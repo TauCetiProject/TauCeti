@@ -93,11 +93,17 @@ lemma eulerDegreeHom_apply (a : Additive (LineBundleClass X)) :
     eulerDegreeHom k X a = eulerDegree k a.toMul :=
   (rfl)
 
+omit [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] in
 /-- The Euler-characteristic degree of an integer tensor power is the integer multiple of the
 original degree, on a proper integral curve over `k` whose codimension-one local rings are
-discrete valuation rings and whose `H¹(X, 𝒪_X)` is finite-dimensional. -/
+discrete valuation rings and whose `H¹(X, 𝒪_X)` is finite-dimensional.
+
+The discrete-valuation-ring instance comes last, so that `simp` rejects this lemma when it cannot
+find the other instances before searching for that one, a search that can time out. -/
 @[simp]
-theorem eulerDegree_zpow (a : LineBundleClass X) (n : ℤ) :
+theorem eulerDegree_zpow
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    (a : LineBundleClass X) (n : ℤ) :
     eulerDegree k (a ^ n) = n * eulerDegree k a := by
   simpa using (eulerDegreeHom k X).map_zsmul n (Additive.ofMul a)
 

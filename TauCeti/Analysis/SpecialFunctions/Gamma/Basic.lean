@@ -88,7 +88,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   `(-k, -k + 1)`, `k ≥ 1`, with the even case `Real.pi_div_factorial_le_Gamma_of_mem_Ioo`.
 * `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
   `−ℕ`.
-* `Real.eventually_ne_neg_natCast` — the points near a real number off `−ℕ` are off `−ℕ`.
+* `Real.eventually_ne_neg_natCast`, `Complex.eventually_ne_neg_natCast` — the points near a
+  number off `−ℕ` are off `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Complex.norm_inv_Gamma_add_natCast_mul_factorial_le` —
@@ -296,6 +297,15 @@ theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
   have heq := congrArg re h
   simp only [neg_re, natCast_re] at heq
   linarith [n.cast_nonneg (α := ℝ)]
+
+/-- The points near a complex number off `−ℕ` are off `−ℕ`: the poles of `Γ` are isolated. -/
+theorem eventually_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
+    ∀ᶠ w in 𝓝 s, ∀ m : ℕ, w ≠ -(m : ℂ) := by
+  -- The poles are the zeros of the entire function `1 / Γ`.
+  have hne : (Gamma s)⁻¹ ≠ 0 := inv_ne_zero (Gamma_ne_zero hs)
+  filter_upwards [differentiable_one_div_Gamma.continuous.continuousAt.eventually_ne hne]
+    with w hw m hm
+  exact hw (by simp [hm, Gamma_neg_nat_eq_zero])
 
 /-- `Complex.Gamma` does not vanish off the real axis. -/
 theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=

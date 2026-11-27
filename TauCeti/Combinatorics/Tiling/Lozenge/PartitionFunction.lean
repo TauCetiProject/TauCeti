@@ -79,9 +79,7 @@ theorem finite_setOf_isTiling (R : Finset TriFace) : {M | IsTiling (R : Set TriF
 @[simp] theorem partitionFunction_empty (w : TriEdge → ℝ) : partitionFunction ∅ w = 1 := by
   have h : {M : Set TriEdge | IsTiling ∅ M} = {∅} := by
     ext M
-    simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff, isTiling_def, Set.mem_empty_iff_false,
-      false_imp_iff, implies_true, and_true, Set.eq_empty_iff_forall_notMem]
-    exact ⟨fun h e he => h e he _ e.mem_whiteFace_edges, fun h e he => (h e he).elim⟩
+    simp
   rw [partitionFunction_def, h, finsum_mem_singleton, finprod_mem_empty]
 
 /-- A region without tilings has partition function `0`. -/

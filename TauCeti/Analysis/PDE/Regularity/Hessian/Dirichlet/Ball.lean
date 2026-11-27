@@ -52,7 +52,7 @@ and its bound.
 * **Balls have smooth boundary.** Every ball has the global `C²` boundary charts of the Dirichlet
   theory on `C²` domains (`TauCeti.exists_contDiff_graph_of_mem_frontier_ball`), so the solvability
   theorem of Gilbarg–Trudinger, Theorem 9.15 (in the `TauCeti` namespace,
-  `existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGradient_add_mul_eq`)
+  `existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_add_inner_add_mul_eq`)
   applies.
 * **Uniformity in `A`.** On the unit ball, Gilbarg–Trudinger's Lemma 9.17 for constant
   coefficients holds with one constant for the whole class of matrices
@@ -235,9 +235,10 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGrad
       ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega,
         traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L iteratedGradient 1 u x) = f x := by
   obtain ⟨u, ⟨hu0, hu⟩, huniq⟩ :=
-    existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGradient_add_mul_eq hp
+    existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_add_inner_add_mul_eq hp
       hp_top (hΩ ▸ isBounded_ball) (forall_frontier_exists_contDiff_graph_of_eq_ball x₀ hR hΩ)
       (A := fun _ => A) (fun _ _ => continuousWithinAt_const) (fun _ _ => ⟨lam, hlam, hA⟩)
+      (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp)
       (c := 0) (γ := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp)
       (ae_of_all _ fun _ => le_rfl) f
   refine ⟨u, ⟨hu0, hu.mono fun x hx => by simpa using hx⟩, fun w ⟨hw0, hw⟩ => huniq w
