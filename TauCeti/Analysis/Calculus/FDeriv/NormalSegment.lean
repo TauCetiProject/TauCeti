@@ -27,8 +27,9 @@ dilations of fields and of maps along a curve, where `a → 0` magnifies the nor
 ## Main results
 
 * `TauCeti.isOpen_normalSegmentDomain`: `normalSegmentDomain Ω` is open when `Ω` is.
-* `TauCeti.exists_isCompact_forall_segment_subset`: over a compact set whose zero-section points
-  lie in an open `Ω`, the normal segments lie in one compact subset of `Ω` for all small `a`.
+* `TauCeti.exists_isCompact_forall_normalSegment_subset`: over a compact set whose zero-section
+  points lie in an open `Ω`, the normal segments lie in one compact subset of `Ω` for all small
+  `a`.
 * `ContDiffOn.comp_normalSegmentDomain`: a function `Cⁿ` on `Ω`, evaluated at `(z, a W)`, is `Cⁿ`
   in `(a, z, W)` on `normalSegmentDomain Ω`.
 * `TauCeti.contDiffOn_integral_fderiv_normalSegmentDomain`: the average normal derivative of a
@@ -85,7 +86,7 @@ theorem mk_zero_mem_of_mem_normalSegmentDomain {Ω : Set (E × N)} {q : ℝ × (
 /-- Over a compact set `K` of points whose zero-section points lie in an open set `Ω`, the normal
 segments from `(z, 0)` to `(z, a W)`, `(z, W) ∈ K`, lie in one compact subset of `Ω` for all small
 `a`. This makes bounds of continuous functions on `Ω` uniform along these segments. -/
-theorem exists_isCompact_forall_segment_subset {Ω K : Set (E × N)} (hΩ : IsOpen Ω)
+theorem exists_isCompact_forall_normalSegment_subset {Ω K : Set (E × N)} (hΩ : IsOpen Ω)
     (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
     ∃ S ⊆ Ω, IsCompact S ∧ ∀ᶠ a in 𝓝 (0 : ℝ), ∀ p ∈ K, segment ℝ (p.1, 0) (p.1, a • p.2) ⊆ S := by
   have hU : ∀ᶠ a in 𝓝 (0 : ℝ), ∀ p ∈ K, (a, p) ∈ normalSegmentDomain Ω :=

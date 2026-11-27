@@ -469,7 +469,7 @@ private theorem norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le
     ((A - J (z, 0)).le_opNorm _).trans (mul_le_mul h₁ hw (norm_nonneg _) (by positivity))
   -- The Taylor remainder is of order `a²`, so its quotient by `a` is of order `a`.
   have h₂v : ‖a⁻¹ • (R (v.1, 0)).2‖ ≤ |a| * (M₂ / 2 * ‖W‖ ^ 2) * ‖v‖ := by
-    rw [norm_smul, norm_inv, Real.norm_eq_abs]
+    simp only [norm_smul, norm_inv, Real.norm_eq_abs]
     calc |a|⁻¹ * ‖(R (v.1, 0)).2‖ ≤ |a|⁻¹ * (|a| * (|a| * (M₂ / 2 * ‖W‖ ^ 2)) * ‖v‖) := by
           gcongr
           exact (norm_snd_le _).trans
@@ -513,7 +513,7 @@ theorem norm_normalDilation_sub_normalLinearization_le {J : E × N → E × N �
   have h1 := right_mem_segment ℝ ((z, 0) : E × N) (z, a • W)
   have hd : ((z, a • W) : E × N) - (z, 0) = ((0 : E), a • W) := by simp
   have haW : ‖((0 : E), a • W)‖ = |a| * ‖W‖ := by
-    rw [Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _), norm_smul, Real.norm_eq_abs]
+    simpa [norm_smul] using mul_nonneg (abs_nonneg a) (norm_nonneg W)
   refine norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le ha hJ₀
     ((norm_nonneg (fderiv ℝ J (z, 0))).trans (hM₁ _ h0)) hM₂₀ ?_ ?_
   · -- The increment of `J` along the segment, by the mean value inequality.
@@ -522,7 +522,7 @@ theorem norm_normalDilation_sub_normalLinearization_le {J : E × N → E × N �
     linarith
   · -- The Taylor remainder, by the quadratic mean value inequality.
     have h := hs.norm_image_sub_sub_le_of_norm_fderiv_sub_le hJ hM₂ h0 h1
-    rw [hd, sub_self, norm_zero, zero_add, haW] at h
+    simp only [hd, haW, sub_self, norm_zero, zero_add] at h
     linarith [show M₂ / 2 * (|a| * ‖W‖) * (|a| * ‖W‖) = |a| * (|a| * (M₂ / 2 * ‖W‖ ^ 2)) by ring]
 
 /-- **The normal dilations converge to the normal linearization at rate `O(a)`, uniformly on
@@ -535,7 +535,7 @@ theorem exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen
     (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
     ∃ C, ∀ᶠ a in 𝓝[≠] (0 : ℝ), ∀ p ∈ K,
       ‖normalDilation J a p - normalLinearization J p‖ ≤ C * |a| := by
-  obtain ⟨S, hSΩ, hS, hseg⟩ := exists_isCompact_forall_segment_subset hΩ hK hKΩ
+  obtain ⟨S, hSΩ, hS, hseg⟩ := exists_isCompact_forall_normalSegment_subset hΩ hK hKΩ
   -- `J` and its first two derivatives are bounded on `S`, and the normal coordinate on `K`.
   have hJ₁ : ContDiffOn ℝ 1 (fderiv ℝ J) Ω := hJ.fderiv_of_isOpen hΩ (by norm_num)
   have hJ₂ : ContinuousOn (iteratedFDeriv ℝ 2 J) Ω :=
@@ -567,7 +567,7 @@ theorem exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen
   have hJa : ‖J (p.1, a • p.2)‖ ≤ M₀ := hM₀ _ (haS p hp (right_mem_segment ℝ _ _))
   have hW : ‖p.2‖ ≤ max R 0 := (hR p hp).trans (le_max_left _ _)
   refine h.trans ?_
-  rw [mul_comm]
+  rw [mul_comm _ |a|]
   gcongr
 
 /-- **The normal dilations converge to the normal linearization at rate `O(a)`.** If `J` is `C²`
