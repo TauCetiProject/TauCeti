@@ -26,7 +26,7 @@ smooth singular homology `H_p^∞(M; ℤ)` (`TauCeti.exists_smoothHomologyPeriod
 is divisible, hence an injective abelian group, a homomorphism `f : H_p^∞(M; ℤ) → ℝ` extends from
 the cycles to an integral cochain `a` vanishing on boundaries. The real cochain `b` with the same
 values on smooth simplices is a cocycle of `Hom(C_*^∞(M; ℝ), ℝ)`
-(`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_d_comp`). By the de Rham theorem integration
+(`TauCeti.exists_cocycle_iCycles_comp_eq`). By the de Rham theorem integration
 is onto the cohomology of these cochains (`TauCeti.deRhamCohomology.bijective_integration`), so
 the integration cochain of some closed form `φ` differs from `b` by a coboundary `d η`. Read back
 on integral chains, the integration cochain of `φ` is `a` plus the coboundary of the integral
@@ -68,68 +68,6 @@ namespace TauCeti
 variable {E H : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type} [TopologicalSpace M]
   [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] {p : ℕ}
-
-omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] in
-/-- A homomorphism `f : H_p^∞(M; ℤ) → ℝ` is the evaluation on integral cycles of the integral
-cochain with the values on simplices of a real cocycle `b` of the smooth singular cochains. -/
-private theorem exists_cocycle_comp_eq (f : ((smoothSingularSubcomplex I M : SSet).chainComplex
-      (ModuleCat.of ℤ ℤ)).homology p ⟶ ModuleCat.of ℤ ℝ) :
-    ∃ b : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).X p ⟶
-        ModuleCat.of ℝ ℝ, ((smoothSingularSubcomplex I M : SSet).chainComplex
-          (ModuleCat.of ℝ ℝ)).d ((ComplexShape.up ℕ).next p) p ≫ b = 0 ∧
-      ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles p ≫
-          (cochainValuesEquiv ℤ (ModuleCat.of ℤ ℝ) (smoothSingularSubcomplex I M : SSet) p).symm
-            (cochainValuesEquiv ℝ (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M : SSet) p b) =
-        ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homologyπ p ≫
-          f := by
-  have : Injective (ModuleCat.of ℤ ℝ) := by
-    have := (Module.Baer.of_divisible ℝ).injective
-    exact Module.injective_object_of_injective_module ℤ ℝ
-  -- Since `ℝ` is an injective abelian group, `f` extends from the cycles to an integral
-  -- cochain `a`, which vanishes on boundaries.
-  let a : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p ⟶
-      ModuleCat.of ℤ ℝ :=
-    Injective.factorThru
-      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homologyπ p ≫ f)
-      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles p)
-  have ha : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles p ≫ a =
-      ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homologyπ p ≫ f :=
-    Injective.comp_factorThru _ _
-  have hda : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).d (p + 1) p ≫
-      a = 0 := by
-    rw [← HomologicalComplex.toCycles_i, Category.assoc, ha]
-    simp
-  -- The real cochain `b` with the same values on simplices is a cocycle.
-  refine ⟨(cochainValuesEquiv ℝ (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M : SSet) p).symm
-    (cochainValuesEquiv ℤ (ModuleCat.of ℤ ℝ) (smoothSingularSubcomplex I M : SSet) p a), ?_, ?_⟩
-  · rw [CochainComplex.next ℕ p]
-    have h := cochainValuesEquiv_symm_cochainValuesEquiv_d_comp ℝ
-      (smoothSingularSubcomplex I M : SSet) ℝ (p + 1) p
-      ((cochainValuesEquiv ℝ (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M : SSet) p).symm
-        (cochainValuesEquiv ℤ (ModuleCat.of ℤ ℝ) (smoothSingularSubcomplex I M : SSet) p a))
-    rw [LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply, hda,
-      LinearEquiv.map_eq_zero_iff, LinearEquiv.map_eq_zero_iff] at h
-    exact h
-  · rw [LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply, ha]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M] in
-/-- The integral cochain with the values on simplices of the real integration cochain of a form is
-its integral integration cochain. -/
-private theorem cochainValuesEquiv_symm_cochainValuesEquiv_integrationCochain
-    (φ : RoughForm I M ℝ p) :
-    (cochainValuesEquiv ℤ (ModuleCat.of ℤ ℝ) (smoothSingularSubcomplex I M : SSet) p).symm
-        (cochainValuesEquiv ℝ (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M : SSet) p
-          (integrationCochain (R := ℝ) φ)) =
-      integrationCochain (R := ℤ) φ := by
-  apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ ℝ) (smoothSingularSubcomplex I M : SSet)
-    p).injective
-  rw [LinearEquiv.apply_symm_apply]
-  funext σ
-  rw [cochainValuesEquiv_apply, cochainValuesEquiv_apply]
-  -- The values are written with the coercion of concrete categories, while
-  -- `integrationCochain_ιChainComplex` uses `ModuleCat.Hom.hom`; the two agree by definition.
-  erw [integrationCochain_ιChainComplex, integrationCochain_ιChainComplex]
-  rw [one_smul, one_smul]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
 /-- If the integration cocycle of a closed form `φ` and a real cocycle `b` of the smooth singular
@@ -180,7 +118,11 @@ theorem exists_smoothHomologyPeriodHom_eq
         -- `g` is additive, so linear for any `ℤ`-module structures, which agree with `zsmul`.
         map_smul' := fun n x ↦ (congrArg g (int_smul_eq_zsmul _ n x)).trans
           ((map_zsmul g n x).trans (int_smul_eq_zsmul _ n (g x)).symm) }, fun _ ↦ rfl⟩
-  obtain ⟨b, hb, hbf⟩ := exists_cocycle_comp_eq f
+  have : Injective (ModuleCat.of ℤ ℝ) := by
+    have := (Module.Baer.of_divisible ℝ).injective
+    exact Module.injective_object_of_injective_module ℤ ℝ
+  obtain ⟨b, hb, hbf⟩ :=
+    exists_cocycle_iCycles_comp_eq ℝ (smoothSingularSubcomplex I M : SSet) ℝ p f
   -- By the de Rham theorem, the class of `b` is that of the integration cocycle of a form `φ`, so
   -- the integration cochain of `φ` differs from `b` by a coboundary `d ≫ η`.
   obtain ⟨c, hc⟩ := (deRhamCohomology.bijective_integration I M p).2
@@ -200,13 +142,15 @@ theorem exists_smoothHomologyPeriodHom_eq
     (φ.val.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.property),
     eq_add_of_sub_eq hz]
   have h1 := ConcreteCategory.congr_hom hbf z
-  have h0 := HomologicalComplex.moduleCat_d_iCycles_apply
-    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)) p
-    ((ComplexShape.up ℕ).prev p) z
-  rw [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_comp, LinearMap.comp_apply]
+  have h0 : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).d p
+      ((ComplexShape.up ℕ).prev p)).hom
+        ((((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles p).hom
+          z) = 0 := by
+    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, HomologicalComplex.iCycles_d,
+      ModuleCat.hom_zero, LinearMap.zero_apply]
+  rw [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_comp, LinearMap.comp_apply, h0,
+    map_zero, zero_add]
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h1
-  -- `h0` is stated with the coercion of concrete categories, the goal with `ModuleCat.Hom.hom`.
-  erw [h0, map_zero, zero_add]
   exact h1
 
 /-- **De Rham's theorem on periods.** On a Hausdorff `σ`-compact smooth manifold `M` modelled on a

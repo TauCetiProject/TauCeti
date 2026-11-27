@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
+import TauCeti.Algebra.Homology.Kronecker
 
 /-!
 # Integral comparison for simplicial cochains
@@ -21,7 +22,9 @@ Simplicial sets and modules are small, so the regular integral coefficient objec
 used without lifting. The scalar ring of the two cochain complexes is `ℤ`. For cochains with
 values in a `k`-module `V`, transporting simplex values from `ModuleCat.of k V` to
 `ModuleCat.of ℤ V` commutes with the coboundary
-(`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_d_comp`).
+(`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_d_comp`). When `V` is an injective abelian
+group, every morphism `H_p(K; ℤ) ⟶ V` is the evaluation on integral cycles of a cocycle over `k`
+(`TauCeti.exists_cocycle_iCycles_comp_eq`).
 
 ## References
 
@@ -175,6 +178,47 @@ lemma cochainValuesEquiv_symm_cochainValuesEquiv_d_comp (i j : ℕ)
     simp only [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply]
   · rw [(K.chainComplex _).shape i j hij, (K.chainComplex _).shape i j hij, zero_comp, zero_comp,
       map_zero, map_zero]
+
+/-- For a `k`-module `V` which is an injective abelian group, every morphism
+`f : H_p(K; ℤ) ⟶ V` is the evaluation on integral cycles of a cocycle `b` over `k`: the integral
+cochain with the simplex values of `b` restricts on the cycles to `f`. This is the surjectivity of
+the Kronecker map for the injective coefficient object `V`
+(`TauCeti.ChainComplex.kronecker_bijective`), transported along simplex values from integral
+cochains to cochains over `k`. -/
+lemma exists_cocycle_iCycles_comp_eq [Injective (ModuleCat.of ℤ V)] (p : ℕ)
+    (f : (K.chainComplex (ModuleCat.of ℤ ℤ)).homology p ⟶ ModuleCat.of ℤ V) :
+    ∃ b : (K.chainComplex (ModuleCat.of k k)).X p ⟶ ModuleCat.of k V,
+      (K.chainComplex (ModuleCat.of k k)).d ((ComplexShape.up ℕ).next p) p ≫ b = 0 ∧
+      (K.chainComplex (ModuleCat.of ℤ ℤ)).iCycles p ≫
+          (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K p).symm
+            (cochainValuesEquiv k (ModuleCat.of k V) K p b) =
+        (K.chainComplex (ModuleCat.of ℤ ℤ)).homologyπ p ≫ f := by
+  -- `f` is the evaluation of the class of an integral cocycle `a`.
+  obtain ⟨x, hx⟩ := (ChainComplex.kronecker_bijective (k := ℤ)
+    (X := K.chainComplex (ModuleCat.of ℤ ℤ)) (Y := ModuleCat.of ℤ V) p).2 f
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p x
+  -- Name the underlying cochain with its morphism type, so that composites with it can be
+  -- rewritten.
+  obtain ⟨a, ha⟩ : ∃ a : (K.chainComplex (ModuleCat.of ℤ ℤ)).X p ⟶ ModuleCat.of ℤ V,
+      ((K.chainComplex (ModuleCat.of ℤ ℤ)).linearYonedaObj ℤ (ModuleCat.of ℤ V)).iCycles p ψ =
+        a := ⟨_, rfl⟩
+  have hca : (K.chainComplex (ModuleCat.of ℤ ℤ)).iCycles p ≫ a =
+      (K.chainComplex (ModuleCat.of ℤ ℤ)).homologyπ p ≫ f := by
+    rw [← hx, ChainComplex.kronecker_homologyπ, ha]
+  have hda : (K.chainComplex (ModuleCat.of ℤ ℤ)).d (p + 1) p ≫ a = 0 := by
+    rw [← ha]
+    exact ChainComplex.d_comp_linearYonedaObj_iCycles p (p + 1) ψ
+  -- The cochain `b` over `k` with the same values on simplices is a cocycle.
+  refine ⟨(cochainValuesEquiv k (ModuleCat.of k V) K p).symm
+    (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K p a), ?_, ?_⟩
+  · rw [CochainComplex.next ℕ p]
+    have h := cochainValuesEquiv_symm_cochainValuesEquiv_d_comp k K V (p + 1) p
+      ((cochainValuesEquiv k (ModuleCat.of k V) K p).symm
+        (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K p a))
+    rw [LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply, hda,
+      LinearEquiv.map_eq_zero_iff, LinearEquiv.map_eq_zero_iff] at h
+    exact h
+  · rw [LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply, hca]
 
 end Values
 
