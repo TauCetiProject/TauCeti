@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.Stein.Solution
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
-import TauCeti.Probability.Distributions.Gaussian.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
