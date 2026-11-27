@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicGeometry.AbelianVariety.Product
   `Spec K` of dimension zero.
 * For abelian varieties `A` and `B`, the projection `A × B ⟶ A` is faithfully flat. It is
   surjective because the homomorphism `a ↦ (a, 0)` is a section of it, so
-  `AbelianVariety.Hom.flat_of_surjective` applies although `A × B` and `A` have different
+  `AbelianVariety.flat_of_surjective` applies although `A × B` and `A` have different
   dimensions when `B` has positive dimension.
 -/
 
@@ -36,7 +36,7 @@ example (A : AbelianVariety K) :
   have : Surjective (Hom.toSchemeHom (𝟙 A)) := by
     rw [Hom.toSchemeHom_id]
     infer_instance
-  exact ⟨Hom.flat_of_surjective _, ‹_›⟩
+  exact ⟨flat_of_surjective _, ‹_›⟩
 
 /-- The first projection `A × B ⟶ A` of a product of abelian varieties is faithfully flat: it is
 surjective, since the homomorphism `a ↦ (a, 0)` is a section of it. -/
@@ -47,6 +47,6 @@ example (A B : AbelianVariety K) :
     rw [← Hom.toSchemeHom_comp, prod.lift_fst, Hom.toSchemeHom_id]
     infer_instance
   have : Surjective (Hom.toSchemeHom (prod.fst A B)) := .of_comp (Hom.toSchemeHom s) _
-  exact ⟨Hom.flat_of_surjective _, ‹_›⟩
+  exact ⟨flat_of_surjective _, ‹_›⟩
 
 end TauCeti.AlgebraicGeometry.AbelianVariety
