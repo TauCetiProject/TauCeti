@@ -11,6 +11,7 @@ public import Mathlib.Data.ZMod.Basic
 
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Zify
 
 /-!
 # Equally spaced cyclic points and periodic functions indexed by `ZMod`
@@ -33,6 +34,7 @@ map `g` advances a family `u` indexed by `ZMod p` by one step, a single coincide
 ## Main results
 
 * `ZMod.val_add_one_eq_or`: `(k + 1).val = k.val + 1 ∨ (k + 1).val + N = k.val + 1` for `N ≠ 0`.
+* `ZMod.one_add_val_sub_one`: `1 + (k - 1).val` is `N` if `k = 0` and `k.val` otherwise.
 * `ZMod.val_add_one_mul_div_eq_or`: advancing `k : ZMod N` to `k + 1` in `k.val * (L / N)` either
   adds `L / N` or adds `L / N - L`.
 * `Function.Periodic.apply_add_val_add_one_mul_div`,
@@ -61,6 +63,13 @@ theorem val_add_one_eq_or {N : ℕ} [NeZero N] (k : ZMod N) :
   · right
     have hN : k.val + 1 = N := by have := k.val_lt; omega
     rw [hk, hN, ZMod.natCast_self, ZMod.val_zero, zero_add]
+
+/-- Stepping back by `1` in `ZMod N` (`N ≠ 0`): one more than the canonical representative of
+`k - 1` is `N` if `k = 0`, and `k.val` otherwise. -/
+theorem one_add_val_sub_one {N : ℕ} [NeZero N] (k : ZMod N) :
+    1 + (k - 1).val = if k = 0 then N else k.val := by
+  zify
+  simp [ZMod.cast_sub_one]
 
 /-- For equally spaced points `k.val * (L / N)` of step `L / N` in a division semiring (such as
 `ℝ`), advancing `k : ZMod N` to `k + 1` either adds `L / N` or adds `L / N - L`. -/

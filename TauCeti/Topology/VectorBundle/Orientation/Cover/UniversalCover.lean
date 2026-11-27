@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 
 /-!
