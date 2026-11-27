@@ -68,7 +68,9 @@ conformal symplectic normal space of `f` onto that of `F ∘ f`
 (`TauCeti.conformalSymplecticNormalEquiv`), conformally symplectic for the two line-valued forms
 (`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalEquiv`), and compatible with
 composition (`TauCeti.conformalSymplecticNormalEquiv_trans`). It is induced by the map
-`u ↦ dF u` of Levi orthogonals (`TauCeti.mfderiv_mem_leviOrthogonal`).
+`u ↦ dF u` of Levi orthogonals: `dF` maps the Levi orthogonal of the tangent image of `f` onto that
+of `F ∘ f` (`TauCeti.map_orthogonalBilin_comap_range_mfderiv`,
+`TauCeti.mfderiv_mem_leviOrthogonal`).
 
 A local defining form `α` of `ξ` at `f y`, with `ker α_(f y) = ξ_(f y)`, identifies the contact
 line with `ℝ` and turns the line-valued form into a linear symplectic form
@@ -362,9 +364,20 @@ theorem contactLineEquiv_trans {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
   | H u => simp [mfderiv_comp x hG hF]
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- An invertible differential `dF_x` mapping `D x` into `D₁ (F x)`, whose inverse maps
+`D₁ (F x)` into `D x`, carries `D x` onto `D₁ (F x)`. -/
+theorem map_ofBijective_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD' : ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
+    (D x).map (LinearEquiv.ofBijective (mfderiv I I₁ F x).toLinearMap
+      hFx.bijective : TangentSpace I x →ₗ[ℝ] TangentSpace I₁ (F x)) = D₁ (F x) :=
+  Submodule.map_equiv_eq_iff.2 fun u ↦
+    ⟨fun hu ↦ hFx.inverse_apply_self u ▸ hFD' _ hu, hFD u⟩
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- The differential of `F` carries the part of the tangent image of `f` lying in `D` onto the part
 of the tangent image of `F ∘ f` lying in `D₁`. -/
-private theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
     (hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
       hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)))
     (hFd : MDifferentiableAt I I₁ F (f y)) (hf : MDifferentiableAt J I f y) :
@@ -394,6 +407,30 @@ private theorem distributionLeviForm_ofSubmodules_ofBijective {n : ℕ∞ω} {x 
     LinearEquiv.ofSubmodules_ofBijective_apply _ hFx.bijective hmap hFD v]
   exact distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v
 
+/-- **Levi orthogonals are natural.** Let `F` be `C²` at `f y` with invertible differential,
+mapping `D (f y)` into `D₁ (F (f y))`, and whose inverse differentials map `D₁` into `D` near
+`f y`, and let `f` be differentiable at `y`. Then the isomorphism `D (f y) ≃ D₁ (F (f y))` induced
+by `dF` carries the Levi orthogonal, inside `D`, of the part of the tangent image of `f` lying in
+`D` onto that of `F ∘ f`. -/
+theorem map_orthogonalBilin_comap_range_mfderiv {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
+    (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)))
+    (hf : MDifferentiableAt J I f y) :
+    (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+        (distributionLeviForm D (f y))).map
+        ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules
+          _ _ hmap : D (f y) →ₗ[ℝ] D₁ (F (f y))) =
+      ((LinearMap.range (mfderiv J I₁ (F ∘ f) y).toLinearMap).comap
+        (D₁ ((F ∘ f) y)).subtype).orthogonalBilin (distributionLeviForm D₁ ((F ∘ f) y)) := by
+  rw [← map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf]
+  exact LinearEquiv.map_orthogonalBilin _
+    ((Submodule.mapQ_injective_iff _ _ _ hFD).2 fun u ↦ (Submodule.map_equiv_eq_iff.1 hmap u).1)
+    (distributionLeviForm_ofSubmodules_ofBijective hD hD₁ hF hn hFx hFD hFD' hmap) _
+
 variable (J D f y) in
 /-- **The conformal symplectic normal spaces under a map carrying one distribution to another.**
 Let `F : M → M₁` be `C²` at `f y`, with invertible differential there, and let `D`, `D₁` be `C¹`
@@ -410,19 +447,11 @@ def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution 
     (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
     (hf : MDifferentiableAt J I f y) :
     ConformalSymplecticNormal J D f y ≃ₗ[ℝ] ConformalSymplecticNormal J D₁ (F ∘ f) y :=
-  -- The inverse differential carries `D₁ (F (f y))` back into `D (f y)`.
-  have hFD₁ (u) (hu : mfderiv I I₁ F (f y) u ∈ D₁ (F (f y))) : u ∈ D (f y) :=
-    hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu
-  have hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
-      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)) :=
-    Submodule.map_equiv_eq_iff.2 fun u ↦ ⟨hFD₁ u, hFD u⟩
-  have hW := map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf
+  have hmap := map_ofBijective_mfderiv_eq hFx hFD hFD'.self_of_nhds
   LinearMap.symplecticNormalCongr _ _
     ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules _ _
-      hmap) hW <| by
-    rw [← hW]
-    exact LinearEquiv.map_orthogonalBilin _ ((Submodule.mapQ_injective_iff _ _ _ hFD).2 hFD₁)
-      (distributionLeviForm_ofSubmodules_ofBijective hD hD₁ hF hn hFx hFD hFD' hmap) _
+      hmap) (map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf)
+    (map_orthogonalBilin_comap_range_mfderiv hD hD₁ hF hn hFx hFD hFD' hmap hf)
 
 /-- The isomorphism of conformal symplectic normal spaces induced by `F` sends the class of `u` to
 the class of `dF u`. -/
@@ -503,31 +532,25 @@ theorem conformalSymplecticNormalEquiv_trans {n n₁ n₂ : ℕ∞ω}
         (LinearMap.symplecticNormalCongr_mk _ _ _ u).symm)
     simp [hcomp]
 
-/-- **The differential of a contactomorphism maps Levi orthogonals into Levi orthogonals.** Under
-the hypotheses of `TauCeti.conformalSymplecticNormalEquiv`, the differential of `F` at `f y` maps
-the Levi orthogonal of the tangent image of `f` at `y` into that of `F ∘ f`. This is the map of
-Levi orthogonals inducing `TauCeti.conformalSymplecticNormalEquiv`. -/
+/-- **The differential of a contactomorphism maps Levi orthogonals into Levi orthogonals.** Let `F`
+be `C²` at `f y` with invertible differential, mapping `D (f y)` into `D₁ (F (f y))`, and whose
+inverse differentials map `D₁` into `D` near `f y`, and let `f` be differentiable at `y`; these are
+the hypotheses of `TauCeti.conformalSymplecticNormalEquiv`. Then `dF` maps the Levi orthogonal of
+the tangent image of `f` at `y` into that of `F ∘ f`. This is the map of Levi orthogonals inducing
+`TauCeti.conformalSymplecticNormalEquiv`. -/
 theorem mfderiv_mem_leviOrthogonal {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
     (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
     (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
     (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
     (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
-    (hf : MDifferentiableAt J I f y) {v : TangentSpace I (f y)}
-    (hv : v ∈ leviOrthogonal J D f y) :
-    mfderiv I I₁ F (f y) v ∈ leviOrthogonal J D₁ (F ∘ f) y := by
-  obtain ⟨hvD, hv⟩ := mem_leviOrthogonal_iff.1 hv
-  refine mem_leviOrthogonal_iff.2 ⟨hFD v hvD, fun w' ⟨a, ha⟩ ↦ ?_⟩
-  -- A tangent image vector of `F ∘ f` in `D₁` is the image of a tangent image vector of `f`,
-  -- which lies in `D` since the inverse differential carries `D₁` back into `D`.
-  rw [ContinuousLinearMap.coe_coe, mfderiv_comp y (hF.mdifferentiableAt (two_pos.trans_le hn).ne')
-    hf, ContinuousLinearMap.comp_apply] at ha
-  have hwD : mfderiv J I f y a ∈ D (f y) :=
-    hFx.inverse_apply_self (mfderiv J I f y a) ▸ hFD'.self_of_nhds _ (ha ▸ w'.property)
-  have hw' : w' = (mfderiv I I₁ F (f y)).toLinearMap.restrict hFD ⟨mfderiv J I f y a, hwD⟩ :=
-    Subtype.ext ha.symm
-  rw [hw']
-  refine (distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' _ ⟨v, hvD⟩).trans ?_
-  rw [hv _ ⟨a, rfl⟩, map_zero]
+    (hf : MDifferentiableAt J I f y) {u : TangentSpace I (f y)}
+    (hu : u ∈ leviOrthogonal J D f y) :
+    mfderiv I I₁ F (f y) u ∈ leviOrthogonal J D₁ (F ∘ f) y := by
+  have hmap := map_ofBijective_mfderiv_eq hFx hFD hFD'.self_of_nhds
+  rw [← map_subtype_orthogonalBilin_eq_leviOrthogonal] at hu ⊢
+  obtain ⟨w, hw, rfl⟩ := hu
+  rw [← map_orthogonalBilin_comap_range_mfderiv hD hD₁ hF hn hFx hFD hFD' hmap hf]
+  exact ⟨_, Submodule.mem_map_of_mem hw, by simp⟩
 
 end NaturalityInvertible
 
