@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 
 /-!
@@ -72,6 +73,8 @@ which lifts the pointwise `(0,1)`-projection
   `(0,1)`-projection of one-forms.
 * `TauCeti.FiniteBundleAtlas.isZeroOneForm_smul_chartSection`: a one-form read in a chart as
   antilinear maps, cut off outside the chart domain, is a `(0,1)`-form.
+* `TauCeti.ofContMDiffSection_mem_zeroOneSobolevSections`: `Cᵏ` `(0,1)`-forms are Sobolev
+  `(0,1)`-forms.
 * `TauCeti.mem_zeroOneSobolevSections_of_isZeroOneForm`: an element whose chart data are the
   readings of a `(0,1)`-form, for instance of a smooth one, is a Sobolev `(0,1)`-form.
 * `TauCeti.zeroOneLowerOrdersL_zeroOnePartSobolevL`:
@@ -291,6 +294,17 @@ theorem mem_zeroOneSobolevSections_of_isZeroOneForm {w : SobolevSection A.tangen
     w ∈ zeroOneSobolevSections A μ p k :=
   (mem_zeroOneSobolevSections_iff_isZeroOneForm hw).2 fun _ ↦ Filter.Eventually.of_forall
     fun _ ↦ hθ _
+
+/-- **`Cᵏ` `(0,1)`-forms are Sobolev `(0,1)`-forms.** The element of `W^{k,p}` of a `Cᵏ` `V`-valued
+one-form which is a `(0,1)`-form at every point is a `(0,1)`-form. -/
+theorem ofContMDiffSection_mem_zeroOneSobolevSections [IsManifold 𝓘(ℝ, ℂ) k M]
+    [ContMDiffVectorBundle k (ℂ →L[ℝ] F) (fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) 𝓘(ℝ, ℂ)]
+    {σ : Cₛ^k⟮𝓘(ℝ, ℂ); ℂ →L[ℝ] F, fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x⟯}
+    (hσ : ∀ x, (ofComplexManifold ℂ M).IsZeroOneForm (σ x)) :
+    SobolevSection.ofContMDiffSection A.tangentHom μ p k σ ∈ zeroOneSobolevSections A μ p k :=
+  mem_zeroOneSobolevSections_of_isZeroOneForm (fun i ↦
+    (SobolevSection.chartValueL_ofContMDiffSection_ae A.tangentHom μ p k σ i).filter_mono
+      (ae_mono (Measure.restrict_mono (A.tangentHom.sectionChartData_image i).le le_rfl))) hσ
 
 /-- The `(0,1)`-forms form a closed subspace: it is the intersection of the kernels of continuous
 linear maps. -/

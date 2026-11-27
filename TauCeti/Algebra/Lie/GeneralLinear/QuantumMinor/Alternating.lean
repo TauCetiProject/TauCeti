@@ -92,6 +92,28 @@ theorem HasMatrixUnitLieRelations.neg_transpose {E : Matrix ι ι A}
   simp only [eq_comm (a := a) (b := d), eq_comm (a := c) (b := b)]
   split_ifs <;> simp [sub_eq_add_neg, add_comm]
 
+/-- Adding a diagonal with constant entry `c` preserves the matrix-unit relations when `c`
+commutes with each generator. -/
+theorem HasMatrixUnitLieRelations.add_diagonal {E : Matrix ι ι A}
+    (hE : E.HasMatrixUnitLieRelations) (c : A) (hc : ∀ i j, Commute (E i j) c) :
+    (E + diagonal (fun _ ↦ c)).HasMatrixUnitLieRelations := by
+  rw [hasMatrixUnitLieRelations_iff] at hE ⊢
+  intro i j k l
+  have hcomm (a b d e : ι) : Commute (E a b) (diagonal (fun _ : ι ↦ c) d e) := by
+    by_cases h : d = e <;> simp [h, hc]
+  have hdiag (a b d e : ι) :
+      Commute (diagonal (fun _ : ι ↦ c) a b) (diagonal (fun _ : ι ↦ c) d e) := by
+    by_cases h : a = b <;> by_cases h' : d = e <;> simp [h, h', Commute.refl]
+  -- The mixed terms cancel on the left, and the two diagonal corrections cancel on the right.
+  have hm : (E i j + diagonal (fun _ ↦ c) i j) * (E k l + diagonal (fun _ ↦ c) k l) -
+      (E k l + diagonal (fun _ ↦ c) k l) * (E i j + diagonal (fun _ ↦ c) i j) =
+      E i j * E k l - E k l * E i j := by
+    simp only [add_mul, mul_add, (hcomm i j k l).eq, (hcomm k l i j).eq, (hdiag i j k l).eq]
+    abel
+  simp only [Matrix.add_apply, hm, hE]
+  by_cases h : j = k <;> by_cases h' : i = l <;>
+    simp [h, h', Ne.symm]
+
 section Alternation
 
 attribute [local instance 100] LieRing.ofAssociativeRing
