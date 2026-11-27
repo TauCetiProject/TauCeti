@@ -38,12 +38,11 @@ theorem norm_logDeriv_one_le_of_truncation {q : ℕ} [NeZero q] (χ : DirichletC
     refine (norm_sum_le_of_le _ (fun n _ ↦ ?_)).trans (Chebyshev.sum_vonMangoldt_div_le hz)
     rw [norm_div, Complex.norm_natCast]
     exact div_le_div_of_nonneg_right (χ.norm_mul_vonMangoldt_le n) (Nat.cast_nonneg n)
-  calc
-    _ ≤ ‖logDeriv χ.LFunction 1 + (∑ n ∈ Ioc 0 ⌊z⌋₊, χ n * (Λ n : ℂ) / n)‖ +
-        ‖∑ n ∈ Ioc 0 ⌊z⌋₊, χ n * (Λ n : ℂ) / n‖ := by
-      let S : ℂ := ∑ n ∈ Ioc 0 ⌊z⌋₊, χ n * (Λ n : ℂ) / n
-      simpa only [add_sub_cancel_right] using norm_sub_le (logDeriv χ.LFunction 1 + S) S
-    _ ≤ _ := add_le_add h hsum
+  exact (norm_le_add_norm_add _ _).trans (add_le_add h hsum)
+
+end DirichletCharacter
+
+namespace TauCeti.DirichletCharacter
 
 /-- For characters whose moduli are bounded by `M`, the logarithmic derivatives at one
 have a common bound. Here `logDeriv` is total, so the principal characters need not be removed. -/
@@ -63,7 +62,7 @@ theorem exists_norm_logDeriv_one_le_of_level_le (M : ℕ) :
 `((2 + ε) / δ₀) * log (log Q) + C` at one. The input is needed only at the offset
 `δ₀ * ε / (2 + ε)` for nonprincipal characters; the conclusion is uniform in the modulus
 and the box height. -/
-theorem norm_logDeriv_one_le_log_log_of_truncation {δ₀ ε : ℝ}
+theorem exists_norm_logDeriv_one_le_log_log_of_truncation {δ₀ ε : ℝ}
     (hδ₀ : 0 < δ₀) (hε : -2 < ε)
     (htrunc : let δ := δ₀ * ε / (2 + ε)
       ∃ K : ℝ, ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q),
@@ -123,4 +122,4 @@ theorem norm_logDeriv_one_le_log_log_of_truncation {δ₀ ε : ℝ}
     have hmax : B - (p * r) * Real.log (Real.log 2) ≤ C := le_max_right _ _
     linarith only [hmax, hmono]
 
-end DirichletCharacter
+end TauCeti.DirichletCharacter
