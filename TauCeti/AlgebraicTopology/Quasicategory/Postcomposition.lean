@@ -147,6 +147,14 @@ noncomputable def tgt (g : Edge y z) :
     simp) ≫
     (sliceFiberIso x z).hom
 
+/-- Target restriction, followed by the inclusion of the right mapping space into its slice,
+is restriction of the original cone along the target vertex. -/
+@[reassoc (attr := simp)]
+lemma tgt_comp_sliceFiberIso_inv_ι (g : Edge y z) :
+    tgt x g ≫ (sliceFiberIso x z).inv ≫ (fiber (slice.π (yonedaEquiv.symm z)) x).ι =
+      (postcompSpace x g).ι ≫ slice.map (stdSimplex.δ 0) (𝟙 X) (by simp) := by
+  simp [tgt]
+
 /-- The simplex of `Hom^R_X(x, y)` underlying the image under `src` of a cone
 `Δ[n] ⋆ Δ[1] ⟶ X` over `g` is its restriction to `Δ[n] ⋆ Δ[0]` along the source of `Δ[1]`, through
 `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
