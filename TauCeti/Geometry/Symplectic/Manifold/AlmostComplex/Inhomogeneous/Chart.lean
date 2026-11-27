@@ -425,8 +425,10 @@ theorem chartTermExtend_chartAt (ν : InhomogeneousTerm jQ JQ) (x : Q) (y : M) {
   rw [TangentBundle.continuousLinearMapAt_trivializationAt hy,
     TangentBundle.symmL_trivializationAt hx, hψ, hψs, (extChartAt IQ x).right_inv hz]
   rw [DomainDependentHomSection.tangentHom_apply]
-  -- As in `chartTerm_chartAt`: `mvfderiv` is `mfderiv` followed by the identification of
-  -- `TangentSpace 𝓘(ℝ, E) _` with `E`, which is the identity, so both sides agree by definition.
+  -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(ℝ, E) _` with `E`,
+  -- and the composite evaluates by `comp_apply`; the identification is the identity, so both
+  -- sides agree by definition. Rewriting with `mvfderiv_apply_eq_mfderiv_apply` or `comp_apply`
+  -- fails here, since `1 : ℂ` is read as a tangent vector only up to that identification.
   rfl
 
 /-- In the preferred extended charts of a domain modelled on `ℂ` with corners, an inhomogeneous
