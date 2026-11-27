@@ -86,38 +86,36 @@ theorem wronskian_airyAi_comp_mul_left {μ ν : ℂ} (hμ : μ ^ 3 = 1) (hν : �
 
 /-- `ω = e^{2πi/3} = −1/2 + (√3/2) i`. -/
 private theorem exp_two_pi_mul_I_div_three : cexp (2 * π * I / 3) = -1 / 2 + √3 / 2 * I := by
-  rw [show 2 * π * I / 3 = ((π - π / 3 : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_pi_div_three, Real.sin_pi_div_three]
-  push_cast
-  ring
+  have h := exp_ofReal_mul_I (π - π / 3)
+  rw [Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_pi_div_three, Real.sin_pi_div_three] at h
+  convert h using 2 <;> push_cast <;> ring
 
 /-- `ω^{−1} = e^{−2πi/3} = −1/2 − (√3/2) i`. -/
 private theorem exp_neg_two_pi_mul_I_div_three :
     cexp (-(2 * π * I / 3)) = -1 / 2 - √3 / 2 * I := by
-  rw [show -(2 * π * I / 3) = ((-(π - π / 3) : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_neg, Real.sin_neg, Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_pi_div_three,
-    Real.sin_pi_div_three]
-  push_cast
-  ring
+  have h := exp_ofReal_mul_I (-(π - π / 3))
+  rw [Real.cos_neg, Real.sin_neg, Real.cos_pi_sub, Real.sin_pi_sub, Real.cos_pi_div_three,
+    Real.sin_pi_div_three] at h
+  convert h using 2 <;> push_cast <;> ring
 
 /-- `e^{πi/6} = √3/2 + i/2`. -/
 private theorem exp_pi_mul_I_div_six : cexp (π * I / 6) = √3 / 2 + 1 / 2 * I := by
-  rw [show π * I / 6 = ((π / 6 : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_pi_div_six, Real.sin_pi_div_six]
-  push_cast
-  ring
+  have h := exp_ofReal_mul_I (π / 6)
+  rw [Real.cos_pi_div_six, Real.sin_pi_div_six] at h
+  convert h using 2 <;> push_cast <;> ring
 
 /-- `e^{−πi/6} = √3/2 − i/2`. -/
 private theorem exp_neg_pi_mul_I_div_six : cexp (-(π * I / 6)) = √3 / 2 - 1 / 2 * I := by
-  rw [show -(π * I / 6) = ((-(π / 6) : ℝ) : ℂ) * I by push_cast; ring, exp_ofReal_mul_I,
-    Real.cos_neg, Real.sin_neg, Real.cos_pi_div_six, Real.sin_pi_div_six]
-  push_cast
-  ring
+  have h := exp_ofReal_mul_I (-(π / 6))
+  rw [Real.cos_neg, Real.sin_neg, Real.cos_pi_div_six, Real.sin_pi_div_six] at h
+  convert h using 2 <;> push_cast <;> ring
 
 /-- `ω³ = 1` for `ω = e^{2πi/3}`. -/
 private theorem exp_two_pi_mul_I_div_three_pow_three : cexp (2 * π * I / 3) ^ 3 = 1 := by
-  rw [← exp_natCast_mul, show ((3 : ℕ) : ℂ) * (2 * π * I / 3) = 2 * π * I by push_cast; ring,
-    exp_two_pi_mul_I]
+  rw [← exp_natCast_mul]
+  convert exp_two_pi_mul_I using 2
+  push_cast
+  ring
 
 /-- `ω⁻³ = 1` for `ω = e^{2πi/3}`. -/
 private theorem exp_neg_two_pi_mul_I_div_three_pow_three : cexp (-(2 * π * I / 3)) ^ 3 = 1 := by
