@@ -36,6 +36,9 @@ homology of a point.
 
 ## Main results
 
+* `TauCeti.coe_sphereCellCocycleTrivialActionHomologyEquiv_apply_fst`,
+  `TauCeti.coe_sphereCellCocycleTrivialActionHomologyEquiv_apply_snd`: the components of a class
+  are those given by the cell attached along the attaching cycle.
 * `TauCeti.nontrivial_sphereCellCocycle_trivialAction_homology`: this twisted homology is
   nonzero in degree `-n`.
 
@@ -72,7 +75,46 @@ def sphereCellCocycleTrivialActionHomologyEquiv (q : ℤ) :
           (q + ((m : ℤ) + 2)) :=
   cycleCellCocycleTrivialActionHomologyEquiv _ _ (loopChainAugmentation_sphereAttachingChain h k)
       q ≪≫ₗ
-    (LinearEquiv.refl k _).prodCongr (LinearEquiv.ofEq _ _ (by push_cast; ring_nf))
+    (LinearEquiv.refl k _).prodCongr
+      (LinearEquiv.ofEq _ _ (by rw [show ((m + 1 : ℕ) : ℤ) + 1 = m + 2 by omega]))
+
+/-- The `e₀`-component of `TauCeti.sphereCellCocycleTrivialActionHomologyEquiv` of a class is that
+of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` for the attaching cycle, read in
+`H(Ω_b Sⁿ)`. -/
+@[simp]
+theorem coe_sphereCellCocycleTrivialActionHomologyEquiv_apply_fst (q : ℤ)
+    (c : ((sphereCellCocycle h k).coefficientCochainComplex
+        ((loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.restrictScalars
+          (loopChainAugmentation Sph (spherePolePoint h) k).trivialAction)).homology q) :
+    ((sphereCellCocycleTrivialActionHomologyEquiv h k q c).1 :
+        (loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.Cohomology) =
+      IsDGRightModule.restrictScalarsCohomologyEquiv
+        (loopChainAugmentation Sph (spherePolePoint h) k).trivialAction
+        (loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule
+        (cycleCellCocycleHomologyEquivOfOpSmulEqZero (sphereAttachingChain_mem h k)
+          (cubicalChainDifferential_sphereAttachingChain h k) _
+          ((loopChainAugmentation Sph (spherePolePoint h) k).op_smul_eq_zero_of_eq_zero
+            (loopChainAugmentation_sphereAttachingChain h k)) q c).1 :=
+  coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_fst _ _ _ q c
+
+/-- The `e₁`-component of `TauCeti.sphereCellCocycleTrivialActionHomologyEquiv` of a class is that
+of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` for the attaching cycle, read in
+`H(Ω_b Sⁿ)`. -/
+@[simp]
+theorem coe_sphereCellCocycleTrivialActionHomologyEquiv_apply_snd (q : ℤ)
+    (c : ((sphereCellCocycle h k).coefficientCochainComplex
+        ((loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.restrictScalars
+          (loopChainAugmentation Sph (spherePolePoint h) k).trivialAction)).homology q) :
+    ((sphereCellCocycleTrivialActionHomologyEquiv h k q c).2 :
+        (loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.Cohomology) =
+      IsDGRightModule.restrictScalarsCohomologyEquiv
+        (loopChainAugmentation Sph (spherePolePoint h) k).trivialAction
+        (loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule
+        (cycleCellCocycleHomologyEquivOfOpSmulEqZero (sphereAttachingChain_mem h k)
+          (cubicalChainDifferential_sphereAttachingChain h k) _
+          ((loopChainAugmentation Sph (spherePolePoint h) k).op_smul_eq_zero_of_eq_zero
+            (loopChainAugmentation_sphereAttachingChain h k)) q c).2 :=
+  coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_snd _ _ _ q c
 
 /-- **With the trivial action the twisted homology of the sphere is not that of a point.** Over a
 nontrivial ring `k`, the twisted homology of `Sⁿ`, `n = m + 2`, with coefficients in the chains on

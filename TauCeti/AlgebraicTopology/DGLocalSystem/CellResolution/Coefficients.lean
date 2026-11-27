@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.CellResolution
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.ZeroAction
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
+public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation.TrivialAction
 
 /-!
 # A cell attached along a cycle that acts by zero on the coefficients
@@ -138,6 +138,19 @@ end ZeroAction
 /-! ### The trivial action of the chains on the loops -/
 
 section TrivialAction
+
+/- Instance search finds different, but definitionally equal, instances on the chain algebra of
+the loop space than those of the general instance on restrictions, and does not see through them.
+So the graded action of the chains on the loops on their restriction along the trivial action is
+restated here in the form instance search produces. -/
+/-- The action of `C_*(Ω_b B; R)` on its restriction along the trivial action
+`TauCeti.DGAlgAugmentation.trivialAction` respects degrees. -/
+instance : SetLike.GradedSMul
+    (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
+    (IsDGRightModule.restrictScalarsGrading (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)
+      (loopChainAugmentation B b R).trivialAction) :=
+  gradedSMul_restrictScalarsGrading (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)
+    (loopChainAugmentation B b R).trivialAction
 
 variable {n : ℕ} {x : loopChainAlgebra B b R}
   (hx : x ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ)))
