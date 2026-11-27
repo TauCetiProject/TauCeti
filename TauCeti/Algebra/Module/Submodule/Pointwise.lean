@@ -68,12 +68,6 @@ open scoped Pointwise
 
 namespace Submodule
 
-/-- A nonzero scalar multiple of a vector outside a submodule stays outside it. -/
-theorem smul_notMem_of_ne_zero {R M : Type*} [DivisionSemiring R] [AddCommMonoid M]
-    [Module R M] (p : Submodule R M) {a : R} {x : M} (ha : a ≠ 0) (hx : x ∉ p) :
-    a • x ∉ p :=
-  (p.smul_mem_iff ha).not.mpr hx
-
 /-- Membership in a pointwise translate under a group action is tested by the inverse action. -/
 theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]

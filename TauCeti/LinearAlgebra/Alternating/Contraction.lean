@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.LinearAlgebra.Alternating.Conormal
 public import TauCeti.LinearAlgebra.Alternating.Curry
 public import TauCeti.LinearAlgebra.Alternating.TopDegree
@@ -145,20 +144,12 @@ theorem contract_rayOfNeZero {α : M [⋀^Fin (k + 1)]→ₗ[R] R} (hα : α ≠
     (Module.Ray.someVector_ray _)).map
       ((LinearMap.applyₗ n).comp AlternatingMap.curryLeftLinearMap)
 
-/-- Equal vectors induce the same contraction of a conormal orientation. -/
-theorem contract_congr_vector (o : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
-    (ho : o.IsConormal W) (hk : finrank R (M ⧸ W) = k + 1)
-    {n m : M} (hn : n ∉ W) (hm : m ∉ W) (h : n = m) :
-    o.contract ho hk n hn = o.contract ho hk m hm := by
-  subst m
-  rfl
-
 /-- Contracting a conormal orientation by a positive multiple of a transverse vector
 gives the same orientation. -/
 theorem contract_smul_of_pos (o : Module.Ray R (M [⋀^Fin (k + 1)]→ₗ[R] R))
     (ho : o.IsConormal W) (hk : finrank R (M ⧸ W) = k + 1)
-    (n : M) (hn : n ∉ W) {a : R} (ha : 0 < a) :
-    o.contract ho hk (a • n) (W.smul_notMem_of_ne_zero ha.ne' hn) =
+    (n : M) (hn : n ∉ W) {a : R} (ha : 0 < a) (hm : a • n ∉ W) :
+    o.contract ho hk (a • n) hm =
       o.contract ho hk n hn := by
   induction o using Module.Ray.ind with
   | h α hα =>

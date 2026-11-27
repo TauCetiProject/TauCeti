@@ -101,15 +101,14 @@ gives the same oriented cell. -/
 theorem sweep_eq_of_eq_pos_smul (σ : OrientedCell h (k + 1)) {n m : N}
     (hn : i n ∉ (affineSpan ℝ σ.carrier).direction)
     {a : ℝ} (ha : 0 < a) (hmn : i m = a • i n) :
-    σ.sweep m (hmn.symm ▸ (affineSpan ℝ σ.carrier).direction.smul_notMem_of_ne_zero ha.ne' hn) =
+    σ.sweep m (hmn.symm ▸ ((affineSpan ℝ σ.carrier).direction.smul_mem_iff ha.ne').not.mpr hn) =
       σ.sweep n hn := by
   ext1
   · simp only [sweep_carrier, hmn]
     exact Set.sweep_smul_of_pos _ _ ha
-  · simp only [sweep_orientation]
-    exact (σ.orientation.contract_congr_vector σ.isConormal σ.finrank_quotient_direction
-      _ _ hmn).trans
-      (σ.orientation.contract_smul_of_pos σ.isConormal σ.finrank_quotient_direction (i n) hn ha)
+  · simp only [sweep_orientation, hmn]
+    exact σ.orientation.contract_smul_of_pos σ.isConormal σ.finrank_quotient_direction
+      (i n) hn ha _
 
 /-- Positive integral multiples give identical oriented sweeps. -/
 theorem sweep_nsmul (σ : OrientedCell h (k + 1)) {n : N}
@@ -117,8 +116,8 @@ theorem sweep_nsmul (σ : OrientedCell h (k + 1)) {n : N}
     {a : ℕ} (ha : 0 < a) :
     σ.sweep (a • n) (by
       simpa only [map_nsmul, Nat.cast_smul_eq_nsmul] using
-        (affineSpan ℝ σ.carrier).direction.smul_notMem_of_ne_zero
-          (Nat.cast_ne_zero.mpr ha.ne' : (a : ℝ) ≠ 0) hn) =
+        ((affineSpan ℝ σ.carrier).direction.smul_mem_iff
+          (Nat.cast_ne_zero.mpr ha.ne' : (a : ℝ) ≠ 0)).not.mpr hn) =
       σ.sweep n hn := by
   apply σ.sweep_eq_of_eq_pos_smul hn (a := (a : ℝ))
   · exact_mod_cast ha
