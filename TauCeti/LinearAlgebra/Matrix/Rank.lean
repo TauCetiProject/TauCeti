@@ -60,6 +60,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   matrix-vector multiplication.
 * `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
   rows.
+* `Matrix.mulVec_surjective_iff_linearIndependent_row`: over a field, `A.mulVec` is surjective
+  exactly when the rows of `A` are linearly independent.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
@@ -381,6 +383,16 @@ theorem finite_of_mulVec_surjective {K : Type*} [Field K] {m n : Type*} [Fintype
   have : Module.Finite K (m → K) := Module.Finite.of_surjective (mulVecLin A) h
   classical
   exact (Pi.linearIndependent_single_one m K).finite
+
+/-- Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly
+independent. -/
+theorem mulVec_surjective_iff_linearIndependent_row {K : Type*} [Field K] {m n : Type*}
+    [Finite m] [Fintype n] {A : Matrix m n K} :
+    A.mulVec.Surjective ↔ LinearIndependent K A.row := by
+  have := Fintype.ofFinite m
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mulVec_surjective⟩
+  rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, finrank_span_range_row]
+  exact (mulVec_surjective_iff_rank_eq_card.mp h).symm
 
 end FiniteRows
 

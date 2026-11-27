@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometr
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Algebra.Star.TensorProductLift
 import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.CStarAlgebra.MaxTensor.Comparison
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
@@ -20,9 +21,10 @@ Let `A` and `B` be unital C*-algebras. A C*-norm on the algebraic tensor product
 presented as `x ↦ ‖Ψ x‖` for an injective star homomorphism `Ψ : A ⊗[ℂ] B → D` into a
 C*-algebra `D`. Such a `Ψ` restricts to commuting star homomorphisms `a ↦ Ψ (a ⊗ 1)` and
 `b ↦ Ψ (1 ⊗ b)` (its compositions with `Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom`
-and `Algebra.TensorProduct.includeRightNonUnitalStarAlgHom`) whose products are the values of
-`Ψ` on elementary tensors, so `‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` for every star homomorphism `Ψ`
-(`NonUnitalStarAlgHom.norm_apply_tmul_le`). This file proves the reverse inequality for
+and `Algebra.TensorProduct.includeRightNonUnitalStarAlgHom`), so `‖Ψ (a ⊗ 1)‖ ≤ ‖a‖`
+(`NonUnitalStarAlgHom.norm_apply_tmul_one_le`), and `‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖` for every star
+homomorphism `Ψ` (`NonUnitalStarAlgHom.norm_apply_tmul_le`, in
+`TauCeti.Analysis.CStarAlgebra.MaxTensor.Comparison`). This file proves the reverse inequality for
 injective `Ψ`: every C*-norm on `A ⊗[ℂ] B` is a cross norm, `‖Ψ (a ⊗ b)‖ = ‖a‖ ‖b‖`
 (`TauCeti.norm_apply_tmul_of_injective`).
 
@@ -35,8 +37,7 @@ of `a` and `b`, `f(a)` and `f(b)` are nonzero, so `f(a) ⊗ f(b) ≠ 0`, contrad
 
 ## Main declarations
 
-* `NonUnitalStarAlgHom.norm_apply_tmul_le`: `‖Ψ (a ⊗ b)‖ ≤ ‖a‖ ‖b‖`, and
-  `NonUnitalStarAlgHom.norm_apply_tmul_one_le`.
+* `NonUnitalStarAlgHom.norm_apply_tmul_one_le`: `‖Ψ (a ⊗ 1)‖ ≤ ‖a‖`.
 * `TauCeti.norm_apply_tmul_of_injective`: **every C*-norm is a cross norm**.
 
 ## References
@@ -57,18 +58,6 @@ namespace TauCeti
 
 variable {A : Type u} {B : Type v} {D : Type w} [CStarAlgebra A] [CStarAlgebra B]
   [NonUnitalCStarAlgebra D]
-
-/-- Every star homomorphism out of `A ⊗[ℂ] B` into a C*-algebra is bounded by `‖a‖ ‖b‖` on
-`a ⊗ b`. -/
-theorem _root_.NonUnitalStarAlgHom.norm_apply_tmul_le (Ψ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D) (a : A)
-    (b : B) :
-    ‖Ψ (a ⊗ₜ b)‖ ≤ ‖a‖ * ‖b‖ := by
-  have h : Ψ (a ⊗ₜ b) = (Ψ.comp Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom) a *
-      (Ψ.comp Algebra.TensorProduct.includeRightNonUnitalStarAlgHom) b := by
-    simp [← map_mul]
-  rw [h]
-  exact (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le _ _)
-    (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _) (norm_nonneg _))
 
 /-- Every star homomorphism out of `A ⊗[ℂ] B` into a C*-algebra is bounded by `‖a‖` on
 `a ⊗ 1`. -/

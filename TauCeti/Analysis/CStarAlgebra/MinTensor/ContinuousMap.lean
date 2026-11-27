@@ -11,6 +11,7 @@ import Mathlib.Algebra.Central.TensorProduct
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Order.Archimedean.Basic
+import TauCeti.Analysis.CStarAlgebra.MaxTensor.Comparison
 import TauCeti.Topology.UrysohnsLemma
 
 /-!
