@@ -9,8 +9,9 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cap.AbsoluteRelative
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
-import TauCeti.Algebra.Ring.Parity
+import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.AlgebraicTopology.Cohomology.Collar
+import TauCeti.AlgebraicTopology.Cohomology.Manifold
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.BoundaryFundamentalClass
 import TauCeti.CategoryTheory.Linear.Int
@@ -66,7 +67,7 @@ manifold `∂X`
 (`TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`), which
 is Poincaré duality of `∂X` (`TauCeti.IsFundamentalClass.bijective_singularCapAddHom`). At the
 ends of the sequences, the homology and the cohomology of `∂X` vanish above its dimension
-(`TauCeti.isZero_singularHomology_of_lt`, `TopCat.isZero_singularCohomology_of_finrank_lt`).
+(`TauCeti.isZero_singularHomology_of_lt`, `TauCeti.isZero_singularCohomology_of_compactSpace`).
 Without a manifold structure on the boundary there is no duality on `∂X` for this argument to use.
 
 ## Main definitions
@@ -377,11 +378,6 @@ include hι in
 private lemma compactSpace_boundary : CompactSpace ((range ι)ᶜ : Set X) :=
   isCompact_iff_compactSpace.1 hι.isOpen_range.isClosed_compl.isCompact
 
-/-- Two equal signs `(-1)ᵖ` acting on an abelian group cancel. -/
-private lemma neg_one_pow_zsmul_neg_one_pow_zsmul {G : Type*} [AddCommGroup G] (p : ℕ) (a : G) :
-    (-1 : ℤ) ^ p • (-1 : ℤ) ^ p • a = a := by
-  rw [smul_smul, neg_one_pow_mul_neg_one_pow, one_zsmul]
-
 variable {E' : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [ChartedSpace E' ((range ι)ᶜ : Set X)]
 
@@ -437,8 +433,8 @@ private lemma singularCohomologyMap_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q 
     -- cohomology here for that of a preadditive category; they agree by uniqueness.
     have hz : IsZero ((TopCat.of ((range ι)ᶜ : Set X)).singularCohomology
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) := by
-      convert TopCat.isZero_singularCohomology_of_finrank_lt (ModuleCat.of ℤ (ULift.{0} ℤ)) L
-        (M := ((range ι)ᶜ : Set X)) (E := E') (m := p) (by omega)
+      convert TauCeti.isZero_singularCohomology_of_compactSpace (ModuleCat.of ℤ (ULift.{0} ℤ)) L
+        (M := ((range ι)ᶜ : Set X)) (E := E') rfl (m := p) (by omega)
       exact Subsingleton.elim _ _
     exact (ModuleCat.subsingleton_of_isZero hz).elim _ _
   · have h₀ := o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hE' p (q' + 1) q'
@@ -448,7 +444,7 @@ private lemma singularCohomologyMap_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q 
       (o.bijective_singularCapAddHom_boundary hn hι hιf hf L hE' p q' (by omega)).1 _ ?_
     refine (TopCat.singularCapAddHom_apply _ _ _ _ _ _ _).trans ?_
     -- Cancel the sign `(-1)ᵖ`.
-    exact (neg_one_pow_zsmul_neg_one_pow_zsmul p _).symm.trans
+    exact (neg_one_pow_smul_neg_one_pow_smul (R := ℤ) p _).symm.trans
       ((congrArg _ h₀.symm).trans (zsmul_zero _))
 
 /-- **Injectivity at the pair.** A relative class of `Hᵖ(X, ∂X)` whose dual in `H_q(X)` comes from
@@ -528,7 +524,7 @@ private lemma exists_sub_mem_range (hE' : finrank ℝ E' + 1 = n) (p q : ℕ) (h
   dsimp only
   rw [map_sub, o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L rfl p (q' + 1) q'
     h rfl x, hx, hw]
-  exact sub_eq_zero.2 (neg_one_pow_zsmul_neg_one_pow_zsmul p _).symm
+  exact sub_eq_zero.2 (neg_one_pow_smul_neg_one_pow_smul (R := ℤ) p _).symm
 
 /-- Lefschetz duality from absolute cohomology, for a boundary carrying a manifold structure. -/
 private lemma bijective_absoluteCapFundamentalClassRel_aux (hE' : finrank ℝ E' + 1 = n)
