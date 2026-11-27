@@ -50,18 +50,8 @@ theorem chartMetric_eq (p : S) :
     ← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc u,
     ← (trivializationAt V (TangentSpace (𝓡 n)) p).symmL_apply (R := ℝ) hc v,
     TangentBundle.symmL_trivializationAt hc, (extChartAt (𝓡 n) p).right_inv ht]
-  -- The inverse tangent trivialization is the derivative of the inverse chart. Its model-space
-  -- tangent vectors are identified by `fromTangentSpace`; the installed round inner product
-  -- reduces to the model-space inner product, so no metric rewrite lemma is needed here.
-  change inner ℝ
-    (mfderivWithin (𝓡 n) (𝓡 n) (extChartAt (𝓡 n) p).symm (range (𝓡 n)) y
-      ((NormedSpace.fromTangentSpace y).symm u))
-    (mfderivWithin (𝓡 n) (𝓡 n) (extChartAt (𝓡 n) p).symm (range (𝓡 n)) y
-      ((NormedSpace.fromTangentSpace y).symm v)) = _
   have hr : range (𝓡 n) = (univ : Set V) := by simp
-  rw [hr]
-  rw [mfderivWithin_univ]
-  rw [extChartAt_sphere]
+  rw [hr, mfderivWithin_univ, extChartAt_sphere]
   exact (metric_two_apply_eq_inner_mfderiv (-p) y u v).symm
 
 /-- The native Levi-Civita Christoffel map in the preferred stereographic chart.
