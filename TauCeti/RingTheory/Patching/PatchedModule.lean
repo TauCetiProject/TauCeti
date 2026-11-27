@@ -56,6 +56,7 @@ square of opposite rings.
   `TauCeti.PatchedModule.fstHom` and `TauCeti.PatchedModule.sndHom`.
 * `TauCeti.PatchedModule.lift`: the universal property of the patched module.
 * `TauCeti.PatchedModule.map`: the `D`-linear map induced by a morphism of patching triples.
+* `TauCeti.PatchedModule.equivOfEq`: the isomorphism of the patched modules of equal gluing maps.
 * `TauCeti.BalancedExtension.commSqEquiv h P`: the gluing isomorphism
   `Q ⊗_{A₁} (A₁ ⊗_D P) ≃ Q ⊗_{A₂} (A₂ ⊗_D P)`, `t ⊗ (s ⊗ p) ↦ (t * π₁ s) ⊗ (1 ⊗ p)`, with
   inverse `t ⊗ (s ⊗ p) ↦ (t * π₂ s) ⊗ (1 ⊗ p)`.
@@ -274,6 +275,27 @@ theorem map_comp (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂
   LinearMap.ext fun _ ↦ rfl
 
 end Map
+
+section EquivOfEq
+
+variable {α' : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
+
+/-- The `D`-linear isomorphism `M(P₁, P₂, α) ≃ M(P₁, P₂, α')`, `(x, y) ↦ (x, y)`, for equal gluing
+maps `α = α'`. -/
+def equivOfEq (hα : α = α') : PatchedModule h α ≃ₗ[D] PatchedModule h α' :=
+  LinearEquiv.ofLinearMap (map LinearMap.id LinearMap.id fun _ ↦ by simp [hα])
+    (map LinearMap.id LinearMap.id fun _ ↦ by simp [hα]) (LinearMap.ext fun _ ↦ rfl)
+    (LinearMap.ext fun _ ↦ rfl)
+
+@[simp]
+theorem fst_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).fst = x.fst :=
+  (rfl)
+
+@[simp]
+theorem snd_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).snd = x.snd :=
+  (rfl)
+
+end EquivOfEq
 
 end PatchedModule
 

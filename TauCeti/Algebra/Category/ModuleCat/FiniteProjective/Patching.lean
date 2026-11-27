@@ -44,9 +44,9 @@ maps `M ⊗_D Aⱼ → Pⱼ` (`TauCeti.finite_patchedModule`, `TauCeti.projectiv
 file packages these module-level statements as the patched module functor and the counit of an
 equivalence of categories whose functor is the patching functor: this is **Milnor's patching
 theorem** (`RingHom.milnor_patching`). The unit is the isomorphism `p ↦ (p ⊗ 1, p ⊗ 1)` of a
-module with the patched module of its triple. Essential surjectivity needs the surjective leg: for
-the inclusions `ℤ → ℚ ← ℤ` the fibre product is `ℤ`, and the triple `(ℤ, ℤ, 2)` is not isomorphic
-to the image `(ℤ, ℤ, 1)` of any module.
+module with the patched module of its triple (`TauCeti.patchedModuleEquiv`). Essential
+surjectivity needs the surjective leg: for the inclusions `ℤ → ℚ ← ℤ` the fibre product is `ℤ`,
+and the triple `(ℤ, ℤ, 2)` is not isomorphic to the image `(ℤ, ℤ, 1)` of any module.
 
 ## Main definitions
 
@@ -57,6 +57,8 @@ to the image `(ℤ, ℤ, 1)` of any module.
 * `RingHom.patchedModuleFunctor π₁ π₂ hπ`: with a surjective leg, the functor
   `(P₁, P₂, α) ↦ M(P₁, P₂, α)` from patching triples to finitely generated projective right
   `D`-modules.
+* `RingHom.patchingUnitIso hπ P`: the isomorphism `p ↦ (p ⊗ 1, p ⊗ 1)` of `P` with the patched
+  module of its patching triple.
 * `RingHom.patchingCounitIso hπ T`: the isomorphism of the patching triple of `M(T)` with `T`.
 * `RingHom.patchingEquivalence π₁ π₂ hπ`: the equivalence of categories formed by these two
   functors.
@@ -69,8 +71,8 @@ to the image `(ℤ, ℤ, 1)` of any module.
 * `RingHom.faithful_patchingFunctor`, `RingHom.full_patchingFunctor`: the patching functor is
   faithful and full.
 * `RingHom.milnor_patching`: with a surjective leg, the patching functor is an equivalence.
-* `RingHom.fst_patchingEquivalence_unitIso_hom_app`,
-  `RingHom.snd_patchingEquivalence_unitIso_hom_app`: the unit sends `p` to `(p ⊗ 1, p ⊗ 1)`.
+* `RingHom.fst_patchingUnitIso_hom`, `RingHom.snd_patchingUnitIso_hom`: the unit sends `p` to
+  `(p ⊗ 1, p ⊗ 1)`.
 
 ## References
 
@@ -333,80 +335,92 @@ theorem patchingCounitIso_hom_naturality {T T' : π₁.PatchingTriples π₂} (�
     (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦
       PatchedModule.compareSnd_map_map _ _ _ _ _ x)))
 
+/-- The isomorphism `p ↦ (p ⊗ 1, p ⊗ 1)` of a finitely generated projective right module `P` over
+`A₁ ×_Q A₂` with the patched module of its patching triple: `TauCeti.patchedModuleEquiv`, whose
+gluing map `TauCeti.BalancedExtension.commSqEquiv` is the gluing isomorphism of the patching triple
+of `P` (`RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv`). This is
+the unit of the patching equivalence (`RingHom.patchingEquivalence`). -/
+def patchingUnitIso (P : FiniteProjectiveRight (π₁.pullback π₂)) :
+    P ≅ (patchedModuleFunctor π₁ π₂ hπ).obj ((patchingFunctor π₁ π₂).obj P) :=
+  ObjectProperty.isoMk _ ((patchedModuleEquiv (op_pullback_comm_sq π₁ π₂)
+    (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂) P.obj).trans
+      (PatchedModule.equivOfEq (α' := ((patchingFunctor π₁ π₂).obj P).gluing.toLinearMap)
+        (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv
+          _ _ _ _ (op_pullback_comm_sq π₁ π₂) P).symm)).toModuleIso
+
+/-- `RingHom.patchingUnitIso` sends `p` to `(p ⊗ 1, p ⊗ 1)`: its first component. -/
+@[simp]
+theorem fst_patchingUnitIso_hom (P : FiniteProjectiveRight (π₁.pullback π₂)) (x : P.obj) :
+    ((patchingUnitIso hπ P).hom.hom.hom x).fst = tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x :=
+  (PatchedModule.fst_equivOfEq _ _).trans
+    ((congrArg PatchedModule.fst (patchedModuleEquiv_apply _ _ _ x)).trans
+      (PatchedModule.fst_toPatchedModule _ x))
+
+/-- `RingHom.patchingUnitIso` sends `p` to `(p ⊗ 1, p ⊗ 1)`: its second component. -/
+@[simp]
+theorem snd_patchingUnitIso_hom (P : FiniteProjectiveRight (π₁.pullback π₂)) (x : P.obj) :
+    ((patchingUnitIso hπ P).hom.hom.hom x).snd = tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x :=
+  (PatchedModule.snd_equivOfEq _ _).trans
+    ((congrArg PatchedModule.snd (patchedModuleEquiv_apply _ _ _ x)).trans
+      (PatchedModule.snd_toPatchedModule _ x))
+
+/-- `RingHom.patchingUnitIso` is natural in maps of finitely generated projective modules. -/
+@[reassoc]
+theorem patchingUnitIso_hom_naturality {P P' : FiniteProjectiveRight (π₁.pullback π₂)}
+    (f : P ⟶ P') :
+    f ≫ (patchingUnitIso hπ P').hom =
+      (patchingUnitIso hπ P).hom ≫
+        (patchedModuleFunctor π₁ π₂ hπ).map ((patchingFunctor π₁ π₂).map f) :=
+  ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ PatchedModule.ext
+    -- Both sides of each component send `p` to `1 ⊗ f p`.
+    ((fst_patchingUnitIso_hom hπ P' _).trans <| (map_tmul _ _ _).symm.trans <|
+      (LinearMap.congr_fun (patchingFunctor_map_fst_hom_hom π₁ π₂ f) _).symm.trans <|
+        (congrArg _ (fst_patchingUnitIso_hom hπ P x).symm).trans
+          (PatchedModule.fst_map _ _ _ _).symm)
+    ((snd_patchingUnitIso_hom hπ P' _).trans <| (map_tmul _ _ _).symm.trans <|
+      (LinearMap.congr_fun (patchingFunctor_map_snd_hom_hom π₁ π₂ f) _).symm.trans <|
+        (congrArg _ (snd_patchingUnitIso_hom hπ P x).symm).trans
+          (PatchedModule.snd_map _ _ _ _).symm)))
+
+/-- The triangle identity of `RingHom.patchingUnitIso` and `RingHom.patchingCounitIso`: the image
+of the unit under the patching functor, followed by the counit, is the identity. -/
+@[reassoc (attr := simp)]
+theorem patchingFunctor_map_patchingUnitIso_hom_comp_patchingCounitIso_hom
+    (P : FiniteProjectiveRight (π₁.pullback π₂)) :
+    (patchingFunctor π₁ π₂).map (patchingUnitIso hπ P).hom ≫
+      (patchingCounitIso hπ ((patchingFunctor π₁ π₂).obj P)).hom = 𝟙 _ :=
+  -- Each component of the composite sends `1 ⊗ p` to `1 • (1 ⊗ p)` through the comparison map.
+  CategoricalPullback.hom_ext
+    (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (BalancedExtension.hom_ext fun x ↦
+      (congrArg (PatchedModule.compareFst _ _) ((LinearMap.congr_fun
+        (patchingFunctor_map_fst_hom_hom π₁ π₂ _) _).trans (map_tmul _ _ _))).trans <|
+          (PatchedModule.compareFst_tmul _ _ 1 _).trans <|
+            (one_smul _ _).trans (fst_patchingUnitIso_hom hπ P x))))
+    (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (BalancedExtension.hom_ext fun x ↦
+      (congrArg (PatchedModule.compareSnd _ _) ((LinearMap.congr_fun
+        (patchingFunctor_map_snd_hom_hom π₁ π₂ _) _).trans (map_tmul _ _ _))).trans <|
+          (PatchedModule.compareSnd_tmul _ _ 1 _).trans <|
+            (one_smul _ _).trans (snd_patchingUnitIso_hom hπ P x))))
+
 variable (π₁ π₂) in
 /-- **Milnor's patching theorem**, as an equivalence of categories. Let `D = A₁ ×_Q A₂` be the
 fibre product of ring homomorphisms `π₁ : A₁ →+* Q` and `π₂ : A₂ →+* Q`, one of which is
 surjective. The patching functor `P ↦ (P ⊗_D A₁, P ⊗_D A₂, α_P)` from finitely generated projective
 right `D`-modules to patching triples is an equivalence, with inverse the patched module functor
-`(P₁, P₂, α) ↦ M(P₁, P₂, α) = {(x, y) ∈ P₁ × P₂ | α (x ⊗ 1) = y ⊗ 1}`. Its counit is
-`RingHom.patchingCounitIso`, and its unit sends `p` to `(p ⊗ 1, p ⊗ 1)`
-(`RingHom.fst_patchingEquivalence_unitIso_hom_app`). -/
+`(P₁, P₂, α) ↦ M(P₁, P₂, α) = {(x, y) ∈ P₁ × P₂ | α (x ⊗ 1) = y ⊗ 1}`. Its unit is
+`RingHom.patchingUnitIso`, `p ↦ (p ⊗ 1, p ⊗ 1)`, and its counit is `RingHom.patchingCounitIso`. -/
 -- Exposed so that its functor and inverse are definitionally the patching and patched module
--- functors, which the statements about its unit and counit need to typecheck.
-@[expose, simps! functor inverse counitIso_hom_app counitIso_inv_app]
+-- functors, and its unit and counit are `RingHom.patchingUnitIso` and `RingHom.patchingCounitIso`,
+-- as recorded by the `simps` lemmas.
+@[expose, simps! functor inverse unitIso_hom_app unitIso_inv_app counitIso_hom_app
+  counitIso_inv_app]
 def patchingEquivalence :
-    FiniteProjectiveRight (π₁.pullback π₂) ≌ π₁.PatchingTriples π₂ :=
-  letI hF := Functor.FullyFaithful.ofFullyFaithful (patchingFunctor π₁ π₂)
-  { functor := patchingFunctor π₁ π₂
-    inverse := patchedModuleFunctor π₁ π₂ hπ
-    unitIso := NatIso.ofComponents
-      (fun P ↦ hF.preimageIso (patchingCounitIso hπ ((patchingFunctor π₁ π₂).obj P)).symm)
-      fun f ↦ hF.map_injective (by simp [← cancel_mono (patchingCounitIso hπ _).hom,
-        patchingCounitIso_hom_naturality])
-    counitIso := NatIso.ofComponents (patchingCounitIso hπ) (patchingCounitIso_hom_naturality hπ)
-    functor_unitIso_comp P := by simp }
-
-/-- The unit of the patching equivalence sends `p` to `(p ⊗ 1, p ⊗ 1)`: its first component. -/
--- The source and target of the linear map are given as `P` and `e.inverse.obj (e.functor.obj P)`,
--- the simp normal forms of `(𝟭 _).obj P` and `(e.functor ⋙ e.inverse).obj P`.
-@[simp]
-theorem fst_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
-    (x : P.obj) :
-    ((ModuleCat.Hom.hom (A := P.obj)
-      (B := ((patchingEquivalence π₁ π₂ hπ).inverse.obj
-        ((patchingEquivalence π₁ π₂ hπ).functor.obj P)).obj)
-      ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom) x).fst =
-      tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x := by
-  -- The first component of the image of the unit, followed by the counit, is the identity.
-  set u := ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom
-  calc _ = (1 : A₁ᵐᵒᵖ) • (u x).fst := (one_smul _ _).symm
-    _ = PatchedModule.compareFst _ _ (tmul _ 1 (u x)) :=
-      (PatchedModule.compareFst_tmul _ _ 1 _).symm
-    _ = PatchedModule.compareFst _ _ (map _ u (tmul _ 1 x)) := congrArg _ (map_tmul _ _ _).symm
-    _ = ((patchingEquivalence π₁ π₂ hπ).counitIso.hom.app _).fst.hom.hom
-          (((patchingFunctor π₁ π₂).map
-            ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P)).fst.hom.hom (tmul _ 1 x)) := by
-      rw [patchingFunctor_map_fst_hom_hom, patchingEquivalence_counitIso_hom_app]
-      exact (LinearMap.congr_fun (patchingCounitIso_hom_fst_hom_hom hπ _) _).symm
-    -- The triangle identity, whose composite has this component by `CategoricalPullback.comp_fst`.
-    _ = _ := congr($(((patchingEquivalence π₁ π₂ hπ).functor_unitIso_comp P)).fst.hom.hom
-      (tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x))
-
-/-- The unit of the patching equivalence sends `p` to `(p ⊗ 1, p ⊗ 1)`: its second component. -/
--- The source and target of the linear map are given as `P` and `e.inverse.obj (e.functor.obj P)`,
--- the simp normal forms of `(𝟭 _).obj P` and `(e.functor ⋙ e.inverse).obj P`.
-@[simp]
-theorem snd_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
-    (x : P.obj) :
-    ((ModuleCat.Hom.hom (A := P.obj)
-      (B := ((patchingEquivalence π₁ π₂ hπ).inverse.obj
-        ((patchingEquivalence π₁ π₂ hπ).functor.obj P)).obj)
-      ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom) x).snd =
-      tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x := by
-  -- The second component of the image of the unit, followed by the counit, is the identity.
-  set u := ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom
-  calc _ = (1 : A₂ᵐᵒᵖ) • (u x).snd := (one_smul _ _).symm
-    _ = PatchedModule.compareSnd _ _ (tmul _ 1 (u x)) :=
-      (PatchedModule.compareSnd_tmul _ _ 1 _).symm
-    _ = PatchedModule.compareSnd _ _ (map _ u (tmul _ 1 x)) := congrArg _ (map_tmul _ _ _).symm
-    _ = ((patchingEquivalence π₁ π₂ hπ).counitIso.hom.app _).snd.hom.hom
-          (((patchingFunctor π₁ π₂).map
-            ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P)).snd.hom.hom (tmul _ 1 x)) := by
-      rw [patchingFunctor_map_snd_hom_hom, patchingEquivalence_counitIso_hom_app]
-      exact (LinearMap.congr_fun (patchingCounitIso_hom_snd_hom_hom hπ _) _).symm
-    -- The triangle identity, whose composite has this component by `CategoricalPullback.comp_snd`.
-    _ = _ := congr($(((patchingEquivalence π₁ π₂ hπ).functor_unitIso_comp P)).snd.hom.hom
-      (tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x))
+    FiniteProjectiveRight (π₁.pullback π₂) ≌ π₁.PatchingTriples π₂ where
+  functor := patchingFunctor π₁ π₂
+  inverse := patchedModuleFunctor π₁ π₂ hπ
+  unitIso := NatIso.ofComponents (patchingUnitIso hπ) (patchingUnitIso_hom_naturality hπ)
+  counitIso := NatIso.ofComponents (patchingCounitIso hπ) (patchingCounitIso_hom_naturality hπ)
+  functor_unitIso_comp := patchingFunctor_map_patchingUnitIso_hom_comp_patchingCounitIso_hom hπ
 
 variable (π₁ π₂) in
 include hπ in
