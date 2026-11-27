@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff

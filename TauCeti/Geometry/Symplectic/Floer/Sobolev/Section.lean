@@ -39,9 +39,12 @@ weak solution of `F(u) = F(w)`: the equation holds almost everywhere with the we
 `ξ_s`, `ξ_t` of `ξ` in place of its classical derivatives. Agreement with
 `TauCeti.SymplecticForm.floerOperator` is proved only on test sections
 (`TauCeti.SymplecticForm.floerSection_toW1p_ae`). When the reference map is itself a Floer
-cylinder, `F(w) = 0`, these zeros are the weak solutions of the Floer equation near `w`; that they
-are classical Floer cylinders is elliptic regularity, which is not proved here. The Floer section is
-the map to which the implicit function theorem and the Sard–Smale theorem are applied in the
+cylinder, `F(w) = 0`, these zeros are the weak solutions of the Floer equation near `w`. By the
+pointwise formula `TauCeti.SymplecticForm.floerSection_apply_ae`, such a zero satisfies the Floer
+equation for `u = w + ξ` almost everywhere, so for periodic data of class `C^ℓ`, with
+`J(z, u z)² = -1`, elliptic regularity makes `u` of class `C^ℓ`
+(`TauCeti.SymplecticForm.contDiff_add_continuousValue_of_ae_floer`). The Floer section is the
+map to which the implicit function theorem and the Sard–Smale theorem are applied in the
 transversality theory of Floer cylinders. For a reference map with `F(w)` in `Lᵖ`, such as a
 pre-glued map, the Floer section plus the constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on test
 sections, and has the same derivative.
