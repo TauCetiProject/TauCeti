@@ -19,12 +19,11 @@ isometric (Blackadar IV.3.4.1–IV.3.4.2). One inequality holds for every `A`
 in the kernel of `A ⊗min B → A ⊗min (B/J)`.
 
 The proof uses that a star homomorphism `φ` between C*-algebras satisfies
-`‖φ a‖ = infDist a (ker φ)` (`NonUnitalStarAlgHom.norm_apply_eq_infDist_ker`), because the induced
-map `A ⧸ ker φ → B` is isometric and the quotient norm is the distance to the kernel.
+`‖φ a‖ = infDist a (ker φ)` (`NonUnitalStarAlgHom.norm_apply_eq_infDist_ker`, in
+`TauCeti.Analysis.CStarAlgebra.Quotient`).
 
 ## Main statements
 
-* `NonUnitalStarAlgHom.norm_apply_eq_infDist_ker`: `‖φ a‖` is the distance from `a` to `ker φ`.
 * `TauCeti.MinTensorProduct.norm_map_mkStarAlgHom_le_infDist`: the norm of the image in
   `A ⊗min (B/J)` is at most the distance to the image of `A ⊗min J`, for every `A`.
 * `TauCeti.CStarAlgebra.isExact_iff_norm_map_mkStarAlgHom_eq_infDist`: `A` is exact iff equality
@@ -42,27 +41,6 @@ open TensorProduct
 open scoped CStarAlgebra
 
 universe u w
-
-namespace NonUnitalStarAlgHom
-
-variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-
-/-- The norm of `φ a` for a star homomorphism `φ` of C*-algebras is the distance from `a` to the
-kernel of `φ`: the induced map `A ⧸ ker φ → B` is isometric. -/
-theorem norm_apply_eq_infDist_ker (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
-    ‖φ a‖ = Metric.infDist a (TwoSidedIdeal.ker φ : Set A) := by
-  set K := TwoSidedIdeal.ker φ
-  have himage : (‖a + ·‖) '' (K : Set A) = (dist a ·) '' (K : Set A) := by
-    ext r
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨-y, neg_mem hy, by simp [dist_eq_norm]⟩
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨-y, neg_mem hy, by simp [dist_eq_norm, sub_eq_add_neg]⟩
-  rw [← φ.quotientKerHom_mk a, φ.isometry_quotientKerHom.norm_map_of_map_zero (map_zero _),
-    TwoSidedIdeal.Quotient.norm_mk_eq, himage, Metric.infDist_eq_iInf, sInf_image']
-
-end NonUnitalStarAlgHom
 
 namespace TauCeti
 
