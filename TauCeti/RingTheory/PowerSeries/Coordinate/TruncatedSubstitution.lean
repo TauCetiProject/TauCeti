@@ -80,9 +80,11 @@ theorem jetSubstAlgEquiv_one (N : ℕ) : jetSubstAlgEquiv N (1 : FormalCoordinat
 @[simp]
 theorem jetSubstAlgEquiv_mul (N : ℕ) (φ ψ : FormalCoordinate R) :
     jetSubstAlgEquiv N (φ * ψ) = jetSubstAlgEquiv N ψ * jetSubstAlgEquiv N φ := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  exact (jetSubstAlgHom_comp (N + 1) φ.toPowerSeries ψ.toPowerSeries
-    φ.constantCoeff_toPowerSeries ψ.constantCoeff_toPowerSeries).symm
+  apply AlgEquiv.ext
+  intro x
+  obtain ⟨f, rfl⟩ := PowerSeries.jet_surjective x
+  simp only [AlgEquiv.mul_apply, jetSubstAlgEquiv_jet, toPowerSeries_mul,
+    subst_comp_subst_apply φ.hasSubst ψ.hasSubst]
 
 theorem jetSubstAlgEquiv_symm (N : ℕ) (φ : FormalCoordinate R) :
     (jetSubstAlgEquiv N φ).symm = jetSubstAlgEquiv N φ⁻¹ := by
@@ -195,7 +197,7 @@ theorem mem_range_substAlgEquivHom (N : ℕ)
       apply (PowerSeries.jet_mem_span_root_iff (Nat.succ_ne_zero N)).mp
       rwa [hg]
     have hga : jetSubstAlgHom (N + 1) g hg0 = a.toAlgHom :=
-      AdjoinRoot.algHom_ext (by rw [jetSubstAlgHom_root]; exact hg)
+      AdjoinRoot.algHom_ext (by rw [jetSubstAlgHom_root, AlgEquiv.coe_toAlgHom]; exact hg)
     obtain ⟨f, hf⟩ := PowerSeries.jet_surjective (a.symm x)
     have hcomp : PowerSeries.jet R (N + 1) (f.subst g) = PowerSeries.jet R (N + 1) X := by
       rw [← jetSubstAlgHom_jet (N + 1) g hg0 f, hga, hf, AlgEquiv.coe_toAlgHom,
@@ -203,12 +205,14 @@ theorem mem_range_substAlgEquivHom (N : ℕ)
     have hc := PowerSeries.jet_eq_jet_iff.mp hcomp 1 (Nat.succ_lt_succ (Nat.pos_of_ne_zero hN))
     rw [coeff_one_subst hg0, Algebra.algebraMap_self_apply, coeff_one_X] at hc
     let φ : FormalCoordinate R := ⟨g, hg0, isUnit_iff_exists_inv'.mpr ⟨coeff 1 f, hc⟩⟩
+    have hφ : φ.toPowerSeries = g := rfl
     refine ⟨jet N φ, ?_⟩
     rw [substAlgEquivHom_jet]
     apply MulOpposite.unop_injective
+    rw [MulOpposite.unop_op]
     apply AlgEquiv.coe_toAlgHom_injective
     apply AdjoinRoot.algHom_ext
-    exact (jetSubstAlgEquiv_root N φ).trans hg
+    simpa only [AlgEquiv.coe_toAlgHom, jetSubstAlgEquiv_root, hφ] using hg
 
 /-- Over a reduced coefficient ring, every automorphism of the truncated polynomial algebra
 is induced by a coordinate jet. -/
