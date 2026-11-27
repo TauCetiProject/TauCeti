@@ -70,6 +70,8 @@ needed.
   source, for instance the model fibre.
 * `TauCeti.exists_continuous_transition_of_continuous_frame`: continuous frames along two
   pointwise equal maps differ by a continuous family of automorphisms of the model fibre.
+* `TauCeti.continuous_of_mk_eq_mk`: every family of automorphisms of the model fibre by which
+  two continuous frames differ is continuous.
 * `TauCeti.frame_trans_symm_eq_of_totalSpaceMk'_eq`,
   `TauCeti.eq_of_frame_comp_totalSpaceMk'_eq`: frames that agree as maps to the total space have
   the same transitions, and determine the automorphisms they are composed with.
@@ -307,6 +309,21 @@ theorem exists_continuous_transition_of_continuous_frame [CompleteSpace 𝕜]
       (hφ.congr fun q ↦ (mk'_frameCast (hfg q.1) (φ q.1) q.2).symm) hψ, fun y v ↦ ?_⟩
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply]
   exact mk'_frameCast _ _ v
+
+/-- **Changes of frame are continuous.** Let `φ` and `ψ` be continuous frames of a finite-rank
+vector bundle along maps `f` and `g`, and `k y` automorphisms of `F` with `φ y = ψ y ∘ k y` as maps
+to the total space. Then `k` is continuous. -/
+theorem continuous_of_mk_eq_mk [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [VectorBundle 𝕜 F E]
+    {g : B → X} {φ : ∀ y, F ≃L[𝕜] E (f y)} {ψ : ∀ y, F ≃L[𝕜] E (g y)}
+    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
+    (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (g q.1) (ψ q.1 q.2)) {k : B → F ≃L[𝕜] F}
+    (hk : ∀ y v, TotalSpace.mk' F (f y) (φ y v) = TotalSpace.mk' F (g y) (ψ y (k y v))) :
+    Continuous fun y ↦ (k y : F →L[𝕜] F) := by
+  obtain ⟨A, hA, hAφ⟩ := exists_continuous_transition_of_continuous_frame
+    (fun y ↦ congrArg TotalSpace.proj (hk y 0)) hφ hψ
+  -- The transition `A` is `k`, since `ψ y ∘ A y` and `ψ y ∘ k y` are both `φ y`.
+  refine hA.congr fun y ↦ ?_
+  rw [eq_of_frame_comp_totalSpaceMk'_eq (hAφ y) fun v ↦ (hk y v).symm]
 
 /-- Along a continuous map `f` from a contractible paracompact R₁ space, a vector bundle `E` has a
 frame `φ` in which the coordinates of every continuous lift of `f` to the total space are

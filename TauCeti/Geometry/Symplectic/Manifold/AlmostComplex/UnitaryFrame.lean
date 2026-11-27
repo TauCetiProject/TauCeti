@@ -198,11 +198,8 @@ theorem Compatible.exists_continuous_unitary_frame_loop [Fact (finrank ℝ E = 2
   -- The frame at the end of the loop, read over its start: the tangent spaces are both the model
   -- space, so this is the same family of maps.
   let ψ₁ : G ≃L[ℝ] TangentSpace I (f 0) := φc 1
-  have hJf (a b : M) (hab : a = b) (w : E) : J a w = J b w := by
-    subst hab
-    rfl
   have hψ₁J (v : G) : ψ₁ (Complex.I • v) = J (f 0) (ψ₁ v) :=
-    (hφcJ 1 v).trans (hJf _ _ hf₀₁.symm _)
+    (hφcJ 1 v).trans (J.apply_congr hf₀₁.symm _)
   -- The defect `D = φc(1)⁻¹ φc(0)` is a complex automorphism, joined to the identity by a path `P`.
   let D : G ≃L[ℂ] G := ((φc 0).trans ψ₁.symm).complexOfMapISmul
     (SmoothAlmostComplexStructure.trans_symm_I_smul (hφcJ 0) hψ₁J)

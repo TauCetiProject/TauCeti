@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 public import TauCeti.Topology.VectorBundle.Complex.RelativeClutching
-import TauCeti.Topology.VectorBundle.FiberCast
 
 /-!
 # The clutching number of a complex vector bundle over a torus
@@ -363,29 +362,6 @@ private theorem squareBoundaryDegree_normalizedDet_mul_two_pi_eq {ψ : (Fin 2 �
     ext v
     rw [hT]
 
-omit [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
-/-- If a continuous frame `Ψ` over the square takes the value `Ψ (0, t) ∘ k t` at `(1, t)`, then
-`t ↦ (k t)⁻¹` is continuous: it is the change of frame between the two vertical edges. -/
-private theorem continuous_symm_of_frame_right_eq_left {w : C(Fin 2 → I, X)}
-    {Ψ : ∀ y, F ≃L[ℂ] E (w y)}
-    (hΨ : Continuous fun q : (Fin 2 → I) × F ↦ TotalSpace.mk' F (w q.1) (Ψ q.1 q.2))
-    {k : I → F ≃L[ℂ] F} (hR : ∀ t v, TotalSpace.mk' F (w ![1, t]) (Ψ ![1, t] v) =
-      TotalSpace.mk' F (w ![0, t]) (Ψ ![0, t] (k t v))) :
-    Continuous fun t ↦ ((k t).symm : F →L[ℂ] F) := by
-  have hpt (t : I) : w ![1, t] = w ![0, t] := congrArg TotalSpace.proj (hR t 0)
-  -- The frame on the right edge, read over the left edge.
-  let Ψ₁ : ∀ t : I, F ≃L[ℂ] E (w ![0, t]) := fun t ↦ (Ψ ![1, t]).trans (fiberCast (hpt t))
-  have hΨ₁ (t : I) (v : F) : Ψ₁ t v = Ψ ![0, t] (k t v) :=
-    TotalSpace.mk_inj.1 ((mk_fiberCast (R := ℂ) (hpt t) _).trans (hR t v))
-  have hc := continuous_trans_symm_of_continuous_frame (f := fun t : I ↦ w ![0, t])
-    (φ := fun t ↦ Ψ ![0, t]) (ψ := Ψ₁)
-    (hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![0, q.1], q.2)))
-    ((hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![1, q.1], q.2))).congr fun q ↦
-      (mk_fiberCast (R := ℂ) (hpt q.1) _).symm)
-  refine hc.congr fun t ↦ ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.symm_apply_eq, hΨ₁, ContinuousLinearEquiv.apply_symm_apply]
-
 /-- **The clutching number of a torus from a frame over its square.** Let `w` be a map of the
 square and `Ψ` a continuous frame of `E` along `w` that takes the same values on the top and bottom
 edges and differs across the vertical edges by a family `k` of automorphisms of `F`,
@@ -410,7 +386,11 @@ theorem torusClutchingNumber_mul_two_pi_eq_of_frame {w : C(Fin 2 → I, X)}
   -- Automorphisms `ψ` along the boundary, twisted by `k⁻¹` across the vertical edges.
   obtain ⟨ψb, hψbc, hψbR, hψbT⟩ := exists_twisted_boundary
     (A := fun q : I × I ↦ (k q.2).symm) (B := fun _ ↦ ContinuousLinearEquiv.refl ℂ F)
-    ((continuous_symm_of_frame_right_eq_left hΨ hR).comp continuous_snd) continuous_const
+    ((continuous_of_mk_eq_mk (f := fun t ↦ w ![0, t]) (g := fun t ↦ w ![1, t])
+      (k := fun t ↦ (k t).symm)
+      (hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![0, q.1], q.2)))
+      (hΨ.comp (by fun_prop : Continuous fun q : I × F ↦ (![1, q.1], q.2))) fun t v ↦ by
+        rw [hR, ContinuousLinearEquiv.apply_symm_apply]).comp continuous_snd) continuous_const
     fun r ↦ by
       ext v
       simp [hk₀₁]

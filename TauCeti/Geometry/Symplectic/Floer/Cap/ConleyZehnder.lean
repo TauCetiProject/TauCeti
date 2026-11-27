@@ -217,8 +217,8 @@ private theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChe
     rw [hφχ', hφχ']
     exact hu'.apply_zero_I_smul hχJ' t v
   -- So they differ by complex-linear maps `k t`, with `φ(t) = φ'(t) ∘ k(t)`.
-  obtain ⟨k, hk, hφk⟩ := exists_continuous_complex_frame_change hφ.continuous hφ'.continuous hφJ
-    hφJ'
+  obtain ⟨k, hk, hφk⟩ := J.exists_continuous_complex_frame_change hφ.continuous hφ'.continuous
+    hφJ hφJ'
   have hχk (t : unitInterval) (v : G) : χ (0, t) v = χ' (0, t) (k t v) := by
     rw [← hφχ, ← hφχ', hφk]
   -- A continuous lift `θ` of the normalized determinant of `k` computes the first Chern number.

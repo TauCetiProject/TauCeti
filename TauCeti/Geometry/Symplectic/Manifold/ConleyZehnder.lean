@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Maslov
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 import TauCeti.Geometry.Symplectic.ConleyZehnder.Parity
@@ -69,7 +68,7 @@ index of the capped orbit, which grades the generators of the capped Floer compl
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_mul_two_pi_eq_of_complex`: for frames with model
   `(G, Im ⟪·, ·⟫)` differing by complex automorphisms `k`, the index changes by twice the winding
   of `det k`; such a `k` exists for frames complex linear for an almost complex structure
-  (`TauCeti.SmoothTwoForm.exists_continuous_complex_frame_change`).
+  (`TauCeti.SmoothAlmostComplexStructure.exists_continuous_complex_frame_change`).
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_square`: frames along `γ` extended over a
   square, with change of frame a loop on every segment and constant along the far edge, give the
   same index.
@@ -485,35 +484,11 @@ theorem frameConleyZehnderIndex_comp_eq [FiniteDimensional ℝ W] [FiniteDimensi
     ω₀.maslovIndex_map_eq_zero ha (hφ''.apply_trans_symm_apply hφ), Int.cast_zero, mul_zero,
     add_zero]
 
-
 /-! ### Complex frames -/
 
 section Complex
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [FiniteDimensional ℂ G]
-
-omit [FiniteDimensional ℂ G] in
-/-- **The change between complex frames.** Two continuous frames of the tangent bundle along a
-family of points, with a complex model `G` and both complex linear for an almost complex
-structure `J`, differ by a continuous family `k` of complex automorphisms of `G`,
-`φ t = φ' t ∘ k t`. -/
-theorem exists_continuous_complex_frame_change {J : SmoothAlmostComplexStructure I M}
-    {φ φ' : ∀ t, G ≃L[ℝ] TangentSpace I (γ t)}
-    (hφ : Continuous fun q : unitInterval × G ↦ (⟨γ q.1, φ q.1 q.2⟩ : TangentBundle I M))
-    (hφ' : Continuous fun q : unitInterval × G ↦ (⟨γ q.1, φ' q.1 q.2⟩ : TangentBundle I M))
-    (hφJ : ∀ t v, φ t (Complex.I • v) = J (γ t) (φ t v))
-    (hφJ' : ∀ t v, φ' t (Complex.I • v) = J (γ t) (φ' t v)) :
-    ∃ k : unitInterval → G ≃L[ℂ] G, Continuous (fun t ↦ (k t : G →L[ℂ] G)) ∧
-      ∀ t v, φ t v = φ' t (k t v) := by
-  let k : unitInterval → G ≃L[ℂ] G := fun t ↦
-    ((φ t).trans (φ' t).symm).complexOfMapISmul
-      (SmoothAlmostComplexStructure.trans_symm_I_smul (hφJ t) (hφJ' t))
-  have hk_apply (t : unitInterval) (v : G) : k t v = (φ' t).symm (φ t v) :=
-    ContinuousLinearEquiv.complexOfMapISmul_apply _ _ v
-  refine ⟨k, (ContinuousLinearMap.restrictScalarsIsometry ℂ G G ℝ ℝ).isometry.isUniformInducing
-    |>.isInducing.continuous_iff.2 ((continuous_trans_symm_of_continuous_frame hφ hφ').congr
-      fun t ↦ ContinuousLinearMap.ext fun v ↦ (hk_apply t v).symm), fun t v ↦ ?_⟩
-  rw [hk_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **Change of frame by complex automorphisms.** Let `ψ` and `ψ'` be symplectic frames along `γ`
 with model `(G, Im ⟪·, ·⟫)` whose change of frame is a loop, and suppose that they differ by complex

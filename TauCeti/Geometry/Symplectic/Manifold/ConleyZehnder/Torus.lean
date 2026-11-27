@@ -9,9 +9,9 @@ public import TauCeti.Geometry.Symplectic.Complex.ImInner.Maslov
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
 public import TauCeti.Geometry.Symplectic.Manifold.ConleyZehnder.Cylinder
 public import TauCeti.Topology.VectorBundle.Complex.TorusClutching
-import TauCeti.Geometry.Symplectic.Floer.Cap.Chern
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.UnitaryFrame
 import TauCeti.Geometry.Symplectic.WittExtension
+import TauCeti.Topology.VectorBundle.Complex.RectangleTrans
 
 /-!
 # The Conley–Zehnder index through two cylinders and the torus they bound
@@ -43,10 +43,11 @@ The proof follows the recapping law for capped loops
 (`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`), with the
 sphere glued from two caps replaced by the torus glued from two cylinders.
 
-* **Clutching** (`TauCeti.torusClutchingNumber_mul_two_pi_eq_of_rectangleTrans`). Let `φ` and `φ'`
-  be continuous frames of a complex vector bundle along `u` and `u'`, periodic on the loops of the
-  cylinders and equal along `γ₀`, which differ along `γ` by a loop `k` of automorphisms of the
-  model, `φ (0, t) = φ' (0, t) ∘ k t`. They glue to a frame `Ψ` over the square of `w` with
+* **Clutching** (`TauCeti.torusClutchingNumber_mul_two_pi_eq_of_rectangleTrans`, in
+  `TauCeti.Topology.VectorBundle.Complex.RectangleTrans`). Let `φ` and `φ'` be continuous frames
+  of a complex vector bundle along `u` and `u'`, periodic on the loops of the cylinders and equal
+  along `γ₀`, which differ along `γ` by a loop `k` of automorphisms of the model,
+  `φ (0, t) = φ' (0, t) ∘ k t`. They glue to a frame `Ψ` over the square of `w` with
   `Ψ (1, t) = Ψ (0, t) ∘ k t`, so the clutching number of `w` is `-wind(det k)`
   (`TauCeti.torusClutchingNumber_mul_two_pi_eq_of_frame`).
 * **Unitary frames.** For a compatible almost complex structure `J`, the tangent bundle has a
@@ -62,8 +63,6 @@ sphere glued from two caps replaced by the torus glued from two cylinders.
 
 ## Main results
 
-* `TauCeti.torusClutchingNumber_mul_two_pi_eq_of_rectangleTrans`: the clutching number of the torus
-  glued from two cylinders is minus the winding of the change of frame along their common loop.
 * `TauCeti.IsSmoothCylinder.exists_unitary_isCylinderFrame`: unitary frames of a cylinder extending
   a periodic unitary reference frame.
 * `TauCeti.IsSmoothCylinder.conleyZehnderIndex_eq_sub_two_mul_torusClutchingNumber`: the
@@ -91,87 +90,6 @@ open Bundle Set Module
 open scoped Topology.Homotopy Manifold ContDiff
 
 namespace TauCeti
-
-/-! ### The clutching number of the torus glued from two cylinders -/
-
-section Clutching
-
-variable {X : Type*} [TopologicalSpace X]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
-  {E : X → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E]
-  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
-
-/-- **The clutching number of the torus glued from two cylinders.** Let `u` and `u'` be maps of the
-plane that agree on the line `s = 0`, and let `w` be the map of the unit square
-`rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'`, `u` run backwards followed by `u'`. Let `φ`
-and `φ'` be continuous frames of `E` along `u` and `u'` that are periodic on the loops of the
-cylinders, `φ (s, 1) = φ (s, 0)` for `s ∈ [0, 1]`, and agree along the edge `s = 1`,
-`φ (1, t) = φ' (1, t)` for `t ∈ [0, 1]`; then `w` is a map of the torus. Let `k` be a family of
-automorphisms of `F` with `φ (0, t) = φ' (0, t) ∘ k t` along the edge `s = 0`. Then for every
-continuous lift `θ` of the normalized determinant of `k` through `Circle.exp`, `2π` times the
-torus clutching number of `w` is `θ 0 - θ 1`. -/
-theorem torusClutchingNumber_mul_two_pi_eq_of_rectangleTrans {u u' : ℝ × ℝ → X}
-    (hseam : ∀ t, u (0, t) = u' (0, t)) {w : C(Fin 2 → unitInterval, X)}
-    (hw : ∀ y, w y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ)))
-    {φ : ∀ z, F ≃L[ℂ] E (u z)} {φ' : ∀ z, F ≃L[ℂ] E (u' z)}
-    (hφ : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u q.1) (φ q.1 q.2))
-    (hφ' : Continuous fun q : (ℝ × ℝ) × F ↦ TotalSpace.mk' F (u' q.1) (φ' q.1 q.2))
-    (hper : ∀ s ∈ Icc (0 : ℝ) 1, ∀ v,
-      TotalSpace.mk' F (u (s, 1)) (φ (s, 1) v) = TotalSpace.mk' F (u (s, 0)) (φ (s, 0) v))
-    (hper' : ∀ s ∈ Icc (0 : ℝ) 1, ∀ v,
-      TotalSpace.mk' F (u' (s, 1)) (φ' (s, 1) v) = TotalSpace.mk' F (u' (s, 0)) (φ' (s, 0) v))
-    (hend : ∀ t ∈ Icc (0 : ℝ) 1, ∀ v,
-      TotalSpace.mk' F (u (1, t)) (φ (1, t) v) = TotalSpace.mk' F (u' (1, t)) (φ' (1, t) v))
-    {k : unitInterval → F ≃L[ℂ] F}
-    (hφk : ∀ (t : unitInterval) v, TotalSpace.mk' F (u (0, t)) (φ (0, t) v) =
-      TotalSpace.mk' F (u' (0, t)) (φ' (0, t) (k t v)))
-    {θ : unitInterval → ℝ} (hθ : Continuous θ)
-    (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet) :
-    (torusClutchingNumber F E w : ℝ) * (2 * Real.pi) = θ 0 - θ 1 := by
-  have hk := Floer.continuous_of_mk_eq_mk hseam hφ hφ' hφk
-  -- The frame `Ψ` over the square of `w`: `φ` on the left half and `φ' ∘ k` on the right half.
-  obtain ⟨Ψ, hΨc, hΨ⟩ := Floer.exists_frame_rectangleTrans (p := w) hseam hw hφ hφ' hk hφk
-  -- Points of the total space read in `φ` or `φ'` only depend on the point of the plane.
-  have hmk {z z' : ℝ × ℝ} (hz : z = z') (v : F) :
-      TotalSpace.mk' F (u z) (φ z v) = TotalSpace.mk' F (u z') (φ z' v) := by
-    subst hz
-    rfl
-  have hmk' {z z' : ℝ × ℝ} (hz : z = z') (v : F) :
-      TotalSpace.mk' F (u' z) (φ' z v) = TotalSpace.mk' F (u' z') (φ' z' v) := by
-    subst hz
-    rfl
-  -- Along the edges `s = 0` and `s = 1` of the square, `Ψ` reads `φ (1, ·)` and `φ (1, ·) ∘ k`.
-  refine torusClutchingNumber_mul_two_pi_eq_of_frame hΨc (k := k) (fun t v ↦ ?_) (fun s v ↦ ?_) hθ
-    hθk
-  · rw [hΨ, hΨ, ite_eq_right (by norm_num), ite_eq_left (by simp)]
-    refine ((hmk' (Prod.ext (by norm_num [Real.smoothTransition.one_of_one_le]) (by simp))
-      _).trans (hend t t.property _).symm).trans (hmk (Prod.ext ?_ (by simp)) _)
-    simp [Real.smoothTransition.zero_of_nonpos]
-  -- `Ψ` takes the same values on the top and bottom edges: the frames are periodic, and so is `k`,
-  -- since both frames are periodic along the common loop `u (0, ·)`.
-  · have hk₀₁ : k 1 = k 0 := by
-      have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-      ext v
-      have e₁ := hφk 1 v
-      have e₀ := hφk 0 v
-      rw [Icc.coe_one] at e₁
-      rw [Icc.coe_zero] at e₀
-      exact (φ' (0, 0)).injective (TotalSpace.mk_inj.1
-        ((((hper' 0 h0 (k 1 v)).symm.trans e₁.symm).trans (hper 0 h0 v)).trans e₀))
-    rw [hΨ, hΨ]
-    by_cases hs : (s : ℝ) ≤ 1 / 2
-    · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, hs, ↓reduceIte, Icc.coe_one,
-        Icc.coe_zero]
-      exact hper (1 - Real.smoothTransition (3 * (s : ℝ)))
-        ⟨by linarith [Real.smoothTransition.le_one (3 * (s : ℝ))],
-          by linarith [Real.smoothTransition.nonneg (3 * (s : ℝ))]⟩ v
-    · simp only [Matrix.cons_val_zero, Matrix.cons_val_one, hs, ↓reduceIte, Icc.coe_one,
-        Icc.coe_zero, hk₀₁]
-      exact hper' (Real.smoothTransition (3 * (s : ℝ) - 2))
-        ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ _
-
-end Clutching
 
 /-! ### Unitary frames of a cylinder -/
 
@@ -231,36 +149,21 @@ private theorem torusClutchingNumber_mul_two_pi_eq_of_complex_frames {G : Type*}
     {θ : unitInterval → ℝ} (hθ : Continuous θ) (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet) :
     (torusClutchingNumber G (J.toContMDiff 0).toContinuousComplexStructure.Fiber w : ℝ) *
       (2 * Real.pi) = θ 0 - θ 1 := by
-  set Jc := (J.toContMDiff 0).toContinuousComplexStructure
   have hJ₀ {b : M} (w : TangentSpace I b) : J b w = J.toContMDiff 0 b w :=
     (J.toContMDiff_apply 0 b w).symm
   have hχJc (z : ℝ × ℝ) (v : G) := (hχJ z v).trans (hJ₀ _)
   have hχJc' (z : ℝ × ℝ) (v : G) := (hχJ' z v).trans (hJ₀ _)
   -- The complex frames are `χ` and `χ'` followed by the identification of `TM` with the fibres of
-  -- `Jc`, so points of the total space are compared in the tangent bundle.
-  have hcont {v : ℝ × ℝ → M} {ξ : ∀ z, G ≃L[ℝ] TangentSpace I (v z)}
-      (hξ : Continuous fun q : (ℝ × ℝ) × G ↦ (⟨v q.1, ξ q.1 q.2⟩ : TangentBundle I M))
-      (hξJ : ∀ z w, ξ z (Complex.I • w) = J.toContMDiff 0 (v z) (ξ z w)) :
-      Continuous fun q : (ℝ × ℝ) × G ↦
-        TotalSpace.mk' G (v q.1) ((J.toContMDiff 0).complexFrame (ξ q.1) (hξJ q.1) q.2) :=
-    ((Jc.totalSpaceHomeomorph G).symm.continuous.comp hξ).congr fun q ↦ by
-      rw [Function.comp_apply, Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_symm_apply,
-        ContMDiffAlmostComplexStructure.complexFrame_apply]
-  have hmk {v v' : ℝ × ℝ → M} {ξ : ∀ z, G ≃L[ℝ] TangentSpace I (v z)}
-      {ξ' : ∀ z, G ≃L[ℝ] TangentSpace I (v' z)} (hξJ : ∀ z w, ξ z (Complex.I • w) = _)
-      (hξJ' : ∀ z w, ξ' z (Complex.I • w) = _) {z z' : ℝ × ℝ} {x x' : G}
-      (h : (⟨v z, ξ z x⟩ : TangentBundle I M) = ⟨v' z', ξ' z' x'⟩) :
-      TotalSpace.mk' G (v z) ((J.toContMDiff 0).complexFrame (ξ z) (hξJ z) x) =
-        TotalSpace.mk' G (v' z') ((J.toContMDiff 0).complexFrame (ξ' z') (hξJ' z') x') := by
-    refine (Jc.totalSpaceHomeomorph G).injective ?_
-    rw [ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame,
-      ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame, h]
+  -- `(TM, J)`, so points of the total space are compared in the tangent bundle.
+  set J₀ := J.toContMDiff 0
   refine torusClutchingNumber_mul_two_pi_eq_of_rectangleTrans
-    (φ := fun z ↦ (J.toContMDiff 0).complexFrame (χ z) (hχJc z))
-    (φ' := fun z ↦ (J.toContMDiff 0).complexFrame (χ' z) (hχJc' z))
-    (fun t ↦ (hu.apply_zero t).trans (hu'.apply_zero t).symm) hw (hcont hχ hχJc)
-    (hcont hχ' hχJc') (fun s hs v ↦ hmk hχJc hχJc ?_) (fun s hs v ↦ hmk hχJc' hχJc' ?_)
-    (fun t ht v ↦ hmk hχJc hχJc' ?_) (k := k) (fun t v ↦ hmk hχJc hχJc' ?_) hθ hθk
+    (φ := fun z ↦ J₀.complexFrame (χ z) (hχJc z)) (φ' := fun z ↦ J₀.complexFrame (χ' z) (hχJc' z))
+    (fun t ↦ (hu.apply_zero t).trans (hu'.apply_zero t).symm) hw
+    (J₀.continuous_complexFrame hχ hχJc) (J₀.continuous_complexFrame hχ' hχJc')
+    (fun s hs v ↦ J₀.mk_complexFrame_eq_mk_complexFrame _ _ ?_)
+    (fun s hs v ↦ J₀.mk_complexFrame_eq_mk_complexFrame _ _ ?_)
+    (fun t ht v ↦ J₀.mk_complexFrame_eq_mk_complexFrame _ _ ?_) (k := k)
+    (fun t v ↦ J₀.mk_complexFrame_eq_mk_complexFrame _ _ ?_) hθ hθk
   · exact TotalSpace.ext (hu.periodic s hs) (heq_of_eq (hper s hs v))
   · exact TotalSpace.ext (hu'.periodic s hs) (heq_of_eq (hper' s hs v))
   · exact TotalSpace.ext ((hu.apply_one t ht).trans (hu'.apply_one t ht).symm)
@@ -303,16 +206,13 @@ private theorem frameConleyZehnderIndex_eq_sub_two_mul_torusClutchingNumber {G :
   have hφ' : IsSymplecticFrame σ (imInnerSymplecticForm G) (fun t : unitInterval ↦ γ t) φ' :=
     hχ'.isSymplecticFrame_apply_zero hu'
   -- Along `γ` both frames are complex linear for `J`.
-  have hJf (a b : M) (hab : a = b) (x : E) : J a x = J b x := by
-    subst hab
-    rfl
   have hφJ (t : unitInterval) (v : G) : φ t (Complex.I • v) = J (γ t) (φ t v) :=
-    (hχJ (0, t) v).trans (hJf _ _ (hu.apply_zero t) _)
+    (hχJ (0, t) v).trans (J.apply_congr (hu.apply_zero t) _)
   have hφJ' (t : unitInterval) (v : G) : φ' t (Complex.I • v) = J (γ t) (φ' t v) :=
-    (hχJ' (0, t) v).trans (hJf _ _ (hu'.apply_zero t) _)
+    (hχJ' (0, t) v).trans (J.apply_congr (hu'.apply_zero t) _)
   -- So they differ by complex-linear maps `k t`, with `φ(t) = φ'(t) ∘ k(t)`.
-  obtain ⟨k, hk, hχk⟩ := exists_continuous_complex_frame_change hφ.continuous hφ'.continuous hφJ
-    hφJ'
+  obtain ⟨k, hk, hχk⟩ := J.exists_continuous_complex_frame_change hφ.continuous hφ'.continuous
+    hφJ hφJ'
   -- A continuous lift `θ` of the normalized determinant of `k` computes the clutching number.
   obtain ⟨θ, hθ⟩ := Circle.exists_lift
     (⟨⟨fun t ↦ (k t).normalizedDet, hk.normalizedDet⟩, rfl, rfl⟩ : Path _ _)
@@ -339,9 +239,7 @@ private theorem IsSmoothCylinder.rectangleTrans_apply_eq (hu : IsSmoothCylinder 
     (hu' : IsSmoothCylinder I γ γ₀ u') {w : C(Fin 2 → unitInterval, M)}
     (hw : ∀ y, w y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ))) :
     (∀ t, w ![1, t] = w ![0, t]) ∧ ∀ s, w ![s, 1] = w ![s, 0] := by
-  have hcyl : IsSmoothCylinder I (fun t ↦ u (1, t)) γ₀
-      (rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u') :=
-    hu.comp_prodMap_one_sub.trans hu' fun t ↦ by simp [hu.apply_zero, hu'.apply_zero]
+  have hcyl := hu.comp_prodMap_one_sub_trans hu'
   refine ⟨fun t ↦ ?_, fun s ↦ ?_⟩ <;> rw [hw, hw] <;>
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Icc.coe_one, Icc.coe_zero]
   · rw [hcyl.apply_one t t.property, hcyl.apply_zero, hu.apply_one t t.property]
@@ -424,8 +322,7 @@ theorem IsSmoothCylinder.conleyZehnderIndex_eq_of_torusClutchingNumber_eq_zero
     hu'.conleyZehnderIndex h hφ₀ hφ₀₁ hΦ hΦσ = hu.conleyZehnderIndex h hφ₀ hφ₀₁ hΦ hΦσ := by
   let w : C(Fin 2 → unitInterval, M) :=
     ⟨fun y ↦ rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ)),
-      ((hu.comp_prodMap_one_sub.trans hu' fun t ↦ by
-        simp [hu.apply_zero, hu'.apply_zero]).contMDiff.continuous.comp (by fun_prop))⟩
+      ((hu.comp_prodMap_one_sub_trans hu').contMDiff.continuous.comp (by fun_prop))⟩
   rw [hu.conleyZehnderIndex_eq_sub_two_mul_torusClutchingNumber h hu' hφ₀ hφ₀₁ hJ G
     (w := w) (fun _ ↦ rfl) hΦ hΦσ, hc w, Int.cast_zero, mul_zero, sub_zero]
 

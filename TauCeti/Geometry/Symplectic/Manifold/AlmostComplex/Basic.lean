@@ -112,6 +112,14 @@ instance : CoeFun (SmoothAlmostComplexStructure I M) fun _ =>
     (x : M) → TangentSpace I x → TangentSpace I x :=
   ⟨fun J x ↦ J.toEndomorphism x⟩
 
+/-- A smooth almost complex structure takes the same values at equal points `a = b`. The vector
+`v` is read in both tangent spaces `TangentSpace I a` and `TangentSpace I b`, which are
+definitionally the model space `E`. -/
+theorem apply_congr (J : SmoothAlmostComplexStructure I M) {a b : M} (h : a = b) (v : E) :
+    J a v = J b v := by
+  subst h
+  rfl
+
 /-- The value of a smooth almost complex structure at a point, as a pointwise
 `AlmostComplexStructure` on that tangent space. -/
 def almostComplexStructureAt (J : SmoothAlmostComplexStructure I M) (x : M) :
