@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.PopulationSampling.Map
 public import TauCeti.Probability.PopulationSampling.OnePair
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.Probability.PopulationSampling.Discrepancy
 
 /-!
 # Sampling discrepancy for populations with a repeated value
@@ -52,11 +53,12 @@ attain the collision probability. For `m ≤ 1` the two sampling laws coincide f
   `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective`: for
   `2 ≤ m ≤ n` and a measurable all-distinct event, the collision values are attained in either
   direction exactly by injective populations;
-* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff`,
-  `iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff`,
-  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff`,
-  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff`: the same characterizations
-  under `[MeasurableSingletonClass α]` without an explicit measurability hypothesis.
+* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective_of_singletons`,
+  `iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_injective_of_singletons`,
+  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons`:
+  the same characterizations under `[MeasurableSingletonClass α]` without an explicit measurability
+  hypothesis.
 
 ## References
 
@@ -232,7 +234,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_lt_of_not_
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective hx hm
 
 /-- **Strictness of the repeated-value bound, extended total-variation form.** For a sample of
@@ -271,7 +273,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_in
   have h := ENNReal.toReal_strict_mono (by finiteness)
     (etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
       (ι := ι) hx hm)
-  simpa [tvDist, toReal_one_sub_descFactorial_div_pow] using h
+  simpa [tvDist] using h
 
 /-- **Distinct values are the only populations attaining the collision probability.** For
 `2 ≤ |ι| ≤ |κ|` and a measurable all-distinct event, the largest event excess of sampling
@@ -305,7 +307,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_inj
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective hm hmn hI
 
 /-- **Total-variation form of the characterization.** For `2 ≤ |ι| ≤ |κ|` and a measurable
@@ -349,7 +351,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injec
 measurable singletons and `2 ≤ |ι| ≤ |κ|`, a deterministic population attains the collision excess
 `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if its values are distinct, without requiring
 measurability of the all-distinct event in `ι → α`. -/
-theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff
+theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
     [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
     (hmn : Fintype.card ι ≤ Fintype.card κ) :
     (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
@@ -369,7 +371,7 @@ has measurable singletons and `2 ≤ |ι| ≤ |κ|`, the largest event excess of
 with replacement over sampling it without replacement equals the collision probability
 `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective, without requiring
 measurability of the all-distinct event in `ι → α`. -/
-theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff
+theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_injective_of_singletons
     [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
     (hmn : Fintype.card ι ≤ Fintype.card κ) :
     (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
@@ -378,15 +380,17 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
-  exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff hm hmn
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
+  exact
+    iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
+      hm hmn
 
 /-- **Attainment characterization under measurable singletons (`etvDist` form).** When `α` has
 measurable singletons and `2 ≤ |ι| ≤ |κ|`, Mathlib's extended total variation distance between
 sampling `x : κ → α` without and with replacement equals twice the collision probability
 `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective, without requiring
 measurability of the all-distinct event in `ι → α`. -/
-theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff
+theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
     [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
     (hmn : Fintype.card ι ≤ Fintype.card κ) :
     etvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
@@ -405,7 +409,7 @@ measurable singletons and `2 ≤ |ι| ≤ |κ|`, the real total variation distan
 `x : κ → α` without and with replacement equals twice the collision probability
 `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective, without requiring
 measurability of the all-distinct event in `ι → α`. -/
-theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
     [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
     (hmn : Fintype.card ι ≤ Fintype.card κ) :
     tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))

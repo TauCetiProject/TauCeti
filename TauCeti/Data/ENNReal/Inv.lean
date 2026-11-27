@@ -25,6 +25,8 @@ is at most `2 b`.
 ## Main declarations
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
+* `ENNReal.toReal_one_sub_descFactorial_div_pow`:
+  `(1 - n.descFactorial m / n ^ m).toReal = 1 - (n.descFactorial m : ℝ) / n ^ m` for any `n m : ℕ`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
 * `ENNReal.one_le_toReal_sub_one`: a finite exponent `2 ≤ r` has `1 ≤ r.toReal - 1`.
@@ -87,6 +89,16 @@ theorem iSup_indicator_inv_natCast_add_one_le {X : Type*} (f : X → ℝ≥0∞)
 theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
     (1 - a / b).toReal = 1 - a.toReal / b.toReal := by
   rw [toReal_sub_of_le (div_le_of_le_mul (by simpa using hab)) one_ne_top, toReal_div, toReal_one]
+
+/-- For any `n m : ℕ`, the real value of `1 - n.descFactorial m / n ^ m` in `ℝ≥0∞` is
+`1 - (n.descFactorial m : ℝ) / n ^ m`. -/
+@[simp]
+theorem toReal_one_sub_descFactorial_div_pow (n m : ℕ) :
+    (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m).toReal =
+      1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m := by
+  have hle : (n.descFactorial m : ℝ≥0∞) ≤ (n : ℝ≥0∞) ^ m := by
+    exact_mod_cast Nat.descFactorial_le_pow n m
+  simp [hle]
 
 /-- For `a < b`, the difference `1 - a / b` is positive, even after truncation to `ℝ≥0`. -/
 theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a / b).toNNReal :=

@@ -122,15 +122,6 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ 
   rw [etvDist_eq_two_mul_iSup_sub (by rw [measure_univ, measure_univ]),
     iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq hx e hI]
 
-/-- For any `n m : ℕ`, the real value of `1 - n.descFactorial m / n ^ m` in `ℝ≥0∞` is
-`1 - (n.descFactorial m : ℝ) / n ^ m`. -/
-theorem toReal_one_sub_descFactorial_div_pow (n m : ℕ) :
-    (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m).toReal =
-      1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m := by
-  have hle : (n.descFactorial m : ℝ≥0∞) ≤ (n : ℝ≥0∞) ^ m := by
-    exact_mod_cast Nat.descFactorial_le_pow n m
-  simp [ENNReal.toReal_one_sub_div hle]
-
 /-- Real total-variation (`tvDist`) form of
 `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq`. -/
 theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ → α}
@@ -141,6 +132,6 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ �
       2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
   rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq hx e hI]
-  simp [toReal_one_sub_descFactorial_div_pow]
+  simp
 
 end TauCeti.Probability
