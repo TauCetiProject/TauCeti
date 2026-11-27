@@ -70,8 +70,10 @@ noncomputable def rankTwoCorner : ℂ →⋆ₙ+* Matrix (Fin 2) (Fin 2) ℂ :=
   NonUnitalStarRingHom.ofClass (StarAlgHom.ofId ℂ (Matrix (Fin 2) (Fin 2) ℂ))
 
 /-- The rank-two corner is `λ ↦ λ 1`. -/
-theorem rankTwoCorner_apply (c : ℂ) : rankTwoCorner c = c • 1 :=
-  Algebra.algebraMap_eq_smul_one c
+theorem rankTwoCorner_apply (c : ℂ) : rankTwoCorner c = c • 1 := by
+  rw [rankTwoCorner, NonUnitalStarRingHom.coe_ofClass]
+  -- `StarAlgHom.ofId ℂ _ c = algebraMap ℂ _ c` holds by `rfl`; Mathlib has no apply lemma for it.
+  exact Algebra.algebraMap_eq_smul_one c
 
 /-- The rank-two corner, read through the stability isomorphism of the corner `e₀₀` and the
 rank, as an endomorphism of `ℤ`. -/
@@ -89,7 +91,7 @@ theorem rankTwoCornerInt_one : rankTwoCornerInt 1 = 2 := by
     ProjectionMonoid.cornerEquiv_symm_mk, ProjectionKZero.rankAddEquiv_of_mk]
   have h1 : comp (Fin 1) (Fin 1) (Fin 2) (Fin 2) ℂ
       ((1 : Matrix (Fin 1) (Fin 1) ℂ).map rankTwoCorner) = 1 := by
-    rw [Matrix.map_one rankTwoCorner (map_zero _) (map_one (StarAlgHom.ofId ℂ _)), comp_one]
+    rw [Matrix.map_one rankTwoCorner (map_zero _) (by simp [rankTwoCorner_apply]), comp_one]
   rw [h1, rank_one]
   simp
 
