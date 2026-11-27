@@ -246,6 +246,12 @@ theorem exists_trivialization_mem_baseSet (b : B) :
     ∃ e : Trivialization F (π F E), b ∈ e.baseSet :=
   ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
 
+/-- Every fibre of a fibre bundle with nonempty model fibre is nonempty. -/
+theorem nonempty_fiber (F : Type*) [TopologicalSpace F] [Nonempty F]
+    (E : B → Type*) [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)]
+    [FiberBundle F E] (b : B) : Nonempty (E b) :=
+  (homeomorphAt F E b).toEquiv.nonempty_congr.mpr inferInstance
+
 /-- A map of total spaces over the identity is continuous if, near each point, source and target
 trivializations express it by a coordinate formula continuous at that point. Neither total space
 needs a pre-existing fibre-bundle instance or topological structures on its individual fibres. -/

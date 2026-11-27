@@ -61,9 +61,6 @@ namespace CliffordAlgebraBundle
 
 variable {E V}
 
-private theorem nonempty_frame (b : B) : Nonempty (Fr b) :=
-  (FiberBundle.homeomorphAt OG Fr b).toEquiv.nonempty_congr.mpr inferInstance
-
 -- The associated fibre is a type synonym of the model algebra. Its atlas transitions are
 -- algebra automorphisms, as witnessed by `frameAlgEquiv`.
 instance instRing (b : B) : Ring (CliffordAlgebraBundle F E V b) :=
@@ -78,29 +75,44 @@ instance instStarRing (b : B) : StarRing (CliffordAlgebraBundle F E V b) :=
 /-- An orthonormal frame identifies the model Clifford algebra with the associated fibre
 over its base point. -/
 def frameAlgEquiv {b : B} (p : Fr b) : C ≃ₐ[ℝ] CliffordAlgebraBundle F E V b :=
-  AlgEquiv.ofLinearEquiv (AssociatedBundle.mkContinuousLinearEquiv ℝ OG p).toLinearEquiv
-    (by
-      simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
-        AssociatedBundle.mkContinuousLinearEquiv_apply, AssociatedBundle.mk_def,
-        Unitary.smul_clifford_eq]
-      exact map_one (Unitary.cliffordAlgEquiv _))
-    (fun x y ↦ by
-      simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
-        AssociatedBundle.mkContinuousLinearEquiv_apply, AssociatedBundle.mk_def,
-        Unitary.smul_clifford_eq]
-      exact map_mul (Unitary.cliffordAlgEquiv _) x y)
+  -- The associated fibre uses the model algebra in the preferred chart at `b`.
+  Unitary.cliffordAlgEquiv (trivializationAt OG Fr b ⟨b, p⟩).2
 
 @[simp]
 theorem frameAlgEquiv_apply {b : B} (p : Fr b) (x : C) :
     frameAlgEquiv p x = AssociatedBundle.mk OG p x := by
-  simp only [frameAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
-    ContinuousLinearEquiv.coe_toLinearEquiv, AssociatedBundle.mkContinuousLinearEquiv_apply]
+  rw [frameAlgEquiv, AssociatedBundle.mk_def, Unitary.smul_clifford_eq]
+  -- At the preferred chart's centre, the associated fibre is a type synonym of the model.
+  rfl
 
 @[simp]
 theorem star_mk {b : B} (p : Fr b) (x : C) :
     star (AssociatedBundle.mk OG p x) = AssociatedBundle.mk OG p (star x) := by
-  simp only [AssociatedBundle.mk_def]
-  exact (Unitary.smul_clifford_star _ x).symm
+  simp only [← frameAlgEquiv_apply, frameAlgEquiv]
+  -- The fibre star is the model star in these coordinates.
+  simpa only [Unitary.smul_clifford_eq] using!
+    (Unitary.smul_clifford_star (trivializationAt OG Fr b ⟨b, p⟩).2 x).symm
+
+/-- The second coordinate of the fibre unit in a preferred Clifford bundle chart is one. -/
+theorem trivializationAt_one_snd (b₀ b : B) :
+    (trivializationAt C (CliffordAlgebraBundle F E V) b₀ ⟨b, 1⟩).2 = 1 := by
+  simp only [AssociatedBundle.trivializationAt_eq_localTriv, FiberBundleCore.localTriv_apply,
+    associatedBundleCore_indexAt]
+  exact (associatedBundleCore_coordChange b b₀ b (1 : C)).trans (smul_one _)
+
+/-- The second coordinate in a preferred Clifford bundle chart preserves fibre multiplication. -/
+theorem trivializationAt_mul_snd (b₀ : B) {b : B}
+    (x y : CliffordAlgebraBundle F E V b) :
+    (trivializationAt C (CliffordAlgebraBundle F E V) b₀ ⟨b, x * y⟩).2 =
+      (trivializationAt C (CliffordAlgebraBundle F E V) b₀ ⟨b, x⟩).2 *
+        (trivializationAt C (CliffordAlgebraBundle F E V) b₀ ⟨b, y⟩).2 := by
+  simp only [AssociatedBundle.trivializationAt_eq_localTriv, FiberBundleCore.localTriv_apply,
+    associatedBundleCore_indexAt]
+  let c := (associatedBundleCore OG Fr C).coordChange b b₀ b
+  have hmul (u v : C) : c (u * v) = c u * c v := by
+    simp only [c, associatedBundleCore_coordChange, smul_mul']
+  -- The fibre multiplication is the model multiplication in the coordinates at `b`.
+  exact hmul x y
 
 /-- The canonical algebra identification of the associated fibre with the Clifford algebra
 of the negative squared norm on the actual fibre. -/
@@ -138,11 +150,19 @@ theorem fiberAlgEquiv_star (b : B) (x : CliffordAlgebraBundle F E V b) :
   obtain ⟨p, y, rfl⟩ := AssociatedBundle.exists_mk (G := ↥OG) (P := Fr) (F := C) x
   simp only [star_mk, fiberAlgEquiv_mk, CliffordAlgebra.equivOfIsometry_star]
 
+/-- Clifford conjugation fixes real scalars in each fibre. -/
+@[simp]
+theorem star_algebraMap (b : B) (r : ℝ) :
+    star (algebraMap ℝ (CliffordAlgebraBundle F E V b) r) =
+      algebraMap ℝ (CliffordAlgebraBundle F E V b) r := by
+  apply (fiberAlgEquiv b).injective
+  simp only [fiberAlgEquiv_star, AlgEquiv.commutes, CliffordAlgebra.star_algebraMap]
+
 open scoped RealInnerProductSpace in
 /-- The fibre's inner product is the intrinsic scalar-part pairing of the images. -/
 theorem inner_eq_regularBilinForm (b : B) (x y : CliffordAlgebraBundle F E V b) :
     ⟪x, y⟫ = CliffordAlgebra.regularBilinForm _ (fiberAlgEquiv b x) (fiberAlgEquiv b y) := by
-  obtain ⟨p⟩ := nonempty_frame (F := F) (E := E) (V := V) b
+  obtain ⟨p⟩ := FiberBundle.nonempty_fiber OG Fr b
   obtain ⟨u, rfl⟩ := (frameAlgEquiv p).surjective x
   obtain ⟨v, rfl⟩ := (frameAlgEquiv p).surjective y
   simp only [frameAlgEquiv_apply, AssociatedBundle.inner_mk, fiberAlgEquiv_mk,
@@ -164,7 +184,7 @@ theorem exists_norm_mul_le :
   obtain ⟨K, hK, hmul⟩ := CliffordAlgebra.exists_regularNorm_mul_le
     (negNormSqForm V) (posDef_neg_negNormSqForm V)
   refine ⟨K, hK, fun b x y ↦ ?_⟩
-  obtain ⟨p⟩ := nonempty_frame (F := F) (E := E) (V := V) b
+  obtain ⟨p⟩ := FiberBundle.nonempty_fiber OG Fr b
   obtain ⟨u, rfl⟩ := (frameAlgEquiv p).surjective x
   obtain ⟨v, rfl⟩ := (frameAlgEquiv p).surjective y
   rw [← map_mul]
@@ -179,6 +199,13 @@ def ι (b : B) : E b →ₗ[ℝ] CliffordAlgebraBundle F E V b :=
 theorem fiberAlgEquiv_ι (b : B) (v : E b) :
     fiberAlgEquiv b (ι (F := F) (V := V) b v) = CliffordAlgebra.ι (negNormSqForm (E b)) v := by
   simp [ι]
+
+/-- Clifford conjugation negates fibrewise generators. -/
+@[simp]
+theorem star_ι (b : B) (v : E b) :
+    star (ι (F := F) (V := V) b v) = -ι (F := F) (V := V) b v := by
+  apply (fiberAlgEquiv b).injective
+  simp only [fiberAlgEquiv_star, fiberAlgEquiv_ι, map_neg, CliffordAlgebra.star_ι]
 
 /-- The fibrewise generator inclusion preserves norms. -/
 @[simp]
@@ -307,7 +334,7 @@ def mulCLM (b : B) : A b →L[ℝ] A b →L[ℝ] A b :=
 
 @[simp]
 theorem mulCLM_apply (b : B) (x y : A b) : mulCLM b x y = x * y := by
-  obtain ⟨p⟩ := nonempty_frame (F := F) (E := E) (V := V) b
+  obtain ⟨p⟩ := FiberBundle.nonempty_fiber OG Fr b
   obtain ⟨u, rfl⟩ := (frameAlgEquiv p).surjective x
   obtain ⟨v, rfl⟩ := (frameAlgEquiv p).surjective y
   rw [← map_mul, frameAlgEquiv_apply, frameAlgEquiv_apply, frameAlgEquiv_apply]
@@ -344,16 +371,12 @@ theorem contMDiff_one :
     ContMDiff IB (IB.prod 𝓘(ℝ, C)) n (fun b ↦ (⟨b, 1⟩ : TotalSpace C A)) := by
   intro b₀
   rw [contMDiffAt_section_iff]
-  refine (contMDiffAt_const (c := (1 : C))).congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt OG Fr b₀).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt OG Fr b₀)] with b hb
-  obtain ⟨p⟩ := nonempty_frame (F := F) (E := E) (V := V) b
-  rw [← map_one (frameAlgEquiv p), frameAlgEquiv_apply,
-    AssociatedBundle.trivializationAt_mk_snd hb, Unitary.smul_clifford_eq, map_one]
+  exact (contMDiffAt_const (c := (1 : C))).congr_of_eventuallyEq <|
+    Filter.Eventually.of_forall fun b ↦ trivializationAt_one_snd b₀ b
 
 private def ιEquivariant : V →[OG] C where
   toFun := CliffordAlgebra.ι (negNormSqForm V)
-  map_smul' g v := (Unitary.cliffordAlgEquiv_ι g v).symm
+  map_smul' g v := (Unitary.smul_clifford_ι g v).symm
 
 private theorem ιEquivariant_apply (v : V) :
     ιEquivariant v = CliffordAlgebra.ι (negNormSqForm V) v := rfl
@@ -371,7 +394,7 @@ theorem contMDiff_ι :
     (P := Fr) (IB := IB) ιEquivariant hι).comp d.symm.contMDiff
   refine h.congr fun z ↦ ?_
   obtain ⟨b, v⟩ := z
-  obtain ⟨p⟩ := nonempty_frame (F := F) (E := E) (V := V) b
+  obtain ⟨p⟩ := FiberBundle.nonempty_fiber OG Fr b
   simp only [Function.comp_apply, d,
     OrthonormalFrameBundle.associatedBundleDiffeomorph_symm_mk_apply (n := n) (IB := IB) p v,
     AssociatedBundle.totalSpaceMap_mk, ιEquivariant_apply, ← ι_frame, p.frame.apply_symm_apply]

@@ -82,6 +82,12 @@ instance instSMulCommClassCliffordAlgebra : SMulCommClass (unitary (V →L[ℝ] 
 theorem smul_clifford_eq (g : unitary (V →L[ℝ] V)) (x : C) :
     g • x = cliffordAlgEquiv g x := (rfl)
 
+/-- The orthogonal action on a Clifford generator is the action on its generating vector. -/
+@[simp]
+theorem smul_clifford_ι (g : unitary (V →L[ℝ] V)) (v : V) :
+    g • CliffordAlgebra.ι (negNormSqForm V) v = CliffordAlgebra.ι (negNormSqForm V) (g • v) := by
+  rw [smul_clifford_eq, cliffordAlgEquiv_ι]
+
 /-- Orthogonal transformations commute with Clifford conjugation. -/
 @[simp]
 theorem smul_clifford_star (g : unitary (V →L[ℝ] V)) (x : C) :
@@ -130,7 +136,9 @@ instance instContMDiffSMulCliffordAlgebra :
       intro g
       exact TauCeti.contMDiffAt_clm_apply.mpr fun x ↦
         (contMDiff_cliffordAlgEquiv_apply x).contMDiffAt
-    exact (hρ.comp contMDiff_fst).clm_apply contMDiff_snd
+    refine ((hρ.comp contMDiff_fst).clm_apply contMDiff_snd).congr fun (g, x) ↦ ?_
+    simp only [smul_clifford_eq, ρ, Function.comp_apply, LinearMap.coe_toContinuousLinearMap',
+      AlgEquiv.toLinearMap_apply]
 
 /-- The smooth orthogonal action is continuous in the Euclidean Clifford topology. -/
 instance instContinuousSMulCliffordAlgebra : ContinuousSMul (unitary (V →L[ℝ] V)) C :=
