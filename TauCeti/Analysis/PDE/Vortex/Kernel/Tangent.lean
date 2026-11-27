@@ -165,6 +165,15 @@ theorem IsDivisorVariation.variationComplexStructure (hy : IsDivisorVariation x 
   rw [sectionValue_variationComplexStructure, eval_smul, smul_eq_mul]
   linear_combination I * h w
 
+/-- **Infinitesimal gauge transformations do not move the zeros.** The variation `d₀ u`, with
+section variation `i u α`, has divisor variation zero. -/
+theorem isDivisorVariation_gaugeDirection (x : ℂ → EuclideanSpace ℝ (Fin 4)) {u : ℂ → ℝ}
+    (hu : Continuous u) (D : Multiset ℂ) : IsDivisorVariation x (gaugeDirection x u) D 0 := by
+  refine ⟨fun w ↦ I * u w, continuous_const.mul (continuous_ofReal.comp hu), fun w ↦ ?_⟩
+  simp only [sectionValue_apply, gaugeDirection_apply_two, gaugeDirection_apply_three, eval_zero,
+    add_zero, ofReal_mul, ofReal_neg]
+  linear_combination (-2 * (D.map fun a ↦ X - C a).prod.eval w * u w * (x w 3 : ℂ)) * I_sq
+
 /-- **Uniqueness of the divisor variation.** If the section of `x` has zero divisor `D`, a
 variation has at most one divisor variation of degree less than `|D|`. -/
 theorem IsDivisorVariation.unique (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
