@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import TauCeti.Analysis.MellinTransform.Uniqueness
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
+import TauCeti.NumberTheory.LSeries.RiemannZeta.FirstRieszSum
 
 /-!
 # The first Riesz explicit formula for nonprincipal Dirichlet characters
@@ -18,7 +19,8 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 For a primitive nonprincipal character and cutoffs `y ≥ 1`, the smoothed prime remainder is equal to
 the sum over the zeros of the entire completion together with the negative gamma-pole and origin
 corrections. If the L-function has no zeros in `Re s > σ`, the norm of the remainder is bounded by
-`C y ^ max σ (1 / 2)` for `y ≥ 1`, with `C` independent of `σ`.
+`C y ^ max σ (1 / 2)` for `y ≥ 1`, with `C` independent of `σ`. Combined with the zeta
+bound, the same estimate holds for every primitive character, principal or not.
 
 The prime-side normalization is that of Levent Alpöge's `Deduction.Gchi`. The formula
 uses `DirichletCharacter.rieszZeroSide`, with the completion and Hadamard expansion
@@ -106,5 +108,20 @@ theorem exists_norm_rieszRemainder_le_of_zeroFreeRightOf (χ : PrimitiveDirichle
       _ = _ := by ring
   rw [χ.rieszRemainder_eq_rieszZeroSide hχ hy, χ.character.rieszZeroSide_def χ.isPrimitive]
   simpa only [add_mul] using norm_add₃_le.trans (add_le_add (add_le_add hZ hG) hE)
+
+/-- For any primitive character, a zero-free half-plane `Re s > σ` bounds the first Riesz
+remainder by `C y ^ max σ (1 / 2)` on `y ≥ 1`. The principal case uses the zeta bound
+`exists_norm_rieszRemainder_one_le_rpow`. -/
+theorem exists_norm_rieszRemainder_le_rpow_of_zeroFreeRightOf (χ : PrimitiveDirichletCharacter)
+    {σ : ℝ} (hσ : ZeroFreeRightOf σ χ.character.LFunction) :
+    ∃ C : ℝ, ∀ y ≥ 1, ‖χ.rieszRemainder y‖ ≤ C * y ^ max σ (1 / 2) := by
+  by_cases hχ : χ = 1
+  · subst χ
+    rw [LFunction_character_one] at hσ
+    obtain ⟨C, hC⟩ := exists_norm_rieszRemainder_one_le_rpow (hσ.mono (le_max_left σ (1 / 2)))
+    exact ⟨C, fun y hy ↦ by
+      simpa only [max_eq_left (le_max_of_le_right (by norm_num : (0 : ℝ) ≤ 1 / 2))] using hC y hy⟩
+  · obtain ⟨C, hC⟩ := χ.exists_norm_rieszRemainder_le_of_zeroFreeRightOf hχ
+    exact ⟨C, hC hσ⟩
 
 end TauCeti.PrimitiveDirichletCharacter

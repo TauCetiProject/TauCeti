@@ -41,41 +41,25 @@ open Filter
 
 namespace TauCeti
 
-/-- A weighted sum of real first Riesz remainders is bounded in norm by
-`C * y ^ max σ (1 / 2)` on `y ≥ 1` if the L-functions of the nonzero-weight members
+/-- A weighted sum of real first Riesz remainders over a finitely supported family is bounded
+in norm by `C * y ^ max σ (1 / 2)` on `y ≥ 1` if the L-functions of the members of the support
 are zero-free right of `max σ (1 / 2)`. The weights need not be positive. -/
 theorem exists_norm_sum_rieszRemainder_re_le_of_zeroFreeRightOf
-    (S : Finset PrimitiveDirichletCharacter) (w : PrimitiveDirichletCharacter → ℝ) {σ : ℝ}
-    (hσ : ∀ χ ∈ S, w χ ≠ 0 → ZeroFreeRightOf (max σ (1 / 2)) χ.character.LFunction) :
+    (w : PrimitiveDirichletCharacter →₀ ℝ) {σ : ℝ}
+    (hσ : ∀ χ ∈ w.support, ZeroFreeRightOf (max σ (1 / 2)) χ.character.LFunction) :
     ∃ C : ℝ, ∀ y ≥ 1,
-      ‖∑ χ ∈ S, w χ * (χ.rieszRemainder y).re‖ ≤ C * y ^ max σ (1 / 2) := by
-  have hterm (χ : PrimitiveDirichletCharacter) (hχ : χ ∈ S) (hwχ : w χ ≠ 0) :
-      ∃ C : ℝ, ∀ y ≥ 1, ‖χ.rieszRemainder y‖ ≤ C * y ^ max σ (1 / 2) := by
-    by_cases heq : χ = 1
-    · subst χ
-      have hz : ZeroFreeRightOf (max σ (1 / 2)) riemannZeta := by
-        have hζ : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-          rw [PrimitiveDirichletCharacter.character_one]
-          exact DirichletCharacter.LFunction_modOne_eq
-        rw [← hζ]
-        exact hσ 1 hχ hwχ
-      obtain ⟨C, hC⟩ := PrimitiveDirichletCharacter.exists_norm_rieszRemainder_one_le_rpow hz
-      exact ⟨C, fun y hy ↦ by
-        simpa only [max_eq_left (le_max_of_le_right (by norm_num : (0 : ℝ) ≤ 1 / 2))] using hC y hy⟩
-    · obtain ⟨C, hC⟩ := χ.exists_norm_rieszRemainder_le_of_zeroFreeRightOf heq
-      exact ⟨C, fun y hy ↦ by
-        simpa only [max_eq_left (le_max_right σ (1 / 2))] using hC (hσ χ hχ hwχ) y hy⟩
-  have hweighted (χ : PrimitiveDirichletCharacter) (hχ : χ ∈ S) :
+      ‖w.sum fun χ c ↦ c * (χ.rieszRemainder y).re‖ ≤ C * y ^ max σ (1 / 2) := by
+  have hterm (χ : PrimitiveDirichletCharacter) (hχ : χ ∈ w.support) :
       ∃ C : ℝ, ∀ y ≥ 1, ‖w χ * (χ.rieszRemainder y).re‖ ≤ C * y ^ max σ (1 / 2) := by
-    by_cases h : w χ = 0
-    · exact ⟨0, by simp [h]⟩
-    obtain ⟨C, hC⟩ := hterm χ hχ h
+    obtain ⟨C, hC⟩ := χ.exists_norm_rieszRemainder_le_rpow_of_zeroFreeRightOf (hσ χ hχ)
     refine ⟨‖w χ‖ * C, fun y hy ↦ ?_⟩
     rw [norm_mul, Real.norm_eq_abs (χ.rieszRemainder y).re, mul_assoc]
-    exact mul_le_mul_of_nonneg_left ((Complex.abs_re_le_norm _).trans (hC y hy)) (norm_nonneg _)
-  choose C hC using hweighted
-  refine ⟨∑ χ ∈ S.attach, C χ χ.property, fun y hy ↦ ?_⟩
-  rw [← Finset.sum_attach S (fun χ ↦ w χ * (χ.rieszRemainder y).re), Finset.sum_mul]
+    refine mul_le_mul_of_nonneg_left ((Complex.abs_re_le_norm _).trans ?_) (norm_nonneg _)
+    simpa only [max_eq_left (le_max_right σ (1 / 2))] using hC y hy
+  choose C hC using hterm
+  refine ⟨∑ χ ∈ w.support.attach, C χ χ.property, fun y hy ↦ ?_⟩
+  rw [Finsupp.sum, ← Finset.sum_attach w.support (fun χ ↦ w χ * (χ.rieszRemainder y).re),
+    Finset.sum_mul]
   exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun χ _ ↦ hC χ χ.property y hy)
 
 /-- Primitive characters in a finite set are all zero-free right of `1 / 2` if and only if,
@@ -106,11 +90,16 @@ theorem forall_exists_hasWindows_sum_rieszRemainder_iff (S : Finset PrimitiveDir
     · exact hy
     · exact fun κ _ ↦ zero_mul (κ.rieszRemainder y).re
   · intro h ε hε
-    obtain ⟨C, hC⟩ := exists_norm_sum_rieszRemainder_re_le_of_zeroFreeRightOf S (fun _ ↦ 1)
-      (σ := 1 / 2) (fun χ hχ _ ↦ by simpa only [max_self] using h χ hχ)
+    let v : PrimitiveDirichletCharacter →₀ ℝ := Finsupp.indicator S (fun _ _ ↦ 1)
+    obtain ⟨C, hC⟩ := exists_norm_sum_rieszRemainder_re_le_of_zeroFreeRightOf v (σ := 1 / 2)
+      (fun χ hχ ↦ by simpa only [max_self] using h χ (Finsupp.support_indicator_subset _ _ hχ))
     have hevent : ∀ᶠ y : ℝ in atTop,
         ∑ χ ∈ S, 1 * (χ.rieszRemainder y).re ≤ C * y ^ ((1 : ℝ) / 2) := by
       filter_upwards [eventually_ge_atTop (1 : ℝ)] with y hy
+      have hsum : (v.sum fun χ c ↦ c * (χ.rieszRemainder y).re) =
+          ∑ χ ∈ S, 1 * (χ.rieszRemainder y).re :=
+        Finsupp.sum_indicator_index _ fun κ _ ↦ zero_mul (κ.rieszRemainder y).re
+      rw [← hsum]
       exact (Real.le_norm_self _).trans (by simpa only [max_self] using hC y hy)
     exact ⟨fun _ ↦ 1, fun _ _ ↦ one_pos, 2, one_lt_two,
       hasWindows_rpow_bound_of_eventually_le hevent (lt_add_of_pos_right _ hε) 2⟩

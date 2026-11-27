@@ -53,6 +53,12 @@ open scoped LSeries.notation ComplexConjugate
 
 namespace TauCeti.PrimitiveDirichletCharacter
 
+/-- The trivial primitive character has the Riemann zeta function as its `L`-function. -/
+theorem LFunction_character_one :
+    (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
+  rw [character_one]
+  exact DirichletCharacter.LFunction_modOne_eq
+
 /-- Grouping the ideal von Mangoldt coefficients of a rational primitive ray class character
 by norm gives the twisted von Mangoldt coefficients of the corresponding Dirichlet character. -/
 @[simp] theorem normCoeff_vonMangoldtTransform_toPrimitiveRayClassCharacter
@@ -234,10 +240,7 @@ theorem hasLaplace_rieszRemainder_comp_exp (χ : PrimitiveDirichletCharacter) {s
   have hlin (c : ℂ) := (hasLaplace_exp_mul_pow 0 hs).const_smul c
   by_cases hχ : χ = 1
   · subst χ
-    have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-      rw [character_one]
-      exact DirichletCharacter.LFunction_modOne_eq
-    rw [hzeta] at hr ⊢
+    rw [LFunction_character_one] at hr ⊢
     have h := hr.add ((hlin (1 + (Real.eulerMascheroniConstant : ℂ))).sub
       (hasLaplace_exp_mul_pow 1 hs))
     rw [rieszRemainderMellin_riemannZeta hs]
