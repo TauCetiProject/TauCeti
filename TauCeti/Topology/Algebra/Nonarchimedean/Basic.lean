@@ -44,7 +44,7 @@ an *open* embedding, which a subgroup's need not be.
   `NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap`.
 * `Multiplicative.instNonarchimedeanGroup`, `Additive.instNonarchimedeanAddGroup`: the type
   synonyms `Multiplicative G` and `Additive G` keep the topology, so they are nonarchimedean
-  exactly when `G` is; for instance `Multiplicative ℤ_[p]` is a nonarchimedean group.
+  when `G` is; for instance `Multiplicative ℤ_[p]` is a nonarchimedean group.
 -/
 
 public section
