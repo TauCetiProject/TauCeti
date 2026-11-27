@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Parametric
 public import TauCeti.Analysis.Sobolev.Cylinder.Stabilizer
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.Topology.Algebra.Module.Complement
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Fredholm.Stabilization
@@ -97,7 +98,8 @@ is additive.
 
 * `TauCeti.CylinderSobolev.neckPreglue`: the pregluing along a neck of length `2 R`.
 * `TauCeti.CylinderSobolev.gluingKerMap`: the gluing map `E₁ × E₂ → E_R`, the pregluing
-  corrected along the range of a right inverse of `A_R`.
+  corrected along the range of a right inverse of `A_R`. It is affine in the right inverse
+  (`TauCeti.CylinderSobolev.gluingKerMap_smul_add_smul`).
 * `TauCeti.CylinderSobolev.gluingObstruction`: the obstruction map `b_R : E₁ × E₂ → S₁ × S₂`.
 * `TauCeti.CylinderSobolev.gluingKerInclusion`: the map `ker D_R → E₁ × E₂`.
 
@@ -765,6 +767,30 @@ theorem coe_gluingKerMap_apply {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ]
             (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))
               (neckPreglue R ((k.1 : H1 V × S₁), (k.2 : H1 V × S₂)))) :=
   (rfl)
+
+/-- **The gluing map is affine in the right inverse.** For right inverses `Q` and `Q'` of the
+stabilized glued operator `A_R` and `a + b = 1`, the combination `a Q + b Q'` is again a right
+inverse (`ContinuousLinearMap.rightInverse_smul_add_smul`), and its gluing map is `a` times the
+gluing map of `Q` plus `b` times that of `Q'`. -/
+theorem gluingKerMap_smul_add_smul {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+    {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {R : ℝ}
+    {Q Q' : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂)}
+    (hQ : Function.RightInverse Q (((jetOperator 2 stripMeasure
+      (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)))
+    (hQ' : Function.RightInverse Q' (((jetOperator 2 stripMeasure
+      (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)))
+    {a b : ℝ} (hab : a + b = 1)
+    (k : (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker ×
+      (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker) :
+    gluingKerMap (ContinuousLinearMap.rightInverse_smul_add_smul hQ hQ' hab) k =
+      a • gluingKerMap hQ k + b • gluingKerMap hQ' k := by
+  obtain rfl : b = 1 - a := eq_sub_of_add_eq' hab
+  refine Subtype.ext ?_
+  simp only [coe_gluingKerMap_apply, add_apply, FunLike.coe_smul, Pi.smul_apply,
+    Submodule.coe_add, Submodule.coe_smul]
+  module
 
 /-- The gluing map is injective as soon as the pairs of elements of the kernels of the pieces
 whose pregluing `p` satisfies `p = Q (A_R p)` all vanish. -/
