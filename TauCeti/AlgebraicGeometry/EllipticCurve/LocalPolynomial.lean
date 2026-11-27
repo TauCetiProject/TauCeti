@@ -35,7 +35,9 @@ local polynomial is `1 − a T + q T²` at good reduction and `1 − a T` otherw
   invariants of the reduced model.
 * `WeierstrassCurve.HasMultiplicativeReduction.c₄_ne_zero` and
   `WeierstrassCurve.HasMultiplicativeReduction.c₆_ne_zero`: hence `c₄` and `c₆` of a curve with
-  multiplicative reduction are nonzero.
+  multiplicative reduction are nonzero, and so `j ∉ {0, 1728}`
+  (`WeierstrassCurve.HasMultiplicativeReduction.j_ne_zero`,
+  `WeierstrassCurve.HasMultiplicativeReduction.j_ne_1728`).
 * `WeierstrassCurve.HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff`: a
   multiplicative reduction is split exactly when the reduced model's node polynomial splits.
 * `WeierstrassCurve.false_of_isRoot_nodeQuadratic`: at nonsplit multiplicative reduction the monic
@@ -109,6 +111,18 @@ theorem HasMultiplicativeReduction.c₆_ne_zero (h : W.HasMultiplicativeReductio
   rw [← integralModel_c₆_eq R W, map_ne_zero_iff _ (IsFractionRing.injective R K)]
   intro h0
   exact h.reduction_c₆_ne_zero R (by rw [reduction, map_c₆, h0, map_zero])
+
+/-- **A multiplicative reduction has `j ≠ 0`**, since `c₄ ≠ 0`. -/
+theorem HasMultiplicativeReduction.j_ne_zero [W.IsElliptic] (h : W.HasMultiplicativeReduction R) :
+    W.j ≠ 0 := by
+  rw [Ne, j_eq_zero_iff]
+  exact h.c₄_ne_zero R
+
+/-- **A multiplicative reduction has `j ≠ 1728`**, since `c₆ ≠ 0`. -/
+theorem HasMultiplicativeReduction.j_ne_1728 [W.IsElliptic]
+    (h : W.HasMultiplicativeReduction R) : W.j ≠ 1728 := by
+  rw [Ne, j_eq_1728_iff]
+  exact h.c₆_ne_zero R
 
 /-- **An additive reduction has `c₄ = 0`**: its singular point is a cusp. -/
 theorem HasAdditiveReduction.reduction_c₄_eq_zero (h : W.HasAdditiveReduction R) :
