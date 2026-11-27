@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.AbsoluteValue.Place
-public import TauCeti.Analysis.AbsoluteValue.RamificationComparison
 public import TauCeti.Analysis.AbsoluteValue.ValuationSubring
+public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.PlaceComparison
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.ValuationSubring
 
 import Mathlib.RingTheory.Ideal.GoingUp
@@ -38,11 +38,12 @@ Under this bijection the vocabulary of places matches that of primes of `O`
 `AbsoluteValue.inertia G_F w` is `inertiaGroup F Q_w`, and the `σ` acting on the residue field of
 `w` by `x ↦ x ^ q`, `q = #(𝓞 F ⧸ Q_w ∩ 𝓞 F)`, in the congruence form
 `w (σ x - x ^ q) < 1` whenever `w x ≤ 1`, are the arithmetic Frobenius elements
-`IsArithFrobAtIntegralPrime σ Q_w`. These follow from `A_w` being centred at `Q_w` and the
-comparisons for centred valuation subrings in
-`TauCeti/Analysis/AbsoluteValue/RamificationComparison.lean` and
-`TauCeti/Analysis/AbsoluteValue/Frobenius.lean`. The groups are written as subgroups of
-`F^alg ≃ₐ[F] F^alg`, which acts on `F^alg` and on its places; `G_F` is that group by definition.
+`IsArithFrobAtIntegralPrime σ Q_w`. The group statements are those of
+`TauCeti/NumberTheory/NumberField/AbsoluteGaloisGroup/PlaceComparison.lean` for `Q = Q_w`; the
+Frobenius statements follow from `A_w` being centred at `Q_w` and the comparison for centred
+valuation subrings in `TauCeti/Analysis/AbsoluteValue/Frobenius.lean`. The groups are written as
+subgroups of `F^alg ≃ₐ[F] F^alg`, which acts on `F^alg` and on its places; `G_F` is that group by
+definition.
 
 ## Main results
 
@@ -52,9 +53,9 @@ comparisons for centred valuation subrings in
 * `TauCeti.GaloisRep.valuationSubring_finitePlaceEquivMaximalIdeal_symm_apply`: the place
   corresponding to a maximal ideal `Q` has valuation subring `O_Q`.
 * `TauCeti.GaloisRep.finitePlaceEquivMaximalIdeal_smul`: the bijection is `G_F`-equivariant.
-* `TauCeti.GaloisRep.stabilizer_eq_decompositionGroup` and
-  `TauCeti.GaloisRep.inertia_eq_inertiaGroup`: the decomposition and inertia groups of `w` are
-  `D_{Q_w}` and `I_{Q_w}`.
+* `TauCeti.GaloisRep.stabilizer_place_eq_decompositionGroup_finitePlaceEquivMaximalIdeal` and
+  `TauCeti.GaloisRep.inertia_place_eq_inertiaGroup_finitePlaceEquivMaximalIdeal`: the
+  decomposition and inertia groups of `w` are `D_{Q_w}` and `I_{Q_w}`.
 * `TauCeti.GaloisRep.isArithFrobAtIntegralPrime_iff_forall_apply_sub_pow_lt_one` and
   `TauCeti.GaloisRep.isArithFrobAtIntegralPrime_iff_mem_stabilizer_and_forall`: arithmetic
   Frobenius elements at `Q_w` are the `σ` with `w (σ x - x ^ q) < 1` whenever `w x ≤ 1`.
@@ -189,19 +190,17 @@ variable (w : {w : Place (AlgebraicClosure F) // IsNonarchimedean w.val})
 
 /-- **The decomposition group of a finite place of `F^alg` is that of `Q_w`**:
 `MulAction.stabilizer G_F w = D_{Q_w}`. -/
-theorem stabilizer_eq_decompositionGroup :
+theorem stabilizer_place_eq_decompositionGroup_finitePlaceEquivMaximalIdeal :
     MulAction.stabilizer (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) w.val =
       decompositionGroup F (finitePlaceEquivMaximalIdeal F w).val :=
-  Place.stabilizer_eq_stabilizer_of_isCenteredAt w.val w.property
-    (isCenteredAt_finitePlaceEquivMaximalIdeal w)
+  stabilizer_place_eq_decompositionGroup w.val w.property (mem_finitePlaceEquivMaximalIdeal_iff w)
 
 /-- **The inertia group of a finite place of `F^alg` is that of `Q_w`**: the `σ ∈ G_F` fixing `w`
 with `w (σ x - x) < 1` whenever `w x ≤ 1` form `I_{Q_w}`. -/
-theorem inertia_eq_inertiaGroup :
+theorem inertia_place_eq_inertiaGroup_finitePlaceEquivMaximalIdeal :
     w.val.val.inertia (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) =
       inertiaGroup F (finitePlaceEquivMaximalIdeal F w).val :=
-  Place.inertia_eq_inertia_of_isCenteredAt w.val w.property
-    (isCenteredAt_finitePlaceEquivMaximalIdeal w)
+  inertia_place_eq_inertiaGroup w.val w.property (mem_finitePlaceEquivMaximalIdeal_iff w)
 
 /-- **Arithmetic Frobenius elements at a finite place of `F^alg`**: `σ ∈ G_F` is an arithmetic
 Frobenius element at `Q_w` exactly when `w (σ x - x ^ q) < 1` whenever `w x ≤ 1`, where
@@ -229,7 +228,7 @@ theorem isArithFrobAtIntegralPrime_iff_mem_stabilizer_and_forall
           (𝓞 F ⧸ (finitePlaceEquivMaximalIdeal F w).val.under (𝓞 F))) < 1 := by
   refine ⟨fun h ↦ ⟨?_, (isArithFrobAtIntegralPrime_iff_forall_apply_sub_pow_lt_one w).mp h⟩,
     fun h ↦ (isArithFrobAtIntegralPrime_iff_forall_apply_sub_pow_lt_one w).mpr h.2⟩
-  rw [stabilizer_eq_decompositionGroup]
+  rw [stabilizer_place_eq_decompositionGroup_finitePlaceEquivMaximalIdeal]
   exact IsArithFrobAt.mem_stabilizer_of_isIntegral (G := Field.absoluteGaloisGroup F) h
 
 end TauCeti.GaloisRep
