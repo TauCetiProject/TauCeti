@@ -40,7 +40,10 @@ an admissible `Γ` keeps its closure but destroys the chart description at the r
 * `Set.IsBoundaryPartChart`: a Lipschitz chart of `Ω` in which `Γ` is the part of the graph over
   a given base region, with restriction to smaller cylinders (`Set.IsBoundaryPartChart.mono`),
   recentring (`Set.IsBoundaryPartChart.trans_constVAdd`), transport by affine isometries
-  (`Set.IsBoundaryPartChart.image`) and positive dilation (`Set.IsBoundaryPartChart.smul`).
+  (`Set.IsBoundaryPartChart.image`) and positive dilation (`Set.IsBoundaryPartChart.smul`), and
+  its defining condition in the two set forms consumed by chart localization
+  (`Set.IsBoundaryPartChart.inter_preimage_normalCylinder_subset`,
+  `Set.IsBoundaryPartChart.setOf_inter_normalCylinder_subset`).
 * `Set.IsLipschitzChart.isBoundaryPartChart_univ_of_subset`,
   `Set.IsLipschitzChart.isBoundaryPartChart_empty_of_disjoint`: a Lipschitz chart whose cylinder
   sees only points of `Γ` on the frontier, or no point of `Γ`, is a boundary-part chart over the
@@ -274,6 +277,18 @@ theorem mem_iff (hc : IsBoundaryPartChart Ω Γ e γ K h r B) {x : F}
 theorem mem_iff_of_mem_frontier (hc : IsBoundaryPartChart Ω Γ e γ K h r B) {x : F}
     (hx : x ∈ frontier Ω) (hxC : e x ∈ normalCylinder h r) : x ∈ Γ ↔ (e x).snd ∈ B := by
   rw [hc.mem_iff hxC, and_iff_right (hc.isLipschitzChart.fst_apply_eq_of_mem_frontier hx hxC)]
+
+/-- Inside the cylinder of a boundary-part chart, the points of `Γ` have their images on the graph
+over the base region. -/
+theorem inter_preimage_normalCylinder_subset (hc : IsBoundaryPartChart Ω Γ e γ K h r B) :
+    Γ ∩ e ⁻¹' normalCylinder h r ⊆ e ⁻¹' {z | z.fst = γ z.snd ∧ z.snd ∈ B} :=
+  fun _ hx => (hc.mem_iff hx.2).1 hx.1
+
+/-- Inside the cylinder of a boundary-part chart, the points of the graph over the base region are
+images of points of `Γ`. -/
+theorem setOf_inter_normalCylinder_subset (hc : IsBoundaryPartChart Ω Γ e γ K h r B) :
+    {z | z.fst = γ z.snd ∧ z.snd ∈ B} ∩ normalCylinder h r ⊆ e.symm ⁻¹' Γ :=
+  fun z hz => (hc.mem_iff (x := e.symm z) (by simpa using hz.2)).2 (by simpa using hz.1)
 
 /-- A boundary-part chart restricts to every smaller cylinder. -/
 theorem mono (hc : IsBoundaryPartChart Ω Γ e γ K h r B) {h' r' : ℝ} (hh' : 0 < h')

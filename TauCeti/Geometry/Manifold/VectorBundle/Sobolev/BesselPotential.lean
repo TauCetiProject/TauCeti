@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
@@ -47,6 +48,10 @@ basis `Module.finBasis ℝ F` of the model fibre (chosen non-constructively).
   (`TauCeti.SquareChartPartition.reconstruction_localization`): the pairing of the localizations
   of `T` and `s` in the `i`-th chart is `T (χᵢ² s)`, and `∑ᵢ χᵢ² = 1`. In particular a functional
   is determined by its localizations (`TauCeti.SquareChartPartition.ext_localization`).
+  Reconstructing a single entry `w` in the slot `(i, j)` gives components `Re (bⱼ*(v) χᵢ w)` in
+  the `i`-th chart (`TauCeti.SquareChartPartition.chartComponent_reconstruction_single`) and
+  vanishes away from the support of `χᵢ`
+  (`TauCeti.SquareChartPartition.isLocallyAt_reconstruction_single_of_notMem`).
 
 `T` is **`H^s` with respect to the partition** (`TauCeti.SquareChartPartition.MemSobolev`) when all
 its localizations lie in `H^s(E, ℂ)`. The **Sobolev space**
@@ -155,21 +160,10 @@ variable [FiniteDimensional ℝ E] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 /-- The chart localization of bundle tests by a cutoff `ψ` supported in the support of the `i`-th
 cutoff, as a continuous linear map into the test functions supported in `A.chartSupport i`. -/
 private def localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯) (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) :
-    BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) where
-  toLinearMap := (A.chartData i).trivialization.chartLocalization (A.chartData i).chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
-      (A.chartSupport_subset_target i)
-      ((A.mapsTo_chartSupport i).mono_left hψ) ∘ₗ
-    (compactlySupported I F ∞ V).subtype ∘ₗ (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
-  cont := by
-    let e := fun x : M ↦ trivializationAt F V x
-    let U := fun x : M ↦ (⟨_, (trivializationAt F V x).open_baseSet⟩ : Opens M)
-    let := frameTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl
-    exact ((A.chartData i).trivialization.continuous_chartLocalization (A.chartData i).chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
-      (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ) e U
-      (fun _ ↦ subset_rfl) fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
-      (continuous_val_compactlySupportedTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl)
+    BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) :=
+  (A.chartData i).trivialization.chartLocalizationCLM (A.chartData i).chart
+    (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
+    (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
@@ -178,14 +172,17 @@ private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯
     A.localizationCLM i ψ hψ s y = ψ ((A.chartData i).chart.symm y) •
       ((A.chartData i).trivialization
         ⟨(A.chartData i).chart.symm y, s ((A.chartData i).chart.symm y)⟩).2 :=
-  (A.chartData i).trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
+by
+  rw [localizationCLM, Bundle.Trivialization.chartLocalizationCLM_apply]
+  exact (A.chartData i).trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_notMem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
     (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) (s : BundleTest I F V) {y : E}
     (hy : y ∉ (A.chartData i).chart.target) :
-    A.localizationCLM i ψ hψ s y = 0 :=
-  (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
+    A.localizationCLM i ψ hψ s y = 0 := by
+  rw [localizationCLM, Bundle.Trivialization.chartLocalizationCLM_apply]
+  exact (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
 
 /-- The `j`-th coordinate functional of the fixed basis `Module.finBasis ℝ F` of the model fibre
 (chosen non-constructively), with complex values. -/
@@ -253,6 +250,29 @@ theorem reconstruction_apply (v : ι × Fin (Module.finrank ℝ F) → 𝓢'(E, 
     A.reconstruction v s = ∑ k, (v k (A.testLocalization k.1 k.2 s)).re :=
   (rfl)
 
+/-- The reconstruction of a tuple with a single nonzero entry `w`, in the slot `(i, j)`, is the
+functional `s ↦ Re w (sᵢⱼ)`. -/
+theorem reconstruction_single_apply [DecidableEq ι] (k : ι × Fin (Module.finrank ℝ F))
+    (w : 𝓢'(E, ℂ)) (s : BundleTest I F V) :
+    A.reconstruction (Pi.single k w) s = (w (A.testLocalization k.1 k.2 s)).re := by
+  rw [reconstruction_apply, Finset.sum_eq_single k (fun l _ hl ↦ by simp [hl]) (by simp)]
+  simp
+
+/-- A bundle test vanishing wherever `χᵢ` does not has zero localization in the `i`-th chart. -/
+theorem testLocalization_eq_zero (i : ι) (j : Fin (Module.finrank ℝ F)) {s : BundleTest I F V}
+    (hs : ∀ z, A.cutoff i z ≠ 0 → s z = 0) : A.testLocalization i j s = 0 := by
+  ext y
+  by_cases hy : y ∈ (A.chartData i).chart.target
+  · rw [A.testLocalization_apply_of_mem _ _ _ hy, zero_apply]
+    by_cases hz : A.cutoff i ((A.chartData i).chart.symm y) = 0
+    · simp [hz]
+    have hzb := (A.chartData i).source_subset ((A.chartData i).chart.map_target hy)
+    have h0 := (A.chartData i).trivialization.apply_mk_symm hzb 0
+    rw [← Bundle.Trivialization.symmL_apply (R := ℝ) _ hzb, map_zero] at h0
+    rw [hs _ hz, h0]
+    simp
+  · simp [A.testLocalization_apply_of_notMem _ _ _ hy]
+
 end Reconstruction
 
 /-! ### Localization of distributions -/
@@ -278,7 +298,8 @@ private theorem chartTestCLM_localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯
       (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
       (TestFunction.ofSupportedIn (A.chartSupport_subset_target i) (A.localizationCLM i ψ hψ s)) x =
       ψ x • s x := by
-  rw [Bundle.Trivialization.coe_chartTestCLM]
+  rw [Bundle.Trivialization.coe_chartTestCLM, localizationCLM,
+    Bundle.Trivialization.chartLocalizationCLM_apply]
   refine (congr($((A.chartData i).trivialization.chartTestSection_chartLocalization
     (A.chartData i).chart (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ
     (A.chartSupport i) (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
@@ -312,6 +333,79 @@ theorem localization_apply (i : ι) (j : Fin (Module.finrank ℝ F)) (T : Bundle
       (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset T
         (Module.finBasis ℝ F j)).cutoffTempered (A.chartCutoff i) :=
   (rfl)
+
+/-- The localization, in the slot `(i, j)`, of the test `φ • v` extended through the `i`-th chart
+and frame is `bⱼ*(v) χᵢ φ`, where `χᵢ` is read in the chart and `(bⱼ*)` is the dual basis of the
+fixed basis of the model fibre. -/
+theorem testLocalization_chartTestCLM (i : ι) (j : Fin (Module.finrank ℝ F))
+    (φ : 𝓓(⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩, ℝ)) (v : F) :
+    A.testLocalization i j ((A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
+        (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
+        (TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ)) =
+      ((Module.finBasis ℝ F).repr v j : ℂ) •
+        SchwartzMap.smulLeftCLM ℂ (A.chartCutoff i : E → ℂ)
+          (TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM ofRealCLM φ)) := by
+  have hχ := (A.chartCutoff i).hasCompactSupport.hasTemperateGrowth (A.chartCutoff i).contDiff
+  ext y
+  rw [_root_.smul_apply, SchwartzMap.smulLeftCLM_apply_apply hχ]
+  by_cases hy : y ∈ (A.chartData i).chart.target
+  · have hs := (A.chartData i).source_subset ((A.chartData i).chart.map_target hy)
+    simp [A.testLocalization_apply_of_mem _ _ _ hy, A.chartCutoff_apply_of_mem hy,
+      Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _
+        ((A.chartData i).chart.map_target hy), (A.chartData i).chart.right_inv hy,
+      Bundle.Trivialization.symmL_apply _ hs, Bundle.Trivialization.apply_mk_symm _ hs, mul_comm,
+      mul_left_comm, mul_assoc]
+  · simp [A.testLocalization_apply_of_notMem _ _ _ hy, A.chartCutoff_apply_of_notMem hy]
+
+/-- The component along `v`, in the `i`-th chart and frame, of the functional `s ↦ Re w (sᵢⱼ)`
+reconstructed from `w` in the slot `(i, j)`: the real part of the tempered distribution
+`bⱼ*(v) χᵢ w`, restricted to the chart target. -/
+theorem chartComponent_reconstruction_single [DecidableEq ι] (i : ι)
+    (j : Fin (Module.finrank ℝ F)) (w : 𝓢'(E, ℂ)) (v : F) :
+    (A.chartData i).trivialization.chartComponent (A.chartData i).chart
+        (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
+        (A.reconstruction (Pi.single (i, j) w)) v =
+      Distribution.mapCLM (ofRealCLM ∘L reCLM) (TemperedDistribution.toDistribution _
+        (((Module.finBasis ℝ F).repr v j : ℂ) •
+          TemperedDistribution.smulLeftCLM ℂ (A.chartCutoff i : E → ℂ) w)) := by
+  ext φ
+  rw [Bundle.Trivialization.chartComponent_apply, reconstruction_single_apply,
+    testLocalization_chartTestCLM, map_smul]
+  simp
+
+/-- **Reconstructions vanish away from the cutoff.** Away from the support of `χᵢ`, the functional
+`s ↦ Re w (sᵢⱼ)` reconstructed from `w` in the slot `(i, j)` vanishes, and so do its components
+near the image of `x` in a chart of the partition at `x`. So it satisfies near `x` every predicate
+`P` which holds near the points outside the support of a distribution. -/
+theorem isLocallyAt_reconstruction_single_of_notMem [DecidableEq ι]
+    {P : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → Prop}
+    (hP : ∀ {Ω : Opens E} {T : 𝓓'(Ω, ℂ)} {y : E}, y ∈ Ω → y ∉ Distribution.dsupport T →
+      P Ω T y)
+    (i : ι) (j : Fin (Module.finrank ℝ F)) (w : 𝓢'(E, ℂ)) {x : M}
+    (hx : x ∉ tsupport (A.cutoff i)) :
+    BundleTest.IsLocallyAt P (A.reconstruction (Pi.single (i, j) w)) x := by
+  obtain ⟨i', hi'⟩ : ∃ i', A.cutoff i' x ≠ 0 := by
+    by_contra! h
+    simpa [h] using A.sum_sq_cutoff x
+  set c := (A.chartData i').chart
+  have hxs : x ∈ c.source := A.tsupport_cutoff_subset i' (subset_tsupport _ hi')
+  refine BundleTest.IsLocallyAt.intro _ (A.chartData i').contMDiffOn_chart
+    (A.contMDiffOn_chart_symm i') (A.chartData i').source_subset hxs fun v ↦ ?_
+  refine hP (c.map_source hxs) ?_
+  rw [Distribution.notMem_dsupport_iff]
+  refine ⟨c.target ∩ c.symm ⁻¹' (tsupport (A.cutoff i))ᶜ, fun φ hφ ↦ ?_,
+    c.isOpen_inter_preimage_symm (_root_.isClosed_tsupport _).isOpen_compl, c.map_source hxs,
+    by rwa [mem_preimage, c.left_inv hxs]⟩
+  rw [Bundle.Trivialization.chartComponent_apply, reconstruction_single_apply,
+    A.testLocalization_eq_zero i j fun z hz ↦ ?_]
+  · simp
+  -- The extended test vanishes where `χᵢ` does not, since `φ` vanishes there in the chart.
+  by_cases hz' : z ∈ c.source
+  · rw [Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _ hz']
+    have hφz : φ (c z) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦
+      (hφ h).2 (by rw [c.left_inv hz']; exact subset_tsupport _ hz)
+    simp [TestFunction.postcompCLM_apply, hφz]
+  · exact Bundle.Trivialization.chartTestCLM_apply_of_notMem _ _ _ _ _ hz'
 
 /-- The localization of `T`, paired with the localization of `s`, is `T` evaluated on the `j`-th
 frame component of `χᵢ² s`. -/
@@ -666,8 +760,9 @@ theorem inclusion_inclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) (u : A.s
 
 /-- The inclusion `H^s ⊆ H^r` does not increase the norm. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : A.sobolevSpace s) : ‖A.inclusion h u‖ ≤ ‖u‖ := by
-  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
-  gcongr with k
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u]
+  refine PiLp.norm_mono fun k ↦ ?_
+  rw [inclusion_apply]
   exact BesselPotentialSpace.norm_inclusion_apply_le h _
 
 theorem norm_inclusion_le (h : r ≤ s) : ‖A.inclusion h‖ ≤ 1 :=

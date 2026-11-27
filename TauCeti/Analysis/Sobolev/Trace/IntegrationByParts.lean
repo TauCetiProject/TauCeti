@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Trace.Extension
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.ProdHalfSpace
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.Holder
 
@@ -155,8 +156,7 @@ private theorem continuous_hyperplaneBoundaryPairing (hp : p ≠ (∞ : ℝ≥0�
       ∫ y : E, W1p.hyperplaneTrace hp a w y * χ (WithLp.toLp 2 (a, y)) := by
   let _ : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (a, y)) :=
-    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
+    WithLp.isClosedEmbedding_toLp_prodMk_left 2 a
   have hT : MemLp (fun y : E ↦ χ (WithLp.toLp 2 (a, y))) p.conjExponent volume :=
     (hχ.comp he.continuous).memLp_of_hasCompactSupport
       (hχc.comp_isClosedEmbedding he)

@@ -22,6 +22,12 @@ protects, at each stage `s`, either nothing (`r e s = none`) or the numbers up t
 * `injuryEvents A r e`: the pairs `(s, x)` with `x ∈ injuriesAt A r e s`.
 * `injurySet A r e`: the numbers that ever injure `e`, Soare's `I_e`.
 * `injuryStages A r e`: the stages `s + 1` at which some number injures `e`.
+* `injuriesThrough A r e n`: the finite set of numbers injuring `e` in the transitions before
+  stage `n`.
+
+All these objects of `e` depend only on the stages and on the restraint of `e`, not on the
+restraints of other requirements. The injuries through stage `n` increase with `n` and exhaust
+`injurySet A r e`, which is finite exactly when some stage exhausts it.
 
 Finitely many injury stages are the same as an eventually injury-free tail, and give finitely many
 injuring numbers. When the stages are monotone, a number enters at most once
@@ -29,7 +35,9 @@ injuring numbers. When the stages are monotone, a number enters at most once
 injuring numbers are equivalent to both, and there are at most as many injury stages as injuring
 numbers. Several numbers
 may injure `e` at one stage, so the inequality can be strict. Without monotonicity a single number
-can leave and re-enter, injuring `e` at infinitely many stages.
+can leave and re-enter, injuring `e` at infinitely many stages. When at most one number injures
+`e` at each transition, there are at least as many injury stages as injuring numbers, with no
+monotonicity; with monotone stages as well, the two are equinumerous.
 
 A restraint protecting fewer numbers at every stage has fewer injuries, and inclusions of the
 batches pass to the events, numbers and stages. Control of the restraint itself gives finite
@@ -49,6 +57,15 @@ requirements are separate matters, not treated here.
   transition changes no membership at or below the restraint.
 * `TauCeti.Priority.injurySet_eq_image`, `TauCeti.Priority.injuryStages_eq_image`: numbers and
   stages are the projections of the events.
+* `TauCeti.Priority.mem_injuriesThrough`, `TauCeti.Priority.monotone_injuriesThrough`,
+  `TauCeti.Priority.injurySet_eq_iUnion_injuriesThrough`: the injuries through a stage increase and
+  exhaust the injury set.
+* `TauCeti.Priority.finite_injurySet_iff_exists_eq_injuriesThrough`: a finite injury set is the
+  set of injuries through some stage.
+* `TauCeti.Priority.injuriesAt_congr`, `TauCeti.Priority.injuryEvents_congr`,
+  `TauCeti.Priority.injurySet_congr`, `TauCeti.Priority.injuryStages_congr`,
+  `TauCeti.Priority.injuriesThrough_congr`: the injury objects of a requirement depend only on its
+  own restraint.
 * `TauCeti.Priority.injuriesAt_mono`, `TauCeti.Priority.injuryEvents_mono`,
   `TauCeti.Priority.injurySet_mono`, `TauCeti.Priority.injuryStages_mono`: a smaller restraint
   has fewer injuries.
@@ -60,6 +77,11 @@ requirements are separate matters, not treated here.
   many injuring numbers are equivalent to both.
 * `TauCeti.Priority.ncard_injuryStages_le`: under monotone stages, there are at most as many
   injury stages as injuring numbers (as `ncard`s, which are both `0` in the infinite case).
+* `TauCeti.Priority.encard_injurySet_le_encard_injuryStages`,
+  `TauCeti.Priority.encard_injuryStages_eq_encard_injurySet`,
+  `TauCeti.Priority.ncard_injuryStages_eq_ncard_injurySet`: with at most one injuring number per
+  transition, at least as many injury stages as injuring numbers, and exactly as many under
+  monotone stages.
 * `TauCeti.Priority.finite_injurySet_of_eventually_bounded`: an eventually bounded restraint admits
   only finitely many injuring numbers.
 * `TauCeti.Priority.exists_forall_injuriesAt_eq_empty_of_eventually_bounded`: under monotone
@@ -97,6 +119,11 @@ def injurySet : Set ℕ :=
 /-- The stages `s + 1` at which some number injures requirement `e`. -/
 def injuryStages : Set ℕ :=
   {t | ∃ s, t = s + 1 ∧ (injuriesAt A r e s).Nonempty}
+
+/-- The numbers injuring requirement `e` in the transitions to the stages `1, …, n`: the union of
+the batches `injuriesAt A r e s` for `s < n`. -/
+def injuriesThrough (n : ℕ) : Finset ℕ :=
+  (Finset.range n).biUnion (injuriesAt A r e)
 
 variable {A r e}
 
@@ -182,6 +209,86 @@ theorem injuryStages_eq_image :
     exact ⟨s, x, hx, rfl⟩
   · rintro ⟨s, x, hx, rfl⟩
     exact ⟨s, rfl, x, hx⟩
+
+/-! ### Injuries through a stage -/
+
+/-- Membership in the injuries through stage `n`: an injury in some transition before `n`. -/
+@[simp]
+theorem mem_injuriesThrough {n x : ℕ} :
+    x ∈ injuriesThrough A r e n ↔ ∃ s < n, x ∈ injuriesAt A r e s := by
+  simp [injuriesThrough]
+
+/-- Nothing injures before the first transition. -/
+@[simp]
+theorem injuriesThrough_zero : injuriesThrough A r e 0 = ∅ := by
+  simp [injuriesThrough]
+
+/-- The injuries through stage `n + 1` add the batch of the transition to stage `n + 1`. -/
+theorem injuriesThrough_succ (n : ℕ) :
+    injuriesThrough A r e (n + 1) = injuriesThrough A r e n ∪ injuriesAt A r e n := by
+  rw [injuriesThrough, injuriesThrough, Finset.range_add_one, Finset.biUnion_insert,
+    Finset.union_comm]
+
+/-- The injuries through stage `n` increase with `n`. -/
+theorem monotone_injuriesThrough : Monotone (injuriesThrough A r e) :=
+  fun _ _ hmn _ hx =>
+    let ⟨s, hs, hx⟩ := mem_injuriesThrough.1 hx
+    mem_injuriesThrough.2 ⟨s, hs.trans_le hmn, hx⟩
+
+/-- The injury set is the union of the injuries through the finite stages. -/
+theorem injurySet_eq_iUnion_injuriesThrough :
+    injurySet A r e = ⋃ n, (injuriesThrough A r e n : Set ℕ) := by
+  ext x
+  simp only [mem_injurySet, mem_iUnion, Finset.mem_coe, mem_injuriesThrough]
+  exact ⟨fun ⟨s, hs⟩ => ⟨s + 1, s, s.lt_succ_self, hs⟩, fun ⟨_, s, _, hs⟩ => ⟨s, hs⟩⟩
+
+/-- **A finite injury set is exhausted at a finite stage**: the injury set is finite exactly when
+it is the set of injuries through some stage. -/
+theorem finite_injurySet_iff_exists_eq_injuriesThrough :
+    (injurySet A r e).Finite ↔ ∃ n, injurySet A r e = injuriesThrough A r e n := by
+  refine ⟨fun h => ?_, fun ⟨n, hn⟩ => hn ▸ Finset.finite_toSet _⟩
+  have hdir : Directed (· ⊆ ·) fun n => (injuriesThrough A r e n : Set ℕ) :=
+    Monotone.directed_le fun _ _ hmn => Finset.coe_subset.2 (monotone_injuriesThrough hmn)
+  have hsub : (h.toFinset : Set ℕ) ⊆ ⋃ n, (injuriesThrough A r e n : Set ℕ) := by
+    rw [h.coe_toFinset, injurySet_eq_iUnion_injuriesThrough]
+  obtain ⟨n, hn⟩ := hdir.exists_mem_subset_of_finset_subset_biUnion hsub
+  rw [h.coe_toFinset] at hn
+  refine ⟨n, hn.antisymm ?_⟩
+  rw [injurySet_eq_iUnion_injuriesThrough]
+  exact subset_iUnion (fun n => (injuriesThrough A r e n : Set ℕ)) n
+
+/-! ### Extensionality in the restraint -/
+
+/-- **The injury batches of a requirement depend only on its own restraint**: requirements with
+equal restraints, in possibly different restraint data, have equal batches. -/
+theorem injuriesAt_congr {r' : ℕ → ℕ → Option ℕ} {e' : ℕ} (h : r e = r' e') :
+    injuriesAt A r e = injuriesAt A r' e' := by
+  funext s
+  simp only [injuriesAt, h]
+
+/-- The injury events of a requirement depend only on its own restraint. -/
+theorem injuryEvents_congr {r' : ℕ → ℕ → Option ℕ} {e' : ℕ} (h : r e = r' e') :
+    injuryEvents A r e = injuryEvents A r' e' := by
+  ext p
+  rw [mem_injuryEvents, mem_injuryEvents, injuriesAt_congr h]
+
+/-- The injury set of a requirement depends only on its own restraint. -/
+theorem injurySet_congr {r' : ℕ → ℕ → Option ℕ} {e' : ℕ} (h : r e = r' e') :
+    injurySet A r e = injurySet A r' e' := by
+  ext x
+  rw [mem_injurySet, mem_injurySet, injuriesAt_congr h]
+
+/-- The injury stages of a requirement depend only on its own restraint. -/
+theorem injuryStages_congr {r' : ℕ → ℕ → Option ℕ} {e' : ℕ} (h : r e = r' e') :
+    injuryStages A r e = injuryStages A r' e' := by
+  ext t
+  rw [mem_injuryStages, mem_injuryStages, injuriesAt_congr h]
+
+/-- The injuries through a stage of a requirement depend only on its own restraint. -/
+theorem injuriesThrough_congr {r' : ℕ → ℕ → Option ℕ} {e' : ℕ} (h : r e = r' e') :
+    injuriesThrough A r e = injuriesThrough A r' e' := by
+  funext n
+  rw [injuriesThrough, injuriesThrough, injuriesAt_congr h]
 
 /-! ### Comparing restraints -/
 
@@ -299,6 +406,48 @@ theorem ncard_injuryStages_le (hA : Monotone A) :
     exact Finite.of_finite_image h hinj
   rw [injuryStages_eq_image, injurySet_eq_image, hinj.ncard_image]
   exact ncard_image_le hev
+
+/-! ### One injuring number per transition -/
+
+/-- **With at most one injuring number per transition, the stage determines the event.** -/
+theorem injOn_fst_injuryEvents (h : ∀ s, (injuriesAt A r e s).card ≤ 1) :
+    InjOn Prod.fst (injuryEvents A r e) := by
+  rintro ⟨s, x⟩ hsx ⟨t, y⟩ hty (rfl : s = t)
+  simp only [mem_injuryEvents] at hsx hty
+  rw [Finset.card_le_one.1 (h s) x hsx y hty]
+
+/-- Distinct injury events lie at distinct injury stages when each transition has at most one
+injuring number. -/
+private theorem injOn_succ_fst_injuryEvents (h : ∀ s, (injuriesAt A r e s).card ≤ 1) :
+    InjOn (fun p : ℕ × ℕ => p.1 + 1) (injuryEvents A r e) :=
+  fun _ hp _ hq hpq => injOn_fst_injuryEvents h hp hq (Nat.succ_injective hpq)
+
+/-- **At most as many injuring numbers as injury stages**, when each transition has at most one
+injuring number. No monotonicity of the stages is needed: a number re-entering at a later stage
+only adds stages. The cardinalities are extended, so the statement also covers the infinite
+case. -/
+theorem encard_injurySet_le_encard_injuryStages (h : ∀ s, (injuriesAt A r e s).card ≤ 1) :
+    (injurySet A r e).encard ≤ (injuryStages A r e).encard := by
+  rw [injurySet_eq_image, injuryStages_eq_image, (injOn_succ_fst_injuryEvents h).encard_image]
+  exact encard_image_le _ _
+
+/-- **As many injury stages as injuring numbers**, when the stages are monotone and each
+transition has at most one injuring number. The cardinalities are extended, so both sets are
+finite or both infinite. -/
+theorem encard_injuryStages_eq_encard_injurySet (hA : Monotone A)
+    (h : ∀ s, (injuriesAt A r e s).card ≤ 1) :
+    (injuryStages A r e).encard = (injurySet A r e).encard := by
+  rw [injuryStages_eq_image, injurySet_eq_image, (injOn_succ_fst_injuryEvents h).encard_image,
+    (injOn_snd_injuryEvents hA).encard_image]
+
+/-- **As many injury stages as injuring numbers**, as `ncard`s, when the stages are monotone and
+each transition has at most one injuring number. Both sets are then finite together
+(`TauCeti.Priority.finite_injurySet_iff_finite_injuryStages`), and in the infinite case both
+cardinalities are `0`. -/
+theorem ncard_injuryStages_eq_ncard_injurySet (hA : Monotone A)
+    (h : ∀ s, (injuriesAt A r e s).card ≤ 1) :
+    (injuryStages A r e).ncard = (injurySet A r e).ncard := by
+  rw [ncard_def, ncard_def, encard_injuryStages_eq_encard_injurySet hA h]
 
 end Priority
 

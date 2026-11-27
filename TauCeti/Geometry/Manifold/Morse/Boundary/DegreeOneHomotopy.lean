@@ -35,7 +35,12 @@ finitely many they count the `q`-coefficients of `K ∘ ∂₀` and `∂₁ ∘ 
 `∂₁ ∘ K + K ∘ ∂₀ = G` holds, for a map `G` counting `N p q` further ends between critical points
 of equal index, exactly when between any two critical points of equal index the broken trajectories
 and the further ends are evenly many in total
-(`TauCeti.morseBoundary_comp_morseDegreeOneMap_add_eq_iff`).
+(`TauCeti.morseBoundary_comp_morseDegreeOneMap_add_eq_iff`). These counts only see the slices up
+to bijection: slice families with equally large slices have the same degree-one map
+(`TauCeti.morseDegreeOneMap_congr_ncard`), and a map restricting to bijections between the slices of
+two families matches their broken trajectories
+(`TauCeti.ncard_morseSourceBrokenDegreeOneSet_congr`,
+`TauCeti.ncard_morseTargetBrokenDegreeOneSet_congr`).
 
 **The chain homotopy.** The degree-one map raises the Morse index by one, so it restricts to maps
 from the chains of index `i` to those of index `j`, zero unless `j = i + 1`
@@ -148,6 +153,21 @@ theorem morseDegreeOneMap_single_apply (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
     morseDegreeOneMap f₀ hf₁ S (Finsupp.single p a) q = a * morseDegreeOneCoeff f₀ f₁ S p q := by
   rw [morseDegreeOneMap_apply, Finsupp.sum_single_index (zero_mul _)]
 
+/-- **The degree-one map only depends on the sizes of the slices**: two slice families `S` and
+`S'` whose slices `S p q` and `S' p q` have the same number of points whenever
+`ind q = ind p + 1` have the same degree-one map. -/
+theorem morseDegreeOneMap_congr_ncard {β : Type*} {S' : M → M → Set β} (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
+    (h : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 →
+        (S p q).ncard = (S' p q).ncard) :
+    morseDegreeOneMap f₀ hf₁ S = morseDegreeOneMap f₀ hf₁ S' := by
+  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
+  rw [morseDegreeOneMap_single_apply, morseDegreeOneMap_single_apply]
+  by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1
+  · rw [morseDegreeOneCoeff_eq_ncard hind, morseDegreeOneCoeff_eq_ncard hind, h p q hind]
+  · rw [morseDegreeOneCoeff_eq_zero_of_manifoldMorseIndex_ne_add_one hind,
+      morseDegreeOneCoeff_eq_zero_of_manifoldMorseIndex_ne_add_one hind]
+
 /-- **The degree-one map of a slice family with no slices raising the index vanishes**: if `S p q`
 is empty whenever `ind q = ind p + 1`, the degree-one map of `S` is zero. -/
 theorem morseDegreeOneMap_eq_zero_of_slice_eq_empty (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
@@ -208,6 +228,58 @@ theorem mem_morseTargetBrokenDegreeOneSet {p q : M} {x : criticalPoints 𝓘(ℝ
         manifoldMorseIndex 𝓘(ℝ, E) f₁ x.1 = manifoldMorseIndex 𝓘(ℝ, E) f₁ q + 1 ∧
           x.2.1 ∈ S p x.1 ∧ x.2.2 ∈ hX₁.morseTrajectorySlice x.1 q :=
   Iff.rfl
+
+variable {β : Type*} {S' : M → M → Set β} {g : α → β}
+
+/-- **Bijective slice families have equally many trajectories broken at the source.** If a map
+`g` restricts to bijections from every slice `S p q` onto the slice `S' p q`, then for all `p` and
+`q` the trajectories of `S` and of `S'` from `p` to `q` broken at the source are equally many. -/
+theorem ncard_morseSourceBrokenDegreeOneSet_congr (hg : ∀ p q, BijOn g (S p q) (S' p q))
+    (p q : M) :
+    (morseSourceBrokenDegreeOneSet f₁ S' hX₀ p q).ncard =
+      (morseSourceBrokenDegreeOneSet f₁ S hX₀ p q).ncard := by
+  have himage : morseSourceBrokenDegreeOneSet f₁ S' hX₀ p q =
+      Prod.map id (Prod.map id g) '' morseSourceBrokenDegreeOneSet f₁ S hX₀ p q := by
+    ext ⟨p', z, y⟩
+    simp only [mem_image, mem_morseSourceBrokenDegreeOneSet, Prod.exists, Prod.map_apply, id,
+      Prod.mk.injEq]
+    constructor
+    · rintro ⟨h₁, h₂, hz, hy⟩
+      obtain ⟨y', hy', rfl⟩ := (hg p' q).surjOn hy
+      exact ⟨p', z, y', ⟨h₁, h₂, hz, hy'⟩, rfl, rfl, rfl⟩
+    · rintro ⟨p'', z', y', ⟨h₁, h₂, hz, hy'⟩, rfl, rfl, rfl⟩
+      exact ⟨h₁, h₂, hz, (hg _ q).mapsTo hy'⟩
+  rw [himage]
+  refine InjOn.ncard_image ?_
+  rintro ⟨p₁, z₁, y₁⟩ h₁ ⟨p₂, z₂, y₂⟩ h₂ heq
+  simp only [Prod.map_apply, id, Prod.mk.injEq] at heq
+  obtain ⟨rfl, rfl, hy⟩ := heq
+  exact Prod.ext rfl (Prod.ext rfl ((hg p₁ q).injOn h₁.2.2.2 h₂.2.2.2 hy))
+
+/-- **Bijective slice families have equally many trajectories broken at the target.** If a map
+`g` restricts to bijections from every slice `S p q` onto the slice `S' p q`, then for all `p` and
+`q` the trajectories of `S` and of `S'` from `p` to `q` broken at the target are equally many. -/
+theorem ncard_morseTargetBrokenDegreeOneSet_congr (hg : ∀ p q, BijOn g (S p q) (S' p q))
+    (p q : M) :
+    (morseTargetBrokenDegreeOneSet f₀ S' hX₁ p q).ncard =
+      (morseTargetBrokenDegreeOneSet f₀ S hX₁ p q).ncard := by
+  have himage : morseTargetBrokenDegreeOneSet f₀ S' hX₁ p q =
+      Prod.map id (Prod.map g id) '' morseTargetBrokenDegreeOneSet f₀ S hX₁ p q := by
+    ext ⟨q', y, z⟩
+    simp only [mem_image, mem_morseTargetBrokenDegreeOneSet, Prod.exists, Prod.map_apply, id,
+      Prod.mk.injEq]
+    constructor
+    · rintro ⟨h₁, h₂, hy, hz⟩
+      obtain ⟨y', hy', rfl⟩ := (hg p q').surjOn hy
+      exact ⟨q', y', z, ⟨h₁, h₂, hy', hz⟩, rfl, rfl, rfl⟩
+    · rintro ⟨q'', y', z', ⟨h₁, h₂, hy', hz⟩, rfl, rfl, rfl⟩
+      exact ⟨h₁, h₂, (hg p _).mapsTo hy', hz⟩
+  rw [himage]
+  refine InjOn.ncard_image ?_
+  rintro ⟨q₁, y₁, z₁⟩ h₁ ⟨q₂, y₂, z₂⟩ h₂ heq
+  simp only [Prod.map_apply, id, Prod.mk.injEq] at heq
+  obtain ⟨rfl, hy, rfl⟩ := heq
+  exact Prod.ext rfl (Prod.ext ((hg p q₁).injOn h₁.2.2.1 h₂.2.2.1 hy) rfl)
 
 end BrokenSets
 

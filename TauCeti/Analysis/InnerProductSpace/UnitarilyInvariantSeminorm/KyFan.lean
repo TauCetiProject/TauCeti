@@ -74,7 +74,6 @@ theorem kyFan_apply (k : ℕ) (A : E →ₗ[𝕜] F) : kyFan 𝕜 E F k A = A.ky
   (rfl)
 
 /-- The nuclear seminorm is the sum of all singular values. -/
-@[simp]
 theorem nuclear_apply (A : E →ₗ[𝕜] F) : nuclear 𝕜 E F A = A.singularValues.sum fun _ s ↦ s := by
   rw [nuclear, kyFan_apply, LinearMap.kyFanSum_def, ← Fin.sum_univ_eq_sum_range]
   exact A.sum_fin_singularValues id rfl

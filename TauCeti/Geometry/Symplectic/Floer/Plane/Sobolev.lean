@@ -26,7 +26,9 @@ metric is `|dw|² / (4π² |w|²)`, so this file fixes the conformal weight
 
 `ρ(w) = (1 + |w|²)⁻¹` (`TauCeti.Floer.PSSPlane.cylindricalWeight`),
 
-a conformal weight on the whole plane (`TauCeti.Floer.PSSPlane.isWeight_cylindricalWeight`). The
+a conformal weight on the whole plane (`TauCeti.Floer.PSSPlane.isWeight_cylindricalWeight`), whose
+inverse `ρ⁻¹ = 1 + |w|²` (`TauCeti.Floer.PSSPlane.inv_cylindricalWeight`) is continuous
+(`TauCeti.Floer.PSSPlane.continuous_inv_cylindricalWeight`). The
 Sobolev space `TauCeti.ConformalSobolev.H1 V univ ρ` of `TauCeti.Analysis.Sobolev.Conformal` is
 then the completion of the compactly supported sections in the norm
 `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)`, which is the `W^{1,2}` norm of the plane on every disc and agrees
@@ -116,6 +118,21 @@ theorem isWeight_cylindricalWeight : ConformalSobolev.IsWeight univ cylindricalW
     rw [cylindricalWeight_apply]
     positivity
 
+/-- The cylindrical weight is continuous. -/
+theorem continuous_cylindricalWeight : Continuous cylindricalWeight :=
+  continuousOn_univ.1 isWeight_cylindricalWeight.continuousOn
+
+/-- The inverse of the cylindrical weight at `w` is `1 + |w|²`. -/
+@[simp]
+theorem inv_cylindricalWeight (z : ℝ × ℝ) :
+    (cylindricalWeight z)⁻¹ = 1 + ‖Complex.equivRealProdCLM.symm z‖ ^ 2 := by
+  rw [cylindricalWeight_apply, inv_inv]
+
+/-- The inverse `ρ⁻¹ = 1 + |w|²` of the cylindrical weight is continuous. -/
+theorem continuous_inv_cylindricalWeight : Continuous fun z ↦ (cylindricalWeight z)⁻¹ := by
+  simp only [inv_cylindricalWeight]
+  fun_prop
+
 /-- The inverse square root of the cylindrical weight at `w` is at most `1 + |w|`. -/
 theorem inv_sqrt_cylindricalWeight_le (z : ℝ × ℝ) :
     (√(cylindricalWeight z))⁻¹ ≤ 1 + ‖Complex.equivRealProdCLM.symm z‖ := by
@@ -159,15 +176,6 @@ private theorem setIntegral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : �
   set band := {s : ℝ | R < p.endSign * s} ×ˢ Ico (0 : ℝ) 1
   have hband : MeasurableSet band :=
     (measurableSet_lt measurable_const (measurable_id.const_mul _)).prod measurableSet_Ico
-  have himage : realChart p.cylindricalEndLift '' band =
-      {z : ℝ × ℝ | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖} := by
-    ext z
-    constructor
-    · rintro ⟨ζ, hζ, rfl⟩
-      exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ.1
-    · intro hz
-      obtain ⟨ζ, hζ1, hζ2, hζz⟩ := p.exists_realChart_cylindricalEndLift_eq hz
-      exact ⟨ζ, ⟨hζ1, hζ2⟩, hζz⟩
   -- The lift of `ξ` vanishes far out on the end, so its energy density is integrable there.
   obtain ⟨N, hN⟩ := p.exists_eventuallyEq_zero_comp_realChart_cylindricalEndLift hξc
   obtain ⟨a, b, -, hab, -, -⟩ := exists_Icc_eq_preimage_endSign_mul p (le_max_left R N)
@@ -175,7 +183,8 @@ private theorem setIntegral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : �
     (measurableSet_lt measurable_const (measurable_id.const_mul _)) fun ζ hζ hζab ↦
       hN ζ ((le_max_right R N).trans_lt
         (not_le.1 fun h ↦ hζab ((hab ζ.1).2 ⟨le_of_lt hζ, h⟩)))).const_mul (4 * π ^ 2)
-  rw [← himage, integral_image_eq_integral_of_eq_abs_det_smul hband
+  rw [← p.image_realChart_cylindricalEndLift_prod_Ico,
+    integral_image_eq_integral_of_eq_abs_det_smul hband
     ((p.injOn_realChart_cylindricalEndLift 0).mono
       (prod_mono (subset_univ _) (by rw [zero_add])))
     (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
@@ -214,8 +223,7 @@ theorem integral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : ℝ × ℝ �
   set DR := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R)}
   have hDR : IsCompact DR := isCompact_setOf_norm_equivRealProdCLM_symm_le _
   have := hξ.continuous_fderiv one_ne_zero
-  have hρc : Continuous cylindricalWeight :=
-    continuousOn_univ.1 isWeight_cylindricalWeight.continuousOn
+  have hρc := continuous_cylindricalWeight
   have hGc : Continuous fun z ↦ cylindricalWeight z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 := by fun_prop
   -- The weighted density vanishes off the support of `ξ`.

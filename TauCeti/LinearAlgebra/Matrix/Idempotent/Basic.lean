@@ -14,6 +14,9 @@ public import TauCeti.Data.Matrix.Block
 public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
+public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Algebra.Ring.Pi
+import TauCeti.LinearAlgebra.End.Idempotent
 
 import TauCeti.Data.Matrix.Basic
 
@@ -53,14 +56,19 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_submatrix`, `Matrix.idempotentEquivalent_conj`,
   `Matrix.IdempotentEquivalent.fromBlocks`, `Matrix.IdempotentEquivalent.map`: invariance under
   relabelling, conjugation, block sums and ring homomorphisms.
+* `Matrix.idempotentEquivalent_prod_iff`, `Matrix.idempotentEquivalent_pi_iff`: over a product
+  of semirings, equivalence of idempotents is checked componentwise.
 * `Matrix.idempotentEquivalent_zero_iff`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left`,
+  `IsIdempotentElem.idempotentEquivalent_fromBlocks_fromBlocks_zero`,
   `Matrix.idempotentEquivalent_self_iff`, `Matrix.idempotentEquivalent_single_one`,
   `Matrix.idempotentEquivalent_fromBlocks_one_sub`: zero matrices, zero-block padding,
   self-equivalence, diagonal matrix units, and `f ⊕ (1 - f) ∼ 1`.
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
+* `Matrix.BlockTriangular.bijOn_range_blockDiagonalPart`: a block triangular idempotent matrix
+  maps the range of its block-diagonal part bijectively onto its own range.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
 * `IsIdempotentElem.linearMap_apply_eq_vecMul`: a linear map out of this range is right
   multiplication by the matrix of its values on the rows.
@@ -101,6 +109,13 @@ theorem IsIdempotentElem.matrix_prodEquiv_symm {e₁ : Matrix ι ι A} {e₂ : M
     (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
     IsIdempotentElem ((Matrix.prodEquiv ι ι A B).symm (e₁, e₂)) :=
   IsIdempotentElem.map (e := (e₁, e₂)) (Prod.ext he₁.eq he₂.eq) (Matrix.prodRingEquiv ι A B).symm
+
+/-- An idempotent matrix `e` over a factor `R j` of a product, placed in that factor by
+`Pi.single j` entrywise, is idempotent. -/
+theorem IsIdempotentElem.matrix_map_piSingle {J : Type*} [DecidableEq J] {R : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (R j)] (j : J) {e : Matrix ι ι (R j)}
+    (he : IsIdempotentElem e) : IsIdempotentElem (e.map (Pi.single j : R j → ∀ k, R k)) := by
+  simpa using he.matrix_map (NonUnitalRingHom.single R j)
 
 end NonUnitalNonAssocSemiring
 
@@ -283,6 +298,23 @@ theorem idempotentEquivalent_prod_iff {B : Type*} [NonUnitalNonAssocSemiring B]
   apply Matrix.mul_eq_of_map_fst_of_map_snd <;>
   simp only [Matrix.map_fst_prodEquiv_symm, Matrix.map_snd_prodEquiv_symm, h₁, h₂]
 
+/-- **Products of families of semirings.** Idempotent matrices over `Π j, B j` are equivalent
+exactly when all their components are: the rectangular matrices witnessing the component
+equivalences assemble to a witness over the product. -/
+theorem idempotentEquivalent_pi_iff {J : Type*} {B : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (B j)] {e : Matrix ι ι (∀ j, B j)}
+    {f : Matrix κ κ (∀ j, B j)} :
+    IdempotentEquivalent e f ↔ ∀ j, IdempotentEquivalent (e.map (· j)) (f.map (· j)) := by
+  refine ⟨fun h j ↦ h.map (Pi.evalNonUnitalRingHom B j), fun h ↦ ?_⟩
+  choose x y hxy hyx hex hxf hfy hye using h
+  -- The witnesses over the product are assembled from the component witnesses.
+  have hx (j : J) : (Matrix.piEquiv.symm x).map (· j) = x j := by
+    rw [← Matrix.piEquiv_apply, Equiv.apply_symm_apply]
+  have hy (j : J) : (Matrix.piEquiv.symm y).map (· j) = y j := by
+    rw [← Matrix.piEquiv_apply, Equiv.apply_symm_apply]
+  refine ⟨Matrix.piEquiv.symm x, Matrix.piEquiv.symm y, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    exact Matrix.mul_eq_of_forall_map_apply fun j ↦ by simp only [*]
+
 /-- Zero matrices of any two finite sizes are equivalent idempotents. -/
 theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
     IdempotentEquivalent (0 : Matrix m m A) (0 : Matrix n n A) :=
@@ -326,6 +358,20 @@ theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left (m : T
   rw [hEq]
   simpa using (he.idempotentEquivalent_fromBlocks_zero_right m).submatrix
     (Equiv.sumComm m ι) (Equiv.refl ι)
+
+/-- Padding an idempotent matrix `e` to `(0 ⊕ e) ⊕ 0`, by an upper-left and then a lower-right
+zero block, preserves its equivalence class. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_fromBlocks_zero (m n : Type*)
+    [Fintype m] [Fintype n] {e : Matrix ι ι A} (he : IsIdempotentElem e) :
+    IdempotentEquivalent
+      (fromBlocks (fromBlocks (0 : Matrix m m A) 0 0 e) 0 0 (0 : Matrix n n A)) e := by
+  let σ : (m ⊕ ι) ⊕ n ≃ ι ⊕ (m ⊕ n) :=
+    ((Equiv.sumComm m ι).sumCongr (Equiv.refl n)).trans (Equiv.sumAssoc ι m n)
+  have hEq : fromBlocks (fromBlocks (0 : Matrix m m A) 0 0 e) 0 0 (0 : Matrix n n A) =
+      (fromBlocks e 0 0 (0 : Matrix (m ⊕ n) (m ⊕ n) A)).submatrix σ σ := by
+    ext ((_ | _) | _) ((_ | _) | _) <;> simp [σ]
+  rw [hEq]
+  simpa using (he.idempotentEquivalent_fromBlocks_zero_right (m ⊕ n)).submatrix σ (Equiv.refl ι)
 
 end NonUnitalNonAssocSemiring
 
@@ -530,6 +576,43 @@ theorem nonempty_linearEquiv_range_mulVecBilin_iff {e : Matrix ι ι A} {f : Mat
 end Matrix
 
 end Idempotent
+
+namespace Matrix
+
+variable {m α : Type*} [LinearOrder α] {b : m → α}
+
+/-- A block triangular idempotent matrix maps the range of its block-diagonal part bijectively
+onto its own range: the two idempotents differ by a matrix strictly raising the rank, which is
+nilpotent after multiplication by block triangular matrices on both sides. -/
+theorem BlockTriangular.bijOn_range_blockDiagonalPart {R : Type*} [CommRing R] [Fintype m]
+    {M : Matrix m m R} (hM : M.BlockTriangular b) (hMM : IsIdempotentElem M) :
+    Set.BijOn M.mulVecLin (LinearMap.range (M.blockDiagonalPart b).mulVecLin)
+      (LinearMap.range M.mulVecLin) := by
+  classical
+  set M₀ := M.blockDiagonalPart b
+  have hM₀ : M₀.BlockTriangular b := blockTriangular_blockDiagonalPart M
+  have hM₀M₀ : IsIdempotentElem M₀ := hM.isIdempotentElem_blockDiagonalPart hMM
+  have hN := hM.sub_blockDiagonalPart_apply_eq_zero_of_le
+  have hnil₁ : _root_.IsNilpotent (M₀ * M * M₀ - M₀) := by
+    have : M₀ * M * M₀ - M₀ = M₀ * (M - M₀) * M₀ := by
+      rw [mul_sub, sub_mul, hM₀M₀.eq, hM₀M₀.eq]
+    rw [this]
+    exact isNilpotent_of_apply_eq_zero_of_le
+      (hM₀.mul_apply_eq_zero_of_le' (hM₀.mul_apply_eq_zero_of_le hN))
+  have hnil₂ : _root_.IsNilpotent (M * M₀ * M - M) := by
+    have : M * M₀ * M - M = -(M * (M - M₀) * M) := by
+      rw [mul_sub, sub_mul, hMM.eq, hMM.eq, neg_sub]
+    rw [this]
+    exact (isNilpotent_of_apply_eq_zero_of_le
+      (hM.mul_apply_eq_zero_of_le' (hM.mul_apply_eq_zero_of_le hN))).neg
+  have hlin (N : Matrix m m R) : toLinAlgEquiv' N = N.mulVecLin :=
+    LinearMap.ext fun v ↦ by rw [toLinAlgEquiv'_apply, mulVecLin_apply]
+  rw [← hlin, ← hlin]
+  refine LinearMap.IsIdempotentElem.bijOn_range_of_isNilpotent (hMM.map _) (hM₀M₀.map _) ?_ ?_
+  · simpa only [map_sub, map_mul] using hnil₁.map (toLinAlgEquiv' (R := R) (n := m))
+  · simpa only [map_sub, map_mul] using hnil₂.map (toLinAlgEquiv' (R := R) (n := m))
+
+end Matrix
 
 namespace Module.Finite
 

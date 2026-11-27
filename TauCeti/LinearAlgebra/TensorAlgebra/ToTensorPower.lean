@@ -5,57 +5,82 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
-import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 
 /-!
-# Tensor algebras and tensor powers
+# Tensor powers inside the tensor algebra and its grading
 
-This file records `TensorAlgebra.toDirectSum_toTensorAlgebra`, `TensorAlgebra.ofDirectSum_of`,
-and `TensorPower.toTensorAlgebra_mem_range_pow`, bridging `TensorPower.toTensorAlgebra` with
-`TensorAlgebra.toDirectSum`, `TensorAlgebra.ofDirectSum`, and powers of `(TensorAlgebra.ι R).range`.
+Mathlib identifies the tensor algebra `TensorAlgebra R M` with the direct sum `⨁ n, ⨂[R]^n M` of
+the tensor powers (`TensorAlgebra.toDirectSum`, `TensorAlgebra.ofDirectSum`), and separately
+grades it by the powers `range ι ^ n` of the image of `TensorAlgebra.ι`
+(`TensorAlgebra.gradedAlgebra`). This file records how the two descriptions match:
+`TensorPower.toTensorAlgebra` lands in the `n`-th graded piece, it is the degree-`n` part of
+`ofDirectSum`, and the homogeneous components of a tensor for `TensorAlgebra.gradedAlgebra` are
+the components of `TensorAlgebra.toDirectSum`.
+
+## Main results
+
+* `TensorAlgebra.ofDirectSum_of`, `TensorAlgebra.toDirectSum_toTensorAlgebra`: the identification
+  with the direct sum restricts to `TensorPower.toTensorAlgebra` in each degree.
+* `TensorPower.toTensorAlgebra_mem_range_ι_pow`: a degree-`n` tensor lies in `range ι ^ n`.
+* `TensorAlgebra.coe_decompose_eq_toTensorAlgebra_toDirectSum`: the degree-`n` component for
+  `TensorAlgebra.gradedAlgebra` is the image of the degree-`n` component of `toDirectSum`.
 -/
 
 public section
 
+open DirectSum
 open scoped TensorProduct
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 namespace TensorAlgebra
 
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- `TensorAlgebra.ofDirectSum` sends a single component in degree `n` to
-`TensorPower.toTensorAlgebra`. -/
+/-- On the degree-`n` summand, `TensorAlgebra.ofDirectSum` is `TensorPower.toTensorAlgebra`. -/
 @[simp]
-theorem ofDirectSum_of {n : ℕ} (t : ⨂[R]^n M) :
-    ofDirectSum (DirectSum.of (fun k ↦ ⨂[R]^k M) n t) = TensorPower.toTensorAlgebra t :=
-  DirectSum.toAddMonoid_of (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) n t
+theorem ofDirectSum_of {n : ℕ} (x : ⨂[R]^n M) :
+    ofDirectSum (of _ n x) = TensorPower.toTensorAlgebra x :=
+  DirectSum.toAddMonoid_of (fun _ ↦ LinearMap.toAddMonoidHom TensorPower.toTensorAlgebra) _ _
 
-/-- `TensorAlgebra.toDirectSum` sends an element of the `n`-th tensor power to the `n`-th
-component of the direct sum. -/
+/-- A degree-`n` tensor, viewed in the tensor algebra, corresponds under
+`TensorAlgebra.toDirectSum` to the degree-`n` summand. -/
 @[simp]
-theorem toDirectSum_toTensorAlgebra {n : ℕ} (t : ⨂[R]^n M) :
-    toDirectSum (TensorPower.toTensorAlgebra t) =
-      DirectSum.of (fun k ↦ ⨂[R]^k M) n t := by
-  rw [← ofDirectSum_of t, toDirectSum_ofDirectSum]
+theorem toDirectSum_toTensorAlgebra {n : ℕ} (x : ⨂[R]^n M) :
+    toDirectSum (TensorPower.toTensorAlgebra x) = of _ n x := by
+  rw [← ofDirectSum_of, toDirectSum_ofDirectSum]
 
 end TensorAlgebra
 
-namespace TensorPower
+open TensorAlgebra
 
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+/-- A degree-`n` tensor lies in the `n`-th piece `range ι ^ n` of the grading
+`TensorAlgebra.gradedAlgebra` of the tensor algebra. -/
+theorem TensorPower.toTensorAlgebra_mem_range_ι_pow {n : ℕ} (x : ⨂[R]^n M) :
+    TensorPower.toTensorAlgebra x ∈ LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M) ^ n := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r g =>
+    rw [map_smul, TensorPower.toTensorAlgebra_tprod, TensorAlgebra.tprod_apply]
+    refine Submodule.smul_mem _ r ?_
+    simpa using SetLike.list_prod_ofFn_mem_graded
+      (A := fun n : ℕ ↦ LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M) ^ n) (fun _ ↦ 1)
+      (fun k ↦ ι R (g k)) fun k ↦ by simp
+  | add x y hx hy => rw [map_add]; exact add_mem hx hy
 
-/-- The image of `TensorPower.toTensorAlgebra` on the `n`-th tensor power lies in
-`(TensorAlgebra.ι R).range ^ n`. -/
-theorem toTensorAlgebra_mem_range_pow {n : ℕ} (t : ⨂[R]^n M) :
-    TensorPower.toTensorAlgebra t ∈ (TensorAlgebra.ι R : M →ₗ[R] TensorAlgebra R M).range ^ n := by
-  induction t using PiTensorProduct.induction_on with
-  | smul_tprod r x =>
-    rw [map_smul]; refine Submodule.smul_mem _ r ?_
-    simpa [TensorPower.toTensorAlgebra_tprod, TensorAlgebra.tprod_apply] using
-      SetLike.list_prod_ofFn_mem_graded (fun _ : Fin n ↦ (1 : ℕ))
-        (fun i ↦ TensorAlgebra.ι R (x i))
-        (fun i ↦ by simpa only [pow_one] using LinearMap.mem_range_self _ (x i))
-  | add _ _ hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
+namespace TensorAlgebra
 
-end TensorPower
+/-- The homogeneous components of a tensor for the grading `TensorAlgebra.gradedAlgebra` are the
+images in the tensor algebra of the components of `TensorAlgebra.toDirectSum`. -/
+theorem coe_decompose_eq_toTensorAlgebra_toDirectSum (t : TensorAlgebra R M) (n : ℕ) :
+    (decompose (fun n : ℕ ↦ LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M) ^ n) t n :
+      TensorAlgebra R M) = TensorPower.toTensorAlgebra (toDirectSum t n) := by
+  classical
+  conv_lhs => rw [← ofDirectSum_toDirectSum t, ← sum_support_of (toDirectSum t)]
+  rw [map_sum, decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+  simp_rw [ofDirectSum_of]
+  rw [Finset.sum_eq_single n
+    (fun m _ hmn ↦ decompose_of_mem_ne _ (TensorPower.toTensorAlgebra_mem_range_ι_pow _) hmn)
+    (fun hn ↦ by simp [DFinsupp.notMem_support_iff.1 hn])]
+  exact decompose_of_mem_same _ (TensorPower.toTensorAlgebra_mem_range_ι_pow _)
+
+end TensorAlgebra

@@ -64,7 +64,9 @@ the image point.
   (`TauCeti.BoundaryTangentCorr.eq_zero_iff`).
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 * `TauCeti.exists_boundaryTangentCorr`, `TauCeti.exists_boundaryTangentCorr_symm`: under a
-  diffeomorphism, every tangent vector of either boundary has a corresponding one.
+  diffeomorphism, every tangent vector of either boundary has a corresponding one, and
+  `TauCeti.boundaryTangentMap`: the correspondence is a linear isomorphism `T_q∂M ≃ T_{Φ q}∂M'`
+  (`TauCeti.boundaryTangentCorr_iff_eq_boundaryTangentMap`).
 * `TauCeti.mfderiv_mem_boundaryTangentSpace_iff`,
   `TauCeti.eventually_mpullback_mem_boundaryTangentSpace`: a diffeomorphism sends `v` into
   `T_{Φ q}∂M'` exactly when `v ∈ T_q∂M`, so pullbacks of fields tangent to `∂M'` are tangent to
@@ -295,6 +297,24 @@ theorem mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPoin
   exact ((isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg q v).resolve_left
     h₁).resolve_right h₂
 
+/-- Adding a boundary tangent vector preserves `IsOutwardPointing`, since boundary tangent vectors
+have zero constrained coordinate. -/
+theorem isOutwardPointing_add_mfderiv_subtypeVal_boundary [IsManifold (𝓡∂ (n + 1)) 1 M]
+    (x : (𝓡∂ (n + 1)).boundary M)
+    (v : TangentSpace (𝓡∂ (n + 1)) (x : M)) (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :
+    IsOutwardPointing (x : M) (v + mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) ↔ IsOutwardPointing (x : M) v := by
+  rw [isOutwardPointing_iff, isOutwardPointing_iff, and_iff_right x.property,
+    and_iff_right x.property, map_add, map_add, PiLp.add_apply]
+  have hz : (NormedSpace.fromTangentSpace (𝕜 := ℝ) (extChartAt (𝓡∂ (n + 1)) (x : M) (x : M))
+      (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+        (extChartAt (𝓡∂ (n + 1)) (x : M)) (x : M)
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w))) 0 = 0 := by
+    rw [mfderiv_subtypeVal_boundary, mfderiv_extChartAt_self]
+    exact euclideanHalfSpaceBoundaryParam_apply_zero w
+  rw [hz, add_zero]
+
 /-- The frontier of the open half-space of outward vectors at a boundary point is the tangent
 space of the boundary. -/
 theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
@@ -487,6 +507,56 @@ theorem exists_boundaryTangentCorr_symm {k : WithTop ℕ∞} (hk : k ≠ 0)
   rw [boundaryTangentSpace_def, LinearMap.mem_range] at hv
   obtain ⟨u, rfl⟩ := hv
   exact ⟨u, hu.symm⟩
+
+/-- The **boundary tangent map** of a diffeomorphism `Φ` of manifolds with boundary, of class
+`C^k` with `k ≠ 0`, from `q ∈ ∂M` to `q' = Φ q ∈ ∂M'`: the linear isomorphism `T_q∂M ≃ T_{q'}∂M'`
+sending `u` to the unique `u'` with `dι' u' = dΦ (dι u)`
+(`TauCeti.boundaryTangentCorr_iff_eq_boundaryTangentMap`). -/
+def boundaryTangentMap {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M)
+    (q' : (𝓡∂ (n + 1)).boundary M') (h : Φ q = q') :
+    TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q ≃ₗ[ℝ]
+      TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q' :=
+  -- `dΦ ∘ dι` lands in `T_{q'}∂M'`; read it back through `dι'`. Both tangent spaces are
+  -- `EuclideanSpace ℝ (Fin n)`, so their dimensions agree by `rfl`.
+  LinearMap.linearEquivOfInjective
+    ((boundaryTangentEquiv q').symm.toLinearMap ∘ₗ
+      ((mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q).toLinearMap ∘ₗ
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q).toLinearMap).codRestrict
+        (boundaryTangentSpace q') fun u ↦ by
+          rw [show q' = ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ from
+            Subtype.ext h.symm]
+          exact (mfderiv_mem_boundaryTangentSpace_iff hk Φ q).2
+            (mfderiv_subtypeVal_mem_boundaryTangentSpace q u))
+    ((boundaryTangentEquiv q').symm.injective.comp fun _ _ huv ↦
+      injective_mfderiv_subtypeVal_boundary q
+        ((Φ.isInvertible_mfderiv hk).injective (congrArg Subtype.val huv)))
+    rfl
+
+/-- Under a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`, every
+`u ∈ T_q∂M` corresponds to its image under the boundary tangent map. -/
+theorem boundaryTangentCorr_boundaryTangentMap {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M)
+    (q' : (𝓡∂ (n + 1)).boundary M') (h : Φ q = q')
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    BoundaryTangentCorr Φ q q' u (boundaryTangentMap hk Φ q q' h u) := by
+  rw [BoundaryTangentCorr, ← coe_boundaryTangentEquiv_apply]
+  exact congrArg Subtype.val ((boundaryTangentEquiv q').apply_symm_apply _)
+
+/-- Under a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`, the vector
+of `T_{q'}∂M'`, `q' = Φ q`, corresponding to `u ∈ T_q∂M` is exactly its image under the boundary
+tangent map. -/
+theorem boundaryTangentCorr_iff_eq_boundaryTangentMap {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') {q : (𝓡∂ (n + 1)).boundary M}
+    {q' : (𝓡∂ (n + 1)).boundary M'} (h : Φ q = q')
+    {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
+    {u' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q'} :
+    BoundaryTangentCorr Φ q q' u u' ↔ u' = boundaryTangentMap hk Φ q q' h u := by
+  refine ⟨fun hu ↦ injective_mfderiv_subtypeVal_boundary q' ?_, fun hu ↦ ?_⟩
+  · exact hu.trans (boundaryTangentCorr_boundaryTangentMap hk Φ q q' h u).symm
+  · rw [hu]
+    exact boundaryTangentCorr_boundaryTangentMap hk Φ q q' h u
 
 end Naturality
 

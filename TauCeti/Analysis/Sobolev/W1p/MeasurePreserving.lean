@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Dynamics.Ergodic.MeasurePreserving
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
@@ -54,6 +55,10 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   (`TauCeti.W1p.norm_gradient_compAffineIsometryEquivL`), and it does not increase the norm. It
   preserves and reflects zero boundary values
   (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
+* `TauCeti.W1p.eLpNorm_value_compAffineIsometryEquivL_sub` and
+  `TauCeti.W1p.setAverage_value_compAffineIsometryEquivL`: precomposition with an affine isometry
+  preserves the `Lᵖ` distance of the value from a constant, and the mean over a subset of the
+  domain.
 * `TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`: compactness of the value map
   `W^{1,p} → Lᵖ` transfers along an affine isometry.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
@@ -346,6 +351,34 @@ theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.value_compAffineIsometryEquivL_ae g hUV u)]
   exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp)
 
+/-- Precomposition with an affine isometry preserves the `Lᵖ` distance of the value from a
+constant: `‖u ∘ g - c‖_{Lᵖ(U)} = ‖u - c‖_{Lᵖ(V)}`. -/
+theorem W1p.eLpNorm_value_compAffineIsometryEquivL_sub (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) (u : W1p volume V p) (c : ℝ) :
+    eLpNorm (fun x => W1p.value (W1p.compAffineIsometryEquivL g hUV u) x - c) p
+        (volume.restrict U) =
+      eLpNorm (fun y => W1p.value u y - c) p (volume.restrict V) := by
+  have hmp := g.measurePreserving.restrict_of_preimage_eq V.isOpen.measurableSet hUV
+  have h : (fun x => W1p.value (W1p.compAffineIsometryEquivL g hUV u) x - c) =ᵐ[volume.restrict U]
+      (fun y => W1p.value u y - c) ∘ g :=
+    (W1p.value_compAffineIsometryEquivL_ae g hUV u).mono fun x hx => by
+      simp only [hx, Function.comp_apply]
+  rw [eLpNorm_congr_ae h]
+  exact eLpNorm_comp_measurePreserving ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const)
+    hmp
+
+/-- Precomposition with an affine isometry preserves means: for `S ⊆ V`, the mean of `u ∘ g` over
+`g⁻¹(S)` is the mean of `u` over `S`. -/
+theorem W1p.setAverage_value_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) (u : W1p volume V p) {S : Set F'} (hS : S ⊆ V) :
+    ⨍ x in g ⁻¹' S, W1p.value (W1p.compAffineIsometryEquivL g hUV u) x =
+      ⨍ y in S, W1p.value u y := by
+  have hSU : g ⁻¹' S ⊆ U := hUV ▸ preimage_mono hS
+  rw [average_congr (ae_restrict_of_ae_restrict_of_subset hSU
+    (W1p.value_compAffineIsometryEquivL_ae g hUV u))]
+  exact setAverage_comp_preimage_of_map_eq_smul (e := g.toHomeomorph.toMeasurableEquiv)
+    (by rw [one_smul]; exact g.measurePreserving.map_eq) one_ne_zero ENNReal.one_ne_top _ S
+
 /-- Rigid changes of coordinates preserve zero Sobolev boundary values. -/
 theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
@@ -407,9 +440,9 @@ theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL (e : F ≃ₗᵢ
     (hUV : (U : Set F) = e ⁻¹' V) (u : W1p volume V p) (φ : 𝓓(U, ℝ)) :
     ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV u) y,
       ∇ (φ : F → ℝ) y⟫_ℝ =
-      ∫ x in V, ⟪W1p.gradient u x, ∇ (e.toContinuousLinearEquiv.transportTestFunction
+      ∫ x in V, ⟪W1p.gradient u x, ∇ (e.toContinuousLinearEquiv.transportTestFunction ℝ
         (mapsTo_iff_subset_preimage.2 hUV.subset) φ : F' → ℝ) x⟫_ℝ := by
-  set ψ := e.toContinuousLinearEquiv.transportTestFunction
+  set ψ := e.toContinuousLinearEquiv.transportTestFunction ℝ
     (mapsTo_iff_subset_preimage.2 hUV.subset) φ with hψ
   -- Pointwise, both integrands are `Dφ(y) (e⁻¹ ∇u(e y))`.
   have hpt : ∀ y, ⟪e.symm (W1p.gradient u (e y)), ∇ (φ : F → ℝ) y⟫_ℝ =
