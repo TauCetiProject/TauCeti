@@ -66,8 +66,10 @@ theorem coefficientMatrix_baseChange_map_splittingBialgEquiv :
   let f : ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
     (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
   let _ := Comodule.Corestrict (R := ℂ) (C := ℂ ⊗[ℝ] S) (M := ℂ ⊗[ℝ] V) f
-  change (Comodule.coefficientMatrix (C := ℂ ⊗[ℝ] S) (e.baseChange ℂ)).map f = _
-  rw [← Comodule.coefficientMatrix_corestrict]
+  -- `Comodule.coefficientMatrix_corestrict` is stated for a coalgebra map; as functions, `f` is
+  -- the splitting itself
+  have hf : ⇑f = ⇑splittingBialgEquiv := rfl
+  rw [← hf, ← Comodule.coefficientMatrix_corestrict]
   refine Matrix.ext fun i j ↦ ?_
   rw [Hodge.HodgeStructureOn.splitCoordinateMatrix_apply, Comodule.coefficientMatrix_apply,
     Comodule.matrixCoefficient_def]
