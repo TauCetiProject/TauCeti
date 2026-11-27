@@ -29,14 +29,10 @@ namespace TauCeti.Examples.AdelicDeterminant
 variable (K : Type*) [Field K] [NumberField K]
 
 /-- The adelic determinant point map of `GL₁` is continuous. -/
-example : Continuous (GeneralLinear.determinantPoints K 1 (A := AdeleRing (𝓞 K) K)) := by
-  have : ⇑(GeneralLinear.determinantPoints K 1 (A := AdeleRing (𝓞 K) K)) =
-      BialgHom.mapDomain (GeneralLinear.determinantCoordinateMap K 1).hom := by
-    funext f
+example : Continuous (GeneralLinear.determinantPoints K 1 (A := AdeleRing (𝓞 K) K)) :=
+  (BialgHom.continuous_mapDomain (GeneralLinear.determinantCoordinateMap K 1).hom).congr fun f ↦ by
     ext x
     rw [GeneralLinear.determinantPoints_apply_apply, BialgHom.mapDomain_apply_apply]
-  rw [this]
-  exact BialgHom.continuous_mapDomain _
 
 /-- For `GL₁`, the `𝔾ₘ` unit of the adelic determinant of a point is the idele given by the
 entry of its one-by-one matrix. -/
