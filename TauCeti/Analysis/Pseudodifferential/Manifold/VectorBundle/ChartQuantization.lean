@@ -64,6 +64,8 @@ of `a`, localized by cutoffs equal to `1` on the supports of `φ` and `ψ`, is
 
 ## Main results
 
+* `OpenPartialHomeomorph.isSectionProperlySupported_sectionChartQuantization`: the chart
+  quantization is properly supported.
 * `OpenPartialHomeomorph.sectionChartQuantization_eq_sum`: the chart quantization as a sum of
   scalar chart quantizations of the entries of the symbol.
 * `OpenPartialHomeomorph.sectionChartQuantization_mem_sectionClassicalPseudodifferentialOperators`:
@@ -311,6 +313,20 @@ theorem sectionChartQuantization_eq_zero {s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpa
   ext x
   rw [sectionChartQuantization_apply, hv, quantizeSchwartzValue_zero_right, smul_zero, map_zero,
     ContMDiffSection.coe_zero, Pi.zero_apply]
+
+/-- **Chart quantizations between bundles are properly supported.** For every compact set, one may
+take `K' = e⁻¹(supp φ) ∪ e⁻¹(supp ψ)`: the output is always supported in `e⁻¹(supp φ)`, and it
+vanishes when the input vanishes near `e⁻¹(supp ψ)`. -/
+theorem isSectionProperlySupported_sectionChartQuantization :
+    IsSectionProperlySupported (e.sectionChartQuantization he t t' φ ψ hφ hψ a) :=
+  isSectionProperlySupported_iff.2 fun _ _ ↦ ⟨e.symm '' tsupport φ ∪ e.symm '' tsupport ψ,
+    (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
+    fun s _ ↦ (tsupport_sectionChartQuantization_subset he t t' φ ψ hφ hψ a s).trans
+      subset_union_left,
+    fun s hs p _ ↦ by
+      rw [sectionChartQuantization_eq_zero he t t' φ ψ hφ hψ a fun q hq ↦
+        (hs.filter_mono (nhdsSet_mono subset_union_right)).self_of_nhdsSet q hq,
+        ContMDiffSection.coe_zero, Pi.zero_apply]⟩
 
 /-- **The chart quantization in bases.** Let `(bᵢ)` be a basis of `V` and `(cⱼ)` a basis of `W`,
 and let `ρ` and `ρ'` be real smooth functions on `M`, supported in the base sets of `t` and `t'`

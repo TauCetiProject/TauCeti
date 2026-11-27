@@ -10,7 +10,7 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Existence
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!

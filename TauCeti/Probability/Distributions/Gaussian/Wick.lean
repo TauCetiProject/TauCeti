@@ -14,14 +14,17 @@ public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 # Wick--Isserlis formula for Gaussian mixed moments
 
 The centered mixed moment of finitely many linear observables of a Gaussian measure is the
-sum, over perfect matchings of the positions, of the product of the covariances along the
-matching. The formula is indexed by positions, so observables and coordinates may repeat. It
+sum, over perfect matchings of the positions, of the product of the centered bilinear
+second moments along the matching. Real-valued observables give the covariance formula.
+The formula is indexed by positions, so observables and coordinates may repeat. It
 also covers empty products, odd degrees, and singular positive-semidefinite covariances.
 
 ## Main results
 
-* `ProbabilityTheory.IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching` is the
-  abstract Wick--Isserlis formula for linear observables of a Gaussian measure.
+* `ProbabilityTheory.IsGaussian.integral_prod_sub_clm_eq_sum_perfectMatching` gives the
+  pairing formula for real or complex real-linear observables of a Gaussian measure.
+* `ProbabilityTheory.IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching` states the
+  real-valued formula in terms of covariance.
 * `ProbabilityTheory.HasGaussianLaw.integral_prod_sub_dual_eq_sum_perfectMatching` transfers
   the formula to linear observables of a Gaussian random variable on an arbitrary measurable
   space.
@@ -56,32 +59,31 @@ namespace ProbabilityTheory.IsGaussian
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- **Wick--Isserlis formula.** A centered mixed moment of finitely many linear observables of
-a Gaussian measure is the sum of covariance products over perfect matchings of the positions.
-The statement includes empty and odd position types. -/
-theorem integral_prod_sub_dual_eq_sum_perfectMatching (μ : Measure E) [IsGaussian μ]
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (L : ι → StrongDual ℝ E) :
+/-- **Wick–Isserlis formula.** The centered product moment of real or complex real-linear
+observables is the sum of bilinear centered second-moment products over perfect matchings.
+The pair coefficients use ordinary multiplication, without complex conjugation. -/
+theorem integral_prod_sub_clm_eq_sum_perfectMatching (μ : Measure E) [IsGaussian μ]
+    {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜] (L : ι → E →L[ℝ] 𝕜) :
     (∫ x, ∏ i, (L i x - μ[L i]) ∂μ) =
       ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
-        Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ],
-          fun i j ↦ covariance_comm (L i) (L j)⟩ e := by
+        Sym2.lift ⟨fun i j ↦ ∫ x, (L i x - μ[L i]) * (L j x - μ[L j]) ∂μ,
+          fun i j ↦ by simp only [mul_comm]⟩ e := by
   classical
   induction hn : Fintype.card ι using Nat.strong_induction_on generalizing ι with
   | _ n ih =>
-    let w : Sym2 ι → ℝ :=
-      Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ],
-        fun i j ↦ covariance_comm (L i) (L j)⟩
+    let w : Sym2 ι → 𝕜 :=
+      Sym2.lift ⟨fun i j ↦ ∫ x, (L i x - μ[L i]) * (L j x - μ[L j]) ∂μ,
+        fun i j ↦ by simp only [mul_comm]⟩
     rcases isEmpty_or_nonempty ι with hι | ⟨⟨a⟩⟩
     · simp
     · calc
         _ = ∫ x, (L a x - μ[L a]) * ∏ i ∈ univ.erase a, (L i x - μ[L i]) ∂μ := by
           congr 2 with x
           exact (Finset.mul_prod_erase _ _ (mem_univ a)).symm
-        _ = ∑ b ∈ univ.erase a, cov[L a, L b; μ] *
+        _ = ∑ b ∈ univ.erase a, w s(a, b) *
             ∫ x, ∏ j ∈ (univ.erase a).erase b, (L j x - μ[L j]) ∂μ := by
-          simpa only [covariance] using
-            integral_sub_clm_mul_prod_sub_clm μ (univ.erase a) (L a) L
-        _ = ∑ b : {b : ι // b ≠ a}, cov[L a, L b; μ] *
+          exact integral_sub_clm_mul_prod_sub_clm μ (univ.erase a) (L a) L
+        _ = ∑ b : {b : ι // b ≠ a}, w s(a, b.val) *
             ∫ x, ∏ j : {x : ι // x ≠ a ∧ x ≠ b}, (L j x - μ[L j]) ∂μ := by
           rw [Finset.sum_subtype (p := fun b : ι ↦ b ≠ a) (univ.erase a) (by simp)]
           apply Finset.sum_congr rfl
@@ -110,6 +112,16 @@ theorem integral_prod_sub_dual_eq_sum_perfectMatching (μ : Measure E) [IsGaussi
           induction e using Sym2.inductionOn with
           | _ i j => rfl
         _ = _ := (TauCeti.PerfectMatching.sum_prod_edgeFinset_eq_sum_mul_sum w a).symm
+
+/-- The centered mixed moment of finitely many real linear observables of a Gaussian measure is
+the sum of covariance products over perfect matchings of the positions. -/
+theorem integral_prod_sub_dual_eq_sum_perfectMatching (μ : Measure E) [IsGaussian μ]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (L : ι → StrongDual ℝ E) :
+    (∫ x, ∏ i, (L i x - μ[L i]) ∂μ) =
+      ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ],
+          fun i j ↦ covariance_comm (L i) (L j)⟩ e := by
+  simpa only [covariance] using integral_prod_sub_clm_eq_sum_perfectMatching μ L
 
 end ProbabilityTheory.IsGaussian
 

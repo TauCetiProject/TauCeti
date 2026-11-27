@@ -232,7 +232,7 @@ theorem exists_ckHolderSpaceOn_one_of_isCompact_closure (hΩ : IsCompact (closur
         rw [norm_iteratedFDeriv_one, hu' x x.property]
         exact hC' x (subset_closure x.property)⟩
   · have h : HolderOnWith K α (iteratedFDeriv ℝ 1 u) Ω := by
-      rw [holderOnWith_iteratedFDeriv_succ_iff, holderOnWith_iteratedFDeriv_zero_iff]
+      rw [holderOnWith_iteratedFDeriv_one_iff]
       exact hu'H.congr fun z hz ↦ (hu' z hz).symm
     exact h.holderWith
 

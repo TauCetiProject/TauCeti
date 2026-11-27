@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Separation
-import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # The degree of a meromorphic function over `ℂ(t)`
