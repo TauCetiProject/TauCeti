@@ -20,6 +20,7 @@ import TauCeti.Analysis.Complex.Runge.Parameter
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 import TauCeti.Analysis.Normed.Module.Exhaustion
+import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
 # Global solutions of `bar∂ u = f` on arbitrary open plane domains with parameters
