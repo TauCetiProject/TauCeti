@@ -71,7 +71,7 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : E → ℝ}
 
 /-- If `f` agrees on `U` with an element of `W^{k,p}(U)` and `χ` is a real test function supported
 in `U`, then `χ f` is an `Lᵖ` function in `H^{k,p}(E)`. -/
-private theorem exists_memSobolev_mul_of_wkp (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} {U : Opens E}
+theorem exists_memSobolev_mul_of_wkp (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} {U : Opens E}
     {w : TauCeti.Wkp (volume : Measure E) U p k}
     (hw : (TauCeti.Wkp.value k w : E → ℝ) =ᵐ[volume.restrict U] f) {χ : E → ℝ}
     (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ) (hχU : tsupport χ ⊆ U) :

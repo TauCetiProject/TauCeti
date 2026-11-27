@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Basic
+public import TauCeti.Algebra.Category.Grp.SemidirectProduct
 
 /-!
 # Naturality of the dynamic Levi decomposition
@@ -29,10 +30,10 @@ parabolic, Levi, and unipotent subgroups of `GLₙ`.
 
 ## Main declarations
 
-* `TauCeti.Cocharacter.leviSemidirectMap`: extension of the value algebra on the semidirect
-  product.
 * `TauCeti.Cocharacter.leviSemidirectFunctor`: the dynamic semidirect product as a group-valued
-  functor.
+  functor, the semidirect product of the unipotent and Levi functors, with
+  `TauCeti.Cocharacter.leviSemidirectFunctor_map_apply`: extension of the value algebra on the
+  semidirect product acts coordinatewise.
 * `TauCeti.Cocharacter.limitToLeviNatTrans`: the dynamic limit as a natural transformation from
   the parabolic functor to the Levi functor.
 * `TauCeti.Cocharacter.leviToParabolicNatTrans`: the Levi inclusions as a natural transformation
@@ -145,57 +146,34 @@ theorem mapUnipotent_leviConjugation {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
   simp only [coe_mapUnipotent_apply, coe_leviConjugation_apply,
     coe_mapLevi_apply, map_mul, Subgroup.coe_inv, map_inv]
 
-/-- Extension of the value algebra on the semidirect product in the dynamic Levi decomposition. -/
-noncomputable def leviSemidirectMap {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
-    (unipotent A l) ⋊[leviConjugation A l] (levi A l) →*
-      (unipotent B l) ⋊[leviConjugation B l] (levi B l) :=
-  SemidirectProduct.map (mapUnipotent l φ) (mapLevi l φ) fun z ↦ by
-    apply MonoidHom.ext
-    intro g
-    exact mapUnipotent_leviConjugation l φ z g
+/-- The semidirect product `U(l)(A) ⋊ Z(l)(A)` in the dynamic Levi decomposition, functorial in
+the commutative value algebra `A`: the semidirect product of the unipotent and Levi functors. -/
+-- The object carrier must unfold when constructing the natural decomposition isomorphism.
+@[expose] noncomputable def leviSemidirectFunctor :
+    Functor (CommAlgCat.{w} R) GrpCat.{max v w} :=
+  GrpCat.semidirectProductFunctor (unipotentFunctor l) (leviFunctor l)
+    (fun A ↦ leviConjugation A l) fun _ _ φ z g ↦ by
+      rw [unipotentFunctor_map, leviFunctor_map]
+      exact mapUnipotent_leviConjugation l φ z g
 
-/-- Extension on the dynamic Levi semidirect product acts coordinatewise. -/
+/-- Extension of the value algebra on the dynamic Levi semidirect product acts coordinatewise. -/
 @[simp]
-theorem leviSemidirectMap_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
+theorem leviSemidirectFunctor_map_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (g : (unipotent A l) ⋊[leviConjugation A l] (levi A l)) :
-    leviSemidirectMap l φ g =
-      ⟨mapUnipotent l φ g.left, mapLevi l φ g.right⟩ := by
-  rfl
+    (leviSemidirectFunctor l).map φ g = (⟨mapUnipotent l φ g.left, mapLevi l φ g.right⟩ :
+      (unipotent B l) ⋊[leviConjugation B l] (levi B l)) :=
+  (GrpCat.semidirectProductFunctor_map_apply (unipotentFunctor l) (leviFunctor l)
+    (fun A ↦ leviConjugation A l) _ φ g).trans <| by
+    rw [unipotentFunctor_map, leviFunctor_map]
+    rfl
 
 /-- Extension of the value algebra commutes with the dynamic Levi decomposition equivalence. -/
 theorem mapParabolic_leviDecompositionMulEquiv_apply
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (g : (unipotent A l) ⋊[leviConjugation A l] (levi A l)) :
     mapParabolic l φ (leviDecompositionMulEquiv A l g) =
-      leviDecompositionMulEquiv B l (leviSemidirectMap l φ g) := by
+      leviDecompositionMulEquiv B l ((leviSemidirectFunctor l).map φ g) := by
   simp
-
-private theorem leviSemidirectMap_id (A : CommAlgCat.{w} R) :
-    leviSemidirectMap l (𝟙 A) = MonoidHom.id _ := by
-  ext g <;> simp [leviSemidirectMap]
-
-private theorem leviSemidirectMap_comp {A B C : CommAlgCat.{w} R}
-    (φ : A ⟶ B) (ψ : B ⟶ C) :
-    leviSemidirectMap l (φ ≫ ψ) =
-      (leviSemidirectMap l ψ).comp (leviSemidirectMap l φ) := by
-  ext g <;> simp [leviSemidirectMap]
-
-/-- The semidirect product `U(l)(A) ⋊ Z(l)(A)` in the dynamic Levi decomposition, functorial in
-the commutative value algebra `A`. -/
--- The object carrier must unfold when constructing the natural decomposition isomorphism.
-@[expose] noncomputable def leviSemidirectFunctor :
-    Functor (CommAlgCat.{w} R) GrpCat.{max v w} where
-  obj A := GrpCat.of ((unipotent A l) ⋊[leviConjugation A l] (levi A l))
-  map φ := GrpCat.ofHom (leviSemidirectMap l φ)
-  map_id A := by rw [leviSemidirectMap_id]; rfl
-  map_comp φ ψ := by rw [leviSemidirectMap_comp]; rfl
-
-/-- The dynamic Levi semidirect-product functor maps a homomorphism by extension on its unipotent
-and Levi coordinates. -/
-@[simp]
-theorem leviSemidirectFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
-    (leviSemidirectFunctor l).map φ = GrpCat.ofHom (leviSemidirectMap l φ) :=
-  rfl
 
 /-- **The functorial dynamic Levi decomposition.** The semidirect product of the dynamic
 unipotent and Levi subgroup functors is naturally isomorphic to the dynamic parabolic functor. -/

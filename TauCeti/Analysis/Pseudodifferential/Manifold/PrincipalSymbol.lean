@@ -56,10 +56,16 @@ depends on the cutoffs only through their values at the point.
   at nonzero covectors.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_sub_one`: an operator of order `m - 1` has
   principal symbol `0` in order `m`.
+* `TauCeti.classicalPrincipalSymbol_add_of_mem_sub_one`: adding an operator of order `m - 1`
+  does not change the principal symbol of order `m`.
+* `TauCeti.classicalPrincipalSymbol_smul_of_ne_zero`: multiplying by a nonzero constant `c`
+  multiplies the principal symbol by `c`, even when `P` is not of order `m`.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_iff`: conversely, the principal symbol of an operator
   of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
   symbol differ by an operator of order `m - 1`
   (`TauCeti.sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq`).
+* `TauCeti.classicalPrincipalSymbol_mulLeft_comp`: multiplying an operator on the left by a smooth
+  function `g` multiplies its principal symbol at `x` by `g(x)`.
 * `TauCeti.classicalPrincipalSymbol_eq_of_eventually_apply_eq`: the principal symbol at `x` only
   depends on the operator near `x`; so the principal symbol of a locally finite sum of operators is
   the sum of their principal symbols (`TauCeti.classicalPrincipalSymbol_locallyFiniteSum`).
@@ -585,6 +591,34 @@ theorem classicalPrincipalSymbol_sub (hP : P ∈ classicalPseudodifferentialOper
   rw [sub_eq_add_neg, classicalPrincipalSymbol_add hP (neg_mem hQ), classicalPrincipalSymbol_neg,
     ← sub_eq_add_neg]
 
+/-- **Lower order perturbations.** Adding an operator of order `m - 1` does not change the
+principal symbol of order `m`, whether or not `P` has order `m`. -/
+theorem classicalPrincipalSymbol_add_of_mem_sub_one
+    (hQ : Q ∈ classicalPseudodifferentialOperators (m - 1)) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (P + Q) x ξ = classicalPrincipalSymbol m P x ξ := by
+  have hQ' : Q ∈ classicalPseudodifferentialOperators m :=
+    classicalPseudodifferentialOperators_le 1 (by simp) hQ
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  · rw [classicalPrincipalSymbol_add hP hQ', classicalPrincipalSymbol_eq_zero_of_mem_sub_one hQ,
+      add_zero]
+  · -- Neither `P` nor `P + Q` is of order `m`, so both principal symbols vanish.
+    have hPQ : P + Q ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
+      simpa using sub_mem h hQ'
+    rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem hPQ]
+
+/-- The principal symbol of `c • P` for a nonzero constant `c` is `c` times that of `P`, whether or
+not `P` has order `m`. -/
+theorem classicalPrincipalSymbol_smul_of_ne_zero {c : ℂ} (hc : c ≠ 0) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (c • P) x ξ = c * classicalPrincipalSymbol m P x ξ := by
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  · exact classicalPrincipalSymbol_smul hP c x ξ
+  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
+    have hcP : c • P ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
+      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
+    rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem hcP, mul_zero]
+
 /-- **The kernel of the principal symbol.** A classical pseudodifferential operator of order `m`
 has vanishing principal symbol exactly when it is a classical pseudodifferential operator of order
 `m - 1`. -/
@@ -642,6 +676,42 @@ theorem classicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
       classicalPrincipalSymbol_add (hP i (Finset.mem_insert_self i s))
         (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
       ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
+
+/-- **Multiplication on the left.** For a complex-valued smooth function `g`, the principal symbol
+of `u ↦ g · P u` is `σ_m(g P)(x, ξ) = g(x) σ_m(P)(x, ξ)`. -/
+theorem classicalPrincipalSymbol_mulLeft_comp (hP : P ∈ classicalPseudodifferentialOperators m)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (LinearMap.mulLeft ℂ g ∘ₗ P) x ξ =
+      g x * classicalPrincipalSymbol m P x ξ := by
+  -- Read `g P` in the preferred chart `e` at `x`, through a cutoff `φ` equal to `1` at `e x`: its
+  -- compression is that of `P` by `φ (Re g)` plus `i` times that by `φ (Im g)`.
+  set e := chartAt (CoordinateSpace n) x
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source _ x
+  obtain ⟨φ, hφ⟩ := exists_cutoff_chartAt (n := n) x
+  have hφx : φ (e x) = 1 := hφ.self_of_nhds
+  obtain ⟨a₁, ha₁⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he
+    (chartPartCutoff he g Complex.reCLM φ) φ
+  obtain ⟨a₂, ha₂⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he
+    (chartPartCutoff he g Complex.imCLM φ) φ
+  have h := coefficient_principal_apply_eq_classicalPrincipalSymbol
+    (mulLeft_comp_mem_classicalPseudodifferentialOperators hP g) he φ φ
+    (a := a₁ + Complex.I • a₂) (fun u y ↦ by
+      rw [ClassicalSymbol.quantizeSchwartzValue_toSymbol_add,
+        ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul, ha₁, ha₂, smul_eq_mul,
+        complexChartCompression_mulLeft_comp]) hx ξ
+  have hre := chartPartCutoff_re_add_im he g φ (e x)
+  simp only [ClassicalSymbol.principal_add, ClassicalSymbol.principal_smul,
+    HomogeneousSymbol.coefficient_add, HomogeneousSymbol.coefficient_smul, Pi.add_apply,
+    Pi.smul_apply, FunLike.coe_add, FunLike.coe_smul,
+    coefficient_principal_apply_eq_classicalPrincipalSymbol hP he _ φ ha₁ hx ξ,
+    coefficient_principal_apply_eq_classicalPrincipalSymbol hP he _ φ ha₂ hx ξ, hφx,
+    smul_eq_mul] at h
+  rw [hφx, e.left_inv hx] at hre
+  push_cast at h hre
+  linear_combination -h + classicalPrincipalSymbol m P x ξ * hre
 
 /-! ### Locality -/
 

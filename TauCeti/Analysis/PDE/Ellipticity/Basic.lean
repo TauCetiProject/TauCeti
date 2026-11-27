@@ -16,6 +16,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Matrix.Contraction
+public import TauCeti.Analysis.PDE.Ellipticity.SymmetricPart
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
@@ -74,7 +75,8 @@ constants are parameters, not hidden existential data.
   bilinear forms, and `C¹` entries give bilinear forms that are Hölder on compact sets.
 * `TauCeti.PDE.lipschitzWith_matrixBilinearForm_of_forall`: Lipschitz entries give Lipschitz
   bilinear forms.
-* `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
+* `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply` and
+  `TauCeti.PDE.lipschitzOnWith_apply_apply_of_matrixBilinearForm`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.lipschitzOnWith_inv_matrixBilinearForm_self` and
   `TauCeti.PDE.norm_inv_matrixBilinearForm_self_le`: for a uniformly elliptic coefficient field
@@ -94,7 +96,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM`: the operator norm of the attached
-  bilinear form is the operator norm of the matrix on Euclidean space.
+  bilinear form is the operator norm of the matrix on Euclidean space;
+  `TauCeti.PDE.norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub` is its form for differences.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
@@ -131,8 +134,6 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.UniformlyEllipticOn.add_bounded`: adding a bounded coefficient
   perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
   perturbation size `μ` is smaller than `λ`.
-* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
-  coefficient matrix.
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
   coefficient field by its symmetric part preserves uniform ellipticity with the same
@@ -150,41 +151,6 @@ namespace TauCeti
 namespace PDE
 
 open Matrix
-
-/-! ### Symmetric part of a coefficient matrix -/
-
-section SymmetricPart
-
-variable {n : Type*}
-
-/-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
-
-For energy estimates the diagonal quadratic form of `A` agrees with that of
-`coefficientSymmetricPart A`, while the resulting matrix is symmetric. This is the
-finite-dimensional bookkeeping needed before the integrated energy form is specialized to
-self-adjoint elliptic operators. -/
-noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
-  (1 / 2 : ℝ) • (A + Aᵀ)
-
-/-- The symmetric part of a coefficient matrix is symmetric. -/
-lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) : (coefficientSymmetricPart A).IsSymm :=
-  (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
-
-/-- The entries of the symmetric part are the averages of opposite entries. -/
-@[simp]
-lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
-    coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
-  simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
-
-/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
-@[simp]
-lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    coefficientSymmetricPart A = A := by
-  ext i j
-  rw [coefficientSymmetricPart_apply, hA.apply i j]
-  ring
-
-end SymmetricPart
 
 /-! ### The matrix bilinear form -/
 
@@ -246,7 +212,7 @@ lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
     (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (coefficientSymmetricPart A) η ξ =
       (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) / 2 := by
-  rw [coefficientSymmetricPart, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
+  rw [coefficientSymmetricPart_def, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
     matrixBilinearForm_transpose_apply]
   ring
 
@@ -418,6 +384,13 @@ lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix
   exact (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
 
+/-- The bilinear forms of two matrices are as far apart as their operators on Euclidean space. -/
+lemma norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub [DecidableEq n]
+    (A B : Matrix n n ℝ) :
+    ‖matrixBilinearForm A - matrixBilinearForm B‖ =
+      ‖toEuclideanCLM (n := n) (𝕜 := ℝ) A - toEuclideanCLM (n := n) (𝕜 := ℝ) B‖ := by
+  rw [← matrixBilinearForm_sub, ← map_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
+
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
 lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
@@ -473,6 +446,12 @@ lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {La
   exact (div_le_iff₀' two_pos).2 (by
     simpa [Real.norm_eq_abs] using hsum)
 
+/-- A matrix bilinear form in coordinates: `ηᵀ A ξ = ∑ᵢⱼ ηᵢ ξⱼ Aᵢⱼ`. -/
+lemma matrixBilinearForm_apply_eq_sum (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ = ∑ i, ∑ j, η i * ξ j * A i j := by
+  classical
+  rw [matrixBilinearForm_apply, ← toLinearMap₂'_apply', toLinearMap₂'_apply]; simp [mul_assoc]
+
 /-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
 the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
 the first-order cross term `∑ᵢⱼ Aᵢⱼ ∂ᵢη ∂ⱼu` of the principal part of a product. -/
@@ -492,8 +471,8 @@ lemma abs_sum_mul_apply_single_mul_apply_single_le [DecidableEq n] {A : Matrix n
   have h := hA X Y
   rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map] at h
   convert h using 2
-  simp only [hX, hY, dotProduct, mulVec, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [← matrixBilinearForm_apply, matrixBilinearForm_apply_eq_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hX, hY]; ring
 
 end BilinearForm
 
@@ -558,8 +537,8 @@ lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [coefficientSymmetricPart, toQuadraticForm'_smul, toQuadraticForm'_add_transpose, smul_smul,
-    one_div_mul_cancel two_ne_zero, one_smul]
+  rw [coefficientSymmetricPart_def, toQuadraticForm'_smul, toQuadraticForm'_add_transpose,
+    smul_smul, one_div_mul_cancel two_ne_zero, one_smul]
 
 /-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
 bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by
@@ -1359,6 +1338,17 @@ theorem lipschitzOnWith_matrixBilinearForm_apply_apply {X : Type*} [PseudoEMetri
   have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
   rwa [hc] at h
 
+/-- The entries `x ↦ a(x)ᵢⱼ` of a coefficient field that is `K`-Lipschitz on `s` as a bilinear
+form are `K`-Lipschitz on `s`. -/
+theorem lipschitzOnWith_apply_apply_of_matrixBilinearForm {X : Type*} [PseudoEMetricSpace X]
+    {a : X → Matrix n n ℝ} {s : Set X} {K : ℝ≥0}
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) s) (i j : n) :
+    LipschitzOnWith K (fun x => a x i j) s := by
+  classical
+  simpa only [matrixBilinearForm_apply, PiLp.ofLp_single, mulVec_single_one, single_one_dotProduct,
+    col_apply, PiLp.nnNorm_single, nnNorm_one, mul_one] using
+    lipschitzOnWith_matrixBilinearForm_apply_apply hK (EuclideanSpace.single i 1) (.single j 1)
+
 /-- If `a` is uniformly elliptic on `s` with lower constant `λ` and `x ↦ a(x)` is `K`-Lipschitz on
 `s` as a bilinear form, then for `w ≠ 0` the reciprocal `x ↦ a(x)(w, w)⁻¹` is
 `K ‖w‖² / (λ ‖w‖²)²`-Lipschitz on `s`. -/
@@ -1400,14 +1390,10 @@ theorem exists_lipschitzWith_matrixBilinearForm_eqOn {X : Type*} [PseudoMetricSp
       LipschitzWith K' (fun x => matrixBilinearForm (abar x)) := by
   classical
   -- Extend the entries of `a` from `S` to Lipschitz functions on the whole space.
-  have hent : ∀ i j, LipschitzOnWith (K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊) (fun x => a x i j) S := fun i j => by
-    simpa [matrixBilinearForm_apply] using lipschitzOnWith_matrixBilinearForm_apply_apply hK
-      (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
-  choose g hgL hgS using fun i j => (hent i j).extend_real
-  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx => by
-    ext i j
-    exact (hgS i j hx).symm
+  choose g hgL hgS using fun i j =>
+    (lipschitzOnWith_apply_apply_of_matrixBilinearForm hK i j).extend_real
+  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx =>
+    Matrix.ext fun i j => (hgS i j hx).symm
   -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
   exact ⟨_, _, habar, lipschitzWith_matrixBilinearForm_of_forall (a := fun x => Matrix.of
     fun i j => g i j x) hgL⟩

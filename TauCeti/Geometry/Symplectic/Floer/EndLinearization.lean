@@ -49,7 +49,10 @@ over the compact set of values of `(t, x(t))`.
 
 For a solution of the Floer equation `∂s u + J_t(u)(∂t u - X_{H_t}(u)) = 0` the slice defect is
 `J_t(u) ∂s u`, so it tends to zero uniformly whenever `∂s u` does
-(`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero`).
+(`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero`). If the loops
+of `u` converge to an orbit `x` of two Hamiltonians `H` and `H'`, the slice defects for `H` and for
+`H'` tend to zero together, since `X_H` and `X_{H'}` agree along `x`
+(`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt`).
 
 At a nondegenerate orbit `x` this gives the `L²` estimate of `D_u` on the far part of the end
 (`TauCeti.SymplecticForm.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`):
@@ -285,6 +288,27 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     _ ≤ (|C| + 1) * ‖fderiv ℝ u (s, t) stdComplexLineReal‖ := by gcongr
     _ < (|C| + 1) * (ε / (|C| + 1)) := by gcongr
     _ = ε := by field_simp
+
+/-- If a loop `x` is an orbit of two time-dependent Hamiltonians `H` and `H'` with jointly `C¹`
+Hamiltonians, the loops of `u` converge uniformly to `x` and the slice defect
+`∂t u - X_{H_t}(u)` tends uniformly to zero, then so does the slice defect `∂t u - X_{H'_t}(u)`:
+the vector fields `X_H` and `X_{H'}` agree along `x`. -/
+theorem tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
+    (ω : SymplecticForm V) {H H' : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (Function.uncurry H))
+    (hH' : ContDiff ℝ 1 (Function.uncurry H')) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hx' : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H' t) (x t)) t) {u : ℝ × ℝ → V}
+    {l : Filter ℝ} (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
+    TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H' t)) u (s, t)) 0 l
+        (Icc 0 1) :=
+  tendstoUniformlyOn_sliceDefect_of_apply_eq
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH')).continuous
+    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
+    (fun t ↦ (hx' t).unique (hx t)) hux hδ
 
 /-- The linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))` along a continuous loop `x`,
 shifted by a weight to `S_t - δ J_t(x(t))`, is continuous in `t`. -/

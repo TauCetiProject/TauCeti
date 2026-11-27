@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.ModelCoordinate
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.ContMDiff.Basic
@@ -54,6 +55,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+* `OpenPartialHomeomorph.contMDiffAt_extend_symm`: the inverse of an extended chart `e.extend I`
+  of the maximal atlas is `C^n` at the model coordinate `I (e x)` of a point of its source.
 -/
 
 public section
@@ -206,6 +209,22 @@ theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
     (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
   (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
     ((c.extendTrans I Ψ).open_target.mem_nhds hv)
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] {e : OpenPartialHomeomorph M H} {x : M}
+
+/-- For a boundaryless model, the inverse of an extended chart of the maximal `C^n` atlas is
+`C^n` at the model coordinate `I (e x)` of any point of the source of `e`. -/
+theorem contMDiffAt_extend_symm [ChartedSpace H M] [I.Boundaryless] {n : ℕ∞ω}
+    (he : e ∈ IsManifold.maximalAtlas I n M) (hx : x ∈ e.source) :
+    ContMDiffAt 𝓘(𝕜, E) I n (e.extend I).symm (I (e x)) :=
+  (contMDiffOn_extend_symm he).contMDiffAt
+    (e.extend_target' (I := I) ▸ e.extend_target_mem_nhds hx)
 
 end OpenPartialHomeomorph
 

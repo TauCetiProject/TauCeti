@@ -9,6 +9,7 @@ public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import Mathlib.NumberTheory.Ostrowski
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
@@ -35,7 +36,8 @@ a place `v` of `k` exactly when its restriction to `k` is `v`. If `w` lies over 
 other.
 
 An infinite place is archimedean, since it takes the value `2` at `2`, and is therefore never
-equivalent to a nonarchimedean absolute value.
+equivalent to a nonarchimedean absolute value. In characteristic zero it restricts to the real
+absolute value on `ℚ`.
 
 ## Main results
 
@@ -80,7 +82,11 @@ equivalent to a nonarchimedean absolute value.
 * `NumberField.InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or`: the
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
+* `NumberField.InfinitePlace.mk_eq_mk_iff_of_isUnramified`: embeddings with a common restriction
+  and the same unramified infinite place are equal.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
+* `NumberField.InfinitePlace.under_rat`: an infinite place restricts to the real absolute value
+  on `ℚ`.
 * `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
   equivalent to a nonarchimedean absolute value.
 * `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
@@ -336,12 +342,35 @@ theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq
     rw [← h, ComplexEmbedding.conjugate_comp]
     exact (ComplexEmbedding.involutive_conjugate k _).symm
 
+/-- Two complex embeddings over a common restriction agree if they induce the same infinite
+place and that place is unramified over the base. -/
+theorem InfinitePlace.mk_eq_mk_iff_of_isUnramified {L : Type*} [Field L] [Algebra K L]
+    {φ ψ : L →+* ℂ} (h : φ.comp (algebraMap K L) = ψ.comp (algebraMap K L))
+    (hφ : (mk φ).IsUnramified K) : mk φ = mk ψ ↔ φ = ψ := by
+  refine ⟨fun he ↦ ?_, congrArg mk⟩
+  rcases mk_eq_iff.mp he with he | hc
+  · exact he
+  have hr : ComplexEmbedding.IsReal (φ.comp (algebraMap K L)) := by
+    rw [ComplexEmbedding.isReal_iff, ← ComplexEmbedding.conjugate_comp, hc, h]
+  have hφreal := (isUnramified_mk_iff_isUnmixed.mp hφ) hr
+  exact (ComplexEmbedding.isReal_iff.mp hφreal).symm.trans hc
+
 /-- An infinite place is archimedean: it takes the value `2` at `2`. -/
 theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.val := by
   intro h
   have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
   rw [← InfinitePlace.coe_apply, v.map_natCast] at this
   norm_num at this
+
+/-- An infinite place of a field of characteristic zero restricts to the real absolute value on
+`ℚ`. -/
+@[simp]
+theorem InfinitePlace.under_rat [CharZero K] (v : InfinitePlace K) :
+    v.val.under ℚ = Rat.AbsoluteValue.real := by
+  ext q
+  rw [AbsoluteValue.under_apply, ← coe_apply, ← v.norm_embedding_eq, eq_ratCast (algebraMap ℚ K),
+    map_ratCast, Complex.norm_ratCast]
+  rfl
 
 /-- An infinite place is never equivalent to a nonarchimedean absolute value. -/
 theorem InfinitePlace.not_isEquiv_of_isNonarchimedean (v : InfinitePlace K)
