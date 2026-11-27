@@ -143,10 +143,8 @@ theorem sectionPrincipalCoefficient_smulRight (hx : I.IsInteriorPoint x)
     sectionPrincipalCoefficient I hx P (ξ.smulRight v) = sectionPrincipalSymbol I hx P ξ v := by
   set b := Module.finBasis ℝ (TangentSpace I x)
   rw [← sum_sectionPrincipalSymbol_smul hx P (fun k ↦ LinearMap.toContinuousLinearMap (b.coord k))
-    b (fun ζ ↦ ?_) ξ v]
-  · simp [sectionPrincipalCoefficient, b]
-  · ext w
-    simpa using LinearMap.congr_fun (b.sum_dual_apply_smul_coord ζ.toLinearMap) w
+    b b.sum_apply_smul_coord_toContinuousLinearMap ξ v]
+  simp [sectionPrincipalCoefficient, b]
 
 /-- **Characterization of the leading coefficient.** It is the unique linear map on
 `Hom(T_xM, V_x)` sending each rank-one map `ξ ⊗ v` to `σ(P)(ξ) v`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Equivalence
+public import TauCeti.Algebra.Homology.HomotopyCategory.Functor
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Coherence
 
 /-!
@@ -23,8 +24,8 @@ derived categories; the following comparisons identify iterated restrictions wit
 
 * `Scheme.Hom.derivedRestrictComp f g h w`: for open immersions with `w : f ≫ g = h`, the
   comparison `(K|_Y)|_X ≅ K|_X` induced by `Scheme.Modules.restrictFunctorComp` and
-  `Scheme.Modules.restrictFunctorCongr`, with its values on complexes and on sheaves placed in one
-  degree.
+  `Scheme.Modules.restrictFunctorCongr`, with its values on complexes, on complexes in the
+  homotopy category, and on sheaves placed in one degree.
 * `Scheme.derivedRestrictId X`: derived restriction along the identity of `X` is the identity.
 * `Scheme.Hom.derivedRestrictComp_associativity`: for three composable open immersions the two
   comparisons of the threefold restriction with the restriction along the composite agree;
@@ -130,6 +131,42 @@ lemma derivedRestrictComp_hom_app_singleFunctor_obj (M : Z.Modules) (n : ℤ) :
   rw [derivedRestrictComp_hom, NatTrans.comp_app, NatTrans.mapDerivedCategory_app_singleFunctor_obj,
     Functor.mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategorySingleFunctor_hom_app_assoc,
     NatTrans.comp_app]
+
+/-- On the image of a complex `K` in the homotopy category, the comparison `derivedRestrictComp` is
+the localization of the termwise comparison of restrictions of module sheaves, up to the
+identifications `Functor.mapDerivedCategoryFactorsh` of derived restriction on the homotopy
+category. -/
+@[reassoc]
+lemma derivedRestrictComp_hom_app_Qh_obj (K : CochainComplex Z.Modules ℤ) :
+    (derivedRestrictComp f g h w).hom.app (Qh.obj ((HomotopyCategory.quotient _ _).obj K)) ≫
+      (Modules.restrictFunctor h).mapDerivedCategoryFactorsh.hom.app
+        ((HomotopyCategory.quotient _ _).obj K) =
+    f.derivedRestrict.map ((Modules.restrictFunctor g).mapDerivedCategoryFactorsh.hom.app
+        ((HomotopyCategory.quotient _ _).obj K)) ≫
+      (Modules.restrictFunctor f).mapDerivedCategoryFactorsh.hom.app
+        ((HomotopyCategory.quotient _ _).obj
+          (((Modules.restrictFunctor g).mapHomologicalComplex _).obj K)) ≫
+        Qh.map ((HomotopyCategory.quotient _ _).map ((NatTrans.mapHomologicalComplex
+          ((restrictFunctorComp f g).inv ≫ (restrictFunctorCongr w).hom) _).app K)) := by
+  have h₁ := (derivedRestrictComp f g h w).hom.naturality
+    ((quotientCompQhIso Z.Modules).hom.app K)
+  have h₂ := (quotientCompQhIso X.Modules).inv.naturality ((NatTrans.mapHomologicalComplex
+    ((restrictFunctorComp f g).inv ≫ (restrictFunctorCongr w).hom) _).app K)
+  dsimp only [Functor.comp_obj, Functor.comp_map] at h₁ h₂
+  simp only [Functor.mapDerivedCategoryFactorsh_hom_app,
+    Functor.mapHomotopyCategoryFactors_inv_app, CategoryTheory.Functor.map_id]
+  rw [← reassoc_of% h₁, derivedRestrictComp_hom_app_Q_obj]
+  simp only [Category.assoc, Iso.inv_hom_id_app_assoc, Functor.map_comp]
+  -- The objects `((restrictFunctor g ⋙ restrictFunctor f).mapHomologicalComplex _).obj K` and
+  -- `((restrictFunctor f).mapHomologicalComplex _).obj (((restrictFunctor g).mapHomologicalComplex
+  -- _).obj K)` agree by definition, hence `erw`.
+  erw [reassoc_of% h₂]
+  simp only [Functor.comp_obj, Functor.mapHomotopyCategory_obj,
+    NatTrans.mapHomologicalComplex_comp, NatTrans.comp_app, Functor.map_comp, Category.comp_id,
+    CategoryTheory.Functor.map_id, Category.id_comp, Iso.inv_hom_id_app_map_assoc]
+  -- The two sides differ only in these objects and in writing `g.derivedRestrict` for
+  -- `(restrictFunctor g).mapDerivedCategory`, which is its definition.
+  rfl
 
 /-- The comparison `derivedRestrictComp` commutes with the shifts of derived categories. -/
 instance : NatTrans.CommShift (derivedRestrictComp f g h w).hom ℤ := by

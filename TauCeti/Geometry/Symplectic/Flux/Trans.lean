@@ -17,7 +17,8 @@ diffeotopies of `M`. Their pointwise composite `Φ.trans Ψ`, with time slices `
 
 `Flux(ψ ∘ φ) = Flux(ψ) + Flux_{ψ₁^* σ}(φ) + d g`
 
-for a smooth function `g` (`TauCeti.Diffeotopy.fluxForm_trans_sub_sub_mem_exactForms`), where
+for a smooth function `g` vanishing at every point which no map `φ_t` moves
+(`TauCeti.Diffeotopy.exists_fluxForm_trans_sub_sub_eq_mextDerivₗ`), where
 `Flux_{ψ₁^* σ}(φ)` is the flux form of `φ` with respect to the pulled back form `ψ₁^* σ`. When
 `φ₁` and `ψ₁` preserve `σ` this says that the flux is additive on pointwise composites
 (`TauCeti.Diffeotopy.flux_trans`):
@@ -41,12 +42,16 @@ double cylinder (`TauCeti.mextDeriv_homotopyOperator_homotopyOperator`) gives
 The two ends of `L` are flux forms: `G` restricted to `t = 1` is the motion of `φ` followed by
 the slice inclusion at time one, and `G` restricted to `t = 0` is stationary. Reading them off
 uses the naturality of the homotopy operator along slice inclusions
-(`TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`).
+(`TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`). The primitive `g = -h_t L`
+vanishes at every point `x` which no `φ_t` moves, since there `G ((x, t), s) = (x, t)` does not
+depend on `s`, so that `L` vanishes at every `(x, t)`.
 
 ## Main results
 
-* `TauCeti.Diffeotopy.fluxForm_trans_sub_sub_mem_exactForms`: the flux form of a pointwise
-  composite of diffeotopies, modulo exact forms.
+* `TauCeti.Diffeotopy.exists_fluxForm_trans_sub_sub_eq_mextDerivₗ`,
+  `TauCeti.Diffeotopy.fluxForm_trans_sub_sub_mem_exactForms`: the flux form of a pointwise
+  composite of diffeotopies, modulo the differential of a function vanishing where `φ` is
+  stationary.
 * `TauCeti.Diffeotopy.flux_trans`: the flux of a pointwise composite is the sum of the fluxes.
 * `TauCeti.Diffeotopy.flux_symm`: the flux of the reversed diffeotopy is the negated flux.
 * `TauCeti.Diffeotopy.flux_symm_trans`: the flux of `φ_t ∘ ψ_t⁻¹` is the difference of the
@@ -102,6 +107,11 @@ private theorem cylinderRescale_comp_prodMap_one :
       (fun x ↦ (x, (1 : unitInterval))) ∘ Φ.cylinderMap :=
   funext fun p ↦ by simp [cylinderRescale]
 
+/-- Over a point which no map of `Φ` moves, the homotopy is stationary in `s`. -/
+private theorem cylinderRescale_apply_of_forall_eq {x : M} (hx : ∀ t, Φ (t, x) = x)
+    (t s : unitInterval) : Φ.cylinderRescale ((x, t), s) = (x, t) := by
+  simp [cylinderRescale, hx]
+
 /-- Over the initial time `t = 0` the homotopy is stationary: it is the motion of the constant
 diffeotopy, read at time zero. -/
 private theorem cylinderRescale_comp_prodMap_zero :
@@ -135,13 +145,15 @@ private theorem mpullback_homotopyOperator_mpullback_cylinderRescale (τ : Smoot
     coe_fluxForm, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
 
 /-- **The flux form of a pointwise composite.** For a closed two-form `σ` and diffeotopies `φ`
-and `ψ`, the flux form of the composite `ψ_t ∘ φ_t` differs by an exact form from the sum of the
-flux form of `ψ` and the flux form of `φ` with respect to `ψ₁^* σ`. No diffeomorphism involved
-needs to preserve `σ`. -/
-theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
+and `ψ`, the flux form of the composite `ψ_t ∘ φ_t` differs from the sum of the flux form of `ψ`
+and the flux form of `φ` with respect to `ψ₁^* σ` by the differential of a smooth function `g`
+which vanishes at every point that no map `φ_t` moves. No diffeomorphism involved needs to
+preserve `σ`. -/
+theorem exists_fluxForm_trans_sub_sub_eq_mextDerivₗ {σ : SmoothForm J M ℝ 2}
     (hσ : SmoothForm.IsClosed σ) :
-    (Φ.trans Ψ).fluxForm σ - Ψ.fluxForm σ -
-        Φ.fluxForm (SmoothForm.mpullback Ψ.final Ψ.final.contMDiff σ) ∈ exactForms J M 1 := by
+    ∃ g : SmoothForm J M ℝ 0, (∀ x, (∀ t, Φ (t, x) = x) → g.val x = 0) ∧
+      (Φ.trans Ψ).fluxForm σ - Ψ.fluxForm σ -
+        Φ.fluxForm (SmoothForm.mpullback Ψ.final Ψ.final.contMDiff σ) = mextDerivₗ J 0 g := by
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold (J.prod (𝓡∂ 1)) ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) (M × unitInterval) :=
     IsManifold.of_le (n := ∞) (by simp)
@@ -181,12 +193,31 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
   -- The primitive is `-h_t L`.
   have hLs : IsSmoothForm (J.prod (𝓡∂ 1)) ∞ (homotopyOperator η.val) :=
     IsSmoothForm.homotopyOperator η.isSmoothForm
-  rw [exactForms_succ]
   refine ⟨-⟨homotopyOperator (homotopyOperator η.val),
-    (IsSmoothForm.homotopyOperator hLs).mem_smoothBundleForms⟩, Subtype.ext ?_⟩
-  rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_mk, SmoothForm.coe_mpullback,
-    key, Submodule.coe_sub, Submodule.coe_sub, coe_fluxForm, coe_fluxForm, coe_fluxForm]
-  abel
+    (IsSmoothForm.homotopyOperator hLs).mem_smoothBundleForms⟩, fun x hx ↦ ?_,
+    (Subtype.ext ?_).symm⟩
+  · -- Over a point which `Φ` never moves, `G` is stationary in `s`, so `L` vanishes at every
+    -- `(x, t)` and hence so does `h_t L` at `x`.
+    have hL (t : unitInterval) : homotopyOperator η.val (x, t) = 0 := by
+      rw [SmoothForm.coe_mpullback]
+      exact homotopyOperator_mpullback_apply_eq_zero (Φ.cylinderRescale_apply_of_forall_eq hx t) _
+    rw [Submodule.coe_neg, Pi.neg_apply, Submodule.coe_mk,
+      homotopyOperator_apply_eq_zero fun t v ↦ by rw [hL t]; rfl, neg_zero]
+  · rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_mk, SmoothForm.coe_mpullback,
+      key, Submodule.coe_sub, Submodule.coe_sub, coe_fluxForm, coe_fluxForm, coe_fluxForm]
+    abel
+
+/-- **The flux form of a pointwise composite.** For a closed two-form `σ` and diffeotopies `φ`
+and `ψ`, the flux form of the composite `ψ_t ∘ φ_t` differs by an exact form from the sum of the
+flux form of `ψ` and the flux form of `φ` with respect to `ψ₁^* σ`. No diffeomorphism involved
+needs to preserve `σ`. -/
+theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
+    (hσ : SmoothForm.IsClosed σ) :
+    (Φ.trans Ψ).fluxForm σ - Ψ.fluxForm σ -
+        Φ.fluxForm (SmoothForm.mpullback Ψ.final Ψ.final.contMDiff σ) ∈ exactForms J M 1 := by
+  obtain ⟨g, -, hg⟩ := Φ.exists_fluxForm_trans_sub_sub_eq_mextDerivₗ Ψ hσ
+  rw [hg, exactForms_succ]
+  exact LinearMap.mem_range_self _ g
 
 /-- **The flux homomorphism.** For a closed two-form `σ` preserved by the final diffeomorphisms
 `φ₁` and `ψ₁`, the flux of the pointwise composite `ψ_t ∘ φ_t` is the sum of the fluxes of `φ`

@@ -63,7 +63,11 @@ The pairing `⟨2ρ, ν⟩ = ∑_{i < j} (νᵢ - νⱼ)` of a vector with the s
 * `TauCeti.dominates_iff_forall_prefixSum_le`: dominance compares prefix sums of every length.
 * `TauCeti.dominates_iff_exists_nonneg_sub_eq_sum`, `TauCeti.dominates_iff_exists_nat_sub_eq_sum`:
   dominance is the order of nonnegative combinations of consecutive differences `eᵢ - eᵢ₊₁`.
-* `TauCeti.dominates_iff_eq_fin_one`: on vectors of length one, dominance is equality.
+* `TauCeti.dominates_iff_eq_fin_one`, `TauCeti.dominates_iff_fin_two`: on vectors of length one,
+  dominance is equality; on vectors of length two, it compares totals and first coordinates.
+* `TauCeti.Dominates.apply_le_apply_zero`, `TauCeti.Dominates.apply_last_le_apply`: the
+  coordinates of an antitone vector dominated by `g` lie between the last and the first
+  coordinate of `g`.
 * `TauCeti.Dominates.dominanceDefect_lt`: the defect strictly decreases down the order.
 * `TauCeti.twoRhoPairing_eq_sum_zsmul`: `⟨2ρ, ν⟩ = ∑ᵢ (n - 1 - 2i) νᵢ`.
 * `TauCeti.twoRhoPairing_ite_lt`: the vector with `a` entries `m` followed by `n - a` entries `0`
@@ -149,6 +153,43 @@ theorem dominates_iff_eq_fin_one [AddCommMonoid M] [Preorder M] {a g : Fin 1 →
     Dominates a g ↔ a = g := by
   refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ Dominates.refl a⟩
   simpa only [Fin.sum_univ_one, Fin.fin_one_eq_zero i] using h.1.symm
+
+/-- On vectors of length two, dominance compares the totals and the first coordinates. -/
+theorem dominates_iff_fin_two [AddCommMonoid M] [LE M] [@Std.Refl M (· ≤ ·)] {a g : Fin 2 → M} :
+    Dominates a g ↔ g 0 + g 1 = a 0 + a 1 ∧ a 0 ≤ g 0 := by
+  rw [dominates_iff_forall_prefixSum_le, Fin.sum_univ_two, Fin.sum_univ_two]
+  refine and_congr_right fun hsum ↦ ⟨fun h ↦ prefixSum_one a ▸ prefixSum_one g ▸ h 1, fun h k ↦ ?_⟩
+  rcases k with _ | _ | k
+  · simpa only [prefixSum_zero] using refl_of (· ≤ ·) (0 : M)
+  · rwa [prefixSum_one, prefixSum_one]
+  · rw [prefixSum_of_le (by omega), prefixSum_of_le (by omega), Fin.sum_univ_two,
+      Fin.sum_univ_two, hsum]
+    exact refl_of (· ≤ ·) _
+
+/-- If an antitone vector `a` is dominated by `g`, then every coordinate of `a` is at most the
+first coordinate of `g`. -/
+theorem Dominates.apply_le_apply_zero [AddCommMonoid M] [Preorder M] {a g : Fin (n + 1) → M}
+    (h : Dominates a g) (ha : Antitone a) (i : Fin (n + 1)) : a i ≤ g 0 := by
+  have h1 := (dominates_iff_forall_prefixSum_le.mp h).2 1
+  rw [prefixSum_one, prefixSum_one] at h1
+  exact (ha (Fin.zero_le i)).trans h1
+
+/-- If an antitone vector `a` is dominated by `g`, then every coordinate of `a` is at least the
+last coordinate of `g`. -/
+theorem Dominates.apply_last_le_apply [AddCommMonoid M] [Preorder M]
+    [IsOrderedCancelAddMonoid M] {a g : Fin (n + 1) → M} (h : Dominates a g) (ha : Antitone a)
+    (i : Fin (n + 1)) : g (Fin.last n) ≤ a i := by
+  have hn := (dominates_iff_forall_prefixSum_le.mp h).2 n
+  -- `prefixSum_succ` names the last index `⟨n, _⟩`; identify it with `Fin.last n`.
+  have hidx : (⟨n, Nat.lt_succ_self n⟩ : Fin (n + 1)) = Fin.last n :=
+    Fin.ext (Fin.val_last n).symm
+  -- the total is the prefix sum of length `n` plus the last coordinate
+  have hlast (z : Fin (n + 1) → M) : ∑ j, z j = prefixSum n z + z (Fin.last n) := by
+    rw [← prefixSum_of_le le_rfl, prefixSum_succ (Nat.lt_succ_self n), hidx]
+  have htot := h.1
+  rw [hlast, hlast] at htot
+  have hle : prefixSum n a + a (Fin.last n) ≤ prefixSum n g + a (Fin.last n) := by gcongr
+  exact (le_of_add_le_add_left (htot.trans_le hle)).trans (ha (Fin.le_last i))
 
 /-- **Dominance is the order of nonnegative combinations of consecutive differences.** In an
 ordered additive commutative group, `a` dominates `g` exactly when `g - a` is a combination
