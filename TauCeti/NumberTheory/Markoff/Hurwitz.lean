@@ -50,13 +50,14 @@ def markoffHurwitzSet (n : ℕ) (a k : R) : Set (Fin n → R) :=
   {x | markoffHurwitzForm a x = k}
 
 /-- A tuple belongs to the level set exactly when its Markoff–Hurwitz form is `k`. -/
-theorem mem_markoffHurwitzSet_iff_form_eq {a k : R} {x : Fin n → R} :
+theorem mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq {a k : R} {x : Fin n → R} :
     x ∈ markoffHurwitzSet n a k ↔ markoffHurwitzForm a x = k := Iff.rfl
 
 /-- The Markoff–Hurwitz equation in sum and product form. -/
 theorem mem_markoffHurwitzSet {a k : R} {x : Fin n → R} :
     x ∈ markoffHurwitzSet n a k ↔ (∑ i, x i ^ 2) = a * (∏ i, x i) + k := by
-  rw [mem_markoffHurwitzSet_iff_form_eq, markoffHurwitzForm_def, sub_eq_iff_eq_add, add_comm k]
+  rw [mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq, markoffHurwitzForm_def,
+    sub_eq_iff_eq_add, add_comm k]
 
 /-- The Markoff–Hurwitz form commutes with ring homomorphisms, with the coefficient mapped. -/
 theorem markoffHurwitzForm_comp_ringHom (a : R) (x : Fin n → R) (f : R →+* S) :
@@ -67,8 +68,8 @@ theorem markoffHurwitzForm_comp_ringHom (a : R) (x : Fin n → R) (f : R →+* S
 theorem comp_mem_markoffHurwitzSet {a k : R} {x : Fin n → R}
     (hx : x ∈ markoffHurwitzSet n a k) (f : R →+* S) :
     f ∘ x ∈ markoffHurwitzSet n (f a) (f k) := by
-  rw [mem_markoffHurwitzSet_iff_form_eq, markoffHurwitzForm_comp_ringHom,
-    mem_markoffHurwitzSet_iff_form_eq.mp hx]
+  rw [mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq, markoffHurwitzForm_comp_ringHom,
+    mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq.mp hx]
 
 /-- The Markoff–Hurwitz form is symmetric in the coordinates. -/
 @[simp]
@@ -82,7 +83,7 @@ theorem markoffHurwitzForm_comp_perm (a : R) (x : Fin n → R) (σ : Equiv.Perm 
 theorem comp_perm_mem_markoffHurwitzSet_iff {a k : R} {x : Fin n → R}
     {σ : Equiv.Perm (Fin n)} :
     x ∘ σ ∈ markoffHurwitzSet n a k ↔ x ∈ markoffHurwitzSet n a k := by
-  simp only [mem_markoffHurwitzSet_iff_form_eq, markoffHurwitzForm_comp_perm]
+  simp only [mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq, markoffHurwitzForm_comp_perm]
 
 /-- The origin has level zero in positive dimension. -/
 @[simp]
@@ -99,6 +100,19 @@ theorem mem_positiveMarkoffHurwitzSet {a k : ℤ} {x : Fin n → ℤ} :
     x ∈ positiveMarkoffHurwitzSet n a k ↔ x ∈ markoffHurwitzSet n a k ∧ ∀ i, 0 < x i :=
   Iff.rfl
 
+/-- Positive integral points lie on the corresponding Markoff–Hurwitz level set. -/
+theorem positiveMarkoffHurwitzSet_subset_markoffHurwitzSet {a k : ℤ} :
+    positiveMarkoffHurwitzSet n a k ⊆ markoffHurwitzSet n a k :=
+  Set.sep_subset _ _
+
+/-- Coordinate permutations preserve positive integral Markoff–Hurwitz points. -/
+@[simp]
+theorem comp_perm_mem_positiveMarkoffHurwitzSet_iff {a k : ℤ} {x : Fin n → ℤ}
+    {σ : Equiv.Perm (Fin n)} :
+    x ∘ σ ∈ positiveMarkoffHurwitzSet n a k ↔ x ∈ positiveMarkoffHurwitzSet n a k := by
+  simp only [mem_positiveMarkoffHurwitzSet, comp_perm_mem_markoffHurwitzSet_iff,
+    Function.comp_apply, σ.forall_congr_right (q := fun i ↦ 0 < x i)]
+
 /-- The three-variable form with coefficient three is the classical Markoff form. -/
 @[simp]
 theorem markoffHurwitzForm_three (x : Fin 3 → R) :
@@ -110,7 +124,7 @@ theorem markoffHurwitzForm_three (x : Fin 3 → R) :
 @[simp]
 theorem markoffHurwitzSet_three : markoffHurwitzSet 3 (3 : R) 0 = markoffSet R := by
   ext x
-  simp only [mem_markoffHurwitzSet_iff_form_eq, markoffHurwitzForm_three,
+  simp only [mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq, markoffHurwitzForm_three,
     mem_markoffSet_iff_markoffForm_eq_zero]
 
 /-- The positive three-variable zero level with coefficient three is the classical positive
@@ -202,7 +216,7 @@ theorem markoffHurwitzForm_markoffHurwitzMove (a : R) (i : Fin n) (x : Fin n →
 @[simp]
 theorem markoffHurwitzMove_mem_markoffHurwitzSet_iff {a k : R} {i : Fin n} {x : Fin n → R} :
     markoffHurwitzMove a i x ∈ markoffHurwitzSet n a k ↔ x ∈ markoffHurwitzSet n a k := by
-  simp only [mem_markoffHurwitzSet_iff_form_eq, markoffHurwitzForm_markoffHurwitzMove]
+  simp only [mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq, markoffHurwitzForm_markoffHurwitzMove]
 
 /-- In three variables the changed coordinate uses the product of the other two coordinates
 in cyclic order. -/
@@ -235,26 +249,25 @@ theorem markoffHurwitzSignChange_apply (ε : Fin n → ℤˣ) (x : Fin n → R) 
     markoffHurwitzSignChange R ε x i = ((ε i : ℤ) : R) * x i := (rfl)
 
 /-- A sign change whose signs multiply to one preserves the Markoff–Hurwitz form. -/
-theorem markoffHurwitzForm_signChange (a : R) (ε : Fin n → ℤˣ) (hε : ∏ i, ε i = 1)
-    (x : Fin n → R) :
+theorem markoffHurwitzForm_markoffHurwitzSignChange (a : R) (ε : Fin n → ℤˣ)
+    (hε : ∏ i, ε i = 1) (x : Fin n → R) :
     markoffHurwitzForm a (markoffHurwitzSignChange R ε x) = markoffHurwitzForm a x := by
-  let sign : ℤˣ →* R := (Int.castRingHom R).toMonoidHom.comp (Units.coeHom ℤ)
-  have hsq (i : Fin n) : sign (ε i) ^ 2 = 1 := by
-    rw [← map_pow, Int.units_sq, map_one]
-  have hprod : ∏ i, sign (ε i) = 1 := by rw [← map_prod, hε, map_one]
   simp only [markoffHurwitzForm, markoffHurwitzSignChange_apply]
   -- The sign condition controls the product, while each individual square is unchanged.
   have hs (i : Fin n) : (((ε i : ℤ) : R) * x i) ^ 2 = x i ^ 2 := by
-    have hi : (((ε i : ℤ) : R)) ^ 2 = 1 := by simpa [sign] using hsq i
+    have hi : ((ε i : ℤ) : R) ^ 2 = 1 := by
+      rw [← Int.cast_pow, ← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one, Int.cast_one]
     rw [mul_pow, hi, one_mul]
-  have hp : ∏ i, ((ε i : ℤ) : R) = 1 := by simpa [sign] using hprod
+  have hp : ∏ i, ((ε i : ℤ) : R) = 1 := by
+    rw [← Int.cast_prod, ← Units.coe_prod, hε, Units.val_one, Int.cast_one]
   rw [Finset.sum_congr rfl (fun i _ ↦ hs i), Finset.prod_mul_distrib, hp, one_mul]
 
 /-- Even sign changes preserve every level of the Markoff–Hurwitz form. -/
 theorem markoffHurwitzSignChange_mem_markoffHurwitzSet_iff {a k : R} {ε : Fin n → ℤˣ}
     (hε : ∏ i, ε i = 1) {x : Fin n → R} :
     markoffHurwitzSignChange R ε x ∈ markoffHurwitzSet n a k ↔ x ∈ markoffHurwitzSet n a k := by
-  simp only [mem_markoffHurwitzSet_iff_form_eq, markoffHurwitzForm_signChange a ε hε]
+  simp only [mem_markoffHurwitzSet_iff_markoffHurwitzForm_eq,
+    markoffHurwitzForm_markoffHurwitzSignChange a ε hε]
 
 /-- The narrow Markoff–Hurwitz group is generated by coordinate permutations and even sign
 changes. A coordinate permutation acts by precomposition with its inverse. -/
@@ -270,8 +283,8 @@ theorem markoffHurwitzNarrowGroup_le_iff {H : Subgroup (Equiv.Perm (Fin n → R)
       (∀ σ : Equiv.Perm (Fin n), Equiv.piCongrLeft' (fun _ ↦ R) σ ∈ H) ∧
         ∀ ε : Fin n → ℤˣ, (∏ i, ε i = 1) → markoffHurwitzSignChange R ε ∈ H := by
   rw [markoffHurwitzNarrowGroup, Subgroup.closure_le, Set.union_subset_iff,
-    Set.range_subset_iff, Set.image_subset_iff]
-  rfl
+    Set.range_subset_iff, Set.subset_def, Set.forall_mem_image]
+  simp only [SetLike.mem_coe, Set.mem_ofPred_eq]
 
 /-- The Markoff–Hurwitz group adjoins the Vieta permutations to the narrow group. -/
 def markoffHurwitzGroup (n : ℕ) (a : R) : Subgroup (Equiv.Perm (Fin n → R)) :=
@@ -285,7 +298,7 @@ theorem markoffHurwitzGroup_le_iff {a : R} {H : Subgroup (Equiv.Perm (Fin n → 
   simp [markoffHurwitzGroup, sup_le_iff, Subgroup.closure_le, Set.range_subset_iff]
 
 /-- The narrow group is a subgroup of the Markoff–Hurwitz group at any coefficient. -/
-theorem markoffHurwitzNarrowGroup_le (n : ℕ) (a : R) :
+theorem markoffHurwitzNarrowGroup_le_markoffHurwitzGroup (n : ℕ) (a : R) :
     markoffHurwitzNarrowGroup n R ≤ markoffHurwitzGroup n a := by
   unfold markoffHurwitzGroup
   exact le_sup_left
@@ -313,8 +326,9 @@ theorem markoffHurwitzGroup_le_stabilizer (a k : R) :
   rw [markoffHurwitzGroup_le_iff, markoffHurwitzNarrowGroup_le_iff]
   refine ⟨⟨fun σ ↦ ?_, fun ε hε ↦ ?_⟩, fun i ↦ ?_⟩ <;>
     rw [MulAction.mem_stabilizer_set] <;> intro x
-  · rw [Equiv.Perm.smul_def, funext (Equiv.piCongrLeft'_apply _ σ x)]
-    exact comp_perm_mem_markoffHurwitzSet_iff (σ := σ.symm)
+  · rw [Equiv.Perm.smul_def, funext (Equiv.piCongrLeft'_apply _ σ x),
+      ← Function.comp_def x σ.symm]
+    exact comp_perm_mem_markoffHurwitzSet_iff
   · exact markoffHurwitzSignChange_mem_markoffHurwitzSet_iff hε
   · simpa only [Equiv.Perm.smul_def, markoffHurwitzMovePerm_apply] using
       (markoffHurwitzMove_mem_markoffHurwitzSet_iff (i := i) (a := a) (k := k) (x := x))
