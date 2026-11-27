@@ -84,8 +84,9 @@ theorem exists_singularCohomologyBockstein_eq_of_mem_torsion {p : ℕ}
   -- The image of `α` in `Hᵖ⁺¹(X; ℚ)` is torsion, hence zero.
   exact (ShortComplex.moduleCat_exact_iff _).1 (X.singularCohomology_exact_coefficient₁
     (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ ratAddCircleShortComplex_shortExact p (p + 1) rfl) α <|
-    eq_zero_of_isOfFinAddOrder_singularCohomology_rat <|
-      (ModuleCat.Hom.hom _).toAddMonoidHom.isOfFinAddOrder ((AddCommGroup.mem_torsion _).1 hα)
+    eq_zero_of_isOfFinAddOrder_singularCohomology_rat <| (AddCommGroup.mem_torsion _).1 <|
+      AddSubgroup.mem_comap.1 <|
+        AddCommGroup.le_comap_torsion (ModuleCat.Hom.hom _).toAddMonoidHom hα
 
 /-- **The cup product with a torsion class only sees the Bockstein**: if `u, u' ∈ Hᵖ(X; ℚ/ℤ)` have
 the same Bockstein in `Hᵖ⁺¹(X; ℤ)` and `b ∈ H^q(X; ℤ)` is torsion, then `u ⌣ b = u' ⌣ b` in
@@ -113,9 +114,9 @@ theorem singularCup_eq_of_singularCohomologyBockstein_eq {p q n : ℕ} (h : p + 
   suffices hz : X.singularCup ℤ integralCoeffComul (ρ_ (ModuleCat.of ℤ ℚ)).hom p q n h r b = 0 by
     rw [hz, map_zero]
   -- `r ⌣ b` is torsion, hence zero.
-  exact eq_zero_of_isOfFinAddOrder_singularCohomology_rat
-    ((X.singularCup ℤ integralCoeffComul (ρ_ (ModuleCat.of ℤ ℚ)).hom p q n h
-      r).toAddMonoidHom.isOfFinAddOrder ((AddCommGroup.mem_torsion _).1 hb))
+  exact eq_zero_of_isOfFinAddOrder_singularCohomology_rat <| (AddCommGroup.mem_torsion _).1 <|
+    AddSubgroup.mem_comap.1 <| AddCommGroup.le_comap_torsion (X.singularCup ℤ integralCoeffComul
+      (ρ_ (ModuleCat.of ℤ ℚ)).hom p q n h r).toAddMonoidHom hb
 
 /-- The value `⟨u ⌣ b, z⟩` of the torsion linking pairing, for the chosen Bockstein lift `u` of
 `α`. -/
@@ -155,8 +156,8 @@ def torsionLinkingPairing (p q n : ℕ) (h : p + q = n)
       AddCommGroup.torsion (X.integralCohomology q) →+ AddCircle (1 : ℚ) :=
   AddMonoidHom.mk'
     (fun α ↦ AddMonoidHom.mk' (fun b ↦ torsionLinkingValue p q n h z α b) (fun b b' ↦ by
-      rw [torsionLinkingValue, torsionLinkingValue, torsionLinkingValue, AddSubgroup.coe_add,
-        map_add, map_add, ModuleCat.hom_add, LinearMap.add_apply]))
+      rw [torsionLinkingValue, torsionLinkingValue, torsionLinkingValue]
+      simp only [AddSubgroup.coe_add, map_add, ModuleCat.hom_add, LinearMap.add_apply]))
     (fun α α' ↦ AddMonoidHom.ext fun b ↦ by
       -- Compute all three values with the sum of the chosen lifts of `α` and `α'`.
       obtain ⟨u, hu⟩ := exists_singularCohomologyBockstein_eq_of_mem_torsion α.property
@@ -165,8 +166,8 @@ def torsionLinkingPairing (p q n : ℕ) (h : p + q = n)
       rw [torsionLinkingValue_eq p q n h z _ b.property (u + u')
           (by rw [map_add, hu, hu', AddSubgroup.coe_add]),
         torsionLinkingValue_eq p q n h z α b.property u hu,
-        torsionLinkingValue_eq p q n h z α' b.property u' hu', map_add, LinearMap.add_apply,
-        map_add, ModuleCat.hom_add, LinearMap.add_apply])
+        torsionLinkingValue_eq p q n h z α' b.property u' hu']
+      simp only [map_add, ModuleCat.hom_add, LinearMap.add_apply])
 
 /-- **The value of the torsion linking pairing**: if `u ∈ Hᵖ(X; ℚ/ℤ)` has Bockstein `α`, then the
 torsion linking pairing of `α` and `b` against `z` is `⟨u ⌣ b, z⟩`. -/
@@ -192,12 +193,12 @@ theorem torsionLinkingPairing_naturality {Y : TopCat.{0}} (f : X ⟶ Y) (p q n :
     (α : AddCommGroup.torsion (Y.integralCohomology (p + 1)))
     (b : AddCommGroup.torsion (Y.integralCohomology q)) :
     X.torsionLinkingPairing p q n h z
-        ⟨TopCat.singularCohomologyMap f (p + 1) α, (AddCommGroup.mem_torsion _).2 <|
-          (TopCat.singularCohomologyMap f (p + 1)).hom.toAddMonoidHom.isOfFinAddOrder
-            ((AddCommGroup.mem_torsion _).1 α.property)⟩
-        ⟨TopCat.singularCohomologyMap f q b, (AddCommGroup.mem_torsion _).2 <|
-          (TopCat.singularCohomologyMap f q).hom.toAddMonoidHom.isOfFinAddOrder
-            ((AddCommGroup.mem_torsion _).1 b.property)⟩ =
+        ⟨TopCat.singularCohomologyMap f (p + 1) α, AddSubgroup.mem_comap.1 <|
+          AddCommGroup.le_comap_torsion (TopCat.singularCohomologyMap f (p + 1)).hom.toAddMonoidHom
+            α.property⟩
+        ⟨TopCat.singularCohomologyMap f q b, AddSubgroup.mem_comap.1 <|
+          AddCommGroup.le_comap_torsion (TopCat.singularCohomologyMap f q).hom.toAddMonoidHom
+            b.property⟩ =
       Y.torsionLinkingPairing p q n h
         (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
           (ModuleCat.of ℤ (ULift.{0} ℤ))).map f z) α b := by
