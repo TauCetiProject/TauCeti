@@ -178,8 +178,8 @@ theorem pow_finrank_residueKer_dvd_det {ϖ : R} (hϖ : maximalIdeal R = Ideal.sp
       split_ifs with hj
       · exact hcol j hj i
       · exact one_dvd _
-  rw [det_transpose, Finset.prod_ite_mem, Finset.univ_inter, Finset.prod_const, hs, det_mul,
-    ← GeneralLinearGroup.val_det_apply] at hdvd
+  simp only [det_transpose, Finset.prod_ite_mem, Finset.univ_inter, Finset.prod_const, hs,
+    det_mul, ← GeneralLinearGroup.val_det_apply] at hdvd
   exact (Units.dvd_mul_right).mp hdvd
 
 end LocalRing
@@ -278,11 +278,12 @@ theorem exists_eq_mul_iff_residueKer_eq (hϖ : Irreducible ϖ) {A B A' B' : Matr
   have hBA := (mul_eq_smul_one_comm (mem_nonZeroDivisors_of_ne_zero hϖ0)).mp h
   -- `ϖ (C A) = A' B A = ϖ A'`
   have hCA : C * A = A' := (smul_right_inj hϖ0).mp <| by
-    rw [← smul_mul, ← hC, Matrix.mul_assoc, hBA, Matrix.mul_smul, Matrix.mul_one]
-  -- `ϖ² (C C') = A' B A B' = ϖ A' B' = ϖ² 1`
-  have hCC' : C * C' = 1 := (smul_right_inj hϖ0).mp <| (smul_right_inj hϖ0).mp <| by
-    rw [← smul_mul, ← Matrix.mul_smul, ← hC, ← hC', Matrix.mul_assoc, ← Matrix.mul_assoc B, hBA,
-      smul_mul, Matrix.one_mul, Matrix.mul_smul, h']
+    rw [← smul_mul, ← hC]
+    simp [Matrix.mul_assoc, hBA]
+  -- `ϖ (C C') = C A B' = A' B' = ϖ 1`
+  have hCC' : C * C' = 1 := (smul_right_inj hϖ0).mp <| by
+    rw [← Matrix.mul_smul, ← hC']
+    simpa only [← Matrix.mul_assoc, hCA] using h'
   exact ⟨⟨C, C', hCC', mul_eq_one_comm.mp hCC'⟩, hCA.symm⟩
 
 end DiscreteValuationRing
