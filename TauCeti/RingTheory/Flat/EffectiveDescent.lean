@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import TauCeti.RingTheory.Flat.Amitsur
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import TauCeti.RingTheory.TensorProduct.Maps
 
@@ -95,39 +95,6 @@ The faithfully flat input is the exactness of the Amitsur sequence
 public section
 
 open TensorProduct
-
-section Amitsur
-
-variable {R : Type*} (S : Type*) (M : Type*) [CommRing R] [Ring S] [Algebra R S]
-  [AddCommGroup M] [Module R M]
-
-/-- **Amitsur exactness.** If `S` is a faithfully flat `R`-algebra, then for every `R`-module
-`M` the sequence `M → S ⊗[R] M → S ⊗[R] (S ⊗[R] M)`, with maps `m ↦ 1 ⊗ m` and
-`s ⊗ m ↦ s ⊗ (1 ⊗ m) - 1 ⊗ (s ⊗ m)`, is exact. -/
-theorem Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one [Module.FaithfullyFlat R S] :
-    Function.Exact (TensorProduct.mk R S M 1)
-      ((TensorProduct.mk R S M 1).lTensor S - TensorProduct.mk R S (S ⊗[R] M) 1) := by
-  set d := (TensorProduct.mk R S M 1).lTensor S - TensorProduct.mk R S (S ⊗[R] M) 1
-  have hd : d ∘ₗ TensorProduct.mk R S M 1 = 0 := by
-    ext m
-    simp [d]
-  -- After base change to `S`, the action `s ⊗ x ↦ s • x` of `S` on the left factor (multiplying
-  -- the first two factors) is a contracting homotopy.
-  let h := TensorProduct.lift (Algebra.lsmul R R (A := S) (S ⊗[R] M)).toLinearMap
-  let h' := TensorProduct.lift (Algebra.lsmul R R (A := S) (S ⊗[R] (S ⊗[R] M))).toLinearMap
-  have key : h' ∘ₗ d.lTensor S = (TensorProduct.mk R S M 1).lTensor S ∘ₗ h - LinearMap.id := by
-    ext s t m
-    simp [d, h, h', smul_tmul']
-  refine Module.FaithfullyFlat.lTensor_reflects_exact R S _ _ fun y ↦ ⟨fun hy ↦ ?_, ?_⟩
-  · refine ⟨h y, ?_⟩
-    have := congr($key y)
-    simp only [LinearMap.comp_apply, hy, map_zero, LinearMap.sub_apply, LinearMap.id_apply] at this
-    exact (sub_eq_zero.mp this.symm)
-  · rintro ⟨x, rfl⟩
-    rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hd, LinearMap.lTensor_zero,
-      LinearMap.zero_apply]
-
-end Amitsur
 
 namespace TauCeti
 
@@ -269,8 +236,8 @@ theorem descended_baseChange [Module.FaithfullyFlat R S] (A : Type*) [Ring A] [A
     | tmul s a => simp
     | add x y hx hy => simp only [map_add, hx, hy]
   rw [mem_descended_iff, hθ, ← sub_eq_zero, AlgHom.mem_range]
-  exact (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one S A x).trans
-    (by simp [eq_comm])
+  simpa [Amitsur.d₀_def, eq_comm] using
+    Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one S A x
 
 /-- **Uniqueness of descent.** If `S` is faithfully flat over `R`, `A` is an `R`-algebra and
 `e : S ⊗[R] A ≃ B` is an `S`-algebra isomorphism carrying `1 ⊗ A` into the descended algebra
@@ -652,7 +619,7 @@ theorem exact_lTensor_descended_val [Module.FaithfullyFlat R S] :
     (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one S _)
   ext s m a
   have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.property
-  simp [leftCommBaseChangeEquiv, leftCommBaseChangeEquiv₂, ha, Algebra.smul_def,
+  simp [Amitsur.d₀_def, leftCommBaseChangeEquiv, leftCommBaseChangeEquiv₂, ha, Algebra.smul_def,
     Algebra.TensorProduct.algebraMap_apply]
 
 end ChangeOfBase
