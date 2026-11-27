@@ -17,8 +17,9 @@ involves only the Hermitian form `π conj(l) z / area(ℂ/Λ)` and a sign that i
 on `2Λ` and `-1` otherwise. It is entire, odd, has derivative one at zero, and has simple
 zeros exactly on the lattice. Both the correction and the function depend only on the lattice.
 
-This normalization permits translating sigma by a half-period to construct even theta
-functions with a Hermitian transformation law.
+A twisted translate by a half-period `t ∉ Λ` constructs an even theta function:
+multiply `σ(z + t)` by `exp (−(π/A) conj(t) z)`, where `A = area(ℂ/Λ)`.
+The resulting function has a Hermitian transformation law.
 
 ## References
 
@@ -38,45 +39,6 @@ namespace PeriodPair
 
 variable (L : PeriodPair)
 
-/-- The complex-linear correction to the quasi-period map of a lattice. Subtracting `s₂ l`
-from `η(l)` leaves `π conj(l) / area(ℂ/Λ)`. -/
-def sigmaCorrection : ℂ :=
-  (L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ -
-    (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₁) / L.ω₁
-
-/-- The formula for the complex-linear sigma correction in a pair of periods. -/
-theorem sigmaCorrection_def :
-    L.sigmaCorrection = (L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ -
-      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₁) / L.ω₁ := (rfl)
-
-/-- The corrected quasi-period map is conjugate-linear, with coefficient `π / area(ℂ/Λ)`. -/
-theorem quasiPeriod_sub_sigmaCorrection_mul (l : L.lattice) :
-    L.quasiPeriod l - L.sigmaCorrection * l =
-      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj (l : ℂ) := by
-  have h₁ : L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ - L.sigmaCorrection * L.ω₁ =
-      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₁ := by
-    rw [sigmaCorrection_def, div_mul_cancel₀ _ L.ω₁_ne_zero]
-    ring
-  have h₂ : L.quasiPeriod ⟨_, L.ω₂_mem_lattice⟩ - L.sigmaCorrection * L.ω₂ =
-      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₂ := by
-    apply mul_right_cancel₀ L.ω₁_ne_zero
-    linear_combination L.ω₂ * h₁ - L.quasiPeriod_legendre_covolume
-  obtain ⟨m, n, h⟩ := mem_lattice.mp l.property
-  rw [L.quasiPeriod_eq_intCast_mul_add l h, ← h, map_add, map_mul, map_mul]
-  simp only [map_intCast]
-  linear_combination (m : ℂ) * h₁ + (n : ℂ) * h₂
-
-/-- The sigma correction is independent of the generators of the lattice. -/
-theorem sigmaCorrection_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
-    L.sigmaCorrection = L'.sigmaCorrection := by
-  have h₁ := L.quasiPeriod_sub_sigmaCorrection_mul ⟨_, L.ω₁_mem_lattice⟩
-  have h₂ := L'.quasiPeriod_sub_sigmaCorrection_mul ⟨_, h ▸ L.ω₁_mem_lattice⟩
-  have hη := L.quasiPeriod_eq_of_lattice_eq h ⟨_, L.ω₁_mem_lattice⟩
-  rw [← hη] at h₂
-  simp only at h₁ h₂
-  rw [← h] at h₂
-  exact mul_right_cancel₀ L.ω₁_ne_zero (by linear_combination h₂ - h₁)
-
 /-- The reduced sigma function of a complex lattice: the Weierstrass product with its
 quadratic exponential correction. -/
 def reducedSigma (z : ℂ) : ℂ :=
@@ -87,6 +49,7 @@ theorem reducedSigma_def (z : ℂ) :
     L.reducedSigma z = exp (-(L.sigmaCorrection * z ^ 2 / 2)) * L.weierstrassSigma z := (rfl)
 
 /-- The reduced sigma function is entire. -/
+@[fun_prop]
 theorem differentiable_reducedSigma : Differentiable ℂ L.reducedSigma := by
   unfold reducedSigma
   exact Differentiable.mul (by fun_prop) L.differentiable_weierstrassSigma
@@ -152,6 +115,7 @@ theorem reducedSigma_add_coe (z : ℂ) (l : L.lattice) :
     (if (l : ℂ) / 2 ∈ L.lattice then (1 : ℂ) else -1) * he
 
 /-- Every zero of reduced sigma is simple. -/
+@[simp]
 theorem analyticOrderAt_reducedSigma_coe (l : L.lattice) :
     analyticOrderAt L.reducedSigma l = 1 := by
   have he : AnalyticAt ℂ (fun z : ℂ ↦ exp (-(L.sigmaCorrection * z ^ 2 / 2))) l := by
