@@ -14,7 +14,6 @@ public import TauCeti.Data.Matrix.Block
 public import TauCeti.Data.Matrix.Composition
 public import TauCeti.LinearAlgebra.Matrix.StarProjection
 public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
-import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Murray–von Neumann equivalence of matrix projections
