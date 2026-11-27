@@ -248,8 +248,8 @@ private theorem exists_eq_zeroOneHilbertSchmidtL (hp : 1 < p) (hp_top : p ≠ �
     (hQ₁ i).2.trans (subset_closure.trans ((hQ₂ i).trans (subset_closure.trans (hQ₃ i))))
   -- In every chart, `Λ` is represented over `Q₁` by a smooth field, giving one piece `ζᵢ`.
   choose θ hθ hrep hweak using fun i ↦
-    exists_memLp_forall_integral_eq_zero_of_annihilator (q := p.conjExponent) A hD hDs hp
-      hp_top Λ hΛ i (hQ₁i i)
+    exists_memLp_forall_integral_eq_zero_of_annihilator (q := p.conjExponent) A hD hDs hp_top Λ hΛ
+      i (hQ₁i i)
   choose g hg hθg using fun i ↦ exists_contDiffOn_ae_eq_of_forall_integral_eq_zero A hD hDs
     (subset_closure.trans (hQ₁i i)) hq (hθ i).memLpLoc (hweak i)
   choose ζ hζs hζ01 hζΛ using fun i ↦ exists_zeroOneForm_chart A

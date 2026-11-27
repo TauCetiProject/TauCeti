@@ -250,8 +250,8 @@ private theorem exists_norm_apply_le_norm_ofExponentLEL_one (hp' : 1 < p') (hp'_
   have hQ₀₁ (i : Fin A.n) : Q₀ i ≤ Q₁ i := subset_closure.trans (hQ₀ i).2
   -- In every chart, the field representing `Λ` over `Q₁` is smooth, hence bounded on `Q₀`.
   choose θ hθ hrep hweak using fun i ↦
-    exists_memLp_forall_integral_eq_zero_of_annihilator (q := p'.conjExponent) A hD hDs hp'
-      hp'_top Λ hΛ i (hQ₁i i)
+    exists_memLp_forall_integral_eq_zero_of_annihilator (q := p'.conjExponent) A hD hDs hp'_top Λ
+      hΛ i (hQ₁i i)
   choose g hg hθg using fun i ↦ exists_contDiffOn_ae_eq_of_forall_integral_eq_zero A hD hDs
     (subset_closure.trans (hQ₁i i)) hq (hθ i).memLpLoc (hweak i)
   choose M₀ hM₀ using fun i ↦ (hQ₀ i).1.exists_bound_of_continuousOn

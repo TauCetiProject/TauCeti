@@ -194,7 +194,7 @@ theorem exists_memLp_forall_integral_mul_eq_integral_inner_gradient_of_integral_
     rw [hℓ]
     exact abs_integral_mul_le_of_integral_eq_zero hr hrp hp hδ hδn ht hh hsupp hmean φ
   obtain ⟨H, hH, hHnorm, hHφ⟩ := exists_memLp_forall_eq_integral_inner_gradient_of_abs_le
-    (μ := μ) (p := p) hq1 hq_top ℓ hM hbound
+    (μ := μ) (p := p) hq_top ℓ hM hbound
   simp only [Opens.coe_top, Measure.restrict_univ] at hH hHnorm hHφ
   refine ⟨H, hH, hHnorm.trans (le_of_eq ?_), fun φ => (hℓ φ).symm.trans (hHφ φ)⟩
   rw [ENNReal.ofReal_toReal hfin, ENNReal.ofReal_mul hK, ENNReal.coe_mul,

@@ -9,26 +9,25 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.MeasureTheory.Function.Lp.Dual
 import TauCeti.Analysis.Distribution.SchwartzSpace.Lp
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.MeasureTheory.Function.L1Space.Dual
 
 /-!
 # Norming `Lᵠ` functions by Schwartz functions
 
 Let `μ` be a measure of temperate growth on a finite-dimensional real normed space, and let
 `p < ∞` and `q` be Hölder conjugate. The Schwartz functions are dense in `Lᵖ(μ)`, so they norm the
-dual space `Lᵠ(μ)`: an `Lᵠ` function `h` whose pairings with Schwartz functions satisfy
-`‖∫ g h‖ ≤ B ‖g‖_p` has `‖h‖_q ≤ B`
+dual space `Lᵠ(μ)`: for `B ≥ 0`, an `Lᵠ` function `h` whose pairings with Schwartz functions
+satisfy `‖∫ g h‖ ≤ B ‖g‖_p` has `‖h‖_q ≤ B`
 (`MeasureTheory.Lp.norm_le_of_forall_norm_toTemperedDistribution_apply_le`), and every
 `r < ‖h‖_q` is exceeded by `‖∫ g h‖` for some Schwartz function `g` with `‖g‖_p < 1`
 (`MeasureTheory.Lp.exists_lt_norm_toTemperedDistribution_apply_of_lt_norm`).
 
-Conversely, for `1 ≤ p < ∞` every tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p` for all
-Schwartz functions `g` is an `Lᵠ` function of norm at most `B`
+Conversely, for `1 ≤ p < ∞` and `B ≥ 0` every tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p`
+for all Schwartz functions `g` is an `Lᵠ` function of norm at most `B`
 (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`). The bound extends `u` from
 the dense Schwartz functions to a continuous linear functional on `Lᵖ(μ)`
-(`SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`:
-`MeasureTheory.Lp.dualEquiv` for `1 < p`, and for `p = 1`, where `q = ∞`, the dual of `L¹` of the
-σ-finite measure `μ` (`MeasureTheory.Lp.exists_toDual_eq`). This is how an `Lᵠ` estimate for a
+(`SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`
+(`MeasureTheory.Lp.toDual_surjective`), including `L¹(μ)⋆ = L^∞(μ)` at `p = 1` for the
+σ-finite measure `μ`. This is how an `Lᵠ` estimate for a
 distribution is obtained by duality from estimates on test functions alone, for instance for the
 blocks of a distribution in a Besov space of negative order.
 
@@ -79,7 +78,8 @@ theorem exists_lt_norm_toTemperedDistribution_apply_of_lt_norm (hp : p ≠ ∞) 
   exact ⟨g, hg1, by rwa [toTemperedDistribution_apply_eq_toDual_apply (p := p)]⟩
 
 /-- **Norming by Schwartz functions.** For `p < ∞` and `q` Hölder conjugate to `p`, if
-`h ∈ Lᵠ(μ)` satisfies `‖∫ g h‖ ≤ B ‖g‖_p` for every Schwartz function `g`, then `‖h‖_q ≤ B`. -/
+`h ∈ Lᵠ(μ)` satisfies `‖∫ g h‖ ≤ B ‖g‖_p` for every Schwartz function `g` and some `B ≥ 0`, then
+`‖h‖_q ≤ B`. -/
 theorem norm_le_of_forall_norm_toTemperedDistribution_apply_le (hp : p ≠ ∞) (h : Lp ℂ q μ)
     {B : ℝ} (hB : 0 ≤ B) (hh : ∀ g : 𝓢(E, ℂ), ‖(h : 𝓢'(E, ℂ)) g‖ ≤ B * ‖g.toLp p μ‖) :
     ‖h‖ ≤ B := by
@@ -99,7 +99,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **Distributions bounded in `Lᵖ` are `Lᵠ` functions.** For `1 ≤ p < ∞` and `q` Hölder
 conjugate to `p`, a tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p` for every Schwartz function
-`g` is the tempered distribution of some `h ∈ Lᵠ(μ)` with `‖h‖_q ≤ B`. -/
+`g` and some `B ≥ 0` is the tempered distribution of some `h ∈ Lᵠ(μ)` with `‖h‖_q ≤ B`. -/
 theorem exists_eq_toTemperedDistribution_and_norm_le (hp_top : p ≠ ∞)
     (u : 𝓢'(E, ℂ)) {B : ℝ} (hB : 0 ≤ B) (hu : ∀ g : 𝓢(E, ℂ), ‖u g‖ ≤ B * ‖g.toLp p μ‖) :
     ∃ h : Lp ℂ q μ, (h : 𝓢'(E, ℂ)) = u ∧ ‖h‖ ≤ B := by
@@ -107,14 +107,8 @@ theorem exists_eq_toTemperedDistribution_and_norm_le (hp_top : p ≠ ∞)
   -- Extend `u` from the dense Schwartz functions to a functional `Λ` on `Lᵖ`.
   obtain ⟨Λ, hΛu, hΛ⟩ :=
     SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le hp_top (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) hB hu
-  -- `Λ` is integration against some `h ∈ Lᵠ`: the dual of `L¹` is `L^∞`, and for `1 < p` the dual
-  -- of `Lᵖ` is `Lᵠ`.
-  obtain ⟨h, hh⟩ : ∃ h : Lp ℂ q μ, Lp.toDual ℂ μ q p h = Λ := by
-    rcases (Fact.out : 1 ≤ p).eq_or_lt with rfl | hp
-    · obtain rfl : q = ∞ := (ENNReal.HolderConjugate.eq_top_iff_eq_one q 1).2 rfl
-      exact Lp.exists_toDual_eq Λ
-    · exact ⟨(Lp.dualEquiv ℂ μ q p hp hp_top).symm Λ, by
-        rw [← Lp.coe_dualEquiv hp hp_top, LinearIsometryEquiv.apply_symm_apply]⟩
+  -- `Λ` is integration against some `h ∈ Lᵠ`, as the dual of `Lᵖ` is `Lᵠ`.
+  obtain ⟨h, hh⟩ := Lp.toDual_surjective (p := q) hp_top Λ
   -- `h` represents `u`.
   refine ⟨h, ?_, by rwa [← (Lp.toDual ℂ μ q p).norm_map h, hh]⟩
   ext g

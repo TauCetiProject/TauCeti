@@ -351,7 +351,7 @@ theorem finiteDimensional_orthogonalBilin_range_sobolevL (hp : 1 < p) (hp_top : 
   have hQ₃' (i : Fin A.n) : (Q₃ i : Set ℂ) ⊆ A.image i := subset_closure.trans (hQ₃ i)
   -- The fields representing an annihilator over `Q₃`, and their compact sets of values.
   choose θ hθ hrep hweak using fun (Λ : G) i ↦
-    exists_memLp_forall_integral_eq_zero_of_annihilator (q := q) A hD hDs hp hp_top Λ (hG Λ) i
+    exists_memLp_forall_integral_eq_zero_of_annihilator (q := q) A hD hDs hp_top Λ (hG Λ) i
       (hQ₃ i)
   choose K hK hKθ using fun i (c : Fin (finrank ℝ F)) ↦ exists_isCompact_of_represents (q := q)
     A hD hDs hp hp_top i (hQ₃' i) (hQ₂ i) (hQ₁ i).1 (hQ₁ i).2 (hQ₀ i).1 (hQ₀ i).2 (finBasis ℝ F c)

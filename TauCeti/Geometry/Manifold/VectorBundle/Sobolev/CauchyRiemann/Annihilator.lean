@@ -124,12 +124,12 @@ theorem exists_extension_zeroOneSobolevSections
 variable {q : ℝ≥0∞} [hq₁ : Fact (1 ≤ q)] [hpq : p.HolderConjugate q]
 
 include hq₁ hpq in
-/-- **Local representation of functionals on `(0,1)`-forms.** Let `1 < p < ∞`, `q` the conjugate
+/-- **Local representation of functionals on `(0,1)`-forms.** Let `1 ≤ p < ∞`, `q` the conjugate
 exponent, and `Λ` a continuous functional on the `Lᵖ` `(0,1)`-forms. For every open `Q` with
 closure in the image of chart `i`, there is an `L^q` covector field `θ` on `Q` with
 `Λ w = ∫_Q θ (wᵢ(1))` for every `(0,1)`-form `w` vanishing almost everywhere off the points of `M`
 read in chart `i` inside `Q`, where `wᵢ` is the chart-`i` reading of `w`. -/
-theorem exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (hp : 1 < p) (hp_top : p ≠ ⊤)
+theorem exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (hp_top : p ≠ ⊤)
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) (i : Fin A.n) {Q : Opens ℂ}
     (hQi : closure (Q : Set ℂ) ⊆ A.image i) :
     ∃ θ : ℂ → F →L[ℝ] ℝ, MemLp θ q (volume.restrict Q) ∧
@@ -146,7 +146,7 @@ theorem exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (hp : 1 < p) (hp_top
     exact fun y hy ↦ hQi (subset_closure hy)
   -- `Λ` over `Q` is integration of the chart-`i` components against `H`.
   obtain ⟨H, hH, hHΛ⟩ := SobolevSection.exists_memLp_forall_apply_eq_sum_setIntegral (q := q)
-    A.tangentHom hp hp_top Λ' i hQi'
+    A.tangentHom hp_top Λ' i hQi'
   -- The coefficient field, assembled by a fixed continuous linear map: the `c`-th component of
   -- the complex antilinear map with value `v` on `1`, weighted by `H c`.
   let T : EuclideanSpace ℝ (Fin (finrank ℝ (ℂ →L[ℝ] F))) →L[ℝ] F →L[ℝ] ℝ :=
@@ -210,14 +210,14 @@ private theorem coord_tangentHom_eq_of_eqOn {i : Fin A.n} {ξ : Π x, V x}
 
 include hD hDs hq₁ hpq in
 /-- **Annihilators of the range are weak solutions of the adjoint equation, in a chart.** Let
-`1 < p < ∞`, `q` the conjugate exponent, and `Λ` a continuous functional on the `Lᵖ` `(0,1)`-forms
+`1 ≤ p < ∞`, `q` the conjugate exponent, and `Λ` a continuous functional on the `Lᵖ` `(0,1)`-forms
 vanishing on the range of the realization `W^{1,p}(M, V) → Lᵖ(M, Λ^{0,1} ⊗ V)` of a smooth real
 Cauchy–Riemann operator `D`. Let `Q` be open with closure in the image of chart `i`. Then the
 `L^q` covector field `θ` on `Q` representing `Λ` over `Q`, `Λ w = ∫_Q θ (wᵢ(1))` for every
 `(0,1)`-form `w` vanishing off the points read in chart `i` inside `Q`, satisfies
 `∫ θ ((∂bar φ + Zᵢ φ)(1)) = 0` for every test function `φ` on `Q`, where `Zᵢ` is the zeroth-order
 term of `D` in chart `i`. -/
-theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp : 1 < p) (hp_top : p ≠ ⊤)
+theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp_top : p ≠ ⊤)
     (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ)
     (hΛ : ∀ w, Λ (hD.sobolevL A hDs volume p w) = 0) (i : Fin A.n) {Q : Opens ℂ}
     (hQi : closure (Q : Set ℂ) ⊆ A.image i) :
@@ -232,7 +232,7 @@ theorem exists_memLp_forall_integral_eq_zero_of_annihilator (hp : 1 < p) (hp_top
         A.chartZeroOrder D i z ((φ : ℂ → F) z)) 1) = 0 := by
   have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   obtain ⟨θ, hθ, hrep⟩ :=
-    exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (q := q) A hp hp_top Λ i hQi
+    exists_memLp_forall_eq_setIntegral_of_mem_aeZeroOff (q := q) A hp_top Λ i hQi
   refine ⟨θ, hθ, hrep, fun φ ↦ ?_⟩
   -- The smooth section read as `φ` in chart `i`.
   have hQimg : (Q : Set ℂ) ⊆ A.image i := fun y hy ↦ hQi (subset_closure hy)

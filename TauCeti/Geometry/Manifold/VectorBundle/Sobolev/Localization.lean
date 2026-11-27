@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Function.Lp.Dual
 
 Let `A` be a finite bundle atlas of a smooth vector bundle `V → M` with finite-dimensional model
 fibre `F`, over a manifold modelled on a finite-dimensional inner product space `E`, and let
-`1 < p < ∞` with conjugate exponent `q`. A continuous functional `Λ` on the chart data of `Lᵖ`
+`1 ≤ p < ∞` with conjugate exponent `q`. A continuous functional `Λ` on the chart data of `Lᵖ`
 sections is, over an open `Q` with closure in the image of chart `i`, integration of the chart-`i`
 components against an `L^q` field: `Λ w = ∑_c ∫_Q H_c wᵢ_c` for every `Lᵖ` section `w` vanishing
 off the points read in chart `i` inside `Q`
@@ -92,10 +92,10 @@ private theorem apply_eq_sum_single
 variable {q : ℝ≥0∞} [hq₁ : Fact (1 ≤ q)] [hpq : p.HolderConjugate q]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
-/-- **Chartwise representation.** For `1 < p < ∞`, the restriction of a continuous functional on
+/-- **Chartwise representation.** For `1 ≤ p < ∞`, the restriction of a continuous functional on
 the chart data of sections to the block of chart `j` is integration against an `L^q` field of
 coefficients, one for each component. -/
-private theorem exists_memLp_apply_single_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
+private theorem exists_memLp_apply_single_eq (hp_top : p ≠ ⊤)
     (Λ' : A.sectionChartData.SobolevData μ p 0 →L[ℝ] ℝ)
     (j : Fin A.sectionChartData.n) :
     ∃ H : E → EuclideanSpace ℝ (Fin (finrank ℝ F)),
@@ -106,7 +106,7 @@ private theorem exists_memLp_apply_single_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
   -- The block of chart `j` is `Fin _ → Wkp μ (image j) p 0`, which is `Fin _ → Lᵖ` by definition
   -- (`Wkp.value_zero` is `rfl`), so the duality for `Lᵖ` tuples applies to it directly.
   obtain ⟨H, hH, -, hΛ⟩ := MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq (p := q) (q := p)
-    hp hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
+    hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
     (Λ'.comp (ContinuousLinearMap.single ℝ
       (fun j ↦ Fin (finrank ℝ F) →
         Wkp μ (A.sectionChartData.image j) p 0) j))
@@ -114,10 +114,10 @@ private theorem exists_memLp_apply_single_eq (hp : 1 < p) (hp_top : p ≠ ⊤)
 
 include hq₁ hpq in
 /-- **Localizing a functional to one chart.** Let `Q` be open with closure in the image of chart
-`i`, and `1 < p < ∞`. For a continuous functional `Λ'` on the chart data of sections, there is a
+`i`, and `1 ≤ p < ∞`. For a continuous functional `Λ'` on the chart data of sections, there is a
 continuous functional `ℓ` on chart-`i` data over `Q` with `Λ' w = ℓ (w_i|_Q)` for every `Lᵖ`
 section `w` whose chart-`j` data vanish off the localized image, for every chart `j`. -/
-private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤)
+private theorem exists_localization [T2Space M] (hp_top : p ≠ ⊤)
     (Λ' : A.sectionChartData.SobolevData μ p 0 →L[ℝ] ℝ)
     (i : Fin A.sectionChartData.n) {Q : Opens E}
     (hQi : closure (Q : Set E) ⊆ A.image i)
@@ -128,7 +128,7 @@ private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤
           ∀ᵐ y ∂μ.restrict (A.sectionChartData.image j : Set E),
           y ∉ A.localizedImage i j Q → Wkp.value 0 (w j c) y = 0) →
         Λ' w = ℓ fun c ↦ Wkp.restrictL hQ 0 (w i c) := by
-  choose H hH hΛ using exists_memLp_apply_single_eq (q := q) A hp hp_top Λ'
+  choose H hH hΛ using exists_memLp_apply_single_eq (q := q) A hp_top Λ'
   -- The localized images and the transfer of chart-`i` data to them.
   set P : Fin A.sectionChartData.n → Opens E := fun j ↦ A.localizedImage i j Q
   have hPj (j : Fin A.n) :
@@ -177,12 +177,12 @@ private theorem exists_localization [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤
     rw [← Wkp.value_zero (w j c), hy hyd.1 hyd.2, mul_zero]
 
 include hq₁ hpq in
-/-- **Local representation of functionals on `Lᵖ` sections.** Let `1 < p < ∞`, `q` the conjugate
+/-- **Local representation of functionals on `Lᵖ` sections.** Let `1 ≤ p < ∞`, `q` the conjugate
 exponent, `Λ` a continuous functional on the chart data of `Lᵖ` sections, and `Q` open with closure
 in the image of chart `i`. There is an `L^q` field `H` of coefficients on `Q`, one for each
 component, with `Λ w = ∑_c ∫_Q H_c wᵢ_c` for every `Lᵖ` section `w` vanishing almost everywhere
 off the points read in chart `i` inside `Q`. -/
-theorem exists_memLp_forall_apply_eq_sum_setIntegral [T2Space M] (hp : 1 < p) (hp_top : p ≠ ⊤)
+theorem exists_memLp_forall_apply_eq_sum_setIntegral [T2Space M] (hp_top : p ≠ ⊤)
     (Λ : A.sectionChartData.SobolevData μ p 0 →L[ℝ] ℝ) (i : Fin A.n) {Q : Opens E}
     (hQi : closure (Q : Set E) ⊆ A.image i) :
     ∃ H : E → EuclideanSpace ℝ (Fin (finrank ℝ F)), MemLp H q (μ.restrict Q) ∧
@@ -192,11 +192,11 @@ theorem exists_memLp_forall_apply_eq_sum_setIntegral [T2Space M] (hp : 1 < p) (h
   have hQ : Q ≤ A.sectionChartData.image i := by
     rw [sectionChartData_image]
     exact fun y hy ↦ hQi (subset_closure hy)
-  obtain ⟨ℓ, hℓ⟩ := exists_localization (q := q) A hp hp_top Λ i hQi hQ
+  obtain ⟨ℓ, hℓ⟩ := exists_localization (q := q) A hp_top Λ i hQi hQ
   -- `ℓ` acts on `Fin _ → Wkp μ Q p 0`, which is `Fin _ → Lᵖ(Q)` by definition (`Wkp.value_zero`
   -- is `rfl`), so it is read as a functional on `Lᵖ` tuples.
   obtain ⟨H, hH, -, hHℓ⟩ := MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq (p := q) (q := p)
-    (μ := μ.restrict (Q : Set E)) hp hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
+    (μ := μ.restrict (Q : Set E)) hp_top (EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ)
     (ℓ : StrongDual ℝ (Fin (finrank ℝ F) → Lp ℝ p (μ.restrict (Q : Set E))))
   refine ⟨H, hH, fun w hw ↦ ?_⟩
   rw [hℓ _ w.prop (value_eq_zero_ae_of_mem_aeZeroOff A (fun y hy ↦ hQi (subset_closure hy)) hw),

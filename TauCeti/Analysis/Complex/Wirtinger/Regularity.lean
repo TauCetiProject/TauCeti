@@ -86,14 +86,12 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
   have := FiniteDimensional.completeSpace ℂ F
   have : Fact (1 ≤ p) := ⟨hp.le⟩
   have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
-  have hq : 1 < p.conjExponent :=
-    (ENNReal.HolderConjugate.lt_top_iff_one_lt p _).1 hp_top.lt_top
   have hq_top : p.conjExponent ≠ ⊤ := ((ENNReal.HolderConjugate.lt_top_iff_one_lt _ p).2 hp).ne
   obtain ⟨V, hKV, hVc, hVU, C, hC⟩ :=
     exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_eq_of_le
       (F := F) (q := p.conjExponent) hp hp_top hpr hK hKU
   obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
-    (μ := volume) (Ω := V) (G := F) (p := p) hq hq_top
+    (μ := volume) (Ω := V) (G := F) (p := p) hq_top
   refine ⟨V, hKV, hVc, hVU, 2 * (C₀ * C), fun u f hu hf h => ?_⟩
   set A := eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)
   have hA : (C : ℝ≥0∞) * A ≠ ⊤ :=

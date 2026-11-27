@@ -15,15 +15,33 @@ import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.MeasureTheory.Function.Holder
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.MeasureTheory.Function.Lp.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # Representation of continuous functionals on `Lᵖ`
 
 On a σ-finite measure space, the integral pairing identifies the continuous dual of `Lᵠ`
-with `Lᵖ` for conjugate exponents `1 < p, q < ∞`. The isometric embedding is supplied by
-`MeasureTheory.Lp.toDual`. Surjectivity follows from reflexivity of `Lᵠ`: a functional
-annihilating the closed range is evaluation at an `Lᵠ` function, which must vanish by the
-injectivity of the reversed integral pairing.
+with `Lᵖ` for conjugate exponents `1 ≤ q < ∞`, including the endpoint `L¹(μ)⋆ = L^∞(μ)`. The
+isometric embedding is supplied by `MeasureTheory.Lp.toDual`. For `1 < q`, surjectivity follows
+from reflexivity of `Lᵠ`: a functional annihilating the closed range is evaluation at an `Lᵠ`
+function, which must vanish by the injectivity of the reversed integral pairing.
+
+For `q = 1` and a finite measure, the density of `φ ∈ L¹(μ)⋆` is found in `L²(μ)`. As `L²(μ)` maps
+continuously into `L¹(μ)` (`MeasureTheory.Lp.ofExponentLEL`), `φ` restricts to a continuous linear
+functional on `L²(μ)`. The Riesz representation theorem writes it as `f ↦ ∫ h f` for some
+`h ∈ L²(μ)`. Testing against simple functions bounds `‖h‖_∞` by `‖φ‖`
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le`), and density
+of simple functions in `L¹(μ)` gives `φ f = ∫ h f` for every `f ∈ L¹(μ)`. A σ-finite measure `μ`
+has a positive weight `w` with `∫ w dμ < ∞`
+(`MeasureTheory.exists_pos_lintegral_lt_of_sigmaFinite`), and `ν = w μ` is a finite measure with
+the same null sets as `μ`. Multiplication by `w` maps `L¹(ν)` isometrically onto `L¹(μ)`
+(`MeasureTheory.withDensitySMulLI`), so `φ` pulls back to a functional on `L¹(ν)`, whose density
+`g ∈ L^∞(ν) = L^∞(μ)` represents `φ`: `φ (w u) = ∫ g u dν = ∫ g (w u) dμ`. Some hypothesis on `μ`
+is needed: for the measure on a point that gives it infinite mass, `L¹(μ) = 0` while
+`L^∞(μ) = 𝕜`.
 
 This representation passes distributional test-function bounds to actual `Lᵖ` weak derivatives.
 
@@ -39,7 +57,9 @@ For a real inner product space `E` with a finite orthonormal basis `b`, the dual
 
 ## Main declarations
 
-* `MeasureTheory.Lp.dualEquiv`: the isometric isomorphism `Lᵖ(μ) ≃ (Lᵠ(μ))⋆`.
+* `MeasureTheory.Lp.toDual_surjective`: for `1 ≤ q < ∞`, every continuous linear functional on
+  `Lᵠ(μ)` is integration against some `g ∈ Lᵖ(μ)`.
+* `MeasureTheory.Lp.dualEquiv`: the isometric isomorphism `Lᵖ(μ) ≃ (Lᵠ(μ))⋆` for `1 ≤ q < ∞`.
 * `MeasureTheory.Lp.strongDualEquiv`: the isometric isomorphism `Lᵖ(μ; H⋆) ≃ (Lᵠ(μ; H))⋆` for a
   Hilbert space `H`.
 * `MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq`: the representation of functionals on
@@ -47,7 +67,9 @@ For a real inner product space `E` with a finite orthonormal basis `b`, the dual
 
 ## References
 
-* G. B. Folland, *Real Analysis*, second edition, Theorem 6.16.
+* H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
+  Theorem 4.14 (the dual of `L¹`).
+* G. B. Folland, *Real Analysis*, second edition, Theorems 6.15 and 6.16.
 * J. Diestel, J. J. Uhl, *Vector Measures*, Mathematical Surveys 15, AMS, 1977, Chapter IV, §1
   (the dual of the Lebesgue–Bochner space `Lᵠ(μ; X)` is `Lᵖ(μ; X⋆)` when `X⋆` has the
   Radon–Nikodým property, for instance when `X` is reflexive).
@@ -60,55 +82,165 @@ open scoped ENNReal InnerProductSpace
 namespace MeasureTheory.Lp
 
 variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
-  [SigmaFinite μ] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
 
-/-- Every continuous scalar functional on `Lᵠ` is integration against an `Lᵖ` function,
-for conjugate exponents strictly between one and infinity. -/
-theorem toDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
-    Function.Surjective (toDual 𝕜 μ p q) :=
-  LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
+/-! ### The dual of `L¹` -/
+
+section L1
+
+open scoped NNReal ComplexConjugate
+
+/-- For a finite measure, every continuous linear functional on `L¹(μ)` is integration against
+an essentially bounded function. -/
+private theorem exists_toDual_eq_of_isFiniteMeasure [IsFiniteMeasure μ]
+    (φ : StrongDual 𝕜 (Lp 𝕜 1 μ)) :
+    ∃ g : Lp 𝕜 ∞ μ, toDual 𝕜 μ ∞ 1 g = φ := by
+  -- The Riesz representation `h` of `φ` restricted to `L²(μ)` represents `φ` on `L²(μ)`.
+  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Lp.ofExponentLEL 𝕜 𝕜 one_le_two
+  set u : Lp 𝕜 2 μ := (InnerProductSpace.toDual 𝕜 (Lp 𝕜 2 μ)).symm (φ.comp ι)
+  set h : α → 𝕜 := fun x => conj (u x)
+  have hφ : ∀ (f : Lp 𝕜 1 μ) (f' : Lp 𝕜 2 μ), (f : α → 𝕜) =ᵐ[μ] f' →
+      φ f = ∫ x, h x * f x ∂μ := fun f f' hf => by
+    have hfι : f = ι f' := Lp.ext (by simpa only [ι, Lp.coeFn_ofExponentLEL] using hf)
+    calc φ f = inner 𝕜 u f' := by
+          rw [InnerProductSpace.toDual_symm_apply, ContinuousLinearMap.comp_apply, hfι]
+      _ = ∫ x, h x * f x ∂μ := by
+          rw [L2.inner_def]
+          refine integral_congr_ae (hf.mono fun x hx => ?_)
+          simp [h, hx, mul_comm]
+  -- Testing against simple functions bounds `‖h‖_∞` by `‖φ‖`.
+  have hint : Integrable h μ := (Lp.memLp u).star.integrable one_le_two
+  have hbound : eLpNorm h ∞ μ ≤ ‖φ‖ₑ :=
+    hint.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun σ hσ =>
+      have hσ₂ := σ.memLp_of_isFiniteMeasure 2 μ
+      enorm_integral_mul_le_of_apply_eq φ hσ
+        (hφ _ (hσ₂.toLp σ) (hσ.coeFn_toLp.trans hσ₂.coeFn_toLp.symm))
+  have hh : MemLp h ∞ μ := memLp_iff.2 (hbound.trans_lt eNorm_lt_top)
+  refine ⟨hh.toLp h, ContinuousLinearMap.ext fun f => ?_⟩
+  -- Both functionals are continuous, and they agree on indicator functions.
+  induction f using Lp.induction ENNReal.one_ne_top with
+  | indicatorConst c hs hμs =>
+    rw [toDual_apply, Lp.simpleFunc.coe_indicatorConst,
+      hφ _ (indicatorConstLp 2 hs hμs.ne c)
+        (indicatorConstLp_coeFn.trans indicatorConstLp_coeFn.symm)]
+    exact integral_congr_ae (by filter_upwards [hh.coeFn_toLp] with x hx; rw [hx])
+  | add _ _ _ hf hg => rw [map_add, map_add, hf, hg]
+  | isClosed => exact isClosed_eq (ContinuousLinearMap.continuous _) φ.continuous
+
+/-- Multiplication by a weight `w`, from `L¹(w μ)` to `L¹(μ)`, commutes with scalars of `𝕜`. -/
+private theorem withDensitySMulLI_smul {w : α → ℝ≥0} (hw : Measurable w) (c : 𝕜)
+    (u : Lp 𝕜 1 (μ.withDensity fun x ↦ (w x : ℝ≥0∞))) :
+    withDensitySMulLI μ hw (c • u) = c • withDensitySMulLI μ hw u := by
+  ext1
+  filter_upwards [(ae_withDensity_iff hw.coe_nnreal_ennreal).1 (Lp.coeFn_smul c u),
+    (memL1_smul_of_L1_withDensity hw (c • u)).coeFn_toLp,
+    Lp.coeFn_smul c (withDensitySMulLI μ hw u),
+    (memL1_smul_of_L1_withDensity hw u).coeFn_toLp] with x h₁ h₂ h₃ h₄
+  rw [withDensitySMulLI_apply, h₂, h₃, Pi.smul_apply, withDensitySMulLI_apply, h₄]
+  rcases eq_or_ne (w x) 0 with hx | hx
+  · simp [hx]
+  · rw [h₁ (ENNReal.coe_ne_zero.2 hx), Pi.smul_apply, smul_comm]
+
+/-- Multiplication by a positive weight `w` maps `L¹(w μ)` onto `L¹(μ)`. -/
+private theorem withDensitySMulLI_surjective {w : α → ℝ≥0} (hw : Measurable w)
+    (hw0 : ∀ x, w x ≠ 0) : Function.Surjective (withDensitySMulLI μ (E := 𝕜) hw) := by
+  intro f
+  have hμν : μ ≪ μ.withDensity fun x ↦ (w x : ℝ≥0∞) := withDensity_absolutelyContinuous'
+    hw.coe_nnreal_ennreal.aemeasurable (.of_forall fun x ↦ ENNReal.coe_ne_zero.2 (hw0 x))
+  have hcancel (x : α) (y : 𝕜) : w x • (w x : ℝ)⁻¹ • y = y := by
+    rw [NNReal.smul_def, smul_inv_smul₀ (NNReal.coe_ne_zero.2 (hw0 x))]
+  have hu : MemLp (fun x ↦ (w x : ℝ)⁻¹ • f x) 1 (μ.withDensity fun x ↦ (w x : ℝ≥0∞)) :=
+    memLp_one_iff_integrable.2 <| (integrable_withDensity_iff_integrable_smul hw).2 <|
+      (memLp_one_iff_integrable.1 (Lp.memLp f)).congr (.of_forall fun x ↦ (hcancel x _).symm)
+  refine ⟨hu.toLp _, Lp.ext ?_⟩
+  filter_upwards [(memL1_smul_of_L1_withDensity hw (hu.toLp _)).coeFn_toLp,
+    hμν.ae_le hu.coeFn_toLp] with x h₁ h₂
+  rw [withDensitySMulLI_apply, h₁, h₂, hcancel]
+
+/-- **The dual of `L¹`.** On a σ-finite measure space, every continuous linear functional on
+`L¹(μ)` is integration against an essentially bounded function. -/
+private theorem exists_toDual_eq [SigmaFinite μ] (φ : StrongDual 𝕜 (Lp 𝕜 1 μ)) :
+    ∃ g : Lp 𝕜 ∞ μ, toDual 𝕜 μ ∞ 1 g = φ := by
+  -- A positive weight `w` with finite integral makes `ν = w μ` a finite measure with the null sets
+  -- of `μ`.
+  obtain ⟨w, hw0, hwm, hwi⟩ := exists_pos_lintegral_lt_of_sigmaFinite μ one_ne_zero
+  set ν := μ.withDensity fun x ↦ (w x : ℝ≥0∞)
+  have : IsFiniteMeasure ν := isFiniteMeasure_withDensity (hwi.trans ENNReal.one_lt_top).ne
+  have hμν : μ ≪ ν := withDensity_absolutelyContinuous' hwm.coe_nnreal_ennreal.aemeasurable
+    (.of_forall fun x ↦ ENNReal.coe_ne_zero.2 (hw0 x).ne')
+  -- Multiplication by `w` is a continuous `𝕜`-linear map `T` from `L¹(ν)` onto `L¹(μ)`, and
+  -- the functional `φ ∘ T` on `L¹(ν)` has a density `g ∈ L^∞(ν)`.
+  set T : Lp 𝕜 1 ν →L[𝕜] Lp 𝕜 1 μ :=
+    { toFun := withDensitySMulLI μ hwm
+      map_add' := map_add _
+      map_smul' := withDensitySMulLI_smul hwm
+      cont := (withDensitySMulLI μ hwm).continuous }
+  obtain ⟨g, hg⟩ := exists_toDual_eq_of_isFiniteMeasure (φ.comp T)
+  have hgμ : MemLp g ∞ μ := (Lp.memLp g).mono_ac_top hμν
+  refine ⟨hgμ.toLp g, ContinuousLinearMap.ext fun f ↦ ?_⟩
+  -- Write `f = T u`; then `φ f = ∫ g u dν = ∫ g (w u) dμ`.
+  obtain ⟨u, rfl⟩ := withDensitySMulLI_surjective hwm (fun x ↦ (hw0 x).ne') f
+  calc toDual 𝕜 μ ∞ 1 (hgμ.toLp g) (withDensitySMulLI μ hwm u)
+      = ∫ x, (w x : ℝ) • (g x * u x) ∂μ := by
+        rw [toDual_apply]
+        refine integral_congr_ae ?_
+        filter_upwards [hgμ.coeFn_toLp, (memL1_smul_of_L1_withDensity hwm u).coeFn_toLp]
+          with x h₁ h₂
+        rw [h₁, withDensitySMulLI_apply, h₂, mul_smul_comm, NNReal.smul_def]
+    _ = ∫ x, g x * u x ∂ν := (integral_withDensity_eq_integral_smul hwm _).symm
+    _ = φ (withDensitySMulLI μ hwm u) := by rw [← toDual_apply, hg]; rfl
+
+end L1
+
+variable [SigmaFinite μ] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+/-- **Riesz representation of `(Lᵠ)⋆`.** On a σ-finite measure space, every continuous scalar
+functional on `Lᵠ` is integration against an `Lᵖ` function, for Hölder conjugate exponents with
+`1 ≤ q < ∞`. -/
+theorem toDual_surjective (hq_top : q ≠ ∞) : Function.Surjective (toDual 𝕜 μ p q) := by
+  rcases (Fact.out : 1 ≤ q).eq_or_lt with rfl | hq
+  · obtain rfl : p = ∞ := (ENNReal.HolderConjugate.eq_top_iff_eq_one p 1).2 rfl
+    exact exists_toDual_eq
+  exact LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
     (surjective_inclusionInDoubleDual (E := 𝕜) hq hq_top) fun f hf ↦
     (toDual 𝕜 μ q p).injective <| ContinuousLinearMap.ext fun g ↦ by
       rw [map_zero, zero_apply, toDual_apply]
       simpa only [toDual_apply, mul_comm] using hf g
 
 variable (𝕜 μ p q) in
-/-- The norm-preserving integral representation of the continuous dual of `Lᵠ` by `Lᵖ`. -/
-noncomputable def dualEquiv (hq : 1 < q) (hq_top : q ≠ ∞) :
-    Lp 𝕜 p μ ≃ₗᵢ[𝕜] StrongDual 𝕜 (Lp 𝕜 q μ) :=
-  LinearIsometryEquiv.ofSurjective (toDual 𝕜 μ p q) (toDual_surjective hq hq_top)
+/-- The norm-preserving integral representation of the continuous dual of `Lᵠ` by `Lᵖ`, for
+Hölder conjugate exponents with `1 ≤ q < ∞`. -/
+noncomputable def dualEquiv (hq_top : q ≠ ∞) : Lp 𝕜 p μ ≃ₗᵢ[𝕜] StrongDual 𝕜 (Lp 𝕜 q μ) :=
+  LinearIsometryEquiv.ofSurjective (toDual 𝕜 μ p q) (toDual_surjective hq_top)
 
 /-- Evaluation of the integral representation equivalence. -/
-theorem dualEquiv_apply (hq : 1 < q) (hq_top : q ≠ ∞) (g : Lp 𝕜 p μ) (f : Lp 𝕜 q μ) :
-    dualEquiv 𝕜 μ p q hq hq_top g f = ∫ x, g x * f x ∂μ :=
+theorem dualEquiv_apply (hq_top : q ≠ ∞) (g : Lp 𝕜 p μ) (f : Lp 𝕜 q μ) :
+    dualEquiv 𝕜 μ p q hq_top g f = ∫ x, g x * f x ∂μ :=
   toDual_apply g f
 
 @[simp]
-theorem coe_dualEquiv (hq : 1 < q) (hq_top : q ≠ ∞) :
-    ⇑(dualEquiv 𝕜 μ p q hq hq_top) = toDual 𝕜 μ p q := by
+theorem coe_dualEquiv (hq_top : q ≠ ∞) : ⇑(dualEquiv 𝕜 μ p q hq_top) = toDual 𝕜 μ p q := by
   funext g
   ext f
-  exact (dualEquiv_apply hq hq_top g f).trans (toDual_apply g f).symm
+  exact (dualEquiv_apply hq_top g f).trans (toDual_apply g f).symm
 
 /-- The representing density of a functional integrates to its value on every `Lᵠ` function. -/
 @[simp]
-theorem integral_dualEquiv_symm_mul (hq : 1 < q) (hq_top : q ≠ ∞)
-    (Λ : StrongDual 𝕜 (Lp 𝕜 q μ)) (f : Lp 𝕜 q μ) :
-    ∫ x, (dualEquiv 𝕜 μ p q hq hq_top).symm Λ x * f x ∂μ = Λ f := by
-  rw [← dualEquiv_apply hq hq_top, LinearIsometryEquiv.apply_symm_apply]
+theorem integral_dualEquiv_symm_mul (hq_top : q ≠ ∞) (Λ : StrongDual 𝕜 (Lp 𝕜 q μ))
+    (f : Lp 𝕜 q μ) : ∫ x, (dualEquiv 𝕜 μ p q hq_top).symm Λ x * f x ∂μ = Λ f := by
+  rw [← dualEquiv_apply hq_top, LinearIsometryEquiv.apply_symm_apply]
 
 /-- **Representation of functionals on `(Lᵠ)ᶥ`.** Let `b` be a finite orthonormal basis of a real
 inner product space `E`. A continuous functional `Λ` on `(Lᵠ)ᶥ` is `g ↦ ∑ᵢ ∫ ⟪H, bᵢ⟫ gᵢ` for a
 field `H ∈ Lᵖ(α; E)` with `‖H‖_{Lᵖ} ≤ |ι| ‖Λ‖`. -/
 theorem exists_memLp_forall_dual_pi_apply_eq {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (hq : 1 < q) (hq_top : q ≠ ∞) (b : OrthonormalBasis ι ℝ E)
+    [InnerProductSpace ℝ E] (hq_top : q ≠ ∞) (b : OrthonormalBasis ι ℝ E)
     (Λ : StrongDual ℝ (ι → Lp ℝ q μ)) :
     ∃ H : α → E, MemLp H p μ ∧ eLpNorm H p μ ≤ Fintype.card ι * ENNReal.ofReal ‖Λ‖ ∧
       ∀ g, Λ g = ∑ i, ∫ x, ⟪H x, b i⟫_ℝ * g i x ∂μ := by
   classical
   let Λc : ι → StrongDual ℝ (Lp ℝ q μ) := fun i =>
     Λ.comp (ContinuousLinearMap.single ℝ (fun _ : ι => Lp ℝ q μ) i)
-  let Hc : ι → Lp ℝ p μ := fun i => (dualEquiv ℝ μ p q hq hq_top).symm (Λc i)
+  let Hc : ι → Lp ℝ p μ := fun i => (dualEquiv ℝ μ p q hq_top).symm (Λc i)
   have hHc (i : ι) : ‖Hc i‖ ≤ ‖Λ‖ := by
     simp only [Hc, LinearIsometryEquiv.norm_map]
     refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun g => ?_
@@ -138,7 +270,7 @@ theorem exists_memLp_forall_dual_pi_apply_eq {ι E : Type*} [Fintype ι] [Normed
     rw [map_sum]
     refine Finset.sum_congr rfl fun i _ => ?_
     simp_rw [hinner]
-    exact (integral_dualEquiv_symm_mul (p := p) hq hq_top (Λc i) (g i)).symm
+    exact (integral_dualEquiv_symm_mul (p := p) hq_top (Λc i) (g i)).symm
 
 /-! ### Functionals on `Lᵠ` with values in a Hilbert space -/
 
