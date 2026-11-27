@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence
+public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Splitting
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.TopColumn
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.HomologySequence
@@ -31,14 +32,24 @@ top column of the limit page
 page embeds into the cohomology of `ℳ ⊗ ⟨P_{q+1}⟩`, the top column of the first page
 (`TauCeti.TwistingCocycle.indexTopColumnEInftyToHomology`).
 
-As motivation: for the twisted complex of a Morse function with a unique maximum `x_max` of
-index `n`, the restriction is the projection onto the coefficients of `x_max`, which the reference
-uses to compute the shriek map of the inclusion of a point. The results here supply the algebraic
-input to its characterization of the classes living over the fundamental class of the base, by
-their component at the maximum (Proposition 2.5 of the reference) and by the top column
-`E^∞_{n,*}` of the spectral sequence (Proposition 2.6). This file involves no Morse function,
-shriek map or fundamental class, and does not prove the identification of the restriction with
-the shriek map.
+Evaluating at a single generator `x` of top index is again a cochain map
+(`TauCeti.TwistingCocycle.topComponent`), to the complex of `ℳ` reindexed by `q + 1`, and in
+cohomology it sends the class of a cycle `f` to the class of `f x` in `H(ℳ)`
+(`TauCeti.TwistingCocycle.topComponentCohomology`,
+`TauCeti.TwistingCocycle.topComponentCohomology_homologyπ`). When `x` is the only generator of
+top index, the restriction is this evaluation, so a class comes from the generators of index at
+most `q` exactly when its component at `x` vanishes in `H(ℳ)`
+(`TauCeti.TwistingCocycle.topComponentCohomology_eq_zero_iff`), exactly when it vanishes on the top
+column of the limit page
+(`TauCeti.TwistingCocycle.indexToTopColumnEInfty_eq_zero_iff_topComponentCohomology_eq_zero`).
+
+For the twisted complex of a Morse function with a unique maximum `x_max` of index `n`, the
+evaluation is the projection onto the coefficient of `x_max`, which the reference uses to compute
+the shriek map of the inclusion of a point. The results here supply the algebraic input to its
+characterization of the classes living over the fundamental class of the base, by their component
+at the maximum (Proposition 2.5 of the reference) and by the top column `E^∞_{n,*}` of the spectral
+sequence (Proposition 2.6). This file involves no Morse function, shriek map or fundamental class,
+and does not prove the identification of the restriction with the shriek map.
 
 ## Main definitions
 
@@ -48,6 +59,10 @@ the shriek map.
   complex onto the top column of the limit page of the index spectral sequence.
 * `TauCeti.TwistingCocycle.indexTopColumnEInftyToHomology`: the embedding of that top column into
   the cohomology of the generators of top index.
+* `TauCeti.TwistingCocycle.topComponent`: evaluation at a generator of top index, a cochain map
+  from the twisted complex.
+* `TauCeti.TwistingCocycle.topComponentCohomology`: its map `Hᵏ(ℳ ⊗ ⟨P⟩) → H^{k + q + 1}(ℳ)` in
+  cohomology.
 
 ## Main results
 
@@ -55,6 +70,10 @@ the shriek map.
   on the generators of top index exactly when it comes from the generators of lower index.
 * `TauCeti.TwistingCocycle.indexToTopColumnEInfty_eq_zero_iff`: a class is detected on the top
   column of the limit page exactly when its restriction to the generators of top index is nonzero.
+* `TauCeti.TwistingCocycle.topComponentCohomology_eq_zero_iff`: at the only generator of top
+  index, a class has zero component exactly when it comes from the generators of lower index.
+* `TauCeti.TwistingCocycle.indexToTopColumnEInfty_eq_zero_iff_topComponentCohomology_eq_zero`: and
+  exactly when it vanishes on the top column of the limit page.
 
 ## References
 
@@ -203,5 +222,122 @@ instance (k : ℤ) : Mono (m.indexTopColumnEInftyToHomology dM hM hq k) := by
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
     indexToTopColumnEInfty_comp_indexTopColumnEInftyToHomology] at hx
   exact (m.indexToTopColumnEInfty_eq_zero_iff dM hM hq α).2 hx
+
+/-! ### The component at a generator of top index -/
+
+/-- **The component at a generator of top index.** When every generator has index at most
+`q + 1`, evaluating a family `P → M` at a generator `x` of index `q + 1` is a cochain map from the
+twisted complex `ℳ ⊗ ⟨P⟩` to the complex of `ℳ` reindexed so that its degree-`n` term is
+`ℳ (n + q + 1)` (`TauCeti.shiftedModuleComplex`): no twisting term ends at `x`. It is the
+restriction to the generators of top index followed by the evaluation at `x`. -/
+noncomputable def topComponent (x : {x // ind x = q + 1}) :
+    m.twistedCochainComplex dM hM ⟶ shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1) :=
+  m.topIndexRestriction dM hM hq ≫ indexGradedPieceEval hM ind x
+
+/-- In each degree, `topComponent` evaluates a family at the generator. -/
+@[simp]
+theorem shiftedModuleComplexXEquiv_topComponent_f (x : {x // ind x = q + 1}) (n : ℤ)
+    (f : (m.twistedCochainComplex dM hM).X n) :
+    (shiftedModuleComplexXEquiv hM (q + 1) n (((m.topComponent dM hM hq x).f n).hom f) : M) =
+      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f : P → M) x := by
+  rw [topComponent, HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    shiftedModuleComplexXEquiv_indexGradedPieceEval_f]
+  exact congrFun (m.topIndexRestriction_f_apply dM hM hq n f) x
+
+include hq in
+/-- The component of a cycle of the twisted complex at a generator of top index is a cycle of
+`ℳ`. -/
+theorem dM_twistedCochainComplexXEquiv_apply_eq_zero (x : {x // ind x = q + 1}) {k : ℤ}
+    (f : (m.twistedCochainComplex dM hM).X k)
+    (hf : ((m.twistedCochainComplex dM hM).d k (k + 1)).hom f = 0) :
+    dM ((twistedCochainComplexXEquiv m.mem_graded m.twisting hM k f : P → M) x) = 0 := by
+  rw [← m.shiftedModuleComplexXEquiv_topComponent_f dM hM hq x k f,
+    ← shiftedModuleComplexXEquiv_d_eq_zero_iff, HomologicalComplex.Hom.comm_apply, hf, map_zero]
+
+/-- When `x` is the only generator of index `q + 1`, the evaluation at `x` is injective on the
+cohomology of the generators of index `q + 1`: inserting at `x` is a left inverse. -/
+private theorem injective_homologyMap_indexGradedPieceEval (x : {x // ind x = q + 1})
+    (hx : ∀ y : {x // ind x = q + 1}, y = x) (k : ℤ) :
+    Function.Injective (homologyMap (indexGradedPieceEval hM ind x) k).hom := by
+  classical
+  have : Subsingleton {x // ind x = q + 1} := ⟨fun a b ↦ (hx a).trans (hx b).symm⟩
+  have h := sum_indexGradedPieceEval_comp_single hM ind (p := q + 1)
+  rw [Fintype.sum_subsingleton _ x] at h
+  refine Function.LeftInverse.injective
+    (g := (homologyMap (indexGradedPieceSingle hM ind x) k).hom) fun α ↦ ?_
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← homologyMap_comp, h, homologyMap_id,
+    ModuleCat.id_apply]
+
+/-- **The kernel of the component at the only generator of top index.** If `x` is the only
+generator of index `q + 1`, a cohomology class of the twisted complex has zero component at `x` in
+cohomology exactly when it comes from the subcomplex `F_q` spanned by the generators of index at
+most `q`. -/
+theorem homologyMap_topComponent_eq_zero_iff (x : {x // ind x = q + 1})
+    (hx : ∀ y : {x // ind x = q + 1}, y = x) {k : ℤ}
+    (α : (m.twistedCochainComplex dM hM).homology k) :
+    (homologyMap (m.topComponent dM hM hq x) k).hom α = 0 ↔
+      α ∈ LinearMap.range (homologyMap (m.twistedIndexCochainComplexι hM q) k).hom := by
+  rw [← m.homologyMap_topIndexRestriction_eq_zero_iff dM hM hq, topComponent, homologyMap_comp,
+    ModuleCat.hom_comp, LinearMap.comp_apply,
+    map_eq_zero_iff _ (injective_homologyMap_indexGradedPieceEval dM hM x hx k)]
+
+/-- **The component at a generator of top index in cohomology**, `Hᵏ(ℳ ⊗ ⟨P⟩) → H^{k + q + 1}(ℳ)`:
+the class of a cycle `f` goes to the class in `H(ℳ)` of its component `f x`
+(`TauCeti.TwistingCocycle.topComponentCohomology_homologyπ`). -/
+noncomputable def topComponentCohomology (x : {x // ind x = q + 1}) (k : ℤ) :
+    (m.twistedCochainComplex dM hM).homology k →ₗ[R] hM.cohomologyGrading (k + (q + 1)) :=
+  (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM (q + 1) k).toLinearMap ∘ₗ
+    (homologyMap (m.topComponent dM hM hq x) k).hom
+
+/-- `topComponentCohomology` sends the class of a cycle `f` to the class in `H(ℳ)` of its
+component at the generator. -/
+@[simp]
+theorem topComponentCohomology_homologyπ (x : {x // ind x = q + 1}) {k : ℤ}
+    (f : (m.twistedCochainComplex dM hM).X k)
+    (hf : ((m.twistedCochainComplex dM hM).d k (k + 1)).hom f = 0) :
+    (m.topComponentCohomology dM hM hq x k (((m.twistedCochainComplex dM hM).homologyπ k).hom
+        ((m.twistedCochainComplex dM hM).moduleCatCyclesMk f (k + 1) (by simp) hf)) :
+        hM.Cohomology) =
+      Submodule.Quotient.mk ⟨(twistedCochainComplexXEquiv m.mem_graded m.twisting hM k f : P → M) x,
+        hM.mem_cycles.mpr (m.dM_twistedCochainComplexXEquiv_apply_eq_zero dM hM hq x f hf)⟩ := by
+  rw [topComponentCohomology, LinearMap.comp_apply, homologyMap_homologyπ_moduleCatCyclesMk,
+    LinearEquiv.coe_coe, shiftedModuleComplexHomologyEquiv_homologyπ]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
+
+/-- `topComponentCohomology` vanishes on the class of a cycle `f` exactly when the component `f x`
+is a boundary of `ℳ`. -/
+theorem topComponentCohomology_homologyπ_eq_zero_iff (x : {x // ind x = q + 1}) {k : ℤ}
+    (f : (m.twistedCochainComplex dM hM).X k)
+    (hf : ((m.twistedCochainComplex dM hM).d k (k + 1)).hom f = 0) :
+    m.topComponentCohomology dM hM hq x k (((m.twistedCochainComplex dM hM).homologyπ k).hom
+        ((m.twistedCochainComplex dM hM).moduleCatCyclesMk f (k + 1) (by simp) hf)) = 0 ↔
+      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM k f : P → M) x ∈
+        LinearMap.range dM := by
+  rw [← Submodule.coe_eq_zero, topComponentCohomology_homologyπ, hM.quotientMk_eq_zero_iff,
+    hM.mem_boundaries]
+
+/-- **The chain characterization of the classes coming from the lower generators.** If `x` is the
+only generator of index `q + 1`, a cohomology class of the twisted complex has zero component at
+`x` in `H(ℳ)` exactly when it comes from the subcomplex `F_q` spanned by the generators of index
+at most `q`. -/
+theorem topComponentCohomology_eq_zero_iff (x : {x // ind x = q + 1})
+    (hx : ∀ y : {x // ind x = q + 1}, y = x) {k : ℤ}
+    (α : (m.twistedCochainComplex dM hM).homology k) :
+    m.topComponentCohomology dM hM hq x k α = 0 ↔
+      α ∈ LinearMap.range (homologyMap (m.twistedIndexCochainComplexι hM q) k).hom := by
+  rw [topComponentCohomology, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.map_eq_zero_iff, m.homologyMap_topComponent_eq_zero_iff dM hM hq x hx]
+
+/-- **Classes detected on the top column, by their component at the top generator.** If `x` is the
+only generator of index `q + 1`, a cohomology class of the twisted complex vanishes on the top
+column of the limit page of the index spectral sequence exactly when its component at `x` vanishes
+in `H(ℳ)`. -/
+theorem indexToTopColumnEInfty_eq_zero_iff_topComponentCohomology_eq_zero
+    (x : {x // ind x = q + 1}) (hx : ∀ y : {x // ind x = q + 1}, y = x) {k : ℤ}
+    (α : (m.twistedCochainComplex dM hM).homology k) :
+    (m.indexToTopColumnEInfty dM hM hq k).hom α = 0 ↔
+      m.topComponentCohomology dM hM hq x k α = 0 := by
+  rw [indexToTopColumnEInfty_eq_zero_iff, homologyMap_topIndexRestriction_eq_zero_iff,
+    m.topComponentCohomology_eq_zero_iff dM hM hq x hx]
 
 end TauCeti.TwistingCocycle
