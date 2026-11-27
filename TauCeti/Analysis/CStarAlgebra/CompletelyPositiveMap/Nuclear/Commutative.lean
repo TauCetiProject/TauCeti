@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Nuclear
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Commutative
-public import Mathlib.Topology.UnitInterval
-import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Analysis.Convex.PartitionOfUnity
+import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Topology.ContinuousMap.StarOrdered
@@ -23,17 +23,20 @@ contraction (`TauCeti.CStarAlgebra.isNuclear_continuousMap`). Given finitely man
 and `ε > 0`, cover `X` by finitely many open sets `U_k`, `k ∈ t`, on each of which every `f ∈ F`
 varies by less than `ε / 2` around its value at a point `x_k`, and take a partition of unity
 `g_k` subordinate to the cover. The evaluation `α f = diag(f(x_k))` is a star homomorphism
-`C(X, ℂ) → M_t(ℂ)`, and `β M = Σ_k M_kk g_k` is a positive map into a commutative C⋆-algebra,
-hence completely positive, with `β 1 = Σ_k g_k = 1`. Then `β (α f) = Σ_k f(x_k) g_k` is within
-`ε / 2` of `f` for `f ∈ F`, and `β ∘ α` factors through the nuclear algebra `M_t(ℂ)`.
+`C(X, ℂ) → M_t(ℂ)`, and `β M = Σ_k M_kk g_k` (`TauCeti.CStarAlgebra.diagSumSMul`) is a positive
+map into a commutative C⋆-algebra, hence completely positive, with `β 1 = Σ_k g_k = 1`. Then
+`β (α f) = Σ_k f(x_k) g_k` is within `ε / 2` of `f` for `f ∈ F`, and `β ∘ α` factors through the
+nuclear algebra `M_t(ℂ)`.
 
 Through the Gelfand transform every commutative unital C⋆-algebra is nuclear
 (`TauCeti.CStarAlgebra.isNuclear_of_commCStarAlgebra`). In particular the identity of `C[0,1]`
-is a nuclear completely positive map, the first `C[0,1]` Check of the roadmap
-(`TauCeti.CStarAlgebra.isNuclear_unitInterval`).
+is a nuclear completely positive map.
 
 ## Main declarations
 
+* `TauCeti.CStarAlgebra.diagSumSMul`: for positive `b_k` in a commutative C⋆-algebra, the
+  completely positive map `M ↦ Σ_k M_kk • b_k` on `M_ι(ℂ)`, with
+  `TauCeti.CStarAlgebra.norm_diagSumSMul_apply_le`: it is contractive when `Σ_k b_k = 1`.
 * `TauCeti.CStarAlgebra.isNuclear_continuousMap`: `C(X, ℂ)` is nuclear for compact Hausdorff
   `X`.
 * `TauCeti.CStarAlgebra.isNuclear_of_commCStarAlgebra`: commutative unital C⋆-algebras are
@@ -53,26 +56,41 @@ namespace TauCeti.CStarAlgebra
 
 open CompletelyPositiveMap
 
-/-- The diagonal evaluation `f ↦ diag(f(x_k))` at finitely many points, as a star homomorphism
-`C(X, ℂ) → M_t(ℂ)`. -/
-private noncomputable def diagEval {Y : Type*} [TopologicalSpace Y] [DecidableEq Y]
-    (t : Finset Y) : C(Y, ℂ) →⋆ₙₐ[ℂ] CStarMatrix t t ℂ where
-  toFun f := CStarMatrix.ofMatrix (Matrix.diagonal fun k : t ↦ f k)
-  map_smul' c f := by
-    ext i j
-    by_cases h : i = j <;> simp [h]
-  map_zero' := by
-    ext i j
-    simp
-  map_add' f f' := by
-    ext i j
-    by_cases h : i = j <;> simp [h]
-  map_mul' f f' := by
-    ext i j
-    by_cases h : i = j <;> simp [CStarMatrix.mul_apply, Matrix.diagonal_apply, h]
-  map_star' f := by
-    ext i j
-    by_cases h : i = j <;> simp [CStarMatrix.star_apply, h, eq_comm]
+section DiagSumSMul
+
+variable {ι B : Type*} [Fintype ι]
+
+/-- For positive `b : ι → B` in a commutative C⋆-algebra, the completely positive map
+`M ↦ Σ_k M_kk • b_k` from `M_ι(ℂ)` to `B`. It is positive because the diagonal entries of a
+positive matrix are positive, and so completely positive since `B` is commutative. -/
+noncomputable def diagSumSMul [NonUnitalCommCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (b : ι → B) (hb : ∀ k, 0 ≤ b k) : CStarMatrix ι ι ℂ →CP B :=
+  PositiveLinearMap.toCompletelyPositiveMapOfCommCodomain <| .mk₀
+    { toFun := fun M ↦ ∑ k, M k k • b k
+      map_add' := fun M N ↦ by simp [add_smul, Finset.sum_add_distrib]
+      map_smul' := fun c M ↦ by simp [Finset.smul_sum, smul_smul] }
+    fun M hM ↦ Finset.sum_nonneg fun k _ ↦
+      smul_nonneg (CStarMatrix.diag_nonneg_of_nonneg hM k) (hb k)
+
+@[simp]
+theorem diagSumSMul_apply [NonUnitalCommCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (b : ι → B) (hb : ∀ k, 0 ≤ b k) (M : CStarMatrix ι ι ℂ) :
+    diagSumSMul b hb M = ∑ k, M k k • b k :=
+  congrFun (PositiveLinearMap.coe_toCompletelyPositiveMapOfCommCodomain _) M
+
+/-- If the positive `b_k` sum to `1`, the map `M ↦ Σ_k M_kk • b_k` is unital, hence
+contractive. -/
+theorem norm_diagSumSMul_apply_le [CommCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (b : ι → B) (hb : ∀ k, 0 ≤ b k) (hsum : ∑ k, b k = 1) (M : CStarMatrix ι ι ℂ) :
+    ‖diagSumSMul b hb M‖ ≤ ‖M‖ := by
+  classical
+  refine (CompletelyPositiveMapClass.norm_map_one_le_one_iff _).1 ?_ M
+  have h1 : diagSumSMul b hb 1 = 1 := by
+    simp [hsum]
+  rw [h1]
+  exact CStarRing.norm_one_le
+
+end DiagSumSMul
 
 variable (X : Type*) [TopologicalSpace X] [CompactSpace X] [T2Space X]
 
@@ -92,74 +110,41 @@ instance isNuclear_continuousMap : IsNuclear C(X, ℂ) := by
   let g : t → C(X, ℂ) := fun k ↦ (ρ k).realToRCLike ℂ
   have hg (k : t) (y : X) : g k y = (ρ k y : ℂ) := by
     simp [g, ContinuousMap.realToRCLike_apply]
-  have hsum (y : X) : ∑ k, (ρ k y : ℂ) = 1 := by
+  have hg0 (k : t) : 0 ≤ g k := fun y ↦ by
+    simpa [hg] using ρ.nonneg k y
+  have hsum : ∑ k, g k = 1 := by
+    ext y
     have h := ρ.sum_eq_one (Set.mem_univ y)
     rw [finsum_eq_sum_of_fintype] at h
-    exact_mod_cast h
-  -- The evaluation `α` and the partition-of-unity map `β`.
+    simpa [hg] using congrArg ((↑) : ℝ → ℂ) h
+  -- The evaluation `α` at the points of `t` and the partition-of-unity map `β`.
+  let e : C(X, ℂ) →⋆ₐ[ℂ] CStarMatrix t t ℂ := (CStarMatrix.diagonalStarAlgHom ℂ t ℂ).comp
+    { AlgHom.pi fun k : t ↦ ContinuousMap.evalAlgHom ℂ ℂ (k : X) with map_star' _ := rfl }
   let α : C(X, ℂ) →CP CStarMatrix t t ℂ :=
-    CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (diagEval t)
-  have hα (f : C(X, ℂ)) : ‖α f‖ ≤ ‖f‖ := NonUnitalStarAlgHom.norm_apply_le (diagEval t) f
-  let βₗ : CStarMatrix t t ℂ →ₗ[ℂ] C(X, ℂ) :=
-    { toFun := fun M ↦ ∑ k, M k k • g k
-      map_add' := fun M N ↦ by simp [add_smul, Finset.sum_add_distrib]
-      map_smul' := fun c M ↦ by simp [Finset.smul_sum, smul_smul] }
-  have hβₗ (M : CStarMatrix t t ℂ) : βₗ M = ∑ k, M k k • g k := rfl
-  let β : CStarMatrix t t ℂ →CP C(X, ℂ) :=
-    (PositiveLinearMap.mk₀ βₗ fun M hM ↦ by
-      rw [hβₗ]
-      refine Finset.sum_nonneg fun k _ ↦ ?_
-      rw [ContinuousMap.le_def]
-      intro y
-      simp only [ContinuousMap.zero_apply, ContinuousMap.smul_apply, hg, smul_eq_mul]
-      exact mul_nonneg (CStarMatrix.diag_nonneg_of_nonneg hM k)
-        (Complex.zero_le_real.2 (ρ.nonneg k y))).toCompletelyPositiveMapOfCommCodomain
-  have hβ_apply (M : CStarMatrix t t ℂ) : β M = ∑ k, M k k • g k :=
-    congrFun (PositiveLinearMap.coe_toCompletelyPositiveMapOfCommCodomain _) M
-  have hβ : ∀ M, ‖β M‖ ≤ ‖M‖ := by
-    refine (CompletelyPositiveMapClass.norm_map_one_le_one_iff β).1 ?_
-    have h1 : β 1 = 1 := by
-      ext y
-      simpa [hβ_apply, hg] using hsum y
-    rw [h1]
-    exact CStarRing.norm_one_le
+    CompletelyPositiveMapClass.toCompletelyPositiveLinearMap e
+  have hα (f : C(X, ℂ)) : ‖α f‖ ≤ ‖f‖ := NonUnitalStarAlgHom.norm_apply_le e f
+  have he (f : C(X, ℂ)) (k : t) : α f k k = f k := by
+    change CStarMatrix.diagonalStarAlgHom ℂ t ℂ (fun k ↦ f k) k k = f k
+    simp
+  let β := diagSumSMul g hg0
   refine ⟨β.comp α, ?_, fun f hf ↦ ?_⟩
-  · simpa using
-      ((isNuclear_cstarMatrix t).isNuclearContraction_id.comp_right α hα).comp_left β hβ
+  · simpa using ((isNuclear_cstarMatrix t).isNuclearContraction_id.comp_right α hα).comp_left β
+      (norm_diagSumSMul_apply_le g hg0 hsum)
   · refine lt_of_le_of_lt ((ContinuousMap.norm_le _ (half_pos hε).le).2 fun y ↦ ?_)
       (half_lt_self hε)
-    have hαf : β (α f) = ∑ k : t, f k • g k := by
-      rw [hβ_apply]
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      simp [α, diagEval]
-    rw [CompletelyPositiveMap.comp_apply, hαf]
-    simp only [ContinuousMap.sub_apply, ContinuousMap.coe_sum, Finset.sum_apply,
-      ContinuousMap.smul_apply, hg, smul_eq_mul, CompletelyPositiveMap.id_apply]
-    calc ‖∑ k : t, f k * (ρ k y : ℂ) - f y‖
-        = ‖∑ k : t, (ρ k y : ℂ) * (f k - f y)‖ := by
-          rw [Finset.sum_congr rfl fun k _ ↦ mul_sub (ρ k y : ℂ) _ _, Finset.sum_sub_distrib,
-            ← Finset.sum_mul, hsum, one_mul]
-          simp only [mul_comm]
-      _ ≤ ∑ k : t, ρ k y * (ε / 2) := by
-          refine (norm_sum_le _ _).trans <| Finset.sum_le_sum fun k _ ↦ ?_
-          rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (ρ.nonneg k y)]
-          by_cases h : ρ k y = 0
-          · simp [h]
-          refine mul_le_mul_of_nonneg_left ?_ (ρ.nonneg k y)
-          have hy : y ∈ U k := hρ k (subset_tsupport _ h)
-          rw [norm_sub_rev]
-          exact (Set.mem_iInter₂.1 hy f hf).le
-      _ = ε / 2 := by
-          rw [← Finset.sum_mul, show ∑ k : t, ρ k y = 1 by exact_mod_cast hsum y, one_mul]
+    -- `β (α f) y = Σ_k ρ_k(y) f(x_k)` is a convex combination of values within `ε / 2` of `f y`.
+    have hy : ∑ᶠ k, ρ k y • f k ∈ Metric.closedBall (f y) (ε / 2) := by
+      refine ρ.finsum_smul_mem_convex (g := fun k _ ↦ f k) (Set.mem_univ y) (fun k hk ↦ ?_)
+        (convex_closedBall _ _)
+      rw [Metric.mem_closedBall, dist_eq_norm, norm_sub_rev]
+      exact (Set.mem_iInter₂.1 (hρ k (subset_tsupport _ hk)) f hf).le
+    rw [Metric.mem_closedBall, dist_eq_norm, finsum_eq_sum_of_fintype] at hy
+    simpa [β, he, hg, Complex.real_smul, mul_comm] using hy
 
 /-- **Commutative unital C⋆-algebras are nuclear**, through the Gelfand transform
 `A ≃⋆ₐ C(X, ℂ)` onto the continuous functions on the character space. -/
 theorem isNuclear_of_commCStarAlgebra (A : Type*) [CommCStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] : IsNuclear A :=
   .of_starAlgEquiv (gelfandStarTransform A)
-
-/-- **Check**: the identity of `C[0,1]` is a nuclear completely positive map. -/
-theorem isNuclear_unitInterval : IsNuclear C(unitInterval, ℂ) :=
-  inferInstance
 
 end TauCeti.CStarAlgebra
