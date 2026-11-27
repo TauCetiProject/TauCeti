@@ -42,8 +42,8 @@ real local martingales on a raw filtration `ℱ` with local-martingale cross-bra
 (set-integral and conditional-expectation forms), joint increment independence from `ℱ s`, product
 Gaussian increment laws, global pathwise coordinate independence, coordinate vector Brownian law
 (`IsBrownianVector`), strongly predictable indistinguishable vector Brownian versions (both
-arbitrary index coordinatewise and countable-index jointly predictable `Pi` versions), the adapted
-combined filtered characterization, and the converse cross-product martingale
+arbitrary index coordinatewise and countable-index jointly predictable `Pi` versions), and the
+converse cross-product martingale
 (`ProbabilityTheory.IsBrownianReal.martingale_mul_of_indepFun`) and vector increment independence
 theorems for independent Brownian local martingales.
 
@@ -424,30 +424,5 @@ theorem indep_comap_sub_pi_of_iIndepFun_isBrownianReal_locally_martingale
       (hloc i)).martingale_sq_sub.congr hsm fun _ ↦ h0ae.mono fun _ h0ω ↦ by simp [C, sq, h0ω]
   · exact ((hB i).martingale_mul_of_indepFun (hB j) (hind.indepFun hij) (hA i) (hA j) (hloc i)
       (hloc j)).congr hsm fun _ ↦ h0ae.mono fun _ h0ω ↦ by simp [C, hij, h0ω]
-
-/-- **Vector Lévy characterization for adapted continuous local martingales.**
-If `M : ι → ℝ≥0 → Ω → ℝ` is a family of adapted, almost-surely continuous local martingales on `ℱ`
-with `M i 0 = 0` almost surely and cross-brackets `M i t * M j t - δ_{ij} t` local martingales
-for all `i, j`, then `M` is a coordinate vector Brownian motion (`IsBrownianVector M P`), each
-coordinate `M i` is a filtered pre-Brownian motion relative to `ℱ`, and every vector increment
-`ω ↦ (M i t ω - M i s ω)_i` (`s ≤ t`) is independent of `ℱ s`. -/
-theorem isBrownianVector_and_isFilteredPreBrownianReal_of_locally_martingale
-    [IsProbabilityMeasure P] {ι : Type*} [DecidableEq ι] {M : ι → ℝ≥0 → Ω → ℝ}
-    (hM : ∀ i, Locally (fun Y ↦ Martingale Y ℱ P) ℱ (M i) P)
-    (hQ : ∀ i j, Locally (fun Y ↦ Martingale Y ℱ P) ℱ
-      (fun t ω ↦ M i t ω * M j t ω - if i = j then (t : ℝ) else 0) P)
-    (h0 : ∀ i, ∀ᵐ ω ∂P, M i 0 ω = 0) (hcont : ∀ i, ∀ᵐ ω ∂P, Continuous (M i · ω))
-    (hA : ∀ i, Adapted ℱ (M i)) :
-    IsBrownianVector M P ∧ (∀ i, IsFilteredPreBrownianReal ℱ (M i) P) ∧
-      (∀ s t, s ≤ t → Indep (.comap (fun ω i ↦ M i t ω - M i s ω) inferInstance) (ℱ s) P) := by
-  obtain ⟨W, _, hWM, hBW, hFB, hind⟩ :=
-    exists_isStronglyPredictable_indist_isBrownianVector_of_locally_martingale hM hQ h0 hcont
-  refine ⟨hBW.congr_indist hWM, fun i ↦ (hFB i).congr (hA i) fun t ↦ (hWM i).mono fun _ hω ↦ hω t,
-    fun s t hst ↦ ?_⟩
-  simpa only [IndepFun_iff_Indep, @MeasurableSpace.comap_id _ (ℱ s)] using
-    @IndepFun.process_congr_left ι Ω mΩ P (fun _ ↦ ℝ) Ω _ (ℱ s)
-      (fun i ω ↦ W i t ω - W i s ω) (fun i ω ↦ M i t ω - M i s ω) id
-      (by simpa only [IndepFun_iff_Indep, @MeasurableSpace.comap_id _ (ℱ s)] using hind s t hst)
-      (fun i ↦ (hWM i).mono fun _ hω ↦ by simp [hω t, hω s])
 
 end TauCeti.Probability
