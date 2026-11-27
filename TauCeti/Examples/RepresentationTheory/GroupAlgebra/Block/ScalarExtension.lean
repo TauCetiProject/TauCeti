@@ -189,10 +189,11 @@ theorem isBlockIdempotent_centerMapRingHom_blockC₃ [CharP K 2] (hα : α ^ 2 +
 
 end C₃
 
-/-- **`𝔽₄ ⊆ 𝔽₂^alg`.** The three blocks of `𝔽₄[C₃]` stay blocks of `𝔽₂^alg[C₃]`, and the two
+/-- **`𝔽₄ ⊆ 𝔽₂^alg`.** For a root `α ∈ 𝔽₄` of `X² + X + 1`, the three blocks `1 + r + r²`,
+`1 + α² r + α r²` and `1 + α r + α² r²` of `𝔽₄[C₃]` stay blocks of `𝔽₂^alg[C₃]`, and the two
 blocks of `𝔽₄[S₃]` stay blocks of `𝔽₂^alg[S₃]`. -/
 theorem galoisField_two_two_algebraicClosure :
-    ∃ α : GaloisField 2 2,
+    ∃ α : GaloisField 2 2, α ^ 2 + α + 1 = 0 ∧
       IsBlockIdempotent (centerMapRingHom C₃ (algebraMap _ (AlgebraicClosure (GaloisField 2 2)))
           (toCenter (1 + of (GaloisField 2 2) C₃ r + of (GaloisField 2 2) C₃ (r ^ 2)))) ∧
       IsBlockIdempotent (centerMapRingHom C₃ (algebraMap _ (AlgebraicClosure (GaloisField 2 2)))
@@ -204,7 +205,7 @@ theorem galoisField_two_two_algebraicClosure :
       IsBlockIdempotent (centerMapRingHom S₃ (algebraMap _ (AlgebraicClosure (GaloisField 2 2)))
           (centerMapRingHom S₃ (ZMod.castHom (dvd_refl 2) (GaloisField 2 2)) blockTwoS₃)) := by
   obtain ⟨α, hα⟩ := exists_sq_add_self_add_one_eq_zero_galoisField_two_two
-  exact ⟨α, isBlockIdempotent_centerMapRingHom_blockC₃ hα _ |>.1,
+  exact ⟨α, hα, isBlockIdempotent_centerMapRingHom_blockC₃ hα _ |>.1,
     isBlockIdempotent_centerMapRingHom_blockC₃ hα _ |>.2.1,
     isBlockIdempotent_centerMapRingHom_blockC₃ hα _ |>.2.2,
     isBlockIdempotent_centerMapRingHom_blockS₃ _ _ |>.1,
