@@ -22,9 +22,8 @@ on the end to a fixed family `J_q(t)`
 (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_of_finite_energy_positive`). This
 file proves that its index does not depend on that choice
 (`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex`). So the
-index of a PSS plane may be computed for any convenient structure over the disc, the step that
-reduces the count of rigid PSS planes, from which the unit of the pair-of-pants product is built, to
-the asymptotic data of the plane.
+index of a PSS plane may be computed for any convenient structure over the disc, one step toward
+expressing it through the asymptotic data of the plane.
 
 This is the PSS-plane counterpart of the invariance under the data for the pair of pants
 (`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pairOfPants_data`), and the proof
