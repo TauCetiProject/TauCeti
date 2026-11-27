@@ -74,20 +74,20 @@ theorem norm_eq_one (hu : M.IsLeadingUnitEigenvector u) : ‖u‖ = 1 :=
   (isLeadingUnitEigenvector_iff.mp hu).1
 
 /-- The quadratic form of `M` is bounded by `⟪u, M u⟫ ‖v‖²` at a leading unit eigenvector `u`. -/
-theorem inner_apply_self_le (hu : M.IsLeadingUnitEigenvector u) (v : E) :
+theorem inner_self_apply_le (hu : M.IsLeadingUnitEigenvector u) (v : E) :
     ⟪v, M v⟫ ≤ ⟪u, M u⟫ * ‖v‖ ^ 2 :=
   (isLeadingUnitEigenvector_iff.mp hu).2 v
 
 /-- The negative of a leading unit eigenvector is a leading unit eigenvector. -/
 theorem neg (hu : M.IsLeadingUnitEigenvector u) : M.IsLeadingUnitEigenvector (-u) := by
   refine of_norm_eq_one_of_le (by rw [norm_neg, hu.norm_eq_one]) fun v ↦ ?_
-  simpa only [map_neg, inner_neg_neg] using hu.inner_apply_self_le v
+  simpa only [map_neg, inner_neg_neg] using hu.inner_self_apply_le v
 
 /-- Two leading unit eigenvectors of `M` have the same Rayleigh quotient. -/
-theorem inner_apply_self_eq (hu : M.IsLeadingUnitEigenvector u)
+theorem inner_self_apply_eq (hu : M.IsLeadingUnitEigenvector u)
     (hv : M.IsLeadingUnitEigenvector v) : ⟪v, M v⟫ = ⟪u, M u⟫ := by
-  have h₁ := hu.inner_apply_self_le v
-  have h₂ := hv.inner_apply_self_le u
+  have h₁ := hu.inner_self_apply_le v
+  have h₂ := hv.inner_self_apply_le u
   rw [hv.norm_eq_one, one_pow, mul_one] at h₁
   rw [hu.norm_eq_one, one_pow, mul_one] at h₂
   exact le_antisymm h₁ h₂
@@ -100,9 +100,9 @@ theorem inner_apply_add_inner_apply (hu : M.IsLeadingUnitEigenvector u) (w : E) 
   set b := ⟪u, M u⟫
   set a := ⟪w, M u⟫ + ⟪u, M w⟫ - 2 * b * ⟪w, u⟫
   set K := b * ‖w‖ ^ 2 - ⟪w, M w⟫
-  have hK : 0 ≤ K := by linarith [hu.inner_apply_self_le w]
+  have hK : 0 ≤ K := by linarith [hu.inner_self_apply_le w]
   have hquad (t : ℝ) : t * a ≤ t ^ 2 * K := by
-    have h := hu.inner_apply_self_le (u + t • w)
+    have h := hu.inner_self_apply_le (u + t • w)
     simp only [map_add, map_smul, inner_add_left, inner_add_right, inner_smul_left,
       inner_smul_right, conj_trivial, norm_add_sq_real, norm_smul, Real.norm_eq_abs, mul_pow,
       sq_abs, hu.norm_eq_one, one_pow] at h
@@ -144,7 +144,7 @@ theorem le_of_apply_eq_smul (hu : M.IsLeadingUnitEigenvector u) {x : E}
     exact le_of_mul_le_mul_right h hy2
   set b := ⟪u, M u⟫
   have hμb : μ ≤ b := by
-    have h := hu.inner_apply_self_le y
+    have h := hu.inner_self_apply_le y
     rw [hyM] at h
     exact le_of_mul_le_mul_right h hy2
   have huy : ⟪u, y⟫ = 0 := by rw [real_inner_comm]; exact hyu
@@ -184,7 +184,7 @@ theorem eq_or_eq_neg (hM : M.IsSymmetric) (hu : M.IsLeadingUnitEigenvector u)
   have hu1 : ⟪u, u⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu.norm_eq_one, one_pow]
   set b := ⟪u, M u⟫
   have hMu : M u = b • u := hu.apply_eq_smul hM
-  have hMv : M v = b • v := by rw [hv.apply_eq_smul hM, hu.inner_apply_self_eq hv]
+  have hMv : M v = b • v := by rw [hv.apply_eq_smul hM, hu.inner_self_apply_eq hv]
   have hy := h (v - ⟪u, v⟫ • u)
     (by rw [inner_sub_left, inner_smul_left, hu1, real_inner_comm]; simp)
     (by rw [map_sub, map_smul, hMv, hMu, smul_sub, smul_comm])

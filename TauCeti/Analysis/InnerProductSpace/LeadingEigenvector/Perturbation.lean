@@ -92,7 +92,7 @@ theorem leading_eigenvector_perturbation {Sig P : E →L[ℝ] E} (hSig : IsSelfA
     · exact ⟨w, hw, h⟩
     · exact ⟨-w, hw.neg, by rw [inner_neg_left]; linarith⟩
   have hb : γ - ‖P‖ ≤ ⟪θh, A θh⟫ :=
-    hmlow.trans (by simpa [hθ] using hθh.inner_apply_self_le θ)
+    hmlow.trans (by simpa [hθ] using hθh.inner_self_apply_le θ)
   -- every eigenvalue of `A` carried by `θh^⟂` is at most `γ - ν + ‖P‖`
   have hev := fun {y : E} ↦ hθh.le_of_apply_eq_smul hperp (y := y)
   refine ⟨θh, hθh, hsign, fun u hu ↦ hθh.eq_or_eq_neg hA (fun y hy hAy ↦ ?_) hu, ?_⟩
