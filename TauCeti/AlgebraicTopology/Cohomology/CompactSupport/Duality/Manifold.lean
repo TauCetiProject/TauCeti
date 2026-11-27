@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.MayerVietoris
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Euclidean.Duality
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Manifold
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 
 import TauCeti.CategoryTheory.Linear.Int
 
@@ -50,6 +51,8 @@ with the orientation restricted from `o`, that its duality map is bijective in e
   isomorphism.
 * `TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`: for a closed
   oriented manifold, the cap product with the fundamental class is bijective.
+* `TauCeti.IsFundamentalClass.bijective_singularCapAddHom`: the same for an integral fundamental
+  class given without an orientation.
 
 ## References
 
@@ -135,5 +138,22 @@ theorem bijective_singularCapAddHom_fundamentalClass [CompactSpace M] (p q : ℕ
     (o.dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv hn L p q h α).symm
 
 end HomologicalOrientation
+
+variable {M E : Type} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
+
+/-- **Poincaré duality for an integral fundamental class.** For a compact Hausdorff manifold `M`
+without boundary of dimension `n` and an integral fundamental class `μ ∈ Hₙ(M; ℤ)`, a class whose
+image in the local homology at every point is a generator, the cap product with `μ` is a bijection
+`Hᵖ(M; L) → H_q(M; L)` for `p + q = n`. No orientation is given: `μ` determines one
+(`TauCeti.HomologicalOrientation.ofIsFundamentalClass`), whose fundamental class it is. -/
+theorem IsFundamentalClass.bijective_singularCapAddHom [T2Space M] [CompactSpace M]
+    (hn : finrank ℝ E = n) (L : ModuleCat.{0} ℤ)
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) (p q : ℕ) (h : p + q = n) :
+    Function.Bijective ((TopCat.of M).singularCapAddHom ℤ (ρ_ _).inv (ρ_ L).hom h μ) := by
+  have := (HomologicalOrientation.ofIsFundamentalClass (E := E) hμ
+    ).bijective_singularCapAddHom_fundamentalClass hn L p q h
+  rwa [HomologicalOrientation.fundamentalClass_ofIsFundamentalClass] at this
 
 end TauCeti
