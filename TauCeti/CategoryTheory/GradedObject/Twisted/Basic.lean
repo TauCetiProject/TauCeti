@@ -441,10 +441,30 @@ variable {c C}
 lemma id_apply (X : TwistedGradedObject c C) (i : I) : (𝟙 X : X ⟶ X) i = 𝟙 (X i) :=
   (rfl)
 
+/-- The composite of two morphisms of cocycle-twisted graded objects is the composite in every
+degree. -/
+@[simp]
+lemma comp_apply {X Y Z : TwistedGradedObject c C} (f : X ⟶ Y) (g : Y ⟶ Z) (i : I) :
+    (f ≫ g) i = f i ≫ g i :=
+  (rfl)
+
 /-- The sum of two morphisms of cocycle-twisted graded objects is computed in every degree. -/
 @[simp]
 lemma add_apply [Preadditive C] {X Y : TwistedGradedObject c C} (f g : X ⟶ Y) (i : I) :
     (f + g) i = f i + g i :=
+  (rfl)
+
+/-- The negative of a morphism of cocycle-twisted graded objects is computed in every degree. -/
+@[simp]
+lemma neg_apply [Preadditive C] {X Y : TwistedGradedObject c C} (f : X ⟶ Y) (i : I) :
+    (-f) i = -f i :=
+  (rfl)
+
+/-- The difference of two morphisms of cocycle-twisted graded objects is computed in every
+degree. -/
+@[simp]
+lemma sub_apply [Preadditive C] {X Y : TwistedGradedObject c C} (f g : X ⟶ Y) (i : I) :
+    (f - g) i = f i - g i :=
   (rfl)
 
 /-- A scalar multiple of a morphism of cocycle-twisted graded objects is computed in every

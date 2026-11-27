@@ -19,8 +19,8 @@ by reindexing via coproducts and by convolution tensor products. In a category w
 coproducts, these coproducts exist for finitely supported objects even when the grading type
 and the fibres of its addition map are infinite.
 
-These results allow convolution of finitely supported graded finite-dimensional vector spaces
-without requiring infinite coproducts in the category of finite-dimensional vector spaces.
+These results allow convolution of finitely supported graded modules with finite (projective)
+components without requiring infinite coproducts in the category of such modules.
 They depend only on the tensor product, not on the choice of associator, and thus also apply
 when the associator is twisted by a cocycle.
 -/
