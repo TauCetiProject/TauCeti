@@ -5,12 +5,9 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Action.Basic
-public import Mathlib.FieldTheory.Perfect
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.Ideal.Over
+public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
-import Mathlib.Algebra.CharP.Algebra
-import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 
 /-!
 # Localization at the maximal ideal of a local ring and at its preimages, and local lifts
@@ -33,22 +30,12 @@ the polynomial ring localized at `(𝔪_R, X_i)`.
 A homomorphism `ψ : R →+* T` to a local ring which inverts the complement of a prime
 `p` and maps `p` into the maximal ideal lifts to a local homomorphism from the localization of `R`
 at `p`. For instance, a homomorphism to a field factors locally through the localization at its
-kernel. In particular, for any local ring `S`, `algebraMap ℤ S` lifts to a local homomorphism from
-`Localization.AtPrime ((maximalIdeal S).under ℤ)`, whose residue field is a prime field (`ℚ` or
-`𝔽_p`) and hence perfect, giving a `G`-invariant local base ring whenever `G` acts on `S` by ring
-automorphisms.
+kernel.
 
 ## Main results
 
 * `IsLocalRing.algEquivLocalizationAtMaximalIdeal R S`: the `R`-algebra isomorphism from a local
   ring `S` to its localization at its maximal ideal.
-* `TauCeti.IsLocalRing.localizationAtPrimeUnderIntRingHom S`: the canonical local homomorphism
-  `Localization.AtPrime ((maximalIdeal S).under ℤ) →+* S`, with its `Algebra`, `IsLocalHom`, and
-  `SMulCommClass` instances.
-* `TauCeti.instPerfectFieldResidueFieldLocalizationAtPrimeInt`: the residue field of
-  `Localization.AtPrime p` for any prime `p : Ideal ℤ` is perfect, so any algebraic (in particular
-  finite) residue field of `S` is separable over it via Mathlib's
-  `Algebra.IsAlgebraic.isSeparable_of_perfectField`.
 * `IsLocalization.AtPrime.isLocalHom_lift`: the lift of a homomorphism to a local ring along the
   localization at a prime mapped into the maximal ideal is local.
 * `IsLocalization.AtPrime.isLocalHom_algebraMap_of_liesOver` and
@@ -132,62 +119,6 @@ end Localization.AtPrime
 namespace TauCeti
 
 open _root_.IsLocalRing Ideal
-
-namespace IsLocalRing
-
-section PrimeBase
-
-variable (S : Type*) [CommRing S] [_root_.IsLocalRing S]
-
-/-- The canonical ring homomorphism `Localization.AtPrime ((maximalIdeal S).under ℤ) →+* S`
-lifting `algebraMap ℤ S`: every integer outside `(maximalIdeal S).under ℤ` maps to a unit of `S`.
--/
-noncomputable def localizationAtPrimeUnderIntRingHom :
-    Localization.AtPrime ((maximalIdeal S).under ℤ) →+* S :=
-  IsLocalization.lift (M := ((maximalIdeal S).under ℤ).primeCompl) (g := algebraMap ℤ S)
-    fun y ↦ notMem_maximalIdeal.mp y.property
-
-/-- Any local ring `S` is canonically an algebra over
-`Localization.AtPrime ((maximalIdeal S).under ℤ)`. -/
-noncomputable instance instAlgebraLocalizationAtPrimeUnderInt :
-    Algebra (Localization.AtPrime ((maximalIdeal S).under ℤ)) S :=
-  (localizationAtPrimeUnderIntRingHom S).toAlgebra
-
-/-- The algebra map from `Localization.AtPrime ((maximalIdeal S).under ℤ)` to `S` is a local
-homomorphism. -/
-instance instIsLocalHomAlgebraMapLocalizationAtPrimeUnderInt :
-    IsLocalHom (algebraMap (Localization.AtPrime ((maximalIdeal S).under ℤ)) S) :=
-  IsLocalization.AtPrime.isLocalHom_lift ((maximalIdeal S).under ℤ) _ le_rfl
-
-/-- Any ring-automorphism group action on `S` commutes with the canonical algebra structure from
-`Localization.AtPrime ((maximalIdeal S).under ℤ)`. -/
-instance instSMulCommClassLocalizationAtPrimeUnderInt {G : Type*} [Monoid G]
-    [MulSemiringAction G S] :
-    SMulCommClass G (Localization.AtPrime ((maximalIdeal S).under ℤ)) S := ⟨fun σ r x ↦ by
-  have hfix : σ • algebraMap (Localization.AtPrime ((maximalIdeal S).under ℤ)) S r =
-      algebraMap (Localization.AtPrime ((maximalIdeal S).under ℤ)) S r := by
-    rw [← MulSemiringAction.toRingHom_apply, ← RingHom.comp_apply]
-    congr 1
-    exact IsLocalization.ringHom_ext ((maximalIdeal S).under ℤ).primeCompl (Subsingleton.elim _ _)
-  rw [Algebra.smul_def, smul_mul', hfix, ← Algebra.smul_def]⟩
-
-end PrimeBase
-
-end IsLocalRing
-
-/-- For any prime ideal `p` of `ℤ`, the residue field of `Localization.AtPrime p` is perfect:
-it is isomorphic to `ℚ` when `p = ⊥` and to `ZMod q` when `p = (q)` is nonzero. -/
-instance instPerfectFieldResidueFieldLocalizationAtPrimeInt (p : Ideal ℤ) [p.IsPrime] :
-    PerfectField (ResidueField (Localization.AtPrime p)) := by
-  by_cases hp : p = ⊥
-  · subst hp
-    have : CharZero (ResidueField (Localization.AtPrime (⊥ : Ideal ℤ))) :=
-      charZero_of_injective_algebraMap <| (RingHom.injective_iff_ker_eq_bot _).mpr
-        (Ideal.ker_algebraMap_residueField (⊥ : Ideal ℤ))
-    infer_instance
-  · have : Finite (ℤ ⧸ p) := Ring.HasFiniteQuotients.finiteQuotient hp
-    have : Finite p.ResidueField := inferInstance
-    infer_instance
 
 variable {A R : Type*} [CommSemiring A] [CommSemiring R] [IsLocalRing R]
 

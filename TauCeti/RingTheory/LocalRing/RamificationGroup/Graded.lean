@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.GroupTheory.Sylow
+public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import Mathlib.Algebra.Polynomial.Identities
 import Mathlib.RingTheory.IntegralDomain
@@ -268,6 +269,19 @@ section HigherRamification
 open scoped commutatorElement
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+
+/-- An element `σ ∈ G_i` moves every unit `u : Sˣ` by a factor in `U(S, i + 1)`. -/
+theorem map_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
+    (hσ : σ ∈ ramificationGroup G S i) (u : Sˣ) :
+    Units.map (MulDistribMulAction.toMonoidHom S σ) u * u⁻¹ ∈
+      (maximalIdeal S ^ (i + 1)).principalUnitGroup := by
+  rw [Ideal.mem_principalUnitGroup]
+  have hsub :
+      ((Units.map (MulDistribMulAction.toMonoidHom S σ) u * u⁻¹ : Sˣ) : S) - 1 =
+        (σ • (u : S) - (u : S)) * (↑u⁻¹ : S) := by
+    rw [Units.val_mul, Units.coe_map, MulDistribMulAction.toMonoidHom_apply, sub_mul, Units.mul_inv]
+  rw [hsub]
+  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
 
 /-- An element of `G_n` moves every element of `𝔪 ^ k` by an element of `𝔪 ^ (k + n)`. -/
 theorem smul_sub_mem_maximalIdeal_pow_add {n : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G S n)
@@ -831,15 +845,17 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueFi
       (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) :=
   (rfl)
 
+/-- The wild inertia Sylow subgroup is normal in `G_0`. -/
+theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
+    (ramificationGroupOneSylow G S R p : Subgroup (ramificationGroup G S 0)).Normal := by
+  rw [ramificationGroupOneSylow_coe]
+  infer_instance
+
 /-- **`G_1` is the only Sylow `p`-subgroup of `G_0`**: the Sylow subgroup
 `TauCeti.IsLocalRing.ramificationGroupOneSylow` is normal. -/
 theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
     (Q : Sylow p (ramificationGroup G S 0)) : Q = ramificationGroupOneSylow G S R p := by
-  have hnormal :
-      (ramificationGroupOneSylow G S R p : Subgroup (ramificationGroup G S 0)).Normal := by
-    rw [ramificationGroupOneSylow_coe]
-    infer_instance
-  let _ := Sylow.unique_of_normal _ hnormal
+  let _ := Sylow.unique_of_normal _ (ramificationGroupOneSylow_normal G S R p)
   exact Subsingleton.elim _ _
 
 end DiscreteValuationRing

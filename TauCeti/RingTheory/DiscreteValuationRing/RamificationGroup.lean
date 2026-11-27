@@ -11,9 +11,7 @@ public import TauCeti.Algebra.Group.Action.Irreducible
 public import TauCeti.RingTheory.DiscreteValuationRing.PrincipalUnitGroup
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 import Mathlib.RingTheory.IntegralDomain
-import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.RingTheory.Invariant.Basic
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Graded embeddings into principal unit groups of a discrete valuation ring
@@ -72,8 +70,6 @@ characteristic-zero structure theorems for `G_0` and `G_1` on arbitrary discrete
   extension.
 * `TauCeti.IsDiscreteValuationRing.tameCharacter_injective_iff`,
   `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`,
-  `TauCeti.IsDiscreteValuationRing.not_dvd_card_ramificationGroupGraded_zero`,
-  `TauCeti.IsDiscreteValuationRing.ramificationGroupOneSylow_normal`,
   `TauCeti.IsDiscreteValuationRing.natCard_ramificationGroup_one`, and
   `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero` (in
   `TauCeti.IsDiscreteValuationRing`): tame inertia and wild inertia structure on a discrete
@@ -102,11 +98,9 @@ characteristic-zero structure theorems for `G_0` and `G_1` on arbitrary discrete
     and `natCard_ramificationGroup_one`.
   * `TauCeti/FieldTheory/FunctionField/Place/Extension/TameInertia.lean`: the tame and wild
     inertia structure results (`tameCharacter_injective_iff`,
-    `isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`,
-    `not_dvd_card_ramificationGroupGraded_zero`, and
+    `isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`, and
     `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`), adapted from the
-    function-field place statements (`isCyclic_quotient_ramificationGroup_one`,
-    `not_dvd_index_ramificationGroup_one`, and
+    function-field place statements (`isCyclic_quotient_ramificationGroup_one` and
     `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`).
 -/
 
@@ -120,19 +114,6 @@ section UniformizerRatio
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
   [MulSemiringAction G S]
-
-/-- An element `σ ∈ G_i` moves every unit `u : Sˣ` by a factor in `U(S, i + 1)`. -/
-private theorem map_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G S i) (u : Sˣ) :
-    Units.map (MulDistribMulAction.toMonoidHom S σ) u * u⁻¹ ∈
-      (maximalIdeal S ^ (i + 1)).principalUnitGroup := by
-  rw [Ideal.mem_principalUnitGroup]
-  have hsub :
-      ((Units.map (MulDistribMulAction.toMonoidHom S σ) u * u⁻¹ : Sˣ) : S) - 1 =
-        (σ • (u : S) - (u : S)) * (↑u⁻¹ : S) := by
-    rw [Units.val_mul, Units.coe_map, MulDistribMulAction.toMonoidHom_apply, sub_mul, Units.mul_inv]
-  rw [hsub]
-  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
 
 /-- For a uniformizer `ϖ` and `σ ∈ G_i`, the **uniformizer ratio** `u_σ ∈ U(S, i)` is the unique
 unit satisfying `ϖ * u_σ = σ • ϖ`. -/
@@ -579,28 +560,6 @@ theorem isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot
   isCyclic_of_injective_ringHom
     ((Units.coeHom (ResidueField S)).comp (IsLocalRing.tameCharacter G S))
     (Units.val_injective.comp ((tameCharacter_injective_iff G R S).mpr h))
-
-variable (G S) in
-/-- **The order of `G_0 / G_1` is prime to the residue characteristic `p`.** A field of
-characteristic `p` has no nontrivial `p`-th roots of unity, while `G_0 / G_1` embeds into
-`(ResidueField S)ˣ`. -/
-theorem not_dvd_card_ramificationGroupGraded_zero (p : ℕ)
-    [CharP (ResidueField S) p] [Finite (RamificationGroupGraded G S 0)] :
-    ¬ p ∣ Nat.card (RamificationGroupGraded G S 0) := by
-  rcases CharP.char_is_prime_or_zero (ResidueField S) p with hprime | rfl
-  · have : Fact p.Prime := ⟨hprime⟩
-    exact TauCeti.not_dvd_card_of_injective_units p (IsLocalRing.tameCharacterGraded G S)
-      (IsLocalRing.tameCharacterGraded_injective R)
-  · simpa using Nat.card_pos.ne'
-
-variable (G S) in
-/-- The wild inertia Sylow subgroup is normal in `G_0`. -/
-theorem ramificationGroupOneSylow_normal (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
-    [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
-    (IsLocalRing.ramificationGroupOneSylow G S R p :
-      Subgroup (ramificationGroup G S 0)).Normal := by
-  rw [IsLocalRing.ramificationGroupOneSylow_coe]
-  infer_instance
 
 variable (G S) in
 /-- The order of wild inertia is the `p`-part of the order of inertia:
