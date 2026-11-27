@@ -42,8 +42,9 @@ no global regularity. For a smooth one-form it agrees with the canonical contact
 function that are both differentiable at `x`, rescaling by the function preserves the pointwise
 condition whenever its value at `x` is nonzero (`TauCeti.isContactFormAt_fun_smul_iff`). The
 condition at `x` only depends on the value of the form at `x` and on its exterior derivative at `x`
-restricted to the hyperplane (`TauCeti.isContactFormAt_congr`). At an interior point the
-condition can be checked in the preferred chart
+restricted to the hyperplane (`TauCeti.isContactFormAt_congr`), and it is unchanged when both are
+multiplied by a common nonzero factor (`TauCeti.isContactFormAt_congr_smul`). At an interior point
+the condition can be checked in the preferred chart
 (`TauCeti.isContactFormAt_inChartAt_iff`), which reduces local questions about contact forms on
 manifolds, such as the existence of Darboux charts, to open subsets of the model space.
 On a normed space it is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the
@@ -66,7 +67,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
   form and its exterior derivative are standard in suitable linear coordinates.
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
   `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff`,
-  `TauCeti.isContactFormAt_congr`, `TauCeti.SmoothForm.isContactFormAt_iff_isContact` and
+  `TauCeti.isContactFormAt_congr`, `TauCeti.isContactFormAt_congr_smul`,
+  `TauCeti.SmoothForm.isContactFormAt_iff_isContact` and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
@@ -330,6 +332,35 @@ theorem isContactFormAt_inChartAt_iff [IsManifold I 1 M] {α : RoughForm I M ℝ
       fun w hw ↦ (congrArg (fun A ↦ A ![v, w]) hd).symm.trans (hvw w ?_)
     exact RoughForm.mem_ker.2 ((hev w).trans (RoughForm.mem_ker.1 hw))
 
+/-- **The contact condition at a point is congruent up to a nonzero factor.** If `β x = c α x` for
+a nonzero real number `c`, and the exterior derivatives satisfy `dβ x = c dα x` on the common
+hyperplane `ker α_x`, then `β` and `α` are contact at `x` together. Their exterior derivatives may
+differ off `ker α_x`. -/
+theorem isContactFormAt_congr_smul {α β : RoughForm I M ℝ 1} {x : M} {c : ℝ} (hc : c ≠ 0)
+    (hval : β x = c • α x)
+    (hd : ∀ v ∈ α.ker x, ∀ w ∈ α.ker x, mextDeriv β x ![v, w] = c * mextDeriv α x ![v, w]) :
+    IsContactFormAt β x ↔ IsContactFormAt α x := by
+  have hker {v : TangentSpace I x} : v ∈ β.ker x ↔ v ∈ α.ker x := by
+    rw [RoughForm.mem_ker, RoughForm.mem_ker, hval, ContinuousAlternatingMap.smul_apply,
+      smul_eq_mul, mul_eq_zero, or_iff_right hc]
+  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero (by rw [hval, h0, smul_zero]), fun v hv hvw ↦
+      h.nondegenerate v (hker.2 hv) fun w hw ↦ ?_⟩,
+    fun h ↦ ⟨fun h0 ↦ h.ne_zero ((smul_eq_zero.1 (hval ▸ h0)).resolve_left hc), fun v hv hvw ↦
+      h.nondegenerate v (hker.1 hv) fun w hw ↦ ?_⟩⟩
+  · rw [hd v hv w (hker.1 hw), hvw w (hker.1 hw), mul_zero]
+  · have h := hvw w (hker.2 hw)
+    rw [hd v (hker.1 hv) w hw] at h
+    exact (mul_eq_zero.1 h).resolve_left hc
+
+/-- **The contact condition at a point is congruent.** Two one-forms with the same value at `x`
+whose exterior derivatives at `x` agree on the common hyperplane `ker α_x` are contact at `x`
+together. Their exterior derivatives may differ off `ker α_x`. -/
+theorem isContactFormAt_congr {α β : RoughForm I M ℝ 1} {x : M} (hval : β x = α x)
+    (hd : ∀ v ∈ α.ker x, ∀ w ∈ α.ker x, mextDeriv β x ![v, w] = mextDeriv α x ![v, w]) :
+    IsContactFormAt β x ↔ IsContactFormAt α x :=
+  isContactFormAt_congr_smul one_ne_zero (by rw [hval, one_smul]) fun v hv w hw ↦ by
+    rw [hd v hv w hw, one_mul]
+
 section Rescaling
 
 variable [IsManifold I 1 M] {α : RoughForm I M ℝ 1} {f : M → ℝ} {x : M}
@@ -340,45 +371,13 @@ differentiable at `x` with `f x ≠ 0`, the one-form `f α` is a contact form at
 theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x) (hfx : f x ≠ 0) :
-    IsContactFormAt (fun y ↦ f y • α y) x ↔ IsContactFormAt α x := by
-  have hd : ∀ v ∈ α.ker x, ∀ w ∈ α.ker x,
-      mextDeriv (fun y ↦ f y • α y) x ![v, w] = f x * mextDeriv α x ![v, w] := by
-    intro v hv w hw
+    IsContactFormAt (fun y ↦ f y • α y) x ↔ IsContactFormAt α x :=
+  isContactFormAt_congr_smul hfx rfl fun v hv w hw ↦ by
     rw [RoughForm.mem_ker] at hv hw
     rw [mextDeriv_fun_smul_apply hf hα, hv, hw]
     ring
-  constructor
-  · intro h
-    refine ⟨(smul_ne_zero_iff.mp h.ne_zero).2, fun v hv hvw ↦ ?_⟩
-    refine h.nondegenerate v (by rwa [RoughForm.ker_fun_smul hfx]) fun w hw ↦ ?_
-    rw [RoughForm.ker_fun_smul hfx] at hw
-    rw [hd v hv w hw, hvw w hw, mul_zero]
-  · intro h
-    refine ⟨smul_ne_zero hfx h.ne_zero, fun v hv hvw ↦ ?_⟩
-    rw [RoughForm.ker_fun_smul hfx] at hv hvw
-    refine h.nondegenerate v hv fun w hw ↦ ?_
-    have := hvw w hw
-    rw [hd v hv w hw] at this
-    exact (mul_eq_zero.mp this).resolve_left hfx
 
 end Rescaling
-
-/-- **The contact condition at a point is congruent.** Two one-forms with the same value at `x`
-whose exterior derivatives at `x` agree on the common hyperplane `ker α_x` are contact at `x`
-together. Their exterior derivatives may differ off `ker α_x`. -/
-theorem isContactFormAt_congr {α β : RoughForm I M ℝ 1} {x : M} (hval : β x = α x)
-    (hd : ∀ v ∈ α.ker x, ∀ w ∈ α.ker x, mextDeriv β x ![v, w] = mextDeriv α x ![v, w]) :
-    IsContactFormAt β x ↔ IsContactFormAt α x := by
-  have hker {v : TangentSpace I x} : v ∈ β.ker x ↔ v ∈ α.ker x := by
-    rw [RoughForm.mem_ker, RoughForm.mem_ker, hval]
-  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero (hval.trans h0), fun v hv hvw ↦
-      h.nondegenerate v (hker.2 hv) fun w hw ↦ ?_⟩,
-    fun h ↦ ⟨fun h0 ↦ h.ne_zero (hval.symm.trans h0), fun v hv hvw ↦
-      h.nondegenerate v (hker.1 hv) fun w hw ↦ ?_⟩⟩
-  · rw [hd v hv w (hker.1 hw)]
-    exact hvw w (hker.1 hw)
-  · rw [← hd v (hker.1 hv) w hw]
-    exact hvw w (hker.2 hw)
 
 /-- For a smooth one-form, the pointwise contact condition at `x` is the linear contact condition
 `Module.Dual.IsContact` for the covector `α_x` and the bilinear form of `dα_x`. -/

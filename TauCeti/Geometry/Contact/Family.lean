@@ -33,8 +33,9 @@ For `N = ℝ` this is the form in which time-dependent vector fields enter the t
 
 Being contact is an open condition on the slices: the pairs `(t, y)` such that `α_t` is contact
 at `y` form an open subset of `N × M`
-(`TauCeti.SmoothForm.isOpen_setOf_isContactFormAt_mpullback_prodMk`), so on a compact `M` the
-parameters `t` with `α_t` a contact form form an open subset of `N`
+(`TauCeti.SmoothForm.isOpen_setOf_isContactFormAt_mpullback_prodMk`); for a single form, its
+contact points form an open subset of `M` (`TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`). On a
+compact `M` the parameters `t` with `α_t` a contact form form an open subset of `N`
 (`TauCeti.SmoothForm.isOpen_setOf_isContactForm_mpullback_prodMk`). A family which is contact
 for the parameters of a compact set is therefore contact for the parameters of a neighbourhood.
 
@@ -50,6 +51,7 @@ constructions then depend smoothly on the parameter
 * `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt_mpullback_prodMk`: the contact points of the
   slices form an open set; `TauCeti.SmoothForm.isOpen_setOf_isContactForm_mpullback_prodMk`: on a
   compact manifold, so do the parameters of the contact slices.
+* `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`: the contact points of a single form are open.
 * `TauCeti.SmoothForm.contMDiffOn_reebVectorField_mpullback_prodMk`: the Reeb vector fields of the
   slices depend smoothly on the parameter in an open set where the slices are contact.
 * `TauCeti.SmoothForm.contMDiffOn_contactMoserVectorField_mpullback_prodMk`: the contact-Moser
@@ -105,6 +107,16 @@ theorem isOpen_setOf_isContactFormAt_mpullback_prodMk (α : SmoothForm (J.prod I
     convert isOpen_empty using 1
     refine Set.eq_empty_of_forall_notMem fun p hp ↦ hodd ?_
     exact (isContactFormAt_iff_isContact.1 hp).odd_finrank (isAlt_bilinFormAt _ p.2)
+
+/-- **The contact points of a form are open.** For a smooth one-form `α` on `M`, the set of points
+at which `α` is contact is open. It is the set of contact points of the constant family
+`(t, y) ↦ α_y` on `ℝ × M`, at the parameter `0`. -/
+theorem isOpen_setOf_isContactFormAt (α : SmoothForm I M ℝ 1) :
+    IsOpen {x | IsContactFormAt α.val x} := by
+  have h := (isOpen_setOf_isContactFormAt_mpullback_prodMk
+    (mpullback (Prod.snd : ℝ × M → M) (contMDiff_snd (I := 𝓘(ℝ, ℝ))) α)).preimage
+      (continuous_const.prodMk continuous_id : Continuous fun x : M ↦ ((0 : ℝ), x))
+  simpa only [mpullback_prodMk_mpullback_snd, Set.preimage_ofPred_eq] using h
 
 /-- **Contact slices form an open set of parameters on a compact manifold.** If `M` is compact,
 the set of parameters `t ∈ N` such that the slice `α_t = ι_t^* α` of a smooth one-form `α` on
