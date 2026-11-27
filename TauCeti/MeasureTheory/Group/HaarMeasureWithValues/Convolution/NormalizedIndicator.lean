@@ -17,12 +17,12 @@ Left and right multiplication by this idempotent characterize
 left and right subgroup invariance, respectively. For nested subgroups the larger subgroup's
 idempotent absorbs the smaller one on either side.
 
-The proofs use `LocallyConstant.compactOpenIndicator` and
-`TauCeti.HaarMeasureWithValues.convolution` on `TauCeti.HeckeAlgebra`.
-Using `Subsemigroup.mem_corner_iff`, `TauCeti.HeckeAlgebra.mem_corner_normalizedIndicator_iff`
-identifies the convolution corner `e_U * H * e_U` with the algebra of `U`-bi-invariant
-functions. This identification is used to compare smooth representations with modules over
-finite-level Hecke algebras.
+`TauCeti.HeckeAlgebra.normalizedIndicator_eq_smul` expresses the idempotent as a scalar
+multiple of `LocallyConstant.compactOpenIndicator`. The product in `TauCeti.HeckeAlgebra`
+is `TauCeti.HaarMeasureWithValues.convolution`.
+`TauCeti.HeckeAlgebra.mem_corner_normalizedIndicator_iff` characterizes membership in
+`Subsemigroup.corner` for this idempotent. The corner `e_U * H * e_U` consists of the
+`U`-bi-invariant functions, which form the finite-level Hecke algebra at `U`.
 
 ## References
 
