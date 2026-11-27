@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import TauCeti.Geometry.Manifold.Groupoid.Basic
+public import TauCeti.Geometry.Manifold.Groupoid.Fibers
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.Groupoid.Examples
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
@@ -29,8 +29,11 @@ objects and total arrows by pulling charts back along their object and arrow hom
   smooth manifold, `Discrete N` is a Lie groupoid (`TauCeti.UnitGroupoid.isLieGroupoid`);
 * the **pair groupoid** `Codiscrete M` of a `C^n` manifold `M` has object manifold `C^n`
   diffeomorphic to `M` and arrow manifold `C^n` diffeomorphic to `M × M` in `(target, source)`
-  coordinates, yielding a Lie groupoid (`TauCeti.PairGroupoid.isLieGroupoid`) on any Hausdorff
-  second-countable real smooth manifold `M`;
+  coordinates, with `C^n` submersive source and target (`TauCeti.PairGroupoid.isSubmersion_source`,
+  `TauCeti.PairGroupoid.isSubmersion_target`), yielding a Lie groupoid
+  (`TauCeti.PairGroupoid.isLieGroupoid`) on any Hausdorff second-countable real smooth manifold `M`
+  whose source and target fibres are canonically diffeomorphic to `M`
+  (`TauCeti.PairGroupoid.sourceFiberDiffeomorph`, `TauCeti.PairGroupoid.targetFiberDiffeomorph`);
 * the **one-object groupoid** `SingleObj G` of a `C^n` manifold `G` has singleton object manifold
   modelled on `𝓘(𝕜, Unit)` and arrow manifold `C^n` diffeomorphic to `G`, yielding a Lie groupoid
   (`TauCeti.OneObjectGroupoid.isLieGroupoid`) for every second-countable real Lie group `G` (no
@@ -49,8 +52,10 @@ objects and total arrows by pulling charts back along their object and arrow hom
   diffeomorphism, local diffeomorphisms, and Lie groupoid instance on `Discrete N`.
 * `TauCeti.PairGroupoid.instChartedSpaceObjects`, `TauCeti.PairGroupoid.instChartedSpaceArrows`,
   `TauCeti.PairGroupoid.objectDiffeomorph`, `TauCeti.PairGroupoid.arrowDiffeomorph`,
-  `TauCeti.PairGroupoid.isLieGroupoid`: smooth structure and Lie groupoid instance on
-  `Codiscrete M`.
+  `TauCeti.PairGroupoid.isSubmersion_source`, `TauCeti.PairGroupoid.isSubmersion_target`,
+  `TauCeti.PairGroupoid.isLieGroupoid`, `TauCeti.PairGroupoid.sourceFiberDiffeomorph`,
+  `TauCeti.PairGroupoid.targetFiberDiffeomorph`: smooth structure, Lie groupoid instance, and fibre
+  diffeomorphisms on `Codiscrete M`.
 * `TauCeti.OneObjectGroupoid.instChartedSpaceObjects`,
   `TauCeti.OneObjectGroupoid.instChartedSpaceArrows`,
   `TauCeti.OneObjectGroupoid.arrowDiffeomorph`, `TauCeti.OneObjectGroupoid.isLieGroupoid`: smooth
@@ -275,6 +280,36 @@ theorem arrowDiffeomorph_toHomeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ�
     (arrowDiffeomorph I n M).toHomeomorph = arrowHomeomorph M := by
   simp [arrowDiffeomorph]
 
+/-- The source map of the pair groupoid is a `C^n` submersion: in `(target, source)` coordinates it
+is the second projection `M × M → M`. -/
+theorem isSubmersion_source (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M] :
+    Manifold.IsSubmersion (I.prod I) I n
+      (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) := by
+  have h : (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) =
+      (objectDiffeomorph I n M).symm ∘ (Prod.fst ∘
+        ((arrowDiffeomorph I n M).trans (Diffeomorph.prodComm I I M M n))) := by
+    funext a
+    simp
+  rw [h]
+  exact (objectDiffeomorph I n M).symm.isLocalDiffeomorph.comp_isSubmersion
+    (((arrowDiffeomorph I n M).trans (Diffeomorph.prodComm I I M M n)).isLocalDiffeomorph
+      |>.isSubmersion_comp Manifold.isSubmersion_fst)
+
+/-- The target map of the pair groupoid is a `C^n` submersion: in `(target, source)` coordinates it
+is the first projection `M × M → M`. -/
+theorem isSubmersion_target (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
+    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M] :
+    Manifold.IsSubmersion (I.prod I) I n
+      (Quiver.Total.right : Quiver.Total (Codiscrete M) → Codiscrete M) := by
+  have h : (Quiver.Total.right : Quiver.Total (Codiscrete M) → Codiscrete M) =
+      (objectDiffeomorph I n M).symm ∘ (Prod.fst ∘ arrowDiffeomorph I n M) := by
+    funext a
+    simp
+  rw [h]
+  exact (objectDiffeomorph I n M).symm.isLocalDiffeomorph.comp_isSubmersion
+    ((arrowDiffeomorph I n M).isLocalDiffeomorph.isSubmersion_comp Manifold.isSubmersion_fst)
+
 end Smooth
 
 section LieGroupoid
@@ -289,26 +324,88 @@ private theorem contMDiff_inverse_aux :
   exact ((contMDiff_snd.comp (arrowDiffeomorph I ∞ M).contMDiff).prodMk
     (contMDiff_fst.comp (arrowDiffeomorph I ∞ M).contMDiff)).congr fun a ↦ by simp
 
-variable [IsManifold I ∞ M]
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
 
-private theorem isSubmersion_source_aux :
-    Manifold.IsSubmersion (I.prod I) I ∞
-      (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) := by
-  have h : (Quiver.Total.left : Quiver.Total (Codiscrete M) → Codiscrete M) =
-      (objectDiffeomorph I ∞ M).symm ∘ (Prod.fst ∘
-        ((arrowDiffeomorph I ∞ M).trans (Diffeomorph.prodComm I I M M ∞))) := by
-    funext a
-    simp
-  rw [h]
-  exact (objectDiffeomorph I ∞ M).symm.isLocalDiffeomorph.comp_isSubmersion
-    (((arrowDiffeomorph I ∞ M).trans (Diffeomorph.prodComm I I M M ∞)).isLocalDiffeomorph
-      |>.isSubmersion_comp Manifold.isSubmersion_fst)
+section FiberTranslations
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [SecondCountableTopology M]
+variable [IsLieGroupoid I (I.prod I) (Codiscrete M)]
+
+/-- Target identifies each canonical source fibre `s⁻¹(x)` of `Codiscrete M` diffeomorphically with
+`M`, sending an arrow `x ⟶ z` to `z`. -/
+noncomputable def sourceFiberDiffeomorph (x : Codiscrete M) :
+    letI := IsLieGroupoid.sourceFiberChartedSpace I (I.prod I) x
+    {a : Quiver.Total (Codiscrete M) // a.left = x} ≃ₘ^∞⟮
+      𝓘(ℝ, Fin (Module.finrank ℝ (E × E) - Module.finrank ℝ E) → ℝ), I⟯ M :=
+  RegularFiber.diffeomorphOfProd (by simp)
+    (IsLieGroupoid.contMDiff_source I (I.prod I) (Codiscrete M))
+    BoundarylessManifold.isInteriorPoint (IsLieGroupoid.isRegularValue_source I (I.prod I) x)
+    (arrowDiffeomorph I ∞ M) (objectDiffeomorph I ∞ M) (by funext a; simp)
+
+@[simp]
+theorem sourceFiberDiffeomorph_apply (x : Codiscrete M)
+    (a : {a : Quiver.Total (Codiscrete M) // a.left = x}) :
+    letI := IsLieGroupoid.sourceFiberChartedSpace I (I.prod I) x
+    sourceFiberDiffeomorph I M x a = a.val.right.as := by
+  simp [sourceFiberDiffeomorph, RegularFiber.diffeomorphOfProd_apply]
+
+@[simp]
+theorem coe_sourceFiberDiffeomorph_symm_apply (x : Codiscrete M) (z : M) :
+    letI := IsLieGroupoid.sourceFiberChartedSpace I (I.prod I) x
+    ((sourceFiberDiffeomorph I M x).symm z).val = ⟨x, ⟨z⟩, default⟩ := by
+  simp [sourceFiberDiffeomorph, RegularFiber.coe_diffeomorphOfProd_symm_apply]
+
+/-- Source identifies each canonical target fibre `t⁻¹(x)` of `Codiscrete M` diffeomorphically with
+`M`, sending an arrow `w ⟶ x` to `w`. -/
+noncomputable def targetFiberDiffeomorph (x : Codiscrete M) :
+    letI := IsLieGroupoid.targetFiberChartedSpace I (I.prod I) x
+    {a : Quiver.Total (Codiscrete M) // a.right = x} ≃ₘ^∞⟮
+      𝓘(ℝ, Fin (Module.finrank ℝ (E × E) - Module.finrank ℝ E) → ℝ), I⟯ M :=
+  RegularFiber.diffeomorphOfProd (by simp)
+    (IsLieGroupoid.contMDiff_target I (I.prod I) (Codiscrete M))
+    BoundarylessManifold.isInteriorPoint (IsLieGroupoid.isRegularValue_target I (I.prod I) x)
+    ((arrowDiffeomorph I ∞ M).trans (Diffeomorph.prodComm I I M M ∞))
+    (objectDiffeomorph I ∞ M) (by funext a; simp)
+
+@[simp]
+theorem targetFiberDiffeomorph_apply (x : Codiscrete M)
+    (a : {a : Quiver.Total (Codiscrete M) // a.right = x}) :
+    letI := IsLieGroupoid.targetFiberChartedSpace I (I.prod I) x
+    targetFiberDiffeomorph I M x a = a.val.left.as := by
+  simp [targetFiberDiffeomorph, RegularFiber.diffeomorphOfProd_apply]
+
+@[simp]
+theorem coe_targetFiberDiffeomorph_symm_apply (x : Codiscrete M) (w : M) :
+    letI := IsLieGroupoid.targetFiberChartedSpace I (I.prod I) x
+    ((targetFiberDiffeomorph I M x).symm w).val = ⟨⟨w⟩, x, default⟩ := by
+  simp [targetFiberDiffeomorph, RegularFiber.coe_diffeomorphOfProd_symm_apply]
+
+/-- Under the target-coordinate identifications `s⁻¹(t(g)) ≃ₘ^∞ M ≃ₘ^∞ s⁻¹(s(g))`, right
+translation in the pair groupoid acts as the identity on `M`. -/
+theorem sourceFiberDiffeomorph_rightMulDiffeomorph (g : Quiver.Total (Codiscrete M))
+    (h : {a : Quiver.Total (Codiscrete M) // a.left = g.right}) :
+    letI := IsLieGroupoid.sourceFiberChartedSpace I (I.prod I) g.right
+    letI := IsLieGroupoid.sourceFiberChartedSpace I (I.prod I) g.left
+    sourceFiberDiffeomorph I M g.left (IsLieGroupoid.rightMulDiffeomorph I (I.prod I) g h) =
+      sourceFiberDiffeomorph I M g.right h := by
+  simp
+
+/-- Under the source-coordinate identifications `t⁻¹(s(g)) ≃ₘ^∞ M ≃ₘ^∞ t⁻¹(t(g))`, left
+translation in the pair groupoid acts as the identity on `M`. -/
+theorem targetFiberDiffeomorph_leftMulDiffeomorph (g : Quiver.Total (Codiscrete M))
+    (h : {a : Quiver.Total (Codiscrete M) // a.right = g.left}) :
+    letI := IsLieGroupoid.targetFiberChartedSpace I (I.prod I) g.left
+    letI := IsLieGroupoid.targetFiberChartedSpace I (I.prod I) g.right
+    targetFiberDiffeomorph I M g.right (IsLieGroupoid.leftMulDiffeomorph I (I.prod I) g h) =
+      targetFiberDiffeomorph I M g.left h := by
+  simp
+
+end FiberTranslations
+
+variable [T2Space M] [SecondCountableTopology M]
 
 /-- The pair groupoid on a Hausdorff second-countable smooth manifold is a Lie groupoid. -/
 instance isLieGroupoid : IsLieGroupoid I (I.prod I) (Codiscrete M) where
-  isSubmersion_source := isSubmersion_source_aux I M
+  isSubmersion_source := isSubmersion_source I ∞ M
   contMDiff_unit := by
     rw [← (arrowDiffeomorph I ∞ M).contMDiff_diffeomorph_comp_iff le_rfl]
     exact ((objectDiffeomorph I ∞ M).contMDiff.prodMk
@@ -317,7 +414,7 @@ instance isLieGroupoid : IsLieGroupoid I (I.prod I) (Codiscrete M) where
   -- The composite of `x → y` and `y → z` is the arrow with coordinates `(z, x)`.
   contMDiff_comp := by
     have ha := (arrowDiffeomorph I ∞ M).contMDiff
-    exact contMDiff_composablePairs_comp_of_eq (isSubmersion_source_aux I M)
+    exact contMDiff_composablePairs_comp_of_eq (isSubmersion_source I ∞ M)
       (contMDiff_inverse_aux I M)
       ((arrowDiffeomorph I ∞ M).symm.contMDiff.comp
         ((ha.comp contMDiff_snd).fst.prodMk (ha.comp contMDiff_fst).snd))

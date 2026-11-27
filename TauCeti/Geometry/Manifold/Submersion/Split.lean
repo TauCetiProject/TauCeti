@@ -27,7 +27,8 @@ preserves and reflects regular values (`Manifold.IsSubmersion.isRegularValue_com
 For maps between finite-dimensional real or complex manifolds with boundaryless source, a split
 differential and smoothness on a neighbourhood give Mathlib's submersion normal form. The complement
 can be chosen uniformly as `Fin (dim E - dim F) → 𝕜`, even when the source is empty. Consequently
-a smooth map is a submersion exactly when its differentials split, and a smooth map whose composite
+a smooth map is a submersion exactly when its differentials split, composites of submersions are
+submersions, and a smooth map whose composite
 with a smooth surjection is a submersion is itself one. No separation or countability
 hypothesis on either manifold is needed. These comparisons allow constructions using submersion
 charts to be applied to maps specified by their differentials. In particular, a map between
@@ -335,6 +336,18 @@ theorem submersion_iff_split_mfderiv (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
   refine ⟨fun h x ↦ h.hasRightInverse_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) x, fun h ↦ ?_⟩
   exact (hf.isSubmersionOfComplement_of_surjective_mfderiv hn
     (fun x ↦ (isRegularPoint_iff.mp (isDiffSubmersionAt_iff_isRegularPoint.mp (h x))))).isSubmersion
+
+/-- A composite of `C^n` submersions (`1 ≤ n`) is a `C^n` submersion when the source of the first
+is boundaryless and finite-dimensional and the target of the second is finite-dimensional. The
+intermediate manifold may be modelled on any space. -/
+theorem _root_.Manifold.IsSubmersion.comp {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {g : M' → N} {f' : M → M'} (hg : IsSubmersion I' J n g)
+    (hf' : IsSubmersion I I' n f') (hn : 1 ≤ n) : IsSubmersion I J n (g ∘ f') := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  exact (submersion_iff_split_mfderiv (hg.contMDiff.comp hf'.contMDiff) hn).2 fun x ↦
+    IsDiffSubmersionAt.comp (hg.hasRightInverse_mfderiv hn0 (f' x))
+      (hf'.hasRightInverse_mfderiv hn0 x)
 
 /-- A smooth map `f` is a submersion when its composite `f ∘ π` with a smooth surjection `π` is
 one: by the chain rule, every differential of `f` is then surjective. The source of `π` may be
