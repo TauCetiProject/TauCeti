@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LocalizedChangeOfVariables
 import TauCeti.Analysis.Pseudodifferential.Lp.BesselPotentialSpace
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 
 /-!
@@ -191,19 +190,11 @@ theorem IsClassicalElliptic.exists_sum_norm_toBesselPotentialSpaceCLM_le_add
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
         hθc hθs hp hp_top r)
-    _ (fun a ha ↦ ?_) ⌈s + m - r⌉₊ (fun a ha ↦ ?_) he φ he' ψ hψ
-  · obtain ⟨C, hC⟩ :=
-      ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
-    rw [sub_neg_eq_add] at hC
-    exact ⟨C, hC⟩
-  · -- `Op(a)` maps `H^{r,p}` to `H^{r + N,p}`, which embeds into `H^{s + m,p}`.
-    obtain ⟨C, hC⟩ :=
-      ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le r hp hp_top
-    refine ⟨‖BesselPotentialSpace.inclusion (E := CoordinateSpace n) (G := ℂ) (p := p) hN‖ * C,
-      fun w ↦ ?_⟩
-    rw [← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM hN, mul_assoc]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_left (hC w) (norm_nonneg _))
+    _ (fun a ha ↦ ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_le
+      (sub_neg_eq_add s m).ge hp hp_top) ⌈s + m - r⌉₊
+    -- `Op(a)` maps `H^{r,p}` to `H^{r + N,p}`, which embeds into `H^{s + m,p}`.
+    (fun a ha ↦ ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_le hN
+      hp hp_top) he φ he' ψ hψ
 
 /-- **The elliptic estimate on a compact manifold, in Besov and Hölder–Zygmund norms.** Let `P`
 be an elliptic classical pseudodifferential operator of order `m`, and `ψᵢ` finitely many cutoffs
@@ -242,16 +233,9 @@ theorem IsClassicalElliptic.exists_sum_norm_toBesovSpaceCLM_le_add
     (SchwartzMap.toBesovSpaceCLM_injective ℂ b r p ∞)
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ hθc hθs b r p ∞)
-    _ (fun a ha ↦ ?_) ⌈s + m - r⌉₊ (fun a ha ↦ ?_) he φ he' ψ hψ
-  · obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b s
-    refine ⟨C, fun w ↦ ?_⟩
-    have := hC (p := p) w
-    rwa [sub_neg_eq_add] at this
-  · -- `Op(a)` maps `B^r_{p,∞}` to `B^{r + N}_{p,∞}`, which embeds into `B^{s + m}_{p,∞}`.
-    obtain ⟨C, -, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le b r
-    refine ⟨‖BesovSpace.inclusion ℂ b p (q := ∞) (q' := ∞) hN le_rfl‖ * C, fun w ↦ ?_⟩
-    rw [← SchwartzMap.inclusion_toBesovSpaceCLM hN le_rfl, mul_assoc]
-    exact (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_left (hC w) (norm_nonneg _))
+    _ (fun a ha ↦ ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le b
+      (sub_neg_eq_add s m).ge p) ⌈s + m - r⌉₊
+    -- `Op(a)` maps `B^r_{p,∞}` to `B^{r + N}_{p,∞}`, which embeds into `B^{s + m}_{p,∞}`.
+    (fun a ha ↦ ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_le b hN p) he φ he' ψ hψ
 
 end TauCeti
