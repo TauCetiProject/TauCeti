@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Constructions.EuclideanSpace
 In dimension `n ≥ 2`, a map `u : ℝⁿ → F` continuous on `Ω` and locally Lipschitz on `Ω ∖ {c}` is
 `ACL` on `Ω` (`LocallyLipschitzOn.isACLOn_of_diff_singleton`). The coordinate lines in the `i`-th
 direction through `c` form the line `c + ℝ eᵢ`, a null set since `n ≥ 2`
-(`EuclideanSpace.volume_setOf_forall_ne_eq_zero`); every other coordinate segment of a closed box
+(`EuclideanSpace.addHaar_setOf_forall_ne_eq_zero`); every other coordinate segment of a closed box
 in `Ω` is a compact subset of `Ω ∖ {c}`, on which `u` is Lipschitz, so its line function is
 absolutely continuous. In particular a map continuous on an open set `Ω` and `C¹` on `Ω ∖ {c}` is
 `ACL` on `Ω`. This covers radial maps such as `x ↦ |x|^a`, `a > 0`, which are not locally
@@ -54,7 +54,8 @@ theorem _root_.LocallyLipschitzOn.isACLOn_of_diff_singleton (hn : 2 ≤ n)
     have hnull : ∀ᵐ x ∂volume.restrict (coordinateBox a b),
         x ∉ {x : EuclideanSpace ℝ (Fin n) | ∀ j, j ≠ i → x j = c j} :=
       ae_restrict_of_ae
-        (measure_eq_zero_iff_ae_notMem.1 (EuclideanSpace.volume_setOf_forall_ne_eq_zero c i))
+        (measure_eq_zero_iff_ae_notMem.1
+          (EuclideanSpace.addHaar_setOf_forall_ne_eq_zero volume c i))
     filter_upwards [ae_restrict_mem (measurableSet_coordinateBox a b), hnull] with x hx hxA
     simp only [not_forall] at hxA
     obtain ⟨j, hji, hxj⟩ := hxA

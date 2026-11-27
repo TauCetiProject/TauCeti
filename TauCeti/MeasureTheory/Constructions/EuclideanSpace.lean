@@ -32,8 +32,8 @@ null set.
 * `EuclideanSpace.measurable_single`: the inclusion of one coordinate is measurable.
 * `EuclideanSpace.map_single_map_eval`: over a one-element index type, a measure is the image of
   its coordinate law under `EuclideanSpace.single default`.
-* `EuclideanSpace.volume_setOf_forall_ne_eq_zero`: with at least two coordinates, the coordinate
-  line `{x | ∀ j ≠ i, x j = c j}` is a null set.
+* `EuclideanSpace.addHaar_setOf_forall_ne_eq_zero`: with at least two coordinates, the coordinate
+  line `{x | ∀ j ≠ i, x j = c j}` is null for every additive Haar measure.
 -/
 
 public section
@@ -74,10 +74,13 @@ theorem map_single_map_eval [Unique ι] (μ : Measure (EuclideanSpace ℝ ι)) :
 
 omit [DecidableEq ι] in
 /-- With at least two coordinates, the points `x` whose coordinate line in the `i`-th direction
-passes through `c`, those with `x j = c j` for every `j ≠ i`, form a null set. -/
-theorem volume_setOf_forall_ne_eq_zero [Fintype ι] [Nontrivial ι] (c : EuclideanSpace ℝ ι)
-    (i : ι) : volume {x : EuclideanSpace ℝ ι | ∀ j, j ≠ i → x j = c j} = 0 := by
+passes through `c`, those with `x j = c j` for every `j ≠ i`, form a null set for any additive Haar
+measure. -/
+theorem addHaar_setOf_forall_ne_eq_zero [Finite ι] [Nontrivial ι]
+    (μ : Measure (EuclideanSpace ℝ ι)) [μ.IsAddHaarMeasure] (c : EuclideanSpace ℝ ι) (i : ι) :
+    μ {x : EuclideanSpace ℝ ι | ∀ j, j ≠ i → x j = c j} = 0 := by
   classical
+  have := Fintype.ofFinite ι
   obtain ⟨j, hji⟩ := exists_ne i
   let s : Submodule ℝ (EuclideanSpace ℝ ι) := ℝ ∙ EuclideanSpace.single i 1
   have hsub : {x : EuclideanSpace ℝ ι | ∀ j, j ≠ i → x j = c j} ⊆ (· + -c) ⁻¹' s := by
@@ -95,6 +98,6 @@ theorem volume_setOf_forall_ne_eq_zero [Fintype ι] [Nontrivial ι] (c : Euclide
     simp [hji] at this
   refine measure_mono_null hsub ?_
   rw [measure_preimage_add_right]
-  exact Measure.addHaar_submodule volume s hs
+  exact Measure.addHaar_submodule μ s hs
 
 end EuclideanSpace
