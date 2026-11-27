@@ -71,20 +71,17 @@ theorem exists_eq_exp_mul_I [FiniteDimensional ℝ E] (χ : AddChar E ℂ) (hχ 
     (existsUnique_eq_expUnitHom_complex (lineHom χ hχ h0 x)).unique (hs x) <|
       ContinuousMonoidHom.ext fun t ↦ Units.ext <| by
         rw [coe_lineHom_apply, h, ← coe_expUnitHom_complex, ofAdd_toAdd]
+  have hs1 (x : E) : χ x = exp (s x) := by simpa using hst x 1
   let S : E →ₗ[ℝ] ℂ :=
     { toFun := s
-      map_add' x y := huniq fun t ↦ by
-        rw [smul_add, map_add_eq_mul, hst, hst, ← exp_add, mul_add]
-      map_smul' c x := huniq fun t ↦ by
-        rw [smul_smul, hst, RingHom.id_apply, real_smul, ofReal_mul, mul_assoc] }
+      map_add' x y := huniq fun t ↦ by simp [hst, map_add_eq_mul, ← exp_add, mul_add]
+      map_smul' c x := huniq fun t ↦ by simp [smul_smul, hst, mul_assoc] }
   -- Unitarity makes `s` purely imaginary.
-  have hre (x : E) : (s x).re = 0 := by
-    have := h1 x
-    rwa [← one_smul ℝ x, hst, ofReal_one, one_mul, norm_exp, Real.exp_eq_one_iff] at this
+  have hre (x : E) : (s x).re = 0 := by simpa [hs1, norm_exp] using h1 x
   refine ⟨(imLm.comp S).toContinuousLinearMap, fun x ↦ ?_⟩
   have hx : s x = (s x).im * I := by
     apply Complex.ext <;> simp [hre]
-  rw [← one_smul ℝ x, hst, ofReal_one, one_mul, one_smul]
+  rw [hs1]
   conv_lhs => rw [hx]
   simp [S]
 

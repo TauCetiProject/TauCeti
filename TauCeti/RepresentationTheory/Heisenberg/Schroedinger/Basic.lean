@@ -96,9 +96,7 @@ def polarizedSchroedinger :
       map_smul' c φ := funext fun u ↦ smul_comm _ c _ }
   map_one' := LinearMap.ext fun φ ↦ funext fun u ↦ by simp
   map_mul' p q := LinearMap.ext fun φ ↦ funext fun u ↦ by
-    simp [smul_smul, ← AddChar.map_add_eq_mul, add_assoc]
-    congr 3
-    abel
+    simp [smul_smul, ← AddChar.map_add_eq_mul, add_assoc, add_left_comm, add_comm]
 
 /-- The polarized Schrödinger operator of `(t, (x, y))` translates by `x` and modulates by
 `u ↦ ψ (t + B u y)`. -/
@@ -175,8 +173,9 @@ variable [TopologicalSpace X] [ContinuousAdd X] {B : X →ₗ[R] Y →ₗ[R] C} 
 /-- The polarized Schrödinger operators preserve compact support. -/
 theorem hasCompactSupport_polarizedSchroedinger_apply
     (p : B.polarizedForm.bilinearFactorSet.Extension) {φ : X → V} (hφ : HasCompactSupport φ) :
-    HasCompactSupport (B.polarizedSchroedinger ψ V p φ) :=
-  (hφ.comp_homeomorph (Homeomorph.addRight _)).smul_left
+    HasCompactSupport (B.polarizedSchroedinger ψ V p φ) := by
+  rw [funext (polarizedSchroedinger_apply B ψ V p φ)]
+  exact (hφ.comp_homeomorph (Homeomorph.addRight _)).smul_left
 
 /-- The Schrödinger operators preserve compact support. -/
 theorem hasCompactSupport_schroedinger_apply [Invertible (2 : R)]
@@ -194,6 +193,7 @@ theorem isLocallyConstant_polarizedSchroedinger_apply (hψ : IsLocallyConstant �
     (hB : ∀ y, Continuous fun u ↦ B u y) (p : B.polarizedForm.bilinearFactorSet.Extension)
     {φ : X → V} (hφ : IsLocallyConstant φ) :
     IsLocallyConstant (B.polarizedSchroedinger ψ V p φ) := by
+  rw [funext (polarizedSchroedinger_apply B ψ V p φ)]
   have hmod : IsLocallyConstant fun u ↦ ψ (p.left.toAdd + B u p.right.toAdd.2) := by
     simp_rw [AddChar.map_add_eq_mul]
     exact (hψ.comp_continuous (hB _)).comp (ψ p.left.toAdd * ·)
