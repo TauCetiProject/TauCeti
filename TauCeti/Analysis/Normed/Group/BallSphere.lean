@@ -33,6 +33,9 @@ Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` whenever `
 A bijection of the closed unit ball preserving the unit sphere restricts to a bijection of the
 unit sphere (`Equiv.restrictUnitSphere`).
 
+Points chosen from annularly separated open balls (`‖c n‖ + r n < ‖c (n + 1)‖ - r (n + 1)`) have
+strictly increasing norms (`TauCeti.strictMono_norm_of_forall_mem_ball`).
+
 An action by isometries fixing zero (`SMulZeroClass`) preserves every sphere centred at zero, so
 it restricts to a scalar action on the sphere (`TauCeti.Sphere.instSMulOfIsIsometricSMul`),
 continuous when the ambient action is and again by isometries, and the inclusion of the sphere is
@@ -104,6 +107,16 @@ theorem image_sub_const_setOf_lt_norm_subset {E : Type*} [SeminormedAddGroup E] 
   rintro _ ⟨x, hx, rfl⟩
   have := norm_le_norm_sub_add x h
   grind
+
+/-- Points chosen from annularly separated open balls have strictly increasing norms. -/
+theorem strictMono_norm_of_forall_mem_ball {E : Type*} [SeminormedAddCommGroup E]
+    {c : ℕ → E} {r : ℕ → ℝ} {x : ℕ → E}
+    (hsep : ∀ n, ‖c n‖ + r n < ‖c (n + 1)‖ - r (n + 1))
+    (hx : ∀ n, x n ∈ ball (c n) (r n)) :
+    StrictMono fun n => ‖x n‖ :=
+  strictMono_nat_of_lt_succ fun n =>
+    (norm_lt_of_mem_ball (hx n)).trans <|
+      (hsep n).trans (sub_lt_iff_lt_add.mpr (norm_lt_of_mem_ball (mem_ball_comm.mp (hx (n + 1)))))
 
 /-! ### Bijections of the closed ball preserving the unit sphere -/
 
