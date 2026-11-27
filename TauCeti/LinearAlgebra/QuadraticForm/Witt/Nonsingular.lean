@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 import Mathlib.LinearAlgebra.Prod
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.QuadraticForm.CharTwo
 import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
@@ -88,12 +89,6 @@ section CommRing
 variable {R : Type u} [CommRing R] {V : Type v} [AddCommGroup V] [Module R V]
   {Q : QuadraticForm R V} {e f : V}
 
-/-- A vector is orthogonal to the span of `e` and `f` exactly when it is orthogonal to both. -/
-theorem mem_orthogonal_span_pair_iff {u : V} :
-    u ∈ LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span R {e, f}) ↔
-      polar Q e u = 0 ∧ polar Q f u = 0 := by
-  simp [LinearMap.BilinForm.orthogonal]
-
 /-- The span of a hyperbolic pair `e, f` (isotropic vectors with `polar Q e f = 1`) is
 complementary to its polar orthogonal complement, with no hypothesis on `Q`. The component of `u`
 in the span is `polar Q u f • e + polar Q u e • f`. -/
@@ -105,13 +100,13 @@ theorem isCompl_span_pair_orthogonal_of_polar_eq_one (he : Q e = 0) (hf : Q f = 
   refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ ↦ ?_,
     codisjoint_iff.2 (eq_top_iff.2 fun u _ ↦ ?_)⟩
   · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hv
-    obtain ⟨h₁, h₂⟩ := mem_orthogonal_span_pair_iff.1 hv'
-    simp only [polar_add_right, polar_smul_right, polar_self, he, hf, hef, hfe, smul_eq_mul,
-      smul_zero, mul_zero, mul_one, zero_add, add_zero] at h₁ h₂
+    obtain ⟨h₁, h₂⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.1 hv'
+    simp only [polarBilin_apply_apply, polar_add_right, polar_smul_right, polar_self, he, hf, hef,
+      hfe, smul_eq_mul, smul_zero, mul_zero, mul_one, zero_add, add_zero] at h₁ h₂
     simp [h₁, h₂]
   · refine Submodule.mem_sup.2 ⟨polar Q u f • e + polar Q u e • f,
       Submodule.mem_span_pair.2 ⟨_, _, rfl⟩, u - (polar Q u f • e + polar Q u e • f),
-      mem_orthogonal_span_pair_iff.2 ⟨?_, ?_⟩, add_sub_cancel _ _⟩ <;>
+      LinearMap.BilinForm.mem_orthogonal_span_pair_iff.2 ⟨?_, ?_⟩, add_sub_cancel _ _⟩ <;>
     simp [polar_sub_right, polar_add_right, polar_smul_right, polar_self, he, hf, hef, hfe,
       polar_comm Q u]
 
@@ -148,8 +143,9 @@ private def orthogonalSpanPairMap (e f f' : V) (he : Q e = 0) (hef' : polar Q e 
       LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {e, f'}) :=
   LinearMap.codRestrict _
     ((LinearMap.id - (Q.polarBilin f').smulRight e) ∘ₗ Submodule.subtype _) fun u ↦ by
-      obtain ⟨hu₁, -⟩ := mem_orthogonal_span_pair_iff.1 u.property
-      refine mem_orthogonal_span_pair_iff.2 ⟨?_, ?_⟩ <;>
+      obtain ⟨hu₁, -⟩ : polar Q e u = 0 ∧ _ :=
+        LinearMap.BilinForm.mem_orthogonal_span_pair_iff.1 u.property
+      refine LinearMap.BilinForm.mem_orthogonal_span_pair_iff.2 ⟨?_, ?_⟩ <;>
       simp [polar_sub_right, polar_smul_right, polar_self, he, hu₁, polar_comm Q f' e, hef']
 
 private theorem coe_orthogonalSpanPairMap (he : Q e = 0) (hef' : polar Q e f' = 1)
@@ -162,7 +158,8 @@ private theorem orthogonalSpanPairMap_comp (he : Q e = 0) (hef : polar Q e f = 1
     orthogonalSpanPairMap e f' f he hef ∘ₗ orthogonalSpanPairMap e f f' he hef' =
       LinearMap.id := by
   ext u
-  obtain ⟨-, hu₂⟩ := mem_orthogonal_span_pair_iff.1 u.property
+  obtain ⟨-, hu₂⟩ : _ ∧ polar Q f u = 0 :=
+    LinearMap.BilinForm.mem_orthogonal_span_pair_iff.1 u.property
   simp [coe_orthogonalSpanPairMap, polar_sub_right, polar_smul_right, hu₂, polar_comm Q f e, hef]
 
 /-- The orthogonal complements of two hyperbolic pairs sharing their first vector are isometric. -/
@@ -174,7 +171,8 @@ private theorem equivalent_restrict_orthogonal_span_pair_of_eq (he : Q e = 0)
         (orthogonalSpanPairMap e f' f he hef) (orthogonalSpanPairMap_comp he hef' hef)
         (orthogonalSpanPairMap_comp he hef hef')
      map_app' u := by
-        obtain ⟨hu₁, -⟩ := mem_orthogonal_span_pair_iff.1 u.property
+        obtain ⟨hu₁, -⟩ : polar Q e u = 0 ∧ _ :=
+          LinearMap.BilinForm.mem_orthogonal_span_pair_iff.1 u.property
         simp [coe_orthogonalSpanPairMap, sub_eq_add_neg, QuadraticMap.map_add,
           QuadraticMap.map_smul, he, polar_comm Q u, hu₁] }⟩
 
@@ -285,7 +283,7 @@ private theorem equivalent_restrict_orthogonal_span_pair_single (Q₁ : Quadrati
       (Submodule.span K {(Pi.single 0 1, 0), (Pi.single 1 1, 0)}) =
       LinearMap.range (LinearMap.inr K (Fin 2 → K) V₁) := by
     ext ⟨x, v⟩
-    rw [QuadraticForm.mem_orthogonal_span_pair_iff, LinearMap.mem_range]
+    rw [LinearMap.BilinForm.mem_orthogonal_span_pair_iff, LinearMap.mem_range]
     constructor
     · rintro ⟨h₁, h₀⟩
       refine ⟨v, Prod.ext (funext fun i ↦ ?_) rfl⟩
