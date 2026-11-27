@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Int.Order.Units
+import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Integer vectors with sum of squares one
+# Sums of squares of integers
 
 An integer vector has coordinate squares summing to one exactly when it is a signed coordinate
 unit `±eᵢ`. The classification works over any finite index type and separates this arithmetic
 fact from its applications to lattice roots.
+
+Four integers whose squares sum to a multiple of `4` all have the same parity, because
+`X ^ 2 % 4 = X % 2`.
 -/
 
 public section
@@ -39,5 +43,16 @@ theorem sum_sq_eq_one_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {z : ι →
       by_cases hj : j = i <;> simp [h, hj, hother]
   · rintro ⟨i, rfl | rfl⟩ <;>
       rw [sum_eq_single_of_mem i (mem_univ i) fun j _ hj ↦ by simp [hj]] <;> simp
+
+/-- If the squares of four integers `A, B, C, D` sum to a multiple of `4`, then `B`, `C` and `D`
+have the same parity as `A`. -/
+theorem exists_eq_add_two_mul_of_four_dvd_sq_add_sq_add_sq_add_sq {A B C D : ℤ}
+    (h : 4 ∣ A ^ 2 + B ^ 2 + C ^ 2 + D ^ 2) :
+    ∃ b c d : ℤ, B = A + 2 * b ∧ C = A + 2 * c ∧ D = A + 2 * d := by
+  have := Int.sq_emod_four A
+  have := Int.sq_emod_four B
+  have := Int.sq_emod_four C
+  have := Int.sq_emod_four D
+  exact ⟨(B - A) / 2, (C - A) / 2, (D - A) / 2, by omega, by omega, by omega⟩
 
 end TauCeti
