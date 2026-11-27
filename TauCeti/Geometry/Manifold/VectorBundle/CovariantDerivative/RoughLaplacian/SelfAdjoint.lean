@@ -44,9 +44,10 @@ Lax–Milgram solution operator.
   self-adjoint extension of the formally self-adjoint operator `∇*∇` on smooth sections.
 
 Here `∇*` is the adjoint of `∇` for the fibre metrics and the Riemannian volume, so the operator is
-defined for every smooth connection; for a metric connection it agrees on smooth sections with the
-negative trace `-tr_g ∇²` of `CovariantDerivative.roughLaplacian`. It is the analogue for sections
-of a bundle of the scalar operator `TauCeti.Manifold.SobolevH1.negLaplacian`.
+defined for every smooth connection; for a metric connection, when `M` has no boundary, it agrees on
+smooth sections with the negative trace `-tr_g ∇²` of `CovariantDerivative.roughLaplacian`. It is
+the analogue for sections of a bundle of the scalar operator
+`TauCeti.Manifold.SobolevH1.negLaplacian`.
 
 ## References
 
@@ -89,7 +90,8 @@ variable (cov) in
 manifold, as an unbounded operator on `L²(V)`: the operator of the energy form `Q` along the value
 map `H¹(V) → L²(V)`. Its graph consists of the pairs `(J w, g)` with `Q(w, v) = ⟪g, J v⟫_{L²}` for
 every `v ∈ H¹(V)` (`CovariantDerivative.SobolevH1.mem_graph_roughLaplacian_iff`). For a metric
-connection it extends `CovariantDerivative.smoothRoughLaplacian` with the Levi-Civita connection
+connection on a bundle over a closed manifold (`[I.Boundaryless]`) it extends
+`CovariantDerivative.smoothRoughLaplacian` with the Levi-Civita connection
 (`CovariantDerivative.SobolevH1.roughLaplacian_toLp_ofSmooth`). -/
 def roughLaplacian :
     LpSection ℝ F V 2 (riemannianVolume I M) →ₗ.[ℝ] LpSection ℝ F V 2 (riemannianVolume I M) :=

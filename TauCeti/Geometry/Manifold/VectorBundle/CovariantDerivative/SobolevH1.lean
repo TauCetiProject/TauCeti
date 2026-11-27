@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Completion
+public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.DifferentialOperator
 public import TauCeti.MeasureTheory.Function.LpSection.Dense
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.MeasureTheory.Integral.ContinuousMap
@@ -29,14 +31,19 @@ sections are dense (`CovariantDerivative.SobolevH1.denseRange_ofSmooth`) and emb
 (`CovariantDerivative.SobolevH1.ofSmooth_injective`). It is the analogue for sections of a bundle
 of the space `TauCeti.Manifold.SobolevH1` of functions.
 
-The inclusion of the smooth sections into the space `L²(V)` of square-integrable sections
+A linear map `L` from the smooth sections to a Banach space with `‖L σ‖ ≤ C ‖σ‖_{H¹}` extends
+uniquely to a continuous linear map on `H¹(V)`: it is Mathlib's `LinearMap.extendOfNorm L` along
+the dense inclusion `CovariantDerivative.SobolevH1.ofSmooth ∇`, with `LinearMap.extendOfNorm_eq`,
+`LinearMap.extendOfNorm_unique` and `LinearMap.norm_extendOfNorm_apply_le`. In particular the
+inclusion of the smooth sections into the space `L²(V)` of square-integrable sections
 (`TauCeti.LpSection`) does not increase norms, so it extends to a continuous linear map
 `CovariantDerivative.SobolevH1.toLp : H¹(V) →L[ℝ] L²(V)`, the value of an element of `H¹(V)`.
 Its range is dense, since the smooth sections are dense in `L²(V)`
 (`CovariantDerivative.SobolevH1.denseRange_toLp`).
 
 The **energy form** `CovariantDerivative.SobolevH1.energyForm` is the continuous bilinear form
-`⟪w, v⟫_{H¹} - ⟪w, v⟫_{L²}` on `H¹(V)`. It extends `∫ ⟪∇σ, ∇τ⟫ dV` from smooth sections, and it is
+`⟪w, v⟫_{H¹} - ⟪w, v⟫_{L²}` on `H¹(V)`, the shift by `-1` of the `H¹` inner product along `toLp`
+(`ContinuousLinearMap.shiftedForm`). It extends `∫ ⟪∇σ, ∇τ⟫ dV` from smooth sections, and it is
 symmetric and nonnegative, so that `H¹(V)` with its value map and its energy form is the setting
 in which the rough Laplacian `∇*∇` is realized as a self-adjoint operator on `L²(V)`.
 
@@ -134,6 +141,14 @@ theorem ofPreSobolevH1_toPreSobolevH1 (u : Cₛ^∞⟮I; F, V⟯) :
 
 end PreSobolevH1
 
+omit [VectorBundle ℝ F V] in
+/-- The integral `∫ |∇σ|² dμ` of the squared Hilbert–Schmidt norm of the covariant derivative is
+nonnegative. -/
+theorem integral_innerCovariantDerivative_self_nonneg [FiniteDimensional ℝ E]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [MeasurableSpace M] (μ : Measure M)
+    (σ : Π x : M, V x) : 0 ≤ ∫ x, cov.innerCovariantDerivative σ σ x ∂μ :=
+  integral_nonneg (cov.innerCovariantDerivative_self_nonneg σ)
+
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -197,7 +212,7 @@ abbrev preInner : PreInnerProductSpace.Core ℝ cov.PreSobolevH1 where
   re_inner_nonneg u := by
     simp only [RCLike.re_to_real]
     exact add_nonneg (integral_nonneg fun x ↦ real_inner_self_nonneg)
-      (integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg _ x)
+      (cov.integral_innerCovariantDerivative_self_nonneg _ _)
   add_left u v w := by
     simp only [map_add, integral_inner_add_left, integral_innerCovariantDerivative_add_left]
     ring
@@ -296,37 +311,28 @@ private theorem smoothToLp_apply (u : Cₛ^∞⟮I; F, V⟯) :
       ⟨u, by simp⟩ :=
   (rfl)
 
-omit [IsContMDiffRiemannianBundle I ∞ F V] [FiniteDimensional ℝ F] in
-/-- The `L²` inner product of the classes of two smooth sections is `∫ ⟪u, v⟫ dV`. -/
-private theorem inner_smoothToLp (u v : Cₛ^∞⟮I; F, V⟯) :
-    ⟪smoothToLp u, smoothToLp v⟫_ℝ = ∫ x, ⟪u x, v x⟫_ℝ ∂riemannianVolume I M := by
-  rw [smoothToLp_apply, smoothToLp_apply, LpSection.ofCompactlySupported_apply,
-    LpSection.ofCompactlySupported_apply, LpSection.inner_mk]
+omit [FiniteDimensional ℝ F] in
+variable (cov) in
+/-- The class in `L²(V)` of a smooth section has norm at most its `H¹` norm. -/
+private theorem norm_smoothToLp_le (u : Cₛ^∞⟮I; F, V⟯) : ‖smoothToLp u‖ ≤ 1 * ‖ofSmooth cov u‖ := by
+  rw [one_mul, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
+    ← real_inner_self_eq_norm_sq, inner_ofSmooth, smoothToLp_apply,
+    LpSection.inner_ofCompactlySupported]
+  exact le_add_of_nonneg_right (cov.integral_innerCovariantDerivative_self_nonneg _ _)
 
 variable (cov) in
-/-- The inclusion of the smooth sections into `L²(V)`, on the pre-completion space. -/
-private def preToLp : cov.PreSobolevH1 →L[ℝ] LpSection ℝ F V 2 (riemannianVolume I M) :=
-  LinearMap.mkContinuous (smoothToLp ∘ₗ (ofPreSobolevH1 cov).toLinearMap) 1 fun u ↦ by
-    obtain ⟨u, rfl⟩ := (toPreSobolevH1 cov).surjective u
-    rw [one_mul, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, inner_toPreSobolevH1]
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-      ofPreSobolevH1_toPreSobolevH1, inner_smoothToLp]
-    exact le_add_of_nonneg_right
-      (integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg _ x)
-
-variable (cov) in
-/-- The **value** of an element of `H¹(V)` in `L²(V)`: the continuous extension of the inclusion
-of the smooth sections into `L²(V)`. -/
+/-- The **value** of an element of `H¹(V)` in `L²(V)`: the continuous extension
+(`LinearMap.extendOfNorm`) of the inclusion of the smooth sections into `L²(V)` along the dense
+inclusion `ofSmooth`. -/
 def toLp : cov.SobolevH1 →L[ℝ] LpSection ℝ F V 2 (riemannianVolume I M) :=
-  (preToLp cov).fromCompletion
+  smoothToLp.extendOfNorm (ofSmooth cov)
 
 /-- The value of a smooth section in `L²(V)` is its class. -/
 theorem toLp_ofSmooth (u : Cₛ^∞⟮I; F, V⟯) :
     toLp cov (ofSmooth cov u) = LpSection.ofCompactlySupported ℝ I 2 (riemannianVolume I M)
-      ⟨u, by simp⟩ := by
-  rw [toLp, ofSmooth_apply, ContinuousLinearMap.fromCompletion_apply_coe]
-  rfl
+      ⟨u, by simp⟩ :=
+  (LinearMap.extendOfNorm_eq (denseRange_ofSmooth cov) ⟨1, norm_smoothToLp_le cov⟩ u).trans
+    (smoothToLp_apply u)
 
 /-- The value of a smooth section in `L²(V)` is almost everywhere equal to the section. -/
 theorem toLp_ofSmooth_ae_eq (u : Cₛ^∞⟮I; F, V⟯) :
@@ -339,7 +345,7 @@ theorem toLp_ofSmooth_ae_eq (u : Cₛ^∞⟮I; F, V⟯) :
 theorem inner_toLp_ofSmooth (u v : Cₛ^∞⟮I; F, V⟯) :
     ⟪toLp cov (ofSmooth cov u), toLp cov (ofSmooth cov v)⟫_ℝ =
       ∫ x, ⟪u x, v x⟫_ℝ ∂riemannianVolume I M := by
-  rw [toLp_ofSmooth, toLp_ofSmooth, ← smoothToLp_apply, ← smoothToLp_apply, inner_smoothToLp]
+  rw [toLp_ofSmooth, toLp_ofSmooth, LpSection.inner_ofCompactlySupported]
 
 /-- **Smooth sections embed into `H¹(V)`.** Two smooth sections with the same image in `H¹(V)`
 have the same class in `L²(V)`, hence agree, since the Riemannian volume charges every nonempty
@@ -356,13 +362,8 @@ theorem ofSmooth_eq_zero_iff {u : Cₛ^∞⟮I; F, V⟯} : ofSmooth cov u = 0 �
 
 /-- The value map does not increase norms: `‖w‖_{L²} ≤ ‖w‖_{H¹}`. -/
 theorem norm_toLp_le (w : cov.SobolevH1) : ‖toLp cov w‖ ≤ ‖w‖ := by
-  induction w using induction_on with
-  | hp => exact isClosed_le (toLp cov).continuous.norm continuous_norm
-  | h u =>
-    rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, inner_toLp_ofSmooth, inner_ofSmooth]
-    exact le_add_of_nonneg_right
-      (integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg _ x)
+  simpa only [one_mul, toLp] using
+    LinearMap.norm_extendOfNorm_apply_le (denseRange_ofSmooth cov) 1 (norm_smoothToLp_le cov) w
 
 /-- **The values of `H¹(V)` are dense in `L²(V)`**, since the smooth sections are. -/
 theorem denseRange_toLp [T2Space M] [ContMDiffVectorBundle ∞ F V I] : DenseRange (toLp cov) := by
@@ -373,16 +374,18 @@ theorem denseRange_toLp [T2Space M] [ContMDiffVectorBundle ∞ F V I] : DenseRan
 
 /-! ### The energy form -/
 
-/-- The **energy form** `Q(w, v) = ⟪w, v⟫_{H¹} - ⟪w, v⟫_{L²}` on `H¹(V)`, the continuous
+/-- The **energy form** `Q(w, v) = ⟪w, v⟫_{H¹} - ⟪w, v⟫_{L²}` on `H¹(V)`, the shift by `-1` of the
+`H¹` inner product along the value map (`ContinuousLinearMap.shiftedForm`): the continuous
 extension of `∫ ⟪∇σ, ∇τ⟫ dV` from smooth sections
 (`CovariantDerivative.SobolevH1.energyForm_ofSmooth`). -/
 def energyForm : cov.SobolevH1 →L[ℝ] cov.SobolevH1 →L[ℝ] ℝ :=
-  innerSL ℝ - (innerSL ℝ).bilinearComp (toLp cov) (toLp cov)
+  (toLp cov).shiftedForm (innerSL ℝ) (-1)
 
 /-- Unfolding lemma for `CovariantDerivative.SobolevH1.energyForm`. -/
 theorem energyForm_apply (w v : cov.SobolevH1) :
-    energyForm w v = ⟪w, v⟫_ℝ - ⟪toLp cov w, toLp cov v⟫_ℝ :=
-  (rfl)
+    energyForm w v = ⟪w, v⟫_ℝ - ⟪toLp cov w, toLp cov v⟫_ℝ := by
+  rw [energyForm, ContinuousLinearMap.shiftedForm_apply, innerSL_apply_apply,
+    RCLike.ofReal_real_eq_id, id, neg_one_mul, sub_eq_add_neg]
 
 /-- The energy form of two smooth sections is `∫ ⟪∇σ, ∇τ⟫ dV`. -/
 @[simp]
@@ -401,7 +404,7 @@ theorem energyForm_self_nonneg (w : cov.SobolevH1) : 0 ≤ energyForm w w := by
   | hp => exact isClosed_le continuous_const (by fun_prop)
   | h u =>
     exact (energyForm_ofSmooth u u).ge.trans'
-      (integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg _ x)
+      (cov.integral_innerCovariantDerivative_self_nonneg _ _)
 
 /-- The squared `H¹` norm is the energy plus the squared `L²` norm. -/
 theorem norm_sq_eq_energyForm_add (w : cov.SobolevH1) :
