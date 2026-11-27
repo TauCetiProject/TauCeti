@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import Mathlib.MeasureTheory.VectorMeasure.AddContent
 import Mathlib.MeasureTheory.Integral.SetToL1.ChangeMeasure
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.VectorMeasure.Integral
 import TauCeti.MeasureTheory.VectorMeasure.Operations
 
 /-!
@@ -160,19 +161,6 @@ variable [RCLike 𝕜] [NormedSpace 𝕜 X]
 namespace MeasureTheory.VectorMeasure
 
 variable [NormedSpace ℝ X] [IsScalarTower ℝ 𝕜 X] (m : VectorMeasure S X) {C : ℝ≥0}
-
-/-- If `|m| ≤ C μ`, the set function `s ↦ (c ↦ c • m s)` is dominated by `C μ`. -/
-private theorem dominatedFinMeasAdditive_transpose_lsmul (hm : m.variation ≤ C • μ) :
-    DominatedFinMeasAdditive μ (m.transpose (ContinuousLinearMap.lsmul ℝ 𝕜))
-      (C * ‖(ContinuousLinearMap.lsmul ℝ 𝕜 : 𝕜 →L[ℝ] X →L[ℝ] X)‖) := by
-  simpa using (dominatedFinMeasAdditive_cbmApplyMeasure m
-    (ContinuousLinearMap.lsmul ℝ 𝕜)).of_measure_le_smul ENNReal.coe_ne_top
-      (by simpa only [ENNReal.smul_def] using hm) (by positivity)
-
-@[simp]
-private theorem transpose_lsmul_apply (s : Set S) (c : 𝕜) :
-    m.transpose (ContinuousLinearMap.lsmul ℝ 𝕜) s c = c • m s := by
-  rw [transpose_eq_cbmApplyMeasure, cbmApplyMeasure_apply, ContinuousLinearMap.lsmul_apply]
 
 variable [CompleteSpace X]
 
