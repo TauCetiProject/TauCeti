@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.Action.Factor
-public import TauCeti.Dynamics.Ergodic.IsomorphicModNull
+public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
@@ -39,6 +39,8 @@ The single-map version is `TauCeti.isIsomorphicModNull_iff_exists_ae`.
 
 ## Main results
 
+* `TauCeti.IsIsomorphismModNullSMul.toMod0MeasureIso`: the maps of an isomorphism mod 0 of
+  actions are a `TauCeti.Mod0MeasureIso`.
 * `TauCeti.IsIsomorphismModNullSMul.refl`, `.symm`, `.trans`, and the same for
   `IsIsomorphicModNullSMul`: an equivalence relation.
 * `TauCeti.IsIsomorphismModNullSMul.ergodicSMul_iff`,
@@ -129,25 +131,37 @@ protected theorem symm (h : IsIsomorphismModNullSMul M f g μ ν) :
     IsIsomorphismModNullSMul M g f ν μ :=
   ⟨h.isFactorMapSMul_symm, h.isFactorMapSMul, h.right_inv, h.left_inv⟩
 
+/-- The maps of an isomorphism mod 0 of actions, as a measure-preserving isomorphism modulo null
+sets. -/
+@[to_additive /-- The maps of an isomorphism mod 0 of additive actions, as a measure-preserving
+isomorphism modulo null sets. -/]
+def toMod0MeasureIso (h : IsIsomorphismModNullSMul M f g μ ν) : Mod0MeasureIso X Y μ ν :=
+  .ofMeasurePreserving h.isFactorMapSMul.measurePreserving
+    h.isFactorMapSMul_symm.measurePreserving h.left_inv h.right_inv
+
+@[to_additive (attr := simp)]
+theorem toMod0MeasureIso_toFun (h : IsIsomorphismModNullSMul M f g μ ν) :
+    h.toMod0MeasureIso.toFun = f :=
+  Mod0MeasureIso.ofMeasurePreserving_toFun ..
+
+@[to_additive (attr := simp)]
+theorem toMod0MeasureIso_invFun (h : IsIsomorphismModNullSMul M f g μ ν) :
+    h.toMod0MeasureIso.invFun = g :=
+  Mod0MeasureIso.ofMeasurePreserving_invFun ..
+
 /-- Isomorphisms mod 0 of actions compose. -/
 @[to_additive /-- Isomorphisms mod 0 of additive actions compose. -/]
 protected theorem trans (h : IsIsomorphismModNullSMul M f g μ ν)
     (h' : IsIsomorphismModNullSMul M f' g' ν ρ) :
     IsIsomorphismModNullSMul M (f' ∘ f) (g ∘ g') μ ρ := by
-  have hf := h.isFactorMapSMul.measurePreserving
-  have hg := h.isFactorMapSMul_symm.measurePreserving
-  have hf' := h'.isFactorMapSMul.measurePreserving
-  have hg' := h'.isFactorMapSMul_symm.measurePreserving
-  let e : Mod0MeasureIso X Y μ ν :=
-    ⟨f, g, hf.measurable, hg.measurable, hf.map_eq, hg.map_eq, h.left_inv, h.right_inv⟩
-  let e' : Mod0MeasureIso Y Z ν ρ :=
-    ⟨f', g', hf'.measurable, hg'.measurable, hf'.map_eq, hg'.map_eq, h'.left_inv, h'.right_inv⟩
   refine ⟨h'.isFactorMapSMul.comp h.isFactorMapSMul,
     h.isFactorMapSMul_symm.comp h'.isFactorMapSMul_symm, ?_, ?_⟩
-  · simpa only [Mod0MeasureIso.trans_toFun, Mod0MeasureIso.trans_invFun, e, e', comp_def] using
-      (e.trans e').left_inv_ae
-  · simpa only [Mod0MeasureIso.trans_toFun, Mod0MeasureIso.trans_invFun, e, e', comp_def] using
-      (e.trans e').right_inv_ae
+  · simpa only [Mod0MeasureIso.trans_toFun, Mod0MeasureIso.trans_invFun, toMod0MeasureIso_toFun,
+      toMod0MeasureIso_invFun, comp_def] using
+      (h.toMod0MeasureIso.trans h'.toMod0MeasureIso).left_inv_ae
+  · simpa only [Mod0MeasureIso.trans_toFun, Mod0MeasureIso.trans_invFun, toMod0MeasureIso_toFun,
+      toMod0MeasureIso_invFun, comp_def] using
+      (h.toMod0MeasureIso.trans h'.toMod0MeasureIso).right_inv_ae
 
 /-- The two actions of an isomorphism mod 0 are isomorphic mod 0. -/
 @[to_additive /-- The two additive actions of an isomorphism mod 0 are isomorphic mod 0. -/]

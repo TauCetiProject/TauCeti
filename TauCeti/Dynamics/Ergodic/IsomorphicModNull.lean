@@ -51,6 +51,8 @@ isomorphic mod 0 in the sense of `IsIsomorphicModNull`.
   forward and inverse maps of an isomorphism mod 0 are factor maps.
 * `TauCeti.IsIsomorphicModNull.ergodic_iff`: for measurable `T` and `S`, ergodicity is invariant
   under isomorphism mod 0.
+* `TauCeti.IsomorphismModNull.toMod0MeasureIso`: the maps of an isomorphism mod 0 are a
+  `TauCeti.Mod0MeasureIso`.
 * `TauCeti.exists_isomorphismModNull_of_ae`, `TauCeti.isIsomorphicModNull_iff_exists_ae`: for
   measurable quasi-measure-preserving `T` and `S`, isomorphism mod 0 is the existence of a
   `TauCeti.Mod0MeasureIso` (measure-preserving maps inverse almost everywhere) conjugating the
@@ -395,6 +397,21 @@ theorem toFun_comp_invFun_ae_eq (e : IsomorphismModNull T μ S ν) :
     e.toFun ∘ e.invFun =ᵐ[ν] id :=
   e.symm.invFun_comp_toFun_ae_eq
 
+/-- The maps of an isomorphism mod 0, as a measure-preserving isomorphism modulo null sets. -/
+def toMod0MeasureIso (e : IsomorphismModNull T μ S ν) : Mod0MeasureIso X Y μ ν :=
+  .ofMeasurePreserving e.measurePreserving_toFun e.measurePreserving_invFun
+    e.invFun_comp_toFun_ae_eq e.toFun_comp_invFun_ae_eq
+
+@[simp]
+theorem toMod0MeasureIso_toFun (e : IsomorphismModNull T μ S ν) :
+    e.toMod0MeasureIso.toFun = e.toFun :=
+  Mod0MeasureIso.ofMeasurePreserving_toFun ..
+
+@[simp]
+theorem toMod0MeasureIso_invFun (e : IsomorphismModNull T μ S ν) :
+    e.toMod0MeasureIso.invFun = e.invFun :=
+  Mod0MeasureIso.ofMeasurePreserving_invFun ..
+
 end IsomorphismModNull
 
 /-- **Conull realization of an almost-everywhere isomorphism.** For measurable
@@ -443,9 +460,8 @@ theorem isIsomorphicModNull_iff_exists_ae (hTm : Measurable T)
     IsIsomorphicModNull T μ S ν ↔
       ∃ e : Mod0MeasureIso X Y μ ν, e.toFun ∘ T =ᵐ[μ] S ∘ e.toFun := by
   refine ⟨fun h ↦ (isIsomorphicModNull_iff_nonempty.mp h).elim fun e ↦
-    ⟨⟨e.toFun, e.invFun, e.measurable_toFun, e.measurable_invFun,
-      e.measurePreserving_toFun.map_eq, e.measurePreserving_invFun.map_eq,
-      e.invFun_comp_toFun_ae_eq, e.toFun_comp_invFun_ae_eq⟩, e.isFactorMap.comp_ae_eq⟩,
+    ⟨e.toMod0MeasureIso, by
+      simpa only [IsomorphismModNull.toMod0MeasureIso_toFun] using e.isFactorMap.comp_ae_eq⟩,
     fun ⟨e, he⟩ ↦ ?_⟩
   obtain ⟨e', -, -⟩ := exists_isomorphismModNull_of_ae hTm hT hSm hS e he
   exact e'.isIsomorphicModNull
