@@ -95,6 +95,20 @@ theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}
     (H : ((g : GL n R) : Matrix n n R) = ((h : GL n R) : Matrix n n R)) : g = h :=
   Subtype.ext <| Units.ext H
 
+/-- An element `g` of `unitaryGroupOf A` satisfies `gᴴ (A g) = A`, the right-associated form of
+`star g * A * g = A`. -/
+theorem unitaryGroupOf.conjTranspose_mul_mul_cancel (g : unitaryGroupOf A) :
+    ((g : GL n R) : Matrix n n R)ᴴ * (A * ((g : GL n R) : Matrix n n R)) = A := by
+  rw [← Matrix.mul_assoc, ← star_eq_conjTranspose, mem_unitaryGroupOf_iff.mp g.property]
+
+/-- An element `g` of `unitaryGroupOf A` cancels against its conjugate transpose around `A`:
+`gᴴ (A (g X)) = A X`. -/
+theorem unitaryGroupOf.conjTranspose_mul_mul_mul_cancel (g : unitaryGroupOf A) {m : Type*}
+    (X : Matrix n m R) :
+    ((g : GL n R) : Matrix n n R)ᴴ * (A * (((g : GL n R) : Matrix n n R) * X)) = A * X := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.mul_assoc _ A,
+    unitaryGroupOf.conjTranspose_mul_mul_cancel]
+
 /-- **The unitary group of the identity form is the unitary subgroup** of `GL n R`: both consist
 of the invertible matrices `g` with `star g * g = 1`, which for an invertible `g` also gives
 `g * star g = 1`. -/
@@ -118,8 +132,8 @@ theorem inv_mul_mul_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
     rw [Units.mul_inv, conjTranspose_one, Matrix.one_mul, Matrix.mul_one] at h
     rw [star_eq_conjTranspose, ← h]
   -- `(x⁻¹ (g x))ᴴ B (x⁻¹ (g x)) = (g x)ᴴ A (g x) = xᴴ A x = B`
-  have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h
-    ((g * x : GL n R) : Matrix n n R) ((g * x : GL n R) : Matrix n n R)
+  have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h ((g * x : GL n R) : Matrix n n R)
+    ((g * x : GL n R) : Matrix n n R)
   rw [Units.val_mul, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg,
     ← star_eq_conjTranspose (x : Matrix n n R), hx] at h'
   simpa only [y, Units.val_mul, Matrix.mul_assoc, star_eq_conjTranspose] using h'
