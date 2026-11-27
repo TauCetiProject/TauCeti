@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Length
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
@@ -25,7 +26,10 @@ metric `g_D = j^* g` pulled back along `j` (`TauCeti.scalarRegularSublevelMetric
   theorems for local isometries, which assume no boundaryless source, then apply to `j`;
 * `dj` carries gradients of restrictions to gradients: `dj(grad^D (u ∘ j)) = grad^N u` for every
   `u : N → ℝ` differentiable at the point
-  (`TauCeti.mfderiv_mgradient_comp_subtypeVal_scalarRegularSublevel`).
+  (`TauCeti.mfderiv_mgradient_comp_subtypeVal_scalarRegularSublevel`);
+* `j` preserves the lengths of `C¹` curves, so `d_N(j x, j y) ≤ d_D(x, y)`
+  (`TauCeti.pathELength_subtypeVal_comp_scalarRegularSublevel`,
+  `TauCeti.riemannianEDist_le_scalarRegularSublevel`).
 
 The metric-free facts about `D` live with the topology of regular sublevels: `a - f` is a global
 boundary defining function of `D` (`TauCeti.isBoundaryDefiningFunctionOn_scalarRegularSublevel`),
