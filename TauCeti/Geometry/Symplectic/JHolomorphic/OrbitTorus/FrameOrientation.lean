@@ -113,13 +113,13 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det_of_frame 
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
     (hMb : ∀ t : ℝ, M b t = J₀ ∘L frameConnection J₀ Φ t)
-    {f : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℂ]
+    {f : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℂ]
       CircleSobolev 0 F × 𝕐[F]}
     (hf : f.restrictScalars ℝ = periodicTorusOperator d ℓ (M a))
     {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
     (hb : Function.Bijective (periodicTorusOperator d ℓ (M b)))
     {x : (periodicTorusOperator d ℓ (M b) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
         CircleSobolev 0 F × 𝕐[F]).detLine} (hx : x ≠ 0)
     (hxz : rayOfNeZero ℝ x hx =
       detLineOrientationTransport (T := fun τ ↦ periodicTorusOperator d ℓ (M τ)) a b
@@ -129,7 +129,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det_of_frame 
           (hz.detLineCongrOfEq_ne_zero_of_isFredholm hf
             (isFredholm_periodicTorusOperator d hℓ (M a) (hMs a left_mem_uIcc))))) :
     SignType.sign ((periodicTorusOperator d ℓ (M b) :
-        CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+        CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign (LinearMap.det (1 - (P : V →ₗ[ℝ] V))) := by
   rw [sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det d hℓ hM hMs hMa hf hz hb hx
@@ -154,13 +154,13 @@ theorem
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
     (hMb : ∀ t : ℝ, M b t = J₀ ∘L frameConnection J₀ Φ t)
-    {f : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℂ]
+    {f : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℂ]
       CircleSobolev 0 F × 𝕐[F]}
     (hf : f.restrictScalars ℝ = periodicTorusOperator d ℓ (antiperiodicGaugeLoop d (M a)))
     {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
     (hb : Function.Bijective (periodicTorusOperator d ℓ (antiperiodicGaugeLoop d (M b))))
     {x : (periodicTorusOperator d ℓ (antiperiodicGaugeLoop d (M b)) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
         CircleSobolev 0 F × 𝕐[F]).detLine} (hx : x ≠ 0)
     (hxz : rayOfNeZero ℝ x hx =
       detLineOrientationTransport
@@ -175,7 +175,7 @@ theorem
               (CircleSobolev.im_inner_antiperiodicGaugeLoop_add_eq_zero d
                 (hMs a left_mem_uIcc)))))) :
     SignType.sign ((periodicTorusOperator d ℓ (antiperiodicGaugeLoop d (M b)) :
-        CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+        CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign (LinearMap.det (1 + (P : V →ₗ[ℝ] V))) := by
   rw [sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_eq_sign_det d hℓ
