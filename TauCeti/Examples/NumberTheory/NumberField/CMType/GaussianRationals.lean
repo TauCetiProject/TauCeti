@@ -27,8 +27,9 @@ type trace of `i` is `I` (`typeTrace_Φ_ζ`), so the reflex field is `ℚ(I) ⊆
 and is not `ℚ` (`reflexField_Φ_ne_bot`), while the full trace of `i` vanishes (`trace_ζ`), unlike
 its type trace.
 
-The reflex norm `N_Φ : E* → E` inverts the selected embedding: `N_Φ(φ c) = c` (`reflexNorm_Φ`), so
-`N_Φ(2 + I) = 2 + i` (`reflexNorm_Φ_two_add_I`). For the complementary type `ιΦ = {i ↦ -I}`,
+The reflex norm `N_Φ : ℚ(I) → K`, defined on the reflex field `ℚ(I)` of `reflexField_Φ`, inverts
+the selected embedding: `N_Φ(φ c) = c` (`reflexNorm_Φ`), so `N_Φ(2 + I) = 2 + i`
+(`reflexNorm_Φ_two_add_I`). For the complementary type `ιΦ = {i ↦ -I}`,
 `N_{ιΦ}(2 + I) = 2 - i` (`reflexNorm_star_Φ_two_add_I`), the conjugate of `N_Φ(2 + I)`; in
 particular the two norms differ (`reflexNorm_star_Φ_two_add_I_ne`).
 -/
