@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
-public import TauCeti.Geometry.Manifold.SymmetricPower.TotallyReal
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.InverseFunction
 import TauCeti.Topology.Sym.Basic
@@ -38,8 +37,9 @@ tuples of pairwise distinct points (`Sym.isLocalDiffeomorphAt_ofFn_iff`).
 * **On the diagonal.** If `p i = p j` for `i ≠ j`, then `Sym.ofFn` is not injective near `p`: since
   `α` has no isolated points, moving the `i`-th point of `p` slightly to `q ≠ p i` gives a tuple
   `w` near `p`, and swapping its `i`-th and `j`-th points gives a different tuple near `p` with the
-  same image (`Sym.frequently_ofFn_eq_ofFn_and_ne`). So `Sym.ofFn` is not even a local
-  homeomorphism there (`Sym.injective_of_isLocalDiffeomorphAt_ofFn`). For two points of `ℂ`, the
+  same image (`Sym.frequently_ofFn_eq_ofFn_and_ne`). So `Sym.ofFn` is not injective on any
+  neighbourhood of `p`, hence not a local diffeomorphism there
+  (`Sym.injective_of_isLocalDiffeomorphAt_ofFn`). For two points of `ℂ`, the
   coordinates `(z₁ + z₂, z₁ z₂)` do not separate `(z₁, z₂)` from `(z₂, z₁)`, and the collision
   `z₁ = z₂` is where these two tuples come together.
 
@@ -106,20 +106,20 @@ private theorem exists_writtenInExtChartAt_ofFn (hp : Injective p) :
   set I := ModelWithCorners.pi fun _ : Fin n => 𝓘(ℂ)
   obtain ⟨T, T', hTa, hT'inj, hT', hT⟩ :=
     exists_injective_hasFDerivAt_symChartAt_ofFn hp (Sym.ofFn p) (mem_symChartAt_source _)
-  rw [extChartAt_pi_self_eq]
+  rw [← extChartAt_pi_self_eq] at hTa hT'
   refine ⟨T, T', hTa, hT'inj, hT', ?_⟩
-  rw [← extChartAt_pi_self_eq]
   -- the inverse product chart sends coordinates near those of `p` to tuples near `p`
   have hsymm : Tendsto (extChartAt I p).symm (𝓝 (extChartAt I p p)) (𝓝 p) := by
     simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) p).tendsto
   filter_upwards [extChartAt_target_mem_nhds (I := I) p, hsymm.eventually hT] with u hu hTu
   simp only [writtenInExtChartAt, comp_apply] at hTu ⊢
-  rw [extChartAt_coe, modelWithCornersSelf_coe, symChartedSpace_chartAt, comp_apply, id, hTu]
+  simp only [extChartAt_coe, modelWithCornersSelf_coe, symChartedSpace_chartAt, comp_apply,
+    id_eq, hTu]
   congr 1
   funext j
   -- the product chart reads the tuple `(extChartAt I p).symm u` back as `u`
-  have := congrFun ((extChartAt I p).right_inv hu) j
-  rwa [extChartAt_pi_apply, extChartAt_coe, modelWithCornersSelf_coe, comp_apply, id] at this
+  simpa only [extChartAt_coe, modelWithCornersSelf_coe, comp_apply, id_eq] using
+    (extChartAt_pi_apply p _ j).symm.trans (congrFun ((extChartAt I p).right_inv hu) j)
 
 /-- **The quotient map onto the symmetric power is holomorphic off the diagonal.** At a tuple of
 pairwise distinct points of a Hausdorff complex curve `α`, the map `Sym.ofFn : αⁿ → Sym α n` is
@@ -193,8 +193,8 @@ section Diagonal
 
 variable [T2Space α]
 
-/-- A local homeomorphism, in particular a local biholomorphism, from `αⁿ` onto the symmetric power
-at a tuple `p` forces the points of `p` to be distinct. -/
+/-- If the quotient map `Sym.ofFn : αⁿ → Sym α n` is a `C^k` local diffeomorphism (for `k = ω`, a
+local biholomorphism) at a tuple `p`, then the points of `p` are distinct. -/
 theorem injective_of_isLocalDiffeomorphAt_ofFn {k : ℕ∞ω}
     (h : letI := symChartedSpace (K := ℂ) (α := α) (n := n)
       IsLocalDiffeomorphAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℂ)) 𝓘(ℂ, Fin n → ℂ) k Sym.ofFn

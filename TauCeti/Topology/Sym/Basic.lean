@@ -139,13 +139,7 @@ theorem frequently_ofFn_eq_ofFn_and_ne [PerfectSpace α] {p : Fin n → α} {i j
       simpa [w] using
         ((continuous_const.update (f := fun _ : α => p) i continuous_id).tendsto (p i)).mono_left
           nhdsWithin_le_nhds
-    have hswap : (fun k => p (Equiv.swap i j k)) = p := by
-      funext k
-      rcases eq_or_ne k i with rfl | hki
-      · simp [hp]
-      rcases eq_or_ne k j with rfl | hkj
-      · simp [hp]
-      simp [Equiv.swap_apply_of_ne_of_ne hki hkj]
+    have hswap : (fun k => p (Equiv.swap i j k)) = p := funext (Equiv.apply_swap_eq_self hp)
     have h₂ : Tendsto (fun q => w q ∘ Equiv.swap i j) (𝓝[≠] (p i)) (𝓝 p) := by
       have h := ((continuous_pi fun k => continuous_apply (Equiv.swap i j k)).tendsto p).comp h₁
       rw [hswap] at h
