@@ -100,7 +100,10 @@ theorem liftedDescentData_hom {Y : C} (q : Y ⟶ U) {i j : ι} (a : Y ⟶ X i) (
     (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
     (liftedDescentData η f z e hη).hom q a b ha hb =
       (liftedOverlapIso η f z e hη q a b ha hb).hom := by
-  rw [liftedOverlapIso_def]
+  -- `liftedOverlapIso` is the gluing isomorphism of `StrongTrans.liftDescentData`
+  -- (`liftedOverlapIso_def`), which is `liftedDescentData` by definition (`liftedDescentData_def`);
+  -- that last step cannot be rewritten, as the objects of the descent datum depend on it.
+  rw [liftedOverlapIso_def, DescentData.iso_hom]
   rfl
 
 /-- **Lifted overlaps are compatible with pullback.** For `g : Y' ⟶ Y`, the pullback along `g`
@@ -160,7 +163,13 @@ theorem imageLocalIso_hom (i : ι) :
     (imageLocalIso η y r i).hom =
       (η.naturalityObjIso (f i).op.toLoc y).inv ≫
         (η.app (.mk (op (X i)))).toFunctor.map (r.hom.hom i) ≫ (e i).hom := by
-  simp [imageLocalIso, imageDescentIso]
+  simp only [imageLocalIso, imageDescentIso, DescentData.isoApp_trans, DescentData.isoApp_symm,
+    Iso.trans_hom, DescentData.isoApp_hom, mapLiftedDescentDataIso_hom_hom, Functor.mapIso_hom,
+    Iso.symm_hom, DescentData.isoApp_inv, Iso.app_inv,
+    StrongTrans.toDescentDataCompMapDescentDataIso_inv_app_hom, StrongTrans.naturalityObjIso_inv]
+  -- The two sides differ only in implicit intermediate objects of the composites,
+  -- `((η.mapDescentData f).obj (liftedDescentData η f z e hη)).obj i` against
+  -- `(η.app _).toFunctor.obj (x i)`, which agree by definition (`liftedDescentData_obj`).
   rfl
 
 /-- The inverse arrow of the local image isomorphism is `e_i⁻¹`, then `η_(X_i)` of the inverse
@@ -173,6 +182,10 @@ theorem imageLocalIso_inv (i : ι) :
     Iso.trans_inv, DescentData.isoApp_inv, mapLiftedDescentDataIso_inv_hom, Functor.mapIso_inv,
     Iso.symm_inv, DescentData.isoApp_hom, Iso.app_hom,
     StrongTrans.toDescentDataCompMapDescentDataIso_hom_app_hom, StrongTrans.naturalityObjIso_hom]
+  -- The two sides differ in association and in implicit intermediate objects of the composites,
+  -- `((η.mapDescentData f).obj (liftedDescentData η f z e hη)).obj i` against
+  -- `(η.app _).toFunctor.obj (x i)`, which agree by definition (`liftedDescentData_obj`); so
+  -- `Category.assoc` does not fire in `simp` and is applied up to this definitional equality.
   exact Category.assoc _ _ _
 
 /-- The local image isomorphisms commute with the gluing isomorphisms of the canonical descent
@@ -202,7 +215,8 @@ theorem map_globalImageIso_hom (i : ι) :
       (imageLocalIso η y r i).hom := by
   have := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
     ((G.fullyFaithfulToDescentData f hf).map_preimage (imageDescentIso η y r).hom)
-  rw [imageLocalIso, DescentData.isoApp_hom]
+  rw [toDescentData_map_hom] at this
+  rw [globalImageIso, Functor.FullyFaithful.preimageIso_hom, imageLocalIso, DescentData.isoApp_hom]
   exact this
 
 /-- The restriction of the inverse of the global image isomorphism to the chart `i` is the
@@ -213,7 +227,8 @@ theorem map_globalImageIso_inv (i : ι) :
       (imageLocalIso η y r i).inv := by
   have := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
     ((G.fullyFaithfulToDescentData f hf).map_preimage (imageDescentIso η y r).inv)
-  rw [imageLocalIso, DescentData.isoApp_inv]
+  rw [toDescentData_map_hom] at this
+  rw [globalImageIso, Functor.FullyFaithful.preimageIso_inv, imageLocalIso, DescentData.isoApp_inv]
   exact this
 
 /-- **Uniqueness of the global image isomorphism.** An isomorphism `η_U y ≅ z` whose restrictions
