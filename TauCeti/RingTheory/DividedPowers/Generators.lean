@@ -509,27 +509,6 @@ end Generators
 
 /-! ### Strictness of `AdditivePowers` -/
 
-private lemma mem_span_inr_iff (x : TrivSqZeroExt (ZMod 2) (ZMod 2)) :
-    x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} ↔ x.fst = 0 := by
-  constructor
-  · intro hx
-    rw [Ideal.mem_span_singleton] at hx
-    rcases hx with ⟨a, rfl⟩
-    simp
-  · intro hx
-    rw [Ideal.mem_span_singleton]
-    refine ⟨TrivSqZeroExt.inl x.snd, ?_⟩
-    ext
-    · simp [hx]
-    · simp
-
-private lemma mul_eq_zero_of_mem_span_inr {x y : TrivSqZeroExt (ZMod 2) (ZMod 2)}
-    (hx : x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)})
-    (hy : y ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}) : x * y = 0 := by
-  have hx0 := (mem_span_inr_iff x).mp hx
-  have hy0 := (mem_span_inr_iff y).mp hy
-  ext <;> simp [hx0, hy0]
-
 private noncomputable def counterexampleDpow (n : ℕ)
     (x : TrivSqZeroExt (ZMod 2) (ZMod 2)) : TrivSqZeroExt (ZMod 2) (ZMod 2) := by
   classical
@@ -576,8 +555,12 @@ private noncomputable def counterexampleAdditivePowers :
       rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ']
       have hmid : ∑ p ∈ antidiagonal k,
           counterexampleDpow (p.1 + 1) x * counterexampleDpow (p.2 + 1) y = 0 :=
-        Finset.sum_eq_zero fun p _ ↦ mul_eq_zero_of_mem_span_inr
-          (counterexampleDpow_mem p.1.succ_ne_zero hx) (counterexampleDpow_mem p.2.succ_ne_zero hy)
+        Finset.sum_eq_zero fun p _ ↦ by
+          rcases Ideal.mem_span_singleton.mp (counterexampleDpow_mem p.1.succ_ne_zero hx) with
+            ⟨u, hu⟩
+          rcases Ideal.mem_span_singleton.mp (counterexampleDpow_mem p.2.succ_ne_zero hy) with
+            ⟨v, hv⟩
+          rw [hu, hv, mul_mul_mul_comm, TrivSqZeroExt.inr_mul_inr, zero_mul]
       rw [hmid, add_zero]
       match k with
       | 0 | 1 => simp [counterexampleDpow, hx, hy, hxy, add_comm]
@@ -589,13 +572,13 @@ private noncomputable def counterexampleAdditivePowers :
     | 0 | 1 | 2 | _ + 4 => simp [counterexampleDpow, hx, hax]
     | 3 =>
       simp only [counterexampleDpow, hx, hax, ↓reduceIte]
-      have hx0 := (mem_span_inr_iff x).mp hx
+      rcases Ideal.mem_span_singleton.mp hx with ⟨b, rfl⟩
       have hcube : a.fst * a.fst * a.fst = a.fst := by
         have : ∀ u : ZMod 2, u * u * u = u := by decide
         exact this a.fst
       ext
-      · simp [hx0]
-      · simp [hx0, pow_succ, hcube]
+      · simp
+      · simp [pow_succ, hcube]
 
 /-- Not every `AdditivePowers` structure underlies a `DividedPowers` structure: on the dual
 numbers `𝔽₂[ε]/(ε²)` with `I = (ε)`, the family `δ₀ = 1`, `δ₁ = δ₃ = id`, and `δₙ = 0` for
