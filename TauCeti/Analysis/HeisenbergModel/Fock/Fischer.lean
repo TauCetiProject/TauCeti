@@ -9,7 +9,7 @@ public import TauCeti.Analysis.HeisenbergModel.Fock.Moment
 public import TauCeti.RingTheory.MvPolynomial.JetPairing
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Star
-import Mathlib.Topology.Algebra.Module.ClosedSubmodule
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The Fischer pairing of polynomial vectors in the Fock model
@@ -117,15 +117,6 @@ private theorem innerSL_weilRep_heisenbergDeriv (u : unitaryGroup ε) (x : ι �
   rw [starRingEnd_apply]
   exact h₁.unique h₂
 
-/-- If `c a = conj c b` for every complex `c`, then `a = 0` and `b = 0`. -/
-private theorem eq_zero_of_forall_mul_eq_conj_mul {a b : ℂ} (h : ∀ c : ℂ, c * a = conj c * b) :
-    a = 0 ∧ b = 0 := by
-  have h₁ := h 1
-  have h₂ := h Complex.I
-  simp only [one_mul, map_one, Complex.conj_I] at h₁ h₂
-  exact ⟨by linear_combination (h₁ - Complex.I * h₂) / 2 + (a + b) / 2 * Complex.I_sq,
-    by linear_combination (-h₁ - Complex.I * h₂) / 2 + (a + b) / 2 * Complex.I_sq⟩
-
 /-- Both commutation rules, as the vanishing of their two differences. -/
 private theorem commutation_rules (u : unitaryGroup ε) (P Q : MvPolynomial ι ℂ) (j : ι) :
     ReproducingModel.innerSL (polyVector ε Q) (weilRep ε u (polyVector ε (raiseOp ε j P))) -
@@ -137,7 +128,7 @@ private theorem commutation_rules (u : unitaryGroup ε) (P Q : MvPolynomial ι �
         ∑ i, conj (((u : GL ι ℂ) : Matrix ι ι ℂ) i j) *
           ReproducingModel.innerSL (polyVector ε (raiseOp ε i Q))
             (weilRep ε u (polyVector ε P)) = 0 := by
-  refine eq_zero_of_forall_mul_eq_conj_mul fun c ↦ ?_
+  refine Complex.eq_zero_of_forall_mul_eq_conj_mul fun c ↦ ?_
   have h := innerSL_weilRep_heisenbergDeriv u (Pi.single j c) P Q
   simp only [heisenbergDeriv_single, smul_def, heisenbergDeriv_apply, LinearMap.sub_apply,
     LinearMap.smul_apply, map_sub, map_smul, map_sum, smul_eq_mul, Pi.neg_apply,
