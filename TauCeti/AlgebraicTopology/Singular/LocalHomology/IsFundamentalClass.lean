@@ -94,6 +94,12 @@ map this multiple is the degree of the map with coefficients in `K`, the mod `2`
   `±e_*[M]`.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_rationalFundamentalClass`: the rational
   fundamental class of a compact connected oriented manifold is a fundamental class.
+* `TauCeti.HomologicalOrientation.ofIsFundamentalClass`: the orientation given by the local images
+  of an integral fundamental class, and
+  `TauCeti.HomologicalOrientation.fundamentalClass_ofIsFundamentalClass`: on a compact manifold,
+  its fundamental class is the class itself. Conversely, the orientation of the fundamental class
+  of `o` is `o` (`TauCeti.HomologicalOrientation.ofIsFundamentalClass_fundamentalClass`). So the
+  integral fundamental classes of a compact manifold correspond exactly to its orientations.
 
 ## References
 
@@ -456,6 +462,42 @@ theorem isFundamentalClass_iff_forall_isLocalOrientation
 
 end Integral
 
+section OfIsFundamentalClass
+
+variable {M E : Type w} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
+  {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{w} ℤ)) n :
+    ModuleCat.{w} ℤ)}
+
+namespace HomologicalOrientation
+
+/-- **The orientation of an integral fundamental class.** The images `μ_x` of an integral
+fundamental class `μ ∈ Hₙ(M; ℤ)` in the local homology groups are local orientations, and they are
+carried to one another by transport along paths, since the restrictions of a global class are
+(`TauCeti.localHomologyRestriction_univ_comp_localHomologyTransport`). So they form a homological
+orientation of `M`, whose fundamental class is `μ` when `M` is compact
+(`TauCeti.HomologicalOrientation.fundamentalClass_ofIsFundamentalClass`). -/
+def ofIsFundamentalClass (hμ : IsFundamentalClass μ) : HomologicalOrientation M E n where
+  toFun x := ⟨singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) x n μ,
+    (isFundamentalClass_iff_forall_isLocalOrientation μ).1 hμ x⟩
+  localOrientationTransport_toFun' f := Subtype.ext <| by
+    rw [coe_localOrientationTransport]
+    dsimp only
+    rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+      ← ConcreteCategory.comp_apply, localHomologyRestriction_univ_comp_localHomologyTransport]
+
+/-- The local orientation of `TauCeti.HomologicalOrientation.ofIsFundamentalClass` at `x` is the
+image of the fundamental class in the local homology at `x`. -/
+@[simp]
+theorem coe_ofIsFundamentalClass_apply (hμ : IsFundamentalClass μ) (x : M) :
+    (ofIsFundamentalClass (E := E) hμ x).val =
+      singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) x n μ :=
+  (rfl)
+
+end HomologicalOrientation
+
+end OfIsFundamentalClass
+
 namespace HomologicalOrientation
 
 variable {M E : Type} [TopologicalSpace M] [T2Space M]
@@ -531,6 +573,27 @@ theorem isFundamentalClass_rationalFundamentalClass [ConnectedSpace M] :
   refine (isFundamentalClass_iff_ne_zero hn _).2 ?_
   rw [rationalFundamentalClass_def]
   exact (o.rationalFundamentalClassEquiv hn).map_ne_zero_iff.2 one_ne_zero
+
+/-- **An integral fundamental class is the fundamental class of its orientation.** On a compact
+manifold, the fundamental class of the orientation
+`TauCeti.HomologicalOrientation.ofIsFundamentalClass` determined by an integral fundamental class
+`μ` is `μ` itself. -/
+@[simp]
+theorem fundamentalClass_ofIsFundamentalClass
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) :
+    (ofIsFundamentalClass (E := E) hμ).fundamentalClass hn = μ :=
+  ((ofIsFundamentalClass hμ).eq_fundamentalClass hn fun x ↦
+    (coe_ofIsFundamentalClass_apply hμ x).symm).symm
+
+/-- **The orientation of the fundamental class.** On a compact manifold, the orientation
+`TauCeti.HomologicalOrientation.ofIsFundamentalClass` determined by the fundamental class of an
+orientation `o` is `o` itself. -/
+@[simp]
+theorem ofIsFundamentalClass_fundamentalClass :
+    ofIsFundamentalClass (o.isFundamentalClass_fundamentalClass hn) = o :=
+  HomologicalOrientation.ext fun x ↦ Subtype.ext <| by
+    rw [coe_ofIsFundamentalClass_apply, singularHomologyToLocalHomology_fundamentalClass]
 
 end HomologicalOrientation
 

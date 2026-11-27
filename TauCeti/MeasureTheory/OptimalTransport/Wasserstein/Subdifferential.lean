@@ -12,8 +12,10 @@ public import TauCeti.Analysis.GradientFlow.Slope
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.EulerLagrange
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InteractionEnergy
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # The Wasserstein subdifferential
@@ -60,6 +62,15 @@ potential `V` whose gradient grows at most linearly: its gradient `∇V` is a su
 law of `P₂(E)`, by the first-order condition `V y ≥ V x + ⟪∇V x, y - x⟫ + (m / 2) ‖y - x‖²`
 integrated against an optimal coupling.
 
+The second example is the interaction energy `ν ↦ (1 / 2) ∫∫ w (x - y) dν(x) dν(y)` of a
+differentiable `m`-strongly convex `w`, for any real `m`, whose gradient grows at most linearly:
+its interaction gradient `x ↦ (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)` is a subgradient at every
+law `μ` of `P₂(E)`. The first-order inequality of the interaction energy along a coupling `γ`
+carries the remainder `(m / 4) ∫∫ ‖(x - y) - (x' - y')‖² dγ dγ`, whose double integral is twice the
+variance of the displacement `x - y` under `γ`, so at most `2 W₂(μ, ν)²` for an optimal `γ`. The
+remainder is therefore at least `(min m 0 / 2) W₂(μ, ν)²`, and the global subgradient inequality
+holds with the parameter `min m 0`.
+
 ## Main definitions
 
 * `TauCeti.wassersteinSubdifferential φ μ`: the set of subgradients of `φ` at `μ`, a subset of
@@ -83,9 +94,14 @@ integrated against an optimal coupling.
   satisfying the global subgradient inequality with the term `(m / 2) W₂(μ, ν)²`.
 * `TauCeti.ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff`: the same
   characterization for an energy that is `m`-convex along every generalized geodesic based at `μ`.
+* `TauCeti.IsCoupling.integral_inner_sub_congr_ae`: the pairing of a field with the displacement
+  of a coupling only depends on the field almost everywhere.
 * `StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy` and
   `StrongConvexOn.nonempty_wassersteinSubdifferential_potentialEnergy`: the gradient of an
   `m`-strongly convex potential is a subgradient of its potential energy.
+* `StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy` and
+  `StrongConvexOn.nonempty_wassersteinSubdifferential_interactionEnergy`: the interaction gradient
+  of a semiconvex kernel is a subgradient of its interaction energy.
 
 ## References
 
@@ -93,7 +109,7 @@ integrated against an optimal coupling.
   Probability Measures*, 2nd ed., Birkhäuser 2008, Chapter 10: §10.1 for the subdifferential at
   regular measures, its closedness, minimal selection and the slope bound, §10.3 for the
   subgradient inequality of energies convex along generalized geodesics, and §10.4 for the
-  subdifferential of the potential energy.
+  subdifferentials of the potential and interaction energies.
 -/
 
 public section
@@ -376,6 +392,17 @@ theorem ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff {m : 
   have ht' := h t ht (c t) (by rw [hlaw t ht, generalizedGeodesic_eq_map_snd, hsnd])
   rwa [hsnd, ← WassersteinSpace.dist_sq_eq_integral hγ] at ht'
 
+omit [CompleteSpace E] [BorelSpace E] [SecondCountableTopology E] in
+/-- The pairing `∫ ⟪f x, y - x⟫ dγ(x, y)` against a coupling `γ` of `ρ` and `ρ'` depends only on
+the class of `f` modulo `ρ`-almost everywhere equality. -/
+theorem IsCoupling.integral_inner_sub_congr_ae {ρ ρ' : Measure E} {γ : Measure (E × E)}
+    {f g : E → E} (hγ : IsCoupling γ ρ ρ') (hfg : f =ᵐ[ρ] g) :
+    ∫ z, ⟪f z.1, z.2 - z.1⟫ ∂γ = ∫ z, ⟪g z.1, z.2 - z.1⟫ ∂γ := by
+  refine integral_congr_ae ?_
+  filter_upwards [hγ.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hfg] with z hz
+  simp only [Function.comp_apply] at hz
+  rw [hz]
+
 section PotentialEnergy
 
 variable {V : E → ℝ} {m C : ℝ}
@@ -406,11 +433,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
   have hgrad : MemLp (gradient V) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
     (Lp.memLp ξ).ae_eq hξ
   -- Replace `ξ` by `∇V`, and every term by an integral against `γ`.
-  have hpair : ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ = ∫ z, ⟪gradient V z.1, z.2 - z.1⟫ ∂γ := by
-    refine integral_congr_ae ?_
-    filter_upwards [hγc.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hξ] with z hz
-    simp only [Function.comp_apply] at hz
-    rw [hz]
+  have hpair : ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ = ∫ z, ⟪gradient V z.1, z.2 - z.1⟫ ∂γ :=
+    hγc.integral_inner_sub_congr_ae hξ
   have hinner : Integrable (fun z : E × E ↦ ⟪gradient V z.1, z.2 - z.1⟫) γ := by
     refine (hγc.integrable_inner_sub_comp_fst hγ₂ hgrad).neg.congr (.of_forall fun z ↦ ?_)
     rw [Pi.neg_apply, ← inner_neg_left, neg_sub, real_inner_comm]
@@ -443,19 +467,75 @@ theorem _root_.StrongConvexOn.nonempty_wassersteinSubdifferential_potentialEnerg
     (wassersteinSubdifferential
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ).Nonempty := by
-  have hm : Measurable (gradient V) :=
-    (InnerProductSpace.toDual ℝ E).symm.continuous.measurable.comp (measurable_fderiv ℝ V)
-  have hnorm : MemLp (fun x : E ↦ ‖x‖) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
-    μ.hasFiniteMoment.memLp_id.norm
-  have hbound : MemLp (fun x : E ↦ C * (1 + ‖x‖)) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
-    ((memLp_const (1 : ℝ)).add hnorm).const_mul C
-  have hgrad : MemLp (gradient V) 2 ((μ : ProbabilityMeasure E) : Measure E) := by
-    refine hbound.of_le hm.aestronglyMeasurable (.of_forall fun x ↦ ?_)
-    rw [Real.norm_eq_abs]
-    exact (hV' x).trans (le_abs_self _)
+  have hgrad : MemLp (gradient V) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
+    μ.hasFiniteMoment.memLp_id.comp_of_norm_le_mul_one_add
+      (measurable_gradient V).stronglyMeasurable hV'
   exact ⟨hgrad.toLp _, hV.mem_wassersteinSubdifferential_potentialEnergy hVd hV'
     hgrad.coeFn_toLp⟩
 
 end PotentialEnergy
+
+section InteractionEnergy
+
+variable {w : E → ℝ} {m C : ℝ}
+
+/-- **The interaction gradient is a subgradient of the interaction energy.** Let `w` be a
+differentiable `m`-strongly convex function, for any real `m`, whose gradient grows at most
+linearly, `‖∇w z‖ ≤ C (1 + ‖z‖)`. At every law `μ` of `P₂(E)`, every field `ξ ∈ L²(μ; E)` equal
+almost everywhere to the interaction gradient `x ↦ (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)` is a
+subgradient of the interaction energy `ν ↦ (1 / 2) ∫∫ w (x - y) dν(x) dν(y)`. -/
+theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy
+    (hw : StrongConvexOn univ m w) (hwd : Differentiable ℝ w)
+    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖))
+    (hξ : ξ =ᵐ[((μ : ProbabilityMeasure E) : Measure E)]
+      interactionGradient w ((μ : ProbabilityMeasure E) : Measure E)) :
+    ξ ∈ wassersteinSubdifferential (fun ν : WassersteinSpace 2 E ↦
+      interactionEnergy (fun z ↦ w (z.1 - z.2)) ((ν : ProbabilityMeasure E) : Measure E)) μ := by
+  have hφ (ρ : WassersteinSpace 2 E) : interactionEnergy (fun z ↦ w (z.1 - z.2))
+      ((ρ : ProbabilityMeasure E) : Measure E) = ((∫ z, w (z.1 - z.2) ∂
+        ((ρ : ProbabilityMeasure E) : Measure E).prod ((ρ : ProbabilityMeasure E) : Measure E)) /
+          2 : ℝ) :=
+    interactionEnergy_of_integrable
+      (integrable_comp_sub_of_norm_gradient_le hwd hw' ρ.hasFiniteMoment)
+  -- Along an optimal coupling the remainder of the first-order inequality of the interaction
+  -- energy is at least `(min m 0 / 2) W₂(μ, ν)²`, since its double integral is twice the variance
+  -- of the displacement.
+  refine mem_wassersteinSubdifferential_of_forall_le (m := min m 0) (by simp [hφ])
+    (by simp [hφ]) fun ν γ hγ ↦ ?_
+  have hγc := hγ.toIsCoupling
+  have : IsProbabilityMeasure γ := hγ.isProbabilityMeasure
+  have hγ₂ := integrable_norm_sub_sq_of_hasFiniteMoment (hγc.fst_eq ▸ μ.hasFiniteMoment)
+    (hγc.snd_eq ▸ ν.hasFiniteMoment)
+  have hpair : ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ =
+      ∫ z, ⟪interactionGradient w ((μ : ProbabilityMeasure E) : Measure E) z.1, z.2 - z.1⟫ ∂γ :=
+    hγc.integral_inner_sub_congr_ae hξ
+  have hd : MemLp (fun z : E × E ↦ z.1 - z.2) 2 γ :=
+    (memLp_two_iff_integrable_sq_norm (by fun_prop)).2 hγ₂
+  have hD := integral_norm_sub_sq_prod hd
+  rw [probReal_univ, one_mul] at hD
+  have hD₀ : 0 ≤ ∫ p, ‖(p.1.1 - p.1.2) - (p.2.1 - p.2.2)‖ ^ 2 ∂γ.prod γ :=
+    integral_nonneg fun _ ↦ by positivity
+  refine le_trans ?_ (hw.interactionEnergy_add_le hwd hw' hγc μ.hasFiniteMoment ν.hasFiniteMoment)
+  rw [hpair, WassersteinSpace.dist_sq_eq_integral hγ]
+  refine add_le_add le_rfl (EReal.coe_le_coe_iff.2 (add_le_add le_rfl ?_))
+  rcases le_total m 0 with hm | hm
+  · rw [min_eq_left hm]
+    nlinarith [sq_nonneg ‖∫ z, (z.1 - z.2) ∂γ‖]
+  · rw [min_eq_right hm]
+    nlinarith
+
+/-- The interaction energy of a differentiable `m`-strongly convex kernel `w (x - y)`, for any real
+`m`, whose gradient grows at most linearly has a nonempty Wasserstein subdifferential at every law
+of `P₂(E)`: it contains the class of the interaction gradient in `L²(μ; E)`. -/
+theorem _root_.StrongConvexOn.nonempty_wassersteinSubdifferential_interactionEnergy
+    (hw : StrongConvexOn univ m w) (hwd : Differentiable ℝ w)
+    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) (μ : WassersteinSpace 2 E) :
+    (wassersteinSubdifferential (fun ν : WassersteinSpace 2 E ↦
+      interactionEnergy (fun z ↦ w (z.1 - z.2)) ((ν : ProbabilityMeasure E) : Measure E))
+      μ).Nonempty := by
+  have h := memLp_interactionGradient hw' μ.hasFiniteMoment
+  exact ⟨h.toLp _, hw.mem_wassersteinSubdifferential_interactionEnergy hwd hw' h.coeFn_toLp⟩
+
+end InteractionEnergy
 
 end TauCeti
