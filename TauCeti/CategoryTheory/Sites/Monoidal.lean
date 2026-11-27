@@ -17,8 +17,9 @@ product obtained by sheafifying the sectionwise tensor product
 (`CategoryTheory.Sheaf.monoidalCategory`). This file constructs the canonical map
 `F.obj ⊗ G.obj ⟶ (F ⊗ G).obj` from the sectionwise tensor product of two sheaves to the underlying
 presheaf of their tensor product, and shows that it is natural and that morphisms out of `F ⊗ G`
-are determined by their restriction along it. It also identifies the unit of `Sheaf J A`, the
-sheafification of the constant presheaf `𝟙_ A`, with the constant sheaf `𝟙_ A`.
+are determined by their restriction along it. It gives the same description of the unit of
+`Sheaf J A`, the sheafification of the constant presheaf `𝟙_ A`, and identifies it with the constant
+sheaf `𝟙_ A`.
 
 ## Main declarations
 
@@ -26,6 +27,9 @@ sheafification of the constant presheaf `𝟙_ A`, with the constant sheaf `𝟙
 * `CategoryTheory.Sheaf.toTensorObj_naturality`: it is natural in `F` and `G`.
 * `CategoryTheory.Sheaf.tensorObj_hom_ext`: morphisms of sheaves out of `F ⊗ G` agreeing after
   `Sheaf.toTensorObj F G` are equal.
+* `CategoryTheory.Sheaf.toTensorUnit J A`: the canonical map `𝟙_ (Cᵒᵖ ⥤ A) ⟶ (𝟙_ (Sheaf J A)).obj`.
+* `CategoryTheory.Sheaf.tensorUnit_hom_ext`: morphisms of sheaves out of `𝟙_ (Sheaf J A)` agreeing
+  after `Sheaf.toTensorUnit J A` are equal.
 * `CategoryTheory.Sheaf.tensorUnitIsoConstantSheaf`: the unit `𝟙_ (Sheaf J A)` is the constant
   sheaf `𝟙_ A`.
 -/
@@ -85,11 +89,49 @@ lemma toTensorObj_naturality {F F' G G' : Sheaf J A} (f : F ⟶ F') (g : G ⟶ G
   exact congrArg (toSheafify J _ ≫ ·.hom) h
 
 variable (J A) in
+/-- The canonical map from the unit `𝟙_ (Cᵒᵖ ⥤ A)` of presheaves, the constant presheaf `𝟙_ A`, to
+the underlying presheaf of the unit of sheaves: the unit of sheafification followed by the
+identification of the sheafified unit with `𝟙_ (Sheaf J A)`. -/
+noncomputable def toTensorUnit : 𝟙_ (Cᵒᵖ ⥤ A) ⟶ (𝟙_ (Sheaf J A)).obj :=
+  CategoryTheory.toSheafify J (𝟙_ (Cᵒᵖ ⥤ A)) ≫
+    (Functor.Monoidal.εIso (presheafToSheaf J A)).inv.hom
+
+variable (J A) in
+/-- `Sheaf.toTensorUnit J A` is the unit of sheafification followed by the identification of the
+sheafified unit with `𝟙_ (Sheaf J A)`. -/
+lemma toTensorUnit_def :
+    toTensorUnit J A = CategoryTheory.toSheafify J (𝟙_ (Cᵒᵖ ⥤ A)) ≫
+      (Functor.Monoidal.εIso (presheafToSheaf J A)).inv.hom :=
+  (rfl)
+
+/-- Morphisms of sheaves out of `𝟙_ (Sheaf J A)` are determined by their restriction along
+`Sheaf.toTensorUnit J A`. -/
+lemma tensorUnit_hom_ext {H : Sheaf J A} {f g : 𝟙_ (Sheaf J A) ⟶ H}
+    (h : toTensorUnit J A ≫ f.hom = toTensorUnit J A ≫ g.hom) : f = g := by
+  refine (cancel_epi (Functor.Monoidal.εIso (presheafToSheaf J A)).inv).1 (Sheaf.hom_ext ?_)
+  exact sheafify_hom_ext _ _ _ H.property (by simpa [toTensorUnit_def] using h)
+
+variable (J A) in
 /-- The unit of the tensor product of sheaves, the sheafification of the constant presheaf `𝟙_ A`,
-is the constant sheaf `𝟙_ A`. -/
+is the constant sheaf `𝟙_ A`. It is characterised by
+`toTensorUnit_comp_tensorUnitIsoConstantSheaf_hom_hom`. -/
 noncomputable def tensorUnitIsoConstantSheaf :
     𝟙_ (Sheaf J A) ≅ (constantSheaf J A).obj (𝟙_ A) :=
   Functor.Monoidal.εIso (presheafToSheaf J A) ≪≫
     (presheafToSheaf J A).mapIso (NatIso.ofComponents fun _ ↦ Iso.refl _)
+
+variable (J A) in
+/-- Restricted along `Sheaf.toTensorUnit J A`, the identification of `𝟙_ (Sheaf J A)` with the
+constant sheaf `𝟙_ A` is the unit of sheafification of the constant presheaf `𝟙_ A`. -/
+@[reassoc]
+lemma toTensorUnit_comp_tensorUnitIsoConstantSheaf_hom_hom :
+    toTensorUnit J A ≫ (tensorUnitIsoConstantSheaf J A).hom.hom =
+      CategoryTheory.toSheafify J ((Functor.const Cᵒᵖ).obj (𝟙_ A)) := by
+  rw [toTensorUnit_def, tensorUnitIsoConstantSheaf, Category.assoc,
+    ← ObjectProperty.FullSubcategory.comp_hom, Iso.trans_hom, Iso.inv_hom_id_assoc]
+  -- The second factor is the sheafification of the componentwise identity, which is
+  -- `𝟙 ((Functor.const Cᵒᵖ).obj (𝟙_ A))` by definition.
+  exact (toSheafify_naturality J (𝟙 ((Functor.const Cᵒᵖ).obj (𝟙_ A)))).symm.trans
+    (Category.id_comp _)
 
 end CategoryTheory.Sheaf
