@@ -47,7 +47,11 @@ necks, then any two such right inverses `Q` and `Q'` give gluing isomorphisms di
 positive factor (`TauCeti.CylinderSobolev.exists_pos_gluingDetLineEquiv_apply_eq_smul`), so they
 induce the same orientation transport. The right inverses `Q + s (Q' - Q)`, `s ∈ [0, 1]`, all
 have norm at most `C`, the gluing maps along them are invertible and affine in `s`, and so the
-determinant of the change between the two gluing maps cannot change sign.
+determinant of the change between the two gluing maps cannot change sign. Hence for fixed
+stabilizers, a bound `C` and every sufficiently long neck, the orientation of `det D_R` glued
+from orientations of `det D₁` and `det D₂` does not depend on the choice of right inverse of norm
+at most `C`
+(`TauCeti.CylinderSobolev.exists_forall_ge_exists_pos_gluingDetLineEquiv_apply_eq_smul`).
 
 ## Main definitions
 
@@ -60,6 +64,8 @@ determinant of the change between the two gluing maps cannot change sign.
   isomorphism is the four-term isomorphism of the exact sequence of linear gluing, up to sign.
 * `TauCeti.CylinderSobolev.exists_pos_gluingDetLineEquiv_apply_eq_smul`: right inverses of
   bounded norm give gluing isomorphisms differing by positive factors.
+* `TauCeti.CylinderSobolev.exists_forall_ge_exists_pos_gluingDetLineEquiv_apply_eq_smul`: for long
+  necks, this holds for any two right inverses of norm at most a given bound.
 
 ## References
 
@@ -73,6 +79,7 @@ determinant of the change between the two gluing maps cannot change sign.
 public section
 
 open MeasureTheory Module TensorProduct
+open scoped ENNReal
 
 namespace TauCeti.CylinderSobolev
 
@@ -89,9 +96,6 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {R : ℝ}
   [FiniteDimensional ℝ ((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).ker]
   [FiniteDimensional ℝ ((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).ker]
-  [FiniteDimensional ℝ ((jetOperator 2 stripMeasure
-    (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-      (H1 V).subtypeL).ker]
 
 section Definition
 
@@ -144,6 +148,9 @@ isomorphism (`TauCeti.detLineFourTermEquiv`) of the exact sequence of linear glu
 whose middle map is the obstruction map `b_R`, times the sign
 `(-1) ^ (dim S₁ * (dim E₂ + dim S₂) + dim coker D_R * dim (S₁ × S₂))`. -/
 theorem gluingDetLineEquiv_detLineStabilizationEquiv_tmul_eq_detLineFourTermEquiv
+    [FiniteDimensional ℝ ((jetOperator 2 stripMeasure
+      (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+        (H1 V).subtypeL).ker]
     (h₁ : Function.Surjective (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁))
     (h₂ : Function.Surjective (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂))
     (h : Function.Bijective (gluingKerMap hQ))
@@ -226,6 +233,54 @@ theorem exists_pos_gluingDetLineEquiv_apply_eq_smul
     Submodule.coe_smul, coe_gluingKerMap_apply, add_apply,
     smul_apply, sub_apply]
   module
+
+variable [CompleteSpace W] in
+/-- **For long necks the glued orientation does not depend on the right inverse.** Let `D₁` and
+`D₂` be first-order operators on the cylinder whose coefficient fields are essentially bounded with
+matching ends, and let `ιᵢ : Sᵢ → L²` be finite-dimensional stabilizers supported away from the
+glued ends, such that the stabilized operators `Aᵢ (ξ, σ) = Dᵢ ξ + ιᵢ σ` have bounded right
+inverses `Qᵢ`. Fix a bound `C`. Then for every sufficiently long neck and any two right inverses
+`Q`, `Q'` of the stabilized glued operator `A_R` of norm at most `C`, the gluing maps along `Q` and
+`Q'` are isomorphisms `E₁ × E₂ ≃ E_R`, and the gluing isomorphisms
+`det D₁ ⊗ det D₂ ≃ det D_R` that they induce differ by a positive factor. -/
+theorem exists_forall_ge_exists_pos_gluingDetLineEquiv_apply_eq_smul
+    {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
+    (h₁ : TendstoUniformlyOn (Function.curry M₁) M Filter.atTop (Set.Icc 0 1))
+    (h₂ : TendstoUniformlyOn (Function.curry M₂) M Filter.atBot (Set.Icc 0 1)) {T : ℝ}
+    (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
+    (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0)
+    {Q₁ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₁} {Q₂ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₂}
+    (hQ₁ : (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
+      ContinuousLinearMap.id ℝ _)
+    (hQ₂ : (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
+      ContinuousLinearMap.id ℝ _) (C : ℝ) :
+    ∃ R₀ : ℝ, ∀ R ≥ R₀, ∀ (Q Q' : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂))
+      (hQ : Function.RightInverse Q (((jetOperator 2 stripMeasure
+        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)))
+      (hQ' : Function.RightInverse Q' (((jetOperator 2 stripMeasure
+        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))),
+      ‖Q‖ ≤ C → ‖Q'‖ ≤ C →
+        ∃ (h : Function.Bijective (gluingKerMap hQ)) (h' : Function.Bijective (gluingKerMap hQ'))
+          (c : ℝ), 0 < c ∧
+          ∀ (hA₁ : Function.Surjective
+              (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁))
+            (hA₂ : Function.Surjective
+              (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)) t,
+            gluingDetLineEquiv hQ' hA₁ hA₂ h' t = c • gluingDetLineEquiv hQ hA₁ hA₂ h t := by
+  obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_gluingKerMap_bijective hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁ hQ₂ C
+  -- The right inverses `Qᵢ` make the stabilized pieces onto.
+  have hA₁ : Function.Surjective
+      (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁) := fun y ↦
+    ⟨Q₁ y, DFunLike.congr_fun hQ₁ y⟩
+  have hA₂ : Function.Surjective
+      (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂) := fun y ↦
+    ⟨Q₂ y, DFunLike.congr_fun hQ₂ y⟩
+  refine ⟨R₀, fun R hR Q Q' hQ hQ' hQC hQ'C ↦ ?_⟩
+  obtain ⟨c, hc, hct⟩ :=
+    exists_pos_gluingDetLineEquiv_apply_eq_smul hA₁ hA₂ (hR₀ R hR).2 hQ hQ' hQC hQ'C
+  exact ⟨_, _, c, hc, fun _ _ ↦ hct⟩
 
 end RightInverse
 

@@ -100,7 +100,7 @@ variable {𝕜 E₁ S₁ F₁ E₂ S₂ F₂ E F : Type*} [Field 𝕜]
 
 section Gluing
 
-variable {D : E →L[𝕜] F} {j : S₁ × S₂ →L[𝕜] F} [FiniteDimensional 𝕜 D.ker]
+variable {D : E →L[𝕜] F} {j : S₁ × S₂ →L[𝕜] F}
 
 /-- **The ordered determinant-line isomorphism of stabilized linear gluing.** Let `D₁.coprod ι₁`
 and `D₂.coprod ι₂` be onto, with finite-dimensional stabilizing spaces `S₁` and `S₂` and
@@ -116,12 +116,15 @@ read `det Dᵢ` as `det Kᵢ ⊗ (det Sᵢ)^*` by the normalized stabilization i
 factor along `g`, read the result as `det D`, and multiply by the Koszul sign
 `(-1) ^ (dim S₁ * (dim K₂ + dim S₂))`. The sign makes the direct sum with its tautological kernel
 identification glue to the normalized direct sum isomorphism
-(`ContinuousLinearMap.detLineGluingEquiv_kerCoprodProdMapEquiv`). -/
+(`ContinuousLinearMap.detLineGluingEquiv_kerCoprodProdMapEquiv`). The kernel of `D` is
+finite-dimensional, since `g` makes the stabilized kernel of `D` finite-dimensional. -/
 noncomputable def detLineGluingEquiv (h₁ : Function.Surjective (D₁.coprod ι₁))
     (h₂ : Function.Surjective (D₂.coprod ι₂)) (h : Function.Surjective (D.coprod j))
     (g : ((D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker) ≃ₗ[𝕜] (D.coprod j).ker) :
     (D₁ : E₁ →ₗ[𝕜] F₁).detLine ⊗[𝕜] (D₂ : E₂ →ₗ[𝕜] F₂).detLine ≃ₗ[𝕜]
       (D : E →ₗ[𝕜] F).detLine :=
+  haveI : FiniteDimensional 𝕜 (D.coprod j).ker := g.finiteDimensional
+  haveI := finiteDimensional_ker_of_finiteDimensional_ker_coprod D j
   TensorProduct.congr (detLineStabilizationEquiv D₁ ι₁ h₁).symm
       (detLineStabilizationEquiv D₂ ι₂ h₂).symm ≪≫ₗ
     TauCeti.detLineTensorDualProdEquiv 𝕜 _ _ _ _ ≪≫ₗ
@@ -132,7 +135,7 @@ noncomputable def detLineGluingEquiv (h₁ : Function.Surjective (D₁.coprod ι
 /-- `ContinuousLinearMap.detLineGluingEquiv` is the composite of the inverse stabilization
 isomorphisms of the pieces, the gathering isomorphism `TauCeti.detLineTensorDualProdEquiv`, the
 transport along `g`, the stabilization isomorphism of `D` and the Koszul sign. -/
-theorem detLineGluingEquiv_def (h₁ : Function.Surjective (D₁.coprod ι₁))
+theorem detLineGluingEquiv_def [FiniteDimensional 𝕜 D.ker] (h₁ : Function.Surjective (D₁.coprod ι₁))
     (h₂ : Function.Surjective (D₂.coprod ι₂)) (h : Function.Surjective (D.coprod j))
     (g : ((D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker) ≃ₗ[𝕜] (D.coprod j).ker) :
     detLineGluingEquiv h₁ h₂ h g =
@@ -150,7 +153,7 @@ theorem detLineGluingEquiv_def (h₁ : Function.Surjective (D₁.coprod ι₁))
 product of their images in `det D₁` and `det D₂` to the image in `det D` of their product
 (`TauCeti.detLineTensorDualProdEquiv`) transported along `g`, times
 `(-1) ^ (dim S₁ * (dim K₂ + dim S₂))`. -/
-theorem detLineGluingEquiv_detLineStabilizationEquiv_tmul
+theorem detLineGluingEquiv_detLineStabilizationEquiv_tmul [FiniteDimensional 𝕜 D.ker]
     (h₁ : Function.Surjective (D₁.coprod ι₁)) (h₂ : Function.Surjective (D₂.coprod ι₂))
     (h : Function.Surjective (D.coprod j))
     (g : ((D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker) ≃ₗ[𝕜] (D.coprod j).ker)
@@ -174,6 +177,8 @@ theorem detLineGluingEquiv_apply_eq_det_smul (h₁ : Function.Surjective (D₁.c
     detLineGluingEquiv h₁ h₂ h g' t =
       LinearMap.det (g'.trans g.symm).toLinearMap •
         detLineGluingEquiv h₁ h₂ h g t := by
+  have : FiniteDimensional 𝕜 (D.coprod j).ker := g.finiteDimensional
+  have := finiteDimensional_ker_of_finiteDimensional_ker_coprod D j
   -- On the determinant line of `K₁ × K₂`, transport along `g'` is transport along the
   -- automorphism `g⁻¹ ∘ g'`, which is multiplication by its determinant, followed by `g`.
   have hg : ∀ y, LinearEquiv.rTensor (Dual 𝕜 (TauCeti.detLine 𝕜 (S₁ × S₂))) g'.detLineCongr y =
@@ -201,8 +206,8 @@ isomorphism, on the stabilization isomorphisms of the pieces, is the four-term i
 (`TauCeti.detLineFourTermEquiv`) of this sequence applied to the product of `x₁` and `x₂`, times
 the sign `(-1) ^ (dim S₁ * (dim K₂ + dim S₂) + dim coker D * dim (S₁ × S₂))`. -/
 theorem detLineGluingEquiv_detLineStabilizationEquiv_tmul_eq_detLineFourTermEquiv
-    (h₁ : Function.Surjective (D₁.coprod ι₁)) (h₂ : Function.Surjective (D₂.coprod ι₂))
-    (h : Function.Surjective (D.coprod j))
+    [FiniteDimensional 𝕜 D.ker] (h₁ : Function.Surjective (D₁.coprod ι₁))
+    (h₂ : Function.Surjective (D₂.coprod ι₂)) (h : Function.Surjective (D.coprod j))
     (g : ((D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker) ≃ₗ[𝕜] (D.coprod j).ker)
     {fK : D.ker →ₗ[𝕜] (D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker}
     {b : ((D₁.coprod ι₁).ker × (D₂.coprod ι₂).ker) →ₗ[𝕜] S₁ × S₂}
@@ -252,7 +257,7 @@ variable {E₁ S₁ F₁ E₂ S₂ F₂ E F : Type*}
   {D₁ : E₁ →L[ℝ] F₁} {ι₁ : S₁ →L[ℝ] F₁} {D₂ : E₂ →L[ℝ] F₂} {ι₂ : S₂ →L[ℝ] F₂}
   {D : E →L[ℝ] F} {j : S₁ × S₂ →L[ℝ] F}
   [FiniteDimensional ℝ D₁.ker] [FiniteDimensional ℝ S₁]
-  [FiniteDimensional ℝ D₂.ker] [FiniteDimensional ℝ S₂] [FiniteDimensional ℝ D.ker]
+  [FiniteDimensional ℝ D₂.ker] [FiniteDimensional ℝ S₂]
 
 /-- **Kernel isomorphisms joined by a segment of isomorphisms glue to the same orientation.** If
 every point `(1 - s) • g + s • g'`, `s ∈ [0, 1]`, of the segment between two isomorphisms
