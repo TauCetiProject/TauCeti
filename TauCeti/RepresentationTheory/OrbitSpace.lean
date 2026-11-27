@@ -97,20 +97,7 @@ theorem isOpenQuotientMap_orbitRel_mk (hρ : ∀ g : G, Continuous (ρ g)) :
   haveI : ContinuousConstSMul G V := ⟨hρ⟩
   MulAction.isOpenQuotientMap_quotientMk
 
-/-- **The orbit map of a finite group is closed.** For a representation of a finite group by
-continuous operators, the quotient map `V → V / G` is closed: the saturation of a closed set `F`
-is the finite union of the closed sets `(ρ g)⁻¹ F`. -/
-theorem isClosedMap_orbitRel_mk_of_finite [Finite G] (hρ : ∀ g : G, Continuous (ρ g)) :
-    IsClosedMap (Quotient.mk ρ.orbitRel) := by
-  intro F hF
-  have : Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' F) = ⋃ g, ρ g ⁻¹' F := by
-    ext x
-    simp only [Set.mem_preimage, Set.mem_image, ρ.orbitRel_mk_eq_mk_iff, Set.mem_iUnion]
-    exact ⟨fun ⟨_, hy, g, hg⟩ ↦ ⟨g, hg ▸ hy⟩, fun ⟨g, hg⟩ ↦ ⟨_, hg, g, rfl⟩⟩
-  have hsat : IsClosed (Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' F)) := by
-    rw [this]
-    exact isClosed_iUnion_of_finite fun g ↦ hF.preimage (hρ g)
-  exact isQuotientMap_quotient_mk'.isClosed_preimage.1 hsat
+section Compact
 
 variable [TopologicalSpace G] [CompactSpace G]
 
@@ -139,6 +126,17 @@ theorem t2Space_quotient_orbitRel [T2Space V] (hρ : Continuous fun p : G × V �
   haveI : ContinuousSMul G V := ⟨hρ⟩
   haveI := TauCeti.properSMul_of_compactSpace G V
   t2Space_quotient_mulAction_of_properSMul
+
+end Compact
+
+/-- **The orbit map of a finite group is closed.** For a representation of a finite group by
+continuous operators, the quotient map `V → V / G` is closed. This is the compact case
+`Representation.isClosedMap_orbitRel_mk` for the discrete topology on `G`. -/
+theorem isClosedMap_orbitRel_mk_of_finite [Finite G] (hρ : ∀ g : G, Continuous (ρ g)) :
+    IsClosedMap (Quotient.mk ρ.orbitRel) :=
+  letI : TopologicalSpace G := ⊥
+  haveI : DiscreteTopology G := ⟨rfl⟩
+  ρ.isClosedMap_orbitRel_mk (continuous_prod_of_discrete_left.2 hρ)
 
 end Topology
 
