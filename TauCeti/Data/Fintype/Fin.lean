@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.Units.Basic
+public import Mathlib.Algebra.GroupWithZero.Invertible
 public import Mathlib.Data.Fintype.Fin
 public import Mathlib.Data.Multiset.Range
 import Mathlib.Order.Interval.Finset.Nat
@@ -21,7 +21,8 @@ be compared with one about an initial segment of `ℕ` without passing through l
 It also records that the cardinality of a nonempty `Fin n`, cast into a group with zero, is a unit
 as soon as `n` is invertible whenever it is nonzero (`TauCeti.isUnit_card_fin`).
 The nonzero cast condition for the cardinality follows from that for `n`
-(`TauCeti.neZero_card_fin`).
+(`TauCeti.neZero_card_fin`). This also gives invertibility in a group with zero
+(`TauCeti.invertibleCardFin`).
 -/
 
 public section
@@ -52,5 +53,10 @@ instance neZero_card_fin (K : Type*) [NatCast K] [Zero K] (n : ℕ) [NeZero (n :
     NeZero (Fintype.card (Fin n) : K) := by
   rw [Fintype.card_fin]
   infer_instance
+
+/-- The cast of the cardinality of `Fin n` is invertible when the cast of `n` is nonzero. -/
+instance invertibleCardFin (K : Type*) [GroupWithZero K] [NatCast K] (n : ℕ) [NeZero (n : K)] :
+    Invertible (Fintype.card (Fin n) : K) :=
+  invertibleOfNonzero (by simpa only [Fintype.card_fin] using NeZero.ne (n : K))
 
 end TauCeti

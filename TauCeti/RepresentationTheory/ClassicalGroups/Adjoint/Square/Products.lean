@@ -14,9 +14,9 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 # The alternating and symmetric product intertwiners for the adjoint square of SLₙ
 
 Over a commutative ring the Lie bracket gives an equivariant contraction that changes sign
-under the tensor flip. When `n` is nonzero in the field, the traceless symmetric product lifts to
-an equivariant linear map on the tensor square of the trace-zero matrices. Swapping the tensor
-factors fixes this map.
+under the tensor flip. When the matrix size is invertible in the scalar ring, the traceless
+symmetric product lifts to an equivariant linear map on the tensor square of the trace-zero
+matrices. Swapping the tensor factors fixes this map.
 -/
 
 public section

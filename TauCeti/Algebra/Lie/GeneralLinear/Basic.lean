@@ -46,7 +46,7 @@ sits *inside* the derived ideal and the two are not complementary.
   matrix units and the differences of the diagonal ones contains every trace-zero matrix. This is
   the spanning core shared by the derived-ideal computation below and by the ideal-generation
   argument of `TauCeti/Algebra/Lie/GeneralLinear/Radical.lean`.
-* `LinearMap.surjective_to_sl_of_matrix_units`: a linear map into `sl n R` is surjective
+* `LinearMap.surjective_of_single_mem_range`: a linear map into `sl n R` is surjective
   if it hits the same generators.
 * `TauCeti.mem_center_matrix_iff`: an element of `gl n R` is central exactly when it is a scalar
   matrix; `TauCeti.one_mem_center_matrix` records that the identity is central,
@@ -258,7 +258,7 @@ theorem ker_traceLieCharacter : (traceLieCharacter R n).ker = slIdeal R n := by
 
 /-- A linear map into the special linear Lie algebra is surjective if it hits every
 off-diagonal matrix unit and every difference of two diagonal matrix units. -/
-theorem _root_.LinearMap.surjective_to_sl_of_matrix_units {M : Type*} [AddCommGroup M] [Module R M]
+theorem _root_.LinearMap.surjective_of_single_mem_range {M : Type*} [AddCommGroup M] [Module R M]
     (f : M →ₗ[R] LieAlgebra.SpecialLinear.sl n R)
     (off : ∀ (i j : n) (hij : i ≠ j),
       LieAlgebra.SpecialLinear.single i j hij 1 ∈ LinearMap.range f)

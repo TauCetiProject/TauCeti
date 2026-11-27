@@ -5,6 +5,7 @@ Authors: Jeromie Beasley
 -/
 module
 
+public import TauCeti.Data.Fintype.Fin
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Products
 public import TauCeti.RepresentationTheory.ClassicalGroups.Adjoint.Square.Surjectivity
@@ -78,10 +79,6 @@ theorem alternatingEmbeddingMap_pairing (x : V) (t : T) :
       (SLAdjoint.traceDualEquiv K n x) (alternatingProductMap K n t) :=
   liftMap_pairing _ x t
 
-/-- The matrix size is invertible in a field when its cast is nonzero. -/
-local instance invertibleCardFin : Invertible (Fintype.card (Fin n) : K) :=
-  invertibleOfNonzero (by simpa only [Fintype.card_fin] using NeZero.ne (n : K))
-
 variable (K n)
 
 /-- The trace transpose of the traceless symmetric product into the tensor square. -/
@@ -95,8 +92,7 @@ theorem symmetricEmbeddingMap_injective (hn : 3 ≤ n) :
 
 variable {K n}
 
-/-- The trace pairing on the tensor square characterizes the symmetric transpose, which is
-injective for sizes at least three. -/
+/-- The trace pairing on the tensor square characterizes the symmetric transpose. -/
 theorem symmetricEmbeddingMap_pairing (x : V) (t : T) :
     squareTrace (symmetricEmbeddingMap K n x) t =
       (SLAdjoint.traceDualEquiv K n x) (symmetricProductMap K n t) :=

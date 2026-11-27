@@ -13,7 +13,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 /-!
 # Dimensions of the two adjoint images in the tensor square
 
-For size `n ≥ 3` nonzero in the scalar field, each image has dimension `n ^ 2 - 1`.
+The alternating image has dimension `n ^ 2 - 1` whenever the size is nonzero in the scalar field.
+The symmetric image has this dimension under the same condition and `n ≥ 3`.
 The two images are disjoint when `2 ≠ 0`, so their sum has twice that dimension.
 In size three the separate images are octets and their sum has dimension sixteen.
 -/

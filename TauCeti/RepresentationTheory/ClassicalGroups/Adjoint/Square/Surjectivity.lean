@@ -53,7 +53,7 @@ private theorem alternating_cycle (i j : Fin n) (h : i ≠ j) (c : K) :
 ring when the matrix size is at least three. -/
 theorem alternatingProductMap_surjective (K : Type*) [CommRing K] (n : ℕ) (hn : 3 ≤ n) :
     Function.Surjective (alternatingProductMap K n) := by
-  apply (alternatingProductMap K n).toLinearMap.surjective_to_sl_of_matrix_units
+  apply (alternatingProductMap K n).toLinearMap.surjective_of_single_mem_range
   · intro i j hij
     obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact LinearMap.mem_range.mpr ⟨_, Subtype.ext (alternating_chain i k j hik hkj hij 1)⟩
@@ -65,7 +65,7 @@ in every size: subtracting a scalar from a diagonal unit makes it traceless with
 its commutator with an off-diagonal unit. -/
 theorem alternatingProductMap_surjective_of_isUnit (K : Type*) [CommRing K] (n : ℕ)
     (hn : IsUnit (n : K)) : Function.Surjective (alternatingProductMap K n) := by
-  apply (alternatingProductMap K n).toLinearMap.surjective_to_sl_of_matrix_units
+  apply (alternatingProductMap K n).toLinearMap.surjective_of_single_mem_range
   · intro i j hij
     obtain ⟨X, r, hX⟩ := exists_sl_add_smul_one_eq (fun _ => by simpa using hn)
       (Matrix.single i i (1 : K))
@@ -94,7 +94,7 @@ theorem symmetricProductMap_surjective (K : Type*) [CommRing K] (n : ℕ)
     [Invertible (Fintype.card (Fin n) : K)]
     (hn : 3 ≤ n) :
     Function.Surjective (symmetricProductMap K n) := by
-  apply (symmetricProductMap K n).toLinearMap.surjective_to_sl_of_matrix_units
+  apply (symmetricProductMap K n).toLinearMap.surjective_of_single_mem_range
   · intro i j hij
     obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact LinearMap.mem_range.mpr ⟨_, Subtype.ext (symmetric_chain i k j hik hkj hij 1)⟩
