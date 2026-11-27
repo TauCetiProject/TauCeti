@@ -45,6 +45,8 @@ the plane (`Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`).
 * `TauCeti.Wkp.exists_value_ae_eq_of_isCompact`: local `W^{k,p}` regularity near every point of a
   compact set containing `Ω` gives `W^{k,p}(Ω)`.
 * `TauCeti.Wkp.ext_of_restrictL_eq`: restrictions to an open cover determine a Sobolev function.
+* `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_forall_lowerOrder_eq_restrictL`: a function that
+  gains a derivative on each member of a finite open cover gains it on every open set they cover.
 
 ## References
 
@@ -188,5 +190,28 @@ theorem exists_glue_of_restrictL_eq [Fintype ι] {V : ι → Opens E} (hle : ∀
       exact (hu n).symm
   obtain ⟨v, -, hv, hvn⟩ := exists_glue hle hcov k w hu
   exact ⟨v, hv, hvn⟩
+
+/-- **One more derivative glues along a finite open cover.** Let finitely many open sets
+`V i ⊆ Ω` cover an open set `U ⊆ Ω`, and let `u ∈ W^{k,p}(Ω)`. If the restriction of `u` to each
+`V i` is the order-`k` part of some `w i ∈ W^{k+1,p}(V i)`, then its restriction to `U` is the
+order-`k` part of some `v ∈ W^{k+1,p}(U)` with `‖v‖ ≤ ∑ᵢ ‖w i‖`. -/
+theorem exists_lowerOrder_eq_restrictL_of_forall_lowerOrder_eq_restrictL [Fintype ι]
+    {U : Opens E} {V : ι → Opens E} (hU : U ≤ Omega) (hle : ∀ i, V i ≤ Omega)
+    (hcov : U ≤ ⨆ i, V i) {k : ℕ} (u : Wkp mu Omega p k) (w : ∀ i, Wkp mu (V i) p (k + 1))
+    (hw : ∀ i, lowerOrder k (w i) = restrictL (hle i) k u) :
+    ∃ v : Wkp mu U p (k + 1), lowerOrder k v = restrictL hU k u ∧ ‖v‖ ≤ ∑ i, ‖w i‖ := by
+  have hcov' : U ≤ ⨆ i, U ⊓ V i := fun x hx => by
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (hcov hx)
+    exact Opens.mem_iSup.2 ⟨i, Opens.mem_inf.2 ⟨hx, hi⟩⟩
+  -- The restrictions of the `w i` to `U ⊓ V i` all have the value of `u`.
+  obtain ⟨v, hv, -, hvn⟩ := exists_glue (fun _ => inf_le_left) hcov' (k + 1)
+    (fun i => restrictL inf_le_right (k + 1) (w i)) (u := value k u) fun i => by
+      refine (value_restrictL_ae inf_le_right (k + 1) (w i)).trans
+        (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_right) ?_)
+      rw [value_succ, hw i]
+      exact value_restrictL_ae (hle i) k u
+  refine ⟨v, ext k (Lp.ext ?_), hvn.trans (Finset.sum_le_sum fun i _ => norm_restrictL_le _ _ _)⟩
+  rw [← value_succ]
+  exact hv.trans (value_restrictL_ae hU k u).symm
 
 end TauCeti.Wkp
