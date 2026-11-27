@@ -128,7 +128,8 @@ theorem twist_algEquiv_mul {K : Type*} [Field K] [Algebra K (PadicAlgCl p)] (i :
 theorem twist_ne_zero (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : twist i σ ≠ 0 := by
   simp [twist]
 
-/-- The twist scalars lie in `ℚ_p`, so they are fixed by every automorphism over a subfield. -/
+/-- The twist scalars lie in `ℚ_p`, so they are fixed by every automorphism over a subfield `K`
+containing `ℚ_p`. -/
 theorem smul_twist {K : Type*} [Field K] [Algebra ℚ_[p] K] [Algebra K (PadicAlgCl p)]
     [IsScalarTower ℚ_[p] K (PadicAlgCl p)] (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (i : ℤ)
     (τ : PadicAlgCl p ≃+* PadicAlgCl p) : σ • twist i τ = twist i τ := by

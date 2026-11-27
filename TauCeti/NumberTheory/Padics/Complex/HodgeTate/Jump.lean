@@ -41,7 +41,7 @@ the independent family stays independent on finitely many points
 of `1` serves. Tate's theorem near `1`
 (`PadicComplex.eq_zero_of_eventually_twist_mul_smul_eq`) kills `c` when
 `k i ≠ u`, and the Ax–Sen–Tate theorem (`PadicComplex.mem_range_coe_iff_eventually_smul_eq`) makes
-`c` algebraic when `k i = u`. Consequently a `ℂ_p`-basis of the semilinear maps consisting of
+`c` algebraic when `k i = u`. Consequently a finite `ℂ_p`-basis of the semilinear maps consisting of
 Hodge–Tate maps of weights `k i` computes the jumps: they form the multiset of the `k i`.
 
 ## Main definitions
@@ -55,7 +55,8 @@ Hodge–Tate maps of weights `k i` computes the jumps: they form the multiset of
 * `PadicComplex.mem_span_image_of_mem_hodgeTateMaps`: a Hodge–Tate map of weight `u` in the
   `ℂ_p`-span of Hodge–Tate maps lies in the `PadicAlgCl p`-span of those of weight `u`.
 * `PadicComplex.disjoint_hodgeTateMaps`: Hodge–Tate maps of different weights meet only in `0`.
-* `PadicComplex.hasHodgeTateJumps_of_basis`: a `ℂ_p`-basis of Hodge–Tate maps computes the jumps.
+* `PadicComplex.hasHodgeTateJumps_of_basis`: a finite `ℂ_p`-basis of Hodge–Tate maps computes the
+  jumps.
 
 ## References
 
