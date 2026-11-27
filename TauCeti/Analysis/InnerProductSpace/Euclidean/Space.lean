@@ -34,7 +34,8 @@ closed disks in which characteristic maps of CW complexes are defined onto compl
 disks. The real inner product of `ℂⁱ`, the one for which its unit sphere is a manifold, is the real
 part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`). Reindexing the
 coordinates of a real Euclidean vector along an equivalence keeps the sum of their squares, the
-squared norm (`EuclideanSpace.sum_sq_apply_equiv`).
+squared norm (`EuclideanSpace.sum_sq_apply_equiv`). The self pairing `star x ⬝ᵥ x` of a vector
+of `𝕜ⁱ` is its squared norm (`EuclideanSpace.star_dotProduct_self_eq_norm_sq`).
 -/
 
 public section
@@ -52,6 +53,13 @@ sum of their squares, `‖v‖²`. -/
 theorem EuclideanSpace.sum_sq_apply_equiv {ι κ : Type*} [Fintype ι] [Fintype κ] (e : κ ≃ ι)
     (v : EuclideanSpace ℝ ι) : ∑ k, v (e k) ^ 2 = ‖v‖ ^ 2 := by
   rw [EuclideanSpace.real_norm_sq_eq, e.sum_comp (fun i ↦ v i ^ 2)]
+
+/-- The self pairing `star x ⬝ᵥ x` of a vector of Euclidean space is its squared norm. -/
+theorem EuclideanSpace.star_dotProduct_self_eq_norm_sq {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+    (x : EuclideanSpace 𝕜 ι) :
+    star (WithLp.ofLp x) ⬝ᵥ WithLp.ofLp x = ((‖x‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [dotProduct_comm, ← inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K]
+  norm_cast
 
 namespace TauCeti
 
