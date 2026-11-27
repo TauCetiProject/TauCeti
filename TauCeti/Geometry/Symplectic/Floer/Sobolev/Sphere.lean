@@ -61,7 +61,7 @@ sections are dense in `W^{1,2}` of the sphere.
   they bound the `L²` norm of `η'` near `ζ = 0` by its `L²` norm on an annulus. Changing
   variables along the inversion, `∫ ‖η‖² ≤ A ∫_{|w| ≤ b} ‖η‖²` for every cokernel element, and
   Peetre's argument
-  (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_integral_norm_sq_le`)
+  (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_setIntegral_norm_sq_le`)
   shows that the cokernel is finite-dimensional
   (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`),
   so that `D_u` is Fredholm (`isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base`),
@@ -593,33 +593,20 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereW
   -- The structure at infinity is the compatible structure `J₀`.
   have hT : T ≤ ‖((|T|, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
   have h₀ : ω.Compatible J₀ := by simpa [hJ₀ _ hT] using hc (|T|, 0)
-  -- `J` is bounded along `u`: it is continuous on the compact ball `‖w‖ ≤ T`, and `J₀` outside.
-  have hJc : Continuous fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap :=
-    continuous_iff_continuousAt.2 fun z ↦
-    (hJ z).continuousAt.comp (f := fun z ↦ (z, u z))
-      (continuousAt_id.prodMk (hu.continuous.continuousAt))
-  obtain ⟨B₁, hB₁⟩ := (isCompact_closedBall (0 : ℝ × ℝ) T).exists_bound_of_continuousOn
-    hJc.continuousOn
-  have hB (z : ℝ × ℝ) : ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤
-      max B₁ ‖J₀.toLinearMap.toContinuousLinearMap‖ := by
-    rcases le_or_gt ‖z‖ T with hz | hz
-    · exact (hB₁ z (mem_closedBall_zero_iff.2 hz)).trans (le_max_left _ _)
-    · rw [hJ₀ z hz.le]
-      exact le_max_right _ _
-  have hρ1 (z : ℝ × ℝ) : sphereWeight z ≤ 1 := by
-    rw [sphereWeight_apply]
-    exact inv_le_one_of_one_le₀ (one_le_pow₀ (by nlinarith [sq_nonneg z.1, sq_nonneg z.2]))
   obtain ⟨A, b, hglob⟩ :=
     exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero_of_eq_base (u := u) ω h₀ hJ₀
       hKs₀ hKt₀
-  exact finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_integral_norm_sq_le ω
-    isWeight_sphereWeight hρ1 hJ hKs hKt hu hc hB
+  refine finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_setIntegral_norm_sq_le
+    ω isWeight_sphereWeight (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z)
+    (fun z _ ↦ hu.contDiffAt) (fun z _ ↦ hc z)
     (ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
       (fun z hz y ↦ by rw [hJ₀ z hz y]) hKs₀ hKt₀ (fun z ↦ (hJ z).of_le (by norm_num))
       (fun z ↦ (hKs z).of_le (by norm_num)) (fun z ↦ (hKt z).of_le (by norm_num))
       (hu.of_le (by norm_num)))
-    hglob
+    (A := A) (isCompact_setOf_norm_equivRealProdCLM_symm_le b) (subset_univ _) fun η hη hD hηi ↦ ?_
+  rw [Measure.restrict_univ]
+  exact hglob (contDiffOn_univ.1 hη) (fun z ↦ hD z (mem_univ z)) (integrableOn_univ.1 hηi)
 
 /-- **The linearized operator on the sphere is Fredholm.** Let the Floer data `J`, `K_s`, `K_t` on
 the plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero perturbation on `‖w‖ ≥ T`, a

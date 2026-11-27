@@ -1380,4 +1380,38 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart_of_movingEnds (ha : �
     IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart inf)) (Ioi b ×ˢ Icc 0 1) :=
   SymplecticForm.integrableOn_sobolevDensity_comp_movingEndChart ha hξ hξc hξU none b
 
+/-- If `J` is `C¹` along `u` and `u` is `C¹` on the sphere with moving input ends, the plane minus
+the centers `c i`, a `C¹` covector field with compact support there has integrable `W^{1,2}`
+energy density, read as the pulled-back form (`TauCeti.Floer.covectorPullback`) in the chart
+`ψ_i = realChart (z ↦ c i + a i φ₀(z))` of the input end `i`, over every half-cylinder
+`(b, ∞) × [0, 1]`: it vanishes far out on the end. -/
+theorem integrableOn_sobolevDensity_covectorPullback_realChart_of_movingEnds (ha : ∀ i, a i ≠ 0)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hu : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1 u z)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηU : tsupport η ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) (i : ι) (b : ℝ) :
+    IntegrableOn (sobolevDensity (covectorPullback
+      (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z) J u η)) (Ioi b ×ˢ Icc 0 1) :=
+  SymplecticForm.integrableOn_sobolevDensity_covectorPullback_movingEndChart ha hJ hu hη hηc hηU
+    (some i) b
+
+/-- If `J` is `C¹` along `u` and `u` is `C¹` on the sphere with moving input ends, the plane minus
+the centers `c i`, a `C¹` covector field with compact support there has integrable `W^{1,2}`
+energy density, read as the pulled-back form (`TauCeti.Floer.covectorPullback`) in the positive
+end chart `φ'_∞` of the output end, over every half-cylinder `(b, ∞) × [0, 1]`: it vanishes far
+out on the end. -/
+theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart_of_movingEnds
+    (ha : ∀ i, a i ≠ 0) {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) →
+      ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hu : ∀ z : ℝ × ℝ, (∀ i, Complex.equivRealProdCLM.symm z ≠ c i) → ContDiffAt ℝ 1 u z)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηU : tsupport η ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) (b : ℝ) :
+    IntegrableOn (sobolevDensity (covectorPullback (positiveEndChart inf) J u η))
+      (Ioi b ×ˢ Icc 0 1) :=
+  SymplecticForm.integrableOn_sobolevDensity_covectorPullback_movingEndChart ha hJ hu hη hηc hηU
+    none b
+
 end TauCeti.Floer

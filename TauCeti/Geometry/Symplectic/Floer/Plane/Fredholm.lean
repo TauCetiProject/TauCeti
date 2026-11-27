@@ -45,9 +45,9 @@ so that `D_u` is Fredholm.
   `η' = η (φ ·) ∘ (a + b J)` controls the `L²` norm of `η`, inverting `a + b J`
   (`TauCeti.AlmostComplexStructure.mul_opNorm_le_opNorm_comp_smul_add_smul`) and changing
   variables along the end lift `φ`. Letting `n → ∞` gives `∫ ‖η‖² ≤ A ∫_{‖w‖ ≤ b} ‖η‖²`.
-* **Peetre's argument.** Given this estimate, Peetre's argument for weights `ρ ≤ 1` on the plane
-  (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_integral_norm_sq_le`, in
-  the namespace `TauCeti.SymplecticForm`) shows that the orthogonal complement of the range is
+* **Peetre's argument.** Given this estimate, Peetre's argument
+  (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_setIntegral_norm_sq_le`,
+  in the namespace `TauCeti.SymplecticForm`) shows that the orthogonal complement of the range is
   finite-dimensional
   (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive`, in the namespace
   `TauCeti.SymplecticForm`), and `D_u` is Fredholm
@@ -477,10 +477,13 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positiv
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).rangeᗮ := by
   obtain ⟨A, -, hglob⟩ := exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero ω
     (fun z ↦ (hJ z).of_le (by norm_num)) (hu.of_le (by norm_num)) hB hadj
-  refine finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_integral_norm_sq_le ω
-    PSSPlane.isWeight_cylindricalWeight (fun z ↦ ?_) hJ hKs hKt hu hc hB hM hglob
-  rw [PSSPlane.cylindricalWeight_apply]
-  exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _))
+  refine finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_setIntegral_norm_sq_le
+    ω PSSPlane.isWeight_cylindricalWeight (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z)
+    (fun z _ ↦ hu.contDiffAt) (fun z _ ↦ hc z) hM (A := A)
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le (Real.exp (2 * π * (R + 1)))) (subset_univ _)
+    fun η hη hD hηi ↦ ?_
+  rw [Measure.restrict_univ]
+  exact hglob (contDiffOn_univ.1 hη) (fun z ↦ hD z (mem_univ z)) (integrableOn_univ.1 hηi)
 
 /-- **The linearized operator of a PSS plane is Fredholm.** Let `J` be `C³` and `K_s`, `K_t` be
 `C⁴` at the points `(z, u z)` along a `C³` map `u`, with `J` compatible along `u` and
