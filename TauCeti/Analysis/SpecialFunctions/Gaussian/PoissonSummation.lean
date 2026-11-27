@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
-import Mathlib.NumberTheory.LSeries.HurwitzZeta
 import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
@@ -257,12 +257,30 @@ theorem summable_periodic_gaussian {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
   refine (mul_le_mul_of_nonneg_right hcoeff (by positivity)).trans_eq ?_
   ring
 
-private theorem tsum_periodic_gaussian_eq_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
-    {j : ℕ} (hj : j ≤ 1) {t : ℝ} (ht : t ≠ 0) :
+/-- Split a periodic Gaussian sum over the integers into the even or odd Hurwitz theta
+kernels of the residue classes, according to the degree of the monomial. -/
+theorem tsum_periodic_gaussian_eq_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
+    {j : ℕ} (hj : j ≤ 1) (t : ℝ) :
     (∑' n : ℤ, Φ n * W j ((n : ℝ) * t)) =
       ((N : ℝ) * t : ℂ) ^ j * ∑ a : ZMod N, Φ a *
         (if j = 0 then (evenKernel (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)
           else (oddKernel (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ)) := by
+  obtain rfl | ht := eq_or_ne t 0
+  · interval_cases j
+    · suffices ∑' n : ℤ, Φ n = 0 by
+        simpa [evenKernel_undef _ le_rfl] using this
+      -- A summable periodic sequence vanishes on every residue class.
+      by_cases h : Summable (fun n : ℤ ↦ Φ n)
+      · have hΦ (a : ZMod N) : Φ a = 0 := by
+          have hinj : Function.Injective (fun k : ℤ ↦ k * N + a.val) := by
+            intro k l hkl
+            exact (mul_right_cancel₀ (by exact_mod_cast NeZero.ne N : (N : ℤ) ≠ 0))
+              (add_right_cancel hkl)
+          refine (summable_const_iff _).mp ((h.comp_injective hinj).congr fun k ↦ ?_)
+          simp
+        simp [hΦ]
+      · exact tsum_eq_zero_of_not_summable h
+    · simp
   have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hsq : 0 < ((N : ℝ) * t) ^ 2 := sq_pos_of_ne_zero (mul_ne_zero hN ht)
   rw [TauCeti.tsum_int_eq_sum_fin_tsum (summable_periodic_gaussian Φ j ht) N]
@@ -348,7 +366,7 @@ theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → �
       exact congrArg ofReal (by simpa only [y, one_pow] using
         (div_pow (1 : ℝ) ((N : ℝ) * t) 3).symm)
   -- Pass from the residue classes to the dual integer sum using the kernel identities.
-  rw [tsum_periodic_gaussian_eq_residue_sum Φ hj ht.ne']
+  rw [tsum_periodic_gaussian_eq_residue_sum Φ hj t]
   simp_rw [hkernel, mul_left_comm (Φ _), ← mul_sum,
     ← (hasSum_weighted_fourier_kernel Φ hj hy.ne').tsum_eq]
   simp_rw [← tsum_mul_left]
