@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.Analysis.Normed.Ring.WithAbs
+import TauCeti.Analysis.Normed.Field.WithAbs
 import TauCeti.Analysis.Complex.Basic
 
 /-!
@@ -59,9 +60,8 @@ instance Completion.instCharZero (w : InfinitePlace K) : CharZero w.Completion :
 
 /-- The algebra map of `K` into its completion at an infinite place is the coercion. -/
 theorem Completion.algebraMap_apply_eq_coe (w : InfinitePlace K) (x : K) :
-    algebraMap K w.Completion x = (x : w.Completion) := by
-  rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-    Algebra.algebraMap_self_apply]
+    algebraMap K w.Completion x = (x : w.Completion) :=
+  AbsoluteValue.Completion.algebraMap_apply_eq_coe w.val x
 
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
 instance {R : Type*} [CommSemiring R] [Algebra R K] (w : InfinitePlace K) :

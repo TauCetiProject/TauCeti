@@ -64,6 +64,18 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_apply_eq {F : Type*} [Field F]
   ext y
   rw [← congrFun hcw y, hc1, Real.rpow_one]
 
+/-- Equivalent absolute values restricting to the same nontrivial absolute value are equal. -/
+theorem _root_.AbsoluteValue.IsEquiv.eq_of_liesOver {K L : Type*} [Field K] [Field L]
+    [Algebra K L] {v : AbsoluteValue K ℝ} {w w' : AbsoluteValue L ℝ} [w.LiesOver v] [w'.LiesOver v]
+    (h : w.IsEquiv w') (hv : v.IsNontrivial) : w = w' := by
+  obtain ⟨x, hx₀, hx⟩ := hv
+  have hw : w (algebraMap K L x) = v x := by
+    rw [← AbsoluteValue.under_apply, AbsoluteValue.LiesOver.under_eq w v]
+  have hw' : w' (algebraMap K L x) = v x := by
+    rw [← AbsoluteValue.under_apply, AbsoluteValue.LiesOver.under_eq w' v]
+  exact h.eq_of_apply_eq (by simpa only [map_zero] using (algebraMap K L).injective.ne hx₀)
+    (hw ▸ hx) (hw.trans hw'.symm)
+
 /-- The standard absolute values on `ℚ`: the real one and the `q`-adic ones. -/
 def _root_.Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=
   a = Rat.AbsoluteValue.real ∨ ∃ (q : ℕ) (_ : Fact q.Prime), a = Rat.AbsoluteValue.padic q

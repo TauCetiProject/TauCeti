@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Analysis.Normed.Field.WithAbs
-public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import TauCeti.Analysis.Normed.Ring.WithAbs
 
-import Mathlib.Algebra.Order.Ring.IsNonarchimedean
-import Mathlib.Analysis.Normed.Field.Ultra
+import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Topology.MetricSpace.Ultra.Completion
 
 /-!
 # Absolute-value completions
@@ -64,27 +64,31 @@ section Basic
 
 variable {K : Type*} [Field K] (v : AbsoluteValue K ℝ)
 
+/-- The algebra map into an absolute-value completion is the coercion through `WithAbs`. -/
+theorem algebraMap_apply_eq_coe (x : K) :
+    algebraMap K v.Completion x = (WithAbs.toAbs v x : v.Completion) := by
+  rw [algebraMap_def, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply]
+
 /-- The norm of a scalar in the completion is its original absolute value. -/
 @[simp]
 theorem norm_algebraMap (x : K) : ‖algebraMap K v.Completion x‖ = v x := by
-  rw [algebraMap_def, norm_coe, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
-    WithAbs.ofAbs_toAbs]
+  rw [algebraMap_apply_eq_coe, norm_coe, WithAbs.ofAbs_toAbs]
 
 /-- The image of the ground field is dense in its absolute-value completion. -/
 theorem denseRange_algebraMap : DenseRange (algebraMap K v.Completion) := by
   have h : (algebraMap K v.Completion : K → v.Completion) =
       ((↑) : WithAbs v → v.Completion) ∘ (WithAbs.equiv v).symm := by
     funext x
-    rw [algebraMap_def, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply]
-    rfl
+    rw [algebraMap_apply_eq_coe, Function.comp_apply, WithAbs.equiv_symm_apply]
   rw [h]
   exact (denseRange_coe v).comp (WithAbs.equiv v).symm.surjective.denseRange (continuous_coe v)
 
 /-- The completion of a nonarchimedean absolute value is ultrametric. -/
 theorem isUltrametricDist (hv : IsNonarchimedean v) : IsUltrametricDist v.Completion :=
-  IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-    rw [← map_natCast (algebraMap K v.Completion), norm_algebraMap]
-    exact hv.apply_natCast_le_one (by simp) (map_one v)
+  letI := hv.isUltrametricDist_withAbs
+  ⟨fun x y z ↦ by
+    simpa only [(isometry_toCompletion v).dist_eq] using
+      IsUltrametricDist.dist_triangle_max x.toCompletion y.toCompletion z.toCompletion⟩
 
 /-- The completion at a nontrivial absolute value has an element of norm greater than one. -/
 theorem exists_one_lt_norm (hv : v.IsNontrivial) : ∃ x : v.Completion, 1 < ‖x‖ := by
@@ -121,6 +125,67 @@ noncomputable def normedAlgebraOfLiesOver : NormedAlgebra v.Completion w.Complet
     rw [Algebra.smul_def, norm_mul, algebraMap_apply_of_liesOver, norm_map]
 
 end LiesOver
+
+section IsEquiv
+
+variable {K : Type*} [Field K] {v w : AbsoluteValue K ℝ}
+
+/-- Equivalent absolute values give ring-isomorphic completions via the identity on the field. -/
+noncomputable def _root_.AbsoluteValue.IsEquiv.completionEquiv (h : v.IsEquiv w) :
+    v.Completion ≃+* w.Completion :=
+  let e := UniformSpace.Completion.mapRingEquiv (WithAbs.congr v w (.refl K))
+    ((isEquiv_iff_isHomeomorph v w).mp h).continuous
+    (WithAbs.congr_symm v w (.refl K) ▸ ((isEquiv_iff_isHomeomorph w v).mp h.symm).continuous)
+  (equiv v).trans (e.trans (equiv w).symm)
+
+/-- The comparison of completions at equivalent absolute values is continuous. -/
+theorem _root_.AbsoluteValue.IsEquiv.continuous_completionEquiv (h : v.IsEquiv w) :
+    Continuous h.completionEquiv := by
+  have hc : Continuous (UniformSpace.Completion.map (WithAbs.congr v w (.refl K)) ∘
+      toCompletion (v := v)) :=
+    UniformSpace.Completion.continuous_map.comp (continuous_toCompletion v)
+  apply ((continuous_ofCompletion w).comp hc).congr
+  intro x
+  simp only [IsEquiv.completionEquiv, RingEquiv.trans_apply, equiv_apply, equiv_symm_apply,
+    UniformSpace.Completion.mapRingEquiv_apply, Function.comp_apply]
+
+/-- The comparison of completions at equivalent absolute values extends the identity. -/
+@[simp]
+theorem _root_.AbsoluteValue.IsEquiv.completionEquiv_coe (h : v.IsEquiv w) (x : WithAbs v) :
+    h.completionEquiv (x : v.Completion) =
+      (WithAbs.toAbs w x.ofAbs : w.Completion) := by
+  have hu : UniformContinuous (WithAbs.congr v w (.refl K)) := by
+    simpa only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] using
+      uniformContinuous_addMonoidHom_of_continuous
+        (f := (WithAbs.congr v w (.refl K)).toRingHom)
+        ((isEquiv_iff_isHomeomorph v w).mp h).continuous
+  rw [IsEquiv.completionEquiv, RingEquiv.trans_apply, RingEquiv.trans_apply, equiv_apply,
+    equiv_symm_apply, toCompletion_coe, UniformSpace.Completion.mapRingEquiv_apply,
+    UniformSpace.Completion.map_coe hu, ofCompletion_coe, WithAbs.congr_apply, RingEquiv.refl_apply]
+
+end IsEquiv
+
+section Degree
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] {w w' : AbsoluteValue L ℝ}
+
+/-- The local degree depends only on the equivalence class of the extending absolute value. -/
+theorem _root_.AbsoluteValue.IsEquiv.degree_eq (h : w.IsEquiv w') : w.degree K = w'.degree K := by
+  let v := w.under K
+  let v' := w'.under K
+  have hv : v.IsEquiv v' := fun x y ↦ by
+    simpa only [v, v', under_apply] using h (algebraMap K L x) (algebraMap K L y)
+  let := algebraOfLiesOver v w
+  let := algebraOfLiesOver v' w'
+  rw [AbsoluteValue.degree_eq v w, AbsoluteValue.degree_eq v' w']
+  apply Algebra.finrank_eq_of_equiv_equiv hv.completionEquiv h.completionEquiv
+  simp only [algebraMap_eq_of_liesOver v w, algebraMap_eq_of_liesOver v' w']
+  refine DFunLike.ext' (Completion.ext ((continuous_map v' w').comp hv.continuous_completionEquiv)
+    (h.continuous_completionEquiv.comp (continuous_map v w)) fun x ↦ ?_)
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    IsEquiv.completionEquiv_coe, map_coe, WithAbs.map_apply]
+
+end Degree
 
 section Congr
 
@@ -161,8 +226,7 @@ theorem congr_coe (x : WithAbs v) :
 @[simp]
 theorem congr_algebraMap (x : K) :
     congr σ hσ (algebraMap K v.Completion x) = algebraMap L w.Completion (σ x) := by
-  rw [algebraMap_def, algebraMap_def, congr_coe, WithAbs.algebraMap_right_apply,
-    WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply, Algebra.algebraMap_self_apply,
+  rw [algebraMap_apply_eq_coe, algebraMap_apply_eq_coe, congr_coe,
     WithAbs.congr_apply, WithAbs.ofAbs_toAbs]
 
 /-- `AbsoluteValue.Completion.congr` is an isometry. -/
@@ -212,8 +276,7 @@ theorem eq_congr_of_continuous {f : v.Completion → w.Completion} (hf : Continu
     f = congr σ hσ :=
   ext hf (continuous_congr hσ) fun x ↦ by
     have hx : (x : v.Completion) = algebraMap K v.Completion x.ofAbs := by
-      rw [algebraMap_def, WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
-        WithAbs.toAbs_ofAbs]
+      rw [algebraMap_apply_eq_coe, WithAbs.toAbs_ofAbs]
     rw [hx, hfK, congr_algebraMap]
 
 /-- `AbsoluteValue.Completion.congr` of the identity is the identity. -/

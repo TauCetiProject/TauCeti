@@ -11,6 +11,7 @@ public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
 public import TauCeti.NumberTheory.Padics.AlgebraicClosure.Basic
 public import TauCeti.RingTheory.Valuation.Approximation
+import TauCeti.Analysis.Normed.Field.WithAbs
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
@@ -221,16 +222,9 @@ theorem weakApproximation_denseRange
   obtain ⟨Vinf, hVinf, hVinfU⟩ := (isOpen_pi_iff'.mp hUinf) y.2 hyinf
   choose aₑ haₑ using fun (v : FinitePlace K Sₑ) =>
     (v.val.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
-  have hdenseinf (w : {w : InfinitePlace K // w ∈ Sinf}) :
-      DenseRange (fun x : K => algebraMap K w.val.Completion x) := by
-    simp only [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
-    change DenseRange
-      (((↑) : WithAbs w.val.val → w.val.Completion) ∘ (WithAbs.equiv w.val.val).symm)
-    exact (AbsoluteValue.Completion.denseRange_coe (v := w.val.val)).comp
-      (WithAbs.equiv w.val.val).symm.surjective.denseRange
-      (AbsoluteValue.Completion.continuous_coe (v := w.val.val))
   choose ainf hainf using fun (w : {w : InfinitePlace K // w ∈ Sinf}) =>
-    (hdenseinf w).exists_mem_open (hVinf w).1 ⟨y.2 w, (hVinf w).2⟩
+    (AbsoluteValue.Completion.denseRange_algebraMap w.val.val).exists_mem_open
+      (hVinf w).1 ⟨y.2 w, (hVinf w).2⟩
   choose γ hγ using fun (v : FinitePlace K Sₑ) =>
     Valued.mem_nhds.mp ((hVₑ v).1.mem_nhds (haₑ v))
   choose einf heinf hballinf using fun (w : {w : InfinitePlace K // w ∈ Sinf}) =>
@@ -239,15 +233,9 @@ theorem weakApproximation_denseRange
   let εₑ : FinitePlace K Sₑ → ℤᵐ⁰ := fun v =>
     MonoidWithZeroHom.ValueGroup₀.embedding
       (γ v : (Valued.v : Valuation (v.val.adicCompletion K) ℤᵐ⁰).ValueGroup₀)
-  have hεₑ : ∀ v, εₑ v ≠ 0 := fun v => by
-    intro h
-    apply Units.ne_zero (γ v)
-    apply MonoidWithZeroHom.ValueGroup₀.embedding_injective
-    -- Unfold only the chosen radius; the value-group embedding itself remains abstract.
-    change MonoidWithZeroHom.ValueGroup₀.embedding
-      (γ v : (Valued.v : Valuation (v.val.adicCompletion K) ℤᵐ⁰).ValueGroup₀) = 0 at h
-    rw [map_zero]
-    exact h
+  have hεₑ (v) : εₑ v ≠ 0 := fun h ↦
+    Units.ne_zero (γ v) (MonoidWithZeroHom.ValueGroup₀.embedding_injective
+      (by simpa only [εₑ, map_zero] using h))
   obtain ⟨x, hxₑ, hxinf⟩ := exists_mixed_approximation aₑ ainf εₑ hεₑ einf heinf
   refine ⟨_, ?_, ⟨x, rfl⟩⟩
   apply hprod
@@ -271,9 +259,7 @@ theorem weakApproximation_denseRange
     -- `Metric.mem_nhds_iff` presents the chosen neighbourhood as this open ball.
     change dist (algebraMap K w.val.Completion x)
       (algebraMap K w.val.Completion (ainf w)) < einf w
-    rw [dist_eq_norm, ← map_sub, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
-      ← (WithAbs.equiv w.val.val).apply_symm_apply (x - ainf w),
-      AbsoluteValue.Completion.norm_coe]
+    rw [dist_eq_norm, ← map_sub, AbsoluteValue.Completion.norm_algebraMap]
     exact hxinf w
 
 /-- **Approximation at Galois `p`-adic embeddings.** Let
