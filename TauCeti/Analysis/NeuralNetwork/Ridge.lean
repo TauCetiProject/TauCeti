@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Continuous
-public import Mathlib.Topology.ContinuousMap.Algebra
 import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 import Mathlib.Topology.TietzeExtension
@@ -42,17 +41,40 @@ theorem mem_ridgeFunctions_iff {g : E → ℝ} :
     g ∈ ridgeFunctions E ↔ ∃ (a : E) (h : C(ℝ, ℝ)), (fun x ↦ h ⟪a, x⟫) = g := by
   simp only [ridgeFunctions, Set.mem_range, Prod.exists]
 
+/-- Applying a continuous profile to the inner product with a fixed direction gives a ridge
+function. -/
+@[simp]
+theorem mem_ridgeFunctions (a : E) (h : C(ℝ, ℝ)) :
+    (fun x ↦ h ⟪a, x⟫) ∈ ridgeFunctions E :=
+  mem_ridgeFunctions_iff.mpr ⟨a, h, rfl⟩
+
+/-- Every ridge function is continuous. -/
+theorem continuous_of_mem_ridgeFunctions {g : E → ℝ} (hg : g ∈ ridgeFunctions E) :
+    Continuous g := by
+  obtain ⟨a, h, rfl⟩ := mem_ridgeFunctions_iff.mp hg
+  fun_prop
+
+/-- Every finite linear combination of ridge functions is continuous. -/
+theorem continuous_of_mem_span_ridgeFunctions {g : E → ℝ}
+    (hg : g ∈ Submodule.span ℝ (ridgeFunctions E)) : Continuous g := by
+  have hspan : Submodule.span ℝ (ridgeFunctions E) ≤ continuousSubmodule E ℝ ℝ :=
+    Submodule.span_le.mpr fun _ hf ↦ continuous_of_mem_ridgeFunctions hf
+  exact hspan hg
+
 /-- On a compact subset of a real inner product space, every continuous restriction can be
 uniformly approximated by finite linear combinations of continuous ridge functions. -/
 theorem _root_.IsCompact.exists_mem_span_ridgeFunctions_dist_lt {K : Set E} (hK : IsCompact K)
     {f : E → ℝ} (hf : ContinuousOn f K) {ε : ℝ} (hε : 0 < ε) :
     ∃ g ∈ Submodule.span ℝ (ridgeFunctions E), ∀ x ∈ K, dist (f x) (g x) < ε := by
-  let e : Multiplicative E →* C(E, ℝ) :=
-    { toFun := fun a ↦ ⟨fun x ↦ Real.exp ⟪a.toAdd, x⟫, by fun_prop⟩
-      map_one' := by ext x; simp
-      map_mul' := fun a b ↦ by
+  let L : E →+ C(E, ℝ) :=
+    { toFun := fun a ↦ ⟨fun x ↦ ⟪a, x⟫, by fun_prop⟩
+      map_zero' := by ext x; simp
+      map_add' := fun a b ↦ by
         ext x
-        simp [inner_add_left, Real.exp_add] }
+        simp [inner_add_left] }
+  let e : Multiplicative E →* C(E, ℝ) :=
+    (Real.expMonoidHom.compLeftContinuous E (Real.continuous_exp.comp continuous_toAdd)).comp
+      L.toMultiplicative
   let A : Subalgebra ℝ C(E, ℝ) := Algebra.adjoin ℝ (MonoidHom.mrange e : Set C(E, ℝ))
   have hsep : A.SeparatesPoints := by
     intro x y hxy
@@ -67,16 +89,18 @@ theorem _root_.IsCompact.exists_mem_span_ridgeFunctions_dist_lt {K : Set E} (hK 
     simp only [A, Algebra.adjoin_eq_span, Submonoid.closure_eq]
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨a, rfl⟩
-    exact Submodule.subset_span (mem_ridgeFunctions_iff.mpr
-      ⟨a.toAdd, ⟨Real.exp, Real.continuous_exp⟩, rfl⟩)
+    exact Submodule.mem_comap.mpr <|
+      Submodule.subset_span (mem_ridgeFunctions a.toAdd ⟨Real.exp, Real.continuous_exp⟩)
   let fK : C(K, ℝ) := ⟨K.domRestrict f, hf.domRestrict⟩
   obtain ⟨F, hF⟩ := fK.exists_restrict_eq hK.isClosed
   obtain ⟨g, hg, happ⟩ :=
     ContinuousMap.exists_mem_subalgebra_near_continuous_of_isCompact_of_separatesPoints
       hsep F hK hε
-  refine ⟨g, hspan hg, fun x hx ↦ ?_⟩
-  have hxF : F x = f x := DFunLike.congr_fun hF ⟨x, hx⟩
-  rw [← hxF, dist_comm, Real.dist_eq, ← Real.norm_eq_abs]
-  exact happ x hx
+  refine ⟨g, ?_, fun x hx ↦ ?_⟩
+  · exact Submodule.mem_comap.mp (hspan ((Subalgebra.mem_toSubmodule A).mpr hg))
+  have hxF : F x = f x := by
+    simpa only [ContinuousMap.restrict_apply, fK, ContinuousMap.coe_mk, Set.domRestrict_apply] using
+      DFunLike.congr_fun hF ⟨x, hx⟩
+  simpa only [← hxF, dist_eq_norm'] using happ x hx
 
 end TauCeti
