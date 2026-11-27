@@ -5,11 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
 public import Mathlib.AlgebraicGeometry.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.AlgebraicGeometry.Sites.Small
+public import TauCeti.CategoryTheory.Sites.Grothendieck
 public import TauCeti.Topology.LocallyConstant.Basic
 
 /-!
@@ -36,6 +42,13 @@ underlying space of `U`, and its global sections are the locally constant functi
 is the concrete description used to recognise constant and locally constant étale sheaves, for
 example the sheaves of sections of split finite étale covers.
 
+In addition, for any concrete category `A` whose constant-presheaf sheafification map is locally
+injective, `toSheafify` is injective on sections over any nonempty étale `S`-scheme
+(`AlgebraicGeometry.Scheme.injective_toSheafify_app_const_smallEtaleTopology`). For a ring `Λ`,
+any morphism between constant étale sheaves of `Λ`-modules whose source is finitely generated
+comes étale-locally from a constant `Λ`-linear map
+(`CategoryTheory.Sheaf.exists_etaleCover_map_constantSheaf`).
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.etaleLocallyConstantSheaf S`: the étale sheaf of locally constant
@@ -53,13 +66,17 @@ example the sheaves of sections of split finite étale covers.
   an étale sheaf.
 * `AlgebraicGeometry.Scheme.toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom`: the
   comparison sends the class of `m` to the constant function `m`.
+* `AlgebraicGeometry.Scheme.injective_toSheafify_app_const_smallEtaleTopology`: over a nonempty
+  étale `S`-scheme, `toSheafify` on a constant presheaf is injective.
+* `CategoryTheory.Sheaf.exists_etaleCover_map_constantSheaf`: a morphism between constant étale
+  sheaves of `Λ`-modules whose source is finitely generated is étale-locally constant.
 * The sheaf of locally constant functions with values in `M` is a constant sheaf in the sense of
   `CategoryTheory.Sheaf.IsConstant`.
 
 ## References
 
-* M. Artin, A. Grothendieck, J.-L. Verdier, *SGA 4*, Exposé IX, §2.0, for constant and locally
-  constant étale sheaves.
+* M. Artin, A. Grothendieck, J.-L. Verdier, *SGA 4*, Exposé IX, §2.0 and §2.7, for constant and
+  locally constant étale sheaves.
 -/
 
 public section
@@ -378,4 +395,183 @@ theorem etaleConstantSheafSectionsEquiv_symm_naturality {M M' : Type u} (φ : M 
       (etaleConstantSheafSectionsEquiv S M' U).symm (g.map φ) := by
   rw [Equiv.eq_symm_apply, etaleConstantSheafSectionsEquiv_naturality, Equiv.apply_symm_apply]
 
+/-- On a nonempty étale `S`-scheme `U`, the canonical map from `M` into the sections over `U` of
+the constant étale sheaf on `M` is injective: two elements agreeing there agree on a covering
+sieve, which must contain an étale scheme over `U`. -/
+theorem injective_toSheafify_app_const_smallEtaleTopology {S : Scheme.{u}}
+    {A : Type*} [Category* A] [HasWeakSheafify (smallEtaleTopology S) A]
+    {FA : A → A → Type*} {CD : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CD X) (CD Y)] [ConcreteCategory A FA] (M : A)
+    [Presheaf.IsLocallyInjective (smallEtaleTopology S)
+      (toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M))]
+    {U : S.Etale} (hU : Nonempty U.left) :
+    Function.Injective
+      ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app (op U)) := by
+  intro m₁ m₂ hm
+  have hmem : Presheaf.equalizerSieve (F := (Functor.const S.Etaleᵒᵖ).obj M) (X := op U) m₁ m₂ ∈
+      smallEtaleTopology S U :=
+    Presheaf.equalizerSieve_mem (smallEtaleTopology S) _ m₁ m₂ hm
+  obtain ⟨ι, V, g, hR⟩ := (Presheaf.equalizerSieve (F := (Functor.const S.Etaleᵒᵖ).obj M)
+    (X := op U) m₁ m₂).exists_eq_ofArrows
+  have hcov := (ofArrows_mem_smallEtaleTopology_iff g).mp (hR ▸ hmem)
+  obtain ⟨x⟩ := hU
+  have hx : x ∈ ⋃ i, Set.range (g i).left := hcov ▸ Set.mem_univ x
+  obtain ⟨i, _, -⟩ := Set.mem_iUnion.mp hx
+  have hg : Presheaf.equalizerSieve (F := (Functor.const S.Etaleᵒᵖ).obj M) (X := op U)
+      m₁ m₂ (g i) :=
+    hR.symm ▸ Sieve.ofArrows_mk V g i
+  simpa using hg
+
+namespace Hom
+
+/-- If a morphism `φ : const M ⟶ const N` of constant étale sheaves on `S` agrees on constant
+sections over an étale `S`-scheme `u : U ⟶ S` with a morphism `f : M ⟶ N`, then its pullback to
+`U` identifies with `const f`. -/
+lemma smallEtalePullback_map_constantSheaf_eq_of_app {S U : Scheme.{u}} (u : U ⟶ S) [Etale u]
+    {A : Type*} [Category* A] [HasWeakSheafify (smallEtaleTopology S) A]
+    [HasWeakSheafify (smallEtaleTopology U) A]
+    {FA : A → A → Type*} {CD : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CD X) (CD Y)] [ConcreteCategory A FA]
+    [(u.smallEtalePushforward A).IsRightAdjoint]
+    {M N : A} (φ : (constantSheaf (smallEtaleTopology S) A).obj M ⟶
+      (constantSheaf (smallEtaleTopology S) A).obj N) (f : M ⟶ N)
+    (hf : ∀ x : ToType M,
+      φ.hom.app (op (Etale.mk u))
+          ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app
+            (op (Etale.mk u)) x) =
+        (toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj N)).app
+          (op (Etale.mk u)) (f x)) :
+    (u.smallEtalePullbackConstantSheafIso A M).inv ≫
+        (u.smallEtalePullback A).map φ ≫
+        (u.smallEtalePullbackConstantSheafIso A N).hom =
+      (constantSheaf (smallEtaleTopology U) A).map f := by
+  let T_U : U.Etale := Etale.mk (𝟙 U)
+  let hterm_U : IsTerminal T_U :=
+    IsTerminal.isTerminalOfObj (Etale.forget U) _ CategoryTheory.Over.mkIdTerminal
+  apply ((constantSheafAdj (smallEtaleTopology U) A hterm_U).homEquiv M _).injective
+  refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
+  rw [constantSheafAdj_homEquiv_apply, constantSheafAdj_homEquiv_map]
+  simp only [ConcreteCategory.comp_apply, ObjectProperty.FullSubcategory.comp_hom,
+    NatTrans.comp_app]
+  have he := u.smallEtalePullback_map_comp_constantSheafIso_evalUnitSelf φ (hf x)
+  rw [← ConcreteCategory.comp_apply (g := u.evalUnitSelf _),
+    u.toSheafify_comp_evalUnitSelf A M, ConcreteCategory.comp_apply] at he
+  simpa only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply] using he
+
+end Hom
+
 end AlgebraicGeometry.Scheme
+
+namespace CategoryTheory.Sheaf
+
+open AlgebraicGeometry Scheme
+
+section ConstantSheafLocal
+
+variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
+
+/-- Given a surjective linear map `p : (Fin r → Λ) →ₗ[Λ] M` whose basis images land in the image
+of `toSheafify` over a nonempty étale `S`-scheme `u : U ⟶ S`, factor the evaluation of
+`φ : const M ⟶ const N` at `Etale.mk (𝟙 S)` through a `Λ`-linear map `f : M ⟶ N` over `U`. -/
+private lemma exists_hom_of_imageSieve_constantSheaf
+    {M N : ModuleCat.{u} Λ} {r : ℕ} {m : Fin r → M}
+    (hm : Function.Surjective (Fintype.linearCombination Λ m))
+    (φ : (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M ⟶
+      (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N)
+    {U : Scheme.{u}} (u : U ⟶ S) [Etale u] (hUne : Nonempty U)
+    (g : Etale.mk u ⟶ Etale.mk (𝟙 S)) {n : Fin r → N}
+    (hn : ∀ k : Fin r,
+      (toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj N)).app
+          (op (Etale.mk u)) (n k) =
+        ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N).obj.map g.op
+          (φ.hom.app (op (Etale.mk (𝟙 S)))
+            ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app
+              (op (Etale.mk (𝟙 S))) (m k)))) :
+    ∃ f : M ⟶ N, ∀ x : M,
+      φ.hom.app (op (Etale.mk u))
+          ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app
+            (op (Etale.mk u)) x) =
+        (toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj N)).app
+          (op (Etale.mk u)) (f x) := by
+  let p : (Fin r → Λ) →ₗ[Λ] M := Fintype.linearCombination Λ m
+  let q : (Fin r → Λ) →ₗ[Λ] N := Fintype.linearCombination Λ n
+  have hker : LinearMap.ker p ≤ LinearMap.ker q := by
+    intro c hc
+    rw [LinearMap.mem_ker] at hc ⊢
+    apply injective_toSheafify_app_const_smallEtaleTopology N (U := Etale.mk u) hUne
+    have hnat : ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N).obj.map g.op
+        (φ.hom.app (op (Etale.mk (𝟙 S)))
+          ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app
+            (op (Etale.mk (𝟙 S))) (p c))) = 0 := by
+      rw [hc, map_zero, map_zero, map_zero]
+    rw [map_zero, ← hnat]
+    simp only [p, q, Fintype.linearCombination_apply, map_sum, map_smul]
+    exact Finset.sum_congr rfl fun k _ ↦ congrArg (c k • ·) (hn k)
+  let f : M →ₗ[Λ] N :=
+    ((LinearMap.ker p).liftQ q hker).comp (p.quotKerEquivOfSurjective hm).symm.toLinearMap
+  have hf_eq (c : Fin r → Λ) : f (p c) = q c := by
+    have hq : (p.quotKerEquivOfSurjective hm).symm (p c) = Submodule.Quotient.mk c :=
+      (p.quotKerEquivOfSurjective hm).symm_apply_eq.mpr rfl
+    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, hq, Submodule.liftQ_apply]
+  refine ⟨ModuleCat.ofHom f, fun x ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := hm x
+  have hnat : φ.hom.app (op (Etale.mk u))
+      (((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M).obj.map g.op
+        ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app
+          (op (Etale.mk (𝟙 S))) (p c))) =
+      ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N).obj.map g.op
+        (φ.hom.app (op (Etale.mk (𝟙 S)))
+          ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app
+            (op (Etale.mk (𝟙 S))) (p c))) := by
+    rw [← ConcreteCategory.comp_apply, φ.hom.naturality g.op, ConcreteCategory.comp_apply]
+  rw [toSheafify_app_const_map_apply] at hnat
+  rw [hnat, ConcreteCategory.hom_ofHom, hf_eq c]
+  simp only [p, q, Fintype.linearCombination_apply, map_sum, map_smul]
+  exact Finset.sum_congr rfl fun k _ ↦ congrArg (c k • ·) (hn k).symm
+
+/-- **Local constancy of morphisms between constant sheaves.** Let `φ : const M ⟶ const N` be a
+morphism of constant étale sheaves of `Λ`-modules on `S`, with `M` finitely generated. Then there
+exists a `Type u`-indexed jointly surjective étale cover `u : ∀ i, U i ⟶ S` such that over each
+`U i`, the pullback of `φ` identifies (under `smallEtalePullbackConstantSheafIso`) with the constant
+sheaf on a `Λ`-linear map `f i : M ⟶ N`. -/
+theorem exists_etaleCover_map_constantSheaf {M N : ModuleCat.{u} Λ} [Module.Finite Λ M]
+    (φ : (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M ⟶
+      (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N) :
+    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (_ : ∀ i, Etale (u i)),
+      (⋃ i, Set.range (u i) = .univ) ∧
+        ∀ i, ∃ f : M ⟶ N,
+          ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) M).inv ≫
+            ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ ≫
+            ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) N).hom =
+              (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map f := by
+  obtain ⟨r, p_hom, hm⟩ := Module.Finite.exists_fin' Λ M
+  let m : Fin r → M := fun k ↦ p_hom (Pi.single k 1)
+  have hm' : Function.Surjective (Fintype.linearCombination Λ m) := by
+    intro y
+    obtain ⟨c, rfl⟩ := hm y
+    refine ⟨c, ?_⟩
+    conv_rhs => rw [pi_eq_sum_univ' c]
+    simp [m, map_sum, map_smul, Fintype.linearCombination_apply]
+  let T_S : S.Etale := Etale.mk (𝟙 S)
+  let σ : M → ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N).obj.obj
+      (op T_S) :=
+    fun a ↦ φ.hom.app (op T_S)
+      ((toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj M)).app (op T_S) a)
+  let R := ⨅ k : Fin r, Presheaf.imageSieve
+    (toSheafify (smallEtaleTopology S) ((Functor.const S.Etaleᵒᵖ).obj N)) (σ (m k))
+  have hR : R ∈ smallEtaleTopology S T_S :=
+    (smallEtaleTopology S).iInf_mem fun k ↦
+      Presheaf.imageSieve_mem (smallEtaleTopology S) _ (σ (m k))
+  obtain ⟨ι, U, u, hu_et, hUne, hgR, hcov⟩ :=
+    exists_etaleCover_of_mem_smallEtaleTopology_terminal hR
+  refine ⟨ι, U, u, hu_et, hcov, fun i ↦ ?_⟩
+  have := hu_et i
+  obtain ⟨gi, hgi⟩ := hgR i
+  choose n hn using fun k : Fin r ↦ (iInf_le _ k : R ≤ _) _ hgi
+  obtain ⟨f, hf⟩ := exists_hom_of_imageSieve_constantSheaf hm' φ (u i) (hUne i) gi hn
+  exact ⟨f, (u i).smallEtalePullback_map_constantSheaf_eq_of_app φ f hf⟩
+
+end ConstantSheafLocal
+
+end CategoryTheory.Sheaf

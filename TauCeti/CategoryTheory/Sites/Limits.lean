@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.BinaryProducts
 public import Mathlib.CategoryTheory.Limits.Types.Products
+public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.PreservesSheafification
@@ -24,7 +26,10 @@ on the underlying presheaves (Mathlib's `CategoryTheory.Sites.Limits`).
 Sheafifying sectionwise composition also preserves finite limits when the coefficient functor
 does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`), and so does the constant
 sheaf functor when sheafification is left exact
-(`CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`).
+(`CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`). The constant sheaf functor also
+preserves finite colimits whenever sheafification exists
+(`CategoryTheory.Sheaf.preservesFiniteColimits_constantSheaf`), hence preserves short exact
+sequences between abelian categories (`CategoryTheory.Sheaf.shortExact_map_constantSheaf`).
 
 For sheaves of types, the sections of a binary product `F ⨯ G` over `W` are pairs of sections:
 any sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`
@@ -69,6 +74,19 @@ instance preservesFiniteLimits_composeAndSheafify {A B : Type*} [Category* A] [C
 instance preservesFiniteLimits_constantSheaf (A : Type*) [Category* A] [HasSheafify J A] :
     PreservesFiniteLimits (constantSheaf J A) :=
   comp_preservesFiniteLimits _ _
+
+/-- The constant sheaf functor preserves finite colimits when sheafification exists. -/
+instance preservesFiniteColimits_constantSheaf (A : Type*) [Category* A] [HasWeakSheafify J A] :
+    PreservesFiniteColimits (constantSheaf J A) where
+  preservesFiniteColimits K _ _ :=
+    inferInstanceAs (PreservesColimitsOfShape K (Functor.const Cᵒᵖ ⋙ presheafToSheaf J A))
+
+/-- The constant sheaf functor on an abelian category with sheafification preserves short exact
+sequences. -/
+theorem shortExact_map_constantSheaf {A : Type*} [Category* A] [Abelian A] [HasSheafify J A]
+    {T : ShortComplex A} (hT : T.ShortExact) :
+    (T.map (constantSheaf J A)).ShortExact :=
+  hT.map_of_exact _
 
 variable {J} in
 /-- Sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`. -/
