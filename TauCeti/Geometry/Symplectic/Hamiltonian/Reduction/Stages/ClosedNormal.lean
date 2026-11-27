@@ -52,9 +52,10 @@ for arbitrary presentations of the reduced spaces) takes as input.
   (`IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_mk'_eq_and_isEquivariantMomentMap`,
   from the abstract residual moment map
   `IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_eq_and_isEquivariantMomentMap`).
-* **The residual action is proper, and free over `μ⁻¹(0)`.** These are the hypotheses under which
-  the second stage, the reduction of `Z₁ ⧸ N` by `G ⧸ N` at `0`, is again a Marsden–Weinstein–Meyer
-  reduction. If `G` acts properly on `M`, then `G ⧸ N` acts properly on `Z₁ ⧸ N`
+* **The residual action is proper, with stabilizers the images of stabilizers in `G`.** These
+  supply the properness and freeness hypotheses under which the second stage, the reduction of
+  `Z₁ ⧸ N` by `G ⧸ N` at `0`, is again a Marsden–Weinstein–Meyer reduction. If `G` acts properly
+  on `M`, then `G ⧸ N` acts properly on `Z₁ ⧸ N`
   (`IsEquivariantMomentMap.properSMul_quotientGroup_subtypeLevel`), because `Z₁` is closed in the
   locally compact manifold `M` (`TauCeti.SmoothTwoForm.IsMomentMap.isClosed_preimage_singleton`) and
   properness descends to orbit spaces (`MulAction.orbitRel.Quotient.properSMul_quotientGroup`).
@@ -525,8 +526,7 @@ theorem properSMul_quotientGroup_subtypeLevel [ProperSMul G M] (hμ : σ.IsEquiv
 omit [I'.Boundaryless] in
 /-- **Stabilizers of the residual action.** An element of `G ⧸ N` fixes the class `[z]` of a point
 `z` of the first-stage level `μ_N⁻¹(0)` exactly when it is the image of an element of `G` fixing
-`z` in `M`. In particular `G ⧸ N` acts freely at `[z]` when `G` acts freely at `z`, as it does at
-the points of `μ⁻¹(0)` in the second stage of reduction by `N`. -/
+`z` in `M`. In particular `G ⧸ N` acts freely at `[z]` when `G` acts freely at `z`. -/
 theorem stabilizer_quotientGroup_quotientMk_subtypeLevel (hμ : σ.IsEquivariantMomentMap μ) :
     letI : T2Space G := I.t2Space_of_lieGroup ∞
     letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace

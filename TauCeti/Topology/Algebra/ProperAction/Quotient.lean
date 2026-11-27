@@ -36,7 +36,8 @@ that this residual action inherits continuity and properness from the action of 
 
 This is the topological input for reduction in stages: a Lie group acting properly on a regular
 level, reduced first by a closed normal subgroup, leaves a proper action of the quotient group on
-the first-stage reduced space, to which the quotient manifold theorem applies again.
+the first-stage reduced space. Properness is one of the hypotheses of the quotient manifold theorem
+for the second stage; freeness and smoothness of the residual action are supplied elsewhere.
 
 ## Main results
 
@@ -72,6 +73,10 @@ instance continuousSMul_quotientGroup [SeparatelyContinuousMul G] [ContinuousSMu
     rw [← (QuotientGroup.isOpenQuotientMap_mk.prodMap
       MulAction.isOpenQuotientMap_quotientMk).continuous_comp_iff]
     -- On representatives the residual action is the action of `G` followed by the projection.
+    have hcomp : (fun p : (G ⧸ N) × orbitRel.Quotient N X ↦ p.1 • p.2) ∘
+        Prod.map QuotientGroup.mk (Quotient.mk _) = Quotient.mk _ ∘ fun p : G × X ↦ p.1 • p.2 :=
+      funext fun p ↦ mk_smul_mk N p.1 p.2
+    rw [hcomp]
     exact continuous_quot_mk.comp continuous_smul
 
 /-- **The residual action is proper.** If a group `G` with separately continuous multiplication
@@ -106,10 +111,12 @@ instance properSMul_quotientGroup [SeparatelyContinuousMul G] [ProperSMul G X]
   constructor
   · rintro ⟨_, ⟨_, ⟨u, hu, rfl⟩, rfl⟩, v, hv, hgv⟩
     -- `[g] • [u] = [v]` means `n • g • u = v` for some `n ∈ N`, and `[n * g] = [g]`.
+    rw [← Quotient.mk''_eq_mk] at hgv
+    simp only [mk_smul_mk] at hgv
     obtain ⟨n, hn⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact' hgv))
     refine ⟨n * g, ⟨v, ⟨u, hu, by simpa only [mul_smul, ← Subgroup.smul_def] using hn⟩, hv⟩, ?_⟩
     rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).2 n.property, one_mul]
   · rintro ⟨h, ⟨_, ⟨u, hu, rfl⟩, hv⟩, hhg⟩
-    exact ⟨_, ⟨_, ⟨u, hu, rfl⟩, rfl⟩, ⟨h • u, hv, by rw [← hhg]; rfl⟩⟩
+    exact ⟨_, ⟨_, ⟨u, hu, rfl⟩, rfl⟩, ⟨h • u, hv, by rw [← hhg]; exact mk_smul_mk N h u⟩⟩
 
 end MulAction.orbitRel.Quotient
