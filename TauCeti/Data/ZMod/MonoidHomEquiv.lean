@@ -6,27 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-import Mathlib.GroupTheory.NoncommCoprod
 
 /-!
 # Homomorphisms out of `ℤ/Nℤ` and `(ℤ/Nℤ)²`
 
 For any `N : ℕ` (including `N = 0`), a homomorphism `ℤ/Nℤ →* G` to a group `G` is determined by
 the image of `1`, which is an element of `G` killed by `N`, and every such element arises:
-`ZMod.lift` descends its powers to `ℤ/Nℤ`. Likewise, a homomorphism `(ℤ/Nℤ)² →* G` to any group
-`G` is determined by a commuting pair of elements of `G` killed by `N` (the images of `(1, 0)` and
-`(0, 1)`), and when `G` is commutative the commutativity condition is automatic. The groups `ℤ/Nℤ`
-and `(ℤ/Nℤ)²` are written multiplicatively, as `Multiplicative (ZMod N)` and
-`Multiplicative (ZMod N × ZMod N)`.
+`ZMod.lift` descends its powers to `ℤ/Nℤ`. Likewise, for `N ≠ 0` and a commutative group `G`, a
+homomorphism `(ℤ/Nℤ)² →* G` is determined by the pair of images of `(1, 0)` and `(0, 1)`, both
+killed by `N`. The groups `ℤ/Nℤ` and `(ℤ/Nℤ)²` are written multiplicatively, as
+`Multiplicative (ZMod N)` and `Multiplicative (ZMod N × ZMod N)`.
 
 ## Main definitions
 
 * `TauCeti.zmodMonoidHomEquiv N G`: the homomorphisms `ℤ/Nℤ →* G` are the elements of `G` killed by
   `N`.
-* `TauCeti.zmodProdMonoidHomCommuteEquiv N G`: the homomorphisms `(ℤ/Nℤ)² →* G` into any group `G`
-  are the commuting pairs of elements of `G` killed by `N`.
-* `TauCeti.zmodProdMonoidHomEquiv N G`: for commutative `G`, the homomorphisms `(ℤ/Nℤ)² →* G` are
-  the pairs of elements of `G` killed by `N`.
+* `TauCeti.zmodProdMonoidHomEquiv N G`: the homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements
+  of `G` killed by `N`.
 
 ## Main results
 
@@ -35,19 +31,12 @@ and `(ℤ/Nℤ)²` are written multiplicatively, as `Multiplicative (ZMod N)` an
   power of `ofAdd 1` is `1`, and `ofAdd (-1) ≠ 1` when `N ≠ 1`.
 * `TauCeti.zmodMonoidHom_map_ofAdd_intCast`: any homomorphism `Multiplicative (ZMod N) →* G` sends
   `ofAdd (k : ZMod N)` to the `k`-th power of its value at `ofAdd 1`.
-* `TauCeti.zmodMonoidHom_ext`, `TauCeti.zmodProdMonoidHom_ext`: extensionality on the standard
-  generators `ofAdd 1`, and `ofAdd (1, 0)` and `ofAdd (0, 1)`.
+* `TauCeti.zmodMonoidHom_ext`: extensionality on the standard generator `ofAdd 1`.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_one`,
-  `TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_intCast`, `TauCeti.zmodMonoidHomEquiv_symm_apply`,
-  `TauCeti.zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_one_zero`,
-  `TauCeti.zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_zero_one`,
-  `TauCeti.zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_intCast`,
-  `TauCeti.zmodProdMonoidHomCommuteEquiv_symm_apply`,
-  `TauCeti.zmodProdMonoidHomEquiv_symm_apply_ofAdd_one_zero`,
-  `TauCeti.zmodProdMonoidHomEquiv_symm_apply_ofAdd_zero_one`,
-  `TauCeti.zmodProdMonoidHomEquiv_symm_apply_ofAdd_intCast`,
-  `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: inverse evaluation rules on generators, integer
-  casts (for arbitrary `N`), and residues modulo `N`.
+  `TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_intCast`, `TauCeti.zmodMonoidHomEquiv_symm_apply`:
+  inverse evaluation rules on `1`, integer casts (for arbitrary `N`), and residues modulo `N`.
+* `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the homomorphism of `(g, h)` sends `(a, b)` to
+  `g ^ a.val * h ^ b.val`.
 * `TauCeti.injective_zmod_three_prod_iff`: a homomorphism `(ℤ/3ℤ)² →* G` is injective exactly when
   `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel.
 -/
@@ -142,111 +131,32 @@ theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] [NeZero N] (g : {g :
   conv_lhs => rw [← ZMod.natCast_zmod_val a, ← Int.cast_natCast]
   rw [zmodMonoidHomEquiv_symm_apply_ofAdd_intCast, zpow_natCast]
 
-/-- Two homomorphisms `Multiplicative (ZMod N × ZMod N) →* G` that agree on `ofAdd (1, 0)` and
-`ofAdd (0, 1)` are equal. -/
-@[ext]
-theorem zmodProdMonoidHom_ext {G : Type*} [Monoid G]
-    {φ ψ : Multiplicative (ZMod N × ZMod N) →* G}
-    (h₁ : φ (.ofAdd (1, 0)) = ψ (.ofAdd (1, 0)))
-    (h₂ : φ (.ofAdd (0, 1)) = ψ (.ofAdd (0, 1))) : φ = ψ := by
-  let e := MulEquiv.prodMultiplicative (ZMod N) (ZMod N)
-  have hinl :
-      (φ.comp e.symm.toMonoidHom).comp (MonoidHom.inl _ _) =
-        (ψ.comp e.symm.toMonoidHom).comp (MonoidHom.inl _ _) :=
-    zmodMonoidHom_ext h₁
-  have hinr :
-      (φ.comp e.symm.toMonoidHom).comp (MonoidHom.inr _ _) =
-        (ψ.comp e.symm.toMonoidHom).comp (MonoidHom.inr _ _) :=
-    zmodMonoidHom_ext h₂
-  refine MonoidHom.ext fun x ↦ ?_
-  have hmul (f : Multiplicative (ZMod N × ZMod N) →* G) :
-      f x = (f.comp e.symm.toMonoidHom).comp (MonoidHom.inl _ _) (e x).1 *
-        (f.comp e.symm.toMonoidHom).comp (MonoidHom.inr _ _) (e x).2 := by
-    conv_lhs => rw [← e.symm_apply_apply x, ← Prod.fst_mul_snd (e x), map_mul, map_mul]
-    simp [MonoidHom.comp_apply, MonoidHom.inl_apply, MonoidHom.inr_apply]
-  rw [hmul φ, hmul ψ, hinl, hinr]
+section
 
-variable (N) in
-/-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the commuting pairs of elements of `G` killed by `N`**,
-through the images of `(1, 0)` and `(0, 1)` (valid for all `N : ℕ`, including `N = 0`). -/
-noncomputable def zmodProdMonoidHomCommuteEquiv (G : Type*) [Group G] :
-    (Multiplicative (ZMod N × ZMod N) →* G) ≃
-      {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2} where
-  toFun φ :=
-    ⟨(φ (.ofAdd (1, 0)), φ (.ofAdd (0, 1))),
-      (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative)).property,
-      (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative)).property,
-      (Commute.all (Multiplicative.ofAdd ((1, 0) : ZMod N × ZMod N)) (.ofAdd (0, 1))).map φ⟩
-  invFun p :=
-    (((zmodMonoidHomEquiv N G).symm ⟨p.val.1, p.property.1⟩).noncommCoprod
-      ((zmodMonoidHomEquiv N G).symm ⟨p.val.2, p.property.2.1⟩)
-      (fun x y ↦ by
-        obtain ⟨k, hk⟩ := Multiplicative.mem_zpowers_ofAdd_one x
-        obtain ⟨l, hl⟩ := Multiplicative.mem_zpowers_ofAdd_one y
-        rw [← hk, ← hl, map_zpow, map_zpow, zmodMonoidHomEquiv_symm_apply_ofAdd_one,
-          zmodMonoidHomEquiv_symm_apply_ofAdd_one]
-        exact p.property.2.2.zpow_zpow k l)).comp
-      (MulEquiv.prodMultiplicative (ZMod N) (ZMod N)).toMonoidHom
-  left_inv φ := by
-    ext <;> simp [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
-  right_inv p := Subtype.ext <| Prod.ext
-    (by simp [zmodMonoidHomEquiv_symm_apply_ofAdd_one])
-    (by simp [zmodMonoidHomEquiv_symm_apply_ofAdd_one])
+variable [NeZero N]
 
-/-- The pair of elements of `G` associated to a homomorphism `φ : (ℤ/Nℤ)² →* G` is
-`(φ (1, 0), φ (0, 1))`. -/
-@[simp]
-theorem coe_zmodProdMonoidHomCommuteEquiv_apply {G : Type*} [Group G]
-    (φ : Multiplicative (ZMod N × ZMod N) →* G) :
-    (zmodProdMonoidHomCommuteEquiv N G φ : G × G) = (φ (.ofAdd (1, 0)), φ (.ofAdd (0, 1))) :=
-  (rfl)
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a commuting pair `(g, h)` killed by `N` sends integer
-coordinates `(a, b)` to `g ^ a * h ^ b` (valid for all `N : ℕ`, including `N = 0`). -/
-@[simp high]
-theorem zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_intCast {G : Type*} [Group G]
-    (p : {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2}) (a b : ℤ) :
-    (zmodProdMonoidHomCommuteEquiv N G).symm p (.ofAdd ((a : ZMod N), (b : ZMod N))) =
-      p.val.1 ^ a * p.val.2 ^ b := by
-  simp [zmodProdMonoidHomCommuteEquiv]
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a commuting pair `(g, h)` killed by `N` sends `(1, 0)` to
-`g` (valid for all `N : ℕ`, including `N = 0` or `N = 1`). -/
-@[simp high]
-theorem zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_one_zero {G : Type*} [Group G]
-    (p : {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2}) :
-    (zmodProdMonoidHomCommuteEquiv N G).symm p (.ofAdd (1, 0)) = p.val.1 := by
-  simpa using zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_intCast p 1 0
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a commuting pair `(g, h)` killed by `N` sends `(0, 1)` to
-`h` (valid for all `N : ℕ`, including `N = 0` or `N = 1`). -/
-@[simp high]
-theorem zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_zero_one {G : Type*} [Group G]
-    (p : {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2}) :
-    (zmodProdMonoidHomCommuteEquiv N G).symm p (.ofAdd (0, 1)) = p.val.2 := by
-  simpa using zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_intCast p 0 1
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a commuting pair `(g, h)` killed by `N` sends `(a, b)` to
-`g ^ a.val * h ^ b.val`. -/
-@[simp]
-theorem zmodProdMonoidHomCommuteEquiv_symm_apply {G : Type*} [Group G] [NeZero N]
-    (p : {p : G × G // p.1 ^ N = 1 ∧ p.2 ^ N = 1 ∧ Commute p.1 p.2}) (a b : ZMod N) :
-    (zmodProdMonoidHomCommuteEquiv N G).symm p (.ofAdd (a, b)) =
-      p.val.1 ^ a.val * p.val.2 ^ b.val := by
-  conv_lhs => rw [← ZMod.natCast_zmod_val a, ← ZMod.natCast_zmod_val b,
-    ← Int.cast_natCast a.val, ← Int.cast_natCast b.val]
-  rw [zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_intCast, zpow_natCast, zpow_natCast]
+private theorem zmodLift_apply {G : Type*} [Group G] (g : G) (hg : g ^ N = 1)
+    (a : ZMod N) : (zmodLift g hg a).toMul = g ^ a.val :=
+  zmodMonoidHomEquiv_symm_apply ⟨g, hg⟩ a
 
 variable (N) in
 /-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the
-images of `(1, 0)` and `(0, 1)` (valid for all `N : ℕ`, including `N = 0`). -/
+images of `(1, 0)` and `(0, 1)`. -/
 noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
-    (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} :=
-  (zmodProdMonoidHomCommuteEquiv N G).trans
-    { toFun p := (⟨p.val.1, p.property.1⟩, ⟨p.val.2, p.property.2.1⟩)
-      invFun g := ⟨(g.1.val, g.2.val), g.1.property, g.2.property, Commute.all _ _⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
+    (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
+  toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
+    zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
+  invFun g := ((zmodLift g.1.val g.1.property).coprod
+      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
+  left_inv φ := by
+    refine MonoidHom.ext fun z ↦ ?_
+    obtain ⟨a, b, rfl⟩ : ∃ a b : ℕ, z = .ofAdd ((a : ZMod N), (b : ZMod N)) :=
+      ⟨z.toAdd.1.val, z.toAdd.2.val, by simp⟩
+    have hab : ((a : ZMod N), (b : ZMod N)) = a • (1, 0) + b • (0, 1) := by ext <;> simp
+    rw [hab, ofAdd_add, ofAdd_nsmul, ofAdd_nsmul, map_mul, map_pow, map_pow]
+    simp [zmodMonoidHomEquiv, zmodLift_one]
+  right_inv g := by
+    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp [zmodMonoidHomEquiv, zmodLift_one]
 
 /-- The first element of `G` of a homomorphism `φ : (ℤ/Nℤ)² →* G` is `φ (1, 0)`. -/
 @[simp]
@@ -262,38 +172,15 @@ theorem coe_zmodProdMonoidHomEquiv_apply_snd {G : Type*} [CommGroup G]
     ((zmodProdMonoidHomEquiv N G φ).2 : G) = φ (.ofAdd (0, 1)) :=
   (rfl)
 
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a pair `(g, h)` killed by `N` sends `(1, 0)` to `g`
-(valid for all `N : ℕ`, including `N = 0` or `N = 1`). -/
-@[simp high]
-theorem zmodProdMonoidHomEquiv_symm_apply_ofAdd_one_zero {G : Type*} [CommGroup G]
-    (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) :
-    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (1, 0)) = g.1.val :=
-  zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_one_zero _
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a pair `(g, h)` killed by `N` sends `(0, 1)` to `h`
-(valid for all `N : ℕ`, including `N = 0` or `N = 1`). -/
-@[simp high]
-theorem zmodProdMonoidHomEquiv_symm_apply_ofAdd_zero_one {G : Type*} [CommGroup G]
-    (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) :
-    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (0, 1)) = g.2.val :=
-  zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_zero_one _
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a pair `(g, h)` killed by `N` sends integer coordinates
-`(a, b)` to `g ^ a * h ^ b` (valid for all `N : ℕ`, including `N = 0`). -/
-@[simp high]
-theorem zmodProdMonoidHomEquiv_symm_apply_ofAdd_intCast {G : Type*} [CommGroup G]
-    (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ℤ) :
-    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd ((a : ZMod N), (b : ZMod N))) =
-      g.1.val ^ a * g.2.val ^ b :=
-  zmodProdMonoidHomCommuteEquiv_symm_apply_ofAdd_intCast _ a b
-
-/-- The homomorphism `(ℤ/Nℤ)² →* G` of a pair `(g, h)` killed by `N` sends `(a, b)` to
-`g ^ a.val * h ^ b.val`. -/
+/-- The homomorphism `(ℤ/Nℤ)² →* G` of a pair `(g, h)` of elements killed by `N` sends `(a, b)`
+to `g ^ a.val * h ^ b.val`. -/
 @[simp]
-theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G] [NeZero N]
+theorem zmodProdMonoidHomEquiv_symm_apply {G : Type*} [CommGroup G]
     (g : {g : G // g ^ N = 1} × {g : G // g ^ N = 1}) (a b : ZMod N) :
-    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val :=
-  zmodProdMonoidHomCommuteEquiv_symm_apply _ a b
+    (zmodProdMonoidHomEquiv N G).symm g (.ofAdd (a, b)) = g.1.val ^ a.val * g.2.val ^ b.val := by
+  simp [zmodProdMonoidHomEquiv, zmodLift_apply]
+
+end
 
 /-- **Injectivity on `(ℤ/3ℤ)²`.** A homomorphism `ψ : (ℤ/3ℤ)² →* G` is injective exactly when
 `(1, 0)`, `(0, 1)`, `(1, 1)` and `(-1, 1)` are not in its kernel: every nonzero element of

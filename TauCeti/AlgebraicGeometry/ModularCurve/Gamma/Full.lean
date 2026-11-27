@@ -63,7 +63,6 @@ noncomputable def universalDrinfeldBasisHom : Multiplicative (ZMod N × ZMod N) 
   (X.baseChangePointsEquiv (X.drinfeldBasisAmbient N)).symm.toMonoidHom.comp
     (X.curve.torsionPairHom N)
 
-omit [NeZero N] in
 /-- The universal Drinfeld-basis homomorphism corresponds to the universal pair of torsion points
 under the equivalence between points of a base change and points with values in its base. -/
 @[simp]
@@ -73,7 +72,6 @@ theorem baseChangePointsEquiv_universalDrinfeldBasisHom
       X.curve.torsionPairHom N a :=
   MulEquiv.apply_symm_apply _ _
 
-omit [NeZero N] in
 /-- Pulling the universal Drinfeld-basis homomorphism back along a point `x` of
 `E[N] ×_S E[N]` gives the pair of torsion points classified by `x`. -/
 theorem baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom {T : Over X.base}
@@ -84,7 +82,6 @@ theorem baseChangePointsEquiv_pointsPullback_universalDrinfeldBasisHom {T : Over
       x ≫ X.curve.torsionPairHom N a := by
   rw [baseChangePointsEquiv_pointsPullback, baseChangePointsEquiv_universalDrinfeldBasisHom]
 
-omit [NeZero N] in
 /-- Pulling the universal Drinfeld-basis homomorphism back along a point `x` of
 `E[N] ×_S E[N]` gives `ψ` exactly when `x` classifies the pair of torsion points underlying
 `ψ`. -/

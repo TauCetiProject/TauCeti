@@ -434,14 +434,12 @@ theorem torsionPairHom_ofAdd (a b : ZMod N) :
       (fst _ _ ≫ E.torsionι N) ^ a.val * (snd _ _ ≫ E.torsionι N) ^ b.val :=
   zmodProdMonoidHomEquiv_symm_apply _ _ _
 
-omit [NeZero N] in
 /-- The universal pair of points of `E[N]` sends `(1, 0)` to the first projection `P`. -/
 theorem torsionPairHom_ofAdd_one_zero :
     E.torsionPairHom N (.ofAdd (1, 0)) = fst _ _ ≫ E.torsionι N :=
   (coe_zmodProdMonoidHomEquiv_apply_fst _).symm.trans <| by
     rw [torsionPairHom, Equiv.apply_symm_apply]
 
-omit [NeZero N] in
 /-- The universal pair of points of `E[N]` sends `(0, 1)` to the second projection `Q`. -/
 theorem torsionPairHom_ofAdd_zero_one :
     E.torsionPairHom N (.ofAdd (0, 1)) = snd _ _ ≫ E.torsionι N :=

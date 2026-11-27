@@ -7,8 +7,9 @@ module
 
 public import Mathlib.GroupTheory.CoprodI
 public import Mathlib.GroupTheory.OrderOfElement
-import TauCeti.Algebra.Group.Conj
 import TauCeti.GroupTheory.CoprodI.Word
+import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Torsion
+import TauCeti.GroupTheory.GraphOfGroups.FreeProduct
 
 /-!
 # Torsion elements in indexed free products
@@ -35,15 +36,16 @@ nontrivial elements from distinct factors has infinite order.
 
 ## Implementation notes
 
-The torsion classification on `CoprodI G` uses Mathlib's reduced-word normal form
-`Monoid.CoprodI.Word.equiv`. A reduced word of length at least `2` whose first and last letters lie
-in distinct factors has no cancellation between adjacent copies, so all of its positive powers are
-nonempty reduced words (`Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`). When the first and
-last letters lie in the same factor `G i`, conjugating by the inverse of the first letter and taking
-the inverse merges those two letters into a strictly shorter reduced word.
+The infinite-order criterion `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne` holds for
+arbitrary monoids via Mathlib's reduced-word normal form `Monoid.CoprodI.Word.equiv`. For groups,
+`Monoid.CoprodI.exists_isConj_of_isOfFinOrder_of_ne_one` transports the Bass–Serre finite-order
+classification (`TauCeti.GraphOfGroups.π₁.exists_vertexHom_eq_of_isOfFinOrder`) across the
+isomorphism `TauCeti.GraphOfGroups.coprodIEquivπ₁` with the fundamental group of the free-product
+graph of groups.
 
 ## References
 
+* J.-P. Serre, *Trees*, Springer, 1980, Chapter I, §5.1 and §6.5.
 * R. C. Lyndon, P. E. Schupp, *Combinatorial Group Theory*, Springer, 1977, Chapter IV, Theorem 1.4.
 -/
 
@@ -96,85 +98,36 @@ section Group
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
 
-/-- Cyclic reduction step: if a reduced word `Word.cons a v hfv ha1` with `v` nonempty represents an
-element of finite order, its first and last letters lie in the same factor `G i`, so conjugating by
-`(of a)⁻¹` and inverting yields a strictly shorter reduced word `w'`. -/
-private theorem exists_word_length_lt_of_cons
-    {i : ι} (a : G i) (v : Word G) (hfv : v.fstIdx ≠ some i) (ha1 : a ≠ 1)
-    (hv : v ≠ Word.empty) (hg : IsOfFinOrder (Word.cons a v hfv ha1).prod) :
-    ∃ w' : Word G,
-      w'.toList.length < (Word.cons a v hfv ha1).toList.length ∧
-        IsConj (Word.cons a v hfv ha1).prod w'.prod⁻¹ := by
-  classical
-  let w : Word G := Word.cons a v hfv ha1
-  have hw_ne : w ≠ Word.empty := fun h => List.cons_ne_nil _ _ (congrArg Word.toList h)
-  obtain ⟨i₀, j₀, u, hu⟩ := NeWord.of_word w hw_ne
-  have hij : i₀ = j₀ := by
-    by_contra hne
-    exact u.not_isOfFinOrder_prod_of_ne hne (by rwa [NeWord.prod, hu])
-  subst hij
-  have hi₀ : i = i₀ :=
-    Option.some.inj ((Word.fstIdx_cons a v hfv ha1).symm.trans
-      ((congrArg Word.fstIdx hu).symm.trans u.fstIdx_toWord))
-  subst i₀
-  obtain ⟨k, j, q, hq⟩ := NeWord.of_word v hv
-  have hj : j = i := by
-    have h₁ := q.toWord_getLast?_map_fst
-    have h₂ := u.toWord_getLast?_map_fst
-    rw [hq] at h₁
-    rw [hu, Word.getLast?_map_fst_cons_of_ne_empty a hfv ha1 hv, h₁] at h₂
-    exact Option.some.inj h₂
-  subst j
-  let z : Word G := q.inv.toWord
-  let w' : Word G := of a⁻¹ • z
-  have hz_fst : z.fstIdx = some i := q.inv.fstIdx_toWord
-  have hw'_len : w'.toList.length < w.toList.length := by
-    have hle : w'.toList.length ≤ z.toList.length :=
-      Word.length_toList_of_smul_le_of_fstIdx_eq a⁻¹ hz_fst
-    have hz_len : z.toList.length = v.toList.length := by
-      rw [← hq]
-      exact q.length_toList_inv
-    exact (hz_len ▸ hle).trans_lt (by simp [w])
-  refine ⟨w', hw'_len, isConj_iff.mpr ⟨(of a)⁻¹, ?_⟩⟩
-  have hz_prod : z.prod = v.prod⁻¹ := by
-    rw [← hq, ← NeWord.prod, ← NeWord.prod, NeWord.inv_prod]
-  rw [Word.prod_cons, Word.prod_smul, hz_prod]
-  simp
-
 /-- Every nontrivial element of finite order in an indexed free product of groups `CoprodI G` is
 conjugate to a nontrivial element of finite order in one of the factor groups `G i`. -/
 theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : CoprodI G}
     (hg : IsOfFinOrder g) (hg1 : g ≠ 1) :
     ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsConj g (of x) ∧ IsOfFinOrder x := by
-  classical
-  suffices ∀ n : ℕ, ∀ w : Word G, w.toList.length = n →
-      IsOfFinOrder w.prod → w.prod ≠ 1 →
-      ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsConj w.prod (of x) ∧ IsOfFinOrder x by
-    have hprod : (Word.equiv g).prod = g := Word.equiv.symm_apply_apply g
-    simpa [hprod] using this _ (Word.equiv g) rfl (hprod.symm ▸ hg) (hprod.symm ▸ hg1)
-  intro n
-  induction n using Nat.strong_induction_on with
-  | ind n ih =>
-    intro w hlen hg hg1
-    revert hlen hg hg1
-    refine Word.consRecOn w ?_ ?_
-    · intro _ _ hg1
-      exact (hg1 Word.prod_empty).elim
-    · intro i a v hfv ha1 _ hlen hg hg1
-      by_cases hv : v = Word.empty
-      · subst hv
-        rw [Word.prod_cons, Word.prod_empty, mul_one] at hg ⊢
-        exact ⟨i, a, ha1, IsConj.refl _, isOfFinOrder_of_iff.mp hg⟩
-      · obtain ⟨w', hw'_lt, hconj_inv⟩ := exists_word_length_lt_of_cons a v hfv ha1 hv hg
-        have hw'_fin : IsOfFinOrder w'.prod :=
-          isOfFinOrder_inv_iff.mp (hconj_inv.isOfFinOrder hg)
-        have hw'_ne : w'.prod ≠ 1 := fun h1 =>
-          hg1 (isConj_one_left.mp (by simpa [h1] using hconj_inv))
-        obtain ⟨r, y, hy1, hconj_y, hy_fin⟩ :=
-          ih w'.toList.length (hlen ▸ hw'_lt) w' rfl hw'_fin hw'_ne
-        refine ⟨r, y⁻¹, inv_ne_one.mpr hy1, ?_, isOfFinOrder_inv_iff.mpr hy_fin⟩
-        rw [map_inv]
-        exact hconj_inv.trans (TauCeti.isConj_inv_iff.mpr hconj_y)
+  let e := TauCeti.GraphOfGroups.coprodIEquivπ₁ G
+  obtain ⟨b, p, y, hy, hp⟩ :=
+    TauCeti.GraphOfGroups.π₁.exists_vertexHom_eq_of_isOfFinOrder (e.toMonoidHom.isOfFinOrder hg)
+  rcases TauCeti.SerreGraph.starRose.eq_center_or_eq_tip b with rfl | ⟨i, rfl⟩
+  · have hy1 : y = 1 := Subsingleton.elim _ _
+    rw [hy1, map_one] at hp
+    exact absurd (e.injective (by simpa using hp.symm)) hg1
+  · let y' : G i := y
+    let q := (TauCeti.GraphOfGroups.dartPrefunctor
+      (TauCeti.GraphOfGroups.freeProduct G PEmpty.{1})).mapPath
+      ((TauCeti.SerreGraph.starRoseTree ι PEmpty).path
+        (TauCeti.SerreGraph.starRose.center ι PEmpty)
+        (TauCeti.SerreGraph.starRose.tip _ i))
+    have hconj_π₁ : IsConj (e g) (e (of y')) := by
+      change TauCeti.GraphOfGroups.π₁.vertexHom p y = e g at hp
+      rw [← hp]
+      dsimp only [e]
+      rw [TauCeti.GraphOfGroups.coprodIEquivπ₁_of G y',
+        TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp_apply q p y]
+      exact (isConj_iff.mpr
+        ⟨TauCeti.GraphOfGroups.π₁.mk (p.comp q.reverse), by simp [q, y', mul_assoc]⟩).symm
+    have hconj : IsConj g (of y') := by
+      simpa using e.symm.toMonoidHom.map_isConj hconj_π₁
+    refine ⟨i, y', fun hy1 => hg1 ?_, hconj, hy⟩
+    simpa [hy1] using hconj
 
 /-- Every element of finite order in `CoprodI G` is either `1` or conjugate to an element of finite
 order in one of the factor groups `G i`. -/
