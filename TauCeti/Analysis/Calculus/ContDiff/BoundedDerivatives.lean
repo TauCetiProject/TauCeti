@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Smooth functions with bounded derivatives
@@ -19,9 +20,10 @@ across orders is required.
 On a set `s`, the predicate `TauCeti.BddDerivOn 𝕜 k f s` asks that `f` be `Cᵏ` on `s` with its
 derivatives of order at most `k` bounded on `s` by one constant. On an open set it passes to
 directional derivatives, one order lower (`TauCeti.BddDerivOn.fderiv_apply`), and to scalar
-multiples and finite sums. A function that is `Cᵏ` on a set of unique differentiability containing
-the compact closure of an open set `s` has this property on `s`
-(`ContDiffOn.bddDerivOn_of_isCompact_closure`).
+multiples and finite sums; on any set it survives adding a constant. A function that is `Cᵏ` on a
+set of unique differentiability containing the compact closure of an open set `s` has this property
+on `s` (`ContDiffOn.bddDerivOn_of_isCompact_closure`), and a compactly supported `Cᵏ` function has
+it on every set (`HasCompactSupport.bddDerivOn`).
 
 ## Main declarations
 
@@ -136,9 +138,31 @@ theorem BddDerivOn.sum {ι : Type*} {t : Finset ι} (hs : IsOpen s) {f : ι → 
     ((h j hj).1.of_le (by exact_mod_cast hi)).contDiffAt (hs.mem_nhds hx), ← Finset.sum_attach]
   exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ => hC j.val j.property i hi x hx)
 
+/-- Adding a constant changes only the value, so a function with bounded derivatives plus a
+constant has bounded derivatives. -/
+theorem BddDerivOn.add_const (h : BddDerivOn 𝕜 k f s) (c : F) :
+    BddDerivOn 𝕜 k (fun x => f x + c) s := by
+  obtain ⟨C, hC⟩ := h.2
+  refine ⟨h.1.add contDiffOn_const, C + ‖c‖, fun i hi x hx => ?_⟩
+  rcases i with _ | i
+  · have h0 := hC 0 hi x hx
+    rw [norm_iteratedFDeriv_zero] at h0 ⊢
+    exact (norm_add_le _ _).trans (add_le_add_left h0 _)
+  · rw [iteratedFDeriv_succ_add_const]
+    exact (hC _ hi x hx).trans (le_add_of_nonneg_right (norm_nonneg c))
+
 end BddDerivOn
 
 end TauCeti
+
+/-- **Bounded derivatives from compact support.** The derivatives of order at most `k` of a
+compactly supported `Cᵏ` function are bounded on every set. -/
+theorem HasCompactSupport.bddDerivOn {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : E → F} {k : ℕ} (hf : HasCompactSupport f) (hf' : ContDiff 𝕜 k f) (s : Set E) :
+    TauCeti.BddDerivOn 𝕜 k f s := by
+  obtain ⟨C, -, hC⟩ := hf.exists_bound_iteratedFDeriv_of_contDiff hf'
+  exact ⟨hf'.contDiffOn, C, fun i hi x _ => hC i hi x⟩
 
 /-- **Bounded derivatives from compact closure.** If `f` is `Cᵏ` on a set `U` of unique
 differentiability containing the compact closure of an open set `s`, then the derivatives of `f`
