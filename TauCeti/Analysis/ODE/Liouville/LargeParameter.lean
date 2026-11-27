@@ -90,6 +90,21 @@ section Error
 
 variable {I : Set ℝ} {u α : ℝ} {ε ε₁ : ℝ → ℂ}
 
+/-- The derivative of the complex-valued exponential `y ↦ e^{cy}`. -/
+private lemma hasDerivAt_ofReal_exp_mul (c x : ℝ) :
+    HasDerivAt (fun y : ℝ ↦ (Real.exp (c * y) : ℂ)) (Real.exp (c * x) * c) x := by
+  simpa using ((hasDerivAt_id x).const_mul c).exp.ofReal_comp
+
+/-- `e^{-t} e^t = 1` in `ℂ`. -/
+private lemma ofReal_exp_neg_mul_ofReal_exp (t : ℝ) : (Real.exp (-t) : ℂ) * Real.exp t = 1 := by
+  rw [← Complex.ofReal_mul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, Complex.ofReal_one]
+
+/-- `∫_α^y ‖f‖ ≤ ∫_α^x ‖f‖` for `y ∈ [α, x]`. -/
+private lemma integral_norm_le_of_mem_Icc {f : ℝ → ℂ} {x y : ℝ} (hf : ContinuousOn f (Icc α x))
+    (hy : y ∈ Icc α x) : ∫ v in α..y, ‖f v‖ ≤ ∫ v in α..x, ‖f v‖ :=
+  intervalIntegral.integral_mono_interval le_rfl hy.1 hy.2 (ae_of_all _ fun _ ↦ norm_nonneg _)
+    (hf.norm.intervalIntegrable_of_Icc (hy.1.trans hy.2))
+
 /-- The error `ε` of the equation `ε'' + 2u ε' = G` with `ε(α) = ε'(α) = 0`, written through
 its integrating factors. -/
 private lemma caseI_error_eq (hIc : I.OrdConnected) (hα : α ∈ I) {G : ℝ → ℂ}
@@ -108,11 +123,8 @@ private lemma caseI_error_eq (hIc : I.OrdConnected) (hα : α ∈ I) {G : ℝ �
     have hd (v : ℝ) (hv : v ∈ uIcc α x) : HasDerivAt
         (fun t ↦ (Real.exp (2 * u * (t - x)) : ℂ) * ε₁ t)
         ((Real.exp (2 * u * (v - x)) : ℂ) * G v) v := by
-      have he : HasDerivAt (fun t ↦ (Real.exp (2 * u * (t - x)) : ℂ))
-          ((Real.exp (2 * u * (v - x)) * (2 * u) : ℝ) : ℂ) v :=
-        (((hasDerivAt_id v).sub_const x).const_mul (2 * u) |>.exp.congr_deriv
-          (by simp)).ofReal_comp
-      convert he.mul (hε₁ v (hsub hv)) using 1
+      convert (hasDerivAt_ofReal_exp_mul (2 * u) (v - x)).comp_sub_const v x |>.mul
+        (hε₁ v (hsub hv)) using 1
       push_cast
       ring
     rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd hEi]
@@ -129,6 +141,46 @@ private lemma caseI_error_eq (hIc : I.OrdConnected) (hα : α ∈ I) {G : ℝ �
   rw [intervalIntegral.integral_sub hGi hEi, hH, hF]
   ring
 
+/-- If `ε'' + 2u ε' = ψ ε + J` on `I` with `ε(α) = ε'(α) = 0`, then for `x ≥ α` in `I` both
+`‖ε' x‖` and `2u ‖ε x‖` are at most `∫_α^x (‖ψ‖ ‖ε‖ + ‖J‖)`, since the weights
+`e^{2u(v - x)}` and `1 - e^{2u(v - x)}` of `caseI_error_eq` lie in `[0, 1]`. -/
+private lemma norm_caseI_error_le_integral (hIc : I.OrdConnected) (hα : α ∈ I) (hu : 0 < u)
+    {ψ J : ℝ → ℂ} (hψ : ContinuousOn ψ I) (hJ : ContinuousOn J I)
+    (hε : ∀ x ∈ I, HasDerivAt ε (ε₁ x) x)
+    (hε₁ : ∀ x ∈ I, HasDerivAt ε₁ (ψ x * ε x + J x - 2 * u * ε₁ x) x) (h0 : ε α = 0)
+    (h1 : ε₁ α = 0) {x : ℝ} (hx : x ∈ I) (hαx : α ≤ x) :
+    ‖ε₁ x‖ ≤ ∫ v in α..x, ‖ψ v‖ * ‖ε v‖ + ‖J v‖ ∧
+      2 * u * ‖ε x‖ ≤ ∫ v in α..x, ‖ψ v‖ * ‖ε v‖ + ‖J v‖ := by
+  have hsub : Icc α x ⊆ I := hIc.out hα hx
+  have hεc : ContinuousOn ε I := fun y hy ↦ (hε y hy).continuousAt.continuousWithinAt
+  have hGc : ContinuousOn (fun v ↦ ψ v * ε v + J v) I := (hψ.mul hεc).add hJ
+  obtain ⟨h₁, h₂⟩ := caseI_error_eq (G := fun v ↦ ψ v * ε v + J v) hIc hα hGc hε
+    (by simpa using hε₁) h0 h1 hx
+  have hw {w : ℝ → ℝ} (hwc : Continuous w) (hw : ∀ v ∈ Icc α x, 0 ≤ w v ∧ w v ≤ 1) :
+      ‖∫ v in α..x, (w v : ℂ) * (ψ v * ε v + J v)‖ ≤
+        ∫ v in α..x, ‖ψ v‖ * ‖ε v‖ + ‖J v‖ := by
+    refine (intervalIntegral.norm_integral_le_integral_norm hαx).trans
+      (intervalIntegral.integral_mono_on hαx ?_ ?_ fun v hv ↦ ?_)
+    · exact (((Complex.continuous_ofReal.comp hwc).continuousOn.mul (hGc.mono hsub)).norm)
+        |>.intervalIntegrable_of_Icc hαx
+    · exact ((hψ.norm.mul hεc.norm).add hJ.norm).mono hsub |>.intervalIntegrable_of_Icc hαx
+    · rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (hw v hv).1]
+      calc w v * ‖ψ v * ε v + J v‖ ≤ 1 * ‖ψ v * ε v + J v‖ :=
+            mul_le_mul_of_nonneg_right (hw v hv).2 (norm_nonneg _)
+        _ ≤ ‖ψ v‖ * ‖ε v‖ + ‖J v‖ := by rw [one_mul, ← norm_mul]; exact norm_add_le _ _
+  have he (v : ℝ) (hv : v ∈ Icc α x) : Real.exp (2 * u * (v - x)) ≤ 1 :=
+    Real.exp_le_one_iff.2 (mul_nonpos_of_nonneg_of_nonpos (by positivity) (by linarith [hv.2]))
+  refine ⟨?_, ?_⟩
+  · rw [h₁]
+    exact hw (w := fun v ↦ Real.exp (2 * u * (v - x))) (by fun_prop)
+      fun v hv ↦ ⟨(Real.exp_pos _).le, he v hv⟩
+  · have h2u : ‖(2 * u : ℂ)‖ = 2 * u := by
+      rw [← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.norm_real,
+        Real.norm_of_nonneg (by positivity)]
+    rw [← h2u, ← norm_mul, h₂]
+    exact hw (w := fun v ↦ 1 - Real.exp (2 * u * (v - x))) (by fun_prop)
+      fun v hv ↦ ⟨sub_nonneg.2 (he v hv), by linarith [Real.exp_pos (2 * u * (v - x))]⟩
+
 /-- **Error bound.** If `ε'' + 2u ε' = ψ ε + J` on `I` with `ε(α) = ε'(α) = 0`, then for
 `x ≥ α` in `I`, `‖ε x‖ ≤ (∫_α^x ‖J‖) / (2u) · exp((∫_α^x ‖ψ‖) / (2u))`. -/
 private lemma norm_caseI_error_le (hIc : I.OrdConnected) (hα : α ∈ I) (hu : 0 < u)
@@ -139,44 +191,19 @@ private lemma norm_caseI_error_le (hIc : I.OrdConnected) (hα : α ∈ I) (hu : 
     ‖ε x‖ ≤ (∫ v in α..x, ‖J v‖) / (2 * u) * Real.exp ((∫ v in α..x, ‖ψ v‖) / (2 * u)) := by
   have hsub : Icc α x ⊆ I := hIc.out hα hx
   have hεc : ContinuousOn ε I := fun y hy ↦ (hε y hy).continuousAt.continuousWithinAt
-  have hGc : ContinuousOn (fun v ↦ ψ v * ε v + J v) I := (hψ.mul hεc).add hJ
   have hu2 : 0 < 2 * u := by positivity
   -- At every `y ∈ [α, x]`, `‖ε y‖ ≤ (∫_α^x ‖J‖) / (2u) + ∫_α^y (‖ψ‖ / (2u)) ‖ε‖`.
   have hrec (y : ℝ) (hy : y ∈ Icc α x) : ‖ε y‖ ≤ (∫ v in α..x, ‖J v‖) / (2 * u) +
       ∫ v in α..y, ‖ψ v‖ / (2 * u) * ‖ε v‖ := by
-    have hyI := hsub hy
-    have hsy : Icc α y ⊆ I := hIc.out hα hyI
-    have hJn : ContinuousOn (fun v ↦ ‖J v‖) I := hJ.norm
-    have hψε : ContinuousOn (fun v ↦ ‖ψ v‖ * ‖ε v‖) I := hψ.norm.mul hεc.norm
-    have h2 := (caseI_error_eq (G := fun v ↦ ψ v * ε v + J v) hIc hα hGc hε (by simpa using hε₁)
-      h0 h1 hyI).2
-    have hle : ‖(2 * u : ℂ) * ε y‖ ≤ ∫ v in α..y, ‖ψ v‖ * ‖ε v‖ + ‖J v‖ := by
-      rw [h2]
-      refine (intervalIntegral.norm_integral_le_integral_norm hy.1).trans
-        (intervalIntegral.integral_mono_on hy.1 ?_ ?_ fun v hv ↦ ?_)
-      · exact (((Continuous.continuousOn (by fun_prop)).mul (hGc.mono hsy)).norm)
-          |>.intervalIntegrable_of_Icc hy.1
-      · exact ((hψε.add hJn).mono hsy).intervalIntegrable_of_Icc hy.1
-      · have he : Real.exp (2 * u * (v - y)) ≤ 1 :=
-          Real.exp_le_one_iff.2 (mul_nonpos_of_nonneg_of_nonpos hu2.le (by linarith [hv.2]))
-        have he0 := Real.exp_pos (2 * u * (v - y))
-        rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by linarith)]
-        calc (1 - Real.exp (2 * u * (v - y))) * ‖ψ v * ε v + J v‖ ≤ 1 * ‖ψ v * ε v + J v‖ :=
-              mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
-          _ ≤ ‖ψ v‖ * ‖ε v‖ + ‖J v‖ := by
-              rw [one_mul, ← norm_mul]; exact norm_add_le _ _
-    rw [intervalIntegral.integral_add ((hψε.mono hsy).intervalIntegrable_of_Icc hy.1)
-      ((hJn.mono hsy).intervalIntegrable_of_Icc hy.1)] at hle
-    have hJy : ∫ v in α..y, ‖J v‖ ≤ ∫ v in α..x, ‖J v‖ :=
-      intervalIntegral.integral_mono_interval le_rfl hy.1 hy.2
-        (ae_of_all _ fun _ ↦ norm_nonneg _) ((hJn.mono hsub).intervalIntegrable_of_Icc hαx)
-    have h2u : ‖(2 * u : ℂ)‖ = 2 * u := by
-      rw [← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.norm_real,
-        Real.norm_of_nonneg hu2.le]
+    have hsy : Icc α y ⊆ I := hIc.out hα (hsub hy)
+    have hle := (norm_caseI_error_le_integral hIc hα hu hψ hJ hε hε₁ h0 h1 (hsub hy) hy.1).2
+    rw [intervalIntegral.integral_add (f := fun v ↦ ‖ψ v‖ * ‖ε v‖)
+      ((hψ.norm.mul hεc.norm).mono hsy |>.intervalIntegrable_of_Icc hy.1)
+      ((hJ.norm.mono hsy).intervalIntegrable_of_Icc hy.1)] at hle
+    have hJy := integral_norm_le_of_mem_Icc (hJ.mono hsub) hy
     have hdiv : ∫ v in α..y, ‖ψ v‖ / (2 * u) * ‖ε v‖ =
         (∫ v in α..y, ‖ψ v‖ * ‖ε v‖) / (2 * u) := by
       rw [← intervalIntegral.integral_div]; congr 1; ext v; ring
-    rw [norm_mul, h2u] at hle
     rw [hdiv, ← add_div, le_div_iff₀ hu2]
     linarith
   have hβ : ContinuousOn (fun v ↦ ‖ψ v‖ / (2 * u)) I := hψ.norm.div_const _
@@ -196,24 +223,13 @@ private lemma norm_caseI_error_deriv_le (hIc : I.OrdConnected) (hα : α ∈ I) 
     ‖ε₁ x‖ ≤ (∫ v in α..x, ‖ψ v‖) * M + ∫ v in α..x, ‖J v‖ := by
   have hsub : Icc α x ⊆ I := hIc.out hα hx
   have hεc : ContinuousOn ε I := fun y hy ↦ (hε y hy).continuousAt.continuousWithinAt
-  have hGc : ContinuousOn (fun v ↦ ψ v * ε v + J v) I := (hψ.mul hεc).add hJ
-  rw [(caseI_error_eq (G := fun v ↦ ψ v * ε v + J v) hIc hα hGc hε (by simpa using hε₁)
-    h0 h1 hx).1]
-  refine (intervalIntegral.norm_integral_le_integral_norm hαx).trans <|
+  refine (norm_caseI_error_le_integral hIc hα hu hψ hJ hε hε₁ h0 h1 hx hαx).1.trans <|
     (intervalIntegral.integral_mono_on (g := fun v ↦ M * ‖ψ v‖ + ‖J v‖) hαx ?_ ?_
       fun v hv ↦ ?_).trans_eq ?_
-  · exact (((Continuous.continuousOn (by fun_prop)).mul (hGc.mono hsub)).norm)
-      |>.intervalIntegrable_of_Icc hαx
+  · exact ((hψ.norm.mul hεc.norm).add hJ.norm).mono hsub |>.intervalIntegrable_of_Icc hαx
   · exact (continuousOn_const.mul (hψ.norm.mono hsub)).add (hJ.norm.mono hsub)
       |>.intervalIntegrable_of_Icc hαx
-  · -- The weight `e^{2u(v - x)}` is at most `1` for `v ≤ x`.
-    have he : Real.exp (2 * u * (v - x)) ≤ 1 :=
-      Real.exp_le_one_iff.2 (mul_nonpos_of_nonneg_of_nonpos (by positivity) (by linarith [hv.2]))
-    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.exp_pos _).le]
-    calc Real.exp (2 * u * (v - x)) * ‖ψ v * ε v + J v‖ ≤ 1 * ‖ψ v * ε v + J v‖ :=
-          mul_le_mul_of_nonneg_right he (norm_nonneg _)
-      _ ≤ ‖ψ v‖ * ‖ε v‖ + ‖J v‖ := by rw [one_mul, ← norm_mul]; exact norm_add_le _ _
-      _ ≤ M * ‖ψ v‖ + ‖J v‖ := by rw [mul_comm M]; gcongr; exact hM v hv
+  · rw [mul_comm M]; gcongr; exact hM v hv
   · rw [intervalIntegral.integral_add (intervalIntegrable_const.mul_continuousOn
       (hψ.norm.mono (uIcc_of_le hαx ▸ hsub))) ((hJ.norm.mono hsub).intervalIntegrable_of_Icc hαx),
       intervalIntegral.integral_const_mul, mul_comm M]
@@ -239,14 +255,9 @@ private lemma norm_caseI_error_le_and (hIc : I.OrdConnected) (hα : α ∈ I) (h
   -- The bound `K(y) exp(P(y) / (2u))` at `y ∈ [α, x]` is at most its value at `x`.
   have hM (y : ℝ) (hy : y ∈ Icc α x) : ‖ε y‖ ≤ K * Real.exp (P / (2 * u)) := by
     refine (norm_caseI_error_le hIc hα hu hψ hJ hε hε₁ h0 h1 (hsub hy) hy.1).trans ?_
-    have hJy : ∫ v in α..y, ‖J v‖ ≤ ∫ v in α..x, ‖J v‖ :=
-      intervalIntegral.integral_mono_interval le_rfl hy.1 hy.2
-        (ae_of_all _ fun _ ↦ norm_nonneg _) ((hJ.norm.mono hsub).intervalIntegrable_of_Icc hαx)
-    have hψy : ∫ v in α..y, ‖ψ v‖ ≤ P :=
-      intervalIntegral.integral_mono_interval le_rfl hy.1 hy.2
-        (ae_of_all _ fun _ ↦ norm_nonneg _) ((hψ.norm.mono hsub).intervalIntegrable_of_Icc hαx)
-    exact mul_le_mul (div_le_div_of_nonneg_right hJy hu2.le)
-      (Real.exp_le_exp.2 (div_le_div_of_nonneg_right hψy hu2.le)) (Real.exp_pos _).le hK
+    exact mul_le_mul (div_le_div_of_nonneg_right (integral_norm_le_of_mem_Icc (hJ.mono hsub) hy)
+      hu2.le) (Real.exp_le_exp.2 (div_le_div_of_nonneg_right
+        (integral_norm_le_of_mem_Icc (hψ.mono hsub) hy) hu2.le)) (Real.exp_pos _).le hK
   -- With `y = P / (2u) ≥ 0`, both bounds follow from `e^y ≤ 2 e^{2y}` and
   -- `y e^y + 1 ≤ e^{2y}`, the latter from `e^y ≥ 1 + y`.
   set y := P / (2 * u)
@@ -273,6 +284,12 @@ section CaseI
 
 variable {Δ : Set ℝ} {ψ : ℝ → ℂ} {A : ℕ → ℝ → ℂ} {n : ℕ} {α : ℝ}
 
+/-- Since `A₀ = 1` on the open set `Δ`, `A₀' = 0` there. -/
+private lemma deriv_caseI_zero (hΔ : IsOpen Δ) (hA0 : ∀ x ∈ Δ, A 0 x = 1) {x : ℝ} (hx : x ∈ Δ) :
+    deriv (A 0) x = 0 := by
+  rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ (1 : ℂ))
+    (eventually_of_mem (hΔ.mem_nhds hx) hA0), deriv_const]
+
 /-- The recursion `A_{s+1}' = -A_s''/2 + ψ A_s/2` with `A₀ = 1` telescopes: the formal sum
 `S = ∑_{s<n} Aₛ u⁻ˢ` satisfies `S'' + 2u S' - ψ S = -2u A_n' / uⁿ`. -/
 private lemma caseI_sum_residual (hΔ : IsOpen Δ) (hA0 : ∀ x ∈ Δ, A 0 x = 1)
@@ -282,9 +299,6 @@ private lemma caseI_sum_residual (hΔ : IsOpen Δ) (hA0 : ∀ x ∈ Δ, A 0 x = 
     ∑ s ∈ range n, (iteratedDeriv 2 (A s) x + 2 * u * deriv (A s) x - ψ x * A s x) / (u : ℂ) ^ s =
       -(2 * u * deriv (A n) x / (u : ℂ) ^ n) := by
   have hu0 : (u : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hu.ne'
-  have hd0 : deriv (A 0) x = 0 := by
-    rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ (1 : ℂ))
-      (eventually_of_mem (hΔ.mem_nhds hx) hA0), deriv_const]
   set f : ℕ → ℂ := fun s ↦ 2 * u * deriv (A s) x / (u : ℂ) ^ s
   have hterm (s : ℕ) (hs : s ∈ range n) :
       (iteratedDeriv 2 (A s) x + 2 * u * deriv (A s) x - ψ x * A s x) / (u : ℂ) ^ s =
@@ -294,7 +308,7 @@ private lemma caseI_sum_residual (hΔ : IsOpen Δ) (hA0 : ∀ x ∈ Δ, A 0 x = 
     field_simp
     ring
   rw [sum_congr rfl hterm, sum_range_sub']
-  simp [f, hd0]
+  simp [f, deriv_caseI_zero hΔ hA0 hx]
 
 /-- `deriv (A n)` is continuous on `Δ`. -/
 private lemma continuousOn_deriv_caseI (hΔ : IsOpen Δ) (hψ : ContinuousOn ψ Δ)
@@ -304,9 +318,7 @@ private lemma continuousOn_deriv_caseI (hΔ : IsOpen Δ) (hψ : ContinuousOn ψ 
     ContinuousOn (deriv (A n)) Δ := by
   cases n with
   | zero =>
-    refine continuousOn_const (c := (0 : ℂ)) |>.congr fun x hx ↦ ?_
-    rw [Filter.EventuallyEq.deriv_eq (f := fun _ ↦ (1 : ℂ))
-      (eventually_of_mem (hΔ.mem_nhds hx) hA0), deriv_const]
+    exact continuousOn_const (c := (0 : ℂ)) |>.congr fun x hx ↦ deriv_caseI_zero hΔ hA0 hx
   | succ m =>
     have h2 : ContinuousOn (iteratedDeriv 2 (A m)) Δ := by
       rw [iteratedDeriv_succ, iteratedDeriv_one]
@@ -353,12 +365,8 @@ private lemma caseI_error_hasDerivAt {u x : ℝ} {W S S₁ : ℝ → ℂ} {S₂ 
         (ψx * ((Real.exp (-(u * x)) : ℂ) * W x - S x) + Jx -
           2 * u * ((Real.exp (-(u * x)) : ℂ) * (deriv W x - u * W x) - S₁ x)) x := by
   have hE : HasDerivAt (fun y : ℝ ↦ (Real.exp (-(u * y)) : ℂ))
-      (-u * (Real.exp (-(u * x)) : ℂ)) x := by
-    have h : HasDerivAt (fun y : ℝ ↦ -(u * y)) (-u) x := by
-      simpa using ((hasDerivAt_id x).const_mul u).fun_neg
-    convert h.exp.ofReal_comp using 1
-    push_cast
-    ring
+      ((Real.exp (-(u * x)) : ℂ) * -u) x := by
+    simpa only [neg_mul, Complex.ofReal_neg] using hasDerivAt_ofReal_exp_mul (-u) x
   refine ⟨(hE.mul hW).sub hS |>.congr_deriv (by ring), ?_⟩
   refine (hE.mul (hW'.fun_sub (hW.const_mul (u : ℂ)))).sub hS₁ |>.congr_deriv ?_
   linear_combination -hkey
@@ -392,8 +400,7 @@ theorem exists_caseI_solution_norm_le (hΔ : IsOpen Δ) (hΔc : Δ.OrdConnected)
   obtain ⟨W, hWc, hW, hWα, hW'α⟩ := exists_contDiffOn_iteratedDeriv_eq_mul hΔ hΔc
     (continuousOn_const.add hψ) hα ((Real.exp (u * α) : ℂ) * S α)
     ((Real.exp (u * α) : ℂ) * (u * S α + S₁ α))
-  have hEE (y : ℝ) : (Real.exp (-(u * y)) : ℂ) * Real.exp (u * y) = 1 := by
-    rw [← Complex.ofReal_mul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, Complex.ofReal_one]
+  have hEE (y : ℝ) := ofReal_exp_neg_mul_ofReal_exp (u * y)
   -- The error `ε = e^{-ux} W - S` satisfies `ε'' + 2u ε' = ψ ε + J`, `ε(α) = ε'(α) = 0`.
   set ε : ℝ → ℂ := fun y ↦ (Real.exp (-(u * y)) : ℂ) * W y - S y
   set ε₁ : ℝ → ℂ := fun y ↦ (Real.exp (-(u * y)) : ℂ) * (deriv W y - u * W y) - S₁ y
@@ -485,19 +492,13 @@ private lemma caseI_deriv_eq {Δ : Set ℝ} (hΔ : IsOpen Δ) {σ u : ℝ} {B : 
     (hεd : DifferentiableOn ℝ ε Δ) {x : ℝ} (hx : x ∈ Δ) :
     deriv W x = Real.exp (σ * u * x) * (σ * u * (∑ s ∈ range n, B s x / (u : ℂ) ^ s + ε x) +
       (∑ s ∈ range n, deriv (B s) x / (u : ℂ) ^ s + deriv ε x)) := by
-  have he : HasDerivAt (fun y : ℝ ↦ (Real.exp (σ * u * y) : ℂ))
-      (Real.exp (σ * u * x) * (σ * u)) x := by
-    have h : HasDerivAt (fun y : ℝ ↦ σ * u * y) (σ * u) x := by
-      simpa using (hasDerivAt_id x).const_mul (σ * u)
-    convert h.exp.ofReal_comp using 1
-    push_cast
-    ring
+  have he := hasDerivAt_ofReal_exp_mul (σ * u) x
   have hS : HasDerivAt (fun y ↦ ∑ s ∈ range n, B s y / (u : ℂ) ^ s + ε y)
       (∑ s ∈ range n, deriv (B s) x / (u : ℂ) ^ s + deriv ε x) x :=
     (HasDerivAt.fun_sum fun s hs ↦ ((hB s (mem_range.1 hs) x hx).hasDerivAt.div_const _)).add
       (hεd.differentiableAt (hΔ.mem_nhds hx)).hasDerivAt
   rw [Filter.EventuallyEq.deriv_eq (eventually_of_mem (hΔ.mem_nhds hx) hW)]
-  exact (he.mul hS).deriv.trans (by ring)
+  exact (he.mul hS).deriv.trans (by push_cast; ring)
 
 /-- Uniform expansions of `W u = e^{σux} (∑_{s<n} Bₛ u⁻ˢ + ε u)` and of its derivative from
 bounds `‖ε u x‖ ≤ C / uⁿ` and `‖ε u' x‖ ≤ u C / uⁿ` for `u ≥ 1` and `x ∈ U`. -/
@@ -514,8 +515,7 @@ private lemma caseI_isBigO {Δ U : Set ℝ} (hΔ : IsOpen Δ) (hU : U ⊆ Δ) {�
         =O[𝓟 U ×ˢ atTop] (fun p ↦ p.2 / p.2 ^ n) := by
   have hev : ∀ᶠ p : ℝ × ℝ in 𝓟 U ×ˢ atTop, p.1 ∈ U ∧ 1 ≤ p.2 :=
     prod_mem_prod (mem_principal_self U) (eventually_ge_atTop 1)
-  have hEE (u x : ℝ) : (Real.exp (-(σ * u * x)) : ℂ) * Real.exp (σ * u * x) = 1 := by
-    rw [← Complex.ofReal_mul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, Complex.ofReal_one]
+  have hEE (u x : ℝ) := ofReal_exp_neg_mul_ofReal_exp (σ * u * x)
   refine ⟨IsBigO.of_bound C ?_, IsBigO.of_bound (2 * C) ?_⟩
   · filter_upwards [hev] with ⟨x, u⟩ ⟨hx, hu⟩
     rw [hW u hu x (hU hx), ← mul_assoc, hEE, one_mul, add_sub_cancel_left,
