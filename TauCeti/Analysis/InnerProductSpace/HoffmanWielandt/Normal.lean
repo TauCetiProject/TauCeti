@@ -8,14 +8,14 @@ module
 public import TauCeti.Analysis.InnerProductSpace.NormalOperator
 public import TauCeti.Analysis.InnerProductSpace.SchurHorn
 
-import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 
 /-!
 # The Hoffman–Wielandt inequality for normal operators
 
 Let `T` and `S` be operators on a finite-dimensional inner product space with orthonormal
 eigenbases `(uᵢ)` and `(vⱼ)` and eigenvalues `αᵢ` and `βⱼ`. In every orthonormal basis `(bₖ)`
-the squared Frobenius distance of `T` and `S` is the average of the squared eigenvalue gaps
+the squared Frobenius distance of `T` and `S` is the weighted sum of the squared eigenvalue gaps
 against the Schur weights `‖⟪uᵢ, vⱼ⟫‖²` of the two eigenbases:
 
 `∑ₖ ‖(T - S) bₖ‖² = ∑ᵢ ∑ⱼ ‖⟪uᵢ, vⱼ⟫‖² |αᵢ - βⱼ|²`.
@@ -35,10 +35,8 @@ eigenvalue `0`, while their squared Frobenius distance is `1`.
 
 ## Main results
 
-* `OrthonormalBasis.inner_apply_eq_mul_inner_of_apply_eq_smul`: in an orthonormal eigenbasis
-  `(vⱼ)` of `S`, `⟪vⱼ, S x⟫ = βⱼ ⟪vⱼ, x⟫`.
 * `TauCeti.sum_norm_sub_apply_sq_eq_sum_schurWeight_mul`: the squared Frobenius distance of two
-  operators as the Schur-weight average of their squared eigenvalue gaps.
+  operators as the Schur-weighted sum of their squared eigenvalue gaps.
 * `TauCeti.exists_perm_sum_sq_le_and_le_of_apply_eq_smul`: the Hoffman–Wielandt inequality, both
   halves, for operators with given orthonormal eigenbases over `ℝ` or `ℂ`.
 * `TauCeti.exists_perm_sum_sq_le_and_le`: **the Hoffman–Wielandt inequality for normal
@@ -65,22 +63,6 @@ public section
 
 open scoped InnerProductSpace
 
-namespace OrthonormalBasis
-
-variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fintype ι]
-
-/-- **Coordinates in an orthonormal eigenbasis.** If `S (v j) = β j • v j` for an orthonormal
-basis `v`, then the `j`-th coordinate of `S x` is `β j` times the `j`-th coordinate of `x`:
-`⟪v j, S x⟫ = β j * ⟪v j, x⟫`. -/
-theorem inner_apply_eq_mul_inner_of_apply_eq_smul (v : OrthonormalBasis ι 𝕜 E)
-    {S : E →ₗ[𝕜] E} {β : ι → 𝕜} (hS : ∀ j, S (v j) = β j • v j) (j : ι) (x : E) :
-    ⟪v j, S x⟫_𝕜 = β j * ⟪v j, x⟫_𝕜 := by
-  classical
-  conv_lhs => rw [← v.sum_repr' x]
-  simp [hS, inner_sum, inner_smul_right, v.inner_eq_ite, mul_comm]
-
-end OrthonormalBasis
-
 namespace TauCeti
 
 section RCLike
@@ -91,7 +73,7 @@ variable {𝕜 E ι ι' κ : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerP
 /-- **The Frobenius distance of two operators in their eigenbases.** If `T (u i) = α i • u i` and
 `S (v j) = β j • v j` for orthonormal bases `u` and `v`, then in every orthonormal basis `b` the
 squared Frobenius distance `∑ₖ ‖(T - S) (b k)‖²` is `∑ᵢ ∑ⱼ ‖⟪u i, v j⟫‖² ‖α i - β j‖²`, the
-average of the squared eigenvalue gaps against the Schur weights of `u` and `v`. -/
+weighted sum of the squared eigenvalue gaps against the Schur weights of `u` and `v`. -/
 theorem sum_norm_sub_apply_sq_eq_sum_schurWeight_mul {T S : E →ₗ[𝕜] E}
     {u : OrthonormalBasis ι 𝕜 E} {v : OrthonormalBasis ι' 𝕜 E} {α : ι → 𝕜} {β : ι' → 𝕜}
     (hT : ∀ i, T (u i) = α i • u i) (hS : ∀ j, S (v j) = β j • v j)
@@ -101,7 +83,10 @@ theorem sum_norm_sub_apply_sq_eq_sum_schurWeight_mul {T S : E →ₗ[𝕜] E}
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← v.sum_sq_norm_inner_right]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [LinearMap.sub_apply, inner_sub_right, v.inner_apply_eq_mul_inner_of_apply_eq_smul hS, hT,
+  -- In the eigenbasis `v`, the `j`-th coordinate of `S (u i)` is `β j` times that of `u i`.
+  have hSu : ⟪v j, S (u i)⟫_𝕜 = β j * ⟪v j, u i⟫_𝕜 := by
+    simpa only [OrthonormalBasis.repr_apply_apply] using v.repr_apply_of_eigenbasis S hS (u i) j
+  rw [LinearMap.sub_apply, inner_sub_right, hSu, hT,
     inner_smul_right, ← sub_mul, norm_mul, mul_pow,
     OrthonormalBasis.schurWeight_apply, norm_inner_symm, mul_comm]
 
