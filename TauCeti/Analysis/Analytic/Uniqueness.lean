@@ -47,7 +47,8 @@ The identity principle also shows that an analytic function on a preconnected se
 vanish identically does not vanish on a dense subset: otherwise it would vanish on an open set.
 Combined with continuity, the nonvanishing set of an entire function such as a polynomial in the
 entries of a matrix is open and dense, which is how genericity statements for finitely many
-polynomial conditions are proved.
+polynomial conditions are proved. In the same way, if a product of two functions analytic on a
+preconnected open set vanishes there, one of the factors vanishes there.
 
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives. The linear general-position corollary (generalized to finite families over any nontrivially
@@ -69,6 +70,8 @@ normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
 * `AnalyticOnNhd.subset_closure_setOf_ne_zero`: on a preconnected set, an analytic function not
   vanishing at some point does not vanish on a dense subset.
 * `AnalyticOnNhd.dense_setOf_ne_zero`: the same for a function analytic on the whole space.
+* `AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_mul_eq_zero`: on a preconnected open set, if a product
+  of analytic functions vanishes, one factor does.
 * `TauCeti.mem_interior_or_exists_eventually_frequently_ne_zero`: over an `RCLike` field, a point
   of an open set `U` either lies in the interior of the common zero set of a family of functions
   analytic on `U`, or one member of the family vanishes identically near none of the nearby points.
@@ -268,5 +271,27 @@ theorem AnalyticOnNhd.dense_setOf_ne_zero [PreconnectedSpace E] {f : E → F}
   hf.subset_closure_setOf_ne_zero isPreconnected_univ (Set.mem_univ z₀) hz₀ (Set.mem_univ x)
 
 end NonvanishingSet
+
+section Mul
+
+variable {𝕜 E A : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedRing A] [NormedAlgebra 𝕜 A] [NoZeroDivisors A]
+
+/-- **Analytic functions on a connected open set have no zero divisors.** If `f` and `g` are
+analytic on a preconnected open set `U` of a normed space, with values in a normed algebra without
+zero divisors, and `f g = 0` on `U`, then `f = 0` or `g = 0` on `U`. In one variable Mathlib's
+`AnalyticOnNhd.eq_zero_or_eq_zero_of_mul_eq_zero` needs no openness; in several variables zeros
+need not be isolated, and openness lets the identity principle apply near a point where `f ≠ 0`. -/
+theorem AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_mul_eq_zero {f g : E → A} {U : Set E}
+    (hf : AnalyticOnNhd 𝕜 f U) (hg : AnalyticOnNhd 𝕜 g U) (hU : IsPreconnected U)
+    (hUo : IsOpen U) (hfg : ∀ z ∈ U, f z * g z = 0) : Set.EqOn f 0 U ∨ Set.EqOn g 0 U := by
+  refine or_iff_not_imp_left.mpr fun h ↦ ?_
+  obtain ⟨z, hz, hfz⟩ : ∃ z ∈ U, f z ≠ 0 := by
+    simpa [Set.EqOn] using h
+  refine hg.eqOn_zero_of_preconnected_of_eventuallyEq_zero hU hz ?_
+  filter_upwards [(hf z hz).continuousAt.eventually_ne hfz, hUo.mem_nhds hz] with w hw hwU
+  exact (mul_eq_zero.mp (hfg w hwU)).resolve_left hw
+
+end Mul
 
 end

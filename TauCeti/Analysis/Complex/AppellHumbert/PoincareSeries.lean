@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.AppellHumbert.Basic
+public import TauCeti.Analysis.Complex.AppellHumbert.Positive
 public import Mathlib.Algebra.Module.ZLattice.Basic
-import Mathlib.Analysis.Fourier.AddCircleMulti
+public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Complex.UniformLimit
@@ -18,19 +18,13 @@ import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 # Positive Appell–Humbert data have nonzero theta functions
 
 Let `D = (B, χ)` be an Appell–Humbert datum for a full lattice `L` in a finite-dimensional complex
-normed space `V`, with Riemann form `E` (`TauCeti.AppellHumbertData`). The Riemann form is
-*positive* (`TauCeti.AppellHumbertData.IsPositive`) if `E (i u, u) > 0` for `u ≠ 0`; equivalently,
-the Hermitian form `H (u, v) = E (i u, v) + i E (u, v)` of `E` is positive definite. This file shows
-that the theta functions of a positive datum do not all vanish
-(`TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero`), the first step of
-Frobenius' dimension formula.
-
-**The parts of `B`.** The form `B` is real linear in its first and complex linear in its second
-variable. Its part that is complex linear in both variables,
-`B₁ (u, v) = (B (u, v) - i B (i u, v)) / 2` (`TauCeti.AppellHumbertData.symmetricPart`), is
-symmetric because the real part of `B` is; so `B - B₁`
-(`TauCeti.AppellHumbertData.hermitianPart`) has the same Riemann form as `B`, and its real part on
-the diagonal is `Re (B - B₁) (u, u) = π E (i u, u)`. For a positive datum this grows like `‖u‖²`.
+normed space `V`, with Riemann form `E` (`TauCeti.AppellHumbertData`). This file shows that the
+theta functions of a datum with positive Riemann form (`TauCeti.AppellHumbertData.IsPositive`) do
+not all vanish (`TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero`), the first
+step of Frobenius' dimension formula. It uses the decomposition of `B` into its complex bilinear
+part `B₁` (`TauCeti.AppellHumbertData.symmetricPart`) and the rest `B - B₁`
+(`TauCeti.AppellHumbertData.hermitianPart`), whose real part on the diagonal is
+`π E (i u, u)`; for a positive datum this grows like `‖u‖²`.
 
 **Poincaré series.** For a linear form `ξ`, the series
 `P_ξ (y) = ∑_{l ∈ L} e_l (y)⁻¹ exp (B₁ (y + l, y + l) / 2 + ξ (y + l))`, with `e` the factor of
@@ -43,9 +37,8 @@ constant coefficient is `1`; so it is not identically zero.
 
 ## Main declarations
 
-* `TauCeti.AppellHumbertData.IsPositive`: positivity of the Riemann form.
-* `TauCeti.AppellHumbertData.symmetricPart`, `TauCeti.AppellHumbertData.hermitianPart`: the complex
-  bilinear part of `B` and the rest.
+* `TauCeti.AppellHumbertData.exp_riemannForm_equivFun_symm_eq_mFourier`: in the coordinates of a
+  basis, a character `exp (2πi E (a, ·))` with integral pairings is a Fourier monomial.
 * `TauCeti.AppellHumbertData.poincareSeries`: the Poincaré series `P_ξ`.
 * `TauCeti.AppellHumbertData.poincareSeries_mem_thetaSpace`: `P_ξ` is a theta function.
 * `TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero`: a positive datum has a
@@ -54,8 +47,8 @@ constant coefficient is `1`; so it is not identically zero.
 ## Provenance
 
 The construction is adapted from `New.IsAppellHumbert.summable_and_analyticAt_tsum`,
-`New.IsAppellHumbert.poincareSeries_mem_thetaSpace_and_quotMean`,
-`New.IsAppellHumbert.linearPart_symm` and `New.IsAppellHumbert.exists_mem_thetaSpace_ne_zero`
+`New.IsAppellHumbert.poincareSeries_mem_thetaSpace_and_quotMean` and
+`New.IsAppellHumbert.exists_mem_thetaSpace_ne_zero`
 (file `src/Lib/Shimura/ComplexTheta/DimensionFormula.lean`) in grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic, PBC).
 There the series is summed for the Hermitian form `B - B₁` and carried to `B` by an exponential
@@ -81,141 +74,22 @@ namespace TauCeti.AppellHumbertData
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {L : Submodule ℤ V}
   (D : AppellHumbertData L)
 
-/-! ### Positivity and the parts of the form -/
+/-! ### Characters in coordinates -/
 
-/-- The Riemann form `E` of an Appell–Humbert datum is **positive** if `E (i u, u) > 0` for every
-`u ≠ 0`, that is if the Hermitian form `E (i u, v) + i E (u, v)` is positive definite. -/
-def IsPositive : Prop :=
-  ∀ u : V, u ≠ 0 → 0 < D.riemannForm (I • u) u
-
-/-- The **complex bilinear part** `B₁ (u, v) = (B (u, v) - i B (i u, v)) / 2` of the form `B` of an
-Appell–Humbert datum. It is symmetric (`TauCeti.AppellHumbertData.symmetricPart_comm`). -/
-noncomputable def symmetricPart : V →L[ℂ] V →L[ℂ] ℂ where
-  toFun u := (2 : ℂ)⁻¹ • (D.form u - I • D.form (I • u))
-  map_add' u v := by
-    simp only [smul_add, map_add]
-    module
-  map_smul' c u := by
-    -- Write `c = a + b i`: the form is real linear in its first variable.
-    have hc : c • u = c.re • u + c.im • (I • u) := by
-      conv_lhs => rw [← Complex.re_add_im c]
-      rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
-    have hIc : I • c • u = c.re • (I • u) - c.im • u := by
-      rw [hc, smul_add, smul_comm I c.re u, smul_comm I c.im (I • u), smul_smul I I u, I_mul_I,
-        neg_one_smul, smul_neg, sub_eq_add_neg]
-    have h1 (v : V) : D.form (c • u) v = c.re * D.form u v + c.im * D.form (I • u) v := by
-      rw [hc, map_add, D.form.map_smul c.re u, D.form.map_smul c.im (I • u)]
-      simp [Complex.real_smul]
-    have h2 (v : V) : D.form (I • c • u) v = c.re * D.form (I • u) v - c.im * D.form u v := by
-      rw [hIc, map_sub, D.form.map_smul c.re (I • u), D.form.map_smul c.im u]
-      simp [Complex.real_smul]
-    ext v
-    simp only [_root_.smul_apply, _root_.sub_apply, smul_eq_mul,
-      RingHom.id_apply, h1, h2]
-    conv_rhs => rw [← Complex.re_add_im c]
-    ring_nf
-    rw [I_sq]
-    ring
-  cont := by fun_prop
-
-/-- The defining formula of the complex bilinear part of `B`. -/
-theorem symmetricPart_apply (u v : V) :
-    D.symmetricPart u v = (D.form u v - I * D.form (I • u) v) / 2 := by
-  simp [symmetricPart, div_eq_inv_mul]
-
-/-- The complex bilinear part of `B` is symmetric, as the real part of `B` is. -/
-theorem symmetricPart_comm (u v : V) : D.symmetricPart u v = D.symmetricPart v u := by
-  have hre (u v : V) : (D.form (I • u) v).im = (D.form (I • v) u).im := by
-    have h := D.re_form_comm (I • u) (I • v)
-    simp only [(D.form _).map_smul, smul_eq_mul, mul_re, I_re, I_im, zero_mul, one_mul,
-      zero_sub] at h
-    linarith
-  have him (u v : V) : (D.form (I • u) v).re = -(D.form v u).im := by
-    rw [D.re_form_comm, (D.form v).map_smul, smul_eq_mul, mul_re, I_re, I_im]
-    ring
-  rw [symmetricPart_apply, symmetricPart_apply]
-  congr 1
-  apply Complex.ext
-  · simp only [sub_re, mul_re, I_re, I_im, zero_mul, one_mul, zero_sub, sub_neg_eq_add,
-      D.re_form_comm u v, hre u v]
-  · simp only [sub_im, mul_im, I_re, I_im, zero_mul, one_mul, zero_add, him]
-    ring
-
-/-- The **Hermitian part** `B - B₁` of the form `B` of an Appell–Humbert datum: it is conjugate
-linear in its first variable, and `B - B₁ = π H (·₂, ·₁)` for a Hermitian form `H`. It has the
-same Riemann form as `B` (`TauCeti.AppellHumbertData.hermitianPart_sub_hermitianPart`). -/
-noncomputable def hermitianPart : V →L[ℝ] V →L[ℂ] ℂ :=
-  D.form - D.symmetricPart.restrictScalars ℝ
-
-/-- The defining formula of the Hermitian part of `B`. -/
-theorem hermitianPart_apply (u v : V) :
-    D.hermitianPart u v = D.form u v - D.symmetricPart u v := (rfl)
-
-/-- The Hermitian part of `B` has the same Riemann form as `B`:
-`(B - B₁) (v, u) - (B - B₁) (u, v) = 2πi E (u, v)`. -/
-theorem hermitianPart_sub_hermitianPart (u v : V) :
-    D.hermitianPart v u - D.hermitianPart u v = 2 * π * I * D.riemannForm u v := by
-  rw [hermitianPart_apply, hermitianPart_apply, D.symmetricPart_comm v u, ← D.form_sub_form]
-  ring
-
-/-- On the diagonal, the real part of the Hermitian part of `B` is `π E (i u, u)`. -/
-theorem re_hermitianPart_self (u : V) : (D.hermitianPart u u).re = π * D.riemannForm (I • u) u := by
-  rw [hermitianPart_apply, symmetricPart_apply, riemannForm_apply, (D.form u).map_smul,
-    smul_eq_mul]
-  simp only [sub_re, div_ofNat_re, mul_re, I_re, I_im, sub_im, mul_im]
-  field_simp
-  ring
-
-/-- The imaginary parts of `B` and of its complex bilinear part agree on the diagonal. -/
-theorem im_symmetricPart_self (u : V) : (D.symmetricPart u u).im = (D.form u u).im := by
-  have h : (D.form (I • u) u).re = -(D.form u u).im := by
-    rw [D.re_form_comm, (D.form u).map_smul, smul_eq_mul, mul_re, I_re, I_im]
-    ring
-  rw [symmetricPart_apply]
-  simp only [div_im, sub_im, mul_im, I_re, I_im, zero_mul, one_mul, zero_add, h]
-  norm_num
-  ring
-
-variable {D}
-
-/-- A positive Riemann form is bounded below by a positive multiple of `‖u‖²` on the diagonal
-`(i u, u)`. -/
-theorem IsPositive.exists_pos_mul_sq_le [FiniteDimensional ℂ V] (hD : D.IsPositive) :
-    ∃ c > 0, ∀ u : V, c * ‖u‖ ^ 2 ≤ D.riemannForm (I • u) u := by
-  have hcont : Continuous fun u : V ↦ D.riemannForm (I • u) u := by
-    simp only [riemannForm_apply]
-    fun_prop
-  have := FiniteDimensional.proper ℂ V
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · exact ⟨1, one_pos, fun u ↦ by simp [Subsingleton.elim u 0]⟩
-  -- The minimum on the unit sphere, which is compact and avoids `0`.
-  obtain ⟨u₀, hu₀, hmin⟩ := (isCompact_sphere (0 : V) 1).exists_isMinOn
-    (NormedSpace.sphere_nonempty.mpr zero_le_one) hcont.continuousOn
-  have hu₀_ne : u₀ ≠ 0 := ne_zero_of_mem_unit_sphere ⟨u₀, hu₀⟩
-  refine ⟨_, hD u₀ hu₀_ne, fun u ↦ ?_⟩
-  rcases eq_or_ne u 0 with rfl | hu
-  · simp
-  -- Scale `u` to the sphere: the form is homogeneous of degree two.
-  have hunit : ‖u‖⁻¹ • u ∈ sphere (0 : V) 1 := by
-    simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hu)]
-  have h := hmin hunit
-  simp only [Set.mem_ofPred_eq, smul_comm I (‖u‖⁻¹) u, map_smul, LinearMap.smul_apply,
-    smul_eq_mul] at h
-  calc D.riemannForm (I • u₀) u₀ * ‖u‖ ^ 2
-      ≤ ‖u‖⁻¹ * (‖u‖⁻¹ * D.riemannForm (I • u) u) * ‖u‖ ^ 2 := by gcongr
-    _ = D.riemannForm (I • u) u := by field_simp
-
-/-- A positive Riemann form is nondegenerate. -/
-theorem IsPositive.nondegenerate (hD : D.IsPositive) : D.riemannForm.Nondegenerate := by
-  refine ⟨fun u hu ↦ ?_, fun u hu ↦ ?_⟩ <;> by_contra h <;> have := hD u h
-  · rw [D.riemannForm_swap, hu] at this
-    simp at this
-  · rw [hu] at this
-    exact this.false
+/-- In the coordinates `φ` of a real basis `b` of `V`, the character `exp (2πi E (a, ·))` of a
+vector `a` whose pairings `E (a, b i) = n i` with the basis vectors are integers is the Fourier
+monomial `mFourier n` of the torus, at the image of `φ`. -/
+theorem exp_riemannForm_equivFun_symm_eq_mFourier {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℝ V) {a : V} {n : ι → ℤ} (hn : ∀ i, D.riemannForm a (b i) = n i)
+    (φ : ι → ℝ) :
+    exp (2 * π * I * D.riemannForm a (b.equivFun.symm φ)) =
+      UnitAddTorus.mFourier n (fun i ↦ (φ i : UnitAddCircle)) := by
+  rw [UnitAddTorus.mFourier_coe_apply, Module.Basis.equivFun_symm_apply, map_sum]
+  simp only [map_smul, smul_eq_mul, hn]
+  push_cast
+  exact congrArg (fun t ↦ exp (2 * π * I * t)) (Finset.sum_congr rfl fun i _ ↦ mul_comm _ _)
 
 /-! ### Poincaré series -/
-
-variable (D)
 
 /-- The **Poincaré series** `P_ξ (y) = ∑_{l ∈ L} e_l (y)⁻¹ exp (B₁ (y + l, y + l) / 2 + ξ (y + l))`
 of an Appell–Humbert datum, for a linear form `ξ`, where `e` is the factor of automorphy and `B₁`
@@ -354,6 +228,17 @@ theorem IsPositive.poincareSeries_mem_thetaSpace (hD : D.IsPositive) (ξ : V →
     exact (Equiv.addRight m).tsum_eq fun l ↦
       (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))
 
+/-- For a positive datum the Fourier coefficients `χ (l)⁻¹ exp (-(B - B₁) (l, l) / 2)` of the
+Poincaré series on the diagonal are absolutely summable. -/
+private theorem IsPositive.summable_norm_semichar_inv_mul_exp (hD : D.IsPositive) :
+    Summable fun l : L ↦ ‖(D.semichar l : ℂ)⁻¹ * exp (-(D.hermitianPart l l / 2))‖ := by
+  obtain ⟨c₀, hc₀, hle⟩ := hD.exists_pos_mul_sq_le
+  have hg := ZLattice.summable_exp_neg_mul_norm_add_sq L (show 0 < π * c₀ / 2 by positivity) 0
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun l ↦ ?_) (by simpa using hg)
+  simp only [norm_mul, norm_inv, Circle.norm_coe, inv_one, one_mul, norm_exp, neg_re,
+    div_ofNat_re, re_hermitianPart_self]
+  exact Real.exp_le_exp.mpr (by nlinarith [hle l, Real.pi_pos])
+
 /-- **A positive datum has a nonzero theta function.** If the Riemann form of `D` is positive, some
 theta function of `D` does not vanish identically. The Poincaré series `P_ξ` at
 `ξ = (B - B₁) (y, ·)` does not vanish at some `y`, since on the diagonal it is a Fourier series on
@@ -376,13 +261,8 @@ theorem IsPositive.exists_mem_thetaSpace_ne_zero [IsZLattice ℝ L] (hD : D.IsPo
       ∃ k : ℤ, D.riemannForm l (bR i) = k := by
     simpa [bR] using D.exists_riemannForm_eq_intCast l (b i)
   choose n hn using h_int
-  have h_char (l : L) (φ : Module.Free.ChooseBasisIndex ℤ L → ℝ) :
-      exp (2 * π * I * D.riemannForm l (bR.equivFun.symm φ)) =
-        UnitAddTorus.mFourier (n l) (fun i ↦ (φ i : UnitAddCircle)) := by
-    rw [UnitAddTorus.mFourier_coe_apply, Module.Basis.equivFun_symm_apply, map_sum]
-    simp only [map_smul, smul_eq_mul, hn]
-    push_cast
-    simp only [mul_comm]
+  have h_char (l : L) (φ : Module.Free.ChooseBasisIndex ℤ L → ℝ) :=
+    D.exp_riemannForm_equivFun_symm_eq_mFourier bR (hn l) φ
   have hn_inj : Function.Injective n := by
     intro l l' h
     have h_zero : ∀ i, D.riemannForm ((l : V) - l') (bR i) = 0 := fun i ↦ by
@@ -400,16 +280,9 @@ theorem IsPositive.exists_mem_thetaSpace_ne_zero [IsZLattice ℝ L] (hD : D.IsPo
   have hc_n (l : L) : c (n l) = a l := hn_inj.extend_apply a 0 l
   have hc_out {m} (hm : m ∉ Set.range n) : c m = 0 := by
     simp [c, Function.extend_apply' _ _ _ hm]
-  have ha_norm : Summable fun l : L ↦ ‖a l‖ := by
-    obtain ⟨c₀, hc₀, hle⟩ := hD.exists_pos_mul_sq_le
-    have hg := ZLattice.summable_exp_neg_mul_norm_add_sq L (show 0 < π * c₀ / 2 by positivity) 0
-    refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun l ↦ ?_) (by simpa using hg)
-    simp only [a, norm_mul, norm_inv, Circle.norm_coe, inv_one, one_mul, norm_exp, neg_re,
-      div_ofNat_re, re_hermitianPart_self]
-    exact Real.exp_le_exp.mpr (by nlinarith [hle l, Real.pi_pos])
   have hc_sum : Summable fun m ↦ ‖c m‖ :=
     (hn_inj.summable_iff fun m hm ↦ by simp [hc_out hm]).mp
-      (by simpa [Function.comp_def, hc_n] using ha_norm)
+      (by simpa only [Function.comp_def, hc_n] using hD.summable_norm_semichar_inv_mul_exp)
   -- The trigonometric series with coefficients `c` vanishes on the torus.
   have hF (θ : UnitAddTorus (Module.Free.ChooseBasisIndex ℤ L)) :
       ∑' m, c m • UnitAddTorus.mFourier m θ = 0 := by

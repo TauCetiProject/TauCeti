@@ -44,7 +44,21 @@ The twisted translations satisfy the Heisenberg relations: `T_u T_v = exp (-πi 
 (`TauCeti.AppellHumbertData.twistedTranslate_twistedTranslate`), so two of them commute up to the
 phase `exp (2πi E (v, u))`
 (`TauCeti.AppellHumbertData.twistedTranslate_twistedTranslate_eq_smul_swap`). They are
-compatible with products and powers of theta functions.
+compatible with products and powers of theta functions. For `a` in the dual `L^⊥` of `L`, the
+restriction `U_a` of `T_a` to the theta functions of `D`
+(`TauCeti.AppellHumbertData.twistedTranslateEnd`) satisfies the same relations as endomorphisms.
+
+**Normalised translations.** For a complex linear endomorphism `b` of `V`, the normalised
+translation `N_x = χ_b (x)⁻¹ T_x` (`TauCeti.AppellHumbertData.normalizedTranslate`) divides `T_x` by
+the canonical multiplier `χ_b (x) = exp (πi E (x, b x))`. If
+`E (b u, w) + E (u, b w) = E (u, w)`, they satisfy the Heisenberg law
+`N_x N_y = exp (2πi E (y, b x)) N_(x + y)`
+(`TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate`), and the theta functions of
+the datum `(B, χ_b)` of `TauCeti.AppellHumbertData.ofCanonicalSemichar` are the entire functions
+fixed by every `N_l`, `l ∈ L` (`TauCeti.AppellHumbertData.mem_thetaSpace_ofCanonicalSemichar_iff`).
+The Riemann form here is `E = Im H`; the roadmap's form `E_B (u, v) = Im (B (u, v) - B (v, u)) / 2π`
+is `-E`, so its multiplier `exp (πi E_B (b x, x))` is `exp (πi E (x, b x))` here, and its phase
+`exp (2πi E_B (b x, y))` is `exp (2πi E (y, b x))`.
 
 ## Main declarations
 
@@ -56,6 +70,10 @@ compatible with products and powers of theta functions.
   the Heisenberg relations.
 * `TauCeti.AppellHumbertData.twistedTranslate_mem_thetaSpace`: translation twists the semicharacter
   by `exp (2πi E (a, ·))`.
+* `TauCeti.AppellHumbertData.twistedTranslateEnd`: the twisted translation by `a ∈ L^⊥` as an
+  endomorphism of the theta functions.
+* `TauCeti.AppellHumbertData.normalizedTranslate`: the normalised translation `N_x`, and its
+  Heisenberg law `TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate`.
 
 ## Provenance
 
@@ -71,11 +89,19 @@ Copyright 2026 Anthropic, PBC). The phases are restated for the Riemann form `E 
 the negative of the source's. The description of the
 twist through the data `TauCeti.AppellHumbertData.ofAddChar` of characters and the
 characterization `TauCeti.AppellHumbertData.riemannChar_eq_one_iff` are new here.
+`TauCeti.AppellHumbertData.normalizedTranslate`,
+`TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate` and
+`TauCeti.AppellHumbertData.mem_thetaSpace_ofCanonicalSemichar_iff` are adapted from
+`New.ThetaTori.normalizedShift`, `New.IsAppellHumbert.normalizedShift_normalizedShift` and
+`New.ThetaTori.mem_thetaSpace_iff_normalizedShift`, and
+`TauCeti.AppellHumbertData.twistedTranslateEnd` from the endomorphisms of
+`New.IsAppellHumbert.linearIndependent_thetaShiftEnd_out` (file
+`src/Lib/Shimura/ComplexTheta/DimensionFormula.lean`), at the same commit.
 
 ## References
 
 * C. Birkenhake, H. Lange, *Complex Abelian Varieties*, 2nd ed., Grundlehren 302, Springer, 2004,
-  Chapter 2 (the translates `t_v^* L (H, α)`).
+  Chapter 2 (the translates `t_v^* L (H, α)`) and Section 3.1 (canonical factors).
 * D. Mumford, *Abelian Varieties*, Tata Institute of Fundamental Research, 1970, Chapter I, §2
   (line bundles on a complex torus) and Chapter IV, §23 (the theta group).
 -/
@@ -308,5 +334,122 @@ theorem twistedTranslate_mem_thetaSpace_of_mem_dualSubmodule {a : V}
     (ha : a ∈ D.riemannForm.dualSubmodule L) (hf : f ∈ D.thetaSpace) :
     D.twistedTranslate a f ∈ D.thetaSpace := by
   simpa [(D.riemannChar_eq_one_iff).mpr ha] using twistedTranslate_mem_thetaSpace hf a
+
+variable (D) in
+/-- The **twisted translation** `U_a` by `a` in the dual `L^⊥` of `L` for the Riemann form, as an
+endomorphism of the space of theta functions. -/
+noncomputable def twistedTranslateEnd (a : D.riemannForm.dualSubmodule L) :
+    Module.End ℂ D.thetaSpace :=
+  (D.twistedTranslate a).restrict fun _ hf ↦
+    twistedTranslate_mem_thetaSpace_of_mem_dualSubmodule a.property hf
+
+/-- On a theta function, `TauCeti.AppellHumbertData.twistedTranslateEnd` is the twisted
+translation. -/
+@[simp]
+theorem coe_twistedTranslateEnd_apply (a : D.riemannForm.dualSubmodule L) (f : D.thetaSpace) :
+    (D.twistedTranslateEnd a f : V → ℂ) = D.twistedTranslate a f := (rfl)
+
+variable (D) in
+/-- The twisted translation by `0` of theta functions is the identity. -/
+@[simp]
+theorem twistedTranslateEnd_zero : D.twistedTranslateEnd 0 = 1 :=
+  LinearMap.ext fun f ↦ Subtype.ext (by
+    rw [coe_twistedTranslateEnd_apply, ZeroMemClass.coe_zero, twistedTranslate_zero,
+      one_apply_eq_self])
+
+/-- **Composition of twisted translations of theta functions**:
+`U_a U_b = exp (-πi E (a, b)) U_(a + b)`. -/
+theorem twistedTranslateEnd_mul (a b : D.riemannForm.dualSubmodule L) :
+    D.twistedTranslateEnd a * D.twistedTranslateEnd b =
+      exp (-(π * I * D.riemannForm a b)) • D.twistedTranslateEnd (a + b) :=
+  LinearMap.ext fun f ↦ Subtype.ext (by
+    rw [mul_apply_eq_comp, coe_twistedTranslateEnd_apply, coe_twistedTranslateEnd_apply,
+      LinearMap.smul_apply, Submodule.coe_smul, coe_twistedTranslateEnd_apply,
+      Submodule.coe_add, D.twistedTranslate_twistedTranslate])
+
+/-! ### Normalised translations -/
+
+variable (D) in
+/-- The **normalised translation** `N_x = χ_b (x)⁻¹ U_x` by `x ∈ V`: the twisted translation
+divided by the canonical multiplier `χ_b (x) = exp (πi E (x, b x))` of a complex linear map `b`. -/
+noncomputable def normalizedTranslate (b : V →L[ℂ] V) (x : V) : (V → ℂ) →ₗ[ℂ] V → ℂ :=
+  (Circle.exp (π * D.riemannForm x (b x)) : ℂ)⁻¹ • D.twistedTranslate x
+
+/-- The defining formula of the normalised translation. -/
+theorem normalizedTranslate_apply (b : V →L[ℂ] V) (x : V) (f : V → ℂ) :
+    D.normalizedTranslate b x f = (Circle.exp (π * D.riemannForm x (b x)) : ℂ)⁻¹ •
+      D.twistedTranslate x f := (rfl)
+
+/-- **The Heisenberg law of the normalised translations**: if
+`E (b u, w) + E (u, b w) = E (u, w)`, then `N_x N_y = exp (2πi E (y, b x)) N_(x + y)`. -/
+theorem normalizedTranslate_normalizedTranslate {b : V →L[ℂ] V}
+    (hadj : ∀ u w, D.riemannForm (b u) w + D.riemannForm u (b w) = D.riemannForm u w)
+    (x y : V) (f : V → ℂ) :
+    D.normalizedTranslate b x (D.normalizedTranslate b y f) =
+      (Circle.exp (2 * π * D.riemannForm y (b x)) : ℂ) • D.normalizedTranslate b (x + y) f := by
+  -- The multipliers at `x`, `y` and `x + y` contribute `exp (πi (E (x, b y) + E (y, b x)))`.
+  have h_exp : D.riemannForm (x + y) (b (x + y)) = D.riemannForm x (b x) +
+      D.riemannForm y (b y) + 2 * D.riemannForm x (b y) - D.riemannForm x y := by
+    have h1 := hadj x y
+    simp only [map_add, LinearMap.add_apply]
+    rw [D.riemannForm_swap (b x) y]
+    linarith
+  have h_phase : D.riemannForm y (b x) = D.riemannForm x (b y) - D.riemannForm x y := by
+    have h1 := hadj x y
+    rw [D.riemannForm_swap (b x) y]
+    linarith
+  simp only [normalizedTranslate_apply, map_smul, smul_smul,
+    D.twistedTranslate_twistedTranslate x y f]
+  congr 1
+  rw [h_exp, h_phase]
+  simp only [Circle.coe_exp, ← exp_neg, ← exp_add]
+  congr 1
+  push_cast
+  ring
+
+section CanonicalSemichar
+
+variable (B : V →L[ℝ] V →L[ℂ] ℂ) (hB : ∀ u v, (B u v).re = (B v u).re) (b : V →L[ℂ] V)
+  (hadj : ∀ u w, (B w (b u) - B (b u) w).im / (2 * π) + (B (b w) u - B u (b w)).im / (2 * π) =
+    (B w u - B u w).im / (2 * π))
+  (hint : ∀ l m : L, ∃ k : ℤ, (B m (b l) - B (b l) m).im / (2 * π) = k)
+
+/-- The Heisenberg law `N_x N_y = exp (2πi E (y, b x)) N_(x + y)` of the normalised translations
+of the datum `(B, χ_b)` of the canonical multiplier. -/
+theorem normalizedTranslate_normalizedTranslate_ofCanonicalSemichar (x y : V) (f : V → ℂ) :
+    (ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b x
+        ((ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b y f) =
+      (Circle.exp (2 * π * (ofCanonicalSemichar B hB b hadj hint).riemannForm y (b x)) : ℂ) •
+        (ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b (x + y) f :=
+  normalizedTranslate_normalizedTranslate (fun u w ↦ by
+    simpa only [riemannForm_ofCanonicalSemichar_apply] using hadj u w) x y f
+
+/-- The theta functions of `(B, χ_b)` are the entire functions fixed by the normalised
+translations `N_l`, `l ∈ L`. -/
+theorem mem_thetaSpace_ofCanonicalSemichar_iff {f : V → ℂ} :
+    f ∈ (ofCanonicalSemichar B hB b hadj hint).thetaSpace ↔ Differentiable ℂ f ∧
+      ∀ l : L, (ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b l f = f := by
+  set D' := ofCanonicalSemichar B hB b hadj hint
+  have hsc (l : L) : (D'.semichar l : ℂ) = Circle.exp (π * D'.riemannForm l (b l)) := by
+    rw [semichar_ofCanonicalSemichar_eq_circleExp]
+  rw [mem_thetaSpace_iff]
+  refine and_congr_right fun _ ↦ ⟨fun h l ↦ funext fun z ↦ ?_, fun h l z ↦ ?_⟩
+  · rw [normalizedTranslate_apply, Pi.smul_apply, twistedTranslate_apply, h l z, factor_def,
+      smul_eq_mul, exp_neg, ← hsc]
+    have he := exp_ne_zero (D'.form l z + D'.form l l / 2)
+    have hc := Circle.coe_ne_zero (D'.semichar l)
+    generalize exp (D'.form l z + D'.form l l / 2) = e at he ⊢
+    field_simp
+  · have h' := congrFun (h l) z
+    rw [normalizedTranslate_apply, Pi.smul_apply, twistedTranslate_apply, smul_eq_mul, exp_neg,
+      ← hsc] at h'
+    rw [factor_def]
+    have he := exp_ne_zero (D'.form l z + D'.form l l / 2)
+    have hc := Circle.coe_ne_zero (D'.semichar l)
+    generalize exp (D'.form l z + D'.form l l / 2) = e at he h' ⊢
+    field_simp at h'
+    linear_combination h'
+
+end CanonicalSemichar
 
 end TauCeti.AppellHumbertData

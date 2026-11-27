@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import Mathlib.MeasureTheory.Group.Integral
 import TauCeti.Analysis.Fourier.Torus.UnitCube
+import TauCeti.Analysis.Fourier.Torus.Uniqueness
+import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
 # Periodic functions on `ℝᵈ` integrated over the unit cube
@@ -23,8 +25,9 @@ function is given in the coordinates of a lattice basis rather than on the torus
 * a continuous periodic function whose Fourier coefficients
   `∫ exp (-2πi ⟨n, x⟩) g(x) dx` over the cube all vanish is zero
   (`TauCeti.UnitAddTorus.eq_zero_of_forall_setIntegral_mFourier_mul_eq_zero`). This is
-  `TauCeti.UnitAddTorus.ae_eq_zero_of_forall_setIntegral_mFourier_mul_eq_zero` for continuous
-  functions, read on all of `ℝᵈ` by periodicity.
+  `Continuous.eq_of_mFourierCoeff_eq` for the function that `g` induces on the torus
+  (`TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq`), whose Fourier coefficients are these
+  integrals.
 -/
 
 public section
@@ -35,17 +38,6 @@ open _root_.UnitAddTorus
 namespace TauCeti.UnitAddTorus
 
 variable {d : Type*} {E : Type*}
-
-/-- A periodic function takes the same value at two points that have the same image in the torus.
--/
-theorem apply_eq_apply_of_coe_eq {g : (d → ℝ) → E}
-    (hg : ∀ (x : d → ℝ) (n : d → ℤ), g (x + fun i ↦ (n i : ℝ)) = g x) {x y : d → ℝ}
-    (h : ∀ i, (x i : UnitAddCircle) = y i) : g x = g y := by
-  have hn (i : d) : ∃ k : ℤ, y i = x i + k := by
-    obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.mp (QuotientAddGroup.eq.mp (h i))
-    exact ⟨k, by simp only [zsmul_eq_mul, mul_one] at hk; linarith⟩
-  choose n hn using hn
-  rw [show y = x + fun i ↦ (n i : ℝ) from funext hn, hg]
 
 -- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
 -- measures on the circle factors, given by this instance; it is the measure of
@@ -66,10 +58,13 @@ theorem setIntegral_unitCube_comp_add_right {g : (d → ℝ) → E}
   have hTx (x : UnitAddTorus d) (i : d) : (T x i : UnitAddCircle) = x i := by simp [T]
   -- On the torus, `x ↦ g (T x + c)` is the translate of `g ∘ T` by the image of `c`.
   have h_shift (x : UnitAddTorus d) :
-      g (T x + c) = g (T ((fun i ↦ (c i : UnitAddCircle)) + x)) :=
-    apply_eq_apply_of_coe_eq hg fun i ↦ by
-      rw [hTx]
+      g (T x + c) = g (T ((fun i ↦ (c i : UnitAddCircle)) + x)) := by
+    have h : ((fun i ↦ ((T x + c) i : UnitAddCircle)) : UnitAddTorus d) =
+        fun i ↦ (T ((fun i ↦ (c i : UnitAddCircle)) + x) i : UnitAddCircle) := by
+      ext i
       simp [hTx, add_comm]
+    obtain ⟨m, hm⟩ := coe_eq_coe_iff.1 h
+    rw [hm, hg]
   have : (volume : Measure UnitAddCircle).IsAddLeftInvariant :=
     inferInstanceAs (AddCircle.haarAddCircle (T := 1)).IsAddLeftInvariant
   have : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
@@ -88,31 +83,20 @@ theorem eq_zero_of_forall_setIntegral_mFourier_mul_eq_zero {g : (d → ℝ) → 
     (h : ∀ n : d → ℤ, ∫ x in univ.pi fun _ ↦ Icc (0 : ℝ) 1,
       mFourier (-n) (fun i ↦ (x i : UnitAddCircle)) * g x = 0) :
     g = 0 := by
-  set Q : Set (d → ℝ) := univ.pi fun _ ↦ Icc (0 : ℝ) 1
-  have hQ : IsCompact Q := isCompact_univ_pi fun _ ↦ isCompact_Icc
-  -- `g` is bounded on the cube, hence square integrable there.
-  obtain ⟨C, hC⟩ := hQ.exists_bound_of_continuousOn hc.continuousOn
-  have hmem : MemLp g 2 ((volume : Measure (d → ℝ)).restrict Q) := by
-    have : IsFiniteMeasure ((volume : Measure (d → ℝ)).restrict Q) :=
-      isFiniteMeasure_restrict.mpr hQ.measure_lt_top.ne
-    exact (memLp_top_of_bound hc.aestronglyMeasurable C
-      ((ae_restrict_iff' (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc)).mpr
-        (ae_of_all _ hC))).mono_exponent le_top
-  have h_ae := ae_eq_zero_of_forall_setIntegral_mFourier_mul_eq_zero hmem h
-  -- The cube is the closure of its interior, so `g` vanishes on the cube.
-  have h_closure : Q ⊆ closure (interior Q) := by
-    rw [interior_pi_set finite_univ, closure_pi_set]
-    intro x hx i _
-    simpa [closure_Ioo zero_ne_one] using hx i (mem_univ i)
-  have h_on : EqOn g 0 Q :=
-    Measure.eqOn_of_ae_eq h_ae hc.continuousOn continuousOn_const h_closure
-  -- Every point is congruent to a point of the cube.
+  -- `g` descends to a continuous function `G` on the torus, whose Fourier coefficients are the
+  -- integrals over the cube.
+  obtain ⟨G, hGc, hG⟩ := exists_continuous_comp_coe_eq hc fun n x ↦ hg x n
+  set T := fun x : UnitAddTorus d ↦ ((measurableEquivPiIoc 0 x : _) : d → ℝ)
+  have hT : MeasurePreserving T volume _ := measurePreserving_coe_measurableEquivPiIoc
+  have hTe : MeasurableEmbedding T := measurableEmbedding_coe_measurableEquivPiIoc
+  have hTx (x : UnitAddTorus d) : (fun i ↦ (T x i : UnitAddCircle)) = x := by
+    ext i; simp [T]
+  have hG_zero : G = 0 := hGc.eq_of_mFourierCoeff_eq continuous_zero fun n ↦ by
+    rw [show mFourierCoeff (0 : UnitAddTorus d → ℂ) n = 0 by simp [mFourierCoeff], ← h n,
+      ← hT.integral_comp hTe]
+    refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+    simp only [smul_eq_mul, ← hG, hTx]
   funext x
-  have hfract : (fun i ↦ Int.fract (x i)) ∈ Q := fun i _ ↦
-    ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
-  have hx : x = (fun i ↦ Int.fract (x i)) + fun i ↦ ((⌊x i⌋ : ℤ) : ℝ) := by
-    funext i; simp [Int.fract_add_floor]
-  rw [hx, hg]
-  exact h_on hfract
+  rw [← hG, hG_zero, Pi.zero_apply, Pi.zero_apply]
 
 end TauCeti.UnitAddTorus
