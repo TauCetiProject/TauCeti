@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Idempotented.NondegMod
 import TauCeti.CategoryTheory.Linear.FullSubcategory
 
 /-!
-# Bimodule endomorphisms act on nondegenerate modules
+# Bimodule endomorphisms form the centre of nondegenerate modules
 
 Let `H` be an idempotented algebra over a commutative ring `A`. A bimodule endomorphism of `H`,
 that is an additive map `φ : H → H` with `φ(xy) = x φ(y) = φ(x) y` (Mathlib's centroid
@@ -24,13 +24,19 @@ This gives a ring homomorphism `CentroidHom H →+* CatCenter (NondegMod A H)`
 (`TauCeti.NondegMod.centroidToCatCenter`), defined for modules in every universe. For
 `NondegMod.{max u₁ u₂} A H`, modules in a universe large enough to contain the regular module of
 the unitization, it is injective, because on the nondegenerate part `H` of that regular module,
-`φ` acts by `x ↦ φ(x)` (`TauCeti.NondegMod.centroidToCatCenter_injective`).
+`φ` acts by `x ↦ φ(x)` (`TauCeti.NondegMod.centroidToCatCenter_injective`). It is also
+surjective, so it is a ring isomorphism (`TauCeti.NondegMod.centroidEquivCatCenter`): a central
+`z` acts on the regular module `H • (A ⊕ H)`, whose elements are those of `H`, by a map `φ` that
+is left `H`-linear and, by naturality for right multiplications, right `H`-linear; naturality for
+the maps `u ↦ u • m` shows that `z` acts on `m` by `φ(e)` for a local unit `e` of `m`.
 
 ## Main definitions
 
 * `CentroidHom.moduleEnd φ hM`: the action of `φ` on a nondegenerate module `M`.
 * `TauCeti.NondegMod.centroidToCatCenter A H`: the ring homomorphism from the bimodule
   endomorphisms of `H` to the centre of `NondegMod A H`.
+* `TauCeti.NondegMod.centroidEquivCatCenter A H`: the ring isomorphism
+  `CentroidHom H ≃+* CatCenter (NondegMod A H)` for modules in universe `max u₁ u₂`.
 
 ## Main results
 
@@ -41,6 +47,8 @@ the unitization, it is injective, because on the nondegenerate part `H` of that 
   `CentroidHom.moduleEnd_mul`: the action respects the ring operations of `CentroidHom H`.
 * `TauCeti.NondegMod.centroidToCatCenter_injective`: distinct bimodule endomorphisms act
   differently on nondegenerate modules in universe `max u₁ u₂`.
+* `TauCeti.NondegMod.centroidToCatCenter_surjective`: every element of the centre of
+  `NondegMod A H` (universe `max u₁ u₂`) comes from a bimodule endomorphism of `H`.
 
 ## References
 
@@ -261,5 +269,131 @@ theorem centroidToCatCenter_injective :
   replace this : (φ e : Unitization A H) * x = (ψ e : Unitization A H) * x := this
   rwa [← Unitization.inr_mul, ← Unitization.inr_mul, ← map_mul_right, ← map_mul_right, hex,
     Unitization.inr_injective.eq_iff] at this
+
+/-! ### The centre is the centroid -/
+
+/-- The regular nondegenerate module `H • (A ⊕ H)`: the nondegenerate part of the unitization,
+whose elements are those of `H` (`TauCeti.NondegMod.inr_snd_eq_of_mem_nondegeneratePart`). -/
+private noncomputable abbrev regular : NondegMod.{max u₁ u₂} A H :=
+  (nondegeneratePartFunctor.{max u₁ u₂} A H).obj (ModuleCat.of _ (Unitization A H))
+
+/-- An element of the unitization in `H • (A ⊕ H)` lies in `H`: it is fixed by some `e ∈ H`. -/
+theorem inr_snd_eq_of_mem_nondegeneratePart {u : Unitization A H}
+    (hu : u ∈ nondegeneratePart A H (Unitization A H)) : (u.snd : Unitization A H) = u := by
+  obtain ⟨e, -, he⟩ := mem_nondegeneratePart_iff.1 hu
+  rw [← he]
+  ext <;> simp
+
+/-- An element `h ∈ H`, as an element of the regular nondegenerate module. -/
+private noncomputable def regularElem (h : H) : (regular (A := A) (H := H)).obj :=
+  ⟨(h : Unitization A H), by
+    classical
+    obtain ⟨e, he, heh⟩ := IsIdempotented.exists_isIdempotentElem {h}
+    exact mem_nondegeneratePart_iff.2
+      ⟨e, he, by rw [smul_eq_mul, ← Unitization.inr_mul, (heh h (by simp)).1]⟩⟩
+
+/-- Right multiplication by `y ∈ H`, an endomorphism of the regular nondegenerate module. -/
+private noncomputable def regularMulRight (y : H) :
+    regular (A := A) (H := H) ⟶ regular (A := A) (H := H) :=
+  ObjectProperty.homMk (ModuleCat.ofHom
+    ((LinearMap.toSpanSingleton (Unitization A H) (Unitization A H) (y : Unitization A H)).restrict
+      fun u hu ↦ by
+        obtain ⟨e, he, heu⟩ := mem_nondegeneratePart_iff.1 hu
+        refine mem_nondegeneratePart_iff.2 ⟨e, he, ?_⟩
+        rw [smul_eq_mul] at heu
+        rw [LinearMap.toSpanSingleton_apply, smul_eq_mul, smul_eq_mul, ← mul_assoc, heu]))
+
+/-- The morphism `u ↦ u • m` from the regular nondegenerate module to a nondegenerate module. -/
+private noncomputable def regularToSpan (M : NondegMod.{max u₁ u₂} A H) (m : M.obj) :
+    regular (A := A) (H := H) ⟶ M :=
+  ObjectProperty.homMk (ModuleCat.ofHom
+    (LinearMap.toSpanSingleton (Unitization A H) M.obj m ∘ₗ
+      (nondegeneratePart A H (Unitization A H)).subtype))
+
+private theorem regularElem_zero : regularElem (A := A) (0 : H) = 0 :=
+  Subtype.ext (Unitization.inr_zero A)
+
+private theorem regularElem_add (x y : H) :
+    regularElem (A := A) (x + y) = regularElem x + regularElem y :=
+  Subtype.ext (Unitization.inr_add A x y)
+
+private theorem regularElem_mul_eq_smul (x y : H) :
+    regularElem (A := A) (x * y) = (x : Unitization A H) • regularElem y :=
+  Subtype.ext (Unitization.inr_mul A x y)
+
+private theorem regularElem_mul_eq_mulRight (x y : H) :
+    regularElem (A := A) (x * y) = (regularMulRight y).hom.hom (regularElem x) :=
+  Subtype.ext (Unitization.inr_mul A x y)
+
+private theorem regularToSpan_regularElem (M : NondegMod.{max u₁ u₂} A H) (m : M.obj) (h : H) :
+    (regularToSpan M m).hom.hom (regularElem h) = (h : Unitization A H) • m :=
+  rfl
+
+omit [IsIdempotented H] in
+/-- An element of the centre commutes with every morphism, elementwise. -/
+private theorem catCenter_app_hom_apply (z : CatCenter (NondegMod.{v} A H))
+    {X Y : NondegMod.{v} A H} (f : X ⟶ Y) (x : X.obj) :
+    (z.app Y).hom.hom (f.hom.hom x) = f.hom.hom ((z.app X).hom.hom x) := by
+  simpa using congr(($(z.naturality f)).hom.hom x)
+
+variable (A H) in
+/-- The function `H → H` given by an element `z` of the centre: `z` acting on `h ∈ H` in the
+regular nondegenerate module. -/
+private noncomputable def catCenterToFun (z : CatCenter (NondegMod.{max u₁ u₂} A H)) (h : H) :
+    H :=
+  ((z.app regular).hom.hom (regularElem h)).val.snd
+
+private theorem inr_catCenterToFun (z : CatCenter (NondegMod.{max u₁ u₂} A H)) (h : H) :
+    (catCenterToFun A H z h : Unitization A H) =
+      ((z.app regular).hom.hom (regularElem h)).val :=
+  inr_snd_eq_of_mem_nondegeneratePart ((z.app regular).hom.hom (regularElem h)).property
+
+/-- The bimodule endomorphism of `H` given by an element of the centre of `NondegMod A H`. -/
+private noncomputable def catCenterToCentroid (z : CatCenter (NondegMod.{max u₁ u₂} A H)) :
+    CentroidHom H where
+  toFun := catCenterToFun A H z
+  map_zero' := Unitization.inr_injective (R := A) <| by
+    rw [inr_catCenterToFun, regularElem_zero, map_zero, Unitization.inr_zero]
+    rfl
+  map_add' x y := Unitization.inr_injective (R := A) <| by
+    rw [Unitization.inr_add, inr_catCenterToFun, inr_catCenterToFun, inr_catCenterToFun,
+      regularElem_add, map_add]
+    rfl
+  map_mul_left' x y := Unitization.inr_injective (R := A) <| by
+    rw [Unitization.inr_mul, inr_catCenterToFun, inr_catCenterToFun, regularElem_mul_eq_smul,
+      map_smul]
+    rfl
+  map_mul_right' x y := Unitization.inr_injective (R := A) <| by
+    rw [Unitization.inr_mul, inr_catCenterToFun, inr_catCenterToFun, regularElem_mul_eq_mulRight,
+      catCenter_app_hom_apply]
+    rfl
+
+/-- **The centre of `NondegMod A H` is the centroid of `H`**: every central endomorphism of
+the identity functor of nondegenerate modules in universe `max u₁ u₂` comes from a bimodule
+endomorphism of `H`, namely its action on the regular nondegenerate module `H • (A ⊕ H)`. -/
+theorem centroidToCatCenter_surjective :
+    Function.Surjective (centroidToCatCenter.{max u₁ u₂} A H) := by
+  intro z
+  refine ⟨catCenterToCentroid z, ?_⟩
+  ext M m
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
+  rw [centroidToCatCenter_app_apply _ M he]
+  conv_rhs => rw [← he, ← regularToSpan_regularElem, catCenter_app_hom_apply]
+  change (catCenterToFun A H z e : Unitization A H) • m =
+    ((z.app regular).hom.hom (regularElem e)).val • m
+  rw [inr_catCenterToFun]
+
+variable (A H) in
+/-- **The centre of the category of nondegenerate modules** is the ring of bimodule
+endomorphisms of `H`: `CentroidHom H ≃+* CatCenter (NondegMod A H)`. -/
+noncomputable def centroidEquivCatCenter :
+    CentroidHom H ≃+* CatCenter (NondegMod.{max u₁ u₂} A H) :=
+  RingEquiv.ofBijective (centroidToCatCenter.{max u₁ u₂} A H)
+    ⟨centroidToCatCenter_injective, centroidToCatCenter_surjective⟩
+
+@[simp]
+theorem centroidEquivCatCenter_apply (φ : CentroidHom H) :
+    centroidEquivCatCenter A H φ = centroidToCatCenter.{max u₁ u₂} A H φ :=
+  RingEquiv.ofBijective_apply _ _ _
 
 end TauCeti.NondegMod
