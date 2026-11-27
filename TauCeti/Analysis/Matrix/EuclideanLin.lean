@@ -74,6 +74,9 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
+* `Matrix.inner_toEuclideanCLM_left_of_conjTranspose_eq_neg`,
+  `Matrix.re_inner_toEuclideanCLM_self_of_conjTranspose_eq_neg` — a skew-Hermitian matrix acts by
+  a skew-adjoint operator, whose quadratic form has zero real part;
 * `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
   the linear isometry group of Euclidean space, acting as the matrix does
   (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it preserves determinants
@@ -335,6 +338,21 @@ transpose. -/
 theorem adjoint_toEuclideanCLM (A : Matrix ι ι 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) A).adjoint = toEuclideanCLM (𝕜 := 𝕜) Aᴴ := by
   rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star, star_eq_conjTranspose]
+
+/-- A skew-Hermitian matrix, `Aᴴ = -A`, acts by a skew-adjoint operator:
+`⟪A x, y⟫ = -⟪x, A y⟫`. -/
+theorem inner_toEuclideanCLM_left_of_conjTranspose_eq_neg {A : Matrix ι ι 𝕜} (hA : Aᴴ = -A)
+    (x y : EuclideanSpace 𝕜 ι) :
+    ⟪toEuclideanCLM (𝕜 := 𝕜) A x, y⟫_𝕜 = -⟪x, toEuclideanCLM (𝕜 := 𝕜) A y⟫_𝕜 := by
+  rw [← ContinuousLinearMap.adjoint_inner_left, adjoint_toEuclideanCLM, hA, map_neg,
+    neg_apply, inner_neg_left, neg_neg]
+
+/-- The quadratic form `⟪x, A x⟫` of a skew-Hermitian matrix, `Aᴴ = -A`, has zero real part. -/
+theorem re_inner_toEuclideanCLM_self_of_conjTranspose_eq_neg {A : Matrix ι ι 𝕜} (hA : Aᴴ = -A)
+    (x : EuclideanSpace 𝕜 ι) : RCLike.re ⟪x, toEuclideanCLM (𝕜 := 𝕜) A x⟫_𝕜 = 0 := by
+  have h := congrArg RCLike.re (inner_toEuclideanCLM_left_of_conjTranspose_eq_neg hA x x)
+  rw [← inner_conj_symm, RCLike.conj_re, map_neg] at h
+  linarith
 
 /-- Congruence by `A` on the operator side: the sesquilinear form of `A * B * Aᴴ` at `x, y` is
 the sesquilinear form of `B` at `Aᴴ x, Aᴴ y`. -/
