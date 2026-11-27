@@ -23,34 +23,33 @@ idempotent) with `P * B = B`, and it factors through `B` as `P = B * M`.
 
 public section
 
-open WithLp
-
 namespace Matrix
 
 variable {𝕜 n m : Type*} [RCLike 𝕜] [Fintype n] [Fintype m]
 
 /-- **The orthogonal projector onto the column space of `B`**: a star projection `P` with
 `P * B = B` and `P = B * M` for some `M`. It is the matrix of the orthogonal projection of
-Euclidean space onto the range of `B`. -/
+Euclidean space onto the range `K` of `B`, and `M` is the matrix of a linear section of `B` over
+`K` composed with the orthogonal projection onto `K`. -/
 theorem exists_isStarProjection_mul_eq_self_and_eq_mul (B : Matrix n m 𝕜) :
     ∃ P : Matrix n n 𝕜, ∃ M : Matrix m n 𝕜, IsStarProjection P ∧ P * B = B ∧ P = B * M := by
   classical
-  set K : Submodule 𝕜 (EuclideanSpace 𝕜 n) := LinearMap.range (toEuclideanLin B)
+  set f := toEuclideanLin B
+  set K : Submodule 𝕜 (EuclideanSpace 𝕜 n) := LinearMap.range f
   set P : Matrix n n 𝕜 := (toEuclideanCLM (n := n) (𝕜 := 𝕜)).symm K.starProjection
-  have hP : ∀ x : n → 𝕜, P *ᵥ x = ofLp (K.starProjection (toLp 2 x)) := fun x => by
-    simpa [P] using (ofLp_toEuclideanCLM P (toLp 2 x)).symm
-  have hBK : ∀ v : m → 𝕜, toLp 2 (B *ᵥ v) ∈ K := fun v =>
-    ⟨toLp 2 v, by rw [toLpLin_apply, ofLp_toLp]⟩
-  have hM : ∀ i, ∃ a : m → 𝕜, B *ᵥ a = P *ᵥ Pi.single i 1 := fun i => by
-    obtain ⟨a, ha⟩ := K.starProjection_apply_mem (toLp 2 (Pi.single i 1))
-    exact ⟨ofLp a, by rw [hP, ← ha, toLpLin_apply, ofLp_toLp]⟩
-  choose a ha using hM
-  refine ⟨P, of fun j i => a i j, isStarProjection_starProjection.map toEuclideanCLM.symm,
-    ext_iff_mulVec.2 fun v => ?_, ext_of_mulVec_single fun i => ?_⟩
-  · rw [← mulVec_mulVec, hP, Submodule.starProjection_eq_self_iff.2 (hBK v), ofLp_toLp]
-  · rw [← mulVec_mulVec, ← ha i]
-    congr 1
-    ext j
-    simp
+  have hP : toEuclideanLin P = K.starProjection := by
+    rw [← coe_toEuclideanCLM_eq_toEuclideanLin, StarAlgEquiv.apply_symm_apply]
+  -- A linear section `s` of `f` over its range `K`.
+  obtain ⟨s, hs⟩ := f.rangeRestrict.exists_rightInverse_of_surjective f.range_rangeRestrict
+  refine ⟨P, toEuclideanLin.symm (s ∘ₗ K.orthogonalProjectionOnto.toLinearMap),
+    isStarProjection_starProjection.map toEuclideanCLM.symm, toEuclideanLin.injective ?_,
+    toEuclideanLin.injective ?_⟩
+  · refine LinearMap.ext fun v => ?_
+    rw [toLpLin_mul_same, hP, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      Submodule.starProjection_eq_self_iff.2 (LinearMap.mem_range_self f v)]
+  · refine LinearMap.ext fun v => ?_
+    have h := congrArg Subtype.val (LinearMap.congr_fun hs (K.orthogonalProjectionOnto v))
+    rw [toLpLin_mul_same, hP, LinearEquiv.apply_symm_apply]
+    simpa using h.symm
 
 end Matrix

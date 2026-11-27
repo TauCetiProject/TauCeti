@@ -14,11 +14,15 @@ The solutions of `exp ν = 1` are the points of `2π i ℤ` (`Complex.exp_eq_one
 `exp ν = -1` are the points of `π i (2 ℤ + 1)`. Measuring them by their norm: the only solution of
 `exp ν = 1` with `‖ν‖ < 2π` is `ν = 0`, and every solution of `exp ν = -1` has `π ≤ ‖ν‖`. These
 are the bounds that keep the eigenvalues `1` and `-1` away from the exponential of a small matrix.
+In the other direction, `-1` has roots `exp (t * I)` of some order `k` with `t` arbitrarily
+small, namely `t = π / k`.
 
 ## Main results
 
 * `Complex.eq_zero_of_exp_eq_one_of_norm_lt`: `exp ν = 1` and `‖ν‖ < 2π` imply `ν = 0`.
 * `Complex.pi_le_norm_of_exp_eq_neg_one`: `exp ν = -1` implies `π ≤ ‖ν‖`.
+* `Complex.exists_abs_lt_and_exp_mul_I_pow_eq_neg_one`: for every `ε > 0` there are `|t| < ε`
+  and `k` with `exp (t * I) ^ k = -1`.
 -/
 
 public section
@@ -51,5 +55,21 @@ theorem pi_le_norm_of_exp_eq_neg_one {ν : ℂ} (hν : exp ν = -1) : Real.pi �
     rw [hν', norm_mul, norm_intCast]
     simp [abs_of_pos Real.pi_pos]
   nlinarith [Real.pi_pos]
+
+/-- **Small roots of `-1` on the unit circle**: for every `ε > 0` there are a real `t` with
+`|t| < ε` and a natural number `k` with `exp (t * I) ^ k = -1`, namely `t = π / k` for
+`k > π / ε`. -/
+theorem exists_abs_lt_and_exp_mul_I_pow_eq_neg_one {ε : ℝ} (hε : 0 < ε) :
+    ∃ (k : ℕ) (t : ℝ), |t| < ε ∧ exp (t * I) ^ k = -1 := by
+  obtain ⟨k, hk⟩ := exists_nat_gt (Real.pi / ε)
+  have hk0 : (0 : ℝ) < k := (div_pos Real.pi_pos hε).trans hk
+  refine ⟨k, Real.pi / k, ?_, ?_⟩
+  · rw [abs_of_pos (div_pos Real.pi_pos hk0), div_lt_iff₀ hk0, mul_comm]
+    exact (div_lt_iff₀ hε).1 hk
+  · have h : (k : ℂ) * (↑(Real.pi / k) * I) = Real.pi * I := by
+      have hk0' : (k : ℂ) ≠ 0 := by exact_mod_cast hk0.ne'
+      push_cast
+      field_simp
+    rw [← exp_natCast_mul, h, exp_pi_mul_I]
 
 end Complex

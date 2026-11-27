@@ -198,20 +198,18 @@ theorem _root_.MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub [Topologica
     {f : G → E} (hf : MemLp f p μ) (hp : p ≠ ∞) :
     Tendsto (fun g => eLpNorm (fun x => f (g * x) - f x) p μ) (𝓝 1) (𝓝 0) := by
   have : Fact (p ≠ ∞) := ⟨hp⟩
-  set F := hf.toLp f
-  -- `f (g * ·)` represents the `DomMulAct` translate `mk g • F`, which tends to `F` as `g → 1`.
-  have h : Tendsto (fun g : G => DomMulAct.mk g • F - F) (𝓝 1) (𝓝 0) := by
-    simpa using (((DomMulAct.continuous_mk (M := G)).smul
-      (continuous_const (y := F))).tendsto (1 : G)).sub_const F
-  refine (eNorm_zero (E := Lp E p μ) ▸ (continuous_eNorm.tendsto 0).comp h).congr' <|
-    Eventually.of_forall fun g => ?_
-  rw [Function.comp_apply, Lp.eNorm_def]
-  refine eLpNorm_congr_ae ?_
-  filter_upwards [Lp.coeFn_sub (DomMulAct.mk g • F) F, DomMulAct.smul_Lp_ae_eq (DomMulAct.mk g) F,
-    hf.coeFn_toLp, (measurePreserving_mul_left μ g).quasiMeasurePreserving.ae hf.coeFn_toLp]
-    with x h₁ h₂ h₃ h₄
-  rw [h₁, Pi.sub_apply, h₂, h₃]
-  simpa using h₄
+  -- `Lp.leftTranslation` acts by isometries linear over a ring of scalars; `ℤ` acts on any `E`.
+  let : IsBoundedSMul ℤ E := .of_norm_smul_le norm_zsmul_le
+  have hinv : Tendsto (fun g : G => g⁻¹) (𝓝 1) (𝓝 1) := by
+    simpa using (continuous_inv (G := G)).tendsto 1
+  -- `f (g * ·)` represents the left translate `L_{g⁻¹} f`, which tends to `f` as `g → 1`.
+  refine ((tendsto_Lp_iff_tendsto_eLpNorm _ f hf).1
+    ((tendsto_leftTranslation_apply_nhds_one (𝕜 := ℤ) hp (hf.toLp f)).comp hinv)).congr
+    fun g => eLpNorm_congr_ae ?_
+  filter_upwards [coeFn_leftTranslation (𝕜 := ℤ) g⁻¹ (hf.toLp f),
+    (measurePreserving_mul_left μ g).quasiMeasurePreserving.ae hf.coeFn_toLp] with x h₁ h₂
+  simp only [Pi.sub_apply, Function.comp_apply]
+  rw [h₁, inv_inv, h₂]
 
 open Topology in
 /-- **Continuity of left translation in `L¹`**: the left translates of an integrable function

@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
-import Mathlib.Analysis.CStarAlgebra.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Star.Projection.Conjugate
+import TauCeti.Analysis.CStarAlgebra.Projection.Orthogonal
 import TauCeti.Analysis.Matrix.EuclideanLin.Projection
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
@@ -30,7 +31,7 @@ So, for every `c ≥ 0` and every `x`, the elements of `U(J)` that dilate the co
 `1 + c` and preserve the form on their `J`-orthogonal include a conjugate `x * y * x⁻¹` with
 `‖y - 1‖ ≤ c`; the factor `1 + c` does not depend on `x`. This is the hypothesis on dilations
 under which idempotent kernels kill the functions invariant under the unipotent radical
-(`TauCeti.rightRegularIntegral_eq_zero`).
+(`TauCeti.rightRegularIntegral_apply_eq_zero`).
 
 The element `y` is written down from the orthogonal projector `P` onto the column space of
 `B = x⁻¹ * A` (`Matrix.exists_isStarProjection_mul_eq_self_and_eq_mul`) and from
@@ -41,10 +42,11 @@ y = 1 + c • P - (c / (1 + c)) • Q.
 ```
 
 As the column space of `B` is totally isotropic, `P * J * P = 0`, so `P` and `Q` are orthogonal
-projectors with `P * Q = Q * P = 0`. Then `J * y = y' * J` with
+projectors with `P * Q = Q * P = 0` (`IsStarProjection.conjugate`,
+`IsSelfAdjoint.isStarOrtho_conjugate`). Then `J * y = y' * J` with
 `y' = 1 - (c / (1 + c)) • P + c • Q` and `y * y' = 1`, so that `star y * J * y = J`. For the norm,
 `y - 1 = (c / (1 + c)) • (P - Q) + (c - c / (1 + c)) • P`, where `(P - Q)² = P + Q` is a projector,
-so `‖P - Q‖ ≤ 1` by the C⋆-identity.
+so `‖P - Q‖ ≤ 1` by the C⋆-identity (`IsStarProjection.norm_sub_le_one`).
 
 ## Main results
 
@@ -79,69 +81,53 @@ private theorem isStarProjection_mul_mul (hJ : J.IsHermitian) (hJJ : J * J = 1) 
     (hP : IsStarProjection P) (hPJP : P * J * P = 0) :
     IsStarProjection (J * P * J) ∧ P * (J * P * J) = 0 ∧ J * P * J * P = 0 := by
   have hJs : star J = J := hJ
-  have hJJ' : ∀ X : Matrix n n 𝕜, J * (J * X) = X := fun X => by rw [← mul_assoc, hJJ, one_mul]
-  have hPP' : ∀ X : Matrix n n 𝕜, P * (P * X) = P * X := fun X => by
-    rw [← mul_assoc, hP.isIdempotentElem.eq]
-  -- `P * J * P = 0` in right-associated form.
-  have hPJP₀ : P * (J * P) = 0 := by rw [← mul_assoc, hPJP]
-  have hPJP' : ∀ X : Matrix n n 𝕜, P * (J * (P * X)) = 0 := fun X => by
-    rw [← mul_assoc, ← mul_assoc, hPJP, zero_mul]
-  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
-  · rw [IsIdempotentElem]
-    simp only [mul_assoc, hJJ', hPP']
-  · rw [IsSelfAdjoint, star_mul, star_mul, hJs, hP.isSelfAdjoint.star_eq, mul_assoc]
-  · simp only [mul_assoc, hPJP']
-  · simp only [mul_assoc, hPJP₀, mul_zero]
+  have hQ := hP.conjugate (u := J) (by rw [hJs, hJJ])
+  have hPQ := hP.isSelfAdjoint.isStarOrtho_conjugate (u := J) hPJP
+  rw [hJs] at hQ hPQ
+  exact ⟨hQ, hPQ.mul_eq_zero' hQ.isSelfAdjoint, hPQ.mul_eq_zero hQ.isSelfAdjoint⟩
 
 /-- The dilation preserves the form of `J`: `star y * J * y = J`. -/
 private theorem star_dilation_mul_mul (hJ : J.IsHermitian) (hJJ : J * J = 1) {P : Matrix n n 𝕜}
     (hP : IsStarProjection P) (hPJP : P * J * P = 0) {c : ℝ} (hc : 0 ≤ c) :
     star (dilation J P c) * J * dilation J P c = J := by
-  obtain ⟨hQ, -, -⟩ := isStarProjection_mul_mul hJ hJJ hP hPJP
+  obtain ⟨hQ, hPQ, hQP⟩ := isStarProjection_mul_mul hJ hJJ hP hPJP
   have hc' : ((c / (1 + c) : ℝ) : 𝕜) * (1 + c) = c := by
     have h1 : (1 + (c : 𝕜)) ≠ 0 := by exact_mod_cast (by linarith : (1 + c) ≠ 0)
     push_cast
     exact div_mul_cancel₀ _ h1
-  -- Rewriting rules for right-associated products of `J` and `P`.
-  have hJJ' : ∀ X : Matrix n n 𝕜, J * (J * X) = X := fun X => by rw [← mul_assoc, hJJ, one_mul]
-  have hPP : P * P = P := hP.isIdempotentElem.eq
-  have hPP' : ∀ X : Matrix n n 𝕜, P * (P * X) = P * X := fun X => by rw [← mul_assoc, hPP]
-  have hPJP₀ : P * (J * P) = 0 := by rw [← mul_assoc, hPJP]
-  have hPJP' : ∀ X : Matrix n n 𝕜, P * (J * (P * X)) = 0 := fun X => by
-    rw [← mul_assoc, ← mul_assoc, hPJP, zero_mul]
+  -- `J` exchanges `P` and `Q = J * P * J`: `J * Q = P * J` and `J * P = Q * J`.
+  have hJQ : J * (J * P * J) = P * J := by rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hJJ,
+    Matrix.one_mul]
+  have hJP : J * P = J * P * J * J := by rw [Matrix.mul_assoc _ J J, hJJ, Matrix.mul_one]
+  unfold dilation
+  set Q := J * P * J
   -- `y` is self-adjoint, `J * y = y' * J`, and `y * y' = 1`.
-  have hstar : star (dilation J P c) = dilation J P c := by
-    simp [dilation, star_sub, star_add, star_smul, hP.isSelfAdjoint.star_eq,
-      hQ.isSelfAdjoint.star_eq]
-  have hJy : J * dilation J P c =
-      (1 - ((c / (1 + c) : ℝ) : 𝕜) • P + (c : 𝕜) • (J * P * J)) * J := by
-    simp only [dilation, mul_add, mul_sub, add_mul, sub_mul, mul_one, one_mul, mul_smul_comm,
-      smul_mul_assoc, mul_assoc, hJJ', hJJ]
+  have hstar : star (1 + (c : 𝕜) • P - ((c / (1 + c) : ℝ) : 𝕜) • Q) =
+      1 + (c : 𝕜) • P - ((c / (1 + c) : ℝ) : 𝕜) • Q := by
+    simp [star_sub, star_add, star_smul, hP.isSelfAdjoint.star_eq, hQ.isSelfAdjoint.star_eq]
+  have hJy : J * (1 + (c : 𝕜) • P - ((c / (1 + c) : ℝ) : 𝕜) • Q) =
+      (1 - ((c / (1 + c) : ℝ) : 𝕜) • P + (c : 𝕜) • Q) * J := by
+    simp only [mul_add, mul_sub, add_mul, sub_mul, mul_one, one_mul, mul_smul_comm,
+      smul_mul_assoc, hJQ, ← hJP]
     abel
-  have hyy : dilation J P c * (1 - ((c / (1 + c) : ℝ) : 𝕜) • P + (c : 𝕜) • (J * P * J)) = 1 := by
-    simp only [dilation, mul_add, mul_sub, add_mul, sub_mul, mul_one, one_mul, mul_smul_comm,
-      smul_mul_assoc, mul_assoc, hJJ', hPP, hPP', hPJP₀, hPJP', mul_zero, smul_zero]
-    linear_combination (norm := module) (-1 : 𝕜) • (hc' • (P + J * (P * J)))
-  rw [hstar, mul_assoc, hJy, ← mul_assoc, hyy, one_mul]
+  have hyy : (1 + (c : 𝕜) • P - ((c / (1 + c) : ℝ) : 𝕜) • Q) *
+      (1 - ((c / (1 + c) : ℝ) : 𝕜) • P + (c : 𝕜) • Q) = 1 := by
+    simp only [mul_add, mul_sub, add_mul, sub_mul, mul_one, one_mul, mul_smul_comm,
+      smul_mul_assoc, hP.isIdempotentElem.eq, hQ.isIdempotentElem.eq, hPQ, hQP, smul_zero]
+    linear_combination (norm := module) (-1 : 𝕜) • (hc' • (P + Q))
+  rw [hstar, Matrix.mul_assoc, hJy, ← Matrix.mul_assoc, hyy, Matrix.one_mul]
 
 /-- The dilation is within `c` of `1` in the operator norm. -/
 private theorem norm_dilation_sub_one_le (hJ : J.IsHermitian) (hJJ : J * J = 1)
     {P : Matrix n n 𝕜} (hP : IsStarProjection P) (hPJP : P * J * P = 0) {c : ℝ} (hc : 0 ≤ c) :
     ‖dilation J P c - 1‖ ≤ c := by
-  obtain ⟨hQ, hPQ, hQP⟩ := isStarProjection_mul_mul hJ hJJ hP hPJP
+  obtain ⟨hQ, hPQ, -⟩ := isStarProjection_mul_mul hJ hJJ hP hPJP
   set Q := J * P * J
   set c' := c / (1 + c)
   have hc'0 : 0 ≤ c' := by positivity
   have hc'c : c' ≤ c := div_le_self hc (by linarith)
-  -- `‖P - Q‖ ^ 2 = ‖(P - Q) ^ 2‖ = ‖P + Q‖ ≤ 1`.
-  have hPQ1 : ‖P - Q‖ ≤ 1 := by
-    have h : star (P - Q) * (P - Q) = P + Q := by
-      rw [star_sub, hP.isSelfAdjoint.star_eq, hQ.isSelfAdjoint.star_eq, sub_mul, mul_sub,
-        mul_sub, hP.isIdempotentElem.eq, hQ.isIdempotentElem.eq, hPQ, hQP]
-      abel
-    have h1 := (hP.add hQ hPQ).norm_le
-    rw [← h, CStarRing.norm_star_mul_self] at h1
-    nlinarith [norm_nonneg (P - Q)]
+  have hPQ1 : ‖P - Q‖ ≤ 1 := hP.norm_sub_le_one hQ
+    ((hP.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hQ.isSelfAdjoint).2 hPQ)
   have h : dilation J P c - 1 = (c' : 𝕜) • (P - Q) + ((c - c' : ℝ) : 𝕜) • P := by
     simp only [dilation, c', RCLike.ofReal_sub]
     module
@@ -208,18 +194,12 @@ theorem exists_norm_sub_one_le_and_conj_dilates [Finite m] (hJ : J.IsHermitian) 
   set X : Matrix n n 𝕜 := ((x : GL n 𝕜) : Matrix n n 𝕜)
   set X' : Matrix n n 𝕜 := (((x⁻¹ : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)
   have hXX' : X * X' = 1 := by simp [X, X']
-  have hX : Xᴴ * J * X = J := by
-    rw [← star_eq_conjTranspose]
-    exact mem_unitaryGroupOf_iff.mp x.property
-  have hX' : X'ᴴ * J * X' = J := by
-    rw [← star_eq_conjTranspose]
-    exact mem_unitaryGroupOf_iff.mp (x⁻¹).property
+  have hX' : star X' * J * X' = J := mem_unitaryGroupOf_iff.mp (x⁻¹).property
   -- Apply the case `x = 1` to `B = x⁻¹ * A`, whose columns are again totally isotropic.
-  have hB : (X' * A)ᴴ * J * (X' * A) = 0 :=
-    calc (X' * A)ᴴ * J * (X' * A) = Aᴴ * (X'ᴴ * J * X') * A := by
-          simp only [conjTranspose_mul, Matrix.mul_assoc]
-      _ = 0 := by rw [hX', hA]
-  have hX'' : X'ᴴ * (J * X') = J := by rw [← Matrix.mul_assoc, hX']
+  have hB : (X' * A)ᴴ * J * (X' * A) = 0 := by
+    rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq hX' A, hA]
+  have hX'' : X'ᴴ * (J * X') = J := by
+    rw [← Matrix.mul_assoc, ← star_eq_conjTranspose, hX']
   have hBv : ∀ v : n → 𝕜, ((X' * A)ᴴ * J) *ᵥ (X' *ᵥ v) = (Aᴴ * J) *ᵥ v := fun v => by
     rw [mulVec_mulVec]
     simp only [conjTranspose_mul, Matrix.mul_assoc, hX'']
@@ -231,8 +211,9 @@ theorem exists_norm_sub_one_le_and_conj_dilates [Finite m] (hJ : J.IsHermitian) 
   -- `⟨w, x u⟩ = ⟨x⁻¹ w, u⟩`, as `x` preserves the form.
   have key : ∀ w u : n → 𝕜, star w ⬝ᵥ J *ᵥ (X *ᵥ u) = star (X' *ᵥ w) ⬝ᵥ J *ᵥ u :=
     fun w u => by
-      conv_rhs => rw [← hX, star_dotProduct_conjTranspose_mul_mul_mulVec, mulVec_mulVec, hXX',
-        one_mulVec]
+      have h : star (X *ᵥ (X' *ᵥ w)) ⬝ᵥ J *ᵥ (X *ᵥ u) = star (X' *ᵥ w) ⬝ᵥ J *ᵥ u :=
+        mem_unitaryGroupOf_iff_forall_dotProduct.mp x.property (X' *ᵥ w) u
+      rwa [mulVec_mulVec, hXX', one_mulVec] at h
   refine ⟨ofMatrix (isUnit_iff_exists_inv.2 ⟨J, hJJ⟩) Y hY, by simpa using hYn, ?_,
     fun v w hv hw => ?_⟩
   · have hXA : X * (X' * A) = A := by rw [← Matrix.mul_assoc, hXX', Matrix.one_mul]
