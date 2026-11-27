@@ -181,11 +181,11 @@ private lemma twistedChainComplexCoefficientMap_comp_twistedChainComplexMapOfFst
   simp
 
 /-- Open restriction along the identity map is the coefficient comparison `pullbackIdIso.inv`. -/
-theorem borelMooreHomologyRestrictOfExhaustion_id
-    (hid : IsOpenEmbedding (TopCat.Hom.hom (𝟙 X))) (K : CompactExhaustion X) (k : ℕ) :
-    borelMooreHomologyRestrictOfExhaustion L (j := 𝟙 X) hid K (fun _ ↦ by simp) k =
+theorem borelMooreHomologyRestrictOfExhaustion_id (K : CompactExhaustion X) (k : ℕ) :
+    borelMooreHomologyRestrictOfExhaustion L (j := 𝟙 X) IsOpenEmbedding.id K (fun _ ↦ by simp)
+        k =
       borelMooreHomologyCoefficientMap ((pullbackIdIso X).inv.app L) k := by
-  refine ((eq_borelMooreHomologyRestrictOfExhaustion_iff L (j := 𝟙 X) hid K
+  refine ((eq_borelMooreHomologyRestrictOfExhaustion_iff L (j := 𝟙 X) IsOpenEmbedding.id K
     (fun _ ↦ by simp) k _).2 ?_).symm
   rw [← HomologicalComplex.homologyMap_comp]
   congr 1
@@ -194,7 +194,8 @@ theorem borelMooreHomologyRestrictOfExhaustion_id
   rintro ⟨n⟩
   have hEq : (K n)ᶜ = (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ := by simp
   have hmap : Set.MapsTo (TopCat.Hom.hom (𝟙 X)) (K n)ᶜ (TopCat.Hom.hom (𝟙 X) '' K n)ᶜ :=
-    Set.SurjOn.mapsTo_compl (Set.surjOn_image (TopCat.Hom.hom (𝟙 X)) (K n)) hid.injective
+    Set.SurjOn.mapsTo_compl (Set.surjOn_image (TopCat.Hom.hom (𝟙 X)) (K n))
+      IsOpenEmbedding.id.injective
   simp only [ComplexTower.limComplexCone_π_app, Category.assoc,
     locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexπ,
     locallyFiniteChainComplexToLimComplex_comp_limComplexπ]
@@ -473,14 +474,14 @@ variable {V X : TopCat.{v}}
 /-- Open restriction along the identity is the canonical coefficient comparison. -/
 @[simp]
 theorem borelMooreHomologyRestrict_id [T2Space X] [WeaklyLocallyCompactSpace X]
-    [SigmaCompactSpace X] (hid : IsOpenEmbedding (TopCat.Hom.hom (𝟙 X)))
-    (L : LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
-    borelMooreHomologyRestrict (𝟙 X) hid L k =
+    [SigmaCompactSpace X] (L : LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
+    borelMooreHomologyRestrict (𝟙 X) IsOpenEmbedding.id L k =
       borelMooreHomologyCoefficientMap ((pullbackIdIso X).inv.app L) k := by
-  rw [borelMooreHomologyRestrict_eq_ofExhaustion (𝟙 X) hid L (CompactExhaustion.choice X)
+  rw [borelMooreHomologyRestrict_eq_ofExhaustion (𝟙 X) IsOpenEmbedding.id L
+    (CompactExhaustion.choice X)
     ((CompactExhaustion.choice X).closure_image_subset_range
       (TopCat.Hom.hom (𝟙 X)).continuous) k]
-  exact borelMooreHomologyRestrictOfExhaustion_id L hid (CompactExhaustion.choice X) k
+  exact borelMooreHomologyRestrictOfExhaustion_id L (CompactExhaustion.choice X) k
 
 /-- Open restriction is contravariantly functorial for composable open embeddings. -/
 @[reassoc]

@@ -11,9 +11,9 @@ import TauCeti.Topology.Compactness.SigmaCompact
 /-!
 # Open restriction in Borel–Moore homology
 
-Borel–Moore homology is contravariant for open embeddings `j : V ⟶ X`. Unlike finite singular
-chains, locally finite chains cannot be restricted directly to an open subset at the chain level,
-because simplices in `X` may cross the boundary of `V`. Instead, given a compact exhaustion `K` of
+Borel–Moore homology is contravariant for open embeddings `j : V ⟶ X`. Locally finite chains
+cannot be restricted directly to an open subset at the chain level, because simplices in `X` may
+cross the boundary of `V`. Instead, given a compact exhaustion `K` of
 `V` whose images in `X` have closure inside `Set.range j` (automatic when `X` is Hausdorff), the
 restriction on homology is defined by the excision zigzag
 
