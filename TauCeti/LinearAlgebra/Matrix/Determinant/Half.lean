@@ -197,6 +197,13 @@ theorem halfDet_transpose_mul_mul (A P : Matrix ι ι R) :
     simpa [map_halfDet, RingHom.map_det, transpose_map] using congrArg (evalPair A P) key
   · rw [halfDet_of_not_odd hι, halfDet_of_not_odd hι, mul_zero]
 
+/-- The half-determinant of the zero matrix is `0`. -/
+@[simp]
+theorem halfDet_zero : (0 : Matrix ι ι R).halfDet = 0 := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · exact halfDet_of_not_odd (by simp) _
+  · simpa using halfDet_transpose_mul_mul (0 : Matrix ι ι R) 0
+
 /-- Adding `Z - Zᵀ`, which does not change the quadratic form `x ↦ xᵀ A x`, does not change
 `halfDet`. -/
 theorem halfDet_add_sub_transpose (A Z : Matrix ι ι R) :

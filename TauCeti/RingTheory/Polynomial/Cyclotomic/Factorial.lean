@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.IndexMonoid
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.NumberTheory.Divisors
@@ -63,6 +63,10 @@ lets them pass to the completion `lim R[q] / (P_N)`.
 * `TauCeti.X_pow_sub_one_pow_dvd_factorialPoly`, `TauCeti.factorialPoly_dvd_X_pow_sub_one_pow`:
   `(X ^ m - 1) ^ k ∣ P_N` for `0 < m` and `m k ≤ N`, and `P_N ∣ (X ^ m - 1) ^ N` when every
   `1 ≤ i ≤ N` divides `m`.
+* `TauCeti.X_sub_C_pow_dvd_factorialPoly`: `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and
+  `d k ≤ N`.
+* `TauCeti.coeff_taylor_sum_mul_factorialPoly_of_le`: for such `ζ`, the `k`-th Taylor coefficient
+  at `ζ` of a factorial sum `∑_{n < N} b_n P_n` does not change once `N ≥ d (k + 1)`.
 * `TauCeti.cyclotomic_pow_dvd_factorialPoly_iff`, `TauCeti.cyclotomic_dvd_factorialPoly_iff`:
   over a ring of characteristic zero, `Φ_d ^ k ∣ P_N ↔ d k ≤ N` and `Φ_d ∣ P_N ↔ d ≤ N`.
 * `TauCeti.eventually_dvd_factorialIndex`: every index of the full completion divides
@@ -289,6 +293,24 @@ theorem X_pow_sub_one_pow_dvd_factorialPoly {m k N : ℕ} (hm : 0 < m) (h : m * 
   rw [← prod_cyclotomic_eq_X_pow_sub_one hm, ← prod_pow]
   exact prod_cyclotomic_pow_dvd_factorialPoly fun d hd ↦
     (Nat.mul_le_mul_right k (Nat.divisor_le hd)).trans h
+
+/-- `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and `d k ≤ N`: `X - ζ` divides `X ^ d - 1`. -/
+theorem X_sub_C_pow_dvd_factorialPoly {ζ : R} {d k N : ℕ} (hd : 0 < d) (hζ : ζ ^ d = 1)
+    (h : d * k ≤ N) : (X - C ζ) ^ k ∣ factorialPoly R N :=
+  (pow_dvd_pow_of_dvd (dvd_iff_isRoot.mpr (by simp [IsRoot, hζ])) k).trans
+    (X_pow_sub_one_pow_dvd_factorialPoly hd h)
+
+/-- Extending a factorial sum `∑_{n < N} b_n P_n` beyond `N ≥ d (k + 1)` does not change its
+`k`-th Taylor coefficient at a root `ζ` of `X ^ d - 1`, `0 < d`. -/
+theorem coeff_taylor_sum_mul_factorialPoly_of_le {ζ : R} {d k N M : ℕ} (hd : 0 < d)
+    (hζ : ζ ^ d = 1) (hN : d * (k + 1) ≤ N) (hNM : N ≤ M) (b : ℕ → R[X]) :
+    (taylor ζ (∑ n ∈ Finset.range M, b n * factorialPoly R n)).coeff k =
+      (taylor ζ (∑ n ∈ Finset.range N, b n * factorialPoly R n)).coeff k := by
+  obtain ⟨c, hc⟩ : (X - C ζ) ^ (k + 1) ∣ ∑ n ∈ Finset.Ico N M, b n * factorialPoly R n :=
+    Finset.dvd_sum fun n hn ↦ dvd_mul_of_dvd_right
+      (X_sub_C_pow_dvd_factorialPoly hd hζ (hN.trans (Finset.mem_Ico.mp hn).1)) _
+  rw [← Finset.sum_range_add_sum_Ico _ hNM, map_add, coeff_add, hc]
+  simp [taylor_mul, coeff_X_pow_mul']
 
 /-- `P_N ∣ (X ^ m - 1) ^ N` when every `1 ≤ i ≤ N` divides `m`, for instance `m = N!`. -/
 theorem factorialPoly_dvd_X_pow_sub_one_pow {m N : ℕ} (h : ∀ i ∈ Ioc 0 N, i ∣ m) :

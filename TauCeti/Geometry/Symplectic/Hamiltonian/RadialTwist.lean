@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -48,7 +49,15 @@ A finite sum of radial Hamiltonians whose profiles vanish on `[R, ∞)` and whos
 than `2 √R` apart agrees, near each closed disc of radius `√R` about a centre, with the
 corresponding term (`TauCeti.sum_radialHamiltonian_eventuallyEq`). Its flow therefore twists each
 of these discs as the corresponding term does (`TauCeti.hamiltonianFlow_sum_radialHamiltonian`)
-and fixes every point outside them (`TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`).
+and fixes every point outside them (`TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`). So
+its time maps are close to the identity in `C¹` when the twists are: a bound `M` on the profile
+derivatives bounds the displacement of the time-`t` map by `|t| M √R`
+(`TauCeti.norm_hamiltonianFlow_sum_radialHamiltonian_sub_le`), and a bound `L` on Lipschitz
+constants of the fields of the individual twists bounds the distance of its derivative from the
+identity by `exp (L |t|) - 1`
+(`TauCeti.norm_fderiv_hamiltonianFlow_sum_radialHamiltonian_sub_id_le`). Scaling the profile by
+`c` scales the Hamiltonian, hence its vector field, by `c` (`TauCeti.radialHamiltonian_const_mul`),
+so twists by small angles are `C¹`-small.
 
 For every `R > 0` and angle `θ`, `TauCeti.exists_diffeomorph_eventuallyEq_rotation` gives a smooth
 diffeomorphism of `ℂ` preserving the area form and the norm, equal to the rotation by `θ` near `0`
@@ -70,6 +79,8 @@ orbits. If `p` is a periodic point of `φ` of period `k` and the twist is suppor
 * `TauCeti.hamiltonianVectorField_radialHamiltonian`: `X_H(w) = i G'(‖w - p‖²) (w - p)`.
 * `TauCeti.hamiltonianFlow_radialHamiltonian`: the flow is the twist map
   `w ↦ p + exp (i t G'(‖w - p‖²)) (w - p)`.
+* `TauCeti.eq_of_periodic_radialHamiltonian`: a periodic orbit of a radial Hamiltonian along which
+  the period times the angular speed is less than `2π` in absolute value is constant.
 * `TauCeti.hamiltonianFlow_radialHamiltonian_eventuallyEq`: if `G' = θ` near `0`, the time-`t`
   map is the rotation by `t θ` near `p`, and
   `TauCeti.hasFDerivAt_hamiltonianFlow_radialHamiltonian_center` computes its derivative at `p`.
@@ -83,6 +94,9 @@ orbits. If `p` is a periodic point of `φ` of period `k` and the twist is suppor
 * `TauCeti.hamiltonianFlow_sum_radialHamiltonian` and
   `TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`: the flow of a sum of radial twists with
   disjoint supports.
+* `TauCeti.norm_hamiltonianFlow_sum_radialHamiltonian_sub_le` and
+  `TauCeti.norm_fderiv_hamiltonianFlow_sum_radialHamiltonian_sub_id_le`: its time maps are close to
+  the identity, in value and in derivative.
 * `TauCeti.exists_diffeomorph_eventuallyEq_rotation`: a smooth diffeomorphism of `ℂ` preserving
   the area form, rotating a neighbourhood of `0` by a prescribed angle and fixing every point
   outside a prescribed disc.
@@ -117,6 +131,13 @@ theorem radialHamiltonian_apply (G : ℝ → ℝ) (p w : ℂ) :
 theorem contDiff_radialHamiltonian {n : WithTop ℕ∞} {G : ℝ → ℝ} (hG : ContDiff ℝ n G) (p : ℂ) :
     ContDiff ℝ n (radialHamiltonian G p) :=
   ((hG.comp ((contDiff_id.sub contDiff_const).norm_sq ℝ)).neg).div_const 2
+
+/-- Scaling the profile scales the radial Hamiltonian. -/
+theorem radialHamiltonian_const_mul (c : ℝ) (G : ℝ → ℝ) (p : ℂ) :
+    radialHamiltonian (fun s ↦ c * G s) p = fun w ↦ c * radialHamiltonian G p w := by
+  funext w
+  simp only [radialHamiltonian_apply]
+  ring
 
 /-- A profile vanishing on `[R, ∞)` gives a radial Hamiltonian supported in the closed disc of
 radius `√R` about `p`; in particular it has compact support. -/
@@ -187,6 +208,33 @@ theorem hamiltonianFlow_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNRea
   rw [h0] at h
   rw [SymplecticForm.hamiltonianFlow_eq]
   exact h.symm
+
+/-- **Slow periodic orbits of a radial Hamiltonian are constant.** Let `γ` be a solution of
+Hamilton's equations of the radial Hamiltonian `-G(‖w - p‖²) / 2` (`TauCeti.radialHamiltonian`) on
+the complex line, whose vector field is globally Lipschitz, and let `γ` be `T`-periodic with
+`T ≠ 0`. The orbit turns about `p` at the angular speed `G'(‖γ 0 - p‖²)`; if the angle
+`T G'(‖γ 0 - p‖²)` it turns through in one period is less than `2π` in absolute value, then `γ` is
+constant. -/
+theorem eq_of_periodic_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
+    (hX : LipschitzWith K
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
+    {γ : ℝ → ℂ} (hγ : ∀ t, HasDerivAt γ
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p) (γ t)) t)
+    (hG : DifferentiableAt ℝ G (‖γ 0 - p‖ ^ 2)) {T : ℝ} (hT : T ≠ 0) (hper : Function.Periodic γ T)
+    (hslow : |T * deriv G (‖γ 0 - p‖ ^ 2)| < 2 * Real.pi) (t : ℝ) : γ t = γ 0 := by
+  set c := deriv G (‖γ 0 - p‖ ^ 2)
+  have hrot (s : ℝ) : γ s = p + exp (I * ↑(s * c)) * (γ 0 - p) := by
+    rw [eq_flowOfLipschitz hX hγ s, ← SymplecticForm.hamiltonianFlow_eq,
+      hamiltonianFlow_radialHamiltonian hX hG]
+  rcases eq_or_ne (γ 0 - p) 0 with hw | hw
+  · rw [hrot t, hw, mul_zero, add_zero, ← sub_eq_zero.1 hw]
+  -- One period turns `γ 0` through the angle `T c`, a multiple of `2π` smaller than `2π`.
+  have hexp : exp (I * ↑(T * c)) = 1 := by
+    refine mul_right_cancel₀ hw ?_
+    rw [one_mul, ← sub_eq_iff_eq_add'.2 (hrot T), hper.eq]
+  have h0 := Complex.eq_zero_of_exp_eq_one_of_norm_lt hexp (by simpa [norm_mul] using hslow)
+  have hc : c = 0 := (mul_eq_zero.1 (by simpa using h0)).resolve_left hT
+  rw [hrot t, hc, mul_zero, ofReal_zero, mul_zero, Complex.exp_zero, one_mul, add_sub_cancel]
 
 /-- The orbit of `w` under the flow of a radial Hamiltonian stays on the circle through `w` about
 `p`. -/
@@ -375,6 +423,71 @@ theorem hamiltonianFlow_sum_radialHamiltonian_eq_self {K : NNReal}
     (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0) {w : ℂ} (hw : ∀ j ∈ s, R < ‖w - p j‖ ^ 2)
     (t : ℝ) : stdComplexSymplecticForm.hamiltonianFlow _ hX t w = w :=
   (hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hX hGR hw t).eq_of_nhds
+
+/-- **Displacement bound for a sum of disjoint radial twists.** If the profiles are
+differentiable with `|G_j'| ≤ M`, vanish on `[R, ∞)`, and the centres are more than `2 √R` apart,
+the time-`t` map of the flow of the sum moves no point by more than `|t| M √R`: points of the disc
+about `p j` turn as under the `j`-th twist, and the other points are fixed. -/
+theorem norm_hamiltonianFlow_sum_radialHamiltonian_sub_le {K : NNReal}
+    (hX : LipschitzWith K (stdComplexSymplecticForm.hamiltonianVectorField
+      fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w))
+    (hG : ∀ j ∈ s, Differentiable ℝ (G j)) (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0)
+    (hp : (s : Set ι).Pairwise fun j l ↦ 4 * R < ‖p j - p l‖ ^ 2)
+    {K' : ι → NNReal} (hXj : ∀ j ∈ s, LipschitzWith (K' j)
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian (G j) (p j))))
+    {M : ℝ} (hM : ∀ j ∈ s, ∀ x, |deriv (G j) x| ≤ M) (hM0 : 0 ≤ M) (t : ℝ) (w : ℂ) :
+    ‖stdComplexSymplecticForm.hamiltonianFlow _ hX t w - w‖ ≤ |t| * M * Real.sqrt R := by
+  by_cases h : ∃ j ∈ s, ‖w - p j‖ ^ 2 ≤ R
+  · obtain ⟨j, hj, hw⟩ := h
+    rw [hamiltonianFlow_sum_radialHamiltonian hX hGR hp hj (hXj j hj) (hG j hj _) hw]
+    exact norm_hamiltonianFlow_radialHamiltonian_sub_le_mul_sqrt (hXj j hj) (hG j hj) (hM j hj)
+      (hGR j hj) w t
+  · simp only [not_exists, not_and, not_le] at h
+    rw [hamiltonianFlow_sum_radialHamiltonian_eq_self hX hGR h, sub_self, norm_zero]
+    positivity
+
+/-- **The linearized flow of a sum of disjoint radial twists is close to the identity.** Let the
+profiles be `C²` and vanish on `[R, ∞)`, let the centres be more than `2 √R` apart, and let the
+field of the `j`-th twist be `K j`-Lipschitz with `K j ≤ L`. Then the derivative of the time-`t`
+map of the flow of the sum is within `exp (L |t|) - 1` of the identity at every point: near the
+disc about `p j` the flow is that of the `j`-th twist, and away from the discs it is the
+identity. -/
+theorem norm_fderiv_hamiltonianFlow_sum_radialHamiltonian_sub_id_le {K : NNReal}
+    (hX : LipschitzWith K (stdComplexSymplecticForm.hamiltonianVectorField
+      fun w ↦ ∑ j ∈ s, radialHamiltonian (G j) (p j) w))
+    (hG : ∀ j ∈ s, ContDiff ℝ 2 (G j)) (hGR : ∀ j ∈ s, ∀ x, R ≤ x → G j x = 0)
+    (hp : (s : Set ι).Pairwise fun j l ↦ 4 * R < ‖p j - p l‖ ^ 2)
+    {K' : ι → NNReal} (hXj : ∀ j ∈ s, LipschitzWith (K' j)
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian (G j) (p j))))
+    {L : ℝ} (hL : ∀ j ∈ s, (K' j : ℝ) ≤ L) (hL0 : 0 ≤ L) (t : ℝ) (w : ℂ) :
+    ‖fderiv ℝ (stdComplexSymplecticForm.hamiltonianFlow _ hX t) w - ContinuousLinearMap.id ℝ ℂ‖ ≤
+      Real.exp (L * |t|) - 1 := by
+  -- The finitely many separations leave room for discs of a slightly larger radius `√R'`.
+  obtain ⟨R', hRR', hp'⟩ := Filter.Eventually.exists_gt (a := R)
+    (p := fun R' ↦ ∀ j ∈ s, ∀ l ∈ s, j ≠ l → 4 * R' < ‖p j - p l‖ ^ 2)
+    ((Filter.eventually_all_finset s).2 fun j hj ↦ (Filter.eventually_all_finset s).2 fun l hl ↦
+      Filter.eventually_imp_distrib_left.2 fun hjl ↦
+        ContinuousAt.eventually_lt (by fun_prop) continuousAt_const (hp hj hl hjl))
+  by_cases h : ∃ j ∈ s, ‖w - p j‖ ^ 2 < R'
+  · -- Near `w` the flow of the sum is the flow of the `j`-th twist.
+    obtain ⟨j, hj, hw⟩ := h
+    have hev : stdComplexSymplecticForm.hamiltonianFlow _ hX t =ᶠ[𝓝 w]
+        stdComplexSymplecticForm.hamiltonianFlow _ (hXj j hj) t := by
+      filter_upwards [(isOpen_lt (by fun_prop : Continuous fun z : ℂ ↦ ‖z - p j‖ ^ 2)
+        continuous_const).mem_nhds hw] with z hz
+      exact hamiltonianFlow_sum_radialHamiltonian hX
+        (fun l hl x hx ↦ hGR l hl x (hRR'.le.trans hx)) hp' hj (hXj j hj)
+        ((hG j hj).differentiable (by simp) _) hz.le t
+    rw [hev.fderiv_eq]
+    refine (stdComplexSymplecticForm.norm_fderiv_hamiltonianFlow_sub_id_le _ (hXj j hj)
+      (contDiff_radialHamiltonian (hG j hj) (p j)) t w).trans ?_
+    gcongr
+    exact hL j hj
+  · -- Away from the discs the flow is the identity near `w`.
+    simp only [not_exists, not_and, not_lt] at h
+    rw [(hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hX hGR
+      (fun j hj ↦ hRR'.trans_le (h j hj)) t).fderiv_eq, fderiv_id, sub_self, norm_zero]
+    exact sub_nonneg.2 (Real.one_le_exp (by positivity))
 
 end Sum
 

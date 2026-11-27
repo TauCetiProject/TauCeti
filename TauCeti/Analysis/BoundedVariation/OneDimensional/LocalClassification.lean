@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
 import TauCeti.Analysis.BoundedVariation.VariationMeasure
@@ -95,7 +96,8 @@ private theorem measure_inter_preimage_eq_zero_or_sdiff_eq_zero (e : E ≃ₗᵢ
     refine h1.congr (eventuallyEqSet_iff.2 ?_)
     exact (ae_restrict_mem I.isOpen.measurableSet).mono fun t ht => and_iff_left (hmaps ht)
   have hPI : perimeter volume I (e.symm ⁻¹' s) < 1 :=
-    (e.symm.perimeter_preimage_le e.symm.measurePreserving hmaps).trans_lt hP
+    (e.symm.perimeter_preimage_le e.symm.measurePreserving e.symm.symm.continuous.measurable
+      hmaps).trans_lt hP
   have hvol (A : Set ℝ) : volume (e ⁻¹' A) = volume A :=
     e.measurePreserving.measure_preimage_emb e.toMeasurableEquiv.measurableEmbedding A
   have hsymm : e ⁻¹' (e.symm ⁻¹' s) = s := e.toEquiv.preimage_symm_preimage s

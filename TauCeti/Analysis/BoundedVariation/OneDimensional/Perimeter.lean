@@ -49,9 +49,10 @@ measure in `Ω` is strictly less than `1` is either null or conull in `Ω`
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
 * `TauCeti.Real.perimeter_Iio` and `TauCeti.Real.perimeter_Ioi`: the perimeter of a half-line.
-* `TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`: a null-measurable
-  set on an open interval `Ω ⊆ ℝ` of perimeter strictly less than `1` in `Ω` is either null or
-  conull there.
+* `TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one` and
+  `TauCeti.Real.one_le_perimeter_of_ordConnected`: a null-measurable set on an open interval
+  `Ω ⊆ ℝ` of perimeter strictly less than `1` in `Ω` is either null or conull there (equivalently,
+  charging both itself and its complement in `Ω` forces perimeter at least `1`).
 
 ## References
 
@@ -277,5 +278,16 @@ theorem measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one {Ω : Opens �
     rw [perimeter_congr_ae hstI, perimeter_def]
     simpa using ofReal_abs_sub_le_totalVariationOn hu (hΩ.uIcc_subset hy₀I hy₁I) hy₀ hy₁
   exact (not_le_of_gt hP) hle1
+
+/-- **A local lower bound for the perimeter on the line.** A set `s ⊆ ℝ`, null-measurable in an
+open interval `V`, that charges both itself and its complement in `V` has perimeter at least one
+in `V`. -/
+theorem one_le_perimeter_of_ordConnected {s : Set ℝ} {V : Opens ℝ}
+    (hs : NullMeasurableSet s (volume.restrict V)) (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
+  by_contra! hlt
+  rcases measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one hV hs hlt with h | h
+  · exact h1 h
+  · exact h0 (by simpa only [sdiff_eq_compl_inter, inter_comm] using h)
 
 end TauCeti.Real

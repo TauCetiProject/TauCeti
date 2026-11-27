@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.EssentialBoundary
 import TauCeti.MeasureTheory.Function.LocallyIntegrable

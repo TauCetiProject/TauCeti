@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.BoundedVariation.OneDimensional.LocalClassification
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate

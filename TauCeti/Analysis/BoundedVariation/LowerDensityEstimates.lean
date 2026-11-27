@@ -6,14 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import Mathlib.Analysis.Calculus.Monotone
-import TauCeti.Analysis.BoundedVariation.CutByBall
+import TauCeti.Analysis.BoundedVariation.CutByBall.Basic
 import TauCeti.Analysis.BoundedVariation.DensityEstimates
+import TauCeti.Analysis.BoundedVariation.Isometry
+import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
+import TauCeti.Analysis.BoundedVariation.OneDimensional.ReducedBoundary
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Analysis.BoundedVariation.Sobolev.Basic
 import TauCeti.Analysis.Calculus.PowerGrowth
 import TauCeti.Basic.Real.ConjExponents
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -42,6 +47,13 @@ The constants depend only on `n`, `μ` and `t`. Together with the upper density 
 the ball is comparable to `r ^ (n - 1)`. These are the estimates behind the compactness of the
 blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem and the inclusion of `∂*s`
 in the essential boundary (`TauCeti.reducedBoundary_subset_essentialBoundary`).
+
+In dimension one, writing `μ = c • volume`, the perimeter bound takes the sharp form
+`c ≤ |Dχ_s| (closedBall x r)` for every small `r > 0`
+(`TauCeti.eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one`); for
+Lebesgue measure, `c = 1`. Every small ball around `x` meets both `s` and its complement in
+positive measure, and an open interval charged by a set and by its complement has Lebesgue
+perimeter at least one (`TauCeti.Real.one_le_perimeter_of_ordConnected`).
 
 Write `m(ρ) = μ(s ∩ ball x ρ)`. Cutting `s` by the ball of radius `ρ` adds at most `m'(ρ)` to its
 perimeter (`TauCeti.ae_perimeter_inter_ball_le`), and at the reduced boundary
@@ -266,5 +278,73 @@ theorem eventually_ofReal_pow_le_mul_variationMeasure_closedBall
     eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
     with r h hP
   exact h.trans (mul_le_mul_right hP _)
+
+/-- **The lower density estimate for the perimeter measure in dimension one.** Let `E` have
+dimension one, and let `c` be the factor `μ.addHaarScalarFactor volume` with `μ = c • volume`. At
+a point `x` of the reduced boundary of `s` in `Ω`, every small closed ball around `x` has
+perimeter measure `|Dχ_s| (closedBall x r)` at least `c`. For Lebesgue measure, `c = 1`. -/
+theorem eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one
+    (hn : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) :
+    ∀ᶠ r in 𝓝[>] 0, (μ.addHaarScalarFactor volume : ℝ≥0∞) ≤
+      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  have hμv : μ ≪ volume := Measure.absolutelyContinuous_isAddHaarMeasure μ volume
+  have hvμ : volume ≪ μ := Measure.absolutelyContinuous_isAddHaarMeasure volume μ
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary
+    hx, Ioo_mem_nhdsGT hε] with r hr hrε
+  refine le_trans ?_ hr
+  -- Scale `μ` to Lebesgue measure, then transport to the real line along a linear isometry
+  -- equivalence.
+  conv_rhs => rw [Measure.isAddLeftInvariant_eq_smul μ volume]
+  rw [perimeter_def, totalVariationOn_smul_measure, ← perimeter_def]
+  refine le_mul_of_one_le_right zero_le ?_
+  let e : ℝ ≃ₗᵢ[ℝ] E :=
+    (OrthonormalBasis.singleton (Fin 1) ℝ).equiv (stdOrthonormalBasis ℝ E) (finCongr hn.symm)
+  have he : MeasurePreserving e := e.measurePreserving
+  rw [← e.perimeter_comap he e.symm.continuous.measurable]
+  have hV : ((Opens.comap (e : C(ℝ, E)) ⟨ball x r, isOpen_ball⟩ : Opens ℝ) : Set ℝ) =
+      e ⁻¹' ball x r := Opens.coe_comap _ _
+  have hmeas (u : Set E) : volume (e ⁻¹' u ∩ e ⁻¹' ball x r) = volume (u ∩ ball x r) := by
+    rw [← preimage_inter, he.measure_preimage_emb e.toMeasurableEquiv.measurableEmbedding]
+  refine Real.one_le_perimeter_of_ordConnected ?_ ?_ ?_ ?_
+  · rw [hV]
+    exact (((nullMeasurableSet_restrict_of_mem_reducedBoundary hx).mono
+      (Measure.restrict_mono ((ball_subset_ball hrε.2.le).trans hεΩ) le_rfl)).mono_ac
+      (hvμ.restrict _)).preimage (he.restrict_preimage measurableSet_ball).quasiMeasurePreserving
+  · rw [hV]
+    exact convex_iff_ordConnected.1 ((convex_ball x r).linear_preimage e.toLinearMap)
+  · rw [hV, hmeas]
+    exact fun h => (measure_inter_ball_pos hx hrε.1).ne' (hμv h)
+  · rw [hV, ← preimage_compl, hmeas]
+    exact fun h => (measure_inter_ball_pos (s := sᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
+      (hμv h)
+
+/-- **The reduced boundary lies in the essential boundary.** Against an additive Haar measure on a
+finite-dimensional real inner product space, at every point of the reduced boundary of `s` in an
+open set `Ω`, `s` has neither density zero nor density one. -/
+theorem reducedBoundary_subset_essentialBoundary :
+    reducedBoundary μ Ω s ⊆ essentialBoundary μ s := by
+  rcases le_or_gt (finrank ℝ E) 1 with hn | hn
+  · exact reducedBoundary_subset_essentialBoundary_of_finrank_le_one hn
+  · intro x hx
+    set q := NNReal.conjExponent (finrank ℝ E)
+    have hp : NNReal.HolderConjugate (finrank ℝ E) q := .conjExponent (by exact_mod_cast hn)
+    have hc : (((1 + 2) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ q : ℝ≥0) : ℝ≥0∞) ^
+        finrank ℝ E ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
+    rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
+    refine ⟨fun h1 => ?_,
+      not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc
+        (eventually_ofReal_pow_le_mul_measure_inter_ball hp hx one_lt_two)⟩
+    -- Density one of `s` is density one of the null-measurable `s ∩ Ω`, and hence density zero of
+    -- its complement, which contains `ball x r \ s` for small `r`.
+    have hs := nullMeasurableSet_inter_of_mem_reducedBoundary hx
+    have h1' : HasDensityAt μ (s ∩ Ω) x 1 :=
+      (hasDensityAt_inter_of_mem_nhds (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))).2 h1
+    refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
+      (by simpa using h1'.compl hs (Metric.eventually_measure_closedBall_ne_zero_ne_top μ x))
+    filter_upwards [eventually_ofReal_pow_le_mul_measure_ball_sdiff hp hx one_lt_two] with r hr
+    refine hr.trans ?_
+    gcongr
+    exact fun y hy => ⟨.inl hy.2, hy.1⟩
 
 end TauCeti

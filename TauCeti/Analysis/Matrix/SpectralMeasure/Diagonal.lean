@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.Matrix.Resolvent.RankBound
 public import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
-public import TauCeti.LinearAlgebra.Matrix.Hermitian
+public import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.WeakConvergence
 
 /-!

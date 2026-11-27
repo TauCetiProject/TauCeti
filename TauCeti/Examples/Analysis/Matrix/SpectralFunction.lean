@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Convex.SpectralFunction
-public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
+public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
 public import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 public import TauCeti.Data.Fin.Basic
 
@@ -48,6 +48,15 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 /-- The geometric mean `σ₂^{1/2}` on `ℝ²`. -/
 noncomputable def geomMean (μ : Fin 2 → ℝ) : ℝ := (μ 0 * μ 1) ^ (2⁻¹ : ℝ)
 
+/-- Unfold `TauCeti.SpectralFunctionExamples.geomMean`. -/
+theorem geomMean_def (μ : Fin 2 → ℝ) : geomMean μ = (μ 0 * μ 1) ^ (2⁻¹ : ℝ) :=
+  (rfl)
+
+/-- The geometric mean is symmetric. -/
+theorem geomMean_comp_perm (σ : Equiv.Perm (Fin 2)) (μ : Fin 2 → ℝ) :
+    geomMean (μ ∘ σ) = geomMean μ :=
+  σ.apply_comp_fin_two (fun a b ↦ by simp [geomMean_def, mul_comm]) μ
+
 /-- The spectral function of the geometric mean is `det^{1/2}`. -/
 theorem geomMean_eigenvalues₀ {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : A.IsHermitian) :
     geomMean hA.eigenvalues₀ = RCLike.re A.det ^ (2⁻¹ : ℝ) := by
@@ -57,6 +66,11 @@ theorem geomMean_eigenvalues₀ {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : A.IsHerm
   change _ = RCLike.re (∏ k : Fin 2, _) ^ _
   rw [Fin.prod_univ_two, ← RCLike.ofReal_mul, RCLike.ofReal_re]
 
+/-- The square root `4 ^ (1/2)` of `4` is `2`. -/
+theorem four_rpow_inv_two : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
+  rw [show (4 : ℝ) = 2 ^ 2 by norm_num]
+  simpa using Real.pow_rpow_inv_natCast (x := 2) (n := 2) (by norm_num) two_ne_zero
+
 /-- `det^{1/2}` is `2` at `diag(4, 1)` and at `diag(1, 4)`, and `5/2` at their midpoint
 `diag(5/2, 5/2)`. -/
 theorem geomMean_diagonal_four_one (hA : (diagonal ![((4 : ℝ) : 𝕜), (1 : ℝ)]).IsHermitian)
@@ -64,14 +78,11 @@ theorem geomMean_diagonal_four_one (hA : (diagonal ![((4 : ℝ) : 𝕜), (1 : �
     (hM : (diagonal ![((5 / 2 : ℝ) : 𝕜), (5 / 2 : ℝ)]).IsHermitian) :
     geomMean hA.eigenvalues₀ = 2 ∧ geomMean hB.eigenvalues₀ = 2 ∧
       geomMean hM.eigenvalues₀ = 5 / 2 := by
-  have h4 : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
-    rw [show (4 : ℝ) = 2 ^ 2 by norm_num]
-    simpa using Real.pow_rpow_inv_natCast (x := 2) (n := 2) (by norm_num) two_ne_zero
   refine ⟨?_, ?_, ?_⟩
   · rw [hA.eigenvalues₀_diagonal_two (by norm_num), geomMean]
-    simpa using h4
+    simpa using four_rpow_inv_two
   · rw [hB.eigenvalues₀_diagonal_two_swap (by norm_num), geomMean]
-    simpa using h4
+    simpa using four_rpow_inv_two
   · rw [hM.eigenvalues₀_diagonal_two le_rfl, geomMean]
     simpa [← sq] using Real.pow_rpow_inv_natCast (x := 5 / 2) (n := 2) (by norm_num) two_ne_zero
 
@@ -160,6 +171,10 @@ def minPair (μ : Fin 2 → ℝ) : ℝ := min (μ 0) (μ 1)
 
 /-- The larger coordinate of a vector in `ℝ²`. -/
 def maxPair (μ : Fin 2 → ℝ) : ℝ := max (μ 0) (μ 1)
+
+/-- Unfold `TauCeti.SpectralFunctionExamples.maxPair`. -/
+theorem maxPair_def (μ : Fin 2 → ℝ) : maxPair μ = max (μ 0) (μ 1) :=
+  (rfl)
 
 /-- **The smallest eigenvalue is concave**: `min` is symmetric and concave on `ℝ²`, so its
 spectral function `λ₂` is concave on the Hermitian `2 × 2` matrices. -/

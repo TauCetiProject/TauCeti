@@ -101,13 +101,6 @@ private def cycleDixonFunction (f : ℂ → ℂ) (U : Set ℂ) (C : Cycle) (w : 
     classical
     exact if w ∈ U then cycleDixonH1 f C w else cycleDixonH2 f C w
 
-/-- Every supported curve of a cycle contained in `U` maps its parameter interval into `U`. -/
-private theorem mapsTo_of_mem_support {C : Cycle} {U : Set ℂ} (hCU : IsIn C U)
-    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
-    ∀ t ∈ uIcc γ.a γ.b, γ t ∈ U := by
-  intro t ht
-  exact isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
-
 /-- The cycle `h₁`/`h₂` identity. Away from the trace, their difference is the winding number
 of the whole cycle, not a separate hypothesis on each generator. -/
 private theorem cycleDixonH1_eq_cycleDixonH2_sub {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ}
@@ -122,7 +115,7 @@ private theorem cycleDixonH1_eq_cycleDixonH2_sub {f : ℂ → ℂ} {C : Cycle} {
             TauCeti.Contour.windingNumber γ γ.a γ.b w * f w := by
     intro γ hγ
     have hoff := avoids_of_mem_support hw hγ
-    have hγU := mapsTo_of_mem_support hCU hγ
+    have hγU := hCU.mapsTo_of_mem_support hγ
     exact TauCeti.Contour.dixonH1_eq_dixonH2_sub_windingNumber_mul_f γ.continuousOn hoff
       (TauCeti.Contour.cauchy_integrand_intervalIntegrable hf γ.continuousOn hγU
         γ.intervalIntegrable_deriv hoff)
@@ -173,7 +166,7 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
     unfold cycleDixonH1
     exact DifferentiableOn.fun_sum fun γ hγ ↦
       (TauCeti.Contour.differentiableOn_dixonH1 hU hf γ.continuousOn
-        (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv).const_mul
+        (hCU.mapsTo_of_mem_support hγ) γ.intervalIntegrable_deriv).const_mul
           (FreeAddCommGroup.coeff γ C : ℂ)
   intro w
   by_cases hwU : w ∈ U
@@ -263,7 +256,7 @@ private theorem homologyCauchyTheorem_complex {f : ℂ → ℂ} {C : Cycle} {U :
     simpa using hzero
 
 /-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
-combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
+combination of closed absolutely continuous curves whose trace lies in an open set `U`. If `C` is
 null-homologous in `U` and `f` is holomorphic on `U`, with values in any complex normed space,
 then the contour integral of `f` over the whole cycle vanishes.
 

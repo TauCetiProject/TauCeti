@@ -40,8 +40,11 @@ and `C¹` maps it obeys the following laws.
   sphere (`TauCeti.cylinderAction_sub_cylinderAction`).
 
 For a closed `C¹` form the action is moreover unchanged along a `C²` homotopy of caps fixing the
-loop (`TauCeti.cylinderAction_eq_of_homotopy`). The capped action `TauCeti.cappedLoopAction` of
-capped Floer theory uses the opposite orientation and sign
+loop (`TauCeti.cylinderAction_eq_of_homotopy`). More generally, for a map `f` preserving the
+form, the action of an `f`-seamed path `γ`, with `γ 1 = f (γ 0)`, measured against an `f`-seamed
+cylinder (`TauCeti.IsSmoothSeamedCylinder`), is unchanged along a homotopy of `f`-seamed cylinders
+relative to their ends (`TauCeti.cylinderAction_eq_of_seamedHomotopy`). The capped action
+`TauCeti.cappedLoopAction` of capped Floer theory uses the opposite orientation and sign
 (`TauCeti.cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction`).
 
 The action depends on the reference cylinder in general. It only depends on the loop:
@@ -56,13 +59,23 @@ The action depends on the reference cylinder in general. It only depends on the 
   (`TauCeti.SmoothTwoForm.referenceAction_eq`). Choosing one reference loop in each free homotopy
   class gives the action functional on all loops admitting smooth cylinders to their reference
   loops. Its first variation and critical loops are in
-  `TauCeti.Geometry.Symplectic.Hamiltonian.Action.FirstVariation`.
+  `TauCeti.Geometry.Symplectic.Hamiltonian.Action.FirstVariation`;
+* more generally, for a map `f : M → M`, on `f`-seamed paths, `γ 1 = f (γ 0)`, joined to a fixed
+  reference `f`-seamed path `γ₀`, measured against `f`-seamed cylinders to `γ₀`, when `σ` vanishes
+  on `f`-seamed tori (`TauCeti.VanishesOnSeamedTori`). This gives the action functional
+  `TauCeti.SmoothTwoForm.seamedReferenceAction` of the Floer theory of `f`
+  (`TauCeti.SmoothTwoForm.seamedReferenceAction_eq`), which for `f = id` is the action relative to
+  a reference loop (`TauCeti.SmoothTwoForm.seamedReferenceAction_id`); the lemmas on the action
+  relative to a reference loop are derived from it. Its first variation and critical points are
+  in `TauCeti.Geometry.Symplectic.Hamiltonian.Action.Seamed`.
 
-Both area conditions hold for exact forms (`TauCeti.vanishesOnSpheres_mextDeriv`,
-`TauCeti.vanishesOnTori_mextDeriv`). Under the respective area condition, a constant loop at `x`
-has action `-∫₀¹ H(t, x) dt` (`TauCeti.SmoothTwoForm.contractibleAction_const`), and a smooth
+The area conditions hold for exact forms (`TauCeti.vanishesOnSpheres_mextDeriv`,
+`TauCeti.vanishesOnTori_mextDeriv`), on `f`-seamed tori when `f` preserves the primitive
+(`TauCeti.vanishesOnSeamedTori_mextDeriv`). Under the respective area condition, a constant loop
+at `x` has action `-∫₀¹ H(t, x) dt` (`TauCeti.SmoothTwoForm.contractibleAction_const`), and a smooth
 reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
-(`TauCeti.SmoothTwoForm.referenceAction_self`).
+(`TauCeti.SmoothTwoForm.referenceAction_self`, and
+`TauCeti.SmoothTwoForm.seamedReferenceAction_self` for seamed paths).
 
 ## Main definitions
 
@@ -72,6 +85,8 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
   cap, when one exists.
 * `TauCeti.SmoothTwoForm.referenceAction σ H γ₀ γ`: the action of a loop measured against a smooth
   cylinder to the reference loop `γ₀`, when one exists.
+* `TauCeti.SmoothTwoForm.seamedReferenceAction σ f H γ₀ γ`: the action of an `f`-seamed path
+  measured against a smooth `f`-seamed cylinder to the reference path `γ₀`, when one exists.
 
 ## Main results
 
@@ -81,6 +96,8 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
   sphere between the two caps.
 * `TauCeti.cylinderAction_eq_of_homotopy`: for a closed `C¹` form, the action is unchanged along a
   `C²` homotopy of caps fixing the loop.
+* `TauCeti.cylinderAction_eq_of_seamedHomotopy`: for a closed `C¹` form preserved by `f`, the
+  action is unchanged along a `C²` homotopy of `f`-seamed cylinders relative to their ends.
 
 ## References
 
@@ -190,6 +207,34 @@ theorem cylinderAction_sub_cylinderAction (hσ : IsSmoothForm I 0 σ) (H : ℝ �
 
 end Continuous
 
+/-- **Homotopy invariance of the seamed action.** Let `σ` be a closed `C¹` two-form and `f` a
+differentiable map preserving it, `f^* σ = σ`. The action does not change along a `C²` homotopy
+`Φ` of `f`-seamed maps, `Φ ((s, 1), c) = f (Φ ((s, 0), c))`, that fixes the start path
+`Φ ((0, t), c)` and either fixes the far end `Φ ((1, t), c)` or keeps it a single point at each
+time `c` (the point may move). So seamed cylinders between the same `f`-seamed paths that are
+homotopic relative to their ends give the same action. For `f = id` the maps are periodic in `t`,
+and this is `TauCeti.cylinderAction_eq_of_homotopy`. -/
+theorem cylinderAction_eq_of_seamedHomotopy [IsManifold I 2 M] {σ : RoughForm I M ℝ 2}
+    (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0) {f : M → M} (hf : MDifferentiable I I f)
+    (hfσ : mpullback I I f σ = σ) (H : ℝ → M → ℝ) {Φ : (ℝ × ℝ) × ℝ → M}
+    (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
+    (hloop : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
+    (hend : (∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, t), 0)) ∨
+      ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
+    (hseam : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = f (Φ ((s, 0), c))) :
+    cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) := by
+  have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
+  have hc1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
+  -- The loop does not move, so the Hamiltonian terms agree.
+  have hH : ∫ t in 0..1, H t (Φ ((0, t), 1)) = ∫ t in 0..1, H t (Φ ((0, t), 0)) :=
+    intervalIntegral.integral_congr fun t ht ↦ by rw [hloop t (hI ▸ ht) 1 hc1]
+  simp only [cylinderAction_def]
+  rw [rectangleIntegral_eq_of_seamedHomotopy (a := (0, 0)) (b := (1, 1)) hσ hdσ hf hfσ hΦ
+      (.inl fun t ht c hc ↦ hloop t (hI ▸ ht) c hc)
+      (hend.imp (fun h t ht c hc ↦ h t (hI ▸ ht) c hc)
+        fun h t ht c hc ↦ (h t (hI ▸ ht) c hc).trans (h 1 hc1 c hc).symm)
+      (fun s hs c hc ↦ hseam s (hI ▸ hs) c hc), hH]
+
 /-- **Homotopy invariance.** For a closed `C¹` two-form, the action does not change along a `C²`
 homotopy `Φ` that fixes the loop `Φ ((0, t), c)`, keeps the far end `Φ ((1, t), c)` a single
 point at each time `c` (the point may move), and keeps the maps periodic in `t`. So caps related
@@ -200,28 +245,26 @@ theorem cylinderAction_eq_of_homotopy [IsManifold I 2 M] {σ : RoughForm I M ℝ
     (hloop : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
     (hcentre : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
     (hper : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = Φ ((s, 0), c)) :
-    cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) := by
-  have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
-  have hc1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
-  -- The loop does not move, so the Hamiltonian terms agree.
-  have hH : ∫ t in 0..1, H t (Φ ((0, t), 1)) = ∫ t in 0..1, H t (Φ ((0, t), 0)) :=
-    intervalIntegral.integral_congr fun t ht ↦ by rw [hloop t (hI ▸ ht) 1 hc1]
-  simp only [cylinderAction_def]
-  rw [rectangleIntegral_eq_of_homotopy (a := (0, 0)) (b := (1, 1)) hσ hdσ hΦ
-      (.inl fun t ht c hc ↦ hloop t (hI ▸ ht) c hc)
-      (.inr fun t ht c hc ↦ (hcentre t (hI ▸ ht) c hc).trans (hcentre 1 hc1 c hc).symm)
-      (fun s hs c hc ↦ hper s (hI ▸ hs) c hc), hH]
+    cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) :=
+  cylinderAction_eq_of_seamedHomotopy hσ hdσ mdifferentiable_id (mpullback_id σ) H hΦ hloop
+    (.inr hcentre) hper
 
 namespace SmoothTwoForm
 
-variable [IsManifold I ∞ M]
-  {σ : SmoothTwoForm I M} {H : ℝ → M → ℝ} {γ γ₀ : ℝ → M} {u v : ℝ × ℝ → M}
+variable [IsManifold I ∞ M] {σ : SmoothTwoForm I M} {H : ℝ → M → ℝ} {f : M → M} {γ γ₀ : ℝ → M}
+  {u v : ℝ × ℝ → M}
 
-/-- The action measured against a cylinder from `γ` is `∫ u^* σ - ∫₀¹ H(t, γ(t)) dt`. -/
-theorem cylinderAction_eq_of_isSmoothCylinder (hu : IsSmoothCylinder I γ γ₀ u) :
+/-- The action measured against an `f`-seamed cylinder from `γ` is
+`∫ u^* σ - ∫₀¹ H(t, γ(t)) dt`. -/
+theorem cylinderAction_eq_of_isSmoothSeamedCylinder (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
     cylinderAction σ.val H u = rectangleIntegral σ.val u (0, 0) (1, 1) - ∫ t in 0..1, H t (γ t)
         := by
   simp only [cylinderAction_def, hu.apply_zero]
+
+/-- The action measured against a cylinder from `γ` is `∫ u^* σ - ∫₀¹ H(t, γ(t)) dt`. -/
+theorem cylinderAction_eq_of_isSmoothCylinder (hu : IsSmoothCylinder I γ γ₀ u) :
+    cylinderAction σ.val H u = rectangleIntegral σ.val u (0, 0) (1, 1) - ∫ t in 0..1, H t (γ t) :=
+  cylinderAction_eq_of_isSmoothSeamedCylinder (isSmoothSeamedCylinder_id_iff.mpr hu)
 
 /-- **Independence of the cap.** If `σ` vanishes on spheres, the action of a loop is the same
 measured against any two smooth caps, even if they end at different points. -/
@@ -231,13 +274,23 @@ theorem cylinderAction_eq_of_vanishesOnSpheres (hσ : VanishesOnSpheres σ.val) 
   rw [cylinderAction_eq_of_isSmoothCylinder hu, cylinderAction_eq_of_isSmoothCylinder hv,
     hσ.rectangleIntegral_eq (σ.isSmoothForm.of_le (by simp)) hu hv]
 
+/-- **Independence of the seamed cylinder.** If `σ` vanishes on `f`-seamed tori, the action of an
+`f`-seamed path is the same measured against any two smooth `f`-seamed cylinders to the same
+reference path. -/
+theorem cylinderAction_eq_of_vanishesOnSeamedTori (hT : VanishesOnSeamedTori f σ.val)
+    (hu : IsSmoothSeamedCylinder I f γ γ₀ u) (hv : IsSmoothSeamedCylinder I f γ γ₀ v) :
+    cylinderAction σ.val H u = cylinderAction σ.val H v := by
+  rw [cylinderAction_eq_of_isSmoothSeamedCylinder hu,
+    cylinderAction_eq_of_isSmoothSeamedCylinder hv,
+    hT.rectangleIntegral_eq (σ.isSmoothForm.of_le (by simp)) hu hv]
+
 /-- **Independence of the cylinder.** If `σ` vanishes on tori, the action of a loop is the same
 measured against any two smooth cylinders to the same reference loop. -/
 theorem cylinderAction_eq_of_vanishesOnTori (hσ : VanishesOnTori σ.val)
     (hu : IsSmoothCylinder I γ γ₀ u) (hv : IsSmoothCylinder I γ γ₀ v) :
-    cylinderAction σ.val H u = cylinderAction σ.val H v := by
-  rw [cylinderAction_eq_of_isSmoothCylinder hu, cylinderAction_eq_of_isSmoothCylinder hv,
-    hσ.rectangleIntegral_eq (σ.isSmoothForm.of_le (by simp)) hu hv]
+    cylinderAction σ.val H u = cylinderAction σ.val H v :=
+  cylinderAction_eq_of_vanishesOnSeamedTori ((vanishesOnSeamedTori_id_iff _).mpr hσ)
+    (isSmoothSeamedCylinder_id_iff.mpr hu) (isSmoothSeamedCylinder_id_iff.mpr hv)
 
 open Classical in
 /-- The Hamiltonian action of a contractible loop `γ`, measured against a smooth cap of `γ`; it is
@@ -269,40 +322,85 @@ theorem contractibleAction_eq_zero_of_not_exists
 theorem contractibleAction_const (hσ : VanishesOnSpheres σ.val) (x : M) :
     σ.contractibleAction H (fun _ ↦ x) = -∫ t in 0..1, H t x := by
   have hc : IsSmoothCylinder I (fun _ ↦ x) (fun _ ↦ x) ((fun _ : ℝ ↦ x) ∘ Prod.fst) :=
-    ⟨contMDiff_const, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
+    isSmoothSeamedCylinder_id_iff.mp ⟨contMDiff_const, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
   rw [contractibleAction_eq hσ hc, cylinderAction_eq_of_isSmoothCylinder hc,
     rectangleIntegral_comp_fst, zero_sub]
 
 open Classical in
-/-- The Hamiltonian action of a loop `γ` relative to the reference loop `γ₀`, measured against a
-smooth cylinder from `γ` to `γ₀`; it is `0` when there is no such cylinder. When `σ` vanishes on
-tori it does not depend on the cylinder (`TauCeti.SmoothTwoForm.referenceAction_eq`). -/
-def referenceAction (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) (γ₀ γ : ℝ → M) : ℝ :=
-  if h : ∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u then cylinderAction σ.val H h.choose else 0
+/-- The Hamiltonian action of an `f`-seamed path `γ` relative to the reference `f`-seamed path
+`γ₀`, measured against a smooth `f`-seamed cylinder from `γ` to `γ₀`; it is `0` when there is no
+such cylinder. When `σ` vanishes on `f`-seamed tori it does not depend on the cylinder
+(`TauCeti.SmoothTwoForm.seamedReferenceAction_eq`). For `f = id` it is
+`TauCeti.SmoothTwoForm.referenceAction` (`TauCeti.SmoothTwoForm.seamedReferenceAction_id`). -/
+def seamedReferenceAction (σ : SmoothTwoForm I M) (f : M → M) (H : ℝ → M → ℝ) (γ₀ γ : ℝ → M) :
+    ℝ :=
+  if h : ∃ u : ℝ × ℝ → M, IsSmoothSeamedCylinder I f γ γ₀ u then
+    cylinderAction σ.val H h.choose
+  else 0
 
-/-- If `σ` vanishes on tori, the action of a loop relative to `γ₀` is its action measured against
-any smooth cylinder to `γ₀`. -/
-theorem referenceAction_eq (hσ : VanishesOnTori σ.val) (hu : IsSmoothCylinder I γ γ₀ u) :
-    σ.referenceAction H γ₀ γ = cylinderAction σ.val H u := by
-  have h : ∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u := ⟨u, hu⟩
-  simp only [referenceAction, h, ↓reduceDIte]
-  exact cylinderAction_eq_of_vanishesOnTori hσ h.choose_spec hu
+/-- If `σ` vanishes on `f`-seamed tori, the action of an `f`-seamed path relative to `γ₀` is its
+action measured against any smooth `f`-seamed cylinder to `γ₀`. -/
+theorem seamedReferenceAction_eq (hT : VanishesOnSeamedTori f σ.val)
+    (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
+    σ.seamedReferenceAction f H γ₀ γ = cylinderAction σ.val H u := by
+  have h : ∃ u : ℝ × ℝ → M, IsSmoothSeamedCylinder I f γ γ₀ u := ⟨u, hu⟩
+  simp only [seamedReferenceAction, h, ↓reduceDIte]
+  exact cylinderAction_eq_of_vanishesOnSeamedTori hT h.choose_spec hu
+
+/-- The action of a path relative to `γ₀` is `0` when there is no smooth `f`-seamed cylinder to
+`γ₀`. -/
+@[simp]
+theorem seamedReferenceAction_eq_zero_of_not_exists
+    (h : ¬∃ u : ℝ × ℝ → M, IsSmoothSeamedCylinder I f γ γ₀ u) :
+    σ.seamedReferenceAction f H γ₀ γ = 0 :=
+  dite_eq_right h
+
+/-- If `σ` vanishes on `f`-seamed tori, a smooth `f`-seamed reference path `γ₀` has action
+`-∫₀¹ H(t, γ₀(t)) dt` relative to itself. -/
+@[simp]
+theorem seamedReferenceAction_self (hT : VanishesOnSeamedTori f σ.val)
+    (hγ₀ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ₀) (hseam : γ₀ 1 = f (γ₀ 0)) :
+    σ.seamedReferenceAction f H γ₀ γ₀ = -∫ t in 0..1, H t (γ₀ t) := by
+  have hc : IsSmoothSeamedCylinder I f γ₀ γ₀ (γ₀ ∘ Prod.snd) :=
+    ⟨hγ₀.comp contDiff_snd.contMDiff, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ hseam⟩
+  rw [seamedReferenceAction_eq hT hc, cylinderAction_eq_of_isSmoothSeamedCylinder hc,
+    rectangleIntegral_comp_snd, zero_sub]
+
+/-- The Hamiltonian action of a loop `γ` relative to the reference loop `γ₀`, measured against a
+smooth cylinder from `γ` to `γ₀`; it is `0` when there is no such cylinder. This is the seamed
+action `TauCeti.SmoothTwoForm.seamedReferenceAction` for `f = id`. When `σ` vanishes on tori it
+does not depend on the cylinder (`TauCeti.SmoothTwoForm.referenceAction_eq`). -/
+def referenceAction (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) (γ₀ γ : ℝ → M) : ℝ :=
+  σ.seamedReferenceAction id H γ₀ γ
+
+/-- **The seamed action for the identity is the action relative to a reference loop.** -/
+@[simp]
+theorem seamedReferenceAction_id :
+    σ.seamedReferenceAction id H γ₀ γ = σ.referenceAction H γ₀ γ :=
+  (rfl)
 
 /-- The action of a loop relative to `γ₀` is `0` when there is no smooth cylinder to `γ₀`. -/
 @[simp]
 theorem referenceAction_eq_zero_of_not_exists (h : ¬∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u) :
     σ.referenceAction H γ₀ γ = 0 :=
-  dite_eq_right h
+  seamedReferenceAction_eq_zero_of_not_exists <| by
+    simpa only [isSmoothSeamedCylinder_id_iff] using h
+
+/-- If `σ` vanishes on tori, the action of a loop relative to `γ₀` is its action measured against
+any smooth cylinder to `γ₀`. -/
+theorem referenceAction_eq (hσ : VanishesOnTori σ.val) (hu : IsSmoothCylinder I γ γ₀ u) :
+    σ.referenceAction H γ₀ γ = cylinderAction σ.val H u := by
+  rw [← seamedReferenceAction_id]
+  exact seamedReferenceAction_eq ((vanishesOnSeamedTori_id_iff _).mpr hσ)
+    (isSmoothSeamedCylinder_id_iff.mpr hu)
 
 /-- If `σ` vanishes on tori, a smooth reference loop `γ₀` with `γ₀ 1 = γ₀ 0` has action
 `-∫₀¹ H(t, γ₀(t)) dt` relative to itself. -/
 @[simp]
 theorem referenceAction_self (hσ : VanishesOnTori σ.val) (hγ₀ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ₀)
     (hper : γ₀ 1 = γ₀ 0) : σ.referenceAction H γ₀ γ₀ = -∫ t in 0..1, H t (γ₀ t) := by
-  have hc : IsSmoothCylinder I γ₀ γ₀ (γ₀ ∘ Prod.snd) :=
-    ⟨hγ₀.comp contDiff_snd.contMDiff, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ hper⟩
-  rw [referenceAction_eq hσ hc, cylinderAction_eq_of_isSmoothCylinder hc,
-    rectangleIntegral_comp_snd, zero_sub]
+  rw [← seamedReferenceAction_id]
+  exact seamedReferenceAction_self ((vanishesOnSeamedTori_id_iff _).mpr hσ) hγ₀ hper
 
 end SmoothTwoForm
 
