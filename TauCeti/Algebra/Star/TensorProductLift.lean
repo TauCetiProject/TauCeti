@@ -36,6 +36,8 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
   homomorphism `A ⊗[R] B → B ⊗[R] A`.
 * `Algebra.TensorProduct.isStarOrtho_mapNonUnitalStarAlgHom_inl_inr`: the images of
   `A ⊗[R] B` and `A' ⊗[R] B` in `(A × A') ⊗[R] B` are star-orthogonal.
+* `Algebra.TensorProduct.mapNonUnitalStarAlgHom_fst_inl` and its siblings: the composites of
+  `inl ⊗ id`, `inr ⊗ id` with `fst ⊗ id`, `snd ⊗ id` are the identity or zero.
 -/
 
 public section
@@ -355,6 +357,46 @@ theorem mapNonUnitalStarAlgHom_inl_fst_add_inr_snd (x : (A × A') ⊗[R] B) :
       NonUnitalStarAlgHom.inr_apply, NonUnitalStarAlgHom.fst_apply, NonUnitalStarAlgHom.snd_apply,
       NonUnitalStarAlgHom.coe_id, id_eq, ← TensorProduct.add_tmul, Prod.mk_add_mk, add_zero,
       zero_add]
+
+/-- `(fst ⊗ id) ∘ (inl ⊗ id)` is the identity of `A ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_fst_inl (y : A ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.fst R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B) y) =
+      y := by
+  induction y using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+/-- `(snd ⊗ id) ∘ (inr ⊗ id)` is the identity of `A' ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_snd_inr (z : A' ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.snd R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B) z) =
+      z := by
+  induction z using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+/-- `(fst ⊗ id) ∘ (inr ⊗ id)` vanishes on `A' ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_fst_inr (z : A' ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.fst R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B) z) =
+      0 := by
+  induction z using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
+  | tmul a b => simp
+
+/-- `(snd ⊗ id) ∘ (inl ⊗ id)` vanishes on `A ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_snd_inl (y : A ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.snd R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B) y) =
+      0 := by
+  induction y using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
+  | tmul a b => simp
 
 end Prod
 
