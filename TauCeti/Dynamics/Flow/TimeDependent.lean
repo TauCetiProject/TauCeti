@@ -272,7 +272,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 omit [NormedSpace ℝ E] [CompleteSpace E] [NormedSpace ℝ F] [CompleteSpace F] in
 /-- For a family of time-dependent fields `v u` which is jointly Lipschitz in the parameter `u`,
 the time and the point, each field `v u` has a Lipschitz suspension, with the same constant. -/
-theorem lipschitzWith_timeDependentSuspension_apply
+theorem lipschitzWith_timeDependentSuspension_of_parametric
     (hv : LipschitzWith K fun q : F × ℝ × E ↦ v q.1 q.2.1 q.2.2) (u : F) :
     LipschitzWith K (timeDependentSuspension (v u)) := by
   refine lipschitzWith_timeDependentSuspension (LipschitzWith.of_dist_le_mul fun a b ↦ ?_)
@@ -304,7 +304,8 @@ theorem timeDependentFlow_freeze (hv : LipschitzWith K fun q : F × ℝ × E ↦
     (s t : ℝ) (x : E) (u : F) :
     timeDependentFlow (fun t (q : E × F) ↦ (v q.2 t q.1, (0 : F)))
         (lipschitzWith_timeDependentSuspension_freeze hv) s t (x, u) =
-      (timeDependentFlow (v u) (lipschitzWith_timeDependentSuspension_apply hv u) s t x, u) := by
+      (timeDependentFlow (v u) (lipschitzWith_timeDependentSuspension_of_parametric hv u) s t x,
+        u) := by
   set Φ := timeDependentFlow (fun t (q : E × F) ↦ (v q.2 t q.1, (0 : F)))
     (lipschitzWith_timeDependentSuspension_freeze hv) with hΦ
   have hsnd (τ : ℝ) : (Φ s τ (x, u)).2 = u :=
@@ -315,7 +316,8 @@ theorem timeDependentFlow_freeze (hv : LipschitzWith K fun q : F × ℝ × E ↦
       (lipschitzWith_timeDependentSuspension_freeze hv) s τ (x, u)).hasFDerivAt.fst.hasDerivAt
     rw [← hΦ] at h
     simpa [hsnd] using h
-  have h := eq_timeDependentFlow (v u) (lipschitzWith_timeDependentSuspension_apply hv u) hy s t
+  have h :=
+    eq_timeDependentFlow (v u) (lipschitzWith_timeDependentSuspension_of_parametric hv u) hy s t
   rw [hΦ, timeDependentFlow_self, ← hΦ] at h
   exact Prod.ext h (hsnd t)
 

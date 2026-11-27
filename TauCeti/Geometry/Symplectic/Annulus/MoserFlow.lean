@@ -355,7 +355,7 @@ theorem exists_stripMoserFlow_family {r : ℕ∞} (hr : 1 ≤ r) (hg : ContDiff 
   obtain ⟨Y, K, hYK, hY, hYper, h₀, hY0, hYu⟩ :=
     exists_cutoff_stripMoserVectorField hr hg hper hpos harea
   -- For each parameter `u`, the flow of the cut-off field `Y u` on the plane.
-  have hS := lipschitzWith_timeDependentSuspension_apply hYK
+  have hS := lipschitzWith_timeDependentSuspension_of_parametric hYK
   have hYs (u : ℝ) : ContDiff ℝ r fun q : ℝ × (ℝ × ℝ) ↦ Y u q.1 q.2 :=
     hY.comp ((contDiff_const (c := u)).prodMk contDiff_id)
   let ψ (u t : ℝ) : (ℝ × ℝ) ≃ₘ^r⟮𝓘(ℝ, ℝ × ℝ), 𝓘(ℝ, ℝ × ℝ)⟯ (ℝ × ℝ) :=
