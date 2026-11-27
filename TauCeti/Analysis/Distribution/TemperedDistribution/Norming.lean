@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.MeasureTheory.Function.Lp.Dual
+import TauCeti.MeasureTheory.Function.L1Space.Dual
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
@@ -21,11 +22,12 @@ dual space `Lᵠ(μ)`: an `Lᵠ` function `h` whose pairings with Schwartz funct
 `r < ‖h‖_q` is exceeded by `‖∫ g h‖` for some Schwartz function `g` with `‖g‖_p < 1`
 (`MeasureTheory.Lp.exists_lt_norm_toTemperedDistribution_apply_of_lt_norm`).
 
-Conversely, for `1 < p < ∞` every tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p` for all
+Conversely, for `1 ≤ p < ∞` every tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p` for all
 Schwartz functions `g` is an `Lᵠ` function of norm at most `B`
 (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`): the bound extends `u` from
 the dense Schwartz functions to a continuous linear functional on `Lᵖ(μ)`, and the dual of `Lᵖ(μ)`
-is `Lᵠ(μ)` (`MeasureTheory.Lp.dualEquiv`). This is how an `Lᵠ` estimate for a distribution is
+is `Lᵠ(μ)` (`MeasureTheory.Lp.dualEquiv` for `1 < p`, `MeasureTheory.Lp.exists_toDual_eq` for
+`p = 1`, where `q = ∞`). This is how an `Lᵠ` estimate for a distribution is
 obtained by duality from estimates on test functions alone, for instance for the blocks of a
 distribution in a Besov space of negative order.
 
@@ -94,10 +96,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.HasTemperateGrowth]
   {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [q.HolderConjugate p]
 
-/-- **Distributions bounded in `Lᵖ` are `Lᵠ` functions.** For `1 < p < ∞` and `q` Hölder
+/-- **Distributions bounded in `Lᵖ` are `Lᵠ` functions.** For `1 ≤ p < ∞` and `q` Hölder
 conjugate to `p`, a tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p` for every Schwartz function
 `g` is the tempered distribution of some `h ∈ Lᵠ(μ)` with `‖h‖_q ≤ B`. -/
-theorem exists_eq_toTemperedDistribution_and_norm_le (hp : 1 < p) (hp_top : p ≠ ∞)
+theorem exists_eq_toTemperedDistribution_and_norm_le (hp_top : p ≠ ∞)
     (u : 𝓢'(E, ℂ)) {B : ℝ} (hB : 0 ≤ B) (hu : ∀ g : 𝓢(E, ℂ), ‖u g‖ ≤ B * ‖g.toLp p μ‖) :
     ∃ h : Lp ℂ q μ, (h : 𝓢'(E, ℂ)) = u ∧ ‖h‖ ≤ B := by
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
@@ -113,11 +115,18 @@ theorem exists_eq_toTemperedDistribution_and_norm_le (hp : 1 < p) (hp_top : p �
   have hS : ∀ g, ‖S g‖ ≤ B * ‖e g‖ := fun g ↦ by simpa [S, e] using hu g
   set Λ := S.extendOfNorm e
   have hΛ : ‖Λ‖ ≤ B := Λ.opNorm_le_bound hB (LinearMap.norm_extendOfNorm_apply_le he B hS)
-  -- `Λ` is integration against some `h ∈ Lᵠ`, which represents `u`.
-  refine ⟨(Lp.dualEquiv ℂ μ q p hp hp_top).symm Λ, ?_, by simpa using hΛ⟩
+  -- `Λ` is integration against some `h ∈ Lᵠ`: the dual of `L¹` is `L^∞`, and for `1 < p` the dual
+  -- of `Lᵖ` is `Lᵠ`.
+  obtain ⟨h, hh⟩ : ∃ h : Lp ℂ q μ, Lp.toDual ℂ μ q p h = Λ := by
+    rcases (Fact.out : 1 ≤ p).eq_or_lt with rfl | hp
+    · obtain rfl : q = ∞ := (ENNReal.HolderConjugate.eq_top_iff_eq_one q 1).2 rfl
+      exact Lp.exists_toDual_eq Λ
+    · exact ⟨(Lp.dualEquiv ℂ μ q p hp hp_top).symm Λ, by
+        rw [← Lp.coe_dualEquiv hp hp_top, LinearIsometryEquiv.apply_symm_apply]⟩
+  -- `h` represents `u`.
+  refine ⟨h, ?_, by rwa [← (Lp.toDual ℂ μ q p).norm_map h, hh]⟩
   ext g
-  rw [Lp.toTemperedDistribution_apply_eq_toDual_apply (p := p), ← Lp.coe_dualEquiv hp hp_top,
-    LinearIsometryEquiv.apply_symm_apply]
+  rw [Lp.toTemperedDistribution_apply_eq_toDual_apply (p := p), hh]
   simpa [S, e] using LinearMap.extendOfNorm_eq he ⟨B, hS⟩ g
 
 end TemperedDistribution
