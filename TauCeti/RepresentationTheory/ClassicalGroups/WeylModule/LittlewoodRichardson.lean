@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Multiplicity
-public import TauCeti.RepresentationTheory.ClassicalGroups.UnitaryTrick
+public import TauCeti.RepresentationTheory.ClassicalGroups.Unitary.Trick
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Differential
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Laurent

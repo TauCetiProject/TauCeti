@@ -60,6 +60,8 @@ piece is at most a constant times the distance from `g` to `g'`.
   `Lᵖ(E, μ)` for `p < ∞`.
 * `TauCeti.LpSection.ofCompactlySupported_injective`: the map is injective when `μ` is positive
   on nonempty open sets.
+* `TauCeti.LpSection.inner_ofCompactlySupported`: for `p = 2`, the inner product of two such
+  classes is the integral of the fibre inner product.
 
 ## References
 
@@ -72,7 +74,7 @@ public section
 noncomputable section
 
 open Bundle MeasureTheory Set Filter
-open scoped Topology ENNReal NNReal Manifold ContDiff
+open scoped Topology ENNReal NNReal Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
@@ -139,6 +141,16 @@ fibre norm. -/
 theorem norm_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F n E) :
     ‖ofCompactlySupported 𝕜 I p μ s‖ = (eLpNorm (fun x ↦ ‖s.val x‖) p μ).toReal := by
   rw [ofCompactlySupported_apply, norm_mk]
+
+/-- The `L²` inner product of the classes of two compactly supported `C^n` sections is the
+integral of their fibre inner product. -/
+theorem inner_ofCompactlySupported {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+    [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace 𝕜 (E x)] [∀ x, Module ℝ (E x)]
+    [FiberBundle F E] [VectorBundle 𝕜 F E] [VectorBundle ℝ F E] [ContinuousFiberNorm F E]
+    (s t : ContMDiffSection.compactlySupported I F n E) :
+    ⟪ofCompactlySupported 𝕜 I 2 μ s, ofCompactlySupported 𝕜 I 2 μ t⟫_𝕜 =
+      ∫ x, ⟪s.val x, t.val x⟫_𝕜 ∂μ := by
+  rw [ofCompactlySupported_apply, ofCompactlySupported_apply, inner_mk]
 
 /-- `ofCompactlySupported` is compatible with multiplication by real scalars. -/
 theorem ofCompactlySupported_smul [∀ x, IsScalarTower ℝ 𝕜 (E x)] (c : ℝ)

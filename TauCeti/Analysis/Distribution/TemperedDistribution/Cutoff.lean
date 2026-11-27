@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.SmulLeft
+public import TauCeti.Analysis.Distribution.TemperedDistribution.Conjugation
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -53,6 +54,10 @@ on `Ω` be replaced by one acting on the tempered distribution `χ T`.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
 * `Distribution.cutoffTempered_zero`, `Distribution.cutoffTempered_add`,
   `Distribution.cutoffTempered_smul`, `Distribution.cutoffTempered_sum`: `φ T` is linear in `T`.
+* `Distribution.cutoffTempered_mapCLM_conjCLE`: cutting off the complex conjugate of `T` by `φ`
+  is conjugating the cut-off of `T` by `conj ∘ φ`.
+* `Distribution.cutoffTempered_eq_zero_of_disjoint`: `φ T = 0` when `φ` vanishes near the support
+  of `T`.
 * `Distribution.cutoffTempered_induction`: a property of tempered distributions that holds for `0`
   and is preserved by sums passes from the cut-off distributions `ψ T` with `ψ` supported near
   each point of the support of `χ` to `χ T`.
@@ -257,6 +262,34 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
     T.cutoffTempered (c • φ) = c • T.cutoffTempered φ := by
   ext ψ
   simp only [smul_apply, cutoffTempered_def, map_smul, smul_eq_mul]
+
+/-- **Conjugating a cut-off distribution.** Cutting off the complex conjugate of `T` by `φ` gives
+the complex conjugate `ψ ↦ conj (u (conj ψ))` of the tempered distribution `u` obtained by cutting
+off `T` by the conjugate test function `conj ∘ φ`. -/
+theorem cutoffTempered_mapCLM_conjCLE (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    (mapCLM conjCLE.toContinuousLinearMap T).cutoffTempered φ =
+      TemperedDistribution.conjPostcompCLM (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap
+        (T.cutoffTempered (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ)) := by
+  ext ψ
+  rw [cutoffTempered_def, complexPairing_mapCLM_conjCLE,
+    TemperedDistribution.conjPostcompCLM_apply_apply, cutoffTempered_def]
+  simp only [ContinuousLinearEquiv.coe_coe, starL_apply, RCLike.star_def]
+  congr 2
+  ext x
+  simp [bilinLeftCLM_apply]
+
+/-- The cut-off `φ T` vanishes when `φ` vanishes near the support of `T`. -/
+theorem cutoffTempered_eq_zero_of_disjoint (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
+    (h : Disjoint (tsupport φ) (dsupport T)) : T.cutoffTempered φ = 0 := by
+  -- `φ` vanishes on the open set `(tsupport φ)ᶜ`, a neighbourhood of the support of `T`.
+  have h0 : (φ : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] ((0 : 𝓓(Ω, ℂ)) : E → ℂ) :=
+    eventually_nhdsSet_iff_forall.2 fun y hy ↦ by
+      filter_upwards [(isClosed_tsupport φ).isOpen_compl.mem_nhds
+        (h.subset_compl_left hy)] with z hz
+      simp [image_eq_zero_of_notMem_tsupport hz]
+  rw [cutoffTempered_congr T h0]
+  ext ψ
+  simp [cutoffTempered_def]
 
 /-- **From local to global properties of cut-off distributions.** Let `P` be a property of
 tempered distributions that holds for `0` and is preserved by sums. If every point of the support
@@ -560,6 +593,29 @@ theorem exists_mem_nhds_forall_cutoffTempered_toDistribution
   ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ by
     rw [cutoffTempered_toDistribution]
     exact hP u ψ hu⟩
+
+/-- If `P 0` holds, the cut-off distributions of `T` satisfy `P` near every point of `Ω` outside
+the support of `T`, since they vanish there. -/
+theorem exists_mem_nhds_forall_cutoffTempered_of_notMem_dsupport (hP : P 0) (hx : x ∈ Ω)
+    (hxT : x ∉ dsupport T) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ) :=
+  ⟨Ω ∩ (dsupport T)ᶜ, (Ω.isOpen.inter isClosed_dsupport.isOpen_compl).mem_nhds ⟨hx, hxT⟩,
+    inter_subset_left, fun ψ hψ ↦ by
+      rwa [cutoffTempered_eq_zero_of_disjoint T
+        (Set.subset_compl_iff_disjoint_right.1 (hψ.trans inter_subset_right))]⟩
+
+/-- If `P` is preserved by complex conjugation of tempered distributions, then so is the property
+that the cut-off distributions near `x` satisfy `P`. -/
+theorem exists_mem_nhds_forall_cutoffTempered_mapCLM_conjCLE
+    (hP : ∀ u, P u →
+      P (TemperedDistribution.conjPostcompCLM (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap u))
+    (h : ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → P (T.cutoffTempered ψ)) :
+    ∃ U ∈ 𝓝 x, U ⊆ Ω ∧ ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U →
+      P ((mapCLM conjCLE.toContinuousLinearMap T).cutoffTempered ψ) :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun ψ hψ ↦ by
+    rw [cutoffTempered_mapCLM_conjCLE]
+    exact hP _ (hT _ ((tsupport_comp_subset (map_zero conjCLE) ψ).trans hψ))⟩
 
 end LocalProperty
 

@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ScalarOneForm
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 

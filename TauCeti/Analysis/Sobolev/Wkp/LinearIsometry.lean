@@ -47,6 +47,8 @@ norm, and the transport along `e⁻¹` inverts it.
 * `TauCeti.Wkp.compLinearIsometryEquiv`: precomposition with `e` on `W^{k,p}`.
 * `TauCeti.Wkp.value_compLinearIsometryEquiv_ae`,
   `TauCeti.Wkp.iteratedGradient_compLinearIsometryEquiv_ae`: its value and highest derivative.
+* `TauCeti.Wkp.norm_iteratedGradient_compLinearIsometryEquiv`: it preserves the `Lᵖ` norm of the
+  highest derivative.
 * `TauCeti.Wkp.compLinearIsometryEquiv_mem_wkp0Submodule_iff`: zero boundary values are preserved
   and reflected.
 -/
@@ -273,6 +275,22 @@ theorem iteratedGradient_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ
       fun x => (e.iteratedGradientCongr k).symm (iteratedGradient k u (e x)) := by
   rw [compLinearIsometryEquiv_apply, compₗ_succ_apply, (compSpec he hUW k).property]
   exact pullbackLp_ae he hUW k _
+
+/-- The transport preserves the `Lᵖ` norm of the highest derivative: the pullback of iterated
+gradients along `e` is isometric pointwise, and `e` carries `μ` on `U` to `ν` on `W`. -/
+theorem norm_iteratedGradient_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
+    ‖iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u)‖ = ‖iteratedGradient k u‖ := by
+  have heU : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
+    hUW ▸ he.restrict_preimage W.isOpen.measurableSet
+  have hmeas : AEStronglyMeasurable (fun x => (iteratedGradient k u : E' → _) (e x))
+      (μ.restrict U) :=
+    (Lp.aestronglyMeasurable _).comp_measurePreserving heU
+  rw [Lp.norm_def, Lp.norm_def,
+    eLpNorm_congr_ae (iteratedGradient_compLinearIsometryEquiv_ae he hUW k u),
+    eLpNorm_congr_norm_ae ((e.iteratedGradientCongr k).symm.continuous.comp_aestronglyMeasurable
+      hmeas) hmeas (ae_of_all _ fun x => (e.iteratedGradientCongr k).symm.norm_map _)]
+  exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) heU)
 
 /-- The transport commutes with forgetting the highest derivative. -/
 theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)

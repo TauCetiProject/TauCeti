@@ -188,6 +188,26 @@ theorem iteratedDeriv_two_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r 
   field_simp
   ring
 
+open Topology in
+/-- Away from `r = 0`, if `U` is differentiable near `r` and its derivative has derivative `U''`
+at `r`, then the second derivative of the effective potential is
+`U_ℓ''(r) = 3 ℓ² / (m r⁴) + U''`. -/
+theorem hasDerivAt_deriv_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {U'' r : ℝ}
+    (hU : ∀ᶠ s in 𝓝 r, DifferentiableAt ℝ U s) (hU' : HasDerivAt (deriv U) U'' r) (hr : r ≠ 0) :
+    HasDerivAt (deriv (effectivePotential m ℓ U)) (3 * ℓ ^ 2 / (m * r ^ 4) + U'') r := by
+  -- Near `r`, the derivative is the formula of `hasDerivAt_effectivePotential`.
+  have hfun : (fun s ↦ deriv U s - ℓ ^ 2 / m * (s ^ 3)⁻¹) =ᶠ[𝓝 r]
+      deriv (effectivePotential m ℓ U) := by
+    filter_upwards [hU, eventually_ne_nhds hr] with s hs hs₀
+    rw [(hasDerivAt_effectivePotential hs.hasDerivAt hs₀).deriv]
+    ring
+  refine ((hU'.sub (((hasDerivAt_pow 3 r).inv (pow_ne_zero 3 hr)).const_mul
+    (ℓ ^ 2 / m))).congr_of_eventuallyEq hfun.symm).congr_deriv ?_
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  · field_simp
+    ring
+
 /-- Away from `r = 0`, the effective potential is continuous wherever `U` is. -/
 theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} (hU : ContinuousAt U r)
     (hr : r ≠ 0) :

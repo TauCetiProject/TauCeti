@@ -19,7 +19,10 @@ For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules, its homology is the ker
 modulo the range of the first.  The projection of Mathlib's explicit left homology data
 `S.moduleCatLeftHomologyData` from the kernel onto the homology is surjective, and identifies two
 elements exactly when their difference is in the range of the first map
-(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  When the third term is
+(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  A cycle `c` gives the
+linear map `r ↦ [r • c]` into the homology (`CategoryTheory.ShortComplex.moduleCatCycleMap`), whose
+kernel consists of the `r` with `r • c` a boundary, and which is onto when every cycle differs
+from a multiple of `c` by a boundary.  When the third term is
 torsion-free, a vector with a regular multiple in that range is a cycle
 (`CategoryTheory.ShortComplex.mem_ker_g_of_smul_mem_range_f`).  This file also records two
 finiteness consequences of that description:
@@ -118,6 +121,42 @@ cycle. -/
 lemma moduleCatLeftHomologyData_π_hom_surjective :
     Function.Surjective S.moduleCatLeftHomologyData.π.hom :=
   (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- The linear map sending `r : R` to the homology class of `r • c`, for a cycle `c` of a short
+complex of modules. -/
+noncomputable def moduleCatCycleMap (c : LinearMap.ker S.g.hom) : R →ₗ[R] S.homology :=
+  S.moduleCatHomologyIso.inv.hom ∘ₗ
+    LinearMap.toSpanSingleton R _ (S.moduleCatLeftHomologyData.π.hom c)
+
+/-- The cycle map sends `r` to the image of the class of `r • c` in the explicit
+cycles-modulo-boundaries model of the homology. -/
+lemma moduleCatCycleMap_apply (c : LinearMap.ker S.g.hom) (r : R) :
+    S.moduleCatCycleMap c r =
+      S.moduleCatHomologyIso.inv.hom (S.moduleCatLeftHomologyData.π.hom (r • c)) := by
+  simp [moduleCatCycleMap]
+
+/-- An element maps to zero under the cycle map of `c` exactly when its multiple of `c` is a
+boundary. -/
+@[simp]
+lemma moduleCatCycleMap_apply_eq_zero_iff (c : LinearMap.ker S.g.hom) (r : R) :
+    S.moduleCatCycleMap c r = 0 ↔ r • (c : S.X₂) ∈ LinearMap.range S.f.hom := by
+  rw [moduleCatCycleMap_apply]
+  refine (S.moduleCatHomologyIso.toLinearEquiv.symm.map_eq_zero_iff).trans ?_
+  rw [← map_zero S.moduleCatLeftHomologyData.π.hom, moduleCatLeftHomologyData_π_hom_eq_iff]
+  simp [LinearMap.mem_range]
+
+/-- The class of a cycle `c` generates the homology, in the sense that the cycle map of `c` is
+surjective, as soon as every cycle differs from a multiple of `c` by a boundary. -/
+theorem moduleCatCycleMap_surjective (c : LinearMap.ker S.g.hom)
+    (hgen : ∀ z : LinearMap.ker S.g.hom,
+      ∃ r : R, (z : S.X₂) - r • (c : S.X₂) ∈ LinearMap.range S.f.hom) :
+    Function.Surjective (S.moduleCatCycleMap c) := by
+  intro y
+  obtain ⟨w, hw⟩ := S.moduleCatLeftHomologyData_π_hom_surjective (S.moduleCatHomologyIso.hom y)
+  obtain ⟨r, b, hb⟩ := hgen w
+  refine ⟨r, ?_⟩
+  rw [moduleCatCycleMap_apply, ← (S.moduleCatLeftHomologyData_π_hom_eq_iff w (r • c)).2 ⟨b, hb⟩,
+    hw, Iso.hom_inv_id_apply]
 
 end LeftHomologyData
 

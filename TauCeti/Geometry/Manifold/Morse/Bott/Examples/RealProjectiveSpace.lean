@@ -623,7 +623,7 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplan
     ((isClosed_Icc.preimage (contMDiff_projectiveHyperplaneMomentFunction (r := 0)).continuous
       ).isCompact)
     (criticalPoints_inter_preimage_Icc_subset_range_projectiveHyperplaneEmbedding (by norm_num))
-    hdim g hV]
+    hdim g hV ℤ two_ne_zero]
   constructor
   · -- For `N ≥ 1` the band has `H₁ ≅ ℤ/2`.
     rintro he
