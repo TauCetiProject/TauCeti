@@ -26,6 +26,8 @@ Provides set-integral and second-moment bounds for the discrete quadratic sum
   `Y ^ 2 - A` is a martingale and `A` has `c`-Lipschitz increments.
 * `MeasureTheory.Martingale.integral_increment_sq_le`: the unweighted second-moment increment
   bound `E[(Y v - Y u) ^ 2] ≤ c * (v - u) * μ.real univ`.
+* `MeasureTheory.Martingale.integral_quadraticSum_le`: the first-moment bound
+  `E[quadraticSum Y g] ≤ c * (g (Fin.last n) - g 0) * μ.real univ`.
 * `MeasureTheory.Martingale.integral_quadraticSum_sq_le`: a bounded continuous-bracket real
   martingale satisfies an `L²` bound on `quadraticSum Y g` depending only on the uniform bound on
   `Y` and the Lipschitz bracket increment `c * (g (Fin.last n) - g 0)`.
@@ -118,7 +120,10 @@ theorem integral_increment_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → 
     hY.integral_mul_increment_sq_le hQ hA_step huv hYu hYv (W := fun _ ↦ (1 : ℝ))
       stronglyMeasurable_const (C := 1) (ae_of_all μ fun _ ↦ le_rfl) (fun _ ↦ zero_le_one)
 
-private lemma integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ} {c : ℝ}
+/-- First-moment bound for the discrete quadratic sum of a real `L²` martingale `Y` along a
+nondecreasing finite grid `g : Fin (n + 1) → ℝ≥0`, when `Y ^ 2 - A` is a martingale and `A` has
+nonnegative `c`-Lipschitz increments. -/
+theorem integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ} {c : ℝ}
     (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
     {n : ℕ} {g : Fin (n + 1) → ℝ≥0} (hg : Monotone g) (hmem : ∀ k, MemLp (Y (g k)) 2 μ) :
@@ -131,11 +136,6 @@ private lemma integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → �
     simpa only [Pi.sub_apply] using ((hmem j.succ).sub (hmem j.castSucc)).integrable_sq]
   refine (Finset.sum_le_sum fun j _ ↦ hd_le j).trans_eq ?_
   rw [← Finset.sum_mul, ← Finset.mul_sum, Fin.sum_univ_succ_sub_castSucc (fun k ↦ (g k : ℝ))]
-
-private lemma castSucc_last_le_last {α : Type*} [Preorder α] {n : ℕ}
-    {g : Fin (n + 2) → α} (hg : Monotone g) :
-    g (Fin.last n).castSucc ≤ g (Fin.last (n + 1)) := by
-  simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
 
 private lemma integral_quadraticSum_mul_last_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ}
     {R c : ℝ} (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
@@ -200,7 +200,8 @@ theorem integral_quadraticSum_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω �
     -- Split `S_{n+1} = S_n + d` and control `E[S_n^2]`, `E[S_n d]`, and `E[d^2]`.
     let g' : Fin (n + 1) → ℝ≥0 := g ∘ Fin.castSucc
     have hg' : Monotone g' := fun _ _ hij ↦ hg (Fin.castSucc_le_castSucc_iff.mpr hij)
-    have hstep_le := castSucc_last_le_last hg
+    have hstep_le : g (Fin.last n).castSucc ≤ g (Fin.last (n + 1)) := by
+      simpa [Fin.succ_last] using hg (Fin.castSucc_le_succ (Fin.last n))
     have hmem (k : Fin (n + 2)) : MemLp (Y (g k)) 2 μ :=
       MemLp.of_bound ((hY.stronglyAdapted (g k)).mono (ℱ.le _)).aestronglyMeasurable R
         ((hYR k).mono fun _ hω ↦ by rwa [Real.norm_eq_abs])
