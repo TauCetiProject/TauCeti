@@ -676,6 +676,58 @@ theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
   rw [← hp]
   exact p.property
 
+/-- **The end lift slightly beyond height `0`.** The end lift of `q` stays in the thrice-punctured
+sphere on the half-plane `2π (±Re z) > -log 2`, which contains the circle at height `0` of the end:
+on the input ends it stays within distance `exp (-2π Re z) / 2 < 1` of the centre `0` or `1` of the
+end, and on the output end at distance `2 exp (-2π Re z) > 1` from `0`, so it never meets the other
+puncture. -/
+theorem cylindricalEndLift_ne_zero_and_ne_one_of_neg_log_two_lt (q : Puncture) {z : ℂ}
+    (hz : -Real.log 2 < 2 * π * (q.endSign * z.re)) :
+    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 := by
+  have he : Complex.exp (-(2 * (π : ℂ)) * z) ≠ 0 := Complex.exp_ne_zero _
+  have hn : ‖Complex.exp (-(2 * (π : ℂ)) * z)‖ = Real.exp (-(2 * π * z.re)) := by
+    rw [Complex.norm_exp, re_neg_two_pi_mul, neg_mul]
+  cases q with
+  | zero =>
+    simp only [endSign_zero, one_mul] at hz
+    rw [cylindricalEndLift_zero]
+    beta_reduce
+    generalize Complex.exp (-(2 * (π : ℂ)) * z) = e at he hn ⊢
+    have hlt : ‖e‖ < 2 := by
+      rw [hn]
+      exact (Real.exp_lt_exp.2 (by linarith)).trans_eq (Real.exp_log two_pos)
+    refine ⟨div_ne_zero he two_ne_zero, fun h ↦ ?_⟩
+    rw [div_eq_one_iff_eq two_ne_zero] at h
+    rw [h] at hlt
+    norm_num at hlt
+  | one =>
+    simp only [endSign_one, one_mul] at hz
+    rw [cylindricalEndLift_one]
+    beta_reduce
+    generalize Complex.exp (-(2 * (π : ℂ)) * z) = e at he hn ⊢
+    have hlt : ‖e‖ < 2 := by
+      rw [hn]
+      exact (Real.exp_lt_exp.2 (by linarith)).trans_eq (Real.exp_log two_pos)
+    refine ⟨fun h ↦ ?_, fun h ↦ he ?_⟩
+    · rw [sub_eq_zero, eq_comm, div_eq_one_iff_eq two_ne_zero] at h
+      rw [h] at hlt
+      norm_num at hlt
+    · rw [sub_eq_self, div_eq_zero_iff] at h
+      exact h.resolve_right two_ne_zero
+  | inf =>
+    simp only [endSign_inf, neg_one_mul] at hz
+    rw [cylindricalEndLift_inf]
+    beta_reduce
+    generalize Complex.exp (-(2 * (π : ℂ)) * z) = e at he hn ⊢
+    have hgt : 2⁻¹ < ‖e‖ := by
+      have h2 : Real.exp (-Real.log 2) = 2⁻¹ := by rw [Real.exp_neg, Real.exp_log two_pos]
+      rw [hn, ← h2]
+      exact Real.exp_lt_exp.2 (by linarith)
+    refine ⟨mul_ne_zero two_ne_zero he, fun h ↦ ?_⟩
+    have h' := congrArg norm h
+    rw [norm_mul, norm_one, Complex.norm_ofNat] at h'
+    linarith
+
 /-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
 sphere: it is neither `0` nor `1`. -/
 theorem ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}

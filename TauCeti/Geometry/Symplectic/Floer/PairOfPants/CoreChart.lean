@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
-import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -55,7 +54,8 @@ concatenation of the end loops of the inputs `0` and `1` at height `0`, both sta
 circle `‖w‖ = 2` on the same rays from `1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_one`,
 `TauCeti.Floer.norm_symm_pairOfPantsCoreChart_mk_one`). It thus runs once clockwise around that
 circle, like the end loop of the output at height `0`, but at the speed of the angle about `1/2`
-rather than about `0`; this file does not compare the two loops.
+rather than about `0`. The two loops are joined by a cylinder of zero area inside the output
+circle in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Annulus`.
 
 For a map `u` of the pair of pants into a manifold `M`:
 
@@ -81,9 +81,9 @@ The area formula is proved in polar coordinates about `1/2`: by Fubini's theorem
 outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is an iterated
 integral over the angle and over the segment of radii of `S₀` on each ray, and rescaling the radius
 and the angle of each half to `[0, 1]` turns it into the integral over the core chart
-(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The module-valued
-basis-determinant identity `AlternatingMap.eq_basis_det_smulRight`, at the standard basis of
-`ℝ × ℝ`, reads the pulled-back form along the chart as its Jacobian times the area density of `u`.
+(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The Jacobian rule
+`TauCeti.mpullback_comp_apply_eq_det_smul` reads the pulled-back form along the chart as its
+Jacobian times the area density of `u`.
 
 ## References
 
@@ -727,22 +727,9 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
           lobeRadius a (smoothTransition z.1) z.2)) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z) ![(1, 0), (0, 1)] := by
   have hL := ((contDiff_lobeChart (n := 1) a).differentiable one_ne_zero z).hasFDerivAt
-  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
-  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`.
-  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z)
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
-  have hv : (fderiv ℝ (lobeChart a) z ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)]) =
-      ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  -- An alternating map of two vectors of `ℝ × ℝ` is their determinant times its value on the
-  -- standard basis vectors.
-  have hdet := congrArg (· ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)])
-    (ψ.toAlternatingMap.eq_basis_det_smulRight (Module.Basis.finTwoProd ℝ))
-  rw [AlternatingMap.smulRight_apply, Module.Basis.det_finTwoProd_apply,
-    Module.Basis.coe_finTwoProd] at hdet
-  refine (congrArg ψ hv).trans (hdet.trans ?_)
-  refine congrArg (· • ψ ![(1, 0), (0, 1)]) ?_
+  rw [mpullback_comp_apply_eq_det_smul φ hL hu, LinearMap.det_finTwoProd]
+  refine congrArg (· • _) ?_
+  simp only [ContinuousLinearMap.coe_coe]
   rw [fderiv_lobeChart_apply_one_zero, fderiv_lobeChart_apply_zero_one]
   set e := Complex.exp (lobeAngle a z.2 * Complex.I)
   have he : e.re ^ 2 + e.im ^ 2 = 1 := by

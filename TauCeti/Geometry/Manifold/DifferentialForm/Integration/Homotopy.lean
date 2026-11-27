@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Instances.Icc
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Integrals of two-forms over rectangles and their homotopy invariance
@@ -287,6 +288,25 @@ theorem rectangleIntegral_comp_snd (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
     mpullback_comp_clm_apply_eq_zero φ γ (.snd ℝ ℝ ℝ) (i := 0) rfl
   simp [rectangleIntegral_def, h]
 
+/-- The integral of a two-form over a map that factors through a differentiable curve vanishes:
+the pullback of a two-form to the line is zero. -/
+theorem rectangleIntegral_comp_eq_zero (φ : RoughForm I M F 2) {γ : ℝ → M} {h : ℝ × ℝ → ℝ}
+    (hγ : MDifferentiable 𝓘(ℝ, ℝ) I γ) (hh : Differentiable ℝ h) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (γ ∘ h) a b = 0 := by
+  have hz (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ h) φ z ![(1, 0), (0, 1)] = 0 := by
+    rw [mpullback_comp_at (hh z).mdifferentiableAt (hγ (h z))]
+    refine (mpullback_apply_pair h _ z _ _).trans ?_
+    -- Two tangent vectors of the line are multiples of `1`, and an alternating map vanishes on
+    -- two equal vectors.
+    have key (ψ : ℝ [⋀^Fin 2]→L[ℝ] F) (x y : ℝ) : ψ ![x, y] = 0 := by
+      have hv : (![x, y] : Fin 2 → ℝ) = fun i ↦ ![x, y] i • (fun _ ↦ (1 : ℝ)) i := by
+        funext i
+        fin_cases i <;> simp
+      rw [hv, ψ.map_smul_univ, ψ.map_eq_zero_of_eq _ (i := 0) (j := 1) rfl (by decide),
+        smul_zero]
+    exact key (mpullback 𝓘(ℝ, ℝ) I γ φ (h z)) _ _
+  simp [rectangleIntegral_def, hz]
+
 /-- The integral of a two-form over a map that only depends on the first coordinate vanishes. -/
 @[simp]
 theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a b : ℝ × ℝ) :
@@ -324,6 +344,23 @@ theorem mpullback_comp_prodMap_apply (φ : RoughForm I M F 2) {u : ℝ × ℝ �
     (congrArg _ hv)).trans ((ψ (σ s, τ t)).map_smul_univ _ _)).trans ?_
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
   rfl
+
+/-- **The Jacobian rule.** The integrand of `TauCeti.rectangleIntegral` along `u ∘ L`, for a map
+`L` of the plane with derivative `A` at `y`, is the integrand along `u` at `L y` scaled by the
+Jacobian determinant `det A`. -/
+theorem mpullback_comp_apply_eq_det_smul (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    {L : ℝ × ℝ → ℝ × ℝ} {A : ℝ × ℝ →L[ℝ] ℝ × ℝ} {y : ℝ × ℝ} (hL : HasFDerivAt L A y)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (L y)) :
+    mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ L) φ y ![(1, 0), (0, 1)] =
+      LinearMap.det (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) •
+        mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L y) ![(1, 0), (0, 1)] := by
+  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
+  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`; an
+  -- endomorphism scales a top-degree alternating form by its determinant.
+  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L y)
+  exact (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans
+    (congrArg (· ![((1 : ℝ), (0 : ℝ)), (0, 1)]) (ψ.toAlternatingMap.compLinearMap_eq_det_smul
+      (Module.Basis.finTwoProd ℝ) (A : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)))
 
 /-- **Translation invariance.** For a differentiable map `u` of the plane, the integral over the
 translate `z ↦ u (z + c)` on the rectangle with corners `a` and `b` is the integral over `u` on the
