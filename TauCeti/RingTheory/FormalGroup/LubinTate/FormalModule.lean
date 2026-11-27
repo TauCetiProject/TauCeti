@@ -222,19 +222,18 @@ theorem eq_formalModule_iff (ρ : FormalModule O (hf.formalGroup hπ)) :
     congrArg FormalGroupHom.toPowerSeries (ρ.act_comp_act_comm π a)
 
 /-- On the special fibre multiplication by `π ^ m` is the power map `X ↦ X ^ (q ^ m)`,
-where `q` is the residue cardinality. At `m = 1` this gives formal `O`-height one. -/
+where `q` is the residue cardinality. -/
 @[simp]
-theorem map_residue_formalModule_act_pow (m : ℕ) :
+theorem map_residue_formalModule_act_uniformizer_pow (m : ℕ) :
     ((hf.formalModule hπ).act (π ^ m)).toPowerSeries.map (residue O) =
       PowerSeries.X ^ (Nat.card (ResidueField O) ^ m) := by
   induction m with
   | zero => simp
   | succ m ih =>
-    rw [pow_succ, FormalModule.act_mul, FormalGroupHom.comp_toPowerSeries,
-      hf.formalModule_act_uniformizer]
-    -- The substitution formula uses the multivariate presentation of the coefficient map.
-    refine (PowerSeries.map_subst (h := residue O) hf.hasSubst _).trans ?_
-    rw [← PowerSeries.map, hf.map_residue, ih]
+    rw [pow_succ, FormalModule.act_mul, ← FormalGroupHom.map_toPowerSeries,
+      FormalGroupHom.map_comp, FormalGroupHom.comp_toPowerSeries]
+    simp only [FormalGroupHom.map_toPowerSeries, hf.formalModule_act_uniformizer,
+      hf.map_residue, ih]
     have hs : PowerSeries.HasSubst ((PowerSeries.X : PowerSeries (ResidueField O)) ^
         Nat.card (ResidueField O)) := .X_pow hf.exponent_ne_zero
     rw [PowerSeries.subst_pow hs, PowerSeries.subst_X hs, ← pow_mul, pow_succ']
@@ -257,14 +256,31 @@ theorem map_formalModule_act (a : O) :
     ((hf.formalModule hπ).act a).toPowerSeries.map φ =
       ((hf'.formalModule hπ').act (φ a)).toPowerSeries := by
   let u := (hf.formalModule hπ).act a
-  obtain ⟨_, h₁, h⟩ := (hf.formalModule_act_eq_iff hπ a u.toPowerSeries).1 rfl
   apply ((hf'.formalModule_act_eq_iff hπ' (φ a) _).2 ?_).symm
   refine ⟨by simpa only [FormalGroupHom.map_toPowerSeries] using (u.map φ).zero_constantCoeff,
     ?_, ?_⟩
-  · rw [PowerSeries.coeff_map, h₁]
-  · exact (PowerSeries.map_subst (h := φ) u.hasSubst f).symm.trans <|
-      (congrArg (PowerSeries.map φ) h).trans (PowerSeries.map_subst hf.hasSubst _)
+  · simp only [PowerSeries.coeff_map, FormalModule.coeff_one_act, Algebra.algebraMap_self_apply]
+  · simpa only [FormalGroupHom.map_comp, FormalGroupHom.comp_toPowerSeries,
+      FormalGroupHom.map_toPowerSeries, hf.formalModule_act_uniformizer] using
+      congrArg (fun v ↦ (v.map φ).toPowerSeries) ((hf.formalModule hπ).act_comp_act_comm π a)
 
 end BaseChange
 
 end TauCeti.IsLubinTateSeries
+
+namespace TauCeti
+
+open IsLocalRing
+
+/-- The Lubin–Tate theorem. A Lubin–Tate series `f` for a uniformizer `π` determines a formal
+group law with a formal module structure on which `π` acts by `f`. It is the unique formal group
+law admitting `f` as an endomorphism. -/
+theorem exists_formalModule_of_isLubinTateSeries {O : Type*} [CommRing O] [IsDomain O]
+    [IsDiscreteValuationRing O] {π : O} (hπ : Irreducible π) {f : PowerSeries O}
+    (hf : IsLubinTateSeries π (Nat.card (ResidueField O)) f) :
+    ∃ (F : FormalGroup O) (ρ : FormalModule O F), (ρ.act π).toPowerSeries = f ∧
+      ∀ (G : FormalGroup O) (φ : FormalGroupHom G G), φ.toPowerSeries = f → G = F :=
+  ⟨hf.formalGroup hπ, hf.formalModule hπ, hf.formalModule_act_uniformizer hπ,
+    fun G φ h ↦ (hf.eq_formalGroup_iff hπ G).2 ⟨φ, h⟩⟩
+
+end TauCeti
