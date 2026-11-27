@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.Instances
 public import Mathlib.Probability.Process.HittingTime
 import TauCeti.Data.ENat.ENNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
 
 /-!
 # Return times and Kac's lemma
@@ -188,13 +189,8 @@ theorem lintegral_positiveReturnTime_eq_tsum {T : X → X} (hT : Measurable T) {
     ∫⁻ x in A, (positiveReturnTime T A x : ℝ≥0∞) ∂μ =
       ∑' k : ℕ, μ ({x | (k : ℕ∞) < positiveReturnTime T A x} ∩ A) := by
   have hS := measurableSet_lt_positiveReturnTime hT hA
-  simp_rw [ENat.toENNReal_eq_tsum_ite]
-  rw [lintegral_tsum fun k ↦
-    (Measurable.ite (hS k) measurable_const measurable_const).aemeasurable]
-  refine tsum_congr fun k ↦ ?_
-  rw [← Measure.restrict_apply (hS k), ← lintegral_indicator_one (hS k)]
-  refine lintegral_congr fun x ↦ ?_
-  simp [Set.indicator_apply]
+  rw [lintegral_enat_eq_tsum _ hS]
+  exact tsum_congr fun k ↦ Measure.restrict_apply (hS k)
 
 /-- **Kac's identity** for a measure-preserving measurable equivalence `T`: the extended integral
 of the return time over a measurable set `A` is the measure of the set of points whose backward
