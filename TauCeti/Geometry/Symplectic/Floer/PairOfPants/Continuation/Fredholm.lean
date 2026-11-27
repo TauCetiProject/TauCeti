@@ -38,8 +38,9 @@ ends and compatible along `u`. This file proves:
 * in particular the index does not depend on the neck positions, on the inner Hamiltonians or on the
   almost complex structures over the core
   (`index_floerConformalSobolevOperator_pairOfPantsContinuationPerturbation_eq`, in the namespace
-  `TauCeti.SymplecticForm`). So along a path of neck positions the expected dimension of the
-  moduli spaces is constant, equal to that of the pair-of-pants products of the outer Hamiltonians.
+  `TauCeti.SymplecticForm`). So for a fixed map `u` with the given asymptotic orbits, the index of
+  `D_u` does not change as the neck positions move, and equals the index of the pair-of-pants
+  operator of the outer Hamiltonians.
 
 Beyond the height `2 + ∑_q |L_q|` on each end the datum is the pair-of-pants datum of `H`
 (`TauCeti.Floer.pairOfPantsContinuationPerturbation_components_eq`), so these are instances of the
