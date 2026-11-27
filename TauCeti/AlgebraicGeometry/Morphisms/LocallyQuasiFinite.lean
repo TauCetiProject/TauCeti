@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.QuasiFinite.Height
 
 import TauCeti.Topology.KrullDimension.Basic
+import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # Locally quasi-finite morphisms
@@ -46,6 +47,11 @@ of the chart is mapped into a hypersurface.
   morphism has dimension at most that of its target.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective`:
   a closed, surjective, locally quasi-finite morphism preserves dimension.
+* `AlgebraicGeometry.Scheme.Hom.surjective_of_topologicalKrullDim_le_of_isClosed_range`:
+  a locally quasi-finite morphism with closed range and equal dimensions is surjective when the
+  target is irreducible and finite-dimensional.
+* `AlgebraicGeometry.LocallyQuasiFinite.of_comp_of_surjective`: finite fibres descend along a
+  surjection on the source.
 * `AlgebraicGeometry.Scheme.Hom.exists_ne_zero_image_subset_zeroLocus`: a locally quasi-finite
   morphism from an integral affine scheme to `Spec R` maps a proper closed subset into the zero
   locus of a nonzero element of `R`.
@@ -161,6 +167,42 @@ theorem Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective
     (hf : IsClosedMap f) : topologicalKrullDim X = topologicalKrullDim Y :=
   le_antisymm f.topologicalKrullDim_le
     (hf.specializingMap.topologicalKrullDim_le_of_surjective f.surjective)
+
+/-- A locally quasi-finite morphism with closed range in an irreducible scheme of finite Krull
+dimension is surjective if the source has dimension at least that of the target. -/
+theorem Scheme.Hom.surjective_of_topologicalKrullDim_le_of_isClosed_range
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyQuasiFinite f] [IrreducibleSpace Y]
+    (hrange : IsClosed (Set.range f)) (hY : topologicalKrullDim Y ≠ ⊤)
+    (hdim : topologicalKrullDim Y ≤ topologicalKrullDim X) : Surjective f := by
+  rw [surjective_iff, ← Set.range_eq_univ]
+  by_contra hne
+  -- Specialization chains in the source map to strict chains in the range.
+  let : Preorder (Set.range f) := specializationPreorder _
+  let g : X → Set.range f := Set.rangeFactorization f
+  have hg : StrictMono g := by
+    intro x y hxy
+    have hfxy := f.strictMono hxy
+    refine lt_of_le_not_ge ?_ fun hyx ↦ hfxy.not_ge ?_
+    · exact (Topology.IsInducing.subtypeVal.specializes_iff (x := g y) (y := g x)).mp
+        (le_iff_specializes.mp hfxy.le)
+    · exact le_iff_specializes.mpr
+        ((Topology.IsInducing.subtypeVal.specializes_iff (x := g x) (y := g y)).mpr hyx)
+  have hle : topologicalKrullDim X ≤ topologicalKrullDim (Set.range f) := by
+    rw [TauCeti.topologicalKrullDim_eq_iSup_coheight, ← Order.krullDim_eq_iSup_coheight]
+    exact (Order.krullDim_le_of_strictMono g hg).trans (TauCeti.krullDim_le_topologicalKrullDim _)
+  exact (hrange.topologicalKrullDim_lt hne
+    (ne_top_of_le_ne_top hY (topologicalKrullDim_subspace_le Y _))).not_ge (hdim.trans hle)
+
+/-- A locally finite type morphism with finite fibres after precomposition by a surjection
+is locally quasi-finite. It suffices that the composite is quasi-compact and locally
+quasi-finite. -/
+theorem LocallyQuasiFinite.of_comp_of_surjective {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [Surjective f] [LocallyOfFiniteType g] [LocallyQuasiFinite (f ≫ g)] [QuasiCompact (f ≫ g)] :
+    LocallyQuasiFinite g := by
+  apply LocallyQuasiFinite.of_finite_preimage_singleton
+  intro z
+  exact Set.finite_of_finite_preimage ((f ≫ g).finite_preimage_singleton z)
+    (fun y _ ↦ f.surjective y)
 
 /-- **Quasi-finite morphisms over a normal base preserve the dimension of local rings.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type. If `f` is
