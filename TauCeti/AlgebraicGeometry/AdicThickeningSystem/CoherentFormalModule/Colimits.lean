@@ -175,6 +175,12 @@ theorem pullbackEvaluationIso_hom_app (g : 𝔛 ⟶ 𝔜) (n : ℕ)
     (pullbackEvaluationIso g n).hom.app M =
       𝟙 ((Scheme.Modules.pullback (g.app n)).obj (M.obj n)) := (rfl)
 
+@[simp]
+theorem pullbackEvaluationIso_inv_app (g : 𝔛 ⟶ 𝔜) (n : ℕ)
+    (M : CoherentFormalModule 𝔜) :
+    (pullbackEvaluationIso g n).inv.app M =
+      𝟙 ((Scheme.Modules.pullback (g.app n)).obj (M.obj n)) := (rfl)
+
 /-- Pullback of coherent formal modules preserves finite colimits, without Noetherian or
 flatness hypotheses on the morphism of systems. -/
 instance pullback_preservesFiniteColimits (g : 𝔛 ⟶ 𝔜) :
