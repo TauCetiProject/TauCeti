@@ -46,7 +46,6 @@ end
 
 /-- If `adj : F ⊣ G` is an adjunction between `R`-linear categories with `F` additive and `G`
 `R`-linear, then `adj.homEquiv X Y` upgrades to an `R`-linear equivalence. -/
-@[expose]
 def homLinearEquiv [F.Additive] [G.Linear R] (X : C) (Y : D) :
     (F.obj X ⟶ Y) ≃ₗ[R] (X ⟶ G.obj Y) :=
   (adj.homAddEquiv X Y).toLinearEquiv fun r g ↦ by simp [homEquiv_unit]
