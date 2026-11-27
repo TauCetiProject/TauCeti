@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.OrderedCoproduct
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.BaseChange
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 
 /-!
 # The coalgebra of a mixed Kostant lattice
@@ -108,12 +109,6 @@ private noncomputable def latticeSubcoalgebra : TauCeti.Subcoalgebra ℤ K :=
 private noncomputable def latticeRangeEquiv : W ≃ₗ[ℤ] (latticeSubcoalgebra b c).toSubmodule :=
   LinearEquiv.ofInjective (latticeInclusion b c) (latticeInclusion_injective b c)
 
-private noncomputable instance kostantFlat : Module.Flat ℤ K := by
-  let : HasUniqueDiv U := .of_module_rat U
-  let : HasUniqueDiv K := Function.Injective.hasUniqueDiv (K).subtype.toAddMonoidHom
-    (K).subtype_injective
-  infer_instance
-
 private noncomputable instance latticeRangeFlat :
     Module.Flat ℤ (latticeSubcoalgebra b c).toSubmodule := by
   let : Module.Free ℤ W := Module.Free.of_basis B
@@ -132,6 +127,20 @@ noncomputable def pbwKostantLatticeCoalgebra : Coalgebra ℤ W :=
 -- Register the structure without exposing its auxiliary image and transport definitions.
 attribute [instance] pbwKostantLatticeCoalgebra
 
+private theorem comul_eq (x : W) :
+    Coalgebra.comul (R := ℤ) x =
+      TensorProduct.map (latticeRangeEquiv b c).symm.toLinearMap
+        (latticeRangeEquiv b c).symm.toLinearMap
+        (Coalgebra.comul (R := ℤ) (latticeRangeEquiv b c x)) := by
+  unfold pbwKostantLatticeCoalgebra
+  rfl
+
+private theorem counit_eq (x : W) :
+    Coalgebra.counit (R := ℤ) x =
+      Coalgebra.counit (R := ℤ) (latticeRangeEquiv b c x) := by
+  unfold pbwKostantLatticeCoalgebra
+  rfl
+
 private theorem map_latticeInclusion_comul (x : W) :
     TensorProduct.map (latticeInclusion b c) (latticeInclusion b c)
         (Coalgebra.comul (R := ℤ) (A := W) x) =
@@ -141,11 +150,7 @@ private theorem map_latticeInclusion_comul (x : W) :
     apply LinearMap.ext
     intro y
     exact LinearEquiv.ofInjective_symm_apply _ y
-  unfold pbwKostantLatticeCoalgebra
-  dsimp +instances only [LinearEquiv.coalgebra,
-    LinearEquiv.coalgebraStruct, latticeRangeCoalgebra,
-    LinearMap.comp_apply]
-  rw [TauCeti.Subcoalgebra.comul_apply]
+  rw [comul_eq, TauCeti.Subcoalgebra.comul_apply]
   rw [TensorProduct.map_map, hcomp]
   exact (latticeSubcoalgebra b c).map_subtype_comulLinearMap (latticeRangeEquiv b c x)
 
@@ -154,13 +159,11 @@ form. -/
 noncomputable def pbwKostantLatticeToKostantForm : W →ₗc[ℤ] K where
   toLinearMap := latticeInclusion b c
   counit_comp := by
-    unfold pbwKostantLatticeCoalgebra
-    dsimp +instances [LinearEquiv.coalgebra, LinearEquiv.coalgebraStruct,
-      latticeRangeCoalgebra]
     apply LinearMap.ext
     intro x
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TauCeti.Subcoalgebra.counit_apply]
-    rfl
+    rw [LinearMap.comp_apply, counit_eq, TauCeti.Subcoalgebra.counit_apply]
+    exact congrArg (Coalgebra.counit (R := ℤ))
+      (LinearEquiv.ofInjective_apply (latticeInclusion b c) x).symm
   map_comp_comul := LinearMap.ext (map_latticeInclusion_comul b c)
 
 /-- The integral coalgebra inclusion preserves the underlying enveloping-algebra element. -/
@@ -235,10 +238,9 @@ private theorem mixed_lieSpan_eq_top :
     LieSubalgebra.lieSpan ℚ L
       (Set.range (fun i : {i // i ∉ c} => b i) ∪
         Set.range (fun i : {i // i ∈ c} => b i)) = ⊤ := by
-  apply LieSubalgebra.toSubmodule_injective
+  apply LieSubalgebra.lieSpan_eq_top_of_span_eq_top
   apply top_unique
   rw [← b.span_eq]
-  apply le_trans _ LieSubalgebra.submodule_span_le_lieSpan
   apply Submodule.span_mono
   rintro _ ⟨i, rfl⟩
   by_cases hi : i ∈ c
@@ -261,9 +263,8 @@ private theorem rationalLatticeMap_bijective : Function.Bijective (rationalLatti
     rw [Basis.baseChange_apply]
     simp only [CoalgHom.toLinearMap_eq_ofClass, LinearMap.coe_ofClass, rationalLatticeMap_tmul,
       coe_pbwKostantLatticeBasis, one_smul]
-    simpa only [e, Basis.baseChange_apply, Equiv.refl_apply, LinearEquiv.coe_coe] using
-      (Basis.equiv_apply (b := (B).baseChange ℚ) (b' := b.pbwKostantBasis c)
-        (e := Equiv.refl _) a).symm
+    simp only [e, LinearEquiv.coe_coe]
+    rw [← Basis.baseChange_apply, Basis.equiv_apply, Equiv.refl_apply]
   have hfun := congrArg (fun f : ℚ ⊗[ℤ] W →ₗ[ℚ] U => ⇑f) he
   exact hfun ▸ e.bijective
 
