@@ -51,9 +51,11 @@ The finite part is the Gauss sum of a primitive character of a finite ring,
   Math. Nachr. 9 (1953).
 * K. Conrad, *Gauss and Jacobi sums on finite fields and `ℤ/mℤ`*, §4.
 
-The statement and the route follow `New.Exchange.exists_local_gauss_sum` (file
-`src/Lib/Weil/TameGaussSum.lean`) of the Lean formalization `grh-lean` of the Riemann hypothesis
-for Dirichlet L-functions, https://github.com/lsernau/grh-lean (commit `72fead1`, Apache 2.0).
+The statement and the route follow `New.Exchange.exists_local_gauss_sum` and, for the `χ`-form
+`TauCeti.exists_setIntegral_inv_mulChar_mul_addChar_eq`,
+`New.TameLocalChar.invOnUnits_uniformizer_mul_add` (file `src/Lib/Weil/TameGaussSum.lean`) of the
+Lean formalization `grh-lean` of the Riemann hypothesis for Dirichlet L-functions,
+https://github.com/lsernau/grh-lean (commit `72fead1`, Apache 2.0).
 Here the integrand is any function equal to `η ∘ π` on `O`, and `O` need not be compact. No
 separate continuity hypothesis on `ψ` is needed: the conductor condition makes `ψ` trivial on the
 open subgroup `O`, hence locally constant.

@@ -37,8 +37,11 @@ theorem integrableOn_of_eq_comp [Finite R] {U : Set G} (hU : IsOpen U) (hμU : �
       exact hμU.lt_top⟩
   -- `π` is a simple function on `U`: its fibres are open and its range is finite
   let p : SimpleFunc U R := ⟨π, fun r ↦ (hπ.isOpen_fiber r).measurableSet, Set.toFinite _⟩
-  rw [integrableOn_iff_comap_subtypeVal hU.measurableSet, show f ∘ Subtype.val = p.map Φ from
-    funext hf]
+  have hp : ⇑p = π := SimpleFunc.coe_mk _ _ _
+  have hfp : f ∘ Subtype.val = p.map Φ := by
+    rw [SimpleFunc.coe_map, hp]
+    exact funext hf
+  rw [integrableOn_iff_comap_subtypeVal hU.measurableSet, hfp]
   exact (p.map Φ).integrable_of_isFiniteMeasure
 
 end MeasureTheory
