@@ -34,7 +34,8 @@ with no global section.
 In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 
 * `fiberHomSheafFunctor bF bG J U x y`: `X ↦ G.sheafHom J y (X_U x)`, with
-  `fiberHomSheafFunctor_obj`, `fiberHomSheafFunctor_obj_obj`, `fiberHomSheafFunctor_map_hom_app`.
+  `fiberHomSheafFunctor_obj`, `fiberHomSheafFunctor_obj_obj`, `fiberHomSheafFunctor_map_hom`,
+  `fiberHomSheafFunctor_map_hom_app`.
 * `fiberHomSheafMapIso`, with `fiberHomSheafMapIso_hom` and `fiberHomSheafMapIso_inv`.
 
 ## References
@@ -81,6 +82,12 @@ theorem fiberHomSheafFunctor_obj (X : HomCategory bF bG) :
 theorem fiberHomSheafFunctor_obj_obj (X : HomCategory bF bG) :
     ((fiberHomSheafFunctor bF bG J U x y).obj X).obj =
       G.presheafHom y ((X.obj.app (.mk (op U))).toFunctor.obj x) :=
+  (rfl)
+
+/-- An arrow `m : X ⟶ Y` acts on the underlying presheaves by postcomposition with `m_U x`. -/
+theorem fiberHomSheafFunctor_map_hom {X Y : HomCategory bF bG} (m : X ⟶ Y) :
+    ((fiberHomSheafFunctor bF bG J U x y).map m).hom =
+      G.presheafHomPostcomp y ((m.hom.as.app (.mk (op U))).toNatTrans.app x) :=
   (rfl)
 
 /-- An arrow `m : X ⟶ Y` sends a local morphism `p` over `t : T ⟶ U` to `p` followed by the

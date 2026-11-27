@@ -32,7 +32,8 @@ Together these make `x ↦ (X ↦ H_x(X))` a functor on the core of the fibre
 In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 
 * `selfHomSheafTransportIso X e` and `selfHomSheafTransport X e`, with
-  `selfHomSheafTransport_hom_app`, `selfHomSheafTransportIso_inv`, `selfHomSheafTransport_id`,
+  `selfHomSheafTransport_hom_app`, `selfHomSheafTransport_hom`,
+  `selfHomSheafTransportIso_inv`, `selfHomSheafTransport_id`,
   `selfHomSheafTransport_comp` and `selfHomSheafTransport_equivariant`.
 * `selfHomSheafTransportNatIso e`, with `selfHomSheafTransportNatIso_app`,
   `selfHomSheafTransportNatIso_refl` and `selfHomSheafTransportNatIso_trans`.
@@ -81,9 +82,17 @@ theorem selfHomSheafTransport_hom_app (X : HomCategory b b) {x x' : F.obj (.mk (
     (selfHomSheafTransport X e).hom.app T p =
       (F.map T.unop.hom.op.toLoc).toFunctor.map e.inv ≫ p ≫
         (F.map T.unop.hom.op.toLoc).toFunctor.map ((X.obj.app (.mk (op U))).toFunctor.map e.hom) :=
-  (rfl)
+  F.presheafHomMap_app_apply _ _ T p
+
+/-- The underlying morphism of presheaves of `T_e` is `presheafHomMap e⁻¹ (X_U e)`. -/
+theorem selfHomSheafTransport_hom (X : HomCategory b b) {x x' : F.obj (.mk (op U))}
+    (e : x ≅ x') :
+    (selfHomSheafTransport X e).hom =
+      F.presheafHomMap e.inv ((X.obj.app (.mk (op U))).toFunctor.map e.hom) :=
+  F.sheafHomIso_hom_hom J _ _
 
 /-- The inverse of the transport along `e` is the transport along `e⁻¹`. -/
+@[simp]
 theorem selfHomSheafTransportIso_inv (X : HomCategory b b) {x x' : F.obj (.mk (op U))}
     (e : x ≅ x') : (selfHomSheafTransportIso X e).inv = selfHomSheafTransport X e.symm :=
   (rfl)
@@ -92,20 +101,18 @@ theorem selfHomSheafTransportIso_inv (X : HomCategory b b) {x x' : F.obj (.mk (o
 @[simp]
 theorem selfHomSheafTransport_id (X : HomCategory b b) (x : F.obj (.mk (op U))) :
     selfHomSheafTransport X (Iso.refl x) = 𝟙 _ := by
-  ext1
-  change F.presheafHomMap (𝟙 x) ((X.obj.app (.mk (op U))).toFunctor.map (𝟙 x)) = 𝟙 _
-  rw [CategoryTheory.Functor.map_id, presheafHomMap_id]
+  refine Sheaf.hom_ext ((selfHomSheafTransport_hom X (Iso.refl x)).trans ?_)
+  rw [Iso.refl_inv, Iso.refl_hom, CategoryTheory.Functor.map_id, presheafHomMap_id]
+  exact (ObjectProperty.FullSubcategory.id_hom _ ((fiberHomSheafFunctor b b J U x x).obj X)).symm
 
 /-- **Transport along a composite** is the composite of the transports. -/
 theorem selfHomSheafTransport_comp (X : HomCategory b b) {x x' x'' : F.obj (.mk (op U))}
     (e : x ≅ x') (f : x' ≅ x'') :
     selfHomSheafTransport X (e ≪≫ f) = selfHomSheafTransport X e ≫ selfHomSheafTransport X f := by
-  ext1
-  change F.presheafHomMap (f.inv ≫ e.inv)
-      ((X.obj.app (.mk (op U))).toFunctor.map (e.hom ≫ f.hom)) =
-    F.presheafHomMap e.inv _ ≫ F.presheafHomMap f.inv _
-  rw [CategoryTheory.Functor.map_comp, presheafHomMap_comp]
-  rfl
+  refine Sheaf.hom_ext ((selfHomSheafTransport_hom X (e ≪≫ f)).trans ?_)
+  rw [ObjectProperty.FullSubcategory.comp_hom, selfHomSheafTransport_hom,
+    selfHomSheafTransport_hom, Iso.trans_inv, Iso.trans_hom, CategoryTheory.Functor.map_comp]
+  exact presheafHomMap_comp F _ _ _ _
 
 /-- **Transport commutes with the action of the band**: for a section `p` over `t : T ⟶ U`,
 transporting `p` acted on by `a ∈ A(T)` is acting by `a` on the transport of
@@ -132,15 +139,12 @@ theorem selfHomSheafTransport_naturality {X Y : HomCategory b b} (m : X ⟶ Y)
     (fiberHomSheafFunctor b b J U x x).map m ≫ selfHomSheafTransport Y e =
       selfHomSheafTransport X e ≫ (fiberHomSheafFunctor b b J U x' x').map m := by
   apply Sheaf.hom_ext
-  -- The component of `m` is natural with respect to `e`.
-  have h := (m.hom.as.app (.mk (op U))).toNatTrans.naturality e.hom
-  change F.presheafHomPostcomp x ((m.hom.as.app (.mk (op U))).toNatTrans.app x) ≫
-      F.presheafHomMap e.inv ((Y.obj.app (.mk (op U))).toFunctor.map e.hom) =
-    F.presheafHomMap e.inv ((X.obj.app (.mk (op U))).toFunctor.map e.hom) ≫
-      F.presheafHomPostcomp x' ((m.hom.as.app (.mk (op U))).toNatTrans.app x')
-  rw [← presheafHomMap_id_left, ← presheafHomMap_id_left, ← presheafHomMap_comp,
-    ← presheafHomMap_comp, Category.id_comp, Category.comp_id]
-  exact congrArg _ h.symm
+  rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
+    fiberHomSheafFunctor_map_hom, fiberHomSheafFunctor_map_hom, selfHomSheafTransport_hom,
+    selfHomSheafTransport_hom, ← presheafHomMap_id_left, ← presheafHomMap_id_left]
+  -- Both composites are single `presheafHomMap`s; the component of `m` is natural in `e`.
+  refine ((presheafHomMap_comp F _ _ _ _).symm.trans ?_).trans (presheafHomMap_comp F _ _ _ _)
+  rw [Category.comp_id, Category.id_comp, (m.hom.as.app (.mk (op U))).toNatTrans.naturality]
 
 /-- **The transports form a natural isomorphism** `fiberHomSheafFunctor b b J U x x ≅
 fiberHomSheafFunctor b b J U x' x'` of functors of the band-preserving transformation. -/
@@ -155,6 +159,7 @@ theorem selfHomSheafTransportNatIso_app {x x' : F.obj (.mk (op U))} (e : x ≅ x
     (selfHomSheafTransportNatIso e).app X = selfHomSheafTransportIso X e :=
   NatIso.ofComponents.app _ _ X
 
+@[simp]
 theorem selfHomSheafTransportNatIso_refl (x : F.obj (.mk (op U))) :
     selfHomSheafTransportNatIso (b := b) (J := J) (Iso.refl x) = Iso.refl _ := by
   refine Iso.ext (NatTrans.ext (funext fun X ↦ ?_))
@@ -177,18 +182,16 @@ noncomputable def selfHomSheafObjectFunctor :
   obj x := fiberHomSheafFunctor b b J U x.of x.of
   map e := (selfHomSheafTransportNatIso e.iso).hom
   map_id x := by
-    change (selfHomSheafTransportNatIso (Iso.refl x.of)).hom = 𝟙 _
-    rw [selfHomSheafTransportNatIso_refl]
-    rfl
+    rw [coreCategory_id_iso, selfHomSheafTransportNatIso_refl, Iso.refl_hom]
   map_comp e f := by
-    change (selfHomSheafTransportNatIso (e.iso ≪≫ f.iso)).hom = _
-    rw [selfHomSheafTransportNatIso_trans]
-    rfl
+    rw [coreCategory_comp_iso, selfHomSheafTransportNatIso_trans, Iso.trans_hom]
 
+@[simp]
 theorem selfHomSheafObjectFunctor_obj (x : Core (F.obj (.mk (op U)))) :
     (selfHomSheafObjectFunctor b U).obj x = fiberHomSheafFunctor b b J U x.of x.of :=
   (rfl)
 
+@[simp]
 theorem selfHomSheafObjectFunctor_map {x y : Core (F.obj (.mk (op U)))} (e : x ⟶ y) :
     (selfHomSheafObjectFunctor b U).map e = (selfHomSheafTransportNatIso e.iso).hom :=
   (rfl)
