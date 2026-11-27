@@ -49,16 +49,22 @@ def zmodSqExtension : (E).Extension (zmod n) (zmod n) :=
   let g : zmod (n ^ 2) ⟶ zmod n := ObjectProperty.homMk (AddCommGrpCat.ofHom q.toAddMonoidHom)
   have hf : f ≫ g = 0 := by
     apply (ι).map_injective
-    ext x
+    rw [Functor.map_comp, Functor.map_zero]
+    apply ConcreteCategory.ext_apply
+    intro x
+    simp only [CategoryTheory.comp_apply, ObjectProperty.ι_map, f, g, ObjectProperty.homMk_hom,
+      ConcreteCategory.hom_ofHom, RingHom.toAddMonoidHom_eq_coe, AddCommGrpCat.zero_apply]
     exact ZMod.castHom_mulCastHom n (pow_two n).symm x
   let S := ShortComplex.mk f g hf
-  have hS : (S.map ι).ShortExact :=
-    { exact := ((S.map ι).ab_exact_iff_function_exact).mpr
-        (ZMod.exact_mulCastHom_castHom n (pow_two n).symm)
-      mono_f := (AddCommGrpCat.mono_iff_injective ((S.map ι).f)).mpr
-        (ZMod.mulCastHom_injective _ _ (NeZero.ne n))
-      epi_g := (AddCommGrpCat.epi_iff_surjective ((S.map ι).g)).mpr
-        (ZMod.castHom_surjective (dvd_pow_self n (by decide : 2 ≠ 0))) }
+  have hS : (S.map ι).ShortExact := by
+    refine ShortComplex.ShortExact.mk' ((S.map ι).ab_exact_iff_function_exact.mpr ?_)
+      ((AddCommGrpCat.mono_iff_injective _).mpr ?_) ((AddCommGrpCat.epi_iff_surjective _).mpr ?_)
+    all_goals
+      simp only [ShortComplex.map_f, ShortComplex.map_g, S, ObjectProperty.ι_map, f, g,
+        ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom, RingHom.toAddMonoidHom_eq_coe, i, q]
+    · exact ZMod.exact_mulCastHom_castHom n (pow_two n).symm
+    · exact ZMod.mulCastHom_injective _ _ (NeZero.ne n)
+    · exact ZMod.castHom_surjective (dvd_pow_self n (by decide : 2 ≠ 0))
   ⟨zmod (n ^ 2), f, g, hf, (ExactStructure.abelian_conflation _).mpr
     (ShortExact.reflects_shortExact_of_faithful ι hS)⟩
 
@@ -90,19 +96,19 @@ theorem zmodSqExtension_f_one :
   rw [zmodSqExtension_f_comp_eqToHom, ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom]
   simpa only [Int.cast_one, one_mul] using ZMod.mulCastHom_intCast n (pow_two n).symm 1
 
+private abbrev zmodSqExtensionIso : (zmodSqExtension n).obj ≅ zmod (n ^ 2) :=
+  eqToIso (zmodSqExtension_obj n)
+
 private theorem zmodSqExtension_f_comp_apply_one {Y : FiniteAddCommGrp.{0}}
     (g : zmod (n ^ 2) ⟶ Y) :
-    (((zmodSqExtension n).f ≫ eqToHom (zmodSqExtension_obj n)) ≫ g).hom (1 : ZMod n) =
+    ((zmodSqExtension n).f ≫ (zmodSqExtensionIso n).hom ≫ g).hom (1 : ZMod n) =
       g.hom (n : ZMod (n ^ 2)) := by
-  rw [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply, zmodSqExtension_f_one]
+  rw [← Category.assoc, ObjectProperty.FullSubcategory.comp_hom, CategoryTheory.comp_apply,
+    eqToIso.hom, zmodSqExtension_f_one]
 
 private theorem zmodSqExtension_f_comp_eq_zero (g : (zmodSqExtension n).obj ⟶ zmod n) :
     (zmodSqExtension n).f ≫ g = 0 := by
-  have hg : (zmodSqExtension n).f ≫ g =
-      ((zmodSqExtension n).f ≫ eqToHom (zmodSqExtension_obj n)) ≫
-        eqToHom (zmodSqExtension_obj n).symm ≫ g := by
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  rw [hg]
+  rw [← (zmodSqExtensionIso n).hom_inv_id_assoc g]
   apply zmod_hom_ext
   -- Every map to the left endpoint kills multiples of `n`.
   rw [zmodSqExtension_f_comp_apply_one]
@@ -114,12 +120,17 @@ private theorem exists_zmodSqExtension_pushout
     ∃ a : ZMod n, (ExactStructure.Ext1.mk (zmodSqExtension n)).pushout (zmodMul n a) =
       ExactStructure.Ext1.mk e := by
   have he : (e.shortComplex.map ι).ShortExact := e.shortExact.map_of_exact ι
-  obtain ⟨y, hy⟩ : ∃ y : e.obj.obj, e.g.hom y = (1 : ZMod n) :=
-    he.ab_surjective_g (1 : ZMod n)
+  obtain ⟨y, hy⟩ : ∃ y : e.obj.obj, e.g.hom y = (1 : ZMod n) := by
+    simpa only [ShortComplex.map_X₂, ShortComplex.map_g, ObjectProperty.ι_obj,
+      ObjectProperty.ι_map, ExactStructure.Extension.shortComplex] using
+      he.ab_surjective_g (1 : ZMod n)
   have hy' : e.g.hom (n • y) = 0 := by
     rw [map_nsmul, hy, ZModModule.char_nsmul_eq_zero]
-  obtain ⟨a, ha⟩ : ∃ a : ZMod n, e.f.hom a = n • y :=
-    ((e.shortComplex.map ι).ab_exact_iff.mp he.exact) (n • y) hy'
+  have hexact : ∀ x : e.obj.obj, e.g.hom x = 0 → ∃ b : ZMod n, e.f.hom b = x := by
+    simpa only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_f, ShortComplex.map_g,
+      ObjectProperty.ι_obj, ObjectProperty.ι_map, ExactStructure.Extension.shortComplex] using
+      (e.shortComplex.map ι).ab_exact_iff.mp he.exact
+  obtain ⟨a, ha⟩ := hexact (n • y) hy'
   have hy'' : (n ^ 2) • y = 0 := by
     rw [pow_two, mul_nsmul, ← ha, ← map_nsmul, ZModModule.char_nsmul_eq_zero, map_zero]
   let lift : zmod (n ^ 2) ⟶ e.obj :=
@@ -130,22 +141,20 @@ private theorem exists_zmodSqExtension_pushout
     simp only [lift, ObjectProperty.homMk_hom, ConcreteCategory.hom_ofHom, ZMod.lift_coe,
       zmultiplesHom_apply]
   refine ⟨a, (ExactStructure.Ext1.pushout_mk_eq_pullback_mk (e := zmodSqExtension n)
-    (e' := e) (c := 𝟙 _) (eqToHom (zmodSqExtension_obj n) ≫ lift) ?_ ?_).trans
+    (e' := e) (c := 𝟙 _) ((zmodSqExtensionIso n).hom ≫ lift) ?_ ?_).trans
       (ExactStructure.Ext1.pullback_id _)⟩
-  · rw [← Category.assoc]
-    apply zmod_hom_ext
+  · apply zmod_hom_ext
     have h := hlift (n : ℤ)
     rw [Int.cast_natCast, natCast_zsmul] at h
     rw [zmodSqExtension_f_comp_apply_one]
     simp only [ObjectProperty.FullSubcategory.comp_hom, ConcreteCategory.comp_apply]
     rw [zmodMul_apply, mul_one]
     exact h.trans ha.symm
-  · rw [Category.comp_id, ← cancel_epi (eqToHom (zmodSqExtension_obj n).symm)]
-    simp only [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp]
+  · rw [Category.comp_id, Category.assoc, ← (zmodSqExtensionIso n).eq_inv_comp]
     apply zmod_hom_ext
     have h : lift.hom (1 : ZMod (n ^ 2)) = y := by
       simpa only [Int.cast_one, one_zsmul] using hlift 1
-    simp [h, hy]
+    simp [zmodSqExtensionIso, h, hy]
 
 /-- The self-extension group of `ℤ/nℤ` among finite abelian groups is `ℤ/nℤ` under the Baer sum.
 The residue `a` gives the pushout of the sequence with middle group `ℤ/n²ℤ` along multiplication

@@ -13,8 +13,8 @@ public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 /-!
 # Weak Serre subcategories, five-term exact sequences and closed classes
 
-An extension-closed property containing zero and closed under isomorphisms is closed under
-finite products in a preadditive category with finite products.
+An extension-closed property containing zero is closed under finite products in a preadditive
+category with finite products.
 
 Let `P` be a property of objects of an abelian category which is closed under kernels, cokernels
 and extensions; such a `P` is called a weak Serre subcategory. If `A ⟶ B ⟶ M ⟶ D ⟶ E` is exact at
@@ -47,13 +47,18 @@ namespace CategoryTheory.ObjectProperty
 
 open Limits
 
-/-- An extension-closed property containing zero and closed under isomorphisms is closed under
-finite products: binary biproducts are split extensions and the empty product is a zero object. -/
+/-- An extension-closed property containing zero is closed under finite products. -/
 instance isClosedUnderFiniteProducts_of_isClosedUnderExtensions {C : Type*} [Category* C]
     [Preadditive C] [HasFiniteProducts C] (P : ObjectProperty C)
-    [P.ContainsZero] [P.IsClosedUnderIsomorphisms] [P.IsClosedUnderExtensions] :
-    P.IsClosedUnderFiniteProducts := by
+    [P.ContainsZero] [P.IsClosedUnderExtensions] : P.IsClosedUnderFiniteProducts := by
   have : HasFiniteBiproducts C := HasFiniteBiproducts.of_hasFiniteProducts
+  have : P.IsClosedUnderIsomorphisms := by
+    refine ⟨fun {X Y} e hX ↦ ?_⟩
+    obtain ⟨Z, hZ, hPZ⟩ := P.exists_prop_of_containsZero
+    let S := ShortComplex.mk (0 : Z ⟶ Y) e.inv (by simp)
+    exact P.prop_X₂_of_shortExact
+      ((ShortComplex.Splitting.ofIsZeroOfIsIso S hZ
+        (inferInstanceAs (IsIso e.inv))).shortExact) hPZ hX
   have : HasBinaryBiproducts C := hasBinaryBiproducts_of_finite_biproducts C
   have : P.IsClosedUnderBinaryProducts :=
     P.isClosedUnderBinaryProducts_of_prop_biprod fun _ _ hX hY ↦ P.prop_biprod hX hY

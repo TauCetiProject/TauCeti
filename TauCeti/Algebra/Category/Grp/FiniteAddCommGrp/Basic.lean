@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.Grp.IsFinite
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-public import Mathlib.Data.ZMod.Basic
 public import TauCeti.CategoryTheory.ObjectProperty.Extensions
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
+public import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The abelian category of finite abelian groups
@@ -46,11 +46,8 @@ variable (n : ℕ) [NeZero n]
 
 /-- A map out of the finite cyclic group is determined by its value at `1`. -/
 theorem zmod_hom_ext {Y : FiniteAddCommGrp.{0}} {f g : zmod n ⟶ Y}
-    (h : f.hom (1 : ZMod n) = g.hom (1 : ZMod n)) : f = g := by
-  apply AddCommGrpCat.isFinite.ι.map_injective
-  ext x
-  obtain ⟨a, rfl⟩ := ZMod.intCast_surjective x
-  simpa only [ObjectProperty.ι_map, ← zsmul_one, map_zsmul] using congrArg (a • ·) h
+    (h : f.hom (1 : ZMod n) = g.hom (1 : ZMod n)) : f = g :=
+  AddCommGrpCat.isFinite.hom_ext (AddCommGrpCat.hom_ext (AddMonoidHom.ext_zmod h))
 
 /-- Multiplication by an element of `ℤ/nℤ`, as an endomorphism of the finite cyclic group. -/
 def zmodMul : ZMod n →+ (zmod n ⟶ zmod n) :=
