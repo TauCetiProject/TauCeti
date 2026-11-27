@@ -95,7 +95,7 @@ the chart. The balls of `X` and of the chart are compared through Lipschitz boun
   (`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le`);
 * Taubes's packing bound: a set `Z` of zeros of `α` with a Darboux chart about each of its points,
   with uniform constants, is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` balls of `X` of radius
-  `σ` centred in `Z`, for `r ≥ (2 c₀ / σ)²`
+  `σ` centred in `Z`, for `r ≥ max 1 (8 K)` and `r ≥ (2 c₀ / σ)²`
   (`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_frame`). With the lower bound,
   `TauCeti.exists_finset_isCover_pairwiseDisjoint_closedBall` also gives such a cover whose
   half-balls are pairwise disjoint.
@@ -347,7 +347,8 @@ point of `X`. Let `e : X → E` be a Darboux chart on a set `s`, whose inverse i
 `e y ∈ ball (e z) R`. Let the fields `F`, `G`, `S`, `φ`, `β`, `α`, `b`, `η` satisfy the
 hypotheses of `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame`
 on `ball (e z) R`, with `α (e z) = 0`, and suppose that the defect energy `ν = δ dμ` of the chart,
-`δ = (r / 4) |1 - |φ|² - |β|²|`, is at most the pushforward of `μX` on `ball (e z) R`. Then
+`δ = (r / 4) |1 - |φ|² - |β|²|`, is at most the pushforward of `μX` restricted to `s` on
+`ball (e z) R`: `ν t ≤ μX (s ∩ e ⁻¹' t)` for measurable `t ⊆ ball (e z) R`. Then
 `μX (closedBall z ρ) ≥ c ρ²` for every `c₀ / √r ≤ ρ ≤ ρ₀`, for the balls of `X`. -/
 theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le {X : Type*}
     [PseudoMetricSpace X] [MeasurableSpace X] {K C H L R Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
@@ -403,9 +404,10 @@ ball of radius `R₁` about `z`, which is `Λ`-Lipschitz at `z` on that ball:
 `‖e y - e z‖ ≤ Λ dist y z`. Let the fields `F`, `G`, `S`, `φ`, `β`, `η` satisfy the hypotheses of
 `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame` on `ball (e z) R`, including
 the bound `M` on the defect energy `ν = δ dμ` of the chart ball of radius `R / 2`,
-`δ = (r / 4) |1 - |φ|² - |β|²|`, and suppose that the pushforward of `μX` is at most `ν` on
-`ball (e z) R`. Then `μX (closedBall z ρ) ≤ C'' ρ²` for every `ρ ≤ R₁` with `c₀ / √r ≤ ρ` and
-`Λ ρ ≤ R / 2`, for the balls of `X`. Unlike the lower bound
+`δ = (r / 4) |1 - |φ|² - |β|²|`, and suppose that the pushforward of `μX` restricted to `s` is
+at most `ν` on `ball (e z) R`: `μX (s ∩ e ⁻¹' t) ≤ ν t` for measurable `t ⊆ ball (e z) R`.
+Then `μX (closedBall z ρ) ≤ C'' ρ²` for every `ρ ≤ R₁` with `c₀ / √r ≤ ρ` and `Λ ρ ≤ R / 2`, for
+the balls of `X`. Unlike the lower bound
 (`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`),
 the centre need not be a zero of `α`. -/
 theorem exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le {X : Type*}
@@ -458,9 +460,10 @@ there is a Darboux chart `e` on a set `s` with the hypotheses of
 `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`,
 its inverse `Λ`-Lipschitz at `e z` on `ball (e z) R`, the fields of the chart satisfying the
 equations and Taubes's coarse bounds there, the defect energy of the chart at most the pushforward
-of `μX`, and `α (e z) = 0`. Then for every `σ > 0` with `σ ≤ 2 ρ₀`, as soon as `r ≥ (2 c₀ / σ)²`,
-the set `Z` is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` closed balls of `X` of radius `σ`
-centred in `Z`, where `Z_{σ/2}` is the closed `σ / 2`-thickening of `Z`. -/
+of `μX` restricted to `s`, and `α (e z) = 0`. Then for every `σ > 0` with `σ ≤ 2 ρ₀`, as soon as
+`r ≥ 1`, `r ≥ 8 K` and `r ≥ (2 c₀ / σ)²`, the set `Z` is covered by at most
+`4 μX(Z_{σ/2}) / (c σ²)` closed balls of `X` of radius `σ` centred in `Z`, where `Z_{σ/2}` is the
+closed `σ / 2`-thickening of `Z`. -/
 theorem exists_forall_coveringNumber_le_of_frame {X : Type*} [PseudoMetricSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] {K C H L R Λ : ℝ} (hK : 0 ≤ K) (hC : 0 ≤ C)
     (hH : 0 ≤ H) (hL : 0 ≤ L) (hR : 0 < R) (hΛ : 0 < Λ) :
