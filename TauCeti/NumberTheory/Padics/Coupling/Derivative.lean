@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import TauCeti.NumberTheory.Padics.Coupling.NormalForm
 
 import Mathlib.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Ring.Basic
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Topology.Algebra.InfiniteSum.Group
@@ -126,14 +127,6 @@ section Normed
 variable {K : Type*} [NormedCommRing K] [NormOneClass K] [IsUltrametricDist K] {Φ c : Type*}
   [Fintype Φ] [Fintype c] {p : ℕ} {pr : ℕ → Φ → Φ} {S : Set ℕ} {l : ℕ → ℕ → K}
 
-omit [IsUltrametricDist K] in
-/-- `‖p ^ n * q‖ ≤ ‖p‖` for `n ≠ 0` and `‖q‖ ≤ 1`, when `‖p‖ ≤ 1`. -/
-private theorem norm_natCast_pow_mul_le (hp₁ : ‖(p : K)‖ ≤ 1) {n : ℕ} (hn : n ≠ 0) {q : K}
-    (hq : ‖q‖ ≤ 1) : ‖(p : K) ^ n * q‖ ≤ ‖(p : K)‖ :=
-  (norm_mul_le _ _).trans ((mul_le_mul ((norm_pow_le _ n).trans
-    (pow_le_of_le_one (norm_nonneg _) hp₁ hn)) hq (norm_nonneg _) (norm_nonneg _)).trans_eq
-    (mul_one _))
-
 /-- The coefficients of the coupling `Γ_e` have norm at most `1`. -/
 theorem norm_coeff_coupling_le_one (e : ℕ) (d : Φ × c →₀ ℕ) :
     ‖coeff d (coupling p pr e : MvPowerSeries (Φ × c) K)‖ ≤ 1 := by
@@ -158,7 +151,9 @@ theorem norm_coeff_pderiv_coupling_sub_le {e : ℕ} (he : e ≠ 0) (y : Φ × c)
       (norm_coeff_X_le_one _) t).trans_eq (one_mul 1)
   have hp₁ : ‖(p : K)‖ ≤ 1 := IsUltrametricDist.norm_natCast_le_one K p
   rw [pderiv_coupling, add_sub_cancel_right, map_nsmul, nsmul_eq_mul, Nat.cast_pow]
-  exact norm_natCast_pow_mul_le hp₁ he (hQ d)
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero he
+  exact (TauCeti.norm_pow_succ_mul_le hp₁ _ m).trans
+    (TauCeti.norm_mul_le_of_norm_le_one_right (hQ d) _)
 
 /-- For `e ≠ 0` and `‖λ_j‖ ≤ 1`, the coefficients of the derivative in `z_y` of the term
 `λ_j Γ_e ^ p ^ j`, minus `λ_0 P_{e,y}` when `j = 0`, have norm at most `‖p‖`. -/
@@ -177,8 +172,12 @@ theorem norm_coeff_pderiv_smul_coupling_pow_sub_le {e : ℕ} (he : e ≠ 0) {a :
       smul_eq_mul, Nat.cast_pow]
     have h_rest := (norm_coeff_mul_le_mul (norm_coeff_pow_le_one hΓ (p ^ j - 1))
       (norm_coeff_pderiv_le hΓ y) d).trans_eq (one_mul 1)
-    exact (norm_mul_le _ _).trans ((mul_le_mul (ha j) (norm_natCast_pow_mul_le hp₁ hj.ne' h_rest)
-      (norm_nonneg _) zero_le_one).trans_eq (one_mul _))
+    have h_pow (q : K) (hq : ‖q‖ ≤ 1) : ‖(p : K) ^ j * q‖ ≤ ‖(p : K)‖ := by
+      obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hj.ne'
+      rw [hm]
+      exact (TauCeti.norm_pow_succ_mul_le hp₁ q m).trans
+        (TauCeti.norm_mul_le_of_norm_le_one_right hq _)
+    exact (TauCeti.norm_mul_le_of_norm_le_one_left (ha j) _).trans (h_pow _ h_rest)
 
 /-- **The derivative of the coupling series modulo `p`.** If `0 ∉ S`, `1 < p` and `‖λ_{e j}‖ ≤ 1`,
 the coefficients of `∂Ξ_λ/∂z_y - ∑_{e ∈ S} λ_{e 0} P_{e,y}` have norm at most `‖p‖`. -/
