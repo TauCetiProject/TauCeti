@@ -43,7 +43,7 @@ private abbrev MonicIrreducible (F : Type*) [Field F] :=
 /-- The coefficient of degree `m` sums `c ^ k` over the monic squarefree polynomials of degree
 `m`, with `k` the number of monic irreducible factors. Normalization preserves this count. -/
 noncomputable def weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
-    {R : Type*} [CommRing R] (c : R) : R⟦X⟧ :=
+    {R : Type*} [Semiring R] (c : R) : R⟦X⟧ :=
   PowerSeries.mk fun m ↦
     ∑ f ∈ (Polynomial.finite_monicSquarefreePolysOfDegree F m).toFinset,
       c ^ (factors f).card
@@ -51,7 +51,7 @@ noncomputable def weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
 /-- The degree-`m` coefficient is the finite weighted sum over monic squarefree polynomials. -/
 @[simp]
 theorem coeff_weightedSquarefreeSeries (F : Type*) [Field F] [Finite F]
-    {R : Type*} [CommRing R] (c : R) (m : ℕ) :
+    {R : Type*} [Semiring R] (c : R) (m : ℕ) :
     coeff m (weightedSquarefreeSeries F c) =
       ∑ f ∈ (Polynomial.finite_monicSquarefreePolysOfDegree F m).toFinset,
         c ^ (factors f).card := by
@@ -61,7 +61,7 @@ variable {F : Type*} [Field F]
 
 section Weighted
 
-private theorem weightedSum_eq_sum_powerset [Finite F] {R : Type*} [CommRing R]
+private theorem weightedSum_eq_sum_powerset [Finite F] {R : Type*} [Semiring R]
     (c : R) (m : ℕ) :
     (∑ s ∈ ((finite_monicIrreducible_natDegree_le F m).toFinset.powerset.filter
       fun s : Finset (MonicIrreducible F) ↦ ∑ p ∈ s, (p : Polynomial F).natDegree = m),
