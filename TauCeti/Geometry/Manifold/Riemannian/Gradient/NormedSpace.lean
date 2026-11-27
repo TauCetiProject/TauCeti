@@ -128,6 +128,7 @@ theorem norm_mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
   exact h
 
 /-- The gradient of the negated squared norm in the standard flat metric is `-2x`. -/
+@[simp]
 theorem mgradient_neg_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
     let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
