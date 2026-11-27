@@ -12,11 +12,9 @@ import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.Algebra.Lie.Killing.Regular
 import TauCeti.Algebra.Lie.Sl2.Principal
 import TauCeti.Algebra.Lie.Sl2.Spectrum
-import TauCeti.Algebra.Lie.Submodule.Finrank
 import TauCeti.Algebra.Lie.Weights.Dimension
 import TauCeti.Algebra.Lie.Weights.Eigenvector
 import TauCeti.Algebra.Lie.Weights.Rank
-import TauCeti.LinearAlgebra.Dimension.DirectSum
 import TauCeti.LinearAlgebra.Graded.Kernel
 import TauCeti.LinearAlgebra.RootSystem.Height
 
@@ -52,12 +50,8 @@ enlarge the kernel (`LinearMap.IsHomogeneous.finrank_ker_add_le`). So `x` is reg
 
 ## Main results
 
-* `TauCeti.finrank_rootSpaceSpan`: the span of the root spaces of a set `S` of roots has
-  dimension `#S`.
 * `TauCeti.mem_rootSpaceSpan_iff`: an element lies in the span of the root spaces of `S` exactly
   when its components along the root-space decomposition vanish outside `S`.
-* `TauCeti.rootSpace_add_le_rootSpaceSpan_of_forall`: the root space at a nonzero sum `γ + δ` of
-  two roots lies in the span of the root spaces of `S` when every root equal to `γ + δ` is in `S`.
 * `TauCeti.rank_add_two_le_finrank_ker_ad_of_mem_rootSpaceSpan`: an element of `n⁺` with zero
   component at a simple root has a centralizer of dimension at least `rank L + 2`.
 * `TauCeti.isCentralizerRegular_sum_add`: a sum of nonzero simple root vectors plus root vectors
@@ -86,24 +80,6 @@ namespace TauCeti
 
 /-! ### Spans of root spaces -/
 
-variable (H) in
-/-- **The span of the root spaces of a set of roots has dimension the number of roots in it**,
-each root space being a line and distinct root spaces being independent. -/
-theorem finrank_rootSpaceSpan (S : Set H.root) : finrank K (rootSpaceSpan H S) = S.ncard := by
-  classical
-  have := Fintype.ofFinite S
-  have hind : iSupIndep fun α : S ↦ (rootSpace H ((α : H.root) : H → K)).toSubmodule :=
-    LieSubmodule.iSupIndep_toSubmodule.mpr <| (iSupIndep_genWeightSpace' K H L).comp
-      (f := fun α : S ↦ ((α : H.root) : Weight K H L))
-      (Subtype.val_injective.comp Subtype.val_injective)
-  rw [← LieSubmodule.finrank_toSubmodule, rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule,
-    finrank_iSup_eq_sum_finrank_of_iSupIndep hind]
-  calc _ = ∑ _α : S, 1 := Finset.sum_congr rfl fun α _ ↦ (LieSubmodule.finrank_toSubmodule _).trans
-        (finrank_rootSpace_eq_one ((α : H.root) : Weight K H L) (H.isNonZero_coe_root α))
-    _ = S.ncard := by
-      rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_one, ← Nat.card_coe_set_eq,
-        Nat.card_eq_fintype_card]
-
 omit [IsKilling K L] in
 /-- **Membership in a span of root spaces, through the root-space decomposition.** An element lies
 in the span of the root spaces of `S` exactly when each of its nonzero components along the
@@ -126,26 +102,6 @@ theorem mem_rootSpaceSpan_iff {S : Set H.root} {z : L} :
       exact zero_mem _
     obtain ⟨k, hk, rfl⟩ := hz χ hχ
     exact rootSpace_le_rootSpaceSpan hk (genWeightSpaceProjection_apply_mem _ z)
-
-/-- The root space at a sum `γ + δ` of two roots lies in the span of the root spaces of a set `S`
-of roots as soon as `γ + δ` is nonzero and every root equal to `γ + δ` lies in `S`. -/
-theorem rootSpace_add_le_rootSpaceSpan_of_forall {S : Set H.root} {γ δ : H.root}
-    (h0 : (rootSystem H).root γ + (rootSystem H).root δ ≠ 0)
-    (hS : ∀ k : H.root,
-      (rootSystem H).root k = (rootSystem H).root γ + (rootSystem H).root δ → k ∈ S) :
-    rootSpace H ((γ : H → K) + (δ : H → K)) ≤ rootSpaceSpan H S := by
-  by_cases h : rootSpace H ((γ : H → K) + (δ : H → K)) = ⊥
-  · rw [h]
-    exact bot_le
-  -- the sum is a nonzero weight, hence a root `k`
-  have hne : (⟨(γ : H → K) + (δ : H → K), h⟩ : Weight K H L).IsNonZero := by
-    intro hzero
-    refine h0 (LinearMap.ext fun z ↦ ?_)
-    simpa [Weight.toLinear_apply] using congrFun hzero z
-  let k : H.root := ⟨⟨(γ : H → K) + (δ : H → K), h⟩, by simpa [LieSubalgebra.root] using hne⟩
-  have hk : (rootSystem H).root k = (rootSystem H).root γ + (rootSystem H).root δ :=
-    LinearMap.ext fun z ↦ by simp [k, Weight.toLinear_apply]
-  exact rootSpace_le_rootSpaceSpan (α := k) (hS k hk)
 
 /-! ### A vanishing simple component -/
 
@@ -197,22 +153,6 @@ private theorem rootSpace_add_le_rootSpaceSpan_posRoots_sdiff {i : H.root} (hi :
       have := one_le_height_of_mem_posRoots (rootSystem H) b hγ
       omega
 
-/-- The span `u` of the root spaces of the positive roots other than a simple root `αᵢ` is stable
-under the adjoint action of the parabolic subalgebra `p = H ⊕ L_{-αᵢ} ⊕ n⁺`. -/
-private theorem lie_mem_rootSpaceSpan_posRoots_sdiff {i : H.root} (hi : i ∈ b.support) {z x : L}
-    (hz : z ∈ genWeightSpaceSpan H L
-      (insert 0 ((fun k : H.root ↦ (k : H → K)) '' insert (-i) (posRoots (rootSystem H) b))))
-    (hx : x ∈ rootSpaceSpan H (posRoots (rootSystem H) b \ {i})) :
-    ⁅z, x⁆ ∈ rootSpaceSpan H (posRoots (rootSystem H) b \ {i}) := by
-  rw [genWeightSpaceSpan_eq_iSup] at hz
-  rw [rootSpaceSpan_eq_iSup] at hx
-  refine LieSubmodule.iSup_induction _ (motive := fun z ↦ ⁅z, x⁆ ∈ _) hz (fun χ z hz ↦ ?_)
-    (by simp) fun z z' hz hz' ↦ by rw [add_lie]; exact add_mem hz hz'
-  refine LieSubmodule.iSup_induction _ (motive := fun x ↦ ⁅z, x⁆ ∈ _) hx (fun δ x hx ↦ ?_)
-    (by simp) fun x x' hx hx' ↦ by rw [lie_add]; exact add_mem hx hx'
-  exact rootSpace_add_le_rootSpaceSpan_posRoots_sdiff b hi χ.property δ.property
-    (lie_mem_genWeightSpace_of_mem_genWeightSpace hz hx)
-
 /-- The parabolic subalgebra `p = H ⊕ L_{-αᵢ} ⊕ n⁺` and the root spaces of the negative roots
 other than `-αᵢ` together span `L`. -/
 private theorem genWeightSpaceSpan_sup_rootSpaceSpan_negRoots_sdiff_eq_top (i : H.root) :
@@ -224,6 +164,7 @@ private theorem genWeightSpaceSpan_sup_rootSpaceSpan_negRoots_sdiff_eq_top (i : 
   by_cases hχ : (χ : H → K) = 0
   · exact le_sup_of_le_left (genWeightSpace_le_genWeightSpaceSpan (by simp [hχ]))
   let k : H.root := ⟨χ, by simpa [LieSubalgebra.root] using hχ⟩
+  -- `k` is `χ` with its nonzeroness attached, so its root space is the weight space of `χ`
   change rootSpace H (k : H → K) ≤ _
   by_cases hk : k ∈ insert (-i) (posRoots (rootSystem H) b)
   · exact le_sup_of_le_left (genWeightSpace_le_genWeightSpaceSpan
@@ -247,7 +188,9 @@ theorem rank_add_two_le_finrank_ker_ad_of_mem_rootSpaceSpan {i : H.root} (hi : i
       LieSubmodule.sup_toSubmodule, Submodule.map_sup]
     refine sup_le_sup_right (Submodule.map_le_iff_le_comap.mpr fun z hz ↦ ?_) _
     rw [Submodule.mem_comap, ad_apply, ← lie_skew]
-    exact neg_mem (lie_mem_rootSpaceSpan_posRoots_sdiff b hi hz hx)
+    -- `u` is stable under the parabolic subalgebra `p = H ⊕ L_{-αᵢ} ⊕ n⁺`
+    exact neg_mem (lie_mem_rootSpaceSpan
+      (fun _ hχ _ hδ ↦ rootSpace_add_le_rootSpaceSpan_posRoots_sdiff b hi hχ hδ) hz hx)
   have hrange : finrank K (LinearMap.range (ad K L x)) ≤
       (posRoots (rootSystem H) b \ {i}).ncard + (negRoots (rootSystem H) b \ {-i}).ncard := by
     calc finrank K (LinearMap.range (ad K L x))
@@ -270,16 +213,6 @@ theorem rank_add_two_le_finrank_ker_ad_of_mem_rootSpaceSpan {i : H.root} (hi : i
   omega
 
 /-! ### Nonzero simple components -/
-
-/-- A root vector of `γ` is an eigenvector of `ad (2ρ^∨)`, with eigenvalue twice the height of
-`γ`. -/
-private theorem mem_eigenspace_ad_twoWeylVector_flip {γ : H.root} {z : L}
-    (hz : z ∈ rootSpace H ((γ : Weight K H L) : H → K)) :
-    z ∈ (ad K L (twoWeylVector (rootSystem H).flip b.flip : H)).eigenspace
-      ((2 * b.height γ : ℤ) : K) := by
-  rw [Module.End.mem_eigenspace_iff, ad_apply, ← LieSubalgebra.coe_bracket_of_module,
-    lie_eq_smul_of_mem_rootSpace hz, root_apply_twoWeylVector_flip_eq_two_mul_height]
-  norm_cast
 
 /-- **A principal nilpotent element perturbed by higher root vectors is regular.** If `eᵢ` is a
 nonzero vector of the root space of each simple root `αᵢ` and `y` lies in the span of the root
@@ -306,7 +239,7 @@ theorem isCentralizerRegular_sum_add {e : b.support → L}
   have hT : LinearMap.IsHomogeneous (ad K L (∑ i, e i)) 𝒜 𝒜 2 := by
     refine LinearMap.isHomogeneous_def.mpr fun n v hv ↦ ?_
     have hsum : ∑ i, e i ∈ 𝒜 2 := sum_mem fun i _ ↦ by
-      have := mem_eigenspace_ad_twoWeylVector_flip b (he i)
+      have := mem_eigenspace_ad_twoWeylVector_flip_of_mem_rootSpace b (he i)
       rwa [RootPairing.Base.height_one_of_mem_support i.property, mul_one] at this
     have := lie_mem_eigenspace_toEnd_add hsum hv
     rw [show ((2 : ℤ) : K) + (n : K) = ((n + 2 : ℤ) : K) by push_cast; ring] at this
@@ -325,7 +258,8 @@ theorem isCentralizerRegular_sum_add {e : b.support → L}
     have h2 : b.height γ ≠ 1 := fun h ↦ hγs ((RootPairing.Base.height_eq_one_iff b).mp h)
     refine Submodule.mem_iSup_of_mem (2 * b.height γ + n) (Submodule.mem_iSup_of_mem
       (by omega) ?_)
-    have := lie_mem_eigenspace_toEnd_add (mem_eigenspace_ad_twoWeylVector_flip b hz) hv
+    have := lie_mem_eigenspace_toEnd_add
+      (mem_eigenspace_ad_twoWeylVector_flip_of_mem_rootSpace b hz) hv
     rw [← Int.cast_add] at this
     exact this
   calc finrank K (LinearMap.ker (ad K L (∑ i, e i + y)))

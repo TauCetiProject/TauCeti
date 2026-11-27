@@ -32,48 +32,27 @@ for a Lie algebra graded by the eigenvalues of `ad h`, an element `e + y` with `
 ## Main results
 
 * `LinearMap.IsHomogeneous.finrank_ker_add_le`: `dim ker (T + S) ≤ dim ker T`.
+* `Submodule.finrank_inf_le_finrank_inf_of_sup_eq_of_disjoint`: the inductive step, comparing the
+  dimensions of `A ⊓ F` and `B ⊓ F` along one step `F₀ = V₀ ⊕ F₁` of a filtration.
+* `iSupIndep.exists_biSup_ge_eq_top_and_biSup_ge_eq_bot`: the filtration `⨆ m ≥ n, 𝒜 m` of a
+  finite-dimensional space by an independent spanning family is everything for small `n` and zero
+  for large `n`.
 -/
 
 public section
 
-namespace LinearMap
-
 open Module Submodule
 
-variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  {𝒜 : ℤ → Submodule K V}
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 /-! ### The filtration by degree -/
 
-omit [FiniteDimensional K V] in
-/-- The part of degree at least `n` is `𝒜 n` plus the part of degree at least `n + 1`. -/
-private theorem sup_iSup_succ_le (𝒜 : ℤ → Submodule K V) (n : ℤ) :
-    𝒜 n ⊔ ⨆ (m : ℤ) (_ : n + 1 ≤ m), 𝒜 m = ⨆ (m : ℤ) (_ : n ≤ m), 𝒜 m := by
-  refine le_antisymm (sup_le (le_iSup₂_of_le (f := fun m (_ : n ≤ m) ↦ 𝒜 m) n le_rfl le_rfl)
-    (iSup₂_le fun m hm ↦ le_iSup₂_of_le (f := fun m (_ : n ≤ m) ↦ 𝒜 m) m (by omega) le_rfl))
-    (iSup₂_le fun m hm ↦ ?_)
-  rcases hm.eq_or_lt with rfl | hlt
-  · exact le_sup_left
-  · exact le_sup_of_le_right
-      (le_iSup₂_of_le (f := fun m (_ : n + 1 ≤ m) ↦ 𝒜 m) m (by omega) le_rfl)
-
-omit [FiniteDimensional K V] in
-/-- The part of degree at least `n` decreases with `n`. -/
-private theorem antitone_iSup_le (𝒜 : ℤ → Submodule K V) :
-    Antitone fun n ↦ ⨆ (m : ℤ) (_ : n ≤ m), 𝒜 m := fun n _ h ↦
-  iSup₂_le fun m hm ↦ le_iSup₂_of_le (f := fun m (_ : n ≤ m) ↦ 𝒜 m) m (h.trans hm) le_rfl
-
-omit [FiniteDimensional K V] in
-/-- For an independent family, `𝒜 n` meets the part of degree greater than `n` trivially. -/
-private theorem disjoint_iSup_succ_le (h𝒜 : iSupIndep 𝒜) (n : ℤ) :
-    Disjoint (𝒜 n) (⨆ (m : ℤ) (_ : n + 1 ≤ m), 𝒜 m) :=
-  (h𝒜 n).mono_right <| iSup₂_le fun m hm ↦
-    le_iSup₂_of_le (f := fun m (_ : m ≠ n) ↦ 𝒜 m) m (by omega) le_rfl
-
-/-- An independent spanning family of a finite-dimensional space has finitely many nonzero
-members, so its part of degree at least `n` is everything for small `n` and zero for large `n`. -/
-private theorem exists_iSup_le_eq_top_and_eq_bot (h𝒜 : iSupIndep 𝒜) (h𝒜top : ⨆ n, 𝒜 n = ⊤) :
-    ∃ lo hi : ℤ, lo ≤ hi ∧ ⨆ (m : ℤ) (_ : lo ≤ m), 𝒜 m = ⊤ ∧ ⨆ (m : ℤ) (_ : hi ≤ m), 𝒜 m = ⊥ := by
+/-- An independent family `𝒜` spanning a finite-dimensional space has finitely many nonzero
+members, so its part `⨆ m ≥ n, 𝒜 m` of degree at least `n` is everything for small `n` and zero
+for large `n`. -/
+theorem iSupIndep.exists_biSup_ge_eq_top_and_biSup_ge_eq_bot [FiniteDimensional K V]
+    {𝒜 : ℤ → Submodule K V} (h𝒜 : iSupIndep 𝒜) (h𝒜top : ⨆ n, 𝒜 n = ⊤) :
+    ∃ lo hi : ℤ, lo ≤ hi ∧ ⨆ m ≥ lo, 𝒜 m = ⊤ ∧ ⨆ m ≥ hi, 𝒜 m = ⊥ := by
   have hfin : {n | 𝒜 n ≠ ⊥}.Finite := by
     have := h𝒜.fintypeNeBotOfFiniteDimensional
     exact Set.toFinite _
@@ -83,17 +62,21 @@ private theorem exists_iSup_le_eq_top_and_eq_bot (h𝒜 : iSupIndep 𝒜) (h𝒜
   · refine eq_top_iff.mpr (h𝒜top ▸ iSup_le fun m ↦ ?_)
     by_cases hm : 𝒜 m = ⊥
     · simp [hm]
-    · exact le_iSup₂_of_le (f := fun m (_ : min lo (hi + 1) ≤ m) ↦ 𝒜 m) m
+    · exact le_iSup₂_of_le (f := fun m (_ : m ≥ min lo (hi + 1)) ↦ 𝒜 m) m
         ((min_le_left _ _).trans (hlo hm)) le_rfl
   · refine eq_bot_iff.mpr (iSup₂_le fun m hm ↦ ?_)
     by_contra h
     have := hhi (show 𝒜 m ≠ ⊥ from fun h' ↦ h h'.le)
     omega
 
-/-- The inductive step: let `F₀ = V₀ ⊕ F₁`. If the `V₀`-components of the elements of `A ⊓ F₀`
-lie in `B`, then passing from `F₁` to `F₀` adds no more to the dimension of `A ⊓ F₁` than to that
-of `B ⊓ F₁`. -/
-private theorem finrank_inf_le_finrank_inf_of_succ {A B V₀ F₀ F₁ : Submodule K V}
+namespace Submodule
+
+/-- **Comparing dimensions along one step of a filtration.** Let `F₀ = V₀ ⊕ F₁` be an internal
+direct sum, and let `A` and `B` be subspaces such that the component in `V₀` of every element of
+`A ⊓ F₀` modulo `F₁` lies in `B`, that is `V₀ ⊓ (A ⊓ F₀ ⊔ F₁) ≤ B`. If `A ⊓ F₁` has dimension at
+most that of `B ⊓ F₁`, then `A ⊓ F₀` has dimension at most that of `B ⊓ F₀`. -/
+theorem finrank_inf_le_finrank_inf_of_sup_eq_of_disjoint [FiniteDimensional K V]
+    {A B V₀ F₀ F₁ : Submodule K V}
     (hF : V₀ ⊔ F₁ = F₀) (hdisj : Disjoint V₀ F₁) (hB : V₀ ⊓ (A ⊓ F₀ ⊔ F₁) ≤ B)
     (ih : finrank K ↥(A ⊓ F₁) ≤ finrank K ↥(B ⊓ F₁)) :
     finrank K ↥(A ⊓ F₀) ≤ finrank K ↥(B ⊓ F₀) := by
@@ -117,6 +100,12 @@ private theorem finrank_inf_le_finrank_inf_of_succ {A B V₀ F₀ F₁ : Submodu
   have hJle := finrank_mono (le_inf hB (inf_le_left : J ≤ V₀))
   omega
 
+end Submodule
+
+namespace LinearMap
+
+variable [FiniteDimensional K V] {𝒜 : ℤ → Submodule K V}
+
 /-! ### Perturbations of homogeneous maps -/
 
 /-- **A perturbation by terms of higher degree does not enlarge the kernel.** Let `𝒜` be an
@@ -137,8 +126,8 @@ theorem IsHomogeneous.finrank_ker_add_le (h𝒜 : iSupIndep 𝒜) (h𝒜top : �
   -- the leading component in `𝒜 n` of an element of `ker (T + S) ⊓ F n` lies in `ker T`
   have step (n : ℤ) (ih : finrank K ↥(ker (T + S) ⊓ F (n + 1)) ≤ finrank K ↥(ker T ⊓ F (n + 1))) :
       finrank K ↥(ker (T + S) ⊓ F n) ≤ finrank K ↥(ker T ⊓ F n) := by
-    refine finrank_inf_le_finrank_inf_of_succ (sup_iSup_succ_le 𝒜 n)
-      (disjoint_iSup_succ_le h𝒜 n) (fun v hv ↦ ?_) ih
+    refine finrank_inf_le_finrank_inf_of_sup_eq_of_disjoint (biSup_ge_eq_sup 𝒜 n).symm
+      (h𝒜.disjoint_biSup (y := {m | n < m}) (lt_irrefl n)) (fun v hv ↦ ?_) ih
     obtain ⟨hvn, hv⟩ := mem_inf.mp hv
     obtain ⟨a, ha, w, hw, rfl⟩ := mem_sup.mp hv
     obtain ⟨haker, haF⟩ := mem_inf.mp ha
@@ -146,9 +135,10 @@ theorem IsHomogeneous.finrank_ker_add_le (h𝒜 : iSupIndep 𝒜) (h𝒜top : �
     have h₁ : T (a + w) ∈ F (n + d + 1) := by
       rw [map_add, hTa]
       exact add_mem (neg_mem (hSF n haF)) (by simpa [add_right_comm] using hTF (n + 1) hw)
-    exact disjoint_def.mp (disjoint_iSup_succ_le h𝒜 (n + d)) _ (hT.map_mem hvn) h₁
+    exact disjoint_def.mp (h𝒜.disjoint_biSup (y := {m | n + d < m}) (lt_irrefl (n + d))) _
+      (hT.map_mem hvn) h₁
   -- downward induction from a degree above the support to one below it
-  obtain ⟨lo, hi, hlohi, hFtop, hFbot⟩ := exists_iSup_le_eq_top_and_eq_bot h𝒜 h𝒜top
+  obtain ⟨lo, hi, hlohi, hFtop, hFbot⟩ := h𝒜.exists_biSup_ge_eq_top_and_biSup_ge_eq_bot h𝒜top
   replace hFtop : F lo = ⊤ := hFtop
   replace hFbot : F hi = ⊥ := hFbot
   have key (k : ℕ) : finrank K ↥(ker (T + S) ⊓ F (hi - k)) ≤ finrank K ↥(ker T ⊓ F (hi - k)) := by
