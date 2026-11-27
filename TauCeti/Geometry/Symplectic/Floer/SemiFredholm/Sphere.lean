@@ -92,10 +92,12 @@ below. The weight `(1 + |w|²)²` is the inverse of `ρ`, as for the dual of `W^
   with `-ω` and `-J₀`, and bounds the Dirichlet energy by the `L²` norm of the adjoint, with no
   lower-order term. Applied in
   the chart `ζ`, where the field is supported in a bounded disc and the Poincaré inequality on a
-  strip controls its `L²` norm, this bounds the `W^{1,2}` norm of `η'`. The inversion multiplies
-  the adjoint by its Jacobian `|w|⁴`
-  (`TauCeti.SymplecticForm.floerLinearizationAdjoint_perturbationPullback`), and the change of
-  variables along the inversion absorbs one Jacobian, which leaves the weight `|w|⁴ ≤ (1 + |w|²)²`.
+  strip controls its `L²` norm
+  (`exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const` below), this bounds
+  the `W^{1,2}` norm of `η'`. The inversion multiplies the adjoint by its Jacobian
+  `|w|⁴` (`TauCeti.SymplecticForm.floerLinearizationAdjoint_perturbationPullback`), and the change
+  of variables along the inversion (`TauCeti.Complex.setIntegral_image_realChart_inv`) absorbs one
+  Jacobian, which leaves the weight `|w|⁴ ≤ (1 + |w|²)²`.
 
 ## References
 
@@ -444,6 +446,38 @@ theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible 
         exact pow_le_pow_left₀ (norm_nonneg _) (hD z) 2
     _ = _ := by rw [integral_const_mul]; ring
 
+/-- **The `L²` norm of a field supported in a disc, for constant data.** For an `ω`-compatible
+`J₀` and `r > 0` there is `C` such that every compactly supported `C²` covector field `θ` vanishing
+on `|ζ| ≥ r` satisfies `∫ ‖θ‖² ≤ C ∫ ‖D^* θ‖²` for the formal adjoint of the constant data `J₀`,
+`0`. The field is supported in the strip `|t| < r`, so the Poincaré inequality bounds its `L²` norm
+by its Dirichlet energy, which the energy estimate of constant data bounds by `∫ ‖D^* θ‖²`. -/
+theorem exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const
+    (h₀ : ω.Compatible J₀) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃θ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 θ → HasCompactSupport θ →
+      (∀ ζ, r ≤ ‖Complex.equivRealProdCLM.symm ζ‖ → θ ζ = 0) →
+      ∫ ζ, ‖θ ζ‖ ^ 2 ≤ C * ∫ ζ, ‖ω.floerLinearizationAdjoint
+        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 θ
+          ζ‖ ^ 2 := by
+  obtain ⟨C, hC, hE⟩ := exists_forall_integral_norm_fderiv_sq_le_of_const (ω := ω) h₀
+  refine ⟨(2 * r) ^ 2 * C, by positivity, fun θ hθ hθc hθ0 ↦ ?_⟩
+  have hP := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd (r := r)
+    (hθ.of_le one_le_two) hθc fun ζ hζ ↦ hθ0 ζ (hζ.trans (by
+      have h := Complex.abs_im_le_norm (Complex.equivRealProdCLM.symm ζ)
+      rwa [Complex.equivRealProdCLM_symm_apply_im] at h))
+  rw [← stdComplexLineImag_eq] at hP
+  have hdθ := hθ.continuous_fderiv two_ne_zero
+  have hdc (v : ℝ × ℝ) : Integrable fun ζ ↦ ‖fderiv ℝ θ ζ v‖ ^ 2 :=
+    Continuous.integrable_of_hasCompactSupport (f := fun ζ ↦ ‖fderiv ℝ θ ζ v‖ ^ 2)
+      ((hdθ.clm_apply continuous_const).norm.pow 2)
+      ((hθc.fderiv (𝕜 := ℝ)).comp_left (g := fun L : (ℝ × ℝ) →L[ℝ] (V →L[ℝ] ℝ) ↦ ‖L v‖ ^ 2)
+        (by simp))
+  have hIm : ∫ ζ, ‖fderiv ℝ θ ζ stdComplexLineImag‖ ^ 2 ≤
+      ∫ ζ, (‖fderiv ℝ θ ζ stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ θ ζ stdComplexLineImag‖ ^ 2) :=
+    integral_mono (hdc _) ((hdc _).add (hdc _)) fun ζ ↦ by
+      nlinarith [sq_nonneg ‖fderiv ℝ θ ζ stdComplexLineReal‖]
+  rw [mul_assoc]
+  exact hP.trans (mul_le_mul_of_nonneg_left (hIm.trans (hE hθ hθc)) (by positivity))
+
 /-- **The adjoint of constant data through the inversion.** For a constant structure `J₀` and the
 zero perturbation, read a covector field `η` in the chart `ζ = w⁻¹` of the point at infinity as the
 `(0, 1)`-form `η' = η (ζ⁻¹) ∘ (a + b J₀)` (`TauCeti.Floer.covectorPullback`). Away from `ζ = 0`, the
@@ -535,11 +569,10 @@ private theorem integral_norm_floerLinearizationAdjoint_covectorPullback_realCha
   set g : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖ ^ 4 * ‖D η z‖ ^ 2
   have hDη' (ζ : ℝ × ℝ) (hζ : ζ ∈ U) : ‖D (Floer.covectorPullback ι
       (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) 0 η) ζ‖ ^ 2 =
-      |(fderiv ℝ ι ζ).det| * g (ι ζ) := by
+      ‖Complex.equivRealProdCLM.symm (ι ζ)‖ ^ 4 * g (ι ζ) := by
     -- `rw` cannot see through the local definition `D`, so the lemma is restated with `show`.
     rw [show D _ ζ = _ from floerLinearizationAdjoint_const_covectorPullback_realChart_inv hζ
-      (hη.differentiable two_ne_zero _), norm_smul, TauCeti.Complex.det_fderiv_realChart_inv hζ,
-      Real.norm_of_nonneg (by positivity), abs_of_nonneg (by positivity)]
+      (hη.differentiable two_ne_zero _), norm_smul, Real.norm_of_nonneg (by positivity)]
     ring
   have hDc : Continuous (D η) := continuous_floerLinearizationAdjoint_of_tsupport_subset
     (U := univ) (fun _ _ ↦ contDiffAt_const) (fun _ _ ↦ contDiffAt_const)
@@ -557,11 +590,8 @@ private theorem integral_norm_floerLinearizationAdjoint_covectorPullback_realCha
         (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) 0 η) ζ‖ ^ 2 :=
         (setIntegral_eq_integral_of_ae_compl_eq_zero (hU0.mono fun ζ hζ h ↦ (h hζ).elim)).symm
     _ = ∫ z in ι '' U, g z :=
-        (integral_image_eq_integral_of_eq_abs_det_smul hU.measurableSet
-          TauCeti.Complex.realChart_inv_involutive.injective.injOn
-          (fun ζ hζ ↦
-            (TauCeti.Complex.contDiffAt_realChart_inv hζ (n := 1)).differentiableAt one_ne_zero)
-          fun ζ hζ ↦ by rw [hDη' ζ hζ, smul_eq_mul]).symm
+        (setIntegral_congr_fun hU.measurableSet fun ζ hζ ↦ hDη' ζ hζ).trans
+          (TauCeti.Complex.setIntegral_image_realChart_inv hU.measurableSet (fun _ h ↦ h) g).symm
     _ ≤ ∫ z, g z := setIntegral_le_integral hg (ae_of_all _ fun z ↦ by positivity)
 
 /-- **The estimate at infinity for constant data.** For a constant `ω`-compatible structure `J₀` and
@@ -583,7 +613,9 @@ private theorem exists_forall_integral_sobolevDensity_covectorPullback_realChart
           ‖ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
             (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η z‖ ^ 2 := by
   obtain ⟨C, hC, hE⟩ := exists_forall_integral_norm_fderiv_sq_le_of_const h₀
-  refine ⟨(1 + (2 * (2 * r⁻¹)) ^ 2) * C, by positivity, fun η hη hc hη0 ↦ ?_⟩
+  obtain ⟨C', hC', hL⟩ :=
+    exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const (ω := ω) h₀ (2 * r⁻¹)
+  refine ⟨C + C', by positivity, fun η hη hc hη0 ↦ ?_⟩
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   set η' := Floer.covectorPullback (TauCeti.Complex.realChart (·⁻¹))
     (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) 0 η
@@ -591,44 +623,26 @@ private theorem exists_forall_integral_sobolevDensity_covectorPullback_realChart
   have hη'c : HasCompactSupport η' :=
     HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le r⁻¹) fun ζ hζ ↦
       hη'far ζ (not_le.1 hζ)
-  -- The Poincaré inequality in the chart, where `η'` vanishes off the disc `|ζ| ≤ r⁻¹`.
-  have hP := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd (r := 2 * r⁻¹)
-    (hη'2.of_le one_le_two) hη'c fun ζ hζ ↦ hη'far ζ (by
-      have h1 := Complex.abs_im_le_norm (Complex.equivRealProdCLM.symm ζ)
-      have h2 : 0 < r⁻¹ := inv_pos.2 hr
-      simp only [Complex.equivRealProdCLM_symm_apply_im] at h1
-      linarith)
-  rw [← stdComplexLineImag_eq] at hP
-  -- The energy estimate in the chart, and the change of variables back to the plane.
+  -- The energy estimate and the Poincaré inequality in the chart, where `η'` vanishes off the
+  -- disc `|ζ| ≤ r⁻¹`, and the change of variables back to the plane.
   have hEη := hE hη'2 hη'c
+  have hLη := hL hη'2 hη'c fun ζ hζ ↦ hη'far ζ (by linarith [inv_pos.2 hr])
   have hcv := integral_norm_floerLinearizationAdjoint_covectorPullback_realChart_inv_sq_le
     (ω := ω) (J₀ := J₀) hη hc
   have iD := integrable_norm_fderiv_sq_add (μ := volume) (hη'2.of_le one_le_two) hη'c
     stdComplexLineReal stdComplexLineImag
   have iL : Integrable fun ζ ↦ ‖η' ζ‖ ^ 2 :=
     hη'2.continuous.integrable_norm_sq_of_hasCompactSupport hη'c
-  have iI : Integrable fun ζ ↦ ‖fderiv ℝ η' ζ stdComplexLineImag‖ ^ 2 :=
-    iD.mono' (((hη'2.continuous_fderiv two_ne_zero).clm_apply
-      continuous_const).norm.pow 2).aestronglyMeasurable (Eventually.of_forall fun ζ ↦ by
-        rw [Real.norm_of_nonneg (by positivity)]
-        nlinarith [sq_nonneg ‖fderiv ℝ η' ζ stdComplexLineReal‖])
-  have hI : ∫ ζ, ‖fderiv ℝ η' ζ stdComplexLineImag‖ ^ 2 ≤
-      ∫ ζ, (‖fderiv ℝ η' ζ stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η' ζ stdComplexLineImag‖ ^ 2) :=
-    integral_mono iI iD fun ζ ↦ by
-      dsimp only
-      nlinarith [sq_nonneg ‖fderiv ℝ η' ζ stdComplexLineReal‖]
   refine ⟨(iD.add iL).congr (Eventually.of_forall fun ζ ↦
     (Floer.sobolevDensity_apply η' ζ).symm), ?_⟩
   simp only [Floer.sobolevDensity_apply]
   rw [integral_add iD iL]
-  calc _ ≤ (1 + (2 * (2 * r⁻¹)) ^ 2) * ∫ ζ, (‖fderiv ℝ η' ζ stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ η' ζ stdComplexLineImag‖ ^ 2) := by nlinarith
-    _ ≤ (1 + (2 * (2 * r⁻¹)) ^ 2) * (C * ∫ ζ, ‖ω.floerLinearizationAdjoint
-          (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η'
-            ζ‖ ^ 2) := by gcongr
-    _ ≤ _ := by
-        rw [← mul_assoc]
-        exact mul_le_mul_of_nonneg_left hcv (by positivity)
+  calc _ ≤ (C + C') * ∫ ζ, ‖ω.floerLinearizationAdjoint
+        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η'
+          ζ‖ ^ 2 := by
+        rw [add_mul]
+        exact add_le_add hEη hLη
+    _ ≤ _ := mul_le_mul_of_nonneg_left hcv (by positivity)
 
 /-- The arithmetic closing the estimates of the formal adjoint on a disc and near infinity:
 `C (p X' + q Y') ≤ C (p + q) (X + Y)` when `X' ≤ X` and `Y' ≤ Y`, all terms nonnegative. -/

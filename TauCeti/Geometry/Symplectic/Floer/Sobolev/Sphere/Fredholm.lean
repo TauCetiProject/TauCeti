@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Analysis.Sobolev.Poincare.Slab
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
@@ -48,10 +47,12 @@ the namespace `TauCeti.SymplecticForm`.
   which is one near `ζ = 0`, the extension is a compactly supported field in the chart, supported
   in a strip, so its `L²` norm is bounded by its Dirichlet energy (the Poincaré inequality), which
   is bounded by the `L²` norm of its adjoint (the energy estimate of constant data,
-  `TauCeti.SymplecticForm.exists_forall_integral_norm_fderiv_sq_le_of_const`). That adjoint is
-  `dψ`-times the extension, supported in an annulus. The `L²` norm of a covector field is
-  invariant under the inversion, up to the factor `(1 + ‖J₀‖)²` of inverting `a + b J₀`, so the
-  `L²` norm of `η` near `∞` is controlled by its `L²` norm on the image of that annulus, and
+  `TauCeti.SymplecticForm.exists_forall_integral_norm_fderiv_sq_le_of_const`; together,
+  `exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const` in the namespace
+  `TauCeti.SymplecticForm`).
+  That adjoint is `dψ`-times the extension, supported in an annulus. The `L²` norm of a covector
+  field is invariant under the inversion, up to the factor `(1 + ‖J₀‖)²` of inverting `a + b J₀`,
+  so the `L²` norm of `η` near `∞` is controlled by its `L²` norm on the image of that annulus, and
   `∫ ‖η‖² ≤ A ∫_{|w| ≤ b} ‖η‖²` for every square-integrable `η` with `D_u^* η = 0`.
 * **Peetre's argument.** Cut off near the disc `|w| ≤ b`, cokernel elements of norm at most one
   have jets bounded in `W^{1,2}` (by the estimate of the formal adjoint on a disc,
@@ -150,38 +151,6 @@ section Estimate
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ × ℝ → V → AlmostComplexStructure V}
   {J₀ : AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
-
-/-- **The `L²` norm of a field supported in a disc, for constant data.** For an `ω`-compatible
-`J₀` and `r > 0` there is `C` such that every compactly supported `C²` covector field `θ` vanishing
-on `|ζ| ≥ r` satisfies `∫ ‖θ‖² ≤ C ∫ ‖D^* θ‖²` for the formal adjoint of the constant data `J₀`,
-`0`. The field is supported in the strip `|t| < r`, so the Poincaré inequality bounds its `L²` norm
-by its Dirichlet energy, which the energy estimate of constant data bounds by `∫ ‖D^* θ‖²`. -/
-private theorem exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const
-    (h₀ : ω.Compatible J₀) (r : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃θ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 θ → HasCompactSupport θ →
-      (∀ ζ, r ≤ ‖Complex.equivRealProdCLM.symm ζ‖ → θ ζ = 0) →
-      ∫ ζ, ‖θ ζ‖ ^ 2 ≤ C * ∫ ζ, ‖ω.floerLinearizationAdjoint
-        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 θ
-          ζ‖ ^ 2 := by
-  obtain ⟨C, hC, hE⟩ := exists_forall_integral_norm_fderiv_sq_le_of_const (ω := ω) h₀
-  refine ⟨(2 * r) ^ 2 * C, by positivity, fun θ hθ hθc hθ0 ↦ ?_⟩
-  have hP := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd (r := r)
-    (hθ.of_le one_le_two) hθc fun ζ hζ ↦ hθ0 ζ (hζ.trans (by
-      have h := Complex.abs_im_le_norm (Complex.equivRealProdCLM.symm ζ)
-      rwa [Complex.equivRealProdCLM_symm_apply_im] at h))
-  rw [← stdComplexLineImag_eq] at hP
-  have hdθ := hθ.continuous_fderiv two_ne_zero
-  have hdc (v : ℝ × ℝ) : Integrable fun ζ ↦ ‖fderiv ℝ θ ζ v‖ ^ 2 :=
-    Continuous.integrable_of_hasCompactSupport (f := fun ζ ↦ ‖fderiv ℝ θ ζ v‖ ^ 2)
-      ((hdθ.clm_apply continuous_const).norm.pow 2)
-      ((hθc.fderiv (𝕜 := ℝ)).comp_left (g := fun L : (ℝ × ℝ) →L[ℝ] (V →L[ℝ] ℝ) ↦ ‖L v‖ ^ 2)
-        (by simp))
-  have hIm : ∫ ζ, ‖fderiv ℝ θ ζ stdComplexLineImag‖ ^ 2 ≤
-      ∫ ζ, (‖fderiv ℝ θ ζ stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ θ ζ stdComplexLineImag‖ ^ 2) :=
-    integral_mono (hdc _) ((hdc _).add (hdc _)) fun ζ ↦ by
-      nlinarith [sq_nonneg ‖fderiv ℝ θ ζ stdComplexLineReal‖]
-  rw [mul_assoc]
-  exact hP.trans (mul_le_mul_of_nonneg_left (hIm.trans (hE hθ hθc)) (by positivity))
 
 /-- **The adjoint of a cut-off solution.** Let `η₀` be `C²` on the disc `|ζ| < a⁻¹` and annihilated
 there, away from `ζ = 0`, by the formal adjoint of the constant data `J₀`, `0`. Let `ψ` be a smooth
