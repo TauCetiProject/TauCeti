@@ -92,11 +92,11 @@ private theorem contDiffOn_quasiReflection_sub_apply (hJ : J.IsHermitian) {y₀ 
     ContDiffOn ℝ ω (fun x => ((quasiReflection hJ (x - y₀) _
         (add_star_half_dotProduct_sub_dotProduct hJ hy₀ x) : GL n 𝕜) : Matrix n n 𝕜) i j)
       {x | star x ⬝ᵥ J *ᵥ x / 2 - star x ⬝ᵥ J *ᵥ y₀ ≠ 0} := by
-  simp only [val_quasiReflection, Matrix.sub_apply, Matrix.smul_apply, vecMulVec_apply,
-    smul_eq_mul]
-  refine contDiffOn_const.sub
-    (((contDiff_half_dotProduct_sub_dotProduct y₀).contDiffOn.inv fun x hx => hx).mul ?_)
-  simp only [vecMul, dotProduct, Pi.star_apply, Pi.sub_apply, star_sub]
+  simp only [val_quasiReflection, unitaryTransvection_def, Matrix.add_apply, Matrix.smul_apply,
+    vecMulVec_apply, smul_eq_mul]
+  refine contDiffOn_const.add
+    (((contDiff_half_dotProduct_sub_dotProduct y₀).contDiffOn.inv fun x hx => hx).neg.mul ?_)
+  simp only [vecMul, dotProduct, Function.comp_apply, Pi.sub_apply, map_sub, starRingEnd_apply]
   fun_prop
 
 /-- Near a non-isotropic vector there are no isotropic vectors, so the constant map `1` satisfies

@@ -17,7 +17,8 @@ a scalar `s` with `s + star s = ⟨v, v⟩`, the **quasi-reflection** along `v` 
 
 `x ↦ x - s⁻¹ ⟨v, x⟩ v`,
 
-the matrix `1 - s⁻¹ • v (star v ᵥ* A)` (`Matrix.unitaryGroupOf.quasiReflection`). It preserves
+the matrix `1 - s⁻¹ • v (star v ᵥ* A)` (`Matrix.unitaryGroupOf.quasiReflection`), which is the
+unitary transvection `Matrix.unitaryTransvection A (starRingEnd K) v (-s⁻¹)`. It preserves
 the form, and it is invertible with inverse the quasi-reflection along `v` with parameter
 `star s`, so it lies in `Matrix.unitaryGroupOf A` even when `A` is not invertible. For
 `⟨v, v⟩ ≠ 0` and `s = ⟨v, v⟩ / 2` it is the reflection `Matrix.unitaryGroupOf.reflection` in `v`;
@@ -36,11 +37,10 @@ the isotropic orbit in `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Isotropic
 
 * `Matrix.unitaryGroupOf.quasiReflection`: the quasi-reflection along `v` with parameter `s`.
 
-The form identity and the product formula for the rank-one perturbations
-`1 + c • v (star v ᵥ* A)` of the identity behind these facts are
-`Matrix.star_one_add_smul_vecMulVec_mul_mul` and
-`Matrix.one_add_smul_vecMulVec_mul_one_add_smul_vecMulVec`, over a commutative ring, in
-`TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup`, where they also give the reflections.
+The form identity and the product formula behind these facts are those of unitary
+transvections, `Matrix.star_unitaryTransvection_mul_mul_self_of_eq_zero` (in
+`TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup`, where it also gives the reflections) and
+`Matrix.unitaryTransvection_mul_unitaryTransvection_eq`.
 
 ## Main results
 
@@ -89,54 +89,48 @@ private theorem neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero {a b q :
   field_simp
   ring
 
-/-- For Hermitian `A` and `s + star s = ⟨v, v⟩`, the matrix `1 - s⁻¹ • v (star v ᵥ* A)` preserves
-the form of `A`. -/
-private theorem star_one_sub_inv_smul_vecMulVec_mul_mul (hA : A.IsHermitian) {v : n → K} {s : K}
-    (hs : s + star s = star v ⬝ᵥ A *ᵥ v) :
-    star (1 - s⁻¹ • vecMulVec v (star v ᵥ* A)) * A * (1 - s⁻¹ • vecMulVec v (star v ᵥ* A)) =
-      A := by
-  have h := neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hs star_eq_zero.symm
-  have h' : -s⁻¹ + -(star s)⁻¹ + -(star s)⁻¹ * -s⁻¹ * (star v ⬝ᵥ A *ᵥ v) = 0 := by
-    linear_combination h
-  rw [sub_eq_add_neg, ← neg_smul, star_one_add_smul_vecMulVec_mul_mul hA, star_neg, star_inv₀, h',
-    zero_smul, add_zero]
-
-/-- For `a + b = ⟨v, v⟩` with `a` and `b` vanishing together, the matrices
-`1 - a⁻¹ • v (star v ᵥ* A)` and `1 - b⁻¹ • v (star v ᵥ* A)` are inverse to each other. -/
-private theorem one_sub_inv_smul_vecMulVec_mul_one_sub_inv_smul_vecMulVec {v : n → K} {a b : K}
+/-- For `a + b = ⟨v, v⟩` with `a` and `b` vanishing together, the unitary transvections
+`τ_{v,-a⁻¹}` and `τ_{v,-b⁻¹}` are inverse to each other. -/
+private theorem unitaryTransvection_neg_inv_mul_unitaryTransvection_neg_inv {v : n → K} {a b : K}
     (hab : a + b = star v ⬝ᵥ A *ᵥ v) (h0 : a = 0 ↔ b = 0) :
-    (1 - a⁻¹ • vecMulVec v (star v ᵥ* A)) * (1 - b⁻¹ • vecMulVec v (star v ᵥ* A)) = 1 := by
-  simp only [sub_eq_add_neg, ← neg_smul, one_add_smul_vecMulVec_mul_one_add_smul_vecMulVec,
-    neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hab h0, zero_smul, add_zero]
+    A.unitaryTransvection (starRingEnd K) v (-a⁻¹) *
+      A.unitaryTransvection (starRingEnd K) v (-b⁻¹) = 1 := by
+  rw [unitaryTransvection_mul_unitaryTransvection_eq]
+  exact (congrArg _ (neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hab h0)).trans
+    unitaryTransvection_zero
 
 namespace unitaryGroupOf
 
 /-- **The quasi-reflection** along `v` with parameter `s`, for a Hermitian matrix `A` and a scalar
 `s` with `s + star s = ⟨v, v⟩`: the element `x ↦ x - s⁻¹ ⟨v, x⟩ v` of `unitaryGroupOf A`, whose
-matrix is `1 - s⁻¹ • v (star v ᵥ* A)` (`val_quasiReflection`). Its inverse is the quasi-reflection
-with parameter `star s` (`inv_quasiReflection`). -/
+matrix `1 - s⁻¹ • v (star v ᵥ* A)` is the unitary transvection
+`Matrix.unitaryTransvection A (starRingEnd K) v (-s⁻¹)` (`val_quasiReflection`). Its inverse is the
+quasi-reflection with parameter `star s` (`inv_quasiReflection`). -/
 noncomputable def quasiReflection (hA : A.IsHermitian) (v : n → K) (s : K)
     (hs : s + star s = star v ⬝ᵥ A *ᵥ v) : unitaryGroupOf A :=
-  ⟨⟨1 - s⁻¹ • vecMulVec v (star v ᵥ* A), 1 - (star s)⁻¹ • vecMulVec v (star v ᵥ* A),
-      one_sub_inv_smul_vecMulVec_mul_one_sub_inv_smul_vecMulVec hs star_eq_zero.symm,
-      one_sub_inv_smul_vecMulVec_mul_one_sub_inv_smul_vecMulVec (by rw [add_comm, hs])
-        star_eq_zero⟩, by
-    rw [mem_unitaryGroupOf_iff, Units.val_mk]
-    exact star_one_sub_inv_smul_vecMulVec_mul_mul hA hs⟩
+  ⟨⟨A.unitaryTransvection (starRingEnd K) v (-s⁻¹),
+      A.unitaryTransvection (starRingEnd K) v (-(star s)⁻¹),
+      unitaryTransvection_neg_inv_mul_unitaryTransvection_neg_inv hs star_eq_zero.symm,
+      unitaryTransvection_neg_inv_mul_unitaryTransvection_neg_inv (by rw [add_comm, hs])
+        star_eq_zero⟩,
+    mem_unitaryGroupOf_iff.mpr <| star_unitaryTransvection_mul_mul_self_of_eq_zero hA (by
+      rw [star_neg, star_inv₀]
+      exact neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero hs star_eq_zero.symm)⟩
 
 variable (hA : A.IsHermitian) (v : n → K) (s : K) (hs : s + star s = star v ⬝ᵥ A *ᵥ v)
 
 @[simp]
 theorem val_quasiReflection :
     ((quasiReflection hA v s hs : GL n K) : Matrix n n K) =
-      1 - s⁻¹ • vecMulVec v (star v ᵥ* A) :=
+      A.unitaryTransvection (starRingEnd K) v (-s⁻¹) :=
   (rfl)
 
 /-- The quasi-reflection along `v` with parameter `s` sends `x` to `x - s⁻¹ ⟨v, x⟩ v`. -/
 theorem quasiReflection_mulVec (x : n → K) :
     ((quasiReflection hA v s hs : GL n K) : Matrix n n K) *ᵥ x =
       x - (s⁻¹ * (star v ⬝ᵥ A *ᵥ x)) • v := by
-  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul]
+  rw [val_quasiReflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg]
+  rfl
 
 /-- The quasi-reflection along `v` fixes every vector orthogonal to `v` for the form. -/
 theorem quasiReflection_mulVec_of_dotProduct_eq_zero {x : n → K} (hx : star v ⬝ᵥ A *ᵥ x = 0) :
@@ -145,15 +139,12 @@ theorem quasiReflection_mulVec_of_dotProduct_eq_zero {x : n → K} (hx : star v 
 
 /-- The inverse of the quasi-reflection along `v` with parameter `s` is the quasi-reflection
 along `v` with parameter `star s`. -/
+@[simp]
 theorem inv_quasiReflection :
     (quasiReflection hA v s hs)⁻¹ =
       quasiReflection hA v (star s) (by rw [star_star, add_comm, hs]) := by
   ext : 1
-  rw [Subgroup.coe_inv, val_quasiReflection]
-  refine Units.inv_eq_of_mul_eq_one_left ?_
-  rw [val_quasiReflection]
-  exact one_sub_inv_smul_vecMulVec_mul_one_sub_inv_smul_vecMulVec (by rw [add_comm, hs])
-    star_eq_zero
+  rfl
 
 /-- For a non-isotropic `v`, the quasi-reflection along `v` with parameter `⟨v, v⟩ / 2` is the
 reflection in `v`. -/

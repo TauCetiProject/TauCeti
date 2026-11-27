@@ -47,8 +47,9 @@ are in `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Transvection.le
 
 * `Matrix.unitaryTransvection_mulVec`: the action `x ↦ x + a B(v, x) v`; as a linear map
   `τ_{v,a}` is Mathlib's `LinearMap.transvection` (`Matrix.toLin'_unitaryTransvection`).
-* `Matrix.unitaryTransvection_mul_unitaryTransvection`: `τ_{v,a} τ_{v,b} = τ_{v,a+b}` for
-  isotropic `v`.
+* `Matrix.unitaryTransvection_mul_unitaryTransvection_eq`: the product formula
+  `τ_{v,a} τ_{v,b} = τ_{v, a + b + a b B(v, v)}`, which for isotropic `v` is
+  `τ_{v,a} τ_{v,b} = τ_{v,a+b}` (`Matrix.unitaryTransvection_mul_unitaryTransvection`).
 * `Matrix.det_unitaryTransvection_eq` and `Matrix.det_unitaryTransvection`: the determinant
   `1 + a B(v, v)`, which is `1` when `v` is isotropic.
 * `Matrix.unitaryTransvection_smul`: rescaling the vector, `τ_{c v,a} = τ_{v, a c σ(c)}`.
@@ -110,6 +111,15 @@ theorem toLin'_unitaryTransvection (a : R) :
   rw [toLin'_apply, unitaryTransvection_mulVec, LinearMap.transvection.apply,
     LinearMap.smul_apply, toBilin'_apply', smul_eq_mul]
 
+/-- **The product of two transvections or quasi-reflections along the same vector**:
+`τ_{v,a} τ_{v,b} = τ_{v, a + b + a b B(v, v)}`. -/
+theorem unitaryTransvection_mul_unitaryTransvection_eq (a b : R) :
+    Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
+      Q.unitaryTransvection σ v (a + b + a * b * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))) := by
+  simp only [unitaryTransvection_def, Matrix.add_mul, Matrix.mul_add, Matrix.one_mul,
+    Matrix.mul_one, smul_mul_smul_comm, vecMulVec_mul_vecMulVec, ← dotProduct_mulVec,
+    vecMulVec_smul, smul_smul, add_smul, add_assoc]
+
 /-- **The parameter of a transvection along an isotropic vector is additive.** If `B(v, v) = 0`,
 then `τ_{v,a} τ_{v,b} = τ_{v,a+b}`, so `a ↦ τ_{v,a}` turns addition into multiplication. Over a
 commutative ring, where `τ_{v,-a}` inverts `τ_{v,a}`, these transvections form a one-parameter
@@ -117,11 +127,7 @@ group. -/
 theorem unitaryTransvection_mul_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a b : R) :
     Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
       Q.unitaryTransvection σ v (a + b) := by
-  refine toLin'.injective ?_
-  rw [toLin'_mul, toLin'_unitaryTransvection, toLin'_unitaryTransvection,
-    LinearMap.transvection.comp_of_right_eq (by
-      rw [LinearMap.smul_apply, toBilin'_apply', hv, smul_zero]),
-    ← add_smul, toLin'_unitaryTransvection]
+  rw [unitaryTransvection_mul_unitaryTransvection_eq, hv, mul_zero, add_zero]
 
 /-- Rescaling the vector of a unitary transvection rescales its parameter by the norm of the
 scalar: `τ_{c v,a} = τ_{v, a c σ(c)}`. -/
