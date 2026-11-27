@@ -11,7 +11,6 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 
@@ -103,10 +102,9 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
           Real.exp_zero, mul_one]
 
 /-- The monomial of degree `j` times the standard Gaussian is bounded in absolute value by
-`j! exp(1 - 2 |x|)`. -/
+`j! exp(1 - |x|)`. -/
 theorem abs_pow_mul_exp_neg_pi_mul_sq_le (j : ℕ) (x : ℝ) :
-    |x ^ j * Real.exp (-Real.pi * x ^ 2)| ≤
-      (j.factorial : ℝ) * Real.exp 1 * Real.exp (-2 * |x|) := by
+    |x ^ j * Real.exp (-Real.pi * x ^ 2)| ≤ (j.factorial : ℝ) * Real.exp 1 * Real.exp (-|x|) := by
   rw [abs_mul, abs_pow, Real.abs_exp, ← sq_abs x]
   calc
     _ ≤ (j.factorial : ℝ) * Real.exp |x| * Real.exp (-Real.pi * |x| ^ 2) := by
@@ -115,10 +113,10 @@ theorem abs_pow_mul_exp_neg_pi_mul_sq_le (j : ℕ) (x : ℝ) :
         (Real.pow_div_factorial_le_exp |x| (abs_nonneg x) j)
     _ = (j.factorial : ℝ) * Real.exp (|x| - Real.pi * |x| ^ 2) := by
       rw [mul_assoc, ← Real.exp_add, neg_mul, sub_eq_add_neg]
-    _ ≤ (j.factorial : ℝ) * Real.exp (1 + -2 * |x|) := by
+    _ ≤ (j.factorial : ℝ) * Real.exp (1 + -|x|) := by
       gcongr
-      have hπ := mul_nonneg (sub_nonneg.mpr Real.pi_gt_three.le) (sq_nonneg |x|)
-      nlinarith [sq_nonneg (|x| - 1 / 2)]
+      have hπ : 0 ≤ Real.pi - 1 := by linarith [Real.two_le_pi]
+      nlinarith [sq_nonneg (|x| - 1), mul_nonneg hπ (sq_nonneg |x|)]
     _ = _ := by rw [Real.exp_add, mul_assoc]
 
 /-- For `0 < b`, `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` uniformly in

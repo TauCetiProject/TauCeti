@@ -18,8 +18,13 @@ The Mellin integral of the theta series with coefficients `μ(n) χ(n)` equals
 approximates that value. Multiplying by the gamma-weighted L-function
 shows that the error is `O(r)`, uniformly in the character, its modulus and the imaginary part.
 This provides the right boundary estimate in the three-lines argument that detects zeros from
-theta integrals. The estimate corresponds to `New.norm_mul_mollifier_sub_le` in
-`grh/src/Lib/Analytic/QuadraticTwist.lean` of lsernau/grh-lean (`72fead1`).
+theta integrals.
+
+The theta–Mellin normalization follows Montgomery and Vaughan, *Multiplicative Number Theory I:
+Classical Theory*, Chapter 10. The zero-cutoff formula corresponds to
+`New.mellin_thetaSeries_moebius` in `grh/src/Lib/Analytic/DirichletTheta.lean`;
+the right boundary estimate corresponds to `New.norm_mul_mollifier_sub_le` in
+`grh/src/Lib/Analytic/QuadraticTwist.lean`, both from lsernau/grh-lean (`72fead1`).
 -/
 
 public section

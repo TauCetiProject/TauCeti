@@ -13,7 +13,7 @@ public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.Mellin
 
 import Mathlib.Analysis.Complex.ExponentialBounds
-import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
+import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
@@ -40,9 +40,6 @@ This is the unscaled theta sum: `Lib/Analytic/DirichletTheta` of lsernau/grh-lea
 multiplies it by `t^(1/2)` and shifts the Mellin argument by `-1/2`.
 
 ## Provenance
-
-The theta–Mellin normalization follows the classical construction in H. L. Montgomery and
-R. C. Vaughan, *Multiplicative Number Theory I: Classical Theory*, Chapter 10.
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
 PBC), commit `72fead102f663d5c7a407964a13dc0cf9d977207`. The file
@@ -146,13 +143,18 @@ theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
 /-- A pointwise exponential majorant for the Gaussian weights of both parities. -/
 private theorem norm_gaussianMonomial_le (j : Fin 2) (x : ℝ) :
     ‖gaussianMonomial j x‖ ≤ 3 * exp (-|x|) ^ 2 := by
-  have hj : j.val.factorial = 1 := by fin_cases j <;> rfl
-  rw [Real.norm_eq_abs, gaussianMonomial, pow_two (exp (-|x|)), ← Real.exp_add, ← two_mul,
-    mul_neg, ← neg_mul]
-  refine (abs_pow_mul_exp_neg_pi_mul_sq_le j.val x).trans ?_
-  rw [hj, Nat.cast_one, one_mul]
-  gcongr
-  exact exp_one_lt_three.le
+  have hpow : |x| ^ j.val ≤ exp |x| :=
+    calc |x| ^ j.val ≤ |x| + 1 := by fin_cases j <;> simp
+      _ ≤ exp |x| := add_one_le_exp _
+  have hexp : |x| + -π * x ^ 2 ≤ 1 + (-|x| + -|x|) := by
+    rw [← sq_abs x]
+    nlinarith [pi_gt_three, sq_nonneg (|x| - 2⁻¹), sq_nonneg |x|]
+  calc ‖gaussianMonomial j x‖ = |x| ^ j.val * exp (-π * x ^ 2) := by
+        simp [gaussianMonomial]
+    _ ≤ exp |x| * exp (-π * x ^ 2) := by gcongr
+    _ ≤ exp (1 + (-|x| + -|x|)) := by rw [← Real.exp_add]; gcongr
+    _ = exp 1 * exp (-|x|) ^ 2 := by rw [Real.exp_add, Real.exp_add, sq]
+    _ ≤ 3 * exp (-|x|) ^ 2 := by gcongr; exact exp_one_lt_three.le
 
 /-- The Mellin integral of the parity-`j` Gaussian converges for `-j < re s`. -/
 theorem mellinConvergent_gaussianMonomial {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
@@ -255,37 +257,46 @@ theorem gaussianDirichletTheta_def (j : ℕ) (a : ℕ → ℂ) (t : ℝ) :
 private theorem norm_gaussianDirichletTheta_term_le (j : ℕ) {a : ℕ → ℂ} {M t : ℝ}
     {n : ℕ} (ha : ‖a (n + 1)‖ ≤ M) :
     ‖a (n + 1) * (((n + 1 : ℕ) * t) ^ j * Real.exp (-Real.pi * ((n + 1 : ℕ) * t) ^ 2) : ℝ)‖ ≤
-      (M * (j.factorial : ℝ) * Real.exp 1) * Real.exp (-((n + 1) * (2 * |t|))) := by
+      (M * (j.factorial : ℝ) * Real.exp 1) * Real.exp (-|t|) ^ (n + 1) := by
   rw [norm_mul, norm_real, Real.norm_eq_abs]
   calc
-    _ ≤ M * ((j.factorial : ℝ) * Real.exp 1 * Real.exp (-2 * |((n + 1 : ℕ) : ℝ) * t|)) :=
+    _ ≤ M * ((j.factorial : ℝ) * Real.exp 1 * Real.exp (-|((n + 1 : ℕ) : ℝ) * t|)) :=
       mul_le_mul ha (abs_pow_mul_exp_neg_pi_mul_sq_le j _) (abs_nonneg _) ((norm_nonneg _).trans ha)
     _ = _ := by
-      rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n + 1 : ℕ))]
-      push_cast
-      ring_nf
+      rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n + 1 : ℕ)),
+        ← Real.exp_natCast_mul, mul_neg]
+      ring
 
-/-- For bounded coefficients the Gaussian theta sum converges absolutely at every nonzero
+/-- For bounded coefficients the Gaussian theta sum converges absolutely at every positive
 argument. -/
 theorem summable_norm_gaussianDirichletTheta (j : ℕ) {a : ℕ → ℂ} {M t : ℝ}
-    (ha : ∀ n ≠ 0, ‖a n‖ ≤ M) (ht : t ≠ 0) :
+    (ha : ∀ n ≠ 0, ‖a n‖ ≤ M) (ht : 0 < t) :
     Summable fun n : ℕ ↦ ‖a (n + 1) *
       (((n + 1 : ℕ) * t) ^ j * Real.exp (-Real.pi * ((n + 1 : ℕ) * t) ^ 2) : ℝ)‖ := by
-  have ht' : 0 < 2 * |t| := mul_pos two_pos (abs_pos.mpr ht)
-  exact (Real.hasSum_mul_exp_neg_nat_succ_mul _ ht').summable
-    |>.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun n ↦
-      norm_gaussianDirichletTheta_term_le j (ha _ (Nat.succ_ne_zero n))
+  have hgeom := (summable_nat_add_iff 1).2 (summable_geometric_of_lt_one (Real.exp_nonneg (-t))
+    (Real.exp_lt_one_iff.mpr (neg_neg_of_pos ht)))
+  exact (hgeom.mul_left (M * (j.factorial : ℝ) * Real.exp 1)).of_nonneg_of_le
+    (fun _ ↦ norm_nonneg _) fun n ↦ by
+      simpa only [abs_of_pos ht] using
+        norm_gaussianDirichletTheta_term_le j (t := t) (ha _ (Nat.succ_ne_zero n))
 
 /-- For coefficients of norm at most `M`, the theta sum at `t > 0` is at most
-`M j! e / (exp (2t) − 1)` in norm. -/
+`M j! e / (exp t − 1)` in norm. -/
 theorem norm_gaussianDirichletTheta_le (j : ℕ) {a : ℕ → ℂ} {M t : ℝ}
     (ha : ∀ n ≠ 0, ‖a n‖ ≤ M) (ht : 0 < t) :
-    ‖gaussianDirichletTheta j a t‖ ≤
-      M * (j.factorial : ℝ) * Real.exp 1 / (Real.exp (2 * t) - 1) := by
+    ‖gaussianDirichletTheta j a t‖ ≤ M * (j.factorial : ℝ) * Real.exp 1 / (Real.exp t - 1) := by
+  have hq := Real.exp_lt_one_iff.mpr (neg_neg_of_pos ht)
+  have hgeom := summable_geometric_of_lt_one (Real.exp_nonneg (-t)) hq
+  have hnorm := summable_norm_gaussianDirichletTheta j ha ht
   rw [gaussianDirichletTheta_def]
-  refine tsum_of_norm_bounded (Real.hasSum_mul_exp_neg_nat_succ_mul _ (by positivity)) fun n ↦ ?_
-  simpa only [abs_of_pos ht] using
-    norm_gaussianDirichletTheta_term_le j (t := t) (ha _ (Nat.succ_ne_zero n))
+  refine (norm_tsum_le_tsum_norm hnorm).trans ((hnorm.tsum_le_tsum
+    (fun n ↦ by simpa only [abs_of_pos ht] using
+      norm_gaussianDirichletTheta_term_le j (t := t) (ha _ (Nat.succ_ne_zero n)))
+    (((summable_nat_add_iff 1).2 hgeom).mul_left _)).trans_eq ?_)
+  simp_rw [tsum_mul_left, pow_succ, tsum_mul_right, tsum_geometric_of_lt_one (Real.exp_nonneg _) hq,
+    Real.exp_neg]
+  have he := Real.exp_pos t
+  field_simp [he.ne', ne_of_gt (Real.one_lt_exp_iff.mpr ht), ne_of_gt hq]
 
 /-- The Mellin transform of the Gaussian theta sum is `LSeries a s` multiplied by
 `Γℝ(s+j)/2` in the common domain of absolute convergence. -/
@@ -313,15 +324,14 @@ theorem norm_integral_gaussianDirichletTheta_sub (j : ℕ) {a : ℕ → ℂ} {M 
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
     rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht.1, sub_re, hs, one_re]
     norm_num
-    have ht0 := ht.1
-    have hden : 0 < Real.exp (2 * t) - 1 := sub_pos.mpr (Real.one_lt_exp_iff.mpr (by positivity))
+    have hden : 0 < Real.exp t - 1 := sub_pos.mpr (Real.one_lt_exp_iff.mpr ht.1)
     have hM : 0 ≤ M := (norm_nonneg _).trans (ha 1 one_ne_zero)
     calc
-      _ ≤ t * (M * (j.factorial : ℝ) * Real.exp 1 / (Real.exp (2 * t) - 1)) :=
+      _ ≤ t * (M * (j.factorial : ℝ) * Real.exp 1 / (Real.exp t - 1)) :=
         mul_le_mul_of_nonneg_left (norm_gaussianDirichletTheta_le j ha ht.1) ht.1.le
       _ ≤ _ := by
         rw [mul_comm t, div_mul_eq_mul_div, div_le_iff₀ hden]
-        exact mul_le_mul_of_nonneg_left (by linarith [Real.add_one_le_exp (2 * t)]) (by positivity)
+        exact mul_le_mul_of_nonneg_left (by linarith [Real.add_one_le_exp t]) (by positivity)
   simpa [hr, mul_comm] using norm_setIntegral_le_of_norm_le_const_ae (μ := volume)
     measure_Ioc_lt_top hbound
 
