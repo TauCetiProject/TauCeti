@@ -262,6 +262,7 @@ theorem projectivePlaneTopChart_symm_apply (u : EuclideanSpace ℝ (Fin 2)) :
   (rfl)
 
 /-- The inverse chart sends the origin to the maximum `[0 : 0 : 1]`. -/
+@[simp]
 theorem projectivePlaneTopChart_symm_zero :
     projectivePlaneTopChart.symm 0 = mk ℝ ![0, 0, 1] (by simp) := by
   rw [projectivePlaneTopChart_symm_apply]
@@ -532,12 +533,6 @@ end Attaching
 /-! ### The lower sublevels are homotopy equivalent to the projective line `z = 0` -/
 
 section Sublevel
-
-/-- Equal nonzero vectors span the same point of the projective space. -/
-private theorem mk_eq_mk_of_eq {V : Type*} [AddCommGroup V] [Module ℝ V] {v w : V} (h : v = w)
-    {hv : v ≠ 0} {hw : w ≠ 0} : mk ℝ v hv = mk ℝ w hw := by
-  subst h
-  rfl
 
 /-- The linear map `(x, y, z) ↦ (x, y)`. -/
 private def dropLast : (Fin 3 → ℝ) →ₗ[ℝ] Fin 2 → ℝ :=

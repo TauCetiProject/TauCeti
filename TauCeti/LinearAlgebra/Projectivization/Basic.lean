@@ -26,7 +26,8 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
 two nonzero vectors give the same point exactly when the first lies on the line spanned by the
-second (`Projectivization.mk_eq_mk_iff_mem_span`).
+second (`Projectivization.mk_eq_mk_iff_mem_span`), and equal nonzero vectors give the same point
+whatever the proofs that they are nonzero (`Projectivization.mk_eq_mk_of_eq`).
 
 A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
 `[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
@@ -78,6 +79,13 @@ spanned by the second. -/
 theorem mk_eq_mk_iff_mem_span {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
     mk K v hv = mk K w hw ↔ v ∈ K ∙ w := by
   rw [mk_eq_mk_iff', Submodule.mem_span_singleton]
+
+variable {K} in
+/-- Equal nonzero vectors span the same projective point, whatever the nonvanishing proofs. -/
+theorem mk_eq_mk_of_eq {v w : V} (h : v = w) {hv : v ≠ 0} {hw : w ≠ 0} :
+    mk K v hv = mk K w hw := by
+  subst h
+  rfl
 
 variable {K} in
 /-- The projectivization of a vector space of dimension at most one has at most one point: all
