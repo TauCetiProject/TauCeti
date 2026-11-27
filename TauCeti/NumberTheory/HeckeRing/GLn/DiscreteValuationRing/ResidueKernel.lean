@@ -70,6 +70,7 @@ theorem mul_inv_mem_integralGL_iff_residueKer_eq {ι : Type*} [Fintype ι] [Deci
     (hA' : A'.map (algebraMap R K) = g') (h' : A' * B' = ϖ • 1) :
     g * g'⁻¹ ∈ integralGL R K ι ↔ A.residueKer = A'.residueKer := by
   rw [eq_comm, ← exists_eq_mul_iff_residueKer_eq hϖ h' h]
+  rw [MonoidHom.mem_range]
   refine exists_congr fun U ↦ ?_
   rw [eq_mul_inv_iff_mul_eq, eq_comm, ← Units.val_inj, Units.val_mul,
     GeneralLinearGroup.val_map_apply, ← hA, ← hA', ← Matrix.map_mul]

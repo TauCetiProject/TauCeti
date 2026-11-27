@@ -125,9 +125,10 @@ theorem residueKer_mul_units (A : Matrix ι ι R) (U : GL ι R) :
     (A * (U : Matrix ι ι R)).residueKer =
       (GeneralLinearGroup.map (residue R) U)⁻¹ • A.residueKer := by
   set Ū := GeneralLinearGroup.map (residue R) U
-  -- the matrix of `Ū` is the entrywise reduction of `U`, by definition of `GeneralLinearGroup.map`
+  -- the matrix of `Ū` is the entrywise reduction of `U`
   have hŪ (v : ι → ResidueField R) :
-      (U : Matrix ι ι R).map (residue R) *ᵥ v = Ū • v := (rfl)
+      (U : Matrix ι ι R).map (residue R) *ᵥ v = Ū • v := by
+    rw [GeneralLinearGroup.smul_eq_mulVec, GeneralLinearGroup.val_map_apply]
   ext v
   refine ⟨fun h ↦ (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr
     ⟨Ū • v, mem_residueKer.mpr ?_, inv_smul_smul Ū v⟩, fun h ↦ ?_⟩
@@ -147,10 +148,11 @@ theorem exists_residueKer_mul_eq (A : Matrix ι ι R)
   obtain ⟨U, hU⟩ := GeneralLinearGroup.map_surjective (n := ι) (residue R) residue_surjective P⁻¹
   exact ⟨U, by rw [residueKer_mul_units, hU, inv_inv, hP]⟩
 
-/-- If `ϖ` lies in the maximal ideal, then `ϖ ^ dim ker Ā` divides `det A`: after a change of basis
-`U ∈ GL_n(R)` the columns of `A U` indexed by a basis of `ker Ā` are divisible by `ϖ`. -/
+/-- If `ϖ` generates the maximal ideal, then `ϖ ^ dim ker Ā` divides `det A`. -/
 theorem pow_finrank_residueKer_dvd_det {ϖ : R} (hϖ : maximalIdeal R = Ideal.span {ϖ})
     (A : Matrix ι ι R) : ϖ ^ finrank (ResidueField R) A.residueKer ∣ A.det := by
+  -- after a change of basis `U ∈ GL_n(R)`, the columns of `A U` indexed by a basis of `ker Ā` are
+  -- divisible by `ϖ`
   -- a set `s` of `dim ker Ā` coordinates and the subspace `W` spanned by their basis vectors
   have hle : finrank (ResidueField R) A.residueKer ≤ (Finset.univ : Finset ι).card := by
     have := Submodule.finrank_le A.residueKer
@@ -185,17 +187,6 @@ end LocalRing
 section DiscreteValuationRing
 
 variable [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
-
-omit [Fintype ι] in
-/-- A matrix whose reduction vanishes is `ϖ` times an integral matrix. -/
-private theorem exists_eq_smul_of_map_residue_eq_zero (hϖ : Irreducible ϖ) {M : Matrix ι ι R}
-    (h : M.map (residue R) = 0) : ∃ C : Matrix ι ι R, M = ϖ • C := by
-  have hdvd (i j : ι) : ∃ c, M i j = ϖ * c := by
-    have := forall_mem_ker_iff_map_eq_zero.mpr h i j
-    rw [ker_residue, hϖ.maximalIdeal_eq] at this
-    exact Ideal.mem_span_singleton.mp this
-  choose C hC using hdvd
-  exact ⟨of C, ext fun i j ↦ by simp [hC]⟩
 
 variable [DecidableEq ι]
 
@@ -233,12 +224,17 @@ theorem associated_det_pow_finrank_residueKer (hϖ : Irreducible ϖ) {A B : Matr
     have := Submodule.finrank_mono hrange
     omega
   obtain ⟨t, ht⟩ := Nat.exists_eq_add_of_le hle
-  have hprod := congrArg det h
-  rw [det_mul, det_smul, det_one, mul_one, ha, hb, mul_mul_mul_comm, ← pow_add, ht, pow_add,
-    mul_assoc, ← sub_eq_zero, ← mul_sub_one, mul_eq_zero, sub_eq_zero] at hprod
+  -- `ϖ ^ k * a * (ϖ ^ m * b) = det A * det B = ϖ ^ n` and `ϖ ^ k * ϖ ^ m = ϖ ^ n * ϖ ^ t`, so
+  -- `ϖ ^ n * (ϖ ^ t * a * b) = ϖ ^ n`, and cancelling `ϖ ^ n` shows that `a` is a unit
+  have hpow : ϖ ^ finrank (ResidueField R) A.residueKer *
+      ϖ ^ finrank (ResidueField R) B.residueKer = ϖ ^ Fintype.card ι * ϖ ^ t := by
+    rw [← pow_add, ← pow_add, ht]
+  have hprod : ϖ ^ Fintype.card ι * (ϖ ^ t * a * b) = ϖ ^ Fintype.card ι * 1 := by
+    have hdet := congrArg det h
+    rw [det_mul, det_smul, det_one, mul_one, ha, hb] at hdet
+    linear_combination hdet - a * b * hpow
   have hunit : IsUnit a := IsUnit.of_mul_eq_one (ϖ ^ t * b) <| by
-    rw [← (hprod.resolve_left (pow_ne_zero _ hϖ.ne_zero))]
-    ring
+    linear_combination mul_left_cancel₀ (pow_ne_zero _ hϖ.ne_zero) hprod
   rw [ha]
   exact (associated_mul_unit_right _ _ hunit).symm
 
@@ -262,7 +258,8 @@ so it is divisible by `ϖ`. -/
 private theorem exists_mul_eq_smul (hϖ : Irreducible ϖ) {A B A' : Matrix ι ι R}
     (h : A * B = ϖ • 1) (hker : A.residueKer ≤ A'.residueKer) :
     ∃ C : Matrix ι ι R, A' * B = ϖ • C := by
-  refine exists_eq_smul_of_map_residue_eq_zero hϖ (ext fun i j ↦ ?_)
+  refine (map_eq_zero_iff_exists_eq_smul (ker_residue.trans hϖ.maximalIdeal_eq)).mp
+    (ext fun i j ↦ ?_)
   have h0 := congrFun (mem_residueKer.mp (hker (mulVec_mem_residueKer hϖ h (Pi.single j 1)))) i
   rwa [mulVec_mulVec, ← Matrix.map_mul, mulVec_single_one, col_apply] at h0
 
