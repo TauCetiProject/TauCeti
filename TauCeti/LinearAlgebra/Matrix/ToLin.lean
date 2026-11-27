@@ -370,9 +370,8 @@ theorem toLin_apply_fin_two {R V M : Type*} [CommSemiring R] [AddCommMonoid V] [
     (A : Matrix (Fin 2) (Fin 2) R) (x y : R) :
     Matrix.toLin v b A (x • v 0 + y • v 1) =
       (A 0 0 * x + A 0 1 * y) • b 0 + (A 1 0 * x + A 1 1 * y) • b 1 := by
-  simp only [map_add, map_smul, toLin_self, Fin.sum_univ_two, smul_add, smul_smul, add_smul]
-  rw [mul_comm x, mul_comm y, mul_comm x, mul_comm y]
-  abel
+  simp only [map_add, map_smul, toLin_self, Fin.sum_univ_two]
+  match_scalars <;> ring
 
 section Bilinear
 
