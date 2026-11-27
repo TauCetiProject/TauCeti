@@ -307,12 +307,11 @@ theorem cauchyPompeiu_jordanBoundaryCycle_smul {E : Type*} [NormedAddCommGroup E
         (Contour.jordanBoundaryCycle γ₀ s γ).integral (fun z ↦ (z - ξ)⁻¹ • f z) -
       (Real.pi : ℂ)⁻¹ • ∫ z in Contour.jordanRegion γ₀ s γ,
         (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 :=
-  cauchyPompeiu_smul hΩ (Contour.isOpen_jordanRegion hab₀ hinj₀ hab hinj) hclosure
+  cauchyPompeiu_smul hΩ Contour.isOpen_jordanRegion hclosure
     (Contour.jordanBoundaryCycle γ₀ s γ)
     (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
     (fun _ hz ↦ Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz)
-    f hf hξ
-    (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hξ)
+    f hf hξ (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hξ)
 
 /-- **Cauchy–Pompeiu formula on a finitely connected Jordan region.** Given an outer simple closed
 absolutely continuous curve `γ₀` and simple closed absolutely continuous hole curves
@@ -336,12 +335,11 @@ theorem cauchyPompeiu_jordanBoundaryCycle {γ₀ : Contour.AbsolutelyContinuousC
       (2 * (Real.pi : ℂ))⁻¹ *
         ∫ z in Contour.jordanRegion γ₀ s γ,
           (fderiv ℝ f z 1 + Complex.I * fderiv ℝ f z Complex.I) / (z - ξ) :=
-  cauchyPompeiu hΩ (Contour.isOpen_jordanRegion hab₀ hinj₀ hab hinj) hclosure
+  cauchyPompeiu hΩ Contour.isOpen_jordanRegion hclosure
     (Contour.jordanBoundaryCycle γ₀ s γ)
     (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
     (fun _ hz ↦ Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz)
-    f hf hξ
-    (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hξ)
+    f hf hξ (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hξ)
 
 end JordanRegion
 

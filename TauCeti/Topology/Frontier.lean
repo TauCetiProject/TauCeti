@@ -122,12 +122,9 @@ let alone a holomorphic map.
   set where it is continuous.
 * `TauCeti.nonneg_of_forall_abs_le_frontier` — a bound for the absolute value of a function on the
   frontier of a nonempty compact set in a preconnected noncompact space is nonnegative.
-* `IsOpen.closure_sdiff_of_isClosed` and `IsOpen.frontier_sdiff_of_isClosed` — the closure and
-  frontier of an open set with a closed subset removed.
-* `TauCeti.interior_biUnion_of_isClosed_of_pairwiseDisjoint` — the interior of a finite union of
-  pairwise-disjoint closed sets is the union of their interiors.
-* `IsOpen.closure_sdiff_biUnion` and `IsOpen.frontier_sdiff_biUnion` — the closure and frontier
-  of an open set with finitely many pairwise-disjoint closed subsets removed.
+* `IsOpen.frontier_sdiff_of_isClosed` — the frontier of an open set with a closed subset removed.
+* `IsOpen.frontier_sdiff_biUnion` — the frontier of an open set with finitely many
+  pairwise-disjoint closed subsets removed.
 -/
 
 public section
@@ -393,14 +390,6 @@ section FiniteHoles
 
 variable {X ι : Type*} [TopologicalSpace X]
 
-/-- Removing a closed subset `K ⊆ U` from an open set `U` gives a set whose closure is
-`closure U \ interior K`. -/
-theorem _root_.IsOpen.closure_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (hK : IsClosed K)
-    (hKU : K ⊆ U) : closure (U \ K) = closure U \ interior K := by
-  have hcodisj : Codisjoint (interior U) (interior Kᶜ) :=
-    codisjoint_iff.mpr (interior_union_interior_compl_eq_univ hU hK hKU)
-  rw [sdiff_eq, closure_inter_of_codisjoint_interior hcodisj, closure_compl, sdiff_eq]
-
 /-- Removing a closed subset `K ⊆ U` from an open set `U` gives a set whose frontier is
 `frontier U ∪ frontier K`. -/
 theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (hK : IsClosed K)
@@ -415,36 +404,6 @@ theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (
       exact ⟨⟨hxUcl, fun h ↦ hxU (hKU (interior_subset h))⟩, fun h ↦ hxU h.1⟩
     · have hxK : x ∈ K := hK.closure_eq ▸ hxKcl
       exact ⟨⟨subset_closure (hKU hxK), hxKint⟩, fun h ↦ h.2 hxK⟩
-
-/-- The interior of a finite union of pairwise-disjoint closed sets is the union of their
-interiors. -/
-theorem interior_biUnion_of_isClosed_of_pairwiseDisjoint {s : Finset ι} {K : ι → Set X}
-    (hK : ∀ i ∈ s, IsClosed (K i)) (hdisj : (s : Set ι).PairwiseDisjoint K) :
-    interior (⋃ i ∈ s, K i) = ⋃ i ∈ s, interior (K i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i t hi ih =>
-    have hKi : IsClosed (K i) := hK i (Finset.mem_insert_self i t)
-    have ht' : ∀ j ∈ t, IsClosed (K j) := fun j hj ↦ hK j (Finset.mem_insert_of_mem hj)
-    have hKt : IsClosed (⋃ j ∈ t, K j) := t.finite_toSet.isClosed_biUnion ht'
-    have hdisj_it : Disjoint (closure (K i)) (closure (⋃ j ∈ t, K j)) := by
-      rw [hKi.closure_eq, hKt.closure_eq]
-      exact Set.disjoint_iUnion₂_right.mpr fun j hj ↦ hdisj (Finset.mem_insert_self i t)
-        (Finset.mem_insert_of_mem hj) (fun h ↦ hi (h ▸ hj))
-    rw [Finset.set_biUnion_insert, interior_union_of_disjoint_closure hdisj_it,
-      ih ht' (hdisj.subset (Finset.coe_subset.mpr (Finset.subset_insert i t))),
-      Finset.set_biUnion_insert]
-
-/-- Removing finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`) from an open set
-`U` gives a set whose closure is `closure U \ ⋃ i ∈ s, interior (K i)`. -/
-theorem _root_.IsOpen.closure_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
-    {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
-    (hdisj : (s : Set ι).PairwiseDisjoint K) :
-    closure (U \ ⋃ i ∈ s, K i) = closure U \ ⋃ i ∈ s, interior (K i) := by
-  have hK_star : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
-  rw [hU.closure_sdiff_of_isClosed hK_star (iUnion₂_subset hsub),
-    interior_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj]
 
 /-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
 `U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of

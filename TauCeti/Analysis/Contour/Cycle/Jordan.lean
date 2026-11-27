@@ -368,16 +368,13 @@ theorem jordanRegion_empty (γ₀ : AbsolutelyContinuousClosedCurve)
     jordanRegion γ₀ ∅ γ = filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b) := by
   simp [jordanRegion]
 
-/-- A finitely connected Jordan region `jordanRegion γ₀ s γ` bounded by simple closed absolutely
-continuous curves `γ₀` and `γ i` (`i ∈ s`) is open. -/
+/-- The region `jordanRegion γ₀ s γ` determined by closed absolutely continuous curves `γ₀` and
+`γ i` (`i ∈ s`) is open. -/
 theorem isOpen_jordanRegion {γ₀ : AbsolutelyContinuousClosedCurve} {s : Finset ι}
-    {γ : ι → AbsolutelyContinuousClosedCurve} (hab₀ : γ₀.a ≠ γ₀.b)
-    (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
-    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
-    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b))) :
+    {γ : ι → AbsolutelyContinuousClosedCurve} :
     IsOpen (jordanRegion γ₀ s γ) :=
-  (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).isClosed.isOpen_filledHull_sdiff_biUnion s
-    fun i hi ↦ ((γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)).isClosed
+  (isCompact_uIcc.image_of_continuousOn γ₀.continuousOn).isClosed.isOpen_filledHull_sdiff_biUnion
+    s fun i _ ↦ (isCompact_uIcc.image_of_continuousOn (γ i).continuousOn).isClosed
 
 namespace Cycle
 
@@ -467,18 +464,17 @@ theorem trace_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
       (fun i hi ↦ (γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)) hsub hdisj]
 
 /-- Any point of `jordanRegion γ₀ s γ` lies off the trace of `jordanBoundaryCycle γ₀ s γ`. -/
-theorem notMem_trace_jordanBoundaryCycle_of_mem (hab₀ : γ₀.a ≠ γ₀.b)
-    (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
-    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
-    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))
-    (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
-      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
-    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    {z : ℂ} (hz : z ∈ jordanRegion γ₀ s γ) :
+theorem notMem_trace_jordanBoundaryCycle_of_mem {z : ℂ} (hz : z ∈ jordanRegion γ₀ s γ) :
     z ∉ trace (jordanBoundaryCycle γ₀ s γ) := by
-  rw [trace_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj]
-  exact Set.disjoint_right.mp
-    (disjoint_frontier_iff_isOpen.mpr (isOpen_jordanRegion hab₀ hinj₀ hab hinj)) hz
+  intro htr
+  rw [mem_jordanRegion_iff] at hz
+  rw [jordanBoundaryCycle] at htr
+  rcases trace_sub_subset _ _ htr with h₀ | hi
+  · rw [trace_of, AbsolutelyContinuousClosedCurve.image_positivelyOrient] at h₀
+    exact hz.1.2 h₀
+  · obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.mp (trace_sum_subset s _ hi)
+    rw [trace_of, AbsolutelyContinuousClosedCurve.image_positivelyOrient] at hzi
+    exact hz.2 i hi (subset_filledHull hzi)
 
 open scoped Classical in
 /-- **Winding-number adapter for `jordanBoundaryCycle`.** Off its trace
@@ -531,8 +527,7 @@ theorem windingWeight_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
   ext z
   by_cases htr : z ∈ trace (jordanBoundaryCycle γ₀ s γ)
   · rw [windingWeight_eq_zero_of_mem _ htr,
-      indicator_of_notMem fun hzΔ ↦
-        notMem_trace_jordanBoundaryCycle_of_mem hab₀ hinj₀ hab hinj hsub hdisj hzΔ htr]
+      indicator_of_notMem fun hzΔ ↦ notMem_trace_jordanBoundaryCycle_of_mem hzΔ htr]
   · rw [windingWeight_eq_of_notMem _ htr,
       windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj htr]
     by_cases hzΔ : z ∈ jordanRegion γ₀ s γ <;> simp [hzΔ]
