@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.GroupTheory.GroupAction.Effective
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
 import TauCeti.Algebra.Lie.Quotient
@@ -53,6 +54,10 @@ of `G ⧸ N` is smooth, and describes its Lie algebra and its actions.
   (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`). As `N` is normal, `G ⧸ N` acts on
   `M ⧸ N` through representatives (`MulAction.orbitRel.Quotient.instMulActionQuotientGroup`), and
   this residual action is smooth (`Subgroup.contMDiffSMul_orbitRelQuotientOfIsClosed`).
+* **The faithful quotient of an action.** If `G` acts smoothly on `M` and the kernel `K` of the
+  action is closed, as it is when `M` is Hausdorff (`TauCeti.isClosed_ker_toPermHom`), the
+  quotient Lie group `G ⧸ K` acts smoothly and faithfully on `M` by `[g] • x = g • x`
+  (`Subgroup.contMDiffSMul_quotientKerToPermHom`).
 
 These are the groups and actions of symplectic reduction in stages: for a Hamiltonian action of
 `G` and a closed normal subgroup `N`, the residual group `G ⧸ N`, with Lie algebra `𝔤 ⧸ 𝔫`, acts on
@@ -404,5 +409,37 @@ theorem contMDiffSMul_orbitRelQuotientOfIsClosed [N.Normal] (hN : IsClosed (N : 
   exact hπM.contMDiff.comp contMDiff_smul
 
 end Action
+
+/-! ### The faithful quotient of an action -/
+
+section Faithful
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M] [ContMDiffSMul I I' ∞ G M]
+
+/-- **The faithful quotient of a smooth action acts smoothly.** If the Lie group `G` acts smoothly
+on `M` and the kernel `K` of the action is closed, the quotient Lie group `G ⧸ K` acts smoothly on
+`M` by `[g] • x = g • x`, and faithfully (`TauCeti.instFaithfulSMulQuotientKerToPermHom`). The
+kernel is closed as soon as `M` is Hausdorff (`TauCeti.isClosed_ker_toPermHom`). -/
+theorem contMDiffSMul_quotientKerToPermHom
+    (hK : IsClosed ((MulAction.toPermHom G M).ker : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    ContMDiffSMul 𝓘(ℝ, QuotientModelSpace I (MulAction.toPermHom G M).ker) I' ∞
+      (G ⧸ (MulAction.toPermHom G M).ker) M := by
+  let _ := quotientChartedSpaceOfIsClosed I hK
+  refine ⟨fun p ↦ ?_⟩
+  -- Near `p`, a smooth local section `s` of `G → G ⧸ K` writes the action as `(q, x) ↦ s q • x`.
+  obtain ⟨U, hU, hpU, s, hs, hmks⟩ := (isSubmersion_quotientMk (I := I) hK)
+    |>.exists_contMDiffOn_section_of_surjective QuotientGroup.mk_surjective p.1
+  have hEq : (fun q : (G ⧸ (MulAction.toPermHom G M).ker) × M ↦ s q.1 • q.2) =ᶠ[nhds p]
+      fun q ↦ q.1 • q.2 := by
+    filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds (hU.mem_nhds hpU)] with q hq
+    rw [← TauCeti.quotientKerToPermHom_mk_smul, hmks q.1 hq]
+  refine ContMDiffAt.congr_of_eventuallyEq ?_ hEq.symm
+  exact contMDiff_smul.contMDiffAt.comp p
+    (((hs.contMDiffAt (hU.mem_nhds hpU)).comp p contMDiffAt_fst).prodMk contMDiffAt_snd)
+
+end Faithful
 
 end Subgroup
