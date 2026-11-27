@@ -19,8 +19,8 @@ import TauCeti.Geometry.Manifold.ExtChartAt
 /-!
 # Averaging differential forms over a compact group action
 
-Let a group `G`, which is a compact smooth manifold, act smoothly on a boundaryless smooth
-manifold `M`, and let `μ` be a finite measure on `G`. For a smooth differential form `α` on `M`
+Let a group `G`, which is a compact smooth manifold, act smoothly on a smooth manifold `M`, and
+let `μ` be a finite measure on `G`. For a smooth differential form `α` on `M`
 with values in a Banach space, `TauCeti.SmoothForm.measureAverage J μ α` is the form
 
 `(avg α)_x (v₁, …, vₖ) = ∫ α_{a • x}(d(a •)_x v₁, …, d(a •)_x vₖ) dμ(a)`,
@@ -34,10 +34,11 @@ Averaging is the basic tool for producing invariant forms. When `μ` is right-in
 instance the normalized Haar measure `TauCeti.haarProb`, every element of `G` preserves the
 averaged form (`TauCeti.SmoothForm.mpullback_smul_measureAverage`), and when `μ` is moreover a
 right-invariant probability measure, averaging fixes exactly the invariant forms
-(`TauCeti.SmoothForm.measureAverage_eq_self_iff`). Averaging commutes with the exterior derivative
-(`TauCeti.SmoothForm.mextDerivₗ_measureAverage`): in a chart, the coordinate expression of the
-average is the integral of the coordinate expressions of the pullbacks, which are jointly smooth in
-the chart point and the group element, and the exterior derivative can be taken under the integral
+(`TauCeti.SmoothForm.measureAverage_eq_self_iff`). When `M` is boundaryless, averaging commutes
+with the exterior derivative (`TauCeti.SmoothForm.mextDerivₗ_measureAverage`): in a chart, the
+coordinate expression of the average is the integral of the coordinate expressions of the
+pullbacks, which are jointly smooth in the chart point and the group element, and the exterior
+derivative can be taken under the integral
 (`TauCeti.extDeriv_integral_of_contMDiffOn`). Hence the average of a closed form is closed
 (`TauCeti.SmoothForm.IsClosed.measureAverage`), and the average of an exact form `d β` is the
 exact form `d (avg β)`. A form vanishing at every point of an orbit has average
@@ -219,9 +220,8 @@ private theorem averageModel_add (α β : SmoothForm I M F k) (x : M) :
   simp only [averageModel, h]
   exact integral_add (integrable_pullbackSMulForm J μ α x) (integrable_pullbackSMulForm J μ β x)
 
-variable [I.Boundaryless]
-
 omit [MeasurableSpace G] [CompactSpace G] [T2Space G] [OpensMeasurableSpace G] in
+variable [I.Boundaryless] in
 /-- In the chart at `x₀`, the coordinate expressions of the pullbacks of a smooth form by the
 action are jointly smooth in the chart point and the group element. -/
 private theorem contMDiffOn_inChartAt_mpullback_smul (α : SmoothForm I M F k) (x₀ : M) :
@@ -264,8 +264,8 @@ private theorem contMDiff_averageForm (α : SmoothForm I M F k) :
 namespace SmoothForm
 
 /-- **The average of a differential form over a compact group action.** For a group `G` that is
-a compact smooth manifold acting smoothly on a boundaryless smooth manifold `M`, and a finite
-measure `μ` on `G`, this sends a smooth form `α` to the smooth form
+a compact smooth manifold acting smoothly on a smooth manifold `M`, and a finite measure `μ` on
+`G`, this sends a smooth form `α` to the smooth form
 
 `(avg α)_x (v₁, …, vₖ) = ∫ α_{a • x}(d(a •)_x v₁, …, d(a •)_x vₖ) dμ(a)`.
 
@@ -346,6 +346,8 @@ theorem measureAverage_eq_zero_of_forall_smul (α : SmoothForm I M F k) {x : M}
   simp
 
 end SmoothForm
+
+variable [I.Boundaryless]
 
 /-- Near the chart point of `x`, the coordinate expression of the average in the chart at `x` is the
 integral of the coordinate expressions of the pullbacks. -/

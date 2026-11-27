@@ -66,7 +66,7 @@ namespace TauCeti
 namespace LieTestFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
 
@@ -76,21 +76,21 @@ section Integrand
 
 variable (a b : LieTestFunction I G)
 
-omit [I.Boundaryless] [LieGroup I ∞ G] [MeasurableSpace G] [OpensMeasurableSpace G] in
+omit [LieGroup I ∞ G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The convolution integrand `x ↦ a x * b (x⁻¹ * g)` vanishes unless `x ∈ support a` and
 `x⁻¹ * g ∈ support b`. -/
 private theorem mem_support_of_mul_ne_zero {x g : G} (h : a x * b (x⁻¹ * g) ≠ 0) :
     x ∈ support a ∧ x⁻¹ * g ∈ support b :=
   mem_support_and_inv_mul_mem_support h (fun h ↦ by simp [h]) (fun h ↦ by simp [h])
 
-omit [I.Boundaryless] [LieGroup I ∞ G] [MeasurableSpace G] [OpensMeasurableSpace G] in
+omit [LieGroup I ∞ G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The convolution integrand `x ↦ a x * b (x⁻¹ * g)` vanishes unless `x ∈ tsupport a` and
 `x⁻¹ * g ∈ tsupport b`. -/
 private theorem mem_tsupport_of_mul_ne_zero {x g : G} (h : a x * b (x⁻¹ * g) ≠ 0) :
     x ∈ tsupport a ∧ x⁻¹ * g ∈ tsupport b :=
   mem_tsupport_and_inv_mul_mem_tsupport h (fun h ↦ by simp [h]) (fun h ↦ by simp [h])
 
-omit [I.Boundaryless] [MeasurableSpace G] [OpensMeasurableSpace G] in
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The convolution integrand is jointly continuous. -/
 private theorem continuous_integrand :
     Continuous (uncurry fun (g x : G) ↦ a x * b (x⁻¹ * g)) := by
@@ -98,7 +98,6 @@ private theorem continuous_integrand :
   rw [uncurry_def]
   fun_prop
 
-omit [I.Boundaryless] in
 /-- The convolution integrand is integrable against any measure finite on compact sets. -/
 theorem integrable_mul_inv_mul (g : G) : Integrable (fun x ↦ a x * b (x⁻¹ * g)) μ :=
   ((continuous_integrand a b).comp (.prodMk_right g)).integrable_of_hasCompactSupport
