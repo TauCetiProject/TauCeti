@@ -75,8 +75,8 @@ remaining term with a direct lift or a lift by `Ψ_row`, moved by an integral ma
 * `TauCeti.ThetaLift.LiftLaw.isRamified_apply`, `TauCeti.ThetaLift.IsRamified.upOperator` and
   `TauCeti.ThetaLift.IsRamified.upOperator_pow`: lifts, `Up` and its powers keep vectors ramified.
 * `TauCeti.ThetaLift.LiftLaw.gluedLift_apply_eq_smul`: on ramified vectors, a glued double lift is
-  `#prim · γ' γ` times the two direct lifts after `Up`, where `#prim` counts the primitive vectors
-  (`TauCeti.primitiveVectors`, the vectors nonzero at every place).
+  `#prim · γ' γ` times the two direct lifts after `Up`, where `#prim` counts the vectors nonzero
+  at every place (`TauCeti.piNonzeroVectors`).
 * `TauCeti.ThetaLift.gluedChain_eq_smul_directChain`: on ramified vectors, the first `p` glued
   double lifts of a chain are `∏_{i<p} (d_i · #prim_i · ∏_{j<2i+2} γ_j)` times the first `2p`
   direct lifts after `Up^p`.
@@ -610,22 +610,22 @@ variable {k A F P 𝔽 : Type*} [CommRing k] [CommRing A] [CommRing F] [Algebra 
 the lift laws with factors `γ` and `γ'`, a ramified vector `φ` and an `Up`-family `g` of the
 source,
 `π''(D'') ∑_y L'(char_y) L(lastCol_y) φ = (#prim · γ' γ) · L'(direct) L(direct)(Up φ)`, where
-`#prim` is the number of primitive vectors of `m' → P → 𝔽`. -/
+`#prim` is the number of vectors of `m' → P → 𝔽` nonzero at every place. -/
 theorem LiftLaw.gluedLift_apply_eq_smul [IsLocalHom red] (hred : Function.Surjective red)
     (hL : LiftLaw red π π' D D' l l' L γ) (hL' : LiftLaw red π' π'' D' D'' l' l'' L' γ')
     {g : (m → P → 𝔽) → GL m A} (hg : IsUpFamily red l g) (hφ : IsRamified red π φ)
     (ψ : (P → 𝔽) → k) :
     gluedLift π'' D'' L L' ψ l l'' φ =
-      ((#(primitiveVectors m' P 𝔽) : k) * γ' * γ) •
+      ((#(piNonzeroVectors m' P 𝔽) : k) * γ' * γ) •
         L' (directDatum k l' l'') (L (directDatum k l l') (upOperator π D l g ψ φ)) := by
   obtain ⟨g', hg'⟩ := exists_isUpFamily red hred l'
   have hterm (y : m' → P → 𝔽) :
       L' (charDatum ψ l'' y) (L (lastColDatum k l y) φ) =
-        if y ∈ primitiveVectors m' P 𝔽 then
+        if y ∈ piNonzeroVectors m' P 𝔽 then
           L' (mirrorDatum ψ l' l'') (L (directDatum k l l') φ) else 0 := by
     split_ifs with hy
-    · -- a primitive column is the column of an integral invertible matrix `b`
-      obtain ⟨b, hb⟩ := exists_map_col_eq_of_mem_primitiveVectors red hred hy l'
+    · -- a column nonzero at every place is the column of an integral invertible matrix `b`
+      obtain ⟨b, hb⟩ := exists_map_col_eq_of_mem_piNonzeroVectors red hred hy l'
       rw [← hb, hL.apply_lastColDatum_col, hL'.apply_charDatum_col]
     · -- a column vanishing at a place `w` gives a datum invariant under the scalings at `w`
       obtain ⟨w, hw⟩ : ∃ w, ∀ i, y i w = 0 := by simpa using hy
@@ -740,13 +740,13 @@ lift laws with factors `γ_j`, a ramified vector `φ` and an `Up`-family `g` at 
 composite of the first `p` glued double lifts
 `d_i · π(D) ∑_y L_{2i+1}(char_y) ∘ L_{2i}(lastCol_y)` takes `φ` to
 `∏_{i<p} (d_i · #prim_i · ∏_{j<2i+2} γ_j)` times the first `2p` direct lifts of `Up^p φ`, where
-`#prim_i` is the number of primitive vectors of `m_{2i+1} → P → 𝔽`. -/
+`#prim_i` is the number of vectors of `m_{2i+1} → P → 𝔽` nonzero at every place. -/
 theorem gluedChain_eq_smul_directChain [IsLocalHom red] (hred : Function.Surjective red)
     (hL : ∀ j, LiftLaw red (π j) (π (j + 1)) (D j) (D (j + 1)) (l j) (l (j + 1)) (L j) (γ j))
     {g : (m 0 → P → 𝔽) → GL (m 0) A} (hg : IsUpFamily red (l 0) g)
     (hφ : IsRamified red (π 0) φ) (ψ : (P → 𝔽) → k) (d : ℕ → k) (p : ℕ) :
     gluedChain π D L l ψ d p φ =
-      (∏ i ∈ range p, (d i * #(primitiveVectors (m (2 * i + 1)) P 𝔽) *
+      (∏ i ∈ range p, (d i * #(piNonzeroVectors (m (2 * i + 1)) P 𝔽) *
         ∏ j ∈ range (2 * i + 2), γ j)) •
         directChain L l (2 * p) ((upOperator (π 0) (D 0) (l 0) g ψ ^ p) φ) := by
   classical
