@@ -23,11 +23,13 @@ reference map `w`, `TauCeti.SymplecticForm.floerSection`, is therefore the quasi
 `TauCeti.quasilinearSection` of these coefficients, with `b = ∂t w`. It is defined on any space `X`
 of `Lᵖ(μ)` jets `(ξ, ξ_s, ξ_t)` whose values have continuous representatives
 `e : X →L[ℝ] (ℝ × ℝ →ᵇ V)`. For `2 < p < ∞` the Sobolev embedding supplies them on
-`W^{1,p}(ℝ × S¹, V)` of the cylinder (`TauCeti.CylinderSobolev.continuousValue`), where the zeros
-of the section are Floer cylinders, and on `W^{1,p}_F(ℝ × [0, 1], V)` of the strip with boundary
-values in subspaces `F₀`, `F₁` (`TauCeti.StripSobolev.continuousValueIccExtend`), where with
-`K_s = 0` and `K_t = H` they are Floer strips `∂s u + J(u) (∂t u - X_H(u)) = 0` with boundary on
-`w + F₀` and `w + F₁`, the linear model of the strips of Lagrangian Floer homology.
+`W^{1,p}(ℝ × S¹, V)` of the cylinder (`TauCeti.CylinderSobolev.continuousValue`) and on
+`W^{1,p}_F(ℝ × [0, 1], V)` of the strip with boundary values in subspaces `F₀`, `F₁`
+(`TauCeti.StripSobolev.continuousValueIccExtend`). For a reference map with `F(w) = 0`, the zeros of
+the section are the weak solutions of the Floer equation near `w`: cylinders, respectively strips
+with boundary on `w + F₀` and `w + F₁`, which with `K_s = 0` and `K_t = H` solve
+`∂s u + J(u) (∂t u - X_H(u)) = 0` weakly, the linear model of the strips of Lagrangian Floer
+homology.
 
 When `J` and `G` are continuous in `(z, y)`, `w` is differentiable, `∂t w` and `J` are bounded,
 and `J` and `G` are Lipschitz in `y` uniformly in `z`, its value at the jet of a differentiable

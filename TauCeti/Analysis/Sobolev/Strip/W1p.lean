@@ -69,8 +69,8 @@ is `0` by the convention of `LinearMap.extendOfNorm`. The nonlinear sections of
 representatives defined on the whole plane, where the strip measure lives; for the strip these
 are the images under `TauCeti.StripSobolev.continuousValueIccExtend F₀ F₁ p`, the Sobolev embedding
 followed by the extension from the closed strip that is constant in `t` on either side of it, as
-`Set.IccExtend` does for functions on an interval. The first component of the jet of every element
-of `W^{1,p}` agrees with it almost everywhere on the strip
+`Set.IccExtend` does for functions on an interval. For `2 < p < ∞`, the first component of the jet
+of every element of `W^{1,p}` agrees with it almost everywhere on the strip
 (`TauCeti.StripSobolev.fst_ae_eq_continuousValueIccExtend`).
 
 ## Main definitions

@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.Strip.Jet
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Quasilinear first-order sections on spaces of `Lᵖ` jets with continuous representatives
@@ -128,13 +129,6 @@ private theorem aestronglyMeasurable_comp_uncurry {Y : Type*} [TopologicalSpace 
     (hu : AEStronglyMeasurable u μ) :
     AEStronglyMeasurable (fun z ↦ A z (u z)) μ :=
   hA.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu)
-
-/-- The continuous representatives of two elements of `X` are uniformly within the norm of `e`
-times their distance. -/
-private theorem norm_sub_le_opNorm_mul (x y : X) (z : ℝ × ℝ) :
-    ‖e x z - e y z‖ ≤ ‖e‖ * ‖x - y‖ := by
-  rw [← sub_apply, ← map_sub]
-  exact (BoundedContinuousFunction.norm_coe_le_norm _ _).trans (e.le_opNorm (x - y))
 
 /-! ### The section -/
 
@@ -525,7 +519,7 @@ private theorem norm_remainder_le
       rw [e₁, Pi.sub_apply, e₂, Pi.sub_apply, e₃, e₄, e₅]
       exact norm_remainder_apply_le hbB hAL hA'K z (by rw [Submodule.coe_sub, e₆, Pi.sub_apply])
         (by rw [Submodule.coe_sub, e₇, Pi.sub_apply]) e₈ hε
-        (norm_sub_le_opNorm_mul x₁ x₀ z) (norm_sub_le_opNorm_mul x₁ x₂ z) (hmA z) (hmG z))
+        (e.norm_apply_sub_apply_le x₁ x₀ z) (e.norm_apply_sub_apply_le x₁ x₂ z) (hmA z) (hmG z))
   refine key.trans_eq ?_
   simp only [Submodule.norm_coe]
   ring
@@ -537,7 +531,7 @@ private theorem dist_add_apply_lt {x x₀ : X} {δ r : ℝ} (hδ : 0 < δ)
     (z : ℝ × ℝ) : dist (y + e x z) (y + e x₀ z) < δ := by
   rw [dist_add_left, dist_eq_norm]
   calc ‖e x z - e x₀ z‖
-      ≤ ‖e‖ * ‖x - x₀‖ := norm_sub_le_opNorm_mul x x₀ z
+      ≤ ‖e‖ * ‖x - x₀‖ := e.norm_apply_sub_apply_le x x₀ z
     _ ≤ ‖e‖ * (δ / (‖e‖ + 1)) := by
         gcongr
         exact hx.le.trans hrδ

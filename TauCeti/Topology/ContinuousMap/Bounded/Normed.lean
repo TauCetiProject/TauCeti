@@ -41,7 +41,9 @@ isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous`,
 `ContinuousLinearMap.norm_compLeftContinuousBounded_apply_le`, and
 `ContinuousLinearMap.norm_compLeftContinuousBounded_le` record naturality and operator-norm bounds
-for postcomposition with a continuous linear map.
+for postcomposition with a continuous linear map, and
+`ContinuousLinearMap.norm_apply_sub_apply_le` bounds `‖f x a - f y a‖` by `‖f‖ * ‖x - y‖` for a
+continuous linear map `f` into bounded continuous functions.
 `ContinuousLinearMap.compLeftContinuousBounded₂` is the pointwise action
 `(f, g) ↦ (t ↦ B (f t) (g t))` of a continuous bilinear map `B` on bounded continuous functions,
 of operator norm at most `‖B‖` (`ContinuousLinearMap.norm_compLeftContinuousBounded₂_le`), and
@@ -227,6 +229,13 @@ theorem norm_compLeftContinuousBounded_le (g : β →L[𝕜] γ) (α : Type*) [T
     ‖g.compLeftContinuousBounded α‖ ≤ ‖g‖ :=
   (g.compLeftContinuousBounded α).opNorm_le_bound (norm_nonneg g)
     (g.norm_compLeftContinuousBounded_apply_le)
+
+/-- For a continuous linear map `f` into bounded continuous functions, the values of `f x` and
+`f y` at every point are within `‖f‖ * ‖x - y‖` of each other. -/
+theorem norm_apply_sub_apply_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (f : E →L[𝕜] (α →ᵇ β)) (x y : E) (a : α) : ‖f x a - f y a‖ ≤ ‖f‖ * ‖x - y‖ := by
+  rw [← _root_.sub_apply, ← map_sub]
+  exact ((f (x - y)).norm_coe_le_norm a).trans (f.le_opNorm (x - y))
 
 section Bilinear
 
