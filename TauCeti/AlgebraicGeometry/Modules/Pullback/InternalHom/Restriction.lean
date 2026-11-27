@@ -36,11 +36,10 @@ namespace TauCeti.AlgebraicGeometry
 
 private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
     {U Y : Scheme.{u}} (j : U ⟶ Y) [IsOpenImmersion j]
-    (M N : Y.Modules) [M.IsQuasicoherent]
+    (M N : Y.Modules)
     (hR : IsIso (((Scheme.Modules.restrictFunctor j).ihomComparison M).app N)) :
     IsIso ((pullbackIhomComparison M j).app N) := by
   let P := Scheme.Modules.pullback j
-  let : P.Monoidal := Functor.Monoidal.ofOplaxMonoidal P
   let σ := (Scheme.Modules.restrictFunctorIsoPullback j).inv
   have hm : μ P M ((ihom M).obj N) ≫ σ.app (M ⊗ (ihom M).obj N) =
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
@@ -58,10 +57,10 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
       ← Functor.Monoidal.inv_δ]
   exact h ▸ hP
 
-/-- Pullback to an open subscheme commutes with internal Hom from a quasicoherent sheaf.
+/-- Pullback to an open subscheme commutes with internal Hom from any sheaf of modules.
 The source need not be finitely presented, and the target is arbitrary. -/
 theorem _root_.AlgebraicGeometry.Scheme.Opens.isIso_pullbackIhomComparison_app
-    {Y : Scheme.{u}} (U : Y.Opens) (M N : Y.Modules) [M.IsQuasicoherent] :
+    {Y : Scheme.{u}} (U : Y.Opens) (M N : Y.Modules) :
     IsIso ((pullbackIhomComparison M U.ι).app N) :=
   isIso_pullbackIhomComparison_app_of_restrictFunctor U.ι M N
     (Scheme.Modules.isIso_restrictFunctor_ihomComparison_app U M N)

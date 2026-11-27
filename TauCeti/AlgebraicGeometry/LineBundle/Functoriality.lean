@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.CategoryTheory.Monoidal.EqToHom
 public import TauCeti.CategoryTheory.Monoidal.Subcategory
 
@@ -30,8 +29,8 @@ the pullback of `InvertibleSheaf.tensorProductObjIso L K`; on the target, the tr
 `InvertibleSheaf.pullback_obj_obj` on both factors and the inverse of `tensorProductObjIso`. The
 comparison `δ` is the field `Functor.OplaxMonoidal.δ` of Mathlib's oplax monoidal functors, for
 Tau Ceti's oplax monoidal structure `Scheme.Modules.pullbackOplaxMonoidal` on module pullback; it
-is invertible because line bundles are quasicoherent
-(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
+is invertible for all sheaves of modules (`Scheme.Modules.isIso_pullback_δ`). So pullback is a
+homomorphism of Picard
 groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`, and an
 isomorphism of schemes induces an equivalence of categories of line bundles
 (`InvertibleSheaf.pullbackEquiv`) and a group isomorphism of Picard groups
@@ -49,7 +48,8 @@ and composition comparisons (`InvertibleSheaf.pullbackTensorProductIso_id` and
 Pullback of line bundles is moreover a strong symmetric monoidal functor
 (`InvertibleSheaf.pullbackBraided`) for the symmetric monoidal structure of `InvertibleSheaf X`
 inherited from `X.Modules`. Its structure is that of the strong symmetric monoidal pullback of
-quasicoherent sheaves to all modules (`Scheme.Modules.pullbackToModulesBraided`), along the
+quasicoherent sheaves to all modules (the composite of the subcategory inclusion with
+`Scheme.Modules.pullbackBraided`), along the
 inclusion `InvertibleSheaf.toQuasicoherent` of line bundles into quasicoherent sheaves. Its tensor
 comparison is `pullbackTensorProductIso`, read through `tensorProductIsoTensor`
 (`InvertibleSheaf.pullback_μIso`), and on underlying sheaves its comparisons are those of module
@@ -329,8 +329,8 @@ section Monoidal
 
 /-- **Pullback of line bundles is strong symmetric monoidal.** The structure is transported from
 the lift to line bundles of the strong symmetric monoidal pullback of quasicoherent sheaves to all
-modules, `Scheme.Modules.pullbackToModulesBraided`, along the identifications
-`pullback_obj_obj` of underlying sheaves. -/
+modules (the composite of the subcategory inclusion with `Scheme.Modules.pullbackBraided`), along
+the identifications `pullback_obj_obj` of underlying sheaves. -/
 instance pullbackBraided (f : X ⟶ Y) : (pullback f).Braided :=
   let i : (SheafOfModules.isInvertible X).lift
       (toQuasicoherent Y ⋙ (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
@@ -438,12 +438,7 @@ instance isMonoidal_pullbackId_hom (X : Scheme.{u}) : NatTrans.IsMonoidal (pullb
     rfl
   tensor L K := by
     apply ObjectProperty.hom_ext
-    have h : inv (δ (Scheme.Modules.pullback (𝟙 X)) L.obj K.obj) ≫
-        (Scheme.Modules.pullbackId X).hom.app (L.obj ⊗ K.obj) =
-          (Scheme.Modules.pullbackId X).hom.app L.obj ⊗ₘ
-            (Scheme.Modules.pullbackId X).hom.app K.obj := by
-      rw [IsIso.inv_comp_eq, Scheme.Modules.pullback_id_δ]
-    simp [pullbackId_hom_app_hom, h, ← tensorHom_comp_tensorHom, eqToHom_tensorHom_eqToHom]
+    simp [pullbackId_hom_app_hom, ← tensorHom_comp_tensorHom, eqToHom_tensorHom_eqToHom]
 
 /-- The composition comparison `pullbackComp f g` commutes with the inverse tensor comparisons:
 this is `pullbackTensorProductIso_comp` for the monoidal tensor product. -/

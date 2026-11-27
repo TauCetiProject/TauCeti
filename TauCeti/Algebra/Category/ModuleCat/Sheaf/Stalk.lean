@@ -30,8 +30,10 @@ If finitely many sections generate the restriction of a sheaf of modules to a ne
 (`SheafOfModules.GeneratingSections.span_germ_eq_top`). Thus a linear map out of the stalk of a
 sheaf of finite type is determined by its values on the germs of local generators.
 
-A morphism of sheaves of modules is a monomorphism exactly when all its stalk maps are injective
-(`SheafOfModules.mono_iff_forall_injective_stalkMapCommRing`), as for the underlying sheaves of
+A morphism of sheaves of modules is a monomorphism (respectively, an isomorphism) exactly when
+all its stalk maps are injective (respectively, bijective)
+(`SheafOfModules.mono_iff_forall_injective_stalkMapCommRing`,
+`SheafOfModules.isIso_iff_forall_bijective_stalkMapCommRing`), as for the underlying sheaves of
 abelian groups.
 -/
 
@@ -194,5 +196,16 @@ theorem mono_iff_forall_injective_stalkMapCommRing
     have (x : X) : Mono ((stalkFunctor AddCommGrpCat x).map ((toSheaf _).map g).hom) :=
       (AddCommGrpCat.mono_iff_injective _).mpr (h x)
     exact (toSheaf _).mono_of_mono_map (TopCat.Presheaf.mono_of_stalk_mono _)
+
+/-- A morphism of sheaves of modules over a sheaf of commutative rings on a topological space is
+an isomorphism if and only if all of its stalk maps are bijective. -/
+theorem isIso_iff_forall_bijective_stalkMapCommRing
+    {N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)} (g : M ⟶ N) :
+    IsIso g ↔
+      ∀ x : X, Function.Bijective (PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val) := by
+  rw [← isIso_iff_of_reflects_iso g (toSheaf (TauCeti.SheafOfModules.ringCatSheaf R)),
+    TopCat.Presheaf.isIso_iff_stalkFunctor_map_iso]
+  simp only [PresheafOfModules.coe_stalkMapCommRing]
+  exact forall_congr' fun x ↦ ConcreteCategory.isIso_iff_bijective _
 
 end SheafOfModules

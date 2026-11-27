@@ -6,34 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Adjunction
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
-# Pullback of tensor products with a quasicoherent factor
+# Restriction and pullback of tensor products along an open immersion
 
-For a morphism of schemes `f : X ⟶ Y`, the canonical comparison `f^*(M ⊗ N) ⟶ f^*M ⊗ f^*N`,
-the tensor map of the oplax monoidal pullback, is an isomorphism whenever either factor is
-quasicoherent (`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent` and
-`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent_right`). The target `Y` is arbitrary and the
-other factor is an arbitrary sheaf of modules; no flatness or finiteness is assumed.
-
-Pullback along an open immersion `j : U ⟶ Y` is strong monoidal for all sheaves of modules
-(`Scheme.Modules.isIso_pullback_δ_of_isOpenImmersion`), and restriction along `j` is lax monoidal
-with invertible tensor map (`Scheme.Modules.restrictFunctorLaxMonoidal`,
-`Scheme.Modules.isIso_restrictFunctor_μ`).
-The restriction--pullback isomorphism identifies these tensor comparisons
+Restriction along an open immersion `j : U ⟶ Y` is lax monoidal with invertible tensor map
+(`Scheme.Modules.restrictFunctorLaxMonoidal`, `Scheme.Modules.isIso_restrictFunctor_μ`).
+The restriction--pullback isomorphism identifies the tensor comparison of restriction with the
+oplax tensor comparison `δ` of pullback
 (`Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor`).
 
-These isomorphisms say that pulling back along `f` turns tensor products into tensor products as
-long as one factor is quasicoherent; in particular they apply to line bundles. This is what makes
-pullback of line-bundle classes multiplicative (`LineBundleClass.pullback_mul`), so that every
-morphism of schemes induces a homomorphism of Picard groups `Pic(Y) →* Pic(X)`
-(`LineBundleClass.pullbackHom`), as the Picard functor `T ↦ Pic(X_T)` requires.
+For invertibility of `δ (pullback f)` for an arbitrary morphism of schemes `f : X ⟶ Y` and
+arbitrary sheaves of modules, see `Scheme.Modules.isIso_pullback_δ` in
+`TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Strong`.
 
 ## References
 
 * The Stacks Project, *Sheaves of Modules*, Lemma 03EL (pullback of tensor products).
-* R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2.
 * G. M. Kelly, *Doctrinal adjunction*, Lecture Notes in Mathematics 420 (1974).
 -/
 
@@ -109,55 +99,7 @@ lemma restrictFunctorIsoPullback_inv_app_tensor (M N : Y.Modules) :
   rw [hd] at h
   exact h
 
-/-- **Pullback along an open immersion is strong monoidal**: the tensor comparison
-`j^*(M ⊗ N) ⟶ j^*M ⊗ j^*N` is an isomorphism for all sheaves of modules `M` and `N`. -/
-instance isIso_pullback_δ_of_isOpenImmersion (M N : Y.Modules) :
-    IsIso (δ (pullback j) M N) := by
-  have : IsIso (δ (pullback j) M N ≫
-      ((restrictFunctorIsoPullback j).inv.app M ⊗ₘ
-        (restrictFunctorIsoPullback j).inv.app N)) := by
-    rw [← restrictFunctorIsoPullback_inv_app_tensor]
-    infer_instance
-  exact IsIso.of_isIso_comp_right _
-    ((restrictFunctorIsoPullback j).inv.app M ⊗ₘ (restrictFunctorIsoPullback j).inv.app N)
-
 end OpenImmersion
-
-variable {X Y : Scheme.{u}}
-
-/-- **Pullback preserves tensor products with a quasicoherent left factor**: for every morphism
-of schemes `f : X ⟶ Y`, the tensor comparison `f^*(M ⊗ N) ⟶ f^*M ⊗ f^*N` is an isomorphism when
-`M` is quasicoherent. The right factor need not be quasicoherent. -/
-instance isIso_pullback_δ_of_isQuasicoherent (f : X ⟶ Y) (M N : Y.Modules)
-    [M.IsQuasicoherent] : IsIso (δ (pullback f) M N) := by
-  -- The claim is local on `Y` (`isIso_iff_of_isOpenCover`). Over an affine open `V ⊆ Y` the
-  -- comparison for `f ∣_ V` is invertible (`isIso_pullback_δ_of_isAffine`), and so is the
-  -- comparison for the open immersion `V.ι`. Writing `(f⁻¹ V).ι ≫ f = f ∣_ V ≫ V.ι` and using
-  -- `pullback_comp_δ`, the pullback of the comparison for `f` to `f⁻¹ V` is invertible.
-  refine (isIso_iff_of_isOpenCover
-    (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr fun V ↦ ?_
-  have : IsAffine V.val := V.property
-  -- Over the affine open `V`, the comparison for `f ∣_ V ≫ V.ι = (f⁻¹ V).ι ≫ f` is invertible.
-  have hg : IsIso (δ (pullback (f ∣_ V.val ≫ V.val.ι)) M N) := by
-    rw [pullback_comp_δ]
-    have := isIso_pullback_δ_of_isAffine (f ∣_ V.val) ((pullback V.val.ι).obj M)
-      ((pullback V.val.ι).obj N)
-    infer_instance
-  rw [morphismRestrict_ι, pullback_comp_δ, isIso_comp_left_iff, isIso_comp_right_iff] at hg
-  exact hg
-
-/-- **Pullback preserves tensor products with a quasicoherent right factor**: for every morphism
-of schemes `f : X ⟶ Y`, the tensor comparison `f^*(M ⊗ N) ⟶ f^*M ⊗ f^*N` is an isomorphism when
-`N` is quasicoherent. The left factor need not be quasicoherent. -/
-instance isIso_pullback_δ_of_isQuasicoherent_right (f : X ⟶ Y) (M N : Y.Modules)
-    [N.IsQuasicoherent] : IsIso (δ (pullback f) M N) := by
-  -- The comparison with the factors exchanged is invertible, and the braidings carry one to the
-  -- other.
-  have h := pullback_map_braiding_hom_comp_δ f M N
-  have : IsIso (δ (pullback f) M N ≫ (β_ _ _).hom) := by
-    rw [← h]
-    infer_instance
-  exact IsIso.of_isIso_comp_right _ (β_ _ _).hom
 
 end
 

@@ -29,8 +29,8 @@ the algebraic side of base change for graded relative spectra, such as the linea
 The algebra laws of `f^* A` are those of `A`, stated for its unit and homogeneous
 multiplications as morphisms of quasicoherent sheaves (`GradedQuasicoherentAlgebra.one` and
 `GradedQuasicoherentAlgebra.mul`), transported along the strong symmetric monoidal pullback of
-quasicoherent sheaves to modules on `Y`
-(`AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided`), by the transport lemmas
+quasicoherent sheaves to modules on `Y` (the composite of the subcategory inclusion with
+`AlgebraicGeometry.Scheme.Modules.pullbackBraided`), by the transport lemmas
 `CategoryTheory.GradedObject.one_mul_of_laxMonoidal`, `mul_one_of_laxMonoidal`,
 `mul_assoc_of_laxMonoidal` and `mul_comm_of_laxBraided`.
 
@@ -134,8 +134,7 @@ private lemma pullbackMul_def (i j : ℕ) :
       inv (δ (Scheme.Modules.pullback f) (A.obj.X i) (A.obj.X j)) ≫
         (Scheme.Modules.pullback f).map (A.obj.toMon.mul i j) := by
   rw [pullbackMul, Scheme.Modules.pullbackToModules_μ]
-  have := @Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent _ _ f _
-    ((degree j).obj A).obj ((degree i).obj A).property
+  have := Scheme.Modules.isIso_pullback_δ f ((degree i).obj A).obj ((degree j).obj A).obj
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
   exact Functor.eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) _ (degree_obj_obj A i).symm
     (degree_obj_obj A j).symm (degree_obj_obj A (i + j)).symm _ _ (A.mul_hom i j)

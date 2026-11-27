@@ -42,7 +42,7 @@ universe u
 
 noncomputable section
 
-variable {X Y : Scheme.{u}} (M : Y.Modules) [M.IsQuasicoherent] (f : X ⟶ Y)
+variable {X Y : Scheme.{u}} (M : Y.Modules) (f : X ⟶ Y)
 
 /-- The canonical base-change comparison for internal Hom from a quasicoherent sheaf.
 It is natural in arbitrary target sheaves of modules. -/
@@ -91,11 +91,11 @@ theorem pullbackIhomComparison_app_eq_curry (F : Y.Modules) :
   exact (curry_uncurry _).symm.trans
     (congrArg curry (whiskerLeft_pullbackIhomComparison_app_comp_ev M f F))
 
-/-- The base-change comparison is natural in the quasicoherent source: precomposition with
-`g : M₁ ⟶ M₂` corresponds to precomposition with its pullback. -/
+/-- The base-change comparison is natural in the source: precomposition with `g : M₁ ⟶ M₂`
+corresponds to precomposition with its pullback. -/
 @[reassoc]
 theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modules}
-    [M₁.IsQuasicoherent] [M₂.IsQuasicoherent] (g : M₁ ⟶ M₂) (F : Y.Modules) :
+    (g : M₁ ⟶ M₂) (F : Y.Modules) :
     (Scheme.Modules.pullback f).map ((pre g).app F) ≫ (pullbackIhomComparison M₁ f).app F =
       (pullbackIhomComparison M₂ f).app F ≫
         (pre ((Scheme.Modules.pullback f).map g)).app ((Scheme.Modules.pullback f).obj F) := by
@@ -113,7 +113,7 @@ theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modu
 /-- If the evaluation `f* M ⊗ f* D ⟶ 𝟙` of the pulled-back exact pairing is the transported
 evaluation `M ⊗ D ⟶ 𝟙`, then the comparison `f* 𝓗om(M, -) ≅ 𝓗om(f* M, f* -)` built from `D`
 is compatible with evaluation. -/
-private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules) [D.IsQuasicoherent]
+private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules)
     [ExactPairing D M]
     [ExactPairing ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M)]
     (he : ε_ ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M) =
@@ -151,7 +151,7 @@ private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules) [D.IsQuasicohere
 
 /-- The canonical internal-Hom base-change comparison is invertible for every scheme morphism
 when its quasicoherent source has a quasicoherent left dual, without any condition on the target. -/
-theorem isIso_pullbackIhomComparison_of_exactPairing
+theorem isIso_pullbackIhomComparison_of_exactPairing [M.IsQuasicoherent]
     (D : Y.Modules) [D.IsQuasicoherent] [ExactPairing D M] :
     IsIso (pullbackIhomComparison M f) := by
   let QD : QuasicoherentSheaf Y := ⟨D, inferInstance⟩

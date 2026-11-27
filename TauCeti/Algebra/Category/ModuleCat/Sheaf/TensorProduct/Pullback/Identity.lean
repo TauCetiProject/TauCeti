@@ -17,8 +17,10 @@ chosen identification.
 
 Mathlib's `SheafOfModules.pushforwardId` and `SheafOfModules.pullbackId` are the canonical
 identity comparisons. Identity pushforward respects the lax monoidal structure, and identity
-pullback respects the oplax monoidal structure. The unit and tensor formulas supply the identity
-normalization needed when comparing successive pullbacks of tensor products.
+pullback respects the oplax and strong monoidal structures
+(`TauCeti.SheafOfModules.isMonoidal_pullbackId_hom`, `pullback_id_ε`, `pullback_id_μ`). The
+unit and tensor formulas supply the identity normalization needed when comparing successive
+pullbacks of tensor products.
 -/
 
 public section
@@ -161,6 +163,84 @@ theorem pullback_id_δ (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
     (by infer_instance) (by infer_instance) _ _ (by infer_instance)
     (_root_.SheafOfModules.conjugateEquiv_pullbackId_hom (ringCatSheaf R)) M N
   simpa using h.symm
+
+/-- The canonical oplax monoidal structure on identity pullback. -/
+@[expose, instance_reducible]
+def pullbackIdOplaxMonoidal :
+    (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))).OplaxMonoidal :=
+  pullbackOplaxMonoidal (S := R) (R := R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))
+
+scoped[TauCeti.SheafOfModules.PullbackId] attribute [instance]
+  TauCeti.SheafOfModules.pullbackIdOplaxMonoidal
+
+open scoped TauCeti.SheafOfModules.PullbackId
+
+/-- The unit comparison for identity pullback is an isomorphism. -/
+instance isIso_pullback_id_η :
+    IsIso (Functor.OplaxMonoidal.η (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R)))) := by
+  rw [pullback_id_η]
+  infer_instance
+
+/-- The tensor comparison for identity pullback is an isomorphism. -/
+instance isIso_pullback_id_δ (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    IsIso (Functor.OplaxMonoidal.δ (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))) M N) := by
+  have : IsIso (Functor.OplaxMonoidal.δ (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))) M N ≫
+      ((_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app M ⊗ₘ
+        (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app N)) := by
+    rw [pullback_id_δ]
+    infer_instance
+  exact IsIso.of_isIso_comp_right _
+    ((_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app M ⊗ₘ
+      (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app N)
+
+/-- The strong monoidal structure on identity pullback. -/
+@[expose, instance_reducible]
+def pullbackIdMonoidal :
+    (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))).Monoidal :=
+  Functor.Monoidal.ofOplaxMonoidal _
+
+scoped[TauCeti.SheafOfModules.PullbackId] attribute [instance]
+  TauCeti.SheafOfModules.pullbackIdMonoidal
+
+/-- The canonical identity isomorphism `SheafOfModules.pullbackId` respects the strong monoidal
+structure on identity pullback. -/
+instance isMonoidal_pullbackId_hom :
+    NatTrans.IsMonoidal (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom where
+  unit := by
+    rw [← pullback_id_η R]
+    exact Functor.Monoidal.ε_η _
+  tensor E F := by
+    rw [← cancel_epi (Functor.OplaxMonoidal.δ
+      (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+        (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))) E F)]
+    simp [pullback_id_δ]
+
+/-- The strong monoidal unit map of identity pullback inverts the canonical identity isomorphism
+at the structure sheaf. -/
+theorem pullback_id_ε :
+    Functor.LaxMonoidal.ε (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+        (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))) =
+      (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).inv.app (𝟙_ _) := by
+  rw [← cancel_mono ((_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app (𝟙_ _))]
+  exact (NatTrans.IsMonoidal.unit
+    (τ := (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom)).trans (by simp)
+
+/-- The strong monoidal tensor map of identity pullback intertwines the canonical identity
+isomorphism with the tensor product of identity comparisons. -/
+@[reassoc]
+theorem pullback_id_μ (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.pullback.{u} (J := J) (K := J)
+        (S := ringCatSheaf R) (R := ringCatSheaf R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))) M N ≫
+      (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app (M ⊗ N) =
+      (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app M ⊗ₘ
+        (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom.app N :=
+  (NatTrans.IsMonoidal.tensor
+    (τ := (_root_.SheafOfModules.pullbackId (ringCatSheaf R)).hom) M N).trans (by simp)
 
 end
 

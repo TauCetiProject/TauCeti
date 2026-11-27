@@ -21,7 +21,7 @@ right adjoint to tensoring with its dual `E^∨`, and tensoring with `f^* E` is 
 tensoring with `f^* E^∨`, the dual of `f^* E`
 (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullbackDualIso`). Their left adjoints
 `T ↦ f^* (E^∨ ⊗ T)` and `T ↦ f^* E^∨ ⊗ f^* T` agree because pullback commutes with tensoring by
-the quasi-coherent sheaf `E^∨` (`AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso`), so the
+`E^∨` (`AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso`), so the
 right adjoints agree too.
 
 For the closed subscheme `ι : Z ⟶ X` cut out by an ideal sheaf, the case `N = 𝒪_Z` identifies
