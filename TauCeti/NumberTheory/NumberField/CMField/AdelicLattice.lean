@@ -27,7 +27,9 @@ of `M` is `B u` with `[det u] = [L : M]`
 
 ## Main declarations
 
-* `NumberField.IsCMField.finiteAdeleConj`: complex conjugation on the finite adeles.
+* `NumberField.IsCMField.finiteAdeleConj`: complex conjugation on the finite adeles, a star
+  structure (`NumberField.IsCMField.instStarRingFiniteAdeleRing`) preserving `Ô`
+  (`NumberField.IsCMField.star_mem_integralAdeles_iff`).
 * `NumberField.IsCMField.gramDet`: the Gram determinant `det(B^*B)` of an adelic matrix.
 * `NumberField.IsCMField.latticeDiscriminant`: the discriminant of a lattice of rank `r`.
 * `NumberField.IsCMField.latticeDiscriminant_span_col`: the discriminant computed from any basis.
@@ -53,7 +55,7 @@ Adapted from the file `src/New/Spanning/RemainingTerms/Discriminants.lean` of gr
   second half of) `New.Filling.IsLatticeOfRank.of_le_and_discriminant_eq_mul_index`.
 
 That complex conjugation preserves `Ô`
-(`NumberField.IsCMField.finiteAdeleConj_mem_integralAdeles_iff`) is `New.star_mem_Ô` in
+(`NumberField.IsCMField.star_mem_integralAdeles_iff`) is `New.star_mem_Ô` in
 `src/Lib/Adelic/Adeles/Basic.lean` of grh-lean, and the invariance of the generalised index under
 it (`NumberField.IsCMField.genIndex_finiteAdeleConj`) is `New.genIndex_star` in
 `src/Lib/General/Measure/HaarModulus.lean`. In grh-lean `E` is also assumed to contain a
@@ -89,26 +91,43 @@ theorem finiteAdeleConj_algebraMap (x : E) :
     finiteAdeleConj E (algebraMap E 𝔸ᶠ[E] x) = algebraMap E 𝔸ᶠ[E] (complexConj E x) :=
   finiteAdeleEquiv_algebraMap E E _ x
 
+variable (E) in
+/-- Complex conjugation of a CM field, as a ring automorphism, is an involution. -/
+@[simp]
+theorem complexConj_trans_complexConj :
+    (complexConj E).toRingEquiv.trans (complexConj E).toRingEquiv = RingEquiv.refl E :=
+  RingEquiv.ext fun x ↦ complexConj_apply_apply (K := E) x
+
 /-- Complex conjugation on the finite adeles is an involution. -/
 @[simp]
 theorem finiteAdeleConj_finiteAdeleConj (a : 𝔸ᶠ[E]) :
     finiteAdeleConj E (finiteAdeleConj E a) = a := by
-  have h : (complexConj E).toRingEquiv.trans (complexConj E).toRingEquiv = RingEquiv.refl E :=
-    RingEquiv.ext fun x ↦ complexConj_apply_apply (K := E) x
-  rw [finiteAdeleConj_def, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans, h,
-    finiteAdeleEquiv_refl, RingEquiv.refl_apply]
+  rw [finiteAdeleConj_def, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans,
+    complexConj_trans_complexConj, finiteAdeleEquiv_refl, RingEquiv.refl_apply]
 
-/-- Complex conjugation preserves the integral finite adeles. It takes priority over the
-place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma. -/
+/-- Complex conjugation `finiteAdeleConj` is a star structure on the finite adeles of a CM field. -/
+instance instStarRingFiniteAdeleRing : StarRing 𝔸ᶠ[E] where
+  star := finiteAdeleConj E
+  star_involutive := finiteAdeleConj_finiteAdeleConj
+  star_mul a b := by rw [map_mul, mul_comm]
+  star_add := map_add _
+
+variable (E) in
+/-- The star structure on the finite adeles is complex conjugation `finiteAdeleConj`. -/
+theorem coe_finiteAdeleConj : ⇑(finiteAdeleConj E) = star :=
+  (rfl)
+
+/-- Conjugation preserves the integral finite adeles. It takes priority over the place-by-place
+unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma. -/
 @[simp high]
-theorem finiteAdeleConj_mem_integralAdeles_iff {x : 𝔸ᶠ[E]} :
-    finiteAdeleConj E x ∈ integralAdeles (𝓞 E) E ↔ x ∈ integralAdeles (𝓞 E) E :=
+theorem star_mem_integralAdeles_iff {a : 𝔸ᶠ[E]} :
+    star a ∈ integralAdeles (𝓞 E) E ↔ a ∈ integralAdeles (𝓞 E) E :=
   finiteAdeleEquiv_mem_integralAdeles_iff _
 
 /-- The generalised index is invariant under complex conjugation. -/
 @[simp]
 theorem genIndex_finiteAdeleConj (a : 𝔸ᶠ[E]) : genIndex E (finiteAdeleConj E a) = genIndex E a :=
-  genIndex_map _ (fun _ ↦ finiteAdeleConj_mem_integralAdeles_iff) a
+  genIndex_map _ (fun _ ↦ by rw [coe_finiteAdeleConj]; exact star_mem_integralAdeles_iff) a
 
 variable {κ : Type*} [Fintype κ] {r : ℕ}
 
