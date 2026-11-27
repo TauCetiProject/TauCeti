@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.IntegralLattice.ClassNumber
-public import TauCeti.NumberTheory.IntegralLattice.Localization.Stabilizer
+public import TauCeti.NumberTheory.IntegralLattice.Localization.ProperIndex
+public import TauCeti.NumberTheory.IntegralLattice.ProperClassNumber
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.DoubleCoset.Basic
 
 /-!
@@ -45,12 +45,31 @@ representative as soon as the rational forms of the lattices in the genus are is
 `L`, which is what makes this map a bijection onto the genus; that comparison of rational forms is
 not proved here.
 
+The same holds for proper classes and the special orthogonal group. Every local stabilizer
+`K_p(L)` meets both cosets of `SO(V_p)` in `O(V_p)` as soon as `V ≠ 0`, so every element of
+`O(V)(𝔸_f)` becomes an element of `SO(V)(𝔸_f)` after right multiplication by an element of `K_f(L)`
+(`exists_mem_integralSubgroup_mul_mem_range_finiteAdelicSpecialOrthogonalToOrthogonal`), and every
+translate of `L` is a translate by `SO(V)(𝔸_f)`. A rational isometry of determinant one
+gives a proper isometry of translates, so the proper class of `g • L` depends only on the double
+coset of `g` in
+
+```text
+SO(V)(ℚ) \ SO(V)(𝔸_f) / K_f⁺(L),    K_f⁺(L) = ∏_p K_p⁺(L),
+```
+
+and the resulting map to proper classes is injective
+(`TauCeti.IntegralLattice.properDoubleCosetClass_injective`), with image the proper classes of the
+lattices in the genus of `L` on the quadratic space of `L`
+(`TauCeti.IntegralLattice.mem_range_properDoubleCosetClass_iff`).
+
 ## Main definitions
 
 * `TauCeti.IntegralLattice.adelicTranslate`: the translate `g • L` of `L` by an element `g` of
   the finite adelic orthogonal group.
 * `TauCeti.IntegralLattice.doubleCosetClass`: the isometry class of `g • L`, as a function of the
   double coset of `g`.
+* `TauCeti.IntegralLattice.properDoubleCosetClass`: the proper isometry class of `g • L` for
+  `g ∈ SO(V)(𝔸_f)`, as a function of the double coset of `g`.
 
 ## Main results
 
@@ -65,11 +84,16 @@ not proved here.
 * `TauCeti.IntegralLattice.doubleCosetClass_injective`,
   `TauCeti.IntegralLattice.mem_range_doubleCosetClass_iff`: the double cosets are in bijection with
   the classes of the genus of `L` represented on the quadratic space of `L`.
+* `TauCeti.IntegralLattice.properDoubleCosetClass_injective`,
+  `TauCeti.IntegralLattice.mem_range_properDoubleCosetClass_iff`: the special orthogonal double
+  cosets are in bijection with the proper classes of the genus of `L` represented on the quadratic
+  space of `L`.
 
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms* (1963), §81E and §§101–102, for the adelic
-  action on lattices and the description of the classes in a genus by adelic double cosets.
+  action on lattices and the description of the classes and proper classes in a genus by adelic
+  double cosets.
 * M. Kneser, *Quadratische Formen* (2002), §§21–22.
 -/
 
@@ -205,6 +229,14 @@ theorem adelicTranslate_eq_self_iff :
   have h := L.adelicTranslate_eq_adelicTranslate_iff (g := g) (h := 1)
   rwa [adelicTranslate_one, mul_one, inv_mem_iff] at h
 
+/-- Right multiplication by an element of `K_f(L)` does not move the translate of `L`. -/
+theorem adelicTranslate_mul_of_mem_integralSubgroup
+    {k : L.orthogonalCompactOpens.finiteAdelicOrthogonal}
+    (hk : k ∈ integralSubgroup L.orthogonalCompactOpens.orthogonal) :
+    L.adelicTranslate (g * k) = L.adelicTranslate g := by
+  rw [adelicTranslate_eq_adelicTranslate_iff, mul_inv_rev, inv_mul_cancel_right]
+  exact inv_mem hk
+
 /-- **A rational isometry `γ` carries `g • L` onto `γ g • L`.** -/
 theorem adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier (γ : orthogonalGroup L.norm) :
     (L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g)).carrier =
@@ -234,6 +266,14 @@ noncomputable def adelicTranslateDiagonalIsometry (γ : orthogonalGroup L.norm) 
 theorem adelicTranslateDiagonalIsometry_apply (γ : orthogonalGroup L.norm) (v : V) :
     L.adelicTranslateDiagonalIsometry g γ v = (γ : V ≃ₗ[ℚ] V) v :=
   (rfl)
+
+/-- The isometry `g • L ≅ γ g • L` given by a rational isometry `γ` is proper exactly when `γ`
+has positive determinant. -/
+@[simp]
+theorem isProper_adelicTranslateDiagonalIsometry_iff (γ : orthogonalGroup L.norm) :
+    (L.adelicTranslateDiagonalIsometry g γ).IsProper ↔
+      0 < (LinearEquiv.det (γ : V ≃ₗ[ℚ] V) : ℚ) :=
+  Isometry.isProper_iff _
 
 /-- **A translate of `L` lies in the genus of `L`.** -/
 theorem sameGenus_adelicTranslate : L.SameGenus (L.adelicTranslate g) := by
@@ -288,11 +328,7 @@ noncomputable def doubleCosetClass :
     L.orthogonalCompactOpens.finiteAdelicOrthogonalDoubleCoset → IsometryQuotient V :=
   Quotient.lift (fun g ↦ (L.adelicTranslate g).isometryClass) fun g h hgh ↦ by
     obtain ⟨_, ⟨γ, rfl⟩, k, hk, rfl⟩ := DoubleCoset.rel_iff.mp hgh
-    have h : L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g * k) =
-        L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g) := by
-      rw [adelicTranslate_eq_adelicTranslate_iff, mul_inv_rev, inv_mul_cancel_right]
-      exact inv_mem hk
-    rw [h]
+    rw [adelicTranslate_mul_of_mem_integralSubgroup _ _ hk]
     exact (L.adelicTranslateDiagonalIsometry g γ).isometryClass_eq
 
 /-- The class of the double coset of `g` is the class of `g • L`. -/
@@ -339,6 +375,118 @@ theorem mem_range_doubleCosetClass_iff {c : IsometryQuotient V} :
     exact ⟨DoubleCoset.mk _ _ g, hc⟩
 
 end DoubleCoset
+
+section ProperDoubleCoset
+
+open _root_.QuadraticMap OrthogonalCompactOpens
+
+/-- **Every finite adele is proper up to `K_f(L)`**: for every `g ∈ O(V)(𝔸_f)` there is
+`k ∈ K_f(L) = ∏_p K_p(L)` such that `g k` lies in `SO(V)(𝔸_f)`. In particular every translate of
+`L` is a translate by an element of `SO(V)(𝔸_f)`. -/
+theorem exists_mem_integralSubgroup_mul_mem_range_finiteAdelicSpecialOrthogonalToOrthogonal
+    (g : L.orthogonalCompactOpens.finiteAdelicOrthogonal) :
+    ∃ k ∈ integralSubgroup L.orthogonalCompactOpens.orthogonal,
+      g * k ∈ L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal.range := by
+  choose k hk hgk using fun p : Nat.Primes ↦
+    L.exists_mem_localStabilizer_mul_mem_specialOrthogonalWithin p (g p)
+  have hk' (p : Nat.Primes) : k p ∈ L.orthogonalCompactOpens.orthogonal p :=
+    L.orthogonalCompactOpens_orthogonal p ▸ hk p
+  refine ⟨⟨k, Eventually.of_forall hk'⟩, (mem_integralSubgroup _ _).mpr hk', ?_⟩
+  exact (mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff _ _).mpr hgk
+
+variable [FiniteDimensional ℚ V]
+
+/-- **The proper class of the translates of `L` by a double coset.** The proper isometry class of
+`g • L`, for `g ∈ SO(V)(𝔸_f)`, depends only on the double coset of `g` in
+`SO(V)(ℚ) \ SO(V)(𝔸_f) / K_f⁺(L)`, where `K_f⁺(L) = ∏_p K_p⁺(L)`.
+
+The instance `FiniteDimensional ℚ V`, which the lattice `L` already forces
+(`TauCeti.IntegralLattice.finiteDimensional`), is the one under which the special orthogonal
+double coset set is formed. -/
+noncomputable def properDoubleCosetClass :
+    L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalDoubleCoset →
+      ProperIsometryQuotient V :=
+  Quotient.lift (fun g ↦ (L.adelicTranslate
+      (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal g)).properIsometryClass)
+    fun g h hgh ↦ by
+      obtain ⟨_, ⟨γ, rfl⟩, k, hk, rfl⟩ := DoubleCoset.rel_iff.mp hgh
+      -- Right multiplication by `k ∈ K_f⁺(L)` does not move the translate.
+      rw [map_mul, map_mul,
+        finiteAdelicSpecialOrthogonalToOrthogonal_finiteAdelicSpecialOrthogonalDiagonal,
+        adelicTranslate_mul_of_mem_integralSubgroup _ _
+          ((finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff _ _).mpr hk)]
+      -- The rational isometry `γ` has determinant one, so it gives a proper isometry.
+      refine Isometry.IsProper.properIsometryClass_eq
+        (e := L.adelicTranslateDiagonalIsometry _ (specialOrthogonalToOrthogonal L.norm γ)) ?_
+      rw [isProper_adelicTranslateDiagonalIsometry_iff, coe_specialOrthogonalToOrthogonal,
+        det_coe_specialOrthogonalGroup, Units.val_one]
+      exact one_pos
+
+/-- The proper class of the double coset of `g` is the proper class of `g • L`. -/
+@[simp]
+theorem properDoubleCosetClass_mk (g : L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonal) :
+    L.properDoubleCosetClass (DoubleCoset.mk _ _ g) = (L.adelicTranslate
+      (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal g)).properIsometryClass :=
+  (rfl)
+
+/-- Every proper class of the form `properDoubleCosetClass` lies in the genus of `L`. -/
+theorem properDoubleCosetClass_mem_genusProperClasses
+    (c : L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalDoubleCoset) :
+    L.properDoubleCosetClass c ∈ L.genusProperClasses := by
+  obtain ⟨g, rfl⟩ := Quotient.mk_surjective c
+  exact properIsometryClass_mem_genusProperClasses_iff.mpr (L.sameGenus_adelicTranslate _)
+
+/-- **Distinct double cosets give translates of `L` which are not properly isometric**: for
+`g, h ∈ SO(V)(𝔸_f)`, the translates `g • L` and `h • L` are properly isometric only when `g` and
+`h` lie in the same double coset `SO(V)(ℚ) g K_f⁺(L)`. -/
+theorem properDoubleCosetClass_injective : Function.Injective L.properDoubleCosetClass := by
+  intro c d hcd
+  obtain ⟨g, rfl⟩ := Quotient.mk_surjective c
+  obtain ⟨h, rfl⟩ := Quotient.mk_surjective d
+  obtain ⟨e, he⟩ := properIsometryClass_eq_properIsometryClass_iff.mp hcd
+  let γ : orthogonalGroup L.norm := (MulEquiv.subgroupCongr L.orthogonalGroup_norm).symm
+    (L.form.isometryGroupEquivIsometryEquiv.symm e.toIsometryEquiv)
+  have hγe : (γ : V ≃ₗ[ℚ] V) = e.toLinearEquiv := LinearEquiv.ext <| congrFun
+    (L.form.coe_isometryGroupEquivIsometryEquiv_symm e.toIsometryEquiv)
+  -- The determinant of `γ` is positive and squares to one, so `γ` lies in `SO(V)(ℚ)`.
+  have hγ1 : orthogonalDet L.norm γ = 1 := by
+    have hs := congrArg (fun u : ℚˣ ↦ (u : ℚ))
+      (orthogonalDet_sq (nondegenerate_polar_iff.mpr L.nondegenerate_norm).1 γ)
+    have hpos : 0 < (orthogonalDet L.norm γ : ℚ) := by
+      rw [orthogonalDet_apply, hγe]
+      exact (Isometry.isProper_iff e).mp he
+    exact Units.ext ((sq_eq_one_iff.mp hs).resolve_right fun h ↦ by linarith)
+  obtain ⟨δ, hδ⟩ : γ ∈ (specialOrthogonalToOrthogonal L.norm).range := by
+    rwa [range_specialOrthogonalToOrthogonal, mem_specialOrthogonalWithin_iff,
+      ← orthogonalDet_apply]
+  have hγh : L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ *
+        L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal g) =
+      L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal h) :=
+    IntegralLattice.ext ((L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier _ γ).trans
+      (hγe ▸ e.map_carrier)) rfl
+  rw [← hδ, ← finiteAdelicSpecialOrthogonalToOrthogonal_finiteAdelicSpecialOrthogonalDiagonal,
+    ← map_mul, adelicTranslate_eq_adelicTranslate_iff, ← map_inv, ← map_mul,
+    finiteAdelicSpecialOrthogonalToOrthogonal_mem_integralSubgroup_iff] at hγh
+  exact DoubleCoset.eq.mpr ⟨_, ⟨δ, rfl⟩, _, hγh, by group⟩
+
+/-- **The proper classes of the double cosets are the proper classes of the genus of `L`
+represented on the quadratic space of `L`.** -/
+theorem mem_range_properDoubleCosetClass_iff {c : ProperIsometryQuotient V} :
+    c ∈ Set.range L.properDoubleCosetClass ↔
+      ∃ M : IntegralLattice V, M.form = L.form ∧ L.SameGenus M ∧ M.properIsometryClass = c := by
+  refine ⟨?_, fun ⟨M, hform, hM, hc⟩ ↦ ?_⟩
+  · rintro ⟨d, rfl⟩
+    obtain ⟨g, rfl⟩ := Quotient.mk_surjective d
+    exact ⟨L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicSpecialOrthogonalToOrthogonal g),
+      rfl, L.sameGenus_adelicTranslate _, rfl⟩
+  · obtain ⟨g, rfl⟩ := L.exists_adelicTranslate_eq hform hM
+    -- Replace `g` by a proper adele `g k` with `k ∈ K_f(L)`, which has the same translate.
+    obtain ⟨k, hk, h, hh⟩ :=
+      L.exists_mem_integralSubgroup_mul_mem_range_finiteAdelicSpecialOrthogonalToOrthogonal g
+    refine ⟨DoubleCoset.mk _ _ h, ?_⟩
+    rw [properDoubleCosetClass_mk, hh, adelicTranslate_mul_of_mem_integralSubgroup _ _ hk, hc]
+
+end ProperDoubleCoset
 
 end IntegralLattice
 
