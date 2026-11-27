@@ -97,6 +97,13 @@ def fibrationComparison (M : BrownModel B b H R P ind) (p : C(E, B)) :
       cubicalChainModule (MooreReplacement p) H R :=
   coefficientPairing M.comparison (MooreReplacement.Fiber.appendFromMap p b)
 
+/-- The fibration comparison is the pairing of coefficient vectors with the images of the
+generators along appending paths from `b` to the points of the fibre. -/
+theorem fibrationComparison_def (M : BrownModel B b H R P ind) (p : C(E, B)) :
+    M.fibrationComparison p =
+      coefficientPairing M.comparison (MooreReplacement.Fiber.appendFromMap p b) :=
+  (rfl)
+
 /-- The comparison of a coefficient `σ` at a single generator `x` appends the image of `x` to `σ`.
 -/
 @[simp]

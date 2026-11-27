@@ -17,8 +17,11 @@ Let `η : F ⟶ G` be a strong transformation between pseudofunctors
 `F` has an image `f₁^* (η M₁) ⟶ f₂^* (η M₂)`, the image `η φ` conjugated by the naturality
 isomorphisms of `η` (`Pseudofunctor.StrongTrans.mapPullHom`). It is compatible with composition,
 identities and Mathlib's pullback `LocallyDiscreteOpToCat.pullHom` of such morphisms
-(`Pseudofunctor.StrongTrans.mapPullHom_pullHom`). So `η` sends descent data for `F` along a family
-of morphisms `f i : X i ⟶ S` to descent data for `G` (`Pseudofunctor.StrongTrans.mapDescentData`),
+(`Pseudofunctor.StrongTrans.mapPullHom_pullHom`). Pullbacks of morphisms conjugated by two
+strong-transformation naturality isomorphisms are computed by
+`Pseudofunctor.StrongTrans.pullHom_naturalityObjIso`. So `η` sends descent data for `F` along a
+family of morphisms `f i : X i ⟶ S` to descent data for `G`
+(`Pseudofunctor.StrongTrans.mapDescentData`),
 compatibly with the functors from the fibres over `S` up to the naturality isomorphisms of `η`
 (`Pseudofunctor.StrongTrans.toDescentDataCompMapDescentDataIso`). This is compatible with
 identities and composites of strong transformations (`StrongTrans.mapDescentDataId`,
@@ -178,6 +181,29 @@ lemma mapPullHom_mapComp'_inv ⦃X Y Z : C⦄ (f : Y ⟶ X) (g : Z ⟶ Y) (fg : 
   -- As in `mapPullHom_mapComp'_hom`, the identity is over a composite in `Cat`.
   erw [CategoryTheory.Functor.map_id]
   simp
+
+/-- The pullback `pullHom` along `h` of a morphism `g^* (Φ A) ⟶ g^* (Φ' A)` written through the
+naturality isomorphisms of `Φ` and `Φ'` at `g`. -/
+lemma pullHom_naturalityObjIso
+    {P G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} (Φ Φ' : P ⟶ G) {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
+    (A : P.obj (.mk (op U)))
+    (z : (Φ.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A) ⟶
+      (Φ'.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A)) :
+    pullHom ((Φ.naturalityObjIso g.op.toLoc A).inv ≫ z ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom)
+        h (h ≫ g) (h ≫ g) =
+      (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv ≫
+        (Φ.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom ≫
+          (Φ.naturalityObjIso h.op.toLoc _).hom ≫ (G.map h.op.toLoc).toFunctor.map z ≫
+            (Φ'.naturalityObjIso h.op.toLoc _).inv ≫
+              (Φ'.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).inv ≫
+                (Φ'.naturalityObjIso (h ≫ g).op.toLoc A).hom := by
+  rw [pullHom_eq_compIso]
+  simp only [Functor.map_comp, Category.assoc]
+  rw [compIso_hom, compIso_inv, naturalityObjIso_inv, naturalityObjIso_hom]
+  rw [← reassoc_of% (Φ.mapPullHom_mapComp'_hom g h (h ≫ g) rfl A),
+    ← Φ'.mapPullHom_mapComp'_inv g h (h ≫ g) rfl A]
+  simp only [mapPullHom_def, naturalityObjIso_hom, naturalityObjIso_inv,
+    compIso_hom, compIso_inv, Category.assoc]
 
 /-- `StrongTrans.mapPullHom` for the identity strong transformation is the identity. -/
 @[simp]
