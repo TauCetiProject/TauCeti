@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.RingTheory.Valuation.ValuationSubring
+public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
@@ -21,16 +21,15 @@ formulas, have at least the valuation of `x`. For an additive valuation which is
 the whole ring, such as the valuation of a discrete valuation ring, units have valuation zero and
 valuations increase along divisibility. It also records that an additive valuation taking integer
 values on nonzero elements, such as a discrete valuation normalised at a uniformiser, is infinite
-only at zero. Membership in the associated valuation subring is nonnegativity.
+only at zero.
 
 ## Main results
 
-* `AddValuation.mem_toValuation_valuationSubring_iff`: membership in the associated valuation
-  subring is equivalent to nonnegativity of the additive valuation.
 * `AddValuation.map_prod`, `AddValuation.map_multiset_prod`: finite and multiset products
   become sums of valuations.
 * `AddValuation.map_prod_castLE`: the valuation of the product of the first `k` entries of a
   tuple is the prefix sum of their valuations.
+* `AddValuation.map_eq_zero_of_pow_eq_one`: roots of unity of nonzero order have valuation zero.
 * `AddValuation.map_neg_one_pow`: `v ((-1) ^ k) = 0`.
 * `AddValuation.le_map_nsmul`: `v x ≤ v (n • x)`.
 * `AddValuation.map_eq_zero_of_isUnit`, `AddValuation.map_le_map_of_dvd`: for an additive valuation
@@ -77,6 +76,15 @@ theorem map_neg_one_pow {R : Type*} [Ring R] (v : AddValuation R Γ₀) (k : ℕ
     v ((-1) ^ k) = 0 := by
   rw [v.map_pow, v.map_neg, v.map_one, smul_zero]
 
+/-- A root of unity of nonzero order has additive valuation zero. -/
+theorem map_eq_zero_of_pow_eq_one {R : Type*} [Ring R] (v : AddValuation R Γ₀)
+    {x : R} {n : ℕ} (hn : n ≠ 0) (hx : x ^ n = 1) : v x = 0 := by
+  have H : n • v x = 0 := by rw [← v.map_pow, hx, v.map_one]
+  rcases lt_trichotomy (v x) 0 with h | h | h
+  · exact ((nsmul_neg h hn).ne H).elim
+  · exact h
+  · exact ((nsmul_pos h hn).ne' H).elim
+
 /-- A natural multiple `n • x` has at least the valuation of `x`. -/
 theorem le_map_nsmul {R : Type*} [Ring R] (v : AddValuation R Γ₀) (n : ℕ) (x : R) :
     v x ≤ v (n • x) := by
@@ -113,13 +121,5 @@ theorem eq_zero_of_eq_top_of_forall_ne_zero
   exact WithTop.coe_ne_top (hn.symm.trans hx)
 
 end Ring
-
-/-- Membership in the valuation subring is nonnegativity of the additive valuation. -/
-theorem mem_toValuation_valuationSubring_iff {K Γ : Type*} [Field K]
-    [LinearOrderedAddCommGroupWithTop Γ] (v : AddValuation K Γ) (x : K) :
-    x ∈ v.toValuation.valuationSubring ↔ 0 ≤ v x := by
-  rw [Valuation.mem_valuationSubring_iff, toValuation_apply,
-    ← ofAdd_zero, Multiplicative.ofAdd_le, ← toDual_zero,
-    OrderDual.toDual_le_toDual]
 
 end AddValuation

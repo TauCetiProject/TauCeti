@@ -15,6 +15,11 @@ public import TauCeti.RingTheory.RootsOfUnity.Ultrametric
 The existing `AddValuation.ofNorm` at base `p` is normalized by `v(p) = 1`. A primitive
 `p ^ h`-th root of unity has `v(ζ - 1) = 1 / φ(p ^ h)` for every positive exponent `h`.
 
+## Main results
+
+* `PadicAlgCl.ofNorm_p`: the normalization at `p`.
+* `PadicAlgCl.ofNorm_sub_one`: the valuation of a shifted primitive prime-power root.
+
 ## Provenance
 
 `PadicAlgCl.ofNorm_sub_one` adapts `New.Selmer.ellVal_sub_one_of_isPrimitiveRoot` in

@@ -56,20 +56,20 @@ theorem sum_max_min_valuation_roots_le (g : K[X])
     (g.roots.map fun a ↦ max 0 (min (ρ : WithTop ℝ) (v a))).sum ≤
       v (g.coeff d) + d • (ρ : WithTop ℝ) := by
   obtain ⟨q, hg, _, _⟩ := g.exists_prod_multiset_X_sub_C_mul
-  have hformula (t : ℝ) : g.addGaussValuation v t =
-      (g.roots.map fun a ↦ min (t : WithTop ℝ) (v a)).sum + q.addGaussValuation v t := by
+  have hformula (t : ℝ) : addGaussValuation v t g =
+      (g.roots.map fun a ↦ min (t : WithTop ℝ) (v a)).sum + addGaussValuation v t q := by
     conv_lhs => rw [← hg]
-    rw [addGaussValuation_mul, addGaussValuation_multiset_prod, Multiset.map_map]
+    rw [AddValuation.map_mul, AddValuation.map_multiset_prod, Multiset.map_map]
     simp only [Function.comp_def, addGaussValuation_X_sub_C]
-  have hzero : 0 ≤ g.addGaussValuation v 0 :=
+  have hzero : 0 ≤ addGaussValuation v 0 g :=
     (le_addGaussValuation_iff v 0).2 fun i ↦ by simpa using hcoeff i
   have hmono := q.addGaussValuation_mono v hρ
   have hbase : 0 ≤ (g.roots.map fun a ↦ min 0 (v a)).sum +
-      q.addGaussValuation v ρ := by
+      addGaussValuation v ρ q := by
     rw [hformula 0, WithTop.coe_zero] at hzero
     exact hzero.trans (add_le_add_right hmono _)
   have H : (g.roots.map fun a ↦ min (ρ : WithTop ℝ) (v a)).sum +
-      q.addGaussValuation v ρ ≤ v (g.coeff d) + d • (ρ : WithTop ℝ) := by
+      addGaussValuation v ρ q ≤ v (g.coeff d) + d • (ρ : WithTop ℝ) := by
     rw [← hformula ρ]
     exact g.addGaussValuation_le_coeff v ρ d
   have hsplit : (g.roots.map fun a ↦ min (ρ : WithTop ℝ) (v a)).sum =
@@ -85,7 +85,7 @@ theorem sum_max_min_valuation_roots_le (g : K[X])
     exact H.symm
   rw [hsplit] at H
   have H' : ((g.roots.map fun a ↦ min 0 (v a)).sum +
-      q.addGaussValuation v ρ) +
+      addGaussValuation v ρ q) +
         (g.roots.map fun a ↦ max 0 (min (ρ : WithTop ℝ) (v a))).sum ≤
           v (g.coeff d) + d • (ρ : WithTop ℝ) := by
     simpa only [add_right_comm] using H

@@ -14,6 +14,10 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 For finite families in an ordered additive monoid with a top element, termwise lower bounds
 with finite sum let one bound each individual excess by the total excess.
 
+## Main results
+
+* `Finset.le_add_of_sum_le_sum_add`: a total excess bound controls each individual excess.
+
 ## Provenance
 
 `Finset.le_add_of_sum_le_sum_add` adapts `New.Selmer.le_add_of_sum_le_sum_add` in

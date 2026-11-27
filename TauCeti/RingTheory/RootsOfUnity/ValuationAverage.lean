@@ -20,6 +20,13 @@ For a real additive valuation normalized at `p`, the shifted primitive `p ^ h`-t
 in the multiset's cardinality. These estimates form the averaging step in polynomial evaluation
 bounds.
 
+## Main results
+
+* `AddValuation.sum_max_min_primitiveRoots_sub_le`: the per-point clipped distance bound.
+* `AddValuation.exists_isPrimitiveRoot_sum_max_min_sub_le`: a root with bounded total clipped
+  distance valuation.
+* `AddValuation.exists_isPrimitiveRoot_sum_sub_le`: the corresponding untruncated bound.
+
 ## Provenance
 
 `AddValuation.sum_max_min_primitiveRoots_sub_le` and
@@ -44,6 +51,12 @@ namespace AddValuation
 
 variable {K : Type*} [CommRing K] [IsDomain K] {p : ℕ}
   (v : AddValuation K (WithTop ℝ)) (hp : v (p : K) = 1)
+
+omit [IsDomain K] in
+include hp in
+private lemma nat_ne_zero_of_map_eq_one : p ≠ 0 := by
+  intro hz
+  simp [hz] at hp
 
 omit [IsDomain K] in
 include hp in
@@ -104,16 +117,11 @@ theorem sum_max_min_primitiveRoots_sub_le (α : K) (h : ℕ) :
         exact le_max_left _ _)) :
           ((primitiveRoots (p ^ h) K).val.map fun ζ ↦ max 0 (min 1 (v (ζ - 1 - α)))).sum ≤
             _ + (rest.map fun a ↦ max 0 (min (1 : WithTop ℝ) (v a))).sum)
-  have hp0 : p ≠ 0 := by intro hz; simp [hz] at hp
+  have hp0 : p ≠ 0 := nat_ne_zero_of_map_eq_one v hp
   have hzero : ∀ ζ ∈ primitiveRoots (p ^ h) K, max 0 (min 1 (v (ζ - 1 - α))) = 0 := by
     intro ζ hζ
-    have hvζ : v ζ = 0 := by
-      have H := congrArg v.toValuation (isPrimitiveRoot_of_mem_primitiveRoots hζ).pow_eq_one
-      rw [_root_.map_pow, _root_.map_one] at H
-      have H' := congrArg (fun t : Multiplicative (WithTop ℝ)ᵒᵈ ↦ t.toAdd.ofDual)
-        ((pow_eq_one_iff_of_nonneg zero_le (pow_ne_zero _ hp0)).1 H)
-      simpa only [AddValuation.toValuation_apply, toAdd_ofAdd, OrderDual.ofDual_toDual,
-        toAdd_one, ofDual_zero] using H'
+    have hvζ : v ζ = 0 := v.map_eq_zero_of_pow_eq_one (pow_ne_zero _ hp0)
+      (isPrimitiveRoot_of_mem_primitiveRoots hζ).pow_eq_one
     have heq : ζ - 1 - α = ζ - (1 + α) := by ring
     rw [heq, sub_eq_add_neg, v.map_add_of_distinct_val (by
       rw [hvζ, v.map_neg]
@@ -131,7 +139,7 @@ theorem exists_isPrimitiveRoot_sum_max_min_sub_le (h : ℕ)
       (R.map fun α ↦ max 0 (min 1 (v (ζ - 1 - α)))).sum ≤
         ((R.card : ℝ) * (Nat.totient (p ^ h) : ℝ)⁻¹ * (h + 1) : ℝ) := by
   classical
-  have hp0 : p ≠ 0 := by intro hz; simp [hz] at hp
+  have hp0 : p ≠ 0 := nat_ne_zero_of_map_eq_one v hp
   have : NeZero (p ^ h) := ⟨pow_ne_zero _ hp0⟩
   obtain ⟨ζ₀, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (p ^ h)
   let μ := primitiveRoots (p ^ h) K
