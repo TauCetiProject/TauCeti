@@ -12,6 +12,8 @@ public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.Instances.Matrix
 
@@ -112,6 +114,8 @@ estimates do not see the boundary.
   `TauCeti.PDE.abs_energyFormH1_le_norm_energyFormH1L_mul`: `|B(u, v)| ≤ ‖B‖ ‖u‖ ‖v‖`.
 * `TauCeti.PDE.energyFormH1L0_comm`: symmetry of the bundled `H¹₀` energy form, from symmetry of
   the energy form at the functions of `H¹₀(Ω)`.
+* `TauCeti.PDE.memLp_drift` and `TauCeti.PDE.memLp_drift_apply`: the drift of an essentially
+  bounded field of pointwise energy forms, and each of its coordinates, is essentially bounded.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.memLp_energyIntegrand_zero_drift`: without drift, the energy
@@ -316,6 +320,34 @@ theorem memLp_energyIntegrand_mass_sub_const
   filter_upwards with x
   simp only [Pi.sub_apply]
   simpa only [sub_zero] using (energyIntegrand_sub (a x) 0 (b x) 0 (c x) kappa).symm
+
+/-- The coordinates of the drift of an essentially bounded field of pointwise energy forms are
+essentially bounded. -/
+theorem memLp_drift_apply
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) (k : ι) :
+    MemLp (fun x ↦ b x k) ⊤ (mu.restrict Omega) := by
+  classical
+  -- The drift coordinate `b_k` is the jet form evaluated at `((0, e_k), (1, 0))`.
+  set U : ℝ × EuclideanSpace ℝ ι := (0, EuclideanSpace.single k 1)
+  set V : ℝ × EuclideanSpace ℝ ι := (1, 0)
+  have h₁ : eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U) ⊤ (mu.restrict Omega) ≤
+      ‖U‖₊ * eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
+    eLpNorm_clm_apply_const_le U
+  have h₂ : eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U V) ⊤ (mu.restrict Omega) ≤
+      ‖V‖₊ * eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U) ⊤ (mu.restrict Omega) :=
+    eLpNorm_clm_apply_const_le V
+  have hUV : (fun x ↦ energyIntegrand (a x) (b x) (c x) U V) = fun x ↦ b x k := by
+    funext x
+    simp [U, V, energyIntegrand_apply, EuclideanSpace.inner_single_right]
+  rw [← hUV]
+  exact memLp_iff.2 (h₂.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+    (h₁.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hcoeff))))
+
+/-- The drift of an essentially bounded field of pointwise energy forms is essentially bounded. -/
+theorem memLp_drift
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    MemLp b ⊤ (mu.restrict Omega) :=
+  MemLp.of_eval_piLp (memLp_drift_apply hcoeff)
 
 /-- A bounded coefficient field with continuously varying matrix bilinear forms has an essentially
 bounded field of drift- and mass-free energy integrands on every open set. -/

@@ -10,7 +10,6 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.Basic
-import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Symmetry of the energy form
@@ -50,8 +49,8 @@ All in the `TauCeti.PDE` namespace.
 * `forall_energyFormH1_comm_iff`: for an almost everywhere symmetric principal coefficient, the
   energy form on `H¹(Ω)` is symmetric exactly when the drift vanishes almost everywhere on `Ω`.
 * `exists_forall_energyFormH1_comm_and_not_ae_isSymm`: on every nonempty open subset of `ℝⁿ`,
-  `n ≥ 2`, a bounded uniformly elliptic coefficient field whose principal coefficient is not almost
-  everywhere symmetric has a symmetric energy form.
+  `n ≥ 2`, there is a bounded coefficient field with `ξ · a ξ = ‖ξ‖²` whose principal coefficient
+  is not almost everywhere symmetric but whose energy form is symmetric.
 
 ## References
 
@@ -108,28 +107,6 @@ private theorem energyFormH1_sub_energyFormH1_swap
   refine ⟨(huv.sub hvu).congr hpt, ?_⟩
   rw [energyFormH1_def, energyFormH1_def, ← integral_sub huv hvu]
   exact integral_congr_ae hpt
-
-omit [mu.IsAddHaarMeasure] in
-/-- The coordinates of an essentially bounded drift are essentially bounded. -/
-private theorem memLp_drift_apply
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Ω)) (k : ι) :
-    MemLp (fun x ↦ b x k) ⊤ (mu.restrict Ω) := by
-  classical
-  -- The drift coordinate `b_k` is the jet form evaluated at `((0, e_k), (1, 0))`.
-  set U : ℝ × EuclideanSpace ℝ ι := (0, EuclideanSpace.single k 1)
-  set V : ℝ × EuclideanSpace ℝ ι := (1, 0)
-  have h₁ : eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U) ⊤ (mu.restrict Ω) ≤
-      ‖U‖₊ * eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Ω) :=
-    eLpNorm_clm_apply_const_le U
-  have h₂ : eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U V) ⊤ (mu.restrict Ω) ≤
-      ‖V‖₊ * eLpNorm (fun x ↦ energyIntegrand (a x) (b x) (c x) U) ⊤ (mu.restrict Ω) :=
-    eLpNorm_clm_apply_const_le V
-  have hUV : (fun x ↦ energyIntegrand (a x) (b x) (c x) U V) = fun x ↦ b x k := by
-    funext x
-    simp [U, V, energyIntegrand_apply, EuclideanSpace.inner_single_right]
-  rw [← hUV]
-  exact memLp_iff.2 (h₂.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
-    (h₁.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hcoeff))))
 
 /-- For an almost everywhere symmetric principal coefficient, if `a(f, f') = a(f', f)` for two test
 functions `f, f'`, then `∂_b f · f' - ∂_b f' · f` is integrable on `Ω` with integral zero, where
