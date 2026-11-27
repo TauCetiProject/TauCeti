@@ -92,6 +92,15 @@ theorem natCast_mem_curveIndexSubgroup {d : ℕ}
     (d : ℤ) ∈ curveIndexSubgroup f :=
   AddSubgroup.subset_closure ⟨d, h, rfl⟩
 
+/-- The index subgroup is contained in `H` exactly when `H` contains the degree of every
+relative effective Cartier divisor on `X` over `S`. -/
+theorem curveIndexSubgroup_le_iff {H : AddSubgroup ℤ} :
+    curveIndexSubgroup f ≤ H ↔ ∀ d : ℕ,
+      ((relativeEffectiveCartierDegreeSubfunctor f d).obj (op (Over.mk (𝟙 S)))).Nonempty →
+        (d : ℤ) ∈ H := by
+  rw [curveIndexSubgroup, AddSubgroup.closure_le, Set.image_subset_iff]
+  rfl
+
 /-- The **index** of a proper family of curves `f : X ⟶ S`: the gcd of the degrees of its
 `S`-rational effective divisors, the relative effective Cartier divisors on `X` over `S`, defined
 as the index of the subgroup `curveIndexSubgroup f` of `ℤ` they generate. It is `0` when `X` has
@@ -106,6 +115,22 @@ theorem curveIndex_dvd {d : ℕ}
   have := (AddSubgroup.zsmul_mem_iff_index_dvd _ Int.zmultiples_one d).1
     (by simpa only [smul_eq_mul, mul_one] using natCast_mem_curveIndexSubgroup f h)
   exact Int.natCast_dvd_natCast.mp this
+
+/-- A natural number divides the index exactly when it divides the degree of every relative
+effective Cartier divisor on `X` over `S`. -/
+theorem dvd_curveIndex_iff {n : ℕ} :
+    n ∣ curveIndex f ↔ ∀ d : ℕ,
+      ((relativeEffectiveCartierDegreeSubfunctor f d).obj (op (Over.mk (𝟙 S)))).Nonempty →
+        n ∣ d := by
+  constructor
+  · intro h d hd
+    exact dvd_trans h (curveIndex_dvd f hd)
+  · intro h
+    have hle : curveIndexSubgroup f ≤ AddSubgroup.zmultiples (n : ℤ) :=
+      (curveIndexSubgroup_le_iff f).2 fun d hd ↦
+        Int.mem_zmultiples_iff.mpr (Int.natCast_dvd_natCast.mpr (h d hd))
+    simpa only [curveIndex, Int.index_zmultiples, Int.natAbs_natCast] using
+      AddSubgroup.index_dvd_of_le hle
 
 end Index
 
@@ -150,8 +175,8 @@ theorem curvePeriod_dvd_iff {d : ℤ} :
 degrees of `S`-rational divisor classes. -/
 theorem curveIndexSubgroup_le_curvePeriodSubgroup :
     curveIndexSubgroup f ≤ curvePeriodSubgroup f := by
-  rw [curveIndexSubgroup, AddSubgroup.closure_le]
-  rintro _ ⟨d, ⟨D, hD⟩, rfl⟩
+  rw [curveIndexSubgroup_le_iff]
+  rintro d ⟨D, hD⟩
   exact ⟨_, relativePicardToFppfSheaf_app_mem_relativePicardDegreeFppfSubfunctor_of_mem f hD⟩
 
 /-- **The period divides the index** (Poonen–Stoll, Section 8): the gcd of the degrees of the
