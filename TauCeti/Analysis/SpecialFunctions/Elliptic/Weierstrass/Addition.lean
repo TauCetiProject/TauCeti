@@ -116,12 +116,13 @@ theorem weierstrassZeta_add_add_weierstrassZeta_sub (hv : v ∉ L.lattice) (h : 
   by_cases hu : u ∈ L.lattice
   · -- Both sides are `2 η(u)`, by the quasi-periodicity of `ζ`.
     have h₀ : ℘'[L] u = 0 := L.derivWeierstrassP_coe ⟨u, hu⟩
+    have hζ : L.weierstrassZeta u = L.quasiPeriod ⟨u, hu⟩ := by
+      simpa using L.weierstrassZeta_coe ⟨u, hu⟩
     have h₁ : L.weierstrassZeta (u + v) = L.weierstrassZeta v + L.quasiPeriod ⟨u, hu⟩ := by
       simpa [add_comm] using L.weierstrassZeta_add_coe v ⟨u, hu⟩
     have h₂ : L.weierstrassZeta (u - v) = L.weierstrassZeta (-v) + L.quasiPeriod ⟨u, hu⟩ := by
       simpa [neg_add_eq_sub] using L.weierstrassZeta_add_coe (-v) ⟨u, hu⟩
-    rw [h₀, h₁, h₂, L.weierstrassZeta_neg, show L.weierstrassZeta u = L.quasiPeriod ⟨u, hu⟩ from
-      L.weierstrassZeta_coe ⟨u, hu⟩]
+    rw [h₀, h₁, h₂, L.weierstrassZeta_neg, hζ]
     ring
   set S := {w : ℂ | w ∉ L.lattice ∧ w + v ∉ L.lattice ∧ w - v ∉ L.lattice}
   set ψ : ℂ → ℂ := fun w ↦ L.weierstrassZeta (w + v) + L.weierstrassZeta (w - v) -
@@ -182,7 +183,7 @@ private lemma exists_weierstrassSigma_add_mul_weierstrassSigma_sub_eq (hv : v �
     convert (((L.hasDerivAt_weierstrassP hw.1).const_sub (℘[L] v)).mul
       ((L.hasDerivAt_weierstrassSigma hw.1).pow 2)).mul_const (L.weierstrassSigma v ^ 2) using 1
     have h℘ := sub_ne_zero.mpr (hne w hw)
-    simp only [g, Pi.pow_apply, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
+    simp [g]
     field_simp
     ring
   have hfS : ∀ w ∈ S, f w ≠ 0 := fun w hw ↦
@@ -231,7 +232,6 @@ private lemma weierstrassSigma_add_mul_weierstrassSigma_sub_of_ne (hu : u ∉ L.
     L.weierstrassSigma (u + v) * L.weierstrassSigma (u - v) =
       (℘[L] v - ℘[L] u) * L.weierstrassSigma u ^ 2 * L.weierstrassSigma v ^ 2 := by
   obtain ⟨c, hc⟩ := L.exists_weierstrassSigma_add_mul_weierstrassSigma_sub_eq hv
-  have hσ : Continuous L.weierstrassSigma := L.differentiable_weierstrassSigma.continuous
   -- Near `0`, the points `w ≠ 0` satisfy `w, w ± v ∉ Λ`.
   have hS : ∀ᶠ w in 𝓝[≠] (0 : ℂ), w ∉ L.lattice ∧ w + v ∉ L.lattice ∧ w - v ∉ L.lattice := by
     have hopen := L.isClosed_lattice.isOpen_compl
@@ -280,7 +280,6 @@ theorem weierstrassSigma_two_mul (z : ℂ) :
     ring
   -- Divide the addition formula at `(z, z - h)` by `h` and let `h → 0`.
   have hz0 : z - 0 ∉ L.lattice := by simpa using hz
-  have hσ : Continuous L.weierstrassSigma := L.differentiable_weierstrassSigma.continuous
   have h₁ : Tendsto (fun h ↦ L.weierstrassSigma (2 * z - h) * slope L.weierstrassSigma 0 h)
       (𝓝[≠] 0) (𝓝 (L.weierstrassSigma (2 * z) * 1)) := by
     refine Tendsto.mul ?_ (hasDerivAt_iff_tendsto_slope.mp L.hasDerivAt_weierstrassSigma_zero)

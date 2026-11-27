@@ -44,7 +44,8 @@ complex torus.
 
 * `PeriodPair.hasProdLocallyUniformlyOn_weierstrassFactor_two_div`: the canonical product
   converges locally uniformly on `ℂ`.
-* `PeriodPair.differentiable_weierstrassSigma`: `σ` is entire.
+* `PeriodPair.differentiable_weierstrassSigma`, `PeriodPair.continuous_weierstrassSigma`: `σ` is
+  entire, hence continuous.
 * `PeriodPair.weierstrassSigma_eq_zero_iff`: `σ(z) = 0` exactly when `z ∈ Λ`.
 * `PeriodPair.analyticOrderAt_weierstrassSigma_coe`: these zeros are simple.
 * `PeriodPair.weierstrassSigma_neg`, `PeriodPair.hasDerivAt_weierstrassSigma_zero`: `σ` is odd
@@ -115,6 +116,11 @@ private theorem differentiable_tprod_weierstrassFactor_two_div :
 theorem differentiable_weierstrassSigma : Differentiable ℂ L.weierstrassSigma := by
   rw [weierstrassSigma_eq]
   exact differentiable_id.mul L.differentiable_tprod_weierstrassFactor_two_div
+
+/-- `σ` is continuous. -/
+@[fun_prop]
+theorem continuous_weierstrassSigma : Continuous L.weierstrassSigma :=
+  L.differentiable_weierstrassSigma.continuous
 
 private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice) :
     weierstrassFactor 2 (z / l) ≠ 0 := by
