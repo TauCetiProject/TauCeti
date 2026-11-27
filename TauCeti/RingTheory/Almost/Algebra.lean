@@ -348,8 +348,7 @@ categories. -/
 theorem isEquivalence_toAlmost_baseChange (W : Type u) [CommRing W] [_root_.Algebra V W]
     (hW : S.ideal.map (algebraMap V W) = ⊤) :
     (toAlmost (S.baseChange W)).IsEquivalence := by
-  have hcl : S.baseChange W = BasicSetup.classical W := by ext1; simpa using hW
-  rw [hcl]
+  rw [S.baseChange_eq_classical_of_map_eq_top W hW]
   infer_instance
 
 /-- If `S.ideal` generates the unit ideal in a `V`-algebra `W`, almostification identifies

@@ -60,18 +60,6 @@ theorem localizedModuleIso_inv_mk (M : ModuleCat.{max u v} R) (T : Submonoid R) 
   rw [← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply, map_smul,
     localizedModuleIso_hom_mkLinearMap, h]
 
-private theorem localizedModuleIso_hom_apply (M : ModuleCat.{max u v} R) (T : Submonoid R)
-    (x : M.localizedModule T) :
-    (M.localizedModuleIso T).hom x =
-      (IsLocalizedModule.iso T (M.localizedModuleMkLinearMap T)).symm x := by
-  have h : (M.localizedModuleIso T).hom.hom.restrictScalars R =
-      (IsLocalizedModule.iso T (M.localizedModuleMkLinearMap T)).symm.toLinearMap := by
-    apply IsLocalizedModule.linearMap_ext T (M.localizedModuleMkLinearMap T)
-      (LocalizedModule.mkLinearMap T M)
-    ext m
-    simp [M.localizedModuleIso_hom_mkLinearMap T m]
-  exact LinearMap.congr_fun h x
-
 /-- Naturality of `ModuleCat.localizedModuleIso`: `(localizedModuleFunctor T).map f` corresponds
 to `LocalizedModule.map T f.hom`. -/
 @[reassoc]
@@ -79,17 +67,19 @@ theorem localizedModuleIso_naturality {T : Submonoid R} {M₁ M₂ : ModuleCat.{
     (f : M₁ ⟶ M₂) :
     (localizedModuleFunctor.{max u v} T).map f ≫ (M₂.localizedModuleIso T).hom =
       (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
-  have h :
-      localizedModuleMap T f ≫ (M₂.localizedModuleIso T).hom =
-        (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
-    ext x
-    have hcoe := congr_fun (LocalizedModule.coe_map_eq (M₁.localizedModuleMkLinearMap T)
-      (M₂.localizedModuleMkLinearMap T) f.hom) ((M₁.localizedModuleIso T).hom x)
-    rw [localizedModuleIso_hom_apply] at hcoe
-    simp only [Function.comp_apply, LinearEquiv.apply_symm_apply] at hcoe
-    rw [ModuleCat.comp_apply, ModuleCat.comp_apply, localizedModuleIso_hom_apply,
-      localizedModuleIso_hom_apply, localizedModuleMap_hom_apply, ConcreteCategory.hom_ofHom]
-    exact hcoe.symm
+  have h : localizedModuleMap T f ≫ (M₂.localizedModuleIso T).hom =
+      (M₁.localizedModuleIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+    apply hom_ext
+    apply LinearMap.restrictScalars_injective R
+    apply IsLocalizedModule.linearMap_ext T (M₁.localizedModuleMkLinearMap T)
+      (LocalizedModule.mkLinearMap T M₂)
+    ext m
+    simp only [LinearMap.coe_restrictScalars, LinearMap.comp_apply, hom_comp,
+      ConcreteCategory.hom_ofHom]
+    rw [localizedModuleMap_hom_apply, IsLocalizedModule.map_apply T
+        (M₁.localizedModuleMkLinearMap T) (M₂.localizedModuleMkLinearMap T) f.hom m,
+      localizedModuleIso_hom_mkLinearMap, localizedModuleIso_hom_mkLinearMap,
+      LocalizedModule.map_mk]
   rw [localizedModuleFunctor_map]
   exact h
 

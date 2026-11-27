@@ -658,11 +658,28 @@ theorem baseChange_classical : (classical V).baseChange W = classical W := by
 theorem baseChange_quotient_eq_zero : S.baseChange (V ⧸ S.ideal) = zero (V ⧸ S.ideal) := by
   ext1; exact Ideal.map_quotient_self S.ideal
 
+/-- Base change makes a basic setup classical iff its ideal generates the unit ideal in `W`. -/
+@[simp]
+theorem baseChange_eq_classical_iff :
+    S.baseChange W = classical W ↔ S.ideal.map (algebraMap V W) = ⊤ := by
+  simp [BasicSetup.ext_iff]
+
+/-- Base change along `V → W` makes a basic setup classical whenever `mW = ⊤`. -/
+theorem baseChange_eq_classical_of_map_eq_top (hW : S.ideal.map (algebraMap V W) = ⊤) :
+    S.baseChange W = classical W :=
+  (S.baseChange_eq_classical_iff W).mpr hW
+
+/-- When an element of `m` is inverted in `W`, the extended ideal `mW` is the unit ideal. -/
+theorem ideal_map_eq_top_of_isLocalization_away {ε : V} (hε : ε ∈ S.ideal)
+    [IsLocalization.Away ε W] : S.ideal.map (algebraMap V W) = ⊤ :=
+  Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hε)
+    (IsLocalization.Away.algebraMap_isUnit ε)
+
 /-- Inverting an element of `m` makes the setup classical (Gabber–Ramero Remark 2.1.4(ii)); this
 includes `ε = 0`, where `V[1/ε] = 0`. -/
 theorem baseChange_away_eq_classical {ε : V} (hε : ε ∈ S.ideal) [IsLocalization.Away ε W] :
     S.baseChange W = classical W :=
-  eq_classical_of_isUnit_mem (Ideal.mem_map_of_mem _ hε) (IsLocalization.Away.algebraMap_isUnit ε)
+  S.baseChange_eq_classical_of_map_eq_top W (S.ideal_map_eq_top_of_isLocalization_away W hε)
 
 end BaseChange
 

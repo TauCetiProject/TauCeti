@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import TauCeti.CategoryTheory.Monoidal.Braided.Adjunction
 
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # Change of rings and tensor products of modules

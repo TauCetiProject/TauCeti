@@ -209,9 +209,9 @@ noncomputable example :
     IsLocalization.algEquiv (Submonoid.powers (p : 𝓞_ℂ_[p]))
       (Localization.Away (p : 𝓞_ℂ_[p])) ℂ_[p],
     Module.toAlmostBaseChangeEquiv S ℂ_[p]
-      (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical ℂ_[p] hp)),
+      (S.ideal_map_eq_top_of_isLocalization_away ℂ_[p] hp),
     Algebra.toAlmostBaseChangeEquiv S ℂ_[p]
-      (by simpa using congrArg BasicSetup.ideal (S.baseChange_away_eq_classical ℂ_[p] hp))⟩
+      (S.ideal_map_eq_top_of_isLocalization_away ℂ_[p] hp)⟩
 
 -- A single-term complex concentrated in degree `0` with `ResidueField 𝓞_ℂ_[p]` is not exact at
 -- `0` in `ModuleCat 𝓞_ℂ_[p]`, has almost zero homology in every degree, and becomes acyclic
