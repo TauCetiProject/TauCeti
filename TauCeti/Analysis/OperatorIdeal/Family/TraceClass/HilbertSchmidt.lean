@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.OperatorIdeal.Family.HilbertSchmidt
 public import TauCeti.Analysis.OperatorIdeal.Family.TraceClass.Trace
-import TauCeti.Analysis.MeanInequalities
 
 /-!
 # Products of Hilbert–Schmidt operators
@@ -69,36 +68,6 @@ universe u v w x
 variable {𝕜 : Type u} [RCLike 𝕜]
 
 namespace ContinuousLinearMap
-
-/-! ### Cauchy–Schwarz for operators on a common source -/
-
-section CauchySchwarz
-
-variable {F : Type*} {G : Type*} {H : Type*}
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {κ : Type*}
-
-/-- **Cauchy–Schwarz for Hilbert–Schmidt columns.** For operators `A`, `B` on a common source and a
-Hilbert basis `(cᵢ)` of it, `∑ᵢ ‖A cᵢ‖ ‖B cᵢ‖ ≤ E_c(A)^(1/2) E_c(B)^(1/2)` in `ℝ≥0∞`. -/
-theorem tsum_enorm_apply_mul_enorm_apply_le (A : F →L[𝕜] G) (B : F →L[𝕜] H)
-    (c : HilbertBasis κ 𝕜 F) :
-    ∑' i, ‖A (c i)‖ₑ * ‖B (c i)‖ₑ ≤
-      A.hilbertSchmidtEnergy c ^ (1 / 2 : ℝ) * B.hilbertSchmidtEnergy c ^ (1 / 2 : ℝ) := by
-  simpa [hilbertSchmidtEnergy_def, ENNReal.rpow_two] using
-    ENNReal.inner_le_Lp_mul_Lq_tsum (fun i ↦ ‖A (c i)‖ₑ) (fun i ↦ ‖B (c i)‖ₑ)
-      Real.HolderConjugate.two_two
-
-/-- For operators `A`, `B` of finite Hilbert–Schmidt energy on a common source, the products
-`‖A cᵢ‖ ‖B cᵢ‖` along a Hilbert basis are summable. -/
-theorem summable_norm_apply_mul_norm_apply (A : F →L[𝕜] G) (B : F →L[𝕜] H) (c : HilbertBasis κ 𝕜 F)
-    (hA : A.hilbertSchmidtEnergy c ≠ ∞) (hB : B.hilbertSchmidtEnergy c ≠ ∞) :
-    Summable fun i ↦ ‖A (c i)‖ * ‖B (c i)‖ := by
-  have hne : ∑' i, ‖A (c i)‖ₑ * ‖B (c i)‖ₑ ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.mul_ne_top (by simp [hA]) (by simp [hB]))
-      (tsum_enorm_apply_mul_enorm_apply_le A B c)
-  simpa using ENNReal.summable_toReal hne
-
-end CauchySchwarz
 
 /-! ### The composite as a nuclear series -/
 
@@ -163,16 +132,6 @@ theorem gauge_traceClass_comp_le (S : F →L[𝕜] G) (T : E →L[𝕜] F) :
   obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
   rw [gauge_traceClass, gauge_hilbertSchmidt S c, gauge_hilbertSchmidt T b]
   exact S.nuclearENorm_comp_le T b c
-
-/-- The adjoint of a Hilbert–Schmidt operator is Hilbert–Schmidt. -/
-theorem adjoint_mem_hilbertSchmidt {T : E →L[𝕜] F}
-    (hT : T ∈ ((hilbertSchmidt.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule) :
-    ContinuousLinearMap.adjoint T ∈
-      ((hilbertSchmidt.{u, w, v} 𝕜).operatorGauge F E).finiteSubmodule := by
-  obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
-  obtain ⟨_, c, -⟩ := exists_hilbertBasis 𝕜 F
-  rw [mem_finiteSubmodule_hilbertSchmidt_iff _ c, T.hilbertSchmidtEnergy_adjoint b c]
-  exact (mem_finiteSubmodule_hilbertSchmidt_iff T b).1 hT
 
 /-- **Products of Hilbert–Schmidt operators are trace class.** -/
 theorem comp_mem_traceClass {S : F →L[𝕜] G} {T : E →L[𝕜] F}

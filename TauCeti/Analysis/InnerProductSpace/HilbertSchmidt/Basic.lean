@@ -55,6 +55,8 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
 * `ContinuousLinearMap.hilbertSchmidtEnergy_comp_comp_le`: `E(A T B) ≤ ‖A‖ₑ² E(T) ‖B‖ₑ²`.
 * `ContinuousLinearMap.rpow_hilbertSchmidtEnergy_add_le`: the triangle inequality
   `E_b(S + T)^(1/2) ≤ E_b(S)^(1/2) + E_b(T)^(1/2)`.
+* `ContinuousLinearMap.tsum_enorm_apply_mul_enorm_apply_le`: Cauchy–Schwarz for two operators on a
+  common source, `∑ᵢ ‖A cᵢ‖ ‖B cᵢ‖ ≤ E_c(A)^(1/2) E_c(B)^(1/2)`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_smul` and `ContinuousLinearMap.hilbertSchmidtNorm_smul`:
   homogeneity, `E_b(c • T) = ‖c‖ₑ² E_b(T)` and `‖c • T‖_HS = ‖c‖ ‖T‖_HS`.
 * `ContinuousLinearMap.hilbertSchmidtNorm_adjoint`: `‖T†‖_HS = ‖T‖_HS`, for every operator.
@@ -145,6 +147,26 @@ theorem rpow_hilbertSchmidtEnergy_add_le (S T : E →L[𝕜] F) (b : HilbertBasi
   refine le_trans ?_ h
   gcongr
   exact _root_.tsum_le_tsum fun i ↦ by gcongr; exact eNorm_add_le _ _
+
+/-- **Cauchy–Schwarz for Hilbert–Schmidt columns.** For operators `A`, `B` on a common source and a
+Hilbert basis `(cᵢ)` of it, `∑ᵢ ‖A cᵢ‖ ‖B cᵢ‖ ≤ E_c(A)^(1/2) E_c(B)^(1/2)` in `ℝ≥0∞`. -/
+theorem tsum_enorm_apply_mul_enorm_apply_le (A : E →L[𝕜] F) (B : E →L[𝕜] G)
+    (c : HilbertBasis ι 𝕜 E) :
+    ∑' i, ‖A (c i)‖ₑ * ‖B (c i)‖ₑ ≤
+      A.hilbertSchmidtEnergy c ^ (1 / 2 : ℝ) * B.hilbertSchmidtEnergy c ^ (1 / 2 : ℝ) := by
+  simpa [hilbertSchmidtEnergy_def, ENNReal.rpow_two] using
+    ENNReal.inner_le_Lp_mul_Lq_tsum (fun i ↦ ‖A (c i)‖ₑ) (fun i ↦ ‖B (c i)‖ₑ)
+      Real.HolderConjugate.two_two
+
+/-- For operators `A`, `B` of finite Hilbert–Schmidt energy on a common source, the products
+`‖A cᵢ‖ ‖B cᵢ‖` along a Hilbert basis are summable. -/
+theorem summable_norm_apply_mul_norm_apply (A : E →L[𝕜] F) (B : E →L[𝕜] G) (c : HilbertBasis ι 𝕜 E)
+    (hA : A.hilbertSchmidtEnergy c ≠ ∞) (hB : B.hilbertSchmidtEnergy c ≠ ∞) :
+    Summable fun i ↦ ‖A (c i)‖ * ‖B (c i)‖ := by
+  have hne : ∑' i, ‖A (c i)‖ₑ * ‖B (c i)‖ₑ ≠ ∞ :=
+    ne_top_of_le_ne_top (ENNReal.mul_ne_top (by simp [hA]) (by simp [hB]))
+      (tsum_enorm_apply_mul_enorm_apply_le A B c)
+  simpa using ENNReal.summable_toReal hne
 
 /-- Embedding the target into its completion does not change the energy. -/
 @[simp]
