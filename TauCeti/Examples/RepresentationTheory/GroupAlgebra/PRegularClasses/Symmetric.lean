@@ -64,24 +64,6 @@ theorem mk_mem_pRegularConjClasses_three_iff (g : S₃) :
     exact iff_of_false (by decide) h2
   · exact iff_of_true (by decide) (mul_self_eq_one_of_ne g h3)
 
-/-- `g` is conjugate to `ρ` exactly when it is a `3`-cycle. -/
-private theorem isConj_ρ_iff (g : S₃) : IsConj g ρ ↔ g ≠ 1 ∧ g * g * g = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ isConj_of_classOfS₃_eq g ρ ?_⟩
-  · have hc : classOfS₃ g = 1 := classOfS₃_eq_of_isConj g ρ h
-    simp only [classOfS₃] at hc
-    split_ifs at hc with h1 h3 <;> first | exact ⟨h1, h3⟩ | exact absurd hc (by decide)
-  · simp only [classOfS₃, h.1, h.2, ite_false, ite_true]; decide
-
-/-- `g` is conjugate to `s` exactly when it is a transposition. -/
-private theorem isConj_s_iff (g : S₃) : IsConj g s ↔ g ≠ 1 ∧ g * g = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ isConj_of_classOfS₃_eq g s ?_⟩
-  · have hc : classOfS₃ g = 2 := classOfS₃_eq_of_isConj g s h
-    simp only [classOfS₃] at hc
-    split_ifs at hc with h1 h3 <;>
-      first | exact ⟨h1, mul_self_eq_one_of_ne g h3⟩ | exact absurd hc (by decide)
-  · have h3 : g * g * g ≠ 1 := by rw [h.2, one_mul]; exact h.1
-    simp only [classOfS₃, h.1, h3, ite_false]; decide
-
 /-- The class of `1` differs from the class of every `x ≠ 1`. -/
 private theorem mk_one_ne_mk {x : S₃} (hx : x ≠ 1) : ConjClasses.mk 1 ≠ ConjClasses.mk x := by
   rwa [Ne, ConjClasses.mk_eq_mk_iff_isConj, isConj_one_right]
