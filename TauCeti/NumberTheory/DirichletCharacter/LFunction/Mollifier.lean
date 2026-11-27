@@ -67,8 +67,7 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
 /-- The coefficients of the reciprocal Dirichlet series have norm at most one. -/
 private theorem norm_mul_moebius_le_one {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
     ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
-  rw [mul_comm, ← zsmul_eq_mul]
-  exact (ArithmeticFunction.norm_moebius_smul_le n (χ n)).trans (χ.norm_le_one n)
+  exact (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n)
 
 /-- The theta kernel of the mollifier decays faster than every power at infinity. -/
 private theorem isBigO_gaussianMollifier_kernel {N : ℕ} (χ : DirichletCharacter ℂ N) (j : ℕ)
@@ -141,7 +140,8 @@ theorem norm_gaussianMollifier_le_of_re_mem_Icc {N : ℕ} (χ : DirichletCharact
       gcongr
       exact norm_gaussianTheta_le (fun n ↦ χ.norm_mul_moebius_le_one n) ht₀
     _ = 3 * t ^ (s.re - 2) * Real.exp (-t) := by
-      rw [show s.re - 2 = (s.re - 1) - 1 by ring, Real.rpow_sub_one ht₀.ne' (s.re - 1)]
+      have hexponent : s.re - 2 = (s.re - 1) - 1 := by ring
+      rw [hexponent, Real.rpow_sub_one ht₀.ne' (s.re - 1)]
       ring
     _ ≤ C * Real.exp (-t) := by
       dsimp only [C]

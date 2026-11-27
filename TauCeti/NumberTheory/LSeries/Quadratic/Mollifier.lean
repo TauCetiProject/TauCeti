@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Mollifier
-public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail
+public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail.Basic
 
 /-!
 # The Gaussian mollifier on the critical line
@@ -39,11 +39,11 @@ theorem norm_gaussianMollifier_le_quadraticTwistGaussianThetaTailIntegral {N : �
     (integrableOn_quadraticTwistGaussianThetaTailIntegrand hc hT) ?_)
   filter_upwards [ae_restrict_mem (measurableSet_Ioi (a := T⁻¹))] with t ht
   have ht₀ : 0 < t := (inv_pos.mpr hT).trans ht
-  rw [norm_cpow_mul_gaussianDirichletTheta j _ s ht₀, hs, Real.rpow_sub_one ht₀.ne',
-    ← Real.sqrt_eq_rpow, div_mul_eq_mul_div,
-    gaussianThetaSeries_def j (fun n ↦ χ n * (μ n : ℂ)),
-    norm_mul, norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-  gcongr
-  exact le_add_of_nonneg_left (norm_nonneg _)
+  rw [norm_cpow_mul_gaussianDirichletTheta j _ s ht₀, hs]
+  calc
+    _ = ‖gaussianThetaSeries j (fun n ↦ χ n * (μ n : ℂ)) t‖ / t := by
+      rw [norm_gaussianThetaSeries, Real.rpow_sub_one ht₀.ne', ← Real.sqrt_eq_rpow,
+        div_mul_eq_mul_div]
+    _ ≤ _ := div_le_div_of_nonneg_right (le_add_of_nonneg_left (norm_nonneg _)) ht₀.le
 
 end DirichletCharacter

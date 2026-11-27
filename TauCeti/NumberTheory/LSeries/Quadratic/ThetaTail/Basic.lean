@@ -54,9 +54,8 @@ theorem integrableOn_quadraticTwistGaussianThetaTailIntegrand (hc : ∀ n : ℕ+
     {T : ℝ} (hT : 0 < T) :
     IntegrableOn (fun u ↦ (‖gaussianThetaSeries j c u‖ +
       ‖gaussianThetaSeries j (fun n ↦ c n * μ n) u‖) / u) (Ioi T⁻¹) := by
-  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 := by
-    rw [mul_comm, ← zsmul_eq_mul]
-    exact (ArithmeticFunction.norm_moebius_smul_le n (c n)).trans (hc n)
+  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 :=
+    (ArithmeticFunction.norm_mul_moebius_le n (c n)).trans (hc n)
   have h := (integrableOn_norm_gaussianThetaSeries_div (j := j) hc (inv_pos.mpr hT)).add
     (integrableOn_norm_gaussianThetaSeries_div (j := j) (c := fun n ↦ c n * μ n)
       hμ (inv_pos.mpr hT))

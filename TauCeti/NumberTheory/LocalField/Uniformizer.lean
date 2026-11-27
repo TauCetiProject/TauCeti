@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.RingTheory.Valuation.Basic
 
 /-!
 # Uniformizers of a nonarchimedean local field
@@ -30,7 +31,10 @@ largest value below `1`. An irreducible element of `𝒪[K]` has this valuation
 group. In a nonarchimedean local field the valuation of a unit `x` is therefore
 `uniformizer K ^ v_K(x)` (`TauCeti.valuation_eq_uniformizer_zpow`), and the closed balls
 `{x | valuation K x ≤ uniformizer K ^ m}`, the fractional ideals `𝓂[K] ^ m` for `m : ℤ`, form a
-neighbourhood basis of `0` (`TauCeti.hasBasis_nhds_zero_valuation_le_uniformizer_zpow`).
+neighbourhood basis of `0` (`TauCeti.hasBasis_nhds_zero_valuation_le_uniformizer_zpow`). As
+additive subgroups (`Valuation.leAddSubgroup`) these balls are compact
+(`TauCeti.isCompact_leAddSubgroup`), and every compact subset of `K` lies in one of them
+(`IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow`).
 -/
 
 public section
@@ -175,6 +179,32 @@ theorem hasBasis_nhds_zero_valuation_le_uniformizer_zpow :
     exact zpow_lt_zpow_right_of_lt_one₀ uniformizer_pos uniformizer_lt_one (lt_add_one _)
   · exact ⟨uniformizer K ^ m, (zpow_pos uniformizer_pos m).ne',
       fun x (hx : valuation K x < _) ↦ hx.le⟩
+
+variable (K) in
+/-- The additive subgroup `(valuation K).leAddSubgroup γ`, the closed ball
+`{x | valuation K x ≤ γ}`, is compact. -/
+theorem isCompact_leAddSubgroup (γ : ValueGroupWithZero K) :
+    IsCompact ((valuation K).leAddSubgroup γ : Set K) := by
+  rw [Valuation.coe_leAddSubgroup]
+  exact isCompact_closedBall K γ
+
+/-- Every compact subset of `K` lies in some fractional ideal `𝓂[K] ^ n`, the closed ball
+`{x | valuation K x ≤ uniformizer K ^ n}`: these balls are open, increase as `n` decreases, and
+cover `K`. -/
+theorem _root_.IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow {s : Set K}
+    (hs : IsCompact s) : ∃ n : ℤ, s ⊆ {x | valuation K x ≤ uniformizer K ^ n} := by
+  let U : ℤ → Set K := fun n ↦ (valuation K).leAddSubgroup (uniformizer K ^ n)
+  have hU : Antitone U := fun i j hij ↦ SetLike.coe_subset_coe.2 <|
+    (valuation K).leAddSubgroup_monotone <|
+      zpow_le_zpow_right_of_le_one₀ uniformizer_pos uniformizer_lt_one.le hij
+  have hcover : s ⊆ ⋃ n, U n := fun x _ ↦ by
+    rcases eq_or_ne x 0 with rfl | hx
+    · exact mem_iUnion.2 ⟨0, zero_mem ((valuation K).leAddSubgroup _)⟩
+    · exact mem_iUnion.2 ⟨_, (valuation_le_uniformizer_zpow_iff (Units.mk0 x hx) _).2 le_rfl⟩
+  simpa only [U, Valuation.coe_leAddSubgroup] using
+    hs.elim_directed_cover U (fun n ↦ AddSubgroup.isOpen_of_mem_nhds _
+      ((hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_of_mem trivial)) hcover
+      hU.directed_le
 
 end LocalField
 

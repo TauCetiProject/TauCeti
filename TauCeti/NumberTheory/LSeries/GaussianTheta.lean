@@ -102,6 +102,12 @@ theorem gaussianMellin_def (j : Fin 2) :
 
 variable {j : Fin 2} {c : ℕ → ℂ}
 
+/-- The norm of the normalized theta series is the theta sum's norm times the square root
+of the scale. -/
+theorem norm_gaussianThetaSeries (u : ℝ) :
+    ‖gaussianThetaSeries j c u‖ = √u * ‖gaussianTheta j c u‖ := by
+  rw [gaussianThetaSeries_def, norm_mul, Complex.norm_real, norm_of_nonneg (sqrt_nonneg u)]
+
 /-- The Mellin transform of the parity-`j` Gaussian in its half-plane of convergence. -/
 theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
     gaussianMellin j s =
@@ -208,9 +214,9 @@ theorem norm_gaussianTheta_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) {u : ℝ} (hu
 At nonpositive scales both sides vanish under the real square-root convention. -/
 theorem norm_gaussianThetaSeries_le (hc : ∀ n : ℕ+, ‖c n‖ ≤ 1) (u : ℝ) :
     ‖gaussianThetaSeries j c u‖ ≤ 3 * exp (-u) / √u := by
+  rw [norm_gaussianThetaSeries]
   obtain hu | hu := le_or_gt u 0
-  · simp [gaussianThetaSeries_def, sqrt_eq_zero_of_nonpos hu]
-  rw [gaussianThetaSeries_def, norm_mul, Complex.norm_real, norm_of_nonneg (sqrt_nonneg u)]
+  · simp [sqrt_eq_zero_of_nonpos hu]
   calc √u * ‖gaussianTheta j c u‖ ≤ √u * (3 * exp (-u) / u) := by
         gcongr
         exact norm_gaussianTheta_le hc hu

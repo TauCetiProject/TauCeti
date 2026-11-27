@@ -5,7 +5,7 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Algebra.Order.Ring.Abs
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
@@ -45,7 +45,8 @@ behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`. Over an interval `L 
 squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the Möbius coefficient
 energy of bilinear estimates. Since `|μ(n)| ≤ 1`, multiplying by `μ(n)` never increases an
 absolute value (`ArithmeticFunction.abs_moebius_mul_le`) or norm
-(`ArithmeticFunction.norm_moebius_smul_le`).
+(`ArithmeticFunction.norm_mul_moebius_le`). The norm bound also holds for integer scalar
+multiplication in a seminormed additive group (`ArithmeticFunction.norm_moebius_smul_le`).
 
 ## Main results
 
@@ -307,6 +308,12 @@ theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M :
 theorem norm_moebius_smul_le [SeminormedAddGroup G] (n : ℕ) (a : G) :
     ‖μ n • a‖ ≤ ‖a‖ := by
   rcases moebius_eq_or n with h | h | h <;> simp [h]
+
+/-- Right multiplication by a value of the Möbius function does not increase the norm. -/
+theorem norm_mul_moebius_le [SeminormedRing R] (n : ℕ) (a : R) :
+    ‖a * (μ n : R)‖ ≤ ‖a‖ := by
+  rw [← (Int.cast_commute (μ n) a).eq, ← zsmul_eq_mul]
+  exact norm_moebius_smul_le n a
 
 /-- Multiplying by a value of the Möbius function does not increase the absolute value:
 `|μ(n) a| ≤ |a|`, as `μ(n)` is `0` or `±1`. -/
