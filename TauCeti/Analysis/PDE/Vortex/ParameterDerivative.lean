@@ -115,8 +115,12 @@ denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
   `TauCeti.Analysis.PDE.Vortex.ParameterDerivative.AdjointSobolev`.
 
 The weighted Sobolev versions of the second derivative estimates for `Q` and `π` are in
-`TauCeti.Analysis.PDE.Vortex.SecondParameterDerivative`. Derivatives in the parameter of order three
-and higher are not treated.
+`TauCeti.Analysis.PDE.Vortex.SecondParameterDerivative`. The weighted `L²` estimates for the
+derivatives of every order along curves are in
+`TauCeti.Analysis.PDE.Vortex.ParameterDerivative.IteratedDeriv`
+(`exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalRightInverse_le` and
+`exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le`); their weighted
+Sobolev versions at order three and higher are not treated.
 
 ## References
 
@@ -284,7 +288,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_m
 
 /-- `Q (Z(b, y))` costs at most `q ‖Z‖ ‖b‖∞ r N` in a weighted norm in which `Q` costs at most `q`
 and `y` at most `r N`. -/
-private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q r : ℝ≥0}
+theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q r : ℝ≥0}
     {N : ℝ≥0∞}
     {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
     (hQ : ∀ g, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q g) z) 2 μ⊤ ≤
@@ -309,7 +313,7 @@ most `kc` on the kernel at the rate `c`, and at most `qᵢ` on `eᵢ k` at the r
 `‖k‖₂`, then
 
 `‖exp(c ρ) y‖₂ ≤ kc ∑ i ∈ s, qᵢ ‖exp(c ρ) Aᵢ‖₂ + ‖exp(c ρ) (y - π y)‖₂`. -/
-private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner {c : ℝ}
+theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner {c : ℝ}
     {kc : ℝ≥0} {ι : Type*} {s : Finset ι} {q : ι → ℝ≥0}
     {T : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
     {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}

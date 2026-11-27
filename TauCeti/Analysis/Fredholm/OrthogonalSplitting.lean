@@ -95,6 +95,8 @@ complement of `ker (T x₀)` the derivative of these adjoints is
   complement splits every `e` as `e = π e + Q (T e)`.
 * `ContinuousLinearMap.eq_zero_of_mem_ker_of_forall_inner_eq_zero`: an element of the kernel
   `ι`-orthogonal to the kernel vanishes.
+* `ContinuousLinearMap.IsOrthogonalKerProjection.inner_apply_left_eq_right`: the orthogonal kernel
+  projection is symmetric for the `ι`-pairing, `⟪ι (π e), ι e'⟫ = ⟪ι e, ι (π e')⟫`.
 * `ContinuousLinearMap.apply_eq_of_ker_projection_conj` and
   `ContinuousLinearMap.apply_eq_of_rightInverse_conj`: an equivalence `e` carrying the kernel of
   `T` to that of `T'` and the `ι`-pairing to the `ι'`-pairing conjugates the orthogonal kernel
@@ -259,6 +261,15 @@ theorem IsOrthogonalKerProjection.real_inner_apply_eq_norm_sq [Module ℝ E] [Mo
     [InnerProductSpace ℝ H] {ι : E →L[ℝ] H} {T : E →L[ℝ] F} {π : E →L[ℝ] E}
     (h : IsOrthogonalKerProjection ι T π) (e : E) : ⟪ι e, ι (π e)⟫_ℝ = ‖ι (π e)‖ ^ 2 := by
   simpa only [RCLike.ofReal_real_eq_id, id_eq] using h.inner_apply_eq_norm_sq e
+
+/-- **An orthogonal kernel projection is symmetric for the `ι`-pairing:**
+`⟪ι (π e), ι e'⟫ = ⟪ι e, ι (π e')⟫`, both sides being `⟪ι (π e), ι (π e')⟫`. -/
+theorem IsOrthogonalKerProjection.inner_apply_left_eq_right {π : E →L[𝕜] E}
+    (h : IsOrthogonalKerProjection ι T π) (e e' : E) : ⟪ι (π e), ι e'⟫_𝕜 = ⟪ι e, ι (π e')⟫_𝕜 := by
+  have h₁ := h.inner_sub_eq_zero e' (π e) (h.mem_ker e)
+  have h₂ := h.inner_sub_eq_zero e (π e') (h.mem_ker e')
+  rw [map_sub, inner_sub_left, sub_eq_zero] at h₁ h₂
+  rw [h₂, ← inner_conj_symm, h₁, inner_conj_symm]
 
 /-- **Uniqueness of the orthogonal right inverse.** For an injective `ι` into an inner product
 space, two right inverses of `T` whose values are `ι`-orthogonal to the kernel of `T` agree. -/
