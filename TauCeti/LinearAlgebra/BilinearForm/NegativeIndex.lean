@@ -100,6 +100,27 @@ theorem finrank_le_negativeIndexOn (W : Submodule 𝕜 V) [Module.Finite 𝕜 W]
   le_iSup_of_le W <| le_iSup_of_le ‹Module.Finite 𝕜 W› <|
     le_iSup_of_le hWS <| le_iSup_of_le hW le_rfl
 
+/-- A linear map from a finite-dimensional space into the admissible submodule, on whose nonzero
+vectors the form is negative, bounds the index from below by the dimension of its source. Such a
+map is automatically injective. -/
+theorem finrank_le_negativeIndexOn_of_linearMap {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    [Module.Finite 𝕜 W] (φ : W →ₗ[𝕜] V) (hS : ∀ w, φ w ∈ S)
+    (hneg : ∀ w, w ≠ 0 → B (φ w) (φ w) < 0) :
+    (finrank 𝕜 W : ℕ∞) ≤ B.negativeIndexOn S := by
+  have hinj : Function.Injective φ := by
+    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+    intro w hw
+    by_contra hw0
+    have hw' := hneg w hw0
+    rw [LinearMap.mem_ker.mp hw, map_zero] at hw'
+    exact hw'.false
+  rw [← LinearMap.finrank_range_of_inj hinj]
+  refine B.finrank_le_negativeIndexOn _ ?_ ?_
+  · rintro _ ⟨w, rfl⟩
+    exact hS w
+  · rintro _ ⟨w, rfl⟩ hw0
+    exact hneg w fun h0 ↦ hw0 (by rw [h0, map_zero])
+
 /-- A finite lower bound for the index is realized by a negative subspace of that dimension. -/
 theorem le_negativeIndexOn_iff {n : ℕ} :
     (n : ℕ∞) ≤ B.negativeIndexOn S ↔
@@ -163,36 +184,17 @@ theorem negativeIndexOn_comp (f : V' →ₗ[𝕜] V) (S : Submodule 𝕜 V') :
   apply le_antisymm
   · rw [negativeIndexOn_le_iff]
     intro W _ hWS hW
-    -- `f` is injective on a negative subspace of the pulled-back form.
-    have hinj : Function.Injective (f ∘ₗ W.subtype) := by
-      rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-      intro w hw
-      by_contra hw0
-      have hfw : f w = 0 := hw
-      have hneg := hW w w.property (by simpa using hw0)
-      simp [hfw] at hneg
-    rw [← LinearMap.finrank_range_of_inj hinj]
-    refine B.finrank_le_negativeIndexOn _ ?_ ?_
-    · rintro _ ⟨w, rfl⟩
-      exact ⟨w, hWS w.property, rfl⟩
-    · rintro _ ⟨w, rfl⟩ hw0
-      exact hW w w.property fun h0 ↦ hw0 (by simp [h0])
+    exact B.finrank_le_negativeIndexOn_of_linearMap (f ∘ₗ W.subtype)
+      (fun w ↦ ⟨w, hWS w.property, rfl⟩) fun w hw0 ↦ hW w w.property (by simpa using hw0)
   · rw [negativeIndexOn_le_iff]
     intro W _ hWS hW
     -- Lift `W` through the surjection `S → S.map f`.
     obtain ⟨h, hh⟩ := Module.projective_lifting_property (f.submoduleMap S)
       (Submodule.inclusion hWS) (f.submoduleMap_surjective S)
     have hfh (w : W) : f (h w) = w := congr(($hh w : V))
-    let φ : W →ₗ[𝕜] V' := S.subtype ∘ₗ h
-    have hinj : Function.Injective φ := fun w w' hww' ↦
-      Subtype.ext (by rw [← hfh w, ← hfh w']; exact congrArg f hww')
-    rw [← LinearMap.finrank_range_of_inj hinj]
-    refine (B.comp f f).finrank_le_negativeIndexOn _ ?_ ?_
-    · rintro _ ⟨w, rfl⟩
-      exact (h w).property
-    · rintro _ ⟨w, rfl⟩ hw0
-      have hw : (w : V) ≠ 0 := fun h0 ↦ hw0 (by rw [show w = 0 from Subtype.ext h0, map_zero])
-      simpa [φ, hfh] using hW w w.property hw
+    refine (B.comp f f).finrank_le_negativeIndexOn_of_linearMap (S.subtype ∘ₗ h)
+      (fun w ↦ (h w).property) fun w hw0 ↦ ?_
+    simpa [hfh] using hW w w.property (by simpa using hw0)
 
 /-- The negative index of a pullback along a linear map is the negative index on its range. -/
 theorem negativeIndex_comp (f : V' →ₗ[𝕜] V) :
@@ -352,21 +354,8 @@ theorem negativeIndexOn_sup_eq_left (hAC : ∀ a ∈ A, ∀ c ∈ C, B a c = 0)
     simp only [map_add, LinearMap.add_apply, hAC _ (h w).fst.property _ (h w).snd.property,
       hCA _ (h w).snd.property _ (h w).fst.property, add_zero, zero_add]
     exact le_add_of_nonneg_right (hC _ (h w).snd.property)
-  have hinj : Function.Injective φ := by
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    intro w hw
-    by_contra hw0
-    have hwC : (w : V) ∈ C := by
-      rw [← hsplit w, ← hφ, LinearMap.mem_ker.mp hw, zero_add]
-      exact (h w).snd.property
-    exact (hneg w w.property (by simpa using hw0)).not_ge (hC w hwC)
-  rw [← LinearMap.finrank_range_of_inj hinj]
-  refine B.finrank_le_negativeIndexOn _ ?_ ?_
-  · rintro _ ⟨w, rfl⟩
-    exact (h w).fst.property
-  · rintro _ ⟨w, rfl⟩ hw0
-    have hw : (w : V) ≠ 0 := fun h0 ↦ hw0 (by rw [show w = 0 from Subtype.ext h0, map_zero])
-    exact (hle w).trans_lt (hneg w w.property hw)
+  exact B.finrank_le_negativeIndexOn_of_linearMap φ (fun w ↦ (h w).fst.property)
+    fun w hw0 ↦ (hle w).trans_lt (hneg w w.property (by simpa using hw0))
 
 end Splitting
 
