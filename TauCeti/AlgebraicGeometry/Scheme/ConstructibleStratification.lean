@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
+public import TauCeti.Topology.Stratification.Finite
 
 /-!
 # Constructible stratifications of schemes
@@ -43,6 +45,20 @@ quasi-separated open:
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.exists_of_iSup_eq`: stratifications of the
   members of a finite cover of `U` by retrocompact opens glue to a stratification of `U` each of
   whose strata factors through a stratum of one of the given stratifications.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.extend`: for opens `W ≤ U` with `W`
+  retrocompact in `U`, the stratification of `U` made of a stratification of `W` together with the
+  reduced closed subscheme on `U \ W`; `range_f_extend_none` and `range_f_extend_some` give the
+  images of its strata.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.existsUnique_mem_range`: every point of `U`
+  lies in exactly one stratum.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.inf`: the common refinement of two
+  stratifications of `U`, whose strata are the fibre products of their strata; `inf_refines_left`,
+  `inf_refines_right` and `Refines.inf` say that it is their greatest common refinement, and
+  `Refines.pullback` says that pullback preserves refinement.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.toFiniteStratification`: the finite locally
+  closed stratification of `U` by the nonempty images of the strata, which sends `single` to `⊤`,
+  `inf` to `⊓`, `restrict` and `pullback` to `TauCeti.FiniteStratification.comap`, and refinement
+  to the order (`Refines.toFiniteStratification_le`).
 
 ## References
 
@@ -87,6 +103,16 @@ variable {U : X.Opens} (S : X.ConstructibleStratification U)
 
 lemma range_subset (i : S.ι) : Set.range (S.f i) ⊆ U :=
   S.iUnion_range ▸ Set.subset_iUnion (fun i ↦ Set.range (S.f i)) i
+
+/-- A point of `X` lies in some stratum of a stratification of `U` if and only if it lies in `U`. -/
+lemma exists_mem_range_iff {x : X} : (∃ i, x ∈ Set.range (S.f i)) ↔ x ∈ U := by
+  rw [← SetLike.mem_coe, ← S.iUnion_range, Set.mem_iUnion]
+
+/-- Every point of `U` lies in exactly one stratum of a stratification of `U`. -/
+lemma existsUnique_mem_range {x : X} (hx : x ∈ U) : ∃! i, x ∈ Set.range (S.f i) := by
+  simpa only [Set.mem_univ, true_and] using pairwiseDisjoint_unique
+    (f := fun i ↦ Set.range (S.f i)) (S.pairwise_disjoint_range.set_pairwise Set.univ)
+    (by simpa only [Set.mem_univ, Set.iUnion_true, S.iUnion_range, SetLike.mem_coe] using hx)
 
 /-- The stratification of an open `U` by the single stratum `U`. -/
 @[expose, simps Z f]
@@ -215,6 +241,174 @@ lemma refines_iff {V : X.Opens} {T : X.ConstructibleStratification V} :
 lemma restrict_refines {V : X.Opens} (hVU : V ≤ U) : (S.restrict hVU).Refines S :=
   fun i ↦ ⟨i, Limits.pullback.fst _ _, rfl⟩
 
+/-- The pullback along `g` of a refinement is a refinement of the pullback. -/
+lemma Refines.pullback {V : X.Opens} {T : X.ConstructibleStratification V} (h : T.Refines S)
+    (g : Y ⟶ X) : (T.pullback g).Refines (S.pullback g) := by
+  intro j
+  obtain ⟨i, a, ha⟩ := h j
+  exact ⟨i, Limits.pullback.map _ _ _ _ a (𝟙 Y) (𝟙 X) (by simp [ha]) (by simp),
+    (Limits.pullback.lift_snd _ _ _).trans (Category.comp_id _)⟩
+
+/-! ### Common refinement -/
+
+/-- The common refinement of two constructible stratifications of `U`: its strata are the fibre
+products over `X` of the strata of the two, whose images are the intersections of their images. -/
+@[expose, simps Z f]
+noncomputable def inf (T : X.ConstructibleStratification U) : X.ConstructibleStratification U where
+  ι := S.ι × T.ι
+  Z p := Limits.pullback (S.f p.1) (T.f p.2)
+  f p := Limits.pullback.fst _ _ ≫ S.f p.1
+  pairwise_disjoint_range := by
+    rintro ⟨i, j⟩ ⟨i', j'⟩ h
+    simp only [Pullback.range_fst_comp]
+    by_cases hi : i = i'
+    · subst hi
+      have hj : j ≠ j' := fun hj ↦ h (by rw [hj])
+      exact (T.pairwise_disjoint_range hj).mono Set.inter_subset_right Set.inter_subset_right
+    · exact (S.pairwise_disjoint_range hi).mono Set.inter_subset_left Set.inter_subset_left
+  iUnion_range := by
+    simp only [Pullback.range_fst_comp, Set.iUnion_prod']
+    rw [← Set.iUnion_inter_iUnion (fun i ↦ Set.range (S.f i)) fun j ↦ Set.range (T.f j),
+      S.iUnion_range, T.iUnion_range, Set.inter_self]
+  isConstructible_range p := by
+    simp only [Pullback.range_fst_comp, Set.preimage_inter]
+    exact (S.isConstructible_range p.1).inter (T.isConstructible_range p.2)
+
+/-- The strata of the common refinement also map to `X` through the strata of `T`. -/
+lemma inf_f_eq_snd (T : X.ConstructibleStratification U) (p : S.ι × T.ι) :
+    (S.inf T).f p = Limits.pullback.snd _ _ ≫ T.f p.2 :=
+  Limits.pullback.condition
+
+/-- The strata of `S.inf T` have the intersections of the strata of `S` and `T` as images. -/
+lemma range_f_inf (T : X.ConstructibleStratification U) (p : S.ι × T.ι) :
+    Set.range ((S.inf T).f p) = Set.range (S.f p.1) ∩ Set.range (T.f p.2) :=
+  Pullback.range_fst_comp _ _
+
+lemma inf_refines_left (T : X.ConstructibleStratification U) : (S.inf T).Refines S :=
+  fun p ↦ ⟨p.1, Limits.pullback.fst _ _, rfl⟩
+
+lemma inf_refines_right (T : X.ConstructibleStratification U) : (S.inf T).Refines T :=
+  fun p ↦ ⟨p.2, Limits.pullback.snd _ _, (S.inf_f_eq_snd T p).symm⟩
+
+/-- A stratification refining both `S` and `T` refines their common refinement. -/
+lemma Refines.inf {V : X.Opens} {T : X.ConstructibleStratification U}
+    {R : X.ConstructibleStratification V} (hS : R.Refines S) (hT : R.Refines T) :
+    R.Refines (S.inf T) := by
+  intro j
+  obtain ⟨i, a, ha⟩ := hS j
+  obtain ⟨i', b, hb⟩ := hT j
+  exact ⟨(i, i'), Limits.pullback.lift a b (ha.trans hb.symm),
+    (Limits.pullback.lift_fst_assoc _ _ _ _).trans ha⟩
+
+/-! ### The stratification by the images of the strata -/
+
+/-- The finite locally closed stratification of `U` whose strata are the nonempty images of the
+strata of `S`. -/
+noncomputable def toFiniteStratification : TauCeti.FiniteStratification U :=
+  TauCeti.FiniteStratification.ofErase
+    (Set.finite_range fun i ↦ U.ι ⁻¹' Set.range (S.f i)).toFinset
+    (by
+      rw [Set.Finite.coe_toFinset]
+      rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ hij
+      exact (S.pairwise_disjoint_range fun h ↦ hij (by rw [h])).preimage _)
+    (by
+      rw [Set.Finite.coe_toFinset, Set.sUnion_range, ← Set.preimage_iUnion, S.iUnion_range,
+        ← Scheme.Opens.range_ι, Set.preimage_range])
+    (by
+      simp only [Set.Finite.mem_toFinset, Set.forall_mem_range]
+      exact fun i ↦ (S.f i).isLocallyClosed_range.preimage U.ι.continuous)
+
+/-- The strata of `S.toFiniteStratification` are the nonempty images of the strata of `S`. -/
+@[simp]
+lemma mem_toFiniteStratification_parts {s : Set U} :
+    s ∈ S.toFiniteStratification.parts ↔ s.Nonempty ∧ ∃ i, U.ι ⁻¹' Set.range (S.f i) = s := by
+  simp [toFiniteStratification]
+
+/-- A refinement gives a finer stratification of `U` by the images of the strata. -/
+lemma Refines.toFiniteStratification_le {T : X.ConstructibleStratification U} (h : T.Refines S) :
+    T.toFiniteStratification ≤ S.toFiniteStratification := by
+  refine TauCeti.FiniteStratification.le_def.2 fun s hs ↦ ?_
+  obtain ⟨hs, j, rfl⟩ := T.mem_toFiniteStratification_parts.1 hs
+  obtain ⟨i, a, ha⟩ := h j
+  have hji : Set.range (T.f j) ⊆ Set.range (S.f i) := by
+    rw [← ha]
+    exact Set.range_comp_subset_range ⇑a ⇑(S.f i)
+  exact ⟨_, S.mem_toFiniteStratification_parts.2 ⟨hs.mono (Set.preimage_mono hji), i, rfl⟩,
+    Set.preimage_mono hji⟩
+
+/-- The images of the strata of `single U` form the single-stratum stratification of `U`. -/
+@[simp]
+lemma toFiniteStratification_single (U : X.Opens) : (single U).toFiniteStratification = ⊤ := by
+  ext s
+  simp only [mem_toFiniteStratification_parts, range_f_single,
+    TauCeti.FiniteStratification.mem_top_parts]
+  constructor
+  · rintro ⟨⟨x, -⟩, -, rfl⟩
+    exact ⟨⟨x⟩, Set.eq_univ_of_forall fun y ↦ y.property⟩
+  · rintro ⟨⟨x⟩, rfl⟩
+    exact ⟨⟨x, trivial⟩, (), Set.eq_univ_of_forall fun y ↦ y.property⟩
+
+/-- The images of the strata of the common refinement form the common refinement of the
+stratifications of `U` by the images of the strata. -/
+@[simp]
+lemma toFiniteStratification_inf (T : X.ConstructibleStratification U) :
+    (S.inf T).toFiniteStratification = S.toFiniteStratification ⊓ T.toFiniteStratification := by
+  ext s
+  simp only [mem_toFiniteStratification_parts, TauCeti.FiniteStratification.mem_inf_parts]
+  constructor
+  · rintro ⟨hs, p, rfl⟩
+    rw [S.range_f_inf T p, Set.preimage_inter] at hs ⊢
+    exact ⟨hs, _, ⟨hs.mono Set.inter_subset_left, p.1, rfl⟩, _,
+      ⟨hs.mono Set.inter_subset_right, p.2, rfl⟩, rfl⟩
+  · rintro ⟨hs, _, ⟨-, i, rfl⟩, _, ⟨-, j, rfl⟩, rfl⟩
+    exact ⟨hs, (i, j), by rw [S.range_f_inf T (i, j), Set.preimage_inter]⟩
+
+/-- If the images of the strata of a stratification `T` of an open `V` of `Y` are the preimages
+under a morphism `φ : V ⟶ U` of the images of the strata of `S`, then the stratification of `V` by
+the images of the strata of `T` is the pullback along `φ` of that of `S`. -/
+lemma toFiniteStratification_eq_comap {V : Y.Opens} (T : Y.ConstructibleStratification V)
+    (φ : (V : Scheme) ⟶ U)
+    (h : Set.range (fun j ↦ V.ι ⁻¹' Set.range (T.f j)) =
+      Set.range (fun i ↦ φ ⁻¹' (U.ι ⁻¹' Set.range (S.f i)))) :
+    T.toFiniteStratification = S.toFiniteStratification.comap φ φ.continuous := by
+  ext s
+  simp only [mem_toFiniteStratification_parts, TauCeti.FiniteStratification.mem_comap_parts]
+  constructor
+  · rintro ⟨hs, j, rfl⟩
+    obtain ⟨i, hi⟩ : ∃ i, φ ⁻¹' (U.ι ⁻¹' Set.range (S.f i)) = V.ι ⁻¹' Set.range (T.f j) :=
+      h.subset ⟨j, rfl⟩
+    rw [← hi] at hs ⊢
+    exact ⟨hs, _, ⟨Set.nonempty_of_nonempty_preimage hs, i, rfl⟩, rfl⟩
+  · rintro ⟨hs, _, ⟨-, i, rfl⟩, rfl⟩
+    exact ⟨hs, h.superset ⟨i, rfl⟩⟩
+
+/-- The images of the strata of the restriction to `V` form the pullback of the stratification of
+`U` by the images of the strata along the inclusion of `V` in `U`. -/
+@[simp]
+lemma toFiniteStratification_restrict {V : X.Opens} (hVU : V ≤ U) :
+    (S.restrict hVU).toFiniteStratification =
+      S.toFiniteStratification.comap (X.homOfLE hVU) (X.homOfLE hVU).continuous := by
+  have h (i : (S.restrict hVU).ι) : V.ι ⁻¹' Set.range ((S.restrict hVU).f i) =
+      X.homOfLE hVU ⁻¹' (U.ι ⁻¹' Set.range (S.f i)) := by
+    ext x
+    simp only [Set.mem_preimage, S.range_f_restrict hVU i, ← Scheme.Hom.comp_apply,
+      Scheme.homOfLE_ι, Set.mem_inter_iff]
+    exact and_iff_left x.property
+  exact S.toFiniteStratification_eq_comap _ _ (congrArg Set.range (funext h))
+
+/-- The images of the strata of the pullback along `g` form the pullback of the stratification of
+`U` by the images of the strata along `g`. -/
+@[simp]
+lemma toFiniteStratification_pullback (g : Y ⟶ X) :
+    (S.pullback g).toFiniteStratification =
+      S.toFiniteStratification.comap (g ∣_ U) (g ∣_ U).continuous := by
+  have h (i : (S.pullback g).ι) : (g ⁻¹ᵁ U).ι ⁻¹' Set.range ((S.pullback g).f i) =
+      (g ∣_ U) ⁻¹' (U.ι ⁻¹' Set.range (S.f i)) := by
+    ext x
+    rw [Set.mem_preimage, S.range_f_pullback g i]
+    simp only [Set.mem_preimage, ← Scheme.Hom.comp_apply, morphismRestrict_ι]
+  exact S.toFiniteStratification_eq_comap _ _ (congrArg Set.range (funext h))
+
 section Glue
 
 /-! ### Gluing along a finite enumerated cover
@@ -231,36 +425,27 @@ private def before (V : Fin n → X.Opens) (m : Fin n) : Set X := ⋃ l < m, (V 
 private lemma isOpen_before (m : Fin n) : IsOpen (before V m) :=
   isOpen_iUnion fun l ↦ isOpen_iUnion fun _ ↦ (V l).isOpen
 
-/-- The closed subset of the stratum `(S m).Z i` lying outside the earlier members of the cover. -/
-private def outside (p : Σ m, (S m).ι) : TopologicalSpace.Closeds ((S p.1).Z p.2) :=
-  ⟨(S p.1).f p.2 ⁻¹' (before V p.1)ᶜ,
-    (isOpen_before p.1).isClosed_compl.preimage ((S p.1).f p.2).continuous⟩
-
-/-- The immersion of the reduced closed subscheme on `outside S p` into `X`. -/
+/-- The immersion into `X` of the reduced closed subscheme of the stratum `(S m).Z i` lying
+outside the earlier members of the cover. -/
 private noncomputable def glueι (p : Σ m, (S m).ι) :
-    (IdealSheafData.vanishingIdeal (outside S p)).subscheme ⟶ X :=
-  (IdealSheafData.vanishingIdeal (outside S p)).subschemeι ≫ (S p.1).f p.2
+    (IdealSheafData.vanishingIdeal
+      (((S p.1).f p.2) ⁻¹ᵁ ⟨before V p.1, isOpen_before p.1⟩).compl).subscheme ⟶ X :=
+  ((S p.1).f p.2).sdiffι ⟨before V p.1, isOpen_before p.1⟩
 
 private instance (p : Σ m, (S m).ι) : IsImmersion (glueι S p) := by
   unfold glueι
   infer_instance
 
 private lemma range_glueι (p : Σ m, (S m).ι) :
-    Set.range (glueι S p) = Set.range ((S p.1).f p.2) \ before V p.1 := by
-  have h : ⇑(glueι S p) =
-      (S p.1).f p.2 ∘ (IdealSheafData.vanishingIdeal (outside S p)).subschemeι :=
-    funext fun _ ↦ Scheme.Hom.comp_apply _ _ _
-  rw [h, Set.range_comp, IdealSheafData.range_subschemeι,
-    IdealSheafData.coe_support_vanishingIdeal, outside, TopologicalSpace.Closeds.coe_mk,
-    Set.preimage_compl]
-  exact Set.image_compl_preimage
+    Set.range (glueι S p) = Set.range ((S p.1).f p.2) \ before V p.1 :=
+  Hom.range_sdiffι _ _
 
 /-- Strata over the same member are disjoint by assumption; a stratum over a later member avoids
 the earlier members. -/
 private lemma pairwise_disjoint_range_glueι :
     Pairwise fun p q ↦ Disjoint (Set.range (glueι S p)) (Set.range (glueι S q)) := by
   rintro ⟨m, i⟩ ⟨m', i'⟩ hp
-  simp only [range_glueι]
+  rw [range_glueι, range_glueι]
   rcases lt_trichotomy m m' with hm | rfl | hm
   · exact Set.disjoint_left.mpr fun x hx hx' ↦
       hx'.2 (Set.mem_iUnion₂.mpr ⟨m, hm, (S m).range_subset i hx.1⟩)
@@ -309,6 +494,85 @@ private lemma isConstructible_range_glueι (hVU : ⨆ m, V m = U)
 
 end Glue
 
+section Extend
+
+/-! ### Adding the closed complement of a retrocompact open -/
+
+variable {W : X.Opens}
+
+/-- **Adding a closed stratum.** For opens `W ≤ U` such that the trace of `W` on `U` is
+retrocompact, a constructible stratification `T` of `W` extends to a constructible stratification
+of `U` whose strata are those of `T` (indexed by `some i`) together with the reduced closed
+subscheme on `U \ W` (indexed by `none`, immersed by `U.ι.sdiffι W`). -/
+@[expose]
+noncomputable def extend (T : X.ConstructibleStratification W) (hWU : W ≤ U)
+    (hW : IsRetrocompact ((U : Set X) ↓∩ (W : Set X))) : X.ConstructibleStratification U where
+  ι := Option T.ι
+  Z o := o.elim (IdealSheafData.vanishingIdeal (U.ι ⁻¹ᵁ W).compl).subscheme T.Z
+  f
+    | none => U.ι.sdiffι W
+    | some i => T.f i
+  isImmersion o := by cases o <;> dsimp <;> infer_instance
+  -- In the remaining fields `f none` and `f (some i)` reduce to `U.ι.sdiffι W` and `T.f i` only by
+  -- unfolding the match defining `f`, together with `Option.elim` in the type of the domain, which
+  -- `dsimp` does not reach inside the coercion to functions; `change` states the reduced form.
+  pairwise_disjoint_range := by
+    rintro (_ | i) (_ | i') h
+    · exact (h rfl).elim
+    · change Disjoint (Set.range (U.ι.sdiffι W)) (Set.range (T.f i'))
+      rw [Hom.range_sdiffι, Opens.range_ι]
+      exact Set.disjoint_sdiff_left.mono_right (T.range_subset i')
+    · change Disjoint (Set.range (T.f i)) (Set.range (U.ι.sdiffι W))
+      rw [Hom.range_sdiffι, Opens.range_ι]
+      exact Set.disjoint_sdiff_right.mono_left (T.range_subset i)
+    · exact T.pairwise_disjoint_range fun hii' ↦ h (congrArg some hii')
+  iUnion_range := by
+    rw [Set.iUnion_option]
+    change Set.range (U.ι.sdiffι W) ∪ ⋃ i, Set.range (T.f i) = U
+    rw [Hom.range_sdiffι, Opens.range_ι, T.iUnion_range, Set.sdiff_union_self,
+      Set.union_eq_left.mpr hWU]
+  isConstructible_range
+    | none => by
+      change IsConstructible ((U : Set X) ↓∩ Set.range (U.ι.sdiffι W))
+      rw [Hom.range_sdiffι, Opens.range_ι, Set.preimage_sdiff, Subtype.coe_preimage_self,
+        ← Set.compl_eq_univ_sdiff]
+      exact (hW.isConstructible (W.isOpen.preimage continuous_subtypeVal)).compl
+    | some i => by
+      change IsConstructible ((U : Set X) ↓∩ Set.range (T.f i))
+      have hrange : Set.range (Set.inclusion hWU) = (U : Set X) ↓∩ (W : Set X) :=
+        Set.range_inclusion hWU
+      exact (isConstructible_preimage_iff_of_isOpenEmbedding
+        (IsOpenEmbedding.inclusion hWU (W.isOpen.preimage continuous_subtypeVal))
+        (hrange ▸ hW) (hrange ▸ fun _ hx ↦ T.range_subset i hx)).mp (T.isConstructible_range i)
+
+variable (T : X.ConstructibleStratification W) (hWU : W ≤ U)
+  (hW : IsRetrocompact ((U : Set X) ↓∩ (W : Set X)))
+
+@[simp]
+lemma extend_Z_none :
+    (T.extend hWU hW).Z none = (IdealSheafData.vanishingIdeal (U.ι ⁻¹ᵁ W).compl).subscheme :=
+  rfl
+
+@[simp]
+lemma extend_Z_some (i : T.ι) : (T.extend hWU hW).Z (some i) = T.Z i := rfl
+
+@[simp]
+lemma extend_f_none : (T.extend hWU hW).f none = U.ι.sdiffι W := rfl
+
+@[simp]
+lemma extend_f_some (i : T.ι) : (T.extend hWU hW).f (some i) = T.f i := rfl
+
+/-- The new stratum of `T.extend hWU hW` has image `U \ W`. -/
+lemma range_f_extend_none : Set.range ((T.extend hWU hW).f none) = (U : Set X) \ W :=
+  (Hom.range_sdiffι U.ι W).trans (congrArg (· \ _) U.range_ι)
+
+/-- The strata of `T.extend hWU hW` indexed by `some i` have the images of the strata of `T`. -/
+lemma range_f_extend_some (i : T.ι) :
+    Set.range ((T.extend hWU hW).f (some i)) = Set.range (T.f i) :=
+  rfl
+
+end Extend
+
 /-- Constructible stratifications of the members `V k` of a finite cover of `U` by opens whose
 traces on `U` are retrocompact glue to a constructible stratification of `U`, each of whose strata
 factors through a stratum of one of the given stratifications. -/
@@ -322,12 +586,12 @@ theorem exists_of_iSup_eq {κ : Type*} [Finite κ] {V : κ → X.Opens} (hVU : �
   have hVU' : ⨆ m, V (e.symm m) = U := (e.symm.iSup_comp (g := V)).trans hVU
   exact ⟨{
     ι := Σ m : Fin n, (S (e.symm m)).ι
-    Z p := (IdealSheafData.vanishingIdeal (outside (fun m ↦ S (e.symm m)) p)).subscheme
+    Z p := _
     f := glueι fun m ↦ S (e.symm m)
     pairwise_disjoint_range := pairwise_disjoint_range_glueι _
     iUnion_range := iUnion_range_glueι _ hVU'
     isConstructible_range := isConstructible_range_glueι _ hVU' fun m ↦ hV (e.symm m) },
-    fun p ↦ ⟨e.symm p.1, p.2, _, rfl⟩⟩
+    fun p ↦ ⟨e.symm p.1, p.2, _, Hom.subschemeι_comp_eq_sdiffι _ _⟩⟩
 
 end ConstructibleStratification
 

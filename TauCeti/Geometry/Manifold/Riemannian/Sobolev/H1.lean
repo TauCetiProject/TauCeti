@@ -11,7 +11,8 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.ContMDiffMap.L2
+import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -40,7 +41,8 @@ functions extends by continuity to all of `H¹(M)`: for `w ∈ H¹(M)` and a smo
 (`TauCeti.Manifold.SobolevH1.inner_ofSmooth_right`), where `Δ = div grad` is the
 Laplace–Beltrami operator. Consequently an element of `H¹(M)` with value zero is orthogonal to
 the dense set of smooth functions, so `toLp` is injective
-(`TauCeti.Manifold.SobolevH1.toLp_injective`), and `H¹(M)` is a subspace of `L²(M)`.
+(`TauCeti.Manifold.SobolevH1.toLp_injective`), and `H¹(M)` is a subspace of `L²(M)`. Its
+values are dense in `L²(M)` (`TauCeti.Manifold.SobolevH1.denseRange_toLp`).
 
 The **Dirichlet form** `TauCeti.Manifold.SobolevH1.dirichletForm` is the continuous bilinear form
 `⟪w, v⟫_{H¹} - ⟪w, v⟫_{L²}` on `H¹(M)`. It extends `∫ ⟪∇u, ∇v⟫ dV` from smooth functions, and
@@ -59,7 +61,8 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
 * `TauCeti.Manifold.SobolevH1.liftSmooth`: continuous linear extension of a bounded `ℝ`-linear map
   from smooth functions to `H¹(M)`, characterized by `liftSmooth_ofSmooth` and `liftSmooth_unique`.
 * `TauCeti.Manifold.SobolevH1.toLp`: the value map `H¹(M) → L²(M)`, injective by
-  `TauCeti.Manifold.SobolevH1.toLp_injective`.
+  `TauCeti.Manifold.SobolevH1.toLp_injective`, with dense range by
+  `TauCeti.Manifold.SobolevH1.denseRange_toLp`.
 * `TauCeti.Manifold.SobolevH1.inner_ofSmooth_right`: Green's identity on `H¹(M)`.
 * `TauCeti.Manifold.SobolevH1.dirichletForm`: the Dirichlet form.
 
@@ -389,6 +392,13 @@ theorem inner_toLp_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯
   rw [toLp_ofSmooth, L2.inner_toLp_continuousMap]
   simp only [ContinuousMap.coe_ofClass, conj_trivial, mul_comm (φ _)]
 
+/-- The integral of the value of `w ∈ H¹(M)` is its `L²` inner product with the constant
+function `1`. -/
+theorem integral_toLp_eq_inner_toLp_ofSmooth_one (w : SobolevH1 I M) :
+    ∫ x, toLp w x ∂riemannianVolume I M = ⟪toLp w, toLp (ofSmooth (1 : C^∞⟮I, M; ℝ⟯))⟫_ℝ := by
+  rw [inner_toLp_ofSmooth_right]
+  simp
+
 /-- The integral of the square of the value of `w ∈ H¹(M)` is its squared `L²` norm. -/
 theorem integral_toLp_sq_eq_norm_sq (w : SobolevH1 I M) :
     ∫ x, toLp w x ^ 2 ∂riemannianVolume I M = ‖toLp w‖ ^ 2 := by
@@ -517,6 +527,16 @@ theorem dirichletForm_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ
   simp [subLaplaceBeltrami, mul_comm]
 
 end Green
+
+/-! ### Density of the values in `L²(M)` -/
+
+/-- **The values of `H¹(M)` are dense in `L²(M)`.** They contain the classes of the smooth
+functions, which are dense (`ContMDiffMap.denseRange_toLp`). -/
+theorem denseRange_toLp [IsManifold I ∞ M] [T2Space M] :
+    DenseRange (toLp (I := I) (M := M)) :=
+  (ContMDiffMap.denseRange_toLp (riemannianVolume I M) ℝ).mono <| by
+    rintro _ ⟨u, rfl⟩
+    exact ⟨ofSmooth u, toLp_ofSmooth u⟩
 
 end SobolevH1
 

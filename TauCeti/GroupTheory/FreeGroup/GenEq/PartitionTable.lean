@@ -708,6 +708,16 @@ theorem IsPartitionTable.eq_nil_of_systemSize_eq_zero (hT : IsPartitionTable r T
     (Finset.single_le_sum (f := fun o : Occurrence r => r[o.1].length - 1)
       (fun _ _ => Nat.zero_le _) (Finset.mem_univ o))
 
+/-- In a partition table, the letter `y` of a one-letter word `[y]` of the system has an
+occurrence with the empty word. -/
+theorem IsPartitionTable.exists_occurrence_with_word_eq_nil_of_singleton_mem
+    (hT : IsPartitionTable r T) {y : (X ⊕ A) × Bool} (hy : [y] ∈ r) :
+    ∃ o : Occurrence r, r[o.1][o.2] = y ∧ T o = [] := by
+  obtain ⟨i, hi, hw⟩ := List.getElem_of_mem hy
+  have h : 0 < r[i].length := by simp [hw]
+  refine ⟨⟨⟨i, hi⟩, ⟨0, h⟩⟩, by simp [hw], List.eq_nil_of_length_eq_zero ?_⟩
+  simpa [hw] using hT.length_le ⟨⟨i, hi⟩, ⟨0, h⟩⟩
+
 /-- **Kharlampovich–Myasnikov, §4.2.** At most `|S|` letters of `Z` occur in a partition table of
 a system of size `|S|`, so for `|S| > 0` they can be renamed injectively by elements of
 `Fin |S|`. -/

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.LinearAlgebra.Orientation.Basis
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # The induced boundary orientation
@@ -36,7 +37,7 @@ public section
 
 noncomputable section
 
-open Set
+open Bundle Set
 open scoped Manifold
 
 
@@ -207,6 +208,49 @@ theorem orientationAt_boundaryOrientation_model (n : ℕ)
       -(EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation := by
   rw [orientationAt_boundaryOrientation, Manifold.Orientation.orientationAt_model]
   exact Orientation.halfSpaceBoundaryOrientation_basisFun n
+
+/-- Since the zeroth ambient chart vector points inward (`x₀ ≥ 0`), the standard boundary chart
+basis has the opposite orientation to `Orientation.halfSpaceBoundaryOrientation` of the ambient
+basis. -/
+theorem orientation_boundary_basisAt_stdBasis_eq_neg
+    (α q : (𝓡∂ (n + 1)).boundary M)
+    (hq : q ∈ (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) α).source)
+    (hq_base : q ∈ (trivializationAt (EuclideanSpace ℝ (Fin n))
+      (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) α).baseSet)
+    (hq'_base : (q : M) ∈ (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+      (TangentSpace (𝓡∂ (n + 1))) (α : M)).baseSet) :
+    ((trivializationAt (EuclideanSpace ℝ (Fin n))
+        (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) α).basisAt
+        (EuclideanSpace.basisFun (Fin n) ℝ).toBasis hq_base).orientation =
+      -(Orientation.halfSpaceBoundaryOrientation
+        ((trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
+          (TangentSpace (𝓡∂ (n + 1))) (α : M)).basisAt
+          (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis hq'_base).orientation) := by
+  set e' := trivializationAt (EuclideanSpace ℝ (Fin (n + 1))) (TangentSpace (𝓡∂ (n + 1))) (α : M)
+  set B := (trivializationAt (EuclideanSpace ℝ (Fin n))
+    (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) α).basisAt
+    (EuclideanSpace.basisFun (Fin n) ℝ).toBasis hq_base
+  set B' := e'.basisAt (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis hq'_base
+  -- Flip the inward zeroth basis vector to an outward vector, reversing the ambient orientation.
+  let w : Fin (n + 1) → ℝˣ := Function.update 1 0 (-1)
+  let B_neg := B'.unitsSMul w
+  have hB_neg0 : (fun v : EuclideanSpace ℝ (Fin (n + 1)) ↦ v 0) (B_neg 0) < 0 := by
+    have hB0 : B_neg 0 = e'.symmL ℝ (q : M) (-EuclideanSpace.single 0 1) := by
+      simp only [B_neg, w, Module.Basis.unitsSMul_apply, Function.update_self, Units.smul_def,
+        Units.val_neg, Units.val_one, neg_one_smul, map_neg, B', Manifold.basisAt_apply,
+        OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
+    have h := (hB0 ▸ isOutwardPointing_trivializationAt_symmL_neg_single_zero
+      hq'_base).coordinate_deriv_neg
+    rwa [mfderiv_extChartAt_self] at h
+  have hB_neg_orient : B_neg.orientation = -B'.orientation := B'.orientation_neg_single 0
+  have hspec := Orientation.halfSpaceBoundaryOrientation_spec
+    (-B'.orientation) hB_neg0 B B_neg (funext fun k ↦ Fin.cases rfl (fun i ↦ by
+      have h1 : B_neg i.succ = B' i.succ := by
+        simp [B_neg, w, Module.Basis.unitsSMul_apply]
+      have h2 := (mfderiv_subtypeVal_boundary_basisAt_stdBasis α q hq hq_base hq'_base i).symm
+      rw [mfderiv_subtypeVal_boundary] at h2
+      exact h1.trans h2) k)
+  exact (hspec.2 hB_neg_orient).trans (Orientation.halfSpaceBoundaryOrientation_neg _)
 
 section Preserving
 

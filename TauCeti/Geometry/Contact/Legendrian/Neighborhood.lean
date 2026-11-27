@@ -223,15 +223,15 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
     (ι : SmoothEmbedding I J ∞ Λ M) (hn : (∞ : ℕ∞ω) ≠ 0)
     (hdim : finrank ℝ ((E →L[ℝ] ℝ) × ℝ) = finrank ℝ F - finrank ℝ E)
     {Ψ : CotangentBundle I Λ × ℝ → M} {q : Λ} (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ)
-    (v : ι.NormalSpace q hn)
+    (v : ι.isImmersion.NormalSpace q hn)
     (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q))
     (hE : letI := ι.normalSpaceFiberBundle hn hdim
       MDifferentiableAt (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn)
-        (zeroSection ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn) q))
+        (zeroSection ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.isImmersion.NormalSpace x hn) q))
     (hline : letI := ι.normalSpaceFiberBundle hn hdim
       (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) =
         ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
-          (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) :
+          (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.isImmersion.NormalSpace x hn))) :
     mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
       (((0 : E), (p : E →L[ℝ] ℝ)), c) = ι.normalRepresentative q hn v := by
   let := ι.normalSpaceFiberBundle hn hdim
@@ -240,12 +240,14 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
   have hγ0 : ((⟨q, (0 : ℝ) • p⟩ : CotangentBundle I Λ), (0 : ℝ) * c) = jetZero I q := by
     simp [zeroSection]
   have hℓ : MDifferentiableAt 𝓘(ℝ) (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ))
-      (fun t : ℝ ↦ (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 :=
+      (fun t : ℝ ↦ (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
+        (fun x ↦ ι.isImmersion.NormalSpace x hn))) 0 :=
     (TotalSpace.hasMFDerivAt_smul_curve (IB := I)
-      (⟨q, v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))
+      (⟨q, v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.isImmersion.NormalSpace x hn))
       (hasDerivAt_id (0 : ℝ))).mdifferentiableAt
   have hℓ0 : (⟨q, (0 : ℝ) • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
-      (fun x ↦ ι.NormalSpace x hn)) = zeroSection _ (fun x ↦ ι.NormalSpace x hn) q := by
+      (fun x ↦ ι.isImmersion.NormalSpace x hn)) =
+        zeroSection _ (fun x ↦ ι.isImmersion.NormalSpace x hn) q := by
     simp [zeroSection]
   have hγ1 : mfderiv 𝓘(ℝ) ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
       (fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0 (1 : ℝ) =
@@ -269,13 +271,15 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
   -- `d(Ψ ∘ γ)(1) = d(exp ∘ ℓ)(1)`:
   have hγℓ : mfderiv 𝓘(ℝ) J (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0
       (1 : ℝ) = mfderiv 𝓘(ℝ) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
-        (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 (1 : ℝ) := by
+        (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
+          (fun x ↦ ι.isImmersion.NormalSpace x hn))) 0 (1 : ℝ) := by
     rw [hline]
   -- `d(exp ∘ ℓ)(1) = d exp (0, v)`:
   have hℓexp : mfderiv 𝓘(ℝ) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
-      (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 (1 : ℝ) =
+      (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
+        (fun x ↦ ι.isImmersion.NormalSpace x hn))) 0 (1 : ℝ) =
         mfderiv (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp hn)
-          (zeroSection _ (fun x ↦ ι.NormalSpace x hn) q)
+          (zeroSection _ (fun x ↦ ι.isImmersion.NormalSpace x hn) q)
           ((Bundle.zeroSectionTangentEquiv (I := I) q).symm (0, v)) := by
     rw [Bundle.zeroSectionTangentEquiv_symm_inr]
     exact mfderiv_comp_apply_of_eq (hg := hE) (hf := hℓ) (hy := hℓ0) (v := (1 : ℝ))
@@ -345,7 +349,8 @@ private theorem exists_partialDiffeomorph_jet [Nonempty Λ] (ι : SmoothEmbeddin
     (by norm_cast) hdim isOpen_univ (subset_univ _)
   -- `Ψ` is the normal exponential, read through `J¹Λ ≃ T^* Λ × ℝ ≃ ν(ι)`.
   set D := ι.normalBundleDiffeomorphOfIsLegendrianImmersion hι hn hm hm hdim with hD
-  have hD0 (q : Λ) : D.symm (jetZero I q) = zeroSection _ (fun x ↦ ι.NormalSpace x hn) q := by
+  have hD0 (q : Λ) :
+      D.symm (jetZero I q) = zeroSection _ (fun x ↦ ι.isImmersion.NormalSpace x hn) q := by
     rw [hD, normalBundleDiffeomorphOfIsLegendrianImmersion_symm_apply]
     exact congrArg (TotalSpace.mk' _ q) (map_zero _)
   set Ψ := D.symm.toPartialDiffeomorph.trans Φ with hΨ
@@ -526,56 +531,6 @@ private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaC
       SmoothForm.coe_mpullback_subtype_val_apply]
     exact (CotangentBundle.contactization_liouvilleForm_apply_zeroSection q 0 (v 0)).symm
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] [J.Boundaryless]
-  [T2Space M] [SecondCountableTopology M] in
-/-- Let `Ψ` be a partial diffeomorphism from `J¹Λ` to `M` and `φ` one of its source `W` fixing a set
-`K`, with `φ^* (Ψ|_W)^* α = (dz - λ)|_W` on the source of `φ`. Then `φ` followed by `Ψ` is a
-partial diffeomorphism from `J¹Λ` to `M`, defined near `K` and equal to `Ψ` there, which pulls
-`α` back to `dz - λ` on its source. -/
-private theorem exists_partialDiffeomorph_trans_opens
-    (Ψ : PartialDiffeomorph ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J
-      (CotangentBundle I Λ × ℝ) M ∞)
-    (hΨW : ContMDiff ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J ∞
-      (Ψ ∘ (Subtype.val : (⟨Ψ.source, Ψ.open_source⟩ :
-        TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)) → _)))
-    {K : Set (CotangentBundle I Λ × ℝ)} (hK : K ⊆ Ψ.source)
-    (φ : PartialDiffeomorph ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
-      ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (⟨Ψ.source, Ψ.open_source⟩ :
-        TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)) (⟨Ψ.source, Ψ.open_source⟩ :
-        TopologicalSpace.Opens (CotangentBundle I Λ × ℝ)) ∞)
-    (hφs : Subtype.val ⁻¹' K ⊆ φ.source) (hφt : Subtype.val ⁻¹' K ⊆ φ.target)
-    (hφfix : ∀ y ∈ Subtype.val ⁻¹' K, φ y = y)
-    (hφ : ∀ y ∈ φ.source, TauCeti.mpullback _ _ φ (SmoothForm.mpullback _ hΨW α).val y =
-      (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal
-        (CotangentBundle.liouvilleForm I Λ).contactization).val y) :
-    ∃ F : PartialDiffeomorph ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J
-        (CotangentBundle I Λ × ℝ) M ∞,
-      K ⊆ F.source ∧ (∀ x ∈ K, F x = Ψ x) ∧ ∀ x ∈ F.source, TauCeti.mpullback _ J F α.val x =
-        (CotangentBundle.liouvilleForm I Λ).contactization.val x := by
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  obtain ⟨Φ, hΦs, -, hΦfix, hΦ⟩ :=
-    exists_partialDiffeomorph_mpullback_apply_eq_of_opens hn hK φ hφs hφt hφfix
-  refine ⟨Φ.trans Ψ, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [PartialDiffeomorph.trans_source]
-    exact ⟨hΦs hx, by rw [mem_preimage, hΦfix x hx]; exact hK hx⟩
-  · rw [PartialDiffeomorph.coe_trans, Function.comp_apply, hΦfix x hx]
-  rw [PartialDiffeomorph.trans_source] at hx
-  rw [PartialDiffeomorph.coe_trans,
-    mpullback_comp_at (Φ.mdifferentiableAt hn hx.1) (Ψ.mdifferentiableAt hn hx.2)]
-  obtain ⟨y, hy, rfl, hyΦ⟩ := hΦ x hx.1
-  rw [hyΦ]
-  -- On the source of `Ψ`, `(Ψ|_W)^* α` is `Ψ^* α` read on `W`.
-  have hpt : TauCeti.mpullback ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
-      ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) Subtype.val
-      (TauCeti.mpullback ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ α.val) (φ y) =
-        (SmoothForm.mpullback _ hΨW α).val (φ y) := by
-    rw [SmoothForm.coe_mpullback, mpullback_comp_at
-      (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
-      (Ψ.mdifferentiableAt hn (φ y).property)]
-  rw [← SmoothForm.coe_mpullback_subtype_val_apply, ← hφ y hy]
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [TauCeti.mpullback_apply φ, TauCeti.mpullback_apply φ, hpt]
-
 /-! ### The neighbourhood theorem -/
 
 /-- **The strict Legendrian neighbourhood theorem.** Let `α` be a contact form on a manifold `M`
@@ -608,8 +563,12 @@ theorem exists_partialDiffeomorph_mpullback_eq_contactization [Nonempty Λ]
   obtain ⟨φ, hφs, hφt, hφfix, hφ⟩ := exists_partialDiffeomorph_opens_zeroSection _ <| by
     rintro ⟨x, hx⟩ ⟨q, rfl⟩
     exact isContactFormAt_jet (hval q) (hfo q) hΨW hx
-  obtain ⟨F, hFs, hFΨ, hF⟩ := exists_partialDiffeomorph_trans_opens Ψ hΨW
-    (range_subset_iff.2 hsrc) φ hφs hφt hφfix hφ
-  exact ⟨F, fun q ↦ hFs ⟨q, rfl⟩, fun q ↦ (hFΨ _ ⟨q, rfl⟩).trans (hval q), hF⟩
+  -- Read `φ` in `J¹Λ` and follow it by `Ψ`.
+  obtain ⟨F, hFs, hFΨ, hF⟩ :=
+    Ψ.exists_eqOn_mpullback_apply_eq_of_opens (by simp) (range_subset_iff.2 hsrc) φ hφs hφt hφfix
+  refine ⟨F, fun q ↦ hFs ⟨q, rfl⟩, fun q ↦ (hFΨ ⟨q, rfl⟩).trans (hval q), fun x hx ↦ ?_⟩
+  obtain ⟨y, hy, rfl, hFy⟩ := hF x hx
+  rw [hFy, ← SmoothForm.coe_mpullback _ hΨW]
+  exact (hφ y hy).trans (SmoothForm.coe_mpullback_subtype_val_apply _ y)
 
 end TauCeti.SmoothEmbedding
