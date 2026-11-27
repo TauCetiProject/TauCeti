@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.GaltonWatson.Kernel
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Fixed points of the offspring generating function
@@ -97,7 +98,7 @@ theorem isLeast_pgf_eq_self_one_iff :
   · rintro ⟨hm, h1⟩
     refine ⟨⟨zero_le_one, le_rfl, by simp⟩, fun s ⟨hs0, _, hfs⟩ => ?_⟩
     by_contra! hs1
-    rcases (measure_zero_add_measure_one_le ν).lt_or_eq with h | h
+    rcases (ν.measure_singleton_add_measure_singleton_le zero_ne_one).lt_or_eq with h | h
     · -- strictly convex case: `f` is below the diagonal on `(s, 1)`, so its slope on `[t, 1]`
       -- exceeds `1` for `t = (s + 1) / 2`, while its derivative is at most `m ≤ 1`
       have ht := pgf_lt_self_of_add_lt_one ν h hs0 le_rfl hfs (by simp)

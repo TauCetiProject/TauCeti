@@ -21,6 +21,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Probability-generating functions
@@ -89,7 +90,7 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
 * `TauCeti.Probability.setOf_pgf_eq_self_eq_pair` — unless `ν {1} = 1`, the fixed points of `f`
   in `[0, 1]` are the least one and `1`, using `TauCeti.Probability.pgf_lt_self_of_add_lt_one` and
   `TauCeti.Probability.eq_one_of_pgf_eq_self_of_add_eq_one` for the two cases that
-  `TauCeti.Probability.measure_zero_add_measure_one_le` leaves.
+  `MeasureTheory.Measure.measure_singleton_add_measure_singleton_le` leaves.
 -/
 
 public section
@@ -790,11 +791,6 @@ open Filter Set
 
 variable (ν : Measure ℕ) [IsProbabilityMeasure ν]
 
-/-- The masses of `0` and `1` under a probability measure on `ℕ` add up to at most `1`, so one of
-`strictConvexOn_pgf_of_add_lt_one` and `pgf_eq_of_add_eq_one` applies. -/
-theorem measure_zero_add_measure_one_le : ν {0} + ν {1} ≤ 1 :=
-  (measure_union (by simp) (measurableSet_singleton 1)).symm.trans_le prob_le_one
-
 /-- The iterates `f^[n] 0` of the generating function of a probability measure on `ℕ` lie in
 `[0, 1]`. -/
 private theorem iterate_pgf_zero_mem_Icc (n : ℕ) : (pgf id ν)^[n] 0 ∈ Icc (0 : ℝ) 1 :=
@@ -888,7 +884,7 @@ theorem setOf_pgf_eq_self_eq_pair (h1 : ν {1} ≠ 1) {q : ℝ}
   refine ⟨fun hs => ?_, ?_⟩
   · rcases hs.2.1.lt_or_eq with hs1 | rfl
     · left
-      rcases (measure_zero_add_measure_one_le ν).lt_or_eq with h | h
+      rcases (ν.measure_singleton_add_measure_singleton_le zero_ne_one).lt_or_eq with h | h
       · refine (hq.2 hs).antisymm' (not_lt.1 fun hqs => ?_)
         exact (pgf_lt_self_of_add_lt_one ν h hq.1.1 le_rfl hq.1.2.2 (by simp) hqs hs1).ne
           hs.2.2
