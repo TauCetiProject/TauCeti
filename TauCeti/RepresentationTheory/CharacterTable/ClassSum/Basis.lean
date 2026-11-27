@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -95,9 +96,8 @@ theorem classSumCenter_coe (C : ConjClasses G) :
 
 /-- The class sum of the conjugacy class of `1`, as an element of the center, is `1`. -/
 @[simp]
-theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 := by
-  apply Subtype.ext
-  simp
+theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 :=
+  Subtype.ext <| (classSum_mk_of_mem_center k (one_mem _)).trans (map_one _)
 
 /-- Convert a function on conjugacy classes to the corresponding linear combination of class
 sums. -/
@@ -186,5 +186,23 @@ theorem finrank_center_monoidAlgebra :
   let := Classical.decEq G
   rw [Module.finrank_eq_card_basis (classSumBasis (G := G) (k := k))]
   exact Fintype.card_eq_nat_card
+
+end TauCeti
+
+namespace TauCeti
+
+variable {k G : Type*} [CommSemiring k] [CommGroup G] [Fintype G] [DecidableEq G]
+
+/-- In a commutative group every element is central (`classSum_mk_of_mem_center`), so the
+class sum of `g`, as an element of the center, is `g`.
+
+Its simp priority is low so that `classSumCenter_mk_one` still rewrites the class of `1`
+to `1`, rather than to `toCenter (of k G 1)`, which simp leaves as `single 1 1`. -/
+@[simp low]
+theorem classSumCenter_mk_of_commGroup (g : G) :
+    classSumCenter (k := k) (ConjClasses.mk g) =
+      MonoidAlgebra.toCenter (MonoidAlgebra.of k G g) :=
+  Subtype.ext <| (classSum_mk_of_mem_center k
+    (Subgroup.mem_center_iff.mpr fun h => mul_comm h g)).trans (MonoidAlgebra.coe_toCenter _).symm
 
 end TauCeti

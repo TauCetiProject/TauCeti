@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.DedekindDomain.Discriminant.Basic
 import TauCeti.NumberTheory.LocalField.Different.Monogenic
 import TauCeti.NumberTheory.LocalField.Monogenic
+import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 
 /-!
 # The local discriminant of an extension of local fields
@@ -53,6 +54,8 @@ unramified criterion and the bound `f(L/K) · (e(L/K) - 1) ≤ δ(L/K)`.
 * `TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`: the product formula
   `δ(L/K) = f(L/K) · d(L/K)`.
 * `TauCeti.discriminantIdeal_eq_maximalIdeal_pow`: `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`.
+* `TauCeti.addVal_discr_eq_discriminantExponent` and `TauCeti.span_discr_eq_discriminantIdeal`:
+  the discriminant of an `𝒪[K]`-basis of `𝒪[L]` has valuation `δ(L/K)` and generates `𝔩(L/K)`.
 * `TauCeti.IsTotallyRamified.addVal_aeval_derivative_minpoly_eq_discriminantExponent`:
   the derivative of a uniformizer's minimal polynomial has order `δ(L/K)` in a totally
   ramified extension.
@@ -184,6 +187,30 @@ theorem discriminantIdeal_eq_maximalIdeal_pow :
     discriminantIdeal K L = 𝓂[K] ^ discriminantExponent K L := by
   rw [discriminantExponent_eq_inertiaDegree_mul_differentExponent,
     discriminantIdeal_eq_maximalIdeal_pow_mul]
+
+section Basis
+
+variable {K L} {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **The discriminant of an integral basis has valuation `δ(L/K)`.** For an `𝒪[K]`-basis `b` of
+`𝒪[L]`, the additive valuation of `Algebra.discr 𝒪[K] b` is the discriminant exponent. -/
+theorem addVal_discr_eq_discriminantExponent (b : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.discr 𝒪[K] b) = discriminantExponent K L := by
+  rw [← Ring.ord_eq_addVal, ord_discr_eq_multiplicity_mul_finrank K L b,
+    discriminantExponent_eq_inertiaDegree_mul_differentExponent, differentExponent_def,
+    inertiaDegree_def, mul_comm]
+  norm_cast
+
+/-- **The discriminant of an integral basis generates the discriminant ideal**: for an
+`𝒪[K]`-basis `b` of `𝒪[L]`, `(Algebra.discr 𝒪[K] b) = 𝔩(L/K)`. -/
+theorem span_discr_eq_discriminantIdeal (b : Module.Basis ι 𝒪[K] 𝒪[L]) :
+    Ideal.span {Algebra.discr 𝒪[K] b} = discriminantIdeal K L := by
+  ext y
+  rw [Ideal.mem_span_singleton, ← IsDiscreteValuationRing.addVal_le_iff_dvd,
+    addVal_discr_eq_discriminantExponent, discriminantIdeal_eq_maximalIdeal_pow,
+    IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+
+end Basis
 
 /-- **The characteristic property of the local discriminant exponent**: the `n`-th power of the
 maximal ideal of `𝒪[K]` divides the discriminant ideal exactly when `n ≤ δ(L/K)`. -/

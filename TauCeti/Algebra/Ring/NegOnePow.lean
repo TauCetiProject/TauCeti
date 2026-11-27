@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.Algebra.Ring.NegOnePow
 import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
 # Powers of negative one in a ground ring
@@ -23,6 +26,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 ## Main results
 
 * `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
+* `TauCeti.negOnePowCast_mul_finsum`: multiplication by a ground-ring sign commutes with `finsum`.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
@@ -30,8 +34,12 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   induce the same scalar action on a module.
 * `TauCeti.negOnePowCast_smul_mem`: the ground-ring signs preserve every additive subgroup.
 * `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
+* `TauCeti.negOnePow_smul_eq_self_of_neg_one_eq_one`: the signs act trivially when `-1 = 1` in
+  the ground ring.
 * `Int.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
   unit-valued sign and the power `(-1) ^ n` act as involutions.
+* `TauCeti.neg_one_pow_smul_mem`: the power `(-1) ^ j` from the scalars preserves every additive
+  subgroup.
 * `TauCeti.neg_one_pow_mul_succ_div_two_succ`: the signs of successive triangular numbers, as
   natural-number powers of `-1`.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
@@ -83,6 +91,16 @@ theorem negOnePowCast_two_mul (a : ℤ) : negOnePowCast R (2 * a) = 1 := by
 theorem negOnePowCast_mul_self (e : ℤ) : negOnePowCast R e * negOnePowCast R e = 1 := by
   rw [← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul]
 
+/-- The scalar `(-1) ^ e` is left-regular, since it is its own inverse. -/
+theorem isLeftRegular_negOnePowCast (e : ℤ) : IsLeftRegular (negOnePowCast R e) :=
+  isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self e)
+
+/-- Multiplication by the scalar `(-1) ^ e` commutes with `finsum`, without any finiteness
+assumption on the support. -/
+theorem negOnePowCast_mul_finsum {ι : Type uI} (e : ℤ) (f : ι → R) :
+    negOnePowCast R e * ∑ᶠ i, f i = ∑ᶠ i, negOnePowCast R e * f i :=
+  (isLeftRegular_negOnePowCast e).mul_finsum f
+
 theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
   simp [negOnePowCast, Int.negOnePow_even _ he]
 
@@ -114,6 +132,14 @@ theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunL
     [AddMonoidHomClass F A B] (f : F) (e : ℤ) (a : A) :
     f (negOnePowCast R e • a) = negOnePowCast R e • f a := by
   simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, map_zsmul]
+
+/-- When `-1 = 1` in the ground ring, as in `ZMod 2`, every sign `(-1) ^ e` acts trivially on
+its modules. -/
+theorem negOnePow_smul_eq_self_of_neg_one_eq_one (h1 : (-1 : R) = 1) (e : ℤ) (a : A) :
+    e.negOnePow • a = a := by
+  rcases Int.units_eq_one_or e.negOnePow with h | h
+  · rw [h, one_smul]
+  · rw [h, Units.neg_smul, one_smul, ← neg_one_smul R a, h1, one_smul]
 
 end
 
@@ -150,6 +176,13 @@ theorem neg_one_pow_smul_neg_one_pow_smul {R : Type uR} [Monoid R] [HasDistribNe
     {B : Type uA} [MulAction R B] (n : ℕ) (b : B) :
     (-1 : R) ^ n • (-1 : R) ^ n • b = b := by
   rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_smul]
+
+/-- A sign `(-1) ^ j` from the scalars preserves membership in any set closed under negation, such
+as an additive subgroup, even one that is not closed under the scalar action. -/
+theorem neg_one_pow_smul_mem {R M S : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [SetLike S M] [NegMemClass S M] {H : S} {x : M} (hx : x ∈ H) (j : ℕ) :
+    ((-1 : R) ^ j) • x ∈ H := by
+  rcases neg_one_pow_eq_or R j with h | h <;> simp [h, hx]
 
 end NegOnePowSMul
 

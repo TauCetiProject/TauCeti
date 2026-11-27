@@ -33,26 +33,19 @@ so the length in `W'` is computed by words in `B`, and the exchange condition of
 exchange condition for these words. The orders of the products of two generators are the entries
 of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
 
-## Main definitions
-
-* `CoxeterSystem.parabolicHom`: the homomorphism `W →* W'` induced by a map of index types along
-  which the Coxeter matrices agree.
+The homomorphism `CoxeterSystem.parabolicHom`, with its action on words and its functoriality, is
+defined in `TauCeti/GroupTheory/Coxeter/Basic.lean`.
 
 ## Main results
 
 * `CoxeterSystem.simple_mem_parabolic_iff`: a simple reflection lies in the standard parabolic
   subgroup of `J` exactly when its index lies in `J`.
-* `CoxeterSystem.parabolicHom_wordProd`: the homomorphism sends the product of a word to the
-  product of its image.
-* `CoxeterSystem.parabolicHom_id`, `CoxeterSystem.parabolicHom_comp`: the homomorphisms are
-  functorial in the map of index types.
-* `CoxeterSystem.parabolicHom_reindex`, `CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex`: along
-  a bijection they are the identity of a reindexed system and the inverse of
-  `CoxeterMatrix.reindexGroupEquiv` on the presented groups.
-* `CoxeterSystem.range_parabolicHom`: its image is the standard parabolic subgroup of
-  `Set.range f`.
+* `CoxeterSystem.range_parabolicHom`: the image of `CoxeterSystem.parabolicHom` is the standard
+  parabolic subgroup of `Set.range f`.
 * `CoxeterSystem.length_parabolicHom`: **it preserves lengths.**
 * `CoxeterSystem.parabolicHom_injective`: **it is injective.**
+* `CoxeterSystem.card_parabolic_range`: so the standard parabolic subgroup of `Set.range f` has the
+  order of `W`.
 * `CoxeterSystem.isReduced_map_iff`: a word is reduced exactly when its image is.
 * `CoxeterSystem.bruhatLE_parabolicHom_iff`: **it embeds the Bruhat order as an induced
   suborder.**
@@ -86,60 +79,7 @@ theorem simple_mem_parabolic_iff (cs : CoxeterSystem M W) {J : Set B} {i : B} :
 
 variable (cs : CoxeterSystem M W) (cs' : CoxeterSystem M' W') {f : B → B'}
 
-/-- The homomorphism of Coxeter groups induced by a map `f : B → B'` of index types along which the
-Coxeter matrices agree, `M i j = M' (f i) (f j)`: it sends `s i` to `s' (f i)`. It is injective
-(`CoxeterSystem.parabolicHom_injective`) and length-preserving
-(`CoxeterSystem.length_parabolicHom`), with image the standard parabolic subgroup of
-`Set.range f` (`CoxeterSystem.range_parabolicHom`). -/
-def parabolicHom (hf : ∀ i j, M i j = M' (f i) (f j)) : W →* W' :=
-  cs.lift ⟨fun i ↦ cs'.simple (f i), fun i j ↦ by rw [hf]; exact cs'.simple_mul_simple_pow _ _⟩
-
 variable {cs'} (hf : ∀ i j, M i j = M' (f i) (f j))
-
-@[simp]
-theorem parabolicHom_simple (i : B) : cs.parabolicHom cs' hf (cs.simple i) = cs'.simple (f i) :=
-  cs.lift_apply_simple _ i
-
-/-- The homomorphism `CoxeterSystem.parabolicHom` sends the product of a word to the product of its
-image under `f`. -/
-@[simp]
-theorem parabolicHom_wordProd (ω : List B) :
-    cs.parabolicHom cs' hf (cs.wordProd ω) = cs'.wordProd (ω.map f) := by
-  induction ω with
-  | nil => simp
-  | cons i ω ih => simp [wordProd_cons, ih]
-
-/-- **The identity of index types induces the identity of `W`.** -/
-@[simp]
-theorem parabolicHom_id (hid : ∀ i j, M i j = M (id i) (id j)) :
-    cs.parabolicHom cs hid = MonoidHom.id W :=
-  cs.ext_simple fun i ↦ parabolicHom_simple cs hid i
-
-/-- **The homomorphisms `CoxeterSystem.parabolicHom` compose** along composites of maps of index
-types: extending along `f` and then along `g` is extending along `g ∘ f`. -/
-theorem parabolicHom_comp {B'' W'' : Type*} [Group W''] {M'' : CoxeterMatrix B''}
-    {cs'' : CoxeterSystem M'' W''} {g : B' → B''} (hg : ∀ i j, M' i j = M'' (g i) (g j))
-    (hgf : ∀ i j, M i j = M'' ((g ∘ f) i) ((g ∘ f) j)) :
-    (cs'.parabolicHom cs'' hg).comp (cs.parabolicHom cs' hf) = cs.parabolicHom cs'' hgf :=
-  cs.ext_simple fun i ↦ by simp
-
-/-- **Reindexing a Coxeter system along `e` does not change the group**: the homomorphism of
-`CoxeterSystem.parabolicHom` from `cs` to `cs.reindex e` along `e` is the identity of `W`. -/
-@[simp]
-theorem parabolicHom_reindex (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
-    cs.parabolicHom (cs.reindex e) he = MonoidHom.id W :=
-  cs.ext_simple fun i ↦ by simp
-
-/-- On the presented Coxeter groups, the homomorphism of `CoxeterSystem.parabolicHom` along a
-bijection `e` is the inverse of Mathlib's isomorphism `CoxeterMatrix.reindexGroupEquiv`. -/
-@[simp]
-theorem _root_.CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex (M : CoxeterMatrix B)
-    (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
-    M.toCoxeterSystem.parabolicHom (M.reindex e).toCoxeterSystem he =
-      (M.reindexGroupEquiv e).symm.toMonoidHom :=
-  M.toCoxeterSystem.ext_simple fun i ↦ by
-    rw [parabolicHom_simple]
-    simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple]
 
 /-- The image of `CoxeterSystem.parabolicHom` is the standard parabolic subgroup of
 `Set.range f`. -/
@@ -209,6 +149,13 @@ theorem parabolicHom_injective : Function.Injective (cs.parabolicHom cs' hf) :=
   injective_of_exchange (cs := cs) _ cs'.length
     (fun i j ↦ by rw [parabolicHom_simple, parabolicHom_simple, orderOf_simple_mul_simple, hf])
     (isLeast_length_parabolicHom cs hf) (exchange_parabolicHom cs hf)
+
+include cs hf in
+/-- **The standard parabolic subgroup of `Set.range f` has the order of `W`**: it is the injective
+image of `CoxeterSystem.parabolicHom`. -/
+theorem card_parabolic_range : Nat.card (cs'.parabolic (Set.range f)) = Nat.card W := by
+  rw [← range_parabolicHom cs hf]
+  exact (Nat.card_congr (MonoidHom.ofInjective (parabolicHom_injective cs hf)).toEquiv).symm
 
 include hf in
 /-- A word in `B` is reduced exactly when its image under `f` is reduced in `W'`. -/

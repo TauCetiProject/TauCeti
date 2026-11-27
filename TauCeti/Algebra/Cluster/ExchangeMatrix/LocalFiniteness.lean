@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word.Basic
 public import Mathlib.Data.Set.Finite.Lattice
 
 /-!

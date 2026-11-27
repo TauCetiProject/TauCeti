@@ -10,6 +10,7 @@ public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.LinearAlgebra.Matrix.Divisibility
 public import TauCeti.LinearAlgebra.Matrix.Minor
 public import TauCeti.RingTheory.Valuation.AddValuation
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 
 /-!
@@ -25,9 +26,11 @@ valuation ring, the least valuation of a `k × k` minor of `A` is therefore
 `v s₀ + ⋯ + v sₖ₋₁`, and `v (det A)` is the sum of all the `v sᵢ`. All row and column choices
 are needed here; the principal minors alone need not attain the minimum.
 
-Over a discrete valuation ring, every square matrix has such a Smith
-normal form: `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing` in
-`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`.
+Over a valuation domain, such as a discrete valuation ring, every square matrix has such a Smith
+normal form: `Matrix.exists_smith_normal_form_of_preValuationRing` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`. Comparing these least valuations shows that
+a Smith normal form `diagonal (ϖ ^ α)` by powers of a uniformizer `ϖ`, with monotone exponents
+`α`, is unique.
 
 These valuations are the slopes of the Hodge polygon of the endomorphism `A` of the lattice
 `Rⁿ`, and the minor bounds are the input to the comparison of this Hodge polygon with the Newton
@@ -46,6 +49,8 @@ polygon of `det (1 - X A)` in `TauCeti.NumberTheory.NewtonPolygon.Lattice`.
 * `Matrix.prefixSum_le_valuation_principalMinor_of_mul_mul_eq_diagonal`: in particular it bounds
   the valuations of the principal `k × k` minors from below.
 * `Matrix.valuation_det_eq_sum_of_mul_mul_eq_diagonal`: `v (det A) = ∑ i, v (s i)`.
+* `Matrix.eq_of_mul_mul_eq_diagonal_pow`: over a discrete valuation ring, a Smith normal form
+  `diagonal (ϖ ^ α)` with monotone exponents is unique.
 
 ## References
 
@@ -181,5 +186,44 @@ theorem valuation_det_eq_sum_of_mul_mul_eq_diagonal (hv : ∀ x, 0 ≤ v x) (hL 
   exact hdet
 
 end InvariantFactor
+
+section DiscreteValuationRing
+
+variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {n : ℕ}
+  {A L Q L' Q' : Matrix (Fin n) (Fin n) R} {ϖ : R} {α β : Fin n → ℕ}
+
+/-- **Uniqueness of the Smith normal form over a discrete valuation ring.** If
+`L * A * Q = diagonal (ϖ ^ α)` and `L' * A * Q' = diagonal (ϖ ^ β)` for a uniformizer `ϖ`,
+monotone exponents `α`, `β` and `L`, `Q`, `L'`, `Q'` of unit determinant, then `α = β`. -/
+theorem eq_of_mul_mul_eq_diagonal_pow (hϖ : Irreducible ϖ) (hα : Monotone α) (hβ : Monotone β)
+    (hL : IsUnit L.det) (hQ : IsUnit Q.det) (hL' : IsUnit L'.det) (hQ' : IsUnit Q'.det)
+    (h : L * A * Q = diagonal fun i ↦ ϖ ^ α i) (h' : L' * A * Q' = diagonal fun i ↦ ϖ ^ β i) :
+    α = β := by
+  set v := IsDiscreteValuationRing.addVal R
+  have hv : ∀ x, 0 ≤ v x := fun _ ↦ zero_le
+  have hval (γ : Fin n → ℕ) : (fun i ↦ v (ϖ ^ γ i)) = fun i ↦ ((γ i : ℕ) : ℕ∞) := by
+    simp [v, IsDiscreteValuationRing.addVal_uniformizer hϖ]
+  -- the least valuation of a `k × k` minor of `A` is the prefix sum of either exponent vector
+  have hprefix (k : ℕ) (hk : k ≤ n) : prefixSum k α = prefixSum k β := by
+    have key {γ δ : Fin n → ℕ} (hγ : Monotone γ) (hδ : Monotone δ) {L₁ Q₁ L₂ Q₂ : Matrix _ _ R}
+        (hL₁ : IsUnit L₁.det) (hQ₁ : IsUnit Q₁.det) (hL₂ : IsUnit L₂.det) (hQ₂ : IsUnit Q₂.det)
+        (h₁ : L₁ * A * Q₁ = diagonal fun i ↦ ϖ ^ γ i)
+        (h₂ : L₂ * A * Q₂ = diagonal fun i ↦ ϖ ^ δ i) : prefixSum k γ ≤ prefixSum k δ := by
+      obtain ⟨f, g, hfg⟩ := exists_valuation_det_submatrix_eq_prefixSum_of_mul_mul_eq_diagonal
+        hv hL₂ hQ₂ (fun _ _ hij ↦ pow_dvd_pow ϖ (hδ hij)) h₂ hk
+      have hle := prefixSum_le_valuation_det_submatrix_of_mul_mul_eq_diagonal
+        hv hL₁ hQ₁ (fun _ _ hij ↦ pow_dvd_pow ϖ (hγ hij)) h₁ hk f g
+      rw [hval] at hfg hle
+      have hcast (ε : Fin n → ℕ) : (prefixSum k fun i ↦ ((ε i : ℕ) : ℕ∞)) = prefixSum k ε := by
+        simp [prefixSum_def]
+      rw [hcast] at hle hfg
+      exact_mod_cast hle.trans hfg.le
+    exact le_antisymm (key hα hβ hL hQ hL' hQ' h h') (key hβ hα hL' hQ' hL hQ h' h)
+  funext i
+  have h₁ := hprefix (i + 1) i.isLt
+  rw [prefixSum_succ i.isLt, prefixSum_succ i.isLt, hprefix i i.isLt.le] at h₁
+  exact Nat.add_left_cancel h₁
+
+end DiscreteValuationRing
 
 end Matrix

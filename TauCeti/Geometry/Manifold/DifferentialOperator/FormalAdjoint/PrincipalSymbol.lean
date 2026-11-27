@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
@@ -38,6 +39,8 @@ adjoints (`LinearMap.IsFormalAdjoint.inner_apply_eq_of_mem_differentialOperators
 ## Main results
 
 * `LinearMap.IsFormalAdjoint.inner_sectionPrincipalSymbol_apply`: the identity above.
+* `LinearMap.IsFormalAdjoint.sectionPrincipalSymbol_eq_smul_adjoint`: the same identity as an
+  equality of linear maps, `σ_geom(Q)(ξ) = (-1) ^ m σ_geom(P)(ξ)†`.
 
 ## References
 
@@ -102,5 +105,25 @@ theorem IsFormalAdjoint.inner_sectionPrincipalSymbol_apply
   rw [hQ, LinearMap.smul_apply, real_inner_smul_right, sectionPrincipalSymbol_mvfderiv,
     sectionPrincipalSymbol_mvfderiv, real_inner_smul_left, real_inner_smul_right, hC]
   simp [← mul_assoc, ← mul_pow]
+
+/-- **The principal symbol of a formal adjoint**, as a linear map: if `Q` is a formal adjoint of
+`P`, both of order at most `m`, then `σ_geom(Q)(ξ)` is `(-1) ^ m` times the adjoint of
+`σ_geom(P)(ξ)`, read as a continuous linear map between the finite-dimensional fibres. -/
+theorem IsFormalAdjoint.sectionPrincipalSymbol_eq_smul_adjoint
+    {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m}
+    {Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F, V⟯ m}
+    (h : (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯).IsFormalAdjoint
+      (Q : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯) μ)
+    (hx : I.IsInteriorPoint x) (ξ : TangentSpace I x →L[ℝ] ℝ)
+    [FiniteDimensional ℝ (V x)] [FiniteDimensional ℝ (W x)] :
+    sectionPrincipalSymbol I hx Q ξ = ((-1 : ℝ) ^ m) •
+      ((ContinuousLinearMap.adjoint
+        (LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx P ξ)) :
+          W x →L[ℝ] V x) : W x →ₗ[ℝ] V x) := by
+  refine LinearMap.ext fun w ↦ ext_inner_left ℝ fun v ↦ ?_
+  rw [LinearMap.smul_apply, real_inner_smul_right, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.adjoint_inner_right, LinearMap.coe_toContinuousLinearMap',
+    h.inner_sectionPrincipalSymbol_apply, ← mul_assoc, ← mul_pow]
+  norm_num
 
 end LinearMap

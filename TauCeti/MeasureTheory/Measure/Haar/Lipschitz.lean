@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Hausdorff measure and null-set transport under Lipschitz maps
@@ -20,7 +21,8 @@ measure, so every additive Haar measure is mutually absolutely continuous with i
 increase the Hausdorff `d`-measure by at most the factor `K ^ d`
 (`LipschitzOnWith.hausdorffMeasure_image_le`), and a set of zero Hausdorff `d`-measure has zero
 Hausdorff `d'`-measure for every `d' ≥ d`. The same factor `K ^ d` bounds the growth of the
-normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`.
+normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`, and on a
+separable extended metric space locally Lipschitz maps preserve `μHE[d]`-null subsets.
 Inverse-Lipschitz maps on a parameter set give the reverse measure bound. Together these
 bounds give null-set and almost-everywhere equivalences for bi-Lipschitz parametrizations,
 for normalized Hausdorff measure and for additive Haar measure on the source. The raw
@@ -42,8 +44,12 @@ uses only Lipschitz control in the forward direction and inverse-Lipschitz contr
 * `AntilipschitzWith.le_euclideanHausdorffMeasure_image_of_domRestrict` — localized lower bound.
 * `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff` — bi-Lipschitz null-set transport.
 * `LipschitzOnWith.ae_euclideanHausdorffMeasure_image_iff` — bi-Lipschitz a.e. transport.
-* `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff_addHaar` and
-  `LipschitzOnWith.ae_image_iff_addHaar` — the corresponding source Haar-measure equivalences.
+* `LipschitzOnWith.euclideanHausdorffMeasure_image_eq_zero_iff_addHaar`,
+  `LipschitzOnWith.ae_euclideanHausdorffMeasure_exists_of_addHaar`, and
+  `LipschitzOnWith.ae_image_iff_addHaar` — the corresponding source Haar-measure transport and
+  equivalences.
+* `LocallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_subset` — a map locally Lipschitz
+  on `s` sends every `μHE[d]`-null subset `t ⊆ s` to a `μHE[d]`-null set.
 -/
 
 public section
@@ -226,6 +232,17 @@ theorem ae_euclideanHausdorffMeasure_image_of_addHaar
   hf.ae_euclideanHausdorffMeasure_image _
     ((Measure.absolutelyContinuous_isAddHaarMeasure μHE[finrank ℝ E] μ).ae_le h)
 
+/-- A Lipschitz parametrization transports source-Haar-a.e. parameter assertions `p : E → Prop` to
+normalized Hausdorff-a.e. existence of a good preimage in `s`, without requiring injectivity. -/
+theorem ae_euclideanHausdorffMeasure_exists_of_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : E → Y} {s : Set E}
+    (hf : LipschitzOnWith K f s) (μ : Measure E) [μ.IsAddHaarMeasure] {p : E → Prop}
+    (h : ∀ᵐ x ∂μ, x ∈ s → p x) :
+    ∀ᵐ y ∂(μHE[finrank ℝ E] : Measure Y), y ∈ f '' s → ∃ x ∈ s, f x = y ∧ p x :=
+  hf.ae_euclideanHausdorffMeasure_image_of_addHaar μ
+    (h.mono fun x hx hxs => ⟨x, hxs, rfl, hx hxs⟩)
+
 /-- Inverse-Lipschitz control pulls normalized Hausdorff-a.e. assertions on the image
 back to any source Haar measure, without requiring Lipschitz regularity. -/
 theorem _root_.AntilipschitzWith.ae_addHaar_of_euclideanHausdorffMeasure_image
@@ -250,3 +267,18 @@ theorem ae_image_iff_addHaar
     hf.ae_euclideanHausdorffMeasure_image_of_addHaar μ⟩
 
 end LipschitzOnWith
+
+/-- A map locally Lipschitz on `s` maps every `μHE[d]`-null subset `t ⊆ s` to a `μHE[d]`-null
+set. -/
+theorem LocallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_subset {X Y : Type*}
+    [EMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X] [BorelSpace X]
+    [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] {s t : Set X} {f : X → Y}
+    (hf : LocallyLipschitzOn s f) (hts : t ⊆ s) (d : ℕ) (ht0 : μHE[d] t = 0) :
+    μHE[d] (f '' t) = 0 := by
+  obtain ⟨U, _, _, hcov, hLip⟩ := hf.exists_open_cover_lipschitzOnWith (.of_separableSpace s)
+  have ht : t = ⋃ n, t ∩ U n := by
+    rw [← Set.inter_iUnion, Set.inter_eq_self_of_subset_left (hts.trans hcov)]
+  rw [ht, Set.image_iUnion]
+  refine measure_iUnion_null fun n => nonpos_iff_eq_zero.mp <|
+    (((hLip n).mono (Set.inter_subset_inter_left _ hts)).euclideanHausdorffMeasure_image_le d)
+      |>.trans_eq (by rw [measure_mono_null Set.inter_subset_left ht0, mul_zero])

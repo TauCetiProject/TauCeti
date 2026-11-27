@@ -423,7 +423,7 @@ private def localTrivializations (D : CartierDivisor X) :
 /-- **The sheaf of a Cartier divisor is a line bundle.** On an integral scheme, `𝒪_X(D)` is
 locally free of rank one: over an open subset on which `f` is an equation of `D`, it is
 `f⁻¹ 𝒪_X`. -/
-theorem isInvertible_sheaf (D : CartierDivisor X) : SheafOfModules.isInvertible X D.sheaf :=
+instance isInvertible_sheaf (D : CartierDivisor X) : SheafOfModules.isInvertible X D.sheaf :=
   D.localTrivializations.isInvertible
 
 /-- The line bundle `𝒪_X(D)` attached to a Cartier divisor `D` on an integral scheme. -/

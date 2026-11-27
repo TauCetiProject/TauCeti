@@ -9,15 +9,18 @@ public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
-# Constancy of a linear image of a curve
+# Linear images of curves
 
 A curve whose derivative on a closed interval is killed by a continuous linear map has constant
-image under that map on that interval.
+image under that map on that interval. The derivative of the image of a curve under a continuous
+linear equivalence is the image of its derivative, with no differentiability hypothesis.
 
 ## Main results
 
 * `ContinuousLinearMap.apply_eq_apply_left_of_hasDerivWithinAt`: the image under a continuous
   linear map of such a curve agrees with its value at the left endpoint.
+* `ContinuousLinearEquiv.comp_deriv`: `deriv (L ∘ f) x = L (deriv f x)` for a continuous linear
+  equivalence `L`, whether or not `f` is differentiable at `x`.
 -/
 
 public section
@@ -39,3 +42,11 @@ theorem ContinuousLinearMap.apply_eq_apply_left_of_hasDerivWithinAt (L : E →L[
       (fun t ht => (hβ t (Ico_subset_Icc_self ht)).derivWithin
         ((uniqueDiffOn_Icc hab).uniqueDiffWithinAt (Ico_subset_Icc_self ht))) t ht
   · rw [le_antisymm (ht.2.trans hab) ht.1]
+
+/-- The derivative of the image of a curve under a continuous linear equivalence `L` is `L` applied
+to its derivative, whether or not the curve is differentiable. -/
+theorem ContinuousLinearEquiv.comp_deriv {𝕜 G G' : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup G'] [NormedSpace 𝕜 G']
+    (L : G ≃L[𝕜] G') (f : 𝕜 → G) (x : 𝕜) : deriv (L ∘ f) x = L (deriv f x) := by
+  rw [← fderiv_apply_one_eq_deriv, ← fderiv_apply_one_eq_deriv, L.comp_fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]

@@ -51,7 +51,12 @@ tensor product pairings: in string diagrams, the loop of `f` sits inside the loo
   correspond to morphisms `𝟙_ C ⟶ Y`;
 * `TauCeti.tensorRightHomEquiv_whiskerRight_comp`, `TauCeti.tensorRightHomEquiv_symm_comp`, and
   `TauCeti.tensorRightHomEquiv_whiskerLeft_comp`: naturality and dinaturality of
-  `CategoryTheory.tensorRightHomEquiv`.
+  `CategoryTheory.tensorRightHomEquiv`;
+* `TauCeti.coevaluation_whiskerRight_tensorLeftHomEquiv`: the two Frobenius reciprocities
+  `CategoryTheory.tensorLeftHomEquiv` and `CategoryTheory.tensorRightHomEquiv` of a morphism
+  `S ⊗ T' ⟶ U` agree after inserting coevaluations;
+* `TauCeti.whiskerLeft_rightAdjointMate_comp_evaluation`: for `φ : R ≅ 𝟙_ C` and a normalized
+  pairing of `Rᘁ` and `R`, contracting `R` with the right adjoint mate of `φ.hom` is `φ`.
 -/
 
 public section
@@ -342,5 +347,55 @@ theorem tensorRightHomEquiv_whiskerLeft_comp {X Y Y' Z : C} [HasRightDual Y] [Ha
           rw [coevaluation_comp_rightAdjointMate]
     _ = 𝟙 _ ⊗≫ X ◁ η_ Y' Y'ᘁ ⊗≫ ((X ⊗ Y') ◁ fᘁ ≫ g ▷ Yᘁ) := by monoidal
     _ = _ := by rw [whisker_exchange]; monoidal
+
+/-- Inserting the coevaluation of `T'` and `T` before the Frobenius reciprocity
+`CategoryTheory.tensorLeftHomEquiv` through `S'` is inserting the coevaluation of `S'` and `S`
+before the Frobenius reciprocity `CategoryTheory.tensorRightHomEquiv` through `T'`. -/
+@[reassoc]
+theorem coevaluation_whiskerRight_tensorLeftHomEquiv {S S' T T' U : C} [ExactPairing S' S]
+    [ExactPairing T' T] (h : S ⊗ T' ⟶ U) :
+    η_ T' T ≫ tensorLeftHomEquiv T' S' S U h ▷ T ≫ (α_ _ _ _).hom =
+      η_ S' S ≫ S' ◁ tensorRightHomEquiv S T' T U h := by
+  dsimp only [tensorLeftHomEquiv, tensorRightHomEquiv, Equiv.coe_fn_mk]
+  calc
+    _ = 𝟙 _ ⊗≫ (𝟙_ C ◁ η_ T' T ≫ η_ S' S ▷ (T' ⊗ T)) ⊗≫ S' ◁ h ▷ T ⊗≫ 𝟙 _ := by
+      simp only [comp_whiskerRight, Category.assoc]
+      monoidal
+    _ = 𝟙 _ ⊗≫ (η_ S' S ▷ 𝟙_ C ≫ (S' ⊗ S) ◁ η_ T' T) ⊗≫ S' ◁ h ▷ T ⊗≫ 𝟙 _ := by
+      rw [whisker_exchange]
+    _ = _ := by
+      simp only [whiskerLeft_comp]
+      monoidal
+
+/-- For `φ : R ≅ 𝟙_ C` and a pairing of `Rᘁ` and `R` normalized by `η_ Rᘁ R ≫ ε_ R Rᘁ = 𝟙`,
+contracting `R` with the right adjoint mate `φ.homᘁ : 𝟙_ C ⟶ Rᘁ` through the pairing is `φ`. -/
+theorem whiskerLeft_rightAdjointMate_comp_evaluation {R : C} [HasRightDual R]
+    [P : ExactPairing Rᘁ R] (φ : R ≅ 𝟙_ C) (hP : η_ (Rᘁ : C) R ≫ ε_ R Rᘁ = 𝟙 (𝟙_ C)) :
+    R ◁ φ.homᘁ ≫ ε_ (Rᘁ : C) R = (ρ_ R).hom ≫ φ.hom := by
+  -- By the normalization, the mate of `φ.hom` is `φ` applied after the coevaluation.
+  have hm : (φ.homᘁ : 𝟙_ C ⟶ Rᘁ) = η_ (Rᘁ : C) R ≫ (Rᘁ : C) ◁ φ.hom ≫ (ρ_ _).hom := by
+    apply (ExactPairing.homUnitEquiv R Rᘁ).symm.injective
+    rw [← cancel_epi φ.inv, ExactPairing.homUnitEquiv_symm_apply,
+      ExactPairing.homUnitEquiv_symm_apply, rightAdjointMate_comp_evaluation]
+    trans 𝟙 (𝟙_ C)
+    · -- The evaluation of the unit object is its right unitor.
+      change φ.inv ≫ (λ_ R).inv ≫ 𝟙_ C ◁ φ.hom ≫ (ρ_ (𝟙_ C)).hom = _
+      rw [← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id_assoc, unitors_inv_equal,
+        Iso.inv_hom_id]
+    · rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, unitors_inv_equal,
+        ← rightUnitor_inv_naturality_assoc]
+      simp only [Category.assoc, Iso.hom_inv_id_assoc, ← whiskerLeft_comp_assoc, Iso.hom_inv_id,
+        whiskerLeft_id, Category.id_comp, hP]
+  rw [hm]
+  calc
+    _ = 𝟙 _ ⊗≫ R ◁ η_ (Rᘁ : C) R ⊗≫ ((R ⊗ Rᘁ) ◁ φ.hom ≫ ε_ (Rᘁ : C) R ▷ 𝟙_ C) ⊗≫ 𝟙 _ := by
+      simp only [whiskerLeft_comp]
+      monoidal
+    _ = 𝟙 _ ⊗≫ (R ◁ η_ (Rᘁ : C) R ⊗≫ ε_ (Rᘁ : C) R ▷ R) ⊗≫ φ.hom := by
+      rw [whisker_exchange]
+      monoidal
+    _ = _ := by
+      rw [ExactPairing.coevaluation_evaluation'']
+      monoidal
 
 end TauCeti
