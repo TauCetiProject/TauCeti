@@ -36,6 +36,8 @@ along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields i
 
 ## Main results
 
+* `TauCeti.valuation_eq_valuation_equivOfRingEquiv_symm`: `e` carries the valuation at the finite
+  place corresponding to `w` to the valuation at `w`.
 * `TauCeti.units_map_adicCompletionCongr_unitAtFinitePlace`: `adicCompletionCongr` intertwines
   `unitAtFinitePlace` with `Units.map e`.
 * `TauCeti.isSquare_unitAtFinitePlace_iff_of_ringEquiv`,
@@ -73,6 +75,19 @@ section FinitePlace
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
 
 namespace TauCeti
+
+/-- A ring isomorphism `e : K ≃+* L` of number fields carries the valuation at the finite place of
+`K` corresponding to a finite place `w` of `L` to the valuation at `w`: this is the hypothesis of
+`adicCompletionCongr` for that pair of places. -/
+theorem valuation_eq_valuation_equivOfRingEquiv_symm (e : K ≃+* L) (w : HeightOneSpectrum (𝓞 L))
+    (x : K) :
+    w.valuation L (e x) =
+      ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm w).valuation K
+        x := by
+  have hw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e)
+      ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm w).asIdeal := by
+    rw [← asIdeal_equivOfRingEquiv, Equiv.apply_symm_apply]
+  simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L) (RingOfIntegers.mapRingEquiv e) hw x
 
 /-- Extending a valuation-preserving isomorphism `e : K ≃+* L` to the adic completions intertwines
 `unitAtFinitePlace` with `Units.map e`. -/

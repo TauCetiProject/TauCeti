@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
 /-!
@@ -34,6 +35,8 @@ copy in another universe.
 
 * `QuadraticMap.transport_symm_transport`, `QuadraticMap.transport_transport_symm`: transporting
   along `f` and then along `f.symm` is the identity, in both orders.
+* `QuadraticMap.transport_weightedSumSquares`: transporting the diagonal form `⟨a₁, …, aₙ⟩` along
+  the coordinatewise equivalence induced by a ring isomorphism `τ` gives `⟨τ a₁, …, τ aₙ⟩`.
 * `QuadraticMap.radical_transport`: the radical of the transported form is the image of the
   radical.
 * `QuadraticMap.nondegenerate_transport_iff`, `QuadraticMap.anisotropic_transport_iff`,
@@ -172,6 +175,25 @@ theorem anisotropic_transport_iff (f : M ≃ₛₗ[σ] M') (Q : QuadraticForm R 
     map_eq_zero_iff σ (RingHomInvPair.toRingEquiv σ σ').injective, LinearEquiv.map_eq_zero_iff]
 
 end Semiring
+
+section WeightedSumSquares
+
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
+
+variable {R S : Type*} [CommSemiring R] [CommSemiring S] {ι : Type*} [Fintype ι]
+
+/-- Transporting the diagonal form `⟨a₁, …, aₙ⟩` along the coordinatewise semilinear equivalence
+`(ι → R) ≃ₛₗ[τ] (ι → S)` induced by a ring isomorphism `τ` gives the diagonal form
+`⟨τ a₁, …, τ aₙ⟩`. -/
+@[simp]
+theorem transport_weightedSumSquares (τ : R ≃+* S) (a : ι → R) :
+    (weightedSumSquares R a).transport
+        (LinearEquiv.piCongrRightₛₗ fun _ : ι ↦ τ.toSemilinearEquiv) =
+      weightedSumSquares S fun i ↦ τ (a i) := by
+  ext x
+  simp [weightedSumSquares_apply, map_sum]
+
+end WeightedSumSquares
 
 section Ring
 
