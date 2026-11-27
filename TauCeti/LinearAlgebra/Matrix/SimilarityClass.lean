@@ -14,7 +14,6 @@ public import TauCeti.LinearAlgebra.End.Invariant
 import Mathlib.Algebra.Module.PID
 import Mathlib.Algebra.Polynomial.Module.FiniteDimensional
 import TauCeti.LinearAlgebra.BilinearForm.PolynomialQuotient
-import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Similarity classes of square matrices of all sizes
@@ -54,8 +53,10 @@ These classes index the class functions on all square matrices of the Hall algeb
   `W`.
 * `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`: a semisimple block triangular
   map is similar to its block diagonal part.
-* `Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot`: the characteristic polynomial is the
-  product of those on an invariant subspace and on the quotient.
+* `TauCeti.SimilarityClass.exists_sylvester_eq`,
+  `TauCeti.SimilarityClass.ofEnd_blockTriangular_eq_of_sylvester`: on a Fitting component
+  `C = ker T` of `g`, the Sylvester map `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` is surjective, and every
+  block triangular map with diagonal blocks `g|_C` and `g|_{V / C}` is similar to `g`.
 
 ## References
 
@@ -71,6 +72,9 @@ These classes index the class functions on all square matrices of the Hall algeb
 * Adapted from grh-lean as above: the similarity of a semisimple block triangular map with its
   block diagonal part from `src/Lib/LocalGL/Green/CuspidalFunctions.lean`, here proved with an
   invariant complement of the first summand rather than with a projection.
+* Adapted from the same file: the Sylvester equation on a Fitting component and the resulting
+  conjugation, from the proof of `New.Hall.IsCuspidal.exists_charpoly_eq_pow`, here with
+  `Submodule.liftQ` instead of `quotKerEquivRange`.
 -/
 
 public section
@@ -335,6 +339,91 @@ theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.E
     exact Prod.ext h₁ h₂
   exact (ofEnd_eq_of_apply_eq (LinearEquiv.ofInjectiveEndo φ hφ_inj) h_comm).symm
 
+section Sylvester
+
+open Module.End (blockTriangular blockTriangular_apply)
+
+variable {g T : Module.End k V} {C : Submodule k V} (hC : C ∈ g.invtSubmodule)
+  (hCT : LinearMap.ker T = C) (hN : IsCompl C (LinearMap.range T))
+
+include hCT hN in
+/-- Let `T` commute with every map commuting with `g`, with `C = ker T` complementary to
+`range T` (a Fitting component). Then the Sylvester map `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` is
+injective, hence surjective. -/
+theorem exists_sylvester_eq (hT : ∀ Y : Module.End k V, Commute Y g → Commute Y T)
+    (x : (V ⧸ C) →ₗ[k] C) :
+    ∃ y : (V ⧸ C) →ₗ[k] C, g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x := by
+  let S : ((V ⧸ C) →ₗ[k] C) →ₗ[k] ((V ⧸ C) →ₗ[k] C) :=
+    { toFun y := g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC
+      map_add' y y' := by ext; simp; abel
+      map_smul' c y := by ext; simp [smul_sub] }
+  suffices h_inj : Function.Injective S by
+    obtain ⟨y, hy⟩ := LinearMap.injective_iff_surjective.1 h_inj x
+    exact ⟨y, hy⟩
+  refine (injective_iff_map_eq_zero S).2 fun y hy ↦ ?_
+  have hy' (v : V) : (y (Submodule.Quotient.mk (g v)) : V) = g (y (Submodule.Quotient.mk v)) := by
+    have := congrArg (fun z ↦ ((z (Submodule.Quotient.mk v) : C) : V)) (sub_eq_zero.1 hy)
+    simpa [S] using this.symm
+  -- `y` read on `V` commutes with `g`, hence with `T`; it kills `C` and `range T`.
+  let Y : Module.End k V := C.subtype ∘ₗ y ∘ₗ C.mkQ
+  have hYT := hT Y (LinearMap.ext fun v ↦ by simp [Y, hy'])
+  have hY : Y = 0 := by
+    refine LinearMap.ext fun v ↦ ?_
+    obtain ⟨c, hc, _, ⟨w, rfl⟩, rfl⟩ := Submodule.mem_sup.1 (hN.sup_eq_top ▸ Submodule.mem_top :
+      v ∈ C ⊔ LinearMap.range T)
+    have hYc : Y c = 0 := by simp [Y, (Submodule.Quotient.mk_eq_zero C).2 hc]
+    have hYw : Y (T w) = 0 := by
+      rw [← mul_apply_eq_comp, hYT.eq, mul_apply_eq_comp, ← LinearMap.mem_ker, hCT]
+      exact (y (C.mkQ w)).prop
+    simp [map_add, hYc, hYw]
+  ext v
+  simpa [Y] using LinearMap.congr_fun hY v
+
+include hCT hN in
+/-- With `y` solving the Sylvester equation `g|_C ∘ y - y ∘ g|_{V / C} = x`, the block map with
+upper right block `x` is similar to `g`, by `(c, [v]) ↦ c + y [v] + T v`. -/
+theorem ofEnd_blockTriangular_eq_of_sylvester (hgT : Commute g T)
+    {x y : (V ⧸ C) →ₗ[k] C} (hxy : g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x) :
+    ofEnd (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x) = ofEnd g := by
+  let ι : (V ⧸ C) →ₗ[k] V := C.liftQ T hCT.ge
+  have hι (v : V) : ι (Submodule.Quotient.mk v) = T v := Submodule.liftQ_apply _ _ _
+  have hι_inj : Function.Injective ι := by
+    rw [← LinearMap.ker_eq_bot, Submodule.ker_liftQ_eq_bot' _ _ hCT.symm]
+  have hTg (v : V) : T (g v) = g (T v) := by
+    rw [← mul_apply_eq_comp, ← hgT.eq, mul_apply_eq_comp]
+  let E : (C × (V ⧸ C)) →ₗ[k] V := C.subtype.coprod (C.subtype ∘ₗ y + ι)
+  have hE_inj : Function.Injective E := by
+    refine (injective_iff_map_eq_zero E).2 fun p hp ↦ ?_
+    have h_eq : ι p.2 = -((p.1 : V) + y p.2) :=
+      eq_neg_of_add_eq_zero_right (by simpa [E, add_assoc] using hp)
+    have h_mem : ι p.2 ∈ C ⊓ LinearMap.range T := by
+      refine ⟨h_eq ▸ C.neg_mem (C.add_mem p.1.prop (y p.2).prop), ?_⟩
+      induction p.2 using Submodule.Quotient.induction_on with
+      | H v => exact ⟨v, rfl⟩
+    rw [hN.inf_eq_bot, Submodule.mem_bot, ← map_zero ι] at h_mem
+    have h₂ : p.2 = 0 := hι_inj h_mem
+    have h₁ : p.1 = 0 := Subtype.ext (by simpa [E, h₂] using hp)
+    exact Prod.ext h₁ h₂
+  have h_dim : Module.finrank k (C × (V ⧸ C)) = Module.finrank k V := by
+    rw [Module.finrank_prod, add_comm, C.finrank_quotient_add_finrank]
+  have hE (c : C) (v : V) :
+      E (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x (c, Submodule.Quotient.mk v)) =
+        g (E (c, Submodule.Quotient.mk v)) := by
+    have hx : (x (Submodule.Quotient.mk v) : V) =
+        g (y (Submodule.Quotient.mk v)) - y (Submodule.Quotient.mk (g v)) := by
+      rw [← hxy]
+      simp
+    simp [E, blockTriangular_apply, hx, hι, hTg, map_add]
+    abel
+  refine ofEnd_eq_of_apply_eq (LinearEquiv.ofBijective E
+    ⟨hE_inj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h_dim).1 hE_inj⟩)
+    fun p ↦ ?_
+  obtain ⟨c, q⟩ := p
+  induction q using Submodule.Quotient.induction_on with
+  | H v => exact hE c v
+
+end Sylvester
+
 end Block
 
 end SimilarityClass
@@ -396,19 +485,3 @@ end Transpose
 
 end TauCeti
 
-/-- The characteristic polynomial of `g` is the product of those of `g` on an invariant subspace
-and on the quotient. -/
-theorem Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot {k V : Type*} [Field k]
-    [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
-    (hU : U ∈ g.invtSubmodule) :
-    (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly := by
-  open TauCeti.SimilarityClass in
-  have hU' := (Module.End.mem_invtSubmodule g).1 hU
-  -- Replace the two maps by `LinearMap.restrict` and `Submodule.mapQ`, which have the same
-  -- classes; the definitions of `invtRestrict` and `invtQuot` are not exposed here.
-  rw [← charpoly_ofEnd (g.invtRestrict hU), ← charpoly_ofEnd (g.invtQuot hU),
-    ofEnd_invtRestrict_eq_of_injective (g := g.restrict hU') U.subtype (fun _ ↦ rfl) hU
-      U.injective_subtype U.range_subtype,
-    ofEnd_invtQuot_eq_of_surjective U.mkQ (g' := U.mapQ U g hU') (fun _ ↦ rfl) hU
-      U.mkQ_surjective U.ker_mkQ, charpoly_ofEnd, charpoly_ofEnd,
-    LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U g hU']

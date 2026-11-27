@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Charpoly.Degree
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # The ring of class functions on all square matrices over a finite field

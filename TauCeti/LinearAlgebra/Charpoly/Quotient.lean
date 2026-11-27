@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Algebra.Algebra.Bilinear
 public import TauCeti.LinearAlgebra.FiniteDimensional.ScalarTower
+public import TauCeti.LinearAlgebra.End.Invariant
 
 /-!
 # The characteristic polynomial on an invariant submodule and its quotient
@@ -31,6 +32,10 @@ free modules, with `N` identified with its image and `Q` with the quotient by it
 multiplicative counterpart of the additivity of the trace `LinearMap.trace_eq_add_of_exact`.
 
 ## Main results
+
+* `Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot`: the same product for the
+  endomorphisms `Module.End.invtRestrict` and `Module.End.invtQuot` induced on an invariant
+  subspace and its quotient.
 
 * `LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp`: the characteristic polynomial of an
   endomorphism divides that of any endomorphism containing it through an injective intertwiner.
@@ -197,3 +202,13 @@ theorem charpoly_lsmul_eq_mul_quotient (P : Submodule A M) (a : A) :
     LinearEquiv.charpoly_conj, LinearEquiv.charpoly_conj]
 
 end Submodule
+
+/-- The characteristic polynomial of `g` is the product of those of `g` on an invariant subspace
+and on the quotient. -/
+theorem Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot {k V : Type*} [Field k]
+    [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
+    (hU : U ∈ g.invtSubmodule) :
+    (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly :=
+  (LinearMap.charpoly_eq_mul_of_exact U.injective_subtype U.mkQ_surjective
+    (LinearMap.exact_subtype_mkQ U) (LinearMap.ext fun _ ↦ by simp)
+    (LinearMap.ext fun _ ↦ by simp)).symm

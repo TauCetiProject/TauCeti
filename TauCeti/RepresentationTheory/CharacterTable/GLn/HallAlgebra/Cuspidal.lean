@@ -14,6 +14,7 @@ import TauCeti.FieldTheory.Finite.ArootsOrbit
 import TauCeti.FieldTheory.Minpoly.Dvd
 import TauCeti.LinearAlgebra.Charpoly.Aeval.Comp
 import TauCeti.LinearAlgebra.Charpoly.Degree
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 import TauCeti.Order.ModularLattice.Crapo
 
 /-!
@@ -63,7 +64,8 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
   `New.Hall.IsCuspidal.exists_charpoly_eq_pow` and `New.greenCuspidal_simClassOf_eq_mul`. The
   pointwise product `New.Hall.mulMoebius` is written out here, and the irreducible factor `P` is
   taken from the minimal polynomial. The similarity of a semisimple block triangular map with its
-  block diagonal part is `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`.
+  block diagonal part is `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`, and the
+  Sylvester equation on a Fitting component is `TauCeti.SimilarityClass.exists_sylvester_eq`.
 -/
 
 public section
@@ -210,85 +212,6 @@ end BlockAverage
 
 section CuspidalSupport
 
-variable {g T : Module.End k V} {C : Submodule k V} (hC : C ∈ g.invtSubmodule)
-  (hCT : LinearMap.ker T = C) (hN : IsCompl C (LinearMap.range T))
-
-include hCT hN in
-/-- Let `T` commute with every map commuting with `g`, with `C = ker T` complementary to
-`range T` (a Fitting component). Then the Sylvester map `y ↦ g|_C ∘ y - y ∘ g|_{V / C}` is
-injective, hence surjective. -/
-private theorem exists_sylvester_eq (hT : ∀ Y : Module.End k V, Commute Y g → Commute Y T)
-    (x : (V ⧸ C) →ₗ[k] C) :
-    ∃ y : (V ⧸ C) →ₗ[k] C, g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x := by
-  let S : ((V ⧸ C) →ₗ[k] C) →ₗ[k] ((V ⧸ C) →ₗ[k] C) :=
-    { toFun y := g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC
-      map_add' y y' := by ext; simp; abel
-      map_smul' c y := by ext; simp [smul_sub] }
-  suffices h_inj : Function.Injective S by
-    obtain ⟨y, hy⟩ := LinearMap.injective_iff_surjective.1 h_inj x
-    exact ⟨y, hy⟩
-  refine (injective_iff_map_eq_zero S).2 fun y hy ↦ ?_
-  have hy' (v : V) : (y (Submodule.Quotient.mk (g v)) : V) = g (y (Submodule.Quotient.mk v)) := by
-    have := congrArg (fun z ↦ ((z (Submodule.Quotient.mk v) : C) : V)) (sub_eq_zero.1 hy)
-    simpa [S] using this.symm
-  -- `y` read on `V` commutes with `g`, hence with `T`; it kills `C` and `range T`.
-  let Y : Module.End k V := C.subtype ∘ₗ y ∘ₗ C.mkQ
-  have hYT := hT Y (LinearMap.ext fun v ↦ by simp [Y, hy'])
-  have hY : Y = 0 := by
-    refine LinearMap.ext fun v ↦ ?_
-    obtain ⟨c, hc, _, ⟨w, rfl⟩, rfl⟩ := Submodule.mem_sup.1 (hN.sup_eq_top ▸ Submodule.mem_top :
-      v ∈ C ⊔ LinearMap.range T)
-    have hYc : Y c = 0 := by simp [Y, (Submodule.Quotient.mk_eq_zero C).2 hc]
-    have hYw : Y (T w) = 0 := by
-      rw [← mul_apply_eq_comp, hYT.eq, mul_apply_eq_comp, ← LinearMap.mem_ker, hCT]
-      exact (y (C.mkQ w)).prop
-    simp [map_add, hYc, hYw]
-  ext v
-  simpa [Y] using LinearMap.congr_fun hY v
-
-include hCT hN in
-/-- With `y` solving the Sylvester equation `g|_C ∘ y - y ∘ g|_{V / C} = x`, the block map with
-upper right block `x` is similar to `g`, by `(c, [v]) ↦ c + y [v] + T v`. -/
-private theorem ofEnd_blockTriangular_eq_of_sylvester (hgT : Commute g T)
-    {x y : (V ⧸ C) →ₗ[k] C} (hxy : g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x) :
-    ofEnd (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x) = ofEnd g := by
-  let ι : (V ⧸ C) →ₗ[k] V := C.liftQ T hCT.ge
-  have hι (v : V) : ι (Submodule.Quotient.mk v) = T v := Submodule.liftQ_apply _ _ _
-  have hι_inj : Function.Injective ι := by
-    rw [← LinearMap.ker_eq_bot, Submodule.ker_liftQ_eq_bot' _ _ hCT.symm]
-  have hTg (v : V) : T (g v) = g (T v) := by
-    rw [← mul_apply_eq_comp, ← hgT.eq, mul_apply_eq_comp]
-  let E : (C × (V ⧸ C)) →ₗ[k] V := C.subtype.coprod (C.subtype ∘ₗ y + ι)
-  have hE_inj : Function.Injective E := by
-    refine (injective_iff_map_eq_zero E).2 fun p hp ↦ ?_
-    have h_eq : ι p.2 = -((p.1 : V) + y p.2) :=
-      eq_neg_of_add_eq_zero_right (by simpa [E, add_assoc] using hp)
-    have h_mem : ι p.2 ∈ C ⊓ LinearMap.range T := by
-      refine ⟨h_eq ▸ C.neg_mem (C.add_mem p.1.prop (y p.2).prop), ?_⟩
-      induction p.2 using Submodule.Quotient.induction_on with
-      | H v => exact ⟨v, rfl⟩
-    rw [hN.inf_eq_bot, Submodule.mem_bot, ← map_zero ι] at h_mem
-    have h₂ : p.2 = 0 := hι_inj h_mem
-    have h₁ : p.1 = 0 := Subtype.ext (by simpa [E, h₂] using hp)
-    exact Prod.ext h₁ h₂
-  have h_dim : Module.finrank k (C × (V ⧸ C)) = Module.finrank k V := by
-    rw [Module.finrank_prod, add_comm, C.finrank_quotient_add_finrank]
-  have hE (c : C) (v : V) :
-      E (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x (c, Submodule.Quotient.mk v)) =
-        g (E (c, Submodule.Quotient.mk v)) := by
-    have hx : (x (Submodule.Quotient.mk v) : V) =
-        g (y (Submodule.Quotient.mk v)) - y (Submodule.Quotient.mk (g v)) := by
-      rw [← hxy]
-      simp
-    simp [E, blockTriangular_apply, hx, hι, hTg, map_add]
-    abel
-  refine ofEnd_eq_of_apply_eq (LinearEquiv.ofBijective E
-    ⟨hE_inj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h_dim).1 hE_inj⟩)
-    fun p ↦ ?_
-  obtain ⟨c, q⟩ := p
-  induction q using Submodule.Quotient.induction_on with
-  | H v => exact hE c v
-
 variable [Fintype k]
 
 /-- For `A` cuspidal with `A(g) ≠ 0` and `P(g)` not invertible, `P(g)` is nilpotent: every block map
@@ -397,7 +320,12 @@ theorem greenCuspidal_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) :
   refine Finset.sum_eq_zero fun U _ ↦ ?_
   rw [eigenvalueSum_of_dim_eq_zero K η (by simp [Module.finrank_zero_of_subsingleton]), zero_mul]
 
-variable [Fintype k] in
+end Green
+
+section GreenFintype
+
+variable (K : Type*) [Field K] [Algebra k K] (η : K → ℂ) [Fintype k]
+
 /-- **`C_η` is cuspidal.** -/
 theorem isCuspidal_greenCuspidal : (greenCuspidal K η : HallAlgebra k).IsCuspidal := by
   -- By Mackey's formula and the block averages of `β_η · μ`, the block average of `C_η` at
@@ -416,7 +344,7 @@ theorem isCuspidal_greenCuspidal : (greenCuspidal K η : HallAlgebra k).IsCuspid
   -- Each part has a factor `Σ_U μ(c|_U) = 1(c)` with `c = a` or `c = b`, of positive size.
   simp [sum_moebius_invtRestrict_eq_one_apply, one_apply, ha, hb]
 
-variable {K} [Fintype k] in
+variable {K} in
 /-- **`C_η` only sees the Frobenius orbits of the eigenvalues.** Let `g` act on a space of
 dimension `d`, and suppose `η′(z) = a η(z)` at every `z ∈ K` with `z ^ q ^ d = z` whose
 Frobenius orbit `z, z ^ q, …, z ^ q ^ (d - 1)` lists the eigenvalues of `g` with multiplicity.
@@ -454,6 +382,6 @@ theorem greenCuspidal_ofEnd_eq_mul {η η' : K → ℂ} {a : ℂ} {g : Module.En
       (mem_aroots.1 hz).2, zero_mul]
   rw [eigenvalueSum_ofEnd, eigenvalueSum_ofEnd, h_map, Multiset.sum_map_mul_left, mul_assoc]
 
-end Green
+end GreenFintype
 
 end TauCeti.HallAlgebra
