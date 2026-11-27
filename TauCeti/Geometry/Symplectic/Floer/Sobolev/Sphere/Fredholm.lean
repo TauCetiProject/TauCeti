@@ -167,7 +167,7 @@ private theorem exists_mul_norm_sq_le_of_floerLinearizationAdjoint_eq_zero (ω :
       ‖Complex.equivRealProdCLM.symm z‖ ^ 4 := by
     rw [TauCeti.Complex.det_fderiv_realChart_inv hζ0, hζz]
   have h := det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq (u := u) (g := η)
-    (J := fun _ _ ↦ J₀) (hasDerivAt_inv hζ0) (by rw [hdet]; positivity) le_rfl
+    (J := fun _ _ ↦ J₀) (hasDerivAt_inv hζ0) le_rfl
   rw [hdet, hζz, ← hη₀eq _ (hsub hζD) hζ0] at h
   refine h.trans (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) ?_ 2)
     (sq_nonneg _))
@@ -299,13 +299,8 @@ private theorem setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPu
           rw [TauCeti.Complex.det_fderiv_realChart_inv hζ.1]
           positivity
         simp only [smul_eq_mul, abs_of_nonneg hdet]
-        have hdet' : 0 < (fderiv ℝ ι ζ).det := by
-          rw [TauCeti.Complex.det_fderiv_realChart_inv hζ.1,
-            TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv]
-          have := norm_pos_iff.2 hζ.1
-          positivity
         refine (det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq (hasDerivAt_inv hζ.1)
-          hdet' (hB _)).trans (mul_le_mul_of_nonneg_left ?_ (sq_nonneg _))
+          (hB _)).trans (mul_le_mul_of_nonneg_left ?_ (sq_nonneg _))
         rw [sobolevDensity_apply]
         nlinarith [sq_nonneg ‖fderiv ℝ (covectorPullback ι J' u g) ζ stdComplexLineReal‖,
           sq_nonneg ‖fderiv ℝ (covectorPullback ι J' u g) ζ stdComplexLineImag‖]

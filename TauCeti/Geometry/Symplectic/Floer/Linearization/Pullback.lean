@@ -189,12 +189,11 @@ theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : 
   simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
 
 /-- **Inverting the factor `a + b J` of a pullback along a holomorphic chart.** Let `f` have
-complex derivative at `ζ`, with positive Jacobian there, and let `‖J‖ ≤ B` at the image point.
+complex derivative at `ζ` and let `‖J‖ ≤ B` at the image point.
 Then `det (d realChart f) ‖g (φ ζ)‖² ≤ (1 + B)² ‖g'(ζ)‖²` for `φ = realChart f` and the pullback
 `g' = g (φ ·) ∘ (a + b J)`: the squared norm of `(a, b)` is the Jacobian. -/
 theorem det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq [FiniteDimensional ℝ V]
     {f : ℂ → ℂ} {f' : ℂ} {ζ : ℝ × ℝ} (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm ζ))
-    (hdet : 0 < (fderiv ℝ (TauCeti.Complex.realChart f) ζ).det)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {g : ℝ × ℝ → V →L[ℝ] ℝ} {B : ℝ}
     (hB : ‖(J (TauCeti.Complex.realChart f ζ)
       (u (TauCeti.Complex.realChart f ζ))).toLinearMap.toContinuousLinearMap‖ ≤ B) :
@@ -202,6 +201,9 @@ theorem det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq [FiniteDimensi
       (1 + B) ^ 2 * ‖covectorPullback (TauCeti.Complex.realChart f)
         (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u g ζ‖ ^ 2 := by
   set φ := TauCeti.Complex.realChart f
+  obtain hdet | hdet := (TauCeti.Complex.det_fderiv_realChart_nonneg hf).eq_or_lt
+  · rw [← hdet, zero_mul]
+    positivity
   have hab := TauCeti.Complex.sq_add_sq_fderiv_realChart hf
   rw [← stdComplexLineReal_eq] at hab
   have h := (J (φ ζ) (u (φ ζ))).mul_opNorm_le_opNorm_comp_smul_add_smul (g (φ ζ))

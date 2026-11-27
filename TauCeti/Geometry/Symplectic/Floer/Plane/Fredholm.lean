@@ -169,8 +169,7 @@ private theorem setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPu
       positivity) (ae_of_all _ (prod_mono subset_rfl Ico_subset_Icc_self)))
   rw [smul_eq_mul, abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos ζ)]
   refine (det_mul_norm_sq_le_mul_norm_covectorPullback_realChart_sq
-    (positive.hasDerivAt_cylindricalEndLift _)
-    (positive.det_fderiv_realChart_cylindricalEndLift_pos ζ) (hB _)).trans
+    (positive.hasDerivAt_cylindricalEndLift _) (hB _)).trans
     (mul_le_mul_of_nonneg_left ?_ (by positivity))
   rw [sobolevDensity_apply]
   nlinarith [sq_nonneg ‖fderiv ℝ (covectorPullback φ J' u g) ζ stdComplexLineReal‖,
