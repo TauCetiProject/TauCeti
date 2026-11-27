@@ -84,9 +84,9 @@ theorem IsCompact.exists_mem_nhdsSet_mapsTo_forall_exists_nhds {X : Type*} [Unif
   let U : Set X := {x | ∃ s ∈ S, (s, x) ∈ E}
   let r : X → X := fun x ↦ if h : ∃ s ∈ S, (s, x) ∈ E then h.choose else x
   have hr (x : X) (hx : x ∈ U) : r x ∈ S ∧ (r x, x) ∈ E := by
-    have hx' : ∃ s ∈ S, (s, x) ∈ E := hx
-    rw [show r x = hx'.choose from dite_eq_left hx']
-    exact hx'.choose_spec
+    simp only [U, Set.mem_ofPred_eq] at hx
+    simp only [r, dite_eq_left hx]
+    exact hx.choose_spec
   have hE3 {a b c d : X} (hab : (a, b) ∈ E) (hbc : (b, c) ∈ E) (hcd : (c, d) ∈ E) :
       (a, d) ∈ D :=
     hEEE ⟨c, ⟨b, hab, hbc⟩, hcd⟩

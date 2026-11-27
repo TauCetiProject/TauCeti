@@ -65,22 +65,6 @@ namespace TauCeti.AlexanderSpanier
 
 variable {R : Type w} [Ring R] {M : Type v} [AddCommGroup M] [Module R M] {X : Type u}
 
-section Subset
-
-variable [TopologicalSpace X]
-
-variable (R M) in
-/-- A class of `H^n(X; M)` that restricts to zero on a subspace `U` restricts to zero on every
-subspace `N ⊆ U`. -/
-theorem cohomologyMap_subtypeVal_apply_eq_zero_of_subset {N U : Set X} (hNU : N ⊆ U) {n : ℕ}
-    {c : cohomology R X M n}
-    (hc : (cohomologyMap R M (ContinuousMap.subtypeVal U) n).hom c = 0) :
-    (cohomologyMap R M (ContinuousMap.subtypeVal N) n).hom c = 0 := by
-  rw [← ContinuousMap.subtypeVal_comp_inclusion hNU, cohomologyMap_comp,
-    ConcreteCategory.comp_apply, hc, map_zero]
-
-end Subset
-
 section Uniform
 
 variable [UniformSpace X] {S : Set X}
@@ -196,16 +180,14 @@ theorem exists_mem_nhdsSet_cohomologyMap_subtypeVal_apply_eq_zero (hS : IsCompac
   cases n with
   | zero =>
     -- In degree zero there are no coboundaries: the restriction of `φ` to `S` is locally zero.
-    have hn : ¬ (ComplexShape.up ℕ).Rel ((ComplexShape.up ℕ).prev 0) 0 := by simp
-    have hS0 := HomologicalComplex.moduleCat_eq_zero_of_homologyπ_eq_zero _ hn _ hc
-    rw [← (HomologicalComplex.moduleCat_iCycles_injective _ 0).eq_iff, hresi, map_zero,
-      cochainClass_eq_zero_iff] at hS0
-    obtain ⟨U, hU, hU0⟩ := exists_mem_nhdsSet_isLocallyZero_zero hS hδ hS0
-    refine ⟨U, hU, ?_⟩
-    have hz : HomologicalComplex.cyclesMap (restriction R M U) 0 z = 0 := by
-      rwa [← (HomologicalComplex.moduleCat_iCycles_injective _ 0).eq_iff, hresi, map_zero,
+    have h0 (A : Set X) : HomologicalComplex.cyclesMap (restriction R M A) 0 z = 0 ↔
+        IsLocallyZero fun y : Fin 1 → A ↦ φ (Subtype.val ∘ y) := by
+      rw [← (HomologicalComplex.moduleCat_iCycles_injective _ 0).eq_iff, hresi, map_zero,
         cochainClass_eq_zero_iff]
-    rw [hz, map_zero]
+    have hn : ¬ (ComplexShape.up ℕ).Rel ((ComplexShape.up ℕ).prev 0) 0 := by simp
+    obtain ⟨U, hU, hU0⟩ := exists_mem_nhdsSet_isLocallyZero_zero hS hδ
+      ((h0 S).1 (HomologicalComplex.moduleCat_eq_zero_of_homologyπ_eq_zero _ hn _ hc))
+    exact ⟨U, hU, by rw [(h0 U).2 hU0, map_zero]⟩
   | succ m =>
     -- The restriction of `φ` to `S` is a coboundary `δψ` up to a locally zero function.
     obtain ⟨y, hy⟩ := ((cochainComplex R S M).moduleCat_homologyπ_eq_zero_iff

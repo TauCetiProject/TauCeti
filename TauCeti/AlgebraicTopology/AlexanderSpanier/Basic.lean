@@ -356,6 +356,15 @@ lemma cohomologyMap_comp (f : C(Y, X)) (g : C(Z, Y)) (n : ℕ) :
     cohomologyMap R M (f.comp g) n = cohomologyMap R M f n ≫ cohomologyMap R M g n := by
   rw [cohomologyMap, cochainComplexMap_comp, HomologicalComplex.homologyMap_comp]
 
+/-- A class of `H^n(X; M)` that restricts to zero on a subspace `U` restricts to zero on every
+subspace `N ⊆ U`. -/
+theorem cohomologyMap_subtypeVal_apply_eq_zero_of_subset {N U : Set X} (hNU : N ⊆ U) {n : ℕ}
+    {c : cohomology R X M n}
+    (hc : (cohomologyMap R M (ContinuousMap.subtypeVal U) n).hom c = 0) :
+    (cohomologyMap R M (ContinuousMap.subtypeVal N) n).hom c = 0 := by
+  rw [← ContinuousMap.subtypeVal_comp_inclusion hNU, cohomologyMap_comp,
+    ConcreteCategory.comp_apply, hc, map_zero]
+
 /-- The **Alexander–Spanier cochain complex** as a contravariant functor on topological
 spaces. -/
 @[expose, simps]
