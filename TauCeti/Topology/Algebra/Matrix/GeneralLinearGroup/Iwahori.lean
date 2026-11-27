@@ -13,14 +13,17 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.IwasawaBruhat
 
 import Mathlib.Topology.Algebra.Valued.ValuedField
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Topology of pro-`p` Iwahori subgroups of `GL_m` over a valued field
 
 Let `K` be a valued field with valuation `v : Valuation K Γ₀` and valuation subring `𝒪`, and let
-`m` be a finite linearly ordered index type. This file establishes the basic topological properties
-of the image `I₁ ⊆ GL_m(K)` of the pro-`p` Iwahori subgroup `TauCeti.iwahoriOne m 𝒪`:
+`m` be a finite linearly ordered index type. This file characterizes membership in the image
+`I₁ ⊆ GL_m(K)` of `TauCeti.iwahoriOne m 𝒪` directly in terms of `Valued.v`, and establishes its
+openness and compactness:
 
+* `TauCeti.mem_map_iwahoriOne_iff_valued`: membership in `I₁` expressed via `Valued.v`.
 * `TauCeti.isOpen_map_iwahoriOne`: `I₁` is an open (hence closed) subgroup of `GL_m(K)`.
 * `TauCeti.isCompact_map_iwahoriOne`: when `𝒪` is compact, `I₁` is compact in `GL_m(K)`.
 -/
@@ -34,11 +37,20 @@ open Matrix
 variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] [Valued K Γ₀]
 variable {m : Type*} [Fintype m] [LinearOrder m]
 
+/-- Membership in the image of the pro-`p` Iwahori subgroup `iwahoriOne m 𝒪` inside `GL m K`,
+expressed directly in terms of `Valued.v`. -/
+theorem mem_map_iwahoriOne_iff_valued {g : GL m K} :
+    g ∈ (iwahoriOne m (Valued.v (R := K)).valuationSubring).map
+        (GeneralLinearGroup.map (algebraMap _ K)) ↔
+      (∀ i j, Valued.v (g i j) ≤ 1) ∧ (∀ ⦃i j⦄, j < i → Valued.v (g i j) < 1) ∧
+        ∀ i, Valued.v (g i i - 1) < 1 := by
+  have heq := Valuation.isEquiv_valuation_valuationSubring (Valued.v (R := K))
+  simp only [mem_map_iwahoriOne_iff, heq.le_one_iff_le_one.symm, heq.lt_one_iff_lt_one.symm]
+
 /-- The pro-`p` Iwahori subgroup `I₁` is an open subgroup of `GL m K`. -/
 theorem isOpen_map_iwahoriOne :
     IsOpen ((iwahoriOne m (Valued.v (R := K)).valuationSubring).map
       (GeneralLinearGroup.map (algebraMap _ K)) : Set (GL m K)) := by
-  have heq := Valuation.isEquiv_valuation_valuationSubring (Valued.v (R := K))
   have hopen_le : IsOpen {x : K | Valued.v x ≤ (1 : Γ₀)} := Valued.isOpen_integer K
   have hopen_lt : IsOpen {x : K | Valued.v x < (1 : Γ₀)} := by
     have hball : IsOpen {x : K | (Valued.v (R := K)).restrict x < 1} := Valued.isOpen_ball K 1
@@ -49,8 +61,8 @@ theorem isOpen_map_iwahoriOne :
       (⋂ i : m, ⋂ j : m, ⋂ (_ : j < i), {g : GL m K | Valued.v (g i j) < 1}) ∩
       (⋂ i : m, {g : GL m K | Valued.v (g i i - 1) < 1}) := by
     ext g
-    simp only [SetLike.mem_coe, mem_map_iwahoriOne_iff, heq.le_one_iff_le_one.symm,
-      heq.lt_one_iff_lt_one.symm, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq, and_assoc]
+    simp only [SetLike.mem_coe, mem_map_iwahoriOne_iff_valued, Set.mem_inter_iff, Set.mem_iInter,
+      Set.mem_ofPred_eq, and_assoc]
   rw [hset]
   have hcont (i j : m) : Continuous fun g : GL m K ↦ (g : Matrix m m K) i j := by fun_prop
   refine (IsOpen.inter ?_ ?_).inter ?_
@@ -72,10 +84,7 @@ theorem isCompact_map_iwahoriOne [CompactSpace (Valued.v (R := K)).valuationSubr
   have : CompactSpace (GL m A) := Units.isClosedEmbedding_embedProduct.compactSpace
   let f := GeneralLinearGroup.map (n := m) (algebraMap A K)
   have hf_cont : Continuous f := Continuous.generalLinearGroup_map continuous_subtypeVal
-  have hf_inj : Function.Injective f := fun g₁ g₂ h ↦
-    Units.ext <| Matrix.ext fun i j ↦ Subtype.ext <| by
-      simpa [f, GeneralLinearGroup.map_apply] using
-        congrArg (fun g : GL m K ↦ (g : Matrix m m K) i j) h
+  have hf_inj : Function.Injective f := GeneralLinearGroup.map_injective Subtype.val_injective
   have hpre : (iwahoriOne m A : Set (GL m A)) =
       f ⁻¹' (((iwahoriOne m A).map f : Subgroup _) : Set _) := by
     rw [Subgroup.coe_map, Set.preimage_image_eq _ hf_inj]

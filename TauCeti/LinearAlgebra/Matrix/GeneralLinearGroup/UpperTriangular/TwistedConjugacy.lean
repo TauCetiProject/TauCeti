@@ -13,8 +13,14 @@ public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 -- `TauCeti.mem_map_iwahoriOne_iff` and `TauCeti.diagGL_mem_map_iwahoriOne_iff`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.IwasawaBruhat
--- `TauCeti.isOpen_map_iwahoriOne` and `TauCeti.isCompact_map_iwahoriOne`.
+-- `TauCeti.mem_map_iwahoriOne_iff_valued`, `isOpen_map_iwahoriOne`, `isCompact_map_iwahoriOne`.
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Iwahori
+-- `TauCeti.Valued.continuous_of_valuation_eq`.
+import TauCeti.Topology.Algebra.Valued.RingHom
+-- `Valuation.map_mul_mul_inv_le`.
+import TauCeti.RingTheory.Valuation.Basic
+-- `Matrix.GeneralLinearGroup.map_surjective`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
 -- `IsClosed.mem_of_mapClusterPt` and `exists_clusterPt_of_compactSpace`.
 import Mathlib.Topology.Compactness.Compact
 -- `Continuous.generalLinearGroup_map`.
@@ -84,15 +90,6 @@ variable {K : Type*} [Field K] (A : ValuationSubring K) {m : Type*} [Fintype m] 
 private abbrev mapIwahoriOne : Subgroup (GL m K) :=
   (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))
 
-private lemma val_mul_mul_inv_le {a b c : K} (hb : b ≠ 0)
-    (hab : A.valuation a ≤ A.valuation b) :
-    A.valuation (a * c * b⁻¹) ≤ A.valuation c := by
-  rw [map_mul, map_mul, map_inv₀, mul_right_comm]
-  have hpos : 0 < A.valuation b := pos_iff_ne_zero.mpr (by simp [hb])
-  have hratio : A.valuation a * (A.valuation b)⁻¹ ≤ 1 :=
-    (mul_inv_le_iff₀ hpos).mpr (by simpa using hab)
-  simpa using mul_le_mul_of_nonneg_right hratio zero_le
-
 /-- Conjugating an upper-triangular element of `I₁` by a dominant diagonal matrix keeps it in
 `I₁`. -/
 private lemma diagGL_mul_inv_mem_mapIwahoriOne_of_isUpperTriangular {t : m → Kˣ}
@@ -106,7 +103,7 @@ private lemma diagGL_mul_inv_mem_mapIwahoriOne_of_isUpperTriangular {t : m → K
     rcases lt_or_ge j i with hji | hij
     · simp [hutri hji]
     · rw [Units.val_inv_eq_inv_val]
-      exact (val_mul_mul_inv_le A (Units.ne_zero (t j)) (ht hij)).trans (h1 i j)
+      exact (A.valuation.map_mul_mul_inv_le (ht hij)).trans (h1 i j)
   · rw [diagGL_mul_mul_inv_apply, hutri hji]
     simp
   · rw [diagGL_mul_mul_inv_apply]
@@ -127,7 +124,7 @@ private lemma diagGL_inv_mul_mem_mapIwahoriOne_of_isLowerTriangular {t : m → K
       simp [Pi.inv_apply, Units.val_inv_eq_inv_val]
       ring
     rw [heq]
-    exact val_mul_mul_inv_le A (Units.ne_zero (t i)) (ht hji)
+    exact A.valuation.map_mul_mul_inv_le (ht hji)
   refine ⟨fun i j ↦ ?_, fun i j hji ↦ ?_, fun i ↦ ?_⟩
   · rw [diagGL_mul_mul_inv_apply]
     rcases lt_or_ge i j with hij | hji
@@ -180,13 +177,6 @@ private abbrev I1 (K : Type*) [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupW
     [Valued K Γ₀] (m : Type*) [Fintype m] [LinearOrder m] : Subgroup (GL m K) :=
   (iwahoriOne m (valSubring K)).map (GeneralLinearGroup.map (algebraMap (valSubring K) K))
 
-private lemma mem_I1_iff {g : GL m K} :
-    g ∈ I1 K m ↔
-      (∀ i j, Valued.v (g i j) ≤ 1) ∧ (∀ ⦃i j⦄, j < i → Valued.v (g i j) < 1) ∧
-        ∀ i, Valued.v (g i i - 1) < 1 := by
-  have heq := Valuation.isEquiv_valuation_valuationSubring (Valued.v (R := K))
-  simp only [I1, mem_map_iwahoriOne_iff, heq.le_one_iff_le_one.symm, heq.lt_one_iff_lt_one.symm]
-
 /-- The conjugated subgroup `diag(t)⁻ʲ I₁ diag(t)ʲ`. -/
 private abbrev conjI1 (t : m → Kˣ) (j : ℤ) : Subgroup (GL m K) :=
   (I1 K m).comap (MulAut.conj (diagGL t) ^ j).toMonoidHom
@@ -199,10 +189,16 @@ private lemma conjI1_mem_iff {t : m → Kˣ} {j : ℤ} {x : GL m K} :
     x ∈ conjI1 t j ↔ diagGL (t ^ j) * x * (diagGL (t ^ j))⁻¹ ∈ I1 K m := by
   rw [conjI1, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, ← map_zpow, MulAut.conj_apply, map_zpow]
 
+private lemma conjI1_add_one_iff {t : m → Kˣ} {j : ℤ} {x : GL m K} :
+    x ∈ conjI1 t (j + 1) ↔ diagGL t * x * (diagGL t)⁻¹ ∈ conjI1 t j := by
+  simp only [conjI1_mem_iff, _root_.zpow_add, zpow_one, MonoidHom.map_mul, _root_.mul_inv_rev,
+    mul_assoc]
+
 private lemma map_mem_conjI1_iff {t : m → Kˣ} {σ : K →+* K}
     (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x) {j : ℤ} {x : GL m K} :
     GeneralLinearGroup.map σ x ∈ conjI1 t j ↔ x ∈ conjI1 t j := by
-  simp only [conjI1_mem_iff, mem_I1_iff, diagGL_mul_mul_inv_apply, GeneralLinearGroup.map_apply]
+  simp only [conjI1_mem_iff, mem_map_iwahoriOne_iff_valued, diagGL_mul_mul_inv_apply,
+    GeneralLinearGroup.map_apply]
   have hentry (a b : m) :
       Valued.v (((t ^ j) a : K) * σ (x a b) * (((t ^ j) b)⁻¹ : Kˣ)) =
         Valued.v (((t ^ j) a : K) * x a b * (((t ^ j) b)⁻¹ : Kˣ)) := by
@@ -217,31 +213,6 @@ private lemma map_mem_conjI1_iff {t : m → Kˣ} {σ : K →+* K}
     conv_lhs => rw [← map_one σ, ← map_sub, hσ]
   simp only [hentry, hdiag]
 
-private lemma continuous_of_valuation_eq {σ : K →+* K}
-    (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x) : Continuous σ := by
-  rw [continuous_iff_continuousAt]
-  intro x
-  rw [ContinuousAt, Filter.tendsto_def]
-  intro s hs
-  rw [Valued.mem_nhds] at hs ⊢
-  obtain ⟨γ, hγ⟩ := hs
-  refine ⟨γ, fun y hy ↦ hγ ?_⟩
-  have hsub : Valued.v (σ y - σ x) = Valued.v (y - x) := by rw [← map_sub, hσ]
-  have hr : (Valued.v (R := K)).restrict (σ y - σ x) = (Valued.v (R := K)).restrict (y - x) :=
-    le_antisymm ((Valuation.restrict_le_iff _).mpr hsub.le)
-      ((Valuation.restrict_le_iff _).mpr hsub.ge)
-  simpa [hr] using hy
-
-private lemma surjective_generalLinearGroup_map {σ : K →+* K}
-    (hσ_surj : Function.Surjective σ) :
-    Function.Surjective (GeneralLinearGroup.map (n := m) σ) := by
-  let e : K ≃+* K := RingEquiv.ofBijective σ ⟨σ.injective, hσ_surj⟩
-  intro g
-  refine ⟨GeneralLinearGroup.map e.symm.toRingHom g, ?_⟩
-  ext i j
-  rw [GeneralLinearGroup.map_apply, GeneralLinearGroup.map_apply]
-  exact e.apply_symm_apply (g i j)
-
 private lemma widen_twistedConj {t : m → Kˣ}
     (htA : Monotone fun i : m ↦ (valSubring K).valuation (t i : K))
     {σ : K →+* K} (hσ : ∀ x : K, Valued.v (σ x) = Valued.v x)
@@ -253,35 +224,33 @@ private lemma widen_twistedConj {t : m → Kˣ}
     exists_upperTriangular_mul_conj_mem_mapIwahoriOne (valSubring K) htA (hk 0 le_rfl (by omega))
   obtain ⟨z, hz⟩ := hσ_surj (u⁻¹ * twistedConj t g σ k)
   have hu_mem (j : ℕ) : u ∈ conjI1 t j := by
-    have htpow : Monotone fun i : m ↦ (valSubring K).valuation ((t ^ j) i : K) := by
-      intro i₁ i₂ hle
-      simp only [Pi.pow_apply, Units.val_pow_eq_pow_val, map_pow]
-      exact pow_le_pow_left' (htA hle) j
+    have htpow : Monotone fun i : m ↦ (valSubring K).valuation ((t ^ j) i : K) := fun _ _ hle ↦ by
+      simpa [Pi.pow_apply, Units.val_pow_eq_pow_val, map_pow] using pow_le_pow_left' (htA hle) j
     have hres :=
       diagGL_mul_inv_mem_mapIwahoriOne_of_isUpperTriangular (valSubring K) htpow hu hutri
     rw [conjI1_mem_iff]
     simpa [zpow_natCast] using hres
-  have hz_mem (j : ℕ) (hj : j ≤ b + 1) : z ∈ conjI1 t (j + -1) := by
+  have hz_mem (j : ℕ) (hj : j ≤ b + 1) : z ∈ conjI1 t (j - 1) := by
     rw [← map_mem_conjI1_iff hσ, hz]
     cases j with
     | zero => simpa [conjI1_mem_iff] using hu_conj
     | succ j =>
-      rw [Nat.cast_succ, add_neg_cancel_right]
+      rw [Nat.cast_succ, add_sub_cancel_right]
       exact (conjI1 t j).mul_mem ((conjI1 t j).inv_mem (hu_mem j)) (hk j (by omega) (by omega))
-  refine ⟨k * ⟨z, hz_mem 1 (by omega)⟩⁻¹, fun j hj₀ hj ↦ ?_⟩
+  refine ⟨k * ⟨z, by simpa using hz_mem 1 (by omega)⟩⁻¹, fun j hj₀ hj ↦ ?_⟩
   lift j to ℕ using hj₀
-  have hmul : twistedConj t g σ (k * ⟨z, hz_mem 1 (by omega)⟩⁻¹) =
+  have hmul : twistedConj t g σ (k * ⟨z, by simpa using hz_mem 1 (by omega)⟩⁻¹) =
       ((diagGL t)⁻¹ * z * diagGL t) * u := by
     simp only [twistedConj, Subgroup.coe_mul, Subgroup.coe_inv, _root_.mul_inv_rev,
       MonoidHom.map_mul, MonoidHom.map_inv, hz]
     group
   rw [hmul]
   have hz' : (diagGL t)⁻¹ * z * diagGL t ∈ conjI1 t j := by
-    rw [conjI1_mem_iff]
-    have hz0 := (conjI1_mem_iff).mp (hz_mem j (by omega))
-    rw [_root_.zpow_add, _root_.zpow_neg_one, MonoidHom.map_mul, MonoidHom.map_inv,
-      _root_.mul_inv_rev, inv_inv] at hz0
-    simpa [mul_assoc] using hz0
+    have h1 : (diagGL t)⁻¹ * z * diagGL t ∈ conjI1 t ((j - 1 : ℤ) + 1) ↔
+        diagGL t * ((diagGL t)⁻¹ * z * diagGL t) * (diagGL t)⁻¹ ∈ conjI1 t (j - 1) :=
+      conjI1_add_one_iff
+    rw [sub_add_cancel] at h1
+    exact h1.mpr (by simpa [mul_assoc] using hz_mem j (by omega))
   exact (conjI1 t j).mul_mem hz' (hu_mem j)
 
 private lemma shift_twistedConj {t : m → Kˣ} {σ : K →+* K}
@@ -290,15 +259,13 @@ private lemma shift_twistedConj {t : m → Kˣ} {σ : K →+* K}
     ∃ k' : I1 K m, ∀ j : ℤ, -((a + 1 : ℕ) : ℤ) ≤ j → j ≤ b →
       twistedConj t g σ k' ∈ conjI1 t j := by
   let y : I1 K m :=
-    ⟨(MulAut.conj (diagGL t) ^ (1 : ℤ)) (twistedConj t g σ k), hk 1 (by omega) (by omega)⟩
+    ⟨diagGL t * twistedConj t g σ k * (diagGL t)⁻¹, by
+      simpa [conjI1_mem_iff] using hk 1 (by omega) (by omega)⟩
   refine ⟨k * y, fun j hj₀ hj ↦ ?_⟩
-  have hy : (y : GL m K) ∈ conjI1 t j := by
-    rw [conjI1_mem_iff]
-    have hk1 := (conjI1_mem_iff).mp (hk (j + 1) (by omega) (by omega))
-    rw [_root_.zpow_add, zpow_one, MonoidHom.map_mul, _root_.mul_inv_rev] at hk1
-    simpa [y, MulAut.conj_apply, mul_assoc] using hk1
+  have hy : (y : GL m K) ∈ conjI1 t j :=
+    conjI1_add_one_iff.mp (hk (j + 1) (by omega) (by omega))
   have hmul : twistedConj t g σ (k * y) = GeneralLinearGroup.map σ (y : GL m K) := by
-    simp [twistedConj, y, MulAut.conj_apply, mul_assoc]
+    simp [twistedConj, y, mul_assoc]
   rw [hmul]
   exact (map_mem_conjI1_iff hσ).mpr hy
 
@@ -321,8 +288,21 @@ private lemma exists_twistedConj_mem_conjI1 {t : m → Kˣ}
   | zero =>
     induction b with
     | succ b ih =>
-      exact ih.elim (widen_twistedConj htA hσ (surjective_generalLinearGroup_map hσ_surj) b)
+      exact ih.elim (widen_twistedConj htA hσ (GeneralLinearGroup.map_surjective σ hσ_surj) b)
     | zero => exact h_start.imp fun k hk j hj₀ hj ↦ by rwa [show j = 0 by omega]
+
+private lemma exists_one_lt_zpow_mul {G : Type*} [CommGroup G] [LinearOrder G] [IsOrderedMonoid G]
+    [MulArchimedean G] {r : G} (hr : r ≠ 1) (u : G) : ∃ n : ℤ, 1 < r ^ n * u := by
+  have hgt (s : G) (hs : 1 < s) : ∃ n : ℕ, 1 < s ^ (n + 1) * u := by
+    obtain ⟨n, hn⟩ := MulArchimedean.arch u⁻¹ hs
+    refine ⟨n, ?_⟩
+    rw [← inv_lt_iff_one_lt_mul, pow_succ]
+    exact hn.trans_lt (lt_mul_of_one_lt_right' _ hs)
+  rcases lt_or_gt_of_ne hr with hr_lt | hr_gt
+  · obtain ⟨n, hn⟩ := hgt r⁻¹ (one_lt_inv'.mpr hr_lt)
+    exact ⟨-((n + 1 : ℕ) : ℤ), by rwa [_root_.zpow_neg, zpow_natCast, ← inv_pow]⟩
+  · obtain ⟨n, hn⟩ := hgt r hr_gt
+    exact ⟨((n + 1 : ℕ) : ℤ), by rwa [zpow_natCast]⟩
 
 private lemma isDiag_of_forall_mem_conjI1 [MulArchimedean Γ₀ˣ] {t : m → Kˣ}
     (ht : Function.Injective fun i : m ↦ Valued.v (t i : K))
@@ -335,30 +315,16 @@ private lemma isDiag_of_forall_mem_conjI1 [MulArchimedean Γ₀ˣ] {t : m → K�
   have htj : Valued.v (t j : K) ≠ 0 := by simp
   let r : Γ₀ˣ := Units.mk0 (Valued.v (t i : K) / Valued.v (t j : K)) (div_ne_zero hti htj)
   let u : Γ₀ˣ := Units.mk0 (Valued.v (x i j)) hvx
-  have hbound (n : ℤ) : ((r ^ n * u : Γ₀ˣ) : Γ₀) ≤ 1 := by
-    obtain ⟨h1, -, -⟩ := mem_I1_iff.mp (conjI1_mem_iff.mp (hx n))
-    have h := h1 i j
-    rw [diagGL_mul_mul_inv_apply, Units.val_inv_eq_inv_val, map_mul, map_mul, map_inv₀] at h
-    have hti_z : ((t ^ n) i : K) = (t i : K) ^ n := Units.val_zpow_eq_zpow_val (t i) n
-    have htj_z : ((t ^ n) j : K) = (t j : K) ^ n := Units.val_zpow_eq_zpow_val (t j) n
-    rw [hti_z, htj_z, map_zpow₀, map_zpow₀] at h
-    have hru : ((r ^ n * u : Γ₀ˣ) : Γ₀) =
-        Valued.v (t i : K) ^ n * Valued.v (x i j) * (Valued.v (t j : K) ^ n)⁻¹ := by
-      simp [r, u, div_eq_mul_inv, mul_zpow, mul_right_comm]
-    exact hru ▸ h
   have hr_ne : r ≠ 1 := fun hr1 ↦
     hij (ht ((div_eq_one_iff_eq htj).mp (congrArg Units.val hr1)))
-  rcases lt_or_gt_of_ne hr_ne with hr_lt | hr_gt
-  · obtain ⟨n, hn⟩ := MulArchimedean.arch u⁻¹ (one_lt_inv'.mpr hr_lt)
-    have h1 : (1 : Γ₀ˣ) < r ^ (-((n + 1 : ℕ) : ℤ)) * u := by
-      rw [← inv_lt_iff_one_lt_mul, _root_.zpow_neg, zpow_natCast, ← inv_pow, pow_succ]
-      exact lt_of_le_of_lt hn (lt_mul_of_one_lt_right' _ (one_lt_inv'.mpr hr_lt))
-    exact not_lt_of_ge (hbound (-((n + 1 : ℕ) : ℤ))) (by exact_mod_cast h1)
-  · obtain ⟨n, hn⟩ := MulArchimedean.arch u⁻¹ hr_gt
-    have h1 : (1 : Γ₀ˣ) < r ^ ((n + 1 : ℕ) : ℤ) * u := by
-      rw [← inv_lt_iff_one_lt_mul, zpow_natCast, pow_succ]
-      exact lt_of_le_of_lt hn (lt_mul_of_one_lt_right' _ hr_gt)
-    exact not_lt_of_ge (hbound ((n + 1 : ℕ) : ℤ)) (by exact_mod_cast h1)
+  obtain ⟨n, hn⟩ := exists_one_lt_zpow_mul hr_ne u
+  obtain ⟨h1, -, -⟩ := mem_map_iwahoriOne_iff_valued.mp (conjI1_mem_iff.mp (hx n))
+  have h := h1 i j
+  rw [diagGL_mul_mul_inv_apply] at h
+  have hbound : ((r ^ n * u : Γ₀ˣ) : Γ₀) ≤ 1 := by
+    simpa [r, u, Units.val_inv_eq_inv_val, Units.val_zpow_eq_zpow_val, div_eq_mul_inv,
+      mul_zpow, mul_right_comm] using h
+  exact not_lt_of_ge hbound (by exact_mod_cast hn)
 
 /-- **Twisted conjugacy in `I₁ · diag(t) · I₁`.** Let `σ : K →+* K` be a surjective ring
 endomorphism preserving the valuation, and let `t : m → Kˣ` have strictly increasing valuations
@@ -386,7 +352,7 @@ theorem exists_inv_mul_mul_map_eq_diagGL_mul [MulArchimedean Γ₀ˣ]
   obtain ⟨k, hk⟩ : ∃ k : I1 K m, ClusterPt k (atTop.map fun n ↦ f n n) :=
     exists_clusterPt_of_compactSpace _
   have hmap : Continuous (GeneralLinearGroup.map (n := m) σ) :=
-    Continuous.generalLinearGroup_map (continuous_of_valuation_eq hσ)
+    Continuous.generalLinearGroup_map (Valued.continuous_of_valuation_eq hσ)
   have h_all (j : ℤ) : twistedConj t g σ k ∈ conjI1 t j := by
     have h_cont : Continuous fun x : I1 K m ↦
         diagGL (t ^ j) * twistedConj t g σ x * (diagGL (t ^ j))⁻¹ := by
@@ -403,7 +369,7 @@ theorem exists_inv_mul_mul_map_eq_diagGL_mul [MulArchimedean Γ₀ˣ]
     refine h_closed.mem_of_mapClusterPt hk ?_
     filter_upwards [mem_atTop j.natAbs] with n hn using hf n n j (by omega) (by omega)
   have hX_mem : twistedConj t g σ k ∈ I1 K m := by simpa using h_all 0
-  obtain ⟨-, -, hX_diag⟩ := mem_I1_iff.mp hX_mem
+  obtain ⟨-, -, hX_diag⟩ := mem_map_iwahoriOne_iff_valued.mp hX_mem
   have h_unit (i : m) : (twistedConj t g σ k : Matrix m m K) i i ≠ 0 := by
     intro h0
     have hlt := hX_diag i

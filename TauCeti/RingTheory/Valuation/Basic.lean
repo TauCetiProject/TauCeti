@@ -20,6 +20,7 @@ subgroup `Valuation.leAddSubgroup`.
 * `Valuation.map_add_pow_le_max`: `v (x + y) ^ n ≤ max (v x ^ n) (v y ^ n)`.
 * `Valuation.map_natCast_le_one`: `v n ≤ 1` for every natural number `n`.
 * `Valuation.coe_leAddSubgroup`: the subgroup `v.leAddSubgroup γ` is the set `{x | v x ≤ γ}`.
+* `Valuation.map_mul_mul_inv_le`: if `v a ≤ v b`, then `v (a * c * b⁻¹) ≤ v c`.
 -/
 
 public section
@@ -41,6 +42,17 @@ theorem map_natCast_le_one (n : ℕ) : v (n : R) ≤ 1 := by
 theorem coe_leAddSubgroup {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation R Γ₀)
     (γ : Γ₀) : (v.leAddSubgroup γ : Set R) = {x | v x ≤ γ} :=
   Set.ext fun _ ↦ mem_leAddSubgroup_iff
+
+/-- If `v a ≤ v b` in a field, then `v (a * c * b⁻¹) ≤ v c`. -/
+theorem map_mul_mul_inv_le {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀]
+    (v : Valuation K Γ₀) {a b c : K} (hab : v a ≤ v b) :
+    v (a * c * b⁻¹) ≤ v c := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp
+  · rw [map_mul, map_mul, map_inv₀, mul_right_comm]
+    have hpos : 0 < v b := pos_iff_ne_zero.mpr (by simp [hb])
+    have hratio : v a * (v b)⁻¹ ≤ 1 := (mul_inv_le_iff₀ hpos).mpr (by simpa using hab)
+    simpa using mul_le_mul_of_nonneg_right hratio zero_le
 
 end Valuation
 
