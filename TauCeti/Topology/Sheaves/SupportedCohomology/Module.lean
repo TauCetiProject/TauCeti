@@ -767,6 +767,22 @@ lemma supportedModuleHPresheafPostcomp_zero
   rw [supportedModuleHPresheafPostcomp_app_apply, NatTrans.app_zero]
   exact Ext.comp_zero x _ _ _ hk
 
+/-- Yoneda postcomposition is additive in the `Ext` class. -/
+@[simp]
+lemma supportedModuleHPresheafPostcomp_add
+    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m n k : ℕ}
+    (α β : Ext.{u} F G n) (hk : m + n = k) :
+    supportedModuleHPresheafPostcomp S (α + β) hk =
+      supportedModuleHPresheafPostcomp S α hk + supportedModuleHPresheafPostcomp S β hk := by
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  rw [supportedModuleHPresheafPostcomp_app_apply, NatTrans.app_add]
+  refine (Ext.comp_add x α β hk).trans ?_
+  rw [← supportedModuleHPresheafPostcomp_app_apply S α hk W x,
+    ← supportedModuleHPresheafPostcomp_app_apply S β hk W x]
+  exact (congrFun (congrArg DFunLike.coe
+    (ModuleCat.hom_add ((supportedModuleHPresheafPostcomp S α hk).app W)
+      ((supportedModuleHPresheafPostcomp S β hk).app W))) x).symm
+
 /-- For a degree-zero class `Ext.mk₀ f`, Yoneda postcomposition is the map of
 supported cohomology presheaves induced by `f`. -/
 @[simp]
