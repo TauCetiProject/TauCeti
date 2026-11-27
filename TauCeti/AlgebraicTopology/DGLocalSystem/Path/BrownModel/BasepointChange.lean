@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.QuasiIso
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel.Basic
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Pairing
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.CoefficientPairing
 
 /-!
 # Changing the basepoint of a Brown model
@@ -146,9 +146,7 @@ in the chains on the paths from `b`. -/
 def basepointChangeComparison (M : BrownModel B b H R P ind) (a : B) :
     (P →₀ cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) →ₗ[R]
       cubicalChainModule (MoorePathFrom B a) H R :=
-  Finsupp.lsum R fun x ↦
-    (cubicalChainPairing (MooreLoopSpace B b) H R (MoorePathBetween.transFrom a b)).flip
-      (M.comparison x)
+  coefficientPairing M.comparison (MoorePathBetween.transFrom a b)
 
 /-- The comparison of a coefficient `σ` at a single generator `x` is the concatenation of `σ` with
 the image of `x`. -/
@@ -157,8 +155,8 @@ theorem basepointChangeComparison_single (M : BrownModel B b H R P ind) (a : B) 
     (σ : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
     M.basepointChangeComparison a (Finsupp.single x σ) =
       cubicalChainPairing (MooreLoopSpace B b) H R (MoorePathBetween.transFrom a b) σ
-        (M.comparison x) := by
-  simp [basepointChangeComparison]
+        (M.comparison x) :=
+  coefficientPairing_single _ _ x σ
 
 /-- **The basepoint-change comparison commutes with the differentials**: it sends the twisted
 differential, with coefficients in `C_*(P_{a→b} B)`, to the boundary of chains on the paths from
@@ -167,26 +165,9 @@ theorem basepointChangeComparison_coefficientDifferential (M : BrownModel B b H 
     (f : P →₀ cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
     M.basepointChangeComparison a (M.cocycle.coefficientDifferential
         (cubicalChainModule_isDGRightModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) f) =
-      cubicalChainModuleDifferential (MoorePathFrom B a) H R (M.basepointChangeComparison a f) := by
-  classical
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f f' hf hf' => simp only [map_add, hf, hf']
-  | single x σ =>
-    induction σ using DirectSum.Decomposition.inductionOn
-      (cubicalChainModuleGrading (MoorePathBetween B a b) (MooreLoopSpace B b) R) with
-    | zero => simp
-    | add σ σ' hσ hσ' => simp only [Finsupp.single_add, map_add, hσ, hσ']
-    | @homogeneous q σ =>
-      rw [M.cocycle.coefficientDifferential_single _ x σ.property, map_add, Units.smul_def,
-        map_zsmul, basepointChangeComparison_single, basepointChangeComparison_single,
-        cubicalChainModuleDifferential_cubicalChainPairing _ σ.property, ←
-        M.linearCombination_comparison_m, Finsupp.linearCombination_apply, map_finsuppSum,
-        map_finsuppSum, Units.smul_def]
-      congr 2
-      refine Finsupp.sum_congr fun y _ ↦ ?_
-      rw [basepointChangeComparison_single, cubicalChainPairing_op_smul_left _
-        (fun ω γ δ ↦ MoorePathBetween.transFrom_op_smul ω γ δ)]
+      cubicalChainModuleDifferential (MoorePathFrom B a) H R (M.basepointChangeComparison a f) :=
+  coefficientPairing_coefficientDifferential M.cocycle M.linearCombination_comparison_m
+    (fun ω γ δ ↦ MoorePathBetween.transFrom_op_smul ω γ δ) f
 
 /-- **The basepoint-change comparison is linear over the chains on the loops at `a`**, acting on the
 coefficients in front and on the chains on the paths from `a` by concatenation in front. -/
