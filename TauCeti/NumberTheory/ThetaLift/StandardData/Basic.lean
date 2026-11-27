@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.LinearAlgebra.Matrix.Determinant.RowCompletion
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Semilocal
-import TauCeti.LinearAlgebra.Matrix.Submatrix
 
 /-!
 # Standard row and column data
@@ -23,6 +22,16 @@ These functions are partners: their values on the last rows of `k⁻¹` and the 
 columns of `k` differ by the determinant character of `k`. Over a semilocal integral
 subring, they are supported on blocks of invertible integral matrices. These
 algebraic facts allow row data to be exchanged with column data in local theta integrals.
+
+## References
+
+The standard data and partner assertion follow [ShortProof], `lsernau/grh-lean` at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`,
+[grh/src/Lib/SiegelWeil/Tower/LineGaussSums.lean](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/Lib/SiegelWeil/Tower/LineGaussSums.lean)
+(`New.stdRowDatum`, `New.stdColDatum`, `New.areMatched_stdRowDatum_stdColDatum`).
+Its column-support input is `New.IsValuationPair.exists_firstCols_iff` in
+[grh/src/Lib/General/LinearAlgebra/PartnerAlgebra.lean](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/Lib/General/LinearAlgebra/PartnerAlgebra.lean).
+The proofs here are independent.
 -/
 
 public section
@@ -128,15 +137,13 @@ theorem exists_leftInverse_of_standardColDatum_ne_zero {y : Matrix (b ⊕ a) b A
     rw [Matrix.mul_assoc, nonsing_inv_mul _ hdet]⟩
 
 /-- The standard row and column data satisfy the determinant matching identity. -/
-theorem standardRowDatum_inv_eq_det_mul_standardColDatum
+theorem standardRowDatum_inv_rows_eq_mul_standardColDatum
     (k : GeneralLinearGroup (b ⊕ a) O) :
-    O.standardRowDatum χ s (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).submatrix
-      Sum.inr id).map Subtype.val) =
+    O.standardRowDatum χ s (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) =
     χ (k : Matrix (b ⊕ a) (b ⊕ a) O).det *
-      O.standardColDatum χ s (((k : Matrix (b ⊕ a) (b ⊕ a) O).submatrix
-        id Sum.inl).map Subtype.val) := by
+      O.standardColDatum χ s (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) := by
   rw [standardRowDatum_map, standardColDatum_map,
-    ← det_fromRows_submatrix_inv_mul_det s k, map_mul, _root_.mul_inv_rev]
+    ← det_fromRows_toRows₂_inv_mul_det s k, map_mul, _root_.mul_inv_rev]
   have hχ : χ (k : Matrix (b ⊕ a) (b ⊕ a) O).det ≠ 0 :=
     MulChar.apply_ne_zero_iff.mpr k.det.isUnit
   simp [hχ]
@@ -145,20 +152,18 @@ theorem standardRowDatum_inv_eq_det_mul_standardColDatum
 theorem exists_inv_rows_of_standardRowDatum_ne_zero {x : Matrix a (b ⊕ a) A}
     (hx : O.standardRowDatum χ s x ≠ 0) :
     ∃ k : GeneralLinearGroup (b ⊕ a) O,
-      (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id).map Subtype.val) = x := by
+      (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) = x := by
   obtain ⟨x₀, hmap, hdet⟩ := (O.standardRowDatum_ne_zero_iff χ s).mp hx
   obtain ⟨g, hg⟩ := (isUnit_iff_isUnit_det (fromRows s x₀)).mpr hdet
   refine ⟨g⁻¹, ?_⟩
-  have hrows : (fromRows s x₀).submatrix Sum.inr id = x₀ := by
-    exact Matrix.ext fun i j ↦ fromRows_apply_inr s x₀ i j
-  simpa only [inv_inv, hg, hrows] using hmap
+  simpa only [inv_inv, hg, toRows₂_fromRows] using hmap
 
 /-- Over a semilocal ring every point where the column datum is nonzero is the first
 columns of an integral invertible matrix. -/
 theorem exists_cols_of_standardColDatum_ne_zero [Finite (MaximalSpectrum O)]
     {y : Matrix (b ⊕ a) b A} (hy : O.standardColDatum χ s y ≠ 0) :
     ∃ k : GeneralLinearGroup (b ⊕ a) O,
-      (((k : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl).map Subtype.val) = y := by
+      (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = y := by
   obtain ⟨y₀, t, hmap, ht⟩ := O.exists_leftInverse_of_standardColDatum_ne_zero χ s hy
   have hframe : y₀ ∈ TauCeti.unimodularFrames O (b ⊕ a) b := ⟨t, ht⟩
   rw [← TauCeti.orbit_submatrix_one Sum.inl_injective] at hframe
@@ -171,11 +176,15 @@ theorem exists_cols_of_standardColDatum_ne_zero [Finite (MaximalSpectrum O)]
     (k : Matrix (b ⊕ a) (b ⊕ a) O)
   simp only [Equiv.refl_symm, Equiv.coe_refl, Function.id_comp] at hm
   rw [hm] at hk
-  exact (congrArg (fun M ↦ M.map Subtype.val) hk).trans hmap
+  have hcols : (k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = y₀ := by
+    apply Matrix.ext
+    intro i j
+    simpa only [toCols₁_apply, submatrix_apply, id_eq] using congrFun (congrFun hk i) j
+  exact (congrArg (fun M ↦ M.map Subtype.val) hcols).trans hmap
 
 /-- Simultaneous right multiplication of the fixed and varying rows scales the datum
 by the inverse determinant character. No invertibility hypothesis is needed. -/
-theorem standardRowDatum_map_mul (x : Matrix a (b ⊕ a) O)
+theorem standardRowDatum_mul_right (x : Matrix a (b ⊕ a) O)
     (k : Matrix (b ⊕ a) (b ⊕ a) O) :
     O.standardRowDatum χ (s * k) ((x * k).map Subtype.val) =
       (χ k.det)⁻¹ * O.standardRowDatum χ s (x.map Subtype.val) := by
@@ -184,65 +193,66 @@ theorem standardRowDatum_map_mul (x : Matrix a (b ⊕ a) O)
 omit [DecidableEq a] in
 /-- Right multiplication of the column frame scales the datum by the inverse
 determinant character. No invertibility hypothesis is needed. -/
-theorem standardColDatum_map_mul (y : Matrix (b ⊕ a) b O) (t : Matrix b b O) :
+theorem standardColDatum_mul_right (y : Matrix (b ⊕ a) b O) (t : Matrix b b O) :
     O.standardColDatum χ s ((y * t).map Subtype.val) =
       (χ t.det)⁻¹ * O.standardColDatum χ s (y.map Subtype.val) := by
   simp only [standardColDatum_map, ← Matrix.mul_assoc, det_mul, map_mul, _root_.mul_inv_rev]
 
 omit s in
 /-- The row datum of the standard first rows takes value one on the standard last rows. -/
-@[simp high] -- Evaluate standard frames before the general integral-matrix formula.
 theorem standardRowDatum_one :
-    O.standardRowDatum χ ((1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inl id)
-      (((1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id).map Subtype.val) = 1 := by
-  have hrows : fromRows ((1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inl id)
-      ((1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id) = 1 := by
-    ext (i | i) j <;> rfl
-  rw [standardRowDatum_map, hrows, det_one, map_one, inv_one]
+    O.standardRowDatum χ ((1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁)
+      (((1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) = 1 := by
+  rw [standardRowDatum_map, fromRows_toRows, det_one, map_one, inv_one]
 
 omit s in
 /-- The column datum of the standard first rows takes value one on the standard first columns. -/
-@[simp high] -- Evaluate standard frames before the general integral-matrix formula.
+@[simp high] -- No simp lemma reduces the product of these two blocks of the identity.
 theorem standardColDatum_one :
-    O.standardColDatum χ ((1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inl id)
-      (((1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl).map Subtype.val) = 1 := by
-  have hcols : (1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inl id *
-      (1 : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl = 1 :=
-    submatrix_one_mul_submatrix_one ⟨Sum.inl, Sum.inl_injective⟩
+    O.standardColDatum χ ((1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁)
+      (((1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = 1 := by
+  have hcols : (1 : Matrix (b ⊕ a) (b ⊕ a) O).toRows₁ *
+      (1 : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = 1 := by
+    ext i j
+    simp [Matrix.mul_apply, Matrix.one_apply]
   rw [standardColDatum_map, hcols, det_one, map_one, inv_one]
 
 /-- Partners have support on complementary blocks of integral invertible matrices and
 satisfy the determinant matching identity there. The coordinate order is `b ⊕ a`. -/
-def AreMatrixPartners (Φ : Matrix a (b ⊕ a) A → C) (Ψ : Matrix (b ⊕ a) b A → C) : Prop :=
-  (∀ x, Φ x ≠ 0 → ∃ k : GeneralLinearGroup (b ⊕ a) O,
-    (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id).map Subtype.val) = x) ∧
-  (∀ y, Ψ y ≠ 0 → ∃ k : GeneralLinearGroup (b ⊕ a) O,
-    (((k : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl).map Subtype.val) = y) ∧
-  ∀ k : GeneralLinearGroup (b ⊕ a) O,
-    Φ (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id).map Subtype.val) =
+structure AreMatrixPartners (Φ : Matrix a (b ⊕ a) A → C) (Ψ : Matrix (b ⊕ a) b A → C) : Prop where
+  /-- The row datum is supported on last rows of integral inverses. -/
+  row_support : ∀ x, Φ x ≠ 0 → ∃ k : GeneralLinearGroup (b ⊕ a) O,
+    (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) = x
+  /-- The column datum is supported on first columns of integral units. -/
+  col_support : ∀ y, Ψ y ≠ 0 → ∃ k : GeneralLinearGroup (b ⊕ a) O,
+    (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = y
+  /-- Values on complementary blocks satisfy the determinant identity. -/
+  apply_inv_rows_eq : ∀ k : GeneralLinearGroup (b ⊕ a) O,
+    Φ (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) =
       χ (k : Matrix (b ⊕ a) (b ⊕ a) O).det *
-        Ψ (((k : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl).map Subtype.val)
+        Ψ (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val)
 
 omit s in
 /-- The support conditions and value identity characterizing partners. -/
 theorem areMatrixPartners_iff (Φ : Matrix a (b ⊕ a) A → C)
     (Ψ : Matrix (b ⊕ a) b A → C) : O.AreMatrixPartners χ Φ Ψ ↔
     (∀ x, Φ x ≠ 0 → ∃ k : GeneralLinearGroup (b ⊕ a) O,
-      (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id).map Subtype.val) = x) ∧
+      (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) = x) ∧
     (∀ y, Ψ y ≠ 0 → ∃ k : GeneralLinearGroup (b ⊕ a) O,
-      (((k : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl).map Subtype.val) = y) ∧
+      (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = y) ∧
     ∀ k : GeneralLinearGroup (b ⊕ a) O,
-      Φ (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).submatrix Sum.inr id).map Subtype.val) =
+      Φ (((↑k⁻¹ : Matrix (b ⊕ a) (b ⊕ a) O).toRows₂).map Subtype.val) =
         χ (k : Matrix (b ⊕ a) (b ⊕ a) O).det *
-          Ψ (((k : Matrix (b ⊕ a) (b ⊕ a) O).submatrix id Sum.inl).map Subtype.val) :=
-  Iff.rfl
+          Ψ (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) :=
+  ⟨fun h ↦ ⟨h.row_support, h.col_support, h.apply_inv_rows_eq⟩,
+    fun h ↦ ⟨h.1, h.2.1, h.2.2⟩⟩
 
 /-- Standard row and column data are partners over a semilocal integral subring. -/
 theorem areMatrixPartners_standardData [Finite (MaximalSpectrum O)] :
     O.AreMatrixPartners χ (O.standardRowDatum χ s) (O.standardColDatum χ s) :=
   ⟨fun _ ↦ O.exists_inv_rows_of_standardRowDatum_ne_zero χ s,
     (fun _ ↦ O.exists_cols_of_standardColDatum_ne_zero χ s),
-    O.standardRowDatum_inv_eq_det_mul_standardColDatum χ s⟩
+    O.standardRowDatum_inv_rows_eq_mul_standardColDatum χ s⟩
 
 variable {O χ}
 
@@ -251,11 +261,9 @@ omit s in
 theorem AreMatrixPartners.const_mul {Φ : Matrix a (b ⊕ a) A → C}
     {Ψ : Matrix (b ⊕ a) b A → C} (h : O.AreMatrixPartners χ Φ Ψ) (c : C) :
     O.AreMatrixPartners χ (fun x ↦ c * Φ x) (fun y ↦ c * Ψ y) := by
-  refine ⟨fun x hx ↦ h.1 x (mul_ne_zero_iff.mp hx).2,
-    (fun y hy ↦ h.2.1 y (mul_ne_zero_iff.mp hy).2), fun k ↦ ?_⟩
-  -- Evaluate the pointwise products before using the matching identity.
-  dsimp only
-  rw [h.2.2 k]
+  refine ⟨fun x hx ↦ h.row_support x (mul_ne_zero_iff.mp hx).2,
+    (fun y hy ↦ h.col_support y (mul_ne_zero_iff.mp hy).2), fun k ↦ ?_⟩
+  rw [h.apply_inv_rows_eq k]
   exact mul_left_comm _ _ _
 
 omit s in
@@ -267,10 +275,10 @@ theorem AreMatrixPartners.row_eq {Φ Φ' : Matrix a (b ⊕ a) A → C}
   by_cases hx : Φ x = 0
   · by_cases hx' : Φ' x = 0
     · exact hx.trans hx'.symm
-    · obtain ⟨k, rfl⟩ := h'.1 x hx'
-      exact (h.2.2 k).trans (h'.2.2 k).symm
-  · obtain ⟨k, rfl⟩ := h.1 x hx
-    exact (h.2.2 k).trans (h'.2.2 k).symm
+    · obtain ⟨k, rfl⟩ := h'.row_support x hx'
+      exact (h.apply_inv_rows_eq k).trans (h'.apply_inv_rows_eq k).symm
+  · obtain ⟨k, rfl⟩ := h.row_support x hx
+    exact (h.apply_inv_rows_eq k).trans (h'.apply_inv_rows_eq k).symm
 
 omit s in
 /-- A row datum has at most one column partner. -/
@@ -279,14 +287,15 @@ theorem AreMatrixPartners.col_eq {Φ : Matrix a (b ⊕ a) A → C}
     (h' : O.AreMatrixPartners χ Φ Ψ') : Ψ = Ψ' := by
   have heq (k : GeneralLinearGroup (b ⊕ a) O) :=
     mul_left_cancel₀ (MulChar.apply_ne_zero_iff.mpr k.det.isUnit :
-      χ (k : Matrix (b ⊕ a) (b ⊕ a) O).det ≠ 0) ((h.2.2 k).symm.trans (h'.2.2 k))
+      χ (k : Matrix (b ⊕ a) (b ⊕ a) O).det ≠ 0)
+      ((h.apply_inv_rows_eq k).symm.trans (h'.apply_inv_rows_eq k))
   funext y
   by_cases hy : Ψ y = 0
   · by_cases hy' : Ψ' y = 0
     · exact hy.trans hy'.symm
-    · obtain ⟨k, rfl⟩ := h'.2.1 y hy'
+    · obtain ⟨k, rfl⟩ := h'.col_support y hy'
       exact heq k
-  · obtain ⟨k, rfl⟩ := h.2.1 y hy
+  · obtain ⟨k, rfl⟩ := h.col_support y hy
     exact heq k
 
 end Subring
