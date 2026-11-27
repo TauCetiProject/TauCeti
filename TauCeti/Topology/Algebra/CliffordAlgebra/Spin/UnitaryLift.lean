@@ -41,6 +41,10 @@ structure `J₀`, along a unitary frame, are continuous as well
 * `OrthonormalBasis.continuous_centralizerSpinCLift` and `TauCeti.continuous_unitarySpinCLift`:
   the lifts of the unitary group of a complex structure are continuous; the latter is bundled as
   the continuous homomorphism `TauCeti.unitarySpinCLiftContinuousMonoidHom`.
+* `TauCeti.canonicalLineCharacter` and `TauCeti.inv_det_comp_unitarySpinCLift`: the inverse
+  complex determinant `det_ℂ⁻¹ : U(ℝ⁴, J₀) → U(1)`, the character of the canonical line, as a
+  continuous homomorphism, and the identity `det⁻¹ ∘ σ = det_ℂ⁻¹` along the lift
+  `σ = TauCeti.unitarySpinCLift`.
 
 ## References
 
@@ -130,5 +134,33 @@ definition, which is what the extension of structure group along it is stated wi
 theorem unitarySpinCLiftContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
     unitarySpinCLiftContinuousMonoidHom hJ₀ e h₀ h₂ g = unitarySpinCLift hJ₀ e h₀ h₂ g :=
   (rfl)
+
+/-- The **character of the canonical line**: the inverse complex determinant
+`U(ℝ⁴, J₀) → U(1)`, `g ↦ det_ℂ(g)⁻¹`, where `det_ℂ(g)` is the determinant of the unitary matrix of
+`g` in the frame `e` (`OrthonormalBasis.centralizerToUnitaryGroup`). The anticanonical line
+`Λ²_ℂ` is associated to the unitary frames by `det_ℂ`
+(`TauCeti.OrthonormalFrameBundle.unitaryFrameDetEquiv`), and the canonical line by its
+inverse. -/
+noncomputable def canonicalLineCharacter : Subgroup.centralizer {J₀} →ₜ* Circle where
+  toMonoidHom := (Matrix.UnitaryGroup.detCircle.comp (e.centralizerToUnitaryGroup hJ₀ h₀ h₂))⁻¹
+  continuous_toFun :=
+    (Matrix.UnitaryGroup.continuous_detCircle.comp
+      (e.continuous_centralizerToUnitaryGroup hJ₀ h₀ h₂)).inv
+
+@[simp]
+theorem canonicalLineCharacter_apply (g : Subgroup.centralizer {J₀}) :
+    canonicalLineCharacter hJ₀ e h₀ h₂ g =
+      (Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g))⁻¹ :=
+  (rfl)
+
+/-- The inverse determinant character of `Spinᶜ(4)` restricts along the canonical lift
+`σ = TauCeti.unitarySpinCLift` to the character of the canonical line: `(det σ(g))⁻¹ = det_ℂ(g)⁻¹`
+(`TauCeti.det_unitarySpinCLift`). -/
+theorem inv_det_comp_unitarySpinCLift :
+    (spinCGroup.det (realCliffordForm 4 0)
+        (nondegenerate_realCliffordForm 4 0).ne_zero)⁻¹.comp (unitarySpinCLift hJ₀ e h₀ h₂) =
+      (canonicalLineCharacter hJ₀ e h₀ h₂).toMonoidHom := by
+  ext g
+  simp [det_unitarySpinCLift]
 
 end TauCeti

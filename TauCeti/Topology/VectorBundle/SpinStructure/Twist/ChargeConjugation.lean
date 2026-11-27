@@ -72,15 +72,14 @@ determinant line `L`, by `[p, w] ↦ [[p, 1], conj w]`
 directions. The inputs are the lines of inverses and tensor products of circle bundles
 (`TauCeti.PrincipalBundle.inverseLineEquiv`, `TauCeti.PrincipalBundle.tensorLineEquiv`).
 
-For the canonical `Spinᶜ` structure `s_ω` of an almost Hermitian four-manifold, the determinant
-line is the anticanonical line `K⁻¹`, by a separate declaration
-(`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`). Combined with it, the
-fourth equivalence is a step toward Taubes's isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`, which
-compares the Seiberg–Witten equations of the labels `E` and `K ⊗ E⁻¹` (Taubes, *GR = SW*): its
-twisting line is the conjugate of `L(s_ω) ⊗ E`. Composing with `L(s_ω) ≃ K⁻¹` and identifying the
-conjugate of `K⁻¹ ⊗ E` with `K ⊗ E⁻¹` (the conjugate of a Hermitian line is its dual) are not done
-here. The third equivalence is the step `conj(s_ω ⊗ E) ≃ conj(s_ω) ⊗ E⁻¹` of the same
-identification.
+For the canonical `Spinᶜ` structure `s_ω` of an almost Hermitian four-manifold, whose determinant
+line is the anticanonical line `K⁻¹`
+(`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`), the fourth gives
+Taubes's isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`, which compares the Seiberg–Witten
+equations of the labels `E` and `K ⊗ E⁻¹` (Taubes, *GR = SW*), once `P ×_{det⁻¹} U(1)` is
+identified with the circle bundle of `K`; that is
+`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`. The third is the step
+`conj(s_ω ⊗ E) ≃ conj(s_ω) ⊗ E⁻¹` of the same identification.
 
 ## Main definitions
 
@@ -386,10 +385,14 @@ private theorem continuous_twistChargeConjTwistMap :
 and determinant line `L`, and a principal `U(1)`-bundle `Q` with line `E`, the charge conjugate of
 `s ⊗ E` is equivalent to the twist of `s` by the principal `U(1)`-bundle `(P ×_X Q) ×_ψ U(1)`,
 which has the transition functions of `L⁻¹ ⊗ E⁻¹`: `conj (s ⊗ E) ≃ s ⊗ (L⁻¹ ⊗ E⁻¹)`, by
-`[[(p, q), 1], h] ↦ [(p, [(p, q), 1]), h]`. For the canonical `Spinᶜ` structure of an almost
-Hermitian four-manifold, where `L = K⁻¹`, this gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` after
-identifying `(P ×_X Q) ×_ψ U(1)` with the circle bundle of `K ⊗ E⁻¹`; that identification is not
-part of this statement. -/
+`[[(p, q), 1], h] ↦ [(p, [(p, q), 1]), h]`. The analogous equivalence with `L⁻¹ ⊗ E⁻¹`
+presented as a tensor product of circle bundles is
+`TauCeti.SpinCStructure.chargeConjTwistEquivTwist`. For the canonical `Spinᶜ` structure `s_ω` of
+an almost Hermitian four-manifold, where `L = K⁻¹`, composing that one with the twist by
+`L⁻¹ ⊗ E⁻¹ ≃ K ⊗ E⁻¹`, the tensor product (`TauCeti.PrincipalBundle.Equiv.extend` of
+`TauCeti.PrincipalBundle.Equiv.fiberProd`) of
+`TauCeti.OrthonormalFrameBundle.inverseDeterminantBundleEquivCanonicalBundle` with the identity,
+gives `TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`. -/
 def twistChargeConjEquivTwist :
     (s.twist Q).chargeConj.Equiv (s.twist (s.inverseDeterminantTwistBundle Q)) :=
   ((s.fiberProd Circle Q).extendCompEquiv μ hμ hπμ
@@ -704,9 +707,10 @@ determinant bundle of `s` (`TauCeti.SpinCStructure.inverseDeterminantBundle`) wi
 (`TauCeti.SpinCStructure.chargeConjTwistEquivTwist_toEquiv_mk`); it is well defined because
 `χ (g [1, w]) = g [1, (det g)⁻¹ w⁻¹]`. The Hermitian line of `(P ×_{det⁻¹} U(1)) ⊗ E⁻¹` is
 identified with the conjugate of `L ⊗ E` (`TauCeti.SpinCStructure.chargeConjTwistLineEquiv`). For
-the canonical `Spinᶜ` structure `s_ω` of an almost Hermitian four-manifold, whose determinant line
-is `K⁻¹`, this is a step toward Taubes's isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`; the
-identification of this twisting line with `K ⊗ E⁻¹` is not made here. -/
+the canonical `Spinᶜ` structure `s_ω` of an almost Hermitian four-manifold, the inverse
+determinant bundle is the circle bundle of the canonical line `K`, and this becomes Taubes's
+isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`
+(`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`). -/
 def chargeConjTwistEquivTwist (s : SpinCStructure F V n) :
     (s.twist E).chargeConj.Equiv
       (s.twist (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E))) :=
@@ -785,8 +789,9 @@ Remark: for the canonical `Spinᶜ` structure `s_ω` of an almost Hermitian four
 determinant line is the anticanonical line `K⁻¹`
 (`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`), the twisting line is
 then the conjugate of `K⁻¹ ⊗ E`, which for Hermitian lines is `K ⊗ E⁻¹`, the line of Taubes's
-isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`. That composite and the identification of the
-conjugate with `K ⊗ E⁻¹` are not proved here. -/
+isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`
+(`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`, at the level of
+circle bundles). The identification of this conjugate line with `K ⊗ E⁻¹` is not proved here. -/
 def chargeConjTwistLineEquiv (s : SpinCStructure F V n) (x : X) :
     AssociatedBundle Circle (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)) ℂ x
       ≃L⋆[ℂ] s.determinantLine x ⊗[ℂ] AssociatedBundle Circle E ℂ x where
