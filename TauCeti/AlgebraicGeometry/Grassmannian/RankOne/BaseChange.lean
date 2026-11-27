@@ -38,7 +38,7 @@ linear forms of the two charts, and these agree.
 
 * `IsBaseChange.grassmannianSchemeHom_comp_toProj`: **the rank-one identification commutes with
   base change.**
-* `IsBaseChange.isPullback_proj_map`: hence `Proj (Sym M')` is the base change of `Proj (Sym M)`
+* `IsBaseChange.isPullback_ProjMap`: hence `Proj (Sym M')` is the base change of `Proj (Sym M)`
   to `Spec R'`, for any presentation of `M'` as a base change of `M`.
 
 ## References
@@ -151,6 +151,7 @@ along `R → R'` and a graded ring map `φ : Sym_R M → Sym_{R'} M'` restrictin
 the identifications `toProj` of the rank-one Grassmannians
 `G(1, M)` and `G(1, M')` with `Proj (Sym M)` and `Proj (Sym M')` intertwine the base change morphism
 `G(1, M') ⟶ G(1, M)` and `Proj.map φ`. -/
+@[reassoc]
 theorem grassmannianSchemeHom_comp_toProj :
     hf.grassmannianSchemeHom 1 ≫ toProj R = toProj R' ≫ Proj.map φ hφ := by
   refine scheme_hom_ext fun A _ _ N ↦ ?_
@@ -178,7 +179,7 @@ base change `f : M → M'` along `R → R'` and a graded ring map `φ : Sym_R M 
 `f`, the square formed by `Proj.map φ` and the structure morphisms to
 `Spec R'` and `Spec R` is cartesian. It is the base change square of the rank-one Grassmannians
 (`IsBaseChange.isPullback_grassmannianSchemeHom`), transported along `toProjIso`. -/
-theorem isPullback_proj_map :
+theorem isPullback_ProjMap :
     IsPullback (Proj.map φ hφ) (projToSpec R' M') (projToSpec R M)
       (Spec.map (CommRingCat.ofHom (algebraMap R R'))) :=
   (hf.isPullback_grassmannianSchemeHom 1).of_iso (toProjIso R') (toProjIso R) (Iso.refl _)
