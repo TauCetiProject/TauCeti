@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
-public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian
+public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Basic
 public import TauCeti.AlgebraicTopology.Quasicategory.Postcomposition
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 public import TauCeti.CategoryTheory.Category.Pointed.Fin

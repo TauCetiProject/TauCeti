@@ -347,6 +347,16 @@ lemma obj₀Equiv_apply_coe (σ : (ihomOver p f : SSet) _⦋0⦌) :
     dsimp% (obj₀Equiv σ).val = ihomObj₀Equiv K E σ.val :=
   (rfl)
 
+/-- Restricting a relative simplex to a parameter vertex precomposes its corresponding map
+with the inclusion of that vertex, identifying `K ⊗ Δ[0]` with `K`. This formula rewrites
+the restriction without unfolding the relative simplex or vertex equivalence. -/
+lemma obj₀Equiv_map {n : ℕ} (i : ⦋0⦌ ⟶ ⦋n⦌) (σ : (ihomOver p f : SSet) _⦋n⦌) :
+    (obj₀Equiv ((ihomOver p f : SSet).map i.op σ)).val =
+      (fstStdSimplexZeroIso K).inv ≫ (K ◁ stdSimplex.map i) ≫ (objEquiv σ).val := by
+  rw [← cancel_epi (fstStdSimplexZeroIso K).hom, Iso.hom_inv_id_assoc,
+    obj₀Equiv_apply_coe, objEquiv_apply_coe, fstStdSimplexZeroIso_hom, fst_comp_ihomObj₀Equiv]
+  exact ihomObjEquiv_map _ _ _
+
 /-- The functors over the base form a quasicategory when `p` is an inner fibration. -/
 instance quasicategory [InnerFibration p] : Quasicategory (ihomOver p f) :=
   fiber.quasicategory _ _

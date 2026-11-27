@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian
+public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Basic
 public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
@@ -40,8 +40,8 @@ universe u
 
 variable {E B : SSet.{u}} (p : E ⟶ B)
 
-/-- The full subcomplex of sections of `p` which send all edges of `B` to `p)-coCartesian
-edges, as in the coCartesian dual of *Higher Topos Theory*, Corollary 3.3.3.2. -/
+/-- The full subcomplex of sections of `p` which send all edges of `B` to edges
+coCartesian over `p`, as in the coCartesian dual of *Higher Topos Theory*, Corollary 3.3.3.2. -/
 def coCartesianSections : (coherentSections p : SSet).Subcomplex :=
   (coherentSections p : SSet).fullEnhancedSubcategory fun s ↦
     ∀ ⦃x y : B _⦋0⦌⦄ (e : Edge x y), (e.map (ihomOver.obj₀Equiv s).val).IsCoCartesian p
@@ -76,19 +76,7 @@ lemma mem_coCartesianSections_obj_iff {n : ℕ} {s : (coherentSections p : SSet)
           (ihomOver.objEquiv s).val)).IsCoCartesian p := by
   rw [coCartesianSections_eq_fullEnhancedSubcategory,
     mem_fullEnhancedSubcategory_obj_iff_forall_fin]
-  have restrict (i : Fin (n + 1)) :
-      (ihomOver.obj₀Equiv ((coherentSections p : SSet).map
-        (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op s)).val =
-      (fstStdSimplexZeroIso B).inv ≫
-        (B ◁ stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i)) ≫
-        (ihomOver.objEquiv s).val := by
-    rw [← cancel_epi (fstStdSimplexZeroIso B).hom, Iso.hom_inv_id_assoc]
-    have h₀ := ihomOver.obj₀Equiv_apply_coe
-      ((coherentSections p : SSet).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op s)
-    have hn := ihomOver.objEquiv_apply_coe s
-    rw [h₀, hn, fstStdSimplexZeroIso_hom, fst_comp_ihomObj₀Equiv]
-    exact ihomObjEquiv_map _ _ _
-  exact forall_congr' fun i ↦ by rw [restrict i]
+  exact forall_congr' fun i ↦ by rw [ihomOver.obj₀Equiv_map]
 
 /-- For an isomorphism, every section is coCartesian. -/
 @[simp]
@@ -101,18 +89,27 @@ namespace coCartesianSections
 
 /-- The vertices of the coCartesian section complex are the coCartesian sections of `p`. -/
 def obj₀Equiv :
-    (coCartesianSections p : SSet) _⦋0⦌ ≃
+    (coCartesianSections p).obj (op ⦋0⦌) ≃
       {s : {g : B ⟶ E // g ≫ p = 𝟙 B} //
         ∀ ⦃x y : B _⦋0⦌⦄ (e : Edge x y), (e.map s.val).IsCoCartesian p} :=
-  (Equiv.subtypeEquivRight (fun _ ↦ mem_coCartesianSections_obj_zero_iff)).trans
+  (fullEnhancedSubcategory.verticesEquiv _).trans
     ((ihomOver.obj₀Equiv (p := p) (f := 𝟙 B)).subtypeEquiv (fun _ ↦ Iff.rfl))
 
 /-- The projection of the vertex equivalence is the underlying coherent section, a formula
 for using the equivalence without unfolding it. -/
 @[simp]
-lemma obj₀Equiv_apply_val (s : (coCartesianSections p : SSet) _⦋0⦌) :
-    dsimp% only [Subfunctor.toFunctor_obj] (obj₀Equiv p s).val = ihomOver.obj₀Equiv s.val :=
-  (rfl)
+lemma obj₀Equiv_apply_val (s : (coCartesianSections p).obj (op ⦋0⦌)) :
+    (obj₀Equiv p s).val = ihomOver.obj₀Equiv s.val :=
+  congrArg (ihomOver.obj₀Equiv (p := p) (f := 𝟙 B))
+    (fullEnhancedSubcategory.verticesEquiv_apply_coe _ _)
+
+/-- The vertex represented by a coCartesian section projects to its coherent section vertex. -/
+@[simp]
+lemma obj₀Equiv_symm_apply_val
+    (s : {s : {g : B ⟶ E // g ≫ p = 𝟙 B} //
+      ∀ ⦃x y : B _⦋0⦌⦄ (e : Edge x y), (e.map s.val).IsCoCartesian p}) :
+    ((obj₀Equiv p).symm s).val = ihomOver.obj₀Equiv.symm s.val :=
+  fullEnhancedSubcategory.verticesEquiv_symm_apply_coe _ _
 
 /-- If `p` is an inner fibration, its coCartesian sections form a quasicategory. -/
 instance quasicategory [InnerFibration p] : Quasicategory (coCartesianSections p : SSet) :=
