@@ -18,7 +18,7 @@ operator commuting with the raising operator is completely determined by one sca
 ordered pair `(i, j)` of occurrence labels whose intervals satisfy the precedence relation
 `I ≺ J`, i.e. `I.fst < J.fst ≤ I.snd + 1 ≤ J.snd` (`TauCeti.IntInterval.Precedes`).
 
-On such an allowed pair `(i, j)`, the rank-one block operator `TauCeti.Multisegment.blockOperator`
+On such an allowed pair `(i, j)`, the block operator `TauCeti.Multisegment.blockOperator`
 sends each standard vector of block `j` of degree `a` to the standard vector of block `i` of degree
 `a - 1` (and `0` outside the overlap or on other blocks). Along the overlap `{a ∈ J | a - 1 ∈ I}`,
 commutation with the raising operator forces all matrix entries `(i, a - 1) ← (j, a)` of any

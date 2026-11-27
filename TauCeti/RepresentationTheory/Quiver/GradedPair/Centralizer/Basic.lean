@@ -21,10 +21,10 @@ homogeneous of degree `-d.step` and satisfy `L ∘ₗ T = T ∘ₗ L`. Each `L �
 therefore defines a graded pair `P.oppositePair L` on the same grading in the reverse direction
 `d.reverse`.
 
-Because `L` commutes with `T`, it leaves every invariant submodule of `T` (in particular
-`LinearMap.range (T ^ k)` and `LinearMap.range T`) stable. On any model `M : P.SubmoduleModel W`
-of a centralizer-stable submodule, restriction gives a complex linear map
-`M.restrictCentralizer`; specializing to the chosen image model `P.imageModel` gives
+Because `L` commutes with `T`, it leaves `LinearMap.range (T ^ k)` (and in particular
+`LinearMap.range T`) stable. On any model `M : P.SubmoduleModel W` of a centralizer-stable
+submodule, restriction gives a complex linear map `M.restrictCentralizer`; specializing to the
+chosen image model `P.imageModel` gives
 `P.restrictCentralizer : P.centralizer →ₗ[ℂ] P.imageModel.pair.centralizer`.
 
 The main theorem `TauCeti.GradedPair.centralizer_image_extension` shows that any endomorphism `L'`
@@ -268,7 +268,7 @@ def oppositePairEquiv (e : GradedPairEquiv P Q) (L : P.centralizer) :
 
 end GradedPairEquiv
 
-/-! ### Restriction to invariant submodule models and actual images -/
+/-! ### Restriction to centralizer-stable submodule models and actual images -/
 
 namespace GradedPair
 
