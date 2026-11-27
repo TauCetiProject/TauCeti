@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
+public import TauCeti.AlgebraicGeometry.Sites.Big.FullyFaithful
 public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
 
 /-!
@@ -148,58 +148,32 @@ private lemma bigSectionsRestrict_glue_eq_glue {W W' : Over S} (f : W' ⟶ W)
 /-- The `S`-scheme given by an open `U` of `S`. -/
 private abbrev opensOver (U : S.Opens) : Over S := Over.mk U.ι
 
-variable (M) in
-/-- Sections of `M` over `U` as global sections of the pullback of `M` to `U`. -/
-private noncomputable def sectionsEquiv (U : S.Opens) :
-    Γ(M, U) ≃ Γ((Scheme.Modules.pullback U.ι).obj M, ⊤) :=
-  Equiv.ofBijective _ (bijective_pullbackSectionsLE_ι M U ⊤ rfl)
-
-private lemma sectionsEquiv_apply (U : S.Opens) (s : Γ(M, U)) :
-    sectionsEquiv M U s = U.ι.pullbackSectionsLE M U ⊤ (by simp) s :=
-  rfl
-
-private lemma sectionsEquiv_add (F : S.Modules) (U : S.Opens) (s s' : Γ(F, U)) :
-    sectionsEquiv F U (s + s') = sectionsEquiv F U s + sectionsEquiv F U s' :=
-  map_add (U.ι.pullbackSectionsLE F U ⊤ (by simp)) s s'
-
-private lemma sectionsEquiv_smul (F : S.Modules) (U : S.Opens) (r : Γ(S, U)) (s : Γ(F, U)) :
-    sectionsEquiv F U (r • s) = (U.ι.appLE U ⊤ (by simp)).hom r • sectionsEquiv F U s :=
-  map_smulₛₗ (U.ι.pullbackSectionsLE F U ⊤ (by simp)) r s
-
 /-- The map on sections over `U` of the glued morphism. -/
 private noncomputable def sectionsMap (U : S.Opens) (s : Γ(M, U)) : Γ(N, U) :=
-  (sectionsEquiv N U).symm (glue hR hm (opensOver U) (sectionsEquiv M U s))
+  (bigOpensSectionsEquiv N U).symm (glue hR hm (opensOver U) (bigOpensSectionsEquiv M U s))
 
 private lemma sectionsEquiv_sectionsMap (U : S.Opens) (s : Γ(M, U)) :
-    sectionsEquiv N U (sectionsMap hR hm U s) = glue hR hm (opensOver U) (sectionsEquiv M U s) :=
+    bigOpensSectionsEquiv N U (sectionsMap hR hm U s) =
+      glue hR hm (opensOver U) (bigOpensSectionsEquiv M U s) :=
   Equiv.apply_symm_apply _ _
-
-/-- Restriction from `U` to `U' ≤ U` on the big site, read through `sectionsEquiv`. -/
-private lemma bigSectionsRestrict_sectionsEquiv (F : S.Modules) {U U' : S.Opens} (i : U' ⟶ U)
-    (s : Γ(F, U)) :
-    bigSectionsRestrict F (Over.homMk (S.homOfLE i.le) (by simp) : opensOver U' ⟶ opensOver U)
-      (sectionsEquiv F U s) = sectionsEquiv F U' (F.presheaf.map i.op s) := by
-  rw [sectionsEquiv_apply, sectionsEquiv_apply, Scheme.Hom.pullbackSectionsLE_map]
-  · exact bigSectionsRestrict_pullbackSectionsLE F _ U _ _ s
-  · exact fun x _ ↦ i.le x.property
 
 private lemma sectionsMap_add (U : S.Opens) (s s' : Γ(M, U)) :
     sectionsMap hR hm U (s + s') = sectionsMap hR hm U s + sectionsMap hR hm U s' :=
-  (sectionsEquiv N U).injective (by
-    rw [sectionsEquiv_add, sectionsEquiv_sectionsMap, sectionsEquiv_sectionsMap,
-      sectionsEquiv_sectionsMap, sectionsEquiv_add, glue_add])
+  (bigOpensSectionsEquiv N U).injective (by
+    rw [bigOpensSectionsEquiv_add, sectionsEquiv_sectionsMap, sectionsEquiv_sectionsMap,
+      sectionsEquiv_sectionsMap, bigOpensSectionsEquiv_add, glue_add])
 
 private lemma sectionsMap_smul (U : S.Opens) (r : Γ(S, U)) (s : Γ(M, U)) :
     sectionsMap hR hm U (r • s) = r • sectionsMap hR hm U s :=
-  (sectionsEquiv N U).injective (by
-    rw [sectionsEquiv_smul, sectionsEquiv_sectionsMap, sectionsEquiv_sectionsMap,
-      sectionsEquiv_smul, glue_smul])
+  (bigOpensSectionsEquiv N U).injective (by
+    rw [bigOpensSectionsEquiv_smul, sectionsEquiv_sectionsMap, sectionsEquiv_sectionsMap,
+      bigOpensSectionsEquiv_smul, glue_smul])
 
 private lemma sectionsMap_map {U U' : S.Opens} (i : U' ⟶ U) (s : Γ(M, U)) :
     sectionsMap hR hm U' (M.presheaf.map i.op s) = N.presheaf.map i.op (sectionsMap hR hm U s) :=
-  (sectionsEquiv N U').injective (by
-    rw [sectionsEquiv_sectionsMap, ← bigSectionsRestrict_sectionsEquiv,
-      ← bigSectionsRestrict_sectionsEquiv, sectionsEquiv_sectionsMap,
+  (bigOpensSectionsEquiv N U').injective (by
+    rw [sectionsEquiv_sectionsMap, ← bigSectionsRestrict_bigOpensSectionsEquiv,
+      ← bigSectionsRestrict_bigOpensSectionsEquiv, sectionsEquiv_sectionsMap,
       bigSectionsRestrict_glue_eq_glue])
 
 /-- The glued morphism of the underlying abelian presheaves. -/
@@ -255,8 +229,9 @@ private lemma sectionsEquiv_app_eq_glue (φ : M ⟶ N)
     (hφ : ∀ ⦃Z : Over S⦄ (g : Z ⟶ Over.mk (𝟙 S)) (hg : R g),
       (Scheme.Modules.pullback Z.hom).map φ = m g hg)
     (U : S.Opens) (s : Γ(M, U)) :
-    sectionsEquiv N U (φ.app U s) = glue hR hm (opensOver U) (sectionsEquiv M U s) :=
-  eq_glue hR hm (opensOver U) (sectionsEquiv M U s) (sectionsEquiv N U (φ.app U s))
+    bigOpensSectionsEquiv N U (φ.app U s) =
+      glue hR hm (opensOver U) (bigOpensSectionsEquiv M U s) :=
+  eq_glue hR hm (opensOver U) (bigOpensSectionsEquiv M U s) (bigOpensSectionsEquiv N U (φ.app U s))
     fun Z g hg ↦ by
     have hU : ⊤ ≤ U.ι ⁻¹ᵁ U := (Scheme.Opens.ι_preimage_self U).ge
     have hZ : ⊤ ≤ Z.hom ⁻¹ᵁ U := by
@@ -275,7 +250,7 @@ private lemma existsUnique_pullback_map_eq :
   refine ⟨glued hR hm, fun _ g hg ↦ pullback_map_glued hR hm g hg, fun φ hφ ↦ ?_⟩
   refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
   ext s
-  apply (sectionsEquiv N U).injective
+  apply (bigOpensSectionsEquiv N U).injective
   rw [sectionsEquiv_app_eq_glue hR hm φ hφ, glued_app, sectionsEquiv_sectionsMap]
 
 end PresheafHomGlue
