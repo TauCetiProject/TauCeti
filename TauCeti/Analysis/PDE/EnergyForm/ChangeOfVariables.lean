@@ -127,8 +127,8 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
   open subset and carried by a change of variables with an inverse, solves the transformed
   equation, with bounded lower-order coefficients and square-integrable right-hand side.
 * `TauCeti.PDE.energyFormH1_w1pCompL_restrictL_eq_setIntegral`: for a pure divergence-form
-  equation with a right-hand side `F ∈ H¹` and Jacobian determinants of absolute value one, the
-  transformed right-hand side is `F ∘ Φ ∈ H¹`.
+  equation with a right-hand side `F ∈ W^{m,2}` and Jacobian determinants of absolute value one,
+  the transformed right-hand side is `F ∘ Φ ∈ W^{m,2}`.
 * `TauCeti.PDE.eLpNorm_pullbackDensity_le`: for such changes of variables with Jacobian
   determinants of absolute value one, the transformed density has at most the `Lᵖ` norm of the
   original one.
@@ -976,33 +976,35 @@ theorem exists_forall_energyFormH1_compL_restrictL_eq
     hΨ.pos hΨ.le_abs_det hΨΦ hΦΨ (energyFormH1_restrictL_eq_setIntegral hD hu) v]
   exact integral_congr_ae (hf'.coeFn_toLp.mono fun x hx => by simp only [hx])
 
-/-- **Transforming a weak solution with an `H¹` right-hand side.** Let `Φ` be a change of variables
-from `Ω'` into an open `D ⊆ Ω`, with inverse change of variables `Ψ`, both with Jacobian
-determinants at least one in absolute value. If `u ∈ H¹(Ω)` is a weak solution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω` with `F ∈ H¹(Ω)`, then `u ∘ Φ` is a weak solution in `Ω'` of the
-transformed equation `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`, whose right-hand side lies in `H¹(Ω')`. -/
-theorem energyFormH1_w1pCompL_restrictL_eq_setIntegral
+/-- **Transforming a weak solution with a `W^{m,2}` right-hand side.** Let `Φ` be a change of
+variables of order `m + 1` from `Ω'` into an open `D ⊆ Ω`, with inverse change of variables `Ψ`,
+both with Jacobian determinants at least one in absolute value. If `u ∈ H¹(Ω)` is a weak solution
+of `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω` with `F ∈ W^{m,2}(Ω)`, then `u ∘ Φ` is a weak solution in `Ω'` of the
+transformed equation `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`, whose right-hand side lies in `W^{m,2}(Ω')`. -/
+theorem energyFormH1_w1pCompL_restrictL_eq_setIntegral {m : ℕ}
     {Omega D Ω' : Opens (EuclideanSpace ℝ ι)} (hD : D ≤ Omega)
-    (hΦ : Wkp.IsChangeOfVariables 1 Ω' D Φ L 1) (hΨ : Wkp.IsChangeOfVariables 1 D Ω' Ψ L' 1)
-    (hΨΦ : LeftInvOn Ψ Φ Ω') (hΦΨ : RightInvOn Ψ Φ D) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {F u : W1p mu Omega 2}
+    (hΦ : Wkp.IsChangeOfVariables (m + 1) Ω' D Φ L 1)
+    (hΨ : Wkp.IsChangeOfVariables 1 D Ω' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ Ω')
+    (hΦΨ : RightInvOn Ψ Φ D) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {F : Wkp mu Omega 2 m}
+    {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, W1p.value F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+      ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     (v : W1p0 mu Ω' 2) :
     energyFormH1 (pullbackPrincipal Φ a) 0 0
         (hΦ.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
-      ∫ x in Ω', W1p.value (hΦ.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD F)) x *
+      ∫ x in Ω', Wkp.value m (Wkp.compL (hΦ.mono m.le_succ) (Wkp.restrictL hD m F)) x *
         W1p.value (v : W1p mu Ω' 2) x ∂mu := by
-  have h := energyFormH1_compL_eq_setIntegral hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-    hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det hΨ.differentiableOn hΨ.mapsTo hΨ.norm_fderiv_le
+  have hΦ1 := hΦ.mono (Nat.le_add_left 1 m)
+  have h := energyFormH1_compL_eq_setIntegral hΦ1.differentiableOn hΦ1.injOn hΦ1.mapsTo
+    hΦ1.norm_fderiv_le hΦ1.pos hΦ1.le_abs_det hΨ.differentiableOn hΨ.mapsTo hΨ.norm_fderiv_le
     hΨ.pos hΨ.le_abs_det hΨΦ hΦΨ (energyFormH1_restrictL_eq_setIntegral hD hu) v
   rw [pullbackDrift_zero, pullbackDensity_zero] at h
   -- Since `|det DΦ| = 1`, the pulled-back density of `F` is `F ∘ Φ`.
   refine h.trans (integral_congr_ae ?_)
-  filter_upwards [hΦ.value_w1pCompL_ae ENNReal.ofNat_ne_top (W1p.restrictL hD F),
-    hΦ.ae_comp (W1p.value_restrictL_ae hD F), ae_restrict_mem Ω'.isOpen.measurableSet]
+  filter_upwards [Wkp.value_compL_ae (hΦ.mono m.le_succ) (Wkp.restrictL hD m F),
+    hΦ.ae_comp (Wkp.value_restrictL_ae hD m F), ae_restrict_mem Ω'.isOpen.measurableSet]
     with x h1 h2 hx
-  rw [pullbackDensity_apply, hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hx, one_mul, h1, h2]
+  rw [pullbackDensity_apply, hΦ1.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hx, one_mul, h1, h2]
 
 omit [DecidableEq ι] in
 /-- **The `Lᵖ` norm of a pulled-back density.** For mutually inverse changes of variables of
