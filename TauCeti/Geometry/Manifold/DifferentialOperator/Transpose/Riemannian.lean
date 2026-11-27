@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Existence
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -283,16 +284,17 @@ theorem isFormalTranspose_vectorFieldDerivation_withDensity_exp
       (-(vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) -
         mulLeft ℝ (smoothDivergence I M X + vectorFieldDerivation X φ))
       ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) := by
-  let ρ : C^∞⟮I, M; ℝ⟯ := ⟨Real.exp ∘ φ, ContDiff.comp_contMDiff Real.contDiff_exp φ.contMDiff⟩
+  -- The weight `e^φ`; `Real.exp ∘ φ` is by definition `fun y ↦ Real.exp (φ y)`.
+  let ρ : C^∞⟮I, M; ℝ⟯ :=
+    ⟨fun y ↦ Real.exp (φ y), Real.contDiff_exp.comp_contMDiff φ.contMDiff⟩
+  have hρ : ⇑ρ = fun y ↦ Real.exp (φ y) := ContMDiffMap.coeFn_mk _ _
   -- The chain rule `X (e^φ) = e^φ X φ`.
   have hXρ : vectorFieldDerivation X ρ = ρ * vectorFieldDerivation X φ := by
     ext x
     have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
     simp only [ContMDiffSection.vectorFieldDerivation_apply_apply, ContMDiffMap.coe_mul,
       Pi.mul_apply]
-    rw [show (ρ : M → ℝ) = Real.exp ∘ φ from ContMDiffMap.coeFn_mk _ _,
-      mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt, Real.deriv_exp,
-      _root_.smul_apply, smul_eq_mul, Function.comp_apply]
+    rw [hρ, mvfderiv_exp hφ, _root_.smul_apply, smul_eq_mul]
   refine (isFormalTranspose_vectorFieldDerivation X).withDensity (ρ := ρ)
     (fun x ↦ (Real.exp_pos _).le) fun g ↦ ?_
   ext x
