@@ -69,6 +69,9 @@ The hypothesis `hV` gives the negative normal spaces local frames of size `r j`,
 vector bundle of rank `r j`; such frames exist exactly when `r j` is the Morse index of `f` along
 `S j` (in the namespace `TauCeti.SmoothEmbedding`,
 `IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`).
+The negative normal spaces depend on the fibre metrics `g j`, but the twisted Betti numbers do
+not: the negative normal bundles of two metrics are isomorphic, and so are their orientation local
+systems (`twistedBettiNumber_congr_metric`). So the counts `cₙ` do not depend on the metrics.
 The manifolds, the pieces, the model space `E` of `M` and the coefficient field lie in one
 universe. The band computation reads `ν⁻ j` through frames relabelled by `ULift (Fin (r j))`, whose
 model fibre lies in that universe, and the relabelling changes neither the orientation local system
@@ -80,6 +83,7 @@ nor its homology
 In the namespace `TauCeti.IsMorseBottFamily`:
 
 * `twistedBettiNumber`: the twisted Betti numbers `dim Hₖ(S j; o(ν⁻ j) ⊗ K)` of the pieces.
+* `twistedBettiNumber_congr_metric`: the twisted Betti numbers do not depend on the fibre metrics.
 * `finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`: the dimension of the
   homology of a band with a single critical value.
 * `bettiNumber_le_sum_twistedBettiNumber`,
@@ -207,6 +211,54 @@ theorem twistedBettiNumber_def (j : ι) (k : ℕ) :
       (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
         (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k) :=
   (rfl)
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
+/-- **The twisted Betti numbers do not depend on the fibre metrics.** For two families `g` and
+`g'` of smooth fibre metrics on the normal bundles of the pieces, each making the negative normal
+spaces a vector bundle of rank `r j`, the twisted Betti numbers `dim Hₖ(S j; o(ν⁻ j) ⊗ K)`
+computed from `g` and from `g'` agree. The negative normal bundles of `g` and `g'` are different
+subbundles, but they are isomorphic, so their orientation local systems are isomorphic. -/
+theorem twistedBettiNumber_congr_metric
+    (g' : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
+    (hV' : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g' j).toRiemannianMetric))
+    (j : ι) (k : ℕ) :
+    h.twistedBettiNumber hn hdim g hV K j k = h.twistedBettiNumber hn hdim g' hV' K j k := by
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold (J j) (∞ + 1) (S j) := by
+    simpa using (inferInstance : IsManifold (J j) ∞ (S j))
+  set h' := h.isNondegenerateCriticalSubmanifold j
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    (h'.negativeNormalSpace hn (g j).toRiemannianMetric)
+  let _ := (hV j).fiberBundle
+  have := (hV j).vectorBundle
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    (h'.negativeNormalSpace hn (g' j).toRiemannianMetric)
+  let _ := (hV' j).fiberBundle
+  have := (hV' j).vectorBundle
+  rw [twistedBettiNumber_def, twistedBettiNumber_def]
+  -- Projecting along the positive normal spaces of `g` identifies the two negative normal bundles,
+  -- hence their orientation local systems.
+  exact (asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K _ _
+    (φ := fun s ↦ (h'.negativeNormalSpaceEquiv hn (g' j).toRiemannianMetric
+      (g j).toRiemannianMetric s).toContinuousLinearEquiv)
+    (h'.continuous_negativeNormalSpaceEquiv hn (k := ∞) (by simp)
+      (fun s ↦ (h.contMDiff (i j s)).of_le (by simp)) (hdim j) (g j) (g' j)
+      (h'.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)))).hom
+    k)).toLinearEquiv.finrank_eq
 
 omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
   [∀ j, (J j).Boundaryless] in
