@@ -28,17 +28,17 @@ and the inverse different.
 
 ## Main definitions
 
-* `IsDiscreteValuationRing.quotientEquivMatlisDual`: the `A`-linear isomorphism
+* `TauCeti.IsDiscreteValuationRing.quotientEquivMatlisDual`: the `A`-linear isomorphism
   `A ≅ Hom_O(A, K/O)`, `x ↦ (y ↦ yx/a mod O)`.
-* `IsDiscreteValuationRing.dualEquivMatlisDual`: the `O`-linear isomorphism
+* `TauCeti.IsDiscreteValuationRing.dualEquivMatlisDual`: the `O`-linear isomorphism
   `Hom_A(N, A) ≅ Hom_O(N, K/O)`, `f ↦ (x ↦ f(x)/a mod O)`, for an `A`-module `N`.
 
 ## Main results
 
-* `IsDiscreteValuationRing.dualEquivMatlisDual_comp`: naturality in `N`; precomposition with an
-  `A`-linear map `g` corresponds to the Matlis dual `MatlisDual.map g`.
-* `IsDiscreteValuationRing.dualEquivMatlisDual_smul`: the action of `A` on values of `A`-linear
-  functionals corresponds to its action on arguments of Matlis functionals.
+* `TauCeti.IsDiscreteValuationRing.dualEquivMatlisDual_comp`: naturality in `N`; precomposition
+  with an `A`-linear map `g` corresponds to the Matlis dual `MatlisDual.map g`.
+* `TauCeti.IsDiscreteValuationRing.dualEquivMatlisDual_smul`: the action of `A` on values of
+  `A`-linear functionals corresponds to its action on arguments of Matlis functionals.
 
 ## References
 
@@ -50,9 +50,9 @@ and the inverse different.
 
 public section
 
-open LinearMap MulOpposite TauCeti
+open LinearMap MulOpposite TauCeti IsDiscreteValuationRing
 
-namespace IsDiscreteValuationRing
+namespace TauCeti.IsDiscreteValuationRing
 
 universe u v w
 
@@ -85,7 +85,7 @@ theorem quotientEquivMatlisDual_apply_apply (ha : a ≠ 0) (x y : O ⧸ Ideal.sp
 
 /-- The inverse of `quotientEquivMatlisDual` is characterized by evaluation at `1`. -/
 @[simp]
-theorem divQuotient_quotientEquivMatlisDual_symm (ha : a ≠ 0)
+theorem divQuotient_quotientEquivMatlisDual_symm_apply (ha : a ≠ 0)
     (φ : MatlisDual O (K ⧸ range (Algebra.linearMap O K)) (O ⧸ Ideal.span {a})) :
     divQuotient a ((quotientEquivMatlisDual ha).symm φ) = MatlisDual.equivLinearMap _ _ _ φ 1 := by
   conv_rhs => rw [← (quotientEquivMatlisDual ha).apply_symm_apply φ]
@@ -138,4 +138,4 @@ theorem dualEquivMatlisDual_smul (ha : a ≠ 0) (c : O ⧸ Ideal.span {a})
   ext x
   simp [MatlisDual.smul_op_apply, mul_comm c]
 
-end IsDiscreteValuationRing
+end TauCeti.IsDiscreteValuationRing
