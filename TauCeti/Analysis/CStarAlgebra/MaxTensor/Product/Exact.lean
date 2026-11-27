@@ -60,6 +60,7 @@ namespace TauCeti
 
 namespace MaxTensorProduct
 
+open CStarTensorProduct
 open Algebra.TensorProduct (mapNonUnitalStarAlgHom mapNonUnitalStarAlgHom_tmul)
 
 section Ideal
@@ -96,7 +97,7 @@ theorem mul_mem_range_map_starAlgHom (x : MaxTensorProduct A B) (z : MaxTensorPr
   refine induction_on x (hR.preimage (continuous_id.mul continuous_const)) fun y ↦ ?_
   refine induction_on z (hR.preimage (continuous_const.mul hf)) fun w ↦ ?_
   obtain ⟨w', hw'⟩ := exists_mapNonUnitalStarAlgHom_eq_mul J y w
-  exact ⟨of A J w', by simp only [f, map_of, hw', map_mul]⟩
+  exact ⟨of (maxCStarTensorNorm A J) w', by simp only [f, map_of, hw', map_mul]⟩
 
 variable (A) in
 /-- The image of `A ⊗max J` in `A ⊗max B`, as a two-sided ideal. It is closed
@@ -153,12 +154,13 @@ def quotientIncludeRight : B ⧸ J →⋆ₐ[ℂ] MaxTensorProduct A B ⧸ range
     fun j hj ↦ by
       rw [StarAlgHom.comp_apply, mkUnitalStarAlgHom_apply, eq_zero_iff_mem, mem_rangeIdeal,
         includeRight_apply]
-      exact ⟨of A J (1 ⊗ₜ ⟨j, hj⟩), by simp⟩
+      exact ⟨of (maxCStarTensorNorm A J) (1 ⊗ₜ ⟨j, hj⟩), by simp⟩
 
 /-- `quotientIncludeRight J` sends the class of `b` to the class of `1 ⊗ b`. -/
 @[simp]
 theorem quotientIncludeRight_mk (b : B) :
-    quotientIncludeRight (A := A) J (mk J b) = mk (rangeIdeal A J) (of A B (1 ⊗ₜ b)) := by
+    quotientIncludeRight (A := A) J (mk J b) =
+      mk (rangeIdeal A J) (of (maxCStarTensorNorm A B) (1 ⊗ₜ b)) := by
   simp [quotientIncludeRight]
 
 /-- The star homomorphism `A ⊗max (B/J) → (A ⊗max B)/(A ⊗max J)` sending `a ⊗ b` to the class
@@ -179,7 +181,8 @@ def liftQuotient :
 /-- `liftQuotient J` sends `a ⊗ [b]` to the class of `a ⊗ b`. -/
 @[simp]
 theorem liftQuotient_of_tmul (a : A) (b : B) :
-    liftQuotient J (of A (B ⧸ J) (a ⊗ₜ mk J b)) = mk (rangeIdeal A J) (of A B (a ⊗ₜ b)) := by
+    liftQuotient J (of (maxCStarTensorNorm A (B ⧸ J)) (a ⊗ₜ mk J b)) =
+      mk (rangeIdeal A J) (of (maxCStarTensorNorm A B) (a ⊗ₜ b)) := by
   refine (lift_of_tmul _ _ _ _ _).trans ?_
   -- as in `liftQuotient`, the coercions of the unital homomorphisms only unfold by `change`
   change mkUnitalStarAlgHom _ (includeLeft A B a) * quotientIncludeRight J (mk J b) = _
