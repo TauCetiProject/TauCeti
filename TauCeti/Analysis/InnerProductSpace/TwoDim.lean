@@ -216,7 +216,9 @@ theorem mul_mul_star_eq_det_smul (hE : Module.finrank ℝ E = 2) {A : E →L[ℝ
     rw [← Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.star_eq_conjTranspose,
       ← map_star φ, ← toLinearMap_star, skewAdjoint.mem_iff.1 hA, toLinearMap_neg, map_neg]
   have hd := Matrix.diag_eq_zero_of_transpose_eq_neg hA' fun x hx ↦ by linarith
-  have hT : T.det = (φ T).det := (LinearMap.det_toMatrix b.toBasis _).symm
+  have hT : T.det = (φ T).det := by
+    rw [LinearMap.toMatrixOrthonormal_apply, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom,
+      LinearEquiv.coe_coe, LinearMap.det_toMatrix, ContinuousLinearMap.det]
   apply ContinuousLinearMap.coe_injective
   apply EquivLike.injective φ
   simpa only [toLinearMap_mul, toLinearMap_star, toLinearMap_smul, map_mul, map_star, map_smul, hT,
