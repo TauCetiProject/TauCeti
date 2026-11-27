@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FormalScheme.Basic
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
 public import Mathlib.AlgebraicGeometry.Noetherian
-import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
+public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
@@ -19,8 +18,9 @@ the formal spectrum `Spf A` of a noetherian adic ring `A`, and *noetherian* if m
 underlying space is quasi-compact (EGA I, Ch. I, 10.4.2). This file shows that the condition does
 not depend on the chosen charts: on a locally noetherian formal scheme, the ring of sections of
 every affine formal open is noetherian. In particular `Spf A` is (locally) noetherian exactly when
-`A` is a noetherian ring (EGA I, Ch. I, 10.6.5). For ordinary schemes the notion agrees with
-Mathlib's `AlgebraicGeometry.IsLocallyNoetherian`.
+`A` is a noetherian ring (EGA I, Ch. I, 10.6.5). Every noetherian formal scheme has a noetherian
+underlying topological space (`IsNoetherian.noetherianSpace`), and for ordinary schemes the notion
+agrees with Mathlib's `AlgebraicGeometry.IsLocallyNoetherian`.
 
 ## Implementation notes
 
@@ -44,16 +44,26 @@ noetherian (EGA I, Ch. 0, 7.2.6).
 
 * `TauCeti.FormalScheme.isNoetherianRing_of_isOpenImmersion`: an open formal spectrum `Spf B` of a
   locally noetherian formal scheme has `B` noetherian.
-* `TauCeti.FormalScheme.isLocallyNoetherian_iff_forall_isAffineOpen`: a formal scheme is locally
-  noetherian if and only if the ring of sections of every affine formal open is noetherian.
+* `TauCeti.FormalScheme.isLocallyNoetherian_iff_forall_isAffineOpen`,
+  `TauCeti.FormalScheme.isLocallyNoetherian_iff_of_iSup_eq_top`: a formal scheme is locally
+  noetherian if and only if the ring of sections over every open in an affine open cover
+  (equivalently, over every affine formal open) is noetherian.
+* `TauCeti.FormalScheme.isNoetherian_iff_of_finite_iSup_eq_top`,
+  `TauCeti.FormalScheme.isNoetherian_iff_exists_finite_affine_cover_isNoetherianRing`: a formal
+  scheme is noetherian if and only if it is covered by finitely many affine formal opens with
+  noetherian section rings.
 * `TauCeti.FormalScheme.isLocallyNoetherian_ofSpf_iff`,
   `TauCeti.FormalScheme.isNoetherian_ofSpf_iff`: `Spf A` is (locally) noetherian if and only if
   `A` is noetherian.
-* `TauCeti.FormalScheme.IsLocallyNoetherian.of_isOpenImmersion`: the source of an open immersion
-  into a locally noetherian formal scheme is locally noetherian; in particular so are open formal
-  subschemes, which are noetherian when quasi-compact (`isNoetherian_restrict`).
+* `TauCeti.FormalScheme.IsLocallyNoetherian.of_isOpenImmersion`,
+  `TauCeti.FormalScheme.isLocallyNoetherian_iff_of_iso`,
+  `TauCeti.FormalScheme.IsNoetherian.of_iso`,
+  `TauCeti.FormalScheme.isNoetherian_iff_of_iso`: stability under open immersions, open
+  restrictions (`isNoetherian_restrict`), and isomorphisms.
 * `TauCeti.FormalScheme.isNoetherianRing_stalk`: the stalks of a locally noetherian formal scheme
   are noetherian local rings.
+* `TauCeti.FormalScheme.IsNoetherian.noetherianSpace`: every noetherian formal scheme has a
+  noetherian underlying topological space.
 * `TauCeti.FormalScheme.isLocallyNoetherian_toFormalScheme_iff`,
   `TauCeti.FormalScheme.isNoetherian_toFormalScheme_iff`: an ordinary scheme is a (locally)
   noetherian formal scheme if and only if it is a (locally) noetherian scheme.
@@ -245,6 +255,36 @@ theorem isNoetherian_restrict [X.IsLocallyNoetherian] {U : Opens X}
     (hU : IsCompact (U : Set X)) : (X.restrict U).IsNoetherian where
   toCompactSpace := isCompact_iff_compactSpace.mp hU
 
+/-- Quasi-compact open formal subschemes of a locally noetherian formal scheme are noetherian. -/
+instance [X.IsLocallyNoetherian] (U : Opens X) [CompactSpace U] : (X.restrict U).IsNoetherian :=
+  isNoetherian_restrict (isCompact_iff_compactSpace.mpr ‹_›)
+
+/-- `IsLocallyNoetherian` is invariant under isomorphism of formal schemes. -/
+theorem isLocallyNoetherian_iff_of_iso {X Y : FormalScheme.{u}} (e : X ≅ Y) :
+    X.IsLocallyNoetherian ↔ Y.IsLocallyNoetherian := by
+  have : IsIso (forgetToLocallyRingedSpace.map e.inv) := Functor.map_isIso _ _
+  have : IsIso (forgetToLocallyRingedSpace.map e.hom) := Functor.map_isIso _ _
+  exact ⟨fun _ ↦ IsLocallyNoetherian.of_isOpenImmersion e.inv,
+    fun _ ↦ IsLocallyNoetherian.of_isOpenImmersion e.hom⟩
+
+/-- `IsNoetherian` is preserved along isomorphisms of formal schemes. -/
+theorem IsNoetherian.of_iso {X Y : FormalScheme.{u}} (e : X ≅ Y) [hX : X.IsNoetherian] :
+    Y.IsNoetherian := by
+  have : CompactSpace
+      (LocallyRingedSpace.forgetToTop.obj (forgetToLocallyRingedSpace.obj X)) :=
+    hX.toCompactSpace
+  exact
+    { toIsLocallyNoetherian := (isLocallyNoetherian_iff_of_iso e).mp hX.toIsLocallyNoetherian
+      toCompactSpace :=
+        (TopCat.homeoOfIso
+          (LocallyRingedSpace.forgetToTop.mapIso
+            (forgetToLocallyRingedSpace.mapIso e))).compactSpace }
+
+/-- `IsNoetherian` is invariant under isomorphism of formal schemes. -/
+theorem isNoetherian_iff_of_iso {X Y : FormalScheme.{u}} (e : X ≅ Y) :
+    X.IsNoetherian ↔ Y.IsNoetherian :=
+  ⟨fun _ ↦ .of_iso e, fun _ ↦ .of_iso e.symm⟩
+
 /-- The stalks of a locally noetherian formal scheme are noetherian local rings
 (EGA I, Ch. I, 10.1.6). -/
 instance isNoetherianRing_stalk [X.IsLocallyNoetherian] (x : X) :
@@ -258,11 +298,15 @@ section Spf
 
 variable (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
 
+/-- For a noetherian adic ring `A`, `ofSpf A` has a noetherian underlying topological space. -/
+instance noetherianSpace_ofSpf [IsNoetherianRing A] : NoetherianSpace (ofSpf A) :=
+  inferInstanceAs (NoetherianSpace (Spf.carrier A))
+
 /-- The formal spectrum of a noetherian adic ring is a noetherian formal scheme. -/
 instance [IsNoetherianRing A] : (ofSpf A).IsNoetherian where
   exists_isNoetherianRing x := ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, 𝟙 _, inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A))), x, rfl⟩
-  toCompactSpace := Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
+  toCompactSpace := compactSpace_ofSpf A
 
 /-- `Spf A` is locally noetherian if and only if `A` is noetherian (EGA I, Ch. I, 10.6.5). -/
 @[simp]
@@ -277,6 +321,87 @@ theorem isNoetherian_ofSpf_iff : (ofSpf A).IsNoetherian ↔ IsNoetherianRing A :
   ⟨fun _ ↦ (isLocallyNoetherian_ofSpf_iff A).mp inferInstance, fun _ ↦ inferInstance⟩
 
 end Spf
+
+section CoversAndNoetherianSpace
+
+/-- On a locally noetherian formal scheme `X`, the topologized section ring `hU.Sections` over any
+affine formal open `U` is a noetherian ring (EGA I, Ch. I, 10.6.5). -/
+instance IsAffineOpen.isNoetherianRing_sections [X.IsLocallyNoetherian] {U : Opens X}
+    (hU : X.IsAffineOpen U) : IsNoetherianRing hU.Sections :=
+  (isLocallyNoetherian_ofSpf_iff hU.Sections).mp
+    ((isLocallyNoetherian_iff_of_iso hU.isoSpf).mp inferInstance)
+
+/-- An affine formal open `U` whose section ring `Γ(U, O_X)` is noetherian has a noetherian
+underlying topological space. -/
+theorem noetherianSpace_of_isAffineOpen (U : Opens X) (hU : X.IsAffineOpen U)
+    [IsNoetherianRing (X.presheaf.obj (op U))] : NoetherianSpace U := by
+  have : IsNoetherianRing hU.Sections :=
+    inferInstanceAs (IsNoetherianRing (X.presheaf.obj (op U)))
+  have : NoetherianSpace
+      (LocallyRingedSpace.forgetToTop.obj
+        (forgetToLocallyRingedSpace.obj (ofSpf hU.Sections))) :=
+    noetherianSpace_ofSpf hU.Sections
+  let h := TopCat.homeoOfIso
+    (LocallyRingedSpace.forgetToTop.mapIso (forgetToLocallyRingedSpace.mapIso hU.isoSpf))
+  exact (noetherianSpace_iff_of_homeomorph h).mpr inferInstance
+
+/-- On a locally noetherian formal scheme `X`, every affine formal open is a noetherian topological
+space. -/
+theorem IsAffineOpen.noetherianSpace [X.IsLocallyNoetherian] {U : Opens X}
+    (hU : X.IsAffineOpen U) : NoetherianSpace U :=
+  have := hU.isNoetherianRing
+  noetherianSpace_of_isAffineOpen U hU
+
+/-- Given an affine open cover `⨆ i, U i = ⊤` of `X`, `X` is locally noetherian if and only if
+every section ring `Γ(U i, O_X)` is noetherian. -/
+theorem isLocallyNoetherian_iff_of_iSup_eq_top {ι : Type*} {U : ι → Opens X}
+    (hU : ∀ i, X.IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤) :
+    X.IsLocallyNoetherian ↔ ∀ i, IsNoetherianRing (X.presheaf.obj (op (U i))) := by
+  refine ⟨fun _ i ↦ (hU i).isNoetherianRing, fun hnoeth ↦ ⟨fun x ↦ ?_⟩⟩
+  obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hcov ▸ Opens.mem_top x)
+  have : IsNoetherianRing (hU i).Sections := hnoeth i
+  exact ⟨(hU i).Sections, inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, forgetToLocallyRingedSpace.map (hU i).fromSpf, (hU i).isOpenImmersion_fromSpf,
+    ((hU i).range_fromSpf).ge hxi⟩
+
+/-- Given a finite affine open cover `⨆ i, U i = ⊤` of `X`, `X` is noetherian if and only if every
+section ring `Γ(U i, O_X)` is noetherian. -/
+theorem isNoetherian_iff_of_finite_iSup_eq_top {ι : Type*} [Finite ι] {U : ι → Opens X}
+    (hU : ∀ i, X.IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤) :
+    X.IsNoetherian ↔ ∀ i, IsNoetherianRing (X.presheaf.obj (op (U i))) := by
+  have hc : CompactSpace X := by
+    rw [← isCompact_univ_iff, ← Opens.coe_top, ← hcov, Opens.coe_iSup]
+    exact isCompact_iUnion fun i ↦ (hU i).isCompact
+  exact ⟨fun h ↦ (isLocallyNoetherian_iff_of_iSup_eq_top hU hcov).mp h.toIsLocallyNoetherian,
+    fun h ↦ { toIsLocallyNoetherian := (isLocallyNoetherian_iff_of_iSup_eq_top hU hcov).mpr h
+              toCompactSpace := hc }⟩
+
+/-- A formal scheme is noetherian if and only if it admits a finite affine open cover with
+noetherian section rings. -/
+theorem isNoetherian_iff_exists_finite_affine_cover_isNoetherianRing :
+    X.IsNoetherian ↔
+      ∃ (n : ℕ) (U : Fin n → Opens X), (∀ i, X.IsAffineOpen (U i)) ∧ ⨆ i, U i = ⊤ ∧
+        ∀ i, IsNoetherianRing (X.presheaf.obj (op (U i))) := by
+  refine ⟨fun _ ↦ ?_, ?_⟩
+  · obtain ⟨n, U, hU, hcov⟩ := X.exists_finite_affine_cover
+    exact ⟨n, U, hU, hcov, (isNoetherian_iff_of_finite_iSup_eq_top hU hcov).mp inferInstance⟩
+  · rintro ⟨n, U, hU, hcov, hnoeth⟩
+    exact (isNoetherian_iff_of_finite_iSup_eq_top hU hcov).mpr hnoeth
+
+/-- Every noetherian formal scheme has a noetherian underlying topological space. -/
+instance IsNoetherian.noetherianSpace [X.IsNoetherian] : NoetherianSpace X := by
+  obtain ⟨n, U, hU, hcov⟩ := X.exists_finite_affine_cover
+  have (i : Fin n) : NoetherianSpace (U i : Set X) := (hU i).noetherianSpace
+  rw [← TopologicalSpace.noetherian_univ_iff, ← Opens.coe_top, ← hcov, Opens.coe_iSup]
+  exact TopologicalSpace.NoetherianSpace.iUnion fun i ↦ (U i : Set X)
+
+/-- A locally noetherian formal scheme with noetherian underlying space is noetherian. -/
+theorem isNoetherian_of_noetherianSpace [X.IsLocallyNoetherian] [NoetherianSpace X] :
+    X.IsNoetherian :=
+  have : CompactSpace X := TopologicalSpace.NoetherianSpace.compactSpace X
+  ⟨⟩
+
+end CoversAndNoetherianSpace
 
 section Scheme
 

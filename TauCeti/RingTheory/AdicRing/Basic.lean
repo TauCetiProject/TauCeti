@@ -85,6 +85,19 @@ theorem not_isTateRing [Nontrivial A] [IsAdicRing A] : ¬ Huber.IsTateRing A := 
   intro h
   exact ideal_ne_top (Huber.IsTateRing.eq_top_of_isAdic (ideal_spec A).2.1)
 
+/-- `IsAdicRing` transports back along any ring equivalence whose underlying map is topologically
+inducing. -/
+theorem of_isInducing_ringEquiv {R S : Type*} [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] [CommRing S] [TopologicalSpace S] [IsTopologicalRing S] [IsAdicRing S]
+    (φ : R ≃+* S) (hind : Topology.IsInducing φ) : IsAdicRing R := by
+  obtain ⟨hIfg, hI, hIc⟩ := ideal_spec S
+  have hKfg : ((ideal S).comap φ).FG := Ideal.map_symm φ ▸ hIfg.map (φ.symm : S →+* R)
+  have hKadic : IsAdic ((ideal S).comap φ) := IsAdic.comap hI φ hind
+  have hKcomp : IsAdicComplete ((ideal S).comap φ) R := by
+    rw [← Ideal.map_symm]
+    exact (IsAdicComplete.congr_ringEquiv (ideal S) φ.symm).mpr hIc
+  exact ⟨(ideal S).comap φ, hKfg, hKadic, hKcomp⟩
+
 end IsAdicRing
 
 namespace IsAdicRing
