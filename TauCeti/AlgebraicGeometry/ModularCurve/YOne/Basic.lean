@@ -346,14 +346,12 @@ theorem exists_comp_yOneι_eq_iff_of_isPullback
 `f : S ⟶ Y₁(N)` and a unique morphism `g` from `E` to the universal Tate normal form exhibiting
 `E` as its pullback along `f`, carrying the zero section to the zero section and `P` to the point
 `(0, 0)`. -/
-theorem existsUnique_yOne {N : ℕ} (hN : 4 ≤ N) (hPN : P ^ N = 1)
+theorem existsUnique_yOne {N : ℕ} [NeZero N] (hN : 4 ≤ N) (hPN : P ^ N = 1)
     (hPk : ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s) :
-    let : NeZero N := ⟨by omega⟩
     ∃! fg : (S ⟶ yOne.{u} N) × (E.carrier ⟶ curveGeom.{u}.carrier),
       IsPullback fg.2 E.structureMap curveGeom.structureMap (fg.1 ≫ yOneι N) ∧
         E.zero ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ curveGeom.zero ∧
         P.left ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ pointHom.left := by
-  have : NeZero N := ⟨by omega⟩
   -- `P`, `2P` and `3P` miss the zero section, so `(E, P)` has a Tate normal form
   have hmul (k : ℕ) : P.left ≫ (E.mulBy k).left = (P ^ k).left := by
     rw [← Over.comp_left, comp_mulBy, zpow_natCast]
@@ -378,15 +376,13 @@ over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form
 morphism `S ⟶ Y₁(N)`, by a cartesian morphism carrying the zero section to the zero section,
 exactly when `N • P = 0` and none of `P, 2P, …, (N - 1)P` meets the zero section at any point
 of `S`. -/
-theorem exists_yOne_iff {N : ℕ} (hN : 4 ≤ N) :
-    let : NeZero N := ⟨by omega⟩
+theorem exists_yOne_iff {N : ℕ} [NeZero N] (hN : 4 ≤ N) :
     (∃ (f : S ⟶ yOne.{u} N) (g : E.carrier ⟶ curveGeom.{u}.carrier),
       IsPullback g E.structureMap curveGeom.structureMap (f ≫ yOneι N) ∧
         E.zero ≫ g = (f ≫ yOneι N) ≫ curveGeom.zero ∧
         P.left ≫ g = (f ≫ yOneι N) ≫ pointHom.left) ↔
-      P ^ N = 1 ∧ ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s := by
-  have : NeZero N := ⟨by omega⟩
-  exact ⟨fun ⟨f, g, hg, h₀, hgP⟩ ↦ (exists_comp_yOneι_eq_iff_of_isPullback hg h₀ hgP N).mp
+      P ^ N = 1 ∧ ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s :=
+  ⟨fun ⟨f, _, hg, h₀, hgP⟩ ↦ (exists_comp_yOneι_eq_iff_of_isPullback hg h₀ hgP N).mp
     ⟨f, rfl⟩, fun ⟨hPN, hPk⟩ ↦ let ⟨⟨f, g⟩, h, _⟩ := existsUnique_yOne hN hPN hPk; ⟨f, g, h⟩⟩
 
 /-- **`Y₁(N)` classifies naive `[Γ₁(N)]`-structures.** For `N ≥ 4`, let `φ : ℤ/Nℤ →* E(S)` be a
@@ -394,15 +390,13 @@ homomorphism injective on every fibre of `E` over `S`. Then there are a unique m
 `f : S ⟶ Y₁(N)` and a unique morphism `g` from `E` to the universal Tate normal form exhibiting
 `E` as its pullback along `f`, carrying the zero section to the zero section and `φ 1` to the point
 `(0, 0)`. -/
-theorem existsUnique_yOne_of_isFiberwiseInjective {N : ℕ} (hN : 4 ≤ N)
+theorem existsUnique_yOne_of_isFiberwiseInjective {N : ℕ} [NeZero N] (hN : 4 ≤ N)
     {φ : Multiplicative (ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
     (hφ : E.IsFiberwiseInjective φ) :
-    let : NeZero N := ⟨by omega⟩
     ∃! fg : (S ⟶ yOne.{u} N) × (E.carrier ⟶ curveGeom.{u}.carrier),
       IsPullback fg.2 E.structureMap curveGeom.structureMap (fg.1 ≫ yOneι N) ∧
         E.zero ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ curveGeom.zero ∧
         (φ (.ofAdd 1)).left ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ pointHom.left := by
-  have : NeZero N := ⟨by omega⟩
   refine existsUnique_yOne hN ?_ (isFiberwiseInjective_zmod_iff.mp hφ)
   rw [← map_pow, ← ofAdd_nsmul]
   simp
