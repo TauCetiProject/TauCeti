@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.AdamsExpand
 import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 import TauCeti.RingTheory.PowerSeries.Expand
-import TauCeti.RingTheory.QCalculus.Plethystic.SupportBounds
+import TauCeti.RingTheory.PowerSeries.LaurentSupport
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Trunc
 
