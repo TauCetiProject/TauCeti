@@ -32,15 +32,6 @@ namespace TauCeti
 
 variable {n k : ℕ}
 
-/-- For `k > n` the Hessian cone `Γ_k ⊆ ℝⁿ` is empty, since `σ_k = 0` on `ℝⁿ`. -/
-theorem hessianCone_eq_empty (hkn : n < k) : hessianCone n k = ∅ := by
-  refine Set.eq_empty_of_forall_notMem fun μ hμ ↦ ?_
-  have h := mem_hessianCone.1 hμ (n + 1) (Finset.mem_Icc.2 ⟨by omega, hkn⟩)
-  have hzero : esymm (Fin n) ℝ (n + 1) = 0 := by
-    rw [esymm_eq_multiset_esymm]
-    exact Multiset.esymm_of_card_lt (by simp)
-  simp [hzero] at h
-
 /-- **`σ_k^{1/k}` is superadditive on `Γ_k`**, for `k ≥ 1`. -/
 theorem eval_esymm_rpow_add_le (hk : 1 ≤ k) {μ ν : Fin n → ℝ} (hμ : μ ∈ hessianCone n k)
     (hν : ν ∈ hessianCone n k) :

@@ -20,8 +20,9 @@ on `Γ` (`MvPolynomial.IsHyperbolic.eval_rpow_add_le`):
 
 `p(x)^{1/m} + p(y)^{1/m} ≤ p(x + y)^{1/m}` for `x, y ∈ Γ`,
 
-and, being positively homogeneous of degree one, it is concave on the convex cone `Γ`
-(`MvPolynomial.IsHyperbolic.concaveOn_rpow`). This is the concavity part of Gårding's theorem.
+and, being positively homogeneous of degree one (`MvPolynomial.IsHomogeneous.eval_smul_rpow`), it
+is concave on the convex cone `Γ` (`MvPolynomial.IsHyperbolic.concaveOn_rpow`). This is the
+concavity part of Gårding's theorem.
 
 ## Implementation notes
 
@@ -30,7 +31,7 @@ hyperbolic in the direction `y`, with the same cone. So `t ↦ p(x + t • y)` s
 coefficient `p(y)` and `m` roots `rᵢ`, all negative since `x ∈ Γ(p, y)`:
 `p(x + t • y) = p(y) ∏ᵢ (t - rᵢ)`. At `t = 0` and `t = 1` this gives `p(x) = p(y) ∏ᵢ (-rᵢ)` and
 `p(x + y) = p(y) ∏ᵢ (1 - rᵢ)`, and the inequality is the superadditivity of the geometric mean
-(`Real.prod_rpow_inv_card_add_le`) for the families `-rᵢ` and `1`.
+(`Real.multiset_prod_map_rpow_inv_card_add_le`) for the families `-rᵢ` and `1`.
 
 ## References
 
@@ -41,25 +42,21 @@ coefficient `p(y)` and `m` roots `rᵢ`, all negative since `x ∈ Γ(p, y)`:
 
 public section
 
-namespace MvPolynomial.IsHyperbolic
-
 variable {σ : Type*} {p : MvPolynomial σ ℝ} {m : ℕ} {a : σ → ℝ}
 
-/-- The superadditivity of the geometric mean, for a nonempty multiset of nonpositive reals `s`:
-`(∏ (-r))^{1/n} + 1 ≤ (∏ (1 - r))^{1/n}`, where `n` is the cardinality of `s`. -/
-private theorem prod_neg_rpow_add_one_le (s : Multiset ℝ) (hs : ∀ r ∈ s, r ≤ 0)
-    (hcard : Multiset.card s ≠ 0) :
-    (s.map fun r ↦ -r).prod ^ (Multiset.card s : ℝ)⁻¹ + 1 ≤
-      (s.map fun r ↦ 1 - r).prod ^ (Multiset.card s : ℝ)⁻¹ := by
-  rw [← Multiset.coe_toList s] at hs hcard ⊢
-  set L := s.toList
-  rw [Multiset.coe_card] at hcard ⊢
-  rw [Multiset.map_coe, Multiset.map_coe, Multiset.prod_coe, Multiset.prod_coe,
-    ← Fin.prod_univ_fun_getElem, ← Fin.prod_univ_fun_getElem]
-  have : Nonempty (Fin L.length) := ⟨⟨0, Nat.pos_of_ne_zero hcard⟩⟩
-  have h := Real.prod_rpow_inv_card_add_le (ι := Fin L.length) (a := fun i ↦ -L[i.val])
-    (b := fun _ ↦ 1) (fun i ↦ neg_nonneg.2 (hs _ (List.getElem_mem _))) fun _ ↦ zero_le_one
-  simpa [Fintype.card_fin, neg_add_eq_sub] using h
+namespace MvPolynomial.IsHomogeneous
+
+/-- For a homogeneous polynomial of degree `m ≥ 1` and `p(x) ≥ 0`, `p^{1/m}` is positively
+homogeneous of degree one: `p(θ • x)^{1/m} = θ p(x)^{1/m}` for `θ ≥ 0`. -/
+theorem eval_smul_rpow (hp : p.IsHomogeneous m) (hm : 1 ≤ m) {x : σ → ℝ}
+    (hx : 0 ≤ eval x p) {θ : ℝ} (hθ : 0 ≤ θ) :
+    eval (θ • x) p ^ (m : ℝ)⁻¹ = θ * eval x p ^ (m : ℝ)⁻¹ := by
+  rw [hp.eval_smul, Real.mul_rpow (pow_nonneg hθ m) hx,
+    Real.pow_rpow_inv_natCast hθ (by omega)]
+
+end MvPolynomial.IsHomogeneous
+
+namespace MvPolynomial.IsHyperbolic
 
 /-- **Gårding's theorem, superadditivity.** For `p` hyperbolic of degree `m ≥ 1` in the direction
 `a`, `p(x)^{1/m} + p(y)^{1/m} ≤ p(x + y)^{1/m}` for `x` and `y` in the Gårding cone `Γ(p, a)`. -/
@@ -91,18 +88,14 @@ theorem eval_rpow_add_le (hp : IsHyperbolic p m a) (hm : 1 ≤ m) {x y : σ → 
     Multiset.prod_nonneg fun r hr ↦ by
       obtain ⟨s, hs, rfl⟩ := Multiset.mem_map.1 hr
       linarith [hroots s hs]
-  have key := prod_neg_rpow_add_one_le Q.roots (fun r hr ↦ (hroots r hr).le) (by omega)
-  rw [hcard] at key
+  -- The superadditivity of the geometric mean for the families `-rᵢ` and `1`.
+  have key := Real.multiset_prod_map_rpow_inv_card_add_le (s := Q.roots) (a := fun r ↦ -r)
+    (b := fun _ ↦ 1) (fun h ↦ by simp [h] at hcard; omega)
+    (fun r hr ↦ neg_nonneg.2 (hroots r hr).le) fun _ _ ↦ zero_le_one
+  simp only [hcard, Multiset.map_const', Multiset.prod_replicate, one_pow, Real.one_rpow,
+    neg_add_eq_sub] at key
   rw [h0, h1, Real.mul_rpow hpy hA, Real.mul_rpow hpy hB]
   nlinarith [Real.rpow_nonneg hpy (m : ℝ)⁻¹]
-
-/-- For a homogeneous polynomial of degree `m ≥ 1` and `p(x) ≥ 0`, `p^{1/m}` is positively
-homogeneous of degree one: `p(θ • x)^{1/m} = θ p(x)^{1/m}` for `θ ≥ 0`. -/
-private theorem eval_smul_rpow (hp : p.IsHomogeneous m) (hm : 1 ≤ m) {x : σ → ℝ}
-    (hx : 0 ≤ eval x p) {θ : ℝ} (hθ : 0 ≤ θ) :
-    eval (θ • x) p ^ (m : ℝ)⁻¹ = θ * eval x p ^ (m : ℝ)⁻¹ := by
-  rw [hp.eval_smul, Real.mul_rpow (pow_nonneg hθ m) hx,
-    Real.pow_rpow_inv_natCast hθ (by omega)]
 
 /-- **Gårding's theorem, concavity.** For `p` hyperbolic of degree `m` in the direction `a`,
 `p^{1/m}` is concave on the Gårding cone `Γ(p, a)`. For `m = 0` the exponent `1/m` is the junk
@@ -119,8 +112,8 @@ theorem concaveOn_rpow (hp : IsHyperbolic p m a) :
   · simp [show η = 1 by linarith]
   rcases hη.eq_or_lt with rfl | hη'
   · simp [show θ = 1 by linarith]
-  rw [← eval_smul_rpow hp.isHomogeneous hm (hpos hx) hθ,
-    ← eval_smul_rpow hp.isHomogeneous hm (hpos hy) hη]
+  rw [← hp.isHomogeneous.eval_smul_rpow hm (hpos hx) hθ,
+    ← hp.isHomogeneous.eval_smul_rpow hm (hpos hy) hη]
   exact hp.eval_rpow_add_le hm (smul_mem_gardingCone hp.isHomogeneous hx hθ')
     (smul_mem_gardingCone hp.isHomogeneous hy hη')
 
