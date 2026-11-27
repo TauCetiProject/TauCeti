@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Filtration.Complete
-import TauCeti.RingTheory.AdicCompletion.Pi
+import TauCeti.RingTheory.Ideal.Operations
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.RingTheory.Multiplicity

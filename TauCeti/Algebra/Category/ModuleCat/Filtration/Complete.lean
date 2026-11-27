@@ -22,6 +22,9 @@ module `M` (Mathlib's `IsAdicComplete`), the decreasing filtration `F^p = J^p �
 ## Main results
 
 * `CategoryTheory.FilteredObject.isComplete_ofSubmodules`: the element-wise criterion.
+* `CategoryTheory.FilteredObject.step_adicFiltration`,
+  `CategoryTheory.FilteredObject.subobjectModule_step_adicFiltration`: the step `F^p` of the
+  `J`-adic filtration is `J ^ p • M`.
 * `CategoryTheory.FilteredObject.isExhaustive_adicFiltration`,
   `CategoryTheory.FilteredObject.isSeparated_adicFiltration`: the `J`-adic filtration is
   exhaustive, and separated when `M` is `J`-adically Hausdorff.
@@ -95,10 +98,25 @@ noncomputable abbrev adicFiltration : FilteredObject (ModuleCat.{v} R) ℤᵒᵖ
   ofSubmodules (fun p : ℤᵒᵖ ↦ J ^ p.unop.toNat • (⊤ : Submodule R M)) fun _ _ f ↦
     Submodule.smul_mono_left (Ideal.pow_le_pow_right (Int.toNat_le_toNat (leOfHom f.unop)))
 
+/-- The step `F^p` of the `J`-adic filtration is the subobject of `J ^ p • M` (of `M` for
+`p ≤ 0`). -/
+theorem step_adicFiltration (p : ℤᵒᵖ) :
+    (adicFiltration J M).step p =
+      (ModuleCat.subobjectModule (ModuleCat.of R M)).symm (J ^ p.unop.toNat • ⊤) :=
+  step_ofSubmodules _ _ p
+
+/-- `ModuleCat.subobjectModule` sends the step `F^p` of the `J`-adic filtration to `J ^ p • M`
+(to `M` for `p ≤ 0`). -/
+@[simp]
+theorem subobjectModule_step_adicFiltration (p : ℤᵒᵖ) :
+    ModuleCat.subobjectModule (ModuleCat.of R M) ((adicFiltration J M).step p) =
+      J ^ p.unop.toNat • ⊤ :=
+  subobjectModule_step_ofSubmodules _ _ p
+
 /-- The steps `F^p` of the `J`-adic filtration with `p ≤ 0` are the whole module. -/
 theorem step_adicFiltration_of_nonpos {p : ℤ} (hp : p ≤ 0) :
     (adicFiltration J M).step (op p) = ⊤ := by
-  rw [step_ofSubmodules, unop_op, Int.toNat_eq_zero.2 hp, pow_zero, Ideal.one_eq_top,
+  rw [step_adicFiltration, unop_op, Int.toNat_eq_zero.2 hp, pow_zero, Ideal.one_eq_top,
     Submodule.top_smul, map_top]
 
 /-- The `J`-adic filtration is exhaustive: its step `F^0` is the whole module. -/
