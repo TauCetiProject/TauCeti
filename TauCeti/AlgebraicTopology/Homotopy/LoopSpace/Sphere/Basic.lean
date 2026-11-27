@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.Topology.Homotopy.MappingPath.Fiber
