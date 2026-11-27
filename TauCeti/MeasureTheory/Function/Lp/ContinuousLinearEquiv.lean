@@ -75,6 +75,6 @@ variable {α 𝕜 E F : Type*} {_ : MeasurableSpace α} [NontriviallyNormedField
 theorem IsInvertible.compLpL {L : E →L[𝕜] F} (hL : L.IsInvertible) (p : ℝ≥0∞) [Fact (1 ≤ p)]
     (μ : Measure α) : (L.compLpL p μ).IsInvertible := by
   obtain ⟨e, rfl⟩ := hL
-  exact ⟨e.compLpL p μ, rfl⟩
+  exact ⟨e.compLpL p μ, e.coe_compLpL p μ⟩
 
 end ContinuousLinearMap

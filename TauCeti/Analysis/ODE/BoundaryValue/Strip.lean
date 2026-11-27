@@ -44,7 +44,7 @@ theory of `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator` hold
   (`TauCeti.PathSobolev.isCompactOperator_valueL`);
 * the limits `J (∂ₜ - S±)` are symmetric through the value map
   (`TauCeti.PathSobolev.inner_compLpL_comp_boundaryValueOperator_valueL`) and invertible
-  (`TauCeti.PathSobolev.isInvertible_compLpL_comp_boundaryValueOperator`);
+  (`ContinuousLinearMap.IsInvertible.compLpL`);
 * the family converges to its limits, and differs from `J (∂ₜ - S₊)` by the multiplication
   operator `-J (S(s) - S₊)`, which is bounded through the value map
   (`TauCeti.PathSobolev.norm_compLpL_comp_boundaryValueOperator_sub_apply_le`).
@@ -126,13 +126,6 @@ theorem lipschitzWith_compLpL_comp_boundaryValueOperator (J : X →L[ℝ] X) :
         exact (valueL F₀ F₁).le_opNorm x
     _ = ‖J‖ * ‖valueL F₀ F₁‖ * ‖A - A'‖ * ‖x‖ := by ring
 
-/-- If `J` is invertible and the boundary value problem `w' - A w = f`, `w 0 ∈ F₀`, `w 1 ∈ F₁`
-is uniquely solvable, then `J (d/dt - A)` is an isomorphism from `H1 F₀ F₁` onto `L²`. -/
-theorem isInvertible_compLpL_comp_boundaryValueOperator (hJ : J.IsInvertible)
-    {A : Lp (X →L[ℝ] X) ∞ μ₁} (hA : (boundaryValueOperator F₀ F₁ A).IsInvertible) :
-    ((J.compLpL 2 μ₁).comp (boundaryValueOperator F₀ F₁ A)).IsInvertible :=
-  (hJ.compLpL 2 μ₁).comp hA
-
 /-- The family `s ↦ J (d/dt - S(s))` of a continuous coefficient path differs from
 `J (d/dt - S₊)` by operators bounded through the value map on every bounded interval. -/
 private theorem forall_exists_norm_sub_apply_le {S : ℝ → Lp (X →L[ℝ] X) ∞ μ₁}
@@ -176,7 +169,7 @@ theorem isInvertible_domainTrajectoryOperator_valueL [CompleteSpace X]
       (valueL F₀ F₁) ((J.compLpL 2 μ₁).comp (boundaryValueOperator F₀ F₁ A))).IsInvertible :=
   WeakDerivStep.isInvertible_domainTrajectoryOperator
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymm)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hA)
+    ((hJinv.compLpL 2 μ₁).comp hA)
 
 variable [FiniteDimensional ℝ X]
 
@@ -202,9 +195,9 @@ theorem isFredholm_familyDomainTrajectoryOperator_valueL
     (WeakDerivStep.familyDomainTrajectoryOperator (p := 2) (valueL F₀ F₁) AL).IsFredholm :=
   WeakDerivStep.isFredholm_familyDomainTrajectoryOperator (isCompactOperator_valueL (F₀ := F₀))
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymmbot)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hBbot)
+    ((hJinv.compLpL 2 μ₁).comp hBbot)
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymmtop)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hBtop) hAL
+    ((hJinv.compLpL 2 μ₁).comp hBtop) hAL
     (tendsto_compLpL_comp_boundaryValueOperator hbot)
     (tendsto_compLpL_comp_boundaryValueOperator htop)
     (forall_exists_norm_sub_apply_le hS Stop)
@@ -230,9 +223,9 @@ theorem index_familyDomainTrajectoryOperator_valueL_eq
       (WeakDerivStep.familyDomainTrajectoryOperator (p := 2) (valueL F₀ F₁) AL').index :=
   WeakDerivStep.index_familyDomainTrajectoryOperator_eq (isCompactOperator_valueL (F₀ := F₀))
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymmbot)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hBbot)
+    ((hJinv.compLpL 2 μ₁).comp hBbot)
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymmtop)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hBtop) hAL
+    ((hJinv.compLpL 2 μ₁).comp hBtop) hAL
     (tendsto_compLpL_comp_boundaryValueOperator hbot)
     (tendsto_compLpL_comp_boundaryValueOperator htop)
     (forall_exists_norm_sub_apply_le hS Stop) hAL'
@@ -268,11 +261,11 @@ theorem index_familyDomainTrajectoryOperator_valueL_eq_add
         (WeakDerivStep.familyDomainTrajectoryOperator (p := 2) (valueL F₀ F₁) AL').index :=
   WeakDerivStep.index_familyDomainTrajectoryOperator_eq_add (isCompactOperator_valueL (F₀ := F₀))
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymm₀)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hB₀)
+    ((hJinv.compLpL 2 μ₁).comp hB₀)
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymm₁)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hB₁)
+    ((hJinv.compLpL 2 μ₁).comp hB₁)
     (inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ hSymm₂)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hB₂)
+    ((hJinv.compLpL 2 μ₁).comp hB₂)
     ⟨‖J‖ * ‖S₁ - S₂‖, norm_compLpL_comp_boundaryValueOperator_sub_apply_le J S₁ S₂⟩
     hAL (tendsto_compLpL_comp_boundaryValueOperator hbot)
     (tendsto_compLpL_comp_boundaryValueOperator htop) (forall_exists_norm_sub_apply_le hS S₁)
@@ -301,9 +294,9 @@ theorem index_familyDomainTrajectoryOperator_valueL_eq_zero_of_forall_isInvertib
     (isCompactOperator_valueL (F₀ := F₀))
     ((lipschitzWith_compLpL_comp_boundaryValueOperator J).continuous.comp hS)
     (fun s ↦ inner_compLpL_comp_boundaryValueOperator_valueL hJ hF₀ hF₁ (hSymm s))
-    (fun s ↦ isInvertible_compLpL_comp_boundaryValueOperator hJinv (hB s))
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hBbot)
-    (isInvertible_compLpL_comp_boundaryValueOperator hJinv hBtop) hAL
+    (fun s ↦ (hJinv.compLpL 2 μ₁).comp (hB s))
+    ((hJinv.compLpL 2 μ₁).comp hBbot)
+    ((hJinv.compLpL 2 μ₁).comp hBtop) hAL
     (tendsto_compLpL_comp_boundaryValueOperator hbot)
     (tendsto_compLpL_comp_boundaryValueOperator htop)
     (forall_exists_norm_sub_apply_le hS Stop)
