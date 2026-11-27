@@ -13,6 +13,9 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Fourier.SineCosineSeries
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Orthogonality
+import Mathlib.MeasureTheory.Integral.Pi
 
 /-!
 # The Dirichlet spectrum of `-Δ` on a box
@@ -33,8 +36,17 @@ eigenvalue `κ` leaves a function orthogonal to every mode. Hence every Dirichle
 a finite combination of separated modes with the same eigenvalue
 (`TauCeti.PDE.exists_finset_value_ae_eq_sum_boxSineMode`), and the Dirichlet eigenvalues of `-Δ`
 on the box are exactly the sums `∑ᵢ (kᵢ π / (bᵢ - aᵢ))²`
-(`TauCeti.PDE.isDirichletEigenvalue_laplacian_boxDomain_iff`). An eigenvalue may have several
-separated modes: on `(0, π)²` the value `5 = 1² + 2² = 2² + 1²` is attained twice.
+(`TauCeti.PDE.isDirichletEigenvalue_laplacian_boxDomain_iff`).
+
+Distinct separated modes are orthogonal in `L²` of the box
+(`TauCeti.PDE.setIntegral_boxSineMode_mul_boxSineMode_eq_zero`): by Fubini the integral is a
+product of one-dimensional integrals, and the factor of a coordinate where the indices differ
+vanishes (`TauCeti.integral_sin_mul_sin_eq_zero_of_ne`). So the modes with eigenvalue `κ` form a
+basis of the eigenspace, and the multiplicity of `κ`, the dimension of the eigenspace of the
+Dirichlet solution operator for `κ⁻¹`, is the number of positive multi-indices with
+`∑ᵢ (kᵢ π / (bᵢ - aᵢ))² = κ` (`TauCeti.PDE.finrank_eigenspace_dirichletSolutionOperator_boxDomain`).
+An eigenvalue may have several separated modes: on `(0, π)²` the value `5 = 1² + 2² = 2² + 1²` is
+attained twice, and is an eigenvalue of multiplicity `2`.
 
 The passage from classical to weak eigenfunctions uses
 `TauCeti.PDE.exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq`.
@@ -97,6 +109,86 @@ theorem exists_eq_endpoint_of_mem_frontier_boxDomain {a b : ι → ℝ}
   have hi : x ∈ boxDomain a b := mem_boxDomain.mpr fun i ↦
     ⟨lt_of_le_of_ne (hc i).1 (h i).1.symm, lt_of_le_of_ne (hc i).2 (h i).2⟩
   exact disjoint_frontier_iff_isOpen.mpr (boxDomain a b).isOpen |>.notMem_of_mem_right hi hx
+
+/-- A box `∏ⱼ (aⱼ, bⱼ)` with `aⱼ < bⱼ` for every `j` is nonempty: it contains its centre. -/
+theorem nonempty_boxDomain {a b : ι → ℝ} (hab : ∀ j, a j < b j) :
+    (boxDomain a b : Set (EuclideanSpace ℝ ι)).Nonempty :=
+  ⟨WithLp.toLp 2 fun j ↦ (a j + b j) / 2, mem_boxDomain.2 fun j ↦
+    ⟨by simp; linarith [hab j], by simp; linarith [hab j]⟩⟩
+
+/-- A function continuous on the closure of a box is integrable on the box, for every measure
+that is finite on compact sets. -/
+theorem integrableOn_boxDomain {E : Type*} [NormedAddCommGroup E] {a b : ι → ℝ}
+    {mu : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts mu]
+    {F : EuclideanSpace ℝ ι → E} (hF : ContinuousOn F (closure (boxDomain a b))) :
+    IntegrableOn F (boxDomain a b) mu :=
+  (hF.integrableOn_compact (isBounded_boxDomain a b).isCompact_closure).mono_set subset_closure
+
+/-- The line through `x` parallel to the `i`-th axis meets the box in its `i`-th side exactly when
+the other coordinates of `x` lie in the box. -/
+theorem toLp_update_mem_boxDomain_iff [DecidableEq ι] {a b : ι → ℝ} {i : ι} (x : ι → ℝ)
+    (t : ℝ) :
+    WithLp.toLp 2 (Function.update x i t) ∈ (boxDomain a b : Set (EuclideanSpace ℝ ι)) ↔
+      t ∈ Ioo (a i) (b i) ∧ ∀ j ≠ i, x j ∈ Ioo (a j) (b j) := by
+  simp only [SetLike.mem_coe, mem_boxDomain]
+  refine ⟨fun h ↦ ⟨by simpa using h i, fun j hj ↦ by simpa [hj] using h j⟩, fun h j ↦ ?_⟩
+  by_cases hj : j = i
+  · subst hj
+    simpa using h.1
+  · simpa [hj] using h.2 j hj
+
+/-- A part of the hyperplane `xᵢ = aᵢ` misses the box `∏ⱼ (aⱼ, bⱼ)`. -/
+theorem disjoint_boxDomain_of_forall_apply_eq_left {a b : ι → ℝ} {i : ι}
+    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : ∀ x ∈ Γ, x i = a i) :
+    Disjoint Γ (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
+  Set.disjoint_left.2 fun x hx hxΩ ↦ by
+    have := (mem_boxDomain.1 hxΩ i).1
+    rw [hΓ x hx] at this
+    exact lt_irrefl _ this
+
+/-- Along the line through `x` parallel to the `i`-th axis, the integral over the box is the
+integral over the `i`-th side when the other coordinates of `x` lie in the box, and `0`
+otherwise. -/
+theorem lintegral_indicator_boxDomain_toLp_update [DecidableEq ι] {a b : ι → ℝ} {i : ι}
+    (F : EuclideanSpace ℝ ι → ENNReal) (x : ι → ℝ) :
+    ∫⁻ t, (boxDomain a b : Set (EuclideanSpace ℝ ι)).indicator F
+        (WithLp.toLp 2 (Function.update x i t)) =
+      if ∀ j ≠ i, x j ∈ Ioo (a j) (b j) then
+        ∫⁻ t in Ioo (a i) (b i), F (WithLp.toLp 2 (Function.update x i t)) else 0 := by
+  classical
+  split_ifs with hx
+  · rw [← lintegral_indicator measurableSet_Ioo]
+    congr 1
+    ext t
+    simp only [Set.indicator_apply, toLp_update_mem_boxDomain_iff, and_iff_left hx]
+  · simp only [Set.indicator_apply, toLp_update_mem_boxDomain_iff, hx, and_false, ite_false,
+      lintegral_zero]
+
+/-- **Comparison of integrals over a box along the lines parallel to one axis.** If `F, G ≥ 0` are
+continuous and the integral of `F` over each segment of the box parallel to the `i`-th axis is at
+most that of `G`, then `∫_Ω F ≤ ∫_Ω G`, for every additive Haar measure. -/
+theorem setIntegral_boxDomain_le [DecidableEq ι] {a b : ι → ℝ} {i : ι}
+    {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure] {F G : EuclideanSpace ℝ ι → ℝ}
+    (hF : Continuous F) (hG : Continuous G) (hF0 : ∀ x, 0 ≤ F x) (hG0 : ∀ x, 0 ≤ G x)
+    (h : ∀ x : ι → ℝ, (∀ j ≠ i, x j ∈ Ioo (a j) (b j)) →
+      ∫⁻ t in Ioo (a i) (b i), ENNReal.ofReal (F (WithLp.toLp 2 (Function.update x i t))) ≤
+        ∫⁻ t in Ioo (a i) (b i), ENNReal.ofReal (G (WithLp.toLp 2 (Function.update x i t)))) :
+    ∫ x in boxDomain a b, F x ∂mu ≤ ∫ x in boxDomain a b, G x ∂mu := by
+  have hΩ : MeasurableSet (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
+    (boxDomain a b).isOpen.measurableSet
+  rw [← ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hΩ fun x _ => hG0 x),
+    ofReal_integral_eq_lintegral_ofReal (f := F) (integrableOn_boxDomain hF.continuousOn)
+      (ae_of_all _ hF0),
+    ofReal_integral_eq_lintegral_ofReal (f := G) (integrableOn_boxDomain hG.continuousOn)
+      (ae_of_all _ hG0),
+    ← lintegral_indicator hΩ, ← lintegral_indicator hΩ]
+  refine lintegral_le_lintegral_of_forall_lintegral_update_le mu
+    (hF.measurable.ennreal_ofReal.indicator hΩ) (hG.measurable.ennreal_ofReal.indicator hΩ) i
+    fun x => ?_
+  rw [lintegral_indicator_boxDomain_toLp_update, lintegral_indicator_boxDomain_toLp_update]
+  split_ifs with hx
+  · exact h x hx
+  · exact le_rfl
 
 /-- The separated sine mode of a rectangular box, extended smoothly to the whole space. -/
 def boxSineMode (a b : ι → ℝ) (k : ι → ℕ) (x : EuclideanSpace ℝ ι) : ℝ :=
@@ -210,6 +302,23 @@ theorem exists_value_ae_eq_boxSineMode_and_energyFormH1_eq {a b : ι → ℝ}
     (fun _ hx ↦ boxSineMode_eq_zero_of_mem_frontier hab k hx)
     (fun x _ ↦ laplacian_boxSineMode a b k x)
 
+omit [DecidableEq ι] in
+/-- An element of `L²` of a box that is a.e. equal to a separated mode with positive indices is
+nonzero: the mode is continuous and takes the value `1` somewhere in the open box. -/
+private theorem ne_zero_of_ae_eq_boxSineMode {a b : ι → ℝ} (hab : ∀ i, a i < b i) {k : ι → ℕ}
+    (hk : ∀ i, 0 < k i) {ψ : Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))}
+    (hψ : ψ =ᵐ[mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))] boxSineMode a b k) :
+    ψ ≠ 0 := by
+  intro h0
+  have hz : EqOn (boxSineMode a b k) 0 (boxDomain a b) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := mu) ?_ (boxDomain a b).isOpen
+      (contDiff_boxSineMode a b k).continuous.continuousOn continuousOn_const
+    filter_upwards [hψ, Lp.coeFn_zero ℝ 2
+      (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))] with x h1 h2
+    rw [← h1, h0, h2]
+  obtain ⟨x, hx, hpeak⟩ := exists_boxSineMode_eq_one hab hk
+  simpa [hpeak] using hz hx
+
 /-- Every positive multi-index gives a Dirichlet eigenvalue of `-Δ` on a box. Its
 nonzero eigenfunction is the product of the corresponding one-dimensional sine modes. -/
 theorem isDirichletEigenvalue_laplacian_boxDomain {a b : ι → ℝ}
@@ -219,16 +328,21 @@ theorem isDirichletEigenvalue_laplacian_boxDomain {a b : ι → ℝ}
   obtain ⟨u, hu, heq⟩ := exists_value_ae_eq_boxSineMode_and_energyFormH1_eq (mu := mu) hab k
   refine (isDirichletEigenvalue_iff_setIntegral _).mpr
     ⟨u, fun h0 ↦ ?_, fun v ↦ by rw [heq v, W1p.inner_value_eq_setIntegral]⟩
-  have hval : W1p.value (u : W1p mu (boxDomain a b) 2) = 0 := by
-    rw [← W1p0.valueL_apply, h0, map_zero]
-  have hz : EqOn (boxSineMode a b k) 0 (boxDomain a b) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := mu) ?_ (boxDomain a b).isOpen
-      (contDiff_boxSineMode a b k).continuous.continuousOn continuousOn_const
-    filter_upwards [hu, Lp.coeFn_zero ℝ 2
-      (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))] with x h1 h2
-    rw [← h1, hval, h2]
-  obtain ⟨x, hx, hpeak⟩ := exists_boxSineMode_eq_one hab hk
-  simpa [hpeak] using hz hx
+  exact ne_zero_of_ae_eq_boxSineMode hab hk hu (by rw [← W1p0.valueL_apply, h0, map_zero])
+
+omit [DecidableEq ι] in
+/-- The identification `ι → ℝ ≃ EuclideanSpace ℝ ι` carries the product of the intervals
+`(aᵢ, bᵢ)` onto the box, preserving volume. -/
+private theorem measurePreserving_toLp_boxDomain (a b : ι → ℝ) :
+    MeasurePreserving (MeasurableEquiv.toLp 2 (ι → ℝ))
+      (volume.restrict (univ.pi fun i => Ioo (a i) (b i)))
+      (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))) := by
+  have hpre : MeasurableEquiv.toLp 2 (ι → ℝ) ⁻¹' (boxDomain a b : Set (EuclideanSpace ℝ ι)) =
+      univ.pi fun i => Ioo (a i) (b i) := by
+    ext y
+    simp
+  rw [← hpre]
+  exact (PiLp.volume_preserving_toLp ι).restrict_preimage (boxDomain a b).isOpen.measurableSet
 
 omit [DecidableEq ι] in
 /-- **Completeness of the separated modes on a box.** A function integrable on a box and
@@ -249,15 +363,7 @@ theorem ae_eq_zero_of_forall_setIntegral_mul_boxSineMode_eq_zero {a b : ι → �
     integrable_smul_measure (by exact_mod_cast hc) ENNReal.coe_ne_top] at hg
   -- Read `g` on `ι → ℝ`, where the product sine system is complete.
   let T := MeasurableEquiv.toLp 2 (ι → ℝ)
-  have hT : MeasurePreserving T volume volume := PiLp.volume_preserving_toLp ι
-  have hpre : T ⁻¹' (boxDomain a b : Set (EuclideanSpace ℝ ι)) =
-      univ.pi fun i => Ioo (a i) (b i) := by
-    ext y
-    simp [T]
-  have hTΩ : MeasurePreserving T (volume.restrict (univ.pi fun i => Ioo (a i) (b i)))
-      (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))) := by
-    rw [← hpre]
-    exact hT.restrict_preimage (boxDomain a b).isOpen.measurableSet
+  have hTΩ := measurePreserving_toLp_boxDomain a b
   have hzero := ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero (g := g ∘ T)
     (hTΩ.integrable_comp_emb T.measurableEmbedding |>.2 hg) fun k hk => by
       have hk' := h k hk
@@ -267,7 +373,7 @@ theorem ae_eq_zero_of_forall_setIntegral_mul_boxSineMode_eq_zero {a b : ι → �
       simp only [Function.comp_apply, boxSineMode_def]
       congr 1
       refine Finset.prod_congr rfl fun i _ => ?_
-      simp only [T, MeasurableEquiv.coe_toLp, PiLp.toLp_apply]
+      simp only [MeasurableEquiv.coe_toLp, PiLp.toLp_apply]
       ring_nf
   have hge : (g ∘ T) ∘ T.symm = g := funext fun x => by simp
   rw [← hge]
@@ -414,5 +520,127 @@ theorem isDirichletEigenvalue_laplacian_boxDomain_iff {a b : ι → ℝ} (hab : 
     rw [h1, h2]
     simp
   · exact ⟨k, (hs k hk).1, (hs k hk).2.symm⟩
+
+/-! ### Orthogonality of the separated modes and multiplicities -/
+
+omit [DecidableEq ι] in
+/-- **Orthogonality of the separated sine modes.** Two separated modes of a box with distinct
+multi-indices are orthogonal in `L²` of the box, for every additive Haar measure. The integral
+splits by Fubini into one-dimensional integrals, and the factor of a coordinate where the indices
+differ vanishes. No relation between `aᵢ` and `bᵢ` is assumed: an empty factor makes the box
+empty. -/
+theorem setIntegral_boxSineMode_mul_boxSineMode_eq_zero {a b : ι → ℝ} {k l : ι → ℕ}
+    (hkl : k ≠ l) :
+    ∫ x in boxDomain a b, boxSineMode a b k x * boxSineMode a b l x ∂mu = 0 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp hkl
+  -- Reduce from the Haar measure `mu` to the volume, a positive multiple of it.
+  rw [Measure.isAddLeftInvariant_eq_smul mu volume, Measure.restrict_smul,
+    integral_smul_nnreal_measure, smul_eq_zero]
+  right
+  -- Read the integral on `ι → ℝ`, where the box is a product of intervals.
+  rw [← (measurePreserving_toLp_boxDomain a b).integral_comp', volume_pi, Measure.restrict_pi_pi]
+  simp only [MeasurableEquiv.coe_toLp, boxSineMode_def, ← Finset.prod_mul_distrib]
+  refine (integral_fintype_prod_eq_prod (fun j t ↦
+    Real.sin ((k j * Real.pi / (b j - a j)) * (t - a j)) *
+      Real.sin ((l j * Real.pi / (b j - a j)) * (t - a j)))).trans
+    (Finset.prod_eq_zero (Finset.mem_univ i) ?_)
+  rcases lt_or_ge (a i) (b i) with hab | hba
+  · rw [← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hab.le]
+    exact integral_sin_mul_sin_eq_zero_of_ne (a i) (b i) hi
+  · rw [Ioo_eq_empty hba.not_gt, Measure.restrict_empty, integral_zero_measure]
+
+/-- Given `H¹₀` realizations `φ k` of the separated modes, the eigenspace of the Dirichlet solution
+operator of `-Δ` on a box for `κ⁻¹` is spanned by the realizations whose eigenvalue is `κ`. -/
+private theorem eigenspace_dirichletSolutionOperator_eq_span {a b : ι → ℝ}
+    (hab : ∀ i, a i < b i)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {kappa : ℝ} (hkappa : kappa ≠ 0)
+    {φ : (ι → ℕ) → W1p0 mu (boxDomain a b) 2}
+    (hφ : ∀ k, W1p.value (φ k : W1p mu (boxDomain a b) 2)
+      =ᵐ[mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))] boxSineMode a b k)
+    (hφeq : ∀ k (v : W1p0 mu (boxDomain a b) 2),
+      energyFormH1 (fun _ ↦ 1) 0 0 (φ k : W1p mu (boxDomain a b) 2)
+          (v : W1p mu (boxDomain a b) 2) =
+        (∑ i, (k i * Real.pi / (b i - a i)) ^ 2) *
+          ⟪W1p.value (φ k : W1p mu (boxDomain a b) 2),
+            W1p.value (v : W1p mu (boxDomain a b) 2)⟫_ℝ) :
+    Module.End.eigenspace (dirichletSolutionOperator hcoeff hcoercive :
+      Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))) →ₗ[ℝ]
+        Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))) kappa⁻¹ =
+      Submodule.span ℝ ((fun k ↦ W1p.value (φ k : W1p mu (boxDomain a b) 2)) ''
+        {k | (∀ i, 0 < k i) ∧ ∑ i, (k i * Real.pi / (b i - a i)) ^ 2 = kappa}) := by
+  refine le_antisymm (fun w hw ↦ ?_) (Submodule.span_le.2 ?_)
+  · -- An eigenvector `w` is the value of the eigenfunction `κ S w` in `H¹₀`.
+    rw [Module.End.mem_eigenspace_iff, ContinuousLinearMap.coe_coe,
+      dirichletSolutionOperator_apply] at hw
+    obtain ⟨u, hu_def⟩ : ∃ u : W1p0 mu (boxDomain a b) 2,
+        u = kappa • weakSolutionDirichlet hcoeff hcoercive w := ⟨_, rfl⟩
+    have hu : W1p.value (u : W1p mu (boxDomain a b) 2) = w := by
+      rw [← W1p0.valueL_apply, hu_def, map_smul, W1p0.valueL_apply, hw, smul_inv_smul₀ hkappa]
+    have hueq (v : W1p0 mu (boxDomain a b) 2) :
+        energyFormH1 (fun _ ↦ 1) 0 0 (u : W1p mu (boxDomain a b) 2)
+            (v : W1p mu (boxDomain a b) 2) =
+          kappa * ⟪W1p.value (u : W1p mu (boxDomain a b) 2),
+            W1p.value (v : W1p mu (boxDomain a b) 2)⟫_ℝ := by
+      have hS := (isWeakSolutionDirichlet_iff_inner w _).mp
+        (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive w) v
+      rw [hu, ← energyFormH1L0_apply hcoeff, hu_def]
+      simp [energyFormH1L0_apply, hS]
+    exact hu ▸ value_mem_span_of_energyFormH1_eq hab hφ hφeq hueq
+  · -- Each mode with eigenvalue `κ` is an eigenvector.
+    rintro _ ⟨k, hk, rfl⟩
+    rw [SetLike.mem_coe, Module.End.mem_eigenspace_iff, ContinuousLinearMap.coe_coe,
+      dirichletSolutionOperator_def]
+    have h := hcoercive.formSolutionOperator_apply_eq_inv_smul hkappa (u := φ k)
+      (J := W1p0.valueL (mu := mu) (Omega := boxDomain a b) (p := 2)) fun v ↦ by
+        rw [energyFormH1L0_apply, hφeq k v, hk.2, W1p0.valueL_apply, W1p0.valueL_apply]
+    simpa only [W1p0.valueL_apply] using h
+
+omit [DecidableEq ι] in
+/-- Realizations in `L²` of the separated modes with positive indices are linearly independent:
+they are nonzero and, by `TauCeti.PDE.setIntegral_boxSineMode_mul_boxSineMode_eq_zero`, pairwise
+orthogonal. -/
+private theorem linearIndependent_of_ae_eq_boxSineMode {a b : ι → ℝ} (hab : ∀ i, a i < b i)
+    {s : Set (ι → ℕ)} (hs : ∀ k ∈ s, ∀ i, 0 < k i)
+    {ψ : (ι → ℕ) → Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))}
+    (hψ : ∀ k, ψ k =ᵐ[mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))] boxSineMode a b k) :
+    LinearIndependent ℝ fun k : s ↦ ψ k := by
+  refine linearIndependent_of_ne_zero_of_inner_eq_zero
+    (fun k ↦ ne_zero_of_ae_eq_boxSineMode hab (hs k k.property) (hψ k)) fun k l hkl ↦ ?_
+  dsimp only
+  rw [MeasureTheory.L2.inner_def, ← setIntegral_boxSineMode_mul_boxSineMode_eq_zero (mu := mu)
+    (Subtype.coe_injective.ne hkl)]
+  refine integral_congr_ae ?_
+  filter_upwards [hψ k, hψ l] with x hk hl
+  simp [hk, hl, mul_comm]
+
+/-- **The multiplicity of a Dirichlet eigenvalue of a box.** On the box `∏ᵢ (aᵢ, bᵢ)`, the
+eigenspace of the Dirichlet solution operator of `-Δ` for the eigenvalue `κ⁻¹`, `κ ≠ 0`, has
+dimension the number of positive multi-indices `k` with `∑ᵢ (kᵢ π / (bᵢ - aᵢ))² = κ`. So the
+multiplicity of the Dirichlet eigenvalue `κ` is the number of separated modes with eigenvalue `κ`:
+these modes are eigenfunctions, they are orthogonal
+(`TauCeti.PDE.setIntegral_boxSineMode_mul_boxSineMode_eq_zero`), and every eigenfunction is a
+combination of them (`TauCeti.PDE.exists_finset_value_ae_eq_sum_boxSineMode`). Unlike the first
+Dirichlet eigenvalue of a connected domain, a higher eigenvalue need not be simple: on `(0, π)²`
+the value `5 = 1² + 2² = 2² + 1²` has multiplicity `2`. -/
+theorem finrank_eigenspace_dirichletSolutionOperator_boxDomain {a b : ι → ℝ}
+    (hab : ∀ i, a i < b i)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix ι ι ℝ)) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {kappa : ℝ} (hkappa : kappa ≠ 0) :
+    Module.finrank ℝ (Module.End.eigenspace (dirichletSolutionOperator hcoeff hcoercive :
+      Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))) →ₗ[ℝ]
+        Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))) kappa⁻¹) =
+      {k : ι → ℕ | (∀ i, 0 < k i) ∧ ∑ i, (k i * Real.pi / (b i - a i)) ^ 2 = kappa}.ncard := by
+  choose φ hφ hφeq using fun k : ι → ℕ ↦
+    exists_value_ae_eq_boxSineMode_and_energyFormH1_eq (mu := mu) hab k
+  set S : Set (ι → ℕ) := {k | (∀ i, 0 < k i) ∧ ∑ i, (k i * Real.pi / (b i - a i)) ^ 2 = kappa}
+  have : Fintype S := (finite_setOf_forall_pos_and_sum_sq_eq hab kappa).fintype
+  have hli := linearIndependent_of_ae_eq_boxSineMode (s := S) hab (fun _ hk ↦ hk.1) hφ
+  rw [eigenspace_dirichletSolutionOperator_eq_span hab hcoeff hcoercive hkappa hφ hφeq,
+    Set.image_eq_range, finrank_span_eq_card hli, Set.ncard_eq_toFinset_card', Set.toFinset_card]
 
 end TauCeti.PDE

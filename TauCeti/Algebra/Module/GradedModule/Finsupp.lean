@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
@@ -21,7 +23,11 @@ decomposition, including when several basis vectors have the same degree. This c
 also applies after a linear change of coordinates, via `InternalGrading.map`.
 
 Each piece is itself free: `InternalGrading.finsuppPieceBasis A g p` is its basis formed by the
-basis vectors of the indices of degree `p`.
+basis vectors of the indices of degree `p`. So its rank is the number of indices of degree `p`
+(`InternalGrading.finrank_finsupp_piece`), and for finitely many indices a sum of weights over the
+degrees, counted with the ranks of the pieces, is the sum of the weights of the degrees of the
+indices (`InternalGrading.finsum_finrank_finsupp_piece_smul`): this computes the Euler
+characteristic of a complex with a basis of homogeneous generators by counting generators.
 
 The construction uses Mathlib's `Finsupp.supported` submodules and
 `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`.
@@ -109,5 +115,27 @@ theorem coe_finsuppPieceBasis {p : ι} (i : {i // g i = p}) :
 theorem finsuppPieceBasis_repr_apply {p : ι} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
     (finsuppPieceBasis A g p).repr x i = (x : I →₀ A) i :=
   (rfl)
+
+/-- The degree-`p` piece of the free module graded by `g` has rank the number of indices of degree
+`p`. -/
+theorem finrank_finsupp_piece [StrongRankCondition A] (p : ι) :
+    Module.finrank A ((finsupp A g).piece p) = Nat.card {i // g i = p} :=
+  Module.finrank_eq_nat_card_basis (finsuppPieceBasis A g p)
+
+/-- For finitely many indices, a sum of weights `w` over the degrees, counted with the ranks of the
+pieces of the free module graded by `g`, is the sum of the weights of the degrees of the indices. -/
+theorem finsum_finrank_finsupp_piece_smul [StrongRankCondition A] [Fintype I] {B : Type*}
+    [AddCommMonoid B] (w : ι → B) :
+    ∑ᶠ p, Module.finrank A ((finsupp A g).piece p) • w p = ∑ i, w (g i) := by
+  classical
+  rw [finsum_eq_sum_of_support_subset _ (s := Finset.univ.image g) fun p hp ↦ ?_,
+    Finset.sum_comp]
+  · refine Finset.sum_congr rfl fun p _ ↦ ?_
+    rw [finrank_finsupp_piece, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  · obtain ⟨i, rfl⟩ : ∃ i, g i = p := by
+      by_contra! h
+      have : IsEmpty {i // g i = p} := ⟨fun i ↦ h i i.property⟩
+      simp [finrank_finsupp_piece] at hp
+    simp
 
 end TauCeti.InternalGrading

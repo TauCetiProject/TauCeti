@@ -45,6 +45,18 @@ nowhere-vanishing continuous section has zero Euler class
 (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): every relative class restricts to zero on `E₀`.
 So a trivial bundle of positive rank has zero Euler class (`TauCeti.eulerClass_trivial_eq_zero`).
 
+Changing only the model fibre `F` of the same fibres `E`, for a topology on `TotalSpace F' E`
+making the identity of points to `TotalSpace F E` inducing, gives the isomorphism of Thom pairs
+`TauCeti.thomPairModelFiberIso`. It is the identity over the base
+(`TauCeti.thomPairModelFiberIso_hom_fst_comp_thomPairProj`) and on every fibre
+(`TauCeti.fiberThomPairMap_comp_thomPairModelFiberIso_hom`), so the bundle has a Thom class for
+one model fibre exactly when it has one for the other
+(`TauCeti.exists_isThomClass_iff_of_isInducing`). Statements proved for a model fibre in the
+universe of the base can be transported along it to model fibres in any universe; this is how the
+homology Thom isomorphism (`TauCeti.isIso_homologyThomMap`, `TauCeti.homologyThomIso`) and the
+existence of Thom classes (`TauCeti.exists_isThomClass_of_two_eq_zero`,
+`TauCeti.VectorBundleOrientation.exists_isThomClass`) hold for model fibres in any universe.
+
 The projection `π : E → B` is a homotopy equivalence with homotopy inverse the zero section
 (`TauCeti.VectorBundle.totalSpaceHomotopyEquiv`), so pullback along the zero section is an
 isomorphism `Hⁿ(E) ≅ Hⁿ(B)` with inverse `π^*`
@@ -396,6 +408,50 @@ theorem fiberThomPairMap_fst_comp_thomPairProj (b : B) :
       TopCat.ofHom (ContinuousMap.const _ b) :=
   TopCat.ext fun x ↦ congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x)
 
+variable {F E} in
+/-- A change of model fibre is the identity over the base. -/
+@[reassoc (attr := simp)]
+theorem thomPairModelFiberIso_hom_fst_comp_thomPairProj {F' : Type*} [TopologicalSpace F']
+    [TopologicalSpace (TotalSpace F' E)] [FiberBundle F' E]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).hom ≫ thomPairProj F E = thomPairProj F' E :=
+  TopCat.ext fun v ↦ (thomPairProj_apply F E _).trans <|
+    (congrArg TotalSpace.proj (thomPairModelFiberIso_hom_fst_apply h_ind v)).trans
+      (thomPairProj_apply F' E v).symm
+
+variable {F E} in
+/-- The inverse of a change of model fibre is the identity over the base. -/
+@[reassoc (attr := simp)]
+theorem thomPairModelFiberIso_inv_fst_comp_thomPairProj {F' : Type*} [TopologicalSpace F']
+    [TopologicalSpace (TotalSpace F' E)] [FiberBundle F' E]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).inv ≫ thomPairProj F' E = thomPairProj F E :=
+  TopCat.ext fun v ↦ (thomPairProj_apply F' E _).trans <|
+    (congrArg TotalSpace.proj (thomPairModelFiberIso_inv_fst_apply h_ind v)).trans
+      (thomPairProj_apply F E v).symm
+
+variable {F E} in
+/-- A change of model fibre is the identity on every fibre. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairMap_comp_thomPairModelFiberIso_hom {F' : Type*} [TopologicalSpace F']
+    [TopologicalSpace (TotalSpace F' E)] [FiberBundle F' E]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) (b : B) :
+    fiberThomPairMap F' E b ≫ (thomPairModelFiberIso h_ind).hom = fiberThomPairMap F E b :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (congrArg (TopPair.Hom.fst (thomPairModelFiberIso h_ind).hom)
+      (fiberThomPairMap_fst_apply F' E b x)).trans
+      ((thomPairModelFiberIso_hom_fst_apply h_ind _).trans
+        (fiberThomPairMap_fst_apply F E b x).symm))
+
+variable {F E} in
+/-- The inverse of a change of model fibre is the identity on every fibre. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairMap_comp_thomPairModelFiberIso_inv {F' : Type*} [TopologicalSpace F']
+    [TopologicalSpace (TotalSpace F' E)] [FiberBundle F' E]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) (b : B) :
+    fiberThomPairMap F E b ≫ (thomPairModelFiberIso h_ind).inv = fiberThomPairMap F' E b := by
+  rw [Iso.comp_inv_eq, fiberThomPairMap_comp_thomPairModelFiberIso_hom]
+
 /-- The projection `E|_W ⟶ W` of a fibre bundle restricted to a subset `W` of its base, as a
 morphism of topological spaces out of the ambient space of `TauCeti.thomPairOver`. -/
 def thomPairOverProj (W : Set B) : (thomPairOver F E W).fst ⟶ TopCat.of W :=
@@ -561,6 +617,64 @@ theorem IsThomClass.singularCohomologyMap {B' : Type w} [TopologicalSpace B'] {E
   exact h
 
 end ThomClass
+
+section ModelThomClass
+
+variable {B : Type w} [TopologicalSpace B] {E : B → Type w} [∀ b, Zero (E b)]
+  [∀ b, TopologicalSpace (E b)]
+
+/-- A class `u` of `Hⁿ(E, E₀)` for the model fibre `F₂` restricting to a generator of the
+cohomology of every fibre pair pulls back, along a map of Thom pairs `φ` for a second model fibre
+`F₁` which is the identity on the fibres, to a class with the same property, in any degree `n`. -/
+theorem span_singularCohomologyMap_fiberThomPairMap_eq_top_of_comp_eq {F₁ F₂ : Type*}
+    [TopologicalSpace F₁] [TopologicalSpace F₂] [TopologicalSpace (TotalSpace F₁ E)]
+    [TopologicalSpace (TotalSpace F₂ E)] [FiberBundle F₁ E] [FiberBundle F₂ E]
+    (φ : thomPair F₁ E ⟶ thomPair F₂ E)
+    (hφ : ∀ b, fiberThomPairMap F₁ E b ≫ φ = fiberThomPairMap F₂ E b) {n : ℕ}
+    {u : (thomPair F₂ E).singularCohomology R k M n}
+    (hu : ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F₂ E b) n u} = ⊤)
+    (b : B) :
+    Submodule.span k {(TopPair.singularCohomologyMap (fiberThomPairMap F₁ E b) n
+      (TopPair.singularCohomologyMap φ n u))} = ⊤ := by
+  rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  exact hu b
+
+/-- A Thom class transported along a map of Thom pairs which is the identity on the fibres, for
+two model-fibre parameters of the same rank. -/
+private theorem exists_isThomClass_of_fiberThomPairMap_comp {F₁ F₂ : Type*}
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁] [NormedAddCommGroup F₂]
+    [NormedSpace ℝ F₂]
+    [TopologicalSpace (TotalSpace F₁ E)] [TopologicalSpace (TotalSpace F₂ E)] [FiberBundle F₁ E]
+    [FiberBundle F₂ E] (φ : thomPair F₁ E ⟶ thomPair F₂ E)
+    (hφ : ∀ b, fiberThomPairMap F₁ E b ≫ φ = fiberThomPairMap F₂ E b)
+    (hF : finrank ℝ F₂ = finrank ℝ F₁) {u : (thomPair F₂ E).singularCohomology R k M (finrank ℝ F₂)}
+    (hu : IsThomClass F₂ E u) :
+    ∃ v : (thomPair F₁ E).singularCohomology R k M (finrank ℝ F₁), IsThomClass F₁ E v := by
+  -- The pulled-back class lives in degree `finrank ℝ F₂`; move it to degree `finrank ℝ F₁`.
+  obtain ⟨v, hv⟩ : ∃ v : (thomPair F₁ E).singularCohomology R k M (finrank ℝ F₁),
+      ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F₁ E b) _ v} = ⊤ :=
+    hF ▸ ⟨_, span_singularCohomologyMap_fiberThomPairMap_eq_top_of_comp_eq φ hφ hu.2⟩
+  exact ⟨v, isThomClass_iff.2 ⟨inferInstance, hv⟩⟩
+
+/-- **Thom classes for two model fibres.** For a topology on `TotalSpace F' E` making the identity
+of points to `TotalSpace F E` inducing, and model fibres `F` and `F'` of the same finite dimension,
+the same fibres `E` have a Thom class for the model fibre `F` exactly when they have one for the
+model fibre `F'`: the isomorphism of Thom pairs `TauCeti.thomPairModelFiberIso` is the identity on
+the fibres. -/
+theorem exists_isThomClass_iff_of_isInducing {F F' : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    [FiniteDimensional ℝ F'] [TopologicalSpace (TotalSpace F E)]
+    [TopologicalSpace (TotalSpace F' E)] [FiberBundle F E] [FiberBundle F' E]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (hF : finrank ℝ F' = finrank ℝ F) :
+    (∃ u : (thomPair F E).singularCohomology R k M (finrank ℝ F), IsThomClass F E u) ↔
+      ∃ u : (thomPair F' E).singularCohomology R k M (finrank ℝ F'), IsThomClass F' E u :=
+  ⟨fun ⟨_, hu⟩ ↦ exists_isThomClass_of_fiberThomPairMap_comp _
+      (fiberThomPairMap_comp_thomPairModelFiberIso_hom h_ind) hF.symm hu,
+    fun ⟨_, hu⟩ ↦ exists_isThomClass_of_fiberThomPairMap_comp _
+      (fiberThomPairMap_comp_thomPairModelFiberIso_inv h_ind) hF hu⟩
+
+end ModelThomClass
 
 section Pullback
 
