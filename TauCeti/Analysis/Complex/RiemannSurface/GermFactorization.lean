@@ -36,6 +36,8 @@ for maps into any type.
 * `TauCeti.RiemannSurface.GermFactorsThrough.apply_eq`: related points have the same value.
 * `TauCeti.RiemannSurface.GermFactorsThrough.exists_eventually_germFactorsThrough`: a
   factorization `u₁ = u₀ ∘ φ` near `b` relates every point `y` near `b` to `φ y`.
+* `TauCeti.RiemannSurface.GermFactorsThrough.eventually_exists_germFactorsThrough`: the points
+  near `b` are related to points of any given neighbourhood of `a`.
 * `TauCeti.RiemannSurface.GermFactorsThrough.eventually_mem_image`,
   `TauCeti.RiemannSurface.GermFactorsThrough.frequently_mem_image`: if the germ of `u₁` at `b`
   factors through the germ of `u₀` at `a`, then every point near `b` is mapped by `u₁` into the
@@ -104,6 +106,16 @@ theorem GermFactorsThrough.exists_eventually_germFactorsThrough
   refine ⟨φ, hφb, hφd.self_of_nhds.continuousAt, ?_⟩
   filter_upwards [hφd.eventually_nhds, hφu.eventually_nhds] with y hyd hyu
   exact ⟨φ, rfl, hyd, hyu⟩
+
+/-- If the germ of `u₁` at `b` factors through the germ of `u₀` at `a`, then for every `y` near `b`
+the germ of `u₁` at `y` factors through the germ of `u₀` at some point of any given neighbourhood
+of `a`. -/
+theorem GermFactorsThrough.eventually_exists_germFactorsThrough
+    (h : GermFactorsThrough u₁ b u₀ a) {s : Set X} (hs : s ∈ 𝓝 a) :
+    ∀ᶠ y in 𝓝 b, ∃ x ∈ s, GermFactorsThrough u₁ y u₀ x := by
+  obtain ⟨φ, hφb, hφc, hφ⟩ := h.exists_eventually_germFactorsThrough
+  filter_upwards [hφ, hφc.preimage_mem_nhds (hφb ▸ hs)] with y hy hφy
+  exact ⟨φ y, hφy, hy⟩
 
 /-- If the germ of `u₁` at `b` factors through the germ of `u₀` at `a`, then near `b` the map `u₁`
 takes its values in the image under `u₀` of any neighbourhood of `a`. -/
