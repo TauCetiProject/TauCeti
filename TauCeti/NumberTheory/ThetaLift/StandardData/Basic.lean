@@ -166,16 +166,8 @@ theorem exists_cols_of_standardColDatum_ne_zero [Finite (MaximalSpectrum O)]
     ∃ k : GeneralLinearGroup (b ⊕ a) O,
       (((k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁).map Subtype.val) = y := by
   obtain ⟨y₀, t, hmap, ht⟩ := O.exists_leftInverse_of_standardColDatum_ne_zero χ s hy
-  have hframe : y₀ ∈ TauCeti.unimodularFrames O (b ⊕ a) b :=
-    TauCeti.mem_unimodularFrames_iff.mpr ⟨t, ht⟩
-  rw [← TauCeti.orbit_submatrix_one Sum.inl_injective] at hframe
-  obtain ⟨k, hk⟩ := hframe
-  refine ⟨k, ?_⟩
-  have hcols : (k : Matrix (b ⊕ a) (b ⊕ a) O).toCols₁ = y₀ := by
-    ext i j
-    simpa [GeneralLinearGroup.smul_def, Matrix.mul_apply, Matrix.one_apply]
-      using congrFun₂ hk i j
-  exact (congrArg (fun M ↦ M.map Subtype.val) hcols).trans hmap
+  obtain ⟨k, hk⟩ := y₀.exists_toCols₁_eq_iff.mpr ⟨t, ht⟩
+  exact ⟨k, (congrArg (fun M ↦ M.map Subtype.val) hk).trans hmap⟩
 
 /-- Simultaneous right multiplication of the fixed and varying rows scales the datum
 by the inverse determinant character. No invertibility hypothesis is needed. -/

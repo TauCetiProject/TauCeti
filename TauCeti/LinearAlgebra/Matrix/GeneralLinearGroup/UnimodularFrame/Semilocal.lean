@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Basic
 import TauCeti.Algebra.Module.StablyFree.Semilocal
@@ -42,6 +43,8 @@ being stably free and not free.
   is the set `TauCeti.unimodularFrames R n k` of all `k`-frames.
 * `TauCeti.orbit_submatrix_one`: over a semilocal ring, the orbit of the standard frame of an
   injective `f : k → n` consists of exactly the `n × k` matrices with a left inverse.
+* `Matrix.exists_toCols₁_eq_iff`: a matrix over a semilocal ring is the first columns of an
+  invertible matrix if and only if it has a left inverse.
 
 ## References
 
@@ -152,3 +155,29 @@ theorem orbit_submatrix_one [Finite (MaximalSpectrum R)] {f : k → n}
   orbit_eq_unimodularFrames (submatrix_one_mem_unimodularFrames hf)
 
 end TauCeti
+
+namespace Matrix
+
+variable {R b a : Type*} [CommRing R] [Fintype b] [Fintype a]
+  [DecidableEq b] [DecidableEq a]
+
+/-- Over a commutative semilocal ring, a matrix is the first columns of an invertible
+matrix if and only if it has a left inverse. -/
+theorem exists_toCols₁_eq_iff [Finite (MaximalSpectrum R)] (y : Matrix (b ⊕ a) b R) :
+    (∃ k : GL (b ⊕ a) R, (k : Matrix (b ⊕ a) (b ⊕ a) R).toCols₁ = y) ↔
+      ∃ t : Matrix b (b ⊕ a) R, t * y = 1 := by
+  have hcols (k : GL (b ⊕ a) R) :
+      k • (1 : Matrix (b ⊕ a) (b ⊕ a) R).submatrix id Sum.inl =
+        (k : Matrix (b ⊕ a) (b ⊕ a) R).toCols₁ := by
+    rw [GeneralLinearGroup.smul_def, ← @Equiv.coe_refl (b ⊕ a), mul_submatrix_one]
+    ext i j
+    simp only [submatrix_apply, toCols₁_apply, Equiv.refl_symm, Equiv.refl_apply,
+      Function.comp_apply, id_eq]
+  rw [← TauCeti.mem_unimodularFrames_iff, ← TauCeti.orbit_submatrix_one Sum.inl_injective]
+  constructor
+  · rintro ⟨k, hk⟩
+    exact ⟨k, (hcols k).trans hk⟩
+  · rintro ⟨k, hk⟩
+    exact ⟨k, (hcols k).symm.trans hk⟩
+
+end Matrix
