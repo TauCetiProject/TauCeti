@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.OpenMapping
 import TauCeti.Analysis.Complex.Annulus.Basic
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Kernel and adjoint kernel of the Cauchy–Riemann operator on the annulus with real boundary values
@@ -75,7 +76,9 @@ private theorem im_nonneg_of_im_eq_zero_on_annulus_boundary {r₁ r₂ : ℝ} (h
   have hle := Complex.norm_le_of_forall_mem_frontier_norm_le
     (isBounded_ball.subset sdiff_subset) hd (C := 1)
     (fun w hw => by
-      rw [hnorm, hbd w (frontier_ball_diff_closedBall_subset hr₁ h hw), neg_zero, Real.exp_zero])
+      rw [sdiff_eq] at hw
+      rw [hnorm, hbd w (union_comm (sphere (0 : ℂ) r₂) _ ▸
+        frontier_ball_inter_compl_closedBall_subset 0 r₁ r₂ hw), neg_zero, Real.exp_zero])
     (by rwa [closure_ball_diff_closedBall hr₁ h])
   rw [hnorm, Real.exp_le_one_iff] at hle
   linarith

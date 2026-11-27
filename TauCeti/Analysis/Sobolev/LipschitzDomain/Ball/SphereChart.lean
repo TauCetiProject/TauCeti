@@ -32,6 +32,9 @@ half-height and radius `1/4`, the unit ball is exactly the region above this gra
   with `TauCeti.contDiff_unitSphereGraph` and `TauCeti.exists_holderWith_fderiv_unitSphereGraph`.
 * `TauCeti.unitSphereChart`: the rigid coordinates at a point of the unit sphere, with
   `TauCeti.unitSphereChart_symm_apply` and `TauCeti.norm_unitSphereChart_symm_sq`.
+* `TauCeti.unitSphereGraph_lt_iff` and `TauCeti.lt_unitSphereGraph_iff`: near the origin the
+  regions above and below the graph are the inside and the outside of the unit sphere about the
+  point at height one.
 * `TauCeti.unitSphereChart_symm_mem_ball_iff`: near the chart centre the unit ball is the region
   above `TauCeti.unitSphereGraph`.
 * `TauCeti.exists_affineIsometryEquiv_unitSphereGraph_chart`: such charts at every point of the
@@ -107,6 +110,19 @@ theorem unitSphereGraph_of_norm_le {v : K} (hv : ‖v‖ ≤ 1 / 4) :
   rw [unitSphereGraph,
     (unitSphereBump (K := K)).one_of_mem_closedBall (by simpa [unitSphereBump] using hv), one_mul]
 
+/-- Near the origin, the point at height `t ≤ 1` over `v` lies strictly above the cut-off sphere
+graph exactly when it lies in the open unit ball about the point at height one. -/
+theorem unitSphereGraph_lt_iff {v : K} {t : ℝ} (hv : ‖v‖ ≤ 1 / 4) (ht : t ≤ 1) :
+    unitSphereGraph v < t ↔ (1 - t) ^ 2 + ‖v‖ ^ 2 < 1 := by
+  rw [unitSphereGraph_of_norm_le hv, sub_lt_comm, Real.lt_sqrt (by linarith), lt_sub_iff_add_lt]
+
+/-- Near the origin, the point at height `t < 1` over `v` lies strictly below the cut-off sphere
+graph exactly when it lies outside the closed unit ball about the point at height one. -/
+theorem lt_unitSphereGraph_iff {v : K} {t : ℝ} (hv : ‖v‖ ≤ 1 / 4) (ht : t < 1) :
+    t < unitSphereGraph v ↔ 1 < (1 - t) ^ 2 + ‖v‖ ^ 2 := by
+  rw [unitSphereGraph_of_norm_le hv, lt_sub_comm, Real.sqrt_lt' (by linarith),
+    sub_lt_iff_lt_add, add_comm]
+
 end Graph
 
 section Chart
@@ -166,18 +182,8 @@ theorem unitSphereChart_symm_mem_ball_iff (ν : E) (hν : ‖ν‖ = 1)
     (unitSphereChart ν hν).symm z ∈ ball 0 1 ↔ unitSphereGraph z.snd < z.fst := by
   rw [mem_normalCylinder] at hz
   obtain ⟨-, ht2, hv⟩ := hz
-  have hsq := norm_unitSphereChart_symm_sq ν hν z
-  rw [mem_ball_zero_iff, unitSphereGraph_of_norm_le hv.le]
-  have hn0 := norm_nonneg ((unitSphereChart ν hν).symm z)
-  constructor
-  · intro h
-    have hlt : (1 - z.fst) ^ 2 < 1 - ‖z.snd‖ ^ 2 := by nlinarith
-    have := (Real.lt_sqrt (by linarith)).2 hlt
-    linarith
-  · intro h
-    have hlt : 1 - z.fst < √(1 - ‖z.snd‖ ^ 2) := by linarith
-    have hsq' := (Real.lt_sqrt (by linarith)).1 hlt
-    nlinarith
+  rw [mem_ball_zero_iff, unitSphereGraph_lt_iff hv.le (by linarith),
+    ← norm_unitSphereChart_symm_sq ν hν z, sq_lt_one_iff₀ (norm_nonneg _)]
 
 /-- **Charts of the unit ball with one model space.** Fix a unit vector `e₀`. At every point `x`
 of the unit sphere there are rigid coordinates with values in `ℝ × (ℝ ∙ e₀)ᗮ`, sending `x` to the

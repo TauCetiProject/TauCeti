@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Lower-order terms of the divergence-form energy form on `H¹(Ω)`
@@ -26,10 +28,12 @@ between the two sides of a weak equation.
   `TauCeti.PDE.memLp_lowerOrder`: `⟪b, ∇u⟫ ∈ L²(Ω)` and `⟪b, ∇u⟫ + c u ∈ L²(Ω)`.
 * `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable`: with
   bounded principal and mass coefficients the energy form is that of the operator without drift
-  plus the pairing `∫_Ω ⟪b, ∇u⟫ v`, as soon as this pairing is integrable, for instance for a drift
-  in `Lᵖ` (`TauCeti.PDE.integrable_inner_gradient_mul_value`);
+  plus the pairing `∫_Ω ⟪b, ∇u⟫ v`, as soon as this pairing is integrable;
   `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner` is the case of a bounded
   drift.
+* `TauCeti.PDE.integrable_inner_gradient_mul_value`: the pairing is integrable for a measurable
+  drift `‖b‖ ≤ β + |d|` with `d ∈ Lᵖ(Ω)` and a test `v ∈ H¹(Ω) ∩ L^q(Ω)`, `1/p + 1/q = 1/2`, by
+  the Hölder bound `TauCeti.PDE.integrable_const_add_norm_mul_norm_mul_norm`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
   `H¹(Ω) → L²(Ω)`, with norm at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖` for the jet map `J`
   (`TauCeti.PDE.norm_lowerOrderL_le_eLpNorm`), hence at most `(|β| + |γ|) ‖J‖` for bounds
@@ -164,6 +168,34 @@ theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable
   simp only [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply,
     Pi.zero_apply, inner_zero_left, zero_mul]
   ring
+
+/-- If `d ∈ Lᵖ`, `g ∈ L²` and `f ∈ L² ∩ L^q` with `1/p + 1/q = 1/2`, then `(C + |d|) |g| |f|` is
+integrable for every constant `C`. -/
+theorem integrable_const_add_norm_mul_norm_mul_norm {μ : Measure (EuclideanSpace ℝ ι)}
+    {d : EuclideanSpace ℝ ι → ℝ} {p q : ENNReal} (C : ℝ) (hd : MemLp d p μ)
+    (hpq : p⁻¹ + q⁻¹ = 2⁻¹) {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 μ)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 μ) (hfq : MemLp f q μ) :
+    Integrable (fun x ↦ (C + ‖d x‖) * (‖g x‖ * ‖f x‖)) μ := by
+  have : p.HolderTriple q 2 := ⟨hpq⟩
+  exact (((hg.norm.integrable_mul hf.norm).const_mul C).add
+    (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) hg hfq)).congr
+    (ae_of_all _ fun x ↦ by simp only [Pi.add_apply, Pi.mul_apply]; ring)
+
+/-- **The drift pairing for a drift in `Lᵖ`.** Let `b` be almost everywhere strongly measurable
+on `Ω` with `‖b‖ ≤ β + |d|` there, for a constant `β` and `d ∈ Lᵖ(Ω)`. If `u ∈ H¹(Ω)` and
+`φ ∈ H¹(Ω) ∩ L^q(Ω)` with `1/p + 1/q = 1/2`, then the drift term `⟪b, ∇u⟫ φ` of the weak form is
+integrable. -/
+theorem integrable_inner_gradient_mul_value {d : EuclideanSpace ℝ ι → ℝ} {beta : ℝ}
+    {p q : ENNReal} (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hd : MemLp d p (mu.restrict Omega)) (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta + ‖d x‖)
+    (hpq : p⁻¹ + q⁻¹ = 2⁻¹) (u : W1p mu Omega 2) {φ : W1p mu Omega 2}
+    (hφ : MemLp (W1p.value φ) q (mu.restrict Omega)) :
+    Integrable (fun x ↦ ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value φ x) (mu.restrict Omega) :=
+  (integrable_const_add_norm_mul_norm_mul_norm beta hd hpq (Lp.memLp (W1p.gradient u))
+    (Lp.memLp _) hφ).mono'
+    ((hb.inner (Lp.aestronglyMeasurable _)).mul (Lp.aestronglyMeasurable _))
+    ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦
+      norm_inner_mul_le_of_norm_le (hb_bound x hx) _ _)
 
 /-- **Splitting off a bounded drift.** With an essentially bounded principal energy density and
 bounded lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of

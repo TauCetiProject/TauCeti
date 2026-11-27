@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.SphereChart
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
-import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -89,61 +88,37 @@ private theorem exists_holderWith_fderiv_scaledSphereGraph [FiniteDimensional �
   rw [fderiv_scaledSphereGraph hs]
   simpa only [mul_one, Function.comp_def] using hC.comp hl
 
-/-- Near the origin the rescaled sphere graph is `s (1 - √(1 - ‖v‖² / s²))`. -/
-private theorem scaledSphereGraph_of_norm_le {s : ℝ} (hs : s ≠ 0) {v : K}
-    (hv : ‖v‖ ≤ |s| / 4) :
-    scaledSphereGraph s v = s * (1 - √(1 - ‖v‖ ^ 2 / s ^ 2)) := by
-  have hn : ‖s⁻¹ • v‖ = ‖v‖ / |s| := by rw [norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_eq_div]
-  rw [scaledSphereGraph, unitSphereGraph_of_norm_le (by
-    rw [hn, div_le_iff₀ (abs_pos.2 hs)]
-    linarith), hn, div_pow, sq_abs]
+/-- The squared distance `(s - t)² + ‖v‖²` in the coordinates rescaled by `s ≠ 0`. -/
+private theorem sub_sq_add_norm_sq_eq {s : ℝ} (hs : s ≠ 0) (t : ℝ) (v : K) :
+    (s - t) ^ 2 + ‖v‖ ^ 2 = s ^ 2 * ((1 - t / s) ^ 2 + ‖s⁻¹ • v‖ ^ 2) := by
+  rw [norm_smul, norm_inv, Real.norm_eq_abs, mul_pow, inv_pow, sq_abs]
+  field_simp
 
-/-- **The region above the rescaled sphere graph, `s > 0`.** For `|t|, ‖v‖ ≤ s / 4`, the point at
-height `t` over `v` lies in the open ball of radius `s` about the point at height `s` exactly when
-it lies above the graph. -/
-private theorem sub_sq_add_norm_sq_lt_iff {s t : ℝ} (hs : 0 < s) (ht : |t| ≤ s / 4) {v : K}
+private theorem norm_inv_smul_le {s : ℝ} (hs : s ≠ 0) {v : K} (hv : ‖v‖ ≤ |s| / 4) :
+    ‖s⁻¹ • v‖ ≤ 1 / 4 := by
+  rw [norm_smul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 hs)]
+  linarith
+
+/-- **The region above the rescaled sphere graph, `s > 0`.** For `‖v‖ ≤ s / 4` and `t ≤ s`, the
+point at height `t` over `v` lies in the open ball of radius `s` about the point at height `s`
+exactly when it lies above the graph. This is `TauCeti.unitSphereGraph_lt_iff`, rescaled. -/
+private theorem scaledSphereGraph_lt_iff_of_pos {s t : ℝ} (hs : 0 < s) (ht : t ≤ s) {v : K}
     (hv : ‖v‖ ≤ s / 4) :
-    (s - t) ^ 2 + ‖v‖ ^ 2 < s ^ 2 ↔ scaledSphereGraph s v < t := by
-  rw [scaledSphereGraph_of_norm_le hs.ne' (by rwa [abs_of_pos hs])]
-  have ha : ‖v‖ ^ 2 / s ^ 2 ≤ 1 / 16 := by
-    rw [div_le_iff₀ (by positivity)]
-    nlinarith [norm_nonneg v]
-  set q := √(1 - ‖v‖ ^ 2 / s ^ 2)
-  have hq0 : 0 ≤ q := Real.sqrt_nonneg _
-  have hq2 : q ^ 2 = 1 - ‖v‖ ^ 2 / s ^ 2 := Real.sq_sqrt (by linarith)
-  have hv2 : ‖v‖ ^ 2 = s ^ 2 * (1 - q ^ 2) := by
-    rw [hq2]
-    field_simp
-    ring
-  have hst : 0 < s - t := by linarith [le_abs_self t]
-  have hsq : 0 ≤ s * q := mul_nonneg hs.le hq0
-  rw [hv2, show (s - t) ^ 2 + s ^ 2 * (1 - q ^ 2) < s ^ 2 ↔ (s - t) ^ 2 < (s * q) ^ 2 by
-    constructor <;> intro h <;> nlinarith, pow_lt_pow_iff_left₀ hst.le hsq two_ne_zero]
-  constructor <;> intro h <;> nlinarith
+    scaledSphereGraph s v < t ↔ (s - t) ^ 2 + ‖v‖ ^ 2 < s ^ 2 := by
+  rw [scaledSphereGraph, ← lt_div_iff₀' hs,
+    unitSphereGraph_lt_iff (norm_inv_smul_le hs.ne' (by rwa [abs_of_pos hs]))
+      ((div_le_one hs).2 ht), sub_sq_add_norm_sq_eq hs.ne', mul_lt_iff_lt_one_right (by positivity)]
 
-/-- **The region above the rescaled sphere graph, `s < 0`.** For `|t|, ‖v‖ ≤ -s / 4`, the point
-at height `t` over `v` lies outside the closed ball of radius `-s` about the point at height `s`
-exactly when it lies above the graph. -/
-private theorem sq_lt_sub_sq_add_norm_sq_iff {s t : ℝ} (hs : s < 0) (ht : |t| ≤ -s / 4) {v : K}
+/-- **The region above the rescaled sphere graph, `s < 0`.** For `‖v‖ ≤ -s / 4` and `s < t`, the
+point at height `t` over `v` lies outside the closed ball of radius `-s` about the point at height
+`s` exactly when it lies above the graph. This is `TauCeti.lt_unitSphereGraph_iff`, rescaled. -/
+private theorem scaledSphereGraph_lt_iff_of_neg {s t : ℝ} (hs : s < 0) (ht : s < t) {v : K}
     (hv : ‖v‖ ≤ -s / 4) :
-    s ^ 2 < (s - t) ^ 2 + ‖v‖ ^ 2 ↔ scaledSphereGraph s v < t := by
-  rw [scaledSphereGraph_of_norm_le hs.ne (by rwa [abs_of_neg hs])]
-  have ha : ‖v‖ ^ 2 / s ^ 2 ≤ 1 / 16 := by
-    rw [div_le_iff₀ (by nlinarith)]
-    nlinarith [norm_nonneg v]
-  have hs0 : s ≠ 0 := hs.ne
-  set q := √(1 - ‖v‖ ^ 2 / s ^ 2)
-  have hq0 : 0 ≤ q := Real.sqrt_nonneg _
-  have hq2 : q ^ 2 = 1 - ‖v‖ ^ 2 / s ^ 2 := Real.sq_sqrt (by linarith)
-  have hv2 : ‖v‖ ^ 2 = s ^ 2 * (1 - q ^ 2) := by
-    rw [hq2]
-    field_simp
-    ring
-  have hst : 0 < t - s := by linarith [neg_abs_le t]
-  have hsq : 0 ≤ -(s * q) := by nlinarith
-  rw [hv2, show s ^ 2 < (s - t) ^ 2 + s ^ 2 * (1 - q ^ 2) ↔ (-(s * q)) ^ 2 < (t - s) ^ 2 by
-    constructor <;> intro h <;> nlinarith, pow_lt_pow_iff_left₀ hsq hst.le two_ne_zero]
-  constructor <;> intro h <;> nlinarith
+    scaledSphereGraph s v < t ↔ s ^ 2 < (s - t) ^ 2 + ‖v‖ ^ 2 := by
+  rw [scaledSphereGraph, mul_comm, ← div_lt_iff_of_neg hs,
+    lt_unitSphereGraph_iff (norm_inv_smul_le hs.ne (by rwa [abs_of_neg hs]))
+      ((div_lt_one_of_neg hs).2 ht), sub_sq_add_norm_sq_eq hs.ne,
+    lt_mul_iff_one_lt_right (by nlinarith)]
 
 end Graph
 
@@ -187,25 +162,19 @@ private theorem sphereChart_symm_apply (x μ : F) (hμ : ‖μ‖ = 1)
   simp [LinearIsometryEquiv.withLpProdCongr]
 
 private theorem sphereChart_self (x μ : F) (hμ : ‖μ‖ = 1) : sphereChart x μ hμ x = 0 := by
-  rw [eq_comm, ← AffineIsometryEquiv.symm_apply_eq, sphereChart_symm_apply]
-  simp
+  simp [sphereChart, LinearIsometryEquiv.withLpProdCongr]
 
-/-- In the chart at `x` in the direction `μ`, the squared distance to `x - s μ` is
-`(s - t)² + ‖w‖²`. -/
+/-- In the chart at `x` in the direction `μ`, the squared distance to `x - s μ`, the point with
+coordinates `(s, 0)`, is `(s - t)² + ‖w‖²`. -/
 private theorem norm_sphereChart_symm_sub_sq (x μ : F) (hμ : ‖μ‖ = 1) (s : ℝ)
     (z : WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))) :
     ‖(sphereChart x μ hμ).symm z - (x - s • μ)‖ ^ 2 = (s - z.fst) ^ 2 + ‖z.snd‖ ^ 2 := by
-  set w : F := ((orthogonalSpanEquiv μ hμ).symm z.snd : F)
-  have hinner : ⟪μ, w⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1
-      ((orthogonalSpanEquiv μ hμ).symm z.snd).property
-  have hw : ‖w‖ = ‖z.snd‖ := by
-    rw [Submodule.norm_coe, LinearIsometryEquiv.norm_map]
-  have h : (sphereChart x μ hμ).symm z - (x - s • μ) = (s - z.fst) • μ + w := by
-    rw [sphereChart_symm_apply, sub_smul]
-    abel
-  rw [h, norm_add_sq_real, norm_smul, inner_smul_left, hinner, hμ, Real.norm_eq_abs, hw]
-  simp [sq_abs]
+  have h : x - s • μ = (sphereChart x μ hμ).symm (WithLp.toLp 2 (s, 0)) := by
+    simp [sphereChart_symm_apply]
+  rw [h, ← dist_eq_norm, AffineIsometryEquiv.dist_map, dist_eq_norm, WithLp.prod_norm_sq_eq_of_L2,
+    Real.norm_eq_abs, sq_abs, WithLp.sub_fst, WithLp.sub_snd]
+  simp only [WithLp.toLp_fst, WithLp.toLp_snd, sub_zero]
+  ring
 
 /-- The conclusion of `exists_affineIsometryEquiv_graph_of_mem_frontier_annulus` at a point `x`
 for a set `A`. -/
@@ -230,13 +199,11 @@ private theorem hasGraphChart_of_mem_sphere_outer {y x : F} {r R : ℝ} (hr : 0 
   have hh : 0 < h := lt_min (by positivity) (by linarith)
   refine ⟨sphereChart x μ hμ, scaledSphereGraph R, h, h, K, sphereChart_self x μ hμ, hh, hh,
     scaledSphereGraph_zero R, contDiff_scaledSphereGraph R, hK, fun z hz => ?_⟩
-  obtain ⟨ht1, ht2, hw⟩ := mem_normalCylinder.1 hz
+  obtain ⟨-, ht2, hw⟩ := mem_normalCylinder.1 hz
   have hnorm := norm_sphereChart_symm_sub_sq x μ hμ R z
   rw [hc] at hnorm
-  have ht : |z.fst| ≤ R / 4 := abs_le.2 ⟨by linarith [min_le_left (R / 4) (R - r)],
-    by linarith [min_le_left (R / 4) (R - r)]⟩
   have hRt : r < R - z.fst := by linarith [min_le_right (R / 4) (R - r)]
-  rw [← sub_sq_add_norm_sq_lt_iff hR ht (hw.le.trans (min_le_left _ _)), ← hnorm,
+  rw [scaledSphereGraph_lt_iff_of_pos hR (by linarith) (hw.le.trans (min_le_left _ _)), ← hnorm,
     mem_inter_iff, mem_ball_iff_norm, mem_compl_iff, mem_closedBall_iff_norm, not_le,
     ← pow_lt_pow_iff_left₀ (norm_nonneg _) hR.le two_ne_zero]
   refine ⟨fun h => h.1, fun h => ⟨h, ?_⟩⟩
@@ -263,14 +230,11 @@ private theorem hasGraphChart_of_mem_sphere_inner {y x : F} {r R : ℝ} (hr : 0 
   obtain ⟨ht1, ht2, hw⟩ := mem_normalCylinder.1 hz
   have hnorm := norm_sphereChart_symm_sub_sq x μ hμ (-r) z
   rw [hc] at hnorm
-  have ht : |z.fst| ≤ -(-r) / 4 := by
-    rw [neg_neg]
-    exact abs_le.2 ⟨by linarith [min_le_left (r / 4) ((R - r) / 2)],
-      by linarith [min_le_left (r / 4) ((R - r) / 2)]⟩
   have hw' : ‖z.snd‖ ≤ -(-r) / 4 := by
     rw [neg_neg]
     exact hw.le.trans (min_le_left _ _)
-  rw [← sq_lt_sub_sq_add_norm_sq_iff (neg_lt_zero.2 hr) ht hw', ← hnorm, neg_sq,
+  rw [scaledSphereGraph_lt_iff_of_neg (neg_lt_zero.2 hr)
+      (by linarith [min_le_left (r / 4) ((R - r) / 2)]) hw', ← hnorm, neg_sq,
     mem_inter_iff, mem_ball_iff_norm, mem_compl_iff, mem_closedBall_iff_norm, not_le,
     ← pow_lt_pow_iff_left₀ hr.le (norm_nonneg _) two_ne_zero]
   refine ⟨fun h => h.2, fun h => ⟨?_, h⟩⟩

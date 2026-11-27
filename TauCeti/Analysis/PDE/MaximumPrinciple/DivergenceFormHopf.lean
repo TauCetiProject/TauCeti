@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundedDomain
-import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.LpDrift
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Annulus
@@ -20,7 +19,6 @@ import TauCeti.Analysis.PDE.EnergyForm.Poincare
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
-import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.LipschitzRepresentative
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
@@ -34,15 +32,19 @@ Let `B = ball y R` be a ball in an open set `Ω ⊆ ℝ^{n+1}` and let `x₀` li
 Let `a` be uniformly elliptic on `B` with constants `0 < λ ≤ Λ`, not necessarily symmetric, and
 `α`-Hölder on `closedBall y R` for some `α > 0`, and let `b` be a measurable drift, bounded on `B`.
 Let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`, that is
-`a(u, v) + ∫ (b · ∇u) v ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and suppose that `u` agrees
-almost everywhere on `B` with a function `g` continuous on `closedBall y R`, `g x₀ < g x` on `B`.
+`energyFormH1 a b 0 u v ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`; when the drift pairing
+`∫_Ω (b · ∇u) v` is integrable, this is the usual weak inequality `a(u, v) + ∫_Ω (b · ∇u) v ≥ 0`
+(`TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner_of_integrable`). Suppose
+that `u` agrees almost everywhere on `B` with a function `g` continuous on `closedBall y R`,
+`g x₀ < g x` on `B`.
 **Hopf's lemma** (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg`) says that
 `g` leaves `x₀` at a positive linear rate along the inward normal `-ν`, `ν = (x₀ - y) / R`:
 `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
 
-The same holds with lower-order terms. For a drift `β ∈ L^q(B)`, `q > max 2 (n + 1)`, and a
-measurable zeroth-order coefficient `0 ≤ c ≤ M` on `B`, a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + βⁱ ∂ᵢu + c u ≥ 0` satisfies the same conclusion as soon as `c g(x₀) ≤ 0`
+The same holds with lower-order terms. For a drift `β ∈ L^q(B)` with a finite exponent
+`max(2, n + 1) < q < ∞`, and a measurable zeroth-order coefficient `0 ≤ c ≤ M` on `B`, a weak
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + βⁱ ∂ᵢu + c u ≥ 0`, in the same sense
+`energyFormH1 a β c u v ≥ 0`, satisfies the same conclusion as soon as `c g(x₀) ≤ 0`
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp`); in Rosales's sign
 convention these are the terms `cⁱ Dᵢu` with `cⁱ ∈ L^q` and `d u` with `d ≤ 0` bounded. With a
 bounded drift, a bounded `c` of either sign is allowed when `g x₀ = 0`
@@ -338,7 +340,8 @@ private theorem exists_correction_of_uniformlyEllipticOn
     (measure_ne_top_of_subset unitAnnulus_subset_ball measure_ball_lt_top.ne) hHL
   refine ⟨ψ, hψ, fun M hM hHM => ?_⟩
   have := hb.pos
-  -- The `L²` norm of the field is at most `V M`, and `(λ / 10) ‖ψ‖² ≤ a(ψ, ψ) ≤ ‖H‖_{L²} ‖ψ‖`.
+  -- The `L²` norm of the field is at most `V M`; the energy estimate then gives
+  -- `(λ / 10) ‖ψ‖ ≤ ‖H‖_{L²}`.
   have hL2 : ‖hHL.toLp (correctionField b A κ)‖ ≤
       (measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) : ℝ) ^
         ((2 : ℝ≥0∞).toReal⁻¹) * M := by
@@ -347,19 +350,17 @@ private theorem exists_correction_of_uniformlyEllipticOn
       with z h1 h2
     rw [h1]
     exact hHM z (unitAnnulus_subset_closedBall h2)
-  have hcoer := div_ten_mul_norm_sq_le_energyFormH1 hbD hm ψ
-  have henergy : energyFormH1 b 0 0 (ψ : W1p volume unitAnnulus 2) (ψ : W1p volume unitAnnulus 2)
-      ≤ ‖hHL.toLp (correctionField b A κ)‖ * ‖ψ‖ := by
-    rw [hψ ψ, ← divergenceForcing_toLp_apply hHL ψ]
-    exact (le_abs_self _).trans (norm_divergenceForcing_apply_le _ ψ)
-  have hX : lam / 10 * ‖ψ‖ ≤ (measureUnivNNReal (volume.restrict (unitAnnulus (n := n) : Set E)) :
-      ℝ) ^ ((2 : ℝ≥0∞).toReal⁻¹) * M := by
-    rcases (norm_nonneg ψ).eq_or_lt with h0 | hpos
-    · rw [← h0, mul_zero]
-      positivity
-    · nlinarith [hcoer.trans henergy]
-  calc ‖ψ‖ = 10 / lam * (lam / 10 * ‖ψ‖) := by field_simp
-    _ ≤ _ := mul_le_mul_of_nonneg_left hX (by positivity)
+  have h := norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
+    (hbD.memLp_energyIntegrand_zero_zero hm) (by positivity : 0 < lam / 10)
+    (div_ten_mul_norm_sq_le_energyFormH1 hbD hm) (b := 0) (c := 0) (g := 0)
+    (ℓ := divergenceForcing (hHL.toLp (correctionField b A κ)))
+    (by rw [sub_zero]; exact ψ.property)
+    fun v => by rw [hψ v, divergenceForcing_toLp_apply]
+  rw [sub_zero, norm_zero, mul_zero, add_zero, Submodule.norm_coe] at h
+  calc ‖ψ‖ ≤ ‖hHL.toLp (correctionField b A κ)‖ / (lam / 10) :=
+        h.trans (div_le_div_of_nonneg_right (norm_divergenceForcing_le _) (by positivity))
+    _ = 10 / lam * ‖hHL.toLp (correctionField b A κ)‖ := by ring
+    _ ≤ _ := mul_le_mul_of_nonneg_left hL2 (by positivity)
 
 /-- **The `C^{1,β}` estimate on the annulus.** For exponents as in
 `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`, there is `C ≥ 0` such that for
@@ -575,24 +576,18 @@ private theorem exists_drift_correction (ν : E) (hν : ‖ν‖ = 1) {α : ℝ�
       (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hq2.le hf.aestronglyMeasurable)
   have hH1 : ‖χ‖ ≤ 10 / lam * (V *
       (eLpNorm f q (volume.restrict (unitAnnulus (n := n) : Set E))).toReal) := by
-    have henergy : energyFormH1 b 0 0 (χ : W1p volume unitAnnulus 2)
-        (χ : W1p volume unitAnnulus 2) ≤ ‖hf2.toLp f‖ * ‖χ‖ := by
-      have hint : ∫ z in (unitAnnulus (n := n) : Set E),
-          f z * W1p.value (χ : W1p volume unitAnnulus 2) z = dirichletForcing (hf2.toLp f) χ := by
-        rw [dirichletForcing_apply_eq_setIntegral]
-        refine integral_congr_ae ?_
-        filter_upwards [hf2.coeFn_toLp] with z hz
-        rw [hz]
-      rw [hχ' χ, hint]
-      exact (neg_le_abs _).trans ((Real.norm_eq_abs _).symm.trans_le
-        (norm_dirichletForcing_apply_le _ χ))
-    have hX : lam / 10 * ‖χ‖ ≤ ‖hf2.toLp f‖ := by
-      rcases (norm_nonneg χ).eq_or_lt with h0 | hpos
-      · rw [← h0, mul_zero]
-        positivity
-      · nlinarith [hcoer χ]
-    calc ‖χ‖ = 10 / lam * (lam / 10 * ‖χ‖) := by field_simp
-      _ ≤ _ := mul_le_mul_of_nonneg_left (hX.trans hL2) (by positivity)
+    have hsol : IsWeakSolutionDirichlet b 0 0 (hf2.neg.toLp (-f)) χ := by
+      refine (isWeakSolutionDirichlet_iff _ χ).2 fun v => ?_
+      rw [hχ v]
+      refine integral_congr_ae ?_
+      filter_upwards [hf2.neg.coeFn_toLp] with z hz
+      rw [hz]
+    have hnorm : ‖hf2.neg.toLp (-f)‖ = ‖hf2.toLp f‖ := by
+      rw [Lp.norm_toLp, Lp.norm_toLp, eLpNorm_neg]
+    calc ‖χ‖ ≤ ‖hf2.toLp f‖ / (lam / 10) :=
+          hnorm ▸ norm_le_of_isWeakSolutionDirichlet (by positivity) hcoer hsol
+      _ = 10 / lam * ‖hf2.toLp f‖ := by ring
+      _ ≤ _ := mul_le_mul_of_nonneg_left hL2 (by positivity)
   -- The `C^{1,β}` estimate on the annulus for `-div (b ∇χ) = -f`.
   have hgrad := H (w := χ) (b := b) (G := 0) (f := -f) (Kb := Kb) (KG := 0) hb hbh hKb
     (HolderWith.zero.holderOnWith _) hf.neg (fun φ => by
@@ -880,9 +875,7 @@ private theorem ae_add_mul_le_of_supersolution {b : E → Matrix (Fin (n + 1)) (
     (subset_univ _)
   have hbD := hb.mono_set unitAnnulus_subset_closedBall
   have hm := aestronglyMeasurable_restrict_unitAnnulus hbc
-  have hcb := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    hbD.upper_nonneg hm aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hbD.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have hcb := hbD.memLp_energyIntegrand_zero_zero hm
   -- The mass coefficient is essentially bounded, so the energy form splits off its mass term.
   have hcbd : ∀ z ∈ (unitAnnulus (n := n) : Set E), ‖c z‖ ≤ γ := fun z hz => by
     rw [Real.norm_eq_abs, abs_of_nonneg (hc0 z hz)]
@@ -1015,12 +1008,11 @@ private theorem exists_add_mul_le_of_supersolution (ν : E) (hν : ‖ν‖ = 1)
       (volume.restrict (unitAnnulus (n := n) : Set E))).toReal)
   have hfn : C₂ * (eLpNorm (fun z => (B + 2) * ‖β z‖) q
       (volume.restrict (unitAnnulus (n := n) : Set E))).toReal ≤ Lχ := by
-    refine mul_le_mul_of_nonneg_left ?_ hC₂
-    have h := eLpNorm_le_mul_eLpNorm_of_ae_le_mul hf.aestronglyMeasurable (c := (B : ℝ) + 2)
-      (g := β) (ae_of_all _ fun z => by rw [Real.norm_of_nonneg (by positivity)]) q
-    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hβ.eLpNorm_ne_top)
-      h).trans_eq ?_
-    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+    refine mul_le_mul_of_nonneg_left (le_of_eq ?_) hC₂
+    rw [show (fun z => (B + 2) * ‖β z‖) = ((B : ℝ) + 2) • fun z => ‖β z‖ from rfl,
+      eLpNorm_const_smul,
+      eLpNorm_norm _ hβ.aestronglyMeasurable, ENNReal.toReal_mul, toReal_eNorm,
+      Real.norm_of_nonneg (by positivity)]
   obtain ⟨χ, χ', hχ, hχ0, hχg, hχae, hχLip, hχ0'⟩ := Hχ hb hbh (hKb.trans hη1) hf
     (ae_of_all _ fun z => by positivity)
   have hL : Lχ ≤ min 1 (κ * Real.exp (-κ) / 4) := (mul_assoc _ _ _).symm.trans_le hDβ
@@ -1261,18 +1253,23 @@ private theorem memLp_rescaled_drift {β : E → E} {y p : E} {R ε : ℝ} {q : 
 /-- **Hopf's lemma with a drift and a mass term, under the sign condition `c g(x₀) ≤ 0`.** Let
 `B = ball y R ⊆ Ω ⊆ ℝⁿ⁺¹` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on
 `B` with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`,
-let the drift `β` lie in `L^q(B)` for some `q > max 2 (n + 1)`, and let `c` be measurable with
-`0 ≤ c ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + βⁱ ∂ᵢu + c u ≥ 0` in `Ω`, equal almost everywhere on `B` to a function `g`
+let the drift `β` lie in `L^q(B)` for a finite exponent `max(2, n + 1) < q < ∞`, and let `c` be
+measurable with `0 ≤ c ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + βⁱ ∂ᵢu + c u ≥ 0` in `Ω`, in the sense that `energyFormH1 a β c u v ≥ 0` for
+every nonnegative `v ∈ H¹₀(Ω)`, which is the usual split weak inequality when the drift and mass
+pairings are integrable. Let `u` be equal almost everywhere on `B` to a function `g`
 continuous on `closedBall y R` with `g x₀ < g x` for every `x ∈ B`, and suppose that
 `c g(x₀) ≤ 0` on `B`, for instance `g x₀ ≤ 0`. Then, with `ν = (x₀ - y) / R` the outer unit
 normal of `B` at `x₀`, `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
 
-This is the lemma of Rosales for a drift `cⁱ ∈ L^q`, `q > n + 1`, and a bounded zeroth-order term
-of the sign there called weakly non-positive. The integrability `q > n + 1` makes the rescaled
-drift `ε β(ε ·)` small in `L^q` as `ε → 0`, and it is the integrability under which the weak
-maximum principle holds
-(`TauCeti.PDE.UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top`).
+This is a result of the type of Rosales's Theorem 4.1, in the case with no lower-order term
+inside the divergence and with a bounded, nonnegative mass coefficient `c` in Tau Ceti's sign
+convention, that is a bounded zeroth-order coefficient `-c ≤ 0` in Rosales's. The exponent enters
+twice. The scaling condition `q > n + 1` makes the rescaled drift `ε β(ε ·)` small in `L^q` as
+`ε → 0`. The comparison step uses the weak maximum principle with a drift in `L^q`
+(`TauCeti.PDE.UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top`), whose hypotheses
+are `q > 2` and `n + 1 < q.toReal`, so that `q` is finite; the bound `q > 2` matters only in
+dimension one.
 The sign condition cannot be dropped: on the interval `(0, 2)`, `cosh` solves `-u'' + u = 0`, and
 its minimum `cosh 0 = 1` over `[0, 2)` is attained only at the boundary point `0`, where its
 derivative vanishes. -/
@@ -1411,7 +1408,7 @@ private theorem memLp_exponent_add_three {b : E → E} {y : E} {R Bb : ℝ}
 `B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on `B`
 with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`, and
 let `b` be a measurable drift with `‖b‖ ≤ B_b` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`, that is `a(u, v) + ∫ (b · ∇u) v ≥ 0` for every nonnegative
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`, that is `energyFormH1 a b 0 u v ≥ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on `closedBall y R` with
 `g x₀ < g x` for every `x ∈ B`. Then `g` leaves its minimum `x₀` at a positive linear rate along
 the inward normal: with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,

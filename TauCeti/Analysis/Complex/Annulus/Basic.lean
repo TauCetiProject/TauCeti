@@ -26,8 +26,9 @@ are computed for an arbitrary centre.
   annulus.
 * `TauCeti.Complex.sphere_subset_closure_ball_diff_closedBall`: that closure contains every circle
   with radius in `[r₁, r₂]`.
-* `TauCeti.Complex.frontier_ball_diff_closedBall_subset`: the frontier of the open annulus lies on
-  the two boundary circles.
+
+The frontier of the open annulus lies on the two boundary circles, by the metric-space lemma
+`TauCeti.frontier_ball_inter_compl_closedBall_subset`.
 -/
 
 public section
@@ -115,17 +116,5 @@ theorem sphere_subset_closure_ball_diff_closedBall {z₀ : ℂ} {r r₁ r₂ : �
   rw [closure_ball_diff_closedBall hr₁ h, mem_sdiff, mem_closedBall_iff_norm, mem_ball_iff_norm,
     not_lt, hw]
   exact ⟨h₂, h₁⟩
-
-/-- The frontier of the open annulus lies on the two boundary circles. -/
-theorem frontier_ball_diff_closedBall_subset {z₀ : ℂ} {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (h : r₁ < r₂) :
-    frontier (ball z₀ r₂ \ closedBall z₀ r₁) ⊆ sphere z₀ r₁ ∪ sphere z₀ r₂ := by
-  rw [(isOpen_ball.sdiff isClosed_closedBall).frontier_eq, closure_ball_diff_closedBall hr₁ h]
-  intro z hz
-  simp only [mem_sdiff, mem_ball_iff_norm, mem_closedBall_iff_norm, not_lt, not_and, not_le]
-    at hz
-  simp only [mem_union, mem_sphere_iff_norm]
-  rcases hz.1.1.lt_or_eq with h₂ | h₂
-  · exact Or.inl (le_antisymm (hz.2 h₂) hz.1.2)
-  · exact Or.inr h₂
 
 end TauCeti.Complex
