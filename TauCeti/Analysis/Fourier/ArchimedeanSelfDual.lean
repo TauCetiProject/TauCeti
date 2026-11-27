@@ -110,8 +110,8 @@ def complexTraceChar : AddChar ℂ Circle :=
 
 /-- `ψ_ℂ(z) = exp (2πi · 2 Re z)`. -/
 theorem complexTraceChar_apply (z : ℂ) : complexTraceChar z = 𝐞 (2 * z.re) := by
-  rw [← Algebra.trace_complex_apply]
-  rfl
+  rw [complexTraceChar, AddChar.compAddMonoidHom_apply, LinearMap.toAddMonoidHom_coe,
+    Algebra.trace_complex_apply]
 
 /-- `2 Re (z w)` is the real inner product of `z` with `2 conj w`. -/
 private theorem two_mul_re_mul (z w : ℂ) : 2 * (z * w).re = ⟪z, (2 : ℝ) • conj w⟫ := by

@@ -37,11 +37,11 @@ character** `ψ_v = adicCompletionAddChar K v` of `K_v`. This file proves:
 ## Sign convention
 
 On `K` the finite part `ψ_f` is `exp (2πi Tr_{K/ℚ} ·)`, and the infinite part of the standard
-adelic character carries the opposite sign. The roadmap's standard character
-`ψ_{ℚ_p}(x) = exp (-2πi {x}_p)` at the finite places is the inverse `ψ_v⁻¹`. A character and its
-inverse have the same annihilators, conductor exponent (`AddChar.conductorExponent_inv`) and
-self-dual measure (`AddChar.selfDualMeasure_inv`), so every statement here holds verbatim for
-`ψ_v⁻¹`.
+adelic character carries the opposite sign. Tate's local character `exp (-2πi {x}_p)` (Tate, §2.2)
+at the finite places is the inverse `ψ_v⁻¹`. A character and its inverse have the same
+annihilators, conductor exponent (`AddChar.conductorExponent_inv`) and self-dual measure
+(`AddChar.selfDualMeasure_inv`), so the annihilator, conductor-exponent and self-dual-measure
+statements here hold verbatim for `ψ_v⁻¹`.
 
 ## Main definitions
 
@@ -77,31 +77,6 @@ noncomputable section
 open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing IsDedekindDomain.HeightOneSpectrum
   NumberField MeasureTheory Measure ValuativeRel TauCeti
 open scoped NumberField nonZeroDivisors ENNReal
-
-namespace IsDedekindDomain.HeightOneSpectrum
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K] [Algebra R K]
-  [IsFractionRing R K] (v : HeightOneSpectrum R)
-
-/-- **The fractional ideals of `K_v` in terms of the adic valuation.** In the completion `K_v`
-with finite residue field, `x` lies in the fractional ideal `𝓂 ^ m`, the closed ball of radius
-`uniformizer ^ m` for the valuative relation, exactly when `Valued.v x ≤ exp (-m)`. -/
-theorem valuation_le_uniformizer_zpow_iff_valued_le [Finite (R ⧸ v.asIdeal)]
-    (x : v.adicCompletion K) (m : ℤ) :
-    ValuativeRel.valuation (v.adicCompletion K) x ≤
-        ValuativeRel.uniformizer (v.adicCompletion K) ^ m ↔
-      Valued.v x ≤ WithZero.exp (-m) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  lift x to (v.adicCompletion K)ˣ using isUnit_iff_ne_zero.2 hx
-  have hv : Valued.v (x : v.adicCompletion K) =
-      WithZero.exp (-(normalizedValuation (v.adicCompletion K) x).toAdd) := by
-    rw [← inv_inv (Valued.v (x : v.adicCompletion K)), ← normalizedValuationWithZero_adicCompletion,
-      normalizedValuationWithZero_coe, WithZero.exp_neg]
-    rfl
-  rw [valuation_le_uniformizer_zpow_iff, hv, WithZero.exp_le_exp, neg_le_neg_iff]
-
-end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti.GlobalNumberFields
 
@@ -139,19 +114,6 @@ theorem isLocallyConstant_adicCompletionAddChar :
 theorem continuous_adicCompletionAddChar : Continuous (adicCompletionAddChar K v) :=
   isLocallyConstant_adicCompletionAddChar.continuous
 
-/-- The sum of the finite adeles supported at the places of `S` with the components of `a` there
-has the components of `a` at `S` and `0` elsewhere. -/
-private theorem sum_single_apply [DecidableEq (HeightOneSpectrum (𝓞 K))]
-    (a : FiniteAdeleRing (𝓞 K) K) (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (w : HeightOneSpectrum (𝓞 K)) :
-    (∑ u ∈ S, single K u (a u)) w = if w ∈ S then a w else 0 := by
-  rw [← proj_apply, _root_.map_sum]
-  simp only [proj_apply]
-  split_ifs with hw
-  · rw [Finset.sum_eq_single_of_mem w hw fun u _ hu ↦ single_apply_of_ne hu.symm _,
-      single_apply_self]
-  · exact Finset.sum_eq_zero fun u hu ↦ single_apply_of_ne (ne_of_mem_of_not_mem hu hw).symm _
-
 /-- **`ψ_f` is the product of the local characters `ψ_v`.** If the finite adele `a` is integral at
 every place outside the finite set `S`, then `ψ_f (a) = ∏_{v ∈ S} ψ_v (a_v)`. -/
 theorem finiteAdeleAddChar_eq_prod (a : FiniteAdeleRing (𝓞 K) K)
@@ -173,7 +135,7 @@ theorem finiteAdeleAddChar_eq_prod (a : FiniteAdeleRing (𝓞 K) K)
         rw [add_sub_cancel]
     _ = ∏ u ∈ S, adicCompletionAddChar K u (a u) := by
         rw [finiteAdeleAddChar_add_of_mem_integralAdeles hint, AddChar.map_sum_eq_prod]
-        rfl
+        simp only [adicCompletionAddChar_apply]
 
 /-- In `𝔸ᶠ`, the products of the finite adele supported at `v` with `y` by integral finite adeles
 are the finite adeles supported at `v` with component in `y 𝒪_v`. -/
@@ -266,8 +228,8 @@ theorem selfDualMeasure_adicCompletionAddChar_adicCompletionIntegers :
 variable (K) in
 /-- **The self-dual measures are almost all normalized.** For all but finitely many finite places
 `v`, namely those not dividing the different, `ψ_v` has conductor exponent `0` and its self-dual
-measure is the Haar measure `dx_v` giving `𝒪_v` mass one. So the restricted product of the
-self-dual measures is defined. -/
+measure is the Haar measure `dx_v` giving `𝒪_v` mass one. This is the condition needed for the
+restricted product of the self-dual measures to be defined. -/
 theorem eventually_selfDualMeasure_adicCompletionAddChar_eq
     [∀ v : HeightOneSpectrum (𝓞 K), MeasurableSpace (v.adicCompletion K)]
     [∀ v : HeightOneSpectrum (𝓞 K), BorelSpace (v.adicCompletion K)] :
