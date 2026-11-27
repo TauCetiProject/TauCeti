@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.NormalForm
 import TauCeti.Analysis.Normed.Group.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Convexity
+import TauCeti.Topology.OpenPartialHomeomorph.Germ
 
 /-!
 # The moment map near a fixed point, read through a weight chart
@@ -120,20 +121,13 @@ source of `e` onto the neighbourhood filter of its value at `x` within the cone 
 -/
 theorem map_nhds_eq_nhdsWithin_vadd_range_weightMomentMap
     (hf : ∀ x ∈ e.source, f x = ν + weightMomentMap α (e x)) {x : X} (hx : x ∈ e.source) :
-    map f (𝓝 x) = 𝓝[ν +ᵥ range (weightMomentMap α)] (f x) := by
-  -- Near `x`, `f` is the continuous map `ν + μ_model ∘ e`.
-  have hcont : ContinuousAt f x := by
-    have hd : ContinuousAt (fun y ↦ ν + weightMomentMap α (e y)) x :=
-      continuousAt_const.add ((hasFDerivAt_weightMomentMap α (e x)).continuousAt.comp
-        (e.continuousAt hx))
-    exact hd.congr (eventually_of_mem (e.open_source.mem_nhds hx) fun y hy ↦ (hf y hy).symm)
-  refine le_antisymm (fun T hT ↦ ?_) fun T hT ↦
-    mem_of_superset (image_mem_nhdsWithin_vadd_range_weightMomentMap hf hx hT)
-      (image_preimage_subset f T)
-  obtain ⟨V, hV, hVT⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hT
-  exact mem_map.2 (mem_of_superset
-    (inter_mem (hcont.preimage_mem_nhds hV) (e.open_source.mem_nhds hx))
-    fun y ⟨hyV, hy⟩ ↦ hVT ⟨hyV, mapsTo_source_vadd_range_weightMomentMap hf hy⟩)
+    map f (𝓝 x) = 𝓝[ν +ᵥ range (weightMomentMap α)] (f x) :=
+  -- The translated model is open onto the cone: read it through the identity chart.
+  e.map_nhds_eq_nhdsWithin_of_eqOn (g := fun z ↦ ν + weightMomentMap α z) (fun y hy ↦ hf y hy) hx
+    (continuousAt_const.add (hasFDerivAt_weightMomentMap α (e x)).continuousAt)
+    (Eventually.of_forall fun z ↦ vadd_mem_vadd_set (mem_range_self z))
+    fun _ ↦ image_mem_nhdsWithin_vadd_range_weightMomentMap (e := OpenPartialHomeomorph.refl _)
+      (fun _ _ ↦ rfl) (mem_univ _)
 
 /-- For a chart `e` onto the ball `‖q‖² + ‖p‖² < r`, the ball of radius `min r r'` lies in the
 target of `e`. -/
