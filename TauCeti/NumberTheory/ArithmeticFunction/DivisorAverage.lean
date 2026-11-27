@@ -95,8 +95,10 @@ theorem sum_Ioc_sigma_zero_add_sqrt_sq (N : ℕ) :
 
 /-! ### The average order -/
 
-private theorem natCast_sqrt_floor_le {x : ℝ} (hx : 0 ≤ x) : ((⌊x⌋₊.sqrt : ℕ) : ℝ) ≤ √x :=
-  nat_sqrt_le_real_sqrt.trans (sqrt_le_sqrt (Nat.floor_le hx))
+private theorem natCast_sqrt_floor_le (x : ℝ) : ((⌊x⌋₊.sqrt : ℕ) : ℝ) ≤ √x := by
+  rcases le_or_gt 0 x with hx | hx
+  · exact nat_sqrt_le_real_sqrt.trans (sqrt_le_sqrt (Nat.floor_le hx))
+  · simp [Nat.floor_of_nonpos hx.le, sqrt_eq_zero_of_nonpos hx.le]
 
 private theorem sqrt_lt_natCast_sqrt_floor_add_one (x : ℝ) : √x < (⌊x⌋₊.sqrt : ℕ) + 1 := by
   rw [sqrt_lt' (by positivity)]
@@ -105,11 +107,9 @@ private theorem sqrt_lt_natCast_sqrt_floor_add_one (x : ℝ) : √x < (⌊x⌋�
   push_cast at h
   linarith [Nat.lt_floor_add_one x]
 
-private theorem natFloor_sqrt (x : ℝ) : ⌊√x⌋₊ = ⌊x⌋₊.sqrt := by
-  rcases le_or_gt 0 x with hx | hx
-  · exact (Nat.floor_eq_iff (sqrt_nonneg x)).2
-      ⟨natCast_sqrt_floor_le hx, sqrt_lt_natCast_sqrt_floor_add_one x⟩
-  · rw [sqrt_eq_zero_of_nonpos hx.le, Nat.floor_zero, Nat.floor_of_nonpos hx.le, Nat.sqrt_zero]
+private theorem natFloor_sqrt (x : ℝ) : ⌊√x⌋₊ = ⌊x⌋₊.sqrt :=
+  (Nat.floor_eq_iff (sqrt_nonneg x)).2
+    ⟨natCast_sqrt_floor_le x, sqrt_lt_natCast_sqrt_floor_add_one x⟩
 
 /-- **Dirichlet's hyperbola identity** for the divisor function, with a real cutoff:
 `∑_{n ≤ x} τ(n) + ⌊√x⌋² = 2 ∑_{a ≤ √x} ⌊x / a⌋`. -/
@@ -140,9 +140,14 @@ private theorem sub_le_sum_Ioc_natCast_floor_div (x : ℝ) (M : ℕ) :
   rw [← Nat.floor_div_natCast, ← div_eq_mul_inv]
   linarith [Nat.lt_floor_add_one (x / a)]
 
-/-- For `x ≥ 1` and `M = ⌊√⌊x⌋⌋`, `log √x - 1 / M ≤ log M`. -/
-private theorem log_sqrt_sub_le {x : ℝ} (hx : 1 ≤ x) :
+/-- For `M = ⌊√⌊x⌋⌋`, `log √x - 1 / M ≤ log M`. For `x < 1`, where `M = 0`, this reads
+`log √x ≤ 0`. -/
+private theorem log_sqrt_sub_le (x : ℝ) :
     log √x - 1 / (⌊x⌋₊.sqrt : ℕ) ≤ log (⌊x⌋₊.sqrt : ℕ) := by
+  rcases lt_or_ge x 1 with hx | hx
+  · have hM : ⌊x⌋₊.sqrt = 0 := by rw [Nat.floor_eq_zero.2 hx, Nat.sqrt_zero]
+    have hs : √x ≤ 1 := (sqrt_le_left zero_le_one).2 (by simpa using hx.le)
+    simpa [hM] using log_nonpos (sqrt_nonneg x) hs
   have hx0 : 0 < x := zero_lt_one.trans_le hx
   have hM : (0 : ℝ) < (⌊x⌋₊.sqrt : ℕ) := by
     exact_mod_cast Nat.sqrt_pos.2 (Nat.floor_pos.2 hx)
@@ -188,7 +193,7 @@ theorem abs_sum_Ioc_sigma_zero_sub_le {x : ℝ} (hx : 0 ≤ x) :
   -- Notation: `N = ⌊x⌋₊`, `M = ⌊√N⌋`, and `H` the `M`-th harmonic number.
   have hM : 0 < ⌊x⌋₊.sqrt := Nat.sqrt_pos.2 (Nat.floor_pos.2 hx1)
   have hM1 : (1 : ℝ) ≤ (⌊x⌋₊.sqrt : ℕ) := by exact_mod_cast hM
-  have hMs := natCast_sqrt_floor_le hx
+  have hMs := natCast_sqrt_floor_le x
   have hsM := sqrt_lt_natCast_sqrt_floor_add_one x
   have hxs : x = √x * √x := (mul_self_sqrt hx).symm
   -- The hyperbola identity, with the terms `⌊N / a⌋` compared with `x / a`.
@@ -204,7 +209,7 @@ theorem abs_sum_Ioc_sigma_zero_sub_le {x : ℝ} (hx : 0 ≤ x) :
       (TauCeti.one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant hM.ne')
   have hlogx : log x = 2 * log √x := by rw [log_sqrt hx]; ring
   have hL_up : log (⌊x⌋₊.sqrt : ℕ) ≤ log √x := log_le_log (by linarith) hMs
-  have hL_lo := log_sqrt_sub_le hx1
+  have hL_lo := log_sqrt_sub_le x
   -- The sizes of `x / M` and `x - M²`.
   have hxM : x / (⌊x⌋₊.sqrt : ℕ) ≤ 2 * √x := by
     rw [div_le_iff₀ (by linarith)]
