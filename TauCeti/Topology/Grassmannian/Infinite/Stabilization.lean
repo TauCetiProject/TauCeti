@@ -149,6 +149,7 @@ theorem preimage_toInfinite_rankStabilization_image {n : ℕ}
 variable [TopologicalSpace 𝕜]
 
 /-- Rank stabilization is continuous for the finite-stage final topologies. -/
+@[fun_prop]
 theorem continuous_rankStabilization :
     Continuous (rankStabilization : infiniteGrassmannian 𝕜 k → _) := by
   refine continuous_iff.2 fun n ↦ ?_
