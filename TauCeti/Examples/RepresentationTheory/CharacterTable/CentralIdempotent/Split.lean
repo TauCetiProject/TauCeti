@@ -30,27 +30,28 @@ namespace TauCeti.Examples.SplitCentralIdempotent
 
 -- The trivial character of `S₃` over `ℚ` gives `(1/6) ∑_g g`.
 example (g : Equiv.Perm (Fin 3)) :
-    (characterIdempotent (Representation.trivial ℚ (Equiv.Perm (Fin 3)) ℚ)).coeff g = 1 / 6 := by
+    (primitiveCentralIdempotent (Representation.trivial ℚ (Equiv.Perm (Fin 3)) ℚ)).coeff g =
+      1 / 6 := by
   simp [Representation.char_trivial, Fintype.card_perm, Nat.factorial]
 
 /-- The sign character `t ↦ -1` of `C₂ = ℤˣ` over `ℚ₂`. -/
 noncomputable abbrev signCharacter : ℤˣ →* ℚ_[2]ˣ := Units.map (Int.castRingHom ℚ_[2])
 
-noncomputable instance : Invertible (Nat.card ℤˣ : ℚ_[2]) :=
+noncomputable instance invertibleNatCardUnitsInt : Invertible (Nat.card ℤˣ : ℚ_[2]) :=
   invertibleOfNonzero (by simp [Nat.card_eq_fintype_card, Fintype.card_units_int])
 
 /-- `e₊ = (1 + t)/2`, from the trivial character of `C₂ = ℤˣ` over `ℚ₂`. -/
 noncomputable abbrev ePlus : MonoidAlgebra ℚ_[2] ℤˣ :=
-  characterIdempotent (Representation.ofLinearCharacter (1 : ℤˣ →* ℚ_[2]ˣ))
+  primitiveCentralIdempotent (Representation.ofLinearCharacter (1 : ℤˣ →* ℚ_[2]ˣ))
 
 /-- `e₋ = (1 - t)/2`, from the sign character of `C₂ = ℤˣ` over `ℚ₂`. -/
 noncomputable abbrev eMinus : MonoidAlgebra ℚ_[2] ℤˣ :=
-  characterIdempotent (Representation.ofLinearCharacter signCharacter)
+  primitiveCentralIdempotent (Representation.ofLinearCharacter signCharacter)
 
 -- The coefficients of `e₊` and `e₋` at `t = -1` are `1/2` and `-1/2`, at `1` both are `1/2`.
 example : ePlus.coeff (-1) = 1 / 2 ∧ eMinus.coeff (-1) = -1 / 2 ∧
     ePlus.coeff 1 = 1 / 2 ∧ eMinus.coeff 1 = 1 / 2 := by
-  simp only [characterIdempotent_coeff, Representation.char_ofLinearCharacter, signCharacter,
+  simp only [primitiveCentralIdempotent_coeff, Representation.char_ofLinearCharacter, signCharacter,
     Nat.card_eq_fintype_card, Fintype.card_units_int]
   norm_num
 
@@ -72,12 +73,12 @@ theorem isEmpty_equiv_baseChange :
 
 -- `e₊` and `e₋` are orthogonal.
 example : ePlus * eMinus = 0 :=
-  characterIdempotent_mul_characterIdempotent_eq_zero _ (AlgebraicClosure ℚ_[2]) _
-    isEmpty_equiv_baseChange
+  primitiveCentralIdempotent_mul_primitiveCentralIdempotent_of_baseChange _
+    (AlgebraicClosure ℚ_[2]) _ isEmpty_equiv_baseChange
 
 -- `e₊` is idempotent.
 example : IsIdempotentElem ePlus :=
-  isIdempotentElem_characterIdempotent _ (AlgebraicClosure ℚ_[2])
+  isIdempotentElem_primitiveCentralIdempotent_of_baseChange _ (AlgebraicClosure ℚ_[2])
 
 -- `e₊ + e₋ = 1`: the two characters are a complete list for `C₂`, which has two classes.
 example : ePlus + eMinus = 1 := by
@@ -89,7 +90,7 @@ example : ePlus + eMinus = 1 := by
       Representation.ofLinearCharacter signCharacter] i : Representation ℚ_[2] ℤˣ ℚ_[2]).baseChange
         (AlgebraicClosure ℚ_[2])).IsIrreducible :=
     Representation.isIrreducible_of_finrank_eq_one _ (by simp)
-  have h := sum_characterIdempotent (AlgebraicClosure ℚ_[2])
+  have h := sum_primitiveCentralIdempotent_of_baseChange (AlgebraicClosure ℚ_[2])
     (![Representation.ofLinearCharacter 1, Representation.ofLinearCharacter signCharacter] :
       Fin 2 → Representation ℚ_[2] ℤˣ ℚ_[2])
     (by
@@ -115,8 +116,8 @@ example : ePlus ∉ Set.range (MonoidAlgebra.mapRingHom ℤˣ (algebraMap ℤ_[2
       Padic.norm_p] at h1
     norm_num at h1
   refine ⟨key _ ?_, key _ ?_⟩ <;>
-    simp only [characterIdempotent_coeff, Representation.char_ofLinearCharacter, signCharacter,
-      Nat.card_eq_fintype_card, Fintype.card_units_int] <;>
+    simp only [primitiveCentralIdempotent_coeff, Representation.char_ofLinearCharacter,
+      signCharacter, Nat.card_eq_fintype_card, Fintype.card_units_int] <;>
     norm_num
 
 end TauCeti.Examples.SplitCentralIdempotent

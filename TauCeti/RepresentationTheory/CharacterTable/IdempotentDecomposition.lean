@@ -155,11 +155,12 @@ section Exhaust
 
 include hind hcard
 
+omit [∀ i, FiniteDimensional k (V i)] in
 /-- **A complete family lists every primitive central idempotent.** Every irreducible
 representation is equivalent to a member of the family, and equivalent representations have the
 same idempotent. -/
 theorem exists_eq_primitiveCentralIdempotent {W : Type x} [AddCommGroup W] [Module k W]
-    [FiniteDimensional k W] (σ : Representation k G W) [σ.IsIrreducible] :
+    (σ : Representation k G W) [σ.IsIrreducible] :
     ∃ i, primitiveCentralIdempotent σ = primitiveCentralIdempotent (ρ i) := by
   obtain ⟨i, hi⟩ := ClassFunction.exists_nonempty_equiv ρ hind hcard σ
   exact ⟨i, primitiveCentralIdempotent_eq_of_nonempty_equiv σ (ρ i) hi⟩

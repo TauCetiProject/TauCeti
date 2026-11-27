@@ -49,7 +49,7 @@ completeness of the irreducible characters.
 * `TauCeti.Representation.characterSum`: the group-algebra element `∑_g χ(g⁻¹) g`, with
   `TauCeti.Representation.characterSumCenter` the same element read in the centre.
 * `TauCeti.Representation.primitiveCentralIdempotent`: the element
-  `e_ρ = (χ(1) / |G|) ∑_g χ(g⁻¹) g` of an irreducible representation, with
+  `e_ρ = (χ(1) / |G|) ∑_g χ(g⁻¹) g` of a representation, with
   `TauCeti.Representation.primitiveCentralIdempotentCenter` the same element read in the centre.
 
 ## Main statements
@@ -289,29 +289,19 @@ section Idempotent
 
 variable [Fintype G]
 
-/-- **The primitive central idempotent** `e_ρ = (χ(1) / |G|) ∑_g χ(g⁻¹) g` of an irreducible
-representation over an algebraically closed field whose characteristic does not divide `|G|`.
+/-- **The primitive central idempotent** `e_ρ = (χ(1) / |G|) ∑_g χ(g⁻¹) g` attached to a
+representation `ρ` with character `χ`, over any field.
 
-It is the Wedderburn projector onto the block of `ρ`: it acts as the identity on `ρ` and as zero on
-every irreducible representation not isomorphic to `ρ`, by
-`TauCeti.Representation.asAlgebraHom_primitiveCentralIdempotent`. That property forces the
-normalization, and it is what makes the element idempotent
-(`TauCeti.Representation.isIdempotentElem_primitiveCentralIdempotent`); the definition carries the
-hypotheses that the idempotence theorem uses, rather than being stated for a bare formula that need
-not be idempotent. Use `TauCeti.Representation.characterSum` for the unnormalized element
-`∑_g χ(g⁻¹) g`, which is defined for every representation. -/
--- The formula itself mentions none of these four hypotheses, so they are named with a leading
--- underscore, the convention for an argument that is deliberately unused in the body.
-noncomputable def primitiveCentralIdempotent [_fd : FiniteDimensional k V] [_ac : IsAlgClosed k]
-    [_inv : Invertible (Nat.card G : k)] [_irr : ρ.IsIrreducible] : k[G] :=
+For an irreducible representation over an algebraically closed field whose characteristic does not
+divide `|G|`, it is the Wedderburn projector onto the block of `ρ`: it acts as the identity on `ρ`
+and as zero on every irreducible representation not isomorphic to `ρ`, by
+`TauCeti.Representation.asAlgebraHom_primitiveCentralIdempotent`, and it is idempotent by
+`TauCeti.Representation.isIdempotentElem_primitiveCentralIdempotent`. Those hypotheses are carried
+by the theorems rather than by the definition, which is the bare formula: it is idempotent only
+under them, and when `|G|` is zero in `k` the inverse `(|G| : k)⁻¹` is `0`, so the element is `0`.
+Use `TauCeti.Representation.characterSum` for the unnormalized element `∑_g χ(g⁻¹) g`. -/
+noncomputable def primitiveCentralIdempotent : k[G] :=
   ((Nat.card G : k)⁻¹ * ρ.character 1) • characterSum ρ
-
-variable [FiniteDimensional k V]
-
-section FiniteDimensionalRight
-
-variable [FiniteDimensional k W] [IsAlgClosed k]
-variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
 
 /-- The coefficients of the primitive central idempotent.
 
@@ -323,9 +313,9 @@ theorem primitiveCentralIdempotent_coeff (g : G) :
       (Nat.card G : k)⁻¹ * ρ.character 1 * ρ.character g⁻¹ := by
   simp [primitiveCentralIdempotent]
 
-/-- **Equivalent irreducible representations have the same primitive central idempotent.** The
-idempotent is built from the character alone, and equivalent representations have equal characters,
-so `e_ρ` is an invariant of the isomorphism class of `ρ`. -/
+/-- **Equivalent representations have the same primitive central idempotent.** The idempotent is
+built from the character alone, and equivalent representations have equal characters, so `e_ρ` is
+an invariant of the isomorphism class of `ρ`. -/
 theorem primitiveCentralIdempotent_eq_of_nonempty_equiv (h : Nonempty (ρ.Equiv σ)) :
     primitiveCentralIdempotent ρ = primitiveCentralIdempotent σ := by
   have hc : ρ.character = σ.character := _root_.Representation.char_iso h.some
@@ -371,6 +361,11 @@ theorem primitiveCentralIdempotentCenter_eq_sum_classSumCenter [DecidableEq G]
   refine Finset.sum_congr rfl fun C _ => ?_
   rw [smul_smul]
 
+section FiniteDimensionalRight
+
+variable [FiniteDimensional k W] [IsAlgClosed k]
+variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible] [σ.IsIrreducible]
+
 open scoped Classical in
 /-- **An irreducible representation sees `e_ρ` as `1` or as `0`**, according to whether it is
 isomorphic to `ρ`. -/
@@ -390,7 +385,7 @@ theorem centralCharacter_primitiveCentralIdempotentCenter :
 /-- **An irreducible representation sees its own primitive central idempotent as `1`.** This is the
 diagonal case of `TauCeti.Representation.centralCharacter_primitiveCentralIdempotentCenter`. -/
 @[simp]
-theorem centralCharacter_primitiveCentralIdempotentCenter_self :
+theorem centralCharacter_primitiveCentralIdempotentCenter_self [FiniteDimensional k V] :
     centralCharacter ρ (primitiveCentralIdempotentCenter ρ) = 1 := by
   classical
   rw [centralCharacter_primitiveCentralIdempotentCenter,
@@ -440,6 +435,7 @@ theorem primitiveCentralIdempotent_mul_primitiveCentralIdempotent :
 theorem isIdempotentElem_primitiveCentralIdempotent :
     IsIdempotentElem (primitiveCentralIdempotent ρ) := by
   classical
+  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   rw [IsIdempotentElem, primitiveCentralIdempotent_mul_primitiveCentralIdempotent ρ ρ,
     ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩]
 
