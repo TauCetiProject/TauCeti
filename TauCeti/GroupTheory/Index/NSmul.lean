@@ -253,16 +253,6 @@ theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
 
-/-- The subgroup of `n`-th powers in a product is the product of the subgroups of `n`-th
-powers. -/
-@[to_additive range_nsmulAddMonoidHom_prod
-  /-- The subgroup of `n`-multiples in a product is the product of the subgroups of
-  `n`-multiples. -/]
-theorem range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
-    (powMonoidHom n : A × B →* A × B).range =
-      (powMonoidHom n : A →* A).range.prod (powMonoidHom n : B →* B).range := by
-  rw [powMonoidHom_prod, MonoidHom.range_prodMap]
-
 /-- The index of the `n`-th powers in a product is the product of the indices. -/
 @[simp]
 theorem index_range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :

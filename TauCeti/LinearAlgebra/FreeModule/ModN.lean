@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.FreeModule.ModN
 import TauCeti.Algebra.Group.Prod
-import TauCeti.GroupTheory.Index.NSmul
 
 /-!
 # Coordinates and product equivalences for `G / nG`

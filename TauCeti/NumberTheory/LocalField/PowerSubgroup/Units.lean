@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
+import TauCeti.Algebra.Group.Prod
 import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
