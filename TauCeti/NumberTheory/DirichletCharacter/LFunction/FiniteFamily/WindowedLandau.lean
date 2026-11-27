@@ -95,6 +95,21 @@ theorem zeroFreeRightOf_of_dirichletFamilyRiesz_hasWindows
   zeroFreeRightOf_of_dirichletFamilyRiesz_meanWindows hw hθ hL
     (fun _ hη ↦ hwin.frequently_integral_mul_rpow_le_rpow hη)
 
+/-- To exclude zeros of a given primitive character to the right of `σ`, it suffices to
+bound the remainder of a nonnegatively weighted family containing that character on
+power windows at every exponent above `σ`. The family and the ratio of the windows
+may depend on the exponent. -/
+theorem zeroFreeRightOf_of_forall_dirichletFamilyRiesz_hasWindows
+    {χ : PrimitiveDirichletCharacter} {σ : ℝ} (hσ : 0 ≤ σ)
+    (hwin : ∀ θ > σ, ∃ (w : PrimitiveDirichletCharacter →₀ ℝ) (L : ℝ),
+      0 ≤ w ∧ χ ∈ w.support ∧ 1 < L ∧
+        HasWindows {y | w.sum (fun ψ c ↦ c * (ψ.rieszRemainder y).re) ≤ y ^ θ} L) :
+    ZeroFreeRightOf σ χ.character.LFunction := by
+  refine zeroFreeRightOf_iff_forall_gt.mpr fun θ hθ ↦ ?_
+  obtain ⟨w, L, hw, hχ, hL, h⟩ := hwin θ hθ
+  exact zeroFreeRightOf_of_dirichletFamilyRiesz_hasWindows (C := 1) hw (hσ.trans hθ.le) hL
+    (by simpa only [one_mul] using h) χ hχ
+
 /-- If a positive-weight member has a zero to the right of `θ`, every sufficiently far-out
 power window contains a point at which the family's real remainder exceeds `C * y ^ θ`. -/
 theorem eventually_exists_lt_dirichletFamilyRiesz_on_window
