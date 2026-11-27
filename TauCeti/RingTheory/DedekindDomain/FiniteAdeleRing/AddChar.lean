@@ -46,6 +46,13 @@ continuous for every topology on the values. For a number field and the characte
 
 * J. Tate, *Fourier analysis in number fields and Hecke's zeta-functions*, thesis (1950), in
   J. W. S. Cassels and A. Fröhlich, eds., *Algebraic Number Theory*, Chapter XV, §3.
+
+The construction of the extension by a representative chosen by strong approximation, and its
+triviality on the integral finite adeles, are adapted from grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC),
+`src/Lib/Adelic/Adeles/AdditiveCharacter.lean` (`New.ψf`), stated there for the trace character
+of a number field; here they are generalized to any additive character of the fraction field of a
+Dedekind domain that is trivial on the ring.
 -/
 
 public section

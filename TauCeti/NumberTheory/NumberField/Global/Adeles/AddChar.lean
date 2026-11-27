@@ -188,13 +188,9 @@ theorem continuous_infiniteAdeleStdAddChar : Continuous (infiniteAdeleStdAddChar
 
 variable (K) in
 /-- The standard additive character `ψ(x) = e(-Tr_∞ x_∞) · ψ_f(x_f)` of the adeles of `K`. -/
-noncomputable def adeleStdAddChar : AddChar 𝔸[K] Circle where
-  toFun x := infiniteAdeleStdAddChar K x.1 * finiteAdeleStdAddChar K x.2
-  map_zero_eq_one' := by
-    rw [Prod.fst_zero, Prod.snd_zero, AddChar.map_zero_eq_one, AddChar.map_zero_eq_one, mul_one]
-  map_add_eq_mul' x y := by
-    rw [Prod.fst_add, Prod.snd_add, AddChar.map_add_eq_mul, AddChar.map_add_eq_mul,
-      mul_mul_mul_comm]
+noncomputable def adeleStdAddChar : AddChar 𝔸[K] Circle :=
+  (infiniteAdeleStdAddChar K).compAddMonoidHom (AddMonoidHom.fst _ _) *
+    (finiteAdeleStdAddChar K).compAddMonoidHom (AddMonoidHom.snd _ _)
 
 /-- The standard additive character is the product of its infinite and finite parts. -/
 theorem adeleStdAddChar_apply (x : 𝔸[K]) :
