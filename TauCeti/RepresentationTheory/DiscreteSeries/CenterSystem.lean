@@ -133,13 +133,16 @@ of `B`. -/
   simp only [entries, biUnion_insert, mem_union]
   tauto
 
+/-- Definitional unfolding of `TauCeti.DiscreteSeries.CenterSystem.rank`. -/
+theorem rank_def (B : Finset C) : K.rank B = #K.stem + ∑ c ∈ B, K.length c := by rfl
+
 /-- Without blocks, the rank is the number of stem entries. -/
-@[simp] theorem rank_empty : K.rank ∅ = #K.stem := by simp [rank]
+@[simp] theorem rank_empty : K.rank ∅ = #K.stem := by simp [rank_def]
 
 /-- Inserting a center `c ∉ B` raises the rank by its length. -/
 theorem rank_insert [DecidableEq C] {c : C} {B : Finset C} (hc : c ∉ B) :
     K.rank (insert c B) = K.rank B + K.length c := by
-  rw [rank, rank, sum_insert hc]
+  rw [rank_def, rank_def, sum_insert hc]
   omega
 
 /-- When every length of a center of `B` has the parity of `|S|`, the rank has the parity of
@@ -241,13 +244,21 @@ variable (K) in
 `(-1)` to the number of centers outside `B` that reverse the sign of `y`. -/
 def sign (B : Finset C) (y : ℤ) : ℤˣ := (-1) ^ #{c ∈ Bᶜ | K.Flips c y}
 
+variable (K) in
+/-- Definitional unfolding of `TauCeti.DiscreteSeries.CenterSystem.sign`. -/
+theorem sign_def (B : Finset C) (y : ℤ) : K.sign B y = (-1) ^ #{c ∈ Bᶜ | K.Flips c y} := by rfl
+
+variable (K) in
+/-- With the blocks of all centers, every entry has sign `1`. -/
+@[simp] theorem sign_univ (y : ℤ) : K.sign univ y = 1 := by simp [sign_def]
+
 /-- Inserting a center `c ∉ B` reverses the signs of the entries that `c` flips. -/
 theorem sign_insert {c : C} {B : Finset C} (hc : c ∉ B) (y : ℤ) :
     K.sign (insert c B) y = if K.Flips c y then -K.sign B y else K.sign B y := by
   have hcompl : Bᶜ = insert c (insert c B)ᶜ := by
     rw [compl_insert, insert_erase (mem_compl.2 hc)]
   have hnot : c ∉ {c' ∈ (insert c B)ᶜ | K.Flips c' y} := by simp
-  rw [sign, sign, hcompl, filter_insert]
+  rw [sign_def, sign_def, hcompl, filter_insert]
   split_ifs
   · rw [card_insert_of_notMem hnot, pow_succ, mul_neg_one, neg_neg]
   · rfl
@@ -276,7 +287,7 @@ theorem IsSeparated.two_mul_le_abs_sub_of_sign_ne (hK : K.IsSeparated h) {B : Fi
       omega
     · rw [K.flips_iff_of_kind_eq_down hk, K.flips_iff_of_kind_eq_down hk]
       omega
-  exact hne (by rw [sign, sign, filter_congr hflips])
+  exact hne (by rw [sign_def, sign_def, filter_congr hflips])
 
 end Sign
 
@@ -359,19 +370,11 @@ theorem IsParam.isBlockRule_insert {gap : ℕ} (hK : K.IsSeparated h) (hc : c �
     (hl' : K.IsParam (insert c B) σ s' l') :
     IsBlockRule gap s s' (K.center c + (card ι / 2 : ℕ)) (K.center c + (card ι' / 2 : ℕ)) l l' := by
   obtain ⟨hcard, hδ, hδ'⟩ := hl.card_insert hK hc hl'
-  rw [isBlockRule_iff_of_floor _ (by omega), hδ, hδ', show card ι' - card ι = K.length c by omega]
+  have hlength : card ι' - card ι = K.length c := by omega
+  rw [isBlockRule_iff_of_floor _ (by omega), hδ, hδ', hlength]
   refine ⟨⟨(hl.hasGap hK).mono hgap, (hl'.hasGap hK).mono hgap⟩,
     hl.image_eq_union_centeredBlock hl', fun i r heq ↦ ?_⟩
   rw [hl.ne_iff_flips hl' hc heq, K.flips_iff_of_kind_eq_down hdown]
-
-/-- Lowering the negation of `f` by `d` negates the entries of `f` raised by `d`. -/
-private theorem image_neg_sub {κ : Type*} [Fintype κ] (f : κ → ℤ) (d : ℕ) :
-    univ.image (fun r ↦ (-f) r - d) = (univ.image fun r ↦ f r + d).image Neg.neg := by
-  rw [image_image]
-  congr 1
-  funext r
-  simp only [Pi.neg_apply, Function.comp_apply]
-  omega
 
 /-- Inserting an up center: in a separated system with bound `h`, if `l` is `λ_B` and `l'` is
 `λ_{B ∪ {c}}` with the same sign, for an up center `c ∉ B`, then `-l` and `-l'` satisfy the block
@@ -383,10 +386,11 @@ theorem IsParam.isBlockRule_neg_insert {gap : ℕ} (hK : K.IsSeparated h) (hc : 
     IsBlockRule gap s s' (-K.center c + ((card ι + 1) / 2 : ℕ))
       (-K.center c + ((card ι' + 1) / 2 : ℕ)) (-l) (-l') := by
   obtain ⟨hcard, hδ, hδ'⟩ := hl.card_insert hK hc hl'
-  rw [isBlockRule_iff_of_ceil _ (by omega), hδ, hδ', show card ι' - card ι = K.length c by omega]
+  have hlength : card ι' - card ι = K.length c := by omega
+  rw [isBlockRule_iff_of_ceil _ (by omega), hδ, hδ', hlength]
   refine ⟨⟨(hl.hasGap hK).neg.mono hgap, (hl'.hasGap hK).neg.mono hgap⟩, ?_, fun i r heq ↦ ?_⟩
-  · rw [image_neg_sub, image_neg_sub, hl.image_eq_union_centeredBlock hl', image_union,
-      image_neg_centeredBlock]
+  · simpa [image_image, image_union, Function.comp_def, sub_eq_neg_add] using
+      congrArg (image Neg.neg) (hl.image_eq_union_centeredBlock hl')
   · simp only [Pi.neg_apply] at heq ⊢
     rw [hl.ne_iff_flips hl' hc (by omega), K.flips_iff_of_kind_eq_up hup]
     omega
