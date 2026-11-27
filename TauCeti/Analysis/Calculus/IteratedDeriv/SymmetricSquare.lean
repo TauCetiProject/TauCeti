@@ -19,8 +19,8 @@ For functions `f`, `g` of one variable that are `C²` at `x`, the Wronskian of `
 `g²`, the determinant of the matrix of their values and first two derivatives at `x`, is twice
 the cube of the Wronskian `f g' - f' g` of `f` and `g`. This is a polynomial identity in the
 values of `f`, `g` and their first two derivatives; no differential equation is involved.
-Consequently, if `f g' - f' g` does not vanish at a point, then `f²`, `f g` and `g²` are linearly
-independent.
+Consequently, if the scalar field has `2 ≠ 0` and `f g' - f' g` does not vanish at a point, then
+`f²`, `f g` and `g²` are linearly independent.
 
 For two solutions `f`, `g` of a second-order equation `w'' = q w`, the products `f²`, `f g`, `g²`
 solve the symmetric-square equation, and the identity computes the Wronskian of this fundamental
@@ -29,8 +29,8 @@ system; for Airy's equation this is DLMF 9.11.2.
 ## Main results
 
 * `TauCeti.det_iteratedDeriv_sq_mul_sq`: `𝒲{f², f g, g²} = 2 (f g' - f' g)³`.
-* `TauCeti.linearIndependent_sq_mul_sq`: if `f g' - f' g ≠ 0` at a point, then `f²`, `f g` and
-  `g²` are linearly independent.
+* `TauCeti.linearIndependent_sq_mul_sq`: if `2 ≠ 0` in the scalar field and `f g' - f' g ≠ 0` at
+  a point, then `f²`, `f g` and `g²` are linearly independent.
 
 ## References
 
@@ -65,8 +65,8 @@ theorem det_iteratedDeriv_sq_mul_sq (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffA
     Nat.cast_ofNat, zero_add, Nat.reduceAdd, tsub_zero, tsub_self, Nat.add_one_sub_one]
   ring
 
-/-- If `f`, `g` are `C²` at `x` and their Wronskian `f g' - f' g` does not vanish at `x`, then
-`f²`, `f g` and `g²` are linearly independent. -/
+/-- Over a scalar field in which `2 ≠ 0`, if `f`, `g` are `C²` at `x` and their Wronskian
+`f g' - f' g` does not vanish at `x`, then `f²`, `f g` and `g²` are linearly independent. -/
 theorem linearIndependent_sq_mul_sq [NeZero (2 : 𝕜)] (hf : ContDiffAt 𝕜 2 f x)
     (hg : ContDiffAt 𝕜 2 g x) (hW : f x * deriv g x - deriv f x * g x ≠ 0) :
     LinearIndependent 𝕜 ![fun t => f t ^ 2, fun t => f t * g t, fun t => g t ^ 2] := by
