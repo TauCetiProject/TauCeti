@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.Reflection
 public import TauCeti.Algebra.Lie.Coadjoint.RootPlane
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
-import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Character
 import TauCeti.Geometry.Lie.RankOne
 import TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -94,7 +94,39 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
+/-- **The differential of a character is integral on the kernel of the exponential.** Let `T` be a
+closed subgroup of `G` and `χ : T → S¹` a map with `χ 1 = 1` whose real differential is `ℓ`, that
+is `χ (exp X) = e^{i ℓ(X)}` for every `X` in the Lie algebra of `T`. Then `ℓ(X) ∈ 2πℤ` whenever
+`exp X = 1`. -/
+theorem exists_apply_eq_intCast_mul_of_apply_lieExp_eq_circleExp {T : Subgroup G}
+    (hT : IsClosed (T : Set G)) {F : Type*} [FunLike F T Circle] [OneHomClass F T Circle] (χ : F)
+    {ℓ : Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
+    (hχ : ∀ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
+      χ ⟨lieExp (I := I) (X : LeftInvariantDerivation I G),
+          lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT
+            ((LieSubalgebra.mem_toSubmodule _).1 X.property)⟩ =
+        Circle.exp (ℓ X))
+    {X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
+    (hX : lieExp (I := I) (X : LeftInvariantDerivation I G) = 1) :
+    ∃ n : ℤ, ℓ X = n * (2 * π) := by
+  rw [← Circle.exp_eq_one, ← hχ X, ← map_one χ]
+  exact congrArg χ (Subtype.ext hX)
+
 variable {t : Submodule ℝ (LeftInvariantDerivation I G)} {α ℓ : Dual ℝ t} {c : t}
+
+/-- **Integral functionals pair integrally with integral cocharacters.** Let `ℓ ∈ t*` take values
+in `2πℤ` on the kernel of the exponential, as the real differential of a character does
+(`exists_apply_eq_intCast_mul_of_apply_lieExp_eq_circleExp`), and let `c ∈ t` satisfy
+`exp(2π c) = 1`. Then `ℓ(c)` is an integer. -/
+theorem exists_apply_eq_intCast_of_lieExp_two_pi_smul_eq_one
+    (hℓ : ∀ X : t, lieExp (I := I) (X : LeftInvariantDerivation I G) = 1 →
+      ∃ n : ℤ, ℓ X = n * (2 * π))
+    (hc : lieExp (I := I) ((2 * π) • (c : LeftInvariantDerivation I G)) = 1) :
+    ∃ n : ℤ, ℓ c = n := by
+  obtain ⟨n, hn⟩ := hℓ ((2 * π) • c) hc
+  refine ⟨n, mul_right_cancel₀ two_pi_pos.ne' ?_⟩
+  rw [map_smul, smul_eq_mul] at hn
+  linear_combination hn
 
 /-- **A reflection along an integral cocharacter preserves the integral functionals.** Let
 `α, ℓ ∈ t*` take values in `2πℤ` on the kernel of the exponential, and let `c ∈ t` satisfy
@@ -143,9 +175,12 @@ theorem lieExp_two_pi_smul_reflection_eq_one {T : Subgroup G} [IsMulCommutative 
       (Submodule.neg_mem _ (Submodule.smul_mem _ _ (Submodule.smul_mem _ _ c.property)))
   have hpow : lieExp (I := I) ((n : ℝ) • (2 * π) • (c : LeftInvariantDerivation I G)) = 1 := by
     rw [Int.cast_smul_eq_zsmul, lieExp_zsmul, hc₁, one_zpow]
-  rw [Module.reflection_apply, Submodule.coe_sub, Submodule.coe_smul, hαX, smul_sub,
-    smul_comm (2 * π), sub_eq_add_neg, lieExp_add_of_lie_eq_zero hcomm, lieExp_neg, hX, hpow,
-    inv_one, one_mul]
+  have heq : (2 * π) • (Module.reflection hc X : LeftInvariantDerivation I G) =
+      (2 * π) • (X : LeftInvariantDerivation I G) +
+        -((n : ℝ) • (2 * π) • (c : LeftInvariantDerivation I G)) := by
+    simp only [Module.reflection_apply, Submodule.coe_sub, Submodule.coe_smul, hαX]
+    module
+  rw [heq, lieExp_add_of_lie_eq_zero hcomm, lieExp_neg, hX, hpow, inv_one, one_mul]
 
 end Integral
 
