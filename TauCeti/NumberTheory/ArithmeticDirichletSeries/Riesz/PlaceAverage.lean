@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.GroupTheory.Coset.Fiber
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Lipschitz
 
 /-!
 # Riesz sums with two cutoffs on a group of places
@@ -49,23 +48,11 @@ theorem sum_sum_mul_max_eq_rieszSum [MulOneClass H] (π : G →* H) (B : Finset 
   have hscaled (v : ℕ → ℝ) {y : ℝ} (hy : 0 < y) (hyN : ⌊y⌋₊ ≤ N) :
       ∑ n ∈ Icc 1 N, v n * max (a / n - a / y) 0 =
         a * (rieszSum (fun n ↦ (v n : ℂ)) y).re / y := by
-    obtain rfl | ha := ha.eq_or_lt
-    · simp
-    have hcut : a / (a / y) = y := by field_simp
-    have h := mul_rieszSum_div_eq_sum_max (fun n ↦ (v n : ℂ)) (a := a) (div_pos ha hy) le_rfl
-    rw [hcut] at h
-    have hre := congrArg Complex.re h
-    simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero,
-      Complex.re_sum] at hre
-    rw [mul_div_right_comm, hre]
-    -- The extra indices above the natural floor of the cutoff contribute zero.
-    refine (sum_subset (Icc_subset_Icc_right hyN) ?_).symm
-    intro n hn hny
-    have hyn : y ≤ n := by
-      apply (Nat.lt_of_floor_lt ?_).le
-      exact lt_of_not_ge fun hle ↦ hny (mem_Icc.mpr ⟨(mem_Icc.mp hn).1, hle⟩)
-    have hdiv := div_le_div_of_nonneg_left ha.le hy hyn
-    simp [max_eq_right (sub_nonpos.mpr hdiv)]
+    rw [rieszSum_eq_sum_max_of_floor_le _ hyN, Complex.re_sum, mul_div_right_comm, mul_sum]
+    refine sum_congr rfl fun n _ ↦ ?_
+    simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero]
+    rw [mul_left_comm (a / y), mul_max_of_nonneg _ _ (div_nonneg ha hy.le), mul_zero,
+      mul_sub, mul_one, ← mul_div_assoc, div_mul_cancel₀ _ hy.ne']
   rw [sum_comm]
   have hs (n : ℕ) :
       (∑ t ∈ A, w n * max (a / n - (if g n * t ∈ B then a / x else a / X)) 0) =
@@ -116,8 +103,8 @@ theorem sum_sub_log_eq_rieszSum_sub_log [MulOneClass H] (π : G →* H) [Fintype
     simpa [mul_comm] using (π.natCard_preimage_of_surjective hπ Set.univ).symm
   have hG : (Fintype.card G : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hH : (Fintype.card H : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hratio : (A.card : ℝ) / Fintype.card G = 1 / Fintype.card H := by
-    apply (div_eq_div_iff hG hH).mpr
+  have hratio : (A.card : ℝ) = Fintype.card G / Fintype.card H := by
+    apply (eq_div_iff_mul_eq hH).mpr
     simpa using congrArg (fun n : ℕ ↦ (n : ℝ)) hA
   have hlog : ∑ b : G, Real.log (if b ∈ B then a / x else a / X) =
       (Fintype.card G : ℝ) * (Real.log a - Real.log X) +
@@ -127,13 +114,8 @@ theorem sum_sub_log_eq_rieszSum_sub_log [MulOneClass H] (π : G →* H) [Fintype
     simp only [card_univ, filter_mem_eq_inter, univ_inter, nsmul_eq_mul]
     ring
   rw [sum_sub_distrib, sum_sum_mul_max_eq_rieszSum π B hB g w ha.le hx hX hN, sum_const,
-    nsmul_eq_mul, hlog, add_div, mul_div_cancel_left₀ _ hG]
-  -- Regroup the main term to expose the kernel-to-group ratio.
-  have hmain : (A.card : ℝ) * (a * (Real.log a - (Real.log a - Real.log X +
-      B.card * (Real.log X - Real.log x) / Fintype.card G) + C)) =
-      a * (A.card * (Real.log X + C) -
-        ((A.card : ℝ) / Fintype.card G) * B.card * (Real.log X - Real.log x)) := by ring
-  rw [hmain, hratio]
+    nsmul_eq_mul, hlog, hratio]
+  field_simp [hG, hH, hx.ne', hX.ne']
   ring
 
 end MonoidHom
