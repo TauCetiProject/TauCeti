@@ -15,8 +15,7 @@ import TauCeti.FieldTheory.Minpoly.Dvd
 import TauCeti.LinearAlgebra.Charpoly.Aeval.Comp
 import TauCeti.LinearAlgebra.Charpoly.Degree
 import TauCeti.LinearAlgebra.Charpoly.Quotient
-import TauCeti.Order.ModularLattice.Crapo
-import TauCeti.Order.Sublattice
+import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Semisimple
 
 /-!
 # The inverse `μ` of `𝟙` and Green's cuspidal functions
@@ -28,9 +27,10 @@ function `𝟙` for the induction product, and Green's cuspidal function of `η 
 the pointwise product.
 
 Evaluated at `g`, the relation `μ ∗ 𝟙 = 1` says that `U ↦ μ(g|_U)` is the Möbius function
-`U ↦ μ(⊥, U)` of the lattice of `g`-invariant subspaces. This lattice is modular, so by Crapo's
-complementation theorem it is complemented, that is `g` is semisimple, when `μ(g) ≠ 0`. Block
-averages of `B · μ` only see the block diagonal class, and from this and Mackey's formula `C_η` is
+`U ↦ μ(⊥, U)` of the lattice of `g`-invariant subspaces
+(`Module.End.sum_moebius_ofEnd_invtRestrict`), and `μ(g) ≠ 0` forces `g` to be semisimple
+(`Module.End.isSemisimple_of_moebius_ne_zero`). So block averages of `B · μ` only see the block
+diagonal class, and from this and Mackey's formula `C_η` is
 cuspidal. A cuspidal function vanishes off the classes whose characteristic polynomial is a power
 of an irreducible polynomial: for an irreducible factor `P` of the minimal polynomial, all block
 maps with diagonal blocks `g` on the Fitting component `ker P(g)^N` and on the quotient are
@@ -54,11 +54,8 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
 * J. A. Green, *The characters of the finite general linear groups*, Trans. Amer. Math. Soc. 80
   (1955), 402–447, Theorem 1.
 * T. A. Springer, *Characters of special groups*, Séminaire Bourbaki 441 (1973/74), 1.1–1.7.
-* D. Krasula, arXiv:2403.05656, Lemma 23, and H. H. Crapo, *The Möbius function of a lattice*,
-  J. Combinatorial Theory 1 (1966), for the vanishing of `μ` off semisimple classes.
 * Adapted from `src/Lib/LocalGL/Green/CuspidalFunctions.lean` in grh-lean
   (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
-  `New.Hall.sum_moebius_simClassOf_endOnSub`, `New.Hall.isSemisimple_of_moebius_ne_zero`,
   `New.Hall.moebius_eq_one_of_dim_eq_zero`, `New.Hall.blockAverage_mulMoebius`,
   `New.Hall.conj_moebius`, `New.Hall.greenCuspidal_mul_constOne`,
   `New.Hall.greenCuspidal_eq_zero_of_dim_lt_one`, `New.Hall.isCuspidal_greenCuspidal`,
@@ -87,64 +84,22 @@ section Moebius
 
 variable [Finite k]
 
-/-- At the class of `g`, the sum of `μ` at the classes of `g` on the `g`-invariant subspaces is the
-value of the unit `1`. -/
-private theorem sum_moebius_invtRestrict_eq_one_apply (g : Module.End k V)
-    [Fintype g.invtSubmodule] :
-    ∑ U : g.invtSubmodule, moebius (ofEnd (g.invtRestrict U.prop)) =
-      (1 : HallAlgebra k) (ofEnd g) := by
-  rw [← moebius_mul_constOne, mul_ofEnd_eq_sum]
-  simp
+omit [Finite k] in
+/-- The lattice of `g`-invariant subspaces is trivial exactly when `g` acts on the zero space. -/
+private theorem top_eq_bot_iff_finrank_eq_zero (g : Module.End k V) :
+    (⊤ : g.invtSubmodule) = ⊥ ↔ finrank k V = 0 := by
+  rw [← finrank_top k V, Submodule.finrank_eq_zero, ← Subtype.coe_inj]
+  rfl
 
 /-- `μ` is `1` on the class of size `0`. -/
 theorem moebius_eq_one_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius o = 1 := by
   have := Fintype.ofFinite o.rep.invtSubmodule
-  have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
-  have key := sum_moebius_invtRestrict_eq_one_apply o.rep
-  simp only [ofEnd_rep, one_apply, h, ↓reduceIte] at key
-  -- The only invariant subspace of the zero space is `⊥`, and its class is `o`.
-  rwa [Fintype.sum_subsingleton _ ⊥,
-    eq_of_dim_eq_zero (c := ofEnd (o.rep.invtRestrict (⊥ : o.rep.invtSubmodule).prop)) (by simp)
-      h] at key
-
-open scoped Classical in
-/-- For a nonzero `g`-invariant subspace `X`, the values `μ(g|_U)` at the `g`-invariant subspaces
-`U ≤ X` add up to `0`: they are those of `g|_X`, which add up to `1(g|_X) = 0`. -/
-private theorem sum_moebius_invtRestrict_le_eq_zero (g : Module.End k V)
-    [Fintype g.invtSubmodule] {X : g.invtSubmodule} (hX : X ≠ ⊥) :
-    ∑ U with U ≤ X, moebius (ofEnd (g.invtRestrict U.prop)) = 0 := by
-  -- The invariant subspaces of `g` below `X` are those of `g` on `X`.
-  have hX' : (X : Submodule k V) ≠ ⊥ := fun h ↦ hX (Subtype.ext h)
-  have := Fintype.ofFinite (g.invtRestrict X.prop).invtSubmodule
-  have key := LinearMap.sum_invtSubmodule_comap X.val.subtype
-    (g.coe_invtRestrict_apply X.prop)
-    (fun U ↦ moebius (ofEnd ((g.invtRestrict X.prop).invtRestrict U.prop)))
-  have h_dim : (ofEnd (g.invtRestrict X.prop)).dim ≠ 0 := by
-    simpa [Submodule.finrank_eq_zero] using hX'
-  simp only [Submodule.ker_subtype, bot_le, Finset.filter_true] at key
-  rw [sum_moebius_invtRestrict_eq_one_apply, one_apply] at key
-  simp only [h_dim, ↓reduceIte] at key
-  refine (Finset.sum_congr (Finset.filter_congr fun U _ ↦ ?_) fun U hU ↦ ?_).trans key.symm
-  · rw [Submodule.range_subtype]
-    exact Subtype.coe_le_coe.symm
-  · exact congrArg moebius (ofEnd_invtRestrict_comap _ (g.coe_invtRestrict_apply X.prop)
-      X.val.injective_subtype U.prop (by simpa using (Finset.mem_filter.1 hU).2)).symm
-
-/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. -/
-private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
-    (h : moebius (ofEnd g) ≠ 0) : g.IsSemisimple := by
-  classical
-  -- Evaluated at `g`, `μ ∗ 𝟙 = 1` makes `U ↦ μ(g|_U)` the Möbius function `U ↦ μ(⊥, U)` of the
-  -- modular lattice of `g`-invariant subspaces, so by Crapo's complementation theorem this
-  -- lattice is complemented when `μ(g) ≠ 0`.
-  have := Fintype.ofFinite g.invtSubmodule
-  have h_top : ofEnd (g.invtRestrict (⊤ : g.invtSubmodule).prop) = ofEnd g :=
-    ofEnd_invtRestrict_eq_of_injective (g := g) (g' := g) LinearMap.id (fun _ ↦ rfl)
-      (⊤ : g.invtSubmodule).prop Function.injective_id LinearMap.range_id
-  have : ComplementedLattice g.invtSubmodule :=
-    complementedLattice_of_sum_le_eq_zero (μ := fun U ↦ moebius (ofEnd (g.invtRestrict U.prop)))
-      (fun _ hX ↦ sum_moebius_invtRestrict_le_eq_zero g hX) (by rwa [h_top])
-  exact Module.End.isSemisimple_iff'.2 fun p ↦ exists_isCompl p
+  -- `μ ∗ 𝟙 = 1` at the class of `o.rep` on `⊥`, which is `o`, has the single term `μ(o)`.
+  have key := o.rep.sum_moebius_ofEnd_invtRestrict ⊥
+  simp only [le_bot_iff, Finset.filter_eq', Finset.mem_univ, ↓reduceIte, Finset.sum_singleton]
+    at key
+  rwa [eq_of_dim_eq_zero (c := ofEnd (o.rep.invtRestrict (⊥ : o.rep.invtSubmodule).prop)) (by simp)
+    h] at key
 
 /-- `μ` takes real values. -/
 @[simp]
@@ -154,10 +109,13 @@ theorem conj_moebius (c : SimilarityClass k) : conj (moebius c) = moebius c := b
   have h : μ' * constOne = moebius * constOne := by
     refine ext_ofEnd fun _ g ↦ ?_
     have := Fintype.ofFinite g.invtSubmodule
-    have key := congrArg conj (sum_moebius_invtRestrict_eq_one_apply g)
-    rw [map_sum] at key
+    -- `μ ∗ 𝟙 = 1` at the class of `g`.
+    have key := g.sum_moebius_ofEnd_invtRestrict ⊤
+    simp only [le_top, Finset.filter_true, top_eq_bot_iff_finrank_eq_zero] at key
+    have key' := congrArg conj key
+    rw [map_sum] at key'
     rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
-    simpa [μ', apply_ite conj, sum_moebius_invtRestrict_eq_one_apply] using key
+    simpa [μ', apply_ite conj, key] using key'
   exact congrArg (· c) (isUnit_constOne.mul_right_cancel h)
 
 end Moebius
@@ -179,13 +137,15 @@ theorem blockAverage_moebius (c : SimilarityClass k) :
   suffices h : F * constOne = F' * constOne from congrArg (· c) (isUnit_constOne.mul_right_cancel h)
   refine ext_ofEnd fun _ x ↦ ?_
   have := Fintype.ofFinite x.invtSubmodule
+  have hx := x.sum_moebius_ofEnd_invtRestrict ⊤
+  simp only [le_top, Finset.filter_true, top_eq_bot_iff_finrank_eq_zero] at hx
   have h_mackey := blockAverage_mul x y moebius constOne
   rw [moebius_mul_constOne, blockAverage_one_ofEnd, finsum_eq_sum_of_fintype] at h_mackey
   simp only [blockAverage_constOne] at h_mackey
   rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
   simp only [F, F', constOne_apply, mul_one, smul_mul_assoc, smul_apply,
-    moebius_mul_constOne, ← Finset.sum_mul, sum_moebius_invtRestrict_eq_one_apply]
-  exact h_mackey.symm
+    moebius_mul_constOne, ← Finset.sum_mul, hx]
+  simpa [one_apply] using h_mackey.symm
 
 variable [Finite k] in
 omit [Fintype k] in
@@ -196,7 +156,7 @@ private theorem mul_moebius_blockTriangular (B : HallAlgebra k) (a : Module.End 
       B (ofEnd (a.prodMap b)) * moebius (ofEnd (blockTriangular a b x)) := by
   by_cases h : moebius (ofEnd (blockTriangular a b x)) = 0
   · simp [h]
-  · rw [ofEnd_blockTriangular_of_isSemisimple (isSemisimple_of_moebius_ofEnd_ne_zero h)]
+  · rw [ofEnd_blockTriangular_of_isSemisimple (Module.End.isSemisimple_of_moebius_ne_zero _ h)]
 
 /-- The block averages of `B · μ` only see the block diagonal class:
 `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`. -/
@@ -304,9 +264,11 @@ private theorem greenCuspidal_eq_neg_moebius_mul :
       eigenvalueSum K η (ofEnd g) * moebius (ofEnd (g.invtRestrict U.prop)) := by
     rw [eigenvalueSum_ofEnd_eq_add K η U.prop]
     ring
-  simp only [h_terms, ← Finset.mul_sum, sum_moebius_invtRestrict_eq_one_apply, one_apply]
+  have key := g.sum_moebius_ofEnd_invtRestrict ⊤
+  simp only [le_top, Finset.filter_true, top_eq_bot_iff_finrank_eq_zero] at key
+  simp only [h_terms, ← Finset.mul_sum, key]
   split_ifs with h
-  · simp [eigenvalueSum_eq_zero_of_dim_eq_zero K η h]
+  · simp [eigenvalueSum_eq_zero_of_dim_eq_zero K η (o := ofEnd g) (by simpa using h)]
   · simp
 
 /-- **`C_η ∗ 𝟙 = -β_η`.** -/
@@ -348,7 +310,10 @@ theorem isCuspidal_greenCuspidal : (greenCuspidal K η : HallAlgebra k).IsCuspid
   simp only [mul_add, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
     mul_assoc, mul_comm (moebius _) (eigenvalueSum K η _)]
   -- Each part has a factor `Σ_U μ(c|_U) = 1(c)` with `c = a` or `c = b`, of positive size.
-  simp [sum_moebius_invtRestrict_eq_one_apply, one_apply, ha, hb]
+  have ka := a.rep.sum_moebius_ofEnd_invtRestrict ⊤
+  have kb := b.rep.sum_moebius_ofEnd_invtRestrict ⊤
+  simp only [le_top, Finset.filter_true, top_eq_bot_iff_finrank_eq_zero] at ka kb
+  simp [ka, kb, ha, hb]
 
 variable {K} in
 /-- **`C_η` only sees the Frobenius orbits of the eigenvalues.** Let `g` act on a space of

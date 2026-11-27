@@ -12,7 +12,7 @@ public import TauCeti.CategoryTheory.Subobject.Length
 import Mathlib.CategoryTheory.Abelian.Exact
 import TauCeti.CategoryTheory.Abelian.SubquotientPresentation
 import TauCeti.CategoryTheory.Abelian.Subobject.Modular
-import TauCeti.Order.ModularLattice.Basic
+import TauCeti.Order.ModularLattice
 
 /-!
 # Additivity of length in abelian categories

@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel.Equivarian
 
 import Mathlib.RepresentationTheory.Maschke
 import TauCeti.Geometry.Manifold.GroupAction.EquivariantSlice
-import TauCeti.Order.ModularLattice.Basic
+import TauCeti.Order.ModularLattice
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Semisimple
 
