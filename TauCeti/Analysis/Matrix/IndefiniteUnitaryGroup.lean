@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
 public import TauCeti.Topology.Instances.Matrix
+import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
@@ -35,6 +36,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
   subset of the matrices, with the subspace topology, since its inverse `A⁻¹ * star g * A` is a
   continuous function of `g`; over `ℝ` or `ℂ` this makes `U(p, q)` locally compact and second
   countable.
+* Over a topological ring, the conjugation `g ↦ b⁻¹ g b` and the bijection `g ↦ a g b` between the
+  unitary groups of congruent forms `A` and `bᴴ (t A) b` are continuous.
 * For a unitary Gram matrix `A` over `ℝ` or `ℂ`, such as `diag(1, …, 1, -1, …, -1)`, the inverse
   `A⁻¹ * star g * A` of `g ∈ unitaryGroupOf A` has the operator norm of `g`, since multiplying by
   a unitary matrix and taking adjoints preserve the operator norm. As `1 ≤ ‖g‖ * ‖g⁻¹‖`, every such
@@ -54,6 +57,8 @@ that use the topology or the order of `ℝ` and `ℂ`.
 * `Matrix.isClosed_unitaryGroupOf`: `unitaryGroupOf A` is closed in `GL n R`.
 * `Matrix.unitaryGroupOf.isClosedEmbedding_val`: for invertible `A`, the coercion of
   `unitaryGroupOf A` to the matrices is a closed embedding.
+* `Matrix.unitaryGroupOf.continuous_conjEquiv`, `Matrix.unitaryGroupOf.continuous_transport`: the
+  conjugation and transport maps between unitary groups of congruent forms are continuous.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.continuous_fromBlocksHom`: the block-diagonal embedding
   of `U(p) × U(q)` is continuous.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.isCompact_range_fromBlocksHom`: the block-diagonal
@@ -118,6 +123,28 @@ theorem unitaryGroupOf.isClosedEmbedding_val {R : Type*} [CommRing R] [StarRing 
   · rw [hrange]
     exact isClosed_eq ((continuous_id.star.matrix_mul continuous_const).matrix_mul continuous_id)
       continuous_const
+
+section Congruence
+
+variable {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  {A A' : Matrix n n R} {b : GL n R} {K : Type*} [Semifield K] [Algebra K R] {t : K}
+
+/-- The conjugation isomorphism `g ↦ b⁻¹ g b` between unitary groups of congruent forms is
+continuous. -/
+theorem unitaryGroupOf.continuous_conjEquiv (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') : Continuous (conjEquiv ht hb) :=
+  (((continuous_const.mul continuous_subtypeVal).mul continuous_const).subtype_mk
+    fun g ↦ inv_mul_mul_mem hb g.property).congr fun g ↦ (conjEquiv_apply ht hb g).symm
+
+/-- The bijection `g ↦ a g b` between unitary groups of congruent forms
+(`Matrix.unitaryGroupOf.transport`) is continuous. -/
+theorem unitaryGroupOf.continuous_transport (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') {a : GL n R}
+    (hab : a * b ∈ unitaryGroupOf A') : Continuous (transport ht hb hab) :=
+  ((continuous_const (y := (⟨a * b, hab⟩ : unitaryGroupOf A'))).mul
+    (continuous_conjEquiv ht hb)).congr fun g ↦ (transport_apply ht hb hab g).symm
+
+end Congruence
 
 /-- **Membership in `unitaryGroupOf A` by polarization.** Over `ℝ` or `ℂ` and for Hermitian `A`,
 `g ∈ unitaryGroupOf A` exactly when `⟨g z, g z⟩ = ⟨z, z⟩` for every `z`, where
