@@ -62,7 +62,6 @@ private theorem punctured_lattice_mem (A : CommAlgCat ℤ) (i : Fin t.rank)
     g ∈ ⨆ γ ∈ Finset.univ.erase (pin (ht := ht) i),
       (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
         D.isNilpotent_representation_rootGenerator γ.val A).range := by
-  classical
   have hle : D.subsystemSubgroup
       (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) A ≤
       ⨆ γ ∈ Finset.univ.erase (pin (ht := ht) i),
@@ -242,8 +241,8 @@ private theorem simpleQuotientMap_bijective (A : Type v) [CommRing A] (i : Fin t
     intro u hu
     apply Subgroup.mem_bot.mpr
     apply (D.rootSubgroupPoints_simpleIndex_mem_puncturedPositivePoints_iff A i u).mp
-    have hq : (QuotientGroup.mk' ((D.puncturedPositivePoints A i).subgroupOf
-        (D.positivePoints A))) (positiveRootHom D A (pin i) u) = 1 := hu
+    have hq := MonoidHom.mem_ker.mp hu
+    rw [simpleQuotientMap, MonoidHom.comp_apply] at hq
     exact (QuotientGroup.eq_one_iff
       (N := (D.puncturedPositivePoints A i).subgroupOf (D.positivePoints A))
       (positiveRootHom D A (pin i) u)).mp hq
@@ -258,7 +257,7 @@ private theorem simpleQuotientMap_bijective (A : Type v) [CommRing A] (i : Fin t
     have hg : g = ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩ *
         positiveRootHom D A (pin i) u := Subtype.ext h
     rw [hg, map_mul, hv', one_mul]
-    rfl
+    exact MonoidHom.comp_apply _ _ _
 
 /-- The simple-root quotient, normalized by the chosen root parameter. -/
 noncomputable def simpleRootQuotientEquiv (A : Type v) [CommRing A] (i : Fin t.rank) :
@@ -280,6 +279,13 @@ theorem simpleRootQuotientEquiv_symm_apply (A : Type v) [CommRing A] (i : Fin t.
 noncomputable def simpleRootCoordinate (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.positivePoints A →* Multiplicative A :=
   (D.simpleRootQuotientEquiv A i).toMonoidHom.comp (QuotientGroup.mk' _)
+
+/-- The quotient equivalence on a class is its simple-root coordinate. -/
+@[simp]
+theorem simpleRootQuotientEquiv_mk (A : Type v) [CommRing A] (i : Fin t.rank)
+    (g : D.positivePoints A) :
+    D.simpleRootQuotientEquiv A i (QuotientGroup.mk g) =
+      D.simpleRootCoordinate A i g := (rfl)
 
 /-- The simple-root coordinate recovers its chosen parameter. -/
 @[simp]
@@ -308,8 +314,19 @@ theorem ker_simpleRootCoordinate (A : Type v) [CommRing A] (i : Fin t.rank) :
 theorem simpleRootCoordinate_eq_one_iff (A : Type v) [CommRing A] (i : Fin t.rank)
     (g : D.positivePoints A) :
     D.simpleRootCoordinate A i g = 1 ↔ (g : D.points A) ∈ D.puncturedPositivePoints A i := by
-  rw [← MonoidHom.mem_ker, D.ker_simpleRootCoordinate]
-  rfl
+  rw [← MonoidHom.mem_ker, D.ker_simpleRootCoordinate, Subgroup.mem_subgroupOf]
+
+/-- Multiplying a punctured positive point by the chosen simple-root element recovers
+that element's parameter as the simple-root coordinate. -/
+@[simp]
+theorem simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex
+    (A : Type v) [CommRing A] (i : Fin t.rank) (v : D.positivePoints A)
+    (hv : (v : D.points A) ∈ D.puncturedPositivePoints A i) (u : Multiplicative A) :
+    D.simpleRootCoordinate A i
+      (v * ⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
+        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩) = u := by
+  rw [map_mul, (D.simpleRootCoordinate_eq_one_iff A i v).mpr hv, one_mul]
+  exact D.simpleRootCoordinate_simpleIndex A i u
 
 /-- The coordinate vanishes on every other positive root group. -/
 @[simp]
@@ -377,7 +394,7 @@ theorem simpleRootCoordinate_eq_positiveRootEquiv_symm (A : Type v) [CommRing A]
       ((D.positiveRootEquiv l hl hall A).symm g)
 
 /-- A positive point has a unique punctured-positive factor followed by a simple-root factor. -/
-theorem existsUnique_puncturedPositivePoints_mul_simpleIndex
+theorem existsUnique_puncturedPositivePoints_mul_rootSubgroupPoints_simpleIndex
     (A : Type v) [CommRing A] (i : Fin t.rank) (g : D.positivePoints A) :
     ∃! p : D.puncturedPositivePoints A i × Multiplicative A,
       (g : D.points A) = p.1 * D.rootSubgroupPoints (t.simpleIndex ht i) A p.2 := by
@@ -388,9 +405,8 @@ theorem existsUnique_puncturedPositivePoints_mul_simpleIndex
       D.simpleRootCoordinate A i g = a := by
     have hg : g = ⟨w, D.puncturedPositivePoints_le_positivePoints A i w.property⟩ *
         positiveRootHom D A (pin i) a := Subtype.ext hw
-    rw [hg, map_mul]
-    rw [(D.simpleRootCoordinate_eq_one_iff A i _).mpr w.property, one_mul]
-    exact D.simpleRootCoordinate_simpleIndex A i a
+    rw [hg]
+    exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i _ w.property a
   refine ⟨(⟨v, hv⟩, u), h, fun p hp => ?_⟩
   have hu : p.2 = u := (coord p.1 p.2 hp).symm.trans (coord ⟨v, hv⟩ u h)
   apply Prod.ext _ hu
@@ -413,7 +429,7 @@ theorem simpleRootCoordinate_map {A : Type v} {B : Type w} [CommRing A] [CommRin
     D.positiveRootEquiv_symm_map, toAdd_ofAdd]
 
 /-- Conjugation by the actual torus scales a simple-root coordinate by that root's character. -/
-theorem simpleRootCoordinate_torus_conj (A : Type v) [CommRing A] (i : Fin t.rank)
+theorem simpleRootCoordinate_torusPoints_conj (A : Type v) [CommRing A] (i : Fin t.rank)
     (s : Fin t.rank → Aˣ) (g : D.positivePoints A) :
     D.simpleRootCoordinate A i
       ⟨D.torusPoints A s * g * (D.torusPoints A s)⁻¹,
@@ -426,8 +442,8 @@ theorem simpleRootCoordinate_torus_conj (A : Type v) [CommRing A] (i : Fin t.ran
   let v' : D.positivePoints A := ⟨v, D.puncturedPositivePoints_le_positivePoints A i hv⟩
   have hg : g = v' * positiveRootHom D A (pin i) u := Subtype.ext h
   have hcoord : D.simpleRootCoordinate A i g = u := by
-    rw [hg, map_mul, (D.simpleRootCoordinate_eq_one_iff A i v').mpr hv, one_mul]
-    exact D.simpleRootCoordinate_simpleIndex A i u
+    rw [hg]
+    exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i v' hv u
   have hvconj := (Subgroup.mem_normalizer_iff.mp
     (D.range_torusPoints_le_normalizer_puncturedPositivePoints A i ⟨s, rfl⟩) v).mp hv
   let w : D.positivePoints A := ⟨D.torusPoints A s * v * (D.torusPoints A s)⁻¹,
@@ -444,9 +460,8 @@ theorem simpleRootCoordinate_torus_conj (A : Type v) [CommRing A] (i : Fin t.ran
       MonoidHom.codRestrict_apply, pin, w]
     rw [h, ← D.torusPoints_conj_rootSubgroupPoints, ofAdd_toAdd]
     group
-  rw [heq, map_mul, (D.simpleRootCoordinate_eq_one_iff A i w).mpr hvconj, one_mul,
-    hcoord]
-  exact D.simpleRootCoordinate_simpleIndex A i _
+  rw [heq, hcoord]
+  exact D.simpleRootCoordinate_mul_rootSubgroupPoints_simpleIndex A i w hvconj _
 
 /-- The simultaneous simple-root coordinates, with the componentwise additive group law. -/
 noncomputable def simpleRootCoordinates (A : Type v) [CommRing A] :
@@ -485,6 +500,7 @@ theorem ker_simpleRootCoordinates (A : Type v) [CommRing A] :
         (t.rationalBase ht).support) A).subgroupOf (D.positivePoints A) := by
   classical
   ext g
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf]
   constructor
   · intro hg
     let l : List PositiveRoot := Finset.univ.toList
@@ -493,7 +509,8 @@ theorem ker_simpleRootCoordinates (A : Type v) [CommRing A] :
     let u := (D.positiveRootEquiv l hl hall A).symm g
     have hsimple (γ : PositiveRoot) (hγ : γ.val ∈ (t.rationalBase ht).support) : u γ = 0 := by
       obtain ⟨i, hi⟩ := exists_simpleIndex_eq_of_mem_support hγ
-      have hc : D.simpleRootCoordinate A i g = 1 := congrFun hg i
+      have hc := congrFun hg i
+      rw [D.simpleRootCoordinates_apply, Pi.one_apply] at hc
       rw [D.simpleRootCoordinate_eq_positiveRootEquiv_symm A i l hl hall] at hc
       have hγ' : γ = ⟨t.simpleIndex ht i, simpleIndex_mem_posRoots i⟩ := Subtype.ext hi.symm
       exact hγ' ▸ congrArg toAdd hc
@@ -515,6 +532,7 @@ theorem ker_simpleRootCoordinates (A : Type v) [CommRing A] :
   · intro hg
     apply funext
     intro i
+    rw [D.simpleRootCoordinates_apply, Pi.one_apply]
     apply (D.simpleRootCoordinate_eq_one_iff A i g).mpr
     have hle : D.subsystemPoints
         (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \

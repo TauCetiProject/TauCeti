@@ -130,7 +130,7 @@ example (D : ChevalleyDatum (.A 2) ht) :
   · rw [D.simpleRootCoordinate_map, hc]
     exact congrArg ofAdd (DualNumber.fst_eps (R := ℚ))
   · intro h
-    have he : (1 : ℚ) = 0 := congrArg TrivSqZeroExt.snd h
+    have he : (1 : ℚ) = 0 := by simpa using congrArg TrivSqZeroExt.snd h
     exact one_ne_zero he
   · simp [pow_two, DualNumber.eps_mul_eps]
 
