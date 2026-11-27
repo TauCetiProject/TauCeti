@@ -48,6 +48,8 @@ the maximal ideal `𝔪` (`Matrix.mem_ideal_smul_top_iff`).
 * `Matrix.mem_range_scalar_of_commute_of_span_eq_top`: a matrix commuting with a spanning family
   is scalar.
 * `Matrix.span_range_map_eq_top`: the image of a spanning family under a ring homomorphism spans.
+* `Matrix.GeneralLinearGroup.inv_mul_map_mul_mem_range_of_span_eq_top`: if `a` conjugates a
+  spanning family into `M_n(O)`, it conjugates every matrix over `O` into `M_n(O)`.
 * `Matrix.GeneralLinearGroup.inv_apply_mul_apply_mem_range_of_span_eq_top`: if `a` conjugates a
   spanning family into `M_n(O)`, every product of an entry of `a⁻¹` and an entry of `a` lies in
   `O`.
