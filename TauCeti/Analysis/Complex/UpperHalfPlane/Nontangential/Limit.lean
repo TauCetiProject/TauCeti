@@ -18,6 +18,9 @@ nontangential limit is `Tendsto u (nontangentialFilter α x) (𝓝 L)`.
 The truncated cones `Γ^α_h(x)`, `0 < h`, form a basis of this filter
 (`TauCeti.nontangentialFilter_hasBasis`). The filter grows with the aperture, so a nontangential
 limit for one aperture is one for every smaller aperture (`TauCeti.nontangentialFilter_mono`).
+For `b > 0` the affine map `z ↦ a + b z` carries nontangential approach to `x` into
+nontangential approach, with the same aperture, to `a + b x`
+(`TauCeti.tendsto_add_mul_nontangentialFilter`).
 A ray `(x + ct) + it`, `t → 0⁺`, with `|c| < α` is a nontangential approach
 (`TauCeti.tendsto_ray_nontangentialFilter`). In particular, for a positive aperture the vertical
 approach `x + it` is nontangential (`TauCeti.tendsto_vertical_nontangentialFilter`), so a
@@ -31,6 +34,8 @@ nontangential limit is also a vertical limit and the filter is nontrivial.
 
 * `TauCeti.nontangentialFilter_hasBasis`: the cones `Γ^α_h(x)`, `0 < h`, form a basis.
 * `TauCeti.nontangentialFilter_mono`: the filter is monotone in the aperture.
+* `TauCeti.tendsto_add_mul_nontangentialFilter`: affine maps `z ↦ a + b z`, `b > 0`, preserve
+  nontangential approach.
 * `TauCeti.nontangentialFilter_le_nhds`, `TauCeti.tendsto_im_nontangentialFilter`: nontangential
   approach to `x` is approach to `x`, so `Im z → 0`.
 * `TauCeti.tendsto_ray_nontangentialFilter`: straight-line approach inside the cone is
@@ -122,6 +127,26 @@ theorem eventually_nontangentialFilter_abs_re_sub_le (α x : ℝ) {δ : ℝ} (h�
 theorem nontangentialFilter_mono {α β : ℝ} (hαβ : α ≤ β) (x : ℝ) :
     nontangentialFilter α x ≤ nontangentialFilter β x :=
   nhdsWithin_mono _ (nontangentialCone_mono hαβ le_rfl x)
+
+/-- **Affine maps preserve nontangential approach.** For `b > 0`, `z ↦ a + b z` maps nontangential
+approach to `x` into nontangential approach, with the same aperture, to `a + b x`. -/
+theorem tendsto_add_mul_nontangentialFilter (a : ℝ) {b : ℝ} (hb : 0 < b) (α x : ℝ) :
+    Tendsto (fun z : ℂ ↦ (a : ℂ) + b * z) (nontangentialFilter α x)
+      (nontangentialFilter α (a + b * x)) := by
+  rw [nontangentialFilter_def, nontangentialFilter_def]
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+  · have hc : Continuous fun z : ℂ ↦ (a : ℂ) + b * z := by fun_prop
+    have := (hc.tendsto (x : ℂ)).mono_left (nhdsWithin_le_nhds (s := nontangentialCone α ⊤ x))
+    simpa using this
+  · filter_upwards [self_mem_nhdsWithin] with z hz
+    obtain ⟨hz0, hzα, -⟩ := mem_nontangentialCone.1 hz
+    have him : ((a : ℂ) + b * z).im = b * z.im := by simp
+    have hre : ((a : ℂ) + b * z).re - (a + b * x) = b * (z.re - x) := by simp; ring
+    refine mem_nontangentialCone.2 ⟨?_, ?_, ENNReal.ofReal_lt_top⟩
+    · rw [him]
+      positivity
+    · rw [him, hre, abs_mul, abs_of_pos hb]
+      nlinarith
 
 /-- **Straight-line approach inside the cone is nontangential.** For `|c| < α`, the ray
 `(x + ct) + it → x` nontangentially as `t → 0⁺`. -/

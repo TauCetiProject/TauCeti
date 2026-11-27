@@ -25,9 +25,9 @@ transform `w ↦ i (1 + w) / (1 - w)` maps the radius of the unit disc ending at
 `ζ = (x - i) / (x + i)` to an arc ending at `x`, inside every cone at `x` near `x`
 (`TauCeti.tendsto_I_mul_one_add_div_one_sub_nontangentialFilter`): along it
 `|Re z - x| = |x| (1 - r) / (1 + r) · Im z`. So the radial limits of `F` transported to the disc
-are the nontangential limits of `F`. The point `ζ` is `e^{iθ}` for `θ = π + 2 arctan x`
-(`TauCeti.exp_pi_add_two_mul_arctan_mul_I`), and `θ ↦ tan ((θ - π) / 2)` is differentiable on
-`(0, 2π)`, so these angles form a set of positive measure when the points `x` do.
+are the nontangential limits of `F`. The point `ζ` is `e^{iθ}` for the Cayley angle
+`θ = π + 2 arctan x` (`TauCeti.exp_cayleyAngle_mul_I`), and `θ ↦ tan ((θ - π) / 2)` is
+differentiable on `(0, 2π)`, so these angles form a set of positive measure when the points `x` do.
 
 ## References
 
@@ -105,32 +105,25 @@ theorem eqOn_const_of_upperHalfPlaneBoundaryFun_eq {F : ℂ → ℂ} {S : ℝ} {
       exact ⟨hxA, fun α ↦ hx hxA ▸ hlim α⟩
     exact fun h0 ↦ hA (measure_mono_null_ae hgood h0)
   -- the corresponding angles
-  set θ : ℝ → ℝ := fun x ↦ π + 2 * Real.arctan x
-  have hE : volume (θ '' A') ≠ 0 := by
+  have hE : volume (cayleyAngle '' A') ≠ 0 := by
     intro h0
-    have hsub : A' ⊆ (fun t ↦ Real.tan ((t - π) / 2)) '' (θ '' A') :=
-      fun x hx ↦ ⟨θ x, mem_image_of_mem θ hx, by simp [θ]⟩
-    have hdiff : DifferentiableOn ℝ (fun t ↦ Real.tan ((t - π) / 2)) (θ '' A') := by
+    have hsub : A' ⊆ (fun t ↦ Real.tan ((t - π) / 2)) '' (cayleyAngle '' A') :=
+      fun x hx ↦ ⟨cayleyAngle x, mem_image_of_mem cayleyAngle hx, by simp [cayleyAngle_def]⟩
+    have hdiff : DifferentiableOn ℝ (fun t ↦ Real.tan ((t - π) / 2)) (cayleyAngle '' A') := by
       rintro _ ⟨y, -, rfl⟩
       refine (Real.differentiableAt_tan.2 ?_).comp _ (by fun_prop) |>.differentiableWithinAt
-      simpa [θ] using (Real.cos_arctan_pos y).ne'
+      simpa [cayleyAngle_def] using (Real.cos_arctan_pos y).ne'
     exact hA' (measure_mono_null hsub
       (addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero volume hdiff h0))
   -- the transported function on the disc
   set g : ℂ → ℂ := fun w ↦ F (I * (1 + w) / (1 - w))
-  have hmaps := bijOn_I_mul_one_add_div_one_sub_ball.mapsTo
-  have hg : DifferentiableOn ℂ g (ball 0 1) := by
-    refine hF.comp (fun w hw ↦ ?_) hmaps
-    have hw1 : w ≠ 1 := by
-      rintro rfl
-      simp at hw
-    exact (hasDerivAt_I_mul_one_add_div_one_sub hw1).differentiableAt.differentiableWithinAt
-  have hgS : ∀ w ∈ ball (0 : ℂ) 1, ‖g w‖ ≤ S := fun w hw ↦ hS _ (hmaps hw)
-  have hlim : ∀ t ∈ θ '' A', Tendsto (fun r ↦ g (circleMap 0 r t)) (𝓝[<] 1) (𝓝 c) := by
+  have hgS : ∀ w ∈ ball (0 : ℂ) 1, ‖g w‖ ≤ S :=
+    fun w hw ↦ hS _ (bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hw)
+  have hlim : ∀ t ∈ cayleyAngle '' A', Tendsto (fun r ↦ g (circleMap 0 r t)) (𝓝[<] 1) (𝓝 c) := by
     rintro _ ⟨x, hx, rfl⟩
-    simp only [g, circleMap_zero, θ, exp_pi_add_two_mul_arctan_mul_I]
+    simp only [g, circleMap_zero, exp_cayleyAngle_mul_I]
     exact (hx.2 1).comp (tendsto_I_mul_one_add_div_one_sub_nontangentialFilter x one_pos)
-  have hgc := eqOn_const_ball_of_tendsto_circleMap hg hgS hE hlim
+  have hgc := eqOn_const_ball_of_tendsto_circleMap hF.comp_I_mul_one_add_div_one_sub hgS hE hlim
   intro z hz
   have hzI : z + I ≠ 0 := add_I_ne_zero_of_im_nonneg (le_of_lt hz)
   have := hgc (bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz)

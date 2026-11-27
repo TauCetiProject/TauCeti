@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -54,6 +55,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
 * `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
+* `DifferentiableOn.comp_I_mul_one_add_div_one_sub`: a function holomorphic on the upper half-plane
+  transports to a function holomorphic on the unit disc.
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
@@ -68,8 +71,10 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.re_I_mul_one_add_div_one_sub_mul_norm_one_sub_sq`: the real part of the inverse
   transform, `re (i (1 + w) / (1 - w)) ‖1 - w‖² = -2 im w`.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
-* `TauCeti.exp_pi_add_two_mul_arctan_mul_I`: the boundary point `(x - i) / (x + i)` is `e^{iθ}` for
-  `θ = π + 2 arctan x`.
+* `TauCeti.cayleyAngle`: the angle `θ = π + 2 arctan x`, with `e^{iθ} = (x - i) / (x + i)`
+  (`TauCeti.exp_cayleyAngle_mul_I`), derivative `2 / (1 + x ^ 2)` (`TauCeti.hasDerivAt_cayleyAngle`)
+  and range `(0, 2π)` (`TauCeti.range_cayleyAngle`); the inverse Cayley coordinate inverts it
+  (`TauCeti.inverseCayleyCoord_exp_cayleyAngle_mul_I`).
 * `TauCeti.I_mul_one_add_div_one_sub_ofReal_mul_sub_I_div_add_I` and
   `TauCeti.re_I_mul_one_add_div_one_sub_ofReal_mul_sub_I_div_add_I`: the inverse transform on the
   radius `r ↦ r (x - i) / (x + i)` of the disc, in closed form, and its real part in terms of its
@@ -344,6 +349,17 @@ theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
   field_simp
   ring
 
+/-- **Transport to the disc.** If `F` is holomorphic on the upper half-plane, then
+`w ↦ F (i (1 + w) / (1 - w))` is holomorphic on the unit disc. -/
+theorem _root_.DifferentiableOn.comp_I_mul_one_add_div_one_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {F : ℂ → E} (hF : DifferentiableOn ℂ F UpperHalfPlane.upperHalfPlaneSet) :
+    DifferentiableOn ℂ (fun w ↦ F (I * (1 + w) / (1 - w))) (ball 0 1) := by
+  refine hF.comp (fun w hw ↦ ?_) bijOn_I_mul_one_add_div_one_sub_ball.mapsTo
+  have hw1 : w ≠ 1 := by
+    rintro rfl
+    simp at hw
+  exact (hasDerivAt_I_mul_one_add_div_one_sub hw1).differentiableAt.differentiableWithinAt
+
 /-- The inverse Cayley transform tends to infinity as the disc variable tends to its pole `1`. -/
 theorem tendsto_I_mul_one_add_div_one_sub_nhdsNE_one :
     Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[≠] 1) (cobounded ℂ) := by
@@ -457,17 +473,43 @@ theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
   norm_num at this
 
 open scoped Real in
-/-- The boundary point `(x - i) / (x + i)` of the Cayley transform is `e^{iθ}` for
+/-- The **Cayley angle** `θ = π + 2 arctan x ∈ (0, 2π)` of `x ∈ ℝ`: the boundary point
+`(x - i) / (x + i)` of the Cayley transform is `e^{iθ}` (`TauCeti.exp_cayleyAngle_mul_I`). -/
+noncomputable def cayleyAngle (x : ℝ) : ℝ := π + 2 * Real.arctan x
+
+open scoped Real in
+/-- The defining formula of `TauCeti.cayleyAngle`. -/
+theorem cayleyAngle_def (x : ℝ) : cayleyAngle x = π + 2 * Real.arctan x := (rfl)
+
+/-- The boundary point `(x - i) / (x + i)` of the Cayley transform is `e^{iθ}` for the Cayley angle
 `θ = π + 2 arctan x`. -/
-theorem exp_pi_add_two_mul_arctan_mul_I (x : ℝ) :
-    exp ((π + 2 * Real.arctan x : ℝ) * I) = ((x : ℂ) - I) / ((x : ℂ) + I) := by
+theorem exp_cayleyAngle_mul_I (x : ℝ) :
+    exp (cayleyAngle x * I) = ((x : ℂ) - I) / ((x : ℂ) + I) := by
   have hxI : (x : ℂ) + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simp)
   have hxI' : 1 - (x : ℂ) * I ≠ 0 := by
     rw [show 1 - (x : ℂ) * I = -I * ((x : ℂ) + I) by linear_combination I_sq]
     exact mul_ne_zero (neg_ne_zero.2 I_ne_zero) hxI
-  rw [ofReal_add, add_mul, exp_add, exp_pi_mul_I, ← one_add_mul_I_div_one_sub_mul_I_eq_exp]
+  rw [cayleyAngle_def, ofReal_add, add_mul, exp_add, exp_pi_mul_I,
+    ← one_add_mul_I_div_one_sub_mul_I_eq_exp]
   field_simp
   linear_combination -2 * (x : ℂ) * I_sq
+
+/-- The derivative of the Cayley angle `π + 2 arctan x` is `2 / (1 + x ^ 2)`. -/
+theorem hasDerivAt_cayleyAngle (x : ℝ) : HasDerivAt cayleyAngle (2 * (1 + x ^ 2)⁻¹) x := by
+  unfold cayleyAngle
+  simpa [one_div] using ((Real.hasDerivAt_arctan x).const_mul 2).const_add Real.pi
+
+/-- The Cayley angle is injective. -/
+theorem cayleyAngle_injective : Function.Injective cayleyAngle := fun x y h ↦ by
+  rw [cayleyAngle_def, cayleyAngle_def] at h
+  exact Real.arctan_injective (by linarith)
+
+open scoped Real in
+/-- The Cayley angle takes exactly the values in `(0, 2π)`. -/
+theorem range_cayleyAngle : range cayleyAngle = Ioo 0 (2 * π) := by
+  rw [show cayleyAngle = (π + ·) ∘ (2 * ·) ∘ Real.arctan from rfl, range_comp, range_comp,
+    Real.range_arctan, image_mul_left_Ioo two_pos, image_const_add_Ioo]
+  congr 1 <;> ring
 
 /-- The inverse Cayley transform of a point `r ζ` on the radius of the disc through the boundary
 point `ζ = (x - i) / (x + i)`, in closed form. -/
@@ -668,3 +710,13 @@ theorem inverseCayleyCoord_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) :
     linear_combination w.im * hre
 
 end Complex
+
+namespace TauCeti
+
+/-- The inverse Cayley coordinate inverts the Cayley angle: it sends `e^{iθ}`,
+`θ = π + 2 arctan x`, to `x`. -/
+theorem inverseCayleyCoord_exp_cayleyAngle_mul_I (x : ℝ) :
+    inverseCayleyCoord (exp (cayleyAngle x * I)) = x := by
+  rw [exp_cayleyAngle_mul_I, inverseCayleyCoord_cayley, ofReal_re]
+
+end TauCeti
