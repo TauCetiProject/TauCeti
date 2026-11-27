@@ -30,10 +30,10 @@ containing basepoints become one region. This file builds that system
 `TauCeti.HeegaardRegionSystem.joinRegion`, which sends the regions containing basepoints to the
 joined region `none` of `TauCeti.HeegaardRegionSystem.JoinedRegion` and every other region `r` to
 `some r`. The joined region carries the single basepoint. Each tube lowers the Euler
-characteristic by two, so the joined region has Euler characteristic
-`∑ᵢ χ(R_{zᵢ}) - 2 (b - 1)` (`TauCeti.HeegaardRegionSystem.joinedEuler`), and when the original
-regions assemble a surface of genus `g` the joined ones assemble a surface of genus `g + b - 1`
-(`TauCeti.HeegaardRegionSystem.sum_joinedEuler_sub_card_eq`).
+characteristic by two, so when the basepoints lie in distinct regions the joined region has Euler
+characteristic `∑ᵢ χ(R_{zᵢ}) - 2 (b - 1)` (`TauCeti.HeegaardRegionSystem.joinedEuler`), and when
+moreover the original regions assemble a surface of genus `g` the joined ones assemble a surface
+of genus `g + b - 1` (`TauCeti.HeegaardRegionSystem.sum_joinedEuler_sub_card_eq`).
 
 The two systems have the same generators, and a domain `D` of the joined system is read on the
 original one as `D ∘ joinRegion`, which takes one value on all the regions containing basepoints.
@@ -50,7 +50,8 @@ The lemmas of `TauCeti.LowDimTopology.Heegaard.MapRegion` apply to `joinBasepoin
   The two systems are weakly admissible together
   (`TauCeti.HeegaardRegionSystem.weaklyAdmissible_joinBasepoints_iff`), and weakly admissible at a
   generator together (`TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_joinBasepoints_iff`).
-* **Maslov indices.** For the joined Euler characteristics, a domain `D` has
+* **Maslov indices.** When the basepoints lie in distinct regions, for the joined Euler
+  characteristics a domain `D` has
   `μ(D) = μ(D ∘ joinRegion) - 2 (b - 1) n_z(D)`
   (`TauCeti.HeegaardRegionSystem.maslovIndex_joinBasepoints`), since the point measures are
   unchanged. As `D ∘ joinRegion` has multiplicity `n_z(D)` at each of the `b` basepoints, the
@@ -227,8 +228,9 @@ variable [Fintype Basepoint]
 
 /-- **The Euler characteristics of the joined regions.** A region containing no basepoint keeps
 its Euler characteristic `χ`, and the joined region has Euler characteristic
-`∑ᵢ χ(R_{zᵢ}) - 2 (b - 1)`, since each of the `b - 1` tubes joining the `b` regions containing
-basepoints lowers the Euler characteristic by two. -/
+`∑ᵢ χ(R_{zᵢ}) - 2 (b - 1)`. When the `b` basepoints lie in distinct regions, this is the Euler
+characteristic of the tubed surface, since each of the `b - 1` tubes joining the `b` regions
+containing basepoints lowers the Euler characteristic by two. -/
 def joinedEuler (χ : Region → ℤ) : H.JoinedRegion → ℤ
   | none => ∑ z, χ (H.basepoint z) - 2 * (Fintype.card Basepoint - 1)
   | some r => χ r
@@ -257,11 +259,11 @@ theorem sum_joinedEuler [Fintype Region] (hinj : Injective H.basepoint) (χ : Re
     linarith
   exact_mod_cast h'
 
-/-- **The joined system has genus `g + b - 1`.** If the regions of `H` assemble a closed surface
-of genus `g`, in the sense `∑ χ(R) - #(α ∩ β) = 2 - 2g`, and `n = g + b - 1`, as for a balanced
-diagram with `b` basepoints, then the joined regions assemble a closed surface of genus `n`. This
-is the normalization of a singly pointed diagram with `n` curves of each kind, the hypothesis of
-`TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`. -/
+/-- **The joined system has genus `g + b - 1`.** If the basepoints lie in distinct regions and the
+regions of `H` assemble a closed surface of genus `g`, in the sense `∑ χ(R) - #(α ∩ β) = 2 - 2g`,
+and `n = g + b - 1`, as for a balanced diagram with `b` basepoints, then the joined regions assemble
+a closed surface of genus `n`. This is the normalization of a singly pointed diagram with `n` curves
+of each kind, the hypothesis of `TauCeti.HeegaardRegionSystem.maslovIndex_one_eq_two`. -/
 theorem sum_joinedEuler_sub_card_eq [Fintype Region] [Fintype Point]
     (hinj : Injective H.basepoint) {χ : Region → ℤ} {g : ℕ}
     (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (g : ℤ))
@@ -389,11 +391,11 @@ theorem maslovIndex_joinBasepoints_of_apply_none_eq_zero {χ : Region → ℤ}
   rw [H.maslovIndex_mapRegion _ _ χ, H.sum_mul_sub_sum_mul_comp_joinRegion hχ', hD]
   simp
 
-/-- **The Maslov index of a domain of the joined system.** For the joined Euler characteristics
-`TauCeti.HeegaardRegionSystem.joinedEuler`, a domain `D` has Maslov index
-`μ(D ∘ joinRegion) - 2 (b - 1) n_z(D)`, where `n_z(D)` is its multiplicity at the joined region:
-the point measures do not see the relabelling, and the Euler measures differ by the `b - 1`
-tubes. -/
+/-- **The Maslov index of a domain of the joined system.** When the basepoints lie in distinct
+regions, for the joined Euler characteristics `TauCeti.HeegaardRegionSystem.joinedEuler`, a domain
+`D` has Maslov index `μ(D ∘ joinRegion) - 2 (b - 1) n_z(D)`, where `n_z(D)` is its multiplicity at
+the joined region: the point measures do not see the relabelling, and the Euler measures differ by
+the `b - 1` tubes. -/
 theorem maslovIndex_joinBasepoints [Fintype Basepoint] (hinj : Injective H.basepoint)
     (χ : Region → ℤ) (x y : H.Generator) (D : H.JoinedRegion → ℤ) :
     H.joinBasepoints.maslovIndex (H.joinedEuler χ) x y D =
@@ -405,10 +407,10 @@ theorem maslovIndex_joinBasepoints [Fintype Basepoint] (hinj : Injective H.basep
   push_cast
   ring
 
-/-- **The grading quantity of the joined system.** For the joined Euler characteristics, the
-quantity `μ(D) - 2 n_z(D)` of a domain `D` of the singly pointed joined system is the quantity
-`μ - 2 ∑ᵢ n_{zᵢ}` of its pullback to the multipointed system, which has multiplicity `n_z(D)` at
-each of the `b` basepoints. -/
+/-- **The grading quantity of the joined system.** When the basepoints lie in distinct regions, for
+the joined Euler characteristics, the quantity `μ(D) - 2 n_z(D)` of a domain `D` of the singly
+pointed joined system is the quantity `μ - 2 ∑ᵢ n_{zᵢ}` of its pullback to the multipointed system,
+which has multiplicity `n_z(D)` at each of the `b` basepoints. -/
 theorem maslovIndex_joinBasepoints_sub_two_mul_sum [Fintype Basepoint]
     (hinj : Injective H.basepoint) (χ : Region → ℤ) (x y : H.Generator) (D : H.JoinedRegion → ℤ) :
     H.joinBasepoints.maslovIndex (H.joinedEuler χ) x y D -
@@ -438,12 +440,12 @@ theorem periodicMaslovIndices_joinBasepoints {χ : Region → ℤ} {χ' : H.Join
     exact ⟨P', hP', H.maslovIndex_joinBasepoints_of_apply_none_eq_zero hχ' x x
       (H.apply_none_eq_zero_of_mem_periodicDomains_joinBasepoints hP')⟩
 
-/-- **The relative grading of the joined system is normalized** when that of `H` is: a domain
-`E` from a generator `x` to itself in the joined system has `μ(E) - 2 n_z(E)` among its periodic
-Maslov indices at `x` as soon as every domain from a generator to itself in `H` has
-`μ - 2 ∑ᵢ n_{zᵢ}` among the periodic Maslov indices of `H`. This is the hypothesis `hself` of the
-relative grading lemmas of `TauCeti.LowDimTopology.Heegaard.RelativeGrading`, for the joined
-system. -/
+/-- **The relative grading of the joined system is normalized** when that of `H` is and the
+basepoints lie in distinct regions: a domain `E` from a generator `x` to itself in the joined system
+has `μ(E) - 2 n_z(E)` among its periodic Maslov indices at `x` as soon as every domain from a
+generator to itself in `H` has `μ - 2 ∑ᵢ n_{zᵢ}` among the periodic Maslov indices of `H`. This is
+the hypothesis `hself` of the relative grading lemmas of
+`TauCeti.LowDimTopology.Heegaard.RelativeGrading`, for the joined system. -/
 theorem maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_joinBasepoints [Fintype Basepoint]
     (hinj : Injective H.basepoint) {χ : Region → ℤ}
     (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
