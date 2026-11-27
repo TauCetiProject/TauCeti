@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.Algebraic.Integral
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Polynomial.Basic
+import Mathlib.RingTheory.Polynomial.IsIntegral
 
 /-!
 # Transcendental elements under translations, algebra maps, and automorphisms
@@ -20,6 +22,9 @@ homomorphism, the transcendental counterpart of Mathlib's `isAlgebraic_algHom_if
 An algebraic extension of scalars without zero divisors also preserves transcendence
 under an injective algebra map into a common overring, and so does a nonconstant polynomial
 with coefficients in a field, mapped into an algebra (`Transcendental.aeval_map`).
+An element of a finite extension of a field `F / k` that is transcendental over `k` has a
+characteristic polynomial over `F` with a coefficient transcendental over `k`
+(`Transcendental.exists_transcendental_coeff_charpoly_lmul`).
 Dually, every root in `A` of a polynomial over `R` is algebraic over `R`
 (`isAlgebraic_of_mem_aroots`).
 The kernel of an algebra map into a field algebraic over the base field is a maximal ideal
@@ -114,6 +119,28 @@ theorem aeval_map {K : Type*} [Field K] [Algebra K R] (hx : Transcendental R x)
     rw [leadingCoeff_map]
     exact IsUnit.mem_nonZeroDivisors <|
       (leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt hq)).isUnit.map _)
+
+/-- **A transcendental element has a transcendental characteristic coefficient**: if `z` lies in a
+finite `F`-algebra `A` and is transcendental over a subfield `k` of `F`, then some coefficient of
+the characteristic polynomial of `z` over `F` is transcendental over `k`. Otherwise `z` would be a
+root of a monic polynomial with coefficients algebraic over `k`. -/
+theorem exists_transcendental_coeff_charpoly_lmul {k F A : Type*} [Field k] [Field F] [CommRing A]
+    [Algebra k F] [Algebra F A] [Algebra k A] [IsScalarTower k F A] [Module.Finite F A] {z : A}
+    (hz : Transcendental k z) :
+    ∃ i, Transcendental k ((Algebra.lmul F A z).charpoly.coeff i) := by
+  cases subsingleton_or_nontrivial A
+  · exact absurd (Subsingleton.elim z 0 ▸ isAlgebraic_zero) hz
+  by_contra! h
+  refine hz (IsIntegral.isAlgebraic ?_)
+  refine .of_aeval_monic_of_isIntegral_coeff
+    ((LinearMap.charpoly_monic (Algebra.lmul F A z)).map (algebraMap F A))
+    ?_ ?_ fun i ↦ ?_
+  · rw [natDegree_map, LinearMap.charpoly_natDegree]
+    exact (Module.finrank_pos (R := F) (M := A)).ne'
+  · rw [eval_map_algebraMap, Algebra.aeval_self_charpoly_lmul]
+    exact isIntegral_zero
+  · rw [coeff_map]
+    exact (not_not.mp (h i)).isIntegral.algebraMap
 
 end Transcendental
 

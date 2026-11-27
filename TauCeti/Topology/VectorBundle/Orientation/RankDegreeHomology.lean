@@ -37,8 +37,9 @@ pair with coefficients in the pulled-back orientation system is a different grou
 `TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology`. When `E` is the negative normal
 bundle of a Morse–Bott critical submanifold, `r` is the lowest degree in which the relative
 homology across the critical level can be nonzero, and this identifies the group in that degree
-with the zeroth homology of the submanifold twisted by the orientations of its negative bundle
-(in `TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology`).
+with the zeroth homology of the submanifold twisted by the orientations of its negative bundle;
+`TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology` reads the orientability of the negative
+bundle off that group.
 
 ## The proof
 

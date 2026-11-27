@@ -69,6 +69,13 @@ def sphereRoundMetricOfRadius (r : ℝ) (hr : 0 < r) :
   ((sphereRoundMetric (E := E)).ofLE le_top).rescale (fun _ ↦ r ^ 2) contMDiff_const
     fun _ ↦ pow_pos hr 2
 
+/-- Unfolding lemma for `sphereRoundMetricOfRadius`. -/
+theorem sphereRoundMetricOfRadius_def (hr : 0 < r) :
+    sphereRoundMetricOfRadius (E := E) (n := n) r hr =
+      ((sphereRoundMetric (E := E)).ofLE le_top).rescale (fun _ ↦ r ^ 2) contMDiff_const
+        fun _ ↦ pow_pos hr 2 :=
+  (rfl)
+
 /-- The round metric of radius `r` is `r²` times the round inner product. -/
 @[simp]
 theorem sphereRoundMetricOfRadius_inner (hr : 0 < r) (p : sphere (0 : E) 1)

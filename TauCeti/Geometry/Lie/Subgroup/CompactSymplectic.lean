@@ -48,6 +48,9 @@ uniquely `X + i Y` with `X` and `Y` in `𝔰𝔭(n)`.
   **the Lie algebra of the compact symplectic group is the skew-Hermitian matrices in `sp`.**
 * `TauCeti.Lie.isEmbeddedLieSubgroup_GLSymplectic_inf_unitarySubgroup`: the compact symplectic
   group is an embedded Lie subgroup of the general linear group, hence a Lie group.
+* `TauCeti.Lie.compactSymplecticEmbeddedData`, `TauCeti.Lie.compactSymplecticChartedSpace`,
+  `TauCeti.Lie.compactSymplecticLieGroup`: its closed-subgroup data, charts and Lie group
+  structure.
 * `TauCeti.Lie.isBaseChange_complex_GLSymplectic_inf_unitarySubgroup`: the matrix coordinates
   exhibit `𝔰𝔭(2n, ℂ)` as the complexification of the Lie algebra of `Sp(n)`.
 * `TauCeti.Lie.compactSymplecticComplexificationLieEquiv`: **the complex Lie algebra isomorphism
@@ -67,7 +70,7 @@ uniquely `X + i Y` with `X` and `Y` in `𝔰𝔭(n)`.
 public section
 
 open Manifold TensorProduct
-open scoped Manifold Matrix Matrix.Norms.Operator
+open scoped ContDiff Manifold Matrix Matrix.Norms.Operator
 
 noncomputable section
 
@@ -120,6 +123,34 @@ theorem isEmbeddedLieSubgroup_GLSymplectic_inf_unitarySubgroup :
         Subgroup (Matrix (l ⊕ l) (l ⊕ l) 𝕜)ˣ) :=
   isEmbeddedLieSubgroup_of_isClosed ((isClosed_GLSymplectic l 𝕜).inter
     (isClosed_unitarySubgroup_units (Matrix (l ⊕ l) (l ⊕ l) 𝕜)))
+
+variable (l 𝕜)
+
+/-- The model of the compact symplectic group: its Lie algebra as a closed subgroup of the general
+linear group. -/
+abbrev CompactSymplecticModel :=
+  (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜))
+    (GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜) :
+      Subgroup (Matrix (l ⊕ l) (l ⊕ l) 𝕜)ˣ)).toSubmodule
+
+/-- The closed-subgroup data of the compact symplectic group inside the general linear group. -/
+def compactSymplecticEmbeddedData :
+    EmbeddedLieSubgroupData 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜)
+      (GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜)) (CompactSymplecticModel l 𝕜) :=
+  EmbeddedLieSubgroupData.ofIsClosed ((isClosed_GLSymplectic l 𝕜).inter
+    (isClosed_unitarySubgroup_units (Matrix (l ⊕ l) (l ⊕ l) 𝕜)))
+
+/-- The closed-subgroup charts of the compact symplectic group. -/
+instance compactSymplecticChartedSpace :
+    ChartedSpace (CompactSymplecticModel l 𝕜)
+      ↥(GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜)) :=
+  (compactSymplecticEmbeddedData l 𝕜).chartedSpace
+
+/-- The real Lie group structure of the compact symplectic group in its closed-subgroup charts. -/
+instance compactSymplecticLieGroup :
+    LieGroup 𝓘(ℝ, CompactSymplecticModel l 𝕜) ∞
+      ↥(GLSymplectic l 𝕜 ⊓ unitarySubgroup (GL (l ⊕ l) 𝕜)) :=
+  (compactSymplecticEmbeddedData l 𝕜).lieGroup
 
 end RCLike
 

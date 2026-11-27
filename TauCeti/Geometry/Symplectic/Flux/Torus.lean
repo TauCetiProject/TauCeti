@@ -9,12 +9,14 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Torus
 public import TauCeti.Geometry.Manifold.DeRham.Torus
 public import TauCeti.Geometry.Symplectic.Flux
 public import TauCeti.Geometry.Symplectic.Flux.Endpoint
+public import TauCeti.Geometry.Symplectic.Flux.Hamiltonian
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Topology.Covering.AddCircle
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
+import TauCeti.Geometry.Manifold.DeRham.AddCircle
 
 /-!
-# The flux of the translations of a torus, and the flux group of the two-torus
+# The flux of the translations and shears of a torus, and the flux group of the two-torus
 
 For a finite family of positive periods `p i`, let `Tⁿ = ∀ i, AddCircle (p i)` be the torus with
 coordinate time forms `dt_i` (`TauCeti.torusTimeForm p i`), and let `φ_t (x) = x + [t v]` be the
@@ -33,7 +35,10 @@ coordinates `(x, y)` and `v = a ∂_x + b ∂_y`, this is `A (a [dy] - b [dx])`:
 `x`-direction has flux `A [dy]` and that in the `y`-direction has flux `-A [dx]`. The diffeotopy is
 a loop exactly when `v` lies in the period lattice
 (`TauCeti.final_torusTranslationDiffeotopy_eq_refl_iff`), and for `A ≠ 0` its flux vanishes only
-when `v = 0`, since `[dt_0]` and `[dt_1]` are linearly independent. Integrated around the two
+when `v = 0`, since `[dt_0]` and `[dt_1]` are linearly independent. So for `A ≠ 0` and `v ≠ 0` it
+is not homotopic relative to both time ends to any Hamiltonian diffeotopy
+(`TauCeti.not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian`), even when it is a loop at
+the identity. Integrated around the two
 coordinate circles, the flux form has periods `-A v 1 p 0` and `A v 0 p 1`
 (`TauCeti.pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update`); for unit
 periods and integer `v` these are integer multiples of `A`. So the fluxes of the translation loops
@@ -69,6 +74,25 @@ group, the set of fluxes of the loops preserving the area form at every time:
 dual to the two coordinate circles. The computation uses only the loops themselves, not the
 topology of the group of area-preserving diffeomorphisms.
 
+**Shears.** Let `v` be a real vector with `v i = 0` and `g` a smooth function on the `i`-th circle,
+and let `φ_t (x) = x + [t g(x i) v]` be the shear diffeotopy (`TauCeti.torusShearDiffeotopy`).
+Its velocity is `g(x i) v` and its spatial derivative only adds multiples of `v`, so for a two-form
+`σ` with constant coefficients `β` its flux form is `g(x i) β(v, ·)`
+(`TauCeti.fluxForm_torusShearDiffeotopy_apply`). Suppose `β(v, ·) = c dt_i`. Then every `φ_t`
+preserves `σ`, its flux form is `c g(x i) dt_i`, and since a one-form `g dt` on a circle is
+cohomologous to `(⨍ g) dt` (`AddCircle.funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms`) the
+flux is
+
+`Flux(φ) = c (⨍ g) [dt_i]`,  `⨍ g = (p i)⁻¹ ∫₀^{p i} g`
+
+(`TauCeti.flux_torusShearDiffeotopy`). When `c = 0` or `∫ g = 0`, the function `c G(x i)`, for a
+primitive `G` of `g - ⨍ g` on the circle, is a Hamiltonian of the shear, read along the motion,
+since the shear does not move the `i`-th coordinate. As `[dt_i] ≠ 0`, the shear is a Hamiltonian
+isotopy exactly when `c = 0` or `∫ g = 0` (`TauCeti.isHamiltonian_torusShearDiffeotopy_iff`). On the
+two-torus with the area form `A dt_0 ∧ dt_1`, `A ≠ 0`, the shear `(x, y) ↦ (x, y + [t g(x)])` has
+`c = -A`, so it is Hamiltonian exactly when `∫ g = 0`
+(`TauCeti.isHamiltonian_torusShearDiffeotopy_smul_torusVolumeForm_iff`).
+
 ## Main results
 
 * `TauCeti.fluxForm_torusTranslationDiffeotopy_apply`: for a constant-coefficient two-form `β`,
@@ -81,6 +105,8 @@ topology of the group of area-preserving diffeomorphisms.
   translation of the two-torus for the area form `A dt_0 ∧ dt_1`.
 * `TauCeti.flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff`: this flux vanishes
   exactly when `A = 0` or `v = 0`.
+* `TauCeti.not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian`: for `A ≠ 0` and `v ≠ 0`
+  the translation is not homotopic relative to both time ends to a Hamiltonian diffeotopy.
 * `TauCeti.pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update`: its
   periods along the coordinate circles.
 * `TauCeti.exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq`: every class
@@ -91,6 +117,14 @@ topology of the group of area-preserving diffeomorphisms.
   for every closed two-form, the flux of the translation loop along a lattice vector.
 * `TauCeti.mem_fluxGroup_smul_torusVolumeForm_iff`: the flux group of `A dt_0 ∧ dt_1` consists of
   the classes `A (m p_1 [dt_0] + n p_0 [dt_1])` with `m n : ℤ`.
+* `TauCeti.fluxForm_torusShearDiffeotopy_apply`,
+  `TauCeti.timeSlice_torusShearDiffeotopy_mem_diffeomorphStabilizer`,
+  `TauCeti.final_torusShearDiffeotopy_mem_diffeomorphStabilizer`: the flux form of a shear, and
+  the shears preserving a constant-coefficient two-form.
+* `TauCeti.flux_torusShearDiffeotopy`: the flux of a shear is `c (⨍ g) [dt_i]`.
+* `TauCeti.isHamiltonian_torusShearDiffeotopy_iff`,
+  `TauCeti.isHamiltonian_torusShearDiffeotopy_smul_torusVolumeForm_iff`: a shear is a Hamiltonian
+  isotopy exactly when `c = 0` or `∫ g = 0`.
 
 ## References
 
@@ -245,6 +279,214 @@ theorem Diffeotopy.exists_flux_torusTranslationDiffeotopy_eq_flux
 
 end Loop
 
+section Shear
+
+/-! ### Shears -/
+
+variable {v} {i : ι} (hv : v i = 0) (g : C^∞⟮𝓘(ℝ), AddCircle (p i); ℝ⟯)
+  {β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ}
+
+/-- The integrand of the flux form of a shear: `σ` at the moving point, on the velocity
+`g(x i) v` and the image `w + (t g'(x i) w i) v` of a spatial vector `w`, is `g(x i) β(v, w)`. -/
+private theorem apply_mfderiv_cylinderMap_torusShearDiffeotopy
+    {σ : SmoothForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ k, AddCircle (p k)) ℝ 2}
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (x : ∀ k, AddCircle (p k))
+    (t : unitInterval) (w : ι → ℝ) :
+    σ.val ((torusShearDiffeotopy p v hv g).cylinderMap (x, t))
+        ![mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
+            (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap
+            (x, t) ((0 : ι → ℝ), (1 : TangentSpace (𝓡∂ 1) t)),
+          mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
+            (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap
+            (x, t) (w, (0 : EuclideanSpace ℝ (Fin 1)))] =
+      g (x i) * β ![v, w] := by
+  rw [mfderiv_cylinderMap_torusShearDiffeotopy_apply_one,
+    mfderiv_cylinderMap_torusShearDiffeotopy_space, hσ]
+  -- The vectors are `0 + g(x i) v` and `w + b v`, read in the model space `ι → ℝ`, and `β`
+  -- vanishes when its first vector is `0`.
+  have h (a b : ℝ) : β ![a • v, w + b • v] = a * β ![v, w] := by
+    simpa [β.map_coord_zero (m := ![0, _]) 0 rfl] using
+      β.apply_vecCons_add_smul_add_smul v 0 w a b
+  exact h _ _
+
+/-- **The flux form of a shear.** For a two-form `σ` on the torus with constant coefficients `β`,
+the shear diffeotopy `x ↦ x + [t g(x i) v]` has flux form `g(x i) β(v, ·)`. -/
+theorem fluxForm_torusShearDiffeotopy_apply
+    {σ : SmoothForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ k, AddCircle (p k)) ℝ 2}
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) (x : ∀ k, AddCircle (p k)) :
+    ((torusShearDiffeotopy p v hv g).fluxForm σ).val x = g (x i) • β.curryLeft v := by
+  rw [Diffeotopy.fluxForm_apply]
+  -- At every time the integrand is `g(x i) β(v, ·)`: the velocity is `g(x i) v` and the spatial
+  -- derivative only adds multiples of `v`, on which `β(v, ·)` vanishes.
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ g (x i) • β.curryLeft v) fun t _ ↦
+    ContinuousAlternatingMap.ext fun w ↦ ?_).trans ?_
+  · obtain ⟨u, rfl⟩ : ∃ u : ι → ℝ, w = ![u] :=
+      ⟨w 0, funext fun j ↦ by rw [Fin.fin_one_eq_zero j]; rfl⟩
+    rw [Diffeotopy.curryLeft_mfderiv_cylinderMap_apply]
+    -- The two vectors are the velocity and the image of `u`.
+    refine (congrArg (σ.val _) (funext fun j ↦ by fin_cases j <;> rfl)).trans
+      ((apply_mfderiv_cylinderMap_torusShearDiffeotopy p hv g hσ x _ u).trans ?_)
+    simp
+  · rw [intervalIntegral.integral_const, sub_zero, one_smul]
+
+/-- **Shears preserve the two-forms they slide along.** Let `σ` be a two-form on the torus with
+constant coefficients `β` such that `β(v, ·) = c dt_i` for a constant `c`. Then every map of the
+shear diffeotopy `x ↦ x + [t g(x i) v]` preserves `σ`. -/
+theorem timeSlice_torusShearDiffeotopy_mem_diffeomorphStabilizer
+    {σ : SmoothForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ k, AddCircle (p k)) ℝ 2}
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) {c : ℝ}
+    (hβ : ∀ w, β ![v, w] = c * w i) (t : unitInterval) :
+    (torusShearDiffeotopy p v hv g).timeSlice t ∈ SmoothForm.diffeomorphStabilizer σ := by
+  refine SmoothForm.mem_diffeomorphStabilizer_iff_forall.2 fun x ↦
+    ContinuousAlternatingMap.ext fun W ↦ ?_
+  -- The derivative of the time slice is the shear `w ↦ w + (t g'(x i) w i) • v`.
+  set L := mvfderiv 𝓘(ℝ) g (x i)
+  have hD (w : ι → ℝ) : mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ((torusShearDiffeotopy p v hv g).timeSlice t) x w =
+        w + ((t : ℝ) * L (w i)) • v :=
+    ((torusShearDiffeotopy p v hv g).mfderiv_cylinderMap_inl (by simp) (x, t) w).symm.trans
+      (mfderiv_cylinderMap_torusShearDiffeotopy_space p hv g x t w)
+  -- A linear map of the real line satisfies `L a * b = L b * a`.
+  have hL (a b : ℝ) : L a * b = L b * a := by
+    have h₁ : L (b * a) = b * L a := L.map_smul b a
+    have h₂ : L (a * b) = a * L b := L.map_smul a b
+    rw [mul_comm b a] at h₁
+    linarith
+  rw [TauCeti.mpullback_apply, hσ, hσ]
+  obtain ⟨u, u', rfl⟩ : ∃ u u' : ι → ℝ, W = ![u, u'] :=
+    ⟨W 0, W 1, funext fun j ↦ by fin_cases j <;> rfl⟩
+  -- Expand `β` on the two displaced vectors `u + (t L (u i)) v` and `u' + (t L (u' i)) v`.
+  refine (congrArg β (funext fun j ↦ by fin_cases j <;> exact hD _)).trans
+    ((β.apply_vecCons_add_smul_add_smul v u u' ((t : ℝ) * L (u i)) ((t : ℝ) * L (u' i))).trans ?_)
+  have h₁ := β.apply_vecCons_swap u v
+  have h₂ := hβ u
+  have h₃ := hβ u'
+  have h₄ := hL (u i) (u' i)
+  linear_combination (t : ℝ) * L (u' i) * h₁ - (t : ℝ) * L (u' i) * h₂ +
+    (t : ℝ) * L (u i) * h₃ + (t : ℝ) * c * h₄
+
+/-- The final diffeomorphism `x ↦ x + [g(x i) v]` of a shear diffeotopy preserves every two-form
+with constant coefficients `β` such that `β(v, ·) = c dt_i`. -/
+theorem final_torusShearDiffeotopy_mem_diffeomorphStabilizer
+    {σ : SmoothForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ k, AddCircle (p k)) ℝ 2}
+    (hσ : ∀ x, (σ.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) {c : ℝ}
+    (hβ : ∀ w, β ![v, w] = c * w i) :
+    (torusShearDiffeotopy p v hv g).final ∈ SmoothForm.diffeomorphStabilizer σ := by
+  rw [Diffeotopy.final_def]
+  exact timeSlice_torusShearDiffeotopy_mem_diffeomorphStabilizer p hv g hσ hβ 1
+
+variable {σ : closedForms (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (∀ k, AddCircle (p k)) 2}
+  (hσ : ∀ x, (σ.val.val x : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) = β) {c : ℝ}
+  (hβ : ∀ w, β ![v, w] = c * w i)
+include hσ hβ
+
+/-- The flux form of a shear is `c g(x i) dt_i`, the pullback of `c g dt` along the `i`-th
+coordinate projection. -/
+private theorem fluxForm_torusShearDiffeotopy_eq_smul_mpullback :
+    (torusShearDiffeotopy p v hv g).fluxForm σ.val =
+      c • SmoothForm.mpullback (fun x : ∀ k, AddCircle (p k) ↦ x i) contMDiff_apply
+        (SmoothForm.funSMulₗ g (AddCircle.timeForm (p i))) := by
+  refine Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun w ↦ ?_)
+  have hw : w = ![w 0] := funext fun j ↦ by rw [Fin.fin_one_eq_zero j]; rfl
+  rw [hw, fluxForm_torusShearDiffeotopy_apply p hv g hσ]
+  simp only [Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
+    SmoothForm.mpullback_apply, SmoothForm.coe_funSMulₗ, AddCircle.timeForm_apply,
+    TauCeti.mfderiv_apply, Matrix.cons_val_zero, smul_eq_mul]
+  -- Both sides are real numbers: the left side is `g(x i) β(v, w 0)` and the right side is
+  -- `c (g(x i) (w 0) i)`, by the definitions of `curryLeft`, `proj` and scalar multiplication.
+  exact (congrArg (g (x i) * ·) (hβ (w 0))).trans (mul_left_comm _ _ _)
+
+/-- A shear has the Hamiltonian `(x, t) ↦ c G(x i)`, read along the motion, for a primitive `G` of
+`(g - m) dt` on the `i`-th circle with `c m = 0`. -/
+private theorem hasHamiltonian_torusShearDiffeotopy {G : AddCircle (p i) → ℝ}
+    (hG : ContMDiff 𝓘(ℝ) 𝓘(ℝ, ℝ) ∞ G) {m : ℝ}
+    (hdG : mextDeriv (RoughForm.ofFunction 𝓘(ℝ) G) =
+      (SmoothForm.funSMulₗ g (AddCircle.timeForm (p i)) - m • AddCircle.timeForm (p i)).val)
+    (hcm : c * m = 0) :
+    (torusShearDiffeotopy p v hv g).HasHamiltonian σ.val fun q ↦ c * G (q.1 i) := by
+  refine Diffeotopy.hasHamiltonian_iff.2 ⟨contMDiff_const.mul
+    (hG.comp (contMDiff_apply.comp contMDiff_fst)), fun q w ↦ ?_⟩
+  obtain ⟨x, t⟩ := q
+  -- The derivative of `G` at `x i` is multiplication by `g(x i) - m`.
+  have hGd : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) G (x i) ((1 : ℝ →L[ℝ] ℝ).smulRight (g (x i) - m)) := by
+    refine ((hG.mdifferentiableAt (by simp)).hasMFDerivAt).congr_mfderiv
+      (ContinuousLinearMap.ext fun u ↦ ?_)
+    have h := congrArg (fun φ : RoughForm 𝓘(ℝ) (AddCircle (p i)) ℝ 1 ↦ φ (x i) ![u]) hdG
+    simp only [mextDeriv_ofFunction_apply] at h
+    rw [h]
+    simp only [Submodule.coe_sub, Submodule.coe_smul, SmoothForm.coe_funSMulₗ, Pi.sub_apply,
+      Pi.smul_apply, ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.smul_apply,
+      AddCircle.timeForm_apply, Matrix.cons_val_zero]
+    -- Tangent vectors of the circle are real numbers, on which both sides are `(g(x i) - m) u`.
+    exact (show ∀ a b r : ℝ, a * r - b * r = r * (a - b) by intros; ring) (g (x i)) m u
+  have happ := TauCeti.hasMFDerivAt_apply (I := fun _ : ι ↦ 𝓘(ℝ)) (M := fun k ↦ AddCircle (p k)) i x
+  have hF : HasMFDerivAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1)) 𝓘(ℝ)
+      (fun q : (∀ k, AddCircle (p k)) × unitInterval ↦ c * G (q.1 i)) (x, t)
+      (c • (((1 : ℝ →L[ℝ] ℝ).smulRight (g (x i) - m)).comp (ContinuousLinearMap.proj i)).comp
+        (ContinuousLinearMap.fst ℝ (ι → ℝ) (EuclideanSpace ℝ (Fin 1)))) :=
+    ((hGd.comp x happ).comp (x, t) (hasMFDerivAt_fst (x, t))).const_smul c
+  rw [TauCeti.mpullback_apply]
+  -- The two vectors are the velocity and the image of `w`.
+  refine (congrArg (σ.val.val _) (funext fun k ↦ by fin_cases k <;> rfl)).trans
+    ((apply_mfderiv_cylinderMap_torusShearDiffeotopy p hv g hσ x t w).trans
+      (Eq.trans ?_ (DFunLike.congr_fun hF.mfderiv (w, 0)).symm))
+  rw [hβ]
+  -- Both sides are real numbers: the right side is `c ((w i) (g(x i) - m))`.
+  exact (show ∀ a b r : ℝ, c * b = 0 → a * (c * r) = c * (r * (a - b)) by
+    intro a b r h; linear_combination r * h) (g (x i)) m (w i) hcm
+
+/-- **The flux of a shear.** Let `σ` be a closed two-form on the torus with constant coefficients
+`β` such that `β(v, ·) = c dt_i`. The shear diffeotopy `x ↦ x + [t g(x i) v]` has flux
+`c (⨍ g) [dt_i]` in `H¹_dR(Tⁿ)`, where `⨍ g = (p i)⁻¹ ∫₀^{p i} g` is the mean of `g`. -/
+theorem flux_torusShearDiffeotopy
+    (h : (torusShearDiffeotopy p v hv g).final ∈ SmoothForm.diffeomorphStabilizer σ.val) :
+    (torusShearDiffeotopy p v hv g).flux σ h =
+      (c * ((p i)⁻¹ * ∫ s in (0)..(p i), g s)) •
+        deRhamCohomology.mk (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) 1 (torusTimeClosedForm p i) := by
+  set m := (p i)⁻¹ * ∫ s in (0)..(p i), g s
+  -- The difference `c (g - ⨍ g) dt_i` is pulled back from the exact form `c (g - ⨍ g) dt` of the
+  -- `i`-th circle.
+  have hcl : SmoothForm.funSMulₗ g (AddCircle.timeForm (p i)) - m • AddCircle.timeForm (p i) ∈
+      closedForms 𝓘(ℝ) (AddCircle (p i)) 1 :=
+    mem_closedForms_of_finrank_le 𝓘(ℝ) (by simp) _
+  have hex := closedForms.mpullback_mem_exactForms (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (I' := 𝓘(ℝ)) (fun x : ∀ k, AddCircle (p k) ↦ x i) contMDiff_apply 1
+    (⟨_, hcl⟩ : closedForms 𝓘(ℝ) (AddCircle (p i)) 1)
+    (AddCircle.funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms g)
+  rw [Diffeotopy.flux_def, mul_smul, ← map_smul, ← map_smul, ← sub_eq_zero, ← map_sub,
+    deRhamCohomology.mk_eq_zero_iff]
+  convert Submodule.smul_mem _ c hex using 1
+  simp only [Submodule.coe_sub, Submodule.coe_smul, coe_torusTimeClosedForm,
+    closedForms.coe_mpullback, fluxForm_torusShearDiffeotopy_eq_smul_mpullback p hv g hσ hβ,
+    map_sub, map_smul, torusTimeForm_def, smul_sub]
+
+/-- **Hamiltonian shears.** Let `σ` be a closed two-form on the torus with constant coefficients
+`β` such that `β(v, ·) = c dt_i`. The shear diffeotopy `x ↦ x + [t g(x i) v]` is a Hamiltonian
+isotopy of `σ` exactly when `c = 0` or `g` has integral zero over a period. -/
+theorem isHamiltonian_torusShearDiffeotopy_iff :
+    (torusShearDiffeotopy p v hv g).IsHamiltonian σ.val ↔
+      c = 0 ∨ ∫ s in (0)..(p i), g s = 0 := by
+  have hslice := timeSlice_torusShearDiffeotopy_mem_diffeomorphStabilizer p hv g hσ hβ
+  have hfin := final_torusShearDiffeotopy_mem_diffeomorphStabilizer p hv g hσ hβ
+  have hpi : (p i)⁻¹ ≠ 0 := inv_ne_zero (Fact.out : 0 < p i).ne'
+  constructor
+  · -- A Hamiltonian isotopy has zero flux, and `[dt_i] ≠ 0`.
+    intro hΦ
+    have h0 := (flux_torusShearDiffeotopy p hv g hσ hβ hfin).symm.trans (hΦ.flux_eq_zero hfin)
+    rw [smul_eq_zero, deRhamCohomology.mk_eq_zero_iff, coe_torusTimeClosedForm] at h0
+    rcases mul_eq_zero.1 (h0.resolve_right (torusTimeForm_notMem_exactForms p i)) with h | h
+    · exact .inl h
+    · exact .inr ((mul_eq_zero.1 h).resolve_left hpi)
+  · -- The Hamiltonian is `c G(x i)` for a primitive `G` of `g - ⨍ g` on the `i`-th circle.
+    intro h
+    obtain ⟨G, hG, hdG⟩ := exists_contMDiff_mextDeriv_eq_of_mem_exactForms 𝓘(ℝ)
+      (AddCircle.funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms g)
+    refine Diffeotopy.isHamiltonian_iff.2
+      ⟨hslice, _, hasHamiltonian_torusShearDiffeotopy p hv g hσ hβ hG hdG ?_⟩
+    rcases h with h | h <;> simp [h]
+
+end Shear
+
 section Area
 
 variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)] (v : Fin 2 → ℝ) (A : ℝ)
@@ -335,6 +577,25 @@ theorem flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff
     · exact h₀.resolve_left hA
   · rintro (rfl | rfl) <;> ext i <;> fin_cases i <;> simp
 
+/-- **Translations of the two-torus are not homotopic to Hamiltonian isotopies.** For a nonzero
+area form `A dt_0 ∧ dt_1` and `v ≠ 0`, the translation diffeotopy along `v` is not homotopic,
+relative to both time ends, to any Hamiltonian diffeotopy of the area form: its flux is nonzero,
+while homotopic diffeotopies have the same flux and Hamiltonian ones have zero flux. This holds
+also when `v` lies in the period lattice, where the translation diffeotopy is a loop at the
+identity, itself a Hamiltonian diffeomorphism. -/
+theorem not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian (hA : A ≠ 0) (hv : v ≠ 0)
+    {Ψ : Diffeotopy (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) ∞ (∀ i, AddCircle (p i))}
+    (hΨ : Ψ.IsHamiltonian (A • torusVolumeForm p)) :
+    ¬ (torusTranslationDiffeotopy p v).Homotopic Ψ := by
+  intro h
+  have hΨfin := SmoothForm.final_mem_diffeomorphStabilizer hΨ.timeSlice_mem_diffeomorphStabilizer
+  have hfin : (torusTranslationDiffeotopy p v).final ∈
+      SmoothForm.diffeomorphStabilizer (A • torusVolumeForm p) := h.final_eq ▸ hΨfin
+  have h0 := (h.flux_eq ⟨A • torusVolumeForm p, mem_closedForms_of_finrank_le _ (by simp) _⟩ hfin
+    hΨfin).trans (hΨ.flux_eq_zero hΨfin)
+  exact ((flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff p v A hfin).1 h0).elim
+    hA hv
+
 /-- **Integral translation loops realize the area lattice as fluxes.** On the two-torus with the
 area form `A dt_0 ∧ dt_1`, for all integers `m` and `n` there is a loop of diffeomorphisms based at
 the identity, all of whose maps preserve the area form, with flux `A (m p_1 [dt_0] + n p_0 [dt_1])`:
@@ -397,6 +658,22 @@ theorem mem_fluxGroup_smul_torusVolumeForm_iff
     obtain ⟨Φ, _, hslice, hfin, hflux⟩ :=
       exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq p A m n
     exact ⟨Φ, hslice, hfin, hflux⟩
+
+/-- **Hamiltonian shears of the two-torus.** For a nonzero area form `A dt_0 ∧ dt_1` on the
+two-torus, the shear diffeotopy `(x, y) ↦ (x, y + [t g(x)])` by a smooth function `g` on the first
+circle is a Hamiltonian isotopy exactly when `g` has integral zero over a period. -/
+theorem isHamiltonian_torusShearDiffeotopy_smul_torusVolumeForm_iff (hA : A ≠ 0)
+    (g : C^∞⟮𝓘(ℝ), AddCircle (p 0); ℝ⟯) :
+    (torusShearDiffeotopy p ![0, 1] rfl g).IsHamiltonian (A • torusVolumeForm p) ↔
+      ∫ s in (0)..(p 0), g s = 0 := by
+  -- The area form has constant coefficients `β` with `β((0, 1), w) = -A w 0`.
+  have hβ (w : Fin 2 → ℝ) : (A • torusVolumeForm p).val 0 ![![0, 1], w] = -A * w 0 := by
+    have h := congrArg (A • ·) (torusVolumeForm_apply p 0 ![![0, 1], w])
+    refine h.trans ?_
+    simp [Matrix.det_fin_two]
+  rw [isHamiltonian_torusShearDiffeotopy_iff (σ := ⟨A • torusVolumeForm p,
+    mem_closedForms_of_finrank_le _ (by simp) _⟩) p rfl g (smul_torusVolumeForm_apply_eq p A) hβ,
+    neg_eq_zero, or_iff_right hA]
 
 end Area
 

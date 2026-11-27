@@ -32,6 +32,8 @@ the generic fibre.
 ## Main results
 
 * `TauCeti.flat_respectsIso`: flat morphisms of schemes respect isomorphisms.
+* `TauCeti.flat_specAlgebraMap`, `TauCeti.surjective_specAlgebraMap`: if `S` is flat, resp.
+  faithfully flat, over `R`, then `Spec S ⟶ Spec R` is flat, resp. surjective.
 * `AlgebraicGeometry.Scheme.Hom.flat_restrict_iff`: the stalk criterion for flatness of a
   restriction.
 * `AlgebraicGeometry.flat_stalkMap_iff`: on affine opens `x ∈ V ⊆ f⁻¹ U`, the stalk map at `x` is
@@ -66,6 +68,17 @@ instance flat_respectsIso :
     MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
   MorphismProperty.respectsIso_of_isStableUnderComposition
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- If `S` is flat over `R`, then `Spec S ⟶ Spec R` is flat. -/
+instance flat_specAlgebraMap (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
+    [Module.Flat R S] : Flat (Spec.algebraMap R S) :=
+  HasRingHomProperty.Spec_iff.mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
+
+/-- If `S` is faithfully flat over `R`, then `Spec S ⟶ Spec R` is surjective. -/
+instance surjective_specAlgebraMap (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
+    [Module.FaithfullyFlat R S] : Surjective (Spec.algebraMap R S) :=
+  ((flat_and_surjective_SpecMap_iff _).mpr
+    (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)).2
 
 /-- A flat morphism between irreducible schemes sends the generic point to the generic point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y)

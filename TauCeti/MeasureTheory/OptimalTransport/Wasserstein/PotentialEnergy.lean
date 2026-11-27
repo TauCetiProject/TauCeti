@@ -365,6 +365,15 @@ theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {�
   rw [abs_le] at this ⊢
   constructor <;> nlinarith [neg_abs_le (V 0), le_abs_self (V 0)]
 
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The potential energy of a differentiable potential whose gradient grows at most linearly,
+`‖∇V x‖ ≤ C (1 + ‖x‖)`, is the Bochner integral `∫ V dρ` at every finite measure `ρ` with finite
+second moment. -/
+theorem potentialEnergy_eq_integral_of_norm_gradient_le {ρ : Measure E} [IsFiniteMeasure ρ]
+    (hV : Differentiable ℝ V) (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖)) (hρ : MemLp id 2 ρ) :
+    potentialEnergy V ρ = ((∫ x, V x ∂ρ : ℝ) : EReal) :=
+  potentialEnergy_of_integrable (integrable_comp_of_norm_gradient_le hV hV' hρ)
+
 /-- **The first variation of the potential energy.** Let `V` be a differentiable potential whose
 gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, and let `ρ` be a finite measure with
 finite second moment. For every vector field `ξ ∈ L²(ρ; E)`, the potential energy
@@ -579,12 +588,9 @@ theorem _root_.StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy
   -- The generalized geodesic is the interpolation of the coupling `γ.snd` of `ν₀` and `ν₁`.
   have hπ := hγ.isCoupling_snd
   have : IsProbabilityMeasure γ.snd := hπ.isProbabilityMeasure
-  have hmap : generalizedGeodesic γ t = γ.snd.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
-    rw [generalizedGeodesic_def, Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-    rfl
   have h₀ := hπ.fst_eq ▸ WassersteinSpace.hasFiniteMoment ν₀
   have h₁ := hπ.snd_eq ▸ WassersteinSpace.hasFiniteMoment ν₁
-  rw [hν, hmap, ← hπ.fst_eq, ← hπ.snd_eq]
+  rw [hν, generalizedGeodesic_eq_map_snd, ← hπ.fst_eq, ← hπ.snd_eq]
   exact hV.potentialEnergy_map_le hVm (potentialEnergy_ne_bot_of_hasFiniteMoment h₀ hVAB)
     (potentialEnergy_ne_bot_of_hasFiniteMoment h₁ hVAB)
     (integrable_norm_sub_sq_of_hasFiniteMoment h₀ h₁) ht

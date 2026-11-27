@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Colimit.CommonStage
 import TauCeti.Algebra.Colimit.Ring.Basic
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 import TauCeti.RingTheory.Polynomial.ScaleRoots
 
 /-!
@@ -119,28 +120,10 @@ theorem isIntegrallyClosed_of_directed (f : ∀ i j, i ≤ j → G i →+* G j)
   -- The cleared equation holds at a later stage `j`.
   obtain ⟨j, hij, hj⟩ := hker i ((p'.scaleRoots b').eval a') (by
     rw [map_eval_scaleRoots _ (hp'.natDegree_map _), hrel])
-  have : Nontrivial (G j) := (φ j).domain_nontrivial
   rw [map_eval_scaleRoots _ (hp'.natDegree_map _)] at hj
-  set A := f i j hij a'
-  set B := f i j hij b'
-  set q := p'.map (f i j hij)
-  have hB : algebraMap (G j) (FractionRing (G j)) B ≠ 0 := by
-    refine (map_ne_zero_iff _ (IsFractionRing.injective _ _)).mpr fun h ↦ ?_
-    have : φ i b' = 0 := by rw [← hf i j hij b']; exact (congrArg (φ j) h).trans (map_zero _)
-    exact nonZeroDivisors.ne_zero hb this
-  -- So `A / B` is integral over `G j`, hence `A = c * B` for some `c` in `G j`.
-  have hint : IsIntegral (G j) (algebraMap (G j) (FractionRing (G j)) A /
-      algebraMap (G j) (FractionRing (G j)) B) := by
-    refine ⟨q, hp'.map _, ?_⟩
-    have := scaleRoots_eval₂_mul (p := q) (algebraMap (G j) (FractionRing (G j)))
-      (algebraMap (G j) (FractionRing (G j)) A / algebraMap (G j) (FractionRing (G j)) B) B
-    rw [mul_div_cancel₀ _ hB, eval₂_at_apply, hj, map_zero, eq_comm, mul_eq_zero] at this
-    exact this.resolve_left (pow_ne_zero _ hB)
-  obtain ⟨c, hc⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
-  have hcB : c * B = A := by
-    apply IsFractionRing.injective (G j) (FractionRing (G j))
-    rw [map_mul, hc, div_mul_cancel₀ _ hB]
+  -- So `f a'` is divisible by `f b'` in the integrally closed domain `G j`.
+  obtain ⟨c, hc⟩ := IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero (hp'.map _) hj
   refine ⟨φ j c, ?_⟩
-  rw [eq_div_iff hb', ← map_mul, ← hf i j hij b', ← map_mul, hcB, hf]
+  rw [eq_div_iff hb', ← map_mul, ← hf i j hij b', ← map_mul, mul_comm, ← hc, hf]
 
 end TauCeti

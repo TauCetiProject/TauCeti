@@ -39,6 +39,9 @@ derivatives `i w₂ e^{iθ}` and `−i w₁ e^{−iφ}` are linearly independent
 (`TauCeti.linearIndependent_deriv_lozengeCharFun`), that is, the real Jacobian of `P_w` is
 invertible there: its determinant is `w₁ w₂ sin(θ + φ)`, and at a zero
 `w₁ sin(θ + φ) = −w₃ sin θ ≠ 0` (`TauCeti.mul_sin_add_eq_of_lozengeCharFun_eq_zero`).
+Equivalently, the real derivative of `(θ, φ) ↦ P_w(θ, φ)` (`TauCeti.hasFDerivAt_lozengeCharFun`),
+which sends `(a, b)` to `a (i w₂ e^{iθ}) + b (−i w₁ e^{−iφ})`, is injective at every zero
+(`TauCeti.IsLiquidWeights.exists_hasFDerivAt_injective`).
 
 ## References
 
@@ -67,6 +70,12 @@ def lozengeCharFun (w₁ w₂ w₃ θ φ : ℝ) : ℂ :=
 theorem lozengeCharFun_def (w₁ w₂ w₃ θ φ : ℝ) :
     lozengeCharFun w₁ w₂ w₃ θ φ = w₃ + w₂ * exp (θ * I) + w₁ * exp (-(φ * I)) :=
   (rfl)
+
+/-- The characteristic function `P_w` is continuous on `ℝ²`. -/
+theorem continuous_lozengeCharFun (w₁ w₂ w₃ : ℝ) :
+    Continuous fun p : ℝ × ℝ => lozengeCharFun w₁ w₂ w₃ p.1 p.2 := by
+  simp only [lozengeCharFun_def]
+  fun_prop
 
 /-- Type weights are liquid when they satisfy the strict triangle inequalities. -/
 def IsLiquidWeights (w₁ w₂ w₃ : ℝ) : Prop :=
@@ -343,5 +352,42 @@ theorem linearIndependent_deriv_lozengeCharFun (hw : IsLiquidWeights w₁ w₂ w
   · refine (mul_eq_zero.1 (?_ : t * (w₁ * w₂ * (Real.sin θ * Real.cos φ +
       Real.cos θ * Real.sin φ)) = 0)).resolve_right hd
     linear_combination (-(w₂ * Real.cos θ)) * hre - (w₂ * Real.sin θ) * him
+
+/-- **The real derivative of `P_w`.** At `x = (θ, φ)`, the derivative of
+`(θ, φ) ↦ P_w(θ, φ)` sends `(a, b)` to `a (i w₂ e^{iθ}) + b (−i w₁ e^{−iφ})`, combining the
+partial derivatives `TauCeti.hasDerivAt_lozengeCharFun_fst` and
+`TauCeti.hasDerivAt_lozengeCharFun_snd`. -/
+theorem hasFDerivAt_lozengeCharFun (w₁ w₂ w₃ : ℝ) (x : ℝ × ℝ) :
+    HasFDerivAt (fun p : ℝ × ℝ => lozengeCharFun w₁ w₂ w₃ p.1 p.2)
+      ((ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (I * w₂ * exp (x.1 * I)) +
+        (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (-(I * w₁ * exp (-(x.2 * I))))) x := by
+  set A : ℝ × ℝ →L[ℝ] ℂ := (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight I
+  set B : ℝ × ℝ →L[ℝ] ℂ := -(ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight I
+  have hA : HasFDerivAt (fun p : ℝ × ℝ => (p.1 : ℂ) * I) A x := by
+    convert A.hasFDerivAt using 1
+    funext p
+    simp [A, real_smul]
+  have hB : HasFDerivAt (fun p : ℝ × ℝ => -((p.2 : ℂ) * I)) B x := by
+    convert B.hasFDerivAt using 1
+    funext p
+    simp [B, real_smul]
+  have h := ((hA.cexp.const_mul (w₂ : ℂ)).const_add (w₃ : ℂ)).add (hB.cexp.const_mul (w₁ : ℂ))
+  convert h using 1
+  · funext p
+    simp only [lozengeCharFun_def, Pi.add_apply]
+  · refine ContinuousLinearMap.ext fun h => ?_
+    simp [A, B, real_smul]
+    ring
+
+/-- At a zero of `P_w`, for liquid weights, the real derivative of `P_w` is injective. -/
+theorem IsLiquidWeights.exists_hasFDerivAt_injective (hw : IsLiquidWeights w₁ w₂ w₃)
+    {x : ℝ × ℝ} (hx : lozengeCharFun w₁ w₂ w₃ x.1 x.2 = 0) :
+    ∃ L : ℝ × ℝ →L[ℝ] ℂ, HasFDerivAt (fun p : ℝ × ℝ => lozengeCharFun w₁ w₂ w₃ p.1 p.2) L x ∧
+      Function.Injective L := by
+  refine ⟨_, hasFDerivAt_lozengeCharFun w₁ w₂ w₃ x, (injective_iff_map_eq_zero _).2
+    fun h hh => ?_⟩
+  have := (LinearIndependent.pair_iff.1 (linearIndependent_deriv_lozengeCharFun hw hx)) h.1 h.2
+    (by simpa using hh)
+  exact Prod.ext this.1 this.2
 
 end TauCeti

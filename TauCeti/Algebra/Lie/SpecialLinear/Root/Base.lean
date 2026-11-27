@@ -11,8 +11,8 @@ public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.SpecialLinear.Character
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
-import TauCeti.Algebra.Group.Submonoid.Telescoping
 import TauCeti.Algebra.Lie.Sl2.Basic
+import TauCeti.LinearAlgebra.RootSystem.ConsecutiveDifferenceBase
 
 /-!
 # The roots and the standard base of `sl (Fin (r + 1))`
@@ -239,15 +239,6 @@ theorem specialLinearSimpleRootIndex_injective :
   simpa only [rootSystem_coroot_specialLinearSimpleRootIndex,
     (specialLinearDiagonalCartanBasis r K).injective.eq_iff] using h
 
-/-- The images of the simple roots under the root map of the root system. -/
-private theorem image_root_range_specialLinearSimpleRootIndex :
-    (IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root ''
-        Set.range (specialLinearSimpleRootIndex r K) =
-      Set.range fun k : Fin r =>
-        specialLinearEpsilon r K k.castSucc - specialLinearEpsilon r K k.succ := by
-  simp_rw [← Set.range_comp, Function.comp_def, specialLinearSimpleRootIndex_def,
-    rootSystem_root_specialLinearRootIndex]
-
 /-- Every root is a sum of simple roots or the negative of one. -/
 private theorem root_mem_or_neg_mem_closure (α : (specialLinearDiagonalCartan r K).root) :
     (IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root α ∈
@@ -255,41 +246,12 @@ private theorem root_mem_or_neg_mem_closure (α : (specialLinearDiagonalCartan r
           Set.range (specialLinearSimpleRootIndex r K)) ∨
       -(IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root α ∈
         AddSubmonoid.closure ((IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root ''
-          Set.range (specialLinearSimpleRootIndex r K)) := by
-  obtain ⟨i, j, hij, rfl⟩ := exists_eq_specialLinearRootIndex α
-  rw [image_root_range_specialLinearSimpleRootIndex, rootSystem_root_specialLinearRootIndex,
-    neg_sub]
-  have hs (a b : Fin (r + 1)) (hab : (a : ℕ) + 1 = b) :
-      specialLinearEpsilon r K a - specialLinearEpsilon r K b ∈
-        AddSubmonoid.closure (Set.range fun k : Fin r =>
-          specialLinearEpsilon r K k.castSucc - specialLinearEpsilon r K k.succ) := by
-    have ha : (a : ℕ) < r := by omega
-    obtain rfl : b = (⟨a, ha⟩ : Fin r).succ := Fin.ext (by simp; omega)
-    exact AddSubmonoid.subset_closure ⟨⟨a, ha⟩, rfl⟩
-  rcases le_total i j with h | h
-  · exact .inl (sub_mem_of_consecutive_sub_mem_fin _ hs h)
-  · exact .inr (sub_mem_of_consecutive_sub_mem_fin _ hs h)
-
-/-- The simple roots are linearly independent: they span the dual of the diagonal Cartan
-subalgebra, since every root is a combination of them, and there are `r` of them. -/
-private theorem linearIndepOn_root_range_specialLinearSimpleRootIndex :
-    LinearIndepOn K (IsKilling.rootSystem (specialLinearDiagonalCartan r K)).root
-      (Set.range (specialLinearSimpleRootIndex r K)) := by
-  set P := IsKilling.rootSystem (specialLinearDiagonalCartan r K)
-  rw [linearIndepOn_range_iff specialLinearSimpleRootIndex_injective]
-  refine linearIndependent_of_top_le_span_of_card_eq_finrank ?_ ?_
-  · rw [← RootPairing.IsRootSystem.span_root_eq_top (P := P), Submodule.span_le]
-    rintro _ ⟨α, rfl⟩
-    have hsub : AddSubmonoid.closure (P.root '' Set.range (specialLinearSimpleRootIndex r K)) ≤
-        (Submodule.span K
-          (Set.range (P.root ∘ specialLinearSimpleRootIndex r K))).toAddSubmonoid := by
-      rw [AddSubmonoid.closure_le, Set.range_comp]
-      exact Submodule.subset_span
-    rcases root_mem_or_neg_mem_closure α with h | h
-    · exact hsub h
-    · exact (Submodule.neg_mem_iff _).mp (hsub h)
-  · rw [Fintype.card_fin, Subspace.dual_finrank_eq, finrank_eq_card_basis
-      (specialLinearDiagonalCartanBasis r K), Fintype.card_fin]
+          Set.range (specialLinearSimpleRootIndex r K)) :=
+  RootPairing.root_mem_or_neg_mem_closure_of_forall_exists_eq_sub (specialLinearEpsilon r K)
+    (fun k => by rw [specialLinearSimpleRootIndex_def, rootSystem_root_specialLinearRootIndex])
+    (fun β => by
+      obtain ⟨i, j, hij, rfl⟩ := exists_eq_specialLinearRootIndex β
+      exact ⟨i, j, rootSystem_root_specialLinearRootIndex hij⟩) α
 
 variable (r K) in
 /-- **The standard base of `sl (Fin (r + 1)) K`**: the simple roots `αₖ = εₖ - εₖ₊₁`, `k < r`, whose
@@ -297,7 +259,11 @@ root vectors are the matrix units `Eₖ,ₖ₊₁` just above the diagonal. -/
 noncomputable def specialLinearPositiveBase :
     (IsKilling.rootSystem (specialLinearDiagonalCartan r K)).Base :=
   RootPairing.Base.mk' _ (Set.range (specialLinearSimpleRootIndex r K))
-    linearIndepOn_root_range_specialLinearSimpleRootIndex root_mem_or_neg_mem_closure
+    (RootPairing.linearIndepOn_root_range_of_root_mem_or_neg_mem_closure
+      specialLinearSimpleRootIndex_injective root_mem_or_neg_mem_closure <| by
+        rw [Subspace.dual_finrank_eq, finrank_eq_card_basis (specialLinearDiagonalCartanBasis r K),
+          Fintype.card_fin])
+    root_mem_or_neg_mem_closure
 
 /-- The simple roots of the standard base are the `αₖ = εₖ - εₖ₊₁`. -/
 @[simp]

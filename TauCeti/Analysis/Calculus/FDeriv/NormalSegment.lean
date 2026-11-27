@@ -27,6 +27,9 @@ dilations of fields and of maps along a curve, where `a → 0` magnifies the nor
 ## Main results
 
 * `TauCeti.isOpen_normalSegmentDomain`: `normalSegmentDomain Ω` is open when `Ω` is.
+* `TauCeti.exists_isCompact_forall_normalSegment_subset`: over a compact set whose zero-section
+  points lie in an open `Ω`, the normal segments lie in one compact subset of `Ω` for all small
+  `a`.
 * `ContDiffOn.comp_normalSegmentDomain`: a function `Cⁿ` on `Ω`, evaluated at `(z, a W)`, is `Cⁿ`
   in `(a, z, W)` on `normalSegmentDomain Ω`.
 * `TauCeti.contDiffOn_integral_fderiv_normalSegmentDomain`: the average normal derivative of a
@@ -41,7 +44,7 @@ public section
 
 noncomputable section
 
-open Set
+open Filter Set Topology
 
 namespace TauCeti
 
@@ -79,6 +82,34 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 theorem mk_zero_mem_of_mem_normalSegmentDomain {Ω : Set (E × N)} {q : ℝ × (E × N)}
     (hq : q ∈ normalSegmentDomain Ω) : (q.2.1, 0) ∈ Ω := by
   simpa using hq 0 (left_mem_Icc.2 zero_le_one)
+
+/-- Over a compact set `K` of points whose zero-section points lie in an open set `Ω`, the normal
+segments from `(z, 0)` to `(z, a W)`, `(z, W) ∈ K`, lie in one compact subset of `Ω` for all small
+`a`. This makes bounds of continuous functions on `Ω` uniform along these segments. -/
+theorem exists_isCompact_forall_normalSegment_subset {Ω K : Set (E × N)} (hΩ : IsOpen Ω)
+    (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
+    ∃ S ⊆ Ω, IsCompact S ∧ ∀ᶠ a in 𝓝 (0 : ℝ), ∀ p ∈ K, segment ℝ (p.1, 0) (p.1, a • p.2) ⊆ S := by
+  have hU : ∀ᶠ a in 𝓝 (0 : ℝ), ∀ p ∈ K, (a, p) ∈ normalSegmentDomain Ω :=
+    hK.eventually_forall_of_forall_eventually fun p hp ↦
+      (isOpen_normalSegmentDomain hΩ).mem_nhds (zero_mem_normalSegmentDomain (hKΩ p hp))
+  obtain ⟨ε, hε, hεU⟩ := Metric.eventually_nhds_iff.1 hU
+  refine ⟨(fun q : ℝ × (E × N) ↦ ((q.2.1, q.1 • q.2.2) : E × N)) ''
+    (Icc (-(ε / 2)) (ε / 2) ×ˢ K), ?_, (isCompact_Icc.prod hK).image (by fun_prop), ?_⟩
+  · rintro _ ⟨⟨s, p⟩, ⟨hs, hp⟩, rfl⟩
+    have hs' : dist s 0 < ε := by
+      rw [Real.dist_eq, sub_zero, abs_lt]
+      constructor <;> linarith [hs.1, hs.2]
+    simpa using (mem_normalSegmentDomain.1 (hεU hs' p hp)) 1 (right_mem_Icc.2 zero_le_one)
+  · filter_upwards [Metric.closedBall_mem_nhds (0 : ℝ) (half_pos hε)] with a ha p hp
+    rw [Metric.mem_closedBall, Real.dist_eq, sub_zero] at ha
+    -- A point of the segment is `(z, (β a) W)` with `0 ≤ β ≤ 1`.
+    rintro _ ⟨α, β, hα, hβ, hαβ, rfl⟩
+    refine ⟨(β * a, p), ⟨abs_le.1 ?_, hp⟩, ?_⟩
+    · rw [abs_mul, abs_of_nonneg hβ]
+      nlinarith [abs_nonneg a]
+    · ext
+      · simp [← add_smul, hαβ]
+      · simp [mul_smul]
 
 section HadamardNormalSegment
 
