@@ -154,14 +154,6 @@ open TauCeti
 
 variable {k ℓ μ : ℕ} {V : Type*} [Fintype V] {G : SimpleGraph V} [DecidableRel G.Adj] {n : ℕ}
 
-/-- A strongly regular graph with `0 < μ` that is not complete has an edge. -/
-theorem IsSRGWith.ne_bot (h : G.IsSRGWith n k ℓ μ) (hμ : 0 < μ) (htop : G ≠ ⊤) : G ≠ ⊥ := by
-  obtain ⟨v, w, hne, hvw⟩ := ne_top_iff_exists_not_adj.1 htop
-  obtain ⟨⟨u, hu⟩⟩ : Nonempty (G.commonNeighbors v w) := by
-    rw [← Fintype.card_pos_iff, h.of_not_adj hne hvw]
-    exact hμ
-  exact ne_bot_iff_exists_adj.2 ⟨v, u, ((G.mem_commonNeighbors).1 hu).1⟩
-
 /-- In a strongly regular graph that is neither complete nor edgeless, the smaller restricted
 eigenvalue `s` is less than the larger one `r`. -/
 theorem IsSRGWith.srgEigenvalueS_lt_srgEigenvalueR (h : G.IsSRGWith n k ℓ μ) (htop : G ≠ ⊤)
