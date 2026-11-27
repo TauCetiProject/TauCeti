@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
+import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -20,8 +21,9 @@ independently chosen family of local quadratic spaces.
 Global witnesses base-change to local witnesses.  The resulting API also records invariance
 under global equivalence, invariance of `IsLocallyIsotropic` under nonzero scalar multiplication,
 the `c⁻¹`-shift law for `LocallyRepresentsScalar` under nonzero scalar multiplication, and the
-rank constraint imposed by local equivalence.  These are the common hypotheses used in
-local-to-global statements for quadratic forms.
+rank constraints imposed by local equivalence and local representation; a form locally represented
+by a form on a finite-dimensional space is itself finite-dimensional.  These are the common
+hypotheses used in local-to-global statements for quadratic forms.
 
 Complex places do not occur in the definitions: over `ℂ`, isotropy is automatic in dimension
 at least two, representation of regular forms is controlled only by dimension, and regular forms
@@ -29,7 +31,8 @@ of equal dimension are equivalent.  `TauCeti.NumberTheory.QuadraticForm.Global.C
 makes this omission explicit.
 
 If a form locally represents a scalar `a`, adjoining `⟨-a⟩` makes it locally isotropic. Adjoining a
-zero orthogonal summand does not change which scalars a form locally represents.
+zero orthogonal summand does not change which scalars a form locally represents, nor which regular
+forms it locally represents.
 
 -/
 
@@ -211,6 +214,22 @@ theorem LocallyRepresentsScalar.of_prod_zero {Q : _root_.QuadraticForm K V} {a :
       (((atRealPlaceProd Q 0 w).represents_iff _).mp (h.2 w))
     exact (QuadraticMap.represents_iff _ _).mpr ⟨x.1, by simpa using hx⟩
 
+/-- Adjoining a zero orthogonal summand does not change local representation of a regular form: a
+regular form locally represented by the orthogonal sum of `R` with a zero form is already locally
+represented by `R`. -/
+theorem LocallyRepresents.of_prod_zero {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} {X : Type*} [AddCommGroup X] [Module K X]
+    (hQ : Q.Nondegenerate) (h : Q.LocallyRepresents (R.prod (0 : _root_.QuadraticForm K X))) :
+    Q.LocallyRepresents R := by
+  rw [locallyRepresents_iff] at h ⊢
+  refine ⟨fun v ↦ ?_, fun w ↦ ?_⟩
+  · have hv := (h.1 v).trans (QuadraticMap.Equivalent.isRepresentedBy ⟨atFinitePlaceProd R 0 v⟩)
+    rw [atFinitePlace_zero] at hv
+    exact hv.of_prod_zero (Nondegenerate.atFinitePlace hQ v).radical_eq_bot
+  · have hw := (h.2 w).trans (QuadraticMap.Equivalent.isRepresentedBy ⟨atRealPlaceProd R 0 w⟩)
+    rw [atRealPlace_zero] at hw
+    exact hw.of_prod_zero (Nondegenerate.atRealPlace hQ w).radical_eq_bot
+
 /-- Globally equivalent quadratic forms are locally equivalent. -/
 theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}
     {R : _root_.QuadraticForm K W} (h : Q.Equivalent R) : Q.LocallyEquivalent R := by
@@ -360,5 +379,16 @@ theorem LocallyRepresents.finrank_le [FiniteDimensional K W]
   obtain ⟨f, hf, -⟩ := hp
   simpa only [Module.finrank_baseChange] using
     LinearMap.finrank_le_finrank_of_injective hf
+
+/-- A form locally represented by a form on a finite-dimensional space lives on a finite-dimensional
+space. -/
+theorem LocallyRepresents.finiteDimensional [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyRepresents R) : FiniteDimensional K V := by
+  let v := Classical.arbitrary (HeightOneSpectrum (𝓞 K))
+  obtain ⟨f, hf, -⟩ := (QuadraticMap.isRepresentedBy_iff _ _).mp (h.1 v)
+  have : Module.Finite (v.adicCompletion K) (v.adicCompletion K ⊗[K] V) :=
+    Module.Finite.of_injective f hf
+  exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat (v.adicCompletion K)
 
 end QuadraticForm
