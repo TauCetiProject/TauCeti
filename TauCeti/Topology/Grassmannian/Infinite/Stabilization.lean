@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.Infinite.Basic
+import TauCeti.Data.Nat.Set
 
 /-!
 # Rank stabilization of the infinite Grassmannian
@@ -37,10 +38,8 @@ theorem coe_toInfinite_rankStabilization (V : finiteGrassmannian 𝕜 k n) :
       V.toInfinite.val.comap (Finsupp.lcomapDomain (R := 𝕜) Nat.succ Nat.succ_injective) := by
   ext v
   simp only [Submodule.mem_comap, mem_toInfinite, mem_rankStabilization,
-    Finsupp.lcomapDomain_apply, Finsupp.comapDomain_apply]
-  rw [← Nat.and_forall_add_one (p := fun i ↦ n + 1 ≤ i → v i = 0)]
-  simp only [Nat.add_one_le_iff, Nat.not_lt_zero, false_implies, true_and, Nat.lt_succ_iff]
-  exact Iff.rfl
+    Fin.tail_def, Fin.val_succ, Finsupp.lcomapDomain_apply, Finsupp.comapDomain_apply,
+    Nat.succ_eq_add_one, Nat.forall_ge_succ_iff]
 
 end finiteGrassmannian
 
@@ -59,10 +58,25 @@ noncomputable def rankStabilization (V : infiniteGrassmannian 𝕜 k) :
     exact W.rankStabilization.toInfinite.property⟩
 
 /-- The stabilized plane is the inverse image of the original plane under coordinate
-deletion. This is the defining equation for rewrites with the unexposed map. -/
+deletion. Use `mem_rankStabilization` to simplify membership. -/
 theorem coe_rankStabilization (V : infiniteGrassmannian 𝕜 k) :
     (V.rankStabilization).val =
       V.val.comap (Finsupp.lcomapDomain (R := 𝕜) Nat.succ Nat.succ_injective) := (rfl)
+
+/-- A vector belongs to the stabilized plane if deleting its first coordinate gives a vector in
+the original plane. -/
+@[simp]
+theorem mem_rankStabilization (V : infiniteGrassmannian 𝕜 k) (v : ℕ →₀ 𝕜) :
+    v ∈ V.rankStabilization.val ↔
+      Finsupp.lcomapDomain (R := 𝕜) Nat.succ Nat.succ_injective v ∈ V.val := by
+  rw [coe_rankStabilization, Submodule.mem_comap]
+
+/-- The first coordinate vector belongs to every stabilized plane. -/
+theorem single_zero_mem_rankStabilization (V : infiniteGrassmannian 𝕜 k) :
+    Finsupp.single 0 1 ∈ V.rankStabilization.val := by
+  rw [mem_rankStabilization, Finsupp.lcomapDomain_apply,
+    Finsupp.comapDomain_single_of_notMem_range (by simp : 0 ∉ range Nat.succ)]
+  exact V.val.zero_mem
 
 /-- Rank stabilization restricts to the native finite rank stabilization at every stage. -/
 @[simp]
@@ -90,9 +104,8 @@ theorem range_rankStabilization :
   ext W
   constructor
   · rintro ⟨V, rfl⟩
-    rw [Set.mem_ofPred_eq, coe_rankStabilization, Submodule.mem_comap, Finsupp.lcomapDomain_apply,
-      Finsupp.comapDomain_single_of_notMem_range (by simp : 0 ∉ range Nat.succ)]
-    exact V.val.zero_mem
+    rw [Set.mem_ofPred_eq]
+    exact V.single_zero_mem_rankStabilization
   · intro hW
     obtain ⟨n, U, rfl⟩ := exists_toInfinite_eq W
     rw [Set.mem_ofPred_eq] at hW
@@ -107,11 +120,9 @@ theorem rankStabilization_basepoint :
     (basepoint 𝕜 k).rankStabilization = basepoint 𝕜 (k + 1) := by
   apply Subtype.ext
   ext v
-  simp only [coe_rankStabilization, Submodule.mem_comap, coe_basepoint, Finsupp.mem_supported',
-    mem_Iio,
-    Finsupp.lcomapDomain_apply, Finsupp.comapDomain_apply, not_lt]
-  rw [← Nat.and_forall_add_one (p := fun i ↦ k + 1 ≤ i → v i = 0)]
-  simp only [Nat.add_one_le_iff, Nat.not_lt_zero, false_implies, true_and, Nat.lt_succ_iff]
+  simp only [mem_rankStabilization, coe_basepoint, Finsupp.mem_supported', mem_Iio,
+    Finsupp.lcomapDomain_apply, Finsupp.comapDomain_apply, not_lt, Nat.succ_eq_add_one,
+    Nat.forall_ge_succ_iff]
 
 /-- The intersection of a stabilized image with the next finite stage is the finite
 stabilization of the corresponding preimage. -/
