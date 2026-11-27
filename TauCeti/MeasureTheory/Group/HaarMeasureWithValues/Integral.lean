@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Basic
 public import TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport
+public import TauCeti.Topology.LocallyConstant.CompactSupport.MapCoeff
 
 /-!
 # Integration against a Haar measure with values in a ring
@@ -43,7 +44,9 @@ holds for every expansion by indicators, with overlaps allowed
 * `TauCeti.HaarMeasureWithValues.eq_integral_of_apply_compactOpenIndicator`: uniqueness; a linear
   map with these values on indicators is the integral.
 * `TauCeti.HaarMeasureWithValues.integral_smul_measure`: `∫ f d(cμ) = c ∫ f dμ`.
-* `TauCeti.HaarMeasureWithValues.integral_comp_comm`: naturality under `A`-linear maps `M → N`.
+* `TauCeti.HaarMeasureWithValues.integral_comp_commSL`: naturality under a semilinear map
+  `M → N` over a ring homomorphism `σ : A →+* B`, integrating against `σ ∘ μ`; in particular
+  `TauCeti.HaarMeasureWithValues.integral_comp_comm`, naturality under `A`-linear maps.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum_of_discrete`: on a finite discrete group,
   `∫ f dμ = μ({1}) • ∑_g f(g)`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum`: for a compact open subgroup `U` and a
@@ -178,18 +181,20 @@ private theorem integralAux_eq_sum {f : LocallyConstant G M}
   obtain ⟨hv', hcov⟩ := adapted_of_sum_indicator hfib hsum
   exact sum_eq_sum_of_adapted μ hdisj hv' hcov hK hv hKf
 
-/-- **Naturality of the auxiliary integral.** If `g = φ ∘ f` for an `A`-linear map `φ`, then the
-integral of `g` is `φ` applied to the integral of `f`. -/
-private theorem integralAux_comp_left {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
+/-- **Naturality of the auxiliary integral.** Let `σ : A →+* B` and let `ν` be the `B`-valued
+Haar measure `σ ∘ μ`. If `g = φ ∘ f` for a `σ`-semilinear map `φ`, then the integral of `g`
+against `ν` is `φ` applied to the integral of `f` against `μ`. -/
+private theorem integralAux_comp_left {B N : Type*} [Semiring B] [AddCommMonoid N] [Module B N]
+    {σ : A →+* B} (ν : HaarMeasureWithValues B G) (hν : ∀ K, ν K = σ (μ K)) (φ : M →ₛₗ[σ] N)
     {f : LocallyConstant G M} (hf : HasCompactSupport f) {g : LocallyConstant G N}
     (hg : HasCompactSupport g) (hfg : ∀ x, g x = φ (f x)) :
-    integralAux μ g hg = φ (integralAux μ f hf) := by
+    integralAux ν g hg = φ (integralAux μ f hf) := by
   obtain ⟨s, K, -, hfib, hd, hsum⟩ := exists_pairwiseDisjoint_sum_indicator hf
   obtain ⟨hv, hcov⟩ := adapted_of_sum_indicator hfib hsum
   rw [integralAux_eq_sum μ hf hd hv hcov,
-    integralAux_eq_sum μ hg hd (v := φ) (fun m hm x hx ↦ by rw [hfg, hv m hm x hx])
+    integralAux_eq_sum ν hg hd (v := φ) (fun m hm x hx ↦ by rw [hfg, hv m hm x hx])
       fun x hx ↦ hcov x fun h ↦ hx (by rw [hfg, h, map_zero]), map_sum]
-  simp only [map_smul]
+  simp only [map_smulₛₗ, hν]
 
 end Semiring
 
@@ -221,7 +226,7 @@ private theorem integralAux_add {f g : LocallyConstant G M} (hf : HasCompactSupp
 
 private theorem integralAux_smul (c : A) {f : LocallyConstant G M} (hf : HasCompactSupport f) :
     integralAux μ (c • f) (hf.smul_left (f := fun _ ↦ c)) = c • integralAux μ f hf := by
-  rw [integralAux_comp_left μ (c • LinearMap.id) hf (hf.smul_left (f := fun _ ↦ c))
+  rw [integralAux_comp_left μ μ (fun _ ↦ rfl) (c • LinearMap.id) hf (hf.smul_left (f := fun _ ↦ c))
     fun x ↦ by simp]
   simp
 
@@ -309,14 +314,24 @@ theorem integral_smul_measure [T2Space G] (c : A) (f : compactlySupported A G M)
     rw [LinearMap.smul_apply, integral_compactOpenIndicator, smul_apply, smul_assoc]
   exact (LinearMap.congr_fun h f).symm
 
+/-- **Semilinear naturality.** For a ring homomorphism `σ : A →+* B` and a `σ`-semilinear map
+`φ : M → N`, integrating `φ ∘ f` against the `B`-valued Haar measure `σ ∘ μ` gives
+`φ (∫ f dμ)`. -/
+@[simp]
+theorem integral_comp_commSL {B N : Type*} [CommSemiring B] [AddCommMonoid N] [Module B N]
+    (σ : A →+* B) (φ : M →ₛₗ[σ] N) (f : compactlySupported A G M) :
+    (μ.map (σ : A →+ B)).integral (compactlySupported.map φ f) = φ (μ.integral f) :=
+  integralAux_comp_left μ _ (map_apply μ _) φ (mem_compactlySupported.1 f.property)
+    (mem_compactlySupported.1 (compactlySupported.map φ f).property)
+    (compactlySupported.map_apply φ f)
+
 /-- **Naturality.** Integration commutes with `A`-linear maps `φ : M → N`. -/
 @[simp]
 theorem integral_comp_comm {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
     (f : compactlySupported A G M) :
-    μ.integral ⟨(f : LocallyConstant G M).map φ, mem_compactlySupported.2
-      ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩ = φ (μ.integral f) :=
-  integralAux_comp_left μ φ (mem_compactlySupported.1 f.property)
-    ((mem_compactlySupported.1 f.property).comp_left (map_zero φ)) fun _ ↦ rfl
+    μ.integral (compactlySupported.map φ f) = φ (μ.integral f) := by
+  simpa only [RingHom.toAddMonoidHom_id, map_id] using
+    integral_comp_commSL μ (RingHom.id A) φ f
 
 /-- **Coset sums.** For a compact open subgroup `U` and a test function `f` invariant under right
 translation by `U`, the integral is the sum over the cosets `gU` of `μ(U) • f(g)`, written through

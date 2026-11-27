@@ -13,7 +13,9 @@ public import Mathlib.Data.Finsupp.Order
 A nonnegative finitely supported function into an ordered additive monoid has total sum zero
 exactly when it vanishes (`Finsupp.sum_eq_zero_iff_of_nonneg`). If the monoid is moreover
 cancellative, its total sum equals its value at a single index exactly when all off-index values
-vanish (`Finsupp.sum_eq_apply_iff_of_nonneg`).
+vanish (`Finsupp.sum_eq_apply_iff_of_nonneg`). A sum of single-coordinate functions at distinct
+indices is bounded by a nonnegative finitely supported function exactly when each summand fits
+at its own coordinate (`Finsupp.sum_single_le_iff_of_injective`).
 
 On a linearly ordered index type, a finitely supported function splits into its coordinates below a
 chosen index, its value at that index, and its coordinates above it. A natural-valued finitely
@@ -44,6 +46,27 @@ theorem single_one_add_single_one_le_iff {σ : Type*} {f : σ →₀ ℕ} {u v :
   classical
   rw [le_iff, support_single_add_single huv one_ne_zero one_ne_zero]
   simp [huv, huv.symm, Nat.one_le_iff_ne_zero]
+
+/-- A finite sum of single-coordinate functions at distinct indices is bounded by a
+nonnegative finitely supported function exactly when each coordinate is bounded there. -/
+theorem sum_single_le_iff_of_injective {ι σ M : Type*} [Fintype ι] [AddCommMonoid M] [LE M]
+    {e : ι → σ} (he : Function.Injective e) (a : ι → M) {l : σ →₀ M} (hl : 0 ≤ l) :
+    (∑ i, single (e i) (a i)) ≤ l ↔ ∀ i, a i ≤ l (e i) := by
+  classical
+  have hAt (i : ι) : (∑ j, single (e j) (a j)) (e i) = a i := by
+    rw [Finset.sum_apply', Finset.sum_eq_single_of_mem i (Finset.mem_univ i)]
+    · exact single_eq_same
+    · exact fun j _ hji ↦ single_eq_of_ne (fun h ↦ hji (he h.symm))
+  constructor
+  · intro h i
+    simpa only [hAt] using h (e i)
+  · intro h x
+    by_cases hx : x ∈ Set.range e
+    · obtain ⟨i, rfl⟩ := hx
+      simpa only [hAt] using h i
+    · rw [Finset.sum_apply', Finset.sum_eq_zero]
+      · exact hl x
+      · exact fun i _ ↦ single_eq_of_ne (fun h ↦ hx ⟨i, h.symm⟩)
 
 /-- Mapping values along a strictly monotone zero-preserving map reflects and preserves the
 pointwise `≤` order on finitely supported functions. -/

@@ -20,7 +20,9 @@ exponent `p ∈ [p₁, p₂]`, `u ^ p ≤ u ^ p₁ + u ^ p₂`, which dominates 
 
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
-denominator `1 - y ^ (-s)` stays bounded below.
+denominator `1 - y ^ (-s)` stays bounded below. For a base `q ≥ 1` and natural numbers with
+`2n < M`, `q ^ n √q ≤ q ^ (M / 2)`: this is how a count of at most `q ^ n √q` objects, each weighted
+by `q ^ (-M / 2)`, is bounded by `1`, as for the step weights of Kneser's neighbour method.
 
 A negative power reverses a comparison up to a constant: if `0 < x ≤ a y` with `a ≥ 0` (so that
 `a` and `y` are positive), then `y ^ (-q) ≤ a ^ q x ^ (-q)` for `q ≥ 0`. This dominates a
@@ -100,6 +102,7 @@ both for `0 ≤ log x` and for the case `p = 0`, where the statement reduces to 
 * `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
   `p ∈ Set.Icc p₁ p₂`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
+* `Real.pow_mul_sqrt_le_rpow_div_two`: `q ^ n √q ≤ q ^ (M / 2)` for `1 ≤ q` and `2n < M`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
@@ -166,6 +169,14 @@ theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) �
   calc y ^ (-s) ≤ (2 : ℝ) ^ (-s) := rpow_le_rpow_of_nonpos two_pos hy (by linarith)
     _ ≤ (2 : ℝ) ^ (-(1 : ℝ)) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
     _ = 1 / 2 := by norm_num
+
+/-- For `1 ≤ q` and natural numbers `n`, `M` with `2n < M`, `q ^ n * √q ≤ q ^ (M / 2)`, as
+`n + 1/2 ≤ M/2`. -/
+theorem pow_mul_sqrt_le_rpow_div_two {q : ℝ} (hq : 1 ≤ q) {n M : ℕ} (hM : 2 * n < M) :
+    q ^ n * √q ≤ q ^ ((M : ℝ) / 2) := by
+  have hM' : (2 * n + 1 : ℝ) ≤ M := by exact_mod_cast hM
+  rw [sqrt_eq_rpow, ← rpow_natCast, ← rpow_add (by linarith)]
+  exact rpow_le_rpow_of_exponent_le hq (by linarith)
 
 /-- A negative power reverses a comparison up to a constant: if `0 < x ≤ a y` with `a ≥ 0` and
 `q ≥ 0`, then `y ^ (-q) ≤ a ^ q x ^ (-q)`. The hypotheses force `a > 0` and `y > 0`. -/

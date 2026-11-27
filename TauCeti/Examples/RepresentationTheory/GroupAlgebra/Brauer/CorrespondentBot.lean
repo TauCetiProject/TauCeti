@@ -28,19 +28,23 @@ example : Subgroup.normalizer ((⊥ : Subgroup S₃) : Set S₃) = ⊤ :=
 
 -- The Brauer correspondent at `1` keeps every coefficient.
 example (x : MonoidAlgebra (ZMod 2) S₃) (g : S₃) :
-    (brauerCorrespondent ⊥ x).coeff (Subgroup.normalizerEquivOfNormal ⊥ g) = x.coeff g := by
+    (brauerCorrespondent (Subgroup.centralizer_le_normalizer ((⊥ : Subgroup S₃) : Set S₃)) x).coeff
+        (Subgroup.normalizerEquivOfNormal ⊥ g) =
+      x.coeff g := by
   rw [brauerCorrespondent_bot, coeff_domCongr, MulEquiv.symm_apply_apply]
 
 -- The Brauer correspondent of the defect-zero block `ρ + ρ²` is a block of `𝔽₂[N_{S₃}(1)]`.
 example : ∃ b' : Subalgebra.center (ZMod 2)
       (MonoidAlgebra (ZMod 2) (Subgroup.normalizer ((⊥ : Subgroup S₃) : Set S₃))),
     IsBlockIdempotent b' ∧ (b' : MonoidAlgebra (ZMod 2) _) =
-      brauerCorrespondent ⊥ (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) :=
+      brauerCorrespondent (Subgroup.centralizer_le_normalizer ((⊥ : Subgroup S₃) : Set S₃))
+        (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃) :=
   isBlockIdempotent_blockTwoS₃.isBlockIdempotent_brauerCorrespondent_bot
 
 -- It has defect group `1`.
 example : IsDefectGroup (ZMod 2) 2
-    (brauerCorrespondent ⊥ (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃)) ⊥ :=
+    (brauerCorrespondent (Subgroup.centralizer_le_normalizer ((⊥ : Subgroup S₃) : Set S₃))
+      (blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃)) ⊥ :=
   isDefectGroup_blockTwoS₃_bot.isDefectGroup_brauerCorrespondent_bot
 
 end TauCeti.Examples.BrauerCorrespondentBot
