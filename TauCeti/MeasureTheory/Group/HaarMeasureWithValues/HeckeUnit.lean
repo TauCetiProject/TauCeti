@@ -180,7 +180,9 @@ theorem exists_forall_mul_eq_iff_discreteTopology {U₀ : OpenSubgroup G}
     (hU₀ : IsCompact (U₀ : Set G)) (hμ : IsUnit (μ (U₀.toCompactOpens hU₀))) :
     (∃ e : HeckeAlgebra μ, ∀ f, e * f = f ∧ f * e = f) ↔ DiscreteTopology G := by
   refine ⟨fun ⟨e, he⟩ ↦ μ.discreteTopology_of_forall_convolution_eq_left
-    (e := e.toCompactlySupported) fun f ↦ congrArg toCompactlySupported (he ⟨f⟩).1, fun _ ↦ ?_⟩
+    (e := e.toCompactlySupported) fun f ↦
+      (toCompactlySupported_mul μ e ⟨f⟩).symm.trans (congrArg toCompactlySupported (he ⟨f⟩).1),
+    fun _ ↦ ?_⟩
   -- `{1}` is a compact open subgroup, and `μ(U₀) = [U₀ : 1] μ({1})`, so `μ({1})` is a unit.
   let W : OpenSubgroup G := ⟨⊥, isOpen_discrete _⟩
   have hWmem (g : G) : g ∈ W ↔ g = 1 := Subgroup.mem_bot
