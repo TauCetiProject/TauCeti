@@ -144,6 +144,11 @@ theorem _root_.IsPreconnected.subset_interior_or_subset_compl_closure (hS : IsPr
   exact hS.subset_or_subset isOpen_interior isClosed_closure.isOpen_compl
     (disjoint_compl_right.mono_left (interior_subset.trans subset_closure)) hsub
 
+/-- A preconnected set missing the frontier of a closed set `V` lies in `interior V` or in `Vᶜ`. -/
+theorem _root_.IsPreconnected.subset_interior_or_subset_compl_of_isClosed (hS : IsPreconnected S)
+    (hV : IsClosed V) (h : Disjoint S (frontier V)) : S ⊆ interior V ∨ S ⊆ Vᶜ := by
+  simpa only [hV.closure_eq] using hS.subset_interior_or_subset_compl_closure h
+
 /-- **A preconnected set that meets both a set and its complement meets its frontier.** If `S` is
 preconnected and contains a point of `V` and a point outside `V`, then `S` meets `frontier V`.
 

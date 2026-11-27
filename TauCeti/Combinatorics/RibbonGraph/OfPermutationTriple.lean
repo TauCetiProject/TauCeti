@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.RibbonGraph.Basic
+public import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The bipartite ribbon graph of a permutation triple
@@ -19,7 +20,8 @@ vertex is the cycle of the corresponding component through them. For a connected
 result is a dessin d'enfants; disconnected triples give disconnected graphs, and
 `TauCeti.PermutationTriple.isConnected_ribbonGraph` is the equivalence.
 
-* `TauCeti.PermutationTriple.ribbonGraph`: the construction.
+* `TauCeti.PermutationTriple.ribbonGraph`: the construction, the case `E = Fin n` of the general
+  ribbon graph `TauCeti.BipartiteRibbonGraph.ofPerms` of two permutations of a finite type.
 * `TauCeti.PermutationTriple.facePerm_ribbonGraph`: the face permutation of the graph is the
   third component `σinf` of the triple, so the faces of the graph are the cycles of `σinf`.
 * `TauCeti.PermutationTriple.isConnected_ribbonGraph`: the graph is connected exactly when the
@@ -37,9 +39,10 @@ fields of `TauCeti.BipartiteRibbonGraph`, so a consumer cannot so much as state 
 `t.ribbonGraph` is a sheet of `t` without reducing those fields; the lemmas below then read off
 the remaining fields.
 
-The black and white vertex types are quotients of `Fin n`. Their `Fintype` and `DecidableEq`
-instances decide `Equiv.Perm.SameCycle` by iterating the permutation, so the cell counts of the
-graph of a concrete triple evaluate by `decide` and `#eval`.
+The black and white vertex types are the `Equiv.Perm.SameCycle` quotients of the edge type
+`Fin n`, as for every `TauCeti.BipartiteRibbonGraph.ofPerms`. Their `Fintype` and `DecidableEq`
+instances decide `SameCycle` by iterating the permutation, so the cell counts of the graph of a
+concrete triple evaluate by `decide` and `#eval`.
 
 ## References
 
@@ -50,6 +53,8 @@ graph of a concrete triple evaluate by `decide` and `#eval`.
 -/
 
 open Equiv Equiv.Perm
+
+universe u
 
 public section
 
@@ -63,25 +68,22 @@ variable {n : ℕ} (t : PermutationTriple n)
 black and white vertices are the cycles of `σ0` and of `σ1`, and the cyclic orders around them
 are `σ0` and `σ1` themselves. For a connected triple this is the dessin d'enfants of the
 associated three-point cover. -/
-@[expose] def ribbonGraph : BipartiteRibbonGraph := t.σ0.bipartiteRibbonGraph t.σ1
+@[expose] def ribbonGraph : BipartiteRibbonGraph :=
+  BipartiteRibbonGraph.ofPerms (Fin n) t.σ0 t.σ1
 
 /-- The cyclic order of the sheets around a black vertex is `σ0`. -/
-@[simp] theorem rotB_ribbonGraph : t.ribbonGraph.rotB = t.σ0 :=
-  t.σ0.rotB_bipartiteRibbonGraph t.σ1
+@[simp] theorem rotB_ribbonGraph : t.ribbonGraph.rotB = t.σ0 := (rfl)
 
 /-- The cyclic order of the sheets around a white vertex is `σ1`. -/
-@[simp] theorem rotW_ribbonGraph : t.ribbonGraph.rotW = t.σ1 :=
-  t.σ0.rotW_bipartiteRibbonGraph t.σ1
+@[simp] theorem rotW_ribbonGraph : t.ribbonGraph.rotW = t.σ1 := (rfl)
 
 /-- The black end of a sheet is its cycle under `σ0`. -/
 @[simp] theorem blackEnd_ribbonGraph (i : Fin n) :
-    t.ribbonGraph.blackEnd i = Quotient.mk (SameCycle.setoid t.σ0) i :=
-  t.σ0.blackEnd_bipartiteRibbonGraph t.σ1 i
+    t.ribbonGraph.blackEnd i = Quotient.mk (SameCycle.setoid t.σ0) i := (rfl)
 
 /-- The white end of a sheet is its cycle under `σ1`. -/
 @[simp] theorem whiteEnd_ribbonGraph (i : Fin n) :
-    t.ribbonGraph.whiteEnd i = Quotient.mk (SameCycle.setoid t.σ1) i :=
-  t.σ0.whiteEnd_bipartiteRibbonGraph t.σ1 i
+    t.ribbonGraph.whiteEnd i = Quotient.mk (SameCycle.setoid t.σ1) i := (rfl)
 
 -- After the rewrites, the remaining goal mentions `t.ribbonGraph.E` where the cited lemma
 -- mentions `Fin n`, so `exact` closes it on the reduction `@[expose]` supplies; the same holds

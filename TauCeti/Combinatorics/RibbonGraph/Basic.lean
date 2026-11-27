@@ -9,11 +9,11 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.GroupTheory.Perm.Cycle.Factors
 public import Mathlib.Order.Setoid.Basic
+public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Finite bipartite ribbon graphs
@@ -30,7 +30,9 @@ faces.  Gluing a disc into each face gives a closed oriented surface, one for ea
 component, and `eulerChar` is its Euler characteristic `|B| + |W| - |E| + |F|`.  This file also
 provides morphisms, isomorphisms, automorphisms, connected components, vertex degrees, the
 vertex counts as cycle counts of the two rotations, the two incidence degree-sum formulas, and the
-copy of a ribbon graph in a higher universe.
+copy of a ribbon graph in a higher universe. The constructor `BipartiteRibbonGraph.Hom.ofEdge`
+extends an edge map intertwining the rotations, using `Equiv.Perm.SameCycle.map` on each
+endpoint fibre.
 
 ## References
 
@@ -87,56 +89,6 @@ structure BipartiteRibbonGraph : Type (u + 1) where
 namespace BipartiteRibbonGraph
 
 attribute [instance] fintypeE fintypeB fintypeW decidableEqE decidableEqB decidableEqW
-
-/-- The graph on `α` whose black and white vertices are the cycle quotients of `σ` and `τ`.
-Its projections compute so that the finite invariants can be evaluated. -/
-@[expose] def _root_.Equiv.Perm.bipartiteRibbonGraph {α : Type u} [Fintype α] [DecidableEq α]
-    (σ τ : Perm α) : BipartiteRibbonGraph :=
-  let decσ : DecidableRel (Perm.SameCycle σ) := inferInstance
-  let decτ : DecidableRel (Perm.SameCycle τ) := inferInstance
-  { E := α
-    B := Quotient (Perm.SameCycle.setoid σ)
-    W := Quotient (Perm.SameCycle.setoid τ)
-    fintypeE := inferInstance
-    fintypeB := @Quotient.fintype _ _ _ decσ
-    fintypeW := @Quotient.fintype _ _ _ decτ
-    decidableEqE := inferInstance
-    decidableEqB := @Quotient.decidableEq _ _ decσ
-    decidableEqW := @Quotient.decidableEq _ _ decτ
-    blackEnd := Quotient.mk (Perm.SameCycle.setoid σ)
-    whiteEnd := Quotient.mk (Perm.SameCycle.setoid τ)
-    rotB := σ
-    rotW := τ
-    blackEnd_surjective := Quotient.mk_surjective
-    whiteEnd_surjective := Quotient.mk_surjective
-    isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
-    isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ }
-
-section
-
-variable {α : Type u} [Fintype α] [DecidableEq α] (σ τ : Perm α)
-
-/-- The edges of the graph of two permutations are the elements they permute. -/
-@[simp] theorem _root_.Equiv.Perm.E_bipartiteRibbonGraph : (σ.bipartiteRibbonGraph τ).E = α :=
-  (rfl)
-
-/-- The black rotation of the graph of two permutations is the first permutation. -/
-@[simp] theorem _root_.Equiv.Perm.rotB_bipartiteRibbonGraph : (σ.bipartiteRibbonGraph τ).rotB = σ :=
-  (rfl)
-
-/-- The white rotation of the graph of two permutations is the second permutation. -/
-@[simp] theorem _root_.Equiv.Perm.rotW_bipartiteRibbonGraph : (σ.bipartiteRibbonGraph τ).rotW = τ :=
-  (rfl)
-
-/-- The black endpoint of an edge is its cycle under the first permutation. -/
-@[simp] theorem _root_.Equiv.Perm.blackEnd_bipartiteRibbonGraph (x : α) :
-    (σ.bipartiteRibbonGraph τ).blackEnd x = Quotient.mk (Perm.SameCycle.setoid σ) x := (rfl)
-
-/-- The white endpoint of an edge is its cycle under the second permutation. -/
-@[simp] theorem _root_.Equiv.Perm.whiteEnd_bipartiteRibbonGraph (x : α) :
-    (σ.bipartiteRibbonGraph τ).whiteEnd x = Quotient.mk (Perm.SameCycle.setoid τ) x := (rfl)
-
-end
 
 variable (Γ : BipartiteRibbonGraph.{u})
 
@@ -830,6 +782,52 @@ def uliftIso : (Γ.ulift : BipartiteRibbonGraph.{max u v}).Iso Γ where
 /-- The universe-lifting isomorphism sends a lifted white vertex to the vertex it wraps. -/
 @[simp] theorem uliftIso_white_apply (w : (Γ.ulift : BipartiteRibbonGraph.{max u v}).W) :
     Γ.uliftIso.white w = w.down := (rfl)
+
+/-! ### Ribbon graphs from two permutations -/
+
+/-- The finite bipartite ribbon graph with edges `E` and rotations `σ` and `τ`: its black and
+white vertices are the cycles of `σ` and of `τ`, the cyclic orders around them being `σ` and `τ`
+themselves. Every finite set with two permutations arises this way as the edge set of a ribbon
+graph; the graph of a permutation triple is the case `E = Fin n`. -/
+@[expose] def ofPerms (E : Type u) [Fintype E] [DecidableEq E] (σ τ : Perm E) :
+    BipartiteRibbonGraph.{u} where
+  E := E
+  B := Quotient (Perm.SameCycle.setoid σ)
+  W := Quotient (Perm.SameCycle.setoid τ)
+  fintypeE := inferInstance
+  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle σ)))
+  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle τ)))
+  decidableEqE := inferInstance
+  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle σ)))
+  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (Perm.SameCycle τ)))
+  blackEnd := Quotient.mk (Perm.SameCycle.setoid σ)
+  whiteEnd := Quotient.mk (Perm.SameCycle.setoid τ)
+  rotB := σ
+  rotW := τ
+  blackEnd_surjective := Quotient.mk_surjective
+  whiteEnd_surjective := Quotient.mk_surjective
+  isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
+  isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ
+
+section OfPerms
+
+variable {E : Type u} [Fintype E] [DecidableEq E] (σ τ : Perm E)
+
+/-- The black rotation of `ofPerms E σ τ` is `σ`. -/
+@[simp] theorem rotB_ofPerms : (ofPerms E σ τ).rotB = σ := (rfl)
+
+/-- The white rotation of `ofPerms E σ τ` is `τ`. -/
+@[simp] theorem rotW_ofPerms : (ofPerms E σ τ).rotW = τ := (rfl)
+
+/-- The black end of an edge of `ofPerms E σ τ` is its cycle under `σ`. -/
+@[simp] theorem blackEnd_ofPerms (e : E) :
+    (ofPerms E σ τ).blackEnd e = Quotient.mk (Perm.SameCycle.setoid σ) e := (rfl)
+
+/-- The white end of an edge of `ofPerms E σ τ` is its cycle under `τ`. -/
+@[simp] theorem whiteEnd_ofPerms (e : E) :
+    (ofPerms E σ τ).whiteEnd e = Quotient.mk (Perm.SameCycle.setoid τ) e := (rfl)
+
+end OfPerms
 
 end BipartiteRibbonGraph
 
