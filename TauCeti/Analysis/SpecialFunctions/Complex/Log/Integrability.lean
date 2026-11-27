@@ -8,23 +8,23 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
-import TauCeti.MeasureTheory.Integral.Dilation
+import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # Uniform `L^k` bounds for affine complex logarithms
 
 For the affine family `t ↦ Complex.log (1 - t * z)` as `z : ℂ` varies over a bounded set
 `‖z‖ ≤ R`, translating `|log |t - Re(z⁻¹)||` yields a uniform `L^k` bound on every bounded
-interval `(a, b]`, even though the logarithmic singularity `t = z⁻¹` moves through `(a, b]`.
+interval `(a, b]`. A logarithmic singularity can move through `(a, b]` when `z` is real and
+nonzero and `z⁻¹` lies there; for general nonzero complex `z`, the estimate uses the real shift
+`Re(z⁻¹)` whether or not `1 - t * z` vanishes on `(a, b]`.
 
 ## Main declarations
 
-* `TauCeti.setLIntegral_abs_log_abs_sub_pow_le`: bounds `∫⁻ t in (a, b], |log |t - s|| ^ k` for
-  `s ∈ [c, d]` by `∫⁻ u in [a - d, b - c], |log ‖u‖| ^ k`.
-* `TauCeti.setLIntegral_norm_clog_one_sub_mul_pow_le`: uniform `L^k` bound for `Log (1 - t * z)` on
-  `(a, b]` when `0 < r ≤ ‖z‖ ≤ R`.
-* `TauCeti.exists_setLIntegral_norm_clog_one_sub_mul_pow_le`: uniform finite `L^k` bound for
-  `Log (1 - t * z)` on `(a, b]` over any bounded ball `‖z‖ ≤ R`.
+* `TauCeti.setLIntegral_norm_clog_one_sub_ofReal_mul_pow_le`: uniform `L^k` bound for
+  `Log (1 - t * z)` on `(a, b]` when `0 < r ≤ ‖z‖ ≤ R`.
+* `TauCeti.exists_setLIntegral_norm_clog_one_sub_ofReal_mul_pow_le`: uniform finite `L^k` bound
+  for `Log (1 - t * z)` on `(a, b]` over any bounded ball `‖z‖ ≤ R`.
 -/
 
 public section
@@ -40,25 +40,10 @@ private lemma one_le_affineLogBound {T r R : ℝ} (hT : 0 ≤ T) (hR : 0 ≤ R) 
     Real.log_nonneg (by linarith [mul_nonneg hT hR] : (1 : ℝ) ≤ 1 + T * R),
     abs_nonneg (Real.log r), Real.log_nonneg (by linarith : (1 : ℝ) ≤ 1 + R)]
 
-/-- Translating by `s ∈ [c, d]` bounds the Lebesgue integral of `|log |t - s|| ^ k` over `(a, b]`
-by the integral of `|log ‖u‖| ^ k` over `[a - d, b - c]`. -/
-theorem setLIntegral_abs_log_abs_sub_pow_le (k : ℕ) {a b c d s : ℝ} (hs : s ∈ Set.Icc c d) :
-    ∫⁻ t in Set.Ioc a b, ENNReal.ofReal (|Real.log (|t - s|)| ^ k) ≤
-      ∫⁻ u in Set.Icc (a - d) (b - c), ENNReal.ofReal (|Real.log ‖u‖| ^ k) := by
-  have hsub : Set.Ioc a b ⊆ (fun t : ℝ ↦ -s + (1 : ℝ) • t) ⁻¹' Set.Icc (a - d) (b - c) := by
-    intro t ht
-    rw [Set.mem_preimage, smul_eq_mul, one_mul, neg_add_eq_sub]
-    exact ⟨by linarith [ht.1, hs.2], by linarith [ht.2, hs.1]⟩
-  refine (lintegral_mono_set hsub).trans_eq ?_
-  simpa [neg_add_eq_sub, Real.norm_eq_abs] using
-    Measure.setLIntegral_comp_add_smul volume
-      (fun u : ℝ ↦ ENNReal.ofReal (|Real.log ‖u‖| ^ k)) (-s) one_ne_zero
-      (Set.Icc (a - d) (b - c))
-
 /-- On `(a, b]`, when `0 < r ≤ ‖z‖ ≤ R`, shifting by `Re(z⁻¹) ∈ [-r⁻¹, r⁻¹]` bounds the `L^k`
 integral of `t ↦ Complex.log (1 - t * z)` uniformly in `z`. -/
-theorem setLIntegral_norm_clog_one_sub_mul_pow_le (k : ℕ) (a b : ℝ) {r R : ℝ} (hr : 0 < r) {z : ℂ}
-    (hzr : r ≤ ‖z‖) (hzR : ‖z‖ ≤ R) :
+theorem setLIntegral_norm_clog_one_sub_ofReal_mul_pow_le (k : ℕ) (a b : ℝ) {r R : ℝ} (hr : 0 < r)
+    {z : ℂ} (hzr : r ≤ ‖z‖) (hzR : ‖z‖ ≤ R) :
     ∫⁻ t in Set.Ioc a b, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ k) ≤
       ENNReal.ofReal
         ((2 : ℝ) ^ (k - 1) *
@@ -100,13 +85,14 @@ theorem setLIntegral_norm_clog_one_sub_mul_pow_le (k : ℕ) (a b : ℝ) {r R : �
   rw [lintegral_add_left measurable_const, lintegral_const, Measure.restrict_apply_univ,
     lintegral_const_mul _ (by fun_prop)]
   gcongr _ + _ * ?_
-  have hsub := setLIntegral_abs_log_abs_sub_pow_le k (a := a) (b := b) hs
-  rwa [sub_neg_eq_add] at hsub
+  have hsub := setLIntegral_Ioc_comp_sub_le (μ := volume)
+    (fun u : ℝ ↦ ENNReal.ofReal (|Real.log (|u|)| ^ k)) (a := a) (b := b) hs
+  simpa only [sub_neg_eq_add, Real.norm_eq_abs] using hsub
 
 open scoped ENNReal in
 /-- Over any bounded ball `‖z‖ ≤ R`, every natural power `‖Complex.log (1 - t * z)‖ ^ k` has a
 uniform finite Lebesgue integral on `(a, b]` independent of `z`. -/
-theorem exists_setLIntegral_norm_clog_one_sub_mul_pow_le (k : ℕ) (a b R : ℝ) :
+theorem exists_setLIntegral_norm_clog_one_sub_ofReal_mul_pow_le (k : ℕ) (a b R : ℝ) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ z : ℂ, ‖z‖ ≤ R →
       ∫⁻ t in Set.Ioc a b, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ k) ≤ C := by
   set T : ℝ := max |a| |b|
@@ -145,7 +131,7 @@ theorem exists_setLIntegral_norm_clog_one_sub_mul_pow_le (k : ℕ) (a b R : ℝ)
         le_mul_of_one_le_left (by positivity) (one_le_pow₀ (by norm_num))
     · rw [lintegral_const, Measure.restrict_apply_univ]
       exact le_self_add
-  · exact setLIntegral_norm_clog_one_sub_mul_pow_le k a b hr hlarge.le
+  · exact setLIntegral_norm_clog_one_sub_ofReal_mul_pow_le k a b hr hlarge.le
       (hz.trans (le_max_left R 0))
 
 end TauCeti

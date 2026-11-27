@@ -11,10 +11,10 @@ public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Integrability
-import TauCeti.MeasureTheory.Function.UniformIntegrable
+import TauCeti.Basic.Complex.Basic
+import TauCeti.MeasureTheory.Function.DeLaValleePoussin
 
 /-!
 # Integrability of the polylogarithm's radial integrand
@@ -36,19 +36,20 @@ gives the uniform majorant of the integrand, and the same lower bound controls i
 `(-log t) ^ k / (1 - t z)` in `z`. On a general bounded parameter family `‖z‖ ≤ R`, a common
 integrable majorant need not exist (for example, on the full ball with `R > 1`, the logarithmic
 singularity at `t = 1 / z` moves through `(1 / R, 1)`); instead, translating
-`log |t - Re(1 / z)| ^ 2` gives a uniform `L²` bound on `(0, 1]`, which yields
+`|log |t - Re(1 / z)|| ^ p` gives a uniform `L^p` bound on `(0, 1]`, and the `p = 2` bound yields
 `MeasureTheory.UniformIntegrable` in `L¹` over the finite-measure interval `(0, 1]`.
 
 ## Main declarations
 
 * `TauCeti.Polylog.intervalIntegrable_radialIntegrand`: interval integrability on `[0, 1]` for
   every `z`.
-* `TauCeti.Polylog.integral_eq_integral_radialIntegrand_of_eqOn`: modifying the radial integrand
+* `TauCeti.Polylog.ae_one_sub_ofReal_mul_ne_zero` and
+  `TauCeti.Polylog.integral_eq_integral_radialIntegrand_of_eqOn`: modifying the radial integrand
   at `0`, `1`, and the possible zero of `1 - t z` leaves the integral unchanged.
 * `TauCeti.Polylog.exists_norm_radialIntegrand_le`: the uniform majorant `C * |log t| ^ k` on a
   compact subset of the principal domain.
-* `TauCeti.Polylog.exists_setLIntegral_norm_radialIntegrand_sq_le` and
-  `TauCeti.Polylog.uniformIntegrable_radialIntegrand`: uniform `L²` bound and uniform
+* `TauCeti.Polylog.exists_setLIntegral_norm_radialIntegrand_pow_le` and
+  `TauCeti.Polylog.uniformIntegrable_radialIntegrand`: uniform `L^p` bound and uniform
   integrability on `(0, 1]` over bounded parameter families.
 * `TauCeti.Polylog.intervalIntegrable_neg_log_pow_div_one_sub_mul`: interval integrability of the
   differentiated kernel `(-log t) ^ k / (1 - t z)` on `[0, 1]` for `z` in the principal domain.
@@ -181,6 +182,13 @@ theorem exists_norm_radialIntegrand_le (k : ℕ) {K : Set ℂ} (hK : IsCompact K
           gcongr
           · linarith [le_max_right R 0]
 
+/-- For any `z : ℂ` and measure `μ` on `ℝ` with null singletons (such as Lebesgue measure or any
+atomless Borel measure), `1 - (t : ℂ) * z` is nonzero `μ`-almost everywhere. -/
+theorem ae_one_sub_ofReal_mul_ne_zero (z : ℂ) {μ : Measure ℝ} [NullSingletonClass μ] :
+    ∀ᵐ t : ℝ ∂μ, 1 - (t : ℂ) * z ≠ 0 := by
+  rw [ae_iff]
+  simpa [not_not] using (Complex.subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero μ
+
 /-- Any function agreeing with the polylogarithm's radial integrand on `(0, 1)` away from the
 possible zero of `1 - t z` has the same interval integral on `[0, 1]`. -/
 theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ}
@@ -193,10 +201,7 @@ theorem integral_eq_integral_radialIntegrand_of_eqOn (k : ℕ) (z : ℂ) {g : �
   have hIoo : ∀ᵐ t : ℝ ∂volume, t ∈ Ioc (0 : ℝ) 1 → t ∈ Ioo (0 : ℝ) 1 := by
     filter_upwards [Ioo_ae_eq_Ioc (a := (0 : ℝ)) (b := 1) (μ := volume)] with t ht htIoc
     exact ht.mpr htIoc
-  have hne : ∀ᵐ t : ℝ ∂volume, 1 - (t : ℂ) * z ≠ 0 := by
-    rw [ae_iff]
-    simpa [not_not] using (Complex.subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero volume
-  filter_upwards [hIoo, hne] with t ht₁ ht₂ htIoc
+  filter_upwards [hIoo, ae_one_sub_ofReal_mul_ne_zero z] with t ht₁ ht₂ htIoc
   exact hg ⟨ht₁ htIoc, ht₂⟩
 
 /-- Away from `t = 0` (`0 < a ≤ 1`), the Lebesgue integral of the `p`-th power of the norm of the
@@ -222,12 +227,12 @@ private lemma setLIntegral_norm_radialIntegrand_pow_Ioc_le (p k : ℕ) {a : ℝ}
   exact ENNReal.ofReal_le_ofReal
     ((pow_le_pow_left₀ (norm_nonneg _) h1 p).trans_eq (mul_pow _ _ p))
 
-/-- Over any bounded ball `‖z‖ ≤ R`, the radial integrand of weight `k + 2` has a uniform `L²`
+/-- Over any bounded ball `‖z‖ ≤ R`, the radial integrand of weight `k + 2` has a uniform `L^p`
 bound on `(0, 1]`. -/
-theorem exists_setLIntegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
+theorem exists_setLIntegral_norm_radialIntegrand_pow_le (p k : ℕ) (R : ℝ) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ z : ℂ, ‖z‖ ≤ R →
       ∫⁻ t in Ioc (0 : ℝ) 1,
-        ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2) ≤
+        ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ p) ≤
           C := by
   set R' : ℝ := max R 0
   set a : ℝ := 1 / (2 * (R' + 1)) with ha_def
@@ -236,33 +241,35 @@ theorem exists_setLIntegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
   have haR : a * R' ≤ 1 / 2 := by
     rw [ha_def, div_mul_eq_mul_div, one_mul, div_le_iff₀ (by positivity)]
     linarith [le_max_right R 0]
-  set I₁ : ℝ≥0∞ := ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (|Real.log t| ^ (2 * k))
+  set I₁ : ℝ≥0∞ := ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (|Real.log t| ^ (p * k))
   have hI₁ : I₁ < ∞ := by
     refine lt_of_le_of_lt (lintegral_mono fun t ↦ ?_)
-      (intervalIntegrable_log_pow (2 * k) (a := 0) (b := 1)).1.hasFiniteIntegral
+      (intervalIntegrable_log_pow (p * k) (a := 0) (b := 1)).1.hasFiniteIntegral
     rw [← ofReal_norm, norm_pow, Real.norm_eq_abs]
-  obtain ⟨C₂, hC₂, hC₂z⟩ := exists_setLIntegral_norm_clog_one_sub_mul_pow_le 2 a 1 R'
+  obtain ⟨C₂, hC₂, hC₂z⟩ := exists_setLIntegral_norm_clog_one_sub_ofReal_mul_pow_le p a 1 R'
   set Ka : ℝ := |Real.log a| ^ k / a
-  refine ⟨ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ + ENNReal.ofReal (Ka ^ 2) * C₂,
+  refine ⟨ENNReal.ofReal ((3 / 2 * R') ^ p) * I₁ + ENNReal.ofReal (Ka ^ p) * C₂,
     by finiteness, fun z hz ↦ ?_⟩
   have hzR : ‖z‖ ≤ R' := hz.trans (le_max_left R 0)
   rw [(Ioc_union_Ioc_eq_Ioc ha0.le ha1).symm]
   refine (lintegral_union_le _ (Ioc 0 a) (Ioc a 1)).trans (add_le_add ?_
-    ((setLIntegral_norm_radialIntegrand_pow_Ioc_le 2 k ha0 ha1 z).trans
+    ((setLIntegral_norm_radialIntegrand_pow_Ioc_le p k ha0 ha1 z).trans
       (by gcongr; exact hC₂z z hzR)))
   calc ∫⁻ t in Ioc 0 a, ENNReal.ofReal
-          (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2)
-      ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal ((3 / 2 * R') ^ 2 * |Real.log t| ^ (2 * k)) := by
+          (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ p)
+      ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal ((3 / 2 * R') ^ p * |Real.log t| ^ (p * k)) := by
         refine (setLIntegral_mono' measurableSet_Ioc fun t ht ↦ ENNReal.ofReal_le_ofReal ?_).trans
           (lintegral_mono' (Measure.restrict_mono (Ioc_subset_Ioc_right ha1) le_rfl) le_rfl)
         have h1 : ‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ≤
             3 / 2 * R' * |Real.log t| ^ k :=
           (norm_radialIntegrand_le_of_mul_le ht.1 k
             ((mul_le_mul ht.2 hzR (norm_nonneg z) ha0.le).trans haR)).trans (by gcongr)
-        exact (pow_le_pow_left₀ (norm_nonneg _) h1 2).trans_eq
-          (by rw [mul_pow, ← pow_mul, mul_comm k 2])
-    _ = ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ := by
-        simp_rw [ENNReal.ofReal_mul (sq_nonneg _)]
+        exact (pow_le_pow_left₀ (norm_nonneg _) h1 p).trans_eq
+          (by rw [mul_pow, ← pow_mul, mul_comm k p])
+    _ = ENNReal.ofReal ((3 / 2 * R') ^ p) * I₁ := by
+        have hRp : 0 ≤ (3 / 2 * R') ^ p :=
+          pow_nonneg (mul_nonneg (by norm_num) (le_max_right R 0)) p
+        simp_rw [ENNReal.ofReal_mul hRp]
         exact lintegral_const_mul _ (by fun_prop)
 
 /-- Over any bounded family of complex parameters `z i`, the radial integrands of the polylogarithm
@@ -274,23 +281,14 @@ theorem uniformIntegrable_radialIntegrand {ι : Type*} (k : ℕ) {z : ι → ℂ
       (fun (i : ι) (t : ℝ) ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z i)) / t)
       1 (volume.restrict (Ioc 0 1)) := by
   obtain ⟨R, hR⟩ := hz.exists_norm_le
-  obtain ⟨C, hC, hCz⟩ := exists_setLIntegral_norm_radialIntegrand_sq_le k R
+  obtain ⟨C, hC, hCz⟩ := exists_setLIntegral_norm_radialIntegrand_pow_le 2 k R
   have : IsFiniteMeasure (volume.restrict (Ioc (0 : ℝ) 1)) := ⟨by simp [Real.volume_Ioc]⟩
-  refine MeasureTheory.uniformIntegrable_of_eLpNorm_le (p := 1) (q := 2)
-    (C := C ^ (2⁻¹ : ℝ)) (by norm_num) (by finiteness) fun i ↦ ?_
-  have hmeas : AEStronglyMeasurable
-      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z i)) / t)
-      (volume.restrict (Ioc 0 1)) :=
-    (intervalIntegrable_radialIntegrand k (z i)).1.aestronglyMeasurable
-  have h2 : eLpNorm
-      (fun t : ℝ ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z i)) / t)
-      ((2 : ℝ≥0) : ℝ≥0∞) (volume.restrict (Ioc 0 1)) ^ ((2 : ℝ≥0) : ℝ) ≤ C := by
-    rw [eLpNorm_nnreal_pow_eq_lintegral (p := (2 : ℝ≥0)) two_ne_zero hmeas]
-    simp_rw [NNReal.coe_ofNat, ← ofReal_norm, ENNReal.rpow_two,
-      ← ENNReal.ofReal_pow (norm_nonneg _)]
-    exact hCz (z i) (hR (z i) (mem_range_self i))
-  exact (ENNReal.le_rpow_inv_iff (by norm_num : (0 : ℝ) < 2)).mpr
-    (by simpa only [NNReal.coe_ofNat, ENNReal.coe_ofNat] using h2)
+  exact TauCeti.uniformIntegrable_of_lintegral_ofReal_le (Φ := fun t : ℝ ↦ t ^ 2)
+    (tendsto_id.congr' (by
+      filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
+      exact (mul_div_cancel_right₀ t ht).symm.trans (by rw [sq])))
+    (fun i ↦ (intervalIntegrable_radialIntegrand k (z i)).1.aestronglyMeasurable)
+    hC fun i ↦ hCz (z i) (hR (z i) (mem_range_self i))
 
 /-- Pointwise complex derivative of the radial polylogarithm integrand in `w` away from `t = 0`
 whenever `1 - t * w ∈ Complex.slitPlane`. -/

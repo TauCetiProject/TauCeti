@@ -24,6 +24,9 @@ Even natural powers of `I` simplify via `Complex.I_pow_two_mul`: `I ^ (2 * k) = 
 the imaginary part of `I ^ n * w` is given by `Complex.im_I_pow_two_mul_mul` (even `n`) and
 `Complex.im_I_pow_two_mul_add_one_mul` (odd `n`).
 
+For any `z : ℂ`, the set `{t : ℝ | 1 - (t : ℂ) * z = 0}` has at most one element
+(`Complex.subsingleton_one_sub_ofReal_mul_eq_zero`).
+
 Every real number cast to `ℂ` is self-adjoint, registered as the instance
 `TauCeti.instFactIsSelfAdjointComplexOfReal : Fact (IsSelfAdjoint (r : ℂ))`. It supplies the
 self-adjointness hypotheses of star structures with a real parameter.
@@ -60,6 +63,18 @@ theorem im_I_pow_two_mul_add_one_mul (k : ℕ) (w : ℂ) :
     (I ^ (2 * k + 1) * w).im = (-1 : ℝ) ^ k * w.re := by
   rw [pow_succ, mul_assoc, I_pow_two_mul, ← ofReal_one, ← ofReal_neg, ← ofReal_pow,
     im_ofReal_mul, I_mul_im]
+
+/-- For every `z : ℂ`, `{t : ℝ | 1 - (t : ℂ) * z = 0}` contains at most one real number. -/
+theorem subsingleton_one_sub_ofReal_mul_eq_zero (z : ℂ) :
+    {t : ℝ | 1 - (t : ℂ) * z = 0}.Subsingleton := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · have hpre : {t : ℝ | 1 - (t : ℂ) * z = 0} = (fun t : ℝ ↦ (t : ℂ) * z) ⁻¹' {1} := by
+      ext t
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff, sub_eq_zero]
+      exact eq_comm
+    rw [hpre]
+    exact Set.subsingleton_singleton.preimage ((mul_left_injective₀ hz).comp ofReal_injective)
 
 end Complex
 

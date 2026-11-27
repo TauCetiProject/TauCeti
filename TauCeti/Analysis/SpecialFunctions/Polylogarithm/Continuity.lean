@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
-import TauCeti.Analysis.Complex.Basic
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
+import TauCeti.MeasureTheory.Function.DeLaValleePoussin
 
 /-!
 # Continuity of integer-weight polylogarithms
@@ -28,7 +29,8 @@ Specifically:
   singularity): for `n ≤ 0` and `z ≠ 1`, continuity comes from rationality
   (`analyticAt_polylog_neg_nat`); for `n ≥ 1` and `z ≠ 1` off `[1, ∞)` it comes from holomorphy on
   the slit plane (`analyticAt_polylog`); and at `z = 1` in weights `n ≥ 2` every radial argument
-  `1 - t` with `t ∈ (0, 1)` lies in the open slit plane.
+  `1 - t` with `t ∈ (0, 1)` lies in the open slit plane. In particular `polylog n` is continuous
+  on the closed unit disc (`TauCeti.Polylog.continuousOn_polylog_closedBall`) for `2 ≤ n`.
 * Closed lower half-plane continuity (`TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos`):
   within `{w | w.im ≤ 0}`, `polylog n` is continuous at every `z` satisfying `z ≠ 1 ∨ 2 ≤ n`
   (again continuity at `z = 1` requires `2 ≤ n`), since `1 - t z` lies in the closed upper
@@ -39,6 +41,8 @@ Specifically:
 
 * `TauCeti.Polylog.continuousAt_polylog`: unrestricted continuity of `polylog n` for
   `z ≠ 1 ∨ 2 ≤ n` and `n ≤ 0 ∨ z.im ≠ 0 ∨ z.re ≤ 1`.
+* `TauCeti.Polylog.continuousOn_polylog_closedBall`: `polylog n` is continuous on
+  `Metric.closedBall 0 1` for `2 ≤ n`.
 * `TauCeti.Polylog.continuousWithinAt_polylog_im_nonpos`: continuity of `polylog n` within the
   closed lower half-plane `{w | w.im ≤ 0}` for `z ≠ 1 ∨ 2 ≤ n`.
 
@@ -50,7 +54,7 @@ Specifically:
 
 public section
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Metric Set
 open scoped Topology
 
 namespace TauCeti.Polylog
@@ -67,22 +71,27 @@ private lemma tendsto_polylog_nat_add_two_of_ae_tendsto {ι : Type*} {l : Filter
   intro u hu
   set w : ℕ → ℂ := z ∘ u
   have hw : Tendsto w atTop (𝓝 z₀) := hz.comp hu
-  have hui :=
-    (uniformIntegrable_radialIntegrand k (Metric.isBounded_range_of_tendsto w hw)).unifIntegrable
+  obtain ⟨R, hR⟩ := (Metric.isBounded_range_of_tendsto w hw).exists_norm_le
+  obtain ⟨C, hC, hCz⟩ := exists_setLIntegral_norm_radialIntegrand_pow_le 2 k R
   set F : ℕ → ℝ → ℂ := fun m t ↦
     ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * w m)) / t
   set f : ℝ → ℂ := fun t ↦ ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z₀)) / t
-  have hF_int : ∀ m, Integrable (F m) (volume.restrict (Ioc 0 1)) :=
-    fun m ↦ (intervalIntegrable_radialIntegrand k (w m)).1
-  have hf_mem : MemLp f 1 (volume.restrict (Ioc 0 1)) :=
-    memLp_one_iff_integrable.mpr (intervalIntegrable_radialIntegrand k z₀).1
+  have hF_meas : ∀ m, AEStronglyMeasurable (F m) (volume.restrict (Ioc 0 1)) :=
+    fun m ↦ (intervalIntegrable_radialIntegrand k (w m)).1.aestronglyMeasurable
   have hae : ∀ᵐ t : ℝ ∂volume.restrict (Ioc 0 1), Tendsto (fun m ↦ F m t) atTop (𝓝 (f t)) := by
     filter_upwards [hlog] with t ht
     exact (tendsto_const_nhds.mul (ht.comp hu).neg).div_const (t : ℂ)
-  have hL1 := tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top
-    (fun m ↦ (hF_int m).aestronglyMeasurable) hf_mem hui hae
+  have : IsFiniteMeasure (volume.restrict (Ioc (0 : ℝ) 1)) := ⟨by simp [Real.volume_Ioc]⟩
+  have hlim : TendstoInMeasure (volume.restrict (Ioc 0 1)) F atTop f :=
+    MeasureTheory.tendstoInMeasure_of_tendsto_ae hF_meas hae
+  have hΦ : Tendsto (fun t : ℝ ↦ t ^ 2 / t) atTop atTop :=
+    tendsto_id.congr' (by
+      filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
+      exact (mul_div_cancel_right₀ t ht).symm.trans (by rw [sq]))
   have hint := tendsto_const_nhds (x := ((Nat.factorial k : ℂ)⁻¹)).mul
-    (tendsto_integral_of_L1' f (Eventually.of_forall hF_int) hL1)
+    (TauCeti.tendsto_integral_of_lintegral_ofReal_le (Φ := fun t : ℝ ↦ t ^ 2) hΦ
+      (Eventually.of_forall hF_meas) hC
+      (Eventually.of_forall fun m ↦ hCz (w m) (hR (w m) (mem_range_self m))) hlim)
   simpa only [Function.comp_def, polylog_nat_add_two, intervalIntegral.integral_of_le zero_le_one,
     F, f, w] using hint
 
@@ -108,6 +117,13 @@ theorem continuousAt_polylog {n : ℤ} {z : ℂ} (hn : z ≠ 1 ∨ 2 ≤ n)
     · exact (analyticAt_polylog n (z.one_sub_mem_slitPlane_iff.mpr
         ⟨hz.resolve_left hn0.not_ge, hz1⟩)).continuousAt
 
+/-- For every integer weight `n ≥ 2`, `polylog n` is continuous on the closed unit disc. -/
+theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
+    ContinuousOn (polylog n) (closedBall 0 1) :=
+  fun z hz ↦ (continuousAt_polylog (Or.inr hn)
+    (Or.inr (Or.inr
+      ((Complex.re_le_norm z).trans (mem_closedBall_zero_iff.mp hz))))).continuousWithinAt
+
 /-- Every integer-weight polylogarithm is continuous within the closed lower half-plane
 `{w | w.im ≤ 0}` at every point `z` with `z ≠ 1 ∨ 2 ≤ n`. Continuity at `z = 1` requires
 `2 ≤ n`. -/
@@ -124,11 +140,8 @@ theorem continuousWithinAt_polylog_im_nonpos (n : ℤ) {z : ℂ} (hz : z ≠ 1 �
       simpa [Pi.neg_def] using (continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos zero_le_one
         (z := z) (by simpa [sub_ne_zero] using hz1.symm)).neg
     · refine tendsto_polylog_nat_add_two_of_ae_tendsto k nhdsWithin_le_nhds ?_
-      have hne : ∀ᵐ t : ℝ ∂volume, 1 - (t : ℂ) * z ≠ 0 := by
-        rw [ae_iff]
-        simpa [not_not] using
-          (Complex.subsingleton_one_sub_ofReal_mul_eq_zero z).measure_zero volume
-      filter_upwards [ae_restrict_mem measurableSet_Ioc, ae_restrict_of_ae hne] with t ht htz
+      filter_upwards [ae_restrict_mem measurableSet_Ioc,
+        ae_restrict_of_ae (ae_one_sub_ofReal_mul_ne_zero z)] with t ht htz
       exact (continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos ht.1.le htz).tendsto
 
 end TauCeti.Polylog

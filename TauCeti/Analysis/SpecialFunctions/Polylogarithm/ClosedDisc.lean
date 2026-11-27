@@ -37,8 +37,6 @@ logarithmic singularity of `Liₙ`.
 
 ## Main results
 
-* `TauCeti.Polylog.continuousOn_polylog_closedBall`: `polylog n` is continuous on
-  `Metric.closedBall 0 1` for `2 ≤ n`.
 * `TauCeti.Polylog.hasSum_polylog_of_norm_le_one` and
   `TauCeti.Polylog.hasSum_norm_polylog_of_norm_le_one`: the disc series converges, absolutely,
   to `polylog n z` for `‖z‖ ≤ 1`; `TauCeti.Polylog.polylog_eq_tsum_of_norm_le_one` is its `tsum`
@@ -67,13 +65,6 @@ open Filter MeasureTheory Metric Set
 open scoped Topology Real
 
 namespace TauCeti.Polylog
-
-/-- For every integer weight `n ≥ 2`, `polylog n` is continuous on the closed unit disc. -/
-theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
-    ContinuousOn (polylog n) (closedBall 0 1) :=
-  fun z hz ↦ (continuousAt_polylog (Or.inr hn)
-    (Or.inr (Or.inr
-      ((Complex.re_le_norm z).trans (mem_closedBall_zero_iff.mp hz))))).continuousWithinAt
 
 /-- **Closed-disc series of the polylogarithm.** For every integer weight `n ≥ 2` and every `z`
 in the closed unit disc `‖z‖ ≤ 1`, the series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n` converges to

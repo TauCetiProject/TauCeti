@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Log.Interval
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
@@ -18,23 +18,26 @@ import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 /-!
 # Boundary continuity and the principal jump of integer-weight polylogarithms
 
-In weights `n ≥ 2`, `TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity` establishes both
-unrestricted continuity of `polylog n` away from `(1, ∞)` (and away from `z = 1` when `n ≤ 1`,
-since continuity at `z = 1` requires `2 ≤ n`) and continuity within the closed lower half-plane
-`{w | w.im ≤ 0}` (again for `z ≠ 1 ∨ 2 ≤ n`). This file deduces the lower and upper boundary
-limits along `ℝ`, evaluates the imaginary part and principal jump across the branch cut `(1, ∞)`,
-and characterizes `ContinuousAt (polylog n) z` for every integer weight `n : ℤ`.
+For every integer weight `n : ℤ`, `TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity`
+establishes both unrestricted continuity of `polylog n` (whenever `z ≠ 1 ∨ 2 ≤ n` and
+`n ≤ 0 ∨ z.im ≠ 0 ∨ z.re ≤ 1`, i.e. off `(1, ∞)` when `n ≥ 1` and away from `1` when `n ≤ 1`)
+and continuity within the closed lower half-plane `{w | w.im ≤ 0}` (whenever `z ≠ 1 ∨ 2 ≤ n`).
+This file deduces the lower and upper boundary limits at real points from the open half-planes,
+evaluates the imaginary part and principal jump across the branch cut `(1, ∞)` in positive weight
+`n ≥ 1`, and characterizes `ContinuousAt (polylog n) z` for every integer weight `n : ℤ`.
 
 Specifically:
 * From continuity within `{w | w.im ≤ 0}` (`continuousWithinAt_polylog_im_nonpos`), `polylog n x`
-  is the lower boundary limit `lim_{t → 0+} polylog n (x - t I)` along `ℝ` whenever `x ≠ 1 ∨ 2 ≤ n`
+  is the boundary limit at real points from the open lower half-plane, in particular under
+  vertical approach from below `lim_{t → 0+} polylog n (x - t I)`, whenever `x ≠ 1 ∨ 2 ≤ n`
   (again continuity at `x = 1` requires `2 ≤ n`).
 * On `(1, ∞)` in positive weight `n ≥ 1`, weight `n = 1` evaluates `(polylog 1 x).im = -π`
   directly from `-Complex.log (1 - x)`, while weights `n ≥ 2` split `(0, 1]` at `x⁻¹` to obtain
   `(polylog n x).im = -π (log x) ^ (n - 1) / (n - 1)!`.
-* Conjugation symmetry (`TauCeti.Polylog.polylog_conj`) relates the upper boundary limit
-  `lim_{t → 0+} polylog n (x + t I)` to `conj (polylog n x)`, giving the principal jump
-  `2 π i (log x) ^ (n - 1) / (n - 1)!`, pointwise discontinuity along `(1, ∞)`, and the complete
+* In positive weight `n ≥ 1`, conjugation symmetry (`TauCeti.Polylog.polylog_conj`) relates the
+  upper boundary limit `lim_{t → 0+} polylog n (x + t I)` to `conj (polylog n x)`, giving the
+  principal jump `2 π i (log x) ^ (n - 1) / (n - 1)!` and pointwise discontinuity along
+  `(1, ∞)`. Combining this with the unrestricted continuity theorem yields the complete
   characterization `ContinuousAt (polylog n) z ↔ (z ≠ 1 ∨ 2 ≤ n) ∧ (n ≤ 0 ∨ z.im ≠ 0 ∨ z.re ≤ 1)`
   for all `n : ℤ`.
 
@@ -49,7 +52,8 @@ Specifically:
   `TauCeti.Polylog.tendsto_polylog_nhdsWithin_im_pos_of_one_lt`,
   `TauCeti.Polylog.tendsto_polylog_add_mul_I_nhdsGT_zero_of_one_lt`, and
   `TauCeti.Polylog.tendsto_polylog_add_mul_I_sub_polylog_sub_mul_I_nhdsGT_zero_of_one_lt`: lower
-  and upper boundary limits along `ℝ`, and upper boundary limit and principal jump across `(1, ∞)`.
+  and upper boundary limits at real points from the open half-planes, and upper boundary limit and
+  principal jump across `(1, ∞)` in positive weight `n ≥ 1`.
 * `TauCeti.Polylog.not_continuousAt_of_one_lt_of_eventuallyEq_polylog`,
   `TauCeti.Polylog.not_continuousAt_polylog_of_one_lt`,
   `TauCeti.Polylog.continuousAt_polylog_iff`, and
@@ -77,8 +81,8 @@ theorem tendsto_polylog_nhdsWithin_im_neg (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 
   have hx' : (x : ℂ) ≠ 1 ∨ 2 ≤ n := hx.imp (fun h h1 ↦ h (by exact_mod_cast h1)) id
   exact (continuousWithinAt_polylog_im_nonpos n hx').mono fun _ hz ↦ hz.out.le
 
-/-- Lower boundary limit along `ℝ`: for integer weight `n` and real `x` with `x ≠ 1 ∨ 2 ≤ n`,
-`polylog n (x - t * I) → polylog n x` as `t → 0+`. -/
+/-- Lower boundary limit under vertical approach from below: for integer weight `n` and real `x`
+with `x ≠ 1 ∨ 2 ≤ n`, `polylog n (x - t * I) → polylog n x` as `t → 0+`. -/
 theorem tendsto_polylog_sub_mul_I_nhdsGT_zero (n : ℤ) {x : ℝ} (hx : x ≠ 1 ∨ 2 ≤ n) :
     Tendsto (fun t : ℝ ↦ polylog n (x - t * Complex.I)) (𝓝[>] 0) (𝓝 (polylog n x)) :=
   (tendsto_polylog_nhdsWithin_im_neg n hx).comp

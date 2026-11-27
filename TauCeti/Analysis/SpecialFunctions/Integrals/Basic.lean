@@ -65,9 +65,6 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_linear_mul_eq_log_sub`:
   `∫ t in a₀..b₀, (z₀ + t * d)⁻¹ * d = log (u * (z₀ + b₀ * d)) - log (u * (z₀ + a₀ * d))`
   when `u * (z₀ + t * d) ∈ Complex.slitPlane` on `uIcc a₀ b₀`.
-* `TauCeti.integral_log_pow_div_self`:
-  `∫ t in a..b, (log t) ^ k / t = ((log b) ^ (k + 1) - (log a) ^ (k + 1)) / (k + 1)` when
-  `0 ∉ [[a, b]]`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I`:
@@ -374,18 +371,6 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
   · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
     have := hpos σ hσ
     positivity
-
-/-- When the interval `[[a, b]]` avoids `0`, the interval integral
-`∫ t in a..b, (log t) ^ k / t` evaluates to `((log b) ^ (k + 1) - (log a) ^ (k + 1)) / (k + 1)`. -/
-theorem integral_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
-    ∫ t : ℝ in a..b, Real.log t ^ k / t =
-      (Real.log b ^ (k + 1) - Real.log a ^ (k + 1)) / (k + 1 : ℝ) := by
-  have hne (t : ℝ) (ht : t ∈ Set.uIcc a b) : t ≠ 0 := fun ht0 ↦ h (ht0 ▸ ht)
-  simpa [div_eq_mul_inv] using
-    (intervalIntegral.integral_comp_mul_deriv (f := Real.log) (f' := fun t ↦ t⁻¹)
-      (g := fun u ↦ u ^ k) (fun t ht ↦ Real.hasDerivAt_log (hne t ht))
-      (continuousOn_inv₀.mono fun t ht ↦ hne t ht) (continuous_pow k)).trans
-      (integral_pow (a := Real.log a) (b := Real.log b) k)
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/

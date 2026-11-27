@@ -37,9 +37,10 @@ the closed unit disc, and real values of every `Liₙ` on the real half-line `(-
 * `TauCeti.Polylog.polylog_neg_nat_conj`: conjugation symmetry of nonpositive weights on `ℂ`.
 * `TauCeti.Polylog.polylog_conj`: conjugation symmetry for `n ≤ 0` on all of `ℂ`, and in positive
   weight off the cut `(1, ∞)` (in particular on `re z ≤ 1` and on the closed unit disc `‖z‖ ≤ 1`).
-* `TauCeti.Polylog.polylog_neg_nat_ofReal_im`, `TauCeti.Polylog.ofReal_polylog_neg_nat_ofReal_re`,
-  `TauCeti.Polylog.polylog_ofReal_im`, and `TauCeti.Polylog.ofReal_polylog_ofReal_re`: `Liₙ x` is
-  real for `n ≤ 0` on all of `ℝ`, and for arbitrary `n : ℤ` on `(-∞, 1]`.
+* `TauCeti.Polylog.polylog_ofReal_im`, `TauCeti.Polylog.ofReal_polylog_ofReal_re`,
+  `TauCeti.Polylog.polylog_neg_nat_ofReal_im`, and
+  `TauCeti.Polylog.ofReal_polylog_neg_nat_ofReal_re`: `Liₙ x` is real for `n ≤ 0` on all of `ℝ`,
+  and for arbitrary `n : ℤ` on `(-∞, 1]`.
 
 ## References
 
@@ -98,18 +99,6 @@ theorem polylog_conj (n : ℤ) {z : ℂ} (hz : n ≤ 0 ∨ z.im ≠ 0 ∨ z.re �
     simp only [map_sub, map_one, map_mul, Complex.conj_ofReal] at hlog
     simp [hlog]
 
-/-- Nonpositive-weight polylogarithms take real values at every real argument, including `1`. -/
-@[simp]
-theorem polylog_neg_nat_ofReal_im (r : ℕ) (x : ℝ) :
-    (polylog (-(r : ℤ)) x).im = 0 :=
-  Complex.conj_eq_iff_im.mp (by simpa using (polylog_neg_nat_conj r x).symm)
-
-/-- On all of `ℝ` (including `1`), `polylog (-r) x` equals the coercion of its real part. -/
-@[simp]
-theorem ofReal_polylog_neg_nat_ofReal_re (r : ℕ) (x : ℝ) :
-    ((polylog (-(r : ℤ)) x).re : ℂ) = polylog (-(r : ℤ)) x :=
-  Complex.conj_eq_iff_re.mp (by simpa using (polylog_neg_nat_conj r x).symm)
-
 /-- Every integer-weight polylogarithm is real for `n ≤ 0` on all of `ℝ`, and for all `n : ℤ` on
 `(-∞, 1]`. -/
 theorem polylog_ofReal_im (n : ℤ) {x : ℝ} (hx : n ≤ 0 ∨ x ≤ 1) : (polylog n x).im = 0 := by
@@ -122,5 +111,17 @@ theorem ofReal_polylog_ofReal_re (n : ℤ) {x : ℝ} (hx : n ≤ 0 ∨ x ≤ 1) 
     ((polylog n x).re : ℂ) = polylog n x := by
   rw [← Complex.conj_eq_iff_re, Complex.conj_eq_iff_im]
   exact polylog_ofReal_im n hx
+
+/-- Nonpositive-weight polylogarithms take real values at every real argument, including `1`. -/
+@[simp]
+theorem polylog_neg_nat_ofReal_im (r : ℕ) (x : ℝ) :
+    (polylog (-(r : ℤ)) x).im = 0 :=
+  polylog_ofReal_im (-(r : ℤ)) (Or.inl (by omega))
+
+/-- On all of `ℝ` (including `1`), `polylog (-r) x` equals the coercion of its real part. -/
+@[simp]
+theorem ofReal_polylog_neg_nat_ofReal_re (r : ℕ) (x : ℝ) :
+    ((polylog (-(r : ℤ)) x).re : ℂ) = polylog (-(r : ℤ)) x :=
+  ofReal_polylog_ofReal_re (-(r : ℤ)) (Or.inl (by omega))
 
 end TauCeti.Polylog
