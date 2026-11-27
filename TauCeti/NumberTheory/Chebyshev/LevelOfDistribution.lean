@@ -107,9 +107,12 @@ variable {q : ℕ} {x θ θ' : ℝ}
 
 /-! ### The discrepancy -/
 
+/-- The discrepancy is a maximum of absolute values, hence nonnegative. -/
 theorem discrepancy_nonneg (q : ℕ) (x : ℝ) : 0 ≤ discrepancy q x :=
   Real.iSup_nonneg fun _ ↦ abs_nonneg _
 
+/-- There are no reduced residues `0 ≤ a < 0`, so the maximum defining `discrepancy 0 x` is
+empty. -/
 @[simp]
 theorem discrepancy_zero (x : ℝ) : discrepancy 0 x = 0 :=
   Real.iSup_of_isEmpty _
@@ -131,16 +134,18 @@ theorem abs_primeCountAP_sub_le_discrepancy {a : ZMod q} (ha : IsUnit a) (x : �
     refine le_of_eq_of_le ?_ (le_ciSup (Finite.bddAbove_range _) ⟨⟨a.val, a.val_lt⟩, hcop⟩)
     simp only [ZMod.natCast_zmod_val]
 
-/-- A common bound for the reduced residue classes modulo `q` bounds `discrepancy q x`. -/
-theorem discrepancy_le {C : ℝ} (hC : 0 ≤ C)
+/-- A common bound for the reduced residue classes modulo `q` bounds `discrepancy q x`. Such a
+bound is nonnegative, since `1` is a unit. -/
+theorem discrepancy_le {C : ℝ}
     (h : ∀ a : ZMod q, IsUnit a → |(primeCountAP q a x : ℝ) - π ⌊x⌋₊ / q.totient| ≤ C) :
     discrepancy q x ≤ C :=
-  Real.iSup_le (fun a ↦ h _ ((ZMod.isUnit_iff_coprime _ q).2 a.property)) hC
+  Real.iSup_le (fun a ↦ h _ ((ZMod.isUnit_iff_coprime _ q).2 a.property))
+    ((abs_nonneg _).trans (h 1 isUnit_one))
 
 /-- Modulo `1` every prime lies in the single class, so the discrepancy vanishes. -/
 @[simp]
 theorem discrepancy_one (x : ℝ) : discrepancy 1 x = 0 :=
-  le_antisymm (discrepancy_le le_rfl fun a _ ↦ by simp) (discrepancy_nonneg 1 x)
+  le_antisymm (discrepancy_le fun a _ ↦ by simp) (discrepancy_nonneg 1 x)
 
 /-! ### Levels of distribution -/
 
@@ -185,13 +190,16 @@ theorem primesHaveLevel_of_nonpos (hθ : θ ≤ 0) : PrimesHaveLevel θ := by
 
 /-! ### Maynard's window errors -/
 
+/-- A window error is at least `1`. -/
 theorem one_le_windowError (q N : ℕ) : 1 ≤ windowError q N :=
   le_add_of_nonneg_right <| Real.iSup_nonneg fun _ ↦ abs_nonneg _
 
+/-- The window `[0, 0)` is empty. -/
 @[simp]
 theorem windowError_zero_right (q : ℕ) : windowError q 0 = 1 := by
   simp [windowError, Real.iSup_const_zero]
 
+/-- Modulo `1` the single class holds every prime of the window. -/
 @[simp]
 theorem windowError_one_left (N : ℕ) : windowError 1 N = 1 := by
   simp [windowError, Subsingleton.eq_zero]
@@ -260,7 +268,7 @@ private theorem card_filter_primesLE_le_add_one (N : ℕ) (P : ℕ → Prop) [De
 residue class gains or loses at most the prime `N`, and the mean at most `1 / φ(q) ≤ 1`. -/
 theorem discrepancy_natCast_sub_one_le (q N : ℕ) :
     discrepancy q ↑(N - 1) ≤ discrepancy q N + 1 := by
-  refine discrepancy_le (by linarith [discrepancy_nonneg q N]) fun a ha ↦ ?_
+  refine discrepancy_le fun a ha ↦ ?_
   have h := abs_primeCountAP_sub_le_discrepancy ha (N : ℝ)
   rw [Chebyshev.primeCountAP_def, Nat.floor_natCast] at h ⊢
   have hmono : (N - 1).primesLE ⊆ N.primesLE := Nat.primesLE_mono (Nat.sub_le N 1)
