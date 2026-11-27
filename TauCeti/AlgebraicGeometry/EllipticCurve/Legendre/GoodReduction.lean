@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GoodPrimes
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGoodReduction
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.PadicValRat
 
@@ -46,9 +45,15 @@ theorem padicValRat_legendre_j_of_nonunit [(legendre l).IsElliptic] (hp : (p : �
     dsimp [t]
     nlinarith [sq_nonneg (l - 1 / 2)]
   have h256 : padicValRat p 256 = 0 := by
-    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-    have hcast : (256 : ℚ) = ((2 ^ 8 : ℕ) : ℚ) := by norm_num
-    rw [hcast, padicValRat.of_nat, multiplicity_prime_prime_pow 8 hp, Nat.cast_zero]
+    have hdvd : ¬ (p : ℕ) ∣ 256 := fun h ↦
+      hp (Nat.prime_eq_prime_of_dvd_pow p.prop Nat.prime_two (m := 8) (by
+        norm_num
+        exact h))
+    calc
+      padicValRat p 256 = padicValRat p ((256 : ℕ) : ℚ) := by norm_num
+      _ = 0 := by
+        rw [padicValRat.of_nat]
+        simp [multiplicity_eq_zero_of_not_dvd hdvd]
   have hj : (legendre l).j = 256 * (1 - t) ^ 3 / t ^ 2 := by
     rw [legendre_j]
     congr 1 <;> dsimp [t] <;> ring
@@ -110,24 +115,14 @@ theorem legendre_units_of_good_reduction (E : WeierstrassCurve ℚ) {p : Nat.Pri
     (hp : (p : ℕ) ≠ 2) {d l : ℚ} {C : VariableChange ℚ}
     (hC : C • E = scaledLegendre d l) (hgood : E.HasGoodReductionAt p) :
     padicValRat p l = 0 ∧ padicValRat p (1 - l) = 0 := by
-  rw [hasGoodReductionAt_iff] at hgood
-  obtain ⟨D, hD⟩ := (E.baseChange ℚ_[p]).exists_smul_eq_minimal ℤ_[p]
-  have hpot : (E.baseChange ℚ_[p]).HasPotentialGoodReduction ℤ_[p] :=
-    (hasPotentialGoodReduction_smul ℤ_[p] D _).mp
-      (hD ▸ hgood.hasPotentialGoodReduction ℤ_[p])
-  have hlocal := hpot.isElliptic ℤ_[p]
-  have : E.IsElliptic := ⟨IsUnit.of_map (algebraMap ℚ ℚ_[p]) E.Δ (by
-    simpa only [baseChange, map_Δ] using hlocal.isUnit)⟩
+  have := hgood.isElliptic
   have : (scaledLegendre d l).IsElliptic := hC ▸ inferInstanceAs (C • E).IsElliptic
   have := isElliptic_legendre_of_scaledLegendre d l ‹(scaledLegendre d l).IsElliptic›
   have hjC : (scaledLegendre d l).j = E.j := by
     simpa only [hC] using E.variableChange_j C
-  obtain ⟨z, hz⟩ := hpot.isInteger_j ℤ_[p]
-  simp only [baseChange, map_j, eq_ratCast, PadicInt.algebraMap_apply] at hz
-  rw [← hjC, scaledLegendre_j_eq_legendre_j] at hz
   apply legendre_units_of_padicValRat_j_nonneg p hp
-  rw [← Padic.valuation_ratCast, ← hz]
-  exact PadicInt.valuation_coe_nonneg
+  rw [← scaledLegendre_j_eq_legendre_j d l, hjC]
+  exact hgood.padicValRat_j_nonneg
 
 end WeierstrassCurve
 
