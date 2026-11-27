@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DividedPowerAlgebra.Init
 public import Mathlib.Algebra.DirectSum.Internal
+public import TauCeti.RingTheory.GradedAlgebra.Generators
 
 /-!
 # Homogeneous pieces of the divided power algebra
@@ -42,34 +43,24 @@ variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 variable [AddCommMonoid P] [Module R P]
 
-/-- The products of divided-power generators whose indices sum to `d`. -/
-def homogeneousGenerators (d : ℕ) : Set (DividedPowerAlgebra R M) :=
-  {x | ∃ l : List (ℕ × M), (l.map Prod.fst).sum = d ∧
-    x = (l.map fun nm ↦ dp R nm.1 nm.2).prod}
-
 /-- The degree-`d` homogeneous piece of the divided power algebra. -/
 def homogeneousSubmodule (d : ℕ) : Submodule R (DividedPowerAlgebra R M) :=
-  Submodule.span R (homogeneousGenerators (R := R) (M := M) d)
+  TauCeti.GradedAlgebra.wordSpan R (fun nm : ℕ × M ↦ dp R nm.1 nm.2) Prod.fst d
 
 /-- A product of divided-power generators belongs to the piece indexed by the sum of their
 degrees. -/
 theorem prod_dp_mem_homogeneousSubmodule (l : List (ℕ × M)) :
     (l.map fun nm ↦ dp R nm.1 nm.2).prod ∈
-      homogeneousSubmodule (R := R) (M := M) (l.map Prod.fst).sum := by
-  apply Submodule.subset_span
-  exact ⟨l, rfl, rfl⟩
+      homogeneousSubmodule (R := R) (M := M) (l.map Prod.fst).sum :=
+  TauCeti.GradedAlgebra.prod_mem_wordSpan _ _ l
 
 /-- A submodule contains the degree-`d` piece if and only if it contains every product of
 divided-power generators whose indices sum to `d`. -/
 theorem homogeneousSubmodule_le_iff {d : ℕ} {p : Submodule R (DividedPowerAlgebra R M)} :
     homogeneousSubmodule (R := R) (M := M) d ≤ p ↔
       ∀ l : List (ℕ × M), (l.map Prod.fst).sum = d →
-        (l.map fun nm ↦ dp R nm.1 nm.2).prod ∈ p := by
-  rw [homogeneousSubmodule, Submodule.span_le]
-  constructor
-  · exact fun h l hl ↦ h ⟨l, hl, rfl⟩
-  · rintro h _ ⟨l, hl, rfl⟩
-    exact h l hl
+        (l.map fun nm ↦ dp R nm.1 nm.2).prod ∈ p :=
+  TauCeti.GradedAlgebra.wordSpan_le_iff d p
 
 /-- An induction principle for the degree-`d` piece: a property of its elements holds as soon as
 it holds for products of divided-power generators whose indices sum to `d` and is stable under
@@ -83,14 +74,8 @@ theorem homogeneousSubmodule_induction {d : ℕ}
     (add : ∀ x y hx hy, motive x hx → motive y hy → motive (x + y) (Submodule.add_mem _ hx hy))
     (smul : ∀ (r : R) x hx, motive x hx → motive (r • x) (Submodule.smul_mem _ r hx))
     {x : DividedPowerAlgebra R M} (hx : x ∈ homogeneousSubmodule (R := R) (M := M) d) :
-    motive x hx := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-      obtain ⟨l, hl, rfl⟩ := hx
-      exact prod_dp l hl
-  | zero => exact zero
-  | add x y _ _ hx hy => exact add x y _ _ hx hy
-  | smul r x _ hx => exact smul r x _ hx
+    motive x hx :=
+  TauCeti.GradedAlgebra.wordSpan_induction hx prod_dp zero add smul
 
 /-- Linear maps from a homogeneous piece agree if they agree on every product of
 divided-power generators of the prescribed total degree. -/
@@ -101,7 +86,9 @@ theorem homogeneousSubmodule_ext {d : ℕ}
         g ⟨(l.map fun nm ↦ dp R nm.1 nm.2).prod, hl ▸ prod_dp_mem_homogeneousSubmodule l⟩) :
     f = g := by
   apply (Submodule.linearMap_eq_iff_of_eq_span f g
-    (S := homogeneousGenerators (R := R) (M := M) d) rfl).2
+    (S := {a | ∃ l : List (ℕ × M), (l.map Prod.fst).sum = d ∧
+      (l.map fun nm ↦ dp R nm.1 nm.2).prod = a})
+    (TauCeti.GradedAlgebra.wordSpan_def R (fun nm : ℕ × M ↦ dp R nm.1 nm.2) Prod.fst d)).2
   rintro ⟨_, l, hl, rfl⟩
   exact h l hl
 
@@ -110,43 +97,22 @@ theorem dp_mem_homogeneousSubmodule (d : ℕ) (m : M) :
     dp R d m ∈ homogeneousSubmodule (R := R) (M := M) d := by
   simpa using prod_dp_mem_homogeneousSubmodule (R := R) [(d, m)]
 
+/-- The homogeneous submodules form a graded monoid under multiplication. -/
+instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) (M := M)) :=
+  inferInstanceAs (SetLike.GradedMonoid
+    (TauCeti.GradedAlgebra.wordSpan R (fun nm : ℕ × M ↦ dp R nm.1 nm.2) Prod.fst))
+
 /-- The unit is homogeneous of degree zero. -/
 theorem one_mem_homogeneousSubmodule :
-    (1 : DividedPowerAlgebra R M) ∈ homogeneousSubmodule (R := R) (M := M) 0 := by
-  simpa using prod_dp_mem_homogeneousSubmodule (R := R) (M := M) []
+    (1 : DividedPowerAlgebra R M) ∈ homogeneousSubmodule (R := R) (M := M) 0 :=
+  SetLike.one_mem_graded _
 
 /-- Products of homogeneous elements have the sum of their degrees. -/
 theorem mul_mem_homogeneousSubmodule {a b : ℕ} {x y : DividedPowerAlgebra R M}
     (hx : x ∈ homogeneousSubmodule (R := R) (M := M) a)
     (hy : y ∈ homogeneousSubmodule (R := R) (M := M) b) :
-    x * y ∈ homogeneousSubmodule (R := R) (M := M) (a + b) := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-      obtain ⟨l, hl, rfl⟩ := hx
-      induction hy using Submodule.span_induction with
-      | mem y hy =>
-          obtain ⟨k, hk, rfl⟩ := hy
-          simpa only [List.map_append, List.prod_append, List.sum_append, hl, hk] using
-            prod_dp_mem_homogeneousSubmodule (R := R) (l ++ k)
-      | zero => simp
-      | add x y _ _ hx hy =>
-          rw [mul_add]
-          exact Submodule.add_mem _ hx hy
-      | smul r y _ hy =>
-          rw [mul_smul_comm]
-          exact Submodule.smul_mem _ r hy
-  | zero => simp
-  | add x y _ _ hx hy =>
-      rw [add_mul]
-      exact Submodule.add_mem _ hx hy
-  | smul r x _ hx =>
-      rw [smul_mul_assoc]
-      exact Submodule.smul_mem _ r hx
-
-/-- The homogeneous submodules form a graded monoid under multiplication. -/
-instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) (M := M)) where
-  one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
-  mul_mem _ _ := mul_mem_homogeneousSubmodule
+    x * y ∈ homogeneousSubmodule (R := R) (M := M) (a + b) :=
+  SetLike.mul_mem_graded hx hy
 
 /-- A product `∏_{j ∈ F} dp R kⱼ mⱼ` over a finite set belongs to the homogeneous piece of its
 total degree. -/
@@ -182,31 +148,15 @@ theorem map_mem_homogeneousSubmodule {S : Type*} [CommSemiring S] [Algebra R S] 
     [IsScalarTower R S N] (f : M →ₗ[R] N) {d : ℕ} {x : DividedPowerAlgebra R M}
     (hx : x ∈ homogeneousSubmodule (R := R) (M := M) d) :
     map S f x ∈ homogeneousSubmodule (R := S) (M := N) d := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-      obtain ⟨l, hl, rfl⟩ := hx
-      apply Submodule.subset_span
-      refine ⟨l.map fun nm ↦ (nm.1, f nm.2), ?_, ?_⟩
-      · have hdegrees :
-            ((l.map fun nm ↦ (nm.1, f nm.2)).map Prod.fst).sum =
-              (l.map Prod.fst).sum := by
-          clear hl
-          induction l with
-          | nil => rfl
-          | cons nm l ih =>
-              simp only [List.map_cons, List.sum_cons]
-              rw [ih]
-        exact hdegrees.trans hl
-      · have hproducts :
-            ((l.map fun nm ↦ dp R nm.1 nm.2).map (map S f)).prod =
-              ((l.map fun nm ↦ (nm.1, f nm.2)).map fun nm ↦ dp S nm.1 nm.2).prod := by
-          clear hl
-          induction l with
-          | nil => rfl
-          | cons nm l ih =>
-              simp only [List.map_cons, List.prod_cons]
-              rw [map_apply_dp, ih]
-        exact (map_list_prod (map S f) _).trans hproducts
+  induction hx using homogeneousSubmodule_induction with
+  | prod_dp l hl =>
+      have hdeg : ((l.map fun nm ↦ (nm.1, f nm.2)).map Prod.fst).sum = d := by
+        simpa [List.map_map, Function.comp_def] using hl
+      have hprod : map S f (l.map fun nm ↦ dp R nm.1 nm.2).prod =
+          ((l.map fun nm ↦ (nm.1, f nm.2)).map fun nm ↦ dp S nm.1 nm.2).prod := by
+        simp [map_list_prod, List.map_map, Function.comp_def]
+      rw [hprod, ← hdeg]
+      exact prod_dp_mem_homogeneousSubmodule _
   | zero => simp
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
   | smul r x _ hx => simpa using Submodule.smul_of_tower_mem _ r hx
