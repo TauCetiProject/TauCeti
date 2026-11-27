@@ -213,12 +213,12 @@ theorem weakSetIntegral_indicator_const_apply (hB : MeasurableSet B) (x : X)
   rw [weakSetIntegral_apply, h, integral_indicator_const _ hB, measureReal_restrict_apply hB,
     inter_comm, RCLike.real_smul_eq_coe_mul]
 
-/-- For a Bochner-integrable function, the weak set integral at the test `y` is the value of `ι y`
-at the Bochner set integral. -/
+/-- For a function that is Bochner integrable on `A`, the weak set integral at the test `y` is the
+value of `ι y` at the Bochner set integral over `A`. -/
 theorem weakSetIntegral_apply_of_integrable [NormedSpace ℝ X] [CompleteSpace X]
-    (hfi : Integrable f μ) (y : Y) :
+    (hfi : IntegrableOn f A μ) (y : Y) :
     weakSetIntegral f ι hf A y = ι y (∫ s in A, f s ∂μ) := by
-  rw [weakSetIntegral_apply, (ι y).integral_comp_comm hfi.integrableOn]
+  rw [weakSetIntegral_apply, (ι y).integral_comp_comm hfi]
 
 end WeakSetIntegral
 
@@ -300,10 +300,10 @@ theorem dunfordSetIntegral_apply (hf : WeaklyIntegrable 𝕜 f μ) (A : Set S)
     (x' : StrongDual 𝕜 X) : dunfordSetIntegral f hf A x' = ∫ s in A, x' (f s) ∂μ := by
   simp [dunfordSetIntegral_eq_weakSetIntegral]
 
-/-- The Dunford set integral of a Bochner-integrable function is the image of its Bochner set
-integral in the bidual. -/
+/-- The Dunford set integral over `A` of a function that is Bochner integrable on `A` is the image
+of its Bochner set integral in the bidual. -/
 theorem dunfordSetIntegral_of_integrable [NormedSpace ℝ X] [CompleteSpace X]
-    (hf : WeaklyIntegrable 𝕜 f μ) (hfi : Integrable f μ) (A : Set S) :
+    (hf : WeaklyIntegrable 𝕜 f μ) {A : Set S} (hfi : IntegrableOn f A μ) :
     dunfordSetIntegral f hf A = NormedSpace.inclusionInDoubleDual 𝕜 X (∫ s in A, f s ∂μ) := by
   ext x'
   rw [dunfordSetIntegral_eq_weakSetIntegral, weakSetIntegral_apply_of_integrable hfi]
@@ -401,12 +401,12 @@ theorem dunfordSetIntegral_comp_inclusionInDoubleDual (hf : WeaklyIntegrable �
   ext x
   simp
 
-/-- The weak-star set integral of a Bochner-integrable dual-valued function is its Bochner set
-integral. -/
+/-- The weak-star set integral over `A` of a dual-valued function that is Bochner integrable on
+`A` is its Bochner set integral. -/
 theorem weakStarSetIntegral_of_integrable (hf : ∀ x, Integrable (fun s ↦ f s x) μ)
-    (hfi : Integrable f μ) (A : Set S) : weakStarSetIntegral f hf A = ∫ s in A, f s ∂μ := by
+    {A : Set S} (hfi : IntegrableOn f A μ) : weakStarSetIntegral f hf A = ∫ s in A, f s ∂μ := by
   ext x
-  rw [weakStarSetIntegral_apply, ContinuousLinearMap.integral_apply hfi.integrableOn]
+  rw [weakStarSetIntegral_apply, ContinuousLinearMap.integral_apply hfi]
 
 variable {g : S → StrongDual 𝕜 X} {A B : Set S}
 
