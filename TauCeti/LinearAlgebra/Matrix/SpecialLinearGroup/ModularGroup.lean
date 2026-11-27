@@ -44,9 +44,8 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   `TauCeti.ModularGroup.mul_S_apply_apply_one`, `TauCeti.ModularGroup.neg_mul_S_apply_apply_zero`,
   `TauCeti.ModularGroup.neg_mul_S_apply_apply_one`: the columns of `γ Tⁿ`, `γ S` and `-(γ S)` in
   terms of those of `γ`.
-* `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_T`,
-  `Matrix.SpecialLinearGroup.coe_mul_S`: explicit `2 × 2` matrices of `γ * T ^ n`, `γ * T`, and
-  `γ * S` for `γ ∈ SL₂(ℤ)`.
+* `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
+  `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
 
 public section
@@ -64,12 +63,6 @@ theorem coe_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, Matrix.mul_apply,
       Fin.sum_univ_two]
-
-/-- Multiplying `γ ∈ SL₂(ℤ)` on the right by `T` adds the first column to the second. -/
-theorem coe_mul_T (γ : SL(2, ℤ)) :
-    (↑(γ * ModularGroup.T) : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0, γ 0 0 + γ 0 1; γ 1 0, γ 1 0 + γ 1 1] := by
-  simpa using coe_mul_T_zpow γ 1
 
 /-- Multiplying `γ ∈ SL₂(ℤ)` on the right by `S` swaps the columns and negates the new second
 column. -/

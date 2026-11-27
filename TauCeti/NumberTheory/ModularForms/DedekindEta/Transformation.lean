@@ -326,9 +326,9 @@ private theorem etaMultiplier_eq_iff_of_mul_T (γ : SL(2, ℤ)) (hc : γ 1 0 ≠
       (12 * (γ * T) 1 0) - dedekindSum ((γ * T) 1 1) ((γ * T) 1 0) - 1 / 4)) ↔
     etaMultiplier γ = cexp (π * I * (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) -
       dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) := by
-  have h00 : (γ * T) 0 0 = γ 0 0 := by rw [γ.coe_mul_T]; simp
-  have h10 : (γ * T) 1 0 = γ 1 0 := by rw [γ.coe_mul_T]; simp
-  have h11 : (γ * T) 1 1 = γ 1 0 + γ 1 1 := by rw [γ.coe_mul_T]; simp
+  have h00 : (γ * T) 0 0 = γ 0 0 := by simpa using mul_T_zpow_apply_apply_zero γ 1 0
+  have h10 : (γ * T) 1 0 = γ 1 0 := by simpa using mul_T_zpow_apply_apply_zero γ 1 1
+  have h11 : (γ * T) 1 1 = γ 1 0 + γ 1 1 := by simpa using mul_T_zpow_apply_apply_one γ 1 1
   rw [etaMultiplier_mul_T, h00, h10, h11, dedekindSum_self_add]
   push_cast
   have hexp :
