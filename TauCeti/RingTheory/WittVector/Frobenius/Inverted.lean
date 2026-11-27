@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.Algebra.Colimit.Ring.Iterate
 public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 public import TauCeti.RingTheory.WittVector.Ideal
+public import TauCeti.RingTheory.WittVector.MapEquiv
 
 /-!
 # Frobenius-inverted Witt vectors
@@ -124,9 +125,7 @@ theorem map_id : map (RingHom.id A) = RingHom.id (FrobeniusInverted p A) := by
 
 theorem map_comp (f : A →+* B) (g : B →+* C) :
     map (p := p) (g.comp f) = (map g).comp (map f) := by
-  have h : WittVector.map (p := p) (g.comp f) = (WittVector.map g).comp (WittVector.map f) :=
-    RingHom.ext fun x ↦ WittVector.ext fun n ↦ by simp only [map_coeff, RingHom.comp_apply]
-  simp only [map, h]
+  simp only [map, _root_.WittVector.map_comp]
   exact RingHom.IterateColimit.map_comp _ _ _ _
 
 /-- `W(f)[1/F]` commutes with the Frobenius automorphisms of `W(A)[1/F]` and `W(B)[1/F]`. -/
