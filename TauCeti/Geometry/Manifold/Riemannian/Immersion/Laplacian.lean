@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Euclidean
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.MFDeriv.Inner
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Immersion
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -61,40 +60,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   {f : M → F}
-
-/-- **The second fundamental form of an isometric immersion into a Euclidean space** is the
-ambient derivative of `df W` minus its tangential part:
-`B(v, w) = D_v (df W) - df (∇_v W)` for vector fields `V`, `W` through `v`, `w`, with `∇` the
-Levi-Civita connection of `M`. -/
-theorem immersionSecondFundamentalFormAt_model_space_eq_sub {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ, F) 2 f x)
-    (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ)
-    {V W : Π y : M, TangentSpace I y} (hV : MDiffAt (T% V) x) (hW : MDiffAt (T% W) x) :
-    immersionSecondFundamentalFormAt (leviCivitaConnection 𝓘(ℝ, F) F) f x (V x) (W x) =
-      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
-        mvfderiv I f x (leviCivitaConnection I M W x (V x)) := by
-  have hdW : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ (mfderiv I 𝓘(ℝ, F) f y (W y) : F)) x := by
-    simpa only [mvfderiv_apply_eq_mfderiv_apply] using
-      mdifferentiableAt_mvfderiv_apply hf le_rfl hW
-  rw [immersionSecondFundamentalFormAt_apply hf hV hW,
-    immersionSecondFundamentalForm_model_space (hf.mdifferentiableAt two_ne_zero) hdW]
-  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun z hz ↦ ?_
-  · -- `D_v (df W) - df (∇_v W)` is orthogonal to the image of `df`, by the Gauss formula.
-    refine mem_orthogonalNormalSpace_iff.2 fun u ↦ ?_
-    have hG := (isLeviCivitaConnection_leviCivitaConnection I).inner_apply_eq_inner_mvfderiv
-      hf hg hV hW u
-    -- `mvfderiv` is `mfderiv` followed by the identification of `TangentSpace 𝓘(ℝ, F) _` with
-    -- `F`, which is the identity, so this restates the goal in `mvfderiv` form.
-    change ⟪mvfderiv I f x u, mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
-      mvfderiv I f x (leviCivitaConnection I M W x (V x))⟫_ℝ = 0
-    rw [inner_sub_right, real_inner_comm, ← hG, ← hg, real_inner_comm, sub_self]
-  · -- `df (∇_v W)` is tangent, so orthogonal to the normal space. As above, `change` restates
-    -- the goal in `mvfderiv` form.
-    change ⟪mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
-      (mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
-        mvfderiv I f x (leviCivitaConnection I M W x (V x))), (z : F)⟫_ℝ = 0
-    rw [sub_sub_cancel]
-    exact mem_orthogonalNormalSpace_iff.1 hz _
 
 /-- **The Hessian of a coordinate function of an isometric immersion into a Euclidean space** is
 the second fundamental form in that direction: `Hess ⟪f, e⟫ (v, w) = ⟪B(v, w), e⟫`. -/
