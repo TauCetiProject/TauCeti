@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.HeckeOperator
 public import TauCeti.RepresentationTheory.Smooth.Averaging
 import TauCeti.Algebra.Module.NatInt
-import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 
@@ -20,10 +19,11 @@ where `G` carries a topology for which multiplication is separately continuous, 
 compact subgroup of `G` whose pro-order is invertible in `A`, so that the averaging projector
 `e_C` onto the invariants `V^C` is defined (`Representation.smoothAverage`). For `t ∈ G` the
 operator `U_t = e_C ∘ ρ(t)` (`Representation.uOperator`) maps `V` into `V^C`. On `V^C` it depends
-only on the double coset `C t C`, and it is `ρ(t)` when `t⁻¹ C t ⊆ C`. For `C` also open, `U_t` is
-the average of the translates `ρ(q t)` over representatives `q` of `C ⧸ (C ∩ t C t⁻¹)`, the double
-coset operator `[C t C]` is their sum (this only needs `C ∩ t C t⁻¹` to have finite index in `C`),
-and so `[C t C] = [C : C ∩ t C t⁻¹] • U_t` on `V^C`, the index being the number of cosets `h C` in
+only on the double coset `C t C`, and it is `ρ(t)` when `t⁻¹ C t ⊆ C`. When `C ∩ t C t⁻¹` is open
+in `C` (for instance when `C` is open), `U_t` is the average of the translates `ρ(q t)` over
+representatives `q` of `C ⧸ (C ∩ t C t⁻¹)`. The double coset operator `[C t C]` is their sum
+(`Representation.doubleCosetOperator_apply_eq_finsum`), and so
+`[C t C] = [C : C ∩ t C t⁻¹] • U_t` on `V^C`, the index being the number of cosets `h C` in
 `C t C`.
 
 The operators `U_t` are not multiplicative in general. They are when `C` splits along `t` and `t'`:
@@ -54,12 +54,10 @@ Iwahori factorisation of `I₁` into upper and lower triangular factors gives su
   `C` splits along `t` and `t'`.
 * `Representation.uOperator_mul_mul_apply_of_mem`, `Representation.uOperator_apply_of_forall_mem`:
   on `V^C`, `U_t` depends only on `C t C`, and `U_t v = ρ(t) v` when `t⁻¹ C t ⊆ C`.
-* `Representation.uOperator_apply_eq_inverse_relIndex_smul_finsum`: for `C` open, `U_t` on `V^C`
-  as the average of the translates `ρ(q t)`, `q ∈ C ⧸ (C ∩ t C t⁻¹)`.
-* `Representation.doubleCosetOperator_apply_eq_finsum`: for `C ∩ t C t⁻¹` of finite index in `C`,
-  `[C t C]` on `V^C` as the sum of the same translates.
-* `Representation.doubleCosetOperator_apply_eq_relIndex_smul_uOperator`: for `C` open,
-  `[C t C] = [C : C ∩ t C t⁻¹] • U_t` on `V^C`.
+* `Representation.uOperator_apply_eq_inverse_relIndex_smul_finsum`: for `C ∩ t C t⁻¹` open in
+  `C`, `U_t` on `V^C` as the average of the translates `ρ(q t)`, `q ∈ C ⧸ (C ∩ t C t⁻¹)`.
+* `Representation.doubleCosetOperator_apply_eq_relIndex_smul_uOperator`: for `C ∩ t C t⁻¹` open
+  in `C`, `[C t C] = [C : C ∩ t C t⁻¹] • U_t` on `V^C`.
 
 ## References
 
@@ -250,9 +248,11 @@ section DoubleCoset
 open Pointwise
 
 /-- On `V^C`, the operator `U_t` is the average of the translates `ρ(q t) v` over representatives
-`q` of `C ⧸ (C ∩ t C t⁻¹)`, for `C` open. -/
-theorem uOperator_apply_eq_inverse_relIndex_smul_finsum (hC_open : IsOpen (C : Set G)) (t : G)
-    {v : V} (hv : v ∈ invariants (ρ.comp C.subtype)) :
+`q` of `C ⧸ (C ∩ t C t⁻¹)`, when `C ∩ t C t⁻¹` is open in `C` (for instance when `C` is open,
+by `Subgroup.isOpen_conjAct_smul_subgroupOf`). -/
+theorem uOperator_apply_eq_inverse_relIndex_smul_finsum {t : G}
+    (hopen : IsOpen (((ConjAct.toConjAct t • C).subgroupOf C : Subgroup C) : Set C)) {v : V}
+    (hv : v ∈ invariants (ρ.comp C.subtype)) :
     ρ.uOperator C hC t v = Ring.inverse ((ConjAct.toConjAct t • C).relIndex C : A) •
       ∑ᶠ q : C ⧸ (ConjAct.toConjAct t • C).subgroupOf C, ρ ((q.out : G) * t) v := by
   -- `C ∩ t C t⁻¹` fixes `ρ(t) v`, since `t⁻¹ c t ∈ C` for its elements `c`.
@@ -264,64 +264,25 @@ theorem uOperator_apply_eq_inverse_relIndex_smul_finsum (hC_open : IsOpen (C : S
       exact Subgroup.mem_map.2 ⟨t⁻¹ * c * t, mem_invariants_comp_subtype_iff.1 hv
         (Subgroup.mem_conjAct_smul_iff.1 (Subgroup.mem_subgroupOf.1 hc)),
         by simp [mul_assoc]⟩
-  rw [uOperator_apply, smoothAverage_apply_of_le _ hC (C.isOpen_conjAct_smul_subgroupOf hC_open t)
-    hstab, Subgroup.relIndex]
+  rw [uOperator_apply, smoothAverage_apply_of_le _ hC hopen hstab, Subgroup.relIndex]
   simp [← mul_apply_eq_comp, ← map_mul]
 
-omit [TopologicalSpace G] [SeparatelyContinuousMul G] [IsSmooth ρ] [CompactSpace C] in
-/-- On `V^C`, when `C ∩ t C t⁻¹` has finite index in `C` (for instance when `C` is compact and
-open), the double coset operator `[C t C]` is the sum of the translates `ρ(q t) v` over
-representatives `q` of `C ⧸ (C ∩ t C t⁻¹)`: the cosets `q t C` are the distinct cosets making up
-`C t C`. -/
-theorem doubleCosetOperator_apply_eq_finsum (t : G)
-    [((ConjAct.toConjAct t • C).subgroupOf C).FiniteIndex] {v : V}
+/-- **The double coset operator and `U_t`.** For a compact subgroup `C` with `C ∩ t C t⁻¹` open in
+`C` (for instance `C` compact open, by `Subgroup.isOpen_conjAct_smul_subgroupOf`) and `v ∈ V^C`,
+the double coset operator `[C t C] v = ∑_{h C ⊆ C t C} ρ(h) v` is `[C : C ∩ t C t⁻¹]` times
+`U_t v`; the index is the number of cosets `h C` in `C t C`. -/
+theorem doubleCosetOperator_apply_eq_relIndex_smul_uOperator {t : G}
+    (hopen : IsOpen (((ConjAct.toConjAct t • C).subgroupOf C : Subgroup C) : Set C)) {v : V}
     (hv : v ∈ invariants (ρ.comp C.subtype)) :
-    ρ.doubleCosetOperator C t v =
-      ∑ᶠ q : C ⧸ (ConjAct.toConjAct t • C).subgroupOf C, ρ ((q.out : G) * t) v := by
-  classical
-  set H := (ConjAct.toConjAct t • C).subgroupOf C
-  have : Fintype (C ⧸ H) := Fintype.ofFinite _
-  -- distinct `q` give distinct cosets `q t C`
-  have hinj : Set.InjOn (fun q : C ⧸ H ↦ (((q.out : G) * t : G) : G ⧸ C))
-      ↑(Finset.univ : Finset (C ⧸ H)) := fun q _ q' _ hqq' ↦ by
-    rw [← q.out_eq, ← q'.out_eq, QuotientGroup.eq, Subgroup.mem_subgroupOf,
-      Subgroup.mem_conjAct_smul_iff]
-    simpa [mul_assoc] using QuotientGroup.eq.1 hqq'
-  -- every coset in `C t C` is some `q t C`
-  have hcov (g : G) (hg : (DoubleCoset.doubleCoset t C C).indicator (1 : G → A) g ≠ 0) :
-      ∃ q ∈ (Finset.univ : Finset (C ⧸ H)), (((q.out : G) * t : G) : G ⧸ C) = g := by
-    have hg : g ∈ DoubleCoset.doubleCoset t (C : Set G) C := by
-      by_contra hg'
-      exact hg (Set.indicator_of_notMem hg' _)
-    rw [DoubleCoset.doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hg
-    obtain ⟨q, k, hk, hgk⟩ := hg
-    exact ⟨q, Finset.mem_univ _, by rw [← hgk, QuotientGroup.eq]; simpa [mul_assoc] using hk⟩
-  have hright (g k : G) (hk : k ∈ C) :
-      (DoubleCoset.doubleCoset t C C).indicator (1 : G → A) (g * k) =
-        (DoubleCoset.doubleCoset t C C).indicator 1 g := by
-    simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff_right hk]
-  rw [doubleCosetOperator_def, heckeOperator_apply_eq_sum hright (by rwa [weightSpace_one]) hinj
-    hcov, finsum_eq_sum_of_fintype]
-  -- every `q t` lies in `C t C`, where the indicator is `1`
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  have hmem : (q.out : G) * t ∈ DoubleCoset.doubleCoset t (C : Set G) C :=
-    DoubleCoset.mem_doubleCoset.2 ⟨q.out, q.out.property, 1, C.one_mem, by simp⟩
-  rw [Set.indicator_of_mem hmem, Pi.one_apply, one_smul]
-
-/-- **The double coset operator and `U_t`.** For a compact open subgroup `C` and `v ∈ V^C`, the
-double coset operator `[C t C] v = ∑_{h C ⊆ C t C} ρ(h) v` is `[C : C ∩ t C t⁻¹]` times `U_t v`;
-the index is the number of cosets `h C` in `C t C`. -/
-theorem doubleCosetOperator_apply_eq_relIndex_smul_uOperator (hC_open : IsOpen (C : Set G))
-    (t : G) {v : V} (hv : v ∈ invariants (ρ.comp C.subtype)) :
     ρ.doubleCosetOperator C t v = (ConjAct.toConjAct t • C).relIndex C • ρ.uOperator C hC t v := by
-  have hopen := C.isOpen_conjAct_smul_subgroupOf hC_open t
   have hu : IsUnit ((ConjAct.toConjAct t • C).relIndex C : A) := hC.isUnit_index hopen
   have : Finite (C ⧸ (ConjAct.toConjAct t • C).subgroupOf C) :=
     Subgroup.quotient_finite_of_isOpen _ hopen
   have : ((ConjAct.toConjAct t • C).subgroupOf C).FiniteIndex :=
     Subgroup.finiteIndex_of_finite_quotient
-  rw [uOperator_apply_eq_inverse_relIndex_smul_finsum ρ C hC hC_open t hv, smul_comm,
-    Ring.inverse_natCast_smul_nsmul hu, doubleCosetOperator_apply_eq_finsum ρ C t hv]
+  rw [uOperator_apply_eq_inverse_relIndex_smul_finsum ρ C hC hopen hv, smul_comm,
+    Ring.inverse_natCast_smul_nsmul hu,
+    doubleCosetOperator_apply_eq_finsum t (by rwa [weightSpace_one])]
 
 end DoubleCoset
 

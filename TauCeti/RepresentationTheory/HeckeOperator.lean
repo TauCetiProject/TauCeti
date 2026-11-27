@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.DoubleCoset
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.WeightSpace
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Basic
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.Topology.Algebra.Group.DoubleCoset
 
 /-!
@@ -33,7 +35,9 @@ convolution of the functions (`Representation.heckeOperator_heckeOperator`), and
 For `K` compact and open, the indicator of a double coset `K g K` lives on finitely many cosets
 (`QuotientGroup.finite_support_indicator_doubleCoset`), and its operator, the double coset
 operator `[K g K]`, preserves `W^K`
-(`Representation.doubleCosetOperator_apply_mem_weightSpace`).
+(`Representation.doubleCosetOperator_apply_mem_weightSpace`). On `W^K`, when `K ∩ g K g⁻¹` has
+finite index in `K`, `[K g K]` is the sum of the translates `ρ(q g)` over representatives `q` of
+`K ⧸ (K ∩ g K g⁻¹)` (`Representation.doubleCosetOperator_apply_eq_finsum`).
 
 ## Main definitions
 
@@ -189,6 +193,46 @@ variable (ρ K) in
 theorem doubleCosetOperator_def (g : G) :
     ρ.doubleCosetOperator K g = ρ.heckeOperator K ((DoubleCoset.doubleCoset g K K).indicator 1) :=
   (rfl)
+
+open Pointwise in
+/-- On `W^K`, when `K ∩ g K g⁻¹` has finite index in `K` (for instance when `K` is compact and
+open), the double coset operator `[K g K]` is the sum of the translates `ρ(q g) v` over
+representatives `q` of `K ⧸ (K ∩ g K g⁻¹)`: the cosets `q g K` are the distinct cosets making up
+`K g K`. -/
+theorem doubleCosetOperator_apply_eq_finsum (g : G)
+    [((ConjAct.toConjAct g • K).subgroupOf K).FiniteIndex]
+    (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.doubleCosetOperator K g v =
+      ∑ᶠ q : K ⧸ (ConjAct.toConjAct g • K).subgroupOf K, ρ ((q.out : G) * g) v := by
+  classical
+  set H := (ConjAct.toConjAct g • K).subgroupOf K
+  have : Fintype (K ⧸ H) := Fintype.ofFinite _
+  -- distinct `q` give distinct cosets `q g K`
+  have hinj : Set.InjOn (fun q : K ⧸ H ↦ (((q.out : G) * g : G) : G ⧸ K))
+      ↑(Finset.univ : Finset (K ⧸ H)) := fun q _ q' _ hqq' ↦ by
+    rw [← q.out_eq, ← q'.out_eq, QuotientGroup.eq, Subgroup.mem_subgroupOf,
+      Subgroup.mem_conjAct_smul_iff]
+    simpa [mul_assoc] using QuotientGroup.eq.1 hqq'
+  -- every coset in `K g K` is some `q g K`
+  have hcov (x : G) (hx : (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) x ≠ 0) :
+      ∃ q ∈ (Finset.univ : Finset (K ⧸ H)), (((q.out : G) * g : G) : G ⧸ K) = x := by
+    have hx : x ∈ DoubleCoset.doubleCoset g (K : Set G) K := by
+      by_contra hx'
+      exact hx (Set.indicator_of_notMem hx' _)
+    rw [DoubleCoset.doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hx
+    obtain ⟨q, k, hk, hxk⟩ := hx
+    exact ⟨q, Finset.mem_univ _, by rw [← hxk, QuotientGroup.eq]; simpa [mul_assoc] using hk⟩
+  have hright (x k : G) (hk : k ∈ K) :
+      (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (x * k) =
+        (DoubleCoset.doubleCoset g K K).indicator 1 x := by
+    simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff_right hk]
+  rw [doubleCosetOperator_def, heckeOperator_apply_eq_sum hright hv hinj hcov,
+    finsum_eq_sum_of_fintype]
+  -- every `q g` lies in `K g K`, where the indicator is `1`
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  have hmem : (q.out : G) * g ∈ DoubleCoset.doubleCoset g (K : Set G) K :=
+    DoubleCoset.mem_doubleCoset.2 ⟨q.out, q.out.property, 1, K.one_mem, by simp⟩
+  rw [Set.indicator_of_mem hmem, Pi.one_apply, one_smul]
 
 /-- For a compact open subgroup `K`, the double coset operator `[K g K]` preserves `W^K`. -/
 theorem doubleCosetOperator_apply_mem_weightSpace [TopologicalSpace G] [IsTopologicalGroup G]
