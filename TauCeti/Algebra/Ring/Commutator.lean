@@ -22,7 +22,8 @@ Integer translation needs only a nonassociative ring; the other results use asso
 
 Over a semiring the hypothesis is written as a relation, `x * y = y * x + z`, since there is no
 subtraction to form a commutator with: the power identities need only that `z` commutes with the
-element being powered, and the nilpotency results additionally need a `ℚ`-algebra structure, to
+element being powered (and normal ordering of two powers needs that `z` commutes with both
+elements), and the nilpotency results additionally need a `ℚ`-algebra structure, to
 divide by the multiplicity a power releases. Over a ring the same `z` is the commutator
 `x * y - y * x`, which is the form the integer-eigenvector results take.
 
@@ -52,6 +53,9 @@ Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
 * `TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq`: the mirrored orientation,
   moving an element across a power standing to its left.
 * `TauCeti.Associative.pow_mul_eq_add_nsmul_mul_pow`: the mirrored shifted-factor form.
+* `TauCeti.Associative.pow_mul_pow_eq_sum_of_commutator_eq`: normal ordering of `x ^ m * y ^ n`
+  when the commutator commutes with both elements, with coefficients
+  `m.choose k * n.choose k * k!`.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq`: a commutator commuting with both of its
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
@@ -191,6 +195,86 @@ theorem pow_mul_eq_add_nsmul_mul_pow {a x c : A} (h : x * a = (a + c) * x)
       rw [pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq hxa
         (hc.symm.mul_right (Commute.refl x)), Nat.add_sub_cancel, add_mul,
         smul_mul_assoc, ← mul_assoc, (hc.symm.pow_left n).eq, mul_assoc, ← pow_succ]
+
+open Finset Nat in
+/-- One more factor `y` on the right of a normal-ordered monomial `y ^ (n - k) z ^ k x ^ (m - k)`,
+weighted by its normal-ordering coefficient: moving it past `x ^ (m - k)` gives the monomials of
+the next stage at the indices `k` and `k + 1`. -/
+private theorem nsmul_pow_mul_pow_mul_pow_mul_of_commutator_eq {x y z : A}
+    (hxy : x * y = y * x + z) (hxz : Commute x z) (hyz : Commute y z) (m n k : ℕ) :
+    (m.choose k * n.choose k * k !) • (y ^ (n - k) * z ^ k * x ^ (m - k)) * y =
+      (m.choose k * n.choose k * k !) • (y ^ (n + 1 - k) * z ^ k * x ^ (m - k)) +
+        (m.choose (k + 1) * n.choose k * (k + 1) !) •
+          (y ^ (n + 1 - (k + 1)) * z ^ (k + 1) * x ^ (m - (k + 1))) := by
+  rcases lt_or_ge n k with hnk | hkn
+  · simp [Nat.choose_eq_zero_of_lt hnk]
+  -- Moving `y` past `x ^ (m - k)` releases `(m - k)` copies of `x ^ (m - k - 1) z`.
+  rw [smul_mul_assoc, mul_assoc (y ^ (n - k) * z ^ k),
+    pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq hxy hxz, mul_add, smul_add, mul_smul_comm,
+    smul_smul]
+  have hcoeff : m.choose k * n.choose k * k ! * (m - k) =
+      m.choose (k + 1) * n.choose k * (k + 1) ! := by
+    rw [Nat.factorial_succ]
+    calc m.choose k * n.choose k * k ! * (m - k)
+        = (m.choose k * (m - k)) * (n.choose k * k !) := by ring
+      _ = (m.choose (k + 1) * (k + 1)) * (n.choose k * k !) := by
+        rw [Nat.choose_succ_right_eq]
+      _ = _ := by ring
+  rw [hcoeff]
+  congr 2
+  · -- The `y` passes through `z ^ k` and lengthens the power of `y`.
+    rw [show n + 1 - k = n - k + 1 by omega, pow_succ]
+    simp only [mul_assoc]
+    rw [← mul_assoc (z ^ k) y, ← (hyz.pow_right k).eq, mul_assoc]
+  · -- The released copy of `z` passes through `x ^ (m - k - 1)` and lengthens the power of `z`.
+    rw [Nat.add_sub_add_right, Nat.sub_sub, pow_succ]
+    simp only [mul_assoc]
+    rw [(hxz.pow_left _).eq]
+
+open Finset Nat in
+/-- Normal ordering with a central commutator, summed over all `k ≤ m`; the terms with `k > n`
+vanish, since then `n.choose k = 0`. -/
+private theorem pow_mul_pow_eq_sum_range_of_commutator_eq {x y z : A} (hxy : x * y = y * x + z)
+    (hxz : Commute x z) (hyz : Commute y z) (m n : ℕ) :
+    x ^ m * y ^ n = ∑ k ∈ range (m + 1),
+      (m.choose k * n.choose k * k !) • (y ^ (n - k) * z ^ k * x ^ (m - k)) := by
+  induction n with
+  | zero =>
+    rw [sum_range_succ']
+    simp
+  | succ n ih =>
+    rw [pow_succ, ← mul_assoc, ih, sum_mul,
+      sum_congr rfl fun k _ ↦ nsmul_pow_mul_pow_mul_pow_mul_of_commutator_eq hxy hxz hyz m n k,
+      sum_add_distrib, sum_range_succ (fun k ↦ (m.choose (k + 1) * n.choose k * (k + 1) !) • _),
+      Nat.choose_succ_self, zero_mul, zero_mul, zero_smul, add_zero, sum_range_succ',
+      sum_range_succ']
+    -- Pascal's rule `(n + 1).choose (k + 1) = n.choose k + n.choose (k + 1)` merges the terms
+    -- of the two sums at each index `k + 1`.
+    simp only [Nat.choose_succ_succ', add_mul, mul_add, add_nsmul, sum_add_distrib,
+      Nat.choose_zero_right]
+    abel
+
+open Finset Nat in
+/-- **Normal ordering of powers with a central commutator.** If `x * y = y * x + z`, and `z`
+commutes with both `x` and `y`, then
+
+```text
+x ^ m * y ^ n = ∑ k ≤ min(m,n), (m.choose k * n.choose k * k!) • y ^ (n - k) * z ^ k * x ^ (m - k).
+```
+
+The coefficient is `m! n! / (k! (m - k)! (n - k)!)`. Over a `ℚ`-algebra, this is
+`dividedPower_mul_dividedPower_of_commutator_eq` multiplied through by `m! n!`; the present form
+needs no division, so it holds in every semiring. For the Weyl relation `∂ x - x ∂ = c` it is the
+expansion of `∂ ^ m x ^ n` in the normal-ordered monomials `x ^ i ∂ ^ j` (Kedlaya, *Fourier
+transforms and p-adic 'Weil II'*, Lemma 4.1.2). -/
+theorem pow_mul_pow_eq_sum_of_commutator_eq {x y z : A} (hxy : x * y = y * x + z)
+    (hxz : Commute x z) (hyz : Commute y z) (m n : ℕ) :
+    x ^ m * y ^ n = ∑ k ∈ range (min m n + 1),
+      (m.choose k * n.choose k * k !) • (y ^ (n - k) * z ^ k * x ^ (m - k)) := by
+  rw [pow_mul_pow_eq_sum_range_of_commutator_eq hxy hxz hyz]
+  refine (sum_subset (range_subset_range.mpr (by omega)) fun k hk hk' ↦ ?_).symm
+  rw [mem_range] at hk hk'
+  rw [Nat.choose_eq_zero_of_lt (by omega : n < k), mul_zero, zero_mul, zero_smul]
 
 end PowerCommutator
 
