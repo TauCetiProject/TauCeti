@@ -53,12 +53,12 @@ homotopy equivalence onto the projective line `z = 0`
 (`TauCeti.projectivePlaneSublevelHomotopyEquiv`), which is a circle by
 `[x : y] ↦ (x + i y)² / (x² + y²)` (`TauCeti.projectivePlaneSublevelCircleEquiv`). The core circle
 `t ↦ [cos πt : sin πt : 0]` (`TauCeti.projectivePlaneCoreLoop`) has degree `1` in this circle, and
-so generates `π₁({f ≤ c})` (`TauCeti.zpowers_projectivePlaneCoreLoop_eq_top`). Read along the
-counterclockwise loop of `∂D²` (`TauCeti.diskBoundaryTwoLoop`), the attaching map `α₊` has degree
-`2` and `α₋` has degree `-2` (`TauCeti.degree_projectivePlaneAttachingMap`,
-`TauCeti.degree_projectivePlaneAttachingMapReflect`): `α₊` is the core circle run twice and `α₋`
-the reversed core circle run twice, up to homotopy and conjugation
-(`TauCeti.homotopic_projectivePlaneAttachingMap`,
+so generates `π₁({f ≤ c})` (`TauCeti.zpowers_projectivePlaneCoreLoop_eq_top`). For `0 < ε < 1`
+(at `ε = 0` both attaching maps are constant), read along the counterclockwise loop of `∂D²`
+(`TauCeti.diskBoundaryTwoLoop`), the attaching map `α₊` has degree `2` and `α₋` has degree `-2`
+(`TauCeti.degree_projectivePlaneAttachingMap`, `TauCeti.degree_projectivePlaneAttachingMapReflect`):
+`α₊` is the core circle run twice and `α₋` the reversed core circle run twice, up to homotopy
+and conjugation (`TauCeti.homotopic_projectivePlaneAttachingMap`,
 `TauCeti.homotopic_projectivePlaneAttachingMapReflect`). In particular `α₊` and `α₋` are not
 homotopic with their labelled source fixed
 (`TauCeti.not_homotopic_projectivePlaneAttachingMap_reflect`), although they differ only by the
@@ -76,9 +76,9 @@ reflection `r` of their source and give homeomorphic cell attachments.
 * `TauCeti.projectivePlaneSublevelHomotopyEquiv`, `TauCeti.projectivePlaneSublevelCircleEquiv`:
   the sublevels below the maximum are homotopy equivalent to the projective line and the circle.
 * `TauCeti.degree_projectivePlaneAttachingMap`, `TauCeti.degree_projectivePlaneAttachingMapReflect`:
-  the attaching maps have degrees `2` and `-2`.
-* `TauCeti.not_homotopic_projectivePlaneAttachingMap_reflect`: the two attaching maps are not
-  homotopic.
+  for `0 < ε < 1` the attaching maps have degrees `2` and `-2`.
+* `TauCeti.not_homotopic_projectivePlaneAttachingMap_reflect`: for `0 < ε < 1` the two attaching
+  maps are not homotopic.
 
 ## References
 
