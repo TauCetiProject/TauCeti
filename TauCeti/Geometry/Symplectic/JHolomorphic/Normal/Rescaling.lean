@@ -512,8 +512,9 @@ theorem norm_normalDilation_sub_normalLinearization_le {J : E × N → E × N �
   have h0 := left_mem_segment ℝ ((z, 0) : E × N) (z, a • W)
   have h1 := right_mem_segment ℝ ((z, 0) : E × N) (z, a • W)
   have hd : ((z, a • W) : E × N) - (z, 0) = ((0 : E), a • W) := by simp
+  -- `simp` turns `max ‖0‖ ‖a • W‖ = |a| * ‖W‖` into the side condition `0 ≤ |a| * ‖W‖`.
   have haW : ‖((0 : E), a • W)‖ = |a| * ‖W‖ := by
-    simpa [norm_smul] using mul_nonneg (abs_nonneg a) (norm_nonneg W)
+    simpa [norm_smul] using (by positivity : 0 ≤ |a| * ‖W‖)
   refine norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le ha hJ₀
     ((norm_nonneg (fderiv ℝ J (z, 0))).trans (hM₁ _ h0)) hM₂₀ ?_ ?_
   · -- The increment of `J` along the segment, by the mean value inequality.
@@ -551,7 +552,9 @@ theorem exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hseg] with a ha haS p hp
   have hx {x : E × N} (hx : x ∈ segment ℝ (p.1, 0) (p.1, a • p.2)) : x ∈ Ω := hSΩ (haS p hp hx)
   -- On the segment, the derivative of `J` moves by at most `max M₂ 0` times the distance to
-  -- `(z, 0)`, by the mean value inequality for `fderiv ℝ J`.
+  -- `(z, 0)`, by the mean value inequality for `fderiv ℝ J`. The second derivative is bounded
+  -- through `iteratedFDeriv ℝ 2 J`, because Lean does not synthesize the norm instance on the
+  -- triply nested operator space of `fderiv ℝ (fderiv ℝ J)`.
   have hLip (x : E × N) (hx' : x ∈ segment ℝ (p.1, 0) (p.1, a • p.2)) :
       ‖fderiv ℝ J x - fderiv ℝ J (p.1, 0)‖ ≤ max M₂ 0 * ‖x - (p.1, 0)‖ :=
     (convex_segment _ _).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ) (f := fderiv ℝ J)
