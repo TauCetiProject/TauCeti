@@ -142,15 +142,12 @@ number of `i` in the cellular boundary of `j` is `1 - 1 = 0`. -/
 theorem cellularIncidence_zero_eq_zero_of_subsingleton {C : Set X} [CWComplex C]
     [Subsingleton (cell C 0)] (i : cell C 0) (j : cell C 1) :
     cellularIncidence C R 0 i j = 0 := by
+  let := uniqueOfSubsingleton i
   -- Every point of the `0`-skeleton lies in the open cell of `i`.
   have hmem (x : skeletonObj C 1) : (x : X) ∈ openCell 0 i := by
-    have hx : (x : X) ∈ ⋃ (m : ℕ) (_ : (m : ℕ∞) < (1 : ℕ)) (j : cell C m), openCell m j := by
-      rw [CWComplex.iUnion_openCell_eq_skeletonLT]
-      exact x.property
-    simp only [Set.mem_iUnion] at hx
-    obtain ⟨m, hm, i', hi'⟩ := hx
-    obtain rfl : m = 0 := by exact_mod_cast Nat.lt_one_iff.mp (by exact_mod_cast hm)
-    rwa [Subsingleton.elim i' i] at hi'
+    have hx : (x : X) ∈ (skeletonLT C 1 : Set X) := by exact_mod_cast x.property
+    rw [skeletonLT_one_eq_insert] at hx
+    simpa [openCell_zero_eq_singleton, Subsingleton.elim i default] using hx
   simp [cellularIncidence_zero, hmem]
 
 end TauCeti
