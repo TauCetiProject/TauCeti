@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GridInterpolation
+public import TauCeti.Algebra.Order.Floor.GridInterpolation
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.Algebra.Order.Floor.Semifield

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Analysis.Convex.Function
-public import TauCeti.Analysis.Calculus.GridInterpolation
+public import TauCeti.Algebra.Order.Floor.GridInterpolation
 public import TauCeti.Analysis.Convex.Sequence.Basic
 import Mathlib.Tactic.Linarith
 

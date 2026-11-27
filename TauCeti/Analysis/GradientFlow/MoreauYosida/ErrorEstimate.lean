@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.Calculus.GridInterpolation
 import TauCeti.Analysis.GradientFlow.MinimizingMovement
+import TauCeti.Topology.ContinuousOn.GridInterpolation
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -27,8 +28,9 @@ gives a continuous function `B(t)` whose right derivative is a convex combinatio
 quotients. Summing the four discrete variational inequalities cancels the cross energies into
 `α_n(t) (φ(U n) - φ(U (n + 1))) + β_k(t) (φ(V k) - φ(V (k + 1)))`, while the dissipations absorb
 the `-m` metric shift terms. Right-derivative comparison (`TauCeti.stepWeightDiffPrimitive`) then
-bounds `d(U ⌈t / τ⌉₊, V ⌈t / η⌉₊)²` in terms of `d(U 0, V 0)²` and `(τ + η)` times the energy
-dissipated up to steps `⌊t / τ⌋₊ + 1` and `⌊t / η⌋₊ + 1`.
+bounds `d(U ⌈t / τ⌉₊, V ⌈t / η⌉₊)²` in terms of `d(U 0, V 0)²`, `τ` times the energy dissipated
+by `U` up to step `⌊t / τ⌋₊ + 1`, and `η` times the energy dissipated by `V` up to step
+`⌊t / η⌋₊ + 1`.
 
 ## Main results
 * `TauCeti.dist_ceil_sq_le_of_penalizedConvex`: quantitative two-step error bound between two
@@ -250,20 +252,12 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
           ((η : ℝ) / 2) * (eV 0 - eV (⌊t / η⌋₊ + 1))) (by positivity : 0 ≤ 2 * exp (K * t))
   rw [← mul_assoc, mul_assoc 2, hcan, mul_one] at hmul; exact hmul.trans_eq (by ring)
 
-/-- For any `x` in a floor semiring and `i ∈ {⌊x⌋₊, ⌊x⌋₊ + 1}`, the distance between `W ⌈x⌉₊`
-and `W i` is at most the step distance `dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1))`. -/
-private theorem dist_ceil_le_dist_floor_add_one {X R : Type*} [PseudoMetricSpace X] [Semiring R]
-    [LinearOrder R] [FloorSemiring R] (W : ℕ → X) (x : R) {i : ℕ}
-    (hi : i = ⌊x⌋₊ ∨ i = ⌊x⌋₊ + 1) :
-    dist (W ⌈x⌉₊) (W i) ≤ dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1)) := by
-  rcases ceil_eq_floor_or_add_one x with hc | hc <;>
-    rcases hi with rfl | rfl <;> simp [hc, dist_comm]
-
 /-- **Quantitative two-step error bound for minimizing movements.** Under
 `TauCeti.PenalizedConvex m τ φ` and `TauCeti.PenalizedConvex m η φ` with `(-m) * τ ≤ 1 / 2` and
 `(-m) * η ≤ 1 / 2`, the piecewise constant interpolants of two minimizing movement sequences with
-real energies satisfy an explicit bound in terms of `d(U 0, V 0)²` and `(τ + η)` times the energy
-dissipated up to steps `⌊t / τ⌋₊ + 1` and `⌊t / η⌋₊ + 1`. -/
+real energies satisfy an explicit bound in terms of `d(U 0, V 0)²`, `τ` times the energy dissipated
+by `U` up to step `⌊t / τ⌋₊ + 1`, and `η` times the energy dissipated by `V` up to step
+`⌊t / η⌋₊ + 1`. -/
 theorem dist_ceil_sq_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
     {m : ℝ} {τ η : ℝ≥0} {φ : X → EReal} (hτc : PenalizedConvex m τ φ)
     (hηc : PenalizedConvex m η φ) (hτ : 0 < τ) (hη : 0 < η) (hmτ : (-m) * τ ≤ 1 / 2)
@@ -291,13 +285,16 @@ theorem dist_ceil_sq_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
   set n := ⌊t / (τ : ℝ)⌋₊; set k := ⌊t / (η : ℝ)⌋₊
   set ΔU := dist (U n) (U (n + 1)); set ΔV := dist (V k) (V (k + 1))
   have hΔU := hstep hU heU hantiU n; have hΔV := hstep hV heV hantiV k
+  have hcd (W : ℕ → X) (δ : ℝ≥0) {a : ℕ} (ha : a = ⌊t / δ⌋₊ ∨ a = ⌊t / δ⌋₊ + 1) :
+      dist (W ⌈t / δ⌉₊) (W a) ≤ dist (W ⌊t / δ⌋₊) (W (⌊t / δ⌋₊ + 1)) := by
+    rcases ceil_eq_floor_or_add_one (t / (δ : ℝ)) with hc | hc <;>
+      rcases ha with rfl | rfl <;> simp [hc, dist_comm]
   have hcell (i j : ℕ) (hi : i = n ∨ i = n + 1) (hj : j = k ∨ j = k + 1) :
       (dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ^ 2 - 4 * ΔU ^ 2 - 4 * ΔV ^ 2) / 4 ≤
         halfDistSq U V i j := by
     have htri : dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ≤ dist (U i) (V j) + ΔU + ΔV :=
       (dist_triangle4 (U ⌈t / τ⌉₊) (U i) (V j) (V ⌈t / η⌉₊)).trans
-        (by linarith [dist_ceil_le_dist_floor_add_one U (t / (τ : ℝ)) hi,
-          dist_comm (V j) (V ⌈t / η⌉₊) ▸ dist_ceil_le_dist_floor_add_one V (t / (η : ℝ)) hj])
+        (by linarith [hcd U τ hi, dist_comm (V j) (V ⌈t / η⌉₊) ▸ hcd V η hj])
     have hsq : dist (U ⌈t / τ⌉₊) (V ⌈t / η⌉₊) ^ 2 ≤
         2 * dist (U i) (V j) ^ 2 + 4 * ΔU ^ 2 + 4 * ΔV ^ 2 := by
       nlinarith [sq_nonneg (dist (U i) (V j) - ΔU - ΔV), sq_nonneg (ΔU - ΔV),

@@ -10,7 +10,6 @@ public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Data.EReal.Operations
 import TauCeti.Topology.MetricSpace.Pseudo.LowerBound
 import TauCeti.Topology.MetricSpace.Pseudo.Cauchy
 
