@@ -285,10 +285,12 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le {p : ℝ≥
   refine ⟨2 * C, δ, hδ, ?_⟩
   intro H ν c₀ a hν hH ham hbd hosc u G hu0 hu hgp hG2 hGp
   obtain ⟨hG'p, hG'le⟩ :=
-    memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection
+    memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
       (one_le_two.trans hp.le) H.isOpen.measurableSet MeasurableSet.univ
-      (mapsTo_univ (hyperplaneReflection ν c₀) univ) (ℝ ∙ ν)ᗮ.reflection (by rwa [univ_inter])
-  simp only [Measure.restrict_univ, univ_inter] at hG'p hG'le
+      (mapsTo_univ (hyperplaneReflection ν c₀) univ) (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry
+      (by rwa [univ_inter])
+  simp only [Measure.restrict_univ, univ_inter, LinearIsometryEquiv.coe_toLinearIsometry]
+    at hG'p hG'le
   have hwgp := memLp_gradient_sub_compHyperplaneReflectionL ν c₀ hgp
   -- The reflected coefficient is measurable and bounded.
   have hãm : AEStronglyMeasurable (reflectPrincipal ν c₀ a) volume := by
@@ -871,9 +873,10 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_reflection {p : ℝ≥0
     one_le_two hw0 ((Lp.memLp (W1p.value w)).mono_measure hle)
     ((Lp.memLp (W1p.gradient w)).mono_measure hle)
   obtain ⟨hGrp, hGrle⟩ :=
-    memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection
+    memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
       (one_le_two.trans hp.le) H.isOpen.measurableSet measurableSet_ball hBρ
-      (ℝ ∙ ν)ᗮ.reflection hGp
+      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry hGp
+  simp only [LinearIsometryEquiv.coe_toLinearIsometry] at hGrp hGrle
   -- The interior estimate for the odd reflection on `B`; its coefficient is within `δ₀` of `A`.
   have hosc (c : E) (r : ℝ) (_ : 0 < r) (_ : r ≤ 4 * R) :
       ∃ A' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,

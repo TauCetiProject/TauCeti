@@ -83,8 +83,8 @@ normal vector and an offset.
   `x ↦ 1_H f x - 1_H g (ρ x)` built from two functions `f`, `g` given on one side `H` of the
   hyperplane lies in `Lᵖ` with norm at most `‖f‖_p + ‖g‖_p`. For `g = f` this is the odd
   reflection of `f`, of norm at most twice that of `f`.
-* `TauCeti.memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection`: for a
-  linear isometric equivalence `T`, the field `1_H G - 1_H (T ∘ G) ∘ ρ` lies in `Lᵖ` with norm at
+* `TauCeti.memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection`: for a
+  linear isometry `T`, the field `1_H G - 1_H (T ∘ G) ∘ ρ` lies in `Lᵖ` with norm at
   most twice that of `G`; for `T` the linear part of `ρ` this is the odd reflection of a field.
 * `TauCeti.sub_comp_hyperplaneReflection_ae_eq_indicator`: for `f` vanishing off `H`, the odd
   reflection `f - T (f ∘ ρ)` is `1_H f - 1_H (T ∘ f) ∘ ρ`.
@@ -487,12 +487,12 @@ theorem eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (hp : 1 ≤
         rw [eLpNorm_comp_measurePreserving hg' hρ, hnorm, hnorm]
 
 /-- **The odd reflection of a vector field.** Let `U` be a measurable set mapped into itself by
-the hyperplane reflection `ρ`, let `H` be measurable, let `1 ≤ p` and let `T` be a linear isometric
-equivalence of `E`, such as the linear part of `ρ`. If `G ∈ Lᵖ(U ∩ H)`, then
+the hyperplane reflection `ρ`, let `H` be measurable, let `1 ≤ p` and let `T` be a linear isometry
+of `E`, such as the linear part of `ρ`. If `G ∈ Lᵖ(U ∩ H)`, then
 `x ↦ 1_H G x - 1_H (T ∘ G) (ρ x)` lies in `Lᵖ(U)`, with norm at most `2 ‖G‖_{Lᵖ(U ∩ H)}`. -/
-theorem memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection
+theorem memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
     [NormedSpace ℝ E] (hp : 1 ≤ p) (hHm : MeasurableSet H) (hUm : MeasurableSet U)
-    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) (T : E ≃ₗᵢ[ℝ] E)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) (T : E →ₗᵢ[ℝ] E)
     (hf : MemLp f p (μ.restrict (U ∩ H))) :
     MemLp (fun x => H.indicator f x - H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x))
         p (μ.restrict U) ∧
@@ -500,9 +500,9 @@ theorem memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflect
         H.indicator (fun y => T (f y)) (hyperplaneReflection ν c x)) p (μ.restrict U) ≤
           2 * eLpNorm f p (μ.restrict (U ∩ H)) := by
   refine ⟨memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hf
-    (T.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' hf), ?_⟩
+    (T.toContinuousLinearMap.comp_memLp' hf), ?_⟩
   refine (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le hp hHm hUm hU).trans_eq ?_
-  rw [LinearIsometryEquiv.eLpNorm_comp, two_mul]
+  rw [LinearIsometry.eLpNorm_comp, two_mul]
 
 /-- **The odd reflection in indicator form.** Let `U` be a measurable set mapped into itself by
 the hyperplane reflection `ρ`, and let `f` vanish almost everywhere on `U ∖ H`. For a map `T` with
