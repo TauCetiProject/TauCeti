@@ -93,20 +93,17 @@ coupling `2`, gives `8 π m` (`integral_one_sub_sq_norm_sectionValue_eq_eight_mu
 theorem integral_one_sub_sq_norm_sectionValue_eq_div {c : ℝ} (hc : 0 < c) {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedVortexSubMulAction c m) :
     ∫ z, (1 - ‖sectionValue x z‖ ^ 2) = 16 * π * m / c := by
-  -- Dilate by `t = c^(-1/2)` to the normalized equation, where the flux identity holds.
-  set t : ℝ := (√c)⁻¹ with ht_def
-  have ht : 0 < t := by positivity
-  have ht2 : t ^ 2 = c⁻¹ := by rw [ht_def, inv_pow, Real.sq_sqrt hc.le]
-  have htc : t ^ 2 * c = 1 := by rw [ht2, inv_mul_cancel₀ hc.ne']
-  have hy := dilateField_mem_framedVortexSubMulAction ht hx
-  rw [htc] at hy
+  -- Normalize to coupling one by the dilation by `c^(-1/2)`, where the flux identity holds.
+  have hy := (framedVortexNormalize hc m ⟨x, hx⟩).property
+  rw [coe_framedVortexNormalize] at hy
   obtain ⟨hs, hsol, hfr⟩ := mem_framedVortexSubMulAction.1 hy
   simp only [coupledEquation_one] at hsol
   have hflux := integral_one_sub_sq_norm_sectionValue_eq_mul_card (hs.of_le (by simp)) hsol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hfr)
     (isZeroMultiplicity_sectionValue_framedVortexDivisor ⟨_, hy⟩)
   simp only [sectionValue_dilateField, Sym.card_coe] at hflux
-  have hcomp := Measure.integral_comp_smul volume (fun z ↦ 1 - ‖sectionValue x z‖ ^ 2) t
+  have ht2 : (√c)⁻¹ ^ 2 = c⁻¹ := by rw [inv_pow, Real.sq_sqrt hc.le]
+  have hcomp := Measure.integral_comp_smul volume (fun z ↦ 1 - ‖sectionValue x z‖ ^ 2) (√c)⁻¹
   rw [Complex.finrank_real_complex, ht2, inv_inv, abs_of_pos hc, smul_eq_mul] at hcomp
   rw [hcomp] at hflux
   rw [eq_div_iff hc.ne', ← hflux, mul_comm]
