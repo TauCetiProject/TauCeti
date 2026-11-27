@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
+public import TauCeti.CategoryTheory.Linear.FullyFaithful
 public import TauCeti.CategoryTheory.Monoidal.FSymbols.Model
 
 /-!
@@ -242,10 +242,8 @@ variable (hEnd : ∀ a, Function.Bijective (algebraMap R (End (S a))))
 variable (hOrth : HomOrthogonal S)
 
 private def coordinates (X Y : Model P) :
-    ((functor P S).obj X ⟶ (functor P S).obj Y) →ₗ[R] (X ⟶ Y) :=
-  LinearMap.pi fun a ↦ LinearMap.pi fun x ↦ LinearMap.pi fun y ↦
-    (homPairingOfBijective (hEnd a) _ (incl P S X a x)).comp
-      (Linear.rightComp R _ (proj P S Y a y))
+    ((functor P S).obj X ⟶ (functor P S).obj Y) → (X ⟶ Y) :=
+  fun g a x y ↦ homPairingOfBijective (hEnd a) _ (incl P S X a x) (g ≫ proj P S Y a y)
 
 private theorem coordinates_map {X Y : Model P} (f : X ⟶ Y) :
     coordinates P S hEnd X Y ((functor P S).map f) = f := by
@@ -264,51 +262,43 @@ private theorem map_coordinates {X Y : Model P} (g : (functor P S).obj X ⟶ (fu
     rw [functor_map_entry]
     exact homPairingOfBijective_smul_id _ _
 
-/-- The native matrix coordinates of a morphism between realized objects. Its inverse realizes
-matrices, without replacing the caller's chosen basis types or finite instances. -/
-def coordinatesLinearEquiv (X Y : Model P) :
+/-- Realization is fully faithful when the family has scalar endomorphisms and is orthogonal.
+The chosen preimage retains the model's native basis carriers. -/
+def fullyFaithful : (functor P S).FullyFaithful :=
+  { preimage := fun {X Y} g ↦ coordinates P S hEnd X Y g
+    map_preimage := fun {_ _} g ↦ map_coordinates P S hEnd hOrth g
+    preimage_map := fun {_ _} f ↦ coordinates_map P S hEnd f }
+
+/-- The native matrix coordinates of a morphism between realized objects, given by the inverse of
+`Functor.homLinearEquiv` on the caller's chosen basis carriers. Use `fullyFaithful` to supply
+local `Full` and `Faithful` instances for the generic functor laws. -/
+abbrev coordinatesLinearEquiv (X Y : Model P) :
     ((functor P S).obj X ⟶ (functor P S).obj Y) ≃ₗ[R] (X ⟶ Y) :=
-  { coordinates P S hEnd X Y with
-    invFun := (functor P S).map
-    left_inv := map_coordinates P S hEnd hOrth
-    right_inv := coordinates_map P S hEnd }
+  letI := (fullyFaithful P S hEnd hOrth).full
+  letI := (fullyFaithful P S hEnd hOrth).faithful
+  ((functor P S).homLinearEquiv R X Y).symm
 
 /-- Evaluate a native matrix coordinate by pairing the corresponding inclusion and projection. -/
 theorem coordinatesLinearEquiv_apply {X Y : Model P}
     (g : (functor P S).obj X ⟶ (functor P S).obj Y) (a : ι)
     (x : X.basis a) (y : Y.basis a) :
     coordinatesLinearEquiv P S hEnd hOrth X Y g a x y =
-      homPairingOfBijective (hEnd a) _ (incl P S X a x) (g ≫ proj P S Y a y) := (rfl)
+      homPairingOfBijective (hEnd a) _ (incl P S X a x) (g ≫ proj P S Y a y) := by
+  let := (fullyFaithful P S hEnd hOrth).full
+  symm
+  apply (homPairingOfBijective_eq_iff _ _ _).2
+  simpa only [coordinatesLinearEquiv, Functor.homLinearEquiv_symm_apply,
+    Functor.map_preimage] using
+    functor_map_entry P S ((functor P S).preimage g) a x y
 
 /-- An entry of the coordinate matrix is characterized by the corresponding scalar component. -/
 theorem coordinatesLinearEquiv_apply_smul_id {X Y : Model P}
     (g : (functor P S).obj X ⟶ (functor P S).obj Y) (a : ι)
     (x : X.basis a) (y : Y.basis a) :
     coordinatesLinearEquiv P S hEnd hOrth X Y g a x y • 𝟙 (S a) =
-      incl P S X a x ≫ g ≫ proj P S Y a y :=
-  homPairingOfBijective_smul_id _ _
-
-@[simp]
-theorem coordinatesLinearEquiv_symm_apply {X Y : Model P} (f : X ⟶ Y) :
-    (coordinatesLinearEquiv P S hEnd hOrth X Y).symm f = (functor P S).map f := (rfl)
-
-@[simp]
-theorem coordinatesLinearEquiv_functor_map {X Y : Model P} (f : X ⟶ Y) :
-    coordinatesLinearEquiv P S hEnd hOrth X Y ((functor P S).map f) = f := by
-  rw [← coordinatesLinearEquiv_symm_apply P S hEnd hOrth]
-  exact LinearEquiv.apply_symm_apply _ _
-
-@[simp]
-theorem functor_map_coordinatesLinearEquiv {X Y : Model P}
-    (g : (functor P S).obj X ⟶ (functor P S).obj Y) :
-    (functor P S).map (coordinatesLinearEquiv P S hEnd hOrth X Y g) = g := by
-  rw [← coordinatesLinearEquiv_symm_apply P S hEnd hOrth]
-  exact LinearEquiv.symm_apply_apply _ _
-
-private def fullyFaithful : (functor P S).FullyFaithful :=
-  { preimage := fun {X Y} g ↦ coordinatesLinearEquiv P S hEnd hOrth X Y g
-    map_preimage := fun {_ _} g ↦ map_coordinates P S hEnd hOrth g
-    preimage_map := fun {_ _} f ↦ coordinates_map P S hEnd f }
+      incl P S X a x ≫ g ≫ proj P S Y a y := by
+  rw [coordinatesLinearEquiv_apply]
+  exact homPairingOfBijective_smul_id _ _
 
 variable (hS : IsSplitSimpleFamily R S)
 
