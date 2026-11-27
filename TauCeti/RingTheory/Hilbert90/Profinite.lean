@@ -147,11 +147,7 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_prod_eq_one_of_isProfiniteRing
       (h_tame.quotientMap _ Ideal.span_natCast_le_comap).exists_mul_map_eq_of_prod_eq_one
         (x := Units.map (facMk (R := R) N : R →* FacQuot R N) x)
         (by simpa using map_dvd (facMk N) hx_one)
-        (by
-          have h := Ideal.Quotient.mk_prod_range_pow_quotientMap (facIdeal R N) σ
-            Ideal.span_natCast_le_comap p (x : R)
-          rw [hx_norm, map_one] at h
-          simpa using h.symm)
+        (by simpa [map_prod] using congrArg (facMk (R := R) N) hx_norm)
     exact ⟨g, hg_one, by simpa using congrArg Units.val hg⟩
   choose g hg_one hg using key
   let Λ : (∀ N, FacQuot R N) →+* R := ultralimRingHom
