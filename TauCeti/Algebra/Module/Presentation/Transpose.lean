@@ -365,7 +365,9 @@ theorem quadraticPresentation_gen_apply (σ : S ≃+* R) (P : QuadraticPresentat
         (((Pi.basisFun R (Fin P.size)).contragredientDual σ).equivFun.symm
           (v ∘ (finCongr (quadraticPresentation_size σ P)).symm)) := by
     simp only [quadraticPresentation, QuadraticPresentation.ofExact_gen]
-    rfl
+    -- `(quadraticPresentation σ P).size` is definitionally `P.size`, so `finCongr` acts trivially.
+    exact congrArg _ (funext fun i ↦ congrArg v (Fin.ext
+      (finCongr_symm_apply_coe (quadraticPresentation_size σ P) i).symm))
   rw [hgen, Module.Basis.equivFun_symm_apply, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [map_smul, Module.Basis.contragredientDual_apply, Submodule.mkQ_apply, hcoord,
@@ -380,14 +382,6 @@ theorem fittingIdeal_eq_of_quadraticPresentation (σ : S ≃+* R) (P : Quadratic
   let := P.finite
   rw [(quadraticPresentation σ P).fittingIdeal_eq, P.fittingIdeal_eq,
     det_quadraticPresentation_rel, Ideal.map_span, Set.image_singleton]
-
-private theorem fittingIdeal_eq_minorsIdeal_of_exact {R M : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] [Module.Finite R M] {m n : ℕ} (A : Matrix (Fin m) (Fin n) R)
-    {q : (Fin m → R) →ₗ[R] M} (hq : Function.Surjective q) (hex : Function.Exact A.mulVecLin q)
-    (k : ℕ) :
-    TauCeti.fittingIdeal R M k = (LinearMap.range A.mulVecLin).minorsIdeal (m - k) := by
-  nontriviality R
-  rw [TauCeti.fittingIdeal_eq_minorsIdeal_ker hq k, Module.finrank_fin_fun, hex.linearMap_ker_eq]
 
 /-- For an `m × t` matrix `A` over `R`, the zeroth Fitting ideal over `S` of the transpose of
 `Matrix.toLin' A : (Fin t → R) →ₗ[R] (Fin m → R)` is the ideal of `t × t` minors of the transposed
@@ -407,7 +401,7 @@ theorem fittingIdeal_toLin'_eq_minorsIdeal (σ : S ≃+* R) {m t : ℕ} (A : Mat
   have hex₁ : Function.Exact (Aᵀ.map σ.symm).mulVecLin q := by
     rw [← ContragredientDual.toMatrix_map_toLin' σ A]
     exact hex₀.toMatrix_mulVecLin d₀ d₁
-  rw [fittingIdeal_eq_minorsIdeal_of_exact (Aᵀ.map σ.symm) hq hex₁ 0, Nat.sub_zero]
+  rw [hex₁.fittingIdeal_eq_minorsIdeal_range_mulVecLin hq 0, Fintype.card_fin, Nat.sub_zero]
 
 /-- For an `m × t` matrix `A` over `R`, the zeroth Fitting ideal over `S` of the transpose of
 `Matrix.toLin' A` is the image along `σ⁻¹` of the ideal of `t × t` minors of `A`. -/
@@ -442,8 +436,8 @@ theorem fittingIdeal_eq_of_free (σ : S ≃+* R) {t s : ℕ}
   have hex : Function.Exact A.mulVecLin π' :=
     (LinearMap.exact_iff.2 hf.symm).toMatrix_mulVecLin b₁ b₀
   rw [TauCeti.fittingIdeal_congr (congr σ b₁.equivFun b₀.equivFun hcomm) 0,
-    fittingIdeal_toLin'_eq_map_minorsIdeal, fittingIdeal_eq_minorsIdeal_of_exact A hπ' hex s,
-    Nat.add_sub_cancel]
+    fittingIdeal_toLin'_eq_map_minorsIdeal, hex.fittingIdeal_eq_minorsIdeal_range_mulVecLin hπ' s,
+    Fintype.card_fin, Nat.add_sub_cancel]
 
 /-- **Higher Fitting ideals and transposes with excess generators** (Dasgupta–Kakde, equation (171),
 proof of Lemma B.4): if `P₁ →f P₀ →π M → 0` is an exact sequence of `R`-modules in which `P₁` and
