@@ -142,10 +142,16 @@ theorem mapOfEpiTwistingSheafHom_def (m : ℤ) :
           CommMon.relativeProjTwistingSheafMap
             ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom
             (irrelevant_le_map_of_epi q) m := by
-  -- Inside this module the comparison and its defining transports reduce to the relative Proj
-  -- map and identities.
-  exact (Category.comp_id _).trans
-    ((Category.id_comp _).trans ((Scheme.Modules.pullback _).map_id _ ▸ Category.id_comp _)).symm
+  -- The defining equalities identify definitionally equal objects and morphisms.
+  have hF : eqToHom (twistingSheaf_obj S F.obj m) = 𝟙 (twistingSheaf S F.obj m).obj := rfl
+  have hG : eqToHom (twistingSheaf_obj S G.obj m) = 𝟙 (twistingSheaf S G.obj m).obj := rfl
+  have hq : (Scheme.Modules.pullbackCongr (mapOfEpi_def q)).hom.app
+      (twistingSheaf S F.obj m).obj =
+        𝟙 ((Scheme.Modules.pullback (mapOfEpi q)).obj (twistingSheaf S F.obj m).obj) := rfl
+  simp only [hF, hG, hq]
+  erw [(Scheme.Modules.pullback (mapOfEpi q)).map_id _, Category.id_comp,
+    Category.id_comp, Category.comp_id]
+  rfl
 
 /-- On an affine chart, the twist comparison is the relative Proj chart component. -/
 theorem mapOfEpiTwistingSheafHom_comp_π (m : ℤ) (U : S.AffineZariskiSite) :
@@ -156,11 +162,9 @@ theorem mapOfEpiTwistingSheafHom_comp_π (m : ℤ) (U : S.AffineZariskiSite) :
         CommMon.relativeProjTwistingSheafMapComponent
           ((gradedSymmetricAlgebra S).map (ObjectProperty.homMk q)).hom (irrelevant_le_map_of_epi q)
           m U := by
-  exact (Category.assoc _ _ _).symm.trans
-    ((congrArg (· ≫ _) (mapOfEpiTwistingSheafHom_def q m)).trans
-      ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-        ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
-          (CommMon.relativeProjTwistingSheafMap_comp_π _ _ _ U))))))
+  -- The rewrites need to identify `Scheme.Modules` with its category of sheaves of modules.
+  erw [← Category.assoc (mapOfEpiTwistingSheafHom q m), mapOfEpiTwistingSheafHom_def]
+  erw [Category.assoc, Category.assoc, CommMon.relativeProjTwistingSheafMap_comp_π]
 
 /-- Pullback along the map induced by an epimorphism identifies the integer twists. -/
 instance isIso_mapOfEpiTwistingSheafHom (m : ℤ) : IsIso (mapOfEpiTwistingSheafHom q m) :=
