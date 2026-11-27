@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Finset.Dedup
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Algebra.Group.End

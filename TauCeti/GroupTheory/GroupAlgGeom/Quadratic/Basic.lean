@@ -19,7 +19,6 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
-import Mathlib.Algebra.Group.Submonoid.BigOperators
 import TauCeti.Data.List.Forall2
 import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.Logic.Function.Extend
@@ -325,8 +324,7 @@ theorem conjWord_def (p : X × G) :
 
 @[simp] theorem conjWord_one (z : X) : conjWord (z, (1 : G)) = 1 := by simp [conjWord_def]
 
-@[simp]
-theorem occVars_conjWord [DecidableEq G] (p : X × G) :
+@[simp] theorem occVars_conjWord [DecidableEq G] (p : X × G) :
     GX.occVars (conjWord p) = if p.2 = 1 then ∅ else {p.1} := by
   classical
   by_cases hp : p.2 = 1
@@ -346,8 +344,7 @@ theorem commWord_mem_avoiding [DecidableEq X] {p : X × X} {v : X}
 /-- A square atom `sqWord x` avoids a variable `v` when `x ≠ v`. -/
 theorem sqWord_mem_avoiding [DecidableEq X] {x v : X} (hx : x ≠ v) :
     sqWord (G := G) x ∈ GX.avoiding v := by
-  rw [sqWord_def]
-  exact pow_mem (GX.inr_of_mem_avoiding hx) 2
+  rw [sqWord_def]; exact pow_mem (GX.inr_of_mem_avoiding hx) 2
 
 /-- A conjugate atom `conjWord p` avoids a variable `v` when `p.1 ≠ v`. -/
 theorem conjWord_mem_avoiding [DecidableEq X] {p : X × G} {v : X} (hp : p.1 ≠ v) :
@@ -355,6 +352,27 @@ theorem conjWord_mem_avoiding [DecidableEq X] {p : X × G} {v : X} (hp : p.1 ≠
   rw [conjWord_def]
   exact mul_mem (mul_mem (inv_mem (GX.inr_of_mem_avoiding hp)) (GX.inl_mem_avoiding _ _))
     (GX.inr_of_mem_avoiding hp)
+
+@[simp] theorem eval_commWord (ι : G →* H) (v : X → H) (p : X × X) :
+    eval ι v (commWord p) = ⁅(v p.1)⁻¹, (v p.2)⁻¹⁆ := by
+  simp [commWord_def, map_commutatorElement]
+
+@[simp] theorem eval_sqWord (ι : G →* H) (v : X → H) (x : X) :
+    eval ι v (sqWord x) = v x ^ 2 := by simp [sqWord_def]
+
+@[simp] theorem eval_conjWord (ι : G →* H) (v : X → H) (p : X × G) :
+    eval ι v (conjWord p) = (v p.1)⁻¹ * ι p.2 * v p.1 := by simp [conjWord_def]
+
+@[simp] theorem map_commWord {ι : G →* H} (φ : GHom (inl : G →* GX G X) ι) (p : X × X) :
+    φ (commWord p) = ⁅(φ (inr (FreeGroup.of p.1)))⁻¹, (φ (inr (FreeGroup.of p.2)))⁻¹⁆ := by
+  simp [commWord_def, map_commutatorElement]
+
+@[simp] theorem map_sqWord {ι : G →* H} (φ : GHom (inl : G →* GX G X) ι) (x : X) :
+    φ (sqWord x) = φ (inr (FreeGroup.of x)) ^ 2 := by simp [sqWord_def]
+
+@[simp] theorem map_conjWord {ι : G →* H} (φ : GHom (inl : G →* GX G X) ι) (p : X × G) :
+    φ (conjWord p) = (φ (inr (FreeGroup.of p.1)))⁻¹ * ι p.2 * φ (inr (FreeGroup.of p.1)) := by
+  simp [conjWord_def]
 
 end Atoms
 
