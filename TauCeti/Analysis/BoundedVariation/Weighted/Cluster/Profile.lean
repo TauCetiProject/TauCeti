@@ -20,13 +20,14 @@ import TauCeti.Topology.Instances.ENNReal
 Let `W` be a weight on a finite-dimensional real inner product space `E`, with measure
 `μ = e^{−W} · volume`. For `q ≥ 1` and a vector `v ∈ ℝ^q`, the **isoperimetric profile**
 `I_μ^{(q−1)}(v)` (`TauCeti.isoperimetricProfile W q v`) is the infimum of the total perimeters of
-the `q`-clusters whose cells have the measures `v_1, …, v_q`, in `[0, ∞]`. When `μ(E) = 1` the
+the `q`-clusters whose cells have the measures `v_1, …, v_q`, in `[0, ∞]`. The constraint is
+`μ(Ω_i) = ENNReal.ofReal v_i`, so a negative coordinate is read as `0`. When `μ(E) = 1` the
 relevant vectors lie on the probability simplex `Δ^{(q−1)}`, and a cluster attaining the profile
 at its own measure vector is a minimizing cluster.
 
 * The profile is at most the total perimeter of each competitor
   (`TauCeti.isoperimetricProfile_le`, `TauCeti.le_isoperimetricProfile_iff`), and it is finite
-  exactly when some cluster has the prescribed cell measures
+  exactly when some cluster has the cell measures `ENNReal.ofReal v_i`
   (`TauCeti.isoperimetricProfile_lt_top_iff`).
 * It is invariant under permuting the coordinates of `v`
   (`TauCeti.isoperimetricProfile_comp_perm`).
@@ -68,8 +69,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {W : E → ℝ} {p q : ℕ} {v : Fin q → ℝ}
 
 /-- The **isoperimetric profile** `I_μ^{(q−1)}(v)`: the infimum of the total perimeters of the
-`q`-clusters whose cells have the measures `v_1, …, v_q` for `μ = e^{−W} · volume`. It is `∞`
-when no cluster has these cell measures. -/
+`q`-clusters `Ω` with `μ(Ω_i) = ENNReal.ofReal v_i` for every `i`, where `μ = e^{−W} · volume`.
+A negative coordinate of `v` is thus read as `0`. The profile is `∞` when no cluster has these
+cell measures. -/
 def isoperimetricProfile (W : E → ℝ) (q : ℕ) (v : Fin q → ℝ) : ℝ≥0∞ :=
   ⨅ (Ω : Cluster W q) (_ : ∀ i, weightedMeasure W (Ω.cell i) = ENNReal.ofReal (v i)),
     Ω.perimeter
@@ -96,8 +98,8 @@ theorem le_isoperimetricProfile_iff {c : ℝ≥0∞} :
         c ≤ Ω.perimeter :=
   le_iInf₂_iff
 
-/-- The isoperimetric profile is finite exactly when some cluster has the prescribed cell
-measures. -/
+/-- The isoperimetric profile is finite exactly when some cluster `Ω` has
+`μ(Ω_i) = ENNReal.ofReal v_i` for every `i` (a negative `v_i` is read as `0`). -/
 theorem isoperimetricProfile_lt_top_iff :
     isoperimetricProfile W q v < ⊤ ↔
       ∃ Ω : Cluster W q, ∀ i, weightedMeasure W (Ω.cell i) = ENNReal.ofReal (v i) := by
