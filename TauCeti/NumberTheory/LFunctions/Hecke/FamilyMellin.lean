@@ -95,7 +95,7 @@ theorem neg_one_le_meromorphicOrderAt_heckeFamilyRieszRemainderMellin
     (w : PrimitiveRayClassCharacter K →₀ ℝ) {z : ℂ} (hz : z ≠ 0) :
     -1 ≤ meromorphicOrderAt (heckeFamilyRieszRemainderMellin w) z := by
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv]
-  exact neg_one_le_meromorphicOrderAt_sum_rieszRemainderMellin _
+  simpa only [← Complex.coe_smul] using neg_one_le_meromorphicOrderAt_sum_rieszRemainderMellin _
     (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
     hz
 
@@ -107,38 +107,15 @@ theorem residue_heckeFamilyRieszRemainderMellin
       (↑(w.symmetrizeInv.sum fun ψ c ↦
         c * (meromorphicOrderAt (heckeLFunctionC ψ.character) z).untop₀) : ℂ) / (z * (1 - z)) := by
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv, Finsupp.sum]
+  simp only [← Complex.coe_smul, ofReal_sum, ofReal_mul, ofReal_intCast]
   exact residue_sum_rieszRemainderMellin _
-    (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
-    hz
+    (fun (ψ : PrimitiveRayClassCharacter K) _ ↦
+      meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn) hz
 
-private theorem sum_orders_nonneg {w : PrimitiveRayClassCharacter K →₀ ℝ} (hw : 0 ≤ w) {z : ℂ}
-    (h₀ : ∀ ψ ∈ w.symmetrizeInv.support, 0 ≤ meromorphicOrderAt (heckeLFunctionC ψ.character) z) :
-    0 ≤ ∑ ψ ∈ w.symmetrizeInv.support,
-      w.symmetrizeInv ψ * ((meromorphicOrderAt (heckeLFunctionC ψ.character) z).untop₀ : ℝ) :=
-  Finset.sum_nonneg fun ψ hψ ↦ mul_nonneg (Finsupp.le_def.mp (Finsupp.symmetrizeInv_nonneg hw) ψ)
-    (by exact_mod_cast WithTop.untop₀_nonneg.mpr (h₀ ψ hψ))
-
-private theorem sum_orders_pos_iff {w : PrimitiveRayClassCharacter K →₀ ℝ} (hw : 0 ≤ w) {z : ℂ}
-    (h₀ : ∀ ψ ∈ w.symmetrizeInv.support, 0 ≤ meromorphicOrderAt (heckeLFunctionC ψ.character) z) :
-    (0 < ∑ ψ ∈ w.symmetrizeInv.support,
-      w.symmetrizeInv ψ * ((meromorphicOrderAt (heckeLFunctionC ψ.character) z).untop₀ : ℝ)) ↔
-      ∃ ψ ∈ w.symmetrizeInv.support,
-        0 < (meromorphicOrderAt (heckeLFunctionC ψ.character) z).untop₀ := by
-  have hw' : ∀ ψ, 0 ≤ w.symmetrizeInv ψ :=
-    fun ψ ↦ Finsupp.le_def.mp (Finsupp.symmetrizeInv_nonneg hw) ψ
-  rw [Finset.sum_pos_iff_of_nonneg]
-  · apply exists_congr
-    intro ψ
-    apply and_congr_right
-    intro hψ
-    have hc := (hw' ψ).lt_of_ne (Finsupp.mem_support_iff.mp hψ).symm
-    rw [mul_pos_iff_of_pos_left hc, Int.cast_pos]
-  · intro ψ hψ
-    exact mul_nonneg (hw' ψ) (by exact_mod_cast WithTop.untop₀_nonneg.mpr (h₀ ψ hψ))
-
-/-- Away from zero and one, if the supported L-functions and their inverses have no pole,
-the family expression has a pole exactly when a supported L-function has a finite positive
-order at the point or its conjugate. Identically zero germs contribute no residue. -/
+/-- Away from zero and one, for nonnegative weights, if the L-functions in the symmetrized
+support have no pole, the family expression has a pole exactly when a supported L-function
+has a finite positive order at the point or its conjugate. Nonnegativity rules out
+cancellation between residues; identically zero germs contribute no residue. -/
 theorem meromorphicOrderAt_heckeFamilyRieszRemainderMellin_neg_iff
     {w : PrimitiveRayClassCharacter K →₀ ℝ} (hw : 0 ≤ w) {z : ℂ} (hz : z ≠ 0) (h₁ : z ≠ 1)
     (h₀ : ∀ ψ ∈ w.symmetrizeInv.support, 0 ≤ meromorphicOrderAt (heckeLFunctionC ψ.character) z) :
@@ -146,25 +123,27 @@ theorem meromorphicOrderAt_heckeFamilyRieszRemainderMellin_neg_iff
       ∃ ψ ∈ w.support, 0 < (meromorphicOrderAt (heckeLFunctionC ψ.character) z).untop₀ ∨
         0 < (meromorphicOrderAt (heckeLFunctionC ψ.character) (conj z)).untop₀ := by
   rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv,
-    meromorphicOrderAt_sum_rieszRemainderMellin_neg_iff _
+    meromorphicOrderAt_sum_rieszRemainderMellin_neg_iff_of_nonneg
+      (fun ψ _ ↦ Finsupp.le_def.mp (Finsupp.symmetrizeInv_nonneg hw) ψ)
       (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
-      hz h₁]
-  rw [← (sum_orders_nonneg hw h₀).lt_iff_ne', sum_orders_pos_iff hw h₀]
+      h₀ hz h₁]
   have hinv (ψ : PrimitiveRayClassCharacter K) :
       meromorphicOrderAt (heckeLFunctionC ψ⁻¹.character) z =
         meromorphicOrderAt (heckeLFunctionC ψ.character) (conj z) := by
     simpa only [PrimitiveRayClassCharacter.character_inv, Complex.conj_conj] using
       meromorphicOrderAt_heckeLFunctionC_inv_conj ψ.character (conj z)
   constructor
-  · rintro ⟨ψ, hψ, ho⟩
+  · rintro ⟨ψ, hψ, -, ho⟩
     rcases (Finsupp.mem_support_symmetrizeInv hw ψ).mp hψ with hm | hm
     · exact ⟨ψ, hm, Or.inl ho⟩
     · refine ⟨ψ⁻¹, hm, Or.inr ?_⟩
       rw [← hinv ψ⁻¹, inv_inv]
       exact ho
   · rintro ⟨ψ, hm, ho | ho⟩
-    · exact ⟨ψ, (Finsupp.mem_support_symmetrizeInv hw ψ).mpr (Or.inl hm), ho⟩
-    · exact ⟨ψ⁻¹, (Finsupp.mem_support_symmetrizeInv hw ψ⁻¹).mpr (by simp [hm]), hinv ψ ▸ ho⟩
+    · have hψ := (Finsupp.mem_support_symmetrizeInv hw ψ).mpr (Or.inl hm)
+      exact ⟨ψ, hψ, Finsupp.mem_support_iff.mp hψ, ho⟩
+    · have hψ := (Finsupp.mem_support_symmetrizeInv hw ψ⁻¹).mpr (by simp [hm])
+      exact ⟨ψ⁻¹, hψ, Finsupp.mem_support_iff.mp hψ, hinv ψ ▸ ho⟩
 
 /-- At a real pole strictly between zero and one, if no L-function in the symmetrized
 support has a pole there, the residue of a nonnegatively weighted family is positive real. -/
@@ -174,17 +153,10 @@ theorem residue_heckeFamilyRieszRemainderMellin_pos
       0 ≤ meromorphicOrderAt (heckeLFunctionC ψ.character) (r : ℂ))
     (hp : meromorphicOrderAt (heckeFamilyRieszRemainderMellin w) (r : ℂ) < 0) :
     ∃ a : ℝ, 0 < a ∧ Contour.residue (heckeFamilyRieszRemainderMellin w) (r : ℂ) = a := by
-  have hr₀ := Complex.ofReal_ne_zero.mpr hr.ne'
-  have hne := (Contour.meromorphicOrderAt_lt_zero_iff_residue_ne_zero
-    (meromorphic_heckeFamilyRieszRemainderMellin w _)
-    (neg_one_le_meromorphicOrderAt_heckeFamilyRieszRemainderMellin w hr₀)).mp hp
-  let a : ℝ := (∑ ψ ∈ w.symmetrizeInv.support,
-    w.symmetrizeInv ψ * ((meromorphicOrderAt (heckeLFunctionC ψ.character) (r : ℂ)).untop₀ : ℝ)) /
-      (r * (1 - r))
-  have heq : Contour.residue (heckeFamilyRieszRemainderMellin w) (r : ℂ) = (a : ℂ) := by
-    simpa only [a, Finsupp.sum, Complex.ofReal_div, Complex.ofReal_mul, Complex.ofReal_sub,
-      Complex.ofReal_one] using residue_heckeFamilyRieszRemainderMellin w hr₀
-  have ha : 0 ≤ a := div_nonneg (sum_orders_nonneg hw h₀) (mul_nonneg hr.le (sub_nonneg.mpr hr₁.le))
-  exact ⟨a, ha.lt_of_ne (Complex.ofReal_ne_zero.mp (heq ▸ hne)).symm, heq⟩
+  rw [heckeFamilyRieszRemainderMellin_eq_sum_symmetrizeInv] at hp ⊢
+  exact exists_pos_residue_sum_rieszRemainderMellin_of_nonneg
+    (fun ψ _ ↦ Finsupp.le_def.mp (Finsupp.symmetrizeInv_nonneg hw) ψ)
+    (fun ψ _ ↦ meromorphicOn_univ.mp (meromorphicNFOn_heckeLFunctionC ψ.character).meromorphicOn)
+    hr hr₁ h₀ hp
 
 end TauCeti.LFunctions
