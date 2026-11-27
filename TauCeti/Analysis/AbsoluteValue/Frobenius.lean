@@ -198,17 +198,6 @@ theorem inertia_eq_inertia_of_forall_apply_le_one (w : Place L) (hw : IsNonarchi
     w.val.inertia G = Q.inertia G :=
   inertia_eq_inertia_of_isCenteredAt w hw (isCenteredAt_valuationSubring hw hB hQ)
 
-/-- **Elements acting on residues by a power map fix the place.** If `w ≤ 1` on `B`, with
-`Q = {b | w b < 1}` and `B_Q` a valuation ring, an element `σ` with `w (σ • x - x ^ q) < 1`
-whenever `w x ≤ 1` lies in the decomposition group of the finite place `w`. -/
-theorem mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one (w : Place L)
-    (hw : IsNonarchimedean w.val) (hB : ∀ b : B, w.val (algebraMap B L b) ≤ 1)
-    (hQ : ∀ b : B, b ∈ Q ↔ w.val (algebraMap B L b) < 1) {σ : G} {q : ℕ}
-    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ q) < 1) : σ ∈ stabilizer G w :=
-  stabilizer_valuationSubring (G := G) w hw ▸
-    (isCenteredAt_valuationSubring hw hB hQ).mem_stabilizer_of_forall_smul_sub_pow_mem_nonunits
-      ((forall_mem_valuationSubring_smul_sub_pow_mem_nonunits_iff hw).mpr hσ)
-
 variable [TopologicalSpace G] [CompactSpace G] [TotallyDisconnectedSpace G] [IsTopologicalGroup G]
   [TopologicalSpace L] [DiscreteTopology L] [ContinuousSMul G L]
   {R : Type*} [CommRing R] [Algebra R B] [SMulCommClass G R B]

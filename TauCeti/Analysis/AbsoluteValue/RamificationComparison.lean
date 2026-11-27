@@ -52,6 +52,8 @@ are compared with Mathlib's stabiliser lemmas in
 
 * `AbsoluteValue.Place.stabilizer_valuationSubring`: the stabiliser of a finite place is the
   stabiliser of its valuation subring.
+* `AbsoluteValue.Place.mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one`: an element satisfying
+  the congruences `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1` fixes the place `w`.
 * `AbsoluteValue.Place.stabilizer_eq_decompositionSubgroup`,
   `AbsoluteValue.Place.inertia_eq_map_inertiaSubgroup`: the decomposition and inertia groups in
   `L ≃ₐ[K] L` are Mathlib's decomposition and inertia subgroups of `A_w`.
@@ -123,6 +125,28 @@ theorem stabilizer_valuationSubring (w : Place L) (hw : IsNonarchimedean w.val) 
     (isEquiv_iff_valuationSubring (isNonarchimedean_smul_iff.mpr hw) hw).mpr
       ((valuationSubring_smul σ hw).trans hσ)
   exact congrArg Subtype.val (eq_of_isEquiv h)
+
+/-- **Power-map congruences fix the place.** If `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1`, then
+`σ` lies in the decomposition group of the place `w`, for any exponent `q` and any place `w`. -/
+theorem mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one (w : Place L) {σ : G} {q : ℕ}
+    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ q) < 1) : σ ∈ MulAction.stabilizer G w := by
+  rw [MulAction.mem_stabilizer_iff, smul_eq_iff_eq_inv_smul]
+  refine eq_of_isEquiv (by_contra fun h ↦ ?_)
+  -- Otherwise some `a` has `w a < 1 < w (σ • a)`, and `y = a ^ n` with `w (σ • y) > 2`
+  -- contradicts `w (σ • y) ≤ w (σ • y - y ^ q) + w (y ^ q) < 2`.
+  obtain ⟨a, ha, ha'⟩ := exists_one_lt_lt_one_of_not_isEquiv (σ⁻¹ • w).isNontrivial
+    w.isNontrivial (mt IsEquiv.symm h)
+  rw [val_smul, AbsoluteValue.smul_apply, inv_inv] at ha
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt 2 ha
+  have hy : w.val (a ^ n) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one₀ (w.val.nonneg a) ha'.le
+  have hyq : w.val ((a ^ n) ^ q) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one₀ (w.val.nonneg _) hy
+  have hle := w.val.add_le (σ • a ^ n - (a ^ n) ^ q) ((a ^ n) ^ q)
+  rw [sub_add_cancel] at hle
+  linarith [hσ _ hy, show w.val (σ • a ^ n) = w.val (σ • a) ^ n by rw [smul_pow', map_pow]]
 
 section Galois
 
