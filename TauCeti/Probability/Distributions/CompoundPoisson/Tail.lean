@@ -43,10 +43,6 @@ theorem tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Ioi x)) atTop
       (𝓝 ((r : ℝ) * C)) := by
-  rcases le_or_gt α 0 with hα | _hα
-  · -- For a nonpositive exponent every weighted tail tends to zero, so `C = 0`.
-    obtain rfl := tendsto_nhds_unique hμ (μ.tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα)
-    simpa using (compoundPoissonMeasure r μ).tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα
   simpa only [compoundPoissonMeasure_def, integral_natCast_poissonMeasure] using
     Measure.tendsto_rpow_mul_bind_convolutionPower_real_Ioi hμ
       (integrable_natCast_rpow_poissonMeasure r (α + 1))

@@ -206,7 +206,8 @@ theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
     integral_id_map_cast_poissonMeasure]
   ring
 
-/-- Every real power of the native Poisson count is integrable. -/
+/-- Every real power of the native Poisson count is integrable. For negative exponents this uses
+Lean's totalized `Real.rpow`, which assigns zero to a zero base. -/
 theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) (p : ℝ) :
     Integrable (fun n : ℕ ↦ (n : ℝ) ^ p) (poissonMeasure r) := by
   rcases le_total 0 p with hp | hp
@@ -272,21 +273,22 @@ theorem integrable_exp_mul_map_cast_poissonMeasure
 /-- The exact exponential-integrability domain of a Poisson random variable is all of `ℝ`. -/
 theorem integrableExpSet_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) :
     integrableExpSet X P = Set.univ := by
+  rw [← integrableExpSet_id_map_cast_poissonMeasure r]
   ext t
-  simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true] using
-    hX.integrable_exp_mul_map_cast_poissonMeasure t
+  simp only [integrableExpSet, Set.mem_ofPred_eq]
+  rw [← hX.map_eq]
+  symm
+  change Integrable (fun x : ℝ ↦ Real.exp (t * x)) (Measure.map X P) ↔
+    Integrable ((fun x : ℝ ↦ Real.exp (t * x)) ∘ X) P
+  exact integrable_map_measure (by fun_prop) hX.aemeasurable
 
-/-- Every real power of a Poisson random variable is integrable. -/
+/-- Every real power of a Poisson random variable is integrable. For a negative exponent this uses
+Lean's totalized `Real.rpow`, so the integrand is zero wherever the random variable is zero. -/
 theorem integrable_rpow_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (p : ℝ) :
     Integrable (fun ω ↦ X ω ^ p) P := by
   apply hX.integrable_fun_comp (f := fun x : ℝ ↦ x ^ p)
   apply (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).2
   simpa only [Function.comp_def] using integrable_natCast_rpow_poissonMeasure r p
-
-/-- Every natural power of a Poisson random variable is integrable. -/
-theorem integrable_pow_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (n : ℕ) :
-    Integrable (fun ω ↦ X ω ^ n) P := by
-  simpa only [Real.rpow_natCast] using hX.integrable_rpow_map_cast_poissonMeasure (n : ℝ)
 
 /-- A Poisson random variable belongs to every finite `Lᵖ` space. -/
 theorem memLp_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (p : ℝ≥0) :
@@ -308,7 +310,8 @@ theorem mgf_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (t : ℝ) :
 /-- The cumulant-generating function of a Poisson random variable. -/
 theorem cgf_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (t : ℝ) :
     cgf X P t = (r : ℝ) * (Real.exp t - 1) := by
-  rw [cgf, hX.mgf_map_cast_poissonMeasure, Real.log_exp]
+  rw [cgf, ← mgf_id_map hX.aemeasurable, hX.map_eq]
+  exact congrFun (TauCeti.Probability.cgf_id_map_cast_poissonMeasure r) t
 
 /-- A real random variable with Poisson law has centered second moment equal to the rate. -/
 theorem integral_sub_sq_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]
