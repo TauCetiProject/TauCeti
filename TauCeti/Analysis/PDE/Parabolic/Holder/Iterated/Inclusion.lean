@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.FieldHolder
+import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 
 /-!
 # Inclusions between parabolic Hölder spaces of consecutive orders
@@ -52,11 +53,16 @@ The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`
   `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_succ`), which keeps the map and its fields
   (`TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_apply`,
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_inclusionOfLEL`) and has norm at most
-  `(8 n²) ^ (n - m)` (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_le`).
+  `(8 n²) ^ (n - m)` (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_le`); reading a map one
+  order lower multiplies its norm by at most `8 (n + 1)²`
+  (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_succ_apply_le`).
 * `TauCeti.ParabolicCkHolderSpace.inclusionL_injective`: the inclusion of consecutive orders is
   injective.
 * `TauCeti.ParabolicCkHolderSpace.memHolder_mixedDerivL_of_le`: every field of order at most `k`
   is parabolically `α`-Hölder.
+* `TauCeti.ParabolicCkHolderSpace.exists_coe_eq_of_le` and
+  `TauCeti.ParabolicCkHolderSpace.exists_holderSpace_coe_eq`: a map of order `k` is one of every
+  order `j ≤ k`, and a bounded parabolically `α`-Hölder map.
 
 ## References
 
@@ -220,6 +226,13 @@ theorem norm_inclusionOfLEL_le (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n) :
     · exact ih.trans (by gcongr; linarith)
     · exact norm_inclusionL_le_mul_sq hα
 
+/-- Reading a map of order `n + 1` at order `n` multiplies its norm by at most `8 (n + 1)²`. -/
+theorem norm_inclusionOfLEL_succ_apply_le (hα : α ≤ 1) {n : ℕ}
+    (f : ParabolicCkHolderSpace (n + 1) α E F hab) :
+    ‖inclusionOfLEL hα (Nat.le_succ n) f‖ ≤ 8 * (n + 1) ^ 2 * ‖f‖ := by
+  refine (ContinuousLinearMap.le_opNorm _ f).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg f))
+  simpa using norm_inclusionOfLEL_le (E := E) (F := F) (hab := hab) hα (Nat.le_succ n)
+
 /-- **Every field is parabolically Hölder.** For `α ≤ 1`, every field `D_t^r D_x^m u` with
 `2 r + m ≤ k` of a map of order `k` is parabolically `α`-Hölder, not only those of top order:
 the map is also of every order `2 r + m ≤ k`, where the field has top order. -/
@@ -233,6 +246,23 @@ theorem memHolder_mixedDerivL_of_le (hα : α ≤ 1) (f : ParabolicCkHolderSpace
     · exact f.memHolder_mixedDerivL h
     · rw [← mixedDerivL_inclusionL hα f (by omega)]
       exact ih _ (by omega)
+
+/-- For `α ≤ 1`, a parabolic Hölder map of order `k` is one of every order `j ≤ k`. -/
+theorem exists_coe_eq_of_le (hα : α ≤ 1) {j : ℕ} (h : j ≤ k)
+    (f : ParabolicCkHolderSpace k α E F hab) :
+    ∃ g : ParabolicCkHolderSpace j α E F hab, ⇑g = ⇑f := by
+  induction k, h using Nat.le_induction with
+  | base => exact ⟨f, rfl⟩
+  | succ k _ ih =>
+    obtain ⟨g, hg⟩ := ih (inclusionL hα f)
+    exact ⟨g, hg.trans (funext (inclusionL_apply hα f))⟩
+
+/-- For `α ≤ 1`, a parabolic Hölder map of every order `k` is a bounded parabolically `α`-Hölder
+map on the slab. -/
+theorem exists_holderSpace_coe_eq (hα : α ≤ 1) (f : ParabolicCkHolderSpace k α E F hab) :
+    ∃ g : HolderSpace α (slab (E := E) a b) F, ⇑g = ⇑f := by
+  obtain ⟨g, hg⟩ := exists_coe_eq_of_le hα k.zero_le f
+  exact ⟨equivHolderSpace g, funext fun p ↦ (equivHolderSpace_apply g p).trans (congrFun hg p)⟩
 
 end ParabolicCkHolderSpace
 

@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Morita.Matrix
 
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.ModuleCat.Equivalence
+import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # Matrix Morita functor on finitely generated projective modules
@@ -18,9 +19,7 @@ For a ring `R : Type u` and a finite index type `ι : Type v` with decidable equ
 functor `ModuleCat.toMatrixModCat R ι` (`P ↦ (ι → P)`) preserves finitely generated projective
 modules (`TauCeti.finiteProjectiveModules_le_inverseImage_toMatrixModCat`). Lifting it yields a
 canonical additive functor `TauCeti.finiteProjectiveModulesToMatrixFunctor R ι` independent of any
-choice of index in `ι`, which is an equivalence of categories whenever `ι` is nonempty. For
-`ι : Type`, `TauCeti.FiniteProjectiveModules.matrixColumn R ι` packages the column module `R^ι`
-over `Matrix ι ι R` as an object of `(finiteProjectiveModules (Matrix ι ι R)).FullSubcategory`.
+choice of index in `ι`, which is an equivalence of categories whenever `ι` is nonempty.
 -/
 
 public section
@@ -110,33 +109,5 @@ instance : (finiteProjectiveModulesToMatrixFunctor R ι).IsEquivalence := by
   have : (finiteProjectiveModulesToMatrixFunctor R ι).Full :=
     Functor.Full.of_comp_faithful_iso (ObjectProperty.liftCompιIso _ _ _)
   exact { }
-
-section Column
-
-open scoped Matrix.Module
-
-/-- The column module `R^ι` over the matrix ring `Matrix ι ι R`, with matrices acting by
-`(A • v) i = ∑ j, A i j * v j`, as a finitely generated projective module. It is the image of the
-regular `R`-module under the matrix Morita equivalence. -/
-@[expose] def FiniteProjectiveModules.matrixColumn (R : Type u) [Ring R] (ι : Type) [Fintype ι]
-    [DecidableEq ι] : (finiteProjectiveModules (Matrix ι ι R)).FullSubcategory :=
-  ⟨ModuleCat.of (Matrix ι ι R) (ι → R), by
-    rw [finiteProjectiveModules_iff]
-    cases isEmpty_or_nonempty ι with
-    | inl _ => exact ⟨inferInstance, inferInstance⟩
-    | inr _ =>
-      let e := ModuleCat.matrixEquivalence R (Classical.arbitrary ι)
-      exact ⟨(e.finite_functor_obj_iff (ModuleCat.of R R)).2 inferInstance,
-        (e.projective_functor_obj_iff (ModuleCat.of R R)).2 inferInstance⟩⟩
-
-/-- The underlying module of `TauCeti.FiniteProjectiveModules.matrixColumn R ι` is `R^ι` with
-the column action of `Matrix ι ι R`. -/
-@[simp]
-theorem FiniteProjectiveModules.matrixColumn_obj (R : Type u) [Ring R] (ι : Type) [Fintype ι]
-    [DecidableEq ι] : (FiniteProjectiveModules.matrixColumn R ι).obj =
-      ModuleCat.of (Matrix ι ι R) (ι → R) :=
-  (rfl)
-
-end Column
 
 end TauCeti

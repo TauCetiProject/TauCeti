@@ -10,8 +10,11 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.FubiniStudySphere
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere.Hurewicz
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Hurewicz
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Chern
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Action
+public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
+public import TauCeti.Geometry.Symplectic.Floer.Laurent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern.Hurewicz
 
 /-!
@@ -49,10 +52,59 @@ the Riemann sphere is simply connected.
   by either. In particular, for every time-dependent Hamiltonian the capped action is injective on
   the cap classes of every loop with a smooth based cap
   (`TauCeti.Floer.SphericalCapClass.action_injective_fubiniStudyForm`).
+* **The generator.** The class `ℓ = TauCeti.Floer.SphericalPeriodGroup.riemannSphereGenerator` of
+  the standard sphere has area `1` and first Chern number `2`
+  (`TauCeti.Floer.SphericalPeriodGroup.area_riemannSphereGenerator`,
+  `TauCeti.Floer.SphericalPeriodGroup.chern_riemannSphereGenerator`). Its Hurewicz class generates
+  `H₂(OnePoint ℂ; ℤ)` (`TauCeti.zmultiples_hurewiczIntHom_riemannSphereSquare`), so `ℓ` generates
+  `Γ` (`TauCeti.Floer.SphericalPeriodGroup.zmultiples_riemannSphereGenerator`), and the class map
+  `H₂(OnePoint ℂ; ℤ) → Γ` is an isomorphism
+  (`TauCeti.Floer.SphericalPeriodGroup.ofSingularHomology_riemannSphere_bijective`): `Γ ≅ ℤ`. The
+  generator `ℓ` is the positive Chern generator
+  (`TauCeti.Floer.SphericalPeriodGroup.chernEquivInt_riemannSphereGenerator`), so the minimal
+  Chern number is `2`.
+* **Laurent coefficients.** The Floer Novikov ring is the ring of formal Laurent series in the
+  variable `X = e^(-ℓ)`
+  (`TauCeti.Floer.NovikovRing.toLaurentSeries_single_neg_zsmul_riemannSphereGenerator`), of raw
+  degree `-2 c ℓ = -4` (`TauCeti.Floer.SphericalPeriodGroup.degree_riemannSphereGenerator`) and
+  valuation `ω ℓ = 1`: a nonzero monomial `r e^(k ℓ)` has raw degree `4 k` and no other
+  (`TauCeti.Floer.NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff`).
+* **The direction of the valuation.** The Floer Novikov ring has valuation `ν(γ) = -ω(γ)`, so the
+  monomial `e^(k ℓ)` has valuation `-k`. For `m ≠ 0`, the geometric series `∑ₖ e^(k m ℓ)` is a
+  Floer Novikov series exactly when `m < 0`
+  (`TauCeti.Floer.forall_finite_neg_area_lt_indicator_range_nsmul_riemannSphere_iff`):
+  `∑ₖ e^(-k ℓ) = ∑ₖ X^k` lies in the ring, its valuations `k` tending to infinity, while
+  `∑ₖ e^(k ℓ)` does not. A ring with valuation `+ω` would contain exactly the opposite geometric
+  series (`TauCeti.Floer.forall_finite_area_lt_indicator_range_nsmul_riemannSphere_iff`).
+* **The coefficient comparison `q^A ↦ e^(-A)`.** The comparison from the Novikov ring indexed by
+  the class group `H₂(OnePoint ℂ; ℤ)` of genus-zero Gromov–Witten theory to the Floer Novikov ring
+  is bijective (`TauCeti.Floer.coefficientComparison_ofSingularHomology_riemannSphere_bijective`),
+  and sends `q^(k [ℓ])` to `X^k`
+  (`TauCeti.Floer.NovikovRing.toLaurentSeries_coefficientComparison_riemannSphere_single`). For
+  `k = 1` this is `q^[S²] ↦ X`, the coefficient of the quantum relation `x ⋆ x = q^[S²]` of `CP¹`,
+  homogeneous since `deg q^[S²] = 2 c₁[S²] = 4 = 2 deg x`
+  (`TauCeti.Floer.single_zsmul_riemannSphereSquare_mem_gradeBy`). The comparison keeps it of
+  degree `4`: its image `e^(-ℓ)` has raw degree `-4`, which is cochain degree `4`
+  (`TauCeti.Floer.coefficientComparison_riemannSphere_single_mem_gradeBy_degree`), whereas with
+  the opposite sign `q^A ↦ e^A` the image `e^ℓ` would have raw degree `4`, cochain degree `-4`.
+  The whole quantum geometric series `∑ₖ q^(k [S²])` goes to `∑ₖ e^(-k ℓ)`
+  (`TauCeti.Floer.coefficientComparison_geometric_riemannSphere`): the quantum corrections in the
+  multiples of the line class land in the Floer Novikov ring, and would not land in a ring with
+  valuation `+ω`.
+* **Recapping at a sphere.** Any two cap classes of a loop in the Riemann sphere differ by
+  recapping with a unique multiple `k • ℓ`
+  (`TauCeti.Floer.SphericalCapClass.existsUnique_zsmul_riemannSphereGenerator_vadd_eq`). With the
+  orientation of `SphericalCapClass`, recapping by `k • ℓ` lowers the capped action of `ω_FS` by
+  exactly `k` (`TauCeti.Floer.SphericalCapClass.action_zsmul_riemannSphereGenerator_vadd`).
 
 These are the coefficient data of capped Floer theory on `CP¹` for the actual symplectic form and
 the actual first Chern number. The computations for arbitrary homomorphisms `ω` and `c` on the round
 sphere are in `TauCeti.Geometry.Symplectic.Floer.Examples.Sphere`.
+
+## Main definitions
+
+* `TauCeti.Floer.SphericalPeriodGroup.riemannSphereGenerator`: the class of the standard sphere in
+  the period group of the Riemann sphere.
 
 ## Main results
 
@@ -63,9 +115,23 @@ sphere are in `TauCeti.Geometry.Symplectic.Floer.Examples.Sphere`.
   number are injective on the period group.
 * `TauCeti.Floer.SphericalCapClass.action_injective_fubiniStudyForm`: a cap class is determined by
   its capped action.
+* `TauCeti.Floer.SphericalPeriodGroup.ofSingularHomology_riemannSphere_bijective`: the period
+  group is `H₂(OnePoint ℂ; ℤ) ≅ ℤ`, generated by the standard sphere.
+* `TauCeti.Floer.NovikovRing.toLaurentSeries_coefficientComparison_riemannSphere_single`: the
+  comparison `q^A ↦ e^(-A)` sends `q^(k [ℓ])` to the Laurent monomial `X^k`.
+* `TauCeti.Floer.forall_finite_neg_area_lt_indicator_range_nsmul_riemannSphere_iff`,
+  `TauCeti.Floer.forall_finite_area_lt_indicator_range_nsmul_riemannSphere_iff`:
+  `∑ₖ e^(k m ℓ)` with `m ≠ 0` is a Novikov series for the valuation `-ω` of the Floer Novikov ring
+  exactly when `m < 0`, and for the opposite valuation `+ω` exactly when `m > 0`.
+* `TauCeti.Floer.coefficientComparison_geometric_riemannSphere`: the comparison sends the quantum
+  geometric series `∑ₖ q^(k [S²])` to `∑ₖ e^(-k ℓ)`.
+* `TauCeti.Floer.coefficientComparison_riemannSphere_single_mem_gradeBy_degree`: it sends
+  `q^(k [ℓ])`, of quantum degree `4 k`, to a series of raw degree `-4 k`, cochain degree `4 k`.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS (2012),
   Section 11.1 (the Novikov ring and the quantum cohomology of `CP¹`).
 -/
@@ -143,6 +209,8 @@ end OnePoint
 
 namespace TauCeti.Floer
 
+open NovikovSeries OnePoint PeriodGroup
+
 namespace SphericalPeriodGroup
 
 /-- **On the period group of the Riemann sphere, area is half the first Chern number**, for the
@@ -167,7 +235,246 @@ theorem area_injective_fubiniStudyForm :
   PeriodGroup.area_injective_of_area_eq_mul_chern
     (fun s ↦ OnePoint.homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s) (by norm_num)
 
+/-- **The class of the standard sphere** in the period group of the Riemann sphere with the
+Fubini–Study area and the first Chern number of `ω_FS`. It has area `1` and Chern number `2`, and
+generates the period group (`SphericalPeriodGroup.zmultiples_riemannSphereGenerator`). -/
+def riemannSphereGenerator : SphericalPeriodGroup ω_FS c₁_FS :=
+  ofHomotopyGroup _ _ ∞ (Additive.ofMul (⟦riemannSphereSquare⟧ : π_ 2 (OnePoint ℂ) ∞))
+
+/-- The generator is the class `ofHomotopyGroup` of the standard sphere, so the general results on
+period groups generated by one sphere apply to it. -/
+theorem riemannSphereGenerator_def :
+    riemannSphereGenerator =
+      ofHomotopyGroup _ _ ∞ (Additive.ofMul (⟦riemannSphereSquare⟧ : π_ 2 (OnePoint ℂ) ∞)) :=
+  (rfl)
+
+/-- **Classes of `H₂(OnePoint ℂ; ℤ)` in the period group**: the Hurewicz class of the standard
+sphere is sent to the generator `ℓ`. -/
+@[simp]
+theorem ofSingularHomology_hurewicz_riemannSphereSquare :
+    ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _)
+        ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) riemannSphereSquare).hom 1) =
+      riemannSphereGenerator := by
+  rw [← hurewiczIntHom_mk]
+  exact ofSingularHomology_hurewiczIntHom _ _ _
+
+/-- **The standard sphere has Fubini–Study area `1`.** -/
+@[simp]
+theorem area_riemannSphereGenerator : PeriodGroup.area _ _ riemannSphereGenerator = 1 := by
+  rw [riemannSphereGenerator_def, area_ofHomotopyGroup]
+  exact OnePoint.homologySphereIntegralHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare
+
+/-- **The standard sphere has first Chern number `2`.** -/
+@[simp]
+theorem chern_riemannSphereGenerator : PeriodGroup.chern _ _ riemannSphereGenerator = 2 := by
+  rw [riemannSphereGenerator_def, chern_ofHomotopyGroup]
+  exact OnePoint.homologyFirstChernHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare
+
+/-- **The standard sphere has degree `4`**, twice its first Chern number: the Laurent variable
+`e^(-ℓ)` has raw degree `-4`. -/
+theorem degree_riemannSphereGenerator : PeriodGroup.degree _ _ riemannSphereGenerator = 4 := by
+  rw [degree_apply, chern_riemannSphereGenerator]
+  norm_num
+
+/-- The standard sphere has nonzero Fubini–Study area. -/
+theorem area_riemannSphereGenerator_ne_zero : PeriodGroup.area _ _ riemannSphereGenerator ≠ 0 := by
+  rw [area_riemannSphereGenerator]
+  exact one_ne_zero
+
+/-- The standard sphere has nonzero first Chern number. -/
+theorem chern_riemannSphereGenerator_ne_zero :
+    PeriodGroup.chern _ _ riemannSphereGenerator ≠ 0 := by
+  rw [chern_riemannSphereGenerator]
+  exact two_ne_zero
+
+/-- **The standard sphere generates the period group of the Riemann sphere.** -/
+theorem zmultiples_riemannSphereGenerator :
+    AddSubgroup.zmultiples riemannSphereGenerator = ⊤ :=
+  zmultiples_ofHomotopyGroup_eq_top zmultiples_hurewiczIntHom_riemannSphereSquare
+
+/-- Every class of the period group of the Riemann sphere is an integer multiple of the class of
+the standard sphere. -/
+theorem exists_zsmul_riemannSphereGenerator_eq (γ : SphericalPeriodGroup ω_FS c₁_FS) :
+    ∃ k : ℤ, k • riemannSphereGenerator = γ :=
+  exists_zsmul_ofHomotopyGroup_eq zmultiples_hurewiczIntHom_riemannSphereSquare γ
+
+/-- The period group of the Riemann sphere is cyclic, generated by the class of the standard
+sphere. -/
+instance : IsAddCyclic (SphericalPeriodGroup ω_FS c₁_FS) :=
+  isAddCyclic_of_zmultiples_eq_top zmultiples_hurewiczIntHom_riemannSphereSquare
+
+/-- **The period group of the Riemann sphere is infinite cyclic**: `k ↦ k • ℓ` is injective. -/
+theorem zsmul_riemannSphereGenerator_injective :
+    Function.Injective fun k : ℤ ↦ k • riemannSphereGenerator :=
+  zsmul_ofHomotopyGroup_injective (.inl area_riemannSphereGenerator_ne_zero)
+
+/-- **The class map `H₂(OnePoint ℂ; ℤ) → Γ` of the Riemann sphere is an isomorphism.** -/
+theorem ofSingularHomology_riemannSphere_bijective :
+    Function.Bijective
+      (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _)) :=
+  ⟨ofSingularHomology_injective_of_zmultiples_eq_top
+    zmultiples_hurewiczIntHom_riemannSphereSquare _ (.inl area_riemannSphereGenerator_ne_zero),
+    ofSingularHomology_surjective _⟩
+
+/-- On the Riemann sphere, every spherical class of vanishing first Chern number has vanishing area,
+the hypothesis of the integer coordinates `TauCeti.Floer.PeriodGroup.chernEquivInt`. -/
+theorem ker_chern_le_ker_area_riemannSphere :
+    (AddMonoidHom.comp c₁_FS (sphericalClasses (OnePoint ℂ) 1).subtype).ker ≤
+      (AddMonoidHom.comp ω_FS (sphericalClasses (OnePoint ℂ) 1).subtype).ker :=
+  ker_le_ker_of_area_eq_mul_chern
+    fun s ↦ homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s
+
+/-- On the Riemann sphere the first Chern number does not vanish on spherical classes. -/
+theorem chern_ne_zero_riemannSphere :
+    AddMonoidHom.comp c₁_FS (sphericalClasses (OnePoint ℂ) 1).subtype ≠ 0 := fun h ↦
+  chern_riemannSphereGenerator_ne_zero <| by
+    rw [riemannSphereGenerator_def, chern_ofHomotopyGroup]
+    exact DFunLike.congr_fun h
+      ⟨_, hurewiczIntHom_mem_sphericalClasses ∞ (Additive.ofMul ⟦riemannSphereSquare⟧)⟩
+
+/-- **The standard sphere is the positive Chern generator** of the period group of the Riemann
+sphere: its integer coordinate is `1`, so the minimal Chern number is `2`. -/
+theorem chernEquivInt_riemannSphereGenerator :
+    chernEquivInt ker_chern_le_ker_area_riemannSphere chern_ne_zero_riemannSphere
+      riemannSphereGenerator = 1 :=
+  chernEquivInt_eq_one_of_zmultiples_eq_top _ _ zmultiples_riemannSphereGenerator (by simp)
+
+/-- The Laurent exponent of the standard sphere is `-1`: the Laurent variable is `e^(-ℓ)`. -/
+theorem laurentExponent_riemannSphereGenerator :
+    laurentExponent ker_chern_le_ker_area_riemannSphere chern_ne_zero_riemannSphere
+      riemannSphereGenerator = -1 :=
+  laurentExponent_eq_neg_one_of_zmultiples_eq_top _ _ zmultiples_riemannSphereGenerator (by simp)
+
 end SphericalPeriodGroup
+
+open SphericalPeriodGroup
+
+/-- **Laurent coefficients of the Riemann sphere.** The Laurent coordinates of the Floer Novikov
+ring of the Riemann sphere with its Fubini–Study form, for the monotonicity constant `1/2`, send the
+monomial `e^(-k ℓ)` to `X^k`: the Laurent variable `X` is `e^(-ℓ)`, of raw degree `-4` and
+valuation `1`. -/
+theorem NovikovRing.toLaurentSeries_single_neg_zsmul_riemannSphereGenerator {R : Type*}
+    [Semiring R] (k : ℤ) (r : R) :
+    NovikovRing.toLaurentSeries (ω := AddMonoidHom.comp ω_FS (sphericalClasses _ 1).subtype)
+        (c := AddMonoidHom.comp c₁_FS (sphericalClasses _ 1).subtype)
+        (fun s ↦ homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s)
+        chern_ne_zero_riemannSphere (by norm_num) (single (-(k • riemannSphereGenerator)) r) =
+      HahnSeries.single k r :=
+  NovikovRing.toLaurentSeries_single_neg_zsmul _ _ _ zmultiples_riemannSphereGenerator (by simp) k r
+
+/-- **The coefficient comparison on the Riemann sphere is bijective.** The comparison
+`q^A ↦ e^(-[A])` from the Novikov ring indexed by the class group `H₂(OnePoint ℂ; ℤ)` of genus-zero
+Gromov–Witten theory to the Floer Novikov ring of the Fubini–Study form is bijective. -/
+theorem coefficientComparison_ofSingularHomology_riemannSphere_bijective {R : Type*}
+    [Semiring R] :
+    Function.Bijective (coefficientComparison (R := R)
+      (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+      (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))) :=
+  ⟨coefficientComparison_injective _ _ ofSingularHomology_riemannSphere_bijective.1,
+    coefficientComparison_surjective _ _ (ofSingularHomology_surjective _)⟩
+
+/-- **The comparison `q^A ↦ e^(-A)` in Laurent coordinates on the Riemann sphere.** The comparison
+out of the Novikov ring indexed by `H₂(OnePoint ℂ; ℤ)` sends the monomial `q^(k [ℓ])` of the class
+of the standard sphere to the Laurent monomial `X^k`. -/
+theorem NovikovRing.toLaurentSeries_coefficientComparison_riemannSphere_single {R : Type*}
+    [Semiring R] (k : ℤ) (r : R) :
+    NovikovRing.toLaurentSeries (ω := AddMonoidHom.comp ω_FS (sphericalClasses _ 1).subtype)
+        (c := AddMonoidHom.comp c₁_FS (sphericalClasses _ 1).subtype)
+        (fun s ↦ homologySphereIntegralHom_fubiniStudyForm_eq_inv_two_mul s)
+        chern_ne_zero_riemannSphere (by norm_num)
+        (coefficientComparison
+          (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+          (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+          (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r)) =
+      HahnSeries.single k r := by
+  rw [coefficientComparison_single, map_zsmul, hurewiczIntHom_mk,
+    ofSingularHomology_hurewicz_riemannSphereSquare]
+  exact NovikovRing.toLaurentSeries_single_neg_zsmul_riemannSphereGenerator k r
+
+/-- **Geometric series in the Floer Novikov ring of the Riemann sphere.** For a nonzero multiple
+`m • ℓ` of the standard sphere and a nonzero coefficient `r`, the series `∑ₖ r e^(k m ℓ)` satisfies
+the Novikov condition of the Floer Novikov ring, whose valuation `ν = -ω` gives `e^(k m ℓ)` the
+valuation `-k m`, exactly when `m < 0`. So `∑ₖ e^(-k ℓ)`, the geometric series in the Laurent
+variable `e^(-ℓ)` of valuation `1`, lies in the Floer Novikov ring, with valuations `k` tending to
+infinity, while `∑ₖ e^(k ℓ)` does not. -/
+theorem forall_finite_neg_area_lt_indicator_range_nsmul_riemannSphere_iff {R : Type*}
+    [Zero R] {m : ℤ} (hm : m ≠ 0) {r : R} (hr : r ≠ 0) :
+    (∀ C : ℝ, {γ | (Set.range fun k : ℕ ↦ k • (m • riemannSphereGenerator)).indicator
+        (fun _ ↦ r) γ ≠ 0 ∧ (-PeriodGroup.area _ _) γ < C}.Finite) ↔ m < 0 := by
+  have harea : (-PeriodGroup.area _ _) (m • riemannSphereGenerator) = -m := by simp
+  rw [forall_finite_lt_indicator_range_nsmul_iff (by rw [harea]; exact_mod_cast neg_ne_zero.2 hm)
+    hr, harea]
+  exact_mod_cast neg_pos
+
+/-- **The opposite valuation reverses the geometric series.** For the valuation `+ω` instead of
+the valuation `-ω` of the Floer Novikov ring, the series `∑ₖ r e^(k m ℓ)` with `m ≠ 0` and `r ≠ 0`
+satisfies the Novikov condition exactly when `m > 0`. Such a ring contains `∑ₖ e^(k ℓ)` but not the
+series `∑ₖ e^(-k ℓ)` to which the comparison `q^A ↦ e^(-A)` sends the quantum geometric series
+`∑ₖ q^(k [S²])` (`TauCeti.Floer.coefficientComparison_geometric_riemannSphere`), so it could not
+receive the quantum corrections in the multiples of the line class. -/
+theorem forall_finite_area_lt_indicator_range_nsmul_riemannSphere_iff {R : Type*}
+    [Zero R] {m : ℤ} (hm : m ≠ 0) {r : R} (hr : r ≠ 0) :
+    (∀ C : ℝ, {γ | (Set.range fun k : ℕ ↦ k • (m • riemannSphereGenerator)).indicator
+        (fun _ ↦ r) γ ≠ 0 ∧ PeriodGroup.area _ _ γ < C}.Finite) ↔ 0 < m := by
+  have harea : PeriodGroup.area _ _ (m • riemannSphereGenerator) = m := by simp
+  rw [forall_finite_lt_indicator_range_nsmul_iff (by rw [harea]; exact_mod_cast hm) hr, harea]
+  exact Int.cast_pos
+
+/-- **The comparison of the quantum geometric series on the Riemann sphere.** The comparison
+`q^A ↦ e^(-A)` sends the geometric series `∑ₖ r q^(k [S²])` of the class of the standard sphere,
+of Fubini–Study area `1`, to the geometric series `∑ₖ r e^(-k ℓ)` of the Floer Novikov ring. -/
+theorem coefficientComparison_geometric_riemannSphere {R : Type*} [Semiring R] (r : R) :
+    coefficientComparison
+        (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (geometric ω_FS (h := hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧))
+          (by rw [homologySphereIntegralHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare]
+              exact one_pos) r) =
+      geometric (-PeriodGroup.area _ _) (h := -riemannSphereGenerator) (by simp) r := by
+  rw [coefficientComparison_geometric]
+  ext γ
+  simp only [coeff_geometric]
+  rw [hurewiczIntHom_mk, ofSingularHomology_hurewicz_riemannSphereSquare]
+
+/-- **The raw degrees of Floer monomials on the Riemann sphere.** A nonzero monomial `r e^(k ℓ)` of
+the Floer Novikov ring has raw degree `2 c₁(k ℓ) = 4 k` and no other. So the Laurent variable
+`e^(-ℓ)` has raw degree `-4`, which is cochain degree `4`, and `e^ℓ` has raw degree `4`. -/
+theorem NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff {R : Type*}
+    [Semiring R] {r : R} (hr : r ≠ 0) (k d : ℤ) :
+    single (k • riemannSphereGenerator) r ∈
+        gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) d ↔ d = 4 * k := by
+  rw [single_mem_gradeBy_iff hr, map_zsmul, PeriodGroup.degree_apply,
+    chern_riemannSphereGenerator, smul_eq_mul]
+  omega
+
+/-- **The quantum degree of the line class of `CP¹`.** The class `L` of the standard sphere has
+first Chern number `2`, so the quantum monomial `q^(k L)` has degree `2 c₁(k L) = 4 k`. -/
+theorem single_zsmul_riemannSphereSquare_mem_gradeBy {R : Type*} [Semiring R] (k : ℤ) (r : R) :
+    (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r :
+        NovikovSeries R _ ω_FS) ∈ gradeBy R ω_FS (2 • c₁_FS : _ →+ ℤ) (4 * k) := by
+  convert single_zsmul_mem_gradeBy_two_smul (R := R) (N := ω_FS) c₁_FS k _ r using 2
+  rw [homologyFirstChernHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare]
+  ring
+
+/-- **The comparison `q^A ↦ e^(-A)` preserves the degree of the quantum relation of `CP¹`.**
+The quantum monomial `q^(k L)` of the class `L` of the standard sphere has degree `4 k`
+(`TauCeti.Floer.single_zsmul_riemannSphereSquare_mem_gradeBy`), and the comparison sends it to
+`e^(-k ℓ)`, of raw Floer degree `-4 k`, that is of cochain degree `4 k` in the grading
+`C^k = CF_(1-k)`. For `k = 1` this is the coefficient `q^L` of the quantum relation
+`x ⋆ x = q^L · 1`: of degree `4 = 2 + 2`, and still of cochain degree `4` after the comparison. With
+the opposite sign `q^A ↦ e^A` the image `e^ℓ` would have raw degree `4`, that is cochain degree
+`-4`, and not `4`
+(`TauCeti.Floer.NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff`). -/
+theorem coefficientComparison_riemannSphere_single_mem_gradeBy_degree {R : Type*} [Semiring R]
+    (k : ℤ) (r : R) :
+    coefficientComparison
+        (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r) ∈
+      gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) (-(4 * k)) := by
+  rw [PeriodGroup.degree_eq_two_smul_chern]
+  exact coefficientComparison_mem_gradeBy_two_smul _ _ c₁_FS _ (chern_ofSingularHomology _)
+    (single_zsmul_riemannSphereSquare_mem_gradeBy k r)
 
 namespace SphericalCapClass
 
@@ -182,6 +489,24 @@ theorem action_injective_fubiniStudyForm (Ham : ℝ → OnePoint ℂ → ℝ)
       OnePoint.mextDeriv_fubiniStudyForm (homologySphereIntegralHom_hurewiczIntHom _ _ x) Ham
       h) :=
   action_injective _ Ham h SphericalPeriodGroup.area_injective_fubiniStudyForm
+
+/-- **Recapping on the Riemann sphere.** Any two cap classes of a loop in the Riemann sphere differ
+by recapping with a unique multiple of the class of the standard sphere. -/
+theorem existsUnique_zsmul_riemannSphereGenerator_vadd_eq
+    (D D' : SphericalCapClass ω_FS c₁_FS γ) :
+    ∃! k : ℤ, k • riemannSphereGenerator +ᵥ D = D' :=
+  existsUnique_zsmul_vadd_eq zmultiples_riemannSphereGenerator
+    (ofHomotopyGroup_ne_zero (.inl area_riemannSphereGenerator_ne_zero)) D D'
+
+/-- **The action of recapping at the standard sphere.** For every time-dependent Hamiltonian,
+recapping a cap class by `k` copies of the standard sphere lowers its capped action for the
+Fubini–Study form by exactly `k`. -/
+theorem action_zsmul_riemannSphereGenerator_vadd (Ham : ℝ → OnePoint ℂ → ℝ)
+    (h : ∃ u, IsSmoothBasedCap 𝓘(ℝ, ℂ) γ u) (k : ℤ) (q : SphericalCapClass ω_FS c₁_FS γ) :
+    action _ _ (homologySphereIntegralHom_hurewiczIntHom _ _ x) Ham h
+        (k • riemannSphereGenerator +ᵥ q) =
+      -k + action _ _ (homologySphereIntegralHom_hurewiczIntHom _ _ x) Ham h q := by
+  rw [action_vadd, map_zsmul, area_riemannSphereGenerator, zsmul_eq_mul, mul_one]
 
 end SphericalCapClass
 

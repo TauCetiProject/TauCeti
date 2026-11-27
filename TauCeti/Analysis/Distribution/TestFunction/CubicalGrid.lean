@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.TestFunction.BoxCurrent
 import Mathlib.Algebra.Group.Subgroup.Finsupp
+import TauCeti.Algebra.Ring.NegOnePow
 import Mathlib.Analysis.Calculus.FDeriv.Affine
+import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # Coordinate boxes and the cubes of a cubical grid as currents in `ℝⁿ`
@@ -49,18 +51,27 @@ file supplies their boundary formula, supports and mass bounds.
 * `TauCeti.coordPlaneMap_succAboveEmb`: the face maps of the box are coordinate plane maps.
 * `TauCeti.coordPlaneMap_comp_boxFaceMap`: a coordinate plane composed with a face map of the
   box is a coordinate plane of one dimension less.
+* `TauCeti.coordProj I`, `TauCeti.planeProj I x`: the coordinate projection and the affine
+  projection onto a coordinate plane, left inverses of the linear part of `coordPlaneMap I x` and
+  of `coordPlaneMap I x` itself.
+* `TauCeti.coordForm I`: the coordinate form `dx^I`, with
+  `TauCeti.compContinuousLinearMap_contLinear_coordPlaneMap_comp_coordProj` writing a form
+  restricted to the plane as its coefficient times `dx^I`.
 * `TauCeti.coordBoxCurrent I x r Ω`: the oriented current `[[x; I, r]]` of a coordinate box.
 * `TauCeti.coordBoxCurrent_apply`: its value as an integral over `[0, r]`.
 * `TauCeti.coordBoxCurrent_comp_extDerivCLM`: the cubical boundary formula.
-* `TauCeti.dsupport_coordBoxCurrent_subset`, `TauCeti.mass_coordBoxCurrent_le`,
-  `TauCeti.isNormal_coordBoxCurrent`: support, mass and normality.
+* `TauCeti.dsupport_coordBoxCurrent_subset`, `TauCeti.isCompact_dsupport_coordBoxCurrent`,
+  `TauCeti.mass_coordBoxCurrent_le`, `TauCeti.isNormal_coordBoxCurrent`: support, mass and
+  normality.
 * `TauCeti.gridCubeCurrent ε I z Ω`: the oriented grid cube with corner `εz`, `z ∈ ℤⁿ`.
 * `TauCeti.gridCubeCurrent_comp_extDerivCLM`: the boundary of a grid cube is an alternating sum of
   grid cubes.
 * `TauCeti.cubicalGridChains ε Ω k`: the integral cubical grid `k`-chains of side `ε`, with the
   explicit description `TauCeti.mem_cubicalGridChains_iff`.
 * `TauCeti.comp_extDerivCLM_mem_cubicalGridChains`: grid chains are closed under the boundary.
-* `TauCeti.isNormal_of_mem_cubicalGridChains`: grid chains are normal currents.
+* `TauCeti.isNormal_of_mem_cubicalGridChains`,
+  `TauCeti.isCompact_dsupport_of_mem_cubicalGridChains`: grid chains are normal currents with
+  compact support.
 
 ## References
 
@@ -99,6 +110,12 @@ theorem coordPlaneMap_apply (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n
 theorem contLinear_coordPlaneMap (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
     (coordPlaneMap I x).contLinear =
       (LinearIsometry.piLpExtendByZero 2 ℝ ℝ I).toContinuousLinearMap := by
+  simp [coordPlaneMap]
+
+/-- `coordPlaneMap I x s` differs from the base point `x` by the linear part applied to `s`. -/
+theorem coordPlaneMap_sub_self (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (s : EuclideanSpace ℝ (Fin k)) :
+    coordPlaneMap I x s - x = (coordPlaneMap I x).contLinear s := by
   simp [coordPlaneMap]
 
 /-- The linear part of `coordPlaneMap I x` sends the `j`-th axis to the `I j`-th axis. -/
@@ -176,6 +193,101 @@ theorem coordPlaneMap_comp_boxFaceMap (I : Fin (k + 1) ↪ Fin n) (x : Euclidean
     have hne : m ≠ I j := fun h ↦ hm ⟨j, h.symm⟩
     rw [Function.extend_apply' _ _ _ hm, Function.extend_apply' _ _ _ hm']
     simp [hne]
+
+/-! ### Coordinate projections and coordinate forms -/
+
+/-- The coordinate projection `v ↦ (v (I j))ⱼ`, a left inverse of the linear part of
+`TauCeti.coordPlaneMap I x` (`TauCeti.coordProj_contLinear_coordPlaneMap`). -/
+noncomputable def coordProj (I : Fin k ↪ Fin n) :
+    EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+  (EuclideanSpace.equiv (Fin k) ℝ).symm.toContinuousLinearMap ∘L
+    ContinuousLinearMap.pi fun j ↦ EuclideanSpace.proj (I j)
+
+@[simp]
+theorem coordProj_apply (I : Fin k ↪ Fin n) (v : EuclideanSpace ℝ (Fin n)) (j : Fin k) :
+    coordProj I v j = v (I j) := by
+  simp [coordProj]
+
+/-- The coordinate projection is a left inverse of the linear part of a coordinate plane map. -/
+theorem coordProj_contLinear_coordPlaneMap (I : Fin k ↪ Fin n)
+    (x : EuclideanSpace ℝ (Fin n)) (s : EuclideanSpace ℝ (Fin k)) :
+    coordProj I ((coordPlaneMap I x).contLinear s) = s := by
+  ext j
+  simp [contLinear_coordPlaneMap, I.injective.extend_apply]
+
+/-- The directions of a coordinate plane lie in the span of `e_{I 0}, …, e_{I (k-1)}`. -/
+theorem contLinear_coordPlaneMap_mem_span (I : Fin k ↪ Fin n)
+    (x : EuclideanSpace ℝ (Fin n)) (v : EuclideanSpace ℝ (Fin k)) :
+    (coordPlaneMap I x).contLinear v ∈
+      Submodule.span ℝ (range fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) := by
+  refine (Submodule.mem_span_range_iff_exists_fun ℝ).2 ⟨fun j ↦ v j, ?_⟩
+  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.sum_repr v]
+  simp [map_sum, map_smul, contLinear_coordPlaneMap_single]
+
+/-- The affine projection `y ↦ (y - x)_I` onto the coordinates of the plane, a left inverse of
+`TauCeti.coordPlaneMap I x` (`TauCeti.planeProj_coordPlaneMap`). -/
+noncomputable def planeProj (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
+    EuclideanSpace ℝ (Fin n) →ᴬ[ℝ] EuclideanSpace ℝ (Fin k) :=
+  (coordProj I).toContinuousAffineMap - ContinuousAffineMap.const ℝ _ (coordProj I x)
+
+theorem planeProj_apply (I : Fin k ↪ Fin n) (x y : EuclideanSpace ℝ (Fin n)) :
+    planeProj I x y = coordProj I (y - x) := by
+  simp [planeProj]
+
+/-- The linear part of the projection onto a coordinate plane is the coordinate projection. -/
+@[simp]
+theorem contLinear_planeProj (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
+    (planeProj I x).contLinear = coordProj I := by
+  ext v
+  simp [planeProj]
+
+@[simp]
+theorem planeProj_coordPlaneMap (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (s : EuclideanSpace ℝ (Fin k)) :
+    planeProj I x (coordPlaneMap I x s) = s := by
+  ext j
+  simp [planeProj_apply, coordPlaneMap_apply, I.injective.extend_apply]
+
+/-- The coordinate `k`-form `dx^I`: the determinant of the coordinates indexed by `I`. -/
+noncomputable def coordForm (I : Fin k ↪ Fin n) :
+    EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ :=
+  (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.continuousDet.compContinuousLinearMap (coordProj I)
+
+/-- The coordinate form `dx^I` evaluates to the determinant of the coordinates indexed by `I`. -/
+theorem coordForm_apply (I : Fin k ↪ Fin n) (v : Fin k → EuclideanSpace ℝ (Fin n)) :
+    coordForm I v = (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.det (coordProj I ∘ v) := by
+  rw [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    Module.Basis.continuousDet_apply]
+
+/-- The coordinate form `dx^I` is one on `e_{I 0}, …, e_{I (k-1)}`. -/
+@[simp]
+theorem coordForm_apply_single (I : Fin k ↪ Fin n) :
+    coordForm I (fun j ↦ EuclideanSpace.single (I j) 1) = 1 := by
+  have h : (coordProj I ∘ fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) =
+      (EuclideanSpace.basisFun (Fin k) ℝ).toBasis := by
+    funext j
+    ext i
+    simp [I.injective.eq_iff, eq_comm]
+  rw [coordForm_apply, h, Module.Basis.det_self]
+
+/-- Projecting onto a coordinate plane turns a `k`-form into the multiple of `dx^I` by its
+coefficient on `e_{I 0}, …, e_{I (k-1)}`. -/
+theorem compContinuousLinearMap_contLinear_coordPlaneMap_comp_coordProj (I : Fin k ↪ Fin n)
+    (x : EuclideanSpace ℝ (Fin n)) (α : EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) :
+    α.compContinuousLinearMap ((coordPlaneMap I x).contLinear ∘L coordProj I) =
+      α (fun j ↦ EuclideanSpace.single (I j) 1) • coordForm I := by
+  ext v
+  set b := (EuclideanSpace.basisFun (Fin k) ℝ).toBasis
+  have h := (α.compContinuousLinearMap (coordPlaneMap I x).contLinear).apply_eq_det_mul b
+    (coordProj I ∘ v)
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousLinearMap.coe_comp,
+    ContinuousAlternatingMap.smul_apply, coordForm, smul_eq_mul]
+  have hb : (coordPlaneMap I x).contLinear ∘ b = fun j ↦ EuclideanSpace.single (I j) 1 := by
+    funext j
+    simp only [Function.comp_apply, b, OrthonormalBasis.coe_toBasis,
+      EuclideanSpace.basisFun_apply, contLinear_coordPlaneMap_single]
+  rw [Function.comp_assoc, h, hb, mul_comm, Module.Basis.continuousDet_apply]
 
 end CoordPlaneMap
 
@@ -291,17 +403,28 @@ theorem coordBoxCurrent_comp_extDerivCLM (I : Fin (k + 1) ↪ Fin n)
       ((0 : Fin (k + 1) → ℝ) j)      (by simp)]
   simp only [ContinuousLinearMap.comp_apply]
 
+/-- The coordinate box `{x + ∑ⱼ sⱼ e_{I j} | 0 ≤ sⱼ ≤ rⱼ}` is compact. -/
+theorem isCompact_coordPlaneMap_image_Icc (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (r : Fin k → ℝ) : IsCompact (coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r)) :=
+  ((PiLp.homeomorph 2 _).isCompact_preimage.2 isCompact_Icc).image (coordPlaneMap I x).continuous
+
 /-- The support of `[[x; I, r]]` lies in the box `{x + ∑ⱼ sⱼ e_{I j} | 0 ≤ sⱼ ≤ rⱼ}`. -/
 theorem dsupport_coordBoxCurrent_subset (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
     (r : Fin k → ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
     dsupport (coordBoxCurrent I x r Ω : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) → ℝ) ⊆
       coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r) := by
-  have hbox : IsCompact (ofLp ⁻¹' Icc 0 r : Set (EuclideanSpace ℝ (Fin k))) :=
-    (PiLp.homeomorph 2 _).isCompact_preimage.2 isCompact_Icc
   rw [coordBoxCurrent, ContinuousLinearMap.coe_comp]
   refine (dsupport_comp_pullbackCLM_subset _).trans ?_
-  rw [(hbox.image (coordPlaneMap I x).continuous).isClosed.closure_subset_iff]
+  rw [(isCompact_coordPlaneMap_image_Icc I x r).isClosed.closure_subset_iff]
   exact image_mono (inter_subset_right.trans (dsupport_boxCurrent_subset 0 r ⊤))
+
+/-- The support of `[[x; I, r]]` is compact. -/
+theorem isCompact_dsupport_coordBoxCurrent (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (r : Fin k → ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
+    IsCompact
+      (dsupport (coordBoxCurrent I x r Ω : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) → ℝ)) :=
+  (isCompact_coordPlaneMap_image_Icc I x r).of_isClosed_subset isClosed_dsupport
+    (dsupport_coordBoxCurrent_subset I x r Ω)
 
 /-- **The mass of a coordinate box**: `M([[x; I, r]]) ≤ ∏ⱼ rⱼ`, the `k`-volume of the box. -/
 theorem mass_coordBoxCurrent_le (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
@@ -425,10 +548,7 @@ theorem comp_extDerivCLM_mem_cubicalGridChains {ε : ℝ}
   have hsub := AddSubgroup.sub_mem _
     (gridCubeCurrent_mem_cubicalGridChains ε (j.succAboveEmb.trans I) (z + Pi.single (I j) 1) Ω)
     (gridCubeCurrent_mem_cubicalGridChains ε (j.succAboveEmb.trans I) z Ω)
-  rcases neg_one_pow_eq_or ℝ (j : ℕ) with h | h <;> rw [h]
-  · rwa [one_smul]
-  · have h' := AddSubgroup.zsmul_mem _ hsub (-1)
-    rwa [← Int.cast_smul_eq_zsmul ℝ, Int.cast_neg, Int.cast_one] at h'
+  exact neg_one_pow_smul_mem hsub _
 
 /-- **Grid chains are normal currents.** -/
 theorem isNormal_of_mem_cubicalGridChains {ε : ℝ} {Ω : Opens (EuclideanSpace ℝ (Fin n))}
@@ -440,6 +560,24 @@ theorem isNormal_of_mem_cubicalGridChains {ε : ℝ} {Ω : Opens (EuclideanSpace
       rintro _ ⟨⟨I, z⟩, rfl⟩
       exact mem_normalCurrentSubmodule.2 (isNormal_gridCubeCurrent ε I z Ω)
   exact mem_normalCurrentSubmodule.1 ((Submodule.mem_toAddSubgroup _).1 (h hT))
+
+/-- **Grid chains have compact support**: the support of a grid chain lies in the union of the
+finitely many cubes it is made of. -/
+theorem isCompact_dsupport_of_mem_cubicalGridChains {ε : ℝ}
+    {Ω : Opens (EuclideanSpace ℝ (Fin n))}
+    {T : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    (hT : T ∈ cubicalGridChains ε Ω k) : IsCompact (dsupport (T : _ → ℝ)) := by
+  induction hT using AddSubgroup.closure_induction with
+  | mem _ h =>
+    obtain ⟨⟨I, z⟩, rfl⟩ := h
+    dsimp only
+    rw [gridCubeCurrent_def]
+    exact isCompact_dsupport_coordBoxCurrent _ _ _ Ω
+  | zero => simp [dsupport_zero]
+  | add S T _ _ hS hT =>
+    rw [FunLike.coe_add]
+    exact (hS.union hT).of_isClosed_subset isClosed_dsupport (dsupport_add_subset _ _)
+  | neg T _ hT => rwa [FunLike.coe_neg, dsupport_neg]
 
 /-- **The mass of a grid chain**: `M(∑_c a_c • Q_c) ≤ (∑_c |a_c|) εᵏ`. -/
 theorem mass_finsuppSum_gridCubeCurrent_le (ε : ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n)))

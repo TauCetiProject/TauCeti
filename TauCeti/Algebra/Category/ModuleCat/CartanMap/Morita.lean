@@ -99,27 +99,40 @@ instance {R : Type*} [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Lin
 
 @[simp]
 theorem finiteModulesEquivalence_functor_obj_obj (M : FGModuleCat.{u} A) :
-    (e.finiteModulesEquivalence.functor.obj M).obj = e.functor.obj M.obj :=
-  e.congrFullSubcategory_functor_obj_obj _ M
+    (e.finiteModulesEquivalence.functor.obj M).obj = e.functor.obj M.obj := by
+  simp [finiteModulesEquivalence]
 
 @[simp]
 theorem finiteModulesEquivalence_functor_map_hom {M N : FGModuleCat.{u} A} (f : M ⟶ N) :
     (e.finiteModulesEquivalence.functor.map f).hom =
       eqToHom (e.finiteModulesEquivalence_functor_obj_obj M) ≫ e.functor.map f.hom ≫
-        eqToHom (e.finiteModulesEquivalence_functor_obj_obj N).symm :=
-  e.congrFullSubcategory_functor_map_hom _ f
+        eqToHom (e.finiteModulesEquivalence_functor_obj_obj N).symm := by
+  have h : e.finiteModulesEquivalence.functor ⋙ (ModuleCat.isFG B).ι =
+      (ModuleCat.isFG A).ι ⋙ e.functor := by
+    rw [finiteModulesEquivalence, Equivalence.congrFullSubcategory_functor,
+      ObjectProperty.lift_comp_ι]
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    ObjectProperty.map_hom_of_comp_ι_eq h f
+      (e.finiteModulesEquivalence_functor_obj_obj M) (e.finiteModulesEquivalence_functor_obj_obj N)
 
 @[simp]
 theorem finiteModulesEquivalence_inverse_obj_obj (M : FGModuleCat.{u'} B) :
-    (e.finiteModulesEquivalence.inverse.obj M).obj = e.inverse.obj M.obj :=
-  e.congrFullSubcategory_inverse_obj_obj _ M
+    (e.finiteModulesEquivalence.inverse.obj M).obj = e.inverse.obj M.obj := by
+  simp [finiteModulesEquivalence]
 
 @[simp]
 theorem finiteModulesEquivalence_inverse_map_hom {M N : FGModuleCat.{u'} B} (f : M ⟶ N) :
     (e.finiteModulesEquivalence.inverse.map f).hom =
       eqToHom (e.finiteModulesEquivalence_inverse_obj_obj M) ≫ e.inverse.map f.hom ≫
-        eqToHom (e.finiteModulesEquivalence_inverse_obj_obj N).symm :=
-  e.congrFullSubcategory_inverse_map_hom _ f
+        eqToHom (e.finiteModulesEquivalence_inverse_obj_obj N).symm := by
+  have h : e.finiteModulesEquivalence.inverse ⋙ (ModuleCat.isFG A).ι =
+      (ModuleCat.isFG B).ι ⋙ e.inverse := by
+    rw [finiteModulesEquivalence, Equivalence.congrFullSubcategory_inverse,
+      ObjectProperty.lift_comp_ι]
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    ObjectProperty.map_hom_of_comp_ι_eq h f
+      (e.finiteModulesEquivalence_inverse_obj_obj M) (e.finiteModulesEquivalence_inverse_obj_obj N)
+
 
 /-! ### Exactness of the restricted equivalences -/
 

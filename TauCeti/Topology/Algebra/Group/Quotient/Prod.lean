@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.GroupTheory.QuotientGroup.Prod
 public import TauCeti.Topology.Covering.Quotient
+import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Quotients of a product of topological groups by a discrete subgroup
@@ -40,6 +41,8 @@ the quotient map `(ℝʳ ⧸ Λ) × K → G` is a finite covering of `G` by the 
 
 * `Subgroup.continuous_prodQuotientMap`: the map `(A ⧸ Λ) × K → (A × K) ⧸ Γ` is continuous.
 * `Subgroup.isCoveringMap_prodQuotientMap`: it is a covering map.
+* `Subgroup.compactSpace_quotient_map_snd`: if `(A × K) ⧸ Γ` is compact, so is the quotient of `K`
+  by the image of `Γ`.
 
 ## References
 
@@ -79,6 +82,12 @@ instance discreteTopology_comap_inl [DiscreteTopology Γ] :
     DiscreteTopology (Γ.comap (MonoidHom.inl A K)) :=
   isDiscrete_iff_discreteTopology.1 <| (isDiscrete_iff_discreteTopology.2 ‹_›).preimage
     (continuous_id.prodMk continuous_const).continuousOn (Prod.mk_left_injective 1)
+
+/-- **The image of a cocompact subgroup of `A × K` in `K` is cocompact.** If `(A × K) ⧸ Γ` is
+compact, then so is `K ⧸ Γ.map (MonoidHom.snd A K)`, its image under the second projection. -/
+instance compactSpace_quotient_map_snd [CompactSpace ((A × K) ⧸ Γ)] :
+    CompactSpace (K ⧸ Γ.map (MonoidHom.snd A K)) :=
+  Γ.compactSpace_quotient_map continuous_snd Prod.snd_surjective
 
 variable [IsTopologicalGroup A]
 

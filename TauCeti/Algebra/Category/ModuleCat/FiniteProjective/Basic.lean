@@ -108,6 +108,12 @@ instance : HasBinaryBiproducts (finiteProjectiveModules R).FullSubcategory :=
 
 namespace FiniteProjectiveModules
 
+/-- A finitely generated projective module as an object of the subcategory of finitely generated
+projective modules. -/
+abbrev of (R : Type u) [Ring R] (P : Type u) [AddCommGroup P] [Module R P] [Module.Finite R P]
+    [Module.Projective R P] : (finiteProjectiveModules R).FullSubcategory :=
+  ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+
 variable {R}
 
 /-- The underlying module of a biproduct of finitely generated projective modules is the product of

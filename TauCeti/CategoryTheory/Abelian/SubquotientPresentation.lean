@@ -31,6 +31,13 @@ presentation `(⊥, ⊤)` of an object inside itself as a unit on both sides. Fo
 in `X`, the presentation of the cokernel of `I′ ≤ K′` is, up to the identification of the
 cokernels, the one obtained in two steps through the cokernel of `I ≤ K`.
 
+A morphism `φ : A ⟶ A'` maps a presentation of `X` inside `A` to a presentation of `X'` inside `A'`
+over a morphism `g : X ⟶ X'` when it restricts to the larger subobjects compatibly with the
+projections (`SubquotientPresentation.MapsTo`). It then maps the smaller subobjects into each
+other as well, and the relation is preserved by composition of presentations and by transport
+along isomorphisms. This is how morphisms of spectral sequences act on the presentations of their
+pages.
+
 ## Main definitions
 
 * `TauCeti.SubquotientPresentation A X`: a presentation of `X` as a subquotient of `A`.
@@ -48,6 +55,8 @@ cokernels, the one obtained in two steps through the cokernel of `I ≤ K`.
 * `TauCeti.SubquotientPresentation.mapIso`: transport along an isomorphism `X ≅ Y`.
 * `TauCeti.SubquotientPresentation.isoOfEq`: the isomorphism between two objects presented by the
   same subobjects.
+* `TauCeti.SubquotientPresentation.MapsTo`: a morphism maps one presentation to another over a
+  morphism of the presented objects.
 
 ## Main results
 
@@ -64,6 +73,14 @@ cokernels, the one obtained in two steps through the cokernel of `I ≤ K`.
 * `TauCeti.SubquotientPresentation.trans_subquotient_image`,
   `TauCeti.SubquotientPresentation.subquotient_subquotient_image`: naturality of the presentation
   of a cokernel.
+* `TauCeti.SubquotientPresentation.isZero_iff_B_eq_Z`: the presented object is zero exactly when
+  the two subobjects agree.
+* `TauCeti.SubquotientPresentation.MapsTo.Z_le_pullback`,
+  `TauCeti.SubquotientPresentation.MapsTo.B_le_pullback`: a morphism mapping one presentation to
+  another maps the larger and the smaller subobjects into those of the other;
+  `TauCeti.SubquotientPresentation.mapsTo_refl`, `TauCeti.SubquotientPresentation.MapsTo.trans`,
+  `TauCeti.SubquotientPresentation.MapsTo.mapIso`: compatibility with the identity presentations,
+  composition and transport.
 
 ## References
 
@@ -174,6 +191,11 @@ lemma ofEpi_Z : (ofEpi le g hg).Z = Z := (rfl)
 lemma π_ofEpi : (ofEpi le g hg).π = g :=
   (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom _ WalkingParallelPair.one
 
+/-- The projection of the presentation given by `g`, as a morphism out of `Z`. -/
+lemma π_ofEpi' : (ofEpi le g hg).π = ofLE _ Z (ofEpi_Z le g hg).le ≫ g := by
+  rw [π_ofEpi]
+  exact (ofLE_self_comp _ _).symm
+
 end OfEpi
 
 /-- Every subquotient presentation is the one given by its projection. -/
@@ -222,6 +244,11 @@ lemma preimage_le_Z (K : Subobject X) : P.preimage K ≤ P.Z := by
 lemma preimage_bot : P.preimage ⊥ = P.B := by
   rw [preimage, pullback_bot, kernelSubobject_π, map_pullback_arrow_of_le P.le]
 
+/-- A morphism into the larger subobject lands in the smaller one exactly when its composite with
+the projection vanishes. -/
+lemma factors_B_iff (x : W ⟶ P.Z) : P.B.Factors (x ≫ P.Z.arrow) ↔ x ≫ P.π = 0 := by
+  rw [← P.preimage_bot, P.factors_preimage_iff, bot_factors_iff_zero]
+
 @[simp]
 lemma preimage_top : P.preimage ⊤ = P.Z := by
   rw [preimage, pullback_top, Subobject.map_top, mk_arrow]
@@ -252,6 +279,13 @@ lemma preimage_le_preimage_iff {K L : Subobject X} : P.preimage K ≤ P.preimage
 @[simp]
 lemma preimage_inj {K L : Subobject X} : P.preimage K = P.preimage L ↔ K = L :=
   P.preimage_injective.eq_iff
+
+/-- The presented object is zero exactly when the two subobjects of the presentation agree. -/
+lemma isZero_iff_B_eq_Z : IsZero X ↔ P.B = P.Z := by
+  rw [← P.preimage_bot, ← P.preimage_top, preimage_inj]
+  refine ⟨fun h ↦ (subsingleton_of_isZero h).elim _ _, fun h ↦ by_contra fun h' ↦ ?_⟩
+  have := nontrivial_of_not_isZero h'
+  exact bot_ne_top h
 
 /-- Taking preimages under the projection is an order isomorphism from the subobjects of `X`
 onto the interval `[B, Z]` of subobjects of `A`, with inverse the image. -/
@@ -621,6 +655,87 @@ lemma subquotient_subquotient_image {I I' K' K : Subobject X} (h : I ≤ K) (hI 
   P.trans_subquotient_image _ hI h' hK
 
 end Naturality
+
+section MapsTo
+
+variable {A' X' Y' : C} (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+
+/-- The morphism `φ : A ⟶ A'` maps the presentation `P` of `X` to the presentation `P'` of `X'`
+over `g : X ⟶ X'`: it restricts to a morphism from the larger subobject of `P` to that of `P'`,
+and this restriction followed by the projection of `P'` is the projection of `P` followed by `g`.
+-/
+def MapsTo (φ : A ⟶ A') (g : X ⟶ X') : Prop :=
+  ∃ ψ : (P.Z : C) ⟶ P'.Z, ψ ≫ P'.Z.arrow = P.Z.arrow ≫ φ ∧ ψ ≫ P'.π = P.π ≫ g
+
+variable {P P'} {φ : A ⟶ A'} {g : X ⟶ X'}
+
+/-- Unfolding `SubquotientPresentation.MapsTo`: the restriction of `φ` to the larger subobjects
+exists and is compatible with the projections. -/
+lemma mapsTo_iff : P.MapsTo P' φ g ↔
+    ∃ ψ : (P.Z : C) ⟶ P'.Z, ψ ≫ P'.Z.arrow = P.Z.arrow ≫ φ ∧ ψ ≫ P'.π = P.π ≫ g :=
+  Iff.rfl
+
+/-- If `φ` maps `P` to `P'` over `g`, it maps the preimage under `P` of the pullback along `g` of
+a subobject `K` into the preimage of `K` under `P'`. -/
+lemma MapsTo.le_pullback_preimage (h : P.MapsTo P' φ g) (K : Subobject X') :
+    P.preimage ((Subobject.pullback g).obj K) ≤ (Subobject.pullback φ).obj (P'.preimage K) := by
+  obtain ⟨ψ, hψ, hψπ⟩ := h
+  set S := P.preimage ((Subobject.pullback g).obj K)
+  -- The inclusion of `S` into the larger subobject of `P`, and its composite with `ψ`.
+  let ι := ofLE S P.Z (P.preimage_le_Z _)
+  have hι : ((Subobject.pullback g).obj K).Factors (ι ≫ P.π) := by
+    rw [← P.factors_preimage_iff, ofLE_arrow]
+    exact factors_self S
+  have hφ : S.arrow ≫ φ = (ι ≫ ψ) ≫ P'.Z.arrow := by simp [ι, hψ]
+  refine le_of_factors ((pullback_factors_iff _ _ _).2 ?_)
+  rw [hφ, P'.factors_preimage_iff, Category.assoc, hψπ, ← Category.assoc, ← pullback_factors_iff]
+  exact hι
+
+/-- If `φ` maps `P` to `P'`, it maps the larger subobject of `P` into that of `P'`. -/
+lemma MapsTo.Z_le_pullback (h : P.MapsTo P' φ g) : P.Z ≤ (Subobject.pullback φ).obj P'.Z := by
+  simpa [Subobject.pullback_top] using h.le_pullback_preimage ⊤
+
+/-- If `φ` maps `P` to `P'`, it maps the smaller subobject of `P` into that of `P'`. -/
+lemma MapsTo.B_le_pullback (h : P.MapsTo P' φ g) : P.B ≤ (Subobject.pullback φ).obj P'.B :=
+  (P.B_le_preimage _).trans (by simpa using h.le_pullback_preimage ⊥)
+
+/-- The identity presentations are mapped to each other by any morphism, over itself. -/
+lemma mapsTo_refl (φ : A ⟶ A') : (refl A).MapsTo (refl A') φ φ :=
+  ⟨(refl A').Z.factorThru ((refl A).Z.arrow ≫ φ) (by rw [refl_Z]; exact top_factors _),
+    factorThru_arrow _ _ _, by rw [π_refl, π_refl, factorThru_arrow]⟩
+
+/-- Composites of presentations are mapped to each other when their factors are. -/
+lemma MapsTo.trans {Q : SubquotientPresentation X Y} {Q' : SubquotientPresentation X' Y'}
+    {k : Y ⟶ Y'} (h : P.MapsTo P' φ g) (hQ : Q.MapsTo Q' g k) :
+    (P.trans Q).MapsTo (P'.trans Q') φ k := by
+  have hle : P.preimage Q.Z ≤ (Subobject.pullback φ).obj (P'.preimage Q'.Z) :=
+    (P.preimage_monotone hQ.Z_le_pullback).trans (h.le_pullback_preimage Q'.Z)
+  obtain ⟨ψ, hψ, hψπ⟩ := h
+  obtain ⟨χ, hχ, hχπ⟩ := hQ
+  -- The restriction of `φ` to the preimages of `Q.Z` and `Q'.Z`.
+  let ω : (P.preimage Q.Z : C) ⟶ P'.preimage Q'.Z := (P'.preimage Q'.Z).factorThru
+    ((P.preimage Q.Z).arrow ≫ φ) ((pullback_factors_iff _ _ _).1 (factors_of_le _ hle
+      (factors_self _)))
+  have hω : ω ≫ (P'.preimage Q'.Z).arrow = (P.preimage Q.Z).arrow ≫ φ := factorThru_arrow _ _ _
+  have hω' : ω ≫ P'.preimageπ Q'.Z = P.preimageπ Q.Z ≫ χ := by
+    rw [← cancel_mono Q'.Z.arrow, Category.assoc, preimageπ_arrow, Category.assoc, hχ,
+      preimageπ_arrow_assoc, ← hψπ, ← Category.assoc, ← Category.assoc]
+    congr 1
+    simp [← cancel_mono P'.Z.arrow, hω, hψ]
+  refine ⟨ofLE _ _ (P.trans_Z Q).le ≫ ω ≫ ofLE _ _ (P'.trans_Z Q').ge, by simp [hω], ?_⟩
+  rw [π_trans', π_trans']
+  simp [ofLE_comp_ofLE_assoc, reassoc_of% hω', hχπ]
+
+/-- Transporting presentations along isomorphisms compatible with `g` and `g'` preserves that
+`φ` maps one to the other. -/
+lemma MapsTo.mapIso (h : P.MapsTo P' φ g) {e : X ≅ Y} {e' : X' ≅ Y'} {g' : Y ⟶ Y'}
+    (hg : g ≫ e'.hom = e.hom ≫ g') : (P.mapIso e).MapsTo (P'.mapIso e') φ g' := by
+  obtain ⟨ψ, hψ, hψπ⟩ := h
+  refine ⟨ofLE _ _ (P.mapIso_Z e).le ≫ ψ ≫ ofLE _ _ (P'.mapIso_Z e').ge, by simp [hψ], ?_⟩
+  rw [π_mapIso', π_mapIso']
+  simp [ofLE_comp_ofLE_assoc, reassoc_of% hψπ, hg]
+
+end MapsTo
 
 end SubquotientPresentation
 

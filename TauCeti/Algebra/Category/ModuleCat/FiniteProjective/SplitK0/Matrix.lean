@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 
 import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
 
 /-!
 # Matrix Morita invariance on split `K₀` of finitely generated projective modules
@@ -18,10 +17,7 @@ For a ring `R : Type u` and a nonempty finite index type `ι : Type v` with deci
 `TauCeti.finiteProjectiveModulesMatrixSplitK0Equiv R ι` is the canonical universe-polymorphic
 isomorphism `K₀(proj R) ≃+ K₀(proj (Matrix ι ι R))` induced by `P ↦ (ι → P)`, sending `|ι| • [R]`
 to `[Matrix ι ι R]` and agreeing with `ModuleCat.matrixEquivalence R i` for every `i : ι` when
-`ι` lives in the universe of `R`. For `ι : Type`, this file also records the decomposition of the
-regular class of `Matrix ι ι R` as `card ι` times the column class
-(`TauCeti.FiniteProjectiveModules.of_finiteProjectiveModulesRegular_matrix`) and the action of
-`finiteProjectiveModulesMatrixSplitK0Equiv` on `[R]`, the column class, and the regular class.
+`ι` lives in the universe of `R`.
 
 ## References
 
@@ -103,53 +99,5 @@ theorem finiteProjectiveModulesMatrixSplitK0Equiv_eq (ι : Type u) [Fintype ι] 
       (ModuleCat.matrixEquivalence R (ι := ι) i).finiteProjectiveModulesSplitK0Equiv :=
   AddEquiv.toAddMonoidHom_injective <| (SplitK0.mapEquiv_toAddMonoidHom.{u, u} _).trans
     (SplitK0.map_finiteProjectiveModulesToMatrixFunctor_eq_matrixEquivalence R ι i)
-
-section Column
-
-variable (ι : Type) [Fintype ι] [DecidableEq ι]
-
-/-- **The regular module of a matrix ring is a sum of columns.** In the split `K₀` of
-`Matrix ι ι R`, the class of the regular module is `card ι` times the class of the column
-module. -/
-theorem FiniteProjectiveModules.of_finiteProjectiveModulesRegular_matrix :
-    SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R)) =
-      Fintype.card ι • SplitK0.of.{u} (FiniteProjectiveModules.matrixColumn R ι) := by
-  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ FiniteProjectiveModules.matrixColumn R ι)
-    (Matrix.linearEquivPi ι R), Finset.sum_const, Finset.card_univ]
-
-variable [Nonempty ι]
-
-/-- `finiteProjectiveModulesMatrixSplitK0Equiv` sends `[R]` to the class of the column module
-`R^ι`. -/
-theorem finiteProjectiveModulesMatrixSplitK0Equiv_of_finiteProjectiveModulesRegular :
-    finiteProjectiveModulesMatrixSplitK0Equiv R ι
-        (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
-      SplitK0.of.{u} (FiniteProjectiveModules.matrixColumn R ι) := by
-  rw [finiteProjectiveModulesMatrixSplitK0Equiv_of]
-  exact SplitK0.of_congr <| ObjectProperty.isoMk _ <| eqToIso <|
-    (finiteProjectiveModulesToMatrixFunctor_obj_obj R ι _).trans
-      (FiniteProjectiveModules.matrixColumn_obj R ι).symm
-
-/-- The inverse of `finiteProjectiveModulesMatrixSplitK0Equiv` sends the class of the column
-module to `[R]`. -/
-@[simp]
-theorem finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_matrixColumn :
-    (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm
-        (SplitK0.of.{u} (FiniteProjectiveModules.matrixColumn R ι)) =
-      SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
-  rw [AddEquiv.symm_apply_eq,
-    finiteProjectiveModulesMatrixSplitK0Equiv_of_finiteProjectiveModulesRegular]
-
-/-- The inverse of `finiteProjectiveModulesMatrixSplitK0Equiv` sends the class of the regular
-`Matrix ι ι R`-module to `card ι • [R]`. -/
-@[simp]
-theorem finiteProjectiveModulesMatrixSplitK0Equiv_symm_of_finiteProjectiveModulesRegular :
-    (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm
-        (SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R))) =
-      Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R) :=
-  (finiteProjectiveModulesMatrixSplitK0Equiv R ι).symm_apply_eq.2
-    (finiteProjectiveModulesMatrixSplitK0Equiv_card_nsmul_finiteProjectiveModulesRegular R ι).symm
-
-end Column
 
 end TauCeti

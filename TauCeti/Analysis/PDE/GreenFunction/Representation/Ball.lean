@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import TauCeti.Analysis.PDE.GreenFunction.Representation.Basic
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
+public import TauCeti.Analysis.PDE.TorsionFunction.Ball
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
+import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.BallPotential
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import TauCeti.Topology.Algebra.Support
@@ -45,7 +48,10 @@ jointly smooth off `‖x‖ ‖y‖ = 1` and harmonic in `x` for every `y` in th
 potential solves `-Δ(Φ ⋆ f) = f` and the comparison of classical and weak solutions
 (`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub`) identifies the
 Green potential with the weak solution
-(`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_integral_ballGreenKernel_mul`).
+(`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_integral_ballGreenKernel_mul`). The same
+decomposition shows that the Green potential is itself the classical solution: of class `C^k` in
+the ball for data of class `C^k`, continuous on the closed ball, zero on the sphere, and
+`-Δ ∫ G(·, y) f(y) dy = f` in the ball (`TauCeti.laplacian_integral_ballGreenKernel_mul`).
 
 ## Data in `L²(B)`
 
@@ -57,8 +63,13 @@ acts on `L¹(B)` (`TauCeti.integrable_ballGreenKernel_mul`), and the representat
 extends to `L²(B)`.
 
 As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in `B` is
-`(1 - ‖x‖²) / (2n)`, so `∫_B G(x, y) dy = (1 - ‖x‖²) / (2n)` for almost every `x ∈ B`
-(`TauCeti.ae_setIntegral_ballGreenKernel_eq`); for `n = 3` this is `(1 - ‖x‖²) / 6`.
+`(1 - ‖x‖²) / (2n)` (`TauCeti.PDE.ballTorsionFunction`), so `∫_B G(x, y) dy = (1 - ‖x‖²) / (2n)`
+for almost every `x ∈ B` (`TauCeti.ae_setIntegral_ballGreenKernel_eq`); for `n = 3` this is
+`(1 - ‖x‖²) / 6`. The Newtonian potential of the ball is `1 / (n (n - 2)) + (1 - ‖x‖²) / (2n)` on
+the closed ball (`TauCeti.setIntegral_ball_newtonianKernel_sub_of_norm_sub_le`), constant on the
+sphere, so the harmonic correction of the torsion function is the constant `1 / (n (n - 2))`
+(`TauCeti.ae_setIntegral_ballGreenKernel_eq_setIntegral_newtonianKernel_sub`); in `ℝ³` the
+potential is `(3 - ‖x‖²) / 6` and the correction is `1 / 3`.
 
 ## Main declarations
 
@@ -68,12 +79,19 @@ As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in
   boundary values.
 * `TauCeti.integral_ballGreenKernel_mul_eq_sub`: the Green potential is the corrected Newtonian
   potential.
+* `TauCeti.contDiffOn_integral_ballGreenKernel_mul`,
+  `TauCeti.continuousOn_integral_ballGreenKernel_mul`,
+  `TauCeti.integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one`,
+  `TauCeti.laplacian_integral_ballGreenKernel_mul`: the Green potential of data of class `C²`
+  supported in the ball is the classical solution of the Dirichlet problem.
 * `TauCeti.integrable_ballGreenKernel_mul`: the Green operator on `L¹(B)`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_integral_ballGreenKernel_mul`: the
   representation for data of class `C²` supported in the ball.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_setIntegral_ballGreenKernel_mul`: the
   representation for data in `L²(B)`.
 * `TauCeti.ae_setIntegral_ballGreenKernel_eq`: the torsion function of the ball.
+* `TauCeti.ae_setIntegral_ballGreenKernel_eq_setIntegral_newtonianKernel_sub`: it is the Newtonian
+  potential of the ball minus the constant value of that potential on the sphere.
 
 ## References
 
@@ -188,6 +206,56 @@ theorem integral_ballGreenKernel_mul_eq_sub (hf : Continuous f) (hsupp : tsuppor
   refine integral_congr_ae (Eventually.of_forall fun y => ?_)
   simp only [ballGreenKernel_def, newtonianKernel_sub_comm _ x y, sub_mul]
 
+/-- **The Green potential is smooth in the ball.** For `f` of class `C^k` with `tsupport f` inside
+the unit ball, `x ↦ ∫ G(x, y) f(y) dy` is of class `C^k` in the ball: it is the Newtonian
+potential `Φ ⋆ f`, of class `C^k`, minus a harmonic, hence analytic, correction. -/
+theorem contDiffOn_integral_ballGreenKernel_mul {k : ℕ∞} (hf : ContDiff ℝ k f)
+    (hsupp : tsupport f ⊆ ball 0 1) :
+    ContDiffOn ℝ k (fun x => ∫ y, ballGreenKernel n x y * f y) (ball 0 1) :=
+  ((contDiff_newtonianKernel_convolution hf
+    (HasCompactSupport.of_tsupport_subset_ball hsupp)).contDiffOn.sub
+    ((harmonicOnNhd_integral_ballGreenCorrector_mul hf.continuous
+      hsupp).analyticOnNhd.contDiffOn isOpen_ball.uniqueDiffOn)).congr fun _ hx =>
+    integral_ballGreenKernel_mul_eq_sub hf.continuous hsupp (mem_ball_zero_iff.1 hx).le
+
+/-- **The Green potential is continuous up to the boundary.** For `f` continuous with
+`tsupport f` inside the unit ball, `x ↦ ∫ G(x, y) f(y) dy` is continuous on the closed ball. It
+vanishes on the unit sphere, by `TauCeti.integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one`. -/
+theorem continuousOn_integral_ballGreenKernel_mul (hf : Continuous f)
+    (hsupp : tsupport f ⊆ ball 0 1) :
+    ContinuousOn (fun x => ∫ y, ballGreenKernel n x y * f y) (closedBall 0 1) :=
+  (((HasCompactSupport.of_tsupport_subset_ball hsupp).continuous_convolution_right
+    (ContinuousLinearMap.lsmul ℝ ℝ) (locallyIntegrable_newtonianKernel n) hf).continuousOn.sub
+    (continuousOn_integral_ballGreenCorrector_mul hf hsupp)).congr fun _ hx =>
+    integral_ballGreenKernel_mul_eq_sub hf hsupp (mem_closedBall_zero_iff.1 hx)
+
+/-- **The Green potential vanishes on the boundary.** For every `f`, the Green potential
+`x ↦ ∫ G(x, y) f(y) dy` is zero on the unit sphere, since `G(x, ·) = 0` there. -/
+theorem integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one {x : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ = 1) : ∫ y, ballGreenKernel n x y * f y = 0 := by
+  simp [ballGreenKernel_eq_zero_of_norm_eq_one_left hx]
+
+/-- **The Green potential solves Poisson's equation.** For `n = 1` or `n ≥ 3` and `f` of class
+`C²` with `tsupport f` inside the unit ball of `ℝⁿ`, the Green potential
+`v(x) = ∫ G(x, y) f(y) dy` satisfies `-Δv = f` in the ball. With
+`TauCeti.contDiffOn_integral_ballGreenKernel_mul`,
+`TauCeti.continuousOn_integral_ballGreenKernel_mul` and
+`TauCeti.integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one`, `v` is the classical solution of the
+Dirichlet problem `-Δv = f` in the ball, `v = 0` on the sphere. -/
+theorem laplacian_integral_ballGreenKernel_mul (hn : n ≠ 2) (hn0 : n ≠ 0) (hf : ContDiff ℝ 2 f)
+    (hsupp : tsupport f ⊆ ball 0 1) {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ ball 0 1) :
+    Δ (fun x => ∫ y, ballGreenKernel n x y * f y) x = -f x := by
+  have hc := HasCompactSupport.of_tsupport_subset_ball hsupp
+  have hh := harmonicOnNhd_integral_ballGreenCorrector_mul hf.continuous hsupp x hx
+  have heq : (fun x => ∫ y, ballGreenKernel n x y * f y) =ᶠ[𝓝 x]
+      newtonianKernel n ⋆ f - fun x => ∫ y, ballGreenCorrector n x y * f y := by
+    filter_upwards [isOpen_ball.mem_nhds hx] with z hz
+    exact integral_ballGreenKernel_mul_eq_sub hf.continuous hsupp (mem_ball_zero_iff.1 hz).le
+  rw [(laplacian_congr_nhds heq).self_of_nhds,
+    (contDiff_newtonianKernel_convolution hf hc).contDiffAt.laplacian_sub hh.1,
+    laplacian_newtonianKernel_convolution hn hn0 hf hc, hh.2.eq_of_nhds, Pi.zero_apply, sub_zero,
+    Pi.neg_apply]
+
 end Smooth
 
 /-! ### Weak solutions of the Dirichlet problem -/
@@ -253,11 +321,12 @@ end PDE
 
 /-- **The torsion function of the ball.** Let `n ≠ 1`, so that the dimension `n + 1` is `1` or at
 least `3`. The Green potential of the constant `1` on the unit ball `B` of `ℝⁿ⁺¹` is
-`∫_B G(x, y) dy = (1 - ‖x‖²) / (2(n + 1))` for almost every `x ∈ B`: it is the solution of
-`-Δu = 1` in `B`, `u = 0` on the sphere. In `ℝ³` (`n = 2`) this is `(1 - ‖x‖²) / 6`. -/
+`∫_B G(x, y) dy = (1 - ‖x‖²) / (2(n + 1))` (`TauCeti.PDE.ballTorsionFunction`) for almost every
+`x ∈ B`: it is the solution of `-Δu = 1` in `B`, `u = 0` on the sphere. In `ℝ³` (`n = 2`) this is
+`(1 - ‖x‖²) / 6`. -/
 theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
     ∀ᵐ x ∂(volume.restrict (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)),
-      ∫ y in ball 0 1, ballGreenKernel (n + 1) x y = (1 - ‖x‖ ^ 2) / (2 * ((n : ℝ) + 1)) := by
+      ∫ y in ball 0 1, ballGreenKernel (n + 1) x y = PDE.ballTorsionFunction (Fin (n + 1)) x := by
   let Omega : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball 0 1, isOpen_ball⟩
   have hΩ : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball 0 1 := rfl
   have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
@@ -266,33 +335,46 @@ theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
       (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) := memLp_const 1
   obtain ⟨u, hu, -⟩ := PDE.existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
     (z := 0) (R := 1) hΩ.le (h1.toLp _)
-  obtain ⟨w, hwdef⟩ : ∃ w : EuclideanSpace ℝ (Fin (n + 1)) → ℝ,
-      w = (2 * ((n : ℝ) + 1))⁻¹ • ((fun _ => (1 : ℝ)) - fun y => ‖y‖ ^ 2) := ⟨_, rfl⟩
-  have hwx : ∀ x, w x = (1 - ‖x‖ ^ 2) / (2 * ((n : ℝ) + 1)) := fun x => by
-    rw [hwdef, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, div_eq_inv_mul]
-  have hw' : ContDiff ℝ 2
-      ((fun _ => (1 : ℝ)) - fun y : EuclideanSpace ℝ (Fin (n + 1)) => ‖y‖ ^ 2) :=
-    contDiff_const.sub (contDiff_norm_sq ℝ)
-  have hw : ContDiff ℝ 2 w := by
-    rw [hwdef]
-    exact hw'.const_smul (2 * ((n : ℝ) + 1))⁻¹
-  -- `Δ (1 - ‖y‖²) = -2 (n + 1)`, by `laplacian_norm_sq`.
-  have hΔ : ∀ x, Δ w x = -1 := fun x => by
-    simp [hwdef, laplacian_smul _ hw'.contDiffAt,
-      contDiffAt_const.laplacian_sub (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq]
-    field_simp
+  have hw : ContDiff ℝ 2 (PDE.ballTorsionFunction (Fin (n + 1))) :=
+    PDE.contDiff_ballTorsionFunction
   have hwu := hu.value_ae_eq_of_contDiffOn hΩ.le hw.contDiffOn hw.continuous.continuousOn
     (fun x hx => by
-      rw [hΩ, frontier_ball 0 one_ne_zero, mem_sphere_zero_iff_norm] at hx
-      simp [hwx, hx])
+      rw [hΩ, frontier_ball 0 one_ne_zero] at hx
+      exact PDE.ballTorsionFunction_eq_zero_of_mem_sphere hx)
     (by
       filter_upwards [h1.coeFn_toLp] with x hx
-      rw [hx, Pi.neg_apply, hΔ x, neg_neg])
+      rw [hx, Pi.neg_apply, PDE.laplacian_ballTorsionFunction, neg_neg])
   filter_upwards [hwu.symm.trans (hu.value_ae_eq_setIntegral_ballGreenKernel_mul hn hΩ)]
     with x hx
-  rw [← hwx, hx]
+  rw [hx]
   refine integral_congr_ae ?_
   filter_upwards [h1.coeFn_toLp] with y hy
   rw [hy, mul_one]
+
+/-- **The harmonic correction of the torsion function is a constant.** Let `n ≠ 1`, so that the
+dimension `N = n + 1` is `1` or at least `3`. The Newtonian potential `v(x) = ∫_B Gₙ(x - y) dy` of
+the unit ball `B` of `ℝᴺ` takes the constant value `1 / (N (N - 2))` on the unit sphere
+(`TauCeti.setIntegral_ball_newtonianKernel_sub_of_norm_sub_le`), so the harmonic function with
+the boundary values of `v` is this constant, and the Green potential of the constant `1`, the
+solution of `-Δu = 1` in `B`, `u = 0` on the sphere, is `v` corrected by it:
+`∫_B G(x, y) dy = v(x) - 1 / (N (N - 2))` for almost every `x ∈ B`. In `ℝ³` (`n = 2`) this reads
+`(1 - ‖x‖²) / 6 = (3 - ‖x‖²) / 6 - 1 / 3`. -/
+theorem ae_setIntegral_ballGreenKernel_eq_setIntegral_newtonianKernel_sub (hn : n ≠ 1) :
+    ∀ᵐ x ∂(volume.restrict (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)),
+      ∫ y in ball 0 1, ballGreenKernel (n + 1) x y =
+        (∫ y in ball 0 1, newtonianKernel (n + 1) (x - y)) -
+          (((n : ℝ) + 1) * ((n : ℝ) + 1 - 2))⁻¹ := by
+  have hn' : (n : ℝ) + 1 - 2 ≠ 0 := by
+    have : (n : ℝ) ≠ 1 := by exact_mod_cast hn
+    contrapose this
+    linarith
+  filter_upwards [ae_setIntegral_ballGreenKernel_eq hn, ae_restrict_mem measurableSet_ball]
+    with x hx hxB
+  rw [hx, PDE.ballTorsionFunction_apply, Fintype.card_fin,
+    setIntegral_ball_newtonianKernel_sub_of_norm_sub_le (by omega)
+    (by simpa using (mem_ball_zero_iff.1 hxB).le), sub_zero]
+  push_cast
+  field_simp
+  ring
 
 end TauCeti

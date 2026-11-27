@@ -38,6 +38,11 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   point of a trajectory is fixed.
 * `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
   of distinct points are disjoint.
+* `Flow.subset_biUnion_stableSet` and `Flow.subset_biUnion_unstableSet`: a set of fixed points
+  lies in the union of the stable (respectively unstable) sets of its points, and
+  `Flow.limUnder_atTop_mem_of_mem_biUnion_stableSet` and
+  `Flow.limUnder_atBot_mem_of_mem_biUnion_unstableSet`: a point of that union has its limit in
+  the set.
 * `Flow.eq_of_mem_stableSet` and `Flow.eq_of_mem_unstableSet`: a fixed point lies on no stable
   (respectively unstable) set but its own.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
@@ -215,6 +220,40 @@ theorem disjoint_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (
     Disjoint (unstableSet φ x) (unstableSet φ y) :=
   disjoint_left.2 fun _ hx hy ↦
     hxy (tendsto_nhds_unique (mem_unstableSet.1 hx) (mem_unstableSet.1 hy))
+
+/-- A set of fixed points lies in the union of the stable sets of its points. -/
+theorem subset_biUnion_stableSet {φ : _root_.Flow ℝ α} {C : Set α}
+    (hfix : ∀ p ∈ C, ∀ t, φ t p = p) : C ⊆ ⋃ p ∈ C, stableSet φ p := fun p hp ↦
+  mem_biUnion hp (mem_stableSet.2 (tendsto_const_nhds.congr fun t ↦ (hfix p hp t).symm))
+
+/-- A set of fixed points lies in the union of the unstable sets of its points. -/
+theorem subset_biUnion_unstableSet {φ : _root_.Flow ℝ α} {C : Set α}
+    (hfix : ∀ p ∈ C, ∀ t, φ t p = p) : C ⊆ ⋃ p ∈ C, unstableSet φ p := fun p hp ↦
+  mem_biUnion hp (mem_unstableSet.2 (tendsto_const_nhds.congr fun t ↦ (hfix p hp t).symm))
+
+/-- The forward limit of a trajectory in the stable set of `x` is `x`. -/
+theorem limUnder_atTop_eq_of_mem_stableSet [T2Space α] [Nonempty α] {φ : _root_.Flow ℝ α}
+    {x y : α} (hy : y ∈ stableSet φ x) : limUnder atTop (fun t ↦ φ t y) = x :=
+  (mem_stableSet.1 hy).limUnder_eq
+
+/-- The backward limit of a trajectory in the unstable set of `x` is `x`. -/
+theorem limUnder_atBot_eq_of_mem_unstableSet [T2Space α] [Nonempty α] {φ : _root_.Flow ℝ α}
+    {x y : α} (hy : y ∈ unstableSet φ x) : limUnder atBot (fun t ↦ φ t y) = x :=
+  (mem_unstableSet.1 hy).limUnder_eq
+
+/-- A trajectory converging forward to a point of `C` has its forward limit in `C`. -/
+theorem limUnder_atTop_mem_of_mem_biUnion_stableSet [T2Space α] [Nonempty α]
+    {φ : _root_.Flow ℝ α} {C : Set α} {y : α} (hy : y ∈ ⋃ x ∈ C, stableSet φ x) :
+    limUnder atTop (fun t ↦ φ t y) ∈ C := by
+  obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 hy
+  rwa [limUnder_atTop_eq_of_mem_stableSet hyx]
+
+/-- A trajectory converging backward to a point of `C` has its backward limit in `C`. -/
+theorem limUnder_atBot_mem_of_mem_biUnion_unstableSet [T2Space α] [Nonempty α]
+    {φ : _root_.Flow ℝ α} {C : Set α} {y : α} (hy : y ∈ ⋃ x ∈ C, unstableSet φ x) :
+    limUnder atBot (fun t ↦ φ t y) ∈ C := by
+  obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 hy
+  rwa [limUnder_atBot_eq_of_mem_unstableSet hyx]
 
 /-- Time reversal is an involution. -/
 @[simp]

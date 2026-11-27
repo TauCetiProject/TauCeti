@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
+public import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.CurveAction.Basic
 import TauCeti.MeasureTheory.Function.IntervalStep.CellAverage
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -27,7 +28,8 @@ almost every `t`
 (`TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lipschitz`). For
 `∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` with symmetric, uniformly elliptic coefficients `aⁱʲ` and `∂ₜa`
 bounded, applied to `A(t)` the energy form of `a(t, ·)` on `H¹₀(Ω)`, this is
-`∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))`; that instantiation is not formalized here.
+`∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))`
+(`TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm_of_lipschitz`).
 When `A` does not depend on time,
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` proves these
 estimates by a shifted Gelfand triple, which has no counterpart for time-dependent `A`.
@@ -653,7 +655,8 @@ of `u' + A(t) u = ι* g` with `g ∈ L²(a, b; H)` and initial value `ι v₀`, 
 For a parabolic equation `∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` whose coefficients `aⁱʲ` are symmetric and
 uniformly elliptic with a bounded time derivative, applied to `A(t)` the energy form of `a(t, ·)`
 on `H¹₀(Ω)`, this says `∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))` when
-`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`; that instantiation is not formalized here. This is
+`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`; this instantiation is
+`TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm_of_lipschitz`. This is
 the time-dependent counterpart of Evans, §7.1.3, Theorem 5, which treats time-independent
 coefficients. For `L = 0` it recovers the bound
 `A u u ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` of the time-independent theorem
@@ -720,9 +723,11 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lip
   obtain ⟨dl, hderiv, hdl⟩ := exists_hasWeakLineDerivOn_and_norm_le_of_tendsto
     (F := fun n t ↦ ι (uh n t)) (G := fun n t ↦ ι (D n t)) (f := fun t ↦ ι (u t))
     (fun n ↦ (hD n).clm_comp ι) (fun n ↦ ι.comp_memLp' (huh n)) (ι.comp_memLp' hu)
-    (fun n ↦ ι.comp_memLp' (hDm n)) hDbd (tendsto_integral_norm_clm_apply_sub_sq ι huh hu huhu)
+    (fun n ↦ ι.comp_memLp' (hDm n)) hDbd (ι.lipschitzWith.tendsto_integral_norm_sub_sq
+      (.of_forall fun n ↦ ((huh n).sub hu).integrable_norm_pow two_ne_zero) huhu)
   refine ⟨dl, Lp.memLp dl, hderiv, h.ae_eq (hderiv.clm_comp ι.gelfandDual),
-    ae_le_of_tendsto_integral_norm_sub_sq (φ := fun t v ↦ A t v v) hub hu hubu
+    ae_le_of_tendsto_integral_norm_sub_sq (φ := fun t v ↦ A t v v)
+      (.of_forall fun n ↦ ((hub n).sub hu).integrable_norm_pow two_ne_zero) hubu
       (fun t ↦ by fun_prop) hc fun n ↦ (ae_restrict_mem measurableSet_Ioo).mono (hE n), ?_⟩
   calc ∫ t in Ioo a b, ‖dl t‖ ^ 2 = ‖dl‖ ^ 2 :=
         (Lp.toLp_coeFn dl (Lp.memLp dl) ▸ MemLp.norm_toLp_sq (Lp.memLp dl)).symm

@@ -54,6 +54,7 @@ Artinian ring, in the indecomposable-projective and simple bases.
 
 ## Main definitions
 
+* `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
   `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
   the modules admitting finite resolutions by finitely generated projectives, by the canonical
@@ -125,6 +126,7 @@ open CategoryTheory CategoryTheory.Limits
 universe u v
 
 variable (R : Type u) [Ring R]
+
 
 /-! ### The two exact structures -/
 

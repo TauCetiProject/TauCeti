@@ -108,8 +108,7 @@ theorem eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits_add_cusps (h
     haveI := hΓ.finiteCWType_compactifiedQuotient
     (eulerChar Γ.CompactifiedQuotient : ℝ) <
       ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) + Nat.card Γ.CuspOrbit := by
-  have hpos : 0 < covolume Γ ℍ := covolume_pos <|
-    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
+  have hpos := Γ.covolume_pos
   rw [hΓ.covolume_eq_two_pi_mul_neg_eulerChar_add_cusps, ENNReal.ofReal_pos] at hpos
   nlinarith [Real.pi_pos]
 

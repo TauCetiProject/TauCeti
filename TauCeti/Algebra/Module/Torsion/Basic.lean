@@ -35,7 +35,9 @@ inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a s
 commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
 `LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
 linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
-of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion.
+of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion. A
+semilinear equivalence along a ring isomorphism maps the torsion submodule onto the torsion
+submodule.
 
 ## Main definitions
 
@@ -56,14 +58,25 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `TauCeti.Submodule.comap_torsion_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 * `LinearMap.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `LinearEquiv.map_torsion`: a semilinear equivalence along a ring isomorphism maps the torsion
+  submodule onto the torsion submodule.
 * `LinearMap.torsion_le_ker`: a linear map into a torsion-free module vanishes on the torsion
   submodule.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
-* `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
-  submodules, linear images and products of torsion modules are torsion.
+* `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`,
+  `Module.IsTorsion.pi`: submodules, linear images, and binary and finite dependent products of
+  torsion modules are torsion.
+* `TauCeti.isTorsion_pi_self_iff`: over a nontrivial ring `R`, the free module `ι → R` is torsion
+  exactly when `ι` is empty.
 * `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
+* `RingHom.mapsTo_torsion'_powers`: a ring map `φ` sends `f`-power torsion to `φ f`-power
+  torsion.
+* `IsSMulRegular.torsion'_powers_eq_bot`: a module on which `a` acts injectively has no `a`-power
+  torsion.
 * `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
   `LinearMap.lsmul R M a`.
+* `Submodule.mem_torsionBy_self_iff`: in a commutative semiring `R`, `x ∈ R[a]` if and only if
+  `a * x = 0`.
 * `Submodule.forall_pow_smul_mem_iff_forall_smul_mem`: saturation of a submodule with respect to a
   scalar is equivalent to saturation with respect to all powers of that scalar.
 * `Submodule.Quotient.mk_mem_torsionBy_iff`: the class of `x` in `M ⧸ P` is `a`-torsion if and
@@ -233,6 +246,32 @@ theorem _root_.LinearMap.le_comap_torsion (f : M →ₗ[R] N) :
   exact (_root_.Submodule.mem_torsion_iff _).mpr
     ⟨a, by rw [← LinearMap.map_smul_of_tower, ha, map_zero]⟩
 
+omit [Module R N] in
+/-- A semilinear equivalence along a ring isomorphism maps torsion elements to torsion elements:
+`σ` maps the nonzerodivisors of `R` into those of `S`. -/
+private theorem _root_.LinearEquiv.map_torsion_le {S : Type*} [CommSemiring S] [Module S N]
+    {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : M ≃ₛₗ[σ] N) :
+    (_root_.Submodule.torsion R M).map (e : M →ₛₗ[σ] N) ≤ _root_.Submodule.torsion S N := by
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff x).mp hx
+  have hσa : σ a ∈ S⁰ := by
+    rw [← RingHomInvPair.toRingEquiv_apply σ σ',
+      ← MulEquivClass.map_nonZeroDivisors (RingHomInvPair.toRingEquiv σ σ')]
+    exact Submonoid.mem_map_of_mem _ a.property
+  have h := congrArg e ha
+  rw [Submonoid.smul_def, e.map_smulₛₗ, map_zero] at h
+  exact (_root_.Submodule.mem_torsion_iff (e x)).mpr ⟨⟨σ a, hσa⟩, h⟩
+
+omit [Module R N] in
+/-- A semilinear equivalence along a ring isomorphism `σ : R ≃+* S` maps the torsion submodule onto
+the torsion submodule: `σ` maps the nonzerodivisors of `R` onto those of `S`. -/
+theorem _root_.LinearEquiv.map_torsion {S : Type*} [CommSemiring S] [Module S N] {σ : R →+* S}
+    {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : M ≃ₛₗ[σ] N) :
+    (_root_.Submodule.torsion R M).map (e : M →ₛₗ[σ] N) = _root_.Submodule.torsion S N := by
+  refine le_antisymm e.map_torsion_le ?_
+  rw [_root_.Submodule.map_equiv_eq_comap_symm, ← _root_.Submodule.map_le_iff_le_comap]
+  exact e.symm.map_torsion_le
+
 /-- A linear map `f` for which some `g` satisfies `g ∘ f = a • id` with `a` a nonzerodivisor
 reflects torsion: an element is torsion if and only if its image is. -/
 theorem comap_torsion_of_comp_eq_smul {f : M →ₗ[R] N} {g : N →ₗ[R] M} {a : R} (ha : a ∈ R⁰)
@@ -331,7 +370,29 @@ theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hM x.1))
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)))
 
+/-- A dependent product of finitely many torsion modules is torsion. -/
+theorem pi {ι : Type*} [Finite ι] {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
+    [∀ i, Module R (P i)] (hP : ∀ i, Module.IsTorsion R (P i)) :
+    Module.IsTorsion R (∀ i, P i) := fun x ↦ by
+  cases nonempty_fintype ι
+  choose a ha using fun i ↦ @hP i (x i)
+  refine ⟨∏ i, a i, funext fun i ↦ ?_⟩
+  obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem a (Finset.mem_univ i)
+  rw [Pi.smul_apply, hc, mul_comm, mul_smul, ha i, smul_zero, Pi.zero_apply]
+
 end Module.IsTorsion
+
+namespace TauCeti
+
+/-- Over a nontrivial commutative semiring `R`, the free module `ι → R` is torsion exactly when
+`ι` is empty. -/
+theorem isTorsion_pi_self_iff {R ι : Type*} [CommSemiring R] [Nontrivial R] :
+    Module.IsTorsion R (ι → R) ↔ IsEmpty ι := by
+  refine ⟨fun h ↦ ⟨fun i ↦ ?_⟩, fun _ _ ↦ ⟨1, Subsingleton.elim _ _⟩⟩
+  obtain ⟨c, hc⟩ := h (x := fun _ ↦ 1)
+  exact nonZeroDivisors.coe_ne_zero c (by simpa [Submonoid.smul_def] using congr_fun hc i)
+
+end TauCeti
 
 namespace LinearEquiv
 
@@ -347,6 +408,23 @@ theorem isTorsion'_iff {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMo
 
 end LinearEquiv
 
+/-- A ring map sends `f`-power torsion elements of `R` to `φ f`-power torsion elements of `A`. -/
+theorem RingHom.mapsTo_torsion'_powers {R A : Type*} [CommSemiring R] [CommSemiring A]
+    (φ : R →+* A) (f : R) :
+    Set.MapsTo φ (Submodule.torsion' R R (Submonoid.powers f))
+      (Submodule.torsion' A A (Submonoid.powers (φ f))) := by
+  rintro x ⟨⟨_, k, rfl⟩, hk⟩
+  refine ⟨⟨_, k, rfl⟩, ?_⟩
+  simpa [Submonoid.smul_def] using congr(φ $hk)
+
+/-- If scalar multiplication by `a` is injective on `M`, then `M` has no `a`-power torsion. -/
+theorem IsSMulRegular.torsion'_powers_eq_bot {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {a : R} (ha : IsSMulRegular M a) :
+    Submodule.torsion' R M (Submonoid.powers a) = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr ?_
+  rintro x ⟨⟨_, k, rfl⟩, hk⟩
+  exact ha.pow k (by simpa [Submonoid.smul_def] using hk)
+
 namespace Submodule
 
 /-- The `a`-torsion submodule of an `R`-module `M` is the kernel of left scalar multiplication by
@@ -355,6 +433,12 @@ theorem torsionBy_eq_ker_lsmul {R M : Type*} [CommSemiring R] [AddCommMonoid M] 
     (a : R) : torsionBy R M a = LinearMap.ker (LinearMap.lsmul R M a) := by
   ext x
   rw [mem_torsionBy_iff, LinearMap.mem_ker, LinearMap.lsmul_apply]
+
+/-- In a commutative semiring `R`, `x` lies in the `a`-torsion `R[a]` of `R` as a module over
+itself exactly when `a * x = 0`: the scalar action of `R` on itself is multiplication. -/
+theorem mem_torsionBy_self_iff {R : Type*} [CommSemiring R] {a x : R} :
+    x ∈ torsionBy R R a ↔ a * x = 0 := by
+  rw [mem_torsionBy_iff, smul_eq_mul]
 
 /-- A submodule `P` of an `R`-module `M` is `a`-saturated (`∀ x, a • x ∈ P → x ∈ P`) if and only
 if it is saturated with respect to all powers of `a`. -/

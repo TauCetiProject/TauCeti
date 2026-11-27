@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 import TauCeti.Analysis.Pseudodifferential.MicrolocalCutoff
+import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Elliptic
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 
 /-!
@@ -22,19 +25,55 @@ open cone `Γ` containing `ξ₀` and a radius `R`, the value `a(x, ξ)` is inve
 `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` whenever `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, with `C` uniform for `x` in
 compact sets (`TauCeti.Symbol.IsEllipticOn`). The other points `(x₀, ξ₀)` with `ξ₀ ≠ 0` form the
 **characteristic set** `Char(a)` (`TauCeti.Symbol.characteristicSet`). It is conic, and empty for a
-symbol elliptic above some radius.
+symbol elliptic above some radius. Terms of lower order do not change it
+(`TauCeti.Symbol.characteristicSet_add_inclusion`): at large frequencies they are small relative
+to the inverse bound, so a Neumann series keeps the perturbed symbol invertible. In particular
+symbols differing by a smoothing symbol have the same characteristic set
+(`TauCeti.Symbol.characteristicSet_eq_of_isSmoothing_sub`).
 
-This file proves **microlocal elliptic regularity** for a scalar symbol `a` with compact spatial
-support acting on a Bessel-potential space `H^t`: the operator `Op(a)` recovers every singularity of
+For a classical symbol `a` the characteristic set is read off the principal symbol: it consists of
+the points `(x, ξ)`, `ξ ≠ 0`, at which `a_m(x, ξ)` is not invertible
+(`TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`). If `a_m(x₀, ξ₀)` is invertible,
+then `a` is elliptic on the cone over a neighbourhood of `ξ₀` at large frequencies
+(`TauCeti.ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal`). Conversely,
+if `a` is elliptic along the ray of `ξ`, then `a_m(x, ξ)` is invertible
+(`TauCeti.ClassicalSymbol.isInvertible_coefficient_principal_of_isEllipticOn`). In particular a
+classical symbol has empty characteristic set exactly when it is elliptic
+(`TauCeti.ClassicalSymbol.characteristicSet_toSymbol_eq_empty_iff`).
+
+This file proves **microlocal elliptic regularity** for a symbol `a` with compact spatial support
+acting on a Bessel-potential space `H^t`: the operator `Op(a)` recovers every singularity of
 `v ∈ H^t` away from its characteristic set,
 
-`WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`
+`WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`.
 
-(`TauCeti.Symbol.waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`).
+It holds for **systems**, symbols with values in `V →L[ℂ] W` for finite-dimensional `W`, acting on
+`v ∈ H^t(ℝⁿ; V)`, with the wave front set of vector-valued distributions, the union of the wave
+front sets of the components (`Distribution.vectorWaveFrontSet`)
+(`TauCeti.Symbol.vectorWaveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`).
+In a local frame an operator between vector bundles has such a symbol, and ellipticity of a system
+is invertibility of the matrix `a(x, ξ)`, not of its entries. For a scalar symbol the wave front set
+of a scalar distribution as a vector-valued one is its wave front set, and this is
+`TauCeti.Symbol.waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`.
 Together with the microlocality `WF(Op(a) v) ⊆ WF(v)`
-(`TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`), the two wave front sets agree
-off `Char(a)`, and the singular supports agree over the points above which `a` has no
+(`TauCeti.Symbol.vectorWaveFrontSet_toDistribution_quantizeSobolev_subset`), the two wave front sets
+agree off `Char(a)`, and the singular supports agree over the points above which `a` has no
 characteristic covector.
+
+Conversely, elliptic operators of order `0` detect the covectors at which `v` is smooth. If
+`(x₀, ξ₀) ∉ WF(v)`, a microlocal cutoff `c` living in a small conic neighbourhood of `(x₀, ξ₀)` on
+which `v` is microlocally smooth is the identity near `(x₀, ξ₀)`, so not characteristic there, and
+`Op(c) v` has empty wave front set
+(`Symbol.exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty`).
+An empty wave front set means that `Op(c) v` is a smooth function
+(`Distribution.singularSupport_eq_empty_iff_waveFrontSet_eq_empty`,
+`Distribution.singularSupport_eq_empty_iff`). With microlocal elliptic regularity this identifies
+the Fourier-decay definition of the wave front set with the definition by elliptic test operators:
+
+`WF(v) = ⋂ {Char(c) | c of order 0, Op(c) v smooth}`
+
+(`TauCeti.Symbol.waveFrontSet_toDistribution_eq_iInter_characteristicSet`), the intersection being
+over symbols `c` with compact spatial support.
 
 ## Proof
 
@@ -55,26 +94,56 @@ Now `Op(c)` is microlocally the identity on `U' × Γ'`
 (`TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev`), `Op(q)` does not
 enlarge wave front sets, and `Op(e) v` lies in every `H^s`, so its wave front set is empty.
 
+For a system the parametrix `b` has values in `W →L[ℂ] V`, but the cutoff `c` can be taken scalar,
+`c = c₁ Id_V` for a scalar microlocal cutoff `c₁`. Then `Op(c)` acts on each component separately,
+`ℓ (Op(c) v) = Op(c₁) (ℓ v)` for every functional `ℓ` on `V`
+(`TauCeti.Symbol.postcomp_comp_quantizeSobolev_map_smulRight_id`), so it is microlocally the
+identity on every component, and the argument above runs on the component `ℓ v` singular at
+`(x₀, ξ₀)`.
+
 ## Main results
 
 * `TauCeti.Symbol.characteristicSet`: the characteristic set of a symbol.
+* `TauCeti.Symbol.characteristicSet_add_inclusion`,
+  `TauCeti.Symbol.characteristicSet_eq_of_isSmoothing_sub`: adding a symbol of lower order, or a
+  smoothing symbol, does not change the characteristic set.
+* `TauCeti.Symbol.subset_union_characteristicSet`,
+  `TauCeti.Symbol.sdiff_characteristicSet_eq_of_subset`: from inclusions `S ∩ (U × Γ) ⊆ S'` on the
+  conic regions where `a` is elliptic to `S ⊆ S' ∪ Char(a)`, and to `S' \ Char(a) = S \ Char(a)`
+  when also `S' ⊆ S`.
 * `TauCeti.Symbol.exists_toDistr_quantizeSobolev_eq_sub`: the microlocal parametrix identity
   `Op(c) v = Op(q) (Op(a) v) - Op(e) v` on `H^t`, with `e` smoothing.
-* `TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`:
-  if `a` is elliptic on `U × Γ` at large frequencies, then `WF(v) ∩ (U × Γ) ⊆ WF(Op(a) v)`.
-* `TauCeti.Symbol.waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`:
-  **microlocal elliptic regularity**, `WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`.
-* `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq`:
+* `TauCeti.Symbol.vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`:
+  if the system `a` is elliptic on `U × Γ` at large frequencies, then
+  `WF(v) ∩ (U × Γ) ⊆ WF(Op(a) v)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`:
+  **microlocal elliptic regularity for systems**, `WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq`:
   `WF(Op(a) v) \ Char(a) = WF(v) \ Char(a)`.
 * `TauCeti.Symbol.singularSupport_toDistribution_subset_singularSupport_quantizeSobolev_union`:
   the singular support of `v` lies in that of `Op(a) v` together with the positions of `Char(a)`.
+* `TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`,
+  `TauCeti.Symbol.waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet`,
+  `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq`: the
+  same for scalar symbols, with the wave front set of scalar distributions.
+* `TauCeti.Symbol.notMem_waveFrontSet_toDistribution_iff_exists`: `(x₀, ξ₀) ∉ WF(v)` if and only if
+  some `c` of order `0`, not characteristic at `(x₀, ξ₀)`, gives `WF(Op(c) v) = ∅`.
+* `TauCeti.Symbol.waveFrontSet_toDistribution_eq_iInter_characteristicSet`: the wave front set is
+  the intersection of the characteristic sets of the test operators `c` with `WF(Op(c) v) = ∅`.
+* `TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`,
+  `TauCeti.ClassicalSymbol.characteristicSet_toSymbol`: the characteristic set of a classical
+  symbol is the set of points at which its principal symbol is not invertible, and
+  `TauCeti.ClassicalSymbol.characteristicSet_toSymbol_eq_empty_iff`: it is empty exactly when the
+  symbol is elliptic.
 
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §7
-  (microlocal parametrices and `WF(u) ⊆ WF(Pu) ∪ Char(P)`).
+  (microlocal parametrices, `WF(u) ⊆ WF(Pu) ∪ Char(P)`, and the wave front set as the
+  intersection of the characteristic sets of the operators of order `0` smoothing `u`).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
-  §18.1, Theorem 18.1.28.
+  §18.1, Theorem 18.1.28 (elliptic regularity) and the description of `WF(u)` by the operators of
+  order `0` mapping `u` to a smooth function, in the same section.
 -/
 
 public section
@@ -128,6 +197,121 @@ theorem IsEllipticAbove.characteristicSet_eq_empty {a : Symbol n V W m} {R : ℝ
     (ha : a.IsEllipticAbove R) : a.characteristicSet = ∅ :=
   eq_empty_iff_forall_notMem.2 fun _ hp ↦ hp.2 ⟨univ, univ_mem, univ, isOpen_univ, mem_univ _,
     fun _ _ _ _ ↦ mem_univ _, R, (isEllipticAbove_iff_isEllipticOn.1 ha).mono fun _ hq ↦ hq.2.2⟩
+
+/-- A symbol of order `0` that is the identity at large frequencies over a neighbourhood of `x₀`
+and an open cone containing `ξ₀` is not characteristic at `(x₀, ξ₀)`. -/
+theorem notMem_characteristicSet_of_eq_id {c : Symbol n V V 0} {x₀ ξ₀ : CoordinateSpace n}
+    {U Γ : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) (hΓ : IsOpen Γ) (hξ₀ : ξ₀ ∈ Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {R : ℝ}
+    (hcΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V) :
+    (x₀, ξ₀) ∉ c.characteristicSet := fun h ↦
+  h.2 ⟨U, hU, Γ, hΓ, hξ₀, hcone, R, isEllipticOn_iff.2 fun _ _ ↦ ⟨1, fun p hp _ ↦ by
+    rw [hcΓ p.1 hp.1 p.2 hp.2.1 hp.2.2, ContinuousLinearMap.inverse_id]
+    exact ⟨⟨ContinuousLinearEquiv.refl ℂ V, rfl⟩, by
+      simpa using ContinuousLinearMap.norm_id_le (𝕜 := ℂ) (E := V)⟩⟩⟩
+
+/-- A symbol elliptic in a conic neighbourhood of `(x₀, ξ₀)` stays elliptic there, at larger
+frequencies, after adding a symbol of lower order: over a compact ball of positions the
+perturbation is `O(⟨ξ⟩^(m' - m))` relative to the inverse bound, so it is small at large
+frequencies and the Neumann series applies. -/
+private theorem notMem_characteristicSet_add_inclusion [CompleteSpace V] {m' : ℝ} (h : m' < m)
+    {a : Symbol n V W m} (d : Symbol n V W m') {x₀ ξ₀ : CoordinateSpace n}
+    (ha : (x₀, ξ₀) ∉ a.characteristicSet) :
+    (x₀, ξ₀) ∉ (a + inclusion h.le d).characteristicSet := by
+  rintro ⟨hξ₀, hn⟩
+  obtain ⟨U, hU, Γ, hΓ, hξ₀Γ, hcone, R, hell⟩ := not_not.1 (not_and.1 ha hξ₀)
+  obtain ⟨δ, hδ, hδU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hU
+  have hK := isCompact_closedBall x₀ δ
+  obtain ⟨C₀, hC₀⟩ := isEllipticOn_iff.1 hell _ hK
+  obtain ⟨C₁, hC₁, hd⟩ := d.exists_bound _ hK [] []
+  set C := max C₀ 0 * C₁
+  -- A radius `t ≥ 1` with `C t^(m' - m) ≤ 1 / 2`.
+  obtain ⟨t, ht, ht1⟩ := (((tendsto_rpow_neg_atTop (y := m - m') (by linarith)).eventually
+    (gt_mem_nhds (inv_pos.2 (by positivity : (0 : ℝ) < 2 * C + 1)))).and
+      (eventually_ge_atTop 1)).exists
+  rw [neg_sub] at ht
+  have ht0 : 0 < t := one_pos.trans_le ht1
+  refine hn ⟨closedBall x₀ δ, closedBall_mem_nhds x₀ hδ, Γ, hΓ, hξ₀Γ, hcone, max R t,
+    isEllipticOn_iff.2 fun _ _ ↦ ⟨2 * max C₀ 0, fun p hp _ ↦ ?_⟩⟩
+  obtain ⟨hA, hAinv⟩ := hC₀ p ⟨hδU hp.1, hp.2.1, (le_max_left _ _).trans hp.2.2⟩ hp.1
+  set w := (1 + ‖p.2‖ ^ 2) ^ (-m / 2)
+  have hw : 0 < w := rpow_weight_pos p.2 (-m)
+  set A := a.coefficient p
+  set M := max C₀ 0 * w
+  have hAM : ‖A.inverse‖ ≤ M := hAinv.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hw.le)
+  -- `M ‖d(p)‖ ≤ C ⟨ξ⟩^(m' - m) ≤ C t^(m' - m) ≤ 1 / 2`.
+  have hdp : ‖d.coefficient p‖ ≤ C₁ * (1 + ‖p.2‖ ^ 2) ^ (m' / 2) := by
+    simpa using hd p.1 hp.1 p.2
+  have hwt : (1 + ‖p.2‖ ^ 2) ^ ((m' - m) / 2) ≤ t ^ (m' - m) := by
+    simpa using rpow_weight_le_rpow_mul_rpow_weight (s := m' - m) (s' := 0) ht0
+      ((le_max_right _ _).trans hp.2.2) (by linarith)
+  have hsmall : M * ‖(a + inclusion h.le d).coefficient p - A‖ ≤ 1 / 2 := by
+    rw [coefficient_add, coefficient_inclusion, Pi.add_apply, add_sub_cancel_left]
+    calc M * ‖d.coefficient p‖ ≤ M * (C₁ * (1 + ‖p.2‖ ^ 2) ^ (m' / 2)) := by
+          gcongr
+      _ = C * (1 + ‖p.2‖ ^ 2) ^ ((m' - m) / 2) := by
+          rw [show (m' - m) / 2 = -m / 2 + m' / 2 by ring, Real.rpow_add (by positivity)]
+          ring
+      _ ≤ C * (2 * C + 1)⁻¹ := by gcongr; exact hwt.trans ht.le
+      _ ≤ 1 / 2 := by
+          rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
+          linarith
+  have hlt := hsmall.trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
+  refine ⟨ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt hA hAM hlt,
+    (ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt hA hAM hlt).trans ?_⟩
+  rw [div_le_iff₀ (sub_pos.2 hlt)]
+  nlinarith [mul_nonneg (le_max_right C₀ 0) hw.le]
+
+/-- **Lower-order terms do not change the characteristic set.** Adding a symbol of order
+`m' < m` to a symbol of order `m` leaves its characteristic set unchanged. -/
+theorem characteristicSet_add_inclusion [CompleteSpace V] {m' : ℝ} (h : m' < m)
+    (a : Symbol n V W m) (d : Symbol n V W m') :
+    (a + inclusion h.le d).characteristicSet = a.characteristicSet := by
+  refine Subset.antisymm (by
+    rintro ⟨x, ξ⟩ hp
+    by_contra ha
+    exact notMem_characteristicSet_add_inclusion h d ha hp) ?_
+  rintro ⟨x, ξ⟩ hp
+  by_contra ha
+  refine notMem_characteristicSet_add_inclusion h (-d) ha ?_
+  convert hp using 2
+  ext
+  simp
+
+/-- **Smoothing perturbations do not change the characteristic set.** Two symbols differing by a
+smoothing symbol have the same characteristic set. -/
+theorem characteristicSet_eq_of_isSmoothing_sub [CompleteSpace V] {a b : Symbol n V W m}
+    (h : (a - b).IsSmoothing) : a.characteristicSet = b.characteristicSet := by
+  obtain ⟨d, hd⟩ := isSmoothing_iff.1 h (m - 1)
+  have hab : a = b + inclusion (sub_one_lt m).le d := by
+    ext
+    simp [hd]
+  rw [hab, characteristicSet_add_inclusion (sub_one_lt m)]
+
+/-- **Elliptic regularity from its conic form.** Let `S` be a set of points `(x, ξ)` with `ξ ≠ 0`,
+such as a wave front set, with `S ∩ (U × Γ) ⊆ S'` whenever `a` is elliptic on the points `(x, ξ)`
+with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, for an open set `U` and an open cone `Γ`. Then
+`S ⊆ S' ∪ Char(a)`. -/
+theorem subset_union_characteristicSet {a : Symbol n V W m}
+    {S S' : Set (CoordinateSpace n × CoordinateSpace n)} (hS : ∀ p ∈ S, p.2 ≠ 0)
+    (h : ∀ {U Γ : Set (CoordinateSpace n)}, IsOpen U → IsOpen Γ →
+      (∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) → ∀ {R : ℝ},
+        a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R ≤ ‖p.2‖} → S ∩ U ×ˢ Γ ⊆ S') :
+    S ⊆ S' ∪ a.characteristicSet := by
+  rintro ⟨x, ξ⟩ hp
+  by_contra h'
+  rw [mem_union, not_or, mem_characteristicSet_iff, not_and, not_not] at h'
+  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, R, hell⟩ := h'.2 (hS _ hp)
+  exact h'.1 (h isOpen_interior hΓ hcone (hell.mono fun _ hq ↦ ⟨interior_subset hq.1, hq.2⟩)
+    ⟨hp, mem_interior_iff_mem_nhds.2 hU, hξ⟩)
+
+/-- If `S' ⊆ S ⊆ S' ∪ Char(a)`, as for the wave front sets of `Op(a) v` and `v`, then `S` and `S'`
+agree off the characteristic set: `S' \ Char(a) = S \ Char(a)`. -/
+theorem sdiff_characteristicSet_eq_of_subset {a : Symbol n V W m}
+    {S S' : Set (CoordinateSpace n × CoordinateSpace n)} (h₁ : S' ⊆ S)
+    (h₂ : S ⊆ S' ∪ a.characteristicSet) :
+    S' \ a.characteristicSet = S \ a.characteristicSet :=
+  (sdiff_subset_sdiff_left h₁).antisymm ((sdiff_subset_sdiff_left h₂).trans_eq union_sdiff_right)
 
 end CharacteristicSet
 
@@ -184,7 +368,134 @@ theorem exists_toDistr_quantizeSobolev_eq_sub {a : Symbol n V W m}
 
 end ParametrixIdentity
 
+/-! ### Microlocal elliptic regularity for systems
+
+A symbol with values in `V →L[ℂ] W` is a system of pseudodifferential operators, the form in which
+an operator between vector bundles appears in local frames. Its action on `V`-valued
+distributions is measured by the wave front set of vector-valued distributions, the union of the
+wave front sets of the components (`Distribution.vectorWaveFrontSet`). Ellipticity of the system
+is invertibility of the matrix `a(x, ξ)`, which says nothing about its entries, so microlocal
+elliptic regularity does not reduce to the scalar case entry by entry. The microlocal left
+parametrix `b` is built for the system, but the microlocal cutoff `c ∼ b # a` can be taken scalar,
+`c = c₁ Id_V`. Such a cutoff acts on each component separately
+(`TauCeti.Symbol.postcomp_comp_quantizeSobolev_map_smulRight_id`), and so it is microlocally the
+identity on every component. -/
+
 section EllipticRegularity
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+
+/-- **Microlocal elliptic regularity for systems on a conic region.** Let the symbol `a` with values
+in `V →L[ℂ] W` and compact spatial support be elliptic on the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ`
+and `‖ξ‖ ≥ R`, for an open set `U` and an open cone `Γ`. Then `Op(a)` keeps every singularity of
+`v ∈ H^t(ℝⁿ; V)` in `U × Γ`: `WF(v) ∩ (U × Γ) ⊆ WF(Op(a) v)`, for the wave front sets of
+vector-valued distributions. -/
+theorem vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    haveI : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+    ∀ (v : H^{t}(CoordinateSpace n, V)) {U Γ : Set (CoordinateSpace n)}, IsOpen U → IsOpen Γ →
+      (∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) → ∀ {R : ℝ},
+        a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R ≤ ‖p.2‖} →
+        (toDistribution ⊤ v.toDistr).vectorWaveFrontSet ∩ U ×ˢ Γ ⊆
+          (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet := by
+  have : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+  intro v U Γ hU hΓ hcone R hell
+  rintro ⟨x₀, ξ₀⟩ ⟨hp, hx₀, hξ₀⟩
+  -- A scalar microlocal cutoff `c₁`, the identity near `(x₀, ξ₀)` and supported where `a` is
+  -- elliptic, and the microlocal parametrix identity `Op(c) v = Op(q) (Op(a) v) - Op(e) v` for
+  -- `c = c₁ Id_V`.
+  obtain ⟨c₁, hc₁, hc₁S, U', Γ', hU', hx₀', hΓ', hξ₀', hcone', R', hc₁1⟩ :=
+    exists_microlocalCutoff_of_mem (V := ℂ) hU hx₀ hΓ hξ₀ hcone R
+  set Ψ := ((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).smulRight
+    (ContinuousLinearMap.id ℂ V)).restrictScalars ℝ
+  obtain ⟨q, hq, e, he, hes, hid⟩ := exists_toDistr_quantizeSobolev_eq_sub ha hell
+    (hc₁.map Ψ) (c := c₁.map Ψ) fun p hp ↦ by simp [Ψ, hc₁S p hp]
+  -- A component `ℓ v` of `v` is singular at `(x₀, ξ₀)`, and so is `Op(c₁) (ℓ v) = ℓ (Op(c) v)`.
+  obtain ⟨ℓ, hℓ⟩ := mem_vectorWaveFrontSet_iff.1 hp
+  have hw := BesselPotentialSpace.toDistribution_toDistr_postcomp (Ω := ⊤) ℓ v
+  have h := waveFrontSet_toDistribution_inter_subset_quantizeSobolev hc₁ t
+    (BesselPotentialSpace.postcomp _ t 2 ℓ v) hU' hΓ' hcone' hc₁1 ⟨hw ▸ hℓ, hx₀', hξ₀'⟩
+  rw [← postcomp_quantizeSobolev_map_smulRight_id hc₁ ℓ t v,
+    BesselPotentialSpace.toDistribution_toDistr_postcomp, hid t v, map_sub, map_sub] at h
+  rcases waveFrontSet_sub_subset _ _ h with h | h
+  · -- The component of `Op(q) (Op(a) v)` is singular only where `Op(a) v` is.
+    exact vectorWaveFrontSet_toDistribution_quantizeSobolev_subset hq (t - m) _
+      (waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ _ h)
+  · -- The component of `Op(e) v` lies in every `H^s`, since `e` is smoothing.
+    rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp,
+      waveFrontSet_toDistribution_eq_empty fun s ↦ by
+        rw [BesselPotentialSpace.toDistr_postcomp]
+        exact (hes.memSobolev_toDistr_quantizeSobolev he t s v).postcomp ℓ] at h
+    exact h.elim
+
+/-- **Microlocal elliptic regularity for systems.** For a symbol `a` with values in `V →L[ℂ] W`
+and compact spatial support, and every `v ∈ H^t(ℝⁿ; V)`, every singularity of `v` is a singularity
+of `Op(a) v` or a characteristic point of `a`: `WF(v) ⊆ WF(Op(a) v) ∪ Char(a)`, for the wave front
+sets of vector-valued distributions. -/
+theorem vectorWaveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    haveI : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ v.toDistr).vectorWaveFrontSet ⊆
+        (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet ∪
+          a.characteristicSet := by
+  intro v
+  exact subset_union_characteristicSet (fun _ hp ↦ (vectorWaveFrontSet_subset _ hp).2)
+    (vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn ha t v)
+
+end EllipticRegularity
+
+section FiniteDimensionalValues
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [FiniteDimensional ℂ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+
+/-- Off the characteristic set of a symbol `a` with values in `V →L[ℂ] W` and compact spatial
+support, `Op(a)` neither creates nor removes singularities: `WF(Op(a) v) \ Char(a) =
+WF(v) \ Char(a)` for every `v ∈ H^t(ℝⁿ; V)`, for the wave front sets of vector-valued
+distributions. -/
+theorem vectorWaveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    haveI : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+    haveI : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet \
+          a.characteristicSet =
+        (toDistribution ⊤ v.toDistr).vectorWaveFrontSet \ a.characteristicSet := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+  have : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+  intro v
+  exact sdiff_characteristicSet_eq_of_subset
+    (vectorWaveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
+    (vectorWaveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet ha t v)
+
+/-- **Elliptic regularity for singular supports.** For a symbol `a` with values in `V →L[ℂ] W` and
+compact spatial support, and every `v ∈ H^t(ℝⁿ; V)`, the singular support of `v` lies in that of
+`Op(a) v` together with the positions of the characteristic points of `a`. -/
+theorem singularSupport_toDistribution_subset_singularSupport_quantizeSobolev_union
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    haveI : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+    haveI : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ v.toDistr).singularSupport ⊆
+        (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ∪
+          Prod.fst '' a.characteristicSet := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+  intro v
+  rw [← fst_image_vectorWaveFrontSet, ← fst_image_vectorWaveFrontSet, ← image_union]
+  exact image_mono
+    (vectorWaveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet ha t v)
+
+end FiniteDimensionalValues
+
+/-! ### Scalar symbols
+
+For a scalar symbol the wave front set of the vector-valued distribution `Op(a) v` is its wave
+front set (`Distribution.vectorWaveFrontSet_eq_waveFrontSet`), so the statements above specialize
+to the following. -/
+
+section Scalar
 
 /-- **Microlocal elliptic regularity on a conic region.** Let the scalar symbol `a` with compact
 spatial support be elliptic on the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, for an open
@@ -197,19 +508,9 @@ theorem waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn
     (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R ≤ ‖p.2‖}) :
     (toDistribution ⊤ v.toDistr).waveFrontSet ∩ U ×ˢ Γ ⊆
       (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet := by
-  rintro ⟨x₀, ξ₀⟩ ⟨hp, hx₀, hξ₀⟩
-  obtain ⟨c, hc, hcS, U', Γ', hU', hx₀', hΓ', hξ₀', hcone', R', hc1⟩ :=
-    exists_microlocalCutoff_of_mem (V := ℂ) hU hx₀ hΓ hξ₀ hcone R
-  obtain ⟨q, hq, e, he, hes, hid⟩ := exists_toDistr_quantizeSobolev_eq_sub ha hell hc hcS
-  -- `(x₀, ξ₀) ∈ WF(Op(c) v)`, and `Op(c) v = Op(q) (Op(a) v) - Op(e) v`.
-  have h := waveFrontSet_toDistribution_inter_subset_quantizeSobolev hc t v hU' hΓ' hcone' hc1
-    ⟨hp, hx₀', hξ₀'⟩
-  rw [hid t v, map_sub] at h
-  rcases waveFrontSet_sub_subset _ _ h with h | h
-  · exact waveFrontSet_toDistribution_quantizeSobolev_subset hq (t - m) _ h
-  · rw [waveFrontSet_toDistribution_eq_empty fun s ↦
-      hes.memSobolev_toDistr_quantizeSobolev he t s v] at h
-    exact h.elim
+  simpa only [vectorWaveFrontSet_eq_waveFrontSet] using
+    vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn ha t v hU hΓ
+      hcone hell
 
 /-- **Microlocal elliptic regularity.** For a scalar symbol `a` with compact spatial support and
 every `v ∈ H^t`, every singularity of `v` is a singularity of `Op(a) v` or a characteristic point
@@ -220,14 +521,8 @@ theorem waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicS
     (toDistribution ⊤ v.toDistr).waveFrontSet ⊆
       (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet ∪
         a.characteristicSet := by
-  rintro ⟨x, ξ⟩ hp
-  by_contra h
-  rw [mem_union, not_or] at h
-  obtain ⟨U, hU, Γ, hΓ, hξ, hcone, R, hell⟩ :=
-    not_not.1 (not_and.1 h.2 (mem_waveFrontSet_iff.1 hp).2.1)
-  exact h.1 (waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn ha t v
-    isOpen_interior hΓ hcone (hell.mono fun _ hq ↦ ⟨interior_subset hq.1, hq.2⟩)
-    ⟨hp, mem_interior_iff_mem_nhds.2 hU, hξ⟩)
+  simpa only [vectorWaveFrontSet_eq_waveFrontSet] using
+    vectorWaveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet ha t v
 
 /-- Off the characteristic set of a scalar symbol `a` with compact spatial support, `Op(a)` neither
 creates nor removes singularities: `WF(Op(a) v) \ Char(a) = WF(v) \ Char(a)` for every
@@ -236,26 +531,132 @@ theorem waveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq
     {a : Symbol n ℂ ℂ m} (ha : a.HasCompactSpatialSupport) (t : ℝ)
     (v : H^{t}(CoordinateSpace n, ℂ)) :
     (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet \ a.characteristicSet =
-      (toDistribution ⊤ v.toDistr).waveFrontSet \ a.characteristicSet :=
-  (sdiff_subset_sdiff_left (waveFrontSet_toDistribution_quantizeSobolev_subset ha t v)).antisymm
-    fun _ hp ↦ ⟨((waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet
-      ha t v) hp.1).resolve_right hp.2, hp.2⟩
+      (toDistribution ⊤ v.toDistr).waveFrontSet \ a.characteristicSet := by
+  simpa only [vectorWaveFrontSet_eq_waveFrontSet] using
+    vectorWaveFrontSet_toDistribution_quantizeSobolev_sdiff_characteristicSet_eq ha t v
 
-/-- **Elliptic regularity for singular supports.** For a scalar symbol `a` with compact spatial
-support and every `v ∈ H^t`, the singular support of `v` lies in that of `Op(a) v` together with
-the positions of the characteristic points of `a`. -/
-theorem singularSupport_toDistribution_subset_singularSupport_quantizeSobolev_union
-    {a : Symbol n ℂ ℂ m} (ha : a.HasCompactSpatialSupport) (t : ℝ)
+end Scalar
+
+/-! ### Elliptic test operators
+
+A covector `(x₀, ξ₀)` lies outside the wave front set of `v` exactly when some operator of
+order `0`, elliptic at `(x₀, ξ₀)`, maps `v` to a smooth function. -/
+
+section TestOperators
+
+/-- **Elliptic test operators detect regular covectors.** If `v ∈ H^t` is microlocally smooth at
+`(x₀, ξ₀)`, there is a symbol `c` of order `0` with compact spatial support, not characteristic at
+`(x₀, ξ₀)`, such that `Op(c) v` has empty wave front set. -/
+theorem exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty
+    (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) {x₀ ξ₀ : CoordinateSpace n}
+    (hv : (x₀, ξ₀) ∉ (toDistribution ⊤ v.toDistr).waveFrontSet) :
+    ∃ (c : Symbol n ℂ ℂ 0) (hc : c.HasCompactSpatialSupport), (x₀, ξ₀) ∉ c.characteristicSet ∧
+      (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet = ∅ := by
+  -- At the zero frequency every symbol is noncharacteristic, and the zero symbol will do.
+  rcases eq_or_ne ξ₀ 0 with rfl | hξ₀
+  · exact ⟨0, hasCompactSpatialSupport_zero, fun h ↦ h.1 rfl, by simp⟩
+  set T := toDistribution ⊤ v.toDistr
+  have hs : T.IsMicrolocallySmoothAt x₀ ξ₀ := by simpa [hξ₀] using hv
+  -- The witnesses of microlocal smoothness at `(x₀, ξ₀)`, a cutoff `φ` and an open cone `Γ`,
+  -- witness it at every `(x, η)` with `φ x ≠ 0` and `η ∈ Γ`.
+  obtain ⟨φ, hφ, Γ, hΓ, hξ₀Γ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hs
+  have hsm (x : CoordinateSpace n) (hx : φ x ≠ 0) (η : CoordinateSpace n) (hη : η ∈ Γ) :
+      T.IsMicrolocallySmoothAt x η :=
+    isMicrolocallySmoothAt_iff.2 ⟨φ, hx, Γ, hΓ, hη, hcone, hdecay⟩
+  obtain ⟨δ, hδ, hδφ⟩ := Metric.isOpen_iff.1 (isOpen_ne_fun φ.continuous continuous_const) x₀ hφ
+  -- A closed cone `F` with `Γ' ⊆ F` and `F \ {0} ⊆ Γ`, and a cutoff `c` living in
+  -- `ball x₀ (δ / 2) × Γ'` which is the identity near `(x₀, ξ₀)`.
+  obtain ⟨F, Γ', hF, hFcone, hFΓ, hΓ', hξ₀Γ', hcone', hΓ'F⟩ :=
+    hΓ.exists_isOpen_cone_subset_isClosed_cone hcone hξ₀Γ
+  obtain ⟨c, hc, hc0, U', Γ'', hU', hx₀U', hΓ'', hξ₀Γ'', hcone'', R', hc1⟩ :=
+    exists_microlocalCutoff_of_mem (V := ℂ) isOpen_ball (mem_ball_self (half_pos hδ)) hΓ'
+      hξ₀Γ' hcone' 0
+  refine ⟨c, hc, notMem_characteristicSet_of_eq_id (hU'.mem_nhds hx₀U') hΓ'' hξ₀Γ'' hcone'' hc1,
+    eq_empty_iff_forall_notMem.2 fun ⟨x, ξ⟩ hp ↦ ?_⟩
+  -- A covector of `WF(Op(c) v)` lies in `WF(v)`, so outside `closedBall x₀ (δ / 2) × F`, where
+  -- `c` vanishes conically.
+  obtain ⟨-, hξ0, hns⟩ := mem_waveFrontSet_iff.1
+    (waveFrontSet_toDistribution_quantizeSobolev_subset hc t v hp)
+  by_cases hx : x ∈ closedBall x₀ (δ / 2)
+  · by_cases hξ : ξ ∈ F
+    · exact hns (hsm x (hδφ (closedBall_subset_ball (half_lt_self hδ) hx)) ξ (hFΓ ξ hξ hξ0))
+    · exact notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero hc t v univ_mem
+        hF.isOpen_compl hξ (forall_smul_mem_compl hFcone) (R := 0)
+        (fun _ _ _ hξ' _ ↦ hc0 _ fun hq ↦ hξ' (hΓ'F hq.2.1)) hp
+  · exact notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero hc t v
+      (isClosed_closedBall.isOpen_compl.mem_nhds hx) isOpen_univ (mem_univ ξ)
+      (fun _ _ _ _ ↦ mem_univ _) (R := 0)
+      (fun _ hx' _ _ _ ↦ hc0 _ fun hq ↦ hx' (ball_subset_closedBall hq.1)) hp
+
+/-- **The wave front set by elliptic test operators.** For `v ∈ H^t`, the covector `(x₀, ξ₀)` lies
+outside `WF(v)` if and only if some symbol `c` of order `0` with compact spatial support, not
+characteristic at `(x₀, ξ₀)`, gives `Op(c) v` empty wave front set. -/
+theorem notMem_waveFrontSet_toDistribution_iff_exists (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
+    {x₀ ξ₀ : CoordinateSpace n} :
+    (x₀, ξ₀) ∉ (toDistribution ⊤ v.toDistr).waveFrontSet ↔
+      ∃ (c : Symbol n ℂ ℂ 0) (hc : c.HasCompactSpatialSupport), (x₀, ξ₀) ∉ c.characteristicSet ∧
+        (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet = ∅ := by
+  refine
+    ⟨exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty t v,
+      fun ⟨c, hc, hchar, hWF⟩ hp ↦ hchar ?_⟩
+  simpa [hWF] using waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet hc t
+    v hp
+
+/-- **The wave front set as an intersection of characteristic sets.** For `v ∈ H^t`, `WF(v)` is the
+intersection of the characteristic sets of the symbols `c` of order `0` with compact spatial
+support for which `Op(c) v` has empty wave front set. -/
+theorem waveFrontSet_toDistribution_eq_iInter_characteristicSet (t : ℝ)
     (v : H^{t}(CoordinateSpace n, ℂ)) :
-    (toDistribution ⊤ v.toDistr).singularSupport ⊆
-      (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ∪
-        Prod.fst '' a.characteristicSet := by
-  rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet, ← image_union]
-  exact image_mono
-    (waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet ha t v)
+    (toDistribution ⊤ v.toDistr).waveFrontSet =
+      ⋂ (c : Symbol n ℂ ℂ 0) (hc : c.HasCompactSpatialSupport)
+        (_ : (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet = ∅),
+        c.characteristicSet := by
+  ext ⟨x, ξ⟩
+  simp only [mem_iInter]
+  refine ⟨fun hp c hc hWF ↦ ?_, fun h ↦ ?_⟩
+  · simpa [hWF] using
+      waveFrontSet_toDistribution_subset_quantizeSobolev_union_characteristicSet hc t v hp
+  · by_contra hp
+    obtain ⟨c, hc, hchar, hWF⟩ :=
+      exists_notMem_characteristicSet_and_waveFrontSet_toDistribution_quantizeSobolev_eq_empty t v
+        hp
+    exact hchar (h c hc hWF)
 
-end EllipticRegularity
+end TestOperators
 
 end Symbol
+
+/-! ### The characteristic set of a classical symbol -/
+
+namespace ClassicalSymbol
+
+variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] {a : ClassicalSymbol n V W m}
+
+/-- **The characteristic set of a classical symbol** consists of the points `(x, ξ)`, `ξ ≠ 0`, at
+which its principal symbol `a_m(x, ξ)` is not invertible. -/
+@[simp]
+theorem mem_characteristicSet_toSymbol_iff {p : CoordinateSpace n × CoordinateSpace n} :
+    p ∈ a.toSymbol.characteristicSet ↔
+      p.2 ≠ 0 ∧ ¬ (a.principal.coefficient p).IsInvertible := by
+  obtain ⟨x, ξ⟩ := p
+  exact and_congr_right fun hξ ↦ not_congr ⟨fun ⟨_, hU, _, _, hξΓ, hcone, _, hR⟩ ↦
+    isInvertible_coefficient_principal_of_isEllipticOn hξ (mem_of_mem_nhds hU)
+      (fun t ht ↦ hcone t ht ξ hξΓ) hR,
+    exists_isEllipticOn_of_isInvertible_coefficient_principal hξ⟩
+
+/-- The characteristic set of a classical symbol is the set of points `(x, ξ)`, `ξ ≠ 0`, at which
+its principal symbol is not invertible. -/
+theorem characteristicSet_toSymbol :
+    a.toSymbol.characteristicSet = {p | p.2 ≠ 0 ∧ ¬ (a.principal.coefficient p).IsInvertible} :=
+  Set.ext fun _ ↦ mem_characteristicSet_toSymbol_iff
+
+/-- A classical symbol has no characteristic points exactly when it is elliptic. -/
+@[simp]
+theorem characteristicSet_toSymbol_eq_empty_iff :
+    a.toSymbol.characteristicSet = ∅ ↔ a.IsElliptic := by
+  simp [eq_empty_iff_forall_notMem, isElliptic_iff]
+
+end ClassicalSymbol
 
 end TauCeti

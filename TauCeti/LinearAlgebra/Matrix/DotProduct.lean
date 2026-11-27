@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # Dot products
@@ -17,7 +20,7 @@ form sends `x` to `l i ⬝ᵥ x`, is linearly independent exactly when the squar
 
 Relabelling the indices of a square matrix `M` along `e : I ≃ J` is an isometry of the pairing
 `(u, v) ↦ u ⬝ᵥ M *ᵥ v`, and the sesquilinear form of a compression `Aᴴ * M * A` is that of `M`
-pulled back along `A`.
+pulled back along `A`; for `M = 1` this is the form of the Gram matrix `Aᴴ * A`.
 
 When `A` scales `x` to a multiple of `x'` and `Aᵀ` scales `y'` to a multiple of `y`, the scalars
 transform the dot products `x' ⬝ᵥ y'` and `x ⬝ᵥ y` into each other. For the character-lattice
@@ -26,6 +29,11 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 
 Over a ring, the bilinear form of a matrix with its diagonal removed is the sum over
 ordered off-diagonal index pairs.
+
+For a matrix `J`, a vector orthogonal under `(u, v) ↦ u ⬝ᵥ J *ᵥ v`, or under the sesquilinear
+`(u, v) ↦ star u ⬝ᵥ J *ᵥ v`, to every element of a set is orthogonal to its span. For a
+self-adjoint unit `ρ`, the difference of two values of the sesquilinear form is `ρ` times a sum of
+two values at the differences divided by `ρ`.
 
 ## Main results
 
@@ -38,9 +46,17 @@ ordered off-diagonal index pairs.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
 * `Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec`: the sesquilinear form of a compression
   `Aᴴ * M * A` is that of `M` pulled back along `A`.
+* `Matrix.star_dotProduct_conjTranspose_mul_mulVec`: the sesquilinear form of `Aᴴ * A` is the
+  standard form pulled back along `A`.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
+* `TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero`: over a field in which `2 ≠ 0`,
+  every unit vector of `K³` has an orthogonal unit vector.
+* `Matrix.dotProduct_mulVec_eq_zero_of_mem_span`,
+  `Matrix.star_dotProduct_mulVec_eq_zero_of_mem_span`: orthogonality to a set extends to its span.
+* `Matrix.star_dotProduct_mulVec_sub_eq`: with `D₁ = (u - u') / ρ` and `D₂ = (v - v') / ρ` for a
+  self-adjoint unit `ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)`.
 -/
 
 public section
@@ -89,6 +105,13 @@ theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fi
     (x y : l → α) : star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y) := by
   rw [← mulVec_mulVec, ← mulVec_mulVec, star_mulVec, dotProduct_mulVec]
 
+/-- The sesquilinear form of a Gram matrix `Aᴴ * A` is the form of the identity pulled back along
+`A`: `star x ⬝ᵥ (Aᴴ * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ A *ᵥ y`. -/
+theorem Matrix.star_dotProduct_conjTranspose_mul_mulVec {k l α : Type*} [Fintype k]
+    [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (x y : l → α) :
+    star x ⬝ᵥ (Aᴴ * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ A *ᵥ y := by
+  rw [← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
+
 /-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
 @[simp]
 theorem Matrix.dotProduct_self_nonneg {n R : Type*} [Fintype n] [Ring R] [LinearOrder R]
@@ -121,6 +144,31 @@ theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [Ring R
         rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
     _ = _ := by rw [eq_neg_of_add_eq_zero_right hv, mul_neg, neg_mul]
 
+/-- Over a field in which `2 ≠ 0`, **every unit vector of the three-dimensional space has an
+orthogonal unit vector**: the reflection exchanging a suitable standard basis vector `eᵢ` with `p`
+carries another standard basis vector to one. -/
+theorem TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero {K : Type*} [Field K]
+    [NeZero (2 : K)] {p : Fin 3 → K} (hp : p ⬝ᵥ p = 1) : ∃ u, u ⬝ᵥ u = 1 ∧ p ⬝ᵥ u = 0 := by
+  -- Some coordinate satisfies `p i ≠ 1`, as otherwise `p ⬝ᵥ p = 3`.
+  obtain ⟨i, hi⟩ : ∃ i, p i ≠ 1 := by
+    by_contra! h
+    rw [dotProduct, Fin.sum_univ_three, h 0, h 1, h 2] at hp
+    exact two_ne_zero (by linear_combination hp : (2 : K) = 0)
+  obtain ⟨j, hj⟩ := exists_ne i
+  have hi' : 1 - p i ≠ 0 := sub_ne_zero.mpr hi.symm
+  -- The reflection exchanging `eᵢ` and `p` sends `eⱼ` to a unit vector orthogonal to `p`.
+  refine ⟨Pi.single j 1 + (p j / (1 - p i)) • (Pi.single i 1 - p), ?_, ?_⟩
+  · simp only [dotProduct_add, add_dotProduct, dotProduct_smul, smul_dotProduct, dotProduct_sub,
+      sub_dotProduct]
+    simp only [single_one_dotProduct, dotProduct_single_one, Pi.single_eq_same,
+      Pi.single_eq_of_ne hj, Pi.single_eq_of_ne hj.symm, hp, smul_eq_mul]
+    field_simp
+    ring
+  · simp only [dotProduct_add, dotProduct_smul, dotProduct_sub, dotProduct_single_one, hp,
+      smul_eq_mul]
+    field_simp
+    ring
+
 /-- A linear functional on `(ι → R) × R` is `(v, t) ↦ v ⬝ᵥ u + t * s`, where `u k` is its value at
 `(Pi.single k 1, 0)` and `s` its value at `(0, 1)`. -/
 theorem Module.Dual.apply_prod_eq_dotProduct_add_mul {ι R : Type*} [Fintype ι] [DecidableEq ι]
@@ -137,3 +185,51 @@ theorem Module.Dual.apply_prod_eq_dotProduct_add_mul {ι R : Type*} [Fintype ι]
   congr 3
   ext l
   simp [Pi.single_apply, eq_comm]
+
+/-- **Orthogonality extends to the span, on the right**: if `w ⬝ᵥ J *ᵥ v = 0` for every `v ∈ s`,
+then `w ⬝ᵥ J *ᵥ u = 0` for every `u` in the span of `s`. -/
+theorem Matrix.dotProduct_mulVec_eq_zero_of_mem_span {m n R : Type*} [Fintype m]
+    [Fintype n] [CommSemiring R] {J : Matrix m n R} {s : Set (n → R)} {w : m → R} {u : n → R}
+    (h : ∀ v ∈ s, w ⬝ᵥ J *ᵥ v = 0) (hu : u ∈ Submodule.span R s) : w ⬝ᵥ J *ᵥ u = 0 := by
+  induction hu using Submodule.span_induction with
+  | mem x hx => exact h x hx
+  | zero => simp
+  | add x y _ _ hx hy => simp [mulVec_add, dotProduct_add, hx, hy]
+  | smul c x _ hx => simp [mulVec_smul, dotProduct_smul, hx]
+
+/-- **Orthogonality extends to the span, on the left**: if `star v ⬝ᵥ J *ᵥ w = 0` for every
+`v ∈ s`, then `star u ⬝ᵥ J *ᵥ w = 0` for every `u` in the span of `s`. -/
+theorem Matrix.star_dotProduct_mulVec_eq_zero_of_mem_span {m n R : Type*} [Fintype m]
+    [Fintype n] [CommSemiring R] [StarRing R] {J : Matrix m n R} {s : Set (m → R)} {w : n → R}
+    {u : m → R}
+    (h : ∀ v ∈ s, star v ⬝ᵥ J *ᵥ w = 0) (hu : u ∈ Submodule.span R s) :
+    star u ⬝ᵥ J *ᵥ w = 0 := by
+  induction hu using Submodule.span_induction with
+  | mem x hx => exact h x hx
+  | zero => simp
+  | add x y _ _ hx hy => simp [add_dotProduct, hx, hy]
+  | smul c x _ hx => simp [star_smul, smul_dotProduct, hx]
+
+/-- If `w` is orthogonal to every element of `s`, then the form `star u ⬝ᵥ J *ᵥ w` takes the same
+value at any two vectors `u` and `u'` that differ by an element of the span of `s`. -/
+theorem Matrix.star_dotProduct_mulVec_eq_of_sub_mem_span {m n R : Type*} [Fintype m] [Fintype n]
+    [CommRing R] [StarRing R] {J : Matrix m n R} {s : Set (m → R)} {w : n → R} {u u' : m → R}
+    (h : ∀ v ∈ s, star v ⬝ᵥ J *ᵥ w = 0) (hu : u - u' ∈ Submodule.span R s) :
+    star u ⬝ᵥ J *ᵥ w = star u' ⬝ᵥ J *ᵥ w := by
+  have h0 := star_dotProduct_mulVec_eq_zero_of_mem_span h hu
+  rwa [star_sub, sub_dotProduct, sub_eq_zero] at h0
+
+/-- **The difference of two values of the form at nearby vectors**: for a self-adjoint unit `ρ`,
+with `D₁ = (u - u') / ρ` and `D₂ = (v - v') / ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)`,
+where `⟨u, v⟩ = star u ⬝ᵥ J *ᵥ v`. -/
+theorem Matrix.star_dotProduct_mulVec_sub_eq {m n R : Type*} [Fintype m] [Fintype n] [CommRing R]
+    [StarRing R] {J : Matrix m n R} {ρ : Rˣ} (hρ : IsSelfAdjoint (ρ : R)) (u u' : m → R)
+    (v v' : n → R) :
+    star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v' =
+      ρ * (star (((ρ⁻¹ : Rˣ) : R) • (u - u')) ⬝ᵥ J *ᵥ v +
+        star u' ⬝ᵥ J *ᵥ (((ρ⁻¹ : Rˣ) : R) • (v - v'))) := by
+  have hρ' := (hρ.of_mul_eq_one (Units.mul_inv ρ)).star_eq
+  have h1 : (ρ : R) * ((ρ⁻¹ : Rˣ) : R) = 1 := Units.mul_inv ρ
+  simp only [star_smul, hρ', star_sub, mulVec_smul, mulVec_sub, smul_dotProduct, dotProduct_smul,
+    sub_dotProduct, dotProduct_sub, smul_eq_mul]
+  linear_combination (-(star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v')) * h1

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.SecondDerivative
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 import TauCeti.Topology.UniformSpace.Equicontinuity
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Convergence of the derivatives of Floer solutions
@@ -48,6 +49,11 @@ sequence of derivatives is equicontinuous on `Ω`
 The Arzelà–Ascoli theorem in `C¹` (`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_fderiv`)
 gives a subsequence of every subsequence along which `Duₙ → Dv`; as the limit `Dv` is the same each
 time, the whole sequence converges. The equation passes to the limit pointwise.
+
+Combined with the compactness theorem of `TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`,
+this shows that smooth solutions of bounded energy converge in `C¹` off finitely many bubbling
+points, to a `C¹` solution of the same equation there
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`).
 
 ## References
 
@@ -287,15 +293,9 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer {J : ℂ × V → V →L[ℝ] 
         fun M hM n ↦ hM (ψ n) y rfl) fun y hy ↦ (hlim y hy).comp hψ.tendsto_atTop
   obtain ⟨-, -, hv, -⟩ := hsub id strictMono_id
   -- Hence the whole sequence converges uniformly on each compact subset of `Ω`.
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ]
-    intro C hCΩ hC U hU
-    by_contra hne
-    obtain ⟨ψ, hψ, hψU⟩ := extraction_of_frequently_atTop (not_eventually.1 hne)
-    obtain ⟨φ, -, -, hφ⟩ := hsub ψ hψ
-    obtain ⟨n, hn⟩ :=
-      ((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hφ C hCΩ hC U hU).exists
-    exact hψU (φ n) hn
+  have hconv : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω :=
+    tendstoLocallyUniformlyOn_of_forall_exists_subseq hΩ fun ψ hψ ↦
+      (hsub ψ hψ).imp fun _ h ↦ ⟨h.1, h.2.2⟩
   -- Pass to the limit in the equation.
   exact ⟨hv, hconv, fun y hy ↦ fderiv_I_sub_eq_of_tendsto hW hJ.continuousOn hX.continuousOn
     (hvW y hy) (hconv.tendsto_at hy) (hlim y hy) fun n ↦ hCR n y hy⟩

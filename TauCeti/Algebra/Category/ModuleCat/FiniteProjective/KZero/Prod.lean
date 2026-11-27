@@ -5,95 +5,282 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Map
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Prod
+public import TauCeti.RingTheory.GrothendieckRing
 
 import TauCeti.Algebra.Ring.Opposite
+import TauCeti.Algebra.Ring.Prod
 
 /-!
-# Algebraic `K₀` of a binary product ring
+# Projective `K₀` of a product of rings
 
-For two rings `R` and `S`, `TauCeti.KZero.prodEquiv R S` identifies `KZero (R × S)` with
-`KZero R × KZero S`.
+Projective `K₀` turns finite products of rings into products of groups:
+
+```text
+K₀(R × S) ≃ K₀(R) × K₀(S).
+```
+
+The isomorphism is computed on the idempotent model of `K₀` (`TauCeti.IdempotentMonoid`). A
+matrix over `R × S` is a pair of matrices of the same size over `R` and over `S`
+(`Matrix.prodEquiv`), it is idempotent exactly when both components are, and two idempotents over
+`R × S` are equivalent exactly when their components are
+(`Matrix.idempotentEquivalent_prod_iff`). So the idempotent monoid of `R × S` is the product of
+those of `R` and `S` (`TauCeti.IdempotentMonoid.prodEquiv`), and passing to group completions
+gives the isomorphism of `K₀`. It sends the class `[eRⁿ]` of an idempotent `e` over `R × S` to the
+classes of its two components `e.map Prod.fst` and `e.map Prod.snd`. When `R` and `S` live in the
+same universe, its two components are the maps of `K₀` induced by the two projections
+(`TauCeti.KZero.map`), that is, extension of scalars along `R × S → R` and `R × S → S`, and its
+inverse is the sum of the restrictions of scalars along `(RingHom.fst R S).op` and
+`(RingHom.snd R S).op`. In particular the free module of rank one goes to the pair of free modules
+of rank one.
+
+The zero-ring value `K₀(0) = 0`, the empty case of the product formula, is the instance
+`TauCeti.FiniteProjectiveModules.subsingleton_splitK0` applied to `Rᵐᵒᵖ`.
+
+## Main definitions
+
+* `TauCeti.KZero.prodEquiv R S`: the isomorphism `K₀(R × S) ≃+ K₀(R) × K₀(S)`.
+
+## Main results
+
+* `TauCeti.KZero.prodEquiv_toKZero`, `TauCeti.KZero.prodEquiv_symm_toKZero_toKZero`: on the
+  classes `[eRⁿ]` of idempotents, the isomorphism takes components, and its inverse pairs them.
+  `TauCeti.KZero.prodEquiv_of_ofIdempotent` and
+  `TauCeti.KZero.prodEquiv_symm_of_ofIdempotent_of_ofIdempotent` state the same on the classes
+  `SplitK0.of (ofIdempotent e he)`, the simp normal form of `toKZero _ (mk e he)`.
+* `TauCeti.KZero.toAddMonoidHom_prodEquiv`, `TauCeti.KZero.prodEquiv_apply_fst`,
+  `TauCeti.KZero.prodEquiv_apply_snd`, `TauCeti.KZero.prodEquiv_apply`,
+  `TauCeti.KZero.prodEquiv_symm_apply`: when `R` and `S` live in the same universe, the components
+  of the isomorphism are the maps induced by the two projections, and its inverse is the sum of the
+  restrictions of scalars along `(RingHom.fst R S).op` and `(RingHom.snd R S).op`.
+* `TauCeti.KZero.prodEquiv_of_finiteProjectiveModulesRegular`: `[R × S] ↦ ([R], [S])`.
 
 ## References
 
-* C. A. Weibel, *The K-book*, Chapter II, §2, Prop. 2.4.
+* C. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, §2, Prop. 2.4: `K₀`
+  of a finite product of rings is the product of the `K₀` groups.
+* J. Rosenberg, *Algebraic K-Theory and Its Applications*, §1.2, for the idempotent description.
 -/
 
 public section
 
-open CategoryTheory MulOpposite
+noncomputable section
 
-universe u
+namespace TauCeti
 
-namespace TauCeti.KZero
+open _root_.Algebra
 
-/-- **Product decomposition:** `KZero (R × S) ≃+ KZero R × KZero S`. The forward map sends a
-class over `R × S` to `(map (RingHom.fst R S) x, map (RingHom.snd R S) x)` via extension of
-scalars along the projections `RingHom.fst R S` and `RingHom.snd R S`; the inverse sends `(x, y)`
-to the sum of the restrictions of scalars of `x` along `RingHom.op (RingHom.fst R S)` and of `y`
-along `RingHom.op (RingHom.snd R S)`. -/
-noncomputable def prodEquiv (R S : Type u) [Ring R] [Ring S] :
-    KZero (R × S) ≃+ KZero R × KZero S :=
-  (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
-    (RingEquiv.prodMulOpposite R S)).symm.finiteProjectiveModulesSplitK0Equiv.trans
-    (finiteProjectiveModulesProdSplitK0Equiv Rᵐᵒᵖ Sᵐᵒᵖ)
+universe u v
 
-@[simp] theorem prodEquiv_apply (R S : Type u) [Ring R] [Ring S] (x : KZero (R × S)) :
-    prodEquiv R S x = (map (RingHom.fst R S) x, map (RingHom.snd R S) x) := by
-  have hx : (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
-        (RingEquiv.prodMulOpposite R S)).symm.finiteProjectiveModulesSplitK0Equiv x =
-      SplitK0.map.{u, u}
-        (RingEquiv.prodMulOpposite R S).toRingHom.finiteProjectiveModulesExtendScalars x :=
-    (DFunLike.congr_fun
-      (RingEquiv.splitK0Map_finiteProjectiveModulesExtendScalars_eq_restrictScalars
-        (RingEquiv.prodMulOpposite R S)) x).symm
-  rw [prodEquiv, AddEquiv.trans_apply, hx, finiteProjectiveModulesProdSplitK0Equiv_apply]
-  simp only [SplitK0.map_finiteProjectiveModulesExtendScalars_apply_map]
-  exact Prod.ext (DFunLike.congr_fun (SplitK0.map_finiteProjectiveModulesExtendScalars_congr
-    (RingEquiv.fst_comp_prodMulOpposite R S)) x) (DFunLike.congr_fun
-      (SplitK0.map_finiteProjectiveModulesExtendScalars_congr
-        (RingEquiv.snd_comp_prodMulOpposite R S)) x)
+namespace KZero
 
-private theorem map_restrictScalars_comp_prodMulOpposite {R S A : Type u} [Ring R] [Ring S] [Ring A]
-    (p : Rᵐᵒᵖ × Sᵐᵒᵖ →+* A) (hfin : letI := p.toModule; Module.Finite (Rᵐᵒᵖ × Sᵐᵒᵖ) A)
-    (hproj : letI := p.toModule; Module.Projective (Rᵐᵒᵖ × Sᵐᵒᵖ) A)
-    (q : (R × S)ᵐᵒᵖ →+* A) (hq : q = p.comp (RingEquiv.prodMulOpposite R S).toRingHom)
-    (hfin' : letI := q.toModule; Module.Finite (R × S)ᵐᵒᵖ A)
-    (hproj' : letI := q.toModule; Module.Projective (R × S)ᵐᵒᵖ A) :
-    ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv
-        (RingEquiv.prodMulOpposite R S)).symm.finiteProjectiveModulesSplitK0Equiv.symm
-        : _ ≃+ _).toAddMonoidHom.comp
-      (SplitK0.map.{u, u} (p.finiteProjectiveModulesRestrictScalars hfin hproj)) =
-      SplitK0.map.{u, u} (q.finiteProjectiveModulesRestrictScalars hfin' hproj') :=
-  SplitK0.hom_ext fun P ↦ by
-    simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, SplitK0.map_of,
-      CategoryTheory.Equivalence.finiteProjectiveModulesSplitK0Equiv_symm_of]
-    refine SplitK0.of_congr.{u} <| CategoryTheory.ObjectProperty.isoMk _ <|
-      eqToIso ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv
-        (RingEquiv.prodMulOpposite R S)).symm.finiteProjectiveModulesEquivalence_inverse_obj_obj
-        _) ≪≫
-      (ModuleCat.restrictScalars (RingEquiv.prodMulOpposite R S).toRingHom).mapIso
-        (eqToIso (p.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj P)) ≪≫
-      (ModuleCat.restrictScalarsComp'App (RingEquiv.prodMulOpposite R S).toRingHom p q hq
-        P.obj).symm ≪≫
-      eqToIso (q.finiteProjectiveModulesRestrictScalars_obj_obj hfin' hproj' P).symm
+/-! ### Projective `K₀` of a product -/
 
-@[simp] theorem prodEquiv_symm_apply (R S : Type u) [Ring R] [Ring S]
-    (x : KZero R × KZero S) : (prodEquiv R S).symm x =
+section Prod
+
+variable (R : Type u) (S : Type v) [Ring R] [Ring S]
+
+/-- **`K₀` of a product of rings.** `K₀(R × S) ≃+ K₀(R) × K₀(S)`, sending the class `[eRⁿ]` of an
+idempotent matrix `e` over `R × S` to the classes of its two components
+(`TauCeti.KZero.prodEquiv_toKZero`), and the free module of rank one to the pair of free modules of
+rank one (`TauCeti.KZero.prodEquiv_of_finiteProjectiveModulesRegular`). -/
+def prodEquiv : KZero (R × S) ≃+ KZero R × KZero S :=
+  (IdempotentMonoid.kZeroEquiv (R × S)).symm.trans <|
+    (GrothendieckAddGroup.congr (IdempotentMonoid.prodEquiv R S)).trans <|
+      GrothendieckAddGroup.prodEquiv.trans
+        ((IdempotentMonoid.kZeroEquiv R).prodCongr (IdempotentMonoid.kZeroEquiv S))
+
+variable {R S}
+
+/-- `TauCeti.KZero.prodEquiv` sends the class of an element `x` of the idempotent monoid of
+`R × S` to the classes of its images under the two projections. -/
+@[simp]
+theorem prodEquiv_toKZero (x : IdempotentMonoid (R × S)) :
+    prodEquiv R S (IdempotentMonoid.toKZero (R × S) x) =
+      (IdempotentMonoid.toKZero R (IdempotentMonoid.map (NonUnitalRingHom.fst R S) x),
+        IdempotentMonoid.toKZero S (IdempotentMonoid.map (NonUnitalRingHom.snd R S) x)) := by
+  rw [← IdempotentMonoid.kZeroEquiv_of, prodEquiv, AddEquiv.trans_apply,
+    AddEquiv.symm_apply_apply, AddEquiv.trans_apply, GrothendieckAddGroup.congr_of,
+    IdempotentMonoid.prodEquiv_apply, AddEquiv.trans_apply, GrothendieckAddGroup.prodEquiv_of]
+  -- `AddEquiv.prodCongr` acts componentwise; Mathlib states no apply lemma for it.
+  exact Prod.ext (IdempotentMonoid.kZeroEquiv_of _ _) (IdempotentMonoid.kZeroEquiv_of _ _)
+
+/-- The inverse of `TauCeti.KZero.prodEquiv` sends the pair of classes of `x` in the idempotent
+monoid of `R` and `y` in that of `S` to the class of the element of the idempotent monoid of
+`R × S` with components `x` and `y`. -/
+@[simp]
+theorem prodEquiv_symm_toKZero_toKZero (x : IdempotentMonoid R) (y : IdempotentMonoid S) :
+    (prodEquiv R S).symm (IdempotentMonoid.toKZero R x, IdempotentMonoid.toKZero S y) =
+      IdempotentMonoid.toKZero (R × S) ((IdempotentMonoid.prodEquiv R S).symm (x, y)) := by
+  have h := (IdempotentMonoid.prodEquiv R S).apply_symm_apply (x, y)
+  rw [IdempotentMonoid.prodEquiv_apply, Prod.mk.injEq] at h
+  rw [AddEquiv.symm_apply_eq, prodEquiv_toKZero, h.1, h.2]
+
+/-- `TauCeti.KZero.prodEquiv` sends the class of the column range of an idempotent matrix `e` over
+`R × S` to the classes of the column ranges of its components. This is
+`TauCeti.KZero.prodEquiv_toKZero` in the simp normal form `TauCeti.IdempotentMonoid.toKZero_mk`
+produces. -/
+@[simp]
+theorem prodEquiv_of_ofIdempotent {ι : Type*} [Fintype ι] {e : Matrix ι ι (R × S)}
+    (he : IsIdempotentElem e) :
+    prodEquiv R S (SplitK0.of.{max u v} (FiniteProjectiveModules.ofIdempotent e he)) =
+      (SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent (e.map Prod.fst)
+          (he.matrix_map (NonUnitalRingHom.fst R S))),
+        SplitK0.of.{v} (FiniteProjectiveModules.ofIdempotent (e.map Prod.snd)
+          (he.matrix_map (NonUnitalRingHom.snd R S)))) := by
+  simpa only [IdempotentMonoid.toKZero_mk, IdempotentMonoid.map_mk, NonUnitalRingHom.coe_fst,
+    NonUnitalRingHom.coe_snd] using prodEquiv_toKZero (IdempotentMonoid.mk e he)
+
+/-- The inverse of `TauCeti.KZero.prodEquiv` sends the pair of classes of the column ranges of
+idempotent matrices `e₁` over `R` and `e₂` over `S` to the class of the column range of the
+idempotent matrix over `R × S` with components `e₁` and `e₂`. This is
+`TauCeti.KZero.prodEquiv_symm_toKZero_toKZero` in the simp normal form
+`TauCeti.IdempotentMonoid.toKZero_mk` produces. -/
+@[simp]
+theorem prodEquiv_symm_of_ofIdempotent_of_ofIdempotent {ι : Type*} [Fintype ι]
+    {e₁ : Matrix ι ι R} {e₂ : Matrix ι ι S} (he₁ : IsIdempotentElem e₁)
+    (he₂ : IsIdempotentElem e₂) :
+    (prodEquiv R S).symm (SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent e₁ he₁),
+        SplitK0.of.{v} (FiniteProjectiveModules.ofIdempotent e₂ he₂)) =
+      SplitK0.of.{max u v} (FiniteProjectiveModules.ofIdempotent
+        ((Matrix.prodEquiv ι ι R S).symm (e₁, e₂)) (he₁.matrix_prodEquiv_symm he₂)) := by
+  simpa only [IdempotentMonoid.toKZero_mk, IdempotentMonoid.prodEquiv_symm_mk_mk] using
+    prodEquiv_symm_toKZero_toKZero (IdempotentMonoid.mk e₁ he₁) (IdempotentMonoid.mk e₂ he₂)
+
+/-- `TauCeti.KZero.prodEquiv` sends the class of the free right `R × S`-module of rank one to the
+classes of the free modules of rank one over `R` and over `S`. -/
+theorem prodEquiv_of_finiteProjectiveModulesRegular :
+    prodEquiv R S (SplitK0.of.{max u v} (finiteProjectiveModulesRegular (R × S)ᵐᵒᵖ)) =
+      (SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ),
+        SplitK0.of.{v} (finiteProjectiveModulesRegular Sᵐᵒᵖ)) := by
+  rw [← IdempotentMonoid.toKZero_mk_one, ← IdempotentMonoid.toKZero_mk_one,
+    ← IdempotentMonoid.toKZero_mk_one, prodEquiv_toKZero, IdempotentMonoid.map_mk,
+    IdempotentMonoid.map_mk]
+  congr <;> exact Matrix.map_one _ rfl rfl
+
+end Prod
+
+section Components
+
+variable (R S : Type u) [Ring R] [Ring S]
+
+/-- As an additive map, `TauCeti.KZero.prodEquiv` is the pair of the maps of `K₀` induced by the
+two projections `R × S → R` and `R × S → S`, extension of scalars along them. -/
+theorem toAddMonoidHom_prodEquiv :
+    (prodEquiv R S).toAddMonoidHom =
+      (map (RingHom.fst R S)).prod (map (RingHom.snd R S)) := by
+  -- On the idempotent model both sides take the two components of an idempotent over `R × S`.
+  refine (AddMonoidHom.cancel_right (f := (IdempotentMonoid.kZeroEquiv (R × S)).toAddMonoidHom)
+    (IdempotentMonoid.kZeroEquiv (R × S)).surjective).1 <|
+      GrothendieckAddGroup.addHom_ext fun x ↦ ?_
+  induction x using IdempotentMonoid.ind with | mk n e he =>
+  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddMonoidHom.prod_apply,
+    map_kZeroEquiv_of_mk]
+  simp only [IdempotentMonoid.kZeroEquiv_of, prodEquiv_toKZero, IdempotentMonoid.map_mk,
+    NonUnitalRingHom.coe_fst, NonUnitalRingHom.coe_snd, RingHom.coe_fst, RingHom.coe_snd]
+
+/-- The first component of `TauCeti.KZero.prodEquiv` is the map of `K₀` induced by the first
+projection `R × S → R`, extension of scalars along it. -/
+theorem prodEquiv_apply_fst (x : KZero (R × S)) :
+    (prodEquiv R S x).1 = map (RingHom.fst R S) x :=
+  congrArg Prod.fst (DFunLike.congr_fun (toAddMonoidHom_prodEquiv R S) x)
+
+/-- The second component of `TauCeti.KZero.prodEquiv` is the map of `K₀` induced by the second
+projection `R × S → S`, extension of scalars along it. -/
+theorem prodEquiv_apply_snd (x : KZero (R × S)) :
+    (prodEquiv R S x).2 = map (RingHom.snd R S) x :=
+  congrArg Prod.snd (DFunLike.congr_fun (toAddMonoidHom_prodEquiv R S) x)
+
+/-- When `R` and `S` live in the same universe, `TauCeti.KZero.prodEquiv` sends a class over
+`R × S` to `(map (RingHom.fst R S) x, map (RingHom.snd R S) x)`. -/
+theorem prodEquiv_apply (x : KZero (R × S)) :
+    prodEquiv R S x = (map (RingHom.fst R S) x, map (RingHom.snd R S) x) :=
+  Prod.ext (prodEquiv_apply_fst R S x) (prodEquiv_apply_snd R S x)
+
+/-- When `R` and `S` live in the same universe, the inverse of `TauCeti.KZero.prodEquiv` sends
+`(x, y)` to the sum of the restrictions of scalars of `x` along `(RingHom.fst R S).op` and of `y`
+along `(RingHom.snd R S).op`. -/
+theorem prodEquiv_symm_apply (x : KZero R × KZero S) :
+    (prodEquiv R S).symm x =
       SplitK0.map.{u, u} ((RingHom.op (RingHom.fst R S)).finiteProjectiveModulesRestrictScalars
         (RingHom.finite_toModule_op_fst R S) (RingHom.projective_toModule_op_fst R S)) x.1 +
       SplitK0.map.{u, u} ((RingHom.op (RingHom.snd R S)).finiteProjectiveModulesRestrictScalars
         (RingHom.finite_toModule_op_snd R S) (RingHom.projective_toModule_op_snd R S)) x.2 := by
-  rw [prodEquiv, AddEquiv.symm_trans_apply, finiteProjectiveModulesProdSplitK0Equiv_symm_apply,
-    map_add]
-  congr 1
-  · exact DFunLike.congr_fun (map_restrictScalars_comp_prodMulOpposite
-      (RingHom.fst Rᵐᵒᵖ Sᵐᵒᵖ) _ _ (RingHom.op (RingHom.fst R S))
-      (RingEquiv.fst_comp_prodMulOpposite R S).symm _ _) x.1
-  · exact DFunLike.congr_fun (map_restrictScalars_comp_prodMulOpposite
-      (RingHom.snd Rᵐᵒᵖ Sᵐᵒᵖ) _ _ (RingHom.op (RingHom.snd R S))
-      (RingEquiv.snd_comp_prodMulOpposite R S).symm _ _) x.2
+  refine (prodEquiv R S).symm_apply_eq.2 ?_
+  rw [prodEquiv_apply, map_add, map_add]
+  have hfst : ∀ a : KZero R,
+      map (RingHom.fst R S)
+        (SplitK0.map.{u, u} ((RingHom.op (RingHom.fst R S)).finiteProjectiveModulesRestrictScalars
+          (RingHom.finite_toModule_op_fst R S)
+          (RingHom.projective_toModule_op_fst R S)) a) = a := by
+    intro a
+    induction a using SplitK0.induction_on with
+    | zero => simp
+    | of P =>
+      have h := DFunLike.congr_fun (SplitK0.map_extendScalars_comp_restrictScalars_self
+        (RingHom.op (RingHom.fst R S)) (fun r ↦ ⟨.op (r.unop, 0), rfl⟩)
+        (RingHom.finite_toModule_op_fst R S) (RingHom.projective_toModule_op_fst R S))
+        (SplitK0.of.{u} P)
+      simpa only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, SplitK0.map_of, map_of]
+        using h
+    | neg _ hx => simp [hx]
+    | add _ _ hx hy => simp [hx, hy]
+  have hsnd : ∀ b : KZero S,
+      map (RingHom.snd R S)
+        (SplitK0.map.{u, u} ((RingHom.op (RingHom.snd R S)).finiteProjectiveModulesRestrictScalars
+          (RingHom.finite_toModule_op_snd R S)
+          (RingHom.projective_toModule_op_snd R S)) b) = b := by
+    intro b
+    induction b using SplitK0.induction_on with
+    | zero => simp
+    | of P =>
+      have h := DFunLike.congr_fun (SplitK0.map_extendScalars_comp_restrictScalars_self
+        (RingHom.op (RingHom.snd R S)) (fun s ↦ ⟨.op (0, s.unop), rfl⟩)
+        (RingHom.finite_toModule_op_snd R S) (RingHom.projective_toModule_op_snd R S))
+        (SplitK0.of.{u} P)
+      simpa only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, SplitK0.map_of, map_of]
+        using h
+    | neg _ hx => simp [hx]
+    | add _ _ hx hy => simp [hx, hy]
+  have hfst0 : ∀ b : KZero S,
+      map (RingHom.fst R S)
+        (SplitK0.map.{u, u} ((RingHom.op (RingHom.snd R S)).finiteProjectiveModulesRestrictScalars
+          (RingHom.finite_toModule_op_snd R S)
+          (RingHom.projective_toModule_op_snd R S)) b) = 0 := by
+    intro b
+    induction b using SplitK0.induction_on with
+    | zero => simp
+    | of P =>
+      have h := DFunLike.congr_fun (SplitK0.map_extendScalars_comp_restrictScalars_eq_zero
+        (RingHom.op (RingHom.fst R S)) (RingHom.op (RingHom.snd R S))
+        (RingHom.finite_toModule_op_snd R S) (RingHom.projective_toModule_op_snd R S)
+        (.op (1, 0)) rfl rfl) (SplitK0.of.{u} P)
+      simpa only [AddMonoidHom.comp_apply, AddMonoidHom.zero_apply, SplitK0.map_of, map_of]
+        using h
+    | neg _ hx => simp [hx]
+    | add _ _ hx hy => simp [hx, hy]
+  have hsnd0 : ∀ a : KZero R,
+      map (RingHom.snd R S)
+        (SplitK0.map.{u, u} ((RingHom.op (RingHom.fst R S)).finiteProjectiveModulesRestrictScalars
+          (RingHom.finite_toModule_op_fst R S)
+          (RingHom.projective_toModule_op_fst R S)) a) = 0 := by
+    intro a
+    induction a using SplitK0.induction_on with
+    | zero => simp
+    | of P =>
+      have h := DFunLike.congr_fun (SplitK0.map_extendScalars_comp_restrictScalars_eq_zero
+        (RingHom.op (RingHom.snd R S)) (RingHom.op (RingHom.fst R S))
+        (RingHom.finite_toModule_op_fst R S) (RingHom.projective_toModule_op_fst R S)
+        (.op (0, 1)) rfl rfl) (SplitK0.of.{u} P)
+      simpa only [AddMonoidHom.comp_apply, AddMonoidHom.zero_apply, SplitK0.map_of, map_of]
+        using h
+    | neg _ hx => simp [hx]
+    | add _ _ hx hy => simp [hx, hy]
+  exact Prod.ext (by rw [hfst, hfst0, add_zero]) (by rw [hsnd0, hsnd, zero_add])
 
-end TauCeti.KZero
+end Components
+
+end KZero
+
+end TauCeti

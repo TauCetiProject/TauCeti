@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Approximate-point spectrum of bounded operators
@@ -103,8 +104,9 @@ theorem approximatePointSpectrum_subset_spectrum (T : E →L[𝕜] E) :
   rintro ⟨u, hu⟩
   obtain ⟨x, hx, hlim⟩ := hz
   have hbound (n : ℕ) : 1 ≤ ‖(↑u⁻¹ : E →L[𝕜] E)‖ * ‖T (x n) - z • x n‖ := by
-    have h := norm_le_norm_ringInverse_mul_norm_apply u.isUnit (x n)
-    rwa [Ring.inverse_unit, hu, hx, sub_apply, algebraMap_apply, norm_sub_rev] at h
+    have h := (isInvertible_iff_isUnit.mpr u.isUnit).norm_le_norm_inverse_mul_norm (x n)
+    rwa [← ringInverse_eq_inverse, Ring.inverse_unit, hu, hx, sub_apply, algebraMap_apply,
+      norm_sub_rev] at h
   have hzero : Tendsto (fun n ↦ ‖(↑u⁻¹ : E →L[𝕜] E)‖ *
       ‖T (x n) - z • x n‖) atTop (𝓝 0) := by
     simpa only [norm_zero, mul_zero] using tendsto_const_nhds.mul hlim.norm

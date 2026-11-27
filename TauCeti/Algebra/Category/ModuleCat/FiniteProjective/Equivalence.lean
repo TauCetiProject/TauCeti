@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 import TauCeti.Algebra.Category.ModuleCat.Equivalence
 import TauCeti.CategoryTheory.Adjunction.Additive
+import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # Equivalences of categories of finitely generated projective modules
@@ -51,29 +52,43 @@ instance : e.finiteProjectiveModulesEquivalence.functor.Additive := by
 @[simp]
 theorem finiteProjectiveModulesEquivalence_functor_obj_obj
     (M : (finiteProjectiveModules A).FullSubcategory) :
-    (e.finiteProjectiveModulesEquivalence.functor.obj M).obj = e.functor.obj M.obj :=
-  e.congrFullSubcategory_functor_obj_obj _ M
+    (e.finiteProjectiveModulesEquivalence.functor.obj M).obj = e.functor.obj M.obj := by
+  simp [finiteProjectiveModulesEquivalence]
 
 @[simp]
 theorem finiteProjectiveModulesEquivalence_functor_map_hom
     {M N : (finiteProjectiveModules A).FullSubcategory} (f : M ⟶ N) :
     (e.finiteProjectiveModulesEquivalence.functor.map f).hom =
       eqToHom (e.finiteProjectiveModulesEquivalence_functor_obj_obj M) ≫ e.functor.map f.hom ≫
-        eqToHom (e.finiteProjectiveModulesEquivalence_functor_obj_obj N).symm :=
-  e.congrFullSubcategory_functor_map_hom _ f
+        eqToHom (e.finiteProjectiveModulesEquivalence_functor_obj_obj N).symm := by
+  have h : e.finiteProjectiveModulesEquivalence.functor ⋙ (finiteProjectiveModules B).ι =
+      (finiteProjectiveModules A).ι ⋙ e.functor := by
+    rw [finiteProjectiveModulesEquivalence, Equivalence.congrFullSubcategory_functor,
+      ObjectProperty.lift_comp_ι]
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    ObjectProperty.map_hom_of_comp_ι_eq h f
+      (e.finiteProjectiveModulesEquivalence_functor_obj_obj M)
+      (e.finiteProjectiveModulesEquivalence_functor_obj_obj N)
 
 @[simp]
 theorem finiteProjectiveModulesEquivalence_inverse_obj_obj
     (M : (finiteProjectiveModules B).FullSubcategory) :
-    (e.finiteProjectiveModulesEquivalence.inverse.obj M).obj = e.inverse.obj M.obj :=
-  e.congrFullSubcategory_inverse_obj_obj _ M
+    (e.finiteProjectiveModulesEquivalence.inverse.obj M).obj = e.inverse.obj M.obj := by
+  simp [finiteProjectiveModulesEquivalence]
 
 @[simp]
 theorem finiteProjectiveModulesEquivalence_inverse_map_hom
     {M N : (finiteProjectiveModules B).FullSubcategory} (f : M ⟶ N) :
     (e.finiteProjectiveModulesEquivalence.inverse.map f).hom =
       eqToHom (e.finiteProjectiveModulesEquivalence_inverse_obj_obj M) ≫ e.inverse.map f.hom ≫
-        eqToHom (e.finiteProjectiveModulesEquivalence_inverse_obj_obj N).symm :=
-  e.congrFullSubcategory_inverse_map_hom _ f
+        eqToHom (e.finiteProjectiveModulesEquivalence_inverse_obj_obj N).symm := by
+  have h : e.finiteProjectiveModulesEquivalence.inverse ⋙ (finiteProjectiveModules A).ι =
+      (finiteProjectiveModules B).ι ⋙ e.inverse := by
+    rw [finiteProjectiveModulesEquivalence, Equivalence.congrFullSubcategory_inverse,
+      ObjectProperty.lift_comp_ι]
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using
+    ObjectProperty.map_hom_of_comp_ι_eq h f
+      (e.finiteProjectiveModulesEquivalence_inverse_obj_obj M)
+      (e.finiteProjectiveModulesEquivalence_inverse_obj_obj N)
 
 end CategoryTheory.Equivalence
