@@ -173,6 +173,10 @@ theorem adaptedQDerivative_apply (q : A) (f : A⟦X⟧) :
 @[simp] theorem adaptedQDerivative_C (q a : A) : adaptedQDerivative q (C a) = 0 := by
   simp [adaptedQDerivative_apply]
 
+/-- The adapted Jackson derivative of `1` is `0`. -/
+@[simp] theorem adaptedQDerivative_one (q : A) : adaptedQDerivative q (1 : A⟦X⟧) = 0 := by
+  ext n; simp
+
 /-- The adapted Jackson derivative of `X` is `C (1 - q)`. -/
 @[simp] theorem adaptedQDerivative_X (q : A) : adaptedQDerivative q (X : A⟦X⟧) = C (1 - q) := by
   simp [adaptedQDerivative_apply, Algebra.smul_def]
@@ -195,7 +199,7 @@ polynomials. -/
   ext n; simp
 
 /-- At `q = 1`, the adapted Jackson derivative vanishes identically. -/
-@[simp] theorem adaptedQDerivative_one : adaptedQDerivative (1 : A) = 0 := by ext f n; simp
+@[simp] theorem adaptedQDerivative_base_one : adaptedQDerivative (1 : A) = 0 := by ext f n; simp
 
 /-- The adapted Jackson derivative commutes with coefficient ring homomorphisms. -/
 theorem map_adaptedQDerivative (φ : A →+* B) (q : A) (f : A⟦X⟧) :

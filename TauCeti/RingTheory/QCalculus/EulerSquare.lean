@@ -10,6 +10,7 @@ import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.RingTheory.PowerSeries.PiTopology
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.PowerSeries.Order
+import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 
 /-!
 # Euler's square-exponent product identity
@@ -184,7 +185,7 @@ private theorem coeff_coeff_qPochhammerSeries_sq_eq (k n j : ℕ) (hj : j ≤ k)
   let φ : R⟦X⟧ →+* R⟦X⟧ := (expand 2 two_ne_zero).toRingHom
   have hF : map φ (integralQPochhammer R) = qPochhammerSeries (X ^ 2 : R⟦X⟧) := by
     rw [integralQPochhammer_eq_qPochhammerSeries,
-      map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R))]
+      map_qPochhammerSeries _ fun _ ↦ isUnit_one_sub_X_pow (Nat.succ_ne_zero _)]
     ext m
     simp [φ, expand_X]
   have hp_map :
@@ -197,12 +198,6 @@ private theorem coeff_coeff_qPochhammerSeries_sq_eq (k n j : ℕ) (hj : j ≤ k)
   split_ifs with hd
   · exact coeff_coeff_integralQPochhammer_eq_of_lt (j / 2) n (by omega)
   · rfl
-
-/-- Coefficient of `(-X) ^ n * f` at degree `k`. -/
-private theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
-    coeff k ((-X : R⟦X⟧) ^ n * f) = (-1) ^ n * if n ≤ k then coeff (k - n) f else 0 := by
-  rw [neg_eq_neg_one_mul, mul_pow, mul_assoc, ← map_one C, ← map_neg, ← map_pow, coeff_C_mul,
-    coeff_X_pow_mul']
 
 /-- **Euler's raw identity** in `R⟦X⟧`:
 `∑_{n ≥ 0} r ^ (n ^ 2) / (r ^ 2; r ^ 2)_n = ∏_{i ≥ 0} (1 + r ^ (2 i + 1))`. -/

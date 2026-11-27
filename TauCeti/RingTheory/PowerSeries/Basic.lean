@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -36,7 +35,8 @@ coefficients `map f` acts on the constant coefficient.
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
 * `PowerSeries.coeff_succ_mul_eq_add_sum`: the `Xⁿ⁺¹`-coefficient of `f * g` is
   `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
-* `PowerSeries.isUnit_one_sub_X_pow_succ`: `1 - X ^ (n + 1)` is a unit in `R⟦X⟧`.
+* `PowerSeries.coeff_neg_X_pow_mul`: the `Xᵏ`-coefficient of `(-X) ^ n * f` is
+  `(-1) ^ n * coeff (k - n) f` for `n ≤ k` and `0` otherwise.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 -/
@@ -179,15 +179,17 @@ theorem coeff_succ_mul_eq_add_sum (f g : R⟦X⟧) (n : ℕ) :
 
 end Coeff
 
-section Unit
+section CoeffRing
 
 variable {R : Type*} [Ring R]
 
-/-- Every series `1 - X ^ (n + 1)` is a unit in `R⟦X⟧`. -/
-theorem isUnit_one_sub_X_pow_succ (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
-  isUnit_iff_constantCoeff.mpr (by simp)
+/-- Coefficient of `(-X) ^ n * f` at degree `k`. -/
+theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
+    coeff k ((-X : R⟦X⟧) ^ n * f) = (-1) ^ n * if n ≤ k then coeff (k - n) f else 0 := by
+  rw [neg_eq_neg_one_mul, (Commute.one_left (X : R⟦X⟧)).neg_left.mul_pow, mul_assoc,
+    ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_X_pow_mul']
 
-end Unit
+end CoeffRing
 
 end PowerSeries
 

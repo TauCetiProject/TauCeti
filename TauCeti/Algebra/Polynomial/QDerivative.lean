@@ -269,6 +269,10 @@ theorem adaptedQDerivative_apply (p : R[X]) :
 @[simp] theorem adaptedQDerivative_C (a : R) : adaptedQDerivative q (C a) = 0 := by
   simp [adaptedQDerivative_apply]
 
+/-- The adapted Jackson derivative of `1` is `0`. -/
+@[simp] theorem adaptedQDerivative_one : adaptedQDerivative q (1 : R[X]) = 0 := by
+  simpa using adaptedQDerivative_C q 1
+
 /-- The adapted Jackson derivative of `X` is `C (1 - q)`. -/
 @[simp] theorem adaptedQDerivative_X : adaptedQDerivative q (X : R[X]) = C (1 - q) := by
   simp [adaptedQDerivative_apply, Algebra.smul_def]
@@ -287,7 +291,7 @@ theorem adaptedQDerivative_X_pow (n : ℕ) :
   by_cases h : k = n <;> simp [h]
 
 /-- At `q = 1`, the adapted Jackson derivative vanishes identically. -/
-@[simp] theorem adaptedQDerivative_one : adaptedQDerivative (1 : R) = 0 := by ext p n; simp
+@[simp] theorem adaptedQDerivative_base_one : adaptedQDerivative (1 : R) = 0 := by ext p n; simp
 
 /-- Difference identity: `X * D'_q p = p - p(q X)`. -/
 theorem X_mul_adaptedQDerivative (p : R[X]) :

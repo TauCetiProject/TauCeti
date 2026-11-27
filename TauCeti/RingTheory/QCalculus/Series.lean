@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.PowerSeries.Basic
 public import TauCeti.RingTheory.PowerSeries.QDerivative
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.PowerSeries.Log
+import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
@@ -519,7 +520,7 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
 `qPochhammerSeries X` in `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_eq_qPochhammerSeries :
     integralQPochhammer R = qPochhammerSeries (X : R⟦X⟧) :=
-  (eq_qPochhammerSeries_iff (isUnit_one_sub_X_pow_succ (R := R))).mpr
+  (eq_qPochhammerSeries_iff fun _ ↦ isUnit_one_sub_X_pow (Nat.succ_ne_zero _)).mpr
     ⟨integralQPochhammer_eq_one_sub_X_mul_rescale, constantCoeff_integralQPochhammer⟩
 
 /-- **Euler's reciprocal identity** for the integral infinite `q`-Pochhammer product in
@@ -527,13 +528,13 @@ theorem integralQPochhammer_eq_qPochhammerSeries :
 theorem integralQPochhammer_mul_qPochhammerInvSeries :
     integralQPochhammer R * qPochhammerInvSeries (X : R⟦X⟧) = 1 := by
   rw [integralQPochhammer_eq_qPochhammerSeries]
-  exact qPochhammerSeries_mul_qPochhammerInvSeries (isUnit_one_sub_X_pow_succ (R := R))
+  exact qPochhammerSeries_mul_qPochhammerInvSeries fun _ ↦ isUnit_one_sub_X_pow (Nat.succ_ne_zero _)
 
 /-- Base change of coefficients for `integralQPochhammer`. -/
 theorem map_integralQPochhammer (φ : R →+* S) :
     map (map φ) (integralQPochhammer R) = integralQPochhammer S := by
   rw [integralQPochhammer_eq_qPochhammerSeries, integralQPochhammer_eq_qPochhammerSeries,
-    map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R))]
+    map_qPochhammerSeries _ fun _ ↦ isUnit_one_sub_X_pow (Nat.succ_ne_zero _)]
   ext n
   simp
 
@@ -543,7 +544,8 @@ theorem map_ofPowerSeries_integralQPochhammer :
     map (HahnSeries.ofPowerSeries ℤ R) (integralQPochhammer R) =
       qPochhammerSeries (HahnSeries.single (1 : ℤ) (1 : R)) := by
   rw [integralQPochhammer_eq_qPochhammerSeries,
-    map_qPochhammerSeries _ (isUnit_one_sub_X_pow_succ (R := R)), HahnSeries.ofPowerSeries_X]
+    map_qPochhammerSeries _ fun _ ↦ isUnit_one_sub_X_pow (Nat.succ_ne_zero _),
+    HahnSeries.ofPowerSeries_X]
 
 /-- For every `m`, the `[q ^ m t]` coefficient of `integralQPochhammer R` is `-1`. -/
 theorem coeff_coeff_one_integralQPochhammer (m : ℕ) :
