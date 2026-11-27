@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
-import TauCeti.Analysis.SpecialFunctions.Exp.Gap
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 
 /-!
 # Lower bounds for prime-counting main terms with an exceptional zero
@@ -26,6 +27,14 @@ public section
 namespace TauCeti
 
 open _root_.Real Set
+
+/-- Attenuating `x` by `exp (-((1 - β) * log x))` gives the real power `x ^ β`. -/
+private theorem mul_exp_neg_sub_mul_log_eq_rpow {x : ℝ} (hx : 0 < x) (β : ℝ) :
+    x * exp (-((1 - β) * log x)) = x ^ β := by
+  rw [rpow_def_of_pos hx]
+  nth_rw 1 [← exp_log hx]
+  rw [← exp_add]
+  ring_nf
 
 /-- The Chebyshev main term with exceptional coefficient `a ≤ 1` is bounded below by
 `x / 4` times `min 1 ((1 - β) * log x)`, provided `x ≥ exp (2 / β)`. In particular,
@@ -47,8 +56,7 @@ theorem mul_min_one_le_sub_mul_rpow_div {x β a : ℝ} (hβ₀ : 0 < β) (hβ₁
       nlinarith only [mul_nonneg (sub_nonneg.mpr hβ₁) (sub_nonneg.mpr hscale)]))
   have hrpow : x ^ β / β = x * exp (-u - log β) := by
     dsimp only [u]
-    rw [exp_sub, exp_log hβ₀, ← mul_div_assoc, ← neg_mul, neg_sub, mul_comm (β - 1),
-      exp_mul, exp_log hx₀, rpow_sub_one hx₀.ne', mul_div_cancel₀ _ hx₀.ne']
+    rw [exp_sub, exp_log hβ₀, ← mul_div_assoc, mul_exp_neg_sub_mul_log_eq_rpow hx₀]
   have hdecay : a * (x ^ β / β) ≤ x * exp (-(u / 2)) := by
     calc
       _ ≤ x ^ β / β := mul_le_of_le_one_left (by positivity) ha
@@ -82,12 +90,9 @@ theorem mul_min_one_le_logIntegral_sub_mul_logIntegral_rpow {x β a : ℝ} (hx :
   have hlog := log_pos hx
   have hgap := min_one_div_two_le_one_sub_exp_neg
     (mul_nonneg (sub_nonneg.mpr hβ) hlog.le)
-  have hpow : x * exp (-((1 - β) * log x)) = x ^ β := by
-    rw [← neg_mul, neg_sub, mul_comm (β - 1), exp_mul, exp_log hx₀, rpow_sub_one hx₀.ne',
-      mul_div_cancel₀ _ hx₀.ne']
   calc
     _ ≤ x * (1 - exp (-((1 - β) * log x))) / log x := by gcongr
-    _ = (x - x ^ β) / log x := by rw [mul_sub, mul_one, hpow]
+    _ = (x - x ^ β) / log x := by rw [mul_sub, mul_one, mul_exp_neg_sub_mul_log_eq_rpow hx₀]
     _ ≤ logIntegral x - logIntegral (x ^ β) := by
       rw [← hsplit]
       simpa only [pow_one] using le_integral_inv_log_pow 1 hβx hle
