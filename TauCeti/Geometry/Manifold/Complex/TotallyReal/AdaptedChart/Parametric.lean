@@ -92,11 +92,7 @@ private theorem exists_isAdaptedChart_slice [IsManifold I' k N]
   set e' := (Homeomorph.prodAssoc P F F).symm.transOpenPartialHomeomorph e
   have he' : ∀ q ∈ e'.source, (e' q).1 = q.1 := fun q _ ↦ by
     simpa [e', Homeomorph.prodAssoc] using hfst ((q.1, q.2.1), q.2.2)
-  have hes' : ∀ q ∈ e'.target, (e'.symm q).1 = q.1 := fun q hq ↦ by
-    simpa [e', Homeomorph.prodAssoc] using
-      e.fst_fst_symm_of_coe_eq_parametricAdaptedNormalExtension he
-        (by simpa [e', Homeomorph.prodAssoc] using hq)
-  set es := e'.slice he' hes' s
+  set es := e'.slice he' s
   have hes (p : F × F) : es p = (e ((s, p.1), p.2)).2 := by
     simp [es, e', Homeomorph.prodAssoc]
   have hess (w : E) : es.symm w = ((e.symm (s, w)).1.2, (e.symm (s, w)).2) := by
