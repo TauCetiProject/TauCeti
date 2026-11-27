@@ -9,7 +9,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOne.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Existence
 
 /-!
 # The real Cauchy–Riemann operator of a connection
@@ -34,9 +33,6 @@ is complex linear when `∇` commutes with multiplication by `i`
   at each point of that set.
 * `ContMDiffCovariantDerivativeOn.zeroOnePart`: the `(0,1)`-part of a `C^n` covariant derivative
   is `C^n`.
-* `TauCeti.exists_isRealCauchyRiemannOperator_contMDiffCovariantDerivativeOn`: every `C^k` complex
-  vector bundle of finite rank over a σ-compact Hausdorff almost complex manifold carries a `C^n`
-  real Cauchy–Riemann operator for `n + 1 ≤ k`, the `(0,1)`-part of a `C^n` covariant derivative.
 
 ## References
 
@@ -133,21 +129,6 @@ theorem _root_.ContMDiffCovariantDerivativeOn.zeroOnePart {n : ℕ∞ω} (hn : n
     (hcov : ContMDiffCovariantDerivativeOn F n cov u) :
     ContMDiffCovariantDerivativeOn F n (fun σ x ↦ j.zeroOnePart (cov σ x)) u where
   contMDiff hσ := (j.contMDiff_totalSpace_zeroOnePart hn).comp_contMDiffOn (hcov.contMDiff hσ)
-
-/-- **Existence of smooth real Cauchy–Riemann operators.** A `C^k` complex vector bundle of
-finite rank over a σ-compact Hausdorff manifold with a smooth almost complex structure, modelled on
-a finite-dimensional space, carries a `C^n` real Cauchy–Riemann operator whenever `n + 1 ≤ k`: the
-`(0,1)`-part of a `C^n` covariant derivative
-(`CovariantDerivative.exists_contMDiffCovariantDerivative`). -/
-theorem exists_isRealCauchyRiemannOperator_contMDiffCovariantDerivativeOn [FiniteDimensional ℝ E]
-    [T2Space M] [SigmaCompactSpace M] [FiniteDimensional ℝ F] {n : ℕ∞} {k : ℕ∞ω}
-    [ContMDiffVectorBundle k F V I] (hk : n + 1 ≤ k) :
-    ∃ D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x,
-      IsRealCauchyRiemannOperator F j D ∧ ContMDiffCovariantDerivativeOn F n D univ := by
-  obtain ⟨cov, hcov⟩ := CovariantDerivative.exists_contMDiffCovariantDerivative (I := I) (F := F)
-    (V := V) hk
-  exact ⟨_, cov.isCovariantDerivativeOnUniv.isRealCauchyRiemannOperator_zeroOnePart j,
-    hcov.contMDiff.zeroOnePart j (by exact_mod_cast le_top)⟩
 
 end Smooth
 
