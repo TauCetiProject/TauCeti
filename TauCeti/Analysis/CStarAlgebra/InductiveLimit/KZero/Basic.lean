@@ -321,11 +321,6 @@ section ProjectionMonoid
 
 open NonUnitalStarRingHom (ofClass)
 
-omit [IsDirectedOrder ι] [Nonempty ι] in
-/-- The star homomorphism underlying the connecting map from a stage to itself is the identity. -/
-theorem ofClass_f_self (i : ι) : ofClass (f i i le_rfl) = NonUnitalStarRingHom.id (A i) :=
-  NonUnitalStarRingHom.ext fun a ↦ DirectedSystem.map_self (f := (f · · ·)) a
-
 /-- The maps induced on `V` by the canonical maps are compatible with the connecting maps. -/
 @[simp]
 theorem projectionMonoid_map_of_map_f {i j : ι} (hij : i ≤ j) (y : ProjectionMonoid (A i)) :
