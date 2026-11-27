@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.HeisenbergModel.WeilOperators
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Analysis.Complex.RingHomIsometric
 import TauCeti.MeasureTheory.Measure.Haar.IntegralUnique
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.Analysis.Complex.Basic
 
 /-!
 # Transport and intertwining in reproducing models
@@ -41,7 +40,9 @@ without unfolding its construction.
   operators and the sesquilinear form.
 * `TauCeti.ReproducingModel.transport_symm_transport`,
   `TauCeti.ReproducingModel.transport_transport_symm`,
-  `TauCeti.ReproducingModel.transport_bijective`: transport along `φ.symm` is the inverse.
+  `TauCeti.ReproducingModel.transport_bijective`: transport along `φ.symm` is the inverse; its
+  matching conditions come from `TauCeti.ReproducingModel.symm_matching_heisenberg` and
+  `TauCeti.ReproducingModel.symm_matching_vacuum`.
 * `TauCeti.ReproducingModel.transport_weilOp`, `TauCeti.ReproducingModel.transport_weilRep`:
   transport intertwines the Weil operators and representations.
 
@@ -67,27 +68,6 @@ open scoped ComplexConjugate
 
 namespace TauCeti.ReproducingModel
 
-/-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) is an
-involution. -/
-private theorem map_map_of_isometric (σ : ℂ →+* ℂ) [RingHomIsometric σ] (z : ℂ) :
-    σ (σ z) = z := by
-  rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl <;> simp
-
-/-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) commutes with
-complex conjugation. -/
-private theorem map_conj_of_isometric (σ : ℂ →+* ℂ) [RingHomIsometric σ] (z : ℂ) :
-    σ (conj z) = conj (σ z) := by
-  rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl <;> simp
-
-/-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) commutes with
-Bochner integrals. -/
-private theorem map_integral_of_isometric {X : Type*} [MeasurableSpace X] (σ : ℂ →+* ℂ)
-    [RingHomIsometric σ] (μ : Measure X) (f : X → ℂ) :
-    σ (∫ x, f x ∂μ) = ∫ x, σ (f x) ∂μ := by
-  rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl
-  · simp
-  · exact integral_conj.symm
-
 /-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) fixes the values
 of a vacuum. -/
 theorem map_vacuum_comp {W W' : Type*} [AddCommGroup W'] [TopologicalSpace W']
@@ -97,6 +77,22 @@ theorem map_vacuum_comp {W W' : Type*} [AddCommGroup W'] [TopologicalSpace W']
   rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl
   · simp [hφ]
   · simp [hφ, he'.conj_apply]
+
+/-- The Heisenberg matching condition for `φ` gives the matching condition for `φ.symm`, as
+needed for transport along `φ.symm`. -/
+theorem symm_matching_heisenberg {W W' : Type*} [AddCommGroup W] [TopologicalSpace W]
+    [AddCommGroup W'] [TopologicalSpace W'] {β : HeisenbergDatum W} {β' : HeisenbergDatum W'}
+    {σ : ℂ →+* ℂ} [RingHomIsometric σ] {φ : W' ≃ₜ+ W}
+    (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (x y : W) :
+    σ (β' (φ.symm x) (φ.symm y)) = β x y := by
+  rw [← hβ, φ.apply_symm_apply, φ.apply_symm_apply, Complex.map_map_of_isometric]
+
+/-- The vacuum matching condition for `φ` gives the matching condition for `φ.symm`, as needed
+for transport along `φ.symm`. -/
+theorem symm_matching_vacuum {W W' : Type*} [AddCommGroup W] [TopologicalSpace W]
+    [AddCommGroup W'] [TopologicalSpace W'] {e : W → ℂ} {e' : W' → ℂ} {φ : W' ≃ₜ+ W}
+    (hφ : ∀ x, e (φ x) = e' x) (x : W) : e' (φ.symm x) = e x := by
+  rw [← hφ, φ.apply_symm_apply]
 
 variable {W W' : Type*} [AddCommGroup W] [TopologicalSpace W] [MeasurableSpace W]
   [IsTopologicalAddGroup W] [BorelSpace W] [SecondCountableTopology W] [LocallyCompactSpace W]
@@ -136,7 +132,7 @@ private def transportFun (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y) (hφ :
         rw [map_mul, map_mul, hβ, ← map_sub, map_vacuum_comp he' hφ]
       simp_rw [← h_pt]
       rw [← v.integral_mul_kernel (φ x), ← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ'
-        hφ).integral_comp φ.toHomeomorph.measurableEmbedding, map_integral_of_isometric]
+        hφ).integral_comp φ.toHomeomorph.measurableEmbedding, Complex.map_integral_of_isometric]
 
 private theorem transportFun_apply (hβ : ∀ x y, σ (β (φ x) (φ y)) = β' x y)
     (hφ : ∀ x, e (φ x) = e' x) (v : ReproducingModel β μ e) (x : W') :
@@ -198,8 +194,8 @@ theorem innerSL_transport (v w : ReproducingModel β μ e) :
     innerSL (transport μ μ' hβ hφ v) (transport μ μ' hβ hφ w) = σ (innerSL v w) := by
   rw [innerSL_apply, innerSL_apply,
     ← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ' hφ).integral_comp
-      φ.toHomeomorph.measurableEmbedding, map_integral_of_isometric]
-  simp only [transport_apply, map_mul, map_conj_of_isometric]
+      φ.toHomeomorph.measurableEmbedding, Complex.map_integral_of_isometric]
+  simp only [transport_apply, map_mul, Complex.map_conj_of_isometric]
 
 /-- Transport along `φ.symm` undoes transport along `φ`. -/
 @[simp]
@@ -208,7 +204,7 @@ theorem transport_symm_transport [LocallyCompactSpace W']
     (v : ReproducingModel β μ e) :
     transport μ' μ hβ' hφ' (transport μ μ' hβ hφ v) = v := by
   ext x
-  simp only [transport_apply, φ.apply_symm_apply, map_map_of_isometric]
+  simp only [transport_apply, φ.apply_symm_apply, Complex.map_map_of_isometric]
 
 /-- Transport along `φ` undoes transport along `φ.symm`. -/
 @[simp]
@@ -217,19 +213,17 @@ theorem transport_transport_symm [LocallyCompactSpace W']
     (v : ReproducingModel β' μ' e') :
     transport μ μ' hβ hφ (transport μ' μ hβ' hφ' v) = v := by
   ext x
-  simp only [transport_apply, φ.symm_apply_apply, map_map_of_isometric]
+  simp only [transport_apply, φ.symm_apply_apply, Complex.map_map_of_isometric]
 
 omit [SecondCountableTopology W'] in
 /-- Transport is bijective; its inverse is transport along `φ.symm`. -/
 theorem transport_bijective : Function.Bijective (transport μ μ' hβ hφ) := by
   let : SecondCountableTopology W' := φ.toHomeomorph.secondCountableTopology
   let : LocallyCompactSpace W' := φ.toHomeomorph.isClosedEmbedding.locallyCompactSpace
-  have hβ' (x y : W) : σ (β' (φ.symm x) (φ.symm y)) = β x y := by
-    rw [← hβ, φ.apply_symm_apply, φ.apply_symm_apply, map_map_of_isometric]
-  have hφ' (x : W) : e' (φ.symm x) = e x := by
-    rw [← hφ, φ.apply_symm_apply]
-  exact ⟨Function.LeftInverse.injective (transport_symm_transport hβ hφ hβ' hφ'),
-    Function.RightInverse.surjective (transport_transport_symm hβ hφ hβ' hφ')⟩
+  exact ⟨Function.LeftInverse.injective (transport_symm_transport hβ hφ
+      (symm_matching_heisenberg hβ) (symm_matching_vacuum hφ)),
+    Function.RightInverse.surjective (transport_transport_symm hβ hφ
+      (symm_matching_heisenberg hβ) (symm_matching_vacuum hφ))⟩
 
 omit [SecondCountableTopology W'] in
 /-- Every vector in the target model is the transport of a vector in the source model. -/
@@ -263,7 +257,7 @@ private theorem integral_kernel_transport (v : ReproducingModel β μ e) (x : W'
     σ (∫ y, v y * (β (g • y) (φ x) * e (φ x - g • y)) ∂μ) =
       ∫ y, transport μ μ' hβ hφ v y * (β' (g' • y) x * e' (x - g' • y)) ∂μ' := by
   rw [← (measurePreserving_of_vacuum (β := β) (β' := β') μ μ' hφ).integral_comp
-    φ.toHomeomorph.measurableEmbedding, map_integral_of_isometric]
+    φ.toHomeomorph.measurableEmbedding, Complex.map_integral_of_isometric]
   simp only [map_mul, hact, hβ, ← map_sub, map_vacuum_comp he' hφ, transport_apply]
 
 include hact in
