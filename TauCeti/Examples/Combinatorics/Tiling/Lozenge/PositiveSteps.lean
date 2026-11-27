@@ -13,9 +13,13 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.PositiveSteps
 * The closed walk `0 → e₁ → e₃ → 0` in the edge graph of the white face `W(0)` has `2` positive
   steps and its reverse has `1`, adding up to its length `3`; counting every dart would give `3`
   both ways.
-* The one-dart walk `0 → e₃` has `1` positive step.
+* The one-dart walk `0 → e₃` has `1` positive step, and the height `H_{M₁} = x` of the
+  all-type-1 tiling rises by `1` along it, so the bound `H(v) − H(u) ≤ positiveSteps p` is sharp
+  there. With Gorin's positive directions `(1, 0)`, `(0, 1)`, `(−1, −1)` this step would be
+  negative and count `0`, and the bound would fail.
 * In the unit hexagon, the six faces round `0`, the walk `(−1, 0) → 0 → (1, 0)` has `2` positive
-  steps; counting instead the darts from `u + e_k` to `u` would give `0`.
+  steps; counting instead the darts from `u + e_k` to `u` would give `0`. Every height function
+  on the hexagon therefore rises by `0`, `1` or `2` from `(−1, 0)` to `(1, 0)`.
 -/
 
 public section
@@ -65,6 +69,19 @@ example : positiveSteps triangleWalk + positiveSteps triangleWalk.reverse = 3 :=
 example : positiveSteps (.cons adj₃ .nil : (regionGraph whiteZero).Walk (0, 0) (1, 1)) = 1 := by
   simp [isPositiveStep_iff]
 
+/-- `H_{M₁} = x` is a height function on `W(0)`. -/
+theorem isHeightFunctionOn_fst : IsHeightFunctionOn whiteZero Prod.fst := by
+  rw [isHeightFunctionOn_def]
+  rintro ⟨v, k⟩ -
+  fin_cases k <;> simp [latticeDir_zero, latticeDir_one, latticeDir_two]
+
+/-- `H_{M₁} = x` rises by `1` along `0 → e₃`, the number of positive steps of that walk; a count
+giving this step `0` would violate the bound. -/
+example : ((1, 1) : ℤ × ℤ).1 - ((0, 0) : ℤ × ℤ).1 = 1 ∧
+    ((1, 1) : ℤ × ℤ).1 - ((0, 0) : ℤ × ℤ).1 ≤
+      positiveSteps (.cons adj₃ .nil : (regionGraph whiteZero).Walk (0, 0) (1, 1)) :=
+  ⟨rfl, isHeightFunctionOn_fst.sub_le_positiveSteps _⟩
+
 /-- The unit hexagon: the six faces round `0`. -/
 abbrev unitHexagon : Set TriFace := vertexFaces (0, 0)
 
@@ -90,5 +107,17 @@ example :
   constructor
   · simp [isPositiveStep_iff]
   · simp [Walk.reverse_cons, isPositiveStep_iff]
+
+/-- Every height function on the unit hexagon rises by `0`, `1` or `2` from `(−1, 0)` to
+`(1, 0)`. -/
+example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn unitHexagon H) :
+    0 ≤ H (1, 0) - H (-1, 0) ∧ H (1, 0) - H (-1, 0) ≤ 2 := by
+  let p : (regionGraph unitHexagon).Walk (-1, 0) (1, 0) := .cons adj_hex₁ (.cons adj_hex₂ .nil)
+  have h₁ := hH.sub_le_positiveSteps p
+  have h₂ := hH.neg_positiveSteps_reverse_le_sub p
+  simp only [p, positiveSteps_cons, positiveSteps_nil, Walk.reverse_cons, Walk.reverse_nil,
+    Walk.nil_append, Walk.cons_append, isPositiveStep_iff] at h₁ h₂
+  norm_num at h₁ h₂
+  omega
 
 end TauCeti.Examples.PositiveStepsChecks
