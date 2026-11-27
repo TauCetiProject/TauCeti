@@ -162,7 +162,7 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
     hX.contMDiff hα (by simp) (hf.of_le (by norm_num))
   simp_rw [forall_comm (α := ℝ) (β := M), hX.forall_mpullback_flowOf_apply_eq_self_iff hα hf]
   refine ⟨fun h x ↦ ?_, fun h x t _ ↦ h _⟩
-  have h0 := h x 0 (mem_flowDomain_zero hX1 x)
+  have h0 := h x 0 (mem_flowDomain_zero (hX1 x))
   rwa [flowOf_zero] at h0
 
 /-! ### Complete flows -/
