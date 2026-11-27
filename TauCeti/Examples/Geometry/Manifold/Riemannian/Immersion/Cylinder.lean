@@ -120,6 +120,7 @@ theorem contDiff_cyl : ContDiff ℝ 2 cyl := by
   fun_prop
 
 /-- The differential of the parametrization: `d cyl (w) = w₀ τ + w₁ e₂`. -/
+@[simp]
 theorem mfderiv_cyl (y w : ℝ²) :
     mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ³) cyl y w = w 0 • τ y + w 1 • e 2 := by
   have h : ((π₀).smulRight (τ y) + (π₁).smulRight (e 2)) w = w 0 • τ y + w 1 • e 2 := by simp
@@ -132,7 +133,7 @@ private theorem inner_τ_ν (y : ℝ²) : ⟪τ y, ν y⟫_ℝ = 0 := by
   ring
 
 /-- `ν` is a unit vector. -/
-private theorem inner_ν_ν (y : ℝ²) : ⟪ν y, ν y⟫_ℝ = 1 := by
+theorem inner_ν_ν (y : ℝ²) : ⟪ν y, ν y⟫_ℝ = 1 := by
   simp only [ν, PiLp.inner_apply, Fin.sum_univ_three]
   simp
 
@@ -159,6 +160,7 @@ theorem ν_mem_orthogonalNormalSpace (y : ℝ²) :
   exact inner_mfderiv_cyl_ν y u
 
 /-- **The second fundamental form of the unit cylinder**: `B(v, w) = -v₀ w₀ ν`. -/
+@[simp]
 theorem immersionSecondFundamentalFormAt_cyl (x v w : ℝ²) :
     immersionSecondFundamentalFormAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x
       v w = -(v 0 * w 0) • ν x := by
@@ -212,6 +214,7 @@ private theorem inner_immersionShapeOperatorAt_cyl (x v w : ℝ²) :
   simp
 
 /-- **The shape operator of the unit cylinder** in the outward direction: `S_ν v = -v₀ e_θ`. -/
+@[simp]
 theorem immersionShapeOperatorAt_cyl_apply (x v : ℝ²) :
     immersionShapeOperatorAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x (ν x) v =
       -(v 0) • eθ := by
@@ -277,6 +280,7 @@ private theorem tangentBasis_apply (x : ℝ²) (i : Fin 2) :
 
 /-- **The mean curvature vector of the unit cylinder** is `H = -ν / 2`: the trace of `B` is `-ν`,
 divided by the dimension `2`. -/
+@[simp]
 theorem immersionMeanCurvatureVector_cyl (x : ℝ²) :
     immersionMeanCurvatureVector (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x =
       -(1 / 2 : ℝ) • ν x := by
