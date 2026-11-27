@@ -438,9 +438,7 @@ private theorem circleCosTwoMin_eq_coe_int (r : ℝ) (j : Fin 2) :
 /-- The maximum `p_j` is the class of `r + j π`, with `j` read as an integer. -/
 private theorem circleCosTwoMax_eq_coe_int (r : ℝ) (j : Fin 2) :
     circleCosTwoMax r j = ((r + ((j : ℕ) : ℤ) * π : ℝ) : AddCircle (2 * π)) := by
-  rw [circleCosTwoMax_def]
-  push_cast
-  rfl
+  rw [circleCosTwoMax_def, Int.cast_natCast]
 
 /-- **The stable manifold of a minimum is the open arc between its two neighbouring maxima.** For
 `δ > 0` and every adapted pseudo-gradient, a point lies on the stable manifold of the minimum
