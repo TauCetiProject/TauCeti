@@ -196,7 +196,7 @@ theorem toSubmonoid_mapPowSaturation {f : M →* N} (hf : Function.Injective f)
     (F.mapPowSaturation hf hsurj).toSubmonoid = (F.toSubmonoid.map f).powSaturation := (rfl)
 
 /-- Membership in `mapPowSaturation hf hsurj F` holds iff some positive power lies in `f '' F`. -/
-@[to_additive
+@[to_additive (attr := simp)
 /-- Membership in `mapNSMulSaturation` holds iff some positive multiple lies in `f '' F`. -/]
 theorem mem_mapPowSaturation {f : M →* N} {hf : Function.Injective f}
     {hsurj : ∀ y : N, ∃ n, 0 < n ∧ y ^ n ∈ MonoidHom.mrange f} {F : SaturatedSubmonoid M} {y : N} :

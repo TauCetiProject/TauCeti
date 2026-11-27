@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import TauCeti.Algebra.MonoidAlgebra.Face.Coaction
 import Mathlib.RingTheory.Spectrum.Prime.RingHom
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Closed face subschemes, localized orbits, and the orbit closure order
@@ -193,12 +194,7 @@ theorem isOpenImmersion_torusHom (hS : S.FG) : IsOpenImmersion (S.torusHom R) :=
 
 /-- Over every commutative ring `R`, the diagonalizable group scheme
 `Spec R[AddSubgroup.closure S]` has dense image in `Spec R[S]`. -/
-theorem denseRange_torusHom : DenseRange (S.torusHom R) := by
-  -- `Spec.map (CommRingCat.ofHom f)` has underlying map `PrimeSpectrum.comap f` (`Spec.map_apply`).
-  refine (PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical
-    (f := mapDomainRingHom R S.toGroupClosure)).2 fun p hp ↦ ?_
-  have hp0 : p = 0 := mapDomain_injective S.toGroupClosure_injective (by
-    rw [← mapDomainRingHom_apply R S.toGroupClosure, RingHom.mem_ker.1 hp, mapDomain_zero])
-  exact hp0 ▸ zero_mem _
+theorem denseRange_torusHom : DenseRange (S.torusHom R) :=
+  RingHom.denseRange_comap_of_injective _ (mapDomain_injective S.toGroupClosure_injective)
 
 end AddSubmonoid

@@ -104,14 +104,8 @@ theorem finite_quotient_powSaturation (hfg : H.powSaturation.FG) :
 /-- The saturation quotient `H.nsmulSaturation ⧸ H.addSubgroupOf H.nsmulSaturation` is subsingleton
 iff `H` equals its positive-multiple saturation. -/]
 theorem subsingleton_quotient_powSaturation_iff :
-    Subsingleton (H.powSaturation ⧸ H.subgroupOf H.powSaturation) ↔ H = H.powSaturation :=
-  ⟨fun _ ↦ le_antisymm H.le_powSaturation fun x hx ↦
-    (H.mem_subgroupOf).1 <| (QuotientGroup.eq_one_iff (⟨x, hx⟩ : H.powSaturation)).1
-      (Subsingleton.elim (QuotientGroup.mk ⟨x, hx⟩ :
-        H.powSaturation ⧸ H.subgroupOf H.powSaturation) 1),
-    fun heq ↦ ⟨fun a b ↦ by
-      induction a using QuotientGroup.induction_on with | H x =>
-      induction b using QuotientGroup.induction_on with | H y =>
-      exact QuotientGroup.eq.2 (H.mem_subgroupOf.2 (heq.ge (x⁻¹ * y).property))⟩⟩
+    Subsingleton (H.powSaturation ⧸ H.subgroupOf H.powSaturation) ↔ H = H.powSaturation := by
+  rw [QuotientGroup.subsingleton_iff, Subgroup.subgroupOf_eq_top]
+  exact ⟨fun h ↦ le_antisymm H.le_powSaturation h, fun h ↦ h.ge⟩
 
 end Subgroup

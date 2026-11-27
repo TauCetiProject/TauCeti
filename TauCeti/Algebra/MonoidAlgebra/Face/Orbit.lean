@@ -136,17 +136,12 @@ theorem distinguishedPoint_def (R A : Type*) [CommSemiring R] [CommSemiring A] [
     F.distinguishedPoint R A = (Algebra.ofId R A).comp
       ((Bialgebra.counitAlgHom R (AddMonoidAlgebra R F.faceSubgroup)).comp (F.orbitMap R)) := (rfl)
 
-/-- On a monomial in `F`, `F.distinguishedPoint R A` sends `single a r` to `algebraMap R A r`. -/
-theorem distinguishedPoint_single_mem (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
-    (a : F) (r : R) :
-    F.distinguishedPoint R A (single (a : S) r) = algebraMap R A r := by simp [distinguishedPoint]
-
 /-- On a monomial with exponent in `F`, `F.distinguishedPoint R A` gives `algebraMap R A r`. -/
 @[simp]
 theorem distinguishedPoint_single_of_mem (R A : Type*) [CommSemiring R] [CommSemiring A]
     [Algebra R A] {s : S} (hs : s ∈ F) (r : R) :
-    F.distinguishedPoint R A (single s r) = algebraMap R A r :=
-  F.distinguishedPoint_single_mem R A ⟨s, hs⟩ r
+    F.distinguishedPoint R A (single s r) = algebraMap R A r := by
+  simp [distinguishedPoint, hs]
 
 /-- On a monomial outside `F`, `F.distinguishedPoint R A` vanishes. -/
 @[simp]
@@ -319,19 +314,13 @@ theorem pointOfChar_def (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A
       (AddMonoidAlgebra.lift R A F.faceSubgroup ((Units.coeHom A).comp ψ)).comp
         (F.orbitMap R) := (rfl)
 
-/-- On a monomial in `F`, `F.pointOfChar R ψ` sends `single a r` to `r • ψ (F.toFaceSubgroup a)`. -/
-theorem pointOfChar_single_mem (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A]
-    [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) (a : F) (r : R) :
-    F.pointOfChar R ψ (single (a : S) r) = r • (ψ (.ofAdd (F.toFaceSubgroup a)) : A) := by
-  simp [pointOfChar]
-
 /-- On a monomial with exponent in `F`, `F.pointOfChar R ψ` gives
 `r • ψ (F.toFaceSubgroup ⟨s, hs⟩)`. -/
 @[simp]
 theorem pointOfChar_single_of_mem (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A]
     [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) {s : S} (hs : s ∈ F) (r : R) :
-    F.pointOfChar R ψ (single s r) = r • (ψ (.ofAdd (F.toFaceSubgroup ⟨s, hs⟩)) : A) :=
-  F.pointOfChar_single_mem R ψ ⟨s, hs⟩ r
+    F.pointOfChar R ψ (single s r) = r • (ψ (.ofAdd (F.toFaceSubgroup ⟨s, hs⟩)) : A) := by
+  simp [pointOfChar, hs]
 
 /-- On a monomial outside `F`, `F.pointOfChar R ψ` vanishes. -/
 @[simp]
@@ -369,7 +358,8 @@ theorem pointOfChar_injective (R A : Type*) [CommSemiring R] [CommSemiring A] [A
     Function.Injective (F.pointOfChar R (A := A)) := fun ψ₁ ψ₂ h ↦ by
   have honF (a : F) : ψ₁ (.ofAdd (F.toFaceSubgroup a)) = ψ₂ (.ofAdd (F.toFaceSubgroup a)) := by
     have eval := AlgHom.congr_fun h (single (a : S) (1 : R))
-    rw [F.pointOfChar_single_mem, F.pointOfChar_single_mem, one_smul, one_smul] at eval
+    rw [F.pointOfChar_single_of_mem R _ a.property, F.pointOfChar_single_of_mem R _ a.property,
+      one_smul, one_smul] at eval
     exact Units.ext eval
   refine MonoidHom.ext fun g ↦ ?_
   obtain ⟨a, b, hab⟩ := F.exists_add_toFaceSubgroup_eq g.toAdd
@@ -808,26 +798,48 @@ noncomputable def _root_.AddSubmonoid.fiberIntegralClosureEquivMapDomainAlgHom
           ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K //
         y.comp (mapDomainAlgHom R R
           (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x} :=
-  let e := S.isIntegralClosureRingEquivNsmulSaturationInfClosure R L B
+  letI := (mapDomainRingHom R
+    (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+  let e := S.nsmulSaturationInfClosureEquivIntegralClosure R L B
   { toFun := fun z ↦
-      ⟨{ z.val.comp e.symm.toRingHom with
+      ⟨{ z.val.comp e.toRingHom with
           commutes' := fun r ↦ by
-            have hz := RingHom.congr_fun z.property (algebraMap R (AddMonoidAlgebra R S) r)
-            rw [RingHom.comp_apply,
-              ← S.isIntegralClosureRingEquivNsmulSaturationInfClosure_symm_mapDomain_inclusion
-                R L B, ← mapDomainAlgHom_apply R R, AlgHom.commutes] at hz
-            simpa [e] using hz.trans (x.commutes r) },
+            have hcomm := e.commutes (algebraMap R (AddMonoidAlgebra R S) r)
+            have hmap : algebraMap (AddMonoidAlgebra R S)
+                  (AddMonoidAlgebra R
+                    ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
+                  (algebraMap R (AddMonoidAlgebra R S) r) =
+                algebraMap R
+                  (AddMonoidAlgebra R
+                    ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) r := by
+              simp [RingHom.algebraMap_toAlgebra]
+            change z.val (e (algebraMap R _ r)) = algebraMap R K r
+            rw [← hmap, hcomm]
+            exact (RingHom.congr_fun z.property _).trans (x.commutes r) },
         AlgHom.ext fun f ↦ by
-          simpa [e, mapDomainAlgHom_apply] using RingHom.congr_fun z.property f⟩
-    invFun := fun y ↦ ⟨y.val.toRingHom.comp e.toRingHom, RingHom.ext fun f ↦ by
-      rw [RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-        S.isIntegralClosureRingEquivNsmulSaturationInfClosure_algebraMap,
-        ← mapDomainAlgHom_apply R R]
+          have hcomm := e.commutes f
+          have hmap : mapDomainAlgHom R R (AddSubmonoid.inclusion
+                (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) f =
+              algebraMap (AddMonoidAlgebra R S) _ f := by
+            simp [RingHom.algebraMap_toAlgebra]
+          change z.val (e (mapDomainAlgHom R R _ f)) = x f
+          rw [hmap, hcomm]
+          exact RingHom.congr_fun z.property f⟩
+    invFun := fun y ↦ ⟨y.val.toRingHom.comp e.symm.toRingHom, RingHom.ext fun f ↦ by
+      have hcomm := e.symm.commutes f
+      have hmap : algebraMap (AddMonoidAlgebra R S)
+            (AddMonoidAlgebra R
+              ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) f =
+          mapDomainAlgHom R R (AddSubmonoid.inclusion
+            (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) f := by
+        simp [RingHom.algebraMap_toAlgebra]
+      change y.val (e.symm (algebraMap (AddMonoidAlgebra R S) B f)) = x f
+      rw [hcomm, hmap]
       exact AlgHom.congr_fun y.property f⟩
-    left_inv := fun z ↦ Subtype.ext <| RingHom.ext fun b ↦ congrArg z.val (e.symm_apply_apply b)
-    right_inv := fun y ↦ Subtype.ext <| AlgHom.ext fun f ↦ congrArg y.val (e.apply_symm_apply f) }
+    left_inv := fun z ↦ Subtype.ext <| RingHom.ext fun b ↦ congrArg z.val (e.apply_symm_apply b)
+    right_inv := fun y ↦ Subtype.ext <| AlgHom.ext fun f ↦ congrArg y.val (e.symm_apply_apply f) }
 
-/-- Evaluating `fiberIntegralClosureEquivMapDomainAlgHom` gives `z.val.comp e.symm.toRingHom`. -/
+/-- Evaluating `fiberIntegralClosureEquivMapDomainAlgHom` gives `z.val.comp e.toRingHom`. -/
 theorem _root_.AddSubmonoid.coe_fiberIntegralClosureEquivMapDomainAlgHom_apply
     (S : AddSubmonoid G) (R L B K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
     [CommRing L] [Algebra (AddMonoidAlgebra R S) L] [IsFractionRing (AddMonoidAlgebra R S) L]
@@ -837,11 +849,11 @@ theorem _root_.AddSubmonoid.coe_fiberIntegralClosureEquivMapDomainAlgHom_apply
     (z : {z : B →+* K // z.comp (algebraMap (AddMonoidAlgebra R S) B) = x.toRingHom}) :
     (S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x z : AddMonoidAlgebra R
         ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K).toRingHom =
-      z.val.comp (S.isIntegralClosureRingEquivNsmulSaturationInfClosure R L B).symm.toRingHom :=
+      z.val.comp (S.nsmulSaturationInfClosureEquivIntegralClosure R L B).toRingHom :=
   (rfl)
 
 /-- The inverse of `fiberIntegralClosureEquivMapDomainAlgHom` gives
-`y.val.toRingHom.comp e.toRingHom`. -/
+`y.val.toRingHom.comp e.symm.toRingHom`. -/
 theorem _root_.AddSubmonoid.coe_fiberIntegralClosureEquivMapDomainAlgHom_symm_apply
     (S : AddSubmonoid G) (R L B K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
     [CommRing L] [Algebra (AddMonoidAlgebra R S) L] [IsFractionRing (AddMonoidAlgebra R S) L]
@@ -852,9 +864,11 @@ theorem _root_.AddSubmonoid.coe_fiberIntegralClosureEquivMapDomainAlgHom_symm_ap
         ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K //
       y.comp (mapDomainAlgHom R R
         (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x}) :
+    letI := (mapDomainRingHom R
+      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
     ((S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x).symm y : B →+* K) =
       y.val.toRingHom.comp
-        (S.isIntegralClosureRingEquivNsmulSaturationInfClosure R L B).toRingHom := (rfl)
+        (S.nsmulSaturationInfClosureEquivIntegralClosure R L B).symm.toRingHom := (rfl)
 
 /-- Under `[RootableBy Kˣ ℕ]`, every `K`-point `x : R[S] →ₐ[R] K` lifts along `R[S] →+* B`. -/
 theorem exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure (R L B K : Type*) [CommRing R]

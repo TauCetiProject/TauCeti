@@ -123,11 +123,6 @@ theorem orbitMap_single_of_mem (R : Type*) [CommSemiring R] {s : S} (hs : s ∈ 
     F.toAddSubmonoid.faceRestriction_single_of_mem F.addSaturated hs, mapDomainAlgHom_apply,
     mapDomain_single]
 
-/-- On a monomial in `F`, `F.orbitMap R` sends `single a r` to `single (F.toFaceSubgroup a) r`. -/
-theorem orbitMap_single_mem (R : Type*) [CommSemiring R] (a : F) (r : R) :
-    F.orbitMap R (single (a : S) r) = single (F.toFaceSubgroup a) r :=
-  F.orbitMap_single_of_mem R a.property r
-
 /-- On a monomial outside `F`, `F.orbitMap R` vanishes. -/
 @[simp]
 theorem orbitMap_single_of_notMem (R : Type*) [CommSemiring R] {s : S} (hs : s ∉ F) (r : R) :
