@@ -41,6 +41,8 @@ and Hessian determine the corresponding linearized gradient flow and its contrac
 * `TauCeti.lipschitzWith_gradient_splitQuadratic`: its gradient is globally `1`-Lipschitz.
 * `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_zero`: the origin is nondegenerate.
 * `TauCeti.splitQuadraticFlow`: its explicit negative-gradient flow.
+* `TauCeti.strictAnti_sum_sq_sub_sum_sq_splitQuadraticFlow`: on coordinate spaces, the quadratic
+  form `Σᵢ uᵢ² - Σⱼ vⱼ²` strictly decreases along the orbits of the flow other than the origin.
 * `Flow.isNegativeGradient_splitQuadraticFlow`: the flow solves the negative-gradient equation.
 * `TauCeti.negativeGradientFlow_splitQuadratic`: the general construction of the negative gradient
   flow returns this explicit flow.
@@ -185,6 +187,52 @@ theorem splitQuadraticFlow_apply (t : ℝ) (z : WithLp 2 (Eₛ × Eᵤ)) :
   (rfl)
 
 end Flow
+
+section Coordinates
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+
+/-- **The coordinate quadratic form decreases along the split flow.** On coordinate spaces, the
+quadratic form `Σᵢ uᵢ² - Σⱼ vⱼ²`, which is twice `TauCeti.splitQuadratic` for the Euclidean norms,
+is strictly decreasing along the orbit of the split flow through any point other than the origin.
+In particular an orbit other than the origin meets each level of this form at most once. -/
+theorem strictAnti_sum_sq_sub_sum_sq_splitQuadraticFlow {z : WithLp 2 ((ι → ℝ) × (κ → ℝ))}
+    (hz : z ≠ 0) :
+    StrictAnti fun t ↦
+      ∑ i, (splitQuadraticFlow t z).fst i ^ 2 - ∑ j, (splitQuadraticFlow t z).snd j ^ 2 := by
+  set A := ∑ i, z.fst i ^ 2
+  set B := ∑ j, z.snd j ^ 2
+  have hA : 0 ≤ A := Finset.sum_nonneg fun i _ ↦ sq_nonneg _
+  have hB : 0 ≤ B := Finset.sum_nonneg fun j _ ↦ sq_nonneg _
+  -- Some coordinate of `z` is nonzero, so one of the two sums of squares is positive.
+  have hpos : 0 < A ∨ 0 < B := by
+    by_contra h
+    simp only [not_or, not_lt] at h
+    have hfst : ∀ i, z.fst i = 0 := fun i ↦ pow_eq_zero_iff two_ne_zero |>.1 <|
+      (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ sq_nonneg (z.fst i)).1 (le_antisymm h.1 hA) i
+        (Finset.mem_univ i)
+    have hsnd : ∀ j, z.snd j = 0 := fun j ↦ pow_eq_zero_iff two_ne_zero |>.1 <|
+      (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg (z.snd j)).1 (le_antisymm h.2 hB) j
+        (Finset.mem_univ j)
+    refine hz (WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)) <;> funext i
+    · simpa using hfst i
+    · simpa using hsnd i
+  -- Along the orbit the two sums are rescaled by `e^{-2t}` and `e^{2t}`.
+  have hQ (t : ℝ) :
+      ∑ i, (splitQuadraticFlow t z).fst i ^ 2 - ∑ j, (splitQuadraticFlow t z).snd j ^ 2 =
+        Real.exp (-t) ^ 2 * A - Real.exp t ^ 2 * B := by
+    simp [A, B, mul_pow, Finset.mul_sum]
+  intro t t' htt'
+  simp only [hQ]
+  have h₁ : Real.exp (-t') ^ 2 < Real.exp (-t) ^ 2 :=
+    pow_lt_pow_left₀ (Real.exp_lt_exp.2 (neg_lt_neg htt')) (Real.exp_pos _).le two_ne_zero
+  have h₂ : Real.exp t ^ 2 < Real.exp t' ^ 2 :=
+    pow_lt_pow_left₀ (Real.exp_lt_exp.2 htt') (Real.exp_pos _).le two_ne_zero
+  rcases hpos with hpos | hpos
+  · nlinarith [mul_lt_mul_of_pos_right h₁ hpos, mul_le_mul_of_nonneg_right h₂.le hB]
+  · nlinarith [mul_le_mul_of_nonneg_right h₁.le hA, mul_lt_mul_of_pos_right h₂ hpos]
+
+end Coordinates
 
 end TauCeti
 
