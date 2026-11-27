@@ -62,7 +62,9 @@ Since `ℂ_[p]` is algebraically closed, every rational number is a value: a roo
   finite values.
 * `PadicComplex.ofNorm_exp_one_eq_map_realValuation`: base change from `p` to `Real.exp 1` scales
   values by `Real.log p`.
-* `PadicComplex.exists_norm_eq_rpow`: every rational power of `p` is attained as a norm on `ℂ_[p]`.
+* `PadicComplex.exists_norm_eq_rpow`, `PadicComplex.exists_norm_mem_Ioo_eq_rpow_neg`: every
+  rational power of `p` is attained as a norm on `ℂ_[p]`, and rationals in `(0, 1)` give points
+  in the open annulus `(p⁻¹, 1)`.
 
 ## References
 
@@ -191,6 +193,19 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
 theorem exists_norm_eq_rpow (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (q : ℝ) := by
   obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q : ℚ)
   exact ⟨x, by simpa using addValuation_eq_coe_iff.mp hx⟩
+
+/-- For any rational `q ∈ (0, 1)`, there exists `t : ℂ_[p]` in the open annulus `(p⁻¹, 1)` with
+`‖t‖ = p ^ (-q)`. -/
+theorem exists_norm_mem_Ioo_eq_rpow_neg {q : ℚ} (hq0 : 0 < q) (hq1 : q < 1) :
+    ∃ t : ℂ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by
+  obtain ⟨t, ht⟩ := exists_norm_eq_rpow (p := p) (-q)
+  have hnorm : ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by simpa using ht
+  have hp : (1 : ℝ) < p := Nat.one_lt_cast.2 (Fact.out : p.Prime).one_lt
+  refine ⟨t, ⟨?_, ?_⟩, hnorm⟩
+  · rw [hnorm, ← Real.rpow_neg_one (p : ℝ)]
+    exact Real.rpow_lt_rpow_of_exponent_lt hp (neg_lt_neg (by exact_mod_cast hq1))
+  · rw [hnorm, ← Real.rpow_zero (p : ℝ)]
+    exact Real.rpow_lt_rpow_of_exponent_lt hp (neg_lt_zero.2 (by exact_mod_cast hq0))
 
 variable (p) in
 /-- The real additive valuation on `ℂ_[p]` with values in `WithTop ℝ`, normalised by `v(p) = 1`.

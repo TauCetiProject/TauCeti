@@ -83,12 +83,12 @@ def quotientMvPowerSeriesMonoidAlgebraEquiv : (MvPowerSeries (Fin 2) (MonoidAlge
     (map_span_rel_mvPowerSeriesAlgEquiv_symm M)).trans <| (MonoidAlgebra.quotientAlgEquiv ℤ_[p] M
       _).trans (MonoidAlgebra.mapAlgEquiv ℤ_[p] M (quotientEquiv (p := p)))
 
-@[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_zero :
+theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_zero :
     quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 0)) =
       MonoidAlgebra.single 1 (T : AnnularRing p) := by
   simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv_apply,
     MonoidAlgebra.mapAlgHom_single]
-@[simp] theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_one :
+theorem quotientMvPowerSeriesMonoidAlgebraEquiv_mk_X_one :
     quotientMvPowerSeriesMonoidAlgebraEquiv M (Ideal.Quotient.mk _ (MvPowerSeries.X 1)) =
       MonoidAlgebra.single 1 (U : AnnularRing p) := by
   simp [quotientMvPowerSeriesMonoidAlgebraEquiv, MonoidAlgebra.mapAlgEquiv_apply,

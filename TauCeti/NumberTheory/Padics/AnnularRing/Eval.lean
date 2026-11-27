@@ -10,17 +10,17 @@ public import TauCeti.NumberTheory.Padics.AnnularRing.Evaluation
 public import TauCeti.NumberTheory.Padics.AnnularRing.Gauge
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Complex.Valuation
-import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RingTheory.Node.Completed
 
 /-!
 # Integral domain structure and `AnnularLaurent` evaluations on `p⁻¹ < |t| < 1`
 
 Building on `TauCeti.NumberTheory.Padics.AnnularRing.Evaluation`, this file proves that
 `AnnularRing p` and `AnnularLaurent p hα` are integral domains (`TauCeti.AnnularRing.instIsDomain`,
-`TauCeti.AnnularLaurent.instIsDomain`) via a uniform dominant-term witness for large rational radii
-in `ℂ_p`. It extends `AnnularRing.eval` across `Localization.Away T` to
+`TauCeti.AnnularLaurent.instIsDomain`) from `TauCeti.CompletedNodeAlgebra.isDomain` via
+`TauCeti.AnnularRing.quotientEquiv`. It extends `AnnularRing.eval` across `Localization.Away T` to
 `TauCeti.AnnularLaurent.eval hα ht`, proves continuity in the Tate gauge topology
 (`continuous_eval`), uniqueness of continuous evaluations (`eq_eval_of_continuous`), and failure of
 the Lipschitz property whenever `α < ‖t‖` (`not_lipschitzWith_eval_of_lt`,
@@ -86,130 +86,6 @@ end Eval
 
 section JointInjectivity
 
-/-- The asymptotic score `-2 * v(d_m) - m` of the `m`-th coefficient. At radius
-`‖t‖ = p ^ (-B / (2B + 1))` (for large `B`), `‖d_m t ^ m‖ = p ^ (E_B(m) / (2B + 1))` with
-`2 * E_B(m) = (2B + 1) * valScore x m + m`. -/
-private def valScore (x : AnnularRing p) (m : ℤ) : ℤ := -2 * ((x.coeff m).valuation : ℤ) - m
-
-/-- The integer numerator `E_B(m)` in `‖d_m t ^ m‖ = p ^ (E_B(m) / (2B + 1))` when
-`‖t‖ = p ^ (-B / (2B + 1))`. -/
-private def evalExponent (x : AnnularRing p) (B : ℕ) (m : ℤ) : ℤ :=
-  -(((x.coeff m).valuation : ℤ) * (2 * B + 1)) - B * m
-
-private theorem two_mul_evalExponent (x : AnnularRing p) (B : ℕ) (m : ℤ) :
-    2 * evalExponent x B m = (2 * (B : ℤ) + 1) * valScore x m + m := by
-  simp only [evalExponent, valScore]; ring
-
-private theorem evalExponent_le_sub_one {x : AnnularRing p} {B : ℕ} {m m₀ : ℤ}
-    (hdom : (2 * (B : ℤ) + 1) * valScore x m + m <
-      (2 * (B : ℤ) + 1) * valScore x m₀ + m₀) :
-    evalExponent x B m ≤ evalExponent x B m₀ - 1 := by
-  have h2 : 2 * evalExponent x B m < 2 * evalExponent x B m₀ := by
-    rwa [two_mul_evalExponent, two_mul_evalExponent]
-  omega
-
-/-- Because `v(d_m) ≥ max 0 (-m)` in `AnnularRing p`, we have `valScore x m ≤ -|m|` whenever
-`d_m ≠ 0`, so `valScore` drops off linearly outside any finite window. -/
-private theorem valScore_le_neg_abs {x : AnnularRing p} {m : ℤ} (hm : x.coeff m ≠ 0) :
-    valScore x m ≤ -|m| := by
-  have h := x.norm_coeff_le m
-  rw [PadicInt.norm_eq_zpow_neg_valuation hm, zpow_le_zpow_iff_right₀ (one_lt_p (p := p))] at h
-  rw [valScore]; cases abs_cases m <;> omega
-
-/-- Strategy for finding a dominant term: pick any nonzero coefficient `d_{m₁}` and set the
-window radius `R = |m₁| + 2 * v(d_{m₁})`, so `valScore x m₁ ≥ -R`. Among nonzero coefficients in
-`[-R, R]`, let `m₀` be the largest index attaining the maximum `valScore`. For every `B ≥ R + 1`,
-`(2B + 1) * valScore x m + m` is strictly largest at `m₀`:
-* inside `[-R, R]`, ties in `valScore` break in favor of `m₀` by maximality (`m < m₀`), while a
-  drop of at least `1` in `valScore` outweighs `m - m₀ ≤ 2R < 2B + 1`;
-* outside `[-R, R]`, `|m| ≥ R + 1` gives `valScore x m ≤ -|m| < -R ≤ valScore x m₀`, and the
-  margin `(2B + 1) * (valScore x m₀ - valScore x m)` dominates `m - m₀ ≤ |m| + R`. -/
-private theorem exists_dominant_index {x : AnnularRing p} (hx : x ≠ 0) :
-    ∃ (R : ℕ) (m₀ : ℤ), x.coeff m₀ ≠ 0 ∧ ∀ ⦃B : ℕ⦄, R + 1 ≤ B → ∀ ⦃m : ℤ⦄, m ≠ m₀ → x.coeff m ≠ 0 →
-      (2 * (B : ℤ) + 1) * valScore x m + m < (2 * (B : ℤ) + 1) * valScore x m₀ + m₀ := by
-  classical
-  have ⟨m₁, hm₁⟩ : ∃ m₁ : ℤ, x.coeff m₁ ≠ 0 := Classical.byContradiction fun h ↦
-    hx (AnnularRing.ext (funext <| by simpa using h))
-  set R : ℕ := m₁.natAbs + 2 * (x.coeff m₁).valuation
-  let S : Finset ℤ := (Finset.Icc (-(R : ℤ)) R).filter fun m ↦ x.coeff m ≠ 0
-  have hm₁S : m₁ ∈ S :=
-    Finset.mem_filter.2 ⟨Finset.mem_Icc.2 (by have := Int.abs_eq_natAbs m₁; omega), hm₁⟩
-  let Smax : Finset ℤ := S.filter fun m ↦ valScore x m = S.sup' ⟨m₁, hm₁S⟩ (valScore x)
-  have hSmax : Smax.Nonempty := let ⟨m, hm⟩ := Finset.exists_mem_eq_sup' ⟨m₁, hm₁S⟩ (valScore x)
-    ⟨m, Finset.mem_filter.2 ⟨hm.1, hm.2.symm⟩⟩
-  let m₀ : ℤ := Smax.max' hSmax
-  obtain ⟨hm₀S, hm₀_score⟩ := Finset.mem_filter.1 (Finset.max'_mem Smax hSmax)
-  obtain ⟨hm₀_Icc, hm₀_ne⟩ := Finset.mem_filter.1 hm₀S
-  rw [Finset.mem_Icc] at hm₀_Icc
-  refine ⟨R, m₀, hm₀_ne, fun B hB m hm_ne hm0 ↦ ?_⟩
-  have hRB : (R : ℤ) < B := by omega
-  by_cases hmIcc : -(R : ℤ) ≤ m ∧ m ≤ R
-  · have hmS : m ∈ S := Finset.mem_filter.2 ⟨Finset.mem_Icc.2 hmIcc, hm0⟩
-    rcases ((Finset.le_sup' (valScore x) hmS).trans_eq hm₀_score.symm).eq_or_lt with heq | hlt
-    · have hlt_m₀ := lt_of_le_of_ne
-        (Finset.le_max' Smax m (Finset.mem_filter.2 ⟨hmS, heq.trans hm₀_score⟩)) hm_ne
-      rw [heq]; linarith
-    · nlinarith [Int.le_sub_one_of_lt hlt, hRB, hmIcc.2, hm₀_Icc.1]
-  · have habs : (R : ℤ) + 1 ≤ |m| := by cases abs_cases m <;> omega
-    have hm₀_ge : -(R : ℤ) ≤ valScore x m₀ := (by dsimp [valScore, R]; omega :
-      -(R : ℤ) ≤ valScore x m₁).trans (hm₀_score ▸ Finset.le_sup' (valScore x) hm₁S)
-    nlinarith [valScore_le_neg_abs hm0, le_abs_self m, hRB, hm₀_Icc.1, hm₀_ge]
-
-/-- If `x ≠ 0`, then at any sufficiently large radius `‖t‖ = p ^ (-B / (2B + 1))` the dominant
-term `d_{m₀} t ^ {m₀}` strictly exceeds the ultrametric bound on the rest of the series, so
-`eval t ht.1 ht.2 x ≠ 0`. -/
-private theorem exists_forall_eval_ne_zero_of_ne_zero {x : AnnularRing p} (hx : x ≠ 0) :
-    ∃ B₀ : ℕ, ∀ ⦃B : ℕ⦄, B₀ ≤ B → ∀ (t : ℂ_[p]) (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1),
-      ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) → eval t ht.1 ht.2 x ≠ 0 := by
-  classical
-  obtain ⟨R, m₀, hm₀_ne, hdom⟩ := exists_dominant_index hx
-  refine ⟨R + 1, fun B hB t ht hnorm_t heval0 ↦ ?_⟩
-  have h2B1_pos : (0 : ℝ) < 2 * (B : ℝ) + 1 := by positivity
-  let f : ℤ → ℂ_[p] := fun m ↦ algebraMap ℚ_[p] ℂ_[p] (x.coeff m) * t ^ m
-  -- Every nonzero term has norm `p ^ (evalExponent x B m / (2B + 1))`.
-  have hnorm_eq {m : ℤ} (hm : x.coeff m ≠ 0) :
-      ‖f m‖ = (p : ℝ) ^ ((evalExponent x B m : ℝ) / (2 * B + 1)) := by
-    rw [show ‖f m‖ = ‖x.coeff m‖ * ‖t‖ ^ m by
-        rw [norm_mul, norm_algebraMap', PadicInt.norm_coe, norm_zpow],
-      PadicInt.norm_eq_zpow_neg_valuation hm, hnorm_t, ← Real.rpow_intCast,
-      ← Real.rpow_intCast (n := m), ← Real.rpow_mul p_pos.le, ← Real.rpow_add p_pos]
-    congr 1; simp only [evalExponent]; push_cast; field_simp [h2B1_pos.ne']; ring
-  -- Bound the tail excluding `m₀` by `r = p ^ ((evalExponent x B m₀ - 1) / (2B + 1)) < ‖f m₀‖`.
-  set r : ℝ := (p : ℝ) ^ (((evalExponent x B m₀ - 1 : ℤ) : ℝ) / (2 * B + 1))
-  have hr0 : 0 ≤ r := Real.rpow_nonneg (p_pos (p := p)).le _
-  have hr_lt : r < ‖f m₀‖ := by
-    rw [hnorm_eq hm₀_ne]
-    exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
-      (div_lt_div_of_pos_right (by exact_mod_cast sub_one_lt (evalExponent x B m₀)) h2B1_pos)
-  have htail_norm : ‖∑' m : ℤ, if m = m₀ then (0 : ℂ_[p]) else f m‖ ≤ r :=
-    IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hr0 fun m ↦ by
-      by_cases hm_eq : m = m₀; · simp [hm_eq, hr0]
-      by_cases hm0 : x.coeff m = 0; · simp [hm_eq, f, hm0, hr0]
-      rw [ite_eq_right hm_eq, hnorm_eq hm0]
-      exact Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le (div_le_div_of_nonneg_right
-        (by exact_mod_cast evalExponent_le_sub_one (hdom hB hm_eq hm0)) h2B1_pos.le)
-  -- Since `f m₀ + tail = 0`, `‖f m₀‖ = ‖tail‖ ≤ r`, contradicting `r < ‖f m₀‖`.
-  have hsplit := (hasSum_eval ht.1 ht.2 x).summable.tsum_eq_add_tsum_ite m₀
-  rw [← eval_apply ht.1 ht.2 x, heval0] at hsplit
-  linarith [(congr_arg norm (eq_neg_of_add_eq_zero_left hsplit.symm)).trans (norm_neg _)]
-
-/-- For any rational `q ∈ (0, 1)`, there exists `t : ℂ_[p]` in the open annulus `(p⁻¹, 1)` with
-`‖t‖ = p ^ (-q)`. -/
-private theorem exists_padicComplex_norm_eq_rpow_neg {q : ℚ} (hq0 : 0 < q) (hq1 : q < 1) :
-    ∃ t : ℂ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by
-  obtain ⟨t, ht⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-q)
-  have hnorm : ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by simpa using ht
-  have hp := one_lt_p (p := p); refine ⟨t, ⟨?_, ?_⟩, hnorm⟩
-  · rw [hnorm, ← Real.rpow_neg_one (p : ℝ)]
-    exact Real.rpow_lt_rpow_of_exponent_lt hp (neg_lt_neg (by exact_mod_cast hq1))
-  · rw [hnorm, ← Real.rpow_zero (p : ℝ)]
-    exact Real.rpow_lt_rpow_of_exponent_lt hp (neg_lt_zero.2 (by exact_mod_cast hq0))
-
-private theorem exists_padicComplex_ratio (B : ℕ) (hB : 1 ≤ B) : ∃ t : ℂ_[p],
-    ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) := by
-  simpa using exists_padicComplex_norm_eq_rpow_neg (p := p) (q := (B : ℚ) / (2 * B + 1))
-    (by positivity) ((div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : B < 2 * B + 1)))
-
 /-- Elements of `AnnularRing p` agreeing on `p⁻¹ < ‖t‖ < 1` in `ℂ_p` are equal. -/
 theorem eq_of_forall_eval_eq {x y : AnnularRing p}
     (h : ∀ (t : ℂ_[p]) (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1),
@@ -217,18 +93,12 @@ theorem eq_of_forall_eval_eq {x y : AnnularRing p}
   sub_eq_zero.1 <| eq_zero_of_forall_eval_eq_zero (K := ℂ_[p]) fun t h₀ h₁ ↦ by
     rw [map_sub, h t ⟨h₀, h₁⟩, sub_self]
 
-instance instNoZeroDivisors : NoZeroDivisors (AnnularRing p) where
-  eq_zero_or_eq_zero_of_mul_eq_zero {x y} hxy := by
-    by_contra! hne
-    obtain ⟨Bx, hBx⟩ := exists_forall_eval_ne_zero_of_ne_zero hne.1
-    obtain ⟨By, hBy⟩ := exists_forall_eval_ne_zero_of_ne_zero hne.2
-    obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_ratio (p := p) (max (max Bx By) 1)
-      (le_max_right _ _)
-    exact mul_ne_zero (hBx ((le_max_left Bx By).trans (le_max_left _ _)) t ht hnorm)
-      (hBy ((le_max_right Bx By).trans (le_max_left _ _)) t ht hnorm)
-      (by rw [← map_mul, hxy, map_zero])
+instance instIsDomain : IsDomain (AnnularRing p) :=
+  letI : IsDomain (CompletedNodeAlgebra ℤ_[p] (p : ℤ_[p])) :=
+    CompletedNodeAlgebra.isDomain (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
+      PadicInt.p_nonunit
+  quotientEquiv.symm.toMulEquiv.isDomain
 
-instance instIsDomain : IsDomain (AnnularRing p) := NoZeroDivisors.to_isDomain _
 instance instIsDomainLocalizationAway : IsDomain (Localization.Away (T : AnnularRing p)) :=
   Localization.Away.isDomain (T_ne_zero (p := p))
 end JointInjectivity
@@ -300,8 +170,9 @@ theorem not_lipschitzWith_eval_of_lt (hα : α ∈ Set.Ioo 0 1)
     ¬ LipschitzWith c (eval hα ht) := fun hL ↦ by
   obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (c : ℝ) ((one_lt_div hα.1).2 hαt)
   have hdist := hL.dist_le_mul (algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ n) 0
-  simp [show ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ n‖ = α ^ n by
-    simpa using (pseudoUniformizer p hα).norm_pow n] at hdist
+  have hnorm_Tn : ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ n‖ = α ^ n := by
+    simpa using (pseudoUniformizer p hα).norm_pow n
+  simp [hnorm_Tn] at hdist
   linarith [(div_pow ‖t‖ α n).trans_le ((div_le_iff₀ (pow_pos hα.1 n)).2 hdist)]
 
 /-- The Tate gauge bound `‖z‖ ≤ α ^ r` implies `‖eval hα ht z‖ ≤ ‖t‖ ^ r`. -/
@@ -309,9 +180,9 @@ theorem norm_eval_le_zpow_of_norm_le_zpow (hα : α ∈ Set.Ioo 0 1)
     (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) {z : AnnularLaurent p hα} {r : ℤ}
     (hz : ‖z‖ ≤ α ^ r) : ‖eval hα ht z‖ ≤ ‖t‖ ^ r := by
   obtain ⟨x, hx⟩ := (mem_ringOfDefinition_iff _).1 ((norm_le_zpow_iff hα z r).1 hz)
-  rw [show z = (unitT p hα ^ r).val * algebraMap (AnnularRing p) _ x by
-      simp [hx, ← mul_assoc, ← Units.val_mul],
-    map_mul, eval_zpow_unitT, eval_algebraMap, norm_mul, norm_zpow]
+  have hz_eq : z = (unitT p hα ^ r).val * algebraMap (AnnularRing p) _ x := by
+    simp [hx, ← mul_assoc, ← Units.val_mul]
+  rw [hz_eq, map_mul, eval_zpow_unitT, eval_algebraMap, norm_mul, norm_zpow]
   exact mul_le_of_le_one_right (zpow_nonneg (norm_nonneg t) r) (norm_eval_le_one ht.1 ht.2 x)
 
 /-- Every annulus evaluation into a complete normed field extension of `ℚ_p` is continuous. -/
@@ -414,7 +285,7 @@ theorem exists_continuous_not_lipschitzWith_eval (hα : α ∈ Set.Ioo 0 1) :
     (one_lt_inv₀ hβ_pos).2 (max_lt (inv_lt_one_of_one_lt₀ (one_lt_p (p := p))) hα.2)
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (p : ℝ) hβ_inv
   let N : ℕ := m + 2; have hN_pos : (0 : ℝ) < N := by positivity
-  obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_norm_eq_rpow_neg (p := p) (q := (1 : ℚ) / N)
+  obtain ⟨t, ht, hnorm⟩ := PadicComplex.exists_norm_mem_Ioo_eq_rpow_neg (p := p) (q := (1 : ℚ) / N)
     (by positivity) ((div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : 1 < N)))
   have hβ_lt_t : β < ‖t‖ := by
     have hrpow : (p : ℝ) ^ ((1 : ℝ) / N) < β⁻¹ := by

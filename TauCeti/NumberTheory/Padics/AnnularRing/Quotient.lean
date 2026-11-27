@@ -83,8 +83,10 @@ theorem uCoeff_eq_of_mul_eq {x : AnnularRing p} {n : ℕ} {c : ℤ_[p]}
 /-- `uCoeff (ofPowerSeriesU (PowerSeries.mk 1))` is constantly `1`, so it does not tend to `0`. -/
 theorem not_tendsto_uCoeff_ofPowerSeriesU_mk_one :
     ¬ Tendsto (uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧))) atTop (𝓝 0) := by
-  rw [show uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧)) = fun _ ↦ 1 from
-    funext fun _ ↦ by simp, tendsto_const_nhds_iff]; exact one_ne_zero
+  have hconst : uCoeff (ofPowerSeriesU (PowerSeries.mk 1 : ℤ_[p]⟦X⟧)) = fun _ ↦ 1 :=
+    funext fun _ ↦ by simp
+  rw [hconst, tendsto_const_nhds_iff]
+  exact one_ne_zero
 
 private theorem uCoeff_ofPowerSeriesT_mul_U_pow_of_lt (f : ℤ_[p]⟦X⟧) {k n : ℕ} (hk : k < n) :
     uCoeff (ofPowerSeriesT f * U ^ k) n = 0 := uCoeff_eq_of_mul_eq <| by
@@ -106,10 +108,10 @@ theorem tendsto_uCoeff_of_forall_pow_dvd_eval₂ {x : AnnularRing p}
   refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := TauCeti.exists_zpow_neg_lt (one_lt_p (p := p)) hε
   obtain ⟨P, y, hy⟩ := hx N; refine ⟨P.natDegree + 1, fun n hn ↦ ?_⟩
+  have hx_eq : x = P.eval₂ ofPowerSeriesT.toRingHom U + ((p : ℤ_[p]) ^ N : ℤ_[p]) • y := by
+    rw [Algebra.smul_def, map_pow, map_natCast, ← hy, add_sub_cancel]
   have hcoeff : uCoeff x n = (p : ℤ_[p]) ^ N * uCoeff y n := by
-    rw [show x = P.eval₂ ofPowerSeriesT.toRingHom U + ((p : ℤ_[p]) ^ N : ℤ_[p]) • y by
-      rw [Algebra.smul_def, map_pow, map_natCast, ← hy, add_sub_cancel],
-      uCoeff_add, uCoeff_eval₂_of_natDegree_lt P (by omega), zero_add, uCoeff_smul]
+    rw [hx_eq, uCoeff_add, uCoeff_eval₂_of_natDegree_lt P (by omega), zero_add, uCoeff_smul]
   rw [dist_zero_right, hcoeff]
   exact ((PadicInt.norm_le_pow_iff_mem_span_pow _ N).2
     (Ideal.mem_span_singleton.2 ⟨uCoeff y n, rfl⟩)).trans_lt hN
