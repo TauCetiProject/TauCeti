@@ -14,7 +14,6 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
-import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
@@ -174,16 +173,7 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] 
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
   have := M.krullDimLE_sections_quotient (d := 1) hU hπ
-  have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
-    refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
-    -- The generic fibre is the basic open of the pullback of `π`.
-    have hrange : M.genericι.opensRange =
-        M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
-      ext1
-      rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
-        M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
-    rw [hrange, M.toBase.algebraMap_sections]
-    exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
+  have := M.isLocalization_away_app_genericι hU hπ
   have hB := toK.locally_isStandardSmoothOfRelativeDimension_sections 1 (hU.preimage M.genericι)
   have := SmoothOfRelativeDimension.smooth 1 toK
   have := AlgebraicGeometry.IsRegular.of_smooth toK

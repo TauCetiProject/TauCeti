@@ -34,6 +34,8 @@ the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a
 * `AlgebraicGeometry.Scheme.Hom.isIso_fromNormalization_iff`: the normalization of `Y` in `X` is
   `Y` itself if and only if, over every affine open of `Y`, the sections of `Y` map injectively
   onto the integral closure.
+* `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_fromNormalization_iff`: the same criterion
+  over a single affine open of `Y`.
 * `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
   scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
   function field.
@@ -146,6 +148,21 @@ theorem isIso_fromNormalization_iff :
   simp only [Scheme.Hom.app_eq_appLE]
   -- The preimage `𝟙 Y ⁻¹ᵁ U` is `U` by definition; it occurs inside the dependent `appLE`, where
   -- rewriting with `TopologicalSpace.Opens.map_id_obj` is not possible.
+  rfl
+
+/-- The relative normalization `f.normalization ⟶ Y` is an isomorphism over an affine open
+`U ⊆ Y` if and only if the map `Γ(Y, U) → Γ(X, f ⁻¹ U)` is injective and its image contains every
+element integral over `Γ(Y, U)`: that is, `Γ(Y, U)` is integrally closed in `Γ(X, f ⁻¹ U)`. -/
+theorem isIso_morphismRestrict_fromNormalization_iff {U : Y.Opens} (hU : IsAffineOpen U) :
+    IsIso (f.fromNormalization ∣_ U) ↔ Function.Injective (f.app U) ∧
+      ∀ s, (f.app U).hom.IsIntegralElem s → s ∈ (f.app U).hom.range := by
+  have H : f = f ≫ 𝟙 Y := (Category.comp_id f).symm
+  have h : f.normalizationDesc f (𝟙 Y) H = f.fromNormalization := by
+    simpa using f.normalizationDesc_comp f (𝟙 Y) H
+  rw [isIso_morphismRestrict_iff_isIso_app _ hU, ← h]
+  refine (f.isIso_normalizationDesc_app_iff f (𝟙 Y) H hU).trans ?_
+  simp only [Scheme.Hom.app_eq_appLE]
+  -- As in `isIso_fromNormalization_iff`, the preimage `𝟙 Y ⁻¹ᵁ U` is `U` by definition.
   rfl
 
 end AlgebraicGeometry.Scheme.Hom
