@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Probability.LargeDeviations.Basic
 import Mathlib.MeasureTheory.Integral.Lebesgue.Add
+import TauCeti.MeasureTheory.Integral.Lebesgue.Slabs
 import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.LargestTerm
 import TauCeti.Data.EReal.Operations
@@ -24,12 +25,13 @@ logarithms of the exponential moments `ε i * log ∫⁻ exp (f / ε i) dμ i` t
 `sup_x (f x - I x)` in `EReal`.
 
 Varadhan's lemma says that a large deviation principle implies the Laplace principle with the
-same rate, at an inverse speed tending to `0`. The lower bound holds for every continuous `f`:
-near a point `x` the integrand exceeds `exp ((f x - δ) / ε i)` on the open set
-`{f > f x - δ}`, whose rate is bounded below by the principle. The upper bound for bounded `f`
-splits the range of `f` into finitely many closed slabs of width `δ` and combines the upper bound
-of the principle on each slab with the principle of the largest term. Neither goodness of the
-rate function nor total mass `1` is needed.
+same rate, at an inverse speed tending to `0`. The lower bound holds for every lower
+semicontinuous `f`: near a point `x` the integrand exceeds `exp ((f x - δ) / ε i)` on the open
+set `{f > f x - δ}`, whose rate is bounded below by the principle. The upper bound holds for
+every bounded upper semicontinuous `f`: it splits the range of `f` into finitely many closed slabs
+of width `δ` (`TauCeti.lintegral_ofReal_exp_div_le_sum_slabs`) and combines the upper bound of the
+principle on each slab with the principle of the largest term. Neither goodness of the rate
+function nor total mass `1` is needed.
 
 The *moment condition* is a criterion for the tail condition of Varadhan's lemma for unbounded
 functions: if the exponential moments of `γ * φ` have finite limsup rate for some `γ > 1`, then
@@ -42,11 +44,9 @@ the rate of the exponential moment of `φ` restricted to `{M ≤ φ}` tends to `
 ## Main results
 
 * `TauCeti.Probability.HasLDP.le_liminf_coe_mul_log_lintegral_exp`: the lower bound of
-  Varadhan's lemma, for every continuous function.
-* `TauCeti.Probability.lintegral_ofReal_exp_div_le_sum_slabs`: the exponential moment of a
-  bounded function is at most a finite sum over slabs of its range.
+  Varadhan's lemma, for every lower semicontinuous function.
 * `TauCeti.Probability.HasLDP.limsup_coe_mul_log_lintegral_exp_le`: the upper bound of
-  Varadhan's lemma, for bounded continuous functions.
+  Varadhan's lemma, for bounded upper semicontinuous functions.
 * `TauCeti.Probability.HasLDP.laplacePrinciple`: Varadhan's lemma for bounded continuous
   functions.
 * `TauCeti.Probability.tendsto_limsup_log_setLIntegral_exp_of_moment`: the moment condition
@@ -54,9 +54,10 @@ the rate of the exponential moment of `φ` restricted to `{M ≤ φ}` tends to `
 
 ## Implementation notes
 
-The roadmap states these results at a speed `a n → ∞`. Here they are stated, like
-`TauCeti.Probability.HasLDP`, at an inverse speed `ε` along an arbitrary filter; speed `a n`
-corresponds to `ε n = (a n)⁻¹`, and the exponent `a n * f x` to `f x / ε n`.
+As for `TauCeti.Probability.HasLDP`, the results are stated at an inverse speed `ε i ≥ 0` along
+an arbitrary filter. A family indexed by `n` at a speed `a n → ∞` is covered by taking
+`ε n = (a n)⁻¹`, which tends to `0`; the exponent `a n * f x` then reads `f x / ε n`, and the
+normalized logarithm `(a n)⁻¹ * log ∫⁻ exp (a n * f) dμ n` reads `ε n * log ∫⁻ exp (f / ε n) dμ n`.
 
 The proof of `HasLDP.laplacePrinciple` follows `CKMA.varadhan` in lean-CKMA
 (`CKMA/Probability/LargeDeviations.lean`), adapted from real Bochner integrals at speed `n + 1`
@@ -76,45 +77,6 @@ open Filter Topology MeasureTheory
 open scoped ENNReal NNReal BoundedContinuousFunction
 
 namespace TauCeti.Probability
-
-section Slabs
-
-variable {X : Type*} [MeasurableSpace X]
-
-/-- **Slab bound.** Let `|f| ≤ M` and `δ > 0`, and split the range `[-M, M]` of `f` into the
-slabs `{c k ≤ f}` with lower edges `c k = -M + k δ`, `k < ⌊2 M / δ⌋₊ + 1`. Then the exponential
-moment `∫⁻ exp (f / e) dν` is at most the sum over the slabs of `exp ((c k + δ) / e) ν {c k ≤ f}`.
-No measurability is needed: `ν` of a set is its outer measure. -/
-theorem lintegral_ofReal_exp_div_le_sum_slabs {f : X → ℝ} {M : ℝ} (hf : ∀ x, |f x| ≤ M) {δ : ℝ}
-    (hδ : 0 < δ) (e : ℝ≥0) (ν : Measure X) :
-    ∫⁻ x, ENNReal.ofReal (Real.exp (f x / e)) ∂ν ≤
-      ∑ k ∈ Finset.range (⌊2 * M / δ⌋₊ + 1),
-        ENNReal.ofReal (Real.exp ((-M + k * δ + δ) / e)) * ν {x | -M + k * δ ≤ f x} := by
-  -- Integrate indicators of measurable hulls of the slabs, which have the same measure.
-  set T : ℕ → Set X := fun k => toMeasurable ν {x | -M + k * δ ≤ f x}
-  have hT (k : ℕ) : MeasurableSet (T k) := measurableSet_toMeasurable ν _
-  calc ∫⁻ x, ENNReal.ofReal (Real.exp (f x / e)) ∂ν
-      ≤ ∫⁻ x, ∑ k ∈ Finset.range (⌊2 * M / δ⌋₊ + 1),
-          (T k).indicator (fun _ => ENNReal.ofReal (Real.exp ((-M + k * δ + δ) / e))) x ∂ν :=
-        lintegral_mono fun x => ?_
-    _ = _ := by
-        rw [lintegral_finsetSum _ fun k _ => measurable_const.indicator (hT k)]
-        simp only [lintegral_indicator_const (hT _), T, measure_toMeasurable]
-  -- The point `x` lies in the slab with index `⌊(f x + M) / δ⌋₊`.
-  have hfx := abs_le.1 (hf x)
-  have h0 : 0 ≤ (f x + M) / δ := div_nonneg (by linarith) hδ.le
-  have hk1 := (le_div_iff₀ hδ).1 (Nat.floor_le h0)
-  have hk2 := (div_lt_iff₀ hδ).1 (Nat.lt_floor_add_one ((f x + M) / δ))
-  have hkN : ⌊(f x + M) / δ⌋₊ ∈ Finset.range (⌊2 * M / δ⌋₊ + 1) :=
-    Finset.mem_range.2 <| Nat.lt_succ_of_le <|
-      Nat.floor_le_floor (div_le_div_of_nonneg_right (by linarith) hδ.le)
-  refine le_trans ?_ (Finset.single_le_sum (fun _ _ => zero_le) hkN)
-  -- Membership in the set-builder slab is its defining inequality.
-  rw [Set.indicator_of_mem (subset_toMeasurable ν _ (show -M + _ * δ ≤ f x by linarith))]
-  exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2
-    (div_le_div_of_nonneg_right (by linarith) e.coe_nonneg))
-
-end Slabs
 
 section Laplace
 
@@ -146,10 +108,10 @@ theorem LaplacePrinciple.tendsto (h : LaplacePrinciple l ε μ I) (f : X →ᵇ 
     (𝓝 (⨆ x, ((f x : EReal) - I x))) :=
   h f
 
-/-- **Lower bound of Varadhan's lemma.** Under a large deviation principle, every continuous `f`
-satisfies `sup_x (f x - I x) ≤ liminf ε i * log ∫⁻ exp (f / ε i) dμ i`. -/
+/-- **Lower bound of Varadhan's lemma.** Under a large deviation principle, every lower
+semicontinuous `f` satisfies `sup_x (f x - I x) ≤ liminf ε i * log ∫⁻ exp (f / ε i) dμ i`. -/
 theorem HasLDP.le_liminf_coe_mul_log_lintegral_exp [OpensMeasurableSpace X]
-    (h : HasLDP l ε μ I) {f : X → ℝ} (hf : Continuous f) :
+    (h : HasLDP l ε μ I) {f : X → ℝ} (hf : LowerSemicontinuous f) :
     ⨆ x, ((f x : EReal) - I x) ≤ liminf (fun i => ((ε i : ℝ) : EReal) *
       ENNReal.log (∫⁻ x, ENNReal.ofReal (Real.exp (f x / ε i)) ∂μ i)) l := by
   set L := liminf (fun i => ((ε i : ℝ) : EReal) *
@@ -157,7 +119,7 @@ theorem HasLDP.le_liminf_coe_mul_log_lintegral_exp [OpensMeasurableSpace X]
   -- Every level `c < f x` gives `c - I x ≤ L`, through the open set `{c < f}`.
   have hc (x : X) (c : ℝ) (hcx : c < f x) : (c : EReal) - I x ≤ L := by
     set U := {y | c < f y}
-    have hU : IsOpen U := isOpen_lt continuous_const hf
+    have hU : IsOpen U := hf.isOpen_preimage c
     have hle (i : ι) (hi : 0 < ε i) : (c : EReal) + ((ε i : ℝ) : EReal) * ENNReal.log (μ i U) ≤
         ((ε i : ℝ) : EReal) *
           ENNReal.log (∫⁻ x, ENNReal.ofReal (Real.exp (f x / ε i)) ∂μ i) := by
@@ -186,10 +148,11 @@ theorem HasLDP.le_liminf_coe_mul_log_lintegral_exp [OpensMeasurableSpace X]
   rwa [← EReal.coe_ennreal_toReal hI, ← EReal.coe_sub, add_sub_cancel_right] at hz'
 
 /-- **Upper bound of Varadhan's lemma.** Under a large deviation principle at an inverse speed
-tending to `0`, every bounded continuous `f` satisfies
+tending to `0`, every upper semicontinuous `f` with `|f| ≤ M` satisfies
 `limsup ε i * log ∫⁻ exp (f / ε i) dμ i ≤ sup_x (f x - I x)`. -/
 theorem HasLDP.limsup_coe_mul_log_lintegral_exp_le (h : HasLDP l ε μ I)
-    (hε : Tendsto ε l (𝓝 0)) (f : X →ᵇ ℝ) :
+    (hε : Tendsto ε l (𝓝 0)) {f : X → ℝ} (hf : UpperSemicontinuous f) {M : ℝ}
+    (hM : ∀ x, |f x| ≤ M) :
     limsup (fun i => ((ε i : ℝ) : EReal) *
       ENNReal.log (∫⁻ x, ENNReal.ofReal (Real.exp (f x / ε i)) ∂μ i)) l ≤
       ⨆ x, ((f x : EReal) - I x) := by
@@ -197,18 +160,17 @@ theorem HasLDP.limsup_coe_mul_log_lintegral_exp_le (h : HasLDP l ε μ I)
   -- By the slab bound and the principle of the largest term, the limsup is at most `S + δ`.
   have hδ (δ : ℝ) (hδ : 0 < δ) : limsup (fun i => ((ε i : ℝ) : EReal) *
       ENNReal.log (∫⁻ x, ENNReal.ofReal (Real.exp (f x / ε i)) ∂μ i)) l ≤ S + δ := by
-    set F : ℕ → Set X := fun k => {x | -‖f‖ + k * δ ≤ f x}
+    set F : ℕ → Set X := fun k => {x | -M + k * δ ≤ f x}
     refine (ENNReal.limsup_coe_mul_log_mono (Eventually.of_forall fun i =>
-      lintegral_ofReal_exp_div_le_sum_slabs (fun x => (Real.norm_eq_abs _).symm.trans_le
-        (f.norm_coe_le_norm x)) hδ (ε i) (μ i))).trans ?_
+      lintegral_ofReal_exp_div_le_sum_slabs hM hδ (ε i) (μ i))).trans ?_
     rw [ENNReal.limsup_coe_mul_log_sum _ _ hε fun h0 =>
       absurd (Finset.range_eq_empty_iff.1 h0) (Nat.add_one_ne_zero _)]
     refine iSup₂_le fun k _ => ?_
-    -- The slab `F k` has rate at most `S + δ`, since `f ≥ -‖f‖ + k δ` on it.
+    -- The slab `F k` has rate at most `S + δ`, since `f ≥ -M + k δ` on it.
     rw [limsup_congr (h.eventually_pos.mono fun i hi =>
       ENNReal.coe_mul_log_ofReal_exp_div_mul hi _ (μ i (F k))), EReal.limsup_coe_add]
     refine (add_le_add le_rfl
-      (h.upper_bound _ (isClosed_le continuous_const f.continuous))).trans ?_
+      (h.upper_bound _ (hf.isClosed_preimage _))).trans ?_
     rw [add_comm, ← EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _))
       (.inl (EReal.coe_ne_top _))]
     refine TauCeti.EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx => ?_
@@ -233,8 +195,10 @@ large deviation principle implies the Laplace principle with the same rate (Dupu
 Theorem 1.2.1; Dembo–Zeitouni, Theorem 4.3.1). -/
 theorem HasLDP.laplacePrinciple [OpensMeasurableSpace X] (h : HasLDP l ε μ I)
     (hε : Tendsto ε l (𝓝 0)) : LaplacePrinciple l ε μ I := fun f =>
-  tendsto_of_le_liminf_of_limsup_le (h.le_liminf_coe_mul_log_lintegral_exp f.continuous)
-    (h.limsup_coe_mul_log_lintegral_exp_le hε f)
+  tendsto_of_le_liminf_of_limsup_le
+    (h.le_liminf_coe_mul_log_lintegral_exp f.continuous.lowerSemicontinuous)
+    (h.limsup_coe_mul_log_lintegral_exp_le hε f.continuous.upperSemicontinuous
+      fun x => (Real.norm_eq_abs _).symm.trans_le (f.norm_coe_le_norm x))
 
 end Laplace
 
@@ -270,7 +234,7 @@ theorem tendsto_limsup_log_setLIntegral_exp_of_moment (hε : ∀ᶠ i in l, 0 < 
           rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, ← add_div]
           refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2
             (div_le_div_of_nonneg_right ?_ (ε i).coe_nonneg))
-          nlinarith [mul_nonneg (sub_nonneg.2 hγ.le) (sub_nonneg.2 (show M ≤ φ x from hx))]
+          nlinarith [mul_nonneg (sub_nonneg.2 hγ.le) (sub_nonneg.2 (Set.mem_ofPred.1 hx))]
       _ ≤ ∫⁻ x, ENNReal.ofReal (Real.exp ((1 - γ) * M / ε i)) *
             ENNReal.ofReal (Real.exp (γ * φ x / ε i)) ∂μ i :=
           setLIntegral_le_lintegral _ _
