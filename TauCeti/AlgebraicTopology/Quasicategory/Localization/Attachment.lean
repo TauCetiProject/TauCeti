@@ -1,0 +1,178 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.Limits.Shapes.Products
+public import TauCeti.AlgebraicTopology.Quasicategory.CoherentIso
+
+/-!
+# Attaching walking equivalences
+
+For a simplicial set `C` and a set `W` of its edges, `C.equivalenceAttachment W` is the
+pushout attaching a coherent isomorphism along every edge in `W`. A map from `C` to
+a quasicategory extends across this pushout exactly when it inverts every edge of `W`.
+Maps sending the marked edges to degenerate edges extend using constant maps on the
+attached copies. The pushout itself need not be a quasicategory.
+
+## References
+
+* J. Lurie, *Higher Topos Theory*, §1.2.7.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory Limits Simplicial
+
+namespace SSet
+
+/-- Attach one coherent isomorphism along each edge in `W`. -/
+noncomputable def equivalenceAttachment (C : SSet.{u}) (W : Set (C _⦋1⦌)) : SSet.{u} :=
+  pushout (Sigma.desc (fun w : W ↦ yonedaEquiv.symm w.val))
+    (Limits.Sigma.map (fun _ : W ↦ coherentIso.edgeInclusion))
+
+namespace equivalenceAttachment
+
+variable {C D B : SSet.{u}} (W : Set (C _⦋1⦌))
+
+/-- The canonical map to the attachment. -/
+noncomputable def ι : C ⟶ C.equivalenceAttachment W := pushout.inl _ _
+
+/-- The map from the coproduct of coherent isomorphisms to the attachment. -/
+noncomputable def ofCoproduct : (∐ fun _ : W ↦ coherentIso.{u}) ⟶
+    C.equivalenceAttachment W := pushout.inr _ _
+
+/-- The copy of the coherent isomorphism attached at `w`. -/
+noncomputable def ofEdge (w : W) : coherentIso ⟶ C.equivalenceAttachment W :=
+  Sigma.ι (fun _ : W ↦ coherentIso.{u}) w ≫ ofCoproduct W
+
+/-- The defining pushout square of the attachment. -/
+theorem isPushout : IsPushout
+    (Sigma.desc (fun w : W ↦ yonedaEquiv.symm w.val))
+    (Limits.Sigma.map (fun _ : W ↦ coherentIso.edgeInclusion)) (ι W) (ofCoproduct W) :=
+  IsPushout.of_hasPushout _ _
+
+/-- The forward edge of an attached coherent isomorphism is the corresponding marked edge. -/
+@[reassoc]
+lemma edgeInclusion_ofEdge (w : W) :
+    coherentIso.edgeInclusion ≫ ofEdge W w = yonedaEquiv.symm w.val ≫ ι W := by
+  have h := congrArg (fun f ↦ Sigma.ι (fun _ : W ↦ Δ[1]) w ≫ f) (isPushout W).w
+  simpa [ofEdge] using h.symm
+
+/-- Descent to the attachment from maps agreeing along every marked edge. -/
+noncomputable def desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D))
+    (h : ∀ w, coherentIso.edgeInclusion ≫ g w = yonedaEquiv.symm w.val ≫ f) :
+    C.equivalenceAttachment W ⟶ D :=
+  (isPushout W).desc f (Sigma.desc g) (by
+    apply Sigma.hom_ext
+    intro w
+    simpa using (h w).symm)
+
+@[reassoc (attr := simp)]
+lemma ι_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) :
+    ι W ≫ desc W f g h = f := (isPushout W).inl_desc _ _ _
+
+@[reassoc (attr := simp)]
+lemma ofCoproduct_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) :
+    ofCoproduct W ≫ desc W f g h = Sigma.desc g := (isPushout W).inr_desc _ _ _
+
+@[reassoc (attr := simp)]
+lemma ofEdge_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) (w : W) :
+    ofEdge W w ≫ desc W f g h = g w := by
+  simp [ofEdge]
+
+/-- Maps out of the attachment are determined by their restrictions to `C` and every
+attached coherent isomorphism. -/
+@[ext]
+theorem hom_ext {f g : C.equivalenceAttachment W ⟶ D}
+    (hC : ι W ≫ f = ι W ≫ g) (hW : ∀ w, ofEdge W w ≫ f = ofEdge W w ≫ g) :
+    f = g := by
+  apply (isPushout W).hom_ext hC
+  apply Sigma.hom_ext
+  intro w
+  simpa [ofEdge] using hW w
+
+/-- Descent is compatible with postcomposition. -/
+@[reassoc]
+lemma desc_comp (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) (k : D ⟶ B) :
+    desc W f g h ≫ k = desc W (f ≫ k) (fun w ↦ g w ≫ k)
+      (fun w ↦ by rw [← Category.assoc, h w, Category.assoc]) := by
+  apply hom_ext <;> simp
+
+/-- Every marked edge becomes an equivalence in the attachment. No fibrancy is assumed. -/
+theorem isEquivalence_map (w : W) :
+    (Edge.mk' ((ι W).app _ w.val)).IsEquivalence := by
+  have h := congrArg yonedaEquiv (edgeInclusion_ofEdge W w)
+  exact (coherentIso.invStructOfEqMapHom (g := ofEdge W w)
+    (by simpa [yonedaEquiv_comp] using h.symm)).isEquivalence
+
+/-- A map to a quasicategory extends across the attachment if and only if it sends
+all the marked edges to equivalences. -/
+theorem exists_extension_iff [Quasicategory D] (f : C ⟶ D) :
+    (∃ g : C.equivalenceAttachment W ⟶ D, ι W ≫ g = f) ↔
+      ∀ w : W, (Edge.mk' (f.app _ w.val)).IsEquivalence := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨g, rfl⟩ w
+    exact (Edge.isEquivalence_iff_of_edge_eq (by rfl)).1 ((isEquivalence_map W w).map g)
+  · have h' (w : W) : ∃ g : coherentIso ⟶ D,
+        coherentIso.edgeInclusion ≫ g = yonedaEquiv.symm w.val ≫ f :=
+      (exists_extension_coherentIso_iff _).2 (by
+        rw [yonedaEquiv_symm_comp, yonedaEquiv.apply_symm_apply]
+        exact h w)
+    choose g hg using h'
+    exact ⟨desc W f g hg, ι_desc W f g hg⟩
+
+/-- When a map sends each marked edge to the degenerate edge at a specified vertex,
+it extends by the constant map on each attached coherent isomorphism. -/
+noncomputable def descOfDegenerate (p : C ⟶ B) (b : W → B _⦋0⦌)
+    (h : ∀ w, p.app _ w.val = B.σ 0 (b w)) : C.equivalenceAttachment W ⟶ B :=
+  desc W p (fun w ↦ const (b w)) (fun w ↦ by
+    rw [comp_const, yonedaEquiv_symm_comp, h w, σ_zero_eq_yonedaEquiv_const,
+      yonedaEquiv.symm_apply_apply])
+
+@[reassoc (attr := simp)]
+lemma ι_descOfDegenerate (p : C ⟶ B) (b : W → B _⦋0⦌) (h) :
+    ι W ≫ descOfDegenerate W p b h = p := ι_desc W _ _ _
+
+@[reassoc (attr := simp)]
+lemma ofEdge_descOfDegenerate (p : C ⟶ B) (b : W → B _⦋0⦌) (h) (w : W) :
+    ofEdge W w ≫ descOfDegenerate W p b h = const (b w) := ofEdge_desc W _ _ _ w
+
+section StandardEdge
+
+/-- Attaching a coherent isomorphism to the distinguished edge of the standard interval
+gives the coherent isomorphism itself. -/
+noncomputable def stdSimplexOneIso :
+    (Δ[1] : SSet.{u}).equivalenceAttachment {yonedaEquiv (𝟙 Δ[1])} ≅ coherentIso := by
+  let W : Set ((Δ[1] : SSet.{u}) _⦋1⦌) := {yonedaEquiv (𝟙 Δ[1])}
+  let w : W := ⟨_, Set.mem_singleton _⟩
+  have hw (v : W) : v = w := Subtype.ext (Set.mem_singleton_iff.1 v.property)
+  let f := desc W coherentIso.edgeInclusion (fun _ ↦ 𝟙 coherentIso) (fun v ↦ by
+    rw [hw v]
+    simp [w])
+  have hf : f ≫ ofEdge W w = 𝟙 (equivalenceAttachment Δ[1] W) := by
+    apply hom_ext W
+    · simpa [f, w] using edgeInclusion_ofEdge W w
+    · intro v
+      simp [f, hw v]
+  exact
+    { hom := f
+      inv := ofEdge W w
+      hom_inv_id := hf
+      inv_hom_id := by simp [f] }
+
+@[reassoc (attr := simp)]
+lemma ι_stdSimplexOneIso_hom :
+    ι {yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))} ≫ stdSimplexOneIso.hom =
+      coherentIso.edgeInclusion := by
+  simp [stdSimplexOneIso]
+
+end StandardEdge
+
+end equivalenceAttachment
+
+end SSet
