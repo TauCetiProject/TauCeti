@@ -28,6 +28,8 @@ a posteriori. For a topological group `G` the same group is Mathlib's quotient
   `ZerothHomotopy.instCommGroup`: the monoid and group structures on path components, with additive
   versions.
 * `ZerothHomotopy.mkMonoidHom`: the quotient map as a monoid homomorphism.
+* `ZerothHomotopy.liftMonoidHom`: a monoid homomorphism constant along paths, descended to path
+  components.
 -/
 
 public section
@@ -103,6 +105,39 @@ def mkMonoidHom [Monoid M] [ContinuousMul M] : M →* ZerothHomotopy M where
 @[to_additive (attr := simp)]
 theorem mkMonoidHom_apply [Monoid M] [ContinuousMul M] (a : M) : mkMonoidHom M a = mk a :=
   (rfl)
+
+@[to_additive]
+theorem mkMonoidHom_surjective [Monoid M] [ContinuousMul M] :
+    Function.Surjective (mkMonoidHom M) :=
+  mk_surjective
+
+section Lift
+
+variable [Monoid M] [ContinuousMul M] {N : Type*} [MulOneClass N]
+
+/-- A monoid homomorphism which is constant along paths descends to the monoid of path
+components. -/
+@[to_additive /-- An additive monoid homomorphism which is constant along paths descends to the
+additive monoid of path components. -/]
+def liftMonoidHom (f : M →* N) (hf : ∀ ⦃x y : M⦄, Path x y → f x = f y) :
+    ZerothHomotopy M →* N where
+  toFun := lift f hf
+  map_one' := by rw [← mk_one, lift_mk, map_one]
+  map_mul' x y := by
+    induction x; induction y
+    rw [← mk_mul, lift_mk, lift_mk, lift_mk, map_mul]
+
+@[to_additive (attr := simp)]
+theorem liftMonoidHom_mk (f : M →* N) (hf : ∀ ⦃x y : M⦄, Path x y → f x = f y) (a : M) :
+    liftMonoidHom f hf (mk a) = f a :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem liftMonoidHom_comp_mkMonoidHom (f : M →* N) (hf : ∀ ⦃x y : M⦄, Path x y → f x = f y) :
+    (liftMonoidHom f hf).comp (mkMonoidHom M) = f :=
+  MonoidHom.ext fun _ => (rfl)
+
+end Lift
 
 section Group
 
