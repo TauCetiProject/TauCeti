@@ -24,14 +24,11 @@ section
 variable {R A B : Type*} [Add A] [Mul A] [Star A] [SMul R A]
   [Add B] [Mul B] [Star B] [SMul R B]
 
-/-- Forgetting the algebraic structure of a star algebra equivalence leaves its action unchanged. -/
-theorem toEquiv_apply (φ : A ≃⋆ₐ[R] B) (a : A) : φ.toEquiv a = φ a := (rfl)
-
 /-- Restrict a star algebra equivalence to the star projections of its domain and codomain. -/
 def starProjectionCongr (φ : A ≃⋆ₐ[R] B) :
     {p : A // IsStarProjection p} ≃ {q : B // IsStarProjection q} :=
-  φ.toEquiv.subtypeEquiv fun p ↦ by
-    rw [toEquiv_apply]
+  (φ : A ≃ B).subtypeEquiv fun p ↦ by
+    rw [EquivLike.coe_coe φ]
     exact ⟨fun hp ↦ hp.map φ, fun hp ↦ by
       simpa only [symm_apply_apply] using hp.map φ.symm⟩
 
@@ -39,7 +36,7 @@ def starProjectionCongr (φ : A ≃⋆ₐ[R] B) :
 @[simp]
 theorem starProjectionCongr_apply (φ : A ≃⋆ₐ[R] B) (p : {p : A // IsStarProjection p}) :
     (φ.starProjectionCongr p).val = φ p.val := by
-  simp only [starProjectionCongr, Equiv.subtypeEquiv_apply, toEquiv_apply]
+  simp only [starProjectionCongr, Equiv.subtypeEquiv_apply, EquivLike.coe_coe φ]
 
 /-- The inverse restriction acts by the inverse star algebra equivalence. -/
 @[simp]
