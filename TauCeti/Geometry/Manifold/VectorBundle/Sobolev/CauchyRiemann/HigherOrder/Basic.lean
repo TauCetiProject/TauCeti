@@ -46,6 +46,8 @@ a `(0,1)`-form.
   is `∂bar uᵢ + Zᵢ uᵢ`, for the weak derivative of the chart data `uᵢ`.
 * `TauCeti.IsRealCauchyRiemannOperator.sobolevSuccL_zero`: at `k = 0` it is the realization
   `TauCeti.IsRealCauchyRiemannOperator.sobolevL`.
+* `TauCeti.IsRealCauchyRiemannOperator.chartValuesL_sobolevSuccL_eq_of_chartValuesL_eq`: on
+  sections with the same chart data, the realizations at orders `k + 1` and one agree.
 * `TauCeti.IsRealCauchyRiemannOperator.zeroOneLowerOrdersL_sobolevSuccL_add`: the realizations at
   orders `k + d` and `k` commute with forgetting `d` weak derivatives, and
   `TauCeti.IsRealCauchyRiemannOperator.zeroOneLowerOrdersL_sobolevSuccL` for `d = 1`.
@@ -274,6 +276,24 @@ theorem sobolevSuccL_zero : hD.sobolevSuccL A hDs μ p 0 = hD.sobolevL A hDs μ 
   filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs μ p 0 w hDu,
     chartValueL_sobolevL_ae A hD hDs μ p w hDu] with y h₁ h₂
   rw [h₁, h₂]
+
+/-- **Agreement with the order-one realization.** If a Sobolev section `w` of order `k + 1` and a
+`W^{1,p}` section `ξ` have the same chart data, then the realizations of `D` at order `k + 1` and
+at order one send them to `(0,1)`-forms with the same chart data. -/
+theorem chartValuesL_sobolevSuccL_eq_of_chartValuesL_eq {w : SobolevSection A μ p (k + 1)}
+    {ξ : SobolevSection A μ p 1}
+    (h : A.sectionChartData.chartValuesL μ p (k + 1) w = A.sectionChartData.chartValuesL μ p 1 ξ) :
+    A.tangentHom.sectionChartData.chartValuesL μ p k
+        (hD.sobolevSuccL A hDs μ p k w : SobolevSection A.tangentHom μ p k) =
+      A.tangentHom.sectionChartData.chartValuesL μ p 0
+        (hD.sobolevL A hDs μ p ξ : SobolevSection A.tangentHom μ p 0) := by
+  refine SectionChartData.chartValuesL_eq_iff.2 fun (i : Fin A.n) ↦
+    Lp.ext ((ae_image_tangentHom_iff A μ i).2 ?_)
+  have hi := SectionChartData.chartValuesL_eq_iff.1 h i
+  have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i ξ
+  filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs μ p k w (hi ▸ hDu),
+    chartValueL_sobolevL_ae A hD hDs μ p ξ hDu] with y h₁ h₂
+  rw [h₁, h₂, hi]
 
 /-- **Compatibility with the order.** Forgetting the `d` highest weak derivatives of the
 realization of a Sobolev section of order `k + d + 1` gives the realization of the section regarded

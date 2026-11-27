@@ -74,6 +74,7 @@ changes of chart and trivialization
   `W^{k,p}(V)` for every `k` and `1 ≤ p < ∞`.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection`: the `Cᵏ` sections are dense.
 * `TauCeti.SobolevSection.denseRange_ofExponentLEL`: lowering the exponent has dense range.
+* `TauCeti.SobolevSection.denseRange_lowerOrdersL`: lowering the order has dense range.
 * `TauCeti.SobolevSection.hasExtensionByZero`: over surfaces, extension by zero holds for `Cⁿ`
   bundles at orders `k ≤ n`; `hasExtensionByZero_of_le_one` is the case
   `k ≤ 1` for `C¹` bundles.
@@ -499,6 +500,19 @@ theorem denseRange_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ 
   refine (denseRange_ofContMDiffSection A μ p k hp).mono ?_
   rintro _ ⟨s, rfl⟩
   exact ⟨ofContMDiffSection A μ q k s, ofExponentLEL_ofContMDiffSection hpq s⟩
+
+variable (A μ p k) in
+/-- **Lowering the order has dense range.** For `1 ≤ p < ∞`, the inclusion
+`W^{k+d,p}(V) → W^{k,p}(V)` (`TauCeti.SectionChartData.lowerOrdersL`) has dense range: its range
+contains the `C^∞` sections. -/
+theorem denseRange_lowerOrdersL (hp : p ≠ ⊤) (d : ℕ) :
+    DenseRange (A.sectionChartData.lowerOrdersL μ p k d) := by
+  refine (denseRange_ofContMDiffSection_comp_ofLE A μ p k hp).mono ?_
+  rintro _ ⟨s, rfl⟩
+  refine ⟨_, (lowerOrdersL_ofContMDiffSection A μ p k d
+    (ContMDiffSection.ofLE ENat.LEInfty.out s)).trans ?_⟩
+  rw [LinearMap.comp_apply]
+  exact congrArg _ (ContMDiffSection.ext fun _ ↦ by simp)
 
 end Unconditional
 
