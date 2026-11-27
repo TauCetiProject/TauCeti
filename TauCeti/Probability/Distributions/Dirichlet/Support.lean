@@ -19,12 +19,12 @@ every neighbourhood of a boundary point, including a vertex, has positive mass. 
 includes a single coordinate, where the simplex is a singleton. Invalid parameters and an empty
 coordinate type give the zero measure and hence empty support.
 
+The normalized-Gamma construction gives this directly: each nonnegative vector belongs to the
+support of the Gamma product, and normalization is continuous at every vector of total one.
+
 For every concentration vector, the Dirichlet law is mutually singular with respect to ambient
 Euclidean volume. In the valid case it is carried by the affine hyperplane on which the coordinates
 sum to one; in the invalid cases the law is zero.
-
-The normalized-Gamma construction gives this directly: each nonnegative vector belongs to the
-support of the Gamma product, and normalization is continuous at every vector of total one.
 
 ## References
 
