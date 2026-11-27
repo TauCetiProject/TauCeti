@@ -68,7 +68,8 @@ Each statement holds for the components of `T` in a chart and a frame, by the Eu
 onto the covectors of `E`. For the neighbourhoods in the cotangent bundle, the reading
 `(y, η) ↦ ⟪η, ·⟫ ∘ dc_(c⁻¹ y)` of a vector of `E × E` as a covector of `M` at `c⁻¹ y` is continuous
 (`TauCeti.CotangentBundle.continuousAt_mk_comp_mfderiv`) and inverts the reading of covectors in
-the chart, so a neighbourhood of a covector of `M` pulls back to a neighbourhood of its reading.
+the chart, so a neighbourhood of a covector of `M` pulls back to a neighbourhood of its reading
+(`TauCeti.CotangentBundle.eventually_mk_symm_comp_mfderiv_of_eventually`).
 
 ## References
 
@@ -98,55 +99,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
   [FiberBundle F V] [VectorBundle ℝ F V]
   [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
   {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} {s : ℝ}
-
-/-! ### Reading covectors in a chart -/
-
-section Chart
-
-variable {c : OpenPartialHomeomorph M E} (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
-  (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-
-omit [MeasurableSpace E] [BorelSpace E] [T2Space M] in
-include hc hcs in
-/-- A property of covectors of `M` holding near the covector `ξ` at `x ∈ c.source` holds, read in
-the chart `c`, near the reading of `ξ`: for `(y, η)` near `(c x, ⟪·⟫⁻¹ (ξ ∘ d(c⁻¹)_(c x)))`, the
-point `y` lies in the chart target and the property holds at the covector `⟪η, ·⟫ ∘ dc_(c⁻¹ y)` at
-`c⁻¹ y`, whose reading in `c` is `η`
-(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_comp_mfderiv_symm`). -/
-private theorem eventually_chart_of_eventually {Q : CotangentBundle I M → Prop}
-    (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ}
-    (h : ∀ᶠ p in 𝓝 (TotalSpace.mk' (E →L[ℝ] ℝ) x ξ : CotangentBundle I M), Q p) :
-    ∀ᶠ q in 𝓝 (c x, (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x))),
-      q.1 ∈ c.target ∧ Q (TotalSpace.mk' (E →L[ℝ] ℝ) (c.symm q.1)
-        (toDual ℝ E q.2 ∘L mfderiv I 𝓘(ℝ, E) c (c.symm q.1))) := by
-  have hcd : c.MDifferentiable I 𝓘(ℝ, E) :=
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩
-  have hy₀ : c x ∈ c.target := c.map_source hx
-  have hf : ContMDiffAt I 𝓘(ℝ, E) 1 c (c.symm (c x)) := by
-    rw [c.left_inv hx]
-    exact ((hc x hx).contMDiffAt (c.open_source.mem_nhds hx)).of_le (by simp)
-  -- Pulling covectors of `E` back through `c` is continuous, and sends the reading of `ξ` to `ξ`.
-  have hcont : ContinuousAt (fun q : E × E ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) (c.symm q.1)
-      (toDual ℝ E q.2 ∘L mfderiv I 𝓘(ℝ, E) c (c.symm q.1)) : CotangentBundle I M))
-      (c x, (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x))) :=
-    (CotangentBundle.continuousAt_mk_symm_comp_mfderiv
-      (w₀ := (c x, ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x))) hy₀ hf).comp_of_eq
-      (f := fun q : E × E ↦ (q.1, toDual ℝ E q.2))
-      (continuous_fst.prodMk ((toDual ℝ E).continuous.comp continuous_snd)).continuousAt
-      (by simp)
-  have hq₀ : (TotalSpace.mk' (E →L[ℝ] ℝ) (c.symm (c x))
-      (toDual ℝ E ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x))) ∘L
-        mfderiv I 𝓘(ℝ, E) c (c.symm (c x))) : CotangentBundle I M) =
-      TotalSpace.mk' (E →L[ℝ] ℝ) x ξ := by
-    rw [LinearIsometryEquiv.apply_symm_apply, c.left_inv hx]
-    congr 1
-    ext v
-    exact congr_arg ξ congr($(hcd.symm_comp_deriv hx) v)
-  filter_upwards [hcont.eventually (hq₀ ▸ h),
-    continuous_fst.continuousAt.preimage_mem_nhds (c.open_target.mem_nhds hy₀)] with q hq hqt
-  exact ⟨hqt, hq⟩
-
-end Chart
 
 /-! ### The projection of the `H^s` wave front set -/
 
@@ -228,10 +180,16 @@ theorem isMicrolocallySmoothAt_iff_eventually_forall_isMicrolocallySobolevAt
     isMicrolocallyAt_def.1 (isMicrolocallySobolevAt_def.1 (h.self_of_nhds 0))
   refine (isMicrolocallySmoothAt_iff T hc hcs hct hx _).2 fun v ↦
     Distribution.isMicrolocallySmoothAt_iff_eventually_forall_isMicrolocallySobolevAt.2 ?_
-  filter_upwards [eventually_chart_of_eventually hc hcs hx h] with q ⟨hq, hQ⟩ s
-  have hv := (isMicrolocallySobolevAt_iff T hc hcs hct (c.map_target hq) _).1 (hQ s) v
   have hcd : c.MDifferentiable I 𝓘(ℝ, E) :=
     ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩
+  have hev := CotangentBundle.eventually_mk_symm_comp_mfderiv_of_eventually hcd hx
+    (((hc _ hx).contMDiffAt (c.open_source.mem_nhds hx)).of_le (by simp)) h
+  -- The covectors of `E` are read as vectors of `E` through `toDual`.
+  have hread := (continuous_fst.prodMk ((toDual ℝ E).continuous.comp continuous_snd)).tendsto
+    (c p.proj, (toDual ℝ E).symm (p.snd ∘L mfderiv 𝓘(ℝ, E) I c.symm (c p.proj)))
+  simp only [comp_apply, LinearIsometryEquiv.apply_symm_apply] at hread
+  filter_upwards [hread.eventually hev] with q ⟨hq, hQ⟩ s
+  have hv := (isMicrolocallySobolevAt_iff T hc hcs hct (c.map_target hq) _).1 (hQ s) v
   -- The point and the covector of `hv` are read back as `q.1` and `q.2`.
   convert hv using 2
   · exact (c.right_inv hq).symm
@@ -276,6 +234,18 @@ theorem waveFrontSet_eq_empty_iff_forall_sobolevWaveFrontSet_eq_empty
 
 /-! ### The singular support as the closure of the `H^s` singular supports -/
 
+/-- The `H^s` singular support lies in the singular support. -/
+theorem sobolevSingularSupport_subset_singularSupport (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    sobolevSingularSupport I s T ⊆ singularSupport I T := by
+  intro x hx
+  rw [mem_singularSupport_iff]
+  rintro ⟨t, ht, c, hc, hcs, hct, hxc, h⟩
+  -- In the chart witnessing smoothness near `x`, every component is also `H^s` near `c x`.
+  refine (mem_sobolevSingularSupport_iff.1 hx) <| isLocallySobolevAt_def.2 <|
+    isLocallyAt_def.2 ⟨t, ht, c, hc, hcs, hct, hxc, fun v ↦ ?_⟩
+  exact (Distribution.notMem_sobolevSingularSupport_iff (c.map_source hxc)).1 fun hv ↦
+    h v (Distribution.sobolevSingularSupport_subset_singularSupport s _ hv)
+
 section Boundaryless
 
 variable [I.Boundaryless]
@@ -314,12 +284,6 @@ theorem singularSupport_eq_closure_iUnion_sobolevSingularSupport (T : BundleTest
   rw [← not_iff_not, notMem_singularSupport_iff_eventually_forall_isLocallySobolevAt,
     mem_closure_iff_frequently, not_frequently]
   simp only [mem_iUnion, mem_sobolevSingularSupport_iff, not_exists, not_not]
-
-/-- On a manifold without boundary, the `H^s` singular support lies in the singular support. -/
-theorem sobolevSingularSupport_subset_singularSupport (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    sobolevSingularSupport I s T ⊆ singularSupport I T := by
-  rw [singularSupport_eq_closure_iUnion_sobolevSingularSupport]
-  exact (subset_iUnion (fun s ↦ sobolevSingularSupport I s T) s).trans subset_closure
 
 /-- On a manifold without boundary, a real functional on bundle tests is smooth near every point
 exactly when it is `H^s` near every point, for every real `s`. -/

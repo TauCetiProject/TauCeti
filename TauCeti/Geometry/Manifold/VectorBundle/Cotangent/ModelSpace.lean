@@ -37,7 +37,9 @@ into `T*U` is continuous as soon as its base point and its covector depend conti
 parameter (`TauCeti.CotangentBundle.continuous_totalSpaceMk_opens`). Through a chart `c` of a
 manifold `M` modelled on `E`, the covector `p ∘ Dc(c⁻¹ y)` of `M` pulled back from a point `y` of
 the chart target and a covector `p` of `E` depends continuously on `(y, p)`
-(`TauCeti.CotangentBundle.continuousAt_mk_symm_comp_mfderiv`).
+(`TauCeti.CotangentBundle.continuousAt_mk_symm_comp_mfderiv`), so a neighbourhood of a covector of
+`M` pulls back to a neighbourhood of its reading in `c`
+(`TauCeti.CotangentBundle.eventually_mk_symm_comp_mfderiv_of_eventually`).
 
 ## References
 
@@ -50,7 +52,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti.CotangentBundle
 
@@ -218,6 +220,35 @@ theorem continuousAt_mk_symm_comp_mfderiv {c : OpenPartialHomeomorph M E}
         ((ContinuousAt.comp (g := c) (f := fun w : E × (E →L[𝕜] 𝕜) ↦ c.symm w.1)
           (c.continuousAt (c.map_target hw₀)) hg).prodMk continuous_snd.continuousAt)
   exact continuousAt_mk_comp_mfderiv (f := c) (fun _ ↦ rfl) hΨ hg hc
+
+/-- **Neighbourhoods of covectors read through a chart.** Let `c` be an open partial homeomorphism
+of `M` into its model space `E`, differentiable with its inverse and `C¹` at `x ∈ c.source`. A
+property of covectors of `M` holding near the covector `ξ` at `x` holds, read in `c`, near the
+reading `(c x, ξ ∘ D(c⁻¹)(c x))` of `ξ`: for `(y, p)` near it, `y` lies in the chart target and the
+property holds at the covector `p ∘ Dc(c⁻¹ y)` at `c⁻¹ y`, whose reading in `c` is `p`
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_comp_mfderiv_symm`). -/
+theorem eventually_mk_symm_comp_mfderiv_of_eventually {c : OpenPartialHomeomorph M E}
+    (hc : c.MDifferentiable I 𝓘(𝕜, E)) {x : M} (hx : x ∈ c.source)
+    (hcx : ContMDiffAt I 𝓘(𝕜, E) 1 c x) {ξ : TangentSpace I x →L[𝕜] 𝕜}
+    {Q : CotangentBundle I M → Prop}
+    (h : ∀ᶠ p in 𝓝 (TotalSpace.mk' (E →L[𝕜] 𝕜) x ξ : CotangentBundle I M), Q p) :
+    ∀ᶠ w : E × (E →L[𝕜] 𝕜) in 𝓝 (c x, ξ ∘L mfderiv 𝓘(𝕜, E) I c.symm (c x)),
+      w.1 ∈ c.target ∧ Q (TotalSpace.mk' (E →L[𝕜] 𝕜) (c.symm w.1)
+        (w.2 ∘L mfderiv I 𝓘(𝕜, E) c (c.symm w.1))) := by
+  have hy₀ : c x ∈ c.target := c.map_source hx
+  -- Pulling the reading of `ξ` back through `c` gives `ξ`.
+  have hw₀ : (TotalSpace.mk' (E →L[𝕜] 𝕜) (c.symm (c x))
+      ((ξ ∘L mfderiv 𝓘(𝕜, E) I c.symm (c x)) ∘L mfderiv I 𝓘(𝕜, E) c (c.symm (c x))) :
+        CotangentBundle I M) = TotalSpace.mk' (E →L[𝕜] 𝕜) x ξ := by
+    rw [c.left_inv hx]
+    congr 1
+    ext v
+    exact congr_arg ξ congr($(hc.symm_comp_deriv hx) v)
+  have hcont := continuousAt_mk_symm_comp_mfderiv
+    (w₀ := (c x, ξ ∘L mfderiv 𝓘(𝕜, E) I c.symm (c x))) hy₀ (by rwa [c.left_inv hx])
+  filter_upwards [hcont.eventually (hw₀ ▸ h),
+    continuous_fst.continuousAt.preimage_mem_nhds (c.open_target.mem_nhds hy₀)] with w hw hwt
+  exact ⟨hwt, hw⟩
 
 end Chart
 
