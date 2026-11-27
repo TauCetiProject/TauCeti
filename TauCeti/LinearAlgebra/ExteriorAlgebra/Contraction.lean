@@ -30,28 +30,26 @@ exterior basis vectors containing both coordinates.
 Removing two distinct coordinates from an index set in the two possible orders gives opposite
 products of shuffle signs (`TauCeti.ExteriorAlgebra.basisEraseSign_mul_basisEraseSign_erase`).
 
-The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
-monomial, and so the basis vector indexed by `s`, by the parity of its degree.
-Reversal is diagonal too, with the sign `(-1) ^ (s.card.choose 2)`
-(`ExteriorAlgebra.reverse_basis`). For a finite index set, the top-degree coefficient
-`b.ExteriorAlgebra.coord Finset.univ` therefore kills every contraction, and the grade involution
-and reversal multiply it by `(-1) ^ n` and `(-1) ^ (n.choose 2)` in rank `n`
-(`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
+Reversal is diagonal for the exterior basis, with the sign `(-1) ^ (s.card.choose 2)`
+(`ExteriorAlgebra.reverse_basis`), matching the diagonal grade involution from
+`TauCeti.LinearAlgebra.ExteriorAlgebra.Basis` (`TauCeti.ExteriorAlgebra.involute_basis`). For a
+finite index set, the top-degree coefficient `b.ExteriorAlgebra.coord Finset.univ` therefore kills
+every contraction, and the grade involution and reversal multiply it by `(-1) ^ n` and
+`(-1) ^ (n.choose 2)` in rank `n` (`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
 `Module.Basis.exteriorAlgebra_coord_univ_involute`,
 `Module.Basis.exteriorAlgebra_coord_univ_reverse`).
-
-Every basis vector is the product of the exterior-algebra generators of its index set, in
-increasing order; for index sets with one or two elements this is also recorded in the explicit
-forms `TauCeti.ExteriorAlgebra.basis_singleton` and `TauCeti.ExteriorAlgebra.basis_pair`.
 
 Independently of a basis, `ExteriorAlgebra.contractLeft_map` states naturality under a linear
 map: pull back the contracting functional and then map the contracted element. This follows
 from the general quadratic-isometry statement `CliffordAlgebra.contractLeft_map`.
 
-Independently of a basis, the grade involution is the sign `(-1) ^ n` on the `n`-th exterior power,
-a contraction carries the `(n + 1)`-th exterior power into the `n`-th, and a vector graded-commutes
-with every multivector: `ι m * x = involute x * ι m`.  Together with the graded Leibniz rule
-`CliffordAlgebra.contractLeft_mul`, these say that a contraction is an odd derivation of degree
+Independently of a basis, a contraction carries the `(n + 1)`-th exterior power into the `n`-th
+(`TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower`). Together with the `(-1) ^ n` sign of
+the grade involution on `⋀ⁿ M` (`TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower`) and
+graded commutativity `ι m * x = involute x * ι m` (`ExteriorAlgebra.ι_mul_eq_involute_mul`,
+`ExteriorAlgebra.ι_mul_eq_neg_one_pow_smul_mul`) in
+`TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution`, as well as the graded Leibniz rule
+`CliffordAlgebra.contractLeft_mul`, this says that a contraction is an odd derivation of degree
 `-1` of the graded-commutative exterior algebra. On a wedge product of vectors it is the alternating
 sum of deletions (`TauCeti.ExteriorAlgebra.contractLeft_ιMulti`); this is the differential of the
 Koszul complex.

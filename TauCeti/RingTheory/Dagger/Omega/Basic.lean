@@ -258,7 +258,7 @@ theorem d_eq_zero_iff_forall_pderiv_eq_zero (g : W) :
 /-- In characteristic zero, `d f = 0` in `Ω¹_{W/K}` iff `f ∈ range (algebraMap K W)`. -/
 theorem d_eq_zero_iff_mem_range_algebraMap [CharZero K] (f : W) :
     d K W f = 0 ↔ f ∈ Set.range (algebraMap K W) := by
-  rw [d_eq_zero_iff_forall_pderiv_eq_zero, forall_pderiv_eq_zero_iff]; rfl
+  rw [d_eq_zero_iff_forall_pderiv_eq_zero, forall_pderiv_eq_zero_iff, Set.mem_range]
 
 /-- In characteristic zero, `d f = 0` iff `f` equals its constant coefficient viewed in `W`. -/
 theorem d_eq_zero_iff_eq_algebraMap_constantCoeff [CharZero K] (f : W) :

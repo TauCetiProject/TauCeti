@@ -70,12 +70,9 @@ private theorem washnitzerBasis_exteriorPower_repr_extDerivPow_smul
   rw [washnitzerBasis_repr_d, LinearMap.map_smul, smul_mul_assoc, LinearMap.map_smul, ι_mul_basis]
   by_cases hkt : k ∈ t.val
   · simp [hkt]
-  · rw [ite_eq_right hkt, Units.smul_def, ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K),
-      LinearMap.map_smul, Module.Basis.coord_apply, Module.Basis.repr_self]
-    by_cases hins : insert k t.val = u.val
-    · rw [ite_eq_left ⟨hkt, hins⟩, hins, Units.smul_def,
-        ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K), Finsupp.single_eq_same]; simp [mul_comm]
-    · rw [ite_eq_right fun h ↦ hins h.2, Finsupp.single_eq_of_ne' hins]; simp
+  · simp only [hkt, ↓reduceIte, map_zsmul_unit, Module.Basis.coord_apply, Module.Basis.repr_self]
+    by_cases hins : insert k t.val = u.val <;>
+      simp [hins, Units.smul_def, mul_comm]
 
 /-- **Coordinate formula for the overconvergent exterior derivative** over a complete ultrametric
 normed field `K` in any characteristic. -/

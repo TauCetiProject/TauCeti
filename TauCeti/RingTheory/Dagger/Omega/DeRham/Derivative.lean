@@ -112,7 +112,7 @@ theorem mapSemilinear_extDeriv (f : A →ₐ[K] B) (x : ExteriorAlgebra A (Omega
   | algebraMap a =>
     rw [extDeriv_algebraMap, ExteriorAlgebra.mapSemilinear_ι, mapSemilinear_d,
       ExteriorAlgebra.mapSemilinear_algebraMap, extDeriv_algebraMap]
-    rfl
+    simp
   | ι_d a =>
     rw [extDeriv_ι_d, map_zero, ExteriorAlgebra.mapSemilinear_ι, mapSemilinear_d, extDeriv_ι_d]
   | mul x y ihx ihy =>

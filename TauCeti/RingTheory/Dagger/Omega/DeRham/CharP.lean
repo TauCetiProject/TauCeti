@@ -12,9 +12,9 @@ public import TauCeti.RingTheory.Dagger.Omega.DeRham.Basic
 
 Over a base ring `R` of characteristic `p`, `d R A (f ^ p) = 0` for every `f : A` in any
 `R`-algebra `A` (`d_pow_charP`). Over a complete ultrametric normed field `K` of prime
-characteristic `p > 0`, the degree-zero Poincaré lemma fails on every nonempty dagger polydisc
-`K⟨X_σ⟩†`, and on `K⟨X₀⟩†` the `1`-form `X₀ ^ (p - 1) dX₀` has no potential in `K⟨X₀⟩†`, the
-overconvergent de Rham complex fails to be exact in degree `1`, and `H¹_dR(K⟨X₀⟩† / K)` is
+characteristic `p > 0`, the degree-zero and degree-one Poincaré lemmas fail on every nonempty dagger
+polydisc `K⟨X_σ⟩†` (`Xᵢ ^ (p - 1) dXᵢ` has no potential in `K⟨X_σ⟩†`), and on `K⟨X₀⟩†` the
+overconvergent de Rham complex fails to be exact in degree `1` and `H¹_dR(K⟨X₀⟩† / K)` is
 nontrivial.
 -/
 
@@ -51,23 +51,24 @@ theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP {σ : Type*} (i : σ)
         f ∉ Set.range (algebraMap K (washnitzerAlgebra σ K)) :=
   ⟨X σ K i ^ p, d_X_pow_charP i p, X_pow_notMem_range_algebraMap i (Fact.out : p.Prime).pos⟩
 
-/-- **Failure of the degree-one Poincaré lemma in characteristic `p > 0`**: `X₀ ^ (p - 1) • d X₀`
-has no potential `g ∈ K⟨X₀⟩†`. -/
-theorem not_exists_d_eq_X_pow_sub_one_smul_d_X_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
-    ¬∃ g : washnitzerAlgebra (Fin 1) K,
-      d K (washnitzerAlgebra (Fin 1) K) g =
-        X (Fin 1) K 0 ^ (p - 1) • d K (washnitzerAlgebra (Fin 1) K) (X (Fin 1) K 0) := by
+/-- **Failure of the degree-one Poincaré lemma in characteristic `p > 0`** on every dagger
+polydisc with at least one variable `i : σ`: `Xᵢ ^ (p - 1) • d Xᵢ` has no potential
+`g ∈ K⟨X_σ⟩†`. -/
+theorem not_exists_d_eq_X_pow_sub_one_smul_d_X_charP {σ : Type*} [Finite σ] (i : σ) (p : ℕ)
+    [CharP K p] [Fact p.Prime] :
+    ¬∃ g : washnitzerAlgebra σ K,
+      d K (washnitzerAlgebra σ K) g =
+        X σ K i ^ (p - 1) • d K (washnitzerAlgebra σ K) (X σ K i) := by
+  classical
   rintro ⟨g, hg⟩
-  have hrepr := congrArg (fun ω ↦ (washnitzerBasis (Fin 1) K).repr ω 0) hg
-  rw [washnitzerBasis_repr_d, LinearEquiv.map_smul, ← washnitzerBasis_apply,
-    Module.Basis.repr_self, Finsupp.smul_single_one, Finsupp.single_eq_same] at hrepr
-  let e : Fin 1 →₀ ℕ := Finsupp.single 0 (p - 1)
-  have hcoeff := congrArg (fun f : washnitzerAlgebra (Fin 1) K ↦ MvPowerSeries.coeff e f.val) hrepr
-  have hlhs : MvPowerSeries.coeff e (pderiv (Fin 1) K 0 g).val = 0 := by
-    rw [coe_pderiv, MvPowerSeries.coeff_pderiv, Finsupp.single_eq_same, ← Nat.cast_add_one,
-      Nat.sub_add_cancel (Fact.out : p.Prime).pos, CharP.cast_eq_zero, mul_zero]
-  rw [hlhs, SubmonoidClass.coe_pow, coe_X, MvPowerSeries.coeff_X_pow, ite_eq_left rfl] at hcoeff
-  exact zero_ne_one hcoeff
+  have hrepr := congrArg (fun ω ↦ (washnitzerBasis σ K).repr ω i) hg
+  simp only [washnitzerBasis_repr_d, map_smul, ← washnitzerBasis_apply, Module.Basis.repr_self,
+    Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_eq_same] at hrepr
+  let e : σ →₀ ℕ := Finsupp.single i (p - 1)
+  have hcoeff := congrArg (fun f : washnitzerAlgebra σ K ↦ MvPowerSeries.coeff e f.val) hrepr
+  have hp : ((p - 1 : ℕ) + 1 : K) = 0 := by
+    rw [← Nat.cast_add_one, Nat.sub_add_cancel (Fact.out : p.Prime).pos, CharP.cast_eq_zero]
+  simp [e, coe_pderiv, MvPowerSeries.coeff_pderiv, hp, MvPowerSeries.coeff_X_pow] at hcoeff
 
 /-- In characteristic `p > 0`, `deRhamComplex K (K⟨X₀⟩†)` is not exact in degree `1`. -/
 theorem not_exactAt_deRhamComplex_washnitzer_one_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
@@ -81,7 +82,7 @@ theorem not_exactAt_deRhamComplex_washnitzer_one_charP (p : ℕ) [CharP K p] [Fa
     rw [mem_closedForms]; exact Subsingleton.elim _ 0
   obtain ⟨f₀, hf₀⟩ := LinearMap.mem_range.mp ((exactForms_succ K W 0) ▸ hex.symm ▸ hclosed)
   obtain ⟨c, rfl⟩ := (exteriorPower.zeroEquiv W _).symm.surjective f₀
-  exact not_exists_d_eq_X_pow_sub_one_smul_d_X_charP p
+  exact not_exists_d_eq_X_pow_sub_one_smul_d_X_charP (σ := Fin 1) 0 p
     ⟨c, (exteriorPower.oneEquiv W _).symm.injective
       (by rwa [extDerivPow_zero_zeroEquiv_symm] at hf₀)⟩
 
