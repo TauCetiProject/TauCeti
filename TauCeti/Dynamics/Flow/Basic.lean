@@ -31,6 +31,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.prod`: the product of two flows with the same time.
 * `Flow.continuous_eval_const`: the flow line `t ↦ ϕ t x` through a point is continuous.
+* `Flow.continuousVAdd`: the action `ϕ.toAddAction` of a flow is jointly continuous.
 * `Flow.map_nsmul`: the time-`(k • t)` map is the `k`-th iterate of the time-`t` map.
 * `Flow.coe_toHomeomorph`, `Flow.coe_toHomeomorph_symm`: the homeomorphism `ϕ.toHomeomorph t` is
   the time-`t` map, with inverse the time-`(-t)` map.
@@ -132,6 +133,13 @@ theorem prod_apply {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ
 /-- The flow line `t ↦ ϕ t x` through a point `x` is continuous. -/
 theorem continuous_eval_const [AddZero τ] (ϕ : Flow τ α) (x : α) : Continuous fun t ↦ ϕ t x :=
   ϕ.continuous continuous_id continuous_const
+
+/-- The action `ϕ.toAddAction` of a flow is jointly continuous, since `t +ᵥ x` is `ϕ t x` by
+definition of `Flow.toAddAction`. -/
+theorem continuousVAdd [AddMonoid τ] (ϕ : Flow τ α) :
+    @ContinuousVAdd τ α ϕ.toAddAction.toVAdd _ _ :=
+  letI := ϕ.toAddAction
+  ⟨ϕ.cont'⟩
 
 /-- The time-`(k • t)` map of a flow is the `k`-th iterate of its time-`t` map. -/
 theorem map_nsmul [AddMonoid τ] (ϕ : Flow τ α) (k : ℕ) (t : τ) : ϕ (k • t) = (ϕ t)^[k] := by
