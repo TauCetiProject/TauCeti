@@ -18,7 +18,7 @@ Let `T` be a maximal torus of a compact Lie group `G`, with Lie algebra `𝔱 �
 `W = N(T) / T` acting on `𝔱` (`Subgroup.weylAdjointRepresentation`), and let `B` be an invariant
 inner product on `𝔤`. Decompose `𝔤 = 𝔱 ⊕ E₁ ⊕ ⋯ ⊕ E_r` into nonzero real root planes with nonzero
 roots `α₁, …, α_r ∈ 𝔱*` (`TauCeti.IsRootPlaneDecomposition`). The **closed Weyl chamber** of an
-element `X₀ ∈ 𝔱` (`TauCeti.closedWeylChamber`) is
+element `X₀ ∈ 𝔱` (`TauCeti.sameSideChamber`) is
 
 `C = {X ∈ 𝔱 | 0 ≤ α_i(X₀) α_i(X) for every i}`,
 
@@ -29,7 +29,7 @@ orbit in `𝔤` and every coadjoint orbit in `𝔤*`, meets `C` in exactly one p
 homeomorphic to the adjoint and coadjoint orbit spaces.
 
 * **Existence**
-  (`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_mem_closedWeylChamber`).
+  (`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_mem_sameSideChamber`).
   Among the finitely many points `w X`, `w ∈ W`, take one maximizing `B(w X, X₀)`. Each root
   reflection `s_α`, which lies in `W`
   (`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection`),
@@ -62,20 +62,20 @@ Connectedness is needed for uniqueness: for `G = O(2)` and `T = SO(2)` there are
 
 Restricting the proper map `𝔱 → 𝔤 / Ad G` (`TauCeti.Lie.IsMaximalTorus.isProperMap_orbitRel_mk_coe`)
 to the closed set `C` gives a continuous proper bijection, so a homeomorphism
-`C ≃ₜ 𝔤 / Ad G` (`TauCeti.Lie.IsMaximalTorus.closedWeylChamberOrbitHomeomorph`). Through the
+`C ≃ₜ 𝔤 / Ad G` (`TauCeti.Lie.IsMaximalTorus.sameSideChamberOrbitHomeomorph`). Through the
 homeomorphisms of `TauCeti.Geometry.Lie.Subgroup.Weyl.OrbitSpace`, `C` is also homeomorphic to the
 coadjoint orbit space `𝔤* / Ad* G`, placing `X ∈ C` at the coadjoint orbit of its covector for an
-invariant form (`TauCeti.Lie.IsMaximalTorus.closedWeylChamberCoadjointOrbitHomeomorph`).
+invariant form (`TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph`).
 
 ## Main definitions
 
-* `TauCeti.closedWeylChamber α X₀`: the closed chamber of a family of linear forms containing `X₀`.
-* `TauCeti.Lie.IsMaximalTorus.closedWeylChamberOrbitHomeomorph`: `C ≃ₜ 𝔤 / Ad G`.
-* `TauCeti.Lie.IsMaximalTorus.closedWeylChamberCoadjointOrbitHomeomorph`: `C ≃ₜ 𝔤* / Ad* G`.
+* `TauCeti.sameSideChamber α X₀`: the closed chamber of a family of linear forms containing `X₀`.
+* `TauCeti.Lie.IsMaximalTorus.sameSideChamberOrbitHomeomorph`: `C ≃ₜ 𝔤 / Ad G`.
+* `TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph`: `C ≃ₜ 𝔤* / Ad* G`.
 
 ## Main results
 
-* `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_mem_closedWeylChamber`: every Weyl
+* `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_mem_sameSideChamber`: every Weyl
   orbit meets the closed chamber.
 * `TauCeti.Lie.IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero`: for a compact connected
   group, the Weyl group preserves the regular elements.
@@ -83,7 +83,7 @@ invariant form (`TauCeti.Lie.IsMaximalTorus.closedWeylChamberCoadjointOrbitHomeo
   group acts freely on the open chambers.
 * `TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`: two Weyl-related points of
   the closed chamber are equal.
-* `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_closedWeylChamber_Ad`: every adjoint orbit meets the
+* `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_sameSideChamber_Ad`: every adjoint orbit meets the
   closed chamber in exactly one point.
 
 ## References
@@ -110,27 +110,27 @@ section Chamber
 
 variable {ι M : Type*} [AddCommGroup M] [Module ℝ M]
 
-/-- The **closed Weyl chamber** of a family `α` of linear forms containing `X₀`: the vectors `X`
+/-- The **same-side chamber** of a family `α` of linear forms containing `X₀`: the vectors `X`
 lying, for every `i`, on the same closed side of `ker (α i)` as `X₀`, that is,
-`0 ≤ α i X₀ * α i X`. For the roots of a compact Lie group and a regular `X₀`, this is the closure
-of the open Weyl chamber containing `X₀`. -/
-def closedWeylChamber (α : ι → Dual ℝ M) (X₀ : M) : Set M :=
+`0 ≤ α i X₀ * α i X`. For the roots of a compact Lie group and a regular `X₀`, this is the closed
+Weyl chamber containing `X₀`, the closure of the open Weyl chamber containing `X₀`. -/
+def sameSideChamber (α : ι → Dual ℝ M) (X₀ : M) : Set M :=
   {X | ∀ i, 0 ≤ α i X₀ * α i X}
 
 @[simp]
-theorem mem_closedWeylChamber {α : ι → Dual ℝ M} {X₀ X : M} :
-    X ∈ closedWeylChamber α X₀ ↔ ∀ i, 0 ≤ α i X₀ * α i X :=
+theorem mem_sameSideChamber {α : ι → Dual ℝ M} {X₀ X : M} :
+    X ∈ sameSideChamber α X₀ ↔ ∀ i, 0 ≤ α i X₀ * α i X :=
   Iff.rfl
 
-theorem self_mem_closedWeylChamber (α : ι → Dual ℝ M) (X₀ : M) :
-    X₀ ∈ closedWeylChamber α X₀ :=
+theorem self_mem_sameSideChamber (α : ι → Dual ℝ M) (X₀ : M) :
+    X₀ ∈ sameSideChamber α X₀ :=
   fun _ ↦ mul_self_nonneg _
 
-/-- A closed Weyl chamber of a finite-dimensional space is closed. -/
-theorem isClosed_closedWeylChamber [TopologicalSpace M] [IsTopologicalAddGroup M]
+/-- A same-side chamber of a finite-dimensional space is closed. -/
+theorem isClosed_sameSideChamber [TopologicalSpace M] [IsTopologicalAddGroup M]
     [ContinuousSMul ℝ M] [T2Space M] [FiniteDimensional ℝ M] (α : ι → Dual ℝ M) (X₀ : M) :
-    IsClosed (closedWeylChamber α X₀) := by
-  simp only [closedWeylChamber, Set.ofPred_forall]
+    IsClosed (sameSideChamber α X₀) := by
+  simp only [sameSideChamber, Set.ofPred_forall]
   exact isClosed_iInter fun i ↦ isClosed_le continuous_const
     (continuous_const.mul (LinearMap.continuous_of_finiteDimensional (α i)))
 
@@ -186,13 +186,12 @@ private theorem IsMaximalTorus.exists_weylAdjointRepresentation_apply_sub (hT : 
       B (c : LeftInvariantDerivation I G) X₀ =
         a X₀ * B (c : LeftInvariantDerivation I G) c / 2 := by
     have h0 := hcB (X₀ - (a X₀ / 2) • c) (by rw [map_sub, map_smul, hc, smul_eq_mul]; ring)
-    rw [Submodule.coe_sub, Submodule.coe_smul, map_sub, map_smul, LinearMap.sub_apply,
-      LinearMap.smul_apply, smul_eq_mul, hBs.eq] at h0
+    simp [hBs.eq] at h0
     linear_combination h0
   refine ⟨B (c : LeftInvariantDerivation I G) c / 2, n, by positivity,
     fun Z hZ ↦ by rw [hrefl, hZ, zero_smul, sub_zero], fun Z X₀ ↦ ?_⟩
-  rw [hrefl, Submodule.coe_sub, Submodule.coe_smul, map_sub, map_smul, LinearMap.sub_apply,
-    LinearMap.smul_apply, smul_eq_mul, hcX]
+  rw [hrefl]
+  simp [hcX X₀]
   ring
 
 /-! ### Existence of a representative in the closed chamber -/
@@ -201,13 +200,13 @@ private theorem IsMaximalTorus.exists_weylAdjointRepresentation_apply_sub (hT : 
 Lie group, `B` a symmetric positive definite invariant form on `𝔤`, and `α_i` the roots of nonzero
 root planes of `𝔱`. Then for every `X₀, X ∈ 𝔱` some element `w` of the Weyl group carries `X` into
 the closed chamber of `X₀`: no root separates `w X` from `X₀`. -/
-theorem IsMaximalTorus.exists_weylAdjointRepresentation_mem_closedWeylChamber
+theorem IsMaximalTorus.exists_weylAdjointRepresentation_mem_sameSideChamber
     (hT : IsMaximalTorus T) (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef)
     (hB : B.lieInvariant (LeftInvariantDerivation I G))
     (h : ∀ i, IsRootPlane B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule (α i) (V i) (J i))
     (hV : ∀ i, V i ≠ ⊥) (X₀ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
     ∃ w : T.normalizerQuotient,
-      T.weylAdjointRepresentation (I := I) w X ∈ closedWeylChamber α X₀ := by
+      T.weylAdjointRepresentation (I := I) w X ∈ sameSideChamber α X₀ := by
   have := hT.finite_normalizerQuotient I
   -- Maximize the pairing `B(w X, X₀)` over the finite Weyl group.
   obtain ⟨w, hw⟩ := Finite.exists_max fun w : T.normalizerQuotient ↦
@@ -232,32 +231,28 @@ variable [ConnectedSpace G] [Finite ι]
 theorem IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero (hT : IsMaximalTorus T)
     (hB : B.lieInvariant (LeftInvariantDerivation I G)) (hsep : B.SeparatingLeft)
     (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
-    (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥) (w : T.normalizerQuotient)
+    (hV : ∀ i, V i ≠ ⊥) (w : T.normalizerQuotient)
     {X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule} (hX : ∀ i, α i X ≠ 0) (i : ι) :
     α i (T.weylAdjointRepresentation (I := I) w X) ≠ 0 := by
+  have hα : ∀ i, α i ≠ 0 := fun i h0 ↦ hX i (by simp [h0])
   revert i
   rw [← hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB hsep hα hV] at hX ⊢
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
-  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply]
-  ext g
-  -- `g` fixes `Ad_n X` exactly when `n⁻¹ g n` fixes `X`, and `n` normalizes `T`.
-  have key : g ∈ (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-      (Ad (I := I) (n : G) X) ↔ (n : G)⁻¹ * g * n ∈
-        (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-          (X : LeftInvariantDerivation I G) := by
-    simp only [mem_stabilizer_continuousAdjointRepresentation_iff, Ad_mul, Ad_inv,
-      LieEquiv.trans_apply]
-    exact (LieEquiv.symm_apply_eq _).symm
-  rw [key, hX]
-  exact (Subgroup.mem_normalizer_iff''.1 n.property g).symm
+  -- The stabilizer of `Ad_n X` is the conjugate by `n` of the stabilizer `T` of `X`.
+  have := Representation.stabilizer_conj
+    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation n X
+  simp only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply,
+    hX] at this
+  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, this]
+  exact Subgroup.mem_normalizer_iff_map_conj_eq.1 n.property
 
 variable (hT : IsMaximalTorus T) (hB : B.lieInvariant (LeftInvariantDerivation I G))
   (hsep : B.SeparatingLeft)
   (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
-  (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥)
+  (hV : ∀ i, V i ≠ ⊥)
   {X₀ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
 
-include hT hB hsep hD hα hV
+include hT hB hsep hD hV
 
 /-- **An element of the Weyl group meeting the open chamber preserves it.** If `w X₁` lies in the
 open chamber `{X | 0 < α_i(X₀) α_i(X) for all i}` together with `X₁`, so does `w Y` for every `Y`
@@ -278,7 +273,7 @@ private theorem forall_pos_mul_apply_weylAdjointRepresentation (w : T.normalizer
     have := mul_pos (hw i) (hY j)
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
     linarith
-  have hreg := hT.apply_weylAdjointRepresentation_ne_zero hB hsep hD hα hV w
+  have hreg := hT.apply_weylAdjointRepresentation_ne_zero hB hsep hD hV w
     (X := (-b) • X₁ + a • Y) (fun j h0 ↦ (hP j).ne' (by rw [h0, mul_zero])) i
   -- But `α_i(X₀) α_i(w P) = -b a + a b = 0`.
   have h0 : α i X₀ * α i (ρ w ((-b) • X₁ + a • Y)) = 0 := by
@@ -294,6 +289,7 @@ theorem IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation
     (hX₁ : ∀ i, 0 < α i X₀ * α i X₁)
     (hw : ∀ i, 0 < α i X₀ * α i (T.weylAdjointRepresentation (I := I) w X₁)) : w = 1 := by
   have := hT.finite_normalizerQuotient I
+  have hα : ∀ i, α i ≠ 0 := fun i h0 ↦ by simpa [h0] using hX₁ i
   set ρ := T.weylAdjointRepresentation (I := I)
   -- Every power of `w` preserves the open chamber.
   have hpow (k : ℕ) {Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
@@ -303,7 +299,7 @@ theorem IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation
     | succ k ih =>
       intro i
       rw [pow_succ', map_mul, mul_apply_eq_comp]
-      exact forall_pos_mul_apply_weylAdjointRepresentation hT hB hsep hD hα hV w hX₁ hw (ih hY) i
+      exact forall_pos_mul_apply_weylAdjointRepresentation hT hB hsep hD hV w hX₁ hw (ih hY) i
   -- The barycentre `Z = ∑_{k < m} w^k X₁`, `m` the order of `w`, lies in the chamber and is fixed
   -- by `w`.
   set m := orderOf w
@@ -341,21 +337,22 @@ variable [ConnectedSpace G] [Finite ι]
   (hT : IsMaximalTorus T) (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef)
   (hB : B.lieInvariant (LeftInvariantDerivation I G))
   (hD : IsRootPlaneDecomposition B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J)
-  (hα : ∀ i, α i ≠ 0) (hV : ∀ i, V i ≠ ⊥)
+  (hV : ∀ i, V i ≠ ⊥)
   {X₀ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule} (hX₀ : ∀ i, α i X₀ ≠ 0)
 
-include hT hBs hBp hB hD hα hV hX₀
+include hT hBs hBp hB hD hV hX₀
 
 /-- **Two Weyl-related points of a closed Weyl chamber are equal.** Let `T` be a maximal torus of a
 compact connected Lie group, `B` a symmetric positive definite invariant form on `𝔤`, and
-`𝔤 = 𝔱 ⊕ E₁ ⊕ ⋯ ⊕ E_r` a decomposition into nonzero root planes with nonzero roots `α_i`. For a
+`𝔤 = 𝔱 ⊕ E₁ ⊕ ⋯ ⊕ E_r` a decomposition into nonzero root planes with roots `α_i`. For a
 regular `X₀ ∈ 𝔱`, if an element of the Weyl group carries a point `X` of the closed chamber of `X₀`
 to a point `Y` of that chamber, then `X = Y`. -/
 theorem IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq
-    {X Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule} (hX : X ∈ closedWeylChamber α X₀)
-    (hY : Y ∈ closedWeylChamber α X₀) {w : T.normalizerQuotient}
+    {X Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule} (hX : X ∈ sameSideChamber α X₀)
+    (hY : Y ∈ sameSideChamber α X₀) {w : T.normalizerQuotient}
     (hw : T.weylAdjointRepresentation (I := I) w X = Y) : X = Y := by
   have hsep : B.SeparatingLeft := LinearMap.BilinForm.separatingLeft_of_anisotropic hBp.anisotropic
+  have hα : ∀ i, α i ≠ 0 := fun i h0 ↦ hX₀ i (by simp [h0])
   have := hT.finite_normalizerQuotient I
   set ρ := T.weylAdjointRepresentation (I := I)
   have : Nonempty {v : T.normalizerQuotient // ρ v Y = Y} := ⟨⟨1, by simp⟩⟩
@@ -364,8 +361,8 @@ theorem IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq
     B (ρ v (ρ w X₀) : LeftInvariantDerivation I G) X₀
   set U := ρ v (ρ w X₀)
   have hU (i : ι) : α i U ≠ 0 :=
-    hT.apply_weylAdjointRepresentation_ne_zero hB hsep hD hα hV v
-      (hT.apply_weylAdjointRepresentation_ne_zero hB hsep hD hα hV w hX₀) i
+    hT.apply_weylAdjointRepresentation_ne_zero hB hsep hD hV v
+      (hT.apply_weylAdjointRepresentation_ne_zero hB hsep hD hV w hX₀) i
   -- The roots vanishing at `Y` are positive at `U`: their reflections fix `Y`, and would otherwise
   -- increase the pairing.
   have hUpos (i : ι) (hi : α i Y = 0) : 0 < α i X₀ * α i U := by
@@ -397,56 +394,56 @@ theorem IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq
     exact add_pos_of_nonneg_of_pos (hX i) (mul_pos hs (mul_self_pos.2 (hX₀ i)))
   have himg : ρ (v * w) (X + s • X₀) = Y + s • U := by
     rw [map_mul, mul_apply_eq_comp, map_add, map_smul, hw, map_add, map_smul, hvY]
-  have h1 := hT.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation hB hsep hD hα hV (v * w)
+  have h1 := hT.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation hB hsep hD hV (v * w)
     hXs (himg ▸ hsY)
   calc X = ρ (v * w) X := by rw [h1, map_one, one_apply_eq_self]
     _ = Y := by rw [map_mul, mul_apply_eq_comp, hw, hvY]
 
 /-- **Every Weyl orbit meets a closed Weyl chamber in exactly one point.** For a maximal torus of a
-compact connected Lie group, a root-plane decomposition with nonzero roots and planes for a
+compact connected Lie group, a root-plane decomposition with nonzero planes for a
 symmetric positive definite invariant form, and a regular `X₀`, each `X ∈ 𝔱` is Weyl-related to
 exactly one point of the closed chamber of `X₀`. -/
-theorem IsMaximalTorus.existsUnique_mem_closedWeylChamber_orbitRel
+theorem IsMaximalTorus.existsUnique_mem_sameSideChamber_orbitRel
     (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
-    ∃! Y, Y ∈ closedWeylChamber α X₀ ∧ (T.weylAdjointRepresentation (I := I)).orbitRel Y X := by
+    ∃! Y, Y ∈ sameSideChamber α X₀ ∧ (T.weylAdjointRepresentation (I := I)).orbitRel Y X := by
   obtain ⟨w, hw⟩ :=
-    hT.exists_weylAdjointRepresentation_mem_closedWeylChamber hBs hBp hB hD.isRootPlane hV X₀ X
+    hT.exists_weylAdjointRepresentation_mem_sameSideChamber hBs hBp hB hD.isRootPlane hV X₀ X
   refine ⟨_, ⟨hw, (Representation.orbitRel_apply _).2 ⟨w, rfl⟩⟩, fun Y ⟨hY, hYX⟩ ↦ ?_⟩
   obtain ⟨u, hu⟩ := (Representation.orbitRel_apply _).1 hYX
-  refine (hT.eq_of_weylAdjointRepresentation_apply_eq hBs hBp hB hD hα hV hX₀ hw hY
+  refine (hT.eq_of_weylAdjointRepresentation_apply_eq hBs hBp hB hD hV hX₀ hw hY
     (w := u * w⁻¹) ?_).symm
-  rw [← hu, map_mul, mul_apply_eq_comp, ← mul_apply_eq_comp (T.weylAdjointRepresentation w⁻¹),
-    ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
+  simp [← hu, ← mul_apply_eq_comp, ← map_mul]
 
 /-- **Every adjoint orbit meets a closed Weyl chamber in exactly one point.** For a maximal torus
-`T` of a compact connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero roots
-and planes for a symmetric positive definite invariant form, and a regular `X₀ ∈ 𝔱`, each `Z ∈ 𝔤`
+`T` of a compact connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero
+planes for a symmetric positive definite invariant form, and a regular `X₀ ∈ 𝔱`, each `Z ∈ 𝔤`
 is carried by the adjoint action to exactly one point of the closed chamber of `X₀`. -/
-theorem IsMaximalTorus.existsUnique_mem_closedWeylChamber_Ad (Z : LeftInvariantDerivation I G) :
+theorem IsMaximalTorus.existsUnique_mem_sameSideChamber_Ad (Z : LeftInvariantDerivation I G) :
     ∃! Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
-      Y ∈ closedWeylChamber α X₀ ∧ ∃ g : G, Ad (I := I) g Z = Y := by
+      Y ∈ sameSideChamber α X₀ ∧ ∃ g : G, Ad (I := I) g Z = Y := by
   obtain ⟨g, hg⟩ := hT.exists_Ad_mem_lieSubalgebraOfSubgroup Z
   obtain ⟨Y, ⟨hY, hYX⟩, huniq⟩ :=
-    hT.existsUnique_mem_closedWeylChamber_orbitRel hBs hBp hB hD hα hV hX₀ ⟨_, hg⟩
+    hT.existsUnique_mem_sameSideChamber_orbitRel hBs hBp hB hD hV hX₀ ⟨_, hg⟩
   -- Points of `𝔱` are adjoint-related exactly when they are Weyl-related.
   have hrel (Y' : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
       (∃ g' : G, Ad (I := I) g' Z = Y') ↔
         (T.weylAdjointRepresentation (I := I)).orbitRel Y' ⟨_, hg⟩ := by
-    rw [Representation.orbitRel_apply, hT.exists_weylAdjointRepresentation_eq_iff]
-    refine ⟨fun ⟨g', hg'⟩ ↦ ⟨g' * g⁻¹, ?_⟩, fun ⟨g', hg'⟩ ↦ ⟨g' * g, ?_⟩⟩
-    · simp only [Ad_mul, LieEquiv.trans_apply, Ad_inv, LieEquiv.symm_apply_apply, hg']
-    · simp only [Ad_mul, LieEquiv.trans_apply] at hg' ⊢
-      exact hg'
+    have hZ :
+        Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
+          (Ad (I := I) g Z) = Quotient.mk _ Z :=
+      (Representation.orbitRel_mk_eq_mk_iff _).2 ⟨g, by simp⟩
+    rw [hT.orbitRel_weylAdjointRepresentation_iff, ← Quotient.eq]
+    simp [hZ, Representation.orbitRel_mk_eq_mk_iff]
   exact ⟨Y, ⟨hY, (hrel Y).2 hYX⟩, fun Y' ⟨hY', hY'Z⟩ ↦ huniq Y' ⟨hY', (hrel Y').1 hY'Z⟩⟩
 
 /-! ### The chamber as the orbit space -/
 
 /-- The map from the closed Weyl chamber to the adjoint orbit space is bijective. -/
-private theorem bijective_closedWeylChamber_orbitRel_mk :
-    Function.Bijective fun X : closedWeylChamber α X₀ ↦
+private theorem bijective_sameSideChamber_orbitRel_mk :
+    Function.Bijective fun X : sameSideChamber α X₀ ↦
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
         ((X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) : LeftInvariantDerivation I G) := by
-  have huniq := hT.existsUnique_mem_closedWeylChamber_Ad hBs hBp hB hD hα hV hX₀
+  have huniq := hT.existsUnique_mem_sameSideChamber_Ad hBs hBp hB hD hV hX₀
   refine ⟨fun X Y hXY ↦ Subtype.ext ?_, fun q ↦ ?_⟩
   · obtain ⟨g, hg⟩ := (Representation.orbitRel_mk_eq_mk_iff _).1 hXY
     simp only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply]
@@ -459,25 +456,25 @@ private theorem bijective_closedWeylChamber_orbitRel_mk :
     simp only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply, hg]
 
 /-- **A closed Weyl chamber is the adjoint orbit space.** For a maximal torus `T` of a compact
-connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero roots and planes for
+connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero planes for
 a symmetric positive definite invariant form, and a regular `X₀ ∈ 𝔱`, sending a point of the closed
 chamber of `X₀` to its adjoint orbit is a homeomorphism onto `𝔤 / Ad G`. -/
-def IsMaximalTorus.closedWeylChamberOrbitHomeomorph :
-    closedWeylChamber α X₀ ≃ₜ
+def IsMaximalTorus.sameSideChamberOrbitHomeomorph :
+    sameSideChamber α X₀ ≃ₜ
       Quotient (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel :=
-  have hp : IsProperMap fun X : closedWeylChamber α X₀ ↦
+  have hp : IsProperMap fun X : sameSideChamber α X₀ ↦
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
         ((X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) : LeftInvariantDerivation I G) :=
     hT.isProperMap_orbitRel_mk_coe.comp
-      (isClosed_closedWeylChamber α X₀).isClosedEmbedding_subtypeVal.isProperMap
-  (Equiv.ofBijective _ (bijective_closedWeylChamber_orbitRel_mk hT hBs hBp hB hD hα hV hX₀))
+      (isClosed_sameSideChamber α X₀).isClosedEmbedding_subtypeVal.isProperMap
+  (Equiv.ofBijective _ (bijective_sameSideChamber_orbitRel_mk hT hBs hBp hB hD hV hX₀))
     |>.toHomeomorphOfContinuousClosed hp.continuous hp.isClosedMap
 
-/-- The homeomorphism `IsMaximalTorus.closedWeylChamberOrbitHomeomorph` sends a point of the
+/-- The homeomorphism `IsMaximalTorus.sameSideChamberOrbitHomeomorph` sends a point of the
 chamber to its adjoint orbit. -/
 @[simp]
-theorem IsMaximalTorus.closedWeylChamberOrbitHomeomorph_apply (X : closedWeylChamber α X₀) :
-    hT.closedWeylChamberOrbitHomeomorph hBs hBp hB hD hα hV hX₀ X =
+theorem IsMaximalTorus.sameSideChamberOrbitHomeomorph_apply (X : sameSideChamber α X₀) :
+    hT.sameSideChamberOrbitHomeomorph hBs hBp hB hD hV hX₀ X =
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
         ((X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) : LeftInvariantDerivation I G) :=
   (rfl)
@@ -494,29 +491,29 @@ variable {B' : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
   [IsModuleTopology ℝ (Module.Dual ℝ (GroupLieAlgebra I G))]
 
 /-- **A closed Weyl chamber is the coadjoint orbit space.** For a maximal torus `T` of a compact
-connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero roots and planes for
+connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero planes for
 a symmetric positive definite invariant form, a regular `X₀ ∈ 𝔱`, and an invariant form `B'` with
 trivial left radical on the tangent Lie algebra, sending a point `X` of the closed chamber of `X₀`
 to the coadjoint orbit of its covector `B' (X, ·)` is a homeomorphism onto `𝔤* / Ad* G`, for the
 module topology on `𝔤*`. -/
-def IsMaximalTorus.closedWeylChamberCoadjointOrbitHomeomorph :
-    closedWeylChamber α X₀ ≃ₜ Quotient (coadjointRepresentation ℝ I G).orbitRel :=
-  ((hT.closedWeylChamberOrbitHomeomorph hBs hBp hB hD hα hV hX₀).trans
+def IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph :
+    sameSideChamber α X₀ ≃ₜ Quotient (coadjointRepresentation ℝ I G).orbitRel :=
+  ((hT.sameSideChamberOrbitHomeomorph hBs hBp hB hD hV hX₀).trans
     hT.weylOrbitHomeomorph.symm).trans (hT.weylCoadjointOrbitHomeomorph hB' hB's)
 
-/-- The homeomorphism `IsMaximalTorus.closedWeylChamberCoadjointOrbitHomeomorph` sends a point `X`
+/-- The homeomorphism `IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph` sends a point `X`
 of the chamber to the coadjoint orbit of `B' (X, ·)`. -/
 @[simp]
-theorem IsMaximalTorus.closedWeylChamberCoadjointOrbitHomeomorph_apply
-    (X : closedWeylChamber α X₀) :
-    hT.closedWeylChamberCoadjointOrbitHomeomorph hBs hBp hB hD hα hV hX₀ hB' hB's X =
+theorem IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph_apply
+    (X : sameSideChamber α X₀) :
+    hT.sameSideChamberCoadjointOrbitHomeomorph hBs hBp hB hD hV hX₀ hB' hB's X =
       Quotient.mk (coadjointRepresentation ℝ I G).orbitRel
         (B' (evalOne ((X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
           LeftInvariantDerivation I G))) := by
   have : hT.weylOrbitHomeomorph.symm
-      (hT.closedWeylChamberOrbitHomeomorph hBs hBp hB hD hα hV hX₀ X) = Quotient.mk _ X.val := by
-    rw [Homeomorph.symm_apply_eq, weylOrbitHomeomorph_mk, closedWeylChamberOrbitHomeomorph_apply]
-  rw [closedWeylChamberCoadjointOrbitHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
+      (hT.sameSideChamberOrbitHomeomorph hBs hBp hB hD hV hX₀ X) = Quotient.mk _ X.val := by
+    rw [Homeomorph.symm_apply_eq, weylOrbitHomeomorph_mk, sameSideChamberOrbitHomeomorph_apply]
+  rw [sameSideChamberCoadjointOrbitHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
     this, weylCoadjointOrbitHomeomorph_mk]
 
 end Orbit
