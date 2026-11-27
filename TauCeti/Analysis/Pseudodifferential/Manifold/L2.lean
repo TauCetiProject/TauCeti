@@ -50,16 +50,17 @@ evaluate with `TauCeti.chartSobolevRealization_apply`. On smooth functions it is
   (`TauCeti.IsClassicalElliptic.exists_norm_le_mul_norm_chartSobolevExtension_add`), which bounds
   the norm of the Hilbert space `H^m(M)` by the graph norm
   (`ContinuousLinearMap.isClosed_domainOperator_of_norm_le`).
-* **Weak solutions.** If `n ≠ 0` and `P` is elliptic, every weak solution `f ∈ L²(M, μ)` of
-  `P f = g ∈ L²(M, μ)`, in the sense that `⟪f, P u⟫ = ⟪g, u⟫` for all smooth `u`, lies in `H^m(M)`
+* **Weak solutions.** If `n ≠ 0` and `P` is elliptic, every `f ∈ L²(M, μ)` with
+  `⟪f, P u⟫ = ⟪g, u⟫` for some `g ∈ L²(M, μ)` and all smooth `u`, that is, every weak solution of
+  `P* f = g` for the formal adjoint `P*` of `P`, lies in `H^m(M)`
   (`TauCeti.IsClassicalElliptic.exists_chartSobolevToLp_eq_of_forall_inner_eq`). Indeed, for a
   parametrix `S` with `P ∘ S - 1` of order `-∞`, testing against `S u` gives `f = S* g - R* f`,
   where the formal adjoints `S*` and `R*` of `S` and `R = P ∘ S - 1` have order `-m` and so map
   `L²(M, μ)` into `H^m(M)`.
 * **Adjoints.** Consequently the adjoint of the realization of an elliptic `P` is the realization
   of its formal adjoint, with the same domain `H^m(M)`
-  (`TauCeti.IsClassicalElliptic.adjoint_chartSobolevRealization`): the weak solutions are exactly
-  the elements of the domain of the adjoint. In particular the realization of a formally
+  (`TauCeti.IsClassicalElliptic.adjoint_chartSobolevRealization`): the domain of the adjoint
+  consists exactly of the `f` above. In particular the realization of a formally
   self-adjoint elliptic operator is **self-adjoint**
   (`TauCeti.IsClassicalElliptic.isSelfAdjoint_chartSobolevRealization`).
 
@@ -291,8 +292,9 @@ variable [NeZero n] {P}
 
 /-- **Elliptic regularity for weak `L²` solutions.** Let `M` be a compact manifold modelled on `ℝⁿ`
 with `n ≠ 0`, `μ` a finite measure with a smooth positive density, and `P` an elliptic classical
-pseudodifferential operator of order `m ≥ 0`. If `f, g ∈ L²(M, μ)` satisfy `P f = g` weakly, in the
-sense that `⟪f, P u⟫ = ⟪g, u⟫` for every smooth `u`, then `f` lies in the Sobolev space `H^m(M)`.
+pseudodifferential operator of order `m ≥ 0`. If `f, g ∈ L²(M, μ)` satisfy `⟪f, P u⟫ = ⟪g, u⟫`
+for every smooth `u`, that is, the formal adjoint of `P` sends `f` to `g` weakly, then `f` lies in
+the Sobolev space `H^m(M)`.
 -/
 theorem IsClassicalElliptic.exists_chartSobolevToLp_eq_of_forall_inner_eq
     (hPe : IsClassicalElliptic m P) {f g : Lp ℂ 2 μ}
@@ -346,7 +348,8 @@ theorem IsClassicalElliptic.adjoint_chartSobolevRealization (hPe : IsClassicalEl
     (isProperlySupported_of_compactSpace Q) fun u v _ _ ↦ hPQ u v
   have hle := chartSobolevRealization_le_adjoint hμ hc ψ hψ P hm hP hQ hPQ
   refine (LinearPMap.eq_of_le_of_domain_eq hle (le_antisymm hle.1 fun f hf ↦ ?_)).symm
-  -- An element `f` of the domain of the adjoint solves `P f = g` weakly, for `g` its image.
+  -- An element `f` of the domain of the adjoint satisfies `⟪f, P u⟫ = ⟪g, u⟫` for all smooth `u`,
+  -- for `g` its image.
   obtain ⟨x, rfl⟩ := hPe.exists_chartSobolevToLp_eq_of_forall_inner_eq hμ hc ψ hψ hm
     (g := (chartSobolevRealization hμ hc ψ hψ P hm).adjoint ⟨f, hf⟩) fun u ↦ by
       have h := LinearPMap.adjoint_isFormalAdjoint (dense_domain_chartSobolevRealization hμ hc ψ hψ
