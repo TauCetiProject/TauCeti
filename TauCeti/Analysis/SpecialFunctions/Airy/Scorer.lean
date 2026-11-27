@@ -21,7 +21,7 @@ $$\operatorname{Hi}(z) = \frac{1}{\pi} \int_0^\infty \exp\!\left(-\frac{t^3}{3} 
 which converges absolutely for every complex `z`, and `Gi = Bi − Hi` (DLMF 9.12.11).
 
 The integrand is the power-decay kernel of `TauCeti.MeasureTheory.Integral.Exp.PowerDecay` with
-`p = 3`, `b = 1/3` and `q = 0`. Differentiating under the integral sign shows that `Hi` is
+`p = 3`, `b = 1/3` and `s = 0`. Differentiating under the integral sign shows that `Hi` is
 entire, with the iterated derivatives given by the moments `π⁻¹ ∫₀^∞ tⁿ exp(−t³/3 + z t) dt`; at
 the origin these are Gamma values, `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`. Since
 `(t² − z) exp(−t³/3 + z t) = −∂ₜ exp(−t³/3 + z t)`, the second moment equals `z` times the zeroth
@@ -121,27 +121,23 @@ theorem _root_.Real.scorerHi_ofReal (x : ℝ) : TauCeti.scorerHi x = Real.scorer
 
 /-! ### Moment integrals -/
 
-/-- The moment integrand of `Hi` is the power-decay kernel with `p = 3`, `q = n` and
+/-- The moment integrand of `Hi` is the power-decay kernel with `p = 3`, `s = n` and
 `b = 1/3`. -/
 private theorem pow_mul_cexp_neg_cube_div_three_add_mul_eq (n : ℕ) (z : ℂ) (t : ℝ) :
     (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t) =
-      (t : ℂ) ^ ((n : ℝ) : ℂ) * cexp (z * t - ((1 / 3 * t ^ (3 : ℝ) : ℝ) : ℂ)) := by
-  rw [ofReal_natCast, cpow_natCast, Real.rpow_ofNat]
-  push_cast
-  ring_nf
+      (t : ℂ) ^ (n : ℂ) * cexp (z * t - (1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) := by
+  have hexp : -(t : ℂ) ^ 3 / 3 + z * t = z * t - (1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
+    rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
+    ring
+  rw [cpow_natCast, hexp]
 
 /-- For every natural number `n` and complex `z`, the moment integrand
 `t ↦ tⁿ exp(−t³/3 + z t)` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) := by
-  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) :=
+  (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
     (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]) z).congr_fun
-    (fun t _ => ?_) measurableSet_Ioi
-  have hexp : z * t - (1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) = -(t : ℂ) ^ 3 / 3 + z * t := by
-    rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
-    ring
-  dsimp only
-  rw [cpow_natCast, hexp]
+    (fun t _ => (pow_mul_cexp_neg_cube_div_three_add_mul_eq n z t).symm) measurableSet_Ioi
 
 /-- The integrand `t ↦ exp(−t³/3 + z t)` of `Hi` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Complex.integrableOn_cexp_neg_cube_div_three_add_mul (z : ℂ) :
@@ -155,10 +151,10 @@ theorem _root_.Nat.hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul (
     HasDerivAt
       (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + w * t))
       (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) z := by
-  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_rpow (p := 3) (q := n) (b := 1 / 3)
-    (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z
-  -- The exponent `n + 1` of the derivative kernel is the real number `n + 1`.
-  have hcast : ((n : ℝ) : ℂ) + 1 = ((n + 1 : ℕ) : ℝ) := by push_cast; ring
+  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
+    (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]) z
+  -- The exponent `n + 1` of the derivative kernel is the natural number `n + 1`.
+  have hcast : (n : ℂ) + 1 = ((n + 1 : ℕ) : ℂ) := by push_cast; ring
   simpa only [hcast, pow_mul_cexp_neg_cube_div_three_add_mul_eq] using h
 
 /-! ### Derivatives of `Hi` -/
@@ -223,14 +219,14 @@ private theorem integral_sq_mul_cexp_sub_mul_cexp_neg_cube_div_three_add_mul (z 
     exact harg.cexp.neg.congr_deriv (by ring)
   have hint := (Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 2 z).sub
     ((Complex.integrableOn_cexp_neg_cube_div_three_add_mul z).const_mul z)
-  -- `g` is the negated kernel of `TauCeti.MeasureTheory.Integral.Exp.PowerDecay` with `q = 0`.
+  -- `g` is the negated kernel of `TauCeti.MeasureTheory.Integral.Exp.PowerDecay` with `s = 0`.
   have htend : Tendsto g atTop (𝓝 0) := by
-    have h := (tendsto_cpow_mul_cexp_mul_sub_mul_rpow_atTop (q := 0) (p := 3) (b := 1 / 3)
-      (by norm_num) (by norm_num) z).neg
+    have h := (tendsto_cpow_mul_cexp_mul_sub_mul_cpow_atTop (p := 3) (b := 1 / 3)
+      (by norm_num) (by norm_num) 0 z).neg
     rw [neg_zero] at h
     refine h.congr fun t => ?_
     have hk := pow_mul_cexp_neg_cube_div_three_add_mul_eq 0 z t
-    rw [pow_zero, one_mul, CharP.cast_eq_zero] at hk
+    rw [pow_zero, one_mul, Nat.cast_zero] at hk
     rw [← hk]
   have hibp := integral_Ioi_of_hasDerivAt_of_tendsto hcont.continuousWithinAt hderiv hint htend
   simpa [g] using hibp
@@ -261,10 +257,7 @@ theorem _root_.Nat.iterate_deriv_scorerHi_zero (n : ℕ) :
         ∫ t in Ioi (0 : ℝ),
           (t : ℂ) ^ (n : ℂ) * cexp (-(1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) := by
     refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
-    have hexp : -(t : ℂ) ^ 3 / 3 + 0 * t = -(1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
-      rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
-      ring
-    rw [cpow_natCast, hexp]
+    simpa only [zero_mul, zero_sub, neg_mul] using pow_mul_cexp_neg_cube_div_three_add_mul_eq n 0 t
   have hpow : (1 / 3 : ℂ) ^ (-((n : ℂ) + 1) / 3) * (1 / (3 : ℂ)) =
       (3 : ℂ) ^ (((n : ℂ) - 2) / 3) := by
     have hexp : ((n : ℂ) + 1) / 3 + (-1) = ((n : ℂ) - 2) / 3 := by ring

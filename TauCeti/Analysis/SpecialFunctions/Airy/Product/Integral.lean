@@ -496,21 +496,20 @@ theorem hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) 
       (∫ t in Ioi (0 : ℝ),
         (t : ℂ) ^ (n + 1) * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
       z := by
-  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_rpow (p := 3) (q := (n : ℝ) - 1 / 2)
-    (b := 1 / 12) (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z
-  -- The exponent `q + 1` of the derivative kernel is `(n + 1) - 1/2`.
-  have hcast : (((n : ℝ) - 1 / 2 : ℝ) : ℂ) + 1 = ((((n + 1 : ℕ) : ℝ) - 1 / 2 : ℝ) : ℂ) := by
+  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 12)
+    (s := (n : ℂ) - 1 / 2) (by norm_num) (by norm_num)
+    (by simp; linarith [n.cast_nonneg (α := ℝ)]) z
+  -- The exponent `s + 1` of the derivative kernel is `(n + 1) - 1/2`.
+  have hcast : ((n : ℂ) - 1 / 2) + 1 = ((n + 1 : ℕ) : ℂ) - 1 / 2 := by
     push_cast
     ring
   have hF (k : ℕ) (w : ℂ) :
       ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ k * cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) =
         ∫ t in Ioi (0 : ℝ),
-          (t : ℂ) ^ (((k : ℝ) - 1 / 2 : ℝ) : ℂ) *
-            cexp (w * t - ((1 / 12 * t ^ (3 : ℝ) : ℝ) : ℂ)) := by
-    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) => ?_
-    rw [pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht, ← ofReal_cpow ht.le]
-    push_cast
-    rfl
+          (t : ℂ) ^ ((k : ℂ) - 1 / 2) *
+            cexp (w * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) :=
+    setIntegral_congr_fun measurableSet_Ioi fun _ ht =>
+      pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht k w
   rw [hcast] at h
   simpa only [hF] using h
 
@@ -582,18 +581,17 @@ private theorem integral_product_equation_kernel (z : ℂ) :
   have hint := ((integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow 3 z).sub
     ((integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow 1 z).const_mul (4 * z))).sub
     ((integrableOn_cexp_sub_cube_div_twelve_mul_cpow z).const_mul (2 : ℂ))
-  -- `g` is `-4` times the power-decay kernel with `p = 3`, `q = 1/2` and `b = 1/12`.
+  -- `g` is `-4` times the power-decay kernel with `p = 3`, `s = 1/2` and `b = 1/12`.
   have htend : Tendsto g atTop (𝓝 0) := by
-    have h := (tendsto_cpow_mul_cexp_mul_sub_mul_rpow_atTop (q := 1 / 2) (p := 3) (b := 1 / 12)
-      (by norm_num) (by norm_num) z).const_mul (-4)
+    have h := (tendsto_cpow_mul_cexp_mul_sub_mul_cpow_atTop (p := 3) (b := 1 / 12)
+      (by norm_num) (by norm_num) (1 / 2) z).const_mul (-4)
     rw [mul_zero] at h
     refine h.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with t ht
-    have hsqrt : ((Real.sqrt t : ℝ) : ℂ) = (t : ℂ) ^ ((1 / 2 : ℝ) : ℂ) := by
-      rw [Real.sqrt_eq_rpow, ofReal_cpow ht.le]
-    have hexp : z * t - (t : ℂ) ^ 3 / 12 = z * t - ((1 / 12 * t ^ (3 : ℝ) : ℝ) : ℂ) := by
-      rw [Real.rpow_ofNat]
-      push_cast
+    have hsqrt : ((Real.sqrt t : ℝ) : ℂ) = (t : ℂ) ^ (1 / 2 : ℂ) := by
+      rw [Real.sqrt_eq_rpow, show (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) by norm_num, ofReal_cpow ht.le]
+    have hexp : z * t - (t : ℂ) ^ 3 / 12 = z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
+      rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
       ring
     dsimp only [g]
     rw [hsqrt, hexp]
