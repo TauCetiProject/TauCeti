@@ -30,9 +30,13 @@ are those of the datum `m • ZLattice.appellHumbertData Λ χ hχ`, that is,
 `χ (l) ^ m exp (m π (z conj(l) + |l|² / 2) / A)` (`ZLattice.factor_nsmul_appellHumbertData`).
 
 The sign `ε (l)`, equal to `1` for `l ∈ 2Λ` and to `-1` otherwise (`ZLattice.sigmaSign`), is an
-Appell–Humbert multiplier (`ZLattice.isAppellHumbertMultiplier_sigmaSign`); the datum
-`ZLattice.sigmaSignData Λ` of `(H, ε)` is the one of which the sigma function of `Λ` is a theta
-function of degree one.
+Appell–Humbert multiplier (`ZLattice.isAppellHumbertMultiplier_sigmaSign`). It is the sign in the
+quasi-periodicity `σ (z + l) = ε (l) exp (η (l) (z + l / 2)) σ (z)` of the Weierstrass sigma
+function (`PeriodPair.weierstrassSigma_add_coe_of_div_two_mem` and
+`PeriodPair.weierstrassSigma_add_coe_of_div_two_notMem`). The datum `ZLattice.sigmaSignData Λ` of
+`(H, ε)` is intended for the reduced sigma function `σ (z) exp (-s₂ z² / 2)`, for a suitable
+constant `s₂` of `Λ`, which is expected to be a theta function of degree one for it; this file does
+not prove that.
 
 The area of `Λ` is Mathlib's Lebesgue covolume `ZLattice.covolume Λ`, which for a `ℤ`-basis `a, b`
 is `|Im (ā b)|` (`ZLattice.covolume_eq_abs_im`); no separate notion of area is introduced. The
@@ -243,7 +247,7 @@ variable (Λ) in
 open Classical in
 /-- The sign `ε (l)` of a lattice `Λ` in `ℂ`: `1` if `l ∈ 2Λ`, that is `l / 2 ∈ Λ`, and `-1`
 otherwise. It is an Appell–Humbert multiplier (`ZLattice.isAppellHumbertMultiplier_sigmaSign`),
-the multiplier of the sigma function of `Λ`. -/
+and it is the sign in the transformation law of the (reduced) sigma function of `Λ`. -/
 noncomputable def sigmaSign (l : Λ) : Circle :=
   if (l : ℂ) / 2 ∈ Λ then 1 else -1
 
@@ -300,8 +304,9 @@ theorem isAppellHumbertMultiplier_sigmaSign : IsAppellHumbertMultiplier Λ (sigm
   grind [Int.even_add, Int.even_sub]
 
 variable (Λ) in
-/-- The **Appell–Humbert datum `(H, ε)`** of a lattice `Λ` in `ℂ`, the datum of which the sigma
-function of `Λ` is a theta function of degree one. -/
+/-- The **Appell–Humbert datum `(H, ε)`** of a lattice `Λ` in `ℂ`. Its intended use is the reduced
+sigma function `σ (z) exp (-s₂ z² / 2)` of `Λ`, expected to be a theta function of degree one for
+this datum; that is not proved here. -/
 noncomputable def sigmaSignData : TauCeti.AppellHumbertData Λ :=
   appellHumbertData Λ (sigmaSign Λ) (isAppellHumbertMultiplier_sigmaSign Λ)
 
