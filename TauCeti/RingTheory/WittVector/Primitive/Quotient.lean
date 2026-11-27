@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.Ideal
 public import TauCeti.RingTheory.AdicCompletion.Principal
 public import TauCeti.RingTheory.AdicCompletion.Quotient
+public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
 
 /-!
@@ -42,6 +43,10 @@ zeroth Witt coordinate is divisible by `ϖ`; so these results apply to every pri
 * `WittVector.IsDistinguished.exists_mk_teichmuller_dvd_natCast_pow`: `[ϖ]` divides a power of
   `p` in `A⁺`.
 * `WittVector.IsDistinguished.isAdicComplete_quotient_natCast`: `A⁺` is `p`-adically complete.
+* `WittVector.IsDistinguished.mk_teichmuller_pow_dvd_natCast`: `[ϖ] ^ p ∣ p` in `A⁺` when
+  `ϖ ^ p ∣ ξ₀`.
+* `WittVector.IsDistinguished.bijective_frobeniusModPow_quotient`: relative Frobenius
+  `A⁺ ⧸ ([ϖ]) → A⁺ ⧸ ([ϖ] ^ p)` is bijective when `ϖ ^ p ∣ ξ₀`.
 * `WittVector.IsDistinguished.exists_mk_teichmuller_sub_mem`: `a ↦ [a]` is uniformly continuous
   from the `ϖ`-adic topology on `S` to the `[ϖ]`-adic topology on `A⁺`.
 * `WittVector.IsDistinguished.quotientTeichmullerEquiv`: `A⁺ ⧸ ([ϖ]) ≃+* S ⧸ (ϖ)`.
@@ -233,6 +238,74 @@ theorem comap_map_algebraMap (hξ : ξ.IsDistinguished) (hξ₀ : ξ.coeff 0 ∈
   rw [← Ideal.Quotient.eq_zero_iff_mem, map_mul, map_pow] at hx
   rw [← Ideal.Quotient.eq_zero_iff_mem]
   exact mem_nonZeroDivisors_iff_left.mp hreg _ hx
+
+/-- For a distinguished element `ξ` over a perfect ring `S` of characteristic `p` and `ϖ ∈ S` with
+`ϖ ^ p ∣ ξ.coeff 0`, we have `(mk [ϖ]) ^ p ∣ p` in `𝕎 S ⧸ (ξ)`. -/
+theorem mk_teichmuller_pow_dvd_natCast (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ^ p ∣ ξ.coeff 0) :
+    Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ) ^ p ∣ (p : 𝕎 S ⧸ span {ξ}) := by
+  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp hξ
+  obtain ⟨c, hc⟩ := hξ₀
+  set J := span {ξ}
+  refine ⟨Ideal.Quotient.mk J (teichmuller p c) * (-Ideal.Quotient.mk J ↑u⁻¹), ?_⟩
+  have hu' : Ideal.Quotient.mk J ↑u * Ideal.Quotient.mk J ↑u⁻¹ = 1 := by
+    rw [← map_mul, u.mul_inv, map_one]
+  have hξ' : Ideal.Quotient.mk J (teichmuller p (ξ.coeff 0)) +
+      (p : 𝕎 S ⧸ J) * Ideal.Quotient.mk J ↑u = 0 := by
+    rw [← map_natCast (Ideal.Quotient.mk J), ← map_mul, ← map_add, ← hu,
+      Ideal.Quotient.mk_singleton_self]
+  have hteich : Ideal.Quotient.mk J (teichmuller p ϖ) ^ p *
+      Ideal.Quotient.mk J (teichmuller p c) =
+      Ideal.Quotient.mk J (teichmuller p (ξ.coeff 0)) := by
+    rw [← map_pow, ← map_pow, ← map_mul, ← map_mul, ← hc]
+  rw [← mul_assoc, hteich]
+  linear_combination -(p : 𝕎 S ⧸ J) * hu' + Ideal.Quotient.mk J ↑u⁻¹ * hξ'
+
+/-- Relative Frobenius `A⁺ ⧸ (π) → A⁺ ⧸ (π ^ p)` is bijective on `A⁺ = 𝕎 S ⧸ (ξ)` when `ξ` is
+distinguished over a perfect ring `S` of characteristic `p` and `ϖ ^ p ∣ ξ.coeff 0`, where
+`π = mk [ϖ]`. -/
+theorem bijective_frobeniusModPow_quotient (hξ : ξ.IsDistinguished) (hξ₀p : ϖ ^ p ∣ ξ.coeff 0) :
+    Function.Bijective
+      (TauCeti.frobeniusModPow p (hξ.mk_teichmuller_pow_dvd_natCast hξ₀p)) := by
+  set J := span {ξ}
+  set π : 𝕎 S ⧸ J := Ideal.Quotient.mk J (teichmuller p ϖ)
+  have hξ₀ : ϖ ∣ ξ.coeff 0 := (dvd_pow_self ϖ hp.out.ne_zero).trans hξ₀p
+  have hπp : Ideal.Quotient.mk J (teichmuller p (ϖ ^ p)) = π ^ p := by
+    rw [map_pow, map_pow]
+  let e1 := hξ.quotientTeichmullerEquiv hξ₀
+  let ep := hξ.quotientTeichmullerEquiv hξ₀p
+  constructor
+  · rw [TauCeti.frobeniusModPow_injective_iff]
+    intro x hx
+    obtain ⟨w, rfl⟩ := Ideal.Quotient.mk_surjective x
+    have hx' : Ideal.Quotient.mk (span {Ideal.Quotient.mk J (teichmuller p (ϖ ^ p))})
+        (Ideal.Quotient.mk J w ^ p) = 0 := by
+      rw [Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton, hπp]
+      exact hx
+    have hcoeff : ϖ ^ p ∣ w.coeff 0 ^ p := by
+      have h0 := congrArg ep hx'
+      rw [map_zero ep, map_pow (Ideal.Quotient.mk _), map_pow ep,
+        quotientTeichmullerEquiv_mk_mk, ← map_pow] at h0
+      exact mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp h0)
+    have hcoeff1 : ϖ ∣ w.coeff 0 := by
+      have hpow : ∀ x : S, _root_.frobeniusEquiv S p x = x ^ p := fun x ↦ by
+        rw [_root_.coe_frobeniusEquiv, _root_.frobenius_def]
+      rw [← hpow ϖ, ← hpow (w.coeff 0)] at hcoeff
+      exact (map_dvd_iff (_root_.frobeniusEquiv S p)).mp hcoeff
+    have h1 : e1 (Ideal.Quotient.mk (span {π}) (Ideal.Quotient.mk J w)) = 0 := by
+      rw [quotientTeichmullerEquiv_mk_mk, Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton]
+      exact hcoeff1
+    exact mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp (e1.injective (h1.trans
+      (map_zero e1).symm)))
+  · rw [TauCeti.frobeniusModPow_surjective_iff]
+    intro x
+    obtain ⟨w, rfl⟩ := Ideal.Quotient.mk_surjective x
+    let a : S := (_root_.frobeniusEquiv S p).symm (w.coeff 0)
+    refine ⟨Ideal.Quotient.mk J (teichmuller p a), ?_⟩
+    rw [← hπp, ← mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem]
+    apply ep.injective
+    rw [map_zero ep, map_sub (Ideal.Quotient.mk _), map_sub ep, map_pow (Ideal.Quotient.mk _),
+      map_pow ep, quotientTeichmullerEquiv_mk_mk, quotientTeichmullerEquiv_mk_mk,
+      teichmuller_coeff_zero, ← map_pow, _root_.frobeniusEquiv_symm_pow_p, sub_self]
 
 end IsDistinguished
 

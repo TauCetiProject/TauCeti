@@ -42,6 +42,9 @@ one; for `I = (p)` the target is Mathlib's `PreTilt B⁺ p = Perfection (ModP B�
 * `TauCeti.Perfectoid.uniformTilt.mem_plusSubring_iff_coeff_zero`: `x ∈ B♭⁺` iff `x⁽⁰⁾ ∈ B⁺`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem_span`: `(x + y)⁽ⁿ⁾ - x⁽ⁿ⁾ - y⁽ⁿ⁾ ∈ p B⁺` on
   `B♭⁺`.
+* `TauCeti.Perfectoid.uniformTilt.plusSubring_le_powerBoundedSubring`: `B♭⁺ ⊆ B♭°`.
+* `TauCeti.Perfectoid.uniformTilt.instPerfectRingPlusSubring`: `B♭⁺` is a perfect ring of
+  characteristic `p`.
 * `TauCeti.Perfectoid.uniformTilt.map_mem_plusSubring`: `g♭` carries `B♭⁺` into `C♭⁺` when `g`
   carries `B⁺` into `C⁺`.
 * `TauCeti.Perfectoid.uniformTilt.plusSharp_add_sub_mem`: `(x + y)♯ - x♯ - y♯ ∈ p B⁺`.
@@ -156,6 +159,19 @@ theorem plusSubring_le_powerBoundedSubring [NonarchimedeanAddGroup (uniformTilt 
     (h : IsRingOfIntegralElements Bplus) :
     plusSubring p h ≤ powerBoundedSubring (uniformTilt p B) :=
   fun _ hx ↦ mem_powerBoundedSubring.mpr ((isBounded_plusSubring h).isPowerBounded_of_mem hx)
+
+/-- The integral tilt `B♭⁺` is a perfect ring for the exponent `p`. -/
+instance instPerfectRingPlusSubring (h : IsRingOfIntegralElements Bplus) :
+    PerfectRing (plusSubring p h) p where
+  bijective_frobenius := by
+    refine ⟨fun x y hxy ↦ Subtype.ext <| PerfectRing.bijective_frobenius.1
+      (congrArg Subtype.val hxy), fun x ↦ ?_⟩
+    obtain ⟨y, hy⟩ := (PerfectRing.bijective_frobenius (R := uniformTilt p B) (p := p)).2 x
+    dsimp only at hy
+    refine ⟨⟨y, mem_plusSubring_iff_coeff_zero.mpr <|
+      h.mem_of_pow_mem hp.out.pos ?_⟩, Subtype.ext hy⟩
+    rw [← map_pow, hy]
+    exact mem_plusSubring_iff_coeff_zero.mp x.property
 
 section Map
 
