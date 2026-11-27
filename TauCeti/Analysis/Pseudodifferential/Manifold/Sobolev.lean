@@ -67,6 +67,9 @@ symbol with compact spatial support
   partition, `1 < p < ∞`.
 * `TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
   Sobolev estimate `‖P u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` in these norms, for `1 < p < ∞`.
+* `TauCeti.IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum`: on
+  any manifold, the reading of `P u` in one chart is bounded by the readings of `u` through
+  cutoffs adding up to `1` on a compact set depending only on `P` and the chart cutoff.
 * `TauCeti.chartSobolevExtension_toChartSobolevSpace_of_mem`: `P` extends to a bounded operator
   `H^s(M) → H^t(M)` for `t ≤ s - m`.
 * `TauCeti.isCompactOperator_chartSobolevExtension_of_mem`: the extension is compact for
@@ -189,6 +192,57 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_appl
       ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
       ⟨C, hC⟩)
     he φ he' ψ hψ
+
+/-- **The Sobolev estimate in one chart, on any manifold.** Let `P` be a properly supported
+operator and `φ` a cutoff in a chart `e`. There is a compact set `K ⊆ M` with the following
+property. Let `ψᵢ` be finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`,
+extended by `0`, add up to `1` on `K`. If `P` is a classical pseudodifferential operator of order
+`m`, then for every real `s` and `1 < p < ∞` there is a constant `C` such that every smooth `u` on
+`M` satisfies
+
+`‖φ · ((P u) ∘ e⁻¹)‖_{H^{s - m,p}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^{s,p}}`.
+
+Unlike `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`, the
+cutoffs `ψᵢ` need only cover the compact set `K`, so `M` need not be compact. The set `K` depends
+only on `P` and `φ`, not on the order `m`, on `s` or on `p`. -/
+theorem IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : IsProperlySupported P)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hp : 1 < p) (hp_top : p ≠ ⊤) :
+    ∃ K : Set M, IsCompact K ∧ ∀ {ι : Type*} [Fintype ι]
+      {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+      (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+      (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ)),
+      (∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) →
+      ∀ m : ℝ, P ∈ classicalPseudodifferentialOperators m → ∀ s : ℝ, ∃ C,
+        ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+          ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) p
+              (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
+            C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s p
+              ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
+  -- On `e⁻¹(supp φ)`, `P u` only depends on `u` on a compact set `K`.
+  obtain ⟨K, hK, hPK⟩ := hP.exists_isCompact_forall_eqOn (e.isCompact_symm_image_tsupport φ)
+  refine ⟨K, hK, fun {ι} _ e' he' ψ hψ m hPm s ↦ ?_⟩
+  choose C hC using fun i ↦
+    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le hPm he
+      (he' i) φ (ψ i) hp hp_top s
+  refine ⟨∑ i, |C i|, fun u ↦ ?_⟩
+  -- Since `u = ∑ᵢ Ψᵢ u` on `K`, the reading of `P u` is the sum of the readings of `P (Ψᵢ u)`.
+  have hu : e.cutoffPushforwardSchwartz he φ (P u) = ∑ i, e.cutoffPushforwardSchwartz he φ (P
+      (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e' i).cutoffPullback (he' i) (ψ i) 1)) u)) := by
+    rw [← map_sum, ← map_sum]
+    ext y
+    rw [cutoffPushforwardSchwartz_apply, cutoffPushforwardSchwartz_apply]
+    by_cases hy : y ∈ tsupport φ
+    · refine congrArg _ (hPK _ _ (fun x hx ↦ ?_) (Set.mem_image_of_mem _ hy))
+      simp only [ContMDiffMap.coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply,
+        ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply, ← Finset.sum_mul,
+        ← Complex.ofReal_sum, hψ x hx, Complex.ofReal_one, one_mul]
+    · simp [image_eq_zero_of_notMem_tsupport hy]
+  rw [hu, map_sum, Finset.mul_sum]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hC i u).trans ?_)
+  exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans (Finset.single_le_sum
+    (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_univ i))) (norm_nonneg _)
 
 /-! ### Extension to the Sobolev spaces of a compact manifold -/
 

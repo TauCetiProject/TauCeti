@@ -53,7 +53,9 @@ values on compactly supported functions, and hence by its chart compressions.
   functions on either side and local operators (`TauCeti.IsProperlySupported.of_local`) are
   properly supported. A local operator takes the same value at `x` on functions that agree near
   `x` (`TauCeti.apply_eq_of_eventuallyEq_of_local`) and does not enlarge supports
-  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`).
+  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`). On a compact set, a properly supported
+  operator only sees its input on another compact set
+  (`TauCeti.IsProperlySupported.exists_isCompact_forall_eqOn`).
 * `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
   `ContMDiffMap.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
   outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
@@ -228,6 +230,22 @@ theorem IsProperlySupported.comp (hP : IsProperlySupported P) (hQ : IsProperlySu
   have hQf := hQ₂ f (hf.filter_mono (nhdsSet_mono subset_union_right))
   exact Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₃L) fun y hy ↦
     hQf y (interior_subset hy)
+
+/-- **A properly supported operator only sees its input on a compact set.** For a properly
+supported operator `P` and a compact set `K`, there is a compact set `K'` such that `P f` and
+`P g` agree on `K` whenever `f` and `g` agree on `K'`. -/
+theorem IsProperlySupported.exists_isCompact_forall_eqOn (hP : IsProperlySupported P) {K : Set M}
+    (hK : IsCompact K) :
+    ∃ K' : Set M, IsCompact K' ∧ ∀ f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      EqOn f g K' → EqOn (P f) (P g) K := by
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  obtain ⟨K₁, hK₁, -, hP₂⟩ := hP K hK
+  -- `f - g` vanishes on the interior of `K'`, a neighbourhood of `K₁`.
+  obtain ⟨K', hK', hK₁K'⟩ := exists_compact_superset hK₁
+  refine ⟨K', hK', fun f g hfg x hx ↦ ?_⟩
+  rw [← sub_eq_zero, ← Pi.sub_apply, ← ContMDiffMap.coe_sub, ← map_sub]
+  exact hP₂ _ (Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₁K') fun y hy ↦ by
+    simp [hfg (interior_subset hy)]) x hx
 
 /-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, takes
 the same value at `x` on two functions that agree near `x`. -/
