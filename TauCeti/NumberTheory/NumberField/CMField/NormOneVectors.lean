@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.FinitePoints
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Norm-one vectors in finite adelic lattices

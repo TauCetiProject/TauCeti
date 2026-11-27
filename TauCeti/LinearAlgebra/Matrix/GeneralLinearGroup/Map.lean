@@ -27,6 +27,8 @@ all of which a construction transporting a group of matrices along a change of s
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
+* `Matrix.GeneralLinearGroup.map_mulVec`: change of scalars commutes with the action of
+  `GL n R` on vectors.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
 * `Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`: the determinants of that kernel are the
@@ -69,6 +71,13 @@ protected theorem map_neg (f : R →+* S) (g : GL n R) :
     Matrix.GeneralLinearGroup.map f (-g) = -Matrix.GeneralLinearGroup.map f g := by
   ext i j
   simp [Matrix.GeneralLinearGroup.map_apply]
+
+/-- Change of scalars along a ring homomorphism `f` commutes with the action of `g ∈ GL n R` on
+vectors: `GLₙ(f) g` applied to `f ∘ v` is `f` applied to `g *ᵥ v`. -/
+theorem map_mulVec (f : R →+* S) (g : GL n R) (v : n → R) :
+    (map f g : Matrix n n S) *ᵥ (f ∘ v) = f ∘ ((g : Matrix n n R) *ᵥ v) := by
+  ext i
+  rw [val_map_apply, Function.comp_apply, RingHom.map_mulVec]
 
 /-- The kernel of reduction `GL n R → GL n (R ⧸ I)`, the principal congruence level of `I`,
 consists of the matrices congruent to the identity matrix entrywise modulo `I`. -/
