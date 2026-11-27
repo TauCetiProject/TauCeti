@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Normed.Module.ByParts
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecificLimits.Normed
 
@@ -28,6 +29,9 @@ evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
 
 * `Complex.tendsto_sum_range_taylorSeries_neg_log`: the partial sums of `∑ zⁿ / n` tend to
   `-log (1 - z)` for `‖z‖ ≤ 1` and `z ≠ 1`.
+* `Complex.norm_neg_log_one_sub_sub_sum_Icc_pow_div_le`: the remainder after the terms through
+  degree `N` is bounded by `2 / ((N + 1) * ‖z - 1‖)` on the same domain, by
+  `Finset.norm_sum_range_smul_le_of_antitoneOn` and the geometric sum bound.
 * `Real.tendsto_sum_Icc_sin_mul_div`: the sawtooth series
   `∑_{n=1}^N sin (n θ) / n → (π - θ) / 2` for `0 < θ < 2π`, using the argument
   `Complex.arg_one_sub_exp_mul_I` of `1 - exp (θ i)`.
@@ -94,6 +98,36 @@ theorem tendsto_sum_range_taylorSeries_neg_log {z : ℂ} (hz : ‖z‖ ≤ 1) (h
   refine hl.congr fun n ↦ ?_
   rw [sum_range_succ']
   simp [hf]
+
+/-- On the closed unit disc away from `1`, the remainder of the logarithmic series after
+degree `N` is bounded by `2 / ((N + 1) * ‖z - 1‖)`. -/
+theorem norm_neg_log_one_sub_sub_sum_Icc_pow_div_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz₁ : z ≠ 1)
+    (N : ℕ) :
+    ‖-log (1 - z) - ∑ j ∈ Icc 1 N, z ^ j / j‖ ≤ 2 / ((N + 1 : ℝ) * ‖z - 1‖) := by
+  have hhead : ∑ j ∈ range (N + 1), z ^ j / (j : ℂ) =
+      ∑ j ∈ Icc 1 N, z ^ j / (j : ℂ) := by
+    rw [sum_range_eq_add_Ico _ (Nat.succ_pos N)]
+    simp [Nat.succ_eq_add_one, Ico_add_one_right_eq_Icc]
+  have hlim := ((tendsto_sum_range_taylorSeries_neg_log hz hz₁).comp
+    (tendsto_add_atTop_nat (N + 1))).sub_const (∑ j ∈ range (N + 1), z ^ j / (j : ℂ))
+  rw [← hhead]
+  refine le_of_tendsto hlim.norm (Eventually.of_forall fun M ↦ ?_)
+  simp only [Function.comp_apply, Nat.add_comm M (N + 1), sum_range_add, add_sub_cancel_left]
+  have hanti : Antitone fun j : ℕ ↦ ((N + 1 + j : ℕ) : ℝ)⁻¹ := by
+    intro i j hij
+    exact inv_anti₀ (by positivity) (by exact_mod_cast Nat.add_le_add_left hij (N + 1))
+  have hgeom (L : ℕ) : ‖∑ j ∈ range L, z ^ (N + 1 + j)‖ ≤ 2 / ‖z - 1‖ := by
+    simp only [pow_add z (N + 1), ← mul_sum, norm_mul]
+    have hpow : ‖z ^ (N + 1)‖ ≤ 1 := by
+      rw [norm_pow]
+      exact pow_le_one₀ (norm_nonneg _) hz
+    exact (mul_le_of_le_one_left (norm_nonneg _) hpow).trans
+      (TauCeti.norm_geom_sum_le hz hz₁ L)
+  have h := norm_sum_range_smul_le_of_antitoneOn (hanti.antitoneOn (Set.Iio M))
+    (by positivity) (fun L _ ↦ hgeom L)
+  simpa only [Complex.real_smul, Complex.ofReal_inv, Complex.ofReal_natCast, ← div_eq_inv_mul,
+    Complex.ofReal_add, Complex.ofReal_one, Nat.add_zero, Nat.cast_add, Nat.cast_one,
+    div_mul_eq_div_div_swap, inv_mul_eq_div] using h
 
 end Complex
 
