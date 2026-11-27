@@ -31,6 +31,7 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
+* `IsSelfAdjoint.of_add_right`: if `e + x` and `e` are self-adjoint, then so is `x`.
 * `IsSelfAdjoint.mul_star_eq_neg_star_mul`: if `γ * x = -(x * γ)` for a self-adjoint `γ`, then
   `γ * star x = -(star x * γ)`.
 * `IsSelfAdjoint.mul_eq_right_of_mul_eq_left`: for self-adjoint `x` and `q`, `x * q = x` implies
@@ -74,6 +75,11 @@ theorem IsSelfAdjoint.eq_zero_of_isNilpotent {x : R} (hx : IsSelfAdjoint x)
   exact key m (pow_eq_zero_of_le m.lt_two_pow_self.le hm)
 
 end Nilpotent
+
+/-- If `e + x` and `e` are self-adjoint, then so is `x`. -/
+theorem IsSelfAdjoint.of_add_right {R : Type*} [AddCommGroup R] [StarAddMonoid R] {e x : R}
+    (hex : IsSelfAdjoint (e + x)) (he : IsSelfAdjoint e) : IsSelfAdjoint x := by
+  simpa using hex.sub he
 
 /-- An element anticommuting with a self-adjoint `γ` has an adjoint anticommuting with `γ`. -/
 theorem IsSelfAdjoint.mul_star_eq_neg_star_mul {R : Type*} [NonUnitalNonAssocRing R]

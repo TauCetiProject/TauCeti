@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.Ergodic.Ergodic
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+public import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
 # Factor maps of measure-preserving systems
@@ -34,6 +35,10 @@ measure-preserving map `π : X → Y` intertwining the two systems almost everyw
   then `S` preserves `ν`.
 * `TauCeti.IsFactorMap.comp_iterate_ae_eq` — a factor map intertwines all iterates almost
   everywhere when `T` is quasi-measure-preserving.
+* `TauCeti.IsFactorMap.exists_measurableSet_mapsTo`, `TauCeti.IsFactorMap.of_measure_compl_eq_zero`,
+  `TauCeti.isFactorMap_iff_exists_measurableSet` — for a measurable quasi-measure-preserving `T`,
+  a measure-preserving map is a factor map exactly when it intertwines `T` and `S` exactly on a
+  measurable conull set that is forward invariant under `T`.
 * `TauCeti.IsFactorMap.preErgodic`, `TauCeti.IsFactorMap.ergodic` — pre-ergodicity passes to
   factors, and ergodicity passes to factors whose target map is measurable.
 
@@ -122,6 +127,21 @@ theorem comp_iterate_ae_eq (h : IsFactorMap π T S μ ν) (hT : QuasiMeasurePres
     rw [iterate_succ, iterate_succ]
     exact h₁.trans h₂
 
+/-- **Invariant conull realization for a single map.** A factor map from a measurable
+quasi-measure-preserving system `T` satisfies `π ∘ T = S ∘ π` on a measurable conull set that is
+forward invariant under `T`. -/
+theorem exists_measurableSet_mapsTo (h : IsFactorMap π T S μ ν) (hTm : Measurable T)
+    (hT : QuasiMeasurePreserving T μ μ) :
+    ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ Set.MapsTo T X₀ X₀ ∧
+      ∀ x ∈ X₀, π (T x) = S (π x) :=
+  exists_measurableSet_mapsTo_of_ae hTm hT h.comp_ae_eq
+
+/-- A measure-preserving map that satisfies `π ∘ T = S ∘ π` exactly on a conull set is a factor
+map. -/
+theorem of_measure_compl_eq_zero (hπ : MeasurePreserving π μ ν) {X₀ : Set X} (h0 : μ X₀ᶜ = 0)
+    (h : ∀ x ∈ X₀, π (T x) = S (π x)) : IsFactorMap π T S μ ν :=
+  ⟨hπ, by filter_upwards [mem_ae_iff.mpr h0] with x hx using h x hx⟩
+
 /-- A factor of a pre-ergodic system is pre-ergodic. -/
 theorem preErgodic (h : IsFactorMap π T S μ ν) (hT : PreErgodic T μ) : PreErgodic S ν where
   aeconst_set s hs₀ hs₁ := by
@@ -136,5 +156,14 @@ theorem ergodic (h : IsFactorMap π T S μ ν) (hT : Ergodic T μ) (hS : Measura
   ⟨h.measurePreserving_target hT.toMeasurePreserving hS, h.preErgodic hT.toPreErgodic⟩
 
 end IsFactorMap
+
+/-- For a measurable quasi-measure-preserving map `T`, a measure-preserving map `π` is a factor
+map exactly when `π ∘ T = S ∘ π` on a measurable conull set that is forward invariant under `T`. -/
+theorem isFactorMap_iff_exists_measurableSet (hTm : Measurable T)
+    (hT : QuasiMeasurePreserving T μ μ) (hπ : MeasurePreserving π μ ν) :
+    IsFactorMap π T S μ ν ↔ ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ Set.MapsTo T X₀ X₀ ∧
+      ∀ x ∈ X₀, π (T x) = S (π x) :=
+  ⟨fun h ↦ h.exists_measurableSet_mapsTo hTm hT, fun ⟨_, _, h0, _, h⟩ ↦
+    .of_measure_compl_eq_zero hπ h0 h⟩
 
 end TauCeti

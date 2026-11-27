@@ -9,9 +9,10 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 public import TauCeti.Algebra.Module.Injective.Cogenerator
-public import TauCeti.LinearAlgebra.Pi.Orthogonal
+public import TauCeti.LinearAlgebra.Matrix.RowLattice
 public import TauCeti.RingTheory.DiscreteValuationRing.Length
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
+import TauCeti.Algebra.Module.Submodule.LinearMap
 
 /-!
 # Matlis duality over a discrete valuation ring and lengths of orthogonals in `(K/O)ⁿ`
@@ -30,6 +31,8 @@ length is the valuation of `det M`, both infinite when `det M = 0`.
 * `IsDiscreteValuationRing.divQuotient`: division by `a`, the map `O/a → K/O`, `t ↦ t/a`.
 * `IsDiscreteValuationRing.quotientEquivTorsionBySet`: for `a ≠ 0`, the identification of `O/a`
   with the elements of `K/O` killed by `a`.
+* `IsDiscreteValuationRing.linearMapQuotientSpanEquivFractionRingQuotient`: for `a ≠ 0` and an
+  `O`-module `Q` killed by `a`, the identification `Hom_O(Q, O/a) ≃ₗ[O] Hom_O(Q, K/O)`.
 
 ## Main results
 
@@ -37,6 +40,8 @@ length is the valuation of `det M`, both infinite when `det M = 0`.
   `Hom_O(O/a, K/O)` has length `v(a)`.
 * `IsDiscreteValuationRing.length_linearMap_fractionRing_quotient`: `Hom_O(M, K/O)` has the
   length of `M`, for every `O`-module `M` (Matlis duality over a discrete valuation ring).
+* `IsDiscreteValuationRing.length_linearMap_quotient_span_singleton_right`: for `a ≠ 0` and an
+  `O`-module `Q` killed by `a`, `Hom_O(Q, O/a)` has the length of `Q`.
 * `IsDiscreteValuationRing.length_orthogonalBilin`: the orthogonal of `R ⊆ Oⁿ` in `(K/O)ⁿ` has
   length `length_O (Oⁿ/R)`.
 * `Matrix.length_ker_eq_addVal_det`: the kernel of a square matrix `M` acting on `(K/O)ⁿ` has
@@ -141,6 +146,27 @@ theorem coe_quotientEquivTorsionBySet_apply_mk {a : O} (ha : a ≠ 0) (t : O) :
       Submodule.Quotient.mk (t • (algebraMap O K a)⁻¹) :=
   divQuotient_mk a t
 
+omit [IsDiscreteValuationRing O] in
+/-- For `a ≠ 0` and an `O`-module `Q` killed by `a`, `divQuotient a` induces an equivalence
+`Hom_O(Q, O ⧸ Ideal.span {a}) ≃ₗ[O] Hom_O(Q, K ⧸ O)`. -/
+noncomputable def linearMapQuotientSpanEquivFractionRingQuotient
+    {Q : Type*} [AddCommMonoid Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
+    (Q →ₗ[O] O ⧸ Ideal.span {a}) ≃ₗ[O] (Q →ₗ[O] K ⧸ range (Algebra.linearMap O K)) :=
+  (LinearEquiv.congrRight (quotientEquivTorsionBySet (K := K) ha)).trans
+    (Submodule.linearMapSubtypeEquiv O _ fun ψ x ↦ by
+      rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff,
+        ← map_smul, h, map_zero])
+
+omit [IsDomain O] [IsDiscreteValuationRing O] in
+@[simp]
+theorem linearMapQuotientSpanEquivFractionRingQuotient_apply
+    {Q : Type*} [AddCommMonoid Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0)
+    (φ : Q →ₗ[O] O ⧸ Ideal.span {a}) (x : Q) :
+    linearMapQuotientSpanEquivFractionRingQuotient (K := K) ha h φ x =
+      divQuotient (K := K) a (φ x) := by
+  simp [linearMapQuotientSpanEquivFractionRingQuotient]
+  rfl
+
 /-- For `a ≠ 0`, `Hom_O(O/a, K/O)` has length `v(a)`. -/
 theorem length_linearMap_quotient_span_singleton {a : O} (ha : a ≠ 0) :
     Module.length O (O ⧸ Ideal.span {a} →ₗ[O] K ⧸ range (Algebra.linearMap O K)) =
@@ -167,6 +193,15 @@ theorem length_linearMap_fractionRing_quotient (M : Type*) [AddCommGroup M] [Mod
   rw [IsLocalRing.eq_maximalIdeal h𝔪]
   exact length_linearMap_quotient_maximalIdeal
 
+omit [Field K] [Algebra O K] [IsFractionRing O K] in
+/-- For an `O`-module `Q` killed by `a ≠ 0`, `Hom_O(Q, O ⧸ Ideal.span {a})` has the same length as
+`Q`. -/
+theorem length_linearMap_quotient_span_singleton_right
+    {Q : Type*} [AddCommGroup Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
+    Module.length O (Q →ₗ[O] O ⧸ Ideal.span {a}) = Module.length O Q := by
+  rw [(linearMapQuotientSpanEquivFractionRingQuotient (K := FractionRing O) ha h).length_eq,
+    length_linearMap_fractionRing_quotient (K := FractionRing O)]
+
 variable {ι : Type*} [Fintype ι]
 
 /-- **The orthogonal in `(K/O)^ι` of a submodule `R ⊆ O^ι` has the colength of `R`.** The
@@ -191,16 +226,9 @@ variable {ι : Type*} {O K : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuati
 acting on `(K/O)^ι`, the orthogonal of the rows of `M`, has length the valuation of `det M`, both
 sides infinite when `det M = 0`. -/
 theorem length_ker_eq_addVal_det (M : Matrix ι ι O) :
-    Module.length O (LinearMap.ker (LinearMap.pi fun i ↦ ∑ j, M i j •
-        LinearMap.proj j : (ι → K ⧸ range (Algebra.linearMap O K)) →ₗ[O] _)) =
+    Module.length O (M.ker (K ⧸ range (Algebra.linearMap O K))) =
       addVal O M.det := by
-  have hker : LinearMap.ker (LinearMap.pi fun i ↦ ∑ j, M i j •
-        LinearMap.proj j : (ι → K ⧸ range (Algebra.linearMap O K)) →ₗ[O] _) =
-      (Submodule.span O (Set.range M.row)).orthogonalBilin
-        (Fintype.bilinearCombination O O).flip := by
-    ext u
-    rw [LinearMap.mem_ker, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range, funext_iff]
-    simp [Matrix.row, Fintype.linearCombination_apply]
-  rw [hker, length_orthogonalBilin, length_quotient_span_range_eq_addVal_det]
+  rw [ker_eq_orthogonalBilin, length_orthogonalBilin,
+    length_quotient_span_range_eq_addVal_det]
 
 end Matrix

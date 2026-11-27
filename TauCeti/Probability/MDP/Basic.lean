@@ -10,7 +10,6 @@ public import Mathlib.Probability.ProbabilityMassFunction.Monad
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.Analysis.Normed.Lp.Infty
-public import TauCeti.Probability.Kernel.PMF
 
 /-!
 # Markov decision processes with bounded rewards
@@ -32,7 +31,6 @@ public section
 noncomputable section
 
 open MeasureTheory
-open ProbabilityTheory
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -56,28 +54,6 @@ omit [MeasurableSpace S] in
 /-- The reward bound is nonnegative as soon as there is a state and an action. -/
 theorem rewardBound_nonneg [Nonempty S] [Nonempty A] : 0 ≤ M.rewardBound :=
   (abs_nonneg _).trans (M.abs_reward_le (Classical.arbitrary S) (Classical.arbitrary A))
-
-section TransitionKernel
-
-variable [MeasurableSpace A] [Countable S] [Countable A]
-  [MeasurableSingletonClass S] [MeasurableSingletonClass A]
-
-/-- The kernel drawing the next state from the transition PMF of the current state and action. -/
-def transKernel : Kernel (S × A) S :=
-  Kernel.ofPMF fun p ↦ M.trans p.1 p.2
-
-/-- Each row of the transition kernel is the measure of the corresponding transition PMF. -/
-@[simp]
-theorem transKernel_apply (p : S × A) : M.transKernel p = (M.trans p.1 p.2).toMeasure :=
-  Kernel.ofPMF_apply _ _
-
-instance : IsMarkovKernel M.transKernel := by
-  constructor
-  intro p
-  rw [transKernel_apply]
-  infer_instance
-
-end TransitionKernel
 
 /-- The expected next-state value after choosing action `a` at state `s`. -/
 def expect (v : S → ℝ) (s : S) (a : A) : ℝ :=
