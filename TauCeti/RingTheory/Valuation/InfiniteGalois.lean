@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.RingTheory.Valuation.Center
 import Mathlib.FieldTheory.Galois.Profinite
-import Mathlib.FieldTheory.KrullTopology
 import Mathlib.RingTheory.Invariant.Profinite
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.RingTheory.Invariant.Galois
@@ -40,8 +39,9 @@ contains `B` and has a centre `P_A` on `B`, a prime lying over the maximal ideal
   of `A'`, lying in every valuation subring over `O`; so `u` is integral over `O`, lies in `B`,
   and belongs to `P_A` but not to `P_{A'}`.
 * `Gal(L/K)` is profinite, acts continuously on `B` with the discrete topology (stabilizers of
-  algebraic elements are open), and the invariants of `B` are `O`, since `O` is integrally closed
-  in `K` (`TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed`). Mathlib's
+  algebraic elements are open, `TauCeti.InfiniteGalois.continuousSMul_integralClosure`), and the
+  invariants of `B` are `O`, since `O` is integrally closed in `K`
+  (`TauCeti.InfiniteGalois.isInvariant_integralClosure`). Mathlib's
   `Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite` then moves `P_A` to `P_{A'}`, and the
   first point moves `A` to `A'`.
 
@@ -106,29 +106,6 @@ private theorem mem_centerIdeal_algebraMap_iff {O : ValuationSubring K} {A : Val
 
 variable [IsGalois K L]
 
-/-- `Gal(L/K)` acts continuously on the integral closure of a subring of `K` in `L`, with the
-discrete topology on the latter. -/
-private theorem continuousSMul_integralClosure (O : ValuationSubring K)
-    [TopologicalSpace (integralClosure O L)] [DiscreteTopology (integralClosure O L)] :
-    ContinuousSMul Gal(L/K) (integralClosure O L) := by
-  refine continuousSMul_iff_stabilizer_isOpen.2 fun x ↦ ?_
-  have h : (MulAction.stabilizer Gal(L/K) x : Set Gal(L/K)) =
-      MulAction.stabilizer Gal(L/K) (x : L) :=
-    Set.ext fun σ ↦ MulAction.mem_stabilizer_iff.trans <| by
-      rw [Subtype.ext_iff, integralClosure.coe_smul]
-      rfl
-  rw [h]
-  exact stabilizer_isOpen_of_isIntegral (x : L)
-
-/-- The elements of the integral closure of a valuation subring `O` of `K` in `L` fixed by
-`Gal(L/K)` are those of `O`. -/
-private theorem isInvariant_integralClosure (O : ValuationSubring K) :
-    Algebra.IsInvariant O (integralClosure O L) Gal(L/K) where
-  isInvariant x hx := by
-    obtain ⟨r, hr⟩ := (TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed
-      (R := O) K (x : L)).mpr ⟨x.property, fun σ ↦ congrArg Subtype.val (hx σ)⟩
-    exact ⟨r, Subtype.ext hr⟩
-
 /-- **The extensions of a valuation subring to a Galois extension are conjugate.** Let `L / K` be
 a Galois extension, possibly infinite. Two valuation subrings of `L` with the same restriction to
 `K` are conjugate under `Gal(L/K)`. -/
@@ -151,8 +128,8 @@ theorem exists_algEquiv_smul_eq_of_comap_eq_of_isGalois {A A' : ValuationSubring
       mem_centerIdeal_algebraMap_iff hO hc, mem_centerIdeal_algebraMap_iff h hc']
   let _ : TopologicalSpace (integralClosure O L) := ⊥
   have : DiscreteTopology (integralClosure O L) := ⟨rfl⟩
-  have := continuousSMul_integralClosure (L := L) O
-  have := isInvariant_integralClosure (L := L) O
+  have := TauCeti.InfiniteGalois.continuousSMul_integralClosure O K L
+  have := TauCeti.InfiniteGalois.isInvariant_integralClosure O K L
   obtain ⟨σ, hσ⟩ := Algebra.IsInvariant.exists_smul_of_under_eq_of_profinite
     (G := Gal(L/K)) _ _ hunder
   refine ⟨σ, eq_of_comap_eq_of_isCenteredAt (comap_algebraMap_pointwise_smul σ A) h.symm

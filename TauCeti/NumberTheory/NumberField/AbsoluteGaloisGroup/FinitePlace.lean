@@ -75,13 +75,7 @@ private theorem isMaximal_centre (w : {w : Place (AlgebraicClosure F) // IsNonar
   obtain ⟨p, _, hp⟩ := w.val.isNonarchimedean_iff.mp w.property
   have hpQ : (p : integralClosure (𝓞 F) (AlgebraicClosure F)) ∈ centre w := by
     rw [mem_centre_iff]
-    have h1 : w.val.val ((p : integralClosure (𝓞 F) (AlgebraicClosure F)) : AlgebraicClosure F) =
-        Rat.AbsoluteValue.padic p (p : ℚ) := by
-      rw [← hp, AbsoluteValue.under_apply]
-      simp
-    refine h1.trans_lt ?_
-    rw [Rat.AbsoluteValue.padic_eq_padicNorm]
-    exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+    simpa using Place.apply_natCast_lt_one_of_under_eq_padic hp
   have hp0 : (p : integralClosure (𝓞 F) (AlgebraicClosure F)) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   have hunder : (centre w).under (𝓞 F) ≠ ⊥ :=

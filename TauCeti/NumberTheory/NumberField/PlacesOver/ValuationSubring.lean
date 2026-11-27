@@ -16,7 +16,7 @@ import Mathlib.RingTheory.Valuation.LocalSubring
 import Mathlib.RingTheory.UniqueFactorizationDomain.Ideal
 import TauCeti.NumberTheory.NumberField.PlacesOver.Galois
 import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
-import TauCeti.RingTheory.DedekindDomain.Prufer
+import TauCeti.NumberTheory.NumberField.PlacesOver.Place
 import TauCeti.RingTheory.Valuation.InfiniteGalois
 import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 import TauCeti.RingTheory.Valuation.ValuationSubring
@@ -56,22 +56,16 @@ conjugacy of the places above a given place.
   not enough when `L / K` is infinite, since a countable dense subgroup of `Gal(ℚ^alg/ℚ)` has
   countable orbits, while `ℚ^alg` has uncountably many places above each place of `ℚ`.
 
-Every valuation subring of `L` contains the integral closure `O_L` of `ℤ` in `L`, which is a
-Prüfer domain (`IsIntegralClosure.preValuationRing_atPrime`), so the valuation subrings of `L`
-are the primes of `O_L` through their centres, equivariantly for any group acting on `L`
-(`ValuationSubring.equivPrimeSpectrumIntegralClosureInt`).
-
 ## Main results
 
-* `ValuationSubring.equivPrimeSpectrumIntegralClosureInt`: valuation subrings of `L` are the primes
-  of its algebraic integers, `G`-equivariantly
-  (`ValuationSubring.equivPrimeSpectrumIntegralClosureInt_symm_smul`).
 * `AbsoluteValue.Place.valuationSubring_injective`: a finite place is determined by its valuation
   subring.
 * `AbsoluteValue.Place.exists_valuationSubring_eq`: for `L` algebraic over `ℚ`, every valuation
   subring of `L` other than `L` is that of a finite place.
 * `AbsoluteValue.Place.finitePlaceEquivValuationSubring`: the bijection.
 * `AbsoluteValue.Place.exists_under_eq_padic`: a place above each prime number.
+* `AbsoluteValue.Place.apply_natCast_lt_one_of_under_eq_padic`: a place above `p` is less than one
+  at `p`.
 * `AbsoluteValue.Place.exists_under_eq`, `AbsoluteValue.Place.exists_smul_eq_of_under_eq`,
   `AbsoluteValue.Place.exists_smul_eq_of_under_eq_of_surjective`: existence and conjugacy of
   places above a place.
@@ -94,54 +88,6 @@ and
 public section
 
 open scoped Pointwise
-
-/-! ### Valuation subrings and primes of the algebraic integers -/
-
-namespace ValuationSubring
-
-variable (L : Type*) [Field L]
-
-/-- Every valuation subring of a field contains the algebraic integers. -/
-theorem algebraMap_integralClosure_int_mem (A : ValuationSubring L) (b : integralClosure ℤ L) :
-    algebraMap (integralClosure ℤ L) L b ∈ A :=
-  Subring.isIntegrallyClosed_iff.mp inferInstance (b.property.tower_top (A := A))
-
-variable [CharZero L] [Algebra.IsAlgebraic ℚ L]
-
-/-- The integral closure of `ℤ` in a field algebraic over `ℚ` has that field as fraction field. -/
-instance isFractionRing_integralClosure_int : IsFractionRing (integralClosure ℤ L) L :=
-  have : Algebra.IsAlgebraic ℤ L :=
-    (IsFractionRing.comap_isAlgebraic_iff (K := ℚ)).mpr inferInstance
-  integralClosure.isFractionRing_of_algebraic fun _ hx ↦
-    FaithfulSMul.algebraMap_injective ℤ L (hx.trans (map_zero _).symm)
-
-/-- **Valuation subrings of an algebraic extension of `ℚ` are primes of its algebraic integers**:
-sending a valuation subring to its centre on the integral closure of `ℤ` is a bijection onto the
-prime spectrum, with inverse the localization at a prime. -/
-noncomputable def equivPrimeSpectrumIntegralClosureInt :
-    ValuationSubring L ≃ PrimeSpectrum (integralClosure ℤ L) :=
-  (Equiv.subtypeUnivEquiv (algebraMap_integralClosure_int_mem L)).symm.trans
-    (equivPrimeSpectrum fun P _ ↦ IsIntegralClosure.preValuationRing_atPrime ℤ ℚ L P)
-
-/-- The valuation subring corresponding to a prime is centred at it. -/
-theorem isCenteredAt_equivPrimeSpectrumIntegralClosureInt_symm
-    (Q : PrimeSpectrum (integralClosure ℤ L)) :
-    ((equivPrimeSpectrumIntegralClosureInt L).symm Q).IsCenteredAt Q.asIdeal := by
-  have := IsIntegralClosure.preValuationRing_atPrime ℤ ℚ L Q.asIdeal
-  change (((equivPrimeSpectrum fun P _ ↦
-    IsIntegralClosure.preValuationRing_atPrime ℤ ℚ L P).symm Q :
-      {A : ValuationSubring L // _}) : ValuationSubring L).IsCenteredAt Q.asIdeal
-  rw [coe_equivPrimeSpectrum_symm_apply]
-  exact Ideal.isCenteredAt_valuationSubringAtPrime
-
-/-- **The correspondence is equivariant** for any group acting on `L` by ring automorphisms. -/
-theorem equivPrimeSpectrumIntegralClosureInt_symm_smul {G : Type*} [Group G]
-    [MulSemiringAction G L] (g : G) (Q : PrimeSpectrum (integralClosure ℤ L)) :
-    (equivPrimeSpectrumIntegralClosureInt L).symm (g • Q) =
-      g • (equivPrimeSpectrumIntegralClosureInt L).symm Q :=
-  coe_equivPrimeSpectrum_symm_smul _ g Q
-
-end ValuationSubring
 
 namespace AbsoluteValue.Place
 
@@ -257,6 +203,15 @@ theorem exists_under_eq_padic [Algebra.IsAlgebraic ℚ L] (p : ℕ) [Fact p.Prim
     exact PadicAlgCl.norm_extends p q
   exact ⟨⟨_, hu ▸ .padic p⟩, hu⟩
 
+/-- A place above the prime number `p` takes a value less than one at `p`. -/
+theorem apply_natCast_lt_one_of_under_eq_padic {w : Place L} {p : ℕ} [Fact p.Prime]
+    (hp : w.val.under ℚ = Rat.AbsoluteValue.padic p) : w.val (p : L) < 1 := by
+  have h1 : w.val (p : L) = Rat.AbsoluteValue.padic p (p : ℚ) := by
+    rw [← hp, AbsoluteValue.under_apply]
+    simp
+  rw [h1, Rat.AbsoluteValue.padic_eq_padicNorm]
+  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+
 /-- The place of `L` obtained by restricting a place of `M` along a `ℚ`-embedding `L → M`. -/
 private def comapAlgHom {M : Type*} [Field M] [CharZero M] (f : L →ₐ[ℚ] M) (w : Place M) :
     Place L :=
@@ -281,14 +236,9 @@ theorem exists_valuationSubring_eq [Algebra.IsAlgebraic ℚ L] {A : ValuationSub
   obtain ⟨w₀, hw₀⟩ := exists_under_eq_padic (L := M) p
   have hw₀n : IsNonarchimedean w₀.val := w₀.isNonarchimedean_iff.mpr ⟨p, inferInstance, hw₀⟩
   have hpA₀ : (p : ℤ) ∈ intCenter (w₀.val.valuationSubring hw₀n) := by
-    have h1 : w₀.val (algebraMap ℤ M (p : ℤ)) = Rat.AbsoluteValue.padic p (p : ℚ) := by
-      rw [← hw₀, AbsoluteValue.under_apply]
-      simp
     rw [Valuation.mem_centerIdeal, ← ValuationSubring.mem_nonunits_iff,
-      mem_nonunits_valuationSubring_iff]
-    refine h1.trans_lt ?_
-    rw [Rat.AbsoluteValue.padic_eq_padicNorm]
-    exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+      mem_nonunits_valuationSubring_iff, map_natCast]
+    exact apply_natCast_lt_one_of_under_eq_padic hw₀
   -- `A₀` and `A'` meet `ℚ` in the same valuation subring, so they are conjugate
   obtain ⟨σ, hσ⟩ := ValuationSubring.exists_algEquiv_smul_eq_of_comap_eq_of_isGalois
     (comap_eq_of_intCenter_eq (intCenter_eq_of_mem hp hpA₀ hpA'))
@@ -329,17 +279,6 @@ theorem valuationSubring_finitePlaceEquivValuationSubring_symm_apply [Algebra.Is
 
 section Extension
 
-/-- An archimedean place is an infinite place. -/
-private theorem isInfinitePlace_of_not_isNonarchimedean {K : Type*} [Field K] [CharZero K]
-    (v : Place K) (hv : ¬ IsNonarchimedean v.val) : NumberField.IsInfinitePlace v.val := by
-  have hreal : Rat.infinitePlace.val = Rat.AbsoluteValue.real := by
-    ext q
-    rw [← NumberField.InfinitePlace.coe_apply, Rat.infinitePlace_apply,
-      Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs]
-  have : v.val.LiesOver Rat.infinitePlace.val :=
-    ⟨(v.not_isNonarchimedean_iff.mp hv).trans hreal.symm⟩
-  exact NumberField.isInfinitePlace_of_liesOver Rat.infinitePlace v.val
-
 variable {K : Type*} [Field K] [CharZero K] [Algebra K L]
 
 /-- **Every place extends.** For fields `K ⊆ L` with `L` algebraic over `ℚ`, every place of `K` is
@@ -355,12 +294,11 @@ theorem exists_under_eq [Algebra.IsAlgebraic ℚ L] (v : Place K) :
     have hwK' : IsNonarchimedean (w.under K).val :=
       (isNonarchimedean_iff_of_liesOver (K := K) w.val (w.under K).val).mp hw
     refine ⟨w, valuationSubring_injective hwK' hv ?_⟩
-    rw [← hA]
-    ext x
-    rw [mem_valuationSubring_iff, ValuationSubring.mem_comap, mem_valuationSubring_iff, val_under,
-      AbsoluteValue.under_apply]
+    rw [← hA, ← valuationSubring_under (L := K) hw]
+    congr 1
+    exact val_under ..
   · have : Algebra.IsAlgebraic K L := Algebra.IsAlgebraic.tower_top (K := ℚ) (A := L) K
-    let u : NumberField.InfinitePlace K := ⟨v.val, isInfinitePlace_of_not_isNonarchimedean v hv⟩
+    let u : NumberField.InfinitePlace K := ⟨v.val, (isInfinitePlace_iff v).mpr hv⟩
     obtain ⟨w, hw⟩ := NumberField.nonempty_setOf_liesOver_infinitePlace L u
     have hw' : w.LiesOver v.val := hw
     have hstd : Rat.AbsoluteValue.IsStandard (w.under ℚ) := by
@@ -379,17 +317,14 @@ theorem exists_smul_eq_of_under_eq [IsGalois K L] {w w' : Place L} (h : w.under 
       (isNonarchimedean_iff_of_liesOver (K := K) w'.val (w'.under K).val).mpr (h ▸ hwK)
     obtain ⟨σ, hσ⟩ := ValuationSubring.exists_algEquiv_smul_eq_of_comap_eq_of_isGalois (K := K)
       (A := w.val.valuationSubring hw) (A' := w'.val.valuationSubring hw') <| by
-        have h' : w.val.under K = w'.val.under K := by
-          rw [← val_under, ← val_under, h]
-        ext x
-        simp only [ValuationSubring.mem_comap, mem_valuationSubring_iff]
-        rw [← AbsoluteValue.under_apply, ← AbsoluteValue.under_apply, h']
+        rw [← valuationSubring_under (L := K) hw, ← valuationSubring_under (L := K) hw']
+        congr 1
+        rw [← val_under, ← val_under, h]
     have hσw : IsNonarchimedean (σ • w).val := by rwa [val_smul, isNonarchimedean_smul_iff]
     exact ⟨σ, valuationSubring_injective hσw hw' (by rw [valuationSubring_smul_eq σ w hw, hσ])⟩
   · have hwK : ¬ IsNonarchimedean (w.under K).val := fun h' ↦
       hw ((isNonarchimedean_iff_of_liesOver (K := K) w.val (w.under K).val).mpr h')
-    let u : NumberField.InfinitePlace K :=
-      ⟨(w.under K).val, isInfinitePlace_of_not_isNonarchimedean _ hwK⟩
+    let u : NumberField.InfinitePlace K := ⟨(w.under K).val, (isInfinitePlace_iff _).mpr hwK⟩
     have : w.val.LiesOver u.val := inferInstanceAs (w.val.LiesOver (w.under K).val)
     have : w'.val.LiesOver u.val := by
       rw [show u.val = (w'.under K).val by rw [← h]]
