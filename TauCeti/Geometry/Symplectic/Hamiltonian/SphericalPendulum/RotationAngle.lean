@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningP
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
 import TauCeti.Topology.Circle.Degree
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -65,8 +65,15 @@ the focus–focus value `(1, 0)` of `F`. Precisely, along the counterclockwise c
 `γ(t) = (1 + r cos t, r sin t)`, `t ∈ [0, 2π]`, of radius `r > 0`, if it runs above the curve of
 relative equilibria off the axis, every function `L` continuous on `[0, 2π]` that agrees with
 `Θ ∘ γ` modulo `2π` off the axis satisfies `L(2π) = L(0) - 2π`
-(`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`). This holds for every
-`r ≤ 1` (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one`).
+(`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`), and more generally a
+continuous lift of `m Θ ∘ γ` for an integer `m` drops by `2πm`
+(`TauCeti.sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle`).
+The circles of radius `r ≤ 1` run above the curve of relative equilibria off the axis
+(`TauCeti.mem_sphericalPendulumTurningPointDomain_of_le_one`,
+`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one`).
+Such a lift exists: `Θ ∘ γ` on the upper half-circle and `Θ ∘ γ + 2π` on the lower one join
+continuously, from `2π` at `t = 0` to `0` at `t = 2π`
+(`TauCeti.exists_continuousOn_eqOn_sphericalPendulumRotationAngle`).
 This drop of the rotation angle is the input to the classical computation of the Hamiltonian
 monodromy of the pendulum around `(1, 0)`.
 
@@ -99,8 +106,14 @@ contribution small (`TauCeti.abs_integral_mul_mul_div_mul_sqrt_sub_sq_le`). Away
   continuous function over `[-π/2, π/2]`.
 * `TauCeti.continuousOn_sphericalPendulumRotationAngle`: `Θ` is continuous on the values with
   `j ≠ 0` above the curve of relative equilibria.
+* `TauCeti.tendsto_sphericalPendulumRotationAngle_circle`: the one-sided limits of `Θ` along a
+  circle about the focus–focus value, where it crosses the axis `j = 0`.
+* `TauCeti.exists_continuousOn_eqOn_sphericalPendulumRotationAngle`: a continuous lift of `Θ`
+  modulo `2π` along a circle about the focus–focus value.
 * `TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`: a continuous lift of `Θ`
   modulo `2π` decreases by `2π` once around the focus–focus value.
+* `TauCeti.sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle`:
+  a continuous lift of `m Θ` modulo `2π` decreases by `2πm`.
 
 ## References
 
@@ -664,18 +677,6 @@ section Continuity
 
 variable {h j z₀ : ℝ}
 
-/-- The regular integrand of the spherical pendulum rotation angle after the sine substitution
-between turning points `a` and `b`, with third root `h - a - b`. -/
-noncomputable def sphericalPendulumRotationAngleSinIntegrand (a b h j θ : ℝ) : ℝ :=
-  j / ((1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-    √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))))
-
-/-- The formula for the regular sine-substitution integrand. -/
-theorem sphericalPendulumRotationAngleSinIntegrand_def (a b h j θ : ℝ) :
-    sphericalPendulumRotationAngleSinIntegrand a b h j θ =
-      j / ((1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
-        √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ)))) := (rfl)
-
 /-- **The rotation angle as a regular integral.** For `j ≠ 0` and `(h, j)` strictly above the
 curve of relative equilibria, the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between
 the turning points `z₋ < z₊` turns the rotation angle into the integral
@@ -685,83 +686,17 @@ theorem sphericalPendulumRotationAngle_eq_integral_sin (hj : j ≠ 0) (hz₀ : z
     (hV : sphericalPendulumEffectivePotential j z₀ < h) :
     sphericalPendulumRotationAngle h j =
       2 * ∫ θ in (-(π / 2))..(π / 2),
-        sphericalPendulumRotationAngleSinIntegrand (sphericalPendulumLowerTurningPoint h j)
-          (sphericalPendulumUpperTurningPoint h j) h j θ := by
-  simp only [sphericalPendulumRotationAngleSinIntegrand_def]
-  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
-  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz₀ hV
-  have himage := image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc hj hz₀ hV
-  rw [image_apply_two_preimage_sphericalPendulumEnergyMomentum] at himage
-  dsimp only at himage
-  set a := sphericalPendulumLowerTurningPoint h j
-  set b := sphericalPendulumUpperTurningPoint h j
-  set u : ℝ → ℝ := fun θ ↦ (a + b) / 2 + (b - a) / 2 * sin θ with hu
-  have hr : 0 < (b - a) / 2 := by linarith
-  -- The substitution maps `[-π/2, π/2]` injectively onto `[z₋, z₊]`.
-  have hu_image : u '' Icc (-(π / 2)) (π / 2) = Icc a b := by
-    have : u = (fun s ↦ (b - a) / 2 * s + (a + b) / 2) ∘ sin := by
-      funext θ
-      simp only [hu, Function.comp]
-      ring
-    rw [this, image_comp, bijOn_sin.image_eq, image_affine_Icc' hr]
-    congr 1 <;> ring
-  have hu_inj : InjOn u (Icc (-(π / 2)) (π / 2)) := fun x hx y hy hxy ↦
-    injOn_sin hx hy (by simpa [hu, hr.ne'] using hxy)
-  have hu_deriv : ∀ θ ∈ Icc (-(π / 2)) (π / 2),
-      HasDerivWithinAt u ((b - a) / 2 * cos θ) (Icc (-(π / 2)) (π / 2)) θ := fun θ _ ↦
-    (((hasDerivAt_sin θ).const_mul _).const_add _).hasDerivWithinAt
-  rw [sphericalPendulumRotationAngle_eq_setIntegral, himage, ← hu_image,
-    integral_image_eq_integral_abs_deriv_smul measurableSet_Icc hu_deriv hu_inj,
-    integral_Icc_eq_integral_Ioo, intervalIntegral.integral_of_le (by linarith [pi_pos]),
-    integral_Ioc_eq_integral_Ioo]
-  congr 1
-  refine setIntegral_congr_fun measurableSet_Ioo fun θ hθ ↦ ?_
-  -- On `(-π/2, π/2)`, the Jacobian `(z₊ - z₋) / 2 · cos θ` cancels the vanishing factor
-  -- `√((z - z₋) (z₊ - z))` of the square root of the radicand.
-  have hrc : 0 < (b - a) / 2 * cos θ := mul_pos hr (cos_pos_of_mem_Ioo hθ)
-  have hden := one_sub_sq_mul_sqrt_sub_add_mul_sin_pos ha hab.le hb (by linarith : b < h - a - b) θ
-  obtain ⟨h1x, hcx⟩ := mul_ne_zero_iff.1 hden.ne'
-  have hrad : 2 * (h - u θ) * (1 - u θ ^ 2) - j ^ 2 =
-      ((b - a) / 2 * cos θ) ^ 2 * (2 * (h - a - b - u θ)) := by
-    rw [hfac]
-    simp only [hu]
-    linear_combination
-      (-2 * ((b - a) / 2) ^ 2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))) *
-        sin_sq_add_cos_sq θ
-  have hux : u θ = (a + b) / 2 + (b - a) / 2 * sin θ := rfl
-  rw [← hux, hrad, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hrc.le, abs_of_pos hrc, smul_eq_mul]
-  generalize u θ = x at h1x hcx ⊢
-  generalize (b - a) / 2 * cos θ = k at hrc ⊢
-  field_simp
-
-/-- **Joint continuity of the regular integrand.** With the turning points `z₋(h, j)`,
-`z₊(h, j)` substituted, the integrand of `sphericalPendulumRotationAngle_eq_integral_sin` is jointly
-continuous in `((h, j), θ)` for `(h, j)` in `sphericalPendulumTurningPointDomain`, since its
-denominator is positive there. -/
-theorem continuousOn_sphericalPendulumRotationAngleSinIntegrand :
-    ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumRotationAngleSinIntegrand
-        (sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
-        (sphericalPendulumUpperTurningPoint p.1.1 p.1.2) p.1.1 p.1.2 p.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) := by
-  have ha : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
-    continuousOn_sphericalPendulumLowerTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
-  have hb : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumUpperTurningPoint p.1.1 p.1.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
-    continuousOn_sphericalPendulumUpperTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
-  simp only [sphericalPendulumRotationAngleSinIntegrand_def]
-  refine ContinuousOn.div (by fun_prop) (by fun_prop) fun p hp ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hp.1
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
-  have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
-  have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz hV
-  exact (one_sub_sq_mul_sqrt_sub_add_mul_sin_pos ha₁ hab.le hb₁ (by linarith) p.2).ne'
+        j / ((1 - ((sphericalPendulumLowerTurningPoint h j +
+            sphericalPendulumUpperTurningPoint h j) / 2 +
+          (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+            sin θ) ^ 2) *
+          √(2 * (h - sphericalPendulumLowerTurningPoint h j -
+            sphericalPendulumUpperTurningPoint h j -
+            ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+              (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) /
+                2 * sin θ)))) := by
+  simp only [sphericalPendulumRotationAngle_def, ← div_div]
+  rw [integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin hj hz₀ hV]
 
 /-- **Continuity of the rotation angle.** The rotation angle `Θ(h, j)` is continuous on the
 values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equilibria, that is, with
@@ -769,23 +704,14 @@ values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equili
 theorem continuousOn_sphericalPendulumRotationAngle :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumRotationAngle c.1 c.2)
       sphericalPendulumTurningPointDomain := by
-  let R := sphericalPendulumTurningPointDomain
-  let G : R → ℝ → ℝ := fun c θ ↦
-    sphericalPendulumRotationAngleSinIntegrand
-      (sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2)
-      (sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2) (c : ℝ × ℝ).1
-      (c : ℝ × ℝ).2 θ
-  have hG : Continuous (Function.uncurry G) :=
-    continuousOn_sphericalPendulumRotationAngleSinIntegrand.comp_continuous
-      (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), p.2)) fun p ↦ ⟨p.1.property,
-          trivial⟩
-  rw [continuousOn_iff_continuous_domRestrict]
-  refine ((continuous_const (y := (2 : ℝ))).mul
-    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
-      (-(π / 2)) (π / 2))).congr fun c ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.property
-  simp only [G, domRestrict_apply]
-  exact (sphericalPendulumRotationAngle_eq_integral_sin hj hz hV).symm
+  refine ((continuousOn_const (c := (2 : ℝ))).mul
+    (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+    (g := fun c z ↦ c.2 / (1 - z ^ 2)) (ContinuousOn.div (by fun_prop) (by fun_prop)
+      fun p hp ↦ ?_))).congr fun c _ ↦ ?_
+  · have := hp.2
+    simp only [mem_Ioo] at this
+    nlinarith
+  · simp only [sphericalPendulumRotationAngle_def, ← div_div, Pi.mul_apply]
 
 end Continuity
 
@@ -793,7 +719,7 @@ end Continuity
 
 /-- The one-sided limits of the rotation angle along the circle `γ(t) = (1 + r cos t, r sin t)`, at
 the points `γ(0) = γ(2π) = (1 + r, 0)` and `γ(π) = (1 - r, 0)` where it crosses the axis `j = 0`. -/
-private theorem tendsto_sphericalPendulumRotationAngle_circle {r : ℝ} (hr : 0 < r) (hr₂ : r < 2) :
+theorem tendsto_sphericalPendulumRotationAngle_circle {r : ℝ} (hr : 0 < r) (hr₂ : r < 2) :
     Tendsto (fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t))
         (𝓝[Ioo 0 π] 0) (𝓝 (2 * π)) ∧
       Tendsto (fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t))
@@ -831,7 +757,7 @@ private theorem tendsto_sphericalPendulumRotationAngle_circle {r : ℝ} (hr : 0 
 
 /-- The value `(1, r)` lies above the curve of relative equilibria only for `r < 2`: for
 `z ∈ (-1, 1)` the effective potential satisfies `V_r(z) ≥ |r| - 1`. -/
-private theorem lt_two_of_mem_sphericalPendulumTurningPointDomain {r : ℝ}
+theorem lt_two_of_mem_sphericalPendulumTurningPointDomain {r : ℝ}
     (h : (1, r) ∈ sphericalPendulumTurningPointDomain) : r < 2 := by
   obtain ⟨_, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 h
   rw [sphericalPendulumEffectivePotential_def] at hV
@@ -843,57 +769,140 @@ private theorem lt_two_of_mem_sphericalPendulumTurningPointDomain {r : ℝ}
   have hle : (1 + z) * (1 - z) ≤ 1 := by nlinarith [sq_nonneg z]
   nlinarith [mul_le_mul_of_nonneg_right hle hw.le]
 
+/-- **A continuous lift of the rotation angle around the focus–focus value.** Let
+`γ(t) = (1 + r cos t, r sin t)`, for `t ∈ [0, 2π]`, be the counterclockwise circle of radius `r > 0`
+about the focus–focus value `(1, 0)`, and suppose that off the axis `j = 0` it runs strictly above
+the curve of relative equilibria. Then the rotation angle `Θ(γ(t))` on the upper half-circle
+`t ∈ (0, π)` and `Θ(γ(t)) + 2π` on the lower half-circle `t ∈ (π, 2π)` join to a function `L`
+continuous on `[0, 2π]`, with `L(0) = 2π` and `L(2π) = 0`: at the crossings of the axis, the
+one-sided limits `2π` at `γ(0)`, `π` and `-π + 2π` at `γ(π)`, and `-2π + 2π` at `γ(2π)` match. -/
+theorem exists_continuousOn_eqOn_sphericalPendulumRotationAngle {r : ℝ} (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain) :
+    ∃ L : ℝ → ℝ, ContinuousOn L (Icc 0 (2 * π)) ∧
+      (∀ t ∈ Ioo 0 π, L t = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) ∧
+      (∀ t ∈ Ioo π (2 * π),
+        L t = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t) + 2 * π) ∧
+      L 0 = 2 * π ∧ L (2 * π) = 0 := by
+  have hpi : 0 < π := pi_pos
+  have h2pi : π < 2 * π := by linarith
+  have hr₂ := lt_two_of_mem_sphericalPendulumTurningPointDomain
+    (by simpa using hγ (π / 2) (by simp))
+  obtain ⟨l₀, lπ₁, lπ₂, l₂π⟩ := tendsto_sphericalPendulumRotationAngle_circle hr hr₂
+  set Θ : ℝ → ℝ := fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)
+  have hΘ : ∀ {s : Set ℝ}, (∀ t ∈ s, sin t ≠ 0) → ContinuousOn Θ s :=
+    fun hs ↦ continuousOn_sphericalPendulumRotationAngle.comp
+      (by fun_prop : Continuous fun t : ℝ ↦ (1 + r * cos t, r * sin t)).continuousOn
+      fun t ht ↦ hγ t (hs t ht)
+  have hsin₁ : ∀ t ∈ Ioo 0 π, sin t ≠ 0 := fun t ht ↦ (sin_pos_of_pos_of_lt_pi ht.1 ht.2).ne'
+  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦
+    (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2).ne
+  -- Off the two half-circles, `L(t) = 2π - t` takes the values `2π`, `π` and `0` at the crossings.
+  let L : ℝ → ℝ := fun t ↦
+    if t ∈ Ioo 0 π then Θ t else if t ∈ Ioo π (2 * π) then Θ t + 2 * π else 2 * π - t
+  have hL₁ : EqOn L Θ (Ioo 0 π) := fun t ht ↦ by simp only [L, ht, ↓reduceIte]
+  have hL₂ : EqOn L (fun t ↦ Θ t + 2 * π) (Ioo π (2 * π)) := fun t ht ↦ by
+    have h₁ : t ∉ Ioo 0 π := fun h ↦ ht.1.not_gt h.2
+    simp only [L, h₁, ht, ↓reduceIte]
+  have hLc {t : ℝ} (h₁ : t ∉ Ioo 0 π) (h₂ : t ∉ Ioo π (2 * π)) : L t = 2 * π - t := by
+    simp only [L, h₁, h₂, ↓reduceIte]
+  have hL0 : L 0 = 2 * π := by rw [hLc (fun h ↦ h.1.false) fun h ↦ hpi.not_gt h.1, sub_zero]
+  have hLπ : L π = π := by rw [hLc (fun h ↦ h.2.false) fun h ↦ h.1.false]; ring
+  have hL2π : L (2 * π) = 0 := by rw [hLc (fun h ↦ h2pi.not_gt h.2) fun h ↦ h.2.false, sub_self]
+  -- The one-sided limits at the crossings of the axis.
+  have lim {s : Set ℝ} {t₀ v : ℝ} {f : ℝ → ℝ} (hf : EqOn L f s)
+      (hlim : Tendsto f (𝓝[s] t₀) (𝓝 v)) (hv : L t₀ = v) : ContinuousWithinAt L s t₀ := by
+    rw [ContinuousWithinAt, hv]
+    exact hlim.congr' (eventually_nhdsWithin_of_forall fun t ht ↦ (hf ht).symm)
+  have e₀ := lim hL₁ l₀ hL0
+  have eπ₁ := lim hL₁ lπ₁ hLπ
+  have eπ₂ := lim hL₂ (lπ₂.add_const (2 * π)) (by rw [hLπ]; ring)
+  have e₂π := lim hL₂ (l₂π.add_const (2 * π)) (by rw [hL2π]; ring)
+  refine ⟨L, fun t ht ↦ ?_, hL₁, hL₂, hL0, hL2π⟩
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · exact (continuousWithinAt_Icc_iff_Ici (by positivity)).2
+      (continuousWithinAt_Ioi_iff_Ici.1 ((continuousWithinAt_Ioo_iff_Ioi hpi).1 e₀))
+  rcases lt_trichotomy t π with htπ | rfl | htπ
+  · exact ((hΘ hsin₁).congr hL₁ |>.continuousAt (isOpen_Ioo.mem_nhds ⟨ht₀, htπ⟩)).continuousWithinAt
+  · refine (continuousAt_iff_continuous_left_right.2 ⟨?_, ?_⟩).continuousWithinAt
+    exacts [continuousWithinAt_Iio_iff_Iic.1 ((continuousWithinAt_Ioo_iff_Iio hpi).1 eπ₁),
+      continuousWithinAt_Ioi_iff_Ici.1 ((continuousWithinAt_Ioo_iff_Ioi h2pi).1 eπ₂)]
+  rcases ht.2.eq_or_lt with rfl | ht₂
+  · exact (continuousWithinAt_Icc_iff_Iic (by positivity)).2
+      (continuousWithinAt_Iio_iff_Iic.1 ((continuousWithinAt_Ioo_iff_Iio h2pi).1 e₂π))
+  · exact (((hΘ hsin₂).add continuousOn_const).congr hL₂ |>.continuousAt
+      (isOpen_Ioo.mem_nhds ⟨htπ, ht₂⟩)).continuousWithinAt
+
+/-- **A continuous lift of an integer multiple of the rotation angle drops around the focus–focus
+value.** Let `γ(t) = (1 + r cos t, r sin t)`, for `t ∈ [0, 2π]`, be the counterclockwise circle of
+radius `r > 0` about the focus–focus value `(1, 0)` of the energy–momentum map, and suppose that off
+the axis `j = 0` it runs strictly above the curve of relative equilibria. Let `m` be an integer. If
+`L` is continuous on `[0, 2π]` and agrees modulo `2π` with `m Θ(γ(t))` at every `t` with
+`sin t ≠ 0`, then `L(2π) - L(0) = -2πm`. The circle can only run above that curve when `r < 2`.
+
+The difference `L - m Θ ∘ γ` is constant on each of the two open half-circles, where it is
+continuous with values in `2πℤ`. The one-sided limits of `Θ` at the axis, `±2π` at `(1 + r, 0)` and
+`±π` at `(1 - r, 0)`, then force the two constants to differ by `2πm` and the lift to drop by
+`2πm`. -/
+theorem sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle
+    {r : ℝ} (hr : 0 < r)
+    (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
+    (m : ℤ) {L : ℝ → ℝ} (hL : ContinuousOn L (Icc 0 (2 * π)))
+    (hLΘ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
+      (L t : Real.Angle) = ↑(m * sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t))) :
+    L (2 * π) - L 0 = -(m * (2 * π)) := by
+  have hpi : 0 < π := pi_pos
+  have h2pi : π < 2 * π := by linarith
+  have hr₂ := lt_two_of_mem_sphericalPendulumTurningPointDomain
+    (by simpa using hγ (π / 2) (by simp))
+  set Θ : ℝ → ℝ := fun t ↦ m * sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)
+  obtain ⟨l₀, lπ₁, lπ₂, l₂π⟩ := tendsto_sphericalPendulumRotationAngle_circle hr hr₂
+  have hΘ : ∀ {s : Set ℝ}, (∀ t ∈ s, sin t ≠ 0) → ContinuousOn Θ s :=
+    fun hs ↦ continuousOn_const.mul <| continuousOn_sphericalPendulumRotationAngle.comp
+      (by fun_prop : Continuous fun t : ℝ ↦ (1 + r * cos t, r * sin t)).continuousOn
+      fun t ht ↦ hγ t (hs t ht)
+  have hIcc₁ : Ioo 0 π ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨ht.1.le, by linarith [ht.2]⟩
+  have hIcc₂ : Ioo π (2 * π) ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨by linarith [ht.1], ht.2.le⟩
+  have hsin₁ : ∀ t ∈ Ioo 0 π, sin t ≠ 0 := fun t ht ↦ (sin_pos_of_pos_of_lt_pi ht.1 ht.2).ne'
+  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦
+    (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2).ne
+  -- On each open half-circle the lift differs from `m Θ ∘ γ` by a constant.
+  obtain ⟨C₁, hC₁⟩ := isPreconnected_Ioo.exists_forall_sub_eq_of_coe_eq (hL.mono hIcc₁)
+    (hΘ hsin₁) fun t ht ↦ hLΘ t (hIcc₁ ht) (hsin₁ t ht)
+  obtain ⟨C₂, hC₂⟩ := isPreconnected_Ioo.exists_forall_sub_eq_of_coe_eq (hL.mono hIcc₂)
+    (hΘ hsin₂) fun t ht ↦ hLΘ t (hIcc₂ ht) (hsin₂ t ht)
+  -- A one-sided limit of `m Θ ∘ γ` at an endpoint of a half-circle identifies its constant.
+  have key : ∀ {s : Set ℝ} {t₀ C θ : ℝ}, (𝓝[s] t₀).NeBot → s ⊆ Icc 0 (2 * π) →
+      t₀ ∈ Icc 0 (2 * π) → (∀ t ∈ s, L t - Θ t = C) →
+      Tendsto (fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) (𝓝[s] t₀)
+        (𝓝 θ) → L t₀ - m * θ = C := fun _ hs ht₀ hC hθ ↦
+    tendsto_nhds_unique (((hL _ ht₀).tendsto.mono_left (nhdsWithin_mono _ hs)).sub
+        (hθ.const_mul _))
+      (tendsto_const_nhds.congr' (eventually_nhdsWithin_of_forall fun t ht ↦ (hC t ht).symm))
+  have h₀ := key (left_nhdsWithin_Ioo_neBot hpi) hIcc₁ ⟨le_rfl, by linarith⟩ hC₁ l₀
+  have h₁ := key (right_nhdsWithin_Ioo_neBot hpi) hIcc₁ ⟨hpi.le, by linarith⟩ hC₁ lπ₁
+  have h₂ := key (left_nhdsWithin_Ioo_neBot h2pi) hIcc₂ ⟨hpi.le, by linarith⟩ hC₂ lπ₂
+  have h₃ := key (right_nhdsWithin_Ioo_neBot h2pi) hIcc₂ ⟨by linarith, le_rfl⟩ hC₂ l₂π
+  linear_combination h₃ - h₂ + h₁ - h₀
+
 /-- **A continuous lift of the rotation angle decreases by `2π` around the focus–focus value.**
 Let `γ(t) = (1 + r cos t, r sin t)`, for `t ∈ [0, 2π]`, be the counterclockwise circle of radius
 `r > 0` about the focus–focus value `(1, 0)` of the energy–momentum map, and suppose that off the
 axis `j = 0` it runs strictly above the curve of relative equilibria. If `L` is continuous on
 `[0, 2π]` and agrees modulo `2π` with the rotation angle `Θ(γ(t))` at every `t` with `sin t ≠ 0`,
-then `L(2π) - L(0) = -2π`. The circle can only run above that curve when `r < 2`.
-
-The difference `L - Θ ∘ γ` is constant on each of the two open half-circles, where it is continuous
-with values in `2πℤ`. The one-sided limits of `Θ` at the axis, `±2π` at `(1 + r, 0)` and `±π` at
-`(1 - r, 0)`, then force the two constants to differ by `2π` and the lift to drop by `2π`. -/
+then `L(2π) - L(0) = -2π`. This is the case `m = 1` of
+`TauCeti.sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle`. -/
 theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle {r : ℝ} (hr : 0 < r)
     (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
     {L : ℝ → ℝ} (hL : ContinuousOn L (Icc 0 (2 * π)))
     (hLΘ : ∀ t ∈ Icc 0 (2 * π), sin t ≠ 0 →
       (L t : Real.Angle) = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) :
     L (2 * π) - L 0 = -(2 * π) := by
-  have hpi : 0 < π := pi_pos
-  have h2pi : π < 2 * π := by linarith
-  have hr₂ := lt_two_of_mem_sphericalPendulumTurningPointDomain
-    (by simpa using hγ (π / 2) (by simp))
-  obtain ⟨l₀, lπ₁, lπ₂, l₂π⟩ := tendsto_sphericalPendulumRotationAngle_circle hr hr₂
-  have hΘ : ∀ {s : Set ℝ}, (∀ t ∈ s, sin t ≠ 0) →
-      ContinuousOn (fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) s :=
-    fun hs ↦ continuousOn_sphericalPendulumRotationAngle.comp (by fun_prop : Continuous
-      fun t : ℝ ↦ (1 + r * cos t, r * sin t)).continuousOn fun t ht ↦ hγ t (hs t ht)
-  have hIcc₁ : Ioo 0 π ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨ht.1.le, by linarith [ht.2]⟩
-  have hIcc₂ : Ioo π (2 * π) ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨by linarith [ht.1], ht.2.le⟩
-  have hsin₁ : ∀ t ∈ Ioo 0 π, sin t ≠ 0 := fun t ht ↦ (sin_pos_of_pos_of_lt_pi ht.1 ht.2).ne'
-  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦
-    (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2).ne
-  -- On each open half-circle the lift differs from `Θ ∘ γ` by a constant.
-  obtain ⟨C₁, hC₁⟩ := isPreconnected_Ioo.exists_forall_sub_eq_of_coe_eq (hL.mono hIcc₁)
-    (hΘ hsin₁) fun t ht ↦ hLΘ t (hIcc₁ ht) (hsin₁ t ht)
-  obtain ⟨C₂, hC₂⟩ := isPreconnected_Ioo.exists_forall_sub_eq_of_coe_eq (hL.mono hIcc₂)
-    (hΘ hsin₂) fun t ht ↦ hLΘ t (hIcc₂ ht) (hsin₂ t ht)
-  -- A one-sided limit of `Θ ∘ γ` at an endpoint of a half-circle identifies its constant.
-  have key : ∀ {s : Set ℝ} {t₀ C θ : ℝ}, (𝓝[s] t₀).NeBot → s ⊆ Icc 0 (2 * π) →
-      t₀ ∈ Icc 0 (2 * π) → (∀ t ∈ s, L t -
-        sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t) = C) →
-      Tendsto (fun t ↦ sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) (𝓝[s] t₀)
-        (𝓝 θ) → L t₀ - θ = C := fun _ hs ht₀ hC hθ ↦
-    tendsto_nhds_unique (((hL _ ht₀).tendsto.mono_left (nhdsWithin_mono _ hs)).sub hθ)
-      (tendsto_const_nhds.congr' (eventually_nhdsWithin_of_forall fun t ht ↦ (hC t ht).symm))
-  have h₀ := key (left_nhdsWithin_Ioo_neBot hpi) hIcc₁ ⟨le_rfl, by linarith⟩ hC₁ l₀
-  have h₁ := key (right_nhdsWithin_Ioo_neBot hpi) hIcc₁ ⟨hpi.le, by linarith⟩ hC₁ lπ₁
-  have h₂ := key (left_nhdsWithin_Ioo_neBot h2pi) hIcc₂ ⟨hpi.le, by linarith⟩ hC₂ lπ₂
-  have h₃ := key (right_nhdsWithin_Ioo_neBot h2pi) hIcc₂ ⟨by linarith, le_rfl⟩ hC₂ l₂π
-  linarith
+  simpa using sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle
+    hr hγ 1 hL (by simpa using hLΘ)
 
 /-- The counterclockwise circles of radius `0 < r ≤ 1` about the focus–focus value `(1, 0)`
-run above the curve of relative equilibria off the axis `j = 0`, so a continuous lift `L` of the
+run above the curve of relative equilibria off the axis `j = 0`
+(`TauCeti.mem_sphericalPendulumTurningPointDomain_of_le_one`), so a continuous lift `L` of the
 rotation angle along such a circle satisfies `L(2π) - L(0) = -2π`
 (`TauCeti.sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle`). -/
 theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one {r : ℝ}
@@ -902,17 +911,6 @@ theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle_of_le_one
       (L t : Real.Angle) = sphericalPendulumRotationAngle (1 + r * cos t) (r * sin t)) :
     L (2 * π) - L 0 = -(2 * π) :=
   sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle hr
-    (fun t ht ↦ mem_sphericalPendulumTurningPointDomain_of_sq_lt (mul_ne_zero hr.ne' ht) (by
-      -- `2 (1 + r cos t) - r² sin² t = (1 + r cos t)² + 1 - r²`, and `cos t > -1` off the axis.
-      have hc : 0 < 1 + cos t := by
-        rcases (neg_one_le_cos t).lt_or_eq with hc | hc
-        · linarith
-        · exact absurd (by linear_combination sin_sq_add_cos_sq t + (cos t - 1) * hc)
-            (pow_ne_zero 2 ht)
-      have hrc : 0 < r * (1 + cos t) := mul_pos hr hc
-      have key : 2 * (1 + r * cos t) - (r * sin t) ^ 2 = (1 + r * cos t) ^ 2 + (1 - r ^ 2) := by
-        linear_combination -r ^ 2 * sin_sq_add_cos_sq t
-      nlinarith [mul_pos hrc (by linarith : 0 < 2 - r + r * cos t)]))
-    hL hLΘ
+    (fun _ ht ↦ mem_sphericalPendulumTurningPointDomain_of_le_one hr hr₂ ht) hL hLΘ
 
 end TauCeti

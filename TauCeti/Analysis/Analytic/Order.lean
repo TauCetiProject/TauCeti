@@ -12,9 +12,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 # The analytic order of products, power maps and derivatives
 
 Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects eventual equality,
-the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
-by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the
-recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
+the order is additive over finite products, a product of linear factors with distinct roots has
+order `1` at each root, composing with `q ↦ q ^ N` at `0` multiplies the order by `N`, the power
+map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the recentred function
+`f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
 monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`)
 and characterized by comparison with the powers `(z - z₀) ^ n`, and at a zero the divided
 difference `dslope f a` has order one less than `f`. The order is finite at a point with a
@@ -33,6 +34,10 @@ finiteness of the zero set itself on a compact is
   coefficients, subtraction of a scalar monomial has the minimum of the two orders.
 * `TauCeti.analyticOrderNatAt_congr`: eventual equality preserves the natural analytic order.
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
+* `TauCeti.analyticOrderAt_prod_sub_pow`: the polynomial `∏ a ∈ s, (z - a) ^ m a` has order `m z`
+  at each `z ∈ s` and order `0` elsewhere.
+* `TauCeti.analyticOrderAt_prod_sub_of_injOn`: a product of linear factors `∏ i ∈ s, (z - r i)`
+  with distinct roots has order `1` at each root.
 * `TauCeti.analyticOrderAt_comp_pow_zero`: the order of `q ↦ f (q ^ N)` at `0` is `N` times
   the order of `f` at `0`.
 * `TauCeti.analyticOrderAt_pow_sub_zero_pow`: the order of `w ↦ w ^ m - 0 ^ m` at `0` is `m`
@@ -102,6 +107,33 @@ theorem analyticOrderAt_prod {ι : Type*} {s : Finset ι} {F : ι → 𝕜 → �
       analyticOrderAt_mul (hF a (Finset.mem_cons_self a s))
         (Finset.analyticAt_prod _ fun i hi ↦ hF i (Finset.mem_cons_of_mem hi)),
       ih fun i hi ↦ hF i (Finset.mem_cons_of_mem hi)]
+
+/-- The analytic order of the polynomial `∏ a ∈ s, (z - a) ^ m a` at `z` is `m z` if `z ∈ s`, and
+`0` otherwise. -/
+theorem analyticOrderAt_prod_sub_pow [DecidableEq 𝕜] (s : Finset 𝕜) (m : 𝕜 → ℕ) (z : 𝕜) :
+    analyticOrderAt (∏ a ∈ s, (· - a) ^ m a) z = if z ∈ s then (m z : ℕ∞) else 0 := by
+  rw [analyticOrderAt_prod fun a _ ↦ by fun_prop]
+  have hterm (a : 𝕜) : analyticOrderAt ((· - a) ^ m a) z = if z = a then (m a : ℕ∞) else 0 := by
+    rw [analyticOrderAt_pow (by fun_prop)]
+    split_ifs with h
+    · subst h
+      simp
+    · simp [analyticOrderAt_id_sub_const_of_ne h]
+  simp_rw [hterm]
+  rw [Finset.sum_ite_eq]
+
+/-- A product of linear factors `∏ i ∈ s, (z - r i)` with distinct roots `r i` vanishes to order
+exactly `1` at each of its roots. -/
+theorem analyticOrderAt_prod_sub_of_injOn {ι : Type*} {s : Finset ι} {r : ι → 𝕜}
+    (hr : Set.InjOn r s) {j : ι} (hj : j ∈ s) :
+    analyticOrderAt (fun z ↦ ∏ i ∈ s, (z - r i)) (r j) = 1 := by
+  classical
+  have hP : AnalyticAt 𝕜 (fun z ↦ ∏ i ∈ s, (z - r i)) (r j) := by fun_prop
+  refine (hP.analyticOrderAt_eq_natCast (n := 1)).2
+    ⟨fun z ↦ ∏ i ∈ s.erase j, (z - r i), by fun_prop, ?_, .of_forall fun z ↦ ?_⟩
+  · refine Finset.prod_ne_zero_iff.2 fun i hi ↦ sub_ne_zero.2 fun h ↦ ?_
+    exact Finset.ne_of_mem_erase hi (hr (Finset.mem_of_mem_erase hi) hj h.symm)
+  · rw [← Finset.mul_prod_erase _ _ hj, pow_one, smul_eq_mul]
 
 /-- The analytic order of `q ↦ f (q ^ N)` at `0` is `N` times the analytic order of `f`
 at `0`. -/

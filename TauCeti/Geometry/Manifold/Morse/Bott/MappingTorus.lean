@@ -142,8 +142,7 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
   rw [coe_closedOrbitEmbedding, mfderiv_closedOrbit, closedOrbit_coe]
   set q := uncurry (mk φ)
   have hq := isLocalDiffeomorph_uncurry_mk φ (t, x)
-  have hreg : IsRegularPoint (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) q (t, x) :=
-    isRegularPoint_iff.2 (hq.isInvertible_mfderiv (by simp)).surjective
+  have hreg : IsRegularPoint (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) q (t, x) := hq.isRegularPoint (by simp)
   -- Lift `v` to a tangent vector `u` of `ℝ × M` at `(t, x)`.
   obtain ⟨u, rfl⟩ := isRegularPoint_iff.1 hreg v
   have hu : u ∈ (criticalHessian (𝓘(ℝ).prod I) (h ∘ Prod.snd) (t, x)).ker := by
@@ -152,10 +151,7 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
     exact hv
   -- The projection to `M` is onto, and the Hessian of `h` at `x` is injective, so `u` has no
   -- component along `M`.
-  have hsnd : IsRegularPoint (𝓘(ℝ).prod I) I (Prod.snd : ℝ × M → M) (t, x) :=
-    isRegularPoint_iff.2 fun w ↦ ⟨(Manifold.tangentSpaceProdEquiv (t, x)).symm (0, w), by
-      rw [mfderiv_snd_apply, Manifold.tangentSpaceProdEquiv_symm_apply]⟩
-  rw [hsnd.ker_criticalHessian_comp hcrit.contMDiffAt contMDiffAt_snd hcrit.mem_criticalPoints,
+  rw [ker_criticalHessian_comp_snd (p := (t, x)) hcrit.contMDiffAt hcrit.mem_criticalPoints,
     Submodule.mem_comap, mfderiv_snd] at hu
   have hu2 : (Manifold.tangentSpaceProdEquiv (t, x) u).2 = 0 := by
     have h0 := LinearMap.mem_ker.1 hu

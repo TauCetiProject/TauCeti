@@ -43,7 +43,9 @@ sign once the orientations are transported along `σ`. Comparing the transported
 the original ones in the same charts
 (`TauCeti.IsAdaptedPseudoGradient.trajectorySign_map_negativeChange`) then relates the signs of
 two trajectories exchanged by `σ` through the effect of `σ` on the orientations of the unstable
-manifolds at `p` and at `q`. For instance, on the real projective plane with its moment function,
+manifolds at `p` and at `q`, read off from the action of its derivative on the unstable frames at
+`p` and at `q` (`TauCeti.IsAdaptedPseudoGradient.trajectorySign_apply_eq_mul_mul_trajectorySign`).
+For instance, on the real projective plane with its moment function,
 the reflection negating the coordinate of the saddle fixes the three critical points, and for a
 pseudo-gradient invariant under it, it exchanges the two trajectories from the maximum to the
 saddle and the two from the saddle to the minimum.
@@ -64,6 +66,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   and their signed counts.
 * `signedMorseBoundaryCoeff_pullback`, `domLCongr_comp_signedMorseBoundary_pullback`: the
   diffeomorphism intertwines the integral Morse boundaries.
+* `trajectorySign_apply_eq_mul_mul_trajectorySign`: a symmetry fixing `p` and `q`, acting on the
+  orientations of the unstable manifolds at `p` and `q` by signs `up` and `uq`, multiplies the
+  sign of each trajectory from `p` to `q` by `up * uq`.
 
 ## References
 
@@ -98,7 +103,7 @@ variable {x : M} (φ : MorseChart E f' (σ x))
 @[simp]
 theorem pullback_negativeCoord : (φ.pullback hf).negativeCoord = φ.negativeCoord := by
   ext v i
-  exact (negativeCoord_apply _ v i).trans (negativeCoord_apply φ v i).symm
+  exact (MorseBottChart.negativeCoord_apply _ v i).trans (φ.negativeCoord_apply v i).symm
 
 /-- The pullback keeps the extension by zero of the coordinates of negative weight. -/
 @[simp]
@@ -162,6 +167,21 @@ theorem pullback_orientation (p : criticalPoints 𝓘(ℝ, E) f) :
       (finCongr ((𝔬'.chart (criticalPointsEquivOfComp hf p)).manifoldMorseIndex_eq_of_comp hf).symm)
       (𝔬'.orientation (criticalPointsEquivOfComp hf p)) :=
   rfl
+
+open scoped Classical in
+/-- **Reversing orientations commutes with the pullback**: pulling back the orientations of `𝔬'`
+reversed at the critical points of `S` gives the pulled-back orientations reversed at the critical
+points that `σ` carries into `S`. -/
+theorem pullback_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f')) [DecidablePred (· ∈ S)] :
+    (𝔬'.reverse S).pullback hf hσX =
+      (𝔬'.pullback hf hσX).reverse (criticalPointsEquivOfComp hf ⁻¹' S) := by
+  ext p
+  · simp
+  · refine heq_of_eq (funext fun p ↦ ?_)
+    simp only [pullback_orientation, reverse_orientation, Set.mem_preimage]
+    by_cases hp : criticalPointsEquivOfComp hf p ∈ S <;> simp only [hp, ↓reduceIte]
+    · exact Orientation.reindex_neg (R := ℝ) _ _
+    · congr 1
 
 end MorseOrientation
 
@@ -399,6 +419,115 @@ theorem domLCongr_comp_signedMorseBoundary_pullback (R : Type*) [Ring R] :
   refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
   obtain ⟨q, rfl⟩ := (criticalPointsEquivOfComp hf).surjective q
   simp [Finsupp.domLCongr_apply, signedMorseBoundaryCoeff_pullback hf hX hX' hσX 𝔬' hf']
+
+end IsAdaptedPseudoGradient
+
+/-! ### Symmetries fixing two critical points -/
+
+namespace IsAdaptedPseudoGradient
+
+section Symmetry
+
+variable [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M]
+
+/-- At a critical point `p`, a change of negative coordinates `N` from the chart of `𝔬` at `p` to
+the chart of `𝔬` at `c = p` which agrees with `L` through the unstable frames transports the
+orientation of `𝔬` at `p` as `L` does. -/
+private theorem map_orientation_eq_units_smul_reindex (hX : IsAdaptedPseudoGradient f X)
+    (hf' : IsMorse 𝓘(ℝ, E) f) (𝔬 : MorseOrientation f X) {p c : criticalPoints 𝓘(ℝ, E) f}
+    (hc : c = p)
+    (N : ({i // (𝔬.chart p).weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // (𝔬.chart c).weight i < 0} → ℝ))
+    (L : ({i // (𝔬.chart p).weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // (𝔬.chart p).weight i < 0} → ℝ))
+    (hN : ∀ v, hX.unstableFrame (𝔬.chart c) c (N v) = hX.unstableFrame (𝔬.chart p) p (L v))
+    {u : ℤˣ} (hu : Orientation.map _ L (𝔬.orientation p) =
+      Units.map (Int.castRingHom ℝ).toMonoidHom u • 𝔬.orientation p)
+    (h : manifoldMorseIndex 𝓘(ℝ, E) f c = manifoldMorseIndex 𝓘(ℝ, E) f p) :
+    Orientation.map _ N (𝔬.orientation p) =
+      Units.map (Int.castRingHom ℝ).toMonoidHom u •
+        Orientation.reindex ℝ _ (finCongr h) (𝔬.orientation c) := by
+  subst hc
+  -- At the critical point itself, the unstable frame is injective, so `N = L`.
+  have hc : (c : M) ∈ hX.flow.unstableSet c :=
+    (hX.mem_unstableSet_inter_stableSet_self
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 c.property)).1
+  have hNL : N = L := LinearEquiv.ext fun v ↦
+    hX.injective_unstableFrame_of_mem (𝔬.coord_mfderiv_chart c) hf' hc (hN v)
+  rw [hNL, hu, finCongr_refl, Orientation.reindex_refl, Equiv.refl_apply]
+
+/-- **Signs of trajectories under a symmetry.** Let `σ` be a diffeomorphism of `M` preserving `f`
+and `X` and fixing the critical points `p` and `q`, where `ind p = ind q + 1`. Suppose that the
+derivative of `σ` acts on the unstable frames of the orientation data `𝔬` at `p` and at `q` through
+linear isomorphisms `Lp` and `Lq` of the coordinates of negative weight, which multiply the
+orientations of `𝔬` at `p` and at `q` by the signs `up` and `uq`. Then the sign of the image under
+`σ` of a trajectory from `p` to `q` is `up * uq` times the sign of the trajectory. -/
+theorem trajectorySign_apply_eq_mul_mul_trajectorySign (hX : IsAdaptedPseudoGradient f X)
+    (hf' : IsMorse 𝓘(ℝ, E) f) (σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M) (hσf : f ∘ σ = f)
+    (hσX : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y (X y) = X (σ y)) (𝔬 : MorseOrientation f X)
+    {p q : criticalPoints 𝓘(ℝ, E) f} (hp : σ p = p) (hq : σ q = q)
+    (Lp : ({i // (𝔬.chart p).weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // (𝔬.chart p).weight i < 0} → ℝ))
+    (Lq : ({i // (𝔬.chart q).weight i < 0} → ℝ) ≃ₗ[ℝ] ({i // (𝔬.chart q).weight i < 0} → ℝ))
+    (hLp : ∀ v, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ p (hX.unstableFrame (𝔬.chart p) p v) =
+      hX.unstableFrame (𝔬.chart p) p (Lp v))
+    (hLq : ∀ v, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ q (hX.unstableFrame (𝔬.chart q) q v) =
+      hX.unstableFrame (𝔬.chart q) q (Lq v))
+    {up uq : ℤˣ}
+    (hup : Orientation.map _ Lp (𝔬.orientation p) =
+      Units.map (Int.castRingHom ℝ).toMonoidHom up • 𝔬.orientation p)
+    (huq : Orientation.map _ Lq (𝔬.orientation q) =
+      Units.map (Int.castRingHom ℝ).toMonoidHom uq • 𝔬.orientation q)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+    hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq (σ y) =
+      up * uq *
+        hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq y := by
+  set e := criticalPointsEquivOfComp hσf
+  -- The charts of `𝔬` at `σ p` and `σ q`, which pull back along `σ` to Morse charts at `p` and `q`.
+  set φp : MorseChart E f (σ p) := 𝔬.chart (e p)
+  set φq : MorseChart E f (σ q) := 𝔬.chart (e q)
+  have hφp' := MorseChart.coord_mfderiv_pullback hσf hσX (𝔬.coord_mfderiv_chart (e p))
+  have hφq' := MorseChart.coord_mfderiv_pullback hσf hσX (𝔬.coord_mfderiv_chart (e q))
+  have hmem (r : criticalPoints 𝓘(ℝ, E) f) : (r : M) ∈ hX.flow.unstableSet r :=
+    (hX.mem_unstableSet_inter_stableSet_self
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 r.property)).1
+  -- Through the unstable frames, the changes of negative coordinates to the pulled-back charts
+  -- are `Lp` and `Lq`; so they transport the orientations of `𝔬` by `up` and `uq`.
+  have hop := map_orientation_eq_units_smul_reindex hX hf' 𝔬 (c := e p) (Subtype.ext hp)
+    ((𝔬.chart p).negativeChange (φp.pullback hσf)) Lp (fun v ↦ by
+      rw [← hLp, ← unstableFrame_negativeChange (𝔬.coord_mfderiv_chart p) hφp' hf' (hmem p) v]
+      exact (mfderiv_unstableFrame_pullback hσf hX hX hσX (𝔬.coord_mfderiv_chart (e p)) hf'
+        (hmem p) _).symm) hup (φp.manifoldMorseIndex_eq_of_comp hσf).symm
+  have hoq := map_orientation_eq_units_smul_reindex hX hf' 𝔬 (c := e q) (Subtype.ext hq)
+    ((𝔬.chart q).negativeChange (φq.pullback hσf)) Lq (fun v ↦ by
+      rw [← hLq, ← unstableFrame_negativeChange (𝔬.coord_mfderiv_chart q) hφq' hf' (hmem q) v]
+      exact (mfderiv_unstableFrame_pullback hσf hX hX hσX (𝔬.coord_mfderiv_chart (e q)) hf'
+        (hmem q) _).symm) huq (φq.manifoldMorseIndex_eq_of_comp hσf).symm
+  -- The sign at `σ y` in the charts of `𝔬` at `σ p = p` and `σ q = q` is the sign at `y` in the
+  -- pulled-back charts, and changing to the charts of `𝔬` multiplies it by `up * uq`.
+  have key : ∀ (c d : criticalPoints 𝓘(ℝ, E) f) (_ : c = p) (_ : d = q)
+      (h : manifoldMorseIndex 𝓘(ℝ, E) f c = manifoldMorseIndex 𝓘(ℝ, E) f d + 1),
+      hX.trajectorySign (𝔬.chart c) (𝔬.chart d) (𝔬.orientation c) (𝔬.orientation d) h (σ y) =
+        hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq
+          (σ y) := by
+    rintro c d rfl rfl h
+    rfl
+  rw [← key (e p) (e q) (Subtype.ext hp) (Subtype.ext hq)
+      (MorseChart.manifoldMorseIndex_eq_add_one_of_comp hσf φp φq hpq)]
+  -- The critical point `e p` is `σ p` as a point of `M`, so the pullback statement applies.
+  refine (trajectorySign_pullback hσf hX hX hσX (𝔬.coord_mfderiv_chart (e p))
+    (𝔬.coord_mfderiv_chart (e q)) _ _ hpq hf' hy).symm.trans ?_
+  rw [← trajectorySign_map_negativeChange (𝔬.coord_mfderiv_chart p) hφp'
+    (𝔬.coord_mfderiv_chart q) hφq' hf' (𝔬.orientation p) (𝔬.orientation q) hpq hy, hop, hoq,
+    Orientation.intCast_units_smul_eq_ite, Orientation.intCast_units_smul_eq_ite]
+  have hne : (-1 : ℤˣ) ≠ 1 := by decide
+  -- After `simp only`, the two sides of each case differ only in the base points of the charts in
+  -- the implicit types of the `Orientation.reindex` coercions: `σ p` on one side and `(e p : M)`
+  -- on the other. These agree by definition (`coe_criticalPointsEquivOfComp_apply` is `rfl`), but
+  -- `simp` and `rw` cannot reach into these dependent implicit types, so `rfl` closes the goals.
+  rcases Int.units_eq_one_or up with rfl | rfl <;> rcases Int.units_eq_one_or uq with rfl | rfl <;>
+    simp only [↓reduceIte, hne, trajectorySign_neg_left, trajectorySign_neg_right, Units.val_one,
+      Units.val_neg, one_mul, neg_mul, neg_neg] <;> rfl
+
+end Symmetry
 
 end IsAdaptedPseudoGradient
 

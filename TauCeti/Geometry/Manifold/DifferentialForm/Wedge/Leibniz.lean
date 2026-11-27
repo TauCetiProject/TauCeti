@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
 # The Leibniz rule for wedge products of differential forms
@@ -67,6 +68,16 @@ theorem inChartAt_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : Roug
       pairedWedge μ μ.continuous₂ (φ.inChartAt x₀ z) (ψ.inChartAt x₀ z) := by
   ext w
   simp only [inChartAt_apply, wedgeWith_apply, pairedWedge_apply]
+
+/-- The coordinate expression of a paired wedge is differentiable within a subset `s` at `z`
+whenever the coordinate expressions of both factors are. -/
+theorem differentiableWithinAt_inChartAt_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    {φ : RoughForm I M F₁ k} {ψ : RoughForm I M F₂ l} {x₀ : M} {s : Set E} {z : E}
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x₀) s z)
+    (hψ : DifferentiableWithinAt ℝ (ψ.inChartAt x₀) s z) :
+    DifferentiableWithinAt ℝ ((φ.wedgeWith μ ψ).inChartAt x₀) s z :=
+  ((differentiableWithinAt_const _).pairedWedge hφ hψ).congr
+    (fun w _ ↦ inChartAt_wedgeWith μ φ ψ x₀ w) (inChartAt_wedgeWith μ φ ψ x₀ z)
 
 end RoughForm
 
@@ -214,6 +225,20 @@ theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   exact TauCeti.mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
 
+/-- The exterior derivative of the paired wedge of a smooth `1`-form `φ` with a smooth function
+`ψ`, evaluated on two tangent vectors: `d(φ ψ)(v, w) = μ(dφ(v, w), ψ) - (μ(φ v, dψ w) -
+μ(φ w, dψ v))`. -/
+theorem mextDeriv_wedgeWith_apply_one_zero (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ 1) (ψ : SmoothForm I M F₂ 0) (x : M) (v w : TangentSpace I x) :
+    mextDeriv (RoughForm.wedgeWith μ φ.val ψ.val) x ![v, w] =
+      μ (mextDeriv φ.val x ![v, w]) (ψ.val x 0) -
+        (μ (φ.val x ![v]) (mextDeriv ψ.val x ![w]) -
+          μ (φ.val x ![w]) (mextDeriv ψ.val x ![v])) := by
+  have hvw : ∀ h : 1 + 1 + 0 = 1 + 0 + 1, (![v, w] ∘ Fin.cast h : Fin 2 → TangentSpace I x) =
+      ![v, w] := fun _ ↦ funext fun i ↦ by fin_cases i <;> rfl
+  rw [mextDeriv_wedgeWith_apply μ φ ψ x ![v, w], hvw, RoughForm.wedgeWith_apply_zero_right,
+    RoughForm.wedgeWith_apply_one_one, pow_one, neg_one_smul, ← sub_eq_add_neg]
+
 /-- The exterior derivative of the real wedge `RoughForm.wedge` of the underlying forms of two
 smooth forms, evaluated on tangent vectors. See `SmoothForm.mextDerivₗ_wedge` for the bundled
 law. -/
@@ -319,6 +344,19 @@ theorem extDerivWedgeₗ_funSMulₗ (f g : C^∞⟮I, M; ℝ⟯) (φ : SmoothFor
   simp only [extDerivWedgeₗ_apply, coe_funSMulₗ, RoughForm.wedge_def,
     RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right,
     ContinuousAlternatingMap.smul_apply]
+
+/-- The exterior derivative of `f dg` is `df ∧ dg`, for smooth functions `f` and `g`: evaluated on a
+pair of tangent vectors it is the determinant `df(v) dg(w) - df(w) dg(v)`. -/
+theorem mextDerivₗ_funSMulₗ_mextDerivₗ_ofFunction_apply
+    (f g : C^∞⟮I, M; ℝ⟯) (x : M) (v w : TangentSpace I x) :
+    (mextDerivₗ I 1 (funSMulₗ f (mextDerivₗ I 0 (ofFunction g)))).val x ![v, w] =
+      mvfderiv I f x v * mvfderiv I g x w - mvfderiv I f x w * mvfderiv I g x v := by
+  rw [mextDerivₗ_apply, coe_funSMulₗ,
+    mextDeriv_fun_smul_apply (f.contMDiff.mdifferentiableAt (by simp))
+      ((mextDerivₗ I 0 (ofFunction g)).mdifferentiableAt x),
+    mextDerivₗ_zero_apply, mextDerivₗ_zero_apply, ofFunction_apply_zero, mextDerivₗ_apply,
+    SmoothForm.mextDeriv_mextDeriv]
+  simp
 
 /-- **The exterior derivative has order one**: its double commutator with multiplication by
 smooth functions `f` and `g` vanishes, `[[d, f], g] = 0`. Since `d` changes the degree, the

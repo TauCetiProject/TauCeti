@@ -232,7 +232,8 @@ theorem form_d16e8GlueVector_self :
       (E8.rootLattice isSimplyLaced_E8).form
         (d16e8GlueVector ⟨1, by decide⟩) (d16e8GlueVector ⟨1, by decide⟩) := by
     rw [pi_form]
-    exact (piForm_apply _ d16e8GlueVector d16e8GlueVector).trans (Fin.sum_univ_two _)
+    exact (LinearMap.BilinForm.pi_apply _ d16e8GlueVector d16e8GlueVector).trans
+      (Fin.sum_univ_two _)
   rw [hsum, d16e8GlueVector_zero, d16e8GlueVector_one]
   -- The zero vector in the E₈ summand still has its table component type.
   erw [map_zero, add_zero]

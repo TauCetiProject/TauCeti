@@ -10,7 +10,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.Flat
@@ -366,8 +367,6 @@ theorem exists_compatible_mfderiv_smul_apply [T2Space M] [SigmaCompactSpace M] {
     ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
       ∀ (a : G) (x : M) (v : TangentSpace I x),
         mfderiv I I (a • ·) x (J x v) = J (a • x) (mfderiv I I (a • ·) x v) := by
-  -- The averaged metric is smooth when the action maps are `C^(∞ + 1)`, that is, smooth.
-  have : ENat.LEInfty ((∞ : ℕ∞ω) + 1) := ⟨by simp⟩
   have := Fintype.ofFinite G
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
     (E := fun x : M ↦ TangentSpace I x)

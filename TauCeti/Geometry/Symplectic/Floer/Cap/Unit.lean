@@ -52,9 +52,11 @@ generator `D` of the orbit `i` is the finite sum of the counts over the classes 
   cocycles the difference is a coboundary
   (`novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right`
   and its `_left` form).
-* **The unit on cohomology.** When the second input and the output are the same complex and `Φ`
-  is the identity, the class of the combination of plane counts is a left identity for the product
-  on the cohomology of the cylinder differentials
+* **The unit on cohomology.** When the input without the plane and the output are the same
+  complex and `Φ` is the identity, `e ⋆ b - b` is a coboundary for every cocycle `b`
+  (`TauCeti.Floer.kernelProduct_coordinates_symm_sub_mem_coboundaries_right`, and its `_left`
+  form for `a ⋆ e - a`), so the class of the combination of plane counts is a left identity for
+  the product on the cohomology of the cylinder differentials
   (`TauCeti.Floer.cohomologyProduct_kernelProduct_coefficientComparison_unit_mk`), and likewise a
   right identity (`TauCeti.Floer.cohomologyProduct_kernelProduct_coefficientComparison_mk_unit`).
 
@@ -375,12 +377,75 @@ variable [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι] {P : ι → Typ
   (hK : ∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1)
   {n ε : ℤ} {CQ : ℝ}
 
-omit [Fintype ι] in
-/-- The comparison of the identity matrix of class-indexed series is the identity matrix. -/
-private theorem coefficientComparison_one_apply :
-    (fun j l => coefficientComparison q hq ((1 : Matrix ι ι (NovikovSeries R G ωG)) j l)) =
-      (1 : Matrix ι ι _) :=
-  Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _)
+include hμ in
+/-- **The unit of class-indexed counts is a left unit on cocycles.** Let `⋆` be the ground-ring
+bilinear map of the counts `Q` of rigid pairs of pants, with a common complex as its second input
+and its output, for any potential bound of its kernel, and `e` the combination of the counts `E`
+of rigid PSS planes with output in the first input. If some family `K` of counts, which lowers the
+cochain degree by one, satisfies the unit identity
+`∑ᵢ Eᵢ Qᵢⱼₗ - [j = l] = ∑ₘ Kⱼₘ Dₘₗ + ∑ₘ Dⱼₘ Kₘₗ` of gluing a plane into the first input, then
+`e ⋆ b - b` is a coboundary of the cylinder differential for every cocycle `b`. -/
+theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_right [Fintype ι₁]
+    (Q : ι₁ → ι → ι → NovikovSeries R G ωG)
+    (hnQ : ∀ p₁ p₂ p₀,
+      kernelOfMatrix r₁ r r (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0 →
+        F p₀ ≤ F₁ p₁ + F p₂ + CQ)
+    (E : ι₁ → NovikovSeries R G ωG)
+    (hunit : ∃ K : ι → ι → NovikovSeries R G ωG,
+      (∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1) ∧
+      ∀ j l, ∑ i, E i * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) j l =
+        ∑ m, K j m * D m l + ∑ m, D j m * K m l)
+    {f : ℤ} {b : NovikovModule R F}
+    (hb : b ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) f) :
+    kernelProduct hnQ (kernelOfMatrix_mem hF r₁ r r _)
+          ((coordinates hF₁ r₁).symm fun i => coefficientComparison q hq (E i)) b - b ∈
+      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
+        (gradeBy R F fun p => n - μ p) f := by
+  obtain ⟨K, hK, hunit⟩ := hunit
+  have h :=
+    novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right
+      r₁ r r q hq hF₁ hF hF Q D E (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ
+      hb
+  -- The Novikov module structure, for the identity map of the identity matrix.
+  let := module (R := R) hF
+  rwa [novikovMapOfMatrix_coefficientComparison_one_apply,
+    novikovProductOfMatrix_eq_kernelProduct hF₁ hF hF r₁ r r _ hnQ] at h
+
+include hμ in
+/-- **The unit of class-indexed counts is a right unit on cocycles.** Let `⋆` be the ground-ring
+bilinear map of the counts `Q` of rigid pairs of pants, with a common complex as its first input
+and its output, for any potential bound of its kernel, and `e` the combination of the counts `E`
+of rigid PSS planes with output in the second input. If some family `K` of counts, which lowers
+the cochain degree by one, satisfies the unit identity
+`∑ⱼ Eⱼ Qᵢⱼₗ - [i = l] = ∑ₘ Kᵢₘ Dₘₗ + ∑ₘ Dᵢₘ Kₘₗ` of gluing a plane into the second input, then
+`a ⋆ e - a` is a coboundary of the cylinder differential for every cocycle `a`. -/
+theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_left [Fintype ι₂]
+    (Q : ι → ι₂ → ι → NovikovSeries R G ωG)
+    (hnQ : ∀ p₁ p₂ p₀,
+      kernelOfMatrix r r₂ r (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0 →
+        F p₀ ≤ F p₁ + F₂ p₂ + CQ)
+    (E : ι₂ → NovikovSeries R G ωG)
+    (hunit : ∃ K : ι → ι → NovikovSeries R G ωG,
+      (∀ i l, ∀ A ∈ (K i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
+      ∀ i l, ∑ j, E j * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) i l =
+        ∑ m, K i m * D m l + ∑ m, D i m * K m l)
+    {f : ℤ} {a : NovikovModule R F}
+    (ha : a ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) f) :
+    kernelProduct hnQ (kernelOfMatrix_mem hF r r₂ r _) a
+          ((coordinates hF₂ r₂).symm fun j => coefficientComparison q hq (E j)) - a ∈
+      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
+        (gradeBy R F fun p => n - μ p) f := by
+  obtain ⟨K, hK, hunit⟩ := hunit
+  have h :=
+    novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
+      r r₂ r q hq hF hF₂ hF Q D E (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ
+      ha
+  -- The Novikov module structure, for the identity map of the identity matrix.
+  let := module (R := R) hF
+  rwa [novikovMapOfMatrix_coefficientComparison_one_apply,
+    novikovProductOfMatrix_eq_kernelProduct hF hF₂ hF r r₂ r _ hnQ] at h
 
 include hμ hK
 
@@ -430,14 +495,9 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype �
   induction y using Submodule.Quotient.induction_on with
   | H b =>
     rw [LinearMap.cohomologyProduct_mk, LinearMap.cohomology_mk_eq_mk_iff]
-    have h :=
-      novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right
-        r₁ r r q hq hF₁ hF hF Q D E
-        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ b.property
-    -- The Novikov module structure, for the identity map of the identity matrix.
-    let := module (R := R) hF
-    rw [coefficientComparison_one_apply, novikovMapOfMatrix_one, LinearMap.id_apply,
-      novikovProductOfMatrix_eq_kernelProduct hF₁ hF hF r₁ r r _ hnQ, ← he] at h
+    have h := kernelProduct_coordinates_symm_sub_mem_coboundaries_right r₁ q hq hF₁ r hF hμ D hδ Q
+      hnQ E ⟨K, hK, hunit⟩ b.property
+    rw [← he] at h
     exact h
 
 /-- **The unit of class-indexed counts on cohomology, on the right.** Let the product of
@@ -486,14 +546,9 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype �
   induction x using Submodule.Quotient.induction_on with
   | H a =>
     rw [LinearMap.cohomologyProduct_mk, LinearMap.cohomology_mk_eq_mk_iff]
-    have h :=
-      novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
-        r r₂ r q hq hF hF₂ hF Q D E
-        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ a.property
-    -- The Novikov module structure, for the identity map of the identity matrix.
-    let := module (R := R) hF
-    rw [coefficientComparison_one_apply, novikovMapOfMatrix_one, LinearMap.id_apply,
-      novikovProductOfMatrix_eq_kernelProduct hF hF₂ hF r r₂ r _ hnQ, ← he] at h
+    have h := kernelProduct_coordinates_symm_sub_mem_coboundaries_left r₂ q hq hF₂ r hF hμ D hδ Q
+      hnQ E ⟨K, hK, hunit⟩ a.property
+    rw [← he] at h
     exact h
 
 end Cohomology

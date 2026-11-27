@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.LinearAlgebra.Charpoly.Dual
 public import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -41,13 +42,16 @@ eigenspaces:
 The main application is to a **skew-adjoint** endomorphism `f`, `B (f x) y = -B x (f y)`
 (`LinearMap.IsSkewAdjoint`), such as an element of the symplectic Lie algebra `sp(V, ω)` or of an
 orthogonal Lie algebra. Its adjoint is `-f`, whose generalized `ν`-eigenspace is the generalized
-`-ν`-eigenspace of `f`, and `p(f)` has adjoint `p(-X)(f)`. Hence:
+`-ν`-eigenspace of `f`, and `p(f)` has adjoint `p(-X)(f)`, so `p(f)` is skew-adjoint again for an
+odd polynomial, `p(-X) = -p` (`LinearMap.IsSkewAdjoint.aeval_of_comp_neg_X_eq_neg`). Hence:
 
 * the generalized `μ`- and `ν`-eigenspaces of `f` are `B`-orthogonal unless `μ + ν = 0`
   (when `μ + ν` is a unit; `LinearMap.IsSkewAdjoint.apply_eq_zero_of_mem_genEigenspace`), so for
   `2 μ` a unit the generalized `μ`-eigenspace is isotropic; likewise the vectors killed by powers
   of `p(f)` and of `q(f)` are `B`-orthogonal when `p` and `q(-X)` are coprime
   (`LinearMap.IsSkewAdjoint.apply_eq_zero_of_mem_maxGenEigenspace_aeval`);
+* for a bilinear form `B`, `f` preserves the `B`-orthogonal complement of every submodule it
+  preserves (`LinearMap.IsSkewAdjoint.apply_mem_orthogonal`);
 * for nondegenerate `B`, the maximal generalized `μ`- and `-μ`-eigenspaces are paired
   nondegenerately (`LinearMap.IsSkewAdjoint.nondegenerate_domRestrict₁₂_maxGenEigenspace`);
 * more generally, for any polynomial `p`, `B` pairs the vectors killed by a power of `p(f)`
@@ -64,6 +68,11 @@ orthogonal Lie algebra. Its adjoint is `-f`, whose generalized `ν`-eigenspace i
   the characteristic polynomial satisfies `χ_f(-X) = (-1)ⁿ χ_f(X)`
   (`LinearMap.IsSkewAdjoint.charpoly_comp_neg_X`): the eigenvalues of `f` come in pairs `±μ`
   with equal geometric and algebraic multiplicities.
+
+For a **self-adjoint** endomorphism `f`, `B (f x) y = B x (f y)` (`LinearMap.IsSelfAdjoint`), of an
+anisotropic `B`, the maximal generalized `μ`-eigenspace is the `μ`-eigenspace
+(`LinearMap.IsSelfAdjoint.maxGenEigenspace_eq_eigenspace`), over any commutative ring and with no
+finiteness hypothesis.
 
 ## References
 
@@ -269,6 +278,13 @@ theorem isAdjointPair_aeval (h : B.IsSkewAdjoint f) (p : R[X]) :
     IsAdjointPair B B ⇑(Polynomial.aeval f p) ⇑(Polynomial.aeval f (p.comp (-X))) := by
   simpa [aeval_comp] using IsAdjointPair.aeval (f := f) (g := -f) h p
 
+/-- For a skew-adjoint `f` and an odd polynomial `p`, `p(-X) = -p`, the endomorphism `p(f)` is
+skew-adjoint. -/
+theorem aeval_of_comp_neg_X_eq_neg (h : B.IsSkewAdjoint f) {p : R[X]} (hp : p.comp (-X) = -p) :
+    B.IsSkewAdjoint (Polynomial.aeval f p) := by
+  have h' := h.isAdjointPair_aeval p
+  rwa [hp, map_neg] at h'
+
 /-- For a skew-adjoint `f`, `B` pairs the generalized `μ`- and `ν`-eigenspaces of `f` to zero
 when `μ + ν` is a unit. -/
 theorem apply_eq_zero_of_mem_genEigenspace (h : B.IsSkewAdjoint f) {μ ν : R}
@@ -304,6 +320,16 @@ theorem apply_eq_zero_of_mem_genEigenspace_self (h : B.IsSkewAdjoint f) {μ : R}
     (hμ : IsUnit (2 * μ)) {k l : ℕ∞} {v w : M} (hv : v ∈ f.genEigenspace μ k)
     (hw : w ∈ f.genEigenspace μ l) : B v w = 0 :=
   h.apply_eq_zero_of_mem_genEigenspace (by rwa [← two_mul]) hv hw
+
+/-- An endomorphism `f` skew-adjoint for a bilinear form `B` preserves the `B`-orthogonal
+complement of every submodule it preserves. -/
+theorem apply_mem_orthogonal {B : LinearMap.BilinForm R M} (h : B.IsSkewAdjoint f)
+    {N : Submodule R M} (hN : ∀ v ∈ N, f v ∈ N) {v : M} (hv : v ∈ B.orthogonal N) :
+    f v ∈ B.orthogonal N :=
+  LinearMap.BilinForm.mem_orthogonal_iff.2 fun y hy ↦ by
+    have := h y v
+    rw [hv _ (hN y hy)] at this
+    simpa using this.symm
 
 section Fitting
 
@@ -379,5 +405,32 @@ theorem hasEigenvalue_neg_iff (hB : B.Nondegenerate) (h : B.IsSkewAdjoint f) {μ
 end Field
 
 end IsSkewAdjoint
+
+namespace IsSelfAdjoint
+
+/-- **Generalized eigenvectors of a self-adjoint endomorphism are eigenvectors.** For an
+endomorphism `f` self-adjoint for an anisotropic bilinear map `B` (`B v v = 0` only for `v = 0`),
+the maximal generalized `μ`-eigenspace of `f` is its `μ`-eigenspace. -/
+theorem maxGenEigenspace_eq_eigenspace (hB : ∀ v, B v v = 0 → v = 0) (hf : B.IsSelfAdjoint f)
+    (μ : R) : f.maxGenEigenspace μ = f.eigenspace μ := by
+  set A := f - μ • 1
+  have hA : IsAdjointPair B B ⇑A ⇑A := IsAdjointPair.sub_smul_one hf μ
+  -- Every vector killed by a power of `A` is killed by `A`, by induction on the exponent: if
+  -- `A² v = 0` then `B (A v) (A v) = B v (A² v) = 0`, so `A v = 0`.
+  have key (k : ℕ) : ∀ v, (A ^ (k + 1)) v = 0 → A v = 0 := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      intro v hv
+      refine hB _ ?_
+      rw [hA v (A v), ih (A v) (by rwa [← mul_apply_eq_comp, ← pow_succ]), map_zero]
+  refine le_antisymm (fun v hv ↦ ?_) (Module.End.eigenspace_le_maxGenEigenspace)
+  obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace f μ v).1 hv
+  rw [Module.End.mem_eigenspace_iff, ← sub_eq_zero]
+  cases k with
+  | zero => simp_all
+  | succ k => simpa [A] using key k v hk
+
+end IsSelfAdjoint
 
 end LinearMap

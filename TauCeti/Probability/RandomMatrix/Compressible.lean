@@ -14,8 +14,10 @@ import TauCeti.Analysis.SpecialFunctions.Choose
 # Invertibility on compressible vectors
 
 For independent, uniformly sub-Gaussian real entries with second moments bounded below by
-one, a matrix with at least as many rows as columns stretches every compressible unit vector
-by a constant times the square root of the row count, outside an exponentially small event.
+one, a matrix with at least half as many rows as columns stretches every compressible unit
+vector by a constant times the square root of the row count, outside an exponentially small
+event. In particular the bound applies to an `(N - 1) × N` matrix for `N ≥ 2`, whose kernel
+is the orthogonal complement of the span of its rows.
 The approximation radius, allowed fraction of nonzero coordinates, and exponential rate
 depend only on the common variance proxy.
 
@@ -27,6 +29,9 @@ measurable matrix entries.
 
 * M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
   matrices*, Advances in Mathematics 218 (2008), Lemma 3.3.
+* M. Rudelson and R. Vershynin, *The smallest singular value of a random rectangular matrix*,
+  Communications on Pure and Applied Mathematics 62 (2009); Lemma 2.6 of the preprint
+  arXiv:0802.3956v4.
 -/
 
 public section
@@ -112,8 +117,8 @@ private theorem measureReal_compressible_le_exp
     (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P)
     {L : ℝ≥0} (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) (L ^ 2) P)
     (hmom : ∀ i j, 1 ≤ ∫ ω, (A ω i j) ^ 2 ∂P)
-    (hdim : Fintype.card n ≤ Fintype.card m) {k : ℕ} (hk : k ≤ Fintype.card n)
-    {ρ : ℝ≥0} (hρ : ρ ≠ 0) (hρ₁ : ρ < 1) (hscale : 3 * (ρ : ℝ) * (24 * L) ≤ 1 / 4)
+    (hdim : Fintype.card n ≤ 2 * Fintype.card m) {k : ℕ} (hk : k ≤ Fintype.card n)
+    {ρ : ℝ≥0} (hρ : ρ ≠ 0) (hρ₁ : ρ < 1) (hscale : 3 * (ρ : ℝ) * (28 * L) ≤ 1 / 4)
     (hcard : (Fintype.card n).choose k * (1 + 2 / (ρ : ℝ)) ^ k ≤
       Real.exp (fixedDirectionRate L / 2 * Fintype.card m)) :
     P.real {ω | ∃ x, TauCeti.IsCompressibleVector k ρ x ∧
@@ -121,7 +126,7 @@ private theorem measureReal_compressible_le_exp
       4 * Real.exp (-min 1 (fixedDirectionRate L / 2) * Fintype.card m) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let d : ℝ := Fintype.card m
-  let M : ℝ := 24 * (L : ℝ) * Real.sqrt d
+  let M : ℝ := 28 * (L : ℝ) * Real.sqrt d
   let g := fixedDirectionRate L
   have hthreshold : Real.sqrt d / 4 ≤
       Real.sqrt d / 2 - (2 * (ρ : ℝ) + (ρ : ℝ)) * M := by
@@ -130,7 +135,7 @@ private theorem measureReal_compressible_le_exp
   have hnet := hind.measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
     hA hmom hk hρ₁ hρ M
   rw [one_mul, one_pow] at hnet
-  have hnorm := hind.measureReal_l2_opNorm_gt_le_of_card_le hA hdim
+  have hnorm := hind.measureReal_l2_opNorm_gt_le_of_card_le_two_mul hA hdim
   have hsub : {ω | ∃ x, TauCeti.IsCompressibleVector k ρ x ∧
         ‖toEuclideanLin (A ω) x‖ < Real.sqrt d / 4} ⊆
       {ω | M < ‖A ω‖} ∪ {ω | ‖A ω‖ ≤ M ∧ ∃ x, TauCeti.IsCompressibleVector k ρ x ∧
@@ -167,8 +172,8 @@ namespace TauCeti.Probability
 open ProbabilityTheory.iIndepFun
 
 /-- The compressible-vector exceptional probability is exponentially small in the row
-count, uniformly for matrices with at least as many rows as columns. The constants depend
-only on the common sub-Gaussian variance proxy. -/
+count, uniformly for matrices with at least half as many rows as columns. The constants
+depend only on the common sub-Gaussian variance proxy. -/
 theorem exists_measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le (K : ℝ≥0) :
     ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∃ ρ : ℝ≥0, 0 < ρ ∧ ρ ≤ 1 / 4 ∧ ∃ a : ℝ, 0 < a ∧
       ∀ {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n] [DecidableEq n]
@@ -176,12 +181,12 @@ theorem exists_measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
         iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P →
         (∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) K P) →
         (∀ i j, 1 ≤ ∫ ω, (A ω i j) ^ 2 ∂P) →
-        Fintype.card n ≤ Fintype.card m →
+        Fintype.card n ≤ 2 * Fintype.card m →
         P.real {ω | ∃ x, TauCeti.IsCompressibleVector ⌊δ * Fintype.card n⌋₊ ρ x ∧
           ‖toEuclideanLin (A ω) x‖ < Real.sqrt (Fintype.card m) / 4} ≤
           4 * Real.exp (-a * Fintype.card m) := by
   let L : ℝ≥0 := K + 1
-  let ρ : ℝ≥0 := (288 * L)⁻¹
+  let ρ : ℝ≥0 := (336 * L)⁻¹
   let g := fixedDirectionRate L
   have hL : 1 ≤ L := by simp [L]
   have hLpos : 0 < L := zero_lt_one.trans_le hL
@@ -196,7 +201,7 @@ theorem exists_measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
     rw [inv_eq_one_div]
     exact (div_le_div_iff_of_pos_left one_pos (by positivity) (by positivity)).mpr (by linarith)
   obtain ⟨δ, hδ, hδ₁, hentropy⟩ :=
-    TauCeti.exists_pos_choose_mul_pow_le_exp (1 + 2 / (ρ : ℝ)) (half_pos hg)
+    TauCeti.exists_pos_choose_mul_pow_le_exp (1 + 2 / (ρ : ℝ)) (div_pos hg four_pos)
   refine ⟨δ, hδ, hδ₁, ρ, hρ, hρ₄, min 1 (g / 2), lt_min one_pos (half_pos hg), ?_⟩
   intro Ω m n _ _ _ _ P A hind hA hmom hdim
   let k := ⌊δ * Fintype.card n⌋₊
@@ -207,14 +212,16 @@ theorem exists_measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
   have hboundK : K ≤ L ^ 2 := hKL.trans (by simpa [pow_two] using
     (le_mul_of_one_le_right (by positivity : (0 : ℝ≥0) ≤ L) hL))
   have hAc i j := (hA i j).mono hboundK
-  have hscale : 3 * (ρ : ℝ) * (24 * L) ≤ 1 / 4 := by
+  have hscale : 3 * (ρ : ℝ) * (28 * L) ≤ 1 / 4 := by
     dsimp [ρ]
     have hLn : (L : ℝ) ≠ 0 := by exact_mod_cast hLpos.ne'
     field_simp
     norm_num
-  have hd : (Fintype.card n : ℝ) ≤ Fintype.card m := Nat.cast_le.mpr hdim
-  have hcard := (hentropy (Fintype.card n) k hk).trans
-    (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hd (half_pos hg).le))
+  -- The entropy rate `g / 4` per column is at most `g / 2` per row.
+  have hd : g / 4 * Fintype.card n ≤ g / 2 * Fintype.card m := by
+    have hd' : (Fintype.card n : ℝ) ≤ 2 * Fintype.card m := by exact_mod_cast hdim
+    nlinarith only [hd', hg]
+  have hcard := (hentropy (Fintype.card n) k hk).trans (Real.exp_le_exp.2 hd)
   exact hind.measureReal_compressible_le_exp hAc hmom hdim hkn hρ.ne'
     (hρ₄.trans_lt (by norm_num)) hscale hcard
 

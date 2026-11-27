@@ -121,7 +121,7 @@ private theorem memLp_testFunction_smul {s : ℝ≥0∞} {W : ℂ → V} (c : �
 
 /-- The field `F = η + (∂_t J) ξ - S ξ` is locally `Lˢ` when `η` is, for a Hölder triple
 `1/p + 1/q = 1/t` with `s ≤ t`. -/
-private theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
+theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
     [ENNReal.HolderTriple p q t] (h : IsWeakCRSolution q Ω J DJ S ξ η)
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hst : s ≤ t) (hη : MemLpLoc s Ω η) :
     MemLpLoc s Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
@@ -130,7 +130,7 @@ private theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
 
 /-- The field `G = -J F - (∂_s J) ξ - (∂_t J) (J ξ)` is locally `Lˢ` when `η` is and `J` is
 locally bounded, for a Hölder triple `1/p + 1/q = 1/t` with `s ≤ t`. -/
-private theorem IsWeakCRSolution.memLpLoc_divergenceForm_snd {s t : ℝ≥0∞}
+theorem IsWeakCRSolution.memLpLoc_divergenceForm_snd {s t : ℝ≥0∞}
     [ENNReal.HolderTriple p q t] (h : IsWeakCRSolution q Ω J DJ S ξ η)
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJ : MemLpLoc ⊤ Ω J) (hst : s ≤ t)
     (hη : MemLpLoc s Ω η) :
@@ -216,14 +216,16 @@ private theorem IsWeakCRSolution.integral_crPairing_of_contDiff
     memLp_one_iff_integrable.1 (memLp_testFunction_smul χ hξ1)
   have hb₂ : Integrable (fun z => χ z • J z (ξ z)) :=
     memLp_one_iff_integrable.1 (memLp_testFunction_smul χ hJξ)
-  have hP := (crPairing v).integrable_of_bilin_of_continuousOn ha hK
-    (fun z hz => crPairingField_eq_zero_of_notMem_tsupport χ hz) hA.continuous.continuousOn
+  have hP := (crPairing v).integrable_of_bilin_of_continuousOn ha.integrableOn hK
+    (.of_forall fun z hz => crPairingField_eq_zero_of_notMem_tsupport χ hz)
+    hA.continuous.continuousOn
   have hA' (e : ℂ) : ContinuousOn (fun z => fderiv ℝ A z e) (tsupport (χ : ℂ → ℝ)) :=
     ((hA.continuous_fderiv (by simp)).clm_apply continuous_const).continuousOn
-  have hQ₁ := (crPairing v).integrable_of_bilin_of_continuousOn hb₁ hK
-    (fun z hz => smul_eq_zero_of_notMem_tsupport χ ξ hz) (hA' 1)
-  have hQ₂ := (crPairing v).integrable_of_bilin_of_continuousOn hb₂ hK
-    (fun z hz => smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz) (hA' I)
+  have hQ₁ := (crPairing v).integrable_of_bilin_of_continuousOn hb₁.integrableOn hK
+    (.of_forall fun z hz => smul_eq_zero_of_notMem_tsupport χ ξ hz) (hA' 1)
+  have hQ₂ := (crPairing v).integrable_of_bilin_of_continuousOn hb₂.integrableOn hK
+    (.of_forall fun z hz => smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz)
+    (hA' I)
   refine ⟨hP, hQ₁, hQ₂, ?_⟩
   obtain ⟨Φ, hpt⟩ := exists_testFunction_inner_crFormalAdjoint_sub_inner (J := J) (DJ := DJ)
     (S := S) (ξ := ξ) (η := η) χ v hA

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 import Mathlib.RingTheory.KrullDimension.Field
+import TauCeti.Data.ENat.Monoid
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Quotient
 import TauCeti.RingTheory.Localization.Annihilator
@@ -29,10 +30,16 @@ embedded primes.
 
 ## Main results
 
+* `Module.supportDim_eq_of_support_eq`: modules with the same support have the same support
+  dimension.
 * `Module.supportDim_eq_of_surjective`: restriction along a surjective scalar map preserves the
   support dimension of a module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
   such as a Noetherian local ring, has support of finite dimension.
+* `Module.lt_supportDim_of_add_one_eq`: for such a module, `d + 1 = dim Supp M` forces
+  `d < dim Supp M`.
+* `Module.supportDim_nonpos_of_maximalIdeal_mem_minimalPrimes`: over a local ring, if `𝔪` is a
+  minimal prime of the annihilator of a finite module, its support has dimension at most zero.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
   `p` is a minimal prime of the support of `M`.
 -/
@@ -44,6 +51,11 @@ open IsLocalRing
 namespace Module
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- The support dimension of a module depends only on its support. -/
+theorem supportDim_eq_of_support_eq {N : Type*} [AddCommGroup N] [Module R N]
+    (h : support R M = support R N) : supportDim R M = supportDim R N := by
+  rw [supportDim, supportDim, h]
 
 /-- Restriction of scalars along a surjective ring homomorphism preserves the support dimension
 of a module: contraction gives an order isomorphism between the two supports. -/
@@ -102,6 +114,30 @@ theorem exists_supportDim_eq_natCast [FiniteRingKrullDim R] [Nontrivial M] :
   obtain ⟨k, rfl⟩ := ENat.ne_top_iff_exists.1 hd_top
   exact ⟨k, hd.symm⟩
 
+/-- For a nonzero module over a ring of finite Krull dimension, a drop of exactly one in the
+dimension of the support is a strict drop: `d + 1 = dim Supp M` implies `d < dim Supp M`. -/
+theorem lt_supportDim_of_add_one_eq [FiniteRingKrullDim R] [Nontrivial M] {d : WithBot ℕ∞}
+    (h : d + 1 = supportDim R M) : d < supportDim R M := by
+  obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
+  rw [hk] at h ⊢
+  exact ENat.WithBot.lt_natCast_of_add_one_eq h
+
+/-- A module whose support has at most one point has support of dimension at most zero. -/
+theorem supportDim_nonpos_of_support_subsingleton (h : (support R M).Subsingleton) :
+    supportDim R M ≤ 0 :=
+  have := (Set.subsingleton_coe _).2 h
+  Order.krullDim_nonpos_of_subsingleton
+
+/-- Over a local ring, if the maximal ideal is a minimal prime of the annihilator of a finite
+module `M`, then it is the only point of the support, so the support of `M` has dimension at most
+zero. -/
+theorem supportDim_nonpos_of_maximalIdeal_mem_minimalPrimes [IsLocalRing R] [Module.Finite R M]
+    (h : maximalIdeal R ∈ (annihilator R M).minimalPrimes) : supportDim R M ≤ 0 := by
+  refine supportDim_nonpos_of_support_subsingleton
+    (Set.subsingleton_singleton (a := closedPoint R) |>.anti fun q hq ↦ PrimeSpectrum.ext ?_)
+  exact le_antisymm (le_maximalIdeal q.isPrime.ne_top)
+    (h.2 ⟨q.isPrime, mem_support_iff_of_finite.1 hq⟩ (le_maximalIdeal q.isPrime.ne_top))
+
 /-- Let `M` be a finite module over a Noetherian ring and `p` a prime containing the annihilator
 of `M`. The support of `M_p` has dimension zero exactly when `p` is a minimal prime of the support
 of `M`. -/
@@ -136,11 +172,9 @@ theorem supportDim_localizedModule_nonpos_iff [IsNoetherianRing R] [Module.Finit
     exact absurd (hdim.trans h) (by decide)
   · -- Every prime `Q` of the support of `M_p` contracts to a prime between the annihilator of `M`
     -- and `p`, hence to `p`, so `Q` is the maximal ideal and the support is a single point.
-    refine Order.krullDim_nonpos_iff_forall_isMax.2 fun Q Q' _ ↦ ?_
-    suffices key : ∀ Q ∈ support (Localization.AtPrime p) (LocalizedModule p.primeCompl M),
-        Q.asIdeal = maximalIdeal (Localization.AtPrime p) by
-      exact (Subtype.ext (PrimeSpectrum.ext ((key _ Q'.property).trans (key _ Q.property).symm))).le
-    intro Q hQ
+    refine supportDim_nonpos_of_support_subsingleton
+      (Set.subsingleton_singleton (a := closedPoint (Localization.AtPrime p)) |>.anti
+        fun Q hQ ↦ PrimeSpectrum.ext ?_)
     have hQp : Q.asIdeal.under R ≤ p :=
       (Ideal.comap_mono (le_maximalIdeal Q.isPrime.ne_top)).trans_eq
         Localization.AtPrime.under_maximalIdeal

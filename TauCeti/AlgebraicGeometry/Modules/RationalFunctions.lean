@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
@@ -27,10 +28,9 @@ condition and the `𝒪_X`-module structure automatic.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`, the elementary fact that every nonempty open
-  subset of an irreducible scheme contains the generic point, and
-  `TauCeti.AlgebraicGeometry.Scheme.germ_smul_functionField`, which says that a function on such
-  a subset acts on the function field through its germ at any of its points;
+* `TauCeti.AlgebraicGeometry.Scheme.germ_smul_functionField`, which says that a function on a
+  nonempty open subset of an irreducible scheme acts on the function field through its germ at
+  any of its points;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField`, the canonical morphism
   `Spec K(X) ⟶ X` from the spectrum of the function field, and
   `TauCeti.AlgebraicGeometry.Scheme.fromSpecFunctionField_preimage`: it pulls a nonempty open
@@ -62,9 +62,10 @@ condition and the `𝒪_X`-module structure automatic.
 * `TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsMul`, multiplication by a rational function
   as an endomorphism of `𝒦_X`, obtained by pushing forward multiplication by the corresponding
   global function on `Spec K(X)`; `rationalFunctionsEquiv_rationalFunctionsMul_app` identifies it
-  with multiplication on sections, and `rationalFunctionsMul_mul` and `rationalFunctionsMul_one`
-  make it multiplicative, so that multiplying by a unit is an automorphism of `𝒦_X`
-  (`rationalFunctionsMul_comp_inv` and `rationalFunctionsMul_inv_comp`);
+  with multiplication on sections, `rationalFunctionsMul_zero` says multiplication by `0` is zero,
+  and `rationalFunctionsMul_mul` and `rationalFunctionsMul_one` make it multiplicative, so that
+  multiplying by a unit is an automorphism of `𝒦_X` (`rationalFunctionsMul_comp_inv` and
+  `rationalFunctionsMul_inv_comp`);
 * the module morphism `TauCeti.AlgebraicGeometry.Scheme.toRationalFunctions` is
   `X.germToFunctionField` on sections
   (`TauCeti.AlgebraicGeometry.Scheme.rationalFunctionsEquiv_toRationalFunctions_app`), is
@@ -114,10 +115,6 @@ def fromSpecFunctionField : Spec X.functionField ⟶ X :=
   X.fromSpecStalk (genericPoint X)
 
 variable {X}
-
-/-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
-theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
-  ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
 
 /-- A function on a nonempty open subset `U` acts on the function field through its germ at any
 point of `U`. -/
@@ -619,6 +616,19 @@ theorem rationalFunctionsMul_one : rationalFunctionsMul X 1 = 𝟙 _ := by
   change F.map (Scheme.Modules.globalSectionsSmul M 1) = 𝟙 _
   rw [Scheme.Modules.globalSectionsSmul_one]
   exact F.map_id M
+
+/-- Multiplication by `0` is the zero endomorphism. -/
+@[simp]
+theorem rationalFunctionsMul_zero : rationalFunctionsMul X 0 = 0 := by
+  let _ : Nonempty ((⊤ : X.Opens) : Type u) := instNonemptyTop
+  simp only [rationalFunctionsMul, map_zero]
+  let M : (Spec X.functionField).Modules :=
+    SheafOfModules.unit (Spec X.functionField).ringCatSheaf
+  let F := Scheme.Modules.pushforward (fromSpecFunctionField X)
+  -- As above, this definitional change only exposes the pushforward and scalar-multiplication
+  -- wrappers so their zero laws apply directly.
+  change F.map (Scheme.Modules.globalSectionsSmul M 0) = 0
+  rw [Scheme.Modules.globalSectionsSmul_zero, Functor.map_zero]
 
 /-- Multiplying by a unit `g` and then by `g⁻¹` is the identity on `𝒦_X`. -/
 @[simp]

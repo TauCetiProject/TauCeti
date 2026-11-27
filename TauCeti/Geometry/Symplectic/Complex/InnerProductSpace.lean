@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 
@@ -18,20 +19,26 @@ structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
 real inner product, `TauCeti.AlmostComplexStructure.inner_apply_left_eq_neg_swap` the antisymmetry
-`⟪J v, w⟫ = -⟪J w, v⟫`, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`. Hence `p` and `J p` are orthogonal of equal norm, and Cauchy–Schwarz for the
-complex inner product bounds the components of any vector along them
+`⟪J v, w⟫ = -⟪J w, v⟫`, and `TauCeti.AlmostComplexStructure.inner_apply_self` and
+`TauCeti.AlmostComplexStructure.inner_self_apply` the orthogonality `⟪J v, v⟫ = ⟪v, J v⟫ = 0`.
+Hence `p` and `J p` are orthogonal of equal norm, and Cauchy–Schwarz for the complex inner product
+bounds the components of any vector along them
 (`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`). Consequently, by
 `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the parametrization
 `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
 
-Conversely, multiplication by `i` on a complex inner product space preserves the real inner product
-`Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
+In finite dimension, a linear map `S` preserving the form `⟪J u, v⟫` satisfies `S J S† = J`
+(`TauCeti.AlmostComplexStructure.apply_apply_adjoint_apply`).
+
+Conversely, on a complex normed space whose norm comes from a real inner product, such as
+`Re ⟪·, ·⟫_ℂ` on a complex inner product space, multiplication by `i` preserves that inner product
+(`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
 
 Conversely, on a complex inner product space the imaginary part `Im ⟪·, ·⟫` of the inner product,
 when it is given as a symplectic form, is compatible with multiplication by `i`
 (`TauCeti.SymplecticForm.compatible_ofComplexModule_of_forall_eq_im_inner`): its associated metric
-`Im ⟪v, i w⟫` is the real inner product `Re ⟪v, w⟫`.
+`Im ⟪v, i w⟫` is the real inner product `Re ⟪v, w⟫`
+(`TauCeti.SymplecticForm.apply_ofComplexModule_eq_inner`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -64,16 +71,20 @@ theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J
   rw [real_inner_comm]
   exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
 
+/-- An orthogonal almost complex structure turns every vector by a right angle, `⟪v, J v⟫ = 0`. -/
+theorem inner_self_apply {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    (v : V) : ⟪v, J v⟫ = 0 := by
+  rw [real_inner_comm, inner_apply_self hJ]
+
 /-- **The complex line of a unit vector is isometric to `ℂ`.** For an orthogonal `J` and a unit
 vector `n`, the vectors `n` and `J n` are orthonormal, so `‖Re z • n + Im z • J n‖ = ‖z‖`. -/
 theorem norm_re_smul_add_im_smul (J : AlmostComplexStructure V)
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {n : V} (hn : ‖n‖ = 1) (z : ℂ) :
     ‖z.re • n + z.im • J n‖ = ‖z‖ := by
   have hJn : ‖J n‖ = 1 := by rw [J.norm_apply hJ, hn]
-  have horth : ⟪n, J n⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
-  simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, horth, hn, hJn,
-    ← sq]
+  simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
+    J.inner_self_apply hJ, hn, hJn, ← sq]
 
 /-- The complex inner product induced by an orthogonal complex structure, using the original
 norm on `V` and the scalar action `J.complexModule`. Its real part is the original inner product.
@@ -173,14 +184,28 @@ theorem inner_sq_add_inner_sq_le {J : AlmostComplexStructure V}
   rw [real_inner_comm p d, real_inner_comm (J p) d]
   linarith
 
-/-- Multiplication by `i` preserves the real inner product `Re ⟪·, ·⟫_ℂ` of a complex inner
-product space, so `ofComplexModule E` is an orthogonal complex structure. -/
+/-- **A map preserving the Kähler form satisfies `S J S† = J`.** If `S` preserves the form
+`⟪J u, v⟫` of an almost complex structure `J`, then `S† J S = J`, so `-J S† J` is a left and hence,
+in finite dimension, a right inverse of `S`. -/
+theorem apply_apply_adjoint_apply [FiniteDimensional ℝ V] {J : AlmostComplexStructure V}
+    {S : V →L[ℝ] V} (hS : ∀ u v, ⟪J (S u), S v⟫ = ⟪J u, v⟫) (w : V) :
+    S (J (S.adjoint w)) = J w := by
+  have hL (u : V) : S.adjoint (J (S u)) = J u :=
+    ext_inner_right ℝ fun v ↦ by rw [ContinuousLinearMap.adjoint_inner_left, hS]
+  have hleft : Function.LeftInverse (fun w ↦ -J (S.adjoint (J w))) S := fun u ↦ by
+    simp only [hL, J.apply_apply, neg_neg]
+  have hsurj : Function.Surjective S :=
+    (LinearMap.injective_iff_surjective (f := (S : V →ₗ[ℝ] V))).1 hleft.injective
+  simpa [J.apply_apply] using hleft.rightInverse_of_surjective hsurj (J w)
+
+/-- Multiplication by `i` is an orthogonal complex structure on a complex normed space whose norm
+comes from a real inner product; for a complex inner product space this real inner product is
+`Re ⟪·, ·⟫_ℂ`. -/
 theorem real_inner_ofComplexModule_ofComplexModule {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] (v w : E) :
-    letI := InnerProductSpace.complexToReal (G := E)
-    ⟪ofComplexModule E v, ofComplexModule E w⟫ = ⟪v, w⟫ := by
-  let := InnerProductSpace.complexToReal (G := E)
-  simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right, ← mul_assoc]
+    [InnerProductSpace ℝ E] [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] (v w : E) :
+    ⟪ofComplexModule E v, ofComplexModule E w⟫ = ⟪v, w⟫ :=
+  ({ (ofComplexModule E).toLinearMap with
+      norm_map' := fun u ↦ by simp [norm_smul] } : E →ₗᵢ[ℝ] E).inner_map_map v w
 
 end TauCeti.AlmostComplexStructure
 
@@ -188,16 +213,40 @@ namespace TauCeti.SymplecticForm
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
+/-- **A unitary frame makes a complex structure compatible.** Let `Φ : F → V` be an invertible
+real-linear map from a complex inner product space carrying `Im ⟪·, ·⟫` to `ω` and multiplication
+by `i` to `J`. Then `J` is `ω`-compatible: `ω` is invariant under `J`, and
+`ω(Φ v, J (Φ v)) = ‖v‖²`. -/
+theorem compatible_of_isInvertible_of_forall_eq_im_inner {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (ω : SymplecticForm V) {J : AlmostComplexStructure V}
+    {Φ : F →L[ℝ] V} (hΦ : Φ.IsInvertible) (hω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im)
+    (hJ : ∀ v, J (Φ v) = Φ (Complex.I • v)) : ω.Compatible J := by
+  obtain ⟨e, rfl⟩ := hΦ
+  refine .of_tames ((ω.invariant_iff _).2 fun v w ↦ ?_) fun v hv ↦ ?_
+  · rw [← e.apply_symm_apply v, ← e.apply_symm_apply w]
+    simp only [← ContinuousLinearEquiv.coe_coe e, hJ, hω, inner_smul_left, inner_smul_right]
+    simp
+  · rw [← e.apply_symm_apply v]
+    simp only [← ContinuousLinearEquiv.coe_coe e, hJ, hω, inner_smul_right,
+      inner_self_eq_norm_sq_to_K]
+    simp only [Complex.mul_im, Complex.I_re, Complex.I_im, zero_mul, one_mul, zero_add]
+    exact_mod_cast pow_pos (norm_pos_iff.2 ((map_ne_zero_iff _ e.symm.injective).2 hv)) 2
+
 /-- The imaginary part `Im ⟪·, ·⟫` of a complex inner product, as a symplectic form, is compatible
 with multiplication by `i`: it is invariant under `i`, and `ω(v, i v) = ‖v‖²`. -/
 theorem compatible_ofComplexModule_of_forall_eq_im_inner (ω : SymplecticForm F)
     (hω : ∀ v w, ω v w = (inner ℂ v w).im) :
-    ω.Compatible (AlmostComplexStructure.ofComplexModule F) := by
-  refine .of_tames ((ω.invariant_iff _).2 fun v w ↦ ?_) fun v hv ↦ ?_
-  · simp [hω, inner_smul_left, inner_smul_right]
-  · rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right,
-      inner_self_eq_norm_sq_to_K]
-    simp only [Complex.mul_im, Complex.I_re, Complex.I_im, zero_mul, one_mul, zero_add]
-    exact_mod_cast pow_pos (norm_pos_iff.2 hv) 2
+    ω.Compatible (AlmostComplexStructure.ofComplexModule F) :=
+  ω.compatible_of_isInvertible_of_forall_eq_im_inner (Φ := .id ℝ F)
+    ⟨.refl ℝ F, rfl⟩ hω fun v ↦ by simp [AlmostComplexStructure.ofComplexModule_apply]
+
+/-- When the symplectic form `ω` is `Im ⟪·, ·⟫`, the metric `ω(·, i ·)` is the real inner product
+`Re ⟪·, ·⟫`. -/
+theorem apply_ofComplexModule_eq_inner (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (v w : F) :
+    ω v (AlmostComplexStructure.ofComplexModule F w) =
+      @inner ℝ F InnerProductSpace.complexToReal.toInner v w := by
+  rw [hω, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right, real_inner_eq_re_inner ℂ]
+  simp
 
 end TauCeti.SymplecticForm

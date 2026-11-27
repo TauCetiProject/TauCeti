@@ -23,11 +23,14 @@ unique, and how cells account for points in consecutive skeleta, so that a map s
 skeleton above any given level, which gives induction principles over the skeleta
 (`TauCeti.forall_mem_skeletonLT_of_map`, `TauCeti.forall_mem_complex_of_map`).  With a single
 `0`-cell, the `0`-skeleton is the base together with that point
-(`TauCeti.skeletonLT_one_eq_insert`).  A subset of the `0`-skeleton is closed as
+(`TauCeti.skeletonLT_one_eq_insert`); the centre of a `0`-cell is a point of the `0`-skeleton
+(`TauCeti.zeroCellCenter`).  A subset of the `0`-skeleton is closed as
 soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), so a map from a
 preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
 also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
-a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
+a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`), carried
+along any map over a map of bases that preserves the skeleta
+(`TauCeti.mapsTo_preimageSkeleton_of_mapsTo_skeletonLT`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -164,6 +167,16 @@ lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy :
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
 
+variable (C) in
+/-- The centre of a `0`-cell, as a point of the `0`-skeleton. -/
+-- The body is exposed so that the fibres over the centre, read in `X`, are those over `χₖ(0)`.
+@[expose] def zeroCellCenter (k : cell C 0) : skeletonObj C 1 :=
+  ⟨map 0 k 0, map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)⟩
+
+@[simp]
+lemma coe_zeroCellCenter (k : cell C 0) : (zeroCellCenter C k : X) = map 0 k 0 :=
+  (rfl)
+
 /-- The centre of an `n`-cell does not lie in `skeletonLT C n`. -/
 lemma map_zero_notMem_skeletonLT {n : ℕ} (j : cell C n) :
     map n j 0 ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
@@ -287,6 +300,19 @@ lemma preimageSkeleton_def (f : E → X) (q : ℤ) :
 lemma mem_preimageSkeleton_iff (f : E → X) (q : ℤ) (x : E) :
     x ∈ preimageSkeleton C f q ↔ f x ∈ skeletonLT C ((q + 1).toNat : ℕ∞) := Iff.rfl
 
+/-- For `q = k - 1`, the stage `q` of the skeletal filtration is the preimage of
+`skeletonLT C k`. -/
+lemma preimageSkeleton_eq_preimage_skeletonLT (f : E → X) (k : ℕ) (q : ℤ) (hq : q = k - 1) :
+    preimageSkeleton C f q = f ⁻¹' skeletonLT C (k : ℕ∞) := by
+  rw [preimageSkeleton_def, show (q + 1).toNat = k by lia]
+
+/-- For `q = k - 1`, the stage `q + 1` of the skeletal filtration is the preimage of
+`skeletonLT C (k + 1)`. -/
+lemma preimageSkeleton_add_one_eq_preimage_skeletonLT (f : E → X) (k : ℕ) (q : ℤ)
+    (hq : q = k - 1) :
+    preimageSkeleton C f (q + 1) = f ⁻¹' skeletonLT C ((k + 1 : ℕ) : ℕ∞) :=
+  preimageSkeleton_eq_preimage_skeletonLT f (k + 1) (q + 1) (by lia)
+
 /-- The preimages of the skeleta form an increasing filtration. -/
 lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) :=
   fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
@@ -314,6 +340,13 @@ lemma preimageSkeleton_natCast (f : E → X) (n : ℕ) :
     preimageSkeleton C f n = f ⁻¹' skeleton C n := by
   simp [preimageSkeleton, skeleton]
 
+/-- The stage `n - 1` of the skeletal filtration is the preimage of the `(n - 1)`-skeleton
+`skeletonLT C n`. -/
+@[simp]
+lemma preimageSkeleton_natCast_sub_one (f : E → X) (n : ℕ) :
+    preimageSkeleton C f ((n : ℤ) - 1) = f ⁻¹' skeletonLT C n := by
+  rw [preimageSkeleton_def, show ((n : ℤ) - 1 + 1).toNat = n by lia]
+
 /-- The stage `0` of the skeletal filtration is the preimage of the `0`-skeleton. -/
 @[simp]
 lemma preimageSkeleton_zero (f : E → X) : preimageSkeleton C f 0 = f ⁻¹' skeleton C 0 := by
@@ -329,5 +362,17 @@ lemma preimageSkeleton_one (f : E → X) : preimageSkeleton C f 1 = f ⁻¹' ske
 lemma preimageSkeleton_ofNat (f : E → X) (n : ℕ) [n.AtLeastTwo] :
     preimageSkeleton C f ofNat(n) = f ⁻¹' skeleton C ofNat(n) :=
   preimageSkeleton_natCast f n
+
+/-- **A map over a cellular map preserves the skeletal filtrations.** If `p' ∘ f = g ∘ p` and `g`
+carries each skeleton of `C` into the skeleton of `C'` of the same dimension, then `f` carries the
+preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton of
+`C'`. -/
+lemma mapsTo_preimageSkeleton_of_mapsTo_skeletonLT {E' X' : Type*} [TopologicalSpace X']
+    [T2Space X'] {C' D' : Set X'} [RelCWComplex C' D'] {p : E → X} {p' : E' → X'} {f : E → E'}
+    {g : X → X'}
+    (hfg : p' ∘ f = g ∘ p) (hg : ∀ n : ℕ, MapsTo g (skeletonLT C n) (skeletonLT C' n)) (q : ℤ) :
+    MapsTo f (preimageSkeleton C p q) (preimageSkeleton C' p' q) := fun x hx ↦ by
+  rw [mem_preimageSkeleton_iff, ← Function.comp_apply (f := p'), hfg]
+  exact hg _ hx
 
 end TauCeti

@@ -15,7 +15,9 @@ The unitary elements of a product of star monoids are the pairs of unitary eleme
 packages that identification as a multiplicative equivalence. It also records that a unit is
 unitary exactly when its adjoint is its inverse. A star-preserving multiplicative map that
 sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to
-unitaries.
+unitaries, and the ring inverse of a unitary element is its adjoint. Finally, the unitary
+elements of a subgroup of the units are identified with the unitary elements whose unit lies in
+that subgroup.
 
 ## Main definitions and results
 
@@ -26,8 +28,11 @@ unitaries.
   `unitary A × unitary B`.
 * `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
   unitaries to unitaries.
+* `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
+* `Subgroup.unitaryInfEquiv`: the unitary elements of a subgroup `H` of `Mˣ` are the unitary
+  elements of `M` whose unit lies in `H`.
 -/
 
 public section
@@ -64,6 +69,12 @@ theorem map_mem_of_map_one {R S F : Type*} [Monoid R] [StarMul R] [Monoid S] [St
   Unitary.mem_iff.mpr
     ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem hr, hf],
       by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem hr, hf]⟩
+
+/-- The ring inverse of a unitary element is its adjoint. -/
+@[simp]
+theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary R) :
+    Ring.inverse (u : R) = star (u : R) :=
+  Ring.inverse_unit (Unitary.toUnits u)
 
 end Unitary
 
@@ -102,5 +113,36 @@ theorem coe_unitarySubgroupUnitsEquiv_symm_apply {M : Type*} [Monoid M] [StarMul
     (Unitary.val_toUnits_apply u).symm
 
 end TauCeti
+
+namespace Subgroup
+
+variable {M : Type*} [Monoid M] [StarMul M] (H : Subgroup Mˣ)
+
+/-- The unitary elements `H ⊓ unitarySubgroup Mˣ` of a subgroup `H` of the units of a star monoid,
+viewed as the unitary elements of the monoid whose unit lies in `H`. -/
+def unitaryInfEquiv :
+    (H ⊓ unitarySubgroup Mˣ : Subgroup Mˣ) ≃ {u : unitary M // Unitary.toUnits u ∈ H} where
+  toFun k := ⟨unitarySubgroupUnitsEquiv ⟨k, (mem_inf.1 k.property).2⟩, by
+    rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply, MulEquiv.symm_apply_apply]
+    exact (mem_inf.1 k.property).1⟩
+  invFun u := ⟨Unitary.toUnits u.val, mem_inf.2 ⟨u.property, by
+    rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
+    exact (unitarySubgroupUnitsEquiv.symm u.val).property⟩⟩
+  left_inv _ := Subtype.ext <| Units.ext rfl
+  right_inv _ := rfl
+
+/-- The unitary element underlying `unitaryInfEquiv` is the underlying element of the unit. -/
+@[simp]
+theorem coe_unitaryInfEquiv_apply (k : (H ⊓ unitarySubgroup Mˣ : Subgroup Mˣ)) :
+    ((H.unitaryInfEquiv k : unitary M) : M) = ((k : Mˣ) : M) :=
+  (rfl)
+
+/-- The inverse of `unitaryInfEquiv` is the canonical unitary inclusion. -/
+@[simp]
+theorem coe_unitaryInfEquiv_symm_apply (u : {u : unitary M // Unitary.toUnits u ∈ H}) :
+    (H.unitaryInfEquiv.symm u : Mˣ) = Unitary.toUnits u.val :=
+  (rfl)
+
+end Subgroup
 
 end

@@ -122,6 +122,14 @@ theorem affineVector_apply_succAbove (k : Fin (n + 1)) (z : Fin n → ℂ) (j : 
     affineVector k z (k.succAbove j) = z j := by
   simp [affineVector]
 
+/-- The homogeneous coordinate vector of the centre of the chart `X_k ≠ 0` is the basis vector
+`e_k`. -/
+@[simp]
+theorem affineVector_zero (k : Fin (n + 1)) :
+    affineVector k (0 : Fin n → ℂ) = EuclideanSpace.single k 1 := by
+  ext i
+  induction i using Fin.succAboveCases k <;> simp [Fin.succAbove_ne]
+
 /-- The homogeneous coordinate vector of an affine point is nonzero. -/
 theorem affineVector_ne_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
     affineVector k z ≠ 0 := by
@@ -182,6 +190,13 @@ theorem coe_affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) :
     (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))) =
       ‖affineVector k z‖⁻¹ • affineVector k z := by
   rw [affineUnitVector, coe_normalizeToSphere_apply, NormedSpace.normalize]
+
+/-- The unit representative of the centre of the chart `X_k ≠ 0` is the basis vector `e_k`. -/
+@[simp]
+theorem coe_affineUnitVector_zero (k : Fin (n + 1)) :
+    (affineUnitVector k (0 : Fin n → ℂ) : EuclideanSpace ℂ (Fin (n + 1))) =
+      EuclideanSpace.single k 1 := by
+  simp [coe_affineUnitVector_apply]
 
 /-- The coordinates of the unit representative `w / ‖w‖` of an affine point. -/
 theorem affineUnitVector_apply (k : Fin (n + 1)) (z : Fin n → ℂ) (i : Fin (n + 1)) :
@@ -297,6 +312,17 @@ theorem insertNth_affineChart (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
 theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
     affineParam k z ∈ affineOpen l ↔ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
   simp [mem_affineOpen_iff]
+
+/-- The point `affineParam k 0`, whose only nonzero homogeneous coordinate is the coordinate `k`,
+lies in the affine open `X_l ≠ 0` exactly when `l = k`. -/
+@[simp↓ high]
+theorem affineParam_zero_mem_affineOpen_iff (k l : Fin (n + 1)) :
+    affineParam k 0 ∈ affineOpen l ↔ l = k := by
+  rw [affineParam_mem_affineOpen_iff]
+  rcases eq_or_ne l k with rfl | h
+  · simp
+  · obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
 
 /-- The transition between standard affine charts is the usual homogeneous-ratio formula. -/
 @[simp↓]

@@ -33,7 +33,10 @@ are maps between the expected Sobolev spaces, for every integer `k ≥ 1`:
 * at every `x ∈ A_m^(k+1)`, the gauge-fixed operator `L_x = d₀* ⊕ d₁`
   (`TauCeti.Vortex.gaugeFixedOperator x`) and its formal adjoint `L_x*`
   (`TauCeti.Vortex.gaugeFixedAdjoint x`) map `C¹` fields in `H^(k+1)` to `H^k`
-  (`gaugeFixedOperator_mem_sobolevFields`, `gaugeFixedAdjoint_mem_sobolevFields`).
+  (`gaugeFixedOperator_mem_sobolevFields`, `gaugeFixedAdjoint_mem_sobolevFields`);
+* at every `x ∈ A_m^n`, `n ≥ 2`, the difference `L_x - L₀` with the vacuum operator, which is
+  multiplication by the coordinates of `x - vacuumField`, maps all fields in `H^n` to `H^n`
+  (`gaugeFixedOperator_sub_mem_sobolevFields`).
 
 The reference field is an exact vortex outside the cutoff disc (`equation_referenceField_eq_zero`).
 Its equation defect is therefore smooth with compact support, and lies in every `H^s`. The exact
@@ -75,7 +78,10 @@ are the complexified coordinates of the variation, elements of Mathlib's Bessel-
   are exactly the vortices, is `TauCeti.Vortex.realSobolevEquation` in
   `TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart`.
 
-No Fredholm property, slice or quotient is constructed here.
+The gauge-fixed operator `L_x` on the Sobolev scale and the Coulomb slice are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.LocalModuli`, and the Fredholm property of `L_x` there
+and the Coulomb slice chart modelled on `ℝ^(2m)` in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.SliceChart`.
 
 ## References
 
@@ -208,6 +214,38 @@ theorem gaugeFixedAdjoint_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m k : 
     simp only [Fin.reduceFinMk, Fin.isValue, gaugeFixedAdjoint_apply_three, Pi.add_apply,
       Pi.sub_apply, Pi.neg_apply]
 
+/-- **`L_x - L₀` has order zero.** For a field `x ∈ A_m^n`, `n ≥ 2`, the gauge-fixed operators at
+`x` and at the vacuum differ on `y ∈ H^n` by a field in `H^n`: their difference is multiplication of
+`y` by the coordinates of `x - vacuumField`. -/
+theorem gaugeFixedOperator_sub_mem_sobolevFields {f : ContDiffBump (0 : ℝ)} {m n : ℕ}
+    (hn : 1 < n) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m n)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields n) :
+    gaugeFixedOperator x y - gaugeFixedOperator vacuumField y ∈ sobolevFields n := by
+  have hp (a b : Fin 4) : (fun z ↦ x z a * y z b) ∈ realSobolevFunctions ℂ n 2 :=
+    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hn hx a (mem_sobolevFields.1 hy b)
+  have hc (b : Fin 4) : (fun z ↦ (1 / 2 : ℝ) * y z b) ∈ realSobolevFunctions ℂ n 2 :=
+    Submodule.smul_mem _ (1 / 2 : ℝ) (mem_sobolevFields.1 hy b)
+  refine mem_sobolevFields.2 fun i ↦ ?_
+  fin_cases i
+  · convert sub_mem (sub_mem (hp 2 3) (hp 3 2)) (hc 3) using 1
+    ext z
+    simp [gaugeAdjoint_def, vacuumField_apply]
+    ring
+  · convert sub_mem (add_mem (hp 2 2) (hp 3 3)) (hc 2) using 1
+    ext z
+    simp [vacuumField_apply]
+    ring
+  · convert add_mem (neg_mem (add_mem (add_mem (add_mem (hp 0 3) (hp 3 0)) (hp 1 2)) (hp 2 1)))
+      (hc 1) using 1
+    ext z
+    simp [vacuumField_apply]
+    ring
+  · convert sub_mem (sub_mem (sub_mem (add_mem (hp 0 2) (hp 2 0)) (hp 1 3)) (hp 3 1)) (hc 0)
+      using 1
+    ext z
+    simp [vacuumField_apply]
+    ring
+
 /-- The quadratic remainder of the vortex equation maps `H^s` fields, `s > 1`, to `H^s`. -/
 theorem quadraticTerm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (i : Fin 3) :
@@ -307,10 +345,8 @@ variable (f m k) in
 `H^k(ℂ)`. The coordinates of `x_m` are smooth with bounded derivatives, so they multiply every
 integer-order Sobolev space into itself. -/
 def referenceMulCLM (a : Fin 4) : H^{(k : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
-  mapCLM (TemperedDistribution.smulLeftCLM ℂ fun z ↦ (referenceField f m z a : ℂ)) fun u ↦
-    u.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le (by norm_num) (by norm_num)
-      (hasTemperateGrowth_ofReal_referenceField_apply f m a)
-      fun n _ ↦ exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a n
+  BesselPotentialSpace.smulLeftCLMOfNormIteratedFDerivLe (by norm_num) (by norm_num)
+    fun n _ ↦ exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a n
 
 /-- `referenceMulCLM f m k a` multiplies the underlying tempered distribution by the coordinate
 `a` of the reference field. -/
@@ -318,16 +354,15 @@ def referenceMulCLM (a : Fin 4) : H^{(k : ℝ)}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ
 theorem toDistr_referenceMulCLM (a : Fin 4) (u : H^{(k : ℝ)}(ℂ)) :
     (referenceMulCLM f m k a u).toDistr =
       TemperedDistribution.smulLeftCLM ℂ (fun z ↦ (referenceField f m z a : ℂ)) u.toDistr :=
-  toDistr_mapCLM _ _ u
+  toDistr_smulLeftCLMOfNormIteratedFDerivLe _ _ _ u
 
 /-- The `L²` function of `x_m,a u` is the pointwise product. -/
 theorem coeFn_inclusionLp_referenceMulCLM_ae_eq (a : Fin 4) (u : H^{(k : ℝ)}(ℂ)) :
     ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) (referenceMulCLM f m k a u)) =ᵐ[volume]
       fun z ↦ (referenceField f m z a : ℂ) * inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) u z := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_ofReal_referenceField_apply_le f m a 0
-  simpa only [smul_eq_mul] using coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM _ _
-    (hasTemperateGrowth_ofReal_referenceField_apply f m a) (C := C)
-    (fun z ↦ by simpa using hC z) (toDistr_referenceMulCLM a u)
+  simpa only [referenceMulCLM, smul_eq_mul] using
+    coeFn_inclusionLp_smulLeftCLMOfNormIteratedFDerivLe_ae_eq _ _ _
+      (hasTemperateGrowth_ofReal_referenceField_apply f m a) u
 
 variable (f m) in
 /-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates

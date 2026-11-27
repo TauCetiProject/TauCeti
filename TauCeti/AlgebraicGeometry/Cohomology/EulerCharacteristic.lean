@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.RingTheory.Length
+import TauCeti.RingTheory.Length
 
 /-!
 # The Euler characteristic of a sheaf of modules on a scheme
@@ -36,6 +38,14 @@ sequences as soon as the truncation degree is one past the last nonvanishing deg
   under isomorphism, and
   `Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections`, the identification of
   `dim H⁰(X, M)` with the dimension of the space of global sections.
+
+Over a commutative ring `R` that is not a field, the same count works with `R`-lengths in place
+of dimensions: `Scheme.Modules.length_cohomology_X₂_le_add` bounds the length of `Hⁱ(X, M₂)`, and
+`Scheme.Modules.length_cohomology_add_eq_add` is the additivity of `ℓ H⁰ - ℓ H¹` on a curve,
+written without subtraction and without finiteness hypotheses. When the cohomology groups are
+vector spaces over a quotient field of `R` through which `R` acts, as for sheaves on a closed
+subscheme of the special fibre of a scheme over a local ring, their `R`-lengths are their
+dimensions (`Scheme.Modules.length_cohomology_eq_of_surjective`).
 
 ## Junk values
 
@@ -105,6 +115,11 @@ def _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow (M : X.Modules) (n : 
   ∑ i ∈ Finset.range n, (-1) ^ i * (finrank k (Cohomology M i) : ℤ)
 
 variable {X}
+
+/-- The truncated Euler characteristic as its defining alternating sum. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_def (M : X.Modules) (n : ℕ) :
+    eulerCharBelow k X M n = ∑ i ∈ Finset.range n, (-1) ^ i * (finrank k (Cohomology M i) : ℤ) :=
+  (rfl)
 
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.eulerCharBelow_zero (M : X.Modules) :
@@ -312,6 +327,66 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_sub_one_
   simpa only [eulerCharBelow_two] using eulerCharBelow_eq_add k hS 2 h₁ h₂ hvan
 
 end ShortExact
+
+section Length
+
+/-- **Lengths over a quotient of the base ring.** If a scheme lies over `Spec S` and over
+`Spec R` compatibly with a surjective ring map `R → S`, then `R` acts on cohomology through `S`,
+so the `R`-length and the `S`-length of the cohomology of a sheaf of modules agree. This applies to
+a closed subscheme of the special fibre of a scheme over a local ring, which lies over the residue
+field. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.length_cohomology_eq_of_surjective
+    {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] {X : Scheme.{u}}
+    [X.Over (Spec (.of R))] [X.Over (Spec (.of S))]
+    (h : (X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S)) = (X ↘ Spec (.of R)))
+    (hRS : Function.Surjective (algebraMap R S)) (M : X.Modules) (i : ℕ) :
+    Module.length R (Cohomology M i) = Module.length S (Cohomology M i) :=
+  have := isScalarTower_cohomology_of_comp_eq h M i
+  Module.length_eq_of_surjective hRS
+
+variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
+  {S : ShortComplex X.Modules} (hS : S.ShortExact)
+
+include hS
+
+/-- In a short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules on a scheme over a
+commutative ring `R`, the `R`-length of `Hⁱ(X, M₂)` is at most the sum of the `R`-lengths of
+`Hⁱ(X, M₁)` and `Hⁱ(X, M₃)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.length_cohomology_X₂_le_add (i : ℕ) :
+    Module.length R (Cohomology S.X₂ i) ≤
+      Module.length R (Cohomology S.X₁ i) + Module.length R (Cohomology S.X₃ i) :=
+  TauCeti.length_le_add_of_exact (f := cohomologyMapBaseLinear R X S.f i)
+    (g := cohomologyMapBaseLinear R X S.g i)
+    (by simpa only [coe_cohomologyMapBaseLinear] using exact_cohomologyMap_cohomologyMap hS i)
+
+/-- **Additivity of the length Euler characteristic on a curve.** For a short exact sequence
+`0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules on a scheme over a commutative ring `R` with
+`H²(X, M₁) = 0`, as on a curve, the `R`-lengths of the cohomology groups satisfy
+`ℓ H⁰(M₁) + ℓ H⁰(M₃) + ℓ H¹(M₂) = ℓ H⁰(M₂) + ℓ H¹(M₁) + ℓ H¹(M₃)`, so that
+`χ = ℓ H⁰ - ℓ H¹` is additive when these lengths are finite. No finiteness is assumed. Over a
+field `k` this is `Scheme.Modules.finrank_cohomology_zero_sub_one_eq_add`; lengths over `R` also
+apply when the cohomology groups are vector spaces over a residue field of `R` that `X` itself does
+not lie over, such as for sheaves supported on the special fibre of a scheme over a local ring. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.length_cohomology_add_eq_add
+    (hvan : Subsingleton (Cohomology S.X₁ 2)) :
+    Module.length R (Cohomology S.X₁ 0) + Module.length R (Cohomology S.X₃ 0) +
+        Module.length R (Cohomology S.X₂ 1) =
+      Module.length R (Cohomology S.X₂ 0) + Module.length R (Cohomology S.X₁ 1) +
+        Module.length R (Cohomology S.X₃ 1) := by
+  have := hS.mono_f
+  refine TauCeti.length_add_length_add_length_eq_of_exact
+    (f₀ := cohomologyMapBaseLinear R X S.f 0) (g₀ := cohomologyMapBaseLinear R X S.g 0)
+    (δ := cohomologyδBaseLinear R X hS 0 1 rfl) (f₁ := cohomologyMapBaseLinear R X S.f 1)
+    (g₁ := cohomologyMapBaseLinear R X S.g 1) ?_ ?_
+    (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R X hS 0) ?_ ?_ ?_ <;>
+  simp only [coe_cohomologyMapBaseLinear, coe_cohomologyδBaseLinear]
+  · exact cohomologyMap_injective S.f
+  · exact exact_cohomologyMap_cohomologyMap hS 0
+  · exact exact_cohomologyδ_cohomologyMap hS 0 1 rfl
+  · exact exact_cohomologyMap_cohomologyMap hS 1
+  · exact cohomologyMap_surjective hS 1 2 rfl hvan
+
+end Length
 
 end Scheme.Modules
 
