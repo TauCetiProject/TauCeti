@@ -256,14 +256,17 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
     (U : OpenNormalSubgroup G) :
     (limitSubgroup H).map (QuotientGroup.mk' U.toSubgroup) = H U := by
   rw [limitSubgroup]
+  -- The dual order directs the quotients by refinement and reindexes the infimum definitionally.
   exact map_iInf_comap_of_compatible (ι := (OpenNormalSubgroup G)ᵒᵈ)
     (fun V ↦ QuotientGroup.mk' V.ofDual.toSubgroup)
-    (fun {_ _} h ↦ QuotientGroup.mapOfLE h) (fun V ↦ H V.ofDual)
+    (fun {_ _} h ↦ QuotientGroup.mapOfLE (OrderDual.ofDual_le_ofDual.mpr h)) (fun V ↦ H V.ofDual)
     (fun _ ↦ QuotientGroup.continuous_mk) (fun _ ↦ QuotientGroup.mk'_surjective _)
     (fun _ ↦ (isClosed_discrete _).preimage QuotientGroup.continuous_mk)
     (fun {V W} h ↦
-      QuotientGroup.mapOfLE_comp_mk' (V := W.ofDual.toSubgroup) (U := V.ofDual.toSubgroup) h)
-    (fun {V W} h ↦ hH (U := W.ofDual) (V := V.ofDual) h) (OrderDual.toDual U)
+      QuotientGroup.mapOfLE_comp_mk' (V := W.ofDual.toSubgroup) (U := V.ofDual.toSubgroup)
+        (OrderDual.ofDual_le_ofDual.mpr h))
+    (fun {V W} h ↦ hH (U := W.ofDual) (V := V.ofDual) (OrderDual.ofDual_le_ofDual.mpr h))
+    (OrderDual.toDual U)
 
 end LimitSubgroup
 

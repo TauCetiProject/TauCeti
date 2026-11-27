@@ -193,6 +193,8 @@ instance localAbsoluteUpperRamificationGroup_normal (v : RamificationIndexDomain
 theorem isClosed_localAbsoluteUpperRamificationGroup (v : RamificationIndexDomain) :
     IsClosed (localAbsoluteUpperRamificationGroup K v : Set (Field.absoluteGaloisGroup K)) := by
   rw [localAbsoluteUpperRamificationGroup_def]
+  -- The closedness lemma uses `Gal(AlgebraicClosure K/K)`, the definition of
+  -- `Field.absoluteGaloisGroup K` with the inherited Krull topology.
   exact isClosed_iInf_comap_restrictNormalHom
     (fun M ↦ finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) M v)
 
@@ -231,6 +233,8 @@ theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_finiteGalois
         (AlgEquiv.restrictNormalHom M.toIntermediateField) =
       finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) M v := by
   rw [localAbsoluteUpperRamificationGroup_def]
+  -- Matching the sources of the restriction maps unfolds `Field.absoluteGaloisGroup K`
+  -- to `Gal(AlgebraicClosure K/K)`.
   exact map_restrictNormalHom_iInf_comap
     (fun N ↦ finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) N v)
     (fun _ _ h ↦ map_restrictNormalHom_finiteGaloisUpperRamificationGroup K _ h v) M
@@ -601,6 +605,8 @@ theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf
         (AlgEquiv.restrictNormalHom N : Gal(AlgebraicClosure K/K) →* Gal(N/K))
     have hanti : Antitone S :=
       comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone K (AlgebraicClosure K) v
+    -- The rewritten infimum is over subgroups of `Field.absoluteGaloisGroup K`,
+    -- which unfolds to the ambient group `Gal(AlgebraicClosure K/K)` of `S`.
     rw [localAbsoluteUpperRamificationGroup_def,
       MonoidHom.map_iInf_of_isClosed _ (InfiniteGalois.restrictNormalHom_continuous E) S
         (fun N ↦ N.isClosed_comap_restrictNormalHom _)
