@@ -96,8 +96,8 @@ theorem coe_sphereCellCocycleTrivialActionHomologyEquiv_apply_fst (q : ℤ)
           ((loopChainAugmentation Sph (spherePolePoint h) k).op_smul_eq_zero_of_eq_zero
             (loopChainAugmentation_sphereAttachingChain h k)) q c).1 := by
   unfold sphereCellCocycleTrivialActionHomologyEquiv
-  rw [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, Prod.fst, LinearEquiv.refl_apply]
-  exact coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_fst _ _ _ q c
+  simp only [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
+    coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_fst]
 
 /-- The `e₁`-component of `TauCeti.sphereCellCocycleTrivialActionHomologyEquiv` of a class is that
 of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` for the attaching cycle, read in
@@ -117,8 +117,8 @@ theorem coe_sphereCellCocycleTrivialActionHomologyEquiv_apply_snd (q : ℤ)
           ((loopChainAugmentation Sph (spherePolePoint h) k).op_smul_eq_zero_of_eq_zero
             (loopChainAugmentation_sphereAttachingChain h k)) q c).2 := by
   unfold sphereCellCocycleTrivialActionHomologyEquiv
-  rw [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, Prod.snd, LinearEquiv.coe_ofEq_apply]
-  exact coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_snd _ _ _ q c
+  simp only [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.coe_ofEq_apply,
+    coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_snd]
 
 /-- **With the trivial action the twisted homology of the sphere is not that of a point.** Over a
 nontrivial ring `k`, the twisted homology of `Sⁿ`, `n = m + 2`, with coefficients in the chains on

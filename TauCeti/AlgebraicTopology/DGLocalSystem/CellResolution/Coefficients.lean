@@ -118,13 +118,10 @@ theorem coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_fst (h : ∀ α : 
       shiftedModuleComplexHomologyEquiv hM _ k ((HomologicalComplex.homologyMap
         (RowFiniteTwistingCocycle.coefficientEval hM (cycleCellCocycle_m_op_smul_eq_zero hx hdx h)
           (Sum.inl ())) k).hom c) := by
-  rw [cycleCellCocycleHomologyEquivOfOpSmulEqZero, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply]
-  simp only [LinearEquiv.prodCongr_apply, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearEquiv.piUnique_apply, LinearEquiv.sumPiEquivProdPi_apply,
-    Equiv.piUnique_apply, Equiv.sumPiEquivProdPi_apply, Equiv.toFun_as_coe,
-    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply,
-    PUnit.default_eq_unit]
+  -- `Sum.elim_inl` and `Sum.elim_inr` would rewrite the factor types of the product equivalence
+  -- but not the fibres of `LinearEquiv.sumPiEquivProdPi`, so the application lemmas would no
+  -- longer match.
+  simp [cycleCellCocycleHomologyEquivOfOpSmulEqZero, -Sum.elim_inl, -Sum.elim_inr]
 
 /-- The `e₁`-component of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` of a class is the
 class in `H(M)` of its image under the evaluation at `e₁`. -/
@@ -135,13 +132,8 @@ theorem coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_snd (h : ∀ α : 
       shiftedModuleComplexHomologyEquiv hM _ k ((HomologicalComplex.homologyMap
         (RowFiniteTwistingCocycle.coefficientEval hM (cycleCellCocycle_m_op_smul_eq_zero hx hdx h)
           (Sum.inr ())) k).hom c) := by
-  rw [cycleCellCocycleHomologyEquivOfOpSmulEqZero, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply]
-  simp only [LinearEquiv.prodCongr_apply, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearEquiv.piUnique_apply, LinearEquiv.sumPiEquivProdPi_apply,
-    Equiv.piUnique_apply, Equiv.sumPiEquivProdPi_apply, Equiv.toFun_as_coe,
-    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply,
-    PUnit.default_eq_unit]
+  -- As above, keep `Sum.elim` unreduced so the application lemmas match.
+  simp [cycleCellCocycleHomologyEquivOfOpSmulEqZero, -Sum.elim_inl, -Sum.elim_inr]
 
 end ZeroAction
 
