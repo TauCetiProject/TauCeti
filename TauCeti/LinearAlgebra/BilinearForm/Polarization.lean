@@ -102,7 +102,8 @@ variable [AddCommMonoid C] [Module R C]
 
 /-- The **polarized form** of a pairing `B : X × Y → C`: the bilinear map
 `((x, y), (x', y')) ↦ B x y'` on `X × Y`. Its skew part `((x, y), (x', y')) ↦ B x y' - B x' y`
-is the symplectic form of the polarization `X × Y`. -/
+is alternating, and is the symplectic form of the polarization `X × Y` when `B` is a perfect
+pairing. -/
 def polarizedForm (B : X →ₗ[R] Y →ₗ[R] C) : LinearMap.BilinMap R (X × Y) C :=
   B.compl₁₂ (LinearMap.fst R X Y) (LinearMap.snd R X Y)
 

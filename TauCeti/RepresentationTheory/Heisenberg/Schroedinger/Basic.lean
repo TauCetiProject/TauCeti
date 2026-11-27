@@ -38,8 +38,8 @@ unitary character of a nonarchimedean local field, the operators preserve the
 locally constant compactly supported functions, the Schwartz–Bruhat space `S(X)`
 (`LinearMap.schroedingerCompactlySupported`). When `ψ` is unitary, each operator acts on norms by
 translation, so it preserves `∫ ‖φ‖ ^ 2` for a translation-invariant measure on `X`
-(`LinearMap.integral_norm_sq_schroedinger_apply`): it is unitary for the `L²` inner product. The
-archimedean model on the Schwartz space is
+(`LinearMap.integral_norm_sq_schroedinger_apply`); this is what makes the operators unitary on
+`L²` once they descend to it. The archimedean model on the Schwartz space is
 `TauCeti.RepresentationTheory.Heisenberg.Schroedinger.Schwartz`.
 
 ## Main definitions
@@ -55,8 +55,8 @@ archimedean model on the Schwartz space is
 * `LinearMap.schroedinger_eq_polarizedSchroedinger`: the half-form representation is the
   polarized one transported along `LinearMap.BilinMap.polarizationEquiv`.
 * `LinearMap.polarizedSchroedinger_inl`, `LinearMap.schroedinger_inl`: the centre acts by `ψ`.
-* `LinearMap.isLocallyConstant_polarizedSchroedinger_apply`,
-  `LinearMap.hasCompactSupport_polarizedSchroedinger_apply`: the operators preserve local
+* `LinearMap.isLocallyConstant_schroedinger_apply`,
+  `LinearMap.hasCompactSupport_schroedinger_apply`: the operators preserve local
   constancy (for `ψ` locally constant) and compact support.
 * `LinearMap.norm_schroedinger_apply`, `LinearMap.integral_norm_sq_schroedinger_apply`: for a
   unitary character the operators act on norms by translation, and preserve `∫ ‖φ‖ ^ 2` for a
@@ -96,11 +96,7 @@ def polarizedSchroedinger :
       map_smul' c φ := funext fun u ↦ smul_comm _ c _ }
   map_one' := LinearMap.ext fun φ ↦ funext fun u ↦ by simp
   map_mul' p q := LinearMap.ext fun φ ↦ funext fun u ↦ by
-    simp only [FactorSet.Extension.mul_left, FactorSet.Extension.mul_right, toAdd_mul,
-      LinearMap.BilinMap.bilinearFactorSet_apply, toAdd_ofAdd, polarizedForm_apply,
-      Prod.fst_add, Prod.snd_add, LinearMap.coe_mk, AddHom.coe_mk, Module.End.mul_eq_comp,
-      LinearMap.comp_apply, trivialMulDistribMulAction_smul, smul_smul, ← AddChar.map_add_eq_mul,
-      map_add, LinearMap.add_apply, add_assoc]
+    simp [smul_smul, ← AddChar.map_add_eq_mul, add_assoc]
     congr 3
     abel
 
@@ -182,6 +178,14 @@ theorem hasCompactSupport_polarizedSchroedinger_apply
     HasCompactSupport (B.polarizedSchroedinger ψ V p φ) :=
   (hφ.comp_homeomorph (Homeomorph.addRight _)).smul_left
 
+/-- The Schrödinger operators preserve compact support. -/
+theorem hasCompactSupport_schroedinger_apply [Invertible (2 : R)]
+    (p : (⅟(2 : R) • (B.polarizedForm - B.polarizedForm.flip)).bilinearFactorSet.Extension)
+    {φ : X → V} (hφ : HasCompactSupport φ) :
+    HasCompactSupport (B.schroedinger ψ V p φ) := by
+  rw [schroedinger_eq_polarizedSchroedinger]
+  exact hasCompactSupport_polarizedSchroedinger_apply _ hφ
+
 variable [TopologicalSpace C]
 
 /-- If `ψ` is locally constant and each `B · y` is continuous, the polarized Schrödinger
@@ -197,14 +201,24 @@ theorem isLocallyConstant_polarizedSchroedinger_apply (hψ : IsLocallyConstant �
 
 variable [Invertible (2 : R)]
 
+/-- If `ψ` is locally constant and each `B · y` is continuous, the Schrödinger operators
+preserve local constancy. -/
+theorem isLocallyConstant_schroedinger_apply (hψ : IsLocallyConstant ψ)
+    (hB : ∀ y, Continuous fun u ↦ B u y)
+    (p : (⅟(2 : R) • (B.polarizedForm - B.polarizedForm.flip)).bilinearFactorSet.Extension)
+    {φ : X → V} (hφ : IsLocallyConstant φ) :
+    IsLocallyConstant (B.schroedinger ψ V p φ) := by
+  rw [schroedinger_eq_polarizedSchroedinger]
+  exact isLocallyConstant_polarizedSchroedinger_apply hψ hB _ hφ
+
 /-- The Schrödinger operator of `p` on a locally constant compactly supported function. -/
 private def schroedingerCompactlySupportedAux (hψ : IsLocallyConstant ψ)
     (hB : ∀ y, Continuous fun u ↦ B u y)
     (p : (⅟(2 : R) • (B.polarizedForm - B.polarizedForm.flip)).bilinearFactorSet.Extension)
     (f : LocallyConstant.compactlySupported k X V) : LocallyConstant.compactlySupported k X V :=
   ⟨⟨B.schroedinger ψ V p f.val,
-      isLocallyConstant_polarizedSchroedinger_apply hψ hB _ f.val.isLocallyConstant⟩,
-    LocallyConstant.mem_compactlySupported.2 <| hasCompactSupport_polarizedSchroedinger_apply _
+      isLocallyConstant_schroedinger_apply hψ hB p f.val.isLocallyConstant⟩,
+    LocallyConstant.mem_compactlySupported.2 <| hasCompactSupport_schroedinger_apply p
       (LocallyConstant.mem_compactlySupported.1 f.property)⟩
 
 private theorem coe_schroedingerCompactlySupportedAux (hψ : IsLocallyConstant ψ)
@@ -278,18 +292,19 @@ theorem norm_schroedinger_apply (hψ : ∀ c, ‖ψ c‖ = 1)
     (p : (⅟(2 : R) • (B.polarizedForm - B.polarizedForm.flip)).bilinearFactorSet.Extension)
     (φ : X → V) (u : X) :
     ‖B.schroedinger ψ V p φ u‖ = ‖φ (u + p.right.toAdd.1)‖ := by
-  simp [norm_smul, hψ]
+  rw [schroedinger_eq_polarizedSchroedinger, norm_polarizedSchroedinger_apply hψ,
+    BilinMap.polarizationEquiv_apply]
 
-/-- **The Schrödinger operators are unitary**: for a unitary character `ψ` and a
-translation-invariant measure on `X`, `∫ ‖ρψ(h) φ‖ ^ 2 = ∫ ‖φ‖ ^ 2`. No measurability of `φ` is
-needed. -/
+/-- For a unitary character `ψ` and a translation-invariant measure on `X`, the Schrödinger
+operators preserve the integral of `‖φ‖ ^ 2`: `∫ ‖ρψ(h) φ‖ ^ 2 = ∫ ‖φ‖ ^ 2`. No measurability of
+`φ` is needed. This is the input for the unitarity of the operators on `L²`. -/
 theorem integral_norm_sq_schroedinger_apply [MeasurableSpace X] [MeasurableAdd X]
     (hψ : ∀ c, ‖ψ c‖ = 1) (μ : Measure X) [μ.IsAddRightInvariant]
     (p : (⅟(2 : R) • (B.polarizedForm - B.polarizedForm.flip)).bilinearFactorSet.Extension)
     (φ : X → V) :
     ∫ u, ‖B.schroedinger ψ V p φ u‖ ^ 2 ∂μ = ∫ u, ‖φ u‖ ^ 2 ∂μ := by
-  simp_rw [norm_schroedinger_apply hψ]
-  exact integral_add_right_eq_self (fun u ↦ ‖φ u‖ ^ 2) _
+  rw [schroedinger_eq_polarizedSchroedinger]
+  exact integral_norm_sq_polarizedSchroedinger_apply hψ μ _ φ
 
 end Norm
 
