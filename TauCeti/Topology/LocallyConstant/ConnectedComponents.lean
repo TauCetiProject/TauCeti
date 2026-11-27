@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -16,6 +17,10 @@ A function `φ` on the connected components of a set `s` defines a function on t
 additive and homogeneous in `φ`. When `s` is open in a locally connected space, every component
 of `s` is open, so `componentFun φ` is locally constant on `s`.
 
+The same holds for a splitting of `s` into two disjoint open pieces `U` and `V`, without passing
+through the components: the function equal to `c` on `U` and to `d` on `V` is locally constant on
+`s = U ∪ V`.
+
 ## Main declarations
 
 * `TauCeti.componentFun`: the function equal to `φ c` on the component `c` of `s` and to `0` off
@@ -24,6 +29,9 @@ of `s` is open, so `componentFun φ` is locally constant on `s`.
   `componentFun φ` is locally constant.
 * `IsLocallyConstant.apply_eq_of_isPreconnected_of_subset`: a function that is locally constant
   on `s` is constant on every preconnected subset of `s`.
+* `TauCeti.isLocallyConstant_domRestrict_indicator_add_indicator`: if `s` is the union of disjoint
+  open sets `U` and `V`, the function equal to `c` on `U` and to `d` on `V` is locally constant on
+  `s`.
 -/
 
 public section
@@ -85,5 +93,35 @@ theorem _root_.IsLocallyConstant.apply_eq_of_isPreconnected_of_subset {g : X →
     refine Topology.IsInducing.subtypeVal.isPreconnected_image.1 ?_
     rwa [image_preimage_eq_of_subset (Subtype.range_coe.symm ▸ hts)]
   exact hg.apply_eq_of_isPreconnected hpre (x := ⟨y, hts hy⟩) (y := ⟨z, hts hz⟩) hy hz
+
+omit [TopologicalSpace X] in
+/-- On the first of two disjoint sets `U` and `V`, the function `U.indicator f + V.indicator g` is
+`f`. -/
+theorem _root_.Disjoint.indicator_add_indicator_apply_of_mem_left [AddZeroClass β] {U V : Set X}
+    (hd : Disjoint U V) (f g : X → β) {x : X} (hx : x ∈ U) :
+    (U.indicator f + V.indicator g) x = f x := by
+  rw [Pi.add_apply, indicator_of_mem hx, indicator_of_notMem (hd.notMem_of_mem_left hx), add_zero]
+
+omit [TopologicalSpace X] in
+/-- On the second of two disjoint sets `U` and `V`, the function `U.indicator f + V.indicator g`
+is `g`. -/
+theorem _root_.Disjoint.indicator_add_indicator_apply_of_mem_right [AddZeroClass β] {U V : Set X}
+    (hd : Disjoint U V) (f g : X → β) {x : X} (hx : x ∈ V) :
+    (U.indicator f + V.indicator g) x = g x := by
+  rw [Pi.add_apply, indicator_of_mem hx, indicator_of_notMem (hd.notMem_of_mem_right hx), zero_add]
+
+/-- If `s` is the union of disjoint open sets `U` and `V`, the function equal to `c` on `U` and to
+`d` on `V` is locally constant on `s`. -/
+theorem isLocallyConstant_domRestrict_indicator_add_indicator [AddZeroClass β] {U V : Set X}
+    (hU : IsOpen U) (hV : IsOpen V) (hd : Disjoint U V) (hUV : s = U ∪ V) (c d : β) :
+    IsLocallyConstant (s.domRestrict (U.indicator (fun _ => c) + V.indicator (fun _ => d))) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun z => ?_
+  rcases (hUV ▸ z.property : (z : X) ∈ U ∪ V) with hz | hz
+  · filter_upwards [(hU.preimage continuous_subtypeVal).mem_nhds hz] with w hw
+    simp only [domRestrict_apply, hd.indicator_add_indicator_apply_of_mem_left _ _ hw,
+      hd.indicator_add_indicator_apply_of_mem_left _ _ hz]
+  · filter_upwards [(hV.preimage continuous_subtypeVal).mem_nhds hz] with w hw
+    simp only [domRestrict_apply, hd.indicator_add_indicator_apply_of_mem_right _ _ hw,
+      hd.indicator_add_indicator_apply_of_mem_right _ _ hz]
 
 end TauCeti

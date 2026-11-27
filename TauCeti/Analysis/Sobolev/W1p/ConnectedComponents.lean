@@ -259,25 +259,13 @@ theorem W1p.exists_value_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_
     ∃ u : W1p mu Omega p,
       W1p.value u =ᵐ[mu.restrict Omega] U.indicator (fun _ => c) + V.indicator (fun _ => d) ∧
         W1p.gradient u = 0 ∧ ∫ x in Omega, W1p.value u x ∂mu = c * mu.real U + d * mu.real V := by
-  set g : E → ℝ := U.indicator (fun _ => c) + V.indicator (fun _ => d) with hg_def
-  have hgU {z : E} (hz : z ∈ U) : g z = c := by
-    simp [hg_def, indicator_of_mem hz, indicator_of_notMem (hd.notMem_of_mem_left hz)]
-  have hgV {z : E} (hz : z ∈ V) : g z = d := by
-    simp [hg_def, indicator_of_mem hz, indicator_of_notMem (hd.notMem_of_mem_right hz)]
-  -- `g` is constant on each of the two pieces, which are open.
-  have hloc : IsLocallyConstant ((Omega : Set E).domRestrict g) := by
-    refine (IsLocallyConstant.iff_eventually_eq _).2 fun z => ?_
-    rcases (hUV ▸ z.property : (z : E) ∈ U ∪ V) with hz | hz
-    · filter_upwards [(hU.preimage continuous_subtypeVal).mem_nhds hz] with w hw
-      simp only [Set.domRestrict_apply, hgU hw, hgU hz]
-    · filter_upwards [(hV.preimage continuous_subtypeVal).mem_nhds hz] with w hw
-      simp only [Set.domRestrict_apply, hgV hw, hgV hz]
-  have hgp : MemLp g p (mu.restrict Omega) :=
+  have hloc := isLocallyConstant_domRestrict_indicator_add_indicator hU hV hd hUV c d
+  have hgp : MemLp (U.indicator (fun _ => c) + V.indicator (fun _ => d)) p (mu.restrict Omega) :=
     ((memLp_const c).indicator hU.measurableSet.nullMeasurableSet).add
       ((memLp_const d).indicator hV.measurableSet.nullMeasurableSet)
   have hval := W1p.value_ofIsLocallyConstant_ae hloc hgp
   refine ⟨W1p.ofIsLocallyConstant hloc hgp, hval, W1p.gradient_ofIsLocallyConstant _ _, ?_⟩
-  rw [integral_congr_ae hval, hg_def, integral_add'
+  rw [integral_congr_ae hval, integral_add'
     ((integrable_const c).indicator hU.measurableSet)
     ((integrable_const d).indicator hV.measurableSet)]
   simp [integral_indicator_const _ hU.measurableSet, integral_indicator_const _ hV.measurableSet,
@@ -307,8 +295,7 @@ theorem W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero
     filter_upwards [ae_restrict_of_ae_restrict_of_subset (hUV ▸ subset_union_left) hval,
       ae_restrict_of_ae_restrict_of_subset (hUV ▸ subset_union_left)
         (Lp.coeFn_zero ℝ p (mu.restrict Omega)), ae_restrict_mem hU.measurableSet] with z h1 h2 hzU
-    rw [h0, W1p.value_zero, h2, Pi.add_apply, indicator_of_mem hzU,
-      indicator_of_notMem (hd.notMem_of_mem_left hzU), add_zero, Pi.zero_apply] at h1
+    rw [h0, W1p.value_zero, h2, hd.indicator_add_indicator_apply_of_mem_left _ _ hzU] at h1
     exact ha h1.symm
   exact hU.measure_ne_zero mu hUne
     (Measure.restrict_eq_zero.1 (ae_eq_bot.1 (Filter.eventually_false_iff_eq_bot.1 hfalse)))

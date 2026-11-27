@@ -28,6 +28,8 @@ endpoint values.
 * `TauCeti.PDE.lineEquiv`: the isometry `t ↦ t e₀` of `ℝ` onto the Euclidean line.
 * `TauCeti.PDE.isBounded_intervalDomain`: the interval domain is bounded, so it has finite volume.
 * `TauCeti.PDE.coe_intervalDomain_eq_ball`: the interval domain is a ball of the line.
+* `TauCeti.PDE.volume_intervalDomain`, `TauCeti.PDE.volume_real_intervalDomain_of_le`: the
+  interval domain `(a, b)` has length `b - a`.
 * `TauCeti.PDE.setIntegral_intervalDomain`: integrals over the interval domain are integrals over
   the real interval.
 * `TauCeti.PDE.measurePreserving_lineEquiv_restrict`: `TauCeti.PDE.lineEquiv` carries Lebesgue
@@ -159,6 +161,18 @@ theorem coe_intervalDomain_eq_ball :
 instance instIsFiniteMeasureRestrictIntervalDomain :
     IsFiniteMeasure (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))) :=
   isFiniteMeasure_restrict.2 isBounded_intervalDomain.measure_lt_top.ne
+
+/-- The interval domain `(a, b)` has volume `b - a`. -/
+theorem volume_intervalDomain :
+    volume (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = ENNReal.ofReal (b - a) := by
+  rw [coe_intervalDomain_eq_preimage,
+    measurePreserving_lineEquiv_symm.measure_preimage measurableSet_Ioo.nullMeasurableSet,
+    Real.volume_Ioo]
+
+/-- The interval domain `(a, b)` with `a ≤ b` has length `b - a`. -/
+theorem volume_real_intervalDomain_of_le (hab : a ≤ b) :
+    volume.real (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = b - a := by
+  rw [measureReal_def, volume_intervalDomain, ENNReal.toReal_ofReal (sub_nonneg.2 hab)]
 
 /-- Integrals over the interval domain are integrals over the real interval: for `f : ℝ → E`,
 the integral of `x ↦ f (x 0)` over `TauCeti.PDE.intervalDomain a b` is `∫ t in Ioo a b, f t`. -/
