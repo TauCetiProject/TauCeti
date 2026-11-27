@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.DiscSeries
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Holomorphy
 
@@ -50,30 +50,10 @@ logarithmic identities above; this derivative vanishes, and the defect vanishes 
 public section
 
 open Metric Set
-open Complex (one_sub_mem_slitPlane_of_norm_lt_one slitPlane_ne_zero)
+open Complex (norm_div_one_sub_lt_one norm_mul_div_one_sub_mul_one_sub_lt_one
+  one_sub_mem_slitPlane_of_norm_lt_one slitPlane_ne_zero)
 
 namespace TauCeti.Polylog
-
-/-- The first two transformed arguments `x / (1 - y)` and (with `x` and `y` swapped)
-`y / (1 - x)` of Abel's identity lie in the open unit disc whenever `‖x‖ + ‖y‖ < 1`. -/
-private lemma norm_div_one_sub_lt_one {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
-    ‖x / (1 - y)‖ < 1 := by
-  have hy : 1 - ‖y‖ ≤ ‖1 - y‖ := by simpa using norm_sub_norm_le (1 : ℂ) y
-  rw [norm_div, div_lt_one (by linarith [norm_nonneg x])]
-  linarith
-
-/-- The third transformed argument `x y / ((1 - x)(1 - y))` of Abel's identity lies in the open
-unit disc whenever `‖x‖ + ‖y‖ < 1`. -/
-private lemma norm_mul_div_mul_lt_one {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
-    ‖x * y / ((1 - x) * (1 - y))‖ < 1 := by
-  have hx : 1 - ‖x‖ ≤ ‖1 - x‖ := by simpa using norm_sub_norm_le (1 : ℂ) x
-  have hy : 1 - ‖y‖ ≤ ‖1 - y‖ := by simpa using norm_sub_norm_le (1 : ℂ) y
-  have hx0 := norm_nonneg x
-  have hy0 := norm_nonneg y
-  have hpos : 0 < (1 - ‖x‖) * (1 - ‖y‖) := mul_pos (by linarith) (by linarith)
-  rw [norm_div, norm_mul, norm_mul, div_lt_one (hpos.trans_le (mul_le_mul hx hy
-    (by linarith) (norm_nonneg _)))]
-  nlinarith [mul_le_mul hx hy (by linarith) (norm_nonneg _)]
 
 /-- The three logarithmic product identities behind Abel's identity: on `‖x‖ + ‖y‖ < 1` the
 principal logarithms of `1 - a`, `1 - b` and `1 - c` split with no multiple of `2πi`. -/
@@ -110,7 +90,7 @@ private lemma hasDerivAt_abel_defect {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
   have hy : ‖y‖ < 1 := by linarith [norm_nonneg x]
   have ha := norm_div_one_sub_lt_one hxy
   have hb := norm_div_one_sub_lt_one (x := y) (y := x) (by linarith)
-  have hc := norm_mul_div_mul_lt_one hxy
+  have hc := norm_mul_div_one_sub_mul_one_sub_lt_one hxy
   have hx1 : 1 - x ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane_of_norm_lt_one hx)
   have hy1 : 1 - y ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane_of_norm_lt_one hy)
   have hD : ∀ z : ℂ, ‖z‖ < 1 → HasDerivAt (polylog 2) (deriv (polylog 2) z) z := fun z hz ↦
