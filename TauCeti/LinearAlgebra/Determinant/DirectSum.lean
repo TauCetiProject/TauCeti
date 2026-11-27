@@ -103,6 +103,8 @@ given by bijectivity multiply
   `TauCeti.congr_detLineCongr_prodAssoc_detLineTensorDualProdEquiv`: like
   `TauCeti.detLineProdEquiv`, the dual product and the gathering isomorphism are associative,
   without a sign.
+* `TauCeti.rTensor_detLineCongr_detLineTensorDualProdEquiv_assoc`: the associativity of the
+  gathering isomorphism, transported along compatible isomorphisms of the partial products.
 * `TauCeti.detLineFourTermEquiv_prodMap`: the four-term isomorphism of a product of exact
   sequences is the product of the four-term isomorphisms, up to a Koszul sign.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodCongr`: naturality under products of commuting
@@ -473,6 +475,56 @@ theorem congr_detLineCongr_prodAssoc_detLineTensorDualProdEquiv
                 LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
             simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, assoc_tmul,
               LinearEquiv.coe_coe, detLineTensorDualProdEquiv_tmul, congr_tmul, h, hφ]
+
+/-- **Associativity of `TauCeti.detLineTensorDualProdEquiv` along kernel isomorphisms.** Gather
+three factors in the two orders, transporting the partial products along isomorphisms
+`g₁₂ : U₁ × U₂ ≃ U₁₂`, `g₂₃ : U₂ × U₃ ≃ U₂₃`, `g : U₁₂ × U₃ ≃ W` and `g' : U₁ × U₂₃ ≃ W'`. If
+`g' (u₁, g₂₃ (u₂, u₃)) = e (g (g₁₂ (u₁, u₂), u₃))` for an isomorphism `e : W ≃ W'`, then the two
+results agree up to `e` and the associator `(V₁ × V₂) × V₃ ≃ V₁ × (V₂ × V₃)`, with no sign. -/
+theorem rTensor_detLineCongr_detLineTensorDualProdEquiv_assoc {U₁₂ U₂₃ W W' : Type*}
+    [AddCommGroup U₁₂] [Module K U₁₂] [AddCommGroup U₂₃] [Module K U₂₃] [AddCommGroup W]
+    [Module K W] [AddCommGroup W'] [Module K W'] [FiniteDimensional K U₁₂]
+    [FiniteDimensional K U₂₃] (g₁₂ : (U₁ × U₂) ≃ₗ[K] U₁₂) (g₂₃ : (U₂ × U₃) ≃ₗ[K] U₂₃)
+    (g : (U₁₂ × U₃) ≃ₗ[K] W) (g' : (U₁ × U₂₃) ≃ₗ[K] W') (e : W ≃ₗ[K] W')
+    (he : ∀ u₁ u₂ u₃, g' (u₁, g₂₃ (u₂, u₃)) = e (g (g₁₂ (u₁, u₂), u₃)))
+    (x₁ : detLine K U₁ ⊗[K] Dual K (detLine K V₁)) (x₂ : detLine K U₂ ⊗[K] Dual K (detLine K V₂))
+    (x₃ : detLine K U₃ ⊗[K] Dual K (detLine K V₃)) :
+    LinearEquiv.rTensor _ g'.detLineCongr (detLineTensorDualProdEquiv K U₁ V₁ U₂₃ (V₂ × V₃)
+        (x₁ ⊗ₜ LinearEquiv.rTensor _ g₂₃.detLineCongr
+          (detLineTensorDualProdEquiv K U₂ V₂ U₃ V₃ (x₂ ⊗ₜ x₃)))) =
+      TensorProduct.congr e.detLineCongr
+        (LinearEquiv.prodAssoc K V₁ V₂ V₃).detLineCongr.symm.dualMap
+        (LinearEquiv.rTensor _ g.detLineCongr
+          (detLineTensorDualProdEquiv K U₁₂ (V₁ × V₂) U₃ V₃
+            (LinearEquiv.rTensor _ g₁₂.detLineCongr
+              (detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ (x₁ ⊗ₜ x₂)) ⊗ₜ x₃))) := by
+  -- Move `g₂₃` and `g₁₂` out of the gathering isomorphisms by naturality.
+  have n₁ := rTensor_detLineCongr_prodCongr_detLineTensorDualProdEquiv
+    (LinearEquiv.refl K U₁) g₂₃
+    (x₁ ⊗ₜ detLineTensorDualProdEquiv K U₂ V₂ U₃ V₃ (x₂ ⊗ₜ x₃))
+  have n₂ := rTensor_detLineCongr_prodCongr_detLineTensorDualProdEquiv
+    g₁₂ (LinearEquiv.refl K U₃)
+    (detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ (x₁ ⊗ₜ x₂) ⊗ₜ x₃)
+  simp only [congr_tmul, LinearEquiv.detLineCongr_refl, LinearEquiv.rTensor_refl,
+    LinearEquiv.refl_apply] at n₁ n₂
+  -- Reassociate the gathering isomorphisms.
+  have hA := congr_detLineCongr_prodAssoc_detLineTensorDualProdEquiv ((x₁ ⊗ₜ x₂) ⊗ₜ x₃)
+  simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, assoc_tmul,
+    LinearEquiv.coe_coe] at hA
+  rw [← n₁, ← n₂, ← hA]
+  generalize detLineTensorDualProdEquiv K (U₁ × U₂) (V₁ × V₂) U₃ V₃ _ = z
+  -- The isomorphisms compose to the same isomorphism `(U₁ × U₂) × U₃ ≃ W'`.
+  have hc : (LinearEquiv.prodAssoc K U₁ U₂ U₃).trans
+      (((LinearEquiv.refl K U₁).prodCongr g₂₃).trans g') =
+      ((g₁₂.prodCongr (LinearEquiv.refl K U₃)).trans g).trans e := by
+    ext ⟨⟨u₁, u₂⟩, u₃⟩ : 1
+    simpa using he u₁ u₂ u₃
+  induction z using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | tmul a φ =>
+    have ha := congr($(congrArg LinearEquiv.detLineCongr hc) a)
+    simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply] at ha
+    simp [ha]
 
 end TensorDual
 
