@@ -47,12 +47,12 @@ contactomorphisms preserve the contact volume
 the absolute value of the constant: `vol(c α) = |c|ⁿ⁺¹ vol(α)`
 (`TauCeti.SmoothForm.IsContactForm.contactVolume_smul`).
 
-**Gray stability does not hold for contact forms.** Gray's theorem
+**The positive multiplier in Gray stability cannot be removed.** Gray's theorem
 (`TauCeti.SmoothForm.exists_diffeotopy_mpullback_eq_pos_smul`) carries a family of contact forms on
-a closed manifold to the initial form only up to a positive multiplier. The multiplier cannot be
-removed. For `αₜ = (1 + t) α` the kernel does not move, but no diffeomorphism `Φ` satisfies
-`Φ^* α₁ = α₀`: it would make `Φ` a strict contactomorphism from `α` to `2 α`, and on a compact
-nonempty manifold a diffeomorphism pulling `c α` back to `α` forces `|c| = 1`, since
+a closed manifold to the initial form only up to a positive multiplier, and on a compact nonempty
+manifold this multiplier cannot be dropped. For `αₜ = (1 + t) α` the kernel does not move, but no
+diffeomorphism `Φ` satisfies `Φ^* α₁ = α₀`: it would make `Φ` a strict contactomorphism from `α`
+to `2 α`, and a diffeomorphism pulling `c α` back to `α` forces `|c| = 1`, since
 `vol(α) = vol(c α) = |c|ⁿ⁺¹ vol(α)` and `vol(α) > 0`
 (`TauCeti.SmoothForm.IsContactForm.abs_eq_one_of_isStrictContactomorphism_smul`).
 
