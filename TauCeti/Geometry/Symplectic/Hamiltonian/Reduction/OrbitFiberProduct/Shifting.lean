@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduc
 import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
+import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Shifting
 import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
@@ -66,6 +67,7 @@ symplectic `σ`, `ω_red` is the unique symplectic form with this identity read 
 All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`.
 
 * `sub_orbitMap`: `Ψ` is a coadjoint-equivariant moment map of `σ ⊞ (-ω_KKS)`.
+* `isRegularValue_sub_orbitMap`: zero is a regular value of `Ψ`, read in a basis of `𝔤`.
 * `forall_differential_surjective_sub_orbitMap`: zero is a regular value of `Ψ`.
 * `isCancelSMul_levelSubMulAction_sub_orbitMap`: `G_0` acts freely on `Ψ⁻¹(0)`.
 * `orbitFiberProductDiffeomorphLevelSubMulAction`: the identity of points `W_O ≃ Ψ⁻¹(0)` as a
@@ -145,6 +147,22 @@ private theorem mem_levelSubMulAction_sub_orbitMap_iff {κ : Type*}
     p ∈ (h.sub_orbitMap c).levelSubMulAction 0 ↔
       (fun i ↦ μ p.1 (b i)) = fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i) :=
   h.mem_levelSubMulAction_sub_orbitMap.trans (components_eq_orbitMap_iff_apply_eq b).symm
+
+/-- **Zero is a regular value of the shifting map along the coadjoint orbit**
+`Ψ(x, o) = μ(x) - ι_O(o)` on `M × G ⧸ G_c`, read in the basis `b`, when `c` is a regular value of
+the coadjoint-equivariant moment map `μ`. -/
+theorem isRegularValue_sub_orbitMap
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    {κ : Type*} [Fintype κ] (b : Basis κ ℝ (GroupLieAlgebra I G)) :
+    IsRegularValue (I'.prod
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+      𝓘(ℝ, κ → ℝ)
+      (fun p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c ↦
+        fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) 0 :=
+  h.isRegularValue_sub hreg b
+    (fun o ↦ (c.contMDiff_orbitMap_coadjointRepresentation_components b o).mdifferentiableAt
+      (by simp))
+    fun o ↦ ⟨o.out, by rw [← Representation.orbitMap_mk, QuotientGroup.out_eq']⟩
 
 /-- **Zero is a regular value of the shifting moment map** `Ψ(x, o) = μ(x) - ι_O(o)` when `c` is a
 regular value of `μ`: at every point of `Ψ⁻¹(0)` the differential of `Ψ` is onto `𝔤*`. Indeed

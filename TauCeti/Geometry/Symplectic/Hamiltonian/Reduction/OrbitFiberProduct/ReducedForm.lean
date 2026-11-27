@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Shifting
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.BalancedProduct
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct
 
@@ -59,10 +58,9 @@ the tangent spaces of the fibres of `q_W`, which are the `G`-orbits of `W_O`.
 
 **The shifting map.** The points of `W_O` are the zeros of the shifting map
 `Ψ(x, o) = μ(x) - ι_O(o)` on `M × O`, the moment map of the diagonal action on `M × O⁻`, where `O⁻`
-carries `-ω_KKS`. Zero is a regular value of `Ψ`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isRegularValue_sub_orbitMap`). The comparison of
-`W_O` with the zero level of `Ψ`, and of its reduced form with the reduced form of `M × O⁻` at
-zero, is in `TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Shifting`.
+carries `-ω_KKS`. The comparison of `W_O` with the zero level of `Ψ`, and of its reduced form with
+the reduced form of `M × O⁻` at zero, is in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Shifting`.
 
 ## Main definitions
 
@@ -82,7 +80,6 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
   `G`-invariant `σ` satisfies `q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`.
 * `isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj`: the form
   `pr_M^* σ - pr_O^* ω_KKS` on `W_O` is closed with null spaces `ker d q_W`.
-* `isRegularValue_sub_orbitMap`: zero is a regular value of the shifting map.
 
 ## References
 
@@ -521,33 +518,6 @@ theorem isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj
     (hq.surjective_mfderiv (by simp)) hηq).1 hη
 
 end Reduced
-
-/-! ### The shifting map -/
-
-section Shifting
-
-variable [Fintype κ] [I.Boundaryless]
-  (h : σ.IsEquivariantMomentMap μ)
-  (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
-  (b : Basis κ ℝ (GroupLieAlgebra I G))
-
-omit [FiniteDimensional ℝ E'] in
-include hreg in
-/-- **Zero is a regular value of the shifting map along the coadjoint orbit**
-`Ψ(x, o) = μ(x) - ι_O(o)` on `M × G ⧸ G_c`, read in the basis `b`, when `c` is a regular value of
-the coadjoint-equivariant moment map `μ`. -/
-theorem isRegularValue_sub_orbitMap :
-    IsRegularValue (I'.prod
-        𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
-      𝓘(ℝ, κ → ℝ)
-      (fun p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c ↦
-        fun i ↦ μ p.1 (b i) - (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2 (b i)) 0 :=
-  h.isRegularValue_sub hreg b
-    (fun o ↦ (c.contMDiff_orbitMap_coadjointRepresentation_components b o).mdifferentiableAt
-      (by simp))
-    fun o ↦ ⟨o.out, by rw [← Representation.orbitMap_mk, QuotientGroup.out_eq']⟩
-
-end Shifting
 
 end IsEquivariantMomentMap
 
