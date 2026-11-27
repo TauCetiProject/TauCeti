@@ -76,9 +76,10 @@ section
 
 variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
 
+omit [HasBinaryBiproducts C] in
 /-- The components of the first projection of the mapping cocone are those of the first
 projection of the mapping cone. -/
-lemma fst_f {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p : ℤ) :
+lemma fst_f {K L : CochainComplex C ℤ} (φ : K ⟶ L) [HasHomotopyCofiber φ] (p : ℤ) :
     (fst φ).f p = (mappingCone.fst φ).val.v (p + -1) p (by lia) := by
   simp [fst, Cochain.leftShift_v (n := 1) _ _ _ _ _ p _ (p + -1) (by lia)]
   rfl
@@ -99,9 +100,11 @@ lemma shiftFunctor_map_mappingCone_map_comp_fst {K₁ L₁ K₂ L₂ : CochainCo
     (mappingCone.fst φ₁).val.v (n + -1) n (by lia) ≫ a.f n
   apply mappingCone.ext_from φ₁ n (n + -1) (by lia) <;> simp [mappingCone.map]
 
+omit [HasBinaryBiproducts C] in
 /-- The components of the second projection of the mapping cocone are those of the second
 projection of the mapping cone. -/
-lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + -1 = q) :
+lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) [HasHomotopyCofiber φ]
+    (p q : ℤ) (hpq : p + -1 = q) :
     (snd φ).v p q hpq = (mappingCone.snd φ).v (p + -1) q (by omega) := by
   subst hpq
   -- `snd φ` is a left shift of `mappingCone.snd φ`, but its source `mappingCocone φ` is
@@ -110,8 +113,9 @@ lemma snd_v {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + -
   rw [Cochain.leftShift_v _ (-1) (-1) _ p (p + -1) rfl (p + -1) (add_zero _)]
   simp [Int.negOnePow_even 2 ⟨1, rfl⟩]
 
+omit [HasBinaryBiproducts C] in
 /-- The second projection of the native shifted cone has differential `-f a - d b`. -/
-lemma d_snd_v {K L : CochainComplex C ℤ} (f : K ⟶ L) (p : ℤ) :
+lemma d_snd_v {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHomotopyCofiber f] (p : ℤ) :
     (mappingCocone f).d p (p + 1) ≫ (snd f).v (p + 1) p (by omega) =
       -(fst f).f p ≫ f.f p -
         (snd f).v p (p + -1) rfl ≫ L.d (p + -1) p := by
@@ -128,6 +132,19 @@ lemma d_snd_v {K L : CochainComplex C ℤ} (f : K ⟶ L) (p : ℤ) :
   rw [hcomp _ (by omega), mappingCone.d_snd_v f (p + -1) p (by omega)]
   simp only [neg_add, sub_eq_add_neg]
   rfl
+
+omit [HasBinaryBiproducts C] in
+/-- The differential of the negative second projection is the composite `Cocone(f) → X → Y`. -/
+lemma δ_neg_snd {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHomotopyCofiber f] :
+    δ (-1) 0 (-mappingCocone.snd f) = Cochain.ofHom (mappingCocone.fst f ≫ f) := by
+  ext p
+  rw [δ_neg, Cochain.neg_v, δ_v (-1) 0 (by omega) _ p p (by omega)
+    (p + -1) (p + 1) (by omega) (by omega)]
+  simp only [Int.negOnePow_zero, one_smul, Cochain.ofHom_v,
+    HomologicalComplex.comp_f]
+  have h := mappingCocone.d_snd_v f p
+  rw [h]
+  simp [sub_eq_add_neg]
 
 /-- The second projection of the mapping cocone is natural in commutative squares. -/
 @[reassoc]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
+public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCocone
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 
 /-!
@@ -17,19 +18,24 @@ A cochain complex `L` in an abelian category is K-injective (Mathlib's
 `CochainComplex.IsKInjective`) if every morphism from an acyclic complex to `L` is null-homotopic.
 This file proves that contractible complexes are K-injective
 (`CochainComplex.isKInjective_of_homotopy_id_zero`), that a right adjoint whose left adjoint is
-exact preserves K-injective complexes (`CochainComplex.isKInjective_map_of_adjunction`), and two
+exact preserves K-injective complexes (`CochainComplex.isKInjective_map_of_adjunction`), and
 closure properties of this class:
+
+* zero complexes, mapping cones and mapping cocones of maps between K-injective complexes
+  are K-injective (`CochainComplex.isKInjective_of_isZero`,
+  `CochainComplex.isKInjective_mappingCone`, `CochainComplex.isKInjective_mappingCocone`);
 
 * a product of K-injective complexes is K-injective (`CochainComplex.isKInjective_of_isLimit_fan`);
 * in a degreewise split short exact sequence `0 → X₁ → X₂ → X₃ → 0` of cochain complexes with
   `X₂` and `X₃` K-injective, the complex `X₁` is K-injective
   (`CochainComplex.isKInjective_X₁_of_degreewiseSplit`).
 
-The second statement holds because K-injective complexes form the right orthogonal of the acyclic
-complexes in the homotopy category, a triangulated subcategory, and a degreewise split short exact
-sequence gives a distinguished triangle there. Together these properties show that the limit of a
-tower of K-injective complexes with degreewise split surjective transitions is K-injective, which
-is the step of Spaltenstein's construction of K-injective replacements of unbounded complexes.
+The cone and degreewise split sequence statements hold because K-injective complexes form the
+right orthogonal of the acyclic complexes in the homotopy category, a triangulated subcategory,
+and a degreewise split short exact sequence gives a distinguished triangle there. Together these
+properties show that the limit of a tower of K-injective complexes with degreewise split
+surjective transitions is K-injective, which is the step of Spaltenstein's construction of
+K-injective replacements of unbounded complexes.
 
 K-injectivity is also equivalent to acyclicity of the Hom complex from every acyclic complex,
 for both the additive and linear Hom complexes. This identifies Mathlib's null-homotopy
@@ -60,6 +66,24 @@ theorem isKInjective_of_homotopy_id_zero {L : CochainComplex C ℤ} (h : Homotop
     L.IsKInjective where
   nonempty_homotopy_zero f _ :=
     ⟨(Homotopy.ofEq (Category.comp_id f).symm).trans ((h.compLeft f).trans (.ofEq (by simp)))⟩
+
+/-- A zero complex is K-injective. -/
+theorem isKInjective_of_isZero {L : CochainComplex C ℤ} (hL : IsZero L) : L.IsKInjective :=
+  isKInjective_of_homotopy_id_zero (.ofEq (hL.eq_of_src _ _))
+
+/-- The mapping cone of a map between K-injective complexes is K-injective. -/
+instance isKInjective_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    [K.IsKInjective] [L.IsKInjective] : (mappingCone f).IsKInjective := by
+  rw [isKInjective_iff_rightOrthogonal]
+  exact ObjectProperty.ext_of_isTriangulatedClosed₃ _ _
+    (HomotopyCategory.mappingCone_triangleh_distinguished f)
+    (IsKInjective.rightOrthogonal K) (IsKInjective.rightOrthogonal L)
+
+/-- The mapping cocone of a map between K-injective complexes is K-injective. -/
+instance isKInjective_mappingCocone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    [K.IsKInjective] [L.IsKInjective] : (mappingCocone f).IsKInjective := by
+  unfold mappingCocone
+  infer_instance
 
 /-- **Products of K-injective complexes are K-injective.** If `c` is a product of a family of
 K-injective cochain complexes, then its cone point is K-injective. -/

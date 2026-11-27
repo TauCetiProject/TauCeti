@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplexOne
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonsingular
 
 /-!
 # The nondegenerate simplices of the prism `Δ[p] ⊗ Δ[1]` as morphisms
@@ -44,6 +45,11 @@ variable {p : ℕ}
 `(0, 0), …, (i, 0), (i, 1), …, (p, 1)`, as a morphism `Δ[p + 1] ⟶ Δ[p] ⊗ Δ[1]`. -/
 noncomputable def ι (i : Fin (p + 1)) : Δ[p + 1] ⟶ (Δ[p] ⊗ Δ[1] : SSet.{u}) :=
   yonedaEquiv.symm (nonDegenerateEquiv i).val
+
+/-- The simplex represented by the inclusion of a nondegenerate prism simplex. -/
+lemma yonedaEquiv_ι (i : Fin (p + 1)) :
+    yonedaEquiv (ι.{u} i) = (nonDegenerateEquiv i).val :=
+  Equiv.apply_symm_apply _ _
 
 /-- The first projection of `ι i` is the degeneracy `σ i : Δ[p + 1] ⟶ Δ[p]`. -/
 @[reassoc (attr := simp)]
@@ -115,6 +121,11 @@ lemma objEquiv_nonDegenerateEquiv_succ (k i : Fin (p + 1)) (hi : k ≤ i) :
 lemma injective_objEquiv_nonDegenerateEquiv (k : Fin (p + 1)) :
     Function.Injective (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val) :=
   (prodStdSimplex.nonDegenerate_iff_injective_objEquiv _).1 (nonDegenerateEquiv k).property
+
+/-- Each nondegenerate prism simplex embeds as a subcomplex of the prism. -/
+instance (k : Fin (p + 1)) : Mono (ι.{u} k) := by
+  unfold ι
+  infer_instance
 
 /-! ### The square `Δ[1] ⊗ Δ[1]` -/
 
