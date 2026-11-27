@@ -89,15 +89,14 @@ private theorem singularHomologyπ_coverFundamentalClass_ne_zero {N : Type*} (p 
   have hloc := hfund.singularHomologyToLocalHomology_ne_zero hE x
   intro h
   apply hloc
-  -- The complement of the fibre over `p⁻¹(b)` lies in the complement of `x`, so the local image at
-  -- `x` factors through the relative class over the complement of the fibre.
-  have hsub : Set.MapsTo (𝟙 (TopCat.of (OrientationCover 𝓘(ℝ, E) M)))
-      (projHom (E := E) M ⁻¹' (p ⁻¹' {p a})ᶜ) {x}ᶜ := fun y hy hyx ↦
-    hy (by obtain rfl : y = x := hyx; exact congrArg p hx)
-  rw [singularHomologyToLocalHomology_eq_singularHomologyπ,
-    ← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (ModuleCat.of ℤ ℤ) hsub]
-  exact (congrArg (ModuleCat.Hom.hom (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hsub)
-    (ModuleCat.of ℤ ℤ) (n + 1))) h).trans (map_zero _)
+  -- The point `x` lies in the fibre over `p⁻¹(b)`, so the local image at `x` factors through the
+  -- relative class over the complement of the fibre.
+  have hx' : ({x} : Set (OrientationCover 𝓘(ℝ, E) M)) ⊆ projHom (E := E) M ⁻¹' (p ⁻¹' {p a}) :=
+    Set.singleton_subset_iff.2 (congrArg p hx)
+  rw [singularHomologyToLocalHomology_eq_singularHomologyπ]
+  exact (singularHomologyπ_localHomologyRestriction_apply _ hx' _ _).symm.trans
+    ((congrArg (localHomologyRestriction (ModuleCat.of ℤ ℤ) hx' (n + 1)).hom h).trans
+      (map_zero _))
 
 /-- **The twisted fundamental class lives over the fundamental class along any map**: for a map
 `p : M → N` and a point `b` in its range, the localization
