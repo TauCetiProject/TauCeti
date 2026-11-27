@@ -12,11 +12,12 @@ import Mathlib.RingTheory.Polynomial.Vieta
 /-!
 # The coefficients of `∏ⱼ (T - Xⱼ)` as coordinates on the symmetric polynomials
 
-Let `X₀, …, X_{n-1}` be the variables of `R[X₀, …, X_{n-1}]`. The coefficient of `T^k` in
-`∏ⱼ (T - Xⱼ)` is `(-1)^(n - k) e_{n - k}` (`MvPolynomial.prod_X_sub_C_coeff`), with `e_m` the
-elementary symmetric polynomial; in particular the constant coefficient is `(-1)^n X₀ ⋯ X_{n-1}`
-(`MvPolynomial.prod_X_sub_C_coeff_zero`). The algebra map `MvPolynomial.vietaAlgHom R n` sending
-`Xᵢ` to the coefficient of `T^i`, for `i < n`, is therefore the fundamental theorem of symmetric
+For a finite type `σ`, the coefficient of `T^k` in `∏ⱼ (T - Xⱼ)` over `R[Xⱼ : j ∈ σ]` is
+`(-1)^(|σ| - k) e_{|σ| - k}` (`MvPolynomial.prod_X_sub_C_coeff`), with `e_m` the elementary
+symmetric polynomial; in particular the constant coefficient is `(-1)^|σ| ∏ⱼ Xⱼ`
+(`MvPolynomial.prod_X_sub_C_coeff_zero`). For `σ = Fin n`, the algebra map
+`MvPolynomial.vietaAlgHom R n` of `R[X₀, …, X_{n-1}]` sending `Xᵢ` to the coefficient of `T^i`,
+for `i < n`, is therefore the fundamental theorem of symmetric
 polynomials up to reindexing and signs: it is injective (`MvPolynomial.vietaAlgHom_injective`)
 and its range is the symmetric subalgebra (`MvPolynomial.range_vietaAlgHom`).
 
@@ -35,24 +36,31 @@ public section
 
 namespace MvPolynomial
 
-variable (R : Type*) [CommRing R] (n : ℕ)
+section Coeff
 
-/-- **Vieta's formulas** in `n` variables: for `k ≤ n`, the coefficient of `T^k` in
-`∏ⱼ (T - Xⱼ)` is `(-1)^(n - k) e_{n - k}`. -/
-theorem prod_X_sub_C_coeff {k : ℕ} (hk : k ≤ n) :
-    (∏ j : Fin n, (Polynomial.X - Polynomial.C (X j : MvPolynomial (Fin n) R))).coeff k =
-      (-1) ^ (n - k) * esymm (Fin n) R (n - k) := by
+variable (R σ : Type*) [CommRing R] [Fintype σ]
+
+/-- **Vieta's formulas** for `MvPolynomial`: for `k ≤ |σ|`, the coefficient of `T^k` in
+`∏ⱼ (T - Xⱼ)` is `(-1)^(|σ| - k) e_{|σ| - k}`. -/
+theorem prod_X_sub_C_coeff {k : ℕ} (hk : k ≤ Fintype.card σ) :
+    (∏ j : σ, (Polynomial.X - Polynomial.C (X j : MvPolynomial σ R))).coeff k =
+      (-1) ^ (Fintype.card σ - k) * esymm σ R (Fintype.card σ - k) := by
   have h := Multiset.prod_X_sub_C_coeff
-    (Finset.univ.val.map (X : Fin n → MvPolynomial (Fin n) R)) (k := k) (by simpa using hk)
-  rw [Multiset.map_map] at h
-  simpa [esymm_eq_multiset_esymm, Finset.prod_eq_multiset_prod] using h
+    (Finset.univ.val.map (X : σ → MvPolynomial σ R)) (k := k) (by simpa using hk)
+  rw [Multiset.map_map, Function.comp_def, Multiset.card_map, ← Finset.card_def,
+    Finset.card_univ] at h
+  rw [esymm_eq_multiset_esymm, Finset.prod_eq_multiset_prod, ← h]
 
-/-- The constant coefficient of `∏ⱼ (T - Xⱼ)` is `(-1)^n X₀ ⋯ X_{n-1}`. -/
+/-- The constant coefficient of `∏ⱼ (T - Xⱼ)` is `(-1)^|σ| ∏ⱼ Xⱼ`. -/
 theorem prod_X_sub_C_coeff_zero :
-    (∏ j : Fin n, (Polynomial.X - Polynomial.C (X j : MvPolynomial (Fin n) R))).coeff 0 =
-      (-1) ^ n * ∏ j : Fin n, X j := by
+    (∏ j : σ, (Polynomial.X - Polynomial.C (X j : MvPolynomial σ R))).coeff 0 =
+      (-1) ^ Fintype.card σ * ∏ j : σ, X j := by
   rw [Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod]
   simp [Finset.prod_neg]
+
+end Coeff
+
+variable (R : Type*) [CommRing R] (n : ℕ)
 
 /-- The algebra map sending `Xᵢ`, for `i < n`, to the coefficient of `T^i` in `∏ⱼ (T - Xⱼ)`. -/
 noncomputable def vietaAlgHom : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R :=
@@ -90,7 +98,8 @@ private theorem vietaAlgHom_eq :
       ((symmetricSubalgebra (Fin n) R).val.comp (esymmAlgHom (Fin n) R n)).comp (signRev R n) := by
   ext i : 1
   have hi : n - (i : ℕ) = (Fin.rev i : ℕ) + 1 := by rw [Fin.val_rev]; omega
-  simp [vietaAlgHom, signRev, esymmAlgHom, prod_X_sub_C_coeff R n i.is_lt.le, hi]
+  simp [vietaAlgHom, signRev, esymmAlgHom,
+    prod_X_sub_C_coeff R (Fin n) (k := i) (by simp), hi]
 
 /-- **The coefficients of `∏ⱼ (T - Xⱼ)` are algebraically independent.** -/
 theorem vietaAlgHom_injective : Function.Injective (vietaAlgHom R n) := by

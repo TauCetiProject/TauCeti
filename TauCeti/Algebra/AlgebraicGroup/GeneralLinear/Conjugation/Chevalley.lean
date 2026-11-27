@@ -375,7 +375,8 @@ theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHo
       mul_comm (IsLocalization.Away.invSelf _), IsLocalization.Away.mul_invSelf, one_pow, mul_one]
   have hx : MvPolynomial.vietaAlgHom R n (MvPolynomial.X 0) =
       (-1) ^ n * ∏ j : Fin n, MvPolynomial.X j := by
-    rw [MvPolynomial.vietaAlgHom_X, Fin.val_zero, MvPolynomial.prod_X_sub_C_coeff_zero]
+    rw [MvPolynomial.vietaAlgHom_X, Fin.val_zero, MvPolynomial.prod_X_sub_C_coeff_zero,
+      Fintype.card_fin]
   -- Read `hF` at `δ`: `δ(F) · ((-1)ⁿ t₁ ⋯ tₙ)^m = (-1)^(nm) p`.
   have h1 := congrArg (fun y : HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n) ↦
     δ.ofConv (y : coordinateHopfAlgebra R n)) hF
