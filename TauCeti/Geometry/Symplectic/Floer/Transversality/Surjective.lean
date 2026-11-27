@@ -362,12 +362,8 @@ private theorem isFredholm_floerSobolevOperator_of_cylindrical_of_compatible_of_
       u).IsFredholm :=
   ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl hJ hKs
     (hKt.of_le (by norm_num)) hJc hu hXm
-    (contDiff_endData_of_eq (-R) (fun t ↦ hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl)
-      (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (-R, t) le_rfl) hJ hKt).2
-    hHmper hxm hxmper hndm huxm hδm hXp
-    (contDiff_endData_of_eq R (fun t ↦ hcyl.almostComplex_eq_of_le (R, t) le_rfl)
-      (fun t ↦ hcyl.hamiltonianT_eq_of_le (R, t) le_rfl) hJ hKt).2
-    hHpper hxp hxpper hndp huxp hδp
+    (hcyl.contDiff_endData_neg hJ hKt).2 hHmper hxm hxmper hndm huxm hδm hXp
+    (hcyl.contDiff_endData_pos hJ hKt).2 hHpper hxp hxpper hndp huxp hδp
 
 /-- **The universal linearized Floer operator of data cylindrical near the ends is onto.** Let `F`
 be a finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and
@@ -418,10 +414,8 @@ theorem
     hJ.of_le (by norm_num)
   -- The data of the ends are those of the cylinder at `s = ∓R`, so their structures are `C¹` and
   -- their Hamiltonians `C³`.
-  have hm := contDiff_endData_of_eq (-R) (fun t ↦ hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (-R, t) le_rfl) hJ₁ hKt
-  have hp := contDiff_endData_of_eq R (fun t ↦ hcyl.almostComplex_eq_of_le (R, t) le_rfl)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le (R, t) le_rfl) hJ₁ hKt
+  have hm := hcyl.contDiff_endData_neg hJ₁ hKt
+  have hp := hcyl.contDiff_endData_pos hJ₁ hKt
   -- The realization of the linearized operator is Fredholm.
   have hD := isFredholm_floerSobolevOperator_of_cylindrical_of_compatible_of_contDiff ω hω hcyl hJ₁
     (hKs.of_le (by norm_num)) hKt hJc (hu.of_le (by norm_num)) hXm hHmper hxm hxmper hndm huxm hδm
