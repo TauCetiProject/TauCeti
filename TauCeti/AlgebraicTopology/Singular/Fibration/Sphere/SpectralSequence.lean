@@ -24,9 +24,10 @@ indexing `E^r_{k,q}`, with `E¹_{k,q} = Hq+k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); R)
   `E¹_{0,q} ≅ Hq(p⁻¹(x₀); R)` (`TauCeti.TopCat.sphereSerreSpectralSequenceFirstPageXIsoPole`) while,
   for a Serre fibration, `E¹_{n,q} ≅ Hq(p⁻¹(x₁); R)`
   (`TauCeti.TopCat.sphereSerreSpectralSequenceFirstPageXIsoTopCell`);
-* a differential `d^r` moves `r` columns to the left, so the two columns survive unchanged up to
-  `Eⁿ` (`TauCeti.TopCat.sphereSerreSpectralSequencePageXIsoFirstPageX`); in particular `E² = E¹`
-  when `n ≥ 2`;
+* a differential `d^r` moves `r` columns to the left
+  (`TauCeti.TopCat.isZero_sphereSerreSpectralSequence_page_two_X_of_rel`), so the two columns
+  survive unchanged up to `Eⁿ` (`TauCeti.TopCat.sphereSerreSpectralSequencePageXIsoFirstPageX`); in
+  particular `E² = E¹` when `n ≥ 2`;
 * the only differential that can be nonzero from then on is the transgression
   `dⁿ : Eⁿ_{n,q} ⟶ Eⁿ_{0,q+n-1}`, after which the spectral sequence stops: `Eⁿ⁺¹ = E^∞` is made of
   graded pieces of `H*(E; R)`, and vanishes in total degree `m` when `Hₘ(E; R) = 0`
@@ -107,6 +108,7 @@ theorem isZero_sphereSerreSpectralSequence_page_two_X (pq : ℤ × ℤ) (h₀ : 
 
 /-- **The column `0` of the first page of the Serre spectral sequence of a map to `Sⁿ`** is the
 homology of the fibre over the pole: `E¹_{0,q} = Hq(p⁻¹(x₀), ∅; R) ≅ Hq(p⁻¹(x₀); R)`. -/
+@[expose, simps! hom]
 def sphereSerreSpectralSequenceFirstPageXIsoPole (hn : 1 ≤ n) (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
     (ha : pq.1 + pq.2 = -(q : ℕ)) :
     ((sphereSerreSpectralSequence h p R).page 2).X pq ≅
@@ -129,6 +131,7 @@ variable {p} in
 /-- **The column `n` of the first page of the Serre spectral sequence of a map to `Sⁿ`** is the
 homology of the fibre over the centre `x₁` of the top cell, shifted by `n`:
 `E¹_{n,q} = Hq+n(E, p⁻¹(x₀); R) ≅ Hq(p⁻¹(x₁); R)`. -/
+@[expose, simps! hom]
 def sphereSerreSpectralSequenceFirstPageXIsoTopCell (hp : serreFibrations p) (hn : 1 ≤ n) (q : ℕ)
     (pq : ℤ × ℤ) (hb : pq.2 = n - 1) (ha : pq.1 + pq.2 = -(q + n : ℕ)) :
     ((sphereSerreSpectralSequence h p R).page 2).X pq ≅
@@ -143,6 +146,17 @@ def sphereSerreSpectralSequenceFirstPageXIsoTopCell (hp : serreFibrations p) (hn
       (q + n) ≪≫
     sphereFibrationSingularHomologyIso h hp R hn q
 
+/-- Before the page `n + 1`, every position joined to a position `pq` in the column `0` or `n` by
+a differential of the Serre spectral sequence of a map to `Sⁿ` lies in an empty column of the first
+page. -/
+theorem isZero_sphereSerreSpectralSequence_page_two_X_of_rel (r : ℤ) (hrn : r ≤ n + 1)
+    (pq : ℤ × ℤ) (hb : pq.2 = -1 ∨ pq.2 = n - 1) (s : ℤ) (hs : 2 ≤ s) (hsr : s < r) (pq' : ℤ × ℤ)
+    (hpq' : (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq pq' ∨
+      (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq' pq) :
+    IsZero (((sphereSerreSpectralSequence h p R).page 2).X pq') := by
+  have := ComplexShape.snd_eq_of_up'_rel hpq'
+  exact isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)
+
 /-- **The objects of the two columns survive to the page `n + 1`.** For `2 ≤ r ≤ n + 1`, the
 object at a position `pq` in the column `0` or `n` of the page `r` of the Serre spectral sequence of
 a map to `Sⁿ` is the object of the first page: the differentials of the pages before `n + 1` join
@@ -152,9 +166,17 @@ def sphereSerreSpectralSequencePageXIsoFirstPageX (r : ℤ) (hr : 2 ≤ r)
     ((sphereSerreSpectralSequence h p R).page r).X pq ≅
       ((sphereSerreSpectralSequence h p R).page 2).X pq :=
   (sphereSerreSpectralSequence h p R).pageXIsoOfLEOfIsZeroOfLT le_rfl r hr
-    fun s hs hsr pq' hpq' ↦ by
-      have := ComplexShape.snd_eq_of_up'_rel hpq'
-      exact isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)
+    (isZero_sphereSerreSpectralSequence_page_two_X_of_rel h p R r hrn pq hb)
+
+/-- `TauCeti.TopCat.sphereSerreSpectralSequencePageXIsoFirstPageX` is the survival isomorphism
+`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZeroOfLT` from the first page. -/
+@[simp]
+theorem sphereSerreSpectralSequencePageXIsoFirstPageX_hom (r : ℤ) (hr : 2 ≤ r)
+    (hrn : r ≤ n + 1) (pq : ℤ × ℤ) (hb : pq.2 = -1 ∨ pq.2 = n - 1) :
+    (sphereSerreSpectralSequencePageXIsoFirstPageX h p R r hr hrn pq hb).hom =
+      ((sphereSerreSpectralSequence h p R).pageXIsoOfLEOfIsZeroOfLT le_rfl r hr
+        (isZero_sphereSerreSpectralSequence_page_two_X_of_rel h p R r hrn pq hb)).hom :=
+  (rfl)
 
 /-- **The page `n + 2` of the Serre spectral sequence of a map to `Sⁿ` is its last.** From the page
 `n + 2` on, every differential at a position `pq` in the column `0` or `n` joins it to an empty

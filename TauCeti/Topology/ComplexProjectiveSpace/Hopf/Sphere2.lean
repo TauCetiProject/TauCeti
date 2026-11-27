@@ -44,7 +44,8 @@ vanishes.
 * `TauCeti.nonempty_addEquiv_int_homotopyGroup_three_sphere2`: `π₃(S²) ≅ ℤ`.
 * `TauCeti.hopfSphere2Hom_mem_serreFibrations`: the Hopf map `S³ → S²` is a Serre fibration.
 * `TauCeti.hopfSphere2FiberHomeomorph`: its fibres are circles, those of the Hopf fibration
-  `S³ → CP¹` (`TauCeti.preimage_hopfSphere2_singleton`).
+  `S³ → CP¹` (`TauCeti.preimage_hopfSphere2_singleton`); `TauCeti.hopfSphere2HomFiberHomeomorph`
+  is the same for the fibres of `TauCeti.hopfSphere2Hom`.
 
 ## References
 
@@ -123,9 +124,7 @@ by the homeomorphism `CP¹ ≃ₜ S²`. -/
 theorem hopfSphere2Hom_mem_serreFibrations : TopCat.serreFibrations hopfSphere2Hom := by
   have : hopfHom 1 ≫ (TopCat.isoOfHomeo homeomorphSphere2).hom = hopfSphere2Hom := by
     ext v : 1
-    rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, TopCat.ofHom_apply,
-      TopCat.ofHom_apply]
-    exact homeomorphSphere2_mk v
+    simp
   rw [← this]
   exact MorphismProperty.RespectsIso.postcomp _ _ _ (mk_mem_serreFibrations 1)
 
@@ -166,5 +165,19 @@ theorem hopfSphere2FiberHomeomorph_one {x : Sphere2}
     (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) (hv : hopfSphere2 v = x) :
     hopfSphere2FiberHomeomorph v hv 1 = ⟨v, hv⟩ :=
   Subtype.ext ((coe_hopfSphere2FiberHomeomorph_apply v hv 1).trans (one_smul _ v))
+
+/-- **The fibres of the Hopf map `S³ → S²`, as a morphism of topological spaces, are circles**:
+`TauCeti.hopfSphere2FiberHomeomorph`, read on the preimage under `TauCeti.hopfSphere2Hom`. -/
+def hopfSphere2HomFiberHomeomorph {x : Sphere2} (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1)
+    (hv : hopfSphere2 v = x) : sphere (0 : ℂ) 1 ≃ₜ (hopfSphere2Hom ⁻¹' {x} : Set _) :=
+  (hopfSphere2FiberHomeomorph v hv).trans (Homeomorph.setCongr (preimage_hopfSphere2Hom {x}).symm)
+
+/-- The homeomorphism of the unit circle with a fibre of `TauCeti.hopfSphere2Hom` is the orbit map
+`u ↦ u • v`. -/
+theorem coe_hopfSphere2HomFiberHomeomorph_apply {x : Sphere2}
+    (v : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) (hv : hopfSphere2 v = x)
+    (u : sphere (0 : ℂ) 1) :
+    (hopfSphere2HomFiberHomeomorph v hv u : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) = u • v :=
+  coe_hopfFiberHomeomorph_apply v u
 
 end TauCeti
