@@ -22,6 +22,8 @@ all of which a construction transporting a group of matrices along a change of s
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.piEquiv_apply_eq_map_eval`: a component of a matrix over a product
+  is its image under evaluation.
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
@@ -45,6 +47,13 @@ public section
 namespace Matrix.GeneralLinearGroup
 
 variable {n R S : Type*} [DecidableEq n] [Fintype n] [CommRing R] [CommRing S]
+
+/-- The component of an invertible matrix over a product of rings is its image under the
+corresponding evaluation homomorphism. -/
+theorem piEquiv_apply_eq_map_eval {ι : Type*} (A : ι → Type*) [∀ i, CommRing (A i)]
+    (g : GL n (∀ i, A i)) (i : ι) : piEquiv A g i = map (Pi.evalRingHom A i) g := by
+  ext j k
+  simp
 
 /-- **Entrywise application of an injective ring hom is injective on `GL n`.** A matrix over `R`
 is determined by its image over `S`, and a unit by its underlying matrix. -/

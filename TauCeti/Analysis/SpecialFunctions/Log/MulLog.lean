@@ -28,6 +28,8 @@ second differences are `O(|h|)`, although it is not Lipschitz near `0`.
   `a - b ≤ a * log a - a * log b`, the scalar form of Klein's inequality.
 * `Real.mul_negMulLog_div`, `Real.mul_log_div_nonneg`: `q * negMulLog (p / q) = p * log (q / p)`,
   and `0 ≤ p * log (q / p)` for `0 ≤ p ≤ q`, the terms of a conditional entropy.
+* `Real.mul_sum_negMulLog_div`: for `rⱼ ≥ 0` summing to `p`,
+  `p * ∑ⱼ negMulLog (rⱼ / p) = ∑ⱼ negMulLog rⱼ - negMulLog p`.
 * `Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 * `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
@@ -105,6 +107,25 @@ theorem mul_negMulLog_div (p q : ℝ) : q * negMulLog (p / q) = p * log (q / p) 
   · simp
   · rw [negMulLog, show q / p = (p / q)⁻¹ from (inv_div p q).symm, log_inv]
     field_simp
+
+/-- For `rⱼ ≥ 0` summing to `p`, `p * ∑ⱼ negMulLog (rⱼ / p) = ∑ⱼ negMulLog rⱼ - negMulLog p`:
+rescaled entropy of the normalised weights `rⱼ / p`, as in the chain rule for entropy. -/
+theorem mul_sum_negMulLog_div {κ : Type*} [Fintype κ] {p : ℝ} {r : κ → ℝ} (hr : ∀ j, 0 ≤ r j)
+    (hsum : ∑ j, r j = p) :
+    p * ∑ j, negMulLog (r j / p) = ∑ j, negMulLog (r j) - negMulLog p := by
+  by_cases hp : p = 0
+  · have : ∀ j, r j = 0 := fun j ↦
+      (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦ hr k).1 (hsum.trans hp) j (Finset.mem_univ j)
+    simp [hp, this]
+  have key : ∀ j, p * negMulLog (r j / p) = negMulLog (r j) + r j * log p := fun j ↦ by
+    by_cases hrj : r j = 0
+    · simp [hrj]
+    rw [negMulLog, negMulLog, log_div hrj hp]
+    field_simp
+    ring
+  rw [Finset.mul_sum, Finset.sum_congr rfl fun j _ ↦ key j, Finset.sum_add_distrib,
+    ← Finset.sum_mul, hsum, negMulLog]
+  ring
 
 /-- The term `p * log (q / p)` of the conditional entropy is nonnegative for `0 ≤ p ≤ q`. -/
 theorem mul_log_div_nonneg {p q : ℝ} (hp : 0 ≤ p) (hpq : p ≤ q) : 0 ≤ p * log (q / p) := by

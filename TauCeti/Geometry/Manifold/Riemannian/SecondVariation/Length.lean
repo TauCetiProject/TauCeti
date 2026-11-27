@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
+public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Normal
 public import TauCeti.Geometry.Manifold.Riemannian.SecondVariation.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
