@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
+import TauCeti.Data.Int.SumSquares
 
 /-!
 # Jacobsthal sums
@@ -197,17 +198,6 @@ theorem sum_jacobsthalPhi_two_sq (hF : ringChar F ≠ 2) :
         rw [← mul_sum, sum_quadraticChar_sq]
         ring
 
-/-- If `a² + b² = 4 n` in `ℤ`, then `a` and `b` are even and `(a / 2)² + (b / 2)² = n`. -/
-private lemma sq_div_two_add_sq_div_two {a b n : ℤ} (h : a ^ 2 + b ^ 2 = 4 * n) :
-    (a / 2) ^ 2 + (b / 2) ^ 2 = n := by
-  obtain ⟨k, rfl | rfl⟩ := Int.even_or_odd' a <;> obtain ⟨m, rfl | rfl⟩ := Int.even_or_odd' b
-  · rw [show 2 * k / 2 = k by omega, show 2 * m / 2 = m by omega]
-    ring_nf at h ⊢
-    omega
-  all_goals
-    ring_nf at h
-    omega
-
 /-- **Jacobsthal's two-squares identity**: over a finite field with `q ≡ 1 (mod 4)` elements,
 `q = (φ_2(1) / 2)² + (φ_2(r) / 2)²` for every non-square `r`. Here `φ_2(1)` and `φ_2(r)` are
 even, since their squares sum to `4 q`, so the divisions in `ℤ` are exact. -/
@@ -237,7 +227,7 @@ theorem jacobsthalPhi_two_sq_add_sq (hq : Fintype.card F % 4 = 1) {r : F} (hr : 
   have hq1 : (Fintype.card F : ℤ) - 1 ≠ 0 := by
     have := Fintype.one_lt_card (α := F)
     omega
-  refine sq_div_two_add_sq_div_two (mul_left_cancel₀ hq1 ?_)
+  refine div_two_sq_add_div_two_sq_of_sq_add_sq_eq_four_mul (mul_left_cancel₀ hq1 ?_)
   linear_combination hsum
 
 end TauCeti
