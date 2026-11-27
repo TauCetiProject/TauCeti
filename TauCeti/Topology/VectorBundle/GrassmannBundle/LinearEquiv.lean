@@ -135,6 +135,20 @@ theorem mapLinearEquiv_comp (g : B' → B'') (L' : ∀ y, E' y ≃L[ℝ] E'' (g 
   exact TotalSpace.ext rfl (heq_of_eq (congrArg Subtype.val
     ((L x).grassmannianMap_trans (L' (f x)) ⟨P, mem_grassmannBundle.1 hP⟩)))
 
+/-- Over a fixed base, the map induced by the fibrewise inverses `L_x⁻¹` undoes the map induced
+by `L`. -/
+@[simp]
+theorem mapLinearEquiv_symm_mapLinearEquiv {E₂ : B → Type*} [∀ b, NormedAddCommGroup (E₂ b)]
+    [∀ b, InnerProductSpace ℝ (E₂ b)] [∀ b, FiniteDimensional ℝ (E₂ b)]
+    (L : ∀ x, E x ≃L[ℝ] E₂ x) (p : grassmannBundle F E k) :
+    mapLinearEquiv id (fun x ↦ (L x).symm) (mapLinearEquiv id L p : grassmannBundle F' E₂ k) =
+      p := by
+  obtain ⟨⟨x, P⟩, hP⟩ := p
+  refine Subtype.ext ?_
+  simp only [coe_mapLinearEquiv_apply]
+  exact TotalSpace.ext rfl (heq_of_eq (congrArg Subtype.val
+    ((L x).symm_grassmannianMap_grassmannianMap ⟨P, mem_grassmannBundle.1 hP⟩)))
+
 /-- For fibrewise linear isometries, the induced map is the conjugation map
 `TauCeti.grassmannBundle.map`: `P_{U_x (range P)} = U_x P U_x⁻¹`. -/
 theorem mapLinearEquiv_toContinuousLinearEquiv (U : ∀ x, E x ≃ₗᵢ[ℝ] E' (f x)) :
@@ -217,8 +231,7 @@ private theorem grassmannBundle_mapLinearEquiv (L : ∀ x, E x ≃L[ℝ] E' (f x
     LinearIsometryEquiv.grassmannianMap_toContinuousLinearEquiv,
     LinearIsometryEquiv.grassmannianMap_toContinuousLinearEquiv, hσ,
     Trivialization.coe_grassmannBundle_apply_snd,
-    LinearIsometryEquiv.coe_grassmannianCongr_apply]
-  rfl
+    LinearIsometryEquiv.coe_grassmannianCongr_apply, coe_mapLinearEquiv_apply]
 
 omit [FiniteDimensional ℝ F] [∀ b, FiniteDimensional ℝ (E b)] [∀ b, FiniteDimensional ℝ (E' b)]
   [FiniteDimensional ℝ V'] in
@@ -259,10 +272,9 @@ theorem continuous_mapLinearEquiv (hf : Continuous f)
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
   let x₀ := proj p₀
   -- The model fibres are finite-dimensional, being isomorphic to fibres of `E` and `E'`.
-  have : FiniteDimensional ℝ F := ((trivializationAt F E x₀).continuousLinearEquivAt ℝ x₀
-    (mem_baseSet_trivializationAt F E x₀)).toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ F' := ((trivializationAt F' E' (f x₀)).continuousLinearEquivAt ℝ
-    (f x₀) (mem_baseSet_trivializationAt F' E' (f x₀))).toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ F := (VectorBundle.continuousLinearEquivAt ℝ F E x₀).finiteDimensional
+  have : FiniteDimensional ℝ F' :=
+    (VectorBundle.continuousLinearEquivAt ℝ F' E' (f x₀)).finiteDimensional
   let φ := trivializationAt F E x₀
   let φ' := trivializationAt F' E' (f x₀)
   let b := EuclideanSpace.basisFun (Fin (finrank ℝ F)) ℝ
@@ -308,25 +320,16 @@ def mapLinearEquivHomeomorph {E' : B → Type*} [TopologicalSpace (TotalSpace F'
     grassmannBundle F E k ≃ₜ grassmannBundle F' E' k where
   toFun := mapLinearEquiv id L
   invFun := mapLinearEquiv id fun x ↦ (L x).symm
-  left_inv p := by
-    rw [← Function.comp_apply (f := mapLinearEquiv _ _), ← mapLinearEquiv_comp]
-    have h : (fun x ↦ (L x).trans (L (id x)).symm) = fun x ↦ ContinuousLinearEquiv.refl ℝ (E x) :=
-      funext fun x ↦ (L x).self_trans_symm
-    rw [h]
-    exact congrFun mapLinearEquiv_id p
+  left_inv := mapLinearEquiv_symm_mapLinearEquiv L
   right_inv p := by
-    rw [← Function.comp_apply (f := mapLinearEquiv _ _), ← mapLinearEquiv_comp]
-    have h : (fun x ↦ (L x).symm.trans (L (id x))) =
-        fun x ↦ ContinuousLinearEquiv.refl ℝ (E' x) :=
-      funext fun x ↦ (L x).symm_trans_self
-    rw [h]
-    exact congrFun mapLinearEquiv_id p
+    simpa only [ContinuousLinearEquiv.symm_symm] using
+      mapLinearEquiv_symm_mapLinearEquiv (F' := F) (fun x ↦ (L x).symm) p
   continuous_toFun := continuous_mapLinearEquiv continuous_id hL
   continuous_invFun := by
     refine continuous_mapLinearEquiv continuous_id fun x₀ ↦ ?_
-    -- The model fibre `F` is complete, being isomorphic to the fibre over `x₀`.
-    have : FiniteDimensional ℝ F := ((trivializationAt F E x₀).continuousLinearEquivAt ℝ x₀
-      (mem_baseSet_trivializationAt F E x₀)).toLinearEquiv.finiteDimensional
+    -- The model fibre `F` is finite-dimensional, being isomorphic to the fibre over `x₀`.
+    have : FiniteDimensional ℝ F :=
+      (VectorBundle.continuousLinearEquivAt ℝ F E x₀).finiteDimensional
     have h := (hL x₀).inCoordinates_clm_inverse (b₁ := id) (b₂ := id)
       isInvertible_equiv
     simpa only [inverse_equiv, id_eq] using h

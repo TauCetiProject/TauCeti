@@ -48,22 +48,6 @@ public section
 open Module ContinuousLinearMap Euclidean
 open scoped InnerProductSpace
 
-namespace Euclidean.grassmannian
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] {k : ℕ}
-
-/-- Two points of the Grassmannian with the same plane are equal: each is the orthogonal
-projection onto its range. -/
-theorem ext_range {P Q : grassmannian ℝ E k}
-    (h : (P : E →L[ℝ] E).range = (Q : E →L[ℝ] E).range) : P = Q := by
-  obtain ⟨_, hP⟩ := eq_starProjection_range P.property
-  obtain ⟨_, hQ⟩ := eq_starProjection_range Q.property
-  refine Subtype.ext ?_
-  rw [hP, hQ]
-  simp_rw [h]
-
-end Euclidean.grassmannian
-
 namespace ContinuousLinearEquiv
 
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -92,6 +76,7 @@ theorem grassmannianMap_eq_imagePlane (P : grassmannian ℝ E k) :
   Subtype.ext (by rw [grassmannian.coe_imagePlane_apply, coe_grassmannianMap_apply])
 
 /-- The plane of the image of `P` is `L (range P)`. -/
+@[simp]
 theorem range_coe_grassmannianMap_apply (P : grassmannian ℝ E k) :
     (L.grassmannianMap k P : F →L[ℝ] F).range =
       (P : E →L[ℝ] E).range.map (L : E →ₗ[ℝ] F) := by
@@ -110,9 +95,7 @@ theorem grassmannianMap_refl (P : grassmannian ℝ E k) :
 theorem grassmannianMap_trans (L' : F ≃L[ℝ] G) (P : grassmannian ℝ E k) :
     (L.trans L').grassmannianMap k P = L'.grassmannianMap k (L.grassmannianMap k P) := by
   refine grassmannian.ext_range ?_
-  rw [range_coe_grassmannianMap_apply, range_coe_grassmannianMap_apply,
-    range_coe_grassmannianMap_apply, ← Submodule.map_comp]
-  rfl
+  simp [← Submodule.map_comp]
 
 /-- The inverse equivalence undoes the induced map. -/
 @[simp]
@@ -172,6 +155,7 @@ theorem grassmannianMap_toContinuousLinearEquiv (U : E ≃ₗᵢ[ℝ] F) (P : gr
     U.toContinuousLinearEquiv.grassmannianMap k P = U.grassmannianCongr k P := by
   refine grassmannian.ext_range ?_
   rw [ContinuousLinearEquiv.range_coe_grassmannianMap_apply, range_coe_grassmannianCongr_apply]
+  -- `U.toContinuousLinearEquiv` and `U.toLinearEquiv` are the same linear map by definition.
   rfl
 
 end LinearIsometryEquiv
@@ -183,13 +167,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   (L : E ≃L[ℝ] F)
 
 /-- For a continuous linear equivalence `L` that multiplies inner products by the constant `c²`,
-the orthogonal projection onto `L (range P)` is `L P L⁻¹`: for `c ≠ 0`, `c⁻¹ L` is a linear
-isometry equivalence, under which orthogonal projections correspond, and for `c = 0` the space
-`F` is zero. -/
+the orthogonal projection onto `L (range P)` is `L P L⁻¹`. -/
 theorem coe_grassmannianMap_of_inner_map_map {c : ℝ}
     (h : ∀ u v, ⟪L u, L v⟫_ℝ = c ^ 2 * ⟪u, v⟫_ℝ) (P : grassmannian ℝ E k) :
     (L.grassmannianMap k P : F →L[ℝ] F) =
       (L : E →L[ℝ] F) ∘L (P : E →L[ℝ] E) ∘L (L.symm : F →L[ℝ] E) := by
+  -- For `c ≠ 0`, `c⁻¹ L` is a linear isometry equivalence, under which orthogonal projections
+  -- correspond; for `c = 0` the space `F` is zero.
   rcases eq_or_ne c 0 with rfl | hc
   · -- For `c = 0` every vector `L u` of `F` has `⟪L u, L u⟫ = 0`.
     have hF (w : F) : w = 0 := by

@@ -79,8 +79,8 @@ def h : ContinuousRiemannianMetric F E :=
   metricOfForm (euclidForm + (3 : ℝ) • secondCoord)
     (fun u v ↦ by simp [euclidForm_apply, secondCoord_apply, real_inner_comm v u, mul_comm (u 1)])
     fun v ↦ by
-      change ‖v‖ ^ 2 ≤ euclidForm v v + 3 * secondCoord v v
-      rw [euclidForm_apply, secondCoord_apply, real_inner_self_eq_norm_sq]
+      rw [add_apply, smul_apply, add_apply, smul_apply, smul_eq_mul, euclidForm_apply,
+        secondCoord_apply, real_inner_self_eq_norm_sq]
       nlinarith [mul_self_nonneg (v 1)]
 
 /-- The metric `4 g` on `ℝ²`. -/
@@ -88,8 +88,7 @@ def h₄ : ContinuousRiemannianMetric F E :=
   metricOfForm ((4 : ℝ) • euclidForm)
     (fun u v ↦ by simp [euclidForm_apply, real_inner_comm v u])
     fun v ↦ by
-      change ‖v‖ ^ 2 ≤ 4 * euclidForm v v
-      rw [euclidForm_apply, real_inner_self_eq_norm_sq]
+      rw [smul_apply, smul_apply, smul_eq_mul, euclidForm_apply, real_inner_self_eq_norm_sq]
       nlinarith [sq_nonneg ‖v‖]
 
 /-- A vector of `ℝ²`, in the copy carrying the metric `k`. -/
@@ -120,7 +119,7 @@ theorem P_apply_e₀ (k : ContinuousRiemannianMetric F E) :
   rw [P, Euclidean.grassmannian.coe_spanLine, Submodule.starProjection_singleton,
     ← real_inner_self_eq_norm_sq, vec, vec, inner_toWithFiberMetric, inner_toWithFiberMetric,
     map_smul, ContinuousLinearEquiv.symm_apply_apply]
-  rfl
+  rw [RCLike.ofReal_real_eq_id, id_eq]
 
 /-- **Check.** The Euclidean orthogonal projection onto `span(u)` sends `e₀` to `u / 2`. -/
 theorem P_g_apply_e₀ :
@@ -148,11 +147,11 @@ theorem metricChangeHomeomorph_P :
   rw [grassmannBundle.metricChangeHomeomorph_fiberIncl]
   congr 1
   refine Euclidean.grassmannian.ext_range ?_
-  rw [range_coe_grassmannianMap_metricChange, P, P, Euclidean.grassmannian.coe_spanLine,
-    Euclidean.grassmannian.coe_spanLine, Submodule.range_starProjection,
-    Submodule.range_starProjection, Submodule.map_span, Set.image_singleton]
-  change ℝ ∙ (metricChange g h () (vec g u)) = _
-  rw [metricChange_apply, vec, vec, toWithFiberMetric_apply, toWithFiberMetric_apply]
+  rw [ContinuousLinearEquiv.range_coe_grassmannianMap_apply, P, P,
+    Euclidean.grassmannian.coe_spanLine, Euclidean.grassmannian.coe_spanLine,
+    Submodule.range_starProjection, Submodule.range_starProjection, Submodule.map_span,
+    Set.image_singleton, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    metricChange_apply, vec, vec, toWithFiberMetric_apply, toWithFiberMetric_apply]
 
 /-- **Check.** The canonical homeomorphism is not the identity on projections: at `e₀`, the image
 `P^h` of `P^g` takes the value `u / 5`, while `P^g` takes the value `u / 2`. -/
@@ -174,8 +173,8 @@ theorem coe_metricChangeHomeomorph_four (p : grassmannBundle F (WithFiberMetric 
         (metricChange h₄ g p.val.proj : _ →L[ℝ] _)⟩ :=
   grassmannBundle.coe_metricChangeHomeomorph_of_inner_eq (c := 2)
     (fun b u v ↦ by
-      rw [h₄, g, metricOfForm_inner, metricOfForm_inner]
-      change 4 * euclidForm u v = _
+      rw [h₄, g, metricOfForm_inner, metricOfForm_inner, smul_apply,
+        smul_apply, smul_eq_mul]
       norm_num) p
 
 end TauCeti.Examples.GrassmannBundleMetricChange
