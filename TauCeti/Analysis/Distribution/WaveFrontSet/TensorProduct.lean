@@ -51,7 +51,9 @@ in the directions `(ξ, 0)` with `ξ ≠ 0`.
   smooth at `(x, ξ)` with `ξ ≠ 0`, then `S ⊗ T` is microlocally smooth at `((x, y), (ξ, η))` for
   every `y` and `η`, and symmetrically in `T`.
 * `Distribution.waveFrontSet_transportCLM_tensorProduct_subset`: the wave front set bound for
-  `S ⊗ T`.
+  `S ⊗ T`; `Distribution.waveFrontSet_transportCLM_tensorProduct_subset_tensorCone` restates it
+  with the cone `TauCeti.tensorCone Γ₁ Γ₂`, which contains `WF(S ⊗ T)` whenever `WF(S) ⊆ Γ₁` and
+  `WF(T) ⊆ Γ₂` and does not depend on `S` and `T`.
 * `Distribution.IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left`,
   `Distribution.IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_right`: if `S ⊗ T` is
   microlocally smooth at `((x, y), (ξ, 0))` and `y ∈ supp T`, then `S` is microlocally smooth at
@@ -409,5 +411,59 @@ theorem waveFrontSet_transportCLM_tensorProduct_delta_ofFun_one {x₀ : E} (hx�
     waveFrontSet_delta hx₀]
   ext
   simp [and_assoc]
+
+end Distribution
+
+namespace TauCeti
+
+variable {E D : Type*} [NormedAddCommGroup E] [NormedAddCommGroup D]
+
+/-- The cone `Γ₁ ⊠ Γ₂` of the nonzero covectors `((x, y), (ξ, η))` of the Euclidean product
+`WithLp 2 (E × D)` with `ξ = 0` or `(x, ξ) ∈ Γ₁`, and `η = 0` or `(y, η) ∈ Γ₂`. When `Γ₁` and `Γ₂`
+contain the wave front sets of `S` and `T`, it contains that of `S ⊗ T`
+(`Distribution.waveFrontSet_transportCLM_tensorProduct_subset_tensorCone`), and it depends only
+on `Γ₁` and `Γ₂`, not on the supports of `S` and `T`. -/
+def tensorCone (Γ₁ : Set (E × E)) (Γ₂ : Set (D × D)) :
+    Set (WithLp 2 (E × D) × WithLp 2 (E × D)) :=
+  {q | q.2 ≠ 0 ∧ (q.2.fst = 0 ∨ (q.1.fst, q.2.fst) ∈ Γ₁) ∧ (q.2.snd = 0 ∨ (q.1.snd, q.2.snd) ∈ Γ₂)}
+
+@[simp]
+theorem mem_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
+    {q : WithLp 2 (E × D) × WithLp 2 (E × D)} :
+    q ∈ tensorCone Γ₁ Γ₂ ↔ q.2 ≠ 0 ∧ (q.2.fst = 0 ∨ (q.1.fst, q.2.fst) ∈ Γ₁) ∧
+      (q.2.snd = 0 ∨ (q.1.snd, q.2.snd) ∈ Γ₂) :=
+  Iff.rfl
+
+/-- `tensorCone Γ₁ Γ₂` is monotone in `Γ₁` and in `Γ₂`. -/
+theorem tensorCone_mono {Γ₁ Γ₁' : Set (E × E)} {Γ₂ Γ₂' : Set (D × D)} (h₁ : Γ₁ ⊆ Γ₁')
+    (h₂ : Γ₂ ⊆ Γ₂') : tensorCone Γ₁ Γ₂ ⊆ tensorCone Γ₁' Γ₂' :=
+  fun _ ⟨h0, hξ, hη⟩ ↦ ⟨h0, hξ.imp_right (@h₁ _), hη.imp_right (@h₂ _)⟩
+
+end TauCeti
+
+namespace Distribution
+
+variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D]
+  {Ω : Opens E} {O : Opens D} {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
+  (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ)) (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+  (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V)
+
+/-- **The wave front set of a tensor product in a fixed cone.** If `WF(S) ⊆ Γ₁` and
+`WF(T) ⊆ Γ₂`, then `WF(S ⊗ T)` lies in the cone `Γ₁ ⊠ Γ₂` (`TauCeti.tensorCone`), which does not
+depend on `S` and `T`. -/
+theorem waveFrontSet_transportCLM_tensorProduct_subset_tensorCone {Γ₁ : Set (E × E)}
+    {Γ₂ : Set (D × D)} (hS : S.waveFrontSet ⊆ Γ₁) (hT : T.waveFrontSet ⊆ Γ₂) :
+    (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+        (S.tensorProduct T hV.subset)).waveFrontSet ⊆ TauCeti.tensorCone Γ₁ Γ₂ := by
+  intro q hq
+  obtain ⟨h₁, h₂⟩ := waveFrontSet_transportCLM_tensorProduct_subset S T hV hW hq
+  refine ⟨(mem_waveFrontSet_iff.1 hq).2.1, ?_, ?_⟩
+  · rcases h₁ with h | ⟨-, h⟩
+    · exact Or.inr (hS h)
+    · exact Or.inl h
+  · rcases h₂ with h | ⟨-, h⟩
+    · exact Or.inr (hT h)
+    · exact Or.inl h
 
 end Distribution
