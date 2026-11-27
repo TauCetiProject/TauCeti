@@ -42,11 +42,11 @@ coefficient `p(y)` and `m` roots `rᵢ`, all negative since `x ∈ Γ(p, y)`:
 `p(x + y) = p(y) ∏ᵢ (1 - rᵢ)`, and the inequality is the superadditivity of the geometric mean
 (`Real.multiset_prod_map_rpow_inv_card_add_le`) for the families `-rᵢ` and `1`.
 
-For Gårding's inequality with `y ∈ Γ`, the function `p^{1/m}` is concave on `Γ` and positively
-homogeneous of degree one, so it lies below its tangent hyperplane through the origin at `x`
-(`ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous`):
-`p(y)^{1/m} ≤ (1/m) p(x)^{1/m - 1} D_y p(x)`, for `x` and `y` in `Γ`. Both sides of Gårding's
-inequality are continuous in `(x, y)`, which extends it to the closure of `Γ`.
+For Gårding's inequality with `x` and `y` in `Γ`, the function `p^{1/m}` is concave on `Γ` and
+positively homogeneous of degree one, so it lies below its tangent hyperplane through the origin
+at `x` (`ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous`):
+`p(y)^{1/m} ≤ (1/m) p(x)^{1/m - 1} D_y p(x)`. Both sides of Gårding's inequality are continuous
+in `(x, y)`, which extends it to the closure of `Γ`.
 
 ## References
 
@@ -132,7 +132,7 @@ theorem concaveOn_rpow (hp : IsHyperbolic p m a) :
   exact hp.eval_rpow_add_le hm (smul_mem_gardingCone hp.isHomogeneous hx hθ')
     (smul_mem_gardingCone hp.isHomogeneous hy hη')
 
-/-- **Gårding's inequality**, for `y` in the cone. -/
+/-- **Gårding's inequality**, for `x` and `y` in the cone. -/
 private theorem mul_rpow_mul_rpow_le_eval_sum_smul_pderiv_of_mem [Fintype σ]
     (hp : IsHyperbolic p m a) (hm : 1 ≤ m) {x y : σ → ℝ} (hx : x ∈ gardingCone p a)
     (hy : y ∈ gardingCone p a) :
