@@ -34,10 +34,10 @@ which roots vanish at a dominant weight and its stabilizer in the Weyl group.
 
   `W_x ≤ W_y ↔ wallIndices x ⊆ wallIndices y ↔ (∀ β, ⟨x, β^∨⟩ = 0 → ⟨y, β^∨⟩ = 0)`
 
-  (`TauCeti.stabilizer_le_stabilizer_iff`,
+  (`TauCeti.stabilizer_le_stabilizer_iff_wallIndices_subset`,
   `TauCeti.stabilizer_le_stabilizer_iff_forall_coroot'_eq_zero`), and two dominant weights have
   the same stabilizer exactly when they lie in the same open face
-  (`TauCeti.stabilizer_eq_stabilizer_iff`).
+  (`TauCeti.stabilizer_eq_stabilizer_iff_wallIndices_eq`).
 * **Every face occurs.** Over a field, every set of simple roots is the set of walls through some
   dominant weight (`TauCeti.exists_mem_dominantChamber_wallIndices_eq`), so the open faces are
   indexed by the subsets of the simple roots, and the stabilizers of dominant weights are exactly
@@ -62,8 +62,9 @@ group by vanishing roots in `TauCeti.Geometry.Lie.Subgroup.Torus.OrbitType`.
   that vanish are those in the span of the simple coroots of its walls.
 * `TauCeti.wallIndices_subset_wallIndices_iff`: the walls through a dominant weight determine
   the roots vanishing there.
-* `TauCeti.stabilizer_le_stabilizer_iff`, `TauCeti.stabilizer_eq_stabilizer_iff`: Weyl
-  stabilizers of dominant weights are compared by their faces.
+* `TauCeti.stabilizer_le_stabilizer_iff_wallIndices_subset`,
+  `TauCeti.stabilizer_eq_stabilizer_iff_wallIndices_eq`: Weyl stabilizers of dominant weights are
+  compared by their faces.
 * `TauCeti.exists_mem_dominantChamber_wallIndices_eq`,
   `TauCeti.image_stabilizer_dominantChamber`: every face is nonempty, and the stabilizers of
   dominant weights are the standard parabolic subgroups.
@@ -108,7 +109,7 @@ theorem coroot'_eq_zero_of_coroot_mem_span_wallIndices {i : ι}
       LinearMap.ker (P.toLinearMap x) := by
     rw [span_le]
     rintro _ ⟨j, hj, rfl⟩
-    -- `P.coroot' j x` is by definition the pairing `P.toLinearMap x (P.coroot j)`.
+    rw [SetLike.mem_coe, LinearMap.mem_ker, ← LinearMap.flip_apply]
     exact mem_wallIndices.mp hj
   exact hle h
 
@@ -123,18 +124,17 @@ theorem coroot'_eq_zero_iff_coroot_mem_span_wallIndices [PartialOrder R] [IsOrde
   obtain ⟨f, -, hf⟩ := b.flip.exists_root_eq_sum_nat_or_neg i
   simp only [flip_root, Base.flip_support] at hf
   set s := ∑ j ∈ b.support, f j • P.coroot j
-  -- `P.coroot' i x` is by definition the pairing `P.toLinearMap x (P.coroot i)`, which is
-  -- linear in the coroot.
+  -- The pairing `P.coroot' j x = P.toLinearMap x (P.coroot j)` is linear in the coroot.
+  have hc (j : ι) : P.coroot' j x = P.toLinearMap x (P.coroot j) := LinearMap.flip_apply _ _ _
+  rw [hc] at h
   have hs : P.toLinearMap x s = 0 := by
     rcases hf with hf | hf
-    · rw [← hf]
-      exact h
-    · rw [← neg_neg s, ← hf, map_neg, neg_eq_zero]
-      exact h
+    · rwa [← hf]
+    · rwa [← neg_neg s, ← hf, map_neg, neg_eq_zero]
   -- Each term `fⱼ ⟨x, αⱼ^∨⟩` is nonnegative and they sum to zero, so each vanishes.
   have hx := (mem_dominantChamber P b x).mp hx
   rw [map_sum] at hs
-  simp only [map_nsmul] at hs
+  simp only [map_nsmul, ← hc] at hs
   have hterm : ∀ j ∈ b.support, f j • P.coroot' j x = 0 :=
     (Finset.sum_eq_zero_iff_of_nonneg fun j hj ↦ nsmul_nonneg (hx j hj) _).mp hs
   have hmem : s ∈ span R ((fun j : b.support ↦ P.coroot j) '' P.wallIndices b x) := by
@@ -173,7 +173,7 @@ variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallograph
 
 /-- **Weyl stabilizers are ordered like faces.** For a dominant weight `x` and any weight `y`, the
 stabilizer of `x` fixes `y` exactly when every simple wall through `x` passes through `y`. -/
-theorem stabilizer_le_stabilizer_iff (hx : x ∈ dominantChamber P b) :
+theorem stabilizer_le_stabilizer_iff_wallIndices_subset (hx : x ∈ dominantChamber P b) :
     MulAction.stabilizer P.weylGroup x ≤ MulAction.stabilizer P.weylGroup y ↔
       P.wallIndices b x ⊆ P.wallIndices b y := by
   refine ⟨wallIndices_subset_of_stabilizer_le, fun h ↦ ?_⟩
@@ -186,16 +186,16 @@ exactly when every root vanishing on `x` vanishes on `y`. -/
 theorem stabilizer_le_stabilizer_iff_forall_coroot'_eq_zero (hx : x ∈ dominantChamber P b) :
     MulAction.stabilizer P.weylGroup x ≤ MulAction.stabilizer P.weylGroup y ↔
       ∀ i, P.coroot' i x = 0 → P.coroot' i y = 0 := by
-  rw [stabilizer_le_stabilizer_iff hx, wallIndices_subset_wallIndices_iff hx]
+  rw [stabilizer_le_stabilizer_iff_wallIndices_subset hx, wallIndices_subset_wallIndices_iff hx]
 
 /-- **Two dominant weights have the same Weyl stabilizer exactly when they lie in the same open
 face** of the closed dominant chamber, that is, on the same simple walls. -/
-theorem stabilizer_eq_stabilizer_iff (hx : x ∈ dominantChamber P b)
+theorem stabilizer_eq_stabilizer_iff_wallIndices_eq (hx : x ∈ dominantChamber P b)
     (hy : y ∈ dominantChamber P b) :
     MulAction.stabilizer P.weylGroup x = MulAction.stabilizer P.weylGroup y ↔
       P.wallIndices b x = P.wallIndices b y := by
-  rw [le_antisymm_iff, stabilizer_le_stabilizer_iff hx, stabilizer_le_stabilizer_iff hy,
-    Set.Subset.antisymm_iff]
+  rw [le_antisymm_iff, stabilizer_le_stabilizer_iff_wallIndices_subset hx,
+    stabilizer_le_stabilizer_iff_wallIndices_subset hy, Set.Subset.antisymm_iff]
 
 end Ordered
 
@@ -218,9 +218,8 @@ theorem exists_mem_dominantChamber_wallIndices_eq (S : Set b.support) :
     fun j ↦ if h : j ∈ b.support then (if (⟨j, h⟩ : b.support) ∈ S then 0 else 1) else 0
   have hx' : ∀ j : b.support, P.coroot' j x = if j ∈ S then 0 else 1 := fun j ↦ by
     have h := hx j (by simp)
-    simp only [j.property, ↓reduceDIte] at h
-    -- The root functionals of the flipped pairing are by definition the coroot functionals.
-    exact h
+    simpa only [j.property, ↓reduceDIte, root', flip_toLinearMap, flip_root,
+      LinearMap.flip_apply] using h
   refine ⟨x, (mem_dominantChamber P b x).mpr fun j hj ↦ ?_, Set.ext fun j ↦ ?_⟩
   · rw [hx' ⟨j, hj⟩]
     split_ifs <;> simp

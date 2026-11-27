@@ -95,18 +95,12 @@ lemma ofIdx_smul_eq_self_of_coroot'_eq_zero {i : ι} {x : M} (h : P.coroot' i x 
   rw [_root_.RootPairing.weylGroup.ofIdx_smul, _root_.RootPairing.Equiv.reflection_smul,
     P.reflection_apply, h, zero_smul, sub_zero]
 
-/-- **A reflection fixes a weight exactly when its coroot vanishes on it.** The vanishing is in
-general stronger than the fixed-point condition, which says only that `⟨x, α^∨⟩ • α = 0`; the two
-agree when `2` is not a zero divisor, as pairing with `α^∨` gives `2 ⟨x, α^∨⟩ = 0`. -/
+/-- The reflection `s_α` in the Weyl group fixes a weight exactly when `α^∨` vanishes on it, as
+`RootPairing.reflection_apply_eq_self_iff` says for the reflection itself. -/
 lemma ofIdx_smul_eq_self_iff [NeZero (2 : R)] [NoZeroDivisors R] {i : ι} {x : M} :
     _root_.RootPairing.weylGroup.ofIdx P i • x = x ↔ P.coroot' i x = 0 := by
-  refine ⟨fun h ↦ ?_, ofIdx_smul_eq_self_of_coroot'_eq_zero⟩
   rw [_root_.RootPairing.weylGroup.ofIdx_smul, _root_.RootPairing.Equiv.reflection_smul,
-    P.reflection_apply, sub_eq_self] at h
-  have h2 := congrArg (P.coroot' i) h
-  rw [map_smul, map_zero, root_coroot'_eq_pairing, pairing_same, smul_eq_mul,
-    mul_eq_zero] at h2
-  exact h2.resolve_right two_ne_zero
+    P.reflection_apply_eq_self_iff]
 
 /-- A Weyl-group element is a wall reflection through `x` exactly when it is the simple reflection
 at some simple root whose simple coroot kills `x`. -/
