@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.CMField.AdelicLattice
+public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 import TauCeti.Analysis.Matrix.Normed
 
 /-!
@@ -18,8 +18,9 @@ integral finite adeles with the diagonal field.
 
 For a short basis `Y` and a rational approximation `X` to its inverse change of coordinates,
 the genus count records `Yᴴ * Y` and `Yᴴ * Y * X`. These are integral by
-`Matrix.isIntegral_gram_data_apply_of_adelic`, and their conjugates are bounded by
-`Matrix.norm_map_gram_data_apply_le`, using the entrywise matrix product bound.
+`Matrix.isIntegral_conjTranspose_mul_self_apply_and_conjTranspose_mul_self_mul_apply_of_adelic`.
+The bound `Matrix.max_norm_conjTranspose_mul_self_apply_norm_conjTranspose_mul_self_mul_apply_le`
+uses the entrywise matrix product bound.
 These are the Gram data in `grh/src/New/UpperBound/Size/ClassCount.lean` of lsernau/grh-lean,
 revision `72fead1` (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
@@ -46,15 +47,16 @@ theorem isIntegral_conjTranspose_mul_apply_of_adelic {n ι κ : Type*} [Fintype 
   have hmap : Yᴴ.map ιE = ((Y.map ιE).map conjE)ᵀ := by
     ext k l
     simp only [Matrix.map_apply, Matrix.conjTranspose_apply, Matrix.transpose_apply,
-      conjE, ιE, finiteAdeleConj_algebraMap]
-    rfl
+      conjE, ιE, finiteAdeleConj_algebraMap, star_eq_complexConj]
   have hgram : (Yᴴ * Z).map ιE =
       (((g * Y.map ιE).map conjE)ᵀ * (g * Z.map ιE)) := by
     simp only [Matrix.map_mul, hmap, Matrix.transpose_mul, Matrix.mul_assoc, conjE]
     rw [← Matrix.mul_assoc (g.map (finiteAdeleConj E))ᵀ g, hg, Matrix.one_mul]
   have hint : ιE ((Yᴴ * Z) i j) ∈ integralAdeles (𝓞 E) E := by
     rw [← Matrix.map_apply (M := Yᴴ * Z) (f := ιE) (i := i) (j := j), hgram, Matrix.mul_apply]
-    exact sum_mem fun k _ ↦ mul_mem (finiteAdeleConj_mem_integralAdeles_iff.mpr (hY k)) (hZ k)
+    refine sum_mem fun k _ ↦ mul_mem ?_ (hZ k)
+    simpa only [Matrix.transpose_apply, Matrix.map_apply, conjE, finiteAdeleConj_apply,
+      star_mem_integralAdeles_iff] using hY k
   obtain ⟨z, hz⟩ := (algebraMap_mem_integralAdeles_iff _).mp hint
   rw [← hz]
   exact RingOfIntegers.isIntegral_coe z
@@ -62,7 +64,8 @@ theorem isIntegral_conjTranspose_mul_apply_of_adelic {n ι κ : Type*} [Fintype 
 /-- If the columns of `Y` are integral in the finite adelic unitary frame `g`, and `X`
 approximates a right inverse of `g * Y` modulo integral finite adeles, both `Yᴴ * Y`
 and `Yᴴ * Y * X` have algebraic-integer entries. -/
-theorem isIntegral_gram_data_apply_of_adelic {n : Type*} [Fintype n] [DecidableEq n]
+theorem isIntegral_conjTranspose_mul_self_apply_and_conjTranspose_mul_self_mul_apply_of_adelic
+    {n : Type*} [Fintype n] [DecidableEq n]
     (g : Matrix n n 𝔸ᶠ[E]) (hg : (g.map (finiteAdeleConj E))ᵀ * g = 1)
     {Y X : Matrix n n E} {B : Matrix n n 𝔸ᶠ[E]}
     (hB : (g * Y.map (algebraMap E 𝔸ᶠ[E])) * B = 1)
@@ -93,7 +96,8 @@ theorem isIntegral_gram_data_apply_of_adelic {n : Type*} [Fintype n] [DecidableE
 `c = 6 * N * (f * r)^2`. If under the embedding the entries of `Y` are bounded by `c`
 and those of `X` by `(2 * f)^2 * N`, the two matrices `Yᴴ * Y` and
 `Yᴴ * Y * X` used for the genus count have entries bounded by `c^3`. -/
-theorem norm_map_gram_data_apply_le {n : Type*} [Fintype n] (Y X : Matrix n n E)
+theorem max_norm_conjTranspose_mul_self_apply_norm_conjTranspose_mul_self_mul_apply_le
+    {n : Type*} [Fintype n] (Y X : Matrix n n E)
     (φ : E →+* ℂ) {N : ℕ} (i j : n)
     (hY : ∀ k l, ‖φ (Y k l)‖ ≤ 6 * N * ((Fintype.card (InfinitePlace E) : ℝ) * Fintype.card n) ^ 2)
     (hX : ∀ k, ‖φ (X k j)‖ ≤ (2 * (Fintype.card (InfinitePlace E) : ℝ)) ^ 2 * N) :
@@ -104,9 +108,8 @@ theorem norm_map_gram_data_apply_le {n : Type*} [Fintype n] (Y X : Matrix n n E)
   let c : ℝ := 6 * N * (f * r) ^ 2
   let b : ℝ := (2 * f) ^ 2 * N
   have hYadj (k l : n) : ‖(Yᴴ.map φ) k l‖ ≤ c := by
-    rw [Matrix.map_apply, Matrix.conjTranspose_apply]
-    have hstar : star (Y l k) = complexConj E (Y l k) := (rfl)
-    rw [hstar, complexEmbedding_complexConj, Complex.norm_conj]
+    rw [Matrix.map_apply, Matrix.conjTranspose_apply, star_eq_complexConj,
+      complexEmbedding_complexConj, Complex.norm_conj]
     exact hY l k
   have hG (k l : n) : ‖φ ((Yᴴ * Y) k l)‖ ≤ r * (c * c) := by
     rw [← Matrix.map_apply (M := Yᴴ * Y) (f := φ) (i := k) (j := l), Matrix.map_mul]
