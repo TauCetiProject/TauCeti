@@ -371,11 +371,9 @@ private theorem countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasu
       ENNReal.ofReal_mul measureReal_nonneg, ofReal_measureReal, ofReal_measureReal]
     ring
   have hA : ∑' i, μ (a ⁻¹' {i}) = 1 := by
-    simpa using (tsum_univ (f := fun i ↦ μ (a ⁻¹' {i}))).symm.trans
-      (tsum_measure_preimage_singleton Set.countable_univ fun i _ ↦ ha (measurableSet_singleton i))
+    simpa using tsum_measure_inter_preimage_singleton (μ := μ) ha Set.univ
   have hB : ∑' j, μ (b ⁻¹' {j}) = 1 := by
-    simpa using (tsum_univ (f := fun j ↦ μ (b ⁻¹' {j}))).symm.trans
-      (tsum_measure_preimage_singleton Set.countable_univ fun j _ ↦ hb (measurableSet_singleton j))
+    simpa using tsum_measure_inter_preimage_singleton (μ := μ) hb Set.univ
   rw [countablePartitionEntropy_pair]
   simp only [hcell, tsum_add, ENNReal.tsum_mul_left, ENNReal.tsum_mul_right, hA, hB, mul_one,
     one_mul]
