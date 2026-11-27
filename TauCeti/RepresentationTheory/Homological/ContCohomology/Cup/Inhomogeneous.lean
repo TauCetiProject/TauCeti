@@ -253,9 +253,9 @@ variable {G R : Type*} [TopologicalSpace G] [Monoid G] [ContinuousMul G] [Topolo
 
 section Bilinear
 
-variable (k : Type*) [CommSemiring k] [Semiring R] [ContinuousAdd R] [ContinuousMul R]
-  [Algebra k R] [ContinuousConstSMul k R] [DistribSMul G R] [ContinuousSMul G R]
-  [SMulCommClass G k R]
+variable (k : Type*) [CommSemiring k] [NonUnitalNonAssocSemiring R] [ContinuousAdd R]
+  [ContinuousMul R] [Module k R] [IsScalarTower k R R] [SMulCommClass k R R]
+  [ContinuousConstSMul k R] [DistribSMul G R] [ContinuousSMul G R] [SMulCommClass G k R]
 
 /-- The cup is bilinear over scalars commuting with the action on the coefficients. -/
 def inhomogeneousCupLinearMap (p q : ℕ) :
