@@ -362,11 +362,6 @@ def fixedPermSEquivOrderTwoEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
   rw [fixedPermSEquivOrderTwoEllipticOrbits, Equiv.trans_apply, Equiv.trans_apply,
     Equiv.subtypeEquivRight_apply, hcoset, fixedCosetSEquivOrderTwoEllipticOrbits_mk]
 
-private theorem permR_eq (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    permR Γ' e = e.permutationRepresentation (R : PSL(2, ℤ)) := by
-  rw [permR_eq_permS_mul_permT, permS, permT, modularTriple_σ1, modularTriple_σinf, ← map_mul,
-    ← QuotientGroup.mk_mul, ← R_def]
-
 /-- **Order-`3` elliptic orbits via fixed points of `permR`.** The fixed points of `permR Γ' e`
 are in bijection with the elliptic orbits of `Γ'.map psl2zToPSL2R` on `ℍ` having stabilizer
 order `3`: the fixed point `e (g Γ')` maps to the orbit of `g⁻¹ • ρ`. -/
@@ -374,7 +369,7 @@ def fixedPermREquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     {x : Fin n // permR Γ' e x = x} ≃
       {q : orbitRel.Quotient (Γ'.map psl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 3} :=
-  (Equiv.subtypeEquivRight fun _ ↦ by rw [permR_eq]).trans
+  (Equiv.subtypeEquivRight fun _ ↦ by rw [permR_def]).trans
     ((e.fixedPermutationRepresentationEquiv (R : PSL(2, ℤ))).trans
       (fixedCosetREquivOrderThreeEllipticOrbits Γ'))
 
@@ -387,7 +382,7 @@ def fixedPermREquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
       Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) ℍ) (g⁻¹ • ρ) := by
   have hR : e.permutationRepresentation (R : PSL(2, ℤ)) (e (g : PSL(2, ℤ) ⧸ Γ')) =
       e (g : PSL(2, ℤ) ⧸ Γ') := by
-    simpa [permR_eq] using hg
+    simpa [permR_def] using hg
   have hcoset :
       e.fixedPermutationRepresentationEquiv (R : PSL(2, ℤ)) ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hR⟩ =
         ⟨(g : PSL(2, ℤ) ⧸ Γ'), by

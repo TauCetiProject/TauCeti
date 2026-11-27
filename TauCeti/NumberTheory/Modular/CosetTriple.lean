@@ -120,6 +120,10 @@ noncomputable abbrev permT (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ'
 noncomputable def permR (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : Perm (Fin n) :=
   e.permutationRepresentation (R : PSL(2, ℤ))
 
+/-- `permR Γ' e` is the coset permutation of `R = S T`. -/
+theorem permR_def (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    permR Γ' e = e.permutationRepresentation (R : PSL(2, ℤ)) := (rfl)
+
 /-- `permR Γ' e` factors as `permS Γ' e * permT Γ' e`. -/
 theorem permR_eq_permS_mul_permT (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     permR Γ' e = permS Γ' e * permT Γ' e := by
