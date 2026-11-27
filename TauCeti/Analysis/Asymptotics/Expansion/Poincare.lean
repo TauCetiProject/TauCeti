@@ -29,8 +29,9 @@ inverse powers, and convergent power series.
   Poincaré expansions at infinity.
 * `Asymptotics.hasAsymptoticExpansion_of_hasSum`: a series `∑ (z ^ s)⁻¹ • a s` converging outside
   a ball is the Poincaré expansion of its sum along `Bornology.cobounded`.
-* `HasFPowerSeriesAt.hasAsymptoticExpansion`: a convergent power series at `c` is the
-  Poincaré expansion of its sum along `𝓝 c`.
+* `HasFPowerSeriesAt.hasAsymptoticExpansion`, `HasFPowerSeriesAt.hasAsymptoticExpansion_zero`:
+  a convergent power series at `c` (or `0`) is the Poincaré expansion of its sum along `𝓝 c`
+  (or `𝓝 0`).
 
 ## References
 
@@ -233,6 +234,15 @@ theorem _root_.HasFPowerSeriesAt.hasAsymptoticExpansion [NontriviallyNormedField
   have hcomp := h0.comp_tendsto hsub
   refine hcomp.congr' (Eventually.of_forall fun z => ?_) EventuallyEq.rfl
   simp only [Function.comp_apply, add_sub_cancel]
+
+/-- A convergent power series at `0` is the Poincaré asymptotic expansion of its sum along `𝓝 0`
+in the scale `z ↦ z ^ n` (DLMF 2.1.8, 2.1.16). -/
+theorem _root_.HasFPowerSeriesAt.hasAsymptoticExpansion_zero [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E}
+    {p : FormalMultilinearSeries 𝕜 𝕜 E} (hf : HasFPowerSeriesAt f p 0) :
+    HasAsymptoticExpansion (𝓝 (0 : 𝕜)) (fun n z => z ^ n) p.coeff f :=
+  hf.hasAsymptoticExpansion.congr_scale fun _ =>
+    Eventually.of_forall fun z => by dsimp only; rw [sub_zero]
 
 /-! ### Checks and examples -/
 

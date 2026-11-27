@@ -58,6 +58,8 @@ of `X ^ n` in `f`.
   constant coefficient is nonzero.
 * `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
   order `1` exactly when `coeff 1 f ≠ 0`.
+* `PowerSeries.coeff_pow_eq_zero_of_lt`: if `constantCoeff g = 0` and `n < k`, then
+  `coeff n (g ^ k) = 0`.
 
 ## Provenance
 
@@ -191,5 +193,11 @@ theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantC
   refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, fun i hi ↦ ?_⟩⟩
   rw [Nat.lt_one_iff.mp hi, coeff_zero_eq_constantCoeff_apply]
   exact hf
+
+/-- If `g` has zero constant coefficient, the `n`-th coefficient of `g ^ k` vanishes whenever
+`n < k`. -/
+theorem coeff_pow_eq_zero_of_lt {g : R⟦X⟧} (hg : constantCoeff g = 0) {n k : ℕ} (h : n < k) :
+    coeff n (g ^ k) = 0 :=
+  coeff_of_lt_order _ ((Nat.cast_lt.mpr h).trans_le (le_order_pow_of_constantCoeff_eq_zero k hg))
 
 end PowerSeries

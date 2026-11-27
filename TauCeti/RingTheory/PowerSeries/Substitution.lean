@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import TauCeti.RingTheory.PowerSeries.Order
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -129,10 +130,6 @@ of a completed group algebra attached to two topological generators.
 public section
 
 namespace PowerSeries
-
-private lemma coeff_pow_eq_zero_of_lt {S : Type*} [CommRing S] {g : S⟦X⟧}
-    (hg : constantCoeff g = 0) {n k : ℕ} (h : n < k) : coeff n (g ^ k) = 0 :=
-  coeff_of_lt_order _ ((Nat.cast_lt.mpr h).trans_le (le_order_pow_of_constantCoeff_eq_zero k hg))
 
 /-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
 substitution depends only on the first `n + 1` coefficients of the outer series. -/

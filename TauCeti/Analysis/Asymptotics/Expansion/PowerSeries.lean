@@ -129,27 +129,6 @@ theorem HasAsymptoticExpansion.isBigO_sub_trunc_eval {P : 𝕜⟦X⟧} {f : α �
   dsimp only
   rw [eval_trunc_eq_sum_smul]
 
-/-- The `N`-th truncation `(PowerSeries.trunc N P).eval (w x)` is `O(1)` when `w → 0`. -/
-theorem isBigO_trunc_eval_one (hw : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (N : ℕ) :
-    (fun x => (PowerSeries.trunc N P).eval (w x)) =O[l] fun _ => (1 : 𝕜) := by
-  simpa only [range_zero, sum_empty, sub_zero, pow_zero] using
-    (hasAsymptoticExpansion_pow_eval hw (PowerSeries.trunc N P)).isBigO 0
-
-/-- Multiplying two `N`-th truncations agrees with the `N`-th truncation of the product up to
-`O(w ^ N)` when `w → 0`. -/
-theorem isBigO_mul_trunc_eval_sub (hw : Tendsto w l (𝓝 0)) (P Q : 𝕜⟦X⟧) (N : ℕ) :
-    (fun x => (PowerSeries.trunc N P).eval (w x) * (PowerSeries.trunc N Q).eval (w x) -
-      (PowerSeries.trunc N (P * Q)).eval (w x)) =O[l] fun x => w x ^ N := by
-  set R : 𝕜[X] := PowerSeries.trunc N P * PowerSeries.trunc N Q - PowerSeries.trunc N (P * Q)
-  have hcoeff : ∀ k < N, R.coeff k = 0 := fun k hk => by
-    have hmul := PowerSeries.coeff_mul_eq_coeff_trunc_mul_trunc P Q hk
-    simp only [R, Polynomial.coeff_sub,
-      ← Polynomial.coeff_coe (PowerSeries.trunc N P * PowerSeries.trunc N Q),
-      Polynomial.coe_mul, ← hmul, PowerSeries.coeff_trunc, hk, ↓reduceIte, sub_self]
-  refine (isBigO_eval_pow_of_coeff_eq_zero hw R hcoeff).congr'
-    (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
-  simp only [R, Polynomial.eval_sub, Polynomial.eval_mul]
-
 /-- Remainder estimate for evaluating a truncated power series at two `O(w)` functions differing
 by `O(w ^ M)`. -/
 private lemma isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
@@ -255,8 +234,7 @@ theorem hasAsymptoticExpansion_pow_mul (hw : Tendsto w l (𝓝 0)) {P Q : 𝕜�
     (hf.isBigO_sub_trunc_eval N) (hg.isBigO_sub_trunc_eval N)).congr'
     (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
   dsimp only
-  rw [eval_trunc_eq_sum_smul]
-  rfl
+  rw [eval_trunc_eq_sum_smul, Pi.mul_apply]
 
 /-- Natural powers of an asymptotic power series in a small variable `w` (DLMF §2.1(iii)). -/
 theorem hasAsymptoticExpansion_pow_pow (hw : Tendsto w l (𝓝 0)) {P : 𝕜⟦X⟧} {f : α → 𝕜}
@@ -285,11 +263,11 @@ theorem hasAsymptoticExpansion_pow_inv (hw : Tendsto w l (𝓝 0)) {P : 𝕜⟦X
     simpa only [range_zero, sum_empty, sub_zero, pow_zero] using hfinv_O
   | succ N =>
     set M := N + 1
-    have hQ0 := isBigO_trunc_eval_one hw P⁻¹ M
+    have hQ0 := PowerSeries.isBigO_trunc_eval_one hw P⁻¹ M
     have h1 : (fun x => (f x - (PowerSeries.trunc M P).eval (w x)) *
         (PowerSeries.trunc M P⁻¹).eval (w x)) =O[l] fun x => w x ^ M := by
       simpa only [mul_one] using (hf.isBigO_sub_trunc_eval M).mul hQ0
-    have h2 := isBigO_mul_trunc_eval_sub hw P P⁻¹ M
+    have h2 := PowerSeries.isBigO_mul_trunc_eval_sub hw P P⁻¹ M
     have hPQ1 : ∀ x : α, (PowerSeries.trunc M (P * P⁻¹)).eval (w x) = 1 := fun x => by
       rw [PowerSeries.mul_inv_cancel P hP, PowerSeries.eval_trunc, Finset.sum_eq_single 0]
       · simp
@@ -438,7 +416,7 @@ private lemma isBigO_substInv_step {σ H : β → 𝕜} {y : α → β} {P Q : �
     ring
   have hqO : q =O[l] w := by
     refine (isBigO_eval_pow_of_coeff_eq_zero (N := 1) hw0 (PowerSeries.trunc (M + 1) Q)
-      fun k hk => ?_).congr' (Eventually.of_forall fun _ => rfl)
+      fun k hk => ?_).congr' EventuallyEq.rfl
       (Eventually.of_forall fun _ => pow_one _)
     rw [Nat.lt_one_iff.mp hk, PowerSeries.coeff_trunc]
     simp [hQ0]
