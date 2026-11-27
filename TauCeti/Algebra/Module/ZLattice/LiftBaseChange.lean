@@ -37,13 +37,14 @@ finiteness step of Gromov compactness: integrals of a fixed form over a curve ar
 comass of the form times the area of the curve.
 
 A family `θ i : H →+ ℝ` that spans the real vector space `H →+ ℝ` gives such an `l`: evaluation
-at the `θ i` has injective real extension `ℝ ⊗[ℤ] H → (ι → ℝ)`, and only finitely many `A : H`
-satisfy `∀ i, |θ i A| ≤ C i`. Torsion elements are not lost: each such window contains whole
-cosets of the finite torsion subgroup. The spanning hypothesis cannot be weakened to joint
-injectivity modulo torsion, by the same `ℤ²` example. Concluding that below an area cutoff only
-finitely many homology classes carry pseudoholomorphic curves also requires identifying the
-integral `∫_C u^* θ` (bounded in `TauCeti.abs_integralTopForm_mpullback_le`) with the pairing of
-`[θ]` with the class of the curve. That de Rham comparison is not provided here.
+at the `θ i` has injective real extension `ℝ ⊗[ℤ] H → (ι → ℝ)`, already for finitely many of
+the `θ i`, and only finitely many `A : H` satisfy `∀ i, |θ i A| ≤ C i`. Torsion elements are not
+lost: each such window contains whole cosets of the finite torsion subgroup. The spanning
+hypothesis cannot be weakened to joint injectivity modulo torsion, by the same `ℤ²` example. For
+the period maps of closed forms on a manifold the spanning hypothesis is de Rham's theorem on
+periods (`TauCeti.span_range_closedFormHomologyPeriod`), which is how Gromov's finiteness of the
+classes of pseudoholomorphic curves of bounded area is derived
+(`TauCeti.SmoothTwoForm.Tames.finite_setOf_isCurveClass_closedFormHomologyPeriod_le`).
 
 ## Main results
 
@@ -53,6 +54,8 @@ integral `∫_C u^* θ` (bounded in `TauCeti.abs_integralTopForm_mpullback_le`) 
   finite.
 * `TauCeti.liftBaseChange_pi_injective_of_span_eq_top`: evaluation at a family spanning
   `H →+ ℝ` has injective real extension.
+* `TauCeti.exists_finset_liftBaseChange_pi_injective`: finitely many members of such a family
+  already have injective real extension.
 * `TauCeti.finite_setOf_forall_abs_apply_le`: only finitely many elements have all pairings
   with such a family in a bounded window.
 
@@ -172,25 +175,35 @@ theorem liftBaseChange_pi_injective_of_span_eq_top (θ : ι → H →+ ℝ)
     | smul => simp_all
   simpa using hx' (Ψ.symm φ) (by simp [hθ])
 
-/-- **Bounded real pairings cut out a finite set.** In a finitely generated abelian group `H`, if
-the real-valued homomorphisms `θ i` span `H →+ ℝ`, then only finitely many elements have all
-pairings `|θ i A| ≤ C i`. -/
-theorem finite_setOf_forall_abs_apply_le [AddGroup.FG H] (θ : ι → H →+ ℝ)
-    (hθ : Submodule.span ℝ (range θ) = ⊤) (C : ι → ℝ) :
-    {A : H | ∀ i, |θ i A| ≤ C i}.Finite := by
+/-- **Finitely many homomorphisms suffice.** In a finitely generated abelian group `H`, if the
+real-valued homomorphisms `θ i` span `H →+ ℝ`, then finitely many of them, indexed by a finset `s`,
+already have injective real extension `ℝ ⊗[ℤ] H → (s → ℝ)`. -/
+theorem exists_finset_liftBaseChange_pi_injective [AddGroup.FG H] (θ : ι → H →+ ℝ)
+    (hθ : Submodule.span ℝ (range θ) = ⊤) :
+    ∃ s : Finset ι, Function.Injective
+      ((LinearMap.pi fun i : s ↦ (θ i).toIntLinearMap : H →ₗ[ℤ] s → ℝ).liftBaseChange ℝ) := by
+  classical
   have : FiniteDimensional ℝ (H →+ ℝ) :=
     ((addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)).symm.finiteDimensional
   -- A finite linearly independent subfamily `b` of the `θ i` still spans.
   obtain ⟨b, hbθ, hbspan, hb⟩ := exists_linearIndependent ℝ (range θ)
   have : Fintype b := hb.setFinite.fintype
   choose c hc using fun f : b ↦ hbθ f.property
-  refine (LinearMap.finite_preimage_of_injective_liftBaseChange _
-    (liftBaseChange_pi_injective_of_span_eq_top (fun f : b ↦ (f : H →+ ℝ))
-      (by rw [Subtype.range_coe, hbspan, hθ]))
-    (Bornology.IsBounded.pi fun f ↦ Metric.isBounded_Icc (-C (c f)) (C (c f)))).subset
-    fun A hA ↦ ?_
+  refine ⟨Finset.univ.image c, liftBaseChange_pi_injective_of_span_eq_top _ ?_⟩
+  refine eq_top_iff.2 (hθ ▸ hbspan ▸ Submodule.span_mono fun f hf ↦ ?_)
+  exact ⟨⟨c ⟨f, hf⟩, Finset.mem_image_of_mem c (Finset.mem_univ _)⟩, hc ⟨f, hf⟩⟩
+
+/-- **Bounded real pairings cut out a finite set.** In a finitely generated abelian group `H`, if
+the real-valued homomorphisms `θ i` span `H →+ ℝ`, then only finitely many elements have all
+pairings `|θ i A| ≤ C i`. -/
+theorem finite_setOf_forall_abs_apply_le [AddGroup.FG H] (θ : ι → H →+ ℝ)
+    (hθ : Submodule.span ℝ (range θ) = ⊤) (C : ι → ℝ) :
+    {A : H | ∀ i, |θ i A| ≤ C i}.Finite := by
+  obtain ⟨s, hs⟩ := exists_finset_liftBaseChange_pi_injective θ hθ
+  refine (LinearMap.finite_preimage_of_injective_liftBaseChange _ hs
+    (Bornology.IsBounded.pi fun i : s ↦ Metric.isBounded_Icc (-C i) (C i))).subset fun A hA ↦ ?_
   simp only [mem_preimage, mem_pi, mem_univ, forall_const, mem_Icc]
-  intro f
-  simpa [hc] using abs_le.1 (hA (c f))
+  intro i
+  simpa using abs_le.1 (hA i)
 
 end TauCeti
