@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Bilinear
 public import TauCeti.AlgebraicTopology.AlexanderSpanier.Basic
 
 import all TauCeti.AlgebraicTopology.AlexanderSpanier.Basic
-import TauCeti.Data.Fin.Basic
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # The cup product in Alexander–Spanier cohomology
@@ -54,7 +54,8 @@ constant locally constant function `1` under `H⁰(X; Λ) ≅ LocallyConstant X 
 
 The Leibniz rule is the same identity between front and back faces as for the cup product of Čech
 cochains (`TauCeti.CategoryTheory.d_cechCup`), here for functions on tuples of points rather than
-for sections over intersections of a cover.
+for sections over intersections of a cover; both are instances of
+`Fin.sum_neg_one_pow_zsmul_mul_succAbove`.
 
 The relative cup product `Hᵖ(X; Λ) × H^q(X, A; Λ) → H^{p+q}(X, A; Λ)` is in
 `TauCeti.AlgebraicTopology.AlexanderSpanier.Cup.Relative`.
@@ -163,26 +164,7 @@ theorem d_cup (a : (cochainComplex R X Λ).X p) (b : (cochainComplex R X Λ).X q
   simp only [cup_cochainClass, cochainComplex_d_cochainClass, ← map_zsmul, ← map_add]
   congr 1
   funext y
-  rw [Pi.add_apply, Pi.smul_apply,
-    ← Fin.sum_congr' _ (show p + 1 + (q + 1) = p + q + 2 by omega), Fin.sum_univ_add,
-    Fin.sum_univ_castSucc (n := p + 1), Fin.sum_univ_succ (n := q + 1)]
-  -- the faces `j ≤ p` of `φ ⌣ ψ` are the faces of `δφ`, the faces `j ≥ p + 1` those of `δψ`,
-  -- and the last face of `δφ` cancels the first face of `δψ`
-  rw [add_mul, mul_add, smul_add, Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
-  have key {P₁ P₂ Q₁ Q₂ S T : Λ} (h₁ : P₁ = Q₁) (h₂ : P₂ = Q₂) (h : S + T = 0) :
-      P₁ + P₂ = Q₁ + S + (T + Q₂) := by
-    rw [h₁, h₂, add_assoc Q₁, ← add_assoc S, h, zero_add]
-  refine key (Finset.sum_congr rfl fun x _ ↦ ?_) (Finset.sum_congr rfl fun x _ ↦ ?_) ?_
-  · rw [smul_mul_assoc]
-    congr 2 <;> exact apply_comp_eq_of_val _ y fun i ↦ by grind [Fin.val_succAbove]
-  · rw [mul_smul_comm, smul_smul, ← pow_add]
-    congr 2
-    · simp only [Fin.val_cast, Fin.val_natAdd, Fin.val_succ]
-      omega
-    all_goals exact apply_comp_eq_of_val _ y fun i ↦ by grind [Fin.val_succAbove]
-  · rw [Fin.val_last, Fin.val_zero, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul]
-    simp only [neg_mul, smul_mul_assoc, neg_add_eq_zero]
-    congr 2 <;> exact apply_comp_eq_of_val _ y fun i ↦ by grind [Fin.val_succAbove]
+  exact Fin.sum_neg_one_pow_zsmul_mul_succAbove (fun σ ↦ φ (y ∘ σ)) (fun σ ↦ ψ (y ∘ σ))
 
 /-- **Associativity** of the Alexander–Spanier cup product, at the level of cochains. -/
 theorem cup_assoc {r m l : ℕ} (h₁ : p + q = m) (h₂ : m + r = n) (h₃ : q + r = l)
@@ -255,8 +237,9 @@ theorem cochainComplexMap_f_cup {Y : Type u} [TopologicalSpace Y] (f : C(Y, X))
 /-- Pulling back the unit cochain gives the unit cochain. -/
 @[simp]
 theorem cochainComplexMap_f_oneCochain {Y : Type u} [TopologicalSpace Y] (f : C(Y, X)) :
-    ((cochainComplexMap R Λ f).f 0).hom (oneCochain R X Λ) = oneCochain R Y Λ :=
-  (rfl)
+    ((cochainComplexMap R Λ f).f 0).hom (oneCochain R X Λ) = oneCochain R Y Λ := by
+  rw [oneCochain_def, oneCochain_def, cochainComplexMap_f_cochainClass]
+  rfl
 
 end Cochain
 
@@ -334,8 +317,8 @@ theorem cohomologyZeroIso_hom_cohomologyOne :
 @[simp]
 theorem cohomologyMap_cohomologyOne {Y : Type u} [TopologicalSpace Y] (f : C(Y, X)) :
     (cohomologyMap R Λ f 0).hom (cohomologyOne R X Λ) = cohomologyOne R Y Λ := by
-  rw [cohomologyOne_def, cohomologyOne_def, homologyMap_homologyπ_moduleCatCyclesMk]
-  congr 2
+  simp only [cohomologyOne_def, cohomologyMap, homologyMap_homologyπ_moduleCatCyclesMk,
+    cochainComplexMap_f_oneCochain]
 
 /-- The unit class is a left unit for the cup product in cohomology. -/
 @[simp]

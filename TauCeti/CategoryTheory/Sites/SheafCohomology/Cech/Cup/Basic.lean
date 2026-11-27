@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
-import TauCeti.Data.Fin.Basic
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # The cup product on Čech complexes
@@ -349,27 +349,9 @@ theorem d_cechCup (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U 
   subst h
   refine cechCochain_ext fun k ↦ ?_
   rw [map_add, map_zsmul, cechComponent_d, cechComponent_cechCup, cechComponent_cechCup,
-    cechFace_d, cechFace_d, ← Fin.sum_congr' _ (show p + 1 + (q + 1) = p + q + 2 by omega),
-    Fin.sum_univ_add, Fin.sum_univ_castSucc (n := p + 1), Fin.sum_univ_succ (n := q + 1)]
+    cechFace_d, cechFace_d]
   simp only [cechFace_cechCup]
-  -- the faces `j ≤ p` of `a ⌣ b` are the faces of `d a`, the faces `j ≥ p + 1` those of `d b`,
-  -- and the last face of `d a` cancels the first face of `d b`
-  rw [add_mul, mul_add, smul_add, Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
-  have key {M : Type w} [AddCommGroup M] {P₁ P₂ Q₁ Q₂ X Y : M} (h₁ : P₁ = Q₁) (h₂ : P₂ = Q₂)
-      (h : X + Y = 0) : P₁ + P₂ = Q₁ + X + (Y + Q₂) := by
-    rw [h₁, h₂, add_assoc Q₁, ← add_assoc X, h, zero_add]
-  refine key (Finset.sum_congr rfl fun x _ ↦ ?_)
-    (Finset.sum_congr rfl fun x _ ↦ ?_) ?_
-  · rw [smul_mul_assoc]
-    congr 2 <;> exact cechFace_eq_of_val _ fun i ↦ by grind [Fin.val_succAbove]
-  · rw [mul_smul_comm, smul_smul, ← pow_add]
-    congr 2
-    · simp only [Fin.val_cast, Fin.val_natAdd, Fin.val_succ]
-      omega
-    all_goals exact cechFace_eq_of_val _ fun i ↦ by grind [Fin.val_succAbove]
-  · rw [Fin.val_last, Fin.val_zero, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul]
-    simp only [neg_mul, smul_mul_assoc, neg_add_eq_zero]
-    congr 2 <;> exact cechFace_eq_of_val _ fun i ↦ by grind [Fin.val_succAbove]
+  exact Fin.sum_neg_one_pow_zsmul_mul_succAbove (fun σ ↦ cechFace k σ a) (fun σ ↦ cechFace k σ b)
 
 /-- The cup product of two cocycles is a cocycle. -/
 theorem d_cechCup_eq_zero {a : (cechAlgebraComplex U F).X p} {b : (cechAlgebraComplex U F).X q}
