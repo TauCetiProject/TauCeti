@@ -224,7 +224,7 @@ the bound of
 For `c = δ > 0` the homotopy is monotone and the action drops by exactly `δ`; for `c = -δ < 0` it
 rises by exactly `δ`. -/
 theorem cylinderAction_add_const_eq_cylinderAction_add_hoferPlus [Nonempty M]
-    (hσ : IsSmoothForm I 0 σ) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (a b : ℝ) (hσ : IsSmoothForm I 0 σ) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
     (hv₀ : ∀ t, v (0, t) = x t) (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
     {c : ℝ → ℝ} (hc : IntervalIntegrable c volume 0 1) :
     cylinderAction σ (fun t y ↦ H t y + c t) v =
@@ -246,14 +246,14 @@ from `H₀` to `H₁` when `x` is a `1`-periodic orbit of `H`, raises the action
 `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction_add_hoferNorm` fails
 without its hypothesis that `H₀ ≤ H₁` somewhere at each time; the action estimate is one-sided. -/
 theorem not_cylinderAction_add_const_le_cylinderAction_add_hoferNorm [Nonempty M]
-    (hσ : IsSmoothForm I 0 σ) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (a b : ℝ) (hσ : IsSmoothForm I 0 σ) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
     (hv₀ : ∀ t, v (0, t) = x t) (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
     {c : ℝ → ℝ} (hc : IntervalIntegrable c volume 0 1) (hneg : ∫ t in 0..1, c t < 0) :
     ¬ cylinderAction σ (fun t y ↦ H t y + c t) v ≤
       cylinderAction σ H
           (rectangleTrans ((fun w ↦ x w.2) ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) +
         hoferNorm (H - fun t y ↦ H t y + c t) := by
-  rw [cylinderAction_add_const_eq_cylinderAction_add_hoferPlus hσ hv hv₀ hH hc,
+  rw [cylinderAction_add_const_eq_cylinderAction_add_hoferPlus a b hσ hv hv₀ hH hc,
     hoferPlus_sub_add_const, sub_add_const_eq, hoferNorm_const]
   linarith
 
