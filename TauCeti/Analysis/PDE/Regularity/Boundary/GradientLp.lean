@@ -907,16 +907,14 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_reflection {p : ℝ≥0
 
 /-! ### Transporting a half-ball problem along the shear -/
 
-/-- The shear `Φ = transvectionL ν (-(-s))` with `⟪ν, s⟫ = 0` and `‖Φ‖ ≤ κ` maps the ball
-`B(T y₀, r / κ)` about the image of `y₀` under its inverse `T = transvectionL ν (-s)` into
-`B(y₀, r)`. -/
-private theorem mapsTo_transvectionL_ball_div {ν s : E} (hνs : ⟪ν, -s⟫_ℝ = 0) {κ : ℝ≥0}
-    (hκ : 0 < (κ : ℝ)) (hΦ : ‖transvectionL ν (-(-s))‖ ≤ κ) (y₀ : E) (r : ℝ) :
-    MapsTo (transvectionL ν (-(-s))) (ball (transvectionL ν (-s) y₀) (r / κ)) (ball y₀ r) :=
+/-- A continuous linear map `L` with `‖L‖ ≤ κ` maps the ball `B(y, r / κ)` into `B(L y, r)`.
+Applied to the shear and to its inverse. -/
+private theorem mapsTo_ball_div_of_opNorm_le (L : E →L[ℝ] E) {κ : ℝ≥0} (hκ : 0 < (κ : ℝ))
+    (hL : ‖L‖ ≤ κ) (y : E) (r : ℝ) : MapsTo L (ball y (r / κ)) (ball (L y) r) :=
   fun x hx => by
-    have h := ((transvectionL ν (-(-s))).lipschitzWith.weaken (by exact_mod_cast hΦ)).mapsTo_ball
-      (by exact_mod_cast hκ.ne') (transvectionL ν (-s) y₀) (r / κ) hx
-    rwa [transvectionL_neg_transvectionL hνs, mul_div_cancel₀ r hκ.ne'] at h
+    have h := (L.lipschitzWith.weaken (by exact_mod_cast hL)).mapsTo_ball
+      (by exact_mod_cast hκ.ne') y (r / κ) hx
+    rwa [mul_div_cancel₀ r hκ.ne'] at h
 
 /-- **A half-ball problem along the shear.** Let `Φ x = x + ⟪ν, x⟫ s` with `⟪ν, s⟫ = 0` and
 `‖Φ‖ ≤ κ`, with inverse `T`, and let `y₀` lie on the boundary hyperplane of `H`. If
@@ -959,7 +957,8 @@ private theorem exists_shear_ball {H : Opens E} {ν y₀ s : E} {c₀ R : ℝ} {
     simpa only [U', B, Opens.coe_mk, mem_preimage] using hx
   have hB₁U' : B₁ ≤ U' := fun x hx => by
     simp only [U', B₁, Opens.mem_mk, mem_preimage] at hx ⊢
-    exact mapsTo_transvectionL_ball_div hνs hκ hΦ y₀ R hx
+    simpa only [transvectionL_neg_transvectionL hνs] using
+      mapsTo_ball_div_of_opNorm_le _ hκ hΦ (transvectionL ν (-s) y₀) R hx
   have hmapsH : MapsTo (transvectionL ν (-(-s))) ((U' ⊓ H : Opens E) : Set E) (B ⊓ H : Opens E) :=
     fun x hx => ⟨hU'B hx.1, (hHΦ x).2 hx.2⟩
   have hmapsH' : MapsTo (transvectionL ν (-s)) ((B ⊓ H : Opens E) : Set E) (U' ⊓ H : Opens E) :=
@@ -1008,10 +1007,7 @@ private theorem eLpNorm_ball_div_inter_le_of_ae_eq_adjoint {H : Opens E} {ν y�
       κ * eLpNorm g₁ p (volume.restrict (ball (transvectionL ν (-s) y₀) r ∩ H)) := by
   have hmapsT : MapsTo (transvectionL ν (-s)) (ball y₀ (r / κ) ∩ H)
       (ball (transvectionL ν (-s) y₀) r ∩ H) := fun y hy =>
-    ⟨by
-      have h := ((transvectionL ν (-s)).lipschitzWith.weaken (by exact_mod_cast hT)).mapsTo_ball
-        (by exact_mod_cast hκ.ne') y₀ (r / κ) hy.1
-      rwa [mul_div_cancel₀ r hκ.ne'] at h, (transvectionL_mem_iff hH hνs y).2 hy.2⟩
+    ⟨mapsTo_ball_div_of_opNorm_le _ hκ hT y₀ r hy.1, (transvectionL_mem_iff hH hνs y).2 hy.2⟩
   have hBm := (measurableSet_ball (x := transvectionL ν (-s) y₀) (ε := r)).inter
     H.isOpen.measurableSet
   have hTa : ‖(transvectionL ν (-s)).adjoint‖ ≤ κ := by rwa [LinearIsometryEquiv.norm_map]
@@ -1076,7 +1072,8 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_isSymm {p : ℝ≥0∞}
   have hR₁ : 0 < R / κ := div_pos hR hκ
   have hmaps : MapsTo (transvectionL ν (-(-s))) (ball (transvectionL ν (-s) y₀) (R / κ) ∩ H)
       (ball y₀ R ∩ H) := fun x hx =>
-    ⟨mapsTo_transvectionL_ball_div hνs hκ hΦ y₀ R hx.1, (hHΦ x).2 hx.2⟩
+    ⟨by simpa only [transvectionL_neg_transvectionL hνs] using
+      mapsTo_ball_div_of_opNorm_le _ hκ hΦ (transvectionL ν (-s) y₀) R hx.1, (hHΦ x).2 hx.2⟩
   have hBm := (measurableSet_ball (x := y₀) (ε := R)).inter H.isOpen.measurableSet
   have hΦmp := measurePreserving_transvectionL volume (inner_neg_right_eq_zero hνs)
   -- The sheared problem.
