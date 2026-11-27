@@ -422,9 +422,7 @@ private theorem maslovIndex_sub_two_mul_sum_add_add_neg {r : H.Generator} {F : R
   ring
 
 /-- **Existence of Maslov gradings modulo `Λ`.** The generators carry a Maslov grading modulo
-`Λ` exactly when every domain `E` from a generator to itself has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` in `Λ`.
-Such a grading is obtained by choosing a generator in each class of generators joined by domains
-and grading the class by `μ(D) - 2 ∑ᵢ n_{zᵢ}(D)` for a chosen domain `D` from it. -/
+`Λ` exactly when every domain `E` from a generator to itself has `μ(E) - 2 ∑ᵢ n_{zᵢ}(E)` in `Λ`. -/
 theorem exists_isMaslovGradingMod_iff :
     (∃ gr, H.IsMaslovGradingMod Λ χ gr) ↔ ∀ (x : H.Generator) (E : Region → ℤ),
       H.IsDomainBetween x x E → H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ Λ := by
@@ -482,7 +480,7 @@ theorem exists_coe_sub_eq_of_maslovIndex_sub_two_mul_sum_mem {x₀ : H.Generator
       ((gr x - gr y : ℚ) : ℚ ⧸ Λ) =
         ((H.maslovIndex χ x y D - 2 * ∑ z, (D (H.basepoint z) : ℚ) : ℚ) : ℚ ⧸ Λ) := by
   classical
-  -- Grade each generator joined to `x₀` by the value of a chosen domain from `x₀` to it.
+  -- Grade each generator joined to `x₀` by minus the value of a chosen domain from `x₀` to it.
   refine ⟨fun y => if hy : ∃ F, H.IsDomainBetween x₀ y F then
       -(H.maslovIndex χ x₀ y hy.choose - 2 * ∑ z, (hy.choose (H.basepoint z) : ℚ)) else 0,
     fun {x y D E} hE hD => QuotientAddGroup.eq_iff_sub_mem.mpr ?_⟩
