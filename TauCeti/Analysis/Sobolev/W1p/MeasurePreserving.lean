@@ -312,8 +312,7 @@ theorem W1p.ae_nonneg_value_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
     (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
     (hu : ∀ᵐ y ∂volume.restrict V, 0 ≤ W1p.value u y) :
     ∀ᵐ x ∂volume.restrict U, 0 ≤ W1p.value (W1p.compAffineIsometryEquivL g hUV u) x := by
-  have hmp : MeasurePreserving g (volume.restrict (U : Set F)) (volume.restrict (V : Set F')) :=
-    hUV ▸ g.measurePreserving.restrict_preimage V.isOpen.measurableSet
+  have hmp := g.measurePreserving.restrict_of_preimage_eq V.isOpen.measurableSet hUV
   filter_upwards [W1p.value_compAffineIsometryEquivL_ae g hUV u,
     hmp.quasiMeasurePreserving.ae hu] with x h1 h2
   rw [h1]
@@ -417,8 +416,7 @@ theorem W1p.restrictL_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F') (hUV : 
     (hUV₀ : (U₀ : Set F) = g ⁻¹' V₀) (u : W1p volume V p) :
     W1p.restrictL hU₀ (W1p.compAffineIsometryEquivL g hUV u) =
       W1p.compAffineIsometryEquivL g hUV₀ (W1p.restrictL hV₀ u) := by
-  have hmp : MeasurePreserving g (volume.restrict (U₀ : Set F)) (volume.restrict (V₀ : Set F')) :=
-    hUV₀ ▸ g.measurePreserving.restrict_preimage V₀.isOpen.measurableSet
+  have hmp := g.measurePreserving.restrict_of_preimage_eq V₀.isOpen.measurableSet hUV₀
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [W1p.value_restrictL_ae hU₀ (W1p.compAffineIsometryEquivL g hUV u),
     ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hU₀)
