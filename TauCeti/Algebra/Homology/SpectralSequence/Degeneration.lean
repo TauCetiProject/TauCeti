@@ -162,8 +162,9 @@ lemma pageXIsoOfLEOfIsZeroOfLT_add_one {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (s 
 /-- **Objects with vanishing neighbours survive.** Suppose that on the page `r` every object
 joined to the position `pq` by a differential of some page `s ≥ r` is zero. Then the object at
 `pq` on every later page `r' ≥ r` is isomorphic to the object at `pq` on the page `r`. This is
-`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZeroOfLT`, whose hypothesis now holds up to every
-page; see `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_self` and
+the special case of `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZeroOfLT` in which the
+neighbours vanish for every page `s ≥ r`, so that it holds for every `r' ≥ r`; see
+`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_self` and
 `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero_add_one`. -/
 noncomputable def pageXIsoOfLEOfIsZero {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
     (h : ∀ s, r ≤ s → ∀ pq', (c s).Rel pq pq' ∨ (c s).Rel pq' pq → IsZero ((E.page r).X pq'))
