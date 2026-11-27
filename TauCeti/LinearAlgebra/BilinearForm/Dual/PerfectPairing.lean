@@ -134,7 +134,7 @@ theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinFo
       LinearEquiv.coe_toLinearMap] using congr($hcomp (b i))
   rw [hm, ← LinearMap.toMatrix_eq_basisToMatrix, Basis.toMatrix_dualBasis_eq_transpose_toMatrix₂,
     Matrix.det_transpose]
-  rfl
+  rw [LinearMap.BilinForm.toMatrix]
 
 /-- A nondegenerate integral form on a finite module has positive dual-lattice index. -/
 theorem relIndex_dualSubmodule_range_mk_one_pos [Module.Finite ℤ M]

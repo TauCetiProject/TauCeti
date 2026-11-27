@@ -206,7 +206,7 @@ theorem isSelfDualAt_iff_dualSubmodule_eq :
     S.IsSelfDualAt p ↔ ((S.form.baseChange ℤ_[p]).baseChange ℚ_[p]).dualSubmodule N = N :=
   Iff.rfl
 
-/-- A completed lattice is self-dual exactly when its integral pairing is perfect. -/
+/-- The lattice is self-dual at `p` exactly when the pairing extended to `ℤ_[p]` is perfect. -/
 theorem isSelfDualAt_iff_isPerfPair :
     S.IsSelfDualAt p ↔ (S.form.baseChange ℤ_[p]).IsPerfPair :=
   (S.isSelfDualAt_iff_dualSubmodule_eq p).trans

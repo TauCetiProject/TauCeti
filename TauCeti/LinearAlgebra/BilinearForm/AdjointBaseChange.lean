@@ -48,7 +48,9 @@ theorem baseChange_rightModule_adjoint [Star O] [SMulCommClass R O L]
     (h : ∀ x y, B (b • x) y = B x (star b • y)) (x y : A ⊗[R] L) :
     B.baseChange A (b • x) y = B.baseChange A x (star b • y) := by
   let _ := SMulCommClass.symm R O L
-  have hpair : IsAdjointPair B B (Module.toModuleEnd R L b) (Module.toModuleEnd R L (star b)) := h
+  have hpair : IsAdjointPair B B (Module.toModuleEnd R L b) (Module.toModuleEnd R L (star b)) := by
+    intro x y
+    simpa only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply] using h x y
   simpa only [TensorProduct.rightModule_smul_eq_lTensor, LinearMap.baseChange_eq_lTensor]
     using hpair.baseChange (A := A) x y
 
