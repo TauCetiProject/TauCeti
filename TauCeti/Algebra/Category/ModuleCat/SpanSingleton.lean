@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 public import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
@@ -22,6 +22,7 @@ way, from its value at `1` (`ModuleCat.homSelfLinearEquiv`).
 ## Main results
 
 * `ModuleCat.homSelfLinearEquiv`: `(R ⟶ M) ≃ₗ M`, evaluation at `1`.
+* `ModuleCat.preadditiveCoyonedaRingIso`: the natural additive form of this identification.
 * `ModuleCat.ofHom_toSpanSingleton_comp`: `(a ↦ a • m) ≫ f` is `a ↦ a • f m`.
 * `ModuleCat.span_singleton_apply_eq_top_iff`: `f x` spans the codomain of an isomorphism `f` if
   and only if `x` spans its domain.
@@ -58,6 +59,23 @@ theorem homSelfLinearEquiv_symm_apply (m : M) :
   simp
 
 end HomSelf
+
+/-- Evaluation at `1` identifies additive Hom from the regular module with the underlying
+abelian-group functor. -/
+noncomputable def preadditiveCoyonedaRingIso (R : Type u) [Ring R] :
+    preadditiveCoyoneda.obj (Opposite.op (of R R)) ≅
+      forget₂ (ModuleCat.{u} R) AddCommGrpCat :=
+  NatIso.ofComponents (fun M ↦ (homSelfLinearEquiv ℤ M).toAddEquiv.toAddCommGrpIso)
+    (fun f ↦ by ext g; rfl)
+
+/-- The additive Hom comparison for the regular module is evaluation at `1`. -/
+@[simp]
+lemma preadditiveCoyonedaRingIso_hom_app_apply {R : Type u} [Ring R]
+    (M : ModuleCat.{u} R) (f : of R R ⟶ M) :
+    DFunLike.coe (F := (of R R ⟶ M) →+ M)
+      ((preadditiveCoyonedaRingIso R).hom.app M).hom f =
+      f.hom 1 :=
+  homSelfLinearEquiv_apply f
 
 /-- Following the morphism `R ⟶ M`, `a ↦ a • m`, by a morphism `f` gives `a ↦ a • f m`. -/
 theorem ofHom_toSpanSingleton_comp {R : Type u} [Ring R] {M N : ModuleCat.{u} R} (m : M)
