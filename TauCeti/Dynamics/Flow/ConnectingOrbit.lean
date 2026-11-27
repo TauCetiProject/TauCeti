@@ -30,7 +30,10 @@ logit `s ↦ log (s / (1 - s))`, which reparametrises the open unit interval by 
 completed by its limits at the two ends. Its homotopy class is what parallel transport in a local
 coefficient system needs, for instance for Morse boundaries with twisted coefficients. Reversing
 time reverses this path (`Flow.connectingPath_eq_symm_of_eq_reverse`), which is how transport along
-the trajectories of `-f` compares with transport along those of `f`.
+the trajectories of `-f` compares with transport along those of `f`. Before its end the path stays
+in the unstable set of its start, and after its start in the stable set of its end
+(`Flow.connectingPath_mem_unstableSet`, `Flow.connectingPath_mem_stableSet`), when these sets
+contain the endpoints.
 -/
 
 public section
@@ -102,6 +105,28 @@ theorem connectingPath_apply_half (hp : y ∈ unstableSet φ p) (hq : y ∈ stab
   rw [connectingPath_apply_of_mem_Ioo hp hq
     (by constructor <;> (rw [← Subtype.coe_lt_coe]; norm_num))]
   norm_num
+
+/-- Before its end, the path traced by a connecting trajectory from `p` lies in the unstable set of
+`p`, provided `p` itself does. -/
+theorem connectingPath_mem_unstableSet (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
+    (hpp : p ∈ unstableSet φ p) {s : unitInterval} (hs : (s : ℝ) < 1) :
+    connectingPath hp hq s ∈ unstableSet φ p := by
+  rcases eq_or_ne s 0 with rfl | hs0
+  · rwa [Path.source]
+  · rw [connectingPath_apply_of_mem_Ioo hp hq ⟨unitInterval.pos_iff_ne_zero.2 hs0, hs⟩,
+      apply_mem_unstableSet_iff]
+    exact hp
+
+/-- After its start, the path traced by a connecting trajectory to `q` lies in the stable set of
+`q`, provided `q` itself does. -/
+theorem connectingPath_mem_stableSet (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
+    (hqq : q ∈ stableSet φ q) {s : unitInterval} (hs : 0 < (s : ℝ)) :
+    connectingPath hp hq s ∈ stableSet φ q := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · rwa [Path.target]
+  · rw [connectingPath_apply_of_mem_Ioo hp hq ⟨hs, unitInterval.lt_one_iff_ne_one.2 hs1⟩,
+      apply_mem_stableSet_iff]
+    exact hq
 
 /-- **Reversing the flow reverses the connecting path.** If `ψ` is the time reversal of `φ`, a
 point `y` whose `φ`-trajectory runs from `p` to `q` has a `ψ`-trajectory running from `q` to `p`,

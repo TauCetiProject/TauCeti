@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
-import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
@@ -305,6 +305,22 @@ theorem signLocalSystemFiberEquiv_map {b b' : B}
     (⟨⟨b, o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))))
     (IsIso.hom_inv_id p)
   exact congrArg _ (h'.trans (congrFun (isCoveringMap_proj (F := F) (E := E) hι).monodromy_refl _))
+
+/-- Transport in the orientation local system along a path which carries the orientation `o` at its
+start to the orientation `o'` at its end, in the sense of
+`TauCeti.VectorBundleOrientationCover.orientationTransport`, carries the value at `o` to the value
+at `o'`. -/
+theorem signLocalSystemFiberEquiv_transport_mk {b b' : B} (γ : Path b b')
+    {o : Orientation ℝ (E b) ι} {o' : Orientation ℝ (E b') ι}
+    (h : orientationTransport E hι γ o = o')
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
+    signLocalSystemFiberEquiv hι o'
+        (LocalCoefficientSystem.transport (signLocalSystem F E R hι) (.mk γ) f) =
+      signLocalSystemFiberEquiv hι o f := by
+  rw [LocalCoefficientSystem.transport_apply]
+  refine signLocalSystemFiberEquiv_map hι _ ?_ f
+  rw [orientationTransport_apply] at h
+  rw [← h, ← fiberEquiv_symm_apply (b := b'), Equiv.symm_apply_apply]
 
 /-- **Transport over a trivializing set**: along a path in the base set of a linear trivialization
 `e`, transport in the orientation local system carries the element with value `r` at the orientation
