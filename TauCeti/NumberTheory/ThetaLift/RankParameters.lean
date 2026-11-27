@@ -32,13 +32,6 @@ private theorem rpow_natCast_mul_eq_pow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) (y : 
   rw [mul_comm]
   exact rpow_mul_natCast hx y n
 
-private theorem eventually_const_mul_rpow_le_rpow {a b : ℝ} (hab : a < b) (K : ℝ) :
-    ∀ᶠ x : ℝ in atTop, K * x ^ a ≤ x ^ b := by
-  filter_upwards [eventually_ge_atTop 0,
-    ((isLittleO_rpow_rpow_atTop hab).const_mul_left K).bound one_pos] with x hx h
-  simpa only [Real.norm_eq_abs, abs_of_nonneg (rpow_nonneg hx b), one_mul] using
-    (le_abs_self _).trans h
-
 private theorem degreeBudget_le {x F K M ε C f r k m δ : ℝ}
     (hx : 0 < x) (hf₀ : 0 ≤ f) (hr₁ : 1 ≤ r) (hk₀ : 0 ≤ k)
     (hf : f ≤ 4 * x ^ F) (hr : r ≤ 4 * x ^ K) (hk : k ≤ 2 * x ^ K)
