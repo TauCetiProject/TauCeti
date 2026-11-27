@@ -19,9 +19,8 @@ at a primitive root of unity can be made real by multiplication by a power of th
 This lets one replace a cyclotomic generator of a relative different by a real associate,
 without changing its absolute value at any infinite place.
 
-The target is the real associate in `New.Parameters.exists_unit_mul_relDifferentGen_real`
-from `grh-lean` (commit `72fead1`, `grh/src/New/Derivatives/Field/PrimeDecomposition.lean`).
-The argument here uses reflection of the polynomial and the derivative at a reciprocal root.
+See also `New.Parameters.exists_unit_mul_relDifferentGen_real` in `grh-lean`
+(commit `72fead1`, `grh/src/New/Derivatives/Field/PrimeDecomposition.lean`).
 -/
 
 public section

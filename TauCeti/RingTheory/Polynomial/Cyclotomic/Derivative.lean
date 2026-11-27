@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
-import TauCeti.Algebra.Polynomial.ReciprocalDerivative
+import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Reflect
 
 /-!
