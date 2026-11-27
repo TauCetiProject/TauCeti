@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
+public import Mathlib.Analysis.ODE.Basic
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Regularity of solutions to first-order ODEs
@@ -18,12 +20,37 @@ A solution of a time-dependent equation `x' = X(t, x)` with a jointly continuous
 is `C¹` (`TauCeti.contDiff_one_of_hasDerivAt`).
 The same holds for a linear equation `f' = A_t f` whose coefficient `A` is `C^n` in `t`
 (`TauCeti.contDiff_succ_of_hasDerivAt_clm_apply`).
+For a field that is Lipschitz in time and state, a bound on the speed of a solution gives
+a Lipschitz constant for its velocity (`IsIntegralCurveOn.lipschitzOnWith_velocity`).
 -/
 
 public section
 
 open Set
-open scoped ContDiff
+open scoped ContDiff NNReal
+
+/-- On a convex time set, a solution with speed at most `B` has `(K + L * B)`-Lipschitz
+velocity if the field is `K`-Lipschitz in time and `L`-Lipschitz in state along the solution's
+range. -/
+theorem IsIntegralCurveOn.lipschitzOnWith_velocity {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {y : ℝ → E} {f : ℝ → E → E} {s : Set ℝ}
+    {K L B : ℝ≥0} (hy : IsIntegralCurveOn y f s) (hs : Convex ℝ s)
+    (hK : ∀ u ∈ y '' s, LipschitzOnWith K (fun t ↦ f t u) s)
+    (hL : ∀ t ∈ s, LipschitzOnWith L (f t) (y '' s))
+    (hB : ∀ t ∈ s, ‖f t (y t)‖₊ ≤ B) :
+    LipschitzOnWith (K + L * B) (fun t ↦ f t (y t)) s := by
+  have hyLip := hs.lipschitzOnWith_of_nnNorm_hasDerivWithin_le (fun t ht ↦ hy t ht) hB
+  rw [lipschitzOnWith_iff_dist_le_mul]
+  intro t ht r hr
+  calc
+    dist (f t (y t)) (f r (y r)) ≤ dist (f t (y t)) (f r (y t)) +
+        dist (f r (y t)) (f r (y r)) := dist_triangle _ _ _
+    _ ≤ K * dist t r + L * dist (y t) (y r) :=
+      add_le_add ((hK _ (mem_image_of_mem y ht)).dist_le_mul t ht r hr)
+        ((hL r hr).dist_le_mul _ (mem_image_of_mem y ht) _ (mem_image_of_mem y hr))
+    _ ≤ K * dist t r + L * (B * dist t r) :=
+      add_le_add le_rfl (mul_le_mul_of_nonneg_left (hyLip.dist_le_mul t ht r hr) L.coe_nonneg)
+    _ = (↑(K + L * B) : ℝ) * dist t r := by push_cast; ring
 
 namespace TauCeti
 
