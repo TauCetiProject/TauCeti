@@ -91,39 +91,40 @@ variable {L : Type*} [LieRing L] [LieAlgebra K L] {φ : H →ₗ[K] L} {E F : I 
 /-- For a generalized Cartan matrix, every `F k` commutes with each raising Serre element
 `(ad (E i)) ^ (-Aᵢⱼ) ⁅E i, E j⁆`, as soon as `φ`, `E` and `F` satisfy the Chevalley relations
 (Kac, §3.3). Neither Serre relation is used. -/
-theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
-    (hneg : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 → A j i = 0)
-    (hφE : ∀ x j, ⁅φ x, E j⁆ = R.root j x • E j) (hφF : ∀ x j, ⁅φ x, F j⁆ = -(R.root j x • F j))
-    (hself : ∀ i, ⁅E i, F i⁆ = φ (R.coroot i)) (hne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0)
-    (i j k : I) : ⁅F k, (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆⁆ = 0 := by
+theorem lie_ad_pow_lie_eq_zero (hA : A.IsGeneralizedCartan)
+    (h : SatisfiesAuxRelations R φ E F) (i j k : I) :
+    ⁅F k, (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆⁆ = 0 := by
   obtain rfl | hij := eq_or_ne i j
   · simp
-  have hFE (a b : I) (hab : a ≠ b) : ⁅F b, E a⁆ = 0 := by rw [← lie_skew, hne a b hab, neg_zero]
+  have hFE (a b : I) (hab : a ≠ b) : ⁅F b, E a⁆ = 0 := by
+    rw [← lie_skew, h.lie_positive_negative_of_ne a b hab, neg_zero]
   have hroot (a b : I) : R.root b (R.coroot a) = (A a b : K) := by simp
   rw [← ad_pow_succ_apply]
   obtain rfl | hki := eq_or_ne k i
   · by_cases h0 : φ (R.coroot k) = 0
-    · rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero (by rw [← lie_skew, hself, h0, neg_zero]),
+    · rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero
+          (by rw [← lie_skew, h.lie_positive_negative_self, h0, neg_zero]),
         hFE j k hij.symm, map_zero]
     have t : IsSl2Triple (φ (R.coroot k)) (E k) (F k) :=
       { h_ne_zero := h0
-        lie_e_f := hself k
-        lie_h_e_nsmul := by rw [hφE, hroot, hdiag]; simp [two_smul]
-        lie_h_f_nsmul := by rw [hφF, hroot, hdiag]; simp [two_smul] }
+        lie_e_f := h.lie_positive_negative_self k
+        lie_h_e_nsmul := by rw [h.lie_cartan_positive, hroot, hA.diag]; simp [two_smul]
+        lie_h_f_nsmul := by rw [h.lie_cartan_negative, hroot, hA.diag]; simp [two_smul] }
     have hstring := t.lie_f_pow_succ_toEnd_e (y := E j) (μ := (A k j : K))
-      (by rw [hφE, hroot]) (hFE j k hij.symm) (-A k j).toNat
+      (by rw [h.lie_cartan_positive, hroot]) (hFE j k hij.symm) (-A k j).toNat
     rw [← ad_eq_toEnd] at hstring
     rw [hstring]
     have hn : (((-A k j).toNat : ℕ) : K) = -(A k j : K) := by
-      rw [← Int.cast_natCast, Int.toNat_of_nonneg (by linarith [hneg k j hij]), Int.cast_neg]
+      rw [← Int.cast_natCast, Int.toNat_of_nonneg (by linarith [hA.offDiag_nonpos k j hij]),
+        Int.cast_neg]
     rw [hn, sub_neg_eq_add, neg_add_cancel, mul_zero, zero_smul]
   rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero (hFE i k hki.symm)]
   obtain rfl | hkj := eq_or_ne k j
-  · rw [← lie_skew, hself, pow_succ, mul_apply_eq_comp, map_neg, ad_apply, lie_skew, hφE,
-      hroot]
-    rcases h : (-A i k).toNat with _ | n
-    · have hik : A i k = 0 := le_antisymm (hneg i k hij) (by omega)
-      simp [hzero i k hik]
+  · rw [← lie_skew, h.lie_positive_negative_self, pow_succ, mul_apply_eq_comp, map_neg, ad_apply,
+      lie_skew, h.lie_cartan_positive, hroot]
+    rcases h_neg : (-A i k).toNat with _ | n
+    · have hik : A i k = 0 := le_antisymm (hA.offDiag_nonpos i k hij) (by omega)
+      simp [(hA.zero_comm i k).mp hik]
     · rw [map_smul, pow_succ, mul_apply_eq_comp, ad_apply, lie_self, map_zero, smul_zero]
   · rw [hFE j k hkj.symm, map_zero]
 
@@ -139,17 +140,14 @@ variable (R) (μ : Module.Dual K H) [DecidableEq I]
 
 /-! ### The Serre relations on the tensor algebra -/
 
-variable (hdiag : ∀ i, A i i = 2) (hneg : ∀ i j, i ≠ j → A i j ≤ 0)
-  (hzero : ∀ i j, A i j = 0 → A j i = 0)
+variable (hA : A.IsGeneralizedCartan)
 
-include hdiag hneg hzero in
+include hA in
 /-- The raising Serre relations hold on the tensor algebra: a raising Serre element kills `1` and
 commutes with the lowering operators, which generate the tensor algebra from `1`. -/
 private theorem ad_pow_lie_raising_raising (i j : I) :
     (ad K _ (raising R μ i) ^ (-A i j).toNat) ⁅raising R μ i, raising R μ j⁆ = 0 := by
-  have hcomm (k : I) := lie_ad_pow_lie_eq_zero hdiag hneg hzero (lie_cartanAction_raising R μ)
-    (lie_cartanAction_lowering R μ) (lie_raising_lowering_self R μ)
-    (fun _ _ h => lie_raising_lowering_of_ne R μ h) i j k
+  have hcomm (k : I) := lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_wordRep R μ) i j k
   have hone (n : ℕ) :
       ((ad K _ (raising R μ i) ^ n) ⁅raising R μ i, raising R μ j⁆) (single 1 1) = 0 := by
     induction n with
@@ -264,7 +262,7 @@ private theorem cartanAction_mem_serreIdeal (x : H) {t : K[FreeMonoid I]}
       (mul_serreElement_mul_mem _ _ _ _)
   simpa [cartanAction_apply] using sub_mem (Submodule.smul_mem _ (μ x) ht) hD
 
-include hdiag hneg hzero in
+include hA in
 /-- The raising operators preserve the Serre ideal: a raising operator commutes with the lowering
 Serre elements, and its commutator with a lowering operator is a Cartan operator. -/
 private theorem raising_mem_serreIdeal (k : I) {t : K[FreeMonoid I]} (ht : t ∈ serreIdeal K A) :
@@ -272,12 +270,17 @@ private theorem raising_mem_serreIdeal (k : I) {t : K[FreeMonoid I]} (ht : t ∈
   have hcomm (i j : I) : ⁅raising R μ k, Algebra.lmul K K[FreeMonoid I] (serreElement K A i j)⁆ =
       0 := by
     rw [← ad_pow_lie_lowering_lowering]
-    refine lie_ad_pow_lie_eq_zero (R := R) (φ := -cartanAction R μ) hdiag hneg hzero
-      (fun x j => ?_) (fun x j => ?_) (fun i => ?_) (fun i j h => ?_) i j k
-    · rw [LinearMap.neg_apply, neg_lie, lie_cartanAction_lowering, neg_neg]
-    · rw [LinearMap.neg_apply, neg_lie, lie_cartanAction_raising]
-    · rw [← lie_skew, lie_raising_lowering_self, LinearMap.neg_apply]
-    · rw [← lie_skew, lie_raising_lowering_of_ne R μ (Ne.symm h), neg_zero]
+    refine lie_ad_pow_lie_eq_zero (R := R) (φ := -cartanAction R μ) hA
+      { lie_cartan_cartan := fun x y => by
+          simp only [LinearMap.neg_apply, neg_lie, lie_neg, neg_neg, lie_cartanAction_cartanAction]
+        lie_cartan_positive := fun x j => by
+          rw [LinearMap.neg_apply, neg_lie, lie_cartanAction_lowering, neg_neg]
+        lie_cartan_negative := fun x j => by
+          rw [LinearMap.neg_apply, neg_lie, lie_cartanAction_raising]
+        lie_positive_negative_self := fun i => by
+          rw [← lie_skew, lie_raising_lowering_self, LinearMap.neg_apply]
+        lie_positive_negative_of_ne := fun i j h => by
+          rw [← lie_skew, lie_raising_lowering_of_ne R μ (Ne.symm h), neg_zero] } i j k
   refine map_mem_serreIdeal _ (fun a c i j => ?_) ht
   induction a using MonoidAlgebra.induction_on with
   | of w =>
@@ -321,14 +324,14 @@ private theorem raising_mem_operatorAlgebra (k : I) : raising R μ k ∈ operato
 private theorem lowering_mem_operatorAlgebra (k : I) : lowering k ∈ operatorAlgebra R μ :=
   LieSubalgebra.subset_lieSpan (Or.inr ⟨k, rfl⟩)
 
-include hdiag hneg hzero in
+include hA in
 private theorem apply_mem_serreIdeal {X : Module.End K K[FreeMonoid I]}
     (hX : X ∈ operatorAlgebra R μ) : ∀ t ∈ serreIdeal K A, X t ∈ serreIdeal K A := by
   induction hX using LieSubalgebra.lieSpan_induction with
   | mem X hX =>
     rcases hX with (⟨x, rfl⟩ | ⟨k, rfl⟩) | ⟨k, rfl⟩
     · exact fun t => cartanAction_mem_serreIdeal R μ x
-    · exact fun t => raising_mem_serreIdeal R μ hdiag hneg hzero k
+    · exact fun t => raising_mem_serreIdeal R μ hA k
     · exact fun t => lowering_mem_serreIdeal k
   | zero => simp
   | add X Y _ _ hX hY => exact fun t ht => add_mem (hX t ht) (hY t ht)
@@ -340,18 +343,18 @@ private theorem apply_mem_serreIdeal {X : Module.End K K[FreeMonoid I]}
 private noncomputable def serreSubmodule :
     LieSubmodule K (operatorAlgebra R μ) K[FreeMonoid I] where
   toSubmodule := serreIdeal K A
-  lie_mem {X t} ht := apply_mem_serreIdeal R μ hdiag hneg hzero X.property t ht
+  lie_mem {X t} ht := apply_mem_serreIdeal R μ hA X.property t ht
 
 /-- The quotient of the tensor algebra by the Serre ideal, on which the operators act. -/
-private abbrev SerreQuotient := K[FreeMonoid I] ⧸ serreSubmodule R μ hdiag hneg hzero
+private abbrev SerreQuotient := K[FreeMonoid I] ⧸ serreSubmodule R μ hA
 
 /-- The action of an operator on the quotient by the Serre ideal. -/
 private noncomputable def quotientAction :
-    operatorAlgebra R μ →ₗ⁅K⁆ Module.End K (SerreQuotient R μ hdiag hneg hzero) :=
+    operatorAlgebra R μ →ₗ⁅K⁆ Module.End K (SerreQuotient R μ hA) :=
   LieModule.toEnd K _ _
 
 private theorem quotientAction_mk (X : operatorAlgebra R μ) (t : K[FreeMonoid I]) :
-    quotientAction R μ hdiag hneg hzero X (LieSubmodule.Quotient.mk' _ t) =
+    quotientAction R μ hA X (LieSubmodule.Quotient.mk' _ t) =
       LieSubmodule.Quotient.mk' _ ((X : Module.End K K[FreeMonoid I]) t) := by
   rw [quotientAction, LieModule.toEnd_apply_apply, ← LieModuleHom.map_lie,
     LieSubalgebra.coe_bracket_of_module, Module.End.lie_apply]
@@ -359,7 +362,7 @@ private theorem quotientAction_mk (X : operatorAlgebra R μ) (t : K[FreeMonoid I
 /-- An operator carrying the tensor algebra into the Serre ideal acts by zero on the quotient. -/
 private theorem quotientAction_eq_zero {X : operatorAlgebra R μ}
     (hX : ∀ t, (X : Module.End K K[FreeMonoid I]) t ∈ serreIdeal K A) :
-    quotientAction R μ hdiag hneg hzero X = 0 := by
+    quotientAction R μ hA X = 0 := by
   ext m
   obtain ⟨t, rfl⟩ := LieSubmodule.Quotient.surjective_mk' _ m
   rw [quotientAction_mk, LinearMap.zero_apply, LieSubmodule.Quotient.mk_eq_zero]
@@ -367,8 +370,8 @@ private theorem quotientAction_eq_zero {X : operatorAlgebra R μ}
 
 /-- The Cartan operators on the quotient. -/
 private noncomputable def quotientCartan :
-    H →ₗ[K] Module.End K (SerreQuotient R μ hdiag hneg hzero) where
-  toFun x := quotientAction R μ hdiag hneg hzero ⟨_, cartanAction_mem_operatorAlgebra R μ x⟩
+    H →ₗ[K] Module.End K (SerreQuotient R μ hA) where
+  toFun x := quotientAction R μ hA ⟨_, cartanAction_mem_operatorAlgebra R μ x⟩
   map_add' x y := by
     rw [← map_add]
     exact congrArg _ (Subtype.ext (map_add _ x y))
@@ -377,27 +380,27 @@ private noncomputable def quotientCartan :
     exact congrArg _ (Subtype.ext (map_smul _ c x))
 
 private theorem quotientCartan_apply (x : H) :
-    quotientCartan R μ hdiag hneg hzero x =
-      quotientAction R μ hdiag hneg hzero ⟨_, cartanAction_mem_operatorAlgebra R μ x⟩ :=
+    quotientCartan R μ hA x =
+      quotientAction R μ hA ⟨_, cartanAction_mem_operatorAlgebra R μ x⟩ :=
   rfl
 
 /-- The raising operators on the quotient. -/
 private noncomputable def quotientRaising (k : I) :
-    Module.End K (SerreQuotient R μ hdiag hneg hzero) :=
-  quotientAction R μ hdiag hneg hzero ⟨_, raising_mem_operatorAlgebra R μ k⟩
+    Module.End K (SerreQuotient R μ hA) :=
+  quotientAction R μ hA ⟨_, raising_mem_operatorAlgebra R μ k⟩
 
 /-- The lowering operators on the quotient. -/
 private noncomputable def quotientLowering (k : I) :
-    Module.End K (SerreQuotient R μ hdiag hneg hzero) :=
-  quotientAction R μ hdiag hneg hzero ⟨_, lowering_mem_operatorAlgebra R μ k⟩
+    Module.End K (SerreQuotient R μ hA) :=
+  quotientAction R μ hA ⟨_, lowering_mem_operatorAlgebra R μ k⟩
 
 /-- The operators on the quotient satisfy all the relations of the Kac–Moody algebra. -/
 private theorem satisfiesRelations_quotient :
-    SatisfiesRelations R (quotientCartan R μ hdiag hneg hzero)
-      (quotientRaising R μ hdiag hneg hzero) (quotientLowering R μ hdiag hneg hzero) where
+    SatisfiesRelations R (quotientCartan R μ hA)
+      (quotientRaising R μ hA) (quotientLowering R μ hA) where
   lie_cartan_cartan x y := by
     rw [quotientCartan_apply, quotientCartan_apply, ← LieHom.map_lie,
-      ← map_zero (quotientAction R μ hdiag hneg hzero)]
+      ← map_zero (quotientAction R μ hA)]
     exact congrArg _ (Subtype.ext (lie_cartanAction_cartanAction R μ x y))
   lie_cartan_positive x j := by
     rw [quotientCartan_apply, quotientRaising, ← LieHom.map_lie,
@@ -413,35 +416,35 @@ private theorem satisfiesRelations_quotient :
     exact congrArg _ (Subtype.ext (lie_raising_lowering_self R μ i))
   lie_positive_negative_of_ne i j hij := by
     rw [quotientRaising, quotientLowering, ← LieHom.map_lie,
-      ← map_zero (quotientAction R μ hdiag hneg hzero)]
+      ← map_zero (quotientAction R μ hA)]
     exact congrArg _ (Subtype.ext (lie_raising_lowering_of_ne R μ hij))
   serre_positive i j := by
     rw [quotientRaising, quotientRaising, ← LieHom.map_lie, ← LieHom.map_ad_pow,
-      ← map_zero (quotientAction R μ hdiag hneg hzero)]
+      ← map_zero (quotientAction R μ hA)]
     refine congrArg _ (Subtype.ext ?_)
     rw [LieSubalgebra.coe_ad_pow]
-    exact ad_pow_lie_raising_raising R μ hdiag hneg hzero i j
+    exact ad_pow_lie_raising_raising R μ hA i j
   serre_negative i j := by
     have h (X Y : operatorAlgebra R μ) (n : ℕ) :
-        (ad K _ (quotientAction R μ hdiag hneg hzero X) ^ n)
-            ⁅quotientAction R μ hdiag hneg hzero X, quotientAction R μ hdiag hneg hzero Y⁆ =
-          quotientAction R μ hdiag hneg hzero ((ad K _ X ^ n) ⁅X, Y⁆) := by
+        (ad K _ (quotientAction R μ hA X) ^ n)
+            ⁅quotientAction R μ hA X, quotientAction R μ hA Y⁆ =
+          quotientAction R μ hA ((ad K _ X ^ n) ⁅X, Y⁆) := by
       rw [← LieHom.map_lie, ← LieHom.map_ad_pow]
     simp only [quotientLowering]
     rw [h]
-    refine quotientAction_eq_zero R μ hdiag hneg hzero fun t => ?_
+    refine quotientAction_eq_zero R μ hA fun t => ?_
     rw [LieSubalgebra.coe_ad_pow, LieSubalgebra.coe_bracket, ad_pow_lie_lowering_lowering,
       Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', ← one_mul (serreElement K A i j)]
     exact mul_serreElement_mul_mem _ _ _ _
 
 private theorem quotientCartan_mk_one (x : H) :
-    quotientCartan R μ hdiag hneg hzero x (LieSubmodule.Quotient.mk' _ 1) =
-      μ x • LieSubmodule.Quotient.mk' (serreSubmodule R μ hdiag hneg hzero) 1 := by
+    quotientCartan R μ hA x (LieSubmodule.Quotient.mk' _ 1) =
+      μ x • LieSubmodule.Quotient.mk' (serreSubmodule R μ hA) 1 := by
   rw [quotientCartan_apply, quotientAction_mk, MonoidAlgebra.one_def,
     cartanAction_single, rootSum_one, LinearMap.zero_apply, sub_zero, map_smul]
 
 private theorem quotientRaising_mk_one (k : I) :
-    quotientRaising R μ hdiag hneg hzero k (LieSubmodule.Quotient.mk' _ 1) = 0 := by
+    quotientRaising R μ hA k (LieSubmodule.Quotient.mk' _ 1) = 0 := by
   rw [quotientRaising, quotientAction_mk, MonoidAlgebra.one_def, raising_single_one,
     raisingWord_one, map_zero]
 
@@ -450,65 +453,67 @@ end TensorAlgebra
 /-- **Cartan injectivity.** For a generalized Cartan matrix `A`, that is `Aᵢᵢ = 2`, `Aᵢⱼ ≤ 0`
 for `i ≠ j` and `Aᵢⱼ = 0 → Aⱼᵢ = 0`, the map from a realization `H` of `A` into the Lie algebra
 presented by the Chevalley and Serre relations is injective. -/
-theorem cartanElement_injective (hdiag : ∀ i, A i i = 2) (hneg : ∀ i j, i ≠ j → A i j ≤ 0)
-    (hzero : ∀ i j, A i j = 0 → A j i = 0) : Function.Injective (cartanElement R) := by
+theorem cartanElement_injective (hA : A.IsGeneralizedCartan) :
+    Function.Injective (cartanElement R) := by
   classical
   refine (injective_iff_map_eq_zero _).mpr fun x hx =>
     (Module.forall_dual_apply_eq_zero_iff K x).mp fun μ => ?_
   have h := LinearMap.congr_fun
-    (congrArg (lift (satisfiesRelations_quotient R μ hdiag hneg hzero)) hx)
-    (LieSubmodule.Quotient.mk' (serreSubmodule R μ hdiag hneg hzero) 1)
+    (congrArg (lift (satisfiesRelations_quotient R μ hA)) hx)
+    (LieSubmodule.Quotient.mk' (serreSubmodule R μ hA) 1)
   rw [lift_cartanElement, map_zero, LinearMap.zero_apply, quotientCartan_mk_one] at h
   refine (smul_eq_zero.mp h).resolve_right fun h1 => one_notMem_serreIdeal (K := K) (A := A) ?_
   exact (LieSubmodule.Quotient.mk_eq_zero _).mp h1
 
 section GeneratorsNeZero
 
-variable (hdiag : ∀ i, A i i = 2) (hneg : ∀ i j, i ≠ j → A i j ≤ 0)
-  (hzero : ∀ i j, A i j = 0 → A j i = 0)
-include hdiag hneg hzero
+variable (hA : A.IsGeneralizedCartan)
+include hA
 
 /-- For a generalized Cartan matrix, the simple coroot `hᵢ` is nonzero in the Kac–Moody
 algebra. -/
 theorem cartanElement_coroot_ne_zero (i : I) : cartanElement R (R.coroot i) ≠ 0 :=
-  (map_ne_zero_iff _ (cartanElement_injective hdiag hneg hzero)).2
+  (map_ne_zero_iff _ (cartanElement_injective hA)).2
     (R.coroot_linearIndependent.ne_zero i)
+
+/-- For a generalized Cartan matrix, the raising generator `eᵢ` is nonzero in the Kac–Moody
+algebra. -/
+theorem positiveGenerator_ne_zero (i : I) : positiveGenerator R i ≠ 0 := fun h =>
+  cartanElement_coroot_ne_zero (R := R) hA i <| by
+    rw [← lie_positiveGenerator_negativeGenerator_self, h, zero_lie]
+
+/-- For a generalized Cartan matrix, the lowering generator `fᵢ` is nonzero in the Kac–Moody
+algebra. -/
+theorem negativeGenerator_ne_zero (i : I) : negativeGenerator R i ≠ 0 := fun h =>
+  cartanElement_coroot_ne_zero (R := R) hA i <| by
+    rw [← lie_positiveGenerator_negativeGenerator_self, h, lie_zero]
+
+end GeneratorsNeZero
 
 /-- **A highest-weight vector of every weight.** For a generalized Cartan matrix and every
 functional `μ` on `H`, the Kac–Moody algebra has a module with a nonzero vector on which each
 `h ∈ H` acts by `μ(h)` and which every raising generator `eᵢ` kills. -/
-theorem exists_highestWeightVector (μ : Module.Dual K H) :
+theorem exists_highestWeightVector (hdiag : ∀ i, A i i = 2)
+    (hneg : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 → A j i = 0)
+    (μ : Module.Dual K H) :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V)
       (_ : LieRingModule (PresentedLieAlgebra R) V) (_ : LieModule K (PresentedLieAlgebra R) V)
       (w : V), w ≠ 0 ∧ (∀ x, ⁅cartanElement R x, w⁆ = μ x • w) ∧
         ∀ i, ⁅positiveGenerator R i, w⁆ = 0 := by
   classical
-  let ρ := lift (satisfiesRelations_quotient R μ hdiag hneg hzero)
-  let _ : LieRingModule (PresentedLieAlgebra R) (SerreQuotient R μ hdiag hneg hzero) :=
+  let hA : A.IsGeneralizedCartan := ⟨hdiag, hneg, fun i j => ⟨hzero i j, hzero j i⟩⟩
+  let ρ := lift (satisfiesRelations_quotient R μ hA)
+  let _ : LieRingModule (PresentedLieAlgebra R) (SerreQuotient R μ hA) :=
     LieRingModule.compLieHom _ ρ
-  have : LieModule K (PresentedLieAlgebra R) (SerreQuotient R μ hdiag hneg hzero) :=
+  have : LieModule K (PresentedLieAlgebra R) (SerreQuotient R μ hA) :=
     LieModule.compLieHom _ ρ
-  refine ⟨SerreQuotient R μ hdiag hneg hzero, inferInstance, inferInstance, inferInstance,
+  refine ⟨SerreQuotient R μ hA, inferInstance, inferInstance, inferInstance,
     inferInstance, LieSubmodule.Quotient.mk' _ 1, fun h1 => one_notMem_serreIdeal (K := K) (A := A)
       ((LieSubmodule.Quotient.mk_eq_zero _).mp h1), fun x => ?_, fun i => ?_⟩
   · rw [LieRingModule.compLieHom_apply, lift_cartanElement, Module.End.lie_apply,
       quotientCartan_mk_one]
   · rw [LieRingModule.compLieHom_apply, lift_positiveGenerator, Module.End.lie_apply,
       quotientRaising_mk_one]
-
-/-- For a generalized Cartan matrix, the raising generator `eᵢ` is nonzero in the Kac–Moody
-algebra. -/
-theorem positiveGenerator_ne_zero (i : I) : positiveGenerator R i ≠ 0 := fun h =>
-  cartanElement_coroot_ne_zero (R := R) hdiag hneg hzero i <| by
-    rw [← lie_positiveGenerator_negativeGenerator_self, h, zero_lie]
-
-/-- For a generalized Cartan matrix, the lowering generator `fᵢ` is nonzero in the Kac–Moody
-algebra. -/
-theorem negativeGenerator_ne_zero (i : I) : negativeGenerator R i ≠ 0 := fun h =>
-  cartanElement_coroot_ne_zero (R := R) hdiag hneg hzero i <| by
-    rw [← lie_positiveGenerator_negativeGenerator_self, h, lie_zero]
-
-end GeneratorsNeZero
 
 end KacMoody
 

@@ -14,6 +14,7 @@ import TauCeti.Algebra.Lie.Graded.Sign
 import TauCeti.Algebra.Lie.KacMoody.Auxiliary
 import TauCeti.Algebra.Lie.Presentation.Serre.Triangular
 import TauCeti.Algebra.Lie.Subalgebra.Automorphism
+import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 
 /-!
@@ -572,24 +573,23 @@ theorem derivedSeries_one_inf_cartanSubalgebra :
 
 /-! ## Cartan stability and triangular projections -/
 
-/-- Bracketing with a Cartan element preserves the raising subalgebra `n⁺`. -/
-theorem lie_cartanElement_mem_positiveSubalgebra (x : H) {y : PresentedLieAlgebra R}
-    (hy : y ∈ positiveSubalgebra R) : ⁅cartanElement R x, y⁆ ∈ positiveSubalgebra R := by
+/-- The Cartan subalgebra preserves the positive subalgebra under the adjoint action. -/
+theorem lie_mem_positiveSubalgebra_of_mem_cartanSubalgebra
+    {x y : PresentedLieAlgebra R} (hx : x ∈ cartanSubalgebra R)
+    (hy : y ∈ positiveSubalgebra R) : ⁅x, y⁆ ∈ positiveSubalgebra R := by
+  obtain ⟨h, rfl⟩ := (mem_cartanSubalgebra_iff R).1 hx
   rw [positiveSubalgebra_def] at hy ⊢
-  refine LieSubalgebra.lie_mem_of_mem_lieSpan ?_ hy
-  rintro _ ⟨i, rfl⟩
-  rw [lie_cartanElement_positiveGenerator]
-  exact LieSubalgebra.smul_mem _ _ (LieSubalgebra.subset_lieSpan (Set.mem_range_self i))
+  exact LieSubalgebra.lie_mem_lieSpan_range_of_lie_eq_smul
+    (lie_cartanElement_positiveGenerator R h) hy
 
-/-- Bracketing with a Cartan element preserves the lowering subalgebra `n⁻`. -/
-theorem lie_cartanElement_mem_negativeSubalgebra (x : H) {y : PresentedLieAlgebra R}
-    (hy : y ∈ negativeSubalgebra R) : ⁅cartanElement R x, y⁆ ∈ negativeSubalgebra R := by
+/-- The Cartan subalgebra preserves the negative subalgebra under the adjoint action. -/
+theorem lie_mem_negativeSubalgebra_of_mem_cartanSubalgebra
+    {x y : PresentedLieAlgebra R} (hx : x ∈ cartanSubalgebra R)
+    (hy : y ∈ negativeSubalgebra R) : ⁅x, y⁆ ∈ negativeSubalgebra R := by
+  obtain ⟨h, rfl⟩ := (mem_cartanSubalgebra_iff R).1 hx
   rw [negativeSubalgebra_def] at hy ⊢
-  refine LieSubalgebra.lie_mem_of_mem_lieSpan ?_ hy
-  rintro _ ⟨i, rfl⟩
-  rw [lie_cartanElement_negativeGenerator]
-  exact neg_mem (LieSubalgebra.smul_mem _ _
-    (LieSubalgebra.subset_lieSpan (Set.mem_range_self i)))
+  exact LieSubalgebra.lie_mem_lieSpan_range_of_lie_eq_smul
+    (fun j => by rw [lie_cartanElement_negativeGenerator, ← neg_smul]) hy
 
 /-- The projection of `TauCeti.KacMoody.PresentedLieAlgebra R` onto `n⁻` along the triangular
 decomposition. -/

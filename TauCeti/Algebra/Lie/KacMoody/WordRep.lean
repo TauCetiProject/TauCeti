@@ -81,19 +81,16 @@ theorem rootSum_one : rootSum R (1 : FreeMonoid I) = 0 := by
 /-- Prepending a letter adds its simple root to the root sum. -/
 theorem rootSum_of_mul (i : I) (w : FreeMonoid I) :
     rootSum R (.of i * w) = R.root i + rootSum R w := by
-  rw [rootSum, map_mul, toAdd_mul, FreeMonoid.lift_eval_of]
-  rfl
+  simp [rootSum]
 
 /-- The root sum of a single-letter word is its simple root. -/
 theorem rootSum_of (i : I) : rootSum R (.of i) = R.root i := by
-  rw [rootSum, FreeMonoid.lift_eval_of]
-  rfl
+  simp [rootSum]
 
 /-- The root sum is additive under word concatenation. -/
 theorem rootSum_mul (w w' : FreeMonoid I) :
     rootSum R (w * w') = rootSum R w + rootSum R w' := by
-  rw [rootSum, map_mul, toAdd_mul]
-  rfl
+  simp [rootSum]
 
 /-- The derivation of the tensor algebra multiplying each word by the value at `x` of the sum of
 the simple roots along it, as a linear function of `x ∈ H`. -/

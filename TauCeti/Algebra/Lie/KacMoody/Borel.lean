@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.KacMoody.Triangular
 public import TauCeti.Algebra.Lie.Subalgebra.Complement
-import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 
 /-!
 # The positive Borel subalgebra of a Kac–Moody presentation
@@ -36,17 +35,6 @@ open LieSubalgebra
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-
-/-- The Cartan subalgebra preserves the positive subalgebra under the adjoint action. -/
-theorem lie_mem_positiveSubalgebra_of_mem_cartanSubalgebra
-    {x y : PresentedLieAlgebra R} (hx : x ∈ cartanSubalgebra R)
-    (hy : y ∈ positiveSubalgebra R) : ⁅x, y⁆ ∈ positiveSubalgebra R := by
-  obtain ⟨h, rfl⟩ := (mem_cartanSubalgebra_iff R).1 hx
-  rw [positiveSubalgebra_def] at hy ⊢
-  refine lie_mem_of_mem_lieSpan ?_ hy
-  rintro _ ⟨i, rfl⟩
-  rw [lie_cartanElement_positiveGenerator]
-  exact Submodule.smul_mem _ _ (subset_lieSpan ⟨i, rfl⟩)
 
 private theorem lie_mem_cartan_sup_positive {x y : PresentedLieAlgebra R}
     (hx : x ∈ (cartanSubalgebra R).toSubmodule ⊔ (positiveSubalgebra R).toSubmodule)

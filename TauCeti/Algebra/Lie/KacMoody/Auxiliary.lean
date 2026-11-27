@@ -140,8 +140,7 @@ variable {R} {L : Type*} [LieRing L] [LieAlgebra K L]
 
 private noncomputable def auxLift {φ : H →ₗ[K] L} {E F : I → L}
     (h : SatisfiesAuxRelations R φ E F) : AuxLieAlgebra R →ₗ⁅K⁆ L :=
-  (auxIdeal R).liftQ (FreeLieAlgebra.lift K (generatorMap φ E F))
-    (auxIdeal_def R ▸ lieSpan_isAuxRelator_le_ker h)
+  (auxIdeal R).liftQ (FreeLieAlgebra.lift K (generatorMap φ E F)) (auxIdeal_le_ker h)
 
 @[simp]
 private theorem auxLift_auxCartan {φ : H →ₗ[K] L} {E F : I → L}
@@ -343,10 +342,7 @@ section AuxSerre
 private theorem lie_auxCartan_mem_range_auxPosHom (x : H) {y : AuxLieAlgebra R}
     (hy : y ∈ (auxPosHom R).range) : ⁅auxCartan R x, y⁆ ∈ (auxPosHom R).range := by
   rw [auxPosHom, TauCeti.FreeLieAlgebra.range_lift_eq_lieSpan] at hy ⊢
-  refine LieSubalgebra.lie_mem_of_mem_lieSpan ?_ hy
-  rintro _ ⟨j, rfl⟩
-  rw [lie_auxCartan_auxPos]
-  exact LieSubalgebra.smul_mem _ _ (LieSubalgebra.subset_lieSpan (Set.mem_range_self j))
+  exact LieSubalgebra.lie_mem_lieSpan_range_of_lie_eq_smul (lie_auxCartan_auxPos R x) hy
 
 private theorem lie_auxNeg_mem_range_auxPosHom_sup_range_auxCartan (k : I) {y : AuxLieAlgebra R}
     (hy : y ∈ (auxPosHom R).range) :
@@ -411,11 +407,7 @@ private theorem lie_auxNeg_auxSerrePosSubmodule (hA : A.IsGeneralizedCartan) (k 
   simp only [LieHom.coe_toLinearMap]
   induction hb using serreIdeal_induction with
   | relator i j =>
-    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA.diag hA.offDiag_nonpos
-      (fun a b => (hA.zero_comm a b).mp) (satisfiesAuxRelations_aux R).lie_cartan_positive
-      (satisfiesAuxRelations_aux R).lie_cartan_negative
-      (satisfiesAuxRelations_aux R).lie_positive_negative_self
-      (satisfiesAuxRelations_aux R).lie_positive_negative_of_ne i j k]
+    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_aux R) i j k]
     exact zero_mem _
   | zero => simp
   | add _ _ _ _ hu hv => simpa [map_add, lie_add] using add_mem hu hv

@@ -499,9 +499,9 @@ theorem ad_pow_succ_apply' (x y : L) (n : ℕ) :
 `(-1) ^ n`. -/
 theorem ad_neg_pow_apply (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L (-x) ^ n) y = (-1 : R) ^ n • (LieAlgebra.ad R L x ^ n) y := by
-  rw [map_neg, neg_pow, _root_.mul_apply_eq_comp, ← neg_one_smul R (1 : Module.End R L),
-    smul_pow, one_pow]
-  simp
+  have h : LieAlgebra.ad R L (-x) ^ n = (-1 : R) ^ n • LieAlgebra.ad R L x ^ n := by
+    rw [map_neg, ← neg_one_smul R (LieAlgebra.ad R L x), smul_pow]
+  exact LinearMap.congr_fun h y
 
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :

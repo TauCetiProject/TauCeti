@@ -493,9 +493,9 @@ theorem generatorMap_positive (i : I) : generatorMap φ E F (.positive i) = E i 
 theorem generatorMap_negative (i : I) : generatorMap φ E F (.negative i) = F i := by rfl
 
 /-- Auxiliary-relation-satisfying data kill every auxiliary relator. -/
-theorem lieSpan_isAuxRelator_le_ker (h : SatisfiesAuxRelations R φ E F) :
-    LieSubmodule.lieSpan K _ {x | IsAuxRelator R x} ≤
-      (FreeLieAlgebra.lift K (generatorMap φ E F)).ker := by
+theorem auxIdeal_le_ker (h : SatisfiesAuxRelations R φ E F) :
+    auxIdeal R ≤ (FreeLieAlgebra.lift K (generatorMap φ E F)).ker := by
+  rw [auxIdeal_def]
   refine LieSubmodule.lieSpan_le.mpr fun x hx => ?_
   rw [SetLike.mem_coe, LieHom.mem_ker]
   induction hx with
@@ -515,8 +515,7 @@ private theorem presentationIdeal_le_ker (h : SatisfiesRelations R φ E F) :
     presentationIdeal R ≤ (FreeLieAlgebra.lift K (generatorMap φ E F)).ker := by
   refine LieSubmodule.lieSpan_le.mpr fun x hx => ?_
   rcases hx with ⟨hx⟩ | ⟨i, j⟩ | ⟨i, j⟩
-  · exact lieSpan_isAuxRelator_le_ker h.toSatisfiesAuxRelations
-      (LieSubmodule.subset_lieSpan hx)
+  · exact auxIdeal_le_ker h.toSatisfiesAuxRelations (LieSubmodule.subset_lieSpan hx)
   · rw [SetLike.mem_coe, LieHom.mem_ker]
     simpa [LieHom.map_ad_pow, generatorMap] using h.serre_positive i j
   · rw [SetLike.mem_coe, LieHom.mem_ker]
