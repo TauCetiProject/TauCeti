@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Flux.Moment
 public import TauCeti.Analysis.PDE.Vortex.ModulusBound
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -31,9 +32,12 @@ the degree `m` and the radius `R`
 (`TauCeti.Vortex.exists_integral_norm_eval_newtonPolynomial_sq_mul_le`). The constant does not
 depend on the configuration of the zeros: collisions and every intermediate separation scale of the
 zeros are included. Since the density is nonnegative, the negative mass vanishes, and the variance
-tends to zero as `ε → 0` uniformly over all such vortices. These are the hypotheses of the compact
-moment lemma (`TauCeti.exists_forall_abs_integral_sub_sum_roots_le`), which then compares a slice
-with the counting measure of the roots of its Newton polynomial.
+tends to zero as `ε → 0` uniformly over all such vortices. These supply the small-variance and
+small-negative-mass hypotheses of the compact moment lemma
+(`TauCeti.exists_forall_abs_integral_sub_sum_roots_le`), which compares a slice with the counting
+measure of the roots of its Newton polynomial; its compact-support hypothesis is not supplied here,
+since the dilated density is positive everywhere, and still needs a separate cutoff or tail
+estimate.
 
 The proof is pointwise (`TauCeti.Vortex.exists_integral_norm_prod_sq_mul_one_sub_normSq_le`). At a
 point `w` at distance `d` from the nearest zero `a₀`, the factor `W - ε a₀` of `P(ε w)` has norm
@@ -48,8 +52,6 @@ polynomial factor into `exp (-d / 8)`, and `exp (-d / 8)` is at most the sum ove
 * `TauCeti.Vortex.exists_integral_norm_prod_sq_mul_one_sub_normSq_le`:
   `∫ |∏_{a ∈ D} (ε w - ε a)|² (1 - |α(w)|²) dw ≤ C ε²`, uniformly over smooth framed degree-`m`
   vortices whose zeros satisfy `ε |a| ≤ R`.
-* `TauCeti.Vortex.newtonPolynomial_integral_one_sub_normSq_smul_mul_pow`: the Newton polynomial of
-  the moments of the dilated flux density is `∏_{a ∈ D} (W - ε a)`.
 * `TauCeti.Vortex.exists_integral_norm_eval_newtonPolynomial_sq_mul_le`: the Newton variance of the
   dilated flux density is at most `C ε²`.
 
@@ -83,19 +85,17 @@ private theorem norm_prod_smul_sub_le {D : Multiset ℂ} {R ε : ℝ} (hε₀ : 
   -- Every factor has norm at most `|w - a₀| + 2R`.
   have hle (a : ℂ) (ha : a ∈ D) : ‖(ε : ℂ) * w - ε * a‖ ≤ ‖w - a₀‖ + 2 * R := by
     have htri : ‖w - a‖ ≤ ‖w - a₀‖ + ‖a₀‖ + ‖a‖ := by
-      calc ‖w - a‖ = ‖(w - a₀) + a₀ - a‖ := by ring_nf
+      calc ‖w - a‖ = ‖(w - a₀) + a₀ - a‖ := by rw [sub_add_cancel]
         _ ≤ ‖w - a₀‖ + ‖a₀‖ + ‖a‖ := (norm_sub_le _ _).trans (by gcongr; exact norm_add_le _ _)
     rw [hfac]
     nlinarith [hR a ha, hR a₀ ha₀, norm_nonneg (w - a₀), norm_nonneg (w - a)]
   have hB : 0 ≤ ‖w - a₀‖ + 2 * R := by positivity
   have hprod (s : Multiset ℂ) (hs : ∀ a ∈ s, ‖(ε : ℂ) * w - ε * a‖ ≤ ‖w - a₀‖ + 2 * R) :
       ‖(s.map fun a ↦ (ε : ℂ) * w - ε * a).prod‖ ≤ (‖w - a₀‖ + 2 * R) ^ Multiset.card s := by
-    induction s using Multiset.induction_on with
-    | empty => simp
-    | cons a s ih =>
-      rw [Multiset.map_cons, Multiset.prod_cons, norm_mul, Multiset.card_cons, pow_succ']
-      exact mul_le_mul (hs a (Multiset.mem_cons_self a s))
-        (ih fun b hb ↦ hs b (Multiset.mem_cons_of_mem hb)) (norm_nonneg _) hB
+    rw [Multiset.norm_prod, Multiset.map_map]
+    refine (Multiset.prod_map_le_prod_map₀ _ (fun _ ↦ ‖w - a₀‖ + 2 * R)
+      (fun _ _ ↦ norm_nonneg _) hs).trans_eq ?_
+    rw [Multiset.map_const', Multiset.prod_replicate]
   obtain ⟨D', rfl⟩ := Multiset.exists_cons_of_mem ha₀
   have hrest := hprod D' fun a ha ↦ hle a (Multiset.mem_cons_of_mem ha)
   rw [Multiset.map_cons, Multiset.prod_cons, norm_mul, hfac, Multiset.card_cons, pow_succ',
@@ -107,21 +107,18 @@ private theorem norm_prod_smul_sub_le {D : Multiset ℂ} {R ε : ℝ} (hε₀ : 
 `a ∈ D`, where `0 ≤ ε ≤ 1`, and let `u ≥ 0` be at most `K exp (-ρ / 4)` whenever `w` is at distance
 at least `ρ` from every point of `D`. Then
 `|∏_{a ∈ D} (ε w - ε a)|² u ≤ ε² A ∑_{a ∈ D} exp (-|w - a| / 8)`, with
-`A = K (2m)! 8^(2m) exp (R / 4)`, the sum running over the distinct points of `D`. -/
+`A = K (2m)! 8^(2m) exp (R / 4)`, the sum running over the points of `D` with multiplicity. -/
 private theorem norm_prod_sq_mul_le_sum {D : Multiset ℂ} {m : ℕ} (hm : Multiset.card D = m)
     {R ε K u : ℝ} (hK₀ : 0 ≤ K) (hε₀ : 0 ≤ ε) (hε₁ : ε ≤ 1) (hR : ∀ a ∈ D, ε * ‖a‖ ≤ R)
     {w : ℂ} (hu₀ : 0 ≤ u)
     (hu : ∀ ρ, (∀ a ∈ D, ρ ≤ ‖w - a‖) → u ≤ K * Real.exp (-(1 / 4 * ρ))) :
     ‖(D.map fun a ↦ (ε : ℂ) * w - ε * a).prod‖ ^ 2 * u ≤
       ε ^ 2 * (K * ((2 * m).factorial / (1 / 8) ^ (2 * m) * Real.exp (R / 4))) *
-        ∑ a ∈ D.toFinset, Real.exp (-(1 / 8 * ‖w - a‖)) := by
+        (D.map fun a ↦ Real.exp (-(1 / 8 * ‖w - a‖))).sum := by
   classical
   rcases D.empty_or_exists_mem with rfl | ⟨b, hb⟩
   · -- Without points `u` vanishes, being at most `K exp (-ρ / 4)` for every `ρ`.
-    have ht : Tendsto (fun ρ : ℝ ↦ K * Real.exp (-(1 / 4 * ρ))) atTop (𝓝 0) := by
-      simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-        (tendsto_id.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 4))).const_mul K
-    simpa using ge_of_tendsto' ht fun ρ ↦ hu ρ (by simp)
+    simpa using nonpos_of_forall_le_mul_exp (by norm_num : (0 : ℝ) < 1 / 4) fun ρ ↦ hu ρ (by simp)
   -- Otherwise compare with the nearest point `a₀`, at distance `d`.
   obtain ⟨a₀, ha₀, hmin⟩ := D.toFinset.exists_min_image (fun a ↦ ‖w - a‖)
     ⟨b, Multiset.mem_toFinset.2 hb⟩
@@ -139,12 +136,14 @@ private theorem norm_prod_sq_mul_le_sum {D : Multiset ℂ} {m : ℕ} (hm : Multi
     have hsplit : Real.exp (-(1 / 4 * d)) =
         Real.exp (-(1 / 8) * (d + 2 * R)) * (Real.exp (R / 4) * Real.exp (-(1 / 8 * d))) := by
       rw [← Real.exp_add, ← Real.exp_add]
-      ring_nf
+      congr 1
+      ring
     rw [hsplit, ← mul_assoc, mul_assoc _ (Real.exp (R / 4))]
     exact mul_le_mul_of_nonneg_right (pow_mul_exp_neg_mul_le (by norm_num) hd _) (by positivity)
-  have hsum : Real.exp (-(1 / 8 * d)) ≤ ∑ a ∈ D.toFinset, Real.exp (-(1 / 8 * ‖w - a‖)) :=
-    Finset.single_le_sum (f := fun a ↦ Real.exp (-(1 / 8 * ‖w - a‖)))
-      (fun _ _ ↦ (Real.exp_pos _).le) (Multiset.mem_toFinset.2 ha₀)
+  have hsum : Real.exp (-(1 / 8 * d)) ≤ (D.map fun a ↦ Real.exp (-(1 / 8 * ‖w - a‖))).sum := by
+    refine Multiset.single_le_sum (fun y hy ↦ ?_) _ (Multiset.mem_map_of_mem _ ha₀)
+    obtain ⟨a, -, rfl⟩ := Multiset.mem_map.1 hy
+    positivity
   calc ‖(D.map fun a ↦ (ε : ℂ) * w - ε * a).prod‖ ^ 2 * u
       ≤ ε ^ 2 * (d + 2 * R) ^ (2 * m) * (K * Real.exp (-(1 / 4 * d))) :=
         mul_le_mul hprod (hu d fun a ha ↦ hmin a (Multiset.mem_toFinset.2 ha)) hu₀
@@ -177,11 +176,6 @@ theorem exists_integral_norm_prod_sq_mul_one_sub_normSq_le (m : ℕ) (R : ℝ) :
           (1 - 4 * (x w 2 ^ 2 + x w 3 ^ 2)) ≤ C * ε ^ 2 := by
   obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m
     (c := 1 / 4) (by norm_num) (by norm_num)
-  -- `exp (-|w| / 8)` is integrable, with integral `I`.
-  have hint : Integrable (fun w : ℂ ↦ Real.exp (-(1 / 8 * ‖w‖))) := by
-    refine memLp_one_iff_integrable.1 ((by fun_prop : Continuous fun w : ℂ ↦
-      Real.exp (-(1 / 8 * ‖w‖))).memLp_of_isBigO_exp_neg_mul_norm (by norm_num)
-        (Asymptotics.isBigO_refl _ _) 1)
   set I := ∫ w : ℂ, Real.exp (-(1 / 8 * ‖w‖))
   have hI : 0 ≤ I := integral_nonneg fun _ ↦ (Real.exp_pos _).le
   set A := K * ((2 * m).factorial / (1 / 8) ^ (2 * m) * Real.exp (R / 4))
@@ -197,48 +191,13 @@ theorem exists_integral_norm_prod_sq_mul_one_sub_normSq_le (m : ℕ) (R : ℝ) :
   -- The integrand is dominated by `ε² A ∑_{a ∈ D} exp (-|w - a| / 8)`, of integral at most
   -- `ε² A m I`.
   have hGint : Integrable fun w ↦
-      ε ^ 2 * A * ∑ a ∈ D.toFinset, Real.exp (-(1 / 8 * ‖w - a‖)) :=
-    (integrable_finsetSum _ fun a _ ↦ hint.comp_sub_right a).const_mul _
+      ε ^ 2 * A * (D.map fun a ↦ Real.exp (-(1 / 8 * ‖w - a‖))).sum :=
+    (integrable_sum_map_exp_neg_mul_norm_sub volume (by norm_num) D).const_mul _
   refine (integral_mono_of_nonneg (.of_forall fun w ↦ mul_nonneg (by positivity) (hu₀ w)) hGint
     (.of_forall fun w ↦ norm_prod_sq_mul_le_sum hm hK₀ hε₀ hε₁ hR (hu₀ w)
       fun ρ hρ ↦ hK x D hx hsol hframe hD w ρ hρ)).trans ?_
-  rw [integral_const_mul, integral_finsetSum _ fun a _ ↦ hint.comp_sub_right a]
-  simp only [integral_sub_right_eq_self (fun w : ℂ ↦ Real.exp (-(1 / 8 * ‖w‖))),
-    Finset.sum_const, nsmul_eq_mul]
-  have hcard : (D.toFinset.card : ℝ) ≤ m := by
-    exact_mod_cast hm ▸ Multiset.toFinset_card_le D
-  calc ε ^ 2 * A * (D.toFinset.card * I) ≤ ε ^ 2 * A * (m * I) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hcard hI)
-          (mul_nonneg (sq_nonneg ε) hA)
-    _ = A * m * I * ε ^ 2 := by ring
-
-/-! ### The Newton polynomial of the dilated flux density -/
-
-variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- **The Newton polynomial of a dilated plane vortex.** For a `C²` vortex on the whole plane whose
-section satisfies `|α| → 1` at infinity, with zero divisor `D`, and a dilation factor `ε`, the
-moments `M_k = (16π)⁻¹ ∫ (ε w)ᵏ (1 - |α(w)|²) dw` of the dilated flux density are the power sums of
-`ε D`, so its Newton polynomial of degree `deg D` is `∏_{a ∈ D} (W - ε a)`. -/
-theorem newtonPolynomial_integral_one_sub_normSq_smul_mul_pow
-    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
-    (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) (ε : ℂ) :
-    newtonPolynomial (fun k ↦ (16 * π : ℂ)⁻¹ *
-        ∫ w, (1 - 4 * (x w 2 ^ 2 + x w 3 ^ 2)) • (ε * w) ^ k) (Multiset.card D) =
-      (D.map fun a ↦ X - C (ε * a)).prod := by
-  have hM : (fun k ↦ (16 * π : ℂ)⁻¹ * ∫ w, (1 - 4 * (x w 2 ^ 2 + x w 3 ^ 2)) • (ε * w) ^ k) =
-      fun k ↦ ((D.map (ε * ·)).map (· ^ k)).sum := by
-    funext k
-    have h := integral_one_sub_normSq_smul_eval_eq hb₁ hb₂ hp hq hsol hlim hD ((C ε * X) ^ k)
-    simp only [eval_pow, eval_mul, eval_C, eval_X] at h
-    rw [h, Multiset.map_map]
-    have hπ : (16 * π : ℂ) ≠ 0 := by exact_mod_cast (by positivity : (16 * π : ℝ) ≠ 0)
-    rw [← mul_assoc, inv_mul_cancel₀ hπ, one_mul, Function.comp_def]
-  rw [hM, ← Multiset.card_map (ε * ·) D, newtonPolynomial_sum_map_pow, Multiset.map_map,
-    Function.comp_def]
+  rw [integral_const_mul, integral_sum_map_exp_neg_mul_norm_sub volume (by norm_num) D, hm]
+  exact (by ring : ε ^ 2 * A * (m * I) = A * m * I * ε ^ 2).le
 
 /-- **The Newton variance of a dilated plane vortex.** For every degree `m` and radius `R` there is
 a constant `C ≥ 0` with the following property. Let `x` be a smooth plane vortex with the degree-`m`
