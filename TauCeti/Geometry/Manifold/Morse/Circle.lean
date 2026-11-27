@@ -214,6 +214,12 @@ theorem circleCosTwo_add_pi (δ r : ℝ) : circleCosTwo δ (r + π) = circleCosT
   rw [circleCosTwo_coe, circleCosTwo_coe,
     show 2 * (t - (r + π)) = 2 * (t - r) - 2 * π by ring, Real.cos_sub_two_pi]
 
+/-- Rotating `δ cos (2 θ)` by `r` gives `δ cos (2 (θ - r))`. -/
+theorem circleCosTwo_zero_apply_sub (δ r : ℝ) (θ : AddCircle (2 * π)) :
+    circleCosTwo δ 0 (θ - r) = circleCosTwo δ r θ := by
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  rw [← AddCircle.coe_sub, circleCosTwo_coe, circleCosTwo_coe, sub_zero]
+
 /-- Rotating the function by `c` moves its maxima by `c`, keeping their labels. -/
 theorem circleCosTwoMax_add_coe (r c : ℝ) (j : Fin 2) :
     circleCosTwoMax r j + (c : AddCircle (2 * π)) = circleCosTwoMax (r + c) j := by

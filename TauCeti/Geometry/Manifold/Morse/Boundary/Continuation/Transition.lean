@@ -70,6 +70,10 @@ this form the transversality condition for continuations is the transversality o
   time-dependent flow line `s ↦ φ_{τ, s} x` tends to a point `p` at `-∞`, resp. `+∞`,
   exactly when its value at one very negative, resp. very positive, time lies in the unstable,
   resp. stable, manifold of `p`.
+* `TauCeti.timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow`,
+  `TauCeti.timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow_symm`: when the field is `X₀`
+  before a window and `X₁` after it, the time-dependent flow from before the window to after it,
+  and back, is the flow across the window between the end flows of `X₀` and `X₁`.
 * `TauCeti.IsContinuationField.eventually_atBot_continuationSpaceField_eq`,
   `TauCeti.IsContinuationField.eventually_atTop_continuationSpaceField_eq`: the space component
   along the base trajectory is `X₀` at very negative times and `X₁` at very positive times.
@@ -270,6 +274,70 @@ theorem tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet (hYX : ∀ u > a, Y 
 end IsAdaptedPseudoGradient
 
 end Ends
+
+/-! ### Time-dependent flows across a window -/
+
+section Window
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+  (hX₀ : IsAdaptedPseudoGradient f₀ X₀) (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
+  {Y : ℝ → (x : M) → TangentSpace 𝓘(ℝ, E) x}
+  (hY : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E).tangent 1
+    fun p : ℝ × M ↦ (⟨p.2, Y p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M))
+  {T₀ T₁ s₀ s₁ a b : ℝ} (hY₀ : ∀ u < T₀, Y u = X₀) (hY₁ : ∀ u > T₁, Y u = X₁)
+  (hs₀ : s₀ < T₀) (hs₁ : T₁ < s₁) (ha : a ≤ s₀) (hb : s₁ ≤ b)
+include hX₀ hX₁ hY hY₀ hY₁ hs₀ hs₁ ha hb
+
+/-- **A time-dependent flow across a window.** Let the `C¹` time-dependent field `Y` be the adapted
+pseudo-gradient `X₀` before the time `T₀` and the adapted pseudo-gradient `X₁` after the time `T₁`.
+For times `s₀ < T₀` and `s₁ > T₁`, the time-dependent flow from a time `a ≤ s₀` to a time `b ≥ s₁`
+is the flow of `X₀` for the time `s₀ - a`, then the time-dependent flow across the window from `s₀`
+to `s₁`, then the flow of `X₁` for the time `b - s₁`. -/
+theorem timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow (x : M) :
+    timeDependentFlowOf Y a b x =
+      hX₁.flow (b - s₁) (timeDependentFlowOf Y s₀ s₁ (hX₀.flow (s₀ - a) x)) := by
+  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
+  -- Before the window the time-dependent flow is the flow of `X₀`.
+  have h₀ : timeDependentFlowOf Y a s₀ x = hX₀.flow (s₀ - a) x := by
+    have h := hX₀.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := a) (x := x) hY₀ hs₀
+      (show a ∈ Iic s₀ from ha)
+    simp only [timeDependentFlowOf_self] at h
+    -- The flows at the times `s₀ - a` and `a - s₀` cancel.
+    conv_rhs => rw [h, ← Flow.map_add]
+    simp
+  -- After the window it is the flow of `X₁`.
+  have h₁ (w : M) : timeDependentFlowOf Y s₁ b w = hX₁.flow (b - s₁) w := by
+    have h := hX₁.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := s₁) (x := w) hY₁ hs₁
+      (show b ∈ Ici s₁ from hb)
+    simpa only [timeDependentFlowOf_self] using h
+  rw [← h₀, ← h₁, timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_trans hcomp hY]
+
+/-- **A time-dependent flow back across a window.** Let the `C¹` time-dependent field `Y` be the
+adapted pseudo-gradient `X₀` before the time `T₀` and the adapted pseudo-gradient `X₁` after the
+time `T₁`. For times `s₀ < T₀` and `s₁ > T₁`, the time-dependent flow from a time `b ≥ s₁` back to
+a time `a ≤ s₀` is the flow of `X₁` for the time `s₁ - b`, then the time-dependent flow back across
+the window from `s₁` to `s₀`, then the flow of `X₀` for the time `a - s₀`. -/
+theorem timeDependentFlowOf_eq_flow_timeDependentFlowOf_flow_symm (x : M) :
+    timeDependentFlowOf Y b a x =
+      hX₀.flow (a - s₀) (timeDependentFlowOf Y s₁ s₀ (hX₁.flow (s₁ - b) x)) := by
+  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
+  -- After the window the time-dependent flow is the flow of `X₁`, here run backwards.
+  have h₁ : timeDependentFlowOf Y b s₁ x = hX₁.flow (s₁ - b) x := by
+    have h := hX₁.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := b) (x := x) hY₁ hs₁
+      (show b ∈ Ici s₁ from hb)
+    simp only [timeDependentFlowOf_self] at h
+    -- The flows at the times `s₁ - b` and `b - s₁` cancel.
+    conv_rhs => rw [h, ← Flow.map_add]
+    simp
+  -- Before the window it is the flow of `X₀`.
+  have h₀ (w : M) : timeDependentFlowOf Y s₀ a w = hX₀.flow (a - s₀) w := by
+    have h := hX₀.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := s₀) (x := w) hY₀ hs₀
+      (show a ∈ Iic s₀ from ha)
+    simpa only [timeDependentFlowOf_self] using h
+  rw [← h₁, ← h₀, timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_trans hcomp hY]
+
+end Window
 
 /-! ### The slices of the continuation map -/
 

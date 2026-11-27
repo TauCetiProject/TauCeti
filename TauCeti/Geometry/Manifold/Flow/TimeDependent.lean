@@ -466,6 +466,15 @@ theorem timeDependentFlowOf_eq_self_of_forall_eq_zero (hx : ∀ u, X u x = 0) (s
   timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX (γ := fun _ ↦ x)
     (hasMFDerivAt_const_of_forall_eq_zero hx) s t
 
+/-- A point at which `X` vanishes at all times of an open interval is fixed by the time-dependent
+flow between any two times of that interval. -/
+theorem timeDependentFlowOf_eq_self_of_forall_mem_Ioo_eq_zero {a b : ℝ}
+    (hx : ∀ u ∈ Ioo a b, X u x = 0) (hs : s ∈ Ioo a b) (ht : t ∈ Ioo a b) :
+    timeDependentFlowOf X s t x = x :=
+  timeDependentFlowOf_eq_of_hasMFDerivAt hX (γ := fun _ ↦ x) (fun u hu ↦ by
+    rw [hx u hu, ContinuousLinearMap.smulRight_zero]
+    exact hasMFDerivAt_const x u) hs ht
+
 /-- **The two-time composition law.** Flowing from time `r` to time `s` and then from `s` to `t`
 is flowing from `r` to `t`, provided both steps are defined; the composite is then defined. -/
 theorem timeDependentFlowOf_trans_of_mem {r : ℝ} (hrs : ((r, s), x) ∈ timeDependentFlowDomain X)
