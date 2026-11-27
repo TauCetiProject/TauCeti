@@ -67,6 +67,7 @@ noncomputable def secondHalf (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by 
     norm_num
 
 /-- The first half of `γ` at time `t` is `γ` at time `t / 2`. -/
+@[simp]
 theorem firstHalf_apply (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by norm_num⟩ = m)
     (t : unitInterval) :
     γ.firstHalf hm t =
@@ -74,6 +75,7 @@ theorem firstHalf_apply (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by norm_
   (rfl)
 
 /-- The second half of `γ` at time `t` is `γ` at time `(1 + t) / 2`. -/
+@[simp]
 theorem secondHalf_apply (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by norm_num⟩ = m)
     (t : unitInterval) :
     γ.secondHalf hm t =
