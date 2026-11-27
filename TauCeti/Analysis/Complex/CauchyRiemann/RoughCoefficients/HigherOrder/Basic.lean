@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.PartialDerivative
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Interior regularity of every order for real Cauchy–Riemann equations with Sobolev coefficients
@@ -100,7 +101,7 @@ theorem memWkpLoc_succ [FiniteDimensional ℝ V] {p q : ℝ≥0} {k : ℕ}
     (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p) (hJ : MemWkpLoc p Ω k J)
     (hS : MemWkpLoc p Ω k S) (hη : MemWkpLoc q Ω k η) : MemWkpLoc q Ω (k + 1) ξ := by
   have hq : 1 < q := by
-    have : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
+    have : (1 : ℝ≥0∞) < q := ENNReal.one_lt_right_of_inv_add_inv_lt_one hpq
     exact_mod_cast this
   induction k generalizing J DJ S ξ η with
   | zero =>
