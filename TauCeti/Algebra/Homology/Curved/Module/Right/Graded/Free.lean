@@ -294,6 +294,18 @@ def freeObj : CurvedDGRightModuleCat.{uR, uA, uM} h where
   differential := freeDifferential h V
   isCurvedDGRightModule := isCurvedDGRightModule_freeCarrier h V
 
+/-- The `R`-linear equivalence identifying the carrier of `freeObj h V` with `V × V`. -/
+def freeEquiv : freeObj h V ≃ₗ[R] V × V :=
+  freeProdLinearEquiv h V
+
+/-- An element of `freeObj h V` has degree `p` iff its two components lie in `V_p` and
+`V_{p - 1}`. -/
+@[simp]
+theorem mem_freeObj_grading_iff {p : ℤ} {x : freeObj h V} :
+    x ∈ (freeObj h V).grading p ↔
+      (freeEquiv h V x).1 ∈ V.grading.piece p ∧ (freeEquiv h V x).2 ∈ V.grading.piece (p - 1) :=
+  mem_freeInternalGrading_piece_iff h V p x
+
 /-- The right `A`-linear generator inclusion `V →ₗ[Aᵐᵒᵖ] freeObj h V`. -/
 def freeι : V →ₗ[Aᵐᵒᵖ] freeObj h V where
   toFun v := (⟨v, 0⟩ : FreeCarrier h V)
@@ -304,6 +316,26 @@ def freeι : V →ₗ[Aᵐᵒᵖ] freeObj h V where
       change z • v = z • v - op (d z.unop) • V.grading.koszulTwist 1 (0 : V)
       simp)
     (smul_zero z).symm
+
+/-- Evaluating `freeEquiv` on `freeι h V v` gives `(v, 0)`. -/
+@[simp]
+theorem freeEquiv_freeι (v : V) : freeEquiv h V (freeι h V v) = (v, 0) :=
+  (rfl)
+
+/-- Evaluating `freeEquiv` on `(freeObj h V).differential x` swaps and twists the components. -/
+@[simp]
+theorem freeEquiv_differential (x : freeObj h V) :
+    freeEquiv h V ((freeObj h V).differential x) =
+      (op w • (freeEquiv h V x).2, (freeEquiv h V x).1) :=
+  (rfl)
+
+/-- Evaluating `freeEquiv` on the twisted right action `a • x` in `freeObj h V`. -/
+@[simp]
+theorem freeEquiv_smul (a : Aᵐᵒᵖ) (x : freeObj h V) :
+    freeEquiv h V (a • x) =
+      (a • (freeEquiv h V x).1 - op (d a.unop) • V.grading.koszulTwist 1 (freeEquiv h V x).2,
+        a • (freeEquiv h V x).2) :=
+  (rfl)
 
 /-- The canonical graded right-linear unit inclusion `V ⟶ toGradedModuleCat (freeObj h V)`. -/
 def freeUnit : V ⟶ toGradedModuleCat (freeObj h V) :=
@@ -327,6 +359,11 @@ def freeProj : toGradedModuleCat (freeObj h V) ⟶ V.shiftObj 1 :=
       rw [toGradedModuleCat_piece] at hx
       rw [add_zero, V.mem_shiftObj_piece_iff]
       exact ((mem_freeInternalGrading_piece_iff h V p x).mp hx).2)
+
+/-- The projection `freeProj h V` extracts the second component of `freeEquiv h V x`. -/
+@[simp]
+theorem freeProj_apply (x : freeObj h V) : (freeProj h V).hom x = (freeEquiv h V x).2 :=
+  (rfl)
 
 /-- The unit inclusion into `freeObj h V` followed by the projection to `V{1}` is zero. -/
 @[reassoc (attr := simp)]
@@ -425,18 +462,9 @@ def freeDesc (f : V ⟶ toGradedModuleCat M) :
   have hsmul (a : A) (v : V) :
       M.differential (f' (op a • v)) - f' (op (d a) • V.grading.koszulTwist 1 v) =
         op a • M.differential (f' v) := by
-    induction v using DirectSum.Decomposition.inductionOn V.grading.piece with
-    | zero => simp
-    | add v₁ v₂ hv₁ hv₂ =>
-      simp only [smul_add, map_add, ← hv₁, ← hv₂]
-      abel
-    | @homogeneous q v =>
-      rcases v with ⟨v, hv⟩
-      have hfv : f' v ∈ M.grading q := by
-        simpa only [toGradedModuleCat_piece] using GradedModuleCat.map_mem f hv
-      rw [f'.map_smul, M.isCurvedDGRightModule.leibniz hfv a,
-        V.grading.koszulTwist_one_eq_negOnePow_smul hv, smul_comm (op (d a)) q.negOnePow]
-      simp only [Units.smul_def, map_zsmul, f'.map_smul, add_sub_cancel_right]
+    rw [f'.map_smul, M.differential_smul, ← toGradedModuleCat_grading]
+    dsimp only [f', unop_op]
+    rw [GradedModuleCat.koszulTwist_hom_apply f 1 v, ← f.hom.map_smul, add_sub_cancel_right]
   refine closedHomOf
     { toFun := fun x : FreeCarrier h V ↦ f' x.fst + M.differential (f' x.snd)
       map_add' := fun x y ↦ by
@@ -604,6 +632,33 @@ theorem freeUnit_comp_forgetDifferential_map_freeFunctor_map (f : V ⟶ W) :
     freeUnit h V ≫ (forgetDifferential (h := h)).map ((freeFunctor (h := h)).map f) =
       f ≫ freeUnit h W :=
   freeUnit_comp_forgetDifferential_map_freeDesc (f ≫ freeUnit h W)
+
+/-- On underlying pairs in `V × V`, `(freeFunctor.map f)` applies `f` componentwise. -/
+@[simp]
+theorem freeEquiv_closedHom_freeFunctor_map_apply (f : V ⟶ W) (x : freeObj h V) :
+    freeEquiv h W (closedHom ((freeFunctor (h := h)).map f) x) =
+      (f.hom (freeEquiv h V x).1, f.hom (freeEquiv h V x).2) := by
+  obtain ⟨u, v, rfl⟩ := exists_eq_freeι_add_differential_freeι h V x
+  have hu : closedHom ((freeFunctor (h := h)).map f) (freeι h V u) = freeι h W (f.hom u) := by
+    rw [freeFunctor_map, closedHom_freeDesc_freeι_apply, GradedModuleCat.hom_comp,
+      LinearMap.comp_apply, hom_freeUnit]
+  have hd :
+      closedHom ((freeFunctor (h := h)).map f) ((freeObj h V).differential (freeι h V v)) =
+        (freeObj h W).differential (freeι h W (f.hom v)) := by
+    rw [freeFunctor_map, closedHom_freeDesc_differential_freeι_apply, GradedModuleCat.hom_comp,
+      LinearMap.comp_apply, hom_freeUnit]
+    -- `freeFunctor.obj W` sits inside the dependent `.differential` projection applied to a
+    -- `freeObj h W` element, so `freeFunctor_obj` cannot rewrite without changing the argument
+    -- type.
+    dsimp only [freeFunctor, ForgetEnrichment.to, ForgetEnrichment.of]
+  rw [map_add, hu, hd, map_add, map_add]
+  simp
+
+/-- Projecting `(freeFunctor.map f)` to `W{1}` commutes with `f{1}`. -/
+theorem freeProj_closedHom_freeFunctor_map_apply (f : V ⟶ W) (x : freeObj h V) :
+    (freeProj h W).hom (closedHom ((freeFunctor (h := h)).map f) x) =
+      f.hom ((freeProj h V).hom x) := by
+  rw [freeProj_apply, freeProj_apply, freeEquiv_closedHom_freeFunctor_map_apply]
 
 instance : (freeFunctor (h := h)).Additive where
   map_add {X Y f g} := by

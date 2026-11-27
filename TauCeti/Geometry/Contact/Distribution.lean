@@ -51,6 +51,9 @@ contact structure along a local diffeomorphism is a contact structure
 pullback along a surjective local diffeomorphism is a contact structure is one itself
 (`TauCeti.IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`). The second statement
 builds contact structures on quotients, such as those which are the kernel of no global one-form.
+Applied to the inclusion of an open subset, the first statement shows that the restriction of a
+contact structure to an open subset is a contact structure
+(`TauCeti.IsContactDistribution.comp_subtypeVal`).
 
 The Levi form of a contact structure is a nondegenerate alternating form with values in a line, so
 the contact hyperplanes have even dimension and `M` has odd dimension `2 m + 1`
@@ -71,6 +74,8 @@ has no integral hypersurfaces.
   of a nowhere vanishing `C^n` one-form, which is a contact form at each point of its domain.
 * `TauCeti.IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt`: on a Hausdorff manifold,
   a smooth contact structure is defined near each point by a smooth one-form on the whole manifold.
+* `TauCeti.IsContactDistribution.exists_smoothForm_eventually_kerDistribution_eq`: on a Hausdorff
+  manifold, a smooth contact structure is near each point the kernel of a smooth one-form.
 * `TauCeti.isContactDistribution_iff_forall_exists_isContactFormAt`: a `C^n` hyperplane field is a
   contact structure exactly when it is locally the kernel of one-forms that are contact.
 * `TauCeti.IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq`: a smooth
@@ -78,7 +83,9 @@ has no integral hypersurfaces.
 * `TauCeti.IsContactDistribution.comap_mfderiv_of_isLocalDiffeomorph`,
   `TauCeti.IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`,
   `TauCeti.isContactDistribution_comap_mfderiv_iff_of_surjective`: contact structures pull back
-  along local diffeomorphisms and descend along surjective ones.
+  along local diffeomorphisms and descend along surjective ones;
+  `TauCeti.IsContactDistribution.comp_subtypeVal`: the restriction of a contact structure to an
+  open subset is a contact structure.
 * `TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`: a smooth one-form
   is a contact form exactly when its kernel is a contact structure.
 * `TauCeti.IsContactDistribution.even_finrank` and `TauCeti.IsContactDistribution.odd_finrank`:
@@ -223,7 +230,7 @@ theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
     (hV.mem_nhds hxV) (α.mdifferentiableAt x)
     (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
     ⟨?_, hD.bijective_distributionLeviForm x⟩
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
+  rw [Ne, ← SmoothForm.kerDistribution_eq_top_iff, hαD.self_of_nhds]
   exact hD.ne_top x
 
 /-- **A contact structure is defined near each point by a global contact form there.** Every point
@@ -239,6 +246,15 @@ theorem IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt [IsManifo
   exact hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp)
     (eventually_of_mem (hW.mem_nhds hy) fun z hz ↦
       (SmoothForm.kerDistribution_eq_ker _ z).trans (hαD z hz).2)
+
+/-- **A contact structure is the kernel near each point of a smooth one-form on the whole
+manifold.** -/
+theorem IsContactDistribution.exists_smoothForm_eventually_kerDistribution_eq [IsManifold I ∞ M]
+    [T2Space M] (hD : IsContactDistribution I ∞ D) (x : M) :
+    ∃ α : SmoothForm I M ℝ 1, ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y := by
+  obtain ⟨W, hW, hxW, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt x
+  exact ⟨α, eventually_of_mem (hW.mem_nhds hxW) fun y hy ↦
+    (SmoothForm.kerDistribution_eq_ker α y).trans (hα y hy).1⟩
 
 /-- **Contact structures are the hyperplane fields locally defined by contact forms.** A `C^n`
 distribution `D` of rank `dim E - 1`, with `1 ≤ n`, is a contact structure exactly when near every
@@ -322,6 +338,14 @@ theorem isContactDistribution_comap_mfderiv_iff_of_surjective (hn : 1 ≤ n)
       IsContactDistribution J n D' :=
   ⟨fun h ↦ h.of_comap_mfderiv_of_isLocalDiffeomorph hn hf hnm hsurj,
     fun h ↦ h.comap_mfderiv_of_isLocalDiffeomorph hn hf hnm⟩
+
+/-- **Restriction of a contact structure to an open subset.** The restriction `x ↦ D x` of a `C^n`
+contact structure, with `1 ≤ n`, to an open subset `U` is a `C^n` contact structure on `U`. -/
+theorem IsContactDistribution.comp_subtypeVal (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
+    (U : TopologicalSpace.Opens M) : IsContactDistribution I n (fun x : U ↦ D x) := by
+  rw [show (fun x : U ↦ D x) = fun x : U ↦ (D x).comap (mfderiv I I Subtype.val x).toLinearMap from
+    funext fun x ↦ (Submodule.comap_mfderiv_subtype_val (D x)).symm]
+  exact hD.comap_mfderiv_of_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val le_rfl
 
 end LocalDiffeomorph
 

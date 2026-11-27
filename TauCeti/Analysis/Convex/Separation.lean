@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 -- Proof-only: strict separation, Riesz representation, and affine-span interiority in finite
--- dimension.
+-- dimension; a Euclidean model of a finite-dimensional normed space.
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Separation of points from open convex sets and supporting hyperplanes
@@ -30,6 +33,17 @@ when `interior C` is nonempty this comes from separating `x` from `interior C`, 
 `interior C` is empty `affineSpan ℝ C` is a proper closed affine subspace whose orthogonal
 complement supplies a nonzero normal.
 
+A point `x ∈ C` outside the intrinsic interior of `C` even admits a *nontrivial* supporting
+hyperplane, one that does not contain `C`
+(`Convex.exists_nontrivial_support_of_notMem_intrinsicInterior`, Rockafellar's Theorem 11.6). Inside
+the direction `V` of the affine span of `C`, the translate `C - x` is a convex set with `0` on its
+frontier, so the previous result gives a nonzero normal `y ∈ V`; a normal in `V` which is constant
+on `C` would be orthogonal to all of `V`, hence zero. The same holds with continuous linear
+functionals in place of inner products in any finite-dimensional real normed space
+(`Convex.exists_strongDual_nontrivial_support_of_notMem_intrinsicInterior`), by a Euclidean model.
+Such a functional cuts out a proper exposed face of `C` through `x`, which is how relative-frontier
+points reduce the dimension in the Minkowski–Carathéodory theorem.
+
 ## Main results
 
 * `Convex.subset_of_image_inner_subset`: a set whose heights along every unit vector are heights
@@ -37,10 +51,17 @@ complement supplies a nonzero normal.
 * `Convex.exists_ne_zero_forall_closure_inner_sub_nonpos`: at every frontier point `x` of a convex
   set `C` in a finite-dimensional real inner product space, there is a nonzero vector `y` with
   `⟪z - x, y⟫ ≤ 0` for all `z ∈ closure C`.
+* `Convex.exists_nontrivial_support_of_notMem_intrinsicInterior`: at every point `x ∈ C` outside
+  the intrinsic interior of a convex set `C` in a finite-dimensional real inner product space,
+  there is a `y` with `⟪c, y⟫ ≤ ⟪x, y⟫` for all `c ∈ C`, strictly for some `c ∈ C`.
+* `Convex.exists_strongDual_nontrivial_support_of_notMem_intrinsicInterior`: the same with a
+  continuous linear functional, in a finite-dimensional real normed space.
 
 ## References
 
 * R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, 1970, Theorem 11.6.
+* J. M. Borwein and J. D. Vanderwerff, *Convex Functions: Constructions, Characterizations and
+  Counterexamples*, Cambridge University Press, 2010, Theorem 2.4.7.
 -/
 
 public section
@@ -108,3 +129,59 @@ theorem Convex.exists_ne_zero_forall_closure_inner_sub_nonpos {E : Type*} [Norme
     rw [real_inner_comm, ← InnerProductSpace.toDual_apply_apply,
       LinearIsometryEquiv.apply_symm_apply, map_sub, sub_nonpos]
     exact hcl_le z hz
+
+/-- **Nontrivial support off the relative interior** (Rockafellar, *Convex Analysis*,
+Theorem 11.6; Borwein–Vanderwerff, Theorem 2.4.7). At a point `x ∈ C` outside the intrinsic
+interior of a convex set `C` in a finite-dimensional real inner product space, there is a vector
+`y` with `⟪c, y⟫ ≤ ⟪x, y⟫` for all `c ∈ C` and `⟪c, y⟫ < ⟪x, y⟫` for some `c ∈ C`: the supporting
+hyperplane through `x` does not contain `C`. -/
+theorem Convex.exists_nontrivial_support_of_notMem_intrinsicInterior {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {C : Set E}
+    (hC : Convex ℝ C) {x : E} (hx : x ∈ C) (hxi : x ∉ intrinsicInterior ℝ C) :
+    ∃ y : E, (∀ c ∈ C, ⟪c, y⟫ ≤ ⟪x, y⟫) ∧ ∃ c ∈ C, ⟪c, y⟫ < ⟪x, y⟫ := by
+  -- translate `C` by `-x` into the direction `V` of its affine span, where `0` is a frontier point
+  set V := (affineSpan ℝ C).direction
+  set D : Set V := {v | x + (v : E) ∈ C}
+  have hmem (c : E) (hc : c ∈ C) : (⟨c - x, AffineSubspace.vsub_mem_direction
+      (subset_affineSpan ℝ C hc) (subset_affineSpan ℝ C hx)⟩ : V) ∈ D := by
+    simpa [D] using hc
+  have h0 : (0 : V) ∈ frontier D := (TauCeti.add_mem_intrinsicFrontier_iff (c := x) 0).1 (by
+    rw [Submodule.coe_zero, add_zero, ← intrinsicClosure_sdiff_intrinsicInterior]
+    exact ⟨subset_intrinsicClosure hx, hxi⟩)
+  obtain ⟨w, hw0, hw⟩ :=
+    (TauCeti.convex_setOf_add_mem hC).exists_ne_zero_forall_closure_inner_sub_nonpos h0
+  have hle (c : E) (hc : c ∈ C) : ⟪c, (w : E)⟫ ≤ ⟪x, (w : E)⟫ := by
+    have := hw _ (subset_closure (hmem c hc))
+    rwa [sub_zero, Submodule.coe_inner, inner_sub_left, sub_nonpos] at this
+  refine ⟨w, hle, ?_⟩
+  by_contra! h
+  -- otherwise `w` is orthogonal to the direction `V`, which contains it
+  have hker : Submodule.span ℝ ((· -ᵥ x) '' C) ≤ LinearMap.ker (innerₗ E (w : E)) := by
+    rw [Submodule.span_le]
+    rintro _ ⟨c, hc, rfl⟩
+    simp [inner_sub_right, real_inner_comm, le_antisymm (hle c hc) (h c hc)]
+  have hwV : (w : E) ∈ Submodule.span ℝ ((· -ᵥ x) '' C) :=
+    vectorSpan_eq_span_vsub_set_right ℝ hx ▸ direction_affineSpan ℝ C ▸ w.property
+  exact hw0 (Subtype.ext (inner_self_eq_zero.1 (hker hwV)))
+
+/-- **Nontrivial support off the relative interior, by a continuous linear functional.** At a
+point `x ∈ C` outside the intrinsic interior of a convex set `C` in a finite-dimensional real
+normed space, some continuous linear functional `l` has `l c ≤ l x` for all `c ∈ C` and
+`l c < l x` for some `c ∈ C`. -/
+theorem Convex.exists_strongDual_nontrivial_support_of_notMem_intrinsicInterior {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {C : Set V}
+    (hC : Convex ℝ C) {x : V} (hx : x ∈ C) (hxi : x ∉ intrinsicInterior ℝ C) :
+    ∃ l : StrongDual ℝ V, (∀ c ∈ C, l c ≤ l x) ∧ ∃ c ∈ C, l c < l x := by
+  -- transport `C` to a Euclidean space and pull back the inner-product support
+  let e : V ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ V)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hxi' : e x ∉ intrinsicInterior ℝ (e '' C) := by
+    rw [← e.coe_toContinuousAffineEquiv, ContinuousAffineEquiv.intrinsicInterior_image]
+    rintro ⟨z, hz, hze⟩
+    exact hxi (e.injective hze ▸ hz)
+  obtain ⟨y, hle, c, ⟨c, hc, rfl⟩, hlt⟩ :=
+    (hC.linear_image e.toLinearMap).exists_nontrivial_support_of_notMem_intrinsicInterior
+      (mem_image_of_mem e hx) hxi'
+  refine ⟨(innerSL ℝ y).comp e.toContinuousLinearMap, fun c' hc' => ?_, c, hc, ?_⟩
+  · simpa [real_inner_comm] using hle _ (mem_image_of_mem e hc')
+  · simpa [real_inner_comm] using hlt

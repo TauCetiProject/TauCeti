@@ -168,6 +168,32 @@ theorem weightInitialForm_add_of_eq {p q : MvPolynomial σ R}
     exact hne (hc.symm.trans (weightedHomogeneousComponent_eq_zero _ _ hlt))
   rw [weightInitialForm_def, hdeg, hc]
 
+/-- If the product of two initial forms is nonzero, it equals the initial form of their
+product. -/
+theorem weightInitialForm_mul_of_mul_ne_zero {p q : MvPolynomial σ R}
+    (h0 : weightInitialForm w p * weightInitialForm w q ≠ 0) :
+    weightInitialForm w (p * q) = weightInitialForm w p * weightInitialForm w q := by
+  have hcomp : weightedHomogeneousComponent w
+      (p.weightedTotalDegree w + q.weightedTotalDegree w) (p * q) =
+      weightInitialForm w p * weightInitialForm w q := by
+    rw [weightedHomogeneousComponent_weightedTotalDegree_add,
+      weightInitialForm_def, weightInitialForm_def]
+  have hdeg : (p * q).weightedTotalDegree w =
+      p.weightedTotalDegree w + q.weightedTotalDegree w := by
+    apply le_antisymm (weightedTotalDegree_mul_le w p q)
+    by_contra! hlt
+    exact h0 (hcomp.symm.trans (weightedHomogeneousComponent_eq_zero _ _ hlt))
+  rw [weightInitialForm_def, hdeg, hcomp]
+
+/-- Over an arbitrary commutative semiring, the product of two initial forms is either zero or the
+initial form of their product. -/
+theorem weightInitialForm_mul_eq_zero_or_eq (p q : MvPolynomial σ R) :
+    weightInitialForm w p * weightInitialForm w q = 0 ∨
+      weightInitialForm w p * weightInitialForm w q = weightInitialForm w (p * q) := by
+  by_cases h0 : weightInitialForm w p * weightInitialForm w q = 0
+  · exact Or.inl h0
+  · exact Or.inr (weightInitialForm_mul_of_mul_ne_zero w h0).symm
+
 /-- Over a semiring without zero divisors, initial forms preserve multiplication. -/
 @[simp]
 theorem weightInitialForm_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) :
@@ -176,18 +202,9 @@ theorem weightInitialForm_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) :
   · simp [hp]
   by_cases hq : q = 0
   · simp [hq]
-  have hi : weightedHomogeneousComponent w
-      (p.weightedTotalDegree w + q.weightedTotalDegree w) (p * q) ≠ 0 := by
-    rw [weightedHomogeneousComponent_weightedTotalDegree_add]
-    exact mul_ne_zero ((weightInitialForm_eq_zero_iff w p).not.mpr hp)
+  exact weightInitialForm_mul_of_mul_ne_zero w <|
+    mul_ne_zero ((weightInitialForm_eq_zero_iff w p).not.mpr hp)
       ((weightInitialForm_eq_zero_iff w q).not.mpr hq)
-  have hdeg : (p * q).weightedTotalDegree w =
-      p.weightedTotalDegree w + q.weightedTotalDegree w := by
-    apply le_antisymm (weightedTotalDegree_mul_le w p q)
-    by_contra! hlt
-    exact hi (weightedHomogeneousComponent_eq_zero _ _ hlt)
-  rw [weightInitialForm_def, hdeg, weightedHomogeneousComponent_weightedTotalDegree_add]
-  rfl
 
 section Map
 

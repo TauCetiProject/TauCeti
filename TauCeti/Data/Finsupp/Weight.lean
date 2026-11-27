@@ -55,6 +55,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   the variables `s` occurring in `f`.
 * `Finsupp.weight_le_degree_nsmul_of_monotone`: for monotone weights `w`, if every variable
   occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
+* `Finsupp.weight_mono_of_nonneg`: if `∀ s, 0 ≤ w s`, then `weight w : (σ →₀ ℕ) → M` is
+  monotone.
+* `Finsupp.weight_nonneg`: if `∀ s, 0 ≤ w s`, then `0 ≤ weight w f` for every `f : σ →₀ ℕ`.
 * `Finsupp.weight_filter_lt_add_smul_add_weight_filter_gt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 * `Finsupp.weight_comp_eq_apply_linearCombination`: the weight of `u` for the weights `f ∘ w` is
@@ -85,8 +88,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
-* `Finsupp.weight_nonneg`, `Finsupp.weight_eq_zero_iff_of_pos`: nonnegativity and zero-weight
-  characterization of `Finsupp.weight` for ordered additive monoid weights.
+* `Finsupp.weight_eq_zero_iff_of_pos`: zero-weight characterization of `Finsupp.weight` for
+  ordered additive monoid weights.
 -/
 
 public section
@@ -184,6 +187,20 @@ weight of `f` is at most its degree times `w i`. -/
 theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w : σ → M}
     (hw : Monotone w) {i : σ} (hf : ∀ s ∈ f.support, s ≤ i) : weight w f ≤ degree f • w i :=
   weight_le_degree_nsmul_of_mem_support f fun s hs ↦ hw (hf s hs)
+
+/-- A weight with nonnegative coordinates is monotone on `σ →₀ ℕ`. -/
+theorem weight_mono_of_nonneg {w : σ → M} (hw : ∀ s, 0 ≤ w s) :
+    Monotone (weight w : (σ →₀ ℕ) → M) := fun f g hfg ↦ by
+  classical
+  -- `Finsupp.sum_le_sum_index` expects `IsOrderedAddMonoid M`, derived here from `AddLeftMono M`.
+  have := IsOrderedAddMonoid.of_addLeftMono (α := M)
+  rw [weight_apply, weight_apply]
+  exact sum_le_sum_index hfg (fun s _ _ _ ↦ nsmul_le_nsmul_left (hw s)) fun _ _ ↦ zero_nsmul _
+
+/-- A weight with nonnegative coordinates takes nonnegative values on `σ →₀ ℕ`. -/
+theorem weight_nonneg {w : σ → M} (hw : ∀ s, 0 ≤ w s) (f : σ →₀ ℕ) :
+    0 ≤ weight w f := by
+  simpa using weight_mono_of_nonneg hw (zero_le (a := f))
 
 end Finsupp
 
@@ -398,12 +415,6 @@ theorem finite_weightedStrip (B N : ℕ) :
 section OrderedAddMonoid
 
 variable {σ M : Type*} [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
-
-/-- If every variable weight is nonnegative, every exponent vector `d : σ →₀ ℕ` has nonnegative
-weight. -/
-theorem weight_nonneg (d : σ →₀ ℕ) {w : σ → M} (hw : ∀ i, 0 ≤ w i) : 0 ≤ weight w d := by
-  rw [weight_apply, Finsupp.sum]
-  exact Finset.sum_nonneg fun i _ ↦ nsmul_nonneg (hw i) (d i)
 
 /-- If every variable has strictly positive weight in an ordered additive commutative monoid, then
 an exponent vector `d : σ →₀ ℕ` has weight zero if and only if `d = 0`. -/

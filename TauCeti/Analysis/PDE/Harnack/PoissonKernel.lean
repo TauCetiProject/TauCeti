@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import TauCeti.Analysis.PDE.GreenFunction.Ball
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 
 /-!
@@ -37,7 +37,11 @@ the smaller radius increase to `R` gives the comparison on `B(c, R)`.
 
 The constant cannot be improved: for `n ≥ 1` and a point `ξ` of the unit sphere of `ℝⁿ`, the
 Poisson kernel `TauCeti.ballPoissonKernel n · ξ` is positive and harmonic on the open unit ball,
-and its values at `x = r ξ` and `y = -r ξ` have ratio exactly `((1 + r) / (1 - r)) ^ n`. At
+and its values at `x = r ξ` and `y = -r ξ` have ratio exactly `((1 + r) / (1 - r)) ^ n`
+(`TauCeti.ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul`). Transported to the ball
+`B(c, R)` of `E`, it attains the constant `((R + r) / (R - r)) ^ n`
+(`TauCeti.exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul`), so every smaller constant fails for
+some nonnegative harmonic function (`TauCeti.exists_harmonicOnNhd_ball_mul_lt`). At
 `r = R / 4` the constant is `(5 / 3) ^ n`, below the constant `3 ^ n` of the mean-value form
 `InnerProductSpace.HarmonicOnNhd.le_three_pow_mul_of_nonneg`, which needs harmonicity on the
 ball of four times the radius. On the complex plane, `n = 2` gives the planar inequality
@@ -50,6 +54,11 @@ ball of four times the radius. On the complex plane, `n = 2` gives the planar in
   comparison with the value at the centre.
 * `InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg`: Harnack's inequality
   `u x ≤ ((R + r) / (R - r)) ^ n * u y` on the closed ball of radius `r < R`.
+* `TauCeti.ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul`: the ratio of the Poisson
+  kernel of the unit ball at two opposite points of a diameter through its pole.
+* `TauCeti.exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul` and
+  `TauCeti.exists_harmonicOnNhd_ball_mul_lt`: the constant `((R + r) / (R - r)) ^ n` is attained,
+  and no smaller constant works.
 
 ## References
 
@@ -98,6 +107,25 @@ private theorem le_mul_and_mul_le_of_harmonicOnNhd_ball_one {n : ℕ} (hn : n �
       (mul_ballPoissonKernel_zero_le_ballPoissonKernel hx (norm_eq_of_mem_sphere y))
       (hnonneg y y.property)
 
+/-- **The Poisson kernel along a diameter.** For a point `ξ` of the unit sphere of `ℝⁿ` and
+`0 ≤ r < 1`, the Poisson kernel `K(·, ξ)` of the unit ball takes at the points `r ξ` and `-r ξ`
+values in the ratio `((1 + r) / (1 - r)) ^ n`: their distances to the pole `ξ` are `1 - r` and
+`1 + r`, and their distances to the centre agree. -/
+theorem ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul {n : ℕ}
+    {ξ : EuclideanSpace ℝ (Fin n)} (hξ : ‖ξ‖ = 1) {r : ℝ} (hr : 0 ≤ r) (hr1 : r < 1) :
+    ballPoissonKernel n (r • ξ) ξ = ((1 + r) / (1 - r)) ^ n * ballPoissonKernel n (-(r • ξ)) ξ := by
+  have h₁ : ‖r • ξ - ξ‖ = 1 - r := by
+    rw [show r • ξ - ξ = -((1 - r) • ξ) by module]
+    simp [norm_smul, hξ, abs_of_nonneg (by linarith : 0 ≤ 1 - r)]
+  have h₂ : ‖-(r • ξ) - ξ‖ = 1 + r := by
+    rw [show -(r • ξ) - ξ = -((1 + r) • ξ) by module]
+    simp [norm_smul, hξ, abs_of_nonneg (by linarith : 0 ≤ 1 + r)]
+  have h₃ : ‖r • ξ‖ = r := by simp [norm_smul, hξ, abs_of_nonneg hr]
+  have hsub : (1 - r) ^ n ≠ 0 := pow_ne_zero _ (by linarith)
+  have hadd : (1 + r) ^ n ≠ 0 := pow_ne_zero _ (by linarith)
+  rw [ballPoissonKernel_def, ballPoissonKernel_def, h₁, h₂, norm_neg, h₃, div_pow]
+  field_simp
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {c x y : E} {r R : ℝ}
 
@@ -112,32 +140,24 @@ private theorem le_mul_and_mul_le_of_lt_of_lt (hn : finrank ℝ E ≠ 0)
       (1 - dist x c / ρ) / (1 + dist x c / ρ) ^ (finrank ℝ E - 1) * u c ≤ u x := by
   have hρ : 0 < ρ := dist_nonneg.trans_lt hxρ
   let e := (stdOrthonormalBasis ℝ E).repr
-  let v : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := (fun z ↦ u (c + ρ • z)) ∘ e.symm
+  let v : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := fun z ↦ u (c + ρ • e.symm z)
+  have hvu : (fun w ↦ v (e (ρ⁻¹ • (w - c)))) = u := by
+    funext w
+    simp [v, smul_smul, mul_inv_cancel₀ hρ.ne']
   -- `v` is harmonic on the ball of radius `R / ρ > 1`, which contains the closed unit ball.
   have hv : HarmonicOnNhd v (ball 0 (R / ρ)) := by
-    have h₁ : HarmonicOnNhd (fun z ↦ u (c + ρ • z)) (ball 0 (R / ρ)) := by
-      rw [harmonicOnNhd_comp_const_add_smul_ball_radius_iff c hρ.ne',
-        Real.norm_of_nonneg hρ.le, mul_div_cancel₀ _ hρ.ne']
-      exact hu
-    have h₂ := (harmonicOnNhd_comp_linearIsometryEquiv_right_iff e.symm).2 h₁
-    rwa [LinearIsometryEquiv.preimage_ball, LinearIsometryEquiv.symm_symm, map_zero] at h₂
+    rwa [← harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hρ, hvu, mul_div_cancel₀ _ hρ.ne']
   have hsub : closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1 ⊆ ball 0 (R / ρ) :=
     closedBall_subset_ball ((one_lt_div hρ).2 hρR)
   have hvc : ContinuousOn v (closedBall 0 1) := fun z hz ↦
     (hv z (hsub hz)).1.continuousAt.continuousWithinAt
-  have hvn : ∀ z ∈ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1, 0 ≤ v z := by
-    intro z hz
-    refine hnonneg _ ?_
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hρ.le,
-      LinearIsometryEquiv.norm_map, norm_eq_of_mem_sphere ⟨z, hz⟩, mul_one]
-    exact hρR
+  have hvn : ∀ z ∈ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1, 0 ≤ v z := fun z hz ↦
+    hnonneg _ (by simpa [norm_smul, abs_of_nonneg hρ.le, norm_eq_of_mem_sphere ⟨z, hz⟩] using hρR)
   -- The point of the unit ball corresponding to `x`.
-  set z := e (ρ⁻¹ • (x - c)) with hz
-  have hzn : ‖z‖ = dist x c / ρ := by
-    rw [hz, LinearIsometryEquiv.norm_map, norm_smul, norm_inv, Real.norm_of_nonneg hρ.le,
-      dist_eq_norm, inv_mul_eq_div]
-  have hvz : v z = u x := by
-    simp [v, hz, smul_smul, mul_inv_cancel₀ hρ.ne']
+  have hzn : ‖e (ρ⁻¹ • (x - c))‖ = dist x c / ρ := by
+    rw [e.norm_map, norm_inv_smul_of_nonneg hρ.le, dist_eq_norm]
+  set z := e (ρ⁻¹ • (x - c))
+  have hvz : v z = u x := congrFun hvu x
   have hv0 : v 0 = u c := by simp [v]
   have h := le_mul_and_mul_le_of_harmonicOnNhd_ball_one hn hvc (hv.mono (ball_subset_ball
     ((one_lt_div hρ).2 hρR).le)) hvn (hzn ▸ (div_lt_one hρ).2 hxρ)
@@ -255,5 +275,64 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg
         ring
     _ ≤ ((R + r) / (R - r)) ^ (k + 1) * u y := by gcongr
     _ = ((R + r) / (R - r)) ^ finrank ℝ E * u y := by rw [hk]
+
+/-- **The constant in Harnack's inequality is attained.** In a real inner product space of finite
+dimension `n ≥ 1`, for every ball `B(c, R)` and every `0 ≤ r < R`, some function harmonic and
+positive on `B(c, R)` attains the constant of
+`InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg`: there are `x` and `y` in
+`closedBall c r` with `u x = ((R + r) / (R - r)) ^ n * u y`. The function is the Poisson kernel of
+the ball with a pole `p` on its boundary sphere, and `x`, `y` are the two points at distance `r`
+from the centre on the diameter through `p`. -/
+theorem exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul (hn : finrank ℝ E ≠ 0) (c : E)
+    (hr : 0 ≤ r) (hrR : r < R) :
+    ∃ u : E → ℝ, HarmonicOnNhd u (ball c R) ∧ (∀ z ∈ ball c R, 0 < u z) ∧
+      ∃ x ∈ closedBall c r, ∃ y ∈ closedBall c r,
+        u x = ((R + r) / (R - r)) ^ finrank ℝ E * u y := by
+  have hR : 0 < R := hr.trans_lt hrR
+  let e := (stdOrthonormalBasis ℝ E).repr
+  -- A point `ξ` of the unit sphere of `ℝⁿ`, the pole of the Poisson kernel.
+  set ξ : EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
+    EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ 1
+  have hξ : ‖ξ‖ = 1 := by simp [ξ]
+  have hξ_nmem : ξ ∉ ball 0 1 := by simp [hξ]
+  let K : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ := fun w ↦ ballPoissonKernel _ w ξ
+  have hK : HarmonicOnNhd K (ball 0 1) :=
+    (harmonicOnNhd_ballPoissonKernel_left hξ).mono (Set.subset_compl_singleton_iff.2 hξ_nmem)
+  -- `u z = K (e ((z - c) / R))`.
+  let u : E → ℝ := fun z ↦ K (e (R⁻¹ • (z - c)))
+  refine ⟨u, ?_, fun z hz ↦ ?_, c + r • e.symm ξ, ?_, c - r • e.symm ξ, ?_, ?_⟩
+  · have h := (harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hR 1).2 hK
+    rwa [mul_one] at h
+  · have hz' : ‖e (R⁻¹ • (z - c))‖ < 1 := by
+      rw [e.norm_map, norm_inv_smul_of_nonneg hR.le, ← dist_eq_norm]
+      exact (div_lt_one hR).2 (mem_ball.1 hz)
+    exact ballPoissonKernel_pos hz' (ne_of_mem_of_not_mem (mem_ball_zero_iff.2 hz') hξ_nmem)
+  · simp [dist_eq_norm, norm_smul, hξ, abs_of_nonneg hr]
+  · simp [norm_smul, hξ, abs_of_nonneg hr]
+  · -- At these points `u` is the Poisson kernel at `(r / R) ξ` and `-(r / R) ξ`.
+    have hx : u (c + r • e.symm ξ) = K ((r / R) • ξ) := by
+      simp [u, smul_smul, div_eq_inv_mul]
+    have hy : u (c - r • e.symm ξ) = K (-((r / R) • ξ)) := by
+      simp [u, smul_smul, div_eq_inv_mul, sub_sub_cancel_left]
+    have hrR' : (1 + r / R) / (1 - r / R) = (R + r) / (R - r) := by
+      rw [one_add_div hR.ne', one_sub_div hR.ne', div_div_div_cancel_right₀ hR.ne']
+    rw [hx, hy, ← hrR']
+    exact ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul hξ (div_nonneg hr hR.le)
+      ((div_lt_one hR).2 hrR)
+
+/-- **No smaller constant works in Harnack's inequality.** In a real inner product space of finite
+dimension `n ≥ 1`, let `0 ≤ r < R` and `C < ((R + r) / (R - r)) ^ n`. Then some function harmonic
+and nonnegative on `B(c, R)` violates `u x ≤ C u y` at two points `x`, `y` of `closedBall c r`, so
+the constant of `InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg` cannot be
+lowered. -/
+theorem exists_harmonicOnNhd_ball_mul_lt (hn : finrank ℝ E ≠ 0) (c : E) (hr : 0 ≤ r)
+    (hrR : r < R) {C : ℝ} (hC : C < ((R + r) / (R - r)) ^ finrank ℝ E) :
+    ∃ u : E → ℝ, HarmonicOnNhd u (ball c R) ∧ (∀ z ∈ ball c R, 0 ≤ u z) ∧
+      ∃ x ∈ closedBall c r, ∃ y ∈ closedBall c r, C * u y < u x := by
+  obtain ⟨u, hu, hpos, x, hx, y, hy, hxy⟩ :=
+    exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul hn c hr hrR
+  refine ⟨u, hu, fun z hz ↦ (hpos z hz).le, x, hx, y, hy, ?_⟩
+  rw [hxy]
+  exact mul_lt_mul_of_pos_right hC (hpos y (closedBall_subset_ball hrR hy))
 
 end TauCeti
