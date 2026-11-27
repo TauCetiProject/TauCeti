@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Commutator
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Composition
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # Commutators of pseudodifferential operators between bundles
@@ -77,10 +76,8 @@ do not commute, so their commutator `diag(1, -1)` has order `0` and not less.
   an order exactly when the principal symbols commute.
 * `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_sub_one_of_forall_exists_smul_id`:
   commutators with an operator of scalar principal symbol lose an order.
-* `TauCeti.mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`,
-  `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`: in
-  positive dimension, a bundle map of order `-1` is zero, and the commutator of two bundle maps has
-  order `-1` exactly when they commute.
+* `TauCeti.lie_mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul`: in
+  positive dimension, the commutator of two bundle maps has order `-1` exactly when they commute.
 
 ## References
 
@@ -251,21 +248,6 @@ end Lie
 section BundleMap
 
 variable [Nontrivial (CoordinateSpace n)]
-
-/-- **Bundle maps of order `-1` vanish.** Over a manifold of positive dimension, an operator
-`P : Γ(E) → Γ(F)` which is linear over the smooth functions, that is a smooth bundle map, is a
-classical pseudodifferential operator of order `-1` only when it is zero: its principal symbol of
-order `0` at a nonzero covector is its fibre map. -/
-theorem mem_sectionClassicalPseudodifferentialOperators_neg_one_iff_of_map_smul
-    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W]
-    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) :
-    P ∈ sectionClassicalPseudodifferentialOperators (-1) ↔ P = 0 := by
-  refine ⟨fun hP₁ ↦ ?_, fun h ↦ h ▸ zero_mem _⟩
-  ext s x
-  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
-  rw [← sectionClassicalPrincipalSymbol_apply_of_map_smul hP hξ s,
-    sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one (m := 0) (by rwa [zero_sub]) x ξ]
-  simp
 
 /-- **Commutators of bundle maps.** Over a manifold of positive dimension, the commutator of two
 smooth bundle maps `A`, `B : Γ(E) → Γ(E)`, operators linear over the smooth functions, has order
