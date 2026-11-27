@@ -48,7 +48,10 @@ live in `TauCeti.Examples.Analysis.CStarAlgebra.Hereditary`.
   `NonUnitalStarSubalgebra.closedIdealOrderIso`.
 * `TauCeti.CStarAlgebra.IsStrictlyPositive`: strictly positive elements in (possibly nonunital)
   C⋆-algebras, with `isStrictlyPositive_iff_hereditarySubalgebra_eq_top`,
-  `isStrictlyPositive_iff_of_unital`, and `IsStrictlyPositive.isFull`.
+  `isStrictlyPositive_iff_of_unital`, `IsStrictlyPositive.isFull`,
+  `IsStrictlyPositive.dense_range_mul_mul`, `isStrictlyPositive_zero_iff`,
+  `IsStrictlyPositive.ne_zero`, `IsStrictlyPositive.smul`, `IsStrictlyPositive.map`, and
+  `IsStrictlyPositive.map_equiv_iff`.
 
 ## References
 
@@ -581,6 +584,72 @@ theorem isStrictlyPositive_one {A : Type*} [CStarAlgebra A] [PartialOrder A] [St
     IsStrictlyPositive (1 : A) :=
   isStrictlyPositive_iff_of_unital.mpr
     (_root_.IsStrictlyPositive.iff_of_unital.mpr ⟨zero_le_one, isUnit_one⟩)
+
+namespace IsStrictlyPositive
+
+theorem dense_range_mul_mul {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] {h : A}
+    (hh : IsStrictlyPositive h) : Dense (Set.range fun x : A => h * x * h) :=
+  dense_iff_closure_eq.mpr hh.closure_range_eq_univ
+
+/-- Zero is strictly positive if and only if the algebra is a subsingleton. -/
+@[simp, grind =]
+theorem _root_.TauCeti.CStarAlgebra.isStrictlyPositive_zero_iff {A : Type*}
+    [NonUnitalCStarAlgebra A] [PartialOrder A] :
+    IsStrictlyPositive (0 : A) ↔ Subsingleton A := by
+  refine ⟨fun h => ?_, fun _ => isStrictlyPositive_def.mpr ⟨le_rfl, Set.eq_univ_of_forall fun x =>
+    subset_closure ⟨0, Subsingleton.elim _ _⟩⟩⟩
+  by_contra hns
+  rw [not_subsingleton_iff_nontrivial] at hns
+  exact not_isStrictlyPositive_zero h
+
+@[grind →]
+theorem ne_zero {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [Nontrivial A] {h : A} (hh : IsStrictlyPositive h) : h ≠ 0 := by
+  rintro rfl
+  exact not_isStrictlyPositive_zero hh
+
+/-- Scaling a strictly positive element by a positive scalar preserves strict positivity. -/
+@[grind ←]
+theorem smul {𝕜 A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [Semifield 𝕜] [PartialOrder 𝕜] [MulActionWithZero 𝕜 A] [IsScalarTower 𝕜 A A]
+    [SMulCommClass 𝕜 A A] [PosSMulMono 𝕜 A]
+    {h : A} (hh : IsStrictlyPositive h) {c : 𝕜} (hc : 0 < c) :
+    IsStrictlyPositive (c • h) := by
+  refine isStrictlyPositive_def.mpr ⟨smul_nonneg hc.le hh.nonneg, ?_⟩
+  have hc1 : c * (c⁻¹ * c⁻¹ * c) = 1 := by
+    rw [mul_assoc c⁻¹ c⁻¹ c, inv_mul_cancel₀ hc.ne', mul_one, mul_inv_cancel₀ hc.ne']
+  have hrange : (Set.range fun x : A => (c • h) * x * (c • h)) =
+      Set.range fun x : A => h * x * h := by
+    ext y
+    refine ⟨?_, ?_⟩
+    · rintro ⟨x, rfl⟩
+      exact ⟨(c * c) • x, by simp [smul_mul_assoc, mul_smul_comm, smul_smul]⟩
+    · rintro ⟨x, rfl⟩
+      exact ⟨(c⁻¹ * c⁻¹) • x, by simp [smul_mul_assoc, mul_smul_comm, smul_smul, hc1]⟩
+  rw [hrange]
+  exact hh.closure_range_eq_univ
+
+/-- Surjective star-algebra homomorphisms map strictly positive elements to strictly positive
+elements. -/
+theorem map {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+    {h : A} (hh : IsStrictlyPositive h) (f : F) (hf : Function.Surjective f) :
+    IsStrictlyPositive (f h) :=
+  isStrictlyPositive_def.mpr ⟨map_nonneg f hh.nonneg,
+    dense_iff_closure_eq.mp <| hf.denseRange.dense_of_mapsTo (map_continuous f)
+      hh.dense_range_mul_mul fun _ ⟨x, hx⟩ => ⟨f x, by rw [← hx, map_mul, map_mul]⟩⟩
+
+/-- Star-algebra equivalences preserve strict positivity in both directions. -/
+@[simp]
+theorem map_equiv_iff {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (e : A ≃⋆ₐ[ℂ] B) {h : A} :
+    IsStrictlyPositive (e h) ↔ IsStrictlyPositive h :=
+  ⟨fun hh => e.symm_apply_apply h ▸ hh.map e.symm e.symm.surjective,
+    fun hh => hh.map e e.surjective⟩
+
+end IsStrictlyPositive
 
 end StrictlyPositive
 

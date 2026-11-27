@@ -20,7 +20,10 @@ functionals, need not pass through `WeakDual.toStrongDual` or unfold the type sy
 compatible with the `𝕜`-action.
 
 It also records that, for ordered `E` and `𝕜`, the functionals that are nonnegative on
-nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`.
+nonnegative elements form a weak-* closed set, `WeakDual.isClosed_setOf_map_nonneg`, and that
+precomposition with a continuous linear map `T : E →L[𝕜] F` induces a weak-star continuous linear
+map `WeakDual.precomp T : WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E` (`WeakDual.precomp_apply`,
+`WeakDual.toStrongDual_precomp`, `WeakDual.precomp_id`, `WeakDual.precomp_comp`).
 -/
 
 public section
@@ -50,5 +53,47 @@ theorem isClosed_setOf_map_nonneg [Preorder 𝕜] [ClosedIciTopology 𝕜] [LE E
     IsClosed {φ : WeakDual 𝕜 E | ∀ a, 0 ≤ a → 0 ≤ φ a} := by
   simp only [Set.ofPred_forall]
   exact isClosed_iInter fun a => isClosed_iInter fun _ => isClosed_Ici.preimage (eval_continuous a)
+
+section Precomp
+
+variable {𝕜 E F G : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜]
+  [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+  [AddCommMonoid G] [Module 𝕜 G] [TopologicalSpace G]
+
+/-- Precomposition with a continuous linear map `T : E →L[𝕜] F`, as a weak-star continuous
+linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`. -/
+noncomputable def precomp (T : E →L[𝕜] F) : WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E where
+  toFun ω := StrongDual.toWeakDual ((toStrongDual ω).comp T)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  cont := continuous_of_continuous_eval fun a => eval_continuous (T a)
+
+/-- Evaluating `WeakDual.precomp T ω` at `x` gives `ω (T x)`. -/
+@[simp]
+theorem precomp_apply (T : E →L[𝕜] F) (ω : WeakDual 𝕜 F) (x : E) :
+    precomp T ω x = ω (T x) :=
+  (rfl)
+
+/-- As a strong dual functional, `WeakDual.precomp T ω` is `(toStrongDual ω).comp T`. -/
+@[simp]
+theorem toStrongDual_precomp (T : E →L[𝕜] F) (ω : WeakDual 𝕜 F) :
+    toStrongDual (precomp T ω) = (toStrongDual ω).comp T :=
+  (rfl)
+
+/-- Precomposition by the identity map on `E` is the identity on `WeakDual 𝕜 E`. -/
+@[simp]
+theorem precomp_id :
+    precomp (ContinuousLinearMap.id 𝕜 E) = ContinuousLinearMap.id 𝕜 (WeakDual 𝕜 E) :=
+  ContinuousLinearMap.ext fun ω => DFunLike.ext _ _ fun x => by simp
+
+/-- Precomposition in the weak-star dual reverses composition of continuous linear maps. -/
+@[simp]
+theorem precomp_comp (S : F →L[𝕜] G) (T : E →L[𝕜] F) :
+    precomp (S.comp T) = (precomp T).comp (precomp S) :=
+  ContinuousLinearMap.ext fun ω => DFunLike.ext _ _ fun x => by simp
+
+end Precomp
 
 end WeakDual

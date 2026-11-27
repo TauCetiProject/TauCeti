@@ -10,7 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
-public import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
+public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.LinearAlgebra.Isomorphisms

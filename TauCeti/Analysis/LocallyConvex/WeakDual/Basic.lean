@@ -24,56 +24,11 @@ This real structure is compatible with the `𝕜`-structure by the general scala
 `WeakDual.instIsScalarTower` from `TauCeti.Topology.Algebra.Module.Spaces.WeakDual`, and the
 instance `WeakDual.instLocallyConvexSpaceReal` records that the weak-star topology is real locally
 convex, as needed for real Hahn–Banach separation and the Krein–Milman theorem.
-
-Precomposition with a continuous linear map `T : E →L[𝕜] F` defines a weak-star continuous
-linear map `WeakDual.precomp T : WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E` (`WeakDual.precomp_apply`,
-`WeakDual.precomp_id`, `WeakDual.precomp_comp`).
 -/
 
 public section
 
 namespace WeakDual
-
-section Precomp
-
-variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-  [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
-  [AddCommMonoid G] [Module 𝕜 G] [TopologicalSpace G]
-
-/-- Precomposition with a continuous linear map `T : E →L[𝕜] F`, as a weak-star continuous
-linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`. -/
-noncomputable def precomp (T : E →L[𝕜] F) : WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E where
-  toFun ω := StrongDual.toWeakDual ((toStrongDual ω).comp T)
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  cont := continuous_of_continuous_eval fun a => eval_continuous (T a)
-
-/-- Evaluating `WeakDual.precomp T ω` at `x` gives `ω (T x)`. -/
-@[simp]
-theorem precomp_apply (T : E →L[𝕜] F) (ω : WeakDual 𝕜 F) (x : E) :
-    precomp T ω x = ω (T x) :=
-  (rfl)
-
-/-- As a strong dual functional, `WeakDual.precomp T ω` is `(toStrongDual ω).comp T`. -/
-@[simp]
-theorem toStrongDual_precomp (T : E →L[𝕜] F) (ω : WeakDual 𝕜 F) :
-    toStrongDual (precomp T ω) = (toStrongDual ω).comp T :=
-  (rfl)
-
-/-- Precomposition by the identity map on `E` is the identity on `WeakDual 𝕜 E`. -/
-@[simp]
-theorem precomp_id :
-    precomp (ContinuousLinearMap.id 𝕜 E) = ContinuousLinearMap.id 𝕜 (WeakDual 𝕜 E) :=
-  ContinuousLinearMap.ext fun ω => DFunLike.ext _ _ fun x => by simp
-
-/-- Precomposition in the weak-star dual reverses composition of continuous linear maps. -/
-@[simp]
-theorem precomp_comp (S : F →L[𝕜] G) (T : E →L[𝕜] F) :
-    precomp (S.comp T) = (precomp T).comp (precomp S) :=
-  ContinuousLinearMap.ext fun ω => DFunLike.ext _ _ fun x => by simp
-
-end Precomp
 
 /-- Every weak-star continuous linear functional on `WeakDual 𝕜 F` is evaluation at a point
 of `F`. -/

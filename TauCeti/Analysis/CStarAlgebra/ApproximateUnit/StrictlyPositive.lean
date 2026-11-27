@@ -31,10 +31,6 @@ C⋆-algebra this coincides with Mathlib's `_root_.IsStrictlyPositive h` (`0 ≤
 
 ## Main definitions and results
 
-* Basic properties supplementing `TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal`:
-  `IsStrictlyPositive.dense_range_mul_mul`, `isStrictlyPositive_zero_iff`,
-  `IsStrictlyPositive.ne_zero`, `IsStrictlyPositive.smul`, `IsStrictlyPositive.map`,
-  `IsStrictlyPositive.map_equiv_iff`.
 * Equivalent characterizations of strict positivity (Blackadar II.4.2.4):
   * `isStrictlyPositive_iff_dense_range_mul_left` and `isStrictlyPositive_iff_dense_range_mul_right`
     (for `0 ≤ h`): density of `h A` or `A h`;
@@ -68,76 +64,6 @@ open Filter Set Topology Unitization WeakDual
 open scoped ComplexOrder NNReal CStarAlgebra
 
 namespace TauCeti.CStarAlgebra
-
-section Basic
-
-namespace IsStrictlyPositive
-
-theorem dense_range_mul_mul {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] {h : A}
-    (hh : IsStrictlyPositive h) : Dense (Set.range fun x : A => h * x * h) :=
-  dense_iff_closure_eq.mpr hh.closure_range_eq_univ
-
-/-- Zero is strictly positive if and only if the algebra is a subsingleton. -/
-@[simp, grind =]
-theorem _root_.TauCeti.CStarAlgebra.isStrictlyPositive_zero_iff {A : Type*}
-    [NonUnitalCStarAlgebra A] [PartialOrder A] :
-    IsStrictlyPositive (0 : A) ↔ Subsingleton A := by
-  refine ⟨fun h => ?_, fun _ => isStrictlyPositive_def.mpr ⟨le_rfl, Set.eq_univ_of_forall fun x =>
-    subset_closure ⟨0, Subsingleton.elim _ _⟩⟩⟩
-  by_contra hns
-  rw [not_subsingleton_iff_nontrivial] at hns
-  exact not_isStrictlyPositive_zero h
-
-@[grind →]
-theorem ne_zero {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
-    [Nontrivial A] {h : A} (hh : IsStrictlyPositive h) : h ≠ 0 := by
-  rintro rfl
-  exact not_isStrictlyPositive_zero hh
-
-/-- Scaling a strictly positive element by a positive scalar preserves strict positivity. -/
-@[grind ←]
-theorem smul {𝕜 A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
-    [Semifield 𝕜] [PartialOrder 𝕜] [MulActionWithZero 𝕜 A] [IsScalarTower 𝕜 A A]
-    [SMulCommClass 𝕜 A A] [PosSMulMono 𝕜 A]
-    {h : A} (hh : IsStrictlyPositive h) {c : 𝕜} (hc : 0 < c) :
-    IsStrictlyPositive (c • h) := by
-  refine isStrictlyPositive_def.mpr ⟨smul_nonneg hc.le hh.nonneg, ?_⟩
-  have hc1 : c * (c⁻¹ * c⁻¹ * c) = 1 := by
-    rw [mul_assoc c⁻¹ c⁻¹ c, inv_mul_cancel₀ hc.ne', mul_one, mul_inv_cancel₀ hc.ne']
-  have hrange : (Set.range fun x : A => (c • h) * x * (c • h)) =
-      Set.range fun x : A => h * x * h := by
-    ext y
-    refine ⟨?_, ?_⟩
-    · rintro ⟨x, rfl⟩
-      exact ⟨(c * c) • x, by simp [smul_mul_assoc, mul_smul_comm, smul_smul]⟩
-    · rintro ⟨x, rfl⟩
-      exact ⟨(c⁻¹ * c⁻¹) • x, by simp [smul_mul_assoc, mul_smul_comm, smul_smul, hc1]⟩
-  rw [hrange]
-  exact hh.closure_range_eq_univ
-
-/-- Surjective star-algebra homomorphisms map strictly positive elements to strictly positive
-elements. -/
-theorem map {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-    [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
-    {h : A} (hh : IsStrictlyPositive h) (f : F) (hf : Function.Surjective f) :
-    IsStrictlyPositive (f h) :=
-  isStrictlyPositive_def.mpr ⟨map_nonneg f hh.nonneg,
-    dense_iff_closure_eq.mp <| hf.denseRange.dense_of_mapsTo (map_continuous f)
-      hh.dense_range_mul_mul fun _ ⟨x, hx⟩ => ⟨f x, by rw [← hx, map_mul, map_mul]⟩⟩
-
-/-- Star-algebra equivalences preserve strict positivity in both directions. -/
-@[simp]
-theorem map_equiv_iff {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-    (e : A ≃⋆ₐ[ℂ] B) {h : A} :
-    IsStrictlyPositive (e h) ↔ IsStrictlyPositive h :=
-  ⟨fun hh => e.symm_apply_apply h ▸ hh.map e.symm e.symm.surjective,
-    fun hh => hh.map e e.surjective⟩
-
-end IsStrictlyPositive
-
-end Basic
 
 section Characterizations
 
@@ -176,7 +102,7 @@ private theorem isStrictlyPositive_of_isApproximateUnit_resolventApprox {h : A} 
     have hmul : u n * u n = cfcₙ (fun t : ℝ => (t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) *
         (t * (t + ((n : ℝ) + 1)⁻¹)⁻¹)) h := by
       dsimp only [u]
-      rw [resolventApprox_def]
+      rw [resolventApprox_eq_cfcₙ]
       exact (cfcₙ_mul _ _ h hg (by simp) hg (by simp)).symm
     refine ⟨?_, ?_⟩
     · nth_rw 1 [← cfcₙ_id' ℝ h hh.isSelfAdjoint]
@@ -214,7 +140,8 @@ private theorem nonneg_of_isIncreasingApproximateUnit_resolventApprox {h : A}
   obtain ⟨N, hN⟩ := eventually_atTop.mp (hne_ev.and hnorm_ev)
   have hh_sa : IsSelfAdjoint h := by
     by_contra hnsa
-    exact (hN N le_rfl).1 (by rw [resolventApprox_def]; exact cfcₙ_apply_of_not_predicate h hnsa)
+    exact (hN N le_rfl).1
+      (by rw [resolventApprox_eq_cfcₙ]; exact cfcₙ_apply_of_not_predicate h hnsa)
   rw [StarOrderedRing.nonneg_iff_quasispectrum_nonneg (R := ℝ) h hh_sa]
   intro t ht
   by_contra! ht_neg
@@ -230,9 +157,9 @@ private theorem nonneg_of_isIncreasingApproximateUnit_resolventApprox {h : A}
   let g : ℝ → ℝ := fun s => s * (s + c)⁻¹
   have hg_cont : ContinuousOn g (quasispectrum ℝ h) := by
     by_contra hg
-    exact hne (by rw [resolventApprox_def]; exact cfcₙ_apply_of_not_continuousOn h hg)
+    exact hne (by rw [resolventApprox_eq_cfcₙ]; exact cfcₙ_apply_of_not_continuousOn h hg)
   have hle : ‖g t‖ ≤ 1 := by
-    rw [resolventApprox_def] at hnorm
+    rw [resolventApprox_eq_cfcₙ] at hnorm
     exact (norm_apply_le_norm_cfcₙ g h ht hg_cont (by simp [g]) hh_sa).trans hnorm
   have hgt : 1 < g t := by
     have htc : t + c < 0 := by linarith

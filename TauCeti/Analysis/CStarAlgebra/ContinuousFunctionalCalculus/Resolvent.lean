@@ -42,13 +42,13 @@ sequential specialization
 * `IsSelfAdjoint.cfc_div_one_add_mul`: `cfc (fun x ↦ x / (1 + k x)) a = a (1 + k a)⁻¹` when
   `1 + k a` is invertible.
 * `TauCeti.CStarAlgebra.resolventApproxAt` and `TauCeti.CStarAlgebra.resolventApprox`: resolvent
-  cutoffs at scale `c : ℝ` and `((n : ℝ) + 1)⁻¹` (`resolventApproxAt_def`, `resolventApprox_def`),
-  together with self-adjointness (`isSelfAdjoint_resolventApproxAt`), homomorphism transport
-  (`map_resolventApproxAt`), positivity (`resolventApproxAt_nonneg`), strict contractive norm bound
-  (`norm_resolventApproxAt_lt_one`), antitone dependence on `c` (`antitoneOn_resolventApproxAt`) and
-  monotonicity in `n` (`monotone_resolventApprox`), algebraic identity
-  (`resolventApproxAt_mul_self_add_smul`), unitization invertibility and embedding
-  (`isUnit_inr_add_smul_one`, `inr_resolventApproxAt`, `inr_resolventApprox`), and norm bound
+  cutoffs at scale `c : ℝ` and `((n : ℝ) + 1)⁻¹` (`resolventApproxAt_def`, `resolventApprox_def`,
+  `resolventApprox_eq_cfcₙ`), together with self-adjointness (`isSelfAdjoint_resolventApproxAt`),
+  homomorphism transport (`map_resolventApproxAt`), positivity (`resolventApproxAt_nonneg`), strict
+  contractive norm bound (`norm_resolventApproxAt_lt_one`), antitone dependence on `c`
+  (`antitoneOn_resolventApproxAt`) and monotonicity in `n` (`monotone_resolventApprox`), algebraic
+  identity (`resolventApproxAt_mul_self_add_smul`), unitization embedding
+  (`inr_resolventApproxAt`, `inr_resolventApprox`), and norm bound
   `‖resolventApproxAt h c * h - h‖ ≤ c` (`norm_resolventApproxAt_mul_self_sub_le`,
   `norm_resolventApprox_mul_self_sub_le`).
 
@@ -266,12 +266,6 @@ private theorem add_ne_zero_of_mem_spectrum_inr {h : A} (hh : 0 ≤ h) {c : ℝ}
   have : 0 ≤ t := spectrum_nonneg_of_nonneg (Unitization.inr_nonneg ℂ h hh) ht
   positivity
 
-/-- In the unitization `A⁺¹`, `(h : A⁺¹) + c • 1` is invertible for `0 ≤ h` and `0 < c`. -/
-theorem isUnit_inr_add_smul_one {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
-    IsUnit ((h : A⁺¹) + c • (1 : A⁺¹)) :=
-  (_root_.IsStrictlyPositive.nonneg_add (Unitization.inr_nonneg ℂ h hh)
-    (_root_.IsStrictlyPositive.smul hc _root_.isStrictlyPositive_one)).isUnit
-
 /-- In the unitization `A⁺¹`, `resolventApproxAt h c` embeds as
 `(h : A⁺¹) * Ring.inverse ((h : A⁺¹) + c • 1)` for `0 ≤ h` and `0 < c`. -/
 theorem inr_resolventApproxAt {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
@@ -297,8 +291,13 @@ is strictly positive it is a monotone sequential increasing approximate unit of 
 noncomputable def resolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) : A :=
   resolventApproxAt h ((n : ℝ) + 1)⁻¹
 
-/-- Unfolding formula for `resolventApprox`. -/
+/-- Unfolding formula for `resolventApprox` in terms of `resolventApproxAt`. -/
 theorem resolventApprox_def {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
+    resolventApprox h n = resolventApproxAt h ((n : ℝ) + 1)⁻¹ :=
+  (rfl)
+
+/-- Nonunital continuous functional calculus formula for `resolventApprox`. -/
+theorem resolventApprox_eq_cfcₙ {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
     resolventApprox h n = cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h :=
   (rfl)
 
@@ -329,8 +328,8 @@ theorem map_resolventApprox {B F : Type*} [NonUnitalCStarAlgebra B]
 `((n : ℝ) + 1) • h`, connecting the resolvent formula to Mathlib's operator-monotone contraction. -/
 theorem resolventApprox_eq_cfcₙ_one_sub {h : A} (hh : 0 ≤ h) (n : ℕ) :
     resolventApprox h n = cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹) (((n : ℝ) + 1) • h) := by
-  simpa [resolventApprox] using
-    resolventApproxAt_eq_cfcₙ_one_sub hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
+  rw [resolventApprox_def]
+  simpa using resolventApproxAt_eq_cfcₙ_one_sub hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
 
 theorem resolventApprox_nonneg {h : A} (hh : 0 ≤ h) (n : ℕ) : 0 ≤ resolventApprox h n :=
   resolventApproxAt_nonneg hh (by positivity)
@@ -346,8 +345,8 @@ theorem monotone_resolventApprox {h : A} (hh : 0 ≤ h) : Monotone (resolventApp
 
 theorem resolventApprox_le_smul {h : A} (hh : 0 ≤ h) (n : ℕ) :
     resolventApprox h n ≤ ((n : ℝ) + 1) • h := by
-  simpa [resolventApprox] using
-    resolventApproxAt_le_inv_smul hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
+  rw [resolventApprox_def]
+  simpa using resolventApproxAt_le_inv_smul hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
 
 /-- Algebraic resolvent identity in `A`: `(h (h + c)⁻¹) h + c • (h (h + c)⁻¹) = h` for
 `c = ((n : ℝ) + 1)⁻¹`. -/
