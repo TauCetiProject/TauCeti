@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster
+public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Basic
 public import TauCeti.Analysis.BoundedVariation.Weighted.Gaussian
 public import TauCeti.Analysis.BoundedVariation.Weighted.HalfSpace
 public import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace

@@ -12,7 +12,7 @@ import Mathlib.Topology.UnitInterval
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Topology.Circle.Degree
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Continuous argument lift for a point-avoiding curve

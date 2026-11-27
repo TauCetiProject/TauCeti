@@ -52,6 +52,8 @@ class in the kernel of the Kronecker map, which is the image of `Ext¹(Hₙ(T_φ
 
 * `TauCeti.MappingTorus.homologyMap_monodromyChainMap_eq_id`: an orientation-preserving `φ` acts
   as the identity on `Hₙ₊₁(F; ℤ)`.
+* `TauCeti.MappingTorus.epi_wangδ_of_mapFundamentalClass_eq`: the Wang connecting morphism is
+  then onto `Hₙ₊₁(F; ℤ)`.
 * `TauCeti.MappingTorus.injective_id_sub_homologyMap_monodromyChainMap_ulift`: if
   `det (𝟙 - φ_*) ≠ 0` on a free `H₁(F; ℤ)` of finite rank, then `𝟙 - φ_*` is injective on
   `H₁(F; ULift ℤ)`.
@@ -135,6 +137,25 @@ theorem homologyMap_monodromyChainMap_eq_id
   -- `singularHomologyFunctor` is by definition the homology of the singular chain complex, so `h`
   -- is the goal.
   exact h
+
+/-- **The Wang connecting morphism is onto the top homology of the fibre.** If `φ` preserves the
+fundamental class of a compact connected oriented `(n + 1)`-manifold `F`, it acts as the identity
+on `Hₙ₊₁(F; ℤ)`, so by the exactness of the Wang sequence every class of `Hₙ₊₁(F; ℤ)` is `δ y` for
+some `y ∈ Hₙ₊₂(T_φ; ℤ)`, where `δ` is the Wang connecting morphism. -/
+theorem epi_wangδ_of_mapFundamentalClass_eq
+    (hφ : o.mapFundamentalClass hn ⟨φ, φ.continuous⟩ = o.fundamentalClass hn) :
+    Epi (wangδ φ (ModuleCat.of ℤ ℤ) (n + 1)) := by
+  refine epi_wangδ_of_homologyMap_monodromyChainMap_eq_id φ _ (n + 1) ?_
+  -- `φ_* = 𝟙` on `Hₙ₊₁(F; ULift ℤ)`, hence on `Hₙ₊₁(F; ℤ)` by naturality of the change of
+  -- coefficients
+  have h := homologyMap_monodromyChainMap_eq_id o hn hφ
+  rw [monodromyChainMap_def] at h ⊢
+  refine (cancel_epi (uliftIntHomologyIso (TopCat.of F) (n + 1)).hom).1 ?_
+  -- term-mode steps: `homologyMap_comp_uliftIntHomologyIso_hom` is stated through `SSet.homology`,
+  -- which is by definition the homology of the singular chain complex
+  exact (homologyMap_comp_uliftIntHomologyIso_hom (TopCat.ofHom ⟨φ, φ.continuous⟩)
+    (n + 1)).symm.trans ((congrArg (· ≫ _) h).trans
+      ((Category.id_comp _).trans (Category.comp_id _).symm))
 
 /-- **The fibre class generates the top homology of a mapping torus.** If `φ` preserves the
 fundamental class of `F` and `𝟙 - φ_*` is injective on `Hₙ(F; ℤ)`, then `c ↦ c • i_*[F]` is an

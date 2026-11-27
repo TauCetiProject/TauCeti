@@ -117,6 +117,17 @@ theorem deriv_LFunction_inv_conj (s : ℂ) :
   rw [hloc.deriv_eq, deriv_conj_conj]
   simp
 
+/-- Inverting the character and conjugating the argument conjugates the logarithmic derivative.
+At the principal-character pole at `1`, both sides are `0` by totalization. -/
+theorem logDeriv_LFunction_inv_conj (s : ℂ) :
+    logDeriv χ⁻¹.LFunction (conj s) = conj (logDeriv χ.LFunction s) := by
+  by_cases hs : s = 1 ∧ χ = 1
+  · obtain ⟨rfl, rfl⟩ := hs
+    simp [logDeriv_apply,
+      deriv_zero_of_not_differentiableAt TauCeti.not_differentiableAt_LFunctionTrivChar_one]
+  · rw [logDeriv_apply, logDeriv_apply, χ.deriv_LFunction_inv_conj,
+      χ.LFunction_inv_conj (not_and_or.mp hs), map_div₀]
+
 /-- On a punctured neighbourhood of every point, `χ⁻¹.LFunction` is
 `conj ∘ χ.LFunction ∘ conj`. -/
 private theorem LFunction_inv_eventuallyEq_nhdsNE (s : ℂ) :

@@ -238,9 +238,11 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
     (hV : finrank ℝ V = 4) (hF : finrank ℝ F = 4) (x : B) :
     ∃ t : Trivialization (Subgroup.centralizer {J₀})
         (fun p : unitaryFrames F J J₀ ↦ (p : OrthonormalFrameBundle ℝ F E V).proj),
-      x ∈ t.baseSet ∧ ∀ (g : Subgroup.centralizer {J₀}) (p : unitaryFrames F J J₀),
+      x ∈ t.baseSet ∧ ∀ (g : Subgroup.centralizer {J₀}) (p : unitaryFrames F J J₀)
+        (hgp : op (g : unitary (V →L[ℝ] V)) • (p : OrthonormalFrameBundle ℝ F E V) ∈
+          unitaryFrames F J J₀),
         (p : OrthonormalFrameBundle ℝ F E V).proj ∈ t.baseSet →
-          t (op g • p) = ((t p).1, (t p).2 * g) := by
+          t ⟨_, hgp⟩ = ((t p).1, (t p).2 * g) := by
   have : Fact (finrank ℝ V = 4) := ⟨hV⟩
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (by omega)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
@@ -271,7 +273,7 @@ theorem exists_trivialization_unitaryFrames {B : Type*} [TopologicalSpace B] {F 
     (isOpen_goodSet e cF β (β j) hJ)
     (continuousOn_unitaryToAdaptedFourBasis_localStructure hJ₂ hJ)
     hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  exact ⟨t, ht ▸ hx, fun g p hgp hp ↦ hteq g p hgp (ht ▸ hp)⟩
 
 section Lift
 

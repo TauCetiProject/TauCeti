@@ -66,6 +66,9 @@ both at least `σ₁ / σₙ = ‖A‖ / ℓ(A) ≥ 1`.
   `Orientation.outerDistortion_linearIsometryEquiv_of_neg`: an isometric isomorphism has outer
   distortion `1` if it preserves orientation, and (in positive dimension) `∞` if it reverses
   orientation.
+* `Orientation.innerDistortion_linearIsometryEquiv`,
+  `Orientation.innerDistortion_smul_linearIsometryEquiv`: an orientation-preserving isometric
+  isomorphism `U`, and any multiple `c • U` with `cⁿ > 0`, has inner distortion `1`.
 
 ## References
 
@@ -476,6 +479,13 @@ theorem innerDistortion_linearIsometryEquiv (U : V ≃ₗᵢ[ℝ] W)
   · simp
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = m + 1)
   simp [LinearMap.minimalStretch_id]
+
+/-- A multiple `c • U` with `cⁿ > 0` (any `c > 0`, and any `c ≠ 0` in even dimension) of an
+orientation-preserving isometric isomorphism `U` has inner distortion `1`. -/
+theorem innerDistortion_smul_linearIsometryEquiv {c : ℝ} (hc : 0 < c ^ n) (U : V ≃ₗᵢ[ℝ] W)
+    (hU : oV.orientedJacobian oW (U : V →ₗ[ℝ] W) = 1) :
+    oV.innerDistortion oW (c • (U : V →ₗ[ℝ] W)) = 1 :=
+  (oV.innerDistortion_smul oW hc _).trans (oV.innerDistortion_linearIsometryEquiv oW U hU)
 
 omit [FiniteDimensional ℝ W] in
 /-- In positive dimension an orientation-reversing isometric isomorphism, such as the reflection

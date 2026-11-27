@@ -48,6 +48,8 @@ presentation of the elementary subgroup; that injectivity is not proved here.
 * `TauCeti.DynkinType.IsSteinbergRelator`: the relators of Steinberg's presentation.
 * `TauCeti.DynkinType.steinbergRelators`: the set of these relators.
 * `TauCeti.DynkinType.steinbergRootSubgroup`: the root subgroups `X_γ` of the presented group.
+* `TauCeti.DynkinType.steinbergWeylElement`: Steinberg's Weyl element `W_γ(s)` of the presented
+  group.
 * `TauCeti.DynkinType.ChevalleyDatum.steinbergLift`: the homomorphism `X_γ(u) ↦ x_γ(u)` from the
   presented group to the points of a Chevalley datum.
 
@@ -262,6 +264,28 @@ theorem steinbergRootSubgroup_apply (γ : Fin t.numRoots) (a : Multiplicative A)
     t.steinbergRootSubgroup ht A γ a = PresentedGroup.of (γ, a.toAdd) :=
   (rfl)
 
+/-- The root generator `X_γ(w)` is the class of the letter `steinbergRoot γ w`. -/
+theorem steinbergRootSubgroup_ofAdd (γ : Fin t.numRoots) (w : A) :
+    t.steinbergRootSubgroup ht A γ (ofAdd w) =
+      PresentedGroup.mk (t.steinbergRelators ht A) (steinbergRoot γ w) :=
+  (rfl)
+
+/-- **Steinberg's Weyl element** `W_γ(s) = X_γ(s) X_{-γ}(-s⁻¹) X_γ(s)` of the presented group, the
+class of the word `steinbergWeylWord`. -/
+noncomputable def steinbergWeylElement (γ : Fin t.numRoots) (s : Aˣ) :
+    PresentedGroup (t.steinbergRelators ht A) :=
+  PresentedGroup.mk _ (steinbergWeylWord ht γ s)
+
+/-- Steinberg's Weyl element is the product `X_γ(s) X_{-γ}(-s⁻¹) X_γ(s)` of root generators. -/
+theorem steinbergWeylElement_eq (γ : Fin t.numRoots) (s : Aˣ) :
+    t.steinbergWeylElement ht A γ s =
+      t.steinbergRootSubgroup ht A γ (ofAdd (s : A)) *
+        t.steinbergRootSubgroup ht A ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)
+          (ofAdd (-((s⁻¹ : Aˣ) : A))) *
+        t.steinbergRootSubgroup ht A γ (ofAdd (s : A)) := by
+  rw [steinbergWeylElement, steinbergWeylWord_def, map_mul, map_mul]
+  simp only [steinbergRootSubgroup_ofAdd]
+
 variable {t ht A}
 
 /-- A relator `⁅X_α(u), X_β(v)⁆ w⁻¹` of the presentation gives the equation
@@ -352,11 +376,11 @@ theorem steinbergLift_of (γ : Fin t.numRoots) (a : A) :
     D.steinbergLift A (PresentedGroup.of (γ, a)) = D.rootSubgroupPoints γ A (ofAdd a) :=
   PresentedGroup.toGroup.of _
 
-/-- Steinberg's homomorphism carries the presented Weyl word `W_γ(s)` to Steinberg's element
-`n_γ(s)` of the datum. -/
+/-- Steinberg's homomorphism carries the Weyl element `W_γ(s)` of the presented group to
+Steinberg's element `n_γ(s)` of the datum. -/
 @[simp]
-theorem steinbergLift_mk_steinbergWeylWord (γ : Fin t.numRoots) (s : Aˣ) :
-    D.steinbergLift A (PresentedGroup.mk _ (steinbergWeylWord ht γ s)) = D.weylElement γ A s := by
+theorem steinbergLift_steinbergWeylElement (γ : Fin t.numRoots) (s : Aˣ) :
+    D.steinbergLift A (t.steinbergWeylElement ht A γ s) = D.weylElement γ A s := by
   -- `PresentedGroup.toGroup` evaluates the class of a word by lifting that word.
   exact D.lift_steinbergWeylWord A γ s
 

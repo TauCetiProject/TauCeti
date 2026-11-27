@@ -17,7 +17,9 @@ import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 # Closed two-sided ideals
 
 The closure of a two-sided ideal in a topological ring is again two-sided, and closed two-sided
-ideals in rings with an approximate unit absorb compatible scalar multiplication. We
+ideals in rings with an approximate unit absorb compatible scalar multiplication. Closedness is
+preserved by `⊥` (in `T₁` spaces), `⊤`, binary intersections, opposite rings, and continuous
+nonunital ring-homomorphism preimages. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
 for quotients of noncommutative rings by native ideals. The closed ideal generated
 by an ideal of the center presents discrete modules with central relations.
@@ -154,6 +156,39 @@ theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Se
 
 end TopologicalClosure
 
+section ClosedOps
+
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+
+/-- The opposite of a closed two-sided ideal is closed. -/
+instance isClosed_op (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)] :
+    IsClosed (I.op : Set Aᵐᵒᵖ) := by
+  rw [coe_op]
+  exact hI.preimage MulOpposite.continuous_unop
+
+/-- The `unop` of a closed two-sided ideal in the opposite ring is closed. -/
+instance isClosed_unop (I : TwoSidedIdeal Aᵐᵒᵖ) [hI : IsClosed (I : Set Aᵐᵒᵖ)] :
+    IsClosed (I.unop : Set A) := by
+  rw [coe_unop]
+  exact hI.preimage MulOpposite.continuous_op
+
+/-- The trivial two-sided ideal `⊥` in a `T₁` ring is closed. -/
+instance isClosed_bot [T1Space A] : IsClosed ((⊥ : TwoSidedIdeal A) : Set A) := by
+  rw [coe_bot]
+  exact isClosed_singleton
+
+/-- The whole ring `⊤` as a two-sided ideal is closed. -/
+instance isClosed_top : IsClosed ((⊤ : TwoSidedIdeal A) : Set A) := by
+  rw [coe_top]
+  exact isClosed_univ
+
+/-- The intersection `I ⊓ J` of two closed two-sided ideals is closed. -/
+instance isClosed_inf (I J : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+    [hJ : IsClosed (J : Set A)] : IsClosed ((I ⊓ J : TwoSidedIdeal A) : Set A) :=
+  hI.inter hJ
+
+end ClosedOps
+
 section OpenUnits
 
 variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
@@ -234,25 +269,6 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
   exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
 
 end ApproximateUnit
-
-section ClosedLattice
-
-variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
-
-/-- The top two-sided ideal is closed. -/
-instance isClosed_top : IsClosed ((⊤ : TwoSidedIdeal A) : Set A) :=
-  isClosed_univ
-
-/-- In a `T₁` space, the bottom two-sided ideal `{0}` is closed. -/
-instance isClosed_bot [T1Space A] : IsClosed ((⊥ : TwoSidedIdeal A) : Set A) :=
-  isClosed_singleton
-
-/-- The intersection of two closed two-sided ideals is closed. -/
-instance isClosed_inf (I J : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
-    [hJ : IsClosed (J : Set A)] : IsClosed ((I ⊓ J : TwoSidedIdeal A) : Set A) :=
-  hI.inter hJ
-
-end ClosedLattice
 
 end TwoSidedIdeal
 

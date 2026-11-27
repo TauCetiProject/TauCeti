@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import TauCeti.Geometry.Manifold.VectorField.Chart.PartialDiffeomorph
 
 /-!

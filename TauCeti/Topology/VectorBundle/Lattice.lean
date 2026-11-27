@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.VectorBundle.Section
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import TauCeti.Topology.Homotopy.Monodromy.Basic
 
 /-!
 # Lattice families in vector bundles and their monodromy
@@ -41,6 +43,20 @@ A continuous section of `L` along a path is a lift of it, so monodromy carries i
 start to its value at the end (`TauCeti.latticeMonodromy_mk_of_continuousOn`). Consequently a
 lattice family spanned by a global continuous frame has trivial monodromy
 (`TauCeti.latticeMonodromyHom_eq_one`).
+
+Two continuous sections with values in `L` which agree at one point agree on every preconnected
+set on which they are continuous (`TauCeti.eqOn_of_continuousOn_of_mem_lattice`).
+
+Conversely, over a path-connected, locally path-connected base, trivial monodromy gives global
+frames. If monodromy around every loop at `x` is trivial, the lifting criterion gives a continuous
+section of the lattice bundle through every vector of `L x`
+(`TauCeti.exists_continuous_section_of_latticeMonodromyHom_eq_one`). When every `L b` is a full
+lattice, spanned over `ℤ` by `n` linearly independent vectors, the sections through a basis of
+`L x` form a global continuous frame spanning `L` at every point: transport along a path from `x`
+to `b` is a group isomorphism `L x ≃+ L b` carrying the values of the sections at `x` to their
+values at `b` (`TauCeti.exists_frame_of_latticeMonodromyHom_eq_one`). So for a family of full
+lattices, the linear monodromy is trivial exactly when the family is spanned by a global
+continuous frame (`TauCeti.latticeMonodromyHom_eq_one_iff_exists_frame`).
 
 The motivating example is the period lattice `Λ ⊆ T*B` of a regular Lagrangian torus fibration,
 which is locally spanned by the differentials of action coordinates; there `T*B/Λ` is the
@@ -404,6 +420,112 @@ theorem latticeMonodromyHom_eq_one {ι : Type*} [Finite ι] {s : ι → ∀ b, E
       rw [map_zsmul, latticeMonodromy_mk_of_continuousOn hL (hs i).continuousOn
         (fun b _ ↦ hsL i b) q fun _ ↦ mem_univ _]
     _ = a := ha.symm
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
+  [FiberBundle F E] [VectorBundle ℝ F E] in
+include hL in
+/-- **Sections of a lattice family are rigid.** Two sections of `E` which are continuous on a
+preconnected set `U`, take values in `L` there and agree at one point of `U` agree on all of
+`U`. -/
+theorem eqOn_of_continuousOn_of_mem_lattice {s t : ∀ b, E b} {U : Set B}
+    (hU : IsPreconnected U) (hs : ContinuousOn (fun b ↦ TotalSpace.mk' F b (s b)) U)
+    (ht : ContinuousOn (fun b ↦ TotalSpace.mk' F b (t b)) U) (hsL : ∀ b ∈ U, s b ∈ L b)
+    (htL : ∀ b ∈ U, t b ∈ L b) {b₀ : B} (hb₀ : b₀ ∈ U) (hst : s b₀ = t b₀) :
+    ∀ b ∈ U, s b = t b := by
+  have := Subtype.preconnectedSpace hU
+  let g₁ : U → {v : TotalSpace F E // v.snd ∈ L v.proj} := fun b ↦ ⟨⟨b, s b⟩, hsL b b.property⟩
+  let g₂ : U → {v : TotalSpace F E // v.snd ∈ L v.proj} := fun b ↦ ⟨⟨b, t b⟩, htL b b.property⟩
+  have h : g₁ = g₂ := hL.eq_of_comp_eq
+    ((hs.comp_continuous continuous_subtypeVal Subtype.prop).subtype_mk _)
+    ((ht.comp_continuous continuous_subtypeVal Subtype.prop).subtype_mk _) rfl ⟨b₀, hb₀⟩
+    (Subtype.ext (congrArg (TotalSpace.mk' F b₀) hst))
+  exact fun b hb ↦ TotalSpace.mk_inj.1 (congrArg Subtype.val (congrFun h ⟨b, hb⟩))
+
+/-- **Trivial monodromy gives global sections.** Over a path-connected, locally path-connected
+base, if the linear monodromy of a lattice family at `x` is trivial, then every vector `a ∈ L x`
+is the value at `x` of a continuous section of `E` with values in `L`. -/
+theorem exists_continuous_section_of_latticeMonodromyHom_eq_one [PathConnectedSpace B]
+    [LocallyPathConnectedSpace B] {x : B} (hx : latticeMonodromyHom hL x = 1) (a : L x) :
+    ∃ s : ∀ b, E b, Continuous (fun b ↦ TotalSpace.mk' F b (s b)) ∧ (∀ b, s b ∈ L b) ∧
+      s x = a := by
+  set e := (latticeProjFiberEquiv F L x).symm a
+  have he (γ : FundamentalGroup B x) : hL.monodromy γ.toPath e = e := by
+    have h := latticeMonodromyHom_apply hL x γ a
+    rw [hx, MonoidHom.one_apply, Units.val_one, one_apply_eq_self, latticeMonodromy_apply] at h
+    exact (latticeProjFiberEquiv F L x).eq_symm_apply.2 h.symm
+  obtain ⟨s, hsx, hps⟩ := (hL.exists_section_iff_forall_monodromy_eq e).2 he
+  have hproj (b : B) : (s b).val.proj = b := congrFun hps b
+  refine ⟨fun b ↦ (latticeProjFiberEquiv F L b ⟨s b, hproj b⟩ : E b), ?_,
+    fun b ↦ (latticeProjFiberEquiv F L b ⟨s b, hproj b⟩).property, ?_⟩
+  · refine (continuous_subtypeVal.comp s.continuous).congr fun b ↦ ?_
+    exact (TotalSpace.mk_cast (hproj b) _).symm
+  · dsimp only
+    rw [show (⟨s x, hproj x⟩ : latticeProj F L ⁻¹' {x}) = e from Subtype.ext hsx,
+      Equiv.apply_symm_apply]
+
+/-- **Trivial monodromy gives a global frame.** Let `L` be a family of full lattices of rank
+`|ι|`: every `L b` is spanned over `ℤ` by a linearly independent family indexed by `ι`. Over a
+path-connected, locally path-connected base, if the linear monodromy at `x` is trivial, then there
+are continuous sections `sᵢ` of `E`, `i ∈ ι`, which at every point `b` are linearly independent
+and span `L b` over `ℤ`. -/
+theorem exists_frame_of_latticeMonodromyHom_eq_one [PathConnectedSpace B]
+    [LocallyPathConnectedSpace B] {ι : Type*} [Finite ι]
+    (hLb : ∀ b, ∃ t : ι → E b, LinearIndependent ℝ t ∧ L b = AddSubgroup.closure (range t))
+    {x : B} (hx : latticeMonodromyHom hL x = 1) :
+    ∃ s : ι → ∀ b, E b, (∀ i, Continuous fun b ↦ TotalSpace.mk' F b (s i b)) ∧
+      ∀ b, LinearIndependent ℝ (fun i ↦ s i b) ∧
+        L b = AddSubgroup.closure (range fun i ↦ s i b) := by
+  have := Fintype.ofFinite ι
+  obtain ⟨t, -, htL⟩ := hLb x
+  have htmem (i : ι) : t i ∈ L x := htL ▸ AddSubgroup.subset_closure (mem_range_self i)
+  choose s hs hsL hsx using fun i ↦
+    exists_continuous_section_of_latticeMonodromyHom_eq_one hL hx ⟨t i, htmem i⟩
+  -- Transport along a path from `x` to `b` carries the generators `t i = s i x` of `L x` to the
+  -- values `s i b`, so these generate `L b`.
+  have hclosure (b : B) : L b = AddSubgroup.closure (range fun i ↦ s i b) := by
+    refine le_antisymm (fun v hv ↦ ?_) ((AddSubgroup.closure_le _).2 ?_)
+    · set m := latticeMonodromy hL (.mk (PathConnectedSpace.somePath x b))
+      have hm (i : ι) : m ⟨t i, htmem i⟩ = ⟨s i b, hsL i b⟩ := by
+        have h := latticeMonodromy_mk_of_continuousOn hL (hs i).continuousOn
+          (fun b _ ↦ hsL i b) (PathConnectedSpace.somePath x b) fun _ ↦ mem_univ _
+        simp only [hsx] at h
+        exact h
+      obtain ⟨k, hk⟩ := AddSubgroup.mem_closure_range_iff_of_fintype.1
+        (htL.le (m.symm ⟨v, hv⟩).property)
+      have hk' : m.symm ⟨v, hv⟩ = ∑ i, k i • (⟨t i, htmem i⟩ : L x) :=
+        Subtype.ext (by simpa using hk)
+      have hv' : (⟨v, hv⟩ : L b) = ∑ i, k i • (⟨s i b, hsL i b⟩ : L b) := by
+        rw [← m.apply_symm_apply ⟨v, hv⟩, hk', map_sum]
+        simp only [map_zsmul, hm]
+      exact AddSubgroup.mem_closure_range_iff_of_fintype.2
+        ⟨k, by simpa using congrArg Subtype.val hv'⟩
+    · rintro _ ⟨i, rfl⟩
+      exact hsL i b
+  refine ⟨s, hs, fun b ↦ ⟨?_, hclosure b⟩⟩
+  -- The real span of generators of `L b` is the real span of a basis of the full lattice `L b`.
+  obtain ⟨t', ht', ht'L⟩ := hLb b
+  have hspan : Submodule.span ℝ (range fun i ↦ s i b) = Submodule.span ℝ (range t') := by
+    rw [← Submodule.span_span_of_tower ℤ ℝ (range fun i ↦ s i b),
+      ← Submodule.span_span_of_tower ℤ ℝ (range t'), ← Submodule.coe_toAddSubgroup,
+      ← Submodule.coe_toAddSubgroup (Submodule.span ℤ (range t')),
+      Submodule.span_int_eq_addSubgroupClosure, Submodule.span_int_eq_addSubgroupClosure,
+      (hclosure b).symm.trans ht'L]
+  rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, hspan, finrank_span_eq_card ht']
+
+/-- **The linear monodromy of a family of full lattices is trivial exactly when the family has a
+global frame.** Over a path-connected, locally path-connected base, for a family of full lattices
+of rank `|ι|`, the linear monodromy at `x` is trivial if and only if there are continuous sections
+`sᵢ`, `i ∈ ι`, spanning `L b` over `ℤ` at every point `b`. -/
+theorem latticeMonodromyHom_eq_one_iff_exists_frame [PathConnectedSpace B]
+    [LocallyPathConnectedSpace B] {ι : Type*} [Finite ι]
+    (hLb : ∀ b, ∃ t : ι → E b, LinearIndependent ℝ t ∧ L b = AddSubgroup.closure (range t))
+    (x : B) :
+    latticeMonodromyHom hL x = 1 ↔ ∃ s : ι → ∀ b, E b,
+      (∀ i, Continuous fun b ↦ TotalSpace.mk' F b (s i b)) ∧
+        ∀ b, L b = AddSubgroup.closure (range fun i ↦ s i b) := by
+  refine ⟨fun hx ↦ ?_, fun ⟨s, hs, hsL⟩ ↦ latticeMonodromyHom_eq_one hL hs hsL x⟩
+  obtain ⟨s, hs, hsL⟩ := exists_frame_of_latticeMonodromyHom_eq_one hL hLb hx
+  exact ⟨s, hs, fun b ↦ (hsL b).2⟩
 
 end Monodromy
 
