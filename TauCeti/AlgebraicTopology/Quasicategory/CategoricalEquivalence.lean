@@ -178,16 +178,19 @@ vertex of `k` to the vertex of `pre k` (`SSet.curry_braiding_comp_app_ihomObj₀
 lemma nonempty_iso_homMk_pre_app {h h' : X ⟶ Y} (α : h ≅ h') (E : SSet.{u}) [Quasicategory E] :
     Nonempty ((ObjectProperty.homMk ((pre h.hom).app E) :
         (⟨(ihom Y.obj).obj E, inferInstance⟩ : QCat.{u}) ⟶ ⟨(ihom X.obj).obj E, inferInstance⟩) ≅
-      ObjectProperty.homMk ((pre h'.hom).app E)) :=
-  ⟨CatEnrichedOrdinary.isoEquiv.symm (eqToIso (by
-      rw [homEquiv_eq_mk, homEquiv_eq_mk, mapHomotopyCategory_obj_mk,
-        curry_braiding_comp_app_ihomObj₀Equiv_symm]
-      rfl) ≪≫
+      ObjectProperty.homMk ((pre h'.hom).app E)) := by
+  have hk (k : X ⟶ Y) :
+      (mapHomotopyCategory (curry ((β_ _ _).hom ≫ comp X.obj Y.obj E))).obj
+          (CatEnrichedOrdinary.homEquiv k) =
+        CatEnrichedOrdinary.homEquiv (ObjectProperty.homMk ((pre k.hom).app E) :
+          (⟨(ihom Y.obj).obj E, inferInstance⟩ : QCat.{u}) ⟶
+            ⟨(ihom X.obj).obj E, inferInstance⟩) := by
+    rw [homEquiv_eq_mk, homEquiv_eq_mk, mapHomotopyCategory_obj_mk,
+      curry_braiding_comp_app_ihomObj₀Equiv_symm]
+    simp only [ObjectProperty.homMk_hom]
+  exact ⟨CatEnrichedOrdinary.isoEquiv.symm (eqToIso (hk h).symm ≪≫
     (mapHomotopyCategory (curry ((β_ _ _).hom ≫ comp X.obj Y.obj E))).mapIso
-      (CatEnrichedOrdinary.isoEquiv α) ≪≫ eqToIso (by
-      rw [homEquiv_eq_mk, homEquiv_eq_mk, mapHomotopyCategory_obj_mk,
-        curry_braiding_comp_app_ihomObj₀Equiv_symm]
-      rfl))⟩
+      (CatEnrichedOrdinary.isoEquiv α) ≪≫ eqToIso (hk h'))⟩
 
 /-- A map of quasicategories is a categorical equivalence when it is an equivalence in the
 bicategory of quasicategories: it admits a quasi-inverse together with invertible natural
