@@ -35,7 +35,9 @@ compatible along `u` on the disc and equal to `J_q(t)` on the end, so the operat
 is Fredholm. The coefficient fields of the members agree on the end, and on the compact disc they
 are jointly continuous in `(μ, z)`, so they depend continuously on `μ` in `L^∞`; the operators then
 form a continuous path of Fredholm operators, along which the index is constant
-(`Continuous.index_eq_of_preconnectedSpace`).
+(`Continuous.index_eq_of_preconnectedSpace`). The continuity holds for every family of almost
+complex structures indexed by a normed space, jointly `C¹` along `u` and constant on the end
+(`TauCeti.SymplecticForm.continuous_floerConformalSobolevOperator_positive_family`).
 
 Every PSS plane is the positive plane for a rescaled Hamiltonian
 (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so the statement covers the negative plane as
@@ -64,56 +66,50 @@ open Floer Floer.PSSPlane ConformalSobolev
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- Along the path of almost complex structures `J_μ` from `J` to `J'` (`pathAlmostComplex`), for
-`J` and `J'` that are `C¹` along `u` and agree on the end `‖w‖ > r`, the realizations of the
-linearized Floer operators of the positive PSS plane depend continuously on `μ` in operator norm,
-provided their coefficient fields on conformal jets are essentially bounded. -/
-private theorem continuous_floerConformalSobolevOperator_pathAlmostComplex (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))
-    {J₀ : AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
-    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} (hJt : ∀ z y, ω.Tames (J z y))
-    (hJ't : ∀ z y, ω.Tames (J' z y)) {r : ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hJ' : ∀ z, ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J' q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ContDiff ℝ 1 u) (hJJ' : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → J z = J' z)
-    (hM : ∀ μ, MemLp (ω.floerConformalJetCoeff cylindricalWeight
-      (fun z y ↦ (pathAlmostComplex h₀ hJt hJ't (μ, z) y).toLinearMap.toContinuousLinearMap)
+/-- **The realizations of the linearized Floer operator of a PSS plane depend continuously on the
+almost complex structures.** Let `p ↦ J_p` be a family of almost complex structures on the plane,
+indexed by a normed space `P`, jointly `C¹` in the parameter and the target point along `u`, whose
+members all agree on the end `‖w‖ > r`. If the coefficient fields on conformal jets of the members
+are essentially bounded, then the realizations `D_u : W^{1,2}(ℂ, V) → L²(ℂ, V)` of the linearized
+Floer operators of the positive PSS plane for `J_p` depend continuously on `p` in operator norm. -/
+theorem continuous_floerConformalSobolevOperator_positive_family {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))
+    {J : P × (ℝ × ℝ) → V → AlmostComplexStructure V} {r : ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ p z, ContDiffAt ℝ 1
+      (fun q : (P × (ℝ × ℝ)) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) ((p, z), u z))
+    (hu : ContDiff ℝ 1 u)
+    (hJr : ∀ p p' z, r < ‖Complex.equivRealProdCLM.symm z‖ → J (p, z) = J (p', z))
+    (hM : ∀ p, MemLp (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J (p, z) y).toLinearMap.toContinuousLinearMap)
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) ∞
       (volume.restrict univ)) :
-    Continuous fun μ ↦ ω.floerConformalSobolevOperator univ cylindricalWeight
-      (fun z y ↦ (pathAlmostComplex h₀ hJt hJ't (μ, z) y).toLinearMap.toContinuousLinearMap)
+    Continuous fun p ↦ ω.floerConformalSobolevOperator univ cylindricalWeight
+      (fun z y ↦ (J (p, z) y).toLinearMap.toContinuousLinearMap)
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u := by
   -- The perturbation of the plane, as a family that does not depend on the parameter.
-  have hK (c : ℂ) (p : ℝ × (ℝ × ℝ)) : ContDiffAt ℝ 2
-      (uncurry fun (q : ℝ × (ℝ × ℝ)) x ↦
+  have hK (c : ℂ) (p : P × (ℝ × ℝ)) : ContDiffAt ℝ 2
+      (uncurry fun (q : P × (ℝ × ℝ)) x ↦
         positive.perturbation H (Complex.equivRealProdCLM.symm q.2) x c) (p, u p.2) :=
     ((contDiff_uncurry_perturbation (p := positive) hH hHs c).comp
       ((contDiff_fst.snd).prodMk contDiff_snd)).contDiffAt
-  -- On the end every member of the path is the common value of `J` and `J'`.
-  have hend (μ : ℝ) (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) :
-      pathAlmostComplex h₀ hJt hJ't (μ, z) = J z :=
-    funext fun y ↦ pathAlmostComplex_of_eq h₀ μ (congrFun (hJJ' z hz) y)
-  -- So the coefficient fields only change over the compact disc `‖w‖ ≤ r`, where they are jointly
+  -- The coefficient fields only change over the compact disc `‖w‖ ≤ r`, where they are jointly
   -- continuous in the parameter and the domain point.
   rw [← continuousOn_univ]
   simp only [floerConformalSobolevOperator_def]
-  exact (continuousOn_jetOperator (fun μ _ ↦ hM μ) fun lam _ ↦ tendsto_nhdsWithin_of_tendsto_nhds
+  exact (continuousOn_jetOperator (fun p _ ↦ hM p) fun lam _ ↦ tendsto_nhdsWithin_of_tendsto_nhds
     (tendsto_eLpNorm_floerConformalJetCoeff_family ω MeasurableSet.univ
       (isCompact_setOf_norm_equivRealProdCLM_symm_le r)
-      (J := fun p y ↦ (pathAlmostComplex h₀ hJt hJ't p y).toLinearMap.toContinuousLinearMap)
+      (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap)
       (Ks := fun q x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm q.2) x 1)
       (Kt := fun q x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm q.2) x Complex.I)
-      (fun z _ ↦ contDiffAt_pathAlmostComplex h₀ hJt hJ't (p := (lam, z)) (hJ z) (hJ' z))
-      (fun z _ ↦ hK 1 _) (fun z _ ↦ hK Complex.I _) (fun z _ ↦ hu.contDiffAt)
-      (fun z _ ↦ continuous_cylindricalWeight.continuousAt)
+      (fun z _ ↦ hJ lam z) (fun z _ ↦ hK 1 _) (fun z _ ↦ hK Complex.I _)
+      (fun z _ ↦ hu.contDiffAt) (fun z _ ↦ continuous_cylindricalWeight.continuousAt)
       (fun z _ ↦ isWeight_cylindricalWeight.pos _ (mem_univ z))
-      (.of_forall fun μ z _ hzK ↦ ⟨funext fun y ↦ by
-        simp only [hend μ z (not_le.1 hzK), hend lam z (not_le.1 hzK)], rfl, rfl⟩)
-      (.of_forall fun μ ↦ (hM μ).aestronglyMeasurable))).clm_comp continuousOn_const
+      (.of_forall fun p z _ hzK ↦ ⟨by rw [hJr p lam z (not_le.1 hzK)], rfl, rfl⟩)
+      (.of_forall fun p ↦ (hM p).aestronglyMeasurable))).clm_comp continuousOn_const
 
 /-- **The index of a PSS plane does not depend on the almost complex structure over the disc.**
 Let `H` be a `C⁴` Hamiltonian of period one in time, with globally Lipschitz suspended vector field,
@@ -208,10 +204,10 @@ theorem index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex (ω : S
     (fun z ↦ (hJμ μ z).of_le (by norm_num)) (hJμr μ) (hu.of_le (by norm_num)) hu.contDiffOn huK
     (fun z hz ↦ hend μ z hz ▸ hF z hz) hE hnd
   -- The path of operators is continuous, so its index is constant.
-  have hTc : Continuous T := continuous_floerConformalSobolevOperator_pathAlmostComplex ω hH
-    (hHs.of_le (by norm_num)) h₀ hJt hJ't (fun z ↦ (hJ z).of_le (by norm_num))
-    (fun z ↦ (hJ' z).of_le (by norm_num)) (hu.of_le (by norm_num))
-    (fun z hz ↦ (hJr z hz).trans (hJr' z hz).symm) hM
+  have hTc : Continuous T := continuous_floerConformalSobolevOperator_positive_family ω hH
+    (hHs.of_le (by norm_num)) (fun μ z ↦ contDiffAt_pathAlmostComplex h₀ hJt hJ't (p := (μ, z))
+      ((hJ z).of_le (by norm_num)) ((hJ' z).of_le (by norm_num))) (hu.of_le (by norm_num))
+    (fun μ μ' z hz ↦ (hend μ z hz).trans (hend μ' z hz).symm) hM
   simpa only [hT, pathAlmostComplex_zero, pathAlmostComplex_one] using
     hTc.index_eq_of_preconnectedSpace hFred 1 0
 
