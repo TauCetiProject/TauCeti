@@ -19,9 +19,9 @@ subsets of `Y`. A continuous map `f : X ⟶ Y` takes compact subsets of `X` to c
 `(f^* P)(K) = P(f(K))`
 
 (`TopCat.KPresheaf.pullback`). When `f` is injective, `X` is Hausdorff and locally compact and
-`Y` is Hausdorff, this pullback preserves K-sheaves (`TopCat.KPresheaf.IsKSheaf.pullback`) and
-homotopy K-sheaves of cochain complexes (`TopCat.KPresheaf.IsHomotopyKSheaf.pullback`), which is
-Pardon's Definition A.3.6.
+`Y` is Hausdorff, this pullback preserves K-sheaves (`TopCat.KPresheaf.IsKSheaf.pullback`), and,
+when `Y` is moreover weakly locally compact, homotopy K-sheaves of cochain complexes
+(`TopCat.KPresheaf.IsHomotopyKSheaf.pullback`), which is Pardon's Definition A.3.6.
 
 Taking images preserves `⊥` and `⊔`, and, for an injective map, `⊓`; so the first two axioms for
 `f^* P` are those of `P` at the images. Injectivity is needed: for the map from a two-point
@@ -187,9 +187,9 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasFilteredColimitsOfSize.{w
   [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace Y]
 
 /-- **Pullback along an injective map preserves homotopy K-sheaves** (Pardon, Definition A.3.6).
-If `X` and `Y` are Hausdorff and locally compact and `F` is a homotopy K-sheaf of cochain
-complexes on `Y`, then its pullback `K ↦ F(f(K))` along an injective continuous map
-`f : X ⟶ Y` is a homotopy K-sheaf on `X`. -/
+If `X` is Hausdorff and locally compact, `Y` is Hausdorff and weakly locally compact, and `F` is
+a homotopy K-sheaf of cochain complexes on `Y`, then its pullback `K ↦ F(f(K))` along an
+injective continuous map `f : X ⟶ Y` is a homotopy K-sheaf on `X`. -/
 theorem IsHomotopyKSheaf.pullback (hf : Function.Injective f)
     {F : KPresheaf (CochainComplex C ℤ) Y} (hF : F.IsHomotopyKSheaf) :
     ((KPresheaf.pullback f).obj F).IsHomotopyKSheaf where
