@@ -10,6 +10,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.PartialIsometry
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.InvSqrtOneSub
 
 /-!
 # Projections from approximate data
@@ -85,30 +86,6 @@ section Unital
 
 variable {A : Type*} [CStarAlgebra A] {p q w : A}
 
-/-- For a self-adjoint `h` with `‖h‖ < 1`, the element `c = (1 - h) ^ (-1 / 2)` is self-adjoint,
-satisfies `c * c * (1 - h) = 1` and commutes with every element commuting with `h`. -/
-private theorem exists_mul_self_mul_one_sub_eq_one {h : A} (hh : IsSelfAdjoint h)
-    (h₁ : ‖h‖ < 1) :
-    ∃ c : A, IsSelfAdjoint c ∧ c * c * (1 - h) = 1 ∧ ∀ y, Commute h y → Commute c y := by
-  have hpos {t : ℝ} (ht : t ∈ spectrum ℝ h) : 0 < 1 - t := by
-    have := spectrum.norm_le_norm_of_mem ht
-    rw [Real.norm_eq_abs] at this
-    linarith [le_abs_self t]
-  have hc : ContinuousOn (fun t : ℝ ↦ (√(1 - t))⁻¹) (spectrum ℝ h) :=
-    ContinuousOn.inv₀ (by fun_prop) fun _ ht ↦ (Real.sqrt_pos.2 (hpos ht)).ne'
-  refine ⟨cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h, IsSelfAdjoint.cfc, ?_,
-    fun y hy ↦ Commute.cfc_real hy _⟩
-  rw [show 1 - h = cfc (fun t : ℝ ↦ 1 - t) h by
-      rw [cfc_sub (fun _ : ℝ ↦ (1 : ℝ)) (fun t : ℝ ↦ t) h, cfc_const_one ℝ h, cfc_id' ℝ h],
-    ← cfc_mul _ _ h hc hc, ← cfc_mul (fun t : ℝ ↦ (√(1 - t))⁻¹ * (√(1 - t))⁻¹) _ h (hc.mul hc)
-      (by fun_prop), ← cfc_const_one ℝ h]
-  refine cfc_congr fun t ht ↦ ?_
-  have h₀ := hpos ht
-  have := Real.sq_sqrt h₀.le
-  have := (Real.sqrt_pos.2 h₀).ne'
-  field_simp
-  linarith
-
 /-- **Approximate partial isometries, unital case.** If `w = q w p` with `‖w⋆w - p‖ < 1` and
 `‖ww⋆ - q‖ < 1`, then `v = w (p + 1 - w⋆w) ^ (-1 / 2)` has `v⋆v = p` and `vv⋆ = q`. -/
 private theorem exists_star_mul_self_eq_of_norm_star_mul_self_sub_lt_one_of_unital
@@ -126,12 +103,15 @@ private theorem exists_star_mul_self_eq_of_norm_star_mul_self_sub_lt_one_of_unit
   have hph : p * h = h := by rw [hh_def, mul_sub, hpp, ← mul_assoc, hpw]
   have hhp : h * p = h := by rw [hh_def, sub_mul, hpp, mul_assoc, hwp]
   have hww : star w * w = (1 - h) * p := by rw [sub_mul, one_mul, hhp, hh_def, sub_sub_cancel]
-  obtain ⟨c, hc, hcc, hcomm⟩ := exists_mul_self_mul_one_sub_eq_one
+  -- `c = (1 - h) ^ (-1 / 2)` is self-adjoint and commutes with `p` and `w⋆w`
+  set c := cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h
+  have hc : IsSelfAdjoint c := IsSelfAdjoint.cfc
+  have hcc : c * c * (1 - h) = 1 := TauCeti.cfc_inv_sqrt_one_sub_mul_self_mul_one_sub
     (hp.isSelfAdjoint.sub (IsSelfAdjoint.star_mul_self w)) (by rwa [norm_sub_rev])
-  have hcp : Commute c p := hcomm p (hhp.trans hph.symm)
+  have hcp : Commute c p := Commute.cfc_real (hhp.trans hph.symm) _
   have hcw : Commute c (star w * w) := by
     rw [show star w * w = p - h by rw [hh_def, sub_sub_cancel]]
-    exact hcp.sub_right (hcomm h (.refl h))
+    exact hcp.sub_right (Commute.cfc_real (.refl h) _)
   set v := w * c with hv
   have hv₁ : star v * v = p :=
     calc star v * v = c * (star w * w) * c := by simp only [hv, star_mul, hc.star_eq, mul_assoc]
