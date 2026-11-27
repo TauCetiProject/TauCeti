@@ -74,8 +74,6 @@ length*.
   composition with `f` maps `Sel(ρ, X, L; V)` onto the `a`-torsion of `Sel(ρ, X, L; W)`.
 * `TauCeti.length_cocycleSelmerModule_eq_length_torsionBy` and
   `TauCeti.length_cocycleSelmerModule_le_of_injective`: the corresponding statements on lengths.
-* `TauCeti.range_restrictScalars_mapMatrixModule`: if `f : M → N` has image the `a`-torsion of
-  `N`, then `f` applied in each coordinate has image the `a`-torsion of `Nⁿ`.
 * `TauCeti.range_cocycleSelmerModuleMap_mapMatrixModule`: for `ρ : G → Mₙ(O)` and `f : M → N`
   injective onto the `a`-torsion of `N`, such as `O/a → B`, composition with `f` in each
   coordinate maps `Sel(ρ, X, L; Mⁿ)` onto the `a`-torsion of `Sel(ρ, X, L; Nⁿ)`.
@@ -323,15 +321,6 @@ variable {G : Type*} [Mul G] [TopologicalSpace G] {O : Type*} [CommRing O] {n : 
   [Fintype n] [DecidableEq n] (ρ : G → Matrix n n O) (X : Set G) (L : Set (G →₀ Matrix n n O))
   {M N : Type*} [AddCommGroup M] [Module O M] [AddCommGroup N] [Module O N] {a : O}
 
-/-- If `f : M → N` has image the `a`-torsion of `N`, then `f` applied in each coordinate has
-image the `a`-torsion of `Nⁿ`. -/
-theorem range_restrictScalars_mapMatrixModule {f : M →ₗ[O] N}
-    (hrange : LinearMap.range f = torsionBy O N a) :
-    LinearMap.range ((f.mapMatrixModule n).restrictScalars O) = torsionBy O (n → N) a := by
-  ext w
-  simp [LinearMap.restrictScalars_mapMatrixModule, LinearMap.range_compLeft, hrange,
-    Submodule.mem_pi, funext_iff]
-
 /-- **Torsion coefficients, for matrix representations.** If `f : M → N` is injective with image
 the `a`-torsion of `N`, for instance `f : O/a → B`, then composition with `f` applied in each
 coordinate maps the Selmer module with coefficients `Mⁿ` onto the `a`-torsion of the Selmer
@@ -341,7 +330,7 @@ theorem range_cocycleSelmerModuleMap_mapMatrixModule {f : M →ₗ[O] N} (hf : I
     LinearMap.range (cocycleSelmerModuleMap O ρ X L (f.mapMatrixModule n)) =
       torsionBy O (cocycleSelmerModule O (n → N) ρ X L) a :=
   range_cocycleSelmerModuleMap O (LinearMap.mapMatrixModule_injective hf)
-    (range_restrictScalars_mapMatrixModule hrange)
+    (LinearMap.range_restrictScalars_mapMatrixModule hrange)
 
 variable (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
 
@@ -354,7 +343,7 @@ theorem length_cocycleSelmerModule_quotient_eq_length_torsionBy (ha : a ≠ 0) :
         (cocycleSelmerModule O (n → K ⧸ LinearMap.range (Algebra.linearMap O K)) ρ X L) a) :=
   length_cocycleSelmerModule_eq_length_torsionBy
     (LinearMap.mapMatrixModule_injective (divQuotient_injective ha))
-    (range_restrictScalars_mapMatrixModule (range_divQuotient ha))
+    (LinearMap.range_restrictScalars_mapMatrixModule (range_divQuotient ha))
 
 /-- **The divisible Selmer length bounds the torsion ones.** For `ρ : G → Mₙ(O)` over a domain `O`
 with fraction field `K` and `a ≠ 0`, the length of the Selmer module with coefficients `(O/a)ⁿ` is

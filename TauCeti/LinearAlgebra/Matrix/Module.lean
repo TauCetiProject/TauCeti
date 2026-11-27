@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Matrix.Module
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -29,7 +30,8 @@ used by matrix Morita equivalence with the usual full endomorphism representatio
 
 The `Mₙ(R)`-linear map `f.mapMatrixModule ι : Mⁿ → Nⁿ` induced by `f : M → N` is, as an
 `R`-linear map, `f.compLeft ι`, so Mathlib's API for `LinearMap.compLeft` (for instance
-`LinearMap.range_compLeft`) applies to it; and it is injective when `f` is.
+`LinearMap.range_compLeft`) applies to it; it is injective when `f` is, and over a commutative
+ring it maps onto the `a`-torsion of `Nⁿ` when `f` maps onto the `a`-torsion of `N`.
 
 The graph `Matrix.piGraph u P = {(x, u • x) : x ∈ P^ι}` of the action of a square matrix `u` on
 `V^ι`, over the coordinatewise power of a submodule `P`, is isomorphic to `P^ι`. When `2` and `u`
@@ -47,6 +49,8 @@ multiplication: changing by `A` and then by `B` is changing by `B * A`.
   are the change by `B * A`.
 * `LinearMap.restrictScalars_mapMatrixModule`, `LinearMap.mapMatrixModule_injective`: the map
   `f.mapMatrixModule ι` is `f` applied in each coordinate, and is injective when `f` is.
+* `LinearMap.range_restrictScalars_mapMatrixModule`: if `f : M → N` has image the `a`-torsion of
+  `N`, then `f.mapMatrixModule ι` has image the `a`-torsion of `Nⁿ`.
 * `Matrix.piGraph`, `Matrix.mem_piGraph_iff`: the graph of a matrix action over `P^ι`.
 * `Matrix.disjoint_piGraph_neg`: the graphs of an invertible matrix and of its negative meet only
   in zero when `2` is invertible.
@@ -107,6 +111,8 @@ end Matrix.Module
 
 namespace LinearMap
 
+section Ring
+
 variable {R ι M N : Type*} [Ring R] [Fintype ι] [DecidableEq ι] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N]
 
@@ -121,6 +127,24 @@ theorem restrictScalars_mapMatrixModule (f : M →ₗ[R] N) :
 theorem mapMatrixModule_injective {f : M →ₗ[R] N} (hf : Function.Injective f) :
     Function.Injective (f.mapMatrixModule ι) :=
   fun _ _ h ↦ funext fun i ↦ hf (by simpa using congr_fun h i)
+
+end Ring
+
+section CommRing
+
+variable {R ι M N : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] [AddCommGroup M]
+  [Module R M] [AddCommGroup N] [Module R N]
+
+/-- If `f : M → N` has image the `a`-torsion of `N`, then `f` applied in each coordinate has
+image the `a`-torsion of `Nⁿ`. -/
+theorem range_restrictScalars_mapMatrixModule {f : M →ₗ[R] N} {a : R}
+    (hrange : LinearMap.range f = Submodule.torsionBy R N a) :
+    LinearMap.range ((f.mapMatrixModule ι).restrictScalars R) =
+      Submodule.torsionBy R (ι → N) a := by
+  ext w
+  simp [LinearMap.range_compLeft, hrange, Submodule.mem_pi, funext_iff]
+
+end CommRing
 
 end LinearMap
 
