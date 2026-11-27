@@ -275,28 +275,6 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
 
-/-- Transporting an approximate unit between a closed two-sided ideal `I` and its associated
-nonunital `⋆`-subalgebra `I.toNonUnitalStarSubalgebra`. -/
-@[simp]
-theorem isApproximateUnit_map_toNonUnitalStarSubalgebraEquiv_iff {l : Filter I} :
-    (l.map I.toNonUnitalStarSubalgebraEquiv).IsApproximateUnit ↔ l.IsApproximateUnit := by
-  refine ⟨fun h => ?_, fun h => h.map I.toNonUnitalStarSubalgebraEquiv
-    (StarAlgEquiv.isometry I.toNonUnitalStarSubalgebraEquiv).continuous
-    I.toNonUnitalStarSubalgebraEquiv.surjective⟩
-  simpa only [Filter.map_map, Function.comp_def, StarAlgEquiv.symm_apply_apply,
-    Filter.map_id'] using h.map I.toNonUnitalStarSubalgebraEquiv.symm
-      (StarAlgEquiv.isometry I.toNonUnitalStarSubalgebraEquiv.symm).continuous
-      I.toNonUnitalStarSubalgebraEquiv.symm.surjective
-
-/-- Transporting an approximate unit between `I.toNonUnitalStarSubalgebra` and the closed
-two-sided ideal `I`. -/
-@[simp]
-theorem isApproximateUnit_map_toNonUnitalStarSubalgebraEquiv_symm_iff
-    {l : Filter I.toNonUnitalStarSubalgebra} :
-    (l.map I.toNonUnitalStarSubalgebraEquiv.symm).IsApproximateUnit ↔ l.IsApproximateUnit := by
-  rw [← I.isApproximateUnit_map_toNonUnitalStarSubalgebraEquiv_iff]
-  simp only [Filter.map_map, Function.comp_def, StarAlgEquiv.apply_symm_apply, Filter.map_id']
-
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/
 theorem cfcₙ_mem_of_isClosed {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A]

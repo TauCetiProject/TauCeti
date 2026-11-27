@@ -355,14 +355,10 @@ theorem eq_of_forall_compactOperator_apply_eq {x y : E}
 operator vanishes on the right is zero. -/
 theorem eq_zero_of_forall_compactOperator_comp_eq_zero {T : AdjointableMap A E F}
     (h : ∀ k ∈ compactOperator A E E, T.comp k = 0) : T = 0 := by
-  refine ext fun x ↦ (CStarModule.inner_self (A := A)).mp (mul_star_self_eq_zero.mp ?_)
+  refine ext fun x ↦ eq_zero_of_rankOne_self_apply_eq_zero (A := A) ?_
   have happ : (T.comp (rankOne A x (T.adjoint (T x)))) x = 0 := by
     rw [h _ (rankOne_mem_compactOperator _ _), zero_apply]
-  have hinner : inner A (T x) ((T.comp (rankOne A x (T.adjoint (T x)))) x) = 0 := by
-    rw [happ, CStarModule.inner_zero_right]
-  rw [comp_rankOne, rankOne_apply, T.adjoint_inner_left, CStarModule.inner_op_smul_right] at hinner
-  nth_rw 2 [← CStarModule.isSelfAdjoint_inner_self.star_eq] at hinner
-  exact hinner
+  simpa [comp_rankOne, rankOne_apply, T.adjoint_inner_left] using happ
 
 /-- Two adjointable operators `S, T : L_A(E, F)` satisfying `S ∘ k = T ∘ k` for all
 `k ∈ K_A(E)` are equal. -/
@@ -492,26 +488,6 @@ theorem tendsto_compactOperator_comp_of_eventually_norm_le
     (adjoint_mem_compactOperator hk)
   have hadj := continuous_adjoint.continuousAt.tendsto.comp hcomp
   simpa [Function.comp_def, ← adjoint_comp] using hadj
-
-/-- Along any norm-bounded filter `f i` converging strongly on `E`, `f i * k → T * k` in
-operator norm for every `k ∈ K_A(E)`. -/
-theorem tendsto_mul_compactOperator_of_eventually_norm_le
-    {ι : Type*} {l : Filter ι} {f : ι → AdjointableMap A E E} {T : AdjointableMap A E E}
-    {C : ℝ} (hC : ∀ᶠ i in l, ‖f i‖ ≤ C)
-    (hf : ∀ x : E, Tendsto (fun i ↦ f i x) l (𝓝 (T x)))
-    {k : AdjointableMap A E E} (hk : k ∈ compactOperator A E E) :
-    Tendsto (fun i ↦ f i * k) l (𝓝 (T * k)) :=
-  tendsto_comp_of_mem_compactOperator_of_eventually_norm_le hC hf hk
-
-/-- Along any norm-bounded filter `f i` whose adjoints `(f i).adjoint` converge strongly on `E`,
-`k * f i → k * T` in operator norm for every `k ∈ K_A(E)`. -/
-theorem tendsto_compactOperator_mul_of_eventually_norm_le
-    {ι : Type*} {l : Filter ι} {f : ι → AdjointableMap A E E} {T : AdjointableMap A E E}
-    {C : ℝ} (hC : ∀ᶠ i in l, ‖f i‖ ≤ C)
-    (hf_adj : ∀ x : E, Tendsto (fun i ↦ (f i).adjoint x) l (𝓝 (T.adjoint x)))
-    {k : AdjointableMap A E E} (hk : k ∈ compactOperator A E E) :
-    Tendsto (fun i ↦ k * f i) l (𝓝 (k * T)) :=
-  tendsto_compactOperator_comp_of_eventually_norm_le hC hf_adj hk
 
 end StrongToNorm
 
