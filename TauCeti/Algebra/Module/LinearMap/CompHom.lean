@@ -15,9 +15,13 @@ Let `σ : R →+* S` be a ring homomorphism. A map semilinear along `σ` kills `
 (`LinearMap.map_eq_zero_of_mem_ker_smul_top`). When `R` acts on `S`-modules through `σ`, a
 `σ`-semilinear map into such a module is `R`-linear (`LinearMap.toLinearMapOfCompHom`), and an
 `S`-linear map between such modules restricts to an `R`-linear map through Mathlib's
-`LinearMap.restrictScalars` (`LinearMap.CompatibleSMul.of_compHom`). The action of `R` is given by
-hypotheses `a • m = σ a • m` rather than by `Module.compHom`, so these also apply to modules whose
-`R`-module structure is already present.
+`LinearMap.restrictScalars` (`LinearMap.CompatibleSMul.of_compHom`). In these results the action
+of `R` is given by hypotheses `a • m = σ a • m` rather than by `Module.compHom`, so they also apply
+to modules whose `R`-module structure is already present.
+
+Finally, when `R` acts on an `S`-module `M` through a representation `ρ : R →+* End_S(M)`, that is
+under the module structure `Module.compHom M ρ`, the element `a ∈ R` acts as the `S`-linear map
+`ρ a` (`DistribSMul.toLinearMap_compHom`).
 
 ## Main definitions
 
