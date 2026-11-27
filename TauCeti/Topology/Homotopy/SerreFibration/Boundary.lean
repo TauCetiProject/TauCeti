@@ -38,8 +38,9 @@ Cube lifts exist by the relative cube lifting property of Serre fibrations
 (`TauCeti.TopCat.exists_isCubeLift`), and the homotopy class of the face is independent of the
 chosen lift and of the representative `γ` of its homotopy class: given lifts `G₀`, `G₁` of
 homotopic loops `γ₀`, `γ₁`, a further relative cube lift of the homotopy, prescribed to be `G₀`
-and `G₁` on the two ends, restricts on its free face to a homotopy between the faces of `G₀` and
-`G₁` (`TopCat.Hom.IsCubeLift.homotopic_face`). This defines the boundary map
+and `G₁` on the two ends (`TauCeti.TopCat.exists_lift_homotopy_of_mem_serreFibrations`), restricts
+on its free face to a homotopy between the faces of `G₀` and `G₁`
+(`TopCat.Hom.IsCubeLift.homotopic_face`). This defines the boundary map
 `TauCeti.TopCat.fibrationBoundaryAtZero`, characterized by `∂[γ] = [face of G]` for every cube lift
 `G`
 of `γ` (`TauCeti.TopCat.fibrationBoundaryAtZero_mk`).
@@ -237,100 +238,7 @@ namespace TopCat.Hom.IsCubeLift
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {b : B} {e : p.fiber b} {N : Type v}
 
-/-- The values prescribed on the bottom and on the sides of the box `I × I^(Option N)` when lifting
-a homotopy between two loops with cube lifts `G₀` and `G₁`, with the coordinate `none` as the
-homotopy parameter and the time of the lift reversed: `G₀` and `G₁` on the faces where the
-parameter is `0` and `1`, and `x₀` elsewhere. -/
-private def boxData (G₀ G₁ : C(I × (I^N), E)) (x₀ : E) (x : I × (I^(Option N))) : E :=
-  if x.2 none = 0 then G₀ (σ x.1, fun k ↦ x.2 (some k))
-  else if x.2 none = 1 then G₁ (σ x.1, fun k ↦ x.2 (some k)) else x₀
-
 variable {γ₀ γ₁ : Ω^ (Option N) B b} {G₀ G₁ : C(I × (I^N), E)}
-
-private theorem boxData_of_eq_zero {x₀ : E} {x : I × (I^(Option N))} (hx : x.2 none = 0) :
-    boxData G₀ G₁ x₀ x = G₀ (σ x.1, fun k ↦ x.2 (some k)) :=
-  ite_eq_left hx
-
-private theorem boxData_of_eq_one {x₀ : E} {x : I × (I^(Option N))} (hx : x.2 none = 1) :
-    boxData G₀ G₁ x₀ x = G₁ (σ x.1, fun k ↦ x.2 (some k)) := by
-  rw [boxData, ite_eq_right (by rw [hx]; exact one_ne_zero), ite_eq_left hx]
-
-private theorem boxData_eq (hG₀ : p.IsCubeLift e γ₀ G₀) (hG₁ : p.IsCubeLift e γ₁ G₁)
-    {x : I × (I^(Option N))} (hx : x.1 = 0 ∨ (fun k ↦ x.2 (some k)) ∈ Cube.boundary N) :
-    boxData G₀ G₁ e.val x = e.val := by
-  have h : σ x.1 = 1 ∨ (fun k ↦ x.2 (some k)) ∈ Cube.boundary N :=
-    hx.imp_left fun h ↦ by rw [h, symm_zero]
-  rw [boxData]
-  split_ifs
-  · exact hG₀.apply_eq _ _ h
-  · exact hG₁.apply_eq _ _ h
-  · rfl
-
-/-- The prescribed values are continuous on the bottom and the sides of the box, where they agree
-with `e`, `G₀` or `G₁` on closed pieces. -/
-private theorem continuousOn_boxData [Finite N] (hG₀ : p.IsCubeLift e γ₀ G₀)
-    (hG₁ : p.IsCubeLift e γ₁ G₁) :
-    ContinuousOn (boxData G₀ G₁ e.val)
-      (TauCeti.cylinderExtensionDomain (Cube.boundary (Option N))) := by
-  set A := {x : I × (I^(Option N)) | x.1 = 0 ∨ (fun k ↦ x.2 (some k)) ∈ Cube.boundary N}
-  set A₀ := {x : I × (I^(Option N)) | x.2 none = 0}
-  set A₁ := {x : I × (I^(Option N)) | x.2 none = 1}
-  have hD : TauCeti.cylinderExtensionDomain (Cube.boundary (Option N)) ⊆ A ∪ A₀ ∪ A₁ := by
-    intro x hx
-    rcases TauCeti.mem_cylinderExtensionDomain_iff.1 hx with h | h
-    · exact .inl (.inl (.inl h))
-    · rcases Cube.boundary_option_iff.1 h with (h | h) | h
-      · exact .inl (.inr h)
-      · exact .inr h
-      · exact .inl (.inl (.inr h))
-  have hA : IsClosed A := (isClosed_eq continuous_fst continuous_const).union
-    (Cube.isClosed_boundary.preimage (by fun_prop))
-  have hA₀ : IsClosed A₀ := isClosed_eq (by fun_prop) continuous_const
-  have hA₁ : IsClosed A₁ := isClosed_eq (by fun_prop) continuous_const
-  refine ContinuousOn.mono ?_ hD
-  exact ((continuousOn_const.congr fun x hx ↦ boxData_eq hG₀ hG₁ hx).union_of_isClosed
-    ((G₀.continuous.comp (by fun_prop)).continuousOn.congr fun x hx ↦ boxData_of_eq_zero hx)
-      hA hA₀).union_of_isClosed
-    ((G₁.continuous.comp (by fun_prop)).continuousOn.congr fun x hx ↦ boxData_of_eq_one hx)
-      (hA.union hA₀) hA₁
-
-/-- A homotopy between two loops with cube lifts `G₀` and `G₁` has a relative lift over the box
-`I × I^(Option N)` with the prescribed values `boxData` on its bottom and sides. Its top face lies
-over `b`. -/
-private theorem exists_boxLift [Finite N] (hp : TauCeti.TopCat.serreFibrations p)
-    (K : (γ₀ : C(I^(Option N), B)).HomotopyRel γ₁ (Cube.boundary (Option N)))
-    (hG₀ : p.IsCubeLift e γ₀ G₀) (hG₁ : p.IsCubeLift e γ₁ G₁) :
-    ∃ L : C(I × (I^(Option N)), E), (∀ y, p (L (1, y)) = b) ∧
-      ∀ y ∈ Cube.boundary (Option N), L (1, y) = boxData G₀ G₁ e.val (1, y) := by
-  set ι := TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I
-  have hK : ∀ r y, y ∈ TauCeti.Cube.prodBoundary N → K (r, ι.symm y) = b := fun r y hy ↦
-    have hy := TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary hy
-    (K.eq_fst r hy).trans (γ₀.property _ hy)
-  let H : C(I × (I^(Option N)), B) :=
-    ⟨fun x ↦ K (x.2 none, ι.symm (σ x.1, fun k ↦ x.2 (some k))), by fun_prop⟩
-  let f : C(TauCeti.cylinderExtensionDomain (Cube.boundary (Option N)), E) :=
-    ⟨fun x ↦ boxData G₀ G₁ e.val x, (continuousOn_boxData hG₀ hG₁).domRestrict⟩
-  have hfx : ∀ x, f x = boxData G₀ G₁ e.val x := fun _ ↦ rfl
-  have hf : ∀ x, p (f x) = H x := by
-    rintro ⟨x, hx⟩
-    simp only [hfx, H, ContinuousMap.coe_mk]
-    rcases TauCeti.mem_cylinderExtensionDomain_iff.1 hx with h | h
-    · rw [boxData_eq hG₀ hG₁ (.inl h), p.apply_coe_fiber, hK]
-      exact TauCeti.Cube.mem_prodBoundary_iff.2 (.inl (.inr (by rw [h, symm_zero])))
-    rcases Cube.boundary_option_iff.1 h with (h | h) | h
-    · rw [boxData_of_eq_zero h, hG₀.map_apply, h, K.apply_zero]
-      rfl
-    · rw [boxData_of_eq_one h, hG₁.map_apply, h, K.apply_one]
-      rfl
-    · rw [boxData_eq hG₀ hG₁ (.inr h), p.apply_coe_fiber, hK]
-      exact TauCeti.Cube.mem_prodBoundary_iff.2 (.inr h)
-  obtain ⟨L, hL, hLf⟩ :=
-    TauCeti.TopCat.exists_lift_openBox_of_mem_serreFibrations hp (Option N) f H hf
-  refine ⟨L, fun y ↦ ?_, fun y hy ↦
-    hLf ⟨(1, y), TauCeti.mem_cylinderExtensionDomain_iff.2 (.inr hy)⟩⟩
-  rw [← Function.comp_apply (f := p), hL]
-  simp only [H, ContinuousMap.coe_mk, symm_one]
-  exact hK _ _ (TauCeti.Cube.mk_zero_mem_prodBoundary _)
 
 /-- **Lifts of homotopic loops have homotopic faces.** If `γ₀` and `γ₁` are homotopic
 generalized loops of the base of a Serre fibration, the faces of any cube lifts `G₀` of `γ₀` and
@@ -339,26 +247,26 @@ theorem homotopic_face [Finite N] (hp : TauCeti.TopCat.serreFibrations p)
     (hG₀ : p.IsCubeLift e γ₀ G₀) (hG₁ : p.IsCubeLift e γ₁ G₁) (h : GenLoop.Homotopic γ₀ γ₁) :
     GenLoop.Homotopic hG₀.face hG₁.face := by
   obtain ⟨K⟩ := h
-  obtain ⟨L, hL₁, hLg⟩ := exists_boxLift hp K hG₀ hG₁
   set ι := TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I
-  have hLι : ∀ r t, (r = 0 ∨ r = 1) ∨ t ∈ Cube.boundary N →
-      L (1, ι.symm (r, t)) = boxData G₀ G₁ e.val (1, ι.symm (r, t)) := fun r t h ↦
-    hLg _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
-      (TauCeti.Cube.mem_prodBoundary_iff.2 h))
-  refine ⟨{ toFun := fun x ↦ ⟨L (1, ι.symm x), hL₁ _⟩
-            continuous_toFun := (L.continuous.comp (by fun_prop)).subtype_mk _
-            map_zero_left := fun t ↦ Subtype.ext ?_
-            map_one_left := fun t ↦ Subtype.ext ?_
-            prop' := fun r t ht ↦ Subtype.ext ?_ }⟩
-  · simp only [GenLoop.coe_coe]
-    rw [hLι 0 t (.inl (.inl rfl)), boxData_of_eq_zero (by simp [ι])]
-    simpa [ι] using (coe_face_apply hG₀ t).symm
-  · simp only [GenLoop.coe_coe]
-    rw [hLι 1 t (.inl (.inr rfl)), boxData_of_eq_one (by simp [ι])]
-    simpa [ι] using (coe_face_apply hG₁ t).symm
-  · simp only [ContinuousMap.coe_mk, GenLoop.coe_coe]
-    rw [hLι r t (.inr ht), boxData_eq hG₀ hG₁ (.inr (by simpa [ι] using ht))]
-    exact ((coe_face_apply hG₀ t).trans (hG₀.apply_eq 0 t (.inr ht))).symm
+  have hK (r : I) {y : I × (I^N)} (hy : y ∈ TauCeti.Cube.prodBoundary N) : K (r, ι.symm y) = b :=
+    have hy := TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary hy
+    (K.eq_fst r hy).trans (γ₀.property _ hy)
+  -- Lift the homotopy, read on `I × (I × I^N)`, from `G₀` to `G₁`, fixed at `e` on the face
+  -- `{1} × I^N` and on the sides; its free face is a homotopy of the faces.
+  obtain ⟨L, hL, hL₀, hL₁, hLe⟩ := TauCeti.TopCat.exists_lift_homotopy_of_mem_serreFibrations hp
+    hG₀.apply_eq hG₁.apply_eq ⟨fun x ↦ K (x.1, ι.symm x.2), by fun_prop⟩
+    (fun y ↦ (K.apply_zero _).trans (hG₀.map_apply y).symm)
+    (fun y ↦ (K.apply_one _).trans (hG₁.map_apply y).symm)
+    fun r s t h ↦ (hK r (TauCeti.Cube.mk_mem_prodBoundary h)).trans (p.apply_coe_fiber b e).symm
+  have hmem (x : I × (I^N)) : L (x.1, 0, x.2) ∈ p ⁻¹' {b} := by
+    rw [mem_preimage, mem_singleton_iff, hL]
+    exact hK _ (TauCeti.Cube.mk_zero_mem_prodBoundary _)
+  exact ⟨{ toFun := fun x ↦ ⟨L (x.1, 0, x.2), hmem x⟩
+           continuous_toFun := (L.continuous.comp (by fun_prop)).subtype_mk hmem
+           map_zero_left := fun t ↦ Subtype.ext ((hL₀ _).trans (coe_face_apply hG₀ t).symm)
+           map_one_left := fun t ↦ Subtype.ext ((hL₁ _).trans (coe_face_apply hG₁ t).symm)
+           prop' := fun r t ht ↦ Subtype.ext ((hLe r 0 t (.inr ht)).trans
+             ((coe_face_apply hG₀ t).trans (hG₀.apply_eq 0 t (.inr ht))).symm) }⟩
 
 /-- **Concatenation of cube lifts.** Two cube lifts of `γ₁` and `γ₂`, run one after the other in
 the `j`-th direction of `I^N`, form a cube lift of the concatenation of `γ₁` and `γ₂` in that

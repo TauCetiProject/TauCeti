@@ -60,6 +60,7 @@ open arc.
   are open, path connected and disjoint, and they cover the complement of `{z, w}`.
 * `TauCeti.exists_centeredArc_subset_of_mem_nhds` — every neighbourhood of `1` contains an arc
   about `1` of half-width at most `π`.
+* `Circle.continuousAt_arg` — the argument is continuous on the circle away from `-1`.
 -/
 
 public section
@@ -170,6 +171,16 @@ theorem exists_centeredArc_subset_of_mem_nhds {V : Set Circle} (hV : V ∈ 𝓝 
   refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_⟩
   rintro _ ⟨t, ht, rfl⟩
   exact hball (hmem ht)
+
+/-- **The argument is continuous on the circle away from `-1`.** A point `z ≠ -1` of the circle
+lies on the slit plane, where `Complex.arg` is continuous. -/
+theorem _root_.Circle.continuousAt_arg {z : Circle} (hz : z ≠ -1) :
+    ContinuousAt (fun w : Circle ↦ Complex.arg w) z := by
+  refine (Complex.continuousAt_arg (Complex.mem_slitPlane_iff_arg.2
+    ⟨fun h ↦ hz ?_, Circle.coe_ne_zero z⟩)).comp continuousAt_subtypeVal
+  rw [← Circle.exp_arg z, h]
+  ext1
+  simp [Circle.coe_exp]
 
 /-! ## The open arcs between two points
 

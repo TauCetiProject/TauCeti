@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Toric.Delzant.Hirzebruch
 public import TauCeti.Geometry.Toric.Delzant.Interval
 public import TauCeti.Geometry.Toric.Delzant.Prod
 public import TauCeti.Geometry.Toric.Delzant.Simplex
+public import TauCeti.Geometry.Toric.Delzant.TangentCone
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -67,6 +68,8 @@ point (`TauCeti.Toric.dualMeasure_facetPolyhedron_simplex_cornerChop`).
 ## Main results
 
 * `TauCeti.Toric.IsIntegralLattice.dualMeasure_facetPolyhedron_add`: translation invariance.
+* `TauCeti.Toric.IsSmoothVertex.addHaar_edgeBasis`: the edge basis at a smooth vertex has the
+  lattice-normalized Haar measure.
 * `TauCeti.Toric.IsIntegralLattice.dualMeasure_facetPolyhedron_map`: invariance under lattice
   isomorphisms.
 * `TauCeti.Toric.IsIntegralLattice.dualMeasure_facetPolyhedron_prod`: volumes of products.
@@ -120,6 +123,14 @@ theorem IsIntegralLattice.dualMeasure_facetPolyhedron_add (h : IsIntegralLattice
     h.dualMeasure (facetPolyhedron i u fun j ↦ c j + y (i (u j))) =
       h.dualMeasure (facetPolyhedron i u c) := by
   rw [facetPolyhedron_add, measure_vadd]
+
+/-- **The edge basis at a smooth vertex is lattice-normalized.** Its Haar measure is the
+lattice-normalized measure, since it is the dual basis of an integral basis. -/
+@[simp]
+theorem IsSmoothVertex.addHaar_edgeBasis [Finite ι] {x : StrongDual ℝ V}
+    [Fintype (activeSet (facetPairing i u) c x)] (hx : IsSmoothVertex i u c x)
+    (h : IsIntegralLattice i) : (hx.edgeBasis h).addHaar = h.dualMeasure := by
+  rw [hx.edgeBasis_eq_dualBasis, h.addHaar_dualBasis]
 
 namespace IsDelzant
 
@@ -357,12 +368,7 @@ theorem dualMeasure_facetPolyhedron_simplex_cornerChop (n : ℕ) {a ε : ℝ} (h
       Function.Embedding.some_apply, simplexNormal_some]
   -- The simplex of size `ε` at the corner lies in the simplex of size `a`.
   have h := (isIntegralLattice_intCast n).dualMeasure_facetPolyhedron_cornerChop_add
-    (c := simplexSupport a) _ hb hε fun x hxs hxε ↦ by
-      simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
-        forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
-      simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
-        sub_zero] at hxε
-      exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
+    (c := simplexSupport a) _ hb hε fun _ ↦ mem_facetPolyhedron_simplex_of_sum_le hεa
   rw [dualMeasure_facetPolyhedron_simplex n ha, finrank_fin_fun] at h
   rw [ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top h, sub_div,
     ENNReal.ofReal_sub _ (by positivity)]

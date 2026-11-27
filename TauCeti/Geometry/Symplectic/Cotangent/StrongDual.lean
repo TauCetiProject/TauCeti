@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -34,6 +35,10 @@ composition and inverses.
 
 * `TauCeti.strongDualCotangentSymplecticForm`: the canonical symplectic form on
   `V × StrongDual ℝ V`.
+* `TauCeti.strongDualCotangentSymplecticFormL`: the same form as a continuous bilinear map, that
+  is its flat map `x ↦ ω(x, ·)` into the continuous dual.
+* `TauCeti.surjective_strongDualCotangentSymplecticFormL_iff`: the flat map is onto the continuous
+  dual exactly when `V` is reflexive.
 * `TauCeti.strongDualCotangentZeroSection`: the zero section of `V × StrongDual ℝ V`.
 * `TauCeti.strongDualCotangentFiber`: the vertical subspace `{0} × V*`, which is Lagrangian
   (`TauCeti.isLagrangian_strongDualCotangentFiber`).
@@ -102,6 +107,53 @@ noncomputable def strongDualCotangentSymplecticForm :
 lemma strongDualCotangentSymplecticForm_apply (x y : V × StrongDual ℝ V) :
     strongDualCotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 := by
   exact strongDualCotangentBilinForm_apply x y
+
+variable (V) in
+/-- The canonical symplectic form `((q, α), (q', β)) ↦ β(q) - α(q')` on `V × V*` as a continuous
+bilinear map. Its underlying bilinear form is `TauCeti.strongDualCotangentSymplecticForm`. -/
+def strongDualCotangentSymplecticFormL :
+    (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
+  LinearMap.mkContinuous₂ strongDualCotangentBilinForm 2 fun x y ↦ by
+    rw [strongDualCotangentBilinForm_apply]
+    calc ‖y.2 x.1 - x.2 y.1‖ ≤ ‖y.2‖ * ‖x.1‖ + ‖x.2‖ * ‖y.1‖ :=
+          (norm_sub_le _ _).trans (add_le_add (y.2.le_opNorm _) (x.2.le_opNorm _))
+      _ ≤ ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ := by
+          gcongr
+          exacts [norm_snd_le y, norm_fst_le x, norm_snd_le x, norm_fst_le y]
+      _ = 2 * ‖x‖ * ‖y‖ := by ring
+
+@[simp]
+theorem strongDualCotangentSymplecticFormL_apply (x y : V × StrongDual ℝ V) :
+    strongDualCotangentSymplecticFormL V x y = strongDualCotangentSymplecticForm x y :=
+  ((LinearMap.mkContinuous₂_apply _ _ x y).trans (strongDualCotangentBilinForm_apply x y)).trans
+    (strongDualCotangentSymplecticForm_apply x y).symm
+
+/-- The canonical form is alternating: it vanishes on the diagonal. -/
+theorem strongDualCotangentSymplecticFormL_apply_self (x : V × StrongDual ℝ V) :
+    strongDualCotangentSymplecticFormL V x x = 0 := by
+  rw [strongDualCotangentSymplecticFormL_apply, strongDualCotangentSymplecticForm_apply, sub_self]
+
+/-- **The canonical form on `V × V*` is strongly nondegenerate exactly when `V` is reflexive**:
+its flat map is onto the continuous dual exactly when the inclusion of `V` into its double dual
+is. A form `ℓ` is `ω(x, ·)` for `x = (q, -ℓ ∘ inl)` as soon as `ℓ ∘ inr` is evaluation at `q`,
+and conversely `ω((q, α), (0, ·))` is evaluation at `q`. -/
+theorem surjective_strongDualCotangentSymplecticFormL_iff :
+    Function.Surjective (strongDualCotangentSymplecticFormL V) ↔
+      Function.Surjective (NormedSpace.inclusionInDoubleDual ℝ V) := by
+  refine ⟨fun h Ψ ↦ ?_, fun h ℓ ↦ ?_⟩
+  · -- The form `(q', β) ↦ Ψ β` is `ω((q, α), ·)`; testing on `(0, β)` gives `β q = Ψ β`.
+    obtain ⟨x, hx⟩ := h (Ψ.comp (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)))
+    refine ⟨x.1, ContinuousLinearMap.ext fun β ↦ ?_⟩
+    simpa using congrArg (fun φ ↦ φ ((0 : V), β)) hx
+  · -- Write `ℓ (q', β) = a q' + Ψ β` and take `q` with `Ψ = ev_q`.
+    obtain ⟨q, hq⟩ := h (ℓ.comp (ContinuousLinearMap.inr ℝ V (StrongDual ℝ V)))
+    refine ⟨(q, -ℓ.comp (ContinuousLinearMap.inl ℝ V (StrongDual ℝ V))),
+      ContinuousLinearMap.ext fun y ↦ ?_⟩
+    have hβ := congrArg (fun Φ ↦ Φ y.2) hq
+    simp only [NormedSpace.dual_def, ContinuousLinearMap.coe_comp, Function.comp_apply,
+      ContinuousLinearMap.inr_apply] at hβ
+    rw [strongDualCotangentSymplecticFormL_apply, strongDualCotangentSymplecticForm_apply, hβ]
+    simp [← map_add]
 
 /-- The zero section in the normed linear cotangent space `V × StrongDual ℝ V`. -/
 def strongDualCotangentZeroSection : Submodule ℝ (V × StrongDual ℝ V) :=

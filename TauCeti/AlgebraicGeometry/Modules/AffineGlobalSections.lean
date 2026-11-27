@@ -15,6 +15,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -37,15 +38,19 @@ modules that is bijective on global sections is an isomorphism, a quasicoherent 
 containing every global section is the whole module, and a quasicoherent module with vanishing
 global sections is zero. Global sections are those on the affine chart `Spec Γ(X, ⊤) ⟶ X`, an
 isomorphism, and on a spectrum they are the inverse of the tilde equivalence (Stacks, Lemma
-26.7.5, Tag 01I7).
+26.7.5, Tag 01I7). Hence on `Spec R` an epimorphism between isomorphic quasicoherent
+modules with finitely generated global sections is an isomorphism, by the Orzech property of
+commutative rings (`Scheme.Modules.isIso_of_epi_of_iso`).
 
 The file also identifies the global sections of a free module on `Spec R` with a direct sum of
-copies of `R`, and records the base-ring action on affine global sections and extensionality of
-sections by restriction to basic opens. On an affine scheme, a map of abelian presheaves into a
-sheaf of modules that is linear over global functions is linear over all functions
-(`Scheme.Modules.app_smul_of_isAffine`). For `Spec R` over `Spec k`, the `k`-algebra structure
-`Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and acts
-pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
+copies of `R`, and records the base-ring action on affine global sections, the additive
+identification `Scheme.Modules.moduleSpecΓAddEquiv` and `R`-linear identification
+`Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv` of `Γ(N, ⊤)` with `moduleSpecΓFunctor.obj N`,
+and extensionality of sections by restriction to basic opens. On an affine scheme, a map of
+abelian presheaves into a sheaf of modules that is linear over global functions is linear over all
+functions (`Scheme.Modules.app_smul_of_isAffine`). For `Spec R` over `Spec k`, the `k`-algebra
+structure `Scheme.algebraOfOver` on sections factors through `R` (`Scheme.algebraMap_spec_eq`) and
+acts pointwise on the localizations of `R` (`Scheme.spec_sections_smul_apply`).
 -/
 
 public section
@@ -218,6 +223,109 @@ lemma isOver_fromSpec (X : Scheme.{u}) [X.Over (Spec (.of R))] (U : X.affineOpen
 
 end
 
+noncomputable section
+
+/-- On `Spec A`, `(moduleSpecΓFunctor (R := A)).obj N` has `Γ(N, ⊤)` as underlying additive group,
+with morphisms acting via `Hom.app ⊤`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓAddEquiv
+    {A : CommRingCat.{u}} (N : (Spec A).Modules) :
+    (moduleSpecΓFunctor (R := A)).obj N ≃+ Γ(N, ⊤) :=
+  -- `moduleSpecΓFunctor` evaluates `modulesSpecToSheaf.obj N` at `⊤`, whose underlying additive
+  -- group is `Γ(N, ⊤)` by definition in `Mathlib.AlgebraicGeometry.Modules.Tilde`.
+  AddEquiv.refl _
+
+/-- `moduleSpecΓAddEquiv` intertwines `moduleSpecΓFunctor.map ψ` with `ψ.app ⊤`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.moduleSpecΓAddEquiv_naturality
+    {A : CommRingCat.{u}} {N₁ N₂ : (Spec A).Modules} (ψ : N₁ ⟶ N₂)
+    (x : (moduleSpecΓFunctor (R := A)).obj N₁) :
+    N₂.moduleSpecΓAddEquiv ((moduleSpecΓFunctor (R := A)).map ψ x) =
+      ψ.app ⊤ (N₁.moduleSpecΓAddEquiv x) :=
+  -- `moduleSpecΓFunctor` only restricts scalars on sections over `⊤`, leaving the underlying map
+  -- `ψ.val.app (.op ⊤)` unchanged.
+  (rfl)
+
+/-- `moduleSpecΓAddEquiv.symm` intertwines `ψ.app ⊤` with `moduleSpecΓFunctor.map ψ`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.moduleSpecΓAddEquiv_symm_naturality
+    {A : CommRingCat.{u}} {N₁ N₂ : (Spec A).Modules} (ψ : N₁ ⟶ N₂) (y : Γ(N₁, ⊤)) :
+    N₂.moduleSpecΓAddEquiv.symm (ψ.app ⊤ y) =
+      (moduleSpecΓFunctor (R := A)).map ψ (N₁.moduleSpecΓAddEquiv.symm y) :=
+  (N₂.moduleSpecΓAddEquiv.symm_apply_eq.mpr
+    (ψ.moduleSpecΓAddEquiv_naturality _).symm).trans
+    (congrArg ((moduleSpecΓFunctor (R := A)).map ψ)
+      (N₁.moduleSpecΓAddEquiv.symm_apply_apply y))
+
+/-- On `M~`, `moduleSpecΓAddEquiv` leaves sections `tilde.toOpen M ⊤ m` unchanged. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓAddEquiv_toOpen_top
+    {A : CommRingCat.{u}} (M : ModuleCat.{u} A) (m : M) :
+    (tilde M).moduleSpecΓAddEquiv (tilde.toOpen M ⊤ m) = tilde.toOpen M ⊤ m :=
+  (rfl)
+
+/-- Under `moduleSpecΓAddEquiv`, scalar multiplication by `r : A` on
+`(moduleSpecΓFunctor (R := A)).obj N` becomes multiplication by `(Scheme.ΓSpecIso A).inv r` on
+`Γ(N, ⊤)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓAddEquiv_smul
+    {A : CommRingCat.{u}} (N : (Spec A).Modules) (r : A)
+    (x : (moduleSpecΓFunctor (R := A)).obj N) :
+    N.moduleSpecΓAddEquiv (r • x) =
+      (Scheme.ΓSpecIso A).inv r • N.moduleSpecΓAddEquiv x := by
+  -- `moduleSpecΓFunctor.obj N` and `Γ(N, ⊤)` share `Tilde`'s `A`-module structure.
+  let eL : (moduleSpecΓFunctor (R := A)).obj N ≃ₗ[A] Γ(N, ⊤) := LinearEquiv.refl A _
+  have he : ⇑N.moduleSpecΓAddEquiv = ⇑eL := rfl
+  rw [he, eL.map_smul, Scheme.Modules.smul_Spec_def, TopCat.Presheaf.map_apply_eq_self]
+
+/-- Under `moduleSpecΓAddEquiv.symm`, multiplication by `(Scheme.ΓSpecIso A).inv r` on `Γ(N, ⊤)`
+becomes scalar multiplication by `r : A` on `(moduleSpecΓFunctor (R := A)).obj N`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓAddEquiv_symm_smul
+    {A : CommRingCat.{u}} (N : (Spec A).Modules) (r : A) (y : Γ(N, ⊤)) :
+    N.moduleSpecΓAddEquiv.symm ((Scheme.ΓSpecIso A).inv r • y) =
+      r • N.moduleSpecΓAddEquiv.symm y :=
+  N.moduleSpecΓAddEquiv.symm_apply_eq.mpr <|
+    (congrArg ((Scheme.ΓSpecIso A).inv r • ·) (N.moduleSpecΓAddEquiv.apply_symm_apply y).symm).trans
+      (N.moduleSpecΓAddEquiv_smul r _).symm
+
+/-- For a sheaf of modules `N` on `Spec R`, the global sections `Γ(N, ⊤)` (equipped with the
+base-ring `R`-module structure from `Spec R` over `Spec R`) are `R`-linearly equivalent to
+`(moduleSpecΓFunctor (R := .of R)).obj N`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv
+    {R : Type u} [CommRing R] (N : (Spec (.of R)).Modules) :
+    Γ(N, ⊤) ≃ₗ[R] (moduleSpecΓFunctor (R := .of R)).obj N :=
+  have hid : ((Spec (.of R)) ↘ Spec (.of R)) = 𝟙 _ := by simp [specOverSpec_over]
+  N.moduleSpecΓAddEquiv.symm.toLinearEquiv fun r y ↦ by
+    rw [Scheme.Modules.base_smul_globalSections, Scheme.Modules.baseRingToGlobalSections_apply, hid,
+      Scheme.Hom.id_appTop, CommRingCat.id_apply]
+    exact N.moduleSpecΓAddEquiv_symm_smul r y
+
+/-- `globalSectionsModuleSpecΓLinearEquiv` acts as `moduleSpecΓAddEquiv.symm`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv_apply
+    {R : Type u} [CommRing R] (N : (Spec (.of R)).Modules) (y : Γ(N, ⊤)) :
+    N.globalSectionsModuleSpecΓLinearEquiv y = N.moduleSpecΓAddEquiv.symm y := by
+  simp [Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv]
+
+/-- `globalSectionsModuleSpecΓLinearEquiv.symm` acts as `moduleSpecΓAddEquiv`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.globalSectionsModuleSpecΓLinearEquiv_symm_apply
+    {R : Type u} [CommRing R] (N : (Spec (.of R)).Modules)
+    (x : (moduleSpecΓFunctor (R := .of R)).obj N) :
+    N.globalSectionsModuleSpecΓLinearEquiv.symm x = N.moduleSpecΓAddEquiv x :=
+  N.globalSectionsModuleSpecΓLinearEquiv.symm_apply_eq.mpr
+    ((N.globalSectionsModuleSpecΓLinearEquiv_apply _).trans
+      (N.moduleSpecΓAddEquiv.symm_apply_apply x)).symm
+
+/-- `globalSectionsModuleSpecΓLinearEquiv` commutes with morphisms `ψ : N₁ ⟶ N₂` of
+`𝒪_{Spec R}`-modules. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.globalSectionsModuleSpecΓLinearEquiv_naturality
+    {R : Type u} [CommRing R] {N₁ N₂ : (Spec (.of R)).Modules} (ψ : N₁ ⟶ N₂) (y : Γ(N₁, ⊤)) :
+    N₂.globalSectionsModuleSpecΓLinearEquiv (ψ.app ⊤ y) =
+      (moduleSpecΓFunctor (R := .of R)).map ψ (N₁.globalSectionsModuleSpecΓLinearEquiv y) := by
+  rw [N₂.globalSectionsModuleSpecΓLinearEquiv_apply,
+    N₁.globalSectionsModuleSpecΓLinearEquiv_apply,
+    ψ.moduleSpecΓAddEquiv_symm_naturality]
+
+end
+
 variable {A : CommRingCat.{u}}
 
 /-- Two sections over `U` of a sheaf of modules on `Spec A` agree if their restrictions to every
@@ -232,6 +340,20 @@ lemma Scheme.Modules.section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).
     PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.is_open'
   exact ⟨_, hfU, hxf, h f hfU⟩
 
+/-- On `Spec R`, a morphism of quasicoherent modules that is an isomorphism on global sections is
+an isomorphism: global sections are the inverse of the tilde equivalence, which reflects
+isomorphisms. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_isIso_moduleSpecΓFunctor_map
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) [IsIso (moduleSpecΓFunctor.map φ)] :
+    IsIso φ := by
+  -- Two definitional equalities are used: `tildeEquiv.inverse.map ψ` is
+  -- `moduleSpecΓFunctor.map φ`, and `P.ι.map ψ` is `φ`.
+  let P := SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf
+  let ψ : (⟨M, ‹_›⟩ : P.FullSubcategory) ⟶ ⟨N, ‹_›⟩ := ObjectProperty.homMk φ
+  have : IsIso (tildeEquiv.inverse.map ψ) := by assumption
+  have : IsIso ψ := isIso_of_reflects_iso ψ tildeEquiv.inverse
+  exact inferInstanceAs (IsIso (P.ι.map ψ))
+
 /-- On an affine scheme, a morphism of quasicoherent modules that is bijective on global
 sections is an isomorphism. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top
@@ -244,19 +366,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_bijective_sectionsFunct
     (ConcreteCategory.isIso_iff_bijective _).mpr hf
   have : IsIso (moduleSpecΓFunctor.map ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)) :=
     (NatIso.isIso_map_iff hU.restrictFromSpecCompModuleSpecΓFunctorIso f).mpr this
-  -- On the spectrum, global sections of quasicoherent modules are the inverse of the tilde
-  -- equivalence, which reflects isomorphisms.
-  let P := SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf
-  have hM : P ((Scheme.Modules.restrictFunctor hU.fromSpec).obj M) :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor _ _
-  have hN : P ((Scheme.Modules.restrictFunctor hU.fromSpec).obj N) :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor _ _
-  let g : (⟨_, hM⟩ : P.FullSubcategory) ⟶ ⟨_, hN⟩ :=
-    ObjectProperty.homMk ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)
-  have : IsIso ((tildeEquiv (R := Γ(X, ⊤))).inverse.map g) := by assumption
-  have : IsIso g := isIso_of_reflects_iso g (tildeEquiv (R := Γ(X, ⊤))).inverse
-  have : IsIso ((Scheme.Modules.restrictFunctor hU.fromSpec).map f) :=
-    inferInstanceAs (IsIso (P.ι.map g))
+  have := Scheme.Modules.isQuasicoherent_restrictFunctor hU.fromSpec M
+  have := Scheme.Modules.isQuasicoherent_restrictFunctor hU.fromSpec N
+  have := Scheme.Modules.isIso_of_isIso_moduleSpecΓFunctor_map
+    ((Scheme.Modules.restrictFunctor hU.fromSpec).map f)
   have : IsIso hU.fromSpec := by rw [IsAffineOpen.fromSpec_top]; infer_instance
   exact Scheme.Modules.isIso_of_isIso_restrictFunctor_map hU.fromSpec f
 
@@ -273,6 +386,24 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_mono_of_surjective_sect
   have := (SheafOfModules.evaluation X.ringCatSheaf (Opposite.op ⊤)).map_mono i
   exact Scheme.Modules.isIso_of_bijective_sectionsFunctor_map_top i
     ⟨(ModuleCat.mono_iff_injective _).mp this, hi⟩
+
+/-- **An epimorphism between isomorphic quasicoherent modules of finite type on an affine
+spectrum is an isomorphism.** On global sections it is a surjection between isomorphic finitely
+generated modules, which is injective by the Orzech property of commutative rings; and global
+sections are an equivalence on quasicoherent modules. Only the existence of an isomorphism
+`M ≅ N` matters, not its relation to `φ`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_epi_of_iso
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) [Epi φ] (e : M ≅ N)
+    [Module.Finite R (moduleSpecΓFunctor.obj N)] : IsIso φ := by
+  -- On global sections `φ` is a surjection onto a finitely generated module from a module
+  -- that injects into it, through `e`, hence bijective by the Orzech property.
+  have : IsIso (moduleSpecΓFunctor.map φ) :=
+    (ConcreteCategory.isIso_iff_bijective _).mpr
+      (OrzechProperty.bijective_of_surjective_of_injective
+        (moduleSpecΓFunctor.mapIso e).toLinearEquiv.toLinearMap (moduleSpecΓFunctor.map φ).hom
+        (moduleSpecΓFunctor.mapIso e).toLinearEquiv.injective
+        (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent φ))
+  exact Scheme.Modules.isIso_of_isIso_moduleSpecΓFunctor_map φ
 
 end AlgebraicGeometry
 
@@ -401,3 +532,37 @@ theorem spec_sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)
 end SectionsAlgebra
 
 end AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open Scheme.Modules
+
+/-- The structure map `Γ(B, V) ⟶ Γ(U, T)` of an open subscheme `U` of `Z` over the affine open `V`
+of `B`, for the algebra structure through `baseRingToStructurePresheaf`, is `k.appLE` followed by
+restriction to `T`. -/
+lemma algebraMap_baseRingToStructurePresheaf_eq_appLE {Z B : Scheme.{u}} (k : Z ⟶ B)
+    {V : B.Opens} (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens)
+    (r : Γ(B, V)) :
+    letI : U.toScheme.Over (Spec (.of Γ(B, V))) := ⟨k.resLE V U e ≫ hV.isoSpec.hom⟩
+    letI : Algebra Γ(B, V) Γ(U.toScheme, T) :=
+      ((U.toScheme.baseRingToStructurePresheaf Γ(B, V)).app (op T)).hom.toAlgebra
+    algebraMap Γ(B, V) Γ(U.toScheme, T) r =
+      (U.ι.appLE U T (by simp)).hom ((k.appLE V U e).hom r) := by
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+  exact congrArg (fun φ ↦ φ.hom r) (Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE k hV U e T)
+
+/-- Through `f'⁻¹ V ⟶ V ≅ Spec Γ(Y', V)`, a function `a` on an affine open `V` acts on the open
+subscheme `f'⁻¹ V` as `f'^* a`. -/
+lemma baseRingToGlobalSections_preimage {X' Y' : Scheme.{u}} (f' : X' ⟶ Y') {V : Y'.Opens}
+    (hV : IsAffineOpen V) (a : Γ(Y', V)) :
+    letI : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
+      ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
+    baseRingToGlobalSections Γ(Y', V) (f' ⁻¹ᵁ V) a = (f' ⁻¹ᵁ V).topIso.inv (f'.app V a) := by
+  let : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
+    ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
+  have h := f'.algebraMap_baseRingToStructurePresheaf_eq_appLE hV (f' ⁻¹ᵁ V) le_rfl ⊤ a
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_top,
+    CommRingCat.hom_ofHom, Scheme.Hom.appLE_eq_app, Scheme.Opens.ι_appLE] at h
+  exact h
+
+end AlgebraicGeometry.Scheme.Hom

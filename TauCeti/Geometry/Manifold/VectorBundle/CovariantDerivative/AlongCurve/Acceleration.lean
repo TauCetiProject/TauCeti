@@ -34,14 +34,18 @@ along-curve derivative.  Under a reparametrization `φ` the acceleration obeys t
 * `CovariantDerivative.accelerationWithin_of_mem_nhds`: on a neighbourhood of the parameter the
   acceleration within the set is the unrestricted one.
 * `CovariantDerivative.accelerationWithin_const`: a constant curve has zero acceleration.
-* `Filter.EventuallyEq.acceleration_eq` and `Filter.EventuallyEq.totalSpaceMk_acceleration_eq`:
-  the acceleration at `t` depends only on the germ of the curve at `t`.
+* `Filter.EventuallyEq.acceleration_eq`, `Filter.EventuallyEq.totalSpaceMk_acceleration_eq`, and
+  `CovariantDerivative.acceleration_eq_zero_of_eventuallyEq_const`: the acceleration at `t` depends
+  only on the germ of the curve at `t`, and vanishes if the curve is eventually constant near `t`.
 * `CovariantDerivative.accelerationWithin_eq_symmL`: **the acceleration in a chart**,
   `u'' + Γ (u', u')` read in an arbitrary chart around the current point.
 * `CovariantDerivative.accelerationWithin_eq_zero_iff`: the acceleration vanishes exactly when
   `u'' + Γ (u', u')` does in the chart at the current point.
 * `CovariantDerivative.accelerationWithin_comp` and `CovariantDerivative.acceleration_comp`: the
   chain rule for the acceleration under reparametrization.
+* `CovariantDerivative.accelerationWithin_congr_covariantDerivative` and
+  `CovariantDerivative.acceleration_congr_covariantDerivative`: dependence on the connection only
+  through vector fields differentiable at the point.
 
 ## References
 
@@ -261,6 +265,12 @@ theorem _root_.Filter.EventuallyEq.totalSpaceMk_acceleration_eq (h : γ =ᶠ[�
       TotalSpace.mk' E (η t) (acceleration cov η t) :=
   TotalSpace.ext h.self_of_nhds (heq_of_eq (h.acceleration_eq cov))
 
+/-- A curve that is eventually constant near a parameter has zero covariant acceleration
+there. -/
+theorem acceleration_eq_zero_of_eventuallyEq_const {x : M} (h : γ =ᶠ[𝓝 t] fun _ ↦ x) :
+    acceleration cov γ t = 0 :=
+  (h.acceleration_eq cov).trans (acceleration_const cov x t)
+
 end Germ
 
 section Chart
@@ -291,5 +301,29 @@ theorem accelerationWithin_eq_symmL {x : M} {s : Set 𝕜} {t : 𝕜} (hs : Uniq
     accelerationWithin_def]
 
 end Chart
+
+section ConnectionCongr
+
+variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+
+/-- Covariant acceleration within `s` at `t` depends on the connection only through its action on
+vector fields differentiable at `γ t`. -/
+theorem accelerationWithin_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    accelerationWithin cov₁ γ s t = accelerationWithin cov₂ γ s t := by
+  simpa only [accelerationWithin_def] using alongCurveWithin_congr_covariantDerivative h
+
+/-- Unrestricted covariant acceleration at `t` depends on the connection only through its action on
+vector fields differentiable at `γ t`. -/
+theorem acceleration_congr_covariantDerivative
+    {cov₁ cov₂ : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    {γ : 𝕜 → M} {t : 𝕜}
+    (h : ∀ ⦃Y : Π y : M, TangentSpace I y⦄, MDiffAt (T% Y) (γ t) → cov₁ Y (γ t) = cov₂ Y (γ t)) :
+    acceleration cov₁ γ t = acceleration cov₂ γ t := by
+  simpa only [← accelerationWithin_univ] using accelerationWithin_congr_covariantDerivative h
+
+end ConnectionCongr
 
 end CovariantDerivative

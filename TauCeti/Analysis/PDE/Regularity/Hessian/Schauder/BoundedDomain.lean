@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.C2HolderBoundary
+public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.LowerOrder
@@ -104,8 +104,9 @@ Gilbarg–Trudinger's global estimate, Theorem 6.6, for zero boundary values.
 * **Lower-order terms.** A domain with Lipschitz graph boundary is a Lipschitz domain
   (`Set.HasLipschitzGraphBoundary.isLipschitzDomain`), so on the bounded domain `Ω` the bounds
   `N` on `u`, `Du` and `D²u` make `u` and `Du` `α`-Hölder with constant a multiple of `N`
-  (`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`). The Hölder constant of
-  `b · ∇u + c u` on `Ω` is then a multiple of `N`
+  (`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`,
+  `Set.HasLipschitzGraphBoundary.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le`). The
+  Hölder constant of `b · ∇u + c u` on `Ω` is then a multiple of `N`
   (`TauCeti.PDE.holderOnWith_fderiv_apply_add_mul`), and the estimate for the principal part
   applies to `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = L u - b · ∇u - c u`. The interpolation step then removes the norms of
   `Du` and `D²u` from the right side, as for the principal part.
@@ -586,24 +587,19 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
   obtain ⟨C₀, hC₀⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
     hα hα1 hΩ hbdry Lam L M hlam
-  -- `Ω` is a bounded Lipschitz domain, so bounds on a function and its derivative make it
-  -- `α`-Hölder on `Ω`.
-  obtain ⟨C₁, hC₁⟩ := (hbdry.hasLipschitzGraphBoundary.isLipschitzDomain
-    finrank_euclideanSpace_fin).exists_holderOnWith_of_norm_fderiv_le hΩ hα1.le
-  set P : ℝ≥0 := 2 * B + 4 * B * C₁
+  -- `Ω` is a bounded Lipschitz domain, so bounds on a function and its derivatives make it and
+  -- its derivative `α`-Hölder on `Ω`.
+  obtain ⟨C₁, hC₁⟩ :=
+    hbdry.hasLipschitzGraphBoundary.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le
+      finrank_euclideanSpace_fin hΩ hα1.le
+  set P : ℝ≥0 := 2 * B + 2 * B * C₁
   refine ⟨C₀ * (1 + P), fun {a b c} hEll hEll' hL hM hHb hb hHc hc {U u N K V} hU hΩU hu hu0
     hN0 hN1 hN2 hV hK => ?_⟩
   have hΩcl : Ω ⊆ closure Ω := subset_closure
-  have hcd : ∀ z ∈ Ω, ContDiffAt ℝ 2 u z := fun z hz => hu.contDiffAt (hU.mem_nhds (hΩU (hΩcl hz)))
-  -- `u` and `Du` are `α`-Hölder on `Ω` with constant `2 C₁ N`.
-  have hHu : HolderOnWith (C₁ * (N + N)) α u Ω :=
-    hC₁ (fun z hz => (hcd z hz).differentiableAt (by norm_num))
-      (fun z hz => by rw [Real.norm_eq_abs]; exact hN0 z (hΩcl hz)) fun z hz => hN1 z (hΩcl hz)
-  have hHDu : HolderOnWith (C₁ * (N + N)) α (fderiv ℝ u) Ω := by
-    refine hC₁ (fun z hz => ((hcd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)) (fun z hz => hN1 z (hΩcl hz)) fun z hz => ?_
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-    exact hN2 z (hΩcl hz)
+  -- `u` and `Du` are `α`-Hölder on `Ω` with constant `C₁ N`.
+  obtain ⟨hHu, hHDu⟩ := hC₁ (fun z hz => hu.contDiffAt (hU.mem_nhds (hΩU (hΩcl hz))))
+    (fun z hz => by rw [Real.norm_eq_abs]; exact hN0 z (hΩcl hz)) (fun z hz => hN1 z (hΩcl hz))
+    fun z hz => hN2 z (hΩcl hz)
   -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on `Ω` with constant `K + N P`.
   have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu (fun z hz => hN0 z (hΩcl hz))
     (fun z hz => hN1 z (hΩcl hz)) hHb hb hHc hc

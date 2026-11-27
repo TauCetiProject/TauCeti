@@ -25,6 +25,10 @@ symmetries of their multiplicities.
   `ord_{conj s} Λ₀(χ⁻¹) = ord_s Λ₀(χ)`. Hence `ρ ↦ 1 - conj ρ` preserves the zero orders of
   `Λ₀(χ)`, and for a real character the orders are invariant under `conj` and under `s ↦ 1 - s`
   separately.
+* Combining the nonprincipal case with `zetaEntireCompletion` at conductor `1`, for every
+  primitive Dirichlet character `χ` the points of positive divisor of `Λ₀(χ)` — and likewise of
+  Mathlib's `χ.completedLFunction` — are precisely the zeros of `χ.LFunction` in the open
+  critical strip `0 < Re s < 1`.
 * For a zero `ρ` and `1 ≤ Re s`, the summand `Re (1 / (s - ρ))` of the partial-fraction
   expansion of `Λ₀'/Λ₀` is positive.
 
@@ -175,4 +179,61 @@ theorem toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt (hne 
     analyticOrderNatAt, analyticOrderNatAt,
     analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs]
 
+/-- For a nonprincipal primitive character, the divisor of the record's entire completion agrees
+pointwise with that of Mathlib's `completedLFunction`. -/
+theorem divisor_dirichletData_entireCompletion_of_ne_one (hne : χ ≠ 1) (s : ℂ) :
+    MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s =
+      MeromorphicOn.divisor χ.completedLFunction Set.univ s := by
+  have hm := dirichletData_hasMeromorphicContinuation χ hχ
+  have ha := hm.analyticAt_entireCompletion s
+  have hL := (DirichletCharacter.differentiable_completedLFunction hne).analyticAt s
+  rw [hm.meromorphicOn_entireCompletion.divisor_apply (Set.mem_univ s),
+    (meromorphicOn_univ.2 χ.meromorphic_completedLFunction).divisor_apply (Set.mem_univ s),
+    ha.meromorphicOrderAt_eq, hL.meromorphicOrderAt_eq,
+    analyticOrderAt_dirichletData_entireCompletion χ hχ hne s]
+
+/-- For any primitive Dirichlet character `χ` (principal at level `1` or nonprincipal), the points
+of positive divisor of `(dirichletData χ hχ).entireCompletion` are precisely the zeros of
+`χ.LFunction` in the open critical strip `0 < Re s < 1`. -/
+theorem zero_lt_divisor_dirichletData_entireCompletion_iff {s : ℂ} :
+    0 < MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s ↔
+      χ.LFunction s = 0 ∧ s.re ∈ Set.Ioo 0 1 := by
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
+      zero_lt_divisor_zetaEntireCompletion_iff, zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo,
+      DirichletCharacter.LFunction_modOne_eq]
+  · have hm := dirichletData_hasMeromorphicContinuation χ hχ
+    have ha := hm.analyticAt_entireCompletion s
+    have htop : meromorphicOrderAt (dirichletData χ hχ).entireCompletion s ≠ ⊤ := by
+      rw [ha.meromorphicOrderAt_eq]
+      simpa using analyticOrderAt_dirichletData_entireCompletion_ne_top χ hχ s
+    have hpos :=
+      hm.meromorphicOn_entireCompletion.zero_lt_divisor_iff_of_analyticAt ha (Set.mem_univ s) htop
+    refine ⟨fun h ↦ ?_, fun ⟨hL, hre⟩ ↦
+      hpos.mpr ((dirichletData_entireCompletion_eq_zero_iff χ hχ hne hre.1).mpr hL)⟩
+    have hre := re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos χ hχ h
+    exact ⟨(dirichletData_entireCompletion_eq_zero_iff χ hχ hne hre.1).mp (hpos.mp h), hre⟩
+
 end TauCeti.LFunctions
+
+namespace DirichletCharacter
+
+variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
+
+/-- For a primitive Dirichlet character `χ`, the points of positive divisor of
+`χ.completedLFunction` are precisely the zeros of `χ.LFunction` in the open critical strip
+`0 < Re s < 1`. -/
+theorem IsPrimitive.zero_lt_divisor_completedLFunction_iff (hχ : χ.IsPrimitive) {s : ℂ} :
+    0 < MeromorphicOn.divisor χ.completedLFunction Set.univ s ↔
+      χ.LFunction s = 0 ∧ s.re ∈ Set.Ioo 0 1 := by
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    rw [completedLFunction_modOne_eq, LFunction_modOne_eq,
+      TauCeti.zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo]
+  · rw [← TauCeti.LFunctions.divisor_dirichletData_entireCompletion_of_ne_one χ hχ hne s,
+      TauCeti.LFunctions.zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ]
+
+end DirichletCharacter
