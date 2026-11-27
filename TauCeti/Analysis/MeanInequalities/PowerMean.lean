@@ -11,7 +11,9 @@ import Mathlib.Analysis.Convex.Jensen
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.Tactic
+import Mathlib.Tactic.ByContra
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
 
 /-!
 # Weighted power means
