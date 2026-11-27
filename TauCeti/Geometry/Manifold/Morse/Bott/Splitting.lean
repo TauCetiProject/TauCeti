@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 public import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
+import TauCeti.Topology.VectorBundle.Riemannian.FiniteDimensional
 
 /-!
 # The positive and negative normal spaces of a Morse–Bott critical submanifold
@@ -26,9 +27,12 @@ The normal Hessian is negative definite on the negative normal space and positiv
 positive one, and the two spaces are orthogonal both for `g` and for the normal Hessian. For a
 Morse–Bott submanifold the normal Hessian is nondegenerate, so the two spaces are complementary,
 and their dimensions are the Morse indices of `f` and of `-f` at `i s`. In particular these
-dimensions do not depend on the metric `g`, although the subspaces themselves do, and they are
-locally constant along `S`. These are the fibres of the negative and positive normal bundles
-`ν⁻` and `ν⁺`, whose disc bundles are attached when a Morse–Bott critical level is crossed.
+dimensions do not depend on the metric `g`, and they are locally constant along `S`. The subspaces
+themselves do depend on `g`: as `g` varies, the negative normal space at `s` runs through all
+subspaces of dimension the Morse index on which the normal Hessian is negative definite, so it
+changes with `g` unless one of the Morse indices of `f` and `-f` at `i s` vanishes. These are the
+fibres of the negative and positive normal bundles `ν⁻` and `ν⁺`, whose disc bundles are attached
+when a Morse–Bott critical level is crossed.
 
 The complementarity holds across metrics: the negative normal space for one fibre metric `g` and
 the positive normal space for another metric `g'` are complementary as well, because the normal
@@ -50,6 +54,11 @@ In the namespace `TauCeti.SmoothEmbedding`:
   `IsCriticalSubmanifold.normalHessian_apply_self_pos_of_mem_positiveNormalSpace`: the normal
   Hessian is negative definite on the negative normal space and positive definite on the positive
   normal space.
+* `IsCriticalSubmanifold.exists_negativeNormalSpace_eq_iff` and
+  `IsCriticalSubmanifold.exists_positiveNormalSpace_eq_iff`: the families of negative normal
+  spaces of fibre metrics are the families of subspaces of dimension the Morse index on which the
+  normal Hessian is negative definite, and likewise for the positive ones with the Morse index of
+  `-f`.
 * `IsCriticalSubmanifold.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace` and
   `IsCriticalSubmanifold.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace`: the
   corresponding semidefiniteness, including the zero vector.
@@ -60,11 +69,16 @@ In the namespace `TauCeti.SmoothEmbedding`:
   Morse–Bott submanifold the normal space is the direct sum of the negative normal space for one
   fibre metric and the positive normal space for any other.
 * `IsNondegenerateCriticalSubmanifold.negativeNormalProjection`: the projection onto the negative
-  normal space along the positive one, along which the normal Hessian splits
-  (`normalHessian_apply_eq_normalHessian_negativeNormalProjection_add`, in the same namespace).
+  normal space along the positive one, along which the normal Hessian and the fibre metric split
+  (`normalHessian_apply_eq_normalHessian_negativeNormalProjection_add` and
+  `inner_eq_inner_negativeNormalProjection_add`, in the same namespace).
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
+* `IsNondegenerateCriticalSubmanifold.exists_negativeNormalSpace_ne_iff` and
+  `IsNondegenerateCriticalSubmanifold.exists_positiveNormalSpace_ne_iff`: the negative,
+  respectively positive, normal space at `s` depends on the fibre metric exactly when the Morse
+  indices of `f` and of `-f` at `i s` are both positive.
 * `IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquiv` and
   `IsNondegenerateCriticalSubmanifold.positiveNormalSpaceEquiv`: the negative, respectively
   positive, normal spaces for two fibre metrics are identified by projection along the positive,
@@ -101,18 +115,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 namespace IsCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
-  (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {s : S} {v w : i.NormalSpace s hn}
+  (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) {s : S}
+      {v w : i.isImmersion.NormalSpace s hn}
 
 /-- The **negative normal space** of a critical submanifold at `s`, relative to a fibre metric
 `g` on the normal spaces: the span of the normal vectors `v` with `Hess v = μ g v` for some
 `μ < 0`, where `Hess` is the normal Hessian. -/
-def negativeNormalSpace (s : S) : Submodule ℝ (i.NormalSpace s hn) :=
+def negativeNormalSpace (s : S) : Submodule ℝ (i.isImmersion.NormalSpace s hn) :=
   (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Iio 0)
 
 /-- The **positive normal space** of a critical submanifold at `s`, relative to a fibre metric
 `g` on the normal spaces: the span of the normal vectors `v` with `Hess v = μ g v` for some
 `μ > 0`, where `Hess` is the normal Hessian. -/
-def positiveNormalSpace (s : S) : Submodule ℝ (i.NormalSpace s hn) :=
+def positiveNormalSpace (s : S) : Submodule ℝ (i.isImmersion.NormalSpace s hn) :=
   (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0)
 
 /-- The negative normal space is the relative spectral subspace of the normal Hessian selected by
@@ -175,12 +190,50 @@ theorem normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace
   · simp
   · exact (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g hv hv0).le
 
+/-- **The negative normal spaces of all fibre metrics.** A family of subspaces `A s` of the normal
+spaces is the family of negative normal spaces of some fibre metric exactly when the normal Hessian
+is negative definite on each `A s` and the dimension of `A s` is the Morse index of `f` at `i s`.
+So the negative normal space at `s` can be any maximal subspace on which the normal Hessian is
+negative definite. A fibre metric here is a family of inner products on the normal spaces, as in
+`negativeNormalSpace`, with no regularity along `S`. -/
+theorem exists_negativeNormalSpace_eq_iff
+    {A : ∀ s, Submodule ℝ (i.isImmersion.NormalSpace s hn)} :
+    (∃ g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn,
+        h.negativeNormalSpace hn g = A) ↔
+      ∀ s, (∀ v ∈ A s, v ≠ 0 → h.normalHessian hn s v v < 0) ∧
+        Module.finrank ℝ (A s) = manifoldMorseIndex I f (i s) := by
+  simp only [funext_iff, negativeNormalSpace_def]
+  refine (RiemannianMetric.exists_forall_toBilinForm_inner_iff fun s φ ↦
+    φ.relativeSpectralSubspace (h.normalHessian hn s) (Iio 0) = A s).trans
+      (forall_congr' fun s ↦ ?_)
+  rw [LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_eq_iff (h.isSymm_normalHessian hn s),
+    h.sigNeg_normalHessian hn s]
+
+/-- **The positive normal spaces of all fibre metrics.** A family of subspaces `A s` of the normal
+spaces is the family of positive normal spaces of some fibre metric exactly when the normal Hessian
+is positive definite on each `A s` and the dimension of `A s` is the Morse index of `-f` at `i s`.
+A fibre metric here is a family of inner products on the normal spaces, as in
+`positiveNormalSpace`, with no regularity along `S`. -/
+theorem exists_positiveNormalSpace_eq_iff
+    {A : ∀ s, Submodule ℝ (i.isImmersion.NormalSpace s hn)} :
+    (∃ g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn,
+        h.positiveNormalSpace hn g = A) ↔
+      ∀ s, (∀ v ∈ A s, v ≠ 0 → 0 < h.normalHessian hn s v v) ∧
+        Module.finrank ℝ (A s) = manifoldMorseIndex I (-f) (i s) := by
+  simp only [funext_iff, positiveNormalSpace_def]
+  refine (RiemannianMetric.exists_forall_toBilinForm_inner_iff fun s φ ↦
+    φ.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0) = A s).trans
+      (forall_congr' fun s ↦ ?_)
+  rw [LinearMap.BilinForm.exists_relativeSpectralSubspace_Ioi_eq_iff (h.isSymm_normalHessian hn s),
+    h.sigPos_normalHessian hn s]
+
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E]
-  (h : i.IsNondegenerateCriticalSubmanifold f) (g g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+  (h : i.IsNondegenerateCriticalSubmanifold f)
+      (g g' : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :
@@ -222,7 +275,7 @@ theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
 
 /-- The projection of the normal space of a Morse–Bott submanifold onto its negative normal space
 along its positive normal space, relative to the fibre metric `g`. -/
-def negativeNormalProjection (s : S) : Module.End ℝ (i.NormalSpace s hn) :=
+def negativeNormalProjection (s : S) : Module.End ℝ (i.isImmersion.NormalSpace s hn) :=
   (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
     (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
 
@@ -247,20 +300,20 @@ theorem ker_negativeNormalProjection (s : S) :
 
 /-- The component of a normal vector along the negative normal space lies in it. -/
 @[simp]
-theorem negativeNormalProjection_apply_mem {s : S} (v : i.NormalSpace s hn) :
+theorem negativeNormalProjection_apply_mem {s : S} (v : i.isImmersion.NormalSpace s hn) :
     h.negativeNormalProjection hn g s v ∈ h.negativeNormalSpace hn g s :=
   Submodule.projection_apply_mem _ v
 
 /-- The component of a normal vector along the positive normal space lies in it. -/
 @[simp]
-theorem sub_negativeNormalProjection_apply_mem {s : S} (v : i.NormalSpace s hn) :
+theorem sub_negativeNormalProjection_apply_mem {s : S} (v : i.isImmersion.NormalSpace s hn) :
     v - h.negativeNormalProjection hn g s v ∈ h.positiveNormalSpace hn g s :=
   Submodule.sub_projection_mem _ v
 
 /-- The projection onto the positive normal space along the negative one is the identity minus the
 projection onto the negative normal space. -/
 @[simp]
-theorem projection_positiveNormalSpace_apply {s : S} (v : i.NormalSpace s hn) :
+theorem projection_positiveNormalSpace_apply {s : S} (v : i.isImmersion.NormalSpace s hn) :
     (h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s).symm v =
       v - h.negativeNormalProjection hn g s v :=
@@ -268,32 +321,47 @@ theorem projection_positiveNormalSpace_apply {s : S} (v : i.NormalSpace s hn) :
 
 /-- The projection fixes the negative normal space. -/
 @[simp]
-theorem negativeNormalProjection_apply_of_mem {s : S} {v : i.NormalSpace s hn}
+theorem negativeNormalProjection_apply_of_mem {s : S} {v : i.isImmersion.NormalSpace s hn}
     (hv : v ∈ h.negativeNormalSpace hn g s) : h.negativeNormalProjection hn g s v = v :=
   Submodule.projection_apply_of_mem_left _ hv
 
 /-- The projection vanishes exactly on the positive normal space. -/
 @[simp]
-theorem negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.NormalSpace s hn} :
+theorem negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.isImmersion.NormalSpace s hn} :
     h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.positiveNormalSpace hn g s :=
   Submodule.projection_apply_eq_zero_iff _
 
+/-- **The projection is injective on a negative definite subspace.** If the normal Hessian is
+negative definite on the image of a linear map `L` into the normal space, then `L` followed by the
+projection onto the negative normal space is injective: the kernel of the projection is the
+positive normal space, on which the normal Hessian is nonnegative. -/
+theorem injective_negativeNormalProjection_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {s : S}
+    (L : V →ₗ[ℝ] i.isImmersion.NormalSpace s hn)
+    (hL : ∀ v ≠ 0, h.normalHessian hn s (L v) (L v) < 0) :
+    Function.Injective (h.negativeNormalProjection hn g s ∘ₗ L) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro v hv
+  by_contra hv0
+  exact (hL v hv0).not_ge (h.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn g
+    ((h.negativeNormalProjection_apply_eq_zero_iff hn g).1 hv))
+
 /-- The projection kills the positive normal space. -/
 @[simp]
-theorem negativeNormalProjection_apply_eq_zero_of_mem {s : S} {v : i.NormalSpace s hn}
+theorem negativeNormalProjection_apply_eq_zero_of_mem {s : S} {v : i.isImmersion.NormalSpace s hn}
     (hv : v ∈ h.positiveNormalSpace hn g s) : h.negativeNormalProjection hn g s v = 0 :=
   Submodule.projection_apply_of_mem_right _ hv
 
 /-- The projection fixes exactly the negative normal space. -/
 @[simp]
-theorem negativeNormalProjection_apply_eq_self_iff {s : S} {v : i.NormalSpace s hn} :
+theorem negativeNormalProjection_apply_eq_self_iff {s : S} {v : i.isImmersion.NormalSpace s hn} :
     h.negativeNormalProjection hn g s v = v ↔ v ∈ h.negativeNormalSpace hn g s :=
   Submodule.projection_eq_self_iff _ _
 
 /-- The component along the positive normal space vanishes exactly on the negative normal
 space. -/
 @[simp]
-theorem sub_negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.NormalSpace s hn} :
+theorem sub_negativeNormalProjection_apply_eq_zero_iff {s : S}
+    {v : i.isImmersion.NormalSpace s hn} :
     v - h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.negativeNormalSpace hn g s := by
   rw [sub_eq_zero, eq_comm, h.negativeNormalProjection_apply_eq_self_iff hn g]
 
@@ -306,7 +374,7 @@ theorem isIdempotentElem_negativeNormalProjection (s : S) :
 /-- The projection of `v` is the unique `x` in the negative normal space with `v - x` in the
 positive normal space. -/
 theorem negativeNormalProjection_apply_eq_of_mem_of_sub_mem {s : S}
-    {v x : i.NormalSpace s hn}
+    {v x : i.isImmersion.NormalSpace s hn}
     (hx : x ∈ h.negativeNormalSpace hn g s) (hvx : v - x ∈ h.positiveNormalSpace hn g s) :
     h.negativeNormalProjection hn g s v = x := by
   conv_lhs => rw [← add_sub_cancel x v]
@@ -317,7 +385,7 @@ theorem negativeNormalProjection_apply_eq_of_mem_of_sub_mem {s : S}
 its values on the negative components and on the positive components, the cross terms vanishing
 by `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`. -/
 theorem normalHessian_apply_eq_normalHessian_negativeNormalProjection_add {s : S}
-    (v w : i.NormalSpace s hn) :
+    (v w : i.isImmersion.NormalSpace s hn) :
     h.normalHessian hn s v w =
       h.normalHessian hn s (h.negativeNormalProjection hn g s v)
           (h.negativeNormalProjection hn g s w) +
@@ -331,6 +399,25 @@ theorem normalHessian_apply_eq_normalHessian_negativeNormalProjection_add {s : S
   set P := h.negativeNormalProjection hn g s
   conv_lhs => rw [← add_sub_cancel (P v) v, ← add_sub_cancel (P w) w]
   simp only [map_add, LinearMap.add_apply, h₁, h₂]
+  ring
+
+/-- **The fibre metric splits along the negative and positive normal spaces**: it is the sum of
+its values on the negative components and on the positive components, the cross terms vanishing
+by `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace`. -/
+theorem inner_eq_inner_negativeNormalProjection_add {s : S}
+    (v w : i.isImmersion.NormalSpace s hn) :
+    g.inner s v w =
+      g.inner s (h.negativeNormalProjection hn g s v) (h.negativeNormalProjection hn g s w) +
+        g.inner s (v - h.negativeNormalProjection hn g s v)
+          (w - h.negativeNormalProjection hn g s w) := by
+  have h₁ := h.inner_eq_zero_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g v) (h.sub_negativeNormalProjection_apply_mem hn g w)
+  have h₂ := h.inner_eq_zero_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g w) (h.sub_negativeNormalProjection_apply_mem hn g v)
+  rw [g.symm] at h₂
+  set P := h.negativeNormalProjection hn g s
+  conv_lhs => rw [← add_sub_cancel (P v) v, ← add_sub_cancel (P w) w]
+  simp only [map_add, add_apply, h₁, h₂]
   ring
 
 /-- **The negative normal spaces for two fibre metrics are isomorphic.** The negative normal
@@ -348,7 +435,7 @@ def negativeNormalSpaceEquiv (s : S) :
 the negative normal space for `g'` along the positive normal space for `g'`. -/
 @[simp]
 theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn g s) :
-    (h.negativeNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
+    (h.negativeNormalSpaceEquiv hn g g' s v : i.isImmersion.NormalSpace s hn) =
       h.negativeNormalProjection hn g' s v := by
   rw [negativeNormalProjection_def, negativeNormalSpaceEquiv, LinearEquiv.trans_apply,
     ← LinearEquiv.coe_toLinearMap (Submodule.quotientEquivOfIsCompl _ _ _).symm,
@@ -378,7 +465,7 @@ def positiveNormalSpaceEquiv (s : S) :
 the positive normal space for `g'` along the negative normal space for `g'`. -/
 @[simp]
 theorem coe_positiveNormalSpaceEquiv_apply {s : S} (v : h.positiveNormalSpace hn g s) :
-    (h.positiveNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
+    (h.positiveNormalSpaceEquiv hn g g' s v : i.isImmersion.NormalSpace s hn) =
       (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v := by
   rw [positiveNormalSpaceEquiv, LinearEquiv.trans_apply,
@@ -406,6 +493,46 @@ theorem isLocallyConstant_finrank_positiveNormalSpace :
     IsLocallyConstant fun s ↦ Module.finrank ℝ (h.positiveNormalSpace hn g s) := by
   simpa only [h.finrank_positiveNormalSpace hn g] using
     h.neg.isLocallyConstant_manifoldMorseIndex hn
+
+/-- **The negative normal space depends on the fibre metric** exactly when both the Morse index of
+`f` and that of `-f` are positive. If `f` has Morse index `0` at `i s`, the negative normal space at
+`s` is `0` for every fibre metric, and if `-f` does, it is the whole normal space; otherwise some
+fibre metric `g'` has a negative normal space at `s` different from that of `g`. A fibre metric
+here is a family of inner products on the normal spaces, as in
+`IsCriticalSubmanifold.negativeNormalSpace`, with no regularity along `S`. -/
+theorem exists_negativeNormalSpace_ne_iff (s : S) :
+    (∃ g' : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn,
+        h.negativeNormalSpace hn g' s ≠ h.negativeNormalSpace hn g s) ↔
+      manifoldMorseIndex I f (i s) ≠ 0 ∧ manifoldMorseIndex I (-f) (i s) ≠ 0 := by
+  have : Nonempty (RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) := ⟨g⟩
+  simp only [IsCriticalSubmanifold.negativeNormalSpace_def]
+  refine (RiemannianMetric.exists_toBilinForm_inner_iff (E := (i.isImmersion.NormalSpace · hn)) s
+    fun φ ↦ φ.relativeSpectralSubspace (h.normalHessian hn s) (Iio 0) ≠
+      (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Iio 0)).trans ?_
+  rw [LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_ne_iff (g.isSymm_toBilinForm_inner s)
+      (g.pos s) (h.isSymm_normalHessian hn s), h.sigNeg_normalHessian hn s,
+      ← h.manifoldMorseIndex_add_manifoldMorseIndex_neg hn s]
+  omega
+
+/-- **The positive normal space depends on the fibre metric** exactly when both the Morse index of
+`f` and that of `-f` are positive. If `-f` has Morse index `0` at `i s`, the positive normal space
+at `s` is `0` for every fibre metric, and if `f` does, it is the whole normal space; otherwise some
+fibre metric `g'` has a positive normal space at `s` different from that of `g`. A fibre metric
+here is a family of inner products on the normal spaces, as in
+`IsCriticalSubmanifold.positiveNormalSpace`, with no regularity along `S`. -/
+theorem exists_positiveNormalSpace_ne_iff (s : S) :
+    (∃ g' : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn,
+        h.positiveNormalSpace hn g' s ≠ h.positiveNormalSpace hn g s) ↔
+      manifoldMorseIndex I f (i s) ≠ 0 ∧ manifoldMorseIndex I (-f) (i s) ≠ 0 := by
+  have : Nonempty (RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) := ⟨g⟩
+  simp only [IsCriticalSubmanifold.positiveNormalSpace_def]
+  refine (RiemannianMetric.exists_toBilinForm_inner_iff (E := (i.isImmersion.NormalSpace · hn)) s
+    fun φ ↦ φ.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0) ≠
+      (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0)).trans ?_
+  rw [LinearMap.BilinForm.exists_relativeSpectralSubspace_Ioi_ne_iff (g.isSymm_toBilinForm_inner s)
+      (g.pos s) (h.isSymm_normalHessian hn s), h.sigPos_normalHessian hn s,
+      ← h.manifoldMorseIndex_add_manifoldMorseIndex_neg hn s]
+  omega
 
 /-- **The negative normal space is Euclidean for minus half the normal Hessian.** There is a linear
 equivalence onto the negative normal space at `s` from the Euclidean space whose dimension is the

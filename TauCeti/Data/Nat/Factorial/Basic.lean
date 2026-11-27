@@ -25,9 +25,10 @@ termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`;
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`;
 `Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
 number of triples of `n` elements with the number of injective ones;
-`Nat.pow_three_le_factorial`, `n ^ 3 ≤ n !` for `6 ≤ n`; and
+`Nat.pow_three_le_factorial`, `n ^ 3 ≤ n !` for `6 ≤ n`;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
-products of factorials in double hypergeometric series.
+products of factorials in double hypergeometric series; and
+`Nat.factorial_div_mul_factorial_div_dvd`, `(i / d)! * (j / d)! ∣ ((i + j) / d)!`.
 -/
 
 public section
@@ -125,5 +126,11 @@ theorem pow_three_le_factorial {n : ℕ} (hn : 6 ≤ n) : n ^ 3 ≤ n ! := by
   calc n ^ 3 ≤ 2 * n.descFactorial 3 := pow_three_le_two_mul_descFactorial_three hn
     _ ≤ (n - 3)! * n.descFactorial 3 := Nat.mul_le_mul_right _ h2
     _ = n ! := Nat.factorial_mul_descFactorial (by omega)
+
+/-- Factorial divisibility under Euclidean division: `(i / d)! * (j / d)! ∣ ((i + j) / d)!`. -/
+theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :
+    (i / d)! * (j / d)! ∣ ((i + j) / d)! :=
+  Nat.dvd_trans (factorial_mul_factorial_dvd_factorial_add (i / d) (j / d))
+    (factorial_dvd_factorial div_add_div_le_add_div)
 
 end Nat

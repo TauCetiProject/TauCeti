@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
+public import TauCeti.LinearAlgebra.Charpoly.Dual
 public import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
@@ -26,8 +27,9 @@ continuous map corresponds to the transpose of the push-forward on homology.  Co
 `Hⁿ(X; k)` is finite-dimensional exactly when `Hₙ(X; k)` is, and the two have the same `finrank`
 (both are zero in the infinite-dimensional case).  The same holds for the relative cohomology and
 homology of a topological pair.  For a continuous self-map `g` of `X`, the endomorphisms
-`𝟙 - g^*` of `Hⁿ(X; k)` and `𝟙 - g_*` of `Hₙ(X; k)` have the same determinant.  For an arbitrary
-coefficient module `M` the isomorphism `Hⁿ(X; k, M) ≃ₗ[k] (Hₙ(X; k) ⟶ M)` is
+`𝟙 - g^*` of `Hⁿ(X; k)` and `𝟙 - g_*` of `Hₙ(X; k)` have the same determinant, and `g^*` and
+`g_*` have the same characteristic polynomial when `Hₙ(X; k)` is finite-dimensional.  For an
+arbitrary coefficient module `M` the isomorphism `Hⁿ(X; k, M) ≃ₗ[k] (Hₙ(X; k) ⟶ M)` is
 `TopCat.singularKroneckerEquivOfProjectiveHomology` itself, whose projectivity hypotheses are found
 by instance search over a field.
 
@@ -46,6 +48,8 @@ by instance search over a field.
   and `TopPair.finite_singularCohomology_iff`: the same for relative cohomology of a pair.
 * `TopCat.det_id_sub_singularCohomologyMap`: for a continuous self-map `g`, the endomorphisms
   `𝟙 - g^*` of `Hⁿ(X; k)` and `𝟙 - g_*` of `Hₙ(X; k)` have the same determinant.
+* `TopCat.charpoly_singularCohomologyMap`: for a continuous self-map `g`, `g^*` on `Hⁿ(X; k)` and
+  `g_*` on `Hₙ(X; k)` have the same characteristic polynomial.
 
 ## References
 
@@ -74,16 +78,14 @@ a class to the linear form underlying its Kronecker pairing
 def singularCohomologyDualEquiv (n : ℕ) :
     X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n ≃ₗ[k]
       Dual k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X) :=
-  X.singularKroneckerEquivOfProjectiveHomology _ _ n ≪≫ₗ ModuleCat.homLinearEquiv
+  X.singularKroneckerLinearEquivOfProjectiveHomology _ _ n
 
 /-- The equivalence `TopCat.singularCohomologyDualEquiv` is the Kronecker map. -/
 @[simp]
 lemma singularCohomologyDualEquiv_apply (n : ℕ)
     (α : X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) :
-    X.singularCohomologyDualEquiv n α = (X.singularKronecker k n α).hom := by
-  rw [singularCohomologyDualEquiv, LinearEquiv.trans_apply,
-    singularKroneckerEquivOfProjectiveHomology_apply]
-  exact ModuleCat.homLinearEquiv_apply _
+    X.singularCohomologyDualEquiv n α = (X.singularKronecker k n α).hom :=
+  X.singularKroneckerLinearEquivOfProjectiveHomology_apply _ _ n α
 
 /-- The inverse of `TopCat.singularCohomologyDualEquiv` sends a linear form `φ` to the class whose
 Kronecker pairing is `φ`. -/
@@ -91,8 +93,9 @@ Kronecker pairing is `φ`. -/
 lemma singularKronecker_singularCohomologyDualEquiv_symm (n : ℕ)
     (φ : Dual k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X)) :
     X.singularKronecker k n ((X.singularCohomologyDualEquiv n).symm φ) = ModuleCat.ofHom φ := by
-  ext x
-  rw [← singularCohomologyDualEquiv_apply, LinearEquiv.apply_symm_apply, ModuleCat.hom_ofHom]
+  rw [singularCohomologyDualEquiv]
+  exact X.singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm
+    (ModuleCat.of k k) (ModuleCat.of k k) n φ
 
 variable {X} in
 /-- **Naturality of the universal coefficient isomorphism over a field**: for a continuous map
@@ -146,6 +149,26 @@ theorem det_id_sub_singularCohomologyMap (g : X ⟶ X) (n : ℕ) :
   · rw [LinearMap.det_eq_one_of_not_module_finite hfin, LinearMap.det_eq_one_of_not_module_finite]
     exact fun hc ↦ hfin ((X.finite_singularCohomology_iff n).1 hc)
 
+variable {X} in
+/-- **`g^*` and `g_*` have the same characteristic polynomial**: over a field, for a continuous
+self-map `g : X ⟶ X` with `Hₙ(X; k)` finite-dimensional, the endomorphisms `g^*` of `Hⁿ(X; k)`
+and `g_*` of `Hₙ(X; k)` have the same characteristic polynomial, since the universal coefficient
+theorem identifies `g^*` with the transpose of `g_*`. -/
+theorem charpoly_singularCohomologyMap (g : X ⟶ X) (n : ℕ)
+    [Module.Finite k (X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n)]
+    [Module.Finite k
+      (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X)] :
+    (TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k) (M := ModuleCat.of k k) g
+        n).hom.charpoly =
+      (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).map
+        g).hom.charpoly := by
+  refine ((X.singularCohomologyDualEquiv n).charpoly_conj _).symm.trans
+    (Eq.trans ?_ (LinearMap.charpoly_dualMap _))
+  congr 1
+  refine LinearMap.ext fun φ ↦ ?_
+  rw [LinearEquiv.conj_apply_apply, singularCohomologyDualEquiv_singularCohomologyMap,
+    LinearEquiv.apply_symm_apply, LinearMap.dualMap_def]
+
 end TopCat
 
 namespace TopPair
@@ -159,16 +182,14 @@ its relative Kronecker pairing (`TopPair.singularCohomologyDualEquiv_apply`). -/
 def singularCohomologyDualEquiv (n : ℕ) :
     P.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n ≃ₗ[k]
       Dual k (P.singularHomology (C := ModuleCat.{w} k) (ModuleCat.of k k) n) :=
-  P.singularKroneckerEquivOfProjectiveHomology _ _ n ≪≫ₗ ModuleCat.homLinearEquiv
+  P.singularKroneckerLinearEquivOfProjectiveHomology _ _ n
 
 /-- The equivalence `TopPair.singularCohomologyDualEquiv` is the relative Kronecker map. -/
 @[simp]
 lemma singularCohomologyDualEquiv_apply (n : ℕ)
     (α : P.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) :
-    P.singularCohomologyDualEquiv n α = (P.singularKronecker k n α).hom := by
-  rw [singularCohomologyDualEquiv, LinearEquiv.trans_apply,
-    singularKroneckerEquivOfProjectiveHomology_apply]
-  exact ModuleCat.homLinearEquiv_apply _
+    P.singularCohomologyDualEquiv n α = (P.singularKronecker k n α).hom :=
+  P.singularKroneckerLinearEquivOfProjectiveHomology_apply _ _ n α
 
 /-- The inverse of `TopPair.singularCohomologyDualEquiv` sends a linear form `φ` to the class whose
 Kronecker pairing is `φ`. -/
@@ -176,8 +197,9 @@ Kronecker pairing is `φ`. -/
 lemma singularKronecker_singularCohomologyDualEquiv_symm (n : ℕ)
     (φ : Dual k (P.singularHomology (C := ModuleCat.{w} k) (ModuleCat.of k k) n)) :
     P.singularKronecker k n ((P.singularCohomologyDualEquiv n).symm φ) = ModuleCat.ofHom φ := by
-  ext x
-  rw [← singularCohomologyDualEquiv_apply, LinearEquiv.apply_symm_apply, ModuleCat.hom_ofHom]
+  rw [singularCohomologyDualEquiv]
+  exact P.singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm
+    (ModuleCat.of k k) (ModuleCat.of k k) n φ
 
 variable {P} in
 /-- **Naturality of the relative universal coefficient isomorphism over a field**: for a map of

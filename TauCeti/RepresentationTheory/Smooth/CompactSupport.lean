@@ -9,6 +9,7 @@ public import TauCeti.Topology.LocallyConstant.CompactSupport
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import Mathlib.Data.Set.Pointwise.Support
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import TauCeti.Topology.Algebra.Group.CompactOpens
 
 /-!
 # The translation representation on locally constant functions with compact support
@@ -32,6 +33,8 @@ local constancy over the compact support of `f` gives a neighbourhood `U` of `1`
 * `TauCeti.isSmooth_compactlySupportedRep`: for a continuous action, the translation
   representation is smooth.
 * `TauCeti.support_compactlySupportedRep_apply`: translation by `g` moves the support by `g`.
+* `TauCeti.compactlySupportedRep_apply_compactOpenIndicator`: translating the indicator `1_K • m`
+  by `g` gives `1_{gK} • m`.
 
 ## References
 
@@ -78,6 +81,25 @@ theorem support_compactlySupportedRep_apply (g : G)
   rw [show ⇑(compactlySupportedRep R G X M g f : LocallyConstant X M) = fun x ↦ f.val (g⁻¹ • x)
     from funext (compactlySupportedRep_apply_coe g f)]
   exact support_comp_inv_smul g f.val
+
+/-- Translating the indicator `1_K • m` of a compact open set by `g` gives the indicator
+`1_{gK} • m` of its translate. -/
+@[simp]
+theorem compactlySupportedRep_apply_compactOpenIndicator [T2Space X] (g : G)
+    (K : TopologicalSpace.CompactOpens X) (m : M) :
+    compactlySupportedRep R G X M g ⟨LocallyConstant.compactOpenIndicator K m,
+        LocallyConstant.compactOpenIndicator_mem_compactlySupported K m⟩ =
+      ⟨LocallyConstant.compactOpenIndicator (g • K) m,
+        LocallyConstant.compactOpenIndicator_mem_compactlySupported _ m⟩ := by
+  classical
+  ext x
+  by_cases hx : g⁻¹ • x ∈ K
+  · rw [compactlySupportedRep_apply_coe, LocallyConstant.compactOpenIndicator_of_mem hx,
+      LocallyConstant.compactOpenIndicator_of_mem
+        (TopologicalSpace.CompactOpens.mem_smul_iff_inv_smul_mem.2 hx)]
+  · rw [compactlySupportedRep_apply_coe, LocallyConstant.compactOpenIndicator_of_notMem hx,
+      LocallyConstant.compactOpenIndicator_of_notMem
+        (mt TopologicalSpace.CompactOpens.mem_smul_iff_inv_smul_mem.1 hx)]
 
 /-- An element acting trivially on `X` acts trivially on `C_c^∞(X, M)`. -/
 theorem compactlySupportedRep_apply_eq_one {g : G} (hg : ∀ x : X, g • x = x) :

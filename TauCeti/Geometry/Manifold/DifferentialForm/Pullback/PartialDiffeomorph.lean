@@ -15,7 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
-# Forms read through a partial diffeomorphism into a normed space
+# Forms and partial diffeomorphisms
 
 Let `Φ` be a smooth partial diffeomorphism from a manifold `M` to a normed space `V`. A form `φ` on
 `M` is read in the coordinates `Φ` as its pullback `(Φ⁻¹)^* φ` along the inverse, a flat form on the
@@ -27,6 +27,10 @@ open set `Φ.target`. This file records the three facts needed to work with this
   (`PartialDiffeomorph.contDiffOn_mpullbackWithin_symm`);
 * it is closed on `Φ.target` when `φ` is closed
   (`PartialDiffeomorph.extDeriv_mpullbackWithin_symm_eq_zero`).
+
+For a smooth partial diffeomorphism `Φ` between two manifolds, pullback along `Φ` commutes with the
+exterior derivative on the source of `Φ`: if `Φ` pulls a smooth form `α` back to a smooth form `β`
+on its source, it pulls `dα` back to `dβ` there (`PartialDiffeomorph.mpullback_mextDerivₗ_apply`).
 -/
 
 public section
@@ -84,5 +88,24 @@ theorem extDeriv_mpullbackWithin_symm_eq_zero [IsManifold I 2 M]
   -- The two zeros are alternating maps on `TangentSpace 𝓘(ℝ, V) p` and on `V`, which Mathlib
   -- identifies definitionally.
   rfl
+
+section Manifold
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ M] [IsManifold I ∞ N]
+
+/-- **Exterior derivatives of forms related by `Φ` are related by `Φ`.** If `Φ` pulls a smooth form
+`α` on `M` back to the smooth form `β` on its source, then it pulls `dα` back to `dβ` there: the
+source is open, and pullback commutes with the exterior derivative. -/
+theorem mpullback_mextDerivₗ_apply (Φ : PartialDiffeomorph I I N M ∞) {α : SmoothForm I M F k}
+    {β : SmoothForm I N F k} (hαβ : ∀ y ∈ Φ.source, mpullback I I Φ α.val y = β.val y)
+    {y : N} (hy : y ∈ Φ.source) :
+    mpullback I I Φ (mextDerivₗ I k α).val y = (mextDerivₗ I k β).val y := by
+  rw [mextDerivₗ_apply, mextDerivₗ_apply,
+    mpullback_mextDeriv_at ((Φ.contMDiffOn.contMDiffAt (Φ.open_source.mem_nhds hy)).of_le
+      (by simp)) ((α.contMDiff (Φ y)).of_le (by simp))]
+  exact mextDeriv_congr_of_eventuallyEq
+    (Filter.eventually_of_mem (Φ.open_source.mem_nhds hy) hαβ)
+
+end Manifold
 
 end PartialDiffeomorph

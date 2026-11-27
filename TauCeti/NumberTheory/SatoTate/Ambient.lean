@@ -11,14 +11,18 @@ public import TauCeti.RepresentationTheory.Compact.Haar
 public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.RankOne
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RankOne
+import TauCeti.LinearAlgebra.Matrix.OfReal
+import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
-# The ambient groups of Sato–Tate theory: `U(d)` and `USp(d)`
+# The ambient groups of Sato–Tate theory: `U(d)`, `USp(d)` and `O(d)`
 
 A Sato–Tate group is a closed subgroup `G` of the unitary group `U(d)` of `d × d` complex
 matrices, weighted by its normalized Haar measure; for an abelian variety of dimension `g` it lies
-in the unitary symplectic group `USp(2g)`. This file sets up these ambient groups.
+in the unitary symplectic group `USp(2g)`, and in general a Sato–Tate group of odd weight lies in
+`USp(d)` and one of even weight in the orthogonal group `O(d)`. This file sets up these ambient
+groups.
 
 ## Closed subgroups of `U(d)` and their Haar measure
 
@@ -53,6 +57,15 @@ group in Mathlib's coordinates. Here it is a subgroup of `U(d)` in the coordinat
 Fité–Kedlaya–Rotger–Sutherland, because Sato–Tate groups are closed subgroups of `U(d)` written in
 those coordinates.
 
+## The orthogonal group and the ambient group of a weight
+
+The orthogonal group `O(d)` is the group of real points of `U(d)`, the unitary matrices with real
+entries. Taking real parts identifies it, as a topological group, with Mathlib's real orthogonal
+group `Matrix.orthogonalGroup (Fin d) ℝ`, so its elements have determinant `±1`, and
+`O(1) = {1, -1}`. The ambient group `TauCeti.SatoTate.ambient w d` of weight `w` is `USp(d)` for
+odd `w` and `O(d)` for even `w`, reflecting that the polarization of a pure Hodge structure of
+weight `w` is alternating in odd weight and symmetric in even weight.
+
 ## Main definitions
 
 * `TauCeti.SatoTate.U`: the unitary group `U(d)`.
@@ -60,6 +73,11 @@ those coordinates.
 * `TauCeti.SatoTate.USp`: the unitary symplectic group `USp(d)`, a subgroup of `U(d)`, and
   `TauCeti.SatoTate.uSpClosed`, the same group as a closed subgroup.
 * `TauCeti.SatoTate.uSpTwoEquivSU2`: the isomorphism of topological groups `USp(2) ≃ₜ* SU(2)`.
+* `TauCeti.SatoTate.Od`: the orthogonal group `O(d)`, a subgroup of `U(d)`, and
+  `TauCeti.SatoTate.odClosed`, the same group as a closed subgroup.
+* `TauCeti.SatoTate.orthogonalGroupEquivOd`: the isomorphism of topological groups from the real
+  orthogonal group onto `O(d)`.
+* `TauCeti.SatoTate.ambient`: the ambient group `USp(d)` or `O(d)` of a weight.
 
 ## Main results
 
@@ -74,6 +92,10 @@ those coordinates.
 * `TauCeti.SatoTate.mem_USp_two_iff`: `USp(2)` is the determinant-one subgroup of `U(2)`.
 * `TauCeti.SatoTate.map_haarProb_uSpTwoEquivSU2`: `USp(2) ≃ₜ* SU(2)` carries Haar measure to Haar
   measure.
+* `TauCeti.SatoTate.isClosed_Od`, `TauCeti.SatoTate.isClosed_ambient`: `O(d)` and the ambient
+  groups are closed in `U(d)`.
+* `TauCeti.SatoTate.det_eq_one_or_neg_one_of_mem_Od`: elements of `O(d)` have determinant `±1`.
+* `TauCeti.SatoTate.mem_Od_one_iff`: `O(1) = {1, -1}`.
 
 ## References
 
@@ -291,5 +313,138 @@ of `SU(2)`. -/
 theorem map_haarProb_uSpTwoEquivSU2 :
     (haarProb (uSpClosed 2).toSubgroup).map uSpTwoEquivSU2 = haarProb SU2 :=
   Measure.isHaarMeasure_eq_of_isProbabilityMeasure _ _
+
+/-! ### The orthogonal group -/
+
+/-- The orthogonal group `O(d) = {g ∈ U(d) | ∀ i j, Im (g i j) = 0}`, the real points of `U(d)`. It
+is the image of the real orthogonal group `Matrix.orthogonalGroup (Fin d) ℝ` under the entrywise
+coercion `ℝ → ℂ` (`TauCeti.SatoTate.orthogonalGroupEquivOd`). -/
+def Od (d : ℕ) : Subgroup (U d) where
+  carrier := {g | ∀ i j, ((g : Matrix (Fin d) (Fin d) ℂ) i j).im = 0}
+  one_mem' i j := by
+    rcases eq_or_ne i j with rfl | hij <;> simp [*]
+  mul_mem' {g h} hg hh i j := by
+    simp [Matrix.mul_apply, Complex.im_sum, Complex.mul_im, hg _ _, hh _ _]
+  inv_mem' {g} hg i j := by
+    simp [hg j i]
+
+theorem mem_Od_iff {g : U d} :
+    g ∈ Od d ↔ ∀ i j, ((g : Matrix (Fin d) (Fin d) ℂ) i j).im = 0 :=
+  Iff.rfl
+
+/-- `O(d)` is closed in `U(d)`: it is cut out by the continuous equations `Im (g i j) = 0`. -/
+theorem isClosed_Od (d : ℕ) : IsClosed (Od d : Set (U d)) := by
+  have h : (Od d : Set (U d)) =
+      ⋂ i, ⋂ j, {g : U d | ((g : Matrix (Fin d) (Fin d) ℂ) i j).im = 0} := by
+    ext g
+    simp [mem_Od_iff]
+  rw [h]
+  exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_eq
+    (Complex.continuous_im.comp ((continuous_apply_apply i j).comp continuous_subtypeVal))
+    continuous_const
+
+/-- `O(d)` as a closed subgroup of `U(d)`. -/
+def odClosed (d : ℕ) : ClosedSubgroup (U d) where
+  toSubgroup := Od d
+  isClosed' := isClosed_Od d
+
+@[simp]
+theorem toSubgroup_odClosed (d : ℕ) : (odClosed d).toSubgroup = Od d :=
+  (rfl)
+
+instance (d : ℕ) : CompactSpace (Od d) :=
+  isCompact_iff_compactSpace.mp (isClosed_Od d).isCompact
+
+/-- An element of `O(d)` is the complex image of the real matrix of its real parts. -/
+theorem map_ofReal_map_re_of_mem_Od {g : U d} (hg : g ∈ Od d) :
+    ((g : Matrix (Fin d) (Fin d) ℂ).map Complex.re).map ((↑) : ℝ → ℂ) = g := by
+  ext i j
+  exact Complex.ext (by simp) (by simp [hg i j])
+
+/-- The real parts of an element of `O(d)` form a real orthogonal matrix. -/
+theorem map_re_mem_orthogonalGroup {g : U d} (hg : g ∈ Od d) :
+    (g : Matrix (Fin d) (Fin d) ℂ).map Complex.re ∈ orthogonalGroup (Fin d) ℝ := by
+  set N := (g : Matrix (Fin d) (Fin d) ℂ).map Complex.re
+  have hN : N.map ((↑) : ℝ → ℂ) = g := map_ofReal_map_re_of_mem_Od hg
+  -- The conjugate transpose of the real matrix `g` is its transpose.
+  have hstar : star (g : Matrix (Fin d) (Fin d) ℂ) = Nᵀ.map ((↑) : ℝ → ℂ) := by
+    rw [transpose_map, hN, star_eq_conjTranspose]
+    ext i j
+    simp [Complex.conj_eq_iff_im.mpr (hg j i)]
+  rw [mem_orthogonalGroup_iff]
+  refine map_injective Complex.ofReal_injective ?_
+  simp only [map_ofReal_mul, hN, ← hstar, map_ofReal_one]
+  exact mem_unitaryGroup_iff.mp (g : U d).property
+
+/-- **The real orthogonal group is `O(d)`.** The entrywise coercion `ℝ → ℂ` is an isomorphism of
+topological groups from Mathlib's `Matrix.orthogonalGroup (Fin d) ℝ` onto `O(d)`, with inverse
+taking real parts. -/
+def orthogonalGroupEquivOd : orthogonalGroup (Fin d) ℝ ≃ₜ* Od d where
+  toFun A := ⟨⟨(A : Matrix (Fin d) (Fin d) ℝ).map ((↑) : ℝ → ℂ),
+    map_ofReal_mem_unitaryGroup A.property⟩, fun _ _ ↦ by simp⟩
+  invFun g := ⟨((g : U d) : Matrix (Fin d) (Fin d) ℂ).map Complex.re,
+    map_re_mem_orthogonalGroup g.property⟩
+  left_inv A := by
+    ext i j
+    simp
+  right_inv g := Subtype.ext <| Subtype.ext <| map_ofReal_map_re_of_mem_Od g.property
+  map_mul' A B := Subtype.ext <| Subtype.ext <| map_ofReal_mul _ _
+  continuous_toFun := (((continuous_id.matrix_map Complex.continuous_ofReal).comp
+    continuous_subtypeVal).subtype_mk _).subtype_mk _
+  continuous_invFun := ((continuous_id.matrix_map Complex.continuous_re).comp
+    (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _
+
+@[simp]
+theorem coe_orthogonalGroupEquivOd (A : orthogonalGroup (Fin d) ℝ) :
+    (((orthogonalGroupEquivOd A : Od d) : U d) : Matrix (Fin d) (Fin d) ℂ) =
+      (A : Matrix (Fin d) (Fin d) ℝ).map ((↑) : ℝ → ℂ) :=
+  (rfl)
+
+@[simp]
+theorem coe_orthogonalGroupEquivOd_symm (g : Od d) :
+    ((orthogonalGroupEquivOd.symm g : orthogonalGroup (Fin d) ℝ) : Matrix (Fin d) (Fin d) ℝ) =
+      ((g : U d) : Matrix (Fin d) (Fin d) ℂ).map Complex.re :=
+  (rfl)
+
+/-- Elements of `O(d)` have determinant `1` or `-1`. -/
+theorem det_eq_one_or_neg_one_of_mem_Od {g : U d} (hg : g ∈ Od d) :
+    (g : Matrix (Fin d) (Fin d) ℂ).det = 1 ∨ (g : Matrix (Fin d) (Fin d) ℂ).det = -1 := by
+  rw [← map_ofReal_map_re_of_mem_Od hg, det_map_ofReal]
+  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup (map_re_mem_orthogonalGroup hg) with h | h <;>
+    simp [h]
+
+/-- `O(1) = {1, -1}`. -/
+theorem mem_Od_one_iff {g : U 1} : g ∈ Od 1 ↔ g = 1 ∨ g = -1 := by
+  -- A `1 × 1` matrix is its determinant times the identity.
+  have key {c : ℂ} (hc : (g : Matrix (Fin 1) (Fin 1) ℂ).det = c) :
+      (g : Matrix (Fin 1) (Fin 1) ℂ) = c • 1 := by
+    ext i j
+    simp [← hc, det_unique, Subsingleton.elim i 0, Subsingleton.elim j 0]
+  constructor
+  · intro h
+    exact (det_eq_one_or_neg_one_of_mem_Od h).imp
+      (fun h1 ↦ Subtype.ext ((key h1).trans (by simp)))
+      (fun h1 ↦ Subtype.ext ((key h1).trans (by simp [Unitary.coe_neg])))
+  · rintro (rfl | rfl) i j <;> simp [Unitary.coe_neg, Subsingleton.elim i j]
+
+/-! ### The ambient group of a weight -/
+
+/-- The ambient group of weight `w` in degree `d`: the unitary symplectic group `USp(d)` for odd
+`w`, and the orthogonal group `O(d)` for even `w`. A Sato–Tate group of weight `w` and degree `d`
+is a closed subgroup of this group. -/
+def ambient (w d : ℕ) : Subgroup (U d) :=
+  if Odd w then USp d else Od d
+
+theorem ambient_of_odd {w : ℕ} (hw : Odd w) : ambient w d = USp d := by
+  simp [ambient, hw]
+
+theorem ambient_of_even {w : ℕ} (hw : Even w) : ambient w d = Od d := by
+  simp [ambient, Nat.not_odd_iff_even.mpr hw]
+
+/-- The ambient group of every weight is closed in `U(d)`. -/
+theorem isClosed_ambient (w d : ℕ) : IsClosed (ambient w d : Set (U d)) := by
+  unfold ambient
+  split_ifs
+  exacts [isClosed_USp d, isClosed_Od d]
 
 end TauCeti.SatoTate

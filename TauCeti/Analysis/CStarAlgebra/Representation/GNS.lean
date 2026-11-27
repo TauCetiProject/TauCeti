@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
-import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
+import TauCeti.Analysis.CStarAlgebra.GNS.Universal
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 
 /-!
@@ -22,13 +22,14 @@ in `A` (`norm_le_iff_forall_isNondegenerate`, `eq_iff_forall_isNondegenerate`) a
 (`DoubleCentralizer.norm_le_iff_forall_isNondegenerate`,
 `DoubleCentralizer.eq_iff_forall_multiplierExtension_eq`).
 
-The Hilbert direct sum `NonUnitalStarAlgHom.hilbertSum` of the GNS representations of all positive
-functionals is therefore a single faithful nondegenerate representation: this is the
-**Gelfand–Naimark theorem** `exists_faithful_nondegenerate_representation`, for every C⋆-algebra,
-with no unit or separability assumption. For a unital algebra nondegeneracy forces the unit to act
-as the identity, giving a faithful unital representation (`exists_faithful_representation`).
-Faithful star homomorphisms between C⋆-algebras are isometric (`NonUnitalStarAlgHom.norm_map`), so
-these representations embed `A` isometrically as a C⋆-subalgebra of bounded operators.
+The universal GNS representation `TauCeti.gnsUniversalRepresentation` (the Hilbert direct sum of the
+GNS representations of all states) is therefore a single faithful nondegenerate representation: this
+is the **Gelfand–Naimark theorem** `exists_faithful_nondegenerate_representation`, for every
+C⋆-algebra, with no unit or separability assumption. For a unital algebra nondegeneracy forces the
+unit to act as the identity, giving a faithful unital representation
+(`exists_faithful_representation`). Faithful star homomorphisms between C⋆-algebras are isometric
+(`NonUnitalStarAlgHom.norm_map`), so these representations embed `A` isometrically as a
+C⋆-subalgebra of bounded operators.
 
 ## References
 
@@ -91,21 +92,16 @@ theorem eq_iff_forall_isNondegenerate {a b : A} :
 
 variable (A) in
 /-- **Gelfand–Naimark theorem.** Every C⋆-algebra `A`, possibly nonunital and nonseparable, has a
-faithful nondegenerate representation on a Hilbert space in the universe of `A`: the Hilbert
-direct sum of the GNS representations of all positive functionals on `A`. For the zero algebra the
-Hilbert space is zero. -/
+faithful nondegenerate representation on a Hilbert space in the universe of `A`: the universal GNS
+representation `TauCeti.gnsUniversalRepresentation A`. For the zero algebra the Hilbert space is
+zero. -/
 theorem exists_faithful_nondegenerate_representation :
     ∃ (H : Type w) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H) (_ : CompleteSpace H)
       (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)), Function.Injective π ∧ π.IsNondegenerate := by
   let := _root_.CStarAlgebra.spectralOrder A
   have := _root_.CStarAlgebra.spectralOrderedRing A
-  let π := NonUnitalStarAlgHom.hilbertSum fun f : A →ₚ[ℂ] ℂ => f.gnsNonUnitalStarAlgHom
-  refine ⟨_, inferInstance, inferInstance, inferInstance, π, ?_, ?_⟩
-  · refine (NonUnitalStarAlgHom.injective_hilbertSum_iff _).2 fun a ha => ?_
-    obtain ⟨f, hf⟩ := exists_norm_gnsNonUnitalStarAlgHom_apply_eq a
-    simpa [ha f] using hf.symm
-  · exact (NonUnitalStarAlgHom.isNondegenerate_hilbertSum_iff _).2 fun f =>
-      f.isNondegenerate_gnsNonUnitalStarAlgHom
+  exact ⟨_, inferInstance, inferInstance, inferInstance, gnsUniversalRepresentation A,
+    gnsUniversalRepresentation_injective A, isNondegenerate_gnsUniversalRepresentation A⟩
 
 variable (B : Type w) [CStarAlgebra B] in
 /-- **Gelfand–Naimark theorem, unital form.** Every unital C⋆-algebra `B` has a faithful unital
@@ -114,11 +110,7 @@ theorem exists_faithful_representation :
     ∃ (H : Type w) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H) (_ : CompleteSpace H)
       (π : B →⋆ₐ[ℂ] (H →L[ℂ] H)), Function.Injective π := by
   obtain ⟨H, _, _, _, π, hπ, hπn⟩ := exists_faithful_nondegenerate_representation B
-  have h1 : π 1 = 1 := hπn.map_one
-  exact ⟨H, _, _, _,
-    { π with
-      map_one' := h1
-      commutes' r := by simp [Algebra.algebraMap_eq_smul_one, h1] }, hπ⟩
+  exact ⟨H, _, _, _, hπn.toStarAlgHom, by simpa using hπ⟩
 
 end TauCeti.CStarAlgebra
 

@@ -37,13 +37,15 @@ normed field. Neither completeness nor independence of the directions is require
 differentiability of a rectangular matrix field `M : E → Matrix κ ι 𝕜` also implies
 differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVecCLM`
 (`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
-`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`). Over `RCLike 𝕜`, the
-real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
-(`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the self-adjoint
-part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
+`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`), and hence of the
+matrix-vector product with a differentiable vector field (`Matrix.differentiableAt_mulVec`).
+Over `RCLike 𝕜`, the real entrywise derivative of a family of Hermitian matrices is Hermitian in
+every direction (`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the
+self-adjoint part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
 (`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`). The
 entries of a matrix in the real vector space of Hermitian matrices are real-linear functions of
-it, hence their own derivatives (`Matrix.hasFDerivAt_selfAdjoint_apply`).
+it, hence their own derivatives (`Matrix.hasFDerivAt_selfAdjoint_apply`), so the matrix of these
+derivatives in a direction `H` is `H` (`Matrix.of_fderiv_selfAdjoint_apply_eq`).
 
 Over a complete nontrivially normed field, a family of finite matrices `y ↦ M y` induces a
 differentiable family of continuous linear maps `y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap`
@@ -129,6 +131,15 @@ theorem differentiableAt_mulVecCLM {κ : Type*} [Finite κ]
   differentiableWithinAt_univ.mp <|
     differentiableWithinAt_mulVecCLM fun i j ↦ (hM i j).differentiableWithinAt
 
+/-- If every entry of `M : E → Matrix κ ι 𝕜` and every component of `v : E → ι → 𝕜` is
+differentiable at `x`, then `y ↦ M y *ᵥ v y` is differentiable at `x`. -/
+theorem differentiableAt_mulVec {κ : Type*} [Finite κ]
+    {M : E → Matrix κ ι 𝕜} {v : E → ι → 𝕜} {x : E}
+    (hM : ∀ i j, DifferentiableAt 𝕜 (fun y ↦ M y i j) x) (hv : DifferentiableAt 𝕜 v x) :
+    DifferentiableAt 𝕜 (fun y ↦ M y *ᵥ v y) x := by
+  cases nonempty_fintype κ
+  simpa only [mulVecCLM_apply] using (differentiableAt_mulVecCLM hM).clm_apply hv
+
 /-- If every entry of `M : E → Matrix κ ι 𝕜` is differentiable on `s`, then the induced operator
 family `y ↦ (M y).mulVecCLM` is differentiable on `s`. -/
 theorem differentiableOn_mulVecCLM {κ : Type*} [Finite κ]
@@ -202,6 +213,16 @@ theorem hasFDerivAt_selfAdjoint_apply [Finite n] (a b : n)
         (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtype)) A :=
   (LinearMap.toContinuousLinearMap
     (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtype)).hasFDerivAt
+
+/-- The matrix of entrywise derivatives at `A` in the direction `H` of a Hermitian matrix is `H`,
+on the real vector space of Hermitian matrices with the entrywise topology. -/
+theorem of_fderiv_selfAdjoint_apply_eq [Finite n] (A H : selfAdjoint.submodule ℝ (Matrix n n 𝕜)) :
+    (of fun a b ↦ fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      (B : Matrix n n 𝕜) a b) A H) = H :=
+  ext fun a b ↦ by
+    simp only [of_apply, (hasFDerivAt_selfAdjoint_apply a b A).fderiv,
+      LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp, Submodule.coe_subtype,
+      Function.comp_apply, entryLinearMap_apply]
 
 end Matrix
 
