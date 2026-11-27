@@ -73,8 +73,10 @@ theorem mem_preperiodicPts : x ∈ preperiodicPts f ↔ IsPreperiodicPt f x :=
 /-- `x` is preperiodic for `f` iff `f^[m + n] x = f^[m] x` for some `m` and some `n > 0`. -/
 theorem isPreperiodicPt_iff_exists_iterate_add_eq :
     IsPreperiodicPt f x ↔ ∃ m n : ℕ, 0 < n ∧ f^[m + n] x = f^[m] x := by
-  simp only [isPreperiodicPt_def, mem_periodicPts, IsPeriodicPt, IsFixedPt, ← iterate_add_apply,
-    add_comm]
+  refine exists_congr fun m ↦ mem_periodicPts.trans <| exists_congr fun n ↦
+    and_congr_right fun _ ↦ ?_
+  rw [Nat.add_comm m n, iterate_add_apply]
+  exact Iff.rfl
 
 theorem IsPreperiodicPt.exists_iterate_add_eq (hx : IsPreperiodicPt f x) :
     ∃ m n : ℕ, 0 < n ∧ f^[m + n] x = f^[m] x :=
@@ -83,6 +85,12 @@ theorem IsPreperiodicPt.exists_iterate_add_eq (hx : IsPreperiodicPt f x) :
 theorem isPreperiodicPt_of_iterate_add_eq {m n : ℕ} (hn : 0 < n) (h : f^[m + n] x = f^[m] x) :
     IsPreperiodicPt f x :=
   isPreperiodicPt_iff_exists_iterate_add_eq.2 ⟨m, n, hn, h⟩
+
+/-- If two iterates `f^[i] x` and `f^[j] x` with `i < j` agree, then `x` is preperiodic. -/
+theorem isPreperiodicPt_of_iterate_eq_of_lt {i j : ℕ} (hij : i < j) (h : f^[i] x = f^[j] x) :
+    IsPreperiodicPt f x :=
+  isPreperiodicPt_of_iterate_add_eq (Nat.sub_pos_of_lt hij)
+    (by rw [Nat.add_sub_cancel' hij.le]; exact h.symm)
 
 theorem isPreperiodicPt_of_mem_periodicPts (hx : x ∈ periodicPts f) : IsPreperiodicPt f x :=
   ⟨0, hx⟩
@@ -135,10 +143,8 @@ theorem isPreperiodicPt_iff_not_injective :
     omega
   · obtain ⟨i, j, h, hij⟩ := not_injective_iff.1 hx
     rcases Nat.lt_or_gt_of_ne hij with hlt | hlt
-    · exact isPreperiodicPt_of_iterate_add_eq (Nat.sub_pos_of_lt hlt)
-        (by rw [Nat.add_sub_cancel' hlt.le]; exact h.symm)
-    · exact isPreperiodicPt_of_iterate_add_eq (Nat.sub_pos_of_lt hlt)
-        (by rw [Nat.add_sub_cancel' hlt.le]; exact h)
+    · exact isPreperiodicPt_of_iterate_eq_of_lt hlt h
+    · exact isPreperiodicPt_of_iterate_eq_of_lt hlt h.symm
 
 /-- **Preperiodic iff the forward orbit is finite.** -/
 theorem isPreperiodicPt_iff_finite_forwardOrbit :
@@ -156,7 +162,7 @@ theorem isPreperiodicPt_iff_finite_forwardOrbit :
       rw [iterate_add_apply, hp.iterate_mod_apply, ← iterate_add_apply, Nat.sub_add_cancel hk]
   · obtain ⟨i, j, hij, h⟩ :=
       Finite.exists_lt_map_eq_of_forall_mem (iterate_mem_forwardOrbit f x) hx
-    exact isPreperiodicPt_iff_not_injective.2 fun hinj ↦ hij.ne (hinj h)
+    exact isPreperiodicPt_of_iterate_eq_of_lt hij h
 
 theorem IsPreperiodicPt.finite_forwardOrbit (hx : IsPreperiodicPt f x) :
     (forwardOrbit f x).Finite :=
