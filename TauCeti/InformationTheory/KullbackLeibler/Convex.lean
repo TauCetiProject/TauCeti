@@ -67,6 +67,7 @@ private theorem withDensity_ofReal_ac_and_llr {α : Type*} [MeasurableSpace α] 
     let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
     let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
     ρ ≪ η ∧ llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x) := by
+  dsimp only
   let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
   let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
   let d : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x / h x)
@@ -91,8 +92,8 @@ private theorem withDensity_ofReal_ac_and_llr {α : Type*} [MeasurableSpace α] 
     rw [← heq]
     exact Measure.rnDeriv_withDensity₀ η (hdm.mono_ac hημ)
   refine ⟨hac, ?_⟩
-  change llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x)
   filter_upwards [hac.ae_le hrn, hρμ.ae_le hf, hρμ.ae_le hh] with x hdx hfx hhx
+  dsimp only [ρ, η] at hdx
   simp only [llr, hdx, d, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
 
 /-- For `A = ∫ f dμ` and `B = ∫ h dμ`, the log-sum inequality is
@@ -115,11 +116,7 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
   have hweight : (fun x ↦ f x * Real.log (f x / h x)) =ᵐ[μ]
       fun x ↦ f x * Real.log (f x) - f x * Real.log (h x) := by
     filter_upwards [hzero] with x hz
-    by_cases hf0 : f x = 0
-    · simp [hf0]
-    · have hh0 : h x ≠ 0 := fun hh0 ↦ hf0 (hz hh0)
-      rw [Real.log_div hf0 hh0]
-      ring
+    exact Real.mul_log_div (f x) (h x) hz
   have hweighted : Integrable (fun x ↦ f x * Real.log (f x / h x)) μ :=
     hdiff.congr hweight.symm
   have hint_base : Integrable (fun x ↦ Real.log (f x / h x)) ρ := by

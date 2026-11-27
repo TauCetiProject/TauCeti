@@ -27,6 +27,10 @@ example (t : ℝ) :
       (-2) * (t * Real.log t) + ((-2) * Real.log (-2)) * t :=
   Real.mul_log_mul (-2) t
 
+example : (-2 : ℝ) * Real.log ((-2) / (-3)) =
+    (-2) * Real.log (-2) - (-2) * Real.log (-3) :=
+  Real.mul_log_div (-2) (-3) (by norm_num)
+
 example {α : Type*} [MeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ] (c : ℝ) :
     entropy μ (fun _ ↦ c) = 0 := by
   simp

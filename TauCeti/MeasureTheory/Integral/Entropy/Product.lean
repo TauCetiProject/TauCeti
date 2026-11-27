@@ -167,20 +167,17 @@ private theorem integral_log_sum_split_le {α : Type*} [MeasurableSpace α] (μ 
         (∫ x, f x ∂μ) * Real.log (∫ x, h x ∂μ) ≤
       ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
   have hsum := integral_log_sum_le μ hf hh hzero hfi hhi hdiff
-  by_cases hB : (∫ x, h x ∂μ) = 0
-  · have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
+  have hBzero : (∫ x, h x ∂μ) = 0 → (∫ x, f x ∂μ) = 0 := by
+    intro hB
+    have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
       (integral_eq_zero_iff_of_nonneg_ae hh hhi).mp hB
     have hfzero : f =ᵐ[μ] fun _ ↦ 0 := by
       filter_upwards [hzero, hhzero] with x hx hhx
       exact hx hhx
-    have hA : (∫ x, f x ∂μ) = 0 := by
-      rw [integral_congr_ae hfzero]
-      simp
-    simpa [hA] using hsum
-  · by_cases hA : (∫ x, f x ∂μ) = 0
-    · simpa [hA] using hsum
-    · rw [Real.log_div hA hB] at hsum
-      linarith
+    rw [integral_congr_ae hfzero]
+    simp
+  rw [← Real.mul_log_div _ _ hBzero]
+  exact hsum
 
 /-- For an a.e. nonnegative function, entropy is convex under mixtures if
 the function, its `x log x` transform, both marginal `x log x` terms, and the marginal cross-log
@@ -233,8 +230,11 @@ private theorem entropy_integral_le_integral_entropy_aux {α β : Type*}
       g (x, y) * Real.log (b y) ∂ν ∂μ) =
       (∫ p, g p * Real.log (g p) ∂(μ.prod ν)) -
         ∫ y, b y * Real.log (b y) ∂ν := by
-    rw [integral_integral_sub hlog hcross, ← integral_prod _ hlog,
-      ← integral_prod _ hcross, hcross_eq]
+    have hfubini : (∫ x, ∫ y, g (x, y) * Real.log (g (x, y)) -
+        g (x, y) * Real.log (b y) ∂ν ∂μ) =
+        ∫ p, g p * Real.log (g p) - g p * Real.log (b p.2) ∂(μ.prod ν) := by
+      simpa only [Pi.sub_apply] using (integral_prod _ (hlog.sub hcross)).symm
+    rw [hfubini, integral_sub hlog hcross, hcross_eq]
   rw [hleft_eq, hright_eq] at hint'
   rw [entropy_def, ham]
   rw [integral_entropy_prod_right μ ν g hlog hmargy]

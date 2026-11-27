@@ -71,8 +71,18 @@ theorem mul_log_mul (c t : ℝ) :
   simp only [negMulLog_eq_neg] at h
   linear_combination -h
 
-/-- If `|s| ≤ t`, the `x log x` transform at `s` is bounded by the norm of
-the transform at `t`, up to the uniform bound on its negative part. -/
+/-- The weighted logarithm of a quotient splits when a zero denominator forces the numerator
+to vanish, including at zero. -/
+theorem mul_log_div (a b : ℝ) (h : b = 0 → a = 0) :
+    a * log (a / b) = a * log a - a * log b := by
+  by_cases ha : a = 0
+  · simp [ha]
+  · have hb : b ≠ 0 := fun hb ↦ ha (h hb)
+    rw [log_div ha hb]
+    ring
+
+/-- If `|s| ≤ t`, then `‖s * log s‖ ≤ ‖t * log t‖ + 1`. The additive constant bounds
+the negative part of `x * log x` on nonnegative inputs. -/
 theorem norm_mul_log_le_of_abs_le {s t : ℝ} (hst : |s| ≤ t) :
     ‖s * log s‖ ≤ ‖t * log t‖ + 1 := by
   have ht : 0 ≤ t := (abs_nonneg s).trans hst
