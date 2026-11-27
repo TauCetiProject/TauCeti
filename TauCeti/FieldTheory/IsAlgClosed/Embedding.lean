@@ -185,11 +185,9 @@ theorem exists_ringHom_extend_of_cardinal_le {D : Type*} {K : Type u} {E : Type 
     simpa only [RingHom.algebraMap_toAlgebra] using hf
   have : FaithfulSMul D E := (faithfulSMul_iff_algebraMap_injective D E).2 <| by
     simpa only [RingHom.algebraMap_toAlgebra] using hφ
-  have : Nontrivial D := f.domain_nontrivial
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis D K
   have htr : Cardinal.lift.{v} (trdeg D K) ≤ Cardinal.lift.{u} (trdeg D E) := by
-    rw [← hs.cardinalMk_eq_trdeg, TauCeti.trdeg_eq_cardinalMk hE]
-    exact (lift_le.2 (mk_set_le s)).trans h_le
+    rw [TauCeti.trdeg_eq_cardinalMk hE]
+    exact (lift_le.2 (TauCeti.trdeg_le_cardinalMk D K)).trans h_le
   obtain ⟨ψ, hψ_inj⟩ := exists_algHom_injective_of_lift_trdeg_le htr
   exact ⟨ψ.toRingHom, hψ_inj, RingHom.ext fun d ↦ by
     simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
