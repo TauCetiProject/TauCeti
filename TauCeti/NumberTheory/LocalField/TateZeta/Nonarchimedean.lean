@@ -46,6 +46,8 @@ and `dₙ = 0` for `n < -N`, which converges absolutely for `re s + r > 0`.
   for `re s + r > 0`; for unitary `ω` this is the half-plane `re s > 0`.
 * `TauCeti.TateZeta.differentiableOn_localZetaIntegral`: `s ↦ z(s, ω; f)` is holomorphic on
   `re s + r > 0`.
+* `TauCeti.TateZeta.norm_apply_mul_natCard_cpow_lt_one`: `‖ω(ϖ) q ^ (-s)‖ < 1` for a
+  uniformizer `ϖ` and `re s + r > 0`.
 * `TauCeti.TateZeta.localZetaIntegral_indicator_integer_of_unramified`: for `ω` unramified,
   `z(s, ω; 1_𝒪) = ν(𝒪[K]ˣ) (1 - ω(ϖ) q ^ (-s))⁻¹` on `re s + r > 0`, where `ϖ` is a uniformizer;
   with the normalized measure `TauCeti.unitsHaar K` (`ν(𝒪[K]ˣ) = 1`) this is the local
@@ -107,6 +109,19 @@ private theorem norm_apply_of_mem_valuationShell (c : Kˣ →ₜ* ℂˣ) {n : �
   congr 1
   push_cast
   ring
+
+/-- For a uniformizer `ϖ` and `re s + r > 0`, where `r` is the exponent of `ω`,
+`‖ω(ϖ) q ^ (-s)‖ = q ^ (-(re s + r)) < 1`. -/
+theorem norm_apply_mul_natCard_cpow_lt_one {ω : Kˣ →ₜ* ℂˣ} {ϖ : Kˣ} (hϖ : IsUniformizer K ϖ)
+    {s : ℂ} (hs : 0 < s.re + characterExponent K ω) :
+    ‖(ω ϖ : ℂ) * (Nat.card 𝓀[K] : ℂ) ^ (-s)‖ < 1 := by
+  have hq := one_lt_natCard_residueField (K := K) (R := ℝ)
+  have hq₀ : (0 : ℝ) < Nat.card 𝓀[K] := zero_lt_one.trans hq
+  have hϖ1 : ϖ ∈ valuationShell K 1 :=
+    mem_valuationShell.2 (by rw [(isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd])
+  rw [norm_mul, norm_apply_of_mem_valuationShell ω hϖ1, zpow_one, ← ofReal_natCast,
+    norm_cpow_eq_rpow_re_of_pos hq₀, neg_re, ← Real.rpow_add hq₀]
+  exact Real.rpow_lt_one_of_one_lt_of_neg hq (by linarith)
 
 variable [MeasurableSpace K] [BorelSpace K]
 
@@ -275,16 +290,9 @@ theorem localZetaIntegral_indicator_integer_of_unramified (ν : Measure Kˣ) [ν
     localZetaIntegral ν (fun x ↦ (normalizedAbsoluteValue K x : ℝ)) ω
         ((𝒪[K] : Set K).indicator 1) s =
       ν.real (unitFiltration K 0 : Set Kˣ) * (1 - ω ϖ * (Nat.card 𝓀[K] : ℂ) ^ (-s))⁻¹ := by
-  have hq := one_lt_natCard_residueField (K := K) (R := ℝ)
-  have hq₀ : (0 : ℝ) < Nat.card 𝓀[K] := zero_lt_one.trans hq
-  have hϖ1 : ϖ ∈ valuationShell K 1 :=
-    mem_valuationShell.2 (by rw [(isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd])
   set c : ℂ := (ν.real (unitFiltration K 0 : Set Kˣ) : ℂ)
   set w := (ω ϖ : ℂ) * (Nat.card 𝓀[K] : ℂ) ^ (-s)
-  have hw : ‖w‖ < 1 := by
-    rw [norm_mul, norm_apply_of_mem_valuationShell ω hϖ1, zpow_one, ← ofReal_natCast,
-      norm_cpow_eq_rpow_re_of_pos hq₀, neg_re, ← Real.rpow_add hq₀]
-    exact Real.rpow_lt_one_of_one_lt_of_neg hq (by linarith)
+  have hw : ‖w‖ < 1 := norm_apply_mul_natCard_cpow_lt_one hϖ hs
   have hd (n : ℤ) :
       (∫ x in valuationShell K n, (𝒪[K] : Set K).indicator 1 (x : K) * (ω x : ℂ) ∂ν) *
         ((Nat.card 𝓀[K] : ℂ) ^ (-s)) ^ n = if 0 ≤ n then c * w ^ n else 0 := by

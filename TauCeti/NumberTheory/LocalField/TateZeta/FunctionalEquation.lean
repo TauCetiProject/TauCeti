@@ -11,10 +11,10 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.MeasureTheory.Group.Correlation
-import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 import TauCeti.NumberTheory.LocalField.HaarCharacter
 import TauCeti.NumberTheory.LocalField.NormedField
 import TauCeti.NumberTheory.LocalField.Topology
+import TauCeti.NumberTheory.LocalField.Units.FormMeasure
 import TauCeti.NumberTheory.LocalField.Units.Shell
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
@@ -156,129 +156,41 @@ end Fourier
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [MeasurableSpace K] [BorelSpace K]
 
-/-- The density `|x|⁻¹` of the multiplicative Haar measure with respect to additive Haar
-measure, with value `∞` at `0`. -/
-private def invAbsDensity (x : K) : ℝ≥0∞ := (ENNReal.ofReal (normalizedAbsoluteValue K x : ℝ))⁻¹
-
-/-- The measure `|x|⁻¹ dμ(x)` on `Kˣ`. -/
-private def unitsModulusMeasure (μ : Measure K) : Measure Kˣ :=
-  (μ.withDensity invAbsDensity).comap Units.val
-
-private theorem measurable_invAbsDensity : Measurable (invAbsDensity (K := K)) := by
-  exact (ENNReal.measurable_ofReal.comp continuous_normalizedAbsoluteValue.measurable).inv
-
-/-- Integrating `h(u) |u|` against `|x|⁻¹ dμ` on `Kˣ` gives the additive integral of `h`. -/
-private theorem integral_unitsModulusMeasure (μ : Measure K) [μ.IsAddHaarMeasure] (h : K → ℂ) :
-    ∫ u : Kˣ, h u * ((normalizedAbsoluteValue K (u : K) : ℝ) : ℂ) ∂unitsModulusMeasure μ =
+/-- Integrating `h(u) |u|` against the form measure `|dx/x|` on `Kˣ` gives the additive integral
+of `h`. -/
+private theorem integral_unitsFormMeasure (μ : Measure K) [μ.IsAddHaarMeasure] (h : K → ℂ) :
+    ∫ u : Kˣ, h u * ((normalizedAbsoluteValue K (u : K) : ℝ) : ℂ) ∂unitsFormMeasure K μ =
       ∫ x, h x ∂μ := by
   have : NullSingletonClass μ := IsAddHaarMeasure.nullSingletonClass μ
-  have he : MeasurableEmbedding (Units.val : Kˣ → K) := Units.measurableEmbedding_val₀
-  have hv : range (Units.val : Kˣ → K) = {0}ᶜ := by
-    ext x
-    exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
-  rw [unitsModulusMeasure,
-    ← he.integral_map (g := fun x ↦ h x * ((normalizedAbsoluteValue K x : ℝ) : ℂ)),
-    he.map_comap, hv, restrict_withDensity (measurableSet_singleton 0).compl,
-    restrict_compl_singleton, integral_withDensity_eq_integral_toReal_smul
-      measurable_invAbsDensity ?_]
+  have hm : Measurable fun x : K ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ :=
+    (continuous_normalizedAbsoluteValue.subtype_mk fun _ ↦ NNRat.cast_nonneg _ :
+      Continuous fun x ↦ (normalizedAbsoluteValue K x : ℝ≥0)).measurable.coe_nnreal_ennreal.inv
+  rw [← Units.measurableEmbedding_val₀.integral_map
+      (g := fun x ↦ h x * ((normalizedAbsoluteValue K x : ℝ) : ℂ)),
+    map_val_unitsFormMeasure, integral_withDensity_eq_integral_toReal_smul hm ?_]
   · refine integral_congr_ae ?_
     filter_upwards [μ.ae_ne 0] with x hx
     have hx' : ((normalizedAbsoluteValue K x : ℝ) : ℂ) ≠ 0 := by
       exact_mod_cast (normalizedAbsoluteValue K).ne_zero hx
-    simp only [invAbsDensity, ENNReal.toReal_inv, ENNReal.toReal_ofReal (NNRat.cast_nonneg _),
-      Complex.real_smul, Complex.ofReal_inv]
+    have hc : ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ) = normalizedAbsoluteValue K x := rfl
+    simp only [ENNReal.toReal_inv, ENNReal.coe_toReal, hc, Complex.real_smul, Complex.ofReal_inv]
     field_simp
   · filter_upwards [μ.ae_ne 0] with x hx
-    simpa [invAbsDensity] using (normalizedAbsoluteValue K).ne_zero hx
-
-
-/-- Multiplication by `a ∈ Kˣ` preserves `|x|⁻¹ dμ`, since it scales `μ` by `|a|⁻¹`. -/
-private theorem map_smul_withDensity_invAbsDensity (μ : Measure K) [μ.IsAddHaarMeasure]
-    (a : Kˣ) : (μ.withDensity invAbsDensity).map (a • ·) = μ.withDensity invAbsDensity := by
-  refine map_smul_withDensity μ a fun x ↦ ?_
-  rw [distribHaarChar_eq_normalizedAbsoluteValue]
-  have ha : (0 : ℝ) < normalizedAbsoluteValue K (a : K) := by
-    exact_mod_cast (normalizedAbsoluteValue K).pos a.ne_zero
-  have hca : ((normalizedAbsoluteValue K (a : K) : ℝ≥0) : ℝ≥0∞) =
-      ENNReal.ofReal (normalizedAbsoluteValue K (a : K) : ℝ) := by
-    rw [← ENNReal.ofReal_coe_nnreal]
-    norm_cast
-  rw [invAbsDensity, invAbsDensity, Units.smul_def, smul_eq_mul, map_mul, NNRat.cast_mul, hca,
-    ENNReal.ofReal_mul ha.le]
-  rcases eq_or_ne x 0 with rfl | -
-  · rw [map_zero, NNRat.cast_zero, ENNReal.ofReal_zero, mul_zero, ENNReal.inv_zero,
-      ENNReal.mul_top (by simpa using ha)]
-  rw [ENNReal.mul_inv (Or.inl (ENNReal.ofReal_pos.2 ha).ne') (Or.inl ENNReal.ofReal_ne_top),
-    ENNReal.mul_inv_cancel_left (ENNReal.ofReal_pos.2 ha).ne' ENNReal.ofReal_ne_top]
-
-private instance (μ : Measure K) [μ.IsAddHaarMeasure] :
-    (unitsModulusMeasure μ).IsMulLeftInvariant := by
-  have he := Units.measurableEmbedding_val₀ (G₀ := K)
-  refine ⟨fun a ↦ ext fun s hs ↦ ?_⟩
-  have hset : (a • · : K → K) ⁻¹' (Units.val '' s) = Units.val '' ((a * ·) ⁻¹' s) := by
-    ext x
-    constructor
-    · rintro ⟨u, hu, hux⟩
-      refine ⟨a⁻¹ * u, by simpa using hu, ?_⟩
-      have hux' : (u : K) = a • x := hux
-      change ((a⁻¹ : Kˣ) : K) * u = x
-      rw [hux', Units.smul_def, smul_eq_mul, ← mul_assoc, ← Units.val_mul, inv_mul_cancel,
-        Units.val_one, one_mul]
-    · rintro ⟨v, hv, rfl⟩
-      exact ⟨a * v, hv, by simp [Units.smul_def]⟩
-  rw [map_apply (measurable_const_mul a) hs, unitsModulusMeasure, he.comap_apply,
-    he.comap_apply, ← hset, ← map_apply (continuous_const_smul (a : Kˣ)).measurable
-      (he.measurableSet_image' hs), map_smul_withDensity_invAbsDensity]
-
-private instance (μ : Measure K) [μ.IsAddHaarMeasure] :
-    IsFiniteMeasureOnCompacts (unitsModulusMeasure μ) := by
-  have he := Units.measurableEmbedding_val₀ (G₀ := K)
-  refine ⟨fun S hS ↦ ?_⟩
-  rcases S.eq_empty_or_nonempty with rfl | hne
-  · simp
-  have hcont : Continuous fun u : Kˣ ↦ (normalizedAbsoluteValue K (u : K) : ℝ) :=
-    continuous_normalizedAbsoluteValue.comp Units.continuous_val
-  obtain ⟨u₀, -, hmin⟩ := hS.exists_isMinOn hne hcont.continuousOn
-  have hδ : (0 : ℝ) < normalizedAbsoluteValue K (u₀ : K) := by
-    exact_mod_cast (normalizedAbsoluteValue K).pos u₀.ne_zero
-  have hSm : MeasurableSet (Units.val '' S) := he.measurableSet_image' hS.measurableSet
-  rw [unitsModulusMeasure, he.comap_apply, withDensity_apply _ hSm]
-  calc ∫⁻ x in Units.val '' S, invAbsDensity x ∂μ
-      ≤ ∫⁻ _ in Units.val '' S, (ENNReal.ofReal (normalizedAbsoluteValue K (u₀ : K) : ℝ))⁻¹ ∂μ :=
-        setLIntegral_mono measurable_const fun x ⟨u, hu, hux⟩ ↦ by
-          rw [← hux]
-          exact ENNReal.inv_le_inv.2 (ENNReal.ofReal_le_ofReal (hmin hu))
-    _ = (ENNReal.ofReal (normalizedAbsoluteValue K (u₀ : K) : ℝ))⁻¹ * μ (Units.val '' S) :=
-        setLIntegral_const _ _
-    _ < ⊤ := ENNReal.mul_lt_top (ENNReal.inv_lt_top.2 (ENNReal.ofReal_pos.2 hδ))
-        (hS.image Units.continuous_val).measure_lt_top
+    simpa using (normalizedAbsoluteValue K).ne_zero hx
 
 /-- **Additive and multiplicative Haar measures.** For an additive Haar measure `μ` on `K` and a
 Haar measure `ν` on `Kˣ` there is a constant `c > 0` with `∫ h dμ = c ∫_{Kˣ} h(u) |u| dν(u)` for
-every `h : K → ℂ`: the measure `|u| dν(u)` is a multiple of `μ` on `Kˣ`, and `{0}` is `μ`-null. -/
+every `h : K → ℂ`: the form measure `|dx/x|` is a multiple of `ν`, and `{0}` is `μ`-null. -/
 theorem exists_pos_forall_integral_eq_smul_integral_units (μ : Measure K) [μ.IsAddHaarMeasure]
     (ν : Measure Kˣ) [ν.IsHaarMeasure] :
     ∃ c : ℝ, 0 < c ∧ ∀ h : K → ℂ,
       ∫ x, h x ∂μ = c • ∫ u : Kˣ, h u * ((normalizedAbsoluteValue K (u : K) : ℝ) : ℂ) ∂ν := by
   have := (Units.isEmbedding_val₀ (G₀ := K)).secondCountableTopology
-  have hρ := isMulLeftInvariant_eq_smul (unitsModulusMeasure μ) ν
-  set c := haarScalarFactor (unitsModulusMeasure μ) ν
-  have key (h : K → ℂ) : ∫ x, h x ∂μ =
-      (c : ℝ) • ∫ u : Kˣ, h u * ((normalizedAbsoluteValue K (u : K) : ℝ) : ℂ) ∂ν := by
-    rw [← integral_unitsModulusMeasure μ h, hρ, integral_smul_nnreal_measure, NNReal.smul_def]
-  refine ⟨c, lt_of_le_of_ne c.coe_nonneg fun hc ↦ ?_, key⟩
-  -- If `c = 0`, then `μ(𝒪[K]) = 0`, which is absurd.
-  have hOc : IsCompact (𝒪[K] : Set K) := by
-    simpa using (integerPositiveCompacts K).isCompact
-  have hOm : MeasurableSet (𝒪[K] : Set K) := hOc.isClosed.measurableSet
-  have h0 := key ((𝒪[K] : Set K).indicator fun _ ↦ 1)
-  rw [← hc, zero_smul, integral_indicator_const _ hOm, Complex.real_smul,
-    mul_one, Complex.ofReal_eq_zero] at h0
-  have hpos : 0 < μ (𝒪[K] : Set K) := by
-    simpa using (μ.measure_pos_of_nonempty_interior
-      (integerPositiveCompacts K).interior_nonempty :)
-  exact (ENNReal.toReal_pos hpos.ne' hOc.measure_lt_top.ne).ne' h0
-
+  have hρ := isMulLeftInvariant_eq_smul (unitsFormMeasure K μ) ν
+  set c := haarScalarFactor (unitsFormMeasure K μ) ν
+  have hc : c ≠ 0 := fun hc ↦ NeZero.ne (unitsFormMeasure K μ) (by rw [hρ, hc, zero_smul])
+  refine ⟨c, NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc), fun h ↦ ?_⟩
+  rw [← integral_unitsFormMeasure μ h, hρ, integral_smul_nnreal_measure, NNReal.smul_def]
 
 /-! ### Tate's local functional equation -/
 
@@ -535,18 +447,8 @@ omit [MeasurableSpace K] [BorelSpace K] in
 `1 - ω(ϖ) q ^ (-s) ≠ 0`: the second term has norm `q ^ (-(re s + r)) < 1`. -/
 theorem one_sub_mul_natCard_cpow_ne_zero {ω : Kˣ →ₜ* ℂˣ} {ϖ : Kˣ} (hϖ : IsUniformizer K ϖ)
     {s : ℂ} (hs : 0 < s.re + characterExponent K ω) :
-    1 - (ω ϖ : ℂ) * (Nat.card 𝓀[K] : ℂ) ^ (-s) ≠ 0 := by
-  have hq := one_lt_natCard_residueField (K := K) (R := ℝ)
-  have hq₀ : (0 : ℝ) < Nat.card 𝓀[K] := zero_lt_one.trans hq
-  intro h
-  have hn : ‖(ω ϖ : ℂ) * (Nat.card 𝓀[K] : ℂ) ^ (-s)‖ < 1 := by
-    rw [norm_mul, norm_coe_apply_eq_rpow_characterExponent, coe_normalizedAbsoluteValue_eq_zpow,
-      (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, ← ofReal_natCast,
-      norm_cpow_eq_rpow_re_of_pos hq₀, neg_re, ← Real.rpow_intCast, ← Real.rpow_mul hq₀.le,
-      ← Real.rpow_add hq₀]
-    exact Real.rpow_lt_one_of_one_lt_of_neg hq (by push_cast; linarith)
-  rw [← (sub_eq_zero.1 h), norm_one] at hn
-  exact lt_irrefl _ hn
+    1 - (ω ϖ : ℂ) * (Nat.card 𝓀[K] : ℂ) ^ (-s) ≠ 0 := fun h ↦
+  (norm_apply_mul_natCard_cpow_lt_one hϖ hs).ne (by rw [← sub_eq_zero.1 h, norm_one])
 
 /-- **The unramified gamma factor.** If `ω` is unramified, `ψ` has conductor exponent `0` and
 `μ(𝒪[K]) = 1`, then on the strip `0 < re s + r < 1`,
