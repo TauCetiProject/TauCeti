@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bifunctor
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 public import TauCeti.CategoryTheory.Localization.DerivabilityStructure.Derives
 public import TauCeti.CategoryTheory.Functor.Derived.LeftDerivedTwo
-public import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Product
 
@@ -1169,7 +1168,7 @@ lemma koszulDerivedFlipIso_involutive :
           (MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
             (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C))) := by
   ext K L
-  simp
+  simp [← DerivedCategory.Q.map_comp]
 
 section General
 

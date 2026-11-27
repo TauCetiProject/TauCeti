@@ -25,11 +25,7 @@ and the unitor identity `(λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom` expressed thro
 `β_ X (𝟙_ C)` of `X` past the tensor unit.
 
 It also records that the inverse tensorator `δ` of a braided functor commutes with the braiding
-(`CategoryTheory.Functor.δ_braiding`), the `δ`-form of `Functor.map_braiding`, that in a
-symmetric monoidal category `(β_ X Y).inv = (β_ Y X).hom`
-(`CategoryTheory.SymmetricCategory.inv_braiding_eq_braiding_swap`), and that any functor out of a
-symmetric monoidal category sends `(β_ X Y).hom` and `(β_ Y X).hom` to mutually inverse morphisms
-(`CategoryTheory.SymmetricCategory.map_braiding_hom_comp_map_braiding_hom`).
+(`CategoryTheory.Functor.δ_braiding`), the `δ`-form of `Functor.map_braiding`.
 -/
 
 public section
@@ -124,25 +120,3 @@ theorem _root_.CategoryTheory.Functor.δ_braiding {D : Type*} [Category* D] [Mon
   simp
 
 end TauCeti
-
-namespace CategoryTheory.SymmetricCategory
-
-variable {C : Type*} [Category* C] [MonoidalCategory C] [SymmetricCategory C]
-
-/-- In a symmetric monoidal category, the inverse braiding `(β_ X Y).inv` equals the swapped
-forward braiding `(β_ Y X).hom`. -/
-@[simp]
-theorem inv_braiding_eq_braiding_swap (X Y : C) :
-    (β_ X Y).inv = (β_ Y X).hom :=
-  (braiding_swap_eq_inv_braiding X Y).symm
-
-variable {D : Type*} [Category* D] (F : C ⥤ D)
-
-/-- A functor out of a symmetric monoidal category sends the braiding and its swap to mutually
-inverse morphisms. -/
-@[reassoc (attr := simp)]
-theorem map_braiding_hom_comp_map_braiding_hom (X Y : C) :
-    F.map (β_ X Y).hom ≫ F.map (β_ Y X).hom = 𝟙 (F.obj (X ⊗ Y)) := by
-  rw [← F.map_comp, symmetry, F.map_id]
-
-end CategoryTheory.SymmetricCategory
