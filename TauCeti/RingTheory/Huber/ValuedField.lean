@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Completion.Basic
+public import TauCeti.Analysis.Normed.Ring.Ultra
+public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
 import Mathlib.RingTheory.Valuation.Integral
@@ -16,7 +18,9 @@ import Mathlib.RingTheory.Valuation.Integral
 The valuation subring of a valued field is open and bounded, at arbitrary rank.
 Consequently a nonzero topologically nilpotent element makes the field a Tate ring,
 and its valuation subring is a ring of integral elements. These results apply to
-completed valued residue fields without choosing a real-valued norm.
+completed valued residue fields without choosing a real-valued norm. For an ultrametric normed
+field `K` the valuation subring is the valuation ring `𝒪[K]`
+(`TauCeti.Huber.isRingOfIntegralElements_integer`).
 -/
 
 public section
@@ -79,5 +83,18 @@ theorem completionPlus_valuationSubring :
   · rw [← hpre]
     exact UniformSpace.Completion.denseRange_coe.subset_closure_image_preimage_of_isOpen
       (Valued.isOpen_valuationSubring _)
+
+end TauCeti.Huber
+
+namespace TauCeti.Huber
+
+open scoped NormedField Valued
+
+/-- **The valuation ring of an ultrametric normed field is a ring of integral elements.** This is
+`isRingOfIntegralElements_valuationSubring` for the valuation of the norm, stated for `𝒪[K]`, so
+that constructions over `𝒪[K]`, such as `PreTilt 𝒪[K] p`, find their instances. -/
+theorem isRingOfIntegralElements_integer (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    IsRingOfIntegralElements 𝒪[K] :=
+  isRingOfIntegralElements_valuationSubring K
 
 end TauCeti.Huber
