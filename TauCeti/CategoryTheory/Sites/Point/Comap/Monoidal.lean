@@ -120,6 +120,9 @@ identifications of the stalks of pullbacks at `Φ` with stalks at `Ψ`
 of stalks (`OplaxMonoidal.δ` of the fibre functors). -/
 theorem isIso_sheafFiber_map_sheafPullback_δ (F G : Sheaf J A) :
     IsIso (Φ.sheafFiber.map (δ (u.sheafPullback A J K) F G)) :=
+  -- The germ lemma concludes `IsIso (Φ.presheafFiber.map (δ …).hom)`, which is this goal after
+  -- unfolding the definition `Point.sheafFiber` (`sheafToPresheaf K A ⋙ Φ.presheafFiber`), so
+  -- that `Φ.sheafFiber.map f` is `Φ.presheafFiber.map f.hom`.
   isIso_presheafFiber_map_sheafPullback_δ_hom_of_germs Φ u e A
     ((Φ.sheafPullbackCompSheafFiberIso u e A).app F)
     ((Φ.sheafPullbackCompSheafFiberIso u e A).app G)
@@ -169,6 +172,9 @@ theorem isIso_sheafFiber_map_sheafPullback_η :
   rw [isIso_comp_left_iff] at h
   -- Instance search does not see through the `Point.sheafFiber` boundary in the type of `N.inv`.
   have h' := @IsIso.of_isIso_comp_left _ _ _ _ _ N.inv _ inferInstance h
+  -- This closes the goal `IsIso (Φ.sheafFiber.map (η …))` with a proof of
+  -- `IsIso (Φ.presheafFiber.map (η …).hom)`: the two agree after unfolding the definition
+  -- `Point.sheafFiber` (`sheafToPresheaf K A ⋙ Φ.presheafFiber`).
   exact @IsIso.of_isIso_comp_right _ _ _ _ _
     (Φ.presheafFiber.map (η (u.sheafPullback A J K)).hom)
     (inv (Φ.presheafFiber.map (Sheaf.toTensorUnit K A)) ≫ η Φ.presheafFiber) inferInstance h'
