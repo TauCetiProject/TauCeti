@@ -53,8 +53,7 @@ within every `ρ > ε` of a point of `S` the density does not vanish
 (`TauCeti.SeibergWitten.exists_mem_closedBall_dist_lt_ne_zero`), and a subdisc of radius `ρ₁`
 carrying charge `κ` has a point of `S` within `ρ` once `ε < (ρ - ρ₁) (κ - ν)`, where `ν` bounds
 the negative mass (`TauCeti.SeibergWitten.exists_mem_dist_lt_of_le_setIntegral`). Both are
-tested against a tent function; the second uses a Lipschitz plateau
-(`TauCeti.SeibergWitten.exists_lipschitzWith_one_plateau`).
+tested against a Lipschitz plateau (`TauCeti.SeibergWitten.exists_lipschitzWith_one_plateau`).
 
 ## References
 
@@ -75,42 +74,6 @@ universe u
 
 /-! ### Atoms of a bounded-Lipschitz approximation -/
 
-/-- **No point of the approximating multiset is missed.** Let `f` be a density whose normalized
-slice `f dλ / 2π` on the closed disc of radius `R` is within `ε < 1` of the counting measure of a
-multiset `S`, against every `1`-Lipschitz function bounded by `1`. Then for every `ρ > ε`, within
-distance `ρ` of every point of `S` there is a point of the disc where `f` does not vanish. -/
-theorem exists_mem_closedBall_dist_lt_ne_zero {f : ℂ → ℝ} {R ε ρ : ℝ} {S : Multiset ℂ}
-    (hS : ∀ g : ℂ → ℝ, LipschitzWith 1 g → (∀ w, |g w| ≤ 1) →
-      |(2 * π)⁻¹ * (∫ w in closedBall 0 R, f w * g w) - (S.map g).sum| ≤ ε)
-    (hε : ε < 1) (hερ : ε < ρ) {V : ℂ} (hV : V ∈ S) :
-    ∃ w ∈ closedBall (0 : ℂ) R, dist w V < ρ ∧ f w ≠ 0 := by
-  by_contra! hf
-  -- The tent `g w = max (t - |w - V|) 0`, of height `t = min ρ 1` at `V`, lives where `f = 0`.
-  set t := min ρ 1
-  have hεt : ε < t := lt_min hερ hε
-  set g : ℂ → ℝ := fun w ↦ max (t - dist w V) 0 with hg
-  have hgL : LipschitzWith 1 g := by
-    simpa using ((LipschitzWith.const t).sub (LipschitzWith.dist_left V)).max_const 0
-  have hg₀ (w : ℂ) : 0 ≤ g w := le_max_right _ _
-  have hg₁ (w : ℂ) : |g w| ≤ 1 := by
-    rw [abs_of_nonneg (hg₀ w)]
-    exact max_le (by linarith [dist_nonneg (x := w) (y := V), min_le_right ρ 1]) zero_le_one
-  have hint : ∫ w in closedBall 0 R, f w * g w = 0 := by
-    refine setIntegral_eq_zero_of_forall_eq_zero fun w hw ↦ ?_
-    rcases lt_or_ge (dist w V) t with hlt | hge
-    · rw [hf w hw (hlt.trans_le (min_le_left _ _)), zero_mul]
-    · rw [show g w = 0 from max_eq_right (by linarith), mul_zero]
-  have := hS g hgL hg₁
-  have ht₀ : 0 ≤ t := by linarith [(abs_nonneg _).trans this]
-  have hgV : g V = t := by
-    simp only [hg, dist_self, sub_zero]
-    exact max_eq_left ht₀
-  have hsum : t ≤ (S.map g).sum := hgV ▸ Multiset.single_le_sum (fun x hx ↦ by
-    obtain ⟨y, -, rfl⟩ := Multiset.mem_map.1 hx
-    exact hg₀ y) (g V) (Multiset.mem_map_of_mem g hV)
-  rw [hint, mul_zero, zero_sub, abs_neg, abs_of_nonneg (by linarith)] at this
-  linarith
-
 /-- **A Lipschitz plateau.** For `0 ≤ t ≤ 1`, a centre `w₀` and a radius `ρ`, there is a
 `1`-Lipschitz function `g` with values in `[0, t]`, equal to `t` within `ρ - t` of `w₀` and to `0`
 at distance at least `ρ` from `w₀`, namely `max (min t (ρ - |w - w₀|)) 0`. It is a test function
@@ -126,6 +89,35 @@ theorem exists_lipschitzWith_one_plateau {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t 
   · dsimp only
     rw [min_eq_left (by linarith), max_eq_left ht₀]
   · exact max_eq_right ((min_le_right _ _).trans (by linarith))
+
+/-- **No point of the approximating multiset is missed.** Let `f` be a density whose normalized
+slice `f dλ / 2π` on the closed disc of radius `R` is within `ε < 1` of the counting measure of a
+multiset `S`, against every `1`-Lipschitz function bounded by `1`. Then for every `ρ > ε`, within
+distance `ρ` of every point of `S` there is a point of the disc where `f` does not vanish. -/
+theorem exists_mem_closedBall_dist_lt_ne_zero {f : ℂ → ℝ} {R ε ρ : ℝ} {S : Multiset ℂ}
+    (hS : ∀ g : ℂ → ℝ, LipschitzWith 1 g → (∀ w, |g w| ≤ 1) →
+      |(2 * π)⁻¹ * (∫ w in closedBall 0 R, f w * g w) - (S.map g).sum| ≤ ε)
+    (hε : ε < 1) (hερ : ε < ρ) {V : ℂ} (hV : V ∈ S) :
+    ∃ w ∈ closedBall (0 : ℂ) R, dist w V < ρ ∧ f w ≠ 0 := by
+  by_contra! hf
+  -- The plateau `g`, of height `t = min ρ 1` at `V` and vanishing off the open disc of radius `t`
+  -- about `V`, lives where `f = 0`.
+  set t := min ρ 1
+  have hεt : ε < t := lt_min hερ hε
+  have hε₀ : 0 ≤ ε := by simpa using hS (fun _ ↦ 0) (LipschitzWith.const' 0) (by simp)
+  obtain ⟨g, hgL, hgt, hg₁, hg_in, hg_out⟩ :=
+    exists_lipschitzWith_one_plateau (hε₀.trans hεt.le) (min_le_right _ _) V t
+  have hint : ∫ w in closedBall 0 R, f w * g w = 0 := by
+    refine setIntegral_eq_zero_of_forall_eq_zero fun w hw ↦ ?_
+    rcases lt_or_ge (dist w V) t with hlt | hge
+    · rw [hf w hw (hlt.trans_le (min_le_left _ _)), zero_mul]
+    · rw [hg_out w hge, mul_zero]
+  have := hS g hgL hg₁
+  have hsum : t ≤ (S.map g).sum := hg_in V (by simp) ▸ Multiset.single_le_sum (fun x hx ↦ by
+    obtain ⟨y, -, rfl⟩ := Multiset.mem_map.1 hx
+    exact (hgt y).1) (g V) (Multiset.mem_map_of_mem g hV)
+  rw [hint, mul_zero, zero_sub, abs_neg, abs_of_nonneg (by linarith)] at this
+  linarith
 
 /-- **A charged subdisc is near a point of the approximating multiset.** Let `f` be a density,
 integrable on the closed disc of radius `R`, whose normalized slice `f dλ / 2π` on that disc is
