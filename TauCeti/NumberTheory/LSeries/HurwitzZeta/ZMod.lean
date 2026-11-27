@@ -40,8 +40,12 @@ theorem LFunction_eq_cpow_mul_sum_Icc_complexHurwitzSeries (Φ : ZMod N → ℂ)
     ZMod.LFunction Φ s =
       (N : ℂ) ^ (-s) *
         ∑ a ∈ Finset.Icc 1 N, Φ a * TauCeti.complexHurwitzSeries s ((a : ℂ) / N) :=
-  LFunction_eq_cpow_mul_sum_Icc_of_eq_hurwitzZeta Φ s
-    fun _ hx => TauCeti.complexHurwitzSeries_ofReal hx.1 hx.2 hs
+  LFunction_eq_cpow_mul_sum_Icc_of_eq_hurwitzZeta Φ s fun a ha => by
+    obtain ⟨ha1, haN⟩ := Finset.mem_Icc.mp ha
+    have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
+    simpa [Complex.ofReal_div, Complex.ofReal_natCast] using
+      TauCeti.complexHurwitzSeries_ofReal (div_pos (Nat.cast_pos.mpr ha1) hN)
+        ((div_le_one hN).mpr (Nat.cast_le.mpr haN)) hs
 
 end ZMod
 

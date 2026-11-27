@@ -25,8 +25,10 @@ decays like `exp (-t)` at `+∞`, and for `t > 0` it is the geometric series
 `∑_{k ≥ 0} exp (-((k + 1) t))`.
 
 Over any complete characteristic-zero normed field `𝕜` with `[ContinuousSMul ℚ 𝕜]` (and in
-particular over `ℂ`), factoring `exp z` from `exp z - 1` gives `exp z - 1 = exp z * (1 - exp (-z))`,
-`exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1)`, and
+particular over `ℂ`), factoring `exp z` from `exp z - 1` gives `exp z - 1 = exp z * (1 - exp (-z))`
+in any complete commutative normed `𝕜`-algebra
+(`NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg`), and over `𝕜` itself gives
+`exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1)` and
 `exp (-z) / (1 - exp (-z)) = (exp z - 1)⁻¹`.
 
 ## Main results
@@ -39,8 +41,9 @@ particular over `ℂ`), factoring `exp z` from `exp z - 1` gives `exp z - 1 = ex
 * `Real.hasSum_exp_neg_nat_succ_mul`: `g(t) = ∑_{k ≥ 0} exp (-((k + 1) t))` for `t > 0`.
 * `Real.hasSum_mul_exp_neg_nat_succ_mul`: `a / (exp t - 1) = ∑_{k ≥ 0} a * exp (-((k + 1) t))`
   for `t > 0`.
-* `NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg`,
-  `NormedSpace.exp_neg_mul_div_one_sub_exp_neg`, `NormedSpace.exp_neg_div_one_sub_exp_neg`:
+* `NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg`: general commutative Banach-algebra
+  factorization `exp z - 1 = exp z * (1 - exp (-z))`.
+* `NormedSpace.exp_neg_mul_div_one_sub_exp_neg`, `NormedSpace.exp_neg_div_one_sub_exp_neg`:
   general normed-field quotient rewrites.
 * `Complex.exp_sub_one_eq_exp_mul_one_sub_exp_neg`,
   `Complex.exp_neg_mul_div_one_sub_exp_neg`, `Complex.exp_neg_div_one_sub_exp_neg`:
@@ -108,26 +111,34 @@ end Real
 
 namespace NormedSpace
 
+section CommAlgebra
+
+variable (𝕜 : Type*) {A : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+  [NormedCommRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
+
+include 𝕜 in
+/-- Factoring out `NormedSpace.exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
+theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : A) :
+    exp z - 1 = exp z * (1 - exp (-z)) := by
+  rw [mul_sub, mul_one, ← exp_add_of_continuousSMul 𝕜, add_neg_cancel, exp_zero]
+
+end CommAlgebra
+
 section Field
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
   [CompleteSpace 𝕜]
 
-/-- Factoring out `NormedSpace.exp z` rewrites `exp z - 1` as `exp z * (1 - exp (-z))`. -/
-theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : 𝕜) :
-    exp z - 1 = exp z * (1 - exp (-z)) := by
-  rw [mul_sub, mul_one, ← exp_add_of_continuousSMul, add_neg_cancel, exp_zero]
-
 /-- Rewriting `exp (-c * z) / (1 - exp (-z))` with denominator `exp z - 1`. -/
 theorem exp_neg_mul_div_one_sub_exp_neg (c z : 𝕜) :
     exp (-c * z) / (1 - exp (-z)) = exp ((1 - c) * z) / (exp z - 1) := by
   have hnum : exp z * exp (-c * z) = exp ((1 - c) * z) := by
-    rw [← exp_add_of_continuousSMul]
+    rw [← exp_add_of_continuousSMul 𝕜]
     congr 1
     ring
   have hne : exp z ≠ 0 :=
-    left_ne_zero_of_mul_eq_one (by rw [← exp_add_of_continuousSMul, add_neg_cancel, exp_zero])
-  rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg, ← hnum, mul_div_mul_left _ _ hne]
+    left_ne_zero_of_mul_eq_one (by rw [← exp_add_of_continuousSMul 𝕜, add_neg_cancel, exp_zero])
+  rw [exp_sub_one_eq_exp_mul_one_sub_exp_neg 𝕜, ← hnum, mul_div_mul_left _ _ hne]
 
 /-- Coefficient-free specialization of `exp_neg_mul_div_one_sub_exp_neg`:
 `exp (-z) / (1 - exp (-z)) = (exp z - 1)⁻¹`. -/
@@ -145,7 +156,7 @@ namespace Complex
 theorem exp_sub_one_eq_exp_mul_one_sub_exp_neg (z : ℂ) :
     exp z - 1 = exp z * (1 - exp (-z)) := by
   simpa only [Complex.exp_eq_exp_ℂ] using
-    NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg z
+    NormedSpace.exp_sub_one_eq_exp_mul_one_sub_exp_neg ℂ z
 
 /-- Rewriting `Complex.exp (-c * z) / (1 - Complex.exp (-z))` with denominator `exp z - 1`. -/
 theorem exp_neg_mul_div_one_sub_exp_neg (c z : ℂ) :

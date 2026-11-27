@@ -137,7 +137,7 @@ private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) 
 theorem integrableOn_hurwitzHeadIntegrand (M : ℕ) {s c : ℂ} (hs : -(M : ℝ) < s.re) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t) (Ioc 0 1) := by
   obtain ⟨B, _, hB⟩ :=
-    exists_norm_hurwitzTaylorQuot_le_of_mem_Icc (isCompact_singleton (x := c)) M
+    exists_norm_hurwitzTaylorQuot_le_on_Icc (isCompact_singleton (x := c)) M
   have hint : IntegrableOn (fun t : ℝ => B * t ^ (s.re + M - 1)) (Ioc 0 1) :=
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
       (intervalIntegral.intervalIntegrable_rpow' (by linarith))).const_mul B
@@ -159,7 +159,7 @@ theorem analyticOnNhd_hurwitzHeadIntegral (M : ℕ) :
     let δ := (p₀.1.re + (M : ℝ)) / 2
     have hδ : 0 < δ := by dsimp [δ]; linarith
     obtain ⟨B, hB0, hB⟩ :=
-      exists_norm_hurwitzTaylorQuot_le_of_mem_Icc (isCompact_closedBall p₀.2 1) M
+      exists_norm_hurwitzTaylorQuot_le_on_Icc (isCompact_closedBall p₀.2 1) M
     refine ⟨{p | δ - M < p.1.re} ∩ (Prod.snd ⁻¹' closedBall p₀.2 1),
       Filter.inter_mem ((isOpen_lt continuous_const (continuous_re.comp continuous_fst)).mem_nhds
         (by dsimp [δ]; linarith)) (continuous_snd.continuousAt.preimage_mem_nhds

@@ -24,9 +24,10 @@ shared scalar bound `(1 - exp (-t))⁻¹ ≤ 1 + t⁻¹` (`TauCeti.inv_one_sub_e
 compact subset of `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}` admits a common integrable majorant
 (`TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`).
 
-Termwise integration of `exp ((1 - c) * t) / (exp t - 1) = ∑_{k ≥ 0} exp (-(k + c) * t)` gives the
-infinite series representation `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`, and specializing
-to `c = 1` yields `TauCeti.integrableOn_cpow_div_exp_sub_one`.
+For `1 < Re s` and `0 < Re c`, termwise integration of the `t > 0` geometric expansion
+`exp ((1 - c) * t) / (exp t - 1) = ∑_{k ≥ 0} exp (-(k + c) * t)` over any subset of `(0, ∞)`
+gives the infinite series representation `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`, and
+specializing to `c = 1` (for `1 < Re s`) yields `TauCeti.integrableOn_cpow_div_exp_sub_one`.
 
 ## Main results
 
@@ -36,9 +37,9 @@ to `c = 1` yields `TauCeti.integrableOn_cpow_div_exp_sub_one`.
 * `TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`:
   parameter-uniform integrable majorant on compact subsets of
   `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`.
-* `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`: termwise integration of
-  `t^{s−1} e^{(1−c)t}/(e^t − 1) = ∑_{k ≥ 0} t^{s−1} e^{−(k+c)t}` over any subset of `(0, ∞)` for
-  `1 < s.re` and `0 < c.re`.
+* `TauCeti.hasSum_setIntegral_cpow_mul_exp_neg_mul`: for `1 < s.re` and `0 < c.re`, termwise
+  integration of the `t > 0` expansion
+  `t^{s−1} e^{(1−c)t}/(e^t − 1) = ∑_{k ≥ 0} t^{s−1} e^{−(k+c)t}` over any subset of `(0, ∞)`.
 * `TauCeti.integrableOn_cpow_div_exp_sub_one`: integrability of `t ↦ t^{s−1}/(e^t − 1)` on
   `(0, ∞)` for `1 < Re s`.
 -/

@@ -43,12 +43,13 @@ theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [NontriviallyNormedFiel
     dslope (exp : 𝕜 → 𝕜) a b = exp a * dslope (exp : 𝕜 → 𝕜) 0 (b - a) := by
   by_cases hab : b = a
   · subst hab
-    simp [dslope_same, (hasDerivAt_exp_of_continuousSMul b).deriv,
-      (hasDerivAt_exp_of_continuousSMul (0 : 𝕜)).deriv]
+    have hderiv (x : 𝕜) : HasDerivAt (exp : 𝕜 → 𝕜) (exp x) x := by
+      simpa using (hasFDerivAt_exp_of_continuousSMul 𝕜 x).hasDerivAt
+    simp [dslope_same, (hderiv b).deriv, (hderiv 0).deriv]
   · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
     rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
     simp only [sub_zero, exp_zero]
-    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_of_continuousSMul, add_sub_cancel]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_of_continuousSMul 𝕜, add_sub_cancel]
 
 end NormedSpace
 
