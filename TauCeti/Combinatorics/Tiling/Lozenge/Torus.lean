@@ -294,7 +294,7 @@ theorem isHeightFunction_floorHeight (hab : n₂ * a + n₁ * b ≤ n₁ * n₂)
   rw [TriEdge.target_mk, floorHeight_def, floorHeight_def, Prod.fst_add, Prod.snd_add, mul_add,
     mul_add, add_add_add_comm]
   generalize ((n₂ * a : ℕ) : ℤ) = A, ((n₁ * b : ℕ) : ℤ) = B, ((n₁ * n₂ : ℕ) : ℤ) = N at *
-  refine Int.ediv_add_sub_ediv ?_ ?_ <;> fin_cases k <;> simp <;> linarith
+  refine Int.ediv_add_sub_ediv_eq_zero_or_one ?_ ?_ <;> fin_cases k <;> simp <;> linarith
 
 @[simp] theorem floorHeight_zero : floorHeight n₁ n₂ a b 0 = 0 := by
   simp [floorHeight_def]
