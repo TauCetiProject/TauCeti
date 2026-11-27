@@ -83,17 +83,11 @@ theorem firstChernClass_tensorProduct_eq_singularCohomologyMap_of_fiberwise {g :
       TopCat.singularCohomologyMap (TopCat.ofHom g) 2
         (firstChernClass (ProjectiveTensor ℂ F₁ F₂) (fun x ↦ E₁ x ⊗[ℂ] E₂ x)) :=
   firstChernClass_eq_singularCohomologyMap_of_fiberwise
-    (φ := fun y ↦ (_root_.TensorProduct.congr (φ₁ y).toLinearEquiv
-      (φ₂ y).toLinearEquiv).toContinuousLinearEquivOfIsModuleTopology)
+    (φ := bundleTensorCongr (E₁' := fun y ↦ E₁ (g y)) (E₂' := fun y ↦ E₂ (g y)) φ₁ φ₂)
     ((continuous_tensorProduct_map (φ₁ := fun y ↦ (φ₁ y : E₁' y →L[ℂ] E₁ (g y)))
-      (φ₂ := fun y ↦ (φ₂ y : E₂' y →L[ℂ] E₂ (g y))) hφ₁ hφ₂).congr fun p ↦ by
-      rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
-        ← LinearEquiv.coe_toLinearMap, _root_.TensorProduct.toLinearMap_congr]
-      -- The linear maps underlying `φᵢ` as continuous linear maps and as linear equivalences
-      -- agree as functions.
-      refine congrArg (TotalSpace.mk' _ (g p.proj))
-        (LinearMap.congr_fun (congrArg₂ _root_.TensorProduct.map ?_ ?_) p.snd) <;>
-      exact LinearMap.coe_injective (by simp))
+      (φ₂ := fun y ↦ (φ₂ y : E₂' y →L[ℂ] E₂ (g y))) hφ₁ hφ₂).congr fun p ↦
+      congrArg (TotalSpace.mk' _ (g p.proj))
+        (LinearMap.congr_fun (_root_.TensorProduct.ext' fun v w ↦ by simp) p.snd))
 
 /-- **Naturality of `c₁` of a tensor product under pullback**: for a continuous map
 `g : B' → B`, `c₁(g^*E₁ ⊗ g^*E₂) = g^* c₁(E₁ ⊗ E₂)`. -/
