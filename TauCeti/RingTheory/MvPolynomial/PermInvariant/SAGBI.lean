@@ -130,24 +130,18 @@ element of `G`. -/
 private theorem exists_permAct_mem_maxOrbitCone [Finite σ] (m : MonomialOrder σ)
     (G : Subgroup (Perm σ)) {x : σ → ℚ} (hx : ∀ i, 0 ≤ x i) :
     ∃ g ∈ G, LinearEquiv.funCongrLeft ℚ ℚ g.symm x ∈ maxOrbitCone m G := by
-  classical
-  let _ : Fintype G := Fintype.ofFinite G
   obtain ⟨D, d, hDpos, hDd⟩ := TauCeti.exists_nat_smul_eq_ratEmbed hx
-  obtain ⟨g₀, -, hg₀max⟩ := Finset.exists_max_image Finset.univ
-    (fun g : G => m.toSyn (d.mapDomain (g : Perm σ)))
-    (Finset.univ_nonempty_iff.mpr ⟨⟨1, G.one_mem⟩⟩)
-  have hd'_mem : d.mapDomain (g₀ : Perm σ) ∈ m.maxOrbitExponents G :=
-    (m.mem_maxOrbitExponents_iff G _).mpr fun h hh => by
-      rw [← Finsupp.mapDomain_comp, ← Equiv.Perm.coe_mul]
-      exact hg₀max ⟨h * g₀, G.mul_mem hh g₀.property⟩ (Finset.mem_univ _)
-  refine ⟨(g₀ : Perm σ), g₀.property, ?_⟩
-  have heq : LinearEquiv.funCongrLeft ℚ ℚ (g₀ : Perm σ).symm x =
-      (D : ℚ)⁻¹ • TauCeti.ratEmbed (d.mapDomain (g₀ : Perm σ)) := by
-    rw [LinearEquiv.funCongrLeft_eq_comp, TauCeti.ratEmbed_mapDomain, ← hDd]
-    ext i; simp [Nat.cast_ne_zero.mpr hDpos.ne']
+  obtain ⟨_, hrel, hmax⟩ := m.exists_permOrbitRel_forall_toSyn_mapDomain_le G d
+  obtain ⟨g₀, hg₀, rfl⟩ := permOrbitRel_iff.mp hrel
+  refine ⟨g₀, hg₀, ?_⟩
+  have heq : LinearEquiv.funCongrLeft ℚ ℚ g₀.symm x =
+      (D : ℚ)⁻¹ • TauCeti.ratEmbed (d.mapDomain g₀) := by
+    rw [TauCeti.ratEmbed_mapDomain]
+    ext i
+    simp [LinearMap.funLeft_apply, ← hDd, Nat.cast_ne_zero.mpr hDpos.ne']
   rw [heq]
   exact PointedCone.smul_mem _ (inv_nonneg.mpr (Nat.cast_nonneg D))
-    ((ratEmbed_mem_maxOrbitCone_iff m G _).mpr hd'_mem)
+    ((ratEmbed_mem_maxOrbitCone_iff m G _).mpr ((m.mem_maxOrbitExponents_iff G _).mpr hmax))
 
 /-- **Disjointness on non-fixed points:** if a nonnegative rational vector `x` and its `g`-translate
 both lie in `maxOrbitCone m G` (`g ∈ G`), then `g` fixes `x`. -/
@@ -160,9 +154,13 @@ private theorem permAct_eq_self_of_mem_maxOrbitCone [Finite σ] (m : MonomialOrd
   have hd_mem : d ∈ m.maxOrbitExponents G := by
     rw [← ratEmbed_mem_maxOrbitCone_iff, ← hDd]
     exact PointedCone.smul_mem _ (Nat.cast_nonneg D) hxC
+  have hgx : (D : ℚ) • LinearEquiv.funCongrLeft ℚ ℚ g.symm x =
+      TauCeti.ratEmbed (d.mapDomain g) := by
+    rw [TauCeti.ratEmbed_mapDomain]
+    ext i
+    simp [LinearMap.funLeft_apply, ← hDd]
   have hgd_mem : d.mapDomain g ∈ m.maxOrbitExponents G := by
-    rw [← ratEmbed_mem_maxOrbitCone_iff, TauCeti.ratEmbed_mapDomain,
-      ← LinearEquiv.funCongrLeft_eq_comp (R := ℚ), ← hDd, map_smul]
+    rw [← ratEmbed_mem_maxOrbitCone_iff, ← hgx]
     exact PointedCone.smul_mem _ (Nat.cast_nonneg D) hgxC
   have hle2 : d ≼[m] d.mapDomain g := by
     have h := (m.mem_maxOrbitExponents_iff G _).mp hgd_mem g⁻¹ (G.inv_mem hg)
@@ -171,7 +169,7 @@ private theorem permAct_eq_self_of_mem_maxOrbitCone [Finite σ] (m : MonomialOrd
   have hdeq : d.mapDomain g = d :=
     m.toSyn.injective (le_antisymm ((m.mem_maxOrbitExponents_iff G _).mp hd_mem g hg) hle2)
   have hscale : (D : ℚ) • LinearEquiv.funCongrLeft ℚ ℚ g.symm x = (D : ℚ) • x := by
-    rw [← map_smul, hDd, LinearEquiv.funCongrLeft_eq_comp, ← TauCeti.ratEmbed_mapDomain, hdeq]
+    rw [hgx, hdeq, ← hDd]
   exact smul_right_injective (σ → ℚ) (Nat.cast_ne_zero.mpr hDpos.ne') hscale
 
 /-- If two translates `g₁⁻¹ • x` and `g₂⁻¹ • x` (`g₁, g₂ ∈ G`) of a nonnegative vector `x` both
@@ -183,14 +181,17 @@ private theorem permAct_mul_inv_eq_self_of_mem_maxOrbitCone [Finite σ] (m : Mon
     (h2 : LinearEquiv.funCongrLeft ℚ ℚ g₂⁻¹.symm x ∈ maxOrbitCone m G) :
     LinearEquiv.funCongrLeft ℚ ℚ (g₁ * g₂⁻¹).symm x = x := by
   have hx1_nonneg : ∀ i, 0 ≤ LinearEquiv.funCongrLeft ℚ ℚ g₁⁻¹.symm x i := fun _ => hx _
-  have hcompC : LinearEquiv.funCongrLeft ℚ ℚ (g₂⁻¹ * g₁).symm
-      (LinearEquiv.funCongrLeft ℚ ℚ g₁⁻¹.symm x) ∈ maxOrbitCone m G := by
-    rw [← LinearEquiv.funCongrLeft_mul_symm, mul_assoc, mul_inv_cancel, mul_one]
-    exact h2
+  have hcomp : LinearEquiv.funCongrLeft ℚ ℚ (g₂⁻¹ * g₁).symm
+      (LinearEquiv.funCongrLeft ℚ ℚ g₁⁻¹.symm x) =
+      LinearEquiv.funCongrLeft ℚ ℚ g₂⁻¹.symm x := by
+    rw [← LinearEquiv.trans_apply, ← LinearEquiv.funCongrLeft_comp, ← Equiv.symm_trans,
+      ← Equiv.Perm.mul_def, mul_assoc, mul_inv_cancel, mul_one]
   have hfix := permAct_eq_self_of_mem_maxOrbitCone m G hx1_nonneg
-    (G.mul_mem (G.inv_mem hg₂) hg₁) h1 hcompC
-  rw [← LinearEquiv.funCongrLeft_mul_symm, mul_assoc, mul_inv_cancel, mul_one] at hfix
-  rw [LinearEquiv.funCongrLeft_mul_symm, hfix, LinearEquiv.funCongrLeft_inv_cancel]
+    (G.mul_mem (G.inv_mem hg₂) hg₁) h1 (hcomp ▸ h2)
+  rw [hcomp] at hfix
+  rw [Equiv.Perm.mul_def, Equiv.symm_trans, LinearEquiv.funCongrLeft_comp,
+    LinearEquiv.trans_apply, hfix, Equiv.Perm.inv_def, Equiv.symm_symm,
+    ← LinearEquiv.funCongrLeft_symm, LinearEquiv.symm_apply_apply]
 
 /-- If the `h`-translate of the midpoint of `(a, b)` lies in `maxOrbitCone m G` and no wall
 functional vanishes on `(a, b)`, then the `h`-translates of both endpoints lie in
@@ -246,9 +247,10 @@ private theorem eq_of_permAct_mem_maxOrbitCone_of_injective [Finite σ] (m : Mon
     (h2 : LinearEquiv.funCongrLeft ℚ ℚ g₂⁻¹.symm p ∈ maxOrbitCone m G) :
     g₁ = g₂ := by
   have hfix := permAct_mul_inv_eq_self_of_mem_maxOrbitCone m G hp_pos hg₁ hg₂ h1 h2
-  rw [LinearEquiv.funCongrLeft_eq_comp] at hfix
+  have hfix' : p ∘ (g₁ * g₂⁻¹).symm = p :=
+    funext fun i => by simpa [LinearMap.funLeft_apply] using congrFun hfix i
   have hmem : g₁ * g₂⁻¹ ∈ TauCeti.fiberSubgroup p :=
-    TauCeti.comp_symm_eq_self_iff_mem_fiberSubgroup.mp hfix
+    TauCeti.comp_symm_eq_self_iff_mem_fiberSubgroup.mp hfix'
   rw [TauCeti.fiberSubgroup_eq_bot_of_injective hp_inj, Subgroup.mem_bot, mul_inv_eq_one] at hmem
   exact hmem
 
@@ -309,7 +311,7 @@ private theorem mem_closure_isSwap_of_generic_segment [Finite σ] [DecidableEq �
     have h0C : LinearEquiv.funCongrLeft ℚ ℚ (h 0)⁻¹.symm p₁ ∈ maxOrbitCone m G := by
       simpa [γ, hc0] using (hendpoints 0).left
     have h1C : LinearEquiv.funCongrLeft ℚ ℚ (1 : Perm σ)⁻¹.symm p₁ ∈ maxOrbitCone m G := by
-      simpa using hp₁C
+      rwa [inv_one, Equiv.Perm.one_def, Equiv.refl_symm, LinearEquiv.funCongrLeft_id]
     exact (eq_of_permAct_mem_maxOrbitCone_of_injective m G (fun i => (hp₁_pos i).le)
       (injective_of_forall_proj_sub_proj_ne_zero heq_mem hp₁_out) G.one_mem (hhG 0) h1C h0C).symm
   have hhlast : h (Fin.last k) = g := by
@@ -327,9 +329,10 @@ private theorem mem_closure_isSwap_of_generic_segment [Finite σ] [DecidableEq �
       fun _ => (hγ_pos t (hc_bounds _).left (hc_bounds _).right _).le
     have hfix := permAct_mul_inv_eq_self_of_mem_maxOrbitCone m G ht_nonneg
       (hhG j.castSucc) (hhG j.succ) (hendpoints j.castSucc).right (hendpoints j.succ).left
-    rw [LinearEquiv.funCongrLeft_eq_comp] at hfix
+    have hfix' : γ t ∘ (h j.castSucc * (h j.succ)⁻¹).symm = γ t :=
+      funext fun i => by simpa [LinearMap.funLeft_apply] using congrFun hfix i
     have hmem : h j.castSucc * (h j.succ)⁻¹ ∈ TauCeti.fiberSubgroup (γ t) :=
-      TauCeti.comp_symm_eq_self_iff_mem_fiberSubgroup.mp hfix
+      TauCeti.comp_symm_eq_self_iff_mem_fiberSubgroup.mp hfix'
     rcases TauCeti.eq_one_or_isSwap_of_mem_fiberSubgroup (fun a b c' d' hab hcd h1 h2 =>
       TauCeti.eq_or_eq_of_coordEq_eq hcd (hγ_uniq t hab hcd
         ((TauCeti.mem_coordEq_iff a b _).mpr h1)
@@ -371,13 +374,12 @@ private theorem wallFuncs_union_eqFuncs_comp_mem (G : Subgroup (Perm σ))
         Equiv.Perm.mul_def, Equiv.symm_trans]
     rw [hcomp]
     exact hwall _ (G.mul_mem (G.inv_mem hh) hk) ℓ hℓ
-  · rw [LinearMap.sub_comp,
-      show (LinearMap.proj a : (σ → ℚ) →ₗ[ℚ] ℚ).comp
-          (LinearEquiv.funCongrLeft ℚ ℚ h.symm).toLinearMap =
-        LinearMap.proj (h.symm a) from LinearMap.proj_comp_funLeft h.symm a,
-      show (LinearMap.proj b : (σ → ℚ) →ₗ[ℚ] ℚ).comp
-          (LinearEquiv.funCongrLeft ℚ ℚ h.symm).toLinearMap =
-        LinearMap.proj (h.symm b) from LinearMap.proj_comp_funLeft h.symm b]
+  · have hsub : ((LinearMap.proj a : (σ → ℚ) →ₗ[ℚ] ℚ) - LinearMap.proj b).comp
+        (LinearEquiv.funCongrLeft ℚ ℚ h.symm).toLinearMap =
+        (LinearMap.proj (h.symm a) : (σ → ℚ) →ₗ[ℚ] ℚ) - LinearMap.proj (h.symm b) := by
+      ext w
+      simp [LinearMap.funLeft_apply]
+    rw [hsub]
     exact heq_sub (heq_mem (h.symm a) (h.symm b) (h.symm.injective.ne hab))
 
 /-- Build the finite family of wall functionals and coordinate-equality functionals, and choose a
@@ -425,8 +427,8 @@ private theorem exists_hyperplane_system_and_basepoint [Finite σ]
       have hw0 : (ℓ.comp (LinearEquiv.funCongrLeft ℚ ℚ (h : Perm σ)⁻¹.symm).toLinearMap)
           (LinearEquiv.funCongrLeft ℚ ℚ (h : Perm σ).symm w) = 0 :=
         LinearMap.congr_fun h0 _
-      rwa [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        LinearEquiv.funCongrLeft_inv_symm_cancel] at hw0
+      rwa [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Equiv.Perm.inv_def,
+        ← LinearEquiv.funCongrLeft_symm, LinearEquiv.symm_apply_apply] at hw0
     · obtain ⟨⟨a, b⟩, hp, rfl⟩ := Finset.mem_image.mp he
       intro h0
       have := LinearMap.congr_fun h0 (Pi.single a (1 : ℚ))
@@ -531,11 +533,12 @@ private theorem exists_generic_endpoint [Finite σ]
       have hval : (ℓ.comp (LinearEquiv.funCongrLeft ℚ ℚ g⁻¹.symm).toLinearMap) q₀ = ℓ p₁ := by
         rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
         dsimp only [q₀]
-        rw [LinearEquiv.funCongrLeft_inv_symm_cancel]
+        rw [Equiv.Perm.inv_def, ← LinearEquiv.funCongrLeft_symm, LinearEquiv.symm_apply_apply]
       rw [hval]
       have hne : ℓ p₁ ≠ 0 := by
         have hcomp : ℓ = ℓ.comp (LinearEquiv.funCongrLeft ℚ ℚ (1 : Perm σ)⁻¹.symm).toLinearMap := by
-          simp
+          rw [inv_one, Equiv.Perm.one_def, Equiv.refl_symm, LinearEquiv.funCongrLeft_id,
+            LinearEquiv.refl_toLinearMap, LinearMap.comp_id]
         exact hcomp ▸ hp₁_out _ (hwall 1 G.one_mem ℓ hℓ)
       exact lt_of_le_of_ne ((hC_iff p₁).mp hp₁C ℓ hℓ) hne.symm
   -- 3. Perturb `q₀` to `q₁` preserving `Lpos` and avoiding `ℬ`.

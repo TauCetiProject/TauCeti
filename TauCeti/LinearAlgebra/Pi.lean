@@ -92,10 +92,6 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
-* `LinearEquiv.funCongrLeft_mul_symm`, `LinearEquiv.funCongrLeft_inv_cancel`,
-  `LinearEquiv.funCongrLeft_inv_symm_cancel`, `LinearEquiv.funCongrLeft_one_symm`, and
-  `LinearEquiv.funCongrLeft_eq_comp`: reindexing by permutations as composition, identity, and
-  inverse cancellation.
 * `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`, and
   `TauCeti.eq_or_eq_of_coordEq_eq`: the coordinate-equality hyperplane `{v | v a = v b}`.
 * `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
@@ -247,39 +243,6 @@ public theorem piCongrLeft_single {R ι ι' : Type*} [Semiring R] [DecidableEq �
   · subst h
     simp
   · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (e.injective.ne h)]
-
-/-- Reindexing along `e` is precomposition with `e`. -/
-public theorem funCongrLeft_eq_comp {R M ι ι' : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (e : ι' ≃ ι) (x : ι → M) :
-    funCongrLeft R M e x = x ∘ e :=
-  (rfl)
-
-/-- Reindexing along `(a * b).symm` factors as consecutive reindexings along `b.symm` and
-`a.symm`. -/
-public theorem funCongrLeft_mul_symm {R M σ : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (a b : Equiv.Perm σ) (v : σ → M) :
-    funCongrLeft R M (a * b).symm v =
-      funCongrLeft R M a.symm (funCongrLeft R M b.symm v) := by
-  rw [Equiv.Perm.mul_def, Equiv.symm_trans, funCongrLeft_comp, trans_apply]
-
-/-- Reindexing along `a.symm` cancels reindexing along `a⁻¹.symm`. -/
-public theorem funCongrLeft_inv_cancel {R M σ : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (a : Equiv.Perm σ) (v : σ → M) :
-    funCongrLeft R M a.symm (funCongrLeft R M a⁻¹.symm v) = v := by
-  rw [Equiv.Perm.inv_def, Equiv.symm_symm, ← funCongrLeft_symm, symm_apply_apply]
-
-/-- Reindexing along `a⁻¹.symm` cancels reindexing along `a.symm`. -/
-public theorem funCongrLeft_inv_symm_cancel {R M σ : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (a : Equiv.Perm σ) (v : σ → M) :
-    funCongrLeft R M a⁻¹.symm (funCongrLeft R M a.symm v) = v := by
-  rw [Equiv.Perm.inv_def, ← funCongrLeft_symm, symm_apply_apply]
-
-/-- Reindexing along `(1 : Equiv.Perm σ).symm` is the identity linear equivalence. -/
-@[simp]
-public theorem funCongrLeft_one_symm {R M σ : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] :
-    funCongrLeft R M (1 : Equiv.Perm σ).symm = LinearEquiv.refl R (σ → M) := by
-  rw [Equiv.Perm.one_def, Equiv.refl_symm, funCongrLeft_id]
 
 /-- A coordinatewise linear equivalence sends a one-point family to the one-point family
 of its image in that coordinate. -/
