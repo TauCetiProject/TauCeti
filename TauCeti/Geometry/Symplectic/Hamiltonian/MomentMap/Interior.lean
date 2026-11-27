@@ -29,8 +29,9 @@ Since locally free points of a symplectic toric manifold are free
 that a point `x` with nonzero isotropy algebra `𝔥 = 𝔤_x` maps to the boundary. Effectiveness is
 used only to pass from locally free to free; the boundary argument, and
 `TauCeti.SmoothTwoForm.IsMomentMap.isotropy_eq_bot_of_mem_interior_convexHull_range`, do not need
-it. Such a point is a global minimum of a component `μ^ξ` for some
-nonzero `ξ ∈ 𝔥` (`TauCeti.SmoothTwoForm.IsMomentMap.exists_ne_zero_isMinOn_of_isotropy_ne_bot`):
+it, and they only use `dim M ≤ 2 dim G`. Such a point is a global minimum of a component `μ^ξ`
+for some nonzero `ξ ∈ 𝔥`
+(`TauCeti.SmoothTwoForm.IsMomentMap.exists_ne_zero_isMinOn_of_isotropy_ne_bot`):
 
 * **The linearized isotropy action.** Every `ξ ∈ 𝔥` acts on `T_x M` by the generator `A_ξ` of
   `t ↦ d(exp (t ξ))_x` (`TauCeti.isotropyLinearization`). These operators are skew-adjoint for
@@ -101,7 +102,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **A point with nonzero isotropy algebra has a semidefinite Hessian.** Let a compact commutative
 Lie group `G` act smoothly on a compact connected symplectic manifold `(M, σ)` without boundary,
-preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. If the isotropy algebra `𝔤_x` is
+preserving `σ`, with moment map `μ`, and with `dim M ≤ 2 dim G`. If the isotropy algebra `𝔤_x` is
 nonzero, then there is a nonzero `ξ ∈ 𝔤_x` such that the Hessian of the component `μ^ξ` at its
 critical point `x` is positive semidefinite. -/
 theorem exists_ne_zero_forall_criticalHessian_nonneg
@@ -109,7 +110,7 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
     (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {x : M}
+    (hdim : finrank ℝ E' ≤ 2 * finrank ℝ E) {x : M}
     (hx : (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M).isotropy x ≠ ⊥) :
     ∃ ξ ∈ (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M).isotropy x, ξ ≠ 0 ∧
       ∀ v, 0 ≤ criticalHessian 𝓘(ℝ, E') (fun y ↦ μ y ξ) x v v := by
@@ -165,7 +166,7 @@ theorem exists_ne_zero_forall_criticalHessian_nonneg
 
 /-- **A point with nonzero isotropy algebra is a minimum of a moment map component.** Let a compact
 commutative Lie group `G` act smoothly on a compact connected symplectic manifold `(M, σ)`
-without boundary, preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. If the isotropy
+without boundary, preserving `σ`, with moment map `μ`, and with `dim M ≤ 2 dim G`. If the isotropy
 algebra `𝔤_x` is nonzero, then there is a nonzero `ξ ∈ 𝔤_x` such that the component `μ^ξ` attains
 its minimum at `x`. -/
 theorem exists_ne_zero_isMinOn_of_isotropy_ne_bot
@@ -173,7 +174,7 @@ theorem exists_ne_zero_isMinOn_of_isotropy_ne_bot
     (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {x : M}
+    (hdim : finrank ℝ E' ≤ 2 * finrank ℝ E) {x : M}
     (hx : (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M).isotropy x ≠ ⊥) :
     ∃ ξ ∈ (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M).isotropy x, ξ ≠ 0 ∧
       IsMinOn (fun y ↦ μ y ξ) univ x := by
@@ -192,7 +193,7 @@ theorem exists_ne_zero_isMinOn_of_isotropy_ne_bot
 
 /-- **The action is locally free over the interior of the moment polytope.** Let a compact
 commutative Lie group `G` act smoothly on a compact connected symplectic manifold `(M, σ)` without
-boundary, preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. If `μ(x)`, read in the
+boundary, preserving `σ`, with moment map `μ`, and with `dim M ≤ 2 dim G`. If `μ(x)`, read in the
 continuous dual `𝔤*`, is an interior point of the moment polytope `conv μ(M)`, then the isotropy
 algebra `𝔤_x` is trivial. -/
 theorem isotropy_eq_bot_of_mem_interior_convexHull_range
@@ -200,7 +201,7 @@ theorem isotropy_eq_bot_of_mem_interior_convexHull_range
     (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {x : M}
+    (hdim : finrank ℝ E' ≤ 2 * finrank ℝ E) {x : M}
     (hx : (LinearMap.toContinuousLinearMap (μ x) : StrongDual ℝ E) ∈
       interior (convexHull ℝ
         (range fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E)))) :
@@ -242,6 +243,6 @@ theorem stabilizer_eq_bot_of_mem_interior_convexHull_range [FaithfulSMul G M]
         (range fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E)))) :
     MulAction.stabilizer G x = ⊥ :=
   h.stabilizer_eq_bot_of_isotropy_eq_bot hσ hG hdim
-    (h.isotropy_eq_bot_of_mem_interior_convexHull_range hσ hG hdim hx)
+    (h.isotropy_eq_bot_of_mem_interior_convexHull_range hσ hG hdim.le hx)
 
 end TauCeti.SmoothTwoForm.IsMomentMap
