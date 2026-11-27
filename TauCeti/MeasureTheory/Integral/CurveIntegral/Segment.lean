@@ -13,6 +13,7 @@ public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Curve integrals of continuous `1`-forms along segments
@@ -30,6 +31,14 @@ the exact form `f(z) dz` along the segment from `a` to `b` is `F b - F a`
 `a ∈ S` through `c` to `b ∈ S` is `F b - F a`
 (`TauCeti.curveIntegral_segment_add_segment_toSpanSingleton_eq_sub`).
 
+A real-affine field of continuous linear maps is integrated exactly by the midpoint rule
+(`AffineMap.curveIntegral_segment_eq_apply_midpoint`). In a complete, possibly non-unital, normed
+ring `A` with compatible real scalars, this computes the ordered integrals of `g(x) dx` and
+`dx g(x)` along a segment for real-affine `g : A → A`. Around a closed polygon with vertices
+`p 0, …, p (n - 1)`, the integral of `(a + b x) dx` is `b * (∑ₖ (pₖ pₖ₊₁ - pₖ₊₁ pₖ)) / 2`,
+and that of `dx (a + x b)` is `(∑ₖ (pₖ₊₁ pₖ - pₖ pₖ₊₁)) * b / 2`; they need not vanish when `A`
+is not commutative.
+
 ## Main declarations
 
 * `Continuous.curveIntegrable_segment`: a continuous field is curve integrable along segments.
@@ -40,6 +49,13 @@ the exact form `f(z) dz` along the segment from `a` to `b` is `F b - F a`
   along a segment in `ℂ`.
 * `TauCeti.curveIntegral_segment_add_segment_toSpanSingleton_eq_sub`: the same along a two-segment
   path through the center of a star-convex domain of a primitive.
+* `AffineMap.curveIntegral_segment_eq_apply_midpoint`: the midpoint rule for real-affine
+  `1`-forms along a segment.
+* `AffineMap.curveIntegral_segment_mul`, `AffineMap.curveIntegral_segment_mul_flip`: the ordered
+  integrals of `g(x) dx` and `dx g(x)` along a segment, for real-affine `g` in a normed ring.
+* `TauCeti.sum_curveIntegral_segment_mul_const_add_mul`,
+  `TauCeti.sum_curveIntegral_segment_mul_flip_add_mul_const`: the integrals of `(a + b x) dx` and
+  `dx (a + x b)` around a closed polygon, as commutator sums of consecutive vertices.
 -/
 
 public section
@@ -57,6 +73,53 @@ theorem Continuous.curveIntegrable_segment {ω : E → E →L[𝕜] F} (hω : Co
     CurveIntegrable ω (.segment a b) :=
   _root_.curveIntegrable_segment.2 <|
     ((hω.clm_apply continuous_const).comp lineMap_continuous).intervalIntegrable 0 1
+
+/-- **Midpoint rule for affine `1`-forms.** The curve integral of a real-affine field `ω` of
+continuous linear maps along the segment from `a` to `b` is the value of `ω` at the midpoint of
+the segment, applied to the displacement `b - a`. -/
+theorem AffineMap.curveIntegral_segment_eq_apply_midpoint {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] [CompleteSpace W]
+    (ω : V →ᵃ[ℝ] V →L[ℝ] W) (a b : V) : ∫ᶜ x in .segment a b, ω x = ω (midpoint ℝ a b) (b - a) := by
+  have h (t : ℝ) : ω (lineMap a b t) (b - a) =
+      ω a (b - a) + t • (ω b (b - a) - ω a (b - a)) := by
+    rw [ω.apply_lineMap, lineMap_apply_module']
+    simp [add_comm]
+  have hi : IntervalIntegrable (fun t : ℝ ↦ t • (ω b (b - a) - ω a (b - a)))
+      MeasureTheory.volume 0 1 :=
+    (continuous_id.smul continuous_const).intervalIntegrable 0 1
+  rw [_root_.curveIntegral_segment, midpoint, h]
+  simp_rw [h]
+  rw [intervalIntegral.integral_add intervalIntegrable_const hi,
+    intervalIntegral.integral_smul_const, integral_id]
+  simp [invOf_eq_inv]
+
+section NormedAlgebra
+
+variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℝ A] [IsScalarTower ℝ A A]
+  [SMulCommClass ℝ A A] [CompleteSpace A]
+
+/-- The integral of the ordered `1`-form `g(x) dx` along a segment, for a real-affine `g`, is the
+value of `g` at the midpoint times the displacement. -/
+theorem AffineMap.curveIntegral_segment_mul (g : A →ᵃ[ℝ] A) (p q : A) :
+    ∫ᶜ x in .segment p q, ContinuousLinearMap.mul ℝ A (g x) = g (midpoint ℝ p q) * (q - p) := by
+  have h := ((ContinuousLinearMap.mul ℝ A).toLinearMap.toAffineMap.comp
+    g).curveIntegral_segment_eq_apply_midpoint p q
+  simp only [AffineMap.coe_comp, Function.comp_apply, LinearMap.coe_toAffineMap,
+    ContinuousLinearMap.coe_coe] at h
+  rw [h, ContinuousLinearMap.mul_apply']
+
+/-- The integral of the ordered `1`-form `dx g(x)` along a segment, for a real-affine `g`, is the
+displacement times the value of `g` at the midpoint. -/
+theorem AffineMap.curveIntegral_segment_mul_flip (g : A →ᵃ[ℝ] A) (p q : A) :
+    ∫ᶜ x in .segment p q, (ContinuousLinearMap.mul ℝ A).flip (g x) =
+      (q - p) * g (midpoint ℝ p q) := by
+  have h := ((ContinuousLinearMap.mul ℝ A).flip.toLinearMap.toAffineMap.comp
+    g).curveIntegral_segment_eq_apply_midpoint p q
+  simp only [AffineMap.coe_comp, Function.comp_apply, LinearMap.coe_toAffineMap,
+    ContinuousLinearMap.coe_coe] at h
+  rw [h, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply']
+
+end NormedAlgebra
 
 namespace BoundedContinuousFunction
 
@@ -138,5 +201,60 @@ theorem curveIntegral_segment_add_segment_toSpanSingleton_eq_sub {E : Type*}
   rw [curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₁ hz)) (hf.mono h₁),
     curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₂ hz)) (hf.mono h₂)]
   abel
+
+section NormedAlgebra
+
+variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℝ A] [IsScalarTower ℝ A A]
+  [SMulCommClass ℝ A A] [CompleteSpace A] {n : ℕ}
+
+/-- The increments `g (finRotate n k) - g k` around a cycle sum to zero. -/
+private theorem sum_finRotate_sub {M : Type*} [AddCommGroup M] (g : Fin n → M) :
+    ∑ k, (g (finRotate n k) - g k) = 0 := by
+  rw [Finset.sum_sub_distrib, Equiv.sum_comp, sub_self]
+
+/-- The integral of `(a + b x) dx` around the closed polygon with vertices `p 0, …, p (n - 1)` is
+`b / 2` times the sum of the commutators `p k * p (k + 1) - p (k + 1) * p k` of consecutive
+vertices. It vanishes when `A` is commutative, but not in general. -/
+theorem sum_curveIntegral_segment_mul_const_add_mul (p : Fin n → A) (a b : A) :
+    ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ A (a + b * x) =
+      (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
+  let g : A →ᵃ[ℝ] A := AffineMap.const ℝ A a + (LinearMap.mulLeft ℝ b).toAffineMap
+  have hg (x : A) : g x = a + b * x := rfl
+  simp_rw [← hg, AffineMap.curveIntegral_segment_mul, hg, midpoint_eq_smul_add]
+  have hk (k : Fin n) :
+      (a + b * ((⅟2 : ℝ) • (p k + p (finRotate n k)))) * (p (finRotate n k) - p k) =
+        a * (p (finRotate n k) - p k) +
+          (2 : ℝ)⁻¹ • (b * (p k * p (finRotate n k) - p (finRotate n k) * p k)) +
+          (2 : ℝ)⁻¹ • (b * (p (finRotate n k) * p (finRotate n k) - p k * p k)) := by
+    simp only [invOf_eq_inv, mul_add, add_mul, mul_sub, mul_smul_comm, smul_mul_assoc,
+      mul_assoc, smul_add, smul_sub]
+    abel
+  simp_rw [hk, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.smul_sum, ← Finset.mul_sum,
+    sum_finRotate_sub (fun k ↦ p k * p k), sum_finRotate_sub p]
+  simp
+
+/-- The integral of `dx (a + x b)` around the closed polygon with vertices `p 0, …, p (n - 1)` is
+half the sum of the commutators `p (k + 1) * p k - p k * p (k + 1)` of consecutive vertices,
+times `b`. It vanishes when `A` is commutative, but not in general. -/
+theorem sum_curveIntegral_segment_mul_flip_add_mul_const (p : Fin n → A) (a b : A) :
+    ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)),
+        (ContinuousLinearMap.mul ℝ A).flip (a + x * b) =
+      (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
+  let g : A →ᵃ[ℝ] A := AffineMap.const ℝ A a + (LinearMap.mulRight ℝ b).toAffineMap
+  have hg (x : A) : g x = a + x * b := rfl
+  simp_rw [← hg, AffineMap.curveIntegral_segment_mul_flip, hg, midpoint_eq_smul_add]
+  have hk (k : Fin n) :
+      (p (finRotate n k) - p k) * (a + ((⅟2 : ℝ) • (p k + p (finRotate n k))) * b) =
+        (p (finRotate n k) - p k) * a +
+          (2 : ℝ)⁻¹ • ((p (finRotate n k) * p k - p k * p (finRotate n k)) * b) +
+          (2 : ℝ)⁻¹ • ((p (finRotate n k) * p (finRotate n k) - p k * p k) * b) := by
+    simp only [invOf_eq_inv, mul_add, add_mul, sub_mul, mul_smul_comm, smul_mul_assoc,
+      mul_assoc, smul_add, smul_sub]
+    abel
+  simp_rw [hk, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.smul_sum, ← Finset.sum_mul,
+    sum_finRotate_sub (fun k ↦ p k * p k), sum_finRotate_sub p]
+  simp
+
+end NormedAlgebra
 
 end TauCeti
