@@ -28,9 +28,9 @@ operator with domain `H^m(M)`, its **realization in `L²`**
 (`TauCeti.chartSobolevRealization`): a function `f ∈ L²` lies in its domain when `f ∈ H^m(M)`,
 and its value is then the extension of `P` applied to `f`. It is the partial operator
 `ContinuousLinearMap.domainOperator` of the pair formed by the injection `H^m(M) → L²(M, μ)` and
-the extension of `P`, so the graph, domain and evaluation lemmas of `domainOperator` apply to
-it. On smooth functions it is `P`
-(`TauCeti.chartSobolevRealization_toLp`), and its domain is dense
+the extension of `P`; rewrite with `TauCeti.chartSobolevRealization_def` to use the graph and
+domain lemmas of `domainOperator`, and evaluate with `TauCeti.chartSobolevRealization_apply`. On
+smooth functions it is `P` (`TauCeti.chartSobolevRealization_toLp`), and its domain is dense
 (`TauCeti.dense_domain_chartSobolevRealization`).
 
 * **Formal adjoints.** If `Q` is a classical pseudodifferential operator of order `m` and a formal
@@ -114,7 +114,8 @@ def chartSobolevRealization : Lp ℂ 2 μ →ₗ.[ℂ] Lp ℂ 2 μ :=
 
 /-- The realization is the partial operator `ContinuousLinearMap.domainOperator` of the injection
 `H^m(M) → L²(M, μ)` and the extension of `P` read in `L²`; rewrite with this lemma to apply the
-graph, domain and evaluation lemmas of `domainOperator`. -/
+graph and domain lemmas of `domainOperator`, and evaluate with
+`TauCeti.chartSobolevRealization_apply`. -/
 theorem chartSobolevRealization_def :
     chartSobolevRealization hμ hc ψ hψ P hm =
       ContinuousLinearMap.domainOperator (chartSobolevToLp hμ hc ψ hψ hm)
