@@ -53,8 +53,8 @@ For a vortex with `C²` section the same holds at every order: every iterated de
 `TauCeti.Vortex.isBigO_iteratedFDeriv_normSq_sub_one`). These follow from the general estimate
 for decaying solutions of `Δ ℓ = κ (exp ℓ - 1)` with `c² < κ`
 (`TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`), here with `κ = 1 / 4`; its
-hypotheses are the decay of `log |α|²`, which is controlled by the modulus defect, the bound on
-its gradient proved above, and smoothness of `log |α|²` near infinity. Wherever `α ≠ 0`, the
+hypotheses are the decay of `log |α|²`, which is controlled by the modulus defect, and
+smoothness of `log |α|²` near infinity. Wherever `α ≠ 0`, the
 `C²` function `log |α|²` solves the scalar equation, hence by Green's identity weakly, so it is
 smooth there by planar elliptic regularity
 (`TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`, via
@@ -393,10 +393,8 @@ private theorem laplacian_log_normSq_hypotheses
       (∀ᶠ z in cocompact ℂ, ContDiffAt ℝ ∞ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z) ∧
       (∀ᶠ z in cocompact ℂ, Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
         1 / 4 * (Real.exp (Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) - 1)) ∧
-      ((fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
-        fun z ↦ Real.exp (-(c' * ‖z‖))) ∧
-      fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
-        fun _ ↦ (1 : ℝ) := by
+      (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
+        fun z ↦ Real.exp (-(c' * ‖z‖)) := by
   -- It suffices to treat a positive rate `c' ≥ c`.
   set c' := max c (1 / 4)
   have hc'pos : 0 < c' := lt_max_of_lt_right (by norm_num)
@@ -414,7 +412,7 @@ private theorem laplacian_log_normSq_hypotheses
     rw [laplacian_log_normSq_eq_exp hp.contDiffAt hq.contDiffAt ((one_half_pos).trans hz)
       (Eventually.of_forall hsol)]
     ring
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   · filter_upwards [hpos] with z hz
     exact contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt (hα z hz)
       (Eventually.of_forall hsol)
@@ -426,11 +424,6 @@ private theorem laplacian_log_normSq_hypotheses
     filter_upwards [hpos] with z hz
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
     exact (Real.abs_log_le_two_mul_one_sub hz.le (hs₁ z)).trans (by linarith [hK z])
-  · obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp hq hsol hlim
-      (c := 0) (by norm_num)
-    refine IsBigO.of_bound K ?_
-    filter_upwards [hK] with z hz
-    simpa using hz
 
 /-- **Exponential decay of all derivatives of `log |α|²`.** For a plane vortex with `C²` section
 whose section satisfies `|α| → 1` at infinity, every iterated derivative of `log |α|²` is
@@ -442,9 +435,9 @@ theorem isBigO_iteratedFDeriv_log_normSq
     (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd, hℓ'⟩ :=
+  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd⟩ :=
     laplacian_log_normSq_hypotheses hp hq hsol hlim hc
-  exact (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth heq hℓd hℓ'
+  exact (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth heq hℓd
     n).trans (isBigO_exp_neg_mul_norm_of_le hcc' _)
 
 /-- **Exponential decay of the second derivative of `log |α|²`.** For a plane vortex with `C²`
@@ -474,10 +467,10 @@ theorem isBigO_iteratedFDeriv_normSq_sub_one
     (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd, hℓ'⟩ :=
+  obtain ⟨c', hcc', hc'pos, hc'κ, hsmooth, heq, hℓd⟩ :=
     laplacian_log_normSq_hypotheses hp hq hsol hlim hc
   have h := isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one hc'pos hc'κ hsmooth
-    heq hℓd hℓ' n
+    heq hℓd n
   -- Near infinity `exp (log |α|²) = |α|²`.
   have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     hlim.eventually (lt_mem_nhds (by norm_num))

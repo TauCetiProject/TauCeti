@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Lattice.Full
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.TorsionFree
+public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import TauCeti.Algebra.Module.Lattice
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -42,7 +46,13 @@ develops the algebraic carrier over an arbitrary coefficient algebra:
 * lattices base change along coefficient maps `B → B'` whenever `K' = B'[S⁻¹]` and `B' → K'` is
   injective (as for `W(R) → W(R')`): the `B'`-span of the image of `Λ` is a lattice isomorphic to
   `B' ⊗[B] Λ` (`TauCeti.ProjectiveLattice.baseChange`). This gives the base change map on lattices
-  along `B → B'`, and it carries the standard lattice to the standard lattice.
+  along `B → B'`, and it carries the standard lattice to the standard lattice;
+* `GL ι K` acts on lattices in `ι → K`, and when `B → K` is injective the stabilizer of the
+  standard lattice is the image of `GL ι B` (`TauCeti.ProjectiveLattice.stabilizer_standard`).
+  When moreover `K` is a localization of `B`, the orbit of the standard lattice consists of the
+  lattices that are free over `B`, so for a local ring `B`, such as `R⟦t⟧` for a field `R` or the
+  valuation ring of a discretely valued field, `GL ι K` acts transitively on lattices
+  (`TauCeti.ProjectiveLattice.isPretransitive`).
 
 ## Main declarations
 
@@ -58,6 +68,12 @@ develops the algebraic carrier over an arbitrary coefficient algebra:
 * `TauCeti.ProjectiveLattice.baseChange` and `TauCeti.ProjectiveLattice.baseChangeEquiv`: base
   change of lattices along `B → B'`, and its identification with `B' ⊗[B] Λ`.
 * `TauCeti.ProjectiveLattice.baseChange_standard`: base change preserves the standard lattice.
+* `TauCeti.ProjectiveLattice.stabilizer_standard`: the stabilizer of the standard lattice in
+  `GL ι K` is the image of `GL ι B`.
+* `TauCeti.ProjectiveLattice.exists_GL_smul_standard_eq_iff`: over a localization, a lattice is
+  a translate of the standard lattice exactly when it is free.
+* `TauCeti.ProjectiveLattice.isPretransitive`: over a local ring, `GL ι K` acts transitively on
+  lattices.
 
 ## References
 
@@ -209,6 +225,15 @@ theorem mem_standard {x : ι → K} :
 theorem single_one_mem_standard [DecidableEq ι] (i : ι) : Pi.single i (1 : K) ∈ standard B K ι :=
   mem_toSubmodule.mp (LinearMap.mem_range.mpr ⟨Pi.single i 1, by simp⟩)
 
+/-- The `B`-span of the standard basis vectors is the standard lattice. -/
+theorem toSubmodule_standard_eq_span [DecidableEq ι] :
+    (standard B K ι).toSubmodule = Submodule.span B (Set.range fun i ↦ Pi.single i (1 : K)) := by
+  rw [toSubmodule_standard, LinearMap.range_eq_map, ← (Pi.basisFun B ι).span_eq,
+    Submodule.map_span, ← Set.range_comp]
+  congr
+  ext i j
+  by_cases h : j = i <;> simp [h]
+
 variable (K ι) in
 /-- When `B = K`, the standard lattice is the whole space. -/
 @[simp]
@@ -243,6 +268,13 @@ theorem mem_map {e : V ≃ₗ[K] W} {Λ : ProjectiveLattice B K V} {y : W} :
 @[simp]
 theorem map_refl (Λ : ProjectiveLattice B K V) : Λ.map (LinearEquiv.refl K V) = Λ :=
   ext fun _ ↦ by simp
+
+/-- Taking images under a linear equivalence preserves and reflects inclusions of lattices. -/
+@[simp]
+theorem map_le_map_iff (e : V ≃ₗ[K] W) {Λ Λ' : ProjectiveLattice B K V} :
+    Λ.map e ≤ Λ'.map e ↔ Λ ≤ Λ' :=
+  ⟨fun h x hx ↦ by simpa using h (mem_map.mpr (by simpa using hx) : e x ∈ Λ.map e),
+    fun h _ hy ↦ mem_map.mpr (h (mem_map.mp hy))⟩
 
 theorem map_trans {U : Type*} [AddCommGroup U] [Module B U] [Module K U] [IsScalarTower B K U]
     (e : V ≃ₗ[K] W) (f : W ≃ₗ[K] U) (Λ : ProjectiveLattice B K V) :
@@ -409,6 +441,146 @@ theorem baseChange_standard [FaithfulSMul B K] (ι : Type*) [Finite ι] :
       (single_one_mem_standard (B := B) i)
 
 end BaseChange
+
+section GeneralLinearGroup
+
+open Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The general linear group `GL ι K` acts on lattices in `ι → K`: a matrix `g` sends `Λ` to its
+image under multiplication by `g`. -/
+noncomputable instance : MulAction (GL ι K) (ProjectiveLattice B K (ι → K)) :=
+  MulAction.compHom _ ((LinearMap.GeneralLinearGroup.generalLinearEquiv K (ι → K)).toMonoidHom.comp
+    GeneralLinearGroup.toLin.toMonoidHom)
+
+/-- The action of `g ∈ GL ι K` on lattices is the action of the linear equivalence of `g`. -/
+theorem GL_smul_def (g : GL ι K) (Λ : ProjectiveLattice B K (ι → K)) :
+    g • Λ = Λ.map (LinearMap.GeneralLinearGroup.generalLinearEquiv K (ι → K)
+      (GeneralLinearGroup.toLin g)) :=
+  rfl
+
+@[simp]
+theorem mem_GL_smul {g : GL ι K} {Λ : ProjectiveLattice B K (ι → K)} {y : ι → K} :
+    y ∈ g • Λ ↔ (↑g⁻¹ : Matrix ι ι K) *ᵥ y ∈ Λ :=
+  mem_map
+
+@[simp]
+theorem toSubmodule_GL_smul (g : GL ι K) (Λ : ProjectiveLattice B K (ι → K)) :
+    (g • Λ).toSubmodule = Λ.toSubmodule.map ((g : Matrix ι ι K).mulVecLin.restrictScalars B) :=
+  (rfl)
+
+/-- The action of `GL ι K` on lattices preserves inclusions. -/
+@[simp]
+protected theorem smul_le_smul_iff (g : GL ι K) {Λ Λ' : ProjectiveLattice B K (ι → K)} :
+    g • Λ ≤ g • Λ' ↔ Λ ≤ Λ' :=
+  map_le_map_iff _
+
+variable [FaithfulSMul B K]
+
+omit [DecidableEq ι] in
+/-- An integral matrix preserves the standard lattice. -/
+private theorem map_mulVec_mem_standard (M : Matrix ι ι B) {y : ι → K}
+    (hy : y ∈ standard B K ι) : M.map (algebraMap B K) *ᵥ y ∈ standard B K ι := by
+  choose x hx using mem_standard.mp hy
+  obtain rfl : (algebraMap B K ∘ x) = y := funext hx
+  exact mem_standard.mpr fun i ↦ ⟨_, RingHom.map_mulVec _ M x i⟩
+
+omit [DecidableEq ι] in
+/-- A matrix over `K` preserving the standard lattice has entries in `B`. -/
+private theorem exists_map_eq_of_forall_mulVec_mem_standard {M : Matrix ι ι K}
+    (hM : ∀ y ∈ standard B K ι, M *ᵥ y ∈ standard B K ι) :
+    ∃ A : Matrix ι ι B, A.map (algebraMap B K) = M := by
+  classical
+  choose A hA using fun i j ↦ mem_standard.mp (hM _ (single_one_mem_standard (B := B) j)) i
+  exact ⟨Matrix.of A, Matrix.ext fun i j ↦ by
+    rw [Matrix.map_apply, Matrix.of_apply]; simpa [mulVec_single_one] using hA i j⟩
+
+/-- The image of `GL ι B` in `GL ι K` fixes the standard lattice. -/
+@[simp]
+theorem map_smul_standard (A : GL ι B) :
+    GeneralLinearGroup.map (algebraMap B K) A • standard B K ι = standard B K ι := by
+  refine le_antisymm (fun y hy ↦ ?_) fun y hy ↦ ?_
+  · rw [mem_GL_smul, ← map_inv, GeneralLinearGroup.val_map_apply] at hy
+    have h := map_mulVec_mem_standard (A : Matrix ι ι B) hy
+    rwa [mulVec_mulVec, ← Matrix.map_mul, Units.mul_inv, Matrix.map_one _ (map_zero _) (map_one _),
+      one_mulVec] at h
+  · rw [mem_GL_smul, ← map_inv, GeneralLinearGroup.val_map_apply]
+    exact map_mulVec_mem_standard _ hy
+
+/-- **The stabilizer of the standard lattice.** If `B → K` is injective, the elements of `GL ι K`
+fixing the standard lattice are exactly those of `GL ι B`. -/
+theorem stabilizer_standard :
+    MulAction.stabilizer (GL ι K) (standard B K ι) =
+      (GeneralLinearGroup.map (algebraMap B K)).range := by
+  refine le_antisymm (fun g hg ↦ ?_) ?_
+  · -- `g` and `g⁻¹` preserve the standard lattice, so both have integral entries.
+    have key {h : GL ι K} (hh : h • standard B K ι = standard B K ι) :
+        ∃ A : Matrix ι ι B, A.map (algebraMap B K) = h := by
+      refine exists_map_eq_of_forall_mulVec_mem_standard fun y hy ↦ ?_
+      rw [← hh, mem_GL_smul, mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one,
+        one_mulVec]
+      exact hy
+    obtain ⟨A, hA⟩ := key hg
+    obtain ⟨A', hA'⟩ := key (inv_mem hg : g⁻¹ ∈ MulAction.stabilizer _ _)
+    have hinj : Function.Injective (Matrix.map · (algebraMap B K) : Matrix ι ι B → _) :=
+      Matrix.map_injective (FaithfulSMul.algebraMap_injective B K)
+    refine ⟨⟨A, A', hinj ?_, hinj ?_⟩, Units.ext ?_⟩
+    · simp [Matrix.map_mul, hA, hA']
+    · simp [Matrix.map_mul, hA, hA']
+    · simpa using hA
+  · rintro _ ⟨A, rfl⟩
+    exact map_smul_standard A
+
+variable (S : Submonoid B) [IsLocalization S K]
+include S
+
+/-- **Free lattices form one orbit.** When `K` is a localization of `B` and `B → K` is injective,
+a lattice in `ι → K` is the image of the standard lattice under some element of `GL ι K` exactly
+when it is free over `B`. -/
+theorem exists_GL_smul_standard_eq_iff (Λ : ProjectiveLattice B K (ι → K)) :
+    (∃ g : GL ι K, g • standard B K ι = Λ) ↔ Module.Free B Λ.toSubmodule := by
+  constructor
+  · rintro ⟨g, rfl⟩
+    rw [GL_smul_def, toSubmodule_map, toSubmodule_standard]
+    exact Module.Free.of_equiv ((LinearEquiv.ofInjective _
+      (FaithfulSMul.algebraMap_injective B K).comp_left).trans
+      (Submodule.equivMapOfInjective _ (LinearEquiv.injective _) _))
+  · intro hfree
+    rcases subsingleton_or_nontrivial K with hK | hK
+    · exact ⟨1, Subsingleton.elim _ _⟩
+    -- A `B`-basis of `Λ` extends to a `K`-basis of `ι → K`; send the standard basis to it.
+    have := Λ.isFullLattice S
+    let b := (Module.Free.chooseBasis B Λ.toSubmodule).extendOfIsFullLattice K
+    let e := b.indexEquiv (Pi.basisFun K ι)
+    let f := (Pi.basisFun K ι).equiv (b.reindex e) (Equiv.refl ι)
+    refine ⟨GeneralLinearGroup.toLin.symm
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv K _).symm f), ?_⟩
+    rw [GL_smul_def, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+    refine toSubmodule_injective ?_
+    have hf : (⇑(f.restrictScalars B : (ι → K) →ₗ[B] ι → K) ∘ fun i ↦ Pi.single i (1 : K)) =
+        b ∘ e.symm := funext fun i ↦ by
+      simpa [f] using (Pi.basisFun K ι).equiv_apply i (b.reindex e) (Equiv.refl ι)
+    rw [toSubmodule_map, toSubmodule_standard_eq_span, Submodule.map_span, ← Set.range_comp, hf,
+      e.symm.surjective.range_comp, Module.Basis.span_range_extendOfIsFullLattice]
+
+/-- **Transitivity on lattices over a local ring.** When `B` is local, `K` a localization of `B`
+and `B → K` injective, every lattice in `ι → K` is the image of the standard lattice under some
+element of `GL ι K`. -/
+theorem exists_GL_smul_standard_eq [IsLocalRing B] (Λ : ProjectiveLattice B K (ι → K)) :
+    ∃ g : GL ι K, g • standard B K ι = Λ :=
+  (exists_GL_smul_standard_eq_iff S Λ).mpr Module.free_of_flat_of_isLocalRing
+
+/-- When `B` is local, `K` a localization of `B` and `B → K` injective, `GL ι K` acts
+transitively on the lattices in `ι → K`. -/
+theorem isPretransitive [IsLocalRing B] :
+    MulAction.IsPretransitive (GL ι K) (ProjectiveLattice B K (ι → K)) where
+  exists_smul_eq Λ Λ' := by
+    obtain ⟨g, rfl⟩ := exists_GL_smul_standard_eq S Λ
+    obtain ⟨g', rfl⟩ := exists_GL_smul_standard_eq S Λ'
+    exact ⟨g' * g⁻¹, by rw [mul_smul, inv_smul_smul]⟩
+
+end GeneralLinearGroup
 
 end ProjectiveLattice
 

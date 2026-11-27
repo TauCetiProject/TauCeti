@@ -40,11 +40,12 @@ atlas, which needs no closedness of `ω` and no inner product on `E`, and for a 
 * The Floer energy density of a solution `u` is `ω(a, J a)` read in the chart, for the chart
   coordinate `a = ∂ₛv - X_{K_s}` of `∂ₛu - X_{K_s}`
   (`TauCeti.SmoothTwoForm.floerEnergyDensity_eq_inChartAt`).
-* A `C³` solution on an open set with values in the chart source has a `C³` coordinate expression
-  solving the coordinate Floer equation for the Hamiltonian one-form read in the chart
-  (`TauCeti.SmoothTwoForm.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub`), and its
-  energy density is nonnegative where `J` is tamed by `ω`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt`).
+* The energy density of a solution is nonnegative where `J` is tamed by `ω`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_nonneg_of_tames_inChartAt`). A `Cⁿ`
+  solution, `n ≠ 0`, on an open set with values in the chart source has a `Cⁿ` coordinate
+  expression solving the coordinate Floer equation for the Hamiltonian one-form read in the chart
+  (`TauCeti.SmoothTwoForm.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub`, in
+  `TauCeti.Geometry.Symplectic.Floer.Chart`).
 * In the chart, `ω(·, J ·)` is a continuous family of bilinear forms on `E`, positive when `J` is
   tamed by `ω`, hence uniformly coercive and bounded on a compact window: `c ‖ξ‖² ≤ ω(a, J a) ≤
   C ‖ξ‖²` for tangent vectors `a` with tangent coordinate `ξ`
@@ -258,32 +259,6 @@ theorem continuousOn_floerEnergyDensity_of_isOpen_prod {P : Type*} [TopologicalS
     (hu.contMDiffAt (hΩ.mem_nhds (hSΩ hz)))
     ((hXs.continuousAt (hW.mem_nhds hqW)).comp hslice)
     ((hXt.continuousAt (hW.mem_nhds hqW)).comp hslice)).continuousWithinAt
-
-/-- **Floer solutions in a chart solve the coordinate Floer equation.** Let `u` be `C³` on an open
-set `U`, with values in the source of the chart at `α`, and solve the Floer equation for `J(z, u)`
-on `U`. Then its coordinate expression `v = extChartAt I α ∘ u` is `C³` on `U` and solves the
-coordinate Floer equation `∂ₜv - X(z, v) i = J(z, v) (∂ₛv - X(z, v) 1)` on `U`, for the structure
-`J` and the Hamiltonian one-form `X` of `K_s ds + K_t dt` read in the chart. -/
-theorem contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
-    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u U)
-    (hus : MapsTo u U (extChartAt I α).source)
-    (hfl : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
-    ContDiffOn ℝ 3 (extChartAt I α ∘ u) U ∧ ∀ z ∈ U,
-      fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
-          ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ u) z) stdComplexLineImag =
-        Floer.almostComplexInChartAt I α J (z, (extChartAt I α ∘ u) z)
-          (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
-            ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ u) z)
-              stdComplexLineReal) := by
-  refine ⟨contMDiffOn_iff_contDiffOn.1 <| (contMDiffOn_extChartAt (n := 3)).comp hu
-    fun z hz ↦ by rw [mem_preimage, ← extChartAt_source I]; exact hus hz, fun z hz ↦ ?_⟩
-  simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
-    hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
-    (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
-      ((hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (hU.mem_nhds hz)) (hus hz)).1
-      (hfl z hz)
 
 omit [FiniteDimensional ℝ E] in
 /-- **The Floer energy density is nonnegative where `J` is tamed in a chart.** Let `J(z, x)` be
@@ -725,7 +700,7 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_s
   have hdiff (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (u k) z :=
     ((hu k).mdifferentiableOn (by norm_num)).mdifferentiableAt (hΩ.mem_nhds hz)
   have hchart (k : ℕ) := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub hΩ (hu k)
-    (fun _ hz ↦ hus k hz) (hfl k)
+    (by norm_num) (fun _ hz ↦ hus k hz) (hfl k)
   obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ :=
     hconv (u := fun k ↦ e ∘ u k) (f := fun k ↦ ω.floerEnergyDensity Ks Kt (u k)) hΩ hΩD
       (fun k ↦ (hchart k).1) (fun k ↦ (hchart k).2) (fun k z hz ↦ (huK k hz).2)

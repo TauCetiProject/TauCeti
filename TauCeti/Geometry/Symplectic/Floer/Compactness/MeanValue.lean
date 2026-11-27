@@ -157,7 +157,7 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
   have hdiff {y : ℝ × ℝ} (hy : y ∈ ball z₀ r) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u y :=
     (hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (isOpen_ball.mem_nhds hy)
   obtain ⟨hcd, hcfl⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub isOpen_ball
-    hu (fun _ hy ↦ hus hy) hfl
+    hu (by norm_num) (fun _ hy ↦ hus hy) hfl
   have hf0 : ∀ y ∈ ball z₀ r, 0 ≤ f y := fun y hy ↦
     hω.floerEnergyDensity_nonneg_of_tames_inChartAt (hJt p hp) (hrD hy) (hus hy) (huK hy).2
       (hfl y hy)

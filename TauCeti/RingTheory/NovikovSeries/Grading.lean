@@ -54,6 +54,9 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 * `TauCeti.NovikovSeries.iSupIndep_gradeBy`: the homogeneous pieces are independent.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_mem_gradeBy_iff`: the inclusion of the group ring
   preserves and reflects the degree.
+* `TauCeti.NovikovSeries.map_mem_gradeBy`: the pushforward `TauCeti.NovikovSeries.map` along an
+  exponent homomorphism compatible with the degrees preserves the degree, and it also reflects it
+  along injective maps (`TauCeti.NovikovSeries.map_mem_gradeBy_iff`).
 * `TauCeti.NovikovSeries.finite_support_of_mem_gradeBy`: a homogeneous series is finitely
   supported when the period is bounded above on its fibre.
 * `TauCeti.NovikovSeries.mem_iSup_gradeBy_iff`: if the period is bounded above on every fibre,
@@ -172,6 +175,18 @@ theorem mem_gradeBy_iff {f : H → ι} {i : ι} {a : NovikovSeries R H N} :
 theorem single_mem_gradeBy (f : H → ι) (h : H) (r : R) :
     (single h r : NovikovSeries R H N) ∈ gradeBy R N f (f h) := fun _ hg => by
   rw [mem_singleton_iff.1 (support_single_subset h r hg), mem_preimage, mem_singleton_iff]
+
+/-- A nonzero monomial `r e^h` has degree `i` exactly when `f h = i`. -/
+theorem single_mem_gradeBy_iff {f : H → ι} {h : H} {r : R} (hr : r ≠ 0) {i : ι} :
+    (single h r : NovikovSeries R H N) ∈ gradeBy R N f i ↔ f h = i :=
+  ⟨fun hs => hs (mem_support.2 (by rwa [coeff_single_same])),
+    fun hi => hi ▸ single_mem_gradeBy f h r⟩
+
+/-- Composing the degree function with an injective map of degrees does not change the pieces;
+for instance, negating both the degree function and the degree. -/
+theorem gradeBy_comp_of_injective {κ : Type*} {g : ι → κ} (hg : Injective g) (f : H → ι)
+    (i : ι) : gradeBy R N (g ∘ f) (g i) = gradeBy R N f i := by
+  rw [gradeBy, gradeBy, preimage_comp, ← image_singleton, hg.preimage_image]
 
 /-- There are no nonzero series of a degree that no exponent has. -/
 theorem gradeBy_eq_bot {f : H → ι} {i : ι} (hi : i ∉ range f) : gradeBy R N f i = ⊥ := by
@@ -365,6 +380,14 @@ section Internal
 
 variable [AddGroup H] {N : H →+ ℝ}
 
+/-- For the degree function `2 • c` of an integer-valued homomorphism `c`, the monomial `r e^(k h)`
+has degree `2 k c(h)`. -/
+theorem single_zsmul_mem_gradeBy_two_smul (c : H →+ ℤ) (k : ℤ) (h : H) (r : R) :
+    (single (k • h) r : NovikovSeries R H N) ∈ gradeBy R N (2 • c : H →+ ℤ) (2 * k * c h) := by
+  convert single_mem_gradeBy (R := R) (N := N) (2 • c : H →+ ℤ) (k • h) r using 2
+  simp only [map_zsmul, AddMonoidHom.smul_apply, smul_eq_mul]
+  ring
+
 /-- Over a nontrivial ring, if the period is nonzero and the additive degree `δ` takes infinitely
 many values, some Novikov series has nonzero coefficients in infinitely many degrees. -/
 theorem exists_infinite_image_support [Nontrivial R] [AddMonoid ι] (hN : N ≠ 0) {δ : H →+ ι}
@@ -462,6 +485,34 @@ theorem isInternal_gradeBy_iff_eq_zero_or_eq_zero [IsAddTorsionFree ι] [Decidab
 end Additive
 
 end Semiring
+
+section Map
+
+variable {T H' : Type*} [Semiring R] [Semiring T] [AddZeroClass H] [AddZeroClass H']
+  {N : H →+ ℝ} {N' : H' →+ ℝ} (ρ : R →+ T) (φ : H →+ H')
+  (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) {f : H → ι} {f' : H' → ι}
+
+/-- **Pushforwards preserve degrees.** If the degree `f'` of `φ h` is the degree `f h` of `h`, the
+pushforward along `φ` sends series of degree `i` to series of degree `i`. -/
+theorem map_mem_gradeBy (hf : ∀ h, f' (φ h) = f h) {i : ι} {a : NovikovSeries R H N}
+    (ha : a ∈ gradeBy R N f i) : map ρ φ hφ a ∈ gradeBy T N' f' i := by
+  intro h' hh'
+  obtain ⟨h, hh, rfl⟩ := support_map_subset ρ φ hφ a hh'
+  rw [mem_preimage, hf]
+  exact ha hh
+
+/-- Along injective coefficient and exponent maps, the pushforward also reflects degrees. -/
+theorem map_mem_gradeBy_iff (hρ : Injective ρ) (hinj : Injective φ) (hf : ∀ h, f' (φ h) = f h)
+    {i : ι} {a : NovikovSeries R H N} :
+    map ρ φ hφ a ∈ gradeBy T N' f' i ↔ a ∈ gradeBy R N f i := by
+  refine ⟨fun ha h hh => ?_, map_mem_gradeBy ρ φ hφ hf⟩
+  have hφh : φ h ∈ (map ρ φ hφ a).support := by
+    rw [mem_support, coeff_map_of_injective ρ φ hφ hinj, ← map_zero ρ]
+    exact hρ.ne (mem_support.1 hh)
+  have := ha hφh
+  rwa [mem_preimage, hf] at this
+
+end Map
 
 /-- The inclusion of the group ring into the Novikov series preserves and reflects the degree. -/
 theorem ofAddMonoidAlgebra_mem_gradeBy_iff [CommSemiring R] [AddMonoid H] {N : H →+ ℝ}
