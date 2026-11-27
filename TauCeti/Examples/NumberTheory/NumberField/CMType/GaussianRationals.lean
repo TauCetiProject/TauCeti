@@ -31,7 +31,7 @@ The reflex norm `N_Φ : ℚ(I) → K`, defined on the reflex field `ℚ(I)` of `
 the selected embedding: `N_Φ(φ c) = c` (`reflexNorm_Φ`), so `N_Φ(2 + I) = 2 + i`
 (`reflexNorm_Φ_two_add_I`). For the complementary type `ιΦ = {i ↦ -I}`,
 `N_{ιΦ}(2 + I) = 2 - i` (`reflexNorm_star_Φ_two_add_I`), the conjugate of `N_Φ(2 + I)`; in
-particular the two norms differ (`reflexNorm_star_Φ_two_add_I_ne`).
+particular `N_{ιΦ}(2 + I) ≠ 2 + i` (`reflexNorm_star_Φ_two_add_I_ne`).
 -/
 
 public section
@@ -179,7 +179,7 @@ theorem reflexNorm_star_Φ_two_add_I (h : 2 + Complex.I ∈ (star Φ).reflexFiel
     (star Φ).reflexNorm le_rfl ⟨2 + Complex.I, h⟩ = 2 - ζ :=
   CMType.reflexNorm_apply_of_coe_eq_singleton coe_star_Φ star_φ_two_sub_ζ.symm
 
-/-- The norms of `Φ` and `ιΦ` differ: `N_{ιΦ}(2 + I) ≠ 2 + i`. -/
+/-- **The Check `N_{ιΦ}(2 + I) ≠ 2 + i`.** -/
 theorem reflexNorm_star_Φ_two_add_I_ne (h : 2 + Complex.I ∈ (star Φ).reflexField) :
     (star Φ).reflexNorm le_rfl ⟨2 + Complex.I, h⟩ ≠ 2 + ζ := by
   rw [reflexNorm_star_Φ_two_add_I]

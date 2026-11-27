@@ -111,12 +111,11 @@ variable {E : Type*} [Field E] [NumberField E]
 attribute [local instance] Algebra.FormallyUnramified.of_isSeparable
 
 /-- **The reflex norm of a one-element CM type.** If `Φ = {φ}` is a CM type on a number field, as
-for an imaginary quadratic field, then `N_Φ = N_{E*,Φ}` inverts `φ`: `N_Φ(φ c) = c`. The
-representation with the type trace is `E*` itself, on which `E` acts through `φ`, and
-`E* = φ(E)`. -/
+for an imaginary quadratic field, then `N_Φ = N_{E*,Φ}` inverts `φ`: `N_Φ(φ c) = c`. -/
 theorem reflexNorm_apply_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
     (hΦ : (Φ : Set (E →+* ℂ)) = {φ}) {a : Φ.reflexField} {c : E} (ha : (a : ℂ) = φ c) :
     Φ.reflexNorm le_rfl a = c := by
+  -- The representation with the type trace is `E*` itself, on which `E` acts through `φ`, and
   -- `E* = φ(E)`.
   have hrange := reflexField_eq_fieldRange_of_coe_eq_singleton hΦ
   have hmem (c : E) : φ c ∈ Φ.reflexField :=
