@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.ODE.Basic
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -16,8 +17,9 @@ This file contains the basic regularity theorem that a solution of a first-order
 derivative over a right-hand side that is already differentiable on its range. The parameter
 set only needs unique derivatives, so the result also applies at closed interval endpoints. It
 holds over any nontrivially normed field and for finite or infinite order of differentiability.
-A solution of a time-dependent equation `x' = X(t, x)` with a jointly continuous right-hand side
-is `C¹` (`TauCeti.contDiff_one_of_hasDerivAt`).
+A solution of a time-dependent equation `x' = X(t, x)` with a jointly `C^n` right-hand side is
+`C^(n + 1)` (`TauCeti.contDiff_succ_of_hasDerivAt`); in particular it is `C¹` when the right-hand
+side is jointly continuous (`TauCeti.contDiff_one_of_hasDerivAt`).
 The same holds for a linear equation `f' = A_t f` whose coefficient `A` is `C^n` in `t`
 (`TauCeti.contDiff_succ_of_hasDerivAt_clm_apply`).
 For a field that is Lipschitz in time and state, a bound on the speed of a solution gives
@@ -73,15 +75,26 @@ theorem contDiffOn_succ_of_hasDerivWithinAt_comp {𝕜 F : Type*} [NontriviallyN
         fun t ht ↦ (hf t ht).derivWithin (hs t ht)
   exact_mod_cast contDiffOn_iff_forall_nat_le.mpr key
 
+/-- A solution of a time-dependent first-order equation `x' = X(t, x)` with a jointly `C^n`
+right-hand side is `C^(n + 1)`: the curve `t ↦ (t, x t)` solves the autonomous equation of the
+vector field `(t, y) ↦ (1, X(t, y))`. The order `n` may be infinite. -/
+theorem contDiff_succ_of_hasDerivAt {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞} {X : 𝕜 → F → F} {x : 𝕜 → F}
+    (hX : ContDiff 𝕜 n (Function.uncurry X)) (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
+    ContDiff 𝕜 (n + 1) x := by
+  have h := contDiffOn_succ_of_hasDerivWithinAt_comp (f := fun t ↦ (t, x t)) (s := univ)
+    (u := univ) (v := fun p ↦ ((1 : 𝕜), Function.uncurry X p)) uniqueDiffOn_univ
+    (contDiff_const.prodMk hX).contDiffOn (mapsTo_univ _ _)
+    fun t _ ↦ (HasDerivAt.prodMk (hasDerivAt_id t) (hx t)).hasDerivWithinAt
+  exact contDiff_snd.comp (contDiffOn_univ.1 h)
+
 /-- A solution of a time-dependent first-order equation `x' = X(t, x)` with a jointly continuous
 right-hand side is `C¹`. -/
 theorem contDiff_one_of_hasDerivAt {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : 𝕜 → F → F} {x : 𝕜 → F}
     (hX : Continuous (Function.uncurry X)) (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
     ContDiff 𝕜 1 x := by
-  refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
-  rw [funext fun t ↦ (hx t).deriv]
-  exact hX.comp (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+  simpa using contDiff_succ_of_hasDerivAt (n := 0) (contDiff_zero.2 hX) hx
 
 /-- A solution of a linear equation `f' = A_t f` whose coefficient `A` is `C^n` is `C^(n + 1)`.
 The order `n` may be infinite. -/

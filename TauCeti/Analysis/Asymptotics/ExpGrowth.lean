@@ -31,6 +31,8 @@ equality when `exp (c * n) * u n` is monotone for some real `c`. This extends Ma
   for some real `c`, then `expGrowthSup (fun n ↦ u (k * n)) = k * expGrowthSup u` for `k ≠ 0`.
 * `Monotone.expGrowthSup_comp_add`: a monotone sequence has the same upper exponential growth
   along the shifted times `n + k`.
+* `ExpGrowth.expGrowthSup_rpow` — `expGrowthSup (fun n ↦ u n ^ t) = t * expGrowthSup u` for
+  real `t ≥ 0`.
 -/
 
 public section
@@ -87,6 +89,13 @@ theorem expGrowthSup_comp_mul_of_monotone_exp_mul {u : ℕ → ℝ≥0∞} {c : 
   rw [h₁, EReal.left_distrib_of_nonneg_of_ne_top (by positivity) (natCast_ne_top k)]
   push_cast
   rw [mul_comm]
+
+/-- Raising a sequence to a nonnegative real power `t` multiplies its upper exponential growth
+by `t`. -/
+theorem expGrowthSup_rpow {t : ℝ} (ht : 0 ≤ t) (u : ℕ → ℝ≥0∞) :
+    expGrowthSup (fun n ↦ u n ^ t) = t * expGrowthSup u := by
+  simp only [expGrowthSup, ENNReal.log_rpow, ← EReal.mul_div]
+  exact limsup_const_mul_of_nonneg_of_ne_top (EReal.coe_nonneg.mpr ht) (EReal.coe_ne_top t)
 
 end ExpGrowth
 

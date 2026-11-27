@@ -28,9 +28,8 @@ Euler class (`TauCeti.Foliation.exists_isEulerClass_of_transverse`). In particul
 orientable codimension-one foliation of a closed orientable `3`-manifold has an Euler class in
 `H²(M; K)`, the kind of class that Thurston's Euler class inequality bounds.
 
-The existence results take the manifold, its model space and the coefficient ring in `Type`:
-`TauCeti.VectorBundleOrientation.exists_isThomClass` asks for the base and the model fibre
-`Fin k → ℝ` of the tangent field to live in the same universe.
+The existence results take the manifold, its model space and the coefficient ring in any common
+universe, while the model fibre `Fin k → ℝ` of the tangent field lies in `Type`.
 
 ## Main definitions
 
@@ -64,13 +63,13 @@ noncomputable section
 open Bundle Module
 open scoped Manifold ContDiff
 
+universe w
+
 namespace TauCeti
 
 namespace Foliation
 
 section Orientation
-
-universe w
 
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
@@ -124,9 +123,9 @@ end Orientation
 
 section Existence
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
-  {M : Type} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
+  {M : Type w} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
   [IsManifold I (n + 1) M] [IsManifold I 1 M] [Orientable I M] (F : Foliation I n M k)
 
 /-- **A transversely orientable codimension-one foliation of an orientable manifold has a Thom
@@ -135,7 +134,7 @@ continuous vector field is nowhere tangent to `F`, then the tangent field of `F`
 `u ∈ Hᵏ(TF, TF₀; K)` with coefficients in any commutative ring `K`. -/
 theorem exists_isThomClass_of_transverse (hE : finrank ℝ E = k + 1)
     {ν : ∀ x : M, TangentSpace I x} (hν : Continuous fun x ↦ (⟨x, ν x⟩ : TangentBundle I M))
-    (hνF : ∀ x, ν x ∉ F.distribution x) (K : Type) [CommRing K] :
+    (hνF : ∀ x, ν x ∉ F.distribution x) (K : Type w) [CommRing K] :
     ∃ u : F.thomPair.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ (Fin k → ℝ)), F.IsThomClass u := by
   obtain ⟨o⟩ := (orientable_iff_nonempty_vectorBundleOrientation (I := I) (M := M)).1 ‹_›
@@ -150,7 +149,7 @@ Euler class** `e ∈ Hᵏ(M; K)`, with coefficients in any commutative ring `K`:
 Thom class of its tangent field. -/
 theorem exists_isEulerClass_of_transverse (hE : finrank ℝ E = k + 1)
     {ν : ∀ x : M, TangentSpace I x} (hν : Continuous fun x ↦ (⟨x, ν x⟩ : TangentBundle I M))
-    (hνF : ∀ x, ν x ∉ F.distribution x) (K : Type) [CommRing K] :
+    (hνF : ∀ x, ν x ∉ F.distribution x) (K : Type w) [CommRing K] :
     ∃ e : (TopCat.of M).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) k,
       F.IsEulerClass e := by
   obtain ⟨u, hu⟩ := F.exists_isThomClass_of_transverse hE hν hνF K

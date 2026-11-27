@@ -12,6 +12,7 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.SimpleRing.Matrix
+import TauCeti.LinearAlgebra.Matrix.Trace.Positive
 
 /-!
 # Positive involutions: examples
@@ -49,8 +50,7 @@ def transpose (n : Type*) [Fintype n] [DecidableEq n] :
     PositiveInvolution (Matrix n n ℚ) :=
   PositiveInvolution.ofStarRing fun x hx ↦ by
     rw [star_eq_conjTranspose, semisimpleReducedTrace_matrix]
-    exact (posSemidef_self_mul_conjTranspose x).trace_nonneg.lt_of_ne'
-      (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hx)
+    exact trace_mul_conjTranspose_self_pos hx
 
 example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n ℚ) :
     (transpose n).toStarRing.star x = xᵀ :=

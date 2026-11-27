@@ -670,6 +670,18 @@ theorem isOutwardPointing (hV : IsOutwardPointingField V) {x : M}
     IsOutwardPointing x (V x) :=
   hV.2 x hx
 
+/-- The negative of an outward-pointing field is smooth. -/
+theorem contMDiff_neg (hV : IsOutwardPointingField V) :
+    ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% (-V)) :=
+  fun x ↦ (hV.contMDiff x).neg_section
+
+/-- The negative of an outward-pointing field points inward along the boundary: the negative of
+its value at every boundary point is outward. This is the boundary hypothesis of the inward flow
+lemmas, applied to the inward field `-V`. -/
+theorem isOutwardPointing_neg_neg (hV : IsOutwardPointingField V) (x : M)
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) : IsOutwardPointing x (-(-V) x) := by
+  simpa using hV.isOutwardPointing hx
+
 /-- The sum of two smooth outward-pointing fields is outward-pointing. -/
 theorem add {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
     (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.Multiquadratic.MinusFive.Basic
+public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.RamifiedPrimesClassGroup
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
@@ -26,8 +27,8 @@ prime `2`.  Thus there are at most two ideal classes.  The prime above `2` is no
 `𝓞_{ℚ(√-5)} = ℤ[√-5]`, and a generator would give an integer solution of
 `a² + 5b² = 2`.
 
-The main theorem is stated for any number field with an integral generator of minimal polynomial
-`X² + 5`; the final theorem applies it to Mathlib's `AdjoinRoot` model.
+The main theorems are stated for any number field with an integral generator of minimal polynomial
+`X² + 5`; the final theorem applies the class number computation to Mathlib's `AdjoinRoot` model.
 
 The argument follows the standard Minkowski proof; see D. A. Cox, *Primes of the Form
 x² + ny²*, Chapter 5.
@@ -36,6 +37,9 @@ x² + ny²*, Chapter 5.
 
 * `TauCeti.NumberField.classNumber_eq_two_of_minpoly_eq_X_sq_add_five`: every presentation of
   `ℚ(√-5)` by an integral generator has class number two.
+* `TauCeti.NumberField.two_mem_ramifiedPrimes_of_minpoly_eq_X_sq_add_five`: `2` ramifies.
+* `TauCeti.NumberField.not_isPrincipal_of_liesOver_two_of_minpoly_eq_X_sq_add_five`: the prime
+  above `2` is not principal.
 * `TauCeti.NumberField.classNumber_adjoinRoot_sqrt_neg_five_eq_two`: the result for the concrete
   `AdjoinRoot (X² + 5)` model.
 -/
@@ -161,17 +165,22 @@ private theorem minkowski_bound_lt_three
       rw [div_lt_iff₀ Real.pi_pos]
       nlinarith [Real.pi_gt_three]
 
-/-- The unique prime above `2` in `ℚ(√-5)` is not principal. -/
-private theorem not_isPrincipal_primeAboveTwo
+/-- The prime `2` ramifies in `ℚ(√-5)`. -/
+theorem two_mem_ramifiedPrimes_of_minpoly_eq_X_sq_add_five
+    (hmin : minpoly ℤ θ = X ^ 2 - C (-5 : ℤ))
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : 2 ∈ ramifiedPrimes K := by
+  rw [mem_ramifiedPrimes_iff_dvd_discr (K := K) Nat.prime_two, discr_eq_neg_twenty hmin hgen]
+  norm_num
+
+/-- **The prime above `2` in `ℚ(√-5)` is not principal.** A generator would have norm `2`, that
+is, give an integer solution of `a² + 5b² = 2`. -/
+theorem not_isPrincipal_of_liesOver_two_of_minpoly_eq_X_sq_add_five
     (hmin : minpoly ℤ θ = X ^ 2 - C (-5 : ℤ))
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (P : Ideal (𝓞 K)) [P.IsPrime] [P.LiesOver (span {(2 : ℤ)})] :
     ¬ Submodule.IsPrincipal P := by
   have hfin : finrank ℚ K = 2 := finrank_rat_eq_two hmin hgen
-  have hdisc := discr_eq_neg_twenty hmin hgen
-  have hram : 2 ∈ ramifiedPrimes K := by
-    rw [mem_ramifiedPrimes_iff_dvd_discr (K := K) Nat.prime_two, hdisc]
-    norm_num
+  have hram := two_mem_ramifiedPrimes_of_minpoly_eq_X_sq_add_five hmin hgen
   intro hprincipal
   let _ : Submodule.IsPrincipal P := hprincipal
   let z : 𝓞 K := Submodule.IsPrincipal.generator P
@@ -203,10 +212,7 @@ theorem classNumber_eq_two_of_minpoly_eq_X_sq_add_five
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : NumberField.classNumber K = 2 := by
   classical
   have hfin : finrank ℚ K = 2 := finrank_rat_eq_two hmin hgen
-  have hdisc := discr_eq_neg_twenty hmin hgen
-  have hram : 2 ∈ ramifiedPrimes K := by
-    rw [mem_ramifiedPrimes_iff_dvd_discr (K := K) Nat.prime_two, hdisc]
-    norm_num
+  have hram := two_mem_ramifiedPrimes_of_minpoly_eq_X_sq_add_five hmin hgen
   let _ : (span {(2 : ℤ)} : Ideal ℤ).IsPrime :=
     (Ideal.span_singleton_prime (by norm_num)).mpr
       (Int.prime_iff_natAbs_prime.mpr Nat.prime_two)
@@ -221,7 +227,7 @@ theorem classNumber_eq_two_of_minpoly_eq_X_sq_add_five
     ⟨P, mem_nonZeroDivisors_of_ne_zero hPne⟩
   have hPclass : ClassGroup.mk0 P0 ≠ 1 := by
     intro h
-    apply not_isPrincipal_primeAboveTwo hmin hgen P
+    apply not_isPrincipal_of_liesOver_two_of_minpoly_eq_X_sq_add_five hmin hgen P
     exact (ClassGroup.mk0_eq_one_iff (mem_nonZeroDivisors_of_ne_zero hPne)).mp
       (by simpa [P0] using h)
   have hM := minkowski_bound_lt_three hmin hgen
