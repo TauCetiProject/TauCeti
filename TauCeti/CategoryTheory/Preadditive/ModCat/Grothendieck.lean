@@ -10,7 +10,6 @@ public import TauCeti.CategoryTheory.Functor.LocallySmall
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 
 import Mathlib.Algebra.Category.Grp.AB
-import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.FunctorCategory
 import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 import Mathlib.CategoryTheory.Preadditive.Transfer
 
@@ -60,17 +59,6 @@ theorem exists_projective_separator [EssentiallySmall.{w} C] :
   let G := ∐ (yoneda (SmallModel.{w} C)).obj
   have hsep : IsSeparator G := isSeparating_yoneda.isSeparator_coproduct
   exact ⟨M.functor.obj G, (M.map_projective_iff G).2 inferInstance, hsep.of_equivalence M⟩
-
-/-- The module category has filtered colimits in the value universe. -/
-instance : HasFilteredColimitsOfSize.{w, w} (ModCat.{w} C) where
-  HasColimitsOfShape := inferInstance
-
-/-- Filtered colimits in the module category are exact, even for a large source category. -/
-noncomputable instance : AB5OfSize.{w, w} (ModCat.{w} C) where
-  ofShape J _ _ := by
-    let P := additiveFunctor Cᵒᵖ AddCommGrpCat.{w}
-    have : PreservesFiniteLimits P.ι := ⟨fun _ _ _ ↦ inferInstance⟩
-    exact HasExactColimitsOfShape.domain_of_functor J P.ι
 
 /-- The category of modules over an essentially small preadditive category is Grothendieck
 abelian in the value universe. -/

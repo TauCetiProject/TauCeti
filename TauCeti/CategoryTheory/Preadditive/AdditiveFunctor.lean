@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.EpiMono
 public import Mathlib.Algebra.Category.Grp.Preadditive
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Center.Linear
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
@@ -16,6 +17,10 @@ public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
+
+import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.FunctorCategory
+import Mathlib.CategoryTheory.Limits.FunctorCategory.Finite
+import Mathlib.CategoryTheory.ObjectProperty.FiniteLimits
 
 /-!
 # Closure properties and linear structures of additive functors
@@ -34,6 +39,8 @@ of additive functors is again additive. Hence the additive functors `D ⥤ A` in
 category `A` contain zero and are closed under kernels, cokernels, and all limits and colimits
 that exist in `A`. They are also closed under every finite product that exists in `D ⥤ A`, since
 such a product is a biproduct and the additive evaluation functors preserve it.
+In particular, additive functors have filtered colimits when the target does, and these colimits
+are exact when the target has finite limits and satisfies AB5.
 
 When `D` is linear over a ring `R`, so is the category `D ⥤+ A` of additive functors into any
 preadditive `A`, with `r ∈ R` acting on `φ : F ⟶ G` by `φ ≫ G(r • 𝟙)` ([Mitchell, §11]). This
@@ -75,7 +82,7 @@ target is different.
 
 public section
 
-universe v
+universe v w w'
 
 open CategoryTheory Limits ZeroObject
 
@@ -167,6 +174,18 @@ instance additiveFunctor_isClosedUnderColimitsOfShape (J : Type*) [Category* J]
       ((h.ι.app j).naturality u).symm
     simp only [Functor.mapCocone_ι_app, evaluation_obj_map, Preadditive.comp_add, hn,
       Functor.map_add, Preadditive.add_comp]
+
+/-- Additive functors have filtered colimits of every size supported by the target category. -/
+instance [HasFilteredColimitsOfSize.{w, w'} A] : HasFilteredColimitsOfSize.{w, w'} (D ⥤+ A) where
+  HasColimitsOfShape _ _ _ := inferInstance
+
+/-- Filtered colimits of additive functors are exact if they are exact in a target with finite
+limits. -/
+noncomputable instance [HasFiniteLimits A] [HasFilteredColimitsOfSize.{w, w'} A]
+    [AB5OfSize.{w, w'} A] : AB5OfSize.{w, w'} (D ⥤+ A) where
+  ofShape J _ _ := by
+    have : (additiveFunctor D A).IsClosedUnderFiniteLimits := ⟨fun _ _ _ ↦ inferInstance⟩
+    exact HasExactColimitsOfShape.domain_of_functor J (additiveFunctor D A).ι
 
 /-- The zero functor is additive. -/
 instance [HasZeroObject A] : (additiveFunctor D A).ContainsZero where
