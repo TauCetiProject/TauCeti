@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Algebra.MvPolynomial.CommRing
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # The coefficient l¹-norm of a multivariate polynomial
@@ -16,7 +17,8 @@ This file defines the coefficient l¹-norm, also called the length, of a multiva
 over a seminormed commutative ring: the sum `ℓ(p) = ∑ₘ ‖cₘ‖` of the norms of its coefficients.
 It is subadditive and submultiplicative, and it controls substitutions: after substituting
 polynomials `fᵢ` for the variables, the length of `p(f)` is at most
-`∑ₘ ‖cₘ‖ ∏ᵢ ℓ(fᵢ) ^ mᵢ`.
+`∑ₘ ‖cₘ‖ ∏ᵢ ℓ(fᵢ) ^ mᵢ`. Values at a point `l` of a finite product are bounded by
+`ℓ(p) max(1, ‖l‖) ^ deg p`, so polynomials grow at most polynomially for the sup norm.
 
 Over `ℤ` the length is the quantity `∑ₘ |cₘ|` of Liouville's inequality for values of integer
 polynomials (`MvPolynomial.l1Norm_eq_sum_abs_coeff`, `Height.logHeight₁_aeval_le`), so these
@@ -39,6 +41,8 @@ values. The one-variable counterpart is `Polynomial.l1Norm`.
 * `MvPolynomial.l1Norm_eq_sum_abs_coeff`: over `ℤ`, the length is `∑ₘ |cₘ|`.
 * `MvPolynomial.l1Norm_aeval_le`: the substitution bound
   `ℓ(p(f)) ≤ ∑ₘ ‖cₘ‖ ∏ᵢ ℓ(fᵢ) ^ mᵢ`.
+* `MvPolynomial.norm_eval_le_l1Norm_mul_max_one_pow`: the evaluation bound
+  `‖p(l)‖ ≤ ℓ(p) max(1, ‖l‖) ^ deg p` for the sup norm on a finite product.
 -/
 
 public section
@@ -200,5 +204,28 @@ theorem l1Norm_aeval_le [NormOneClass R] (f : σ → MvPolynomial τ R) (p : MvP
     (aeval f p).l1Norm ≤ ∑ m ∈ p.support, ‖p.coeff m‖ * m.prod fun i k ↦ (f i).l1Norm ^ k := by
   conv_lhs => rw [p.as_sum, map_sum]
   exact (l1Norm_sum_le _ _).trans (sum_le_sum fun m _ ↦ l1Norm_aeval_monomial_le f m _)
+
+/-- **The evaluation bound.** At a point `l` of a finite product, with the sup norm, the value of
+`p` has norm at most `ℓ(p) max(1, ‖l‖) ^ deg p`.
+
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
+PBC), file `src/Lib/Weil/Fock/Basic.lean`, `New.Fock.exists_norm_eval_le_exp`, which bounds the
+value of a complex polynomial by an exponential in `‖l‖`. -/
+theorem norm_eval_le_l1Norm_mul_max_one_pow [NormOneClass R] [Fintype σ] (p : MvPolynomial σ R)
+    (l : σ → R) :
+    ‖eval l p‖ ≤ p.l1Norm * max 1 ‖l‖ ^ p.totalDegree := by
+  rw [eval_eq', l1Norm_def, sum_mul]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun d hd ↦ ?_)
+  refine (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+  have h_deg : ∑ i, d i ≤ p.totalDegree := by
+    simpa [Finsupp.sum_fintype] using le_totalDegree hd
+  calc ‖∏ i, l i ^ d i‖ ≤ ∏ i, ‖l i‖ ^ d i :=
+        (TauCeti.norm_prod_le_prod_norm _ _).trans
+          (prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ norm_pow_le _ _)
+    _ ≤ ∏ i, max 1 ‖l‖ ^ d i := prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦
+        pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm l i).trans (le_max_right _ _)) _
+    _ ≤ max 1 ‖l‖ ^ p.totalDegree := by
+        rw [prod_pow_eq_pow_sum]
+        exact pow_le_pow_right₀ (le_max_left _ _) h_deg
 
 end MvPolynomial
