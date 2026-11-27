@@ -176,7 +176,8 @@ variable (H) in
 the knot coefficient `∑ U ^ n_w(D) V ^ n_z(D)` (`TauCeti.HeegaardRegionSystem.knotCoefficient`)
 evaluated at `U = X` and `V = 0`. When the set `H.minusDomains χ x y` of nonnegative domains of
 Maslov index one from `x` to `y` is finite, this is the sum of `X ^ n_w(D)` over those domains `D`
-with `n_z(D) = 0` (`knotMinusCoefficient_eq_sum`); for an infinite set it is `0`. -/
+with `n_z(D) = 0` (`knotMinusCoefficient_eq_sum`); for an infinite set it is `0`
+(`knotMinusCoefficient_eq_zero_of_infinite`). -/
 noncomputable def knotMinusCoefficient (χ : Region → ℤ) (w z : Basepoint) (x y : H.Generator) :
     (ZMod 2)[X] :=
   MvPolynomial.aeval ![(X : (ZMod 2)[X]), 0] (H.knotCoefficient χ w z x y)
@@ -186,6 +187,16 @@ variable {χ : Region → ℤ} {w z : Basepoint} {x y : H.Generator}
 theorem knotMinusCoefficient_def : H.knotMinusCoefficient χ w z x y =
     MvPolynomial.aeval ![(X : (ZMod 2)[X]), 0] (H.knotCoefficient χ w z x y) :=
   (rfl)
+
+/-- When infinitely many domains are counted, the minus knot coefficient is `0`. -/
+theorem knotMinusCoefficient_eq_zero_of_infinite (h : (H.minusDomains χ x y).Infinite) :
+    H.knotMinusCoefficient χ w z x y = 0 := by
+  rw [knotMinusCoefficient_def, knotCoefficient_eq_zero_of_infinite h, map_zero]
+
+/-- The minus knot coefficient vanishes when no domain is counted. -/
+theorem knotMinusCoefficient_eq_zero_of_minusDomains_eq_empty (h : H.minusDomains χ x y = ∅) :
+    H.knotMinusCoefficient χ w z x y = 0 := by
+  rw [knotMinusCoefficient_def, knotCoefficient_eq_zero_of_minusDomains_eq_empty h, map_zero]
 
 /-- When finitely many domains are counted, the minus knot coefficient is the sum of
 `X ^ n_w(D)` over the counted domains `D` from `x` to `y` with `n_z(D) = 0`. -/
@@ -226,7 +237,7 @@ theorem exists_mem_minusDomains_of_coeff_knotMinusCoefficient_ne_zero {k : ℕ}
     obtain ⟨D, hD, hDw, hDz⟩ :=
       Set.nonempty_of_ncard_ne_zero fun h0 => h (by rw [h0, Nat.cast_zero])
     exact ⟨D, hD, hDw, hDz⟩
-  · rw [knotMinusCoefficient_def, knotCoefficient_eq_zero_of_infinite hfin, map_zero] at h
+  · rw [knotMinusCoefficient_eq_zero_of_infinite hfin] at h
     exact absurd (coeff_zero k) h
 
 /-- **Setting `U = 0` gives the hat knot Floer coefficient.** When finitely many domains are

@@ -176,7 +176,7 @@ Maslov index `2 D`, never one, so no domain is counted. -/
 theorem knotMinusDifferential_genusZero (w z : B) :
     (genusZero B).knotMinusDifferential (fun _ => 2) w z = 0 := by
   refine knotMinusDifferential_eq_zero_iff.mpr fun x y => ?_
-  rw [knotMinusCoefficient_def, knotCoefficient_eq_zero_of_minusDomains_eq_empty, map_zero]
+  refine knotMinusCoefficient_eq_zero_of_minusDomains_eq_empty ?_
   refine Set.eq_empty_of_forall_notMem fun D hD => ?_
   have hμ := (mem_minusDomains_iff.mp hD).2.2
   rw [maslovIndex_genusZero] at hμ
