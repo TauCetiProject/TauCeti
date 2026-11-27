@@ -63,6 +63,9 @@ values on compactly supported functions, and hence by its chart compressions.
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem`: the class is
+  local; a properly supported operator which near every compact set agrees with a classical
+  pseudodifferential operator of order `m` is one.
 * `TauCeti.mem_classicalPseudodifferentialOperators_iff_forall_isCompact`: membership is local on
   inputs. A properly supported operator has order `m` exactly when, on the functions supported in
   any given compact set, it agrees with some operator of order `m`.
@@ -70,6 +73,8 @@ values on compactly supported functions, and hence by its chart compressions.
   `ContMDiffMap.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of
   order `m` is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its
   input near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
+  Without the second condition, the sum is one as soon as it is properly supported
+  (`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators_of_isProperlySupported`).
 * `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_isCompact`: a properly supported
   operator which agrees on every compact set with a classical pseudodifferential operator of
   order `m` is one.
@@ -151,6 +156,16 @@ theorem isProperlySupported_id :
     IsProperlySupported (LinearMap.id : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :=
   fun K hK ↦ ⟨K, hK, fun _ hf ↦ hf, fun _ hf x hx ↦ hf.self_of_nhdsSet x hx⟩
+
+/-- On a compact manifold every operator is properly supported. -/
+theorem isProperlySupported_of_compactSpace [CompactSpace M]
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    IsProperlySupported P := fun _ _ ↦ ⟨univ, isCompact_univ, fun _ _ ↦ subset_univ _,
+  fun f hf x _ ↦ by
+    -- A function vanishing near `univ` is zero.
+    have hf0 : f = 0 := ContMDiffMap.ext fun y ↦ by simpa using hf.self_of_nhdsSet y (mem_univ y)
+    simp [hf0]⟩
 
 theorem IsProperlySupported.add (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
     IsProperlySupported (P + Q) := by
@@ -388,6 +403,28 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
 
+/-- **The class is local.** A properly supported operator `P` is a classical pseudodifferential
+operator of order `m` as soon as, near every compact set `K`, it agrees with one: for every compact
+`K` there is a smooth function `g` equal to `1` on `K` such that `u ↦ g · P u` is a classical
+pseudodifferential operator of order `m`. Indeed a chart compression of `P` by `φ` and `ψ` only
+sees `P u` on the compact set `e⁻¹(supp φ)`. -/
+theorem mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hP : IsProperlySupported P)
+    (h : ∀ K : Set M, IsCompact K → ∃ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      EqOn (⇑g) 1 K ∧ LinearMap.mulLeft ℂ g ∘ₗ P ∈ classicalPseudodifferentialOperators m) :
+    P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨g, hg1, hgP⟩ := h _ (e.isCompact_symm_image_tsupport φ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hgP).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
+    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply]
+  by_cases hx : x ∈ tsupport φ
+  · rw [hg1 (mem_image_of_mem _ hx), Pi.one_apply, one_mul]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_smul, zero_smul]
+
 /-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
 classical pseudodifferential operator of every order: each chart compression is multiplication by
 a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
@@ -438,19 +475,20 @@ variable {m : ℝ} {ι : Type*}
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
   {hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)} {S : ι → Set M}
 
-/-- **Locally finite sums of pseudodifferential operators.** Let `Pᵢ` be classical
-pseudodifferential operators of order `m` on `M`, and `Sᵢ` compact sets forming a locally finite
-family, such that the outputs of `Pᵢ` are supported in `Sᵢ` and `Pᵢ f = 0` whenever `f` vanishes
-near `Sᵢ`. Then the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of
-order `m`. -/
-theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyFinite S)
-    (hSc : ∀ i, IsCompact (S i)) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
+/-- **Properly supported locally finite sums of pseudodifferential operators.** Let `Pᵢ` be
+classical pseudodifferential operators of order `m` on `M` whose outputs are supported in sets `Sᵢ`
+forming a locally finite family. If the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is properly supported,
+then it is a classical pseudodifferential operator of order `m`. Proper support of the sum is not
+automatic: the `Pᵢ` may see their inputs far from the `Sᵢ`. It holds when each `Pᵢ` only sees its
+input near a compact `Sᵢ` (`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`), and
+also, for instance, when the sum is the difference of two properly supported operators. -/
+theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators_of_isProperlySupported
+    (hS : LocallyFinite S) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
     (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
-    (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
+    (hprop : IsProperlySupported (ContMDiffMap.locallyFiniteSum P hP)) :
     ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m := by
   classical
-  refine mem_classicalPseudodifferentialOperators_iff.2
-    ⟨isProperlySupported_locallyFiniteSum hS hSc hsupp hloc, fun e he φ ψ ↦ ?_⟩
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hprop, fun e he φ ψ ↦ ?_⟩
   -- In a chart, only the finitely many `Pᵢ` with `Sᵢ` meeting `e⁻¹(supp φ)` contribute.
   have hK := e.isCompact_symm_image_tsupport φ
   set I := (hS.finite_nonempty_inter_compact hK).toFinset
@@ -461,6 +499,19 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
   by_cases hx : φ x = 0
   · simp [hx]
   rw [ContMDiffMap.locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
+
+/-- **Locally finite sums of pseudodifferential operators.** Let `Pᵢ` be classical
+pseudodifferential operators of order `m` on `M`, and `Sᵢ` compact sets forming a locally finite
+family, such that the outputs of `Pᵢ` are supported in `Sᵢ` and `Pᵢ f = 0` whenever `f` vanishes
+near `Sᵢ`. Then the locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of
+order `m`. -/
+theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyFinite S)
+    (hSc : ∀ i, IsCompact (S i)) (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
+    (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
+    (hloc : ∀ i f, (∀ᶠ y in 𝓝ˢ (S i), f y = 0) → P i f = 0) :
+    ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m :=
+  locallyFiniteSum_mem_classicalPseudodifferentialOperators_of_isProperlySupported hS hPm hsupp
+    (isProperlySupported_locallyFiniteSum hS hSc hsupp hloc)
 
 end LocallyFiniteSum
 

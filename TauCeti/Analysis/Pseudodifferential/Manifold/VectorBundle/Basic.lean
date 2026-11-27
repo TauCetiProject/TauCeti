@@ -233,6 +233,15 @@ theorem IsSectionProperlySupported.of_map_smul [T2Space M]
     IsSectionProperlySupported P :=
   of_local fun _ _ hs ↦ apply_eq_zero_of_map_smul hP hs
 
+/-- On a compact manifold every operator between bundles is properly supported, with `K' = M`: a
+section vanishing near all of `M` is zero. -/
+theorem IsSectionProperlySupported.of_compactSpace [CompactSpace M]
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    IsSectionProperlySupported P := by
+  refine fun _ _ ↦ ⟨univ, isCompact_univ, fun _ _ ↦ subset_univ _, fun s hs x _ ↦ ?_⟩
+  have hs0 : s = 0 := ContMDiffSection.ext fun y ↦ hs.self_of_nhdsSet y (mem_univ y)
+  simp [hs0]
+
 end ProperSupport
 
 /-! ### Matrix entries -/
@@ -292,7 +301,7 @@ theorem smulCommutator_sectionEntry (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M
       sectionEntry t ψ hψ v t' χ hχ ℓ (smulCommutator ℂ g P) := by
   rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
   exact smulCommutator_comp_comp (fun f ↦ by simp [mul_smul])
-    (t'.cutoffFrameCoeff_smul χ hχ ℓ g) P
+    (t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g) P
 
 /-- The iterated form of `TauCeti.smulCommutator_sectionEntry`: the iterated commutators of a
 matrix entry of `P` are the matrix entries of the iterated commutators of `P`. -/
@@ -303,7 +312,7 @@ theorem smulCommutator_pow_sectionEntry (g : C^∞⟮𝓘(ℝ, CoordinateSpace n
       sectionEntry t ψ hψ v t' χ hχ ℓ ((smulCommutator ℂ g ^ k) P) := by
   rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
   exact smulCommutator_pow_comp_comp (fun f ↦ by simp [mul_smul])
-    (t'.cutoffFrameCoeff_smul χ hχ ℓ g) P k
+    (t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g) P k
 
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
@@ -336,7 +345,8 @@ theorem sectionEntry_mem_differentialOperators {m : ℕ}
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
   rw [sectionEntry_eq_comp]
   exact comp_comp_mem_differentialOperators
-    (fun g ↦ ⟨g, fun f ↦ by simp [mul_smul], t'.cutoffFrameCoeff_smul χ hχ ℓ g⟩) hP
+    (fun g ↦ ⟨g, fun f ↦ by simp [mul_smul], t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g⟩)
+    hP
 
 end Entry
 
@@ -532,15 +542,7 @@ theorem exists_quantizeSchwartzValue_eq_apply_chartCutoffSection [FiniteDimensio
           (P (t.chartCutoffSection he hE ψ u) (e.symm y)) := by
   -- A cutoff `ρ` on `M`, supported in the chart source and equal to `1` over the supports of `φ`
   -- and `ψ`, gives cut-off frames which are frames there.
-  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
-  set ρ := e.cutoffPullback he χ 1
-  have hρs : tsupport ρ ⊆ e.source := (e.tsupport_cutoffPullback_subset he χ 1).trans <| by
-    rintro _ ⟨y, hy, rfl⟩
-    exact e.map_target (χ.tsupport_subset hy)
-  have hρ (y : CoordinateSpace n) (hy : y ∈ tsupport φ ∪ tsupport ψ) : ρ (e.symm y) = 1 := by
-    have hyt : y ∈ e.target := (union_subset φ.tsupport_subset ψ.tsupport_subset) hy
-    rw [e.cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
-    exact hχ.self_of_nhdsSet y hy
+  obtain ⟨ρ, hρs, hρ⟩ := e.exists_tsupport_subset_source_and_eq_one he φ ψ
   set bV := Module.finBasis ℂ V
   set bW := Module.finBasis ℂ W
   -- The entries of `P` in these frames have symbols `a i j` in the chart.
@@ -614,6 +616,20 @@ theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional 
     (P _).eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection _ g hg' hPs b]
   simp only [map_sum, LinearMap.sum_apply, LinearMap.comp_apply,
     sectionEntry_apply_eq_cutoffFrameCoeff]
+
+/-- **Powers.** If `P : Γ(E) → Γ(E)` is a classical pseudodifferential operator of order `m` on a
+bundle with finite-dimensional fibre, then `P ^ k` has order `k * m`. -/
+theorem pow_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional ℂ V] {m : ℝ}
+    {P : Module.End ℂ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (k : ℕ) :
+    P ^ k ∈ sectionClassicalPseudodifferentialOperators (k * m) := by
+  induction k with
+  | zero =>
+    rw [pow_zero, Nat.cast_zero, zero_mul, Module.End.one_eq_id]
+    exact id_mem_sectionClassicalPseudodifferentialOperators
+  | succ k ih =>
+    rw [pow_succ', Module.End.mul_eq_comp, Nat.cast_succ, add_one_mul, add_comm]
+    exact comp_mem_sectionClassicalPseudodifferentialOperators hP ih
 
 end Composition
 

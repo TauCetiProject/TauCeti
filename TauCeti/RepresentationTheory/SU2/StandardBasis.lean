@@ -23,8 +23,9 @@ where `σₐ` are the Pauli matrices, that is, the isomorphism
 `TauCeti.suTwoEquiv : ℝ³ ≃ 𝔰𝔲(2)`, `x ↦ -(i/2) (x₀ σ₁ + x₁ σ₂ + x₂ σ₃)`. In this basis:
 
 * the bracket is the cross product, `⁅suTwoEquiv x, suTwoEquiv y⁆ = suTwoEquiv (x ⨯₃ y)`
-  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is isomorphic to `so(3)` with `-iσₐ/2` corresponding
-  to the infinitesimal rotation about the `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
+  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is not abelian (`TauCeti.SU2.not_isLieAbelian_lieAlgebra`)
+  and is isomorphic to `so(3)` with `-iσₐ/2` corresponding to the infinitesimal rotation about the
+  `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
 * the basis is orthonormal for the invariant form `B(X, Y) = -2 tr(XY)`
   (`TauCeti.trace_toMatrix_suTwoEquiv_mul`); the dot product therefore identifies `ℝ³` with the
   dual `𝔰𝔲(2)*` (`TauCeti.suTwoDualEquiv`), compatibly with the identification of `so(3)*`
@@ -213,6 +214,11 @@ def suTwoLieEquivSoThree : SU2.lieAlgebra ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.
 theorem suTwoLieEquivSoThree_suTwoEquiv (x : Fin 3 → ℝ) :
     suTwoLieEquivSoThree (suTwoEquiv x) = soThreeEquiv ℝ x :=
   congrArg (soThreeEquiv ℝ) (suTwoEquiv.symm_apply_apply x)
+
+/-- **`𝔰𝔲(2)` is not abelian**, since `so(3)` is not (`TauCeti.not_isLieAbelian_so_three`): in the
+basis `-iσₐ/2`, `⁅-iσ₂/2, -iσ₃/2⁆ = -iσ₁/2`. -/
+theorem SU2.not_isLieAbelian_lieAlgebra : ¬IsLieAbelian SU2.lieAlgebra := fun h ↦
+  not_isLieAbelian_so_three (suTwoLieEquivSoThree.symm.injective.isLieAbelian h)
 
 /-! ### The dual of `𝔰𝔲(2)` and the coadjoint action -/
 

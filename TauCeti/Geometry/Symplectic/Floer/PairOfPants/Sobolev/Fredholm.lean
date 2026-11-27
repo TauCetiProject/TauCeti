@@ -94,17 +94,17 @@ for `g ∈ L²(S)` and `h` its reading in the chart, `D (β · (Q h ∘ ψ))` mi
 private theorem jetOperator_endTransfer_sub_sub_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (q : Puncture) {β : ℝ × ℝ → ℝ} {Q : Lp W 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V}
     {K E : Lp W 2 stripMeasure →L[ℝ] Lp W 2 stripMeasure}
-    (hid : ∀ h, ((positiveEndChartLp q).symm (jetOperator
+    (hid : ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
       (volume.restrict thricePuncturedSphereReal) M (endTransfer q β (Q h))) :
         ℝ × ℝ → W) =ᵐ[stripMeasure] fun ζ ↦ β (positiveEndChart q ζ) • h ζ + K h ζ + E h ζ)
     (g : Lp W 2 (volume.restrict thricePuncturedSphereReal)) :
-    ⇑(jetOperator (volume.restrict thricePuncturedSphereReal) M
+    ⇑(jetOperator 2 (volume.restrict thricePuncturedSphereReal) M
         (endTransfer q β (Q ((positiveEndChartLp q).symm g))) -
       positiveEndChartLp q (K ((positiveEndChartLp q).symm g)) -
       positiveEndChartLp q (E ((positiveEndChartLp q).symm g)))
       =ᵐ[volume.restrict thricePuncturedSphereReal] fun z ↦ β z • g z := by
   set h := (positiveEndChartLp q).symm g
-  set X := jetOperator (volume.restrict thricePuncturedSphereReal) M (endTransfer q β (Q h))
+  set X := jetOperator 2 (volume.restrict thricePuncturedSphereReal) M (endTransfer q β (Q h))
   have hX : X - positiveEndChartLp q (K h) - positiveEndChartLp q (E h) =
       positiveEndChartLp q ((positiveEndChartLp q).symm X - K h - E h) := by
     rw [map_sub, map_sub, LinearIsometryEquiv.apply_symm_apply]
@@ -142,16 +142,16 @@ theorem cofg_range_jetOperator_comp_subtypeL_of_sum_eq_one
     (Q : ι → Lp W 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V)
     (K E : ι → Lp W 2 stripMeasure →L[ℝ] Lp W 2 stripMeasure)
     (hK : ∀ i, IsCompactOperator (K i)) (hE : ∑ i, ‖E i‖ < 1)
-    (hid : ∀ i h, ((positiveEndChartLp (q i)).symm (jetOperator
+    (hid : ∀ i h, ((positiveEndChartLp (q i)).symm (jetOperator 2
       (volume.restrict thricePuncturedSphereReal) M (endTransfer (q i) (β i) (Q i h))) :
         ℝ × ℝ → W) =ᵐ[stripMeasure]
           fun ζ ↦ β i (positiveEndChart (q i) ζ) • h ζ + K i h ζ + E i h ζ) :
-    ((jetOperator (volume.restrict thricePuncturedSphereReal) M).comp
+    ((jetOperator 2 (volume.restrict thricePuncturedSphereReal) M).comp
       (ConformalSobolev.H1 V _ cylindricalWeight).subtypeL).range.CoFG := by
   classical
   set μS := volume.restrict thricePuncturedSphereReal
   set H := ConformalSobolev.H1 V thricePuncturedSphereReal cylindricalWeight
-  set D := (jetOperator μS M).comp H.subtypeL
+  set D := (jetOperator 2 μS M).comp H.subtypeL
   -- The `L²` isometries along the end charts and their inverses, as operators.
   set tr : ι → Lp W 2 stripMeasure →L[ℝ] Lp W 2 μS := fun i ↦
     (positiveEndChartLp (W := W) (q i)).toContinuousLinearEquiv.toContinuousLinearMap
@@ -182,10 +182,11 @@ theorem cofg_range_jetOperator_comp_subtypeL_of_sum_eq_one
   have hDP : D.comp P = 1 + K' + E' := by
     ext1 g
     -- The pieces, minus their `K` and `E` parts, add up to `∑ β_i g = g`.
-    have hg : ∑ i, (jetOperator μS M (A i g) - tr i (K i (rd i g)) - tr i (E i (rd i g))) = g := by
+    have hg :
+        ∑ i, (jetOperator 2 μS M (A i g) - tr i (K i (rd i g)) - tr i (E i (rd i g))) = g := by
       refine Lp.ext ?_
       filter_upwards [Lp.coeFn_finsetSum Finset.univ fun i ↦
-          jetOperator μS M (A i g) - tr i (K i (rd i g)) - tr i (E i (rd i g)),
+          jetOperator 2 μS M (A i g) - tr i (K i (rd i g)) - tr i (E i (rd i g)),
         ae_all_iff.2 fun i ↦ jetOperator_endTransfer_sub_sub_ae_eq (q i) (hid i) g,
         ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z h₁ h₂ hz
       rw [h₁, Finset.sum_apply]
@@ -578,7 +579,7 @@ private theorem exists_endCutoff_pieces (ω : SymplecticForm F)
         (s, t)) 0 atTop (Icc 0 1)) :
     ∃ T₀, ∀ T, T₀ ≤ T → ∀ q, ∃ (Q : Lp F 2 stripMeasure →L[ℝ] CylinderSobolev.H1 F)
       (K E : Lp F 2 stripMeasure →L[ℝ] Lp F 2 stripMeasure), IsCompactOperator K ∧
-        ‖E‖ ≤ 1 / 4 ∧ ∀ h, ((positiveEndChartLp q).symm (jetOperator
+        ‖E‖ ≤ 1 / 4 ∧ ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
           (volume.restrict thricePuncturedSphereReal) (ω.floerConformalJetCoeff cylindricalWeight
             (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)
               (endTransfer q (endCutoff q T) (Q h))) : ℝ × ℝ → F) =ᵐ[stripMeasure]
@@ -656,7 +657,7 @@ private theorem exists_frozen_piece (ω : SymplecticForm F)
         (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → β (positiveEndChart zero ζ) = 0) →
         (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart zero ζ) = 0) →
         ∃ K : Lp F 2 stripMeasure →L[ℝ] Lp F 2 stripMeasure, IsCompactOperator K ∧
-          ∀ h, ((positiveEndChartLp zero).symm (jetOperator
+          ∀ h, ((positiveEndChartLp zero).symm (jetOperator 2
             (volume.restrict thricePuncturedSphereReal) (ω.floerConformalJetCoeff cylindricalWeight
               (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)
                 (endTransfer zero β (Q h))) : ℝ × ℝ → F) =ᵐ[stripMeasure]
@@ -702,7 +703,7 @@ private theorem exists_core_pieces (ω : SymplecticForm F)
           (√(cylindricalWeight z) * |γ i z|) ≤ B ∧
           ‖Complex.equivRealProdCLM.symm z - zero.endCenter‖ * ‖fderiv ℝ (γ i) z‖ ≤ B) ∧
       (∀ z, ∑ i, γ i z = 1 - ∑ q, endCutoff q T z) ∧ (∀ i, IsCompactOperator (K i)) ∧
-      ∀ i h, ((positiveEndChartLp zero).symm (jetOperator
+      ∀ i h, ((positiveEndChartLp zero).symm (jetOperator 2
         (volume.restrict thricePuncturedSphereReal) (ω.floerConformalJetCoeff cylindricalWeight
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)
             (endTransfer zero (γ i) (Q i h))) : ℝ × ℝ → F) =ᵐ[stripMeasure]

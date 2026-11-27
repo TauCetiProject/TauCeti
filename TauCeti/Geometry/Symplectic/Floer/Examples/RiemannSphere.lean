@@ -67,7 +67,8 @@ the Riemann sphere is simply connected.
   variable `X = e^(-ℓ)`
   (`TauCeti.Floer.NovikovRing.toLaurentSeries_single_neg_zsmul_riemannSphereGenerator`), of raw
   degree `-2 c ℓ = -4` (`TauCeti.Floer.SphericalPeriodGroup.degree_riemannSphereGenerator`) and
-  valuation `ω ℓ = 1`.
+  valuation `ω ℓ = 1`: a nonzero monomial `r e^(k ℓ)` has raw degree `4 k` and no other
+  (`TauCeti.Floer.NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff`).
 * **The direction of the valuation.** The Floer Novikov ring has valuation `ν(γ) = -ω(γ)`, so the
   monomial `e^(k ℓ)` has valuation `-k`. For `m ≠ 0`, the geometric series `∑ₖ e^(k m ℓ)` is a
   Floer Novikov series exactly when `m < 0`
@@ -81,8 +82,12 @@ the Riemann sphere is simply connected.
   and sends `q^(k [ℓ])` to `X^k`
   (`TauCeti.Floer.NovikovRing.toLaurentSeries_coefficientComparison_riemannSphere_single`). For
   `k = 1` this is `q^[S²] ↦ X`, the coefficient of the quantum relation `x ⋆ x = q^[S²]` of `CP¹`,
-  homogeneous since `deg q^[S²] = 2 c₁[S²] = 4 = 2 deg x`. The whole quantum geometric series
-  `∑ₖ q^(k [S²])` goes to `∑ₖ e^(-k ℓ)`
+  homogeneous since `deg q^[S²] = 2 c₁[S²] = 4 = 2 deg x`
+  (`TauCeti.Floer.single_zsmul_riemannSphereSquare_mem_gradeBy`). The comparison keeps it of
+  degree `4`: its image `e^(-ℓ)` has raw degree `-4`, which is cochain degree `4`
+  (`TauCeti.Floer.coefficientComparison_riemannSphere_single_mem_gradeBy_degree`), whereas with
+  the opposite sign `q^A ↦ e^A` the image `e^ℓ` would have raw degree `4`, cochain degree `-4`.
+  The whole quantum geometric series `∑ₖ q^(k [S²])` goes to `∑ₖ e^(-k ℓ)`
   (`TauCeti.Floer.coefficientComparison_geometric_riemannSphere`): the quantum corrections in the
   multiples of the line class land in the Floer Novikov ring, and would not land in a ring with
   valuation `+ω`.
@@ -120,6 +125,8 @@ sphere are in `TauCeti.Geometry.Symplectic.Floer.Examples.Sphere`.
   exactly when `m < 0`, and for the opposite valuation `+ω` exactly when `m > 0`.
 * `TauCeti.Floer.coefficientComparison_geometric_riemannSphere`: the comparison sends the quantum
   geometric series `∑ₖ q^(k [S²])` to `∑ₖ e^(-k ℓ)`.
+* `TauCeti.Floer.coefficientComparison_riemannSphere_single_mem_gradeBy_degree`: it sends
+  `q^(k [ℓ])`, of quantum degree `4 k`, to a series of raw degree `-4 k`, cochain degree `4 k`.
 
 ## References
 
@@ -428,6 +435,46 @@ theorem coefficientComparison_geometric_riemannSphere {R : Type*} [Semiring R] (
   ext γ
   simp only [coeff_geometric]
   rw [hurewiczIntHom_mk, ofSingularHomology_hurewicz_riemannSphereSquare]
+
+/-- **The raw degrees of Floer monomials on the Riemann sphere.** A nonzero monomial `r e^(k ℓ)` of
+the Floer Novikov ring has raw degree `2 c₁(k ℓ) = 4 k` and no other. So the Laurent variable
+`e^(-ℓ)` has raw degree `-4`, which is cochain degree `4`, and `e^ℓ` has raw degree `4`. -/
+theorem NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff {R : Type*}
+    [Semiring R] {r : R} (hr : r ≠ 0) (k d : ℤ) :
+    single (k • riemannSphereGenerator) r ∈
+        gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) d ↔ d = 4 * k := by
+  rw [single_mem_gradeBy_iff hr, map_zsmul, PeriodGroup.degree_apply,
+    chern_riemannSphereGenerator, smul_eq_mul]
+  omega
+
+/-- **The quantum degree of the line class of `CP¹`.** The class `L` of the standard sphere has
+first Chern number `2`, so the quantum monomial `q^(k L)` has degree `2 c₁(k L) = 4 k`. -/
+theorem single_zsmul_riemannSphereSquare_mem_gradeBy {R : Type*} [Semiring R] (k : ℤ) (r : R) :
+    (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r :
+        NovikovSeries R _ ω_FS) ∈ gradeBy R ω_FS (2 • c₁_FS : _ →+ ℤ) (4 * k) := by
+  convert single_zsmul_mem_gradeBy_two_smul (R := R) (N := ω_FS) c₁_FS k _ r using 2
+  rw [homologyFirstChernHom_fubiniStudyForm_hurewiczIntHom_riemannSphereSquare]
+  ring
+
+/-- **The comparison `q^A ↦ e^(-A)` preserves the degree of the quantum relation of `CP¹`.**
+The quantum monomial `q^(k L)` of the class `L` of the standard sphere has degree `4 k`
+(`TauCeti.Floer.single_zsmul_riemannSphereSquare_mem_gradeBy`), and the comparison sends it to
+`e^(-k ℓ)`, of raw Floer degree `-4 k`, that is of cochain degree `4 k` in the grading
+`C^k = CF_(1-k)`. For `k = 1` this is the coefficient `q^L` of the quantum relation
+`x ⋆ x = q^L · 1`: of degree `4 = 2 + 2`, and still of cochain degree `4` after the comparison. With
+the opposite sign `q^A ↦ e^A` the image `e^ℓ` would have raw degree `4`, that is cochain degree
+`-4`, and not `4`
+(`TauCeti.Floer.NovikovRing.single_zsmul_riemannSphereGenerator_mem_gradeBy_degree_iff`). -/
+theorem coefficientComparison_riemannSphere_single_mem_gradeBy_degree {R : Type*} [Semiring R]
+    (k : ℤ) (r : R) :
+    coefficientComparison
+        (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (single (k • hurewiczIntHom _ ∞ 1 (Additive.ofMul ⟦riemannSphereSquare⟧)) r) ∈
+      gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) (-(4 * k)) := by
+  rw [PeriodGroup.degree_eq_two_smul_chern]
+  exact coefficientComparison_mem_gradeBy_two_smul _ _ c₁_FS _ (chern_ofSingularHomology _)
+    (single_zsmul_riemannSphereSquare_mem_gradeBy k r)
 
 namespace SphericalCapClass
 
