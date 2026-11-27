@@ -144,4 +144,131 @@ theorem finrank_hom_directSumObj [Fintype J] [StrongRankCondition k]
   rw [(Linear.homCongr k e (Iso.refl N)).finrank_eq]
   exact finrank_hom_biproduct k M N
 
+section Reindex
+
+/-- Reindex the summands of a degreewise direct sum of graded modules along an equivalence of
+index types. -/
+def directSumObjEquiv {α β : Type w} (e : α ≃ β)
+    (M : β → GradedModuleCat.{max w v} 𝒜) :
+    directSumObj (fun a ↦ M (e a)) ≅ directSumObj M where
+  hom := coproductDesc (fun a ↦ M (e a))
+    (Cofan.mk (directSumObj M) fun a ↦ (coproductCofan M).inj (e a))
+  inv := coproductDesc M
+    (Cofan.mk (directSumObj (fun a ↦ M (e a))) fun b ↦
+      eqToHom (congrArg M (e.apply_symm_apply b).symm) ≫
+        (coproductCofan (fun a ↦ M (e a))).inj (e.symm b))
+  hom_inv_id := by
+    apply Cofan.IsColimit.hom_ext (coproductCofanIsColimit (fun a ↦ M (e a)))
+    intro a
+    rw [Category.comp_id, ← Category.assoc, coproductCofan_inj_desc, cofan_mk_inj,
+      coproductCofan_inj_desc, cofan_mk_inj]
+    have h : ∀ {j₁ j₂ : α} (w : j₁ = j₂),
+        eqToHom (congrArg (fun x ↦ M (e x)) w) ≫
+            (coproductCofan (fun x ↦ M (e x))).inj j₂ =
+          (coproductCofan (fun x ↦ M (e x))).inj j₁ :=
+      fun w ↦ by subst w; rw [eqToHom_refl, Category.id_comp]
+    exact h (e.symm_apply_apply a).symm
+  inv_hom_id := by
+    apply Cofan.IsColimit.hom_ext (coproductCofanIsColimit M)
+    intro b
+    rw [Category.comp_id, ← Category.assoc, coproductCofan_inj_desc, cofan_mk_inj,
+      Category.assoc, coproductCofan_inj_desc, cofan_mk_inj]
+    have h : ∀ {j₁ j₂ : β} (w : j₁ = j₂),
+        eqToHom (congrArg M w) ≫ (coproductCofan M).inj j₂ = (coproductCofan M).inj j₁ :=
+      fun w ↦ by subst w; rw [eqToHom_refl, Category.id_comp]
+    exact h (e.apply_symm_apply b).symm
+
+/-- Reindexing maps each source coproduct injection to the corresponding target coproduct
+injection. -/
+@[reassoc (attr := simp)]
+theorem coproductCofan_inj_directSumObjEquiv_hom {α β : Type w} (e : α ≃ β)
+    (M : β → GradedModuleCat.{max w v} 𝒜) (a : α) :
+    (coproductCofan (fun x ↦ M (e x))).inj a ≫ (directSumObjEquiv e M).hom =
+      (coproductCofan M).inj (e a) := by
+  rw [directSumObjEquiv, coproductCofan_inj_desc, cofan_mk_inj]
+
+/-- The inverse of the reindexing isomorphism maps each target coproduct injection to the
+matching source coproduct injection via `eqToHom`. -/
+@[reassoc]
+theorem coproductCofan_inj_directSumObjEquiv_inv {α β : Type w} (e : α ≃ β)
+    (M : β → GradedModuleCat.{max w v} 𝒜) (b : β) :
+    (coproductCofan M).inj b ≫ (directSumObjEquiv e M).inv =
+      eqToHom (congrArg M (e.apply_symm_apply b).symm) ≫
+        (coproductCofan (fun x ↦ M (e x))).inj (e.symm b) := by
+  rw [directSumObjEquiv, coproductCofan_inj_desc, cofan_mk_inj]
+
+/-- The inverse of the reindexing isomorphism maps `(coproductCofan M).inj (e a)` back to the
+`a`-th source coproduct injection. -/
+@[reassoc (attr := simp)]
+theorem coproductCofan_inj_apply_directSumObjEquiv_inv {α β : Type w} (e : α ≃ β)
+    (M : β → GradedModuleCat.{max w v} 𝒜) (a : α) :
+    (coproductCofan M).inj (e a) ≫ (directSumObjEquiv e M).inv =
+      (coproductCofan (fun x ↦ M (e x))).inj a := by
+  rw [Iso.comp_inv_eq, coproductCofan_inj_directSumObjEquiv_hom]
+
+end Reindex
+
+section Option
+
+/-- Split off the `none` summand from a degreewise direct sum indexed by `Option α`. -/
+def directSumObjOptionIso {α : Type w} (M : Option α → GradedModuleCat.{max w v} 𝒜) :
+    directSumObj M ≅ M none ⊞ directSumObj (fun a ↦ M (some a)) where
+  hom := coproductDesc M (Cofan.mk (M none ⊞ directSumObj (fun a ↦ M (some a))) fun
+    | none => biprod.inl
+    | some a => (coproductCofan (fun a ↦ M (some a))).inj a ≫ biprod.inr)
+  inv := biprod.desc
+    ((coproductCofan M).inj none)
+    (coproductDesc (fun a ↦ M (some a))
+      (Cofan.mk (directSumObj M) fun a ↦ (coproductCofan M).inj (some a)))
+  hom_inv_id := by
+    apply Cofan.IsColimit.hom_ext (coproductCofanIsColimit M)
+    rintro (_ | a)
+    · rw [Category.comp_id, ← Category.assoc, coproductCofan_inj_desc, cofan_mk_inj,
+        biprod.inl_desc]
+    · rw [Category.comp_id, ← Category.assoc, coproductCofan_inj_desc, cofan_mk_inj,
+        Category.assoc, biprod.inr_desc, coproductCofan_inj_desc, cofan_mk_inj]
+  inv_hom_id := by
+    apply biprod.hom_ext'
+    · rw [biprod.inl_desc_assoc, Category.comp_id, coproductCofan_inj_desc, cofan_mk_inj]
+    · rw [biprod.inr_desc_assoc, Category.comp_id]
+      apply Cofan.IsColimit.hom_ext (coproductCofanIsColimit (fun a ↦ M (some a)))
+      intro a
+      rw [← Category.assoc, coproductCofan_inj_desc, cofan_mk_inj,
+        coproductCofan_inj_desc, cofan_mk_inj]
+
+/-- The `Option` splitting maps the `none` coproduct injection to `biprod.inl`. -/
+@[reassoc (attr := simp)]
+theorem coproductCofan_inj_none_directSumObjOptionIso_hom {α : Type w}
+    (M : Option α → GradedModuleCat.{max w v} 𝒜) :
+    (coproductCofan M).inj none ≫ (directSumObjOptionIso M).hom = biprod.inl := by
+  rw [directSumObjOptionIso, coproductCofan_inj_desc, cofan_mk_inj]
+
+/-- The `Option` splitting maps each `some a` coproduct injection into the right biproduct
+summand via its coproduct injection. -/
+@[reassoc (attr := simp)]
+theorem coproductCofan_inj_some_directSumObjOptionIso_hom {α : Type w}
+    (M : Option α → GradedModuleCat.{max w v} 𝒜) (a : α) :
+    (coproductCofan M).inj (some a) ≫ (directSumObjOptionIso M).hom =
+      (coproductCofan (fun x ↦ M (some x))).inj a ≫ biprod.inr := by
+  rw [directSumObjOptionIso, coproductCofan_inj_desc, cofan_mk_inj]
+
+/-- The inverse of the `Option` splitting maps `biprod.inl` to the `none` coproduct
+injection. -/
+@[reassoc (attr := simp)]
+theorem inl_directSumObjOptionIso_inv {α : Type w}
+    (M : Option α → GradedModuleCat.{max w v} 𝒜) :
+    biprod.inl ≫ (directSumObjOptionIso M).inv = (coproductCofan M).inj none := by
+  rw [directSumObjOptionIso, biprod.inl_desc]
+
+/-- The inverse of the `Option` splitting maps the `a`-th coproduct injection of the `some`
+summand through `biprod.inr` to the `some a` coproduct injection. -/
+@[reassoc (attr := simp)]
+theorem coproductCofan_inj_inr_directSumObjOptionIso_inv {α : Type w}
+    (M : Option α → GradedModuleCat.{max w v} 𝒜) (a : α) :
+    (coproductCofan (fun x ↦ M (some x))).inj a ≫ biprod.inr ≫ (directSumObjOptionIso M).inv =
+      (coproductCofan M).inj (some a) := by
+  rw [← Category.assoc, Iso.comp_inv_eq, coproductCofan_inj_some_directSumObjOptionIso_hom]
+
+end Option
+
 end TauCeti.GradedModuleCat

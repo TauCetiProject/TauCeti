@@ -88,6 +88,12 @@ theorem gradedEulerMatrixA2_mul_gradedCartanMatrixA2_map_invert_transpose :
 def gradedBettiMatrixA2 : Matrix (Fin 2) (Fin 2) (PowerSeries (LaurentPolynomial ℤ)) :=
   !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1]
 
+/-- The entries of the Betti Poincaré matrix of `1 ⟶ 2`. -/
+@[simp]
+theorem gradedBettiMatrixA2_apply (i j : Fin 2) :
+    gradedBettiMatrixA2 i j = !![1, 0; PowerSeries.C (T 1) * PowerSeries.X, 1] i j := by
+  rw [gradedBettiMatrixA2]
+
 /-- Setting `q = 1` in the graded Cartan matrix gives the ordinary Cartan matrix. -/
 @[simp]
 theorem map_laurentEval_one_gradedCartanMatrixA2 :

@@ -578,52 +578,6 @@ theorem gradedFiniteProjectiveModules_directSumObj
   let _ (j : J) : Module.Projective A (M j) := (gradedFiniteProjectiveModules_iff.mp (hM j)).2
   infer_instance
 
-private noncomputable def directSumObjEquiv
-    {A : Type (max uJ v)} [Ring A] [Algebra k A] {𝒜 : ℤ → Submodule k A}
-    {α β : Type uJ} [Fintype α] [Fintype β] (e : α ≃ β)
-    (M : β → GradedModuleCat.{max uJ v} 𝒜) :
-    GradedModuleCat.directSumObj (fun a => M (e a)) ≅ GradedModuleCat.directSumObj M :=
-  have : HasBiproduct (fun a => M (e a)) := HasBiproduct.of_hasCoproduct _
-  have : HasBiproduct M := HasBiproduct.of_hasCoproduct _
-  (GradedModuleCat.coproductCofanIsColimit (fun a => M (e a))).coconePointUniqueUpToIso
-      (biproduct.isColimit (fun a => M (e a))) ≪≫
-    biproduct.whiskerEquiv e (fun _ => Iso.refl _) ≪≫
-    (biproduct.isColimit M).coconePointUniqueUpToIso (GradedModuleCat.coproductCofanIsColimit M)
-
-private noncomputable def directSumObjOptionIso
-    {A : Type (max uJ v)} [Ring A] [Algebra k A] {𝒜 : ℤ → Submodule k A}
-    {α : Type uJ} (M : Option α → GradedModuleCat.{max uJ v} 𝒜) :
-    GradedModuleCat.directSumObj M ≅
-      M none ⊞ GradedModuleCat.directSumObj (fun a => M (some a)) where
-  hom := GradedModuleCat.coproductDesc M (Cofan.mk _ fun
-    | none => biprod.inl
-    | some a => (GradedModuleCat.coproductCofan (fun a => M (some a))).inj a ≫ biprod.inr)
-  inv := biprod.desc
-    ((GradedModuleCat.coproductCofan M).inj none)
-    (GradedModuleCat.coproductDesc (fun a => M (some a)) (Cofan.mk _ fun a =>
-      (GradedModuleCat.coproductCofan M).inj (some a)))
-  hom_inv_id := by
-    apply Cofan.IsColimit.hom_ext (GradedModuleCat.coproductCofanIsColimit M)
-    rintro (_ | a)
-    · rw [Category.comp_id, ← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
-      change biprod.inl ≫ _ = _
-      rw [biprod.inl_desc]
-    · rw [Category.comp_id, ← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
-      change ((GradedModuleCat.coproductCofan (fun a => M (some a))).inj a ≫ biprod.inr) ≫ _ = _
-      rw [Category.assoc, biprod.inr_desc, GradedModuleCat.coproductCofan_inj_desc]
-      rfl
-  inv_hom_id := by
-    apply biprod.hom_ext'
-    · rw [biprod.inl_desc_assoc, Category.comp_id, GradedModuleCat.coproductCofan_inj_desc]
-      rfl
-    · rw [biprod.inr_desc_assoc, Category.comp_id]
-      apply Cofan.IsColimit.hom_ext (GradedModuleCat.coproductCofanIsColimit (fun a => M (some a)))
-      intro a
-      rw [← Category.assoc, GradedModuleCat.coproductCofan_inj_desc]
-      change (GradedModuleCat.coproductCofan M).inj (some a) ≫ _ = _
-      rw [GradedModuleCat.coproductCofan_inj_desc]
-      rfl
-
 private theorem laurentK0_of_directSumObj_aux
     {A : Type (max uJ v)} [Ring A] [Algebra k A] {𝒜 : ℤ → Submodule k A}
     {P : ObjectProperty (GradedModuleCat.{max uJ v} 𝒜)}
@@ -660,7 +614,7 @@ private theorem laurentK0_of_directSumObj_aux
   · intro α β _ e hα M hMj
     let _ : Fintype α := Fintype.ofEquiv β e.symm
     rw [LaurentK0.of_congr.{max uJ v} E
-        (ObjectProperty.isoMk P (directSumObjEquiv e M).symm :
+        (ObjectProperty.isoMk P (GradedModuleCat.directSumObjEquiv e M).symm :
           (⟨GradedModuleCat.directSumObj M, hPsum M hMj⟩ : P.FullSubcategory) ≅
             ⟨GradedModuleCat.directSumObj fun a => M (e a), hPsum _ fun a => hMj (e a)⟩),
       hα (fun a => M (e a)) (fun a => hMj (e a))]
@@ -679,7 +633,7 @@ private theorem laurentK0_of_directSumObj_aux
     have hbiprod : P (M none ⊞ GradedModuleCat.directSumObj fun a => M (some a)) :=
       P.prop_biprod_of_isClosedUnderBinaryProducts (hMj none) hsome
     rw [LaurentK0.of_congr.{max uJ v} E
-        (ObjectProperty.isoMk P (directSumObjOptionIso M) :
+        (ObjectProperty.isoMk P (GradedModuleCat.directSumObjOptionIso M) :
           (⟨GradedModuleCat.directSumObj M, hPsum M hMj⟩ : P.FullSubcategory) ≅
             ⟨M none ⊞ GradedModuleCat.directSumObj fun a => M (some a), hbiprod⟩),
       ← LaurentK0.ofExactK0_exactK0_of.{max uJ v}]
