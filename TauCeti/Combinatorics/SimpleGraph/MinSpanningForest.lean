@@ -25,15 +25,15 @@ an edge to belong to one are proved here.
 
 * *The cut property.* An edge of least weight among the edges of `G` leaving a set `S` of vertices
   lies in some minimum spanning forest; if it is strictly lighter than every other edge leaving
-  `S` and the weights are cancellative, it lies in every minimum spanning forest.
+  `S` and addition of weights is strictly monotone, it lies in every minimum spanning forest.
 * *The cycle property.* An edge of greatest weight on a cycle of `G` is missing from some minimum
-  spanning forest; if it is strictly heavier than every other edge of the cycle and the weights
-  are cancellative, it is missing from every minimum spanning forest.
+  spanning forest; if it is strictly heavier than every other edge of the cycle and addition of
+  weights is strictly monotone, it is missing from every minimum spanning forest.
 
 Both rest on exchanging one edge of a minimum spanning forest for another
 (`SimpleGraph.IsSpanningForest.exists_cut_exchange`,
-`SimpleGraph.IsSpanningForest.exists_cycle_exchange`) and on the change of weight under adding or
-deleting a single edge. Cancellation cannot be dropped from the statements about every minimum
+`SimpleGraph.IsSpanningForest.exists_cycle_exchange`) and on the change of weight under such an
+exchange. Strict monotonicity of addition cannot be dropped from the statements about every minimum
 spanning forest: with weights in `WithTop ℕ`, take a triangle with weights `1, 2, 3` and a pendant
 edge of weight `⊤`. Every spanning tree has weight `⊤`, so all three are minimum, and the one
 through the edges of weights `2` and `3` omits the strictly lightest edge leaving one of its ends.
@@ -47,6 +47,9 @@ through the edges of weights `2` and `3` omits the strictly lightest edge leavin
 
 * `SimpleGraph.totalWeight_deleteEdges_add`, `SimpleGraph.totalWeight_sup_edge`: the weight after
   deleting or adding a single edge.
+* `SimpleGraph.totalWeight_deleteEdges_sup_edge_le`,
+  `SimpleGraph.totalWeight_deleteEdges_sup_edge_lt`: exchanging an edge of a graph for a lighter
+  one does not raise its weight, and lowers it when addition is strictly monotone.
 * `SimpleGraph.exists_isMinSpanningForest`: every graph on a finite vertex type has a minimum
   spanning forest.
 * `SimpleGraph.exists_isMinSpanningForest_adj_of_cut`, `SimpleGraph.IsMinSpanningForest.adj_of_cut`:
@@ -106,6 +109,24 @@ theorem totalWeight_sup_edge (huv : u ≠ v) (h : ¬H.Adj u v) :
   rw [totalWeight_def, totalWeight_def, edgeSet_sup, edgeSet_edge_of_ne huv, Set.union_singleton,
     finsum_mem_insert w ((mem_edgeSet H).not.mpr h) (Set.toFinite _), add_comm]
 
+variable {w}
+
+/-- Exchanging an edge `f` of `F` for an edge `uv` of weight at most `w f` does not raise the weight
+of `F`. -/
+theorem totalWeight_deleteEdges_sup_edge_le [Preorder R] [AddLeftMono R] {f : Sym2 V}
+    (hf : f ∈ F.edgeSet) (huv : u ≠ v) (h : ¬(F.deleteEdges {f}).Adj u v)
+    (hw : w s(u, v) ≤ w f) : totalWeight w (F.deleteEdges {f} ⊔ edge u v) ≤ totalWeight w F := by
+  rw [totalWeight_sup_edge w huv h, ← totalWeight_deleteEdges_add w hf]
+  exact add_le_add_right hw _
+
+/-- Exchanging an edge `f` of `F` for an edge `uv` of weight less than `w f` lowers the weight of
+`F`, when addition is strictly monotone. -/
+theorem totalWeight_deleteEdges_sup_edge_lt [Preorder R] [AddLeftStrictMono R] {f : Sym2 V}
+    (hf : f ∈ F.edgeSet) (huv : u ≠ v) (h : ¬(F.deleteEdges {f}).Adj u v)
+    (hw : w s(u, v) < w f) : totalWeight w (F.deleteEdges {f} ⊔ edge u v) < totalWeight w F := by
+  rw [totalWeight_sup_edge w huv h, ← totalWeight_deleteEdges_add w hf]
+  exact add_lt_add_right hw _
+
 end Weight
 
 /-- A minimum spanning forest of `G` for the edge weight `w`: a spanning forest of `G` whose weight
@@ -148,9 +169,7 @@ theorem exists_isMinSpanningForest [Finite V] [AddCommMonoid R] [LinearOrder R]
 
 section Exchange
 
-variable [Finite V] [AddCommMonoid R] {w : Sym2 V → R} {f : Sym2 V}
-
-variable [LinearOrder R]
+variable [Finite V] [AddCommMonoid R] [LinearOrder R]
 
 /-- **The cut property.** If `uv` is an edge of `G` of least weight among the edges of `G` leaving
 a set `S` of vertices, some minimum spanning forest of `G` contains `uv`. -/
@@ -163,11 +182,9 @@ theorem exists_isMinSpanningForest_adj_of_cut [IsOrderedAddMonoid R] (w : Sym2 V
   · exact ⟨T, hT, hTuv⟩
   -- Exchange an edge `xy` of `T` leaving `S` for `uv`; the weight does not go up.
   obtain ⟨x, y, hxy, hx, hy, hT'⟩ := hT.isSpanningForest.exists_cut_exchange huv hu hv
-  have h₁ := totalWeight_sup_edge w huv.ne fun h ↦ hTuv (deleteEdges_le {s(x, y)} h)
-  have h₂ := totalWeight_deleteEdges_add w ((mem_edgeSet _).mpr hxy)
-  refine ⟨_, hT.of_totalWeight_le hT' ?_, .inr ((edge_adj ..).mpr ⟨.inl ⟨rfl, rfl⟩, huv.ne⟩)⟩
-  rw [h₁, ← h₂]
-  exact add_le_add_right (hmin (hT.isSpanningForest.le hxy) hx hy) _
+  exact ⟨_, hT.of_totalWeight_le hT' (totalWeight_deleteEdges_sup_edge_le
+    ((mem_edgeSet _).mpr hxy) huv.ne (fun h ↦ hTuv (deleteEdges_le _ h))
+    (hmin (hT.isSpanningForest.le hxy) hx hy)), .inr ((edge_adj ..).mpr ⟨.inl ⟨rfl, rfl⟩, huv.ne⟩)⟩
 
 /-- **The cycle property.** If `e` is an edge of greatest weight on a cycle `c` of `G`, some
 minimum spanning forest of `G` does not contain `e`. -/
@@ -181,11 +198,8 @@ theorem exists_isMinSpanningForest_notMem_of_cycle [IsOrderedAddMonoid R] (w : S
   rw [not_not] at heT
   -- Exchange `e` for an edge `xy` of `c` outside `T`; the weight does not go up.
   obtain ⟨x, y, hxyc, hxy, hT'⟩ := hT.isSpanningForest.exists_cycle_exchange hc he heT
-  have h₁ := totalWeight_sup_edge w (c.adj_of_mem_edges hxyc).ne fun h ↦ hxy (deleteEdges_le {e} h)
-  have h₂ := totalWeight_deleteEdges_add w heT
-  refine ⟨_, hT.of_totalWeight_le hT' ?_, ?_⟩
-  · rw [h₁, ← h₂]
-    exact add_le_add_right (hmax _ hxyc) _
+  refine ⟨_, hT.of_totalWeight_le hT' (totalWeight_deleteEdges_sup_edge_le heT
+    (c.adj_of_mem_edges hxyc).ne (fun h ↦ hxy (deleteEdges_le _ h)) (hmax _ hxyc)), ?_⟩
   · -- `e` is deleted, and it is not `xy`, which is not an edge of `T`.
     rw [edgeSet_sup, edgeSet_deleteEdges, edgeSet_edge_of_ne (c.adj_of_mem_edges hxyc).ne]
     rintro (⟨-, h⟩ | rfl)
@@ -194,10 +208,9 @@ theorem exists_isMinSpanningForest_notMem_of_cycle [IsOrderedAddMonoid R] (w : S
 
 end Exchange
 
-section Cancel
+section StrictMono
 
-variable [Finite V] [AddCommMonoid R] [PartialOrder R] [IsOrderedCancelAddMonoid R]
-  {w : Sym2 V → R}
+variable [Finite V] [AddCommMonoid R] [Preorder R] [AddLeftStrictMono R] {w : Sym2 V → R}
 
 /-- **The cut property, strict form.** If `uv` is an edge of `G` leaving a set `S` of vertices and
 strictly lighter than every other edge of `G` leaving `S`, every minimum spanning forest of `G`
@@ -209,12 +222,10 @@ theorem IsMinSpanningForest.adj_of_cut (hF : IsMinSpanningForest w F G) {S : Set
   by_contra hFuv
   -- Exchanging an edge `xy` of `F` leaving `S` for `uv` would give a lighter spanning forest.
   obtain ⟨x, y, hxy, hx, hy, hF'⟩ := hF.isSpanningForest.exists_cut_exchange huv hu hv
-  have h₁ := totalWeight_sup_edge w huv.ne fun h ↦ hFuv (deleteEdges_le {s(x, y)} h)
-  have h₂ := totalWeight_deleteEdges_add w ((mem_edgeSet _).mpr hxy)
   have hne : s(x, y) ≠ s(u, v) := fun h ↦ hFuv ((mem_edgeSet _).mp (h ▸ (mem_edgeSet _).mpr hxy))
-  refine (hF.totalWeight_le hF').not_gt ?_
-  rw [h₁, ← h₂]
-  exact add_lt_add_right (hlt (hF.isSpanningForest.le hxy) hx hy hne) _
+  exact (hF.totalWeight_le hF').not_gt (totalWeight_deleteEdges_sup_edge_lt
+    ((mem_edgeSet _).mpr hxy) huv.ne (fun h ↦ hFuv (deleteEdges_le _ h))
+    (hlt (hF.isSpanningForest.le hxy) hx hy hne))
 
 /-- **The cycle property, strict form.** If `e` is an edge of a cycle `c` of `G` strictly heavier
 than every other edge of `c`, no minimum spanning forest of `G` contains `e`. -/
@@ -224,13 +235,10 @@ theorem IsMinSpanningForest.notMem_of_cycle (hF : IsMinSpanningForest w F G) {a 
   intro heF
   -- Exchanging `e` for an edge `xy` of `c` outside `F` would give a lighter spanning forest.
   obtain ⟨x, y, hxyc, hxy, hF'⟩ := hF.isSpanningForest.exists_cycle_exchange hc he heF
-  have h₁ := totalWeight_sup_edge w (c.adj_of_mem_edges hxyc).ne fun h ↦ hxy (deleteEdges_le {e} h)
-  have h₂ := totalWeight_deleteEdges_add w heF
   have hne : s(x, y) ≠ e := fun h ↦ hxy ((mem_edgeSet _).mp (h ▸ heF))
-  refine (hF.totalWeight_le hF').not_gt ?_
-  rw [h₁, ← h₂]
-  exact add_lt_add_right (hlt _ hxyc hne) _
+  exact (hF.totalWeight_le hF').not_gt (totalWeight_deleteEdges_sup_edge_lt heF
+    (c.adj_of_mem_edges hxyc).ne (fun h ↦ hxy (deleteEdges_le _ h)) (hlt _ hxyc hne))
 
-end Cancel
+end StrictMono
 
 end SimpleGraph

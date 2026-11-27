@@ -41,6 +41,8 @@ edge count.
 * `SimpleGraph.isSpanningForest_exchange_iff`: the exchange criterion. For an edge `uv` of `G` with
   forest path `p` and an edge `f` of `F`, the graph `F - f + uv` is a spanning forest of `G` if and
   only if `f` lies on `p`.
+* `SimpleGraph.IsSpanningForest.exists_exchange_of_walk`: an edge `uv` of the forest can be
+  exchanged for an edge of any walk of `G` from `u` to `v`.
 * `SimpleGraph.IsSpanningForest.exists_symm_exchange`: the symmetric exchange property.
 * `SimpleGraph.IsSpanningForest.exists_cut_exchange`,
   `SimpleGraph.IsSpanningForest.exists_cycle_exchange`: an edge of `G` leaving a set `S` of
@@ -163,6 +165,28 @@ theorem isSpanningForest_exchange_iff (hF : F.IsSpanningForest G) (huv : G.Adj u
       (hF.isAcyclic.anti (F.deleteEdges_le _)).sup_edge_of_not_reachable hnr, ?_⟩
     rw [p.reachable.reachable_deleteEdges_sup_edge_eq hnr, hF.reachable_eq]
 
+/-- **Exchange along a walk.** Let `F` be a spanning forest of `G`, `uv` an edge of `F` and `q` a
+walk from `u` to `v` in a subgraph `H` of `G`. Then some edge `xy` of `q` has its ends separated in
+`F - uv`, and `uv` can be exchanged for it: the graph `F - uv + xy` is again a spanning forest
+of `G`. -/
+theorem IsSpanningForest.exists_exchange_of_walk (hF : F.IsSpanningForest G)
+    (he : s(u, v) ∈ F.edgeSet) (q : H.Walk u v) (hH : H ≤ G) :
+    ∃ x y, s(x, y) ∈ q.edges ∧ ¬(F.deleteEdges {s(u, v)}).Reachable x y ∧
+      (F.deleteEdges {s(u, v)} ⊔ edge x y).IsSpanningForest G := by
+  -- Since `uv` is a bridge of `F`, some edge `xy` of `q` leaves the side of `u` in `F - uv`.
+  have hsep : ¬(F.deleteEdges {s(u, v)}).Reachable u v :=
+    isBridge_iff.mp (isAcyclic_iff_forall_isBridge.mp hF.isAcyclic he)
+  obtain ⟨⟨⟨x, y⟩, hxy⟩, hd, hx, hy⟩ :=
+    q.exists_boundary_dart {z | (F.deleteEdges {s(u, v)}).Reachable u z} .rfl hsep
+  simp only [Set.mem_ofPred_eq] at hx hy
+  have hxy' : ¬(F.deleteEdges {s(u, v)}).Reachable x y := fun h ↦ hy (hx.trans h)
+  have hG : G.Adj x y := hH hxy
+  -- By duality `uv` lies on the forest path from `x` to `y`.
+  obtain ⟨p, hp, -⟩ := hF.existsUnique_path hG.reachable
+  exact ⟨x, y, q.edge_mem_edges_of_mem_darts hd, hxy',
+    (isSpanningForest_exchange_iff hF hG he hp).mpr
+      ((hp.mem_edges_iff_not_reachable_deleteEdges hF.isAcyclic).mpr hxy')⟩
+
 /-- **Symmetric exchange.** For spanning forests `F`, `F'` of `G` and an edge `e` of `F'` that is
 not in `F`, there is an edge `f` of `F` that is not in `F'` such that both `F - f + e` and
 `F' - e + f` are spanning forests of `G`. -/
@@ -173,33 +197,23 @@ theorem IsSpanningForest.exists_symm_exchange (hF : F.IsSpanningForest G)
       (F'.deleteEdges {e} ⊔ fromEdgeSet {f}).IsSpanningForest G := by
   induction e using Sym2.ind with
   | _ u v =>
-    -- The ends of `e` are separated in `F' - e`, so the `F`-path from `u` to `v` has an edge
-    -- `f = s(x, y)` whose ends are separated in `F' - e`.
+    -- The edge `e` of `F'` can be exchanged for an edge `f = s(x, y)` of the `F`-path from `u` to
+    -- `v` whose ends are separated in `F' - e`.
     have huv : F'.Adj u v := (mem_edgeSet _).mp he
-    have hsep : ¬(F'.deleteEdges {s(u, v)}).Reachable u v :=
-      isBridge_iff.mp (isAcyclic_iff_forall_isBridge.mp hF'.isAcyclic he)
     obtain ⟨p, hp, -⟩ := hF.existsUnique_path (hF'.le huv).reachable
-    obtain ⟨⟨⟨x, y⟩, hxy⟩, hd, hx, hy⟩ :=
-      p.exists_boundary_dart {z | (F'.deleteEdges {s(u, v)}).Reachable u z} .rfl hsep
-    simp only [Set.mem_ofPred_eq] at hx hy
-    have hxy' : ¬(F'.deleteEdges {s(u, v)}).Reachable x y := fun h ↦ hy (hx.trans h)
-    have hf : s(x, y) ∈ F.edgeSet := (mem_edgeSet _).mpr hxy
-    have hfp : s(x, y) ∈ p.edges := p.edge_mem_edges_of_mem_darts hd
+    obtain ⟨x, y, hfp, hxy', hF'xy⟩ := hF'.exists_exchange_of_walk he p hF.le
+    have hf : s(x, y) ∈ F.edgeSet := p.edges_subset_edgeSet hfp
     refine ⟨s(x, y), hf, fun hf' ↦ hxy' ?_, ?_, ?_⟩
     · -- `f ≠ e` because `f ∈ F` and `e ∉ F`, so an edge `f` of `F'` would survive in `F' - e`.
       have hne : s(x, y) ≠ s(u, v) := fun h ↦ heF (h ▸ hf)
       exact (deleteEdges_adj.mpr ⟨hf', Set.notMem_singleton_iff.mpr hne⟩).reachable
     · rw [← edge]
       exact (isSpanningForest_exchange_iff hF (hF'.le huv) hf hp).mpr hfp
-    · -- By duality `e` lies on the `F'`-path from `x` to `y`.
-      obtain ⟨q, hq, -⟩ := hF'.existsUnique_path (hF.le hxy).reachable
-      rw [← edge]
-      exact (isSpanningForest_exchange_iff hF' (hF.le hxy) he hq).mpr
-        ((hq.mem_edges_iff_not_reachable_deleteEdges hF'.isAcyclic).mpr hxy')
+    · rwa [← edge]
 
 /-- **Exchange across a cut.** Let `F` be a spanning forest of `G` and `uv` an edge of `G` leaving
 a set `S` of vertices. Then some edge `xy` of `F` leaving `S` can be exchanged for `uv`: the graph
-`F - xy + uv` is again a spanning forest of `G`. The edge `xy` is one on the forest path of `uv`. -/
+`F - xy + uv` is again a spanning forest of `G`. -/
 theorem IsSpanningForest.exists_cut_exchange (hF : F.IsSpanningForest G) (huv : G.Adj u v)
     {S : Set V} (hu : u ∈ S) (hv : v ∉ S) :
     ∃ x y, F.Adj x y ∧ x ∈ S ∧ y ∉ S ∧
@@ -211,8 +225,7 @@ theorem IsSpanningForest.exists_cut_exchange (hF : F.IsSpanningForest G) (huv : 
 
 /-- **Exchange along a cycle.** Let `F` be a spanning forest of `G` and `e` an edge of `F` on a
 cycle `c` of `G`. Then `e` can be exchanged for some edge `xy` of `c` outside `F`: the graph
-`F - e + xy` is again a spanning forest of `G`. The edge `xy` is one whose ends are separated in
-`F - e`. -/
+`F - e + xy` is again a spanning forest of `G`. -/
 theorem IsSpanningForest.exists_cycle_exchange (hF : F.IsSpanningForest G) {a : V}
     {c : G.Walk a a} (hc : c.IsCycle) {e : Sym2 V} (hec : e ∈ c.edges) (heF : e ∈ F.edgeSet) :
     ∃ x y, s(x, y) ∈ c.edges ∧ ¬F.Adj x y ∧
@@ -227,20 +240,11 @@ theorem IsSpanningForest.exists_cycle_exchange (hF : F.IsSpanningForest G) {a : 
       exact ⟨he, G.not_isDiag_of_mem_edgeSet (c.edges_subset_edgeSet he)⟩
     obtain ⟨-, ⟨q⟩⟩ := adj_and_reachable_delete_edges_iff_exists_cycle.mpr
       ⟨a, c.transfer H hH, hc.transfer hH, by rwa [Walk.edges_transfer]⟩
-    -- Since `uv` is a bridge of `F`, some edge `xy` of `q` leaves the side of `u` in `F - uv`.
-    have hsep : ¬(F.deleteEdges {s(u, v)}).Reachable u v :=
-      isBridge_iff.mp (isAcyclic_iff_forall_isBridge.mp hF.isAcyclic heF)
-    obtain ⟨⟨⟨x, y⟩, hxy⟩, -, hx, hy⟩ :=
-      q.exists_boundary_dart {z | (F.deleteEdges {s(u, v)}).Reachable u z} .rfl hsep
-    simp only [Set.mem_ofPred_eq] at hx hy
-    have hxy' : ¬(F.deleteEdges {s(u, v)}).Reachable x y := fun h ↦ hy (hx.trans h)
-    obtain ⟨hxyH, hne⟩ := deleteEdges_adj.mp hxy
-    have hxyc : s(x, y) ∈ c.edges := ((fromEdgeSet_adj _).mp hxyH).1
-    have hG : G.Adj x y := c.adj_of_mem_edges hxyc
-    refine ⟨x, y, hxyc, fun h ↦ hxy' (deleteEdges_adj.mpr ⟨h, hne⟩).reachable, ?_⟩
-    -- By duality `uv` lies on the forest path from `x` to `y`.
-    obtain ⟨p, hp, -⟩ := hF.existsUnique_path hG.reachable
-    exact (isSpanningForest_exchange_iff hF hG heF hp).mpr
-      ((hp.mem_edges_iff_not_reachable_deleteEdges hF.isAcyclic).mpr hxy')
+    -- The bridge `uv` of `F` can be exchanged for an edge `xy` of `q`.
+    obtain ⟨x, y, hxyq, hxy', hF'⟩ := hF.exists_exchange_of_walk heF q
+      fun _ _ h ↦ c.adj_of_mem_edges ((fromEdgeSet_adj _).mp (deleteEdges_adj.mp h).1).1
+    obtain ⟨hxyH, hne⟩ := deleteEdges_adj.mp (q.adj_of_mem_edges hxyq)
+    exact ⟨x, y, ((fromEdgeSet_adj _).mp hxyH).1,
+      fun h ↦ hxy' (deleteEdges_adj.mpr ⟨h, hne⟩).reachable, hF'⟩
 
 end SimpleGraph
