@@ -704,17 +704,11 @@ section Fibre
 
 variable {b : B} {v : E b} (hv : v ≠ 0)
 
-include hF hv in
-/-- A nonzero vector `v` of a line `E b` spans it: `c ↦ c • v` is bijective. -/
-private theorem bijective_toSpanSingleton :
-    Function.Bijective (LinearMap.toSpanSingleton 𝕜 (E b) v) := by
-  let L := ((trivializationAt F E b).continuousLinearEquivAt 𝕜 b
-    (FiberBundle.mem_baseSet_trivializationAt' b)).toLinearEquiv
-  have : FiniteDimensional 𝕜 F := Module.finite_of_finrank_eq_succ hF
-  have : FiniteDimensional 𝕜 (E b) := L.symm.finiteDimensional
-  have hinj : Function.Injective (LinearMap.toSpanSingleton 𝕜 (E b) v) := smul_left_injective 𝕜 hv
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  rw [Module.finrank_self, ← hF, L.finrank_eq]
+include hF in
+/-- A fibre of a vector bundle whose model fibre is a line is a line. -/
+private theorem finrank_fiber : Module.finrank 𝕜 (E b) = 1 := by
+  rw [← hF, ((trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)).toLinearEquiv.finrank_eq]
 
 /-- **The coordinate along a nonzero vector of a line.** A fibre `E b` of a vector bundle whose
 model fibre `F` has dimension one is a line, so a nonzero vector `v ∈ E b` is a basis: every
@@ -725,22 +719,19 @@ def lineCoord : E b ≃L[𝕜] 𝕜 :=
   letI := FiberBundle.t2Space F E b
   letI := VectorBundle.isTopologicalAddGroup 𝕜 F E b
   letI := VectorBundle.continuousSMul 𝕜 F E b
-  let φ := (LinearEquiv.ofBijective _ (bijective_toSpanSingleton hF hv)).symm
-  { toFun := φ
-    invFun c := c • v
-    map_add' := φ.map_add
-    map_smul' := φ.map_smul
-    left_inv w := φ.symm_apply_apply w
-    right_inv c := φ.apply_symm_apply c
+  let φ := (FiniteDimensional.basisSingleton Unit (finrank_fiber hF) v hv).equivFun.trans
+    (LinearEquiv.funUnique Unit 𝕜 𝕜)
+  have hφ (c : 𝕜) : φ.symm c = c • v := by simp [φ, Module.Basis.equivFun_symm_apply]
+  { φ with
     continuous_toFun := (LinearMap.continuous_iff_isClosed_ker φ.toLinearMap).2 <| by
       rw [LinearEquiv.ker, Submodule.bot_coe]
       exact isClosed_singleton
-    continuous_invFun := continuous_id.smul continuous_const }
+    continuous_invFun := (continuous_id.smul continuous_const).congr fun c ↦ (hφ c).symm }
 
 @[simp]
-theorem lineCoord_symm_apply (c : 𝕜) : (lineCoord hF hv).symm c = c • v :=
-  -- The inverse of `lineCoord` is given explicitly as `c ↦ c • v` in its definition.
-  (rfl)
+theorem lineCoord_symm_apply (c : 𝕜) : (lineCoord hF hv).symm c = c • v := by
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  simp [lineCoord, Module.Basis.equivFun_symm_apply]
 
 theorem lineCoord_apply_smul (c : 𝕜) : lineCoord hF hv (c • v) = c := by
   rw [← lineCoord_symm_apply hF hv, ContinuousLinearEquiv.apply_symm_apply]

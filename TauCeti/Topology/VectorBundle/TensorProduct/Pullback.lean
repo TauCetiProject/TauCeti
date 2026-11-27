@@ -168,6 +168,8 @@ theorem continuous_tensorProduct_map_covering {g : C(B', B)}
   -- On each fibre `bundleTensorMap ψ₁ ψ₂` is `φ₁ y ⊗ φ₂ y`, read in the pullback fibres.
   have hmap (y : B') (t : E₁' y ⊗[𝕜] E₂' y) : bundleTensorMap ψ₁ ψ₂ y t =
       _root_.TensorProduct.map (φ₁ y).toLinearMap (φ₂ y).toLinearMap t := by
+    -- `bundleTensorMap` is not exposed outside its module, so this is checked on pure tensors
+    -- (`bundleTensorMap_tmul`) rather than by `rfl`.
     induction t using _root_.TensorProduct.inductionOn with
     | tmul v w =>
       exact (bundleTensorMap_tmul ψ₁ ψ₂ y v w).trans (_root_.TensorProduct.map_tmul _ _ v w).symm
