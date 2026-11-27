@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
+import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
@@ -43,6 +44,8 @@ live in `TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen`.
 * `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A` (and `_B`, `_C`, `_D`) and
   `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy` (and `_B`, `_C`, `_D`): order and
   characteristic polynomial of every Coxeter element of a classical base.
+* `TauCeti.Coxeter.charpoly_of_hasCartanType_of_actsBy`: uniform characteristic polynomial on
+  simple roots for any base of Cartan type `t`.
 * `TauCeti.Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy` (and `_B`, `_C`, `_D`) together
   with the weight-space versions for `P.weylGroupRootRep`: complex eigenvalue multisets
   `exp (2πi e / h)` with multiplicity.
@@ -229,6 +232,36 @@ theorem charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 2
     hW).trans ((congrArg Matrix.charpoly (coxD_def n).symm).trans (charpoly_coxD hn))
 
 end ClassicalOrdersAndCharpoly
+
+/-- **Every Coxeter element of a base of Cartan type `t`** has the same characteristic polynomial
+on the simple roots as `Matrix.coxeterElement t.cartanMatrix`. -/
+theorem charpoly_of_hasCartanType_of_actsBy {ι R M N : Type*} [DecidableEq ι] [CommRing R]
+    [CharZero R] [IsDomain R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {P : RootPairing ι R M N} [P.IsCrystallographic] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = (coxeterElement t.cartanMatrix).charpoly := by
+  have go {A : Matrix (Fin t.rank) (Fin t.rank) ℤ} (ht : t.cartanMatrix = A)
+      {S₀ : List (Fin t.rank)} (hel₀ : List.IsOneDegenerateOrder (fun i j => A i j ≠ 0) S₀)
+      (hperm₀ : S₀.Perm (List.finRange t.rank)) :
+      W.charpoly = (coxeterElement t.cartanMatrix).charpoly :=
+    (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy ht hel₀ hperm₀ h hnd hall
+      hW).trans (by rw [ht])
+  cases t with
+  | A n => exact go (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _)
+  | B n => exact go (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _)
+  | C n => exact go (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _)
+  | D n => exact go (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _)
+  | E6 => exact go DynkinType.cartanMatrix_E6 isOneDegenerateOrder_E6
+            (by decide : ([0, 2, 3, 1, 4, 5] : List (Fin 6)).Perm (List.finRange 6))
+  | E7 => exact go DynkinType.cartanMatrix_E7 isOneDegenerateOrder_E7
+            (by decide : ([0, 2, 3, 1, 4, 5, 6] : List (Fin 7)).Perm (List.finRange 7))
+  | E8 => exact go DynkinType.cartanMatrix_E8 isOneDegenerateOrder_E8
+            (by decide : ([0, 2, 3, 1, 4, 5, 6, 7] : List (Fin 8)).Perm (List.finRange 8))
+  | F4 => exact go DynkinType.cartanMatrix_F4 isOneDegenerateOrder_F4
+            (by decide : ([0, 1, 2, 3] : List (Fin 4)).Perm (List.finRange 4))
+  | G2 => exact go DynkinType.cartanMatrix_G2 isOneDegenerateOrder_G2
+            (by decide : ([0, 1] : List (Fin 2)).Perm (List.finRange 2))
 
 /-! ### Complex eigenvalue multisets on simple roots and on the weight space -/
 

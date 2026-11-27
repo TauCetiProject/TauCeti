@@ -95,26 +95,9 @@ theorem formPerm_sort_univ (n : ℕ) :
 theorem cycleRange_mul_swap {N k : ℕ} (hk : k + 1 < N) :
     cycleRange (⟨k, by omega⟩ : Fin N) * Equiv.swap ⟨k, by omega⟩ ⟨k + 1, hk⟩ =
       cycleRange ⟨k + 1, hk⟩ := by
-  have : NeZero N := ⟨by omega⟩
   ext j
-  rw [Equiv.Perm.mul_apply]
-  rcases lt_trichotomy j.val k with hlt | heq | hgt
-  · have hj1 : j ≠ ⟨k, by omega⟩ := Fin.ne_of_val_ne hlt.ne
-    have hj2 : j ≠ ⟨k + 1, hk⟩ := Fin.ne_of_val_ne (by dsimp; omega)
-    rw [Equiv.swap_apply_of_ne_of_ne hj1 hj2, cycleRange_of_lt (Fin.lt_def.mpr hlt),
-      cycleRange_of_lt (Fin.lt_def.mpr (by dsimp; omega))]
-  · have hj : j = ⟨k, by omega⟩ := Fin.ext heq
-    rw [hj, Equiv.swap_apply_left, cycleRange_of_gt (Fin.lt_def.mpr (by dsimp; omega)),
-      cycleRange_of_lt (Fin.lt_def.mpr (by dsimp; omega)), Fin.val_add,
-      Fin.val_one', Nat.mod_eq_of_lt (by omega : 1 < N), Fin.val_mk, Fin.val_mk,
-      Nat.mod_eq_of_lt hk]
-  · rcases eq_or_lt_of_le (Nat.succ_le_of_lt hgt) with heq1 | hgt1
-    · have hj : j = ⟨k + 1, hk⟩ := Fin.ext heq1.symm
-      rw [hj, Equiv.swap_apply_right, cycleRange_self, cycleRange_self]
-    · have hj1 : j ≠ ⟨k, by omega⟩ := Fin.ne_of_val_ne (by dsimp; omega)
-      have hj2 : j ≠ ⟨k + 1, hk⟩ := Fin.ne_of_val_ne hgt1.ne'
-      rw [Equiv.swap_apply_of_ne_of_ne hj1 hj2, cycleRange_of_gt (Fin.lt_def.mpr hgt),
-        cycleRange_of_gt (Fin.lt_def.mpr hgt1)]
+  simp only [Equiv.Perm.mul_apply, Fin.ext_iff, coe_cycleRange, Equiv.swap_apply_def]
+  split_ifs <;> (try dsimp only at *) <;> omega
 
 /-- The product of the first `k` adjacent transpositions `(0, 1), (1, 2), …, (k - 1, k)` in
 `Equiv.Perm (Fin N)` is the `(k + 1)`-cycle `Fin.cycleRange k`. -/

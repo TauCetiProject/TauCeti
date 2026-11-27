@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
-import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
-import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
@@ -17,9 +15,10 @@ import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 /-!
 # The Coxeter number, exponents, root counts, and coprime-exponent Galois conjugacy
 
-This file packages the Coxeter number `TauCeti.DynkinType.coxeterNumber` and the exponent list
-`TauCeti.DynkinType.exponents` across all crystallographic `DynkinType`s, proves the combinatorial
-identities relating `numRoots`, `rank`, `coxeterNumber`, and `exponents`, and combines
+This file packages the Coxeter number `TauCeti.DynkinType.coxeterNumber`, the exponent list
+`TauCeti.DynkinType.exponents`, and the fundamental degrees `TauCeti.DynkinType.degrees` across all
+crystallographic `DynkinType`s, proves the combinatorial identities relating `numRoots`, `rank`,
+`coxeterNumber`, `exponents`, and `degrees`, and combines
 `TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots` and the Cartan–Killing classification
 with the classical and exceptional Coxeter calculations into uniform theorems for irreducible
 reduced crystallographic finite root systems:
@@ -43,27 +42,41 @@ reduced crystallographic finite root systems:
 
 * `TauCeti.DynkinType.coxeterNumber`: the Coxeter number `h` of a `DynkinType`.
 * `TauCeti.DynkinType.exponents`: the list of exponents `m₁, …, mᵣ` of a `DynkinType`.
+* `TauCeti.DynkinType.degrees`: the list of fundamental invariant degrees `dᵢ = mᵢ + 1`.
 
 ## Main results
 
 * `TauCeti.DynkinType.numRoots_eq_rank_mul_coxeterNumber`,
   `TauCeti.DynkinType.coxeterNumber_eq_numRoots_div_rank`,
   `TauCeti.DynkinType.two_mul_sum_exponents_eq_numRoots`,
+  `TauCeti.DynkinType.sum_exponents`, `TauCeti.DynkinType.sum_degrees`,
   `TauCeti.DynkinType.perm_map_sub_exponents`, and
   `TauCeti.DynkinType.coxeterNumber_sub_one_mem_exponents`: `|Φ| = r * h`, `h = |Φ| / r`,
-  `2 * ∑ mᵢ = |Φ|`, the duality permutation `mᵢ ↦ h - mᵢ`, and `h - 1 ∈ exponents`.
+  `2 * ∑ mᵢ = |Φ|`, `∑ dᵢ = |Φ⁺| + r`, the duality permutation `mᵢ ↦ h - mᵢ`, and
+  `h - 1 ∈ exponents`.
 * `TauCeti.HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd`,
-  `TauCeti.HasCartanType.orderOf_wordProd_eq_natCard_div_card_support`, and
-  `TauCeti.HasCartanType.sum_exponents_eq_ncard_posRoots`: `|Φ| = r * h`, `h = |Φ| / r`, and
-  `∑ mᵢ = |Φ⁺|` for any reduced crystallographic root pairing with a base of valid Cartan type `t`.
-* `TauCeti.Coxeter.charpoly_of_hasCartanType_of_actsBy`: uniform characteristic polynomial on
-  simple roots for any base of Cartan type `t`.
+  `TauCeti.HasCartanType.orderOf_wordProd_eq_natCard_div_card_support`,
+  `TauCeti.HasCartanType.sum_exponents_eq_ncard_posRoots`,
+  `TauCeti.HasCartanType.sum_degrees_eq_ncard_posRoots_add_card_support`,
+  `TauCeti.HasCartanType.natCard_eq_card_support_mul_coxeterNumber`, and
+  `TauCeti.HasCartanType.coxeterNumber_eq_natCard_div_card_support`: root-count and degree-sum
+  identities for any reduced crystallographic root pairing with a base of valid Cartan type `t`.
 * `TauCeti.DynkinType.mem_exponents_of_coprime`: every natural number `a < h` coprime to `h` is an
   exponent of a valid `DynkinType`.
+* `TauCeti.Coxeter.roots_charpoly_coxeterElement`,
+  `TauCeti.Coxeter.mem_roots_charpoly_coxeterElement_of_coprime`, and
+  `TauCeti.HasCartanType.mem_roots_charpoly_of_actsBy_of_coprime`: complex eigenvalue multisets
+  and primitive-root containment for canonical Cartan Coxeter matrices and `ActsBy` matrices.
 * `RootPairing.Base.orderOf_wordProd_eq_orderOf_wordProd`,
+  `RootPairing.Base.two_le_orderOf_wordProd`,
   `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
   `RootPairing.Base.orderOf_wordProd_eq_natCard_div_card_support`,
-  `RootPairing.Base.sum_exponents_eq_ncard_posRoots`, and
+  `RootPairing.Base.sum_exponents_eq_ncard_posRoots`,
+  `RootPairing.Base.sum_degrees_classifiedDynkinType_eq_ncard_posRoots_add_card_support`,
+  `RootPairing.Base.coxeterNumber_classifiedDynkinType_eq_natCard_div_card_support`,
+  `RootPairing.Base.roots_charpoly_of_actsBy`,
+  `RootPairing.Base.mem_roots_charpoly_of_actsBy_of_coprime`,
+  `RootPairing.Base.exp_two_pi_I_div_orderOf_mem_roots_charpoly_of_actsBy`, and
   `RootPairing.Base.roots_charpoly_weylGroupRootRep_wordProd`: unconditional theorems for any
   irreducible reduced crystallographic finite root system.
 
@@ -286,6 +299,56 @@ theorem coxeterNumber_sub_one_mem_exponents {t : DynkinType} (ht : t.Valid) :
   (t.perm_map_sub_exponents).mem_iff.mp
     (List.mem_map_of_mem (f := (t.coxeterNumber - ·)) (t.one_mem_exponents ht))
 
+/-- The **fundamental invariant degrees** `dᵢ = mᵢ + 1` of a Dynkin type. -/
+def degrees (t : DynkinType) : List ℕ :=
+  t.exponents.map (· + 1)
+
+/-- Unfolded characterization of `TauCeti.DynkinType.degrees` as `t.exponents.map (· + 1)`. -/
+theorem degrees_def (t : DynkinType) : t.degrees = t.exponents.map (· + 1) := (rfl)
+
+/-- Membership in `t.degrees` in terms of `t.exponents`. -/
+@[simp] theorem mem_degrees_iff {t : DynkinType} {d : ℕ} :
+    d ∈ t.degrees ↔ ∃ e ∈ t.exponents, e + 1 = d := by
+  rw [degrees_def, List.mem_map]
+
+/-- The number of fundamental invariant degrees (counted with multiplicity) equals the rank. -/
+@[simp] theorem length_degrees (t : DynkinType) : t.degrees.length = t.rank := by
+  simp [degrees_def]
+
+/-- The sum of the exponents of any Dynkin type is half its number of roots (`|Φ| / 2`, equal to
+`|Φ⁺|` for valid types). -/
+@[simp] theorem sum_exponents (t : DynkinType) : t.exponents.sum = t.numRoots / 2 := by
+  rw [← t.two_mul_sum_exponents_eq_numRoots, Nat.mul_div_right _ (by norm_num)]
+
+/-- The sum of the fundamental degrees of any Dynkin type is `|Φ| / 2 + r` (`|Φ⁺| + r` for valid
+types). -/
+@[simp] theorem sum_degrees (t : DynkinType) : t.degrees.sum = t.numRoots / 2 + t.rank := by
+  simp [degrees_def, List.sum_map_add]
+
+/-- Every fundamental degree of a valid Dynkin type is at least `2`. -/
+theorem two_le_of_mem_degrees {t : DynkinType} (ht : t.Valid) {d : ℕ} (hd : d ∈ t.degrees) :
+    2 ≤ d := by
+  obtain ⟨e, he, rfl⟩ := mem_degrees_iff.mp hd
+  have := pos_of_mem_exponents ht he
+  omega
+
+/-- Every fundamental degree of a valid Dynkin type is at most its Coxeter number. -/
+theorem le_coxeterNumber_of_mem_degrees {t : DynkinType} (ht : t.Valid) {d : ℕ}
+    (hd : d ∈ t.degrees) : d ≤ t.coxeterNumber := by
+  obtain ⟨e, he, rfl⟩ := mem_degrees_iff.mp hd
+  exact lt_coxeterNumber_of_mem_exponents ht he
+
+/-- `2` is always a fundamental degree of a valid Dynkin type (corresponding to the invariant
+quadratic form). -/
+@[simp high] theorem two_mem_degrees {t : DynkinType} (ht : t.Valid) : 2 ∈ t.degrees :=
+  mem_degrees_iff.mpr ⟨1, one_mem_exponents ht, rfl⟩
+
+/-- The Coxeter number `h` is always a fundamental degree of a valid Dynkin type. -/
+@[simp high] theorem coxeterNumber_mem_degrees {t : DynkinType} (ht : t.Valid) :
+    t.coxeterNumber ∈ t.degrees := by
+  have h2 := two_le_coxeterNumber ht
+  exact mem_degrees_iff.mpr ⟨t.coxeterNumber - 1, coxeterNumber_sub_one_mem_exponents ht, by omega⟩
+
 end DynkinType
 
 /-! ### Uniform theorems for a base of valid Cartan type -/
@@ -351,80 +414,29 @@ theorem HasCartanType.sum_exponents_eq_ncard_posRoots [Finite ι] [CharZero R] [
   have := h.two_mul_ncard_posRoots_eq_numRoots ht
   omega
 
-namespace Coxeter
+/-- **The sum of the fundamental degrees of `t` equals `|Φ⁺| + r`** for any base `b` of valid
+Cartan type `t`. -/
+theorem HasCartanType.sum_degrees_eq_ncard_posRoots_add_card_support [Finite ι] [CharZero R]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) :
+    t.degrees.sum = (posRoots P b).ncard + b.support.card := by
+  rw [t.sum_degrees, ← t.sum_exponents, h.sum_exponents_eq_ncard_posRoots ht, h.card_support]
 
-/-- **Every Coxeter element of a base of Cartan type `t`** has the same characteristic polynomial
-on the simple roots as `Matrix.coxeterElement t.cartanMatrix`. -/
-theorem charpoly_of_hasCartanType_of_actsBy [DecidableEq ι] [CharZero R] [IsDomain R]
-    [P.IsCrystallographic] {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
-    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
-    W.charpoly = (coxeterElement t.cartanMatrix).charpoly := by
-  cases t with
-  | A n =>
-    rw [charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW, ← charpoly_coxA n, coxA_def]
-    exact congrArg (fun M : Matrix (Fin n) (Fin n) ℤ => (coxeterElement M).charpoly)
-      (DynkinType.cartanMatrix_A n).symm
-  | B n =>
-    rcases n with _ | m
-    · have : IsEmpty b.support := by
-        rw [← Fintype.card_eq_zero_iff, Fintype.card_coe, h.card_support, DynkinType.rank_B]
-      rw [Matrix.charpoly, Matrix.det_isEmpty, ← charpoly_coxB_zero, coxB_def]
-      exact congrArg (fun M : Matrix (Fin 0) (Fin 0) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_B 0).symm
-    · rw [charpoly_of_hasCartanType_B_of_actsBy (Nat.succ_pos m) h hnd hall hW,
-        ← charpoly_coxB (Nat.succ_pos m), coxB_def]
-      exact congrArg (fun M : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_B (m + 1)).symm
-  | C n =>
-    rcases n with _ | m
-    · have : IsEmpty b.support := by
-        rw [← Fintype.card_eq_zero_iff, Fintype.card_coe, h.card_support, DynkinType.rank_C]
-      rw [Matrix.charpoly, Matrix.det_isEmpty, ← charpoly_coxC_zero, coxC_def]
-      exact congrArg (fun M : Matrix (Fin 0) (Fin 0) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_C 0).symm
-    · rw [charpoly_of_hasCartanType_C_of_actsBy (Nat.succ_pos m) h hnd hall hW,
-        ← charpoly_coxC (Nat.succ_pos m), coxC_def]
-      exact congrArg (fun M : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_C (m + 1)).symm
-  | D n =>
-    rcases n with _ | _ | m
-    · have : IsEmpty b.support := by
-        rw [← Fintype.card_eq_zero_iff, Fintype.card_coe, h.card_support, DynkinType.rank_D]
-      rw [Matrix.charpoly, Matrix.det_isEmpty, ← charpoly_coxD_zero, coxD_def]
-      exact congrArg (fun M : Matrix (Fin 0) (Fin 0) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_D 0).symm
-    · have hc := charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .D 1)
-        (DynkinType.cartanMatrix_D 1) (isOneDegenerateOrder_D 1) (List.Perm.refl _) h hnd hall hW
-      exact hc.trans (congrArg (fun M : Matrix (Fin 1) (Fin 1) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_D 1).symm)
-    · rw [charpoly_of_hasCartanType_D_of_actsBy (by omega) h hnd hall hW,
-        ← charpoly_coxD (by omega), coxD_def]
-      exact congrArg
-        (fun M : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ => (coxeterElement M).charpoly)
-        (DynkinType.cartanMatrix_D (m + 2)).symm
-  | E6 =>
-    rw [charpoly_of_hasCartanType_E6_of_actsBy h hnd hall hW, ← charpoly_coxE6]
-    exact congrArg (fun M : Matrix (Fin 6) (Fin 6) ℤ => (coxeterElement M).charpoly)
-      DynkinType.cartanMatrix_E6.symm
-  | E7 =>
-    rw [charpoly_of_hasCartanType_E7_of_actsBy h hnd hall hW, ← charpoly_coxE7]
-    exact congrArg (fun M : Matrix (Fin 7) (Fin 7) ℤ => (coxeterElement M).charpoly)
-      DynkinType.cartanMatrix_E7.symm
-  | E8 =>
-    rw [charpoly_of_hasCartanType_E8_of_actsBy h hnd hall hW, ← charpoly_coxE8]
-    exact congrArg (fun M : Matrix (Fin 8) (Fin 8) ℤ => (coxeterElement M).charpoly)
-      DynkinType.cartanMatrix_E8.symm
-  | F4 =>
-    rw [charpoly_of_hasCartanType_F4_of_actsBy h hnd hall hW, ← charpoly_coxF4]
-    exact congrArg (fun M : Matrix (Fin 4) (Fin 4) ℤ => (coxeterElement M).charpoly)
-      DynkinType.cartanMatrix_F4.symm
-  | G2 =>
-    rw [charpoly_of_hasCartanType_G2_of_actsBy h hnd hall hW, ← charpoly_coxG2]
-    exact congrArg (fun M : Matrix (Fin 2) (Fin 2) ℤ => (coxeterElement M).charpoly)
-      DynkinType.cartanMatrix_G2.symm
+/-- **For a base `b` of valid Cartan type `t`, `|Φ| = r * h`**, where `r = b.support.card` is the
+rank and `h = t.coxeterNumber` is the Coxeter number. -/
+theorem HasCartanType.natCard_eq_card_support_mul_coxeterNumber [Finite ι] [CharZero R]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) :
+    Nat.card ι = b.support.card * t.coxeterNumber := by
+  rw [h.natCard_eq_numRoots ht, h.card_support, t.numRoots_eq_rank_mul_coxeterNumber]
 
-end Coxeter
+/-- **For a base `b` of valid Cartan type `t`, `h = |Φ| / r`**, where `r = b.support.card`. -/
+theorem HasCartanType.coxeterNumber_eq_natCard_div_card_support [Finite ι] [CharZero R]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) :
+    t.coxeterNumber = Nat.card ι / b.support.card := by
+  rw [h.natCard_eq_numRoots ht, h.card_support]
+  exact t.coxeterNumber_eq_numRoots_div_rank ht
 
 /-- **Uniform complex eigenvalue multiset on the simple roots** for any base of valid Cartan type
 `t`: `exp (2πi e / h)` as `e` runs over `t.exponents`, retaining multiplicity. -/
@@ -510,6 +522,50 @@ theorem DynkinType.mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a :
     (fun i => t.lt_coxeterNumber_of_mem_exponents ht (List.getElem_mem _)) hprod ha hcop
   exact hi ▸ List.getElem_mem _
 
+namespace Coxeter
+
+/-- **Complex eigenvalue multiset of the canonical Coxeter matrix `Matrix.coxeterElement
+t.cartanMatrix`** for any valid Dynkin type `t`: counted with multiplicity, the eigenvalues are
+`exp (2πi e / h)` as `e` runs over `t.exponents`, where `h = t.coxeterNumber`. -/
+theorem roots_charpoly_coxeterElement {t : DynkinType} (ht : t.Valid) :
+    ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly.roots =
+      Multiset.ofList (t.exponents.map fun e : ℕ =>
+        Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (t.coxeterNumber : ℂ)))) := by
+  let b₀ := t.simplyConnectedBase ht
+  let l₀ : List b₀.support := Finset.univ.toList
+  have hct := t.hasCartanType_simplyConnectedRootDatum ht
+  have hcp := charpoly_of_hasCartanType_of_actsBy hct (Finset.nodup_toList _)
+    (fun i => Finset.mem_toList.mpr (Finset.mem_univ i)) (b₀.actsBy_wordProd l₀)
+  have hroots := hct.roots_charpoly_of_actsBy ht (Finset.nodup_toList _)
+    (fun i => Finset.mem_toList.mpr (Finset.mem_univ i)) (b₀.actsBy_wordProd l₀)
+  rw [Matrix.charpoly_map, ← hcp, ← Matrix.charpoly_map]
+  exact hroots
+
+/-- **Every primitive `h`-th root of unity `exp (2πi e / h)` (`e < h`, `gcd(e, h) = 1`) is an
+eigenvalue of `Matrix.coxeterElement t.cartanMatrix`** for any valid Dynkin type `t`. -/
+theorem mem_roots_charpoly_coxeterElement_of_coprime {t : DynkinType} (ht : t.Valid) {e : ℕ}
+    (he : e < t.coxeterNumber) (hcop : e.Coprime t.coxeterNumber) :
+    Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (t.coxeterNumber : ℂ))) ∈
+      ((coxeterElement t.cartanMatrix).map (Int.castRingHom ℂ)).charpoly.roots := by
+  rw [roots_charpoly_coxeterElement ht, Multiset.mem_coe, List.mem_map]
+  exact ⟨e, t.mem_exponents_of_coprime ht he hcop, rfl⟩
+
+end Coxeter
+
+/-- **Every primitive `h`-th root of unity `exp (2πi e / h)` (`e < h`, `gcd(e, h) = 1`) is an
+eigenvalue of every Coxeter element of a base of valid Cartan type `t`.** -/
+theorem HasCartanType.mem_roots_charpoly_of_actsBy_of_coprime {ι R M N : Type*} [DecidableEq ι]
+    [CommRing R] [CharZero R] [IsDomain R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+    [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) {l : List b.support} (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W)
+    {e : ℕ} (he : e < t.coxeterNumber) (hcop : e.Coprime t.coxeterNumber) :
+    Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (t.coxeterNumber : ℂ))) ∈
+      (W.map (Int.castRingHom ℂ)).charpoly.roots := by
+  rw [Matrix.charpoly_map, Coxeter.charpoly_of_hasCartanType_of_actsBy h hnd hall hW,
+    ← Matrix.charpoly_map]
+  exact Coxeter.mem_roots_charpoly_coxeterElement_of_coprime ht he hcop
+
 end TauCeti
 
 /-! ### Unconditional theorems for irreducible crystallographic finite root systems -/
@@ -528,6 +584,13 @@ theorem orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType (b : P.Base) {l :
     (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = (classifiedDynkinType b).coxeterNumber :=
   (hasCartanType_classifiedDynkinType b).orderOf_wordProd (valid_classifiedDynkinType b) hnd hall
+
+/-- **Every Coxeter element of a finite irreducible reduced crystallographic root system has order
+at least `2`.** -/
+theorem two_le_orderOf_wordProd (b : P.Base) {l : List b.support} (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) : 2 ≤ orderOf (wordProd P b l) := by
+  rw [b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall]
+  exact (classifiedDynkinType b).two_le_coxeterNumber (valid_classifiedDynkinType b)
 
 /-- **All Coxeter elements of an irreducible reduced crystallographic finite root system — across
 all bases `b, b'` and all orderings `l, l'` of their simple reflections — have the same order.** -/
@@ -568,6 +631,56 @@ theorem sum_exponents_eq_ncard_posRoots (b : P.Base) :
     (classifiedDynkinType b).exponents.sum = (posRoots P b).ncard :=
   (hasCartanType_classifiedDynkinType b).sum_exponents_eq_ncard_posRoots
     (valid_classifiedDynkinType b)
+
+/-- The sum of fundamental degrees of `classifiedDynkinType b` equals `|Φ⁺| + r`. -/
+theorem sum_degrees_classifiedDynkinType_eq_ncard_posRoots_add_card_support (b : P.Base) :
+    (classifiedDynkinType b).degrees.sum = (posRoots P b).ncard + b.support.card :=
+  (hasCartanType_classifiedDynkinType b).sum_degrees_eq_ncard_posRoots_add_card_support
+    (valid_classifiedDynkinType b)
+
+/-- The Coxeter number of `classifiedDynkinType b` is `|Φ| / r`. -/
+theorem coxeterNumber_classifiedDynkinType_eq_natCard_div_card_support (b : P.Base) :
+    (classifiedDynkinType b).coxeterNumber = Nat.card ι / b.support.card :=
+  (hasCartanType_classifiedDynkinType b).coxeterNumber_eq_natCard_div_card_support
+    (valid_classifiedDynkinType b)
+
+/-- **Complex eigenvalue multiset of any Coxeter element on the simple roots** of a finite
+irreducible reduced crystallographic root system: `exp (2πi e / h)` as `e` runs over the exponents
+of `classifiedDynkinType b`, where `h = orderOf (wordProd P b l)`. -/
+theorem roots_charpoly_of_actsBy [DecidableEq ι] (b : P.Base) {l : List b.support}
+    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
+    (hW : b.ActsBy (wordProd P b l) W) :
+    (W.map (Int.castRingHom ℂ)).charpoly.roots =
+      Multiset.ofList ((classifiedDynkinType b).exponents.map fun e : ℕ =>
+        Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (orderOf (wordProd P b l) : ℂ)))) := by
+  rw [b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall]
+  exact (hasCartanType_classifiedDynkinType b).roots_charpoly_of_actsBy
+    (valid_classifiedDynkinType b) hnd hall hW
+
+/-- **Every primitive `h`-th root of unity is an eigenvalue of every Coxeter element** of a finite
+irreducible reduced crystallographic root system on the simple roots, where
+`h = orderOf (wordProd P b l)`. -/
+theorem mem_roots_charpoly_of_actsBy_of_coprime [DecidableEq ι] (b : P.Base) {l : List b.support}
+    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
+    (hW : b.ActsBy (wordProd P b l) W) {e : ℕ} (he : e < orderOf (wordProd P b l))
+    (hcop : e.Coprime (orderOf (wordProd P b l))) :
+    Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (orderOf (wordProd P b l) : ℂ))) ∈
+      (W.map (Int.castRingHom ℂ)).charpoly.roots := by
+  rw [b.orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall] at he hcop ⊢
+  exact (hasCartanType_classifiedDynkinType b).mem_roots_charpoly_of_actsBy_of_coprime
+    (valid_classifiedDynkinType b) hnd hall hW he hcop
+
+/-- **The primitive root `exp (2πi / h)` (`e = 1`) is an eigenvalue of every Coxeter element** of a
+finite irreducible reduced crystallographic root system on the simple roots. -/
+theorem exp_two_pi_I_div_orderOf_mem_roots_charpoly_of_actsBy [DecidableEq ι] (b : P.Base)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
+    (hW : b.ActsBy (wordProd P b l) W) :
+    Complex.exp (2 * Real.pi * Complex.I / (orderOf (wordProd P b l) : ℂ)) ∈
+      (W.map (Int.castRingHom ℂ)).charpoly.roots := by
+  have hmem := b.mem_roots_charpoly_of_actsBy_of_coprime hnd hall hW (e := 1)
+    (b.two_le_orderOf_wordProd hnd hall) (Nat.coprime_one_left _)
+  rw [Nat.cast_one, mul_one_div] at hmem
+  exact hmem
 
 end Irreducible
 

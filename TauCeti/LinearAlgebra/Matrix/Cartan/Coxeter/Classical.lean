@@ -47,8 +47,8 @@ Rather than expanding `c` entry by entry, each family is intertwined with its co
   have the same order and characteristic polynomial for every `n`.
 * In **type `Dₙ`** (`n = m + 2`), the root columns `ε₀ - ε₁, …, εₘ - εₘ₊₁, εₘ + εₘ₊₁` have integer
   quasi-inverse of determinant factor `2` and intertwine `coxD (m + 2)` with the block-diagonal
-  matrix `fromBlocks (negShift (m + 1)) 0 0 (-1)` for all `2 ≤ n` (including the reducible `D₂` and
-  the `A₃` coincidence `D₃`).
+  matrix `fromBlocks (Matrix.negCycleMatrix (m + 1)) 0 0 (-1)` for all `2 ≤ n` (including the
+  reducible `D₂` and the `A₃` coincidence `D₃`).
 
 ## Main definitions
 
@@ -186,83 +186,6 @@ private theorem permMatrixHom_finRotate_mul_eq {m k : ℕ}
   have hrot : (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) :=
     permCoxeterSystem_wordProd_finRange (n := m + 1)
   rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1), hrot] at hprod
-
-/-- Negacyclic shift matrix on `Fin n`: `ε₀ ↦ ε₁ ↦ ⋯ ↦ ε_{n-1} ↦ -ε₀`. -/
-private def negShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.of fun p q =>
-    if q.val + 1 < n then (if p.val = q.val + 1 then 1 else 0)
-    else (if p.val = 0 then -1 else 0)
-
-private theorem negShift_mulVec_single {n : ℕ} (hn : 0 < n) (q : Fin n) :
-    negShift n *ᵥ Pi.single q 1 =
-      (if q.val + 1 < n then (1 : ℤ) else -1) •
-        Pi.single ⟨(q.val + 1) % n, Nat.mod_lt _ hn⟩ 1 := by
-  rw [Matrix.mulVec_single_one]; ext p
-  by_cases hlt : q.val + 1 < n
-  · simp [Matrix.col_apply, negShift, hlt, Nat.mod_eq_of_lt hlt, Pi.single_apply, Fin.ext_iff]
-  · have hqn : q.val + 1 = n := by have := q.isLt; omega
-    simp [Matrix.col_apply, negShift, hqn, Pi.single_apply, Fin.ext_iff]
-
-private theorem negShift_pow_mulVec_single {n : ℕ} (hn : 0 < n) {k : ℕ} (hk : k ≤ n) (q : Fin n) :
-    (negShift n ^ k) *ᵥ Pi.single q 1 =
-      (if q.val + k < n then (1 : ℤ) else -1) •
-        Pi.single ⟨(q.val + k) % n, Nat.mod_lt _ hn⟩ 1 := by
-  induction k with
-  | zero => rw [pow_zero, Matrix.one_mulVec]; ext p; simp [q.isLt, Nat.mod_eq_of_lt q.isLt]
-  | succ k ih =>
-    rw [pow_succ', ← Matrix.mulVec_mulVec, ih (by omega), Matrix.mulVec_smul,
-      negShift_mulVec_single hn]
-    have hq := q.isLt
-    have hmod : ((q.val + k) % n + 1) % n = (q.val + (k + 1)) % n := by
-      rw [← Nat.add_assoc, ← Nat.mod_add_mod (q.val + k) n 1]
-    ext p
-    simp only [Pi.smul_apply, Pi.single_apply, Fin.ext_iff, smul_eq_mul, hmod]
-    by_cases h1 : q.val + k < n
-    · simp only [Nat.mod_eq_of_lt h1]; split_ifs <;> omega
-    · have hrem : (q.val + k) % n = q.val + k - n :=
-        (Nat.mod_eq_sub_mod (by omega)).trans (Nat.mod_eq_of_lt (by omega))
-      simp only [hrem]; split_ifs <;> omega
-
-private theorem negShift_pow_self {n : ℕ} (hn : 0 < n) : negShift n ^ n = -1 := by
-  ext p q
-  have hv := congrFun (negShift_pow_mulVec_single hn le_rfl q) p
-  rw [Matrix.mulVec_single_one, Matrix.col_apply] at hv
-  simp only [hv, ite_eq_right (by omega : ¬ q.val + n < n), Pi.smul_apply, Pi.single_apply,
-    Fin.ext_iff, Nat.add_mod_right, Nat.mod_eq_of_lt q.isLt, smul_eq_mul, Matrix.neg_apply,
-    Matrix.one_apply]
-  split_ifs <;> omega
-
-private theorem charpoly_negShift {n : ℕ} (hn : 0 < n) :
-    (negShift n).charpoly = X ^ n + 1 := by
-  have hdeg : (X ^ n + 1 : ℤ[X]).natDegree = n := by simp
-  have hcomp : reindex (finCongr hdeg) (finCongr hdeg) (X ^ n + 1 : ℤ[X]).companion =
-      negShift n := by
-    ext i j
-    have := i.isLt; have := j.isLt
-    simp only [reindex_apply, submatrix_apply, finCongr_symm, finCongr_apply, Fin.val_cast,
-      companion_apply, hdeg, coeff_add, coeff_X_pow, coeff_one, negShift, Matrix.of_apply]
-    split_ifs <;> omega
-  rw [← hcomp, Matrix.charpoly_reindex,
-    Polynomial.charpoly_companion (by simpa using monic_X_pow_add_C (1 : ℤ) hn.ne')]
-
-private theorem orderOf_negShift {n : ℕ} (hn : 0 < n) : orderOf (negShift n) = 2 * n := by
-  have h0 {k : ℕ} (hk0 : 0 < k) (hk : k < n) :
-      (negShift n ^ k *ᵥ Pi.single ⟨0, hn⟩ 1) ⟨0, hn⟩ = 0 := by
-    have h := congrFun (negShift_pow_mulVec_single hn hk.le ⟨0, hn⟩) ⟨0, hn⟩
-    simp only [zero_add, ite_eq_left hk, one_smul, Pi.single_apply, Fin.ext_iff,
-      Nat.mod_eq_of_lt hk] at h
-    omega
-  refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
-  · rw [mul_comm, pow_mul, negShift_pow_self hn, neg_one_sq]
-  · have hv := congrFun (congrArg (· *ᵥ Pi.single ⟨0, hn⟩ 1) hm1) ⟨0, hn⟩
-    simp only [Matrix.one_mulVec, Pi.single_eq_same] at hv
-    rcases lt_trichotomy m n with hlt | rfl | hgt
-    · linarith [h0 hpos hlt]
-    · rw [negShift_pow_self hn] at hv; simp at hv
-    · obtain ⟨k, rfl⟩ : ∃ k, m = n + k := ⟨m - n, by omega⟩
-      rw [pow_add, negShift_pow_self hn, neg_one_mul, Matrix.neg_mulVec, Pi.neg_apply,
-        h0 (by omega) (by omega)] at hv
-      omega
 
 /-! ### Type `A` -/
 
@@ -405,9 +328,9 @@ private theorem lastFlip_mul_diffBasis (m : ℕ) :
   split_ifs <;> omega
 
 private theorem permMatrixHom_finRotate_mul_lastFlip (m : ℕ) :
-    permMatrixHom (finRotate (m + 1)) * lastFlip m = negShift (m + 1) := by
+    permMatrixHom (finRotate (m + 1)) * lastFlip m = negCycleMatrix (m + 1) := by
   ext p q
-  rw [permMatrixHom_mul_apply, lastFlip, diagonal_apply, negShift, Matrix.of_apply]
+  rw [permMatrixHom_mul_apply, lastFlip, diagonal_apply, negCycleMatrix_apply]
   set s := (finRotate (m + 1)).symm p
   have _ := s.isLt; have _ := q.isLt
   have hrot : p.val = if s.val = m then 0 else s.val + 1 := by
@@ -416,8 +339,8 @@ private theorem permMatrixHom_finRotate_mul_lastFlip (m : ℕ) :
   simp only [Fin.ext_iff, Fin.val_last] at hrot ⊢
   split_ifs at hrot ⊢ <;> omega
 
-private theorem negShift_mul_diffBasis_eq_diffBasis_mul_coxB (m : ℕ) :
-    negShift (m + 1) * diffBasis (m + 1) = diffBasis (m + 1) * coxB (m + 1) := by
+private theorem negCycleMatrix_mul_diffBasis_eq_diffBasis_mul_coxB (m : ℕ) :
+    negCycleMatrix (m + 1) * diffBasis (m + 1) = diffBasis (m + 1) * coxB (m + 1) := by
   have h1 := permMatrixHom_finRotate_mul_eq (diffBasis (m + 1))
     (fun i => reflMatrix (CartanMatrix.B (m + 1)) i.castSucc)
     permMatrixHom_transposition_mul_diffBasis_B
@@ -433,8 +356,8 @@ theorem charpoly_coxB_zero : (coxB 0).charpoly = 1 := by simp
 theorem charpoly_coxB {n : ℕ} (hn : 0 < n) : (coxB n).charpoly = X ^ n + 1 := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   exact (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_diffBasis (m + 1)).ne_zero
-    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m)).symm.trans
-    (charpoly_negShift (Nat.succ_pos m))
+    (negCycleMatrix_mul_diffBasis_eq_diffBasis_mul_coxB m)).symm.trans
+    (charpoly_negCycleMatrix (Nat.succ_le_succ m.zero_le))
 
 /-- The empty type `B₀` Coxeter element has order `1`. -/
 @[simp]
@@ -447,8 +370,8 @@ theorem orderOf_coxB {n : ℕ} (hn : 0 < n) : orderOf (coxB n) = 2 * n := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   exact (SemiconjBy.orderOf_eq_of_isRegular
     (isRegular_of_isLeftRegular_det (isLeftRegular_det_diffBasis (m + 1)))
-    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m).symm).trans
-    (orderOf_negShift (Nat.succ_pos m))
+    (negCycleMatrix_mul_diffBasis_eq_diffBasis_mul_coxB m).symm).trans
+    (orderOf_negCycleMatrix (Nat.succ_le_succ m.zero_le))
 
 /-! ### Type `C` -/
 
@@ -635,10 +558,10 @@ private theorem forkFlip_mul_basisD (m : ℕ) :
   · simp [hq1, basisD_apply]; split_ifs <;> omega
   · simp [hq1, show q.val < m + 1 by omega, basisD_apply, Fin.ext_iff]; split_ifs <;> omega
 
-/-- Block-diagonal model `fromBlocks (negShift (m + 1)) 0 0 (-1)` of `coxD (m + 2)`. -/
+/-- Block-diagonal model `fromBlocks (negCycleMatrix (m + 1)) 0 0 (-1)` of `coxD (m + 2)`. -/
 private def modelD (m : ℕ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℤ :=
   reindex (finSumFinEquiv (m := m + 1) (n := 1)) (finSumFinEquiv (m := m + 1) (n := 1))
-    (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
+    (fromBlocks (negCycleMatrix (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ))
 
 private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
     permMatrixHom (finRotate (m + 2)) * forkFlip m = modelD m := by
@@ -651,8 +574,9 @@ private theorem permMatrixHom_finRotate_mul_forkFlip (m : ℕ) :
     obtain ⟨iq | iq, rfl⟩ := (finSumFinEquiv (m := m + 1) (n := 1)).surjective q <;>
     rw [modelD, reindex_apply, submatrix_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
   · have _ := ip.isLt; have _ := iq.isLt
-    simp only [fromBlocks_apply₁₁, forkFlip, negShift, Matrix.of_apply, finSumFinEquiv_apply_left,
-      Fin.val_castAdd, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
+    simp only [fromBlocks_apply₁₁, forkFlip, negCycleMatrix_apply, Matrix.of_apply,
+      finSumFinEquiv_apply_left, Fin.val_castAdd, Fin.ext_iff] at hrot ⊢
+    split_ifs at hrot ⊢ <;> omega
   · fin_cases iq; have _ := ip.isLt
     simp [forkFlip, Fin.ext_iff] at hrot ⊢; split_ifs at hrot ⊢ <;> omega
   · fin_cases ip; have _ := iq.isLt
@@ -689,7 +613,8 @@ theorem charpoly_coxD {n : ℕ} (hn : 2 ≤ n) :
   rw [hsub,
     (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_basisD m).ne_zero
       (modelD_mul_basisD_eq_basisD_mul_coxD m)).symm,
-    modelD, charpoly_reindex, charpoly_fromBlocks_zero₂₁, charpoly_negShift (Nat.succ_pos m)]
+    modelD, charpoly_reindex, charpoly_fromBlocks_zero₂₁,
+    charpoly_negCycleMatrix (Nat.succ_le_succ m.zero_le)]
   congr 1
   rw [Matrix.charpoly, Matrix.det_fin_one]; simp [sub_neg_eq_add]
 
@@ -706,16 +631,17 @@ theorem orderOf_coxD_one : orderOf (coxD 1) = 2 :=
 private theorem orderOf_modelD (m : ℕ) : orderOf (modelD m) = 2 * (m + 1) := by
   let e := finSumFinEquiv (m := m + 1) (n := 1)
   have hre : modelD m = (reindexAlgEquiv ℤ ℤ e).toRingEquiv.toMulEquiv
-      (fromBlocks (negShift (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) := rfl
+      (fromBlocks (negCycleMatrix (m + 1)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) := rfl
   rw [hre, MulEquiv.orderOf_eq]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun k hk hpos hk1 => ?_⟩
-  · rw [fromBlocks_diagonal_pow, ← orderOf_negShift (Nat.succ_pos m), pow_orderOf_eq_one,
-      orderOf_negShift (Nat.succ_pos m), pow_mul, neg_one_sq, one_pow, fromBlocks_one]
+  · rw [fromBlocks_diagonal_pow, ← orderOf_negCycleMatrix (R := ℤ) (Nat.succ_le_succ m.zero_le),
+      pow_orderOf_eq_one, orderOf_negCycleMatrix (R := ℤ) (Nat.succ_le_succ m.zero_le), pow_mul,
+      neg_one_sq, one_pow, fromBlocks_one]
   · rw [fromBlocks_diagonal_pow] at hk1
-    have h11 : negShift (m + 1) ^ k = 1 := by
+    have h11 : (negCycleMatrix (m + 1) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ) ^ k = 1 := by
       ext i j; simpa [Matrix.one_apply] using congrFun₂ hk1 (Sum.inl i) (Sum.inl j)
     have hle := orderOf_le_of_pow_eq_one hpos h11
-    rw [orderOf_negShift (Nat.succ_pos m)] at hle; omega
+    rw [orderOf_negCycleMatrix (Nat.succ_le_succ m.zero_le)] at hle; omega
 
 /-- **The Coxeter number of `Dₙ` (`2 ≤ n`) is `2 * (n - 1)`**: the Coxeter element of
 `CartanMatrix.D n` has order `2 * (n - 1)`. -/

@@ -233,8 +233,9 @@ theorem negCycleMatrix_pow_mulVec_single {n : ℕ} {R : Type*} [Ring R] (j : Fin
   | zero => rw [pow_zero, Matrix.one_mulVec]; congr 1
   | succ m ih =>
     have hj1 : j.val + 1 < n := by omega
-    rw [pow_succ, ← Matrix.mulVec_mulVec, negCycleMatrix_mulVec_single,
-      dite_eq_left_of_eq_true (eq_true hj1), ih ⟨j.val + 1, hj1⟩ (by simp; omega)]
+    rw [pow_succ, ← Matrix.mulVec_mulVec, negCycleMatrix_mulVec_single]
+    split_ifs
+    rw [ih ⟨j.val + 1, hj1⟩ (by simp; omega)]
     congr 1; ext; simp; omega
 
 /-- The `n`-th power of the signed `n`-cycle matrix is `-1` (`1 ≤ n`). -/
@@ -242,15 +243,17 @@ theorem negCycleMatrix_pow_self {n : ℕ} {R : Type*} [Ring R] (hn : 1 ≤ n) :
     (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ n = -1 := by
   apply Matrix.ext_of_mulVec_single
   intro j
-  have hsplit : j.val + (1 + (n - 1 - j.val)) = n := by have := j.isLt; omega
-  have hpow := congrArg ((negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ ·) hsplit.symm
+  have hpow : (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ n =
+      (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ (j.val + (1 + (n - 1 - j.val))) :=
+    congrArg (_ ^ ·) (by have := j.isLt; omega)
   rw [hpow, pow_add, pow_add, pow_one, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
     negCycleMatrix_pow_mulVec_single j (n - 1 - j.val) (by have := j.isLt; omega),
-    negCycleMatrix_mulVec_single,
-    dite_eq_right_of_eq_false (eq_false (by have := j.isLt; simp; omega)),
-    Matrix.mulVec_neg, negCycleMatrix_pow_mulVec_single ⟨0, by omega⟩ j.val (by simp),
-    Matrix.neg_mulVec, Matrix.one_mulVec]
-  congr 2; ext; simp
+    negCycleMatrix_mulVec_single]
+  split_ifs with h
+  · simp at h; have := j.isLt; omega
+  · rw [Matrix.mulVec_neg, negCycleMatrix_pow_mulVec_single ⟨0, by omega⟩ j.val (by simp),
+      Matrix.neg_mulVec, Matrix.one_mulVec]
+    congr 2; ext; simp
 
 /-- The characteristic polynomial of the signed `n`-cycle matrix is `X^n + 1` (`1 ≤ n`). -/
 theorem charpoly_negCycleMatrix {n : ℕ} {R : Type*} [CommRing R] (hn : 1 ≤ n) :
@@ -273,7 +276,10 @@ theorem orderOf_negCycleMatrix {n : ℕ} {R : Type*} [Ring R] [NeZero (2 : R)] (
       simp [h1, Fin.ext_iff, hpos.ne', h10] at hv
     · have h0 := congrFun₂ (negCycleMatrix_pow_self (R := R) hn ▸ h1) ⟨0, by omega⟩ ⟨0, by omega⟩
       simp only [Matrix.neg_apply, Matrix.one_apply_eq] at h0
-      exact NeZero.ne (2 : R) (by rw [← one_add_one_eq_two]; nth_rw 2 [← h0]; rw [add_neg_cancel])
+      exact NeZero.ne (2 : R) (calc
+        (2 : R) = 1 + 1 := one_add_one_eq_two.symm
+        _ = -1 + 1 := congrArg (· + 1) h0.symm
+        _ = 0 := neg_add_cancel 1)
     · have hm_split : m = n + (m - n) := by omega
       have hm_pos : m - n ≠ 0 := by omega
       have hneg1 : (negCycleMatrix n : Matrix (Fin n) (Fin n) R) ^ (m - n) = -1 := by

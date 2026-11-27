@@ -12,9 +12,8 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 
 Mathlib's `Complex.isPrimitiveRoot_exp` says that `exp(2πi / m)` is a primitive `m`-th root of
 unity. This file records its `e`-th power `exp(2πi * (e / d))`, compatibility along divisibility
-(`exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m` with `m ≠ 0`), injectivity on natural
-numbers strictly less than `h`, and characterization of a duplicate-free multiset of complex numbers
-whose elements are `exp(2πi e / h)` over a duplicate-free list `es` of residues `< h`.
+(`exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m` with `m ≠ 0`), and injectivity on natural
+numbers strictly less than `h`.
 
 ## Main results
 
@@ -24,7 +23,6 @@ whose elements are `exp(2πi e / h)` over a duplicate-free list `es` of residues
 * `TauCeti.injOn_exp_two_pi_I_div`: `e ↦ exp(2πi * (e / h))` is injective on `Set.Iio h`.
 * `TauCeti.nodup_map_exp_two_pi_I_div`: distinct natural numbers strictly below `h` map to
   distinct complex roots of unity `exp(2πi * (e / h))`.
-* `TauCeti.multiset_eq_map_exp_of_nodup_of_mem_iff`: duplicate-free multiset characterization.
 -/
 
 public section
@@ -67,16 +65,5 @@ theorem nodup_map_exp_two_pi_I_div {h : ℕ} {l : List ℕ} (hnd : l.Nodup)
     (l.map fun e : ℕ => exp (2 * π * I * ((e : ℂ) / (h : ℂ)))).Nodup :=
   (List.nodup_map_iff_inj_on hnd).mpr fun _ ha _ hb =>
     injOn_exp_two_pi_I_div h (hlt _ ha) (hlt _ hb)
-
-/-- A duplicate-free multiset of complex numbers whose elements are exactly `exp (2πi e / h)` as
-`e` runs over a duplicate-free list `es` of residues `< h` equals `(es : Multiset ℕ).map _`. -/
-theorem multiset_eq_map_exp_of_nodup_of_mem_iff {s : Multiset ℂ} {es : List ℕ} {h : ℕ}
-    (hes_nd : es.Nodup) (hes_lt : ∀ e ∈ es, e < h) (hs_nd : s.Nodup)
-    (hmem : ∀ ζ : ℂ, ζ ∈ s ↔
-      ∃ e ∈ es, Complex.exp (2 * Real.pi * Complex.I * (e / (h : ℕ))) = ζ) :
-    s = (es : Multiset ℕ).map fun e : ℕ ↦
-      Complex.exp (2 * Real.pi * Complex.I * (e / (h : ℕ))) := by
-  refine (Multiset.Nodup.ext hs_nd ?_).mpr fun z ↦ by simp [hmem]
-  simpa using nodup_map_exp_two_pi_I_div hes_nd hes_lt
 
 end TauCeti

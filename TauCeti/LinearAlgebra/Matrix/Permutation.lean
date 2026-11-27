@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.LinearAlgebra.Matrix.Permutation
-import TauCeti.GroupTheory.Perm.Fin
+public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Permutation matrices: multiplication, basis action, and nonnegative sums
@@ -35,10 +34,6 @@ lying in the support of a matrix `K` and together covering it, has the zero patt
   on each included diagonal at least as large as that permutation's weight.
 * `Matrix.sum_smul_permMatrix_apply_eq_zero_iff`: a positively weighted sum of permutations
   covering the support of `K` has the zero pattern of `K`.
-* `Matrix.permMatrixHom_mulVec_single`,
-  `Matrix.prod_finRange_permMatrixHom_swap_eq_permMatrixHom_cycleRange`,
-  `Matrix.prod_finRange_succ_map_eq_permMatrixHom_finRotate_mul`: basis-vector action and
-  products of adjacent-swap permutation matrices.
 -/
 
 public section
@@ -142,43 +137,5 @@ theorem sum_smul_permMatrix_apply_eq_zero_iff {n α R : Type*} [DecidableEq n] [
       exact hsub σ hσ i (heq ▸ hij)
     simp only [PEquiv.toMatrix_toPEquiv_apply]
     simp [hσij]
-
-section PermMatrixHom
-
-/-- Applying `permMatrixHom σ` to a standard basis vector `eⱼ` gives `e_{σ j}`. -/
-theorem permMatrixHom_mulVec_single {κ R : Type*} [Fintype κ] [DecidableEq κ] [Semiring R]
-    (σ : Equiv.Perm κ) (j : κ) :
-    (permMatrixHom σ : Matrix κ κ R) *ᵥ Pi.single j 1 = Pi.single (σ j) 1 := by
-  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, Equiv.Perm.inv_def,
-    PEquiv.toMatrix_toPEquiv_mulVec σ.symm (Pi.single j 1), Pi.single_comp_equiv, Equiv.symm_symm]
-
-/-- The product of the first `k` adjacent-swap permutation matrices `(0, 1), …, (k - 1, k)` on
-`Fin N` is `permMatrixHom (Fin.cycleRange k)`. -/
-theorem prod_finRange_permMatrixHom_swap_eq_permMatrixHom_cycleRange {N : ℕ} {R : Type*}
-    [Semiring R] (k : ℕ) (hk : k < N) :
-    ((List.finRange k).map fun i : Fin k =>
-        (permMatrixHom (Equiv.swap (⟨i.val, by omega⟩ : Fin N) ⟨i.val + 1, by omega⟩) :
-          Matrix (Fin N) (Fin N) R)).prod =
-      permMatrixHom (Fin.cycleRange ⟨k, hk⟩) := by
-  rw [← Fin.prod_finRange_swap_eq_cycleRange k hk, map_list_prod, List.map_map]
-  rfl
-
-/-- Factoring the product of `m + 1` matrices on `Fin (m + 1)` whose first `m` factors are
-adjacent-swap permutation matrices as `permMatrixHom (finRotate (m + 1))` followed by the last
-factor. -/
-theorem prod_finRange_succ_map_eq_permMatrixHom_finRotate_mul {m : ℕ} {R : Type*} [Semiring R]
-    (S : Fin (m + 1) → Matrix (Fin (m + 1)) (Fin (m + 1)) R)
-    (hS : ∀ i : Fin m, S i.castSucc = permMatrixHom (Equiv.swap i.castSucc i.succ)) :
-    ((List.finRange (m + 1)).map S).prod =
-      permMatrixHom (finRotate (m + 1)) * S (Fin.last m) := by
-  have hcyc : ((List.finRange m).map fun i : Fin m =>
-      Equiv.swap i.castSucc i.succ).prod = finRotate (m + 1) :=
-    (Fin.prod_finRange_swap_eq_cycleRange m (Nat.lt_succ_self m)).trans (Fin.cycleRange_last m)
-  rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-    List.map_singleton, List.prod_singleton, ← hcyc, map_list_prod, List.map_map]
-  congr 1
-  exact congrArg List.prod (List.map_congr_left fun i _ => hS i)
-
-end PermMatrixHom
 
 end Matrix
