@@ -11,8 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.MFDeriv.Inner
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Form
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AddOneForm
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ScalarOneForm
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
@@ -50,23 +49,14 @@ section Basic
 
 variable [IsManifold I 1 M]
 
-private def exactPrequantumPotential (θ : SmoothForm I M ℝ 1) (ℏ : ℝ) (x : M) :
-    ℂ →L[ℝ] TangentSpace I x →L[ℝ] ℂ :=
-  ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ (TangentSpace I x) ℂ)
-    (SmoothForm.degreeOneEquiv θ x)).comp
-      (ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I)
-
-private theorem exactPrequantumPotential_apply (θ : SmoothForm I M ℝ 1) (ℏ : ℝ)
-    (x : M) (z : ℂ) (v : TangentSpace I x) :
-    exactPrequantumPotential θ ℏ x z v = (θ.val x ![v] / ℏ) • (Complex.I * z) := by
-  simp [exactPrequantumPotential, div_eq_mul_inv, mul_comm, mul_left_comm]
-
 /-- The connection `d + iθ/ℏ` on the trivial complex line, regarded as a real
-smooth vector bundle. Prequantization uses `0 < ℏ`; the formula is defined at
-all real scales, with Lean's totalized inverse. -/
+smooth vector bundle: the trivial connection twisted by `θ` and multiplication by `i/ℏ`.
+Prequantization uses `0 < ℏ`; the formula is defined at all real scales, with Lean's
+totalized inverse. -/
 def exactPrequantumConnection (θ : SmoothForm I M ℝ 1) (ℏ : ℝ) :
     CovariantDerivative I ℂ (Trivial M ℂ) :=
-  (CovariantDerivative.trivial (I := I) ℂ).addOneForm (exactPrequantumPotential θ ℏ)
+  (CovariantDerivative.trivial (I := I) ℂ).addOneForm
+    (CovariantDerivative.smulRightOneForm θ fun _ ↦ ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I)
 
 /-- Evaluation of the exact-line connection in its global unit frame. -/
 @[simp]
@@ -74,7 +64,11 @@ theorem exactPrequantumConnection_apply (θ : SmoothForm I M ℝ 1) (ℏ : ℝ)
     (s : M → ℂ) (x : M) (v : TangentSpace I x) :
     exactPrequantumConnection θ ℏ s x v =
       mvfderiv I s x v + ((θ : RoughForm I M ℝ 1) x ![v] / ℏ) • (Complex.I * s x) := by
-  simp [exactPrequantumConnection, CovariantDerivative.addOneForm, exactPrequantumPotential_apply]
+  rw [exactPrequantumConnection, CovariantDerivative.addOneForm_smulRightOneForm_apply,
+    CovariantDerivative.trivial_apply]
+  simp only [smul_apply, ContinuousLinearMap.lsmul_apply, Complex.real_smul, smul_eq_mul,
+    div_eq_inv_mul, Complex.ofReal_mul, Complex.ofReal_inv]
+  ring
 
 /-- The zero primitive gives the ordinary derivative connection. -/
 @[simp]
@@ -198,26 +192,13 @@ variable [IsManifold I 1 M]
 /-- The exact-line connection is `C^n` for every finite order and for `n = ∞`. -/
 instance {n : ℕ∞ω} [ENat.LEInfty n] (θ : SmoothForm I M ℝ 1) (ℏ : ℝ) :
     CovariantDerivative.ContMDiffCovariantDerivative (exactPrequantumConnection θ ℏ) n := by
-  refine CovariantDerivative.ContMDiffCovariantDerivative.addOneForm
-    (cov := CovariantDerivative.trivial (I := I) ℂ) inferInstance ?_
-  let C : ℝ →L[ℝ] ℂ →L[ℝ] ℂ :=
-    ContinuousLinearMap.toSpanSingleton ℝ (ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I)
-  have hC : ContMDiff I (I.prod 𝓘(ℝ, ℝ →L[ℝ] ℂ →L[ℝ] ℂ)) n
-      (fun x : M ↦ TotalSpace.mk' (ℝ →L[ℝ] ℂ →L[ℝ] ℂ)
-        (E := fun y : M ↦ Trivial M ℝ y →L[ℝ] Trivial M (ℂ →L[ℝ] ℂ) y) x C) := by
-    refine contMDiff_hom_bundle_of_inCoordinates_eq_const (c := fun _ ↦ C) ?_
-    intro x y _ _
-    refine ContinuousLinearMap.ext fun r ↦ ContinuousLinearMap.ext fun z ↦ ?_
-    rw [inCoordinates_apply_eq₂ (E₂ := Trivial M ℂ) (E₃ := Trivial M ℂ)
-      (by simp) (by simp) (by simp)]
-    simp
-  have h := hC.clm_bundle_comp ((SmoothForm.degreeOneEquiv θ).contMDiff.of_le ENat.LEInfty.out)
-  -- `addOneForm` takes the section value before the tangent vector.
-  let _ : ∀ x : M, IsNormableSpace ℝ (TangentSpace I x) :=
-    fun x ↦ instIsNormableSpaceTangentSpace I x
-  intro x
-  exact contMDiffWithinAt_univ.mp ((h x).contMDiffWithinAt.clm_bundle_flip
-    (s := Set.univ) (V₂ := Trivial M ℂ) (V₃ := Trivial M ℂ))
+  refine CovariantDerivative.contMDiffCovariantDerivative_addOneForm_smulRightOneForm
+    (cov := CovariantDerivative.trivial (I := I) ℂ) inferInstance θ ?_
+  refine contMDiff_hom_bundle_of_inCoordinates_eq_const
+    (c := fun _ ↦ ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I) fun x y _ _ ↦ ?_
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id]
 
 end Smooth
 
@@ -234,47 +215,26 @@ theorem curvatureOperator_exactPrequantumConnection (θ : SmoothForm I M ℝ 1) 
     (exactPrequantumConnection θ ℏ).curvatureOperator X Y s x =
       (mextDeriv (θ : RoughForm I M ℝ 1) x ![X x, Y x] / ℏ) • (Complex.I * s x) := by
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := 2) (by simp)
-  let a (Z : Π y : M, TangentSpace I y) := fun y ↦ θ.val y ![Z y] / ℏ
-  have ha {Z : Π y : M, TangentSpace I y} (hZ : MDiffAt (T% Z) x) :
-      MDifferentiableAt I 𝓘(ℝ) (a Z) x := by
-    have hθ : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ θ.val y ![Z y]) x := by
-      simpa only [Matrix.vec_single_eq_const] using
-        θ.mdifferentiableAt_apply_vectorField (V := fun _ ↦ Z) (fun _ ↦ hZ)
-    simpa only [a, div_eq_mul_inv, Pi.mul_def] using
-      hθ.mul (mdifferentiableAt_const (c := ℏ⁻¹))
-  have hIs : MDifferentiableAt I 𝓘(ℝ, ℂ) (Complex.I • s) x :=
-    (ContinuousLinearMap.lsmul ℝ ℂ Complex.I).mdifferentiableAt.comp x
-      (hs.mdifferentiableAt (by simp))
+  -- The exact-line connection is the trivial connection twisted by `θ` and `J = i / ℏ`.
+  let L : ℂ →L[ℝ] ℂ := ℏ⁻¹ • ContinuousLinearMap.lsmul ℝ ℂ Complex.I
   have htriv (f : Π y : M, Trivial M ℂ y) (hf : MDifferentiableAt I 𝓘(ℝ, ℂ) f x) :
       MDifferentiableAt I (I.prod 𝓘(ℝ, ℂ)) (T% f) x := by
     simpa only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
       Trivial.trivialization_apply] using hf
-  have hprod (Z : Π y : M, TangentSpace I y) : a Z • (Complex.I • s) =
-      (fun y ↦ exactPrequantumPotential θ ℏ y (s y) (Z y)) := by
-    funext y
-    simp only [a, Pi.smul_apply', Pi.smul_apply, smul_eq_mul, exactPrequantumPotential_apply]
   have hD {Z : Π y : M, TangentSpace I y} (hZ : MDiffAt (T% Z) x) :
       MDifferentiableAt I (I.prod 𝓘(ℝ, ℂ))
         (T% (fun y ↦ CovariantDerivative.trivial ℂ s y (Z y) : Π y, Trivial M ℂ y)) x := by
     simp only [CovariantDerivative.trivial_apply]
     exact htriv _ (mdifferentiableAt_mvfderiv_apply hs le_rfl hZ)
-  rw [exactPrequantumConnection, CovariantDerivative.curvatureOperator_addOneForm _ _
-    (hD hX) (hD hY) (htriv _ (hprod X ▸ (ha hX).smul hIs))
-    (htriv _ (hprod Y ▸ (ha hY).smul hIs)),
-    CovariantDerivative.curvatureOperator_trivial hX hY (hs.of_le (by simp)),
-    θ.mextDeriv_apply_one hX hY]
-  simp only [CovariantDerivative.trivial_apply, zero_add, ← hprod X, ← hprod Y]
-  have hdscale (Z : Π y : M, TangentSpace I y) :
-      mvfderiv I (a Z) x = ℏ⁻¹ • mvfderiv I (fun y ↦ θ.val y ![Z y]) x := by
-    rw [show a Z = ℏ⁻¹ • (fun y ↦ θ.val y ![Z y]) by
-      funext y
-      simp only [a, Pi.smul_apply, smul_eq_mul, div_eq_mul_inv, mul_comm],
-      mvfderiv_const_smul_field]
-  rw [mvfderiv_smul (ha hY) hIs, mvfderiv_smul (ha hX) hIs, hdscale X, hdscale Y]
-  simp only [mvfderiv_const_smul_field, Pi.smul_apply, add_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, exactPrequantumPotential_apply, a,
-    Complex.real_smul, smul_eq_mul, div_eq_mul_inv,
-    Complex.ofReal_mul, Complex.ofReal_sub]
+  have hs1 : MDifferentiableAt I 𝓘(ℝ, ℂ) s x := hs.mdifferentiableAt (by simp)
+  rw [exactPrequantumConnection,
+    CovariantDerivative.curvatureOperator_addOneForm_smulRightOneForm _ θ _ hX hY (hD hX) (hD hY)
+    (htriv _ (L.mdifferentiableAt.comp x hs1))
+    (fun v ↦ by
+      rw [CovariantDerivative.trivial_apply, CovariantDerivative.trivial_apply]
+      exact L.mvfderiv_comp_apply hs1 v),
+    CovariantDerivative.curvatureOperator_trivial hX hY (hs.of_le (by simp))]
+  simp [L, div_eq_inv_mul]
   ring
 
 /-- If `σ = -dθ` at `x`, the curvature operator at `x` acts by `-iσ(X, Y)/ℏ` on

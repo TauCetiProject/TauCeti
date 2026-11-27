@@ -288,6 +288,11 @@ theorem support_marchenkoPastur_subset_Icc (y : ℝ≥0) :
     (marchenkoPastur y).support ⊆ Icc 0 ((1 + √y) ^ 2) :=
   Measure.support_subset_of_isClosed isClosed_Icc (ae_mem_Icc_zero_marchenkoPastur y)
 
+/-- A real point above the upper edge `(1 + √y)²` of `MP_y` is outside its support. -/
+theorem notMem_support_marchenkoPastur_of_lt {y : ℝ≥0} {x : ℝ} (hx : (1 + √(y : ℝ)) ^ 2 < x) :
+    x ∉ (marchenkoPastur y).support := fun h ↦
+  (support_marchenkoPastur_subset_Icc y h).2.not_gt hx
+
 /-- The topological support of `MP_y` is compact. -/
 theorem isCompact_support_marchenkoPastur (y : ℝ≥0) :
     IsCompact (marchenkoPastur y).support :=

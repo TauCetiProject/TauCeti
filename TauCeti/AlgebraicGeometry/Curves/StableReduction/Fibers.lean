@@ -22,7 +22,10 @@ Conversely, a flat finitely presented scheme over the discrete valuation ring to
 pullback square exhibiting a prescribed scheme over the fraction field as its generic fibre is a
 model (`TauCeti.Model.ofIsPullback`).
 
-When the model is a family of curves, so is its generic fibre.
+When the model is a family of curves, so is its generic fibre. Conversely, since a model is flat
+over the discrete valuation ring, its special fibre is no larger than its generic fibre: if `C`
+has dimension at most `d` over `K`, the model has relative dimension at most `d` over `R`
+(`TauCeti.Model.relativeDimensionLE_toBase`).
 -/
 
 public section
@@ -170,10 +173,10 @@ lemma genericι_ofIsPullback :
 
 end OfIsPullback
 
-/-- The set-theoretic image of a model's chosen generic fibre in its total space is the complement
-of the special fibre. -/
-theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
-    Set.range M.genericι = {x : M.total | M.toBase x ≠ closedPoint R} := by
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the fibre of
+the structure morphism over the generic point of `Spec R`. -/
+theorem range_genericι_eq_preimage_genericPoint (M : Model R K C toK) :
+    Set.range M.genericι = M.toBase ⁻¹' {genericPoint (Spec (.of R))} := by
   have : IsIso M.genericFiberIso.inv.left :=
     inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
   rw [M.genericι_def]
@@ -182,8 +185,26 @@ theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
         congrArg Set.range (funext fun x ↦ Scheme.Hom.comp_apply _ _ x)
     _ = Set.range (genericFiberι R K M.toBase) :=
         M.genericFiberIso.inv.left.surjective.range_comp _
-    _ = {x : M.total | M.toBase x ≠ closedPoint R} :=
-        range_genericFiberι_of_isDiscreteValuationRing R K M.toBase
+    _ = M.toBase ⁻¹' {genericPoint (Spec (.of R))} := range_genericFiberι R K M.toBase
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the complement
+of the special fibre. -/
+theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
+    Set.range M.genericι = {x : M.total | M.toBase x ≠ closedPoint R} := by
+  rw [M.range_genericι_eq_preimage_genericPoint, ← range_genericFiberι R K,
+    range_genericFiberι_of_isDiscreteValuationRing]
+
+/-- **The special fibre of a model is no larger than its generic fibre.** If the generic fibre
+`C` has dimension at most `d`, then the model has relative dimension at most `d` over the discrete
+valuation ring: its special fibre also has dimension at most `d`. -/
+instance relativeDimensionLE_toBase {d : ℕ} (M : Model R K C toK)
+    [AlgebraicGeometry.RelativeDimensionLE d toK] :
+    AlgebraicGeometry.RelativeDimensionLE d M.toBase := by
+  have := M.isOpenImmersion_genericι
+  rw [AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le,
+    ← M.range_genericι_eq_preimage_genericPoint,
+    AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion]
+  exact (AlgebraicGeometry.relativeDimensionLE_iff_of_field toK).mp inferInstance
 
 /-- The image of a model's chosen generic fibre in its total space is the basic open of the
 pullback of a nonzero element `π` of the maximal ideal, such as a uniformizer. -/

@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 
+import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 
 /-!
@@ -24,9 +25,10 @@ product formed from it, and a submodule (in particular an ideal) contains every 
 linear combination of matrices whose entries it contains: each such entry is a combination of
 entries of the original matrices.
 
-Nothing here needs invertibility or a square shape outside the statements about powers — only
-that the products are conformable — so the other statements are rectangular. Everything except
-the quotient comparison `Matrix.map_mk_eq_map_mk_iff`, which needs a `CommRing`, holds over any
+Nothing here needs invertibility or a square shape outside the statements about powers and
+about `I • M_n(R)` — only that the products are conformable — so the other statements are
+rectangular. Everything except the quotient comparison `Matrix.map_mk_eq_map_mk_iff`, which needs
+a `CommRing`, and the description of `I • M_n(R)`, which needs a `CommSemiring`, holds over any
 `Semiring`; the two-sided product statement asks the ideal to be two-sided
 (`Ideal.IsTwoSided`), which is automatic over a commutative semiring. These are the membership
 computations a defining-ideal closure proof performs when it propagates a relation through a
@@ -46,6 +48,10 @@ matrix identity.
   with entries in `J` vanishes when `I * J = ⊥`.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
+* `Matrix.mem_ideal_smul_top_iff`: a square matrix lies in `I • M_n(R)` exactly when its entries
+  lie in the ideal `I`.
+* `Matrix.exists_map_eq_and_apply_eq_zero`: along a surjection, a matrix lifts to one vanishing
+  at the same prescribed entries.
 * `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
   has `|ker f| ^ (n * n)` elements.
 * `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
@@ -117,6 +123,38 @@ theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F 
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
   simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, Matrix.zero_apply]
+
+/-- A matrix lies in `I • M_n(R)` exactly when all its entries lie in the ideal `I`. -/
+theorem mem_ideal_smul_top_iff {R : Type*} [CommSemiring R] [Finite n] (I : Ideal R)
+    {x : Matrix n n R} :
+    x ∈ I • (⊤ : Submodule R (Matrix n n R)) ↔ ∀ i j, x i j ∈ I := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · refine Submodule.smul_induction_on hx (fun r hr m _ i j ↦ ?_) fun y z hy hz i j ↦ ?_
+    · simpa using I.mul_mem_right (m i j) hr
+    · simpa using I.add_mem (hy i j) (hz i j)
+  -- Otherwise `x` is the sum of its entries, all in `I`, times the matrix units.
+  have := Fintype.ofFinite n
+  classical
+  rw [matrix_eq_sum_single x]
+  refine sum_mem fun i _ ↦ sum_mem fun j _ ↦ ?_
+  rw [show single i j (x i j) = x i j • single i j 1 by simp [smul_single]]
+  exact Submodule.smul_mem_smul (hx i j) Submodule.mem_top
+
+/-- **Lifting a matrix along a surjection with prescribed zero entries.** If `f` is surjective,
+a matrix over `S` whose entries vanish at the positions satisfying `p` is the image of a matrix
+over `R` whose entries vanish at the same positions. -/
+theorem exists_map_eq_and_apply_eq_zero {R : Type*} [Zero R] [Zero S] {F : Type*}
+    [FunLike F R S] [ZeroHomClass F R S] {f : F} (hf : Function.Surjective f) (Y : Matrix m n S)
+    (p : m → n → Prop) (hY : ∀ i j, p i j → Y i j = 0) :
+    ∃ X : Matrix m n R, X.map f = Y ∧ ∀ i j, p i j → X i j = 0 := by
+  classical
+  choose x hx using fun i j ↦ hf (Y i j)
+  refine ⟨of fun i j ↦ if p i j then 0 else x i j, ?_, fun i j h ↦ by simp [h]⟩
+  ext i j
+  simp only [map_apply, of_apply]
+  split_ifs with h
+  · rw [map_zero, hY i j h]
+  · exact hx i j
 
 /-- **The kernel of an entrywise ring homomorphism** consists of the matrices with entries in
 `ker f`, so it has `|ker f| ^ (n * n)` elements. -/

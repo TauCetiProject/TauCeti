@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 /-!
 # Translation by a point of order two, and the `x`-coordinate of a double
@@ -52,6 +53,10 @@ of multiplication by `2` (Silverman X.1.4).
   kernel of multiplication by `2`.
 * `WeierstrassCurve.Affine.Point.xCoord_add_sub`: when `(x - e)² = c_T`, translation by a point
   of order two sends `x - e` to `±(x - e)`, with the same signs.
+* `WeierstrassCurve.torsionBy_two_shortCurve_ne_bot_iff`: away from characteristic `2`, the
+  curve `y² = x³ + Ax + B` has a point of order two exactly when `x³ + Ax + B` has a root, and
+  `WeierstrassCurve.exists_root_of_torsionBy_two_shortCurve_ne_bot` is the forward direction,
+  which needs no nonsingularity.
 
 ## References
 
@@ -290,3 +295,43 @@ theorem Point.two_ne_zero_of_two_lt_card_ker_nsmul_two [W.IsElliptic]
   exact neg_eq_of_add_eq_zero_right (by simpa [k, two_nsmul] using hT)
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {F : Type*} [Field F] [DecidableEq F] [NeZero (2 : F)] {A B : F}
+
+/-- **A point of order two on `y² = x³ + Ax + B` lies over a root of `x³ + Ax + B`**, in
+characteristic different from `2`: if `E[2]` is nontrivial then the cubic has a root. No
+nonsingularity of the curve is needed; the converse, `torsionBy_two_shortCurve_ne_bot_iff`, needs
+it, since a root at the singular point of a singular cubic gives no point. -/
+theorem exists_root_of_torsionBy_two_shortCurve_ne_bot
+    (h : AddSubgroup.torsionBy (shortCurve A B).toAffine.Point 2 ≠ ⊥) :
+    ∃ x : F, x ^ 3 + A * x + B = 0 := by
+  obtain ⟨⟨P, hP⟩, hP0⟩ := AddSubgroup.ne_bot_iff_exists_ne_zero.mp h
+  rw [Submodule.mem_toAddSubgroup, Submodule.mem_torsionBy_iff, two_zsmul] at hP
+  rcases P with _ | ⟨x, y, hxy⟩
+  · exact absurd rfl hP0
+  refine ⟨x, ?_⟩
+  have hx := Affine.Point.isRoot_twoTorsionPolynomial_of_add_self hxy hP
+  rw [Polynomial.IsRoot.def, eval_toPoly_twoTorsionPolynomial_shortCurve] at hx
+  have h4 : (4 : F) ≠ 0 := by
+    simpa [show (4 : F) = 2 * 2 by norm_num] using NeZero.ne (2 : F)
+  exact (mul_eq_zero.mp hx).resolve_left h4
+
+/-- **The curve `y² = x³ + Ax + B` has a point of order two exactly when `x³ + Ax + B` has a
+root**, for an elliptic curve in characteristic different from `2`: `E[2] ≠ 0` if and only if
+the cubic has a root in the base field. -/
+theorem torsionBy_two_shortCurve_ne_bot_iff [(shortCurve A B).IsElliptic] :
+    AddSubgroup.torsionBy (shortCurve A B).toAffine.Point 2 ≠ ⊥ ↔
+      ∃ x : F, x ^ 3 + A * x + B = 0 := by
+  refine ⟨exists_root_of_torsionBy_two_shortCurve_ne_bot, fun ⟨x, hx⟩ ↦ ?_⟩
+  have hroot : (shortCurve A B).twoTorsionPolynomial.toPoly.IsRoot x := by
+    rw [Polynomial.IsRoot.def, eval_toPoly_twoTorsionPolynomial_shortCurve, hx, mul_zero]
+  obtain ⟨y, hxy, hP⟩ := (Affine.Point.isRoot_twoTorsionPolynomial_iff inferInstance
+    (shortCurve A B).isUnit_Δ.ne_zero x).mp hroot
+  refine AddSubgroup.ne_bot_iff_exists_ne_zero.mpr ⟨⟨_, ?_⟩, fun h0 ↦
+    Affine.Point.some_ne_zero hxy (congrArg Subtype.val h0)⟩
+  rw [Submodule.mem_toAddSubgroup, Submodule.mem_torsionBy_iff, two_zsmul]
+  exact hP
+
+end WeierstrassCurve

@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.Abelianization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # The stable general linear group and algebraic `K₁`
@@ -64,11 +65,15 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 
 * `TauCeti.stabilizeGL_apply`, `TauCeti.coe_stabilizeGL_apply`: block and entry formulas for a
   stabilized matrix.
+* `TauCeti.coe_stabilizeGL_mem_unitary`: stabilization preserves unitary matrices.
 * `Function.Embedding.extendGL_castLEEmb`: stabilization is extension by the identity along the
   inclusion `Fin m ↪ Fin n` of the first `m` indices.
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
   stably elementary exactly when it is represented by an elementary matrix of some size.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
+* `TauCeti.StableGeneralLinearGroup.exists_mem_elementarySubgroup_forall_mul_mul_inv_eq`: on each
+  finite stage, conjugation by an element of `GL_∞(A)` agrees with conjugation by an element of
+  `E_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_eq_commutator`: `E_∞(A)` is the
   commutator subgroup of `GL_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.centralizer_elementarySubgroup`,
@@ -94,6 +99,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroupMap_surjective`: surjective ring maps
   induce surjective homomorphisms of stable elementary subgroups.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
+* `TauCeti.StableGeneralLinearGroup.instSubsingleton`: over a zero ring `A`, `GL_∞(A)` is
+  trivial.
 
 ## References
 
@@ -147,6 +154,13 @@ theorem coe_stabilizeGL_apply {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) (i j 
     MonoidHom.inl_apply, Equiv.coe_reindexGL, coe_fromBlocksGL, submatrix_apply,
     Matrix.one_apply, e.apply_eq_iff_eq]
   rcases i with i | i <;> rcases j with j | j <;> simp [e, Matrix.one_apply]
+
+/-- Stabilization sends unitary matrices to unitary matrices. -/
+theorem coe_stabilizeGL_mem_unitary [StarRing A] {m n : ℕ} (h : m ≤ n) {u : GL (Fin m) A}
+    (hu : (u : Matrix (Fin m) (Fin m) A) ∈ unitary _) :
+    (stabilizeGL A h u : Matrix (Fin n) (Fin n) A) ∈ unitary _ := by
+  rw [stabilizeGL_apply, Equiv.coe_reindexGL, coe_fromBlocksGL, ← reindex_apply]
+  exact (reindex_fromBlocks_zero_zero_mem_unitary_iff _).2 ⟨hu, one_mem _⟩
 
 /-- Stabilization to the same size is the identity. -/
 @[simp]
@@ -272,6 +286,12 @@ theorem exists_of₂ (x y : StableGeneralLinearGroup A) :
   obtain ⟨n, u, v, rfl, rfl⟩ := DirectLimit.exists_eq_mk₂ (fun _ _ h ↦ stabilizeGL A h) x y
   exact ⟨n, u, v, of_apply n u, of_apply n v⟩
 
+/-- The stable general linear group of the zero ring is trivial. -/
+instance instSubsingleton [Subsingleton A] : Subsingleton (StableGeneralLinearGroup A) := by
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨n, u, v, rfl, rfl⟩ := exists_of₂ x y
+  rw [Subsingleton.elim u v]
+
 /-- Homomorphisms out of the stable general linear group agree when they agree on each
 `GL (Fin n) A`. -/
 @[ext]
@@ -354,6 +374,26 @@ instance elementarySubgroup_normal : (elementarySubgroup A).Normal where
     rw [← of_stabilizeGL hmk e, ← of_stabilizeGL hnk g, ← map_inv, ← map_mul, ← map_mul]
     exact of_mem_elementarySubgroup_of_fromBlocksGL (fromBlocksGL_conj_mem_elementarySubgroup _
       (map_stabilizeGL_elementarySubgroup_le hmk ⟨e, he, rfl⟩))
+
+/-- **Conjugation in `GL_∞(A)` is elementary on each finite stage.** For `g ∈ GL_∞(A)` and a size
+`n`, some stably elementary `e` induces the same conjugation as `g` on the image of `GL_n(A)`:
+if `g` is represented by `w` at a size `k ≥ n`, take for `e` Whitehead's matrix `w ⊕ w⁻¹`. -/
+theorem exists_mem_elementarySubgroup_forall_mul_mul_inv_eq (g : StableGeneralLinearGroup A)
+    (n : ℕ) : ∃ e ∈ elementarySubgroup A,
+      ∀ u : GL (Fin n) A, e * of A n u * e⁻¹ = g * of A n u * g⁻¹ := by
+  obtain ⟨m, v, rfl⟩ := exists_of g
+  obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
+  -- At size `k + k`, the image of `x ∈ GL_l(A)` for `l ≤ k` is the block matrix `x ⊕ 1`.
+  have hblock {l : ℕ} (hl : l ≤ k) (x : GL (Fin l) A) : of A l x =
+      of A (k + k) (finSumFinEquiv.reindexGL A (fromBlocksGL (stabilizeGL A hl x, 1))) := by
+    rw [← stabilizeGL_eq_reindexGL_fromBlocksGL, of_stabilizeGL, of_stabilizeGL]
+  refine ⟨of A (k + k) (finSumFinEquiv.reindexGL A
+    (fromBlocksGL (stabilizeGL A hmk v, (stabilizeGL A hmk v)⁻¹))),
+    of_mem_elementarySubgroup ((Equiv.reindexGL_mem_elementarySubgroup_iff _).2
+      (fromBlocksGL_inv_mem_elementarySubgroup _)), fun u ↦ ?_⟩
+  rw [hblock hnk u, hblock hmk v]
+  simp only [← map_inv, ← map_mul]
+  simp
 
 /-- The commutator subgroup of `GL_∞(A)` is contained in the stable elementary subgroup. -/
 theorem commutator_le_elementarySubgroup :

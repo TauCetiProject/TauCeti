@@ -187,10 +187,12 @@ theorem tensorProductOver_piece_le_of_add_eq {d : ι} {C : Submodule k (M ⊗[A]
   rw [tensorProductOver_piece, Submodule.map_le_iff_le_comap]
   exact G.tensorProduct_piece_le_of_add_eq H fun p q hpq m hm n hn ↦ h p q hpq m hm n hn
 
-/-- An `A`-linear map out of `M ⊗[A] N` that shifts the degree of every homogeneous pure tensor
-by `s` is homogeneous of degree `s`. -/
-theorem isHomogeneous_of_tmul_mem_tensorProductOver {Q : Type*} [AddCommMonoid Q] [Module k Q]
-    [Module A Q] [IsScalarTower k A Q] (𝓠 : ι → Submodule k Q) (f : M ⊗[A] N →ₗ[A] Q) (s : ι)
+/-- A linear map out of `M ⊗[A] N` that shifts the degree of every homogeneous pure tensor by `s`
+is homogeneous of degree `s`. The map may be linear over any scalars compatible with `k`, such as
+`A` or an `A`-algebra acting on the left factor. -/
+theorem isHomogeneous_of_tmul_mem_tensorProductOver {R Q : Type*} [Semiring R] [AddCommMonoid Q]
+    [Module k Q] [Module R (M ⊗[A] N)] [Module R Q] [LinearMap.CompatibleSMul (M ⊗[A] N) Q k R]
+    (𝓠 : ι → Submodule k Q) (f : M ⊗[A] N →ₗ[R] Q) (s : ι)
     (hf : ∀ {p q : ι} {m : M} {n : N}, m ∈ G.piece p → n ∈ H.piece q →
       f (m ⊗ₜ[A] n) ∈ 𝓠 (p + q + s)) :
     LinearMap.IsHomogeneous f (G.tensorProductOver 𝒜 H).piece 𝓠 s :=

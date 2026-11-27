@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+import TauCeti.RingTheory.Localization.Integral
 
 /-!
 # Affine models of an extension: the fundamental identity
@@ -33,12 +34,17 @@ transported to the fraction fields.
 
 The identity is stated at the place of a height one prime of `R`; the places outside the finite
 chart of `R` are reached by the same statement at a second model, as in Stichtenoth's two-chart
-device.
+device. For a place `P` finite on a base affine model `B`, the integral closure `C` of `B` in `F'`
+maps canonically to `𝒪'_P = integralClosure 𝒪_P F'`, exhibiting `𝒪'_P` as the localization of `C`
+at the centre of `P` on `B`.
 
 ## Main definitions
 
 * `TauCeti.Place.restrictOfPrimeEquivPrimesOver`: the places of `F' / k'` lying over the place of a
   height one prime `𝔭` of `R` are exactly the primes of `S` lying over `𝔭`.
+* `TauCeti.Place.integralClosureHom` and `TauCeti.Place.integralClosureAlgebra`: the canonical map
+  and algebra structure from the integral closure `C` of a base affine model `B` in `F'` to the
+  local integral closure `𝒪'_P` when `B ⊆ 𝒪_P`.
 
 ## Main results
 
@@ -53,6 +59,8 @@ device.
   `𝔭` of `R` as soon as `𝔓` lies over `𝔭`.
 * `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_eq_finrank`: **the fundamental identity**
   (Stichtenoth, Theorem 3.1.11) at a place of the finite chart.
+* `TauCeti.Place.isLocalization_integralClosure_center`: the local integral closure `𝒪'_P` is the
+  localization of `C` at the centre of `P` on `B`.
 
 ## References
 
@@ -329,6 +337,91 @@ theorem sum_ramificationIdx_mul_relativeDegree_eq_finrank {s : Finset (Place k' 
 end Sum
 
 end OfPrime
+
+section IntegralClosure
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- The canonical ring homomorphism from an affine model `C` to the local integral closure
+`𝒪'_P` when the base affine model `B` lies in `𝒪_P`. -/
+noncomputable def integralClosureHom {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    C →+* integralClosure P.integers F' :=
+  letI := P.integersAlgebra hB
+  haveI := P.isScalarTower_integers_extension (F' := F') hB
+  (algebraMap C F').codRestrict (integralClosure P.integers F').toSubring fun c ↦
+    Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff _ _).mpr
+      (IsIntegral.tower_top (R := B) (A := P.integers)
+        ((IsIntegralClosure.isIntegral_iff (A := C) (R := B)).mpr ⟨c, rfl⟩)))
+
+/-- Coercing `TauCeti.Place.integralClosureHom` to `F'` agrees with `algebraMap C F'`. -/
+@[simp]
+theorem coe_integralClosureHom {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) (c : C) :
+    (integralClosureHom (F' := F') P hB c : F') = algebraMap C F' c := by
+  rw [integralClosureHom, RingHom.codRestrict_apply]
+
+/-- The `C`-algebra structure on `𝒪'_P` induced by `B ⊆ 𝒪_P` when `C` is the integral closure of
+`B` in `F'`. -/
+@[instance_reducible]
+noncomputable def integralClosureAlgebra {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    Algebra C (integralClosure P.integers F') :=
+  (integralClosureHom P hB).toAlgebra
+
+/-- The `C`-algebra map of `TauCeti.Place.integralClosureAlgebra` is
+`TauCeti.Place.integralClosureHom`. -/
+theorem algebraMap_integralClosureAlgebra {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
+    algebraMap C (integralClosure P.integers F') = integralClosureHom P hB :=
+  RingHom.algebraMap_toAlgebra _
+
+/-- The `C`-algebra `TauCeti.Place.integralClosureAlgebra` on `𝒪'_P` is compatible with the
+inclusion into `F'`. -/
+theorem isScalarTower_integralClosure_field {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [Algebra B F] [CommRing C] [Algebra C F'] [Algebra B F']
+    [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers) :
+    letI := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
+    IsScalarTower C (integralClosure P.integers F') F' :=
+  letI := integralClosureAlgebra (F' := F') (B := B) (C := C) P hB
+  .of_algebraMap_eq fun c ↦ by
+    rw [algebraMap_integralClosureAlgebra, Subalgebra.algebraMap_apply, coe_integralClosureHom]
+
+/-- The local integral closure `𝒪'_P` is the localization of `C` at the complement of the centre
+of `P` on `B`. -/
+theorem isLocalization_integralClosure_center {k F F' B C : Type*}
+    [Field k] [Field F] [Field F'] [Algebra k F] [Algebra F F']
+    [CommRing B] [IsDedekindDomain B] [Algebra B F] [IsFractionRing B F]
+    [CommRing C] [Algebra C F'] [Algebra B C] [Algebra B F']
+    [IsScalarTower B C F'] [IsScalarTower B F F'] [IsIntegralClosure C B F']
+    (P : Place k F) (hB : ∀ b : B, algebraMap B F b ∈ P.integers)
+    [Algebra B P.integers] [IsScalarTower B P.integers F]
+    [Algebra C (integralClosure P.integers F')]
+    [IsScalarTower C (integralClosure P.integers F') F'] :
+    IsLocalization (Algebra.algebraMapSubmonoid C (P.center hB).asIdeal.primeCompl)
+      (integralClosure P.integers F') := by
+  have : IsLocalization (P.center hB).asIdeal.primeCompl P.integers :=
+    P.isLocalization_integers_center hB
+  have : IsScalarTower B P.integers F' := IsScalarTower.to₁₂₄ B P.integers F F'
+  exact isLocalization_algebraMapSubmonoid_of_isIntegralClosure (R := B) (Rₘ := P.integers)
+    (S := C) (Sₘ := integralClosure P.integers F') (L := F') (M := (P.center hB).asIdeal.primeCompl)
+
+end IntegralClosure
 
 end Place
 

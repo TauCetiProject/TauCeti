@@ -36,6 +36,8 @@ simply connected space with the mod-two homology of a point are uniquely two-div
   space of a uniquely `m`-divisible abelian group is acyclic modulo `m`.
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`: a
   `K(A, n)` space of a uniquely two-divisible abelian group has the mod-two homology of a point.
+* `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_odd_natCard`: so does a
+  `K(A, n)` space of a finite abelian group of odd order, such as `K(ℤ/3, 1)`.
 
 ## References
 
@@ -79,6 +81,17 @@ theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible (hk : (2 : k) = 
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
   subsingleton_singularHomology_of_bijective_zsmul k (m := 2) (mod_cast hk)
     ((isUniquelyTwoDivisible_iff A).1 hA) hX i
+
+/-- **Mod-two acyclicity of `K(A, n)` spaces of finite groups of odd order.** For a finite abelian
+group `A` of odd order, such as `ℤ/3`, and every `n ≥ 1`, every `K(A, n)` space has the mod-two
+homology of a point, with coefficients in a commutative semisimple ring `k` in which `2 = 0`: `A` is
+uniquely two-divisible (`TauCeti.isUniquelyTwoDivisible_iff_odd_natCard`). -/
+theorem subsingleton_singularHomology_of_odd_natCard (hk : (2 : k) = 0) {A : Type u}
+    [AddCommGroup A] [Finite A] (hA : Odd (Nat.card A)) {n : ℕ} [NeZero n] {X : Type u}
+    [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
+    Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
+  subsingleton_singularHomology_of_isUniquelyTwoDivisible k hk
+    ((isUniquelyTwoDivisible_iff_odd_natCard A).2 hA) hX i
 
 end IsEilenbergMacLaneSpace
 

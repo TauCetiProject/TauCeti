@@ -30,7 +30,8 @@ supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
 arguments replace one cutoff by another. The multiplier is a quotient `χ / φ`, which is smooth
 when no zero of `φ` lies in the closed support of `χ`
-(`ContDiff.mul_inv_of_forall_notMem_tsupport`).
+(`ContDiff.mul_inv_of_forall_notMem_tsupport`). In particular some cutoff equal to one near the
+point is a test-function multiple of `φ` (`TestFunction.exists_eventually_eq_one_and_mul_eq`).
 A compact set `K` in the interior of a compact set `K'` has a complex smooth cutoff supported in
 `K'` and equal to one on `K` (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
@@ -294,6 +295,32 @@ theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
     have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
     simp only [θ, hχy, Complex.ofReal_one]
     field_simp
+
+/-- Near a point where a complex test function `χ` does not vanish, some test function `ρ` equal
+to one near the point is a test-function multiple `h χ` of `χ`. This is how a cutoff which merely
+does not vanish at a point is replaced by one equal to one near it. -/
+theorem exists_eventually_eq_one_and_mul_eq {χ : 𝓓^{n}(Ω, ℂ)} {x : E}
+    (hχx : χ x ≠ 0) :
+    ∃ ρ h : 𝓓^{n}(Ω, ℂ), (∀ᶠ y in 𝓝 x, ρ y = 1) ∧ ∀ y, h y * χ y = ρ y := by
+  have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ hχx)
+  -- Near `x`, every test function is a smooth multiple of `χ`.
+  obtain ⟨U, hU, hUg⟩ := exists_mem_nhds_forall_exists_contDiff_eq_mul hχx
+  -- A cutoff `ρ` equal to one near `x` and supported in `U ∩ Ω`, so `ρ = χ g` for a smooth `g`.
+  obtain ⟨ρ, hρ1, hρU⟩ := exists_complex_cutoff_tsupport_subset (n := n)
+    isCompact_singleton isOpen_interior
+    (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 (inter_mem hU (Ω.isOpen.mem_nhds hxΩ))))
+    (interior_subset.trans inter_subset_right)
+  rw [nhdsSet_singleton] at hρ1
+  obtain ⟨g, hg, hρg⟩ := hUg ρ (hρU.trans (interior_subset.trans inter_subset_left))
+  -- A second cutoff `ρ'` equal to one on `tsupport ρ` makes the multiplier `ρ' g` a test function.
+  obtain ⟨ρ', hρ'1, -⟩ := exists_complex_cutoff_tsupport_subset (n := n)
+    ρ.hasCompactSupport Ω.isOpen ρ.tsupport_subset subset_rfl
+  let h : 𝓓^{n}(Ω, ℂ) := ⟨fun y ↦ ρ' y * g y, ρ'.contDiff.mul hg, ρ'.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans ρ'.tsupport_subset⟩
+  refine ⟨ρ, h, hρ1, fun y ↦ ?_⟩
+  by_cases hy : ρ y = 0
+  · simp [h, hy, mul_assoc, mul_comm (g y), ← hρg y]
+  · simp [h, (hρ'1.self_of_nhdsSet y (subset_tsupport _ hy)), mul_comm (g y), ← hρg y]
 
 end TestFunction
 

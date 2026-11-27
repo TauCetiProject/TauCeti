@@ -7,11 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped
-public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere
 
 /-!
-# The semi-Fredholm estimate along the capped comparison family
+# The semi-Fredholm property along the capped comparison family
 
 The comparison between the pair-of-pants product and the quantum product attaches a
 Piunikhin–Salamon–Schwarz plane to each of the three ends of a pair of pants. The domains of the
@@ -34,6 +33,16 @@ is the estimate on the sphere with data unperturbed near `∞`,
 `TauCeti.SymplecticForm.exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base`;
 the poles `0` and `1` are interior points of the plane chart.
 
+The same reduction applies to the realization of `D_u` on the Sobolev space of the sphere,
+`TauCeti.SymplecticForm.floerConformalSobolevOperator` for the weight
+`TauCeti.Floer.sphereWeight` (`TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere`). Along every
+member of the family its coefficient field is essentially bounded
+(`memLp_floerConformalJetCoeff_cappedComparison`), so it realizes `D_u` from `W^{1,2}` of the
+sphere to `L²`, and it has finite-dimensional kernel
+(`finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison`) and closed range
+(`isClosed_range_floerConformalSobolevOperator_cappedComparison`), all in the namespace
+`TauCeti.SymplecticForm`. The finiteness of the cokernel and the index are not treated here.
+
 ## References
 
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
@@ -44,7 +53,7 @@ the poles `0` and `1` are interior points of the plane chart.
 public section
 
 open Complex Filter Function MeasureTheory Metric Set TauCeti.ThricePuncturedSphere
-open scoped Manifold
+open scoped ENNReal
 
 namespace TauCeti.SymplecticForm
 
@@ -53,6 +62,27 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {J₀ : AlmostComplexStructure V}
   {J : Puncture → ℝ → V → AlmostComplexStructure V}
+
+/-- Near the pole `∞`, on `‖w‖ ≥ T` in the plane chart, the data of the capped comparison family
+are the base structure `J₀` and the zero perturbation. -/
+private theorem exists_cappedComparison_eq_base {ω : SymplecticForm V} (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) (R : ℝ) :
+    ∃ T, (∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y,
+        cappedComparisonAlmostComplex h₀ J hJ R (equivRealProdCLM.symm z) y = J₀) ∧
+      ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y v,
+        cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v = 0 := by
+  have hT := equivRealProdCLM.symm.toHomeomorph.isClosedEmbedding.tendsto_cocompact.eventually
+    ((eventually_cocompact_cappedAlmostComplex_eq_base (M := V) (J := J) (hJ := hJ)
+      (L := comparisonNeckLength R) h₀ (3 * R - 1)).and
+      (eventually_cocompact_cappedPerturbation_eq_zero (M := V) (a := comparisonCutoff R)
+        (L := comparisonNeckLength R) (H := H)))
+  rw [← cobounded_eq_cocompact, hasBasis_cobounded_norm.eventually_iff] at hT
+  simp only [ContinuousLinearEquiv.coe_toHomeomorph] at hT
+  obtain ⟨T, -, hT⟩ := hT
+  refine ⟨T, fun z hz y ↦ ?_, fun z hz y v ↦ ?_⟩
+  · rw [cappedComparisonAlmostComplex_def]
+    exact (hT hz).1 y
+  · rw [cappedComparisonPerturbation_def, (hT hz).2 y, zero_apply]
 
 /-- **The semi-Fredholm estimate along the capped comparison family.** Let `J₀` be
 `ω`-compatible, let `J_q(t, x)` be period-one `C¹` families of `ω`-compatible structures on the
@@ -77,36 +107,91 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_cappedComparis
           (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
           (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u ξ z‖ ^ 2) +
           ∫ z in closedBall 0 R', ‖ξ z‖ ^ 2) := by
-  -- Near the pole `∞` the data are `J₀` and `0`.
-  have hT := equivRealProdCLM.symm.toHomeomorph.isClosedEmbedding.tendsto_cocompact.eventually
-    ((eventually_cocompact_cappedAlmostComplex_eq_base (M := V) (J := J) (hJ := hJ)
-      (L := comparisonNeckLength R) h₀ (3 * R - 1)).and
-      (eventually_cocompact_cappedPerturbation_eq_zero (M := V) (a := comparisonCutoff R)
-        (L := comparisonNeckLength R) (H := H)))
-  rw [← cobounded_eq_cocompact, hasBasis_cobounded_norm.eventually_iff] at hT
-  simp only [ContinuousLinearEquiv.coe_toHomeomorph] at hT
-  obtain ⟨T, -, hT⟩ := hT
-  -- The data, read in the plane chart, are smooth jointly in the domain and target points.
-  have hg {n : WithTop ℕ∞} : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V))) n
-      fun p : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm p.1, (R, p.2)) :=
-    (equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.prodMk
-      (contMDiff_const.prodMk contDiff_snd.contMDiff)
-  have hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (cappedComparisonAlmostComplex h₀ J hJ R
-      (equivRealProdCLM.symm p.1) p.2).toLinearMap.toContinuousLinearMap :=
-    ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
-      fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg).contDiff
-  have hK' (v : ℂ) : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦
-      cappedComparisonPerturbation H R (equivRealProdCLM.symm p.1) p.2 v :=
-    (contDiff_cappedComparisonPerturbation_apply hH hHs v).comp
-      (contDiff_const.prodMk contDiff_id)
+  obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
   exact exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
-    (fun z hz y ↦ by rw [cappedComparisonAlmostComplex_def]; exact (hT hz).1 y)
-    (fun z hz y ↦ by
-      rw [cappedComparisonPerturbation_def, (hT hz).2 y, zero_apply])
-    (fun z hz y ↦ by
-      rw [cappedComparisonPerturbation_def, (hT hz).2 y, zero_apply])
-    (fun z ↦ hJ'.contDiffAt) (fun z ↦ (hK' 1).contDiffAt)
-    (fun z ↦ (hK' I).contDiffAt) hu fun z ↦ by
+    (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+    fun z ↦ by
+      rw [cappedComparisonAlmostComplex_def]
+      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+
+/-- **The coefficient field along the capped comparison family is bounded.** Under the hypotheses
+of `exists_forall_integral_le_mul_integral_floerLinearization_cappedComparison_add`, without the
+compatibility of the structures, the coefficient field of the linearized operator `D_u` of the
+data `K_R` and `J_R` on the conformal jets of the weight of the sphere is essentially bounded on the
+plane, so that `TauCeti.SymplecticForm.floerConformalSobolevOperator` realizes `D_u` from
+`W^{1,2}` of the sphere to `L²`. -/
+theorem memLp_floerConformalJetCoeff_cappedComparison (ω : SymplecticForm V)
+    (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (R : ℝ)
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) :
+    MemLp (ω.floerConformalJetCoeff sphereWeight
+      (fun z y ↦ (cappedComparisonAlmostComplex h₀ J hJ R
+        (equivRealProdCLM.symm z) y).toLinearMap.toContinuousLinearMap)
+      (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
+      (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u) ∞
+      (volume.restrict univ) := by
+  obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
+  exact ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
+    (J₀ := J₀.toLinearMap.toContinuousLinearMap) (T := T) (fun z hz y ↦ by rw [hJ₀ z hz y])
+    (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+
+/-- **The linearized operator along the capped comparison family has finite-dimensional kernel on
+`W^{1,2}`.** Under the hypotheses of
+`exists_forall_integral_le_mul_integral_floerLinearization_cappedComparison_add`, the realization
+of the linearized operator `D_u` of the data `K_R` and `J_R` from `W^{1,2}` of the sphere to `L²`
+has finite-dimensional kernel. -/
+theorem finiteDimensional_ker_floerConformalSobolevOperator_cappedComparison
+    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
+    (hJc : ∀ q t x, ω.Compatible (J q t x)) (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (R : ℝ)
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) :
+    FiniteDimensional ℝ (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun z y ↦ (cappedComparisonAlmostComplex h₀ J hJ R
+        (equivRealProdCLM.symm z) y).toLinearMap.toContinuousLinearMap)
+      (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
+      (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u).ker := by
+  obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
+  exact ω.finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base
+    (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+    fun z ↦ by
+      rw [cappedComparisonAlmostComplex_def]
+      exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
+
+/-- **The linearized operator along the capped comparison family has closed range on
+`W^{1,2}`.** Under the hypotheses of
+`exists_forall_integral_le_mul_integral_floerLinearization_cappedComparison_add`, the realization
+of the linearized operator `D_u` of the data `K_R` and `J_R` from `W^{1,2}` of the sphere to `L²`
+has closed range. -/
+theorem isClosed_range_floerConformalSobolevOperator_cappedComparison
+    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
+    (hJc : ∀ q t x, ω.Compatible (J q t x)) (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (R : ℝ)
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) :
+    IsClosed (Set.range (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun z y ↦ (cappedComparisonAlmostComplex h₀ J hJ R
+        (equivRealProdCLM.symm z) y).toLinearMap.toContinuousLinearMap)
+      (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
+      (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u)) := by
+  obtain ⟨T, hJ₀, hK₀⟩ := exists_cappedComparison_eq_base (H := H) h₀ hJ R
+  exact ω.isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
+    (T := T) hJ₀ (fun z hz y ↦ hK₀ z hz y 1) (fun z hz y ↦ hK₀ z hz y I)
+    (fun z ↦ (contDiff_cappedComparisonAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs R).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R 1).contDiffAt)
+    (fun z ↦ (contDiff_cappedComparisonPerturbation_equivRealProdCLM hH hHs R I).contDiffAt) hu
+    fun z ↦ by
       rw [cappedComparisonAlmostComplex_def]
       exact compatible_cappedAlmostComplex h₀ hJc _ _ _ _
 

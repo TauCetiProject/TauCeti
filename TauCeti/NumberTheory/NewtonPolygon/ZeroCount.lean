@@ -288,7 +288,7 @@ private theorem newtonSlopeMultiplicity_tprod_of_ne_zero {ι : Type*} {α : ι �
     ∏' i, _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)
   have hF0 : (F : K⟦X⟧) ≠ 0 := by
     intro h
-    have h1 := constantCoeff_tprod_polynomialHom_one_sub_C_mul_X (fun i ↦ (α i)⁻¹)
+    have h1 : _root_.PowerSeries.constantCoeff (F : K⟦X⟧) = 1 := by simp [F]
     rw [h, map_zero] at h1
     exact zero_ne_one h1
   have hFent : (F : K⟦X⟧).IsEntire := _root_.PowerSeries.IsEntire.mem_subring.mp F.property
