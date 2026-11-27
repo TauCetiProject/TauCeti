@@ -142,8 +142,8 @@ private theorem hasOscillatoryDecayAt_tail_rpow_mul_cos_add_aux {c p : ℝ}
         (φ - Real.pi / 2) (by linarith) (by push_cast at hB; linarith)).mono (by linarith)
   have hlead : HasOscillatoryDecayAt c p (γ + p - 1) B
       (fun x ↦ -(c * p)⁻¹ * (x ^ (-(γ + p - 1)) * Real.cos (c * x ^ p + (φ - Real.pi / 2)))) :=
-    ((HasOscillatoryDecay.rpow_mul_cos_add (c := c) (p := p)
-      (le_refl (γ + p - 1)) (φ - Real.pi / 2)).const_mul (-(c * p)⁻¹)) B
+    (((HasOscillatoryDecay.rpow_mul_cos_add (c := c) (p := p)
+      (le_refl (γ + p - 1)) (φ - Real.pi / 2)).const_mul (-(c * p)⁻¹)).hasOscillatoryDecayAt B)
   refine (hlead.add (htail.const_mul ((γ + p - 1) / (c * p)))).congr_atTop ?_
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
   simpa only [Pi.add_apply] using (tendsto_and_tail_rpow_mul_cos_add hc hp hγ hx).2.symm
@@ -155,7 +155,7 @@ private theorem hasOscillatoryDecay_tail_rpow_mul_cos_add {c p α : ℝ} (φ : �
     (hc : c ≠ 0) (hp : 0 < p) (hα : 0 < α + p - 1) :
     HasOscillatoryDecay c p (α + p - 1)
       (iteratedTailIntegral (fun t ↦ t ^ (-α) * Real.cos (c * t ^ p + φ)) 1) :=
-  fun B ↦ hasOscillatoryDecayAt_tail_rpow_mul_cos_add_aux hc hp
+  HasOscillatoryDecay.of_forall fun B ↦ hasOscillatoryDecayAt_tail_rpow_mul_cos_add_aux hc hp
     ⌈(B - (α + p - 1)) / p⌉₊ φ hα (by
       have := (div_le_iff₀ hp).mp (Nat.le_ceil ((B - (α + p - 1)) / p)); linarith)
 
@@ -218,8 +218,8 @@ private theorem hasOscillatoryDecayAt_sum_tail_add {c p α₀ B : ℝ} {k : ℕ}
       (iteratedTailIntegral (fun t ↦ t ^ (-α i) * Real.sin (c * t ^ p)) 1) := by
     simpa only [← sub_eq_add_neg, Real.cos_sub_pi_div_two] using
       hasOscillatoryDecay_tail_rpow_mul_cos_add (α := α i) (-(Real.pi / 2)) hc hp (hα_pos i)
-  exact (((hdc B).mono (by linarith [hαi i])).const_mul (u i)).add
-    (((hds B).mono (by linarith [hαi i])).const_mul (v i))
+  exact (((hdc.hasOscillatoryDecayAt B).mono (by linarith [hαi i])).const_mul (u i)).add
+    (((hds.hasOscillatoryDecayAt B).mono (by linarith [hαi i])).const_mul (v i))
 
 /-- Single-step convergence and `HasOscillatoryDecay` preservation for a locally integrable
 function on `[a, ∞)`. -/
@@ -230,7 +230,8 @@ private theorem tendsto_and_hasOscillatoryDecay_step {c p α₀ a : ℝ} {f : �
       HasOscillatoryDecay c p (α₀ + p - 1) (iteratedTailIntegral f 1) := by
   have hB (B : ℝ) : (∃ L, Tendsto (fun R : ℝ ↦ ∫ t in a..R, f t) atTop (𝓝 L)) ∧
       HasOscillatoryDecayAt c p (α₀ + p - 1) B (iteratedTailIntegral f 1) := by
-    obtain ⟨k, α, u, v, r, hαi, hr, heq⟩ := hasOscillatoryDecay_def.mp hf (max B 1 + 2)
+    obtain ⟨k, α, u, v, r, hαi, hr, heq⟩ :=
+      hasOscillatoryDecayAt_iff.mp (hf.hasOscillatoryDecayAt (max B 1 + 2))
     obtain ⟨R₀, hR₀⟩ := eventually_atTop.mp heq
     let x₀ : ℝ := max (max a 1) R₀
     have hx₀_pos : 0 < x₀ :=
@@ -267,7 +268,7 @@ private theorem tendsto_and_hasOscillatoryDecay_step {c p α₀ a : ℝ} {f : �
     filter_upwards [eventually_ge_atTop x₀] with x hx
     simp only [iteratedTailIntegral_one_eq_integral_Ioi (hr_int.mono_set (Ioi_subset_Ioi hx)),
       iteratedTailIntegral_one_eq_of_tendsto (hfx_of_ge hx)]
-  exact ⟨(hB 0).1, fun B ↦ (hB B).2⟩
+  exact ⟨(hB 0).1, HasOscillatoryDecay.of_forall fun B ↦ (hB B).2⟩
 
 /-- Single-step convergence (for every basepoint `x : ℝ`, genuinely when `LocallyIntegrableOn f
 (Ici x)` holds and vacuously to `0` by `intervalIntegral.integral_undef` otherwise) and

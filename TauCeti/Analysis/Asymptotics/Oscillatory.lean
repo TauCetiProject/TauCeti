@@ -27,8 +27,10 @@ and Bessel (`p = 1, α₀ = 1 / 2`) asymptotics.
 
 * `TauCeti.HasOscillatoryDecayAt` and `TauCeti.hasOscillatoryDecayAt_iff`: fixed-order
   oscillatory decomposition up to `O(t ^ (-B))`.
-* `TauCeti.HasOscillatoryDecay` and `TauCeti.hasOscillatoryDecay_def`: all-orders oscillatory
-  asymptotic decay predicate and its characterization.
+* `TauCeti.HasOscillatoryDecay`, `TauCeti.hasOscillatoryDecay_iff`,
+  `TauCeti.hasOscillatoryDecay_def`, `TauCeti.HasOscillatoryDecay.of_forall`, and
+  `TauCeti.HasOscillatoryDecay.hasOscillatoryDecayAt`: all-orders oscillatory asymptotic decay
+  predicate and its characterizations.
 * `TauCeti.HasOscillatoryDecay.of_asymptoticExpansion`: criterion from a Poincaré oscillatory
   asymptotic series.
 * `TauCeti.HasOscillatoryDecay.isBigO_rpow_neg`: leading amplitude bound `O(t ^ (-α₀))`.
@@ -68,7 +70,7 @@ theorem hasOscillatoryDecayAt_iff {c p α₀ B : ℝ} {f : ℝ → ℝ} :
         f =ᶠ[atTop] fun t ↦
           (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
             v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- **Asymptotic oscillatory decay of phase `c * t ^ p` and leading damping `α₀`.**
 A function `f : ℝ → ℝ` satisfies `HasOscillatoryDecay c p α₀ f` if to every polynomial order `B`
@@ -77,8 +79,14 @@ it decomposes at `+∞` into a finite linear combination of power-damped oscilla
 `O(t ^ (-B))` remainder. This class includes Fresnel (`p = 2, α₀ = 0`), negative-argument Airy
 (`c = 2 / 3, p = 3 / 2, α₀ = 1 / 4`), and half-integer/general Bessel (`p = 1, α₀ = 1 / 2`)
 oscillations. -/
-@[expose] def HasOscillatoryDecay (c p α₀ : ℝ) (f : ℝ → ℝ) : Prop :=
+def HasOscillatoryDecay (c p α₀ : ℝ) (f : ℝ → ℝ) : Prop :=
   ∀ B : ℝ, HasOscillatoryDecayAt c p α₀ B f
+
+/-- Characterization of `TauCeti.HasOscillatoryDecay` as `HasOscillatoryDecayAt` at every
+remainder order `B`. -/
+theorem hasOscillatoryDecay_iff {c p α₀ : ℝ} {f : ℝ → ℝ} :
+    HasOscillatoryDecay c p α₀ f ↔ ∀ B : ℝ, HasOscillatoryDecayAt c p α₀ B f :=
+  (Iff.rfl)
 
 /-- Defining equivalence of `TauCeti.HasOscillatoryDecay`. -/
 theorem hasOscillatoryDecay_def {c p α₀ : ℝ} {f : ℝ → ℝ} :
@@ -88,7 +96,7 @@ theorem hasOscillatoryDecay_def {c p α₀ : ℝ} {f : ℝ → ℝ} :
         f =ᶠ[atTop] fun t ↦
           (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
             v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t :=
-  forall_congr' fun _ ↦ hasOscillatoryDecayAt_iff
+  hasOscillatoryDecay_iff.trans (forall_congr' fun _ ↦ hasOscillatoryDecayAt_iff)
 
 namespace HasOscillatoryDecayAt
 
@@ -158,11 +166,23 @@ end HasOscillatoryDecayAt
 
 namespace HasOscillatoryDecay
 
+/-- Construct `TauCeti.HasOscillatoryDecay` from `HasOscillatoryDecayAt` at every remainder
+order `B`. -/
+theorem of_forall {c p α₀ : ℝ} {f : ℝ → ℝ}
+    (h : ∀ B : ℝ, HasOscillatoryDecayAt c p α₀ B f) : HasOscillatoryDecay c p α₀ f :=
+  hasOscillatoryDecay_iff.mpr h
+
+/-- Specialize `TauCeti.HasOscillatoryDecay` to `HasOscillatoryDecayAt` at remainder order
+`B`. -/
+theorem hasOscillatoryDecayAt {c p α₀ : ℝ} {f : ℝ → ℝ}
+    (hf : HasOscillatoryDecay c p α₀ f) (B : ℝ) : HasOscillatoryDecayAt c p α₀ B f :=
+  hasOscillatoryDecay_iff.mp hf B
+
 /-- Any function decaying faster than every power of `t` at `+∞` has `HasOscillatoryDecay c p α₀`
 for all `c, p, α₀`. -/
 theorem of_isBigO {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hf : ∀ B : ℝ, f =O[atTop] fun t : ℝ ↦ t ^ (-B)) : HasOscillatoryDecay c p α₀ f :=
-  fun B ↦ HasOscillatoryDecayAt.of_isBigO (hf B)
+  of_forall fun B ↦ HasOscillatoryDecayAt.of_isBigO (hf B)
 
 /-- The zero function satisfies `HasOscillatoryDecay c p α₀`. -/
 @[simp]
