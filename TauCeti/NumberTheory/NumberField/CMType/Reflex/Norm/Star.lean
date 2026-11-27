@@ -15,12 +15,13 @@ import TauCeti.RingTheory.Unramified.TraceRepresentation
 /-!
 # The reflex norms of a CM type and of its complementary type
 
-Let `Φ` be a CM type on a number field `E`, `ιΦ` its complementary type, and `k ⊆ ℂ` a subfield of
-finite degree containing the reflex field `E* = (ιΦ)*`. The reflex norms satisfy
+Let `Φ` be a CM type on a number field `E`, `ιΦ` its complementary type, and `k ⊆ ℂ` a subfield
+containing the reflex field `E* = (ιΦ)*`. The reflex norms satisfy
 
 `N_{k,Φ}(a) · N_{k,ιΦ}(a) = Nm_{k/ℚ}(a)`
 
-(`TauCeti.CMType.reflexNorm_mul_reflexNorm_star`). The direct sum `V ⊕ V'` of the representations
+(`TauCeti.CMType.reflexNorm_mul_reflexNorm_star`); if `k` has infinite degree, both sides are the
+junk value `1`. In finite degree, the direct sum `V ⊕ V'` of the representations
 with the type traces of `Φ` and `ιΦ` has trace `Tr_{E/ℚ}`, as does `k ⊗_ℚ E`, so the two are
 isomorphic (`TauCeti.exists_linearEquiv_of_trace_eq`). The determinant over `E` of `a ∈ k` on
 `V ⊕ V'` is the product of the reflex norms (`TauCeti.smulDet_prod`), and on `k ⊗_ℚ E` it is
