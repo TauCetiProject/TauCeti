@@ -114,6 +114,24 @@ theorem paraboloidUnitNormal_apply (x : V₂) :
     rw [← norm_paraboloidNormal_sq, Real.sqrt_sq (norm_nonneg _)]
   rw [paraboloidUnitNormal, NormedSpace.normalize, hn]
 
+/-- The first coordinate of the upward unit normal. -/
+@[simp]
+theorem paraboloidUnitNormal_apply_zero (x : V₂) :
+    paraboloidUnitNormal x 0 = (√(1 + 4 * ‖x‖ ^ 2))⁻¹ * (-2 * x 0) := by
+  simp [paraboloidUnitNormal_apply]
+
+/-- The second coordinate of the upward unit normal. -/
+@[simp]
+theorem paraboloidUnitNormal_apply_one (x : V₂) :
+    paraboloidUnitNormal x 1 = (√(1 + 4 * ‖x‖ ^ 2))⁻¹ * (-2 * x 1) := by
+  simp [paraboloidUnitNormal_apply]
+
+/-- The height coordinate of the upward unit normal. -/
+@[simp]
+theorem paraboloidUnitNormal_apply_two (x : V₂) :
+    paraboloidUnitNormal x 2 = (√(1 + 4 * ‖x‖ ^ 2))⁻¹ := by
+  simp [paraboloidUnitNormal_apply]
+
 /-- The upward Cartesian unit normal has length one. -/
 @[simp]
 theorem norm_paraboloidUnitNormal (x : V₂) : ‖paraboloidUnitNormal x‖ = 1 :=
@@ -124,6 +142,14 @@ theorem norm_paraboloidUnitNormal (x : V₂) : ‖paraboloidUnitNormal x‖ = 1 
 theorem inner_paraboloidUnitNormal_fderiv_paraboloidGraph (x w : V₂) :
     ⟪paraboloidUnitNormal x, fderiv ℝ paraboloidGraph x w⟫_ℝ = 0 := by
   simp [paraboloidUnitNormal, NormedSpace.normalize, real_inner_smul_left]
+
+/-- The upward unit normal lies in the orthogonal complement of the graph differential's range. -/
+theorem paraboloidUnitNormal_mem_orthogonal_range_fderiv_paraboloidGraph (x : V₂) :
+    paraboloidUnitNormal x ∈ (fderiv ℝ paraboloidGraph x).rangeᗮ := by
+  rw [Submodule.mem_orthogonal]
+  rintro _ ⟨w, rfl⟩
+  rw [real_inner_comm]
+  exact inner_paraboloidUnitNormal_fderiv_paraboloidGraph x w
 
 /-- The upward unit normal is smooth at every order, including analytic order. -/
 @[fun_prop]
