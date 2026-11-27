@@ -19,6 +19,7 @@ import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -484,12 +485,8 @@ private theorem one_add_pow_mul_norm_badCoeff_mul_seminorm_le
   -- The derivatives of the modulated cutoff grow at most polynomially.
   have hmod : N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
       (χ.toSupportedInTSupport.modulate (m : WithLp 2 (E × D))) ≤
-        Sk * (1 + 2 * π) ^ k * (1 + t) ^ k := by
-    calc _ ≤ Sk * (1 + 2 * π * t) ^ k := ContDiffMapSupportedIn.seminorm_modulate_le _ _ k
-      _ ≤ Sk * ((1 + 2 * π) * (1 + t)) ^ k := by
-          gcongr
-          nlinarith [Real.pi_pos, norm_nonneg (m : WithLp 2 (E × D))]
-      _ = Sk * (1 + 2 * π) ^ k * (1 + t) ^ k := by rw [mul_pow, mul_assoc]
+        Sk * (1 + 2 * π) ^ k * (1 + t) ^ k :=
+    ContDiffMapSupportedIn.seminorm_modulate_le_of_norm_le _ le_rfl k
   rw [le_mul_inv_iff₀ (by positivity), le_div_iff₀ (by positivity)]
   calc (1 + s) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ *
         N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
@@ -661,18 +658,6 @@ private theorem notMem_waveFrontSet
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ u.toDistribution.waveFrontSet :=
   fun x hx η hη hmem ↦ hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem)
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup D]
-  [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace E] [BorelSpace E]
-  [MeasurableSpace D] [BorelSpace D] in
-/-- Combining the bounds on the terms in `A` and off `A`. -/
-private theorem mul_norm_add_le_seminorm {X : Type*} [AddCommGroup X] [Module ℂ X]
-    (p₁ p₂ : Seminorm ℂ X) (u : X) {w K₀ : ℝ} (hw : 0 ≤ w) (hK₀ : 0 ≤ K₀) {g c : ℂ}
-    (hg : w * ‖g‖ ≤ K₀ * p₁ u) (hc : w * ‖c‖ ≤ p₂ u) :
-    w * ‖g + c‖ ≤ (K₀.toNNReal • p₁ + p₂) u :=
-  calc w * ‖g + c‖ ≤ w * ‖g‖ + w * ‖c‖ := by rw [← mul_add]; gcongr; exact norm_add_le _ _
-    _ ≤ K₀ * p₁ u + p₂ u := add_le_add hg hc
-    _ = (K₀.toNNReal • p₁ + p₂) u := by simp [NNReal.smul_def, Real.coe_toNNReal _ hK₀]
-
 /-- **The estimate behind both seminorm bounds.** Let `φ x`, `x ∈ X`, be cutoffs supported in a
 compact set `K ⊆ U` whose Fourier transforms decay to order `N` with a common constant, and let
 `ξ x` lie in a closed cone `V` containing `0` with `K × V` disjoint from `ιᵀ Γ`. If, for every
@@ -728,7 +713,7 @@ private theorem exists_seminorm_localFourier_pullbackInl_le_of_isCompact
         χ.toSupportedInTSupport.modulate (m : WithLp 2 (E × D))))
     (mem_image_of_mem _ (mem_insert_of_mem _ ⟨x, rfl⟩))
   rw [← mul_norm_complexPairing_tsum_smul T χ.tsupport_subset (by positivity) hbad] at hbadle
-  exact mul_norm_add_le_seminorm _ _ u (by positivity) hK₀
+  exact Seminorm.mul_norm_add_le_smul_add_apply _ _ u (by positivity) hK₀
     (hgood.trans_eq (by simp only [K₀]; ring)) hbadle
 
 /-- **The seminorms of the pullback.** For the data `(φ, V, N)` of a seminorm of `𝓓'_{ιᵀ Γ}(U)`,

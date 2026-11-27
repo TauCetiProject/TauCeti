@@ -17,6 +17,8 @@ import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -94,90 +96,6 @@ open scoped Distributions Topology FourierTransform ContDiff Real RealInnerProdu
 namespace TauCeti
 
 open Distribution
-
-/-! ### Cones of directions at a point -/
-
-section Cone
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-omit [NormedSpace ℝ F] in
-/-- The directions of `Γ` at `x`, together with `0`. -/
-private def dirSet (Γ : Set (F × F)) (x : F) : Set F :=
-  insert 0 {ξ | (x, ξ) ∈ Γ}
-
-omit [NormedSpace ℝ F] in
-/-- The directions of a closed cone `Γ` at a point `x ∈ Ω`, together with `0`, form a closed
-set. -/
-private theorem isClosed_dirSet {Ω : Set F} {Γ : Set (F × F)}
-    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) {x : F} (hx : x ∈ Ω) : IsClosed (dirSet Γ x) := by
-  refine isOpen_compl_iff.1 ?_
-  have h : (dirSet Γ x)ᶜ = (fun ξ ↦ (x, ξ)) ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ) := by
-    ext ξ
-    simp [dirSet, hx]
-  rw [h]
-  exact hΓ.preimage (by fun_prop)
-
-private theorem smul_mem_dirSet {Γ : Set (F × F)}
-    (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) {x : F} {t : ℝ} (ht : 0 < t) {ξ : F}
-    (hξ : ξ ∈ dirSet Γ x) : t • ξ ∈ dirSet Γ x := by
-  rcases hξ with rfl | hξ
-  · simp [dirSet]
-  · exact Or.inr (hcone _ hξ t ht)
-
-/-- **A cone of directions avoiding `Γ` at a point avoids it nearby.** If no direction of the
-closed cone `A` is a direction of the closed cone `Γ` at `x₀ ∈ Ω`, then the same holds over a
-neighbourhood of `x₀`. -/
-private theorem exists_mem_nhds_disjoint_prod [ProperSpace F] {Ω : Set F} {Γ : Set (F × F)}
-    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ)
-    (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {x₀ : F} (hx₀ : x₀ ∈ Ω) {A : Set F} (hA : IsClosed A)
-    (hAcone : ∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A) (hA0 : ∀ a ∈ A, a ≠ 0 → (x₀, a) ∉ Γ) :
-    ∃ U ∈ 𝓝 x₀, Disjoint (U ×ˢ A) Γ := by
-  set C : Set (F × F) := {x₀} ×ˢ (A ∩ sphere 0 1)
-  have hC : IsCompact C := isCompact_singleton.prod ((isCompact_sphere 0 1).inter_left hA)
-  have hCsub : C ⊆ (Ω ×ˢ {0}ᶜ) \ Γ := by
-    rintro ⟨x, a⟩ ⟨hx, ha, ha1⟩
-    rw [mem_singleton_iff] at hx
-    subst hx
-    have ha0 : a ≠ 0 := ne_zero_of_mem_sphere one_ne_zero ⟨a, ha1⟩
-    exact ⟨⟨hx₀, ha0⟩, hA0 a ha ha0⟩
-  obtain ⟨δ, hδ, hδsub⟩ := hC.exists_thickening_subset_open hΓ hCsub
-  refine ⟨ball x₀ δ, ball_mem_nhds _ hδ, disjoint_left.2 ?_⟩
-  rintro ⟨x, a⟩ ⟨hx, ha⟩ hxa
-  have ha0 : a ≠ 0 := hΓ0 _ hxa
-  have hna : 0 < ‖a‖ := norm_pos_iff.2 ha0
-  have hmem : (x, ‖a‖⁻¹ • a) ∈ thickening δ C := by
-    refine mem_thickening_iff.2 ⟨(x₀, ‖a‖⁻¹ • a), ⟨rfl, hAcone _ (inv_pos.2 hna) a ha, ?_⟩, ?_⟩
-    · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hna.ne']
-    · rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
-      exact mem_ball.1 hx
-  exact (hδsub hmem).2 (hcone _ hxa _ (inv_pos.2 hna))
-
-/-- **A cone of directions far from `Γ` at a point.** For `θ > 0`, the directions at distance at
-least `θ ‖a‖` from the directions of `Γ` at `x₀ ∈ Ω` form a closed cone `A` avoiding `Γ` over a
-neighbourhood `U` of `x₀`; the directions outside `A` are within `θ ‖a‖` of those of `Γ`. -/
-private theorem exists_nhds_cone_far [ProperSpace F] {Ω : Set F} {Γ : Set (F × F)}
-    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ)
-    (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {x₀ : F} (hx₀ : x₀ ∈ Ω) {θ : ℝ} (hθ : 0 < θ) :
-    ∃ U ∈ 𝓝 x₀, ∃ A : Set F, IsClosed A ∧ (∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A) ∧
-      Disjoint (U ×ˢ A) Γ ∧ ∀ a ∉ A, infDist a (dirSet Γ x₀) < θ * ‖a‖ := by
-  set Z := dirSet Γ x₀
-  have hZc : ∀ t : ℝ, 0 < t → ∀ z ∈ Z, t • z ∈ Z := fun t ht _ hz ↦ smul_mem_dirSet hcone ht hz
-  set A : Set F := {a | θ * ‖a‖ ≤ infDist a Z}
-  have hA : IsClosed A :=
-    isClosed_le (continuous_const.mul continuous_norm) (continuous_infDist_pt Z)
-  have hAc : ∀ t : ℝ, 0 < t → ∀ a ∈ A, t • a ∈ A := fun t ht a ha ↦ by
-    simp only [A, mem_ofPred_eq, infDist_smul_of_forall_smul_mem hZc ht, norm_smul,
-      Real.norm_of_nonneg ht.le] at ha ⊢
-    nlinarith
-  have hAΓ : ∀ a ∈ A, a ≠ 0 → (x₀, a) ∉ Γ := fun a ha ha0 hmem ↦ by
-    have h0 : infDist a Z = 0 := infDist_zero_of_mem (Or.inr hmem)
-    have : 0 < θ * ‖a‖ := by have := norm_pos_iff.2 ha0; positivity
-    exact (lt_irrefl (0 : ℝ)) (this.trans_le (h0 ▸ ha))
-  obtain ⟨U, hU, hUΓ⟩ := exists_mem_nhds_disjoint_prod hΓ hcone hΓ0 hx₀ hA hAc hAΓ
-  exact ⟨U, hU, A, hA, hAc, hUΓ, fun a ha ↦ by simpa [A] using ha⟩
-
-end Cone
 
 section Separation
 
@@ -318,21 +236,23 @@ private theorem exists_cone_data {Ω : Set E} {O : Set D} {Γ₁ : Set (E × E)}
       (∀ t : ℝ, 0 < t → ∀ a ∈ A₂, t • a ∈ A₂) ∧ Disjoint (U₁ ×ˢ A₁) Γ₁ ∧
       Disjoint (U₂ ×ˢ A₂) Γ₂ ∧ ∃ c > 0, ∃ κ > 0, κ ≤ 1 ∧ ∀ ζ ∈ V, ∀ n,
         offRegions A₁ A₂ c n → κ * (‖ζ‖ + ‖n‖) ≤ ‖ζ - n‖ := by
-  set Z₁ := dirSet Γ₁ p₀.fst
-  set Z₂ := dirSet Γ₂ p₀.snd
-  have hZ₁ : IsClosed Z₁ := isClosed_dirSet hΓ₁ hp₀.1
-  have hZ₂ : IsClosed Z₂ := isClosed_dirSet hΓ₂ hp₀.2
-  have hZ₁c : ∀ t : ℝ, 0 < t → ∀ z ∈ Z₁, t • z ∈ Z₁ := fun t ht _ hz ↦ smul_mem_dirSet hcone₁ ht hz
-  have hZ₂c : ∀ t : ℝ, 0 < t → ∀ z ∈ Z₂, t • z ∈ Z₂ := fun t ht _ hz ↦ smul_mem_dirSet hcone₂ ht hz
+  set Z₁ : Set E := insert 0 {ξ | (p₀.fst, ξ) ∈ Γ₁}
+  set Z₂ : Set D := insert 0 {η | (p₀.snd, η) ∈ Γ₂}
+  have hZ₁ : IsClosed Z₁ := hΓ₁.isClosed_insert_zero_setOf_mem hp₀.1
+  have hZ₂ : IsClosed Z₂ := hΓ₂.isClosed_insert_zero_setOf_mem hp₀.2
+  have hZ₁c : ∀ t : ℝ, 0 < t → ∀ z ∈ Z₁, t • z ∈ Z₁ :=
+    forall_smul_mem_insert_zero fun t ht _ hξ ↦ hcone₁ _ hξ t ht
+  have hZ₂c : ∀ t : ℝ, 0 < t → ∀ z ∈ Z₂, t • z ∈ Z₂ :=
+    forall_smul_mem_insert_zero fun t ht _ hη ↦ hcone₂ _ hη t ht
   have hZ₁0 : (0 : E) ∈ Z₁ := mem_insert _ _
   have hZ₂0 : (0 : D) ∈ Z₂ := mem_insert _ _
   obtain ⟨β, hβ, hβ1, hβV⟩ := exists_mul_norm_le_dirDist hZ₁ hZ₂ hZ₁0 hZ₂0 hZ₁c hZ₂c hV hVcone
     fun ζ hζ hζ0 h₁ h₂ ↦ hVΓ ζ hζ (mem_tensorCone.2 ⟨hζ0, h₁, h₂⟩)
   -- The cones `A₁ = {a | (β / 4) ‖a‖ ≤ dist (a, Z₁)}` and `A₂` avoid `Γ₁` and `Γ₂` nearby.
   obtain ⟨U₁, hU₁, A₁, hA₁, hA₁c, hU₁Γ, hA₁Z⟩ :=
-    exists_nhds_cone_far hΓ₁ hcone₁ hΓ₁0 hp₀.1 (by positivity : 0 < β / 4)
+    hΓ₁.exists_mem_nhds_cone_disjoint_prod_infDist_lt hcone₁ hΓ₁0 hp₀.1 (by positivity : 0 < β / 4)
   obtain ⟨U₂, hU₂, A₂, hA₂, hA₂c, hU₂Γ, hA₂Z⟩ :=
-    exists_nhds_cone_far hΓ₂ hcone₂ hΓ₂0 hp₀.2 (by positivity : 0 < β / 4)
+    hΓ₂.exists_mem_nhds_cone_disjoint_prod_infDist_lt hcone₂ hΓ₂0 hp₀.2 (by positivity : 0 < β / 4)
   exact ⟨U₁, hU₁, U₂, hU₂, A₁, A₂, hA₁, hA₁c, hA₂, hA₂c, hU₁Γ, hU₂Γ, β / 4, by positivity,
     β / (12 + β), by positivity, by rw [div_le_one (by positivity)]; linarith,
     fun ζ hζ n hn ↦ mul_add_le_norm_sub_of_offRegions hZ₁0 hZ₂0 hβ hβ1 hA₁Z hA₂Z (hβV ζ hζ) hn⟩
@@ -512,6 +432,34 @@ private def badCoeff (f : WithLp 2 (E × D) → ℂ) (g : D → ℂ) (ζ : WithL
 
 variable {L A₁}
 
+/-! The values of `goodTerm` and `badCoeff` on either side of the split `-m.fst ∈ A₁`. -/
+
+section Split
+
+variable {f : WithLp 2 (E × D) → ℂ} {h : E → ℂ} {g : D → ℂ} {ζ : WithLp 2 (E × D)}
+  {m : ZLattice.dual L}
+
+private theorem goodTerm_of_mem (hm : -(m : WithLp 2 (E × D)).fst ∈ A₁) :
+    goodTerm L A₁ f h g ζ m = (ZLattice.covolume L : ℂ)⁻¹ * (f (ζ + m) *
+      g (-(m : WithLp 2 (E × D)).snd) * h (-(m : WithLp 2 (E × D)).fst)) :=
+  indicator_of_mem (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm _
+
+private theorem goodTerm_of_notMem (hm : -(m : WithLp 2 (E × D)).fst ∉ A₁) :
+    goodTerm L A₁ f h g ζ m = 0 :=
+  indicator_of_notMem (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm _
+
+private theorem badCoeff_of_mem (hm : -(m : WithLp 2 (E × D)).fst ∈ A₁) :
+    badCoeff L A₁ f g ζ m = 0 :=
+  indicator_of_notMem (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∉ A₁})
+    (not_not_intro hm) _
+
+private theorem badCoeff_of_notMem (hm : -(m : WithLp 2 (E × D)).fst ∉ A₁) :
+    badCoeff L A₁ f g ζ m =
+      (ZLattice.covolume L : ℂ)⁻¹ * (f (ζ + m) * g (-(m : WithLp 2 (E × D)).snd)) :=
+  indicator_of_mem (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∉ A₁}) hm _
+
+end Split
+
 variable {Ω : Opens E} {O : Opens D} {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
   (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
   (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V)
@@ -544,13 +492,9 @@ private theorem localFourier_tensorProduct_eq_add (S : 𝓓'(Ω, ℂ)) (T : 𝓓
   rw [localFourier_transportCLM_tensorProduct S T hV hW hχ, WithLp.neg_fst, WithLp.neg_snd,
     add_comm (m : WithLp 2 (E × D)) ζ]
   by_cases hm : -(m : WithLp 2 (E × D)).fst ∈ A₁
-  · rw [goodTerm, badCoeff, indicator_of_mem (s := {m : ZLattice.dual L |
-      -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm, indicator_of_notMem (s := {m : ZLattice.dual L |
-      -(m : WithLp 2 (E × D)).fst ∉ A₁}) (not_not_intro hm), zero_mul, add_zero]
+  · rw [goodTerm_of_mem hm, badCoeff_of_mem hm, zero_mul, add_zero]
     ring
-  · rw [goodTerm, badCoeff, indicator_of_notMem (s := {m : ZLattice.dual L |
-      -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm, indicator_of_mem (s := {m : ZLattice.dual L |
-      -(m : WithLp 2 (E × D)).fst ∉ A₁}) hm, zero_add]
+  · rw [goodTerm_of_notMem hm, badCoeff_of_notMem hm, zero_add]
     ring
 
 /-! ### Estimates for the two parts -/
@@ -576,8 +520,7 @@ private theorem norm_goodTerm_le {f : WithLp 2 (E × D) → ℂ} {h : E → ℂ}
       ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹ := by
   set a : ℂ := (ZLattice.covolume L : ℂ)⁻¹
   by_cases hm : -(m : WithLp 2 (E × D)).fst ∈ A₁
-  · rw [goodTerm, indicator_of_mem
-      (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm, norm_mul, norm_mul]
+  · rw [goodTerm_of_mem hm, norm_mul, norm_mul]
     have H := bound_neg (m : WithLp 2 (E × D)) (hfg (-(m : WithLp 2 (E × D))))
     have Hh := hh _ hm
     rw [WithLp.neg_fst, norm_neg] at H
@@ -601,8 +544,7 @@ private theorem norm_goodTerm_le {f : WithLp 2 (E × D) → ℂ} {h : E → ℂ}
     calc _ ≤ ‖a‖ * (C * σ * ((1 + ‖ζ‖) ^ N)⁻¹ * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹) := by
           gcongr
       _ = _ := by ring
-  · rw [goodTerm, indicator_of_notMem
-      (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∈ A₁}) hm, norm_zero]
+  · rw [goodTerm_of_notMem hm, norm_zero]
     positivity
 
 /-- **The terms with `-m.fst ∈ A₁`.** Under the hypotheses of `norm_goodTerm_le`, the sum of
@@ -635,12 +577,9 @@ private theorem one_add_pow_mul_norm_badCoeff_le {f : WithLp 2 (E × D) → ℂ}
     (1 + ‖ζ‖) ^ N * ‖badCoeff L A₁ f g ζ m‖ * (1 + ‖(m : WithLp 2 (E × D))‖) ^ P ≤
       ‖(ZLattice.covolume L : ℂ)⁻¹‖ * C := by
   by_cases hm : -(m : WithLp 2 (E × D)).fst ∈ A₁
-  · rw [badCoeff, indicator_of_notMem
-      (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∉ A₁}) (by simpa using hm),
-      norm_zero, mul_zero, zero_mul]
+  · rw [badCoeff_of_mem hm, norm_zero, mul_zero, zero_mul]
     exact mul_nonneg (norm_nonneg _) hC
-  · rw [badCoeff, indicator_of_mem
-      (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∉ A₁}) hm, norm_mul]
+  · rw [badCoeff_of_notMem hm, norm_mul]
     have H := bound_neg (m : WithLp 2 (E × D))
       (hfg (-(m : WithLp 2 (E × D))) (by rwa [WithLp.neg_fst]))
     refine le_trans (le_of_eq ?_) (mul_le_mul_of_nonneg_left H (norm_nonneg _))
@@ -650,31 +589,10 @@ private theorem one_add_pow_mul_norm_badCoeff_le {f : WithLp 2 (E × D) → ℂ}
 private theorem continuous_badCoeff {f : WithLp 2 (E × D) → ℂ} (hf : Continuous f) (g : D → ℂ)
     (m : ZLattice.dual L) : Continuous fun ζ ↦ badCoeff L A₁ f g ζ m := by
   by_cases hm : -(m : WithLp 2 (E × D)).fst ∈ A₁
-  · simp only [badCoeff, indicator_of_notMem
-      (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∉ A₁}) (by simpa using hm)]
+  · simp only [badCoeff_of_mem hm]
     exact continuous_const
-  · simp only [badCoeff, indicator_of_mem
-      (s := {m : ZLattice.dual L | -(m : WithLp 2 (E × D)).fst ∉ A₁}) hm]
+  · simp only [badCoeff_of_notMem hm]
     fun_prop
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [InnerProductSpace ℝ D]
-  [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D] in
-/-- The derivatives of the modulated cutoff grow at most polynomially in the modulation. -/
-private theorem seminorm_modulate_fst_le {Ω : Opens E} (χ₁ : 𝓓(Ω, ℂ)) (k : ℕ)
-    (m : WithLp 2 (E × D)) :
-    N[ℂ]_{⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩, k}
-        (χ₁.toSupportedInTSupport.modulate m.fst) ≤
-      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩ k
-        χ₁.toSupportedInTSupport * (1 + 2 * π) ^ k * (1 + ‖m‖) ^ k := by
-  have hfst := WithLp.norm_fst_le (x := m)
-  calc _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩
-        k χ₁.toSupportedInTSupport * (1 + 2 * π * ‖m.fst‖) ^ k :=
-        ContDiffMapSupportedIn.seminorm_modulate_le _ _ k
-    _ ≤ ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ ⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩
-        k χ₁.toSupportedInTSupport * ((1 + 2 * π) * (1 + ‖m‖)) ^ k := by
-        gcongr
-        nlinarith [Real.pi_pos, norm_nonneg m]
-    _ = _ := by rw [mul_pow, mul_assoc]
 
 /-- **The terms of the series off `A₁`, weighted.** If the weighted products of `f` and `g` are
 bounded by `C` to order `q + k` in `n` for `n.fst ∉ A₁`, then the products of the weighted
@@ -695,7 +613,8 @@ private theorem one_add_pow_mul_norm_badCoeff_mul_seminorm_le {Ω : Opens E} (χ
   have _hSk : 0 ≤ Sk := apply_nonneg _ _
   have h := one_add_pow_mul_norm_badCoeff_le (L := L) (A₁ := A₁) (P := q + k) hC hfg m
   rw [pow_add] at h
-  have hmod := seminorm_modulate_fst_le χ₁ k (m : WithLp 2 (E × D))
+  have hmod := χ₁.toSupportedInTSupport.seminorm_modulate_le_of_norm_le
+    (WithLp.norm_fst_le (x := (m : WithLp 2 (E × D)))) k
   rw [le_mul_inv_iff₀ (by positivity)]
   calc (1 + ‖ζ‖) ^ N * ‖badCoeff L A₁ f g ζ m‖ *
         N[ℂ]_{⟨tsupport χ₁, χ₁.hasCompactSupport.isCompact⟩, k}
@@ -801,22 +720,6 @@ private theorem isCompact_insert_range_tsum [DiscreteTopology L] [IsZLattice ℝ
 
 variable {Γ₁ : Set (E × E)}
 
-omit [FiniteDimensional ℝ E] [NormedAddCommGroup D] [InnerProductSpace ℝ D]
-  [FiniteDimensional ℝ D] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D] [BorelSpace D] in
-/-- Combining the bounds on the two parts of the lattice series: the weight `w ≥ 0` of the pairing
-of `S` with a series in `𝓓_K` moves into the coefficients of the series. -/
-private theorem mul_norm_add_complexPairing_tsum_le (S : 𝓓'(Ω, ℂ)) {K : Compacts E}
-    (hK : (K : Set E) ⊆ Ω) {ι : Type*} {c : ι → ℂ} {v : ι → 𝓓_{K}(E, ℂ)} {w : ℝ} (hw : 0 ≤ w)
-    (hc : Summable fun m ↦ c m • v m) {G : ℂ} {A B : ℝ} (hG : w * ‖G‖ ≤ A)
-    (hS : ‖S.complexPairing (ofSupportedIn hK (∑' m, ((w : ℂ) * c m) • v m))‖ ≤ B) :
-    w * ‖G + S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ ≤ A + B := by
-  calc w * ‖G + S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖
-      ≤ w * ‖G‖ + w * ‖S.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ := by
-        rw [← mul_add]
-        gcongr
-        exact norm_add_le _ _
-    _ ≤ A + B := add_le_add hG (mul_norm_complexPairing_tsum_smul S hK hw hc ▸ hS)
-
 /-- **The seminorm estimate for a product cutoff.** Let `χ (x, y) = χ₁ x χ₂ y` be equal to one on
 the support of `φ`, let `A₁` and `A₂` be closed cones avoiding `Γ₁` over `tsupport χ₁` and
 `WF(T)` over `tsupport χ₂`, and let every covector off the two regions of `offRegions A₁ A₂ c` be
@@ -879,10 +782,9 @@ private theorem exists_seminorm_localFourier_tensorProduct_le_of_cutoff (T : �
       ((((1 + ‖ζ‖) ^ N : ℝ) : ℂ) * badCoeff L A₁ f g ζ m) •
         χ₁.toSupportedInTSupport.modulate (m : WithLp 2 (E × D)).fst))
     (mem_image_of_mem _ (mem_insert_of_mem _ ⟨⟨ζ, hζ⟩, rfl⟩))
-  refine (mul_norm_add_complexPairing_tsum_le S χ₁.tsupport_subset (by positivity) hsum
-    (A := K₀ * WaveFrontSpace.seminorm i u) (hgoodle.trans_eq (by rw [hK₀def]; ring))
-    hbadle).trans_eq ?_
-  simp [NNReal.smul_def, Real.coe_toNNReal _ hK₀]
+  rw [← mul_norm_complexPairing_tsum_smul S χ₁.tsupport_subset (by positivity) hsum] at hbadle
+  exact Seminorm.mul_norm_add_le_smul_add_apply _ _ u (by positivity) hK₀
+    (hgoodle.trans_eq (by rw [hK₀def]; ring)) hbadle
 
 omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D] [BorelSpace D] in
 include hV hW in
