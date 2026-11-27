@@ -18,9 +18,10 @@ subsets of `Y`. A continuous map `f : X ⟶ Y` takes compact subsets of `X` to c
 
 `(f^* P)(K) = P(f(K))`
 
-(`TopCat.KPresheaf.pullback`). When `f` is injective and `X` is locally compact, this pullback
-preserves K-sheaves (`TopCat.KPresheaf.IsKSheaf.pullback`) and homotopy K-sheaves of cochain
-complexes (`TopCat.KPresheaf.IsHomotopyKSheaf.pullback`), which is Pardon's Definition A.3.6.
+(`TopCat.KPresheaf.pullback`). When `f` is injective, `X` is Hausdorff and locally compact and
+`Y` is Hausdorff, this pullback preserves K-sheaves (`TopCat.KPresheaf.IsKSheaf.pullback`) and
+homotopy K-sheaves of cochain complexes (`TopCat.KPresheaf.IsHomotopyKSheaf.pullback`), which is
+Pardon's Definition A.3.6.
 
 Taking images preserves `⊥` and `⊔`, and, for an injective map, `⊓`; so the first two axioms for
 `f^* P` are those of `P` at the images. Injectivity is needed: for the map from a two-point
@@ -29,9 +30,10 @@ discrete space `{a, b}` to a point, the pullback of the K-sheaf `ℤ` on the poi
 kernel of the map to the value `0` on `{a} ∩ {b} = ∅`.
 
 The third axiom, that `(f^* P)(K)` is the colimit of `(f^* P)(K')` over the compact
-neighbourhoods `K'` of `K`, holds for every continuous `f` out of a locally compact space as soon
-as `P` satisfies it (`TopCat.KPresheaf.nonempty_isColimit_coconeOfCompacts_pullback`). The images
-`f(K')` are not neighbourhoods of `f(K)`, so this is not a cofinality statement; instead, every
+neighbourhoods `K'` of `K`, holds for every continuous `f` out of a Hausdorff, locally compact
+space as soon as `P` satisfies it
+(`TopCat.KPresheaf.nonempty_isColimit_coconeOfCompacts_pullback`). The images `f(K')` are not
+neighbourhoods of `f(K)`, so this is not a cofinality statement; instead, every
 compact neighbourhood `L` of `f(K)` is a neighbourhood of `f(K')` for some compact neighbourhood
 `K'` of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_mem_compactNhds_map`), and the
 colimit property of `P` at `f(K)` and at the `f(K')` combine. For homotopy K-sheaves the colimit
@@ -111,9 +113,10 @@ private lemma map_comp_ι_eq (P : KPresheaf A Y) {K : Compacts X}
 
 variable [LocallyCompactSpace X]
 
-/-- **The colimit axiom for a pullback.** If `X` is locally compact and `P` is a K-presheaf on `Y`
-whose value on every compact set is the colimit of its values on the compact neighbourhoods, then
-the same holds for its pullback `K ↦ P(f(K))` along any continuous map `f : X ⟶ Y`. -/
+/-- **The colimit axiom for a pullback.** If `X` is Hausdorff and locally compact and `P` is a
+K-presheaf on `Y` whose value on every compact set is the colimit of its values on the compact
+neighbourhoods, then the same holds for its pullback `K ↦ P(f(K))` along any continuous map
+`f : X ⟶ Y`. -/
 theorem nonempty_isColimit_coconeOfCompacts_pullback {P : KPresheaf A Y}
     (hP : ∀ L : Compacts Y, Nonempty (IsColimit (P.coconeOfCompacts L))) (K : Compacts X) :
     Nonempty (IsColimit (((pullback f).obj P).coconeOfCompacts K)) := by
