@@ -120,14 +120,11 @@ variable {𝕜 G H V W : Type*} [RCLike 𝕜] [Monoid G] [Monoid H]
 
 /-- **The external tensor product** `σ ⊠ τ` of a continuous representation `σ` of `G` on `V` and a
 continuous representation `τ` of `H` on `W`: the pair `(g, h)` acts on `V ⊗[𝕜] W` by `σ g ⊗ τ h`
-(`TensorProduct.mapL`). -/
+(`TensorProduct.mapL`). It is the tensor product `tprod` of the restrictions of `σ` and `τ` along
+the two projections of `G × H`. -/
 noncomputable def externalTensor (σ : ContRepresentation 𝕜 G V) (τ : ContRepresentation 𝕜 H W) :
     ContRepresentation 𝕜 (G × H) (V ⊗[𝕜] W) :=
-  .ofMonoidHom
-    { toFun g := TensorProduct.mapL (σ g.1) (τ g.2)
-      map_one' := by simp [ContinuousLinearMap.one_def]
-      map_mul' g h := by
-        rw [Prod.fst_mul, Prod.snd_mul, map_mul, map_mul, TensorProduct.mapL_mul] }
+  (σ.restrict (MonoidHom.fst G H)).tprod (τ.restrict (MonoidHom.snd G H))
 
 variable (σ : ContRepresentation 𝕜 G V) (τ : ContRepresentation 𝕜 H W)
 
@@ -139,6 +136,7 @@ theorem externalTensor_apply (g : G × H) :
 
 /-- Forgetting continuity takes the external tensor product of continuous representations to the
 external tensor product `Representation.externalTensor` of the underlying representations. -/
+@[simp]
 theorem toRepresentation_externalTensor :
     (σ.externalTensor τ).toRepresentation =
       σ.toRepresentation.externalTensor τ.toRepresentation := by
@@ -150,17 +148,13 @@ theorem toRepresentation_externalTensor :
 action. -/
 theorem continuous_externalTensor [TopologicalSpace G] [TopologicalSpace H] (hσ : Continuous σ)
     (hτ : Continuous τ) : Continuous (σ.externalTensor τ) :=
-  (lipschitzWith_one_rTensor.continuous.comp (hσ.comp continuous_fst)).clm_comp
-    (lipschitzWith_one_lTensor.continuous.comp (hτ.comp continuous_snd))
+  continuous_tprod _ _ (hσ.comp continuous_fst) (hτ.comp continuous_snd)
 
 /-- The external tensor product of two unitary representations is unitary: the tensor product of
 two linear isometries is a linear isometry. -/
 theorem IsUnitary.externalTensor {σ : ContRepresentation 𝕜 G V} {τ : ContRepresentation 𝕜 H W}
     (hσ : IsUnitary σ) (hτ : IsUnitary τ) : IsUnitary (σ.externalTensor τ) :=
-  (isUnitary_iff_norm_map _).mpr fun g x ↦ by
-    simpa using TensorProduct.norm_map
-      (((σ g.1) : V →ₗ[𝕜] V).isometryOfInner (hσ.inner_map_map g.1))
-      (((τ g.2) : W →ₗ[𝕜] W).isometryOfInner (hτ.inner_map_map g.2)) x
+  (hσ.restrict _).tprod (hτ.restrict _)
 
 end External
 
