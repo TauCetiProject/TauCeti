@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Pseudodifferential.SmoothKernel
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
-import TauCeti.Geometry.Manifold.Measure.SmoothDensity
+import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Integral
 import TauCeti.Topology.Algebra.Support
 
 /-!

@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 public import TauCeti.Geometry.Manifold.Sobolev.Completion
+import Mathlib.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.InnerProductSpace.Basic
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
-import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Integral
 
 /-!
 # Duality of the Sobolev spaces of a compact manifold

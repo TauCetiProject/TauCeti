@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 import TauCeti.Analysis.Pseudodifferential.Manifold.FormalAdjoint
+import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Integral
 import TauCeti.Analysis.Pseudodifferential.Manifold.PatchedQuantization
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 
