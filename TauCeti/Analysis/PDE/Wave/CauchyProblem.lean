@@ -442,8 +442,8 @@ series of tested forcings converges, with sum
 `∑ⱼ ∫ θ(t) ⟪ψ, Gⱼ(t)⟫ dt`
 `  = ∫ θ''(t) ∫ conj (ψ(x)) U(t)(x) dx dt - ∫ θ(t) ∫ conj (Δψ(x)) U(t)(x) dx dt`.
 
-Neither the data, nor `U(t)`, nor the forcing `∑ⱼ Gⱼ` need be functions; only the blocks `Gⱼ`
-are. -/
+Neither the data nor the forcing `∑ⱼ Gⱼ` need be functions, and `U(t)` need not lie in `L²`; only
+the blocks `Gⱼ` are `L²` functions. -/
 theorem hasSum_integral_mul_inner_of_tendsto_sum_waveDuhamelSolution_block {r q : ℝ≥0∞}
     [Fact (1 ≤ r)] (hq : 1 ≤ q) {γ γ' : ℝ} {b b' : ℝ≥0∞} {f : HomogeneousBesovSpace ℂ φ γ 2 b}
     {g : HomogeneousBesovSpace ℂ φ γ' 2 b'} {T : ℝ} {G : ℤ → ℝ → Lp ℂ 2 (volume : Measure E)}
@@ -457,6 +457,12 @@ theorem hasSum_integral_mul_inner_of_tendsto_sum_waveDuhamelSolution_block {r q 
     (ψ : 𝓢(E, ℂ)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθT : tsupport θ ⊆ Set.Icc 0 T) :
     HasSum (fun j ↦ ∫ t, θ t * ⟪ψ.toLp 2, G j t⟫_ℂ)
       ((∫ t, deriv (deriv θ) t * ∫ x, ⟪ψ x, U t x⟫_ℂ) - ∫ t, θ t * ∫ x, ⟪(Δ ψ) x, U t x⟫_ℂ) := by
+  rcases lt_or_ge T 0 with hT | hT
+  · -- For `T < 0` the function `θ` vanishes and every term is `0`.
+    have : θ = 0 := funext fun t ↦ image_eq_zero_of_notMem_tsupport fun h ↦
+      (Set.Icc_eq_empty hT.not_ge).subset (hθT h)
+    subst this
+    simp
   -- On `[0, T]`, the partial sums of the series are the solutions with the summed data and
   -- forcing.
   have hsum (s : Finset ℤ) {t : ℝ} (ht : t ∈ Set.Icc 0 T) :
@@ -482,7 +488,7 @@ theorem hasSum_integral_mul_inner_of_tendsto_sum_waveDuhamelSolution_block {r q 
       (((hG j).const_inner _).bdd_mul hθ.continuous.aestronglyMeasurable
         (Eventually.of_forall hC)) fun t ht ↦ ?_
     rw [image_eq_zero_of_notMem_tsupport fun h ↦ ht (hθT h), zero_mul]
-  refine (tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution hq
+  refine (tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution hq le_rfl hT
     (fun s ↦ integrable_finsetSum' s fun j _ ↦ hG j) hae' hlim' ψ hθ hθT).congr fun s ↦ ?_
   simp_rw [Finset.sum_apply, inner_sum, Finset.mul_sum]
   exact integral_finsetSum s fun j _ ↦ hint j

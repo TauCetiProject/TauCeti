@@ -68,19 +68,18 @@ the a priori bound `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |t| ∫_{Ι 0 t} ‖G
 (`TauCeti.norm_waveDuhamelSolution_le_mul_setIntegral`), so each term of the identity passes to the
 limit.
 
-This tested form passes to limits that need not lie in `L²`. If free waves `uᵢ` with data in `L²`
-converge to `U : ℝ → L^r` in `L^r` at almost every time and in the mixed norm `L^q_t L^r_x`,
-`1 ≤ q`, then `∫ θ''(t) ∫ ⟪φ, U(t)⟫ dx dt = ∫ θ(t) ∫ ⟪Δφ, U(t)⟫ dx dt` for every Schwartz `φ`
-(`TauCeti.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution`), by Hölder's
-inequality in space and in time
-(`TauCeti.tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub`). This identifies
-the evolutions of data in homogeneous Besov spaces, defined as such limits, as solutions of the
-wave equation. The same holds with forcing: if solutions `uᵢ` with data in `L²` and forcings `Gᵢ`
-integrable on `[0, T]` converge to `U` in `L^r` at almost every time of `[0, T]` and in
-`L^q([0, T]; L^r_x)`, then for every `θ` vanishing outside `[0, T]` the tested forcings
-`∫ θ(t) ⟪φ, Gᵢ(t)⟫ dt` converge to `∫ θ''(t) ∫ ⟪φ, U(t)⟫ dx dt - ∫ θ(t) ∫ ⟪Δφ, U(t)⟫ dx dt`
-(`TauCeti.tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution`): `∂ₜ²U - ΔU` is the limit
-of the forcings on `(0, T)` in the sense of distributions.
+This tested form passes to limits that need not lie in `L²`. Let `a ≤ 0 ≤ b`. If solutions `uᵢ`
+with data in `L²` and forcings `Gᵢ` integrable on `[a, b]` converge to `U : ℝ → L^r` in `L^r` at
+almost every time of `[a, b]` and in the mixed norm `L^q([a, b]; L^r_x)`, `1 ≤ q`, then for every
+Schwartz `φ` and every `θ` vanishing outside `[a, b]` the tested forcings `∫ θ(t) ⟪φ, Gᵢ(t)⟫ dt`
+converge to `∫ θ''(t) ∫ ⟪φ, U(t)⟫ dx dt - ∫ θ(t) ∫ ⟪Δφ, U(t)⟫ dx dt`
+(`TauCeti.tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution`), by Hölder's inequality in
+space and in time (`TauCeti.tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub`):
+`∂ₜ²U - ΔU` is the limit of the forcings on `(a, b)` in the sense of distributions. For limits of
+free waves, `∫ θ''(t) ∫ ⟪φ, U(t)⟫ dx dt = ∫ θ(t) ∫ ⟪Δφ, U(t)⟫ dx dt` for every compactly supported
+`θ` (`TauCeti.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution`). This
+identifies the evolutions of data in homogeneous Besov spaces, defined as such limits, as solutions
+of the wave equation.
 
 Integrating twice in time, Taylor's formula of order one gives the **weak formulation**: for all
 such `φ, ψ` and every time `t`,
@@ -119,7 +118,7 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
 * `TauCeti.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution`: limits of
   free waves in a mixed norm `L^q_t L^r_x` solve the wave equation in the sense of distributions;
 * `TauCeti.tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution`: limits of forced waves in
-  a mixed norm `L^q([0, T]; L^r_x)` solve the forced wave equation on `(0, T)`;
+  a mixed norm `L^q([a, b]; L^r_x)` solve the forced wave equation on `(a, b)`;
 * `TauCeti.inner_waveDuhamelSolution`, `TauCeti.inner_toLp_waveDuhamelSolution`: Duhamel's formula
   satisfies the weak formulation, integrated twice in time.
 
@@ -558,6 +557,31 @@ theorem norm_waveDuhamelSolution_sub_waveDuhamelSolution_le (f g : Lp F 2 (volum
   simpa using norm_waveDuhamelSolution_le_mul_setIntegral (F := F) (G := G₁ - G₂) 0 0
     (hG₁.sub hG₂)
 
+/-- For forcing integrable on `ℝ`, the solution is continuous in time: near each time it is a
+uniform limit of solutions with continuous forcings approximating `G` in `L¹`. -/
+private theorem continuous_waveDuhamelSolution_of_integrable (f g : Lp F 2 (volume : Measure E))
+    (hG : Integrable G) : Continuous (waveDuhamelSolution F f g G) := by
+  refine continuous_of_locally_uniform_approx_of_continuousAt fun x u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.1 hu
+  have hx : 0 < |x| + 2 := by positivity
+  obtain ⟨K, -, hGK, hKc, hK⟩ := hG.exists_hasCompactSupport_integral_sub_le (div_pos hε hx)
+  refine ⟨Set.Ioo (x - 1) (x + 1), Ioo_mem_nhds (by linarith) (by linarith),
+    waveDuhamelSolution F f g K, (continuous_waveDuhamelSolution f g hKc).continuousAt,
+    fun y hy ↦ hεu ?_⟩
+  have hy : |y| < |x| + 2 :=
+    abs_lt.2 ⟨by linarith [neg_abs_le x, hy.1], by linarith [le_abs_self x, hy.2]⟩
+  rw [dist_eq_norm]
+  calc ‖waveDuhamelSolution F f g G y - waveDuhamelSolution F f g K y‖
+      ≤ |y| * ∫ s in Ι 0 y, ‖G s - K s‖ :=
+        norm_waveDuhamelSolution_sub_waveDuhamelSolution_le f g hG.intervalIntegrable
+          hK.intervalIntegrable
+    _ ≤ |y| * (ε / (|x| + 2)) := by
+        gcongr
+        exact (setIntegral_le_integral (hG.sub hK).norm
+          (Eventually.of_forall fun _ ↦ norm_nonneg _)).trans hGK
+    _ < (|x| + 2) * (ε / (|x| + 2)) := mul_lt_mul_of_pos_right hy (div_pos hε hx)
+    _ = ε := by field_simp
+
 /-- If continuous forcings `Kₙ` converge to an integrable forcing `G` in `L¹`, the solutions
 tested against `w(t) χ` converge, for every continuous compactly supported `w`. -/
 private theorem tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto
@@ -691,6 +715,126 @@ theorem integral_deriv_deriv_mul_inner_waveDuhamelSolution_of_integrableOn
         · exact key hθ0 fun t ht ↦ by rw [huH ht]
         · exact key hθ0 fun t ht ↦ by rw [show H t = G t from Set.indicator_of_mem ht G]
 
+/-- On `[a, b] ∋ 0`, the solution with forcing integrable on `[a, b]` is bounded by
+`‖f‖ + (b - a) ‖g‖ + (b - a) ∫_{[a, b]} ‖G‖`. -/
+private theorem norm_waveDuhamelSolution_le_of_integrableOn (f g : Lp F 2 (volume : Measure E))
+    {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hG : IntegrableOn G (Set.Icc a b)) {t : ℝ}
+    (ht : t ∈ Set.Icc a b) :
+    ‖waveDuhamelSolution F f g G t‖ ≤
+      ‖f‖ + (b - a) * ‖g‖ + (b - a) * ∫ s in Set.Icc a b, ‖G s‖ := by
+  have hsub : Set.uIcc 0 t ⊆ Set.Icc a b := Set.uIcc_subset_Icc ⟨ha, hb⟩ ht
+  have htT : |t| ≤ b - a := abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  refine (norm_waveDuhamelSolution_le_mul_setIntegral f g
+    (hG.mono_set hsub).intervalIntegrable).trans ?_
+  have := setIntegral_mono_set hG.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
+    (Eventually.of_forall fun x hx ↦ (Set.uIoc_subset_uIcc.trans hsub) hx)
+  have : 0 ≤ b - a := by linarith
+  gcongr
+
+open Topology in
+/-- If solutions `uᵢ` with forcings integrable on `[a, b] ∋ 0` converge to `U` in `L^r` at almost
+every time of `[a, b]` and in `L^q([a, b]; L^r_x)`, their pairings with `ϑ(t) χ(x)` converge to
+those of `U`, for every continuous `ϑ` vanishing outside `[a, b]`. -/
+private theorem tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto_eLpNorm {ι : Type*}
+    {l : Filter ι} [l.IsCountablyGenerated] {q r : ℝ≥0∞} [Fact (1 ≤ r)] (hq : 1 ≤ q) {a b : ℝ}
+    (ha : a ≤ 0) (hb : 0 ≤ b) {f g : ι → Lp F 2 (volume : Measure E)}
+    {G : ι → ℝ → Lp F 2 (volume : Measure E)} (hG : ∀ i, IntegrableOn (G i) (Set.Icc a b))
+    {U : ℝ → Lp F r (volume : Measure E)}
+    (hae : ∀ᵐ t ∂volume.restrict (Set.Icc a b), Tendsto (fun i ↦
+      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) l (𝓝 0))
+    (hlim : Tendsto (fun i ↦ eLpNorm (fun t ↦
+      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) q
+        (volume.restrict (Set.Icc a b))) l (𝓝 0))
+    (χ : 𝓢(E, F)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ) (hϑc : HasCompactSupport ϑ)
+    (hϑ0 : ∀ t ∉ Set.Icc a b, ϑ t = 0) :
+    Tendsto (fun i ↦ ∫ t, ϑ t * ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) (G i) t⟫) l
+      (𝓝 (∫ t, ϑ t * ∫ x, ⟪χ x, U t x⟫)) := by
+  have := (ENNReal.HolderConjugate.conjExponent hq).symm
+  have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
+  have hpair (h : Lp F 2 (volume : Measure E)) : ∫ x, ⟪χ x, h x⟫ = ⟪χ.toLp 2, h⟫ :=
+    (L2.toLp_inner_of_ae_eq (χ.memLp 2) Filter.EventuallyEq.rfl).symm
+  obtain ⟨C, hC⟩ := hϑ.bounded_above_of_compact_support hϑc
+  -- On `[a, b]`, the solutions agree with those with the forcings `1_{[a, b]} Gᵢ`, which are
+  -- continuous.
+  have hmeas (i : ι) : AEStronglyMeasurable
+      (fun t ↦ ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) (G i) t⟫)
+      (volume.restrict (Set.Icc a b)) := by
+    have hc : Continuous fun t ↦
+        ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) ((Set.Icc a b).indicator (G i)) t⟫ :=
+      continuous_const.inner (continuous_waveDuhamelSolution_of_integrable (f i) (g i)
+        ((hG i).integrable_indicator measurableSet_Icc))
+    refine hc.aestronglyMeasurable.congr
+      (ae_restrict_of_forall_mem measurableSet_Icc fun t ht ↦ ?_)
+    dsimp only
+    rw [waveDuhamelSolution_congr (f i) (g i) fun s hs ↦
+      Set.indicator_of_mem (Set.uIcc_subset_Icc ⟨ha, hb⟩ ht hs) (G i)]
+  -- Both sides are integrals over `[a, b]`, where Hölder's inequality applies.
+  have hset (X : ℝ → ℂ) : ∫ t in Set.Icc a b, ϑ t * X t = ∫ t, ϑ t * X t :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ by rw [hϑ0 t ht, zero_mul]
+  have hfun : (fun i ↦ ∫ t, ϑ t * ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) (G i) t⟫) =
+      fun i ↦ ∫ t in Set.Icc a b, ϑ t * ∫ x, ⟪χ x, waveDuhamelSolution F (f i) (g i) (G i) t x⟫ :=
+    funext fun i ↦ by rw [hset]; simp_rw [hpair]
+  rw [hfun, ← hset fun t ↦ ∫ x, ⟪χ x, U t x⟫]
+  refine tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub
+    (p := q.conjExponent) (r := r.conjExponent)
+    ((hϑ.memLp_of_hasCompactSupport hϑc).restrict _) (χ.memLp _)
+    (ae_of_all _ fun t ↦ Lp.memLp (U t))
+    (ae_of_all _ fun t i ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2)
+      (χ.memLp 2) (Lp.memLp _)) (fun i ↦ by simp_rw [hpair]; exact hmeas i) (fun i ↦ ?_) hae hlim
+  -- The pairings are integrable on `[a, b]`, where the solutions are bounded.
+  simp_rw [hpair]
+  refine Integrable.of_bound (hϑ.aestronglyMeasurable.mul (hmeas i))
+    (C * (‖χ.toLp 2‖ * (‖f i‖ + (b - a) * ‖g i‖ + (b - a) * ∫ s in Set.Icc a b, ‖G i s‖)))
+    (ae_restrict_of_forall_mem measurableSet_Icc fun t ht ↦ ?_)
+  rw [norm_mul]
+  exact mul_le_mul (hC t) ((norm_inner_le_norm _ _).trans
+    (by gcongr; exact norm_waveDuhamelSolution_le_of_integrableOn _ _ ha hb (hG i) ht))
+    (norm_nonneg _) ((norm_nonneg _).trans (hC t))
+
+open Topology in
+/-- **Limits of forced waves in mixed norm solve the forced wave equation.** Let `a ≤ 0 ≤ b` and
+let `uᵢ(t) = cos (tD) fᵢ + D⁻¹ sin (tD) gᵢ + ∫₀ᵗ D⁻¹ sin ((t - s)D) Gᵢ(s) ds` be the solutions with
+data `fᵢ, gᵢ ∈ L²` and forcings `Gᵢ` integrable on `[a, b]`, indexed along a countably generated
+filter, and let `U : ℝ → L^r` with `uᵢ(t) → U(t)` in `L^r` for almost every `t ∈ [a, b]` and
+`uᵢ → U` in the mixed norm `L^q([a, b]; L^r_x)`, for some `1 ≤ q, r ≤ ∞`. Then for every Schwartz
+function `φ` and every `C²` function `θ` of time vanishing outside `[a, b]`, the forcings tested
+against `θ(t) φ(x)` converge to `U` tested against `θ''(t) φ(x) - θ(t) Δφ(x)`:
+
+`∫ θ(t) ⟪φ, Gᵢ(t)⟫ dt → ∫ θ''(t) ∫ ⟪φ(x), U(t)(x)⟫ dx dt - ∫ θ(t) ∫ ⟪Δφ(x), U(t)(x)⟫ dx dt`.
+
+That is, `∂ₜ²U - ΔU` is the limit of the forcings on `(a, b)` in the sense of distributions.
+Neither `U(t)` nor any limit of the data or the forcings needs to lie in `L²`. -/
+theorem tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {q r : ℝ≥0∞} [Fact (1 ≤ r)] (hq : 1 ≤ q) {a b : ℝ} (ha : a ≤ 0)
+    (hb : 0 ≤ b) {f g : ι → Lp F 2 (volume : Measure E)}
+    {G : ι → ℝ → Lp F 2 (volume : Measure E)} (hG : ∀ i, IntegrableOn (G i) (Set.Icc a b))
+    {U : ℝ → Lp F r (volume : Measure E)}
+    (hae : ∀ᵐ t ∂volume.restrict (Set.Icc a b), Tendsto (fun i ↦
+      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) l (𝓝 0))
+    (hlim : Tendsto (fun i ↦ eLpNorm (fun t ↦
+      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) q
+        (volume.restrict (Set.Icc a b))) l (𝓝 0))
+    (φ : 𝓢(E, F)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθab : tsupport θ ⊆ Set.Icc a b) :
+    Tendsto (fun i ↦ ∫ t, θ t * ⟪φ.toLp 2, G i t⟫) l
+      (𝓝 ((∫ t, deriv (deriv θ) t * ∫ x, ⟪φ x, U t x⟫) - ∫ t, θ t * ∫ x, ⟪(Δ φ) x, U t x⟫)) := by
+  have hθc : HasCompactSupport θ := isCompact_Icc.of_isClosed_subset (isClosed_tsupport θ) hθab
+  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
+  have hθ0 (t : ℝ) (ht : t ∉ Set.Icc a b) : θ t = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ ht (hθab h)
+  have hθ''0 (t : ℝ) (ht : t ∉ Set.Icc a b) : deriv (deriv θ) t = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦
+      ht (hθab (tsupport_deriv_subset (tsupport_deriv_subset h)))
+  -- Each solution satisfies the equation with its own forcing.
+  have hφ : Δ ((φ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
+      (((Δ φ).toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
+    simp
+  have heq (i : ι) := integral_deriv_deriv_mul_inner_waveDuhamelSolution_of_integrableOn hφ
+    (f i) (g i) ha hb (hG i) hθ hθab
+  exact ((tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto_eLpNorm hq ha hb hG hae hlim
+      φ (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv hθ''0).sub
+    (tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto_eLpNorm hq ha hb hG hae hlim (Δ φ)
+      hθ.continuous hθc hθ0)).congr fun i ↦ by rw [heq i, add_sub_cancel_left]
+
 open Topology in
 /-- **Limits of free waves in mixed norm solve the wave equation.** Let
 `uᵢ(t) = cos (tD) fᵢ + D⁻¹ sin (tD) gᵢ` be the free waves with data `fᵢ, gᵢ ∈ L²`, indexed along
@@ -711,150 +855,17 @@ theorem integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolutio
       eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) 0 t)) r volume) q volume) l (𝓝 0))
     (φ : 𝓢(E, F)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθc : HasCompactSupport θ) :
     ∫ t, deriv (deriv θ) t * ∫ x, ⟪φ x, U t x⟫ = ∫ t, θ t * ∫ x, ⟪(Δ φ) x, U t x⟫ := by
-  have := (ENNReal.HolderConjugate.conjExponent hq).symm
-  have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
-  have hpair (χ : 𝓢(E, F)) (h : Lp F 2 (volume : Measure E)) :
-      ∫ x, ⟪χ x, h x⟫ = ⟪χ.toLp 2, h⟫ := by
-    rw [L2.inner_def]
-    exact integral_congr_ae (by filter_upwards [χ.coeFn_toLp 2] with x hx; rw [hx])
-  -- Against `ϑ(t) χ(x)`, the pairings of the free waves converge to those of `U`.
-  have hconv (χ : 𝓢(E, F)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ) (hϑc : HasCompactSupport ϑ) :
-      Tendsto (fun i ↦ ∫ t, ϑ t * ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) 0 t⟫) l
-        (𝓝 (∫ t, ϑ t * ∫ x, ⟪χ x, U t x⟫)) := by
-    have hcont (i : ι) : Continuous fun t ↦ ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) 0 t⟫ :=
-      continuous_const.inner (continuous_waveDuhamelSolution (f i) (g i) continuous_zero)
-    simp_rw [← hpair χ]
-    refine tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub
-      (p := q.conjExponent) (r := r.conjExponent) (hϑ.memLp_of_hasCompactSupport hϑc)
-      (χ.memLp _) (ae_of_all _ fun t ↦ Lp.memLp (U t))
-      (ae_of_all _ fun t i ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2)
-        (χ.memLp 2) (Lp.memLp _)) (fun i ↦ ?_) (fun i ↦ ?_) hae hlim
-    · simp_rw [hpair χ]
-      exact (hcont i).aestronglyMeasurable
-    · simp_rw [hpair χ]
-      exact (hϑ.mul (hcont i)).integrable_of_hasCompactSupport hϑc.mul_right
-  have hφ : Δ ((φ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
-      (((Δ φ).toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
-    simp
-  have heq (i : ι) := integral_deriv_deriv_mul_inner_waveDuhamelSolution hφ (f i) (g i)
-    continuous_zero hθ hθc
-  simp only [Pi.zero_apply, inner_zero_right, add_zero] at heq
-  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
-  exact tendsto_nhds_unique ((hconv φ (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv).congr heq)
-    (hconv (Δ φ) hθ.continuous hθc)
-
-/-- On `[0, T]`, the solution with forcing integrable on `[0, T]` is bounded by
-`‖f‖ + T ‖g‖ + T ∫_{[0, T]} ‖G‖`. -/
-private theorem norm_waveDuhamelSolution_le_of_integrableOn (f g : Lp F 2 (volume : Measure E))
-    {T : ℝ} (hG : IntegrableOn G (Set.Icc 0 T)) {t : ℝ} (ht : t ∈ Set.Icc 0 T) :
-    ‖waveDuhamelSolution F f g G t‖ ≤ ‖f‖ + T * ‖g‖ + T * ∫ s in Set.Icc 0 T, ‖G s‖ := by
-  have hsub : Set.uIcc 0 t ⊆ Set.Icc 0 T := Set.uIcc_subset_Icc ⟨le_rfl, ht.1.trans ht.2⟩ ht
-  have htT : |t| ≤ T := by rw [abs_of_nonneg ht.1]; exact ht.2
-  refine (norm_waveDuhamelSolution_le_mul_setIntegral f g
-    (hG.mono_set hsub).intervalIntegrable).trans ?_
-  have := setIntegral_mono_set hG.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-    (Eventually.of_forall fun x hx ↦ (Set.uIoc_subset_uIcc.trans hsub) hx)
-  have := ht.1.trans ht.2
-  gcongr
-
-open Topology in
-/-- If solutions `uᵢ` with forcings integrable on `[0, T]` converge to `U` in `L^r` at almost every
-time of `[0, T]` and in `L^q([0, T]; L^r_x)`, their pairings with `ϑ(t) χ(x)` converge to those of
-`U`, for every continuous `ϑ` vanishing outside `[0, T]`. -/
-private theorem tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto_eLpNorm {ι : Type*}
-    {l : Filter ι} [l.IsCountablyGenerated] {q r : ℝ≥0∞} [Fact (1 ≤ r)] (hq : 1 ≤ q) {T : ℝ}
-    {f g : ι → Lp F 2 (volume : Measure E)} {G : ι → ℝ → Lp F 2 (volume : Measure E)}
-    (hG : ∀ i, IntegrableOn (G i) (Set.Icc 0 T)) {U : ℝ → Lp F r (volume : Measure E)}
-    (hae : ∀ᵐ t ∂volume.restrict (Set.Icc 0 T), Tendsto (fun i ↦
-      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) l (𝓝 0))
-    (hlim : Tendsto (fun i ↦ eLpNorm (fun t ↦
-      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) q
-        (volume.restrict (Set.Icc 0 T))) l (𝓝 0))
-    (χ : 𝓢(E, F)) {ϑ : ℝ → ℂ} (hϑ : Continuous ϑ) (hϑc : HasCompactSupport ϑ)
-    (hϑ0 : ∀ t ∉ Set.Icc 0 T, ϑ t = 0) :
-    Tendsto (fun i ↦ ∫ t, ϑ t * ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) (G i) t⟫) l
-      (𝓝 (∫ t, ϑ t * ∫ x, ⟪χ x, U t x⟫)) := by
-  have := (ENNReal.HolderConjugate.conjExponent hq).symm
-  have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
-  have hpair (h : Lp F 2 (volume : Measure E)) : ∫ x, ⟪χ x, h x⟫ = ⟪χ.toLp 2, h⟫ :=
-    (L2.toLp_inner_of_ae_eq (χ.memLp 2) Filter.EventuallyEq.rfl).symm
-  obtain ⟨C, hC⟩ := hϑ.bounded_above_of_compact_support hϑc
-  have hmeas (i : ι) : AEStronglyMeasurable
-      (fun t ↦ ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) (G i) t⟫)
-      (volume.restrict (Set.Icc 0 T)) :=
-    aestronglyMeasurable_const.inner
-      (aestronglyMeasurable_waveDuhamelSolution_restrict _ _ (hG i).aestronglyMeasurable)
-  -- Both sides are integrals over `[0, T]`, where Hölder's inequality applies.
-  have hset (X : ℝ → ℂ) : ∫ t in Set.Icc 0 T, ϑ t * X t = ∫ t, ϑ t * X t :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ by rw [hϑ0 t ht, zero_mul]
-  have hfun : (fun i ↦ ∫ t, ϑ t * ⟪χ.toLp 2, waveDuhamelSolution F (f i) (g i) (G i) t⟫) =
-      fun i ↦ ∫ t in Set.Icc 0 T, ϑ t * ∫ x, ⟪χ x, waveDuhamelSolution F (f i) (g i) (G i) t x⟫ :=
-    funext fun i ↦ by rw [hset]; simp_rw [hpair]
-  rw [hfun, ← hset fun t ↦ ∫ x, ⟪χ x, U t x⟫]
-  refine tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub
-    (p := q.conjExponent) (r := r.conjExponent)
-    ((hϑ.memLp_of_hasCompactSupport hϑc).restrict _) (χ.memLp _)
-    (ae_of_all _ fun t ↦ Lp.memLp (U t))
-    (ae_of_all _ fun t i ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2)
-      (χ.memLp 2) (Lp.memLp _)) (fun i ↦ by simp_rw [hpair]; exact hmeas i) (fun i ↦ ?_) hae hlim
-  -- The pairings are integrable on `[0, T]`, where the solutions are bounded.
-  simp_rw [hpair]
-  refine Integrable.of_bound (hϑ.aestronglyMeasurable.mul (hmeas i))
-    (C * (‖χ.toLp 2‖ * (‖f i‖ + T * ‖g i‖ + T * ∫ s in Set.Icc 0 T, ‖G i s‖)))
-    (ae_restrict_of_forall_mem measurableSet_Icc fun t ht ↦ ?_)
-  rw [norm_mul]
-  exact mul_le_mul (hC t) ((norm_inner_le_norm _ _).trans
-    (by gcongr; exact norm_waveDuhamelSolution_le_of_integrableOn _ _ (hG i) ht))
-    (norm_nonneg _) ((norm_nonneg _).trans (hC t))
-
-open Topology in
-/-- **Limits of forced waves in mixed norm solve the forced wave equation.** Let
-`uᵢ(t) = cos (tD) fᵢ + D⁻¹ sin (tD) gᵢ + ∫₀ᵗ D⁻¹ sin ((t - s)D) Gᵢ(s) ds` be the solutions with
-data `fᵢ, gᵢ ∈ L²` and forcings `Gᵢ` integrable on `[0, T]`, indexed along a countably generated
-filter, and let `U : ℝ → L^r` with `uᵢ(t) → U(t)` in `L^r` for almost every `t ∈ [0, T]` and
-`uᵢ → U` in the mixed norm `L^q([0, T]; L^r_x)`, for some `1 ≤ q, r ≤ ∞`. Then for every Schwartz
-function `φ` and every `C²` function `θ` of time vanishing outside `[0, T]`, the forcings tested
-against `θ(t) φ(x)` converge to `U` tested against `θ''(t) φ(x) - θ(t) Δφ(x)`:
-
-`∫ θ(t) ⟪φ, Gᵢ(t)⟫ dt → ∫ θ''(t) ∫ ⟪φ(x), U(t)(x)⟫ dx dt - ∫ θ(t) ∫ ⟪Δφ(x), U(t)(x)⟫ dx dt`.
-
-That is, `∂ₜ²U - ΔU` is the limit of the forcings on `(0, T)` in the sense of distributions.
-Neither `U(t)` nor any limit of the data or the forcings needs to lie in `L²`. -/
-theorem tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution {ι : Type*} {l : Filter ι}
-    [l.IsCountablyGenerated] {q r : ℝ≥0∞} [Fact (1 ≤ r)] (hq : 1 ≤ q) {T : ℝ}
-    {f g : ι → Lp F 2 (volume : Measure E)} {G : ι → ℝ → Lp F 2 (volume : Measure E)}
-    (hG : ∀ i, IntegrableOn (G i) (Set.Icc 0 T)) {U : ℝ → Lp F r (volume : Measure E)}
-    (hae : ∀ᵐ t ∂volume.restrict (Set.Icc 0 T), Tendsto (fun i ↦
-      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) l (𝓝 0))
-    (hlim : Tendsto (fun i ↦ eLpNorm (fun t ↦
-      eLpNorm (⇑(U t) - ⇑(waveDuhamelSolution F (f i) (g i) (G i) t)) r volume) q
-        (volume.restrict (Set.Icc 0 T))) l (𝓝 0))
-    (φ : 𝓢(E, F)) {θ : ℝ → ℂ} (hθ : ContDiff ℝ 2 θ) (hθT : tsupport θ ⊆ Set.Icc 0 T) :
-    Tendsto (fun i ↦ ∫ t, θ t * ⟪φ.toLp 2, G i t⟫) l
-      (𝓝 ((∫ t, deriv (deriv θ) t * ∫ x, ⟪φ x, U t x⟫) - ∫ t, θ t * ∫ x, ⟪(Δ φ) x, U t x⟫)) := by
-  rcases lt_or_ge T 0 with hT | hT
-  · -- For `T < 0` the function `θ` vanishes and every term is `0`.
-    have : θ = 0 := funext fun t ↦ image_eq_zero_of_notMem_tsupport fun h ↦
-      (Set.Icc_eq_empty hT.not_ge).subset (hθT h)
-    subst this
-    simpa using tendsto_const_nhds
-  have hθc : HasCompactSupport θ := isCompact_Icc.of_isClosed_subset (isClosed_tsupport θ) hθT
-  have hθ' : ContDiff ℝ 1 (deriv θ) := hθ.deriv' (n := 1)
-  have hθ0 (t : ℝ) (ht : t ∉ Set.Icc 0 T) : θ t = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ ht (hθT h)
-  have hθ''0 (t : ℝ) (ht : t ∉ Set.Icc 0 T) : deriv (deriv θ) t = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦
-      ht (hθT (tsupport_deriv_subset (tsupport_deriv_subset h)))
-  -- Each solution satisfies the equation with its own forcing.
-  have hφ : Δ ((φ.toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) =
-      (((Δ φ).toLp 2 : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
-    simp
-  have heq (i : ι) := integral_deriv_deriv_mul_inner_waveDuhamelSolution_of_integrableOn hφ
-    (f i) (g i) le_rfl hT (hG i) hθ hθT
-  exact ((tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto_eLpNorm hq hG hae hlim φ
-      (hθ'.continuous_deriv le_rfl) hθc.deriv.deriv hθ''0).sub
-    (tendsto_integral_mul_inner_waveDuhamelSolution_of_tendsto_eLpNorm hq hG hae hlim (Δ φ)
-      hθ.continuous hθc hθ0)).congr fun i ↦ by rw [heq i, add_sub_cancel_left]
+  -- This is the case `G = 0` of the forced limit, on an interval `[a, b]` containing `0` and the
+  -- support of `θ`.
+  obtain ⟨a, ha⟩ := hθc.isCompact.bddBelow
+  obtain ⟨b, hb⟩ := hθc.isCompact.bddAbove
+  have h := tendsto_integral_mul_inner_of_tendsto_waveDuhamelSolution (G := fun _ ↦ 0) hq
+    (min_le_right a 0) (le_max_right b 0) (fun _ ↦ integrableOn_zero) (ae_restrict_of_ae hae)
+    (tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
+      fun _ ↦ eLpNorm_mono_measure _ Measure.restrict_le_self) φ hθ
+    fun t ht ↦ ⟨min_le_of_left_le (ha ht), le_max_of_le_left (hb ht)⟩
+  simp only [Pi.zero_apply, inner_zero_right, mul_zero, integral_zero] at h
+  exact sub_eq_zero.1 (tendsto_nhds_unique tendsto_const_nhds h).symm
 
 end Duhamel
 
