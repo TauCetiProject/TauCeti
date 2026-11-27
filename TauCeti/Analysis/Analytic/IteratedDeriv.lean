@@ -16,15 +16,16 @@ import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
-# Analyticity of iterated vertical slice derivatives
+# Analyticity of iterated slice derivatives
 
 Mathlib proves that the `n`-fold iterate `deriv^[n] f` of an analytic function `f : 𝕜 → F` into a
 complete normed space is analytic (`AnalyticAt.iterated_deriv`). This file proves the parametric
-two-variable version for `iteratedDeriv`: if `f : E × 𝕜 → F` is jointly analytic at `p`, then
+two-variable versions: if `f : E × 𝕜 → F` is jointly analytic at `p`, then
 `(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is jointly analytic at `p`
-(`AnalyticAt.iteratedDeriv_snd`), and in particular the vertical Taylor coefficient
+(`AnalyticAt.iteratedDeriv_snd`), its vertical Taylor coefficient
 `x ↦ iteratedDeriv n (fun y ↦ f (x, y)) p.2` is analytic at `p.1`
-(`AnalyticAt.curry_left_iteratedDeriv_snd`).
+(`AnalyticAt.curry_left_iteratedDeriv_snd`), and the first partial derivatives in the second and
+first scalar variables are jointly analytic at `p` (`AnalyticAt.deriv_snd`, `AnalyticAt.deriv_fst`).
 
 For `TauCeti.iteratedDerivInr k f` (defined in `TauCeti.Analysis.Calculus.IteratedDeriv.Basic` as
 the `k`-th iterated derivative in the `Sum.inr` coordinate of `σ ⊕ τ → 𝕜` with `τ` unique), this
@@ -72,6 +73,22 @@ theorem iteratedDeriv_snd {f : E × 𝕜 → F} {p : E × 𝕜} (hf : AnalyticAt
 theorem curry_left_iteratedDeriv_snd {f : E × 𝕜 → F} {p : E × 𝕜} (hf : AnalyticAt 𝕜 f p) (n : ℕ) :
     AnalyticAt 𝕜 (fun x : E ↦ iteratedDeriv n (fun y ↦ f (x, y)) p.2) p.1 :=
   (hf.iteratedDeriv_snd n).curry_left
+
+/-- If `f : E × 𝕜 → F` is jointly analytic at `p` and `F` is complete, then its partial derivative
+in the second variable `(q : E × 𝕜) ↦ deriv (fun y ↦ f (q.1, y)) q.2` is jointly analytic at
+`p`. -/
+theorem deriv_snd {f : E × 𝕜 → F} {p : E × 𝕜} (hf : AnalyticAt 𝕜 f p) :
+    AnalyticAt 𝕜 (fun q : E × 𝕜 ↦ deriv (fun y ↦ f (q.1, y)) q.2) p := by
+  simpa only [iteratedDeriv_one] using hf.iteratedDeriv_snd 1
+
+/-- If `f : 𝕜 × E → F` is jointly analytic at `p` and `F` is complete, then its partial derivative
+in the first variable `(q : 𝕜 × E) ↦ deriv (fun x ↦ f (x, q.2)) q.1` is jointly analytic at
+`p`. -/
+theorem deriv_fst {f : 𝕜 × E → F} {p : 𝕜 × E} (hf : AnalyticAt 𝕜 f p) :
+    AnalyticAt 𝕜 (fun q : 𝕜 × E ↦ deriv (fun x ↦ f (x, q.2)) q.1) p := by
+  have hswap : AnalyticAt 𝕜 (fun r : E × 𝕜 ↦ f (r.2, r.1)) (p.2, p.1) :=
+    hf.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl
+  exact hswap.deriv_snd.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl
 
 end AnalyticAt
 

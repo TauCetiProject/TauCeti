@@ -24,8 +24,12 @@ other does, so criticality does not depend on the coordinates. When `φ` is `C¹
 is locally bounded, so near a point the differential of `f ∘ φ` is at most a fixed multiple of that
 of `f`, and estimates bounding a function by its differential survive changes of coordinates.
 
-At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
-precomposition with the derivative of that map.
+If a map `φ` fixes a point `x` and `f ∘ φ = ψ ∘ f` near `x`, then the chain rule applied to both
+sides shows that the derivatives intertwine as well: `f' ∘ φ' = ψ' ∘ f'`, where `f'`, `φ'` and `ψ'`
+are the derivatives of `f` at `x`, of `φ` at `x` and of `ψ` at `f x`. For instance, the
+linearization of a map commuting with a symmetry at a symmetric point commutes with the linearized
+symmetry, so the symmetry preserves its kernel and its range. In the case `ψ = id`, where `φ`
+preserves the germ of `f`, the derivative of `f` is unchanged by precomposition with that of `φ`.
 
 For precomposition with an affine change of variables `w ↦ c + a • w`, or with the
 multiplication `w ↦ c • w` by a fixed scalar `c` of a division semiring `𝕜'` over which the domain
@@ -38,6 +42,8 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
 
 ## Main results
 
+* `HasFDerivAt.comp_eq_comp_of_eventuallyEq`: the derivative of an equivariant map at a fixed point
+  intertwines the derivatives of the symmetries.
 * `HasFDerivAt.comp_eq_of_eventuallyEq`: invariance of a germ at a fixed point implies invariance
   of its derivative.
 * `HasFDerivAt.injective_of_eventuallyEq_id`: a map with a differentiable local left inverse has
@@ -70,14 +76,23 @@ namespace TauCeti
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- **Derivatives of equivariant maps.** If `φ` fixes `x` and `f ∘ φ = ψ ∘ f` near `x`, then the
+derivative `f'` of `f` at `x` intertwines the derivative `φ'` of `φ` at `x` with the derivative
+`ψ'` of `ψ` at `f x`: `f' ∘ φ' = ψ' ∘ f'`. -/
+theorem _root_.HasFDerivAt.comp_eq_comp_of_eventuallyEq {f : E → F} {f' : E →L[𝕜] F}
+    {φ : E → E} {φ' : E →L[𝕜] E} {ψ : F → F} {ψ' : F →L[𝕜] F} {x : E} (hf : HasFDerivAt f f' x)
+    (hφ : HasFDerivAt φ φ' x) (hψ : HasFDerivAt ψ ψ' (f x)) (hfix : φ x = x)
+    (h : f ∘ φ =ᶠ[nhds x] ψ ∘ f) : f'.comp φ' = ψ'.comp f' := by
+  have hfφ : HasFDerivAt f f' (φ x) := by rwa [hfix]
+  exact (hfφ.comp x hφ).unique ((hψ.comp x hf).congr_of_eventuallyEq h)
+
 /-- If a map fixes `x` and preserves the germ of `f` there, its derivative preserves the
 derivative of `f` by precomposition. -/
 theorem _root_.HasFDerivAt.comp_eq_of_eventuallyEq {f : E → F} {f' : E →L[𝕜] F}
     {φ : E → E} {φ' : E →L[𝕜] E} {x : E} (hf : HasFDerivAt f f' x)
     (hφ : HasFDerivAt φ φ' x) (hfix : φ x = x)
-    (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' := by
-  have hfφ : HasFDerivAt f f' (φ x) := by simpa only [hfix] using hf
-  exact (hfφ.comp x hφ).unique (hf.congr_of_eventuallyEq hinv)
+    (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' :=
+  (hf.comp_eq_comp_of_eventuallyEq hφ (hasFDerivAt_id _) hfix hinv).trans f'.id_comp
 
 /-- If `g ∘ f` is the identity near `x` and `g` is differentiable at `f x`, the derivative of `f`
 at `x` is injective. -/

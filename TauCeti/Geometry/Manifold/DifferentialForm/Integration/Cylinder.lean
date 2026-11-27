@@ -115,6 +115,9 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.rectangleIntegral_rectangleTrans`: the integral over a concatenation.
 * `TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`: the integral over two maps
   glued along their common start.
+* `TauCeti.loopwiseTrans_congr`, `TauCeti.loopwiseTrans_mem`, `TauCeti.apply_loopwiseTrans`: a
+  loopwise concatenation only depends on its maps over `t ∈ [0, 1]`, lies in every set containing
+  their values there, and commutes with composition.
 * `TauCeti.contMDiff_loopwiseTrans`, `TauCeti.rectangleIntegral_loopwiseTrans`: smoothness of and
   the integral over a loopwise concatenation.
 * `TauCeti.IsSmoothSeamedCylinder.trans`, `TauCeti.IsSmoothCylinder.trans`: the concatenation of
@@ -520,6 +523,42 @@ theorem loopwiseTrans_eq_right {u₁ u₂ : ℝ × ℝ → M} (h₁ : ∀ s, u�
     rw [loopwiseTrans, hz₂, Int.fract_one, curveConcat_of_le (by norm_num),
       Real.smoothTransition.zero_of_nonpos (by norm_num),
       Real.smoothTransition.one_of_one_le (by norm_num), h₂]
+
+omit [TopologicalSpace M] in
+/-- The loopwise concatenation at `(s, t)` only depends on the two loops `r ↦ u₁ (s, r)` and
+`r ↦ u₂ (s, r)` at parameters `r ∈ [0, 1]`. -/
+theorem loopwiseTrans_congr {u₁ u₂ v₁ v₂ : ℝ × ℝ → M} {s s' t : ℝ}
+    (h₁ : ∀ r ∈ Icc (0 : ℝ) 1, u₁ (s, r) = v₁ (s', r))
+    (h₂ : ∀ r ∈ Icc (0 : ℝ) 1, u₂ (s, r) = v₂ (s', r)) :
+    loopwiseTrans u₁ u₂ (s, t) = loopwiseTrans v₁ v₂ (s', t) := by
+  rw [loopwiseTrans, loopwiseTrans]
+  rcases le_or_gt (Int.fract t) 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h]
+    exact h₁ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h]
+    exact h₂ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+
+omit [TopologicalSpace M] in
+/-- The loopwise concatenation at `(s, t)` lies in a set `A` if the two loops `r ↦ u₁ (s, r)` and
+`r ↦ u₂ (s, r)` lie in `A` at parameters `r ∈ [0, 1]`. -/
+theorem loopwiseTrans_mem {u₁ u₂ : ℝ × ℝ → M} {A : Set M} {s t : ℝ}
+    (h₁ : ∀ r ∈ Icc (0 : ℝ) 1, u₁ (s, r) ∈ A) (h₂ : ∀ r ∈ Icc (0 : ℝ) 1, u₂ (s, r) ∈ A) :
+    loopwiseTrans u₁ u₂ (s, t) ∈ A := by
+  rw [loopwiseTrans]
+  rcases le_or_gt (Int.fract t) 2⁻¹ with h | h
+  · rw [curveConcat_of_le h]
+    exact h₁ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · rw [curveConcat_of_lt h]
+    exact h₂ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+
+omit [TopologicalSpace M] in
+/-- A map applied to a loopwise concatenation is the loopwise concatenation of the composites. -/
+theorem apply_loopwiseTrans {N : Type*} (f : M → N) (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    f (loopwiseTrans u₁ u₂ z) = loopwiseTrans (f ∘ u₁) (f ∘ u₂) z := by
+  rw [loopwiseTrans, loopwiseTrans]
+  rcases le_or_gt (Int.fract z.2) 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h, Function.comp_apply]
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h, Function.comp_apply]
 
 /-- The loopwise concatenation of two `C^n` maps, each ending where the other starts, is
 `C^n`. -/
