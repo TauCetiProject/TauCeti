@@ -48,8 +48,8 @@ open TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
-/-- Powers of the argument are integrable for a natural-valued geometric random variable exactly
-on the open interval determined by the geometric-series ratio. -/
+/-- For a nonzero success probability, `t ^ X` is integrable for a natural-valued geometric random
+variable exactly when `|(1 - p) * t| < 1`. -/
 theorem integrable_pow_geometricMeasure_iff {X : Ω → ℕ} {p : unitInterval}
     (hX : HasLaw X (geometricMeasure p) P) (hp : p ≠ 0) (t : ℝ) :
     Integrable (fun ω ↦ t ^ X ω) P ↔ |(1 - (p : ℝ)) * t| < 1 := by
@@ -57,8 +57,8 @@ theorem integrable_pow_geometricMeasure_iff {X : Ω → ℕ} {p : unitInterval}
     integrable_map_measure (by fun_prop) hX.aemeasurable]
   rfl
 
-/-- A natural-valued geometric random variable has the geometric probability-generating function
-on its sharp convergence domain. -/
+/-- A natural-valued geometric random variable with nonzero success probability has the geometric
+probability-generating function on its sharp convergence domain. -/
 theorem pgf_geometricMeasure {X : Ω → ℕ} {p : unitInterval}
     (hX : HasLaw X (geometricMeasure p) P) (hp : p ≠ 0) {t : ℝ}
     (ht : |(1 - (p : ℝ)) * t| < 1) :
@@ -88,8 +88,8 @@ nonzero-parameter geometric law. -/
 theorem integrableExpSet_id_map_cast_geometricMeasure {X : Ω → ℝ} {p : unitInterval}
     (hX : HasLaw X ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) P) (hp : p ≠ 0) :
     integrableExpSet X P = {t | (1 - (p : ℝ)) * Real.exp t < 1} := by
-  ext t
-  exact hX.integrable_exp_mul_id_map_cast_geometricMeasure_iff hp t
+  rw [TauCeti.Probability.HasLaw.integrableExpSet_eq hX,
+    TauCeti.Probability.integrableExpSet_id_map_cast_geometricMeasure hp]
 
 /-- The moment-generating function of a real random variable with a nonzero-parameter geometric
 law, on its exact domain. -/
@@ -121,14 +121,8 @@ with the cast geometric law is integrable. -/
 theorem integrableExpSet_id_map_cast_geometricMeasure_zero {X : Ω → ℝ}
     (hX : HasLaw X ((geometricMeasure 0).map (Nat.cast : ℕ → ℝ)) P) :
     integrableExpSet X P = Set.univ := by
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-  apply hX.integrable_fun_comp (f := fun x : ℝ ↦ Real.exp (t * x))
-  have ht : t ∈ integrableExpSet id
-      ((geometricMeasure 0).map (Nat.cast : ℕ → ℝ)) := by
-    rw [TauCeti.Probability.integrableExpSet_id_map_cast_geometricMeasure_zero]
-    exact Set.mem_univ t
-  simpa only [integrableExpSet, Set.mem_ofPred_eq, id_eq] using ht
+  rw [TauCeti.Probability.HasLaw.integrableExpSet_eq hX,
+    TauCeti.Probability.integrableExpSet_id_map_cast_geometricMeasure_zero]
 
 /-- At the totalized zero-success parameter, the moment-generating function of a real random
 variable with the cast geometric law is identically one. -/
@@ -154,3 +148,25 @@ theorem charFun_map_cast_geometricMeasure_zero {X : Ω → ℝ}
   rw [hX.map_eq, TauCeti.Probability.charFun_map_cast_geometricMeasure_zero]
 
 end ProbabilityTheory.HasLaw
+
+namespace TauCeti.Probability
+
+open MeasureTheory ProbabilityTheory
+
+variable {p : unitInterval}
+
+/-- A real random variable with a geometric law has mean `(1 - p) / p`. -/
+theorem integral_of_hasLaw_map_cast_geometricMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ}
+    (hX : HasLaw X ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) P) :
+    P[X] = (1 - (p : ℝ)) / (p : ℝ) := by
+  rw [hX.integral_eq, integral_id_map_cast_geometricMeasure]
+
+/-- A real random variable with a geometric law has variance `(1 - p) / p²`. -/
+theorem variance_of_hasLaw_map_cast_geometricMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ}
+    (hX : HasLaw X ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) P) :
+    variance X P = (1 - (p : ℝ)) / (p : ℝ) ^ 2 := by
+  rw [hX.variance_eq, variance_id_map_cast_geometricMeasure]
+
+end TauCeti.Probability
