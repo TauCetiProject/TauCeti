@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Module
-public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.KZero
+public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.KZero.Basic
 
 /-!
-# `K₀` of a C⋆-inductive limit is the direct limit of the `K₀`-groups
+# The projection `K₀`-group of a C⋆-inductive limit is the direct limit
 
 Let `(A i, f i j)` be a directed system of C⋆-algebras, possibly without unit and with connecting
 maps that need not be injective, and `L = CStarInductiveLimit A f` its C⋆-inductive limit. The
@@ -21,9 +21,14 @@ by the canonical maps `of i : A i → L` assemble to an isomorphism
   AddCommGroup.DirectLimit (fun i ↦ ProjectionKZero (A i)) _ ≃+ ProjectionKZero L`,
 
 sending the class of `y : K₀(A i)` to the image of `y` under `of i`. Surjectivity and injectivity
-are the two halves of the continuity of `K₀` on main
+are the element-wise continuity statements
 (`TauCeti.CStarInductiveLimit.exists_projectionKZero_map_of_eq`,
 `TauCeti.CStarInductiveLimit.exists_projectionKZero_map_f_eq_zero_of_map_of_eq_zero`).
+
+Here `K₀(A)` denotes the projection `K₀`-group `TauCeti.ProjectionKZero A`, the Grothendieck group
+of the projection monoid `V(A)`. For a directed system of unital C⋆-algebras along unital maps it
+is the operator `K₀`-group, so this is then the continuity of operator `K₀`; for nonunital
+algebras it differs from operator `K₀` in general.
 
 ## Main declarations
 
@@ -111,9 +116,10 @@ theorem projectionKZeroDirectLimitHom_injective :
       projectionKZeroSystem_apply, hj, map_zero]
 
 variable (A f) in
-/-- **Continuity of `K₀`.** For a directed system of C⋆-algebras with C⋆-inductive limit `L`, the
-maps induced by the canonical maps `of i : A i → L` give an isomorphism
-`lim K₀(A i) ≃+ K₀(L)` from the direct limit of the projection `K₀`-groups. -/
+/-- **Continuity of the projection `K₀`-group.** For a directed system of C⋆-algebras with
+C⋆-inductive limit `L`, the maps induced by the canonical maps `of i : A i → L` give an isomorphism
+`lim K₀(A i) ≃+ K₀(L)` from the direct limit of the projection `K₀`-groups. For unital stages
+along unital maps this is the continuity of operator `K₀`. -/
 def projectionKZeroDirectLimitEquiv :
     AddCommGroup.DirectLimit (fun i ↦ ProjectionKZero (A i)) (projectionKZeroSystem A f) ≃+
       ProjectionKZero (CStarInductiveLimit A f) :=
@@ -127,6 +133,7 @@ theorem projectionKZeroDirectLimitEquiv_of (i : ι) (y : ProjectionKZero (A i)) 
   projectionKZeroDirectLimitHom_of i y
 
 /-- The inverse isomorphism sends the image of `y : K₀(A i)` to the class of `y`. -/
+@[simp]
 theorem projectionKZeroDirectLimitEquiv_symm_map_of (i : ι) (y : ProjectionKZero (A i)) :
     (projectionKZeroDirectLimitEquiv A f).symm (ProjectionKZero.map (ofClass (of A f i)) y) =
       AddCommGroup.DirectLimit.of _ _ i y :=
