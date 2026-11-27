@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
+public import TauCeti.RepresentationTheory.Tensor.External
 
 /-!
 # The tensor product of continuous representations
@@ -23,7 +24,8 @@ subalgebra of `C(G, 𝕜)` rather than only a subspace.
 
 The *external* tensor product `σ ⊠ τ` of a representation `σ` of `G` and a representation `τ` of
 another monoid `H` is the representation of `G × H` on `V ⊗[𝕜] W` in which `(g, h)` acts by
-`σ g ⊗ τ h`. It is again continuous when `σ` and `τ` are. Applied to finite-dimensional kernels and
+`σ g ⊗ τ h`. Forgetting continuity, it is `Representation.externalTensor`. It is again continuous,
+respectively unitary, when `σ` and `τ` are. Applied to finite-dimensional kernels and
 cokernels, it computes the equivariant index of an external product of operators.
 
 Mathlib's inner product on `V ⊗[𝕜] W` (`TensorProduct.instInnerProductSpace`) is the one for which
@@ -44,8 +46,11 @@ Mathlib's inner product on `V ⊗[𝕜] W` (`TensorProduct.instInnerProductSpace
   continuous, and of unitary ones is unitary.
 * `ContRepresentation.matrixCoeff_tprod`: matrix coefficients of a tensor product at pure
   tensors are products of matrix coefficients.
-* `ContRepresentation.continuous_externalTensor`: the external tensor product of continuous
-  representations is continuous.
+* `ContRepresentation.toRepresentation_externalTensor`: forgetting continuity takes the external
+  tensor product to `Representation.externalTensor`.
+* `ContRepresentation.continuous_externalTensor` and `ContRepresentation.IsUnitary.externalTensor`:
+  the external tensor product of continuous representations is continuous, and of unitary ones is
+  unitary.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
@@ -132,12 +137,31 @@ theorem externalTensor_apply (g : G × H) :
     σ.externalTensor τ g = TensorProduct.mapL (σ g.1) (τ g.2) :=
   (rfl)
 
+/-- Forgetting continuity takes the external tensor product of continuous representations to the
+external tensor product `Representation.externalTensor` of the underlying representations. -/
+theorem toRepresentation_externalTensor :
+    (σ.externalTensor τ).toRepresentation =
+      σ.toRepresentation.externalTensor τ.toRepresentation := by
+  ext g : 1
+  refine TensorProduct.ext' fun v w ↦ ?_
+  rw [Representation.externalTensor_apply_tmul]
+  exact TensorProduct.mapL_tmul _ _ v w
+
 /-- The external tensor product of two continuous representations has a continuous operator-valued
 action. -/
 theorem continuous_externalTensor [TopologicalSpace G] [TopologicalSpace H] (hσ : Continuous σ)
     (hτ : Continuous τ) : Continuous (σ.externalTensor τ) :=
   (lipschitzWith_one_rTensor.continuous.comp (hσ.comp continuous_fst)).clm_comp
     (lipschitzWith_one_lTensor.continuous.comp (hτ.comp continuous_snd))
+
+/-- The external tensor product of two unitary representations is unitary: the tensor product of
+two linear isometries is a linear isometry. -/
+theorem IsUnitary.externalTensor {σ : ContRepresentation 𝕜 G V} {τ : ContRepresentation 𝕜 H W}
+    (hσ : IsUnitary σ) (hτ : IsUnitary τ) : IsUnitary (σ.externalTensor τ) :=
+  (isUnitary_iff_norm_map _).mpr fun g x ↦ by
+    simpa using TensorProduct.norm_map
+      (((σ g.1) : V →ₗ[𝕜] V).isometryOfInner (hσ.inner_map_map g.1))
+      (((τ g.2) : W →ₗ[𝕜] W).isometryOfInner (hτ.inner_map_map g.2)) x
 
 end External
 

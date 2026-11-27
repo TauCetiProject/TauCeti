@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Continuous.TensorProduct
 public import TauCeti.RepresentationTheory.FDRep.Continuous.External
 public import TauCeti.RepresentationTheory.RepresentationRing.Continuous.Restriction
 public import TauCeti.RepresentationTheory.RepresentationRing.External
@@ -49,6 +50,9 @@ indices.
   product of `R(G)`.
 * `TauCeti.contRepRingToRepRing_contRepRingExternalTensor`: forgetting continuity commutes with
   the external tensor product.
+* `ContRepresentation.contRepRingExternalTensor_of_ofContRepresentation`: for continuous
+  representations on finite-dimensional inner product spaces, the class of the external tensor
+  product `ContRepresentation.externalTensor` is the external product of the classes.
 
 ## References
 
@@ -151,3 +155,33 @@ theorem contRepRingToRepRing_contRepRingExternalTensor (x : contRepRing k G)
     ContinuousMonoidHom.coe_fst, ContinuousMonoidHom.coe_snd]
 
 end TauCeti
+
+namespace ContRepresentation
+
+open TauCeti
+
+variable {𝕜 G H X Y : Type*} [RCLike 𝕜] [Monoid G] [Monoid H] [TopologicalSpace G]
+  [TopologicalSpace H] [NormedAddCommGroup X] [InnerProductSpace 𝕜 X] [FiniteDimensional 𝕜 X]
+  [NormedAddCommGroup Y] [InnerProductSpace 𝕜 Y] [FiniteDimensional 𝕜 Y]
+
+/-- **The class of an external tensor product.** For continuous representations `σ` of `G` and `τ`
+of `H` on finite-dimensional inner product spaces, the class of the external tensor product
+`σ ⊠ τ` in the representation ring of `G × H` is the external product of the classes of `σ` and
+`τ`. -/
+theorem contRepRingExternalTensor_of_ofContRepresentation (σ : ContRepresentation 𝕜 G X)
+    (τ : ContRepresentation 𝕜 H Y) (hσ : Continuous σ) (hτ : Continuous τ) :
+    contRepRingExternalTensor 𝕜 G H (SplitK0.of (ContFDRep.ofContRepresentation σ hσ))
+        (SplitK0.of (ContFDRep.ofContRepresentation τ hτ)) =
+      SplitK0.of (ContFDRep.ofContRepresentation (σ.externalTensor τ)
+        (continuous_externalTensor σ τ hσ hτ)) := by
+  rw [contRepRingExternalTensor_of_of]
+  refine SplitK0.of_congr (ObjectProperty.isoMk _ ?_)
+  let E₁ := (ContFDRep.ofContRepresentationEquiv hσ).externalTensor
+    (ContFDRep.ofContRepresentationEquiv hτ)
+  let E₂ := (ContFDRep.ofContRepresentationEquiv (continuous_externalTensor σ τ hσ hτ)).symm
+  rw [toRepresentation_externalTensor] at E₂
+  let E := E₁.trans E₂
+  exact E.toLinearEquiv.toFDRepIso fun g x ↦
+    Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g x
+
+end ContRepresentation

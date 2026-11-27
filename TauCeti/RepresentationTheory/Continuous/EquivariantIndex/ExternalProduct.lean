@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Continuous.TensorProduct.Completion
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 public import TauCeti.RepresentationTheory.RepresentationRing.Continuous.External
 public import TauCeti.RepresentationTheory.RepresentationRing.Continuous.Prod
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
@@ -61,8 +62,6 @@ expand to
 
 ## Main statements
 
-* `ContRepresentation.contRepRingExternalTensor_of_ofContRepresentation`: the class of `σ ⊠ τ` is
-  the external product of the classes of `σ` and `τ`.
 * `ContIntertwiningMap.kerExternalProductBlockCompletionEquiv_kerRepresentation_apply` and
   `ContIntertwiningMap.kerAdjointExternalProductBlockCompletionEquiv_kerRepresentation_apply`: these
   identifications are equivariant for `G × H`.
@@ -81,41 +80,6 @@ public section
 noncomputable section
 
 open CategoryTheory UniformSpace TensorProduct TauCeti
-
-namespace ContRepresentation
-
-variable {𝕜 G H X Y : Type*} [RCLike 𝕜] [Monoid G] [Monoid H]
-  [NormedAddCommGroup X] [InnerProductSpace 𝕜 X] [NormedAddCommGroup Y] [InnerProductSpace 𝕜 Y]
-
-variable (σ : ContRepresentation 𝕜 G X) (τ : ContRepresentation 𝕜 H Y)
-
-/-- **The class of an external tensor product.** For continuous representations `σ` of `G` and `τ`
-of `H` on finite-dimensional inner product spaces, the class of the external tensor product
-`σ ⊠ τ` in the representation ring of `G × H` is the external product of the classes of `σ` and
-`τ`. -/
-theorem contRepRingExternalTensor_of_ofContRepresentation [TopologicalSpace G]
-    [TopologicalSpace H] [FiniteDimensional 𝕜 X] [FiniteDimensional 𝕜 Y] (hσ : Continuous σ)
-    (hτ : Continuous τ) :
-    contRepRingExternalTensor 𝕜 G H (SplitK0.of (ContFDRep.ofContRepresentation σ hσ))
-        (SplitK0.of (ContFDRep.ofContRepresentation τ hτ)) =
-      SplitK0.of (ContFDRep.ofContRepresentation (σ.externalTensor τ)
-        (continuous_externalTensor σ τ hσ hτ)) := by
-  rw [contRepRingExternalTensor_of_of]
-  refine SplitK0.of_congr (ObjectProperty.isoMk _ ?_)
-  let E₁ := (ContFDRep.ofContRepresentationEquiv hσ).externalTensor
-    (ContFDRep.ofContRepresentationEquiv hτ)
-  let E₂ : Representation.Equiv (σ.toRepresentation.externalTensor τ.toRepresentation)
-      (σ.externalTensor τ).toRepresentation :=
-    .mk (LinearEquiv.refl 𝕜 _) fun g ↦ TensorProduct.ext' fun x y ↦ by
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.refl_apply,
-        Representation.externalTensor_apply_tmul, toRepresentation_apply, externalTensor_apply,
-        TensorProduct.mapL_tmul]
-  let E := (E₁.trans E₂).trans
-    (ContFDRep.ofContRepresentationEquiv (continuous_externalTensor σ τ hσ hτ)).symm
-  exact E.toLinearEquiv.toFDRepIso fun g x ↦
-    Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g x
-
-end ContRepresentation
 
 namespace ContIntertwiningMap
 
@@ -142,16 +106,61 @@ theorem mapIncl_externalTensor_kerRepresentation_apply (T : π →ⁱL π') (S :
 
 end Monoid
 
-/-- Linear equivalences `p ≃ p'` and `q ≃ q'` of submodules that preserve the underlying vectors,
-such as the transports along equalities of submodules, do not change the inclusion of `p ⊗ q`
-into `V ⊗ W`. -/
-private theorem mapIncl_congr {𝕜 V W : Type*} [CommRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
-    [AddCommGroup W] [Module 𝕜 W] {p p' : Submodule 𝕜 V} {q q' : Submodule 𝕜 W} (e₁ : p ≃ₗ[𝕜] p')
-    (e₂ : q ≃ₗ[𝕜] q') (h₁ : ∀ v, (e₁ v : V) = v) (h₂ : ∀ w, (e₂ w : W) = w) (x : p ⊗[𝕜] q) :
-    mapIncl p' q' (TensorProduct.congr e₁ e₂ x) = mapIncl p q x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a b => simp [h₁, h₂]
-  | add x y hx hy => simp only [map_add, hx, hy]
+section Equivariance
+
+variable {𝕜 G H X₀ X₁ Y₀ Y₁ X₀' X₁' Y₀' Y₁' Z : Type*} [RCLike 𝕜] [Monoid G] [Monoid H]
+  [NormedAddCommGroup X₀] [InnerProductSpace 𝕜 X₀] [NormedAddCommGroup X₁] [InnerProductSpace 𝕜 X₁]
+  [NormedAddCommGroup Y₀] [InnerProductSpace 𝕜 Y₀] [NormedAddCommGroup Y₁] [InnerProductSpace 𝕜 Y₁]
+  [NormedAddCommGroup X₀'] [InnerProductSpace 𝕜 X₀'] [NormedAddCommGroup X₁']
+  [InnerProductSpace 𝕜 X₁'] [NormedAddCommGroup Y₀'] [InnerProductSpace 𝕜 Y₀']
+  [NormedAddCommGroup Y₁'] [InnerProductSpace 𝕜 Y₁'] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+
+/-- If the inverse of an identification `e` of a submodule `M` of `(X₀ ⊗̂ Y₀) ⊕ (X₁ ⊗̂ Y₁)` with
+`(p ⊗ q) × (p' ⊗ q')` is the inclusion of tensors, then every `w ∈ M` is the pair of inclusions of
+the components of `e w`. -/
+private theorem toLp_coe_mapIncl_apply
+    {M : Submodule 𝕜 (WithLp 2 (Completion (X₀ ⊗[𝕜] Y₀) × Completion (X₁ ⊗[𝕜] Y₁)))}
+    {p : Submodule 𝕜 X₀} {q : Submodule 𝕜 Y₀} {p' : Submodule 𝕜 X₁} {q' : Submodule 𝕜 Y₁}
+    (e : M ≃ₗ[𝕜] (p ⊗[𝕜] q) × (p' ⊗[𝕜] q'))
+    (he : ∀ x, (e.symm x : WithLp 2 (Completion (X₀ ⊗[𝕜] Y₀) × Completion (X₁ ⊗[𝕜] Y₁))) =
+      WithLp.toLp 2 (((mapIncl p q x.1 : X₀ ⊗[𝕜] Y₀) : Completion (X₀ ⊗[𝕜] Y₀)),
+        ((mapIncl p' q' x.2 : X₁ ⊗[𝕜] Y₁) : Completion (X₁ ⊗[𝕜] Y₁)))) (w : M) :
+    WithLp.toLp 2 (((mapIncl p q (e w).1 : X₀ ⊗[𝕜] Y₀) : Completion (X₀ ⊗[𝕜] Y₀)),
+        ((mapIncl p' q' (e w).2 : X₁ ⊗[𝕜] Y₁) : Completion (X₁ ⊗[𝕜] Y₁))) =
+      (w : WithLp 2 (Completion (X₀ ⊗[𝕜] Y₀) × Completion (X₁ ⊗[𝕜] Y₁))) := by
+  rw [← he, e.symm_apply_apply]
+
+/-- An identification `e` of the kernel of an intertwining map `D` out of
+`(π₀ ⊠̂ ρ₀) ⊕ (π₁ ⊠̂ ρ₁)` with `(ker T ⊗ ker S) × (ker T' ⊗ ker S')`, whose inverse is the inclusion
+of tensors of kernel vectors, intertwines the kernel representation of `D` with the external tensor
+products of the kernel representations of `T`, `S`, `T'` and `S'`. -/
+private theorem apply_kerRepresentation_of_coe_symm_apply
+    {π₀ : ContRepresentation 𝕜 G X₀} {π₁ : ContRepresentation 𝕜 G X₁}
+    {ρ₀ : ContRepresentation 𝕜 H Y₀} {ρ₁ : ContRepresentation 𝕜 H Y₁}
+    {π₀' : ContRepresentation 𝕜 G X₀'} {π₁' : ContRepresentation 𝕜 G X₁'}
+    {ρ₀' : ContRepresentation 𝕜 H Y₀'} {ρ₁' : ContRepresentation 𝕜 H Y₁'}
+    {ψ : ContRepresentation 𝕜 (G × H) Z}
+    (D : (π₀.externalTensorCompletion ρ₀).withLpProd 2 (π₁.externalTensorCompletion ρ₁) →ⁱL ψ)
+    (T : π₀ →ⁱL π₀') (S : ρ₀ →ⁱL ρ₀') (T' : π₁ →ⁱL π₁') (S' : ρ₁ →ⁱL ρ₁')
+    (e : D.toContinuousLinearMap.ker ≃ₗ[𝕜]
+      (T.toContinuousLinearMap.ker ⊗[𝕜] S.toContinuousLinearMap.ker) ×
+        (T'.toContinuousLinearMap.ker ⊗[𝕜] S'.toContinuousLinearMap.ker))
+    (he : ∀ x, (e.symm x : WithLp 2 (Completion (X₀ ⊗[𝕜] Y₀) × Completion (X₁ ⊗[𝕜] Y₁))) =
+      WithLp.toLp 2 (((mapIncl _ _ x.1 : X₀ ⊗[𝕜] Y₀) : Completion (X₀ ⊗[𝕜] Y₀)),
+        ((mapIncl _ _ x.2 : X₁ ⊗[𝕜] Y₁) : Completion (X₁ ⊗[𝕜] Y₁))))
+    (g : G × H) (w : D.toContinuousLinearMap.ker) :
+    e (D.kerRepresentation g w) =
+      (T.kerRepresentation.externalTensor S.kerRepresentation).prod
+        (T'.kerRepresentation.externalTensor S'.kerRepresentation) g (e w) := by
+  refine e.symm.injective (Subtype.ext ?_)
+  rw [e.symm_apply_apply, he, coe_kerRepresentation_apply, ← toLp_coe_mapIncl_apply e he w]
+  simp only [withLpProd_apply, WithLp.toLp_fst, WithLp.toLp_snd, ContRepresentation.prod_apply,
+    ContinuousLinearMap.coe_prodMap', Prod.map_fst, Prod.map_snd,
+    mapIncl_externalTensor_kerRepresentation_apply]
+  simp only [ContRepresentation.externalTensor_apply,
+    ContRepresentation.externalTensorCompletion_apply, mapLCompletion_coe]
+
+end Equivariance
 
 section Group
 
@@ -203,7 +212,8 @@ theorem coe_kerExternalProductBlockCompletionEquiv_symm_apply
     LinearEquiv.refl_apply, TensorProduct.congr_symm, LinearEquiv.ofEq_symm,
     ContinuousLinearMap.coe_kerExternalProductBlockCompletionEquiv_symm_apply,
     LinearEquiv.coe_ofEq_apply]
-  rw [mapIncl_congr _ _ (fun _ ↦ by rfl) (fun _ ↦ by rfl)]
+  rw [TensorProduct.mapIncl_congr _ _ (fun _ ↦ LinearEquiv.coe_ofEq_apply _ _)
+    (fun _ ↦ LinearEquiv.coe_ofEq_apply _ _)]
 
 /-- The identification of the kernel of the external product block sends a kernel vector to the
 tensor of kernel vectors whose inclusion is its first component. -/
@@ -213,8 +223,9 @@ theorem coe_mapIncl_kerExternalProductBlockCompletionEquiv_apply_fst
     ((mapIncl _ _ (kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w).1 :
         V₀ ⊗[𝕜] W₀) : Completion (V₀ ⊗[𝕜] W₀)) =
       (w : WithLp 2 (Completion (V₀ ⊗[𝕜] W₀) × Completion (V₁ ⊗[𝕜] W₁))).fst := by
-  conv_rhs => rw [← (kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁).symm_apply_apply w]
-  simp only [coe_kerExternalProductBlockCompletionEquiv_symm_apply, WithLp.toLp_fst]
+  rw [← toLp_coe_mapIncl_apply _
+    (coe_kerExternalProductBlockCompletionEquiv_symm_apply A B hπ₀ hπ₁ hρ₀ hρ₁) w,
+    WithLp.toLp_fst]
 
 /-- The identification of the kernel of the external product block sends a kernel vector to the
 tensor of kernel vectors whose inclusion is its second component. -/
@@ -224,8 +235,9 @@ theorem coe_mapIncl_kerExternalProductBlockCompletionEquiv_apply_snd
     ((mapIncl _ _ (kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w).2 :
         V₁ ⊗[𝕜] W₁) : Completion (V₁ ⊗[𝕜] W₁)) =
       (w : WithLp 2 (Completion (V₀ ⊗[𝕜] W₀) × Completion (V₁ ⊗[𝕜] W₁))).snd := by
-  conv_rhs => rw [← (kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁).symm_apply_apply w]
-  simp only [coe_kerExternalProductBlockCompletionEquiv_symm_apply, WithLp.toLp_snd]
+  rw [← toLp_coe_mapIncl_apply _
+    (coe_kerExternalProductBlockCompletionEquiv_symm_apply A B hπ₀ hπ₁ hρ₀ hρ₁) w,
+    WithLp.toLp_snd]
 
 /-- **The kernel of the external product block, equivariantly**: the identification of the kernel
 of `D` with `(ker A ⊗ ker B) × (ker A† ⊗ ker B†)` intertwines the action of `G × H` on the kernel
@@ -237,24 +249,9 @@ theorem kerExternalProductBlockCompletionEquiv_kerRepresentation_apply (g : G ×
       (A.kerRepresentation.externalTensor B.kerRepresentation).prod
         ((A.adjoint hπ₀ hπ₁).kerRepresentation.externalTensor
           (B.adjoint hρ₀ hρ₁).kerRepresentation) g
-        (kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w) := by
-  set e := kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁
-  set Φ := (A.kerRepresentation.externalTensor B.kerRepresentation).prod
-    ((A.adjoint hπ₀ hπ₁).kerRepresentation.externalTensor (B.adjoint hρ₀ hρ₁).kerRepresentation)
-  rw [← e.apply_symm_apply (Φ g (e w)), e.injective.eq_iff]
-  refine Subtype.ext (WithLp.ofLp_injective 2 (Prod.ext ?_ ?_))
-  · rw [coe_kerExternalProductBlockCompletionEquiv_symm_apply, WithLp.ofLp_toLp,
-      show (Φ g (e w)).1 =
-        A.kerRepresentation.externalTensor B.kerRepresentation g (e w).1 by simp [Φ],
-      mapIncl_externalTensor_kerRepresentation_apply, externalTensor_apply, ← mapLCompletion_coe,
-      coe_mapIncl_kerExternalProductBlockCompletionEquiv_apply_fst]
-    simp
-  · rw [coe_kerExternalProductBlockCompletionEquiv_symm_apply, WithLp.ofLp_toLp,
-      show (Φ g (e w)).2 = (A.adjoint hπ₀ hπ₁).kerRepresentation.externalTensor
-        (B.adjoint hρ₀ hρ₁).kerRepresentation g (e w).2 by simp [Φ],
-      mapIncl_externalTensor_kerRepresentation_apply, externalTensor_apply, ← mapLCompletion_coe,
-      coe_mapIncl_kerExternalProductBlockCompletionEquiv_apply_snd]
-    simp
+        (kerExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w) :=
+  apply_kerRepresentation_of_coe_symm_apply _ _ _ _ _ _
+    (coe_kerExternalProductBlockCompletionEquiv_symm_apply A B hπ₀ hπ₁ hρ₀ hρ₁) g w
 
 /-- The kernel of the adjoint of the equivariant external product block, identified with
 `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)` by
@@ -294,8 +291,10 @@ theorem coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply
     TensorProduct.congr_symm, LinearEquiv.ofEq_symm,
     ContinuousLinearMap.coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply,
     LinearEquiv.coe_ofEq_apply]
-  rw [mapIncl_congr _ _ (fun _ ↦ by rfl) (fun _ ↦ by rfl),
-    mapIncl_congr _ _ (fun _ ↦ by rfl) (fun _ ↦ by rfl)]
+  rw [TensorProduct.mapIncl_congr _ _ (fun _ ↦ LinearEquiv.coe_ofEq_apply _ _)
+      (fun _ ↦ congrArg _ (LinearEquiv.refl_apply _)),
+    TensorProduct.mapIncl_congr _ _ (fun _ ↦ congrArg _ (LinearEquiv.refl_apply _))
+      (fun _ ↦ LinearEquiv.coe_ofEq_apply _ _)]
 
 /-- The identification of the kernel of the adjoint of the external product block sends a kernel
 vector to the tensor of kernel vectors whose inclusion is its first component. -/
@@ -308,9 +307,9 @@ theorem coe_mapIncl_kerAdjointExternalProductBlockCompletionEquiv_apply_fst
     ((mapIncl _ _ (kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w).1 :
         V₁ ⊗[𝕜] W₀) : Completion (V₁ ⊗[𝕜] W₀)) =
       (w : WithLp 2 (Completion (V₁ ⊗[𝕜] W₀) × Completion (V₀ ⊗[𝕜] W₁))).fst := by
-  conv_rhs =>
-    rw [← (kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁).symm_apply_apply w]
-  simp only [coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply, WithLp.toLp_fst]
+  rw [← toLp_coe_mapIncl_apply _
+    (coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply A B hπ₀ hπ₁ hρ₀ hρ₁) w,
+    WithLp.toLp_fst]
 
 /-- The identification of the kernel of the adjoint of the external product block sends a kernel
 vector to the tensor of kernel vectors whose inclusion is its second component. -/
@@ -323,9 +322,9 @@ theorem coe_mapIncl_kerAdjointExternalProductBlockCompletionEquiv_apply_snd
     ((mapIncl _ _ (kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w).2 :
         V₀ ⊗[𝕜] W₁) : Completion (V₀ ⊗[𝕜] W₁)) =
       (w : WithLp 2 (Completion (V₁ ⊗[𝕜] W₀) × Completion (V₀ ⊗[𝕜] W₁))).snd := by
-  conv_rhs =>
-    rw [← (kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁).symm_apply_apply w]
-  simp only [coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply, WithLp.toLp_snd]
+  rw [← toLp_coe_mapIncl_apply _
+    (coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply A B hπ₀ hπ₁ hρ₀ hρ₁) w,
+    WithLp.toLp_snd]
 
 /-- **The kernel of the adjoint of the external product block, equivariantly**: the identification
 of the kernel of `D†` with `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)` intertwines the action of `G × H`
@@ -342,24 +341,9 @@ theorem kerAdjointExternalProductBlockCompletionEquiv_kerRepresentation_apply (g
             (hπ₀.externalTensorCompletion hρ₁))).kerRepresentation g w) =
       ((A.adjoint hπ₀ hπ₁).kerRepresentation.externalTensor B.kerRepresentation).prod
         (A.kerRepresentation.externalTensor (B.adjoint hρ₀ hρ₁).kerRepresentation) g
-        (kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w) := by
-  set e := kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁
-  set Φ := ((A.adjoint hπ₀ hπ₁).kerRepresentation.externalTensor B.kerRepresentation).prod
-    (A.kerRepresentation.externalTensor (B.adjoint hρ₀ hρ₁).kerRepresentation)
-  rw [← e.apply_symm_apply (Φ g (e w)), e.injective.eq_iff]
-  refine Subtype.ext (WithLp.ofLp_injective 2 (Prod.ext ?_ ?_))
-  · rw [coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply, WithLp.ofLp_toLp,
-      show (Φ g (e w)).1 = (A.adjoint hπ₀ hπ₁).kerRepresentation.externalTensor
-        B.kerRepresentation g (e w).1 by simp [Φ],
-      mapIncl_externalTensor_kerRepresentation_apply, externalTensor_apply, ← mapLCompletion_coe,
-      coe_mapIncl_kerAdjointExternalProductBlockCompletionEquiv_apply_fst]
-    simp
-  · rw [coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply, WithLp.ofLp_toLp,
-      show (Φ g (e w)).2 = A.kerRepresentation.externalTensor
-        (B.adjoint hρ₀ hρ₁).kerRepresentation g (e w).2 by simp [Φ],
-      mapIncl_externalTensor_kerRepresentation_apply, externalTensor_apply, ← mapLCompletion_coe,
-      coe_mapIncl_kerAdjointExternalProductBlockCompletionEquiv_apply_snd]
-    simp
+        (kerAdjointExternalProductBlockCompletionEquiv A B hπ₀ hπ₁ hρ₀ hρ₁ w) :=
+  apply_kerRepresentation_of_coe_symm_apply _ _ _ _ _ _
+    (coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply A B hπ₀ hπ₁ hρ₀ hρ₁) g w
 
 end Group
 

@@ -19,9 +19,10 @@ tensor and exterior algebras, defined as powers of their generators.
 
 For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of images of elements of
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
-(`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
-`M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
-(`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
+(`Submodule.exists_eq_rTensor_inclusion_add`). Equivalences of the factors that preserve the
+underlying vectors do not change the inclusion of `p ⊗[R] q` (`TensorProduct.mapIncl_congr`). For
+an ideal `I` and a submodule `J`, the image of `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in
+`I • (M ⊗[R] J)` (`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
 (`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
@@ -193,6 +194,17 @@ theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Subm
   rw [← (TensorProduct.comm R M _).apply_symm_apply u, LinearMap.rTensor_comm]
   exact smul_top_le_comap_smul_top I (TensorProduct.comm R M J).toLinearMap
     (LinearMap.range_lTensor_inclusion_smul_le I J ⟨_, rfl⟩)
+
+/-- Linear equivalences `p ≃ p'` and `q ≃ q'` of submodules that preserve the underlying vectors,
+such as the transports `LinearEquiv.ofEq` along equalities of submodules, do not change the
+inclusion of `p ⊗ q` into `M ⊗ N`. -/
+theorem _root_.TensorProduct.mapIncl_congr {p p' : Submodule R M} {q q' : Submodule R N}
+    (e₁ : p ≃ₗ[R] p') (e₂ : q ≃ₗ[R] q') (h₁ : ∀ v, (e₁ v : M) = v) (h₂ : ∀ w, (e₂ w : N) = w)
+    (x : p ⊗[R] q) :
+    TensorProduct.mapIncl p' q' (TensorProduct.congr e₁ e₂ x) = TensorProduct.mapIncl p q x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => simp [h₁, h₂]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Inclusion
 
