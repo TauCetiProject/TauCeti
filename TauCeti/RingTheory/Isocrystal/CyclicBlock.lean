@@ -12,27 +12,20 @@ public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.Isocrystal.StandardBlock
 public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 public import TauCeti.RingTheory.LaurentSeries.Ramified
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Data.Fin.Basic
 import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
-import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
-import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
-# Simplicity and existence of cyclic standard blocks
+# Existence of cyclic standard-block sub-isocrystals
 
-This file establishes the two key properties of simple cyclic blocks `D(s, r)` with `s` and `r`
-coprime:
-
-1. **Simplicity (`TauCeti.eq_bot_or_eq_top_of_standardBlockFrobenius_stable`).** Over any field `L`
-   with an automorphism `σ` preserving a valuation `v` and fixing a nonzero element `π` whose
-   valuation generates `v(Lˣ)`, `D(s, r)` has no proper nontrivial
-   `standardBlockFrobenius σ π s r`-stable `L`-subspaces when `Nat.Coprime s.natAbs r`.
-2. **Existence (`TauCeti.exists_injective_intertwines_standardBlock`).** Over `k((π))` with `k`
-   algebraically closed of characteristic `p > 0` and `σ = LaurentSeries.coefficientFrobenius p f`,
-   every nontrivial finite isocrystal `(V, Φ)` admits an injective `k((π))`-linear intertwiner
-   `D(s, r) ↪ V` for some coprime `s : ℤ`, `r : ℕ+`.
+Over `k((π))` with `k` algebraically closed of characteristic `p > 0` and
+`σ = LaurentSeries.coefficientFrobenius p f` (`f > 0`), every nontrivial finite-dimensional
+`σ`-semilinear system `(V, Φ)` with `Φ` injective contains a coprime cyclic standard block
+`D(s, r)` via a Frobenius-equivariant `k((π))`-linear embedding
+(`TauCeti.exists_injective_intertwines_standardBlock`).
 
 ## References
 
@@ -49,164 +42,17 @@ open scoped LaurentSeries PowerSeries
 
 namespace TauCeti
 
-/-! ### Simplicity of coprime standard blocks -/
-
-section Simplicity
-
-private noncomputable def basisIterMatrix {L : Type*} [Field L] (σ : L ≃+* L) {d : ℕ}
-    (B : Matrix (Fin d) (Fin d) L) : ℕ → Matrix (Fin d) (Fin d) L
-  | 0 => 1
-  | m + 1 => (basisIterMatrix σ B m).map (σ : L →+* L) * B
-
-private theorem basisIterMatrix_mul_basis {L : Type*} [Field L] (σ : L ≃+* L) (π : L) {s : ℤ}
-    {r d : ℕ} {U : Submodule L (Fin r → L)}
-    (hU : ∀ x ∈ U, standardBlockFrobenius σ π s r x ∈ U) (b : Module.Basis (Fin d) L U) (m : ℕ)
-    (i : Fin d) :
-    let B : Matrix (Fin d) (Fin d) L := Matrix.of fun i k ↦
-      b.repr ⟨standardBlockFrobenius σ π s r (b i).val, hU (b i).val (b i).property⟩ k
-    (standardBlockFrobenius σ π s r)^[m] (b i).val =
-      ∑ k, basisIterMatrix σ B m i k • (b k).val := by
-  intro B
-  have hΦ_b (l : Fin d) :
-      standardBlockFrobenius σ π s r (b l).val = ∑ k, B l k • (b k).val := by
-    have hrep := congrArg Subtype.val
-      (b.sum_repr ⟨standardBlockFrobenius σ π s r (b l).val, hU (b l).val (b l).property⟩)
-    simp only [Submodule.coe_sum, Submodule.coe_smul] at hrep
-    exact hrep.symm
-  induction m generalizing i with
-  | zero => simp [basisIterMatrix, Matrix.one_apply]
-  | succ m ih =>
-    rw [iterate_succ_apply', ih, map_sum]
-    simp only [map_smulₛₗ, RingHom.coe_coe, hΦ_b, smul_sum, smul_smul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun l _ ↦ ?_
-    rw [← Finset.sum_smul]
-    simp [basisIterMatrix, Matrix.mul_apply]
-
-private theorem valuation_basisIterMatrix_det {L Γ₀ : Type*} [Field L]
-    [LinearOrderedCommGroupWithZero Γ₀] (σ : L ≃+* L) (v : Valuation L Γ₀)
-    (hv : ∀ x, v (σ x) = v x) {d : ℕ} (B : Matrix (Fin d) (Fin d) L) (m : ℕ) :
-    v (basisIterMatrix σ B m).det = v B.det ^ m := by
-  induction m with
-  | zero => simp [basisIterMatrix]
-  | succ m ih =>
-    rw [basisIterMatrix, Matrix.det_mul, map_mul, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-      RingHom.coe_coe, hv, ih, pow_succ]
-
-private theorem basis_matrix_iterate_det_val {L Γ₀ : Type*} [Field L]
-    [LinearOrderedCommGroupWithZero Γ₀] (σ : L ≃+* L) (π : L) (hσπ : σ π = π)
-    (v : Valuation L Γ₀) (hv : ∀ x, v (σ x) = v x) {s : ℤ} {r d : ℕ}
-    {U : Submodule L (Fin r → L)} (hU : ∀ x ∈ U, standardBlockFrobenius σ π s r x ∈ U)
-    (b : Module.Basis (Fin d) L U) :
-    let B : Matrix (Fin d) (Fin d) L := Matrix.of fun i k ↦
-      b.repr ⟨standardBlockFrobenius σ π s r (b i).val, hU (b i).val (b i).property⟩ k
-    v B.det ^ r = v π ^ (s * (d : ℤ)) := by
-  intro B
-  let M : Matrix (Fin d) (Fin r) L := Matrix.of fun i j ↦ (b i).val j
-  obtain ⟨c, hc⟩ := Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero.1
-    (b.linearIndependent.map' U.subtype (Submodule.ker_subtype U))
-  let M₀ : Matrix (Fin d) (Fin d) L := M.submatrix id c
-  -- Compare `Φ^[r]` via `basisIterMatrix σ B r` against `π ^ s • σ^[r]` on coordinates.
-  have hCrM : basisIterMatrix σ B r * M₀ = π ^ s • M₀.map (σ^[r] : L → L) := by
-    ext i j
-    have h1 : (standardBlockFrobenius σ π s r)^[r] (b i).val (c j) =
-        (basisIterMatrix σ B r * M₀) i j := by
-      rw [basisIterMatrix_mul_basis σ π hU b r i]
-      simp [B, M₀, M, Matrix.mul_apply]
-    have h2 := standardBlockFrobenius_iterate_rank_apply (s := s) hσπ (b i).val (c j)
-    rw [← h1, h2]
-    simp [M₀, M]
-  have hdet_eq := congrArg (fun X ↦ v X.det) hCrM
-  have hv_iter (x : L) : v (σ^[r] x) = v x := congrFun (iterate_invariant (funext hv) r) x
-  have hdet_map : v (M₀.map (σ^[r] : L → L)).det = v M₀.det := by
-    let σr : L ≃+* L := σ ^ r
-    have hσr : (σ^[r] : L → L) = (σr : L →+* L) := by ext x; simp [σr]
-    rw [hσr, ← RingHom.mapMatrix_apply, ← RingHom.map_det, RingHom.coe_coe]
-    simpa [σr] using hv_iter M₀.det
-  rw [Matrix.det_mul, Matrix.det_smul, map_mul, map_mul, valuation_basisIterMatrix_det σ v hv,
-    map_pow, map_zpow₀, hdet_map] at hdet_eq
-  have hmul := mul_right_cancel₀ ((map_ne_zero v).2 hc) hdet_eq
-  simpa [← zpow_natCast, ← zpow_mul] using hmul
-
-/-- **Simplicity of coprime standard blocks.** Let `σ` be an automorphism of a field `L` fixing a
-nonzero element `π` and preserving a valuation `v` with `v π ≠ 1` whose values on `Lˣ` lie in
-`⟨v π⟩`. Then for coprime `s` and `r`, the standard block `D(s, r)` has no proper nontrivial
-`standardBlockFrobenius σ π s r`-stable `L`-subspaces (Kedlaya 2005, §4.5, 4.5.3–4.5.8). -/
-theorem eq_bot_or_eq_top_of_standardBlockFrobenius_stable
-    {L Γ₀ : Type*} [Field L] [LinearOrderedCommGroupWithZero Γ₀]
-    (σ : L ≃+* L) (π : L) (hπ : π ≠ 0) (hσπ : σ π = π)
-    (v : Valuation L Γ₀) (hv : ∀ x, v (σ x) = v x) (hvπ : v π ≠ 1)
-    (hgen : ∀ x : L, x ≠ 0 → ∃ n : ℤ, v x = v π ^ n)
-    {s : ℤ} {r : ℕ} (hcop : s.natAbs.Coprime r)
-    {U : Submodule L (Fin r → L)}
-    (hU : ∀ x ∈ U, standardBlockFrobenius σ π s r x ∈ U) :
-    U = ⊥ ∨ U = ⊤ := by
-  rw [or_iff_not_imp_left]
-  intro hU0
-  set d := Module.finrank L U
-  have hd_pos : 0 < d := Nat.pos_of_ne_zero fun hd ↦ hU0 (Submodule.finrank_eq_zero.1 hd)
-  have hd_le : d ≤ r := by simpa [d] using Submodule.finrank_le U
-  let b : Basis (Fin d) L U := Module.finBasis L U
-  let Φ_U := (standardBlockFrobenius σ π s r).restrict hU
-  have hΦ_U_inj : Injective Φ_U := fun x y hxy ↦ Subtype.ext <|
-    (standardBlockFrobenius_bijective hπ).injective (congrArg Subtype.val hxy)
-  have hΦ_U_surj : Surjective Φ_U := LinearMap.surjective_of_injectiveₛₗ hΦ_U_inj
-  let B : Matrix (Fin d) (Fin d) L := Matrix.of fun i k ↦ b.repr (Φ_U (b i)) k
-  have hB_det : B.det ≠ 0 :=
-    (LinearMap.isUnit_det_basis_matrix_of_surjectiveₛₗ b hΦ_U_surj).ne_zero
-  have hvB_pow : v B.det ^ r = v π ^ (s * (d : ℤ)) :=
-    basis_matrix_iterate_det_val σ π hσπ v hv hU b
-  obtain ⟨k, hk⟩ := hgen B.det hB_det
-  have hk_exp : v π ^ (k * (r : ℤ)) = v π ^ (s * (d : ℤ)) := by
-    rw [zpow_mul, zpow_natCast, ← hk, hvB_pow]
-  have hvπ0 : 0 < v π := pos_iff_ne_zero.2 ((map_ne_zero v).2 hπ)
-  have hkr : k * (r : ℤ) = s * (d : ℤ) := zpow_right_injective₀ hvπ0 hvπ hk_exp
-  have hdvd : r ∣ s.natAbs * d := by
-    have h1 : (r : ℤ) ∣ s * (d : ℤ) := ⟨k, hkr.symm.trans (mul_comm k (r : ℤ))⟩
-    exact Int.ofNat_dvd.1 (by simpa [Int.natAbs_mul] using Int.dvd_natAbs.2 h1)
-  exact Submodule.eq_top_of_finrank_eq <| by
-    simpa [d] using le_antisymm hd_le (Nat.le_of_dvd hd_pos (hcop.symm.dvd_of_dvd_mul_left hdvd))
-
-end Simplicity
-
 /-! ### Finding a simple standard-block sub-isocrystal -/
 
 section SubBlock
 
-private theorem zpow_apply_of_semiconj {L A B : Type*} [Field L] [AddCommGroup A] [Module L A]
-    [AddCommGroup B] [Module L B] (e₁ : A ≃ₗ[L] A) (e₂ : B ≃ₗ[L] B) (f : A → B)
-    (hf : ∀ x, f (e₁ x) = e₂ (f x)) (z : ℤ) (x : A) :
-    f ((e₁ ^ z) x) = (e₂ ^ z) (f x) := by
-  have hfsymm (y : A) : f (e₁.symm y) = e₂.symm (f y) := by
-    rw [eq_comm, LinearEquiv.symm_apply_eq, ← hf, LinearEquiv.apply_symm_apply]
-  induction z using Int.induction_on with
-  | zero => simp
-  | succ m ih =>
-    simp_rw [show (m : ℤ) + 1 = 1 + m by ring, zpow_add, zpow_one, mul_apply_eq_comp]
-    rw [hf, ih]
-  | pred m ih =>
-    simp_rw [show (-m : ℤ) - 1 = -1 + -m by ring, zpow_add, zpow_neg_one, mul_apply_eq_comp,
-      LinearEquiv.coe_inv]
-    rw [hfsymm, ih]
-
-private def smulLinearEquiv (L V : Type*) [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) : V ≃ₗ[L] V where
-  toFun x := π • x
-  invFun x := π⁻¹ • x
-  left_inv x := by simp [smul_smul, hπ]
-  right_inv x := by simp [smul_smul, hπ]
-  map_add' x y := smul_add π x y
-  map_smul' c x := (smul_comm c π x).symm
-
-private theorem smulLinearEquiv_zpow {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
+private theorem smulOfNeZero_zpow {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
     (π : L) (hπ : π ≠ 0) (z : ℤ) (x : V) :
-    ((smulLinearEquiv L V π hπ) ^ z) x = π ^ z • x := by
-  let g : Lˣ →* (V ≃ₗ[L] V) :=
-    { toFun u := smulLinearEquiv L V u.val u.ne_zero
-      map_one' := by ext x; simp [smulLinearEquiv]
-      map_mul' u v := by ext x; change (u.val * v.val) • x = u.val • v.val • x; rw [mul_smul] }
-  have hz := congrArg (fun e : V ≃ₗ[L] V ↦ e x) (map_zpow g (Units.mk0 π hπ) z)
-  simpa [g, smulLinearEquiv] using hz.symm
+    ((LinearEquiv.smulOfNeZero L V π hπ) ^ z) x = π ^ z • x := by
+  have hz := congrArg (fun e : V ≃ₗ[L] V ↦ e x)
+    (map_zpow (DistribMulAction.toModuleAut L V) (Units.mk0 π hπ) z)
+  simpa [LinearEquiv.smulOfNeZero, LinearEquiv.smulOfUnit, Units.smul_def,
+    Units.val_zpow_eq_zpow_val] using hz.symm
 
 private def shiftVecEquiv (L V : Type*) [Field L] [AddCommGroup V] [Module L V]
     (π : L) (hπ : π ≠ 0) (r : ℕ+) : (Fin r → V) ≃ₗ[L] (Fin r → V) where
@@ -228,85 +74,50 @@ private theorem shiftVecEquiv_apply {L V : Type*} [Field L] [AddCommGroup V] [Mo
     shiftVecEquiv L V π hπ r w i =
       (if (i : ℕ) = 0 then π else 1) • w ((finRotate r).symm i) := rfl
 
-section ShiftIterate
-
-open Fin.NatCast
-
-private theorem shiftVecEquiv_iterate_apply {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) (r : ℕ+) (k : ℕ) (w : Fin r → V) (i : Fin r) :
-    (shiftVecEquiv L V π hπ r)^[k] w i =
-      (∏ t ∈ Finset.range k, if ((i - (t : Fin r) : Fin r) : ℕ) = 0 then π else 1) •
-        w (i - (k : Fin r)) := by
-  induction k generalizing i with
-  | zero => simp
-  | succ k ih =>
-    have hidx (t : ℕ) : i - 1 - (t : Fin r) = i - ((t + 1 : ℕ) : Fin r) := by
-      push_cast; abel
-    rw [iterate_succ_apply', shiftVecEquiv_apply, finRotate_symm_apply, ih,
-      Finset.prod_range_succ', ← smul_assoc, smul_eq_mul, mul_comm]
-    simp only [hidx, Nat.cast_zero, sub_zero]
-
 private theorem shiftVecEquiv_iterate_rank_apply {L V : Type*} [Field L] [AddCommGroup V]
     [Module L V] (π : L) (hπ : π ≠ 0) (r : ℕ+) (w : Fin r → V) :
     (shiftVecEquiv L V π hπ r)^[r] w = π • w := by
   ext i
-  rw [shiftVecEquiv_iterate_apply, Fin.natCast_self, sub_zero, Pi.smul_apply,
-    Finset.prod_eq_single (i : ℕ)]
-  · simp
-  · intro t ht hti
-    rw [ite_eq_right_iff]
-    intro h
-    rw [Fin.val_eq_zero_iff, sub_eq_zero] at h
-    exact (hti (by rw [h, Fin.val_natCast, Nat.mod_eq_of_lt (Finset.mem_range.1 ht)])).elim
-  · simp
-
-end ShiftIterate
+  have h := cyclicShift_iterate_rank_apply (σ := RingHom.id L) id (fun _ _ ↦ rfl) π rfl w i
+  simp only [iterate_id, id_eq] at h
+  exact h
 
 private theorem shiftVecEquiv_zpow_mul_rank {L V : Type*} [Field L] [AddCommGroup V]
     [Module L V] (π : L) (hπ : π ≠ 0) (r : ℕ+) (z : ℤ) (w : Fin r → V) :
     (shiftVecEquiv L V π hπ r ^ ((r : ℤ) * z)) w = π ^ z • w := by
   let E := shiftVecEquiv L V π hπ r ^ (r : ℕ)
-  let Mπ := smulLinearEquiv L (Fin r → V) π hπ
-  have hE (u : Fin r → V) : E u = Mπ u := by
-    change ((shiftVecEquiv L V π hπ r ^ (r : ℕ)) u) = π • u
-    rw [pow_apply_eq_iterate, shiftVecEquiv_iterate_rank_apply]
+  let Mπ := LinearEquiv.smulOfNeZero L (Fin r → V) π hπ
+  have hE : Function.Semiconj id E Mπ := fun u ↦ by
+    rw [id_eq, pow_apply_eq_iterate, shiftVecEquiv_iterate_rank_apply]
+    rfl
   rw [zpow_mul, zpow_natCast]
-  exact (zpow_apply_of_semiconj E Mπ id hE z w).trans (smulLinearEquiv_zpow π hπ z w)
+  exact (hE.linearEquiv_zpow_right z w).trans (smulOfNeZero_zpow π hπ z w)
 
 private theorem shiftVecEquiv_contract {k : Type*} [Field k] (r : ℕ+) (f : k⸨X⸩) :
     shiftVecEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
         (HahnSeries.single_ne_zero one_ne_zero) r (_root_.LaurentSeries.contract r f) =
       _root_.LaurentSeries.contract r (HahnSeries.single 1 1 * f) := by
-  have hrot0 (m : ℕ) [NeZero m] (i : Fin m) (hi : (i : ℕ) = 0) :
-      (finRotate m).symm i = ⟨m - 1, Nat.sub_lt (NeZero.pos m) one_pos⟩ := by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne m)
-    rw [Equiv.symm_apply_eq]
-    have hlast : (⟨n.succ - 1, Nat.sub_lt (Nat.succ_pos n) one_pos⟩ : Fin (n + 1)) =
-        Fin.last n := Fin.ext (by simp)
-    rw [hlast, finRotate_last]
-    exact Fin.ext (by simp [hi])
-  have hrot_ne (m : ℕ) [NeZero m] (i : Fin m) (hi : (i : ℕ) ≠ 0) :
-      (finRotate m).symm i = ⟨(i : ℕ) - 1, by omega⟩ := by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne m)
-    rw [Equiv.symm_apply_eq]
-    have hlt : (⟨(i : ℕ) - 1, by omega⟩ : Fin (n + 1)) ≠ Fin.last n := by
-      simp [Fin.ext_iff]; omega
-    exact Fin.ext (by rw [coe_finRotate_of_ne_last hlt]; simp only; omega)
   ext i m
   rw [shiftVecEquiv_apply]
   split_ifs with hi
-  · rw [smul_eq_mul, HahnSeries.coeff_single_mul, one_mul, hrot0 r i hi,
+  · have hrot : ((finRotate r).symm i : ℕ) = (r : ℕ) - 1 := by
+      refine congrArg Fin.val (show (finRotate r).symm i =
+          ⟨(r : ℕ) - 1, Nat.sub_lt r.pos one_pos⟩ from (finRotate r).symm_apply_eq.2 (Fin.ext ?_))
+      rw [Fin.coe_finRotate_eq_ite, hi]
+      dsimp only
+      split_ifs <;> omega
+    rw [smul_eq_mul, HahnSeries.coeff_single_mul, one_mul,
       _root_.LaurentSeries.coeff_contract, _root_.LaurentSeries.coeff_contract,
-      HahnSeries.coeff_single_mul, one_mul]
+      HahnSeries.coeff_single_mul, one_mul, hrot]
     congr 1
-    dsimp only
     rw [Nat.cast_sub (show 1 ≤ (r : ℕ) from r.pos), Nat.cast_one,
       show (i : ℤ) = 0 from Int.natCast_eq_zero.2 hi]
     ring
-  · rw [one_smul, hrot_ne r i hi, _root_.LaurentSeries.coeff_contract,
-      _root_.LaurentSeries.coeff_contract, HahnSeries.coeff_single_mul, one_mul]
+  · have hrot : ((finRotate r).symm i : ℕ) = (i : ℕ) - 1 :=
+      coe_finRotate_symm_of_ne_zero (Fin.val_ne_zero_iff.1 hi)
+    rw [one_smul, _root_.LaurentSeries.coeff_contract,
+      _root_.LaurentSeries.coeff_contract, HahnSeries.coeff_single_mul, one_mul, hrot]
     congr 1
-    dsimp only
     rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hi), Nat.cast_one]
     ring
 
@@ -316,12 +127,14 @@ private theorem shiftVecEquiv_zpow_contract {k : Type*} [Field k] (r : ℕ+) (z 
           (HahnSeries.single_ne_zero one_ne_zero) r ^ z)
         (_root_.LaurentSeries.contract r f) =
       _root_.LaurentSeries.contract r (HahnSeries.single z 1 * f) := by
-  let mulX := smulLinearEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
+  let mulX := LinearEquiv.smulOfNeZero k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
     (HahnSeries.single_ne_zero one_ne_zero)
-  have h := (zpow_apply_of_semiconj mulX
-    (shiftVecEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1) (HahnSeries.single_ne_zero one_ne_zero) r)
-    (_root_.LaurentSeries.contract r) (fun g ↦ (shiftVecEquiv_contract r g).symm) z f).symm
-  rw [smulLinearEquiv_zpow] at h
+  have hsc : Function.Semiconj (_root_.LaurentSeries.contract r) mulX
+      (shiftVecEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
+        (HahnSeries.single_ne_zero one_ne_zero) r) :=
+    fun g ↦ (shiftVecEquiv_contract r g).symm
+  have h := (hsc.linearEquiv_zpow_right z f).symm
+  rw [smulOfNeZero_zpow] at h
   simpa [← TauCeti.LaurentSeries.val_unitX, ← Units.val_zpow_eq_zpow_val,
     TauCeti.LaurentSeries.val_unitX_zpow] using h
 
@@ -414,6 +227,8 @@ private theorem exists_powerSeries_companion_solution {k : Type*} [Field k] {p f
       x 0 = b 0 * PowerSeries.map (_root_.iterateFrobenius k p f) (x (Fin.last n)) ∧
       ∀ j : Fin n, x j.succ = PowerSeries.map (_root_.iterateFrobenius k p f) (x j.castSucc) +
         b j.succ * PowerSeries.map (_root_.iterateFrobenius k p f) (x (Fin.last n)) := by
+  -- Assemble the recursively constructed `X^t` coefficients into power series `x i` and match
+  -- degree-0 and degree-`(t + 1)` terms in the companion system.
   let σk := _root_.iterateFrobenius k p f
   obtain ⟨d, hd0_ne, hd0_fix, hd_succ⟩ := exists_companion_powerSeries_coeffs hf n b hb
   let x : Fin (n + 1) → k⟦X⟧ := fun i ↦ PowerSeries.mk fun t ↦ d t i
@@ -587,17 +402,17 @@ private theorem shiftVecEquiv_zpow_smulVec {L V : Type*} [Field L] [AddCommGroup
     (π : L) (hπ : π ≠ 0) (r : ℕ+) (z : ℤ) (g : Fin r → L) (v : V) :
     (shiftVecEquiv L V π hπ r ^ z) (fun l ↦ g l • v) =
       fun l ↦ ((shiftVecEquiv L L π hπ r ^ z) g l) • v :=
-  (zpow_apply_of_semiconj (shiftVecEquiv L L π hπ r) (shiftVecEquiv L V π hπ r)
-    (fun g' l ↦ g' l • v) (fun g' ↦ by
-      ext l; simp [shiftVecEquiv_apply, smul_eq_mul, mul_smul]) z g).symm
+  ((Function.Semiconj.linearEquiv_zpow_right (e₁ := shiftVecEquiv L L π hπ r)
+    (e₂ := shiftVecEquiv L V π hπ r) (u := fun g' l ↦ g' l • v) (fun g' ↦ by
+      ext l; simp [shiftVecEquiv_apply, smul_eq_mul, mul_smul]) z) g).symm
 
 private theorem map_pi_comm_shiftVecEquiv_zpow {L V : Type*} [Field L] [AddCommGroup V]
     [Module L V] {σ : L ≃+* L} {Φ : V →ₛₗ[(σ : L →+* L)] V} (π : L) (hπ : π ≠ 0)
     (hσπ : σ π = π) (r : ℕ+) (z : ℤ) (u : Fin r → V) :
     (fun l ↦ Φ ((shiftVecEquiv L V π hπ r ^ z) u l)) =
       (shiftVecEquiv L V π hπ r ^ z) (fun l ↦ Φ (u l)) :=
-  zpow_apply_of_semiconj (shiftVecEquiv L V π hπ r) (shiftVecEquiv L V π hπ r)
-    (fun w l ↦ Φ (w l)) (fun w ↦ by
+  Function.Semiconj.linearEquiv_zpow_right (e₁ := shiftVecEquiv L V π hπ r)
+    (e₂ := shiftVecEquiv L V π hπ r) (u := fun w l ↦ Φ (w l)) (fun w ↦ by
       ext l
       simp only [shiftVecEquiv_apply]
       split_ifs
@@ -623,6 +438,8 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
       (shiftVecEquiv (LaurentSeries k) V (HahnSeries.single 1 1)
         (HahnSeries.single_ne_zero one_ne_zero) r ^ s)
         (fun l ↦ ∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀) := by
+  -- Expand both `l ↦ Φ (w l)` and `(S_V ^ s) w` in the orbit basis `Φ^[i] v₀`, rewriting
+  -- `Φ^[n + 1] v₀` via `hrel` and matching coefficients using `hz0` and `hzs`.
   let L := LaurentSeries k
   let σ := LaurentSeries.coefficientFrobenius (k := k) p f
   have hcontract (g : L) (l : Fin r) :
@@ -630,19 +447,19 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
     ext m; simp [σ]
   let π : L := HahnSeries.single 1 1
   have hπ : π ≠ 0 := HahnSeries.single_ne_zero one_ne_zero
-  let S_V := shiftVecEquiv L V π hπ r
+  set S_V := shiftVecEquiv L V π hπ r
   let smulVec : (Fin r → L) → V → (Fin r → V) := fun g v l ↦ g l • v
   let y : Fin (n + 1) → Fin r → L := fun i l ↦ _root_.LaurentSeries.contract r (z i) l
-  let w : Fin r → V := fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀
-  have hT_eq : (fun l ↦ Φ (w l)) = ∑ i : Fin (n + 1),
+  have hT_eq : (fun l ↦ Φ (∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀)) = ∑ i : Fin (n + 1),
       smulVec (_root_.LaurentSeries.contract r (σ (z i))) (Φ^[i.val + 1] v₀) := by
     ext l
-    simp only [w, smulVec, σ, map_sum, Finset.sum_apply, map_smulₛₗ, RingHom.coe_coe,
+    simp only [smulVec, σ, map_sum, Finset.sum_apply, map_smulₛₗ, RingHom.coe_coe,
       ← iterate_succ_apply' Φ, Nat.succ_eq_add_one, y, hcontract]
-  have hS_eq : (S_V ^ s) w = ∑ i : Fin (n + 1),
+  have hS_eq : (S_V ^ s) (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) = ∑ i : Fin (n + 1),
       smulVec (_root_.LaurentSeries.contract r (HahnSeries.single s 1 * z i)) (Φ^[i.val] v₀) := by
-    have hw_vec : w = ∑ i : Fin (n + 1), smulVec (y i) (Φ^[i.val] v₀) := by
-      ext l; simp [w, smulVec]
+    have hw_vec : (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) =
+        ∑ i : Fin (n + 1), smulVec (y i) (Φ^[i.val] v₀) := by
+      ext l; simp [smulVec]
     rw [hw_vec, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [shiftVecEquiv_zpow_smulVec π hπ r s (y i) (Φ^[i.val] v₀),
@@ -656,8 +473,9 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
     ext l
     simp only [smulVec, Finset.smul_sum, Finset.sum_apply, smul_smul, mul_comm (-a _),
       _root_.LaurentSeries.contract_expand_mul]
-  change (fun l ↦ Φ (w l)) = (S_V ^ s) w
-  rw [hT_eq, hS_eq, Fin.sum_univ_castSucc, Fin.val_last, hΦlast, hlast_split,
+  rw [show (fun l ↦ Φ (∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀)) = _ from hT_eq,
+    show (S_V ^ s) (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) = _ from hS_eq,
+    Fin.sum_univ_castSucc, Fin.val_last, hΦlast, hlast_split,
     Fin.sum_univ_succ (f := fun j : Fin (n + 1) ↦ smulVec (_root_.LaurentSeries.contract r
       (_root_.LaurentSeries.expand k r (-a j) * σ (z (Fin.last n)))) (Φ^[j.val] v₀)),
     Fin.sum_univ_succ (f := fun j : Fin (n + 1) ↦
@@ -706,8 +524,7 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
   let T : (Fin r → V) → (Fin r → V) := fun u l ↦ Φ (u l)
   have hTw : T w = (S_V ^ s) w := shiftVecEquiv_laurent_companion hrel s r z hz0 hzs
   have hcomm : Function.Commute T ⇑(S_V ^ s) :=
-    fun u ↦ map_pi_comm_shiftVecEquiv_zpow π hπ
-      (by rw [LaurentSeries.coefficientFrobenius_single, one_pow]) r s u
+    fun u ↦ map_pi_comm_shiftVecEquiv_zpow π hπ (LaurentSeries.coefficientFrobenius_X p f) r s u
   have hTiter : ∀ m : ℕ, T^[m] w = (S_V ^ s)^[m] w := fun m ↦ by
     induction m with
     | zero => simp
@@ -746,77 +563,38 @@ private theorem cyclicBlockHom_intertwines {L V : Type*} [Field L] [AddCommGroup
     Fintype.linearCombination L (fun j : Fin r ↦ Φ^[j.val] v₀)
         (standardBlockFrobenius σ π s r x) =
       Φ (Fintype.linearCombination L (fun j : Fin r ↦ Φ^[j.val] v₀) x) := by
-  have hrec (m : ℕ) [NeZero m] (hv : Φ^[m] v₀ = π ^ s • v₀) (j : Fin m) :
+  have hrec (j : Fin r) :
       Φ^[j.val + 1] v₀ =
-        (if j.val + 1 = m then π ^ s else 1) • Φ^[(finRotate m j : ℕ)] v₀ := by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne m)
-    by_cases hj : j.val + 1 = n + 1
-    · obtain rfl : j = Fin.last n := Fin.ext (by simp only [Fin.val_last]; omega)
-      simp only [hj, ↓reduceIte]
-      rw [finRotate_last, Fin.val_zero, iterate_zero, id_eq]
-      exact hv
-    · have hj_lt : j ≠ Fin.last n := fun h ↦ hj (by simp [h])
-      simp only [hj, ↓reduceIte, one_smul]
-      rw [coe_finRotate_of_ne_last hj_lt]
+        (if j.val + 1 = r then π ^ s else 1) • Φ^[(finRotate r j : ℕ)] v₀ := by
+    rw [Fin.coe_finRotate_eq_ite]
+    split_ifs with hj
+    · simpa [hj] using hv₀
+    · simp
   refine intertwines_standardBlockFrobenius_of_single _ (fun j ↦ ?_) x
   simp only [Fintype.linearCombination_apply_single, one_smul, ← iterate_succ_apply' Φ]
-  exact hrec r hv₀ j
+  exact hrec j
 
-private theorem exists_minimal_orbit_relation {L V : Type*} [Field L] [AddCommGroup V]
-    [Module L V] [FiniteDimensional L V] {σ : L ≃+* L} {Φ : V →ₛₗ[(σ : L →+* L)] V}
-    (hΦ : Injective Φ) {v₀ : V} (hv₀ : v₀ ≠ 0) :
-    ∃ (n : ℕ) (a : Fin (n + 1) → L),
-      LinearIndependent L (fun i : Fin (n + 1) ↦ Φ^[i.val] v₀) ∧
-      Φ^[n + 1] v₀ + ∑ i : Fin (n + 1), a i • Φ^[i.val] v₀ = 0 ∧
-      a 0 ≠ 0 := by
-  obtain ⟨n, hli, hmem⟩ := Function.exists_linearIndependent_iterate_mem_span (K := L) Φ hv₀
-  have hneg :
-      -Φ^[n + 1] v₀ ∈ Submodule.span L (Set.range fun i : Fin (n + 1) ↦ Φ^[i.val] v₀) :=
-    Submodule.neg_mem _ hmem
-  rw [Finsupp.mem_span_range_iff_exists_finsupp] at hneg
-  obtain ⟨c, hc⟩ := hneg
-  let a : Fin (n + 1) → L := fun i ↦ c i
-  have hrel : Φ^[n + 1] v₀ + ∑ i : Fin (n + 1), a i • Φ^[i.val] v₀ = 0 := by
-    rw [Finsupp.sum_fintype c (fun i x ↦ x • Φ^[i.val] v₀) (fun i ↦ zero_smul L _)] at hc
-    rw [show (∑ i, a i • Φ^[i.val] v₀) = ∑ i, c i • Φ^[i.val] v₀ from rfl, hc, add_neg_cancel]
-  refine ⟨n, a, hli, hrel, fun ha0 ↦ ?_⟩
-  have hsplit : ∑ i : Fin (n + 1), a i • Φ^[i.val] v₀ =
-      ∑ j : Fin n, a j.succ • Φ^[j.val + 1] v₀ := by
-    rw [Fin.sum_univ_succ, ha0, zero_smul, zero_add]
-    simp [Fin.val_succ]
-  have hΦeq : Φ (Φ^[n] v₀ + ∑ j : Fin n, σ.symm (a j.succ) • Φ^[j.val] v₀) = 0 := by
-    rw [map_add, map_sum, ← iterate_succ_apply' Φ]
-    have hsum : (∑ j : Fin n, Φ (σ.symm (a j.succ) • Φ^[j.val] v₀)) =
-        ∑ j : Fin n, a j.succ • Φ^[j.val + 1] v₀ :=
-      Finset.sum_congr rfl fun j _ ↦ by
-        rw [map_smulₛₗ, RingHom.coe_coe, σ.apply_symm_apply, ← iterate_succ_apply' Φ]
-    rw [hsum, ← hsplit]
-    exact hrel
-  have hinner := hΦ (hΦeq.trans (map_zero Φ).symm)
-  let c' : Fin (n + 1) → L := Fin.snoc (fun j : Fin n ↦ σ.symm (a j.succ)) 1
-  have hsum' : ∑ i : Fin (n + 1), c' i • Φ^[i.val] v₀ = 0 := by
-    rw [Fin.sum_univ_castSucc]
-    simp only [c', Fin.snoc_castSucc, Fin.snoc_last, Fin.val_castSucc, Fin.val_last, one_smul]
-    rw [add_comm, hinner]
-  simpa [c'] using Fintype.linearIndependent_iff.1 hli c' hsum' (Fin.last n)
-
-/-- **Existence of a simple standard-block sub-isocrystal.** Every nontrivial finite isocrystal
-`(V, Φ)` over `k((π))` contains a coprime cyclic block `D(s, r)` via a Frobenius-equivariant
-`k((π))`-linear embedding (Kedlaya 2005, §4.5, 4.5.3–4.5.8). -/
+/-- **Existence of a simple standard-block sub-isocrystal.** Every nontrivial finite-dimensional
+`σ`-semilinear system `(V, Φ)` over `k((π))` with `Φ` injective contains a coprime cyclic block
+`D(s, r)` via a Frobenius-equivariant `k((π))`-linear embedding
+(Kedlaya 2005, §4.5, 4.5.3–4.5.8). -/
 theorem exists_injective_intertwines_standardBlock {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
     [FiniteDimensional (LaurentSeries k) V] [Nontrivial V]
     {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
       LaurentSeries k →+* LaurentSeries k)] V}
-    (hΦ : Bijective Φ) :
+    (hΦ : Injective Φ) :
     ∃ (s : ℤ) (r : ℕ+), s.natAbs.Coprime r ∧
       ∃ ι : (Fin r → LaurentSeries k) →ₗ[LaurentSeries k] V,
         Injective ι ∧
         ∀ x, ι (standardBlockFrobenius (LaurentSeries.coefficientFrobenius (k := k) p f)
           (HahnSeries.single 1 1) s r x) = Φ (ι x) := by
+  have : RingHomSurjective (LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k) :=
+    ⟨(LaurentSeries.coefficientFrobenius (k := k) p f).surjective⟩
   obtain ⟨v₀, hv₀⟩ := exists_ne (0 : V)
-  obtain ⟨n, a, hli, hrel, ha0⟩ := exists_minimal_orbit_relation hΦ.injective hv₀
+  obtain ⟨n, a, hli, hrel, ha0⟩ := LinearMap.exists_minimal_orbit_relation hΦ hv₀
   obtain ⟨s, r, hcop, w₀, hw₀, hΦw₀⟩ :=
     exists_eigenvector_of_minimal_relation hli hrel ha0
   let ι := Fintype.linearCombination (LaurentSeries k) fun j : Fin r ↦ Φ^[j.val] w₀
@@ -832,11 +610,6 @@ theorem exists_injective_intertwines_standardBlock {p : ℕ} [Fact p.Prime] {f :
     rw [LinearMap.mem_ker, Fintype.linearCombination_apply_single, Fin.val_zero, iterate_zero,
       id_eq, one_smul] at hmem
     exact hw₀ hmem
-  have hvπ : Valued.v (HahnSeries.single (1 : ℤ) (1 : k)) ≠ 1 := by
-    simp [_root_.LaurentSeries.valuation_single_zpow]
-  have hval (x : LaurentSeries k) :
-      Valued.v (LaurentSeries.coefficientFrobenius p (f : ℕ) x) = Valued.v x := by
-    rw [LaurentSeries.coe_coefficientFrobenius, LaurentSeries.valuation_mapRingHom]
   have hgen : ∀ x : LaurentSeries k, x ≠ 0 →
       ∃ n : ℤ, Valued.v x = Valued.v (HahnSeries.single (1 : ℤ) (1 : k)) ^ n := fun x hx ↦
     ⟨x.order, by
@@ -848,8 +621,9 @@ theorem exists_injective_intertwines_standardBlock {p : ℕ} [Fact p.Prime] {f :
     (eq_bot_or_eq_top_of_standardBlockFrobenius_stable
       (LaurentSeries.coefficientFrobenius (k := k) p f)
       (HahnSeries.single 1 1) (HahnSeries.single_ne_zero one_ne_zero)
-      (by rw [LaurentSeries.coefficientFrobenius_single, one_pow])
-      Valued.v hval hvπ hgen hcop hstab).resolve_right hker_ne_top
+      (LaurentSeries.coefficientFrobenius_X p f) Valued.v
+      (LaurentSeries.valuation_coefficientFrobenius p f)
+      LaurentSeries.valuation_single_one_ne_one hgen hcop hstab).resolve_right hker_ne_top
   exact ⟨s, r, hcop, ι, LinearMap.ker_eq_bot.1 hker_bot, hinter⟩
 
 end SubBlock

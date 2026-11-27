@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.RingTheory.Valuation.Basic
 public import Mathlib.RingTheory.WittVector.Isocrystal
+import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
+import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # The standard Frobenius blocks `D(s, r)`
@@ -42,6 +45,10 @@ coprime. Under the functor from isocrystals to vector bundles on the Fargues–F
 * `TauCeti.eq_zero_of_intertwines_standardBlock`: if `σ` fixes `π ≠ 0` and preserves a valuation
   `v` with `v π ≠ 1`, there is no nonzero Frobenius-equivariant `L`-linear map `D(s, r) → D(s', r')`
   between blocks of different slopes `s / r ≠ s' / r'`.
+* `TauCeti.eq_bot_or_eq_top_of_standardBlockFrobenius_stable`: over a field `L` with an
+  automorphism `σ` preserving a valuation `v` and fixing a nonzero element `π` whose valuation
+  generates `v(Lˣ)`, `D(s, r)` has no proper nontrivial `standardBlockFrobenius σ π s r`-stable
+  subspaces when `Nat.Coprime s.natAbs r`.
 * `TauCeti.standardBlockFrobenius_one_apply_zero_eq_frobenius`: for Witt vectors, the rank-one block
   `D(m, 1)` with `π = p` is Mathlib's `WittVector.StandardOneDimIsocrystal p k m`.
 
@@ -51,6 +58,8 @@ coprime. Under the functor from isocrystals to vector bundles on the Fargues–F
   Astérisque 406 (2018), §8.2.3, before Proposition 8.2.6.
 * K. S. Kedlaya, *A p-adic local monodromy theorem*, Ann. of Math. 160 (2004), Definition 4.1.1
   and Lemma 4.1.2.
+* K. S. Kedlaya, *Slope filtrations revisited*, Doc. Math. 10 (2005), 447–525, §4.5
+  (4.5.3–4.5.8, pp. 497–499).
 -/
 
 public section
@@ -114,31 +123,39 @@ theorem standardBlockFrobenius_single_last {n : ℕ} (c : L) :
 
 /-- The Frobenius of `D(s, r)` sends `Pi.single j c` to `Pi.single (finRotate r j) (σ c)`
 before the last index. -/
-theorem standardBlockFrobenius_single_of_val_add_one_ne {r : ℕ} [NeZero r] {j : Fin r}
+theorem standardBlockFrobenius_single_of_val_add_one_ne {r : ℕ} {j : Fin r}
     (hj : j.val + 1 ≠ r) (c : L) :
     standardBlockFrobenius σ π s r (Pi.single j c) = Pi.single (finRotate r j) (σ c) := by
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
-  subst hn
-  have hj_lt : j ≠ Fin.last n := fun h ↦ hj (by simp [h])
-  obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.2 hj_lt
-  have hrot : finRotate (n + 1) i.castSucc = i.succ :=
-    Fin.ext (by rw [coe_finRotate_of_ne_last hj_lt, Fin.val_castSucc, Fin.val_succ])
-  rw [hrot, standardBlockFrobenius_single_castSucc]
+  ext l
+  rw [standardBlockFrobenius_apply, Pi.single_apply, Pi.single_apply]
+  by_cases hl : l = finRotate r j
+  · subst hl
+    have hne : (finRotate r j : ℕ) ≠ 0 := by
+      rw [Fin.coe_finRotate_eq_ite]
+      split_ifs <;> omega
+    simp only [hne, ↓reduceIte, Equiv.symm_apply_apply, one_mul]
+  · have hsymm : (finRotate r).symm l ≠ j := fun h ↦ hl ((finRotate r).symm_apply_eq.1 h)
+    simp only [hl, hsymm, ↓reduceIte, map_zero, mul_zero]
 
 /-- The Frobenius of `D(s, r)` sends `Pi.single j c` at the last index to
 `Pi.single (finRotate r j) (π ^ s * σ c)`. -/
-theorem standardBlockFrobenius_single_of_val_add_one_eq {r : ℕ} [NeZero r] {j : Fin r}
+theorem standardBlockFrobenius_single_of_val_add_one_eq {r : ℕ} {j : Fin r}
     (hj : j.val + 1 = r) (c : L) :
     standardBlockFrobenius σ π s r (Pi.single j c) =
       Pi.single (finRotate r j) (π ^ s * σ c) := by
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
-  subst hn
-  obtain rfl : j = Fin.last n := Fin.ext (by simp only [Fin.val_last]; omega)
-  rw [finRotate_last, standardBlockFrobenius_single_last]
+  ext l
+  rw [standardBlockFrobenius_apply, Pi.single_apply, Pi.single_apply]
+  by_cases hl : l = finRotate r j
+  · subst hl
+    have h0 : (finRotate r j : ℕ) = 0 := by
+      simp only [Fin.coe_finRotate_eq_ite, hj, ↓reduceIte]
+    simp only [h0, ↓reduceIte, Equiv.symm_apply_apply]
+  · have hsymm : (finRotate r).symm l ≠ j := fun h ↦ hl ((finRotate r).symm_apply_eq.1 h)
+    simp only [hl, hsymm, ↓reduceIte, map_zero, mul_zero]
 
 /-- An `L`-linear map from `L^r` whose values on the standard basis `Pi.single j 1` satisfy
 the cyclic Frobenius recurrence intertwines `standardBlockFrobenius σ π s r` with `Φ`. -/
-theorem intertwines_standardBlockFrobenius_of_single {r : ℕ} [NeZero r] {V : Type*}
+theorem intertwines_standardBlockFrobenius_of_single {r : ℕ} {V : Type*}
     [AddCommGroup V] [Module L V] {Φ : V →ₛₗ[(σ : L →+* L)] V} (g : (Fin r → L) →ₗ[L] V)
     (hg : ∀ j : Fin r, Φ (g (Pi.single j 1)) =
       (if j.val + 1 = r then π ^ s else 1) • g (Pi.single (finRotate r j) 1))
@@ -181,36 +198,40 @@ section Iterate
 
 open Fin.NatCast
 
-/-- The `k`-th power of the Frobenius of `D(s, r)` in coordinates: its `i`-th coordinate is
-`σ ^ k` of the `(i - k)`-th one, times `π ^ s` for each wraparound. -/
-private theorem standardBlockFrobenius_iterate_apply [NeZero r] (hσπ : σ π = π) (k : ℕ)
-    (x : Fin r → L) (i : Fin r) :
-    (standardBlockFrobenius σ π s r)^[k] x i =
-      (∏ t ∈ range k, if ((i - t : Fin r) : ℕ) = 0 then π ^ s else 1) *
-        σ^[k] (x (i - k)) := by
+/-- The `k`-th iterate of a cyclic shift with wraparound scalar `c` and coordinate map `φ`
+satisfying `φ (a • m) = σ a • φ m` and `σ c = c`. -/
+theorem cyclicShift_iterate_apply {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {σ : R →+* R} (φ : M → M) (hφ_smul : ∀ (a : R) (m : M), φ (a • m) = σ a • φ m)
+    (c : R) (hφc : σ c = c) {r : ℕ} [NeZero r] (k : ℕ) (x : Fin r → M) (i : Fin r) :
+    (fun (x : Fin r → M) (i : Fin r) ↦
+        (if (i : ℕ) = 0 then c else 1) • φ (x ((finRotate r).symm i)))^[k] x i =
+      (∏ t ∈ range k, if ((i - (t : Fin r) : Fin r) : ℕ) = 0 then c else 1) •
+        φ^[k] (x (i - (k : Fin r))) := by
   induction k generalizing i with
   | zero => simp
   | succ k ih =>
     have hσw (j : Fin r) :
-        σ (if (j : ℕ) = 0 then π ^ s else 1) = if (j : ℕ) = 0 then π ^ s else 1 := by
-      split_ifs <;> simp [hσπ]
+        σ (if (j : ℕ) = 0 then c else 1) = if (j : ℕ) = 0 then c else 1 := by
+      split_ifs <;> simp [hφc]
     have hidx (t : ℕ) : i - 1 - (t : Fin r) = i - ((t + 1 : ℕ) : Fin r) := by
       push_cast
       abel
-    rw [iterate_succ_apply', standardBlockFrobenius_apply, finRotate_symm_apply, ih, map_mul,
-      map_prod, prod_range_succ', ← iterate_succ_apply' σ]
+    rw [iterate_succ_apply', finRotate_symm_apply, ih, hφ_smul, map_prod,
+      prod_range_succ', ← iterate_succ_apply' φ, ← smul_assoc, smul_eq_mul, mul_comm]
     simp only [hσw, hidx, Nat.cast_zero, sub_zero]
-    ring
 
-/-- If `σ` fixes `π`, then the `r`-th power of the Frobenius of `D(s, r)` is `π ^ s • σ ^ r`,
-with `σ ^ r` acting on coordinates. -/
-theorem standardBlockFrobenius_iterate_rank_apply (hσπ : σ π = π) (x : Fin r → L)
-    (i : Fin r) :
-    (standardBlockFrobenius σ π s r)^[r] x i = π ^ s * σ^[r] (x i) := by
+/-- After a full cycle of length `r`, a cyclic shift with wraparound scalar `c` and coordinate map
+`φ` acts as `c • φ^[r]` on each coordinate. -/
+theorem cyclicShift_iterate_rank_apply {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {σ : R →+* R} (φ : M → M)
+    (hφ_smul : ∀ (a : R) (m : M), φ (a • m) = σ a • φ m)
+    (c : R) (hφc : σ c = c) {r : ℕ} (x : Fin r → M) (i : Fin r) :
+    (fun (x : Fin r → M) (i : Fin r) ↦
+        (if (i : ℕ) = 0 then c else 1) • φ (x ((finRotate r).symm i)))^[r] x i =
+      c • φ^[r] (x i) := by
   have := i.neZero
-  rw [standardBlockFrobenius_iterate_apply hσπ, Fin.natCast_self, sub_zero]
-  -- Over a full cycle only the step `t = i` wraps around, so the product of factors is `π ^ s`.
-  rw [prod_eq_single (i : ℕ)]
+  rw [cyclicShift_iterate_apply φ hφ_smul c hφc, Fin.natCast_self, sub_zero,
+    prod_eq_single (i : ℕ)]
   · simp
   · intro t ht hti
     rw [ite_eq_right_iff]
@@ -218,6 +239,14 @@ theorem standardBlockFrobenius_iterate_rank_apply (hσπ : σ π = π) (x : Fin 
     rw [Fin.val_eq_zero_iff, sub_eq_zero] at h
     exact (hti (by rw [h, Fin.val_natCast, Nat.mod_eq_of_lt (mem_range.1 ht)])).elim
   · simp
+
+/-- If `σ` fixes `π`, then the `r`-th power of the Frobenius of `D(s, r)` is `π ^ s • σ ^ r`,
+with `σ ^ r` acting on coordinates. -/
+theorem standardBlockFrobenius_iterate_rank_apply (hσπ : σ π = π) (x : Fin r → L)
+    (i : Fin r) :
+    (standardBlockFrobenius σ π s r)^[r] x i = π ^ s * σ^[r] (x i) :=
+  cyclicShift_iterate_rank_apply (σ := (σ : L →+* L)) (σ : L →+* L)
+    (fun a m ↦ map_mul σ a m) (π ^ s) (by rw [RingHom.coe_coe, map_zpow₀, hσπ]) x i
 
 /-- If `σ` fixes `π`, then the `(r * m)`-th power of the Frobenius of `D(s, r)` is
 `π ^ (s * m) • σ ^ (r * m)`, with `σ ^ (r * m)` acting on coordinates. -/
@@ -277,6 +306,126 @@ theorem eq_zero_of_intertwines_standardBlock {Γ₀ : Type*} [LinearOrderedCommG
   rw [map_mul, map_mul, hvσ, map_zpow₀, map_zpow₀] at hv'
   have hvπ0 : 0 < v π := pos_iff_ne_zero.2 ((map_ne_zero v).2 hπ)
   exact (zpow_right_injective₀ hvπ0 hvπ) (mul_right_cancel₀ ((map_ne_zero v).2 hyi) hv')
+
+/-! ### Simplicity of coprime standard blocks -/
+
+section Simplicity
+
+private noncomputable def basisIterMatrix {L : Type*} [Field L] (σ : L ≃+* L) {d : ℕ}
+    (B : Matrix (Fin d) (Fin d) L) : ℕ → Matrix (Fin d) (Fin d) L
+  | 0 => 1
+  | m + 1 => (basisIterMatrix σ B m).map (σ : L →+* L) * B
+
+private theorem basisIterMatrix_mul_basis {L : Type*} [Field L] (σ : L ≃+* L) (π : L) {s : ℤ}
+    {r d : ℕ} {U : Submodule L (Fin r → L)}
+    (hU : ∀ x ∈ U, standardBlockFrobenius σ π s r x ∈ U) (b : Module.Basis (Fin d) L U) (m : ℕ)
+    (i : Fin d) :
+    let B : Matrix (Fin d) (Fin d) L := Matrix.of fun i k ↦
+      b.repr ⟨standardBlockFrobenius σ π s r (b i).val, hU (b i).val (b i).property⟩ k
+    (standardBlockFrobenius σ π s r)^[m] (b i).val =
+      ∑ k, basisIterMatrix σ B m i k • (b k).val := by
+  intro B
+  have hΦ_b (l : Fin d) :
+      standardBlockFrobenius σ π s r (b l).val = ∑ k, B l k • (b k).val := by
+    have hrep := congrArg Subtype.val
+      (b.sum_repr ⟨standardBlockFrobenius σ π s r (b l).val, hU (b l).val (b l).property⟩)
+    simp only [Submodule.coe_sum, Submodule.coe_smul] at hrep
+    exact hrep.symm
+  induction m generalizing i with
+  | zero => simp [basisIterMatrix, Matrix.one_apply]
+  | succ m ih =>
+    rw [iterate_succ_apply', ih, map_sum]
+    simp only [map_smulₛₗ, RingHom.coe_coe, hΦ_b, smul_sum, smul_smul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    rw [← Finset.sum_smul]
+    simp [basisIterMatrix, Matrix.mul_apply]
+
+private theorem valuation_basisIterMatrix_det {L Γ₀ : Type*} [Field L]
+    [LinearOrderedCommGroupWithZero Γ₀] (σ : L ≃+* L) (v : Valuation L Γ₀)
+    (hv : ∀ x, v (σ x) = v x) {d : ℕ} (B : Matrix (Fin d) (Fin d) L) (m : ℕ) :
+    v (basisIterMatrix σ B m).det = v B.det ^ m := by
+  induction m with
+  | zero => simp [basisIterMatrix]
+  | succ m ih =>
+    rw [basisIterMatrix, Matrix.det_mul, map_mul, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+      RingHom.coe_coe, hv, ih, pow_succ]
+
+private theorem basis_matrix_iterate_det_val {L Γ₀ : Type*} [Field L]
+    [LinearOrderedCommGroupWithZero Γ₀] (σ : L ≃+* L) (π : L) (hσπ : σ π = π)
+    (v : Valuation L Γ₀) (hv : ∀ x, v (σ x) = v x) {s : ℤ} {r d : ℕ}
+    {U : Submodule L (Fin r → L)} (hU : ∀ x ∈ U, standardBlockFrobenius σ π s r x ∈ U)
+    (b : Module.Basis (Fin d) L U) :
+    let B : Matrix (Fin d) (Fin d) L := Matrix.of fun i k ↦
+      b.repr ⟨standardBlockFrobenius σ π s r (b i).val, hU (b i).val (b i).property⟩ k
+    v B.det ^ r = v π ^ (s * (d : ℤ)) := by
+  intro B
+  let M : Matrix (Fin d) (Fin r) L := Matrix.of fun i j ↦ (b i).val j
+  obtain ⟨c, hc⟩ := Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero.1
+    (b.linearIndependent.map' U.subtype (Submodule.ker_subtype U))
+  let M₀ : Matrix (Fin d) (Fin d) L := M.submatrix id c
+  -- Compare `Φ^[r]` via `basisIterMatrix σ B r` against `π ^ s • σ^[r]` on coordinates.
+  have hCrM : basisIterMatrix σ B r * M₀ = π ^ s • M₀.map (σ^[r] : L → L) := by
+    ext i j
+    have h1 : (standardBlockFrobenius σ π s r)^[r] (b i).val (c j) =
+        (basisIterMatrix σ B r * M₀) i j := by
+      rw [basisIterMatrix_mul_basis σ π hU b r i]
+      simp [B, M₀, M, Matrix.mul_apply]
+    have h2 := standardBlockFrobenius_iterate_rank_apply (s := s) hσπ (b i).val (c j)
+    rw [← h1, h2]
+    simp [M₀, M]
+  have hdet_eq := congrArg (fun X ↦ v X.det) hCrM
+  have hv_iter (x : L) : v (σ^[r] x) = v x := congrFun (iterate_invariant (funext hv) r) x
+  have hdet_map : v (M₀.map (σ^[r] : L → L)).det = v M₀.det := by
+    let σr : L ≃+* L := σ ^ r
+    have hσr : (σ^[r] : L → L) = (σr : L →+* L) := by ext x; simp [σr]
+    rw [hσr, ← RingHom.mapMatrix_apply, ← RingHom.map_det, RingHom.coe_coe]
+    simpa [σr] using hv_iter M₀.det
+  rw [Matrix.det_mul, Matrix.det_smul, map_mul, map_mul, valuation_basisIterMatrix_det σ v hv,
+    map_pow, map_zpow₀, hdet_map] at hdet_eq
+  have hmul := mul_right_cancel₀ ((map_ne_zero v).2 hc) hdet_eq
+  simpa [← zpow_natCast, ← zpow_mul] using hmul
+
+/-- **Simplicity of coprime standard blocks.** Let `σ` be an automorphism of a field `L` fixing a
+nonzero element `π` and preserving a valuation `v` with `v π ≠ 1` whose values on `Lˣ` lie in
+`⟨v π⟩`. Then for coprime `s` and `r`, the standard block `D(s, r)` has no proper nontrivial
+`standardBlockFrobenius σ π s r`-stable `L`-subspaces (Kedlaya 2005, §4.5, 4.5.3–4.5.8). -/
+theorem eq_bot_or_eq_top_of_standardBlockFrobenius_stable
+    {L Γ₀ : Type*} [Field L] [LinearOrderedCommGroupWithZero Γ₀]
+    (σ : L ≃+* L) (π : L) (hπ : π ≠ 0) (hσπ : σ π = π)
+    (v : Valuation L Γ₀) (hv : ∀ x, v (σ x) = v x) (hvπ : v π ≠ 1)
+    (hgen : ∀ x : L, x ≠ 0 → ∃ n : ℤ, v x = v π ^ n)
+    {s : ℤ} {r : ℕ} (hcop : s.natAbs.Coprime r)
+    {U : Submodule L (Fin r → L)}
+    (hU : ∀ x ∈ U, standardBlockFrobenius σ π s r x ∈ U) :
+    U = ⊥ ∨ U = ⊤ := by
+  rw [or_iff_not_imp_left]
+  intro hU0
+  set d := Module.finrank L U
+  have hd_pos : 0 < d := Nat.pos_of_ne_zero fun hd ↦ hU0 (Submodule.finrank_eq_zero.1 hd)
+  have hd_le : d ≤ r := by simpa [d] using Submodule.finrank_le U
+  let b : Module.Basis (Fin d) L U := Module.finBasis L U
+  let Φ_U := (standardBlockFrobenius σ π s r).restrict hU
+  have hΦ_U_inj : Injective Φ_U := fun x y hxy ↦ Subtype.ext <|
+    (standardBlockFrobenius_bijective hπ).injective (congrArg Subtype.val hxy)
+  have hΦ_U_surj : Surjective Φ_U := LinearMap.surjective_of_injectiveₛₗ hΦ_U_inj
+  let B : Matrix (Fin d) (Fin d) L := Matrix.of fun i k ↦ b.repr (Φ_U (b i)) k
+  have hB_det : B.det ≠ 0 :=
+    (LinearMap.isUnit_det_basis_matrix_of_surjectiveₛₗ b hΦ_U_surj).ne_zero
+  have hvB_pow : v B.det ^ r = v π ^ (s * (d : ℤ)) :=
+    basis_matrix_iterate_det_val σ π hσπ v hv hU b
+  obtain ⟨k, hk⟩ := hgen B.det hB_det
+  have hk_exp : v π ^ (k * (r : ℤ)) = v π ^ (s * (d : ℤ)) := by
+    rw [zpow_mul, zpow_natCast, ← hk, hvB_pow]
+  have hvπ0 : 0 < v π := pos_iff_ne_zero.2 ((map_ne_zero v).2 hπ)
+  have hkr : k * (r : ℤ) = s * (d : ℤ) := zpow_right_injective₀ hvπ0 hvπ hk_exp
+  have hdvd : r ∣ s.natAbs * d := by
+    have h1 : (r : ℤ) ∣ s * (d : ℤ) := ⟨k, hkr.symm.trans (mul_comm k (r : ℤ))⟩
+    exact Int.ofNat_dvd.1 (by simpa [Int.natAbs_mul] using Int.dvd_natAbs.2 h1)
+  exact Submodule.eq_top_of_finrank_eq <| by
+    simpa [d] using le_antisymm hd_le (Nat.le_of_dvd hd_pos (hcop.symm.dvd_of_dvd_mul_left hdvd))
+
+end Simplicity
 
 /-! ### Comparison with Mathlib's rank-one Witt isocrystals -/
 

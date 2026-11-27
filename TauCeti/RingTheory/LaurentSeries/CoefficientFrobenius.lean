@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Map
+import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
 # Coefficient Frobenius on Laurent series
@@ -91,6 +92,18 @@ theorem order_coefficientFrobenius_symm (f : ℕ) (x : k⸨X⸩) :
 theorem coefficientFrobenius_single (f : ℕ) (j : ℤ) (a : k) :
     coefficientFrobenius p f (single j a) = single j (a ^ p ^ f) := by
   rw [coe_coefficientFrobenius, mapRingHom_single, iterateFrobenius_def]
+
+/-- Coefficient Frobenius fixes the uniformizer `single 1 1`. -/
+theorem coefficientFrobenius_X (f : ℕ) :
+    coefficientFrobenius (k := k) p f (single 1 1) = single 1 1 := by
+  rw [coefficientFrobenius_single, one_pow]
+
+/-- Coefficient Frobenius preserves the Laurent-series valuation over a field. -/
+@[simp]
+theorem valuation_coefficientFrobenius {k : Type*} [Field k] [ExpChar k p] [PerfectRing k p]
+    (f : ℕ) (x : k⸨X⸩) :
+    Valued.v (coefficientFrobenius p f x) = Valued.v x := by
+  rw [coe_coefficientFrobenius, valuation_mapRingHom]
 
 /-- Coefficient Frobenius restricts to coefficientwise Frobenius on power series. -/
 @[simp]

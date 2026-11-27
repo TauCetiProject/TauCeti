@@ -24,7 +24,9 @@ the descending chain of iterated images `(Submodule.map f)^[n] ⊤` stabilizes b
 `Module.finrank K V` (`LinearMap.iterate_map_top_finrank_add_one`,
 `LinearMap.map_iterate_map_top_finrank`), so `f` restricts to a bijection on
 `(Submodule.map f)^[Module.finrank K V] ⊤` (`LinearMap.bijective_restrict_iterate_map_top`). We
-also record that the representation matrix of a surjective semilinear endomorphism in a finite
+Also, any ring endomorphism admitting a surjective semilinear endomorphism on a nontrivial
+finite-dimensional space is itself surjective (`LinearMap.ringHomSurjective_of_surjectiveₛₗ`).
+We also record that the representation matrix of a surjective semilinear endomorphism in a finite
 basis has unit determinant (`LinearMap.isUnit_det_basis_matrix_of_surjectiveₛₗ`), and that
 solvability of scalar difference polynomials transfers to surjectivity of `Φ - 1`
 (`LinearMap.surjective_sub_id_of_surjective_sum_mul_iterate`).
@@ -34,6 +36,15 @@ public section
 
 namespace LinearMap
 
+/-- Evaluating a `σ`-semilinear map at `u` expands in a finite basis `b` as
+`∑ i, σ (b.repr u i) • f (b i)`. -/
+theorem map_eq_sum_repr_smulₛₗ {ι K K' V W : Type*} [Semiring K] [Semiring K']
+    [AddCommMonoid V] [Module K V] [AddCommMonoid W] [Module K' W] [Fintype ι]
+    {σ : K →+* K'} (b : Module.Basis ι K V) (f : V →ₛₗ[σ] W) (u : V) :
+    f u = ∑ i, σ (b.repr u i) • f (b i) := by
+  conv_lhs => rw [← b.sum_repr u, map_sum]
+  simp [map_smulₛₗ]
+
 section SurjectiveInjective
 
 variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -41,18 +52,18 @@ variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [FiniteDim
 
 /-- On a nontrivial finite-dimensional vector space over a division ring, any ring endomorphism `σ`
 admitting a surjective `σ`-semilinear endomorphism `f` is itself surjective. -/
-private theorem ringHomSurjective_of_surjectiveₛₗ [Nontrivial V] {f : V →ₛₗ[σ] V}
+theorem ringHomSurjective_of_surjectiveₛₗ [Nontrivial V] {f : V →ₛₗ[σ] V}
     (hf : Function.Surjective f) : RingHomSurjective σ := by
   refine ⟨fun c ↦ ?_⟩; by_contra hc
+  -- Pick preimages of `b i` and `c • b i` under `f`, and record their `σ`-semilinear expansions.
   let b := Module.finBasis K V; set d := Module.finrank K V
   have hd : 0 < d := Module.finrank_pos
   have hspan (v : V) : ∃ a : Fin d → K, ∑ j, σ (a j) • f (b j) = v := by
     obtain ⟨u, rfl⟩ := hf v
-    refine ⟨b.repr u, ?_⟩
-    conv_rhs => rw [← b.sum_repr u, map_sum]
-    simp [map_smulₛₗ]
+    exact ⟨b.repr u, (map_eq_sum_repr_smulₛₗ b f u).symm⟩
   choose A hA using fun i : Fin d ↦ hspan (b i)
   choose B hB using fun i : Fin d ↦ hspan (c • b i)
+  -- The `2 * d` coefficient rows in `K^d` are linearly dependent over `K`.
   let u : Fin d × Bool → (Fin d → K) := fun p ↦ if p.2 then B p.1 else A p.1
   have hnot : ¬ LinearIndependent K u := fun hli ↦ by
     have hcard := hli.fintype_card_le_finrank
@@ -61,6 +72,7 @@ private theorem ringHomSurjective_of_surjectiveₛₗ [Nontrivial V] {f : V →�
     omega
   rw [Fintype.not_linearIndependent_iff] at hnot
   obtain ⟨g, hg0, ⟨p₀, hp₀⟩⟩ := hnot
+  -- Push that linear dependence through `σ` to obtain a vanishing combination of `b i`.
   have hsum_j (j : Fin d) :
       ∑ i, (σ (g (i, false)) * σ (A i j) + σ (g (i, true)) * σ (B i j)) = 0 := by
     have hgj := congrFun hg0 j
@@ -78,6 +90,7 @@ private theorem ringHomSurjective_of_surjectiveₛₗ [Nontrivial V] {f : V →�
           rw [Finset.sum_comm]
           conv_lhs => arg 2; rw [Finset.sum_comm]
       _ = 0 := by simp [hsum_j]
+  -- At a nonzero coordinate `p₀`, linear independence of `b` yields a `σ`-preimage of `c`.
   rcases p₀ with ⟨i₀, b₀⟩
   have hcoeff := Fintype.linearIndependent_iff.1 b.linearIndependent _ hcomb i₀
   by_cases hy : g (i₀, true) = 0
@@ -151,10 +164,7 @@ theorem isUnit_det_basis_matrix_of_surjectiveₛₗ {ι K V : Type*} [CommRing K
   have hAB : A * B = 1 := by
     ext j k
     have hrep := congrArg (fun x ↦ b.repr x k) (hu j)
-    have hmap : f (u j) = ∑ i, σ (b.repr (u j) i) • f (b i) := by
-      conv_lhs => rw [← b.sum_repr (u j), map_sum]
-      simp [map_smulₛₗ]
-    rw [hmap, map_sum] at hrep
+    rw [map_eq_sum_repr_smulₛₗ b f (u j), map_sum] at hrep
     simp only [map_smul, Module.Basis.repr_self, Finsupp.single_apply] at hrep
     simpa [A, B, Matrix.mul_apply, Matrix.one_apply, eq_comm] using hrep.symm
   exact isUnit_iff_exists_inv'.2 ⟨A.det, by rw [← Matrix.det_mul, hAB, Matrix.det_one]⟩

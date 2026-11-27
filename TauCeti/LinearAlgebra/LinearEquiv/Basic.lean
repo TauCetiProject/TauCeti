@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -18,7 +19,9 @@ import TauCeti.LinearAlgebra.Span.Basic
 
 Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure, and commutes with
-restriction of scalars.
+restriction of scalars. Integer powers of linear automorphisms agree with integer powers of the
+underlying permutations, so semiconjugacy of linear automorphisms is preserved by integer powers
+(`Function.Semiconj.linearEquiv_zpow_right`).
 Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
 family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
 A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
@@ -40,6 +43,14 @@ namespace LinearEquiv
 /-- Symmetry of a linear automorphism is its group inverse. -/
 theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
+
+/-- The underlying function of an integer power of a linear automorphism is the underlying function
+of the corresponding power of its underlying equivalence. -/
+theorem coe_zpow {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (e : M ≃ₗ[R] M) (n : ℤ) : ⇑(e ^ n) = ⇑(e.toEquiv ^ n) :=
+  congrArg DFunLike.coe
+    (map_zpow (MonoidHom.mk' (LinearEquiv.toEquiv : (M ≃ₗ[R] M) → Equiv.Perm M) fun _ _ ↦ rfl)
+      e n)
 
 /-- The inverse of a linear equivalence with restricted scalars is the inverse with restricted
 scalars. -/
@@ -125,6 +136,19 @@ theorem conjAlgEquiv_toAlgHom_comp_eq_iff {R S A M₁ M₂ : Type*}
     simp [LinearEquiv.conjAlgEquiv_apply, h]
 
 end LinearEquiv
+
+namespace Function.Semiconj
+
+/-- A map intertwining two linear automorphisms also intertwines all of their integer powers. -/
+theorem linearEquiv_zpow_right {R S A B : Type*} [Semiring R] [Semiring S]
+    [AddCommMonoid A] [Module R A] [AddCommMonoid B] [Module S B]
+    {e₁ : A ≃ₗ[R] A} {e₂ : B ≃ₗ[S] B} {u : A → B}
+    (h : Function.Semiconj u e₁ e₂) (n : ℤ) :
+    Function.Semiconj u ⇑(e₁ ^ n) ⇑(e₂ ^ n) := by
+  rw [LinearEquiv.coe_zpow, LinearEquiv.coe_zpow]
+  exact h.perm_zpow_right n
+
+end Function.Semiconj
 
 namespace Submodule
 
