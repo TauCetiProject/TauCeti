@@ -33,6 +33,7 @@ in this sense are the tables on which the billiard ball map of a convex billiard
 ## Main definitions
 
 * `TauCeti.ConvexTable k ℓ`: convex billiard tables of class `C^k` and perimeter `ℓ`.
+* `TauCeti.ConvexTable.tangent`: the unit tangent `τ` of a table, as a point of `Circle`.
 * `TauCeti.ConvexTable.curvature`: the signed curvature `τ × τ'` of a table.
 * `TauCeti.ConvexTable.circleParam`: the parametrisation of the boundary by `AddCircle ℓ`.
 * `TauCeti.ConvexTable.shift`, `TauCeti.ConvexTable.rigidMotion`, `TauCeti.ConvexTable.ofLE`:
@@ -61,6 +62,10 @@ in this sense are the tables on which the billiard ball map of a convex billiard
   no point of a table lies strictly between two others, so its image contains no segment.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
+* `TauCeti.ConvexTable.toStrictConvexBilliardTable_circle_eq_circleBilliardTable`: the convex
+  table `circle R`, regarded as a strictly convex billiard table, is the circular table
+  `Complex.orientation.circleBilliardTable 0 1 R` of `TauCeti.Dynamics.Billiard.Circle.Basic`
+  (via `TauCeti.StrictConvexBilliardTable.circle_eq_circleBilliardTable`).
 
 ## References
 
@@ -154,6 +159,20 @@ theorem continuous_deriv : Continuous (deriv T) :=
 
 /-- The unit tangent of a table is `ℓ`-periodic. -/
 theorem periodic_deriv : Periodic (deriv T) ℓ := T.periodic.deriv
+
+/-- The unit tangent `τ(s)` of a table, as a point of the unit circle. -/
+def tangent (s : ℝ) : Circle :=
+  ⟨deriv T s, mem_sphere_zero_iff_norm.2 (T.norm_deriv s)⟩
+
+@[simp]
+theorem coe_tangent (s : ℝ) : (T.tangent s : ℂ) = deriv T s :=
+  (rfl)
+
+theorem continuous_tangent : Continuous T.tangent :=
+  T.continuous_deriv.subtype_mk _
+
+theorem periodic_tangent : Periodic T.tangent ℓ := fun s =>
+  Circle.ext (by simp [T.periodic_deriv s])
 
 /-- Every point `γ t` with `t ≢ s` modulo `ℓ` lies strictly to the left of the tangent line at
 `γ s`. -/
@@ -273,6 +292,26 @@ theorem curvature_shift (c s : ℝ) : (T.shift c).curvature s = T.curvature (s +
   have h : deriv (T.shift c) = fun s => deriv T (s + c) := funext (T.deriv_shift c)
   rw [curvature_def, curvature_def, h, deriv_comp_add_const]
 
+/-- Shifting by `0` does nothing. -/
+@[simp]
+theorem shift_zero : T.shift 0 = T :=
+  ext fun s => by rw [shift_apply, add_zero]
+
+/-- Shifting twice is shifting by the sum. -/
+@[simp]
+theorem shift_shift (c d : ℝ) : (T.shift c).shift d = T.shift (c + d) :=
+  ext fun s => by rw [shift_apply, shift_apply, shift_apply, add_assoc, add_comm d c]
+
+/-- Shifting by the perimeter does nothing. -/
+@[simp]
+theorem shift_period : T.shift ℓ = T :=
+  ext fun s => by rw [shift_apply, apply_add_period]
+
+/-- Shifts differing by the perimeter agree. -/
+@[simp]
+theorem shift_add_period (c : ℝ) : T.shift (c + ℓ) = T.shift c :=
+  ext fun s => by rw [shift_apply, shift_apply, ← add_assoc, apply_add_period]
+
 /-- The image `s ↦ a * γ s + b` of a table under the rotation by the unit complex number `a`
 followed by the translation by `b`. -/
 def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
@@ -305,6 +344,23 @@ theorem curvature_rigidMotion (a : Circle) (b : ℂ) (s : ℝ) :
     funext (T.deriv_rigidMotion a b)
   rw [curvature_def, curvature_def, h, deriv_const_mul_field', Circle.conj_coe_mul_mul_coe_mul]
 
+/-- The identity motion does nothing. -/
+@[simp]
+theorem rigidMotion_one_zero : T.rigidMotion 1 0 = T :=
+  ext fun s => by simp
+
+/-- Moving twice is moving by the composite motion. -/
+@[simp]
+theorem rigidMotion_rigidMotion (a a' : Circle) (b b' : ℂ) :
+    (T.rigidMotion a b).rigidMotion a' b' = T.rigidMotion (a' * a) (a' * b + b') :=
+  ext fun s => by simp only [rigidMotion_apply, Circle.coe_mul]; ring
+
+/-- Shifting the parameter commutes with moving the table. -/
+@[simp]
+theorem rigidMotion_shift (a : Circle) (b : ℂ) (c : ℝ) :
+    (T.shift c).rigidMotion a b = (T.rigidMotion a b).shift c :=
+  ext fun s => by simp only [rigidMotion_apply, shift_apply]
+
 /-- A table of class `C^k` regarded as a table of class `C^j` for `1 ≤ j ≤ k`. -/
 def ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
   toFun := T
@@ -316,6 +372,29 @@ def ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
 
 @[simp]
 theorem coe_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ⇑(T.ofLE hj hjk) = T := (rfl)
+
+/-- Regarding a table at its own regularity does nothing. -/
+@[simp]
+theorem ofLE_self (hk : 1 ≤ k) (hkk : k ≤ k) : T.ofLE hk hkk = T :=
+  ext fun s => by rw [coe_ofLE]
+
+/-- Lowering the regularity twice is lowering it once. -/
+@[simp]
+theorem ofLE_ofLE {i : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (hi : 1 ≤ i) (hij : i ≤ j) :
+    (T.ofLE hj hjk).ofLE hi hij = T.ofLE hi (hij.trans hjk) :=
+  ext fun s => by simp only [coe_ofLE]
+
+/-- Lowering the regularity commutes with shifting the parameter. -/
+@[simp]
+theorem shift_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) (c : ℝ) :
+    (T.ofLE hj hjk).shift c = (T.shift c).ofLE hj hjk :=
+  ext fun s => by simp only [shift_apply, coe_ofLE]
+
+/-- Lowering the regularity commutes with moving the table. -/
+@[simp]
+theorem rigidMotion_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) (a : Circle) (b : ℂ) :
+    (T.ofLE hj hjk).rigidMotion a b = (T.rigidMotion a b).ofLE hj hjk :=
+  ext fun s => by simp only [rigidMotion_apply, coe_ofLE]
 
 /-- Lowering the regularity of a table does not change its curvature. -/
 @[simp]
@@ -428,6 +507,14 @@ theorem coe_toStrictConvexBilliardTable : ⇑T.toStrictConvexBilliardTable = T :
 @[simp]
 theorem toStrictConvexBilliardTable_period : T.toStrictConvexBilliardTable.period = ℓ := (rfl)
 
+/-- Lowering the regularity does not change the underlying strictly convex billiard table. -/
+@[simp]
+theorem toStrictConvexBilliardTable_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) :
+    (T.ofLE hj hjk).toStrictConvexBilliardTable = T.toStrictConvexBilliardTable := by
+  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
+  · rw [coe_toStrictConvexBilliardTable, coe_toStrictConvexBilliardTable, coe_ofLE]
+  · rw [toStrictConvexBilliardTable_period, toStrictConvexBilliardTable_period]
+
 /-- **Injectivity modulo the period.** Two parameters give the same point of a table exactly when
 they agree modulo `ℓ`. -/
 theorem apply_eq_apply_iff {s t : ℝ} : T s = T t ↔ (s : AddCircle ℓ) = t :=
@@ -473,6 +560,12 @@ contains two segments, is not the image of a table. -/
 theorem not_segment_subset_range {p q : ℂ} (hpq : p ≠ q) : ¬segment ℝ p q ⊆ range T :=
   T.toStrictConvexBilliardTable.not_segment_subset_range hpq
 
+end ConvexTable
+
+namespace ConvexTable
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
 /-- The convex table `circle R` is the circle billiard table
 `TauCeti.StrictConvexBilliardTable.circle`. -/
 @[simp]
@@ -483,6 +576,18 @@ theorem toStrictConvexBilliardTable_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)
   refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
   · exact (circle_apply R s).trans (StrictConvexBilliardTable.circle_apply s).symm
   · exact StrictConvexBilliardTable.period_circle.symm
+
+/-- As a strictly convex billiard table, the circle of radius `R` is also the circular table
+`Complex.orientation.circleBilliardTable 0 1 R` of center `0` starting at `R`, so the
+next-collision and quotient billiard formulas of `TauCeti.Dynamics.Billiard.Circle.Basic`, stated
+in every oriented Euclidean plane, apply to it. -/
+theorem toStrictConvexBilliardTable_circle_eq_circleBilliardTable (R : ℝ)
+    [Fact (0 < 2 * Real.pi * R)] :
+    (circle R).toStrictConvexBilliardTable =
+      Complex.orientation.circleBilliardTable 0 1 R (by simp)
+        (Real.pos_of_fact_two_pi_mul_pos (R := R)) :=
+  (toStrictConvexBilliardTable_circle R).trans
+    StrictConvexBilliardTable.circle_eq_circleBilliardTable
 
 end ConvexTable
 

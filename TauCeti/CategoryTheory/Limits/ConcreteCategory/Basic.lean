@@ -8,7 +8,11 @@ module
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 
 /-!
-# Filtered colimits in concrete categories
+# Limits and filtered colimits in concrete categories
+
+The `j`-th coordinate of the image of an element under the map `IsLimit.map c hd α` between limit
+cones in a concrete category is the image under `α j` of its `j`-th coordinate
+(`CategoryTheory.Limits.IsLimit.map_π_apply`).
 
 Every element of the point of a colimit cocone of a filtered diagram in a concrete category comes
 from some stage (Mathlib's `CategoryTheory.Limits.Concrete.isColimit_exists_rep`). Finitely many
@@ -17,6 +21,8 @@ category.
 
 ## Main results
 
+* `CategoryTheory.Limits.IsLimit.map_π_apply`: the elementwise form of
+  `CategoryTheory.Limits.IsLimit.map_π`.
 * `CategoryTheory.Limits.Concrete.isColimit_exists_rep_fin`: finitely many elements of the point
   of a colimit cocone of a filtered diagram come from a common stage.
 -/
@@ -24,6 +30,22 @@ category.
 public section
 
 open CategoryTheory
+
+namespace CategoryTheory.Limits.IsLimit
+
+/-- The `j`-th coordinate of the image of an element `x` under the map `hd.map c α` between limit
+cones in a concrete category is the image under `α j` of the `j`-th coordinate of `x`. -/
+@[simp]
+theorem map_π_apply {C : Type*} [Category C]
+    {FC : C → C → Type*} {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
+    [ConcreteCategory C FC] {J : Type*} [Category J] {F G : J ⥤ C} (c : Cone F) {d : Cone G}
+    (hd : IsLimit d) (α : F ⟶ G) (j : J) (x : ToType c.pt) :
+    -- The source of `d.π.app j` is given as `d.pt`, as `elementwise` does, so that the left-hand
+    -- side is in simp normal form; `simp` still rewrites the usual `d.π.app j (hd.map c α x)`.
+    ConcreteCategory.hom (X := d.pt) (d.π.app j) (hd.map c α x) = α.app j (c.π.app j x) := by
+  rw [← ConcreteCategory.comp_apply, IsLimit.map_π, ConcreteCategory.comp_apply]
+
+end CategoryTheory.Limits.IsLimit
 
 namespace CategoryTheory.Limits.Concrete
 

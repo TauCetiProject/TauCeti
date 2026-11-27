@@ -390,6 +390,25 @@ section Measurable
 
 variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
+/-- The diagonal coupling `graphPlan id μ` has zero displacement, as soon as the ground extended
+distance is almost everywhere measurable under it. -/
+theorem eLpNorm_edist_graphPlan_id_eq_zero {μ : Measure X}
+    (hd : AEMeasurable (fun z : X × X ↦ edist z.1 z.2) (graphPlan id μ)) (p : ℝ≥0∞) :
+    eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (graphPlan id μ) = 0 := by
+  rw [graphPlan_def] at hd ⊢
+  rw [eLpNorm_map_measure hd.aestronglyMeasurable (by fun_prop)]
+  exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ by simp)
+
+/-- The Wasserstein distance from a measure to itself vanishes as soon as the ground extended
+distance is almost everywhere measurable under the diagonal coupling `graphPlan id μ`. Both
+`TauCeti.wassersteinEDist_self` and `TauCeti.wassersteinEDist_self_of_measurable_edist` are special
+cases. -/
+theorem wassersteinEDist_self_of_aemeasurable_edist {μ : Measure X}
+    (hd : AEMeasurable (fun z : X × X ↦ edist z.1 z.2) (graphPlan id μ)) (p : ℝ≥0∞) :
+    wassersteinEDist p μ μ = 0 :=
+  nonpos_iff_eq_zero.mp <| (wassersteinEDist_le (isCoupling_graphPlan_id μ) p).trans_eq
+    (eLpNorm_edist_graphPlan_id_eq_zero hd p)
+
 /-- The Wasserstein distance from a measure to itself vanishes: the diagonal coupling has zero
 displacement almost everywhere.
 
@@ -399,8 +418,8 @@ an instance rather than a side condition, which is what makes this usable as a `
 @[simp]
 theorem wassersteinEDist_self [MeasurableEq X] (p : ℝ≥0∞) (μ : Measure X) :
     wassersteinEDist p μ μ = 0 := by
-  refine le_antisymm ((wassersteinEDist_le (isCoupling_graphPlan_id μ) p).trans_eq ?_) (zero_le ..)
-  refine eLpNorm_eq_zero_of_ae_zero ?_
+  refine wassersteinEDist_self_of_aemeasurable_edist
+    ((aemeasurable_const (b := (0 : ℝ≥0∞))).congr ?_) p
   filter_upwards [ae_snd_eq_graphPlan (T := (id : X → X)) (μ := μ) aemeasurable_id] with z hz
   simp [hz]
 
@@ -409,16 +428,8 @@ measurable. Unlike `TauCeti.wassersteinEDist_self`, this form does not require a
 diagonal, which need not exist on a non-separated pseudometric Borel space. -/
 theorem wassersteinEDist_self_of_measurable_edist
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (p : ℝ≥0∞) (μ : Measure X) :
-    wassersteinEDist p μ μ = 0 := by
-  apply nonpos_iff_eq_zero.mp
-  refine (wassersteinEDist_le (isCoupling_graphPlan_id μ) p).trans_eq ?_
-  have hgraph : AEMeasurable (fun x : X ↦ (x, id x)) μ := by fun_prop
-  calc
-    eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (graphPlan id μ) =
-        eLpNorm ((fun z : X × X ↦ edist z.1 z.2) ∘ fun x : X ↦ (x, id x)) p μ := by
-      rw [graphPlan_def]
-      exact eLpNorm_map_measure hd.aestronglyMeasurable hgraph
-    _ = 0 := eLpNorm_eq_zero_of_ae_zero (.of_forall fun z ↦ by simp)
+    wassersteinEDist p μ μ = 0 :=
+  wassersteinEDist_self_of_aemeasurable_edist hd.aemeasurable p
 
 /-- **Symmetry.** Exchanging the two measures does not change their Wasserstein distance. -/
 theorem wassersteinEDist_comm (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (p : ℝ≥0∞)
@@ -854,13 +865,8 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         HasFiniteMoment p ν ↔ wassersteinEDist p μ₀ ν ≠ ∞ :=
   ⟨fun hμ₀ _ _ ↦ hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ₀,
     fun h ↦ (h μ₀).mpr (by
-      apply ne_top_of_le_ne_top ENNReal.zero_ne_top
-      refine (wassersteinEDist_le (isCoupling_graphPlan_id μ₀) p).trans_eq ?_
-      rw [graphPlan_def]
-      simp only [id_eq]
-      rw [eLpNorm_map_measure (f := fun x : X ↦ (x, x)) hd.aestronglyMeasurable
-        (measurable_id.prodMk measurable_id).aemeasurable]
-      exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
+      rw [wassersteinEDist_self_of_measurable_edist hd p μ₀]
+      exact ENNReal.zero_ne_top)⟩
 
 /-- A measure of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
 finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment

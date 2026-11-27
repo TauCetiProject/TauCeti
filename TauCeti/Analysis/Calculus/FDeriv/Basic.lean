@@ -38,6 +38,8 @@ differentiable at that point.
   derivative there as well.
 * `LipschitzWith.eNorm_fderiv_le`: a `C`-Lipschitz function has derivative of extended norm at
   most `C`, restating Mathlib's `norm_fderiv_le_of_lipschitz` for the extended norm.
+* `TauCeti.norm_fderiv_le_of_forall_norm_sub_le`: a bound `‖f (x + h) - f x‖ ≤ ‖h‖ K` for all
+  small `h` bounds the derivative of `f` at `x` by `K`.
 -/
 
 public section
@@ -120,6 +122,17 @@ theorem not_differentiableAt_of_add_sub_two_mul_ge {V : Type*} [SeminormedAddCom
   filter_upwards [Ioo_mem_nhdsGT hδ] with t ht
   simp only [Pi.add_apply, zero_add, zero_smul, add_zero, sub_zero, smul_eq_mul]
   rw [le_inv_mul_iff₀ ht.1, mul_comm]; linarith [h t ht]
+
+/-- A bound `‖f (x + h) - f x‖ ≤ ‖h‖ K` for all `‖h‖ ≤ δ`, with `δ > 0`, bounds the derivative of
+`f` at `x` by `K`. -/
+theorem norm_fderiv_le_of_forall_norm_sub_le {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E → G} {δ K : ℝ} (hδ : 0 < δ) (hK : 0 ≤ K)
+    (hf : ∀ h : E, ‖h‖ ≤ δ → ‖f (x + h) - f x‖ ≤ ‖h‖ * K) : ‖fderiv 𝕜 f x‖ ≤ K := by
+  refine norm_fderiv_le_of_lip' 𝕜 hK ?_
+  filter_upwards [Metric.ball_mem_nhds x hδ] with z hz
+  have := hf (z - x) (by rw [← dist_eq_norm]; exact (Metric.mem_ball.mp hz).le)
+  rw [add_sub_cancel] at this
+  linarith
 
 end TauCeti
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.InnerProductSpace.Transvection
 import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -38,6 +39,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
   volume one.
+* `TauCeti.volume_setOf_apply_mem_eq_zero`: in `EuclideanSpace ℝ ι`, the points whose `i`-th
+  coordinate lies in a null set of `ℝ` form a null set.
 * `TauCeti.volume_ball_eq_of_finrank_eq`, `TauCeti.volume_closedBall_eq_of_finrank_eq`: in
   finite-dimensional real inner product spaces of the same dimension, open (respectively closed)
   balls of the same radius have equal volume.
@@ -46,6 +49,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `Module.Basis.ofReal_sqrt_det_gram_mul_addHaar_preimage_ball`: the Gram density times the
   measure of a linear preimage of a ball is its Euclidean volume.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
+* `TauCeti.measurePreserving_transvectionL`: a transvection `x ↦ x + ⟪ν, x⟫ s` with
+  `⟪ν, s⟫ = 0` preserves every additive Haar measure.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
 * `AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage`: an affine-isometric preimage of
@@ -122,6 +127,23 @@ theorem volume_parallelepiped (v : ι → E) (hv : Fintype.card ι = finrank ℝ
     simpa [hfo] using f.normDet_sq_eq_det_gram o
   rw [← hf, ← image_parallelepiped, Measure.addHaar_image_linearMap, o.volume_parallelepiped,
     mul_one, ← f.normDet_eq_abs_det, hf, ← hsq, Real.sqrt_sq f.normDet_nonneg]
+
+open scoped RealInnerProductSpace in
+/-- For `⟪ν, s⟫ = 0`, the transvection `x ↦ x + ⟪ν, x⟫ s` has determinant one, so it preserves
+every additive Haar measure. -/
+theorem measurePreserving_transvectionL (μ : Measure E) [μ.IsAddHaarMeasure] {ν s : E}
+    (h : ⟪ν, s⟫ = 0) : MeasurePreserving (transvectionL ν s) μ μ := by
+  simpa using ContinuousAffineMap.measurePreserving_of_abs_det_eq_one μ
+    (transvectionL ν s).toContinuousAffineMap (by simp [h])
+
+omit [DecidableEq ι] in
+/-- In `EuclideanSpace ℝ ι`, the set of points whose `i`-th coordinate lies in a null set of `ℝ`
+is null. -/
+theorem volume_setOf_apply_mem_eq_zero {s : Set ℝ} (hs : volume s = 0) (i : ι) :
+    volume {x : EuclideanSpace ℝ ι | x i ∈ s} = 0 := by
+  have hpi := Measure.pi_eval_preimage_null (μ := fun _ : ι ↦ (volume : Measure ℝ)) (i := i) hs
+  rw [← volume_pi] at hpi
+  exact (PiLp.volume_preserving_ofLp ι).quasiMeasurePreserving.preimage_null hpi
 
 end TauCeti
 

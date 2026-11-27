@@ -68,7 +68,10 @@ is the order-`k` form of `TauCeti.ParabolicC2HolderSpace.initialDataL`.
   `euclideanZerothOrderCoeff`: the coefficient fields on `ℝⁿ` assembled from scalar coefficients,
   the order-`k` forms of `TauCeti.ParabolicC2HolderSpace.euclideanSecondOrderCoeff`,
   `euclideanFirstOrderCoeff` and `euclideanZerothOrderCoeff`, with which they agree at order zero
-  (`TauCeti.ParabolicCkHolderSpace.equivHolderSpace_euclideanParabolicOperatorL`).
+  (`TauCeti.ParabolicCkHolderSpace.equivHolderSpace_euclideanParabolicOperatorL`), bounded by the
+  norms of the scalar coefficients
+  (`TauCeti.ParabolicCkHolderSpace.norm_euclideanSecondOrderCoeff_le` and its first- and
+  zeroth-order analogues) and linear in them.
 
 ## References
 
@@ -570,6 +573,75 @@ theorem euclideanZerothOrderCoeff_apply
     (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (y : ℝ) :
     euclideanZerothOrderCoeff c p y = c p * y := by
   simp [euclideanZerothOrderCoeff]
+
+/-- The second-order coefficient field is bounded by the sum of the norms of its scalar
+coefficients: `‖H ↦ aⁱʲ H(eᵢ, eⱼ)‖ ≤ ∑ᵢⱼ ‖aⁱʲ‖`. This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.norm_euclideanSecondOrderCoeff_le`. -/
+theorem norm_euclideanSecondOrderCoeff_le
+    (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    ‖euclideanSecondOrderCoeff a‖ ≤ ∑ i, ∑ j, ‖a i j‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun j _ ↦ ?_))
+  -- Evaluation of a Hessian at a pair of basis vectors has norm at most one.
+  have he : ‖(ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
+      simpa using H.abs_apply_single_single_le i j
+  refine ((compLeftL _).le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  exact (norm_compLeftL_le _).trans ((ContinuousLinearMap.norm_toSpanSingleton _).trans_le he)
+
+/-- The first-order coefficient field is bounded by the sum of the norms of its scalar
+coefficients: `‖v ↦ bⁱ v(eᵢ)‖ ≤ ∑ᵢ ‖bⁱ‖`. This is the order-`k` form of
+`TauCeti.ParabolicC2HolderSpace.norm_euclideanFirstOrderCoeff_le`. -/
+theorem norm_euclideanFirstOrderCoeff_le
+    (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ ∑ i, ‖b i‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  -- Evaluation of a covector at a basis vector has norm at most one.
+  have he : ‖(ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ)) :
+      (EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ)‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+      simpa using v.abs_apply_single_le i
+  refine ((compLeftL _).le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  exact (norm_compLeftL_le _).trans ((ContinuousLinearMap.norm_toSpanSingleton _).trans_le he)
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field `y ↦ c y` is bounded by the norm of `c`. This is the
+order-`k` form of `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le`. -/
+theorem norm_euclideanZerothOrderCoeff_le
+    (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ :=
+  ((compLeftL _).le_opNorm _).trans (mul_le_of_le_one_left (norm_nonneg _)
+    ((norm_compLeftL_le _).trans ((ContinuousLinearMap.norm_toSpanSingleton _).trans_le
+      ContinuousLinearMap.norm_id_le)))
+
+/-- The second-order coefficient field is linear in the scalar coefficients. -/
+@[simp]
+theorem euclideanSecondOrderCoeff_sub
+    (a a' : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanSecondOrderCoeff (a - a') =
+      euclideanSecondOrderCoeff a - euclideanSecondOrderCoeff a' :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by
+    simp [sub_mul, Finset.sum_sub_distrib]
+
+/-- The first-order coefficient field is linear in the scalar coefficients. -/
+@[simp]
+theorem euclideanFirstOrderCoeff_sub
+    (b b' : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanFirstOrderCoeff (b - b') = euclideanFirstOrderCoeff b - euclideanFirstOrderCoeff b' :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by
+    simp [sub_mul, Finset.sum_sub_distrib]
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field is linear in the scalar coefficient. -/
+@[simp]
+theorem euclideanZerothOrderCoeff_sub
+    (c c' : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanZerothOrderCoeff (c - c') =
+      euclideanZerothOrderCoeff c - euclideanZerothOrderCoeff c' :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by
+    simp [sub_mul]
 
 /-- Reading the second-order coefficient field at a lower order reads its scalar coefficients at
 that order. -/

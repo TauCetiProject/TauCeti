@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Contact.Gray
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
-import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Interpolating contact forms which agree along a set
@@ -23,11 +22,10 @@ exterior derivative agrees with `dα₀ x` on `ker α₀ x`, so it is contact at
 agree only on pairs with one vector in a subspace `W ⊆ ker α₀ x` containing its own
 `dα₀ x`-orthogonal in `ker α₀ x`, such as the tangent space of a Legendrian submanifold
 (`TauCeti.SmoothForm.isContactFormAt_add_smul_sub_of_mextDeriv_eq_on`). The contact condition is
-open, and `[0, 1]` is compact, so the whole interpolation is contact on an open neighbourhood of `K`
-(`TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub`). Openness is read off the
-contact flat map `v ↦ ι_v dα + α(v) α`: its invertibility is an open condition, and in odd
-dimension it is equivalent to contactness
-(`TauCeti.SmoothForm.isContactFormAt_iff_isInvertible_contactFlat`). No compactness of `K` is
+open in the parameter and the point
+(`TauCeti.SmoothForm.isOpen_setOf_isContactFormAt_mpullback_prodMk`), and `[0, 1]` is compact, so
+the whole interpolation is contact on an open neighbourhood of `K`
+(`TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub`). No compactness of `K` is
 needed, since only the parameter interval is compact.
 
 On this neighbourhood the interpolation, reparametrized by a smooth step function, is a smooth
@@ -68,7 +66,7 @@ public section
 
 noncomputable section
 
-open Bundle Set Module
+open Set
 open scoped Manifold Topology ContDiff
 
 namespace TauCeti.SmoothForm
@@ -76,22 +74,6 @@ namespace TauCeti.SmoothForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {α₀ α₁ : SmoothForm I M ℝ 1}
-
-/-! ### Contact flat maps along the segment -/
-
-/-- The contact flat maps of the interpolations `α₀ + s (α₁ - α₀)` form a smooth section along the
-projection `ℝ × M → M`. -/
-private theorem contMDiff_contactFlat_add_smul_sub (α₀ α₁ : SmoothForm I M ℝ 1) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
-        ((α₀ + p.1 • (α₁ - α₀)).contactFlat p.2)) := by
-  intro p
-  have hα := contMDiff_mpullback_prodMk (lineMapFamily α₀ α₁ contDiff_id) p
-  have hdα := contMDiff_mextDeriv_mpullback_prodMk (lineMapFamily α₀ α₁ contDiff_id) p
-  simp only [mpullback_prodMk_lineMapFamily, id] at hα hdα
-  exact contMDiffAt_sectionAlong_contactFlat (b := Prod.snd)
-    (α := fun p : ℝ × M ↦ α₀ + p.1 • (α₁ - α₀)) hα hdα
 
 /-! ### The interpolation is contact near the set of agreement -/
 
@@ -149,26 +131,16 @@ theorem exists_isOpen_forall_isContactFormAt_add_smul_sub_of_isContactFormAt {K 
     (hcK : ∀ x ∈ K, ∀ s ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + s • (α₁ - α₀)).val x) :
     ∃ N, IsOpen N ∧ K ⊆ N ∧ ∀ x ∈ N, ∀ s ∈ Icc (0 : ℝ) 1,
       IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
-  · exact ⟨∅, isOpen_empty, empty_subset _, by simp⟩
-  -- A contact point makes the model space odd-dimensional.
-  have hodd : Odd (finrank ℝ E) :=
-    (isContactFormAt_iff_isContact.1 (hcK x₀ hx₀ 0 ⟨le_rfl, zero_le_one⟩)).odd_finrank
-      (isAlt_bilinFormAt _ x₀)
-  -- The contact flat maps of the interpolations are invertible on an open set `O ⊆ ℝ × M`.
-  set O := {p : ℝ × M | ((α₀ + p.1 • (α₁ - α₀)).contactFlat p.2).IsInvertible}
-  -- The bundles and the base map are given explicitly: unification would otherwise read the
-  -- section along the identity of `M`.
-  have hO : IsOpen O := Continuous.isOpen_setOf_clm_bundle_isInvertible (𝕜 := ℝ) (F₁ := E)
-    (F₂ := E →L[ℝ] ℝ) (E₁ := TangentSpace I) (E₂ := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
-    (b := Prod.snd) (ϕ := fun p : ℝ × M ↦ (α₀ + p.1 • (α₁ - α₀)).contactFlat p.2)
-    (contMDiff_contactFlat_add_smul_sub α₀ α₁).continuous
+  -- The interpolations are contact on an open set `O ⊆ ℝ × M`: the contact points of the slices
+  -- of the family `s ↦ α₀ + s (α₁ - α₀)`.
+  set O := {p : ℝ × M | IsContactFormAt (α₀ + p.1 • (α₁ - α₀)).val p.2}
+  have hO : IsOpen O := by
+    simpa only [mpullback_prodMk_lineMapFamily, id] using
+      isOpen_setOf_isContactFormAt_mpullback_prodMk (lineMapFamily α₀ α₁ contDiff_id)
   -- Since `[0, 1]` is compact, the points `x` with `[0, 1] × {x} ⊆ O` form an open set.
-  refine ⟨{x | ∀ s ∈ Icc (0 : ℝ) 1, (s, x) ∈ O},
+  exact ⟨{x | ∀ s ∈ Icc (0 : ℝ) 1, (s, x) ∈ O},
     isOpen_iff_mem_nhds.2 fun x hx ↦ isCompact_Icc.eventually_forall_of_forall_eventually
-      fun s hs ↦ (hO.preimage continuous_swap).mem_nhds (hx s hs),
-    fun x hx s hs ↦ isInvertible_contactFlat_of_isContactFormAt (hcK x hx s hs),
-    fun x hx s hs ↦ isContactFormAt_of_isInvertible_contactFlat hodd (hx s hs)⟩
+      fun s hs ↦ (hO.preimage continuous_swap).mem_nhds (hx s hs), hcK, fun _ hx ↦ hx⟩
 
 /-- **The interpolation is contact near the set of first-order agreement.** Let `α₀` be contact at
 every point of `K`, and let `α₁` agree with `α₀` at the points of `K`, with `dα₁` agreeing with

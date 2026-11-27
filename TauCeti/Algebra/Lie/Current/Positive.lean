@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Subalgebra.Character
 public import TauCeti.Algebra.Lie.Current.CentralExtension
 public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Extension.Topology
+public import TauCeti.Algebra.Lie.Abelian
 
 /-!
 # Canonical splittings over nonnegative-order currents
@@ -46,8 +47,7 @@ namespace TauCeti.CurrentAlgebra
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
 
-local instance : IsLieAbelian R := ⟨fun x y ↦ by
-  simp [LieRing.of_associative_ring_bracket, mul_comm]⟩
+attribute [local instance] isLieAbelian_of_commRing
 
 local notation "C" => currentAlgebra R L
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs

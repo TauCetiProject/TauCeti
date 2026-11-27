@@ -43,6 +43,8 @@ vector bundles, as the fixed points of conjugation on the complex ones.
   `L : F ≃ₗᵢ⋆[ℂ] G`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_conjPostcompCLM`: on Schwartz functions the operator is
   `u ↦ L ∘ u`.
+* `TemperedDistribution.MemSobolev.conjPostcompCLM`: `L` preserves `H^{s,p}` tempered
+  distributions.
 * `TemperedDistribution.MemSobolev.compLp_conj`: applying `L` to the values of an `Lᵖ` function
   in `H^{s,p}` gives an `Lᵖ` function in `H^{s,p}`.
 * `TemperedDistribution.MemSobolev.ofReal_compLp`: so does a real-linear functional `ℓ`, read as a
@@ -165,6 +167,13 @@ theorem SchwartzMap.toBesselPotentialSpaceCLM_conjPostcompCLM {s : ℝ} {p : ℝ
 namespace TemperedDistribution
 
 variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : Lp F p (volume : Measure E)}
+
+/-- **Conjugate-linear maps preserve `H^{s,p}`.** If `u ∈ H^{s,p}(E, F)`, then the tempered
+distribution `φ ↦ L (u (conj φ))` lies in `H^{s,p}(E, G)`, for every real `s`. -/
+theorem MemSobolev.conjPostcompCLM {v : 𝓢'(E, F)} (hv : MemSobolev s p v) (L : F →L⋆[ℂ] G) :
+    MemSobolev s p (TemperedDistribution.conjPostcompCLM L v) := by
+  simpa using
+    (BesselPotentialSpace.conjPostcomp E s p L hv.toBesselPotentialSpace).memSobolev_toDistr
 
 /-- Applying a conjugate-linear map to the values of an `Lᵖ` function preserves `H^{s,p}`. -/
 theorem MemSobolev.compLp_conj (hu : MemSobolev s p (u : 𝓢'(E, F))) (L : F →L⋆[ℂ] G) :

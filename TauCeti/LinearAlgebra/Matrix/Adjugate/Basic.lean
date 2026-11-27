@@ -21,7 +21,8 @@ determinant trick behind the Cayley–Hamilton and Nakayama arguments for finite
 
 It also identifies the adjugate of a matrix `A` with a right inverse `B` as `det A • B`
 (`Matrix.adjugate_eq_det_smul_of_mul_eq_one`); for a unitary matrix, `B` is the conjugate
-transpose.
+transpose. Consequently the adjugate commutes with conjugation by an invertible matrix:
+`adj (P * A * Q) = P * adj A * Q` when `P * Q = 1` (`Matrix.adjugate_mul_mul_of_mul_eq_one`).
 
 The same identity shows that if `A * B = c • 1` for a left-regular scalar `c`, then `det A` and
 `det B` are left-regular (`Matrix.isLeftRegular_det_left_of_mul_eq_smul_one`,
@@ -39,6 +40,9 @@ adjugate. Summing over the replaced row, or over the replaced column, gives in b
 `trace (adj A * B)` (`Matrix.sum_det_updateRow_eq_trace_adjugate_mul` and
 `Matrix.sum_det_updateCol_eq_trace_adjugate_mul`): Jacobi's formula for the derivative of `det` at
 `A` in the direction `B`, read row by row or column by column.
+
+For a matrix indexed by `Fin (n + 1)`, the corner entry of the adjugate is the leading principal
+minor of order `n` (`Matrix.adjugate_last_last_eq_det_submatrix_castSucc`).
 -/
 
 public section
@@ -64,6 +68,17 @@ theorem adjugate_eq_det_smul_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq 
     {A B : Matrix n n R} (h : A * B = 1) : A.adjugate = A.det • B := by
   rw [← Matrix.mul_one A.adjugate, ← h, ← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul,
     Matrix.one_mul]
+
+/-- **The adjugate commutes with conjugation.** If `P * Q = 1`, then the adjugate of `P * A * Q`
+is `P * adj A * Q`. For a unitary `P`, `Q` is the conjugate transpose. -/
+theorem adjugate_mul_mul_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq n]
+    {P Q : Matrix n n R} (h : P * Q = 1) (A : Matrix n n R) :
+    (P * A * Q).adjugate = P * A.adjugate * Q := by
+  have h' : Q * P = 1 := mul_eq_one_comm.1 h
+  -- `adj Q = det Q • P` and `adj P = det P • Q`, and `det Q * det P = det (Q * P) = 1`.
+  rw [adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one h,
+    adjugate_eq_det_smul_of_mul_eq_one h', Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_smul,
+    smul_smul, ← det_mul, h', det_one, one_smul, Matrix.mul_assoc]
 
 /-- **The determinant trick.** If a family `v` of elements of a module satisfies the linear
 relations `∑ⱼ A i j • v j = 0` for every `i`, then `det A` kills every member of the family. -/
@@ -160,5 +175,12 @@ theorem sum_det_updateCol_eq_trace_adjugate_mul {n : Type*} [Fintype n] [Decidab
     (A B : Matrix n n R) : ∑ j, (A.updateCol j fun i ↦ B i j).det = (adjugate A * B).trace := by
   simp only [← cramer_apply, cramer_eq_adjugate_mulVec, trace, diag_apply, Matrix.mul_apply, mulVec,
     dotProduct]
+
+/-- The corner entry of the adjugate of a matrix indexed by `Fin (n + 1)` is its leading principal
+minor of order `n`. -/
+theorem adjugate_last_last_eq_det_submatrix_castSucc {n : ℕ}
+    (Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
+    Z.adjugate (Fin.last n) (Fin.last n) = (Z.submatrix Fin.castSucc Fin.castSucc).det := by
+  simp [adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
 
 end Matrix

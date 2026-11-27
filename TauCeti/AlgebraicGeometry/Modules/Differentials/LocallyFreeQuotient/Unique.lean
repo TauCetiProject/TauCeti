@@ -22,6 +22,11 @@ unique isomorphism `E₁ ≅ E₂` carrying `q₁` to `q₂`. This is
 `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.existsUnique_iso_comp_eq` applied to the
 stalkwise injectivity on the dense subset `X_sm^{(d)}`.
 
+Both hypotheses pass to open subschemes: the smooth locus of dimension `d` of an open subscheme
+`U` is the trace of `X_sm^{(d)}`, hence dense in `U`, and `U` is reduced. So uniqueness holds on
+every open subscheme, in particular on the overlaps of an open cover, which is what glueing
+locally free quotients along a cover needs.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.stalkₗ_bijective_of_mem_smoothLocusOfDim`: a locally free quotient
@@ -29,6 +34,8 @@ stalkwise injectivity on the dense subset `X_sm^{(d)}`.
 * `TauCeti.AlgebraicGeometry.existsUnique_iso_comp_eq_of_dense_smoothLocusOfDim`: on a reduced
   scheme with dense `X_sm^{(d)}`, two locally free quotients of rank `d` of `Ω_{X/k}` differ by a
   unique isomorphism of their targets.
+* `TauCeti.AlgebraicGeometry.existsUnique_iso_comp_eq_of_isOpenImmersion`: on a reduced scheme
+  with dense `X_sm^{(d)}`, uniqueness holds on every open subscheme.
 
 ## References
 
@@ -72,5 +79,19 @@ theorem existsUnique_iso_comp_eq_of_dense_smoothLocusOfDim [IsReduced X]
   FiniteLocallyFreeSheaf.existsUnique_iso_comp_eq hX hX q₁ q₂
     (fun _ hx ↦ (stalkₗ_bijective_of_mem_smoothLocusOfDim E₁ q₁ hx).injective)
     (fun _ hx ↦ (stalkₗ_bijective_of_mem_smoothLocusOfDim E₂ q₂ hx).injective)
+
+/-- **Uniqueness of locally free quotients on open subschemes.** On a reduced scheme `X` whose
+smooth locus of dimension `d` is dense, two locally free quotients of rank `d` of `Ω_{U/k}`, for
+an open subscheme `f : U ⟶ X` over `Spec k`, differ by a unique isomorphism of their targets.
+Applied to the overlaps of an open cover, this makes local quotients agree on overlaps. -/
+theorem existsUnique_iso_comp_eq_of_isOpenImmersion [IsReduced X]
+    (hX : Dense (smoothLocusOfDim k X d : Set X)) {U : Scheme.{u}} [U.Over (Spec (.of k))]
+    [LocallyOfFinitePresentation (U ↘ Spec (.of k))] (f : U ⟶ X) [IsOpenImmersion f]
+    [f.IsOver (Spec (.of k))] (E₁ E₂ : FiniteLocallyFreeSheaf.FixedRank U d)
+    (q₁ : U.relativeDifferentials k ⟶ E₁.obj.obj) (q₂ : U.relativeDifferentials k ⟶ E₂.obj.obj)
+    [Epi q₁] [Epi q₂] : ∃! e : E₁.obj.obj ≅ E₂.obj.obj, q₁ ≫ e.hom = q₂ :=
+  have := isReduced_of_isOpenImmersion f
+  existsUnique_iso_comp_eq_of_dense_smoothLocusOfDim
+    (dense_smoothLocusOfDim_of_isOpenImmersion f hX) E₁ E₂ q₁ q₂
 
 end TauCeti.AlgebraicGeometry
