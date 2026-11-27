@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Lp
 public import TauCeti.Geometry.Manifold.Measure.SmoothDensity
 public import TauCeti.Geometry.Manifold.Sobolev.Completion
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
-import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 
 /-!
 # The Sobolev space `H⁰(M)` of a compact manifold is `L²`
@@ -42,21 +40,20 @@ Fix a chart `e` of the maximal atlas and a cutoff `ψ` in it, with support `K` i
 In the chart, `μ` reads as `ρ(y) dy` for a smooth positive density `ρ`
 (`TauCeti.HasSmoothPositiveDensity.exists_map_restrict_source_eq_withDensity`), which is bounded
 above and below by positive constants on the compact set `K`. So the Lebesgue measure on `K` and
-the reading of `μ` on `K` are each bounded by a multiple of the other, and for every `1 ≤ p ≤ ∞`
-the `Lᵖ` norm of the reading `ψ · (u ∘ e⁻¹)` and that of `(ψ ∘ e) · u` on `M` are comparable
-(`TauCeti.exists_eLpNorm_cutoffPushforwardSchwartz_le`,
+the reading of `μ` on `K` are each bounded by a multiple of the other
+(`TauCeti.HasSmoothPositiveDensity.exists_restrict_le_smul_map_and_map_restrict_le_smul`), and
+for every `1 ≤ p ≤ ∞` the `Lᵖ` norm of the reading `ψ · (u ∘ e⁻¹)` and that of `(ψ ∘ e) · u` on
+`M` are comparable (`TauCeti.exists_eLpNorm_cutoffPushforwardSchwartz_le`,
 `TauCeti.exists_eLpNorm_mulLeft_ofReal_cutoffPullback_le`). The first is bounded by the `Lᵖ(μ)`
 norm of `u`, since `|ψ|` is bounded. For the second, `u = ∑ᵢ (ψᵢ ∘ eᵢ) · u`, so the `Lᵖ(μ)` norm
 of `u` is bounded by the sum of those of the pieces. Since the `H⁰` norm of a Schwartz function is
 its `L²` norm, the chart-reading norm of order `0` and the `L²(μ)` norm are equivalent on smooth
 functions. Smooth functions are dense in both spaces (`TauCeti.denseRange_toChartSobolevSpace`,
-`TauCeti.denseRange_smoothToLp`), so the identity of smooth functions extends to an isomorphism
+`ContMDiffMap.denseRange_toLp`), so the identity of smooth functions extends to an isomorphism
 (`LinearEquiv.extend`).
 
 ## Main definitions
 
-* `TauCeti.smoothToLp`: a complex-valued smooth function on a compact manifold as an element of
-  `Lᵖ(μ)`.
 * `TauCeti.chartSobolevSpaceZeroEquivLp`: the isomorphism `H⁰(M) ≃ L²(M, μ)`.
 * `TauCeti.chartSobolevToLp`: the injection `H^s(M) → L²(M, μ)` for `s ≥ 0`.
 
@@ -65,9 +62,8 @@ functions. Smooth functions are dense in both spaces (`TauCeti.denseRange_toChar
 * `TauCeti.exists_eLpNorm_cutoffPushforwardSchwartz_le`,
   `TauCeti.exists_eLpNorm_mulLeft_ofReal_cutoffPullback_le`: reading a function in a chart through
   a cutoff is bounded in `Lᵖ`, in both directions.
-* `TauCeti.denseRange_smoothToLp`: smooth functions are dense in `L²(M, μ)`.
-* `TauCeti.exists_norm_chartReading_zero_le`, `TauCeti.exists_norm_smoothToLp_le`: the
-  chart-reading norm of order `0` and the `L²(μ)` norm are equivalent on smooth functions.
+* `TauCeti.exists_norm_chartReading_zero_le`, `TauCeti.exists_norm_toLp_le`: the chart-reading
+  norm of order `0` and the `L²(μ)` norm are equivalent on smooth functions.
 * `TauCeti.inner_chartSobolevToLp_eq_of_forall_integral_inner_eq`: extensions of formally adjoint
   operators are adjoint in `L²(μ)`.
 
@@ -86,75 +82,6 @@ open scoped ENNReal NNReal ContDiff Manifold Distributions SchwartzMap BesselPot
 
 namespace TauCeti
 
-/-! ### Smooth functions in `Lᵖ` -/
-
-section SmoothToLp
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [CompactSpace M] [MeasurableSpace M] [BorelSpace M] (p : ℝ≥0∞) [Fact (1 ≤ p)]
-  (μ : Measure M) [IsFiniteMeasure μ]
-
-/-- A complex-valued smooth function on a compact manifold, as an element of `Lᵖ(μ)` for a finite
-measure `μ`. -/
-def smoothToLp : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] Lp ℂ p μ :=
-  (ContinuousMap.toLp p μ ℂ).toLinearMap ∘ₗ
-    { toFun u := ⟨u, u.contMDiff.continuous⟩
-      map_add' _ _ := rfl
-      map_smul' c u := by
-        ext x
-        simp }
-
-variable {I p μ}
-
-theorem smoothToLp_apply (u : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    smoothToLp I p μ u = ContinuousMap.toLp p μ ℂ ⟨u, u.contMDiff.continuous⟩ :=
-  (rfl)
-
-/-- The class of a smooth function in `Lᵖ` is represented by the function itself. -/
-theorem coeFn_smoothToLp (u : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : smoothToLp I p μ u =ᵐ[μ] u := by
-  rw [smoothToLp_apply]
-  exact ContinuousMap.coeFn_toLp (p := p) (𝕜 := ℂ) μ _
-
-/-- The norm of the class of a smooth function in `Lᵖ` is its `Lᵖ` norm. -/
-theorem norm_smoothToLp (u : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    ‖smoothToLp I p μ u‖ = (eLpNorm u p μ).toReal := by
-  rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_smoothToLp u)]
-
-/-- The `L²` inner product of two smooth functions is the integral of their pointwise inner
-product. -/
-theorem inner_smoothToLp (u v : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    inner ℂ (smoothToLp I 2 μ u) (smoothToLp I 2 μ v) = ∫ x, inner ℂ (u x) (v x) ∂μ := by
-  rw [L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_smoothToLp (p := 2) (μ := μ) u, coeFn_smoothToLp (p := 2) (μ := μ) v]
-    with x hu hv
-  rw [hu, hv]
-
-/-- **Smooth functions are dense in `L²`.** A function in `L²(μ)` orthogonal to every smooth
-function has zero integral against every real smooth function, so it vanishes almost
-everywhere. -/
-theorem denseRange_smoothToLp [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] :
-    DenseRange (smoothToLp I 2 μ) := by
-  have hK : (LinearMap.range (smoothToLp I 2 μ))ᗮ = ⊥ := by
-    refine (Submodule.eq_bot_iff _).2 fun f hf ↦ Lp.eq_zero_iff_ae_eq_zero.2 ?_
-    refine ae_eq_zero_of_integral_contMDiff_smul_eq_zero I
-      ((Lp.memLp f).locallyIntegrable one_le_two) fun g hg _ ↦ ?_
-    obtain ⟨φ, rfl⟩ : ∃ φ : C^∞⟮I, M; ℝ⟯, ⇑φ = g := ⟨⟨g, hg⟩, rfl⟩
-    have h := Submodule.inner_right_of_mem_orthogonal
-      (LinearMap.mem_range_self _ (ContMDiffMap.ofReal φ)) hf
-    rw [L2.inner_def] at h
-    rw [← h]
-    refine integral_congr_ae ?_
-    filter_upwards [coeFn_smoothToLp (p := 2) (μ := μ) (ContMDiffMap.ofReal φ)] with x hx
-    rw [hx, ContMDiffMap.ofReal_apply]
-    simp [Complex.real_smul, mul_comm]
-  have hd := Submodule.dense_iff_topologicalClosure_eq_top.2
-    (Submodule.topologicalClosure_eq_top_iff.2 hK)
-  rwa [LinearMap.coe_range] at hd
-
-end SmoothToLp
-
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M] [MeasurableSpace M] [BorelSpace M] {μ : Measure M}
 
@@ -166,66 +93,6 @@ variable [IsFiniteMeasureOnCompacts μ] (hμ : HasSmoothPositiveDensity (Coordin
   {e : OpenPartialHomeomorph M (CoordinateSpace n)}
   (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
 
-include hμ he in
-/-- On a compact subset `K` of the target of a chart `e`, the Lebesgue measure and the reading
-`(μ|_{e.source}).map e` of a measure `μ` with smooth positive density are each bounded by a finite
-multiple of the other. -/
-private theorem exists_restrict_le_smul_map_and_map_restrict_le_smul {K : Set (CoordinateSpace n)}
-    (hK : IsCompact K) (hKt : K ⊆ e.target) :
-    ∃ a b : ℝ≥0, volume.restrict K ≤ (a : ℝ≥0∞) • (μ.restrict e.source).map e ∧
-      ((μ.restrict e.source).map e).restrict K ≤ (b : ℝ≥0∞) • volume := by
-  obtain ⟨ρ, hρ, hρ0, hmap⟩ := hμ.exists_map_restrict_source_eq_withDensity he
-  have hc : ContinuousOn ρ K := hρ.continuousOn.mono hKt
-  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn
-    (hc.inv₀ fun y hy ↦ (hρ0 y (hKt hy)).ne')
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn hc
-  refine ⟨A.toNNReal, B.toNNReal, ?_, ?_⟩
-  · -- On `K`, `1 ≤ A ρ`.
-    have hle : K.indicator 1 ≤ fun y ↦ (A.toNNReal : ℝ≥0∞) * ENNReal.ofReal (ρ y) := by
-      intro y
-      by_cases hy : y ∈ K
-      · have hρy := hρ0 y (hKt hy)
-        have hAy : (ρ y)⁻¹ ≤ A := (le_abs_self _).trans (by simpa using hA y hy)
-        dsimp only
-        rw [indicator_of_mem hy, Pi.one_apply, ENNReal.ofNNReal_toNNReal,
-          ← ENNReal.ofReal_mul (by linarith [inv_pos.2 hρy]), ENNReal.one_le_ofReal]
-        rwa [inv_le_iff_one_le_mul₀ hρy] at hAy
-      · simp [indicator_of_notMem hy]
-    calc volume.restrict K = (volume.restrict e.target).restrict K :=
-          (Measure.restrict_restrict_of_subset hKt).symm
-      _ = (volume.restrict e.target).withDensity (K.indicator 1) :=
-          (withDensity_indicator_one hK.measurableSet).symm
-      _ ≤ (volume.restrict e.target).withDensity
-            ((A.toNNReal : ℝ≥0∞) • fun y ↦ ENNReal.ofReal (ρ y)) :=
-          withDensity_mono (.of_forall hle)
-      _ = _ := by rw [withDensity_smul' _ _ ENNReal.coe_ne_top, hmap]
-  · rw [hmap, restrict_withDensity hK.measurableSet,
-      Measure.restrict_restrict_of_subset hKt]
-    calc (volume.restrict K).withDensity (fun y ↦ ENNReal.ofReal (ρ y))
-        ≤ (volume.restrict K).withDensity (fun _ ↦ (B.toNNReal : ℝ≥0∞)) := by
-          refine withDensity_mono ((ae_restrict_iff' hK.measurableSet).2 (.of_forall fun y hy ↦ ?_))
-          rw [ENNReal.ofNNReal_toNNReal]
-          exact ENNReal.ofReal_le_ofReal ((le_abs_self _).trans (by simpa using hB y hy))
-      _ = (B.toNNReal : ℝ≥0∞) • volume.restrict K := withDensity_const _
-      _ ≤ (B.toNNReal : ℝ≥0∞) • volume := by
-          gcongr
-          exact Measure.restrict_le_self
-
-omit [T2Space M] [MeasurableSpace M] [BorelSpace M] in
-/-- The reading `ψ · (u ∘ e⁻¹)` of a function in a chart vanishes outside the support of `ψ`. -/
-private theorem support_cutoffPushforwardSchwartz_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    Function.support (e.cutoffPushforwardSchwartz he ψ u) ⊆ tsupport ψ := fun y hy ↦ by
-  refine subset_tsupport _ fun h ↦ hy ?_
-  rw [cutoffPushforwardSchwartz_apply, h, zero_smul]
-
-omit [T2Space M] [MeasurableSpace M] [BorelSpace M] in
-/-- On the chart source, the reading of `u` in the chart is `(ψ ∘ e) · u` read through `e`. -/
-private theorem cutoffPushforwardSchwartz_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∈ e.source) :
-    e.cutoffPushforwardSchwartz he ψ u (e x) = (ψ (e x) : ℂ) * u x := by
-  rw [cutoffPushforwardSchwartz_apply, e.left_inv hx, Complex.real_smul]
-
 include hμ in
 /-- **Reading a function in a chart is bounded in `Lᵖ`.** For a measure `μ` with smooth positive
 density and a cutoff `ψ` in a chart `e`, the `Lᵖ` norm of the reading `ψ · (u ∘ e⁻¹)` of a smooth
@@ -234,7 +101,7 @@ theorem exists_eLpNorm_cutoffPushforwardSchwartz_le (ψ : 𝓓(⟨e.target, e.op
     (p : ℝ≥0∞) :
     ∃ C : ℝ≥0, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       eLpNorm (e.cutoffPushforwardSchwartz he ψ u) p volume ≤ C * eLpNorm u p μ := by
-  obtain ⟨a, -, hle, -⟩ := exists_restrict_le_smul_map_and_map_restrict_le_smul hμ he
+  obtain ⟨a, -, hle, -⟩ := hμ.exists_restrict_le_smul_map_and_map_restrict_le_smul he
     ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   obtain ⟨A, hA⟩ := ψ.continuous.bounded_above_of_compact_support ψ.hasCompactSupport
   have he' : AEMeasurable e (μ.restrict e.source) :=
@@ -244,27 +111,25 @@ theorem exists_eLpNorm_cutoffPushforwardSchwartz_le (ψ : 𝓓(⟨e.target, e.op
   have hF : AEStronglyMeasurable F ((μ.restrict e.source).map e) :=
     F.continuous.aestronglyMeasurable
   -- On the chart source, `|F ∘ e| ≤ A |u|`.
-  have hFe : ∀ᵐ x ∂μ.restrict e.source, ‖(F ∘ e) x‖₊ ≤ A.toNNReal * ‖u x‖₊ := by
+  have hFe : ∀ᵐ x ∂μ.restrict e.source, ‖(F ∘ e) x‖ ≤ A * ‖u x‖ := by
     refine (ae_restrict_iff' e.open_source.measurableSet).2 (.of_forall fun x hx ↦ ?_)
-    rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, Function.comp_apply,
-      cutoffPushforwardSchwartz_apply_of_mem he ψ u hx, norm_mul, Complex.norm_real,
-      Real.coe_toNNReal _ ((norm_nonneg _).trans (hA 0))]
-    exact mul_le_mul_of_nonneg_right (hA _) (norm_nonneg _)
+    simpa [F, e.cutoffPushforwardSchwartz_apply_of_mem he ψ u hx] using
+      mul_le_mul_of_nonneg_right (hA (e x)) (norm_nonneg (u x))
   calc eLpNorm F p volume = eLpNorm F p (volume.restrict (tsupport ψ)) :=
         (eLpNorm_restrict_eq_of_support_subset F.continuous.aestronglyMeasurable
-          (support_cutoffPushforwardSchwartz_subset he ψ u)).symm
+          (e.support_cutoffPushforwardSchwartz_subset he ψ u)).symm
     _ ≤ (a : ℝ≥0∞) ^ (1 / p).toReal • eLpNorm F p ((μ.restrict e.source).map e) :=
         eLpNorm_le_of_measure_le_smul hle
     _ = (a : ℝ≥0∞) ^ (1 / p).toReal • eLpNorm (F ∘ e) p (μ.restrict e.source) := by
         rw [eLpNorm_map_measure hF he']
-    _ ≤ (a : ℝ≥0∞) ^ (1 / p).toReal • (A.toNNReal • eLpNorm u p (μ.restrict e.source)) := by
+    _ ≤ (a : ℝ≥0∞) ^ (1 / p).toReal •
+          (ENNReal.ofReal A * eLpNorm u p (μ.restrict e.source)) := by
         gcongr
-        exact eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (hF.comp_aemeasurable he') hFe p
-    _ ≤ (a : ℝ≥0∞) ^ (1 / p).toReal • (A.toNNReal • eLpNorm u p μ) := by
+        exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hF.comp_aemeasurable he') hFe p
+    _ ≤ (a : ℝ≥0∞) ^ (1 / p).toReal • (ENNReal.ofReal A * eLpNorm u p μ) := by
         grw [eLpNorm_restrict_le (u : M → ℂ) p μ e.source]
     _ = _ := by
-        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-          ENNReal.coe_ne_top), smul_eq_mul, ENNReal.smul_def, smul_eq_mul, mul_assoc]
+        simp [ENNReal.ofNNReal_toNNReal, ENNReal.coe_rpow_of_nonneg, mul_assoc]
 
 include hμ in
 /-- **A function is bounded in `Lᵖ` by its reading in a chart.** For a measure `μ` with smooth
@@ -275,7 +140,7 @@ theorem exists_eLpNorm_mulLeft_ofReal_cutoffPullback_le (ψ : 𝓓(⟨e.target, 
     ∃ C : ℝ≥0, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
       eLpNorm (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e.cutoffPullback he ψ 1)) u) p μ ≤
         C * eLpNorm (e.cutoffPushforwardSchwartz he ψ u) p volume := by
-  obtain ⟨-, b, -, hle⟩ := exists_restrict_le_smul_map_and_map_restrict_le_smul hμ he
+  obtain ⟨-, b, -, hle⟩ := hμ.exists_restrict_le_smul_map_and_map_restrict_le_smul he
     ψ.hasCompactSupport.isCompact ψ.tsupport_subset
   have he' : AEMeasurable e (μ.restrict e.source) :=
     e.continuousOn.aemeasurable e.open_source.measurableSet
@@ -293,13 +158,13 @@ theorem exists_eLpNorm_mulLeft_ofReal_cutoffPullback_le (ψ : 𝓓(⟨e.target, 
     _ = eLpNorm (F ∘ e) p (μ.restrict e.source) := by
         refine eLpNorm_congr_ae ((ae_restrict_iff' e.open_source.measurableSet).2
           (.of_forall fun x hx ↦ ?_))
-        rw [hG, Function.comp_apply, cutoffPushforwardSchwartz_apply_of_mem he ψ u hx,
+        rw [hG, Function.comp_apply, e.cutoffPushforwardSchwartz_apply_of_mem he ψ u hx,
           cutoffPullback_one_apply_of_mem he _ hx]
     _ = eLpNorm F p ((μ.restrict e.source).map e) :=
         (eLpNorm_map_measure F.continuous.aestronglyMeasurable he').symm
     _ = eLpNorm F p (((μ.restrict e.source).map e).restrict (tsupport ψ)) :=
         (eLpNorm_restrict_eq_of_support_subset F.continuous.aestronglyMeasurable
-          (support_cutoffPushforwardSchwartz_subset he ψ u)).symm
+          (e.support_cutoffPushforwardSchwartz_subset he ψ u)).symm
     _ ≤ (b : ℝ≥0∞) ^ (1 / p).toReal • eLpNorm F p volume := eLpNorm_le_of_measure_le_smul hle
     _ = _ := by
         rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity)
@@ -321,10 +186,10 @@ omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 include hμ in
 /-- The chart readings of order `0` of a smooth function are bounded by its `L²(μ)` norm. -/
 theorem exists_norm_chartReading_zero_le :
-    ∃ C, ∀ u, ‖chartReading he ψ 0 u‖ ≤ C * ‖smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u‖ := by
+    ∃ C, ∀ u, ‖chartReading he ψ 0 u‖ ≤ C * ‖ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u‖ := by
   choose C hC using fun i ↦ exists_eLpNorm_cutoffPushforwardSchwartz_le hμ (he i) (ψ i) 2
   refine ⟨∑ i, (C i : ℝ), fun u ↦ ?_⟩
-  rw [norm_smoothToLp, Finset.sum_mul]
+  rw [ContMDiffMap.norm_toLp, Finset.sum_mul]
   refine (PiLp.norm_le_sum_norm _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
   rw [chartReading_apply, SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
     ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
@@ -336,8 +201,8 @@ omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 include hμ in
 /-- The `L²(μ)` norm of a smooth function is bounded by its chart readings of order `0`, for
 cutoffs whose readings on `M` add up to `1`. -/
-theorem exists_norm_smoothToLp_le (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) :
-    ∃ C, ∀ u, ‖smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u‖ ≤ C * ‖chartReading he ψ 0 u‖ := by
+theorem exists_norm_toLp_le (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) :
+    ∃ C, ∀ u, ‖ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u‖ ≤ C * ‖chartReading he ψ 0 u‖ := by
   choose C hC using fun i ↦ exists_eLpNorm_mulLeft_ofReal_cutoffPullback_le hμ (he i) (ψ i) 2
   refine ⟨∑ i, (C i : ℝ), fun u ↦ ?_⟩
   -- `u = ∑ᵢ (ψᵢ ∘ eᵢ) u`, and each piece is bounded by its reading in `eᵢ`.
@@ -347,11 +212,11 @@ theorem exists_norm_smoothToLp_le (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he 
   conv_lhs => rw [hu]
   rw [map_sum, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-  calc ‖smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ
+  calc ‖ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ
         (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e i).cutoffPullback (he i) (ψ i) 1)) u)‖
       ≤ ((C i : ℝ≥0∞) *
           eLpNorm ((e i).cutoffPushforwardSchwartz (he i) (ψ i) u) 2 volume).toReal := by
-        rw [norm_smoothToLp]
+        rw [ContMDiffMap.norm_toLp]
         exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
           (SchwartzMap.memLp _ 2 volume).eLpNorm_ne_top) (hC i u)
     _ = C i * ‖chartReading he ψ 0 u i‖ := by
@@ -371,9 +236,9 @@ that sends the chart readings of a smooth function to its class in `L²`
 (`TauCeti.chartSobolevSpaceZeroEquivLp_toChartSobolevSpace`). -/
 def chartSobolevSpaceZeroEquivLp : chartSobolevSpace he ψ 0 ≃L[ℂ] Lp ℂ 2 μ :=
   (LinearEquiv.refl ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯).extend
-    (toChartSobolevSpace he ψ 0) (smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ)
-    (denseRange_toChartSobolevSpace he ψ 0) (by simpa using exists_norm_smoothToLp_le hμ he ψ hψ)
-    denseRange_smoothToLp (by simpa using exists_norm_chartReading_zero_le hμ he ψ)
+    (toChartSobolevSpace he ψ 0) (ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ)
+    (denseRange_toChartSobolevSpace he ψ 0) (by simpa using exists_norm_toLp_le hμ he ψ hψ)
+    ContMDiffMap.denseRange_toLp (by simpa using exists_norm_chartReading_zero_le hμ he ψ)
 
 /-- The isomorphism `H⁰(M) ≃ L²(M, μ)` sends the chart readings of a smooth function to its class in
 `L²`. -/
@@ -381,16 +246,16 @@ def chartSobolevSpaceZeroEquivLp : chartSobolevSpace he ψ 0 ≃L[ℂ] Lp ℂ 2 
 theorem chartSobolevSpaceZeroEquivLp_toChartSobolevSpace
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartSobolevSpaceZeroEquivLp hμ he ψ hψ (toChartSobolevSpace he ψ 0 u) =
-      smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u := by
+      ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u := by
   rw [chartSobolevSpaceZeroEquivLp, LinearEquiv.extend_eq, LinearEquiv.refl_apply]
 
 /-- The inverse isomorphism `L²(M, μ) ≃ H⁰(M)` sends the class of a smooth function to its chart
 readings. -/
 @[simp]
-theorem chartSobolevSpaceZeroEquivLp_symm_smoothToLp
+theorem chartSobolevSpaceZeroEquivLp_symm_toLp
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    (chartSobolevSpaceZeroEquivLp hμ he ψ hψ).symm (smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u) =
-      toChartSobolevSpace he ψ 0 u := by
+    (chartSobolevSpaceZeroEquivLp hμ he ψ hψ).symm
+        (ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u) = toChartSobolevSpace he ψ 0 u := by
   rw [chartSobolevSpaceZeroEquivLp, LinearEquiv.extend_symm_eq, LinearEquiv.refl_symm,
     LinearEquiv.refl_apply]
 
@@ -414,7 +279,7 @@ theorem chartSobolevToLp_apply {s : ℝ} (hs : 0 ≤ s) (x : chartSobolevSpace h
 theorem chartSobolevToLp_toChartSobolevSpace {s : ℝ} (hs : 0 ≤ s)
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartSobolevToLp hμ he ψ hψ hs (toChartSobolevSpace he ψ s u) =
-      smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u := by
+      ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u := by
   simp [chartSobolevToLp]
 
 /-- On `H⁰(M)`, `TauCeti.chartSobolevToLp` is the isomorphism `H⁰(M) ≃ L²(M, μ)`. -/
@@ -455,7 +320,7 @@ theorem inner_chartSobolevToLp_eq_of_forall_integral_inner_eq
     (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
   refine (denseRange_toChartSobolevSpace he ψ s').induction_on y
     (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
-  simp only [hA, hB, chartSobolevToLp_toChartSobolevSpace, inner_smoothToLp, hPQ]
+  simp only [hA, hB, chartSobolevToLp_toChartSobolevSpace, ContMDiffMap.inner_toLp, hPQ]
 
 end Equiv
 

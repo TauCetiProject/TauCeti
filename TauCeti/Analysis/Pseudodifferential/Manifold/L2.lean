@@ -25,7 +25,7 @@ A classical pseudodifferential operator `P` of order `m ≥ 0` extends to a boun
 operator with domain `H^m(M)`, its **realization in `L²`**
 (`TauCeti.chartSobolevRealization`): a function `f ∈ L²` lies in its domain when `f ∈ H^m(M)`,
 and its value is then the extension of `P` applied to `f`. On smooth functions it is `P`
-(`TauCeti.chartSobolevRealization_smoothToLp`), and its domain is dense
+(`TauCeti.chartSobolevRealization_toLp`), and its domain is dense
 (`TauCeti.dense_domain_chartSobolevRealization`).
 
 * **Formal adjoints.** If `Q` is a classical pseudodifferential operator of order `m` and a formal
@@ -51,7 +51,7 @@ this domain with the domain of the adjoint, additionally needs elliptic regulari
 
 ## Main results
 
-* `TauCeti.chartSobolevRealization_smoothToLp`: on smooth functions the realization is `P`.
+* `TauCeti.chartSobolevRealization_toLp`: on smooth functions the realization is `P`.
 * `TauCeti.dense_domain_chartSobolevRealization`: its domain is dense.
 * `TauCeti.isFormalAdjoint_chartSobolevRealization`, `TauCeti.chartSobolevRealization_le_adjoint`:
   formal adjoints give formally adjoint realizations.
@@ -104,10 +104,13 @@ theorem chartSobolevGraphMap_apply (x : chartSobolevSpace hc ψ m) :
 
 /-- The **realization in `L²(M, μ)`** of an operator `P` on the smooth functions of a compact
 manifold, with domain the Sobolev space `H^m(M)` of a chart partition, `m ≥ 0`: the unbounded
-operator whose graph is the set of pairs `(x, P x)` for `x ∈ H^m(M)`, read in `L²(M, μ)` through
-`TauCeti.chartSobolevToLp` and through the extension `H^m(M) → H⁰(M) = L²(M, μ)` of `P`
-(`TauCeti.chartSobolevExtension`). For a classical pseudodifferential operator of order `m` this
-extension agrees with `P` on smooth functions (`TauCeti.chartSobolevRealization_smoothToLp`). -/
+operator whose graph is the set of pairs `(x, Pₑ x)` for `x ∈ H^m(M)`, read in `L²(M, μ)` through
+`TauCeti.chartSobolevToLp` and `H⁰(M) = L²(M, μ)`, where `Pₑ = chartSobolevExtension P m 0` is the
+extension `H^m(M) → H⁰(M)` of `P` (`TauCeti.chartSobolevExtension`). The extension is meaningful
+when `P` satisfies the a priori estimate `‖P u‖_{H⁰} ≤ C ‖u‖_{H^m}` on smooth functions, for
+instance when `P` is a classical pseudodifferential operator of order `m`; it then agrees with `P`
+on smooth functions (`TauCeti.chartSobolevRealization_toLp`). Otherwise the extension, and with it
+the realization, is a junk value unrelated to `P`. -/
 def chartSobolevRealization : Lp ℂ 2 μ →ₗ.[ℂ] Lp ℂ 2 μ :=
   (LinearMap.range (chartSobolevGraphMap hμ hc ψ hψ P hm :
     chartSobolevSpace hc ψ m →ₗ[ℂ] Lp ℂ 2 μ × Lp ℂ 2 μ)).toLinearPMap
@@ -153,21 +156,22 @@ theorem chartSobolevRealization_apply (f : (chartSobolevRealization hμ hc ψ h�
   exact hPy.symm
 
 /-- Smooth functions lie in the domain of the realization. -/
-theorem smoothToLp_mem_domain_chartSobolevRealization
+theorem toLp_mem_domain_chartSobolevRealization
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain :=
+    ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u ∈
+      (chartSobolevRealization hμ hc ψ hψ P hm).domain :=
   (mem_domain_chartSobolevRealization_iff hμ hc ψ hψ P hm).2
     ⟨_, chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u⟩
 
 /-- **On smooth functions the realization is `P`.** For a classical pseudodifferential operator
 `P` of order `m`, the realization of `P` sends the class of a smooth function `u` in `L²` to the
 class of `P u`. -/
-theorem chartSobolevRealization_smoothToLp (hP : P ∈ classicalPseudodifferentialOperators m)
+theorem chartSobolevRealization_toLp (hP : P ∈ classicalPseudodifferentialOperators m)
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     chartSobolevRealization hμ hc ψ hψ P hm
-        ⟨smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ u,
-          smoothToLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩ =
-      smoothToLp 𝓘(ℝ, CoordinateSpace n) 2 μ (P u) := by
+        ⟨ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ u,
+          toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩ =
+      ContMDiffMap.toLp 𝓘(ℝ, CoordinateSpace n) 2 μ (P u) := by
   rw [chartSobolevRealization_apply hμ hc ψ hψ P hm _
     (chartSobolevToLp_toChartSobolevSpace hμ hc ψ hψ hm u),
     chartSobolevExtension_toChartSobolevSpace_of_mem hP hψ (by linarith),
@@ -177,9 +181,9 @@ theorem chartSobolevRealization_smoothToLp (hP : P ∈ classicalPseudodifferenti
 functions. -/
 theorem dense_domain_chartSobolevRealization :
     Dense ((chartSobolevRealization hμ hc ψ hψ P hm).domain : Set (Lp ℂ 2 μ)) :=
-  (denseRange_smoothToLp (I := 𝓘(ℝ, CoordinateSpace n)) (μ := μ)).mono <| by
+  (ContMDiffMap.denseRange_toLp (I := 𝓘(ℝ, CoordinateSpace n)) (μ := μ)).mono <| by
     rintro _ ⟨u, rfl⟩
-    exact smoothToLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u
+    exact toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u
 
 /-- **Formal adjoints have formally adjoint realizations.** If `P` and `Q` are classical
 pseudodifferential operators of order `m ≥ 0` and `Q` is a formal adjoint of `P` for `μ`, then
@@ -239,8 +243,9 @@ theorem IsClassicalElliptic.isClosed_chartSobolevRealization
     have h₁ : ‖chartSobolevExtension hc ψ hc ψ P m 0 x‖ ≤ D * ‖L x‖ :=
       (hJ₀ _).trans (mul_le_mul_of_nonneg_left (norm_snd_le (L x)) hD)
     have h₂ : ‖chartSobolevInclusion hc ψ hm x‖ ≤ D * ‖L x‖ :=
-      (hJ₀ _).trans (mul_le_mul_of_nonneg_left
-        (by simp [L, J₀, chartSobolevToLp_apply]) hD)
+      (hJ₀ _).trans (mul_le_mul_of_nonneg_left (by
+        simpa only [L, J₀, chartSobolevGraphMap_apply, chartSobolevToLp_apply,
+          ContinuousLinearEquiv.coe_coe] using norm_fst_le (L x)) hD)
     rw [Real.coe_toNNReal _ (by positivity)]
     calc ‖x‖ ≤ C * (‖chartSobolevExtension hc ψ hc ψ P m 0 x‖ +
           ‖chartSobolevInclusion hc ψ hm x‖) := hC x
