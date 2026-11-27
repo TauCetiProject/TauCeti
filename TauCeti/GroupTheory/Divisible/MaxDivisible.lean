@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Divisible
 public import Mathlib.GroupTheory.Exponent
+public import Mathlib.GroupTheory.Torsion
 
 import Mathlib.Algebra.Category.Grp.Injective
 import Mathlib.LinearAlgebra.Projection
+import TauCeti.GroupTheory.Torsion
 
 /-!
 # The maximal divisible subgroup of an abelian group
@@ -38,6 +40,9 @@ then `A ≃+ Div(A) × ℤ/w`.
 
 * `AddSubgroup.IsDivisible.sSup`: a supremum of divisible subgroups is divisible.
 * `AddSubgroup.IsDivisible.exists_isCompl`: a divisible subgroup has a complement.
+* `TauCeti.AddCommGroup.isDivisible_torsion` and
+  `TauCeti.AddCommGroup.isDivisible_primaryComponent`: the torsion subgroup and the prime-primary
+  components of a divisible group are divisible.
 * `TauCeti.AddCommGroup.isGreatest_maxDivisible`: `Div(A)` is the greatest divisible subgroup.
 * `TauCeti.AddCommGroup.maxDivisible_quotient_eq_bot`: the quotient `A ⧸ Div(A)` is reduced.
 * `TauCeti.AddCommGroup.maxDivisible_prod`, `TauCeti.AddCommGroup.maxDivisible_pi`: compatibility
@@ -212,6 +217,32 @@ theorem isDivisible_maxDivisible : (maxDivisible A).IsDivisible :=
   IsDivisible.sSup (S := {D : AddSubgroup A | D.IsDivisible}) fun _ hD ↦ hD
 
 variable {A}
+
+/-- The torsion subgroup of a divisible abelian group is divisible. -/
+theorem isDivisible_torsion {A : Type*} [AddCommGroup A] [DivisibleBy A ℕ] :
+    (AddCommGroup.torsion A).IsDivisible := by
+  rw [isDivisible_def]
+  intro n hn x hx
+  obtain ⟨y, hy⟩ : ∃ y : A, n • y = x := DivisibleBy.surjective_smul A ℕ hn x
+  obtain ⟨k, hk, hkx⟩ := (AddCommGroup.mem_torsion x).mp hx |>.exists_nsmul_eq_zero
+  refine ⟨y, ?_, hy⟩
+  exact isOfFinAddOrder_iff_nsmul_eq_zero.mpr
+    ⟨k * n, Nat.mul_pos hk (Nat.pos_of_ne_zero hn), by rw [← smul_smul, hy, hkx]⟩
+
+/-- A prime-primary component of a divisible abelian group is divisible. -/
+theorem isDivisible_primaryComponent {A : Type*} [AddCommGroup A] [DivisibleBy A ℕ]
+    (p : ℕ) (hp : p.Prime) : (AddCommGroup.primaryComponent A p).IsDivisible := by
+  rw [AddSubgroup.isDivisible_def]
+  intro n hn x hx
+  obtain ⟨y, hy⟩ : ∃ y : A, n • y = x := DivisibleBy.surjective_smul A ℕ hn x
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hyfin : IsOfFinAddOrder y := isOfFinAddOrder_iff_nsmul_eq_zero.mpr
+    ⟨p ^ k * n, Nat.mul_pos (pow_pos hp.pos _) (Nat.pos_of_ne_zero hn), by
+      rw [← smul_smul, hy, hk]⟩
+  obtain ⟨y', hy', heq⟩ := exists_mem_primaryComponent_apply_eq
+    (nsmulAddMonoidHom (α := A) n) hp hyfin (AddCommMonoid.mem_primaryComponent.mpr ⟨k, by
+      simpa only [nsmulAddMonoidHom_apply, hy] using hk⟩)
+  exact ⟨y', hy', heq.trans hy⟩
 
 /-- Every divisible subgroup lies in the maximal divisible subgroup. -/
 theorem _root_.AddSubgroup.IsDivisible.le_maxDivisible {D : AddSubgroup A} (hD : D.IsDivisible) :

@@ -47,12 +47,10 @@ private theorem ratCircleToPadicQuotient_eq_zero {q : ℚ}
   obtain ⟨a, ha⟩ := hn
   rw [ratCircleToPadicQuotient_coe, Submodule.Quotient.mk_eq_zero] at h
   obtain ⟨z, hz⟩ := Submodule.mem_one.mp h
-  apply (AddCircle.coe_eq_zero_iff_den_eq_one q).mpr
-  apply Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one
-    (p := p) (k := n) (n := a)
-  · simpa [nsmul_eq_mul] using ha.symm
-  · rw [← hz, PadicInt.algebraMap_apply, PadicInt.norm_coe]
-    exact PadicInt.norm_le_one z
+  simpa using Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap
+    (p := p) (r := q) (s := 0) (k := n) (n := a)
+    (by simpa [nsmul_eq_mul] using ha.symm)
+    (by simpa using hz.symm)
 
 private theorem exists_rat_primary_representative (x : ℚ_[p]) :
     ∃ q : ℚ, (q : AddCircle (1 : ℚ)) ∈ AddCommGroup.primaryComponent _ p ∧
@@ -120,5 +118,14 @@ theorem ratCirclePrimaryEquivPadicQuotient_apply (q : ℚ)
       Submodule.Quotient.mk (q : ℚ_[p]) := by
   simp only [ratCirclePrimaryEquivPadicQuotient]
   exact ratCircleToPadicQuotient_coe p q
+
+/-- The inverse equivalence sends a primary rational representative back to its class in
+the primary component of `ℚ/ℤ`. -/
+theorem ratCirclePrimaryEquivPadicQuotient_symm_mk (q : ℚ)
+    (hq : (q : AddCircle (1 : ℚ)) ∈ AddCommGroup.primaryComponent _ p) :
+    (ratCirclePrimaryEquivPadicQuotient p).symm
+      (Submodule.Quotient.mk (q : ℚ_[p])) = ⟨q, hq⟩ := by
+  apply (ratCirclePrimaryEquivPadicQuotient p).injective
+  rw [AddEquiv.apply_symm_apply, ratCirclePrimaryEquivPadicQuotient_apply]
 
 end TauCeti
