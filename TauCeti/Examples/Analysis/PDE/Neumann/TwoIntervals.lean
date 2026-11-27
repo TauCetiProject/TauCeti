@@ -35,7 +35,7 @@ mean zero and vanishing gradient, so the least Rayleigh quotient `‖∇u‖² /
 * `TauCeti.Examples.NeumannTwoIntervals.forall_energyFormH1_eq_zero_iff_twoIntervals`: the
   Neumann kernel on it consists of the combinations `a 1_{(0,1)} + b 1_{(2,3)}`.
 * `TauCeti.Examples.NeumannTwoIntervals.not_isPreconnected_twoIntervals`: it is not preconnected.
-* `exists_value_ae_eq_indicator_sub_indicator_and_gradient_eq_zero_and_setIntegral_eq_zero` and
+* `exists_value_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_setIntegral_eq_zero` and
   `isLeast_rayleigh_meanZero_twoIntervals`, in the namespace
   `TauCeti.Examples.NeumannTwoIntervals`: `1_{(0,1)} - 1_{(2,3)}` has mean zero and vanishing
   gradient, and the least Rayleigh quotient of mean zero is `0`.
@@ -206,37 +206,33 @@ theorem not_isPreconnected_twoIntervals :
   rw [card_connectedComponents_twoIntervals] at h1
   omega
 
+/-- Each of the two intervals has length `1`. -/
+private theorem measureReal_intervalDomain (a : ℝ) :
+    volume.real (PDE.intervalDomain a (a + 1) : Set (EuclideanSpace ℝ (Fin 1))) = 1 := by
+  have h := PDE.setIntegral_intervalDomain (a := a) (b := a + 1) (fun _ => (1 : ℝ))
+  rw [setIntegral_const, smul_eq_mul, mul_one, setIntegral_const, smul_eq_mul, mul_one,
+    Real.volume_real_Ioo_of_le (by linarith), add_sub_cancel_left] at h
+  exact h
+
 /-- **The function `1_{(0,1)} - 1_{(2,3)}` has mean zero and vanishing gradient.** Some
-`u ∈ H¹(Ω)` agrees almost everywhere with `1_{(0,1)} - 1_{(2,3)}`, has `∫_Ω u = 0` and vanishing
-weak gradient, so its Rayleigh quotient `‖∇u‖² / ‖u‖²` is `0`. -/
-theorem exists_value_ae_eq_indicator_sub_indicator_and_gradient_eq_zero_and_setIntegral_eq_zero :
+`u ∈ H¹(Ω)` agrees almost everywhere with `1_{(0,1)} + (-1) 1_{(2,3)}`, has `∫_Ω u = 0` and
+vanishing weak gradient, so its Rayleigh quotient `‖∇u‖² / ‖u‖²` is `0`. -/
+theorem exists_value_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_setIntegral_eq_zero :
     ∃ u : W1p volume twoIntervals 2,
       W1p.value u =ᵐ[volume.restrict twoIntervals]
         (PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => 1) +
           (PDE.intervalDomain 2 3 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => -1) ∧
       W1p.gradient u = 0 ∧ ∫ x in twoIntervals, W1p.value u x = 0 := by
-  set g : EuclideanSpace ℝ (Fin 1) → ℝ :=
-    (PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => 1) +
-      (PDE.intervalDomain 2 3 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => -1) with hg
-  have hmem : MemLp g 2 (volume.restrict twoIntervals) :=
-    ((memLp_const 1).indicator (PDE.intervalDomain 0 1).isOpen.measurableSet.nullMeasurableSet).add
-      ((memLp_const (-1)).indicator
-        (PDE.intervalDomain 2 3).isOpen.measurableSet.nullMeasurableSet)
-  have hval : W1p.value (W1p.ofIsLocallyConstant (isLocallyConstant_indicator_add_indicator 1 (-1))
-      hmem) =ᵐ[volume.restrict twoIntervals] g := by
-    rw [W1p.value_ofIsLocallyConstant]
-    exact hmem.coeFn_toLp
-  refine ⟨_, hval, W1p.gradient_ofIsLocallyConstant _ _, ?_⟩
+  obtain ⟨u, hval, hgrad, hint⟩ :=
+    W1p.exists_value_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_setIntegral_eq
+      (mu := volume) (p := 2) (PDE.intervalDomain 0 1).isOpen (PDE.intervalDomain 2 3).isOpen
+      disjoint_intervalDomain coe_twoIntervals 1 (-1)
+  refine ⟨u, hval, hgrad, ?_⟩
   -- The two intervals have length `1`, so they contribute `1` and `-1`.
-  rw [integral_congr_ae hval, hg, integral_add'
-    ((integrable_const 1).indicator (PDE.intervalDomain 0 1).isOpen.measurableSet)
-    ((integrable_const (-1)).indicator (PDE.intervalDomain 2 3).isOpen.measurableSet),
-    setIntegral_indicator (PDE.intervalDomain 0 1).isOpen.measurableSet,
-    setIntegral_indicator (PDE.intervalDomain 2 3).isOpen.measurableSet,
-    inter_eq_right.2 intervalDomain_zero_one_subset,
-    inter_eq_right.2 intervalDomain_two_three_subset,
-    PDE.setIntegral_intervalDomain (fun _ => (1 : ℝ)),
-    PDE.setIntegral_intervalDomain (fun _ => (-1 : ℝ))]
+  have h1 := measureReal_intervalDomain 0
+  have h2 := measureReal_intervalDomain 2
+  norm_num at h1 h2
+  rw [hint, h1, h2]
   norm_num
 
 /-- **On `(0, 1) ∪ (2, 3)` the least Rayleigh quotient of mean zero is `0`.** The Neumann
