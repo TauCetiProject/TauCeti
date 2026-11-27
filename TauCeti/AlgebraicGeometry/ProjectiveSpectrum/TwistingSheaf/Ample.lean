@@ -15,9 +15,9 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 
 When degree-one standard opens cover `Proj A`, the nonvanishing locus of the section of
 `𝒪(n)` associated to a homogeneous element `r ∈ Aₙ` is exactly `D₊(r)`. Consequently all
-nonnegative twists are globally generated, and every positive twist is ample if `Proj A` is
-quasi-compact. In particular these conclusions apply to the projective spectrum of the symmetric
-algebra of a finite module, over any commutative ring.
+nonnegative twists are globally generated, and every positive twist is ample if `Proj A`
+is quasi-compact. In particular these conclusions apply to the projective spectrum of the
+symmetric algebra of a finite module, over any commutative ring.
 
 This connects the local-fraction construction of twisting sheaves to positivity of line
 bundles. The standard affine opens are the affine nonvanishing loci needed for ampleness,
@@ -33,7 +33,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits AlgebraicGeometry TopologicalSpace
+open CategoryTheory AlgebraicGeometry TopologicalSpace
 
 namespace AlgebraicGeometry.Proj
 

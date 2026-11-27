@@ -42,7 +42,7 @@ local notation "ℒ" => fun n : ℤ ↦
 
 local instance {r : ℕ} (E : FiniteLocallyFreeSheaf.FixedRank (projectiveLine k) r) :
     FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0) :=
-  finite_cohomology k _ 0
+  finite_cohomology_zero k _
 
 local instance {r : ℕ} (E : FiniteLocallyFreeSheaf.FixedRank (projectiveLine k) r) :
     FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1) :=

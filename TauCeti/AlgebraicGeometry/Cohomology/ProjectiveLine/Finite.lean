@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.AffinePushforward
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Basic
-public import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 
 /-!
 # Coherent cohomology of finite covers of the projective line
@@ -18,8 +19,9 @@ vanishes above degree one. No flatness or reducedness assumption is imposed on `
 coefficient sheaf. In particular this applies to the finite normalization maps from regular
 curve models to `ℙ¹`.
 
-Finite pushforward preserves coherent sheaves and is affine, hence preserves cohomology of
-quasi-coherent sheaves; finiteness of cohomology on `ℙ¹_R` therefore transfers directly to `X`.
+Finite pushforward preserves coherent sheaves. The zeroth and first cohomology calculations
+transfer along the two standard affine charts, while the same cover and its affine overlap
+kill higher cohomology.
 
 ## References
 
@@ -50,7 +52,19 @@ theorem finite_cohomology_of_isFinite_to_projectiveLine (M : X.Modules)
   let N : SheafOfModules (projectiveLine R).ringCatSheaf := (pushforward f).obj M
   have : N.IsFinitePresentation := isFinitePresentation_pushforward_of_isFinite f M
   have : N.IsFiniteType := inferInstance
-  have := projectiveLine.finite_cohomology R N n
-  exact (f.moduleFinite_cohomology_pushforward_iff_of_isAffineHom R M n).mp inferInstance
+  have := projectiveLine.finite_cohomology R N
+  cases n with
+  | zero => exact (f.moduleFinite_cohomology_zero_pushforward_iff (R := R) M).mp inferInstance
+  | succ n =>
+    cases n with
+    | zero =>
+      exact (f.moduleFinite_cohomology_one_pushforward_iff_of_two_affine_opens (R := R) M _ _
+        (projectiveLine.isAffineOpen_basicOpen_coord R 0)
+        (projectiveLine.isAffineOpen_basicOpen_coord R 1)
+        (projectiveLine.basicOpen_coord_sup_eq_top R)).mp inferInstance
+    | succ n =>
+      have := f.subsingleton_cohomology_of_card_le_of_isAffineHom_to_projSymmetricAlgebra
+        (Pi.basisFun R (Fin 2)) (Pi.basisFun R (Fin 2)).span_eq M (n + 2) (by simp)
+      infer_instance
 
 end AlgebraicGeometry.Scheme.Modules

@@ -180,21 +180,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_apply (n : �
     cohomologyOnResLinear M n h x = cohomologyOnRes M n h x :=
   (rfl)
 
-/-- Restricting along the reflexive inclusion `U ≤ U` in cohomology is the identity linear map. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_refl (n : ℕ) (U : X.Opens) :
-    cohomologyOnResLinear M n (le_refl U) = LinearMap.id :=
-  LinearMap.ext fun x ↦ ConcreteCategory.congr_hom (cohomologyOnRes_refl M n U) x
-
-/-- Restricting twice in cohomology is restricting along the composite inclusion, as linear
-maps. -/
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_comp (n : ℕ)
-    {U V W : X.Opens} (hUV : U ≤ V) (hVW : V ≤ W) :
-    cohomologyOnResLinear M n hUV ∘ₗ cohomologyOnResLinear M n hVW =
-      cohomologyOnResLinear M n (hUV.trans hVW) :=
-  LinearMap.ext fun x ↦ cohomologyOnRes_comp_apply M n hUV hVW x
-
 /-- The underlying function of `cohomologyOnResLinear` is `cohomologyOnRes`. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.coe_cohomologyOnResLinear (n : ℕ)
     {U V : X.Opens} (h : U ≤ V) : ⇑(cohomologyOnResLinear M n h) = cohomologyOnRes M n h :=

@@ -31,10 +31,10 @@ copies of `L^{⊗ (-n)}` (`AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct
 
 The proof follows Hartshorne, Theorem II.5.17, and the Stacks Project, Tag 01Q3:
 
-* The nonvanishing locus of a positive tensor power `sᵏ` of a section `s` of an invertible sheaf
-  equals the nonvanishing locus of `s` (`Scheme.Modules.nonvanishingLocus_tensorPowSection`).
-  Using quasi-compactness, ampleness of `L` yields a single positive integer `d` and finitely many
-  global sections of `L^{⊗ d}` whose nonvanishing loci are affine and cover `X`
+* By `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow`, raising
+  a section to a positive power preserves its nonvanishing locus. Using quasi-compactness,
+  ampleness of `L` yields a single positive integer `d` and finitely many global sections of
+  `L^{⊗ d}` whose nonvanishing loci are affine and cover `X`
   (`LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvanishingLocus`).
 * When global sections `s₁, …, sₘ` of an invertible sheaf `M` have affine nonvanishing loci `Uᵢ`
   covering `X`, `Scheme.Modules.eventually_exists_generatingSections_tensor_tensorPow` gives finite
@@ -84,36 +84,22 @@ theorem LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvani
         (⨆ i, (TauCeti.tensorPow L.obj d).nonvanishingLocus (s i)) = ⊤ := by
   classical
   obtain ⟨S, hS_top, hS⟩ := hL.exists_finset_isAffineOpen_nonvanishingLocus
-  -- Extract the positive power and section for each open `U ∈ S`, transporting to `L^{⊗ n}`.
-  have hmem (U : S) : ∃ (n : ℕ) (_ : 0 < n) (t : Γ(TauCeti.tensorPow L.obj n, ⊤)),
-      (TauCeti.tensorPow L.obj n).nonvanishingLocus t = U.val := by
-    obtain ⟨_, n, hn, L', hL', s', hs'⟩ := hS U.val U.property
-    obtain ⟨e0⟩ :=
-      LineBundleClass.mk_eq_mk_iff.mp (hL'.trans (LineBundleClass.mk_tensorPow L n).symm)
-    let e : L'.obj ≅ TauCeti.tensorPow L.obj n := e0 ≪≫ eqToIso (InvertibleSheaf.tensorPow_obj L n)
-    obtain ⟨t, ht⟩ : L'.obj.nonvanishingLocus s' ∈
-        Set.range ((TauCeti.tensorPow L.obj n).nonvanishingLocus (U := ⊤)) := by
-      rw [← Scheme.Modules.range_nonvanishingLocus_eq_of_iso e ⊤]
-      exact ⟨s', rfl⟩
-    exact ⟨n, hn, t, ht.trans hs'⟩
-  choose n hn t ht using hmem
+  choose n hn L' hL' s' hs' using fun U : S ↦ (hS U.val U.property).2
   -- Raise every section to a common positive power `d = ∏ U : S, n U`.
   let d : ℕ := ∏ U : S, n U
   have hd : 0 < d := Nat.pos_of_ne_zero (Finset.prod_ne_zero_iff.mpr fun U _ ↦ (hn U).ne')
-  have hlift (U : S) : ∃ s : Γ(TauCeti.tensorPow L.obj d, ⊤),
+  have hs (U : S) : ∃ s : Γ(TauCeti.tensorPow L.obj d, ⊤),
       (TauCeti.tensorPow L.obj d).nonvanishingLocus s = U.val := by
     have hdvd : n U ∣ d := Finset.dvd_prod_of_mem n (Finset.mem_univ U)
-    let k : ℕ := d / n U
-    have hnk : n U * k = d := Nat.mul_div_cancel' hdvd
-    have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hnk; omega
-    obtain ⟨e0⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_iso L (n U) k
-    rw [InvertibleSheaf.tensorPow_obj, InvertibleSheaf.tensorPow_obj,
-      InvertibleSheaf.tensorPow_obj] at e0
-    let e := e0 ≪≫ eqToIso (congrArg (TauCeti.tensorPow L.obj) hnk)
-    refine ⟨e.hom.app ⊤ (Scheme.Modules.tensorPowSection (t U) k), ?_⟩
-    rw [Scheme.Modules.nonvanishingLocus_hom_app,
-      Scheme.Modules.nonvanishingLocus_tensorPowSection (t U) hk, ht U]
-  choose s hs using hlift
+    have hk : 0 < d / n U := Nat.div_pos (Nat.le_of_dvd hd hdvd) (hn U)
+    obtain ⟨s, hs⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow (L₀ := L' U)
+      (L := ⟨TauCeti.tensorPow L.obj d, SheafOfModules.isInvertible_tensorPow L.obj d⟩) hk
+      (by
+        rw [LineBundleClass.mk_eq_mk_iff.mpr
+          ⟨eqToIso (InvertibleSheaf.tensorPow_obj L d).symm⟩,
+          LineBundleClass.mk_tensorPow, hL' U, ← pow_mul, Nat.mul_div_cancel' hdvd]) (s' U)
+    exact ⟨s, hs.trans (hs' U)⟩
+  choose s hs using hs
   let eS : Fin S.card ≃ S := (Fintype.equivFinOfCardEq (Fintype.card_coe S)).symm
   refine ⟨d, hd, S.card, fun i ↦ s (eS i), fun i ↦ ?_, top_unique fun x _ ↦ ?_⟩
   · rw [hs (eS i)]
