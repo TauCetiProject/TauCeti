@@ -14,12 +14,13 @@ public import TauCeti.LinearAlgebra.TensorProduct.Intersection
 /-!
 # Pulling back tensor products of subspaces
 
-For a field extension `L / K`, subspaces of `L ⊗[K] M` and `L ⊗[K] N` pull back to subspaces
-of `M` and `N`. A tensor defined over `K` belongs to the tensor product of the two larger
-subspaces exactly when it belongs to the tensor product of their pullbacks. Contractions by
-linear functionals, extended from `K` to `L`, detect this membership. This permits descent of
-comultiplication stability without requiring either larger subspace itself to descend. Over a
-field extension, a finite-dimensional subspace also has a finite-dimensional pullback.
+Let `K` be a field and `L` a commutative `K`-algebra. Subspaces of `L ⊗[K] M` and
+`L ⊗[K] N` pull back to subspaces of `M` and `N`. If a tensor defined over `K` belongs to
+the tensor product of the larger subspaces after scalar extension, it belongs to the tensor
+product of their pullbacks. Contractions by linear functionals extended from `K` to `L` detect
+this membership. This permits descent of comultiplication stability without requiring either
+larger subspace itself to descend. When `L` is a field, a finite-dimensional subspace also has
+a finite-dimensional pullback.
 -/
 
 public section
@@ -46,7 +47,48 @@ theorem tensorComponent_tensorTensorTensorComm (φ : Module.Dual K N) (z : M ⊗
 
 end LinearMap
 
+namespace TensorProduct
+
+variable {K L M N : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
+  [AddCommMonoid M] [Module K M] [AddCommMonoid N] [Module K N]
+
+/-- Swapping the factors of a scalar-extended tensor agrees with scalar extension of the
+swapped tensor. -/
+theorem comm_tensorTensorTensorComm_one (z : M ⊗[K] N) :
+    TensorProduct.comm L (L ⊗[K] M) (L ⊗[K] N)
+        (AlgebraTensorModule.tensorTensorTensorComm K L K L L L M N
+          (((1 : L) ⊗ₜ[L] (1 : L)) ⊗ₜ[K] z)) =
+      AlgebraTensorModule.tensorTensorTensorComm K L K L L L N M
+        (((1 : L) ⊗ₜ[L] (1 : L)) ⊗ₜ[K] TensorProduct.comm K M N z) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m n => simp
+  | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
+
+end TensorProduct
+
 namespace Submodule
+
+section ContractionMembership
+
+variable {K L M N : Type*} [CommRing K] [CommSemiring L] [Algebra K L]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N] [Module.Projective K N]
+
+/-- If every contraction of a scalar-extended tensor by an extended ground-field functional
+lies in `P`, the original tensor lies in the tensor product with the pullback of `P`. -/
+theorem tensor_mem_range_comap_rTensor_of_forall_tensorComponent_mem
+    (P : Submodule L (L ⊗[K] M)) (z : M ⊗[K] N)
+    (hz : ∀ φ : Module.Dual K N,
+      LinearMap.tensorComponent (Module.Dual.baseChange L φ)
+        (AlgebraTensorModule.tensorTensorTensorComm K L K L L L M N
+          (((1 : L) ⊗ₜ[L] (1 : L)) ⊗ₜ[K] z)) ∈ P) :
+    z ∈ LinearMap.range
+      (((P.restrictScalars K).comap (TensorProduct.mk K L M 1)).subtype.rTensor N) := by
+  rw [LinearMap.rTensor_def, tensor_mem_range_iff_forall_tensorComponent_mem]
+  intro φ
+  rw [mem_comap, restrictScalars_mem, TensorProduct.mk_apply]
+  simpa only [LinearMap.tensorComponent_tensorTensorTensorComm] using hz φ
+
+end ContractionMembership
 
 section TensorMembership
 
@@ -69,32 +111,17 @@ theorem tensor_mem_range_comap_of_baseChange
     (Module.Flat.lTensor_preserves_injective_linearMap _ Q₀.injective_subtype)]
   obtain ⟨t, ht⟩ := hz
   have hright : z ∈ LinearMap.range (P₀.subtype.rTensor N) := by
-    rw [LinearMap.rTensor_def, tensor_mem_range_iff_forall_tensorComponent_mem]
+    apply tensor_mem_range_comap_rTensor_of_forall_tensorComponent_mem P
     intro φ
-    have h := congrArg (LinearMap.tensorComponent (Module.Dual.baseChange L φ)) ht
-    rw [LinearMap.tensorComponent_tensorTensorTensorComm,
-      LinearMap.tensorComponent_map] at h
-    exact (h ▸ (LinearMap.tensorComponent ((Module.Dual.baseChange L φ).comp Q.subtype)
-      t).property : (1 : L) ⊗ₜ[K] LinearMap.tensorComponent φ z ∈ P)
+    rw [← ht, LinearMap.tensorComponent_map]
+    exact (LinearMap.tensorComponent ((Module.Dual.baseChange L φ).comp Q.subtype) t).property
   have hleft : TensorProduct.comm K M N z ∈ LinearMap.range (Q₀.subtype.rTensor M) := by
-    rw [LinearMap.rTensor_def, tensor_mem_range_iff_forall_tensorComponent_mem]
+    apply tensor_mem_range_comap_rTensor_of_forall_tensorComponent_mem Q
     intro φ
-    have h := congrArg (fun w ↦ LinearMap.tensorComponent (Module.Dual.baseChange L φ)
-      (TensorProduct.comm L (L ⊗[K] M) (L ⊗[K] N) w)) ht
-    have hswap : TensorProduct.comm L (L ⊗[K] M) (L ⊗[K] N)
-        (AlgebraTensorModule.tensorTensorTensorComm K L K L L L M N
-          (((1 : L) ⊗ₜ[L] (1 : L)) ⊗ₜ[K] z)) =
-        AlgebraTensorModule.tensorTensorTensorComm K L K L L L N M
-          (((1 : L) ⊗ₜ[L] (1 : L)) ⊗ₜ[K] TensorProduct.comm K M N z) := by
-      clear ht hright h
-      induction z using TensorProduct.inductionOn with
-      | tmul m n => simp
-      | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
-    rw [hswap, LinearMap.tensorComponent_tensorTensorTensorComm, ← TensorProduct.map_comm,
-      LinearMap.tensorComponent_map] at h
-    exact (h ▸ (LinearMap.tensorComponent ((Module.Dual.baseChange L φ).comp P.subtype)
-      (TensorProduct.comm L P Q t)).property :
-        (1 : L) ⊗ₜ[K] LinearMap.tensorComponent φ (TensorProduct.comm K M N z) ∈ Q)
+    rw [← TensorProduct.comm_tensorTensorTensorComm_one, ← ht, ← TensorProduct.map_comm,
+      LinearMap.tensorComponent_map]
+    exact (LinearMap.tensorComponent ((Module.Dual.baseChange L φ).comp P.subtype)
+      (TensorProduct.comm L P Q t)).property
   refine ⟨?_, hright⟩
   obtain ⟨s, hs⟩ := hleft
   refine ⟨TensorProduct.comm K Q₀ M s, ?_⟩

@@ -10,14 +10,16 @@ public import TauCeti.Algebra.HopfAlgebra.Subalgebra
 import TauCeti.LinearAlgebra.TensorProduct.Descent
 
 /-!
-# Pullback of Hopf subalgebras along a field extension
+# Pullback of Hopf subalgebras under scalar extension
 
-If `D` is a Hopf subalgebra of `L ⊗[K] H`, its inverse image under `h ↦ 1 ⊗ h` is a Hopf
-subalgebra of `H`. This does not require that `D` descend to `K`. If `D` is finite-dimensional,
-so is its inverse image: the scalar extension of the inverse image embeds in `D`.
+Let `K` be a field and `L` a commutative `K`-algebra. If `D` is a Hopf subalgebra of
+`L ⊗[K] H`, its inverse image under `h ↦ 1 ⊗ h` is a Hopf subalgebra of `H`. This does not
+require that `D` descend to `K`.
 
-This allows finite quotients and their coefficient functions to be found over `K` after first
-constructing them over a larger field.
+When `L` is a field, finiteness of the pullback follows from
+`Submodule.finiteDimensional_comap_mk_one` in
+`TauCeti.LinearAlgebra.TensorProduct.Descent`. This allows finite quotients and their
+coefficient functions to be found over `K` after first constructing them over a larger field.
 -/
 
 public section
@@ -30,7 +32,7 @@ namespace Subalgebra.IsHopfSubalgebra
 variable {K L H : Type*} [Field K] [CommRing L] [Algebra K L] [Ring H] [HopfAlgebra K H]
   {D : Subalgebra L (L ⊗[K] H)}
 
-/-- The inverse image of a Hopf subalgebra after extension of the ground field is a Hopf
+/-- The inverse image of a Hopf subalgebra under scalar extension to a commutative algebra is a Hopf
 subalgebra, even when the given subalgebra does not itself descend. -/
 theorem comap_includeRight (hD : D.IsHopfSubalgebra) :
     ((D.restrictScalars K).comap
@@ -41,7 +43,9 @@ theorem comap_includeRight (hD : D.IsHopfSubalgebra) :
     simpa only [TensorProduct.comul_tmul, Bialgebra.comul_one,
       Algebra.TensorProduct.one_def] using h
   antipode_mem x hx := by
-    have h := hD.antipode_mem hx
-    simpa [TensorProduct.antipode_def] using h
+    have h := hD.antipode_mem (x := (1 : L) ⊗ₜ[K] x) hx
+    simpa only [Subalgebra.mem_comap, Subalgebra.mem_restrictScalars,
+      Algebra.TensorProduct.includeRight_apply, TensorProduct.antipode_def,
+      TensorProduct.AlgebraTensorModule.map_tmul, HopfAlgebra.antipode_one] using h
 
 end Subalgebra.IsHopfSubalgebra

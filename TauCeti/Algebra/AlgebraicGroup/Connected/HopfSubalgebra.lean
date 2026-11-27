@@ -62,8 +62,6 @@ the universe of the base field.
   idempotent lies in a finite-dimensional Hopf subalgebra.
 * `TauCeti.HopfAlgebra.connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot`: a Hopf
   algebra whose only finite-dimensional Hopf subalgebra is `⊥` has connected spectrum.
-* `TauCeti.HopfAlgebra.exists_isHopfSubalgebra_finiteDimensional_ne_bot_of_not_connectedSpace`:
-  a disconnected spectrum gives a nontrivial finite-dimensional Hopf subalgebra.
 * `TauCeti.HopfAlgebra.connectedSpace_primeSpectrum_iff_forall_isHopfSubalgebra_eq_bot`: the
   resulting characterization over a field of characteristic zero.
 * `TauCeti.geometricallyConnectedCommHopfAlgProperty_iff_forall_isHopfSubalgebra_eq_bot`: in
@@ -197,15 +195,6 @@ theorem connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp hc with rfl | rfl
   · exact .inl (map_zero _)
   · exact .inr (map_one _)
-
-/-- A disconnected affine group over any field admits a nontrivial finite quotient, expressed
-as a finite-dimensional Hopf subalgebra other than the scalar subalgebra. -/
-theorem exists_isHopfSubalgebra_finiteDimensional_ne_bot_of_not_connectedSpace
-    {H : Type u} [CommRing H] [_root_.HopfAlgebra k H]
-    (h : ¬ ConnectedSpace (PrimeSpectrum H)) :
-    ∃ A : Subalgebra k H, A.IsHopfSubalgebra ∧ FiniteDimensional k A ∧ A ≠ ⊥ := by
-  contrapose! h
-  exact connectedSpace_primeSpectrum_of_forall_isHopfSubalgebra_eq_bot h
 
 /-- **Connectedness by finite quotients.** Over a field of characteristic zero, a commutative Hopf
 algebra has connected prime spectrum exactly when its only finite-dimensional Hopf subalgebra is
