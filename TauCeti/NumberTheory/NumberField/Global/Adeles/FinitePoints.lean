@@ -33,9 +33,8 @@ theorem finite_preimage_algebraMap_adeleRing {s : Set 𝔸[K]} (hs : IsCompact s
     fun x ↦ ⟨algebraMap K 𝔸[K] x, ⟨x, rfl⟩⟩
   have hf : Function.Injective f := fun x y h ↦
     (AdeleRing.algebraMap_injective (𝓞 K) K) (congrArg Subtype.val h)
-  have h := ((AdeleRing.principalSubgroup (𝓞 K) K).finite_preimage_coe_of_isCompact hs).preimage
+  exact ((AdeleRing.principalSubgroup (𝓞 K) K).finite_preimage_coe_of_isCompact hs).preimage
     (f := f) hf.injOn
-  exact h
 
 /-- A compact condition at the finite places and a bound at every infinite place cut out
 finitely many elements of a number field. No integrality condition is required. -/
@@ -46,11 +45,14 @@ theorem finite_setOf_infinitePlace_le_and_finiteAdele_mem {s : Set 𝔸ᶠ[K]}
   have ht : IsCompact t := by
     refine isCompact_pi_infinite
       (s := fun w : InfinitePlace K ↦ {a : w.Completion | ‖a‖ ≤ B}) fun w ↦ ?_
-    have h := (InfinitePlace.Completion.isometry_extensionEmbedding w).isClosedEmbedding
-      |>.isCompact_preimage (isCompact_closedBall (0 : ℂ) B)
-    simpa only [Set.preimage, Metric.closedBall, Set.mem_ofPred_eq, dist_zero_right,
-      (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
-        (map_zero _)] using h
+    have hi := InfinitePlace.Completion.isometry_extensionEmbedding w
+    have hset : {a : w.Completion | ‖a‖ ≤ B} =
+        InfinitePlace.Completion.extensionEmbedding w ⁻¹' Metric.closedBall 0 B := by
+      ext a
+      rw [Set.mem_preimage, mem_closedBall_zero_iff, hi.norm_map_of_map_zero (map_zero _)]
+      rfl
+    rw [hset]
+    exact hi.isClosedEmbedding.isCompact_preimage (isCompact_closedBall 0 B)
   have h := finite_preimage_algebraMap_adeleRing (ht.prod hs)
   apply h.subset
   intro x hx

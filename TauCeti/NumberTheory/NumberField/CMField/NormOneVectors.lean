@@ -35,6 +35,24 @@ namespace Matrix.GeneralLinearGroup
 variable {E ι : Type*} [Field E] [NumberField E] [IsCMField E]
   [Fintype ι] [DecidableEq ι]
 
+/-- An invertible matrix cancels its inverse under iterated matrix-vector multiplication. -/
+private theorem mulVec_inv_mulVec {R : Type*} [CommRing R] (g : GL ι R) (v : ι → R) :
+    (g : Matrix ι ι R) *ᵥ ((g⁻¹ : GL ι R) : Matrix ι ι R) *ᵥ v = v := by
+  simp [mulVec_mulVec]
+
+/-- The inverse of an invertible matrix cancels it under iterated matrix-vector multiplication. -/
+private theorem inv_mulVec_mulVec {R : Type*} [CommRing R] (g : GL ι R) (v : ι → R) :
+    ((g⁻¹ : GL ι R) : Matrix ι ι R) *ᵥ (g : Matrix ι ι R) *ᵥ v = v := by
+  simp [mulVec_mulVec]
+
+omit [DecidableEq ι] in
+/-- At a complex embedding of a CM field, the hermitian square norm of a vector becomes the sum
+of the squared absolute values of its coordinates. -/
+private theorem sum_norm_sq_eq_re_star_dotProduct (φ : E →+* ℂ) (x : ι → E) :
+    ∑ j, ‖φ (x j)‖ ^ 2 = (φ (star x ⬝ᵥ x)).re := by
+  have hstar (a : E) : φ (star a) = conj (φ a) := IsCMField.complexEmbedding_complexConj E φ a
+  simp [dotProduct, hstar, Complex.conj_mul', ← Complex.ofReal_pow]
+
 /-- Rational vectors of hermitian norm one in the lattice `g Ô^ι` of a finite adelic frame. -/
 def normOneLatticeVectors (g : GL ι 𝔸ᶠ[E]) : Set (ι → E) :=
   {x | star x ⬝ᵥ x = 1 ∧
@@ -70,11 +88,10 @@ theorem mem_normOneLatticeVectors_iff_exists (g : GL ι 𝔸ᶠ[E]) (x : ι → 
   rw [mem_normOneLatticeVectors_iff]
   constructor
   · rintro ⟨hx, hv⟩
-    refine ⟨hx, fun i ↦ ⟨_, hv i⟩, ?_⟩
-    simp only [mulVec_mulVec, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mulVec]
+    exact ⟨hx, fun i ↦ ⟨_, hv i⟩, mulVec_inv_mulVec g _⟩
   · rintro ⟨hx, v, hv⟩
     refine ⟨hx, fun i ↦ ?_⟩
-    rw [← hv, mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
+    rw [← hv, inv_mulVec_mulVec]
     exact (v i).property
 
 /-- Negation preserves the norm-one vectors of every lattice. -/
@@ -98,21 +115,15 @@ theorem finite_normOneLatticeVectors (g : GL ι 𝔸ᶠ[E]) : g.normOneLatticeVe
   refine (TauCeti.GlobalNumberFields.finite_setOf_infinitePlace_le_and_finiteAdele_vector_mem
     hC 1).subset fun x hx ↦ ⟨?_, ?_⟩
   · intro i w
-    have hstar (a : E) : w.embedding (star a) = conj (w.embedding a) :=
-      IsCMField.complexEmbedding_complexConj E w.embedding a
     have hsum : ∑ j, ‖w.embedding (x j)‖ ^ 2 = 1 := by
-      have h := congrArg (fun a : E ↦ (w.embedding a).re) hx.1
-      simpa only [dotProduct, map_sum, map_mul, Pi.star_apply,
-        hstar, map_one, Complex.conj_mul', Complex.re_sum, ← Complex.ofReal_pow, Complex.ofReal_re,
-        Complex.one_re] using h
+      rw [sum_norm_sq_eq_re_star_dotProduct, hx.1, map_one, Complex.one_re]
     have hi : ‖w.embedding (x i)‖ ^ 2 ≤ 1 := by
       rw [← hsum]
       exact Finset.single_le_sum (fun j _ ↦ sq_nonneg ‖w.embedding (x j)‖) (Finset.mem_univ i)
     rw [← InfinitePlace.norm_embedding_eq]
     nlinarith [norm_nonneg (w.embedding (x i))]
   · refine ⟨((g⁻¹ : GL ι 𝔸ᶠ[E]) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ
-        (fun j ↦ algebraMap E 𝔸ᶠ[E] (x j)), hx.2, ?_⟩
-    simp only [mulVec_mulVec, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mulVec]
+        (fun j ↦ algebraMap E 𝔸ᶠ[E] (x j)), hx.2, mulVec_inv_mulVec g _⟩
 
 /-- Norm-one lattice vectors carry a finite type, without choosing an enumeration. -/
 instance instFiniteNormOneLatticeVectors (g : GL ι 𝔸ᶠ[E]) : Finite g.normOneLatticeVectors :=
@@ -166,8 +177,7 @@ theorem mulVec_mem_normOneLatticeVectors_iff (g : GL ι 𝔸ᶠ[E]) (γ : GL ι 
       Function.comp_apply] using (algebraMap E 𝔸ᶠ[E]).map_mulVec (γ : Matrix ι ι E) x i
   rw [mem_normOneLatticeVectors_iff, mem_normOneLatticeVectors_iff,
     star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hγ, hmap]
-  simp only [_root_.mul_inv_rev, coe_mul, ← mulVec_mulVec]
-  simp only [mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
+  simp only [_root_.mul_inv_rev, coe_mul, ← mulVec_mulVec, inv_mulVec_mulVec]
 
 /-- The bijection of norm-one vectors induced by a rational unitary change of frame. -/
 def normOneLatticeVectorsEquiv (g : GL ι 𝔸ᶠ[E]) (γ : GL ι E)
@@ -188,8 +198,10 @@ theorem normOneLatticeVectorsEquiv_apply (g : GL ι 𝔸ᶠ[E]) (γ : GL ι E)
 theorem normOneLatticeVectorsEquiv_symm_apply (g : GL ι 𝔸ᶠ[E]) (γ : GL ι E)
     (hγ : (γ : Matrix ι ι E) ∈ Matrix.unitaryGroup ι E)
     (y : (map (algebraMap E 𝔸ᶠ[E]) γ * g).normOneLatticeVectors) :
-    ((g.normOneLatticeVectorsEquiv γ hγ).symm y).val = (γ⁻¹ : GL ι E).val *ᵥ y.val :=
-  (rfl)
+    ((g.normOneLatticeVectorsEquiv γ hγ).symm y).val = (γ⁻¹ : GL ι E).val *ᵥ y.val := by
+  have h := congrArg Subtype.val ((g.normOneLatticeVectorsEquiv γ hγ).apply_symm_apply y)
+  rw [normOneLatticeVectorsEquiv_apply] at h
+  rw [← h, inv_mulVec_mulVec]
 
 /-- The number of norm-one vectors is invariant under rational unitary changes and integral
 changes of frame, so it descends to the corresponding double classes. -/
