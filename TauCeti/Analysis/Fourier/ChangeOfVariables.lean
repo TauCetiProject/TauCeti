@@ -60,6 +60,8 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
 * `Real.conj_fourier_apply`, `Real.conj_fourierInv_apply`: conjugating the Fourier transform of
   `v` gives the Fourier transform of `ξ ↦ conj (v (-ξ))`.
+* `Real.fourier_star_apply`: the Fourier transform of `star v` at `x` is the conjugate of that of
+  `v` at `-x`.
 * `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
   character at the frequency `ξ / 2π`.
 -/
@@ -250,6 +252,16 @@ of `v` gives the inverse Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
 theorem _root_.Real.conj_fourierInv_apply (v : E → ℂ) (x : E) :
     conj (𝓕⁻ v x) = 𝓕⁻ (fun ξ ↦ conj (v (-ξ))) x := by
   rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg, Real.conj_fourier_apply]
+
+open ComplexConjugate in
+/-- **The Fourier transform of a conjugate.** The Fourier integral of the conjugate `star v` at
+`x` is the conjugate of the Fourier integral of `v` at `-x`. -/
+theorem _root_.Real.fourier_star_apply (v : E → ℂ) (x : E) : 𝓕 (star v) x = conj (𝓕 v (-x)) := by
+  have h : (fun ξ ↦ (fun η ↦ conj (v (-η))) (-ξ)) = star v := by
+    ext ξ
+    simp only [neg_neg, Pi.star_apply, starRingEnd_apply]
+  rw [Real.conj_fourier_apply, ← Real.fourierInv_eq_fourier_neg,
+    Real.fourierInv_eq_fourier_comp_neg, h]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The exponential `exp(i ⟪y, ξ⟫)` is the Fourier character `𝐞 ⟪y, ξ / 2π⟫`. -/
