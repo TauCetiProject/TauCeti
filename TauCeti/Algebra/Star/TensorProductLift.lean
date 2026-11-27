@@ -140,6 +140,7 @@ theorem includeRightNonUnitalStarAlgHom_apply [Semiring A] [Algebra R A] [StarRi
   (rfl)
 
 /-- Two star homomorphisms out of `A ⊗[R] B` that agree on every `a ⊗ b` are equal. -/
+@[ext high]
 theorem nonUnitalStarAlgHom_ext [NonUnitalSemiring A] [Module R A] [SMulCommClass R A A]
     [IsScalarTower R A A] [StarRing A] [StarModule R A] [NonUnitalSemiring B] [Module R B]
     [SMulCommClass R B B] [IsScalarTower R B B] [StarRing B] [StarModule R B]
