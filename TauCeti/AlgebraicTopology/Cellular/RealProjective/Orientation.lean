@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smoot
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.TopHomology
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Classification
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
+public import TauCeti.Geometry.Manifold.Orientation.ThomClass
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 
 /-!
@@ -39,7 +40,11 @@ A smooth orientation is a homological one
 not orientable as a smooth manifold either
 (`TauCeti.RealProjectiveSpace.not_orientable_projectivization_of_even`); by
 `TauCeti.orientable_iff_nonempty_vectorBundleOrientation`, its tangent bundle then has no
-orientation as a vector bundle.
+orientation as a vector bundle, and by `TauCeti.orientable_iff_exists_isThomClass` no Thom class
+with integral coefficients
+(`TauCeti.RealProjectiveSpace.not_exists_isThomClass_tangentSpace_projectivization`). So the
+integral Thom isomorphism of the tangent bundle of `ℝℙ²` needs coefficients twisted by the
+orientation local system.
 
 ## Main results
 
@@ -54,6 +59,8 @@ orientation as a vector bundle.
   nontrivial.
 * `TauCeti.RealProjectiveSpace.not_orientable_projectivization_of_even`: for `N` even and positive,
   `ℝℙᴺ` is not orientable as a smooth manifold.
+* `TauCeti.RealProjectiveSpace.not_exists_isThomClass_tangentSpace_projectivization`: for `N` even
+  and positive, the tangent bundle of `ℝℙᴺ` has no integral Thom class.
 
 ## References
 
@@ -135,5 +142,20 @@ theorem not_orientable_projectivization_of_even (hN : Even N) (hN0 : N ≠ 0) :
   have hE := Module.finrank_fin_fun ℝ (n := n + 1)
   have := isEmpty_homologicalOrientation_projectivization_of_even hN hN0
   exact isEmptyElim ((o.reindex (finCongr hE)).toHomologicalOrientation hE)
+
+/-- **The tangent bundle of an even-dimensional real projective space has no integral Thom
+class.** For `N` even and positive, no class of `Hᴺ(Tℝℙᴺ, (Tℝℙᴺ)₀; ℤ)` restricts to a generator of
+the local cohomology of every tangent space, since `ℝℙᴺ` is not orientable. -/
+theorem not_exists_isThomClass_tangentSpace_projectivization (hN : Even N) (hN0 : N ≠ 0) :
+    ¬ ∃ u : (thomPair (Fin N → ℝ)
+        (TangentSpace 𝓘(ℝ, Fin N → ℝ) : ℙ ℝ (Fin (N + 1) → ℝ) → Type)).singularCohomology
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (Module.finrank ℝ (Fin N → ℝ)),
+      IsThomClass (Fin N → ℝ) (TangentSpace 𝓘(ℝ, Fin N → ℝ) : ℙ ℝ (Fin (N + 1) → ℝ) → Type) u := by
+  have : LocallyPathConnectedSpace (ℙ ℝ (Fin (N + 1) → ℝ)) :=
+    ChartedSpace.locallyPathConnectedSpace (Fin N → ℝ) _
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN0
+  rw [← orientable_iff_exists_isThomClass (Module.finrank_fin_fun ℝ)]
+  exact not_orientable_projectivization_of_even hN hN0
 
 end TauCeti.RealProjectiveSpace
