@@ -361,14 +361,20 @@ theorem transport_twistedDifferential_eq_twistedMorseBoundary (h : hX.IsMorseSma
         (fun x ↦ LocalCoefficientSystem.transport L
           ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x)) (g x)) y := by
   -- The fibre is trivially graded with zero differential: the twisted differential is the sum of
-  -- the actions of the entries. The grading and its decomposition are those of the bundled DG
-  -- local system, equal to the trivial ones only after unfolding `classicalDGLocalSystem`.
-  have hD := twistedDifferential_trivialGrading_apply
-    (R := R) (M := (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).carrier)
-    (hX.barraudCorneaCocycle hf hdense hθ hc S).m 0 g y
+  -- the actions of the entries. The twisted differential depends on the decomposition of the
+  -- grading, so `classicalDGLocalSystem_grading` cannot rewrite it; the bundled grading is the
+  -- trivial one by definition.
+  have hD : twistedDifferential (hX.barraudCorneaCocycle hf hdense hθ hc S).m
+      (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).grading
+      (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).differential g y =
+        ∑ x, op ((hX.barraudCorneaCocycle hf hdense hθ hc S).m x y) • g x := by
+    rw [classicalDGLocalSystem_differential]
+    exact (twistedDifferential_trivialGrading_apply
+      (R := R) (M := (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).carrier)
+      (hX.barraudCorneaCocycle hf hdense hθ hc S).m 0 g y).trans
+        (by rw [LinearMap.zero_apply, zero_add])
   refine (congrArg (LocalCoefficientSystem.transport L
     ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ y))) hD).trans ?_
-  rw [LinearMap.zero_apply, zero_add]
   -- The sum is taken in the bundled carrier, which is the fibre `L(y₀)` only up to unfolding.
   refine (map_sum (LocalCoefficientSystem.transport L
     ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ y))) _ Finset.univ).trans ?_
@@ -472,6 +478,18 @@ private noncomputable def transportPiEquiv (hθ : ∀ x : criticalPoints 𝓘(�
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   [Fintype (criticalPoints 𝓘(ℝ, E) f)] in
+/-- `transportPiEquiv` is the transport `L(y₀) ≅ L(θ x)` at each critical point `x`. -/
+private theorem transportPiEquiv_apply
+    (g : criticalPoints 𝓘(ℝ, E) f → (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).carrier)
+    (x : criticalPoints 𝓘(ℝ, E) f) :
+    transportPiEquiv hθ L g x =
+      LocalCoefficientSystem.transport L ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))
+        (g x) :=
+  (LinearEquiv.piCongrRight_apply (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+    LocalCoefficientSystem.transport L ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))) g x :)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  [Fintype (criticalPoints 𝓘(ℝ, E) f)] in
 /-- The transports `L(y₀) ≅ L(θ x)` carry the families of total degree `n` in the twisted complex
 of `L(y₀)`, concentrated in degree zero, onto the families vanishing away from the critical points
 of index `-n`. -/
@@ -485,10 +503,12 @@ private theorem map_twistedTotalGrading_transportPiEquiv (n : ℤ) :
   rw [Submodule.map_equiv_eq_comap_symm]
   ext b
   rw [Submodule.mem_comap, mem_twistedTotalGrading_iff]
-  simp only [Submodule.mem_pi, mem_univ, true_implies, mem_trivialGrading_iff]
+  simp only [classicalDGLocalSystem_grading, Submodule.mem_pi, mem_univ, true_implies,
+    mem_trivialGrading_iff]
   refine forall_congr' fun x ↦ ?_
-  -- The grading of `classicalDGLocalSystem` is the trivial grading of the fibre only up to
-  -- unfolding, and the inverse of `transportPiEquiv` is the inverse transport at each point.
+  -- The element lies in the bundled carrier of `classicalDGLocalSystem`, which is the fibre only up
+  -- to unfolding, so `mem_trivialGrading_iff` is applied at the fibre. The inverse of
+  -- `transportPiEquiv` is the inverse transport at each point.
   exact (mem_trivialGrading_iff (R := R) (A := L.obj (FundamentalGroupoid.mk y₀))).trans
     (or_congr_right (LinearEquiv.map_eq_zero_iff (LocalCoefficientSystem.transport L
       ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))).symm))
@@ -532,11 +552,41 @@ theorem twistedMorseCochainComplexXEquiv_dgMorseComplexClassicalXEquiv (n : ℤ)
             criticalPoints 𝓘(ℝ, E) f → (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).carrier)
           x) := by
   -- The source of the first factor is the twisted complex that `dgMorseComplex` unfolds to, so
-  -- `LinearEquiv.trans_apply` only matches up to that unfolding.
+  -- `LinearEquiv.trans_apply` only matches up to that unfolding. Neither `rw [dgMorseComplex_def]`
+  -- (the type of `g` mentions the DG Morse complex) nor `rw`/`simp only` with
+  -- `LinearEquiv.trans_apply` can make the step.
   erw [dgMorseComplexClassicalXEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.ofSubmodules_apply]
-  -- `transportPiEquiv` is the transport at each critical point.
-  rfl
+  exact transportPiEquiv_apply hθ L _ x
+
+/-- Under the identifications of the terms of the two complexes with families, the inverse of the
+degree-`n` identification is the inverse transport `L(θ x) ≅ L(y₀)` at each critical point `x`. -/
+@[simp]
+theorem twistedCochainComplexXEquiv_dgMorseComplexClassicalXEquiv_symm (n : ℤ)
+    (b : (hX.twistedMorseCochainComplex 𝔬
+        ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf
+        (h.twistedMorseBoundary_comp_twistedMorseBoundary_eq_zero hf hdense hθ hc (fun _ ↦ rfl) S
+          𝔬 hS L)).X n)
+    (x : criticalPoints 𝓘(ℝ, E) f) :
+    (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+        (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting
+        (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).isDGRightModule n
+        ((h.dgMorseComplexClassicalXEquiv hf hdense hθ hc S 𝔬 hS L n).symm b) :
+          criticalPoints 𝓘(ℝ, E) f → (classicalDGLocalSystem (X := TopCat.of Y) y₀ L).carrier)
+        x =
+      (LocalCoefficientSystem.transport L ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))).symm
+        ((hX.twistedMorseCochainComplexXEquiv 𝔬
+          ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf
+          (h.twistedMorseBoundary_comp_twistedMorseBoundary_eq_zero hf hdense hθ hc (fun _ ↦ rfl) S
+            𝔬 hS L) n b :
+            (p : criticalPoints 𝓘(ℝ, E) f) →
+              ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+                (FundamentalGroupoid.mk (p : M))) x) := by
+  -- Apply the transport at `x` to both sides and read off the forward identification.
+  refine (LinearEquiv.eq_symm_apply _).2
+    ((h.twistedMorseCochainComplexXEquiv_dgMorseComplexClassicalXEquiv hf hdense hθ hc S 𝔬 hS L n
+      _ x).symm.trans ?_)
+  rw [LinearEquiv.apply_symm_apply]
 
 /-- **Classical recovery.** Under the Morse–Smale condition, let `S` be a twisting chain system on
 the trajectory spaces, graded by the Morse index, which gives each trajectory between critical

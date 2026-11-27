@@ -511,6 +511,27 @@ theorem twistedMorseCochainComplexXEquiv_d (n : ℤ)
       hX.twistedMorseBoundary 𝔬 L hf (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n c) :=
   gradedCochainComplexXEquiv_d n c
 
+/-- The differential of the Morse complex between any two consecutive degrees is the twisted Morse
+boundary, under `twistedMorseCochainComplexXEquiv`. -/
+theorem twistedMorseCochainComplexXEquiv_d_of_add_one_eq {p q : ℤ} (hpq : p + 1 = q)
+    (c : (hX.twistedMorseCochainComplex 𝔬 L hf h).X p) :
+    (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h q
+        (((hX.twistedMorseCochainComplex 𝔬 L hf h).d p q).hom c) :
+          (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))) =
+      hX.twistedMorseBoundary 𝔬 L hf (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h p c) :=
+  gradedCochainComplexXEquiv_d_of_add_one_eq hpq c
+
+/-- Two cochain maps into the Morse complex with coefficients in `L` agree when they agree on
+families, under `twistedMorseCochainComplexXEquiv`. -/
+theorem twistedMorseCochainComplex_hom_ext {C : CochainComplex (ModuleCat R) ℤ}
+    {φ ψ : C ⟶ hX.twistedMorseCochainComplex 𝔬 L hf h}
+    (hφψ : ∀ n (x : C.X n),
+      (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n ((φ.f n).hom x) :
+          (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))) =
+        hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n ((ψ.f n).hom x)) : φ = ψ := by
+  ext n x
+  exact (hX.twistedMorseCochainComplexXEquiv 𝔬 L hf h n).injective (Subtype.ext (hφψ n x))
+
 end IsAdaptedPseudoGradient
 
 end TauCeti
