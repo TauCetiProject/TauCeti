@@ -120,13 +120,13 @@ private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp μ₀ t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+    (h : (ω.floerSobolevOperator 2 (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (Floer.continuationHomotopy (Hm μ₀) (Hp μ₀)) u).IsFredholm) :
-    (ω.floerSobolevOperator (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+    (ω.floerSobolevOperator 2 (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (Floer.continuationHomotopy (Hm μ₁) (Hp μ₁)) u).IsFredholm ∧
-      (ω.floerSobolevOperator (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+      (ω.floerSobolevOperator 2 (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (Floer.continuationHomotopy (Hm μ₁) (Hp μ₁)) u).index =
-        (ω.floerSobolevOperator (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (ω.floerSobolevOperator 2 (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (Floer.continuationHomotopy (Hm μ₀) (Hp μ₀)) u).index :=
   isFredholm_floerSobolevOperator_and_index_eq_of_family ω
     (J := fun _ _ ↦ J₀) (Ks := fun _ _ ↦ 0)
@@ -181,15 +181,15 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
     (hδ'p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp 1 t)) u' (s, t)) 0 atTop
         (Icc 0 1)) :
-    ((ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    ((ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).IsFredholm ↔
-      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
         u').IsFredholm) ∧
-    ((ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    ((ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).IsFredholm →
-      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
           u').index =
-        (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           u).index) := by
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have h₁ : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
@@ -292,9 +292,9 @@ theorem isFredholm_floerSobolevOperator_iff_of_homotopy (ω : SymplecticForm V)
     (hδ'p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp 1 t)) u' (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).IsFredholm ↔
-      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
         u').IsFredholm :=
   (isFredholm_iff_and_index_eq_of_homotopy ω hcyl hcyl' hJ hKs hKt hJ' hKs' hKt' hJc hJ'c hu hu'
     hHm hHp hXm hxm hndm huxm hδm hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p).1
@@ -346,11 +346,11 @@ theorem index_floerSobolevOperator_eq_of_homotopy (ω : SymplecticForm V)
     (hδ'p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp 1 t)) u' (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (h : (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm) :
-    (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
         u').index =
-      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).index :=
   (isFredholm_iff_and_index_eq_of_homotopy ω hcyl hcyl' hJ hKs hKt hJ' hKs' hKt' hJc hJ'c hu hu'
     hHm hHp hXm hxm hndm huxm hδm hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p).2 h

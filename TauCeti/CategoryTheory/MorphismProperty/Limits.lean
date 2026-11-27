@@ -18,7 +18,8 @@ morphism factoring through `k`: this file records the forms of this used when re
 of morphisms of schemes to an affine base. Mathlib's `MorphismProperty.pullback_snd` is the case
 where `f` itself has `P`. If `P` is moreover stable under composition, then the product of two
 morphisms of `Over S` has `P` on underlying morphisms whenever both factors do and the source,
-target, and intermediate binary products exist.
+target, and intermediate binary products exist. The same holds for the composite `f ≫ Δ_g` of `f`
+with the diagonal of `g` whenever `f` and the diagonal of `f ≫ g` have the property.
 
 ## Main results
 
@@ -34,6 +35,8 @@ target, and intermediate binary products exist.
 * `CategoryTheory.MorphismProperty.prod_map_left`: if `P` is moreover stable under composition,
   `P f.left` and `P g.left` imply `P (prod.map f g).left` for morphisms `f` and `g` of `Over S`,
   assuming the source, target, and intermediate binary products exist.
+* `CategoryTheory.MorphismProperty.comp_diagonal`: if `P` is moreover stable under composition,
+  `P f` and `P Δ_{f ≫ g}` imply `P (f ≫ Δ_g)`.
 -/
 
 public section
@@ -101,5 +104,14 @@ theorem prod_map_left [P.IsStableUnderComposition] {S : C} {X Y X' Y' : Over S}
   have h₂ : P (prod.map (𝟙 X') g).left :=
     P.of_isPullback ((IsPullback.of_prod_snd_with_id X' g).map (Over.forget S)) hg
   simpa [← Over.comp_left] using P.comp_mem _ _ h₁ h₂
+
+/-- For a property stable under base change and composition, `P f` and `P Δ_{f ≫ g}` imply
+`P (f ≫ Δ_g)`: by `pullback.comp_diagonal`, `f ≫ Δ_g` is `Δ_{f ≫ g}` followed by the map
+`f ×_Z f`, which has the property by Mathlib's `MorphismProperty.pullbackMap`. -/
+theorem comp_diagonal [P.IsStableUnderComposition] [HasPullbacks C] {Z : C} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (hf : P f) (h : P (pullback.diagonal (f ≫ g))) :
+    P (f ≫ pullback.diagonal g) := by
+  rw [pullback.comp_diagonal]
+  exact P.comp_mem _ _ h (P.pullbackMap hf hf rfl rfl)
 
 end CategoryTheory.MorphismProperty

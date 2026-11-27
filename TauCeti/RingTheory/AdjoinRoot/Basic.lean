@@ -51,13 +51,17 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
   of `a`, over any commutative ring. Mathlib states this only over a field.
+* `AdjoinRoot.root_X_pow_sub_C_pow_eq_mul_pow_mod`: the `k`th power of that root is
+  `a ^ (k / n)` times its `(k % n)`th power.
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
 * `AdjoinRoot.basisXPowSubC`: for `n ≠ 0`, the basis `1, root, …, root ^ (n - 1)` of
   `R[X]/(X ^ n - C a)` indexed by `Fin n`, over any nontrivial commutative ring. It is Mathlib's
   `AdjoinRoot.powerBasis'` reindexed along `natDegree (X ^ n - C a) = n`.
   `AdjoinRoot.basisXPowSubC_repr_root_pow`, `AdjoinRoot.basisXPowSubC_repr_algebraMap_mul_root_pow`
   and `AdjoinRoot.basisXPowSubC_repr_root_pow_self` give the coordinates of `c root ^ k` and of
-  `root ^ n = a` in this basis.
+  `root ^ n = a` in this basis, and `AdjoinRoot.basisXPowSubC_repr_one` those of `1`.
+* `AdjoinRoot.faithfulSMul_X_pow_sub_C`: for `n ≠ 0`, `R → R[X]/(X ^ n - C a)` is injective,
+  over every commutative ring, the zero ring included.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
 * `AdjoinRoot.exists_of_pow_mul_eq_of_C_mul_X_sub_C`: for any `a, g ∈ R`, a power of `a` carries
@@ -259,6 +263,14 @@ theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
 protected theorem root_X_pow_sub_C_pow (n : ℕ) (a : R) : root (X ^ n - C a) ^ n = of _ a := by
   rw [← sub_eq_zero, ← eval₂_root, eval₂_sub, eval₂_C, eval₂_pow, eval₂_X]
 
+/-- Euclidean reduction of powers of the class of `X` in `R[X]/(X ^ n - C a)`: since its `n`th
+power is `a`, its `k`th power is `a ^ (k / n)` times its `(k % n)`th power. For `n = 0` both
+sides are `root ^ k`. -/
+theorem root_X_pow_sub_C_pow_eq_mul_pow_mod (n k : ℕ) (a : R) :
+    root (X ^ n - C a) ^ k = of _ a ^ (k / n) * root (X ^ n - C a) ^ (k % n) := by
+  conv_lhs => rw [← Nat.div_add_mod k n]
+  rw [pow_add, pow_mul, AdjoinRoot.root_X_pow_sub_C_pow]
+
 /-- The class of `X` in `R[X]/(X ^ n - C a)` is a unit when `a` is a unit and `n ≠ 0`. -/
 theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0) :
     IsUnit (root (X ^ n - C a)) :=
@@ -300,11 +312,30 @@ theorem basisXPowSubC_repr_root_pow_self [Nontrivial R] (n : ℕ) [NeZero n] (a 
     (basisXPowSubC n a).repr (root (X ^ n - C a) ^ n) = Finsupp.single 0 a := by
   simpa using basisXPowSubC_repr_algebraMap_mul_root_pow n a a 0
 
+/-- The unit `1 = root ^ 0` has the single coordinate `1` at `0` in `AdjoinRoot.basisXPowSubC`. -/
+@[simp]
+theorem basisXPowSubC_repr_one [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    (basisXPowSubC n a).repr 1 = Finsupp.single 0 1 := by
+  simpa using basisXPowSubC_repr_root_pow n a 0
+
 /-- `R[X]/(X ^ n - C a)` is nontrivial over a nontrivial commutative ring when `n ≠ 0`, since
 `X ^ n - C a` is monic of positive degree. -/
 instance nontrivial_X_pow_sub_C [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
     Nontrivial (AdjoinRoot (X ^ n - C a)) :=
   (nontrivial_iff_of_monic (monic_X_pow_sub_C a (NeZero.ne n))).2 <| by
+    rw [degree_X_pow_sub_C (NeZero.pos n)]
+    exact_mod_cast NeZero.pos n
+
+/-- For `n ≠ 0` the structure map `R → R[X]/(X ^ n - C a)` is injective, over every commutative
+ring `R`: `X ^ n - C a` is monic of positive degree when `R` is nontrivial, and the zero ring is
+handled separately. -/
+instance faithfulSMul_X_pow_sub_C (n : ℕ) [NeZero n] (a : R) :
+    FaithfulSMul R (AdjoinRoot (X ^ n - C a)) := by
+  cases subsingleton_or_nontrivial R with
+  | inl _ =>
+    exact (faithfulSMul_iff_algebraMap_injective _ _).2 (Function.injective_of_subsingleton _)
+  | inr _ =>
+    refine faithfulSMul_of_monic_of_degree_pos (monic_X_pow_sub_C a (NeZero.ne n)) ?_
     rw [degree_X_pow_sub_C (NeZero.pos n)]
     exact_mod_cast NeZero.pos n
 

@@ -124,6 +124,9 @@ zero only at `0`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
 * `TauCeti.exists_mem_Ioo_zero_one_sub_ne_intCast`: every element `r` of a linearly ordered field
   admits `δ ∈ (0, 1)` such that `r - δ` is not an integer.
+* `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
+* `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
+  `0 ≤ a + k * b ≤ c`.
 -/
 
 public section
@@ -548,6 +551,22 @@ theorem exists_mem_Ioo_zero_one_sub_ne_intCast {K : Type*} [Field K] [LinearOrde
     omega
   · have h12 : (1 / 2 : K) < 1 := by linarith [zero_lt_one' K]
     exact ⟨1 / 2, ⟨by positivity, h12⟩, fun m hm ↦ h ⟨m, by linarith⟩⟩
+
+/-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
+divided by `t`. -/
+theorem add_mul_div_le_add {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {t m M : K} (ht : 0 < t) (hmt : m ≤ t) (htM : t ≤ M) : t + m * M / t ≤ m + M := by
+  have key : m + M - (t + m * M / t) = (M - t) * (t - m) / t := by field_simp; ring
+  rw [← sub_nonneg, key]
+  exact div_nonneg (mul_nonneg (sub_nonneg.2 htM) (sub_nonneg.2 hmt)) ht.le
+
+/-- If `0 < k` and `0 ≤ a + k * b ≤ c`, then `a * b ≤ c ^ 2 / (4 * k)`: the inequality of
+arithmetic and geometric means for `a` and `k * b`. -/
+theorem mul_le_sq_div_of_add_mul_le {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a b c k : K} (hk : 0 < k) (h₀ : 0 ≤ a + k * b)
+    (h : a + k * b ≤ c) : a * b ≤ c ^ 2 / (4 * k) := by
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (a - k * b), mul_self_le_mul_self h₀ h]
 
 end TauCeti
 
