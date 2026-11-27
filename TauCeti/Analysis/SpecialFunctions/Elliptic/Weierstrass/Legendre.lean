@@ -36,6 +36,12 @@ leaves the `π`-periodic cotangents unchanged. Under `z ↦ -1 / z` the lattice 
 of some `ℤ τ + ℤ`, and rescaling multiplies `ω₁`, `ω₂` by `c` and `η` by `c⁻¹`, which gives the
 general relation.
 
+Legendre's relation also determines the unique complex-linear correction `s₂` for which
+`η(l) - s₂ l = (π/A) conj(l)`, where `A` is the Lebesgue covolume of the lattice.
+The coefficient `PeriodPair.sigmaCorrection` depends only on the lattice. It supplies the
+quadratic exponential correction used to construct the reduced sigma function in
+`Weierstrass/ReducedSigma.lean`, without requiring the sigma product here.
+
 ## Main results
 
 * `UpperHalfPlane.hasSum_quasiPeriod_ω₂_periodPair`: `η(1; ℤ z + ℤ) = ∑_m ∑_n (m z + n)⁻²`,
@@ -47,6 +53,10 @@ general relation.
 * `PeriodPair.quasiPeriod_legendre`: `η(ω₁) ω₂ - η(ω₂) ω₁ = 2π i` when `Im(ω₂ / ω₁) > 0`.
 * `PeriodPair.quasiPeriod_legendre_of_im_neg`: `η(ω₁) ω₂ - η(ω₂) ω₁ = -2π i` when
   `Im(ω₂ / ω₁) < 0`.
+* `PeriodPair.sigmaCorrection`: the complex-linear coefficient `s₂` of the quasi-period map.
+* `PeriodPair.quasiPeriod_sub_sigmaCorrection_mul`: `η(l) - s₂ l = (π/A) conj(l)`.
+* `PeriodPair.eq_sigmaCorrection_iff`: uniqueness of the correction coefficient.
+* `PeriodPair.sigmaCorrection_eq_of_lattice_eq`: independence from the lattice generators.
 
 ## References
 
@@ -250,12 +260,9 @@ theorem eq_sigmaCorrection_iff (c : ℂ) :
 /-- The sigma correction is independent of the generators of the lattice. -/
 theorem sigmaCorrection_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
     L.sigmaCorrection = L'.sigmaCorrection := by
-  have h₁ := L.quasiPeriod_sub_sigmaCorrection_mul ⟨_, L.ω₁_mem_lattice⟩
-  have h₂ := L'.quasiPeriod_sub_sigmaCorrection_mul ⟨_, h ▸ L.ω₁_mem_lattice⟩
-  have hη := L.quasiPeriod_eq_of_lattice_eq h ⟨_, L.ω₁_mem_lattice⟩
-  rw [← hη] at h₂
-  simp only at h₁ h₂
-  rw [← h] at h₂
-  exact mul_right_cancel₀ L.ω₁_ne_zero (by linear_combination h₂ - h₁)
+  apply Eq.symm
+  refine (L.eq_sigmaCorrection_iff _).mpr fun l ↦ ?_
+  rw [quasiPeriod_eq_of_lattice_eq h l]
+  simpa only [h] using L'.quasiPeriod_sub_sigmaCorrection_mul ⟨l, h ▸ l.property⟩
 
 end PeriodPair

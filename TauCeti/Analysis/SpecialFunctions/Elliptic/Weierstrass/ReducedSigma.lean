@@ -17,10 +17,6 @@ involves only the Hermitian form `π conj(l) z / area(ℂ/Λ)` and a sign that i
 on `2Λ` and `-1` otherwise. It is entire, odd, has derivative one at zero, and has simple
 zeros exactly on the lattice. Both the correction and the function depend only on the lattice.
 
-A twisted translate by a half-period `t ∉ Λ` constructs an even theta function:
-multiply `σ(z + t)` by `exp (−(π/A) conj(t) z)`, where `A = area(ℂ/Λ)`.
-The resulting function has a Hermitian transformation law.
-
 ## References
 
 * A. Weil, *Elliptic Functions according to Eisenstein and Kronecker* (1976).
@@ -48,10 +44,16 @@ def reducedSigma (z : ℂ) : ℂ :=
 theorem reducedSigma_def (z : ℂ) :
     L.reducedSigma z = exp (-(L.sigmaCorrection * z ^ 2 / 2)) * L.weierstrassSigma z := (rfl)
 
+/-- Reduced sigma as the pointwise product of the correction factor and the Weierstrass product. -/
+theorem reducedSigma_eq_mul :
+    L.reducedSigma =
+      (fun z : ℂ ↦ exp (-(L.sigmaCorrection * z ^ 2 / 2))) * L.weierstrassSigma :=
+  funext fun z ↦ L.reducedSigma_def z
+
 /-- The reduced sigma function is entire. -/
 @[fun_prop]
 theorem differentiable_reducedSigma : Differentiable ℂ L.reducedSigma := by
-  unfold reducedSigma
+  rw [reducedSigma_eq_mul]
   exact Differentiable.mul (by fun_prop) L.differentiable_weierstrassSigma
 
 /-- The reduced sigma function is odd. -/
@@ -73,9 +75,8 @@ theorem reducedSigma_zero : L.reducedSigma 0 = 0 :=
 theorem hasDerivAt_reducedSigma_zero : HasDerivAt L.reducedSigma 1 0 := by
   have he : DifferentiableAt ℂ (fun z : ℂ ↦ exp (-(L.sigmaCorrection * z ^ 2 / 2))) 0 := by
     fun_prop
-  convert he.hasDerivAt.mul L.hasDerivAt_weierstrassSigma_zero using 1
-  · exact funext fun z ↦ L.reducedSigma_def z
-  · simp
+  rw [reducedSigma_eq_mul]
+  simpa using he.hasDerivAt.mul L.hasDerivAt_weierstrassSigma_zero
 
 @[simp]
 theorem deriv_reducedSigma_zero : deriv L.reducedSigma 0 = 1 :=
@@ -88,15 +89,14 @@ theorem reducedSigma_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.la
   rw [reducedSigma_def, reducedSigma_def, sigmaCorrection_eq_of_lattice_eq h,
     weierstrassSigma_eq_of_lattice_eq h]
 
-open Classical in
 /-- The Hermitian transformation law of reduced sigma. The multiplier is a sign times an
 exponential; the sign is `1` exactly when `l` is twice a lattice vector and `-1` otherwise. -/
-theorem reducedSigma_add_coe (z : ℂ) (l : L.lattice) :
+theorem reducedSigma_add_coe (z : ℂ) (l : L.lattice)
+    [Decidable ((l : ℂ) / 2 ∈ L.lattice)] :
     L.reducedSigma (z + l) =
       (if (l : ℂ) / 2 ∈ L.lattice then (1 : ℂ) else -1) *
         exp ((Real.pi / ZLattice.covolume L.lattice : ℝ) * conj (l : ℂ) * (z + l / 2)) *
           L.reducedSigma z := by
-  classical
   have hW : L.weierstrassSigma (z + l) =
       (if (l : ℂ) / 2 ∈ L.lattice then (1 : ℂ) else -1) *
         exp (L.quasiPeriod l * (z + l / 2)) * L.weierstrassSigma z := by
@@ -114,16 +114,31 @@ theorem reducedSigma_add_coe (z : ℂ) (l : L.lattice) :
   linear_combination L.weierstrassSigma z *
     (if (l : ℂ) / 2 ∈ L.lattice then (1 : ℂ) else -1) * he
 
+/-- The Hermitian transformation law for a period in twice the lattice. -/
+theorem reducedSigma_add_coe_of_div_two_mem (z : ℂ) {l : L.lattice}
+    (hl : (l : ℂ) / 2 ∈ L.lattice) :
+    L.reducedSigma (z + l) =
+      exp ((Real.pi / ZLattice.covolume L.lattice : ℝ) * conj (l : ℂ) * (z + l / 2)) *
+        L.reducedSigma z := by
+  classical
+  simpa [hl] using L.reducedSigma_add_coe z l
+
+/-- The Hermitian transformation law for a period outside twice the lattice. -/
+theorem reducedSigma_add_coe_of_div_two_notMem (z : ℂ) {l : L.lattice}
+    (hl : (l : ℂ) / 2 ∉ L.lattice) :
+    L.reducedSigma (z + l) =
+      -exp ((Real.pi / ZLattice.covolume L.lattice : ℝ) * conj (l : ℂ) * (z + l / 2)) *
+        L.reducedSigma z := by
+  classical
+  simpa [hl] using L.reducedSigma_add_coe z l
+
 /-- Every zero of reduced sigma is simple. -/
 @[simp]
 theorem analyticOrderAt_reducedSigma_coe (l : L.lattice) :
     analyticOrderAt L.reducedSigma l = 1 := by
   have he : AnalyticAt ℂ (fun z : ℂ ↦ exp (-(L.sigmaCorrection * z ^ 2 / 2))) l := by
     fun_prop
-  have hfun : L.reducedSigma =
-      (fun z : ℂ ↦ exp (-(L.sigmaCorrection * z ^ 2 / 2))) * L.weierstrassSigma :=
-    funext fun z ↦ L.reducedSigma_def z
-  rw [hfun, analyticOrderAt_mul he (L.differentiable_weierstrassSigma.analyticAt l),
+  rw [reducedSigma_eq_mul, analyticOrderAt_mul he (L.differentiable_weierstrassSigma.analyticAt l),
     he.analyticOrderAt_eq_zero.mpr (exp_ne_zero _), L.analyticOrderAt_weierstrassSigma_coe,
     zero_add]
 
