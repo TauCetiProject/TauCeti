@@ -58,29 +58,27 @@ theorem _root_.Unitization.continuous_prodAlgEquiv :
   exact (((continuous_algebraMap 𝕜 A).comp Unitization.continuous_fst).add
     Unitization.continuous_snd).prodMk Unitization.continuous_fst
 
-/-- The map `A⁺ →+* A`, `(r, a) ↦ r • 1 + a`, the lift of the identity of a unital normed algebra
-`A` to its unitization, is continuous. -/
-theorem _root_.Unitization.continuous_lift_id :
-    Continuous (Unitization.lift (NonUnitalAlgHom.id 𝕜 A) : Unitization 𝕜 A →+* A) := by
-  have h : ⇑(Unitization.lift (NonUnitalAlgHom.id 𝕜 A) : Unitization 𝕜 A →+* A) =
-      fun x ↦ algebraMap 𝕜 A x.fst + x.snd :=
-    funext fun x ↦ by simp
-  rw [h]
-  exact ((continuous_algebraMap 𝕜 A).comp Unitization.continuous_fst).add
-    Unitization.continuous_snd
-
-variable [RegularNormedAlgebra 𝕜 A]
-
 /-- The inverse `A × 𝕜 ≃+* A⁺`, `(b, r) ↦ (r, b - r • 1)`, of the splitting of the unitization of
 a unital normed algebra is continuous. -/
 theorem _root_.Unitization.continuous_prodAlgEquiv_symm :
     Continuous ((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv.symm : A × 𝕜 →+* Unitization 𝕜 A) := by
-  have h : ⇑((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv.symm : A × 𝕜 →+* Unitization 𝕜 A) =
-      fun y ↦ Unitization.inl y.2 + Unitization.inr (y.1 - algebraMap 𝕜 A y.2) :=
-    funext fun y ↦ Unitization.prodAlgEquiv_symm_apply y
+  rw [Unitization.isUniformEmbedding_addEquiv.isUniformInducing.isInducing.continuous_iff]
+  have h : ⇑(Unitization.addEquiv 𝕜 A) ∘
+      ⇑((Unitization.prodAlgEquiv 𝕜 A).toRingEquiv.symm : A × 𝕜 →+* Unitization 𝕜 A) =
+      fun y ↦ (y.2, y.1 - algebraMap 𝕜 A y.2) :=
+    funext fun y ↦ Prod.ext (by simp) (by simp)
   rw [h]
-  exact (Unitization.continuous_inl.comp continuous_snd).add (Unitization.continuous_inr.comp
-    (continuous_fst.sub ((continuous_algebraMap 𝕜 A).comp continuous_snd)))
+  exact continuous_snd.prodMk
+    (continuous_fst.sub ((continuous_algebraMap 𝕜 A).comp continuous_snd))
+
+/-- The map `A⁺ →+* A`, `(r, a) ↦ r • 1 + a`, the lift of the identity of a unital normed algebra
+`A` to its unitization, is continuous. -/
+theorem _root_.Unitization.continuous_lift_id :
+    Continuous (Unitization.lift (NonUnitalAlgHom.id 𝕜 A) : Unitization 𝕜 A →+* A) := by
+  rw [← Unitization.fst_comp_prodAlgEquiv]
+  exact continuous_fst.comp (Unitization.continuous_prodAlgEquiv 𝕜 A)
+
+variable [RegularNormedAlgebra 𝕜 A]
 
 namespace UnitizationKOne
 
@@ -101,12 +99,10 @@ theorem unitalProdEquiv_apply_fst (x : StableComponentGroup (Unitization 𝕜 A)
     (unitalProdEquiv 𝕜 A x).1 =
       StableComponentGroup.map (Unitization.lift (NonUnitalAlgHom.id 𝕜 A))
         (Unitization.continuous_lift_id 𝕜 A) x := by
-  obtain ⟨n, u, rfl⟩ := StableComponentGroup.exists_mk x
   simp only [unitalProdEquiv, MulEquiv.trans_apply, StableComponentGroup.mapEquiv_apply,
-    StableComponentGroup.prodEquiv_apply, StableComponentGroup.map_mk]
-  refine congrArg (StableComponentGroup.mk A n) (Units.ext ?_)
-  ext i j
-  simp
+    StableComponentGroup.prodEquiv_apply, StableComponentGroup.map_map,
+    ← Unitization.fst_comp_prodAlgEquiv]
+  rfl
 
 /-- Under `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)`, the second component is induced by the scalar
 part `A⁺ → 𝕜`. -/
@@ -115,12 +111,10 @@ theorem unitalProdEquiv_apply_snd (x : StableComponentGroup (Unitization 𝕜 A)
     (unitalProdEquiv 𝕜 A x).2 =
       StableComponentGroup.map (Unitization.fstHom 𝕜 A : Unitization 𝕜 A →+* 𝕜)
         (Unitization.continuous_fstHom 𝕜 A) x := by
-  obtain ⟨n, u, rfl⟩ := StableComponentGroup.exists_mk x
   simp only [unitalProdEquiv, MulEquiv.trans_apply, StableComponentGroup.mapEquiv_apply,
-    StableComponentGroup.prodEquiv_apply, StableComponentGroup.map_mk]
-  refine congrArg (StableComponentGroup.mk 𝕜 n) (Units.ext ?_)
-  ext i j
-  simp
+    StableComponentGroup.prodEquiv_apply, StableComponentGroup.map_map,
+    ← Unitization.snd_comp_prodAlgEquiv]
+  rfl
 
 /-- The inverse of `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)` is the inverse of the stable component
 group of a product followed by the map induced by the inverse splitting. -/

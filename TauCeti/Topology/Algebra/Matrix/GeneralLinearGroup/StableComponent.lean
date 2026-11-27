@@ -357,13 +357,9 @@ def mapEquiv (e : A ≃+* B) (he : Continuous (e : A →+* B))
   toFun := map e he
   invFun := map e.symm he'
   left_inv x := by
-    obtain ⟨n, u, rfl⟩ := exists_mk x
-    rw [map_map, map_mk]
-    exact congrArg _ (Units.ext (by ext; simp))
+    simp only [map_map, RingEquiv.symm_comp, map_id, MonoidHom.id_apply]
   right_inv x := by
-    obtain ⟨n, u, rfl⟩ := exists_mk x
-    rw [map_map, map_mk]
-    exact congrArg _ (Units.ext (by ext; simp))
+    simp only [map_map, RingEquiv.comp_symm, map_id, MonoidHom.id_apply]
   map_mul' := map_mul _
 
 /-- The isomorphism induced by a ring isomorphism is the homomorphism it induces. -/
