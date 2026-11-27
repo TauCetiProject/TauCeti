@@ -72,8 +72,8 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   and its continuity.
 * `TauCeti.Huber.weightedMapCompletion_id` and `TauCeti.Huber.weightedMapCompletion_comp`: the
   functor laws.
-* `TauCeti.Huber.weightedMapCompletionEquiv_apply`, `…_symm_apply`, `…_congr`, `…_coe_weightedC`,
-  and `…_coe_weightedX`: each direction of the equivalence is the corresponding
+* `TauCeti.Huber.weightedMapCompletionEquiv_apply`, `…_symm_apply`, `…_coe_weightedC`, and
+  `…_coe_weightedX`: each direction of the equivalence is the corresponding
   `TauCeti.Huber.weightedMapCompletion`, acting coefficientwise on constants and fixing variables.
 * `TauCeti.Huber.continuous_weightedMapCompletionEquiv` and its `_symm`: the equivalence is one
   of topological rings.
@@ -285,33 +285,6 @@ theorem weightedMapCompletionEquiv_symm_apply (e : A ≃+* B) (he : Continuous e
     (weightedMapCompletionEquiv e he he' hT hS hTS hST).symm y
       = weightedMapCompletion (φ := (e.symm : B →+* A)) he' hS hT hST y := by
   simp only [weightedMapCompletionEquiv, RingEquiv.ofRingHom_symm_apply]
-
-/-- Two bicontinuous ring isomorphisms agreeing pointwise induce the same equivalence
-`TauCeti.Huber.weightedMapCompletionEquiv` on completions, independently of the continuity and
-weight-preservation proofs. -/
-theorem weightedMapCompletionEquiv_congr (e₁ e₂ : A ≃+* B) (he₁ : Continuous e₁)
-    (he₁' : Continuous e₁.symm) (he₂ : Continuous e₂) (he₂' : Continuous e₂.symm)
-    (hT : IsWeightFamily T) (hS : IsWeightFamily S)
-    (hTS₁ : ∀ i, (e₁ : A →+* B) '' T i ⊆ S i) (hST₁ : ∀ i, (e₁.symm : B →+* A) '' S i ⊆ T i)
-    (hTS₂ : ∀ i, (e₂ : A →+* B) '' T i ⊆ S i) (hST₂ : ∀ i, (e₂.symm : B →+* A) '' S i ⊆ T i)
-    (h : ∀ a : A, e₁ a = e₂ a) :
-    weightedMapCompletionEquiv e₁ he₁ he₁' hT hS hTS₁ hST₁ =
-      weightedMapCompletionEquiv e₂ he₂ he₂' hT hS hTS₂ hST₂ := by
-  ext w
-  rw [weightedMapCompletionEquiv_apply, weightedMapCompletionEquiv_apply]
-  refine UniformSpace.Completion.induction_on w
-      (isClosed_eq (continuous_weightedMapCompletion ..) (continuous_weightedMapCompletion ..))
-      fun f ↦ ?_
-  have he₁'' : Continuous (e₁ : A →+* B) := he₁
-  have he₂'' : Continuous (e₂ : A →+* B) := he₂
-  refine (weightedMapCompletion_coe he₁'' hT hS hTS₁ f).trans ?_
-  refine Eq.trans ?_ (weightedMapCompletion_coe he₂'' hT hS hTS₂ f).symm
-  congr 1
-  ext1
-  rw [coe_weightedMap, coe_weightedMap]
-  ext t
-  simp only [MvPowerSeries.coeff_map]
-  exact h _
 
 /-- `TauCeti.Huber.weightedMapCompletionEquiv` is continuous. -/
 theorem continuous_weightedMapCompletionEquiv (e : A ≃+* B) (he : Continuous e)
