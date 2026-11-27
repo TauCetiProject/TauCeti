@@ -92,10 +92,11 @@ For a map `u` of the pair of pants into a manifold `M`:
   Since the output cylinder runs in a circle, its integral vanishes for every two-form
   (`TauCeti.Floer.rectangleIntegral_comp_pairOfPantsOutputCylinder`, an instance of
   `TauCeti.rectangleIntegral_comp_real`).
-* **The glued disc of the output end loop.** Following the map of the previous item by the output
-  cylinder of `u` gives the glued disc `TauCeti.Floer.pairOfPantsGluedDisc`. For discs `D₀`, `D₁`
-  with a common centre and a common seam it is a disc with the same centre bounding the loop of
-  `u` along the output end at height `0` (`TauCeti.Floer.isLoopCylinder_pairOfPantsGluedDisc`),
+* **The glued disc of the output end loop.** Following the map of the item on gluing discs of
+  the inputs by the output cylinder of `u` gives the glued disc
+  `TauCeti.Floer.pairOfPantsGluedDisc`. For discs `D₀`, `D₁` with a common centre and a common
+  seam it is a disc with the same centre bounding the loop of `u` along the output end at height
+  `0` (`TauCeti.Floer.isLoopCylinder_pairOfPantsGluedDisc`),
   and its integral is that over `D₀` plus that over `D₁` minus the integral of `u^* φ` over `S₀`
   (`TauCeti.Floer.rectangleIntegral_pairOfPantsGluedDisc`).
 
@@ -1178,20 +1179,10 @@ theorem norm_symm_pairOfPantsOutputCylinder (z : ℝ × ℝ) :
     ‖Complex.equivRealProdCLM.symm (pairOfPantsOutputCylinder z)‖ = 2 := by
   rw [pairOfPantsOutputCylinder, ContinuousLinearEquiv.symm_apply_apply, norm_outputCirclePoint]
 
-private theorem outputCirclePoint_mem_thricePuncturedSphereReal (θ : ℝ) :
-    Complex.equivRealProdCLM (outputCirclePoint θ) ∈ thricePuncturedSphereReal := by
-  have h := norm_outputCirclePoint θ
-  rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
-  refine ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩
-  · rw [h0, norm_zero] at h
-    norm_num at h
-  · rw [h1, norm_one] at h
-    norm_num at h
-
 /-- The output cylinder takes values in the pair of pants. -/
 theorem pairOfPantsOutputCylinder_mem_thricePuncturedSphereReal (z : ℝ × ℝ) :
     pairOfPantsOutputCylinder z ∈ thricePuncturedSphereReal :=
-  outputCirclePoint_mem_thricePuncturedSphereReal _
+  mem_thricePuncturedSphereReal_of_two_le_norm (norm_symm_pairOfPantsOutputCylinder z).ge
 
 /-- **The output cylinder starts at the output loop of the core chart.** -/
 theorem pairOfPantsOutputCylinder_mk_zero (t : ℝ) :
@@ -1224,7 +1215,9 @@ theorem rectangleIntegral_comp_pairOfPantsOutputCylinder {φ : RoughForm I M F 2
     rectangleIntegral φ (u ∘ pairOfPantsOutputCylinder) a b = 0 := by
   have hγ : ContMDiff 𝓘(ℝ) I 1 (u ∘ Complex.equivRealProdCLM ∘ outputCirclePoint) :=
     hu.comp_contMDiff (Complex.equivRealProdCLM.contDiff.comp contDiff_outputCirclePoint).contMDiff
-      outputCirclePoint_mem_thricePuncturedSphereReal
+      fun θ ↦ mem_thricePuncturedSphereReal_of_two_le_norm
+        (by rw [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply,
+          norm_outputCirclePoint])
   exact rectangleIntegral_comp_real φ (hγ.mdifferentiable one_ne_zero)
     (contDiff_outputCylinderAngle.differentiable one_ne_zero) a b
 
