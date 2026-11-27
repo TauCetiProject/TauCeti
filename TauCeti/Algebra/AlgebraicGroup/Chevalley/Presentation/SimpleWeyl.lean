@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Presentation.Positive
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Presentation.Commutator
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
