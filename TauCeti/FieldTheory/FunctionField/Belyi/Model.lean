@@ -40,6 +40,8 @@ defined over its field of moduli (Couveignes).
   model onto the pair.
 * `TauCeti.AlgebraicBelyiPair.Model.baseChangeAut`: the automorphism of the pair induced by an
   automorphism of the constants fixing the field of the model.
+* `TauCeti.AlgebraicBelyiPair.Model.conjAlgEquiv`: the isomorphism of pairs `X^σ ≃ X` induced by an
+  automorphism `σ` of `k` over the field of a model.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.IsDefinedOver`: an isomorphism class is defined over a
   subfield.
 
@@ -204,24 +206,47 @@ theorem baseChangeAut_algebraMap_ratFunc (r : RatFunc k) :
         baseChangeAut_embedding]
   exact RingHom.congr_fun (IsFractionRing.injective_comp_algebraMap h) r
 
+/-- The identity automorphism of `k` over `K` induces the identity on `X`. -/
+@[simp]
+theorem baseChangeAut_one : M.baseChangeAut 1 = RingEquiv.refl X := by
+  rw [baseChangeAut, AlgEquiv.aut_one, Algebra.TensorProduct.congr_refl]
+  -- `AlgEquiv.refl.toRingEquiv` is `RingEquiv.refl _`, a left identity for `RingEquiv.trans`.
+  exact M.baseChangeEquiv.symm_trans_self
+
+/-- Composition of automorphisms of `k` over `K` corresponds to composition of `baseChangeAut`. -/
+@[simp]
+theorem baseChangeAut_mul (σ τ : k ≃ₐ[K] k) :
+    M.baseChangeAut (σ * τ) = (M.baseChangeAut τ).trans (M.baseChangeAut σ) := by
+  -- Under `AlgEquiv.aut`, `σ * τ = τ.trans σ` and `refl = refl.trans refl`.
+  have hcongr :
+      Algebra.TensorProduct.congr (AlgEquiv.refl : M.pair ≃ₐ[K] M.pair) (σ * τ) =
+        (Algebra.TensorProduct.congr AlgEquiv.refl τ).trans
+          (Algebra.TensorProduct.congr AlgEquiv.refl σ) :=
+    Algebra.TensorProduct.congr_trans AlgEquiv.refl AlgEquiv.refl τ σ
+  ext x
+  simp [baseChangeAut, hcongr]
+
+/-- The isomorphism of algebraic Belyi pairs `X^σ ≃ X` induced by an automorphism `σ` of `k` over
+the field `K` of a model `M`. -/
+noncomputable def conjAlgEquiv (M : Model K X) (σ : k ≃ₐ[K] k) :
+    X.conj (σ : k ≃+* k) ≃ₐ[RatFunc k] X :=
+  AlgEquiv.ofRingEquiv (f := (conjRingEquiv (σ : k ≃+* k) X).symm.trans (M.baseChangeAut σ))
+    fun r ↦ by
+      rw [RingEquiv.trans_apply, algebraMap_conj, RingEquiv.symm_apply_apply,
+        baseChangeAut_algebraMap_ratFunc, ← RatFunc.mapRingEquiv_symm,
+        RingEquiv.apply_symm_apply]
+
+@[simp]
+theorem conjAlgEquiv_conjRingEquiv (M : Model K X) (σ : k ≃ₐ[K] k) (x : X) :
+    M.conjAlgEquiv σ (conjRingEquiv (σ : k ≃+* k) X x) = M.baseChangeAut σ x := by
+  simp [conjAlgEquiv]
+
 /-- **The field of a model fixes the class**: if `X` has a model over `K`, with `k / K`
 algebraic, then every automorphism of `k` fixing `K` fixes the isomorphism class of `X`. -/
 theorem smul_mk_eq_mk (M : Model K X) {g : k ≃ₐ[ℚ] k}
     (hg : ∀ c : K, g (algebraMap K k c) = algebraMap K k c) :
-    g • IsoClass.mk X = IsoClass.mk X := by
-  let σ : k ≃ₐ[K] k := AlgEquiv.ofRingEquiv (f := (g : k ≃+* k)) hg
-  -- `σ` is `g` viewed as a `K`-algebra automorphism, so undoing `g` and then applying `σ` is the
-  -- identity.
-  have hσ : (g : k ≃+* k).symm.trans (σ : k ≃+* k) = RingEquiv.refl k := by
-    ext c
-    rw [RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, AlgEquiv.ofRingEquiv_apply,
-      RingEquiv.apply_symm_apply, RingEquiv.refl_apply]
-  refine IsoClass.smul_mk_eq_mk_iff.mpr
-    ⟨AlgEquiv.ofRingEquiv (f := (conjRingEquiv (g : k ≃+* k) X).symm.trans (M.baseChangeAut σ))
-      fun r ↦ ?_⟩
-  rw [RingEquiv.trans_apply, algebraMap_conj, RingEquiv.symm_apply_apply,
-    baseChangeAut_algebraMap_ratFunc, ← RingEquiv.trans_apply, ← RatFunc.mapRingEquiv_trans,
-    hσ, RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
+    g • IsoClass.mk X = IsoClass.mk X :=
+  IsoClass.smul_mk_eq_mk_iff.mpr ⟨M.conjAlgEquiv (AlgEquiv.ofRingEquiv (f := (g : k ≃+* k)) hg)⟩
 
 end Model
 

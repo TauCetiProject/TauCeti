@@ -6,22 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Immersion
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Injective
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
-# Closed root subgroups of the simply connected Chevalley scheme
+# Closed root subgroups of a Chevalley group scheme
 
-Every root morphism of the full-weight Chevalley datum is a closed immersion over `ℤ`.
+Every root morphism of **any** Chevalley datum `D` is a closed immersion over `ℤ`.
 Consequently its additive parameter remains faithful over arbitrary value rings, including
-nonreduced rings and rings of bad characteristic.
+nonreduced rings and rings of bad characteristic, and across all isogeny types.
 
-The starting immersions are
-`isClosedImmersion_rootSubgroup_simpleIndex_scChevalleyDatum`. They are extended using the
-signed Weyl conjugation formula `ChevalleyDatum.weylElement_conj_rootSubgroupPoints`.
-The argument takes place at the universal
-additive-group point, so it proves surjectivity of coordinate maps, rather than only injectivity
-on field-valued points. No point-generation or specialization theorem is required.
+## Main results
+
+* `TauCeti.DynkinType.ChevalleyDatum.rootCoordinateMap_surjective`: the ambient `GL` coordinate
+  map of every root of `D` is unconditionally surjective over `ℤ`.
+* `TauCeti.DynkinType.ChevalleyDatum.chevalleyRootSubgroupToralCoordinateMap_surjective`:
+  every factored root coordinate map of `D` is unconditionally surjective over `ℤ`.
+* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup`: every root morphism
+  `D.rootSubgroup γ : 𝔾ₐ ⟶ D.groupScheme` is unconditionally a closed immersion over `ℤ`.
+* `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective`: every root subgroup of `D`
+  is injective on `A`-points over every commutative ring.
 
 ## References
 
@@ -40,6 +45,8 @@ noncomputable section
 
 -- Match the scalar-action instance used by the integral exponential and its matrix API.
 attribute [local instance high] Algebra.toModule
+
+universe v
 
 variable {t : DynkinType} {ht : t.Valid}
 
@@ -132,9 +139,7 @@ private theorem coordinateMap_surjective_reflection (i : Fin t.rank) (γ : Fin t
   simp only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom]
   rw [heval, zsmul_eq_mul, ← mul_assoc, hεA, one_mul]
 
-/-- Surjectivity of the positive simple-root coordinate maps implies surjectivity of all
-root coordinate maps. The assertion concerns integral polynomial maps, not just field points. -/
-theorem rootCoordinateMap_surjective_of_simple
+private theorem rootCoordinateMap_surjective_of_simple
     (hsimple : ∀ i : Fin t.rank, Function.Surjective (C (t.simpleIndex ht i)).hom)
     (γ : Fin t.numRoots) : Function.Surjective (C γ).hom := by
   induction γ using (t.rationalBase ht).induction_simple_reflect with
@@ -146,24 +151,30 @@ theorem rootCoordinateMap_surjective_of_simple
     simpa only [reflectionPerm_rationalRootSystem] using
       D.coordinateMap_surjective_reflection i γ hγ
 
-/-- If the positive simple-root morphisms are closed immersions, every root morphism is a
-closed immersion. This criterion does not assume generation of the group of field points. -/
-theorem isClosedImmersion_rootSubgroup_of_simple
-    (hsimple : ∀ i : Fin t.rank,
-      IsClosedImmersion (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left)
-    (γ : Fin t.numRoots) : IsClosedImmersion (D.rootSubgroup γ).hom.hom.left := by
-  have hcoord (i : Fin t.rank) : Function.Surjective (C (t.simpleIndex ht i)).hom := by
-    have := hsimple i
-    have hc' := IsClosedImmersion.comp
-      (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left D.groupSchemeι.hom.hom.left
-    have hc : IsClosedImmersion
-        (D.rootSubgroup (t.simpleIndex ht i) ≫ D.groupSchemeι).hom.hom.left := by
-      simpa only [Grp.comp_hom_hom, Over.comp_left] using hc'
-    rw [D.rootSubgroup_comp_groupSchemeι, kostantRootSubgroup_def] at hc
-    exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
-      (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ D.dim) _).1 hc
-  rw [D.rootSubgroup_def, chevalleyRootSubgroupToToral_def]
-  apply (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff _ _).2
+/-- The ambient `GL` coordinate map of every root subgroup of a Chevalley datum is unconditionally
+surjective over `ℤ`. -/
+theorem rootCoordinateMap_surjective (γ : Fin t.numRoots) :
+    Function.Surjective (C γ).hom := by
+  refine D.rootCoordinateMap_surjective_of_simple (fun i => ?_) γ
+  have hsimple : IsClosedImmersion (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left := by
+    rw [D.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
+    infer_instance
+  have hc' := IsClosedImmersion.comp
+    (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left D.groupSchemeι.hom.hom.left
+  have hc : IsClosedImmersion
+      (D.rootSubgroup (t.simpleIndex ht i) ≫ D.groupSchemeι).hom.hom.left := by
+    simpa only [Grp.comp_hom_hom, Over.comp_left] using hc'
+  rw [D.rootSubgroup_comp_groupSchemeι, kostantRootSubgroup_def] at hc
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ D.dim) _).1 hc
+
+/-- The factored root coordinate map of every root of a Chevalley datum is unconditionally
+surjective over `ℤ`. -/
+theorem chevalleyRootSubgroupToralCoordinateMap_surjective (γ : Fin t.numRoots) :
+    Function.Surjective
+      (chevalleyRootSubgroupToralCoordinateMap D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+        D.basis D.coordinateWeight γ).hom := by
   have h := mkQuotient_comp_chevalleyRootSubgroupToralCoordinateMap D.representation
     D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight γ
@@ -172,19 +183,47 @@ theorem isClosedImmersion_rootSubgroup_of_simple
       D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
       D.basis D.coordinateWeight γ) _ h]
   exact CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
-    (D.rootCoordinateMap_surjective_of_simple hcoord γ)
+    (D.rootCoordinateMap_surjective γ)
 
-end ChevalleyDatum
-
-variable (t : DynkinType) (ht : t.Valid)
-
-/-- Every root morphism of the full-weight Chevalley datum is a closed immersion over `ℤ`.
+/-- Every root morphism of a Chevalley datum is a closed immersion over `ℤ`.
 In particular this is scheme-theoretic, including in bad characteristic and after nonreduced
 base change, and does not require generation of all group points by root subgroups. -/
-instance isClosedImmersion_rootSubgroup_scChevalleyDatum (γ : Fin t.numRoots) :
-    IsClosedImmersion ((t.scChevalleyDatum ht).rootSubgroup γ).hom.hom.left := by
-  exact (t.scChevalleyDatum ht).isClosedImmersion_rootSubgroup_of_simple
-    (fun i => isClosedImmersion_rootSubgroup_simpleIndex_scChevalleyDatum t ht i) γ
+instance isClosedImmersion_rootSubgroup (γ : Fin t.numRoots) :
+    IsClosedImmersion (D.rootSubgroup γ).hom.hom.left := by
+  rw [D.rootSubgroup_def, chevalleyRootSubgroupToToral_def]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff _ _).2
+    (D.chevalleyRootSubgroupToralCoordinateMap_surjective γ)
+
+/-- Every root subgroup of a Chevalley datum is injective over every commutative ring, including
+nonreduced rings and rings of small characteristic. -/
+theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
+    Function.Injective (D.rootSubgroupPoints γ A) := by
+  rw [D.rootSubgroupPoints_injective_iff γ A, ← kostantRootSubgroupParam_chevalleySystem]
+  exact kostantRootSubgroupParam_injective_of_surjective (t.chevalleySystem ht)
+    (LieAlgebra.Basis.h (t.lieBasis ht)) D.representation D.lattice
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
+    (isNilpotent_apply_ι_chevalleySystem D.representation
+      D.isNilpotent_representation_rootGenerator γ)
+    D.basis (D.rootCoordinateMap_surjective γ) A
+
+/-- Two elements of the same root subgroup of a Chevalley datum are equal if and only if their
+parameters coincide. -/
+@[simp]
+theorem rootSubgroupPoints_inj (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    {u v : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
+  (D.rootSubgroupPoints_injective γ A).eq_iff
+
+/-- An element of a root subgroup of a Chevalley datum is the identity if and only if its
+parameter is `1`. -/
+@[simp]
+theorem rootSubgroupPoints_eq_one_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    {u : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = 1 ↔ u = 1 :=
+  map_eq_one_iff _ (D.rootSubgroupPoints_injective γ A)
+
+end ChevalleyDatum
 
 end
 

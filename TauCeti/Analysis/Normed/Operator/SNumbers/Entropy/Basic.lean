@@ -476,16 +476,8 @@ theorem tendsto_entropyNumber_atTop_nhds_zero_iff_totallyBounded (T : E →L[�
     refine ⟨N, N.finite_toSet, hcov.subset_iUnion_closedBall.trans ?_⟩
     exact iUnion₂_mono fun y _ ↦ closedBall_subset_ball (half_lt_self hε)
   · intro h
-    rw [Metric.tendsto_atTop]
-    intro ε hε
-    set δ : ℝ≥0 := ⟨ε / 2, by positivity⟩
-    have hδ0 : δ ≠ 0 := ne_of_gt (by exact_mod_cast half_pos hε)
-    obtain ⟨C, -, hCfin, hCcov⟩ := exists_finite_isCover_of_totallyBounded hδ0 h
-    refine ⟨hCfin.toFinset.card, fun n hn ↦ ?_⟩
-    have hle : T.entropyNumber hCfin.toFinset.card ≤ δ :=
-      T.entropyNumber_le_of_isCover Nat.lt_two_pow_self.le (by simpa using hCcov)
-    have hle' : T.entropyNumber n ≤ δ := (T.antitone_entropyNumber hn).trans hle
-    simpa [NNReal.dist_eq] using (NNReal.coe_le_coe.mpr hle').trans_lt (half_lt_self hε)
+    exact T.antitone_entropyNumber.tendsto_atTop_nhds_zero_of_isCover h (C := 1)
+      fun _ _ hN ↦ by simpa using T.entropyNumber_le_of_isCover Nat.lt_two_pow_self.le hN
 
 /-- Every compact operator has entropy numbers tending to zero. -/
 theorem _root_.IsCompactOperator.tendsto_entropyNumber {T : E →L[𝕜] F} (hT : IsCompactOperator T) :

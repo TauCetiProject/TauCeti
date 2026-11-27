@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
@@ -63,6 +64,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   a finite free module `M` and `B (F x) (F' y) = c • B x y`, then `det F * det F' = c ^ finrank M`.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
+* `Matrix.detRowAlternating_apply`: the row determinant form evaluated on a family of rows is
+  the determinant of the matrix with those rows.
 * `Matrix.detRowAlternating_pi_apply`: evaluating the row determinant form on a family of
   linear functionals gives the determinant of their evaluation matrix.
 * `Matrix.detRowAlternating_compLinearMap_pi_apply`: the same evaluation in multilinear-map
@@ -85,14 +88,22 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
+* `Module.Basis.det_unique`: over an index type with a single element, the determinant of a
+  family in a basis `b` is the coordinate in `b` of its single vector.
+* `Module.Basis.det_unique_smul`: over an index type with a single element, the single vector of
+  a family is its determinant in a basis `b` times the single vector of `b`.
 * `Module.Basis.det_smul_smul_vecCons`: rescaling the first two of three vectors by `r` and `r'`
   multiplies their determinant by `r * r'`.
 * `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
   basis `b'` has determinant `b'.det b`.
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
+* `Module.Basis.det_mem_nonZeroDivisors`: the determinant `b.det v` of a linearly independent
+  family `v` is a non-zero-divisor.
 * `Module.Basis.det_eq_det_of_det_eq_one`: a basis `b'` with `b.det b' = 1` has the same
   determinant form as `b`.
+* `Module.Basis.eq_zero_of_forall_det_eq_zero`: the determinant form of a rank-two basis is
+  nondegenerate.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
   rank whose determinant is a non-zero-divisor is injective.
@@ -217,6 +228,19 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   rw [hσ, prod_det_sumElim] at h
   rw [h, smul_smul, Int.units_mul_self, one_smul]
 
+/-- Over an index type with a single element, the determinant of a family `v` in a basis `b` is
+the coordinate in `b` of its single vector. This is `Matrix.det_unique` for `Module.Basis.det`. -/
+theorem det_unique [Unique ι] (b : Basis ι R M) (v : ι → M) :
+    b.det v = b.repr (v default) default := by
+  rw [det_apply, Matrix.det_unique, toMatrix_apply]
+
+/-- Over an index type with a single element, the single vector of a family `v` is its
+determinant in a basis `b` times the single vector of `b`. -/
+theorem det_unique_smul [Unique ι] (b : Basis ι R M) (v : ι → M) :
+    b.det v • b default = v default := by
+  rw [det_unique]
+  simpa using b.sum_repr (v default)
+
 /-- Rescaling the first two of three vectors by `r` and `r'` multiplies their determinant in a
 basis by `r * r'`. -/
 theorem det_smul_smul_vecCons (b : Basis (Fin 3) R M) (r r' : R) (u w d : M) :
@@ -251,11 +275,32 @@ theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R]
     b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
   DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
 
+/-- The determinant of a linearly independent family `v` in a basis `b` of the same size is a
+non-zero-divisor, although `v` need not span: over `ℤ`, the family `(2)` in the basis `(1)` of `ℤ`
+has determinant `2`. -/
+theorem det_mem_nonZeroDivisors (b : Basis ι R M) {v : ι → M} (hv : LinearIndependent R v) :
+    b.det v ∈ nonZeroDivisors R := by
+  rw [det_apply, ← Matrix.nonsingular_iff_det_mem_nonZeroDivisors,
+    ← Matrix.linearIndependent_col_iff]
+  convert hv.map' b.equivFun.toLinearMap b.equivFun.ker using 1
+  ext j i
+  simp [toMatrix_apply, Matrix.col]
+
 /-- If a basis `b'` has determinant `1` in the basis `b`, then `b` and `b'` have the same
 determinant form. -/
 theorem det_eq_det_of_det_eq_one {b b' : Basis ι R M} (h : b.det b' = 1) : b'.det = b.det := by
   rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← h, det_mul_det, det_self,
     one_smul]
+
+/-- **The determinant form of a rank-two basis is nondegenerate.** A vector `u` with
+`e.det ![u, v] = 0` for every `v` is zero. -/
+theorem eq_zero_of_forall_det_eq_zero (e : Basis (Fin 2) R M) {u : M}
+    (h : ∀ v, e.det ![u, v] = 0) : u = 0 := by
+  refine e.forall_coord_eq_zero_iff.1 fun i ↦ ?_
+  rw [coord_apply]
+  fin_cases i
+  · simpa [det_apply, Matrix.det_fin_two, toMatrix_apply] using h (e 1)
+  · simpa [det_apply, Matrix.det_fin_two, toMatrix_apply] using h (e 0)
 
 end Module.Basis
 
@@ -429,6 +474,13 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
 end LinearEquiv
 
 namespace Matrix
+
+/-- The row determinant form evaluated on a family of rows is the determinant of the matrix with
+those rows. -/
+theorem detRowAlternating_apply {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (v : n → n → R) : detRowAlternating v = (Matrix.of v).det :=
+  -- Mathlib defines `det` as evaluation of `detRowAlternating` on the rows.
+  rfl
 
 /-- Evaluating the row determinant form after a family of linear functionals gives the
 matrix of those functionals evaluated on the input vectors. -/

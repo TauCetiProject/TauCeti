@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.Analysis.Normed.Group.Prod
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
@@ -23,8 +24,10 @@ such as the circle bundles of nonzero Euler number over the torus.
 `Nil` is also the real Heisenberg group `TauCeti.HeisenbergGroup ℝ` of unipotent upper triangular
 `3 × 3` matrices, whose product in the coordinates of the strictly upper triangle is
 `(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)`; the coordinates give a group isomorphism
-`Nil.toHeisenberg`. The one-forms `dx`, `dy` and `dz - x dy` are left-invariant, so the metric is
-left-invariant and left multiplication by any element is a Riemannian isometry. This gives an
+`Nil.toHeisenberg`. Multiplication and inversion are polynomial in the coordinates, so `Nil` is a
+real-analytic Lie group, and its centre is the `z`-axis `{(0, 0, z)}`. The one-forms `dx`, `dy`
+and `dz - x dy` are left-invariant, so the metric is left-invariant and left multiplication by any
+element is a Riemannian isometry. This gives an
 injective group homomorphism from `Nil` into its isometry group, and already its image acts
 transitively, so `Nil` is a homogeneous Riemannian manifold.
 
@@ -45,7 +48,8 @@ Section 4): every isometry is of this form by `TauCeti.Nil.semidirectProductToIs
   and the coordinates `Nil.x`, `Nil.y`, `Nil.z`.
 * `TauCeti.Nil.toProdDiffeomorph`: the smooth global coordinates in real three-space.
 * `TauCeti.Nil.instGroup`: the group structure of `Nil`, and `TauCeti.Nil.toHeisenberg`, the
-  group isomorphism with the real Heisenberg group.
+  group isomorphism with the real Heisenberg group. Its product and inversion are polynomial, so
+  `Nil` is a real-analytic Lie group (`LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Nil`).
 * `TauCeti.Nil.riemannianMetric`: the analytic metric `dx² + dy² + (dz - x dy)²`, which is the
   `RiemannianBundle` instance of `Nil`.
 * `TauCeti.Nil.toIsom`: left multiplication, as a homomorphism from `Nil` to its isometry group.
@@ -57,6 +61,7 @@ Section 4): every isometry is of this form by `TauCeti.Nil.semidirectProductToIs
 
 ## Main results
 
+* `TauCeti.Nil.mem_center_iff`: the centre of `Nil` is its `z`-axis.
 * `TauCeti.Nil.inner_def`: the inner product of two tangent vectors at a point with first
   coordinate `x` is `v₁ w₁ + v₂ w₂ + (v₃ - x v₂) (w₃ - x w₂)`.
 * `TauCeti.Nil.toIsom_injective`: distinct elements of `Nil` give distinct isometries.
@@ -255,6 +260,40 @@ def toHeisenberg : Nil ≃* HeisenbergGroup ℝ where
 
 @[simp] theorem z_toHeisenberg (p : Nil) : (toHeisenberg p).z = p.z := by simp [toHeisenberg]
 
+/-- **The centre of Nil is the `z`-axis** `{(0, 0, z)}`, transported from the centre of the
+Heisenberg group (`TauCeti.HeisenbergGroup.center_eq_zAxis`). -/
+theorem mem_center_iff {p : Nil} : p ∈ Subgroup.center Nil ↔ p.x = 0 ∧ p.y = 0 := by
+  simp [← Subgroup.mem_map_iff_mem (f := (toHeisenberg : Nil →* HeisenbergGroup ℝ))
+    toHeisenberg.injective, HeisenbergGroup.center_eq_zAxis]
+
+/-! ### The Lie group structure -/
+
+/-- `Nil` is a real-analytic Lie group: in the global coordinates, the product
+`(a, b, c) * (x, y, z) = (a + x, b + y, c + z + a y)` and the inversion
+`(x, y, z)⁻¹ = (-x, -y, -z + x y)` are polynomial. -/
+instance : LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Nil where
+  contMDiff_mul := by
+    have hmul : (fun p : Nil × Nil ↦ p.1 * p.2) =
+        toProd.symm ∘ (fun r : (ℝ × ℝ × ℝ) × ℝ × ℝ × ℝ ↦
+          (r.1.1 + r.2.1, r.1.2.1 + r.2.2.1, r.1.2.2 + r.2.2.2 + r.1.1 * r.2.2.1)) ∘
+          Prod.map toProd toProd := by
+      funext p
+      ext <;> simp
+    rw [hmul]
+    refine contMDiff_toProd_symm.comp (.comp ?_ (contMDiff_toProd.prodMap contMDiff_toProd))
+    -- The model of `ℝ³ × ℝ³` is the product of the models of the two factors.
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+    exact ContDiff.contMDiff (by fun_prop)
+  contMDiff_inv := by
+    have hinv : (fun p : Nil ↦ p⁻¹) =
+        toProd.symm ∘ (fun r : ℝ × ℝ × ℝ ↦ (-r.1, -r.2.1, -r.2.2 + r.1 * r.2.1)) ∘ toProd := by
+      funext p
+      ext <;> simp
+    rw [hinv]
+    exact contMDiff_toProd_symm.comp ((ContDiff.contMDiff (by fun_prop)).comp contMDiff_toProd)
+
+instance : IsTopologicalGroup Nil := topologicalGroup_of_lieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω
+
 /-! ### The metric -/
 
 /-- The coordinate functional `x`. -/
@@ -356,14 +395,8 @@ private theorem mul_left_eq (p : Nil) :
   funext q
   ext <;> simp [linearPart, xL, yL, zL] <;> ring
 
-/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the two results below
-are the corresponding statements about the affine map `r ↦ linearPart p r + toProd p` of
-`ℝ × ℝ × ℝ`. -/
-
-private theorem contMDiff_mul_left {n : ℕ∞ω} (p : Nil) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (p * ·) := by
-  rw [mul_left_eq]
-  exact ((linearPart p).contDiff.add contDiff_const).contMDiff
+/- `Nil` has the charts of `ℝ × ℝ × ℝ` and `toProd` is the identity, so the result below is the
+corresponding statement about the affine map `r ↦ linearPart p r + toProd p` of `ℝ × ℝ × ℝ`. -/
 
 private theorem hasMFDerivAt_mul_left (p q : Nil) :
     HasMFDerivAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q (linearPart p) := by
@@ -394,7 +427,7 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
 
 /-- Left multiplication by an element of `Nil` is smooth. -/
 instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
-  ⟨fun p ↦ contMDiff_mul_left p⟩
+  ⟨fun _ ↦ contMDiff_mul_left⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/

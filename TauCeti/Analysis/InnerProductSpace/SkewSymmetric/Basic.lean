@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # Skew-symmetric maps and orthogonal hyperplane frames on real inner product spaces
@@ -15,7 +16,9 @@ vector `x` into its orthogonal complement `(ℝ ∙ x)ᗮ`. When `f` also satisf
 preserves inner products and norms, and any two anticommuting skew-symmetric maps take orthogonal
 values at every vector `x`. Evaluating a family of `card ι` pairwise anticommuting skew-symmetric
 maps squaring to `-1` at a unit vector `x` therefore produces an orthonormal family in `(ℝ ∙ x)ᗮ`,
-which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`.
+which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = card ι + 1`. In odd
+finite dimension a skew-symmetric linear map `f` has a nonzero kernel vector, since otherwise
+`x, y ↦ ⟪f x, y⟫` would be a nondegenerate alternating form, forcing even dimension.
 
 ## Main definitions and results
 
@@ -32,6 +35,10 @@ which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = 
   and in `(ℝ ∙ x)ᗮ`.
 * `TauCeti.orthonormalBasisOrthogonalOfSkewFamily`: when `finrank ℝ E = card ι + 1`, this family
   is an `OrthonormalBasis ι ℝ (ℝ ∙ x)ᗮ`.
+* `TauCeti.exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank`: a skew-symmetric linear map of an
+  odd-dimensional space has a nonzero kernel vector.
+* `OrthonormalBasis.sum_smul_apply_eq_neg_sum_smul`: a skew-symmetric linear map `A` moves across
+  a sum over an orthonormal basis, `∑ₖ G(bₖ) • Φ(A bₖ) = -∑ₖ G(A bₖ) • Φ(bₖ)`.
 
 ## References
 
@@ -87,6 +94,23 @@ theorem norm_apply_of_skew_of_sq_neg_id {f : E → E}
     ‖f x‖ = ‖x‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
     inner_apply_apply_of_skew_of_sq_neg_id hf hsq]
+
+/-- A skew-symmetric linear map of a real inner product space of odd finite dimension has a
+nonzero kernel vector. -/
+theorem exists_ne_zero_apply_eq_zero_of_skew_of_odd_finrank [FiniteDimensional ℝ E]
+    {f : E →ₗ[ℝ] E} (hf : ∀ x y, ⟪f x, y⟫_ℝ = -⟪x, f y⟫_ℝ) (hodd : Odd (finrank ℝ E)) :
+    ∃ x, x ≠ 0 ∧ f x = 0 := by
+  by_contra! hker
+  have hinj (x : E) (hx : f x = 0) : x = 0 := by_contra fun h ↦ hker x h hx
+  -- The form `x, y ↦ ⟪f x, y⟫` is alternating, and nondegenerate since `f` is injective, so
+  -- the dimension would be even.
+  let B : LinearMap.BilinForm ℝ E := (innerₗ E).comp f
+  have hB : B.IsAlt := inner_apply_self_eq_zero_of_skew hf
+  have hnd : B.Nondegenerate := by
+    refine ⟨fun x hx ↦ hinj x ?_, fun y hy ↦ hinj y ?_⟩
+    · simpa [B] using hx (f x)
+    · simpa [B, hf] using hy (f y)
+  exact Nat.not_even_iff_odd.mpr hodd (hB.even_finrank hnd)
 
 /-- Two anticommuting skew-symmetric maps on a real inner product space take orthogonal values at
 every vector `x`. -/
@@ -175,3 +199,32 @@ theorem orthonormalBasisOrthogonalOfSkewFamily_repr_apply {ι : Type*} [Fintype 
     coe_orthonormalBasisOrthogonalOfSkewFamily_apply]
 
 end TauCeti
+
+namespace OrthonormalBasis
+
+variable {E W : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [AddCommGroup W] [Module ℝ W]
+  {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+
+/-- **Moving a skew-symmetric map across a sum over an orthonormal basis.** For a skew-symmetric
+linear map `A`, an orthonormal basis `(bₖ)` and linear maps `G` and `Φ`,
+`∑ₖ G(bₖ) • Φ(A bₖ) = -∑ₖ G(A bₖ) • Φ(bₖ)`. -/
+theorem sum_smul_apply_eq_neg_sum_smul {A : E →ₗ[ℝ] E}
+    (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) (G : E →ₗ[ℝ] ℝ) (Φ : E →ₗ[ℝ] W) :
+    ∑ k, G (b k) • Φ (A (b k)) = -∑ k, G (A (b k)) • Φ (b k) := by
+  have hrow (j : ι) : ∑ k, ⟪b j, A (b k)⟫_ℝ • b k = -A (b j) := by
+    conv_rhs => rw [← b.sum_repr' (A (b j))]
+    rw [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [real_inner_comm, hA, neg_smul]
+  calc ∑ k, G (b k) • Φ (A (b k))
+      = ∑ k, ∑ j, (⟪b j, A (b k)⟫_ℝ * G (b k)) • Φ (b j) := by
+        refine Finset.sum_congr rfl fun k _ ↦ ?_
+        conv_lhs => rw [← b.sum_repr' (A (b k))]
+        simp [map_sum, map_smul, Finset.smul_sum, smul_smul, mul_comm]
+    _ = ∑ j, G (∑ k, ⟪b j, A (b k)⟫_ℝ • b k) • Φ (b j) := by
+        rw [Finset.sum_comm]
+        simp [map_sum, map_smul, Finset.sum_smul]
+    _ = -∑ k, G (A (b k)) • Φ (b k) := by
+        simp [hrow, ← Finset.sum_neg_distrib]
+
+end OrthonormalBasis

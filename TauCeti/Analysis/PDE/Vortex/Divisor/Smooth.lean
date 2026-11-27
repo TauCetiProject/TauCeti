@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Divisor.Family
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint.Inverse
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 import TauCeti.Analysis.PDE.Vortex.Reduced.HigherSmoothness
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -74,6 +74,12 @@ almost everywhere.
   `TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp`:
   the orthogonal kernel projections and right inverses at the vortices of such a family are `C^n`
   in the parameter.
+* `TauCeti.Vortex.contDiff_orthogonalLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp`:
+  the complementary inverses `R_P` of the adjoint blocks `L_P* : H¹ → L²` are `C^n` in the
+  parameter, and so are the projections `L_P* R_P` onto their ranges
+  (`contDiff_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp`) and the
+  projections `1 - L_P* R_P` onto their cokernels, the values of the kernels of `L_P`
+  (`contDiff_id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp`).
 
 ## References
 
@@ -261,20 +267,11 @@ end Background
 
 /-! ### The parts from the reduced solution -/
 
-/-- The Sobolev embedding of `H^s(ℂ)`, `s > 1`, into the bounded continuous functions. -/
-private def sobolevBCF {s : ℝ} (hs : 1 < s) : H^{s}(ℂ) →L[ℝ] ℂ →ᵇ ℂ :=
-  (ZeroAtInftyContinuousMap.toBCFₗᵢ ℝ).toContinuousLinearMap.comp
-    ((toZeroAtInfty (finrank_real_complex_lt_two_mul hs)).restrictScalars ℝ)
-
-private theorem coeFn_sobolevBCF {s : ℝ} (hs : 1 < s) (u : H^{s}(ℂ)) :
-    ⇑(sobolevBCF hs u) = ⇑(toZeroAtInfty (finrank_real_complex_lt_two_mul hs) u) := by
-  ext z
-  simp [sobolevBCF]
-
-/-- The Sobolev embedding of `u` is a representative of its `L²` function. -/
-private theorem sobolevBCF_ae_eq {s : ℝ} (hs : 1 < s) {u : H^{s}(ℂ)} {f : ℂ → ℂ}
-    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] f) : ⇑(sobolevBCF hs u) =ᵐ[volume] f := by
-  rw [coeFn_sobolevBCF]
+/-- The Sobolev embedding of `u ∈ H^s(ℂ)`, `s > 1`, is a representative of its `L²` function. -/
+private theorem toBCF_ae_eq {s : ℝ} (hs : 1 < s) {u : H^{s}(ℂ)} {f : ℂ → ℂ}
+    (hu : ⇑(inclusionLp (by linarith) u) =ᵐ[volume] f) :
+    ⇑(toBCF (finrank_real_complex_lt_two_mul hs) u) =ᵐ[volume] f := by
+  rw [coe_toBCF]
   exact (coeFn_inclusionLp_ae_eq_toZeroAtInfty _ u).symm.trans hu
 
 variable {m : ℕ}
@@ -286,18 +283,19 @@ private def reducedSolutionH3 (c : Fin m → ℂ) : H^{(2 : ℝ) + 1}(ℂ) :=
 
 /-- The derivative `∂_v w_c` of the reduced solution, as a bounded continuous function. -/
 private def reducedSolutionDeriv (v : ℂ) (c : Fin m → ℂ) : ℂ →ᵇ ℂ :=
-  sobolevBCF one_lt_two (lineDerivCLM (by norm_num) (by simp) v (reducedSolutionH3 c))
+  toBCF (finrank_real_complex_lt_two_mul one_lt_two)
+    (lineDerivCLM (by norm_num) (by simp) v (reducedSolutionH3 c))
 
 private theorem contDiff_reducedSolutionDeriv (v : ℂ) :
     ContDiff ℝ ∞ (reducedSolutionDeriv (m := m) v) :=
-  (sobolevBCF one_lt_two).contDiff.comp
+  ((toBCF (finrank_real_complex_lt_two_mul one_lt_two)).restrictScalars ℝ).contDiff.comp
     (((lineDerivCLM (by norm_num) (by simp) v).restrictScalars ℝ).contDiff.comp
       (contDiff_ofRealSobolevFunction_reducedSolution _))
 
 private theorem reducedSolutionDeriv_ae_eq (v : ℂ) (c : Fin m → ℂ) :
     ⇑(reducedSolutionDeriv v c) =ᵐ[volume]
       fun z ↦ (fderiv ℝ (reducedSolution (monicOfCoeff c)) z v : ℂ) :=
-  sobolevBCF_ae_eq one_lt_two (coeFn_inclusionLp_lineDerivCLM_ae_eq (by norm_num) (by simp)
+  toBCF_ae_eq one_lt_two (coeFn_inclusionLp_lineDerivCLM_ae_eq (by norm_num) (by simp)
     zero_le_two ((contDiff_reducedSolution _).of_le (by simp))
     (coeFn_inclusionLp_ofRealSobolevFunction _ _) v)
 
@@ -313,7 +311,7 @@ private def partsEntry (c₀ c : Fin m → ℂ) : Fin 6 → ℂ →ᵇ ℂ :=
       (natDegree_monicOfCoeff c₀).ge fun k ↦ (monicOfCoeff c).coeff k,
     polySqrtWeight (monicOfCoeff c₀) (monic_monicOfCoeff c₀).ne_zero
       (natDegree_monicOfCoeff c₀).ge fun k ↦ (monicOfCoeff c).derivative.coeff k,
-    sobolevBCF one_lt_two (sobolevReducedSolution c),
+    toBCF (finrank_real_complex_lt_two_mul one_lt_two) (sobolevReducedSolution c),
     reducedSolutionDeriv 1 c,
     reducedSolutionDeriv I c]
 
@@ -324,7 +322,8 @@ private theorem contDiff_partsEntry (c₀ : Fin m → ℂ) (j : Fin 6) :
   · exact contDiff_polySqrtWeight _ _ _ fun k ↦ (contDiff_coeff_monicOfCoeff k).restrict_scalars ℝ
   · exact contDiff_polySqrtWeight _ _ _ fun k ↦
       (contDiff_coeff_derivative_monicOfCoeff k).restrict_scalars ℝ
-  · exact (sobolevBCF one_lt_two).contDiff.comp contDiff_sobolevReducedSolution
+  · exact ((toBCF (finrank_real_complex_lt_two_mul one_lt_two)).restrictScalars ℝ).contDiff.comp
+      contDiff_sobolevReducedSolution
   · exact contDiff_reducedSolutionDeriv 1
   · exact contDiff_reducedSolutionDeriv I
 
@@ -373,7 +372,7 @@ private theorem partsNormSq_vortexParts_self (c₀ : Fin m → ℂ) (z : ℂ) :
 of `P_c` is the vortex of `P_c`. -/
 private theorem ae_fieldOfParts_vortexParts (c₀ c : Fin m → ℂ) :
     ∀ᵐ z, fieldOfParts (vortexParts c₀ c z) = polynomialVortex (monicOfCoeff c) z := by
-  have h3 := sobolevBCF_ae_eq one_lt_two (coeFn_inclusionLp_sobolevReducedSolution c)
+  have h3 := toBCF_ae_eq one_lt_two (coeFn_inclusionLp_sobolevReducedSolution c)
   filter_upwards [h3, reducedSolutionDeriv_ae_eq 1 c, reducedSolutionDeriv_ae_eq I c]
     with z h3 h4 h5
   rw [polynomialVortex_def]
@@ -500,6 +499,18 @@ theorem contDiff_polynomialVortexLp_monicOfCoeff :
     ae_restrict_of_ae (ae_fieldOfParts_vortexParts c₀ c)] with z h₁ h₂ h₃
   rw [h₁, h₂, fieldOfPartsBCF_apply (vortexParts_mem_partsWindow hc), h₃]
 
+/-- **The adjoint block at a vortex has a continuous left inverse.** At the vortex of a monic
+polynomial of positive degree, `L_P* : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` is injective with closed range, so it
+has a continuous left inverse. -/
+theorem hasLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp {P : _root_.Polynomial ℂ}
+    (hP : P.Monic) (hm : 0 < P.natDegree) :
+    (sobolevGaugeFixedAdjoint (polynomialVortexLp P)).HasLeftInverse :=
+  hasLeftInverse_sobolevGaugeFixedAdjoint ((contDiff_polynomialVortex P).of_le (by simp))
+    (equation_polynomialVortex hP hm)
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
+      (tendsto_sectionValue_polynomialVortex hP hm))
+    (polynomialVortexLp_ae_eq P)
+
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {P : X → _root_.Polynomial ℂ}
   {n : ℕ∞}
 
@@ -551,5 +562,47 @@ theorem contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVort
       ((hdeg x).symm ▸ hm))
     fun x ↦ finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x)
       ((hdeg x).symm ▸ hm)
+
+/-- **Smoothness of the complementary inverses of the adjoint blocks along the vortex family.**
+For a family of monic polynomials of a fixed degree `m ≥ 1` whose coefficients are `C^n` functions
+of a parameter, the left inverse of `L_P* : H¹ → L²` vanishing on the `L²`-orthogonal complement
+of its range, the values of the kernel of `L_P`, is a `C^n` function of the parameter, in operator
+norm. For `P = P_c` it is smooth in the symmetric coordinates `c ∈ ℂᵐ` of the divisor, collisions
+of zeros included. -/
+theorem contDiff_orthogonalLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp :
+    ContDiff ℝ n fun x ↦
+      (sobolevGaugeFixedAdjoint (polynomialVortexLp (P x))).orthogonalLeftInverse :=
+  (contDiff_sobolevGaugeFixedAdjoint.comp
+    (contDiff_polynomialVortexLp hmonic hdeg hcoeff)).orthogonalLeftInverse
+    fun x ↦ hasLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp (hmonic x)
+      ((hdeg x).symm ▸ hm)
+
+/-- **Smoothness of the range projections along the vortex family.** For a family of monic
+polynomials of a fixed degree `m ≥ 1` whose coefficients are `C^n` functions of a parameter, let
+`R_P` be the orthogonal left inverse of `L_P* : H¹ → L²`. The `L²`-orthogonal projections
+`L_P* R_P` onto the ranges of the adjoint blocks are a `C^n` function of the parameter, in operator
+norm. The complementary cokernel projections are
+`contDiff_id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp`. -/
+theorem contDiff_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp :
+    ContDiff ℝ n fun x ↦ sobolevGaugeFixedAdjoint (polynomialVortexLp (P x)) ∘L
+      (sobolevGaugeFixedAdjoint (polynomialVortexLp (P x))).orthogonalLeftInverse :=
+  (contDiff_sobolevGaugeFixedAdjoint.comp (contDiff_polynomialVortexLp hmonic hdeg hcoeff)).clm_comp
+    (contDiff_orthogonalLeftInverse_sobolevGaugeFixedAdjoint_polynomialVortexLp hm hmonic hdeg
+      hcoeff)
+
+/-- **Smoothness of the cokernel projections along the vortex family.** For a family of monic
+polynomials of a fixed degree `m ≥ 1` whose coefficients are `C^n` functions of a parameter, let
+`R_P` be the orthogonal left inverse of `L_P* : H¹ → L²`. The projections `Π₋ = 1 - L_P* R_P`,
+which are the `L²`-orthogonal projections onto the values of the kernels of `L_P`
+(`TauCeti.Vortex.id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse`), are a `C^n`
+function of the parameter, in operator norm. For `P = P_c` they are smooth in the symmetric
+coordinates `c ∈ ℂᵐ` of the divisor, collisions of zeros included. -/
+theorem contDiff_id_sub_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp :
+    ContDiff ℝ n fun x ↦ ContinuousLinearMap.id ℝ _ -
+      sobolevGaugeFixedAdjoint (polynomialVortexLp (P x)) ∘L
+        (sobolevGaugeFixedAdjoint (polynomialVortexLp (P x))).orthogonalLeftInverse :=
+  contDiff_const.sub
+    (contDiff_sobolevGaugeFixedAdjoint_comp_orthogonalLeftInverse_polynomialVortexLp hm hmonic
+      hdeg hcoeff)
 
 end TauCeti.Vortex
