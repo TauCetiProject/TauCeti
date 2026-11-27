@@ -417,31 +417,8 @@ theorem lift_hrel :
         MonoidalCore.liftMapAux
           (MonoidalCore.MonoidalEval.ofMonoidal (RigidObject.eval fo) rfl fun _ _ ↦ rfl)
           (liftGen fo fc) g := by
-  rintro _ _ _ _ (⟨X⟩ | ⟨X⟩ | ⟨X⟩ | ⟨X⟩)
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_α_inv, MonoidalCore.liftMapAux_whiskerRight,
-      MonoidalCore.liftMapAux_gen, MonoidalCore.liftMapAux_ρ_hom,
-      MonoidalCore.liftMapAux_l_inv, MonoidalCore.MonoidalEval.ofMonoidal,
-      RigidObject.eval, liftGen]
-    exact ExactPairing.coevaluation_evaluation _ _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_whiskerRight,
-      MonoidalCore.liftMapAux_α_hom, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_gen, MonoidalCore.liftMapAux_l_hom,
-      MonoidalCore.liftMapAux_ρ_inv, MonoidalCore.MonoidalEval.ofMonoidal,
-      RigidObject.eval, liftGen]
-    exact ExactPairing.evaluation_coevaluation _ _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_α_inv, MonoidalCore.liftMapAux_whiskerRight,
-      MonoidalCore.liftMapAux_gen, MonoidalCore.liftMapAux_ρ_hom,
-      MonoidalCore.liftMapAux_l_inv, MonoidalCore.MonoidalEval.ofMonoidal,
-      RigidObject.eval, liftGen]
-    exact ExactPairing.coevaluation_evaluation _ _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_whiskerRight,
-      MonoidalCore.liftMapAux_α_hom, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_gen, MonoidalCore.liftMapAux_l_hom,
-      MonoidalCore.liftMapAux_ρ_inv, MonoidalCore.MonoidalEval.ofMonoidal,
-      RigidObject.eval, liftGen]
-    exact ExactPairing.evaluation_coevaluation _ _
+  rintro _ _ _ _ (⟨X⟩ | ⟨X⟩ | ⟨X⟩ | ⟨X⟩) <;>
+    simp [MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
 
 -- The body is exposed so that the object part reduces, as for `TensorSignature.FreeMonoidal.lift`:
 -- the statements of `lift_ε` and its companions only typecheck once `(lift fo fc).obj X` reduces
@@ -484,6 +461,10 @@ theorem lift_obj_leftDual (X : S.FreeRigid) :
 @[simp]
 theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g :=
   MonoidalCore.lift_map_gen (P := freeRigidPresentation S) (hrel := lift_hrel fo fc) (.coupon g)
+
+/- Because `RigidObject.eval fo` preserves `unit` and `tensor` by `rfl`, `ofMonoidal` reduces
+`cast (_ : A = A) x` to `x` definitionally, so the `MonoidalCore.lift_map_*` lemmas close the
+whiskering, tensor, associator, and unitor computation rules directly. -/
 
 /-- `lift fo fc` preserves left whiskering strictly. -/
 @[simp]

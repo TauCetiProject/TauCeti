@@ -280,29 +280,17 @@ theorem lift_hrel :
         MonoidalCore.liftMapAux
           (MonoidalCore.MonoidalEval.ofMonoidal (projectObj fo) rfl fun _ _ ↦ rfl)
           (liftGen fo fc) g := by
-  rintro _ _ _ _ (_ | _ | ⟨X, f⟩ | ⟨f, Z⟩ | _ | _)
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_gen,
-      MonoidalCore.liftMapAux_id, MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
-    exact Iso.hom_inv_id _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_gen,
-      MonoidalCore.liftMapAux_id, MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
-    exact Iso.inv_hom_id _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_whiskerRight, MonoidalCore.liftMapAux_gen,
-      MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
-    exact BraidedCategory.braiding_naturality_right _ _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_whiskerRight, MonoidalCore.liftMapAux_gen,
-      MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
-    exact BraidedCategory.braiding_naturality_left _ _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_α_hom,
-      MonoidalCore.liftMapAux_whiskerRight, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_gen, MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
-    exact BraidedCategory.hexagon_forward _ _ _
-  · simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_α_inv,
-      MonoidalCore.liftMapAux_whiskerRight, MonoidalCore.liftMapAux_whiskerLeft,
-      MonoidalCore.liftMapAux_gen, MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
-    exact BraidedCategory.hexagon_reverse _ _ _
+  rintro _ _ _ _ (_ | _ | ⟨X, f⟩ | ⟨f, Z⟩ | _ | _) <;>
+    simp only [MonoidalCore.liftMapAux_comp, MonoidalCore.liftMapAux_id,
+      MonoidalCore.liftMapAux_gen, MonoidalCore.liftMapAux_whiskerLeft,
+      MonoidalCore.liftMapAux_whiskerRight, MonoidalCore.liftMapAux_α_hom,
+      MonoidalCore.liftMapAux_α_inv, MonoidalCore.MonoidalEval.ofMonoidal, liftGen]
+  · exact Iso.hom_inv_id _
+  · exact Iso.inv_hom_id _
+  · exact BraidedCategory.braiding_naturality_right _ _
+  · exact BraidedCategory.braiding_naturality_left _ _
+  · exact BraidedCategory.hexagon_forward _ _ _
+  · exact BraidedCategory.hexagon_reverse _ _ _
 
 -- The body is exposed so that the object part reduces, as for `FreeMonoidal.lift`: the statements
 -- of `lift_ε` and its companions only typecheck once `(lift fo fc).obj X` reduces to the
@@ -336,6 +324,10 @@ theorem lift_obj_tensorUnit : (lift fo fc).obj (𝟙_ S.FreeBraided) = 𝟙_ D :
 @[simp]
 theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g :=
   MonoidalCore.lift_map_gen (P := S.freeBraidedPresentation) (hrel := lift_hrel fo fc) (.coupon g)
+
+/- Because `projectObj fo` preserves `unit` and `tensor` by `rfl`, `ofMonoidal` reduces
+`cast (_ : A = A) x` to `x` definitionally, so the `MonoidalCore.lift_map_*` lemmas close the
+whiskering, tensor, associator, and unitor computation rules directly. -/
 
 /-- `lift fo fc` preserves left whiskering strictly. -/
 @[simp]

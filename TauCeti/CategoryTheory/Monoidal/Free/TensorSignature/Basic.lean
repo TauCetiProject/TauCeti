@@ -217,6 +217,10 @@ theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g :=
   MonoidalCore.lift_map_gen (P := S.freeMonoidalPresentation)
     (hrel := fun h ↦ False.elim h) (.coupon g)
 
+/- Because `projectObj fo` preserves `unit` and `tensor` by `rfl`, `ofMonoidal` reduces
+`cast (_ : A = A) x` to `x` definitionally, so the `MonoidalCore.lift_map_*` lemmas close the
+whiskering, tensor, associator, and unitor computation rules directly. -/
+
 @[simp]
 theorem lift_map_whiskerLeft (X : S.FreeMonoidal) {Y₁ Y₂ : S.FreeMonoidal} (f : Y₁ ⟶ Y₂) :
     (lift fo fc).map (X ◁ f) = (lift fo fc).obj X ◁ (lift fo fc).map f :=

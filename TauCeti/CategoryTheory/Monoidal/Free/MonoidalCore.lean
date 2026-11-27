@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Category
+import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Shared monoidal presentation core for free monoidal categories
@@ -389,7 +390,12 @@ structure Lawful (E : MonoidalEval unitObj tensorObj D) : Prop where
 
 /-- The canonical `MonoidalEval` into a monoidal category `D` determined by an object
 interpretation `obj : Obj → D`, using the associators, unitors, whiskerings and tensor products
-of `D`. -/
+of `D`.
+
+Because `Obj`, `unitObj`, `tensorObj`, and `obj` are abstract parameters here, `obj unitObj = 𝟙_ D`
+and `obj (tensorObj X Y) = obj X ⊗ obj Y` cannot hold definitionally inside `MonoidalCore`; taking
+propositional `hunit` and `htensor` supports both definitionally strict interpretations (where
+`cast` collapses to the underlying morphism by `rfl`) and general propositional ones. -/
 @[expose] def ofMonoidal [MonoidalCategory D] (obj : Obj → D)
     (hunit : obj unitObj = 𝟙_ D)
     (htensor : ∀ X Y, obj (tensorObj X Y) = obj X ⊗ obj Y) :
@@ -407,8 +413,113 @@ of `D`. -/
   whiskerRight := fun {_ _} f X ↦ cast (by rw [htensor, htensor]) (f ▷ obj X)
   tensorHom := fun {_ _ _ _} f g ↦ cast (by rw [htensor, htensor]) (f ⊗ₘ g)
 
+section ofMonoidalLemmas
+
+variable [MonoidalCategory D] (obj : Obj → D) (hunit : obj unitObj = 𝟙_ D)
+  (htensor : ∀ X Y, obj (tensorObj X Y) = obj X ⊗ obj Y)
+
+/-- `ofMonoidal` acts on forward associators as the associator of `D` conjugated by `eqToHom`
+along `htensor`. When `htensor` is `fun _ _ ↦ rfl`, `eqToHom_refl` simplifies the RHS to
+`(α_ (obj X) (obj Y) (obj Z)).hom`. -/
+@[simp]
+theorem ofMonoidal_αHom (X Y Z : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).αHom X Y Z =
+      eqToHom (by dsimp only [ofMonoidal]; rw [htensor, htensor]) ≫
+        (α_ (obj X) (obj Y) (obj Z)).hom ≫
+        eqToHom (by dsimp only [ofMonoidal]; rw [htensor, htensor]) :=
+  (conj_eqToHom_iff_heq _ _ (by dsimp only [ofMonoidal]; rw [htensor, htensor])
+    (by dsimp only [ofMonoidal]; rw [htensor, htensor])).mpr (cast_heq _ _)
+
+/-- `ofMonoidal` acts on inverse associators as the inverse associator of `D` conjugated by
+`eqToHom` along `htensor`. -/
+@[simp]
+theorem ofMonoidal_αInv (X Y Z : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).αInv X Y Z =
+      eqToHom (by dsimp only [ofMonoidal]; rw [htensor, htensor]) ≫
+        (α_ (obj X) (obj Y) (obj Z)).inv ≫
+        eqToHom (by dsimp only [ofMonoidal]; rw [htensor, htensor]) :=
+  (conj_eqToHom_iff_heq _ _ (by dsimp only [ofMonoidal]; rw [htensor, htensor])
+    (by dsimp only [ofMonoidal]; rw [htensor, htensor])).mpr (cast_heq _ _)
+
+/-- `ofMonoidal` acts on forward left unitors as the forward left unitor of `D` preceded by
+`eqToHom` along `hunit` and `htensor`. -/
+@[simp]
+theorem ofMonoidal_lHom (X : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).lHom X =
+      eqToHom (by dsimp only [ofMonoidal]; rw [htensor, hunit]) ≫ (λ_ (obj X)).hom := by
+  have h : (cast (by rw [htensor, hunit]) (λ_ (obj X)).hom :
+      obj (tensorObj unitObj X) ⟶ obj X) =
+      eqToHom (by rw [htensor, hunit]) ≫ (λ_ (obj X)).hom := by
+    simpa using (conj_eqToHom_iff_heq _ _ (by rw [htensor, hunit]) rfl).mpr (cast_heq _ _)
+  exact h
+
+/-- `ofMonoidal` acts on inverse left unitors as the inverse left unitor of `D` followed by
+`eqToHom` along `hunit` and `htensor`. -/
+@[simp]
+theorem ofMonoidal_lInv (X : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).lInv X =
+      (λ_ (obj X)).inv ≫ eqToHom (by dsimp only [ofMonoidal]; rw [htensor, hunit]) := by
+  have h : (cast (by rw [htensor, hunit]) (λ_ (obj X)).inv :
+      obj X ⟶ obj (tensorObj unitObj X)) =
+      (λ_ (obj X)).inv ≫ eqToHom (by rw [htensor, hunit]) := by
+    simpa using (conj_eqToHom_iff_heq _ _ rfl (by rw [htensor, hunit])).mpr (cast_heq _ _)
+  exact h
+
+/-- `ofMonoidal` acts on forward right unitors as the forward right unitor of `D` preceded by
+`eqToHom` along `hunit` and `htensor`. -/
+@[simp]
+theorem ofMonoidal_ρHom (X : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).ρHom X =
+      eqToHom (by dsimp only [ofMonoidal]; rw [htensor, hunit]) ≫ (ρ_ (obj X)).hom := by
+  have h : (cast (by rw [htensor, hunit]) (ρ_ (obj X)).hom :
+      obj (tensorObj X unitObj) ⟶ obj X) =
+      eqToHom (by rw [htensor, hunit]) ≫ (ρ_ (obj X)).hom := by
+    simpa using (conj_eqToHom_iff_heq _ _ (by rw [htensor, hunit]) rfl).mpr (cast_heq _ _)
+  exact h
+
+/-- `ofMonoidal` acts on inverse right unitors as the inverse right unitor of `D` followed by
+`eqToHom` along `hunit` and `htensor`. -/
+@[simp]
+theorem ofMonoidal_ρInv (X : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).ρInv X =
+      (ρ_ (obj X)).inv ≫ eqToHom (by dsimp only [ofMonoidal]; rw [htensor, hunit]) := by
+  have h : (cast (by rw [htensor, hunit]) (ρ_ (obj X)).inv :
+      obj X ⟶ obj (tensorObj X unitObj)) =
+      (ρ_ (obj X)).inv ≫ eqToHom (by rw [htensor, hunit]) := by
+    simpa using (conj_eqToHom_iff_heq _ _ rfl (by rw [htensor, hunit])).mpr (cast_heq _ _)
+  exact h
+
+/-- `ofMonoidal` acts on left whiskering as left whiskering in `D` conjugated by `eqToHom` along
+`htensor`. -/
+@[simp]
+theorem ofMonoidal_whiskerLeft (X : Obj) {Y₁ Y₂ : Obj} (f : obj Y₁ ⟶ obj Y₂) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).whiskerLeft X f =
+      eqToHom (htensor X Y₁) ≫ (obj X ◁ f) ≫ eqToHom (htensor X Y₂).symm :=
+  (conj_eqToHom_iff_heq _ _ (htensor X Y₁) (htensor X Y₂)).mpr (cast_heq _ _)
+
+/-- `ofMonoidal` acts on right whiskering as right whiskering in `D` conjugated by `eqToHom` along
+`htensor`. -/
+@[simp]
+theorem ofMonoidal_whiskerRight {X₁ X₂ : Obj} (f : obj X₁ ⟶ obj X₂) (Y : Obj) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).whiskerRight f Y =
+      eqToHom (htensor X₁ Y) ≫ (f ▷ obj Y) ≫ eqToHom (htensor X₂ Y).symm :=
+  (conj_eqToHom_iff_heq _ _ (htensor X₁ Y) (htensor X₂ Y)).mpr (cast_heq _ _)
+
+/-- `ofMonoidal` acts on tensor products of morphisms as `tensorHom` in `D` conjugated by
+`eqToHom` along `htensor`. -/
+@[simp]
+theorem ofMonoidal_tensorHom {W X Y Z : Obj} (f : obj W ⟶ obj Y) (g : obj X ⟶ obj Z) :
+    (ofMonoidal (unitObj := unitObj) (tensorObj := tensorObj) obj hunit htensor).tensorHom f g =
+      eqToHom (htensor W X) ≫ (f ⊗ₘ g) ≫ eqToHom (htensor Y Z).symm :=
+  (conj_eqToHom_iff_heq _ _ (htensor W X) (htensor Y Z)).mpr (cast_heq _ _)
+
+end ofMonoidalLemmas
+
 /-- When `E.obj` sends `unitObj` to `𝟙_ D` and `tensorObj` to `⊗` in a monoidal category `D`,
-and its operations agree heterogeneously with the monoidal structure of `D`, `E` is lawful. -/
+and its operations agree heterogeneously with the monoidal structure of `D`, `E` is lawful.
+
+Formulated with general `hunit`/`htensor` equality hypotheses so it applies whenever `E.obj`
+preserves unit and tensor up to equality, including `ofMonoidal_lawful` over abstract `Obj`. -/
 theorem Lawful.ofMonoidal [MonoidalCategory D] (E : MonoidalEval unitObj tensorObj D)
     (hunit : E.obj unitObj = 𝟙_ D)
     (htensor : ∀ X Y, E.obj (tensorObj X Y) = E.obj X ⊗ E.obj Y)
@@ -424,7 +535,8 @@ theorem Lawful.ofMonoidal [MonoidalCategory D] (E : MonoidalEval unitObj tensorO
       HEq (E.tensorHom f g) (f ⊗ₘ g)) :
     E.Lawful := by
   -- Express each operation of `E` as its counterpart in `D` conjugated by `eqToHom` coercions
-  -- along `hunit` and `htensor`, then close each monoidal axiom by normalizing nested coercions.
+  -- along `hunit` and `htensor`, then close each monoidal axiom with the transport lemmas in
+  -- `TauCeti.CategoryTheory.Monoidal.EqToHom`.
   have eα_hom (X Y Z) : E.αHom X Y Z =
       eqToHom (by rw [htensor, htensor]) ≫ (α_ (E.obj X) (E.obj Y) (E.obj Z)).hom ≫
         eqToHom (by rw [htensor, htensor]) :=
@@ -466,73 +578,32 @@ theorem Lawful.ofMonoidal [MonoidalCategory D] (E : MonoidalEval unitObj tensorO
   · intro X Y Z; simp [eα_hom, eα_inv]
   · intro X₁ X₂ X₃ Y₁ Y₂ Y₃ f₁ f₂ f₃
     simp only [etens, eα_hom, Category.assoc]
-    have hL : (eqToHom (htensor X₁ X₂) ≫ (f₁ ⊗ₘ f₂) ≫ eqToHom (htensor Y₁ Y₂).symm) ⊗ₘ f₃ =
-        eqToHom (by rw [htensor]) ≫ ((f₁ ⊗ₘ f₂) ⊗ₘ f₃) ≫ eqToHom (by rw [htensor]) := by
-      simp only [MonoidalCategory.tensorHom_def, MonoidalCategory.comp_whiskerRight,
-        Category.assoc]
-      rw [← MonoidalCategory.whisker_exchange]
-      simp
-    have hR : f₁ ⊗ₘ (eqToHom (htensor X₂ X₃) ≫ (f₂ ⊗ₘ f₃) ≫ eqToHom (htensor Y₂ Y₃).symm) =
-        eqToHom (by rw [htensor]) ≫ (f₁ ⊗ₘ (f₂ ⊗ₘ f₃)) ≫ eqToHom (by rw [htensor]) := by
-      simp only [MonoidalCategory.tensorHom_def', MonoidalCategory.whiskerLeft_comp,
-        Category.assoc]
-      rw [MonoidalCategory.whisker_exchange]
-      simp
-    rw [hL, hR]
+    rw [eqToHom_conjugate_tensorHom_left (htensor X₁ X₂) (htensor Y₁ Y₂).symm,
+      eqToHom_conjugate_tensorHom_right (htensor X₂ X₃) (htensor Y₂ Y₃).symm]
     simp
   · intro X; simp [eρ_hom, eρ_inv]
   · intro X; simp [eρ_hom, eρ_inv]
   · intro X Y f
     simp only [ewR, eρ_hom, Category.assoc]
-    have h : f ▷ E.obj unitObj ≫ eqToHom (congrArg (E.obj Y ⊗ ·) hunit) =
-        eqToHom (congrArg (E.obj X ⊗ ·) hunit) ≫ f ▷ 𝟙_ D := by
-      simpa only [MonoidalCategory.whiskerLeft_eqToHom] using
-        (MonoidalCategory.whisker_exchange f (eqToHom hunit)).symm
-    rw [eqToHom_trans_assoc (htensor Y unitObj).symm (by rw [htensor, hunit]), reassoc_of% h]
+    rw [eqToHom_trans_assoc (htensor Y unitObj).symm (by rw [htensor, hunit]),
+      reassoc_of% (whiskerRight_comp_eqToHom_right f hunit)]
     simp
   · intro X; simp [el_hom, el_inv]
   · intro X; simp [el_hom, el_inv]
   · intro X Y f
     simp only [ewL, el_hom, Category.assoc]
-    have h : E.obj unitObj ◁ f ≫ eqToHom (congrArg (· ⊗ E.obj Y) hunit) =
-        eqToHom (congrArg (· ⊗ E.obj X) hunit) ≫ 𝟙_ D ◁ f := by
-      simpa only [MonoidalCategory.eqToHom_whiskerRight] using
-        MonoidalCategory.whisker_exchange (eqToHom hunit) f
-    rw [eqToHom_trans_assoc (htensor unitObj Y).symm (by rw [htensor, hunit]), reassoc_of% h]
+    rw [eqToHom_trans_assoc (htensor unitObj Y).symm (by rw [htensor, hunit]),
+      reassoc_of% (whiskerLeft_comp_eqToHom_left hunit f)]
     simp
   · intro W X Y Z
     simp only [ewR, ewL, eα_hom, Category.assoc]
-    have hα₁ : (α_ (E.obj W) (E.obj (tensorObj X Y)) (E.obj Z)).hom =
-        eqToHom (by rw [htensor]) ≫ (α_ (E.obj W) (E.obj X ⊗ E.obj Y) (E.obj Z)).hom ≫
-          eqToHom (by rw [htensor]) := by
-      rw [← cancel_mono (eqToHom (congrArg (E.obj W ⊗ · ⊗ E.obj Z) (htensor X Y)))]
-      simpa using (MonoidalCategory.associator_naturality_middle
-        (E.obj W) (eqToHom (htensor X Y)) (E.obj Z)).symm
-    have hα₂ : (α_ (E.obj (tensorObj W X)) (E.obj Y) (E.obj Z)).hom =
-        eqToHom (by rw [htensor]) ≫ (α_ (E.obj W ⊗ E.obj X) (E.obj Y) (E.obj Z)).hom ≫
-          eqToHom (by rw [htensor]) := by
-      rw [← cancel_mono (eqToHom (congrArg (· ⊗ E.obj Y ⊗ E.obj Z) (htensor W X)))]
-      have h := (MonoidalCategory.associator_naturality_left
-        (eqToHom (htensor W X)) (E.obj Y) (E.obj Z)).symm
-      simp only [MonoidalCategory.eqToHom_whiskerRight] at h
-      simpa using h
-    have hα₃ : (α_ (E.obj W) (E.obj X) (E.obj (tensorObj Y Z))).hom =
-        eqToHom (by rw [htensor]) ≫ (α_ (E.obj W) (E.obj X) (E.obj Y ⊗ E.obj Z)).hom ≫
-          eqToHom (by rw [htensor]) := by
-      rw [← cancel_mono (eqToHom (congrArg (E.obj W ⊗ E.obj X ⊗ ·) (htensor Y Z)))]
-      simpa using (MonoidalCategory.associator_naturality_right
-        (E.obj W) (E.obj X) (eqToHom (htensor Y Z))).symm
-    rw [hα₁, hα₂, hα₃]
+    rw [eqToHom_conjugate_associator_hom rfl (htensor X Y) rfl,
+      eqToHom_conjugate_associator_hom (htensor W X) rfl rfl,
+      eqToHom_conjugate_associator_hom rfl rfl (htensor Y Z)]
     simp
   · intro X Y
     simp only [ewR, ewL, eα_hom, el_hom, eρ_hom, Category.assoc]
-    have hα : (α_ (E.obj X) (E.obj unitObj) (E.obj Y)).hom =
-        eqToHom (by rw [hunit]) ≫ (α_ (E.obj X) (𝟙_ D) (E.obj Y)).hom ≫
-          eqToHom (by rw [hunit]) := by
-      rw [← cancel_mono (eqToHom (congrArg (E.obj X ⊗ · ⊗ E.obj Y) hunit))]
-      simpa using (MonoidalCategory.associator_naturality_middle
-        (E.obj X) (eqToHom hunit) (E.obj Y)).symm
-    rw [hα]
+    rw [eqToHom_conjugate_associator_hom rfl hunit rfl]
     simp
 
 /-- `ofMonoidal` is lawful whenever `obj` preserves the tensor unit and tensor product

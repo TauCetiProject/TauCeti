@@ -27,6 +27,12 @@ inverse tensor comparison at the transported factors.
 * `TauCeti.eqToIso_tensorIso_eqToIso`: `eqToIso h ⊗ᵢ eqToIso h' = eqToIso _`.
 * `TauCeti.whiskerRight_comp_tensorHom_eqToHom` and `TauCeti.whiskerLeft_comp_tensorHom_eqToHom`:
   whiskering by a morphism commutes with transports of the tensor factors.
+* `TauCeti.whiskerRight_comp_eqToHom_right` and `TauCeti.whiskerLeft_comp_eqToHom_left`:
+  whiskering by a morphism commutes with transporting the whiskered object along an equality.
+* `TauCeti.eqToHom_conjugate_tensorHom_left` and `TauCeti.eqToHom_conjugate_tensorHom_right`:
+  tensoring with an `eqToHom`-conjugated morphism factors out the induced transports.
+* `TauCeti.eqToHom_conjugate_associator_hom`: transporting the associator along equalities of
+  all three tensor factors.
 * `CategoryTheory.Functor.eqToHom_conjugate_inv_δ_comp_map`: transporting
   `inv (δ F M N) ≫ F.map φ` along equalities `M = M'`, `N = N'` and `P = P'` gives
   `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the transport of `φ`;
@@ -77,6 +83,44 @@ theorem whiskerLeft_comp_tensorHom_eqToHom {L L' A A' B B' : C} (hL : L = L') (h
     L ◁ g ≫ (eqToHom hL ⊗ₘ eqToHom hB) =
       (eqToHom hL ⊗ₘ eqToHom hA) ≫ L' ◁ (eqToHom hA.symm ≫ g ≫ eqToHom hB) := by
   subst hL hA hB
+  simp
+
+/-- Right whiskering commutes with transporting the right tensor factor along an equality. -/
+theorem whiskerRight_comp_eqToHom_right {A B Y Y' : C} (f : A ⟶ B) (hY : Y = Y') :
+    f ▷ Y ≫ eqToHom (congrArg (B ⊗ ·) hY) = eqToHom (congrArg (A ⊗ ·) hY) ≫ f ▷ Y' := by
+  subst hY
+  simp
+
+/-- Left whiskering commutes with transporting the left tensor factor along an equality. -/
+theorem whiskerLeft_comp_eqToHom_left {X X' A B : C} (hX : X = X') (f : A ⟶ B) :
+    X ◁ f ≫ eqToHom (congrArg (· ⊗ B) hX) = eqToHom (congrArg (· ⊗ A) hX) ≫ X' ◁ f := by
+  subst hX
+  simp
+
+/-- Tensoring a morphism conjugated by `eqToHom` on the left with another morphism factors out
+the induced `eqToHom` transports. -/
+theorem eqToHom_conjugate_tensorHom_left {A A' B B' X Y : C}
+    (hA : A = A') (hB : B' = B) (f : A' ⟶ B') (g : X ⟶ Y) :
+    (eqToHom hA ≫ f ≫ eqToHom hB) ⊗ₘ g =
+      eqToHom (by rw [hA]) ≫ (f ⊗ₘ g) ≫ eqToHom (by rw [hB]) := by
+  subst hA hB
+  simp
+
+/-- Tensoring a morphism with a morphism conjugated by `eqToHom` on the right factors out the
+induced `eqToHom` transports. -/
+theorem eqToHom_conjugate_tensorHom_right {X Y A A' B B' : C}
+    (hA : A = A') (hB : B' = B) (f : X ⟶ Y) (g : A' ⟶ B') :
+    f ⊗ₘ (eqToHom hA ≫ g ≫ eqToHom hB) =
+      eqToHom (by rw [hA]) ≫ (f ⊗ₘ g) ≫ eqToHom (by rw [hB]) := by
+  subst hA hB
+  simp
+
+/-- Transporting the associator along equalities of all three tensor factors. -/
+theorem eqToHom_conjugate_associator_hom {X X' Y Y' Z Z' : C}
+    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') :
+    (α_ X Y Z).hom =
+      eqToHom (by rw [hX, hY, hZ]) ≫ (α_ X' Y' Z').hom ≫ eqToHom (by rw [hX, hY, hZ]) := by
+  subst hX hY hZ
   simp
 
 end TauCeti
