@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Integral.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.RpowLaplace
@@ -87,20 +88,6 @@ private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
       congr 2
       ring
 
-private theorem isBigO_rpow_atBot_atTop_of_comap_abs {f : ℝ → ℝ} {q : ℝ}
-    (h : f =O[Filter.comap abs Filter.atTop] (fun x : ℝ => |x| ^ q)) :
-    f =O[Filter.atBot] (fun x : ℝ => (-x) ^ q) ∧
-      f =O[Filter.atTop] (fun x : ℝ => x ^ q) := by
-  constructor
-  · have h' := h.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atBot_atTop)
-    refine h'.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
-    filter_upwards [Filter.eventually_le_atBot (0 : ℝ)] with x hx
-    rw [abs_of_nonpos hx]
-  · have h' := h.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atTop_atTop)
-    refine h'.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
-    filter_upwards [Filter.eventually_ge_atTop (0 : ℝ)] with x hx
-    rw [abs_of_nonneg hx]
-
 /-- A continuous potential with sufficient logarithmic growth dominates a
 polynomial factor and makes the resulting exponential weight integrable. -/
 theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V : ℝ → ℝ}
@@ -115,13 +102,14 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
   have hR' : 1 ≤ R' := le_max_right _ _
   have hRbound (x : ℝ) (hx : R' ≤ |x|) : c * log |x| ≤ V x := by
     exact hR _ (le_trans (le_max_left _ _) hx) x rfl
-  have hpowPos : IntegrableOn (fun x : ℝ => x ^ q) (Ioi R') volume :=
-    integrableOn_Ioi_rpow_of_lt hq (lt_of_lt_of_le zero_lt_one hR')
-  have hpowNeg : IntegrableOn (fun x : ℝ => (-x) ^ q) (Iio (-R')) volume := by
-    rw [← (Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
-      (Homeomorph.neg ℝ).measurableEmbedding]
-    simp only [Function.comp_def, neg_preimage, neg_Iio, neg_neg]
-    exact hpowPos
+  have hqneg : q ≤ 0 := by dsimp [q]; linarith
+  have hmajor : Integrable (fun x : ℝ => (1 + |x|) ^ q) volume := by
+    have hdim : (Module.finrank ℝ ℝ : ℝ) < -q := by
+      simp only [Module.finrank_self, Nat.cast_one]
+      dsimp [q]
+      linarith
+    simpa only [Real.norm_eq_abs, neg_neg] using
+      (integrable_one_add_norm (E := ℝ) (μ := volume) hdim)
   have hg : Continuous (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) := by
     have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
     have hexp : Continuous (fun x : ℝ => exp (-a * V x)) := by fun_prop
@@ -132,14 +120,26 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
       abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q)]
     exact one_add_abs_rpow_mul_exp_neg_le hp ha (hR'.trans hx) (hRbound x hx)
   have hbig : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.comap abs atTop]
-      (fun x : ℝ => |x| ^ q) := by
-    apply Asymptotics.IsBigO.of_bound (2 ^ p)
+      (fun x : ℝ => (1 + |x|) ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p * 2 ^ (-q))
     filter_upwards [Filter.tendsto_comap.eventually (Filter.eventually_ge_atTop R')] with x hx
-    exact hdom x hx
-  obtain ⟨hneg, hpos⟩ := isBigO_rpow_atBot_atTop_of_comap_abs hbig
-  exact hg.locallyIntegrable.integrable_of_isBigO_atBot_atTop hneg
-    ⟨Iio (-R'), Filter.Iio_mem_atBot _, hpowNeg⟩ hpos
-    ⟨Ioi R', Filter.Ioi_mem_atTop _, hpowPos⟩
+    have hxone : 1 ≤ |x| := hR'.trans hx
+    have hpow : |x| ^ q ≤ 2 ^ (-q) * (1 + |x|) ^ q := by
+      calc
+        |x| ^ q ≤ ((1 + |x|) / 2) ^ q :=
+          Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hqneg
+        _ = 2 ^ (-q) * (1 + |x|) ^ q := by
+          rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
+          ring
+    calc
+      ‖(1 + |x|) ^ p * exp (-a * V x)‖ ≤ 2 ^ p * ‖|x| ^ q‖ := hdom x hx
+      _ ≤ (2 ^ p * 2 ^ (-q)) * ‖(1 + |x|) ^ q‖ := by
+        rw [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q),
+          Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (by positivity) q)]
+        nlinarith [mul_le_mul_of_nonneg_left hpow (show 0 ≤ (2 : ℝ) ^ p by positivity)]
+  rw [comap_abs_atTop, ← cocompact_eq_atBot_atTop] at hbig
+  exact hg.locallyIntegrable.integrable_of_isBigO_cocompact hbig
+    (hmajor.integrableAtFilter _)
 
 /-- Every fixed threshold is eventually below `x² / (2 log |x|)`
 as `|x|` tends to infinity. -/

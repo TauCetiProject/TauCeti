@@ -105,43 +105,52 @@ theorem betaGasPartitionFunction_nonneg (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
     0 ≤ betaGasPartitionFunction n β V :=
   integral_nonneg (betaGasWeight_nonneg n β V)
 
+private theorem isOpen_injective_configurations (n : ℕ) :
+    IsOpen {x : Fin n → ℝ | Function.Injective x} := by
+  have heq : {x : Fin n → ℝ | Function.Injective x} =
+      ⋂ i, ⋂ j, {x : Fin n → ℝ | i ≠ j → x i ≠ x j} := by
+    ext x
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+    constructor
+    · intro hx i j hij h
+      exact hij (hx h)
+    · intro hx i j h
+      by_contra hij
+      exact hx i j hij h
+  rw [heq]
+  apply isOpen_iInter_of_finite
+  intro i
+  apply isOpen_iInter_of_finite
+  intro j
+  by_cases hij : i = j
+  · simp [hij]
+  · have hset : {x : Fin n → ℝ | i ≠ j → x i ≠ x j} =
+        {x : Fin n → ℝ | x i ≠ x j} := by
+      ext x
+      simp [hij]
+    rw [hset]
+    exact (isClosed_eq (continuous_apply i) (continuous_apply j)).isOpen_compl
+
 /-- Every integrable beta-gas weight has positive partition function. -/
 theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hint : Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ))) :
     0 < betaGasPartitionFunction n β V := by
   let x₀ : Fin n → ℝ := fun i => (i : ℝ)
-  have hball : Metric.ball x₀ (1 / 2 : ℝ) ⊆ Function.support (betaGasWeight n β V) := by
-    intro x hx
-    have hdist : ∀ i, |x i - (i.val : ℝ)| < 1 / 2 := by
-      have h := (dist_pi_lt_iff (by norm_num : (0 : ℝ) < 1 / 2)).mp hx
-      intro i
-      simpa [Real.dist_eq, x₀] using h i
-    rw [Function.mem_support]
-    apply (betaGasWeight_pos n β V ?_).ne'
-    intro i j hij
+  have hx₀ : Function.Injective x₀ := by
+    intro i j h
     apply Fin.ext
-    by_contra hne
-    have hi : |(i.val : ℝ) - x i| < 1 / 2 := by
-      rw [abs_sub_comm]
-      exact hdist i
-    have hj : |x i - (j.val : ℝ)| < 1 / 2 := by
-      rw [hij]
-      exact hdist j
-    have hclose : |(i.val : ℝ) - j.val| < 1 := by
-      calc
-        |(i.val : ℝ) - j.val| ≤
-            |(i.val : ℝ) - x i| + |x i - j.val| := abs_sub_le _ _ _
-        _ < 1 := by linarith
-    have hbounds : (-1 : ℤ) < (i.val : ℤ) - j.val ∧
-        (i.val : ℤ) - j.val < 1 := by
-      exact_mod_cast abs_lt.mp hclose
-    omega
+    change (i.val : ℝ) = (j.val : ℝ) at h
+    exact_mod_cast h
+  have hsupport : {x : Fin n → ℝ | Function.Injective x} ⊆
+      Function.support (betaGasWeight n β V) := by
+    intro x hx
+    exact (betaGasWeight_pos n β V hx).ne'
   rw [betaGasPartitionFunction_def]
   apply (integral_pos_iff_support_of_nonneg (betaGasWeight_nonneg n β V) hint).mpr
   exact lt_of_lt_of_le
     ((volume : Measure (Fin n → ℝ)).measure_pos_of_mem_nhds
-      (Metric.ball_mem_nhds x₀ (by norm_num))) (measure_mono hball)
+      ((isOpen_injective_configurations n).mem_nhds hx₀)) (measure_mono hsupport)
 
 /-- The beta-gas weight divided by its partition function. It integrates to one when the weight
 is integrable and the partition function is positive. -/
