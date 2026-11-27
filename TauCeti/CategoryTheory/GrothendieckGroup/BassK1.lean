@@ -152,6 +152,9 @@ def lift (f : ∀ {X : C}, (X ≅ X) → G)
 
 section Functor
 
+-- Limit the shape-to-binary bridge's effect on instance search to importers of Bass K₁.
+attribute [instance 50] preservesBinaryBiproducts_of_preservesBiproducts
+
 variable {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
   (F : C ⥤ D) [F.PreservesZeroMorphisms] [PreservesBinaryBiproducts F]
 
@@ -171,8 +174,8 @@ def map : BassK1 C →+ BassK1 D :=
 @[simp] theorem map_id : map (𝟭 C) = AddMonoidHom.id _ :=
   hom_ext fun a => by simp [Functor.mapIso]
 
-theorem map_comp {E : Type u''} [Category.{v''} E] [HasZeroMorphisms E] [HasBinaryBiproducts E]
-    (H : D ⥤ E) [H.PreservesZeroMorphisms] [PreservesBinaryBiproducts H] :
+@[simp] theorem map_comp {E : Type u''} [Category.{v''} E] [HasZeroMorphisms E]
+    [HasBinaryBiproducts E] (H : D ⥤ E) [H.PreservesZeroMorphisms] [PreservesBinaryBiproducts H] :
     map (F ⋙ H) = (map H).comp (map F) :=
   hom_ext fun a => by simp [Functor.mapIso]
 
