@@ -125,7 +125,7 @@ theorem sum_smulLeftCLM_eq_self {κ : Type*} {t : Finset κ} (ρ : κ → C^∞�
   simp_rw [smulLeftCLM_apply, ← Finset.sum_smul]
   by_cases hx : x ∈ closure {x | s x ≠ 0}
   · rw [hρ x hx, one_smul]
-  · rw [show s x = 0 from not_not.1 fun h ↦ hx (subset_closure h), smul_zero]
+  · rw [Bundle.apply_eq_zero_of_notMem_closure hx, smul_zero]
 
 /-! ### Multiplication of functionals -/
 

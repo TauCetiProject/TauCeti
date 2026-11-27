@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
 public import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.ContMDiffMap.Support
 
 /-!
 # Gluing functionals on bundle tests
@@ -86,13 +87,6 @@ section Gluing
 variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
   {ι : Type*} {U : ι → Opens M}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-/-- A product with a function supported in `U i` is supported in `U i`. -/
-private theorem tsupport_mul_subset {i : ι} {g : C^∞⟮I, M; ℝ⟯} (hg : tsupport g ⊆ U i)
-    (f : C^∞⟮I, M; ℝ⟯) : tsupport (f * g) ⊆ U i := by
-  rw [ContMDiffMap.coe_mul]
-  exact tsupport_mul_subset_right.trans hg
-
 variable
   {T : ∀ i, BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U i, M)) *ᵖ V) →L_c[ℝ] W}
 
@@ -118,7 +112,8 @@ private theorem apply_cutoffRestrictCLM_eq_sum
     (hσ : ∀ x ∈ closure {x | s x ≠ 0}, ∑ l, σ l x = 1) {i : ι} {g : C^∞⟮I, M; ℝ⟯}
     (hg : tsupport g ⊆ U i) :
     T i (cutoffRestrictCLM hg s) =
-      ∑ l, T i (cutoffRestrictCLM (tsupport_mul_subset hg (σ l)) s) := by
+      ∑ l, T i (cutoffRestrictCLM
+        ((ContMDiffMap.tsupport_mul_subset_right (f := σ l)).trans hg) s) := by
   rw [← map_sum]
   refine hT i i _ _ ?_
   -- Unbundle the inclusion, as in `extendByZeroCLM_cutoffRestrictCLM`.
@@ -141,9 +136,11 @@ private theorem sum_cutoffRestrictCLM_eq
     ∑ k, T (j k) (cutoffRestrictCLM (hρ k) s) = ∑ l, T (j' l) (cutoffRestrictCLM (hρ' l) s) := by
   -- Both sums equal the double sum of the values on the products `ρ k ρ' l`.
   calc ∑ k, T (j k) (cutoffRestrictCLM (hρ k) s)
-      = ∑ k, ∑ l, T (j k) (cutoffRestrictCLM (tsupport_mul_subset (hρ k) (ρ' l)) s) :=
+      = ∑ k, ∑ l, T (j k) (cutoffRestrictCLM
+          ((ContMDiffMap.tsupport_mul_subset_right (f := ρ' l)).trans (hρ k)) s) :=
         Finset.sum_congr rfl fun k _ ↦ apply_cutoffRestrictCLM_eq_sum hT ρ' s hs' (hρ k)
-    _ = ∑ l, ∑ k, T (j' l) (cutoffRestrictCLM (tsupport_mul_subset (hρ' l) (ρ k)) s) := by
+    _ = ∑ l, ∑ k, T (j' l) (cutoffRestrictCLM
+          ((ContMDiffMap.tsupport_mul_subset_right (f := ρ k)).trans (hρ' l)) s) := by
         rw [Finset.sum_comm]
         exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦
           apply_cutoffRestrictCLM_eq hT _ _ (mul_comm _ _) s
