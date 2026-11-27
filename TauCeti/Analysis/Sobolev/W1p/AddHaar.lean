@@ -147,7 +147,7 @@ theorem W1p.gradient_addHaarEquivL_ae (u : W1p mu Omega p) :
   gradient_addHaarL_ae mu nu u
 
 /-- The change of Haar measure preserves almost-everywhere nonnegativity of the value. -/
-theorem W1p.ae_nonneg_value_addHaarEquivL {u : W1p mu Omega p}
+theorem W1p.value_addHaarEquivL_ae_nonneg {u : W1p mu Omega p}
     (hu : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) :
     ∀ᵐ x ∂nu.restrict Omega, 0 ≤ W1p.value (W1p.addHaarEquivL mu nu u) x := by
   filter_upwards [W1p.value_addHaarEquivL_ae mu nu u, hu.filter_mono (ae_restrict_le mu nu _)]

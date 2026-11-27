@@ -47,7 +47,7 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
 * `TauCeti.W1p.value_compMeasurePreservingL_ae`, `TauCeti.W1p.gradient_compMeasurePreservingL_ae`:
   its value and weak gradient.
 * `TauCeti.W1p.norm_compMeasurePreservingL_le`: the bound `‖u ∘ Φ‖ ≤ max 1 M ‖u‖`.
-* `TauCeti.W1p.ae_nonneg_value_compMeasurePreservingL`: almost-everywhere nonnegativity of the
+* `TauCeti.W1p.value_compMeasurePreservingL_ae_nonneg`: almost-everywhere nonnegativity of the
   value is preserved.
 * `TauCeti.W1p.restrictL_compMeasurePreservingL`: the operator commutes with restriction to
   smaller open sets.
@@ -240,7 +240,7 @@ theorem W1p.compMeasurePreservingL_compMeasurePreservingL {Ψ : E' → E} {M' : 
 
 /-- Precomposition with `Φ` preserves almost-everywhere nonnegativity of the value: if `u ≥ 0`
 almost everywhere on `V`, then `u ∘ Φ ≥ 0` almost everywhere on `U`. -/
-theorem W1p.ae_nonneg_value_compMeasurePreservingL (hΦ : MeasurePreserving Φ μ ν)
+theorem W1p.value_compMeasurePreservingL_ae_nonneg (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦl : LocallyLipschitzOn U Φ)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) {u : W1p ν V p}
     (hu : ∀ᵐ y ∂ν.restrict V, 0 ≤ W1p.value u y) :
@@ -344,11 +344,11 @@ theorem W1p.value_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F') (hUV : (
 
 /-- Precomposition with an affine isometry preserves almost-everywhere nonnegativity of the
 value: if `u ≥ 0` almost everywhere on `V`, then `u ∘ g ≥ 0` almost everywhere on `U`. -/
-theorem W1p.ae_nonneg_value_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+theorem W1p.value_compAffineIsometryEquivL_ae_nonneg (g : F ≃ᵃⁱ[ℝ] F')
     (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
     (hu : ∀ᵐ y ∂volume.restrict V, 0 ≤ W1p.value u y) :
     ∀ᵐ x ∂volume.restrict U, 0 ≤ W1p.value (W1p.compAffineIsometryEquivL g hUV u) x :=
-  W1p.ae_nonneg_value_compMeasurePreservingL _ _ _ _ hu
+  W1p.value_compMeasurePreservingL_ae_nonneg _ _ _ _ hu
 
 /-- The weak gradient of `u ∘ g` is the gradient of `u` at `g x`, pulled back by the inverse of
 the linear part of `g`. -/

@@ -235,8 +235,8 @@ private theorem exists_extensionL_of_image
     rw [W1p.restrictL_compAffineIsometryEquivL g htop le_top le_top hUW, h₀]
     exact W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g.symm hWU hUW u
   · -- `u ∘ g⁻¹` is nonnegative on `W`, so is its extension, and so is the pullback by `g`.
-    have h := W1p.ae_nonneg_value_compAffineIsometryEquivL g htop
-      (ae_restrict_of_ae (hT₀0 _ (W1p.ae_nonneg_value_compAffineIsometryEquivL g.symm hWU hu)))
+    have h := W1p.value_compAffineIsometryEquivL_ae_nonneg g htop
+      (ae_restrict_of_ae (hT₀0 _ (W1p.value_compAffineIsometryEquivL_ae_nonneg g.symm hWU hu)))
     simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.comp_apply] using h
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -302,8 +302,8 @@ theorem W1p.exists_extensionL_of_isLipschitzDomain (hU : (U : Set F).IsLipschitz
       ContinuousLinearEquiv.coe_coe] at h₀ ⊢
     rw [← W1p.addHaarEquivL_restrictL, h₀, ← W1p.addHaarEquivL_symm mu volume]
     exact A.symm_apply_apply u
-  · have h := W1p.ae_nonneg_value_addHaarEquivL volume mu
-      (ae_restrict_of_ae (hT0 _ (W1p.ae_nonneg_value_addHaarEquivL mu volume hu)))
+  · have h := W1p.value_addHaarEquivL_ae_nonneg volume mu
+      (ae_restrict_of_ae (hT0 _ (W1p.value_addHaarEquivL_ae_nonneg mu volume hu)))
     simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe] using h
 
