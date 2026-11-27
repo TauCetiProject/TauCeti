@@ -57,8 +57,9 @@ vector spaces has exactly this underlying presheaf of types, which gives its she
 
 * `TauCeti.holomorphicSectionSheaf.existsUnique_gluing`: holomorphic sections that agree on
   overlaps glue uniquely; restriction is `TauCeti.holomorphicSectionSheaf.map_apply`.
-* `TauCeti.holomorphicSectionSheaf.sum_hom_app_apply`: a finite sum of morphisms of sheaves of
-  holomorphic sections acts pointwise on values.
+* `TauCeti.holomorphicSectionSheaf.sum_hom_app_apply` and
+  `TauCeti.holomorphicSectionSheaf.comp_hom_app_apply`: finite sums and composites of morphisms of
+  sheaves of holomorphic sections act pointwise on values.
 * `TauCeti.holomorphicSectionSheaf.prodBiconeIsBilimit`: the sheaf of sections of a direct sum
   `V₁ ×ᵇ V₂` is the biproduct of the two sheaves of sections.
 * `TauCeti.holomorphicSectionSheaf.prodIso`: the resulting isomorphism with `⊞`. Finite direct
@@ -400,6 +401,17 @@ theorem sum_hom_app_apply {ι : Type*} (S : Finset ι)
   map_sum (AddMonoidHom.mk'
     (fun g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂ ↦ g.hom.app U s x)
     fun _ _ ↦ add_apply _ _ x) f S
+
+/-- A composite of morphisms between sheaves of holomorphic sections sends a section to the image
+under the second morphism of its image under the first. -/
+theorem comp_hom_app_apply {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace ℂ F₃]
+    {V₃ : X → Type v} [TopologicalSpace (TotalSpace F₃ V₃)] [∀ x, TopologicalSpace (V₃ x)]
+    [FiberBundle F₃ V₃] [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℂ (V₃ x)] [VectorBundle ℂ F₃ V₃]
+    (f : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂)
+    (g : holomorphicSectionSheaf I F₂ V₂ ⟶ holomorphicSectionSheaf I F₃ V₃)
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) :
+    (f ≫ g).hom.app U s x = g.hom.app U (f.hom.app U s) x := (rfl)
 
 /-- A fibrewise linear map `φ : V₁ x → V₂ x` whose total-space map is complex analytic induces a
 morphism of sheaves of holomorphic sections, by `s ↦ (x ↦ φ x (s x))`. -/

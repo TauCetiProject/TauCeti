@@ -807,16 +807,16 @@ theorem twistSumSectionSingle_app_apply (l : κ)
 theorem twistSumSectionSingle_twistSumSectionProj (l : κ) :
     twistSumSectionSingle (n := n) k l ≫ twistSumSectionProj k l = 𝟙 _ := by
   refine holomorphicSectionSheaf.hom_ext fun U s x ↦ ?_
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ModuleCat.hom_comp,
-    LinearMap.comp_apply, twistSumSectionProj_app_apply, twistSumSectionSingle_app_apply]
+  rw [holomorphicSectionSheaf.comp_hom_app_apply, twistSumSectionProj_app_apply,
+    twistSumSectionSingle_app_apply]
   exact Pi.single_eq_same (M := fun _ : κ ↦ ℂ) _ _
 
 @[reassoc (attr := simp)]
 theorem twistSumSectionSingle_twistSumSectionProj_of_ne {l l' : κ} (h : l ≠ l') :
     twistSumSectionSingle (n := n) k l ≫ twistSumSectionProj k l' = 0 := by
   refine holomorphicSectionSheaf.hom_ext fun U s x ↦ ?_
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ModuleCat.hom_comp,
-    LinearMap.comp_apply, twistSumSectionProj_app_apply, twistSumSectionSingle_app_apply]
+  rw [holomorphicSectionSheaf.comp_hom_app_apply, twistSumSectionProj_app_apply,
+    twistSumSectionSingle_app_apply]
   -- `simp` evaluates the zero morphism to the zero of the fibre `(twistCore (k l')).Fiber x`,
   -- which is the zero of `ℂ` by definition
   exact (Pi.single_eq_of_ne' (M := fun _ : κ ↦ ℂ) h _).trans (by simp; rfl)
@@ -827,8 +827,8 @@ theorem sum_twistSumSectionProj_twistSumSectionSingle :
     ∑ l, twistSumSectionProj (n := n) k l ≫ twistSumSectionSingle k l = 𝟙 _ := by
   refine holomorphicSectionSheaf.hom_ext fun U s x ↦ ?_
   rw [holomorphicSectionSheaf.sum_hom_app_apply]
-  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ModuleCat.hom_comp,
-    LinearMap.comp_apply, twistSumSectionProj_app_apply, twistSumSectionSingle_app_apply]
+  simp only [holomorphicSectionSheaf.comp_hom_app_apply, twistSumSectionProj_app_apply,
+    twistSumSectionSingle_app_apply]
   exact Finset.univ_sum_single (s x : κ → ℂ)
 
 variable (n) in
