@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.AppellHumbert.ComplexLattice
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.GroupTheory.IndexNSmul
-import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Analysis.Complex.AppellHumbert.BasePoints
 import TauCeti.Analysis.Complex.AppellHumbert.Frobenius
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
