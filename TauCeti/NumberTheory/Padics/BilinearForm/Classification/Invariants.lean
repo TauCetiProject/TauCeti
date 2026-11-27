@@ -200,15 +200,14 @@ theorem IsJordanSplitting.sum_if_constituentSign_eq_neg_one
     (∑ i ∈ u, if h.constituentSign i = -1 then (4 : ZMod (2 ^ 3)) else 0) =
       if ∏ i ∈ u, h.constituentSign i = -1 then 4 else 0 := by
   classical
-  suffices ((∏ i ∈ u, h.constituentSign i) = 1 ∨ (∏ i ∈ u, h.constituentSign i) = -1) ∧
-      (∑ i ∈ u, if h.constituentSign i = -1 then (4 : ZMod (2 ^ 3)) else 0) =
-        if ∏ i ∈ u, h.constituentSign i = -1 then 4 else 0 from this.2
   induction u using Finset.induction_on with
   | empty => simp
   | insert a s ha ih =>
-    rw [Finset.prod_insert ha, Finset.sum_insert ha, ih.2]
+    rw [Finset.prod_insert ha, Finset.sum_insert ha, ih]
     rcases h.constituentSign_eq_one_or_neg_one a with h1 | h1 <;>
-      rcases ih.1 with h2 | h2 <;> (rw [h1, h2]; decide)
+      rcases Finset.prod_eq_one_or_neg_one s fun i _ ↦ h.constituentSign_eq_one_or_neg_one i with
+        h2 | h2 <;>
+      (rw [h1, h2]; decide)
 
 /-- The product of `h.constituentSign` over a finite set `u` is `-1` iff the sum of `4` over the
 indices in `u` with sign `-1` equals `4` in `ZMod 8`. -/

@@ -73,11 +73,8 @@ section LocallyFiniteOrderBot
 variable [LocallyFiniteOrderBot α] {a b : α}
 
 /-- The union of `Iio a` and `Icc a b` is `Iic b` whenever `a ≤ b`. -/
-theorem Iio_union_Icc_eq_Iic (h : a ≤ b) : Iio a ∪ Icc a b = Iic b := by
-  ext x
-  simp only [mem_union, mem_Iio, mem_Icc, mem_Iic]
-  exact ⟨fun hx ↦ hx.elim (fun hxa ↦ (le_of_lt hxa).trans h) And.right,
-    fun hxb ↦ (lt_or_ge x a).imp_right fun hax ↦ ⟨hax, hxb⟩⟩
+theorem Iio_union_Icc_eq_Iic (h : a ≤ b) : Iio a ∪ Icc a b = Iic b :=
+  coe_injective <| by simpa using Set.Iio_union_Icc_eq_Iic h
 
 end LocallyFiniteOrderBot
 
