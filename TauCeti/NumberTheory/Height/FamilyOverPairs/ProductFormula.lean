@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.Height.FamilyOverPairs.Basic
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.LinearAlgebra.Countable
 import TauCeti.Analysis.Complex.AlgebraicOrbit
+import TauCeti.FieldTheory.IsAlgClosed.AlgebraicEmbedding
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.NumberTheory.Padics.Cardinality
 import TauCeti.NumberTheory.Padics.PadicNormProductFormula
 import TauCeti.RingTheory.Norm.Logarithm
@@ -75,21 +77,12 @@ theorem HeightLe.nonneg_of_one {c : ℝ} (h : HeightLe 1 c) : 0 ≤ c := by
     (Nat.lt_succ_of_le (le_max_left q.num.natAbs q.den))
     (Nat.lt_succ_of_le (le_max_right q.num.natAbs q.den))
   have harch : Real.log |(q : ℝ)| ≤ (finrank ℚ K : ℝ) * a := by
-    let : Countable K := Countable.of_moduleFinite (R := ℚ)
-    have he (g : K →ₐ[ℚ] ℂ) : Real.log ‖g x‖ ≤ a := by
-      -- Use the inclusion and `g` as the two algebra structures on the same carrier `ℂ`.
-      obtain ⟨σ⟩ := @TauCeti.Complex.nonempty_algEquiv K ℂ _ _ g.toRingHom.toAlgebra
-        _ _ inferInstance Cardinal.mk_complex
-      have hσ : σ H = g x := @AlgEquiv.commutes K ℂ ℂ _ _ _ inferInstance
-        g.toRingHom.toAlgebra σ x
-      let τ : ℂ ≃+* ℂ := @AlgEquiv.toRingEquiv K ℂ ℂ _ _ _ inferInstance g.toRingHom.toAlgebra σ
-      rw [← Real.log_exp a]
-      exact Real.log_le_log (norm_pos_iff.mpr ((map_ne_zero g).mpr hx)) (hσ ▸ hArch τ)
-    calc
-      Real.log |(q : ℝ)| = ∑ g : K →ₐ[ℚ] ℂ, Real.log ‖g x‖ := by
-        simpa only [eq_ratCast, _root_.Complex.norm_ratCast] using
-          (Algebra.log_norm_norm_eq_sum_embeddings (K := ℚ) (E := ℂ) x)
-      _ ≤ _ := by simpa [AlgHom.card ℚ K ℂ] using sum_le_sum (fun g (_ : g ∈ univ) ↦ he g)
+    let : NumberField K := { to_charZero := inferInstance, to_finiteDimensional := inferInstance }
+    have hbound := NumberField.abs_norm_le_pow x (C := Real.exp a) fun g ↦ by
+      obtain ⟨τ, hτ⟩ := K.exists_ringEquiv_apply_eq_of_isAlgebraic g
+      exact (hτ x) ▸ hArch τ
+    have hqpos : 0 < |(q : ℝ)| := abs_pos.mpr (by exact_mod_cast Algebra.norm_ne_zero_iff.mpr hx)
+    simpa only [Real.log_pow, Real.log_exp, mul_comm] using Real.log_le_log hqpos hbound
   have hsum : ∑ p ∈ S, Real.log (padicNorm p q) ≤
       ∑ p ∈ S, (finrank ℚ K : ℝ) * (b p * Real.log p) := by
     refine sum_le_sum fun p hp ↦ ?_

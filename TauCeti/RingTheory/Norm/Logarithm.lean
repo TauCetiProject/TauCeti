@@ -9,11 +9,12 @@ public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
-# Logarithmic bounds for field norms
+# Logarithms of field norms
 
-In an algebraically closed normed field, the logarithm of the size of a field norm is the
-sum of the logarithmic sizes at the individual embeddings. The formula also holds at zero
-under the convention `Real.log 0 = 0`.
+For a finite separable extension `L/K` and an algebraically closed normed extension field `E`
+of `K`, the logarithm of the size in `E` of the field norm is the sum of the logarithmic sizes
+at the `K`-embeddings of `L` into `E`. This turns bounds at individual embeddings into a bound
+on the field norm. The identity also holds at zero under the convention `Real.log 0 = 0`.
 -/
 
 public section
@@ -22,8 +23,9 @@ open Finset
 
 namespace Algebra
 
-/-- The logarithmic size of the field norm is the sum of the logarithmic sizes of the images
-under all embeddings into an algebraically closed normed field. -/
+/-- For a finite separable extension `L/K` and an algebraically closed normed extension field
+`E` of `K`, the logarithmic size in `E` of the field norm is the sum of the logarithmic sizes
+under all `K`-embeddings of `L` into `E`. -/
 theorem log_norm_norm_eq_sum_embeddings {K L E : Type*} [Field K] [Field L] [Algebra K L]
     [FiniteDimensional K L] [Algebra.IsSeparable K L] [NormedField E] [Algebra K E]
     [IsAlgClosed E] (x : L) :
