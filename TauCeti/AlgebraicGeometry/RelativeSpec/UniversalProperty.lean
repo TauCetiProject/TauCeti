@@ -43,7 +43,8 @@ property in pullback form: morphisms `T ⟶ Spec_X A` over `X` correspond to mor
 * `TauCeti.AlgebraicGeometry.relativeSpecHomIso X`: the bijection as a natural isomorphism of
   functors of quasi-coherent algebras and schemes over `X` (whose target uses the function-algebra
   functor `TauCeti.AlgebraicGeometry.overFunctions X`), with components
-  `CommMon.relativeSpecHomEquiv`;
+  `CommMon.relativeSpecHomEquiv`, natural in the scheme over `X` and in the algebra
+  (`relativeSpecHomIso_hom_app_app_comp`, `relativeSpecHomIso_hom_app_app_comp_relativeSpec_map`);
 * `TauCeti.AlgebraicGeometry.relativeSpecPullbackHomEquiv`: the bijection between morphisms over
   `X` and algebra maps `q^* A ⟶ 𝒪_T`, natural in the algebra.
 
@@ -478,6 +479,38 @@ lemma relativeSpecHomIso_inv_app_app (A : (QuasicoherentAlgebra X)ᵒᵖ) (T : (
     ((relativeSpecHomIso X).inv.app A).app T φ =
       Over.homMk (CommMon.relativeSpecLift φ) (CommMon.relativeSpecLift_relativeSpecToBase φ) :=
   (rfl)
+
+/-- `relativeSpecHomIso` is natural in the scheme over `X`: composing a point `t : T ⟶ Spec_X B`
+with `g : T' ⟶ T` over `X` composes its algebra map `B ⟶ q_* 𝒪_T` with pullback of regular
+functions along `g`. -/
+theorem relativeSpecHomIso_hom_app_app_comp (B : QuasicoherentAlgebra X) {T' T : Over X}
+    (g : T' ⟶ T) (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((relativeSpec X).obj (op B))) :
+    ((relativeSpecHomIso X).hom.app (op B)).app (op T') (g ≫ t) =
+      ((relativeSpecHomIso X).hom.app (op B)).app (op T) t ≫
+        Scheme.Hom.pushforwardStructureAlgebraMap g.left (Over.w g) :=
+  relativeSpecOverHomEquiv_comp B g t
+
+/-- `relativeSpecHomIso` is natural in the algebra: composing a point `t : T ⟶ Spec_X B'` with
+the relative-spectrum map of `f : B ⟶ B'` precomposes its algebra map with `f`. -/
+theorem relativeSpecHomIso_hom_app_app_comp_relativeSpec_map {B B' : QuasicoherentAlgebra X}
+    (f : B ⟶ B') {T : Over X}
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((relativeSpec X).obj (op B'))) :
+    ((relativeSpecHomIso X).hom.app (op B)).app (op T)
+        (t ≫ (MorphismProperty.Over.forget _ _ X).map ((relativeSpec X).map f.op)) =
+      f.hom ≫ ((relativeSpecHomIso X).hom.app (op B')).app (op T) t :=
+  relativeSpecOverHomEquiv_comp_relativeSpecMap f t
+
+/-- The algebra map of the point given by an algebra map `φ : B ⟶ q_* 𝒪_T` is `φ`. -/
+theorem relativeSpecHomIso_hom_app_app_inv_app_app (B : QuasicoherentAlgebra X) (T : Over X)
+    (φ : B.obj ⟶ T.hom.pushforwardStructureAlgebra) :
+    ((relativeSpecHomIso X).hom.app (op B)).app (op T)
+      (((relativeSpecHomIso X).inv.app (op B)).app (op T) φ) = φ :=
+  (relativeSpecOverHomEquiv B T).apply_symm_apply φ
+
+/-- Points of `Spec_X B` over `X` are determined by their algebra maps `B ⟶ q_* 𝒪_T`. -/
+theorem relativeSpecHomIso_hom_app_app_injective (B : QuasicoherentAlgebra X) (T : Over X) :
+    Function.Injective (((relativeSpecHomIso X).hom.app (op B)).app (op T)) :=
+  (relativeSpecOverHomEquiv B T).injective
 
 variable {T : Scheme.{u}}
 

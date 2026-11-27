@@ -42,7 +42,9 @@ extending it by `cⁿ` on `Symⁿ F`.
 * `TauCeti.AlgebraicGeometry.ιTotal_relativeSpecHomIso_lift_comp_smul`: scalar multiplication
   acts on regular functions of degree `n` by the `n`-th power of the scalar;
 * `TauCeti.AlgebraicGeometry.ιTotal_relativeSpecHomIso_zero`: the zero section kills regular
-  functions of positive degree.
+  functions of positive degree;
+* `TauCeti.AlgebraicGeometry.gradedRelativeSpecVertex_gradedSymmetricAlgebra`: hence the zero
+  section is the vertex of `Spec_X (Sym F)` as the relative spectrum of a graded algebra.
 
 ## References
 
@@ -121,6 +123,20 @@ theorem ιTotal_relativeSpecHomIso_zero (T : Over X) (n : ℕ) :
       (relativeSpecSymmetricAlgebraHomEquiv F T 0)).hom.hom ≫ f) hm).trans
         ((congrArg (ιTotal ((gradedSymmetricAlgebra X).obj F) (n + 1) ≫ ·)
           (comp_zero (C := X.Modules))).trans (comp_zero (C := X.Modules)))
+
+open scoped AddMonObj in
+/-- **The vertex of `Spec_X (Sym F)` is its zero section.** The vertex of the relative spectrum of
+the graded algebra `Sym F`, given by the augmentation `Sym F ⟶ Sym⁰ F = 𝒪_X`, is the zero section
+of the additive group scheme `Spec_X (Sym F)`. -/
+theorem gradedRelativeSpecVertex_gradedSymmetricAlgebra :
+    gradedRelativeSpecVertex ((gradedSymmetricAlgebra X).obj F) =
+      (0 : 𝟙_ (Over X) ⟶ (MorphismProperty.Over.forget _ _ X).obj
+        ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) := by
+  apply relativeSpecHomIso_hom_app_app_injective
+  rw [relativeSpecHomIso_hom_app_app_gradedRelativeSpecVertex]
+  refine commMonHom_ext fun n ↦ ?_
+  rw [ιTotal_augmentation]
+  exact (ιTotal_relativeSpecHomIso_zero _ n).symm
 
 end
 

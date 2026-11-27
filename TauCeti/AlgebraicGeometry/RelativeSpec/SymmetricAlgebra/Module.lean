@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Mod
-public import TauCeti.AlgebraicGeometry.AffineSpace.Ring
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.GlobalSectionsSmul
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Contraction
 public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.Group
 
 /-!
@@ -32,6 +32,9 @@ addition of `𝕍(F)`, and the morphism `𝕍(F) ⟶ 𝕍(F')` induced by a map 
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraSMul` and
   `TauCeti.AlgebraicGeometry.modObjRelativeSpecSymmetricAlgebra`: the scalar multiplication
   `𝔸¹_X ×_X Spec_X (Sym F) ⟶ Spec_X (Sym F)`, an action of the monoid object `𝔸¹_X`;
+* `TauCeti.AlgebraicGeometry.gradedRelativeSpecSMul_gradedSymmetricAlgebra`: it is the
+  contraction action of the affine line on the relative spectrum of the graded algebra `Sym F`,
+  from which the action laws are inherited;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul`: the module map
   of a scalar multiple `a • t` is the module map of `t` multiplied by the function `a`, and
   `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraPullbackHomEquiv_lift_comp_smul`: the
@@ -124,47 +127,45 @@ lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_lift_comp_smul {T : Over X}
     relativeSpecSymmetricAlgebraHomEquiv_lift_comp_smul]
   exact Adjunction.homEquiv_naturality_right_symm _ _ _
 
-open scoped CommRingObj
+/-- **The scalar multiplication of `Spec_X (Sym F)` is a contraction.** The scalar
+multiplication `relativeSpecSymmetricAlgebraSMul F` is the contraction action
+`gradedRelativeSpecSMul` of the affine line on the relative spectrum of the graded algebra
+`Sym F = ⨁ₙ Symⁿ F`, which multiplies functions of degree `n` by the `n`-th power of the
+scalar. -/
+theorem gradedRelativeSpecSMul_gradedSymmetricAlgebra :
+    gradedRelativeSpecSMul ((gradedSymmetricAlgebra X).obj F) =
+      relativeSpecSymmetricAlgebraSMul F := by
+  apply relativeSpecHomIso_hom_app_app_injective
+  rw [relativeSpecHomIso_hom_app_app_gradedRelativeSpecSMul]
+  refine CommMon.hom_ext _ _
+    (GradedQuasicoherentAlgebra.toQuasicoherentAlgebra_hom_ext fun n ↦ ?_)
+  refine (GradedQuasicoherentAlgebra.ιTotal_scaleHom _ _ _ _ n).trans ?_
+  -- Both algebra maps extend module maps `F ⟶ q_* 𝒪`, and scaling the module map by `c` scales
+  -- the extended algebra map by `cⁿ` in degree `n`. The composites mix the `X.Modules` and
+  -- `SheafOfModules` category instances, on which `rw` cannot build its motive, so the
+  -- equations are applied as terms.
+  have h₁ := relativeSpecHomIso_hom_app_app_eq_symmetricAlgebraLift (F := F)
+    (snd (𝔸(PUnit.{u + 1}; X).asOver X) _)
+  have h₂ := relativeSpecHomIso_hom_app_app_eq_symmetricAlgebraLift
+    (relativeSpecSymmetricAlgebraSMul F)
+  have h₃ : relativeSpecSymmetricAlgebraHomEquiv F _ (relativeSpecSymmetricAlgebraSMul F) =
+      relativeSpecSymmetricAlgebraHomEquiv F _ (snd _ _) ≫
+        (Scheme.Modules.pushforward _).map (Scheme.Modules.globalSectionsSmul _
+          (AffineSpace.homAsOverEquiv _ (fst _ _) .unit)) :=
+    Equiv.apply_symm_apply _ _
+  exact (congrArg (fun ψ ↦ GradedQuasicoherentAlgebra.ιTotal _ n ≫ ψ.hom.hom ≫ _) h₁).trans
+    ((ιTotal_symmetricAlgebraLift_comp_globalSectionsSmul _ _ _ n).symm.trans
+      (congrArg (fun ψ ↦ GradedQuasicoherentAlgebra.ιTotal _ n ≫ ψ.hom.hom)
+        (h₂.trans (congrArg (symmetricAlgebraLift (B := _)) h₃)).symm))
 
-/-- **`Spec_X (Sym F)` is a module over the affine line.** The scalar multiplication
+/-- **`Spec_X (Sym F)` is a module over the affine line.** Its scalar multiplication
 `relativeSpecSymmetricAlgebraSMul` is an action of the multiplicative monoid object `𝔸¹_X` of
-`Over X`. -/
+`Over X`: it is the contraction action of the graded algebra `Sym F`
+(`gradedRelativeSpecSMul_gradedSymmetricAlgebra`). -/
 instance modObjRelativeSpecSymmetricAlgebra :
     ModObj (𝔸(PUnit.{u + 1}; X).asOver X) ((MorphismProperty.Over.forget _ _ X).obj
-      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) where
-  smul := relativeSpecSymmetricAlgebraSMul F
-  one_smul := by
-    dsimp only [selfLeftAction_actionHomLeft, selfLeftAction_actionObj,
-      selfLeftAction_actionUnitIso]
-    apply (relativeSpecSymmetricAlgebraHomEquiv F _).injective
-    -- the scalar component of `η ▷ 𝕍(F)` is the function `1`
-    have h : fst (𝟙_ (Over X)) ((MorphismProperty.Over.forget _ _ X).obj
-          ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) ≫
-        η[𝔸(PUnit.{u + 1}; X).asOver X] = 1 := by
-      rw [Hom.one_def, toUnit_unique (fst _ _) (toUnit _)]
-    rw [relativeSpecSymmetricAlgebraHomEquiv_comp_smul, whiskerRight_fst, whiskerRight_snd, h,
-      AffineSpace.homAsOverEquiv_one, Pi.one_apply,
-      Scheme.Modules.globalSectionsSmul_one, CategoryTheory.Functor.map_id, leftUnitor_hom]
-    exact Category.comp_id _
-  mul_smul := by
-    dsimp only [selfLeftAction_actionHomLeft, selfLeftAction_actionHomRight,
-      selfLeftAction_actionObj, selfLeftAction_actionAssocIso]
-    apply (relativeSpecSymmetricAlgebraHomEquiv F _).injective
-    -- the scalar component of `μ ▷ 𝕍(F)` is the product of the two scalar components
-    have h : fst (𝔸(PUnit.{u + 1}; X).asOver X ⊗ 𝔸(PUnit.{u + 1}; X).asOver X)
-          ((MorphismProperty.Over.forget _ _ X).obj
-            ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) ≫
-        μ[𝔸(PUnit.{u + 1}; X).asOver X] =
-          fst _ _ ≫ fst _ _ * fst _ _ ≫ snd _ _ := by
-      rw [Hom.mul_def, ← comp_lift, lift_fst_snd, Category.comp_id]
-    simp only [← Category.assoc, relativeSpecSymmetricAlgebraHomEquiv_comp_smul]
-    simp only [Category.assoc, whiskerRight_fst, whiskerRight_snd, whiskerLeft_snd]
-    simp only [← Category.assoc, relativeSpecSymmetricAlgebraHomEquiv_comp_smul]
-    simp only [Category.assoc, whiskerLeft_fst, associator_hom_fst, associator_hom_snd_fst,
-      associator_hom_snd_snd, h, AffineSpace.homAsOverEquiv_mul, Pi.mul_apply,
-      Scheme.Modules.globalSectionsSmul_mul, CategoryTheory.Functor.map_comp]
-    -- `simp only [Category.assoc]` does not apply across the mixed category instances
-    exact (Category.assoc _ _ _).symm
+      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) :=
+  modObjGradedRelativeSpec ((gradedSymmetricAlgebra X).obj F)
 
 /-- The action of `𝔸¹_X` on `Spec_X (Sym F)` is `relativeSpecSymmetricAlgebraSMul`. -/
 @[simp]
@@ -172,7 +173,7 @@ lemma smul_relativeSpecSymmetricAlgebra :
     γ[𝔸(PUnit.{u + 1}; X).asOver X, (MorphismProperty.Over.forget _ _ X).obj
       ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))] =
       relativeSpecSymmetricAlgebraSMul F :=
-  (rfl)
+  gradedRelativeSpecSMul_gradedSymmetricAlgebra F
 
 open scoped AddMonObj
 
@@ -210,17 +211,8 @@ the induced morphism `Spec_X (Sym F) ⟶ Spec_X (Sym F')` commutes with the scal
 by `𝔸¹_X`. -/
 instance isModHom_relativeSpec_map {F' F : QuasicoherentSheaf X} (a : F' ⟶ F) :
     IsModHom (𝔸(PUnit.{u + 1}; X).asOver X) ((MorphismProperty.Over.forget _ _ X).map
-      ((relativeSpec X).map ((symmetricAlgebra X).map a).op)) where
-  smul_hom := by
-    dsimp only [selfLeftAction_actionHomRight, selfLeftAction_actionObj]
-    rw [smul_relativeSpecSymmetricAlgebra, smul_relativeSpecSymmetricAlgebra]
-    apply (relativeSpecSymmetricAlgebraHomEquiv F' _).injective
-    -- both module maps are `a` followed by the module map of the scalar multiplication on `F`
-    rw [relativeSpecSymmetricAlgebraHomEquiv_comp_relativeSpec_map,
-      relativeSpecSymmetricAlgebraHomEquiv_comp_smul, whiskerLeft_fst, whiskerLeft_snd,
-      relativeSpecSymmetricAlgebraHomEquiv_comp_relativeSpec_map, relativeSpecSymmetricAlgebraSMul,
-      Equiv.apply_symm_apply]
-    exact (Category.assoc _ _ _).symm
+      ((relativeSpec X).map ((symmetricAlgebra X).map a).op)) :=
+  isModHom_relativeSpec_map_toQuasicoherentAlgebra_map _ ((gradedSymmetricAlgebra X).map a)
 
 end
 

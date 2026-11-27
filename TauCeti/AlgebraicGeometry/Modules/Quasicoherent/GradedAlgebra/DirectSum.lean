@@ -49,6 +49,11 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_ιTotal_comp`: hence an algebra
   morphism out of `⨁ₙ Aₙ` is multiplicative and unital on the homogeneous summands
   (`mul_ιTotal` and `one_ιTotal` for the identity);
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.descTotal`: conversely, a family of
+  module maps `Aₙ ⟶ B` into a commutative algebra which preserves the unit and the homogeneous
+  multiplications is the restriction of a unique algebra morphism `⨁ₙ Aₙ ⟶ B`
+  (`ιTotal_descTotal`); such morphisms are determined in positive degrees when the unit
+  `𝒪_X ⟶ A₀` is an epimorphism (`commMonHom_ext`);
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_ιTotal_zero` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isIso_one_toQuasicoherentAlgebra`: a
   graded algebra whose positive-degree components vanish is its degree-zero component, and its
@@ -298,6 +303,59 @@ theorem one_ιTotal_comp {B : CommMon X.Modules} (A : GradedQuasicoherentAlgebra
     A.obj.toMon.one ≫ ιTotal A 0 ≫ k.hom.hom = η[B.X] :=
   (Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ k.hom.hom) (one_ιTotal A)).trans (IsMonHom.one_hom k.hom.hom))
+
+section Desc
+
+variable (A : GradedQuasicoherentAlgebra X) {B : CommMon X.Modules}
+
+private theorem ιTotal_desc (f : ∀ n, A.obj.X n ⟶ B.X) (n : ℕ) :
+    ιTotal A n ≫ Cofan.IsColimit.desc (isColimitιTotal A) f = f n :=
+  Cofan.IsColimit.fac (isColimitιTotal A) f n
+
+/-- **Algebra maps out of a direct sum.** The morphism of commutative algebras
+`⨁ₙ Aₙ ⟶ B` whose restriction to the summand `Aₙ` is `f n`, for a family of module maps
+`f n : Aₙ ⟶ B` that sends the unit of `A₀` to the unit of `B` and the homogeneous multiplications
+`Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` to the multiplication of `B`. -/
+def descTotal (f : ∀ n, A.obj.X n ⟶ B.X)
+    (one_f : A.obj.toMon.one ≫ f 0 = η[B.X])
+    (mul_f : ∀ i j, A.obj.toMon.mul i j ≫ f (i + j) = (f i ⊗ₘ f j) ≫ μ[B.X]) :
+    (toQuasicoherentAlgebra.obj A).obj ⟶ B :=
+  -- The composites below are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
+  -- `X.Modules`, which `rw` does not identify, so the equations are chained as terms.
+  CommMon.homMk (Mon.Hom.mk' (Cofan.IsColimit.desc (isColimitιTotal A) f)
+    ((congrArg (· ≫ Cofan.IsColimit.desc (isColimitιTotal A) f) (one_ιTotal A).symm).trans
+      ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (ιTotal_desc A f 0)).trans one_f)))
+    (toQuasicoherentAlgebra_tensor_hom_ext fun i j ↦
+      ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ Cofan.IsColimit.desc
+        (isColimitιTotal A) f) (mul_ιTotal A i j).symm).trans ((Category.assoc _ _ _).trans
+          ((congrArg (_ ≫ ·) (ιTotal_desc A f (i + j))).trans (mul_f i j))))).trans
+        ((tensorHom_comp_tensorHom_assoc (ιTotal A i) (ιTotal A j)
+          (Cofan.IsColimit.desc (isColimitιTotal A) f)
+          (Cofan.IsColimit.desc (isColimitιTotal A) f) μ[B.X]).trans
+            (congrArg (· ≫ μ[B.X])
+              (congrArg₂ (· ⊗ₘ ·) (ιTotal_desc A f i) (ιTotal_desc A f j)))).symm))
+
+/-- On the summand `Aₙ`, the algebra map `descTotal A f _ _` is `f n`. -/
+@[simp, reassoc]
+theorem ιTotal_descTotal (f : ∀ n, A.obj.X n ⟶ B.X)
+    (one_f : A.obj.toMon.one ≫ f 0 = η[B.X])
+    (mul_f : ∀ i j, A.obj.toMon.mul i j ≫ f (i + j) = (f i ⊗ₘ f j) ≫ μ[B.X]) (n : ℕ) :
+    ιTotal A n ≫ (descTotal A f one_f mul_f).hom.hom = f n :=
+  ιTotal_desc A f n
+
+variable {A} in
+/-- **Algebra maps out of `⨁ₙ Aₙ` are determined in positive degrees.** If the unit
+`𝒪_X ⟶ A₀` is an epimorphism, for instance an isomorphism, two morphisms of commutative algebras
+`⨁ₙ Aₙ ⟶ B` that agree on every summand of positive degree are equal: on `A₀` both are determined
+by the unit. -/
+theorem commMonHom_ext [Epi A.obj.toMon.one] {k k' : (toQuasicoherentAlgebra.obj A).obj ⟶ B}
+    (h : ∀ n, ιTotal A (n + 1) ≫ k.hom.hom = ιTotal A (n + 1) ≫ k'.hom.hom) : k = k' := by
+  refine CommMon.hom_ext _ _ (toQuasicoherentAlgebra_hom_ext fun n ↦ ?_)
+  rcases n with _ | n
+  · exact (cancel_epi A.obj.toMon.one).1 ((one_ιTotal_comp A k).trans (one_ιTotal_comp A k').symm)
+  · exact h n
+
+end Desc
 
 /-- If every homogeneous component of positive degree vanishes, the inclusion of the degree-zero
 component into the direct sum `⨁ₙ Aₙ` is an isomorphism. -/
