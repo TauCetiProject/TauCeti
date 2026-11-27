@@ -318,6 +318,16 @@ theorem tsupport_extendByZeroCLM :
   simpa only [tsupport_def] using
     (tsupport_extendByZero ((ofCompactlySupported I F (c *ᵖ V)).symm s))
 
+/-- A native test whose closed support lies in the open subset is the extension of a test on it. -/
+theorem exists_extendByZeroCLM_eq {s : TauCeti.BundleTest I F V}
+    (hs : closure {x | s x ≠ 0} ⊆ U) :
+    ∃ t : TauCeti.BundleTest I F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V),
+      extendByZeroCLM (I := I) (F := F) (V := V) t = s := by
+  obtain ⟨t, ht⟩ := (mem_range_extendByZeroLinearMap_iff (I := I) (F := F) (n := ∞) (V := V)
+    (U := U) ((ofCompactlySupported I F V).symm s)).2 (by rw [tsupport_def]; exact hs)
+  refine ⟨ofCompactlySupported I F _ t, ?_⟩
+  rw [extendByZeroCLM_ofCompactlySupported, ht, LinearEquiv.apply_symm_apply]
+
 /-- Extension commutes with multiplication by an ambient smooth scalar function. -/
 theorem extendByZeroCLM_smulLeftCLM :
     let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
