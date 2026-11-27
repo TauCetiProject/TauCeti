@@ -75,34 +75,7 @@ section PseudoMetricSpace
 
 variable {X Y F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [PseudoMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] [NormedAddCommGroup F] {μ : Measure X}
-  {ν : Measure Y} {f : Y → F} {Φ : X → Y} {L K D : ℝ≥0}
-
-/-- **Pushing a ball average forward.** Under the hypotheses of
-`LipschitzWith.vmoModulus_comp_le_of_map_le`, the mean deviation of `f ∘ Φ` from a constant `k` on
-`B(c, s)` is at most `K D` times that of `f` on `B(Φ c, L s)`. -/
-private theorem setLAverage_ball_enorm_comp_sub_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
-    (hmap : μ.map Φ ≤ K • ν) (hf : StronglyMeasurable f) (k : F) {c : X} {s : ℝ}
-    (hD : ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s)) :
-    ⨍⁻ x in ball c s, ‖f (Φ x) - k‖ₑ ∂μ ≤
-      K * D * ⨍⁻ y in ball (Φ c) (L * s), ‖f y - k‖ₑ ∂ν := by
-  set A := ⨍⁻ y in ball (Φ c) (L * s), ‖f y - k‖ₑ ∂ν
-  rcases eq_or_ne (μ (ball c s)) 0 with h0 | h0
-  · simp [Measure.restrict_eq_zero.2 h0]
-  rcases eq_or_ne (μ (ball c s)) ⊤ with htop | htop
-  · simp [setLAverage_eq, htop]
-  have hν : ν (ball (Φ c) (L * s)) ≠ ⊤ :=
-    ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top htop) hD
-  have hint := hΦ.setLIntegral_ball_comp_le_of_map_le hL hmap (g := fun y => ‖f y - k‖ₑ)
-    (hf.sub stronglyMeasurable_const).eNorm c s
-  rw [← measure_mul_setLAverage _ hν] at hint
-  rw [setLAverage_eq, ENNReal.div_eq_inv_mul]
-  calc (μ (ball c s))⁻¹ * ∫⁻ x in ball c s, ‖f (Φ x) - k‖ₑ ∂μ
-      ≤ (μ (ball c s))⁻¹ * (K * (ν (ball (Φ c) (L * s)) * A)) := by gcongr
-    _ ≤ (μ (ball c s))⁻¹ * (K * (D * μ (ball c s) * A)) := by gcongr
-    _ = K * D * A * ((μ (ball c s))⁻¹ * μ (ball c s)) := by ring
-    _ = K * D * A := by rw [ENNReal.inv_mul_cancel h0 htop, mul_one]
-
-variable [NormedSpace ℝ F] [CompleteSpace F]
+  {ν : Measure Y} {f : Y → F} {Φ : X → Y} {L K D : ℝ≥0} [NormedSpace ℝ F] [CompleteSpace F]
 
 /-- **Mean oscillation under a change of variables.** Let `Φ : X → Y` be `L`-Lipschitz, `L ≠ 0`,
 with `Φ_* μ ≤ K ν`, and suppose that `ν (B(Φ c, L s)) ≤ D μ (B(c, s))` for every ball. Then
@@ -129,7 +102,8 @@ theorem _root_.LipschitzWith.vmoModulus_comp_le_of_map_le (hΦ : LipschitzWith L
         setLAverage_setLAverage_enorm_sub_le k
     _ ≤ 2 * (K * D * ⨍⁻ y in ball (Φ c) (L * s), ‖g y - k‖ₑ ∂ν) := by
         gcongr
-        exact setLAverage_ball_enorm_comp_sub_le hΦ hL hmap hg k (hD c s hs0)
+        exact hΦ.setLAverage_ball_comp_le_of_map_le hL hmap
+          (hg.sub stronglyMeasurable_const).eNorm (hD c s hs0)
     _ ≤ 2 * (K * D * vmoModulus g ν (L * r)) := by
         gcongr
         exact setLAverage_enorm_sub_setAverage_le_vmoModulus g ν (Φ c)
