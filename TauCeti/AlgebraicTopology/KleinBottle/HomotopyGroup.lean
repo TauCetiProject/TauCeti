@@ -11,7 +11,6 @@ import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 import TauCeti.AlgebraicTopology.EilenbergMacLane.MappingTorus
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane
-import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # The Klein bottle is aspherical
