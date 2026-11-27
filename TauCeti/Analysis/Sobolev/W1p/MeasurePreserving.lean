@@ -306,6 +306,19 @@ theorem W1p.value_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F') (hUV : (
       fun x => W1p.value u (g x) :=
   W1p.value_compMeasurePreservingL_ae _ _ _ _ u
 
+/-- Precomposition with an affine isometry preserves almost-everywhere nonnegativity of the
+value: if `u ≥ 0` almost everywhere on `V`, then `u ∘ g ≥ 0` almost everywhere on `U`. -/
+theorem W1p.ae_nonneg_value_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
+    (hu : ∀ᵐ y ∂volume.restrict V, 0 ≤ W1p.value u y) :
+    ∀ᵐ x ∂volume.restrict U, 0 ≤ W1p.value (W1p.compAffineIsometryEquivL g hUV u) x := by
+  have hmp : MeasurePreserving g (volume.restrict (U : Set F)) (volume.restrict (V : Set F')) :=
+    hUV ▸ g.measurePreserving.restrict_preimage V.isOpen.measurableSet
+  filter_upwards [W1p.value_compAffineIsometryEquivL_ae g hUV u,
+    hmp.quasiMeasurePreserving.ae hu] with x h1 h2
+  rw [h1]
+  exact h2
+
 /-- The weak gradient of `u ∘ g` is the gradient of `u` at `g x`, pulled back by the inverse of
 the linear part of `g`. -/
 theorem W1p.gradient_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F')

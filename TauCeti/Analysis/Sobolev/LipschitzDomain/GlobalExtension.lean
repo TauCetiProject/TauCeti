@@ -235,23 +235,9 @@ private theorem exists_extensionL_of_image
     rw [W1p.restrictL_compAffineIsometryEquivL g htop le_top le_top hUW, h₀]
     exact W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g.symm hWU hUW u
   · -- `u ∘ g⁻¹` is nonnegative on `W`, so is its extension, and so is the pullback by `g`.
-    have hmp : MeasurePreserving g.symm (volume.restrict (W : Set (WithLp 2 (ℝ × E))))
-        (volume.restrict (U : Set F)) := by
-      rw [hWU]
-      exact g.symm.measurePreserving.restrict_preimage U.isOpen.measurableSet
-    have hv : ∀ᵐ y ∂volume.restrict (W : Set (WithLp 2 (ℝ × E))),
-        0 ≤ W1p.value (W1p.compAffineIsometryEquivL g.symm hWU u) y := by
-      filter_upwards [W1p.value_compAffineIsometryEquivL_ae g.symm hWU u,
-        hmp.quasiMeasurePreserving.ae hu] with y h1 h2
-      rw [h1]
-      exact h2
-    have hval := W1p.value_compAffineIsometryEquivL_ae g htop
-      (T₀ (W1p.compAffineIsometryEquivL g.symm hWU u))
-    simp only [Opens.coe_top, Measure.restrict_univ] at hval
-    filter_upwards [hval, g.measurePreserving.quasiMeasurePreserving.ae (hT₀0 _ hv)]
-      with x h1 h2
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h1]
-    exact h2
+    have h := W1p.ae_nonneg_value_compAffineIsometryEquivL g htop
+      (ae_restrict_of_ae (hT₀0 _ (W1p.ae_nonneg_value_compAffineIsometryEquivL g.symm hWU hu)))
+    simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.comp_apply] using h
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 
@@ -316,18 +302,10 @@ theorem W1p.exists_extensionL_of_isLipschitzDomain (hU : (U : Set F).IsLipschitz
       ContinuousLinearEquiv.coe_coe] at h₀ ⊢
     rw [← W1p.addHaarEquivL_restrictL, h₀, ← W1p.addHaarEquivL_symm mu volume]
     exact A.symm_apply_apply u
-  · have hA : ∀ᵐ x ∂volume.restrict (U : Set F), 0 ≤ W1p.value (A u) x := by
-      filter_upwards [W1p.value_addHaarEquivL_ae mu volume u,
-        ((Measure.absolutelyContinuous_isAddHaarMeasure _ _).restrict _).ae_le hu] with x h1 h2
-      rw [h1]
-      exact h2
-    have hB := W1p.value_addHaarEquivL_ae volume mu (T (A u))
-    simp only [Opens.coe_top, Measure.restrict_univ] at hB
-    filter_upwards [hB, (Measure.absolutelyContinuous_isAddHaarMeasure mu volume).ae_le
-      (hT0 _ hA)] with x h1 h2
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-    rw [h1]
-    exact h2
+  · have h := W1p.ae_nonneg_value_addHaarEquivL volume mu
+      (ae_restrict_of_ae (hT0 _ (W1p.ae_nonneg_value_addHaarEquivL mu volume hu)))
+    simpa only [Opens.coe_top, Measure.restrict_univ, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe] using h
 
 end Intrinsic
 
