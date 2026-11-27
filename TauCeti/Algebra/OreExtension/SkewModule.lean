@@ -87,6 +87,7 @@ theorem X_smul_of (n : N) : (X : OreExtension σ 0) • of F n = of F (F n) :=
   congrArg (of F) (semilinearEndHom_X σ F n)
 
 /-- `X - 1` acts on `SkewModule F` by `F - 1`. -/
+@[simp]
 theorem X_sub_one_smul_of (n : N) : (X - 1 : OreExtension σ 0) • of F n = of F (F n - n) := by
   rw [sub_smul, one_smul, X_smul_of, map_sub]
 

@@ -142,10 +142,12 @@ theorem sub_C_mem_range_mulXSubOne (p : OreExtension σ 0) :
   induction p using induction_on with
   | zero => simp
   | add n a p _ _ ih =>
-    rw [map_add, augmentation_monomial, map_add, map_add, AddEquiv.symm_apply_apply,
-      add_sub_add_comm, ← C_mul_X_pow_eq_monomial]
+    rw [map_add, augmentation_monomial]
+    simp only [map_add, AddEquiv.symm_apply_apply]
+    rw [add_sub_add_comm]
     refine Submodule.add_mem _ ⟨C a * ∑ i ∈ Finset.range n, X ^ i, ?_⟩ ih
-    rw [mulXSubOne_apply, mul_assoc, geom_sum_mul, mul_sub, mul_one, C_mul_X_pow_eq_monomial]
+    rw [mulXSubOne_apply, mul_assoc, geom_sum_mul]
+    simp [mul_sub, C_mul_X_pow_eq_monomial]
 
 /-- Right multiplication by `X - 1` is injective: `q * X = q` forces `q = 0`. -/
 theorem mulXSubOne_injective : Function.Injective (mulXSubOne σ) := by
@@ -204,16 +206,20 @@ def homOfMemKer (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreEx
       rw [h, zero_comp]).val
 
 /-- The morphism `homOfMemKer σ N n` sends the class of `p` to `p • n`. -/
+@[reassoc (attr := simp)]
 theorem augmentation_comp_homOfMemKer
     (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0))) :
     augmentation σ ≫ homOfMemKer σ N n = ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n) :=
   (Cofork.IsColimit.desc' (unitShortComplex_shortExact σ).gIsCokernel _ _).property
 
-/-- The morphism `homOfMemKer σ N n` sends `a` to `C a • n`. -/
+/-- The morphism `homOfMemKer σ N n` sends `a` to `C a • n`. The function type is spelled out
+with the carrier `SkewModule _` rather than that of `unitModuleCat σ`: `simp` reduces the
+`ModuleCat.of` carrier in the goal, so a left-hand side stated with it would never match. -/
 @[simp]
 theorem homOfMemKer_apply
     (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0))) (a : R) :
-    homOfMemKer σ N n (SkewModule.of (σ : R →+* R).toSemilinearMap a) =
+    @DFunLike.coe (SkewModule (σ : R →+* R).toSemilinearMap →ₗ[OreExtension σ 0] N) _ _ _
+        (homOfMemKer σ N n).hom (SkewModule.of (σ : R →+* R).toSemilinearMap a) =
       (C a : OreExtension σ 0) • (n : N) := by
   have h := ConcreteCategory.congr_hom (augmentation_comp_homOfMemKer σ N n) (C a)
   rw [ConcreteCategory.comp_apply, augmentation_C] at h
@@ -227,13 +233,13 @@ def homUnitLinearEquiv : (unitModuleCat σ ⟶ N) ≃ₗ[ℤ]
     rw [LinearMap.mem_ker, DistribSMul.toLinearMap_apply, ← map_smul, sub_smul, one_smul,
       SkewModule.X_smul_of]
     simp⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_add' _ _ := Subtype.ext (by simp)
+  map_smul' _ _ := Subtype.ext (by simp)
   invFun := homOfMemKer σ N
   left_inv f := Cofork.IsColimit.hom_ext (unitShortComplex_shortExact σ).gIsCokernel <| by
     rw [Cofork.π_ofπ, augmentation_comp_homOfMemKer]
     exact ModuleCat.hom_ext (LinearMap.ext fun p ↦ (map_smul f.hom p _).symm)
-  right_inv n := Subtype.ext <| by simpa using homOfMemKer_apply σ N n 1
+  right_inv n := Subtype.ext <| by simp
 
 /-- A morphism from the unit module corresponds to its value at `1`. -/
 @[simp]
@@ -258,6 +264,13 @@ theorem coe_extZeroAddEquiv_mk₀ (f : unitModuleCat σ ⟶ N) :
     (extZeroAddEquiv σ N (Ext.mk₀ f) : N) = f (SkewModule.of (σ : R →+* R).toSemilinearMap 1) := by
   rw [extZeroAddEquiv, AddEquiv.trans_apply, ← Ext.addEquiv₀_symm_apply, AddEquiv.apply_symm_apply]
   exact coe_homUnitLinearEquiv_apply σ N f
+
+/-- A vector `n` fixed by `X` corresponds to the class in `Ext⁰` of `homOfMemKer σ N n`. -/
+@[simp]
+theorem extZeroAddEquiv_symm_apply
+    (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0))) :
+    (extZeroAddEquiv σ N).symm n = Ext.mk₀ (homOfMemKer σ N n) :=
+  (extZeroAddEquiv σ N).symm_apply_eq.mpr <| Subtype.ext <| by simp
 
 /-- `Ext¹` from the unit module of `R[X; σ]` to `N` is the cokernel of the action of `X - 1` on
 `N`. It is computed by the resolution `unitShortComplex σ`, in which right multiplication by
@@ -285,7 +298,12 @@ theorem extOneAddEquiv_symm_mk (n : N) :
     (extOneAddEquiv σ N).symm (Submodule.Quotient.mk n) =
       (unitShortComplex_shortExact σ).extClass.comp
         (Ext.mk₀ (ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n))) (add_zero 1) := by
-  rw [← ModuleCat.homSelfLinearEquiv_symm_apply (S := ℤ)]
+  simp only [extOneAddEquiv, AddEquiv.symm_trans_apply,
+    LinearEquiv.coe_toAddEquiv, ← LinearEquiv.coe_toAddEquiv_symm, LinearEquiv.coe_addEquiv_apply,
+    Submodule.Quotient.equiv_symm, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
+    LinearEquiv.coe_coe, LinearEquiv.symm_symm, ModuleCat.homSelfLinearEquiv_symm_apply]
+  -- `homCokernelEquivExt_mk` is stated for `(unitShortComplex σ).f`, which is `mulXSubOne σ` by
+  -- the `ShortComplex.mk` projection; `simp` does not see through it.
   exact homCokernelEquivExt_mk ℤ (unitShortComplex_shortExact σ) N _
 
 end Ext

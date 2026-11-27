@@ -41,7 +41,8 @@ the differential `F - 1` of the Frobenius cohomology complex.
 ## Main results
 
 * `TauCeti.FrobeniusModuleCat.coe_extZeroAddEquiv_mk₀`: a morphism `f` from the unit module
-  corresponds to the fixed vector `f 1`.
+  corresponds to the fixed vector `f 1`; conversely, `extZeroAddEquiv_symm_apply` sends a fixed
+  vector `m` to the morphism sending `1` to `m`.
 * `TauCeti.FrobeniusModuleCat.extOneAddEquiv_symm_mk`: the class of `m` in `Ext¹` is the pushout of
   the extension class of the resolution along `p ↦ p • m`.
 * `TauCeti.FrobeniusModuleCat.homologyZeroIso_hom_extZeroAddEquivHomology` and
@@ -73,9 +74,16 @@ variable {S : Type u} [CommRing S] {σ : S →+* S} (M : FrobeniusModuleCat σ)
 private theorem symm_of_X_sub_one_smul (y : SkewModule M.skewFrobenius) :
     (SkewModule.of M.skewFrobenius).symm ((X - 1 : OreExtension σ.toIntAlgHom 0) • y) =
       M.frobeniusSubOne ((SkewModule.of M.skewFrobenius).symm y) := by
-  rw [← (SkewModule.of M.skewFrobenius).apply_symm_apply y, SkewModule.X_sub_one_smul_of,
-    AddEquiv.symm_apply_apply, AddEquiv.symm_apply_apply, frobeniusSubOne_apply,
-    skewFrobenius_apply]
+  rw [← (SkewModule.of M.skewFrobenius).apply_symm_apply y, X_sub_one_smul_of,
+    AddEquiv.symm_apply_apply, AddEquiv.symm_apply_apply, frobeniusSubOne_apply]
+
+/-- A vector of `M` is killed by `F - 1` on `M.toSkewModuleCat` exactly when it is
+Frobenius-fixed. -/
+theorem of_mem_ker_X_sub_one_iff {m : M.carrier} :
+    SkewModule.of M.skewFrobenius m ∈ LinearMap.ker
+        (DistribSMul.toLinearMap ℤ M.toSkewModuleCat (X - 1 : OreExtension σ.toIntAlgHom 0)) ↔
+      m ∈ LinearMap.ker M.frobeniusSubOne := by
+  simp [sub_eq_zero]
 
 /-- The vectors of `M.toSkewModuleCat` killed by `F - 1` are the Frobenius-fixed vectors of `M`. -/
 private theorem map_ker_X_sub_one :
@@ -100,7 +108,7 @@ private theorem coe_kerAddEquiv_apply
     (x : LinearMap.ker
       (DistribSMul.toLinearMap ℤ M.toSkewModuleCat (X - 1 : OreExtension σ.toIntAlgHom 0))) :
     (kerAddEquiv M x : M.carrier) = (SkewModule.of M.skewFrobenius).symm x :=
-  (rfl)
+  LinearEquiv.ofSubmodules_apply _ (map_ker_X_sub_one M) x
 
 /-- The cokernel of `F - 1` on `M` is that of `F - 1` on `M.toSkewModuleCat`. -/
 private def quotientAddEquiv :
@@ -122,6 +130,15 @@ private def quotientAddEquiv :
             (congrArg M.frobeniusSubOne ((SkewModule.of M.skewFrobenius).symm_apply_apply y))).trans
     (Submodule.Quotient.restrictScalarsEquiv ℤ _)
 
+private theorem quotientAddEquiv_symm_mk (m : M.carrier) :
+    (quotientAddEquiv M).symm (Submodule.Quotient.mk m) =
+      Submodule.Quotient.mk (SkewModule.of M.skewFrobenius m) := by
+  simp only [quotientAddEquiv, LinearEquiv.coe_toAddEquiv, ← LinearEquiv.coe_toAddEquiv_symm,
+    LinearEquiv.coe_addEquiv_apply, LinearEquiv.symm_trans_apply,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.Quotient.equiv_symm,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+    AddEquiv.toIntLinearEquiv_symm, LinearEquiv.symm_symm, AddEquiv.coe_toIntLinearEquiv]
+
 /-- `Ext⁰` over the skew polynomial ring `S{F}` from the unit module `S` to `M` is the group
 `ker (F - 1)` of Frobenius-fixed vectors of `M`. -/
 def extZeroAddEquiv :
@@ -138,6 +155,16 @@ theorem coe_extZeroAddEquiv_mk₀ (f : unitModuleCat σ.toIntAlgHom ⟶ M.toSkew
   (coe_kerAddEquiv_apply M _).trans
     (congrArg (SkewModule.of M.skewFrobenius).symm (OreExtension.coe_extZeroAddEquiv_mk₀ _ _ f))
 
+/-- A Frobenius-fixed vector `m` corresponds to the class in `Ext⁰` of the morphism from the unit
+module to `M` sending `1` to `m`. -/
+@[simp]
+theorem extZeroAddEquiv_symm_apply (m : LinearMap.ker M.frobeniusSubOne) :
+    M.extZeroAddEquiv.symm m = Ext.mk₀ (homOfMemKer σ.toIntAlgHom M.toSkewModuleCat
+      ⟨SkewModule.of M.skewFrobenius m, (M.of_mem_ker_X_sub_one_iff).mpr m.property⟩) :=
+  M.extZeroAddEquiv.symm_apply_eq.mpr <| Subtype.ext <| by
+    rw [coe_extZeroAddEquiv_mk₀, homOfMemKer_apply]
+    simp
+
 /-- `Ext¹` over the skew polynomial ring `S{F}` from the unit module `S` to `M` is the cokernel
 `M ⧸ (F - 1) M`. -/
 def extOneAddEquiv :
@@ -152,8 +179,9 @@ theorem extOneAddEquiv_symm_mk (m : M.carrier) :
     M.extOneAddEquiv.symm (Submodule.Quotient.mk m) =
       (unitShortComplex_shortExact σ.toIntAlgHom).extClass.comp
         (Ext.mk₀ (ModuleCat.ofHom (LinearMap.toSpanSingleton _ M.toSkewModuleCat
-          (SkewModule.of M.skewFrobenius m)))) (add_zero 1) :=
-  OreExtension.extOneAddEquiv_symm_mk _ _ _
+          (SkewModule.of M.skewFrobenius m)))) (add_zero 1) := by
+  rw [extOneAddEquiv, AddEquiv.symm_trans_apply, quotientAddEquiv_symm_mk,
+    OreExtension.extOneAddEquiv_symm_mk]
 
 /-- `Ext⁰_{S{F}}(S, M)` is the Frobenius cohomology of `M` in degree `0`. -/
 def extZeroAddEquivHomology :
