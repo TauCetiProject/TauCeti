@@ -31,7 +31,6 @@ import Mathlib.RingTheory.LocalRing.Quotient
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
-import TauCeti.RingTheory.StableRange.Commutative
 import TauCeti.RingTheory.LocalRing.Quotient
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import TauCeti.RingTheory.LocalRing.Basic
@@ -355,7 +354,12 @@ theorem exists_bottomRowMod_eq (h : HasStableRangeLE (A ⧸ I) 1) {v : Fin 2 →
   obtain ⟨g, hg, hge⟩ := (Ideal.Quotient.mk I).exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq
     Ideal.Quotient.mk_surjective he
   have hmap : GeneralLinearGroup.map (Ideal.Quotient.mk I) g = e := by
-    simpa only [GeneralLinearGroup.map] using hge
+    apply Units.ext
+    ext i j
+    rw [GeneralLinearGroup.map_apply]
+    have hentry := congrArg (fun m : GL (Fin 2) (A ⧸ I) ↦ m i j) hge
+    change ((Ideal.Quotient.mk I).mapMatrix (g : Matrix (Fin 2) (Fin 2) A)) i j = e i j at hentry
+    simpa only [RingHom.mapMatrix_apply, Matrix.map_apply] using hentry
   refine ⟨g⁻¹, inv_mem hg, ?_⟩
   rw [← single_one_vecMul_map, map_inv, hmap]
   exact ((GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv e _ _).mp hve).symm
@@ -375,10 +379,20 @@ noncomputable def GL2K1.rightCosetEquiv (h : HasStableRangeLE (A ⧸ I) 1) :
       let ⟨g, _, hg⟩ := exists_bottomRowMod_eq I h v.property
       ⟨Quotient.mk _ g, Subtype.ext hg⟩⟩
 
+/-- The right coset of a matrix maps to its bundled bottom row modulo `I`. -/
 @[simp]
 theorem GL2K1.rightCosetEquiv_mk (h : HasStableRangeLE (A ⧸ I) 1) (g : GL (Fin 2) A) :
-    (GL2K1.rightCosetEquiv I h (Quotient.mk _ g) : Fin 2 → A ⧸ I) = bottomRowMod I g :=
+    GL2K1.rightCosetEquiv I h (Quotient.mk _ g) =
+      ⟨bottomRowMod I g, isUnimodular_bottomRowMod I g⟩ :=
   (rfl)
+
+/-- A matrix represents the inverse image of a unimodular row exactly when its bottom row
+modulo `I` is that row. -/
+@[simp]
+theorem GL2K1.rightCosetEquiv_symm_eq_mk_iff (h : HasStableRangeLE (A ⧸ I) 1)
+    (v : {v : Fin 2 → A ⧸ I // Module.IsUnimodular (A ⧸ I) v}) (g : GL (Fin 2) A) :
+    (GL2K1.rightCosetEquiv I h).symm v = Quotient.mk _ g ↔ v.val = bottomRowMod I g := by
+  rw [Equiv.symm_apply_eq, GL2K1.rightCosetEquiv_mk, Subtype.ext_iff]
 
 /-- When `A ⧸ I` has stable range at most one, the bottom row modulo `I` identifies the right
 cosets of `K₀(I)` with the points of `ℙ¹(A ⧸ I)`, the unimodular rows up to a unit of `A ⧸ I`. -/
@@ -410,22 +424,15 @@ theorem GL2K0.rightCosetEquiv_mk (h : HasStableRangeLE (A ⧸ I) 1) (g : GL (Fin
         TauCeti.Module.mem_unimodularSubMulAction.mpr (isUnimodular_bottomRowMod I g)⟩ :=
   (rfl)
 
-/-- For a quotient of stable range at most one, the index of `K₁(I)` is the number of
-unimodular rows of `(A ⧸ I)²`. -/
-theorem GL2K1.index_eq_card (h : HasStableRangeLE (A ⧸ I) 1) :
-    (GL2K1 I).index = Nat.card {v : Fin 2 → A ⧸ I // Module.IsUnimodular (A ⧸ I) v} := by
-  rw [Subgroup.index_eq_card,
-    ← Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel _),
-    Nat.card_congr (GL2K1.rightCosetEquiv I h)]
-
-/-- For a quotient of stable range at most one, the index of `K₀(I)` is the number of points of
-the projective line `ℙ¹(A ⧸ I)`. -/
-theorem GL2K0.index_eq_card (h : HasStableRangeLE (A ⧸ I) 1) :
-    (GL2K0 I).index = Nat.card (MulAction.orbitRel.Quotient (A ⧸ I)ˣ
-      (TauCeti.Module.unimodularSubMulAction (A ⧸ I) (Fin 2 → A ⧸ I))) := by
-  rw [Subgroup.index_eq_card,
-    ← Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel _),
-    Nat.card_congr (GL2K0.rightCosetEquiv I h)]
+/-- A matrix represents the inverse image of a projective point exactly when its bottom row
+modulo `I` is a unit multiple of the chosen row of the point. -/
+@[simp]
+theorem GL2K0.rightCosetEquiv_symm_eq_mk_iff (h : HasStableRangeLE (A ⧸ I) 1)
+    (v : TauCeti.Module.unimodularSubMulAction (A ⧸ I) (Fin 2 → A ⧸ I)) (g : GL (Fin 2) A) :
+    (GL2K0.rightCosetEquiv I h).symm (Quotient.mk _ v) = Quotient.mk _ g ↔
+      ∃ u : (A ⧸ I)ˣ, u • v.val = bottomRowMod I g := by
+  rw [Equiv.symm_apply_eq, GL2K0.rightCosetEquiv_mk, eq_comm, Quotient.eq, MulAction.orbitRel_apply]
+  exact exists_congr fun _ ↦ Subtype.ext_iff
 
 /-! ### The indices over a local ring with finite quotient -/
 
@@ -444,8 +451,10 @@ theorem GL2K1.card_residueField_sq_mul_index (hI : I ≠ ⊤) :
       Nat.card (A ⧸ I) ^ 2 * (Nat.card (ResidueField A) ^ 2 - 1) := by
   have := isLocalRing_quotient hI
   have hq := card_residueField_of_surjective (Ideal.Quotient.mk_surjective (I := I))
-  simpa [← hq, GL2K1.index_eq_card I (hasStableRangeLE_one_of_finite_maximalSpectrum _)] using
-    TauCeti.IsLocalRing.card_residueField_pow_mul_card_isUnimodular (A ⧸ I) (Fin 2)
+  rw [Subgroup.index_eq_card,
+    ← Nat.card_congr (QuotientGroup.quotientRightRelEquivQuotientLeftRel _),
+    Nat.card_congr (GL2K1.rightCosetEquiv I (hasStableRangeLE_one_of_isLocalRing (A ⧸ I))), ← hq]
+  exact TauCeti.IsLocalRing.card_residueField_pow_mul_card_isUnimodular (A ⧸ I) (Fin 2)
 
 /-- **The index of `K₁(I)` in `K₀(I)`** over a local ring with finite quotient `A ⧸ I ≠ 0`:
 `q · [K₀(I) : K₁(I)] = #(A ⧸ I) · (q - 1)`, the number of units of `A ⧸ I` multiplied by `q`. -/

@@ -12,9 +12,10 @@ import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Splitti
 /-!
 # Bianchi levels above five
 
-The prime ideal `(2 + i)` in the fourth cyclotomic field has norm five. Its upper-triangular
-congruence subgroup has index six in the full integral general linear group. At level `(5)`,
-both primes above five contribute and the index is thirty-six.
+The prime ideal `(2 + i)` of the Gaussian integers, the ring of integers of the fourth
+cyclotomic field, has norm five. Its upper-triangular congruence subgroup has index six in the
+full integral general linear group. At level `(5)`, both primes above five contribute and the
+index is thirty-six.
 -/
 
 open NumberField UniqueFactorizationMonoid
