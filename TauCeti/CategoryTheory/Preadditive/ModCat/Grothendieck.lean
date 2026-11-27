@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
+public import TauCeti.CategoryTheory.Functor.LocallySmall
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 
 import Mathlib.Algebra.Category.Grp.AB
@@ -40,53 +41,6 @@ namespace TauCeti.ModCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-/-- A morphism from the module represented by `X` to `F` corresponds to its value on `𝟙 X`. -/
-def yonedaHomEquiv {X : C} {F : ModCat.{v} C} :
-    ((yoneda C).obj X ⟶ F) ≃+ F.obj.obj (op X) := by
-  refine
-    { toFun := fun f ↦ f.hom.app (op X) (𝟙 X)
-      invFun := fun x ↦ ObjectProperty.homMk
-        { app Y := AddCommGrpCat.ofHom
-            (AddMonoidHom.mk' (fun f ↦ F.obj.map f.op x) (by
-              intro f g
-              rw [op_add, Functor.map_add]
-              exact AddCommGrpCat.hom_add_apply _ _ _) : (Y.unop ⟶ X) →+ F.obj.obj Y)
-          naturality Y Z g := by
-            ext (f : Y.unop ⟶ X)
-            exact ConcreteCategory.congr_hom (F.obj.map_comp f.op g) x }
-      left_inv := fun f ↦ ObjectProperty.hom_ext _ (preadditiveYoneda_obj_hom_ext ?_)
-      right_inv := fun x ↦ ConcreteCategory.congr_hom (F.obj.map_id (op X)) x
-      map_add' := fun _ _ ↦ rfl }
-  exact ConcreteCategory.congr_hom (F.obj.map_id (op X)) (f.hom.app (op X) (𝟙 X))
-
-/-- The Yoneda equivalence evaluates the morphism at the representing identity. -/
-@[simp]
-theorem yonedaHomEquiv_apply {X : C} {F : ModCat.{v} C} (f : (yoneda C).obj X ⟶ F) :
-    yonedaHomEquiv f = f.hom.app (op X) (𝟙 X) :=
-  (rfl)
-
-/-- The morphism associated to an element acts on arrows by the module action. -/
-theorem yonedaHomEquiv_symm_app_apply {X : C} {F : ModCat.{v} C} (x : F.obj.obj (op X))
-    (Y : Cᵒᵖ) (f : Y.unop ⟶ X) :
-    (yonedaHomEquiv.symm x).hom.app Y f = F.obj.map f.op x :=
-  (rfl)
-
-/-- The Yoneda equivalence is natural in the target module. -/
-theorem yonedaHomEquiv_comp {X : C} {F G : ModCat.{v} C}
-    (f : (yoneda C).obj X ⟶ F) (g : F ⟶ G) :
-    yonedaHomEquiv (f ≫ g) = g.hom.app (op X) (yonedaHomEquiv f) :=
-  (rfl)
-
-/-- The representable modules separate morphisms of modules. -/
-theorem isSeparating_yoneda :
-    (ObjectProperty.ofObj (yoneda C).obj).IsSeparating := by
-  intro F G f g h
-  apply ObjectProperty.hom_ext
-  ext X x
-  have hx := congrArg (yonedaHomEquiv (X := X.unop) (F := G))
-    (h _ ⟨X.unop⟩ ((yonedaHomEquiv (X := X.unop) (F := F)).symm x))
-  simpa only [yonedaHomEquiv_comp, AddEquiv.apply_symm_apply] using hx
-
 /-- Modules on an essentially small preadditive category have a projective separator, obtained
 from the coproduct of the representables of a small model. -/
 theorem exists_projective_separator [EssentiallySmall.{w} C] :
@@ -106,12 +60,6 @@ theorem exists_projective_separator [EssentiallySmall.{w} C] :
   let G := ∐ (yoneda (SmallModel.{w} C)).obj
   have hsep : IsSeparator G := isSeparating_yoneda.isSeparator_coproduct
   exact ⟨M.functor.obj G, (M.map_projective_iff G).2 inferInstance, hsep.of_equivalence M⟩
-
-/-- For an essentially `w`-small source, natural transformations of modules with values in
-`AddCommGrpCat.{w}` form `w`-small types. -/
-instance [EssentiallySmall.{w} C] : LocallySmall.{w} (ModCat.{w} C) :=
-  locallySmall_of_faithful
-    ((additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι ⋙ (equivSmallModel.{w} C).op.congrLeft.functor)
 
 /-- The module category has filtered colimits in the value universe. -/
 instance : HasFilteredColimitsOfSize.{w, w} (ModCat.{w} C) where
