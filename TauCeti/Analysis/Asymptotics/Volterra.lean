@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Asymptotics.Volterra.RightTail
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Calculus.ParametricIntegral.MovingEndpoint
 import TauCeti.Analysis.ODE.Gronwall.Tail
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
@@ -451,13 +452,6 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace
   [NormedSpace ℝ E] {a : ℝ} {K : ℝ → ℝ → 𝕜} {J : ℝ → E} {ψ : ℝ → 𝕜} {P Q : ℝ → ℝ}
 
 omit [NormedSpace ℝ E] in
-/-- The separable bound for `v ↦ K x v • y` on `[x, ∞)`. -/
-private lemma norm_kernel_smul_Ioi_le (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
-    {x v : ℝ} (hx : a < x) (hv : x ≤ v) (y : E) : ‖K x v • y‖ ≤ P x * (Q v * ‖y‖) := by
-  rw [norm_smul, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right (hKle x v hx hv) (norm_nonneg _)
-
-omit [NormedSpace ℝ E] in
 /-- If `K x` and `F` are almost everywhere strongly measurable on `(x, ∞)`, and `‖F‖ ≤ B` there
 with `Q * B` integrable on `(x, ∞)`, then `v ↦ K x v • F v` is integrable on `(x, ∞)`. -/
 private lemma integrableOn_kernel_smul_of_le
@@ -468,7 +462,8 @@ private lemma integrableOn_kernel_smul_of_le
     IntegrableOn (fun v ↦ K x v • F v) (Ioi x) := by
   refine Integrable.mono' (hB.const_mul (P x)) (hKm.smul hFm) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : x < v)
-  refine (norm_kernel_smul_Ioi_le hKle hx hv.le _).trans ?_
+  refine (norm_kernel_smul_le (I := Set.univ) (fun v _ hv ↦ hKle _ v hx hv)
+    (Set.mem_univ _) hv.le _).trans ?_
   rw [← mul_assoc, ← mul_assoc]
   exact mul_le_mul_of_nonneg_left (hFB v hv) ((norm_nonneg _).trans (hKle x v hx hv.le))
 
@@ -544,7 +539,8 @@ theorem norm_volterra_solution_le_of_isBigO_principal_Ici (hP0 : ∀ x ∈ Ioi a
           refine norm_integral_le_of_norm_le ((hJy.add hgb).const_mul (P y)) ?_
           filter_upwards [ae_restrict_mem measurableSet_Ioi] with v (hv : y < v)
           have hQv := hQ0 v (hy.trans hv.le)
-          refine (norm_kernel_smul_Ioi_le hKle hya hv.le _).trans ?_
+          refine (norm_kernel_smul_le (I := Set.univ) (fun v _ hv ↦ hKle _ v hya hv)
+            (Set.mem_univ _) hv.le _).trans ?_
           gcongr P y * ?_
           · exact hP0 y hya
           calc Q v * ‖J v + ψ v • h v‖ ≤ Q v * (‖J v‖ + ‖ψ v‖ * b v) := by

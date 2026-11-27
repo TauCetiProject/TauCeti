@@ -13,8 +13,6 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Algebra.Exponential
-import TauCeti.Analysis.SpecialFunctions.Exp.Taylor
 
 /-!
 # Derivatives of improper tail integrals
@@ -251,10 +249,10 @@ theorem integral_Ioi_mul_exp_integral_Ioi (hint : IntegrableOn g (Ioi x)) :
   rw [hint.integral_Ioi_mul_comp_integral_Ioi Real.hasDerivAt_exp Real.continuous_exp,
     Real.exp_zero]
 
-private lemma indicator_mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
-    (g : ℝ → ℝ) (k : ℕ) :
-    (I.indicator fun v ↦ g v * (∫ u in I ∩ Ioi v, g u) ^ k) =
-      fun v ↦ I.indicator g v * (∫ u in Ioi v, I.indicator g u) ^ k := by
+private lemma indicator_mul_comp_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
+    (g f : ℝ → ℝ) :
+    (I.indicator fun v ↦ g v * f (∫ u in I ∩ Ioi v, g u)) =
+      fun v ↦ I.indicator g v * f (∫ u in Ioi v, I.indicator g u) := by
   ext v
   rw [Set.indicator_mul_left, setIntegral_indicator hI, inter_comm]
 
@@ -265,7 +263,8 @@ Specializing `I = Iio b` via `Iio_inter_Ioi` yields the interval `(x, b)`, and `
 theorem mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
     (hint : IntegrableOn g (I ∩ Ioi x)) (k : ℕ) :
     IntegrableOn (fun v ↦ g v * (∫ u in I ∩ Ioi v, g u) ^ k) (I ∩ Ioi x) := by
-  rw [← integrableOn_indicator_iff hI.nullMeasurableSet, indicator_mul_pow_integral_inter_Ioi hI]
+  rw [← integrableOn_indicator_iff hI.nullMeasurableSet,
+    indicator_mul_comp_integral_inter_Ioi hI g (· ^ k)]
   exact ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).mul_comp_integral_Ioi
     (continuousOn_pow k)
 
@@ -277,7 +276,8 @@ theorem integral_inter_Ioi_mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : Measur
     (hint : IntegrableOn g (I ∩ Ioi x)) (k : ℕ) :
     ∫ v in I ∩ Ioi x, g v * (∫ u in I ∩ Ioi v, g u) ^ k =
       (∫ u in I ∩ Ioi x, g u) ^ (k + 1) / (k + 1) := by
-  rw [inter_comm I (Ioi x), ← setIntegral_indicator hI, indicator_mul_pow_integral_inter_Ioi hI,
+  rw [inter_comm I (Ioi x), ← setIntegral_indicator hI,
+    indicator_mul_comp_integral_inter_Ioi hI g (· ^ k),
     ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).integral_Ioi_mul_pow_integral_Ioi k,
     setIntegral_indicator hI, inter_comm]
 
@@ -286,21 +286,10 @@ theorem integral_inter_Ioi_mul_pow_integral_inter_Ioi {I : Set ℝ} (hI : Measur
 theorem mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : MeasurableSet I)
     (hint : IntegrableOn g (I ∩ Ioi x)) :
     IntegrableOn (fun v ↦ g v * Real.exp (∫ u in I ∩ Ioi v, g u)) (I ∩ Ioi x) := by
-  have hgI : IntegrableOn g (Ioi x) (volume.restrict I) := by
-    rwa [IntegrableOn, Measure.restrict_restrict measurableSet_Ioi, inter_comm]
-  have hΨcont : ContinuousOn (fun v ↦ ∫ u in I ∩ Ioi v, g u) (Ici x) := by
-    simpa only [Measure.restrict_restrict measurableSet_Ioi, inter_comm] using
-      hgI.continuousOn_Ici_primitive_Ioi
-  have hexp_meas : AEStronglyMeasurable (fun v ↦ Real.exp (∫ u in I ∩ Ioi v, g u))
-      (volume.restrict (I ∩ Ioi x)) :=
-    ((Real.continuous_exp.comp_continuousOn (hΨcont.mono Ioi_subset_Ici_self)).mono
-      inter_subset_right).aestronglyMeasurable (hI.inter measurableSet_Ioi)
-  refine Integrable.mono' (hint.norm.mul_const (Real.exp (∫ u in I ∩ Ioi x, ‖g u‖)))
-    (hint.aestronglyMeasurable.mul hexp_meas) ?_
-  filter_upwards [ae_restrict_mem (hI.inter measurableSet_Ioi)] with v hv
-  rw [norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
-  gcongr
-  exact (le_abs_self _).trans (hint.norm_integral_inter_Ioi_le hv.2.le)
+  rw [← integrableOn_indicator_iff hI.nullMeasurableSet,
+    indicator_mul_comp_integral_inter_Ioi hI g Real.exp]
+  exact ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).mul_comp_integral_Ioi
+    Real.continuous_exp.continuousOn
 
 /-- For a measurable set `I` and `g` integrable on `I ∩ Ioi x`, with tail integral
 `Ψ v = ∫ u in I ∩ Ioi v, g u`, the integral of `g * exp ∘ Ψ` over `I ∩ Ioi x` is
@@ -309,38 +298,10 @@ theorem integral_inter_Ioi_mul_exp_integral_inter_Ioi {I : Set ℝ} (hI : Measur
     (hint : IntegrableOn g (I ∩ Ioi x)) :
     ∫ v in I ∩ Ioi x, g v * Real.exp (∫ u in I ∩ Ioi v, g u) =
       Real.exp (∫ u in I ∩ Ioi x, g u) - 1 := by
-  set Ψ : ℝ → ℝ := fun v ↦ ∫ u in I ∩ Ioi v, g u
-  set M : ℝ := ∫ u in I ∩ Ioi x, ‖g u‖
-  let F : ℕ → ℝ → ℝ := fun k v ↦ (k ! : ℝ)⁻¹ * (g v * Ψ v ^ k)
-  have hFint : ∀ k, IntegrableOn (F k) (I ∩ Ioi x) := fun k ↦
-    (hint.mul_pow_integral_inter_Ioi hI k).const_mul _
-  have hFsum : Summable fun k ↦ ∫ v in I ∩ Ioi x, ‖F k v‖ := by
-    refine Summable.of_nonneg_of_le (fun _ ↦ integral_nonneg fun _ ↦ norm_nonneg _)
-      (fun k ↦ ?_) ((Real.summable_pow_div_factorial M).mul_left M)
-    calc ∫ v in I ∩ Ioi x, ‖F k v‖
-        ≤ ∫ v in I ∩ Ioi x, (M ^ k / k !) * ‖g v‖ := by
-          refine setIntegral_mono_on (hFint k).norm (hint.norm.const_mul _)
-            (hI.inter measurableSet_Ioi) fun v hv ↦ ?_
-          have hΨle : ‖Ψ v‖ ≤ M := hint.norm_integral_inter_Ioi_le hv.2.le
-          simp only [F, norm_mul, norm_inv, Real.norm_natCast, norm_pow]
-          rw [div_eq_mul_inv, mul_comm (M ^ k), mul_assoc, mul_comm (‖g v‖)]
-          gcongr
-      _ = M * (M ^ k / k !) := by rw [integral_const_mul]; ring
-  have hser := hasSum_integral_of_summable_integral_norm hFint hFsum
-  have hpt : ∀ v, ∑' k, F k v = g v * Real.exp (Ψ v) := fun v ↦
-    (((Real.hasSum_pow_div_factorial (Ψ v)).mul_left (g v)).congr_fun fun k ↦ by
-      simp only [F, div_eq_mul_inv]; ring).tsum_eq
-  simp only [hpt] at hser
-  have hterm : ∀ k, ∫ v in I ∩ Ioi x, F k v = Ψ x ^ (k + 1) / (k + 1)! := fun k ↦ by
-    dsimp only [F, Ψ]
-    rw [integral_const_mul, hint.integral_inter_Ioi_mul_pow_integral_inter_Ioi hI k,
-      Nat.factorial_succ]
-    push_cast
-    field_simp
-  simp only [hterm] at hser
-  have htarget : HasSum (fun k : ℕ ↦ Ψ x ^ (k + 1) / (k + 1)!) (Real.exp (Ψ x) - 1) := by
-    simpa [div_eq_inv_mul, Real.exp_eq_exp_ℝ] using NormedSpace.hasSum_exp_sub_one ℝ (Ψ x)
-  exact hser.unique htarget
+  rw [inter_comm I (Ioi x), ← setIntegral_indicator hI,
+    indicator_mul_comp_integral_inter_Ioi hI g Real.exp,
+    ((integrableOn_indicator_iff hI.nullMeasurableSet).2 hint).integral_Ioi_mul_exp_integral_Ioi,
+    setIntegral_indicator hI, inter_comm]
 
 end Real
 

@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Calculus.ParametricIntegral.MovingEndpoint
+import TauCeti.Analysis.ODE.Gronwall.Tail
 import TauCeti.Analysis.SpecialFunctions.Exp.Taylor
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Order.Interval.Set.OrdConnected
@@ -480,42 +481,6 @@ private lemma exists_norm_le_mul_of_isBigO (hI : I.OrdConnected)
     _ ≤ P v * ((∫ u in I ∩ Ioi x, Q u * ‖J u‖) + ∫ u in I ∩ Ioi x, Q u * ‖ψ u • h u‖) :=
         mul_le_mul_of_nonneg_left (add_le_add hΦle hψhle) (hP0 v hv)
     _ = _ := by ring
-
-/-- Tail-supersolution comparison: if `‖h‖ ≤ B + R` on `I ∩ Ici x` and every tail bound
-`‖h‖ ≤ B + R * f` on `I ∩ Ioi v` feeds back into `‖h v‖ ≤ B v + R v * ∫ u in I ∩ Ioi v, g u * f u`,
-then iterating `k` times yields a factorial remainder that vanishes as `k → ∞`, giving
-`‖h x‖ ≤ B x`. -/
-private lemma norm_le_of_tail_supersolution {E' : Type*} [NormedAddCommGroup E'] {I : Set ℝ}
-    (hI : MeasurableSet I) {g B R : ℝ → ℝ} {h : ℝ → E'} {x : ℝ} (hx : x ∈ I)
-    (hgint : ∀ v ∈ I, IntegrableOn g (I ∩ Ioi v))
-    (h0 : ∀ v ∈ I, x ≤ v → ‖h v‖ ≤ B v + R v)
-    (hstep : ∀ v ∈ I, x ≤ v → ∀ (f : ℝ → ℝ),
-      (∀ u ∈ I ∩ Ioi v, ‖h u‖ ≤ B u + R u * f u) →
-      IntegrableOn (fun u ↦ g u * f u) (I ∩ Ioi v) →
-      ‖h v‖ ≤ B v + R v * ∫ u in I ∩ Ioi v, g u * f u) :
-    ‖h x‖ ≤ B x := by
-  set G : ℝ → ℝ := fun v ↦ ∫ u in I ∩ Ioi v, g u
-  have hind : ∀ k : ℕ, ∀ v ∈ I, x ≤ v → ‖h v‖ ≤ B v + R v * (G v ^ k / k.factorial) := by
-    intro k
-    induction k with
-    | zero =>
-      intro v hv hxv
-      simpa using h0 v hv hxv
-    | succ k ih =>
-      intro v hv hxv
-      have hpow : IntegrableOn (fun u ↦ g u * (G u ^ k / k.factorial)) (I ∩ Ioi v) := by
-        dsimp only [G]
-        simp_rw [← mul_div_assoc]
-        exact ((hgint v hv).mul_pow_integral_inter_Ioi hI k).div_const _
-      refine (hstep v hv hxv _ (fun u hu ↦ ih u hu.1 (hxv.trans hu.2.le)) hpow).trans_eq ?_
-      simp_rw [← mul_div_assoc]
-      rw [integral_div, (hgint v hv).integral_inter_Ioi_mul_pow_integral_inter_Ioi hI k,
-        Nat.factorial_succ]
-      dsimp only [G]; push_cast; field_simp
-  have hlim : Tendsto (fun k ↦ B x + R x * (G x ^ k / k.factorial)) atTop (𝓝 (B x)) := by
-    simpa using tendsto_const_nhds.add
-      ((Real.summable_pow_div_factorial (G x)).tendsto_atTop_zero.const_mul (R x))
-  exact ge_of_tendsto' hlim fun k ↦ hind k x hx le_rfl
 
 /-- **A priori Volterra bound.** Every continuous solution `h` of the Volterra integral equation
 on an order-connected set `I` with `h = O(P)` towards the right endpoint of `I` satisfies
