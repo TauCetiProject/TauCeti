@@ -60,8 +60,9 @@ theorem exists_contMDiff_eqOn_coord {i : Fin A.n} {φ : E → F} (hφ : ContDiff
   obtain ⟨ψ, hψs, hψ1, -, hψi, -⟩ :=
     hK.exists_contMDiff_one_nhds_tsupport_subset 𝓘(ℝ, E) (A.isOpen_dom i) hKi
   have hψK : ∀ x ∈ K, ψ x = 1 := fun x hx ↦ hψ1.self_of_nhdsSet x hx
-  refine ⟨fun x ↦ ψ x • A.chartSection i φ x, contMDiff_smul_chartSection hψs hψi
-    hφ.contDiffOn, fun y hy ↦ ?_, closure_minimal (fun x hx ↦ ?_) hK.isClosed⟩
+  refine ⟨fun x ↦ ψ x • A.chartSection i φ x, contMDiff_smul_chartSection hψs (A.image i).isOpen
+    (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hφ.contDiffOn, fun y hy ↦ ?_,
+    closure_minimal (fun x hx ↦ ?_) hK.isClosed⟩
   · rw [A.coord_fun_smul i _ _ hy, coord_chartSection φ hy]
     by_cases hφy : φ y = 0
     · rw [hφy, smul_zero]

@@ -24,15 +24,20 @@ target (`TauCeti.ChartCutoffs.chartSupport`).
 On a Hausdorff `σ`-compact manifold with finite-dimensional model, every family of such charts
 indexed by the points of `P`, each containing its point, carries cutoffs
 (`TauCeti.ChartCutoffs.exists_chart_eq`); for a boundaryless model, chart cutoffs exist
-(`TauCeti.ChartCutoffs.nonempty`). Chart cutoffs on `M` and on `N` multiply to chart cutoffs on
-`M × N` with the product charts (`TauCeti.ChartCutoffs.prod`).
+(`TauCeti.ChartCutoffs.nonempty`), even with the chart at each point inside a prescribed open
+neighbourhood of it (`TauCeti.ChartCutoffs.exists_source_subset`), since each point has such a
+chart (`TauCeti.exists_chart_source_subset`). Chart cutoffs on `M` and on `N`
+multiply to chart cutoffs on `M × N` with the product charts (`TauCeti.ChartCutoffs.prod`).
 
 ## Main declarations
 
+* `TauCeti.exists_chart_source_subset`: a smooth chart at a point inside a given open
+  neighbourhood of it.
 * `TauCeti.ChartCutoffs`: charts with subordinate cutoffs.
 * `TauCeti.ChartCutoffs.meeting`: the finitely many indices whose cutoffs meet a compact set; the
   corresponding cutoffs sum to `1` on it (`TauCeti.ChartCutoffs.sum_meeting_eq_one`).
-* `TauCeti.ChartCutoffs.exists_chart_eq`, `TauCeti.ChartCutoffs.nonempty`: existence.
+* `TauCeti.ChartCutoffs.exists_chart_eq`, `TauCeti.ChartCutoffs.nonempty`,
+  `TauCeti.ChartCutoffs.exists_source_subset`: existence.
 * `TauCeti.ChartCutoffs.prod`: product chart cutoffs, with the product targets
   (`TauCeti.ChartCutoffs.prod_chart_target`).
 -/
@@ -46,6 +51,24 @@ namespace TauCeti
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {P : Type*} [TopologicalSpace P] [ChartedSpace H P] {n : ℕ∞}
+
+/-- On a manifold without boundary, every open neighbourhood `U` of a point `x` contains the source
+of a `C^n` chart into the model space with `C^n` inverse whose source contains `x`. -/
+theorem exists_chart_source_subset [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n P] {U : Set P}
+    (hU : IsOpen U) {x : P} (hx : x ∈ U) :
+    ∃ c : OpenPartialHomeomorph P E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
+      ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ U ∧ x ∈ c.source := by
+  let e := (chartAt H x).extendTrans I (Homeomorph.refl E)
+  refine ⟨e.restrOpen U hU, (OpenPartialHomeomorph.contMDiffOn_extendTrans _
+      (IsManifold.chart_mem_maximalAtlas x) contDiff_id).mono ?_,
+    -- The target of `e.restrOpen U` is `e.target ∩ e.symm ⁻¹' U`.
+    (OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (IsManifold.chart_mem_maximalAtlas x)
+      contDiff_id).mono fun y hy ↦ hy.1, ?_, ?_⟩ <;>
+    rw [OpenPartialHomeomorph.restrOpen_source]
+  · exact inter_subset_left
+  · exact inter_subset_right
+  · rw [OpenPartialHomeomorph.extendTrans_source]
+    exact ⟨mem_chart_source H x, hx⟩
 
 variable (ι : Type*) (I P n) in
 /-- **Charts with subordinate cutoffs** on `P`, indexed by `ι`: `C^n` charts into the model space
@@ -161,16 +184,23 @@ theorem exists_chart_eq (c : P → OpenPartialHomeomorph P E)
     finite := fun K hK ↦ ρ.locallyFinite.closure.finite_nonempty_inter_compact hK
     sum_eq_one := fun z ↦ ρ.sum_eq_one (mem_univ z) }, rfl⟩
 
+/-- On a boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, for every
+family of open neighbourhoods `U x` of the points `x`, there are chart cutoffs whose chart at `x`
+has its source in `U x`. For instance the charts can be chosen inside the base sets of
+trivializations of a vector bundle. -/
+theorem exists_source_subset [I.Boundaryless] {U : P → Set P} (hU : ∀ x, IsOpen (U x))
+    (hxU : ∀ x, x ∈ U x) : ∃ A : ChartCutoffs I P n P, ∀ x, (A.chart x).source ⊆ U x := by
+  choose c hc hcs hcU hxc using fun x ↦ exists_chart_source_subset (I := I) (n := ∞) (hU x) (hxU x)
+  obtain ⟨A, hA⟩ := exists_chart_eq (n := n) c
+    (fun x ↦ (hc x).of_le (WithTop.coe_le_coe.2 le_top))
+    (fun x ↦ (hcs x).of_le (WithTop.coe_le_coe.2 le_top)) hxc
+  exact ⟨A, hA ▸ hcU⟩
+
 variable (ι I P n) in
 /-- On a boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, chart cutoffs
 exist. -/
 theorem nonempty [I.Boundaryless] : Nonempty (ChartCutoffs I P n P) :=
-  let ⟨A, _⟩ := exists_chart_eq (fun x : P ↦ (chartAt H x).extendTrans I (Homeomorph.refl E))
-    (fun x ↦ (OpenPartialHomeomorph.contMDiffOn_extendTrans _
-      (IsManifold.chart_mem_maximalAtlas x) contDiff_id).of_le (WithTop.coe_le_coe.2 le_top))
-    (fun x ↦ (OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _
-      (IsManifold.chart_mem_maximalAtlas x) contDiff_id).of_le (WithTop.coe_le_coe.2 le_top))
-    fun x ↦ by rw [OpenPartialHomeomorph.extendTrans_source]; exact mem_chart_source H x
+  let ⟨A, _⟩ := exists_source_subset (I := I) (n := n) (fun _ : P ↦ isOpen_univ) fun _ ↦ mem_univ _
   ⟨A⟩
 
 end ChartCutoffs

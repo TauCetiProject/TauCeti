@@ -37,6 +37,8 @@ comparison is in `TauCeti.QuantumGroups.QuantumInteger.Gaussian`.
 * `TauCeti.gaussianPoly n k`: the Gaussian polynomial `[n k] ∈ ℕ[t]`.
 * `TauCeti.gaussianBinomial t n k`: the Gaussian binomial coefficient `[n k]_t`, the value of
   `gaussianPoly n k` at `t`.
+* `TauCeti.gaussianBinomialInt t n k`: the Gaussian binomial coefficient with an integer lower
+  index `k`, equal to `[n k]_t` for `k ≥ 0` and to `0` for `k < 0`.
 
 ## Main results
 
@@ -54,6 +56,9 @@ comparison is in `TauCeti.QuantumGroups.QuantumInteger.Gaussian`.
   `∏_{i<n} (1 + t^i z) = ∑_{k ≤ n} t^(k(k-1)/2) [n k]_t z^k` over every commutative semiring.
 * `TauCeti.gaussianBinomial_add_succ_eq_sum`: the column recursion
   `[e+j+1 j+1]_t = ∑_{i ≤ e} t^i [i+j j]_t`.
+* `TauCeti.gaussianBinomialInt_succ`, `TauCeti.gaussianBinomialInt_succ'`: the two successor
+  recursions for an integer lower index, `[n+1 k]_t = [n k-1]_t + t^k [n k]_t` and
+  `[n+1 k]_t = t^(n+1-k) [n k-1]_t + [n k]_t`.
 * `TauCeti.gaussianBinomial_add_le_pow`, `TauCeti.gaussianBinomial_add_le_succ_pow_mul_pow`: the
   bounds `[e+j j]_q ≤ q^(e(j+1))` for `q ≥ 2` and `[e+j j]_q ≤ (e+1)^j q^(ej)` for `q ≥ 1`, at a
   natural number `q`.
@@ -358,6 +363,118 @@ theorem gaussianBinomial_add_succ_eq_sum {R : Type*} [Semiring R] (t : R) (e j :
   | succ e ih =>
     rw [gaussianBinomial_succ_succ', sum_range_succ, show e + 1 + j - j = e + 1 by omega,
       show e + 1 + j = e + j + 1 by omega, ih, add_comm]
+
+section IntegerIndex
+
+variable {R S : Type*} [Semiring R] [Semiring S]
+
+/-- The Gaussian binomial coefficient `[n k]_t` with an integer lower index `k`: it is `[n k]_t`
+for `0 ≤ k` and `0` for `k < 0`. Sums whose lower index is a floor, such as Schur's alternating
+sums, use it to drop the terms with a negative index. -/
+noncomputable def gaussianBinomialInt (t : R) (n : ℕ) : ℤ → R
+  | (k : ℕ) => gaussianBinomial t n k
+  | Int.negSucc _ => 0
+
+/-- On a natural lower index, `gaussianBinomialInt` is the Gaussian binomial coefficient. -/
+@[simp]
+theorem gaussianBinomialInt_natCast (t : R) (n k : ℕ) :
+    gaussianBinomialInt t n k = gaussianBinomial t n k :=
+  (rfl)
+
+/-- `gaussianBinomialInt` vanishes on a negative lower index `-(m + 1)`. Not `@[simp]`: `simp`
+already proves it through `gaussianBinomialInt_of_neg` and `Int.negSucc_lt_zero`. -/
+theorem gaussianBinomialInt_negSucc (t : R) (n m : ℕ) :
+    gaussianBinomialInt t n (Int.negSucc m) = 0 :=
+  (rfl)
+
+/-- `[n 0]_t = 1` for the integer lower index `0`. -/
+@[simp]
+theorem gaussianBinomialInt_zero_right (t : R) (n : ℕ) : gaussianBinomialInt t n 0 = 1 := by
+  rw [← Nat.cast_zero (R := ℤ), gaussianBinomialInt_natCast, gaussianBinomial_zero_right]
+
+/-- On the integer lower index `1`, `gaussianBinomialInt` is the Gaussian binomial coefficient. -/
+@[simp]
+theorem gaussianBinomialInt_one_right (t : R) (n : ℕ) :
+    gaussianBinomialInt t n 1 = gaussianBinomial t n 1 := by
+  rw [← Nat.cast_one (R := ℤ), gaussianBinomialInt_natCast]
+
+/-- On a numeric literal lower index, `gaussianBinomialInt` is the Gaussian binomial
+coefficient. -/
+@[simp]
+theorem gaussianBinomialInt_ofNat (t : R) (n k : ℕ) [k.AtLeastTwo] :
+    gaussianBinomialInt t n (no_index (OfNat.ofNat k)) = gaussianBinomial t n (OfNat.ofNat k) := by
+  rw [← Nat.cast_ofNat (R := ℤ), gaussianBinomialInt_natCast]
+
+/-- `[n n]_t = 1` for the integer lower index `n`. Not `@[simp]`: `simp` already proves it
+through `gaussianBinomialInt_natCast` and `gaussianBinomial_self`. -/
+theorem gaussianBinomialInt_self (t : R) (n : ℕ) : gaussianBinomialInt t n n = 1 := by
+  rw [gaussianBinomialInt_natCast, gaussianBinomial_self]
+
+/-- On a nonnegative lower index, `gaussianBinomialInt` is the Gaussian binomial coefficient. -/
+theorem gaussianBinomialInt_of_nonneg (t : R) (n : ℕ) {k : ℤ} (hk : 0 ≤ k) :
+    gaussianBinomialInt t n k = gaussianBinomial t n k.toNat := by
+  lift k to ℕ using hk
+  simp
+
+/-- `gaussianBinomialInt` vanishes on a negative lower index. -/
+@[simp]
+theorem gaussianBinomialInt_of_neg (t : R) (n : ℕ) {k : ℤ} (hk : k < 0) :
+    gaussianBinomialInt t n k = 0 := by
+  obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hk
+  exact gaussianBinomialInt_negSucc t n m
+
+/-- `gaussianBinomialInt` as a single equation: `[n k]_t` truncated to `0` for `k < 0`. -/
+theorem gaussianBinomialInt_def (t : R) (n : ℕ) (k : ℤ) :
+    gaussianBinomialInt t n k = if 0 ≤ k then gaussianBinomial t n k.toNat else 0 := by
+  split_ifs with hk
+  · exact gaussianBinomialInt_of_nonneg t n hk
+  · exact gaussianBinomialInt_of_neg t n (not_le.1 hk)
+
+/-- `gaussianBinomialInt` vanishes on a lower index larger than the upper one. -/
+@[simp]
+theorem gaussianBinomialInt_eq_zero_of_lt (t : R) {n : ℕ} {k : ℤ} (h : n < k) :
+    gaussianBinomialInt t n k = 0 := by
+  rw [gaussianBinomialInt_of_nonneg t n (by omega),
+    gaussianBinomial_eq_zero_of_lt t (by omega)]
+
+/-- Semiring homomorphisms commute with `gaussianBinomialInt`. -/
+@[simp]
+theorem map_gaussianBinomialInt {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F)
+    (t : R) (n : ℕ) (k : ℤ) : f (gaussianBinomialInt t n k) = gaussianBinomialInt (f t) n k := by
+  rcases lt_or_ge k 0 with hk | hk
+  · simp [gaussianBinomialInt_of_neg _ _ hk]
+  · simp [gaussianBinomialInt_of_nonneg _ _ hk]
+
+/-- The successor recursion `[n+1 k]_t = [n k-1]_t + t^k [n k]_t` for every integer `k`, with the
+power `t^k` read as `1` for `k ≤ 0`, where `[n k]_t = 0` unless `k = 0`. -/
+theorem gaussianBinomialInt_succ (t : R) (n : ℕ) (k : ℤ) :
+    gaussianBinomialInt t (n + 1) k =
+      gaussianBinomialInt t n (k - 1) + t ^ k.toNat * gaussianBinomialInt t n k := by
+  rcases lt_or_ge k 0 with hk | hk
+  · simp [gaussianBinomialInt_of_neg _ _ hk, gaussianBinomialInt_of_neg _ _ (by omega : k - 1 < 0)]
+  lift k to ℕ using hk
+  rcases k with _ | k
+  · simp
+  · rw [show ((k + 1 : ℕ) : ℤ) - 1 = k by omega]
+    simp only [gaussianBinomialInt_natCast, Int.toNat_natCast]
+    exact gaussianBinomial_succ_succ t n k
+
+/-- The mirrored successor recursion `[n+1 k]_t = t^(n+1-k) [n k-1]_t + [n k]_t` for every
+integer `k`, with the power read as `1` for `k > n + 1`, where both terms on the right vanish. -/
+theorem gaussianBinomialInt_succ' (t : R) (n : ℕ) (k : ℤ) :
+    gaussianBinomialInt t (n + 1) k =
+      t ^ (n + 1 - k).toNat * gaussianBinomialInt t n (k - 1) + gaussianBinomialInt t n k := by
+  rcases lt_or_ge k 0 with hk | hk
+  · simp [gaussianBinomialInt_of_neg _ _ hk, gaussianBinomialInt_of_neg _ _ (by omega : k - 1 < 0)]
+  lift k to ℕ using hk
+  rcases k with _ | k
+  · simp
+  · rw [show ((k + 1 : ℕ) : ℤ) - 1 = k by omega, show ((n : ℤ) + 1 - (k + 1 : ℕ)).toNat = n - k by
+      omega]
+    simp only [gaussianBinomialInt_natCast]
+    exact gaussianBinomial_succ_succ' t n k
+
+end IntegerIndex
 
 section Bounds
 

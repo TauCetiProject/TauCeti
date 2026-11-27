@@ -33,7 +33,8 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
   multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
-* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables, and
+  `MvPolynomial.esymm_eq_zero_of_card_lt`: `e_k(X₁, …, X_n)` vanishes for `k > n`.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
@@ -61,6 +62,8 @@ product in elementary symmetric polynomials.
   `μ` set to zero, is `e_k` of the entries other than the `i`-th.
 * `TauCeti.aeval_esymm_succ_eq_mul_add`: `σ_{k+1} = μ_i σ_{k;i} + σ_{k+1;i}`, for values in any
   algebra; at `μ = X` it is the decomposition of `e_{k+1}` along `X_i`.
+* `TauCeti.eval_add_smul_single_esymm_succ`: on the line `μ + t eᵢ`, `σ_{k+1}` is affine with
+  slope `σ_{k;i}(μ)`.
 * `TauCeti.sum_eval_update_zero_esymm`: `∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` in `n` variables.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
 
@@ -250,6 +253,12 @@ theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemir
     MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
   rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
+/-- The elementary symmetric polynomial `e_k` vanishes when `k` exceeds the number of variables. -/
+theorem MvPolynomial.esymm_eq_zero_of_card_lt {σ : Type*} [Fintype σ] {R : Type*}
+    [CommSemiring R] {k : ℕ} (h : Fintype.card σ < k) : MvPolynomial.esymm σ R k = 0 := by
+  rw [MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
 namespace TauCeti
 
 section esymmInt
@@ -320,8 +329,8 @@ exceeds the number of variables. -/
 theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
     symmetricEsymm σ R k = 0 := by
   ext1
-  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
-  exact Multiset.esymm_of_card_lt (by simpa using h)
+  rw [coe_symmetricEsymm, ZeroMemClass.coe_zero]
+  exact MvPolynomial.esymm_eq_zero_of_card_lt h
 
 end symmetricEsymm
 
@@ -484,6 +493,19 @@ theorem aeval_esymm_succ_eq_mul_add {S : Type*} [CommSemiring S] [Algebra R S] (
   rw [aeval_update_zero_esymm, aeval_update_zero_esymm, aeval_esymm_eq_multiset_esymm,
     ← Multiset.cons_erase (mem_univ i), Multiset.map_cons, erase_val, Multiset.esymm_cons,
     add_comm]
+
+/-- **`σ_{k+1}` is affine along a coordinate line**: on the line `f + t eᵢ`,
+`σ_{k+1}(f + t eᵢ) = (f_i + t) σ_{k;i}(f) + σ_{k+1;i}(f)`, so its slope is `σ_{k;i}(f)`. -/
+theorem eval_add_smul_single_esymm_succ (f : σ → R) (i : σ) (k : ℕ) (t : R) :
+    eval (f + t • Pi.single i 1) (esymm σ R (k + 1)) =
+      (f i + t) * eval (update f i 0) (esymm σ R k) +
+        eval (update f i 0) (esymm σ R (k + 1)) := by
+  have hu : update (f + t • Pi.single i 1) i 0 = update f i 0 := by
+    ext j
+    by_cases hj : j = i <;> simp [hj, update_of_ne]
+  have h := aeval_esymm_succ_eq_mul_add (R := R) (f + t • Pi.single i 1) i k
+  simp only [hu] at h
+  simpa using h
 
 /-- **The sum of the elementary symmetric functions with one entry deleted**:
 `∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` for `n` variables, where `σ_{k;i}(μ)` is the value of `e_k`

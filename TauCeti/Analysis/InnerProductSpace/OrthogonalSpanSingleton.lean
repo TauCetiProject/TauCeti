@@ -16,6 +16,8 @@ isomorphically onto it. Composing with the inclusion and the orthogonal projecti
 continuous linear map `L : W → E` with values orthogonal to `v` and a left inverse `P` of `L`
 that kills `v`.
 
+In dimension at least two, `(𝕜 ∙ v)ᗮ` contains a nonzero vector.
+
 The orthogonal projection onto `(𝕜 ∙ v)ᗮ` takes values orthogonal to `v`, and for a unit vector
 `e` every `z` is `⟪e, z⟫ e` plus its projection onto `(𝕜 ∙ e)ᗮ`.
 
@@ -23,6 +25,8 @@ The orthogonal projection onto `(𝕜 ∙ v)ᗮ` takes values orthogonal to `v`,
 
 * `TauCeti.exists_leftInverse_inner_eq_zero_of_finrank_eq`: maps `L : W → E` with values
   orthogonal to `v` and `P : E → W` with `P ∘ L = id` and `P v = 0`.
+* `TauCeti.exists_ne_zero_mem_orthogonal_singleton`: a nonzero vector orthogonal to `v` when
+  `2 ≤ finrank 𝕜 E`.
 * `TauCeti.inner_starProjection_orthogonal_singleton_eq_zero`,
   `TauCeti.inner_starProjection_orthogonal_singleton_smul_eq_zero`: the projection onto
   `(𝕜 ∙ v)ᗮ`, or onto `(𝕜 ∙ c v)ᗮ` for `c ≠ 0`, is orthogonal to `v`.
@@ -58,6 +62,16 @@ theorem exists_leftInverse_inner_eq_zero_of_finrank_eq {n : ℕ} [Fact (finrank 
   · simp [K, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
   · exact Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self v)
       (A w).property
+
+/-- In dimension at least two, every vector `v` has a nonzero orthogonal vector. -/
+theorem exists_ne_zero_mem_orthogonal_singleton (hE : 2 ≤ finrank 𝕜 E) (v : E) :
+    ∃ w ∈ (𝕜 ∙ v)ᗮ, w ≠ 0 := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
+  refine Submodule.exists_mem_ne_zero_of_ne_bot fun h ↦ ?_
+  have := Submodule.finrank_add_finrank_orthogonal (𝕜 ∙ v)
+  rw [h, finrank_bot] at this
+  have : finrank 𝕜 (𝕜 ∙ v) ≤ 1 := (finrank_span_le_card ({v} : Set E)).trans (by simp)
+  omega
 
 section Projection
 

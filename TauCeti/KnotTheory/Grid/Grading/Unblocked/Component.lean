@@ -125,9 +125,7 @@ theorem sum_monomialComponentAlexander (x : GridState n) (e : Fin n →₀ ℕ) 
     ∑ q, G.monomialComponentAlexander x e q =
       G.alexander x - (e.degree : ℚ) + ((G.componentCount : ℚ) - 1) / 2 := by
   have he : ∑ q, ∑ c ∈ G.componentColumns q, (e c : ℚ) = (e.degree : ℚ) := by
-    rw [Finsupp.degree_eq_sum, Nat.cast_sum]
-    simp only [componentColumns_def]
-    exact Finset.sum_fiberwise Finset.univ G.componentOfColumn fun c => (e c : ℚ)
+    rw [Finsupp.degree_eq_sum, Nat.cast_sum, sum_sum_componentColumns]
   simp only [monomialComponentAlexander_apply, Finset.sum_sub_distrib, sum_componentAlexander, he]
   ring
 
