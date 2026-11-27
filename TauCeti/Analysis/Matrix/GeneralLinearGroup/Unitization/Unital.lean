@@ -11,11 +11,12 @@ public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
 /-!
 # `K₁` through the unitization agrees with `K₁` of a unital algebra
 
-Let `A` be a unital normed algebra over a nontrivially normed field `𝕜`. Its `K₁`-group defined
-through the forced unitization `A⁺ = Unitization 𝕜 A` is the kernel `TauCeti.UnitizationKOne 𝕜 A`
-of the homomorphism `π₀GL_∞(A⁺) → π₀GL_∞(𝕜)` induced by the scalar part; its `K₁`-group as a
-unital algebra is the stable component group `π₀GL_∞(A)` itself
-(`TauCeti.StableComponentGroup A`). This file shows that the two agree.
+Let `A` be a regular unital normed algebra over a nontrivially normed field `𝕜`
+(`RegularNormedAlgebra 𝕜 A`, which holds for instance when `‖1‖ = 1`, as in a unital
+C⋆-algebra). Its `K₁`-group defined through the forced unitization `A⁺ = Unitization 𝕜 A` is
+the kernel `TauCeti.UnitizationKOne 𝕜 A` of the homomorphism `π₀GL_∞(A⁺) → π₀GL_∞(𝕜)` induced
+by the scalar part; its `K₁`-group as a unital algebra is the stable component group `π₀GL_∞(A)`
+itself (`TauCeti.StableComponentGroup A`). This file shows that the two agree.
 
 The forced unitization splits as `A⁺ ≃ₐ[𝕜] A × 𝕜`, `(r, a) ↦ (r • 1 + a, r)`
 (`Unitization.prodAlgEquiv`), which is a homeomorphism, and the scalar part becomes the second
@@ -51,8 +52,9 @@ variable [RegularNormedAlgebra 𝕜 A]
 
 namespace UnitizationKOne
 
-/-- For a unital normed algebra `A`, `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)`, induced by the
-splitting `A⁺ ≃ₐ[𝕜] A × 𝕜` and the stable component group of a product. -/
+/-- For a regular unital normed algebra `A` (for instance one with `‖1‖ = 1`),
+`π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)`, induced by the splitting `A⁺ ≃ₐ[𝕜] A × 𝕜` and the
+stable component group of a product. -/
 def unitalProdEquiv :
     StableComponentGroup (Unitization 𝕜 A) ≃* StableComponentGroup A × StableComponentGroup 𝕜 :=
   (StableComponentGroup.mapEquiv (Unitization.prodAlgEquiv 𝕜 A).toRingEquiv
@@ -93,9 +95,10 @@ theorem unitalProdEquiv_symm_apply (y : StableComponentGroup A × StableComponen
   rw [unitalProdEquiv, MulEquiv.symm_trans_apply, StableComponentGroup.mapEquiv_symm_apply]
 
 variable (𝕜 A) in
-/-- **`K₁` of a unital algebra through the unitization**: for a unital normed algebra `A`, the
-kernel `K₁(A)` of `π₀GL_∞(A⁺) → π₀GL_∞(𝕜)` is isomorphic to the stable component group
-`π₀GL_∞(A)`, by the first component of `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)`. -/
+/-- **`K₁` of a unital algebra through the unitization**: for a regular unital normed algebra `A`
+(for instance one with `‖1‖ = 1`, such as a unital C⋆-algebra), the kernel `K₁(A)` of
+`π₀GL_∞(A⁺) → π₀GL_∞(𝕜)` is isomorphic to the stable component group `π₀GL_∞(A)`, by the first
+component of `π₀GL_∞(A⁺) ≃* π₀GL_∞(A) × π₀GL_∞(𝕜)`. -/
 def unitalEquiv : UnitizationKOne 𝕜 A ≃* StableComponentGroup A where
   toFun x := (unitalProdEquiv 𝕜 A x).1
   invFun a := ⟨(unitalProdEquiv 𝕜 A).symm (a, 1), by
