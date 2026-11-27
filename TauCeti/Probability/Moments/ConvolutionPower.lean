@@ -17,10 +17,11 @@ import Mathlib.Analysis.MeanInequalitiesPow
 # Moments of convolution powers
 
 Finite convolution powers preserve finite moments. Their means and covariances of linear
-observables add, and their absolute moments of order `p ≥ 1` admit bounds of order `n ^ p`
-in the number `n` of summands. For `0 < p ≤ 1`, the bound is linear in `n`.
-These bounds permit integration over a random number of summands,
-without requiring exponential moments of the base measure.
+observables add, as do the means of measurable additive observables in `ℝ` or `[0, ∞]` and the
+variances of measurable additive real observables, and their absolute moments of order `p ≥ 1`
+admit bounds of order `n ^ p` in the number `n` of summands. For `0 < p ≤ 1`, the bound is linear
+in `n`. These bounds permit integration over a random number of summands, without requiring
+exponential moments of the base measure.
 
 The moment-generating function of a measurable additive real observable under an `n`-fold
 convolution power of an s-finite measure is the `n`th power of its moment-generating function
@@ -208,5 +209,59 @@ theorem covariance_convolutionPower (μ : Measure E) [IsProbabilityMeasure μ]
         exact (hindep.comp (by fun_prop) (by fun_prop)).covariance_eq_zero (hLeval i) (hMeval j)
       · simp
     _ = _ := by simp
+
+/-- The lower integral of a measurable additive observable with values in `[0, ∞]` under a
+convolution power is the number of summands times its lower integral under `μ`. -/
+theorem lintegral_addMonoidHom_convolutionPower (μ : Measure α) [IsProbabilityMeasure μ]
+    (f : α →+ ℝ≥0∞) (hf : Measurable f) (n : ℕ) :
+    ∫⁻ x, f x ∂μ.convolutionPower n = n * ∫⁻ x, f x ∂μ := by
+  induction n with
+  | zero => simp [lintegral_dirac' _ hf]
+  | succ n ih =>
+    have hx (x : α) : ∫⁻ y, f (x + y) ∂μ = f x + ∫⁻ y, f y ∂μ := by
+      simp only [map_add]
+      rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one]
+    simp only [lintegral_convolutionPower_succ _ _ _ hf, hx]
+    rw [lintegral_add_right _ measurable_const, lintegral_const, measure_univ, mul_one, ih,
+      Nat.cast_succ, add_mul, one_mul]
+
+section AddMonoidHom
+
+variable {μ : Measure α} [IsProbabilityMeasure μ] (f : α →+ ℝ) (hf : Measurable f)
+
+include hf
+
+/-- Convolution powers preserve membership of a measurable additive real observable in every
+`Lᵖ` space. -/
+theorem memLp_addMonoidHom_convolutionPower {p : ℝ≥0∞} (hμ : MemLp f p μ) (n : ℕ) :
+    MemLp f p (μ.convolutionPower n) := by
+  have h := memLp_id_convolutionPower
+    ((memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).2 hμ) n
+  rw [← map_convolutionPower μ f hf] at h
+  exact (memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).1 h
+
+/-- The mean of a measurable additive real observable under a convolution power is the number of
+summands times its mean under `μ`. -/
+theorem integral_addMonoidHom_convolutionPower (hμ : Integrable f μ) (n : ℕ) :
+    ∫ x, f x ∂μ.convolutionPower n = n * ∫ x, f x ∂μ := by
+  have h : Integrable id (μ.map f) :=
+    (integrable_map_measure aestronglyMeasurable_id hf.aemeasurable).2 hμ
+  have hmap (ρ : Measure α) : ∫ x, f x ∂ρ = ∫ y, y ∂ρ.map f :=
+    (integral_map hf.aemeasurable aestronglyMeasurable_id).symm
+  rw [hmap, hmap, map_convolutionPower μ f hf, integral_id_convolutionPower h, nsmul_eq_mul]
+
+/-- The variance of a measurable additive real observable under a convolution power is the number
+of summands times its variance under `μ`. -/
+theorem variance_addMonoidHom_convolutionPower (hμ : MemLp f 2 μ) (n : ℕ) :
+    Var[f; μ.convolutionPower n] = n * Var[f; μ] := by
+  have h : MemLp id 2 (μ.map f) :=
+    (memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).2 hμ
+  rw [← variance_id_map hf.aemeasurable, ← variance_id_map hf.aemeasurable,
+    map_convolutionPower μ f hf, ← covariance_self aemeasurable_id,
+    ← covariance_self aemeasurable_id]
+  simpa using covariance_convolutionPower (μ.map f) (ContinuousLinearMap.id ℝ ℝ)
+    (ContinuousLinearMap.id ℝ ℝ) h h n
+
+end AddMonoidHom
 
 end MeasureTheory.Measure

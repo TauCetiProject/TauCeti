@@ -134,28 +134,6 @@ private theorem disjoint_sourceBrokenRecords_targetBrokenRecords (p r : M) (c₀
 
 variable {p r : M} {c₀ c₁ : ℝ}
 
-/-- Below `p` by one index, the end `a` of a trajectory from `p` is a different point, below the
-level `c₀`. -/
-private theorem ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one
-    (hgap₀ : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f₀, f₀ x < f₀ p → f₀ x < c₀) {a z : M}
-    (ha : a ∈ criticalPoints 𝓘(ℝ, E) f₀)
-    (hpa : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₀ a + 1)
-    (hz : z ∈ hX₀.flow.unstableSet p ∩ hX₀.flow.stableSet a) : p ≠ a ∧ f₀ a < c₀ := by
-  have hpa' : p ≠ a := by rintro rfl; omega
-  have hfa := hX₀.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa' hz
-  exact ⟨hpa', hgap₀ a ha (hfa.1.trans hfa.2)⟩
-
-/-- Above `r` by one index, the start `b` of a trajectory to `r` is a different point, above the
-level `c₁`. -/
-private theorem ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one
-    (hgap₁ : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f₁, f₁ r < f₁ x → c₁ < f₁ x) {b z : M}
-    (hb : b ∈ criticalPoints 𝓘(ℝ, E) f₁)
-    (hbr : manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₁ r + 1)
-    (hz : z ∈ hX₁.flow.unstableSet b ∩ hX₁.flow.stableSet r) : b ≠ r ∧ c₁ < f₁ b := by
-  have hbr' : b ≠ r := by rintro rfl; omega
-  have hfb := hX₁.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr' hz
-  exact ⟨hbr', hgap₁ b hb (hfb.1.trans hfb.2)⟩
-
 /-- The records of the configurations broken at the source are the images of the configurations
 of `morseSourceBrokenPairSet`, moving the point of the trajectory from `p` to the level `c₀`. -/
 private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
@@ -168,7 +146,7 @@ private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
   constructor
   · rintro ⟨a, hpa, har, hw₁, hw₁c, hy, hw₃⟩
     have ha := mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₀.mfderiv_eq_zero_of_mem_stableSet hw₁.2)
-    obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ ha hpa hw₁
+    obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ hpa hw₁
     -- `w.1` is the level point of a point of the middle-level slice.
     obtain ⟨z, hz, hzw⟩ := (hX₀.bijOn_levelPoint_midpoint hpa' hac hc₀).surjOn ⟨hw₁, hw₁c⟩
     exact ⟨(⟨a, ha⟩, z, w.2.1), (hX₀.mem_morseSourceBrokenPairSet hX₁).2
@@ -178,7 +156,7 @@ private theorem sourceBrokenRecords_eq_image (hc₀ : c₀ < f₀ p)
     obtain ⟨hpa, har, hz, hy⟩ := (hX₀.mem_morseSourceBrokenPairSet hX₁).1 hx
     dsimp only at hpa har hz hy
     rw [mem_morseTrajectorySlice] at hz
-    obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ a.property
+    obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
       hpa ⟨hz.1, hz.2.1⟩
     obtain ⟨hmem, hc⟩ := hX₀.mapsTo_levelPoint hpa' hac hc₀ ⟨hz.1, hz.2.1⟩
     exact ⟨a, hpa, har, hmem, hc, hy, rfl⟩
@@ -196,9 +174,9 @@ private theorem injOn_sourceBrokenRecords (hc₀ : c₀ < f₀ p)
   simp only [Prod.mk.injEq] at heq
   obtain ⟨heq, rfl, -⟩ := heq
   rw [mem_morseTrajectorySlice] at hz hz'
-  obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ a.property
+  obtain ⟨hpa', hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
     hpa ⟨hz.1, hz.2.1⟩
-  obtain ⟨hpa₂', hac'⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ a'.property
+  obtain ⟨hpa₂', hac'⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
     hpa₂ ⟨hz'.1, hz'.2.1⟩
   obtain ⟨-, ha, rfl⟩ := hX₀.eq_of_levelPoint_eq_of_mem_midpoint hpa' hac hc₀ hpa₂' hac' hc₀
     ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩ heq
@@ -217,7 +195,7 @@ private theorem targetBrokenRecords_eq_image (hc₁ : f₁ r < c₁)
   · rintro ⟨b, hpb, hbr, hy, hw₁, hw₃, hw₃c⟩
     have hb := mem_criticalPoints_iff_mfderiv_eq_zero.2
       (hX₁.mfderiv_eq_zero_of_mem_unstableSet hw₃.1)
-    obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ hb hbr hw₃
+    obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ hbr hw₃
     -- `w.2.2` is the level point of a point of the middle-level slice.
     obtain ⟨z, hz, hzw⟩ := (hX₁.bijOn_levelPoint_midpoint hbr' hc₁ hcb).surjOn ⟨hw₃, hw₃c⟩
     exact ⟨(⟨b, hb⟩, w.2.1, z), (hX₀.mem_morseTargetBrokenPairSet hX₁).2
@@ -227,7 +205,7 @@ private theorem targetBrokenRecords_eq_image (hc₁ : f₁ r < c₁)
     obtain ⟨hpb, hbr, hy, hz⟩ := (hX₀.mem_morseTargetBrokenPairSet hX₁).1 hx
     dsimp only at hpb hbr hy hz
     rw [mem_morseTrajectorySlice] at hz
-    obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ b.property
+    obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
       hbr ⟨hz.1, hz.2.1⟩
     obtain ⟨hmem, hc⟩ := hX₁.mapsTo_levelPoint hbr' hc₁ hcb ⟨hz.1, hz.2.1⟩
     exact ⟨b, hpb, hbr, hy, rfl, hmem, hc⟩
@@ -245,9 +223,9 @@ private theorem injOn_targetBrokenRecords (hc₁ : f₁ r < c₁)
   simp only [Prod.mk.injEq] at heq
   obtain ⟨-, rfl, heq⟩ := heq
   rw [mem_morseTrajectorySlice] at hz hz'
-  obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ b.property
+  obtain ⟨hbr', hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
     hbr ⟨hz.1, hz.2.1⟩
-  obtain ⟨hbr₂', hcb'⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ b'.property
+  obtain ⟨hbr₂', hcb'⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
     hbr₂ ⟨hz'.1, hz'.2.1⟩
   obtain ⟨hb, -, rfl⟩ := hX₁.eq_of_levelPoint_eq_of_mem_midpoint hbr' hc₁ hcb hbr₂' hc₁ hcb'
     ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩ heq
@@ -308,17 +286,13 @@ private theorem closure_pairRecords_subset :
   · exact Or.inl ⟨y, hy, Prod.ext (hup hy.1).symm (Prod.ext rfl (hlow hy.2).symm)⟩
   · -- Breaking at the source, at a critical point `a` below the level `c₀`.
     obtain ⟨a, ⟨har, z, hz⟩, hya⟩ := mem_iUnion₂.1 hy
-    obtain ⟨-, hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀
-      (mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₀.mfderiv_eq_zero_of_mem_unstableSet hya.1))
-      (by omega) hz
+    obtain ⟨-, hac⟩ := hX₀.ne_and_apply_lt_of_manifoldMorseIndex_eq_add_one hgap₀ (by omega) hz
     obtain ⟨hq₁, hq₁c⟩ := h₀.mem_of_tendsto_upperLevelPoint_of_mem_unstableSet hf₀
       (by omega) hya.1 hac hc₀ (fun n ↦ (hxS n).1) hx h₁q
     exact Or.inr (Or.inl ⟨a, by omega, har, hq₁, hq₁c, hya, hlow hya.2⟩)
   · -- Breaking at the target, at a critical point `b` above the level `c₁`.
     obtain ⟨b, ⟨hbp, z, hz⟩, hyb⟩ := mem_iUnion₂.1 hy
-    obtain ⟨-, hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁
-      (mem_criticalPoints_iff_mfderiv_eq_zero.2 (hX₁.mfderiv_eq_zero_of_mem_stableSet hyb.2))
-      (by omega) hz
+    obtain ⟨-, hcb⟩ := hX₁.ne_and_lt_apply_of_manifoldMorseIndex_eq_add_one hgap₁ (by omega) hz
     obtain ⟨hq₃, hq₃c⟩ := h₁.mem_of_tendsto_lowerLevelPoint_of_mem_stableSet hf₁
       (by omega) hyb.2 hc₁ hcb (fun n ↦ (hxS n).2) hx h₃q
     exact Or.inr (Or.inr ⟨b, by omega, by omega, hyb, hup hyb.1, hq₃, hq₃c⟩)
@@ -352,31 +326,17 @@ private theorem exists_nhds_homeomorph_of_mem_pairRecords {q : M × M × M}
         (hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r))),
       ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
   obtain ⟨x₀, hx₀, rfl⟩ := hqP
-  set S := hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet r
-  set P := hX₀.pairRecord hX₁ c₀ c₁ '' S
-  have hcont : ContinuousOn (hX₀.pairRecord hX₁ c₀ c₁) S :=
-    ((hX₀.continuousOn_upperLevelPoint hc₀).mono inter_subset_left).prodMk
-      (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right))
-  -- The records of the points of `S` form a copy of `S`.
-  have hmemS (w : P) : (w : M × M × M).2.1 ∈ S := by
-    obtain ⟨_, x, hx, rfl⟩ := w
-    exact hx
-  let Φ : P ≃ₜ S :=
-    { toFun w := ⟨(w : M × M × M).2.1, hmemS w⟩
-      invFun x := ⟨hX₀.pairRecord hX₁ c₀ c₁ x, mem_image_of_mem _ x.property⟩
-      left_inv := by rintro ⟨_, ⟨x, hx, rfl⟩⟩; rfl
-      right_inv _ := rfl
-      continuous_toFun :=
-        ((continuous_fst.comp continuous_snd).comp continuous_subtypeVal).subtype_mk hmemS
-      continuous_invFun :=
-        (hcont.comp_continuous continuous_subtypeVal fun x ↦ x.property).subtype_mk _ }
-  -- `S` is a manifold modelled on a line `L`.
+  -- The records of the points of `S`, read back by their second component, form a copy of the
+  -- manifold `S`, modelled on a line `L`.
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_isManifold hf₀ ⟨x₀, hx₀⟩
   let _ := C
-  exact exists_nhds_homeomorph_of_isOpen_preimage_val (F := L)
+  exact exists_nhds_homeomorph_of_leftInvOn (F := L) (by omega)
+    (((hX₀.continuousOn_upperLevelPoint hc₀).mono inter_subset_left).prodMk
+      (continuousOn_id.prodMk ((hX₁.continuousOn_lowerLevelPoint hf₁ hc₁).mono inter_subset_right)))
+    (continuous_fst.comp continuous_snd).continuousOn (fun _ _ ↦ rfl)
     (isLocallyClosed_iff_isOpen_coborder.2 (h.finite_closure_diff_pairRecords h₀ h₁ hf₀ hf₁ hind
       hc₀ hgap₀ hc₁ hgap₁).isClosed.isOpen_compl).isOpen_preimage_val_closure
-    (by omega) Φ hq (mem_image_of_mem _ hx₀)
+    hq (mem_image_of_mem _ hx₀)
 
 /-- **A configuration broken at the source is an endpoint.** The record of a configuration broken
 at the source lies in the closure of the records of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, and has a
@@ -421,12 +381,8 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
       ((hcont₀.comp continuous_snd).tendsto (a₁, y)).eventually (gt_mem_nhds hyc)
     filter_upwards [nhdsWithin_le_nhds hev, self_mem_nhdsWithin] with v hv hvR
     obtain ⟨hvS, hv₁, t, ht⟩ := hvR.1.resolve_left hvR.2
-    obtain ⟨a', hpa'', hva'⟩ := hX₀.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet
-      hvS.1 (ne_of_apply_ne f₀ (hv.trans hc₀).ne)
-    have hup : hX₀.upperLevelPoint c₀ v.2 = v.1 := by
-      rw [hX₀.upperLevelPoint_of_lt hv, hX₀.levelPoint_eq hpa'' hva' (t := -t)
-        (by rw [← ht, Flow.map_neg_apply_map, hv₁, ha₁c]), ← ht, Flow.map_neg_apply_map]
-    exact ⟨v.2, hvS, by rw [pairRecord_apply, hup]⟩
+    exact ⟨v.2, hvS, by
+      rw [pairRecord_apply, hX₀.upperLevelPoint_eq_of_flow_eq hvS.1 hc₀ hv (hv₁.trans ha₁c) ht]⟩
   · -- Near the broken record, the records lie below the level `c₀` and come from the chart.
     have hev : ∀ᶠ q in 𝓝 (a₁, y, hX₁.lowerLevelPoint c₁ y), f₀ q.2.1 < c₀ :=
       (((hcont₀.comp continuous_fst).comp continuous_snd).tendsto _).eventually (gt_mem_nhds hyc)
@@ -434,11 +390,8 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
     rcases hq with rfl | ⟨x, hxS, rfl⟩
     · exact ⟨mem_insert _ _, rfl⟩
     · rw [pairRecord_apply] at hqc ⊢
-      have hup := hX₀.upperLevelPoint_of_lt hqc
-      refine ⟨Or.inr ⟨hxS, ?_, -Flow.levelCrossingTime hX₀.flow f₀ c₀ x, ?_⟩, rfl⟩ <;> dsimp only
-      · rw [hup, hX₀.apply_levelPoint (hX₀.exists_flow_eq_of_mem_unstableSet hxS.1 hc₀ hqc),
-          ha₁c]
-      · rw [hup, hX₀.levelPoint_def, Flow.map_neg_apply_map]
+      exact ⟨Or.inr ⟨hxS, (hX₀.apply_upperLevelPoint_of_mem_unstableSet hxS.1 hc₀ hqc).trans
+        ha₁c.symm, hX₀.exists_flow_upperLevelPoint_eq c₀ x⟩, rfl⟩
 
 /-- **A configuration broken at the target is an endpoint.** The record of a configuration broken
 at the target lies in the closure of the records of `W^u_{X₀}(p) ∩ W^s_{X₁}(r)`, and has a
