@@ -220,6 +220,19 @@ theorem iteratedLineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 
     rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih,
       lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivCLM_postcompCLM]
 
+/-- An iterated directional derivative of a test function is its iterated Fréchet derivative
+evaluated on the directions. This is the test-function counterpart of Mathlib's
+`SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv`, with the same proof. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) : ∂^{m} φ x = iteratedFDeriv ℝ k φ x m := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, lineDerivOp_apply_eq_fderiv, iteratedFDeriv_succ_apply_left,
+      ← fderiv_continuousMultilinear_apply_const_apply
+        ((φ.contDiff.differentiable_iteratedFDeriv (mod_cast ENat.natCast_lt_top k)) x)]
+    simp only [funext (ih (Fin.tail m))]
+
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/
 theorem lineDeriv_lineDeriv_eq_fderiv_fderiv (φ : 𝓓(Ω, F)) (v w x : E) :
@@ -269,14 +282,6 @@ theorem tsupport_iteratedLineDerivOp_subset (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fi
     tsupport (∂^{m} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   have h := SchwartzMap.tsupport_iteratedLineDerivOp_subset m (toSchwartzMapCLM ℝ φ)
   rwa [← toSchwartzMapCLM_iteratedLineDerivOp, coe_toSchwartzMapCLM, coe_toSchwartzMapCLM] at h
-
-/-- An iterated directional derivative of a test function agrees pointwise with its iterated
-Fréchet derivative evaluated on those directions. -/
-theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
-    (x : E) :
-    ∂^{m} φ x = iteratedFDeriv ℝ k (φ : E → F) x m := by
-  rw [← toSchwartzMapCLM_apply (𝕜 := ℝ), toSchwartzMapCLM_iteratedLineDerivOp,
-    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, coe_toSchwartzMapCLM]
 
 /-- An iterated directional derivative of a test function agrees pointwise with
 `TauCeti.iteratedFDerivAlong` along the list of directions. -/
