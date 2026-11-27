@@ -98,7 +98,7 @@ absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametri
 theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module ℚ_[p] V]
     {f : V →ₗ[ℚ_[p]] ℚ_[p]} {s : Set V} {r : ℝ} (hr : 0 ≤ r) (hf : ∀ y ∈ s, ‖f y‖ ≤ r) {x : V}
     (hx : x ∈ Submodule.span (subring p) s) : ‖f x‖ ≤ r :=
-  (f.restrictScalars (subring p)).norm_le_of_mem_span
+  (f.restrictScalars (subring p)).norm_apply_le_of_mem_span
     (fun c ↦ (mem_subring_iff p).mp c.property) hr hf hx
 
 end PadicInt

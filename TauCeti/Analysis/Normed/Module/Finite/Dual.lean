@@ -64,7 +64,7 @@ variable {R C M N : Type*} [CommSemiring R] [NormedField C] [Algebra R C]
 
 /-- A bound on the values at generators extends to their span when scalars have norm
 at most one. The bound must be nonnegative, to include the span of the empty set. -/
-theorem norm_le_of_mem_span (f : M →ₗ[R] C)
+theorem norm_apply_le_of_mem_span (f : M →ₗ[R] C)
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) {s : Set M} {r : ℝ} (hr : 0 ≤ r)
     (hs : ∀ m ∈ s, ‖f m‖ ≤ r) {m : M} (hm : m ∈ Submodule.span R s) : ‖f m‖ ≤ r := by
   have := IsUltrametricDist.isUltrametricDist_of_forall_norm_algebraMap_le_one hR
@@ -87,7 +87,7 @@ theorem bddAbove_range_norm (f : M →ₗ[R] C)
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := M)
   refine ⟨∑ m ∈ s, ‖f m‖, ?_⟩
   rintro _ ⟨m, rfl⟩
-  apply f.norm_le_of_mem_span hR (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) _
+  apply f.norm_apply_le_of_mem_span hR (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) _
     (hs ▸ Submodule.mem_top)
   intro x hx
   exact Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) hx
@@ -121,11 +121,11 @@ theorem supNorm_le_iff_of_span_eq_top (f : M →ₗ[R] C)
     f.supNorm ≤ r ↔ ∀ m ∈ s, ‖f m‖ ≤ r := by
   rw [f.supNorm_le_iff hR]
   exact ⟨fun h m _ ↦ h m, fun h m ↦
-    f.norm_le_of_mem_span hR hr h (hs ▸ Submodule.mem_top)⟩
+    f.norm_apply_le_of_mem_span hR hr h (hs ▸ Submodule.mem_top)⟩
 
 omit [Module.Finite R M] in
-/-- On a finite generating set the sup norm is the largest coordinate norm, with zero
-as the maximum of an empty generating set. -/
+/-- On a finite generating set the sup norm is the largest norm of a value at a generator,
+with zero for an empty generating set. -/
 theorem supNorm_eq_sup (f : M →ₗ[R] C)
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) (s : Finset M)
     (hs : Submodule.span R (s : Set M) = ⊤) :
