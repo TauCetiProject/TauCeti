@@ -49,8 +49,8 @@ bound on the partial Dirichlet series that is *uniform* on `s ≥ 1`.
 * `TauCeti.sum_absNorm_rpow_le_finrank_mul_tsum` and
   `TauCeti.tsum_absNorm_rpow_le_finrank_mul_tsum`: the same fibring over *all* height-one primes,
   in finite and infinite form, for every `s > 1`.
-* `TauCeti.tsum_absNorm_rpow_neg_two_le`: at `s = 2` that becomes the explicit
-  `∑_𝔭 N(𝔭) ^ (-2) ≤ 2 [K : ℚ]`.
+* `TauCeti.sum_absNorm_rpow_neg_two_le` and `TauCeti.tsum_absNorm_rpow_neg_two_le`: at `s = 2`
+  the explicit `∑_𝔭 N(𝔭) ^ (-2) ≤ [K : ℚ]`, in finite and infinite form.
 
 No density-zero statement is proved here.  What this file supplies is the numerator half of
 one: `NumberField.Set.HasDirichletDensity (higherDegreePrimes K) 0` asks for
@@ -266,23 +266,47 @@ theorem sum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s)
 
 /-- **The prime ideal zeta sum is at most `[K : ℚ]` times the sum of `m ^ (-s)` over `ℕ`.** The
 finite-sum comparison passes to the limit on the whole range `1 < s` where both sides converge.
-Specializing the exponent is what buys an explicit constant, as in
-`TauCeti.tsum_absNorm_rpow_neg_two_le`. -/
+At `s = 2` the explicit constant `[K : ℚ]` is `TauCeti.tsum_absNorm_rpow_neg_two_le`. -/
 theorem tsum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s) :
     ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤
       Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
   Real.tsum_le_of_sum_le (fun _ ↦ Real.rpow_nonneg (Nat.cast_nonneg _) _)
     (sum_absNorm_rpow_le_finrank_mul_tsum hs)
 
-/-- **The prime ideal zeta sum over all height-one primes at `s = 2` is at most `2 [K : ℚ]`.**
-At most `[K : ℚ]` primes lie over each rational prime, and `ζ (2) < 2`.  The same constant bounds
-the degree-above-one primes for every `s ≥ 1`: `TauCeti.primeIdealZetaSum_higherDegreePrimes_le`.
-The constant is available only from `s = 2` upwards: at `s` just above `1` the sum over `ℕ` is
-already larger than `2`, so only the `s`-dependent bound above survives there. -/
+/-- **The prime sum at `s = 2` is at most the degree.** For every finite set `F` of height-one
+primes of `𝓞 K`, `∑_{𝔭 ∈ F} N(𝔭) ^ (-2) ≤ [K : ℚ]`. -/
+theorem sum_absNorm_rpow_neg_two_le (F : Finset (HeightOneSpectrum (𝓞 K))) :
+    ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) ≤ Module.finrank ℚ K := by
+  -- At most `[K : ℚ]` primes lie over each rational prime `p`, each has norm at least `p`, and
+  -- `∑_{m ≥ 2} m ^ (-2) ≤ 1`.
+  set N : ℕ := F.sup rationalPrimeBelow + 1
+  have hT (𝔭 : HeightOneSpectrum (𝓞 K)) (h𝔭 : 𝔭 ∈ F) : rationalPrimeBelow 𝔭 ∈ Finset.Ioo 1 N :=
+    Finset.mem_Ioo.2 ⟨(prime_rationalPrimeBelow 𝔭).one_lt, Nat.lt_succ_of_le (Finset.le_sup h𝔭)⟩
+  calc ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ))
+      ≤ ∑ 𝔭 ∈ F, ((rationalPrimeBelow 𝔭 : ℝ) ^ 2)⁻¹ := by
+        refine Finset.sum_le_sum fun 𝔭 _ ↦ ?_
+        have hp : (0 : ℝ) < rationalPrimeBelow 𝔭 := mod_cast (prime_rationalPrimeBelow 𝔭).pos
+        have hpN : (rationalPrimeBelow 𝔭 : ℝ) ≤ Ideal.absNorm 𝔭.asIdeal := by
+          exact_mod_cast (pow_one (rationalPrimeBelow 𝔭)).symm.trans_le
+            (rationalPrimeBelow_pow_le_absNorm (𝔭.asIdeal.inertiaDeg_pos ℤ))
+        rw [Real.rpow_neg (hp.le.trans hpN), Real.rpow_two]
+        gcongr
+    _ ≤ Module.finrank ℚ K * ∑ m ∈ Finset.Ioo 1 N, ((m : ℝ) ^ 2)⁻¹ :=
+        sum_comp_rationalPrimeBelow_le (g := fun m : ℕ ↦ ((m : ℝ) ^ 2)⁻¹)
+          (fun _ _ ↦ by positivity) hT
+    _ ≤ Module.finrank ℚ K * 1 := by
+        gcongr
+        exact (sum_Ioo_inv_sq_le 1 N).trans_eq (by norm_num)
+    _ = Module.finrank ℚ K := mul_one _
+
+/-- **The prime ideal zeta sum over all height-one primes at `s = 2` is at most `[K : ℚ]`.**
+The bound `2 [K : ℚ]` also holds for the degree-above-one primes for every `s ≥ 1`:
+`TauCeti.primeIdealZetaSum_higherDegreePrimes_le`. No constant independent of `s` bounds the
+sum over all primes for `s` just above `1`, where the sum diverges as `s → 1⁺`. -/
 theorem tsum_absNorm_rpow_neg_two_le :
     ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) ≤
-      2 * Module.finrank ℚ K :=
-  ((tsum_absNorm_rpow_le_finrank_mul_tsum one_lt_two).trans <| mul_le_mul_of_nonneg_left
-    (tsum_nat_rpow_neg_le_two le_rfl) (Nat.cast_nonneg _)).trans_eq (mul_comm _ _)
+      Module.finrank ℚ K :=
+  Real.tsum_le_of_sum_le (fun _ ↦ Real.rpow_nonneg (Nat.cast_nonneg _) _)
+    sum_absNorm_rpow_neg_two_le
 
 end TauCeti

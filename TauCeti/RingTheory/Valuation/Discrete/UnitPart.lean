@@ -23,7 +23,9 @@ by the corresponding negative power of the unit relating the parameters.
 
 `v.unitPartResidue t ht` reduces the unit part to the residue field: it sends `f = t ^ i u`
 to `ū`. These are the residue-field units through which the tame symbol and the residue maps of
-Milnor K-theory are computed.
+Milnor K-theory are computed. Along a valuation extension `E / F`, the reduced unit part of `f ∈ Fˣ`
+relative to an order-one `s ∈ Eˣ` is the image of that relative to `t` times `c ^ ord_v f`, where
+`c` is the reduced unit part of `t` relative to `s` (`Valuation.unitPartResidue_map_algebraMap`).
 
 ## References
 
@@ -138,6 +140,16 @@ theorem unitPartResidue_apply (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
       v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht f) :=
   (rfl)
 
+/-- The reduced unit part of `f` is the residue of any element of the valuation ring whose value
+is the unit part `f * t ^ (-ord_v f)`. -/
+theorem coe_unitPartResidue_eq_residue (t : Fˣ) (ht : v.ord (t : F) = 1) {f : Fˣ}
+    {x : v.valuationSubring} (hx : (x : F) = (v.unitPart t ht f : Fˣ)) :
+    (v.unitPartResidue t ht f : IsLocalRing.ResidueField v.valuationSubring) =
+      IsLocalRing.residue v.valuationSubring x := by
+  rw [unitPartResidue_apply, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply,
+    ← IsLocalRing.residue_def]
+  exact congrArg _ (Subtype.ext hx.symm)
+
 /-- The reduced unit part of a unit of the valuation ring is its residue. -/
 @[simp]
 theorem unitPartResidue_coe (t : Fˣ) (ht : v.ord (t : F) = 1)
@@ -151,6 +163,35 @@ theorem unitPartResidue_of_ord_eq_zero (t : Fˣ) (ht : v.ord (t : F) = 1) {f : F
     v.unitPartResidue t ht f = v.valuationSubring.unitGroupToResidueFieldUnits
       ⟨f, (v.mem_unitGroup_iff_ord_eq_zero f).2 hf⟩ :=
   v.unitPartResidue_coe t ht ⟨f, _⟩
+
+/-- **Reduced unit parts along a valuation extension.** Let `w` extend `v` along `E / F`, and let
+`t ∈ Fˣ` and `s ∈ Eˣ` have order one. For `f ∈ Fˣ` the reduced unit part of `f` relative to `s` is
+the image of its reduced unit part relative to `t` under the residue-field embedding `k_v → k_w`,
+times `c ^ ord_v f`, where `c` is the reduced unit part of `t` relative to `s`. -/
+theorem unitPartResidue_map_algebraMap {E : Type*} [Field E] [Algebra F E]
+    (w : Valuation E ℤᵐ⁰) [v.HasExtension w] (t : Fˣ) (ht : v.ord (t : F) = 1) (s : Eˣ)
+    (hs : w.ord (s : E) = 1) (f : Fˣ) :
+    w.unitPartResidue s hs (Units.map (algebraMap F E : F →* E) f) =
+      Units.map (algebraMap (IsLocalRing.ResidueField v.valuationSubring)
+        (IsLocalRing.ResidueField w.valuationSubring) : _ →* _) (v.unitPartResidue t ht f) *
+        w.unitPartResidue s hs (Units.map (algebraMap F E : F →* E) t) ^ v.ord (f : F) := by
+  let u : w.valuationSubring.unitGroup :=
+    ⟨_, (HasExtension.map_mem_unitGroup_iff v w).2 (v.unitPart t ht f).property⟩
+  have hf : Units.map (algebraMap F E : F →* E) f =
+      Units.map (algebraMap F E : F →* E) t ^ v.ord (f : F) * (u : Eˣ) := by
+    conv_lhs => rw [v.eq_zpow_mul_unitPart t ht f]
+    rw [map_mul, map_zpow]
+  rw [hf, map_mul, map_zpow, mul_comm, unitPartResidue_coe]
+  exact congrArg (· * _)
+    (HasExtension.unitGroupToResidueFieldUnits_map v w (v.unitPart t ht f).property)
+
+/-- A field unit of order zero has reduced unit part `1` exactly when it is a principal unit. -/
+theorem unitPartResidue_eq_one_iff_of_ord_eq_zero (t : Fˣ) (ht : v.ord (t : F) = 1) {f : Fˣ}
+    (hord : v.ord (f : F) = 0) :
+    v.unitPartResidue t ht f = 1 ↔ f ∈ v.valuationSubring.principalUnitGroup := by
+  rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
+    ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap]
+  exact Iff.rfl
 
 /-- If `r + s = 1` and `r` has positive order, then `s` has reduced unit part `1`. -/
 theorem unitPartResidue_eq_one_of_add_eq_one (t : Fˣ) (ht : v.ord (t : F) = 1) {r s : Fˣ}
@@ -170,5 +211,13 @@ theorem unitPartResidue_neg (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
   rw [← neg_one_mul, map_mul, ← neg_one_mul (v.unitPartResidue t ht f)]
   congr 1
   simpa using v.unitPartResidue_coe t ht ⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩
+
+/-- Changing the parameter from `t` to `t' = c t` divides the reduced unit part of `f` by
+`γ ^ ord_v f`, where `γ`, the residue of `c`, is the reduced unit part of `t'` relative to `t`. -/
+theorem unitPartResidue_eq_mul_zpow (t : Fˣ) (ht : v.ord (t : F) = 1) (t' : Fˣ)
+    (ht' : v.ord (t' : F) = 1) (f : Fˣ) :
+    v.unitPartResidue t' ht' f =
+      v.unitPartResidue t ht f * v.unitPartResidue t ht t' ^ (-v.ord (f : F)) := by
+  rw [unitPartResidue_apply, ← v.unitPartResidue_coe t ht, coe_unitPart, map_mul, map_zpow]
 
 end Valuation

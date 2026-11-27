@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
-import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.FiniteAtlas
 import TauCeti.Geometry.Manifold.ExtChartAt.LocallyCompact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Complete
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
@@ -31,6 +32,10 @@ that every compact chart-frame `C^k` seminorm, in any smooth trivialization, is 
 multiple of the finite-atlas seminorm
 (`ContMDiffSection.exists_chartCkSeminorm_le_finiteAtlasSeminorm`), so any two covering finite
 chart-frame atlases define equivalent norms (`ContMDiffSection.exists_finiteAtlasSeminorm_le`).
+On a boundaryless manifold modelled on a locally compact space, it follows that near each point of a
+chart target the coordinate derivatives through order `k` of the frame coefficients of a section,
+in any smooth trivialization, are bounded by a fixed multiple of the finite-atlas seminorm
+(`ContMDiffSection.exists_norm_iteratedFDeriv_frameCoordinates_le`).
 
 When the compact pieces cover `M`, the finite-atlas seminorm bounds every frame-coordinate value on
 the pieces (`ContMDiffSection.norm_frameCoordinates_apply_le_finiteAtlasSeminorm`) and vanishes only
@@ -64,6 +69,8 @@ the model space. Neither finite rank of the fibres nor Hausdorffness of the base
 * `ContMDiffSection.exists_chartCkSeminorm_le_finiteAtlasSeminorm` and
   `ContMDiffSection.exists_finiteAtlasSeminorm_le`: dominance of compact chart-frame `C^k`
   seminorms and equivalence of finite chart-frame `C^k` norms.
+* `ContMDiffSection.exists_norm_iteratedFDeriv_frameCoordinates_le`: local uniform bounds on the
+  coordinate derivatives of the frame coefficients of sections in any smooth trivialization.
 * `ContMDiffSection.norm_frameCoordinates_apply_le_finiteAtlasSeminorm`,
   `ContMDiffSection.finiteAtlasSeminorm_eq_zero_iff`, and
   `ContMDiffSection.exists_pos_forall_mem_of_isOpen_totalSpace`: pointwise frame-coordinate
@@ -330,6 +337,26 @@ theorem exists_finiteAtlasSeminorm_le {ι' : Type*} [Fintype ι']
     _ ≤ (1 + ∑ j, C j) * finiteAtlasSeminorm e U hU c K k hk s :=
         mul_le_mul_of_nonneg_right (le_add_of_nonneg_left zero_le_one) (apply_nonneg _ _)
 
+/-- **Local uniform bounds on the coordinate derivatives of sections.** If the relative interiors
+of the compact pieces cover `M`, then for any smooth trivialization `e'` on an open set `U'`, any
+point `x` of `U'` and any point `w₀` of the extended chart target at `x`, the derivatives of order
+`m ≤ k` of the frame coefficients of a section in `e'`, read in the chart at `x`, are bounded near
+`w₀` by a fixed multiple of the finite-atlas `C^k` seminorm of the section. -/
+theorem exists_norm_iteratedFDeriv_frameCoordinates_le [I.Boundaryless] [LocallyCompactSpace E]
+    (e' : Trivialization F (π F V)) [MemTrivializationAtlas e'] {U' : Opens M}
+    (hU' : (U' : Set M) ⊆ e'.baseSet) (x : U') {w₀ : E} (hw₀ : w₀ ∈ (extChartAt I x).target)
+    (k : ℕ) (hk : k ≤ n) {m : ℕ} (hm : m ≤ k) :
+    ∃ C, ∀ᶠ z in 𝓝 w₀, ∀ s : Cₛ^n⟮I; F, V⟯,
+      ‖iteratedFDeriv 𝕜 m (fun w ↦ e'.frameCoordinates hU' s ((extChartAt I x).symm w)) z‖ ≤
+        C * finiteAtlasSeminorm e U hU c K k hk s := by
+  -- The frame coefficients are vector-valued maps on `U'`, bounded by a scalar chart seminorm.
+  obtain ⟨L, hL⟩ :=
+    ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le_chartCkSeminorm (F := F) x hw₀ k
+      hk hm
+  obtain ⟨C, -, hC⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm e U hU hK e' hU' x L k hk
+  refine ⟨C, hL.mono fun z hz s ↦ (hz (e'.frameCoordinates hU' s)).trans ?_⟩
+  exact (e'.chartCkSeminorm_apply hU' x L k hk s).symm.trans_le (hC s)
+
 end Cover
 
 /-- **The finite-atlas `C^k` seminorm is a norm** when the compact pieces cover `M`: it vanishes
@@ -550,8 +577,9 @@ theorem withSeminorms_finiteAtlasSeminorm_of_cover
 
 /-- The normed group of `C^k` bundle sections equipped with the `C^k` norm of a finite chart-frame
 atlas whose compact pieces have relative interiors covering `M`. Its topology is definitionally
-`ContMDiffSection.frameTopology e U hU`. -/
-@[instance_reducible]
+`ContMDiffSection.frameTopology e U hU`, and its additive group is definitionally that of the
+sections, so that linear maps of sections are linear maps on this normed group. -/
+@[expose, instance_reducible]
 def finiteAtlasNormedAddCommGroup : NormedAddCommGroup Cₛ^k⟮I; F, V⟯ :=
   letI := frameTopology (I := I) (n := k) e U hU
   letI : Norm Cₛ^k⟮I; F, V⟯ := ⟨finiteAtlasSeminorm e U hU c K k le_rfl⟩
@@ -565,7 +593,7 @@ def finiteAtlasNormedAddCommGroup : NormedAddCommGroup Cₛ^k⟮I; F, V⟯ :=
     ((withSeminorms_finiteAtlasSeminorm k e U hU hK).topologicalSpace_eq_iInf.trans ciInf_unique)
 
 /-- The normed space structure on `C^k` bundle sections for a covering finite chart-frame atlas. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def finiteAtlasNormedSpace :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     NormedSpace 𝕜 Cₛ^k⟮I; F, V⟯ :=

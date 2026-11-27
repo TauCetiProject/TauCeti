@@ -49,12 +49,8 @@ theorem invariantsBaseChangeMap_surjective_of_free (ρ : Representation R G V) :
   have hinv (i : Module.Free.ChooseBasisIndex R A) : e w i ∈ ρ.invariants :=
     (mem_invariants _ _).2 <|
       equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ ((mem_invariants _ _).1 hw) i
-  -- Rebuild `w` from its coordinates: `w = e.symm (e w) = ∑ bᵢ ⊗ e w i`.
-  refine ⟨∑ i ∈ (e w).support, b i ⊗ₜ[R] (⟨e w i, hinv i⟩ : ρ.invariants),
-    Subtype.ext <| (?_ : _ = e.symm (e w)).trans (e.symm_apply_apply w)⟩
-  simp only [map_sum, Submodule.coe_sum, coe_invariantsBaseChangeMap, LinearMap.lTensor_tmul,
-    Submodule.subtype_apply]
-  rw [TensorProduct.equivFinsuppOfBasisLeft_symm_apply, Finsupp.sum]
+  obtain ⟨y, hy⟩ := (b.mem_range_lTensor_subtype_iff ρ.invariants w).2 hinv
+  exact ⟨y, Subtype.ext ((coe_invariantsBaseChangeMap ρ y).trans hy)⟩
 
 /-- **Free scalar extension commutes with invariants**: for `A` free over `R`, the comparison map
 `A ⊗_R V^G → (A ⊗_R V)^G` is bijective for every group `G`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
 # Ladder relations for the Hermite functions
@@ -152,9 +153,7 @@ theorem hasDerivAt_hermiteFunction (n : ℕ) (x : ℝ) :
     simpa only [Function.comp_def, one_mul, id_eq] using h
   have hE : HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2 / 2)))
       (-x * Real.exp (-(x ^ 2 / 2))) x := by
-    have hx2 : HasDerivAt (fun x : ℝ => x ^ 2 / 2) x x := by
-      simpa using (hasDerivAt_pow 2 x).div_const 2
-    simpa [mul_comm] using hx2.neg.exp
+    simpa only [mul_comm] using hasDerivAt_exp_neg_sq_div_two x
   -- The derivative value from the product rule is `√2·H'ₙ(x√2)·e/N - x·ψₙ`. The first term is the
   -- lower mode `√(2n)·ψ_{n-1}` (`sqrt_two_mul_aeval_derivative_hermite`) and `x·ψₙ` is the position
   -- relation (`mul_hermiteFunction`), so the whole collapses to the claimed combination by algebra,

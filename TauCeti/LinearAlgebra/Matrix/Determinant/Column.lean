@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Alternating.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.Ring.NegOnePow
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.List.ProdOfFn
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -42,6 +44,16 @@ theorem columnDet_apply (A : Matrix (Fin n) (Fin n) R) :
   rw [columnDet, MultilinearMap.alternatization_apply]
   simp [MultilinearMap.mkPiAlgebraFin_apply]
 
+/-- An element commuting with all entries commutes with the column determinant. -/
+theorem commute_columnDet (A : Matrix (Fin n) (Fin n) R) {x : R}
+    (h : ∀ i j, Commute (A i j) x) : Commute A.columnDet x := by
+  rw [columnDet_apply]
+  refine Commute.sum_left _ _ _ fun σ _ ↦ ?_
+  rw [Units.smul_def]
+  refine (Commute.list_prod_left _ _ fun y hy ↦ ?_).smul_left _
+  obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+  exact h (σ j) j
+
 /-- The empty column determinant is one. -/
 @[simp] theorem columnDet_fin_zero (A : Matrix (Fin 0) (Fin 0) R) : A.columnDet = 1 := by
   simp [columnDet_apply]
@@ -55,6 +67,39 @@ theorem columnDet_apply (A : Matrix (Fin n) (Fin n) R) :
 theorem columnDet_eq_zero_of_row_eq (A : Matrix (Fin n) (Fin n) R) {i j : Fin n}
     (hij : i ≠ j) (h : A i = A j) : A.columnDet = 0 :=
   AlternatingMap.map_eq_zero_of_eq _ A h hij
+
+/-- For matrices agreeing off two adjacent columns, comparing the ordered two-row minors in
+those columns suffices to compare the column determinants, with the same integer multiplier. -/
+theorem columnDet_eq_zsmul_of_adjacent (A B : Matrix (Fin n) (Fin n) R) (c : ℤ)
+    {i j : Fin n} (hij : i.val + 1 = j.val)
+    (hcols : ∀ r k, k ≠ i → k ≠ j → A r k = B r k)
+    (hpair : ∀ r s, r ≠ s → A r i * A s j - A s i * A r j =
+      c • (B r i * B s j - B s i * B r j)) : A.columnDet = c • B.columnDet := by
+  rw [columnDet_apply, columnDet_apply, Finset.smul_sum, ← sub_eq_zero, ← Finset.sum_sub_distrib]
+  simp_rw [smul_comm c, ← smul_sub]
+  refine TauCeti.sum_sign_smul_eq_zero_of_mul_swap _ i j (by simp [Fin.ext_iff]; omega) ?_
+  intro σ
+  let a (τ : Perm (Fin n)) (k : Fin n) := A (τ k) k
+  let b (τ : Perm (Fin n)) (k : Fin n) := B (τ k) k
+  let τ := σ * swap i j
+  have hfix k (hi : k ≠ i) (hj : k ≠ j) : τ k = σ k := by
+    simp [τ, Equiv.swap_apply_of_ne_of_ne hi hj]
+  have hB k hi hj : b σ k = a σ k := (hcols _ _ hi hj).symm
+  -- Split every product at the adjacent columns, with the same outer factors from `a σ`.
+  have hsplit (f : Fin n → R) (hf : ∀ k, k ≠ i → k ≠ j → f k = a σ k) :=
+    List.prod_ofFn_eq_take_mul_mul_drop_of_eq f (a σ) hij hf
+  rw [hsplit (a τ) (fun k hi hj ↦ by simp [a, hfix k hi hj]),
+    hsplit (b τ) (fun k hi hj ↦ by simpa [b, hfix k hi hj] using hB k hi hj),
+    hsplit (a σ) (fun _ _ _ ↦ rfl), hsplit (b σ) hB]
+  have hmiddle : A (σ j) i * A (σ i) j - c • (B (σ j) i * B (σ i) j) =
+      A (σ i) i * A (σ j) j - c • (B (σ i) i * B (σ j) j) := by
+    have h := hpair (σ i) (σ j) (σ.injective.ne (by simp [Fin.ext_iff]; omega))
+    rw [smul_sub] at h
+    linear_combination (norm := abel) h.symm
+  simpa only [a, b, τ, Equiv.Perm.mul_apply, swap_apply_left, swap_apply_right,
+    mul_sub, sub_mul, mul_smul_comm, smul_mul_assoc] using
+    congrArg (fun x ↦ ((List.ofFn (a σ)).take i).prod * x *
+      ((List.ofFn (a σ)).drop (j + 1)).prod) hmiddle
 
 /-- Expanding along the first column puts the selected entry on the left of its minor. -/
 theorem columnDet_succ_column_zero (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :

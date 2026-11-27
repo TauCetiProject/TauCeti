@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Antilipschitz
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
 # Quantitative embeddings of compact convex sets
@@ -20,11 +22,32 @@ This is the separation estimate used to preserve injectivity under small Lipschi
 secant approximations; compare Munkres, *Elementary Differential Topology*, Chapter II, §9.
 It rests on the uniform first-order approximation of such a map by its derivative at nearby
 points, `IsCompact.exists_pos_forall_norm_image_sub_sub_le`.
+
+Locally, no compactness is needed: if the derivatives of `f` within a convex set `s` stay within
+`C` of a fixed linear map `φ`, and `φ` stretches a chord `y - x` of `s` by at least `c`, then `f`
+stretches it by at least `c - C`, that is `(c - C) ‖y - x‖ ≤ ‖f y - f x‖`
+(`Convex.mul_norm_sub_le_norm_image_sub_of_norm_hasFDerivWithin_sub_le`).
+
+With one point held fixed, differentiability at that point alone suffices. At a point `x` where
+`f` has an antilipschitz derivative, such as an injective derivative on a finite-dimensional
+space, `dist x y ≤ K * dist (f x) (f y)` for `y` near `x`
+(`HasFDerivWithinAt.exists_eventually_dist_le_mul_dist`,
+`HasFDerivAt.exists_eventually_dist_le_mul_dist`). If moreover `f` is continuous on a compact set
+`s` on which `x` is the only point with image `f x`, and the derivative is taken within `s`, the
+bound holds for every `y ∈ s`
+(`IsCompact.exists_forall_dist_le_mul_dist_of_hasFDerivWithinAt`). This is the global self-point
+floor at an injective regular point of a map, in the sense of `TauCeti.AntilipschitzWithFrom`.
+
+Conversely, a bound `dist x y ≤ C * dist (f x) (f y)` for `y` near `x` makes the derivative at
+`x` antilipschitz with the same constant
+(`HasFDerivAt.antilipschitzWith_of_eventually_dist_le_mul_dist`): along each line through `x` the
+difference quotients of `f` are stretched by at least `C⁻¹`, and so is their limit.
 -/
 
 public section
 
-open Set Metric
+open Asymptotics Filter Set Metric
+open scoped NNReal Topology
 
 namespace IsCompact
 
@@ -71,3 +94,91 @@ theorem exists_antilipschitzWith_of_hasFDerivWithinAt (hs : IsCompact s) (hconv 
   nlinarith
 
 end IsCompact
+
+namespace Convex
+
+variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **A lower bound on chords from a nearly constant derivative.** If `f` has derivatives `f' x`
+within a convex set `s` with `‖f' x - φ‖ ≤ C` on `s`, and `c ‖y - x‖ ≤ ‖φ (y - x)‖` for
+`x, y ∈ s`, then `(c - C) ‖y - x‖ ≤ ‖f y - f x‖`. -/
+theorem mul_norm_sub_le_norm_image_sub_of_norm_hasFDerivWithin_sub_le {f : E → G}
+    {f' : E → E →L[𝕜] G} {φ : E →L[𝕜] G} {s : Set E} {c C : ℝ} {x y : E}
+    (hf : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (bound : ∀ x ∈ s, ‖f' x - φ‖ ≤ C)
+    (hs : Convex ℝ s) (xs : x ∈ s) (ys : y ∈ s) (hφ : c * ‖y - x‖ ≤ ‖φ (y - x)‖) :
+    (c - C) * ‖y - x‖ ≤ ‖f y - f x‖ := by
+  have hmv := hs.norm_image_sub_le_of_norm_hasFDerivWithin_le' hf bound xs ys
+  have := norm_sub_norm_le (φ (y - x)) (f y - f x)
+  rw [norm_sub_rev (φ (y - x))] at this
+  linarith
+
+end Convex
+
+section Pointwise
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {f' : E →L[𝕜] F}
+  {s : Set E} {x : E} {C : ℝ≥0}
+
+/-- At a point where a map has an antilipschitz derivative within a set, the points of the set
+near `x` are separated from `x` by their images: `dist x y ≤ K * dist (f x) (f y)` for some `K`. -/
+theorem HasFDerivWithinAt.exists_eventually_dist_le_mul_dist (h : HasFDerivWithinAt f f' s x)
+    (hf' : AntilipschitzWith C f') :
+    ∃ K : ℝ≥0, ∀ᶠ y in 𝓝[s] x, dist x y ≤ K * dist (f x) (f y) := by
+  -- As in Mathlib's `HasFDerivWithinAt.tendsto_nhdsWithin_nhdsNE`: `y - x` is `O(f' (y - x))`,
+  -- which is asymptotically equivalent to `f y - f x`.
+  have A : (fun y ↦ y - x) =O[𝓝[s] x] fun y ↦ f' (y - x) := isBigO_iff.2
+    ⟨C, .of_forall fun y ↦ by
+      simpa only [dist_zero_right, map_zero] using hf'.le_mul_dist (y - x) 0⟩
+  have B : (fun y ↦ f y - f x) ~[𝓝[s] x] fun y ↦ f' (y - x) := h.isLittleO.trans_isBigO A
+  obtain ⟨c, hc⟩ := (A.trans B.isBigO_symm).bound
+  refine ⟨c.toNNReal, hc.mono fun y hy ↦ ?_⟩
+  rw [dist_comm x, dist_comm (f x), dist_eq_norm, dist_eq_norm]
+  exact hy.trans (by gcongr; exact Real.le_coe_toNNReal c)
+
+/-- At a point where a map has an antilipschitz derivative, nearby points are separated from `x`
+by their images: `dist x y ≤ K * dist (f x) (f y)` for `y` near `x`, for some `K`. -/
+theorem HasFDerivAt.exists_eventually_dist_le_mul_dist (h : HasFDerivAt f f' x)
+    (hf' : AntilipschitzWith C f') : ∃ K : ℝ≥0, ∀ᶠ y in 𝓝 x, dist x y ≤ K * dist (f x) (f y) := by
+  simpa only [nhdsWithin_univ] using
+    (h.hasFDerivWithinAt (s := univ)).exists_eventually_dist_le_mul_dist hf'
+
+/-- **A lower distance bound at a point passes to the derivative.** If
+`dist x y ≤ C * dist (f x) (f y)` for every `y` near `x`, then the derivative of `f` at `x` is
+antilipschitz with constant `C`, and in particular injective. This is the converse of
+`HasFDerivAt.exists_eventually_dist_le_mul_dist`. -/
+theorem HasFDerivAt.antilipschitzWith_of_eventually_dist_le_mul_dist (h : HasFDerivAt f f' x)
+    (hC : ∀ᶠ y in 𝓝 x, dist x y ≤ C * dist (f x) (f y)) : AntilipschitzWith C f' := by
+  refine f'.antilipschitz_of_bound fun v ↦ ?_
+  -- Along the line `t ↦ x + t • v`, the difference quotients of `f` tend to `f' v`.
+  have hline : HasDerivAt (fun t : 𝕜 ↦ x + t • v) v 0 := by
+    simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const v).const_add x
+  have hslope : Tendsto (slope (fun t : 𝕜 ↦ f (x + t • v)) 0) (𝓝[≠] 0) (𝓝 (f' v)) :=
+    hasDerivAt_iff_tendsto_slope.1 (HasFDerivAt.comp_hasDerivAt_of_eq (0 : 𝕜) h hline (by simp))
+  -- Each of these quotients is stretched by at least `C⁻¹` relative to `v`.
+  have hx : Tendsto (fun t : 𝕜 ↦ x + t • v) (𝓝 0) (𝓝 x) := by
+    simpa using hline.continuousAt.tendsto
+  have hle : ∀ᶠ t in 𝓝[≠] (0 : 𝕜), ‖v‖ ≤ C * ‖slope (fun t : 𝕜 ↦ f (x + t • v)) 0 t‖ := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hx.eventually hC)]
+      with t (ht : t ≠ 0) hy
+    have ht' : ‖t‖ ≠ 0 := norm_ne_zero_iff.2 ht
+    rw [dist_self_add_right, norm_smul, dist_eq_norm, norm_sub_rev] at hy
+    have hs : ‖slope (fun t : 𝕜 ↦ f (x + t • v)) 0 t‖ = ‖t‖⁻¹ * ‖f (x + t • v) - f x‖ := by
+      simp [slope_def_module, norm_smul]
+    calc ‖v‖ = ‖t‖⁻¹ * (‖t‖ * ‖v‖) := by field_simp
+      _ ≤ ‖t‖⁻¹ * (C * ‖f (x + t • v) - f x‖) := by gcongr
+      _ = C * ‖slope (fun t : 𝕜 ↦ f (x + t • v)) 0 t‖ := by rw [hs]; ring
+  exact ge_of_tendsto (hslope.norm.const_mul (C : ℝ)) hle
+
+/-- Let `f` be continuous on a compact set `s`, with an antilipschitz derivative within `s` at
+`x`, and let `x` be the only point of `s` with image `f x`. Then
+`dist x y ≤ K * dist (f x) (f y)` for every `y ∈ s`, for some `K`. -/
+theorem IsCompact.exists_forall_dist_le_mul_dist_of_hasFDerivWithinAt (hs : IsCompact s)
+    (hf : ContinuousOn f s) (hinj : ∀ y ∈ s, f y = f x → y = x) (h : HasFDerivWithinAt f f' s x)
+    (hf' : AntilipschitzWith C f') : ∃ K : ℝ≥0, ∀ y ∈ s, dist x y ≤ K * dist (f x) (f y) :=
+  have ⟨_, hK⟩ := h.exists_eventually_dist_le_mul_dist hf'
+  hs.exists_forall_dist_le_mul_dist_of_eventually hf hinj hK
+
+end Pointwise

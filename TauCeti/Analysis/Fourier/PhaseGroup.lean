@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -83,6 +84,9 @@ the half-wave phases are with `k = 1`, the propagator intertwines the normalized
   `TauCeti.eLpNorm_phasePropagator_dilateLp`, its effect on the `Lʳ` norms at a fixed time.
 * `TauCeti.eLpNorm_eLpNorm_phasePropagator_dilateLp`: its effect on the mixed norms
   `L^q_t L^r_x`, multiplication by `l ^ (n/r - n/2 + k/q)`.
+* `TauCeti.eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le`: the converse, a Strichartz estimate
+  whose data norm is homogeneous of degree `-s` under the dyadic dilations forces
+  `s = n/2 - n/r - k/q`.
 
 ## References
 
@@ -618,6 +622,7 @@ end Generator
 
 section Dilation
 
+open scoped NNReal
 open Measure Module
 
 variable {ω} {k : ℕ}
@@ -682,6 +687,43 @@ theorem eLpNorm_eLpNorm_phasePropagator_dilateLp
     ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
   congr 3
   ring
+
+/-- **Scaling fixes the regularity of a homogeneous Strichartz estimate.** Let the phase `ω` be
+positively homogeneous of degree `k`, let `q, r ≠ 0`, let `f₀ ∈ L²` be nonzero and let `B < ∞`. If
+the dyadic dilates `D_{2^i} f₀` satisfy
+
+`‖exp(itω(D)) (D_{2^i} f₀)‖_{L^q_t L^r_x} ≤ C 2^{-is} B`
+
+on the whole time line for every `i ∈ ℤ`, then `s = n / 2 - n / r - k / q`, where `1 / r` and
+`1 / q` are `0` for an infinite exponent. This is how a homogeneous estimate
+`‖exp(itω(D)) f‖_{L^q_t L^r_x} ≤ C N f` constrains `s` when `N` is homogeneous of degree `-s` under
+the dyadic dilations, `N (D_{2^i} f) = 2^{-is} N f`, and `N f₀ = B`: the left side scales like
+`2^{i(n/r - n/2 + k/q)}` and is positive, since `exp(itω(D))` is unitary, so the two powers must
+agree. -/
+theorem eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le
+    (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {q r : ℝ≥0∞} (hq : q ≠ 0) (hr : r ≠ 0)
+    {s : ℝ} {f₀ : Lp F 2 (volume : Measure E)} (hf₀ : f₀ ≠ 0) {B : ℝ≥0∞} (hB : B ≠ ∞) {C : ℝ≥0}
+    (h : ∀ i : ℤ, eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t
+        (dilateLp volume ℝ 2 _ (zpow_pos two_pos i) f₀)) r volume) q volume ≤
+      C * (ENNReal.ofReal (((2 : ℝ) ^ i) ^ (-s)) * B)) :
+    s = finrank ℝ E / 2 - finrank ℝ E * (r⁻¹).toReal - k * (q⁻¹).toReal := by
+  set n : ℝ := (finrank ℝ E : ℝ)
+  set Φ : ℝ≥0∞ := eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t f₀) r volume) q volume
+  -- `exp(itω(D))` is unitary, so `exp(itω(D)) f₀ ≠ 0` at every time and `Φ` is positive.
+  have hΦ0 : Φ ≠ 0 := by
+    rw [Ne, eLpNorm_eq_zero_iff hq]
+    intro h0
+    obtain ⟨t, ht⟩ := h0.exists
+    rw [Pi.zero_apply, eLpNorm_eq_zero_iff hr, ← Lp.eq_zero_iff_ae_eq_zero] at ht
+    exact hf₀ (norm_eq_zero.1 (by rw [← norm_phasePropagator_apply ω t f₀, ht, norm_zero]))
+  -- In real terms: `(2^i) ^ e ≤ C B / Φ` for every `i ∈ ℤ`, with `e = n/r - n/2 + k/q + s`.
+  have he := Real.eq_zero_of_forall_zpow_rpow_le one_lt_two (K := C * B.toReal / Φ.toReal)
+    (e := n / r.toReal - n / 2 + k / q.toReal - -s) fun i ↦
+    Real.rpow_sub_le_div_of_ofReal_rpow_mul_le (zpow_pos two_pos i) hΦ0 hB (by
+      simpa only [eLpNorm_eLpNorm_phasePropagator_dilateLp hω _ _ hq] using h i)
+  rw [ENNReal.toReal_inv, ENNReal.toReal_inv]
+  simp only [div_eq_mul_inv n r.toReal, div_eq_mul_inv (k : ℝ) q.toReal] at he
+  linarith
 
 end Dilation
 

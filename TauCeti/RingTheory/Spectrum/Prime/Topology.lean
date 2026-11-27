@@ -49,6 +49,9 @@ closed point, this is Mathlib's `IsLocalRing.closedPoint_mem_iff`.
 
 The closed subset `V(s)` of `PrimeSpectrum R` is also bundled in `TopologicalSpace.Closeds` as
 `PrimeSpectrum.zeroLocusClosed s`, whose open complement is `⨆ r ∈ s, basicOpen r`.
+
+For a localization away from `r`, `PrimeSpectrum` is preconnected precisely when the basic open
+set `D(r)` is preconnected.
 -/
 
 public section
@@ -256,5 +259,14 @@ theorem compl_zeroLocusClosed_eq_iSup_basicOpen (s : Set R) :
     (zeroLocusClosed s).compl = ⨆ r ∈ s, basicOpen r := by
   ext p
   simp [basicOpen_eq_zeroLocus_compl, Set.subset_def]
+
+/-- For any localization `S` away from `r`, `PrimeSpectrum S` is preconnected if and only if the
+basic open set `D(r)` in `PrimeSpectrum R` is preconnected. -/
+theorem preconnectedSpace_iff_isPreconnected_basicOpen (S : Type*) [CommSemiring S]
+    [Algebra R S] (r : R) [IsLocalization.Away r S] :
+    PreconnectedSpace (PrimeSpectrum S) ↔ IsPreconnected (basicOpen r : Set (PrimeSpectrum R)) := by
+  have hind := (localization_away_isOpenEmbedding S r).isInducing
+  rw [preconnectedSpace_iff_univ, ← hind.isPreconnected_image, Set.image_univ,
+    localization_away_comap_range S r]
 
 end PrimeSpectrum

@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
+import TauCeti.Algebra.Group.ZMultiples
+
 /-!
 # Densities on the additive circle
 
@@ -32,7 +34,9 @@ half line (`AddCircle.lintegral_comp_norm_le`).
 
 Mathlib's translation action of `ℝ` on `AddCircle T`, `t +ᵥ x = t + x` (`AddCircle.vadd_eq_add`),
 is jointly measurable and preserves every additively left-invariant measure, such as circle
-volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`).
+volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`). For the
+normalized Haar measure, the Fourier mode `fourier n` has integral `1` for `n = 0` and `0`
+otherwise (`AddCircle.integral_fourier_haarAddCircle`).
 -/
 
 public section
@@ -63,6 +67,13 @@ instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
     simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
 
 variable {T : ℝ} [hT : Fact (0 < T)]
+
+/-- The integral of the Fourier mode `fourier n` for the normalized Haar measure is `1` for
+`n = 0` and `0` otherwise. -/
+theorem integral_fourier_haarAddCircle (n : ℤ) :
+    ∫ x, fourier n x ∂(haarAddCircle (T := T)) = if n = 0 then 1 else 0 := by
+  simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
+    congrFun (fourierCoeff_fourier (T := T) n) 0
 
 /-- Reading a circle point in `[a, a + T)` sends circle volume to Lebesgue measure
 restricted to that interval. -/
@@ -137,11 +148,9 @@ variable {M : Type*} [TopologicalSpace M] [AddCommMonoid M]
 function over the translates of that point by multiples of the period. -/
 theorem automorphize_coe (f : ℝ → M) (x : ℝ) :
     QuotientAddGroup.automorphize f (x : AddCircle T) = ∑' k : ℤ, f (x + k • T) := by
-  let e : ℤ ≃ (AddSubgroup.zmultiples T).op :=
-    (AddSubgroup.zmultiplesEquivInt hT.out.ne').symm.toEquiv.trans (AddSubgroup.equivOp _)
-  rw [QuotientAddGroup.automorphize_mk, ← e.tsum_eq]
-  refine tsum_congr fun k ↦ congrArg f ?_
-  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
+  rw [QuotientAddGroup.automorphize_mk, ← (TauCeti.intEquivOpZMultiples
+    (not_isOfFinAddOrder_of_isAddTorsionFree hT.out.ne')).tsum_eq]
+  simp
 
 /-- Reducing a real law with density `f` modulo `T` gives the circle law whose density
 relative to circle volume is the periodization of `f`.
