@@ -122,10 +122,9 @@ theorem prop_singularHomology_pathComponent_refl_of_prop_doubleLoopSpace (hQP : 
   let e : Ω (pathComponent (Path.refl x)) y ≃ₜ Ω (Ω X x) (Path.refl x) :=
     Path.subtypeHomeomorphOfPathComponentSubset hS
   -- Its fundamental group is `π₁(Ω X x) ≅ π₂(X, x)`.
-  have hY : Subsingleton (π_ 1 (pathComponent (Path.refl x)) y) := by
-    have := (subsingleton_homotopyGroup_loopSpace_iff x 1).2 hX
-    exact (HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset (N := Fin 1) hS
-      rfl).1.subsingleton
+  have hY : Subsingleton (π_ 1 (pathComponent (Path.refl x)) y) :=
+    (HomotopyGroup.subsingleton_iff_of_pathComponent_subset (N := Fin 1) hS rfl).2
+      ((subsingleton_homotopyGroup_loopSpace_iff x 1).2 hX)
   exact prop_singularHomology_of_prop_loopSpace P Q hQP y hY hk fun q hq hqk ↦
     Q.prop_of_iso (e.toHomotopyEquiv.singularHomologyIso _ q).symm (hΩ q hq hqk)
 

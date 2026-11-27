@@ -16,11 +16,11 @@ public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
-import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.Smooth.MinimalPrime
 
 /-!
@@ -51,9 +51,10 @@ fibre.
 Finiteness of `ν` is a hypothesis of the construction: it is what makes `X^ν` of finite
 presentation over `R`. It holds when `C` is reduced and the rings of sections of `X` are Nagata,
 and over an arbitrary, possibly non-excellent, discrete valuation ring when `C` is smooth of
-relative dimension one over `K` and `X` has relative dimension at most one over `R`
-(`TauCeti.Model.isFinite_fromNormalization_genericι`). Over an affine open `Spec A` of `X`, the
-special fibre `A ⧸ πA` then has dimension at most one, and at every minimal prime of `A[1/π]` the
+relative dimension one over `K` (`TauCeti.Model.isFinite_fromNormalization_genericι`). Over an
+affine open `Spec A` of `X`, the special fibre `A ⧸ πA` then has dimension at most one, since the
+special fibre of a model is no larger than its generic fibre
+(`TauCeti.Model.relativeDimensionLE_toBase`), and at every minimal prime of `A[1/π]` the
 residue field is a function field of one variable over `K` with one-dimensional Kähler
 differentials (`TauCeti.transcendental_and_finrank_kaehlerDifferential_residueField_eq_one`); these
 are the hypotheses of the ring-level finiteness theorem
@@ -76,9 +77,8 @@ are the hypotheses of the ring-level finiteness theorem
   property of the normalization, in the category of models.
 * `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth
   generic fibre gives a normal total space, including for disconnected generic fibres.
-* `TauCeti.Model.isFinite_fromNormalization_genericι`: the normalization of a model of relative
-  dimension at most one, with generic fibre smooth of relative dimension one, is finite, over any
-  discrete valuation ring.
+* `TauCeti.Model.isFinite_fromNormalization_genericι`: the normalization of a model whose
+  generic fibre is smooth of relative dimension one is finite, over any discrete valuation ring.
 
 ## References
 
@@ -136,27 +136,6 @@ open _root_.IsLocalRing
 
 variable {M} {U : M.total.Opens}
 
-/-- Over an affine open `U` of the total space of a model of relative dimension at most one, the
-special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most one. -/
-private lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase]
-    (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
-    letI := M.toBase.sectionsAlgebra U
-    Ring.KrullDimLE 1 (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
-  let := M.toBase.sectionsAlgebra U
-  -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`.
-  have : AlgebraicGeometry.RelativeDimensionLE 1
-      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) :=
-    M.toBase.fromSpec_toSpec hU ▸ inferInstance
-  have hdim :=
-    (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
-  -- The fibre over the closed point is `Γ(U) ⧸ 𝔪 Γ(U)`, and `𝔪 = (π)`.
-  have hmap : (maximalIdeal R).map (algebraMap R Γ(M.total, U)) =
-      Ideal.span {algebraMap R Γ(M.total, U) π} := by
-    rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  rw [← hmap, Ring.krullDimLE_iff, ← ringKrullDim_eq_of_ringEquiv
-    (Ideal.Fiber.algEquivQuotientMap (B := Γ(M.total, U)) (maximalIdeal R)).toRingEquiv]
-  exact_mod_cast hdim
-
 /-- The two maps from `R` to the sections of the generic fibre over `U ∩ C`, through the sections
 of the total space over `U` and through the fraction field, agree. -/
 private lemma appLE_comp_app_genericι (U : M.total.Opens) :
@@ -171,12 +150,9 @@ private lemma appLE_comp_app_genericι (U : M.total.Opens) :
   rfl
 
 /-- **The normalization of a model of a smooth curve is finite.** If the generic fibre `C` is
-smooth of relative dimension one over `K` and the total space has relative dimension at most one
-over `R`, then the normalization of the total space in `C` is finite, over an arbitrary, possibly
-non-excellent, discrete valuation ring. The relative dimension hypothesis holds for every model
-which is a family of curves. -/
-instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
-    [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase] :
+smooth of relative dimension one over `K`, then the normalization of the total space in `C` is
+finite, over an arbitrary, possibly non-excellent, discrete valuation ring. -/
+instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] :
     IsFinite M.genericι.fromNormalization := by
   have := M.isOpenImmersion_genericι
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
@@ -197,7 +173,7 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
       exact congr(($(appLE_comp_app_genericι U)).hom)
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
-  have := krullDimLE_sections_quotient (M := M) hU hπ
+  have := M.krullDimLE_sections_quotient (d := 1) hU hπ
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
     refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
     -- The generic fibre is the basic open of the pullback of `π`.

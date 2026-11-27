@@ -11,7 +11,7 @@ public import Mathlib.Data.Nat.Totient
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `qPochhammer` occurs in the statement of the density identity.
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 -- Non-public: `Matrix.card_GL_field`, `ZMod.equivPi`, and local-ring/prime-power kernel counts
 -- are used only in the proofs.
 import Mathlib.Algebra.Field.ZMod

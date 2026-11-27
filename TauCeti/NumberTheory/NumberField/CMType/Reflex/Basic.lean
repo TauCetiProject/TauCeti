@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.CMType.Basic
 import Mathlib.RingTheory.Trace.Basic
 import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 import TauCeti.RingTheory.Trace.RingHom
 
 /-!
@@ -58,6 +59,8 @@ finite-dimensional `ℚ`-algebra, such as a finite product of CM fields, by the 
 * `TauCeti.CMType.typeTrace_induced`, `TauCeti.CMType.reflexField_induced`: for number fields
   `K ⊆ L`, the type induced on `L` by `Φ₀` has type trace `typeTrace_{Φ₀} ∘ Tr_{L/K}` and the
   reflex field of `Φ₀`.
+* `TauCeti.CMType.finrank_reflexField_of_finrank_eq_two`: a CM type on a quadratic number field
+  has a quadratic reflex field.
 
 ## References
 
@@ -118,9 +121,7 @@ theorem typeTrace_add_typeTrace_star_eq_trace {K : Type*} [Field K] [NumberField
     (Φ : CMType K) (a : K) :
     Φ.typeTrace a + (star Φ).typeTrace a = algebraMap ℚ ℂ (Algebra.trace ℚ K a) := by
   rw [typeTrace_add_typeTrace_star, finsum_eq_sum_of_fintype,
-    _root_.trace_eq_sum_embeddings ℂ (K := ℚ) (x := a)]
-  exact Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) _ _ fun _ ↦ by
-    simp [RingHom.equivRatAlgHom_apply]
+    NumberField.algebraMap_trace_eq_sum_embeddings]
 
 /-! ### The reflex field -/
 
@@ -289,5 +290,32 @@ theorem reflexField_induced (Φ₀ : CMType K) :
     exact mul_mem (inv_mem (IntermediateField.natCast_mem _ _)) (typeTrace_mem_reflexField _ _)
 
 end Induced
+
+/-! ### Quadratic fields -/
+
+section Quadratic
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **A CM type on a quadratic field has a quadratic reflex field**: the type is a single
+embedding `φ`, and its reflex field is the image `φ(K)`. -/
+theorem finrank_reflexField_of_finrank_eq_two (Φ : CMType K) (h : Module.finrank ℚ K = 2) :
+    Module.finrank ℚ Φ.reflexField = 2 := by
+  have hcard : Nat.card Φ = 1 := by
+    have := Φ.two_mul_card_eq_finrank
+    omega
+  obtain ⟨⟨φ, hmem⟩, huniq⟩ := Nat.card_eq_one_iff_exists.1 hcard
+  have hΦ : (Φ : Set (K →+* ℂ)) = {φ} := Set.eq_singleton_iff_unique_mem.2
+    ⟨hmem, fun ψ hψ ↦ congrArg Subtype.val (huniq ⟨ψ, hψ⟩)⟩
+  have htrace (x : K) : Φ.typeTrace x = φ.toRatAlgHom x := by
+    rw [typeTrace_apply, hΦ, finsum_mem_singleton, RingHom.toRatAlgHom_apply]
+  have hrange : Φ.reflexField = φ.toRatAlgHom.fieldRange := by
+    refine le_antisymm (reflexField_le_iff.2 fun x ↦ ⟨x, (htrace x).symm⟩) ?_
+    rintro _ ⟨x, rfl⟩
+    exact htrace x ▸ typeTrace_mem_reflexField Φ x
+  rw [hrange, ← h]
+  exact (AlgEquiv.ofInjectiveField φ.toRatAlgHom).toLinearEquiv.finrank_eq.symm
+
+end Quadratic
 
 end TauCeti.CMType

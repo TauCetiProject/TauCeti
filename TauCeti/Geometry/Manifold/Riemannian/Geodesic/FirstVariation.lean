@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.IntervalIntegral
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 
@@ -33,7 +33,8 @@ manifold, whose variation field is `φ` times the coordinate field of `e`
 `g` of that coordinate field with `D_t γ'` is positive at `t₀`; it is continuous there, because
 the first-variation integrand of such a variation is
 (`TauCeti.Manifold.continuousAt_inner_variationField_acceleration`).  A bump supported where
-`g > 0` then gives a variation whose first variation `-∫_a^b φ g` is nonzero.
+`g > 0` then gives a variation whose first variation `-∫_a^b φ g` is nonzero
+(`TauCeti.eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero`).
 
 For the length, the first variation formula
 `TauCeti.Manifold.hasDerivAt_toReal_pathELength` of
@@ -204,41 +205,19 @@ theorem IsEnergyCritical.isGeodesicCurveOn [IsManifold I n M] (hn : 2 ≤ n)
       ((isOpen_extChartAt_source (I := I) (γ t₀)).mem_nhds (mem_extChartAt_source (γ t₀)))))
   have hJab : ball t₀ δ ⊆ uIoo a b := fun t ht ↦ (hδJ ht).1
   have hJ : ∀ t ∈ ball t₀ δ, γ t ∈ (extChartAt I (γ t₀)).source := fun t ht ↦ (hδJ ht).2
-  have hbump : ∀ φ : ContDiffBump t₀, φ.rOut < δ →
+  -- for every bump `φ` supported within `δ` of `t₀`, `φ g` is continuous on `[a, b]` with
+  -- `∫_a^b φ g = 0`, so `g t₀ = 0`
+  have hbump : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ →
       (∫ t in a..b, φ t * g t) = 0 ∧ ∀ t ∈ uIcc a b, ContinuousAt (fun t ↦ φ t * g t) t :=
-    fun φ hφ ↦ h.integral_mul_inner_eq_zero hn isOpen_ball hJab hJ φ.contDiff
-      (φ.tsupport_eq ▸ closedBall_subset_ball hφ) e
-  -- `g` is continuous at `t₀`, since it agrees there with `φ g` for a bump `φ` equal to `1`
-  -- near `t₀`
-  let φ₁ : ContDiffBump t₀ := ⟨δ / 4, δ / 2, by positivity, by linarith⟩
-  have hgcont : ContinuousAt g t₀ := by
-    refine ((hbump φ₁ (by dsimp only [φ₁]; linarith)).2 t₀
-      (uIoo_subset_uIcc_self ht₀)).congr ?_
-    filter_upwards [ball_mem_nhds t₀ (by positivity : 0 < δ / 4)] with t ht
-    rw [φ₁.one_of_mem_closedBall (ball_subset_closedBall ht), one_mul]
-  -- a bump `φ₂` supported where `g > 0` gives a nonnegative continuous `φ₂ g` with zero integral,
-  -- which must vanish on `uIoo a b`; but it is positive at `t₀`
-  obtain ⟨ε, hε, hεg⟩ := Metric.eventually_nhds_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
-  set r := min ε (δ / 2)
-  have hr : 0 < r := lt_min hε (by positivity)
-  let φ₂ : ContDiffBump t₀ := ⟨r / 2, r, by positivity, by linarith⟩
-  obtain ⟨hint, hcont⟩ := hbump φ₂ (by dsimp only [φ₂]; linarith [min_le_right ε (δ / 2)])
-  have hnn : ∀ t, 0 ≤ φ₂ t * g t := fun t ↦ by
-    by_cases ht : t ∈ ball t₀ r
-    · exact mul_nonneg φ₂.nonneg (hεg (lt_of_lt_of_le ht (min_le_left _ _))).le
-    · have hφt : φ₂ t = 0 := Function.notMem_support.mp (by rwa [φ₂.support_eq])
-      rw [hφt, zero_mul]
-  have hzero := (intervalIntegral.integral_eq_zero_iff_of_nonneg_ae
-    (Eventually.of_forall hnn) (ContinuousOn.intervalIntegrable fun t ht ↦
-      (hcont t ht).continuousWithinAt)).mp hint
-  have hsub : uIoo a b ⊆ Ioc a b ∪ Ioc b a := by
-    rw [← uIoc_eq_union]
-    exact Ioo_subset_Ioc_self
-  have heq : φ₂ t₀ * g t₀ = 0 :=
-    Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset hsub hzero) isOpen_Ioo
-      (fun t ht ↦ (hcont t (uIoo_subset_uIcc_self ht)).continuousWithinAt) continuousOn_const ht₀
-  rw [φ₂.one_of_mem_closedBall (mem_closedBall_self (by positivity)), one_mul] at heq
-  exact hg₀.ne' heq
+    fun φ hφ ↦ h.integral_mul_inner_eq_zero hn isOpen_ball hJab hJ φ.contDiff hφ e
+  refine hg₀.ne' (eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero (g := g)
+    (ht₀.1.trans ht₀.2) (Ioo_subset_Icc_self ht₀) hδ
+    (fun φ hφ t ht ↦ ((hbump φ hφ).2 t ht).continuousWithinAt) fun φ hφ ↦ ?_)
+  -- the integral from `min a b` to `max a b` is `± ∫_a^b φ g`
+  have hint := (hbump φ (hφ.trans inter_subset_left)).1
+  rcases le_total a b with hab | hab
+  · rwa [inf_of_le_left hab, sup_of_le_right hab]
+  · rwa [inf_of_le_right hab, sup_of_le_left hab, intervalIntegral.integral_symm, neg_eq_zero]
 
 /-- **The variational characterization of geodesics.** On a boundaryless `C^n` manifold with
 `2 ≤ n ≤ ∞`, a curve which is `C^n` near every point of `[a, b]` is a critical point of the energy

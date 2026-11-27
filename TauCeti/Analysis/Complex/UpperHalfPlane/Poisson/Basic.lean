@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+public import Mathlib.Basic.Real.Sign
 public import Mathlib.Probability.Distributions.Cauchy
 public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.PDE.GreenFunction.HalfPlane
 import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -65,6 +70,14 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   Schwarz integrals of a measure on `ℝ`, which vanish off the real axis for a measure that is not
   Poisson-finite (`TauCeti.upperHalfPlanePoissonIntegral_of_not_isPoissonFinite`,
   `TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`).
+* `TauCeti.upperHalfPlanePoissonIntegral_dirac`: `P[δₐ](z) = P(z, a)`, which is
+  `Im (-1 / (π (z - a)))` (`TauCeti.upperHalfPlanePoissonIntegral_dirac_eq_im`), with the case
+  `TauCeti.upperHalfPlanePoissonIntegral_dirac_zero_eq_im`: `P[δ₀](z) = Im (-1 / (π z))`.
+* `TauCeti.upperHalfPlanePoissonIntegral_volume_restrict_Icc`: the Poisson integral of Lebesgue
+  measure on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`; as
+  `z → x ∉ {a, b}` through the upper half-plane it tends to `(sign (b - x) - sign (a - x)) / 2`,
+  that is to `1` inside `(a, b)` and to `0` outside `[a, b]`
+  (`TauCeti.tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc`).
 * `TauCeti.upperHalfPlanePoissonLIntegral`: the extended Poisson integral in `[0, ∞]`, infinite on
   `ℂ₊` exactly for measures that are not Poisson-finite
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
@@ -97,19 +110,36 @@ namespace TauCeti
 
 /-! ### The Poisson kernel -/
 
+/-- The inward unit normal `i` of the upper half-plane, in the coordinates
+`Complex.orthonormalBasisOneI`. -/
+def upperHalfPlaneNormal : {w : EuclideanSpace ℝ (Fin 2) // ‖w‖ = 1} :=
+  ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+
+/-- The defining formula of `TauCeti.upperHalfPlaneNormal`. -/
+theorem coe_upperHalfPlaneNormal :
+    (upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)) = Complex.orthonormalBasisOneI.repr I := by
+  rw [upperHalfPlaneNormal]
+
+/-- The coordinate of `z` along the normal `i` is `Im z`. -/
+@[simp]
+theorem inner_upperHalfPlaneNormal_repr (z : ℂ) :
+    ⟪(upperHalfPlaneNormal : EuclideanSpace ℝ (Fin 2)), Complex.orthonormalBasisOneI.repr z⟫_ℝ =
+      z.im := by
+  simp [coe_upperHalfPlaneNormal, LinearIsometryEquiv.inner_map_map, Complex.inner]
+
 /-- The **Poisson kernel of the upper half-plane**, `P(z, x) = Im z / (π |x - z| ^ 2)` for a pole
 `z ∈ ℂ₊` and a boundary point `x ∈ ℝ`. It is the half-space Poisson kernel
-`TauCeti.halfSpacePoissonKernel 2` with unit inward normal `i`, pole `z` and boundary point `x`,
-read through `Complex.orthonormalBasisOneI`; `TauCeti.upperHalfPlanePoissonKernel_eq` gives the
-explicit formula. -/
+`TauCeti.halfSpacePoissonKernel 2` with unit inward normal `i` (`TauCeti.upperHalfPlaneNormal`),
+pole `z` and boundary point `x`, read through `Complex.orthonormalBasisOneI`;
+`TauCeti.upperHalfPlanePoissonKernel_eq` gives the explicit formula. -/
 def upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) : ℝ :=
-  halfSpacePoissonKernel 2 ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+  halfSpacePoissonKernel 2 upperHalfPlaneNormal
     (Complex.orthonormalBasisOneI.repr z) (Complex.orthonormalBasisOneI.repr x)
 
 /-- The defining formula of `TauCeti.upperHalfPlanePoissonKernel`. -/
 theorem upperHalfPlanePoissonKernel_def (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x =
-      halfSpacePoissonKernel 2 ⟨Complex.orthonormalBasisOneI.repr I, by simp⟩
+      halfSpacePoissonKernel 2 upperHalfPlaneNormal
         (Complex.orthonormalBasisOneI.repr z) (Complex.orthonormalBasisOneI.repr x) := by
   rw [upperHalfPlanePoissonKernel]
 
@@ -118,7 +148,7 @@ half-plane. -/
 theorem upperHalfPlanePoissonKernel_eq (z : ℂ) (x : ℝ) :
     upperHalfPlanePoissonKernel z x = z.im / (π * normSq ((x : ℂ) - z)) := by
   have hinner : ⟪(I : ℂ), z⟫_ℝ = z.im := by simp [Complex.inner]
-  rw [upperHalfPlanePoissonKernel_def,
+  rw [upperHalfPlanePoissonKernel_def, upperHalfPlaneNormal,
     halfSpacePoissonKernel_orthonormalBasisOneI_repr ⟨I, norm_I⟩, hinner, normSq_eq_norm_sq]
 
 /-- The Poisson kernel is measurable in its boundary point. -/
@@ -253,6 +283,43 @@ theorem upperHalfPlanePoissonKernel_le {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
     _ ≤ 2 * (1 + a ^ 2) * π * (max b b⁻¹ * (t + b ^ 2)) := by gcongr
     _ = 2 * (1 + a ^ 2) * max b b⁻¹ * (π * (t + b ^ 2)) := by ring
 
+/-- **The far part of the Poisson kernel.** If `|Re z - x| ≤ δ / 2` and `|s - x| > δ`, then
+`P(z, s) ≤ K Im z / (1 + s ^ 2)` with `K = 4 (2 + (1 + 2 x ^ 2) / δ ^ 2) / π`. -/
+theorem upperHalfPlanePoissonKernel_le_of_lt_abs_sub {z : ℂ} {x s δ : ℝ} (hz : 0 ≤ z.im)
+    (hδ : 0 < δ) (hzx : |z.re - x| ≤ δ / 2) (hs : δ < |s - x|) :
+    upperHalfPlanePoissonKernel z s ≤
+      z.im * (4 * (2 + (1 + 2 * x ^ 2) / δ ^ 2) / π) * (1 + s ^ 2)⁻¹ := by
+  set M := 2 + (1 + 2 * x ^ 2) / δ ^ 2
+  have hd : |s - x| / 2 ≤ |s - z.re| := by
+    have := abs_sub_le s z.re x
+    linarith
+  have hd2 : (s - x) ^ 2 / 4 ≤ (s - z.re) ^ 2 := by
+    have := pow_le_pow_left₀ (by positivity) hd 2
+    rwa [div_pow, sq_abs, sq_abs, show (2 : ℝ) ^ 2 = 4 by norm_num] at this
+  have hδ2 : δ ^ 2 < (s - x) ^ 2 := by
+    simpa [sq_abs] using pow_lt_pow_left₀ hs hδ.le two_ne_zero
+  have hx2 : 1 + 2 * x ^ 2 ≤ (1 + 2 * x ^ 2) / δ ^ 2 * (s - x) ^ 2 := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+    exact mul_le_mul_of_nonneg_left hδ2.le (by positivity)
+  have key : 1 + s ^ 2 ≤ 4 * M * ((s - z.re) ^ 2 + z.im ^ 2) := by
+    have hs2 : s ^ 2 ≤ 2 * (s - x) ^ 2 + 2 * x ^ 2 := by nlinarith [sq_nonneg (s - 2 * x)]
+    have hM : 0 ≤ M := by positivity
+    calc 1 + s ^ 2 ≤ M * (s - x) ^ 2 := by simp only [M]; nlinarith
+      _ ≤ M * (4 * (s - z.re) ^ 2) := by gcongr; linarith
+      _ ≤ 4 * M * ((s - z.re) ^ 2 + z.im ^ 2) := by nlinarith [sq_nonneg z.im]
+  have hM0 : 0 < M := by positivity
+  have hden : 0 < (s - z.re) ^ 2 + z.im ^ 2 := by
+    have : 0 < (s - z.re) ^ 2 := by rw [← sq_abs]; exact pow_pos (by linarith) 2
+    linarith [sq_nonneg z.im]
+  rw [upperHalfPlanePoissonKernel_eq, Complex.normSq_ofReal_sub,
+    div_le_iff₀ (mul_pos Real.pi_pos hden)]
+  calc z.im = z.im * (4 * M / π) * (1 + s ^ 2)⁻¹ * (π * (1 + s ^ 2) / (4 * M)) := by
+        field_simp
+    _ ≤ z.im * (4 * M / π) * (1 + s ^ 2)⁻¹ * (π * ((s - z.re) ^ 2 + z.im ^ 2)) := by
+        gcongr
+        rw [div_le_iff₀ (by positivity)]
+        nlinarith [Real.pi_pos]
+
 /-- The imaginary part of the Schwarz kernel `TauCeti.subtractedResolventKernel` is `π P(z, x)`. -/
 theorem subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) :
     (subtractedResolventKernel z x).im = π * upperHalfPlanePoissonKernel z x := by
@@ -299,6 +366,13 @@ instance instIsFiniteMeasureUpperHalfPlanePoissonMeasure :
     IsFiniteMeasure upperHalfPlanePoissonMeasure :=
   ⟨by simp [upperHalfPlanePoissonMeasure_univ]⟩
 
+/-- The Poisson measure `dx / (1 + x ^ 2)` is absolutely continuous with respect to Lebesgue
+measure. -/
+theorem upperHalfPlanePoissonMeasure_absolutelyContinuous :
+    upperHalfPlanePoissonMeasure ≪ volume := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity]
+  exact withDensity_absolutelyContinuous _ _
+
 /-- A function is integrable for the Poisson measure `dx / (1 + x ^ 2)` exactly when
 `h(x) / (1 + x ^ 2)` is Lebesgue integrable. -/
 theorem integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul {E : Type*}
@@ -336,6 +410,41 @@ theorem setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure (f : ℝ 
   calc f s = ENNReal.ofReal 1 * f s := by simp
     _ ≤ _ := by gcongr
 
+/-- A function integrable for the Poisson measure is locally integrable on `ℝ`. -/
+theorem locallyIntegrable_of_integrable_upperHalfPlanePoissonMeasure {E : Type*}
+    [NormedAddCommGroup E] {h : ℝ → E} (hh : Integrable h upperHalfPlanePoissonMeasure) :
+    LocallyIntegrable h := by
+  refine locallyIntegrable_iff.2 fun k hk => ?_
+  obtain ⟨R, hR⟩ := hk.isBounded.subset_closedBall 0
+  rw [Real.closedBall_eq_Icc, zero_sub, zero_add] at hR
+  refine IntegrableOn.mono_set ⟨(aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure
+    hh).restrict, ?_⟩ hR
+  exact (setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure _ R).trans_lt
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hh.2)
+
+/-- **The far part of a Poisson integral.** If `P(z, s) ≤ c / (1 + s ^ 2)` for every `s ∉ S`, the
+integral of `f` against the Poisson kernel `P(z, ·)` off `S` is at most `c ∫ f dΠ`. -/
+theorem lintegral_indicator_compl_mul_upperHalfPlanePoissonKernel_le {f : ℝ → ℝ≥0∞}
+    (hf : AEMeasurable f) {z : ℂ} {S : Set ℝ} {c : ℝ}
+    (hc : ∀ s ∉ S, upperHalfPlanePoissonKernel z s ≤ c * (1 + s ^ 2)⁻¹) :
+    ∫⁻ s, Sᶜ.indicator f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) ≤
+      ENNReal.ofReal c * ∫⁻ s, f s ∂upperHalfPlanePoissonMeasure := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity,
+    lintegral_withDensity_eq_lintegral_mul₀ (by fun_prop) hf, ← lintegral_const_mul' _ _
+      ENNReal.ofReal_ne_top]
+  refine lintegral_mono fun s => ?_
+  by_cases hs : s ∈ S
+  · simp [hs]
+  rw [Set.indicator_of_mem (Set.mem_compl hs)]
+  simp only [Pi.mul_apply]
+  calc f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s)
+      ≤ f s * ENNReal.ofReal (c * (1 + s ^ 2)⁻¹) := by
+        gcongr
+        exact hc s hs
+    _ = ENNReal.ofReal c * (ENNReal.ofReal (1 + s ^ 2)⁻¹ * f s) := by
+        rw [ENNReal.ofReal_mul' (by positivity)]
+        ring
+
 /-- A measure `ν` on `ℝ` is **Poisson-finite** when `∫ dν / (1 + x ^ 2) < ∞`, that is when
 `x ↦ 1 / (1 + x ^ 2)` is `ν`-integrable. -/
 def IsPoissonFinite (ν : Measure ℝ) : Prop :=
@@ -366,6 +475,11 @@ theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure �
 theorem IsPoissonFinite.smul_measure {ν : Measure ℝ} (hν : IsPoissonFinite ν) {c : ℝ≥0∞}
     (hc : c ≠ ∞) : IsPoissonFinite (c • ν) :=
   (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).smul_measure hc)
+
+/-- A measure below a Poisson-finite measure is Poisson-finite. -/
+theorem IsPoissonFinite.mono {μ ν : Measure ℝ} (hν : IsPoissonFinite ν) (h : μ ≤ ν) :
+    IsPoissonFinite μ :=
+  (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).mono_measure h)
 
 /-- A Poisson-finite measure gives finite mass to every interval `[-R, R]`. -/
 theorem IsPoissonFinite.measure_Icc_lt_top {ν : Measure ℝ} (hν : IsPoissonFinite ν) (R : ℝ) :
@@ -485,6 +599,52 @@ theorem upperHalfPlanePoissonIntegral_dirac (a : ℝ) (z : ℂ) :
     upperHalfPlanePoissonIntegral (Measure.dirac a) z = upperHalfPlanePoissonKernel z a := by
   rw [upperHalfPlanePoissonIntegral_def, integral_dirac]
 
+/-- The Poisson integral of the Dirac mass at `a` is `Im (-1 / (π (z - a)))`. -/
+theorem upperHalfPlanePoissonIntegral_dirac_eq_im (a : ℝ) :
+    upperHalfPlanePoissonIntegral (Measure.dirac a) =
+      fun z => (-((π : ℂ) * (z - a))⁻¹).im := by
+  ext z
+  rw [upperHalfPlanePoissonIntegral_dirac, upperHalfPlanePoissonKernel_eq, ← normSq_neg, neg_sub]
+  rcases eq_or_ne (normSq (z - a)) 0 with h | h
+  · simp [inv_im, h]
+  · simp [inv_im]
+    field_simp
+
+/-- The Poisson integral of the Dirac mass at `0` is `Im (-1 / (π z))`. -/
+theorem upperHalfPlanePoissonIntegral_dirac_zero_eq_im :
+    upperHalfPlanePoissonIntegral (Measure.dirac 0) = fun z => (-((π : ℂ) * z)⁻¹).im := by
+  simpa using upperHalfPlanePoissonIntegral_dirac_eq_im 0
+
+/-- **The Poisson integral of an interval**: for `a ≤ b`, the Poisson integral of Lebesgue measure
+on `[a, b]` is `(arctan ((b - Re z) / Im z) - arctan ((a - Re z) / Im z)) / π`. For `z` in the
+upper half-plane this is the angle under which `[a, b]` is seen from `z`, divided by `π`. -/
+theorem upperHalfPlanePoissonIntegral_volume_restrict_Icc {a b : ℝ} (hab : a ≤ b) (z : ℂ) :
+    upperHalfPlanePoissonIntegral (volume.restrict (Icc a b)) z =
+      (Real.arctan ((b - z.re) / z.im) - Real.arctan ((a - z.re) / z.im)) / π := by
+  rw [upperHalfPlanePoissonIntegral_def, integral_Icc_eq_integral_Ioc,
+    ← intervalIntegral.integral_of_le hab, ← Real.integral_div_sub_sq_add_sq, div_eq_inv_mul,
+    ← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.integral_congr fun s _ => ?_
+  rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub, ← neg_sub z.re s, neg_sq]
+  field_simp
+
+/-- **Boundary limits of the Poisson integral of an interval**: for `a ≤ b` and a real point
+`x ∉ {a, b}`, the Poisson integral of Lebesgue measure on `[a, b]` tends to
+`(sign (b - x) - sign (a - x)) / 2` as `z → x` through the upper half-plane, that is to `1` for
+`a < x < b` and to `0` for `x < a` or `x > b`. -/
+theorem tendsto_upperHalfPlanePoissonIntegral_volume_restrict_Icc {a b x : ℝ} (hab : a ≤ b)
+    (hxa : x ≠ a) (hxb : x ≠ b) :
+    Tendsto (upperHalfPlanePoissonIntegral (volume.restrict (Icc a b)))
+      (𝓝[UpperHalfPlane.upperHalfPlaneSet] (x : ℂ))
+      (𝓝 ((Real.sign (b - x) - Real.sign (a - x)) / 2)) := by
+  have hlim {c : ℝ} (hc : x ≠ c) := Real.tendsto_arctan_div_of_tendsto_nhdsGT_zero
+    (tendsto_const_nhds.sub (Real.tendsto_re_nhdsWithin_upperHalfPlaneSet x))
+    (sub_ne_zero.2 hc.symm) (Real.tendsto_im_nhdsWithin_upperHalfPlaneSet x)
+  have h := ((hlim hxb).sub (hlim hxa)).div_const π
+  rw [show (π / 2 * Real.sign (b - x) - π / 2 * Real.sign (a - x)) / π =
+      (Real.sign (b - x) - Real.sign (a - x)) / 2 by field_simp] at h
+  exact h.congr fun z => (upperHalfPlanePoissonIntegral_volume_restrict_Icc hab z).symm
+
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`
 (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`), where it agrees with the real-valued
@@ -497,6 +657,15 @@ theorem upperHalfPlanePoissonLIntegral_def (ν : Measure ℝ) (z : ℂ) :
     upperHalfPlanePoissonLIntegral ν z =
       ∫⁻ x, ENNReal.ofReal (upperHalfPlanePoissonKernel z x) ∂ν := by
   rw [upperHalfPlanePoissonLIntegral]
+
+/-- The extended Poisson integral of `f dx` is the integral of `f` against the Poisson kernel. -/
+theorem upperHalfPlanePoissonLIntegral_withDensity {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
+    (z : ℂ) :
+    upperHalfPlanePoissonLIntegral (volume.withDensity f) z =
+      ∫⁻ s, f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) := by
+  rw [upperHalfPlanePoissonLIntegral_def, lintegral_withDensity_eq_lintegral_mul₀ hf
+    (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable]
+  simp only [Pi.mul_apply]
 
 /-- On the upper half-plane, the extended Poisson integral of `ν` is infinite exactly when `ν` is
 not Poisson-finite. -/
@@ -529,9 +698,6 @@ theorem integrable_upperHalfPlanePoissonMeasure_iff {E : Type*} [NormedAddCommGr
     Integrable h upperHalfPlanePoissonMeasure ↔
       upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I < ∞ := by
   have hd : Measurable fun x : ℝ ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by fun_prop
-  have hPi : upperHalfPlanePoissonMeasure ≪ volume := by
-    rw [upperHalfPlanePoissonMeasure_eq_withDensity]
-    exact withDensity_absolutelyContinuous _ _
   have hP : upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I =
       ENNReal.ofReal π⁻¹ * ∫⁻ x, ‖h x‖ₑ ∂upperHalfPlanePoissonMeasure := by
     rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonMeasure_eq_withDensity,
@@ -542,8 +708,8 @@ theorem integrable_upperHalfPlanePoissonMeasure_iff {E : Type*} [NormedAddCommGr
     simp only [Pi.mul_apply, upperHalfPlanePoissonKernel_I, mul_inv]
     rw [ENNReal.ofReal_mul (by positivity)]
     ring
-  rw [hP, Integrable, and_iff_right (hh.mono_ac hPi), HasFiniteIntegral,
-    ENNReal.mul_lt_top_iff]
+  rw [hP, Integrable, and_iff_right (hh.mono_ac upperHalfPlanePoissonMeasure_absolutelyContinuous),
+    HasFiniteIntegral, ENNReal.mul_lt_top_iff]
   simp only [ENNReal.ofReal_lt_top, true_and, ENNReal.ofReal_eq_zero, not_le.mpr
     (inv_pos.mpr Real.pi_pos), false_or, iff_self_or]
   exact fun h0 ↦ h0 ▸ ENNReal.zero_lt_top

@@ -39,6 +39,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
   has topological support in `s`, with multiplicative version
   `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
+* `TauCeti.disjoint_tsupport_iff_eventuallyEq`: a set is disjoint from the topological support of
+  `f` exactly when `f` vanishes near it, with multiplicative version
+  `TauCeti.disjoint_mulTSupport_iff_eventuallyEq`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 * `HasCompactSupport.comp_subtypeVal`: the restriction of a compactly supported function to a set
@@ -114,6 +117,16 @@ end Prod
 theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpace Y] [One M]
     {f : Y → M} {s : Set Y} (hf : ∀ x ∉ s, f x = 1) (hs : IsClosed s) : mulTSupport f ⊆ s :=
   hs.closure_subset_iff.2 (Function.mulSupport_subset_iff'.2 hf)
+
+open scoped Topology in
+/-- A set `s` is disjoint from the topological multiplicative support of `f` exactly when `f` is
+equal to `1` near `s`. -/
+@[to_additive /-- A set `s` is disjoint from the topological support of `f` exactly when `f`
+vanishes near `s`. -/]
+theorem disjoint_mulTSupport_iff_eventuallyEq {Y M : Type*} [TopologicalSpace Y] [One M]
+    {f : Y → M} {s : Set Y} : Disjoint s (mulTSupport f) ↔ f =ᶠ[𝓝ˢ s] 1 := by
+  simp only [Set.disjoint_left, Filter.EventuallyEq, eventually_nhdsSet_iff_forall,
+    notMem_mulTSupport_iff_eventuallyEq]
 
 end TauCeti
 
@@ -200,20 +213,24 @@ compact multiplicative support. -/
 @[to_additive HasCompactSupport.comp_prodMk_right /-- A slice `y ↦ f (x, y)` of a compactly
 supported function on a product is compactly supported. -/]
 theorem HasCompactMulSupport.comp_prodMk_right {X Y M : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [R1Space Y] [One M] {f : X × Y → M} (hf : HasCompactMulSupport f)
+    [TopologicalSpace Y] [One M] {f : X × Y → M} (hf : HasCompactMulSupport f)
     (x : X) : HasCompactMulSupport fun y ↦ f (x, y) :=
-  .intro (hf.isCompact.image continuous_snd) fun y hy ↦
-    image_eq_one_of_notMem_mulTSupport fun h ↦ hy ⟨(x, y), h, rfl⟩
+  have hK : IsClosed (Prod.mk x ⁻¹' mulTSupport f) :=
+    (isClosed_mulTSupport f).preimage (.prodMk_right x)
+  .intro' ((hf.isCompact.image continuous_snd).of_isClosed_subset hK fun y hy ↦ ⟨(x, y), hy, rfl⟩)
+    hK fun _ hy ↦ image_eq_one_of_notMem_mulTSupport hy
 
 /-- A slice `x ↦ f (x, y)` of a function with compact multiplicative support on a product has
 compact multiplicative support. -/
 @[to_additive HasCompactSupport.comp_prodMk_left /-- A slice `x ↦ f (x, y)` of a compactly
 supported function on a product is compactly supported. -/]
 theorem HasCompactMulSupport.comp_prodMk_left {X Y M : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [R1Space X] [One M] {f : X × Y → M} (hf : HasCompactMulSupport f)
+    [TopologicalSpace Y] [One M] {f : X × Y → M} (hf : HasCompactMulSupport f)
     (y : Y) : HasCompactMulSupport fun x ↦ f (x, y) :=
-  .intro (hf.isCompact.image continuous_fst) fun x hx ↦
-    image_eq_one_of_notMem_mulTSupport fun h ↦ hx ⟨(x, y), h, rfl⟩
+  have hK : IsClosed ((·, y) ⁻¹' mulTSupport f) :=
+    (isClosed_mulTSupport f).preimage (.prodMk_left y)
+  .intro' ((hf.isCompact.image continuous_fst).of_isClosed_subset hK fun x hx ↦ ⟨(x, y), hx, rfl⟩)
+    hK fun _ hx ↦ image_eq_one_of_notMem_mulTSupport hx
 
 /-- In a proper space, a function whose topological multiplicative support lies in a ball has
 compact multiplicative support. -/
