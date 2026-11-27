@@ -232,6 +232,16 @@ theorem weightVector_mem_discreteSeries {k : ℕ} {ℓ : ℤ} (hℓ : ℓ ∈ di
     weightVector (k : ℂ) μ ℓ ∈ discreteSeries k μ :=
   weightVector_mem_weightLieSubmodule hℓ
 
+/-- `D_k(μ)` is nonzero: it contains `v_k`. -/
+instance nontrivial_discreteSeries (k : ℕ) (μ : ℂ) :
+    Nontrivial (discreteSeries k μ) := by
+  have hmem : CompactWeightModule.weightVector (k : ℂ) μ k ∈ discreteSeries k μ :=
+    weightVector_mem_discreteSeries (by simp [mem_discreteSeriesWeights])
+  refine ⟨⟨⟨_, hmem⟩, 0, fun h ↦ ?_⟩⟩
+  have h' : CompactWeightModule.weightVector (k : ℂ) μ k = 0 := congrArg Subtype.val h
+  rw [← CompactWeightModule.weightBasis_apply] at h'
+  exact (CompactWeightModule.weightBasis (k : ℂ) μ).ne_zero _ h'
+
 /-- `v_ℓ ∈ D_k^+(μ)` for every weight of the positive ray. -/
 theorem weightVector_mem_positiveDiscreteSeries {k : ℕ} {ℓ : ℤ}
     (hℓ : ℓ ∈ positiveDiscreteSeriesWeights k) :
