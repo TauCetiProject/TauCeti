@@ -111,7 +111,7 @@ theorem totalDegreeSubmodule_le_comap_lift {Γ' A : Type*} [AddCommMonoid Γ']
     [SetLike.GradedMonoid 𝒜] (T : Γ →+ Γ') (f : M →ₗ[R] A)
     (hf : ∀ i, ∀ x ∈ ℳ i, f x ∈ 𝒜 (T i)) (n : Γ) :
     totalDegreeSubmodule ℳ n ≤ (𝒜 (T n)).comap (lift f).toLinearMap := fun _ hx =>
-  TauCeti.GradedAlgebra.map_mem_wordSpan (lift f) T
+  TauCeti.GradedAlgebra.map_mem_of_mem_wordSpan (lift f) T
     (fun s => by simpa only [lift_ι_apply] using hf s.1 s.2 s.2.property) hx
 
 variable [DecidableEq Γ] [DirectSum.Decomposition ℳ]
