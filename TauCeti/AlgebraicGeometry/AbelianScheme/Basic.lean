@@ -199,9 +199,18 @@ def homMk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) : A ⟶ B :=
   InducedCategory.homMk (Grp.homMk'' f one_f mul_f)
 
+/-- The forgetful functor from abelian schemes to their underlying group schemes over `S`. -/
+@[expose] def toGrpFunctor : AbelianScheme S ⥤ Grp (Over S) :=
+  inducedFunctor (fun A : AbelianScheme S ↦ Grp.mk A.toOver)
+
+/-- The underlying group scheme is the group object on `A.toOver`. -/
+@[simp]
+lemma toGrpFunctor_obj (A : AbelianScheme S) : toGrpFunctor.obj A = Grp.mk A.toOver :=
+  (rfl)
+
 /-- The forgetful functor from abelian schemes over `S` to schemes over `S`. -/
 @[expose] def toOverFunctor : AbelianScheme S ⥤ Over S :=
-  inducedFunctor (fun A : AbelianScheme S ↦ Grp.mk A.toOver) ⋙ Grp.forget (Over S)
+  toGrpFunctor ⋙ Grp.forget (Over S)
 
 @[simp]
 lemma toOverFunctor_obj (A : AbelianScheme S) : toOverFunctor.obj A = A.toOver :=
@@ -210,6 +219,12 @@ lemma toOverFunctor_obj (A : AbelianScheme S) : toOverFunctor.obj A = A.toOver :
 /-- The underlying morphism over `S` of a homomorphism of abelian schemes. -/
 abbrev toOverHom {A B : AbelianScheme S} (f : A ⟶ B) : A.toOver ⟶ B.toOver :=
   toOverFunctor.map f
+
+/-- Forgetting the group structure from `toGrpFunctor.map f` recovers `toOverHom f`. -/
+@[simp]
+lemma toGrpFunctor_map_hom_hom {A B : AbelianScheme S} (f : A ⟶ B) :
+    (toGrpFunctor.map f).hom.hom = toOverHom f :=
+  (rfl)
 
 /-- `toOverHom` is definitionally the underlying-morphism projection through the induced category
 and `Grp`. -/
