@@ -340,17 +340,6 @@ variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
   [∀ i, NormedAddCommGroup (V i)] [∀ i, InnerProductSpace 𝕜 (V i)]
   [∀ i, NormedAddCommGroup (H i)] [∀ i, InnerProductSpace 𝕜 (H i)]
 
-private def piProj (𝕜 : Type*) [RCLike 𝕜] {ι : Type*} (V : ι → Type*)
-    [∀ i, NormedAddCommGroup (V i)] [∀ i, InnerProductSpace 𝕜 (V i)] (i : ι) :
-    PiLp 2 V →L[𝕜] V i :=
-  (ContinuousLinearMap.proj (R := 𝕜) i).comp
-    (PiLp.continuousLinearEquiv 2 𝕜 V).toContinuousLinearMap
-
-omit [Fintype ι] in
-private theorem piProj_apply (u : PiLp 2 V) (i : ι) :
-    piProj 𝕜 V i u = u i := by
-  simp [piProj]
-
 private def piInclusion (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
     PiLp 2 V →L[𝕜] PiLp 2 H :=
   (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
@@ -374,13 +363,13 @@ private theorem piInclusion_apply (P : ∀ i, CompactFormPair 𝕜 (V i) (H i))
 
 private def piForm (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
     PiLp 2 V →L⋆[𝕜] PiLp 2 V →L[𝕜] 𝕜 :=
-  ∑ i : ι, (P i).form.bilinearComp (piProj 𝕜 V i) (piProj 𝕜 V i)
+  ∑ i : ι, (P i).form.bilinearComp (PiLp.proj 2 V i) (PiLp.proj 2 V i)
 
 private theorem piForm_apply (P : ∀ i, CompactFormPair 𝕜 (V i) (H i))
     (u v : PiLp 2 V) :
     piForm P u v = ∑ i : ι, (P i).form (u i) (v i) := by
   simp only [piForm, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply,
-    piProj_apply]
+    PiLp.proj_apply]
 
 /-- Finite `ℓ²`-direct sum of compact form pairs. -/
 def pi (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
