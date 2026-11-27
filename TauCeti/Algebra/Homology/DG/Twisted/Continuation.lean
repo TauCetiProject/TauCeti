@@ -51,6 +51,10 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
   matrix product satisfy the continuation equation.
 * `TauCeti.continuation_iff_map`: the continuation equation in matrix form,
   `d ν = mP ν - τ(ν) mQ`, where `τ` is the sign twist `Matrix.signTwist`.
+* `TauCeti.ContinuationCocycle.d_ν_eq_zero_of_eq`,
+  `TauCeti.ContinuationCocycle.d_ν_eq_sum_sub_sum_of_eq_add_one`: for a continuation cocycle that
+  does not increase the index, the entries between generators of equal index are cycles of degree
+  zero, and the continuation equation at index difference one.
 
 ## References
 
@@ -469,6 +473,57 @@ theorem ν_eq_zero_of_lt_of_nonpos (ν : ContinuationCocycle mP mQ) (h𝒜 : ∀
   have hν := ν.mem_graded x y
   rw [h𝒜 _ (by omega)] at hν
   exact (Submodule.mem_bot R).1 hν
+
+/-- The entries of a continuation cocycle between generators of equal index have degree zero. -/
+theorem ν_mem_zero_of_eq (ν : ContinuationCocycle mP mQ) {x : P} {y : Q}
+    (hxy : ind x = indQ y) : ν.ν x y ∈ 𝒜 0 := by
+  have h := ν.mem_graded x y
+  rwa [show indQ y - ind x = 0 by omega] at h
+
+/-- For a continuation cocycle with no entries strictly increasing the index, the entries between
+generators of equal index are cycles. -/
+theorem d_ν_eq_zero_of_eq (ν : ContinuationCocycle mP mQ)
+    (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) {x : P} {y : Q} (hxy : ind x = indQ y) :
+    d (ν.ν x y) = 0 := by
+  -- In the continuation equation every product passes through a generator whose index is
+  -- strictly between theirs, so it vanishes.
+  have h₁ : ∀ z, mP.m x z * ν.ν z y = 0 := fun z ↦ by
+    rcases le_or_gt (ind x) (ind z) with h | h
+    · rw [mP.one_sided x z h, zero_mul]
+    · rw [hν z y (by omega), mul_zero]
+  have h₂ : ∀ z, ν.ν x z * mQ.m z y = 0 := fun z ↦ by
+    rcases le_or_gt (indQ z) (indQ y) with h | h
+    · rw [mQ.one_sided z y h, mul_zero]
+    · rw [hν x z (by omega), zero_mul]
+  simp [ν.continuation x y, h₁, h₂]
+
+/-- **The continuation equation at index difference one**, for a continuation cocycle with no
+entries strictly increasing the index: between a generator `x` of index `q + 1` and a generator `y`
+of index `q`, the differential of the entry is the difference of the products through the
+generators of index `q` of `P` and through those of index `q + 1` of `Q`. -/
+theorem d_ν_eq_sum_sub_sum_of_eq_add_one (ν : ContinuationCocycle mP mQ)
+    (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) {x : P} {y : Q} (q : ℤ) (hx : ind x = q + 1)
+    (hy : indQ y = q) :
+    d (ν.ν x y) = ∑ z : {z : P // ind z = q}, mP.m x z * ν.ν z y -
+      ∑ z : {z : Q // indQ z = q + 1}, ν.ν x z * mQ.m z y := by
+  rw [ν.continuation x y, sub_eq_add_neg]
+  congr 1
+  · rw [← Finset.sum_subtype (Finset.univ.filter fun z ↦ ind z = q) (by simp)
+      fun z ↦ mP.m x z * ν.ν z y]
+    refine (Finset.sum_filter_of_ne fun z _ hz ↦ ?_).symm
+    by_contra hne
+    rcases le_or_gt (ind x) (ind z) with h | h
+    · exact hz (by rw [mP.one_sided x z h, zero_mul])
+    · exact hz (by rw [hν z y (by omega), mul_zero])
+  · rw [← Finset.sum_neg_distrib, ← Finset.sum_subtype (Finset.univ.filter fun z ↦ indQ z = q + 1)
+      (by simp) fun z ↦ -(ν.ν x z * mQ.m z y), Finset.sum_filter]
+    refine Finset.sum_congr rfl fun z _ ↦ ?_
+    split_ifs with hz
+    · rw [show ind x - indQ z - 1 = -1 by omega]
+      simp
+    · rcases le_or_gt (indQ z) q with h | h
+      · rw [mQ.one_sided z y (by omega), mul_zero, smul_zero]
+      · rw [hν x z (by omega), zero_mul, smul_zero]
 
 variable [GradedAlgebra 𝒜]
 
