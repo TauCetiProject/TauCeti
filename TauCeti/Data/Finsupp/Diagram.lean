@@ -249,6 +249,28 @@ a finite set by Dickson's lemma. -/
 theorem finite_minimal_diagram (D : Set (σ →₀ ℕ)) : {α : σ →₀ ℕ | Minimal (· ∈ D) α}.Finite :=
   WellQuasiOrderedLE.finite_of_isAntichain (setOfPred_minimal_antichain _)
 
+/-- In finitely many variables, there are finitely many degree-`ℓ` exponent vectors inside `D`. -/
+instance finite_mem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
+    Finite {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ} :=
+  Finite.of_injective (fun δ ↦ (⟨δ.val, δ.property.2⟩ : {δ' : σ →₀ ℕ // δ'.degree = ℓ}))
+    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
+
+/-- In finitely many variables, there are finitely many degree-`ℓ` exponent vectors outside `D`. -/
+instance finite_notMem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
+    Finite {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ} :=
+  Finite.of_injective (fun γ ↦ (⟨γ.val, γ.property.2⟩ : {δ : σ →₀ ℕ // δ.degree = ℓ}))
+    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
+
+/-- Set-coercion form of `Set.finite_mem_degree`, for `restrictSupport`. -/
+instance finite_setOf_mem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
+    Finite ↥{δ ∈ D | δ.degree = ℓ} :=
+  inferInstanceAs (Finite {δ : σ →₀ ℕ // δ ∈ D ∧ δ.degree = ℓ})
+
+/-- Set-coercion form of `Set.finite_notMem_degree`, for `restrictSupport`. -/
+instance finite_setOf_notMem_degree (D : Set (σ →₀ ℕ)) (ℓ : ℕ) :
+    Finite ↥{γ | γ ∉ D ∧ γ.degree = ℓ} :=
+  inferInstanceAs (Finite {γ : σ →₀ ℕ // γ ∉ D ∧ γ.degree = ℓ})
+
 /-- For finitely many variables `σ`, the `Finset` of componentwise minimal vertices of an exponent
 diagram `D : Set (σ →₀ ℕ)`. -/
 noncomputable def diagramVertices (D : Set (σ →₀ ℕ)) : Finset (σ →₀ ℕ) :=
@@ -350,6 +372,19 @@ def diagramCell (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) : Set (σ →₀ 
 theorem mem_diagramBox_iff {D : Set (σ →₀ ℕ)} {α β : σ →₀ ℕ} :
     β ∈ D.diagramBox α ↔ ∀ α' ∈ D.diagramVertices, toDegLex α' < toDegLex α → ¬ α' ≤ α + β :=
   Iff.rfl
+
+/-- In finitely many variables, the degree-matching slice of a quotient box `D.diagramBox α` is
+finite. -/
+instance finite_diagramBox_degree (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) (ℓ : ℕ) :
+    Finite {β : σ →₀ ℕ // β ∈ D.diagramBox α ∧ α.degree + β.degree = ℓ} :=
+  Finite.of_injective
+    (fun β ↦ (⟨α + β.val, by rw [map_add, β.property.2]⟩ : {δ : σ →₀ ℕ // δ.degree = ℓ}))
+    fun _ _ h ↦ Subtype.ext (add_left_cancel (Subtype.mk.inj h))
+
+/-- Set-coercion form of `Set.finite_diagramBox_degree`, for `restrictSupport`. -/
+instance finite_setOf_diagramBox_degree (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) (ℓ : ℕ) :
+    Finite ↥{β ∈ D.diagramBox α | α.degree + β.degree = ℓ} :=
+  inferInstanceAs (Finite {β : σ →₀ ℕ // β ∈ D.diagramBox α ∧ α.degree + β.degree = ℓ})
 
 theorem mem_diagramCell_iff {D : Set (σ →₀ ℕ)} {α γ : σ →₀ ℕ} :
     γ ∈ D.diagramCell α ↔ α ≤ γ ∧ ∀ α' ∈ D.diagramVertices, toDegLex α' < toDegLex α → ¬ α' ≤ γ :=

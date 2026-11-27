@@ -42,15 +42,12 @@ discarding `X a` and renaming back.
   renaming is killed by `killCompl`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
-<<<<<<< HEAD
 * `MvPolynomial.modMonomial_single_one_eq_rename_killCompl`: when the range of the renaming is the
   complement of a single variable `X a`, the remainder modulo `X a` is `rename f (p.killCompl hf)`.
 * `MvPolynomial.killCompl_monomial_of_apply_zero`: discarding coordinate `0` from a monomial whose
   `0`-th exponent is zero drops coordinate `0`.
-=======
 * `MvPolynomial.linearCombination_rename_eq_of_comp`: relates `Finsupp.linearCombination` on the
   support of `rename τ P` to that on the support of `P` when `b ∘ τ = a`.
->>>>>>> origin/main
 * `MvPolynomial.apply_eval₂_intCastRingHom_of_comp_eq`: a ring homomorphism moving the points
   along a map of indices carries the value of an integral polynomial to that of its renaming.
 * `Polynomial.map_eval_map_rename`: for a polynomial family with coefficients in `MvPolynomial`,
