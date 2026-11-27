@@ -14,12 +14,20 @@ import TauCeti.AlgebraicGeometry.Modules.Tilde.Hartogs
 /-!
 # Hartogs extension for coherent modules on schemes
 
-`Scheme.Modules.isIso_presheaf_map_leTop_restrict_fromSpec_of_two_le_depth` combines
-`tilde_toOpen_bijective_of_two_le_depth` with `Scheme.Modules.stalkDepth_eq_depth_localizedModule`.
+If a coherent module on a locally Noetherian scheme has stalk depth at least two outside the
+image of an open immersion, it is canonically isomorphic to the direct image of its restriction.
 `Scheme.Modules.isIso_restrictAdjunction_unit_app_of_two_le_depth` and
-`Scheme.Modules.restrictAdjunctionUnitIsoOfTwoLeDepth` identify a coherent module with the direct
-image of its restriction via Mathlib's `Scheme.Modules.restrictAdjunction`.
-`Scheme.Modules.bijective_presheaf_map_leTop_of_two_le_depth` gives extension of global sections.
+`Scheme.Modules.restrictAdjunctionUnitIsoOfTwoLeDepth` give this result through the restriction
+adjunction, providing the sheaf-level input for extension of reflexive modules.
+`Scheme.Modules.presheaf_map_leTop_bijective_of_two_le_depth` gives unique extension of global
+sections. On an affine chart,
+`Scheme.Modules.isIso_restrict_fromSpec_presheaf_map_leTop_of_two_le_depth` gives the restriction
+isomorphism using `tilde_toOpen_bijective_of_two_le_depth` and
+`Scheme.Modules.stalkDepth_eq_depth_localizedModule`.
+
+## References
+
+* [Stacks Project, Lemma 31.5.11](https://stacks.math.columbia.edu/tag/0E9I)
 -/
 
 public section
@@ -35,7 +43,7 @@ variable {X : Scheme.{u}}
 
 /-- In an affine chart with Noetherian coordinate ring and finite section module, the restriction
 to `W` is invertible if the stalks outside `W` have depth at least two. -/
-theorem isIso_presheaf_map_leTop_restrict_fromSpec_of_two_le_depth (F : X.Modules)
+theorem isIso_restrict_fromSpec_presheaf_map_leTop_of_two_le_depth (F : X.Modules)
     [F.IsQuasicoherent] {V : X.Opens}
     (hV : IsAffineOpen V) [IsNoetherianRing Γ(X, V)] [Module.Finite Γ(X, V) Γ(F, V)]
     (W : (Spec Γ(X, V)).Opens) (h : ∀ p ∉ W, 2 ≤ F.stalkDepth (hV.fromSpec p)) :
@@ -59,6 +67,8 @@ theorem isIso_presheaf_map_leTop_restrict_fromSpec_of_two_le_depth (F : X.Module
   have hr : IsIso ((modulesSpecToSheaf.obj (tilde M)).presheaf.map W.leTop.op) :=
     IsIso.of_isIso_fac_left (f := tilde.toOpen M ⊤) (h := tilde.toOpen M W)
       (tilde.toOpen_res M ⊤ W W.leTop)
+  -- Forgetting to modules over the base ring and restricting scalars preserve the underlying
+  -- restriction function definitionally, so bijectivity gives the isomorphism over either ring.
   exact (ConcreteCategory.isIso_iff_bijective _).2
     ((ConcreteCategory.isIso_iff_bijective ((modulesSpecToSheaf.obj N).presheaf.map W.leTop.op)).1
       ((NatIso.isIso_map_iff e _).1 hr))
@@ -78,10 +88,9 @@ theorem isIso_restrictAdjunction_unit_app_of_two_le_depth (F : X.Modules)
   have : IsOpenImmersion f := V.property.isOpenImmersion_fromSpec
   let W := f ⁻¹ᵁ j.opensRange
   have : IsIso ((F.restrict f).presheaf.map W.leTop.op) :=
-    F.isIso_presheaf_map_leTop_restrict_fromSpec_of_two_le_depth V.property W
+    F.isIso_restrict_fromSpec_presheaf_map_leTop_of_two_le_depth V.property W
       (fun p hp ↦ h (f p) hp)
-  let a := homOfLE (f.image_mono (leOfHom W.leTop))
-  have hi : IsIso (F.presheaf.map a.op) := by
+  have hi : IsIso (F.presheaf.map (homOfLE (f.image_mono (leOfHom W.leTop))).op) := by
     rw [← isIso_comp_left_iff (F.restrictAppIso f ⊤).hom, ← F.map_restrictAppIso_hom f W.leTop.op]
     infer_instance
   have htop : f ''ᵁ (⊤ : (Spec Γ(X, V)).Opens) = V.val :=
@@ -89,10 +98,10 @@ theorem isIso_restrictAdjunction_unit_app_of_two_le_depth (F : X.Modules)
   have hinter : f ''ᵁ W = j ''ᵁ (j ⁻¹ᵁ V.val) := by
     simp only [W, Scheme.Hom.image_preimage_eq_opensRange_inf, f, V.property.opensRange_fromSpec,
       inf_comm]
-  have he : Arrow.mk a = Arrow.mk (homOfLE (j.image_preimage_le V.val)) :=
-    Arrow.ext hinter htop (Subsingleton.elim _ _)
+  have hj : IsIso (F.presheaf.map (homOfLE (j.image_preimage_le V.val)).op) := by
+    grind only
   rw [restrictAdjunction_unit_app_app]
-  exact congrArg (fun b : Arrow X.Opens ↦ IsIso (F.presheaf.map b.hom.op)) he ▸ hi
+  exact hj
 
 /-- The canonical Hartogs isomorphism for a coherent module across a complement of stalk depth
 at least two on a locally Noetherian scheme. -/
@@ -113,20 +122,19 @@ theorem restrictAdjunctionUnitIsoOfTwoLeDepth_hom (F : X.Modules)
 /-- **Hartogs extension for global sections.** For a coherent module on a locally Noetherian
 scheme, restriction to an open is bijective if all stalks outside that open have depth at least
 two. -/
-theorem bijective_presheaf_map_leTop_of_two_le_depth (F : X.Modules)
+theorem presheaf_map_leTop_bijective_of_two_le_depth (F : X.Modules)
     [IsLocallyNoetherian X] [F.IsQuasicoherent] [F.IsFiniteType]
     (U : X.Opens) (h : ∀ x ∉ U, 2 ≤ F.stalkDepth x) :
     Function.Bijective (F.presheaf.map U.leTop.op) := by
-  have := F.isIso_restrictAdjunction_unit_app_of_two_le_depth U.ι
+  have hunit := F.isIso_restrictAdjunction_unit_app_of_two_le_depth U.ι
     (fun x hx ↦ h x (by simpa only [Scheme.Opens.opensRange_ι] using hx))
-  let a := homOfLE (U.ι.image_preimage_le ⊤)
-  have htop : IsIso (F.presheaf.map a.op) :=
-    (restrictAdjunction_unit_app_app U.ι F ⊤) ▸
-      (Hom.isIso_iff_isIso_app.1 inferInstance) ⊤
+  have htop : IsIso (F.presheaf.map (homOfLE (U.ι.image_preimage_le ⊤)).op) := by
+    rw [← restrictAdjunction_unit_app_app U.ι F ⊤]
+    exact Hom.isIso_iff_isIso_app.1 hunit ⊤
   have he : U.ι ''ᵁ U.ι ⁻¹ᵁ (⊤ : X.Opens) = U := by
     rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι, inf_top_eq]
-  have harrow : Arrow.mk a = Arrow.mk U.leTop := Arrow.ext he rfl (Subsingleton.elim _ _)
-  exact (ConcreteCategory.isIso_iff_bijective _).1
-    (congrArg (fun b : Arrow X.Opens ↦ IsIso (F.presheaf.map b.hom.op)) harrow ▸ htop)
+  have hr : IsIso (F.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op) := by
+    grind only
+  exact (ConcreteCategory.isIso_iff_bijective _).1 hr
 
 end AlgebraicGeometry.Scheme.Modules

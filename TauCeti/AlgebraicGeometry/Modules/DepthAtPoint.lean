@@ -14,9 +14,11 @@ import TauCeti.RingTheory.Depth.Basic
 /-!
 # Depth of the stalk of a scheme module
 
-`Scheme.Modules.stalkDepth` is Mathlib's `IsLocalRing.depth` for a sheaf of modules at a point.
-For a quasi-coherent module, `Scheme.Modules.stalkDepth_eq_depth_localizedModule` computes it on
-an affine open, using `Scheme.Modules.isLocalizedModule_germₗ` and
+`Scheme.Modules.stalkDepth` is the depth of a module stalk over the local ring at a point.
+It expresses the depth hypothesis in coherent Hartogs extension.
+For a quasi-coherent module, `Scheme.Modules.stalkDepth_eq_depth_localizedModule` reduces
+this condition on an affine open to the depth of the localized module of sections.
+The formula follows from `Scheme.Modules.isLocalizedModule_germₗ` and
 `IsLocalRing.depth_eq_of_isLocalizedModule`.
 -/
 
@@ -35,7 +37,6 @@ noncomputable def stalkDepth (F : X.Modules) (x : X) : ℕ∞ :=
   depth (ModuleCat.of (X.presheaf.stalk x) (F.presheaf.stalk x))
 
 /-- The defining equation for stalk depth, expressed using the depth over the local ring. -/
-@[simp]
 theorem stalkDepth_def (F : X.Modules) (x : X) :
     F.stalkDepth x = depth (ModuleCat.of (X.presheaf.stalk x) (F.presheaf.stalk x)) := (rfl)
 
