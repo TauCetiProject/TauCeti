@@ -67,7 +67,24 @@ open _root_.AlgebraicGeometry
 
 universe u
 
-variable {X : Scheme.{u}} (A : GradedQuasicoherentAlgebra X)
+variable {X : Scheme.{u}}
+
+/-- The symmetric algebra map of an epimorphism of quasi-coherent modules is epic in degree one. -/
+theorem _root_.TauCeti.AlgebraicGeometry.QuasicoherentSheaf.epi_gradedSymmetricAlgebra_map_one
+    (F : QuasicoherentSheaf X) {G : QuasicoherentSheaf X} (q : F.obj ⟶ G.obj) [Epi q] :
+    Epi (((gradedSymmetricAlgebra X).map (ObjectProperty.homMk q)).hom.hom.hom 1) := by
+  apply epi_hom_hom_of_epi_degree_map _ 1
+  let e := gradedSymmetricAlgebraDegreeOneIso X
+  have h :
+      ((degree 1).map ((gradedSymmetricAlgebra X).map (ObjectProperty.homMk q))).hom ≫
+          (ObjectProperty.ι _).map (e.hom.app G) =
+        (ObjectProperty.ι _).map (e.hom.app F) ≫ q :=
+    (ObjectProperty.ι _).congr_map (e.hom.naturality (ObjectProperty.homMk q))
+  have he : Epi ((ObjectProperty.ι _).map (e.hom.app F) ≫ q) := inferInstance
+  rw [← h] at he
+  exact (epi_comp_iff_of_isIso _ ((ObjectProperty.ι _).map (e.hom.app G))).mp he
+
+variable (A : GradedQuasicoherentAlgebra X)
 
 /-- The morphism `Sym A₁ ⟶ A` extending the identity of `A₁` is an epimorphism in degree one: it
 is split by `A₁ ≅ Sym¹ A₁`. -/
