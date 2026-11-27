@@ -503,23 +503,13 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_
   -- `T⁻¹` of the chart at infinity.
   have hD : IsCompact (equivRealProdCLM.symm ⁻¹' closedBall (0 : ℂ) T⁻¹) :=
     equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)
-  have hX (α : M) : ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α
-      (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ))) (univ ×ˢ (extChartAt I α).target) := by
-    rw [hamiltonianVectorFieldInChartAt_zero]
-    exact contDiffOn_const
-  have hB (x : M) : ‖mvfderiv I e x (ω.hamiltonianVectorField (fun _ ↦ (0 : ℝ)) x)‖ ≤ 0 := by
-    rw [hamiltonianVectorField_const, Pi.zero_apply, map_zero]
-    exact (norm_zero (E := F)).le
-  have hJ (α : M) : ContDiffOn ℝ 2 (almostComplexInChartAt I α
-      (fun (_ : ℝ × ℝ) ↦ J₀.almostComplexStructureAt)) (univ ×ˢ (extChartAt I α).target) := by
-    refine (((J₀.contDiffOn_inChart α).of_le (by simp)).comp
-      (contDiff_snd.contDiffOn (s := univ ×ˢ (extChartAt I α).target))
-      fun p hp ↦ hp.2).congr fun p _ ↦ ?_
-    simp
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) (J := fun _ ↦ J₀.almostComplexStructureAt) he he_inj
-    isOpen_univ hD (subset_univ _)
-    hJ hX hX (fun _ _ x ↦ hJ₀ x) hc (fun _ _ ↦ hJc) (fun _ _ ↦ hB) fun _ _ ↦ hB
+    isOpen_univ hD (subset_univ _) (fun α ↦ contDiffOn_almostComplexInChartAt_const J₀ α)
+    (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α)
+    (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α) (fun _ _ x ↦ hJ₀ x) hc
+    (fun _ _ ↦ hJc) (fun _ _ ↦ norm_mvfderiv_hamiltonianVectorField_zero_le_zero ω e)
+    fun _ _ ↦ norm_mvfderiv_hamiltonianVectorField_zero_le_zero ω e
   refine ⟨δ, hδ, fun Ω u w E hΩ hΩT hu hhol hint hE hw hwu ↦ ?_⟩
   have hwE (k : ℕ) := hω.integrableOn_and_setIntegral_le_of_eq_comp_inv hJ₀ hΩ hΩT (hu k)
     (hhol k) (hint k) (hwu k)
