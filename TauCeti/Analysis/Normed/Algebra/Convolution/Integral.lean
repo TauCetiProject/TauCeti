@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Algebra.Convolution
 public import TauCeti.Analysis.Normed.Algebra.DividedPower
-public import TauCeti.Analysis.Normed.Algebra.Integral
+public import TauCeti.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.Analysis.Normed.Field.Basic
 public import TauCeti.Analysis.Normed.Field.NatCast
 public import TauCeti.Topology.Algebra.Valued.NormedValued
@@ -38,33 +38,6 @@ open TensorProduct WithConv
 
 namespace WithConv
 
-section Seminorm
-
-variable {R C M : Type*} [CommRing R] [NormedField C] [Algebra R C]
-  [AddCommGroup M] [Module R M] [Coalgebra R M] [Module.Finite R M]
-
-/-- The sup norm on the finite convolution algebra, bundled as a ring seminorm. -/
-def supNormRingSeminorm (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
-    RingSeminorm (WithConv (M →ₗ[R] C)) where
-  toFun f := f.ofConv.supNorm
-  map_zero' := LinearMap.supNorm_zero
-  add_le' _ _ := (LinearMap.supNorm_add_le_max _ _ hR).trans
-    (max_le_add_of_nonneg (LinearMap.supNorm_nonneg _) (LinearMap.supNorm_nonneg _))
-  neg' f := LinearMap.supNorm_neg f.ofConv
-  mul_le' f g := supNorm_convMul_le f g hR
-
-/-- The bundled convolution seminorm is the sup norm of the underlying functional. -/
-@[simp]
-theorem supNormRingSeminorm_apply (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1)
-    (f : WithConv (M →ₗ[R] C)) : supNormRingSeminorm (M := M) hR f = f.ofConv.supNorm := (rfl)
-
-/-- The convolution sup seminorm is ultrametric. -/
-theorem isNonarchimedean_supNormRingSeminorm (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
-    IsNonarchimedean (supNormRingSeminorm (M := M) hR) :=
-  fun f g ↦ LinearMap.supNorm_add_le_max f.ofConv g.ofConv hR
-
-end Seminorm
-
 section Valuation
 
 variable {C : Type*} [NormedField C] [IsUltrametricDist C]
@@ -87,13 +60,15 @@ theorem exists_bound_pow_of_groupLike [IsAlgClosed C] (y : WithConv (A →ₗ[O(
       obtain ⟨u, hu, -⟩ := TauCeti.ConvolutionDual.existsUnique_groupLike_algHom_coefficients χ
       rw [hu]
       exact ⟨⟨y.ofConv u.val, hy u⟩, rfl⟩
+  simp_rw [← supNormRingSeminorm_apply
+    (Valuation.valuationSubring.integers _).norm_algebraMap_le_one]
   apply (supNormRingSeminorm (M := A)
     (Valuation.valuationSubring.integers _).norm_algebraMap_le_one).exists_bound_pow_of_isIntegral _
       hyint
   intro r f
   have heq : (r • f : WithConv (A →ₗ[O(C)] C)) = (r : C) • f :=
     (algebraMap_smul C r f).symm
-  rw [heq, supNormRingSeminorm_apply, ofConv_smul, LinearMap.supNorm_smul]
+  simp only [heq, supNormRingSeminorm_apply, ofConv_smul, LinearMap.supNorm_smul]
   exact (mul_le_mul_of_nonneg_right
     ((Valuation.valuationSubring.integers _).norm_algebraMap_le_one r)
     f.ofConv.supNorm_nonneg).trans_eq
@@ -131,6 +106,7 @@ theorem mul_apply_mem_valuationSubring_of_groupLike [IsAlgClosed C]
     ((Valuation.valuationSubring.integers _).norm_algebraMap_le_one (K := C))
   have herr : M (TauCeti.Bialgebra.convolutionDelta O(C) C A y -
       tensorCounitRight O(C) C A A y - tensorCounitLeft O(C) C A A y) ≤ 1 := by
+    simp only [M, supNormRingSeminorm_apply]
     apply (LinearMap.supNorm_le_iff _
       (Valuation.valuationSubring.integers _).norm_algebraMap_le_one).mpr
     apply LinearMap.norm_apply_le_of_tmul
@@ -146,15 +122,20 @@ theorem mul_apply_mem_valuationSubring_of_groupLike [IsAlgClosed C]
       M (tensorCounitRight O(C) C A A f * tensorCounitLeft O(C) C A A g) = N f * N g := by
     have h : tensorCounitRight O(C) C A A f * tensorCounitLeft O(C) C A A g = mulTensor f g := by
       simp
-    rw [h]
+    simp only [h, M, N, supNormRingSeminorm_apply]
     exact supNorm_mulTensor f g (Valuation.valuationSubring.integers _).norm_algebraMap_le_one
   have hbound := N.smul_le_one_of_bounded_powers M
-    (isNonarchimedean_supNormRingSeminorm _) (fun c f ↦ LinearMap.supNorm_smul c f.ofConv)
+    (isNonarchimedean_supNormRingSeminorm _) (fun c f ↦ by
+      simpa only [N, supNormRingSeminorm_apply, ofConv_smul] using
+        LinearMap.supNorm_smul c f.ofConv)
     (TauCeti.Bialgebra.convolutionDelta O(C) C A) (tensorCounitRight O(C) C A A)
-    (tensorCounitLeft O(C) C A A) (fun f ↦ supNorm_convolutionDelta_le f
-      (Valuation.valuationSubring.integers _).norm_algebraMap_le_one)
-    hcross p hp hpC y (exists_bound_pow_of_groupLike y hy) herr κ hκ
-  exact (LinearMap.supNorm_le_one_iff _).mp hbound a
+    (tensorCounitLeft O(C) C A A) (fun f ↦ by
+      simpa only [M, N, supNormRingSeminorm_apply] using supNorm_convolutionDelta_le f
+        (Valuation.valuationSubring.integers _).norm_algebraMap_le_one)
+    hcross p hp hpC y (by
+      simpa only [N, supNormRingSeminorm_apply] using exists_bound_pow_of_groupLike y hy) herr κ hκ
+  exact (LinearMap.supNorm_le_one_iff _).mp
+    (by simpa only [N, supNormRingSeminorm_apply] using hbound) a
 
 /-- A linear functional which is divisible by `q` on group-like elements and satisfies the
 Leibniz rule modulo `q` is divisible by `q` everywhere after scaling in the factorial radius. -/
