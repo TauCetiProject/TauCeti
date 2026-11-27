@@ -44,6 +44,7 @@ The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerS
 * `TauCeti.ModularForm.eta_smul_zpow_two_mul`:
   `η(γ τ) ^ (2 k) = ε(γ) ^ (2 k) (c τ + d) ^ k η(τ) ^ (2 k)`.
 * `TauCeti.ModularForm.eta_zpow_two_mul_slash`: `η ^ (2 k) ∣[k] γ = ε(γ) ^ (2 k) • η ^ (2 k)`.
+* `TauCeti.ModularForm.etaMultiplier_mul_sq`: `ε(γ δ)² = ε(γ)² ε(δ)²`, so `ε²` is a character.
 * `TauCeti.ModularForm.etaMultiplier_zpow_eq_one_of_mem_Gamma`: `ε(γ) ^ r = 1` for `γ ∈ Γ(N)`,
   `r` even and `24 ∣ r N`.
 * `TauCeti.ModularForm.eta_zpow_two_mul_slash_of_mem_Gamma`: `η ^ (2 k)` is invariant under the
@@ -88,6 +89,21 @@ theorem eta_zpow_two_mul_slash (k : ℤ) (γ : SL(2, ℤ)) :
   rw [ModularForm.SL_slash_apply, eta_smul_zpow_two_mul, ModularGroup.denom_apply,
     Pi.smul_apply, smul_eq_mul, zpow_neg, mul_right_comm,
     mul_inv_cancel_right₀ (zpow_ne_zero _ hden)]
+
+/-- **The square of the eta multiplier is a character**: `ε(γ δ)² = ε(γ)² ε(δ)²`, because `η²`
+transforms in weight one with the multiplier `ε²`. -/
+theorem etaMultiplier_mul_sq (γ δ : SL(2, ℤ)) :
+    etaMultiplier (γ * δ) ^ 2 = etaMultiplier γ ^ 2 * etaMultiplier δ ^ 2 := by
+  have h := eta_zpow_two_mul_slash 1 (γ * δ)
+  rw [SlashAction.slash_mul, eta_zpow_two_mul_slash, _root_.ModularForm.SL_smul_slash,
+    eta_zpow_two_mul_slash, smul_smul] at h
+  have hI := congrFun h UpperHalfPlane.I
+  simp only [Pi.smul_apply, smul_eq_mul, mul_one] at hI
+  have hη : (η (UpperHalfPlane.I : ℂ)) ^ (2 : ℤ) ≠ 0 :=
+    zpow_ne_zero _ (_root_.ModularForm.eta_ne_zero UpperHalfPlane.I.im_pos)
+  have := mul_right_cancel₀ hη hI
+  norm_num at this
+  exact_mod_cast this.symm
 
 /-! ### The multiplier on principal congruence subgroups -/
 

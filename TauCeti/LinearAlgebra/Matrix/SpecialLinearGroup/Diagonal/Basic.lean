@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Diagonal matrices in the special linear group
@@ -16,7 +17,9 @@ commutative ring also defines a determinant-one diagonal matrix by placing the u
 inverse in two distinct diagonal positions. This generalizes Mathlib's field-valued
 `Matrix.SpecialLinearGroup.diag2n` construction. The coordinate-separation predicate records
 whether determinant-one diagonal matrices can distinguish every pair of coordinate lines;
-a unit whose square is not one supplies such separation.
+a unit whose square is not one supplies such separation. Conjugation `g ↦ diag(1, d)⁻¹ g diag(1, d)`
+by the invertible, not necessarily determinant-one, diagonal matrix `diag(1, d)` is an
+endomorphism of `SL₂`.
 
 ## Main declarations
 
@@ -34,6 +37,7 @@ a unit whose square is not one supplies such separation.
   product of six transvections.
 * `Matrix.SpecialLinearGroup.diag2n_decompose`: a two-coordinate diagonal matrix over a field is
   a product of six transvections.
+* `Matrix.SpecialLinearGroup.conjDiagonal`: conjugation of `SL₂` by `diag(1, d)` for a unit `d`.
 
 ## References
 
@@ -260,5 +264,40 @@ theorem DiagonalTorusSeparatesCoordinates.nontrivial_of_not_subsingleton
   exact nontrivial_of_ne (t i) (t j) ht
 
 end
+
+end Matrix.SpecialLinearGroup
+
+namespace Matrix.SpecialLinearGroup
+
+open scoped MatrixGroups
+
+/-- Conjugation `g ↦ diag(1, d)⁻¹ g diag(1, d)` of `SL(2, R)` by a diagonal matrix of
+`GL(2, R)`. -/
+def conjDiagonal {R : Type*} [CommRing R] (d : Rˣ) : SL(2, R) →* SL(2, R) where
+  toFun g := ⟨diagonal ![1, ((d⁻¹ : Rˣ) : R)] * g * diagonal ![1, (d : R)], by
+    simp [det_mul, det_diagonal, Fin.prod_univ_two]⟩
+  map_one' := by
+    ext i j
+    -- the matrix of the identity of `SL(2, R)` is the identity matrix
+    change (diagonal ![1, ((d⁻¹ : Rˣ) : R)] * (1 : Matrix (Fin 2) (Fin 2) R) *
+      diagonal ![1, (d : R)]) i j = (1 : Matrix (Fin 2) (Fin 2) R) i j
+    rw [Matrix.mul_one, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul]
+  map_mul' g h := by
+    ext i j
+    -- the matrix of a product in `SL(2, R)` is the product of the matrices of the factors
+    change (diagonal ![1, ((d⁻¹ : Rˣ) : R)] * ((g : Matrix (Fin 2) (Fin 2) R) * h) *
+        diagonal ![1, (d : R)]) i j = ((diagonal ![1, ((d⁻¹ : Rˣ) : R)] * g *
+        diagonal ![1, (d : R)]) *
+          (diagonal ![1, ((d⁻¹ : Rˣ) : R)] * h * diagonal ![1, (d : R)])) i j
+    simp only [Matrix.mul_assoc]
+    rw [← Matrix.mul_assoc (diagonal ![1, (d : R)]),
+      TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, Matrix.one_mul]
+
+/-- The matrix of `conjDiagonal d g` is `diag(1, d)⁻¹ g diag(1, d)`. -/
+@[simp]
+theorem coe_conjDiagonal {R : Type*} [CommRing R] (d : Rˣ) (g : SL(2, R)) :
+    (conjDiagonal d g : Matrix (Fin 2) (Fin 2) R) =
+      diagonal ![1, ((d⁻¹ : Rˣ) : R)] * g * diagonal ![1, (d : R)] :=
+  (rfl)
 
 end Matrix.SpecialLinearGroup

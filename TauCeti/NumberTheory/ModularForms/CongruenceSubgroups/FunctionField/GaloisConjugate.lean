@@ -333,6 +333,8 @@ private theorem exists_mapRingHom_laurentQExpansion_eta_zpow (σ : ℂ →+* ℂ
     ring_nf
   -- `A ^ 12` is the expansion of `Δ ^ k`, which `σ` fixes
   have hA12 : A ^ 12 = LaurentSeries.expand ℂ d ((qExpansion 1 Δ : LaurentSeries ℂ) ^ k) := by
+    -- `laurentQExpansion_pnat_mul` expands from period `1` to period `d * 1`, so the period
+    -- `12 N` is first written in that form
     rw [← TauCeti.UpperHalfPlane.laurentQExpansion_pow meromorphicAt_cuspFunction_eta_zpow, hpow,
       show ((12 * N : ℕ) : ℝ) = ((d : ℕ) : ℝ) * 1 by simp [d],
       TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul hΔper

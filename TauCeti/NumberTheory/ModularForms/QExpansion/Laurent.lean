@@ -510,6 +510,7 @@ theorem tendsto_laurentQExpansion_coeff_zero (hh : 0 < h) (hfper : Periodic (f �
   rw [orderTop_laurentQExpansion hf] at h0
   have han : AnalyticAt ℂ (cuspFunction h f) 0 := by
     simpa using analyticAt_cuspFunction_qParam_pow_mul hf (k := 0) (by simpa using h0)
+  -- `HahnSeries.ofPowerSeries_apply_coeff` reads off coefficients at natural-number casts
   rw [laurentQExpansion_of_analyticAt han, show (0 : ℤ) = ((0 : ℕ) : ℤ) from rfl,
     HahnSeries.ofPowerSeries_apply_coeff, qExpansion_coeff, Nat.factorial_zero, Nat.cast_one,
     inv_one, one_mul, iteratedDeriv_zero]
