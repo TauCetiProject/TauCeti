@@ -11,6 +11,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.EnergyForm.SmallDrift
 import TauCeti.Analysis.PDE.FundamentalSolution.Divergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
+import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Krylov's whole-space `W^{1,p}` estimate with a zero-order shift
@@ -252,13 +253,6 @@ section Shift
 
 variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞} {κ : ℝ}
 
-/-- For `0 ≤ c`, the `Lᵖ` norm of `c |f|` is `c ‖f‖`. -/
-private theorem eLpNorm_const_mul_norm {F : Type*} [NormedAddCommGroup F] {c : ℝ} (hc : 0 ≤ c)
-    {f : α → F} (hf : AEStronglyMeasurable f μ) :
-    eLpNorm (fun x => c * ‖f x‖) p μ = ENNReal.ofReal c * eLpNorm f p μ := by
-  have hcf : (fun x => c * ‖f x‖) = c • fun x => ‖f x‖ := funext fun _ => (smul_eq_mul _ _).symm
-  rw [hcf, eLpNorm_const_smul, eLpNorm_norm f hf, Real.eNorm_of_nonneg hc]
-
 /-- `R ‖f - κ v‖ + R⁻¹ ‖v‖ ≤ 2 ‖g‖` for `R = κ^{-1/2}` and `g = R |f| + 2 √κ |v|`, so the three
 terms of the interior estimate with the shifted datum combine into one function. -/
 private theorem mul_add_le_of_sub_mul (hp1 : 1 ≤ p) (hκ0 : 0 < κ) (C : ℝ≥0)
@@ -309,15 +303,6 @@ private theorem mul_add_le_of_sub_mul (hp1 : 1 ≤ p) (hκ0 : 0 < κ) (C : ℝ�
         rw [ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
           ENNReal.ofReal_coe_nnreal]
         ring
-
-/-- The `Lᵖ` norm of `g = R |f| + c |v|` is at most `R ‖f‖ + c ‖v‖`. -/
-private theorem eLpNorm_mul_norm_add_mul_norm_le (hp1 : 1 ≤ p) {R c : ℝ} (hR : 0 ≤ R)
-    (hc : 0 ≤ c) {f v : α → ℝ} (hf : AEStronglyMeasurable f μ)
-    (hv : AEStronglyMeasurable v μ) :
-    eLpNorm (fun x => R * ‖f x‖ + c * ‖v x‖) p μ ≤
-      ENNReal.ofReal R * eLpNorm f p μ + ENNReal.ofReal c * eLpNorm v p μ := by
-  refine (eLpNorm_add_le hp1).trans_eq ?_
-  rw [eLpNorm_const_mul_norm hR hf, eLpNorm_const_mul_norm hc hv]
 
 /-- The final bookkeeping: from `X ≤ A G + 2 A g`, `g ≤ F + 2 U` and `U ≤ F + K G`, the sum
 `X + U` is at most a constant times `G + F`. -/
