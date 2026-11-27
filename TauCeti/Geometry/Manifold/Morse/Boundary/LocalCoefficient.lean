@@ -512,6 +512,17 @@ theorem twistedMorseComplexXEquiv_d_of_add_one_eq {n n' : ℤ} (hn : n + 1 = n')
   unfold twistedMorseComplexXEquiv twistedMorseComplex
   exact gradedCochainComplexXEquiv_d_of_add_one_eq hn c
 
+/-- Two cochain maps into the Morse complex with coefficients in `L` agree when they agree on
+families, under `twistedMorseComplexXEquiv`. -/
+theorem twistedMorseComplex_hom_ext {C : CochainComplex (ModuleCat.{max v w} R) ℤ}
+    {φ ψ : C ⟶ hX.twistedMorseComplex 𝔬 L hf hsq}
+    (hφψ : ∀ n (x : C.X n),
+      (twistedMorseComplexXEquiv hf hsq n ((φ.f n).hom x) :
+          (p : criticalPoints 𝓘(ℝ, E) f) → L.obj (FundamentalGroupoid.mk (p : M))) =
+        twistedMorseComplexXEquiv hf hsq n ((ψ.f n).hom x)) : φ = ψ := by
+  ext n x
+  exact (twistedMorseComplexXEquiv hf hsq n).injective (Subtype.ext (hφψ n x))
+
 end Complex
 
 end IsAdaptedPseudoGradient
