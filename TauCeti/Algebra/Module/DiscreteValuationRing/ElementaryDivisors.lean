@@ -35,6 +35,8 @@ of a finite abelian `p`-group (`ZMod.exists_equiv_exponents_of_pi_pow_addEquiv`)
 
 ## Main results
 
+* `TauCeti.IsDiscreteValuationRing.length_quotient_pi_pow_maximalIdeal_smul_top`: the quotient of
+  `∏ i, R ⧸ 𝔪 ^ e i` by `∏ i, 𝔪 ^ a i (R ⧸ 𝔪 ^ e i)` has length `∑ i, min (a i) (e i)`.
 * `TauCeti.IsDiscreteValuationRing.length_quotient_pow_maximalIdeal_smul_top`: for
   `M ≃ ∏ i, R ⧸ 𝔪 ^ e i`, the length of `M ⧸ 𝔪 ^ k M` is `∑ i, min k (e i)`.
 * `TauCeti.IsDiscreteValuationRing.length_pow_maximalIdeal_smul_top_quotient_smul_top`: the
@@ -79,6 +81,16 @@ theorem length_quotient_pow_maximalIdeal_quotient_smul_top (e k : ℕ) :
     _root_.IsDiscreteValuationRing.length_quotient_pow_maximalIdeal]
 
 variable {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*} [Fintype ι] {e : ι → ℕ}
+
+variable (e) in
+/-- **Quotients by products of powers of `𝔪`.** The quotient of `∏ i, R ⧸ 𝔪 ^ e i` by the product
+of the submodules `𝔪 ^ a i (R ⧸ 𝔪 ^ e i)` has length `∑ i, min (a i) (e i)`. -/
+theorem length_quotient_pi_pow_maximalIdeal_smul_top (a : ι → ℕ) :
+    length R ((∀ i, R ⧸ maximalIdeal R ^ e i) ⧸ Submodule.pi Set.univ fun i ↦
+      (maximalIdeal R ^ a i • ⊤ : Submodule R (R ⧸ maximalIdeal R ^ e i))) =
+        ∑ i, min (a i) (e i) := by
+  rw [length_quotient_pi]
+  simp [length_quotient_pow_maximalIdeal_quotient_smul_top]
 
 /-- **The length of `M ⧸ 𝔪 ^ k M` for a module of type `e`.** If `M ≃ ∏ i, R ⧸ 𝔪 ^ e i`, then
 `M ⧸ 𝔪 ^ k M` has length `∑ i, min k (e i)`. -/
