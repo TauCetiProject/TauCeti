@@ -201,8 +201,10 @@ theorem toAdditive_ofMulDistribMulActionResHom_hom {G G' : Type*} {M M' : Type _
     (a : Rep.ofMulDistribMulAction G M) :
     Rep.toAdditive (M := G') (G := M')
         ((ofMulDistribMulActionResHom eM eG hsmul).hom a) =
-      Additive.ofMul (eM.symm (Additive.toMul (Rep.toAdditive (M := G) (G := M) a))) :=
-  toAdditive_ofMulDistribMulActionLinearEquiv eM a
+      Additive.ofMul (eM.symm (Additive.toMul (Rep.toAdditive (M := G) (G := M) a))) := by
+  rw [← Representation.IntertwiningMap.toLinearMap_apply,
+    ofMulDistribMulActionResHom_hom_toLinearMap]
+  exact toAdditive_ofMulDistribMulActionLinearEquiv eM a
 
 end CoefficientTransport
 

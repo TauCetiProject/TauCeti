@@ -239,10 +239,12 @@ underlying `Submodule.torsionBy ℤ A n` equals `AddSubgroup.torsionBy A n`. -/
 theorem Submodule.toAddSubgroup_torsionBy_int (A : Type*) [AddCommGroup A] [instM : Module ℤ A]
     (n : ℤ) :
     (_root_.Submodule.torsionBy ℤ A n).toAddSubgroup = AddSubgroup.torsionBy A n := by
-  obtain rfl := Subsingleton.elim instM (AddCommGroup.toIntModule A)
-  rfl
+  ext x
+  simp only [AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup, Submodule.mem_torsionBy_iff]
+  rw [← Int.cast_id (n := n), @Int.cast_smul_eq_zsmul ℤ A _ _ instM,
+    @Int.cast_smul_eq_zsmul ℤ A _ _ (AddCommGroup.toIntModule A)]
 
-/-- Package the definitional identification between `Submodule.torsionBy ℤ A n` and
+/-- Package the identification between `Submodule.torsionBy ℤ A n` and
 `AddSubgroup.torsionBy A n` as an additive equivalence. -/
 def submoduleTorsionByEquivAddSubgroup (A : Type*) [AddCommGroup A] [Module ℤ A] (n : ℤ) :
     _root_.Submodule.torsionBy ℤ A n ≃+ AddSubgroup.torsionBy A n :=

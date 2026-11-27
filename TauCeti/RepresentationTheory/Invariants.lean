@@ -670,8 +670,8 @@ theorem mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg {k G : Type*} [CommSemiring k] [
     (A : Rep k G) (g : G) (hneg : ∀ x : A, A.ρ g x = -x) (x : A) :
     x ∈ LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap ↔
       x ∈ Submodule.torsionBy k A (2 : k) := by
-  rw [LinearMap.mem_ker, Submodule.mem_torsionBy_iff, two_smul, applyAsHom_sub_id_apply, hneg,
-    sub_eq_add_neg, ← neg_add, neg_eq_zero]
+  rw [LinearMap.mem_ker, Submodule.mem_torsionBy_iff, applyAsHom_sub_id_apply, hneg]
+  simp [two_smul, sub_eq_zero, add_eq_zero_iff_neg_eq]
 
 /-- When `g` acts by negation, the image of `ρ(g) - 𝟙` is `2 A`. -/
 theorem mem_range_applyAsHom_sub_iff_of_ρ_eq_neg {k G : Type*} [CommSemiring k] [CommMonoid G]

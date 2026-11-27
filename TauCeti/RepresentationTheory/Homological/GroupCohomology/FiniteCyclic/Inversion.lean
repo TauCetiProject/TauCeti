@@ -95,9 +95,8 @@ theorem groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven (n : ℕ) [NeZer
   rw [groupCohomologyTwoInvEquivZModTwo]
   simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
   rw [groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven,
-    zmodTorsionByEquiv_symm_apply_eq_iff, AddEquiv.torsionByCongr_apply_coe,
-    submoduleTorsionByEquivAddSubgroup_apply_coe, AddEquiv.trans_apply,
-    AddEquiv.additiveMultiplicative_apply]
+    zmodTorsionByEquiv_symm_apply_eq_iff]
+  simp [AddEquiv.additiveMultiplicative_apply, -Rep.toAdditive_apply]
 
 end Inversion
 
