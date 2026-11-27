@@ -148,19 +148,13 @@ theorem exists_contDiffOn_mulVec_self_eq (hJ : J.IsHermitian) (hJ' : IsUnit J) {
   swap
   · exact exists_contDiffOn_mulVec_eq_of_ne_zero hiso x₀
   -- an isotropic partner `y₀` of `x₀`, from the hyperbolic pairs of a sesquilinear form
-  have hcomp (v : n → 𝕜) : starRingEnd 𝕜 ∘ v = star v := by
-    ext i
-    simp
-  have hJσ : (J.map (starRingEnd 𝕜))ᵀ = (1 : 𝕜) • J := by
-    rw [one_smul]
-    ext i j
-    simpa using hJ.apply i j
   obtain ⟨y₀, -, hy₀, -, hyx⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one
-    (starRingEnd_self_apply (R := 𝕜)) hJσ ((isUnit_iff_isUnit_det J).mp hJ').ne_zero
+    (starRingEnd_self_apply (R := 𝕜)) (by rw [one_smul, transpose_map_starRingEnd, hJ.eq])
+    ((isUnit_iff_isUnit_det J).mp hJ').ne_zero
     (fun s hs => ⟨s / 2, by
       rw [one_mul] at hs
-      rw [one_mul, map_div₀, hs, map_ofNat, add_halves]⟩) hx₀ (by rwa [hcomp])
-  rw [hcomp] at hy₀ hyx
+      rw [one_mul, map_div₀, hs, map_ofNat, add_halves]⟩) hx₀ (by rwa [starRingEnd_comp_eq_star])
+  rw [starRingEnd_comp_eq_star] at hy₀ hyx
   obtain ⟨N, hN, hx₀N, g, hg, hgy⟩ :=
     exists_contDiffOn_mulVec_eq hJ hy₀ (hyx ▸ one_ne_zero : star y₀ ⬝ᵥ J *ᵥ x₀ ≠ 0)
   have hinv : (((g x₀)⁻¹ : unitaryGroupOf J) : GL n 𝕜) *ᵥ x₀ = y₀ := calc

@@ -129,8 +129,8 @@ theorem val_quasiReflection :
 theorem quasiReflection_mulVec (x : n → K) :
     ((quasiReflection hA v s hs : GL n K) : Matrix n n K) *ᵥ x =
       x - (s⁻¹ * (star v ⬝ᵥ A *ᵥ x)) • v := by
-  rw [val_quasiReflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg]
-  rfl
+  rw [val_quasiReflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg,
+    starRingEnd_comp_eq_star]
 
 /-- The quasi-reflection along `v` fixes every vector orthogonal to `v` for the form. -/
 theorem quasiReflection_mulVec_of_dotProduct_eq_zero {x : n → K} (hx : star v ⬝ᵥ A *ᵥ x = 0) :

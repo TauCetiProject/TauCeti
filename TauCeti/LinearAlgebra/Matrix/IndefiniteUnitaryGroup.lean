@@ -178,6 +178,18 @@ theorem mem_unitaryGroupOf_iff_forall_dotProduct {g : GL n R} :
   ext i j
   simpa [mulVec_single_one, Pi.star_single] using h (Pi.single i 1) (Pi.single j 1)
 
+/-- Composing a vector with `starRingEnd` is taking its `star`. -/
+theorem starRingEnd_comp_eq_star {m S : Type*} [CommSemiring S] [StarRing S] (v : m → S) :
+    starRingEnd S ∘ v = star v := by
+  ext i
+  simp [starRingEnd_apply]
+
+/-- The transpose of the image of a matrix under `starRingEnd` is its conjugate transpose. -/
+theorem transpose_map_starRingEnd {l m S : Type*} [CommSemiring S] [StarRing S]
+    (M : Matrix l m S) : (M.map (starRingEnd S))ᵀ = Mᴴ := by
+  ext
+  simp [starRingEnd_apply]
+
 /-- The determinant-one elements of `unitaryGroupOf A` form Tau Ceti's special isometry group
 `Matrix.specialIsometryGroup A (starRingEnd R)` of the `star`-sesquilinear form: the two defining
 equations agree, since `star g = (g.map star)ᵀ`. -/
@@ -185,10 +197,8 @@ theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
     A.specialIsometryGroup (starRingEnd R) =
       (unitaryGroupOf A).comap SpecialLinearGroup.toGL :=
   Subgroup.ext fun g => by
-    have h : ((g : Matrix n n R).map (starRingEnd R))ᵀ = star (g : Matrix n n R) := by
-      ext; simp [starRingEnd_apply]
     rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
-      SpecialLinearGroup.coe_GL_coe_matrix, h]
+      SpecialLinearGroup.coe_GL_coe_matrix, transpose_map_starRingEnd, ← star_eq_conjTranspose]
 
 /-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
 `A⁻¹ * star g * A`. -/
@@ -284,12 +294,11 @@ theorem star_unitaryTransvection_mul_mul_self_of_eq_zero (hA : A.IsHermitian) {v
     (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) :
     star (A.unitaryTransvection (starRingEnd R) v a) * A *
       A.unitaryTransvection (starRingEnd R) v a = A := by
-  have hQ : (A.map (starRingEnd R))ᵀ = (1 : R) • A := by
-    rw [one_smul]
-    ext i j
-    exact hA.apply i j
-  exact transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero starRingEnd_self_apply hQ
-    (by rw [one_mul, one_mul]; exact ha)
+  have h := transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero (v := v) (a := a)
+    starRingEnd_self_apply (by rw [one_smul, transpose_map_starRingEnd, hA.eq]) (by
+      rw [one_mul, one_mul, starRingEnd_comp_eq_star, starRingEnd_apply]
+      exact ha)
+  rwa [transpose_map_starRingEnd, ← star_eq_conjTranspose] at h
 
 end CommRing
 
@@ -339,8 +348,8 @@ theorem reflection_mulVec (hA : A.IsHermitian) (v : n → K)
     (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (x : n → K) :
     ((reflection hA v hv : GL n K) : Matrix n n K) *ᵥ x =
       x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
-  rw [val_reflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg]
-  rfl
+  rw [val_reflection, unitaryTransvection_mulVec, neg_mul, neg_smul, ← sub_eq_add_neg,
+    starRingEnd_comp_eq_star]
 
 /-- The reflection in `v` sends `v` to `-v`. -/
 theorem reflection_mulVec_self (hA : A.IsHermitian) (v : n → K)
