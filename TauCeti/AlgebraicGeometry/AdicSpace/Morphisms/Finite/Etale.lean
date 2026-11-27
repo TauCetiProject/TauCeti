@@ -292,16 +292,6 @@ structure IsFiniteEtale.OfPairChart {X Y : AdicSpace.{u}} (f : X ⟶ Y) (y : Y.o
     sourceIso.hom ≫ (comapOfPair data.isSheafyTarget data.isSheafySource data.pairHom).hom ≫
       targetIso.inv ≫ Y.obj.ofRestrict _
 
-private theorem isSheaf_of_restrict_iso {A : Type u} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] [IsHuberRing A] {S : Pair A} {P : PairOfDefinition A}
-    (hP : P.ringOfDefinition ≤ S.plus) {V : Opens Y.obj} (eV : Y.obj.restrict V.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :
-    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
-      (presentationLimitPresheaf P S.plus) :=
-  (isSheafy_presentationLimitPreAdicSpace_iff P S.plus _ hP).mp
-    ((ObjectProperty.prop_iff_of_iso PreAdicSpace.isSheafy eV).mp
-      (isSheafy_restrict _ Y.property.isSheafy))
-
 /-- Around every point `y : Y.obj`, a finite étale morphism `f : X ⟶ Y` admits an open
 neighbourhood `V` of `y` over which `f` is modelled by `AdicSpace.comapOfPair` for a finite étale
 morphism `φ : (A, A⁺) → (B, B⁺)` between complete Hausdorff Tate sheafy Huber pairs. -/
@@ -313,7 +303,7 @@ theorem IsFiniteEtale.exists_ofPair_chart {f : X ⟶ Y} (hf : IsFiniteEtale f) (
   have _ : IsTateRing A := hA
   have _ : IsTateRing B := IsTateRing.of_continuous (φ := φ.toRingHom) φ.continuous_toRingHom
   have hS := (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf P).mpr
-    ⟨S.isRingOfIntegralElements, isSheaf_of_restrict_iso hP eV⟩
+    ⟨S.isRingOfIntegralElements, isSheaf_of_restrict_iso P hP eV⟩
   have hT := (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf P').mpr
     ⟨T.isRingOfIntegralElements, hsheaf⟩
   let iS : (ofPair S hS).obj ≅ presentationLimitPreAdicSpace P S.plus
@@ -526,7 +516,8 @@ theorem isFiniteEtale_iff_of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] :
 theorem IsFiniteEtale.isLocallyNoetherianAnalytic_source {f : X ⟶ Y} (hf : IsFiniteEtale f)
     (hY : Y.IsLocallyNoetherianAnalytic) : X.IsLocallyNoetherianAnalytic :=
   isLocallyNoetherianAnalytic_iff.mpr
-    ⟨hY.isLocallyNoetherian.of_locallyOfFiniteType hf.isFinite.locallyOfFiniteType,
+    ⟨hY.isLocallyNoetherian.of_locallyOfWeaklyFiniteType
+        hf.isFinite.locallyOfFiniteType.locallyOfWeaklyFiniteType,
       hf.isAnalytic_source⟩
 
 /-- **The image of a finite étale morphism of adic spaces is clopen.** -/

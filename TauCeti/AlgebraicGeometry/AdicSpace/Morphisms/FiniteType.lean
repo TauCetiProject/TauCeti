@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid
+public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.PlusWeaklyFiniteType
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Open
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Discrete
