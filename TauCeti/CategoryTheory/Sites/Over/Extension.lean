@@ -270,6 +270,41 @@ def sheafPullbackIsoPresheafExtension :
   ((Over.forget U).sheafAdjunctionContinuous A (J.over U) J).leftAdjointUniq
     (sheafExtensionAdjunction U J)
 
+/-- The extension comparison carries the restriction-adjunction unit to the coproduct
+injection followed by the sheafification unit. -/
+@[reassoc]
+lemma sheafPullbackIsoPresheafExtension_unit_app (F : Sheaf (J.over U) A)
+    (Y : (Over U)ᵒᵖ) :
+    (((Over.forget U).sheafAdjunctionContinuous A (J.over U) J).unit.app F).hom.app Y ≫
+        ((J.overPullback A U).map
+          ((sheafPullbackIsoPresheafExtension U J).hom.app F)).hom.app Y =
+      presheafExtensionι U F.obj Y.unop.hom ≫
+        ((sheafificationAdjunction J A).unit.app ((presheafExtension U).obj F.obj)).app
+          (op Y.unop.left) := by
+  have h := congrArg (fun α ↦ α.hom.app Y)
+    (Adjunction.unit_leftAdjointUniq_hom_app
+      ((Over.forget U).sheafAdjunctionContinuous A (J.over U) J)
+      (sheafExtensionAdjunction U J) F)
+  have hu := Adjunction.map_restrictFullyFaithful_unit_app
+    ((presheafExtensionAdjunction (A := A) U).comp (sheafificationAdjunction J A))
+      (fullyFaithfulSheafToPresheaf (J.over U) A) (Functor.FullyFaithful.id _)
+      (L := sheafExtension U J) (R := J.overPullback A U) (Iso.refl _) (Iso.refl _) F
+  refine h.trans ((congrArg (fun α ↦ α.app Y) hu).trans ?_)
+  dsimp only [sheafExtension, GrothendieckTopology.overPullback,
+    Functor.sheafPushforwardContinuous]
+  simp only [Functor.id_obj, Functor.comp_obj, Iso.refl_hom, NatTrans.id_app,
+    Functor.comp_map, ObjectProperty.ι_map, ObjectProperty.FullSubcategory.id_hom,
+    Functor.whiskeringLeft_obj_map, Functor.whiskerLeft_app, Category.comp_id,
+    Adjunction.comp_unit_app, NatTrans.comp_app]
+  -- The identity uses the definitionally equal sheafified and restricted functor objects.
+  erw [Category.comp_id]
+  -- Whiskering evaluates the sheafification unit at the underlying object of `Y`.
+  change ((presheafExtensionAdjunction U).unit.app F.obj).app Y ≫
+    ((sheafificationAdjunction J A).unit.app ((presheafExtension U).obj F.obj)).app
+      (op Y.unop.left) = _
+  rw [← Adjunction.homEquiv_id, presheafExtensionAdjunction_homEquiv_app]
+  simp
+
 omit [HasWeakSheafify J A] in
 /-- Extension from a localized site preserves finite limits when coproducts are exact. -/
 instance preservesFiniteLimits_sheafPullback [HasFiniteLimits A] [AB4OfSize.{v} A]
