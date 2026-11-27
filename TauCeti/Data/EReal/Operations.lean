@@ -21,8 +21,9 @@ combinations `s a + t b - r` with real weights and subtrahend behave, and that n
 distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
 installing a coercion; it is additive. Finally, the adjunction `a + b ≤ c ↔ b ≤ c - a` is
-recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`, and
-a positive finite multiple of a supremum is bounded termwise.
+recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`, a
+positive finite multiple of a supremum is bounded termwise, and `x ≤ y` follows from `x ≤ y + δ`
+for every positive real `δ`.
 
 ## Main results
 
@@ -74,6 +75,8 @@ a positive finite multiple of a supremum is bounded termwise.
 * `EReal.add_le_iff_le_ite` — `a + b ≤ c` is equivalent to `b ≤ c - a` with no finiteness
   hypothesis, once `c - a` is replaced by `⊤` when `c = ⊤` or `a = ⊥`;
 * `EReal.mul_iSup_le` — a positive finite multiple of a supremum is bounded termwise;
+* `EReal.le_of_forall_pos_le_add` — a bound `x ≤ y + δ` for every positive real `δ` gives
+  `x ≤ y`;
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -350,6 +353,16 @@ theorem mul_iSup_le {a : EReal} (ha : 0 < a) (ha' : a ≠ ⊤) {ι : Sort*} {f :
     {c : EReal} (h : ∀ i, a * f i ≤ c) : a * ⨆ i, f i ≤ c := by
   rw [mul_comm, ← le_div_iff_mul_le ha ha']
   exact iSup_le fun i ↦ (le_div_iff_mul_le ha ha').2 (mul_comm a (f i) ▸ h i)
+
+/-- An extended real `x` that is at most `y + δ` for every positive real `δ` is at most `y`. The
+general `_root_.le_of_forall_pos_le_add` does not apply, since `EReal` has no `ExistsAddOfLE`
+(`⊥ + c = ⊥`). -/
+theorem le_of_forall_pos_le_add {x y : EReal} (h : ∀ δ : ℝ, 0 < δ → x ≤ y + δ) : x ≤ y := by
+  refine le_of_forall_lt_iff_le.1 fun z hz ↦ ?_
+  obtain ⟨w, hw, hwz⟩ := lt_iff_exists_real_btwn.1 hz
+  refine (h (z - w) (_root_.sub_pos.2 (EReal.coe_lt_coe_iff.1 hwz))).trans ?_
+  calc y + ((z - w : ℝ) : EReal) ≤ (w : EReal) + ((z - w : ℝ) : EReal) := add_le_add hw.le le_rfl
+    _ = z := by rw [← coe_add, add_sub_cancel]
 
 end EReal
 
