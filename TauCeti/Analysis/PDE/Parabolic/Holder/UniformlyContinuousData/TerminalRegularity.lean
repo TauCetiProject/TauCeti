@@ -36,15 +36,14 @@ time reversals of the corresponding statements for the Cauchy problem at positiv
 
 ## The argument
 
-On a bounded `C^{2,α}` terminal datum the classical solution of the terminal-value problem exists
-(`TauCeti.ParabolicC2HolderSpace.euclideanTerminalDataCLE`), and the Schauder estimate before the
-terminal time (in the `TauCeti.ParabolicC2HolderSpace` namespace,
-`exists_rpow_mul_norm_restrictL_le_euclideanBackwardParabolicOperatorL`) bounds its restriction
-to `ℝⁿ × [0, T - δ]` by `C δ^(-(1 + α/2)) (‖f‖_{α,par} + sup |g|)`, with only the supremum of the
-terminal datum on the right. So the restricted classical solution map
-extends by continuity from `C_b^{2,α}` to its closure `BUC` in the supremum norm. The value at a
-point and the backward operator are continuous on `C_b^{2+α,1+α/2}`, so the identification with
-`euclideanTerminalSolutionBUC` and the equation pass to the limit from smooth terminal data.
+Time reversal `R (x, s) = (x, T - s)` turns `P_back` into a forward operator with the reversed
+coefficients (`TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_timeReverseLIE`), the
+terminal-value problem into a Cauchy problem, and `ℝⁿ × [0, T - δ]` into `ℝⁿ × [δ, T]`; this is how
+`euclideanTerminalSolutionBUC` is built from `euclideanCauchySolutionBUC`. So
+`euclideanTerminalSolutionBUCRestrictL` is the time reversal of
+`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUCRestrictL` with the reversed coefficients
+and data, and its properties are those of the forward operator. The weighted estimate keeps its
+constant because time reversal is an isometry and does not increase the norm of the data.
 
 ## Main declarations
 
@@ -74,79 +73,11 @@ noncomputable section
 namespace TauCeti.ParabolicC2HolderSpace
 
 open Set ParabolicSpaceTime BoundedContinuousFunction
-open CkHolderSpace (toBUC toBUC_apply)
+open CkHolderSpace (toBUC)
 open scoped NNReal
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ≥0} (hα₀ : 0 < α) (hα₁ : α < 1)
-
-/-- The classical solution `(f, g) ↦ u` of the terminal-value problem with `C_b^{2,α}` terminal
-datum, restricted to `ℝⁿ × [0, T - δ]`. -/
-private def restrictedTerminalSolution (hT : (0 : ℝ) < T)
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T) :
-    HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
-      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ →ₗ[ℝ]
-        ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ (sub_pos.2 hδT) :=
-  ((restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT)).comp
-    (euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm.toContinuousLinearMap).toLinearMap
-
-private theorem restrictedTerminalSolution_apply (hT : (0 : ℝ) < T)
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T)
-    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
-      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
-    restrictedTerminalSolution hα₀ hα₁ hT a b c ha hδ hδT d =
-      restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT)
-        ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm d) :=
-  (rfl)
-
-/-- The weighted Schauder estimate before the terminal time for the classical solutions, in the
-norm of the data space `C_b^{α,α/2} × BUC`:
-`‖u‖_{2+α,par;[0,T-δ]} ≤ C / δ^(1 + α/2) * max (‖f‖, ‖g‖_∞)`, uniformly over the coefficients and
-horizons in the given bounds. -/
-private theorem exists_norm_restrictedTerminalSolution_le_div {lam : ℝ} (hlam : 0 < lam)
-    (K T₀ : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
-      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
-          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
-        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
-        ∀ {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T)
-          (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
-            CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ),
-          ‖restrictedTerminalSolution hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩ hδ hδT d‖ ≤
-            C / δ ^ (1 + (α : ℝ) / 2) * ‖euclideanCauchyDataToBUC d‖ := by
-  obtain ⟨C, hC, hest⟩ :=
-    exists_rpow_mul_norm_restrictL_le_euclideanBackwardParabolicOperatorL (ι := ι) hα₀ hα₁
-      (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
-  refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
-  -- The terminal values of the classical solution are bounded by the supremum norm of the datum.
-  have hterm (x : EuclideanSpace ℝ ι) :
-      |(euclideanTerminalDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm d
-        (slabMk x ⟨T, right_mem_Icc.2 hT.le⟩)| ≤ ‖toBUC d.2‖ := by
-    rw [euclideanTerminalDataCLE_symm_apply_slabMk_right, ← toBUC_apply, ← Real.norm_eq_abs,
-      ← ClosedSubmodule.norm_coe]
-    exact norm_coe_le_norm _ x
-  have h := hest T hT hTT₀ a b c ha (toQuadraticForm'_le_of_norm_coeff_le hak) hak hbk hck _
-    hterm hδ hδT
-  rw [euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply] at h
-  have hf : ‖d.1‖ ≤ ‖euclideanCauchyDataToBUC d‖ := by simp
-  have hg : ‖toBUC d.2‖ ≤ ‖euclideanCauchyDataToBUC d‖ := by simp
-  rw [restrictedTerminalSolution_apply, div_mul_eq_mul_div,
-    le_div_iff₀' (Real.rpow_pos_of_pos hδ _)]
-  nlinarith
-
-variable (hT : (0 : ℝ) < T) (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+  (hT : (0 : ℝ) < T) (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
   (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
   (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
   (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
@@ -156,49 +87,32 @@ variable (hT : (0 : ℝ) < T) (a : ι → ι → HolderSpace α (slab (E := Eucl
 /-- **The terminal-value solution before the terminal time.** For `0 < δ < T`, the restriction to
 `ℝⁿ × [0, T - δ]` of the solution of the terminal-value problem `P_back u = f`, `u(·, T) = g` with
 bounded uniformly continuous terminal datum `g`, as a continuous linear map
-`C_b^{α,α/2}(ℝⁿ × [0, T]) × BUC(ℝⁿ) →L[ℝ] C_b^{2+α,1+α/2}(ℝⁿ × [0, T - δ])`. Its values are those
-of `euclideanTerminalSolutionBUC` (`euclideanTerminalSolutionBUCRestrictL_apply`), so the extended
+`C_b^{α,α/2}(ℝⁿ × [0, T]) × BUC(ℝⁿ) →L[ℝ] C_b^{2+α,1+α/2}(ℝⁿ × [0, T - δ])`. It is the time
+reversal `R (x, s) = (x, T - s)` of `euclideanCauchySolutionBUCRestrictL` with the coefficients
+`aⁱʲ ∘ R`, `bⁱ ∘ R`, `c ∘ R` and data `(-f ∘ R, g)`. Its values are those of
+`euclideanTerminalSolutionBUC` (`euclideanTerminalSolutionBUCRestrictL_apply`), so the extended
 solution is a classical solution before the terminal time
 (`euclideanBackwardParabolicOperatorL_euclideanTerminalSolutionBUCRestrictL`). -/
 def euclideanTerminalSolutionBUCRestrictL :
     HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ →L[ℝ]
         ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ (sub_pos.2 hδT) :=
-  (restrictedTerminalSolution hα₀ hα₁ hT a b c ha hδ hδT).extendOfNorm euclideanCauchyDataToBUC
+  (timeReverseLIE (E := EuclideanSpace ℝ ι) (F := ℝ) (α := α) (hab := hδT) (T : ℝ)
+      (sub_self (T : ℝ)).symm rfl).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    ((euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT
+      (fun i j ↦ HolderSpace.compLipschitzL _
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith
+          (a i j))
+      (fun i ↦ HolderSpace.compLipschitzL _
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith (b i))
+      (HolderSpace.compLipschitzL _
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith c)
+      (ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩) hδ hδT).comp
+      (ContinuousLinearMap.prodMap (-HolderSpace.compLipschitzL _
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith)
+        (ContinuousLinearMap.id ℝ _)))
 
 variable {a b c}
-
-private theorem euclideanTerminalSolutionBUCRestrictL_euclideanCauchyDataToBUC
-    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
-      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
-    euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT
-        (euclideanCauchyDataToBUC d) =
-      restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT)
-        ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm d) :=
-  LinearMap.extendOfNorm_eq (denseRange_euclideanCauchyDataToBUC hα₁.le) (by
-    obtain ⟨lam, hlam, hlam'⟩ := ha
-    obtain ⟨K, hak, hbk, hck⟩ := exists_norm_coeff_le a b c
-    obtain ⟨C, -, hC⟩ :=
-      exists_norm_restrictedTerminalSolution_le_div (ι := ι) hα₀ hα₁ hlam K T
-    -- `convert` matches the instance arguments of the coercion of `restrictedTerminalSolution`
-    -- with those in the statement of `extendOfNorm_eq`; `exact` would instead unfold the norm of
-    -- the order-two space, whose carrier is not exposed here.
-    exact ⟨C / δ ^ (1 + (α : ℝ) / 2), fun d ↦ by
-      convert hC T hT le_rfl a b c hlam' hak hbk hck hδ hδT d using 2⟩) d
-
-/-- **Agreement with the classical solution.** On a bounded `C^{2,α}` terminal datum `g`, the
-solution before the terminal time is the restriction to `ℝⁿ × [0, T - δ]` of the solution in
-`C_b^{2+α,1+α/2}(ℝⁿ × [0, T])` of `P_back u = f`, `u(·, T) = g`. -/
-@[simp]
-theorem euclideanTerminalSolutionBUCRestrictL_toBUC
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
-    euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (f, toBUC g) =
-      restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT)
-        ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) := by
-  have h := euclideanTerminalSolutionBUCRestrictL_euclideanCauchyDataToBUC hα₀ hα₁ hT (b := b)
-    (c := c) ha hδ hδT (f, g)
-  rwa [euclideanCauchyDataToBUC_apply] at h
 
 /-- **The extended solution is `C^{2+α,1+α/2}` before the terminal time.** On
 `ℝⁿ × [0, T - δ]`, the values of `euclideanTerminalSolutionBUCRestrictL` are those of the extended
@@ -211,20 +125,29 @@ theorem euclideanTerminalSolutionBUCRestrictL_apply
     euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT d p =
       euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha d
         (inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le)) p) := by
-  refine (denseRange_euclideanCauchyDataToBUC hα₁.le).induction_on
-    (p := fun d ↦ euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT d p =
-      euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha d
-        (inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le)) p)) d ?_ fun d ↦ ?_
-  · refine isClosed_eq ?_ ?_
-    · simp_rw [← valueL_apply]
-      exact (continuous_eval_const p).comp (valueL.continuous.comp
-        (euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT).continuous)
-    · exact (continuous_eval_const _).comp
-        (euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha).continuous
-  · obtain ⟨f, g⟩ := d
-    rw [euclideanTerminalSolutionBUCRestrictL_euclideanCauchyDataToBUC,
-      euclideanCauchyDataToBUC_apply, euclideanTerminalSolutionBUC_toBUC, restrictL_apply,
-      valueL_apply]
+  obtain ⟨f, w⟩ := d
+  rw [euclideanTerminalSolutionBUC_apply_eq_euclideanCauchySolutionBUC hα₀ hα₁ hT ha
+    (ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩)]
+  simp only [euclideanTerminalSolutionBUCRestrictL, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
+    timeReverseLIE_apply, euclideanCauchySolutionBUCRestrictL_apply]
+  congr 1
+  ext <;> simp
+
+/-- **Agreement with the classical solution.** On a bounded `C^{2,α}` terminal datum `g`, the
+solution before the terminal time is the restriction to `ℝⁿ × [0, T - δ]` of the solution in
+`C_b^{2+α,1+α/2}(ℝⁿ × [0, T])` of `P_back u = f`, `u(·, T) = g`. -/
+@[simp]
+theorem euclideanTerminalSolutionBUCRestrictL_toBUC
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (f, toBUC g) =
+      restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT)
+        ((euclideanTerminalDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) := by
+  ext p
+  rw [euclideanTerminalSolutionBUCRestrictL_apply, euclideanTerminalSolutionBUC_toBUC,
+    restrictL_apply, valueL_apply]
 
 /-- **The extended solution is a classical solution before the terminal time.** On
 `ℝⁿ × [0, T - δ]`, `euclideanTerminalSolutionBUCRestrictL` solves `P_back u = f`, where `P_back`
@@ -242,27 +165,32 @@ theorem euclideanBackwardParabolicOperatorL_euclideanTerminalSolutionBUCRestrict
         (euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (f, w)) =
       HolderSpace.compLipschitzL _
         (LipschitzWith.inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le))) f := by
-  set R := HolderSpace.compLipschitzL (α := α) (Y := ℝ) _
-    (LipschitzWith.inclusion (slab_subset_slab (E := EuclideanSpace ℝ ι) le_rfl
-      (sub_le_self (T : ℝ) hδ.le)))
-  -- Both sides are continuous linear in the data, and they agree on `C_b^{2,α}` terminal data.
-  have h : euclideanBackwardParabolicOperatorL hα₁.le (fun i j ↦ R (a i j)) (fun i ↦ R (b i))
-      (R c) ∘L euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT =
-        R ∘L ContinuousLinearMap.fst ℝ _ _ := by
-    refine ContinuousLinearMap.ext fun d ↦
-      (denseRange_euclideanCauchyDataToBUC hα₁.le).induction_on
-      (p := fun d ↦ (euclideanBackwardParabolicOperatorL hα₁.le (fun i j ↦ R (a i j))
-        (fun i ↦ R (b i)) (R c) ∘L
-          euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT) d =
-        (R ∘L ContinuousLinearMap.fst ℝ _ _) d) d
-      (isClosed_eq (ContinuousLinearMap.continuous _) (ContinuousLinearMap.continuous _))
-      fun d ↦ ?_
-    rw [ContinuousLinearMap.comp_apply,
-      euclideanTerminalSolutionBUCRestrictL_euclideanCauchyDataToBUC,
-      euclideanBackwardParabolicOperatorL_restrictL,
-      euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', euclideanCauchyDataToBUC_apply]
-  exact congrArg (fun L ↦ L (f, w)) h
+  set R := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
+    (sub_zero (T : ℝ)).symm
+  set S := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
+    (rfl : (T : ℝ) - δ = T - δ)
+  ext p
+  -- The forward equation of the reversed problem at `S p` is the backward equation at `p`.
+  have h := congrArg (fun g ↦ g (S p))
+    (euclideanParabolicOperatorL_euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT
+      (a := fun i j ↦ HolderSpace.compLipschitzL _ R.isometry.lipschitzWith (a i j))
+      (b := fun i ↦ HolderSpace.compLipschitzL _ R.isometry.lipschitzWith (b i))
+      (c := HolderSpace.compLipschitzL _ R.isometry.lipschitzWith c)
+      (ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩) hδ hδT
+      (-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith f) w)
+  have hp : R (inclusion (slab_subset_slab hδ.le le_rfl) (S p)) =
+      inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le)) p := by
+    ext <;> simp [R, S]
+  simp only [euclideanParabolicOperatorL_apply, HolderSpace.compLipschitzL_apply,
+    HolderSpace.neg_apply, hp] at h
+  simp only [euclideanTerminalSolutionBUCRestrictL, euclideanBackwardParabolicOperatorL_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_prodMap', Prod.map_apply,
+    ContinuousLinearMap.id_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearEquiv.coe_coe, timeReverseLIE_apply, timeDerivL_timeReverseLIE,
+    spatialFDerivL_timeReverseLIE, spatialSecondFDerivL_timeReverseLIE,
+    HolderSpace.compLipschitzL_apply, _root_.neg_apply]
+  simp only [R, S] at h
+  linarith
 
 /-- **Schauder estimate before the terminal time for bounded uniformly continuous data.** For
 `0 < α < 1`, an ellipticity constant `λ > 0`, a bound `K` on the Hölder norms of the coefficients
@@ -288,15 +216,25 @@ theorem exists_rpow_mul_norm_euclideanTerminalSolutionBUCRestrictL_le {lam : ℝ
               ‖euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩ hδ hδT d‖ ≤
             C * ‖d‖ := by
   obtain ⟨C, hC, hest⟩ :=
-    exists_norm_restrictedTerminalSolution_le_div (ι := ι) hα₀ hα₁ hlam K T₀
-  refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
-  have hδα : 0 < δ ^ (1 + (α : ℝ) / 2) := Real.rpow_pos_of_pos hδ _
-  -- As in `euclideanTerminalSolutionBUCRestrictL_euclideanCauchyDataToBUC`, `convert` matches the
-  -- instance arguments of the coercions in the statement of `norm_extendOfNorm_apply_le` with ours.
-  have h := LinearMap.norm_extendOfNorm_apply_le (denseRange_euclideanCauchyDataToBUC hα₁.le)
-    (C / δ ^ (1 + (α : ℝ) / 2)) (fun d' ↦ by
-      convert hest T hT hTT₀ a b c ha hak hbk hck hδ hδT d' using 2) d
-  rw [euclideanTerminalSolutionBUCRestrictL]
-  convert (le_div_iff₀' hδα).1 (h.trans_eq (div_mul_eq_mul_div _ _ _)) using 2
+    exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le (ι := ι) hα₀ hα₁ hlam K T₀
+  refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT ⟨f, w⟩ ↦ ?_⟩
+  set R := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
+    (sub_zero (T : ℝ)).symm
+  have hR (g : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) :
+      ‖HolderSpace.compLipschitzL _ R.isometry.lipschitzWith g‖ ≤ ‖g‖ :=
+    HolderSpace.norm_compLipschitzL_apply_le _ g
+  -- The forward estimate for the reversed coefficients and data; reversing the data does not
+  -- increase its norm, and reversing the solution keeps it.
+  have h := hest T hT hTT₀ _ _ _ (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
+    (fun i j ↦ (hR _).trans (hak i j)) (fun i ↦ (hR _).trans (hbk i)) ((hR c).trans hck) hδ hδT
+    (-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith f, w)
+  have hd : ‖(-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith f, w)‖ ≤ ‖(f, w)‖ := by
+    simp only [Prod.norm_def, norm_neg]
+    exact max_le_max (hR f) le_rfl
+  refine le_trans (le_of_eq ?_) (h.trans (mul_le_mul_of_nonneg_left hd hC))
+  simp only [euclideanTerminalSolutionBUCRestrictL, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply,
+    _root_.neg_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.norm_map, R]
 
 end TauCeti.ParabolicC2HolderSpace

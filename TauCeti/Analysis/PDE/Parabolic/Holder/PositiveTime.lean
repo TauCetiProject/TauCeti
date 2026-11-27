@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 
@@ -32,12 +31,6 @@ is uniform in `u` and only the supremum of the initial values enters, as needed 
 of smooth approximations of bounded uniformly continuous initial data at positive times
 (`TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le`).
 
-Time reversal `R (x, s) = (x, T - s)` turns the backward operator
-`P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u` into a forward one
-(`TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_timeReverseLIE`), and so gives the
-same estimate before the terminal time, with the terminal values in place of the initial ones:
-`δ^(1 + α/2) ‖u‖_{2+α,par;[0,T-δ]} ≤ C (‖P_back u‖_{α,par} + ‖u(·, T)‖_∞)`.
-
 ## The argument
 
 Fix a scale `s` with `2 s < T` and a time cutoff `χ` vanishing up to time `s` and equal to one
@@ -63,9 +56,6 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   estimate with `‖u‖_∞` on the right.
 * `exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`: the weighted estimate with the
   supremum of the initial values on the right.
-* `exists_rpow_mul_norm_restrictL_le_euclideanBackwardParabolicOperatorL`: the weighted estimate
-  before the terminal time for the backward operator, with the supremum of the terminal values on
-  the right.
 
 ## References
 
@@ -430,71 +420,6 @@ theorem exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (hα₀ : 
   calc _ ≤ C₁ * (P + ‖valueL u‖) := h
     _ ≤ C₁ * (P + E₀ * (P + M)) := by gcongr
     _ ≤ C₁ * (1 + E₀) * (P + M) := by nlinarith [mul_nonneg hC₁ (mul_nonneg hE₀ hM₀)]
-
-
-/-- **Interior Schauder estimate before the terminal time.** For `0 < α < 1`, ellipticity
-constants `λ > 0` and `Λ`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on
-the horizon, there is a constant `C` such that on `ℝⁿ × [0, T]`, `T ≤ T₀`, every
-`u ∈ C_b^{2+α,1+α/2}` with `|u(·, T)| ≤ M` and every `0 < δ < T` satisfy
-
-`δ^(1 + α/2) ‖u‖_{2+α,par;[0,T-δ]} ≤ C (‖P_back u‖_{α,par} + M)`,
-
-where `P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u` is the backward operator. Only the supremum of
-the terminal values enters, not their `C^{2,α}` norm. -/
-theorem exists_rpow_mul_norm_restrictL_le_euclideanBackwardParabolicOperatorL (hα₀ : 0 < α)
-    (hα₁ : α < 1) (hlam : 0 < lam) (K T₀ : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
-      ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ),
-        (∀ p (ξ : EuclideanSpace ℝ ι),
-          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) →
-        (∀ p (ξ : EuclideanSpace ℝ ι),
-          (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
-        (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
-        ∀ (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {M : ℝ},
-          (∀ x, |u (slabMk x ⟨T, right_mem_Icc.2 hT.le⟩)| ≤ M) → ∀ {δ : ℝ} (hδ : 0 < δ)
-          (hδT : δ < T), δ ^ (1 + (α : ℝ) / 2) *
-            ‖restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT) u‖ ≤
-            C * (‖euclideanBackwardParabolicOperatorL hα₁.le a b c u‖ + M) := by
-  obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (ι := ι)
-    hα₀ hα₁ (Lam := Lam) hlam K T₀
-  refine ⟨C, hC, fun T hT hTT₀ a b c ha ha' hak hbk hck u M hM δ hδ hδT ↦ ?_⟩
-  -- Time reversal `R (x, s) = (x, T - s)` turns `u` into a solution `v = u ∘ R` of a forward
-  -- problem whose initial values are the terminal values of `u`.
-  set R := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
-    (sub_zero (T : ℝ)).symm
-  set rev := HolderSpace.compLipschitzL (α := α) (Y := ℝ) _ R.isometry.lipschitzWith
-  have hrev (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) : ‖rev f‖ ≤ ‖f‖ := by
-    simpa using rev.le_of_opNorm_le (HolderSpace.norm_compLipschitzL_le_one _) f
-  -- Name the reversal with the type of `u`, so that unification does not unfold the order-two
-  -- norm to compare the two proofs of `0 < T`.
-  obtain ⟨v, hv⟩ : ∃ v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
-      v = timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm u := ⟨_, rfl⟩
-  have h := hest T hT hTT₀ (fun i j ↦ rev (a i j)) (fun i ↦ rev (b i)) (rev c)
-    (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
-    (fun p ξ ↦ by simpa only [rev, HolderSpace.compLipschitzL_apply] using ha' (R p) ξ)
-    (fun i j ↦ (hrev _).trans (hak i j)) (fun i ↦ (hrev _).trans (hbk i)) ((hrev c).trans hck) v
-    (fun x ↦ by
-      rw [hv, timeReverseLIE_apply, slabTimeReverse_slabMk, iccTimeReverse_left _ _ _ hT.le]
-      exact hM x) hδ hδT
-  rw [hv, euclideanParabolicOperatorL_timeReverseLIE, norm_neg, ← hv] at h
-  -- Time reversal is an involution, and restricting `u = v ∘ R` to `ℝⁿ × [0, T - δ]` is
-  -- reversing the restriction of `v` to `ℝⁿ × [δ, T]`.
-  have hvu : timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm v = u := by
-    have h := (timeReverseLIE (E := EuclideanSpace ℝ ι) (F := ℝ) (α := α) (hab := hT) (T : ℝ)
-      (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm).symm_apply_apply u
-    rwa [timeReverseLIE_symm, ← hv] at h
-  have hr : restrictL le_rfl (sub_le_self (T : ℝ) hδ.le) (sub_pos.2 hδT) u =
-      timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm rfl (restrictL hδ.le le_rfl hδT v) := by
-    conv_lhs => rw [← hvu]
-    exact restrictL_timeReverseLIE hδ.le le_rfl (sub_self (T : ℝ)).symm rfl v
-  rw [hr]
-  -- `convert` matches the instance arguments of the norms with those of `h`; `exact` would
-  -- instead unfold the order-two norm, whose carrier is not exposed here.
-  convert h.trans (mul_le_mul_of_nonneg_left (add_le_add_left (hrev _) M) hC) using 2
-  convert (timeReverseLIE (E := EuclideanSpace ℝ ι) (F := ℝ) (α := α) (T : ℝ)
-    (sub_self (T : ℝ)).symm rfl).norm_map (restrictL hδ.le le_rfl hδT v) using 2
 
 end Euclidean
 

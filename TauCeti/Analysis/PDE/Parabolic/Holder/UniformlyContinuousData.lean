@@ -120,7 +120,8 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le`: the Schauder estimate at
   positive times for bounded uniformly continuous initial data.
 * `euclideanTerminalSolutionBUC`: the solution operator of the terminal-value problem, the time
-  reversal of `euclideanCauchySolutionBUC`.
+  reversal of `euclideanCauchySolutionBUC`
+  (`euclideanTerminalSolutionBUC_apply_eq_euclideanCauchySolutionBUC`).
 
 ## References
 
@@ -1153,6 +1154,34 @@ private theorem euclideanTerminalSolutionBUC_apply
       euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ reverseL (a i j)) (fun i ↦ reverseL (b i))
         (reverseL c) (reverse_ellipticity ha) (-reverseL f, w) (slabReverse T p) :=
   (rfl)
+
+/-- **Time reversal.** With `R (x, t) = (x, T - t)`, the terminal-value solution with data
+`(f, w)` at `p` is the solution at `R p` of the Cauchy problem with the reversed coefficients
+`aⁱʲ ∘ R`, `bⁱ ∘ R`, `c ∘ R` and data `(-f ∘ R, w)`. -/
+theorem euclideanTerminalSolutionBUC_apply_eq_euclideanCauchySolutionBUC
+    (ha' : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ HolderSpace.compLipschitzL _
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith
+          (a i j) p).toQuadraticForm' ξ)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
+    (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
+    euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p =
+      euclideanCauchySolutionBUC hα₀ hα₁ hT
+        (fun i j ↦ HolderSpace.compLipschitzL _
+          (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith
+            (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _
+          (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith
+            (b i))
+        (HolderSpace.compLipschitzL _
+          (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith c)
+        ha'
+        (-HolderSpace.compLipschitzL _
+          (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith f,
+          w)
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm p) :=
+  euclideanTerminalSolutionBUC_apply hα₀ hα₁ hT ha f w p
 
 /-- **Agreement with the classical solution.** If `u ∈ C_b^{2+α,1+α/2}` solves the terminal-value
 problem `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f` with terminal trace `u(·, T) = w`, then it is the
