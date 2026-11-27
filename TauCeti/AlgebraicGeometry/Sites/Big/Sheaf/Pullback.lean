@@ -118,6 +118,20 @@ lemma bigPresheafPullbackIso_inv_app_apply (T : Over S')
     (bigPresheafPullbackIso g F).inv.app (op T) s = ((pullbackComp T.hom g).hom.app F).app ⊤ s :=
   bigSectionsPullbackEquiv_symm_apply g F T s
 
+/-- The isomorphisms `bigPresheafPullbackIso g F` are natural in the `𝒪_S`-module `F`: they
+intertwine the restriction of `(bigPresheafFunctor S).map φ` along `Over.map g` with
+`(bigPresheafFunctor S').map (g^* φ)`. -/
+@[reassoc]
+lemma bigPresheafPullbackIso_hom_naturality {F G : S.Modules} (φ : F ⟶ G) :
+    (PresheafOfModules.pushforward (bigRingCatSheafPullback g).hom).map
+        ((bigPresheafFunctor S).map φ) ≫ (bigPresheafPullbackIso g G).hom =
+      (bigPresheafPullbackIso g F).hom ≫ (bigPresheafFunctor S').map ((pullback g).map φ) := by
+  ext T s
+  refine (bigPresheafPullbackIso_hom_app_apply g G T.unop _).trans ?_
+  refine Eq.trans ?_ (congrArg (((pullback T.unop.hom).map ((pullback g).map φ)).app ⊤)
+    (bigPresheafPullbackIso_hom_app_apply g F T.unop s)).symm
+  exact congr($((pullbackComp T.unop.hom g).inv.naturality φ).app ⊤ s)
+
 variable [F.IsQuasicoherent]
 
 /-- **Restriction of the big-site module along a morphism of schemes.** For a quasi-coherent
@@ -137,6 +151,22 @@ lemma bigSheafPullbackIso_hom_val :
 lemma bigSheafPullbackIso_inv_val :
     (bigSheafPullbackIso g F).inv.val = (bigPresheafPullbackIso g F).inv :=
   (rfl)
+
+open TauCeti.AlgebraicGeometry in
+/-- The isomorphisms `bigSheafPullbackIso g F` are natural in the quasi-coherent module `F`: they
+intertwine the restriction of `(bigSheafFunctor S).map φ` along `Over.map g` with
+`(bigSheafFunctor S').map (g^* φ)`. -/
+-- `g^* φ` is the morphism between the quasi-coherent modules `g^* F` and `g^* G` themselves:
+-- `QuasicoherentSheaf.pullback g` is not exposed, so its values are not `g^* F` by definition.
+@[reassoc]
+lemma bigSheafPullbackIso_hom_naturality {F G : QuasicoherentSheaf S} (φ : F ⟶ G) :
+    (SheafOfModules.pushforward (bigRingCatSheafPullback g)).map ((bigSheafFunctor S).map φ) ≫
+        (bigSheafPullbackIso g G.obj).hom =
+      (bigSheafPullbackIso g F.obj).hom ≫
+        (bigSheafFunctor S').map (ObjectProperty.homMk
+          (X := ⟨_, isQuasicoherent_pullback g F.obj⟩) (Y := ⟨_, isQuasicoherent_pullback g G.obj⟩)
+          ((pullback g).map φ.hom)) :=
+  SheafOfModules.Hom.ext (bigPresheafPullbackIso_hom_naturality g φ.hom)
 
 end Modules
 
