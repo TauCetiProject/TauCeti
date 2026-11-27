@@ -38,10 +38,11 @@ open scoped TensorProduct
 
 namespace Representation
 
-variable {ι : Type*} {G V : ι → Type*} [∀ i, Monoid (G i)]
+variable {ι : Type*} {G V : ι → Type*}
 
 section Semiring
 
+variable [∀ i, Monoid (G i)]
 variable {R : Type*} [CommSemiring R] [∀ i, AddCommMonoid (V i)] [∀ i, Module R (V i)]
 
 /-- The external tensor product of a family of representations of possibly different monoids.
@@ -75,10 +76,59 @@ theorem toMatrix_piExternalTensor [Fintype ι] [DecidableEq ι] {κ : ι → Typ
   classical
   simp [LinearMap.toMatrix_apply]
 
+/-- Factorwise equivariant equivalences induce an equivalence of external tensor products. -/
+noncomputable def Equiv.piExternalTensor {W : ι → Type*} [∀ i, AddCommMonoid (W i)]
+    [∀ i, Module R (W i)] {ρ : ∀ i, Representation R (G i) (V i)}
+    {σ : ∀ i, Representation R (G i) (W i)} (e : ∀ i, (ρ i).Equiv (σ i)) :
+    (piExternalTensor ρ).Equiv (piExternalTensor σ) :=
+  .mk (PiTensorProduct.congr fun i ↦ (e i).toLinearEquiv) fun g ↦
+    PiTensorProduct.ext <| MultilinearMap.ext fun v ↦ by
+      simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        piExternalTensor_apply_tprod, PiTensorProduct.congr_tprod]
+      exact congrArg (PiTensorProduct.tprod R)
+        (funext fun i ↦ IntertwiningMap.isIntertwining (ρ i) (σ i)
+          (e i).toIntertwiningMap (g i) (v i))
+
+@[simp]
+theorem Equiv.piExternalTensor_tprod {W : ι → Type*} [∀ i, AddCommMonoid (W i)]
+    [∀ i, Module R (W i)] {ρ : ∀ i, Representation R (G i) (V i)}
+    {σ : ∀ i, Representation R (G i) (W i)} (e : ∀ i, (ρ i).Equiv (σ i)) (v : ∀ i, V i) :
+    Equiv.piExternalTensor e (PiTensorProduct.tprod R v) =
+      PiTensorProduct.tprod R (fun i ↦ e i (v i)) :=
+  PiTensorProduct.congr_tprod _ _
+
 end Semiring
+
+section Dual
+
+variable {R : Type*} [CommRing R] [Finite ι] [∀ i, Group (G i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module R (V i)]
+  [∀ i, Module.Finite R (V i)] [∀ i, Module.Free R (V i)]
+
+/-- The external tensor product of the contragredients is the contragredient of the external
+tensor product for a finite family of finite free representations. -/
+noncomputable def piExternalTensorDualEquiv (ρ : ∀ i, Representation R (G i) (V i)) :
+    (piExternalTensor fun i ↦ (ρ i).dual).Equiv (piExternalTensor ρ).dual :=
+  .mk PiTensorProduct.dualDistribEquiv fun g ↦ by
+    let _ := Fintype.ofFinite ι
+    refine PiTensorProduct.ext <| MultilinearMap.ext fun f ↦ ?_
+    refine PiTensorProduct.ext <| MultilinearMap.ext fun v ↦ ?_
+    simp [PiTensorProduct.dualDistribEquiv, LinearMap.compMultilinearMap_apply,
+      Representation.dual_apply, Module.Dual.transpose_apply, piExternalTensor_apply_tprod]
+
+/-- The tensor of functionals acts on a pure tensor by multiplying their evaluations. -/
+@[simp]
+theorem piExternalTensorDualEquiv_tprod_apply [Fintype ι]
+    (ρ : ∀ i, Representation R (G i) (V i)) (f : ∀ i, Module.Dual R (V i)) (v : ∀ i, V i) :
+    piExternalTensorDualEquiv ρ (PiTensorProduct.tprod R f) (PiTensorProduct.tprod R v) =
+      ∏ i, f i (v i) :=
+  PiTensorProduct.dualDistrib_apply f v
+
+end Dual
 
 section Field
 
+variable [∀ i, Monoid (G i)]
 variable {k : Type*} [Field k] [Finite ι] [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   [∀ i, FiniteDimensional k (V i)]
 

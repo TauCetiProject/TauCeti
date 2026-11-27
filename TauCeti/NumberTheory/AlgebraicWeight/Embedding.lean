@@ -110,6 +110,18 @@ protected theorem ext {a b : EmbeddingWeight ι n} (h : ∀ τ i, (a τ).val i =
 protected theorem ext_iff {a b : EmbeddingWeight ι n} : a = b ↔ ∀ τ i, (a τ).val i = (b τ).val i :=
   ⟨fun h _ _ => h ▸ rfl, EmbeddingWeight.ext⟩
 
+/-- The contragredient weight, obtained by negating and reversing the coordinates separately
+at each label. -/
+def dual (a : EmbeddingWeight ι n) : EmbeddingWeight ι n := fun τ ↦ (a τ).dual
+
+@[simp]
+theorem dual_apply (a : EmbeddingWeight ι n) (τ : ι) : a.dual τ = (a τ).dual :=
+  (rfl)
+
+@[simp]
+theorem dual_dual (a : EmbeddingWeight ι n) : a.dual.dual = a :=
+  funext fun τ ↦ by simp
+
 /-! ### Base change -/
 
 section BaseChange
@@ -126,6 +138,11 @@ def baseChange (a : EmbeddingWeight (F →+* Ω) n) : EmbeddingWeight (F' →+* 
 @[simp]
 theorem baseChange_apply (a : EmbeddingWeight (F →+* Ω) n) (τ : F' →+* Ω) :
     a.baseChange F' τ = a (τ.comp (algebraMap F F')) :=
+  (rfl)
+
+@[simp]
+theorem baseChange_dual (a : EmbeddingWeight (F →+* Ω) n) :
+    a.dual.baseChange F' = (a.baseChange F').dual :=
   (rfl)
 
 /-- Base change along the identity preserves every coordinate. -/
@@ -154,6 +171,11 @@ def twist (a : EmbeddingWeight ι n) (b : ι → ℤ) : EmbeddingWeight ι n := 
 theorem twist_apply (a : EmbeddingWeight ι n) (b : ι → ℤ) (τ : ι) :
     a.twist b τ = (a τ).shift (b τ) :=
   (rfl)
+
+@[simp]
+theorem dual_twist (a : EmbeddingWeight ι n) (b : ι → ℤ) :
+    (a.twist b).dual = a.dual.twist (-b) :=
+  funext fun τ ↦ by simp
 
 @[simp]
 theorem twist_zero (a : EmbeddingWeight ι n) : a.twist 0 = a := by
