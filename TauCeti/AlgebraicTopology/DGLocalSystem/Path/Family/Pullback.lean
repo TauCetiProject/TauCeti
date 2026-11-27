@@ -79,7 +79,6 @@ omit [TopologicalSpace B'] in
 private theorem op_smul_tmul_changeBasepoint {a b : B} (N : DGLocalSystem.{v} B a R)
     (x : loopChainAlgebra B b R) (n : N)
     (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
-    letI := (tensorBimoduleObj N (pathChainBimodule B a b R)).moduleOp
     (op x • (tmul R (loopChainAlgebra B a R) n c :
       tensorBimoduleObj N (pathChainBimodule B a b R))) =
       tmul R (loopChainAlgebra B a R) n (op x • c) :=
