@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Iterate
+import TauCeti.Logic.Equiv.Fin.Basic
+import TauCeti.RingTheory.MvPowerSeries.Equiv
 
 /-!
 # Splitting the first variable of a restricted power series
@@ -26,13 +28,6 @@ variable {n : ℕ} {r : Fin (n + 1) → ℝ}
 
 local notation "cOption" => Option.elim' (r 0) (Fin.tail r)
 
--- The radius equation supplies the source type for the renaming in this construction.
-private theorem option_elim_comp_finSuccEquiv : cOption ∘ _root_.finSuccEquiv n = r := by
-  funext i
-  cases i using Fin.cases <;>
-    simp only [Function.comp_apply, finSuccEquiv_zero, finSuccEquiv_succ, Option.elim',
-      Fin.tail_def]
-
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [∀ i, Fact (0 < r i)]
 
 local instance (i : Option (Fin n)) : Fact (0 < cOption i) :=
@@ -48,11 +43,7 @@ local notation "Outer" => PowerSeries.IsRestricted.subring (R := Inner) (r 0)
 /-- Split off `X 0` at radius `r 0`, with coefficients restricted at `Fin.tail r`. -/
 noncomputable def restrictedFinSuccEquiv :
     IsRestricted.subring (R := R) r ≃ₐ[R] Outer :=
-  restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n) option_elim_comp_finSuccEquiv
-
-/-- Mathlib's formal split first renames the variables and then separates the option index. -/
-private theorem finSuccEquiv_apply [CommSemiring S] (f : MvPowerSeries (Fin (n + 1)) S) :
-    finSuccEquiv S n f = optionEquivLeft (Fin n) S (renameEquiv S (_root_.finSuccEquiv n) f) := rfl
+  restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n) (Fin.option_elim'_comp_finSuccEquiv r)
 
 /-- After forgetting restrictedness, splitting off the first variable agrees with Mathlib's
 formal comparison. -/
@@ -61,7 +52,8 @@ theorem map_subtype_restrictedFinSuccEquiv (f : IsRestricted.subring (R := R) r)
     PowerSeries.map (Inner).subtype (restrictedFinSuccEquiv f : PowerSeries Inner) =
       finSuccEquiv R n (f : MvPowerSeries (Fin (n + 1)) R) := by
   rw [finSuccEquiv_apply]
-  exact map_subtype_restrictedSplitEquiv (_root_.finSuccEquiv n) option_elim_comp_finSuccEquiv f
+  exact map_subtype_restrictedSplitEquiv (_root_.finSuccEquiv n)
+    (Fin.option_elim'_comp_finSuccEquiv r) f
 
 /-- Flattening agrees with the inverse of Mathlib's formal comparison. -/
 theorem coe_restrictedFinSuccEquiv_symm (g : Outer) :
@@ -97,7 +89,7 @@ theorem coe_restrictedFinSuccEquiv_X_zero :
     (restrictedFinSuccEquiv (⟨X 0, isRestricted_X r 0⟩ :
       IsRestricted.subring (R := R) r) : PowerSeries Inner) = PowerSeries.X := by
   have h := coe_restrictedSplitEquiv_X_none (R := R) (_root_.finSuccEquiv n)
-    (option_elim_comp_finSuccEquiv (r := r))
+    (Fin.option_elim'_comp_finSuccEquiv r)
   rw [finSuccEquiv_symm_none] at h
   exact h
 
@@ -109,7 +101,7 @@ theorem coe_restrictedFinSuccEquiv_X_succ (i : Fin n) :
       IsRestricted.subring (R := R) r) : PowerSeries Inner) =
         PowerSeries.C ⟨X i, isRestricted_X _ i⟩ := by
   have h := coe_restrictedSplitEquiv_X_some (R := R) (_root_.finSuccEquiv n)
-    (option_elim_comp_finSuccEquiv (r := r)) i
+    (Fin.option_elim'_comp_finSuccEquiv r) i
   rw [finSuccEquiv_symm_some] at h
   exact h
 
@@ -117,12 +109,13 @@ theorem coe_restrictedFinSuccEquiv_X_succ (i : Fin n) :
 @[simp]
 theorem norm_restrictedFinSuccEquiv (f : IsRestricted.subring (R := R) r) :
     ‖restrictedFinSuccEquiv f‖ = ‖f‖ :=
-  norm_restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n) option_elim_comp_finSuccEquiv f
+  norm_restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n)
+    (Fin.option_elim'_comp_finSuccEquiv r) f
 
 /-- Splitting off the first variable is an isometry for the Gauss norms. -/
 theorem isometry_restrictedFinSuccEquiv :
     Isometry (restrictedFinSuccEquiv (R := R) (r := r)) :=
   isometry_restrictedSplitEquiv (c := cOption) (_root_.finSuccEquiv n)
-    option_elim_comp_finSuccEquiv
+    (Fin.option_elim'_comp_finSuccEquiv r)
 
 end MvPowerSeries
