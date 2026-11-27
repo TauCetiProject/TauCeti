@@ -42,7 +42,7 @@ maximum of `φ - u` with `u < φ`, the time derivative of `φ - u` is at most
   without lateral boundary, such as a closed manifold.
 
 The three-dimensional normalization `-6 / (1 + 4t)` is in
-`TauCeti.Geometry.RicciFlow.ScalarCurvatureComparison`.
+`TauCeti.Geometry.RicciFlow.Scalar.CurvatureComparison`.
 
 ## References
 
