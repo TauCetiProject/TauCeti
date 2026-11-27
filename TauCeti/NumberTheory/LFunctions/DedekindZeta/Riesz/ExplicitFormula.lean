@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Riesz.Mellin
 public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
 import TauCeti.Analysis.MellinTransform.PowerLog
 import TauCeti.Analysis.MellinTransform.Uniqueness
-import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.Growth
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.Nonvanishing
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros

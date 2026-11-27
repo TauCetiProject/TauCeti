@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Meromorphic.LogDeriv
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Riesz
 public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
 
 /-!
