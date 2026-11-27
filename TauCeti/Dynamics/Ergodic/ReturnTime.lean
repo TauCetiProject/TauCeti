@@ -44,8 +44,9 @@ everywhere on `A`.
   `1 ≤ i ≤ k`.
 * `TauCeti.measurable_positiveReturnTime`.
 * `TauCeti.lintegral_positiveReturnTime_eq_tsum`: the layer-cake formula for the return time.
-* `TauCeti.lt_positiveReturnTime_inter_eq_preimage`: the sets of points of `A` with return time
-  greater than `k` are carried by `T^[k]` onto the sets of last backward visits.
+* `TauCeti.lt_positiveReturnTime_inter_eq_preimage`: for `g ∘ f = id`, the set of points of `A`
+  with return time under `f` greater than `k` is the preimage under `f^[k]` of the set of last
+  backward visits under `g`.
 * `TauCeti.lintegral_positiveReturnTime_eq_measure`: for a measure-preserving equivalence,
   `∫⁻ x in A, positiveReturnTime T A x ∂μ = μ {y | ∃ j, T.symm^[j] y ∈ A}`.
 * `TauCeti.lintegral_positiveReturnTime`: `∫⁻ x in A, positiveReturnTime T A x ∂μ = 1`.
@@ -143,9 +144,9 @@ theorem iterate_toNat_positiveReturnTime_mem {T : X → X} {A : Set X} {x : X}
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 h
   simpa [← hn] using hmem
 
-/-- For maps `f` and `g` with `g ∘ f = id`, `f^[k]` maps the points of `A` whose return time under
-`f` exceeds `k` onto the points whose backward orbit under `g` visits `A` for the last time `k`
-steps ago: the first set is the preimage of the second. -/
+/-- For maps `f` and `g` with `g ∘ f = id`, the set of points of `A` whose return time under `f`
+exceeds `k` is the preimage under `f^[k]` of the set of points whose backward orbit under `g`
+visits `A` for the last time `k` steps ago. -/
 theorem lt_positiveReturnTime_inter_eq_preimage {f g : X → X} (hgf : Function.LeftInverse g f)
     (A : Set X) (k : ℕ) :
     {x | (k : ℕ∞) < positiveReturnTime f A x} ∩ A =
