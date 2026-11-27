@@ -13,7 +13,8 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.Homotopy.Contractible
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 import TauCeti.Analysis.Complex.UnitDisc.Basic
-import TauCeti.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Complex.CauchyRiemann.NearlyHolomorphic
+import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Analysis.Complex.Conformal.LocalIndex
 
 /-!
@@ -60,6 +61,16 @@ vanishing of `φ` at the points of `σ⁻¹(Z)`
 multiplicities of the disc with `Z`, and it is positive as soon as `σ` meets `Z`
 (`ContinuousMap.zeroCharge_pos`).
 
+The same positivity holds when `f ∘ σ` only extends to a `C¹` function `b` satisfying a
+Cauchy–Riemann inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` with `M` locally bounded
+(`ContinuousMap.zeroCharge_pos_of_norm_le`). By the similarity principle
+(`TauCeti.exists_eventually_eq_mul_of_norm_le`) such a `b` is, near each of its zeros, a
+continuous nonvanishing function times a holomorphic one, so its zeros are isolated unless it
+vanishes identically, and each has positive local index. This is the case of the normal
+coordinate of a pseudoholomorphic disc in coordinates adapted to another, immersed,
+pseudoholomorphic disc, for an almost complex structure that need not be integrable
+(`TauCeti.zeroCharge_pos_of_cauchyRiemann`).
+
 Now let `Y` carry an almost complex structure `J` and let `f` be `J`-holomorphic. If `σ` is the
 restriction of a map `u` that is `J`-holomorphic on the unit disc, then `f ∘ u` is holomorphic
 (`TauCeti.IsPseudoholomorphicOn.differentiableOn_comp`). Hence the zero charges form a positive
@@ -87,12 +98,18 @@ hypothesis that `σ` is nonconstant is needed.
 * `ContinuousMap.zeroCharge_eq_sum_analyticOrderNatAt`: if `f ∘ σ` extends holomorphically, the
   zero charge is the sum of the orders of vanishing.
 * `ContinuousMap.zeroCharge_pos`: it is positive on such discs meeting `Z`.
+* `TauCeti.finite_preimage_preimage_zero_of_norm_le`: if `f ∘ σ` extends to a function satisfying
+  a Cauchy–Riemann inequality, a compact `σ⁻¹(Z)` is finite.
+* `ContinuousMap.zeroCharge_pos_of_norm_le`: it is positive on discs meeting `Z` along which
+  `f` satisfies a Cauchy–Riemann inequality.
 
 ## References
 
 * C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
   J. Amer. Math. Soc. 9 (1996), 845–918, Section 6.
 * A. Dold, *Lectures on Algebraic Topology*, Springer, 1972, Chapter VIII, §4.
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  AMS Colloquium Publications 52, 2012, Section 2.3 (the similarity principle).
 -/
 
 public section
@@ -303,19 +320,65 @@ private theorem exists_mem_ball_ne_zero {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
     simpa [hφ z] using hzero z (mem_ball_zero_iff.2 z.norm_lt_one)
   exact noncompact_univ 𝔻 (huniv ▸ h)
 
+/-- If `f ∘ σ` extends to a `C¹` function `b` on the unit disc satisfying the Cauchy–Riemann
+inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` and `σ⁻¹(f⁻¹(0))` is compact, the zeros of `b` do not accumulate
+at any point of the disc: otherwise `b` would vanish on it. -/
+private theorem eventually_ne_zero_of_norm_le {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
+    (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {b : ℂ → ℂ} (hb : ∀ z : 𝔻, b z = f (σ z))
+    (hbC : ContDiffOn ℝ 1 b (ball 0 1)) {M : ℂ → ℝ}
+    (hM : ∀ z ∈ ball (0 : ℂ) 1, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
+      M z * ‖b z‖) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
+    ∀ᶠ w in 𝓝[≠] z, b w ≠ 0 := by
+  obtain ⟨w₀, hw₀, hbw₀⟩ := exists_mem_ball_ne_zero h hb
+  by_contra hfreq
+  have h0 := eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le isOpen_ball
+    (convex_ball _ _).isPreconnected hbC hM hle hz (by simpa using hfreq)
+  exact hbw₀ (h0 hw₀)
+
+/-- **Finiteness for nearly holomorphic discs.** If `f ∘ σ` extends to a `C¹` function `b` on the
+unit disc satisfying the Cauchy–Riemann inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖`, for a function `M`
+bounded above near every point of the disc, a compact preimage `σ⁻¹(f⁻¹(0))` is finite: by the
+similarity principle the zeros of `b` are isolated. For `M = 0` this is
+`TauCeti.finite_preimage_preimage_zero`. -/
+theorem finite_preimage_preimage_zero_of_norm_le {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
+    (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {b : ℂ → ℂ} (hb : ∀ z : 𝔻, b z = f (σ z))
+    (hbC : ContDiffOn ℝ 1 b (ball 0 1)) {M : ℂ → ℝ}
+    (hM : ∀ z ∈ ball (0 : ℂ) 1, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
+      M z * ‖b z‖) :
+    (σ ⁻¹' (f ⁻¹' {0})).Finite := by
+  -- The image of the preimage in `ℂ` is compact and discrete, so finite.
+  have himg : IsDiscrete (((↑) : 𝔻 → ℂ) '' (σ ⁻¹' (f ⁻¹' {0}))) := by
+    refine isDiscrete_iff_nhdsNE.2 fun _ ⟨z, _, hzx⟩ ↦ inf_principal_eq_bot.2 ?_
+    subst hzx
+    filter_upwards [eventually_ne_zero_of_norm_le h hb hbC hM hle
+      (mem_ball_zero_iff.2 z.norm_lt_one)] with w hw ⟨w', hw', hww'⟩
+    subst hww'
+    exact hw (by simpa [hb w'] using hw')
+  exact ((h.image Complex.UnitDisc.continuous_coe).finite himg).of_finite_image
+    Complex.UnitDisc.coe_injective.injOn
+
+/-- A function holomorphic on the unit disc is of class `C¹` there and satisfies the
+Cauchy–Riemann equation `∂ₛφ + i ∂ₜφ = 0`, the Cauchy–Riemann inequality with `M = 0`. -/
+private theorem contDiffOn_and_norm_add_I_smul_le_zero {φ : ℂ → ℂ}
+    (hφd : DifferentiableOn ℂ φ (ball 0 1)) :
+    ContDiffOn ℝ 1 φ (ball 0 1) ∧ ∀ z ∈ ball (0 : ℂ) 1,
+      ‖fderiv ℝ φ z 1 + Complex.I • fderiv ℝ φ z Complex.I‖ ≤ (0 : ℂ → ℝ) z * ‖φ z‖ := by
+  refine ⟨(hφd.contDiffOn isOpen_ball).restrict_scalars ℝ, fun z hz ↦ ?_⟩
+  rw [(hφd.differentiableAt (isOpen_ball.mem_nhds hz)).fderiv_restrictScalars ℝ]
+  simp [← mul_assoc]
+
 /-- **Finiteness.** If `f ∘ σ` extends to a function `φ` holomorphic on the unit disc, a compact
-preimage `σ⁻¹(f⁻¹(0))` is finite: the zeros of `φ` are isolated. -/
+preimage `σ⁻¹(f⁻¹(0))` is finite: the zeros of `φ` are isolated. This is the case `M = 0` of
+`TauCeti.finite_preimage_preimage_zero_of_norm_le`. -/
 theorem finite_preimage_preimage_zero {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
     (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {φ : ℂ → ℂ} (hφ : ∀ z : 𝔻, φ z = f (σ z))
     (hφd : DifferentiableOn ℂ φ (ball 0 1)) :
-    (σ ⁻¹' (f ⁻¹' {0})).Finite := by
-  obtain ⟨w, hw, hφw⟩ := exists_mem_ball_ne_zero h hφ
-  have hfin := (hφd.analyticOnNhd isOpen_ball).finite_setOf_mem_and_eq_zero_of_isCompact
-    (convex_ball _ _).isPreconnected hw hφw (h.image Complex.UnitDisc.continuous_coe)
-    (image_subset_iff.2 fun z _ ↦ mem_ball_zero_iff.2 z.norm_lt_one)
-  refine (hfin.preimage Complex.UnitDisc.coe_injective.injOn).subset fun z hz ↦
-    ⟨mem_image_of_mem _ hz, ?_⟩
-  simpa [hφ z] using hz
+    (σ ⁻¹' (f ⁻¹' {0})).Finite :=
+  finite_preimage_preimage_zero_of_norm_le h hφ (contDiffOn_and_norm_add_I_smul_le_zero hφd).1
+    (fun _ _ ↦ ⟨0, Eventually.of_forall fun _ ↦ le_rfl⟩)
+    (contDiffOn_and_norm_add_I_smul_le_zero hφd).2
 
 /-- The local index of `f ∘ σ` at a zero `z` is the order of vanishing at `z` of a holomorphic
 extension `φ` of `f ∘ σ`. -/
@@ -356,25 +419,82 @@ theorem zeroCharge_eq_sum_analyticOrderNatAt {f : C(Y, ℂ)} {σ : C(𝔻, Y)} {
   exact Finset.sum_congr rfl fun z hz ↦
     TauCeti.localIndex_eq_analyticOrderNatAt hφ hφd ((hs z).2 hz)
 
+end ContinuousMap
+
+/-! ### Discs along which `f` satisfies a Cauchy–Riemann inequality -/
+
+namespace ContinuousMap
+
+variable {f : C(Y, ℂ)} {σ : C(𝔻, Y)} {b : ℂ → ℂ} {M : ℂ → ℝ}
+
+/-- At a zero `z` of `f ∘ σ`, if `f ∘ σ` extends near `z` to `b = v * s` with `v` continuous and
+nonzero at `z` and `s` analytic at `z`, and the zeros of `b` do not accumulate at `z`, the local
+index of `f ∘ σ` at `z` is positive. -/
+private theorem localIndex_pos_of_eventually_eq_mul (hb : ∀ z : 𝔻, b z = f (σ z)) {z : 𝔻}
+    (hz : f (σ z) = 0) (hiso : ∀ᶠ w in 𝓝[≠] (z : ℂ), b w ≠ 0) {v s : ℂ → ℂ}
+    (hv : ContinuousAt v z) (hv₀ : v z ≠ 0) (hs : AnalyticAt ℂ s z)
+    (hbvs : ∀ᶠ w in 𝓝 (z : ℂ), b w = v w * s w) :
+    0 < ((complexHomologicalOrientation ℂ).comap Complex.UnitDisc.isOpenEmbedding_coe).localIndex
+      (complexHomologicalOrientation ℂ) (f.comp σ) z := by
+  have hs₀ : s z = 0 := by
+    have h := hbvs.self_of_nhds
+    rw [hb z, hz] at h
+    exact (mul_eq_zero.1 h.symm).resolve_left hv₀
+  have key := HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_of_eventually_eq_mul
+    (complexHomologicalOrientation ℂ) Complex.UnitDisc.isOpenEmbedding_coe IsOpenEmbedding.id
+    (f := f.comp σ) (φ := b) (x := z) (Eventually.of_forall fun w ↦ hb w) hv hv₀ hs hs₀ hbvs
+  rw [HomologicalOrientation.comap_id] at key
+  rw [key, Nat.cast_pos]
+  -- The order of `s` at `z` is positive since `s z = 0`, and finite since otherwise `s`, hence
+  -- `b`, would vanish near `z`, whose zeros do not accumulate there.
+  refine ENat.toNat_pos (hs.analyticOrderAt_ne_zero.2 hs₀) fun htop ↦ ?_
+  obtain ⟨w, hw, hbw⟩ := ((eventually_nhdsWithin_of_eventually_nhds
+    ((analyticOrderAt_eq_top.1 htop).and hbvs)).and hiso).exists
+  exact hbw (by rw [hw.2, hw.1, mul_zero])
+
+/-- **Positivity of the zero charge for nearly holomorphic discs.** Suppose `f ∘ σ` extends to a
+function `b` of class `C¹` on the unit disc satisfying the Cauchy–Riemann inequality
+`‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖`, for a function `M` bounded above near every point of the disc. If
+`σ⁻¹(f⁻¹(0))` is compact and nonempty, the zero charge of `σ` is positive.
+
+By the similarity principle, `b` is near each of its zeros a continuous nonvanishing function
+times a holomorphic one, and its zeros are isolated unless it vanishes identically, which
+compactness excludes; so each zero has positive local index. For `M = 0` this is
+`ContinuousMap.zeroCharge_pos`. The inequality holds for the normal component of a
+pseudoholomorphic disc in coordinates adapted to another, immersed, one, and this theorem is then
+the positivity of their intersections. -/
+theorem zeroCharge_pos_of_norm_le (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
+    (hb : ∀ z : 𝔻, b z = f (σ z)) (hbC : ContDiffOn ℝ 1 b (ball 0 1))
+    (hM : ∀ z ∈ ball (0 : ℂ) 1, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
+      M z * ‖b z‖)
+    (hZ : ∃ z, f (σ z) = 0) : 0 < f.zeroCharge σ := by
+  have hfin := TauCeti.finite_preimage_preimage_zero_of_norm_le h hb hbC hM hle
+  have hfib : (f.comp σ) ⁻¹' {0} = σ ⁻¹' (f ⁻¹' {0}) := by
+    rw [ContinuousMap.coe_comp, Set.preimage_comp]
+  rw [ContinuousMap.zeroCharge, HomologicalOrientation.localDegree_eq_sum_localIndex _ _ _
+    Complex.finrank_real_complex _ (hfib ▸ hfin)]
+  obtain ⟨z₀, hz₀⟩ := hZ
+  refine Finset.sum_pos (fun z hz ↦ ?_) ⟨z₀, by simpa using hz₀⟩
+  have hz' : f (σ z) = 0 := by simpa using hz
+  -- Near `z`, `b` is a nonvanishing continuous function times a holomorphic one.
+  obtain ⟨v, s', hv, hv₀, hs', hbvs⟩ := exists_eventually_eq_mul_of_norm_le isOpen_ball hbC hM hle
+    (mem_ball_zero_iff.2 z.norm_lt_one)
+  exact localIndex_pos_of_eventually_eq_mul hb hz'
+    (TauCeti.eventually_ne_zero_of_norm_le h hb hbC hM hle (mem_ball_zero_iff.2 z.norm_lt_one))
+    hv hv₀ hs' hbvs
+
 /-- **Positivity.** If `f ∘ σ` extends to a function `φ` holomorphic on the unit disc, with
 `σ⁻¹(f⁻¹(0))` compact and nonempty, the zero charge of `σ` is positive: by the identity theorem, `φ`
-vanishes to finite, positive order at each zero. -/
-theorem zeroCharge_pos {f : C(Y, ℂ)} {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
-    {φ : ℂ → ℂ} (hφ : ∀ z : 𝔻, φ z = f (σ z)) (hφd : DifferentiableOn ℂ φ (ball 0 1))
+vanishes to finite, positive order at each zero. This is the case `M = 0` of
+`ContinuousMap.zeroCharge_pos_of_norm_le`. -/
+theorem zeroCharge_pos (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {φ : ℂ → ℂ}
+    (hφ : ∀ z : 𝔻, φ z = f (σ z)) (hφd : DifferentiableOn ℂ φ (ball 0 1))
     (hZ : ∃ z, f (σ z) = 0) :
-    0 < zeroCharge f σ := by
-  have hfin := TauCeti.finite_preimage_preimage_zero h hφ hφd
-  rw [zeroCharge_eq_sum_analyticOrderNatAt hφ hφd hfin.toFinset fun z ↦ by simp]
-  obtain ⟨z, hz⟩ := hZ
-  refine Finset.sum_pos (fun x hx ↦ ?_) ⟨z, hfin.mem_toFinset.2 hz⟩
-  have hx0 : φ x = 0 := (hφ x).trans (hfin.mem_toFinset.1 hx)
-  have hx := mem_ball_zero_iff.2 x.norm_lt_one
-  have han := hφd.analyticOnNhd isOpen_ball
-  obtain ⟨w, hw, hφw⟩ := TauCeti.exists_mem_ball_ne_zero h hφ
-  -- The order at `x` is finite since it is zero at `w`, where `φ` does not vanish.
-  exact Nat.cast_pos.2 (ENat.toNat_pos ((han x hx).analyticOrderAt_ne_zero.2 hx0)
-    (han.analyticOrderAt_ne_top_of_isPreconnected (convex_ball _ _).isPreconnected hw hx
-      (by simp [(han w hw).analyticOrderAt_eq_zero.2 hφw])))
+    0 < zeroCharge f σ :=
+  zeroCharge_pos_of_norm_le h hφ (TauCeti.contDiffOn_and_norm_add_I_smul_le_zero hφd).1
+    (fun _ _ ↦ ⟨0, Eventually.of_forall fun _ ↦ le_rfl⟩)
+    (TauCeti.contDiffOn_and_norm_add_I_smul_le_zero hφd).2 hZ
 
 end ContinuousMap
 

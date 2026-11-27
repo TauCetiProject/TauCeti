@@ -35,6 +35,7 @@ multiplied by its volume of `U₀`.
 * `TauCeti.HaarMeasureWithValues A G`: finitely additive, left-invariant `A`-valued functions on
   the compact open subsets of `G`.
 * `TauCeti.HaarMeasureWithValues.map`: pushing the values forward along an additive map.
+* `TauCeti.HaarMeasureWithValues.instSMul`: the rescaled Haar measure `c • μ : K ↦ c • μ(K)`.
 * `TauCeti.HaarMeasureWithValues.normalized`: the Haar measure normalised by `μ U₀ = 1` on a
   compact open subgroup `U₀` of invertible pro-order.
 
@@ -176,6 +177,32 @@ def map {B : Type*} [AddCommMonoid B] (f : A →+ B) : HaarMeasureWithValues B G
 theorem map_apply {B : Type*} [AddCommMonoid B] (f : A →+ B) (K : CompactOpens G) :
     μ.map f K = f (μ K) :=
   (rfl)
+
+section SMul
+
+variable {R : Type*}
+
+/-- The rescaled Haar measure `c • μ : K ↦ c • μ(K)`, the pushforward of `μ` along `a ↦ c • a`. -/
+instance instSMul [DistribSMul R A] : SMul R (HaarMeasureWithValues A G) :=
+  ⟨fun c μ ↦ μ.map (DistribSMul.toAddMonoidHom A c)⟩
+
+/-- The rescaled Haar measure gives `K` the volume `c • μ(K)`. -/
+@[simp]
+theorem smul_apply [DistribSMul R A] (c : R) (K : CompactOpens G) : (c • μ) K = c • μ K :=
+  (rfl)
+
+instance [DistribSMul R A] : SMulZeroClass R (HaarMeasureWithValues A G) where
+  smul_zero c := ext fun K ↦ by simp
+
+instance [Monoid R] [DistribMulAction R A] : MulAction R (HaarMeasureWithValues A G) where
+  one_smul μ := ext fun K ↦ by simp
+  mul_smul a b μ := ext fun K ↦ by simp [mul_smul]
+
+instance [Semiring R] [Module R A] : MulActionWithZero R (HaarMeasureWithValues A G) where
+  smul_zero := smul_zero
+  zero_smul μ := ext fun K ↦ by simp
+
+end SMul
 
 end AddCommMonoid
 
