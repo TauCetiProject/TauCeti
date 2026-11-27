@@ -21,9 +21,7 @@ to `tateSeries N C` and establishes functoriality under continuous ring homomorp
 
 1. **Existence, uniqueness, and error bound** (`existsUnique_weightedEval_tateSeries_eq_zero`): `F`
    has a unique zero `u ∈ C₀^N` with `u ≡ t mod ϖ ^ (k + 1)`, and `u ≡ t mod ϖ ^ (e - k)`.
-2. **Local uniqueness** (`eq_of_weightedEval_tateSeries_eq_zero`): any two zeros in
-   `t + ϖ ^ (k + 1) C₀^N` coincide, with no residual hypothesis on `F(t)`.
-3. **Functoriality** (`map_weightedEval_tateSeries`, `map_weightedEval_tateSeries_eq_zero`):
+2. **Functoriality** (`map_weightedEval_tateSeries`, `map_weightedEval_tateSeries_eq_zero`):
    continuous ring homomorphisms commute with `weightedEval` at power-bounded tuples and preserve
    Newton roots.
 
@@ -31,8 +29,6 @@ to `tateSeries N C` and establishes functoriality under continuous ring homomorp
 
 * `TauCeti.Huber.existsUnique_weightedEval_tateSeries_eq_zero`: multivariable Newton–Hensel lifting
   and quantitative error bound `u ≡ t mod ϖ ^ (e - k)` on `tateSeries N C`.
-* `TauCeti.Huber.eq_of_weightedEval_tateSeries_eq_zero`: uniqueness of zeros in
-  `t + ϖ ^ (k + 1) C₀^N` without a residual hypothesis on `F(t)`.
 * `TauCeti.Huber.map_weightedEval_tateSeries` and
   `TauCeti.Huber.map_weightedEval_tateSeries_eq_zero`: compatibility of evaluation and Newton roots
   with continuous ring homomorphisms.
@@ -100,32 +96,6 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero
   exact ⟨u, ⟨hu_mod, hu_zero,
     pow_dvd_sub_of_weightedEval_eq_zero P hϖ.isUnit hFres hF₀ hJ hFt_smul hu_mod hu_zero⟩,
     fun v hv_mod hv_zero ↦ hu_uniq v ⟨hv_mod, hv_zero⟩⟩
-
-/-- **Uniqueness of zeros in `t + ϖ ^ (k + 1) C₀^N`:** any two zeros `u, u' ∈ P.ringOfDefinition^N`
-of `F` congruent to `t` modulo `ϖ ^ (k + 1)` are equal, provided the Jacobian of `F` at `t` has an
-integral `ϖ ^ k`-scaled left inverse `M` (with no residual hypothesis on `F(t)`). -/
-theorem eq_of_weightedEval_tateSeries_eq_zero
-    (P : PairOfDefinition C) (ϖ : P.ringOfDefinition) (hϖ : IsPseudoUniformizer (ϖ : C))
-    {N : ℕ} {F : Fin N → tateSeries N C}
-    (hF : ∀ i, F i ∈ tateSeriesPlus N C P.ringOfDefinition)
-    {t : Fin N → P.ringOfDefinition} {k : ℕ}
-    {M : Matrix (Fin N) (Fin N) P.ringOfDefinition}
-    (hJ : M.map Subtype.val *
-        Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
-          (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) C))) =
-      (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C))
-    {u u' : Fin N → P.ringOfDefinition}
-    (hu : ∀ i, ϖ ^ (k + 1) ∣ u i - t i)
-    (hFu : ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C))
-      (F i : MvPowerSeries (Fin N) C) = 0)
-    (hu' : ∀ i, ϖ ^ (k + 1) ∣ u' i - t i)
-    (hFu' : ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u' l : C))
-      (F i : MvPowerSeries (Fin N) C) = 0) :
-    u = u' :=
-  eq_of_weightedEval_eq_zero P hϖ
-    (fun i ↦ mem_weightedRestrictedSubring.mp (F i).property)
-    (fun i ↦ mem_tateSeriesPlus_iff.mp (hF i))
-    hJ hu hFu hu' hFu'
 
 end Newton
 
@@ -224,8 +194,10 @@ theorem map_weightedEval_tateSeries_eq_zero
           (tateSeries.pderiv j (F l)),
         tateSeries.coe_pderiv]
     · split_ifs <;> simp [ϖ']
-  exact eq_of_weightedEval_tateSeries_eq_zero P' ϖ' (hϖ.map hφ) hF' hJ'
-    hv'_mod hv'_zero hu'_mod hu'_zero
+  exact eq_of_weightedEval_eq_zero P' (hϖ.map hφ)
+    (fun i ↦ mem_weightedRestrictedSubring.mp (tateSeries.mapRingHom hφ (F i)).property)
+    (fun i ↦ mem_tateSeriesPlus_iff.mp (hF' i))
+    hJ' hv'_mod hv'_zero hu'_mod hu'_zero
 
 end Functoriality
 

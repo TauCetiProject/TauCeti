@@ -177,7 +177,7 @@ private theorem evalOD_eq_zero_iff
   simp [funext_iff, evalOD, Subtype.ext_iff]
 
 /-- The Jacobian matrix of `F` at `t`, as a matrix over `A₀`. -/
-noncomputable def jacobianOD
+private noncomputable def jacobianOD
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (t : Fin N → P.ringOfDefinition) : Matrix (Fin N) (Fin N) P.ringOfDefinition :=
   Matrix.of fun i j ↦ ⟨weightedEval (RingHom.id C) (fun l ↦ (t l : C))
@@ -188,7 +188,7 @@ noncomputable def jacobianOD
 omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- Each entry of `jacobianOD` coerces to the evaluated partial derivative `∂ⱼFᵢ(t)` in `C`. -/
 @[simp]
-theorem jacobianOD_apply
+private theorem jacobianOD_apply
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (t : Fin N → P.ringOfDefinition) (i j : Fin N) :
     (jacobianOD P hF₀ t i j : C) =
@@ -215,7 +215,7 @@ private theorem pow_dvd_evalOD_sub
 
 omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- The scaled inverse of the Jacobian matrix over `C` is one over `A₀`. -/
-theorem mul_jacobianOD_eq
+private theorem mul_jacobianOD_eq
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     {t : Fin N → P.ringOfDefinition} {k : ℕ} {M : Matrix (Fin N) (Fin N) P.ringOfDefinition}
     (hM : M.map ((↑) : P.ringOfDefinition → C) * Matrix.of (fun i j ↦

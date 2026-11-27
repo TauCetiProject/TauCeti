@@ -12,7 +12,6 @@ import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
@@ -108,7 +107,7 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
 
 /-- The pseudouniformiser `ϖ` automatically belongs to `A⁺`, since `A°° ⊆ A⁺` for every ring of
 integral elements. -/
-theorem mem_plus_pseudoUniformizer (P : StandardEtalePresentation Aplus ϖ Cplus) :
+theorem pseudoUniformizer_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) :
     ϖ ∈ Aplus.plus :=
   Aplus.isRingOfIntegralElements.mem_of_isTopologicallyNilpotent
     P.isPseudoUniformizer.isTopologicallyNilpotent
@@ -359,8 +358,9 @@ noncomputable def lift (P : StandardEtalePresentation Aplus ϖ Cplus)
           (Subring.mem_map.mpr ⟨f, by simpa only [tateSeriesPair_plus] using hf, rfl⟩) }
   have hker : P.ideal ≤ RingHom.ker evPair.toRingHom := by
     rw [P.ideal_def]
-    exact Ideal.closure_span_le_ker_of_continuous hev_cont fun i ↦ by
-      simpa only [evPair, ev, coe_weightedEvalHom] using hFu i
+    exact Ideal.closure_le_ker_of_continuous hev_cont
+      (Ideal.span_le.mpr (Set.range_subset_iff.mpr fun i ↦ RingHom.mem_ker.mpr <| by
+        simpa only [evPair, ev, coe_weightedEvalHom] using hFu i))
   (evPair.quotientLift P.ideal hker).comp P.targetToQuotient
 
 /-- On an element `P.π f`, `P.lift z u hu hFu` evaluates the restricted series `f` at `u` along
@@ -509,11 +509,9 @@ noncomputable def identity (Aplus : Pair A) (ϖ : A) (hϖ : IsPseudoUniformizer 
       (Homeomorph.mk e.toEquiv (continuous_weightedRestrictedSubringFinZeroEquiv T₀)
         (continuous_weightedRestrictedSubringFinZeroEquiv_symm T₀)).isQuotientMap
     ker_π := by
-      have hbot_set : ((⊥ : Ideal (tateSeries 0 A)) : Set (tateSeries 0 A)) = {0} := by ext; simp
       have hspan : Ideal.span (Set.range (Fin.elim0 : Fin 0 → tateSeries 0 A)) = ⊥ := by
         simp [Set.range_eq_empty]
-      rw [(RingHom.injective_iff_ker_eq_bot π₀).mp e.injective, hspan,
-        Ideal.closure_eq_of_isClosed ⊥ (hbot_set ▸ isClosed_singleton)]
+      rw [(RingHom.injective_iff_ker_eq_bot π₀).mp e.injective, hspan, Ideal.closure_bot]
     mem_plus_iff := fun a ↦ by
       have hmap : (tateSeriesPlus 0 A Aplus.plus).map (π₀ : tateSeries 0 A →+* A) =
           Aplus.plus := by
