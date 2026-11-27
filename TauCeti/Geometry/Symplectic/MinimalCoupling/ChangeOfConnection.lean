@@ -14,9 +14,9 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 Let `ω` be a two-form on a normed space `E`, let `σ` be a constant skew-symmetric bilinear form
 on a normed space `V`, and let `d + A₀` and `d + A₁` be two connections on the trivial bundle
-`E × V → E`. This file shows that the germ of the minimal coupling form
-`ω_A = π^* ω + dλ_A` (`TauCeti.minimalCouplingForm`) along the zero section does not depend on
-the connection.
+`E × V → E`. This file shows that the minimal coupling form `ω_A = π^* ω + dλ_A`
+(`TauCeti.minimalCouplingForm`) does not depend on the connection, up to a diffeomorphism, near
+the zero section over any compact set on which `ω` is nondegenerate (in finite dimensions).
 
 The minimal coupling primitive `λ_A` is affine in `A`, so the primitives of the two connections
 differ by a term quadratic in the fibre coordinate: at `(z, w)`, on a vector `(v, n)`,
@@ -28,8 +28,8 @@ along the zero section, and the difference also has zero derivative there
 (`TauCeti.hasFDerivAt_minimalCouplingPrimitive_sub_minimalCouplingPrimitive_zero`). The minimal
 coupling forms differ by the exterior derivative of this difference,
 `ω_{A₁} - ω_{A₀} = d(λ_{A₁} - λ_{A₀})`
-(`TauCeti.minimalCouplingForm_sub_minimalCouplingForm`), and along the zero section both are
-`ω + σ` on the whole tangent space of `E × V`
+(`TauCeti.minimalCouplingForm_sub_minimalCouplingForm`), so along the zero section they agree on
+the whole tangent space of `E × V`
 (`TauCeti.minimalCouplingForm_zero_eq_minimalCouplingForm_zero`).
 
 These are the hypotheses of Moser's argument relative to a compact set
@@ -145,16 +145,15 @@ theorem minimalCouplingForm_sub_minimalCouplingForm {p : E × V}
   ring
 
 /-- **Along the zero section the minimal coupling form does not depend on the connection.** For
-skew-symmetric `σ` and connection forms differentiable at `z`, the minimal coupling forms of
-`d + A₀` and `d + A₁` agree at `(z, 0)` on the whole tangent space of `E × V`: both are `ω + σ`. -/
-theorem minimalCouplingForm_zero_eq_minimalCouplingForm_zero (hσ : ∀ u u', σ u u' = -σ u' u)
+connection forms differentiable at `z`, the minimal coupling forms of `d + A₀` and `d + A₁` agree
+at `(z, 0)` on the whole tangent space of `E × V`: they differ by the exterior derivative of
+`λ_{A₁} - λ_{A₀}`, which has zero derivative there. -/
+theorem minimalCouplingForm_zero_eq_minimalCouplingForm_zero
     (hA₀ : DifferentiableAt ℝ A₀ z) (hA₁ : DifferentiableAt ℝ A₁ z) :
-    minimalCouplingForm σ ω A₁ (z, 0) = minimalCouplingForm σ ω A₀ (z, 0) := by
-  ext u
-  have hu : u = ![u 0, u 1] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [hu, minimalCouplingForm_apply_pair_zero hσ hA₁, minimalCouplingForm_apply_pair_zero hσ hA₀]
+    minimalCouplingForm σ ω A₁ (z, 0) = minimalCouplingForm σ ω A₀ (z, 0) :=
+  sub_eq_zero.1 ((minimalCouplingForm_sub_minimalCouplingForm hA₀ hA₁).trans (by
+    rw [extDeriv, (hasFDerivAt_minimalCouplingPrimitive_sub_minimalCouplingPrimitive_zero hA₀
+      hA₁).fderiv, ← alternatizeUncurryFinCLM_apply, _root_.map_zero]))
 
 /-! ### Independence of the germ from the connection -/
 
@@ -217,7 +216,7 @@ private theorem nondegenerate_bilinFormAt_minimalCouplingSmoothForm_zero
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V]
 
-/-- **The germ of the minimal coupling form along the zero section does not depend on the
+/-- **Near the zero section over a compact set, the minimal coupling form does not depend on the
 connection.** In finite dimensions, let `ω` be a smooth closed two-form on `E`, let `σ` be a
 skew-symmetric nondegenerate bilinear form on `V`, let `A₀`, `A₁` be smooth connection forms on
 the trivial bundle `E × V`, and let `K ⊆ E` be a compact set on which `ω` is nondegenerate. Then
@@ -259,7 +258,7 @@ theorem exists_diffeomorph_fix_eventually_minimalCouplingForm_eq
     rintro ⟨z, w⟩ ⟨hz, hw⟩ s -
     obtain rfl : w = 0 := hw
     rw [SmoothTwoForm.bilinFormAt_add_smul_sub_of_eq
-      (minimalCouplingForm_zero_eq_minimalCouplingForm_zero hσ (hd₀ z) (hd₁ z)) s]
+      (minimalCouplingForm_zero_eq_minimalCouplingForm_zero (hd₀ z) (hd₁ z)) s]
     exact nondegenerate_bilinFormAt_minimalCouplingSmoothForm_zero hσ hσn hω hA₀ (hωK z hz)
   obtain ⟨Φ, hΦK, hΦC, hΦ, hΦ1⟩ :=
     SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_mextDeriv_eq_sub
@@ -267,14 +266,8 @@ theorem exists_diffeomorph_fix_eventually_minimalCouplingForm_eq
       (hK.prod isCompact_singleton) hβK hnd
   refine ⟨Φ, fun z hz ↦ hΦK _ ⟨hz, mem_singleton _⟩, hΦC, ?_, fun z hz ↦ ?_⟩
   · filter_upwards [hΦ] with p hp
-    ext u
-    -- On the model space, `mfderiv` is `fderiv` read through the identity `fromTangentSpace`.
-    rw [SmoothForm.coe_mpullback] at hp
-    have h := (TauCeti.mpullback_apply (I := 𝓘(ℝ, E × V)) (I' := 𝓘(ℝ, E × V)) Φ σ₁.val p
-      u).symm.trans congr($hp u)
-    rw [mfderiv_eq_fderiv] at h
-    rw [compContinuousLinearMap_apply]
-    exact h
+    rw [SmoothForm.coe_mpullback, mpullback_eq_flat] at hp
+    exact hp
   · have h := hΦ1 _ ⟨hz, mem_singleton _⟩ (by
       rw [RoughForm.inChartAt_modelSpace, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id,
         minimalCouplingPrimitiveSubSmoothForm_val σ]
