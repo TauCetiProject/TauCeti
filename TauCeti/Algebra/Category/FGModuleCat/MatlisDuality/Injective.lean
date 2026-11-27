@@ -19,11 +19,11 @@ in the category of finitely generated modules over an Artin algebra.
 
 public section
 
-open CategoryTheory TauCeti
+open CategoryTheory
 
 universe u v w
 
-namespace FGModuleCat
+namespace TauCeti.FGModuleCat
 
 /-- The category of finitely generated modules over an Artin algebra has enough injectives. -/
 theorem enoughInjectives_of_artinAlgebra (R : Type u) [CommRing R] [IsArtinianRing R]
@@ -44,4 +44,4 @@ theorem enoughInjectives_of_artinAlgebra (R : Type u) [CommRing R] [IsArtinianRi
       injective := FGModuleCat.injective_of_moduleInjective _
       mono := ConcreteCategory.mono_of_injective f (e.symm.injective.comp hi.injective) }⟩
 
-end FGModuleCat
+end TauCeti.FGModuleCat

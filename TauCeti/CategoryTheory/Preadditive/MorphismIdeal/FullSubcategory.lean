@@ -10,8 +10,9 @@ public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Linear
 /-!
 # Equivalences with full subcategories of ideal quotients
 
-A full additive functor induces an equivalence from the quotient by the pulled-back ideal
-onto any full subcategory of the target quotient that it lands in and hits up to isomorphism.
+An additive functor that is full after passing to the target quotient induces an equivalence
+from the quotient by the pulled-back ideal onto any full subcategory of the target quotient
+that it lands in and hits up to isomorphism.
 This identifies, for example, the stable quotient of a category of finite modules with the
 subcategory of finite objects in the ambient stable quotient.
 -/
@@ -32,12 +33,13 @@ private noncomputable def mapToFullSubcategory : I.Quotient ⥤ P.FullSubcategor
     rw [← I.quotientFunctor_obj_as X, map_obj_quotientFunctor_obj]
     exact hP X.as
 
-variable [F.Full]
+variable [(F ⋙ J.quotientFunctor).Full]
   (hSurj : ∀ Y : P.FullSubcategory,
     ∃ X, Nonempty (J.quotientFunctor.obj (F.obj X) ≅ Y.obj))
 
-/-- A full additive functor induces an equivalence from the quotient by the pulled-back ideal
-onto a full subcategory of the target quotient it lands in and hits up to isomorphism. -/
+/-- An additive functor that is full after passing to the target quotient induces an equivalence
+from the quotient by the pulled-back ideal onto a full subcategory of the target quotient it
+lands in and hits up to isomorphism. -/
 noncomputable def mapFullSubcategoryEquivalence : I.Quotient ≌ P.FullSubcategory := by
   have : (I.map J F h.le).Faithful := (faithful_map_iff I J F h.le).2 h.ge
   let G := mapToFullSubcategory I J F h P hP
@@ -50,22 +52,48 @@ noncomputable def mapFullSubcategoryEquivalence : I.Quotient ≌ P.FullSubcatego
   letI : G.IsEquivalence := {}
   exact G.asEquivalence
 
+/-- The comparison functor is the lift of the induced functor on ideal quotients. -/
+theorem mapFullSubcategoryEquivalence_functor :
+    (mapFullSubcategoryEquivalence I J F h P hP hSurj).functor =
+      P.lift (I.map J F h.le) (fun X ↦ by
+        rw [← I.quotientFunctor_obj_as X, map_obj_quotientFunctor_obj]
+        exact hP X.as) :=
+  (rfl)
+
+/-- On a representative object, the comparison takes its image in the target quotient. -/
+@[simp]
+theorem mapFullSubcategoryEquivalence_functor_obj_obj (X : C) :
+    ((mapFullSubcategoryEquivalence I J F h P hP hSurj).functor.obj
+      (I.quotientFunctor.obj X)).obj = J.quotientFunctor.obj (F.obj X) :=
+  map_obj_quotientFunctor_obj I J F h.le X
+
+/-- On a representative morphism, the underlying comparison map is its image in the target
+quotient, with source and target identified by the comparison's object equation. -/
+@[simp]
+theorem mapFullSubcategoryEquivalence_functor_map_hom {X Y : C} (f : X ⟶ Y) :
+    ((mapFullSubcategoryEquivalence I J F h P hP hSurj).functor.map
+      (I.quotientFunctor.map f)).hom ≫
+        eqToHom (mapFullSubcategoryEquivalence_functor_obj_obj I J F h P hP hSurj Y) =
+      eqToHom (mapFullSubcategoryEquivalence_functor_obj_obj I J F h P hP hSurj X) ≫
+        J.quotientFunctor.map (F.map f) :=
+  map_map_quotientFunctor_map I J F h.le f
+
 /-- The comparison equivalence commutes with the quotient functors and the full inclusion. -/
 noncomputable def quotientFunctorCompMapFullSubcategoryEquivalenceIso :
     I.quotientFunctor ⋙ (mapFullSubcategoryEquivalence I J F h P hP hSurj).functor ⋙ P.ι ≅
       F ⋙ J.quotientFunctor := by
-  rw [mapFullSubcategoryEquivalence, Functor.asEquivalence_functor, mapToFullSubcategory]
+  rw [mapFullSubcategoryEquivalence_functor]
   exact Functor.isoWhiskerLeft I.quotientFunctor (P.liftCompιIso _ _) ≪≫
     eqToIso (I.quotientFunctor_comp_map J F h.le)
 
 instance : (mapFullSubcategoryEquivalence I J F h P hP hSurj).functor.Additive := by
-  rw [mapFullSubcategoryEquivalence, Functor.asEquivalence_functor, mapToFullSubcategory]
+  rw [mapFullSubcategoryEquivalence_functor]
   infer_instance
 
 variable (R : Type*) [Semiring R] [Linear R C] [Linear R D] [F.Linear R]
 
 instance : (mapFullSubcategoryEquivalence I J F h P hP hSurj).functor.Linear R := by
-  rw [mapFullSubcategoryEquivalence, Functor.asEquivalence_functor, mapToFullSubcategory]
+  rw [mapFullSubcategoryEquivalence_functor]
   exact ⟨fun f r ↦ ObjectProperty.hom_ext _ ((I.map J F h.le).map_smul r f)⟩
 
 end TauCeti.MorphismIdeal

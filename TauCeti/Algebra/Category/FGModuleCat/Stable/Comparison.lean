@@ -34,11 +34,11 @@ embedding of the source.
 
 public section
 
-open CategoryTheory Limits TauCeti
+open CategoryTheory Limits
 
 universe u v
 
-namespace FGModuleCat
+namespace TauCeti.FGModuleCat
 
 variable (A : Type u) [Ring A] [IsNoetherianRing A]
 
@@ -65,8 +65,10 @@ theorem projectiveStableIdeal_eq_comap :
   · rintro ⟨P, hP, i, p, hf⟩
     let Q := Projective.over Y
     let q := Projective.π Y
-    have : Epi (F.map q) :=
-      preserves_epi_of_preservesColimit (forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)) q
+    -- The forgetful functor is definitionally the inclusion F and carries colimit preservation.
+    let U := forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)
+    have : Epi (U.map q) := preserves_epi_of_preservesColimit U q
+    have : Epi (F.map q) := inferInstanceAs (Epi (U.map q))
     have : Projective P := (ExactStructure.abelian_isProjective_iff _).1 hP
     let i' := F.preimage (i ≫ Projective.factorThru p (F.map q))
     refine ⟨Q, (ExactStructure.abelian_isProjective_iff _).2 inferInstance, i', q,
@@ -74,16 +76,30 @@ theorem projectiveStableIdeal_eq_comap :
     simpa only [Functor.map_comp, i', Functor.map_preimage, Category.assoc,
       Projective.factorThru_comp] using hf
 
+omit [IsNoetherianRing A] [Small.{v} A] in
+private theorem projectiveStableComparison_surj :
+    ∀ Y : FinitelyPresentedStableModule.{u, v} A,
+      ∃ X : FGModuleCat.{v} A, Nonempty
+        ((ExactStructure.abelian (ModuleCat.{v} A)).projectiveStableFunctor.obj X.obj ≅ Y.obj) := by
+  intro Y
+  have : Module.FinitePresentation A Y.obj.as := Y.property
+  exact ⟨FGModuleCat.of A Y.obj.as, ⟨eqToIso (MorphismIdeal.quotientFunctor_obj_as _ Y.obj)⟩⟩
+
 /-- The projective stable quotient of finitely generated modules is equivalent, by inclusion,
 to finitely presented objects of the ambient projective stable quotient. -/
 noncomputable def projectiveStableEquivalence :
     (ExactStructure.abelian (FGModuleCat.{v} A)).ProjectiveStableCategory ≌
-      FinitelyPresentedStableModule.{u, v} A := by
-  refine MorphismIdeal.mapFullSubcategoryEquivalence _ _ (ModuleCat.isFG.{v} A).ι
-    (projectiveStableIdeal_eq_comap A) _ (fun X ↦ Module.finitePresentation_of_finite A X.obj) ?_
-  intro Y
-  have : Module.FinitePresentation A Y.obj.as := Y.property
-  exact ⟨FGModuleCat.of A Y.obj.as, ⟨eqToIso (MorphismIdeal.quotientFunctor_obj_as _ Y.obj)⟩⟩
+      FinitelyPresentedStableModule.{u, v} A :=
+  MorphismIdeal.mapFullSubcategoryEquivalence _ _ (ModuleCat.isFG.{v} A).ι
+    (projectiveStableIdeal_eq_comap A) _ (fun X ↦ Module.finitePresentation_of_finite A X.obj)
+    (projectiveStableComparison_surj A)
+
+private theorem projectiveStableEquivalence_functor :
+    (projectiveStableEquivalence.{u, v} A).functor =
+      (MorphismIdeal.mapFullSubcategoryEquivalence _ _ (ModuleCat.isFG.{v} A).ι
+        (projectiveStableIdeal_eq_comap A) _ (fun X ↦ Module.finitePresentation_of_finite A X.obj)
+        (projectiveStableComparison_surj A)).functor :=
+  rfl
 
 /-- On quotienting, the projective comparison is induced by the inclusion of finite modules. -/
 noncomputable def projectiveStableFunctorCompEquivalenceIso :
@@ -91,17 +107,17 @@ noncomputable def projectiveStableFunctorCompEquivalenceIso :
       (projectiveStableEquivalence A).functor ⋙ ObjectProperty.ι _ ≅
       (ModuleCat.isFG.{v} A).ι ⋙
         (ExactStructure.abelian (ModuleCat.{v} A)).projectiveStableFunctor := by
-  unfold projectiveStableEquivalence
+  rw [projectiveStableEquivalence_functor]
   exact MorphismIdeal.quotientFunctorCompMapFullSubcategoryEquivalenceIso _ _ _ _ _ _ _
 
 instance : (projectiveStableEquivalence.{u, v} A).functor.Additive := by
-  unfold projectiveStableEquivalence
+  rw [projectiveStableEquivalence_functor]
   infer_instance
 
 open scoped ModuleCat.Algebra in
 instance (R : Type*) [CommSemiring R] [Algebra R A] :
     (projectiveStableEquivalence.{u, v} A).functor.Linear R := by
-  unfold projectiveStableEquivalence
+  rw [projectiveStableEquivalence_functor]
   infer_instance
 
 end Projective
@@ -138,16 +154,30 @@ theorem injectiveStableIdeal_eq_comap :
     simpa only [Functor.map_comp, p', Functor.map_preimage,
       Injective.comp_factorThru_assoc] using hf
 
+omit [IsNoetherianRing A] [Small.{v} A] [EnoughInjectives (FGModuleCat.{v} A)] in
+private theorem injectiveStableComparison_surj :
+    ∀ Y : FinitelyGeneratedInjectiveStableModule.{u, v} A,
+      ∃ X : FGModuleCat.{v} A, Nonempty
+        ((ExactStructure.abelian (ModuleCat.{v} A)).injectiveStableFunctor.obj X.obj ≅ Y.obj) := by
+  intro Y
+  have : Module.Finite A Y.obj.as := Y.property
+  exact ⟨FGModuleCat.of A Y.obj.as, ⟨eqToIso (MorphismIdeal.quotientFunctor_obj_as _ Y.obj)⟩⟩
+
 /-- With enough finitely generated injectives, the injective stable quotient of finitely
 generated modules is equivalent, by inclusion, to the finite objects of the ambient quotient. -/
 noncomputable def injectiveStableEquivalence :
     (ExactStructure.abelian (FGModuleCat.{v} A)).InjectiveStableCategory ≌
-      FinitelyGeneratedInjectiveStableModule.{u, v} A := by
-  refine MorphismIdeal.mapFullSubcategoryEquivalence _ _ (ModuleCat.isFG.{v} A).ι
-    (injectiveStableIdeal_eq_comap A) _ (fun X ↦ inferInstanceAs (Module.Finite A X.obj)) ?_
-  intro Y
-  have : Module.Finite A Y.obj.as := Y.property
-  exact ⟨FGModuleCat.of A Y.obj.as, ⟨eqToIso (MorphismIdeal.quotientFunctor_obj_as _ Y.obj)⟩⟩
+      FinitelyGeneratedInjectiveStableModule.{u, v} A :=
+  MorphismIdeal.mapFullSubcategoryEquivalence _ _ (ModuleCat.isFG.{v} A).ι
+    (injectiveStableIdeal_eq_comap A) _ (fun X ↦ inferInstanceAs (Module.Finite A X.obj))
+    (injectiveStableComparison_surj A)
+
+private theorem injectiveStableEquivalence_functor :
+    (injectiveStableEquivalence.{u, v} A).functor =
+      (MorphismIdeal.mapFullSubcategoryEquivalence _ _ (ModuleCat.isFG.{v} A).ι
+        (injectiveStableIdeal_eq_comap A) _ (fun X ↦ inferInstanceAs (Module.Finite A X.obj))
+        (injectiveStableComparison_surj A)).functor :=
+  rfl
 
 /-- On quotienting, the injective comparison is induced by the inclusion of finite modules. -/
 noncomputable def injectiveStableFunctorCompEquivalenceIso :
@@ -155,19 +185,19 @@ noncomputable def injectiveStableFunctorCompEquivalenceIso :
       (injectiveStableEquivalence A).functor ⋙ ObjectProperty.ι _ ≅
       (ModuleCat.isFG.{v} A).ι ⋙
         (ExactStructure.abelian (ModuleCat.{v} A)).injectiveStableFunctor := by
-  unfold injectiveStableEquivalence
+  rw [injectiveStableEquivalence_functor]
   exact MorphismIdeal.quotientFunctorCompMapFullSubcategoryEquivalenceIso _ _ _ _ _ _ _
 
 instance : (injectiveStableEquivalence.{u, v} A).functor.Additive := by
-  unfold injectiveStableEquivalence
+  rw [injectiveStableEquivalence_functor]
   infer_instance
 
 open scoped ModuleCat.Algebra in
 instance (R : Type*) [CommSemiring R] [Algebra R A] :
     (injectiveStableEquivalence.{u, v} A).functor.Linear R := by
-  unfold injectiveStableEquivalence
+  rw [injectiveStableEquivalence_functor]
   infer_instance
 
 end Injective
 
-end FGModuleCat
+end TauCeti.FGModuleCat

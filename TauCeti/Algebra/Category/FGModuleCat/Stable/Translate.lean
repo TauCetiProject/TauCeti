@@ -25,11 +25,11 @@ by Matlis duality in the ambient stable quotients.
 
 public section
 
-open CategoryTheory TauCeti
+open CategoryTheory
 
 universe u v w
 
-namespace FGModuleCat
+namespace TauCeti.FGModuleCat
 
 variable (R : Type v) [CommRing R] [IsArtinianRing R]
   (A : Type u) [Ring A] [Algebra R A] [Module.Finite R A]
@@ -49,6 +49,27 @@ noncomputable def stableTranslateEquivalence :
     (TauCeti.stableTranslateEquivalence.{u, max v w} R A E hE)).trans
       (injectiveStableEquivalence.{u, max u v w} A).symm
 
+/-- The finite translate applies the ambient translate between the two stable comparisons. -/
+theorem stableTranslateEquivalence_functor :
+    letI : IsArtinianRing A := IsArtinianRing.of_finite R A
+    letI := enoughInjectives_of_artinAlgebra.{v, u, w} R A
+    (stableTranslateEquivalence R A E hE).functor =
+      ((projectiveStableEquivalence.{u, max u v w} A).functor ⋙
+        (TauCeti.stableTranslateEquivalence.{u, max v w} R A E hE).functor) ⋙
+        (injectiveStableEquivalence.{u, max u v w} A).inverse :=
+  (rfl)
+
+/-- The chosen inverse of the finite translate applies the inverse ambient translate between
+the injective and projective comparisons. -/
+theorem stableTranslateEquivalence_inverse :
+    letI : IsArtinianRing A := IsArtinianRing.of_finite R A
+    letI := enoughInjectives_of_artinAlgebra.{v, u, w} R A
+    (stableTranslateEquivalence R A E hE).inverse =
+      (injectiveStableEquivalence.{u, max u v w} A).functor ⋙
+        (TauCeti.stableTranslateEquivalence.{u, max v w} R A E hE).inverse ⋙
+        (projectiveStableEquivalence.{u, max u v w} A).inverse :=
+  (rfl)
+
 /-- Transport along the projective and injective comparisons identifies the translate with
 `TauCeti.stableTranslateEquivalence` in the ambient stable quotients. -/
 noncomputable def stableTranslateEquivalenceCompInjectiveStableEquivalenceIso :
@@ -60,7 +81,7 @@ noncomputable def stableTranslateEquivalenceCompInjectiveStableEquivalenceIso :
         (TauCeti.stableTranslateEquivalence.{u, max v w} R A E hE).functor := by
   letI : IsArtinianRing A := IsArtinianRing.of_finite R A
   letI := enoughInjectives_of_artinAlgebra.{v, u, w} R A
-  unfold stableTranslateEquivalence
+  rw [stableTranslateEquivalence_functor]
   exact Functor.associator _ _ _ ≪≫
     Functor.isoWhiskerLeft _ (injectiveStableEquivalence.{u, max u v w} A).counitIso ≪≫
     Functor.rightUnitor _
@@ -71,9 +92,7 @@ instance :
   let : IsArtinianRing A := IsArtinianRing.of_finite R A
   let := enoughInjectives_of_artinAlgebra.{v, u, w} R A
   have := finite_of_forall_isMaximal hE
-  unfold stableTranslateEquivalence
-  simp only [Equivalence.trans_functor, Equivalence.symm_functor,
-    TauCeti.stableTranslateEquivalence_functor]
+  rw [stableTranslateEquivalence_functor, TauCeti.stableTranslateEquivalence_functor]
   infer_instance
 
-end FGModuleCat
+end TauCeti.FGModuleCat
