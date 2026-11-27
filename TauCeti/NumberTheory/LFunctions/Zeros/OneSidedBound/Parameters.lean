@@ -41,6 +41,8 @@ This file proves the elementary facts about them: `d ≡ 7 (mod 8)` and `d > 64`
 
 ## Main results
 
+* `coprime_div_two_sub_one_of_dvd`, `div_two_sub_one_modEq_seven`: the designated residue
+  class at every positive multiple of `18480` is reduced and is `7` modulo `8`.
 * `TauCeti.OneSidedBound.Parameters.modEq_div_two_sub_one`, `Parameters.ofModEq`.
 * `Parameters.q₀_pos`, `Parameters.d_mod_eight`, `Parameters.sixty_four_lt_d`.
 * `TauCeti.OneSidedBound.towerDeg_eq`: `towerDeg s = 3 ^ (⌊log₃ s⌋ + 5) · 2 ^ s`.
@@ -120,6 +122,17 @@ structure Parameters where
   /-- `q₀ ∤ d + 1`: with `q₀_dvd_two_mul_d_add_one`, the congruence `d ≡ q₀ / 2 - 1`. -/
   not_q₀_dvd_d_add_one : ¬ q₀ ∣ d + 1
 
+/-- The residue `q₀ / 2 - 1` is prime to `q₀` at every positive multiple of `18480`. -/
+theorem coprime_div_two_sub_one_of_dvd {q₀ : ℕ} (hq₀ : q₀ ≠ 0) (hq : 18480 ∣ q₀) :
+    (q₀ / 2 - 1).Coprime q₀ :=
+  (Nat.coprime_div_two_sub_one_iff (even_iff_two_dvd.mpr ((by norm_num : 2 ∣ 18480).trans hq))
+    hq₀).mpr ((by norm_num : 4 ∣ 18480).trans hq)
+
+/-- The residue `q₀ / 2 - 1` is `7` modulo `8` at every positive multiple of `18480`. -/
+theorem div_two_sub_one_modEq_seven {q₀ : ℕ} (hq₀ : q₀ ≠ 0) (hq : 18480 ∣ q₀) :
+    q₀ / 2 - 1 ≡ 7 [MOD 8] :=
+  Nat.div_two_sub_one_modEq_of_mul_dvd hq₀ ((by decide : 2 * 8 ∣ 18480).trans hq)
+
 namespace Parameters
 
 variable (P : Parameters)
@@ -197,8 +210,9 @@ theorem four_dvd_d_add_one : 4 ∣ P.d + 1 := (by norm_num : 4 ∣ 8).trans P.ei
 
 /-- `d ≡ 7 (mod 8)`. -/
 theorem d_mod_eight : P.d % 8 = 7 := by
-  have := P.eight_dvd_d_add_one
-  omega
+  have hd := P.modEq_div_two_sub_one.of_dvd ((by decide : 8 ∣ 18480).trans P.dvd_q₀)
+  have h₇ := div_two_sub_one_modEq_seven P.q₀_ne_zero P.dvd_q₀
+  simp_all [Nat.ModEq]
 
 /-- `d` is odd. -/
 theorem odd_d : Odd P.d := Nat.odd_iff.2 (by have := P.d_mod_eight; omega)

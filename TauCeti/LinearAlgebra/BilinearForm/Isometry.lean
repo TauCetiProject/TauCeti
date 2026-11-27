@@ -84,6 +84,10 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isSquare`: over a linearly ordered ring, an isometry
+  of a left-separating form that is the square of an endomorphism has determinant `1`.
+* `TauCeti.BilinForm.IsIsometry.toMatrix_mem_symplecticGroup`: the matrix of an isometry in a
+  basis in which `B` has the standard symplectic matrix `Matrix.J` is symplectic.
 * `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
   form on a vector space has determinant `1` (by convention when the space is
   infinite-dimensional).
@@ -463,14 +467,22 @@ theorem isUnit_det (b : Basis ι R M)
     (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
   IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
 
+/-- **The matrix of an isometry in a symplectic basis is symplectic**: if the matrix of `B` in a
+basis `b` is the standard symplectic matrix `Matrix.J`, the matrix in `b` of an isometry of `B`
+lies in the symplectic group. -/
+theorem toMatrix_mem_symplecticGroup {l : Type*} [Fintype l] [DecidableEq l]
+    (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
+    (hf : IsIsometry B f) : LinearMap.toMatrix b b f ∈ Matrix.symplecticGroup l R := by
+  have h := (isIsometry_iff_toMatrix b).mp hf
+  rwa [hb, ← SymplecticGroup.mem_iff'] at h
+
 /-- An isometry of a form whose matrix in some basis is the standard symplectic matrix
 `Matrix.J` has determinant `1`: its matrix in that basis is symplectic. -/
 theorem det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
     (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
     (hf : IsIsometry B f) : LinearMap.det f = 1 := by
-  have h := (isIsometry_iff_toMatrix b).mp hf
-  rw [hb, ← SymplecticGroup.mem_iff'] at h
-  rw [← LinearMap.det_toMatrix b, SymplecticGroup.det_eq_one h]
+  rw [← LinearMap.det_toMatrix b,
+    SymplecticGroup.det_eq_one (hf.toMatrix_mem_symplecticGroup b hb)]
 
 end IsIsometry
 
@@ -552,6 +564,25 @@ theorem bijective (hB : B.SeparatingLeft) (hf : IsIsometry B f) : Function.Bijec
 end IsIsometry
 
 end SeparatingLeft
+
+section LinearOrder
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Module.Free R M] [Module.Finite R M]
+
+/-- Over a linearly ordered commutative ring, an isometry of a left-separating form on a finite
+free module that is the square of an endomorphism has determinant `1`. For a representation of a
+group in which every element is a square, such as the unitary group `U(n)`, by isometries of such
+a form, this says the representation preserves every orientation. -/
+theorem IsIsometry.det_eq_one_of_isSquare (hB : B.SeparatingLeft) (hf : IsIsometry B f)
+    (hsq : IsSquare f) : LinearMap.det f = 1 := by
+  have h1 : LinearMap.det f ^ 2 = 1 :=
+    hf.det_sq_eq_one (Module.Free.chooseBasis R M)
+      (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hB))
+  obtain ⟨g, rfl⟩ := hsq
+  rw [map_mul] at h1 ⊢
+  exact (pow_eq_one_iff_of_nonneg (mul_self_nonneg _) two_ne_zero).mp h1
+
+end LinearOrder
 
 end CommRing
 
