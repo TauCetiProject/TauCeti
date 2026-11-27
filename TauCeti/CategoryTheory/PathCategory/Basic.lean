@@ -22,11 +22,12 @@ structure; its identities are empty paths and its composition is concatenation o
 * `TauCeti.pathCategory`: the free category on an explicitly supplied quiver, on its objects.
 * `Quiver.pathCategory_id` and `Quiver.pathCategory_comp`: its identities and composition, as
   operations on `Quiver.Path`.
+* `CategoryTheory.Functor.map_eq_mapPath`: singleton preservation determines the action on paths.
 -/
 
 public section
 
-universe u h
+universe u h u₁ u₂ h₁ h₂
 
 namespace TauCeti
 
@@ -60,3 +61,28 @@ theorem pathCategory_comp (Q : Quiver.{h} O) {a b c : O} (p : @Path O Q a b)
   rfl
 
 end Quiver
+
+namespace CategoryTheory.Functor
+
+/-- A functor between path categories that preserves singleton paths acts on every path
+by extending its map on generators. The generator map shares the functor's object map. -/
+theorem map_eq_mapPath {O₁ : Type u₁} [Q₁ : Quiver.{h₁} O₁]
+    {O₂ : Type u₂} [Q₂ : Quiver.{h₂} O₂]
+    (F : Paths O₁ ⥤ Paths O₂)
+    (map : ∀ {a b : O₁}, @Quiver.Hom O₁ Q₁ a b →
+      @Quiver.Hom O₂ Q₂ (F.obj a) (F.obj b))
+    (hmap : ∀ {a b : O₁} (f : @Quiver.Hom O₁ Q₁ a b),
+      F.map (@Quiver.Hom.toPath O₁ Q₁ a b f) = @Quiver.Hom.toPath O₂ Q₂ _ _ (map f))
+    {a b : O₁} (p : @Quiver.Path O₁ Q₁ a b) :
+    F.map p = @Prefunctor.mapPath O₁ Q₁ O₂ Q₂ ⟨F.obj, map⟩ a b p := by
+  let φ : @Prefunctor O₁ Q₁ O₂ Q₂ := ⟨F.obj, map⟩
+  let G : Paths O₁ ⥤ Paths O₂ :=
+    { obj := φ.obj
+      map := φ.mapPath
+      map_id := fun _ ↦ rfl
+      map_comp := fun p q ↦ φ.mapPath_comp p q }
+  have h : F = G := Paths.ext_functor rfl (fun a b f ↦ by
+    simpa [G, φ] using hmap f)
+  exact eq_of_heq (Functor.hcongr_hom h p)
+
+end CategoryTheory.Functor

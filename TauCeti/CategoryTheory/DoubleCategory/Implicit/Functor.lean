@@ -89,31 +89,17 @@ theorem vPrefunctor_map (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
 @[simp]
 theorem hMap_eq_mapPath (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
     (p : @Quiver.Path O₁ H₁ a b) :
-    F.hMap p = @Prefunctor.mapPath O₁ H₁ O₂ H₂ F.hPrefunctor a b p := by
-  let := H₁
-  let := H₂
-  induction p with
-  | nil => exact F.hMap_id _
-  | cons p f ih =>
-    simpa only [edgeComp, Quiver.pathCategory_comp, Quiver.Path.comp_toPath_eq_cons,
-      Prefunctor.mapPath_cons, hPrefunctor_map] using
-      F.hMap_comp p (@Quiver.Hom.toPath O₁ H₁ _ _ f) |>.trans
-        (congrArg₂ (edgeComp (pathCategory O₂ H₂)) ih (F.hMap_toPath f))
+    F.hMap p = @Prefunctor.mapPath O₁ H₁ O₂ H₂ F.hPrefunctor a b p :=
+  F.hFunctor.map_eq_mapPath (Q₁ := H₁) (Q₂ := H₂)
+    (fun f ↦ F.hGenerator f) (fun f ↦ F.hMap_toPath f) p
 
 /-- The vertical path map is the extension of the vertical generator map. -/
 @[simp]
 theorem vMap_eq_mapPath (F : ImplicitDoubleFunctor D₁ D₂) {a b : O₁}
     (p : @Quiver.Path O₁ V₁ a b) :
-    F.vMap p = @Prefunctor.mapPath O₁ V₁ O₂ V₂ F.vPrefunctor a b p := by
-  let := V₁
-  let := V₂
-  induction p with
-  | nil => exact F.vMap_id _
-  | cons p f ih =>
-    simpa only [edgeComp, Quiver.pathCategory_comp, Quiver.Path.comp_toPath_eq_cons,
-      Prefunctor.mapPath_cons, vPrefunctor_map] using
-      F.vMap_comp p (@Quiver.Hom.toPath O₁ V₁ _ _ f) |>.trans
-        (congrArg₂ (edgeComp (pathCategory O₂ V₂)) ih (F.vMap_toPath f))
+    F.vMap p = @Prefunctor.mapPath O₁ V₁ O₂ V₂ F.vPrefunctor a b p :=
+  F.vFunctor.map_eq_mapPath (Q₁ := V₁) (Q₂ := V₂)
+    (fun f ↦ F.vGenerator f) (fun f ↦ F.vMap_toPath f) p
 
 /-- An implicit double functor has no extra choice of generator maps once its underlying
 strict double functor is fixed. -/
@@ -158,6 +144,12 @@ theorem id_hGenerator {a b : O₁} (f : @Quiver.Hom O₁ H₁ a b) :
 theorem id_vGenerator {a b : O₁} (f : @Quiver.Hom O₁ V₁ a b) :
     (id D₁).vGenerator f = f := rfl
 
+@[simp]
+theorem id_hPrefunctor : (id D₁).hPrefunctor = @Prefunctor.id O₁ H₁ := rfl
+
+@[simp]
+theorem id_vPrefunctor : (id D₁).vPrefunctor = @Prefunctor.id O₁ V₁ := rfl
+
 /-- Composition of implicit double functors, in diagrammatic order. Its body is exposed so
 that the object endpoints of its generator and cell maps compute. -/
 @[expose]
@@ -184,6 +176,16 @@ theorem comp_hGenerator (F : ImplicitDoubleFunctor D₁ D₂) (G : ImplicitDoubl
 theorem comp_vGenerator (F : ImplicitDoubleFunctor D₁ D₂) (G : ImplicitDoubleFunctor D₂ D₃)
     {a b : O₁} (f : @Quiver.Hom O₁ V₁ a b) :
     (F.comp G).vGenerator f = G.vGenerator (F.vGenerator f) := rfl
+
+@[simp]
+theorem comp_hPrefunctor (F : ImplicitDoubleFunctor D₁ D₂) (G : ImplicitDoubleFunctor D₂ D₃) :
+    (F.comp G).hPrefunctor = @Prefunctor.comp O₁ H₁ O₂ H₂ O₃ H₃ F.hPrefunctor G.hPrefunctor :=
+  rfl
+
+@[simp]
+theorem comp_vPrefunctor (F : ImplicitDoubleFunctor D₁ D₂) (G : ImplicitDoubleFunctor D₂ D₃) :
+    (F.comp G).vPrefunctor = @Prefunctor.comp O₁ V₁ O₂ V₂ O₃ V₃ F.vPrefunctor G.vPrefunctor :=
+  rfl
 
 @[simp]
 theorem id_comp (F : ImplicitDoubleFunctor D₁ D₂) : (id D₁).comp F = F :=
