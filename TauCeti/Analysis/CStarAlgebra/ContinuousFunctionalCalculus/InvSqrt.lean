@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
+import TauCeti.Analysis.Normed.Algebra.Spectrum
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.Real.Sqrt
 
@@ -16,16 +17,14 @@ import TauCeti.Analysis.Real.Sqrt
 # Renormalizing an element close to `1` by `k^{-1/2}`
 
 A self-adjoint element `k` of a C⋆-algebra with `‖k - 1‖ ≤ ε ≤ 1/4` has its spectrum in
-`[3/4, 5/4]`, where `t ↦ t^{-1/2}` moves a point by at most its distance to `1`
-(`Real.abs_one_sub_inv_sqrt_le_abs_sub_one`). So the continuous functional calculus gives a
-self-adjoint `g = k^{-1/2}` with `gkg = 1` and `‖g - 1‖ ≤ ε`. Applied to `k = QhQ + (1 - Q)`
-for a projection `Q` commuting with a self-adjoint `h` close to `Q`, this renormalizes the
-compression `QhQ` to `Q`.
+`[3/4, 5/4]` (`spectrum.norm_sub_one_le_of_mem`), where `t ↦ t^{-1/2}` moves a point by at
+most its distance to `1` (`Real.abs_one_sub_inv_sqrt_le_abs_sub_one`). So the continuous
+functional calculus gives a self-adjoint `g = k^{-1/2}` with `gkg = 1` and `‖g - 1‖ ≤ ε`.
+Applied to `k = QhQ + (1 - Q)` for a projection `Q` commuting with a self-adjoint `h` close to
+`Q`, this renormalizes the compression `QhQ` to `Q`.
 
 ## Main declarations
 
-* `TauCeti.abs_sub_one_le_of_mem_spectrum`: the real spectrum of `k` lies within `‖k - 1‖`
-  of `1`.
 * `IsSelfAdjoint.exists_isSelfAdjoint_mul_mul_eq_one`: the renormalizing element `g = k^{-1/2}`.
 * `IsStarProjection.exists_isSelfAdjoint_mul_compress_mul_eq`: renormalizing a compression.
 -/
@@ -38,15 +37,6 @@ namespace TauCeti
 
 variable {B : Type*} [CStarAlgebra B]
 
-/-- The real spectrum of `k` lies within `‖k - 1‖` of `1`. -/
-theorem abs_sub_one_le_of_mem_spectrum {k : B} {t : ℝ} (ht : t ∈ spectrum ℝ k) :
-    |t - 1| ≤ ‖k - 1‖ := by
-  have h : t - 1 ∈ spectrum ℝ (k - algebraMap ℝ B 1) := by
-    rw [← spectrum.sub_singleton_eq]
-    exact Set.sub_mem_sub ht rfl
-  rw [map_one] at h
-  exact spectrum.norm_le_norm_of_mem h
-
 /-- **Renormalizing an element close to `1`.** A self-adjoint `k` with `‖k - 1‖ ≤ ε ≤ 1/4` has
 a self-adjoint `g = k^{-1/2}` with `gkg = 1` and `‖g - 1‖ ≤ ε`, commuting with everything that
 commutes with `k`. -/
@@ -55,7 +45,7 @@ theorem _root_.IsSelfAdjoint.exists_isSelfAdjoint_mul_mul_eq_one {k : B} (hk : I
     ∃ g : B, IsSelfAdjoint g ∧ g * k * g = 1 ∧ ‖g - 1‖ ≤ ε ∧
       ∀ b : B, Commute k b → Commute g b := by
   have hspec : ∀ t ∈ spectrum ℝ k, |t - 1| ≤ ε := fun t ht ↦
-    (abs_sub_one_le_of_mem_spectrum ht).trans hε
+    (Real.norm_eq_abs _ ▸ spectrum.norm_sub_one_le_of_mem ht).trans hε
   have hpos : ∀ t ∈ spectrum ℝ k, 0 < t := fun t ht ↦ by
     linarith [abs_le.mp ((hspec t ht).trans hε4)]
   have hcont : ContinuousOn (fun t : ℝ ↦ (√t)⁻¹) (spectrum ℝ k) :=
