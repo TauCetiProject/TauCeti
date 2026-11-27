@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
+import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
@@ -66,6 +68,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 * `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
   `TauCeti.Huber.powerBoundedSubring_eq_integer`: in an ultrametric normed field `K°` is the
   closed unit ball, equal as a subring to `𝒪[K]`.
+* `TauCeti.Huber.isRingOfIntegralElements_integer`: in an ultrametric normed field the valuation
+  ring `𝒪[K]` is a ring of integral elements.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le` and
   `TauCeti.Huber.powerBoundedSubring.isUnit_iff_norm_eq_one`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms and units of `K°` are the elements of norm one.
@@ -285,6 +289,16 @@ theorem powerBoundedSubring_eq_integer : powerBoundedSubring K = 𝒪[K] := by
   rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Valuation.mem_integer_iff,
     TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply, ← NNReal.coe_le_coe,
     coe_nnNorm, NNReal.coe_one]
+
+variable (K) in
+/-- **The valuation ring of an ultrametric normed field is a ring of integral elements**: it is
+open, integrally closed in `K` as a valuation ring, and equal to the power-bounded subring `K°`
+(`powerBoundedSubring_eq_integer`), so it is the largest ring of integral elements. -/
+theorem isRingOfIntegralElements_integer : IsRingOfIntegralElements 𝒪[K] where
+  isOpen := Valued.isOpen_integer K
+  isIntegrallyClosedIn := Subring.isIntegrallyClosedIn_iff.mpr fun _ hx ↦
+    (Valuation.integer.integers Valued.v).isIntegral_iff_v_le_one.mp hx
+  le_powerBoundedSubring := powerBoundedSubring_eq_integer.ge
 
 /-- The canonical ring isomorphism `K° ≃+* 𝒪[K]` between the power-bounded subring and the
 valuation ring of an ultrametric normed field. -/

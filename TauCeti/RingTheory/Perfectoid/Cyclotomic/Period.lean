@@ -323,12 +323,9 @@ trivial root system. -/
 theorem ker_fontaineTheta_eq_span_xi (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
-    RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} := by
-  have hO := Huber.powerBoundedSubring_eq_integer (K := C)
-  have hplus : Huber.IsRingOfIntegralElements (𝒪[C]) := by
-    rw [← hO]
-    exact Huber.isRingOfIntegralElements_powerBoundedSubring C
-  exact ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements hplus ε hε
+    RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} :=
+  ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements
+    (Huber.isRingOfIntegralElements_integer C) ε hε
 
 /-- On the valuation ring of a complete perfectoid nonarchimedean field,
 `xiTilde` generates the shifted Fontaine kernel. -/
