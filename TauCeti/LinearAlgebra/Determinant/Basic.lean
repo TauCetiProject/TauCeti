@@ -62,8 +62,6 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   commutative ring, for a left-separating form.
 * `LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul`: if a pairing `B` identifies `M'` with the dual of
   a finite free module `M` and `B (F x) (F' y) = c • B x y`, then `det F * det F' = c ^ finrank M`.
-* `Module.Basis.det_constr`: the endomorphism sending a basis `b` to `v` has determinant
-  `b.det v`.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
 * `Matrix.detRowAlternating_apply`: the row determinant form evaluated on a family of rows is
@@ -263,14 +261,6 @@ theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
     ext x : 1
     simp [map_sum, map_smul]
   rw [h, LinearEquiv.det_conj, LinearEquiv.coe_det, det_basis]
-
-/-- The determinant of the endomorphism sending the basis `b` to `v` is the determinant of `v`
-in the basis `b`. -/
-@[simp]
-theorem det_constr (b : Basis ι R M) (v : ι → M) : LinearMap.det (b.constr R v) = b.det v := by
-  rw [det_apply, toMatrix_eq_toMatrix_constr, LinearMap.det_toMatrix]
-  -- `toMatrix_eq_toMatrix_constr` uses `constr ℕ`; both are the linear map sending `b` to `v`.
-  exact congrArg LinearMap.det (b.ext fun i ↦ by simp)
 
 /-- Evaluating the determinant form of a basis `b'` on the image `b.map e` of a basis `b` under a
 linear equivalence `e` gives the determinant of the matrix of `e` with respect to `b` and `b'`. -/

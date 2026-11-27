@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.Basic.Real.Basic
-import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Densities on real vector spaces
@@ -22,8 +21,6 @@ to `v ↦ |b.det v| * c`. The evaluation and change-of-basis formulas include di
 zero. In particular, a density vanishes on dependent tuples in positive dimension,
 and a density is determined by its value on any one basis. This is the linear fibre
 used for orientation-free integration and density-valued test sections.
-The change-of-basis formula rests on `Module.Basis.det_constr`: the endomorphism sending a
-basis `b` to a tuple `v` has determinant `b.det v`.
 
 Densities are transported along linear equivalences by `TauCeti.Density.map`, the analogue of
 `Orientation.map`; along an automorphism `f` the transport is scaling by `|det f|⁻¹`
@@ -113,9 +110,11 @@ the absolute determinant of that tuple. -/
 theorem apply_eq_abs_det_mul (μ : Density V m) (b : Module.Basis (Fin m) ℝ V)
     (v : Fin m → V) : μ v = |b.det v| * μ b := by
   have hv : (b.constr ℝ v : V → V) ∘ b = v := by ext i; simp
+  have hd : LinearMap.det (b.constr ℝ v) = b.det v := by
+    simpa [hv, b.det_self] using (b.det_comp (b.constr ℝ v) b).symm
   calc
     μ v = μ ((b.constr ℝ v : V → V) ∘ b) := congrArg μ hv.symm
-    _ = |b.det v| * μ b := by rw [comp_apply, b.det_constr]
+    _ = |b.det v| * μ b := by rw [comp_apply, hd]
 
 /-- A density is zero exactly when its value on a basis is zero. -/
 @[simp]
