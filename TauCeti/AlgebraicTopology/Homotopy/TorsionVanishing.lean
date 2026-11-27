@@ -7,10 +7,12 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
+public import Mathlib.RingTheory.Localization.Defs
+public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.AlgebraicTopology.PathComponent
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.ModuloTorsion
-import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!

@@ -212,7 +212,8 @@ theorem isIso_singularHomologyMap_localization_iff {R : Type u} [CommRing R] (M 
             LinearMap.range (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom)
           M := by
   have := IsLocalization.flat A M
-  rw [← bijective_singularHomologyMap_baseChange_iff_isIso R A f n,
-    LinearMap.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range _ M A]
+  rw [← bijective_singularHomologyMap_baseChange_iff_isIso R A f n, Function.Bijective,
+    LinearMap.baseChange_injective_iff_isTorsion'_ker _ M A,
+    LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range _ M A]
 
 end TauCeti

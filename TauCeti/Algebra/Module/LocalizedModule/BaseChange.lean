@@ -37,8 +37,8 @@ of the two localized maps are equivalent, and the underlying localized modules a
 
 Third, for an `R`-linear map `f : M →ₗ[R] N` over a commutative ring `R`, base change to a
 localization `A` of `R` at `S` is exact and kills a module iff it is `S`-torsion, characterizing
-injectivity, surjectivity, and bijectivity of `f.baseChange A` via `S`-torsion of `LinearMap.ker f`
-and `N ⧸ LinearMap.range f`.
+injectivity and surjectivity of `f.baseChange A` via `S`-torsion of `LinearMap.ker f` and
+`N ⧸ LinearMap.range f`.
 
 ## Main declarations
 
@@ -59,10 +59,9 @@ and `N ⧸ LinearMap.range f`.
   injectivity, surjectivity, and bijectivity of `f.baseChange A` coincide with those of
   `LocalizedModule.map T f`.
 * `LinearMap.baseChange_injective_iff_isTorsion'_ker`,
-  `LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range`,
-  `LinearMap.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range`: base change of `f` to a
-  localization at `S` is injective, surjective, or bijective iff `LinearMap.ker f` and/or
-  `N ⧸ LinearMap.range f` are `S`-torsion.
+  `LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range`: base change of `f` to a
+  localization at `S` is injective iff `LinearMap.ker f` is `S`-torsion and surjective iff
+  `N ⧸ LinearMap.range f` is `S`-torsion.
 -/
 
 public section
@@ -342,14 +341,5 @@ theorem baseChange_surjective_iff_isTorsion'_quotient_range (f : M →ₗ[R] N) 
     fun _ ↦ LinearMap.ext fun _ ↦ Subsingleton.elim _ _⟩
   obtain ⟨x, rfl⟩ := hsurj y
   exact LinearMap.congr_fun h x
-
-/-- Base change of `f : M →ₗ[R] N` to a localization `A` of `R` at `S` is bijective if and only
-if both its kernel and its cokernel are `S`-torsion. -/
-theorem baseChange_bijective_iff_isTorsion'_ker_and_quotient_range (f : M →ₗ[R] N)
-    (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A] :
-    Function.Bijective (f.baseChange A) ↔
-      Module.IsTorsion' (LinearMap.ker f) S ∧ Module.IsTorsion' (N ⧸ LinearMap.range f) S :=
-  and_congr (f.baseChange_injective_iff_isTorsion'_ker S A)
-    (f.baseChange_surjective_iff_isTorsion'_quotient_range S A)
 
 end LinearMap

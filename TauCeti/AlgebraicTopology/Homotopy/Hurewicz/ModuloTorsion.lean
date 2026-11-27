@@ -32,10 +32,12 @@ so the general Serre-class Hurewicz theorems
 on `Y`:
 * `HomotopyGroup.hurewiczModuleCatHom` is an isomorphism modulo `S`-torsion, giving `S`-torsion
   kernel and cokernel via `ModuleCat.kernelIsoKer` and `ModuleCat.cokernelIsoRangeQuotient`.
-* Base change to any localization `A` of `ℤ` at `S` preserves bijectivity exactly when kernel and
-  cokernel are `S`-torsion (`LinearMap.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range`),
-  yielding the localized Hurewicz isomorphism in degree `n + 2`, and strong induction gives the
-  reverse direction of the connectivity equivalence.
+* Base change to any localization `A` of `ℤ` at `S` preserves injectivity and surjectivity
+  exactly when kernel and cokernel are `S`-torsion
+  (`LinearMap.baseChange_injective_iff_isTorsion'_ker`,
+  `LinearMap.baseChange_surjective_iff_isTorsion'_quotient_range`), yielding the localized Hurewicz
+  isomorphism in degree `n + 2`, and strong induction gives the reverse direction of the
+  connectivity equivalence.
 
 ## Main results
 
@@ -129,13 +131,14 @@ theorem bijective_hurewiczModuleCatHom_baseChange
     (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S)
     (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A] :
     Function.Bijective ((hurewiczModuleCatHom Y y n).hom.baseChange A) :=
-  ((hurewiczModuleCatHom Y y n).hom.baseChange_bijective_iff_isTorsion'_ker_and_quotient_range
-    S A).2 ⟨isTorsion'_ker_hurewiczModuleCatHom hπ,
+  ⟨((hurewiczModuleCatHom Y y n).hom.baseChange_injective_iff_isTorsion'_ker S A).2
+      (isTorsion'_ker_hurewiczModuleCatHom hπ),
+    ((hurewiczModuleCatHom Y y n).hom.baseChange_surjective_iff_isTorsion'_quotient_range S A).2
       -- `isTorsion'_quotient_range_hurewiczModuleCatHom` uses `AddCommGroup.toIntModule`,
-      -- whereas `baseChange_bijective_iff_isTorsion'_ker_and_quotient_range` uses
+      -- whereas `baseChange_surjective_iff_isTorsion'_quotient_range` uses
       -- `Submodule.Quotient.module`.
-      Module.isTorsion'_of_intModule (AddCommGroup.toIntModule _) (Submodule.Quotient.module _)
-        (isTorsion'_quotient_range_hurewiczModuleCatHom hπ)⟩
+      (Module.isTorsion'_of_intModule (AddCommGroup.toIntModule _) (Submodule.Quotient.module _)
+        (isTorsion'_quotient_range_hurewiczModuleCatHom hπ))⟩
 
 /-- Localized Hurewicz equivalence using the `Algebra.toModule` `ℤ`-module structure on `A`. -/
 private def hurewiczLocalizationLinearEquivAux
