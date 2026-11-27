@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Unitary
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 
 /-!
 # Orthogonal `2 × 2` matrices
@@ -26,6 +28,7 @@ and the **sign** `ε(g) = det g = ±1` is an integer. The rotation `r_θ = exp(�
 
 * `TauCeti.orthogonalPhase g`: the phase `z(g) = g₀₀ - i g₁₀` of `g ∈ O(2)`.
 * `TauCeti.orthogonalSign g`: `det g = ±1`, as an integer.
+* `TauCeti.orthogonalRotation θ`: the rotation `r_θ = exp(θJ)`, of phase `e^{iθ}`.
 
 ## Main results
 
@@ -34,6 +37,8 @@ and the **sign** `ε(g) = det g = ±1` is an integer. The rotation `r_θ = exp(�
 * `Matrix.eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one`,
   `Matrix.eq_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one`: the normal forms of rotations and
   reflections.
+* `TauCeti.orthogonalRotation_zero`, `TauCeti.orthogonalRotation_add`,
+  `TauCeti.orthogonalRotation_inv`: the rotations form a one-parameter subgroup of `O(2)`.
 * `TauCeti.orthogonalPhase_mul`: `z(gh) = z(g) z(h) ^ (det g)`.
 * `TauCeti.orthogonalComplexMatrix_eq_of_det_eq_one`: the complex matrix of a rotation.
 -/
@@ -226,6 +231,57 @@ theorem orthogonalPhase_orthogonalDiagonalReflection :
 theorem orthogonalSign_orthogonalDiagonalReflection :
     orthogonalSign (orthogonalDiagonalReflection ℝ 1) = -1 :=
   orthogonalSign_of_det_eq_neg_one (det_orthogonalDiagonalReflection ℝ 1)
+
+/-- The **rotation** `r_θ = exp(θJ) = !![cos θ, sin θ; -sin θ, cos θ]` in `O(2)`, with
+`J = !![0, 1; -1, 0]`: the matrix of `Matrix.SpecialLinearGroup.rotation θ`. -/
+def orthogonalRotation (θ : ℝ) : orthogonalGroup (Fin 2) ℝ :=
+  ⟨(SpecialLinearGroup.rotation θ : Matrix (Fin 2) (Fin 2) ℝ), by
+    rw [mem_orthogonalGroup_iff]
+    have h := Real.cos_sq_add_sin_sq θ
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [Matrix.mul_apply, Fin.sum_univ_two] <;> nlinarith⟩
+
+/-- The matrix of the rotation `r_θ`. -/
+@[simp]
+theorem coe_orthogonalRotation (θ : ℝ) :
+    (orthogonalRotation θ : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ] :=
+  SpecialLinearGroup.coe_rotation θ
+
+/-- The rotation `r_θ` has determinant `1`. -/
+theorem det_orthogonalRotation (θ : ℝ) :
+    (orthogonalRotation θ : Matrix (Fin 2) (Fin 2) ℝ).det = 1 :=
+  (SpecialLinearGroup.rotation θ).det_coe
+
+/-- The rotation `r_θ` has sign `1`. -/
+@[simp]
+theorem orthogonalSign_orthogonalRotation (θ : ℝ) : orthogonalSign (orthogonalRotation θ) = 1 :=
+  orthogonalSign_of_det_eq_one (det_orthogonalRotation θ)
+
+/-- The rotation `r_θ` has phase `e^{iθ}`. -/
+@[simp]
+theorem orthogonalPhase_orthogonalRotation (θ : ℝ) :
+    orthogonalPhase (orthogonalRotation θ) = exp (θ * I) := by
+  simp [orthogonalPhase_def, exp_mul_I, mul_comm I]
+
+/-- The rotation by the angle `0` is the identity. -/
+@[simp]
+theorem orthogonalRotation_zero : orthogonalRotation 0 = 1 :=
+  Subtype.ext congr(($(SpecialLinearGroup.rotation_zero) : Matrix (Fin 2) (Fin 2) ℝ))
+
+-- Not `@[simp]`: the family form `orthogonalRotation θ` is the simp normal form, as for
+-- `Matrix.SpecialLinearGroup.rotation_add`.
+/-- The rotations form a one-parameter subgroup: `r_{θ + φ} = r_θ r_φ`. -/
+theorem orthogonalRotation_add (θ φ : ℝ) :
+    orthogonalRotation (θ + φ) = orthogonalRotation θ * orthogonalRotation φ :=
+  Subtype.ext congr(($(SpecialLinearGroup.rotation_add θ φ) : Matrix (Fin 2) (Fin 2) ℝ))
+
+/-- The inverse of `r_θ` is `r_{-θ}`. -/
+@[simp]
+theorem orthogonalRotation_inv (θ : ℝ) : (orthogonalRotation θ)⁻¹ = orthogonalRotation (-θ) :=
+  inv_eq_of_mul_eq_one_right (by rw [← orthogonalRotation_add, add_neg_cancel,
+    orthogonalRotation_zero])
 
 /-- **The phase of a product**: `z(gh) = z(g) z(h) ^ (det g)`. Composing with a reflection
 conjugates the phase of the second factor. -/

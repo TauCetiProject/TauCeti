@@ -254,6 +254,11 @@ def weightBasis : Module.Basis ℤ ℂ (CompactWeightModule k μ) := Finsupp.bas
 theorem weightBasis_apply (ℓ : ℤ) : weightBasis k μ ℓ = weightVector k μ ℓ :=
   (rfl)
 
+/-- The coordinates in the weight basis are `TauCeti.CompactWeightModule.equivFinsupp k μ`. -/
+@[simp]
+theorem weightBasis_repr : (weightBasis k μ).repr = equivFinsupp k μ :=
+  (rfl)
+
 end CompactWeightModule
 
 variable {k μ : ℂ}
