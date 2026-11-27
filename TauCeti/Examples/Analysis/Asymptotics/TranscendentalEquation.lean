@@ -29,11 +29,12 @@ lower bound eventually excludes it.
 
 ## Main results
 
-* `Asymptotics.existsUnique_sq_sub_log_eq`: existence and uniqueness of the root (DLMF 2.2.3).
-* `Asymptotics.sq_sub_log_root_isEquivalent`: `t ∼ y^{1/2}` as `y → ∞` (DLMF 2.2.4).
-* `Asymptotics.isLittleO_sq_sub_log_root_sq_remainder`: `t² = y + ½ log y + o(1)` (DLMF 2.2.5).
-* `Asymptotics.isLittleO_sq_sub_log_root_remainder`: `t = y^{1/2} (1 + ¼ y⁻¹ log y + o(y⁻¹))`
-  (DLMF 2.2.6).
+All in the namespace `TauCeti.Examples.TranscendentalEquation`:
+
+* `existsUnique_sq_sub_log_eq`: existence and uniqueness of the root (DLMF 2.2.3).
+* `sq_sub_log_root_isEquivalent`: `t ∼ y^{1/2}` as `y → ∞` (DLMF 2.2.4).
+* `isLittleO_sq_sub_log_root_sq_remainder`: `t² = y + ½ log y + o(1)` (DLMF 2.2.5).
+* `isLittleO_sq_sub_log_root_remainder`: `t = y^{1/2} (1 + ¼ y⁻¹ log y + o(y⁻¹))` (DLMF 2.2.6).
 
 ## References
 
@@ -45,10 +46,10 @@ file `DLMF/AsymptoticApproximations/Basics/Transcendental.lean`.
 
 public section
 
-open Filter Real Set
+open Filter Real Set Asymptotics
 open scoped Topology
 
-namespace Asymptotics
+namespace TauCeti.Examples.TranscendentalEquation
 
 /-- `x ↦ x - ½ log x` is strictly increasing on `[½, ∞)`. -/
 private lemma strictMonoOn_sub_log_div_two :
@@ -62,19 +63,21 @@ private lemma strictMonoOn_sub_log_div_two :
   nlinarith [mem_Ici.mp hx]
 
 /-- `x - ½ log x ∼ x` as `x → ∞`. -/
-private lemma sub_log_div_two_isEquivalent : (fun x : ℝ => x - log x / 2) ~[atTop] id := by
-  refine IsLittleO.isEquivalent
-    ((isLittleO_log_id_atTop.const_mul_left (1 / 2)).neg_left.congr_left fun x => ?_)
-  simp only [Pi.sub_apply, id]
-  ring
+private lemma sub_log_div_two_isEquivalent : (fun x : ℝ => x - log x / 2) ~[atTop] id :=
+  (IsEquivalent.refl.sub_isLittleO (isLittleO_log_id_atTop.const_mul_left (1 / 2))).congr_left
+    (Eventually.of_forall fun x => by simp [div_eq_inv_mul])
+
+/-- The cutoff `2^{-1/2}` squares to `½`. -/
+private lemma inv_sqrt_two_sq : ((√2)⁻¹ : ℝ) ^ 2 = 1 / 2 := by
+  rw [inv_pow, sq_sqrt (by norm_num), one_div]
 
 /-- A root `t > 2^{-1/2}` of `t² - log t = y` gives the root `x = t² > ½` of `x - ½ log x = y`. -/
 private lemma half_lt_sq_and_sub_log_div_two_eq {t y : ℝ} (ht : (√2)⁻¹ < t)
     (hty : t ^ 2 - log t = y) :
     1 / 2 < t ^ 2 ∧ t ^ 2 - log (t ^ 2) / 2 = y := by
   refine ⟨?_, ?_⟩
-  · have h := pow_lt_pow_left₀ ht (by positivity) two_ne_zero
-    rwa [inv_pow, sq_sqrt (by norm_num), ← one_div] at h
+  · rw [← inv_sqrt_two_sq]
+    exact pow_lt_pow_left₀ ht (by positivity) two_ne_zero
   · rw [log_pow]
     push_cast
     linarith
@@ -93,8 +96,8 @@ theorem existsUnique_sq_sub_log_eq {y : ℝ} (hy : (1 + log 2) / 2 < y) :
     strictMonoOn_sub_log_div_two sub_log_div_two_isEquivalent hf0
   have hx0 : 0 < x := lt_trans (by norm_num) hx
   refine ⟨√x, ⟨?_, ?_⟩, fun t ht => ?_⟩
-  · rw [← sqrt_inv, ← one_div]
-    exact sqrt_lt_sqrt (by norm_num) hx
+  · rw [lt_sqrt (by positivity), inv_sqrt_two_sq]
+    exact hx
   · rw [sq_sqrt hx0.le, log_sqrt hx0.le]
     exact hfx
   · rw [← hu (t ^ 2) (half_lt_sq_and_sub_log_div_two_eq ht.1 ht.2),
@@ -108,8 +111,8 @@ private lemma eventually_inv_sqrt_two_lt_root {a : ℝ} (ha : 0 < a) {t : ℝ �
   filter_upwards [ht, eventually_gt_atTop (1 / 2 - log a)] with y ⟨hat, hy⟩ hya
   refine ⟨lt_of_not_ge fun hle ↦ ?_, hy⟩
   have hsq : t y ^ 2 ≤ 1 / 2 := by
-    have h := pow_le_pow_left₀ (ha.trans_le hat).le hle 2
-    rwa [inv_pow, sq_sqrt (by norm_num), ← one_div] at h
+    rw [← inv_sqrt_two_sq]
+    exact pow_le_pow_left₀ (ha.trans_le hat).le hle 2
   have hlog : log a ≤ log (t y) := log_le_log ha hat
   linarith
 
@@ -180,4 +183,4 @@ theorem isLittleO_sq_sub_log_root_remainder {a : ℝ} (ha : 0 < a) {t : ℝ → 
   field_simp
   ring
 
-end Asymptotics
+end TauCeti.Examples.TranscendentalEquation
