@@ -12,8 +12,9 @@ import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 /-!
 # Integrability of functions factoring through a locally constant map to a finite type
 
-A function that agrees on an open set `U` of finite measure with `Φ ∘ π`, for a locally constant
-map `π : U → R` to a finite type, is a simple function on `U` for the pulled-back measure, hence
+Let `G` be a topological space with a measurable structure in which open sets are measurable. A
+function that agrees on an open set `U` of finite measure with `Φ ∘ π`, for a locally constant map
+`π : U → R` to a finite type, is a simple function on `U` for the pulled-back measure, hence
 integrable on `U` (`MeasureTheory.integrableOn_of_eq_comp`).
 -/
 
@@ -24,8 +25,9 @@ namespace MeasureTheory
 variable {G R E : Type*} [MeasurableSpace G] {μ : Measure G} [NormedAddCommGroup E]
   [TopologicalSpace G] [OpensMeasurableSpace G]
 
-/-- A function that agrees on an open set `U` of finite measure with a function of a locally
-constant map `π : U → R` to a finite type is integrable on `U`. -/
+/-- In a space whose open sets are measurable, a function that agrees on an open set `U` of finite
+measure with a function of a locally constant map `π : U → R` to a finite type is integrable on
+`U`. -/
 theorem integrableOn_of_eq_comp [Finite R] {U : Set G} (hU : IsOpen U) (hμU : μ U ≠ ⊤)
     {π : U → R} (hπ : IsLocallyConstant π) {f : G → E} {Φ : R → E}
     (hf : ∀ x : U, f x = Φ (π x)) : IntegrableOn f U μ := by

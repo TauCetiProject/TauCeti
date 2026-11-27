@@ -20,8 +20,9 @@ import TauCeti.Topology.Algebra.Ring.Subring
 # The tame local Gauss sum
 
 Let `F` be a topological ring, such as a finite product of non-archimedean local fields, with an
-open subring `O` (its integers) of measure one for an additive Haar measure `μ`, and a unit `ϖ` of
-`F` lying in `O` (a product of uniformisers). Let `π : O →+* R` be a surjection onto a finite ring
+open subring `O` (its integers) of measure one for an additively left-invariant Borel measure `μ`
+(for instance a suitably normalised additive Haar measure), and a unit `ϖ` of `F` lying in `O` (a
+product of uniformisers). Let `π : O →+* R` be a surjection onto a finite ring
 with kernel `ϖ O`, for instance `O → O / ϖ O`. A multiplicative character `η` of `R` is primitive
 if for every `a ≠ 0` some unit `1 + c a` has `η (1 + c a) ≠ 1`, and an additive character `ψ` of
 `F` has conductor `O` if `ψ` is trivial on `t O` exactly when `t ∈ O`.
@@ -69,8 +70,9 @@ variable {F R : Type*} [CommRing F] [CommRing R] {O : Subring F} {ϖ : Fˣ} {π 
   {μ : Measure F} [μ.IsAddLeftInvariant] [Fintype R]
 
 open scoped Classical in
-/-- **The tame local Gauss sum.** Let `O` be an open subring of `F` of measure one, `ϖ` a unit of
-`F` in `O`, and `π : O →+* R` a surjection onto a finite ring with kernel `ϖ O`. Let `η` be a
+/-- **The tame local Gauss sum.** Let `μ` be an additively left-invariant Borel measure on `F`,
+such as an additive Haar measure, and `O` an open subring of `F` with `μ O = 1`. Let `ϖ` be a unit
+of `F` in `O`, and `π : O →+* R` a surjection onto a finite ring with kernel `ϖ O`. Let `η` be a
 primitive multiplicative character of `R`, and `ψ` an additive character of `F` with conductor
 `O`. Then there is `γ` with `‖γ‖ ^ 2 = 1 / #R` such that for every function `g` equal
 to `η ∘ π` on `O` and every `t`, the integral of `g x ψ (t x)` over `O` is `γ η⁻¹ (π (ϖ t))`
@@ -88,9 +90,9 @@ theorem exists_setIntegral_mul_addChar_eq (hO : IsOpen (O : Set F)) (hμO : μ O
   have hshift := MulChar.gaussSum_mulShift_eq_inv_mul_gaussSum hη φ
   have hcard : (Fintype.card R : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   refine ⟨gaussSum η φ / Fintype.card R, ?_, fun g hg t ↦ ?_⟩
-  · rw [norm_div, norm_gaussSum_of_forall_mulShift hshift hφ, div_pow,
-      Real.sq_sqrt (Nat.cast_nonneg _), Complex.norm_natCast, sq, div_mul_eq_div_div,
-      div_self hcard, one_div]
+  · rw [norm_div, norm_gaussSum_of_forall_mulShift hshift hφ, Complex.norm_natCast, div_pow,
+      Real.sq_sqrt (Nat.cast_nonneg _)]
+    field_simp
   split_ifs with h
   · -- on `O` the integrand is `η r φ (u r)` at `r = π x`, with `u = π (ϖ t)`
     set u := π ⟨_, h⟩ with hu
@@ -116,9 +118,7 @@ theorem exists_setIntegral_mul_addChar_eq (hO : IsOpen (O : Set F)) (hμO : μ O
         ψ ((ϖ : F) * t * s) * ∫ x in (O : Set F), g x * ψ (t * x) ∂μ := by
       rw [← integral_const_mul]
       refine setIntegral_congr_fun hO.measurableSet fun x hx ↦ ?_
-      have hπs : π ⟨_, hϖs⟩ = 0 := by
-        rw [← RingHom.mem_ker, hker, mem_span_singleton_iff_inv_mul_mem]
-        simpa using hs
+      have hπs : π ⟨_, hϖs⟩ = 0 := (map_eq_zero_iff_inv_mul_mem hϖ hker _).mpr (by simpa using hs)
       have hgx : g ((ϖ : F) * s + x) = g x := by
         rw [hg ⟨_, O.add_mem hϖs hx⟩, hg ⟨x, hx⟩]
         congr 1
@@ -126,8 +126,8 @@ theorem exists_setIntegral_mul_addChar_eq (hO : IsOpen (O : Set F)) (hμO : μ O
         convert hπs using 2
         ext
         simp
-      rw [hgx, mul_add, AddChar.map_add_eq_mul]
-      ring_nf
+      rw [hgx, mul_add, AddChar.map_add_eq_mul, show t * ((ϖ : F) * s) = (ϖ : F) * t * s by ring]
+      ring
     rw [htr] at hfac
     exact (mul_eq_right₀ hne).mp hfac.symm
 

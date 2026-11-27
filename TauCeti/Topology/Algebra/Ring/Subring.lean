@@ -283,11 +283,9 @@ theorem isLocallyConstant_of_ker_eq_span {F R : Type*} [CommRing F] [CommRing R]
     (hker : RingHom.ker π = Ideal.span {⟨ϖ, hϖ⟩}) : IsLocallyConstant π := by
   -- the kernel `ϖ O` is the preimage of `O` under `x ↦ ϖ⁻¹ x`, hence open
   have hopen : IsOpen (π.toAddMonoidHom.ker : Set O) := by
-    have : (π.toAddMonoidHom.ker : Set O) = {y : O | ((ϖ⁻¹ : Fˣ) : F) * y ∈ O} := by
+    have : (π.toAddMonoidHom.ker : Set O) = (fun y : O ↦ ((ϖ⁻¹ : Fˣ) : F) * y) ⁻¹' O := by
       ext y
-      change π y = 0 ↔ _
-      rw [← RingHom.mem_ker, hker, mem_span_singleton_iff_inv_mul_mem]
-      rfl
+      simpa using map_eq_zero_iff_inv_mul_mem hϖ hker y
     rw [this]
     exact hO.preimage (by fun_prop)
   exact π.toAddMonoidHom.isLocallyConstant_of_isOpen_ker hopen

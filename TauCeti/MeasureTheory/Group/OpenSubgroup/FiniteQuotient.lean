@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Integral.IntegrableOn
 # Integrals over an open subgroup of functions factoring through a finite quotient
 
 Let `H` be an open additive subgroup of a topological additive group `G` with a left-invariant
-measure `μ`, and let `π : H →+ R` be a surjective, locally constant homomorphism onto a finite
+Borel measure `μ`, and let `π : H →+ R` be a surjective, locally constant homomorphism onto a finite
 group `R`, such as the reduction `O → O / ϖ O` of the ring of integers of a non-archimedean local
 field. The translates of the kernel of `π` partition `H` into `#R` pieces of equal measure, so
 integrating over `H` a function that factors through `π` is averaging over `R`, provided
@@ -44,7 +44,7 @@ variable {G R E S : Type*} [MeasurableSpace G] {μ : Measure G} [NormedAddCommGr
 
 /-- **Integrating a function that factors through a finite quotient of an open subgroup.** Let
 `π : H →+ R` be a surjective, locally constant homomorphism from an open subgroup `H` of `G`
-onto a finite group `R`, and `μ` a left-invariant measure with `μ H < ∞`. If `f`, valued in a
+onto a finite group `R`, and `μ` a left-invariant Borel measure with `μ H < ∞`. If `f`, valued in a
 real Banach space, satisfies `f x = Φ (π x)` for every `x ∈ H`, then
 `#R • ∫ x in H, f x ∂μ = μ.real H • ∑ r, Φ r`: the measure `μ` restricted to `H`
 distributes its mass evenly over the fibres of `π`. -/

@@ -7,8 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.Ideal.Maps
-import Mathlib.GroupTheory.QuotientGroup.Basic
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.Algebra.Group.Hom.Lift
 import TauCeti.RingTheory.Ideal.Span
 
 /-!
@@ -37,19 +36,16 @@ theorem exists_isPrimitive_addChar_apply_eq {M : Type*} [CommMonoid M] (hϖ : (�
     (hπ : Function.Surjective π) (hker : RingHom.ker π = Ideal.span {⟨ϖ, hϖ⟩})
     {ψ : AddChar F M} (hψ : ∀ t : F, (∀ x ∈ O, ψ (t * x) = 1) ↔ t ∈ O) :
     ∃ φ : AddChar R M, φ.IsPrimitive ∧ ∀ x : O, φ (π x) = ψ (((ϖ⁻¹ : Fˣ) : F) * x) := by
-  have hzero (x : O) : π x = 0 ↔ ((ϖ⁻¹ : Fˣ) : F) * x ∈ O := by
-    rw [← RingHom.mem_ker, hker, mem_span_singleton_iff_inv_mul_mem]
-  -- `x ↦ ψ (ϖ⁻¹ x)` on `O` is trivial on the kernel of `π`, so it descends to `R = O ⧸ ker π`
+  have hzero := map_eq_zero_iff_inv_mul_mem hϖ hker
+  -- `x ↦ ψ (ϖ⁻¹ x)` on `O` is trivial on the kernel of `π`, so it factors through `π`
   let ψO := (ψ.mulShift ((ϖ⁻¹ : Fˣ) : F)).compAddMonoidHom O.subtype.toAddMonoidHom
   have hle : π.toAddMonoidHom.ker ≤ (AddChar.toAddMonoidHomEquiv ψO).ker := fun x hx ↦ by
     simpa [ψO] using (hψ 1).mpr O.one_mem _ ((hzero x).mp hx)
-  let φ : AddChar R M := AddChar.toAddMonoidHomEquiv.symm <|
-    (QuotientAddGroup.lift _ _ hle).comp
-      (QuotientAddGroup.quotientKerEquivOfSurjective _ hπ).symm.toAddMonoidHom
+  obtain ⟨φ', hφ', -⟩ := (AddMonoidHom.existsUnique_comp_eq_iff_ker_le
+    (AddChar.toAddMonoidHomEquiv ψO) π.toAddMonoidHom hπ).2 hle
+  let φ : AddChar R M := AddChar.toAddMonoidHomEquiv.symm φ'
   have hs (x : O) : φ (π x) = ψ (((ϖ⁻¹ : Fˣ) : F) * x) := by
-    have h := QuotientAddGroup.quotientKerEquivOfSurjective_symm_apply (π : O →+ R) hπ x
-    simp only [AddMonoidHom.coe_ofClass] at h
-    simp [φ, ψO, h]
+    simpa [φ, ψO] using congr_arg Additive.toMul (DFunLike.congr_fun hφ' x)
   refine ⟨φ, fun a ha h ↦ ?_, hs⟩
   obtain ⟨x, rfl⟩ := hπ a
   -- `ϖ⁻¹ x ∉ O`, so `ψ (ϖ⁻¹ x y) ≠ 1` for some `y ∈ O`

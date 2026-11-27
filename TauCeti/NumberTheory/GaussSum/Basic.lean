@@ -58,7 +58,8 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 * `MulChar.gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero`: the Gauss sum against a shift
   `x ↦ ψ (b * x)` vanishes if `b * (u - 1) = 0` for a unit `u` with `χ u ≠ 1`.
 * `MulChar.gaussSum_mulShift_eq_inv_mul_gaussSum`: `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for
-  every `b` when `χ` is primitive, that is, nontrivial on some unit `1 + c * a` for each `a ≠ 0`.
+  every `b` when the characters take values in an integral domain and `χ` is primitive, that is,
+  nontrivial on some unit `1 + c * a` for each `a ≠ 0`.
 * `TauCeti.gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift` and
   `TauCeti.norm_gaussSum_of_forall_mulShift`: `g(χ, ψ) g(χ⁻¹, ψ⁻¹) = #R` and `‖g(χ, ψ)‖ = √#R`
   over a finite ring, when the shifted sums are proportional to `χ⁻¹`.
@@ -256,8 +257,9 @@ theorem gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero {R : Type*} [CommRing R
   exact hu ((mul_eq_right₀ hne).mp h)
 
 /-- **Shifted Gauss sums of a primitive character.** Let `χ` be a multiplicative character of
-the finite ring `R` that is primitive in the sense that for every `a ≠ 0` some unit `1 + c * a`
-has `χ (1 + c * a) ≠ 1`. Then `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for every `b`: for a unit
+the finite ring `R`, with values in an integral domain `R'`, that is primitive in the sense that
+for every `a ≠ 0` some unit `1 + c * a` has `χ (1 + c * a) ≠ 1`, and `ψ` an additive character
+of `R` with values in `R'`. Then `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for every `b`: for a unit
 `b` this is `gaussSum_mulShift_eq`, and for a nonunit `b` both sides vanish. This is the
 hypothesis of `TauCeti.norm_gaussSum_of_forall_mulShift`; for Dirichlet characters it is
 Mathlib's `gaussSum_mulShift_of_isPrimitive`. -/
