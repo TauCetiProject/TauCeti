@@ -286,7 +286,7 @@ theorem ramseyNumber_comm (s t : ℕ) : ramseyNumber ![s, t] = ramseyNumber ![t,
   rw [← ramseyNumber_comp_equiv ![s, t] (Equiv.swap 0 1)]
   congr 1
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- For two colours, the Ramsey property says that every simple graph on `n` vertices has an
 independent set of `s` vertices or a clique of `t` vertices: colour `0` is a non-edge and colour
