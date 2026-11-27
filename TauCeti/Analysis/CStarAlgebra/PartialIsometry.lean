@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import TauCeti.Analysis.CStarAlgebra.Basic
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
-import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RoundProjection
 import TauCeti.Analysis.Normed.Algebra.Star
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 

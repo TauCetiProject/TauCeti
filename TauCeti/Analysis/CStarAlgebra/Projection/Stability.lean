@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Analysis.CStarAlgebra.Projection
 public import TauCeti.Analysis.CStarAlgebra.Basic
-public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RoundProjection
 import Mathlib.Algebra.Order.Star.Projection
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Algebra.Star.Projection.Family
@@ -82,11 +82,11 @@ theorem exists_isStarProjection_mem_of_approx {𝕜' S : Type*} [Monoid 𝕜'] [
   have : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜' A
   have ha_eq : a = (2 : ℝ)⁻¹ • (e + star e) := by simp [a, selfAdjointPart_apply_coe, invOf_eq_inv]
   have ha_mem : a ∈ s := ha_eq ▸ SMulMemClass.smul_mem (2 : ℝ)⁻¹ (add_mem hes (star_mem hes))
-  refine ⟨spectralProjectionIoiHalf a, spectralProjectionIoiHalf_mem (𝕜' := ℝ) ha_mem,
-    isStarProjection_spectralProjectionIoiHalf a, ?_⟩
-  nlinarith [norm_nonneg (e - star e),
-    ha_sa.norm_spectralProjectionIoiHalf_sub_le (by nlinarith [norm_nonneg (e - star e)]),
-    norm_sub_le_norm_sub_add_norm_sub (spectralProjectionIoiHalf a) a e]
+  refine ⟨roundProjection a, roundProjection_mem (𝕜' := ℝ) ha_mem,
+    isStarProjection_roundProjection a, ?_⟩
+  have hnorm := ha_sa.norm_sub_roundProjection_le le_rfl (by nlinarith [norm_nonneg (e - star e)])
+  rw [norm_sub_rev] at hnorm
+  nlinarith [norm_nonneg (e - star e), norm_sub_le_norm_sub_add_norm_sub (roundProjection a) a e]
 end
 
 /-- **Uniform norm stability of projections in closed `𝕜'`-`⋆`-subalgebras** (scalar monoid `𝕜'`

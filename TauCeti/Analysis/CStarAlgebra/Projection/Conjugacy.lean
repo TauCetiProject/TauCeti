@@ -27,7 +27,6 @@ polar-normalizes to `u = hp.projectionConjugacyUnitary hq h` for `‖p - q‖ < 
   `IsStarProjection.continuous_projectionConjugacyUnitary`,
   `IsStarProjection.star_projectionConjugacyUnitary`,
   `IsStarProjection.exists_unitary_conjugate_mem_of_norm_sub_lt_one`,
-  `IsStarProjection.exists_unitary_conjugate_of_norm_sub_lt_one`,
   `IsStarProjection.exists_unitization_unitary_conjugate_of_norm_sub_lt_one`.
 
 ## References
@@ -181,14 +180,6 @@ theorem exists_unitary_conjugate_mem_of_norm_sub_lt_one {𝕜' S : Type*} [Monoi
       ‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ :=
   ⟨_, hp.projectionConjugacyUnitary_mem (𝕜' := 𝕜') hq h hp_mem hq_mem,
     hp.joined_one_projectionConjugacyUnitary hq h, hp.conjugate_projectionConjugacyUnitary hq h,
-    hp.norm_projectionConjugacyUnitary_sub_one_le hq h⟩
-/-- **Unitary conjugacy of nearby projections**: star projections `p, q` with `‖p - q‖ < 1` are
-conjugate by `u : unitary A` with `Joined 1 u` and `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖`. -/
-theorem exists_unitary_conjugate_of_norm_sub_lt_one (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
-    ∃ u : unitary A, Joined 1 u ∧ (u : A) * p * star (u : A) = q ∧
-      ‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ :=
-  ⟨_, hp.joined_one_projectionConjugacyUnitary hq h, hp.conjugate_projectionConjugacyUnitary hq h,
     hp.norm_projectionConjugacyUnitary_sub_one_le hq h⟩
 end
 /-- If star projections `p, q : Unitization ℂ A` with `‖p - q‖ < 1` satisfy `p.fst = q.fst`, then
