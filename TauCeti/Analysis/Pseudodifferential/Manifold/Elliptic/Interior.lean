@@ -29,7 +29,8 @@ and an arbitrarily weak norm of `u`, both on the compact set `K`, with no global
 The set `K` does not depend on `s`, `r` or `p`, and cutoffs `ψᵢ` adding up to `1` on it exist
 (`IsCompact.exists_sum_cutoffPullback_eq_one`). On a compact manifold every operator is properly
 supported, and cutoffs adding up to `1` everywhere serve for every `K`; summing the estimate over
-finitely many cutoffs `φⱼ` then gives the global elliptic estimate.
+finitely many cutoffs `φⱼ` then gives the global elliptic estimate
+(`TauCeti.IsClassicalElliptic.exists_sum_norm_le_add`).
 
 The proof is the parametrix argument of the compact case, localized by proper support. A
 parametrix `Q` of `P`, of order `-m`, has `R = Q P - 1` of order `-∞`
@@ -64,7 +65,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℝ}
   {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-  {e : OpenPartialHomeomorph M (CoordinateSpace n)} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {e : OpenPartialHomeomorph M (CoordinateSpace n)}
 
 /-- **The interior elliptic estimate on a manifold.** Let `P` be a properly supported elliptic
 classical pseudodifferential operator of order `m` on a σ-compact manifold, and `φ` a cutoff in a
@@ -78,12 +79,13 @@ and `1 < p < ∞` there is a constant `C` such that every smooth `u` on `M` sati
 theorem IsClassicalElliptic.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_add
     [SigmaCompactSpace M] (hPe : IsClassicalElliptic m P) (hPs : IsProperlySupported P)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hp : 1 < p) (hp_top : p ≠ ⊤) :
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
     ∃ K : Set M, IsCompact K ∧ ∀ {ι : Type*} [Fintype ι]
       {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
       (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
       (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ)),
-      (∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) → ∀ s r : ℝ, ∃ C,
+      (∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) →
+      ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)], 1 < p → p ≠ ⊤ → ∀ s r : ℝ, ∃ C,
         ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
           ‖SchwartzMap.toBesselPotentialSpaceCLM (s + m) p (e.cutoffPushforwardSchwartz he φ u)‖ ≤
             C * (∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s p
@@ -97,17 +99,18 @@ theorem IsClassicalElliptic.exists_isCompact_forall_norm_toBesselPotentialSpaceC
   have hRs : IsProperlySupported R := (mem_classicalPseudodifferentialOperators_iff.1
     (smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators 0 hR)).1
   obtain ⟨K₁, hK₁, hQK⟩ :=
-    hQs.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum he φ hp hp_top
+    hQs.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum he φ
   obtain ⟨K₂, hK₂, hRK⟩ :=
-    hRs.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum he φ hp hp_top
-  refine ⟨K₁ ∪ K₂, hK₁.union hK₂, fun {ι} _ e' he' ψ hψ s r ↦ ?_⟩
+    hRs.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum he φ
+  refine ⟨K₁ ∪ K₂, hK₁.union hK₂, fun {ι} _ e' he' ψ hψ p _ hp hp_top s r ↦ ?_⟩
   -- `R` has an order `-N` with `s + m ≤ r + N`.
   set N := ⌈s + m - r⌉₊
   have hN : s + m ≤ r - -(N : ℝ) := by
     linarith [Nat.le_ceil (s + m - r)]
-  obtain ⟨A, hA⟩ := hQK he' ψ (fun x hx ↦ hψ x (Or.inl hx)) _ hQ s
+  obtain ⟨A, hA⟩ := hQK he' ψ (fun x hx ↦ hψ x (Or.inl hx)) _ hQ p hp hp_top s
   obtain ⟨B, hB⟩ := hRK he' ψ (fun x hx ↦ hψ x (Or.inr hx)) _
-    (smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _ hR) r
+    (smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _ hR) p hp hp_top
+    r
   rw [sub_neg_eq_add] at hA
   set c := ‖(BesselPotentialSpace.inclusion (E := CoordinateSpace n) (G := ℂ) (p := p) hN)‖
   refine ⟨|A| + c * |B|, fun u ↦ ?_⟩

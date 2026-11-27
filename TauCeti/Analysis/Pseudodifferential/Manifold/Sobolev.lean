@@ -208,13 +208,14 @@ only on `P` and `φ`, not on the order `m`, on `s` or on `p`. -/
 theorem IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : IsProperlySupported P)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hp : 1 < p) (hp_top : p ≠ ⊤) :
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
     ∃ K : Set M, IsCompact K ∧ ∀ {ι : Type*} [Fintype ι]
       {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
       (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
       (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ)),
       (∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) →
-      ∀ m : ℝ, P ∈ classicalPseudodifferentialOperators m → ∀ s : ℝ, ∃ C,
+      ∀ m : ℝ, P ∈ classicalPseudodifferentialOperators m →
+      ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)], 1 < p → p ≠ ⊤ → ∀ s : ℝ, ∃ C,
         ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
           ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) p
               (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
@@ -222,7 +223,7 @@ theorem IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceC
               ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
   -- On `e⁻¹(supp φ)`, `P u` only depends on `u` on a compact set `K`.
   obtain ⟨K, hK, hPK⟩ := hP.exists_isCompact_forall_eqOn (e.isCompact_symm_image_tsupport φ)
-  refine ⟨K, hK, fun {ι} _ e' he' ψ hψ m hPm s ↦ ?_⟩
+  refine ⟨K, hK, fun {ι} _ e' he' ψ hψ m hPm p _ hp hp_top s ↦ ?_⟩
   choose C hC using fun i ↦
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le hPm he
       (he' i) φ (ψ i) hp hp_top s
