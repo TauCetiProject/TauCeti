@@ -317,13 +317,8 @@ theorem equalizer_rootChartCoaction_includeRight :
 subalgebra of the affine root chart, the equalizer of the coaction `δ` and `b ↦ 1 ⊗ b`. -/
 noncomputable def rootChartInvariantEquiv :
     A ≃ₐ[A] AlgHom.equalizer (rootChartCoaction A f n) Algebra.TensorProduct.includeRight :=
-  AlgEquiv.ofBijective ((Algebra.ofId A (rootChart A f n)).codRestrict _ fun a =>
-      (AlgHom.mem_equalizer _ _ _).2 <| (rootChartCoaction_eq_includeRight_iff A f n _).2
-        ⟨a, (Algebra.ofId_apply _ a).symm⟩) <| by
-    refine ⟨fun a a' h => FaithfulSMul.algebraMap_injective A (rootChart A f n)
-      congr(($h : rootChart A f n)), fun ⟨b, hb⟩ => ?_⟩
-    obtain ⟨a, rfl⟩ := (rootChartCoaction_eq_includeRight_iff A f n b).1 hb
-    exact ⟨a, Subtype.ext (Algebra.ofId_apply _ a)⟩
+  ((Subalgebra.equivOfEq _ _ (equalizer_rootChartCoaction_includeRight A f n)).trans
+    (Algebra.botEquivOfInjective (FaithfulSMul.algebraMap_injective A (rootChart A f n)))).symm
 
 /-- The invariant attached to `a ∈ A` by `TauCeti.rootChartInvariantEquiv` is the constant `a`. -/
 @[simp]
