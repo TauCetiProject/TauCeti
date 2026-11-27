@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
@@ -16,6 +17,13 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 A family of continuous bilinear maps gives a continuous bilinear map into the product
 (`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
+
+Evaluating continuous linear maps at a fixed vector `v` (`ContinuousLinearMap.apply 𝕜 G v`) has
+operator norm at most `‖v‖` (`ContinuousLinearMap.opNorm_apply_apply_le`). Every continuous
+`R`-linear endomorphism of a commutative semiring `R` is its value at `1` times the identity
+(`ContinuousLinearMap.eq_apply_one_smul_id`), and every continuous `𝕜`-bilinear map
+`𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its value at `(1, 1)` times
+`ContinuousLinearMap.mul 𝕜 𝕜` (`ContinuousLinearMap.eq_apply_one_one_smul_mul`).
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -74,6 +82,8 @@ of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which cal
 explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`). Forgetting continuity via
 `ContinuousLinearMap.toLinearMap₁₂` commutes with `flip` and `bilinearComp`
 (`ContinuousLinearMap.toLinearMap₁₂_flip`, `ContinuousLinearMap.toLinearMap₁₂_bilinearComp`).
+For a form `B : V →L[𝕜] V →L[𝕜] 𝕜`, the latter reads `ContinuousLinearMap.toBilinForm_bilinearComp`:
+the continuous pull-back of `B`, read as a bilinear form, is the pull-back of the bilinear form.
 -/
 
 public section
@@ -82,9 +92,28 @@ noncomputable section
 
 namespace ContinuousLinearMap
 
+/-- Every continuous `R`-linear endomorphism of a commutative semiring `R` with continuous scalar
+multiplication is its value at `1` times `ContinuousLinearMap.id R R`. -/
+theorem eq_apply_one_smul_id {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [ContinuousConstSMul R R] (D : R →L[R] R) :
+    D = D 1 • ContinuousLinearMap.id R R :=
+  ext_ring <| by simp
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Every continuous `𝕜`-bilinear map `𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its
+value at `(1, 1)` times `ContinuousLinearMap.mul 𝕜 𝕜`. -/
+theorem eq_apply_one_one_smul_mul (H : 𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜) :
+    H = H 1 1 • ContinuousLinearMap.mul 𝕜 𝕜 :=
+  ext_ring <| ext_ring <| by simp
+
+/-- Evaluating continuous linear maps at a fixed vector `v : V` has operator norm at most
+`‖v‖`. -/
+theorem opNorm_apply_apply_le (v : V) : ‖apply 𝕜 G v‖ ≤ ‖v‖ :=
+  opNorm_le_bound _ (norm_nonneg v) fun L ↦ by
+    simpa only [apply_apply, mul_comm] using L.le_opNorm v
 
 /-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
 def piBilin {ι : Type*} {G : ι → Type*}
@@ -459,6 +488,20 @@ theorem toLinearMap₁₂_bilinearComp (L : E →SL[σ₁₃] F →SL[σ₂₃] 
       bilinearComp_apply, coe_coe]
 
 end ToLinearMap₁₂BilinearComp
+
+section ToBilinFormBilinearComp
+
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+
+/-- Forgetting continuity commutes with pulling a form back: the continuous pull-back
+`B.bilinearComp f g` of a form `B`, read as a bilinear form, is the pull-back
+`B.toBilinForm.compl₁₂ f g` of the bilinear form of `B`. -/
+theorem toBilinForm_bilinearComp (B : V →L[𝕜] V →L[𝕜] 𝕜) (f g : W →L[𝕜] V) :
+    (B.bilinearComp f g).toBilinForm = B.toBilinForm.compl₁₂ (f : W →ₗ[𝕜] V) (g : W →ₗ[𝕜] V) :=
+  LinearMap.ext₂ fun _ _ ↦ by simp
+
+end ToBilinFormBilinearComp
 
 end ContinuousLinearMap
 

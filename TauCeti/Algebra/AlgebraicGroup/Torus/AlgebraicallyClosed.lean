@@ -42,8 +42,7 @@ theorem torusCommHopfAlgProperty.split
   have : IsScalarTower k (AlgebraicClosure k) k :=
     IsScalarTower.of_algebraMap_eq fun x ↦ (e.symm.commutes x).symm
   let j : FiniteTypeCommHopfAlgCat.baseChange (K := k) H ≅ H :=
-    ObjectProperty.isoMk _ (_root_.CommHopfAlgCat.isoMk
-      (_root_.Bialgebra.TensorProduct.lid k H.obj))
+    ObjectProperty.isoMk _ (_root_.CommHopfAlgCat.baseChangeSelfIso H.obj)
   -- Extend the splitting back along `AlgebraicClosure k ≃ k` and collapse the tower.
   exact (splitTorusCommHopfAlgProperty k).prop_of_iso
     (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := AlgebraicClosure k) k k H ≪≫ j)

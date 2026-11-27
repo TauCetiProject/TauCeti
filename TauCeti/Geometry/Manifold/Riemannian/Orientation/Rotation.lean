@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
+import TauCeti.Geometry.Manifold.Riemannian.Orientation.Preserving
 
 /-!
 # Regularity of the right-angle rotation on an oriented Riemannian surface
@@ -22,6 +23,9 @@ The metric identifies `J s` with the Riesz dual of the covector `w ↦ vol(s, w)
 Riemannian volume form (`Orientation.inner_rightAngleRotation_left`). The regularity of `J s` thus
 follows from that of the volume form (`TauCeti.isSmoothForm_riemannianVolumeForm`) and of the Riesz
 dual (`Riemannian.Tensor.contMDiffAt_rieszDual`); no local frame appears in the statement.
+
+Pointwise, a pair of unit vectors `(v₀, v₁)` satisfies `v₁ = J v₀` exactly when its oriented area is
+one (`TauCeti.Manifold.Orientation.eq_rightAngleRotation_iff_riemannianVolumeForm_eq_one`).
 
 ## References
 
@@ -55,6 +59,17 @@ theorem rightAngleRotation_tangentSpace_congr
   subst hp hv
   rfl
 
+/-- A pair of unit tangent vectors `(v₀, v₁)` satisfies `v₁ = J v₀` exactly when it has
+oriented area one, `vol(v₀, v₁) = 1`. -/
+theorem eq_rightAngleRotation_iff_riemannianVolumeForm_eq_one
+    (o : Manifold.Orientation I M (Fin 2)) {x : M} {v₀ v₁ : TangentSpace I x}
+    (h₀ : ‖v₀‖ = 1) (h₁ : ‖v₁‖ = 1) :
+    v₁ = (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).rightAngleRotation v₀) ↔
+      riemannianVolumeForm o x ![v₀, v₁] = 1 := by
+  let := o.fact_finrank_tangentSpace x
+  rw [o.riemannianVolumeForm_eq_areaForm, ← (o.orientationAt x).inner_rightAngleRotation_left,
+    inner_eq_one_iff_of_norm_eq_one (by simpa using h₀) h₁, eq_comm]
+
 variable {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (TangentSpace I : M → Type _)]
 
@@ -68,12 +83,17 @@ theorem contMDiffAt_rightAngleRotation (o : Manifold.Orientation I M (Fin 2))
   let Φ : Π y : M, TangentSpace I y →L[ℝ] ℝ := fun y ↦
     letI := o.fact_finrank_tangentSpace y
     (o.orientationAt y).areaForm' (s y)
+  have hΦ (y : M) (w : TangentSpace I y) : Φ y w =
+      (letI := o.fact_finrank_tangentSpace y; (o.orientationAt y).areaForm (s y) w) := by
+    let := o.fact_finrank_tangentSpace y
+    simp only [Φ, _root_.Orientation.areaForm'_apply, LinearMap.coe_toContinuousLinearMap']
   have hJ (y : M) : (letI := o.fact_finrank_tangentSpace y
       (o.orientationAt y).rightAngleRotation (s y)) =
         Riemannian.Tensor.rieszDual (I := I) y (Φ y) := by
     apply Riemannian.Tensor.eq_rieszDual_iff_inner_eq.mpr
     intro w
     let := o.fact_finrank_tangentSpace y
+    rw [hΦ]
     exact (o.orientationAt y).inner_rightAngleRotation_left (s y) w
   have hd : ContMDiffAt I I.tangent n
       (fun y ↦ TotalSpace.mk' E y (Riemannian.Tensor.rieszDual (I := I) y (Φ y))) x := by
@@ -92,10 +112,7 @@ theorem contMDiffAt_rightAngleRotation (o : Manifold.Orientation I M (Fin 2))
     have hscalar := (contMDiffAt_totalSpace_iff.mp heval).2
     convert hscalar using 1
     funext y
-    dsimp only [Φ]
-    let := o.fact_finrank_tangentSpace y
-    rw [riemannianVolumeForm_apply, ← (o.orientationAt y).areaForm_to_volumeForm]
-    rfl
+    exact (hΦ y _).trans (o.riemannianVolumeForm_eq_areaForm _ _).symm
   exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦
     congrArg (TotalSpace.mk' E y) (hJ y))
 

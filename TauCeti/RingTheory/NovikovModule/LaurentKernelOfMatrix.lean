@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Algebra.Homology.Periodic.Compression.GradedMatrix
 public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
+public import TauCeti.RingTheory.NovikovModule.NovikovComplex
 public import TauCeti.RingTheory.NovikovModule.Specialization
 public import TauCeti.RingTheory.NovikovModule.Tensor.Basic
 
 /-!
-# Laurent extensions of matrices and their cyclic specialization
+# Laurent extensions of matrices, their cyclic specialization and their completion
 
 Let `D : Matrix ι₁ ι₀ R` be a matrix over a ring and `H` a group of periods. The generators
 `⟨i, g⟩` of `Σ _ : ι₁, H` are the generators of `ι₁` tensored with the period monomials `e^g`.
@@ -46,11 +47,33 @@ generators, the number of contractible periodic orbits, is at least the total di
 homology of `K` (`TauCeti.NovikovModule.sum_finrank_homology_le_card_of_laurentEquiv`), which is
 the total Betti number when `K` computes the homology of the manifold.
 
+The same holds after completion, over the Novikov ring `Λ = NovikovSeries R H N`, where no
+specialization `t ↦ 1` exists. On the completed combinations the map of the Laurent extension is
+the map of the matrix of constant series `D i k • e^0`
+(`TauCeti.NovikovModule.IsLaurentKernel.novikovMap_laurentKernelOfMatrix`), so the Novikov complex
+of the Laurent extension is the complex over `Λ` of the matrix `D` with its entries read in `Λ` and
+the degrees read modulo `n` (`TauCeti.NovikovModule.novikovComplexLaurentKernelOfMatrixIso`): the
+regraded `K ⊗_R Λ`. Its homology in residue `r` is the direct sum of the homology of the complex
+of `D` over `Λ` in the degrees congruent to `r`
+(`TauCeti.NovikovModule.homologyNovikovComplexLaurentKernelOfMatrixIso`). A Laurent differential
+with a Laurent homotopy equivalence to the Laurent extension, such as the Floer differential with
+the PSS maps, has a Novikov complex homotopy equivalent to the regraded `K ⊗_R Λ`
+(`TauCeti.NovikovModule.novikovComplexHomotopyEquivOfLaurentEquiv`), with the corresponding
+homology (`TauCeti.NovikovModule.homologyNovikovComplexIsoOfLaurentEquiv`). No base change of
+homology from `R` to `Λ` is asserted: the homology on the right is that of the complex over `Λ`.
+
 ## Main definitions
 
 * `TauCeti.NovikovModule.laurentKernelOfMatrix`: the Laurent extension of a matrix.
 * `TauCeti.NovikovModule.cyclicComplexLaurentKernelOfMatrixIso`: the cyclic complex of the Laurent
   extension of a graded matrix is the complex of the matrix with the degrees read modulo `n`.
+* `TauCeti.NovikovModule.novikovComplexLaurentKernelOfMatrixIso`: the Novikov complex of the
+  Laurent extension of a graded matrix is the complex of the matrix over the Novikov ring with the
+  degrees read modulo `n`.
+* `TauCeti.NovikovModule.novikovComplexHomotopyEquivOfLaurentEquiv`: the Novikov complex of a
+  Laurent differential homotopy equivalent to the Laurent extension is homotopy equivalent to the
+  complex of the matrix over the Novikov ring with the degrees read modulo `n` (the regraded
+  `K ⊗_R Λ`).
 
 ## Main results
 
@@ -60,6 +83,9 @@ the total Betti number when `K` computes the homology of the manifold.
   complex of a Laurent differential homotopy equivalent to the Laurent extension.
 * `TauCeti.NovikovModule.sum_finrank_homology_le_card_of_laurentEquiv`: over a field, the number
   of orbits of such a Laurent differential is at least the total dimension of `H^*(K)`.
+* `TauCeti.NovikovModule.homologyNovikovComplexLaurentKernelOfMatrixIso`,
+  `TauCeti.NovikovModule.homologyNovikovComplexIsoOfLaurentEquiv`: the homology of these Novikov
+  complexes in residue `r` is `⨁_{j ≡ r} H^j(K ⊗_R Λ)`.
 
 ## References
 
@@ -356,6 +382,253 @@ def homologyCyclicComplexIsoOfLaurentEquiv (a b : ℤ) (ha : ∀ i, a ≤ e i) (
     homologyCyclicComplexLaurentKernelOfMatrixIso hD hd hDD a b ha hb r
 
 end LaurentEquiv
+
+section LaurentMap
+
+variable {R : Type*} [CommSemiring R] {H : Type*} [AddCommGroup H] [DecidableEq H] {N : H →+ ℝ}
+  {ι₁ ι₀ : Type*} [Finite ι₁] [Finite ι₀] {F₁ : (Σ _ : ι₁, H) → ℝ} {F₀ : (Σ _ : ι₀, H) → ℝ}
+  (hF₁ : ∀ i h (p : H), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₀ : ∀ k h (p : H), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+
+include hF₁ hF₀ in
+/-- The map of the Laurent extension of `M` on completed combinations is the map of the matrix of
+constant Novikov series `M i k • e^0`, relative to the reference generators `0`. -/
+theorem IsLaurentKernel.novikovMap_laurentKernelOfMatrix {A : Type*} [Add A]
+    {d₁ : (Σ _ : ι₁, H) → A} {d₀ : (Σ _ : ι₀, H) → A} {c : A} {M : Matrix ι₁ ι₀ R}
+    (hm : IsLaurentKernel d₁ d₀ c (laurentKernelOfMatrix M)) :
+    letI := module (R := R) hF₁
+    letI := module (R := R) hF₀
+    hm.novikovMap hF₁ hF₀ =
+      novikovMapOfMatrix hF₁ hF₀ (fun _ ↦ 0) (fun _ ↦ 0)
+        (Matrix.of fun i k ↦ (NovikovSeries.single 0 (M i k) : NovikovSeries R H N)) := by
+  let := module (R := R) hF₁
+  let := module (R := R) hF₀
+  exact LinearMap.ext fun a ↦ Subtype.ext <| funext fun q ↦ by
+    rw [IsLaurentKernel.novikovMap_apply_val, novikovMapOfMatrix_apply_val,
+      laurentKernelOfMatrix_eq_mapKernelOfMatrix]
+
+end LaurentMap
+
+section NovikovComplex
+
+universe u v w
+
+variable {R : Type u} [CommRing R] {H : Type w} [AddCommGroup H] [DecidableEq H] {N : H →+ ℝ}
+  {ι : Type v} [Fintype ι] {n : ℕ} {e : ι → ℤ} {D : Matrix ι ι R}
+  (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1) {d : (Σ _ : ι, H) → ZMod n} (hd : ∀ p, d p = e p.fst)
+  (hDD : D * D = 0) {F : (Σ _ : ι, H) → ℝ}
+  (hF : ∀ i h (p : H), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h)
+
+/-- The basis of the Novikov complex of the Laurent extension of `D` given by the generators
+`⟨i, 0⟩`, indexed by the generators of `D` whose degree is congruent to the residue. -/
+private def novikovBasis (r : ZMod n) :
+    Module.Basis {i // (e i : ZMod n) = r} (NovikovSeries R H N)
+      ((novikovComplex R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+        (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+        (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD)).X r) :=
+  (novikovComplexBasis R hF d _ _ _ _ (fun _ ↦ 0) r).reindex
+    (Equiv.subtypeEquivRight fun i ↦ by rw [orbitDegree_eq_intCast hd])
+
+private theorem coe_novikovComplexXEquiv_novikovBasis (r : ZMod n)
+    (i : {i // (e i : ZMod n) = r}) :
+    (novikovComplexXEquiv R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+        (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+        (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) r (novikovBasis hD hd hDD hF r i) :
+      NovikovModule R F) = basis hF (fun _ ↦ 0) i := by
+  rw [novikovBasis, Basis.reindex_apply, coe_novikovComplexXEquiv_novikovComplexBasis,
+    Equiv.subtypeEquivRight_symm_apply_coe]
+
+private theorem novikovBasis_d (r s : ZMod n) (i : {i // (e i : ZMod n) = r}) :
+    ((novikovComplex R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+        (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+        (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD)).d r s).hom
+          (novikovBasis hD hd hDD hF r i) =
+      ∑ k : {k // (e k : ZMod n) = s},
+        D.map (algebraMap R (NovikovSeries R H N)) i k • novikovBasis hD hd hDD hF s k := by
+  classical
+  let := module (R := R) hF
+  by_cases hrs : r + 1 = s
+  · refine (novikovComplexXEquiv R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+      (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+      (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) s).injective (Subtype.ext ?_)
+    rw [coe_novikovComplexXEquiv_d_apply hrs, coe_novikovComplexXEquiv_novikovBasis,
+      IsLaurentKernel.novikovMap_laurentKernelOfMatrix hF hF, novikovMapOfMatrix_eq_toLin,
+      Matrix.toLin_self, map_sum, Submodule.coe_sum]
+    simp only [map_smul, Submodule.coe_smul, coe_novikovComplexXEquiv_novikovBasis,
+      Matrix.transpose_apply, Matrix.of_apply, Matrix.map_apply,
+      NovikovSeries.algebraMap_self_apply]
+    -- Only the generators of residue `s` carry a nonzero entry of the row of `i`.
+    refine ((Finset.sum_subtype {k | (e k : ZMod n) = s} (fun k ↦ by simp)
+      fun k ↦ NovikovSeries.single 0 (D i k) • basis hF (fun _ ↦ 0) k).symm.trans
+        (Finset.sum_filter_of_ne fun k _ hk ↦ ?_)).symm
+    have hDk : D i k ≠ 0 := fun h ↦ hk (by rw [h, NovikovSeries.single_zero, zero_smul])
+    rw [hD i k hDk, Int.cast_add, Int.cast_one, i.property, hrs]
+  · rw [(novikovComplex R hF d _ _ _ _).shape r s hrs]
+    refine (Finset.sum_eq_zero fun k _ ↦ ?_).symm
+    by_cases hDk : D i k = 0
+    · rw [Matrix.map_apply, hDk, map_zero, zero_smul]
+    · exact (hrs (by rw [← i.property, ← k.property, hD i k hDk, Int.cast_add, Int.cast_one])).elim
+
+variable (R) in
+/-- **The Novikov complex of the Laurent extension of a graded matrix** is the complex over the
+Novikov ring of the matrix of constant Novikov series `D i k • e^0`, with the degrees read modulo
+`n`: the regraded `M ⊗_R Λ` of the graded complex `M = gradedMatrixComplex e D`. The generator
+`⟨i, 0⟩` goes to the generator `i`
+(`TauCeti.NovikovModule.novikovComplexLaurentKernelOfMatrixIso_hom_f_basis`). It is the completed
+counterpart of the cyclic specialization
+`TauCeti.NovikovModule.cyclicComplexLaurentKernelOfMatrixIso`; for `n = 0` the degrees are the
+integer degrees `e`. -/
+def novikovComplexLaurentKernelOfMatrixIso :
+    novikovComplex R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+        (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+        (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) ≅
+      gradedMatrixComplex (fun i ↦ (e i : ZMod n)) (D.map (algebraMap R (NovikovSeries R H N)))
+        (gradedMatrix_degree_intCast (gradedMatrix_degree_map hD (map_zero _)))
+        (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N))) :=
+  isoGradedMatrixComplexOfBasis _ _ _ _ (novikovBasis hD hd hDD hF) (novikovBasis_d hD hd hDD hF)
+
+/-- The isomorphism `novikovComplexLaurentKernelOfMatrixIso` sends the basis vector of the
+generator `⟨i, 0⟩` to the generator `i`. -/
+@[simp]
+theorem novikovComplexLaurentKernelOfMatrixIso_hom_f_basis (r : ZMod n)
+    (i : {i // orbitDegree d i = r}) :
+    ((novikovComplexLaurentKernelOfMatrixIso R hD hd hDD hF).hom.f r).hom
+        (novikovComplexBasis R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+          (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+          (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) (fun _ ↦ 0) r i) =
+      gradedMatrixComplexBasis (fun i ↦ (e i : ZMod n))
+        (D.map (algebraMap R (NovikovSeries R H N)))
+        (gradedMatrix_degree_intCast (gradedMatrix_degree_map hD (map_zero _)))
+        (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N))) r
+        ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩ := by
+  have h := isoGradedMatrixComplexOfBasis_hom_f_basis
+    (hD := gradedMatrix_degree_intCast (gradedMatrix_degree_map hD (map_zero _)))
+    (hDD := gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N)))
+    (novikovBasis hD hd hDD hF)
+    (novikovBasis_d hD hd hDD hF) r ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩
+  rwa [novikovBasis, Basis.reindex_apply, Equiv.subtypeEquivRight_symm_apply] at h
+
+/-- The inverse of `novikovComplexLaurentKernelOfMatrixIso` sends the generator `i` to the basis
+vector of the generator `⟨i, 0⟩`. -/
+@[simp]
+theorem novikovComplexLaurentKernelOfMatrixIso_inv_f_basis (r : ZMod n)
+    (i : {i // (e i : ZMod n) = r}) :
+    ((novikovComplexLaurentKernelOfMatrixIso R hD hd hDD hF).inv.f r).hom
+        (gradedMatrixComplexBasis (fun i ↦ (e i : ZMod n))
+          (D.map (algebraMap R (NovikovSeries R H N)))
+          (gradedMatrix_degree_intCast (gradedMatrix_degree_map hD (map_zero _)))
+          (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N))) r i) =
+      novikovComplexBasis R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+        (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+        (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) (fun _ ↦ 0) r
+        ⟨i, (orbitDegree_eq_intCast hd i).trans i.property⟩ := by
+  have h := isoGradedMatrixComplexOfBasis_inv_f_basis
+    (hD := gradedMatrix_degree_intCast (gradedMatrix_degree_map hD (map_zero _)))
+    (hDD := gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N)))
+    (novikovBasis hD hd hDD hF)
+    (novikovBasis_d hD hd hDD hF) r i
+  rwa [novikovBasis, Basis.reindex_apply, Equiv.subtypeEquivRight_symm_apply] at h
+
+/-- **The homology of the Novikov complex of the Laurent extension of a graded matrix.** If the
+degrees of the generators lie in `[a, b]`, its homology in residue `r` is the direct sum of the
+homology of the complex of `D` over the Novikov ring in the degrees of `[a, b]` congruent to `r`. -/
+def homologyNovikovComplexLaurentKernelOfMatrixIso (a b : ℤ) (ha : ∀ i, a ≤ e i)
+    (hb : ∀ i, e i ≤ b) (r : ZMod n) :
+    (novikovComplex R hF d (apply_vadd_of_intCast hd) (laurentKernelOfMatrix D)
+        (isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+        (kernelComp_laurentKernelOfMatrix_self_eq_zero hDD)).homology r ≅
+      ⨁ fun j : ({j ∈ Finset.Icc a b | (j : ZMod n) = r} : Finset ℤ) ↦
+        (gradedMatrixComplex e (D.map (algebraMap R (NovikovSeries R H N)))
+          (gradedMatrix_degree_map hD (map_zero _))
+          (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N)))).homology j :=
+  (HomologicalComplex.homologyFunctor _ _ r).mapIso
+      (novikovComplexLaurentKernelOfMatrixIso R hD hd hDD hF) ≪≫
+    PeriodicComplex.homologyGradedMatrixComplexIntCastIso n e
+      (D.map (algebraMap R (NovikovSeries R H N))) (gradedMatrix_degree_map hD (map_zero _))
+      (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N))) a b ha hb r
+
+end NovikovComplex
+
+section NovikovLaurentEquiv
+
+universe u v w
+
+variable {R : Type u} [CommRing R] {H : Type w} [AddCommGroup H] [DecidableEq H] {N : H →+ ℝ}
+  {ι₁ ι : Type v} [Fintype ι₁] [Fintype ι] [DecidableEq ι] {P₁ : ι₁ → Type w}
+  [∀ i, AddTorsor H (P₁ i)] [DecidableEq (Σ i, P₁ i)] {n : ℕ} {e : ι → ℤ} {D : Matrix ι ι R}
+  (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1) {d : (Σ _ : ι, H) → ZMod n} (hd : ∀ p, d p = e p.fst)
+  (hDD : D * D = 0) {F : (Σ _ : ι, H) → ℝ}
+  (hF : ∀ i h (p : H), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h) {F₁ : (Σ i, P₁ i) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h) {d₁ : (Σ i, P₁ i) → ZMod n}
+  (hd₁ : ∀ i (g : H) (p : P₁ i), d₁ ⟨i, g +ᵥ p⟩ = d₁ ⟨i, p⟩)
+  {δ₁ : (Σ i, P₁ i) → (Σ i, P₁ i) → R} (hδ₁ : IsLaurentKernel d₁ d₁ 1 δ₁)
+  (hδδ₁ : ∀ p q, kernelComp δ₁ δ₁ p q = 0) {Φ : (Σ i, P₁ i) → (Σ _ : ι, H) → R}
+  {Ψ : (Σ _ : ι, H) → (Σ i, P₁ i) → R} {K : (Σ i, P₁ i) → (Σ i, P₁ i) → R}
+  {K' : (Σ _ : ι, H) → (Σ _ : ι, H) → R} (hΦ : IsLaurentKernel d₁ d 0 Φ)
+  (hΨ : IsLaurentKernel d d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
+  (hK' : IsLaurentKernel d d (-1) K')
+  (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ (laurentKernelOfMatrix D) p q)
+  (hΨδ : ∀ p q, kernelComp (laurentKernelOfMatrix D) Ψ p q = kernelComp Ψ δ₁ p q)
+  (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+    kernelComp K δ₁ p q + kernelComp δ₁ K p q)
+  (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
+    kernelComp K' (laurentKernelOfMatrix D) p q + kernelComp (laurentKernelOfMatrix D) K' p q)
+
+/-- **The completed comparison with the Laurent extension of a graded matrix.** Let `δ₁` be a
+Laurent differential, with Laurent chain maps `Φ` and `Ψ` of degree `0` to and from the Laurent
+extension of `D`, inverse to each other up to Laurent homotopies `K` and `K'` of degree `-1`. Then
+the Novikov complex of `δ₁` is homotopy equivalent to the complex over the Novikov ring of the
+matrix of constant series `D i k • e^0`, with the degrees read modulo `n`: the regraded
+`M ⊗_R Λ` of `M = gradedMatrixComplex e D`. Its maps are the chain maps of `Φ` and `Ψ` followed by,
+and preceded by, `TauCeti.NovikovModule.novikovComplexLaurentKernelOfMatrixIso`. -/
+def novikovComplexHomotopyEquivOfLaurentEquiv :
+    HomotopyEquiv (novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁)
+      (gradedMatrixComplex (fun i ↦ (e i : ZMod n)) (D.map (algebraMap R (NovikovSeries R H N)))
+        (gradedMatrix_degree_intCast (gradedMatrix_degree_map hD (map_zero _)))
+        (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N)))) :=
+  (novikovComplexHomotopyEquiv (hF₀ := hF) (hd₀ := apply_vadd_of_intCast hd)
+      (hδ₀ := isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+      (hδδ₀ := kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ
+      hΦΨ hΨΦ).trans
+    (HomotopyEquiv.ofIso (novikovComplexLaurentKernelOfMatrixIso R hD hd hDD hF))
+
+/-- The map of `novikovComplexHomotopyEquivOfLaurentEquiv` is the chain map of `Φ` followed by
+`novikovComplexLaurentKernelOfMatrixIso`. -/
+theorem novikovComplexHomotopyEquivOfLaurentEquiv_hom :
+    (novikovComplexHomotopyEquivOfLaurentEquiv hD hd hDD hF hF₁ hd₁ hδ₁ hδδ₁ hΦ hΨ hK hK' hΦδ hΨδ
+        hΦΨ hΨΦ).hom =
+      novikovComplexHom (hF₁ := hF₁) (hd₁ := hd₁) (hF₀ := hF) Φ hΦ hΦδ ≫
+        (novikovComplexLaurentKernelOfMatrixIso R hD hd hDD hF).hom :=
+  (rfl)
+
+/-- The inverse map of `novikovComplexHomotopyEquivOfLaurentEquiv` is the inverse of
+`novikovComplexLaurentKernelOfMatrixIso` followed by the chain map of `Ψ`. -/
+theorem novikovComplexHomotopyEquivOfLaurentEquiv_inv :
+    (novikovComplexHomotopyEquivOfLaurentEquiv hD hd hDD hF hF₁ hd₁ hδ₁ hδδ₁ hΦ hΨ hK hK' hΦδ hΨδ
+        hΦΨ hΨΦ).inv =
+      (novikovComplexLaurentKernelOfMatrixIso R hD hd hDD hF).inv ≫
+        novikovComplexHom (hF₁ := hF) (hF₀ := hF₁) (hd₀ := hd₁) Ψ hΨ hΨδ :=
+  (rfl)
+
+/-- **The homology of a Novikov complex equivalent to the Laurent extension of a graded matrix.**
+Under the hypotheses of `TauCeti.NovikovModule.novikovComplexHomotopyEquivOfLaurentEquiv`, if the
+degrees of the generators of `D` lie in `[a, b]`, the homology of the Novikov complex of `δ₁` in
+residue `r` is the direct sum of the homology of the complex of `D` over the Novikov ring in the
+degrees of `[a, b]` congruent to `r`: `HF_r ≅ ⨁_{j ≡ r} H^j(M ⊗_R Λ)`. -/
+def homologyNovikovComplexIsoOfLaurentEquiv (a b : ℤ) (ha : ∀ i, a ≤ e i) (hb : ∀ i, e i ≤ b)
+    (r : ZMod n) :
+    (novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁).homology r ≅
+      ⨁ fun j : ({j ∈ Finset.Icc a b | (j : ZMod n) = r} : Finset ℤ) ↦
+        (gradedMatrixComplex e (D.map (algebraMap R (NovikovSeries R H N)))
+          (gradedMatrix_degree_map hD (map_zero _))
+          (gradedMatrix_map_mul_map_eq_zero hDD (algebraMap R (NovikovSeries R H N)))).homology j :=
+  (novikovComplexHomotopyEquiv (hF₀ := hF) (hd₀ := apply_vadd_of_intCast hd)
+      (hδ₀ := isLaurentKernel_laurentKernelOfMatrix_of_intCast hD hd)
+      (hδδ₀ := kernelComp_laurentKernelOfMatrix_self_eq_zero hDD) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ
+      hΦΨ hΨΦ).toHomologyIso r ≪≫
+    homologyNovikovComplexLaurentKernelOfMatrixIso hD hd hDD hF a b ha hb r
+
+end NovikovLaurentEquiv
 
 section Finrank
 

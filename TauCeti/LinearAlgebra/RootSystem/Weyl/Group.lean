@@ -32,6 +32,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   when the coroots span, in particular for simply connected integral root data.
 * `RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top` deduces that the Weyl group then
   acts faithfully on the root indices.
+* `RootPairing.weylGroup_smul_eq_self_of_mem_corootKer` says the Weyl group fixes `P.corootKer`
+  pointwise.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
@@ -60,6 +62,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.weylGroupRootRep_apply`, `RootPairing.weylGroupRootRep_ofIdx_apply`,
   `RootPairing.weylGroupRootRep_injective`, and `RootPairing.ker_weylGroupRootRep` identify the
   action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
+* `RootPairing.weylGroupCorootRep_apply` identifies the action of `P.weylGroupCorootRep` with
+  scalar multiplication.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
   span.
@@ -185,6 +189,19 @@ lemma coroot'_weylGroupToPerm_smul (w : P.weylGroup) (i : ι) (x : M) :
   have h := coroot'_smul P (w : P.Aut) ((w : P.Aut).indexEquiv i) x
   rw [_root_.Equiv.symm_apply_apply] at h
   exact h
+
+variable {P} in
+/-- The Weyl group fixes `P.corootKer` pointwise. -/
+theorem weylGroup_smul_eq_self_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer)
+    (w : P.weylGroup) : w • x = x := by
+  obtain ⟨g, hg⟩ := w
+  induction hg using weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, Equiv.reflection_smul, reflection_apply_eq_self_of_mem_corootKer hx]
+  | one => exact one_smul _ x
+  | mul g₁ g₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
 
 /-- **The sum of squares of all coroot pairings at a weight is invariant under the Weyl group.** -/
 theorem sum_coroot'_sq_smul {𝕜 : Type*} [Fintype ι] [CommSemiring 𝕜] [Algebra R 𝕜]
@@ -389,6 +406,13 @@ multiplication on `M`. -/
 @[simp]
 theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
     P.weylGroupRootRep w x = w • x :=
+  (rfl)
+
+/-- The coroot-space representation `P.weylGroupCorootRep` acts by the scalar multiplication of the
+opposite Weyl group on `N`. -/
+@[simp]
+theorem weylGroupCorootRep_apply (w : P.weylGroup.op) (y : N) :
+    P.weylGroupCorootRep w y = w • y :=
   (rfl)
 
 /-- The weight-space representation of the Weyl group is faithful over every commutative ring. -/
