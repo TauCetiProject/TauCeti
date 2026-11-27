@@ -78,13 +78,16 @@ variable {Q : Type u} [AddCommGroup Q] [Module R Q] [Module.Injective R Q] [Modu
 
 /-- On an indecomposable nonprojective module, the translate of an Auslander–Reiten duality is
 isomorphic in the injectively stable category to the Matlis dual of the minimal transpose. -/
-theorem nonempty_iso_arTranslate_of_auslanderReitenDuality [IsNoetherianRing A]
-    (D : (ExactStructure.abelian (FGModuleCat.{max u v w} A)).AuslanderReitenDuality R Q)
-    (hQ : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] Q) = 1)
-    {Z : FGModuleCat.{max u v w} A} (hZ : Indecomposable Z) (hP : ¬ Projective Z) :
+theorem nonempty_iso_arTranslate_of_auslanderReitenDuality :
+    letI : IsNoetherianRing A := IsNoetherianRing.of_finite R A
+    ∀ (D : (ExactStructure.abelian (FGModuleCat.{max u v w} A)).AuslanderReitenDuality R Q),
+    (∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] Q) = 1) →
+    ∀ {Z : FGModuleCat.{max u v w} A}, Indecomposable Z → ¬ Projective Z →
     let E := ExactStructure.abelian (FGModuleCat.{max u v w} A)
     Nonempty (E.injectivelyTrivialIdeal.quotientFunctor.obj (arTranslate R Q Z) ≅
       D.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) := by
+  have : IsNoetherianRing A := IsNoetherianRing.of_finite R A
+  intro D hQ Z hZ hP
   obtain ⟨S, hS, ⟨e₁⟩, ⟨e₃⟩⟩ := exists_isAlmostSplit_arTranslate R Q hQ Z hZ hP
   let E := ExactStructure.abelian (FGModuleCat.{max u v w} A)
   let e : E.Extension S.X₃ S.X₁ :=
