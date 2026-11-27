@@ -340,6 +340,21 @@ def modelSlabEquiv (k : ℕ) :
     ModelAlgebra K k ≃ₐ[K] NodeAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k) :=
   (modelSlabEquivBase K k).restrictScalars K
 
+/-- `modelSlabEquiv K k` is the restriction of scalars of `modelSlabEquivBase K k` from
+`BaseRing K k` to `K`. -/
+theorem modelSlabEquiv_eq_restrictScalars (k : ℕ) :
+    modelSlabEquiv K k = (modelSlabEquivBase K k).restrictScalars K := (rfl)
+
+/-- `modelSlabEquivBase` and `modelSlabEquiv` have the same underlying function. -/
+@[simp] theorem modelSlabEquivBase_apply (k : ℕ) (u : ModelAlgebra K k) :
+    modelSlabEquivBase K k u = modelSlabEquiv K k u := (rfl)
+
+/-- `(modelSlabEquivBase K k).symm` and `(modelSlabEquiv K k).symm` have the same underlying
+function. -/
+@[simp] theorem modelSlabEquivBase_symm_apply (k : ℕ)
+    (u : NodeAlgebra (BaseRing K k)[T;T⁻¹] (slabParam K k)) :
+    (modelSlabEquivBase K k).symm u = (modelSlabEquiv K k).symm u := (rfl)
+
 private theorem modelSlabEquiv_apply (k : ℕ) (u : ModelAlgebra K k) :
     modelSlabEquiv K k u = modelToSlab K k u := (rfl)
 
@@ -435,8 +450,7 @@ def modelBasis [Nontrivial K] (k : ℕ) :
 /-- Over a nontrivial commutative ring `K`, every theta basis element `modelTheta K k n b` is
 nonzero in `ModelAlgebra K k`. -/
 theorem modelTheta_ne_zero [Nontrivial K] (k : ℕ) (n b : ℤ) : modelTheta K k n b ≠ 0 := by
-  rw [← show modelBasis K k (0, n, b) = modelTheta K k n b by simp [modelBasis_apply]]
-  exact (modelBasis K k).ne_zero (0, n, b)
+  simpa using (modelBasis K k).ne_zero (0, n, b)
 
 /-! ### The focus-focus theta multiplication formula -/
 
@@ -584,9 +598,10 @@ theorem modelSlabEquiv_mapRingHom {K K' : Type*} [CommRing K] [CommRing K']
         LaurentPolynomial.T, AddMonoidAlgebra.mapRingHom_single, fBase, AdjoinRoot.map_root,
         map_one]) (modelSlabEquiv K k u) := by
   intro fBase fLaur
-  refine RingHom.congr_fun (show (modelSlabEquiv K' k).toRingHom.comp (mapRingHom φ k) =
-      (NodeAlgebra.mapRingHom fLaur _).comp (modelSlabEquiv K k).toRingHom from
-    Ideal.Quotient.ringHom_ext <| MvPolynomial.ringHom_ext (fun r => ?_) (fun c => ?_)) u
+  refine RingHom.congr_fun
+    (f := (modelSlabEquiv K' k).toRingHom.comp (mapRingHom φ k))
+    (g := (NodeAlgebra.mapRingHom fLaur _).comp (modelSlabEquiv K k).toRingHom)
+    (Ideal.Quotient.ringHom_ext <| MvPolynomial.ringHom_ext (fun r => ?_) (fun c => ?_)) u
   · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
       AlgEquiv.coe_toRingEquiv, ← MvPolynomial.algebraMap_eq, ← Ideal.Quotient.algebraMap_eq,
       ← IsScalarTower.algebraMap_apply K (Ambient K) (ModelAlgebra K k),

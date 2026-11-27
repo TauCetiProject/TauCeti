@@ -103,17 +103,19 @@ theorem Z_mul (q : B) (n m : ℤ) :
     let r := (n.natAbs + m.natAbs - (n + m).natAbs) / 2
     Z q n * Z q m = algebraMap B (NodeAlgebra B q) (q ^ r) * Z q (n + m) := by
   dsimp only; by_cases hn : n < 0 <;> by_cases hm : m < 0
-  · rw [Z_of_neg q hn, Z_of_neg q hm, Z_of_neg q (by omega), Int.natAbs_add_of_nonpos hn.le hm.le,
-      Nat.sub_self, Nat.zero_div, pow_zero, map_one, one_mul, pow_add]
-  · rw [Z_of_neg q hn, Z_of_nonneg q (not_lt.mp hm), coord_zero_pow_mul_coord_one_pow,
-      show min n.natAbs m.natAbs = (n.natAbs + m.natAbs - (n + m).natAbs) / 2 by omega,
-      show (m.natAbs : ℤ) - n.natAbs = n + m by omega]
-  · rw [Z_of_nonneg q (not_lt.mp hn), Z_of_neg q hm, mul_comm, coord_zero_pow_mul_coord_one_pow,
-      show min m.natAbs n.natAbs = (n.natAbs + m.natAbs - (n + m).natAbs) / 2 by omega,
-      show (n.natAbs : ℤ) - m.natAbs = n + m by omega]
-  · rw [Z_of_nonneg q (not_lt.mp hn), Z_of_nonneg q (not_lt.mp hm), Z_of_nonneg q (by omega),
-      Int.natAbs_add_of_nonneg (not_lt.mp hn) (not_lt.mp hm), Nat.sub_self, Nat.zero_div,
-      pow_zero, map_one, one_mul, pow_add]
+  · have hnat : (n + m).natAbs = n.natAbs + m.natAbs := by omega
+    rw [Z_of_neg q hn, Z_of_neg q hm, Z_of_neg q (by omega)]
+    simp [hnat, pow_add]
+  · have hmin : min n.natAbs m.natAbs = (n.natAbs + m.natAbs - (n + m).natAbs) / 2 := by omega
+    have hdiff : (m.natAbs : ℤ) - n.natAbs = n + m := by omega
+    rw [Z_of_neg q hn, Z_of_nonneg q (not_lt.mp hm), coord_zero_pow_mul_coord_one_pow, hmin, hdiff]
+  · have hmin : min m.natAbs n.natAbs = (n.natAbs + m.natAbs - (n + m).natAbs) / 2 := by omega
+    have hdiff : (n.natAbs : ℤ) - m.natAbs = n + m := by omega
+    rw [Z_of_nonneg q (not_lt.mp hn), Z_of_neg q hm, mul_comm, coord_zero_pow_mul_coord_one_pow,
+      hmin, hdiff]
+  · have hnat : (n + m).natAbs = n.natAbs + m.natAbs := by omega
+    rw [Z_of_nonneg q (not_lt.mp hn), Z_of_nonneg q (not_lt.mp hm), Z_of_nonneg q (by omega)]
+    simp [hnat, pow_add]
 
 /-- When `a` and `b` have the same sign, `Z q (a + b) = Z q a * Z q b` without any factor of
 `q`. -/

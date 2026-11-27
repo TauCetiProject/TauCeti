@@ -84,20 +84,24 @@ def rightChamberMap (q : B) : NodeAlgebra B q →ₐ[B] B[T;T⁻¹] :=
     leftChamberMap q (Z q n) = C (q ^ n.toNat) * T (-n) := by
   rw [leftChamberMap, lift_Z]
   split_ifs with hn
-  · rw [T_pow, mul_one, Int.ofNat_natAbs_of_nonpos hn.le, Int.toNat_of_nonpos hn.le,
-      pow_zero, map_one, one_mul]
-  · rw [mul_pow, ← map_pow, T_pow, mul_neg_one, Int.ofNat_natAbs_of_nonneg (not_lt.mp hn),
-      show n.natAbs = n.toNat by omega]
+  · have hto : n.toNat = 0 := by omega
+    have hcast : (n.natAbs : ℤ) = -n := by omega
+    simp [T_pow, hto, hcast]
+  · have hnat : n.natAbs = n.toNat := by omega
+    have hcast : (n.toNat : ℤ) = n := by omega
+    simp [mul_pow, ← map_pow, T_pow, hnat, hcast]
 
 /-- In the right chamber, `Z q n` maps to `C (q ^ (-n).toNat) * T n`. -/
 @[simp] theorem rightChamberMap_Z (q : B) (n : ℤ) :
     rightChamberMap q (Z q n) = C (q ^ (-n).toNat) * T n := by
   rw [rightChamberMap, lift_Z]
   split_ifs with hn
-  · rw [mul_pow, ← map_pow, T_pow, mul_neg_one, Int.ofNat_natAbs_of_nonpos hn.le, neg_neg,
-      show n.natAbs = (-n).toNat by omega]
-  · rw [T_pow, mul_one, Int.natAbs_of_nonneg (not_lt.mp hn),
-      Int.toNat_of_nonpos (by omega), pow_zero, map_one, one_mul]
+  · have hnat : n.natAbs = (-n).toNat := by omega
+    have hcast : ((-n).toNat : ℤ) = -n := by omega
+    simp [mul_pow, ← map_pow, T_pow, hnat, hcast]
+  · have hto : (-n).toNat = 0 := by omega
+    have hcast : (n.natAbs : ℤ) = n := by omega
+    simp [T_pow, hto, hcast]
 
 private theorem coeff_chamberMap_aux (q : B) (f : NodeAlgebra B q →ₗ[B] B[T;T⁻¹])
     (e : ℤ ≃ ℤ) (c : ℤ → B) (hf : ∀ n : ℤ, f (Z q n) = C (c n) * T (e n))
@@ -112,7 +116,7 @@ private theorem coeff_chamberMap_aux (q : B) (f : NodeAlgebra B q →ₗ[B] B[T;
       Finsupp.smul_single', mul_one, Finsupp.single_apply, Finsupp.single_apply]
     rcases eq_or_ne (e m) k with rfl | h
     · simp
-    · simp [h, show m ≠ e.symm k from fun h' => h (by simp [h'])]
+    · simp [e.eq_symm_apply, h]
 
 /-- The `k`-th Laurent coefficient of `leftChamberMap q u` is the `(-k)`-th slab basis coordinate
 multiplied by `q ^ (-k).toNat`. -/
@@ -635,8 +639,9 @@ theorem tangentialSlabCorrespondence_transfer_single
       if -(i : ℤ × G).1 = k then AddMonoidAlgebra.single (-(i : ℤ × G).1, m')
         (s * (q ^ (i : ℤ × G).1.natAbs).coeff (m' - (i : ℤ × G).2)) else 0 :=
   tangential_transfer_single_aux q (tangentialSlabCorrespondence q hI hJ) i s k m' <| by
-    simp [rightTangentialMap_algebraMap_single_mul_Z, show (i : ℤ × G).1.toNat =
-      (i : ℤ × G).1.natAbs by have := hI i.val i.property; omega]
+    have hi : (i : ℤ × G).1.toNat = (i : ℤ × G).1.natAbs := by
+      have := hI i.val i.property; omega
+    simp [rightTangentialMap_algebraMap_single_mul_Z, hi]
 
 /-- Explicit left-chamber reverse transfer of an incoming right monomial `single (d, m) s` across
 `(tangentialSlabCorrespondence q hI hJ).symm`. -/
@@ -650,8 +655,9 @@ theorem tangentialSlabCorrespondence_symm_transfer_single
       if -(j : ℤ × G).1 = k then AddMonoidAlgebra.single (-(j : ℤ × G).1, m')
         (s * (q ^ (j : ℤ × G).1.natAbs).coeff (m' - (j : ℤ × G).2)) else 0 :=
   tangential_transfer_single_aux q (tangentialSlabCorrespondence q hI hJ).symm j s k m' <| by
-    simp [leftTangentialMap_algebraMap_single_mul_Z, show (j : ℤ × G).1.toNat =
-      (j : ℤ × G).1.natAbs by have := hJ j.val j.property; omega]
+    have hj : (j : ℤ × G).1.toNat = (j : ℤ × G).1.natAbs := by
+      have := hJ j.val j.property; omega
+    simp [leftTangentialMap_algebraMap_single_mul_Z, hj]
 
 private theorem mapAlgHom_tangentialLiftLinearMap [CommSemiring R] [Algebra R S] [Algebra R S']
     (φ : S →ₐ[R] S') {q : AddMonoidAlgebra S Λ} {q' : AddMonoidAlgebra S' Λ}
