@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.Algebra.Polynomial.Div
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Generalized eigenspaces of a polynomial in an endomorphism
@@ -86,5 +89,45 @@ theorem mem_maxGenEigenspace_aeval_X_sq_sub_C {R M : Type*} [CommRing R] [AddCom
     [Module R M] {f : End R M} {μ : R} {v : M} (hv : f (f v) = μ • v) :
     v ∈ (aeval f (X ^ 2 - C μ)).maxGenEigenspace 0 :=
   (mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
+
+/-- If `P (U)` kills `y` and `(P / (X - c)) (U)` still kills `y` whenever `c ≠ 0` and `q * c` are
+both roots of `P`, then any geometric chain `q ^ i / d` (`i < k`) ending below a root `q ^ k / d`
+cancels from `P`. -/
+theorem aeval_cofactor_eq_zero {V : Type*} [AddCommGroup V] [Module ℂ V]
+    (U : End ℂ V) {y : V} {P : ℂ[X]} {q : ℝ} {d : ℂ}
+    (hq : 1 < q) (aeval_P : aeval U P y = 0)
+    (two_roots :
+      ∀ {c : ℂ} (F : ℂ[X]), (X - C c) * F = P → P.IsRoot ((q : ℂ) * c) → c ≠ 0 →
+        aeval U F y = 0)
+    (hd : d ≠ 0) (k : ℕ) (R : ℂ[X]) (hroot : P.IsRoot ((q : ℂ) ^ k / d))
+    (hP : P = (∏ i ∈ Finset.range k, (C d * X - C ((q : ℂ) ^ i))) * R) :
+    aeval U R y = 0 := by
+  have hq0 : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
+  induction k generalizing R with
+  | zero => simpa [hP] using aeval_P
+  | succ k ih =>
+    simp only [Finset.prod_range_succ, mul_assoc, pow_succ', mul_div_assoc] at hP hroot
+    have h_root_k : P.IsRoot ((q : ℂ) ^ k / d) := by simp [hP, field]
+    have eigen_R : U (aeval U R y) = (d⁻¹ * (q : ℂ) ^ k) • aeval U R y := by
+      simpa [sub_eq_zero, ← eq_inv_smul_iff₀ hd, smul_smul, -map_pow] using ih _ h_root_k hP
+    set Q : ℂ[X] := ∏ i ∈ Finset.range k, (C d * X - C ((q : ℂ) ^ i))
+    have cancel : (X - C ((q : ℂ) ^ k / d)) * (d • Q * R) = P := by
+      rw [hP, smul_eq_C_mul]
+      have h1 : (X - C ((q : ℂ) ^ k / d)) * C d = C d * X - C ((q : ℂ) ^ k) := by
+        rw [sub_mul, ← map_mul, div_mul_cancel₀ _ hd, mul_comm X]
+      linear_combination (Q * R) * h1
+    have killed : aeval U Q (aeval U R y) = 0 := by
+      simpa [hd] using two_roots _ cancel hroot (div_ne_zero (pow_ne_zero k hq0) hd)
+    have eval_ne : Q.eval (d⁻¹ * (q : ℂ) ^ k) ≠ 0 := by
+      intro h0
+      rw [eval_prod, Finset.prod_eq_zero_iff] at h0
+      obtain ⟨i, hi, h_eq⟩ := h0
+      simp only [Finset.mem_range, eval_sub, eval_mul, eval_C, eval_X, sub_eq_zero] at hi h_eq
+      have h_pow : (q : ℂ) ^ k = (q : ℂ) ^ i := by
+        simpa [← mul_assoc, mul_inv_cancel₀ hd] using h_eq
+      have h_powR : q ^ k = q ^ i := by exact_mod_cast h_pow
+      exact (pow_lt_pow_right₀ hq hi).ne' h_powR
+    rwa [Module.End.aeval_apply_of_mem_apply_eq_smul (p := Q) eigen_R,
+      smul_eq_zero_iff_right eval_ne] at killed
 
 end Module.End

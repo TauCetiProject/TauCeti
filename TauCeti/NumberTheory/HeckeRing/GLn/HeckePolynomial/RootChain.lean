@@ -11,12 +11,14 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.HeckePolynomial.Basic
 
 import Mathlib.Algebra.Star.BigOperators
 import Mathlib.Analysis.Complex.Basic
-import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Positivity
 import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.LinearAlgebra.Eigenspace.Aeval
+import TauCeti.LinearAlgebra.SesquilinearForm.Complex
+import TauCeti.LinearAlgebra.SesquilinearForm.Polynomial
 
 /-!
 # Root chains of `GL n` Hecke polynomials
@@ -25,11 +27,12 @@ This file isolates the linear-algebraic and polynomial core of the root-chain le
 spherical Hecke polynomials of `GL_N` in unitary representations (cf. Tadić's classification of
 the unitary dual and Bernstein's inequality at the ends of segments).
 
-Given a positive-definite sesquilinear form `B` on a complex vector space `V`, mutually adjoint
-endomorphisms `U, U' : Module.End ℂ V`, a real scale `q > 1`, and vectors `T₀, …, Tₙ` satisfying
-the two hyperplane-count recursions attached to `P = glnHeckePolynomial (n + 1) (q : ℂ) t`:
+Given a positive-definite sesquilinear form `B` on a complex vector space `V`, an endomorphism
+`U : Module.End ℂ V` with left adjoint `U'`, a real scale `q > 1`, and vectors `T₀, …, Tₙ`
+satisfying the two hyperplane-count recursions attached to
+`P = glnHeckePolynomial (n + 1) (q : ℂ) t`:
 
-* `TauCeti.glnHeckePolynomial_root_chain_of_adjoint` proves:
+* `Module.End.glnHeckePolynomial_root_chain_of_adjoint` proves:
   1. **Top-root lower bound**: every root `c` of `P` such that `q * c` is not a root satisfies
      `q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2`;
   2. **Chain cancellation**: if `d ≠ 0`, `q ^ k / d` is a root of `P`, and
@@ -42,86 +45,18 @@ the two hyperplane-count recursions attached to `P = glnHeckePolynomial (n + 1) 
 
 ## Main declarations
 
-* `TauCeti.glnHeckePolynomial_succ`
-* `TauCeti.sesquilinear_aeval_map_starRingEnd`
-* `TauCeti.glnHeckePolynomial_root_chain_of_adjoint`
+* `Module.End.glnHeckePolynomial_root_chain_of_adjoint`
 * `TauCeti.isRoot_of_glnHeckePolynomial_star_mul_eq`
 * `TauCeti.isRoot_mul_pow_of_norm_sq_mul_pow_eq`
 -/
 
 public section
 
-open ComplexOrder Finset Module Polynomial
-
-namespace TauCeti
-
-/-- Recursive formula for the `GL n` Hecke polynomial:
-`glnHeckePolynomial (n + 1) q T = X * glnHeckePolynomial n q (T ∘ Fin.castSucc) +
-C ((-1) ^ (n + 1) * q ^ (n + 1).choose 2 * T (Fin.last (n + 1)))`. -/
-theorem glnHeckePolynomial_succ {A : Type*} [Ring A] (n : ℕ) (q : A) (T : Fin (n + 2) → A) :
-    glnHeckePolynomial (n + 1) q T =
-      X * glnHeckePolynomial n q (fun i ↦ T i.castSucc) +
-        C ((-1) ^ (n + 1) * q ^ (n + 1).choose 2 * T (Fin.last (n + 1))) := by
-  rw [glnHeckePolynomial_def, Fin.sum_univ_castSucc, glnHeckePolynomial_def, mul_sum]
-  congr 1
-  · refine sum_congr rfl fun i _ ↦ ?_
-    have hi : n + 1 - (i : ℕ) = (n - (i : ℕ)) + 1 := by omega
-    rw [Fin.val_castSucc, hi, pow_succ', ← mul_assoc, ← mul_assoc, (commute_X _).eq]
-  · simp [Fin.val_last]
-
-/-- If `U'` is left-adjoint to `U` on a `U`-invariant set `S` for a sesquilinear form `B`, then
-`aeval U' (G.map (starRingEnd R))` is left-adjoint to `aeval U G` on `S`. -/
-theorem sesquilinear_aeval_map_starRingEnd {R V : Type*} [CommSemiring R] [StarRing R]
-    [AddCommMonoid V] [Module R V] (B : V →ₛₗ[starRingEnd R] V →ₗ[R] R) {U U' : End R V}
-    (S : Set V) (adj : ∀ y ∈ S, U y ∈ S ∧ ∀ a : V, B (U' a) y = B a (U y)) (G : R[X]) (a : V) :
-    ∀ y ∈ S, B (aeval U' (G.map (starRingEnd R)) a) y = B a (aeval U G y) := by
-  induction G using recOnHorner generalizing a with
-  | M0 => simp
-  | MC G c _ _ ih => simp_all
-  | MX G _ ih =>
-    intro y hy
-    rw [Polynomial.map_mul, Polynomial.map_X, mul_comm _ X, map_mul, aeval_X,
-      mul_apply_eq_comp, (adj y hy).2, map_mul, aeval_X, mul_apply_eq_comp,
-      ih a (U y) (adj y hy).1]
+open ComplexOrder Finset Module Polynomial TauCeti
 
 section RootChain
 
 variable {V : Type*} [AddCommGroup V] [Module ℂ V]
-
-/-- If `P (U)` kills `y` and `(P / (X - c)) (U)` still kills `y` whenever `c ≠ 0` and `q * c` are
-both roots of `P`, then any chain `q ^ i / d` (`i < k`) ending below a root `q ^ k / d` cancels. -/
-private lemma aeval_cofactor_eq_zero {U : End ℂ V} {y : V} {P : ℂ[X]} {q : ℝ} {d : ℂ}
-    (hq : 1 < q) (aeval_P : aeval U P y = 0)
-    (two_roots :
-      ∀ {c : ℂ} (F : ℂ[X]), (X - C c) * F = P → P.IsRoot ((q : ℂ) * c) → c ≠ 0 →
-        aeval U F y = 0)
-    (hd : d ≠ 0) (k : ℕ) (R : ℂ[X]) (hroot : P.IsRoot ((q : ℂ) ^ k / d))
-    (hP : P = (∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))) * R) :
-    aeval U R y = 0 := by
-  have hq0 : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
-  induction k generalizing R with
-  | zero => simpa [hP] using aeval_P
-  | succ k ih =>
-    simp only [prod_range_succ, mul_assoc, pow_succ', mul_div_assoc] at hP hroot
-    have h_root_k : P.IsRoot ((q : ℂ) ^ k / d) := by simp [hP, field]
-    have eigen_R : U (aeval U R y) = (d⁻¹ * (q : ℂ) ^ k) • aeval U R y := by
-      simpa [sub_eq_zero, ← eq_inv_smul_iff₀ hd, smul_smul, -map_pow] using ih _ h_root_k hP
-    set Q : ℂ[X] := ∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))
-    have cancel : (X - C ((q : ℂ) ^ k / d)) * (d • Q * R) = P :=
-      Polynomial.funext fun a ↦ by simp [hP, field]
-    have killed : aeval U Q (aeval U R y) = 0 := by
-      simpa [hd] using two_roots _ cancel hroot (div_ne_zero (pow_ne_zero k hq0) hd)
-    have eval_ne : Q.eval (d⁻¹ * (q : ℂ) ^ k) ≠ 0 := by
-      intro h0
-      rw [eval_prod, Finset.prod_eq_zero_iff] at h0
-      obtain ⟨i, hi, h_eq⟩ := h0
-      simp only [mem_range, eval_sub, eval_mul, eval_C, eval_X, sub_eq_zero] at hi h_eq
-      have h_pow : (q : ℂ) ^ k = (q : ℂ) ^ i := by
-        simpa [← mul_assoc, mul_inv_cancel₀ hd] using h_eq
-      have h_powR : q ^ k = q ^ i := by exact_mod_cast h_pow
-      exact (pow_lt_pow_right₀ hq hi).ne' h_powR
-    rwa [Module.End.aeval_apply_of_mem_apply_eq_smul (p := Q) eigen_R,
-      smul_eq_zero_iff_right eval_ne] at killed
 
 /-- If `R (U)` kills every `T j` (`j : Fin (n + 1)`) and the adjoint `U'` preserves their span,
 then `aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0`. -/
@@ -142,8 +77,8 @@ private lemma aeval_conj_eq_zero {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ]
       · intro i
         simp [rec_U' i, U'_first, ih (Fin.last n), ih i.castSucc]
   refine by_contra fun hne ↦ (hB _ hne).ne' ?_
-  rw [sesquilinear_aeval_map_starRingEnd B Set.univ (fun y _ ↦ ⟨trivial, fun z ↦ adj z y⟩)
-    R _ _ trivial, kills_span _ 0, map_zero]
+  rw [B.aeval_map_starRingEnd Set.univ (fun y _ ↦ ⟨trivial, fun z ↦ adj z y⟩) R _ _ trivial,
+    kills_span _ 0, map_zero]
 
 /-- Prefix evaluation of `glnHeckePolynomial` at `U` along the `U`-recursion. -/
 private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ} {t : Fin (n + 2) → ℂ}
@@ -161,10 +96,10 @@ private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ
         q ^ m • (t ⟨m + 1, by omega⟩ • T 0 - T ⟨m + 1, by omega⟩) := rec_U ⟨m, hm_lt⟩
     have hstep := glnHeckePolynomial_succ m q (fun i : Fin (m + 2) ↦ t ⟨i, by omega⟩)
     simp only [Fin.val_castSucc, Fin.val_last] at hstep
-    have hih := ih hm_lt.le
-    rw [hstep, map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp, hih,
-      map_smul, hrec, aeval_C, Module.algebraMap_end_apply]
-    simp only [Nat.choose_succ_succ, Nat.choose_one_right]
+    rw [hstep]
+    simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
+      aeval_C, Module.algebraMap_end_apply, Nat.choose_succ_succ, Nat.choose_one_right]
+    rw [ih hm_lt.le, map_smul, hrec]
     module
 
 /-- Action of `U'` on the quotient of a prefix Hecke polynomial by `X - c`. -/
@@ -208,21 +143,25 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
           have h1 : (q ^ m)⁻¹ * t ⟨m + 1, by omega⟩ * q ^ m * (t ⟨m + 1, by omega⟩)⁻¹ = 1 := by
             field_simp [hq, ht_last']
           simp only [smul_smul, ← mul_assoc, h1, one_smul]
-        rw [htop, map_zero, add_zero, hstep, eval_add, eval_mul, eval_X, eval_C,
-          map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply, aeval_p m le_rfl, hT_last]
-        simp only [Nat.choose_succ_succ, Nat.choose_one_right]
+        rw [htop, hstep]
+        simp only [map_zero, add_zero, eval_add, eval_mul, eval_X, eval_C, map_add,
+          LinearMap.add_apply, map_smul, LinearMap.smul_apply, Nat.choose_succ_succ,
+          Nat.choose_one_right]
+        rw [aeval_p m le_rfl, hT_last]
         match_scalars <;> field
       · have hrec : U' (T ⟨m + 1, by omega⟩) =
             q ^ (n - m - 1) • ((t ⟨m + 1, by omega⟩ / q ^ n) • U' (T 0) - T ⟨m, by omega⟩) :=
           rec_U' ⟨m, hmlt⟩
+        have hexp : n - m - 1 + (m + 1) = n := by omega
         have hpow : q ^ (n - m - 1) = q ^ n / q ^ (m + 1) := by
-          rw [eq_div_iff (pow_ne_zero _ hq), ← pow_add, show n - m - 1 + (m + 1) = n by omega]
-        rw [aeval_p (m + 1) hmlt, map_smul, hrec, hpow, hstep, eval_add, eval_mul, eval_X, eval_C,
-          map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply, aeval_p m hmlt.le]
-        simp only [Nat.choose_succ_succ, Nat.choose_one_right]
+          rw [eq_div_iff (pow_ne_zero _ hq), ← pow_add, hexp]
+        rw [aeval_p (m + 1) hmlt, hstep]
+        simp only [map_smul, eval_add, eval_mul, eval_X, eval_C, map_add, LinearMap.add_apply,
+          LinearMap.smul_apply, Nat.choose_succ_succ, Nat.choose_one_right]
+        rw [hrec, hpow, aeval_p m hmlt.le]
         match_scalars <;> field
 
-/-- Pairing estimate behind `glnHeckePolynomial_root_chain_of_adjoint`. -/
+/-- Pairing estimate behind `Module.End.glnHeckePolynomial_root_chain_of_adjoint`. -/
 private lemma le_norm_sq_of_pairing {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ} {U U' : End ℂ V}
     {x z : V} {c a : ℂ} {q : ℝ} {n : ℕ} (hB : ∀ f ≠ (0 : V), 0 < B f f)
     (adj : ∀ y w : V, B (U' y) w = B y (U w)) (hq : 1 < q) (hx_ne : x ≠ 0) (ha : a ≠ 0)
@@ -257,35 +196,25 @@ private lemma aeval_glnHeckePolynomial_top_eq_zero {U : End ℂ V} {n : ℕ} {q 
       ((-1) ^ n * q ^ n.choose 2) • T (Fin.last n))
     (U_last : U (T (Fin.last n)) = q ^ n • t (Fin.last (n + 1)) • T 0) :
     aeval U (glnHeckePolynomial (n + 1) q t) (T 0) = 0 := by
-  rw [glnHeckePolynomial_succ, map_add, LinearMap.add_apply, map_mul, aeval_X,
-    mul_apply_eq_comp, hn, map_smul, U_last, aeval_C, Module.algebraMap_end_apply]
-  simp only [Nat.choose_succ_succ, Nat.choose_one_right]
+  rw [glnHeckePolynomial_succ]
+  simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
+    aeval_C, Module.algebraMap_end_apply, Nat.choose_succ_succ, Nat.choose_one_right]
+  rw [hn, map_smul, U_last]
   module
-
-/-- If `z` is an `U'`-eigenvector orthogonal to `x`, then `z` is orthogonal to `G (U) x` for
-every polynomial `G`. -/
-private lemma sesquilinear_aeval_eq_zero_of_eigen {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
-    {U U' : End ℂ V} {x z : V} {μ : ℂ}
-    (adj' : ∀ a y : V, B (U a) y = B a (U' y)) (eigen_z : U' z = μ • z) (orth_x : B x z = 0)
-    (G : ℂ[X]) : B (aeval U G x) z = 0 := by
-  induction G using recOnHorner with
-  | M0 => simp
-  | MC G a _ _ ih => simp [ih, orth_x]
-  | MX G _ ih => simp [← X_mul, adj', eigen_z, ih]
 
 /-- The linear-algebraic core of the `GL_N` root-chain lemma.
 
-Let `B` be a positive-definite sesquilinear form on `V`, `U` and `U'` mutually adjoint for `B`,
-`q > 1` real, `P = glnHeckePolynomial (n + 1) (q : ℂ) t`, and `T : Fin (n + 1) → V` with
-`T 0 ≠ 0`, `t 0 • T 0 = T 0`, `t (Fin.last (n + 1)) ≠ 0`, satisfying the forward recursion for `U`
-and backward recursion for `U'`. Then:
+Let `B` be a positive-definite sesquilinear form on `V`, `U'` left-adjoint to `U` for `B`
+(reverse adjointness follows automatically from positive definiteness over `ℂ`), `q > 1` real,
+`P = glnHeckePolynomial (n + 1) (q : ℂ) t`, and `T : Fin (n + 1) → V` with `T 0 ≠ 0`,
+`t 0 • T 0 = T 0`, `t (Fin.last (n + 1)) ≠ 0`, satisfying the forward recursion for `U` and
+backward recursion for `U'`. Then:
 1. every root `c` of `P` for which `q * c` is not a root satisfies `q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2`;
 2. if `d ≠ 0`, `q ^ k / d` is a root of `P`, and `P = (∏ i < k, (C d * X - C (q ^ i))) * R`, then
    `aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0`. -/
-theorem glnHeckePolynomial_root_chain_of_adjoint {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
+theorem Module.End.glnHeckePolynomial_root_chain_of_adjoint {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
     (U U' : End ℂ V) {n : ℕ} {q : ℝ} {t : Fin (n + 2) → ℂ} (T : Fin (n + 1) → V)
-    (hB : ∀ f ≠ (0 : V), 0 < B f f)
-    (adj : ∀ a y : V, B (U' a) y = B a (U y)) (adj' : ∀ a y : V, B (U a) y = B a (U' y))
+    (hB : ∀ f ≠ (0 : V), 0 < B f f) (adj : ∀ a y : V, B (U' a) y = B a (U y))
     (hq : 1 < q) (hT_ne : T 0 ≠ 0) (ht_zero : t 0 • T 0 = T 0)
     (ht_last : t (Fin.last (n + 1)) ≠ 0)
     (rec_U : ∀ j : Fin n,
@@ -302,6 +231,13 @@ theorem glnHeckePolynomial_root_chain_of_adjoint {B : V →ₛₗ[starRingEnd �
       P = (∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))) * R →
       aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0 := by
   intro P
+  have hB_symm : B.IsSymm :=
+    (LinearMap.IsNonneg.mk fun x ↦ by
+      rcases eq_or_ne x 0 with rfl | hx
+      · simp
+      · exact (hB x hx).le).isSymm
+  have adj' (a y : V) : B (U a) y = B a (U' y) := by
+    rw [← hB_symm.eq, ← adj y a, hB_symm.eq]
   have hqC : (1 : ℂ) < (q : ℂ) := by exact_mod_cast hq
   have q_ne : (q : ℂ) ≠ 0 := (zero_lt_one.trans hqC).ne'
   have pow_sub_pos : (0 : ℂ) < (q : ℂ) ^ (n + 1) - 1 := sub_pos.mpr (one_lt_pow₀ hqC n.succ_ne_zero)
@@ -315,15 +251,13 @@ theorem glnHeckePolynomial_root_chain_of_adjoint {B : V →ₛₗ[starRingEnd �
     exists_mul_eq_sub_eval_and_apply q_ne ht_last rec_U' U'_first aeval_p aeval_P (n + 1) le_rfl c
   choose D hD hU' using quot
   let z (c : ℂ) : V := aeval U (D c) (T 0)
-  have U'_z (c : ℂ) :
-      c • U' (z c) =
-        (P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' (T 0) + ((q : ℂ) ^ n / q) • z c := by
+  have U'_z (c : ℂ) : c • U' (z c) =
+      (P.eval ((q : ℂ) * c) / (q : ℂ) ^ (n + 1)) • U' (T 0) + ((q : ℂ) ^ n / q) • z c := by
     simpa [aeval_P] using hU' c
   have U_z (c : ℂ) (hc : P.IsRoot c) : U (z c) = c • z c := by
     simpa [aeval_P, hc.eq_zero, sub_eq_zero] using congrArg (aeval U · (T 0)) (hD c)
   have pair_U' (y : V) : B (U' (T 0)) (U' y) = (q : ℂ) ^ n * (q : ℂ) ^ n * B (T 0) y := by
-    simp [← adj', U'_first, U_last]
-    field_simp [ht_last]
+    simp [← adj', U'_first, U_last]; field_simp [ht_last]
   have pair_x (c : ℂ) (hc : P.IsRoot c) :
       c * B (T 0) (z c) * ((q : ℂ) ^ (n + 1) - 1) = P.eval ((q : ℂ) * c) * B (T 0) (T 0) := by
     have paired : B (U' (T 0)) (c • U' (z c)) =
@@ -342,16 +276,18 @@ theorem glnHeckePolynomial_root_chain_of_adjoint {B : V →ₛₗ[starRingEnd �
       rw [← smul_smul]; exact (eq_inv_smul_iff₀ hc).mpr (by simpa [hqc.eq_zero] using U'_z c)
     have orth_x : B (T 0) (z c) = 0 := by
       simpa [hqc.eq_zero, hc, pow_sub_pos.ne'] using pair_x c root
-    exact by_contra fun hz ↦
-      (hB _ hz).ne' (sesquilinear_aeval_eq_zero_of_eigen adj' eigen_z orth_x (D c))
+    exact by_contra fun hz ↦ (hB _ hz).ne' (B.aeval_eq_zero_of_eigen adj' eigen_z orth_x (D c))
   intro d hd k R hroot hP
-  have kills_x : aeval U R (T 0) = 0 := aeval_cofactor_eq_zero hq aeval_P two_roots hd k R hroot hP
+  have kills_x : aeval U R (T 0) = 0 :=
+    U.aeval_cofactor_eq_zero hq aeval_P two_roots hd k R hroot hP
   refine aeval_conj_eq_zero hB adj (fun j ↦ ?_) (U'_first.trans (smul_smul _ _ _)) rec_U'
   simpa [aeval_p j.val j.is_le, kills_x, q_ne] using
     congrArg (aeval U · (T 0))
       (mul_comm R (glnHeckePolynomial j.val (q : ℂ) fun i ↦ t ⟨i, by omega⟩))
 
 end RootChain
+
+namespace TauCeti
 
 section RootSymmetry
 
@@ -425,8 +361,9 @@ theorem isRoot_mul_pow_of_norm_sq_mul_pow_eq {N k : ℕ} {q : ℝ} {t : Fin (N +
   · obtain _ | i := i
     · simpa using hc
     by_contra h_not
+    have hmul_eq : (q : ℂ) * (c * (q : ℂ) ^ i) = c * (q : ℂ) ^ (i + 1) := by ring
     have h_not' : ¬ (glnHeckePolynomial N (q : ℂ) t).IsRoot ((q : ℂ) * (c * (q : ℂ) ^ i)) := by
-      rwa [show (q : ℂ) * (c * (q : ℂ) ^ i) = c * (q : ℂ) ^ (i + 1) by ring]
+      rwa [hmul_eq]
     have h_prev := ih i (Nat.lt_succ_self i) (by omega)
     have h_big := h_top (c * (q : ℂ) ^ i) h_prev h_not'
     have hq_pos : 0 < q := zero_lt_one.trans hq
