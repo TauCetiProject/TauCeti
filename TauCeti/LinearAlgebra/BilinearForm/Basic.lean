@@ -59,6 +59,8 @@ maps valued in an arbitrary module.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.BilinForm.IsSymm.apply_toDual_symm_comm`: the inverse `V* → V` of a symmetric
+  nondegenerate form is symmetric.
 * `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a projective module every alternating form
   is `B - B.flip` for some form `B`, in every characteristic.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
@@ -221,6 +223,16 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     B (x + y) (x + y) = B x x + B y y + 2 * B x y := by
   simp only [map_add, LinearMap.add_apply, hB.eq y x]
   ring
+
+/-- **The inverse of a symmetric form is symmetric.** For a symmetric nondegenerate form `B` on a
+finite-dimensional space, the inverse of `x ↦ B x` satisfies `ν (B⁻¹ ν') = ν' (B⁻¹ ν)` for all
+covectors `ν` and `ν'`. -/
+theorem apply_toDual_symm_comm {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] {B : LinearMap.BilinForm K V} (hB : B.IsSymm)
+    (hB' : B.Nondegenerate) (ν ν' : Module.Dual K V) :
+    ν ((B.toDual hB').symm ν') = ν' ((B.toDual hB').symm ν) := by
+  rw [← LinearMap.BilinForm.apply_toDual_symm_apply (hB := hB') ν,
+    ← LinearMap.BilinForm.apply_toDual_symm_apply (hB := hB') ν', hB.eq]
 
 end LinearMap.BilinForm.IsSymm
 

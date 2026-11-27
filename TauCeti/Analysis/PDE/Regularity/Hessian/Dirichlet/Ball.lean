@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Existence
+public import TauCeti.Analysis.PDE.Ellipticity.Basic
+import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
+import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 
 /-!
@@ -35,6 +38,15 @@ ball into the solution `w` of the frozen problem with zero boundary values and d
 `f + tr ((A - a) ∘ D²u)` and the remainder `u - w`, which solves the homogeneous
 constant-coefficient equation, controls `D²w` in `Lᵖ` with this constant, for every
 `1 < p < ∞`.
+
+In the coordinates of `ℝ^{n+1} = EuclideanSpace ℝ (Fin (n + 1))`, where the operator is written
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with a matrix `A`, the same holds: for `λ ‖ξ‖² ≤ ξᵀ A ξ` and `A` bounded by `Λ`,
+every `f ∈ Lᵖ(B)` on a ball `B` is `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` for some `u ∈ W^{2,p}(B) ∩ W^{1,p}_0(B)` with
+`‖D²u‖_{Lᵖ(B)} ≤ C ‖f‖_{Lᵖ(B)}`, where `C` depends only on `n`, `p`, `λ` and `Λ`
+(`TauCeti.exists_forall_exists_sum_mul_inner_iteratedGradient_eq_and_norm_le_of_ball`). This is
+transported from `ℝ × ℝⁿ` along a linear isometry, which conjugates the Hessian and the
+coefficient operator and so preserves the trace `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = tr (A ∘ D²u)`
+(`Matrix.contraction_apply_eq_traceCLM`).
 
 ## The argument
 
@@ -232,6 +244,130 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGrad
       (ae_of_all _ fun _ => le_rfl) f
   refine ⟨u, ⟨hu0, hu.mono fun x hx => by simpa using hx⟩, fun w ⟨hw0, hw⟩ => huniq w
     ⟨hw0, hw.mono fun x hx => by simpa using hx⟩⟩
+
+/-! ### Euclidean coordinates -/
+
+section Euclidean
+
+open PDE
+
+variable {n : ℕ} {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- Conjugating the operator `A` of `ℝ^{n+1}` by a linear isometry `g : V ≃ ℝ^{n+1}` keeps its
+ellipticity constant and its norm. -/
+private theorem conj_toEuclideanCLM_bounds
+    (g : V ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {lam Λ : ℝ} (hA : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hAΛ : ‖matrixBilinearForm A‖ ≤ Λ) :
+    (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪((g.symm : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] V) ∘L
+        Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L (g : V →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))) ξ,
+          ξ⟫_ℝ) ∧
+      ‖(g.symm : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] V) ∘L Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L
+        (g : V →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))‖ ≤ Λ := by
+  refine ⟨fun ξ => ?_, ?_⟩
+  · have h := hA (g ξ)
+    rw [← matrixBilinearForm_self, matrixBilinearForm_apply, LinearIsometryEquiv.norm_map] at h
+    have hM : ⟪((g.symm : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] V) ∘L
+        Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L (g : V →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))) ξ,
+          ξ⟫_ℝ = ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) A (g ξ), g ξ⟫_ℝ := by
+      simp only [ContinuousLinearMap.comp_apply]
+      rw [← g.inner_map_map]
+      simp
+    rwa [hM, real_inner_comm, Matrix.inner_toEuclideanCLM]
+  · rw [ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+      ContinuousLinearMap.opNorm_comp_linearIsometryEquiv,
+      ← norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
+    exact hAΛ
+
+/-- The contraction with `A` of the pullback of an endomorphism `H` of `V` along `g⁻¹` is the
+trace of the conjugated operator `g⁻¹ ∘ A ∘ g` composed with `H`. -/
+private theorem contraction_iteratedGradientCongr_symm_one [FiniteDimensional ℝ V]
+    (g : V ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+    (H : V →L[ℝ] V) :
+    Matrix.contraction A ((g.symm.iteratedGradientCongr 1).symm H) =
+      traceCLM ℝ V (((g.symm : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] V) ∘L
+        Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L (g : V →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))) ∘L
+          H) := by
+  rw [Matrix.contraction_apply_eq_traceCLM, TauCeti.traceCLM_apply, TauCeti.traceCLM_apply,
+    ← LinearMap.trace_conj' _ g.symm.toLinearEquiv]
+  congr 1
+  ext v
+  have hH : (g.symm.iteratedGradientCongr 1).symm H (g v) = g (H v) := by
+    rw [LinearIsometryEquiv.iteratedGradientCongr_symm_succ_apply]
+    simp only [LinearIsometryEquiv.iteratedGradientCongr_zero]
+    exact congrArg (fun w => g (H w)) (g.toContinuousLinearEquiv.symm_apply_apply v)
+  simp [LinearEquiv.conj_apply, hH, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin]
+
+/-- **The constant-coefficient Dirichlet problem on a ball of `ℝ^{n+1}`, with a uniform estimate.**
+Let `1 < p < ∞` and `0 < λ`. There is a constant `C ≥ 0`, depending only on `n`, `p`, `λ` and
+`Λ`, with the following property. Let `A` be a constant `(n + 1) × (n + 1)` matrix with
+`λ ‖ξ‖² ≤ ξᵀ A ξ` whose attached bilinear form has norm at most `Λ`; `A` need not be symmetric.
+On every ball `Ω = B(x₀, R)` of `ℝ^{n+1}`, `R > 0`, every `f ∈ Lᵖ(Ω)` is `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` almost
+everywhere on `Ω` for some `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` with `‖D²u‖_{Lᵖ(Ω)} ≤ C ‖f‖_{Lᵖ(Ω)}`.
+-/
+theorem exists_forall_exists_sum_mul_inner_iteratedGradient_eq_and_norm_le_of_ball
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {lam : ℝ} (hlam : 0 < lam) (Λ : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
+      (∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
+      ‖matrixBilinearForm A‖ ≤ Λ →
+      ∀ (x₀ : EuclideanSpace ℝ (Fin (n + 1))) (R : ℝ), 0 < R →
+      ∀ Omega : Opens (EuclideanSpace ℝ (Fin (n + 1))),
+        (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball x₀ R →
+      ∀ f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict Omega),
+        ∃ u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega p 2,
+          firstOrder 1 u ∈ w1p0Submodule volume Omega p ∧
+          (∀ᵐ x ∂(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict Omega,
+            ∑ i, ∑ j, A i j * ⟪iteratedGradient 1 u x (EuclideanSpace.single i 1),
+              EuclideanSpace.single j 1⟫_ℝ = f x) ∧
+          ‖iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
+  -- A linear isometry `g` from `ℝ × ℝⁿ` onto `ℝ^{n+1}`.
+  have hdim : finrank ℝ (WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))) = n + 1 := by
+    rw [(WithLp.linearEquiv 2 ℝ (ℝ × EuclideanSpace ℝ (Fin n))).finrank_eq, finrank_prod,
+      finrank_self, finrank_euclideanSpace_fin, add_comm]
+  set g : WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+    ((stdOrthonormalBasis ℝ (WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n)))).reindex
+      (finCongr hdim)).repr
+  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_of_traceCLM_comp_iteratedGradient_eq_of_ball
+    (E := EuclideanSpace ℝ (Fin n)) hp hp_top hlam Λ
+  refine ⟨max C 0, le_max_right C 0, fun A hA hAΛ x₀ R hR Omega hΩ f => ?_⟩
+  obtain ⟨hA', hAΛ'⟩ := conj_toEuclideanCLM_bounds g hA hAΛ
+  -- The ball `Ω' = g⁻¹(Ω)` of `ℝ × ℝⁿ` and the datum `f ∘ g` on it.
+  set Ω' : Opens (WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))) :=
+    ⟨g ⁻¹' Omega, Omega.isOpen.preimage g.continuous⟩
+  have hΩ' : (Ω' : Set (WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n)))) = ball (g.symm x₀) R := by
+    rw [Opens.coe_mk, hΩ, LinearIsometryEquiv.preimage_ball]
+  have hgΩ : MeasurePreserving g (volume.restrict (Ω' : Set _))
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    g.measurePreserving.restrict_preimage Omega.isOpen.measurableSet
+  set f' := Lp.compMeasurePreserving g hgΩ f
+  obtain ⟨u', ⟨hu'0, hu'⟩, -⟩ :=
+    existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGradient_eq_of_ball hp
+      hp_top hlam hA' hR hΩ' f'
+  -- Transport the solution `u'` back to `Ω` along `g⁻¹`.
+  have hΩΩ' : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = g.symm ⁻¹' (Ω' : Set _) := by
+    ext x
+    simp [Ω']
+  have hgs : MeasurePreserving g.symm volume volume := g.symm.measurePreserving
+  have hgsΩ : MeasurePreserving g.symm
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+      (volume.restrict (Ω' : Set _)) := by
+    rw [hΩΩ']
+    exact hgs.restrict_preimage Ω'.isOpen.measurableSet
+  refine ⟨compLinearIsometryEquiv hgs hΩΩ' 2 u', ?_, ?_, ?_⟩
+  · have h := compLinearIsometryEquiv_mem_wkp0Submodule hgs hΩΩ' 1
+      (show lowerOrder 1 u' ∈ wkp0Submodule volume Ω' p 1 by
+        rwa [wkp0Submodule_one, ← firstOrder_one])
+    rwa [wkp0Submodule_one, ← lowerOrder_compLinearIsometryEquiv, ← firstOrder_one] at h
+  · filter_upwards [iteratedGradient_compLinearIsometryEquiv_ae hgs hΩΩ' 1 u',
+      hgsΩ.quasiMeasurePreserving.ae hu',
+      hgsΩ.quasiMeasurePreserving.ae (Lp.coeFn_compMeasurePreserving f hgΩ)] with x h₁ h₂ h₃
+    rw [h₃, Function.comp_apply, LinearIsometryEquiv.apply_symm_apply] at h₂
+    rw [← Matrix.contraction_apply, h₁, contraction_iteratedGradientCongr_symm_one, h₂]
+  · rw [norm_iteratedGradient_compLinearIsometryEquiv, ← Lp.norm_compMeasurePreserving f hgΩ]
+    exact (hC _ hA' hAΛ' (g.symm x₀) R Ω' hΩ' u' f' hu'0 hu').trans
+      (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _))
+
+end Euclidean
 
 end TauCeti
 
