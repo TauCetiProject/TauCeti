@@ -35,6 +35,8 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
+* `OpenPartialHomeomorph.cutoffPushforwardSchwartz_complexCutoffPullback_apply_of_eq_one`: reading
+  through `τ` the pullback of `G` by a cutoff equal to `1` on the support of `τ` gives `τ · G`.
 * `OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function is
   determined by its readings through cutoffs whose readings on `M` add up to `1`.
 * `OpenPartialHomeomorph.sum_indicator_cutoffPushforwardSchwartz_apply`: such a function is
@@ -116,6 +118,20 @@ theorem mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback
     · rw [hχ _ (subset_tsupport _ hτ), one_smul, Complex.real_smul]
   · simp [complexCutoffPullback_apply_of_notMem he _ _ hp,
       cutoffPullback_apply_of_notMem he _ _ hp]
+
+/-- **Reading a pullback in its own chart.** The reading through a cutoff `τ` of the pullback of a
+function `G` on `ℝⁿ` through a cutoff `χ` in the same chart, equal to `1` on the support of `τ`, is
+`τ · G`. -/
+theorem cutoffPushforwardSchwartz_complexCutoffPullback_apply_of_eq_one
+    {τ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : ∀ y ∈ tsupport τ, χ y = 1)
+    (G : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
+    e.cutoffPushforwardSchwartz he τ (e.complexCutoffPullback he χ G) y = τ y • G y := by
+  rw [cutoffPushforwardSchwartz_apply]
+  by_cases hτ : τ y = 0
+  · simp [hτ]
+  have hy : y ∈ e.target := τ.tsupport_subset (subset_tsupport _ hτ)
+  rw [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy,
+    hχ _ (subset_tsupport _ hτ), one_smul]
 
 omit he in
 /-- **A function is recovered from its readings.** If the readings `ψᵢ ∘ eᵢ` on `M` of finitely
