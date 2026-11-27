@@ -281,7 +281,7 @@ private theorem spectrum_mixedOperator_laplacian_empty_inter_Ioi
 /-- **The second eigenvalue of the Neumann Laplacian `-Δ_∅` is the least Rayleigh quotient of
 mean zero.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a nonempty preconnected open set of finite measure with
 compact value map `H¹(Ω) → L²(Ω)`, on which `H¹_∅(Ω) = H¹(Ω)`, as on a bounded Lipschitz domain
-(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`), so that the mixed Laplacian
+(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomain`), so that the mixed Laplacian
 `-Δ_∅` is the Neumann Laplacian. Then the spectrum of `-Δ_∅` has a least positive element `κ`, and
 `κ` is the minimum of the Rayleigh quotient `‖∇u‖² / ‖u‖²` over the `u ∈ H¹(Ω)` with `u ≠ 0` and
 `∫_Ω u = 0`. -/
