@@ -40,6 +40,8 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
 * `Equiv.measurePreserving_uniformOn_univ`: a measurable bijection is measure preserving
   between the `uniformOn univ` measures on its domain and codomain (both are zero when the
   carriers are infinite or empty).
+* `TauCeti.Probability.uniformOn_univ_pi` identifies the uniform law on a finite dependent product
+  with the product of the uniform laws on its factors.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
 -/
@@ -232,6 +234,22 @@ theorem map_uniformOn_univ (e : α ≃ β) :
 end Equiv
 
 namespace TauCeti.Probability
+
+variable {ι : Type*} [Fintype ι] {Ω : ι → Type*} in
+/-- The uniform measure on a finite dependent product is the product of the uniform measures on
+its factors. Each factor can carry any measurable structure with measurable singletons. -/
+theorem uniformOn_univ_pi [∀ i, Finite (Ω i)] [∀ i, MeasurableSpace (Ω i)]
+    [∀ i, MeasurableSingletonClass (Ω i)] :
+    uniformOn (Set.univ : Set (∀ i, Ω i)) =
+      Measure.pi (fun i ↦ uniformOn (Set.univ : Set (Ω i))) := by
+  classical
+  let (i : ι) : Fintype (Ω i) := Fintype.ofFinite _
+  apply Measure.ext_of_singleton
+  intro x
+  have (i : ι) : Nonempty (Ω i) := ⟨x i⟩
+  simp only [Measure.pi_singleton, uniformOn_univ, Measure.count_singleton, Fintype.card_pi,
+    Nat.cast_prod, one_div]
+  exact ENNReal.prod_inv_distrib fun _ _ _ _ _ ↦ Or.inr (ENNReal.natCast_ne_top _)
 
 /-- The uniform measure on all of a nonempty finite type is a probability measure. -/
 instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [Nonempty α]

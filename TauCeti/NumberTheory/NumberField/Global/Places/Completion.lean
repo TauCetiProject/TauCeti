@@ -15,7 +15,9 @@ public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 at a place: the adic completion `v.adicCompletion K` at a finite place `v`, and the archimedean
 completion `w.Completion` at an infinite place `w`. Families of local conditions ranging over all
 places of `K`, such as those cutting out the Shafarevich–Tate group of an elliptic curve, are
-indexed by `Place K` with these fields.
+indexed by `Place K` with these fields. Each completion carries its topology as a topological
+ring, so that products of completions over sets of places, such as those in which strong
+approximation takes place, are topological rings.
 
 ## References
 
@@ -46,6 +48,15 @@ noncomputable instance instFieldCompletion : (v : Place K) → Field v.Completio
 noncomputable instance instAlgebraCompletion : (v : Place K) → Algebra K v.Completion
   | .inl v => inferInstanceAs (Algebra K (v.adicCompletion K))
   | .inr w => inferInstanceAs (Algebra K w.Completion)
+
+noncomputable instance instTopologicalSpaceCompletion :
+    (v : Place K) → TopologicalSpace v.Completion
+  | .inl v => inferInstanceAs (TopologicalSpace (v.adicCompletion K))
+  | .inr w => inferInstanceAs (TopologicalSpace w.Completion)
+
+instance instIsTopologicalRingCompletion : (v : Place K) → IsTopologicalRing v.Completion
+  | .inl v => inferInstanceAs (IsTopologicalRing (v.adicCompletion K))
+  | .inr w => inferInstanceAs (IsTopologicalRing w.Completion)
 
 end TauCeti.GlobalNumberFields.Place
 

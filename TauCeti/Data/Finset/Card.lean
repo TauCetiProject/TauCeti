@@ -30,6 +30,8 @@ import Mathlib.Data.Finset.Basic
   and `T ⊆ U` has fewer than `k`, then fewer elements of `T` lie outside `F` than in `F`.
 * `Finset.card_lt_card_of_subset_sdiff`: a subset of `s \ u` has strictly smaller cardinality
   than `s` when `u` meets `s`.
+* `Finset.disjoint_and_injOn_of_add_le_card_image_union`: if `#S + #B ≤ #(S.image f ∪ B)`, then
+  `S.image f` and `B` are disjoint and `f` is injective on `S`.
 -/
 
 public section
@@ -86,6 +88,16 @@ theorem card_lt_card_of_subset_sdiff {t s u : Finset ι}
     (hsub : t ⊆ s \ u) {v : ι} (hvs : v ∈ s) (hvu : v ∈ u) : #t < #s :=
   card_lt_card (ssubset_iff_exists_subset_erase.2
     ⟨v, hvs, subset_erase.2 ⟨hsub.trans sdiff_subset, fun hv => (mem_sdiff.1 (hsub hv)).2 hvu⟩⟩)
+
+/-- If `#S + #B ≤ #(S.image f ∪ B)`, then `S.image f` and `B` are disjoint and `f` is injective
+on `S`. -/
+theorem disjoint_and_injOn_of_add_le_card_image_union {α β : Type*} [DecidableEq β]
+    {S : Finset α} {B : Finset β} {f : α → β} (h : #S + #B ≤ #(S.image f ∪ B)) :
+    Disjoint (S.image f) B ∧ Set.InjOn f S := by
+  have hunion := card_union_add_card_inter (S.image f) B
+  have hle : #(S.image f) ≤ #S := card_image_le
+  refine ⟨disjoint_iff_inter_eq_empty.2 (card_eq_zero.1 (by omega)),
+    card_image_iff.1 (by omega)⟩
 
 end Finset
 

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Lichnerowicz.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Square
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
 /-!

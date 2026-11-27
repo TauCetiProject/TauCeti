@@ -14,6 +14,8 @@ import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Topology.Instances.Real.Sign
 
 /-!
 # Examples of Hölder and Campanato spaces
@@ -158,11 +160,10 @@ theorem exists_ckHolderSpaceOn_eq_sign {k : ℕ} (hk : 1 ≤ k) (α : ℝ≥0)
   have hloc : ∀ x ∈ (Ω : Set ℝ), Real.sign =ᶠ[𝓝 x] fun _ ↦ Real.sign x := by
     intro x hx
     rw [hΩ] at hx
+    refine Real.eventually_sign_eq_nhds ?_
     rcases hx with hx | hx
-    · filter_upwards [Iio_mem_nhds hx.2] with y hy
-      rw [Real.sign_of_neg hy, Real.sign_of_neg hx.2]
-    · filter_upwards [Ioi_mem_nhds hx.1] with y hy
-      rw [Real.sign_of_pos hy, Real.sign_of_pos hx.1]
+    · exact hx.2.ne
+    · exact hx.1.ne'
   have hcont : ContDiffOn ℝ k Real.sign Ω := fun x hx ↦
     (contDiffAt_const.congr_of_eventuallyEq (hloc x hx)).contDiffWithinAt
   have hderiv : ∀ i : ℕ, i ≠ 0 → ∀ x ∈ (Ω : Set ℝ), iteratedFDeriv ℝ i Real.sign x = 0 := by

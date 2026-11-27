@@ -73,7 +73,9 @@ seminorm of `g`.
 
 A family of maps that are Hölder near each point of a set, with a common constant and a common
 positive exponent, is equicontinuous on that set
-(`TauCeti.equicontinuousOn_of_forall_holderOnWith`).
+(`TauCeti.equicontinuousOn_of_forall_holderOnWith`). A map that is Hölder of positive exponent on
+every compact subset of an open subset of a locally compact space is continuous on that open set
+(`TauCeti.continuousOn_of_forall_isCompact_holderOnWith`).
 
 ## Main declarations
 
@@ -469,6 +471,17 @@ theorem HolderOnWith.smul {X Y 𝕜 : Type*} [PseudoMetricSpace X] [SeminormedAd
     [SeminormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 Y] [IsBoundedSMul 𝕜 Y] {C r : ℝ≥0} {f : X → Y}
     {s : Set X} (a : 𝕜) (hf : HolderOnWith C r f s) : HolderOnWith (C * ‖a‖₊) r (a • f) s :=
   HolderWith.restrict_iff.1 (hf.holderWith.smul a)
+
+/-- The product `fun x ↦ f x • v` of a scalar function that is Hölder on `s` with a fixed vector `v`
+is Hölder on `s`, with the constant multiplied by `‖v‖₊`. -/
+theorem HolderOnWith.smul_const {X 𝕜 Y : Type*} [PseudoMetricSpace X] [SeminormedRing 𝕜]
+    [SeminormedAddCommGroup Y] [Module 𝕜 Y] [IsBoundedSMul 𝕜 Y] {C r : ℝ≥0} {f : X → 𝕜}
+    {s : Set X} (hf : HolderOnWith C r f s) (v : Y) :
+    HolderOnWith (C * ‖v‖₊) r (fun x ↦ f x • v) s :=
+  HolderOnWith.of_dist_le fun x hx y hy ↦ by
+    rw [dist_eq_norm, ← sub_smul, NNReal.coe_mul, coe_nnNorm, mul_right_comm]
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right
+      (by rw [← dist_eq_norm]; exact hf.dist_le hx hy) (norm_nonneg v))
 
 /-- The second differences of an `r`-Hölder function with constant `C` on a normed group are at
 most `2 C ‖h‖ ^ r`. -/
@@ -992,5 +1005,15 @@ theorem equicontinuousOn_of_forall_holderOnWith {ι X Y : Type*} [PseudoMetricSp
     simpa [Real.zero_rpow (NNReal.coe_pos.2 hr).ne'] using hcont.tendsto x
   · filter_upwards [ht] with y hy i
     exact (hC i).dist_le (mem_of_mem_nhds ht) hy
+
+/-- **Local Hölder bounds give continuity.** A map that is Hölder of a positive exponent `r` on
+every compact subset of an open set `U` of a locally compact space is continuous on `U`. -/
+theorem continuousOn_of_forall_isCompact_holderOnWith {X Y : Type*} [PseudoEMetricSpace X]
+    [LocallyCompactSpace X] [PseudoEMetricSpace Y] {U : Set X} (hU : IsOpen U) {f : X → Y}
+    {r : ℝ≥0} (hr : 0 < r) (hf : ∀ K ⊆ U, IsCompact K → ∃ C, HolderOnWith C r f K) :
+    ContinuousOn f U := fun x hx ↦ by
+  obtain ⟨K, hKx, hKU, hK⟩ := local_compact_nhds (hU.mem_nhds hx)
+  obtain ⟨C, hC⟩ := hf K hKU hK
+  exact ((hC.continuousOn hr).continuousAt hKx).continuousWithinAt
 
 end TauCeti

@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.Instances.Matrix
 
@@ -114,6 +115,10 @@ estimates do not see the boundary.
   the energy form at the functions of `H¹₀(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.memLp_energyIntegrand_zero_drift`: without drift, the energy
+  density of uniformly elliptic coefficients with a bounded mass coefficient is bounded.
+* `TauCeti.PDE.UniformlyEllipticOn.memLp_energyIntegrand_zero_zero`: the energy density of a
+  uniformly elliptic principal part is essentially bounded.
 * `TauCeti.PDE.integrable_value_mul_inner_gradient`: the density `u ⟪e, ∇w⟫` of a bounded
   lower-order term in divergence form is integrable, and
   `TauCeti.PDE.integral_value_sub_mul_inner_gradient`: its integral is linear in `u`.
@@ -267,6 +272,22 @@ theorem memLp_energyIntegrand_of_bounds
   exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
     opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
 
+/-- An essentially bounded field of pointwise energy forms has an essentially bounded principal
+part: almost everywhere on `Ω`, `|ηᵀ a(x) ξ| ≤ K ‖η‖ ‖ξ‖` for some `K ≥ 0`, whatever the drift
+and the mass coefficient. -/
+theorem exists_ae_abs_dotProduct_mulVec_le_of_memLp_energyIntegrand
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ᵐ x ∂mu.restrict Omega, ∀ eta xi : EuclideanSpace ℝ ι,
+      |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ K * ‖eta‖ * ‖xi‖ := by
+  have hfin := eLpNormEssSup_le_eLpNorm_top.trans_lt hcoeff.eLpNorm_lt_top
+  refine ⟨(eLpNormEssSup (fun x => energyIntegrand (a x) (b x) (c x)) (mu.restrict Omega)).toReal,
+    ENNReal.toReal_nonneg, ?_⟩
+  filter_upwards [ae_le_eLpNormEssSup (μ := mu.restrict Omega)
+    (f := fun x => energyIntegrand (a x) (b x) (c x))] with x hx eta xi
+  refine (abs_dotProduct_mulVec_le_norm_energyIntegrand (a x) (b x) (c x) eta xi).trans ?_
+  gcongr
+  simpa only [toReal_eNorm] using ENNReal.toReal_mono hfin.ne hx
+
 /-- Bounded measurable principal coefficients and essentially bounded lower-order coefficients
 define an essentially bounded field of pointwise energy forms. This is
 `memLp_energyIntegrand_of_bounds` with the pointwise bounds on `b` and `c` replaced by
@@ -360,6 +381,19 @@ theorem memLp_energyIntegrand_of_continuousOn_of_norm_le
       simpa [Real.norm_eq_abs] using (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
         ((hLam x hx).trans (le_max_left _ _)) le_rfl le_rfl)
     hbeta hgamma
+
+/-- A matrix field with continuous entries bounded by `M` on `Ω`, as a principal coefficient
+alone, has an essentially bounded field of pointwise energy forms on `Ω`. -/
+theorem memLp_energyIntegrand_of_abs_apply_le
+    (ha : ∀ i j, ContinuousOn (fun x ↦ a x i j) Omega) {M : ℝ}
+    (haM : ∀ i j, ∀ x ∈ Omega, |a x i j| ≤ M) :
+    MemLp (fun x ↦ energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0)
+    (continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ ha i j)
+    continuousOn_const continuousOn_const (Lam := ∑ _i : ι, ∑ _j : ι, M)
+    (fun x hx ↦ (norm_matrixBilinearForm_le_sum_abs (a x)).trans
+      (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ haM i j x hx))
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
 
 variable [mu.IsAddHaarMeasure]
 
@@ -573,6 +607,35 @@ theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu
             (WithLp.toLp 2 (Aᵀ j))).restrict
     _ = _ := Finset.sum_congr rfl fun j _ =>
         setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul ψ (WithLp.toLp 2 (Aᵀ j))
+
+open scoped Gradient in
+/-- An equation tested against `H¹₀(Ω)`, `B(u, φ) = ∫_Ω f φ - ∫_Ω ⟨F, ∇φ⟩`, holds in particular
+for test functions, where it reads `B(u, φ) = ∫_Ω ⟨-F, ∇φ⟩ + ∫_Ω f φ`. This converts the
+`f + div F` convention of weak solutions tested against `H¹₀(Ω)` to the `f - div G` convention,
+with `G = -F`, of equations tested against test functions. -/
+theorem energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ}
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+    (hu : ∀ φ : W1p0 mu Omega 2, energyFormH1 a b c u (φ : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (φ : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪F x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 a b c u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      (∫ x in Omega, ⟪(-F) x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu) +
+        ∫ x in Omega, f x * φ x ∂mu := by
+  refine (hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans ?_
+  have h₁ : ∫ x in Omega, f x * W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ) x ∂mu =
+      ∫ x in Omega, f x * φ x ∂mu :=
+    integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
+      simp only [hx])
+  have h₂ : ∫ x in Omega, ⟪F x, W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x⟫_ℝ ∂mu =
+      ∫ x in Omega, ⟪F x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+    rw [W1p.gradient_ofTestFunctionₗ]
+    exact integral_congr_ae ((gradientTestFunctionLp_apply_ae 2 φ).mono fun x hx => by
+      simp only [hx])
+  dsimp only
+  rw [h₁, h₂]
+  simp only [Pi.neg_apply, inner_neg_left, integral_neg]
+  ring
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]
@@ -952,6 +1015,27 @@ theorem norm_energyFormH1_le_of_bounds (hLam : 0 ≤ Lam)
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
 
+/-- **The principal part of the energy form is bounded by the gradients.** If almost everywhere on
+`Ω` the principal coefficient satisfies `|ηᵀ a(x) ξ| ≤ Λ ‖η‖ ‖ξ‖`, then the energy form without
+drift and mass satisfies `|∫_Ω ⟨a ∇u, ∇v⟩| ≤ Λ ‖∇u‖_{L²} ‖∇v‖_{L²}` on `H¹(Ω)`. Unlike
+`TauCeti.PDE.norm_energyFormH1_le_of_bounds`, the right side involves no `L²` norm of the values. -/
+theorem abs_energyFormH1_zero_zero_le_of_bounds (hLam : 0 ≤ Lam)
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega,
+      ∀ eta xi : EuclideanSpace ℝ ι,
+        |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
+    (u v : W1p mu Omega 2) :
+    |energyFormH1 a 0 0 u v| ≤ Lam * (‖W1p.gradient u‖ * ‖W1p.gradient v‖) := by
+  have hint : Integrable (fun x => ‖W1p.gradient u x‖ * ‖W1p.gradient v x‖) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.gradient u)).norm.integrable_mul (Lp.memLp (W1p.gradient v)).norm
+  rw [energyFormH1_def, ← Real.norm_eq_abs]
+  refine (norm_integral_le_of_norm_le (hint.const_mul Lam) ?_).trans ?_
+  · filter_upwards [ha_bound] with x hx
+    rw [Pi.zero_apply, Pi.zero_apply, energyIntegrand_zero_zero_apply, Real.norm_eq_abs,
+      jetField_apply, jetField_apply, ← mul_assoc, mul_right_comm]
+    exact hx _ _
+  · rw [integral_const_mul]
+    exact mul_le_mul_of_nonneg_left (Lp.integral_norm_mul_norm_le _ _) hLam
+
 /-- **The difference of two energy forms.** If both coefficient fields are essentially bounded
 and almost everywhere on `Ω` we have `|ηᵀ (a - a') ξ| ≤ Λ ‖η‖ ‖ξ‖`, `‖b - b'‖ ≤ β` and
 `|c - c'| ≤ γ`, then the energy forms `B` of `(a, b, c)` and `B'` of `(a', b', c')` satisfy
@@ -1050,6 +1134,31 @@ theorem integrable_energyIntegrand_jetField
   PDE.integrable_energyIntegrand_jetField
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound) u v
+
+omit [mu.IsAddHaarMeasure] in
+/-- Uniformly elliptic measurable principal coefficients, no drift and a bounded measurable mass
+coefficient define an essentially bounded field of pointwise energy forms: the case `b = 0` of
+`TauCeti.PDE.memLp_energyIntegrand_of_bounds`. -/
+theorem memLp_energyIntegrand_zero_drift
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    MemLp (fun x => energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) (c x))
+      ⊤ (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero hc
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (beta := 0) (fun _ _ => by simp) hc_bound
+
+omit [mu.IsAddHaarMeasure] in
+/-- A measurable principal coefficient, uniformly elliptic on `Ω`, has an essentially bounded
+energy density when there is no drift and no mass. -/
+theorem memLp_energyIntegrand_zero_zero
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_bounds (b := fun _ => 0) (c := fun _ => 0) (beta := 0) (gamma := 0)
+    h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
 
 /-- The density `⟨a ∇u, ∇w⟩` of the principal energy form is integrable on `Ω` for a measurable
 uniformly elliptic `a` and `u, w ∈ H¹(Ω)`. -/
@@ -1305,8 +1414,7 @@ theorem mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift
   have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
   rw [energyFormH1_congr_ae .rfl (hmem.mono hb_zero) .rfl]
   exact mul_norm_gradient_sq_le_energyFormH1_self
-    (memLp_energyIntegrand_of_bounds (beta := 0) h.upper_nonneg ha aestronglyMeasurable_const hc
-      (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound) .rfl
+    (h.memLp_energyIntegrand_zero_drift ha hc hc_bound) .rfl
     (hmem.mono fun x hx xi => by
       simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx xi)
     (hmem.mono hc_nonneg) u

@@ -52,8 +52,8 @@ theorem eq_bot_of_comapOfSurjective_le {I : HopfIdeal R H} (J : HopfIdeal R (quo
     (hJ : HopfIdeal.comapOfSurjective J (mkQuotient H I).hom (mkQuotient_surjective H I) ≤ I) :
     J = ⊥ := by
   refine le_bot_iff.1
-    (HopfIdeal.le_of_comapOfSurjective_le_comapOfSurjective _
-      (mkQuotient_surjective H I) ?_)
+    ((HopfIdeal.comapOfSurjective_le_comapOfSurjective_iff _
+      (mkQuotient_surjective H I)).mp ?_)
   rw [HopfIdeal.comapOfSurjective_bot]
   intro x hx
   rw [HopfIdeal.mem_kerOfSurjective]
