@@ -157,20 +157,12 @@ theorem not_analyticSet_setOf_not_isoSetoid_of_borelComplete
   have hKK := hKm.prod hKm
   -- the complement of `S` is analytic
   have hc : AnalyticSet Sᶜ := by
-    have hS : Sᶜ = (K ×ˢ K)ᶜ ∪
-        ⋂ b : Bool, cond b {p | isoSetoid L ℕ p.1 p.2} (K ×ˢ K) := by
+    have hS : Sᶜ = (K ×ˢ K)ᶜ ∪ ({p | isoSetoid L ℕ p.1 p.2} ∩ K ×ˢ K) := by
       ext p
-      simp only [S, mem_compl_iff, mem_ofPred_eq, not_and, not_not, mem_union, mem_iInter,
-        Bool.forall_bool, Bool.cond_false, Bool.cond_true]
+      simp only [S, mem_compl_iff, mem_ofPred_eq, not_and, not_not, mem_union, mem_inter_iff]
       tauto
-    rw [hS, union_eq_iUnion]
-    refine AnalyticSet.iUnion fun b ↦ ?_
-    cases b
-    · exact AnalyticSet.iInter fun b ↦ by
-        cases b
-        · exact hKK.analyticSet
-        · exact analyticSet_setOf_isoSetoid
-    · exact hKK.compl.analyticSet
+    rw [hS]
+    exact hKK.compl.analyticSet.union (analyticSet_setOf_isoSetoid.inter_measurableSet hKK)
   -- by Suslin's theorem `S` is Borel, and so is isomorphism on `K`
   have hm := hA.measurableSet_of_compl hc
   apply not_measurableSet_classIso_of_borelComplete hK
