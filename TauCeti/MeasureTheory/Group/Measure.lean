@@ -33,10 +33,12 @@ without any measurability hypotheses (for subgroups as typeclass instances), tha
 `volume` of left- or right-invariant measure spaces (such as Lebesgue measure on `ℝ × ℝ`) is
 left- or right-invariant, and that restricting
 an inversion-invariant measure to a symmetric set, or weighting it by an even density, keeps it
-inversion-invariant. A left-invariant probability measure gives mass `n⁻¹` to a measurable
-subgroup of finite index `n`, since its `n` cosets have equal mass and partition the group, and a
-surjective homomorphism onto a finite group with measurable kernel splits a left-invariant measure
-evenly among its fibres, the translates of the kernel. Finally, for an
+inversion-invariant. Likewise, restricting a left-invariant measure to a set that is invariant
+up to null sets under every left translation keeps it left-invariant. A left-invariant
+probability measure gives mass `n⁻¹` to a measurable subgroup of finite index `n`, since its
+`n` cosets have equal mass and partition the group, and a surjective homomorphism onto a finite
+group with measurable kernel splits a left-invariant measure evenly among its fibres, the
+translates of the kernel. Finally, for an
 inner regular measure whose right translations are quasi-measure-preserving—in particular any
 inner regular Haar measure on a locally compact group—if an open set `U` lies up to a null set
 inside a null-measurable set `V` satisfying `V * s ⊆ V`, then `U * s` (such as the subgroup
@@ -62,6 +64,8 @@ sets forces the group to be locally compact
 * `Measure.isInvInvariant_restrict`, `Measure.isNegInvariant_restrict`,
   `Measure.isInvInvariant_withDensity`, `Measure.isNegInvariant_withDensity`: restriction to a
   symmetric set and an even density preserve inversion or negation invariance.
+* `Measure.isMulLeftInvariant_restrict`, `Measure.isAddLeftInvariant_restrict`: restriction to a
+  set invariant up to null sets under left translations preserves left invariance.
 * `Measure.isMulLeftInvariant_comap`, `Measure.isAddLeftInvariant_comap`,
   `Measure.isMulRightInvariant_comap`, `Measure.isAddRightInvariant_comap`: the pullback of a
   left- or right-invariant measure along a group homomorphism is left- or right-invariant, without
@@ -334,6 +338,24 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
     (MeasurableEquiv.inv G).measurableEmbedding f t
 
 end InvolutiveInv
+
+section LeftInvariant
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+
+/-- Restricting a left-invariant measure to a set that is invariant up to null sets under every
+left translation gives a left-invariant measure. -/
+@[to_additive /-- Restricting an additive left-invariant measure to a set that is invariant up to
+null sets under every left translation gives an additive left-invariant measure. -/]
+theorem isMulLeftInvariant_restrict (μ : Measure G) [μ.IsMulLeftInvariant] {s : Set G}
+    (hs : MeasurableSet s) (h : ∀ g : G, g • s =ᵐ[μ] s) : (μ.restrict s).IsMulLeftInvariant := by
+  refine ⟨fun g ↦ ?_⟩
+  have hpre : (g * ·) ⁻¹' s =ᵐ[μ] s := by
+    simpa only [← smul_eq_mul, preimage_smul] using h g⁻¹
+  have hmap := ((measurePreserving_mul_left μ g).restrict_preimage hs).map_eq
+  rwa [restrict_congr_set hpre] at hmap
+
+end LeftInvariant
 
 end MeasureTheory.Measure
 

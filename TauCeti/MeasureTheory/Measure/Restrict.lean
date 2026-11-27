@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 public import Mathlib.Topology.Compactness.Lindelof
 public import Mathlib.Topology.Sets.Opens
 
@@ -46,6 +47,11 @@ Summing the measures of the cells `S ∩ a ⁻¹' {i}` of a set `S` cut out by a
 
 For a map `f` into a Lindelöf space, a measure is determined by its restrictions to the preimages
 of the sets of an open cover (`MeasureTheory.Measure.ext_of_restrict_preimage`).
+
+For a σ-finite measure, a null measurable set is determined up to null sets by its intersections
+with the sets of finite measure: two null measurable sets meeting every null measurable set of
+finite measure in the same measure are almost everywhere equal
+(`TauCeti.ae_eq_of_forall_measure_inter_eq`).
 -/
 
 public section
@@ -124,6 +130,24 @@ theorem measure_preimage_inter_eq_of_map_restrict_eq_smul
     P (f ⁻¹' C ∩ H) = c * μ C := by
   simpa only [Measure.map_apply hf hC, Measure.restrict_apply (hf hC),
     smul_apply, smul_eq_mul] using congrArg (fun ν : Measure E ↦ ν C) h
+
+/-- For a σ-finite measure, two null measurable sets that meet every null measurable set of finite
+measure in the same measure are almost everywhere equal. -/
+theorem ae_eq_of_forall_measure_inter_eq {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [SigmaFinite μ] {u v : Set α} (hu : NullMeasurableSet u μ) (hv : NullMeasurableSet v μ)
+    (h : ∀ E, NullMeasurableSet E μ → μ E ≠ ∞ → μ (u ∩ E) = μ (v ∩ E)) : u =ᵐ[μ] v := by
+  -- Test `u \ v` against its own intersections with the finite-measure spanning sets.
+  have diff_null {u v : Set α} (hu : NullMeasurableSet u μ) (hv : NullMeasurableSet v μ)
+      (h : ∀ E, NullMeasurableSet E μ → μ E ≠ ∞ → μ (u ∩ E) = μ (v ∩ E)) : μ (u \ v) = 0 := by
+    refine (isCountablySpanning_spanningSets μ).null_of_forall_inter_null ?_
+    rintro _ ⟨n, rfl⟩
+    have hE : NullMeasurableSet ((u \ v) ∩ spanningSets μ n) μ :=
+      (hu.diff hv).inter (measurableSet_spanningSets μ n).nullMeasurableSet
+    have hμE : μ ((u \ v) ∩ spanningSets μ n) ≠ ∞ :=
+      ((measure_mono inter_subset_right).trans_lt (measure_spanningSets_lt_top μ n)).ne
+    rw [← inter_eq_right.2 (fun x hx ↦ hx.1.1 : (u \ v) ∩ spanningSets μ n ⊆ u), h _ hE hμE]
+    exact measure_mono_null (fun x hx ↦ (hx.2.1.2 hx.1).elim) measure_empty
+  exact ae_eq_set.2 ⟨diff_null hu hv h, diff_null hv hu fun E hE hμE ↦ (h E hE hμE).symm⟩
 
 end TauCeti
 
