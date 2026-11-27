@@ -10,8 +10,10 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
+public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
@@ -46,6 +48,10 @@ continuous `2`-positive map is the limit of `‖φ e‖` along any increasing ap
   `CompletelyPositiveMapClass.tendsto_norm_nhds_opNorm_ofClass`.
 * `CompletelyPositiveMap.unitization`: the unital completely positive extension `A⁺¹ →CP B⁺¹` of
   a completely positive contraction.
+* `CompletelyPositiveMap.norm_unitization_apply_le`: the unital extension of a completely positive
+  contraction is a contraction.
+* `CompletelyPositiveMap.unitization_id`, `CompletelyPositiveMap.unitization_comp`: unital extension
+  preserves identities and commutes with composition.
 
 ## References
 
@@ -169,8 +175,9 @@ namespace CompletelyPositiveMap
 
 open TauCeti
 
-variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+variable {A B C : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
 
 /-- The unital extension `λ + a ↦ λ + φ a` of a completely positive contraction `φ : A → B` is a
 unital completely positive map `A⁺¹ →CP B⁺¹`. -/
@@ -212,5 +219,23 @@ theorem unitization_apply_inl (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a
 theorem unitization_apply_one (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) :
     φ.unitization hφ 1 = 1 := by
   simp [unitization_apply]
+
+/-- The unital extension of a completely positive contraction is a contraction. -/
+theorem norm_unitization_apply_le (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
+    ‖φ.unitization hφ x‖ ≤ ‖x‖ :=
+  (CompletelyPositiveMapClass.norm_map_one_le_one_iff _).1
+    (by rw [unitization_apply_one]; exact CStarRing.norm_one_le) x
+
+/-- The unital extension of the identity is the identity. -/
+@[simp]
+theorem unitization_id (h : ∀ a, ‖CompletelyPositiveMap.id A a‖ ≤ ‖a‖) :
+    (CompletelyPositiveMap.id A).unitization h = CompletelyPositiveMap.id A⁺¹ := by
+  ext x <;> simp
+
+/-- The unital extension of a composite is the composite of the unital extensions. -/
+theorem unitization_comp (φ : A →CP B) (ψ : B →CP C) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
+    (hψ : ∀ b, ‖ψ b‖ ≤ ‖b‖) (h : ∀ a, ‖ψ.comp φ a‖ ≤ ‖a‖) :
+    (ψ.comp φ).unitization h = (ψ.unitization hψ).comp (φ.unitization hφ) := by
+  ext x <;> simp
 
 end CompletelyPositiveMap
