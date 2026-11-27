@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.AdelicFrame
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.NumberTheory.NumberField.CMField.IntegralAdeleNorm
 
 /-!
@@ -13,8 +14,9 @@ import TauCeti.NumberTheory.NumberField.CMField.IntegralAdeleNorm
 
 Let `E` be a CM field and `s ∈ {±1}^n` a sign vector. The diagonal hermitian form
 `diag(s) = ⟨s_1, …, s_n⟩` on `E^n` has signature `s` at every infinite place, but at a finite
-place it is isometric to the standard form `⟨1, …, 1⟩` only if `-1` is a norm there. A finite
-adele `ν` with `conj ν * ν = -1` supplies such a norm at all finite places at once, and then
+place having `-1` as a norm is sufficient for it to be isometric to the standard form
+`⟨1, …, 1⟩` for every `s`. A finite adele `ν` with `conj ν * ν = -1` supplies such a norm at all
+finite places at once, and then
 `V = (diag(s), x)` with `x_∞ = 1` and `x_f = diag(ν_1, …, ν_n)`, where `ν_i = 1` if `s_i = 1` and
 `ν_i = ν` if `s_i = -1`, is a hermitian space with an adelic frame of signs `s`
 (`TauCeti.FramedHermitianSpace.signed`): `x_f* diag(s) x_f = 1_n` because `conj ν * (-1) * ν = 1`.
@@ -80,16 +82,10 @@ variable [Fintype ι] [DecidableEq ι]
 
 /-- The finite frame `diag(ν_1, …, ν_n)` of `signed ν hν s`, invertible with inverse
 `diag(conj ν_i * s_i)`. -/
-private def signedFrame {ν : 𝔸ᶠ[E]} (hν : star ν * ν = -1) (s : ι → ℤˣ) : GL ι 𝔸ᶠ[E] where
-  val := diagonal (signedEntry ν s)
-  inv := diagonal fun i ↦ star (signedEntry ν s i) * ((s i : ℤ) : 𝔸ᶠ[E])
-  val_inv := by
-    rw [diagonal_mul_diagonal, ← diagonal_one]
-    exact congrArg diagonal (funext (signedEntry_mul_star_signedEntry_mul hν s))
-  inv_val := by
-    rw [diagonal_mul_diagonal, ← diagonal_one]
-    exact congrArg diagonal (funext fun i ↦ by
-      rw [mul_comm, signedEntry_mul_star_signedEntry_mul hν s])
+private def signedFrame {ν : 𝔸ᶠ[E]} (hν : star ν * ν = -1) (s : ι → ℤˣ) : GL ι 𝔸ᶠ[E] :=
+  diagGL fun i ↦ Units.mkOfMulEqOne (signedEntry ν s i)
+    (star (signedEntry ν s i) * ((s i : ℤ) : 𝔸ᶠ[E]))
+    (signedEntry_mul_star_signedEntry_mul hν s i)
 
 variable (E) in
 /-- The **space of signs `s`** attached to a finite adele `ν` with `conj ν * ν = -1`: the diagonal
@@ -105,7 +101,7 @@ def signed (ν : 𝔸ᶠ[E]) (hν : star ν * ν = -1) (s : ι → ℤˣ) : Fram
   star_mul_gram_mul_snd := by
     rw [diagonal_map (map_zero _)]
     simp_rw [map_intCast]
-    rw [← diagonal_one, signedFrame, star_eq_conjTranspose, diagonal_conjTranspose,
+    rw [← diagonal_one, signedFrame, diagGL_coe, star_eq_conjTranspose, diagonal_conjTranspose,
       diagonal_mul_diagonal, diagonal_mul_diagonal]
     exact congrArg diagonal (funext fun i ↦ star_signedEntry_mul_mul_signedEntry hν s i)
 
@@ -126,8 +122,8 @@ theorem frame_fst_signed (ν : 𝔸ᶠ[E]) (hν : star ν * ν = -1) (s : ι →
 @[simp]
 theorem val_frame_snd_signed (ν : 𝔸ᶠ[E]) (hν : star ν * ν = -1) (s : ι → ℤˣ) :
     ((signed E ν hν s).frame.2 : Matrix ι ι 𝔸ᶠ[E]) =
-      diagonal fun i ↦ if s i = 1 then 1 else ν :=
-  (rfl)
+      diagonal fun i ↦ if s i = 1 then 1 else ν := by
+  simp only [signed, signedFrame, diagGL_coe, Units.val_mkOfMulEqOne, signedEntry]
 
 /-- **There is a hermitian space with an adelic frame of every sign vector** over a CM field
 containing a primitive fourth and a primitive seventh root of unity, for instance a primitive
