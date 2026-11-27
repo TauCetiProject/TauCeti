@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ArithmeticFunction.EulerProduct
 
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Data.Nat.Totient
+import TauCeti.NumberTheory.BoundingSieve
 
 /-!
 # Lower bounds for finite Selberg normalizers
@@ -55,12 +56,6 @@ private def nuHom (s : BoundingSieve)
 @[simp] private theorem nuHom_apply (s : BoundingSieve)
     (hMul : ∀ a b, s.nu (a * b) = s.nu a * s.nu b) (n : ℕ) :
     nuHom s hMul n = s.nu n := (rfl)
-
-private theorem nu_bounds_of_mem_primeFactors (s : BoundingSieve) {d p : ℕ}
-    (hd : d ∣ s.prodPrimes) (hp : p ∈ d.primeFactors) : 0 < s.nu p ∧ s.nu p < 1 := by
-  have hpP := (Nat.dvd_of_mem_primeFactors hp).trans hd
-  exact ⟨s.nu_pos_of_dvd_prodPrimes hpP,
-    s.nu_lt_one_of_dvd_prodPrimes hpP (prime_of_mem_primeFactors hp).ne_one⟩
 
 private theorem nu_nonneg_of_dvd_pow (s : BoundingSieve)
     (hMul : ∀ a b, s.nu (a * b) = s.nu a * s.nu b) {n M : ℕ}
@@ -133,8 +128,10 @@ private theorem sum_divisors_prime_support_le_terms (s : BoundingSieve)
     (nuHom s hMul) (k + 1) d hdsq, selbergTerms_apply]
   simpa only [nuHom_apply] using
     (nuHom s hMul).prod_sum_Icc_pow_le (k + 1) d hdsq
-      (fun p hp ↦ (nu_bounds_of_mem_primeFactors s hd hp).1.le)
-      (fun p hp ↦ (nu_bounds_of_mem_primeFactors s hd hp).2)
+      (fun p hp ↦ (s.nu_pos_of_mem_primeFactors
+        (Nat.primeFactors_mono hd s.prodPrimes_ne_zero hp)).le)
+      (fun p hp ↦ sub_pos.mp (s.one_sub_nu_pos_of_mem_primeFactors
+        (Nat.primeFactors_mono hd s.prodPrimes_ne_zero hp)))
 
 /-- Complete multiplicativity compares the density sum with the finite Selberg normalizer.
 The cutoff is an arbitrary real number; negative cutoffs give empty sums. -/
@@ -190,14 +187,16 @@ theorem selbergTerms_le_of_prime_le (s t : BoundingSieve) (d : ℕ)
     ← Finset.prod_mul_distrib, ← div_eq_mul_inv]
   apply Finset.prod_le_prod₀
   · intro p hp
+    have hpP := Nat.primeFactors_mono hs s.prodPrimes_ne_zero hp
     exact div_nonneg (ht p hp)
       (sub_nonneg.mpr ((hnu p hp).trans
-        (nu_bounds_of_mem_primeFactors s hs hp).2.le))
+        (sub_pos.mp (s.one_sub_nu_pos_of_mem_primeFactors hpP)).le))
   · intro p hp
+    have hpP := Nat.primeFactors_mono hs s.prodPrimes_ne_zero hp
     exact div_le_div₀
-      (nu_bounds_of_mem_primeFactors s hs hp).1.le
+      (s.nu_pos_of_mem_primeFactors hpP).le
       (hnu p hp)
-      (sub_pos.mpr (nu_bounds_of_mem_primeFactors s hs hp).2)
+      (s.one_sub_nu_pos_of_mem_primeFactors hpP)
       (sub_le_sub_left (hnu p hp) 1)
 
 /-- On a sieve-supported index `d` whose primes have densities at least their reciprocals,
