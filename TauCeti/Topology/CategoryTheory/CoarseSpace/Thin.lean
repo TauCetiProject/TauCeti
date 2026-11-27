@@ -130,11 +130,11 @@ theorem thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace
     P.thinClassifyingSpaceRestrictionHomeomorph hs hthin
         (fatToThinClassifyingSpace P.FullSubcategory z) =
       thinClassifyingSpace.fatToThinClassifyingSpacePreimage hs _
-        (P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs hfat z) := by
+        (P.fatClassifyingSpaceRestrictionHomeomorph hs hfat z) := by
   ext
   rw [thinClassifyingSpaceRestrictionHomeomorph_apply_val,
     thinClassifyingSpace.fatToThinClassifyingSpacePreimage_apply_val,
-    fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding_apply_val]
+    fatClassifyingSpaceRestrictionHomeomorph_apply_val]
   simpa only [TopCat.comp_app] using (ConcreteCategory.congr_hom
     (fatClassifyingSpaceMap_comp_fatToThinClassifyingSpace P.ι P.continuous_mapTotal_ι) z).symm
 
@@ -147,7 +147,7 @@ theorem thinClassifyingSpaceRestrictionHomeomorph_symm_fatToThinClassifyingSpace
     (z : fatClassifyingSpace P.FullSubcategory) :
     (P.thinClassifyingSpaceRestrictionHomeomorph hs hthin).symm
         (thinClassifyingSpace.fatToThinClassifyingSpacePreimage hs _
-          (P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs hfat z)) =
+          (P.fatClassifyingSpaceRestrictionHomeomorph hs hfat z)) =
       fatToThinClassifyingSpace P.FullSubcategory z :=
   ((P.thinClassifyingSpaceRestrictionHomeomorph hs hthin).symm_apply_eq).2
     (P.thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace
