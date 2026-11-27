@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Map
-public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product.Basic
+public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product
 
 /-!
 # Functoriality and the flip of the maximal C*-tensor product
