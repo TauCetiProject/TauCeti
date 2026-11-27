@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
+public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Maps.OpenQuotient
 public import Mathlib.Topology.Algebra.Group.Matrix
@@ -31,7 +32,9 @@ topology of the local unit groups.
 
 For the arithmetic maps in `IsDedekindDomain.FiniteAdeleRing`, use:
 
-* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`, and
+* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`,
+  `IsDedekindDomain.FiniteAdeleRing.preimage_unitsContinuousMulEquiv_box`: under
+  `unitsContinuousMulEquiv`, `integralUnits` is the coordinate box with factors `𝒪_vˣ`, and
   `TauCeti.le_integralUnits_of_isCompact`: every compact subgroup lies in `integralUnits`, so
   by `TauCeti.map_det_le_integralUnits_of_isCompact` do the determinants of a compact subgroup
   of `GLₙ(𝔸_f)`;
@@ -173,5 +176,23 @@ theorem isEmbedding_coe_sIntegralUnits {S : Set (HeightOneSpectrum R)} (hS : S.F
   refine adicCompletionIntegers.mem_units_iff_valued_eq_one.mpr ?_
   rw [coe_unitsContinuousMulEquiv_apply]
   exact mem_sIntegralUnits_iff.mp x.property v hv
+
+variable (R K) in
+/-- Under the isomorphism `unitsContinuousMulEquiv` of the finite ideles with the restricted
+product of the `K_vˣ`, the everywhere-integral finite ideles are the preimage of the coordinate
+box with factors the local integral units `𝒪_vˣ`. -/
+theorem preimage_unitsContinuousMulEquiv_box :
+    unitsContinuousMulEquiv R K ⁻¹' RestrictedProduct.box (fun v : HeightOneSpectrum R ↦
+        ((Submonoid.ofClass (v.adicCompletionIntegers K)).units : Set (v.adicCompletion K)ˣ)) =
+      integralUnits R K := by
+  ext x
+  simp only [Set.mem_preimage, RestrictedProduct.mem_box, SetLike.mem_coe, Submonoid.mem_units_iff,
+    mem_integralUnits_iff_forall_mem_adicCompletionIntegers]
+  refine forall_congr' fun v ↦ ?_
+  rw [← RestrictedProduct.inv_apply, ← map_inv, coe_unitsContinuousMulEquiv_apply,
+    coe_unitsContinuousMulEquiv_apply]
+  -- The two sides read the coordinates of `x` and `x⁻¹` through the coercions of
+  -- `FiniteAdeleRing R K` and of the underlying restricted product, which agree by definition.
+  rfl
 
 end IsDedekindDomain.FiniteAdeleRing

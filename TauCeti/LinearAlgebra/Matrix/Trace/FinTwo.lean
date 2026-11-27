@@ -74,6 +74,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   `Matrix.det_one_sub_pow_pos_of_trace_lt_neg_two`,
   `Matrix.det_one_sub_pow_nonneg_of_abs_trace_le_two`: the sign of `det (1 - A ^ n)` for a
   determinant-one matrix `A`, according to its trace.
+* `Matrix.sign_det_one_sub_pow_of_trace_lt_neg_two`: for a determinant-one matrix of trace less
+  than `-2`, the sign of `det (1 - A ^ n)` is `(-1) ^ (n + 1)` for `n ≠ 0`.
 * `Matrix.trace_pow_eq_two_of_trace_eq_two`: the powers of a determinant-one matrix of trace `2`
   have trace `2`.
 * `Matrix.sign_det_one_sub_pow_succ_of_det_eq_one`: for a determinant-one matrix, the signs of
@@ -317,6 +319,19 @@ theorem det_one_sub_pow_nonneg_of_abs_trace_le_two {A : Matrix (Fin 2) (Fin 2) R
   rw [det_one_sub_fin_two, det_pow, hdet, one_pow]
   linarith [(abs_le.1 (abs_trace_pow_le_two hdet htr n)).2]
 
+/-- If a `2 × 2` matrix `A` of determinant one has trace less than `-2`, then the sign of
+`det (1 - A ^ n)` is `(-1) ^ (n + 1)` for every `n ≠ 0`. -/
+theorem sign_det_one_sub_pow_of_trace_lt_neg_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) (htr : A.trace < -2) {n : ℕ} (hn : n ≠ 0) :
+    (SignType.sign (1 - A ^ n).det : ℤ) = (-1) ^ (n + 1) := by
+  rcases n.even_or_odd with he | ho
+  · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr he hn),
+      he.add_one.neg_one_pow]
+    simp
+  · rw [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr ho),
+      ho.add_one.neg_one_pow]
+    simp
+
 /-- For a `2 × 2` matrix `A` of determinant one, the signs of `det (1 - A ^ n)` over the
 nondegenerate powers follow a geometric sequence: if `det (1 - A ^ (k + 1)) ≠ 0`, then
 `sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k`, where `σ = -1` if `det (1 + A) < 0` (that
@@ -335,13 +350,8 @@ theorem sign_det_one_sub_pow_succ_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
   rcases lt_or_ge A.trace (-2) with htr' | htr'
   · rw [ite_eq_left (by linarith), sign_pos (a := (1 - A).det)
       (by simpa using det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr' odd_one)]
-    rcases k.even_or_odd with he | ho
-    · rw [sign_pos (det_one_sub_pow_pos_of_trace_lt_neg_two hdet htr' he.add_one),
-        he.neg_one_pow]
-      simp
-    · rw [sign_neg (det_one_sub_pow_neg_of_trace_lt_neg_two hdet htr' ho.add_one
-        k.succ_ne_zero), ho.neg_one_pow]
-      simp
+    rw [sign_det_one_sub_pow_of_trace_lt_neg_two hdet htr' k.succ_ne_zero]
+    simp [pow_succ]
   have hpos (n : ℕ) (hn : (1 - A ^ n).det ≠ 0) : 0 < (1 - A ^ n).det :=
     (det_one_sub_pow_nonneg_of_abs_trace_le_two hdet (abs_le.2 ⟨htr', htr⟩) n).lt_of_ne' hn
   -- If `trace A = 2`, every power has trace `2`, so `A ^ (k + 1)` would be degenerate.

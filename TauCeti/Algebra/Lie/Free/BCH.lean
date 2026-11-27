@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 public import TauCeti.RingTheory.Nilpotent.BCH
 
 import TauCeti.RingTheory.Ideal.Maps
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The universal Baker–Campbell–Hausdorff element
@@ -57,9 +56,11 @@ of the canonical map from the free nilpotent Lie algebra into the truncated enve
 * `TauCeti.FreeLieAlgebra.quotEquivOfEq_completionProjection_bchCompleted`: the finite
   projections of `bchCompleted` are `bchElement c`.
 * `TauCeti.FreeLieAlgebra.factor_bchElement`: the elements of different classes are compatible.
-* `TauCeti.FreeLieAlgebra.bchElement_zero`, `TauCeti.FreeLieAlgebra.bchElement_one`,
-  `TauCeti.FreeLieAlgebra.bchElement_two`, `TauCeti.FreeLieAlgebra.bchElement_three`: explicit
-  formulas through class three.
+* `TauCeti.FreeLieAlgebra.bchElement_zero`: the element of class zero is `0`.
+* `TauCeti.FreeLieAlgebra.bchElement_one`: the element of class one is `X + Y`.
+* `TauCeti.FreeLieAlgebra.bchElement_three`: the element of class three is the cubic
+  Baker–Campbell–Hausdorff polynomial.
+* `TauCeti.FreeLieAlgebra.bchElement_two`: the element of class two is `X + Y + ½ ⁅X, Y⁆`.
 
 ## References
 
@@ -232,44 +233,25 @@ end Completed
 
 /-! ### Explicit formulas in low nilpotency class -/
 
-private noncomputable def quotAugmentationIdeal (c : ℕ) :
-    Ideal (_root_.UniversalEnvelopingAlgebra ℚ 𝔣 ⧸ J ^ (c + 1)) :=
-  Ideal.map (Ideal.Quotient.mk (J ^ (c + 1))) J
-
-private theorem quotAugmentationIdeal_def (c : ℕ) :
-    quotAugmentationIdeal c = Ideal.map (Ideal.Quotient.mk (J ^ (c + 1))) J := rfl
-
-private theorem mk_ι_mem_quotAugmentationIdeal (c : ℕ) (x : 𝔣) :
-    Ideal.Quotient.mk (J ^ (c + 1)) (ι x) ∈ quotAugmentationIdeal c :=
-  Ideal.mem_map_of_mem _
-    (HopfIdeal.mem_toIdeal.mpr (UniversalEnvelopingAlgebra.ι_mem_augmentation ℚ 𝔣 x))
-
 /-- At class `0`, `bchElement 0` vanishes. -/
 @[simp] theorem bchElement_zero : bchElement 0 = 0 := by
   obtain ⟨x, hx⟩ := LieIdeal.surjective_mkQ _ (bchElement 0)
   rw [← hx, LieIdeal.mkQ_eq_zero]
   simp only [LieModule.lowerCentralSeries_zero, LieSubmodule.mem_top]
 
-/-- At class `1`, `bchElement 1` is the sum `X + Y` of the two generators. -/
-theorem bchElement_one :
-    bchElement 1 = LieSubmodule.Quotient.mk X + LieSubmodule.Quotient.mk Y := by
+/-- The Baker–Campbell–Hausdorff element of class one is `X + Y`: modulo brackets, the product
+of exponentials is the exponential of the sum. -/
+theorem bchElement_one : bchElement 1 = LieSubmodule.Quotient.mk (X + Y) := by
+  -- In `U(𝔣) ⧸ (U⁺) ^ 2` any two classes of Lie elements have zero product, so they commute.
+  have h : ∀ a b : 𝔣, Ideal.Quotient.mk (J ^ (1 + 1)) (ι a) * Ideal.Quotient.mk _ (ι b) = 0 :=
+    fun a b => by
+      rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem, Submodule.pow_succ, Submodule.pow_one]
+      exact Ideal.mul_mem_mul (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation ℚ 𝔣 a))
+        (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation ℚ 𝔣 b))
   symm
-  apply lowerCentralQuotientι_injective ℚ (Fin 2) (ι_injective ℚ 𝔣) 1
-  rw [lowerCentralQuotientι_bchElement,
-    Ideal.log_exp_mul_exp_of_pow_three_eq_bot (quotAugmentationIdeal 1)
-      (Ideal.map_mk_pow_eq_bot_of_le (Ideal.pow_le_pow_right (by decide : 1 + 1 ≤ 3)))
-      (mk_ι_mem_quotAugmentationIdeal 1 X) (mk_ι_mem_quotAugmentationIdeal 1 Y)]
-  have hcomm : Ideal.Quotient.mk (J ^ (1 + 1)) (ι X) * Ideal.Quotient.mk (J ^ (1 + 1)) (ι Y) -
-      Ideal.Quotient.mk (J ^ (1 + 1)) (ι Y) * Ideal.Quotient.mk (J ^ (1 + 1)) (ι X) = 0 := by
-    rw [← Ideal.mem_bot, ← Ideal.map_mk_pow_self J (1 + 1), ← quotAugmentationIdeal_def 1,
-      Submodule.pow_succ (quotAugmentationIdeal 1), Submodule.pow_one]
-    exact Submodule.sub_mem _
-      (Ideal.mul_mem_mul (mk_ι_mem_quotAugmentationIdeal 1 X)
-        (mk_ι_mem_quotAugmentationIdeal 1 Y))
-      (Ideal.mul_mem_mul (mk_ι_mem_quotAugmentationIdeal 1 Y)
-        (mk_ι_mem_quotAugmentationIdeal 1 X))
-  simp only [map_add, lowerCentralQuotientι_mk, LieRing.of_associative_ring_bracket, hcomm,
-    smul_zero, add_zero]
+  rw [eq_bchElement_iff, lowerCentralQuotientι_mk, map_add, map_add]
+  exact IsNilpotent.exp_add_of_commute ((h X Y).trans (h Y X).symm) (isNilpotent_mk_ι ℚ 𝔣 1 X)
+    (isNilpotent_mk_ι ℚ 𝔣 1 Y)
 
 /-- **The Baker–Campbell–Hausdorff element through degree three**: the element of class three is
 `X + Y + ½ ⁅X, Y⁆ + 1/12 (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
