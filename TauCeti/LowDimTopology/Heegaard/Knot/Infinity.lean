@@ -185,6 +185,7 @@ theorem knotInfinityLift_injective : Function.Injective (H.knotInfinityLift i j)
 
 /-- Multiplying by the monomial `U ^ m 0 V ^ m 1` and placing at the level `(i, j)` is placing at
 the level `(i - m 0, j - m 1)`. -/
+@[simp]
 theorem knotInfinityLift_monomial_smul (m : Fin 2 →₀ ℕ)
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     H.knotInfinityLift i j (monomial m (1 : ZMod 2) • c) =
@@ -199,15 +200,6 @@ theorem knotInfinityLift_monomial_smul (m : Fin 2 →₀ ℕ)
         knotInfinityLift_single_monomial, knotInfinityLift_single_monomial]
       simp [sub_add_eq_sub_sub]
     | add p q hp hq => rw [Finsupp.single_add, smul_add, map_add, map_add, hp, hq]
-
-/-- Every lifted chain is supported on cells below the level `(i, j)`. -/
-theorem knotInfinityLift_mem_supported (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
-    H.knotInfinityLift i j c ∈
-      Finsupp.supported (ZMod 2) (ZMod 2) {g : H.Generator × ℤ × ℤ | g.2 ≤ (i, j)} := by
-  intro g hg
-  obtain ⟨m, -, hgm⟩ := exists_coeff_ne_zero_of_mem_support_knotInfinityLift hg
-  rw [Set.mem_ofPred_eq, hgm, Prod.mk_le_mk]
-  omega
 
 end Lift
 
@@ -295,6 +287,13 @@ theorem knotInfinityShift_single (a b : ℤ) (x : H.Generator) (i j : ℤ) (c : 
     H.knotInfinityShift a b (Finsupp.single (x, i, j) c) = Finsupp.single (x, i - a, j - b) c :=
   Finsupp.domLCongr_single _ _ _
 
+/-- The coefficient of the shift by `(a, b)` of a chain `c` at `[x, i, j]` is the coefficient of
+`c` at `[x, i + a, j + b]`. -/
+@[simp]
+theorem knotInfinityShift_apply (a b : ℤ) (c : H.Generator × ℤ × ℤ →₀ ZMod 2) (x : H.Generator)
+    (i j : ℤ) : H.knotInfinityShift a b c (x, i, j) = c (x, i + a, j + b) := by
+  simp [knotInfinityShift]
+
 /-- The shift by `(0, 0)` is the identity. -/
 @[simp]
 theorem knotInfinityShift_zero : H.knotInfinityShift 0 0 = LinearEquiv.refl (ZMod 2) _ :=
@@ -366,16 +365,23 @@ theorem mem_knotInfinityFiltration_iff {S : Set (ℤ × ℤ)} {c : H.Generator �
     c ∈ H.knotInfinityFiltration S ↔ ∀ g ∈ c.support, g.2 ∈ S :=
   Iff.rfl
 
+/-- Every chain placed at the level `(i, j)` lies over the levels below `(i, j)`. -/
+theorem knotInfinityLift_mem_knotInfinityFiltration {i j : ℤ}
+    (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
+    H.knotInfinityLift i j c ∈ H.knotInfinityFiltration (Set.Iic (i, j)) := by
+  intro g hg
+  obtain ⟨m, -, hgm⟩ := exists_coeff_ne_zero_of_mem_support_knotInfinityLift hg
+  rw [Set.mem_preimage, hgm, Set.mem_Iic, Prod.mk_le_mk]
+  omega
+
 /-- The shift by `(a, b)` moves the filtration by `(a, b)`: a shifted chain lies over the levels
 `p` with `p + (a, b) ∈ S` exactly when the chain lies over `S`. -/
 theorem knotInfinityShift_mem_knotInfinityFiltration_iff {a b : ℤ} {S : Set (ℤ × ℤ)}
     {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
     H.knotInfinityShift a b c ∈ H.knotInfinityFiltration ((· + (a, b)) ⁻¹' S) ↔
       c ∈ H.knotInfinityFiltration S := by
-  simp only [mem_knotInfinityFiltration_iff, knotInfinityShift, Finsupp.domLCongr_apply,
-    Finsupp.domCongr_apply, Finsupp.mem_support_iff, Finsupp.equivMapDomain_apply,
-    Equiv.prodCongr_symm, Equiv.refl_symm, Equiv.prodCongr_apply, Equiv.coe_refl, ne_eq,
-    Set.mem_preimage, Prod.forall, Prod.map_apply, id_eq, Equiv.subRight_symm_apply, Prod.mk_add_mk]
+  simp only [mem_knotInfinityFiltration_iff, Finsupp.mem_support_iff, Prod.forall,
+    knotInfinityShift_apply, Set.mem_preimage, Prod.mk_add_mk]
   refine ⟨fun h x i j hc => ?_, fun h x i j hc => h x _ _ hc⟩
   simpa using h x (i - a) (j - b) (by simpa using hc)
 
@@ -402,8 +408,8 @@ theorem knotInfinityFiltration_le_comap_knotInfinityDifferential {S : Set (ℤ �
   intro c hc
   rw [Submodule.mem_comap, knotInfinityDifferential, Finsupp.linearCombination_apply]
   refine Submodule.finsuppSum_mem _ _ _ _ fun g hg => Submodule.smul_mem _ _ ?_
-  refine Finsupp.supported_mono (fun g' hg' => ?_) (knotInfinityLift_mem_supported _)
-  exact hS hg' (hc (Finsupp.mem_support_iff.mpr hg))
+  exact Finsupp.supported_mono (Set.preimage_mono (hS.Iic_subset (hc (Finsupp.mem_support_iff.mpr
+    hg)))) (knotInfinityLift_mem_knotInfinityFiltration _)
 
 variable (H) in
 /-- The differential of the quotient of the full infinity knot complex by the subcomplex over a
@@ -446,14 +452,13 @@ theorem mem_knotInfinityAlexanderSubmodule_iff {A : H.Generator → ℤ}
 
 /-- The shifts by `(a, a)`, in particular the action of `U` of Ozsváth and Szabó, preserve
 `CFK^∞`. -/
+@[simp]
 theorem knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff {a : ℤ} {A : H.Generator → ℤ}
     {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
     H.knotInfinityShift a a c ∈ H.knotInfinityAlexanderSubmodule A ↔
       c ∈ H.knotInfinityAlexanderSubmodule A := by
-  simp only [mem_knotInfinityAlexanderSubmodule_iff, knotInfinityShift, Finsupp.domLCongr_apply,
-    Finsupp.domCongr_apply, Finsupp.mem_support_iff, Finsupp.equivMapDomain_apply,
-    Equiv.prodCongr_symm, Equiv.refl_symm, Equiv.prodCongr_apply, Equiv.coe_refl, ne_eq,
-    Prod.forall, Prod.map_apply, id_eq, Equiv.subRight_symm_apply]
+  simp only [mem_knotInfinityAlexanderSubmodule_iff, Finsupp.mem_support_iff, Prod.forall,
+    knotInfinityShift_apply]
   refine ⟨fun h x i j hc => ?_, fun h x i j hc => by simpa using h x _ _ hc⟩
   simpa using h x (i - a) (j - a) (by simpa using hc)
 
@@ -520,6 +525,7 @@ theorem knotInfinityForget_knotInfinityLift (i j : ℤ)
         ← Finsupp.mapRange_add (by simp)]
 
 /-- Forgetting the second index turns the shift by `(a, b)` into multiplication by `U ^ a`. -/
+@[simp]
 theorem knotInfinityForget_knotInfinityShift (a b : ℤ) (c : H.Generator × ℤ × ℤ →₀ ZMod 2) :
     H.knotInfinityForget (H.knotInfinityShift a b c) =
       (T a : (ZMod 2)[T;T⁻¹]) • H.knotInfinityForget c := by
