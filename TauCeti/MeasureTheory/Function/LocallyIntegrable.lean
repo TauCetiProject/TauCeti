@@ -120,6 +120,9 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   null-measurable set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
   zero extension when the support avoids the added boundary.
+* `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_subset_isCompact` and
+  `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact_closure`: global
+  integrability of zero extension from a null-measurable subset of a compact subset of `s`.
 * `MeasureTheory.LocallyIntegrableOn.integrable_smul_right_of_hasCompactSupport`: a function
   locally integrable on `s`, scaling a function with compact support in `s` that is continuous on
   its support, is integrable.
@@ -509,6 +512,28 @@ theorem indicator_of_closure (hf : LocallyIntegrableOn f (s ∩ closure t) μ)
     exact hz' (subset_closure hz)
 
 end ClosureCutoff
+
+section Indicator
+
+variable {X ε : Type*} [MeasurableSpace X] [TopologicalSpace X]
+  [TopologicalSpace ε] [ESeminormedAddMonoid ε] [PseudoMetrizableSpace ε]
+  {μ : Measure X} {f : X → ε} {s t K : Set X}
+
+/-- Extending a function locally integrable on `s` by zero outside a null-measurable set `t`
+contained in a compact subset `K ⊆ s` gives a globally integrable function. -/
+theorem integrable_indicator_of_subset_isCompact (hf : LocallyIntegrableOn f s μ)
+    (ht : NullMeasurableSet t μ) (htK : t ⊆ K) (hK : IsCompact K) (hKs : K ⊆ s) :
+    Integrable (t.indicator f) μ :=
+  ((hf.integrableOn_compact_subset hKs hK).mono_set htK).integrable_indicator₀ ht
+
+/-- Extending a function locally integrable on `s` by zero outside a null-measurable relatively
+compact set `t` with `closure t ⊆ s` gives a globally integrable function. -/
+theorem integrable_indicator_of_isCompact_closure (hf : LocallyIntegrableOn f s μ)
+    (ht : NullMeasurableSet t μ) (htc : IsCompact (closure t)) (hts : closure t ⊆ s) :
+    Integrable (t.indicator f) μ :=
+  hf.integrable_indicator_of_subset_isCompact ht subset_closure htc hts
+
+end Indicator
 
 end MeasureTheory.LocallyIntegrableOn
 

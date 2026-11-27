@@ -25,8 +25,9 @@ uniformly continuous on a neighbourhood of `s`. For uniformly continuous functio
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
-Mollifying a locally integrable function by a normalized bump gives a smooth function
-(`ContDiffBump.contDiff_normed_convolution`).
+Mollifying a locally integrable function by a normalized bump gives a continuous, and for
+additive Haar measures smooth, function (`ContDiffBump.continuous_normed_convolution`,
+`ContDiffBump.contDiff_normed_convolution`).
 Normalized-bump convolution also preserves an almost-everywhere bound on a function
 (`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
@@ -171,6 +172,11 @@ theorem tsupport_normed_convolution_subset [IsLocallyFiniteMeasure μ] [μ.IsOpe
   · exact (support_convolution_subset _).trans
       (Set.add_subset_add (ρ.support_normed_eq.subset.trans ball_subset_closedBall) subset_closure)
   · exact (isClosed_tsupport g).add_left_of_isCompact (isCompact_closedBall _ _)
+
+/-- Mollifying a locally integrable function by a normalized bump gives a continuous function. -/
+theorem continuous_normed_convolution [μ.IsAddHaarMeasure] (ρ : ContDiffBump (0 : G))
+    (hg : LocallyIntegrable g μ) : Continuous (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) :=
+  ρ.hasCompactSupport_normed.continuous_convolution_left (lsmul ℝ ℝ) ρ.continuous_normed hg
 
 /-- Mollifying a locally integrable function by a normalized bump gives a smooth function. -/
 theorem contDiff_normed_convolution [μ.IsAddHaarMeasure] (ρ : ContDiffBump (0 : G))

@@ -12,6 +12,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
+import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 import TauCeti.Data.ENNReal.Inv
 
 /-!
@@ -143,8 +144,9 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E]
     simpa only [ContinuousLinearMap.id_apply] using
       (hc'.hasWeakFDerivOn.hasWeakLineDerivOn I).bilin_of_continuousOn
         (ContinuousLinearMap.id ℝ (E →L[ℝ] E)) hp2.le hJ'cont
-        (hc'.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I))
-        (hDξ.hasWeakLineDerivOn I) hξ2
+        (fun K hKc hKΩ => memLpLoc_iff.1 (hc'.memLpLoc_deriv.clm_comp
+          (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I)) K hKΩ hKc)
+        (hDξ.hasWeakLineDerivOn I) (fun K hKc hKΩ => memLpLoc_iff.1 hξ2 K hKΩ hKc)
   exact (isWeakCRSolution_congr_ae hJJ' .rfl .rfl .rfl .rfl).2 <|
     (hc'.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn hp2.le hDξ hξ2 hJ'ξ hDξ1 hJ'DξI hη).2 heq'
 
