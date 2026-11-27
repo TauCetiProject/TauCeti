@@ -92,7 +92,8 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
     filter_upwards [eventually_ge_atTop m] with n hn
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
     rw [Nat.add_sub_cancel, smul_smul, div_eq_mul_inv, mul_right_comm,
-      mul_inv_cancel₀ (by positivity), one_mul, ← smul_add, hsum k]; push_cast; rfl
+      mul_inv_cancel₀ (by positivity), one_mul, ← smul_add, hsum k]
+    simp only [Nat.cast_add, Nat.cast_one]
   · intro hA
     have hratio : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
       simpa using (tendsto_add_mul_div_add_mul_atTop_nhds ((m : ℝ) + 1) 1 1
@@ -100,7 +101,8 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
     refine Tendsto.congr (fun n ↦ ?_)
       (by simpa using (hratio.smul (hA.comp (tendsto_add_atTop_nat m))).sub hprefix)
     rw [smul_smul, div_eq_mul_inv, mul_right_comm, mul_inv_cancel₀ (by positivity), one_mul,
-      ← hsum n, smul_add, add_sub_cancel_right]; push_cast; rfl
+      ← hsum n, smul_add, add_sub_cancel_right]
+    simp only [Nat.cast_add, Nat.cast_one]
 
 /-- If a sequence has Cesàro limits along every residue class modulo `q > 0`, its Cesàro averages
 converge to the average of those limits. -/

@@ -22,6 +22,7 @@ import TauCeti.Topology.Instances.AddCircle.LiftIco
 Fourier-analytic equidistribution criteria on `AddCircle T` and `UnitAddTorus d`:
 `TauCeti.asympEquidistributed_addCircle_iff`, `TauCeti.weyl_criterion_addCircle`,
 `TauCeti.asympEquidistributed_unitAddTorus_iff`, `TauCeti.weyl_criterion`,
+`TauCeti.not_asympEquidistributed_of_mFourier_const`,
 `TauCeti.asympEquidistributed_unitAddTorus_iff_forall_linear_comb`,
 `TauCeti.totallyAsympEquidistributed_unitAddTorus_iff_rational_twist`, and
 `TauCeti.uniformDistribution_mod_one_tfae`.
@@ -83,6 +84,20 @@ theorem weyl_criterion {x : ℕ → UnitAddTorus d} :
   rw [asympEquidistributed_def, ProbabilityMeasure.tendsto_volume_unitAddTorus_iff]
   simp_rw [TauCeti.Probability.integral_empiricalMeasure_rclike
     (UnitAddTorus.mFourier _).continuous.stronglyMeasurable]
+
+/-- If a nontrivial Fourier character `mFourier k` takes a constant nonzero value along `x`,
+then `x` is not Haar-equidistributed on `UnitAddTorus d`. -/
+theorem not_asympEquidistributed_of_mFourier_const {x : ℕ → UnitAddTorus d} {k : d → ℤ}
+    (hk : k ≠ 0) {c : ℂ} (hc : c ≠ 0)
+    (hconst : ∀ n : ℕ, UnitAddTorus.mFourier k (x n) = c) :
+    ¬ AsympEquidistributed x (volume : Measure (UnitAddTorus d)).toProbabilityMeasure := by
+  intro hx
+  have hlim : Tendsto (fun _ : ℕ ↦ c) atTop (𝓝 0) :=
+    ((weyl_criterion.mp hx) k hk).congr fun n ↦ by
+      simp only [hconst, sum_const, card_range, nsmul_eq_mul, ← mul_assoc,
+        inv_mul_cancel₀ (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n) : ((n + 1 : ℕ) : ℂ) ≠ 0),
+        one_mul]
+  exact hc (tendsto_nhds_unique tendsto_const_nhds hlim)
 
 /-- **Equidistribution via 1D projections**: `x` is Haar-equidistributed on `UnitAddTorus d` iff
 every nonzero integer combination of its coordinates is equidistributed on `UnitAddCircle`. -/
@@ -153,6 +168,55 @@ private theorem tendsto_fract_Ico_of_asympEquidistributed {u : ℕ → ℝ}
   exact hfreq.congr fun n ↦ congrArg (fun s : Finset ℕ ↦ (s.card : ℝ) / ((n + 1 : ℕ) : ℝ))
     (filter_congr fun i _ ↦ by simp [E, AddCircle.coe_equivIco_mk_apply])
 
+/-- Convergence of fractional-part frequencies on `[a, b) ⊆ [0, 1]` implies asymptotic
+equidistribution of `Int.fract ∘ u` for `volume.restrict (Ico 0 1)`. -/
+private theorem asympEquidistributed_fract_of_forall_Ico {u : ℕ → ℝ}
+    (hfreq : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ≤ 1 → Tendsto (fun n : ℕ ↦
+      (((range (n + 1)).filter (fun i ↦ Int.fract (u i) ∈ Ico a b)).card : ℝ) /
+        ((n + 1 : ℕ) : ℝ)) atTop (𝓝 (b - a)))
+    {ν : ProbabilityMeasure ℝ} (hν_eq : (ν : Measure ℝ) = volume.restrict (Ico (0 : ℝ) 1)) :
+    AsympEquidistributed (fun i ↦ Int.fract (u i)) ν := by
+  classical
+  rw [asympEquidistributed_def]
+  let μ := TauCeti.Probability.empiricalMeasure (fun i ↦ Int.fract (u i))
+  have hpi : IsPiSystem {s : Set ℝ | ∃ a b : ℝ, s = Ico a b} := by
+    rintro _ ⟨a₁, b₁, rfl⟩ _ ⟨a₂, b₂, rfl⟩ -; exact ⟨max a₁ a₂, min b₁ b₂, Ico_inter_Ico⟩
+  refine hpi.tendsto_probabilityMeasure_of_tendsto_of_mem
+    (by rintro _ ⟨a, b, rfl⟩; exact measurableSet_Ico) (fun U hU x hx ↦ by
+      obtain ⟨a, b, ⟨hax, hxb⟩, hsub⟩ := mem_nhds_iff_exists_Ioo_subset.mp (hU.mem_nhds hx)
+      exact ⟨Ico ((a + x) / 2) b, ⟨(a + x) / 2, b, rfl⟩, Ico_mem_nhds (by linarith) hxb,
+        fun y hy ↦ hsub ⟨by linarith [hy.1], hy.2⟩⟩) ?_
+  rintro _ ⟨c, d, rfl⟩; rw [← NNReal.tendsto_coe]
+  have hμ (n : ℕ) : (μ n (Ico c d) : ℝ) = (((range (n + 1)).filter
+      (fun i ↦ Int.fract (u i) ∈ Ico (max c 0) (min d 1))).card : ℝ) / ((n + 1 : ℕ) : ℝ) := by
+    rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def,
+      TauCeti.Probability.empiricalMeasure_real_eq_frequency measurableSet_Ico n]
+    refine congrArg (fun s : Finset ℕ ↦ (s.card : ℝ) / ((n + 1 : ℕ) : ℝ))
+      (filter_congr fun i _ ↦ ?_)
+    simp only [Set.mem_Ico]; have h01 := Int.fract_nonneg (u i); have h1 := Int.fract_lt_one (u i)
+    exact ⟨fun h ↦ ⟨max_le h.1 h01, lt_min h.2 h1⟩,
+      fun h ↦ ⟨(le_max_left c 0).trans h.1, h.2.trans_le (min_le_left d 1)⟩⟩
+  have hν : (ν (Ico c d) : ℝ) = (volume (Ico (max c 0) (min d 1))).toReal := by
+    rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def, hν_eq,
+      Measure.restrict_apply measurableSet_Ico, Set.Ico_inter_Ico]
+  rcases le_or_gt (max c 0) (min d 1) with hle | hlt
+  · rw [Real.volume_Ico, ENNReal.toReal_ofReal (sub_nonneg.mpr hle)] at hν
+    simpa only [μ, hμ, hν] using hfreq _ _ (le_max_right _ _) hle (min_le_right _ _)
+  · have hemp : Ico (max c 0) (min d 1) = ∅ := Ico_eq_empty_of_le hlt.le
+    simp only [hemp, measure_empty, ENNReal.toReal_zero, mem_empty_iff_false, filter_false,
+      Finset.card_empty, Nat.cast_zero, zero_div] at hμ hν
+    simpa only [μ, hμ, hν] using tendsto_const_nhds
+
+/-- Pushing `volume.restrict (Ico 0 1)` forward to `UnitAddCircle` gives normalized Haar measure. -/
+private theorem map_coe_restrict_Ico_unitAddCircle {ν : ProbabilityMeasure ℝ}
+    (hν_eq : (ν : Measure ℝ) = volume.restrict (Ico (0 : ℝ) 1)) :
+    ν.map ((↑) : ℝ → UnitAddCircle) = AddCircle.haarAddCircle.toProbabilityMeasure :=
+  ProbabilityMeasure.toMeasure_injective (by
+    rw [ProbabilityMeasure.toMeasure_map, hν_eq, Measure.coe_toProbabilityMeasure,
+      Measure.restrict_congr_set Ico_ae_eq_Ioc]
+    simpa [AddCircle.volume_eq_smul_haarAddCircle] using
+      (AddCircle.measurePreserving_mk 1 0).map_eq)
+
 /-- Convergence of fractional-part frequencies on `[a, b) ⊆ [0, 1]` gives Haar equidist. -/
 private theorem asympEquidistributed_of_forall_fract_Ico {u : ℕ → ℝ}
     (hfreq : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ≤ 1 → Tendsto (fun n : ℕ ↦
@@ -160,50 +224,13 @@ private theorem asympEquidistributed_of_forall_fract_Ico {u : ℕ → ℝ}
         ((n + 1 : ℕ) : ℝ)) atTop (𝓝 (b - a))) :
     AsympEquidistributed (fun n ↦ (u n : UnitAddCircle))
       AddCircle.haarAddCircle.toProbabilityMeasure := by
-  classical
   have hν_prob : IsProbabilityMeasure (volume.restrict (Ico (0 : ℝ) 1)) := ⟨by simp⟩
   let ν : ProbabilityMeasure ℝ := (volume.restrict (Ico (0 : ℝ) 1)).toProbabilityMeasure
-  let μ := TauCeti.Probability.empiricalMeasure (fun i ↦ Int.fract (u i))
-  have hpi : IsPiSystem {s : Set ℝ | ∃ a b : ℝ, s = Ico a b} := by
-    rintro _ ⟨a₁, b₁, rfl⟩ _ ⟨a₂, b₂, rfl⟩ -; exact ⟨max a₁ a₂, min b₁ b₂, Ico_inter_Ico⟩
-  have htend : Tendsto μ atTop (𝓝 ν) := by
-    refine hpi.tendsto_probabilityMeasure_of_tendsto_of_mem
-      (by rintro _ ⟨a, b, rfl⟩; exact measurableSet_Ico) (fun U hU x hx ↦ by
-        obtain ⟨a, b, ⟨hax, hxb⟩, hsub⟩ := mem_nhds_iff_exists_Ioo_subset.mp (hU.mem_nhds hx)
-        exact ⟨Ico ((a + x) / 2) b, ⟨(a + x) / 2, b, rfl⟩, Ico_mem_nhds (by linarith) hxb,
-          fun y hy ↦ hsub ⟨by linarith [hy.1], hy.2⟩⟩) ?_
-    rintro _ ⟨c, d, rfl⟩; rw [← NNReal.tendsto_coe]
-    have hμ (n : ℕ) : (μ n (Ico c d) : ℝ) = (((range (n + 1)).filter
-        (fun i ↦ Int.fract (u i) ∈ Ico (max c 0) (min d 1))).card : ℝ) / ((n + 1 : ℕ) : ℝ) := by
-      rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def,
-        TauCeti.Probability.empiricalMeasure_real_eq_frequency measurableSet_Ico n]
-      refine congrArg (fun s : Finset ℕ ↦ (s.card : ℝ) / ((n + 1 : ℕ) : ℝ))
-        (filter_congr fun i _ ↦ ?_)
-      simp only [Set.mem_Ico]; have h01 := Int.fract_nonneg (u i); have h1 := Int.fract_lt_one (u i)
-      exact ⟨fun h ↦ ⟨max_le h.1 h01, lt_min h.2 h1⟩,
-        fun h ↦ ⟨(le_max_left c 0).trans h.1, h.2.trans_le (min_le_left d 1)⟩⟩
-    have hν : (ν (Ico c d) : ℝ) = (volume (Ico (max c 0) (min d 1))).toReal := by
-      rw [← ProbabilityMeasure.measureReal_eq_coe_coeFn, Measure.real_def]; dsimp only [ν]
-      rw [Measure.coe_toProbabilityMeasure, Measure.restrict_apply measurableSet_Ico,
-        Set.Ico_inter_Ico]
-    rcases le_or_gt (max c 0) (min d 1) with hle | hlt
-    · rw [Real.volume_Ico, ENNReal.toReal_ofReal (sub_nonneg.mpr hle)] at hν
-      simpa only [hμ, hν] using hfreq _ _ (le_max_right _ _) hle (min_le_right _ _)
-    · have hemp : Ico (max c 0) (min d 1) = ∅ := Ico_eq_empty_of_le hlt.le
-      simp only [hemp, measure_empty, ENNReal.toReal_zero, mem_empty_iff_false, filter_false,
-        Finset.card_empty, Nat.cast_zero, zero_div] at hμ hν
-      simpa only [hμ, hν] using tendsto_const_nhds
-  have hν_map : ν.map ((↑) : ℝ → UnitAddCircle) = AddCircle.haarAddCircle.toProbabilityMeasure :=
-    ProbabilityMeasure.toMeasure_injective (by
-      rw [ProbabilityMeasure.toMeasure_map, Measure.coe_toProbabilityMeasure,
-        Measure.coe_toProbabilityMeasure, Measure.restrict_congr_set Ico_ae_eq_Ioc]
-      simpa [AddCircle.volume_eq_smul_haarAddCircle] using
-        (AddCircle.measurePreserving_mk 1 0).map_eq)
-  simpa only [AddCircle.coe_fract] using (by
-    rw [← hν_map]; exact (asympEquidistributed_def.mpr htend).map
-      continuous_quotient_mk' AddCircle.measurable_mk' :
-    AsympEquidistributed (fun i ↦ ((Int.fract (u i) : ℝ) : UnitAddCircle))
-      AddCircle.haarAddCircle.toProbabilityMeasure)
+  have hν_eq : (ν : Measure ℝ) = volume.restrict (Ico (0 : ℝ) 1) :=
+    Measure.coe_toProbabilityMeasure _
+  simpa only [Function.comp_def, AddCircle.coe_fract, map_coe_restrict_Ico_unitAddCircle hν_eq]
+    using (asympEquidistributed_fract_of_forall_Ico hfreq hν_eq).map
+      (f := ((↑) : ℝ → UnitAddCircle)) continuous_quotient_mk' AddCircle.measurable_mk'
 
 /-- **Uniform distribution modulo `1`**: equivalence of Haar equidistribution on `UnitAddCircle`,
 fractional-part frequencies in `[a, b) ⊆ [0, 1]`, and vanishing of nonzero Weyl sums. -/

@@ -62,15 +62,12 @@ theorem linear_equidistribution_tfae (α β : UnitAddTorus d) :
       (fun n : ℕ ↦ (q * n + r) • α + β) = fun n : ℕ ↦ n • (q • α) + (r • α + β))]
     exact asympEquidistributed_linear_of_torusIrrational (hα.nsmul hq.ne') _
   tfae_have 2 → 1 := TotallyAsympEquidistributed.asympEquidistributed
-  tfae_have 1 → 3 := fun h ↦ torusIrrational_iff_mFourier.mpr fun k hk h1 ↦ by
-    have hlim := ((weyl_criterion.mp h) k hk).congr fun n ↦ by
-      simp_rw [UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_nsmul, h1, one_pow,
-        one_mul]
-      let : Invertible (((range (n + 1)).card : ℂ)) :=
-        invertibleOfNonzero (by rw [card_range]; exact Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n))
-      simpa [card_range, invOf_eq_inv, smul_eq_mul] using
-        Finset.invOf_card_smul_sum_const (R := ℂ) (range (n + 1)) (UnitAddTorus.mFourier k β)
-    simpa [tendsto_nhds_unique tendsto_const_nhds hlim] using UnitAddTorus.norm_mFourier_apply k β
+  tfae_have 1 → 3 := fun h ↦ torusIrrational_iff_mFourier.mpr fun k hk h1 ↦
+    not_asympEquidistributed_of_mFourier_const hk
+      (norm_ne_zero_iff.mp <| by rw [UnitAddTorus.norm_mFourier_apply k β]; exact one_ne_zero)
+      (fun n ↦ by
+        rw [UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_nsmul, h1, one_pow,
+          one_mul]) h
   tfae_finish
 
 /-- **Equidistribution of doubly infinite linear orbits on `UnitAddTorus d`**: equivalence of

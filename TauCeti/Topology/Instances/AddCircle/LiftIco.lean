@@ -58,9 +58,11 @@ theorem frontier_preimage_equivIco_Ico_subset {T c a b : ℝ} [Fact (0 < T)] (hc
     ext x; refine ⟨fun hx ↦ ⟨equivIco T c x, hx, by simp⟩, ?_⟩
     rintro ⟨y, hy, rfl⟩; simpa [E, equivIco_coe_of_mem ⟨hc.trans hy.1, hy.2.trans_le hb⟩] using hy
   have hcl : closure E ⊆ ((↑) : ℝ → AddCircle T) '' Icc a b := by
-    have : T3Space (Quotient (QuotientAddGroup.leftRel (AddSubgroup.zmultiples T))) :=
-      @QuotientAddGroup.instT3Space _ _ _ _ _ _
-        (AddSubgroup.zmultiples T).isClosed_of_discreteTopology
+    -- `AddCircle T` is `ℝ ⧸ AddSubgroup.zmultiples T`; `zmultiples T` is discrete hence closed,
+    -- which gives `T3Space (AddCircle T)` (and thus `T2Space`) via `QuotientAddGroup.instT3Space`.
+    have : IsClosed ((AddSubgroup.zmultiples T : AddSubgroup ℝ) : Set ℝ) :=
+      (AddSubgroup.zmultiples T).isClosed_of_discreteTopology
+    have : T3Space (AddCircle T) := inferInstanceAs (T3Space (ℝ ⧸ AddSubgroup.zmultiples T))
     rw [hE]; exact closure_minimal (image_mono Ico_subset_Icc_self)
       (isCompact_Icc.image continuous_quotient_mk').isClosed
   have hint : ((↑) : ℝ → AddCircle T) '' Ioo a b ⊆ interior E := by

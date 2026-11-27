@@ -29,18 +29,19 @@ namespace TauCeti
 
 variable {G : Type*} [AddCommGroup G]
 
+/-- Per-term binomial difference `(n + h) ^ j • a - n ^ j • a` expanded in powers of `n`. -/
+private theorem add_pow_nsmul_sub_nsmul (n h j : ℕ) (a : G) :
+    (n + h) ^ j • a - n ^ j • a = ∑ r ∈ range j, n ^ r • ((h ^ (j - r) * j.choose r) • a) := by
+  rw [add_pow, sum_range_succ]
+  simp [add_nsmul, sum_smul, mul_assoc, mul_nsmul']
+
 /-- Finite-difference identity for a degree-`s` polynomial sequence in an additive abelian
 group. -/
 theorem poly_sub_shift (s h : ℕ) (α : ℕ → G) (n : ℕ) :
     (∑ j ∈ range (s + 1), (n + h) ^ j • α j) - ∑ j ∈ range (s + 1), n ^ j • α j =
       ∑ r ∈ range s, n ^ r • ∑ j ∈ Ico (r + 1) (s + 1), (h ^ (j - r) * j.choose r) • α j := by
   rw [← sum_sub_distrib]
-  simp_rw [(fun j : ℕ ↦ by
-    rw [add_pow, sum_range_succ, Nat.sub_self, pow_zero, mul_one, Nat.choose_self, Nat.cast_one,
-      mul_one, add_nsmul, add_sub_cancel_right, sum_smul]
-    exact sum_congr rfl fun r _ ↦ by rw [Nat.cast_id, mul_assoc, mul_nsmul'] :
-    ∀ j : ℕ, (n + h) ^ j • α j - n ^ j • α j =
-      ∑ r ∈ range j, n ^ r • ((h ^ (j - r) * j.choose r) • α j)), ← Nat.Ico_zero_eq_range]
+  simp_rw [add_pow_nsmul_sub_nsmul, ← Nat.Ico_zero_eq_range]
   rw [(sum_Ico_Ico_comm' 0 (s + 1) fun r j ↦ n ^ r • ((h ^ (j - r) * j.choose r) • α j)).symm]
   simp_rw [Nat.Ico_zero_eq_range]; rw [sum_range_succ, Ico_self, sum_empty, add_zero]
   exact sum_congr rfl fun r _ ↦ smul_sum.symm

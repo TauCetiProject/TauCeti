@@ -19,8 +19,6 @@ probability measures to be stated without rebuilding the probability-measure str
 
 * `TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul` proves that the underlying measure
   has total mass one.
-* `TauCeti.isProbabilityMeasure_inv_natCast_smul_sum` proves that a uniform finite mixture of
-  probability measures is a probability measure.
 * `TauCeti.MeasureTheory.exists_mem_eq_smul_sum`: a set of probability measures closed under
   binary mixtures contains the uniform mixture of any finitely many of its members.
 * `MeasureTheory.ProbabilityMeasure.toMeasure_convexComb` identifies the underlying measure.
@@ -41,13 +39,6 @@ open MeasureTheory
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-- The uniform mixture `(q : ℝ≥0∞)⁻¹ • ∑ r : Fin q, (μr r : Measure α)` of `q > 0` probability
-measures is a probability measure. -/
-theorem isProbabilityMeasure_inv_natCast_smul_sum {α : Type*} [MeasurableSpace α] {q : ℕ}
-    (hq : 0 < q) (μr : Fin q → ProbabilityMeasure α) :
-    IsProbabilityMeasure ((q : ℝ≥0∞)⁻¹ • ∑ r : Fin q, (μr r : Measure α)) := ⟨by
-  simp [ENNReal.inv_mul_cancel (Nat.cast_ne_zero.mpr hq.ne') (ENNReal.natCast_ne_top q)]⟩
 
 namespace MeasureTheory
 

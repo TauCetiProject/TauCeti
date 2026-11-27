@@ -16,8 +16,6 @@ import TauCeti.Analysis.SpecificLimits.Cesaro.Basic
 /-!
 # Van der Corput's inequality and correlation lemma
 
-* `TauCeti.vanDerCorput_sum_shift`, `TauCeti.vanDerCorput_inner_corr`,
-  `TauCeti.vanDerCorput_expand_sq`: shifted-sum and correlation identities.
 * `TauCeti.vanDerCorput_inequality_re`, `TauCeti.vanDerCorput_inequality`: van der Corput's
   finite lag inequality bounding `H² ‖∑_{n < N} b n‖²` via correlations `1 ≤ h < H`.
 * `TauCeti.tendsto_cesaro_zero_of_forall_correlation`: bounded sequence with vanishing lag
@@ -35,7 +33,7 @@ open Filter Finset Topology
 namespace TauCeti
 
 /-- Shifted-sum identity for van der Corput's inequality over any additive commutative monoid. -/
-theorem vanDerCorput_sum_shift {M : Type*} [AddCommMonoid M] (N H : ℕ) (b : ℕ → M) :
+private theorem vanDerCorput_sum_shift {M : Type*} [AddCommMonoid M] (N H : ℕ) (b : ℕ → M) :
     ∑ m ∈ range (N + H - 1),
         ∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0) =
       H • ∑ n ∈ range N, b n := by
@@ -49,7 +47,7 @@ theorem vanDerCorput_sum_shift {M : Type*} [AddCommMonoid M] (N H : ℕ) (b : �
   exact sum_congr rfl fun n hn ↦ by simp [mem_range.mp hn]
 
 /-- Inner correlation identity for shifts `h₁ ≤ h₂ < H` and a zero-preserving pairing `P`. -/
-theorem vanDerCorput_inner_corr {A M : Type*} [Zero A] [AddCommMonoid M]
+private theorem vanDerCorput_inner_corr {A M : Type*} [Zero A] [AddCommMonoid M]
     (P : A → A → M) (hP₀ : ∀ y, P 0 y = 0) (hP₁ : ∀ x, P x 0 = 0)
     {N H : ℕ} (b : ℕ → A) {h₁ h₂ : ℕ} (h12 : h₁ ≤ h₂) (h2H : h₂ < H) :
     ∑ m ∈ range (N + H - 1),
@@ -68,7 +66,7 @@ theorem vanDerCorput_inner_corr {A M : Type*} [Zero A] [AddCommMonoid M]
     (by omega : n < N), (by omega : h₁ ≤ h₂ + n)]
 
 /-- Exact square-expansion identity for the shifted window sums in van der Corput's inequality. -/
-theorem vanDerCorput_expand_sq (N H : ℕ) (b : ℕ → ℂ) :
+private theorem vanDerCorput_expand_sq (N H : ℕ) (b : ℕ → ℂ) :
     ∑ m ∈ range (N + H - 1),
         ‖∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0)‖ ^ 2 =
       (H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 + 2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *

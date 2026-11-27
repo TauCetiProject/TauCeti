@@ -64,7 +64,7 @@ theorem asympEquidistributed_const (p : X) :
   refine tendsto_const_nhds.congr fun n ↦ (ProbabilityMeasure.toMeasure_injective ?_).symm
   rw [TauCeti.Probability.empiricalMeasure_toMeasure, sum_const, card_range, ← smul_assoc,
     nsmul_eq_mul, ENNReal.mul_inv_cancel (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n))
-      (ENNReal.natCast_ne_top _), one_smul]; rfl
+      (ENNReal.natCast_ne_top _), one_smul, diracProba, ProbabilityMeasure.coe_mk]
 
 /-- When `ProbabilityMeasure X` is Hausdorff, an equidistributed sequence has a unique limit. -/
 theorem AsympEquidistributed.unique [T2Space (ProbabilityMeasure X)] {x : ℕ → X}
@@ -185,6 +185,16 @@ theorem TotallyAsympEquidistributed.comp_affine {x : ℕ → X} {μ : Probabilit
     (hx : TotallyAsympEquidistributed x μ) {q : ℕ} (hq : 0 < q) (r : ℕ) :
     TotallyAsympEquidistributed (fun n ↦ x (q * n + r)) μ := fun q' r' hq' ↦ by
   simpa [mul_add, ← mul_assoc, add_assoc] using hx (q * q') (q * r' + r) (Nat.mul_pos hq hq')
+
+/-- Shifting the index of a sequence by a fixed offset `m` preserves total equidistribution. -/
+@[simp] theorem totallyAsympEquidistributed_comp_add_iff {x : ℕ → X} {μ : ProbabilityMeasure X}
+    (m : ℕ) :
+    TotallyAsympEquidistributed (fun n ↦ x (n + m)) μ ↔ TotallyAsympEquidistributed x μ := by
+  refine ⟨fun h q r hq ↦ ?_, fun h q r hq ↦ by simpa only [add_assoc] using h q (r + m) hq⟩
+  rw [← asympEquidistributed_comp_add_iff m]
+  simpa only [mul_add, Nat.add_assoc,
+    Nat.sub_add_cancel (by have := Nat.le_mul_of_pos_left m hq; omega : m ≤ q * m + r)] using
+      h q (q * m + r - m) hq
 
 /-- Pushing a totally equidistributed sequence forward along a continuous measurable map. -/
 theorem TotallyAsympEquidistributed.map {Y : Type*} [TopologicalSpace Y] [MeasurableSpace Y]

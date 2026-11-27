@@ -16,6 +16,7 @@ import TauCeti.Analysis.Fourier.Monomial
 
 Equidistribution and total equidistribution (on `ℕ` and `ℤ`) of polynomial sequences
 `n ↦ ∑ j ∈ range (s + 1), n ^ j • α j` in `UnitAddTorus d`: `TauCeti.weyl_polynomial`,
+`TauCeti.weyl_polynomial_unitAddCircle`,
 `TauCeti.asympEquidistributed_poly_comp_affine_addCircle`,
 `TauCeti.polynomial_equidistribution_tfae`, `TauCeti.polynomial_equidistribution_iff`,
 `TauCeti.polynomial_total_equidistribution_iff`, and
@@ -53,8 +54,9 @@ theorem weyl_polynomial {d : Type*} [Fintype d] (s : ℕ) (hs : 1 ≤ s) (α : �
     exact ih β ((by simp [β, Nat.choose_succ_self_right] : β (m + 1) = (h * (m + 2)) • α (m + 2))
       ▸ hα.nsmul (Nat.mul_ne_zero hh.ne' (Nat.succ_ne_zero _)))
 
-/-- One-dimensional Weyl polynomial equidistribution on `UnitAddCircle`. -/
-private theorem weyl_polynomial_addCircle (s : ℕ) (hs : 1 ≤ s) (c : ℕ → UnitAddCircle)
+/-- **Weyl's polynomial equidistribution theorem on `UnitAddCircle`**: if `s ≥ 1` and `c s` has
+infinite additive order, then `n ↦ ∑ j ∈ range (s + 1), n ^ j • c j` is Haar-equidistributed. -/
+theorem weyl_polynomial_unitAddCircle (s : ℕ) (hs : 1 ≤ s) (c : ℕ → UnitAddCircle)
     (hc : addOrderOf (c s) = 0) :
     AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), n ^ j • c j)
       AddCircle.haarAddCircle.toProbabilityMeasure := by
@@ -88,7 +90,7 @@ theorem asympEquidistributed_poly_comp_affine_addCircle {s : ℕ} (c : ℕ → U
     simp_rw [heq, hγ_eq (n : ℤ), ← Int.natCast_pow, natCast_zsmul] :
     (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * ((D * n + r : ℕ) : ℤ) + R) ^ j • c j) =
       fun n : ℕ ↦ ∑ t ∈ range (j₀ + 1), n ^ t • γ t)]
-  exact weyl_polynomial_addCircle j₀ hj₀_ge γ <| by
+  exact weyl_polynomial_unitAddCircle j₀ hj₀_ge γ <| by
     rw [hγ_lead, ← torusIrrational_unique_iff (d := Unit) (α := fun _ ↦ (Q * (D : ℤ)) ^ j₀ • c j₀)]
     exact ((torusIrrational_unique_iff (d := Unit) (α := fun _ ↦ c j₀)).mpr hj₀_mem.2).zsmul
       (pow_ne_zero j₀ (mul_ne_zero hQ (Int.natCast_ne_zero.mpr hDpos.ne')))
@@ -135,13 +137,9 @@ private theorem forall_pairing_ne_zero_of_asympEquidistributed_poly {d : Type*} 
         rw [map_nsmul, UnitAddTorus.pairing_apply,
           hnone (j + 1) (mem_Icc.mpr ⟨by omega, by have := mem_range.mp hj; omega⟩), smul_zero],
       zero_add]
-  have hlim := ((weyl_criterion.mp h1) k hk).congr fun n ↦ by
-    simp_rw [hconst_term]
-    let : Invertible (((range (n + 1)).card : ℂ)) :=
-      invertibleOfNonzero (by rw [card_range]; exact Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n))
-    simpa [card_range, invOf_eq_inv, smul_eq_mul] using
-      Finset.invOf_card_smul_sum_const (R := ℂ) (range (n + 1)) (UnitAddTorus.mFourier k (α 0))
-  simpa [tendsto_nhds_unique tendsto_const_nhds hlim] using UnitAddTorus.norm_mFourier_apply k (α 0)
+  exact not_asympEquidistributed_of_mFourier_const hk
+    (norm_ne_zero_iff.mp <| by rw [UnitAddTorus.norm_mFourier_apply k (α 0)]; exact one_ne_zero)
+    hconst_term h1
 
 /-- **Full equidistribution criterion for polynomial sequences on `UnitAddTorus d`**: equivalence
 of equidistribution and total equidistribution on `ℕ` and `ℤ`, non-annihilation of `α 1, …, α s`,
