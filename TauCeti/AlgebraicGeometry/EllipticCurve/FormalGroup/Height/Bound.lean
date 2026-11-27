@@ -219,7 +219,7 @@ theorem heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical
   rw [FormalGroup.heightIdeal_def,
     W.span_coeff_nsmulSeries_eq_top_iff (by omega) (Or.inr ⟨hΔ, hpn⟩),
     Ideal.span_insert, Ideal.span_insert, ← sup_assoc, ← Ideal.span_insert,
-    Ideal.sup_span_singleton_eq_top_of_mem_radical hΔ']
+    Ideal.sup_span_singleton_eq_top_iff_of_mem_radical hΔ']
 
 /-- **The Hasse invariant on families singular over primes dividing `p`.** When
 `W.Δ ∈ (Ideal.span {(p : R)}).radical` (in particular, when `IsNilpotent W.Δ` or `W.Δ = 0`), for

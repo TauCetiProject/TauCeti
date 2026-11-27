@@ -23,7 +23,7 @@ ideals, for instance the vanishing of `Tor` of radical quotients of perfect ring
 * `Ideal.directed_radical_fg`: the radicals of the finitely generated subideals of `I` form a
   directed family.
 * `Ideal.iSup_radical_fg`: their supremum is the radical of `I`.
-* `Ideal.sup_eq_top_iff_of_le_radical` and `Ideal.sup_span_singleton_eq_top_of_mem_radical`:
+* `Ideal.sup_eq_top_iff_of_le_radical` and `Ideal.sup_span_singleton_eq_top_iff_of_mem_radical`:
   taking the supremum with an ideal contained in `I.radical` (or adjoining an element of
   `I.radical`) does not change whether `I` is the unit ideal.
 -/
@@ -58,7 +58,7 @@ theorem sup_eq_top_iff_of_le_radical {I J : Ideal R} (hJ : J ≤ I.radical) :
     fun h ↦ by rw [h, top_sup_eq]⟩
 
 /-- Adjoining an element of `I.radical` does not change whether `I` is the unit ideal. -/
-theorem sup_span_singleton_eq_top_of_mem_radical {I : Ideal R} {x : R} (hx : x ∈ I.radical) :
+theorem sup_span_singleton_eq_top_iff_of_mem_radical {I : Ideal R} {x : R} (hx : x ∈ I.radical) :
     I ⊔ span {x} = ⊤ ↔ I = ⊤ :=
   sup_eq_top_iff_of_le_radical ((span_singleton_le_iff_mem _).mpr hx)
 
