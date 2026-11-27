@@ -43,6 +43,8 @@ function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes
   with a function `C^n` on `Ω` is a `C^n` test function on `Ω`.
 * `TestFunction.tsupport_subset_inter_of_apply_eq_smul`: a test function with values `g x • φ x`
   is supported in the supports of `g` and of `φ`.
+* `TestFunction.sdiff_tsupport_nonempty_of_not_isCompact`: on a noncompact domain `Ω`, a test
+  function vanishes on the nonempty set `Ω ∖ tsupport φ`.
 * `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
   function is zero.
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
@@ -130,6 +132,14 @@ theorem tsupport_subset_inter_of_apply_eq_smul {Ω' : Opens E} {m : ℕ∞} {g :
     tsupport ψ ⊆ tsupport g ∩ tsupport φ := by
   rw [show ⇑ψ = g • ⇑φ from funext h]
   exact Set.subset_inter (tsupport_smul_subset_left g φ) (tsupport_smul_subset_right g φ)
+
+/-- **A test function vanishes somewhere in a noncompact domain.** If `Ω` is not compact, then the
+part `Ω ∖ tsupport φ` of `Ω` outside the support of a test function `φ` on `Ω` is nonempty, since
+otherwise `Ω` would be the compact support of `φ`. -/
+theorem sdiff_tsupport_nonempty_of_not_isCompact (φ : 𝓓^{n}(Ω, F))
+    (hΩ : ¬IsCompact (Ω : Set E)) : ((Ω : Set E) \ tsupport φ).Nonempty :=
+  Set.sdiff_nonempty.2 fun h ↦
+    hΩ (Set.Subset.antisymm h φ.tsupport_subset ▸ φ.hasCompactSupport.isCompact)
 
 /-- On an infinite-dimensional space every test function is zero: a nonzero continuous function
 with compact support forces finite dimension (Riesz,

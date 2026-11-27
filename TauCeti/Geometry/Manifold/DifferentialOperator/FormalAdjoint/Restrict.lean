@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Existence
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Restrict.Section
-public import TauCeti.Topology.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Riemannian.Pullback
+import TauCeti.Geometry.Manifold.Metrizable
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.MeasureTheory.Integral.Bochner.Subtype
+import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!
 # Formal adjoints of restricted differential operators between sections
@@ -37,10 +40,26 @@ with `t` near the support of `s`. Differential operators are local, so `P|_U s =
 `M` of `⟪P S, T⟫` and `⟪S, Q T⟫`, which agree by integration by parts on `M`. The case where `t`
 has compact support follows by symmetry.
 
+Formal adjoints are unique when the fibre inner products of `V` vary continuously and `μ` is locally
+finite and positive on open sets of a σ-compact manifold (`LinearMap.IsFormalAdjoint.unique`). The
+restrictions inherit these properties: `V|_U` is a continuous Riemannian bundle
+(`Bundle.Pullback.instIsContinuousRiemannianBundle`), `μ.comap Subtype.val` is locally finite and
+positive on open sets of `U`, and `U` is again σ-compact. So the formal adjoint of `P|_U`, as an
+operator (`LinearMap.formalAdjoint`), is `Q|_U`
+(`LinearMap.IsFormalAdjoint.formalAdjoint_restrictSectionDifferentialOperators`). In particular,
+with respect to the Riemannian volume `dV`, for which every differential operator between smooth
+Riemannian vector bundles of finite rank has a formal adjoint, `(P|_U)* = (P*)|_U` for the measure
+`dV.comap Subtype.val` on `U`
+(`LinearMap.formalAdjoint_riemannianVolume_restrictSectionDifferentialOperators`).
+
 ## Main results
 
 * `LinearMap.IsFormalAdjoint.restrictSectionDifferentialOperators`: the restriction of a formal
   adjoint is a formal adjoint of the restriction.
+* `LinearMap.IsFormalAdjoint.formalAdjoint_restrictSectionDifferentialOperators`: the formal
+  adjoint of the restriction is the restriction of a formal adjoint.
+* `LinearMap.formalAdjoint_riemannianVolume_restrictSectionDifferentialOperators`: with respect to
+  the Riemannian volume, `(P|_U)* = (P*)|_U`.
 
 ## References
 
@@ -162,5 +181,55 @@ theorem IsFormalAdjoint.restrictSectionDifferentialOperators
   rintro s t (hs | ht)
   · exact integral_inner_restrict_eq_of_isCompact h hs
   · simpa only [real_inner_comm] using (integral_inner_restrict_eq_of_isCompact h.symm ht).symm
+
+/-- **The formal adjoint of a restriction.** If the differential operator `Q` is a formal adjoint
+of the differential operator `P` with respect to a locally finite measure `μ` that is positive on
+open sets of a σ-compact manifold, and `V` is a continuous Riemannian bundle, then on an open
+subset `U` the formal adjoint of `P|_U` with respect to the restricted measure
+`μ.comap Subtype.val` is `Q|_U`. -/
+theorem IsFormalAdjoint.formalAdjoint_restrictSectionDifferentialOperators [SigmaCompactSpace M]
+    [BorelSpace M] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+    [IsContinuousRiemannianBundle F V]
+    {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m}
+    {Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F, V⟯ k}
+    (h : (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯).IsFormalAdjoint Q μ) (U : Opens M) :
+    (U.restrictSectionDifferentialOperators m P :
+        Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯ →ₗ[ℝ]
+          Cₛ^∞⟮I; F', (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ W⟯).formalAdjoint
+      (μ.comap Subtype.val) = U.restrictSectionDifferentialOperators k Q := by
+  have := Manifold.sigmaCompactSpace_opens I U
+  have := Measure.IsOpenPosMeasure.comap μ U.isOpen.isOpenEmbedding_subtypeVal
+  exact (h.restrictSectionDifferentialOperators U).formalAdjoint_eq
+
+section RiemannianVolume
+
+variable [I.Boundaryless] [SigmaCompactSpace M] [BorelSpace M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+
+/-- **Formal adjoints agree with restriction.** With respect to the Riemannian volume `dV` of a
+σ-compact boundaryless manifold and smooth fibre metrics, the formal adjoint of the restriction
+`P|_U` of a differential operator to an open subset `U`, taken for the restricted measure
+`dV.comap Subtype.val`, is the restriction of the formal adjoint of `P`. -/
+theorem formalAdjoint_riemannianVolume_restrictSectionDifferentialOperators
+    [IsContMDiffRiemannianBundle I ∞ F V] [IsContMDiffRiemannianBundle I ∞ F' W]
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) (U : Opens M) :
+    (U.restrictSectionDifferentialOperators m P :
+        Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯ →ₗ[ℝ]
+          Cₛ^∞⟮I; F', (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ W⟯).formalAdjoint
+      ((riemannianVolume I M).comap Subtype.val) =
+      U.restrictSectionDifferentialOperators m
+        ⟨_, formalAdjoint_riemannianVolume_mem_differentialOperators P.property⟩ := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
+    (V := V)
+  exact IsFormalAdjoint.formalAdjoint_restrictSectionDifferentialOperators
+    (Q := ⟨_, formalAdjoint_riemannianVolume_mem_differentialOperators P.property⟩)
+    (isFormalAdjoint_formalAdjoint_riemannianVolume_of_mem_differentialOperators P.property) U
+
+end RiemannianVolume
 
 end LinearMap
