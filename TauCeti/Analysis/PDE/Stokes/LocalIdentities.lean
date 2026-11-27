@@ -25,6 +25,10 @@ viscosity `μ` on the coordinate space `ι → ℝ`, this file defines
 * the predicate `TauCeti.Stokes.IsStokesSolutionAt`, consisting of exactly the momentum equation
   and the incompressibility condition `div u = 0` at a point.
 
+The velocity gradient, the stress and the row divergence are linear at points of
+differentiability (`TauCeti.Stokes.velocityGradient_add`, `TauCeti.Stokes.stress_add`,
+`TauCeti.Stokes.stressDivergence_add` and their `_sub` and `_const_smul` forms).
+
 The main results are the pointwise identities behind the work–dissipation identity and the
 Lorentz reciprocal theorem (Kim–Karrila, *Microhydrodynamics*, §2.2–2.3). For the work flux
 `σ(u,p) v` of a stress against a comparison velocity `v`,
@@ -157,6 +161,31 @@ theorem _root_.Filter.EventuallyEq.stress {u v : (ι → ℝ) → ι → ℝ} {p
   filter_upwards [hu.velocityGradient, hp] with y hy hpy
   rw [stress_def, stress_def, hy, hpy]
 
+/-- The stress is additive in the pair `(u, p)` at a point where both velocities are
+differentiable. -/
+theorem stress_add (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} (p q : (ι → ℝ) → ℝ) {x : ι → ℝ}
+    (hu : DifferentiableAt ℝ u x) (hv : DifferentiableAt ℝ v x) :
+    stress μ (u + v) (p + q) x = stress μ u p x + stress μ v q x := by
+  rw [stress_def, stress_def, stress_def, velocityGradient_add hu hv, Pi.add_apply,
+    newtonianStress_add]
+
+/-- The stress commutes with subtraction in the pair `(u, p)` at a point where both velocities
+are differentiable. -/
+theorem stress_sub (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} (p q : (ι → ℝ) → ℝ) {x : ι → ℝ}
+    (hu : DifferentiableAt ℝ u x) (hv : DifferentiableAt ℝ v x) :
+    stress μ (u - v) (p - q) x = stress μ u p x - stress μ v q x := by
+  rw [stress_def, stress_def, stress_def, velocityGradient_sub hu hv, Pi.sub_apply]
+  simp only [newtonianStress_def, transpose_sub]
+  module
+
+/-- The stress commutes with scaling the pair `(u, p)` at a point where the velocity is
+differentiable. -/
+theorem stress_const_smul (μ : ℝ) {u : (ι → ℝ) → ι → ℝ} (p : (ι → ℝ) → ℝ) {x : ι → ℝ}
+    (hu : DifferentiableAt ℝ u x) (c : ℝ) :
+    stress μ (c • u) (c • p) x = c • stress μ u p x := by
+  rw [stress_def, stress_def, velocityGradient_const_smul hu c, Pi.smul_apply, smul_eq_mul,
+    newtonianStress_smul]
+
 /-- The row divergence `(Div σ)ᵢ = ∑ⱼ ∂ⱼ σᵢⱼ` of a matrix field `σ` at `x`. For the stress field
 `σ(u,p)`, the momentum equation of steady Stokes flow with body force `f` is
 `stressDivergence (stress μ u p) x + f x = 0`. -/
@@ -166,6 +195,34 @@ noncomputable def stressDivergence (σ : (ι → ℝ) → Matrix ι ι ℝ) (x :
 @[simp]
 theorem stressDivergence_apply (σ : (ι → ℝ) → Matrix ι ι ℝ) (x : ι → ℝ) (i : ι) :
     stressDivergence σ x i = ∑ j, fderiv ℝ (fun y => σ y i j) x (Pi.single j 1) := (rfl)
+
+/-- The row divergence is additive on matrix fields whose entries are differentiable at `x`. -/
+theorem stressDivergence_add {σ τ : (ι → ℝ) → Matrix ι ι ℝ} {x : ι → ℝ}
+    (hσ : ∀ i j, DifferentiableAt ℝ (fun y => σ y i j) x)
+    (hτ : ∀ i j, DifferentiableAt ℝ (fun y => τ y i j) x) :
+    stressDivergence (σ + τ) x = stressDivergence σ x + stressDivergence τ x := by
+  funext i
+  simp only [stressDivergence_apply, Pi.add_apply, Matrix.add_apply, ← Finset.sum_add_distrib,
+    fderiv_fun_add (hσ i _) (hτ i _), add_apply]
+
+/-- The row divergence commutes with subtraction of matrix fields whose entries are
+differentiable at `x`. -/
+theorem stressDivergence_sub {σ τ : (ι → ℝ) → Matrix ι ι ℝ} {x : ι → ℝ}
+    (hσ : ∀ i j, DifferentiableAt ℝ (fun y => σ y i j) x)
+    (hτ : ∀ i j, DifferentiableAt ℝ (fun y => τ y i j) x) :
+    stressDivergence (σ - τ) x = stressDivergence σ x - stressDivergence τ x := by
+  funext i
+  simp only [stressDivergence_apply, Pi.sub_apply, Matrix.sub_apply, ← Finset.sum_sub_distrib,
+    fderiv_fun_sub (hσ i _) (hτ i _), sub_apply]
+
+/-- The row divergence commutes with scaling a matrix field whose entries are differentiable at
+`x`. -/
+theorem stressDivergence_const_smul {σ : (ι → ℝ) → Matrix ι ι ℝ} {x : ι → ℝ}
+    (hσ : ∀ i j, DifferentiableAt ℝ (fun y => σ y i j) x) (c : ℝ) :
+    stressDivergence (c • σ) x = c • stressDivergence σ x := by
+  funext i
+  simp only [stressDivergence_apply, Pi.smul_apply, Matrix.smul_apply, smul_eq_mul,
+    fderiv_const_mul (hσ i _) c, smul_apply, Finset.mul_sum]
 
 /-- The row divergence at `x` only depends on the matrix field near `x`. -/
 theorem _root_.Filter.EventuallyEq.stressDivergence_eq {σ τ : (ι → ℝ) → Matrix ι ι ℝ}
