@@ -8,10 +8,12 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Pi
+public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.Data.ZMod.IntUnitsPower
+public import TauCeti.GroupTheory.Index.DomRestrict
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.Data.ZMod.Two
-import TauCeti.GroupTheory.Index.DomRestrict
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Maps twisted by sign characters and their splitting on double covers
@@ -50,6 +52,16 @@ For a lattice of rank two these are the four sign characters, and the four-fold 
 This is the kernel-level comparison behind Taubes's labels of square-zero tori: for any
 translation-invariant subspace, such as the kernel of the normal operator, the maps twisted along
 `ker ι` by the restriction of `χ` split into those twisted by `χ` and by `χ + ι`.
+
+The other sign characters `φ` of `ker ι`, those not pulled back from `G`, are those with
+`φ (g₀ + g₀) = 1` for `ι g₀ = 1` (`AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two`). A map
+twisted along `ker ι` by `φ` changes sign under the translation by `j g₀ + j g₀`
+(`TauCeti.apply_add_add_eq_hilbertSign_smul_of_mem_signTwisted_domRestrict_ker`), so the translation
+by `j g₀` (`TauCeti.signTwistedTranslate`) squares to `-1` on the maps of a translation-invariant
+submodule twisted by `φ` (`TauCeti.signTwistedTranslate_mul_self`). Over a field in which `-1` is
+not a square, such as `ℝ`, these maps therefore form a space of even dimension
+(`TauCeti.even_finrank_signTwisted_domRestrict_ker_inf`). For the kernel of a translation-invariant
+operator, the translation is a complex structure commuting with the operator.
 
 ## References
 
@@ -146,15 +158,82 @@ theorem inv_mem_signTwisted {S : Type*} [DivisionRing S] [Module R S] {f : A →
   simp only [Pi.inv_apply, hf g z]
   rcases Int.units_eq_one_or (hilbertSign (χ g)) with h | h <;> simp [h, Units.smul_def]
 
-/-- A map twisted along `ker ι` is invariant under the translation by twice any `g₀`: twice `g₀`
-lies in `ker ι`, and every sign character vanishes on it. -/
+/-- **Translation by twice an element on a double cover.** A map twisted along `ker ι` by `φ`
+changes under the translation by `j g₀ + j g₀` by the sign of `φ` at `g₀ + g₀`, which lies in
+`ker ι`. -/
+theorem apply_add_add_eq_hilbertSign_smul_of_mem_signTwisted_domRestrict_ker {ι : G →+ ZMod 2}
+    {φ : ι.ker →+ ZMod 2} (hv : v ∈ signTwisted R (j.domRestrict ι.ker) φ) (g₀ : G) (z : A) :
+    v (z + j g₀ + j g₀) =
+      hilbertSign (φ ⟨g₀ + g₀, ι.add_self_mem_ker_zmod_two g₀⟩) • v z := by
+  rw [add_assoc, ← map_add]
+  exact hv ⟨g₀ + g₀, ι.add_self_mem_ker_zmod_two g₀⟩ z
+
+/-- A map twisted along `ker ι` by the restriction of `χ` is invariant under the translation by
+twice any `g₀`: twice `g₀` lies in `ker ι`, and every sign character vanishes on it. -/
 private theorem apply_add_add_eq_of_mem_signTwisted_domRestrict_ker {ι : G →+ ZMod 2}
     (hv : v ∈ signTwisted R (j.domRestrict ι.ker) (χ.domRestrict ι.ker)) (g₀ : G) (z : A) :
     v (z + j g₀ + j g₀) = v z := by
-  have h2 : ∀ x : ZMod 2, x + x = 0 := by decide
-  have := hv ⟨g₀ + g₀, by rw [AddMonoidHom.mem_ker, map_add, h2]⟩ z
-  simp only [AddMonoidHom.domRestrict_apply, map_add, h2, hilbertSign_zero, one_smul] at this
-  rw [add_assoc, this]
+  rw [apply_add_add_eq_hilbertSign_smul_of_mem_signTwisted_domRestrict_ker hv,
+    AddMonoidHom.domRestrict_apply, AddMonoidHom.mem_ker.1 (χ.add_self_mem_ker_zmod_two g₀),
+    hilbertSign_zero, one_smul]
+
+/-! ### Sign characters of a double cover not pulled back from the base
+
+A sign character `φ` of `ker ι` with `φ (g₀ + g₀) = 1`, for `ι g₀ = 1`, is not the restriction of a
+sign character of `G` (`AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two`). On the maps twisted
+by such a `φ` the translation by `j g₀` squares to `-1`, so it is a complex structure, commuting
+with every translation-invariant equation. -/
+
+/-- **Translation of twisted maps.** For a subgroup `H` of `G`, a sign character `φ` of `H` and a
+submodule `S` of `A → E` invariant under the translations by `j`, the translation
+`v ↦ v (· + j g)` by `g : G` as an endomorphism of the maps of `S` twisted along `H` by `φ`. -/
+def signTwistedTranslate {H : AddSubgroup G} (φ : H →+ ZMod 2) {S : Submodule R (A → E)}
+    (hS : ∀ g, ∀ v ∈ S, (fun z ↦ v (z + j g)) ∈ S) (g : G) :
+    Module.End R ↥(signTwisted R (j.domRestrict H) φ ⊓ S) :=
+  (LinearMap.funLeft R E (· + j g)).restrict fun v hv ↦
+    ⟨translate_mem_signTwisted hv.1 fun h ↦ by
+      simp only [AddMonoidHom.domRestrict_apply, ← map_add, add_comm], hS g v hv.2⟩
+
+@[simp]
+theorem coe_signTwistedTranslate_apply {H : AddSubgroup G} (φ : H →+ ZMod 2)
+    {S : Submodule R (A → E)} (hS : ∀ g, ∀ v ∈ S, (fun z ↦ v (z + j g)) ∈ S) (g : G)
+    (v : ↥(signTwisted R (j.domRestrict H) φ ⊓ S)) (z : A) :
+    (signTwistedTranslate φ hS g v : A → E) z = (v : A → E) (z + j g) :=
+  (rfl)
+
+/-- **A complex structure on a double cover.** If `φ (g₀ + g₀) = 1` for a sign character `φ` of
+`ker ι`, then the translation by `j g₀` squares to `-1` on the maps of a translation-invariant
+submodule `S` twisted along `ker ι` by `φ`. Such a `φ` is not pulled back from `G`, and then
+`ι g₀ = 1`. -/
+theorem signTwistedTranslate_mul_self {ι : G →+ ZMod 2} {φ : ι.ker →+ ZMod 2}
+    {S : Submodule R (A → E)} (hS : ∀ g, ∀ v ∈ S, (fun z ↦ v (z + j g)) ∈ S) {g₀ : G}
+    (hφ : φ ⟨g₀ + g₀, ι.add_self_mem_ker_zmod_two g₀⟩ = 1) :
+    signTwistedTranslate φ hS g₀ * signTwistedTranslate φ hS g₀ = -1 := by
+  ext v z
+  simp only [mul_apply_eq_comp, coe_signTwistedTranslate_apply, LinearMap.neg_apply,
+    one_apply_eq_self, Submodule.coe_neg, Pi.neg_apply]
+  rw [apply_add_add_eq_hilbertSign_smul_of_mem_signTwisted_domRestrict_ker v.property.1, hφ,
+    hilbertSign_one, Units.neg_smul, one_smul]
+
+/-- **Even dimension on a double cover.** Let `ι` be a sign character of `G` and `φ` a sign
+character of `ker ι` that is not the restriction of a sign character of `G`. Over a field in which
+`-1` is not a square, such as `ℝ`, the maps of a translation-invariant submodule `S`, such as the
+solutions of a translation-invariant linear equation, twisted along `ker ι` by `φ` form a space of
+even dimension: a translation is a complex structure on it
+(`TauCeti.signTwistedTranslate_mul_self`). (An infinite-dimensional space has `finrank` zero.) -/
+theorem even_finrank_signTwisted_domRestrict_ker_inf {K : Type*} [Field K] [Module K E]
+    (hK : ¬IsSquare (-1 : K)) {ι : G →+ ZMod 2} {φ : ι.ker →+ ZMod 2} {S : Submodule K (A → E)}
+    (hS : ∀ g, ∀ v ∈ S, (fun z ↦ v (z + j g)) ∈ S)
+    (hφ : ∀ χ : G →+ ZMod 2, χ.domRestrict ι.ker ≠ φ) :
+    Even (Module.finrank K ↥(signTwisted K (j.domRestrict ι.ker) φ ⊓ S)) := by
+  -- For `ι = 0` the cover is trivial and `φ` is the restriction of itself.
+  rcases eq_or_ne ι 0 with rfl | hι
+  · exact (hφ (φ.comp ((AddMonoidHom.id G).codRestrict _ fun g ↦ by simp)) (by ext; rfl)).elim
+  obtain ⟨g₀, hg₀⟩ := ι.exists_eq_one_of_ne_zero hι
+  have h₁ : φ ⟨g₀ + g₀, ι.add_self_mem_ker_zmod_two g₀⟩ = 1 :=
+    ZMod.ne_zero_iff_eq_one.1 fun h ↦
+      ((AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two hg₀).2 h).elim fun χ hχ ↦ hφ χ hχ
+  exact Module.End.even_finrank_of_mul_self_eq_neg_one hK (signTwistedTranslate_mul_self hS h₁)
 
 variable [Invertible (2 : R)]
 

@@ -47,6 +47,10 @@ basis of a block-diagonal family, and of a family that becomes block diagonal af
 and Cramer's rule for an endomorphism of a free module of finite rank. On a free module of rank
 one, every endomorphism is multiplication by its determinant.
 
+Over a field in which `-1` is not a square, such as `ℝ`, a vector space carrying an endomorphism
+`J` with `J * J = -1`, a complex structure, has even dimension, by comparing `det J ^ 2` with
+`det (-1)`.
+
 Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
 linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
 
@@ -82,6 +86,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `Module.End.even_finrank_of_mul_self_eq_neg_one`: a vector space over a field in which `-1` is
+  not a square, with an endomorphism squaring to `-1`, has even dimension.
 * `Module.Basis.det_comp_eq_mul`: `b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v` for a linear map
   `f` between two modules with bases `b` and `b'`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
@@ -472,6 +478,27 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
     exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
 
 end LinearEquiv
+
+namespace Module.End
+
+/-- **A complex structure forces even dimension.** If `-1` is not a square in the field `K`, such
+as an ordered field, a `K`-vector space with an endomorphism `J` such that `J * J = -1` has even
+dimension, since `det J ^ 2 = det (-1) = (-1) ^ finrank K V`. (An infinite-dimensional space has
+`finrank` zero.) -/
+theorem even_finrank_of_mul_self_eq_neg_one {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] (hK : ¬IsSquare (-1 : K)) {J : Module.End K V} (hJ : J * J = -1) :
+    Even (finrank K V) := by
+  by_cases hV : FiniteDimensional K V
+  · by_contra hodd
+    refine hK ⟨LinearMap.det J, ?_⟩
+    have h := congrArg LinearMap.det hJ
+    rw [map_mul, ← neg_one_smul K (1 : Module.End K V), LinearMap.det_smul, map_one, mul_one,
+      (Nat.not_even_iff_odd.1 hodd).neg_one_pow] at h
+    exact h.symm
+  · rw [finrank_of_not_finite hV]
+    exact ⟨0, rfl⟩
+
+end Module.End
 
 namespace Matrix
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.SignTwisted
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
+import TauCeti.Algebra.Order.Ring.Square
 
 /-!
 # Twisted kernels of the normal operator of a torus on its double covers
@@ -37,6 +38,14 @@ the double cover `ℂ ⧸ ker ι` of `C`, and every sign character `χ`:
   vanishing on `ker ι`, which is `ℂ ⧸ 2Λ` for a lattice, has no kernel exactly when none of the four
   twisted operators of `C` has
   (`TauCeti.signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff`).
+
+These describe the sign characters of the double cover that are restrictions of sign characters of
+`C`. Every other sign character `φ` of `ker ι` has `φ (ω₀ + ω₀) = 1` for `ι ω₀ = 1`
+(`AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two`), and the translation by `ω₀` squares to
+`-1` on the solutions twisted by `φ` (`TauCeti.signTwistedTranslate_mul_self`). So these solutions
+carry a complex structure and form a real space of even dimension
+(`TauCeti.even_finrank_signTwisted_domRestrict_ker_inf_cauchyRiemannKernel`). The kernels of these
+twisted operators of the double cover therefore jump only by even dimensions.
 
 So whether the twisted operators of a double cover of `C` have kernels is decided by the twisted
 operators of `C`. The kernels here are those of `D` on real-differentiable maps of the plane; the
@@ -132,5 +141,18 @@ theorem signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_cauchyRiemannKernel
             signTwisted ℝ Λ.subtype (κ + ι) ⊓ cauchyRiemannKernel ν μ = ⊥ :=
   signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_eq_bot_iff fun ω _ ↦
     translate_mem_cauchyRiemannKernel (hν ω ω.property) (hμ ω ω.property)
+
+/-- **Even dimension for sign characters of a double cover not pulled back from the torus.** For
+`Λ`-periodic coefficients, a sign character `ι` of `Λ` and a sign character `φ` of `ker ι` that is
+not the restriction of a sign character of `Λ`, the solutions of `D v = 0` twisted along `ker ι` by
+`φ` form a real space of even dimension: the translation by any `ω₀ ∈ Λ` with `ι ω₀ = 1` is a
+complex structure on it (`TauCeti.signTwistedTranslate_mul_self`). -/
+theorem even_finrank_signTwisted_domRestrict_ker_inf_cauchyRiemannKernel {φ : ι.ker →+ ZMod 2}
+    (hν : ∀ ω ∈ Λ, ∀ z, ν (z + ω) = ν z) (hμ : ∀ ω ∈ Λ, ∀ z, μ (z + ω) = μ z)
+    (hφ : ∀ χ : Λ →+ ZMod 2, χ.domRestrict ι.ker ≠ φ) :
+    Even (Module.finrank ℝ
+      ↥(signTwisted ℝ (Λ.subtype.domRestrict ι.ker) φ ⊓ cauchyRiemannKernel ν μ)) :=
+  even_finrank_signTwisted_domRestrict_ker_inf not_isSquare_neg_one
+    (fun ω _ ↦ translate_mem_cauchyRiemannKernel (hν ω ω.property) (hμ ω ω.property)) hφ
 
 end TauCeti
