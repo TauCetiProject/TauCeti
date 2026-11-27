@@ -17,11 +17,6 @@ isomorphisms on all mapping simplicial sets identifies `SimplicialNerve C` with 
 subcategory of `SimplicialNerve D` spanned by the vertices in the image of `F`
 (`CategoryTheory.SimplicialNerve.fullSubcategoryIso`).
 
-To avoid constructing naturality of the inverse on simplices by hand, we factor
-`simplicialNerveMap F` through the full enhanced subcategory inclusion and show each component is
-bijective by lifting enriched functors `C[Δ^n] ⥤ D` along `F` via `EnrichedFunctor.lift`, then
-deduce that the factorization is an isomorphism via `NatIso.isIso_of_isIso_app`.
-
 ## Main results
 
 * `CategoryTheory.SimplicialNerve.range_simplicialNerveMap_le`: every vertex in the range of
@@ -62,6 +57,10 @@ lemma range_simplicialNerveMap_le (F : EnrichedFunctor SSet.{v} C D)
   rw [vertexEquiv_simplicialNerveMap_app]
   exact hP _
 
+-- To avoid constructing naturality of the inverse on simplices by hand, we factor
+-- `simplicialNerveMap F` through the full enhanced subcategory inclusion and show each component is
+-- bijective by lifting enriched functors `C[Δ^n] ⥤ D` along `F` via `EnrichedFunctor.lift`, then
+-- deduce that the factorization is an isomorphism via `NatIso.isIso_of_isIso_app`.
 private noncomputable def simplicialNerveMapToFullSubcategory (F : EnrichedFunctor SSet.{v} C D)
     (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj) :
     SimplicialNerve C ⟶
