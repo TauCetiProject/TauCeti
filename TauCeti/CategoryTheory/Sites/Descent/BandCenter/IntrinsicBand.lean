@@ -68,8 +68,8 @@ noncomputable def banding : F.AbelianBanding J (sheaf F J) where
   mulEquiv U x :=
     (MulEquiv.multiplicativeAdditive (IntrinsicBandSections F U)).trans (evaluationMulEquiv J hF x)
   -- The coefficients of `sheaf F J` are `Additive ZF(U)` and its restriction maps are `restrict`
-  -- (`sheaf_obj_obj`, `sheaf_obj_map_apply`) only up to unfolding `sheaf`, so rewriting these
-  -- goals with `sheaf_obj_map_apply` or `MulEquiv.trans_apply` fails: the motive does not
+  -- (`presheaf_obj`, `presheaf_map_apply`) only up to unfolding `sheaf`, so rewriting these
+  -- goals with `presheaf_map_apply` or `MulEquiv.trans_apply` fails: the motive does not
   -- typecheck. Both fields therefore restate their goal with `change`, in terms of sections of
   -- `ZF`, before rewriting with `evaluationMulEquiv_apply`.
   mapAut_mulEquiv {U V} f x a := by
@@ -106,7 +106,7 @@ theorem centerFromBanding_banding {U : C} (s : IntrinsicBandSections F U) :
     (banding J hF).centerFromBanding U (Multiplicative.ofAdd (Additive.ofMul s)) = s := by
   refine (AbelianBanding.eq_centerFromBanding _ _ s fun V f x ↦ ?_).symm
   -- As in `banding`, the restriction in the coefficient sheaf is `restrict` only up to unfolding
-  -- `sheaf`, so `change` states it as a section of `ZF(V)` rather than `rw [sheaf_obj_map_apply]`.
+  -- `sheaf`, so `change` states it as a section of `ZF(V)` rather than `rw [presheaf_map_apply]`.
   change _ = (banding J hF).mulEquiv V x (Multiplicative.ofAdd (Additive.ofMul (restrict f s)))
   rw [banding_mulEquiv_apply, evaluation_restrict, Category.id_comp]
 

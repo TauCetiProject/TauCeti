@@ -48,8 +48,7 @@ in Definition 8.4.1 (026F).
 * `IntrinsicBandSections.restrict_glue`, `IntrinsicBandSections.glue_unique`,
   `IntrinsicBandSections.glue_restrict`.
 * `IntrinsicBandSections.isSheaf_of_prestack`: `U ↦ Additive ZF(U)` is a sheaf for `J`.
-* `IntrinsicBandSections.sheaf_obj`, `IntrinsicBandSections.sheaf_obj_obj`,
-  `IntrinsicBandSections.sheaf_obj_map_apply`: the sections and restrictions of `sheaf`.
+* `IntrinsicBandSections.sheaf_obj`: the underlying presheaf of `sheaf` is `presheaf`.
 
 ## References
 
@@ -282,15 +281,6 @@ def sheaf : Sheaf J AddCommGrpCat.{max u v u' v'} :=
 
 /-- The underlying presheaf of `sheaf F J` is `presheaf F`. -/
 theorem sheaf_obj : (sheaf F J).obj = presheaf F :=
-  rfl
-
-theorem sheaf_obj_obj (U : C) :
-    (sheaf F J).obj.obj (op U) = AddCommGrpCat.of (Additive (IntrinsicBandSections F U)) :=
-  rfl
-
-/-- The restriction maps of `sheaf F J` are `restrict` through the `Additive` wrapper. -/
-theorem sheaf_obj_map_apply {U V : C} (f : V ⟶ U) (s : Additive (IntrinsicBandSections F U)) :
-    (sheaf F J).obj.map f.op s = Additive.ofMul (restrict f (Additive.toMul s)) :=
   rfl
 
 end Sheaf

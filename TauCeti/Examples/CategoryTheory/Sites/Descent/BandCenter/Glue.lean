@@ -58,11 +58,11 @@ example (h : ∀ (V : C) (x : F.obj (.mk (op V))), Subsingleton (x ⟶ x)) (V : 
 /-- The coefficient group over `U` is `Additive ZF(U)`. -/
 example (U : C) :
     (sheaf F J).obj.obj (op U) = AddCommGrpCat.of (Additive (IntrinsicBandSections F U)) :=
-  sheaf_obj_obj F J U
+  presheaf_obj F (op U)
 
 /-- The restriction maps of the coefficient sheaf are restrictions of sections. -/
 example {U V : C} (f : V ⟶ U) (s : IntrinsicBandSections F U) :
     (sheaf F J).obj.map f.op (Additive.ofMul s) = Additive.ofMul (restrict f s) :=
-  sheaf_obj_map_apply F J f _
+  presheaf_map_apply f.op _
 
 end TauCeti.Examples.BandCenterGlue
