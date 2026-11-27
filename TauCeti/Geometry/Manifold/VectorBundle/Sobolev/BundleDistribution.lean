@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.OfSection
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.LocalRep
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -71,33 +71,6 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   {A : FiniteBundleAtlas E M F V} {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {k : ℕ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- The reading of a section in the preferred charts at the centre of chart `i` of `A` is its
-reading in chart `i`. -/
-private theorem localRep_center (s : ∀ x, V x) (i : Fin A.n) :
-    FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) = A.coord i s := by
-  funext y
-  rw [FirstJetBundle.localRep_apply, extChartAt_model_symm_eq_chartAt_symm, A.coord_def]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- The image of the domain of chart `i` of `A` in the preferred chart at its centre is the chart
-image. -/
-private theorem image_extChartAt_center (i : Fin A.n) :
-    extChartAt 𝓘(ℝ, E) (A.center i) '' A.dom i = A.image i := by
-  ext y
-  rw [image_congr fun x _ ↦ extChartAt_model_apply_eq_chartAt_apply x]
-  exact A.mem_image.symm
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] in
-/-- The chart domains of `A` lie in the first-jet chart domains at their centres. -/
-private theorem dom_subset_baseSet (i : Fin A.n) :
-    A.dom i ⊆ FirstJetBundle.baseSet (H := E) F V (A.center i) := fun _ hx ↦
-  (FirstJetBundle.mem_baseSet_iff F V).2 ⟨A.dom_subset_baseSet i hx, A.dom_subset_chart_source i hx⟩
-
 section Readings
 
 variable [IsManifold 𝓘(ℝ, E) 1 M]
@@ -109,8 +82,8 @@ theorem locallyIntegrableSection {w : SobolevSection A μ p k} {s : ∀ x, V x}
     (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) :
     LocallyIntegrableSection 𝓘(ℝ, E) F s := by
   refine (locallyIntegrableSection_iff_of_iUnion_eq_univ 𝓘(ℝ, E) F A.center A.dom A.isOpen_dom
-    dom_subset_baseSet A.iUnion_dom μ).2 fun i ↦ ?_
-  rw [localRep_center, image_extChartAt_center]
+    A.dom_subset_firstJetBaseSet A.iUnion_dom μ).2 fun i ↦ ?_
+  rw [A.localRep_center, A.image_extChartAt_center]
   exact (Lp.locallyIntegrableOn _ Fact.out).congr (hs i)
 
 /-- Two sections whose readings in the charts of `A` are almost everywhere the chart data of the
@@ -123,9 +96,10 @@ private theorem localRep_ae_eq {w : SobolevSection A μ p k} {s t : ∀ x, V x}
       ((extChartAt 𝓘(ℝ, E) α).target ∩
         (extChartAt 𝓘(ℝ, E) α).symm ⁻¹' (trivializationAt F V α).baseSet)]
       FirstJetBundle.localRep 𝓘(ℝ, E) F t α :=
-  localRep_ae_eq_of_iUnion_eq_univ 𝓘(ℝ, E) F A.center A.dom A.isOpen_dom dom_subset_baseSet
+  localRep_ae_eq_of_iUnion_eq_univ 𝓘(ℝ, E) F A.center A.dom A.isOpen_dom
+    A.dom_subset_firstJetBaseSet
     A.iUnion_dom μ (fun i ↦ by
-      rw [localRep_center, localRep_center, image_extChartAt_center]
+      rw [A.localRep_center, A.localRep_center, A.image_extChartAt_center]
       exact (hs i).symm.trans (ht i)) α
 
 end Readings
