@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Tiling
+import TauCeti.Combinatorics.Tiling.Tile
 
 /-!
 # Regression examples: lozenge tilings
@@ -239,30 +240,24 @@ theorem placedTiles_tilingA_partition :
 /-- Translations act freely on faces: a translation fixing a face is trivial. -/
 theorem isCancelSMul_triFace : IsCancelSMul (Multiplicative (ℤ × ℤ)) TriFace :=
   isCancelSMul_iff_eq_one_of_smul_eq.2 fun g f h => by
-    obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
+    obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, ofAdd_toAdd g⟩
     rw [ofAdd_smul, TriFace.vadd_eq_self_iff] at h
     simp [h]
 
-/-- Translations act freely on placed tiles: a translation fixing a placed tile is trivial. -/
+/-- Translations act freely on placed tiles: a translation fixing a placed tile is trivial, since
+every lozenge has trivial symmetries. -/
 theorem isCancelSMul_placedTile :
     IsCancelSMul (Multiplicative (ℤ × ℤ)) (DiscreteTiling.PlacedTile lozengeProtoset) :=
-  isCancelSMul_iff_eq_one_of_smul_eq.2 fun g pt h => by
-    obtain ⟨e, rfl⟩ := TriEdge.toPlacedTile_bijective.2 pt
-    obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
-    rw [← TriEdge.toPlacedTile_vadd, TriEdge.toPlacedTile_bijective.1.eq_iff,
-      TriEdge.vadd_eq_self_iff] at h
-    simp [h]
+  DiscreteTiling.PlacedTile.isCancelSMul_iff.2 fun k => by rw [lozengeProtoset_apply]
 
 /-- The stabilizer of each prototile of `lozengeProtoset` is trivial, so its trivial symmetry group
 is the whole stabilizer. -/
 theorem stabilizer_lozengeProtoset (k : Fin 3) :
     MulAction.stabilizer (Multiplicative (ℤ × ℤ)) (lozengeProtoset k : Set TriFace) = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).2 fun g hg => ?_
-  obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, rfl⟩
-  rw [MulAction.mem_stabilizer_iff, lozengeProtoset_apply, ofAdd_smul, ← Finset.coe_vadd_finset,
-    Finset.coe_inj, ← TriEdge.faces_vadd, TriEdge.faces_injective.eq_iff,
-    TriEdge.vadd_eq_self_iff] at hg
-  simp [hg]
+  obtain ⟨w, rfl⟩ : ∃ w, Multiplicative.ofAdd w = g := ⟨g.toAdd, ofAdd_toAdd g⟩
+  simpa [MulAction.mem_stabilizer_iff, ← Finset.coe_vadd_finset, ← TriEdge.faces_vadd,
+    TriEdge.faces_injective.eq_iff, TriEdge.vadd_eq_self_iff] using hg
 
 /-! ### A wedge -/
 
