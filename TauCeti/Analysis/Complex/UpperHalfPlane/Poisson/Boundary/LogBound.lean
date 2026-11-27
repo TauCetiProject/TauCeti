@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.JacobianOneDim
 import TauCeti.Analysis.Complex.Radial.Jensen
 import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Boundary.Uniqueness
 import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Covariance
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # The logarithmic bound for bounded holomorphic functions on the half-plane
@@ -80,8 +81,8 @@ theorem circleAverage_comp_inverseCayleyCoord (h : ℝ → E) :
   rw [circleAverage_def, intervalIntegral.integral_of_le two_pi_pos.le,
     integral_Ioc_eq_integral_Ioo, himg, ← integral_smul]
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  simp only [circleMap_zero, ofReal_one, one_mul, inverseCayleyCoord_exp_cayleyAngle_mul_I,
-    smul_smul, upperHalfPlanePoissonKernel_I]
+  simp only [circleMap_zero_one, inverseCayleyCoord_exp_cayleyAngle_mul_I, smul_smul,
+    upperHalfPlanePoissonKernel_I]
   rw [abs_of_pos (by positivity)]
   congr 1
   field_simp
@@ -99,8 +100,8 @@ theorem integrable_upperHalfPlanePoissonMeasure_of_circleIntegrable {h : ℝ →
     cayleyAngle_injective.injOn, integrableOn_univ] at hIoo
   rw [integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul]
   refine (hIoo.smul (1 / 2 : ℝ)).congr (.of_forall fun x ↦ ?_)
-  simp only [Pi.smul_apply, circleMap_zero, ofReal_one, one_mul,
-    inverseCayleyCoord_exp_cayleyAngle_mul_I, smul_smul]
+  simp only [Pi.smul_apply, circleMap_zero_one, inverseCayleyCoord_exp_cayleyAngle_mul_I,
+    smul_smul]
   rw [abs_of_pos (by positivity)]
   congr 1
   ring
@@ -132,22 +133,20 @@ theorem ae_tendsto_circleMap_upperHalfPlaneBoundaryFun
   -- off `B`, `e^{iθ} ≠ 1` is the Cayley point of `x = inverseCayleyCoord e^{iθ}` ...
   have hw1 : circleMap 0 1 θ ≠ 1 := fun h ↦ by
     obtain ⟨n, hn⟩ := (Circle.exp_eq_exp (x := θ) (y := 0)).1 <| Circle.ext <| by
-      rw [Circle.coe_exp, Circle.coe_exp, ofReal_zero, zero_mul, exp_zero, ← h, circleMap_zero,
-        ofReal_one, one_mul]
+      simpa [circleMap_zero_one] using h
     exact hθ1 ⟨n, by rw [hn, zero_add]⟩
   have hζ := cayley_inverseCayleyCoord (by simp) hw1
   set x := inverseCayleyCoord (circleMap 0 1 θ)
   -- ... and `x` has nontangential limits, as `θ` is a Cayley angle of `x` modulo `2π`
   have hxN : x ∉ N := fun hxN ↦ by
     obtain ⟨n, hn⟩ := (Circle.exp_eq_exp (x := θ) (y := cayleyAngle x)).1 <| by
-      rw [exp_cayleyAngle]
       ext1
-      rw [Circle.coe_exp, coe_boundaryCayley, hζ, circleMap_zero, ofReal_one, one_mul]
+      simp [coe_boundaryCayley, hζ, circleMap_zero_one]
     exact hθN (mem_iUnion.2 ⟨n, x, hxN, hn.symm⟩)
   -- the radius ending at `e^{iθ}` is carried into every cone at `x`
   refine hθ ?_
   have hr : ∀ r : ℝ, circleMap 0 r θ = r * (((x : ℂ) - I) / ((x : ℂ) + I)) := fun r ↦ by
-    rw [hζ, circleMap_zero, circleMap_zero, ofReal_one, one_mul]
+    rw [hζ, circleMap_zero, circleMap_zero_one]
   exact ((not_not.1 hxN 1).comp (tendsto_I_mul_one_add_div_one_sub_nontangentialFilter x
     one_pos)).congr fun r ↦ by rw [Function.comp_apply, hr]
 
@@ -221,8 +220,8 @@ theorem log_norm_le_integral_upperHalfPlanePoissonKernel_mul_log_norm
       mul_inv_cancel_left₀ hb.ne']
   simp_rw [hK]
   rw [integral_const_mul, Measure.integral_comp_mul_left (fun x ↦ K (a + x)) b,
-    integral_add_left_eq_self K a, smul_eq_mul, abs_inv, abs_of_pos hb, ← mul_assoc,
-    mul_inv_cancel₀ hb.ne', one_mul]
+    integral_add_left_eq_self K a]
+  simp [abs_of_pos hb, hb.ne']
 
 /-- **The logarithmic bound, as a Poisson integral.** If `F` is holomorphic and bounded on `ℂ₊`
 and `F z ≠ 0` at `z ∈ ℂ₊`, then `log |F(z)| ≤ Re P[log |F*|](z)`. -/
