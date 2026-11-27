@@ -10,7 +10,7 @@ public import TauCeti.Examples.RepresentationTheory.CharacterTable.Gallagher.Spe
 /-!
 # The degree ratio over `Q₈` in `SL(2, 3)`
 
-The `SL(2, 3)` Check of the degree ratio over a normal subgroup
+An example of the degree ratio over a normal subgroup
 (`FDRep.finrank_dvd_finrank_and_finrank_div_finrank_dvd_index_of_liesOver`): for `G = SL(2, 3)`
 and `N = Q₈` (`TauCeti.sl2ZModThreeQuaternionSubgroup`), of index `3`,
 
@@ -40,7 +40,7 @@ noncomputable abbrev χ₃ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ :=
 
 /-- The linear character `θ'` of `Q₈`: row `2` of the table of `QuaternionGroup 2`, read through
 `TauCeti.sl2ZModThreeQuaternionEquiv`. -/
-@[expose] noncomputable def θ' (n : N) : ℂ :=
+noncomputable def θ' (n : N) : ℂ :=
   (quaternionGroupTwoCharacterTable ⟨2, by decide⟩
     ((quaternionClassData 2).index (sl2ZModThreeQuaternionEquiv.symm n)) : ℂ)
 
@@ -117,13 +117,13 @@ private theorem degree_eq {i : SpecialLinearTwoThreeClassIndex} {n : ℕ}
   rw [specialLinearTwoThreeCharacterDegrees_apply, h]
 
 /-- **The degree ratio of `χ₃` over `θ'` is `3`**, which divides `|SL(2, 3) : Q₈| = 3`. -/
-theorem χ₃_one_eq : χ₃ 1 = 3 * θ' 1 ∧ 3 ∣ N.index := by
+theorem χ₃_one_eq_and_dvd_index : χ₃ 1 = 3 * θ' 1 ∧ 3 ∣ N.index := by
   refine ⟨?_, by rw [index_sl2ZModThreeQuaternionSubgroup]⟩
   rw [θ'_one, mul_one, χ₃, character_one_eq (n := 3) (degree_eq (by decide))]
   norm_num
 
 /-- **The characters over `χ₂` have degree ratio `1`**, which divides `|SL(2, 3) : Q₈| = 3`. -/
-theorem apply_one_eq_of_mem_irreducibleCharactersOver_θ
+theorem apply_one_eq_and_dvd_index_of_mem_irreducibleCharactersOver_θ
     {ψ : SpecialLinearGroup (Fin 2) (ZMod 3) → ℂ} (hψ : ψ ∈ irreducibleCharactersOver ℂ N θ) :
     ψ 1 = 1 * θ 1 ∧ 1 ∣ N.index := by
   refine ⟨?_, one_dvd _⟩
@@ -136,10 +136,10 @@ theorem apply_one_eq_of_mem_irreducibleCharactersOver_θ
   rw [one_mul, hθ]
   rcases hψ with rfl | rfl | rfl
   · exact h2
-  · change χhat 1 * ω₁ 1 = 2
+  · dsimp only
     rw [h2, ω₁, character_one_eq (n := 1) (degree_eq (by decide))]
     norm_num
-  · change χhat 1 * ω₂ 1 = 2
+  · dsimp only
     rw [h2, ω₂, character_one_eq (n := 1) (degree_eq (by decide))]
     norm_num
 
