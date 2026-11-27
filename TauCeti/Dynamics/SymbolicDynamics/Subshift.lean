@@ -173,6 +173,12 @@ theorem exterior_def (Λ : Set I) :
 theorem exterior_le (Λ : Set I) : X.exterior Λ ≤ Subtype.instMeasurableSpace :=
   MeasurableSpace.comap_mono cylinderEvents_le_pi
 
+/-- The intersection of the exterior σ-algebras of finite sets is coarser than the trace of the
+product σ-algebra. -/
+theorem iInf_exterior_le :
+    (⨅ Λ : Finset I, X.exterior Λ) ≤ (inferInstance : MeasurableSpace X) :=
+  (iInf_le _ ∅).trans (X.exterior_le _)
+
 /-- The exterior σ-algebras decrease as the set grows. -/
 theorem exterior_anti {Λ Δ : Set I} (h : Λ ⊆ Δ) : X.exterior Δ ≤ X.exterior Λ :=
   MeasurableSpace.comap_mono (cylinderEvents_mono (compl_subset_compl.2 h))
