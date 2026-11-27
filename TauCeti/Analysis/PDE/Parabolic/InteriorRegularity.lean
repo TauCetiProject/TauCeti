@@ -71,7 +71,8 @@ norm at most the sum of theirs.
 The Lipschitz hypothesis on `a` cannot be dropped: a time-independent weak solution of the
 elliptic equation is a weak solution of the parabolic one with `∂ₜu = 0`, and for the coefficient
 with a jump of `TauCeti.Analysis.PDE.Regularity.JumpCoefficient` such solutions need not lie in
-`H²` near the jump.
+`H²` near the jump
+(`TauCeti.PDE.not_forall_exists_memLp_lowerOrder_eq_restrictL_jumpCoefficient`).
 
 ## References
 

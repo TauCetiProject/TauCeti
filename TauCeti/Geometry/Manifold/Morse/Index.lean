@@ -189,6 +189,12 @@ theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hfun]
   exact morseIndex_neg_add_morseIndex_eq_finrank h
 
+/-- Points whose Morse indices differ by one are distinct. -/
+theorem ne_of_manifoldMorseIndex_eq_add_one {y : M}
+    (h : manifoldMorseIndex I f x = manifoldMorseIndex I f y + 1) : x ≠ y := by
+  rintro rfl
+  omega
+
 namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
