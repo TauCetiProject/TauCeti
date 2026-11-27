@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.Algebra.Module.ULift
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
@@ -33,21 +34,32 @@ public noncomputable section
 
 open CategoryTheory
 
+namespace TauCeti
+
+universe u v
+
+/-- Left multiplication gives a ring homomorphism to the endomorphisms of the right
+regular module, lifted to the caller's module universe. -/
+def rightRegularEnd {A : Type u} [Ring A] :
+    A →+* End (ModuleCat.of Aᵐᵒᵖ (ULift.{v} A)) :=
+  (((RingEquiv.moduleEndSelfOp A).trans
+    (ULift.moduleEquiv (R := Aᵐᵒᵖ) (M := A)).symm.conjRingEquiv).trans
+      (ModuleCat.endRingEquiv (ModuleCat.of Aᵐᵒᵖ (ULift.{v} A))).symm).toRingHom
+
+/-- The endomorphism of the lifted right regular module associated to `a` is lifted
+left multiplication by `a`. -/
+@[simp]
+theorem rightRegularEnd_asHom {A : Type u} [Ring A] (a : A) :
+    (rightRegularEnd.{u, v} a).asHom = ModuleCat.ofHom
+      (ULift.moduleEquiv.symm.toLinearMap ∘ₗ LinearMap.mulLeft Aᵐᵒᵖ a ∘ₗ
+        ULift.moduleEquiv.toLinearMap) :=
+  (rfl)
+
+end TauCeti
+
 namespace ModuleCat
 
 universe u
-
-/-- Left multiplication gives a ring homomorphism to the endomorphisms of the right
-regular module. -/
-def rightRegularEnd {A : Type u} [Ring A] : A →+* End (of Aᵐᵒᵖ A) :=
-  ((RingEquiv.moduleEndSelfOp A).trans (endRingEquiv (of Aᵐᵒᵖ A)).symm).toRingHom
-
-/-- The endomorphism of the right regular module associated to `a` is left multiplication
-by `a`. -/
-@[simp]
-theorem rightRegularEnd_asHom {A : Type u} [Ring A] (a : A) :
-    (rightRegularEnd a).asHom = ofHom (LinearMap.mulLeft Aᵐᵒᵖ a) :=
-  (rfl)
 
 variable {R : Type u} [Ring R]
 
@@ -72,7 +84,7 @@ theorem nsmul_id_eq_zero_iff {M : ModuleCat R} {e : ℕ} : e • 𝟙 M = 0 ↔ 
 
 end ModuleCat
 
-universe v w
+universe w
 
 open scoped ModuleCat.Algebra
 

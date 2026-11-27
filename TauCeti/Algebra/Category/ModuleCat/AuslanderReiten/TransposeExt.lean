@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
-public import TauCeti.Algebra.Category.ModuleCat.Algebra
 public import TauCeti.Algebra.Homology.Ext.Presentation
-public import TauCeti.Algebra.Module.AuslanderReiten.DualPresentation
-import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Defect
-import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
+public import TauCeti.Algebra.Homology.DerivedCategory.Ext.WithAction
+public import TauCeti.Algebra.Category.ModuleCat.End
+public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.HomCokernel
 
 /-!
 # The right transpose of a projective resolution of length one
@@ -35,35 +34,12 @@ open scoped ModuleCat.Algebra
 
 namespace TauCeti.FiniteProjectivePresentation
 
-universe u w
+universe u v w
 
-variable {A : Type u} [Ring A] {N : ModuleCat.{u} Aᵐᵒᵖ}
+variable {A : Type u} [Ring A] {N : ModuleCat.{max u v} Aᵐᵒᵖ}
 variable (Q : FiniteProjectivePresentation N)
 
 variable (k : Type w) [CommRing k] [Algebra k A]
-
-/-- The right transpose as the cokernel of precomposition on bundled morphisms into
-the right regular module. -/
-noncomputable def rightTransposeHomCokernelEquiv :
-    Q.rightTranspose ≃ₗ[k] HomCokernel k Q.shortComplex.f (ModuleCat.of Aᵐᵒᵖ A) :=
-  ((Q.p.lcomp A A).cokerRestrictScalarsEquiv k).symm.trans
-    (ModuleCat.covariantDefectEquivHomQuotient k (B := ModuleCat.of Aᵐᵒᵖ A)
-      (LinearEquiv.refl Aᵐᵒᵖ A) Q.shortComplex.f)
-
-/-- The Hom cokernel comparison bundles the functional representing a transpose class. -/
-@[simp]
-theorem rightTransposeHomCokernelEquiv_mk (g : Q.P₁ →ₗ[Aᵐᵒᵖ] A) :
-    let _ := Linear.homModule (R := k) Q.P₀ (ModuleCat.of Aᵐᵒᵖ A)
-    let _ := Linear.homModule (R := k) Q.P₁ (ModuleCat.of Aᵐᵒᵖ A)
-    Q.rightTransposeHomCokernelEquiv k (Submodule.Quotient.mk g) =
-      Submodule.Quotient.mk (ModuleCat.ofHom g) := by
-  let e := ModuleCat.covariantDefectEquivHomQuotient k (B := ModuleCat.of Aᵐᵒᵖ A)
-    (LinearEquiv.refl Aᵐᵒᵖ A) Q.shortComplex.f
-  have h := LinearMap.cokerRestrictScalarsEquiv_symm_mk k (Q.p.lcomp A A) g
-  -- The restricted-scalar cokernel of precomposition is the covariant defect.
-  have h' := ModuleCat.covariantDefectEquivHomQuotient_mk k (B := ModuleCat.of Aᵐᵒᵖ A)
-    (LinearEquiv.refl Aᵐᵒᵖ A) Q.shortComplex.f g
-  exact (congrArg (fun x ↦ e x) h).trans (h'.trans (by simp))
 
 private instance : Projective Q.shortComplex.X₂ :=
   inferInstanceAs (Projective Q.P₀)
@@ -71,15 +47,16 @@ private instance : Projective Q.shortComplex.X₂ :=
 /-- For a length-one projective resolution of a right module, the right transpose computes
 `Ext¹(N, A)`. The left action is described by `rightTransposeEquivExt_smul`. -/
 noncomputable def rightTransposeEquivExt (hp : Function.Injective Q.p) :
-    Q.rightTranspose ≃ₗ[k] Ext N (ModuleCat.of Aᵐᵒᵖ A) 1 :=
+    Q.rightTranspose ≃ₗ[k] Ext N (ModuleCat.of Aᵐᵒᵖ (ULift.{v} A)) 1 :=
   (Q.rightTransposeHomCokernelEquiv k).trans
-    (homCokernelEquivExt k (Q.shortExact_shortComplex hp) (ModuleCat.of Aᵐᵒᵖ A))
+    (homCokernelEquivExt k (Q.shortExact_shortComplex hp) (ModuleCat.of Aᵐᵒᵖ (ULift.{v} A)))
 
 /-- A functional represents the pushout of the short exact presentation along that functional. -/
-@[simp]
+@[simp↓]
 theorem rightTransposeEquivExt_mk (hp : Function.Injective Q.p) (g : Q.P₁ →ₗ[Aᵐᵒᵖ] A) :
     Q.rightTransposeEquivExt k hp (Submodule.Quotient.mk g) =
-      (Q.shortExact_shortComplex hp).extClass.comp (Ext.mk₀ (ModuleCat.ofHom g)) (add_zero 1) := by
+      (Q.shortExact_shortComplex hp).extClass.comp
+        (Ext.mk₀ (ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g))) (add_zero 1) := by
   rw [rightTransposeEquivExt, LinearEquiv.trans_apply, rightTransposeHomCokernelEquiv_mk,
     homCokernelEquivExt_mk]
 
@@ -88,26 +65,63 @@ right regular coefficient module. -/
 theorem rightTransposeEquivExt_smul (hp : Function.Injective Q.p) (a : A)
     (x : Q.rightTranspose) :
     Q.rightTransposeEquivExt k hp (a • x) = (Q.rightTransposeEquivExt k hp x).comp
-      (Ext.mk₀ (ModuleCat.ofHom (LinearMap.mulLeft Aᵐᵒᵖ a))) (add_zero 1) := by
-  rw [rightTransposeEquivExt, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    ← homCokernelEquivExt_naturality]
-  congr 1
+      (Ext.mk₀ (rightRegularEnd.{u, v} a).asHom) (add_zero 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  rw [← Submodule.Quotient.mk_smul, rightTransposeHomCokernelEquiv_mk,
-    rightTransposeHomCokernelEquiv_mk, HomCokernel.map_mk,
-    LinearMap.smul_eq_mulLeft_comp, ModuleCat.ofHom_comp]
+  rw [← Submodule.Quotient.mk_smul, rightTransposeEquivExt_mk, rightTransposeEquivExt_mk]
+  simp only [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
+  congr 2
+  ext x
+  simp [rightRegularEnd_asHom]
+
+/-- The projective right-transpose comparison is linear over `A` when Ext carries the
+left action induced by the right regular coefficient module. -/
+noncomputable def rightTransposeLinearEquivExt (hp : Function.Injective Q.p) :
+    Q.rightTranspose ≃ₗ[A] Abelian.ExtWithAction (rightRegularEnd.{u, v} (A := A)) N 1 where
+  toFun x := (Abelian.ExtWithAction.toExt rightRegularEnd.{u, v}).symm
+    (Q.rightTransposeEquivExt ℤ hp x)
+  invFun x := (Q.rightTransposeEquivExt ℤ hp).symm
+    (Abelian.ExtWithAction.toExt rightRegularEnd.{u, v} x)
+  left_inv x := by simp
+  right_inv x := by simp
+  map_add' x y := by simp
+  map_smul' a x := by
+    apply (Abelian.ExtWithAction.toExt rightRegularEnd.{u, v}).injective
+    simpa only [AddEquiv.apply_symm_apply, Abelian.ExtWithAction.toExt_smul,
+      RingHom.id_apply] using
+      Q.rightTransposeEquivExt_smul ℤ hp a x
+
+/-- Forgetting the left action recovers the integral linear Ext comparison. -/
+@[simp↓]
+theorem rightTransposeLinearEquivExt_toExt (hp : Function.Injective Q.p)
+    (x : Q.rightTranspose) :
+    Abelian.ExtWithAction.toExt rightRegularEnd.{u, v}
+      (Q.rightTransposeLinearEquivExt hp x) = Q.rightTransposeEquivExt ℤ hp x := by
+  simp [rightTransposeLinearEquivExt]
+
+/-- The `A`-linear comparison sends a functional to the corresponding pushout class. -/
+theorem rightTransposeLinearEquivExt_mk (hp : Function.Injective Q.p)
+    (g : Q.P₁ →ₗ[Aᵐᵒᵖ] A) :
+    Abelian.ExtWithAction.toExt rightRegularEnd.{u, v}
+      (Q.rightTransposeLinearEquivExt hp (Submodule.Quotient.mk g)) =
+      (Q.shortExact_shortComplex hp).extClass.comp
+        (Ext.mk₀ (ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g))) (add_zero 1) := by
+  rw [rightTransposeLinearEquivExt_toExt, rightTransposeEquivExt_mk]
 
 /-- Naturality of the projective Ext comparison under a morphism of presentations. -/
-theorem rightTransposeEquivExt_comp {N' : ModuleCat.{u} Aᵐᵒᵖ}
+theorem rightTransposeEquivExt_naturality {N' : ModuleCat.{max u v} Aᵐᵒᵖ}
     (P : FiniteProjectivePresentation N') (hQ : Function.Injective Q.p)
     (hP : Function.Injective P.p) (φ : Q.shortComplex ⟶ P.shortComplex) (x : P.rightTranspose) :
     Q.rightTransposeEquivExt k hQ (Q.rightTransposeMap P φ x) =
       (Ext.mk₀ φ.τ₃).comp (P.rightTransposeEquivExt k hP x) (zero_add 1) := by
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   have h := (Q.shortExact_shortComplex hQ).extClass_naturality (P.shortExact_shortComplex hP) φ
-  rw [rightTransposeMap_mk, rightTransposeEquivExt_mk, rightTransposeEquivExt_mk,
-    ModuleCat.ofHom_comp, ModuleCat.ofHom_hom]
-  simpa only [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀] using
-    congrArg (fun α ↦ α.comp (Ext.mk₀ (ModuleCat.ofHom g)) (add_zero 1)) h
+  have hg : ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g ∘ₗ φ.τ₁.hom) =
+      φ.τ₁ ≫ ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g) := by
+    ext x
+    rfl
+  rw [rightTransposeMap_mk, rightTransposeEquivExt_mk, rightTransposeEquivExt_mk]
+  simpa only [Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀, hg] using
+    congrArg (fun α ↦ α.comp
+      (Ext.mk₀ (ModuleCat.ofHom (ULift.moduleEquiv.symm.toLinearMap ∘ₗ g))) (add_zero 1)) h
 
 end TauCeti.FiniteProjectivePresentation

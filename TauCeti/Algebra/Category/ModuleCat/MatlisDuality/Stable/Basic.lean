@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Basic
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Injective
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Opposite
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Functor
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
@@ -33,8 +33,6 @@ injectives.
 
 ## Main results
 
-* `TauCeti.isInjective_matlisDualOpObj_of_projective`: the dual of a projective right module is
-  injective.
 * `TauCeti.projectiveStableIdeal_op_le_comap_matlisDualOp`: the Matlis dual of a map through a
   projective right module factors through an injective left module.
 * `TauCeti.stableMatlisDualOp_map_projectiveStableFunctor_map`: on the class of a module map, the
@@ -56,15 +54,6 @@ attribute [local instance] ModuleCat.moduleOfAlgebra ModuleCat.isScalarTower_mod
 variable (R : Type*) [CommRing R] {A : Type u} [Ring A] [Algebra R A] (E : Type v)
   [AddCommGroup E] [Module R E] [Module.Injective R E] [Small.{v} R]
 
-/-- **The Matlis dual of a projective right module is injective.** -/
-theorem isInjective_matlisDualOpObj_of_projective (P : ModuleCat.{max u v} Aᵐᵒᵖ)
-    [Module.Projective Aᵐᵒᵖ P] :
-    (ExactStructure.abelian (ModuleCat.{max u v} A)).isInjective
-      ((ModuleCat.matlisDualOp R E).obj (op P)) := by
-  rw [ExactStructure.abelian_isInjective_iff]
-  have := Module.injective_object_of_injective_module A (MatlisDual R E P)
-  exact Injective.of_iso (ModuleCat.matlisDualOpObjEquiv R E P).toModuleIso.symm this
-
 /-- **The Matlis dual of a map through a projective factors through an injective.** The dual
 `D = Hom_R(-, E)` of a projective right `A`-module is an injective left `A`-module, so `D` carries
 the ideal of maps through projective right modules into the ideal of maps through injective left
@@ -83,7 +72,8 @@ theorem projectiveStableIdeal_op_le_comap_matlisDualOp :
   have : Module.Projective Aᵐᵒᵖ P := P.projective_of_module_projective
   refine ⟨(ModuleCat.matlisDualOp R E).obj (op P), ?_, (ModuleCat.matlisDualOp R E).map p.op,
     (ModuleCat.matlisDualOp R E).map i.op, ?_⟩
-  · exact isInjective_matlisDualOpObj_of_projective R E P
+  · exact (ExactStructure.abelian_isInjective_iff _).mpr
+      (isInjective_matlisDualOpObj_of_projective R E P)
   · rw [← Functor.map_comp, ← op_comp, ← h]
     rfl
 

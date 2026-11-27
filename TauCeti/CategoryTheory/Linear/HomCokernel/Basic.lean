@@ -129,6 +129,12 @@ abbrev CovariantHomCokernel (g : Y ⟶ Z) (X : C) :=
 
 namespace CovariantHomCokernel
 
+/-- A map represents zero in the covariant Hom cokernel exactly when it factors through `g`. -/
+theorem mk_eq_zero_iff (g : Y ⟶ Z) (h : X ⟶ Z) :
+    (Submodule.Quotient.mk h : CovariantHomCokernel R g X) = 0 ↔
+      ∃ k : X ⟶ Y, k ≫ g = h := by
+  simp
+
 /-- Precomposition on the cokernel of postcomposition with `g`. -/
 def map (g : Y ⟶ Z) (f : W ⟶ X) :
     CovariantHomCokernel R g X →ₗ[R] CovariantHomCokernel R g W :=

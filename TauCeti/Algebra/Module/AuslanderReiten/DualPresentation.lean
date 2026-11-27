@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation.Basic
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.LinearAlgebra.Dual.Opposite
-public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
+public import TauCeti.Algebra.Module.AuslanderReiten.Morphism
 public import Mathlib.Algebra.Exact.Basic
 
 /-!
@@ -38,6 +38,8 @@ universe u v
 variable {A : Type u} [Ring A]
 
 namespace FiniteProjectivePresentation
+
+open CategoryTheory
 
 variable {N : ModuleCat.{v} Aᵐᵒᵖ}
 
@@ -79,21 +81,48 @@ variable {N' : ModuleCat.{v} Aᵐᵒᵖ}
 noncomputable def rightTransposeMap (Q : FiniteProjectivePresentation N)
     (P : FiniteProjectivePresentation N') (φ : Q.shortComplex ⟶ P.shortComplex) :
     P.rightTranspose →ₗ[A] Q.rightTranspose :=
-  (P.p.lcomp A A).range.mapQ (Q.p.lcomp A A).range (φ.τ₁.hom.lcomp A A) (by
-    rintro _ ⟨g, rfl⟩
-    refine ⟨g ∘ₗ φ.τ₂.hom, ?_⟩
-    have h := congrArg ModuleCat.Hom.hom φ.comm₁₂
-    ext x
-    exact congrArg g (LinearMap.congr_fun h.symm x))
+  Q.rightTransposeEquiv.symm.toLinearMap ∘ₛₗ
+    AuslanderReitenTranspose.map φ.τ₂.hom φ.τ₁.hom
+      (congrArg ModuleCat.Hom.hom φ.comm₁₂.symm) ∘ₛₗ P.rightTransposeEquiv.toLinearMap
 
 /-- On a functional, the induced transpose map is precomposition on the relation modules. -/
-@[simp]
+@[simp↓]
 theorem rightTransposeMap_mk (Q : FiniteProjectivePresentation N)
     (P : FiniteProjectivePresentation N') (φ : Q.shortComplex ⟶ P.shortComplex)
     (g : P.P₁ →ₗ[Aᵐᵒᵖ] A) :
     Q.rightTransposeMap P φ (Submodule.Quotient.mk g) =
       Submodule.Quotient.mk (g ∘ₗ φ.τ₁.hom) := by
-  simp only [rightTransposeMap, Submodule.mapQ_apply, LinearMap.lcomp_apply']
+  simp only [rightTransposeMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [rightTransposeEquiv_mk, AuslanderReitenTranspose.map_mk (p := Q.p) (q := P.p),
+    rightTransposeEquiv_symm_mk]
+  congr 1
+  ext x
+  simp
+
+/-- The identity presentation morphism induces the identity on the right transpose. -/
+@[simp]
+theorem rightTransposeMap_id (Q : FiniteProjectivePresentation N) :
+    Q.rightTransposeMap Q (𝟙 Q.shortComplex) = LinearMap.id := by
+  apply LinearMap.ext
+  intro x
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  rw [rightTransposeMap_mk]
+  simp
+
+/-- Right-transpose maps reverse composition of presentation morphisms. -/
+@[simp]
+theorem rightTransposeMap_comp {N'' : ModuleCat.{v} Aᵐᵒᵖ}
+    (Q : FiniteProjectivePresentation N) (P : FiniteProjectivePresentation N')
+    (P' : FiniteProjectivePresentation N'') (φ : Q.shortComplex ⟶ P.shortComplex)
+    (ψ : P.shortComplex ⟶ P'.shortComplex) :
+    Q.rightTransposeMap P' (φ ≫ ψ) =
+      (Q.rightTransposeMap P φ).comp (P.rightTransposeMap P' ψ) := by
+  apply LinearMap.ext
+  intro x
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  simp only [LinearMap.comp_apply]
+  rw [rightTransposeMap_mk, rightTransposeMap_mk, rightTransposeMap_mk]
+  simp [LinearMap.comp_assoc]
 
 /-- The finite projective presentation of a right transpose obtained by dualizing its
 right presentation. The abbreviation keeps the dual modules and their maps definitionally
