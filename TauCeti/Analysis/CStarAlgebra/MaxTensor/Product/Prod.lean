@@ -78,13 +78,12 @@ def prodLeft : MaxTensorProduct (A × A') B ≃⋆ₐ[ℂ] MaxTensorProduct A B 
 @[simp]
 theorem prodLeft_apply (u : MaxTensorProduct (A × A') B) :
     prodLeft A A' B u = prodLeftHom A A' B u :=
-  induction_on u (isClosed_eq (map_continuous _) (map_continuous _)) fun x ↦ by
-    simp [prodLeft, map_of]
+  congrFun (prodLeft_eq_of_of (F := prodLeftHom A A' B) _ (map_continuous _) fun x ↦ by
+    simp [map_of]) u
 
 /-- `TauCeti.MaxTensorProduct.prodLeftHom` is bijective. -/
-theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) := by
-  rw [show ⇑(prodLeftHom A A' B) = prodLeft A A' B from funext fun u ↦ (prodLeft_apply u).symm]
-  exact (prodLeft A A' B).bijective
+theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) :=
+  (funext prodLeft_apply : ⇑(prodLeft A A' B) = prodLeftHom A A' B) ▸ (prodLeft A A' B).bijective
 
 /-- `TauCeti.MaxTensorProduct.prodLeftHom` is isometric. -/
 theorem norm_prodLeftHom (u : MaxTensorProduct (A × A') B) : ‖prodLeftHom A A' B u‖ = ‖u‖ :=
@@ -111,12 +110,9 @@ theorem prodLeft_symm_of (y : A ⊗[ℂ] B) (z : A' ⊗[ℂ] B) :
 theorem prodLeft_symm_apply (y : MaxTensorProduct A B) (z : MaxTensorProduct A' B) :
     (prodLeft A A' B).symm (y, z) =
       map (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y +
-        map (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B) z := by
-  refine induction_on y (isClosed_eq ((map_continuous _).comp (.prodMk_left z))
-    ((map_continuous _).add continuous_const)) fun y ↦ ?_
-  refine induction_on z (isClosed_eq ((map_continuous _).comp (.prodMk_right _))
-    (continuous_const.add (map_continuous _))) fun z ↦ ?_
-  rw [prodLeft_symm_of, map_add, map_of, map_of]
+        map (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B) z :=
+  prodLeft_symm_eq (A := A) (A' := A') (B := B) _ (map_continuous _) (map_continuous _)
+    (map_of _ _) (map_of _ _) y z
 
 /-- The inverse isomorphism sends `(a ⊗ b, a' ⊗ b')` to `(a, 0) ⊗ b + (0, a') ⊗ b'`. -/
 theorem prodLeft_symm_of_tmul (a : A) (b : B) (a' : A') (b' : B) :

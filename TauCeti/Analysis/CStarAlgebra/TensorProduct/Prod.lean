@@ -33,6 +33,7 @@ public section
 noncomputable section
 
 open TensorProduct Algebra.TensorProduct
+open scoped CStarAlgebra
 
 namespace TauCeti
 
@@ -101,6 +102,35 @@ theorem prodLeft_symm_of (y : A ⊗[ℂ] B) (z : A' ⊗[ℂ] B) :
       of N (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y +
         mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B) z) :=
   (prodLeft h).symm_apply_eq.2 (by simp)
+
+/-- A continuous map that is `(fst ⊗ id, snd ⊗ id)` on `(A × A') ⊗[ℂ] B` is the isomorphism. -/
+theorem prodLeft_eq_of_of
+    {F : CStarTensorProduct N → CStarTensorProduct N₁ × CStarTensorProduct N₂} (hF : Continuous F)
+    (hFof : ∀ x, F (of N x) =
+      (of N₁ (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.fst ℂ A A') (NonUnitalStarAlgHom.id ℂ B)
+          x),
+        of N₂ (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.snd ℂ A A') (NonUnitalStarAlgHom.id ℂ B)
+          x))) :
+    ⇑(prodLeft h) = F :=
+  funext fun u ↦ induction_on u (isClosed_eq (map_continuous _) hF) fun x ↦ by
+    rw [prodLeft_of, hFof]
+
+/-- The inverse isomorphism sends `(y, z)` to `G₁ y + G₂ z` for continuous maps `G₁` and `G₂`
+that are `inl ⊗ id` and `inr ⊗ id` on the algebraic tensor products. -/
+theorem prodLeft_symm_eq {G₁ : CStarTensorProduct N₁ → CStarTensorProduct N}
+    {G₂ : CStarTensorProduct N₂ → CStarTensorProduct N} (hG₁ : Continuous G₁)
+    (hG₂ : Continuous G₂)
+    (hG₁of : ∀ y, G₁ (of N₁ y) =
+      of N (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y))
+    (hG₂of : ∀ z, G₂ (of N₂ z) =
+      of N (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B) z))
+    (y : CStarTensorProduct N₁) (z : CStarTensorProduct N₂) :
+    (prodLeft h).symm (y, z) = G₁ y + G₂ z := by
+  refine induction_on y (isClosed_eq ((map_continuous _).comp (.prodMk_left z))
+    (hG₁.add continuous_const)) fun y ↦ ?_
+  refine induction_on z (isClosed_eq ((map_continuous _).comp (.prodMk_right _))
+    (continuous_const.add hG₂)) fun z ↦ ?_
+  rw [prodLeft_symm_of, map_add, hG₁of, hG₂of]
 
 end CStarTensorProduct
 
