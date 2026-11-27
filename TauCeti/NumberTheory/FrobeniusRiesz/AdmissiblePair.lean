@@ -161,18 +161,33 @@ private theorem mem_primesLE_erase_two_iff {B : ℝ} {p : ℕ} :
   · simp [Nat.mem_primesLE, hp, Nat.le_floor_iff' hp.ne_zero]
   · simp [Nat.mem_primesLE, hp]
 
+/-- The lcm factor of `admissiblePairModulus B q` is positive. -/
+private theorem lcm_prod_primesLE_erase_two_pos (B : ℝ) {q : ℕ} (hq : q ≠ 0) :
+    0 < q.lcm (∏ p ∈ (Nat.primesLE ⌊B⌋₊).erase 2, p) :=
+  Nat.lcm_pos (Nat.pos_of_ne_zero hq)
+    (Finset.prod_pos fun _ hp ↦ (mem_primesLE_erase_two_iff.mp hp).1.pos)
+
+/-- Every odd prime at most `B` divides the lcm factor of `admissiblePairModulus B q`. -/
+private theorem prime_dvd_lcm_prod_primesLE_erase_two {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Prime)
+    (hp2 : p ≠ 2) (hpB : (p : ℝ) ≤ B) : p ∣ q.lcm (∏ p ∈ (Nat.primesLE ⌊B⌋₊).erase 2, p) :=
+  (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
+    (Nat.dvd_lcm_right _ _)
+
 /-- The progression modulus is positive. -/
-theorem admissiblePairModulus_pos (B : ℝ) {q : ℕ} (hq : q ≠ 0) : 0 < admissiblePairModulus B q :=
-  Nat.mul_pos (by decide) (Nat.lcm_pos (Nat.pos_of_ne_zero hq)
-    (Finset.prod_pos fun _ hp ↦ (mem_primesLE_erase_two_iff.mp hp).1.pos))
+theorem admissiblePairModulus_pos (B : ℝ) {q : ℕ} (hq : q ≠ 0) :
+    0 < admissiblePairModulus B q := by
+  rw [admissiblePairModulus_def]
+  exact Nat.mul_pos (by decide) (lcm_prod_primesLE_erase_two_pos B hq)
 
 /-- The progression modulus is divisible by `16`. -/
-theorem sixteen_dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : 16 ∣ admissiblePairModulus B q :=
-  dvd_mul_right _ _
+theorem sixteen_dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : 16 ∣ admissiblePairModulus B q := by
+  rw [admissiblePairModulus_def]
+  exact dvd_mul_right _ _
 
 /-- The first prime `q` divides the progression modulus. -/
-theorem dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : q ∣ admissiblePairModulus B q :=
-  (Nat.dvd_lcm_left _ _).trans (dvd_mul_left _ _)
+theorem dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : q ∣ admissiblePairModulus B q := by
+  rw [admissiblePairModulus_def]
+  exact (Nat.dvd_lcm_left _ _).trans (dvd_mul_left _ _)
 
 /-- Every prime at most `B` divides the progression modulus. -/
 theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Prime)
@@ -180,8 +195,8 @@ theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Pr
   by_cases hp2 : p = 2
   · subst p
     exact (by decide : 2 ∣ 16).trans (sixteen_dvd_admissiblePairModulus B q)
-  · exact (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
-      ((Nat.dvd_lcm_right _ _).trans (dvd_mul_left _ _))
+  · rw [admissiblePairModulus_def]
+    exact (prime_dvd_lcm_prod_primesLE_erase_two q hp hp2 hpB).trans (dvd_mul_left _ _)
 
 /-- For a prime `q`, the prime divisors of the progression modulus are exactly `2`, `q` and the
 primes at most `B`. -/
@@ -189,6 +204,7 @@ theorem prime_dvd_admissiblePairModulus_iff {B : ℝ} {q p : ℕ} (hq : q.Prime)
     p ∣ admissiblePairModulus B q ↔ p = 2 ∨ p = q ∨ (p : ℝ) ≤ B := by
   constructor
   · intro h
+    rw [admissiblePairModulus_def] at h
     rcases hp.dvd_mul.mp h with h16 | hl
     · exact .inl ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp
         (hp.dvd_of_dvd_pow (n := 4) h16))
@@ -211,11 +227,12 @@ theorem exists_coprime_modEq_iff_isAdmissibleAuxiliaryPair (B : ℝ) {q : ℕ}
     ∃ r < admissiblePairModulus B q, r.Coprime (admissiblePairModulus B q) ∧
       ∀ d : ℕ, d.Prime →
         (d ≡ r [MOD admissiblePairModulus B q] ↔ IsAdmissibleAuxiliaryPair B 3 q d) := by
-  let S := (Nat.primesLE ⌊B⌋₊).erase 2
+  rw [admissiblePairModulus_def]
+  set S := (Nat.primesLE ⌊B⌋₊).erase 2
   have hS (p : ℕ) : p ∈ S ↔ p.Prime ∧ p ≠ 2 ∧ (p : ℝ) ≤ B := mem_primesLE_erase_two_iff
-  let P := ∏ p ∈ S, p
-  let M := q.lcm P
-  have hM : 0 < M := Nat.lcm_pos hq.pos (Finset.prod_pos fun p hp ↦ ((hS p).mp hp).1.pos)
+  set P := ∏ p ∈ S, p
+  set M := q.lcm P
+  have hM : 0 < M := lcm_prod_primesLE_erase_two_pos B hq.ne_zero
   have htwo : Nat.Coprime 2 M := by
     apply Nat.Coprime.of_dvd_right (Nat.lcm_dvd_mul q P)
     refine (Nat.prime_two.coprime_iff_not_dvd.mpr (by omega)).mul_right (Nat.Coprime.prod_right ?_)
@@ -237,9 +254,8 @@ theorem exists_coprime_modEq_iff_isAdmissibleAuxiliaryPair (B : ℝ) {q : ℕ}
   · intro h
     have h16 := (h.of_dvd (dvd_mul_right 16 M)).trans r.property.1
     have ham := (hm _).mp ((h.of_dvd (dvd_mul_left M 16)).trans r.property.2)
-    refine ⟨h16, (Nat.dvd_lcm_left q P).trans ham, fun p hp hp2 hpB ↦ ?_⟩
-    exact (Finset.dvd_prod_of_mem id ((hS p).mpr ⟨hp, hp2, hpB⟩)).trans
-      ((Nat.dvd_lcm_right q P).trans ham)
+    exact ⟨h16, (Nat.dvd_lcm_left q P).trans ham, fun p hp hp2 hpB ↦
+      (prime_dvd_lcm_prod_primesLE_erase_two q hp hp2 hpB).trans ham⟩
   · rintro ⟨hd16, hqd, hp⟩
     have hP : P ∣ d + 1 := Finset.prod_primes_dvd (d + 1)
       (fun p hp ↦ ((hS p).mp hp).1.prime) fun p hp' ↦ by
