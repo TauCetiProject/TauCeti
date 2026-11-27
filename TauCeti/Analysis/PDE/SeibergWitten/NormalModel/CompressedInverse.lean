@@ -52,7 +52,8 @@ projection onto `K`, the slow variables of the model.
   `Π u = b_P(ξ⁻¹) (Π f₂)` (`starProjection_fst_sobolevFrequencyNormalModelEquiv_symm`), of norm
   `|ξ|⁻¹ ‖Π f₂‖` (`norm_starProjection_fst_sobolevFrequencyNormalModelEquiv_symm`): the inverse of
   the slow block is multiplication by `ξ⁻¹`. The fast components satisfy
-  `c (‖u - Π u‖² + ‖v‖²) ≤ ‖f‖²` (`mul_add_le_norm_sq_sobolevFrequencyNormalModelEquiv_symm`).
+  `c (‖u - Π u‖² + ‖v‖²) ≤ ‖f‖²`
+  (`mul_norm_sub_starProjection_sq_add_norm_sq_sobolevFrequencyNormalModelEquiv_symm_le`).
   In `H¹`, there is a constant `C`, independent of `ξ`, such that `u = k + w` with `k` in the
   kernel of `L_x` and with values `b_P(ξ⁻¹) (Π f₂)`, `‖w‖_{H¹} ≤ C ‖f‖` and `‖v‖_{H¹} ≤ C ‖f‖`
   (`exists_forall_exists_mem_ker_norm_sobolevFrequencyNormalModelEquiv_symm_sub_le`); here
@@ -68,7 +69,7 @@ and the moving projections contribute commutator terms, which are not treated he
 * `mul_add_add_le_norm_sobolevFrequencyNormalModel_sq`: the band estimate on `H¹`.
 * `starProjection_fst_sobolevFrequencyNormalModelEquiv_symm`,
   `norm_starProjection_fst_sobolevFrequencyNormalModelEquiv_symm`: the slow part of the inverse.
-* `mul_add_le_norm_sq_sobolevFrequencyNormalModelEquiv_symm`,
+* `mul_norm_sub_starProjection_sq_add_norm_sq_sobolevFrequencyNormalModelEquiv_symm_le`,
   `exists_forall_exists_mem_ker_norm_sobolevFrequencyNormalModelEquiv_symm_sub_le`: the fast part
   of the inverse is bounded uniformly in the frequency.
 
@@ -298,7 +299,8 @@ with `|α| → 1` and `∇₁ α → 0` at infinity and with `L∞` class `a`, s
 `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`, and let `Π` be the
 orthogonal projection onto the values of the kernel of `L_x` on `H¹`. For every `ξ ≠ 0` and
 `(u, v) = T_ξ⁻¹ f`, with `L²` norms on the left, `c (‖u - Π u‖² + ‖v‖²) ≤ ‖f‖²`. -/
-theorem mul_add_le_norm_sq_sobolevFrequencyNormalModelEquiv_symm {ξ : ℂ} (hξ : ξ ≠ 0) {c : ℝ}
+theorem mul_norm_sub_starProjection_sq_add_norm_sq_sobolevFrequencyNormalModelEquiv_symm_le
+    {ξ : ℂ} (hξ : ξ ≠ 0) {c : ℝ}
     (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c * ∫ z, ‖η z‖ ^ 2 ≤ ∫ z, ‖Vortex.gaugeFixedAdjoint x η z‖ ^ 2)
     (f : WithLp 2 (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ × Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)) :
