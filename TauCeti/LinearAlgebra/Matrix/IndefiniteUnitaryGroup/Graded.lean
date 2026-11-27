@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.Matrix.FormAdjoint
-public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Bessel
+public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Bessel.Basic
 public import TauCeti.LinearAlgebra.Matrix.RaisesDegree
 import Mathlib.Tactic.LinearCombination
 
