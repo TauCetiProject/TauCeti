@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.MvPolynomial.Initial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
-import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The flat degeneration of an ideal to its weight-initial ideal

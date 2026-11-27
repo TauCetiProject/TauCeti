@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.BoundedPresentation
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Monic
-import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.MvPolynomial.ToricIdeal.WeightedHomogeneous
 
 /-!
