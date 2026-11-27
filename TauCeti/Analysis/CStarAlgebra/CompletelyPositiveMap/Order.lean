@@ -174,6 +174,18 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
 @[simp] theorem id_comp (φ : A₁ →CP A₂) : (CompletelyPositiveMap.id A₂).comp φ = φ :=
   ext fun _ ↦ rfl
 
+/-- The amplification of the identity is the identity. -/
+@[simp] theorem mapCStarMatrix_id (n : Type*) [Fintype n] :
+    (CompletelyPositiveMap.id A₁).mapCStarMatrix n = CompletelyPositiveMap.id _ := by
+  ext x i j
+  simp
+
+/-- The amplification of a composite is the composite of the amplifications. -/
+@[simp] theorem mapCStarMatrix_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) (n : Type*) [Fintype n] :
+    (ψ.comp φ).mapCStarMatrix n = (ψ.mapCStarMatrix n).comp (φ.mapCStarMatrix n) := by
+  ext x i j
+  simp
+
 /-- Converting a composite of non-unital star algebra homomorphisms to a completely positive map
 composes the converted maps. -/
 @[simp] theorem _root_.CompletelyPositiveMapClass.toCompletelyPositiveLinearMap_comp
