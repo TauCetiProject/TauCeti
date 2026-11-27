@@ -258,13 +258,6 @@ theorem pointHom_pow_left_apply_eq_zero_iff (k : ℕ)
   rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, Iso.inv_hom_id] at h'
   simpa using h'
 
--- Cancel `projModelBaseChange φ` for two sections over `Spec S` via its pullback square.
-private theorem comp_projModelBaseChange_eq_iff {R S : Type u} [CommRing R] [CommRing S]
-    (W : WeierstrassCurve R) (φ : R →+* S) {x y : Spec (.of S) ⟶ (W.map φ).projModel}
-    (hx : x ≫ (W.map φ).projModelOver = 𝟙 _) (hy : y ≫ (W.map φ).projModelOver = 𝟙 _) :
-    x ≫ W.projModelBaseChange φ = y ≫ W.projModelBaseChange φ ↔ x = y :=
-  ⟨fun h ↦ (W.isPullback_projModelBaseChange φ).hom_ext h (hx.trans hy.symm), fun h ↦ by rw [h]⟩
-
 -- Apply the 4-torsion criterion after rewriting a base-changed curve to `tateNormalForm`.
 private theorem tateNormalForm_projModelAffinePoint_mulBy_four_eq_zero_iff {R : Type u}
     [CommRing R] {W : WeierstrassCurve R} [W.IsElliptic] {a b : R} (hW : W = tateNormalForm a b)
@@ -288,7 +281,7 @@ theorem specMap_comp_pointHom_pow_four_eq_zero_iff {R : Type u} [CommRing R]
     ← UniversalTate.curveULift.projModelAffinePoint_projModelBaseChange φ,
     Category.assoc, ← UniversalTate.curveULift.projModelMulBy_projModelBaseChange φ 4,
     ← Category.assoc, ← UniversalTate.curveULift.projModelZero_projModelBaseChange φ,
-    comp_projModelBaseChange_eq_iff _ _ (by simp) (by simp)]
+    UniversalTate.curveULift.comp_projModelBaseChange_eq_iff φ (by simp)]
   -- Identify `(φ 0, φ 0)` with `(0, 0)` and `curveULift.map φ` with `tateNormalForm (φ a₁) (φ a₃)`.
   have hpt : (UniversalTate.curveULift.map φ).projModelAffinePoint
         (UniversalTate.equation_curveULift_zero.map φ) =

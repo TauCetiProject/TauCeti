@@ -218,8 +218,11 @@ theorem tateNormalForm_projModelMulBy_two_zero :
     projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h₀]
   refine ⟨rfl, (hb.pow 3).unit, ?_⟩
   ext i
-  fin_cases i <;> simp [W, Affine.negY]
-  ring
+  fin_cases i
+  · simp [W]
+  · simp [W, Affine.negY]
+    ring
+  · simp [W]
 
 /-- **The `4`-torsion locus of `(0, 0)` on an elliptic Tate normal form.** Over any commutative
 ring `R`, the point `[0 : 0 : 1]` of an elliptic Tate normal form `Y² + aXY + bY = X³ + bX²` is
