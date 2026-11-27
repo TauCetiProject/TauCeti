@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.DiscreteSeries.GL2
+public import TauCeti.RepresentationTheory.DiscreteSeries.GL2.Irreducible
+public import TauCeti.RepresentationTheory.GKModule.Irreducible
 public import TauCeti.RepresentationTheory.GL2.CompactWeight.Orthogonal
 
 /-!
@@ -15,7 +16,9 @@ The weights `|ℓ| ≥ k`, `ℓ ≡ k mod 2` of the discrete series `D_k(μ)` fo
 `D_k(μ)` is stable under the action `TauCeti.CompactWeightModule.orthogonalRep` of `O(2)` on the
 compact weights: a rotation `r_θ` acts on `v_ℓ` by `e^{iℓθ}`, and a reflection interchanges the two
 rays. This makes `D_k(μ)` a `(𝔤𝔩₂(ℂ), O(2))`-submodule of the module of all compact weights, hence a
-`(𝔤𝔩₂(ℂ), O(2))`-module.
+`(𝔤𝔩₂(ℂ), O(2))`-module. For `k ≥ 1` it is irreducible: a `(𝔤𝔩₂(ℂ), O(2))`-submodule is a Lie
+submodule stable under the reflection `A = diag(1, -1)`, so `TauCeti.eq_bot_or_eq_discreteSeries`
+applies. Hence it is finitely generated over `𝔤𝔩₂(ℂ)`.
 
 ## Main definitions
 
@@ -24,6 +27,13 @@ rays. This makes `D_k(μ)` a `(𝔤𝔩₂(ℂ), O(2))`-submodule of the module 
 * `TauCeti.discreteSeriesGKModule k μ`: the `(𝔤𝔩₂(ℂ), O(2))`-module `D_k(μ)`, on which `O(2)`
   acts by `TauCeti.CompactWeightModule.orthogonalRep`
   (`TauCeti.discreteSeriesGKModule_ρ_apply_coe`).
+
+## Main statements
+
+* `TauCeti.isIrreducible_discreteSeriesGKModule`: for `k ≥ 1`, `D_k(μ)` is an irreducible
+  `(𝔤𝔩₂(ℂ), O(2))`-module.
+* `TauCeti.exists_lieSpan_eq_top_discreteSeries`: for `k ≥ 1`, `D_k(μ)` is generated over
+  `𝔤𝔩₂(ℂ)` by a finite set.
 
 ## References
 
@@ -71,5 +81,33 @@ theorem discreteSeriesGKModule_ρ_apply_coe (k : ℕ) (μ : ℂ) (g : Matrix.ort
       CompactWeightModule.orthogonalRep (k : ℂ) μ g v :=
   (GKModule.submodule_ρ_apply_coe (M := CompactWeightModule.gkModule (k : ℂ) μ)
     (N := discreteSeriesGKSubmodule k μ) g v).trans (by rw [CompactWeightModule.gkModule_ρ])
+
+/-- **`D_k(μ)` is an irreducible `(𝔤𝔩₂(ℂ), O(2))`-module** for `k ≥ 1`: its only
+`(𝔤𝔩₂(ℂ), O(2))`-submodules are `⊥` and `⊤`. -/
+theorem isIrreducible_discreteSeriesGKModule {k : ℕ} (hk : 1 ≤ k) (μ : ℂ) :
+    (discreteSeriesGKModule k μ).IsIrreducible := by
+  refine GKModule.IsIrreducible.mk fun N hN ↦ ?_
+  let D := discreteSeries k μ
+  have hinj := LieSubmodule.map_injective_of_injective (f := D.incl) (LieSubmodule.injective_incl D)
+  have hrefl : ∀ v ∈ N.toLieSubmodule.map D.incl,
+      CompactWeightModule.reflection (k : ℂ) μ v ∈ N.toLieSubmodule.map D.incl := by
+    rintro _ ⟨w, hw, rfl⟩
+    refine ⟨(discreteSeriesGKModule k μ).ρ (orthogonalDiagonalReflection ℝ 1) w,
+      N.apply_mem _ hw, ?_⟩
+    simp only [LieModuleHom.coe_toLinearMap, LieSubmodule.incl_apply,
+      discreteSeriesGKModule_ρ_apply_coe,
+      CompactWeightModule.orthogonalRep_orthogonalDiagonalReflection, LinearEquiv.coe_coe]
+  rcases eq_bot_or_eq_discreteSeries hk LieSubmodule.map_incl_le hrefl with h | h
+  · exact absurd (GKSubmodule.toLieSubmodule_injective
+      (hinj (by rw [h, GKSubmodule.toLieSubmodule_bot, LieSubmodule.map_bot]))) hN
+  · exact GKSubmodule.toLieSubmodule_injective
+      (hinj (by rw [h, GKSubmodule.toLieSubmodule_top, LieSubmodule.map_incl_top]))
+
+/-- **`D_k(μ)` is finitely generated over `𝔤𝔩₂(ℂ)`** for `k ≥ 1`, since it is an irreducible
+`(𝔤𝔩₂(ℂ), O(2))`-module. -/
+theorem exists_lieSpan_eq_top_discreteSeries {k : ℕ} (hk : 1 ≤ k) (μ : ℂ) :
+    ∃ s : Finset (discreteSeries k μ),
+      LieSubmodule.lieSpan ℂ (Matrix (Fin 2) (Fin 2) ℂ) (s : Set (discreteSeries k μ)) = ⊤ :=
+  (isIrreducible_discreteSeriesGKModule hk μ).exists_lieSpan_eq_top
 
 end TauCeti
