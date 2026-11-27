@@ -1223,21 +1223,12 @@ def topEquiv :
   topEquiv.symm_apply_eq.mpr <| CkHolderSpace.ext fun x ↦ by
     rw [topEquiv_apply, CkHolderSpace.restrictOnL_apply]
 
-/-- The inverse of `topEquiv` preserves pointwise values on `⊤`. -/
-theorem topEquiv_symm_apply (g : CkHolderSpace k α E F) (x : (⊤ : Opens E)) :
-    topEquiv.symm g x = g x := by simp
-
 /-- The derivative fields of `topEquiv f` agree with those of `f`. -/
 @[simp] theorem iteratedFDeriv_topEquiv (f : CkHolderSpaceOn k α (⊤ : Opens E) F)
     (i : Fin (k + 1)) (x : E) :
     (topEquiv f).iteratedFDeriv i x = f.iteratedFDeriv i ⟨x, trivial⟩ := by
   rw [← CkHolderSpace.iteratedFDeriv_eq]
   exact f.iteratedFDeriv_eq (fun y ↦ topEquiv_apply f y.val) i ⟨x, trivial⟩
-
-/-- The derivative fields of `topEquiv.symm g` agree with those of `g`. -/
-theorem iteratedFDeriv_topEquiv_symm (g : CkHolderSpace k α E F)
-    (i : Fin (k + 1)) (x : (⊤ : Opens E)) :
-    (topEquiv.symm g).iteratedFDeriv i x = g.iteratedFDeriv i x := by simp
 
 end Equiv
 
