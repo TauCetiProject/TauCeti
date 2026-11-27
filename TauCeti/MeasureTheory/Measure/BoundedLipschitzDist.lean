@@ -12,14 +12,14 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BoundedLipschit
 /-!
 # The bounded Lipschitz distance
 
-The bounded Lipschitz distance between two measures `μ` and `ν` on a pseudometric space is the
+The bounded Lipschitz distance between two measures `μ` and `ν` on a pseudoemetric space is the
 largest discrepancy `|∫ f dμ - ∫ f dν|` over the test functions `f` that are `1`-Lipschitz and
 bounded by `1` in absolute value. It is taken in `ℝ≥0∞`, as Mathlib's `etvDist` and
 `levyProkhorovEDist` are; for finite measures it is finite.
 
 For probability measures it is at most `2` and at most the total variation distance, it is
 symmetric, satisfies the triangle inequality, and vanishes exactly when the two measures agree.
-The last fact rests on an extensionality principle of independent interest: on a pseudometric
+The last fact rests on an extensionality principle of independent interest: on a pseudoemetric
 space with its Borel σ-algebra, a finite measure is determined by the integrals of the `1`-Lipschitz
 functions bounded by `1`, since rescaled thickened indicators of a closed set are such functions
 and decrease to its indicator. This principle is proved in
@@ -65,9 +65,13 @@ open scoped BoundedContinuousFunction ENNReal NNReal Topology
 
 namespace MeasureTheory
 
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+variable {X : Type*} [MeasurableSpace X]
 
-/-- The **bounded Lipschitz distance** between two measures on a pseudometric space: the supremum,
+section PseudoEMetricSpace
+
+variable [PseudoEMetricSpace X]
+
+/-- The **bounded Lipschitz distance** between two measures on a pseudoemetric space: the supremum,
 over the `1`-Lipschitz real functions `f` bounded by `1` in absolute value, of the discrepancy
 `|∫ f dμ - ∫ f dν|`. It takes values in `ℝ≥0∞`, and is finite for finite measures. -/
 noncomputable def boundedLipschitzDist (μ ν : Measure X) : ℝ≥0∞ :=
@@ -156,7 +160,7 @@ theorem boundedLipschitzDist_le_etvDist [OpensMeasurableSpace X] (μ ν : Measur
     refine ENNReal.ofReal_le_ofReal ?_
     have hm := hf.continuous.aestronglyMeasurable (μ := μ)
     simpa using norm_integral_sub_integral_le_mul_tvDist hm
-      (hf.continuous.aestronglyMeasurable (μ := ν)) hb
+      (hf.continuous.aestronglyMeasurable (μ := ν)) (.of_forall hb) (.of_forall hb)
   · rw [etvDist_of_not_isFiniteMeasure h]
     exact le_top
 
@@ -167,7 +171,7 @@ theorem toReal_boundedLipschitzDist_le_tvDist [OpensMeasurableSpace X]
   simpa only [tvDist] using
     ENNReal.toReal_mono (etvDist_ne_top μ ν) (boundedLipschitzDist_le_etvDist μ ν)
 
-/-- On a pseudometric space with its Borel σ-algebra, the bounded Lipschitz distance between
+/-- On a pseudoemetric space with its Borel σ-algebra, the bounded Lipschitz distance between
 finite measures vanishes exactly when the measures are equal. -/
 @[simp]
 theorem boundedLipschitzDist_eq_zero_iff [BorelSpace X] [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
@@ -179,10 +183,12 @@ theorem boundedLipschitzDist_eq_zero_iff [BorelSpace X] [IsFiniteMeasure μ] [Is
 
 end Basic
 
+end PseudoEMetricSpace
+
 namespace ProbabilityMeasure
 
-variable [PolishSpace X] [BorelSpace X] {ι : Type*} {l : Filter ι} {μs : ι → ProbabilityMeasure X}
-  {μ : ProbabilityMeasure X}
+variable [PseudoMetricSpace X] [PolishSpace X] [BorelSpace X] {ι : Type*} {l : Filter ι}
+  {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
 /-- On a Polish space, probability measures converge weakly if and only if they converge in the
 bounded Lipschitz distance. -/

@@ -31,7 +31,7 @@ there: a non-regular Borel measure on a non-metrizable compact space can integra
 function like a point mass. This is the form needed
 on the Pontryagin dual of a locally compact abelian group that is not second countable.
 
-On a pseudometric Borel space, finite measures are also determined by the integrals of the
+On a pseudoemetric Borel space, finite measures are also determined by the integrals of the
 `1`-Lipschitz real functions bounded by `1`. The proof follows Mathlib's
 `MeasureTheory.ext_of_forall_lintegral_eq_of_IsFiniteMeasure`, rescaling its thickened indicators
 to be `1`-Lipschitz.
@@ -39,7 +39,7 @@ to be `1`-Lipschitz.
 ## Main results
 
 * `MeasureTheory.ext_of_forall_integral_eq_of_lipschitzWith` — finite Borel measures on a
-  pseudometric space with the same integrals of all `1`-Lipschitz functions bounded by `1`
+  pseudoemetric space with the same integrals of all `1`-Lipschitz functions bounded by `1`
   are equal.
 * `TauCeti.MeasureTheory.ext_of_forall_mem_submonoid_integral_eq_of_polish` — two finite Borel
   measures on a Polish space with the same integrals on a point-separating submonoid of
@@ -292,13 +292,13 @@ namespace MeasureTheory
 
 open scoped ENNReal
 
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X]
 
 section Ext
 
 variable [BorelSpace X]
 
-/-- On a pseudometric space with its Borel σ-algebra, two finite measures are equal if they give
+/-- On a pseudoemetric space with its Borel σ-algebra, two finite measures are equal if they give
 the same integral to every `1`-Lipschitz real function bounded by `1` in absolute value. -/
 theorem ext_of_forall_integral_eq_of_lipschitzWith {μ ν : Measure X} [IsFiniteMeasure μ]
     [IsFiniteMeasure ν]
