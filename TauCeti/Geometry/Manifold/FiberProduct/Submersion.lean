@@ -227,7 +227,8 @@ theorem injective_mfderiv_fst_transverseFiberProduct :
   intro p hgi
   refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦
     eq_zero_of_mfderiv_transverseFiberProduct hn hf hg htrans p ξ hξ ?_
-  have hfg := mfderiv_mfderiv_fst_transverseFiberProduct hn hf hg htrans p ξ
+  have hfg :=
+    mfderiv_comp_mfderiv_fst_eq_mfderiv_comp_mfderiv_snd_transverseFiberProduct hn hf hg htrans p ξ
   rw [hξ, map_zero, eq_comm, map_eq_zero_iff _ (tangentSpaceCast IN _ _).injective] at hfg
   exact (injective_iff_map_eq_zero _).1 hgi _ hfg
 
@@ -257,7 +258,8 @@ theorem injective_mfderiv_snd_transverseFiberProduct :
   intro p hfi
   refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦
     eq_zero_of_mfderiv_transverseFiberProduct hn hf hg htrans p ξ ?_ hξ
-  have hfg := mfderiv_mfderiv_fst_transverseFiberProduct hn hf hg htrans p ξ
+  have hfg :=
+    mfderiv_comp_mfderiv_fst_eq_mfderiv_comp_mfderiv_snd_transverseFiberProduct hn hf hg htrans p ξ
   rw [hξ, map_zero, map_zero] at hfg
   exact (injective_iff_map_eq_zero _).1 hfi _ hfg
 

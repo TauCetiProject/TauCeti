@@ -26,8 +26,9 @@ non-instance atlas, characterized by `TauCeti.isManifold_transverseFiberProduct`
 `TauCeti.mem_range_mfderiv_coe_transverseFiberProduct_iff`. In terms of the two projections, a
 tangent vector of the fibre product is determined by its two components
 (`TauCeti.eq_zero_of_mfderiv_transverseFiberProduct`), these components `(u, w)` satisfy
-`df u = dg w` (`TauCeti.mfderiv_mfderiv_fst_transverseFiberProduct`), and every such pair arises
-(`TauCeti.exists_mfderiv_eq_of_transverseFiberProduct`).
+`df u = dg w`
+(`TauCeti.mfderiv_comp_mfderiv_fst_eq_mfderiv_comp_mfderiv_snd_transverseFiberProduct`), and
+every such pair arises (`TauCeti.exists_mfderiv_eq_of_transverseFiberProduct`).
 The existence-only form is
 `TauCeti.exists_isManifold_transverseFiberProduct_isSmoothEmbedding`.
 The embedding gives the smooth universal property via
@@ -221,7 +222,7 @@ theorem exists_mfderiv_eq_of_transverseFiberProduct :
 
 /-- The differentials of the two projections of the transverse fibre product carry a tangent
 vector `ξ` to a pair `(u, w)` with `df u = dg w`. -/
-theorem mfderiv_mfderiv_fst_transverseFiberProduct :
+theorem mfderiv_comp_mfderiv_fst_eq_mfderiv_comp_mfderiv_snd_transverseFiberProduct :
     letI := transverseFiberProductChartedSpace hn hf hg htrans
     ∀ (p : {p : X × Y // f p.1 = g p.2})
       (ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) p),
