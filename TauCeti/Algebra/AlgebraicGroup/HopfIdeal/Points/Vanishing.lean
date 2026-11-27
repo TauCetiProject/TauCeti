@@ -36,6 +36,10 @@ commutator. The trivial point subgroup generates the trivial closed subgroup.
   closures lie in the closure of the commutator.
 * `TauCeti.HopfIdeal.quotientPointsSubgroup_vanishingIdeal_bot`: the closure of the trivial
   subgroup is trivial.
+* `TauCeti.HopfIdeal.augmentation_eq_bot_iff_subsingleton`: a reduced finite-type affine group
+  over an algebraically closed field is trivial exactly when it has a single rational point.
+* `TauCeti.HopfIdeal.vanishingIdeal_toIdeal_eq_ker`: the closure of the image of a morphism from a
+  reduced finite-type scheme over an algebraically closed field is cut out by its kernel.
 
 ## References
 
@@ -272,6 +276,47 @@ algebraically closed field. -/
   intro f
   exact ((mem_vanishingIdeal _ x).mp hx ⟨toConv f, Subgroup.mem_top _⟩).trans
     (map_zero f).symm
+
+/-- A reduced finite-type affine group over an algebraically closed field is trivial, that is its
+augmentation ideal is zero, exactly when it has a single rational point. -/
+theorem augmentation_eq_bot_iff_subsingleton [IsAlgClosed k] [Algebra.FiniteType k H]
+    [IsReduced H] : augmentation k H = ⊥ ↔ Subsingleton (WithConv (H →ₐ[k] k)) := by
+  constructor
+  · intro h
+    -- Every point kills the augmentation ideal, hence is the counit.
+    have hker (f : H →ₐ[k] k) : (augmentation k H).toIdeal ≤ RingHom.ker f := fun y hy ↦ by
+      rw [mem_toIdeal, h, mem_bot] at hy
+      rw [hy, RingHom.mem_ker, map_zero]
+    refine ⟨fun f g ↦ WithConv.ofConv_injective (AlgHom.ext fun x ↦ ?_)⟩
+    rw [AlgHom.apply_eq_counit_of_augmentation_le_ker _ (hker f.ofConv),
+      AlgHom.apply_eq_counit_of_augmentation_le_ker _ (hker g.ofConv)]
+  · intro _
+    rw [← vanishingIdeal_bot, ← vanishingIdeal_top, Subgroup.eq_bot_of_subsingleton ⊤]
+
+/-- **The closure of the image of a morphism is cut out by its kernel.** Let `φ : H →ₐ[k] B`
+be the coordinate map of a morphism of schemes `Spec B → G` from a reduced finite-type scheme
+over an algebraically closed field. If its rational points map onto a subgroup `S` of the
+rational points of `G`, then the functions vanishing on `S` are exactly the kernel of `φ`. -/
+theorem vanishingIdeal_toIdeal_eq_ker [IsAlgClosed k] {B : Type*} [CommRing B] [Algebra k B]
+    [Algebra.FiniteType k B] [IsReduced B] (φ : H →ₐ[k] B)
+    (S : Subgroup (WithConv (H →ₐ[k] k)))
+    (hS : (S : Set (WithConv (H →ₐ[k] k))) = Set.range fun b : B →ₐ[k] k ↦ toConv (b.comp φ)) :
+    (vanishingIdeal S).toIdeal = RingHom.ker φ := by
+  ext x
+  rw [mem_toIdeal, mem_vanishingIdeal, RingHom.mem_ker]
+  constructor
+  · intro hx
+    refine eq_of_forall_algHom_apply_eq (k := k) (K := k) fun b ↦ ?_
+    rw [map_zero]
+    have hb : toConv (b.comp φ) ∈ S := by
+      rw [← SetLike.mem_coe, hS]
+      exact ⟨b, rfl⟩
+    exact hx ⟨_, hb⟩
+  · intro hx g
+    have hg : g.val ∈ (S : Set (WithConv (H →ₐ[k] k))) := g.property
+    rw [hS] at hg
+    obtain ⟨b, hb⟩ := hg
+    rw [← hb, ofConv_toConv, AlgHom.comp_apply, hx, map_zero]
 
 end
 

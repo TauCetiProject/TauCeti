@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Leibniz
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
@@ -47,6 +49,7 @@ localization arguments need.
 * `TauCeti.W1p.contDiffSMul`: the product `ψ u`, as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.value_contDiffSMul_ae` and `TauCeti.W1p.gradient_contDiffSMul_ae`: its two
   components, `ψ u` and `ψ ∇u + u ∇ψ`.
+* `TauCeti.W1p.restrictL_contDiffSMul`: restriction to a smaller open set commutes with the product.
 * `TauCeti.W1p.eLpNorm_le_eLpNorm_value_contDiffSMul`: if `ψ = 1` on `s ⊆ Ω`, the `L^q(s)` norm
   of `u` is at most the `L^q(Ω)` norm of `ψ u`.
 * `TauCeti.W1p.norm_contDiffSMul_le`: the bound `‖ψ u‖ ≤ 2 M ‖u‖`.
@@ -277,6 +280,23 @@ theorem W1p.contDiffSMulL_apply (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
       = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u :=
   (rfl)
 
+/-! ### Restriction -/
+
+/-- Restriction to a smaller open set commutes with multiplication by a smooth cutoff. -/
+@[simp]
+theorem W1p.restrictL_contDiffSMul {U : Opens E} (hU : U ≤ Omega) (hpsi : ContDiff ℝ ∞ psi)
+    (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    (u : W1p mu Omega p) :
+    W1p.restrictL hU (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u) =
+      W1p.contDiffSMul psi hpsi hM (fun x hx => hpsiM x (hU hx)) (fun x hx => hgradM x (hU hx))
+        (W1p.restrictL hU u) := by
+  refine W1p.restrictL_eq_of_value_ae_eq hU ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u),
+    W1p.value_contDiffSMul_ae hpsi hM _ _ (W1p.restrictL hU u), W1p.value_restrictL_ae hU u]
+    with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+
 /-! ### The `L²` Leibniz estimate -/
 
 /-- **The `L²` Leibniz estimate.** At exponent two, the gradient `ψ ∇u + u ∇ψ` of `ψ u` satisfies
@@ -503,5 +523,23 @@ theorem W1p.gradient_testFunctionSMulComp_ae (hp : p ≠ (∞ : ℝ≥0∞)) (ph
   abel
 
 end TestFunctionSMulComp
+
+/-- The Leibniz rule for a `C¹` scalar factor `ψ` on `Ω`. If `u, D ∈ W^{1,p}(Ω)` and
+`D` is the weak derivative of `u` along `w`, then `ψ ⟪∇u, w⟫` has the weak derivative
+`ψ ⟪∇D, v⟫ + (∂ᵥψ) ⟪∇u, w⟫` along any direction `v`. -/
+theorem W1p.hasWeakLineDerivOn_smul_inner_gradient (hpsi : ContDiffOn ℝ 1 psi Omega)
+    {u D : W1p mu Omega p} {v w : E}
+    (hD : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value D) w) :
+    HasWeakLineDerivOn mu Omega
+      (fun x => psi x • innerSL ℝ (W1p.gradient u x) w)
+      (fun x => psi x • innerSL ℝ (W1p.gradient D x) v +
+        fderiv ℝ psi x v • innerSL ℝ (W1p.gradient u x) w) v := by
+  -- `∂_w u` agrees with the value of `D` almost everywhere on `Ω`, so it has the same weak
+  -- derivatives.
+  have hae : W1p.value D =ᵐ[mu.restrict Omega]
+      fun x => innerSL ℝ (W1p.gradient u x) w :=
+    hD.ae_eq ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn _)
+  exact (((W1p.hasWeakFDerivOn D).hasWeakLineDerivOn _).congr_ae hae).contDiffOn_smul_of_ne_zero
+    hpsi one_ne_zero
 
 end TauCeti

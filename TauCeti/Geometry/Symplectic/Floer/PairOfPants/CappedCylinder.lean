@@ -198,15 +198,6 @@ private theorem re_endCoord_one_cylindricalEndLift_nonpos {q : Puncture} (hq : q
   simpa using endSign_mul_re_endCoord_nonpos hq (w := q.cylindricalEndLift w)
     (by rw [re_endCoord_cylindricalEndLift]; linarith)
 
-/-- A point of the capped plane `ℂ ∖ {0}` is the capped puncture `1` or a point of the pair of
-pants `ℂ ∖ {0, 1}`: these are the domain points at which the data of the pair of pants capped at
-`1` are smooth. -/
-theorem eq_endCenter_one_or_of_ne_zero {w : ℂ} (hw : w ≠ 0) :
-    w = one.endCenter ∨ w ≠ 0 ∧ w ≠ 1 := by
-  rcases eq_or_ne w 1 with h | h
-  · exact Or.inl (by simpa using h)
-  · exact Or.inr ⟨hw, h⟩
-
 /-- The end lift of the end at `0` maps the cylinder into `ℂ ∖ {0}`: every image point is the
 capped puncture `1` or a point of the pair of pants. -/
 private theorem cylindricalEndLift_zero_eq_endCenter_one_or (w : ℂ) :
@@ -781,19 +772,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_univ
   linarith [(abs_le.1 (ω.abs_setIntegral_hamiltonianCurvature_cappedCylinderComponent_le hHb hHbs
     hL hBb u subset_rfl)).1]
 
-omit [IsManifold I ⊤ M] [FiniteDimensional ℝ E] in
-/-- The capped datum at `1` is differentiable in the target point at every point of the capped
-plane `ℂ ∖ {0}`. -/
-private theorem mdifferentiableAt_plumbedPerturbation_single_inf (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
-    {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) (v : ℂ) (x : M) :
-    MDifferentiableAt I 𝓘(ℝ) (fun x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (Complex.equivRealProdCLM.symm z) x v) x :=
-  (((contMDiffAt_plumbedPerturbation_single_inf (n := 1) (q := one) (by simp) hHb hHbs hL
-    (eq_endCenter_one_or_of_ne_zero hz) x).comp x
-      (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
-    one_ne_zero
-
 omit [FiniteDimensional ℝ E] in
 /-- **The energy density of the capping family in the coordinates of the end at `0`**, for a
 manifold target. If `u` is differentiable at `φ_0(ζ)`, the Floer energy density of `u ∘ φ_0` at
@@ -815,10 +793,11 @@ theorem floerEnergyDensity_cappedCylinderComponent_comp_endChart (ω : SmoothTwo
     ← perturbationPullback_endChart_zero_plumbedPerturbation_stdComplexLineImag]
   exact ω.floerEnergyDensity_perturbationPullback
     ((contDiff_endChart zero 1).differentiable one_ne_zero ζ) hu
-    (mdifferentiableAt_plumbedPerturbation_single_inf hHb hHbs hL
-      (equivRealProdCLM_symm_endChart_zero_ne_zero ζ) 1 _)
-    (mdifferentiableAt_plumbedPerturbation_single_inf hHb hHbs hL
-      (equivRealProdCLM_symm_endChart_zero_ne_zero ζ) Complex.I _)
+    (mdifferentiableAt_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ)) 1 _)
+    (mdifferentiableAt_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ))
+      Complex.I _)
 
 omit [FiniteDimensional ℝ E] in
 /-- **The energy of the capping family in the coordinates of the end at `0`**, for a manifold
@@ -843,10 +822,11 @@ theorem integral_floerEnergyDensity_image_endChart_zero_plumbedPerturbation
   rw [ω.integral_floerEnergyDensity_image hs ((injOn_endChart_univ_prod_Ico zero t₀).mono hst)
       (fun ζ _ ↦ (contDiff_endChart zero 1).differentiable one_ne_zero ζ)
       (fun ζ _ ↦ det_fderiv_endChart_nonneg zero ζ) hu
-      (fun ζ _ ↦ mdifferentiableAt_plumbedPerturbation_single_inf hHb hHbs hL
-        (equivRealProdCLM_symm_endChart_zero_ne_zero ζ) 1 _)
-      (fun ζ _ ↦ mdifferentiableAt_plumbedPerturbation_single_inf hHb hHbs hL
-        (equivRealProdCLM_symm_endChart_zero_ne_zero ζ) Complex.I _),
+      (fun ζ _ ↦ mdifferentiableAt_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+        (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ)) 1 _)
+      (fun ζ _ ↦ mdifferentiableAt_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+        (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ))
+        Complex.I _),
     perturbationPullback_endChart_zero_plumbedPerturbation_stdComplexLineReal,
     perturbationPullback_endChart_zero_plumbedPerturbation_stdComplexLineImag]
 
@@ -874,10 +854,11 @@ theorem isComplexLinearMap_perturbedMFDeriv_cappedCylinderComponent_comp_endChar
     ← perturbationPullback_endChart_zero_plumbedPerturbation_stdComplexLineImag]
   exact ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
     ((contDiff_endChart zero 1).differentiable one_ne_zero ζ) hu
-    (mdifferentiableAt_plumbedPerturbation_single_inf hHb hHbs hL
-      (equivRealProdCLM_symm_endChart_zero_ne_zero ζ) 1 _)
-    (mdifferentiableAt_plumbedPerturbation_single_inf hHb hHbs hL
-      (equivRealProdCLM_symm_endChart_zero_ne_zero ζ) Complex.I _)
+    (mdifferentiableAt_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ)) 1 _)
+    (mdifferentiableAt_plumbedPerturbation_single_inf (by simp) hHb hHbs hL
+      (eq_endCenter_one_or_of_ne_zero (equivRealProdCLM_symm_endChart_zero_ne_zero ζ))
+      Complex.I _)
     (isComplexLinearMap_fderiv_endChart zero ζ) hfloer
 
 omit [FiniteDimensional ℝ E] in

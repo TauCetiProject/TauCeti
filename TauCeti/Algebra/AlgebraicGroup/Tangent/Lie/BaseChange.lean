@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
 public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
+public import TauCeti.Algebra.Bialgebra.BaseChange
 import Mathlib.RingTheory.Finiteness.Descent
 
 /-!
@@ -23,6 +24,25 @@ change to the coefficient-valued tangent space and its convolution bracket. For 
 of fields, `finrank_lie_baseChange` deduces invariance of Lie dimension, and
 `isKilling_lie_baseChange_iff` shows that the Lie algebra has nondegenerate Killing form exactly
 when its base change does.
+
+When the augmentation cotangent space of `H` is finite projective, the Lie algebra of
+`Spec H` is the dual of that space. For a commutative `R`-algebra `S`,
+`Derivation.cotangentDualBaseChangeEquiv` composes the comparison above with scalar extension of
+tangent vectors and cotangent duality, identifying the scalar extension of this dual with the
+dual for `S ⊗[R] H`, again with no flatness assumption.
+
+## Main declarations
+
+* `TauCeti.tangentBaseChangeLieEquiv`: tangent vectors of `K ⊗[R] H` over `K` are the
+  `K`-valued tangent vectors of `H`.
+* `Derivation.cotangentDualBaseChangeEquiv`: the Lie algebra of `Spec (S ⊗[R] H)` is the scalar
+  extension of the Lie algebra of `Spec H`.
+* `Derivation.cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap`: its value on the cotangent
+  class of `1 ⊗ h`, which determines it (`TauCeti.Bialgebra.dual_ext_cotangentMap_one_tmul`).
+* `Derivation.dualCotangentMap_map_cotangentDualBaseChangeEquiv_tmul`,
+  `Derivation.dualCotangentMap_lid_symm_cotangentDualBaseChangeEquiv` and
+  `Derivation.dualCotangentMap_baseChangeTowerBialgEquiv_cotangentDualBaseChangeEquiv_tmul`: the
+  comparison is natural in `H`, trivial along the identity of `R`, and composes in stages.
 
 ## References
 
@@ -280,3 +300,149 @@ theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebr
         (Module.Finite.equiv Derivation.cotangentDualLieEquiv.symm.toLinearEquiv)
 
 end TauCeti
+
+namespace TauCeti.Bialgebra
+
+open scoped _root_.TensorProduct
+
+variable {R S H : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing H] [Bialgebra R H]
+
+/-- The cotangent class of `s ⊗ h` in the cotangent space of `S ⊗[R] H` over `S` is `s` times the
+class of `1 ⊗ h`. -/
+theorem cotangentMap_tmul (s : S) (h : H) :
+    Bialgebra.cotangentMap S (S ⊗[R] H) (s ⊗ₜ h) =
+      s • Bialgebra.cotangentMap S (S ⊗[R] H) (1 ⊗ₜ h) := by
+  rw [← LinearMap.map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+
+/-- **A tangent vector of `Spec (S ⊗[R] H)` is determined by its values on `1 ⊗ H`**: two linear
+functionals on the cotangent space of `S ⊗[R] H` over `S` agree once they agree on the cotangent
+classes of the elements `1 ⊗ h`. -/
+theorem dual_ext_cotangentMap_one_tmul
+    {f g : Module.Dual S (Bialgebra.CotangentSpace S (S ⊗[R] H))}
+    (hfg : ∀ h : H, f (Bialgebra.cotangentMap S (S ⊗[R] H) (1 ⊗ₜ h)) =
+      g (Bialgebra.cotangentMap S (S ⊗[R] H) (1 ⊗ₜ h))) :
+    f = g := by
+  ext c
+  obtain ⟨y, rfl⟩ := Bialgebra.cotangentMap_surjective S (S ⊗[R] H) c
+  induction y using TensorProduct.inductionOn with
+  | tmul s h => rw [cotangentMap_tmul, LinearMap.map_smul, LinearMap.map_smul, hfg]
+  | add y z hy hz => simp only [map_add, hy, hz]
+
+end TauCeti.Bialgebra
+
+namespace Derivation
+
+open TauCeti
+open scoped TensorProduct
+
+variable {R S H : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing H] [Bialgebra R H]
+
+variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)]
+
+variable (R S H) in
+/-- **Base change of the Lie algebra.** The Lie algebra of `Spec (S ⊗[R] H)` over `S` is the
+scalar extension of the Lie algebra of `Spec H`. The comparison extends a tangent vector of `H`
+`S`-linearly to `S ⊗[R] H`, through coefficient-valued tangent vectors. -/
+noncomputable def cotangentDualBaseChangeEquiv :
+    S ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H) ≃ₗ[S]
+      Module.Dual S (Bialgebra.CotangentSpace S (S ⊗[R] H)) :=
+  (tangentScalarExtensionEquiv (R := R) (A := H) (B := S)).trans
+    ((tangentBaseChangeLieEquiv (R := R) (K := S) (H := H)).toLinearEquiv.trans
+      (cotangentLinearEquiv (R := S) (A := S ⊗[R] H) (B := S)).symm)
+
+/-- Under cotangent duality, the comparison of Lie algebras is the extension of tangent vectors
+from `H` to `S ⊗[R] H`. -/
+@[simp]
+theorem cotangentLinearEquiv_cotangentDualBaseChangeEquiv
+    (z : S ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    cotangentLinearEquiv (R := S) (A := S ⊗[R] H) (B := S) (cotangentDualBaseChangeEquiv R S H z) =
+      tangentBaseChangeLieEquiv (R := R) (K := S) (H := H)
+        (tangentScalarExtensionEquiv (R := R) (A := H) (B := S) z) := by
+  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+    LieEquiv.coe_toLinearEquiv]
+
+/-- The base-changed functional `s ⊗ x` takes the value `s * x (dh)` on the cotangent class of
+`1 ⊗ h`. These classes span the cotangent space of `S ⊗[R] H` over `S`, so this determines the
+comparison. -/
+@[simp]
+theorem cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap (s : S)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) (h : H) :
+    cotangentDualBaseChangeEquiv R S H (s ⊗ₜ x)
+        (Bialgebra.cotangentMap S (S ⊗[R] H) (1 ⊗ₜ h)) =
+      s * algebraMap R S (x (Bialgebra.cotangentMap R H h)) := by
+  rw [← cotangentLinearEquiv_apply_apply, ← algEquivSelf_tangentScalarExtensionEquiv_tmul_apply]
+  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+    LieEquiv.coe_toLinearEquiv, tangentBaseChangeLieEquiv_tmul, one_mul,
+    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
+
+/-- The tangent vector of `Spec (S ⊗[R] H)` attached to the scalar extension `s ⊗ x` takes the
+value `s * x (dh)` on `1 ⊗ h`, after identifying counit-valued coefficients with `S`. -/
+theorem algEquivSelf_cotangentLinearEquiv_cotangentDualBaseChangeEquiv_tmul_apply (s : S)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) (h : H) :
+    Bialgebra.CounitAlgebra.algEquivSelf S (S ⊗[R] H) S
+        (cotangentLinearEquiv (B := S) (cotangentDualBaseChangeEquiv R S H (s ⊗ₜ x)) (1 ⊗ₜ h)) =
+      s * algebraMap R S (x (Bialgebra.cotangentMap R H h)) := by
+  rw [algEquivSelf_cotangentLinearEquiv_apply, cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap]
+
+/-- **The comparison of Lie algebras is natural**: for a bialgebra morphism `φ : H →ₐc[R] L`, the
+differential of its base change `id ⊗ φ` corresponds to the scalar extension of the differential
+of `φ`. -/
+theorem dualCotangentMap_map_cotangentDualBaseChangeEquiv_tmul {L : Type*} [CommRing L]
+    [Bialgebra R L] [Module.Finite R (Bialgebra.CotangentSpace R L)]
+    [Module.Projective R (Bialgebra.CotangentSpace R L)] (φ : H →ₐc[R] L) (s : S)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R L)) :
+    dualCotangentMap (Bialgebra.TensorProduct.map (BialgHom.id S S) φ)
+        (cotangentDualBaseChangeEquiv R S L (s ⊗ₜ x)) =
+      cotangentDualBaseChangeEquiv R S H (s ⊗ₜ dualCotangentMap φ x) := by
+  refine Bialgebra.dual_ext_cotangentMap_one_tmul fun h ↦ ?_
+  rw [dualCotangentMap_apply_cotangentMap, Bialgebra.TensorProduct.map_tmul, BialgHom.id_apply,
+    cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap,
+    cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap, dualCotangentMap_apply_cotangentMap]
+
+/-- **Base change along the identity is trivial on Lie algebras**: across the identification
+`H ≃ R ⊗[R] H`, the comparison of Lie algebras is the identification
+`R ⊗[R] Lie(G) ≃ Lie(G)`. -/
+theorem dualCotangentMap_lid_symm_cotangentDualBaseChangeEquiv
+    (z : R ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    dualCotangentMap ((Bialgebra.TensorProduct.lid R H).symm : H →ₐc[R] R ⊗[R] H)
+        (cotangentDualBaseChangeEquiv R R H z) =
+      TensorProduct.lid R _ z := by
+  induction z using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | tmul c x =>
+    ext v
+    obtain ⟨h, rfl⟩ := Bialgebra.cotangentMap_surjective R H v
+    rw [dualCotangentMap_apply_cotangentMap, BialgEquiv.coe_toBialgHom,
+      Bialgebra.TensorProduct.lid_symm_apply, cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap,
+      TensorProduct.lid_tmul, LinearMap.smul_apply, smul_eq_mul, Algebra.algebraMap_self,
+      RingHom.id_apply]
+
+/-- **The comparison of Lie algebras composes in stages.** For a tower `R → S → T`, extending a
+tangent vector of `Spec H` to `Spec (S ⊗[R] H)` and then to `Spec (T ⊗[S] (S ⊗[R] H))` agrees,
+across the tower identification `T ⊗[S] (S ⊗[R] H) ≃ T ⊗[R] H`, with extending it to
+`Spec (T ⊗[R] H)` in one step. -/
+theorem dualCotangentMap_baseChangeTowerBialgEquiv_cotangentDualBaseChangeEquiv_tmul
+    {T : Type*} [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
+    [Module.Finite S (Bialgebra.CotangentSpace S (S ⊗[R] H))]
+    [Module.Projective S (Bialgebra.CotangentSpace S (S ⊗[R] H))]
+    (t : T) (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    dualCotangentMap (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R S H T :
+          T ⊗[S] (S ⊗[R] H) →ₐc[T] T ⊗[R] H)
+        (cotangentDualBaseChangeEquiv R T H (t ⊗ₜ x)) =
+      cotangentDualBaseChangeEquiv S T (S ⊗[R] H)
+        (t ⊗ₜ cotangentDualBaseChangeEquiv R S H (1 ⊗ₜ x)) := by
+  refine Bialgebra.dual_ext_cotangentMap_one_tmul fun y ↦ ?_
+  rw [dualCotangentMap_apply_cotangentMap, cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap]
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, mul_add, hy, hz]
+  | tmul s h =>
+    rw [BialgEquiv.coe_toBialgHom, TensorProduct.baseChangeTowerBialgEquiv_one_tmul,
+      Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Bialgebra.cotangentMap_tmul,
+      LinearMap.map_smul, cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap,
+      Bialgebra.cotangentMap_tmul, LinearMap.map_smul,
+      cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap, smul_eq_mul, smul_eq_mul, one_mul,
+      map_mul, IsScalarTower.coe_toAlgHom', IsScalarTower.algebraMap_apply R S T]
+    ring
+
+end Derivation

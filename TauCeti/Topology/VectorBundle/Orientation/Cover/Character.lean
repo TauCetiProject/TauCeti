@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
@@ -21,7 +22,9 @@ the **orientation character** `w₁ : π₁(B, b) →* ℤˣ`
 the bundle in the form of a homomorphism on the fundamental group (no cohomology class is
 constructed here). It is `1` on a loop exactly when
 transport along the loop preserves an orientation of `E_b`, and `-1` exactly when it reverses it
-(`orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`).
+(`orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`), also
+stated through `orientationTransport` along a representing loop
+(`orientationCharacter_fromPath_eq_one_iff`, `orientationCharacter_fromPath_eq_neg_one_iff`).
 
 The orientation character is the sign character `IsCoveringMap.signCharacter` of the orientation
 double cover, and the results below specialize the double-cover results of
@@ -48,7 +51,11 @@ character of the loop `t ↦ f(e^{2πit})` at `f 1` is an invariant of the path 
 when the orientations of the fibres `E_{f z}` can be chosen continuously in `z ∈ S¹`, that is when
 `f` lifts to the orientation double cover (`freeLoopOrientationCharacter_eq_one_iff`). Such a lift
 is a continuous choice of orientations of the fibres of `E` along `f`, the data of an orientation
-of the pulled-back bundle `f*E`; the pullback bundle itself is not formed here.
+of the pulled-back bundle `f*E`; the pullback bundle itself is not formed here. Accordingly, the
+sign exponent `IsCoveringMap.freeLoopSignExponent` of a Moore free loop in the orientation double
+cover is `0` exactly when the circle map it traces lifts, and `-1` exactly when it does not
+(`freeLoopSignExponent_eq_zero_iff_exists_lift`,
+`freeLoopSignExponent_eq_neg_one_iff_not_exists_lift`).
 
 For the tangent bundle of a closed manifold `Q`, these are the orientation data in the degree-zero
 twist `η₀` of the Viterbo isomorphism with local coefficients of Barraud–Damian–Humilière–Oancea:
@@ -66,6 +73,8 @@ and the orientation local system of `Q` has the orientation character as its mon
 
 * `orientationCharacter_eq_one_iff_monodromy_eq`, `orientationCharacter_eq_neg_one_iff`: the
   character is `1` where transport preserves an orientation and `-1` where it reverses it.
+* `orientationCharacter_fromPath_eq_one_iff`, `orientationCharacter_fromPath_eq_neg_one_iff`: the
+  same statements for the class of a loop, through `orientationTransport`.
 * `TauCeti.VectorBundleOrientation.orientationCharacter_eq_one`,
   `TauCeti.VectorBundleOrientation.nonempty_iff_orientationCharacter_eq_one`: a bundle over a
   connected, locally path-connected base is orientable exactly when its orientation character is
@@ -78,6 +87,9 @@ and the orientation local system of `Q` has the orientation character as its mon
   path component in `C(S¹, B)`.
 * `freeLoopOrientationCharacter_eq_one_iff`: the character of a free loop is `1` exactly when the
   loop lifts to the orientation double cover.
+* `freeLoopSignExponent_eq_zero_iff_exists_lift`,
+  `freeLoopSignExponent_eq_neg_one_iff_not_exists_lift`: the sign exponent of a Moore free loop in
+  the orientation double cover is `0` exactly when it lifts.
 
 ## References
 
@@ -157,6 +169,25 @@ theorem orientationCharacter_eq_neg_one_iff {b : B} (g : FundamentalGroup B b)
         deck e :=
   IsCoveringMap.signCharacter_eq_neg_one_iff _ deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) _ g e
 
+/-- The orientation character of the class of a loop `γ` is `1` exactly when transport along `γ`
+returns an orientation `o` of the fibre to itself. -/
+theorem orientationCharacter_fromPath_eq_one_iff {b : B} (γ : Path b b)
+    (o : Orientation ℝ (E b) ι) :
+    orientationCharacter F E hι b (FundamentalGroup.fromPath (.mk γ)) = 1 ↔
+      orientationTransport E hι γ o = o := by
+  rw [orientationCharacter_eq_one_iff_monodromy_eq hι _ ⟨⟨b, o⟩, rfl⟩,
+    orientationTransport_apply, ← (fiberEquiv F E ι b).injective.eq_iff, fiberEquiv_mk]
+
+/-- The orientation character of the class of a loop `γ` is `-1` exactly when transport along `γ`
+carries an orientation `o` of the fibre to the opposite orientation. -/
+theorem orientationCharacter_fromPath_eq_neg_one_iff {b : B} (γ : Path b b)
+    (o : Orientation ℝ (E b) ι) :
+    orientationCharacter F E hι b (FundamentalGroup.fromPath (.mk γ)) = -1 ↔
+      orientationTransport E hι γ o = -o := by
+  rw [orientationCharacter_eq_neg_one_iff hι _ ⟨⟨b, o⟩, rfl⟩, orientationTransport_apply,
+    ← fiberEquiv_mk (F := F) (-o), (fiberEquiv F E ι b).injective.eq_iff, Subtype.ext_iff,
+    deck_apply]
+
 /-! ### Orientability -/
 
 /-- **The orientation character of an orientable bundle is trivial**: transport along a loop
@@ -231,6 +262,13 @@ loop space (`freeLoopOrientationCharacter_eq_of_joined`). -/
 def freeLoopOrientationCharacter (hι : Fintype.card ι = finrank ℝ F) (f : C(Circle, B)) : ℤˣ :=
   (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignCharacter (finite_fiber hι) f
 
+/-- The orientation character of a free loop is its sign character in the orientation double
+cover. -/
+theorem freeLoopOrientationCharacter_eq_freeLoopSignCharacter (f : C(Circle, B)) :
+    freeLoopOrientationCharacter F E hι f =
+      (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignCharacter (finite_fiber hι) f :=
+  (rfl)
+
 /-- The orientation character of a free loop is the orientation character of its based loop at
 `f 1`. -/
 theorem freeLoopOrientationCharacter_def (f : C(Circle, B)) :
@@ -262,6 +300,29 @@ theorem freeLoopOrientationCharacter_eq_one_iff (f : C(Circle, B)) :
       ∃ s : C(Circle, VectorBundleOrientationCover F E ι), ∀ z, (s z).proj = f z :=
   IsCoveringMap.freeLoopSignCharacter_eq_one_iff _ _ (fun _ _ h ↦ eq_or_eq_deck hι h) f
     (surjective_proj hι (f 1))
+
+/-- **Orientability along a free loop.** In the orientation double cover, a free loop `γ` has
+exponent `0` exactly when the orientations of the fibres along the circle traced by `γ` can be
+chosen continuously, that is when `E` pulled back along it is orientable. -/
+theorem freeLoopSignExponent_eq_zero_iff_exists_lift (γ : MooreFreeLoopSpace B) :
+    (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignExponent (finite_fiber hι) γ = 0 ↔
+      ∃ s : C(Circle, VectorBundleOrientationCover F E ι),
+        ∀ z, (s z).proj = MooreFreeLoopSpace.toCircleMap γ z :=
+  (IsCoveringMap.freeLoopSignExponent_eq_zero_iff _ _ γ).trans <| by
+    rw [← freeLoopOrientationCharacter_eq_freeLoopSignCharacter]
+    exact freeLoopOrientationCharacter_eq_one_iff hι _
+
+/-- **Non-orientability along a free loop.** In the orientation double cover, a free loop `γ` has
+exponent `-1` exactly when the orientations of the fibres along the circle traced by `γ` cannot be
+chosen continuously, that is when `E` pulled back along it is not orientable. -/
+theorem freeLoopSignExponent_eq_neg_one_iff_not_exists_lift (γ : MooreFreeLoopSpace B) :
+    (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignExponent (finite_fiber hι) γ = -1 ↔
+      ¬∃ s : C(Circle, VectorBundleOrientationCover F E ι),
+        ∀ z, (s z).proj = MooreFreeLoopSpace.toCircleMap γ z :=
+  (IsCoveringMap.freeLoopSignExponent_eq_neg_one_iff _ _ γ).trans <|
+    Int.units_ne_iff_eq_neg.symm.trans <| not_congr <|
+      (IsCoveringMap.freeLoopSignExponent_eq_zero_iff _ _ γ).symm.trans <|
+        freeLoopSignExponent_eq_zero_iff_exists_lift hι γ
 
 /-- The orientation character of a free loop in an orientable bundle is `1`. -/
 theorem _root_.TauCeti.VectorBundleOrientation.freeLoopOrientationCharacter_eq_one

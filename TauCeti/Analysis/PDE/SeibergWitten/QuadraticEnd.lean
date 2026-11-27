@@ -35,6 +35,7 @@ derivative are only real-linear.
 * `quadraticEnd_apply_self`: `Q₀(ψ) ψ = (‖ψ‖² / 2) ψ`.
 * `quadraticEnd_smul`, `quadraticEnd_smul_of_norm_eq_one`: `Q₀(c ψ) = |c|² Q₀(ψ)`; in particular
   `Q₀` is invariant under unit phases.
+* `quadraticEnd_linearIsometryEquiv_apply`: `Q₀(U ψ) = U Q₀(ψ) U⁻¹` for a unitary isomorphism `U`.
 * `quadraticEnd_add`: `Q₀(ψ + φ) = Q₀(ψ) + Q₀(φ) + B(ψ, φ)`.
 * `trace_quadraticEndPolar`, `isSelfAdjoint_quadraticEndPolar`: like `Q₀(ψ)`, every `B(ψ, φ)` is
   trace free in complex dimension two and self-adjoint.
@@ -86,12 +87,14 @@ theorem quadraticEnd_apply (ψ v : E) :
 theorem quadraticEnd_zero : quadraticEnd (0 : E) = 0 := by
   ext; simp
 
-/-- `ψ` is an eigenvector of `Q₀(ψ)` with eigenvalue `‖ψ‖² / 2`. -/
+/-- `Q₀(ψ)` maps `ψ` to `(‖ψ‖² / 2) ψ`; in particular a nonzero `ψ` is an eigenvector of `Q₀(ψ)`
+with eigenvalue `‖ψ‖² / 2`. As a simp lemma it takes priority over `quadraticEnd_apply`, which
+would leave `Q₀(ψ) ψ` as an unreduced difference. -/
+@[simp high]
 theorem quadraticEnd_apply_self (ψ : E) :
     quadraticEnd ψ ψ = ((‖ψ‖ : ℂ) ^ 2 / 2) • ψ := by
-  rw [quadraticEnd_apply, inner_self_eq_norm_sq_to_K, ← sub_smul, RCLike.ofReal_eq_complex_ofReal]
-  congr 1
-  ring
+  simp
+  module
 
 /-- `Q₀` is homogeneous of degree two for the real structure: `Q₀(c ψ) = |c|² Q₀(ψ)`. -/
 theorem quadraticEnd_smul (c : ℂ) (ψ : E) :
@@ -110,6 +113,14 @@ theorem quadraticEnd_smul_of_norm_eq_one {u : ℂ} (hu : ‖u‖ = 1) (ψ : E) :
 @[simp]
 theorem quadraticEnd_neg (ψ : E) : quadraticEnd (-ψ) = quadraticEnd ψ := by
   simpa using quadraticEnd_smul_of_norm_eq_one (u := -1) (by simp) ψ
+
+/-- **`Q₀` is natural under unitary isomorphisms**: `Q₀(U ψ) = U Q₀(ψ) U⁻¹`. This is what lets
+`Q₀` be computed in any unitary frame of a Hermitian vector bundle. -/
+theorem quadraticEnd_linearIsometryEquiv_apply {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℂ E'] (U : E ≃ₗᵢ[ℂ] E') (ψ : E) :
+    quadraticEnd (U ψ) = U.toContinuousLinearEquiv.conjContinuousAlgEquiv (quadraticEnd ψ) := by
+  ext φ
+  simp [LinearIsometryEquiv.inner_map_eq_flip]
 
 /-- In complex dimension two, `Q₀(ψ)` is trace free. -/
 theorem trace_quadraticEnd [FiniteDimensional ℂ E] (h₂ : Module.finrank ℂ E = 2) (ψ : E) :
@@ -165,30 +176,15 @@ def quadraticEndPolar : E →L[ℝ] E →L[ℝ] (E →L[ℂ] E) :=
     (LinearMap.mk₂ ℝ
       (fun ψ φ ↦ rankOne ℂ φ ψ + rankOne ℂ ψ φ -
         ((Complex.re ⟪ψ, φ⟫_ℂ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ E)
-      (fun ψ ψ' φ ↦ by
-        simp only [map_add, add_apply, inner_add_left, Complex.add_re, Complex.ofReal_add,
-          add_smul]
-        abel)
-      (fun r ψ φ ↦ by
-        rw [← Complex.coe_smul r ψ, ← Complex.coe_smul r (_ : E →L[ℂ] E)]
-        simp only [map_smulₛₗ, smul_apply, inner_smul_left, Complex.conj_ofReal,
-          Complex.re_ofReal_mul, Complex.ofReal_mul, mul_smul, smul_sub, smul_add,
-          RingHom.id_apply])
-      (fun ψ φ φ' ↦ by
-        simp only [map_add, add_apply, inner_add_right, Complex.add_re, Complex.ofReal_add,
-          add_smul]
-        abel)
-      (fun r ψ φ ↦ by
-        rw [← Complex.coe_smul r φ, ← Complex.coe_smul r (_ : E →L[ℂ] E)]
-        simp only [map_smulₛₗ, smul_apply, inner_smul_right, Complex.conj_ofReal,
-          Complex.re_ofReal_mul, Complex.ofReal_mul, mul_smul, smul_sub, smul_add,
-          RingHom.id_apply]))
+      (fun ψ ψ' φ ↦ by ext; simp [inner_add_left]; module)
+      (fun r ψ φ ↦ by ext; simp [inner_smul_left, ← Complex.coe_smul]; module)
+      (fun ψ φ φ' ↦ by ext; simp [inner_add_right]; module)
+      (fun r ψ φ ↦ by ext; simp [inner_smul_right, ← Complex.coe_smul]; module))
     3 fun ψ φ ↦ by
       dsimp only [LinearMap.mk₂_apply]
-      refine (norm_sub_le _ _).trans ((add_le_add (norm_add_le _ _) ((norm_smul_le _ _).trans
-        (mul_le_mul_of_nonneg_left (norm_id_le (𝕜 := ℂ) (E := E)) (norm_nonneg _)))).trans ?_)
-      rw [norm_rankOne, norm_rankOne, mul_one, Complex.norm_real, Real.norm_eq_abs]
       have := (Complex.abs_re_le_norm ⟪ψ, φ⟫_ℂ).trans (norm_inner_le_norm ψ φ)
+      grw [norm_sub_le, norm_add_le, norm_smul, norm_id_le]
+      simp only [norm_rankOne, Complex.norm_real, Real.norm_eq_abs]
       linarith [mul_comm ‖ψ‖ ‖φ‖]
 
 /-- Unfolding lemma for `quadraticEndPolar`. -/
@@ -205,28 +201,35 @@ theorem quadraticEndPolar_apply_apply (ψ φ v : E) :
 
 /-- The polarization of `Q₀` is symmetric. -/
 theorem quadraticEndPolar_comm (ψ φ : E) : quadraticEndPolar ψ φ = quadraticEndPolar φ ψ := by
-  rw [quadraticEndPolar_apply, quadraticEndPolar_apply, add_comm (rankOne ℂ φ ψ),
-    ← RCLike.re_to_complex, inner_re_symm, RCLike.re_to_complex]
+  simp only [quadraticEndPolar_apply, add_comm (rankOne ℂ φ ψ), ← RCLike.re_to_complex,
+    inner_re_symm ψ]
+
+/-- `B(ψ, c ψ) = 2 Re(c) Q₀(ψ)`. In particular `B(ψ, ξ ψ) = 0` for imaginary `ξ`: the derivative
+of `Q₀` vanishes along the infinitesimal phase directions. -/
+theorem quadraticEndPolar_smul_self (c : ℂ) (ψ : E) :
+    quadraticEndPolar ψ (c • ψ) = (2 * c.re) • quadraticEnd ψ := by
+  ext v
+  -- The coefficient of `⟪ψ, v⟫ ψ` is `c + conj c = 2 Re(c)`.
+  simp [inner_smul_left, inner_smul_right, ← Complex.ofReal_pow,
+    eq_sub_of_add_eq' (Complex.add_conj c)]
+  module
 
 /-- The polarization of `Q₀` restricts on the diagonal to `2 Q₀`. -/
 @[simp]
 theorem quadraticEndPolar_self (ψ : E) : quadraticEndPolar ψ ψ = 2 • quadraticEnd ψ := by
-  ext v
-  rw [quadraticEndPolar_apply, ← RCLike.re_to_complex, inner_self_eq_norm_sq]
-  simp only [sub_apply, add_apply, smul_apply, quadraticEnd_apply, rankOne_apply,
-    id_apply]
-  push_cast
-  module
+  simpa [two_smul] using quadraticEndPolar_smul_self 1 ψ
+
+/-- `B(ψ, i ψ) = 0`: the derivative of `Q₀` vanishes along the infinitesimal phase direction
+`i ψ`. -/
+@[simp]
+theorem quadraticEndPolar_I_smul_self (ψ : E) : quadraticEndPolar ψ (Complex.I • ψ) = 0 := by
+  simp [quadraticEndPolar_smul_self]
 
 /-- Real polarization of `Q₀`: `Q₀(ψ + φ) = Q₀(ψ) + Q₀(φ) + B(ψ, φ)`. -/
 theorem quadraticEnd_add (ψ φ : E) :
     quadraticEnd (ψ + φ) = quadraticEnd ψ + quadraticEnd φ + quadraticEndPolar ψ φ := by
   ext v
-  simp only [quadraticEndPolar_apply, add_apply, sub_apply, smul_apply, quadraticEnd_apply,
-    rankOne_apply, id_apply, inner_add_left]
-  rw [← Complex.ofReal_pow, ← Complex.ofReal_pow, ← Complex.ofReal_pow, norm_add_sq (𝕜 := ℂ),
-    RCLike.re_to_complex]
-  push_cast
+  simp [inner_add_left, ← Complex.ofReal_pow, norm_add_sq (𝕜 := ℂ)]
   module
 
 /-- In complex dimension two, the polarization `B(ψ, φ)` of `Q₀` is trace free. -/
@@ -240,26 +243,6 @@ theorem isSelfAdjoint_quadraticEndPolar [CompleteSpace E] (ψ φ : E) :
   rw [eq_sub_of_add_eq' (quadraticEnd_add ψ φ).symm]
   exact (isSelfAdjoint_quadraticEnd _).sub
     ((isSelfAdjoint_quadraticEnd _).add (isSelfAdjoint_quadraticEnd _))
-
-/-- `B(ψ, i ψ) = 0`: the derivative of `Q₀` vanishes along the infinitesimal phase direction
-`i ψ`. -/
-@[simp]
-theorem quadraticEndPolar_I_smul_self (ψ : E) : quadraticEndPolar ψ (Complex.I • ψ) = 0 := by
-  ext v
-  simp [inner_smul_left, inner_smul_right, inner_self_eq_norm_sq_to_K, ← Complex.ofReal_pow]
-  module
-
-/-- `B(ψ, c ψ) = 2 Re(c) Q₀(ψ)`. In particular `B(ψ, ξ ψ) = 0` for imaginary `ξ`: the derivative
-of `Q₀` vanishes along the infinitesimal phase directions. -/
-theorem quadraticEndPolar_smul_self (c : ℂ) (ψ : E) :
-    quadraticEndPolar ψ (c • ψ) = (2 * c.re) • quadraticEnd ψ := by
-  -- Split `c ψ = Re(c) ψ + Im(c) (i ψ)` and use real bilinearity.
-  have hc : c • ψ = c.re • ψ + c.im • Complex.I • ψ := by
-    nth_rw 1 [← c.re_add_im]
-    rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
-  rw [hc, map_add, map_smul, map_smul, quadraticEndPolar_I_smul_self, smul_zero, add_zero,
-    quadraticEndPolar_self]
-  module
 
 /-- `B(ψ - φ, ψ + φ) = 2 (Q₀(ψ) - Q₀(φ))`. -/
 theorem quadraticEndPolar_sub_add (ψ φ : E) :
@@ -335,8 +318,6 @@ theorem fderiv_quadraticEnd (ψ : E) :
 theorem contDiff_quadraticEnd {n : WithTop ℕ∞} :
     ContDiff ℝ n (quadraticEnd : E → E →L[ℂ] E) := by
   rw [quadraticEnd_eq_smul_quadraticEndPolar]
-  have hB : ContDiff ℝ n fun p : E × E ↦ quadraticEndPolar p.1 p.2 :=
-    (quadraticEndPolar (E := E)).isBoundedBilinearMap.contDiff
-  exact (hB.comp (contDiff_id.prodMk contDiff_id)).const_smul _
+  fun_prop
 
 end TauCeti.SeibergWitten

@@ -135,6 +135,11 @@ theorem mem_preimageBall {c : Y} {r : ℝ} {x : X} :
 theorem preimageBall_subset_source {c : Y} {r : ℝ} : (e.preimageBall c r : Set X) ⊆ e.source :=
   e.symm.imageOpens_subset_target
 
+/-- Increasing the coordinate radius increases its native preimage open. -/
+theorem preimageBall_mono (e : OpenPartialHomeomorph X Y) {c : Y} {r s : ℝ} (h : r ≤ s) :
+    e.preimageBall c r ≤ e.preimageBall c s :=
+  imageOpens_mono (e := e.symm) (Metric.ball_subset_ball h)
+
 /-- If `closedBall c r` lies in the chart target, the coordinate ball of radius `r` has compact
 closure. -/
 theorem isCompact_closure_preimageBall [R1Space X] [ProperSpace Y] {c : Y} {r : ℝ}

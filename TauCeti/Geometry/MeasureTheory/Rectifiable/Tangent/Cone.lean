@@ -24,6 +24,12 @@ patchwise assertion. It does not assert tangency of an arbitrary larger rectifia
 other patches must still be controlled by measure differentiation. The derivative-range
 form is also used to construct measurable tangent projections in `Rectifiable.Tangent.Measurable`.
 
+The measure-theoretic counterpart, used for approximate tangent planes of rectifiable sets, is the
+cone-density condition `TauCeti.DensityZeroOutsideCones`: the part of a set `S` outside every cone
+about the affine subspace `x + P` has `k`-dimensional density zero at `x`. It passes to subsets,
+enlarges with the subspace, depends only on the set near `x`, and holds trivially for a set
+contained in `x + P`, in particular for the whole space `P = ⊤`.
+
 ## References
 
 * L. Simon, *Lectures on Geometric Measure Theory*, §11 (tangents to rectifiable sets).
@@ -86,3 +92,76 @@ theorem LipschitzOnWith.ae_exists_submodule_forall_infDist_le
   filter_upwards [hg.ae_exists_fderiv_range_forall_infDist_le hi'] with y hy hyimage
   obtain ⟨x, _, _, _, hdim, hcone⟩ := hy hyimage
   exact ⟨(fderiv ℝ g x).range, hdim, hcone⟩
+
+namespace TauCeti
+
+open Filter
+open scoped Topology
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
+  [BorelSpace V] {k : ℕ}
+
+/-- The **cone-density condition** of an approximate tangent plane: the part of `S` outside every
+cone about the affine subspace `x + P` has `k`-dimensional density zero at `x`. Here `P` is an
+arbitrary subspace, and the condition holds trivially for `P = ⊤`
+(`TauCeti.densityZeroOutsideCones_top`). For a `k`-dimensional `P`, together with positive density,
+which holds almost everywhere on a countably `k`-rectifiable set of locally finite measure, it says
+that `P` is an approximate tangent plane of `S` at `x`. -/
+def DensityZeroOutsideCones (k : ℕ) (S : Set V) (x : V) (P : Submodule ℝ V) : Prop :=
+  ∀ ε > (0 : ℝ), Tendsto (fun r ↦
+    μHE[k] {z ∈ S ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)
+
+/-- Unfolding the cone-density condition. -/
+theorem densityZeroOutsideCones_iff {S : Set V} {x : V} {P : Submodule ℝ V} :
+    DensityZeroOutsideCones k S x P ↔ ∀ ε > (0 : ℝ), Tendsto (fun r ↦
+      μHE[k] {z ∈ S ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
+  Iff.rfl
+
+/-- A set contained in the affine subspace `x + P` satisfies the cone-density condition at `x` for
+`P`: none of its points lies outside a cone about `x + P`. -/
+theorem densityZeroOutsideCones_of_forall_sub_mem {S : Set V} {x : V} {P : Submodule ℝ V}
+    (h : ∀ z ∈ S, z - x ∈ P) : DensityZeroOutsideCones k S x P := fun ε hε ↦ by
+  refine tendsto_const_nhds.congr fun r ↦ ?_
+  have hempty : {z ∈ S ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} = ∅ := by
+    refine eq_empty_iff_forall_notMem.2 fun z ⟨⟨hz, _⟩, hlt⟩ ↦ hlt.not_ge ?_
+    rw [infDist_zero_of_mem (SetLike.mem_coe.2 (h z hz))]
+    exact mul_nonneg hε.le dist_nonneg
+  rw [hempty, measure_empty, ENNReal.zero_div]
+
+/-- Every set satisfies the cone-density condition for the whole space: no point lies outside a
+cone about it. -/
+theorem densityZeroOutsideCones_top (S : Set V) (x : V) :
+    DensityZeroOutsideCones k S x ⊤ :=
+  densityZeroOutsideCones_of_forall_sub_mem fun _ _ ↦ Submodule.mem_top
+
+/-- The cone-density condition passes to subsets. -/
+theorem DensityZeroOutsideCones.mono {S T : Set V} {x : V} {P : Submodule ℝ V}
+    (h : DensityZeroOutsideCones k T x P) (hST : S ⊆ T) : DensityZeroOutsideCones k S x P :=
+  fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε)
+    (fun _ ↦ zero_le) fun _ ↦ ENNReal.div_le_div_right (measure_mono fun _ hz ↦ by
+      exact ⟨⟨hST hz.1.1, hz.1.2⟩, hz.2⟩) _
+
+/-- Enlarging the subspace preserves the cone-density condition. -/
+theorem DensityZeroOutsideCones.mono_submodule {S : Set V} {x : V} {P Q : Submodule ℝ V}
+    (h : DensityZeroOutsideCones k S x P) (hPQ : P ≤ Q) :
+    DensityZeroOutsideCones k S x Q :=
+  fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε)
+    (fun _ ↦ zero_le) fun _ ↦ ENNReal.div_le_div_right (measure_mono fun _ hz ↦ by
+      exact ⟨hz.1, hz.2.trans_le (infDist_le_infDist_of_subset
+        (SetLike.coe_subset_coe.mpr hPQ) ⟨0, P.zero_mem⟩)⟩) _
+
+/-- The cone-density condition at `x` only depends on the set near `x`. -/
+theorem densityZeroOutsideCones_inter_iff {S B : Set V} {x : V} {P : Submodule ℝ V} {δ : ℝ}
+    (hδ : 0 < δ) (hB : closedBall x δ ⊆ B) :
+    DensityZeroOutsideCones k (S ∩ B) x P ↔ DensityZeroOutsideCones k S x P := by
+  refine forall₂_congr fun ε _ ↦ tendsto_congr' ?_
+  filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
+  congr 3
+  ext z
+  simp only [mem_inter_iff, and_congr_left_iff]
+  intro _ hz
+  exact and_iff_left (hB (closedBall_subset_closedBall hr.le hz))
+
+end TauCeti

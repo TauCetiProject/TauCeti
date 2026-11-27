@@ -100,9 +100,9 @@ private theorem IsWeakCauchyRiemannOn.exists_comp (h : IsWeakCauchyRiemannOn p U
       ⟨(fderiv ℝ φ z).toContinuousLinearEquivOfDetNeZero (hdeti z hz),
         ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ _⟩
   exact ⟨hc.comp (hφ.continuousOn.mono hUO) hmaps,
-    hu.comp_contDiffOn_diffeo hO hφ hinj hdet hUO hmaps, D,
-    hD.comp_contDiffOn_diffeo hφi (hinj.mono interior_subset) hdeti (by simpa using hint),
-    hDp.comp_fderiv_contDiffOn_diffeo hO hφ hinj hdet hUO hmaps,
+    hu.comp_contDiffOn_diffeo hO hφ hdet hUO hmaps, D,
+    hD.comp_contDiffOn_diffeo hφi hdeti (by simpa using hint),
+    hDp.comp_fderiv_contDiffOn_diffeo hO hφ hdet hUO hmaps,
     ae_restrict_comp_of_differentiableOn volume isOpen_interior (hφi.differentiableOn one_ne_zero)
       (hinj.mono interior_subset) hdeti hint hae⟩
 

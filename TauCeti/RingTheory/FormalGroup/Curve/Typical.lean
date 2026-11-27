@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Nat.Log
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
 import TauCeti.Algebra.Algebra.NatCast
-import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -69,6 +68,8 @@ Hazewinkel classification, and Cartier–Quillen's canonical strict `p`-typicali
   `FormalGroup.pTypicalProjectorCurve_pTypicalProjectorCurve`, and
   `FormalGroup.range_pTypicalProjectorCurve`: Cartier's projector lands in `p`-typical curves, fixes
   precisely the `p`-typical curves, and is idempotent with image `F.pTypicalCurveSubgroup p`.
+* `FormalGroup.Curve.IsPTypical.coeff_eq_zero_of_forall_lt`: over a ring in which all other
+  primes are units, the leading degree of a nonzero typical curve is a power of `p`.
 * `FormalGroup.frobeniusCurve_pTypicalProjectorCurve_of_forall_coprime` and
   `FormalGroup.pTypicalProjectorCurve_verschiebungCurve_of_forall_coprime`: commutation of Cartier's
   projector with `f_m` and `V_m` for `m ≠ 0` coprime to every prime `q ≠ p` (specializing to
@@ -415,7 +416,7 @@ theorem IsPTypical.coeff_subst_log_eq_zero [Algebra ℚ R] {p : ℕ} {γ : F.Cur
   simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logIso_toHom,
     logHom_toPowerSeries] using
     (hγ.mapCurve F.logIso.toHom).coeff_𝔾ₐ_eq_zero
-      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero hq.ne_zero) hk
+      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero ℚ hq.ne_zero) hk
 
 end IsPTypical
 
@@ -442,6 +443,13 @@ theorem pTypicalCurveSubgroup_eq_iInf_ker (F : FormalGroup R) [F.IsComm] (p : �
       ⨅ (q : ℕ) (hq : q.Prime) (_ : q ≠ p), (F.frobeniusCurve q hq.ne_zero).ker := by
   ext γ
   simp [mem_pTypicalCurveSubgroup, Curve.isPTypical_def]
+
+/-- A finite formal-group sum of `p`-typical curves is `p`-typical. -/
+theorem Curve.IsPTypical.sum {F : FormalGroup R} [F.IsComm] {ι : Type*} {p : ℕ}
+    (s : Finset ι) {f : ι → F.Curve} (h : ∀ i ∈ s, (f i).IsPTypical p) :
+    (∑ i ∈ s, f i).IsPTypical p :=
+  (F.mem_pTypicalCurveSubgroup p _).mp <| AddSubgroup.sum_mem _ fun i hi ↦
+    (F.mem_pTypicalCurveSubgroup p _).mpr (h i hi)
 
 section Iso
 
@@ -1079,6 +1087,26 @@ theorem pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_forall_ne_pow (p : �
     F.pTypicalProjectorCurve p hunit (F.verschiebungCurve n hn γ) = 0 := by
   obtain ⟨q, hq, hqn, hqp⟩ := Nat.exists_prime_dvd_ne_of_forall_ne_pow hpow
   exact F.pTypicalProjectorCurve_verschiebungCurve_of_dvd p hunit hq hqp hqn hn γ
+
+/-- If a typical curve vanishes below a degree which is not a power of `p`, it
+also vanishes in that degree, provided every other prime is invertible. -/
+theorem Curve.IsPTypical.coeff_eq_zero_of_forall_lt {F : FormalGroup R} [F.IsComm]
+    {p : ℕ} {γ : F.Curve} (hγ : γ.IsPTypical p)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ}
+    (hpow : ∀ n, k ≠ p ^ n) (hzero : ∀ i < k, PowerSeries.coeff i γ.toPowerSeries = 0) :
+    PowerSeries.coeff k γ.toPowerSeries = 0 := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · exact γ.coeff_zero_toPowerSeries
+  have h := F.coeff_pTypicalProjectorCurve_congr p hunit (k := k)
+    (γ₁ := γ) (γ₂ := F.monomialCurve k hk (PowerSeries.coeff k γ.toPowerSeries))
+    (fun i hi ↦ by
+      rcases hi.eq_or_lt with rfl | hi
+      · simp
+      · simp [hzero i hi, PowerSeries.coeff_X_pow, hi.ne])
+  rw [F.pTypicalProjectorCurve_eq_self p hunit hγ,
+    monomialCurve_eq_verschiebungCurve_homothetyCurve,
+    F.pTypicalProjectorCurve_verschiebungCurve_eq_zero_of_forall_ne_pow p hunit hk hpow] at h
+  simpa using h
 
 /-- Cartier's `p`-typicalization projector commutes with every elementary Cartier projector. -/
 theorem cartierProjectorCurve_pTypicalProjectorCurve (p : ℕ)

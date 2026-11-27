@@ -394,4 +394,18 @@ theorem isMultiplierNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A
   simp_rw [isMultiplierNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_fst_comp_eq hg]
 
+/-- Precomposing a multiplier homomorphism with a star homomorphism of dense range preserves and
+reflects nondegeneracy. -/
+theorem isMultiplierNondegenerate_comp_iff {D : Type*} [NonUnitalCStarAlgebra D] {ψ : D →⋆ₙₐ[ℂ] A}
+    (hψ : DenseRange ψ) : (φ.comp ψ).IsMultiplierNondegenerate ↔ φ.IsMultiplierNondegenerate := by
+  rw [isMultiplierNondegenerate_iff_dense_span_comp hψ, isMultiplierNondegenerate_iff_dense]
+  simp only [comp_apply]
+
+/-- Composing a star homomorphism of dense range with the canonical inclusion into the multiplier
+algebra produces a nondegenerate multiplier homomorphism. -/
+theorem isMultiplierNondegenerate_coeHom_comp {D : Type*} [NonUnitalCStarAlgebra D]
+    {ψ : D →⋆ₙₐ[ℂ] A} (hψ : DenseRange ψ) :
+    ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).IsMultiplierNondegenerate :=
+  (isMultiplierNondegenerate_comp_iff hψ).mpr isMultiplierNondegenerate_coeHom
+
 end NonUnitalStarAlgHom

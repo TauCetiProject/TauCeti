@@ -7,165 +7,179 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Topology.Order.IsLUB
-import TauCeti.Analysis.Complex.PowerSeries.Approximation
+import TauCeti.Analysis.Complex.Runge.Approximation
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 
 /-!
-# The Dolbeault lemma on discs
+# The Dolbeault lemma on open subsets of the plane
 
-Let `D ⊆ ℂ` be an open disc of radius `R ≤ ∞` and let `f : ℂ → W` be `Cⁿ` on `D`, for `n ≥ 1`, with
-values in a complex Banach space. Then the inhomogeneous Cauchy–Riemann equation `\bar∂ g = f` has
-a `Cⁿ` solution `g` on all of `D`. Here `\bar∂ g` is the conjugate Wirtinger derivative
-`TauCeti.conjWirtingerDeriv g z 1 = (∂ₓ g + i ∂ᵧ g) / 2`.
+Let `Ω ⊆ ℂ` be open and let `f : ℂ → W` be `Cⁿ` on `Ω`, for `n ≥ 1`, with values in a complex
+Banach space. Then the inhomogeneous Cauchy–Riemann equation `\bar∂ g = f` has a `Cⁿ` solution `g`
+on all of `Ω`. Here `\bar∂ g` is the conjugate Wirtinger derivative
+`TauCeti.conjWirtingerDeriv g z 1 = (∂ₓ g + i ∂ᵧ g) / 2`. No connectedness, boundedness or
+topological condition on `Ω` is needed.
 
-For compactly supported `f` the Cauchy transform solves the equation on the whole plane
-(`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport`); cutting `f` off
-gives a solution `h k` on each disc of an exhaustion of `D` by concentric discs `B k`
-(`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq_on_closedBall`). These local solutions
-do not converge, but consecutive ones differ by a function `h (k + 1) - h k` that is holomorphic
-on a neighbourhood of the closure of `B k`. An entire function `P k`, a partial sum of the Taylor
-series of that difference, approximates it within `2⁻ᵏ` on `B k`
-(`DifferentiableOn.exists_differentiable_norm_sub_lt`). The corrected solutions
-`h k - ∑_{j < k} P j` then converge locally uniformly on `D`: on `B m` the limit is `h m` plus a
-locally uniform limit of holomorphic functions, so it is `Cⁿ` and has the same `\bar∂` as `h m`,
-namely `f`.
+Exhaust `Ω` by the compact sets `K k = TauCeti.filledExhaustion Ω k`, each filled in `Ω` and
+contained in the interior of the next. Cutting `f` off near `K (k + 1)` and applying the Cauchy
+transform gives a solution `h k` of `\bar∂ (h k) = f` on `K (k + 1)`
+(`IsCompact.exists_contDiff_conjWirtingerDeriv_apply_one_eq`). These local solutions do not
+converge, but consecutive ones differ by a function `h (k + 1) - h k` that is holomorphic on the
+interior of `K (k + 1)`, a neighbourhood of `K k`. Since `K k` is filled in `Ω`, Runge's theorem
+(`TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt`) gives a function `P k`,
+holomorphic on all of `Ω`, within `2⁻ᵏ` of that difference on `K k`. The corrected solutions
+`h k - ∑_{j < k} P j` then converge on `Ω`: on the interior of `K m` the limit is `h m` plus a
+uniform limit of holomorphic functions (`IsOpen.exists_differentiableOn_eqOn_add_tsum`), so it is
+`Cⁿ` and has the same `\bar∂` as `h m`, namely `f`.
 
-This is the local `\bar∂`-lemma behind the vanishing of `H¹(D, 𝒪)` on discs, which makes discs
-acyclic for the structure sheaf of a Riemann surface.
+In the language of Dolbeault cohomology, this says that `H^{0,1}(Ω) = 0` for every open `Ω ⊆ ℂ`:
+the structure sheaf of holomorphic functions has no first cohomology on open subsets of the plane.
 
 ## Main results
 
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball`: the Dolbeault lemma on a
-  disc `Metric.eball c R`, `R ≤ ∞`.
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_ball`: the same for a disc of
-  real radius.
+* `IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: the Dolbeault lemma on an open set
+  `Ω ⊆ ℂ`.
+* `IsOpen.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv`: closed completion
+  `\bar∂ g = ∂ f` on an open set `Ω ⊆ ℂ`.
+* `TauCeti.contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff`: affine characterization of
+  solutions to `\bar∂ u = f` on `Ω` modulo holomorphic functions.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: every `Cⁿ` function on the plane is
   `\bar∂` of a `Cⁿ` function, without any support condition.
-* `TauCeti.exists_contDiffOn_differentiableOn_sub_of_eball`: smooth functions `g k` on open sets
-  covering a disc `Metric.eball c R`, `R ≤ ∞`, with holomorphic pairwise differences, are all `f`
-  plus a holomorphic function for one smooth `f` on the disc.
+* `IsOpen.exists_contDiffOn_differentiableOn_sub`: smooth functions `g k` on open sets covering
+  an open set `U ⊆ ℂ`, with holomorphic pairwise differences, are all `f` plus a holomorphic
+  function for one smooth `f` on `U`.
 
 ## References
 
-* O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
-  Lemma 13.1 and Theorem 13.2 (Dolbeault's lemma), and the proof of §14.7.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
   North-Holland, 1990, Theorem 1.4.4.
+* O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
+  Lemma 13.1 and Theorem 13.2 (Dolbeault's lemma on discs), and the proof of §14.7.
 -/
 
 public section
 
 open Complex Filter Metric Set Topology
-open scoped NNReal ENNReal
+open scoped ENNReal
 
 namespace TauCeti
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {n : ℕ∞}
 
-/-- **The Dolbeault lemma on a disc.** Let `f` be `Cⁿ`, `n ≥ 1`, on the open disc `eball c R`
-of radius `R ≤ ∞`. Then there is a function `g`, `Cⁿ` on the disc, with `\bar∂ g = f` on the
-disc. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball {f : ℂ → W} {c : ℂ}
-    {R : ℝ≥0∞} (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f (eball c R)) :
-    ∃ g : ℂ → W, ContDiffOn ℝ n g (eball c R) ∧
-      ∀ z ∈ eball c R, conjWirtingerDeriv g z 1 = f z := by
-  rcases eq_zero_or_pos R with rfl | hR
-  · exact ⟨0, by simp, by simp⟩
-  -- An exhaustion of the disc by the discs `ball c (r k)`.
-  obtain ⟨u, hu_mono, hu_mem, hu_lim⟩ := exists_seq_strictMono_tendsto' hR
-  have hu_top (k : ℕ) : u k ≠ ⊤ := ((hu_mem k).2.trans_le le_top).ne
-  set r : ℕ → ℝ := fun k ↦ (u k).toReal
-  have hr_mono : StrictMono r := fun i j hij ↦
-    (ENNReal.toReal_lt_toReal (hu_top i) (hu_top j)).2 (hu_mono hij)
-  have hr_pos (k : ℕ) : 0 < r k := ENNReal.toReal_pos (hu_mem k).1.ne' (hu_top k)
-  have hball (k : ℕ) : ball c (r k) = eball c (u k) := by
-    rw [← eball_ofReal, ENNReal.ofReal_toReal (hu_top k)]
-  -- Intermediate radii `r k < s k < r (k + 1)`.
-  set s : ℕ → ℝ := fun k ↦ (r k + r (k + 1)) / 2
-  have hrs (k : ℕ) : r k < s k := by have := hr_mono k.lt_succ_self; simp only [s]; linarith
-  have hsr (k : ℕ) : s k < r (k + 1) := by
-    have := hr_mono k.lt_succ_self; simp only [s]; linarith
-  have hs_mono : StrictMono s := strictMono_nat_of_lt_succ fun k ↦ (hsr k).trans (hrs (k + 1))
-  -- Local solutions `h k`, with `\bar∂ (h k) = f` on `closedBall c (s k)`.
+/-- **The Dolbeault lemma on an open subset of the plane.** Let `f` be `Cⁿ`, `n ≥ 1`, on an open
+set `Ω ⊆ ℂ`. Then there is a function `g`, `Cⁿ` on `Ω`, with `\bar∂ g = f` on `Ω`. -/
+theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq {f : ℂ → W}
+    {Ω : Set ℂ} (hΩ : IsOpen Ω) (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f Ω) :
+    ∃ g : ℂ → W, ContDiffOn ℝ n g Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv g z 1 = f z := by
+  -- The filled exhaustion `K k` of `Ω`, each stage inside the interior of the next.
+  set K : ℕ → Set ℂ := filledExhaustion Ω
+  have hK_mono : Monotone K := filledExhaustion_monotone Ω
+  have hK_int (k : ℕ) : K k ⊆ interior (K (k + 1)) := filledExhaustion_subset_interior_succ Ω k
+  -- Local solutions `h k`, with `\bar∂ (h k) = f` on `K (k + 1)`.
   have hloc (k : ℕ) : ∃ h : ℂ → W, ContDiff ℝ n h ∧
-      ∀ z ∈ closedBall c (s k), conjWirtingerDeriv h z 1 = f z :=
-    exists_contDiff_conjWirtingerDeriv_apply_one_eq_on_closedBall hn
-      (hf.mono ((hball (k + 1)).trans_subset (eball_subset_eball (hu_mem (k + 1)).2.le)))
-      ((hr_pos k).trans (hrs k)) (hsr k)
+      ∀ z ∈ K (k + 1), conjWirtingerDeriv h z 1 = f z :=
+    (isCompact_filledExhaustion Ω (k + 1)).exists_contDiff_conjWirtingerDeriv_apply_one_eq hn hΩ
+      (filledExhaustion_subset Ω (k + 1)) hf
   choose h hh hh_eq using hloc
   have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   have hd (k : ℕ) : Differentiable ℝ (h k) := (hh k).differentiable hn0
-  -- Consecutive local solutions differ by a holomorphic function.
-  have hdiff (k : ℕ) : DifferentiableOn ℂ (h (k + 1) - h k) (ball c (s k)) := fun z hz ↦ by
+  -- Consecutive local solutions differ by a holomorphic function near `K k`.
+  have hdiff (k : ℕ) : DifferentiableOn ℂ (h (k + 1) - h k) (interior (K (k + 1))) := fun z hz ↦ by
     refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
       ((hd (k + 1)).sub (hd k) z)).2 ?_).differentiableWithinAt
     rw [conjWirtingerDeriv_sub (hd (k + 1) z) (hd k z), sub_apply,
-      hh_eq (k + 1) z (ball_subset_closedBall (ball_subset_ball (hs_mono k.lt_succ_self).le hz)),
-      hh_eq k z (ball_subset_closedBall hz), sub_self]
-  -- Taylor corrections `P k`, approximating the differences within `2⁻ᵏ`.
-  have happrox (k : ℕ) : ∃ P : ℂ → W, Differentiable ℂ P ∧
-      ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
-    (hdiff k).exists_differentiable_norm_sub_lt (hrs k) (by positivity)
+      hh_eq (k + 1) z (hK_mono (k + 1).le_succ (interior_subset hz)),
+      hh_eq k z (interior_subset hz), sub_self]
+  -- Runge corrections `P k`, holomorphic on `Ω` and within `2⁻ᵏ` of the differences on `K k`.
+  have happrox (k : ℕ) : ∃ P : ℂ → W, DifferentiableOn ℂ P Ω ∧
+      ∀ z ∈ K k, ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
+    (hΩ.isRungeCompactPair_filledExhaustion k).exists_differentiableOn_norm_sub_lt isOpen_interior
+      (hK_int k) (hdiff k) (by positivity)
   choose P hP hP_lt using happrox
-  -- On `ball c (r m)`, the limit is `h m` plus a holomorphic function.
+  -- On the interior of `K m`, the limit is `h m` plus a holomorphic function.
   set G : ℂ → W := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
-  have hkey (m : ℕ) : ∃ K : ℂ → W, DifferentiableOn ℂ K (ball c (r m)) ∧
-      EqOn G (h m + K) (ball c (r m)) :=
-    exists_differentiableOn_eqOn_add_tsum hr_mono.monotone hP
-      (fun k ↦ (hdiff k).mono (ball_subset_ball (hrs k).le)) hP_lt m
-  -- Every point of the disc lies in some `ball c (r m)`, where `\bar∂ (h m) = f`.
+  have hkey (m : ℕ) : ∃ R : ℂ → W, DifferentiableOn ℂ R (interior (K m)) ∧
+      EqOn G (h m + R) (interior (K m)) :=
+    isOpen_interior.exists_differentiableOn_eqOn_add_tsum
+      (fun k ↦ (hP k).mono (interior_subset.trans (filledExhaustion_subset Ω m)))
+      (fun k hk ↦ (hdiff k).mono (interior_mono (hK_mono (hk.trans k.le_succ))))
+      fun k hk z hz ↦ (hP_lt k z (hK_mono hk (interior_subset hz))).le
+  -- Every point of `Ω` lies in some `K m`, inside the interior of `K (m + 1)`.
   have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := G)
-    (n := n) (U := eball c R) (v := fun _ : Unit ↦ (1 : ℂ)) (f := fun _ ↦ f) (by exact_mod_cast hn)
+    (n := n) (U := Ω) (v := fun _ : Unit ↦ (1 : ℂ)) (f := fun _ ↦ f) (by exact_mod_cast hn)
     fun z hz ↦ by
-      obtain ⟨m, hm⟩ := (hu_lim.eventually (lt_mem_nhds hz)).exists
-      obtain ⟨K, hK, hGK⟩ := hkey m
-      exact ⟨ball c (r m), isOpen_ball, (hball m).symm ▸ hm, h m, K, (hh m).contDiffOn,
-        fun w hw _ ↦ hh_eq m w (ball_subset_closedBall (ball_subset_ball (hrs m).le hw)),
-        hK.contDiffOn isOpen_ball, hGK⟩
+      obtain ⟨m, hm⟩ := mem_iUnion.mp (hΩ.iUnion_filledExhaustion.symm ▸ hz : z ∈ ⋃ k, K k)
+      obtain ⟨R, hR, hGR⟩ := hkey (m + 1)
+      exact ⟨interior (K (m + 1)), isOpen_interior, hK_int m hm, h (m + 1), R,
+        (hh (m + 1)).contDiffOn,
+        fun w hw _ ↦ hh_eq (m + 1) w (hK_mono (m + 1).le_succ (interior_subset hw)),
+        hR.contDiffOn isOpen_interior, hGR⟩
   exact ⟨G, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
 
-/-- **The Dolbeault lemma on a disc of real radius.** If `f` is `Cⁿ`, `n ≥ 1`, on `ball c R`,
-there is a function `g`, `Cⁿ` on `ball c R`, with `\bar∂ g = f` there. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_ball {f : ℂ → W} {c : ℂ} {R : ℝ}
-    (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f (ball c R)) :
-    ∃ g : ℂ → W, ContDiffOn ℝ n g (ball c R) ∧
-      ∀ z ∈ ball c R, conjWirtingerDeriv g z 1 = f z := by
-  rw [← eball_ofReal] at hf ⊢
-  exact exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball hn hf
+/-- **Affine solution space of `\bar∂ u = f`.** Given a particular `Cⁿ` solution `u₀` of
+`\bar∂ u₀ = f` on an open set `Ω ⊆ ℂ`, for `n ≥ 1`, another function `u` is a `Cⁿ` solution of
+`\bar∂ u = f` on `Ω` if and only if `u - u₀` is holomorphic on `Ω`. -/
+theorem contDiffOn_and_conjWirtingerDeriv_apply_one_eq_iff {u₀ u f : ℂ → W}
+    {Ω : Set ℂ} {n : WithTop ℕ∞} (hn : 1 ≤ n) (hΩ : IsOpen Ω) (hu₀ : ContDiffOn ℝ n u₀ Ω)
+    (hsol : ∀ z ∈ Ω, conjWirtingerDeriv u₀ z 1 = f z) :
+    (ContDiffOn ℝ n u Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv u z 1 = f z) ↔
+      DifferentiableOn ℂ (u - u₀) Ω := by
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  constructor
+  · rintro ⟨hu, huf⟩
+    exact differentiableOn_sub_of_conjWirtingerDeriv_eq hΩ (hu.differentiableOn hn0)
+      (hu₀.differentiableOn hn0) fun z hz ↦ by rw [huf z hz, hsol z hz]
+  · intro hdiff
+    have hcd : ContDiffOn ℝ n (u - u₀) Ω :=
+      ((DifferentiableOn.contDiffOn hdiff hΩ).of_le le_top).restrict_scalars ℝ
+    have hu_eq : u = u₀ + (u - u₀) := by ext z; simp
+    refine ⟨hu_eq ▸ hu₀.add hcd, fun z hz ↦ ?_⟩
+    have hd₀ : DifferentiableAt ℝ u₀ z :=
+      (hu₀.contDiffAt (hΩ.mem_nhds hz)).differentiableAt hn0
+    have hdh : DifferentiableAt ℂ (u - u₀) z := hdiff.differentiableAt (hΩ.mem_nhds hz)
+    rw [hu_eq, conjWirtingerDeriv_add hd₀ (hdh.restrictScalars ℝ), add_apply, hsol z hz,
+      hdh.conjWirtingerDeriv_eq_zero, zero_apply, add_zero]
+
+/-- **Closed completion on an open subset of `ℂ`.** For every `Cⁿ` function `f : ℂ → W` on an
+arbitrary open set `Ω ⊆ ℂ` with `1 ≤ m` and `m + 1 ≤ n`, there exists a `Cᵐ` function
+`g : ℂ → W` on `Ω` solving `\bar∂ g = ∂ f` on `Ω`. When `W = ℂ`, this is the coefficient equation
+for `g dz + f dbar z` to be closed. -/
+theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_eq_wirtingerDeriv {m n : ℕ∞}
+    {f : ℂ → W} {Ω : Set ℂ} (hΩ : IsOpen Ω) (hm : 1 ≤ m) (hmn : m + 1 ≤ n)
+    (hf : ContDiffOn ℝ n f Ω) :
+    ∃ g : ℂ → W, ContDiffOn ℝ m g Ω ∧
+      ∀ z ∈ Ω, conjWirtingerDeriv g z 1 = wirtingerDeriv f z 1 :=
+  hΩ.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hm
+    (hf.wirtingerDeriv_apply_of_isOpen hΩ (by exact_mod_cast hmn) 1)
 
 /-- **The Dolbeault lemma on the plane.** Every `Cⁿ` function `f : ℂ → W`, `n ≥ 1`, is `\bar∂ g`
 for a `Cⁿ` function `g`; no support condition on `f` is needed. -/
 theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq {f : ℂ → W} (hn : 1 ≤ n)
     (hf : ContDiff ℝ n f) :
     ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ z, conjWirtingerDeriv g z 1 = f z := by
-  obtain ⟨g, hg, hgf⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball
-    (c := 0) (R := ⊤) hn (by simpa using hf.contDiffOn)
-  exact ⟨g, contDiffOn_univ.1 (by simpa using hg), fun z ↦ hgf z (by simp)⟩
+  obtain ⟨g, hg, hgf⟩ :=
+    isOpen_univ.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hn hf.contDiffOn
+  exact ⟨g, contDiffOn_univ.1 hg, fun z ↦ hgf z (mem_univ z)⟩
 
 /-! ### Smooth data with holomorphic differences
 
 Smooth functions `g k` on open sets `Ω k ⊆ ℂ` whose pairwise differences are holomorphic have
-conjugate Wirtinger derivatives that agree on overlaps. On a disc covered by the `Ω k` these glue
-to one smooth function, and the Dolbeault lemma solves for it: some smooth `f` on the disc has
-every `f - g k` holomorphic. -/
+conjugate Wirtinger derivatives that agree on overlaps. On an open set `U` covered by the `Ω k`
+these glue to one smooth function, and the Dolbeault lemma solves for it: some smooth `f` on `U`
+has every `f - g k` holomorphic. -/
 
-/-- **Smooth data with holomorphic differences glue on a disc.** Let `g k` be smooth on open sets
-`Ω k` covering the disc `eball c R`, `R ≤ ∞`, with `g k - g l` complex differentiable on
-`Ω k ∩ Ω l`. Then some `f`, smooth on the disc, has `f - g k` complex differentiable on
-`eball c R ∩ Ω k` for every `k`. -/
-theorem exists_contDiffOn_differentiableOn_sub_of_eball {ι : Type*} {Ω : ι → Set ℂ}
-    {g : ι → ℂ → W} {c : ℂ} {R : ℝ≥0∞} (hΩ : ∀ k, IsOpen (Ω k))
+/-- **Smooth data with holomorphic differences glue on an open set.** Let `g k` be smooth on open
+sets `Ω k` covering an open set `U ⊆ ℂ`, with `g k - g l` complex differentiable on `Ω k ∩ Ω l`.
+Then some `f`, smooth on `U`, has `f - g k` complex differentiable on `U ∩ Ω k` for every `k`. -/
+theorem _root_.IsOpen.exists_contDiffOn_differentiableOn_sub {U : Set ℂ} (hU : IsOpen U)
+    {ι : Type*} {Ω : ι → Set ℂ} {g : ι → ℂ → W} (hΩ : ∀ k, IsOpen (Ω k))
     (hg : ∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (g k) (Ω k))
     (hgg : ∀ k l, DifferentiableOn ℂ (g k - g l) (Ω k ∩ Ω l))
-    (hcov : eball c R ⊆ ⋃ k, Ω k) :
-    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f (eball c R) ∧
-      ∀ k, DifferentiableOn ℂ (f - g k) (eball c R ∩ Ω k) := by
+    (hcov : U ⊆ ⋃ k, Ω k) :
+    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f U ∧
+      ∀ k, DifferentiableOn ℂ (f - g k) (U ∩ Ω k) := by
   classical
   -- The real differentiability of `g k` at points of `Ω k`.
   have hgd (k : ι) {z : ℂ} (hz : z ∈ Ω k) : DifferentiableAt ℝ (g k) z :=
@@ -185,18 +199,18 @@ theorem exists_contDiffOn_differentiableOn_sub_of_eball {ι : Type*} {Ω : ι �
     have h : ∃ k, z ∈ Ω k := ⟨k, hz⟩
     simp only [θ, h, ↓reduceDIte]
     exact hagree _ _ h.choose_spec hz
-  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ (eball c R) := by
+  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ U := by
     refine contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hcov hz)
     refine ⟨Ω k, hΩ k, hk, ?_⟩
     refine (((hg k).conjWirtingerDeriv_apply_of_isOpen (hΩ k) (by simp) 1).mono
       inter_subset_right).congr ?_
     exact fun w hw ↦ hθ k hw.2
-  obtain ⟨f, hf, hfθ⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball
-    (n := ⊤) le_top hθs
+  obtain ⟨f, hf, hfθ⟩ :=
+    hU.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (n := ⊤) le_top hθs
   refine ⟨f, hf, fun k z hz ↦ ?_⟩
   have hfd : DifferentiableAt ℝ f z :=
-    (hf.contDiffAt (isOpen_eball.mem_nhds hz.1)).differentiableAt (by simp)
+    (hf.contDiffAt (hU.mem_nhds hz.1)).differentiableAt (by simp)
   have hd : DifferentiableAt ℝ (f - g k) z := hfd.sub (hgd k hz.2)
   refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_)
     |>.differentiableWithinAt

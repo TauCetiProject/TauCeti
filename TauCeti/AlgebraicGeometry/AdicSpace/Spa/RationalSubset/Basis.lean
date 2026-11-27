@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 import TauCeti.RingTheory.Valuation.Annulus
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # The rational basis of the adic spectrum
@@ -81,6 +82,8 @@ the basis arguments uses it.
   pair of definition.
 * `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
   to a rational open when the ring map sends open ideals to open ideals.
+* `TauCeti.ValuationSpectrum.bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily`: preimage
+  along `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto `spaRationalFamily A⁺`.
 * `TauCeti.ValuationSpectrum.exists_finite_spaRationalFamily_refinement`: every open cover of a
   member of the family admits a finite refinement by members of the family — the basis and
   compactness results combined, and the form a sheaf criterion on this basis consumes.
@@ -166,6 +169,26 @@ theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
     ⟨V.image φ, φ s, by
       rw [Finset.coe_image, ← Ideal.map_span]
       exact hopen _ hV, rfl⟩
+
+/-- Preimage under `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto
+`spaRationalFamily A⁺`. -/
+theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily {B : Type*} [CommRing B]
+    [TopologicalSpace B] {Aplus : Subring A} {Bplus : Subring B}
+    (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
+    (hplus : Aplus.map (e : A →+* B) = Bplus) :
+    Set.BijOn (fun V : Set (spa Bplus) ↦ spaHomeomorphOfRingEquiv e he he' hplus ⁻¹' V)
+      (spaRationalFamily Bplus) (spaRationalFamily Aplus) := by
+  refine ⟨fun V hV ↦ ?_,
+    (spaHomeomorphOfRingEquiv e he he' hplus).surjective.preimage_injective.injOn,
+    fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U, ?_, ?_⟩⟩
+  · rw [coe_spaHomeomorphOfRingEquiv]
+    exact spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus Aplus _
+      (e.symm.isOpen_map_ideal he) hV
+  · rw [coe_spaHomeomorphOfRingEquiv_symm]
+    exact spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus _
+      (e.isOpen_map_ideal he') hU
+  · ext x
+    simp only [Set.mem_preimage, Homeomorph.symm_apply_apply]
 
 /-- The whole adic spectrum belongs to its rational family, presented as `R({1}/1)`. -/
 theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
@@ -530,6 +553,19 @@ theorem spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen (Aplus : Subring A
     spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t :=
   spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus
     ((IsTateRing.isOpen_iff_eq_top (Ideal.span (T : Set A))).mp hT)
+
+/-- Over a Tate ring, every rational open has a presentation `R(T/s)` with `s ∈ T` and `T`
+generating the unit ideal. -/
+theorem exists_spaBasicOpen_of_mem_spaRationalOpens {Aplus : Subring A}
+    {U : Opens (spa Aplus)} (hU : U ∈ spaRationalOpens Aplus) :
+    ∃ T : Finset A, ∃ s ∈ T, Ideal.span (T : Set A) = ⊤ ∧ U = spaBasicOpen Aplus T s := by
+  classical
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
+  refine ⟨insert s T, s, Finset.mem_insert_self s T, top_le_iff.mp ?_, ?_⟩
+  · rw [← IsTateRing.eq_top_of_isOpen hT]
+    exact Ideal.span_mono (by simp)
+  · ext v
+    simp only [SetLike.mem_coe, mem_spaBasicOpen, rationalSubset_insert_self]
 
 /-- **A dominating unit for a standard rational cover** (the input to Wedhorn Lemma 8.34(ii)).
 Let `A` be a Tate ring and `T` a finite set generating the unit ideal. Then some unit `ϖ` of `A`

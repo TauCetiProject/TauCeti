@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
+import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
@@ -58,6 +59,8 @@ smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In ti
 * `TauCeti.laplacian_heatKernel_convolution`: `Δ (K_t ⋆ g) = ΔK_t ⋆ g`.
 * `TauCeti.hasDerivAt_heatKernel_convolution`: **the heat equation**
   `∂ₜ (K_t ⋆ g)(x) = Δ (K_t ⋆ g)(x)` for `t > 0`.
+* `TauCeti.hasDerivAt_integral_heatKernel`: the time derivative of a heat-kernel mixture against
+  any finite measure is the mixture of its Laplacians.
 * `TauCeti.hasDerivAt_heatKernel_convolution_of_hasCompactSupport`: the heat equation in the form
   `∂ₜ (K_t ⋆ φ) = K_t ⋆ Δ φ` for `C²` data `φ` with compact support.
 * `TauCeti.heatKernel_convolution_sub_eq_integral`: Duhamel's formula
@@ -303,12 +306,8 @@ theorem exists_norm_laplacian_heatKernel_convolution_le {α : ℝ≥0} :
   have h₁ := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hτ hM hH two_ne_zero x
   have h₂ := mul_le_mul_of_nonneg_left (hC τ hτ) H.coe_nonneg
   push_cast at h₂
-  have h₃ : ‖fderiv ℝ (fderiv ℝ (heatKernel τ ⋆ g)) x‖ =
-      ‖iteratedFDeriv ℝ 2 (heatKernel τ ⋆ g) x‖ := by
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  refine (norm_laplacian_le _ x).trans ?_
+  refine (norm_laplacian_le_norm_iteratedFDeriv_two _ x).trans ?_
   calc _ ≤ (finrank ℝ E : ℝ) * (H * (C * τ ^ (((α : ℝ) - 2) / 2))) := by
-        rw [h₃]
         gcongr
         linarith
     _ = _ := by ring
@@ -415,6 +414,30 @@ theorem hasDerivAt_heatKernel_convolution (ht : 0 < t) (hM : ∀ᵐ y, ‖g y‖
   · refine Filter.Eventually.of_forall fun y s hs => ?_
     simpa only [lsmul_apply] using
       (hasDerivAt_heatKernel (by linarith [(hball s hs).1]) y).smul_const (g (x - y))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The time derivative of a heat-kernel mixture against any finite measure is the mixture of
+its Laplacians. No moment assumption on the mixing measure is needed. -/
+theorem hasDerivAt_integral_heatKernel {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {z : Ω → E} {v : ℝ} (hv : 0 < v)
+    (hz : AEStronglyMeasurable z μ) :
+    HasDerivAt (fun w ↦ ∫ a, heatKernel w (z a) ∂μ)
+      (∫ a, Δ (heatKernel v : E → ℝ) (z a) ∂μ) v := by
+  obtain ⟨B, hB⟩ := exists_eventually_norm_iteratedFDeriv_heatKernel_mul_rpow_le
+    (E := E) hv 2 (α := 0) le_rfl
+  simp only [rpow_zero, mul_one] at hB
+  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (s := {w | 0 < w ∧ ∀ x : E, ‖iteratedFDeriv ℝ 2 (heatKernel w) x‖ ≤ B})
+    ((eventually_gt_nhds hv).and hB)
+    (F' := fun w a ↦ Δ (heatKernel w : E → ℝ) (z a))
+    (bound := fun _ ↦ finrank ℝ E * B)
+    (.of_forall fun w ↦
+      (contDiff_heatKernel w (k := 0)).continuous.comp_aestronglyMeasurable hz)
+    (integrable_heatKernel_comp hv hz)
+    ((integrable_laplacian_heatKernel_comp hv hz).aestronglyMeasurable)
+    (.of_forall fun a w hw ↦ (norm_laplacian_le_norm_iteratedFDeriv_two _ _).trans
+      (mul_le_mul_of_nonneg_left (hw.2 (z a)) (Nat.cast_nonneg _)))
+    (integrable_const _) (.of_forall fun a w hw ↦ hasDerivAt_heatKernel hw.1 _)).2
 
 /-- **The heat equation for `C²` data with compact support.** For `t > 0`, the function
 `s ↦ (K_s ⋆ φ)(x)` has derivative `(K_t ⋆ Δ φ)(x)` at `t`: the Laplacian of the solution is the

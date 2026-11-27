@@ -11,6 +11,9 @@ public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
 public import TauCeti.RingTheory.Valuation.IsTrivialOn
+import TauCeti.Algebra.GroupWithZero.Range
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
+import TauCeti.RingTheory.Valuation.Surjective
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
@@ -20,14 +23,17 @@ A *place* of a field extension `F/k` is a normalized discrete valuation of `F` t
 on `k`: a valuation `v : Valuation F ℤᵐ⁰` which is surjective and satisfies `v c = 1` for every
 nonzero constant `c`. This is the object Stichtenoth introduces in
 *Algebraic Function Fields and Codes*, Definitions 1.1.4 and 1.1.9, presented here in the
-normalized form: because the value group is pinned to be all of `ℤᵐ⁰`, no quotient by valuation
-equivalence is needed and equality of places *is* equality of valuations
-(`TauCeti.Place.eq_of_isEquiv`).
+normalized form: because the valuation is pinned to be onto `ℤᵐ⁰`, so that its value group is
+all of `ℤᵐ⁰ˣ`, no quotient by valuation equivalence is needed and equality of places *is*
+equality of valuations (`TauCeti.Place.eq_of_isEquiv`).
 
 ## Main definitions
 
 * `TauCeti.Place k F`: a place of `F/k`.
 * `TauCeti.Place.integers`: the valuation ring `𝒪_P ⊆ F` of a place.
+* `TauCeti.Place.integersAlgebra`: the `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`, with
+  `TauCeti.Place.coe_algebraMap_integersAlgebra`, `TauCeti.Place.isScalarTower_integers`, and
+  `TauCeti.Place.isScalarTower_integers_extension`.
 * `TauCeti.Place.ord`: the additive order function `ord_P : F → ℤ`, normalized so that a prime
   element has order `1`. It has the junk value `ord_P 0 = 0`.
 * `TauCeti.Place.ResidueField`: the residue field `F_P = 𝒪_P / 𝔪_P`, a `k`-algebra.
@@ -98,7 +104,8 @@ variable (k : Type u) (F : Type v) [Field k] [Field F] [Algebra k F]
 
 /-- A **place** of the field extension `F/k` is a normalized discrete valuation of `F` that is
 trivial on the constants: a `ℤᵐ⁰`-valued valuation which is surjective — so that its value
-group is exactly `ℤ` — and which takes the value `1` on every nonzero element of `k`.
+group is all of `ℤᵐ⁰ˣ`, a copy of `ℤ` — and which takes the value `1` on every nonzero element
+of `k`.
 
 Normalization removes the need to quotient by valuation equivalence: two places are equal as
 soon as their valuations are equivalent (`TauCeti.Place.eq_of_isEquiv`). -/
@@ -107,7 +114,8 @@ structure Place where
   the elements of the valuation ring are those with `valuation f ≤ 1`, and a prime element `t`
   satisfies `valuation t = WithZero.exp (-1)`. -/
   valuation : Valuation F ℤᵐ⁰
-  /-- The valuation is surjective, i.e. normalized: its value group is all of `ℤᵐ⁰`. -/
+  /-- The valuation is surjective, i.e. normalized: it is onto `ℤᵐ⁰`, so its value group is all
+  of `ℤᵐ⁰ˣ`. -/
   valuation_surjective : Function.Surjective valuation
   /-- The valuation is trivial on the constants. -/
   isTrivialOn : valuation.IsTrivialOn k
@@ -399,12 +407,12 @@ end Constants
 
 section Discrete
 
-/-- Normalization says exactly that the value group of a place is all of `ℤᵐ⁰`. -/
+/-- The valuation of a place is onto `ℤᵐ⁰`, so its value group is all of `ℤᵐ⁰ˣ`. -/
 theorem valueGroup_eq_top : P.valuation.valueGroup = ⊤ :=
-  Valuation.valueGroup_eq_top_of_surjective P.valuation P.valuation_surjective
+  P.valuation.valueGroup_eq_top_of_surjective P.valuation_surjective
 
 instance : Nontrivial P.valuation.valueGroup :=
-  Valuation.nontrivial_valueGroup_of_surjective P.valuation P.valuation_surjective
+  P.valuation.nontrivial_valueGroup_of_surjective P.valuation_surjective
 
 /-- **The valuation ring of a place is a discrete valuation ring** (Stichtenoth,
 Theorem 1.1.6). -/
@@ -422,11 +430,14 @@ theorem generator_eq_exp_neg_one : IsRankOneDiscrete.generator P.valuation =
 elements for `P`. -/
 @[simp]
 theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P.ord t = 1 :=
-  Valuation.isUniformizer_iff_ord_eq_one_of_surjective
-    P.valuation P.valuation_surjective
+  Valuation.isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top P.valuation P.valueGroup_eq_top
 
+/-- **Every place has a uniformizer**, hence, by `isUniformizer_iff_ord_eq_one`, an element of
+order one. On a field the valuation attains the generator of its value group; for a valuation on
+a ring it need not. -/
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
-  Valuation.exists_isUniformizer_of_surjective P.valuation P.valuation_surjective
+  let ⟨π, hπ⟩ := P.valuation.exists_isUniformizer_of_isCyclic_of_nontrivial
+  ⟨π, hπ⟩
 
 /-- A uniformizer of a place is irreducible in its valuation ring. -/
 theorem irreducible_of_isUniformizer {t : P.integers}
@@ -440,6 +451,10 @@ theorem isUnit_iff_valuation_eq_one {x : P.integers} : IsUnit x ↔ P.valuation 
 theorem isUnit_iff_ord_eq_zero {x : P.integers} (hx : (x : F) ≠ 0) :
     IsUnit x ↔ P.ord (x : F) = 0 :=
   Valuation.isUnit_iff_ord_eq_zero P.valuation hx
+
+/-- A nonzero function lies in the unit group of `𝒪_P` exactly when it has order zero at `P`. -/
+theorem mem_unitGroup_iff_ord_eq_zero (f : Fˣ) : f ∈ P.integers.unitGroup ↔ P.ord (f : F) = 0 :=
+  Valuation.mem_unitGroup_iff_ord_eq_zero P.valuation f
 
 /-- **Existence half of Stichtenoth, Theorem 1.1.6(b)**: relative to a prime element `t` for
 `P`, every nonzero `f : F` is `t ^ (ord_P f)` times a unit of `𝒪_P`. -/
@@ -546,6 +561,44 @@ corresponding statement for the algebra map between the valuation rings of two p
 theorem coe_algebraMap_constants (c : k) :
     ((algebraMap k P.integers c : P.integers) : F) = algebraMap k F c := by
   rw [IsScalarTower.algebraMap_apply k P.integers F, ValuationSubring.algebraMap_apply]
+
+/-- The `R`-algebra structure on `𝒪_P` induced by `R ⊆ 𝒪_P`. -/
+@[instance_reducible]
+noncomputable def integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    Algebra R P.integers :=
+  ((algebraMap R F).codRestrict P.integers hR).toAlgebra
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` sends `r` to `algebraMap R F r`
+in `F`. -/
+@[simp]
+theorem coe_algebraMap_integersAlgebra {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) (r : R) :
+    letI := P.integersAlgebra hR
+    ((algebraMap R P.integers r : P.integers) : F) = algebraMap R F r := by
+  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with the inclusion into
+`F`. -/
+theorem isScalarTower_integers {R : Type*} [CommRing R] [Algebra R F]
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    letI := P.integersAlgebra hR
+    IsScalarTower R P.integers F :=
+  letI := P.integersAlgebra hR
+  .of_algebraMap_eq fun r ↦ by
+    rw [ValuationSubring.algebraMap_apply, coe_algebraMap_integersAlgebra]
+
+/-- The `R`-algebra `TauCeti.Place.integersAlgebra` on `𝒪_P` is compatible with any field
+extension `F' / F` over `R` and `𝒪_P`. -/
+theorem isScalarTower_integers_extension {R F' : Type*} [CommRing R] [Field F']
+    [Algebra F F'] [Algebra R F] [Algebra R F'] [IsScalarTower R F F']
+    [Algebra P.integers F'] [IsScalarTower P.integers F F']
+    (hR : ∀ r : R, algebraMap R F r ∈ P.integers) :
+    letI := P.integersAlgebra hR
+    IsScalarTower R P.integers F' :=
+  letI := P.integersAlgebra hR
+  have := P.isScalarTower_integers hR
+  IsScalarTower.to₁₂₄ R P.integers F F'
 
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/

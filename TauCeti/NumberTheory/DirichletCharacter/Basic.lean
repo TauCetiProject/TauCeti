@@ -52,10 +52,17 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   `DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom`.
 * `DirichletCharacter.factorsThroughEquiv`: the characters at level `N` factoring through
   `d ∣ N` correspond to the characters modulo `d`.
+* `DirichletCharacter.changeLevel_apply_unitsMap`: evaluate a lifted character at a unit by
+  reducing the unit to the original level.
+* `DirichletCharacter.changeLevel_ringHomComp`: raising the level commutes with a change of
+  coefficient ring.
 * `DirichletCharacter.changeLevel_natCast_of_coprime`: changing the level preserves the values
   at naturals prime to the new level, and
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
   character at an integer prime to the new level.
+* `DirichletCharacter.changeLevel_natCast`: the raised character is `χ` at the naturals prime to
+  the new level and `0` at the others, and `DirichletCharacter.changeLevel_mul_prime_natCast`:
+  raising the level by a prime `p` kills the values at the multiples of `p` and keeps the others.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
 * `DirichletCharacter.eq_changeLevel_iff_forall_isCoprime`,
@@ -85,6 +92,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
   level four is determined by its value at `3`, and one of level eight by its values at `3`
   and `5`.
+* `DirichletCharacter.sq_eq_one_of_level_eight`, `DirichletCharacter.inv_eq_self_of_level_eight`:
+  every unit modulo eight squares to one, so every character of level eight has order dividing two
+  and is its own inverse.
 * `DirichletCharacter.subsingleton_of_le_two`: at the levels `1` and `2` there is only one
   character.
 * `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
@@ -118,6 +128,23 @@ divides `gcd (N, L N / p) = N / p` — stated once for characters valued in any
 public section
 
 namespace DirichletCharacter
+
+/-- On a unit, a Dirichlet character lifted to a multiple level takes its value at the reduction
+of that unit to the original level. -/
+theorem changeLevel_apply_unitsMap {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
+    (χ : DirichletCharacter R M) (hMN : M ∣ N) (a : (ZMod N)ˣ) :
+    changeLevel hMN χ a = χ (ZMod.unitsMap hMN a) := by
+  rw [changeLevel_eq_cast_of_dvd, ZMod.unitsMap_val]
+
+/-- At an even level, a Dirichlet character vanishes on even residue classes. -/
+theorem apply_eq_zero_of_even {R : Type*} [CommMonoidWithZero R] {N : ℕ}
+    (χ : DirichletCharacter R N) (hN : _root_.Even N) {a : ZMod N} (ha : _root_.Even a) :
+    χ a = 0 := by
+  let f := ZMod.castHom (even_iff_two_dvd.mp hN) (ZMod 2)
+  have hf : f a = 0 := by
+    obtain ⟨b, rfl⟩ := ha
+    rw [map_add, ← two_mul, show (2 : ZMod 2) = 0 by decide, zero_mul]
+  exact χ.map_nonunit fun hu ↦ not_isUnit_zero (hf ▸ hu.map f)
 
 /-- A nonprincipal Dirichlet character sums to zero over a full period. -/
 theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
@@ -206,6 +233,28 @@ theorem ext_of_level_eight {R : Type*} [CommMonoidWithZero R]
   · exact h3
   · exact h5
   · rw [map_mul, map_mul, h3, h5]
+
+/-- Every Dirichlet character of level eight has order dividing two, because every unit
+modulo eight squares to one. -/
+@[simp]
+theorem sq_eq_one_of_level_eight {R : Type*} [CommMonoidWithZero R]
+    (χ : DirichletCharacter R 8) : χ ^ 2 = 1 := by
+  refine MulChar.ext fun u ↦ ?_
+  rw [MulChar.pow_apply_coe, ← map_pow, MulChar.one_apply_coe, ← Units.val_pow_eq_pow_val,
+    (by decide : ∀ u : (ZMod 8)ˣ, u ^ 2 = 1) u, Units.val_one, map_one]
+
+/-- Every Dirichlet character of level eight is its own inverse. -/
+@[simp]
+theorem inv_eq_self_of_level_eight {R : Type*} [CommMonoidWithZero R]
+    (χ : DirichletCharacter R 8) : χ⁻¹ = χ :=
+  inv_eq_of_mul_eq_one_right (by rw [← sq, sq_eq_one_of_level_eight])
+
+/-- Two characters of level eight multiply to the principal character exactly when they are
+equal. -/
+@[simp]
+theorem mul_eq_one_iff_eq_of_level_eight {R : Type*} [CommMonoidWithZero R]
+    {ψ ρ : DirichletCharacter R 8} : ψ * ρ = 1 ↔ ψ = ρ := by
+  rw [mul_eq_one_iff_eq_inv, inv_eq_self_of_level_eight]
 
 /-- At the levels `1` and `2` there is only one Dirichlet character, since `(ℤ/nℤ)ˣ` is trivial
 there. -/
@@ -389,6 +438,37 @@ prime to the new level. -/
 theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
+
+/-- Raising the level of a Dirichlet character commutes with changing its coefficient ring. -/
+theorem changeLevel_ringHomComp {R R' : Type*} [CommRing R] [CommRing R'] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) (f : R →+* R') :
+    changeLevel h (χ.ringHomComp f) = (changeLevel h χ).ringHomComp f := by
+  ext u
+  simp [changeLevel_eq_cast_of_dvd]
+
+/-- The value of a Dirichlet character raised from level `d` to level `n` at a natural number:
+`χ m` when `m` is prime to `n`, and `0` otherwise. -/
+theorem changeLevel_natCast {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) (m : ℕ) :
+    changeLevel h χ m = if m.Coprime n then χ m else 0 := by
+  split_ifs with hm
+  · exact changeLevel_natCast_of_coprime h χ hm
+  · exact MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime m n).mp hm)
+
+/-- Raising the level of a Dirichlet character from `M` to `M * p`, for a prime `p`, kills its
+values at the multiples of `p` and keeps the others: the new character is `0` at `n` when
+`p ∣ n` and `χ n` otherwise. When `p ∣ M` nothing changes, `χ` already vanishing at the multiples
+of `p`. -/
+theorem changeLevel_mul_prime_natCast {R : Type*} [CommMonoidWithZero R] {M p : ℕ}
+    (hp : p.Prime) (χ : DirichletCharacter R M) (n : ℕ) :
+    changeLevel (dvd_mul_right M p) χ n = if p ∣ n then 0 else χ n := by
+  have hnp : n.Coprime p ↔ ¬ p ∣ n := Nat.coprime_comm.trans hp.coprime_iff_not_dvd
+  by_cases hpn : p ∣ n
+  · simp [changeLevel_natCast, Nat.coprime_mul_iff_right, hnp, hpn]
+  · by_cases hnM : n.Coprime M
+    · simp [changeLevel_natCast, Nat.coprime_mul_iff_right, hnp, hpn, hnM]
+    · simpa [changeLevel_natCast, Nat.coprime_mul_iff_right, hpn, hnM] using
+        (χ.map_nonunit (mt (ZMod.isUnit_iff_coprime n M).mp hnM)).symm
 
 /-- The value of a lifted integer-valued character at an integer coprime to the level. -/
 theorem changeLevel_ringHomComp_intCast_apply {R : Type*} [CommRing R] {d N : ℕ} (h : d ∣ N)

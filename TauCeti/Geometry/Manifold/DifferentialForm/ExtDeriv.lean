@@ -46,6 +46,8 @@ differentiable function is closed exactly when the function is locally constant.
 * `TauCeti.mextDerivWithin_ofFunction`, `TauCeti.mextDeriv_ofFunction`,
   `TauCeti.mextDeriv_ofFunction_apply`: the exterior derivative of a function is its manifold
   derivative.
+* `TauCeti.mextDeriv_ofFunction_continuousLinearMap`: on the model space, the exterior
+  derivative of a continuous linear map is the associated constant `1`-form.
 * `TauCeti.mextDeriv_ofFunction_eq_zero_iff`: the `0`-form of a differentiable function is closed
   exactly when the function is locally constant.
 * `TauCeti.mextDeriv_ofFunction_snd_apply`: the differential of the second coordinate of `M × F`
@@ -403,6 +405,14 @@ theorem mextDeriv_ofFunction_apply (f : M → F) (x : M) (v : TangentSpace I x) 
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
 
+/-- The differential `dt` of the coordinate of `ℝ` sends a tangent vector to itself. -/
+theorem mextDeriv_ofFunction_id_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) z v = v 0 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, fderiv_id]
+  -- Tangent vectors of `ℝ` are real numbers, on which the identity of `ℝ` acts.
+  rfl
+
 /-- **The chain rule for the exterior derivative of a `0`-form.** If `f` is differentiable at `x`
 and `g` has derivative `g'` at `f x`, then `d (g ∘ f) = g' • df` at `x`. -/
 theorem mextDeriv_ofFunction_comp_of_hasDerivAt {f : M → ℝ} {g : ℝ → ℝ} {g' : ℝ} {x : M}
@@ -467,6 +477,16 @@ theorem mextDeriv_ofFunction_add {f g : M → F} (hf : MDifferentiable I 𝓘(�
   funext x
   ext v
   simp [mextDeriv_ofFunction, mvfderiv_add (hf x) (hg x)]
+
+/-- Over the model space `𝓘(ℝ, E)`, the exterior derivative of a continuous linear map `L` is the
+constant `1`-form associated with `L`, transported to each tangent fibre. -/
+theorem mextDeriv_ofFunction_continuousLinearMap (L : E →L[ℝ] F) :
+    mextDeriv (RoughForm.ofFunction 𝓘(ℝ, E) L) =
+      fun x ↦ (ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) L).compContinuousLinearMap
+        (NormedSpace.fromTangentSpace x).toContinuousLinearMap := by
+  funext x
+  ext v
+  simp [mextDeriv_ofFunction, mvfderiv_eq_fderiv, ContinuousLinearMap.fderiv]
 
 /-- On a product `M × F` with a normed space `F`, the exterior derivative of the second coordinate
 reads the second coordinate of a tangent vector. -/

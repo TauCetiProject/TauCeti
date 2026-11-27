@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
@@ -17,9 +19,9 @@ The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their
 identifying the norm of `v` with its generator). This file transports a prime summatory function
 over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
 `Nat.primesLE`, so that results stated for the primes of a number field specialize to the
-classical sums over rational primes. In particular the number-field prime count
-`TauCeti.primeCount ℚ Set.univ` is the classical prime counting function. Both cutoffs are
-inclusive: at `x = 2` both counts are `1`.
+classical sums over rational primes. The number-field prime count `TauCeti.primeCount ℚ Set.univ`
+is the classical prime counting function, and `TauCeti.primePsi ℚ Set.univ` is Mathlib's Chebyshev
+function `ψ`. These use inclusive cutoffs.
 
 ## Main results
 
@@ -41,13 +43,11 @@ open NumberField
 the corresponding sum over the rational primes in `Nat.primesLE ⌊x⌋₊`. -/
 theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : ℕ → M) (x : ℝ) :
     primeSummatory ℚ (fun v ↦ f (Ideal.absNorm v.asIdeal)) x = ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
-  have hprime (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) : (Ideal.absNorm v.asIdeal).Prime := by
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal]
-    exact Rat.HeightOneSpectrum.prime_natGenerator v
   have hmem (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ)) :
       v ∈ primesLE ℚ x ↔ Ideal.absNorm v.asIdeal ∈ Nat.primesLE ⌊x⌋₊ := by
-    rw [mem_normLE, Nat.mem_primesLE, Nat.le_floor_iff' (hprime v).ne_zero]
-    exact (and_iff_left (hprime v)).symm
+    have hprime := Rat.HeightOneSpectrum.prime_absNorm_asIdeal v
+    rw [mem_normLE, Nat.mem_primesLE, Nat.le_floor_iff' hprime.ne_zero]
+    exact (and_iff_left hprime).symm
   rw [primeSummatory_apply]
   refine Finset.sum_bij (fun v _ ↦ Ideal.absNorm v.asIdeal) (fun v hv ↦ (hmem v).mp hv)
     (fun v _ w _ h ↦ Rat.HeightOneSpectrum.absNorm_asIdeal_injective h) (fun p hp ↦ ?_)
@@ -62,8 +62,7 @@ theorem image_absNorm_primesLE_rat (x : ℝ) :
   simp only [Finset.mem_image, mem_normLE, Nat.mem_primesLE]
   constructor
   · rintro ⟨v, hv, rfl⟩
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv ⊢
-    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_natGenerator v⟩
+    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_absNorm_asIdeal v⟩
   · rintro ⟨hple, hp⟩
     obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
     have hx0 : 0 ≤ x := by
@@ -81,5 +80,11 @@ theorem primeCount_rat_univ (x : ℝ) :
   rw [primeCount_eq_card, Finset.filter_true_of_mem fun _ _ ↦ Set.mem_univ _,
     ← Nat.primesLE_card_eq_primeCounting, ← image_absNorm_primesLE_rat,
     Finset.card_image_of_injective _ Rat.HeightOneSpectrum.absNorm_asIdeal_injective]
+
+/-- The sum of the von Mangoldt weights of all prime ideal powers over `ℚ` is Mathlib's
+Chebyshev function `ψ`. -/
+@[simp] theorem primePsi_rat_univ (x : ℝ) : primePsi ℚ Set.univ x = Chebyshev.psi x := by
+  rw [primePsi_eq_sum_Icc, Chebyshev.psi, ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
+  exact Finset.sum_congr rfl fun n _ ↦ primeVonMangoldtCoeff_rat_univ n
 
 end TauCeti

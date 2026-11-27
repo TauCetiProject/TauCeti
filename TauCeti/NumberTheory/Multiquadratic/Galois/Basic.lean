@@ -283,6 +283,15 @@ theorem aut_commute (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   Commute.of_orderOf_dvd_two
     (fun σ => orderOf_dvd_of_pow_eq_one (by rw [pow_two]; exact aut_mul_self_eq_one hroot σ)) a b
 
+/-- In the commutative automorphism group of a multiquadratic field, two automorphisms are
+conjugate exactly when they are equal. -/
+theorem aut_isConj_iff_eq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    {σ τ : IntermediateField.adjoin K (Set.range root) ≃ₐ[K]
+      IntermediateField.adjoin K (Set.range root)} :
+    IsConj σ τ ↔ σ = τ :=
+  ⟨fun h ↦ h.eq_of_right_mem_center (Semigroup.mem_center_iff.mpr fun c ↦ aut_commute hroot c τ),
+    fun h ↦ h ▸ IsConj.refl σ⟩
+
 /-- A multiquadratic extension in characteristic different from two is abelian Galois. -/
 theorem isAbelianGalois [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :

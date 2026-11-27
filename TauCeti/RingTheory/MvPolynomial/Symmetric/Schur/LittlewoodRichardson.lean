@@ -203,7 +203,7 @@ private theorem existsUnique_rowLen_eq (hlam : lam.colLen 0 ≤ N) (T : BoundedS
     by_cases hi : i < N
     · exact (YoungDiagram.rowLen_ofRowLensFin _ hanti ⟨i, hi⟩).symm
     · rw [YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ hanti (not_lt.mp hi),
-        YoungDiagram.rowLen_eq_zero_of_colLen_le (hlam.trans (not_lt.mp hi)),
+        YoungDiagram.rowLen_eq_zero_iff.mpr (hlam.trans (not_lt.mp hi)),
         content_eq_zero T (not_lt.mp hi)]
   have hcard : Y.card = lam.card + μ.card := by
     rw [YoungDiagram.card_ofRowLensFin, sum_add_distrib, ← sum_weight T,
@@ -243,12 +243,8 @@ private theorem diagramSchurPoly_mul_diagramSchurPoly_int {lam μ : YoungDiagram
     refine sum_congr rfl fun T hT => ?_
     obtain ⟨-, hν⟩ := (mem_filter.mp hT).2
     have hνN : (ofPartition ν).colLen 0 ≤ N := by
-      by_contra hlt
-      have hmem : ((N, 0) : ℕ × ℕ) ∈ ofPartition ν :=
-        YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le hlt)
-      have := YoungDiagram.mem_iff_lt_rowLen.mp hmem
-      rw [← hν N, YoungDiagram.rowLen_eq_zero_of_colLen_le hlam, content_eq_zero T le_rfl] at this
-      omega
+      rw [← YoungDiagram.rowLen_eq_zero_iff, ← hν N, YoungDiagram.rowLen_eq_zero_iff.mpr hlam,
+        content_eq_zero T le_rfl]
     rw [diagramSchurPoly_mul_alternant N _ hνN]
     congr 1
     funext j
@@ -319,13 +315,8 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
   by_cases hν : (ofPartition ν).colLen 0 ≤ N
   · -- The `λ`-Yamanouchi tableaux with `λ + c(T) = ν` have entries below `ℓ(ν) ≤ N`.
     congr 1
-    rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Fintype.card_subtype,
-      ← Nat.card_eq_fintype_card]
-    exact Nat.card_congr <| Equiv.subtypeSubtypeEquivSubtype
-      (q := fun T : SemistandardYoungTableau μ =>
-        T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.content i = (ofPartition ν).rowLen i)
-      fun hT i c hc =>
-        (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
+    rw [← Fintype.card_subtype]
+    exact card_boundedYamanouchi_eq_natCard_lrTableau hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
 
 end TauCeti

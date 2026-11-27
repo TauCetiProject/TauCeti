@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
 
 /-!
 # The continuation homotopy of almost complex structures on a manifold
@@ -163,9 +163,9 @@ theorem compatible_continuationAlmostComplex (hJ₁c : ∀ t, σ.Compatible (J�
     σ.Compatible (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z) := by
   refine h₀.isNondegenerate.compatible_iff.mpr fun x => ?_
   rw [almostComplexStructureAt_continuationAlmostComplex]
-  exact Floer.compatible_continuationAlmostComplex (h₀.compatibleAt x)
-    (fun t _ => h₀.isNondegenerate.compatible_iff.mp (hJ₁c t) x)
-    (fun t _ => h₀.isNondegenerate.compatible_iff.mp (hJ₂c t) x) z ()
+  exact Floer.compatible_continuationAlmostComplex (h₀.compatibleAt x) (x := ())
+    (h₀.isNondegenerate.compatible_iff.mp (hJ₁c z.2) x)
+    (h₀.isNondegenerate.compatible_iff.mp (hJ₂c z.2) x)
 
 /-- The continuation homotopy is `J₁ t` for `s ≤ 0`. -/
 @[simp]

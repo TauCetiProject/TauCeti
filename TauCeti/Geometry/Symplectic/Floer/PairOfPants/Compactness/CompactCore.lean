@@ -60,7 +60,9 @@ chart, `(p, z, y) ↦ (K + δ_p)(z, φ⁻¹ y)`, are jointly `C³`
 (`TauCeti.Floer.contDiffOn_pairOfPantsPerturbation_add_comp_symm`). The energy density of a
 solution is integrable once its area density is
 (`IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add`), so only the area
-density is assumed integrable. Localizing the images of small discs into charts on a closed
+density is assumed integrable; both facts are combined in
+`IsNondegenerate.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add`.
+Localizing the images of small discs into charts on a closed
 manifold is not treated here.
 
 ## References
@@ -113,7 +115,7 @@ theorem
     (hδt : ContDiff ℝ 3 (fun q : (P × (ℝ × ℝ)) × V ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set V}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0)
     {J : P → ℝ × ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiffOn ℝ 2
@@ -224,6 +226,30 @@ theorem contDiffOn_pairOfPantsPerturbation_add_comp_symm {n : ℕ∞} {m : WithT
     (s := univ ×ˢ (thricePuncturedSphereReal ×ˢ φ.target)) contDiff_snd.contDiffOn
     fun _ hq ↦ hq.2).add (contMDiffOn_iff_contDiffOn.1 (hδ.comp_contMDiffOn hg))
 
+/-- **The core-perturbed datum is smooth jointly in the parameter.** For period-one Hamiltonians
+which are `C^n` on `ℝ × M` and a family of functions `δ_p(z, x)` which is `C^n` jointly in the
+parameter `p`, the real coordinates `z` of `S = ℂ ∖ {0, 1}` and the target point `x`, each
+component `(p, z, x) ↦ K(z, x)(w) + δ_p(z, x)` of the pair-of-pants perturbation plus `δ_p` is `C^n`
+at every point with `z ∈ S`, as a function on `(P × ℝ²) × M`. -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation_add {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
+    {δ : P → ℝ × ℝ → M → ℝ} (hδ : ContMDiff ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ δ q.1.1 q.1.2 q.2))
+    {p : P} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : M) (w : ℂ) :
+    ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (uncurry fun (r : P × (ℝ × ℝ)) y ↦
+        pairOfPantsPerturbation H (equivRealProdCLM.symm r.2) y w + δ r.1 r.2 y) ((p, z), x) := by
+  -- The canonical datum only sees `(z, x)`, and `δ` sees `((p, z), x)` in the product model.
+  have hz' : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (𝓘(ℝ, ℝ × ℝ).prod I) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ (q.1.2, q.2)) :=
+    (contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
+  have hι : ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) n
+      (fun q : (P × (ℝ × ℝ)) × M ↦ ((q.1.1, q.1.2), q.2)) :=
+    ((contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
+      (contDiff_snd.contMDiff.comp contMDiff_fst)).prodMk contMDiff_snd
+  exact ((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x w).comp ((p, z), x)
+    hz'.contMDiffAt).add (hδ.comp hι).contMDiffAt
+
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
@@ -269,7 +295,7 @@ theorem
       (fun q : (P × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0)
     {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJt : ∀ p ∈ A, ∀ z ∈ thricePuncturedSphereReal, ∀ x,
@@ -317,7 +343,7 @@ theorem
         TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   obtain ⟨c, hc, hbound⟩ :=
-    hω.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le hH
+    hω.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add hH
       (fun q ↦ (hHs q).of_le (by norm_num)) hB (hδs.of_le (by norm_num))
       (hδt.of_le (by norm_num)) hA hD hQ hU hDU hcore hs ht
   -- Read in the chart, the perturbed data are jointly `C³` over `A × S × φ(U)`, which contains
@@ -340,28 +366,10 @@ theorem
     fun p hp z hz x _ ↦ hJt p hp z (hD'S hz) x
   refine ⟨c, hc, δ, hδ, fun Ω p u x E hΩ hΩD hpA hu hfl hx harea htop huQ huC ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hD'S
-  have hι (k : ℕ) : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) 1
-      (fun r : (ℝ × ℝ) × M ↦ ((p k, r.1), r.2)) :=
-    (contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd
-  -- The energy density of a solution is nonnegative on `S`, hence integrable there.
-  have hnn (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
-    floerEnergyDensity_nonneg hω (hJt _ (hpA k) z hz _) (hfl k z hz)
-  have hint (k : ℕ) := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add
-    (δs := δs (p k)) (δt := δt (p k)) hH (fun q ↦ (hHs q).of_le (by norm_num)) hB
-    ((hδs.of_le (by norm_num)).comp (hι k)) ((hδt.of_le (by norm_num)).comp (hι k)) hD hU hDU
-    hcore (hs _ (hpA k)) (ht _ (hpA k)) ((hu k).of_le (by norm_num)) (hx k) (hnn k) (harea k)
-  -- The energy over `Ω` is at most the energy over `S`, hence at most `E + B₀ + B₁ + B_∞ + c`.
-  have hle (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1 + δs (p k) z x)
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I + δt (p k) z x)
-      (u k) z ≤ E + ((∑ q, B q) + c) := by
-    have habs := abs_le.1 (hbound (p k) (hpA k) (u k) ((hu k).of_le (by norm_num)) (huQ k) (x k)
-      (hx k) (hint k) (harea k))
-    refine (setIntegral_mono_set (hint k) (ae_restrict_of_forall_mem
-      isOpen_thricePuncturedSphereReal.measurableSet (hnn k))
-      (Eventually.of_forall hΩS)).trans ?_
-    linarith [habs.2, htop k]
+  -- The energy density is integrable, and the energy over `Ω` is at most `E + B₀ + B₁ + B_∞ + c`.
+  have hE (k : ℕ) := hbound (p k) (hpA k) (u k) ((hu k).of_le (by norm_num)) (huQ k) (x k) (hx k)
+    (harea k) (fun z ↦ J (p k) z (u k z)) (fun z hz ↦ hJt _ (hpA k) z hz _) (hfl k)
   exact hconv hΩ hΩD hpA (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huC
-    (fun k ↦ (hint k).mono_set hΩS) hle
+    (fun k ↦ (hE k).1.mono_set hΩS) fun k ↦ ((hE k).2 Ω hΩS).trans (by linarith [htop k])
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

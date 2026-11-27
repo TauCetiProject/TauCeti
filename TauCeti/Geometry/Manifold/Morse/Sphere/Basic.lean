@@ -13,9 +13,11 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # The height function on the unit sphere is a Morse function
@@ -49,6 +51,11 @@ multiple of `x`.
 * `TauCeti.sphereHeight_unitSphereEquiv`: a linear isometry fixing `v` preserves the height.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
+* `TauCeti.stereographic_symm_image_closedBall` and `TauCeti.stereographic_symm_image_sphere`: for
+  `-1 ≤ a < 1`, in the stereographic coordinates from the north pole the polar cap `{h ≤ a}` and
+  the parallel `{h = a}` are a closed round ball and its boundary sphere about the origin.
+* `TauCeti.interior_setOf_sphereHeight_le`: for `-1 < a < 1`, the interior of the closed polar
+  cap `{h ≤ a}` is the open polar cap `{h < a}`.
 * `TauCeti.mvfderiv_sphereHeight_eq_zero_iff` and `TauCeti.mfderiv_sphereHeight_eq_zero_iff`: its
   critical points are the two poles.
 * `TauCeti.sphereHeight_lt_self` and `TauCeti.sphereHeight_neg_lt`: the north pole is its strict
@@ -58,12 +65,18 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.totalCriticalCount_sphereHeight`: so it has exactly two critical points.
 * `TauCeti.criticalCount_sphereHeight`: it has one critical point of index `n` and one of index
   `0`.
+* `TauCeti.sphereHeight_mem_Ioo_iff`: the height lies in `(-1, 1)` exactly off the poles.
+* `TauCeti.range_sphereHeight`: in positive dimension the height function takes exactly the values
+  in `[-1, 1]`.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
+* `TauCeti.isConnected_setOf_sphereHeight_eq`: on a sphere of dimension at least `2` every level of
+  the height function is connected.
 
 ## References
 
@@ -365,6 +378,25 @@ theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
     sphereHeight v x = -1 ↔ x = -v := by
   rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
 
+/-- The height of a point lies strictly between `-1` and `1` exactly when the point is neither
+pole. -/
+theorem sphereHeight_mem_Ioo_iff {v x : sphere (0 : E) 1} :
+    sphereHeight v x ∈ Ioo (-1) 1 ↔ x ≠ v ∧ x ≠ -v := by
+  rw [mem_Ioo, (neg_one_le_sphereHeight v x).lt_iff_ne', (sphereHeight_le_one v x).lt_iff_ne,
+    Ne, Ne, sphereHeight_eq_neg_one_iff, sphereHeight_eq_one_iff, and_comm]
+
+/-- In positive dimension the height function takes exactly the values in `[-1, 1]`. In dimension
+`0` the sphere consists of the two poles, and the range is `{-1, 1}`. -/
+theorem range_sphereHeight (hn : 0 < n) (v : sphere (0 : E) 1) :
+    range (sphereHeight v) = Icc (-1) 1 := by
+  refine (range_subset_iff.2 fun x ↦
+    mem_Icc.2 ⟨neg_one_le_sphereHeight v x, sphereHeight_le_one v x⟩).antisymm fun r hr ↦ ?_
+  obtain ⟨y, hy, hyr⟩ := (isConnected_sphere_of_one_le (E := E) hn).isPreconnected
+    |>.intermediate_value (f := fun y : E ↦ ⟪y, (v : E)⟫) (-v).property v.property
+    (continuous_id.inner continuous_const).continuousOn
+    (by simpa only [← sphereHeight_apply, sphereHeight_neg_self, sphereHeight_self] using hr)
+  exact ⟨⟨y, hy⟩, hyr⟩
+
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- If the unit vectors `u` and `v` are orthogonal, the height function in the direction `u`
 vanishes at `v`. -/
@@ -431,6 +463,97 @@ theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ �
   field_simp
   ring
 
+/-- The sublevel `{h ≤ a}`, for `a < 1`, misses the north pole `v`, so it lies in the source of
+the stereographic projection from `v`. -/
+theorem sublevel_sphereHeight_subset_source (v : sphere (0 : E) 1) {a : ℝ} (ha' : a < 1) :
+    {x | sphereHeight v x ≤ a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source := by
+  intro x hx hxv
+  rw [mem_singleton_iff] at hxv
+  simp only [mem_ofPred_eq, hxv, Subtype.coe_eta, sphereHeight_self] at hx
+  linarith
+
+/-- The stereographic projection from the north pole `v` carries the sublevel `{h ≤ a}`, for
+`a < 1`, onto the sublevel `{w | -stereographicHeight w ≤ a}` of the height read in the chart. -/
+theorem image_stereographic_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
+    (ha' : a < 1) : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
+      {w | -stereographicHeight w ≤ a} := by
+  rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _
+    (sublevel_sphereHeight_subset_source v ha')]
+  ext w
+  simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
+    sphereHeight_stereographic_symm_apply]
+
+/-- For `-1 ≤ a < 1`, the stereographic projection from the north pole `v` carries the polar cap
+`{h ≤ a}` onto the closed ball of radius `√(4 (1 + a) / (1 - a))` about the origin. -/
+theorem image_stereographic_sublevel_sphereHeight_eq_closedBall (v : sphere (0 : E) 1) {a : ℝ}
+    (ha : -1 ≤ a) (ha' : a < 1) :
+    stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
+      closedBall 0 √(4 * (1 + a) / (1 - a)) := by
+  rw [image_stereographic_sublevel_sphereHeight v ha']
+  ext w
+  rw [mem_ofPred_eq, neg_stereographicHeight_le_iff ha ha' w, mem_closedBall_zero_iff]
+
+/-- For `-1 ≤ a < 1`, the inverse of the stereographic projection from the north pole `v` carries
+the closed ball of radius `√(4 (1 + a) / (1 - a))` about the origin onto the polar cap
+`{h ≤ a}`. -/
+theorem stereographic_symm_image_closedBall (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 ≤ a)
+    (ha' : a < 1) :
+    (stereographic (norm_eq_of_mem_sphere v)).symm '' closedBall 0 √(4 * (1 + a) / (1 - a)) =
+      {x | sphereHeight v x ≤ a} := by
+  rw [← image_stereographic_sublevel_sphereHeight_eq_closedBall v ha ha']
+  exact (stereographic _).toPartialEquiv.symm_image_image_of_subset_source
+    (sublevel_sphereHeight_subset_source v ha')
+
+/-- For `-1 ≤ a < 1`, the inverse of the stereographic projection from the north pole `v` carries
+the sphere of radius `√(4 (1 + a) / (1 - a))` about the origin onto the parallel `{h = a}`. -/
+theorem stereographic_symm_image_sphere (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 ≤ a)
+    (ha' : a < 1) :
+    (stereographic (norm_eq_of_mem_sphere v)).symm '' sphere 0 √(4 * (1 + a) / (1 - a)) =
+      {x | sphereHeight v x = a} := by
+  have hs : {x | sphereHeight v x = a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source :=
+    fun x hx ↦ sublevel_sphereHeight_subset_source v ha' (le_of_eq hx)
+  have himage : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x = a} =
+      sphere 0 √(4 * (1 + a) / (1 - a)) := by
+    rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _ hs]
+    ext w
+    simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
+      sphereHeight_stereographic_symm_apply, neg_stereographicHeight_eq_iff ha ha',
+      mem_sphere_zero_iff_norm]
+  rw [← himage]
+  exact (stereographic _).toPartialEquiv.symm_image_image_of_subset_source hs
+
+/-- For `-1 < a < 1`, the interior of the closed polar cap `{h ≤ a}` is the open polar cap
+`{h < a}`: in the stereographic coordinates from the north pole `v`, it is the interior of a closed
+round ball. -/
+theorem interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 < a)
+    (ha' : a < 1) : interior {x | sphereHeight v x ≤ a} = {x | sphereHeight v x < a} := by
+  have he := isOpenEmbedding_stereographic_symm (norm_eq_of_mem_sphere v)
+  have hR : √(4 * (1 + a) / (1 - a)) ≠ 0 :=
+    (Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))).ne'
+  -- Both sets miss `v`, so they lie in the range of the inverse projection, which is injective.
+  have hrange : {x | sphereHeight v x ≤ a} ⊆ range (stereographic (norm_eq_of_mem_sphere v)).symm :=
+    fun x hx ↦ by
+      rw [range_stereographic_symm (norm_eq_of_mem_sphere v) v.property]
+      exact sublevel_sphereHeight_subset_source v ha' hx
+  rw [← preimage_eq_preimage' (interior_subset.trans hrange)
+      ((ofPred_subset_ofPred.2 fun _ ↦ le_of_lt).trans hrange),
+    he.isOpenMap.preimage_interior_eq_interior_preimage he.continuous,
+    ← stereographic_symm_image_closedBall v ha.le ha', he.injective.preimage_image,
+    interior_closedBall _ hR]
+  ext w
+  simp only [mem_ball_zero_iff, mem_preimage, mem_ofPred_eq, sphereHeight_stereographic_symm_apply,
+    lt_iff_le_and_ne, ne_eq, neg_stereographicHeight_le_iff ha.le ha',
+    neg_stereographicHeight_eq_iff ha.le ha']
+
+/-- For `-1 < a < 1`, the complement of the interior of the closed polar cap `{h ≤ a}` is the
+opposite closed polar cap `{h' ≤ -a}`, where `h'` is the height in the direction of `-v`. -/
+theorem compl_interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) {a : ℝ} (ha : -1 < a)
+    (ha' : a < 1) :
+    (interior {x | sphereHeight v x ≤ a})ᶜ = {x | sphereHeight (-v) x ≤ -a} := by
+  rw [interior_setOf_sphereHeight_le v ha ha']
+  ext x
+  simp
+
 /-- The north pole is a nondegenerate critical point of the height function. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_self (v : sphere (0 : E) 1) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight v) v := by
@@ -483,6 +606,13 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- The height function on the sphere has exactly two critical points, the two poles. -/
+@[simp]
+theorem totalCriticalCount_sphereHeight (v : sphere (0 : E) 1) :
+    totalCriticalCount (𝓡 n) (sphereHeight v) = 2 := by
+  rw [totalCriticalCount_def, criticalPoints_sphereHeight,
+    encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
 
 /-- The critical points of index `m` of the height function on the sphere `Sⁿ` are the north pole
 `v` if `m = n` and the south pole `-v` if `m = 0`. -/
@@ -575,6 +705,33 @@ theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphe
     (fun y z h ↦ Subtype.ext (Subtype.ext congr(($h).val))) fun y ↦ ?_
   rw [mem_ofPred_eq, sphereHeight_apply]
   exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).property
+
+/-- **The levels of the height are connected in dimension at least two.** On the unit sphere
+`Sⁿ` with `n ≥ 2`, every level `h = c` with `-1 ≤ c ≤ 1` is connected: it is a pole when
+`c = ±1`, and otherwise the round sphere of radius `√(1 - c²)` centred at `c v` in the hyperplane
+`h = c`. On the circle the levels strictly between the poles have two points. -/
+theorem isConnected_setOf_sphereHeight_eq (hn : 2 ≤ n) (v : sphere (0 : E) 1) {c : ℝ}
+    (hc : c ∈ Icc (-1) 1) : IsConnected {x | sphereHeight v x = c} := by
+  -- The unit sphere of `(ℝ ∙ v)ᗮ` is connected, since its dimension is `n ≥ 2`, and the level
+  -- `h = c` is its image under the latitude map at height `c`.
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hrank : 1 < Module.rank ℝ (ℝ ∙ (v : E))ᗮ := by
+    rw [← Module.finrank_eq_rank,
+      Submodule.finrank_orthogonal_span_singleton (n := n) (ne_zero_of_mem_unit_sphere v)]
+    exact_mod_cast hn
+  have hconn := isConnected_sphere hrank (0 : (ℝ ∙ (v : E))ᗮ) zero_le_one
+  have := isConnected_iff_connectedSpace.1 hconn
+  obtain ⟨u₀, hu₀⟩ := hconn.nonempty
+  have hlevel : {x | sphereHeight v x = c} = range fun u ↦ latitude v u c := by
+    ext x
+    simp only [mem_ofPred_eq, mem_range, sphereHeight_apply]
+    constructor
+    · rintro rfl
+      obtain ⟨u, t, ht, rfl⟩ := exists_latitude_eq v ⟨u₀, hu₀⟩ x
+      exact ⟨u, by rw [inner_latitude, projIcc_of_mem _ ht]⟩
+    · rintro ⟨u, rfl⟩
+      rw [inner_latitude, projIcc_of_mem _ hc]
+  exact hlevel ▸ isConnected_range (continuous_latitude v continuous_id continuous_const)
 
 end Sphere
 

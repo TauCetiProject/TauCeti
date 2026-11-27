@@ -89,13 +89,13 @@ theorem mem_opposite_piece_iff (G : InternalGrading R M ℤ) (p : ℤ) (x : Mᵐ
 
 /-- Passage to the multiplicative opposite is homogeneous of degree zero. -/
 theorem isHomogeneous_op (G : InternalGrading R M ℤ) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (opLinearEquiv R).toLinearMap G.piece G.opposite.piece 0 :=
   G.isHomogeneous_map (opLinearEquiv R)
 
 /-- Returning from the multiplicative opposite is homogeneous of degree zero. -/
 theorem isHomogeneous_unop (G : InternalGrading R M ℤ) :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (opLinearEquiv R).symm.toLinearMap G.opposite.piece G.piece 0 :=
   G.isHomogeneous_map_symm (opLinearEquiv R)
 
@@ -196,8 +196,6 @@ noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
 `InternalGrading.ofDecomposition 𝒜`. -/
 noncomputable instance ofDecompositionOppositeGradedAlgebra (𝒜 : ℤ → Submodule R A)
     [GradedAlgebra 𝒜] : GradedAlgebra (InternalGrading.ofDecomposition 𝒜).opposite.piece :=
-  have : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece :=
-    (InternalGrading.ofDecomposition_piece 𝒜).symm ▸ inferInstance
   (InternalGrading.ofDecomposition 𝒜).oppositeGradedAlgebra
 
 end GradedAlgebra

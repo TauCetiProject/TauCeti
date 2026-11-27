@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -22,9 +23,12 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 (`Complex.arg_mul_eq_add_arg_iff`). This file records the analogue for quotients, and its most
 common instances: two points of the open upper half-plane, of the open lower half-plane or of the
 open right half-plane have arguments in a common open interval of length `π`, so the argument of
-their quotient is the difference of their arguments. It also records that every
-complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
-and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
+their quotient is the difference of their arguments. Dually, the arguments of two points of the
+slit plane whose imaginary parts have opposite signs add up to a value in `(-π, π)`, and in the
+right half-plane those of `z - 1` and `z + 1` add up to a value in `(-π, π]`. It also records that
+every complex number is rotated onto the nonpositive real axis by the square of a unit complex
+number, and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`, and that of
+`1 - e^{iθ}` for `0 < θ < 2π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
 rotating `z` by `-arg z / 2` lands in the open right half-plane, and the exponential maps the
@@ -41,9 +45,15 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 
 * `Complex.arg_div_eq_sub_arg_iff`: `arg (x / y) = arg x - arg y` exactly when
   `arg x - arg y ∈ (-π, π]`.
+* `Complex.exists_arg_div_add_arg_eq`: in general `arg (x / y) + arg y` is `arg x` up to a multiple
+  of `2π`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_im_neg`: if `x.im < 0` and `y.im < 0`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `arg (x / y) = arg x - arg y`.
+* `Complex.arg_add_arg_mem_Ioo_of_im_mul_nonpos`: two points of the slit plane whose imaginary
+  parts do not have the same strict sign have arguments adding up to a value in `(-π, π)`.
+* `Complex.arg_sub_one_add_arg_add_one_mem_Ioc`: for `0 < re z`,
+  `arg (z - 1) + arg (z + 1) ∈ (-π, π]`.
 * `Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`: in the open upper half-plane,
   `arg w = π / 2 - arctan (re w / im w)`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
@@ -51,10 +61,10 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
 * `Complex.contDiffOn_div_norm_pow`: `(z / |z|)^m` is smooth away from the origin.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
-  the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
-  rectangle.
+  the punctured truncated sector `{|arg ((z - v) / b)| < α}` is the image of an open rectangle.
 * `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
+* `Complex.arg_one_sub_exp_mul_I`: `arg (1 - exp (θ i)) = (θ - π) / 2` for `0 < θ < 2π`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
@@ -98,6 +108,15 @@ theorem arg_div_eq_sub_arg_iff {x y : ℂ} (hx₀ : x ≠ 0) (hy₀ : y ≠ 0) :
   rw [← arg_coe_angle_toReal_eq_arg, arg_div_coe_angle hx₀ hy₀, ← Real.Angle.coe_sub,
     Real.Angle.toReal_coe_eq_self_iff_mem_Ioc]
 
+/-- The argument of a quotient plus that of the denominator is the argument of the numerator up
+to a multiple of `2π`. -/
+theorem exists_arg_div_add_arg_eq {x y : ℂ} (hx₀ : x ≠ 0) (hy₀ : y ≠ 0) :
+    ∃ m : ℤ, arg (x / y) + arg y = arg x + 2 * π * m := by
+  have h := arg_div_coe_angle hx₀ hy₀
+  rw [← Real.Angle.coe_sub, Real.Angle.angle_eq_iff_two_pi_dvd_sub] at h
+  obtain ⟨m, hm⟩ := h
+  exact ⟨m, by linarith⟩
+
 /-- The argument of the quotient of two points of the open upper half-plane is the difference of
 their arguments. -/
 theorem arg_div_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) :
@@ -130,22 +149,26 @@ quotient. -/
 theorem abs_arg_div_comm (a b : ℂ) : |(a / b).arg| = |(b / a).arg| := by
   rw [← inv_div, abs_arg_inv]
 
-/-- A complex number in the open upper half-plane has argument within `π / 2` of `π / 2`. -/
-theorem abs_arg_sub_pi_div_two_lt_of_im_pos {w : ℂ} (hw : 0 < w.im) :
-    |w.arg - Real.pi / 2| < Real.pi / 2 := by
-  have hpos : 0 < w.arg := by
-    have hne : w.arg ≠ 0 := by
-      intro h
-      exact hw.ne' (arg_eq_zero_iff.mp h).2
-    exact lt_of_le_of_ne (arg_nonneg_iff.mpr hw.le) (Ne.symm hne)
-  have hlt := arg_lt_pi_iff.mpr (Or.inr hw.ne')
-  exact abs_lt.mpr ⟨by linarith, by linarith⟩
+/-- A complex number has argument within `π / 2` of `π / 2`, that is, in `(0, π)`, exactly when
+it lies in the open upper half-plane. -/
+@[simp]
+theorem abs_arg_sub_pi_div_two_lt_iff {w : ℂ} : |w.arg - π / 2| < π / 2 ↔ 0 < w.im := by
+  rw [abs_sub_lt_iff]
+  refine ⟨fun h ↦ ?_, fun hw ↦ ?_⟩
+  · -- `0 < arg w` rules out the nonnegative real axis, and `arg w < π` the negative one
+    have h₀ : 0 < w.arg := by linarith [h.2]
+    refine (arg_nonneg_iff.1 h₀.le).lt_of_ne' fun him ↦ h₀.ne' (arg_eq_zero_iff.2 ⟨?_, him⟩)
+    exact (arg_lt_pi_iff.1 (by linarith [h.1])).resolve_right (not_not.2 him)
+  · have h₀ : 0 < w.arg :=
+      (arg_nonneg_iff.2 hw.le).lt_of_ne' fun h ↦ hw.ne' (arg_eq_zero_iff.1 h).2
+    have hπ := arg_lt_pi_iff.2 (Or.inr hw.ne')
+    constructor <;> linarith
 
 /-- In the open upper half-plane the argument is measured from the imaginary axis by an arctangent:
 `arg w = π / 2 - arctan (re w / im w)`. -/
 theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
     w.arg = π / 2 - Real.arctan (w.re / w.im) := by
-  obtain ⟨h1, h2⟩ := abs_lt.1 (abs_arg_sub_pi_div_two_lt_of_im_pos hw)
+  obtain ⟨h1, h2⟩ := abs_lt.1 (abs_arg_sub_pi_div_two_lt_iff.2 hw)
   rw [Real.arctan_eq_of_tan_eq (x := π / 2 - w.arg) ?_ ⟨by linarith, by linarith⟩]
   · ring
   · rw [Real.tan_pi_div_two_sub, tan_arg, inv_div]
@@ -155,49 +178,53 @@ theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
 theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     ∃ ω : ℂ, ‖ω‖ = 1 ∧ c * ω ^ 2 = -‖c‖ := by
   refine ⟨exp (((π - arg c) / 2 : ℝ) * I), norm_exp_ofReal_mul_I _, ?_⟩
-  have h : (arg c : ℂ) * I + 2 * (((π - arg c) / 2 : ℝ) * I) = π * I := by
+  -- `c ω² = ‖c‖ e^{i arg c} e^{i (π - arg c)} = ‖c‖ e^{iπ}`
+  have h : (arg c : ℂ) * I + (2 : ℕ) * (((π - arg c) / 2 : ℝ) * I) = π * I := by
     push_cast
     ring
-  calc c * exp (((π - arg c) / 2 : ℝ) * I) ^ 2
-      = ‖c‖ * exp ((arg c : ℂ) * I + 2 * (((π - arg c) / 2 : ℝ) * I)) := by
-        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_natCast_mul]
-        norm_num
-    _ = -‖c‖ := by
-        rw [h, exp_pi_mul_I]
-        ring
+  nth_rw 1 [← norm_mul_exp_arg_mul_I c]
+  rw [mul_assoc, ← exp_natCast_mul, ← exp_add, h, exp_pi_mul_I]
+  exact mul_neg_one _
 
 /-- If `φ / π` is not an integer, then `-e^{2iφ} = e^{iψ}` for the angle
 `ψ = 2φ - π - 2π⌊φ / π⌋`, which lies in `(-π, π)`, so `ψ` is the argument of `-e^{2iφ}`. -/
 theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / π ≠ k) :
     arg (-exp (↑(2 * φ) * I)) = 2 * φ - π - 2 * π * ⌊φ / π⌋ := by
-  set x := φ / π with hx
-  have hlt : (⌊x⌋ : ℝ) < x := lt_of_le_of_ne (Int.floor_le x) fun h => hφ _ h.symm
-  have hlt' : x < ⌊x⌋ + 1 := Int.lt_floor_add_one x
-  set ψ := 2 * φ - π - 2 * π * ⌊x⌋ with hψ
-  have hφx : φ = x * π := by rw [hx]; field_simp
-  have hψlo : -π < ψ := by
-    rw [hψ, hφx]; nlinarith [pi_pos]
-  have hψhi : ψ < π := by
-    rw [hψ, hφx]; nlinarith [pi_pos]
-  have hneg : -exp (↑(2 * φ) * I) = exp (↑ψ * I) := by
-    have h2φ : (2 * φ : ℝ) = ψ + π + ⌊x⌋ * (2 * π) := by rw [hψ]; ring
-    rw [h2φ]
-    push_cast
-    rw [add_mul, add_mul, exp_add, exp_add, exp_pi_mul_I, mul_assoc (⌊x⌋ : ℂ),
-      exp_int_mul_two_pi_mul_I]
+  -- `-e^{2iφ} = e^{i(2φ - π)}`, and `ψ` is the representative of `2φ - π` in `(-π, π]`
+  rw [← exp_sub_pi_mul_I, ← sub_mul, ← ofReal_sub, arg_exp_mul_I, toIocMod_eq_iff]
+  refine ⟨?_, ⌊φ / π⌋, by rw [zsmul_eq_mul]; ring⟩
+  -- `ψ = 2π fract (φ / π) - π`, and `0 < fract (φ / π) < 1` as `φ / π` is not an integer
+  have hψ : 2 * φ - π - 2 * π * ⌊φ / π⌋ = 2 * π * Int.fract (φ / π) - π := by
+    rw [Int.fract]
+    field_simp
     ring
-  rw [hneg, arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
+  have hfr : 0 < Int.fract (φ / π) := Int.fract_pos.2 fun h ↦ hφ _ h
+  rw [hψ]
+  constructor <;> nlinarith [pi_pos, Int.fract_lt_one (φ / π)]
+
+/-- The argument of `1 - exp (θ i)` for `0 < θ < 2π`: since
+`1 - exp (θ i) = 2 sin (θ / 2) exp ((θ - π) i / 2)` with `sin (θ / 2) > 0`, it is `(θ - π) / 2`. -/
+theorem arg_one_sub_exp_mul_I {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
+    arg (1 - exp (θ * I)) = (θ - π) / 2 := by
+  -- `1 - e^{iθ} = -2i e^{iθ/2} sin (θ/2) = 2 sin (θ/2) e^{i(θ - π)/2}`, with `sin (θ/2) > 0`
+  have hfac : 1 - exp (θ * I) =
+      ((2 * Real.sin (θ / 2) : ℝ) : ℂ) * exp (((θ - π) / 2 : ℝ) * I) := by
+    rw [mul_comm (θ : ℂ) I, one_sub_exp_mul_I, show (((θ - π) / 2 : ℝ) : ℂ) * I =
+      I * θ / 2 + -(π / 2) * I by push_cast; ring, Complex.exp_add, ← log_neg_I,
+      exp_log (neg_ne_zero.2 I_ne_zero)]
+    push_cast
+    ring
+  have hsin : 0 < Real.sin (θ / 2) :=
+    Real.sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
+  rw [hfac, arg_ofReal_mul (by positivity), arg_exp_mul_I, toIocMod_eq_self]
+  constructor <;> linarith [hθ.1, hθ.2, Real.pi_pos]
 
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
     (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) := by
-  rw [← Real.exp_neg]
-  apply Real.exp_le_exp.mpr
-  calc -(u.arg * r) ≤ |u.arg * r| := neg_le_abs _
-    _ = |u.arg| * |r| := abs_mul _ _
-    _ ≤ Real.pi * |r| := by
-      gcongr
-      exact abs_arg_le_pi _
+  rw [← Real.exp_neg, Real.exp_le_exp]
+  calc -(u.arg * r) ≤ |u.arg| * |r| := (neg_le_abs _).trans_eq (abs_mul _ _)
+    _ ≤ Real.pi * |r| := by gcongr; exact abs_arg_le_pi _
 
 /-- The unit complex number `exp (i arg z)` is `z / |z|` for `z ≠ 0`. -/
 theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ : ℂ) := by
@@ -225,6 +252,49 @@ theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
 /-- On the slit plane the argument lies strictly between `-π` and `π`. -/
 theorem abs_arg_lt_pi_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) : |arg z| < π :=
   abs_lt.2 ⟨neg_pi_lt_arg z, lt_of_le_of_ne (arg_le_pi z) (slitPlane_arg_ne_pi hz)⟩
+
+/-- The arguments of two points of the slit plane whose imaginary parts do not have the same strict
+sign add up to a value in `(-π, π)`. -/
+theorem arg_add_arg_mem_Ioo_of_im_mul_nonpos {x y : ℂ} (hx : x ∈ slitPlane) (hy : y ∈ slitPlane)
+    (h : x.im * y.im ≤ 0) : arg x + arg y ∈ Set.Ioo (-π) π := by
+  have hx' := abs_lt.1 (abs_arg_lt_pi_of_mem_slitPlane hx)
+  have hy' := abs_lt.1 (abs_arg_lt_pi_of_mem_slitPlane hy)
+  -- on the slit plane, `arg w ≤ 0` when `im w ≤ 0`, by conjugation
+  have hle : ∀ {w : ℂ}, w ∈ slitPlane → w.im ≤ 0 → arg w ≤ 0 := fun {w} hw hw' => by
+    have := arg_nonneg_iff.2 (by simpa using hw' : 0 ≤ ((starRingEnd ℂ) w).im)
+    simp only [arg_conj, slitPlane_arg_ne_pi hw, ite_false] at this
+    linarith
+  rcases mul_nonpos_iff.1 h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · have := arg_nonneg_iff.2 h₁
+    have := hle hy h₂
+    constructor <;> linarith
+  · have := hle hx h₁
+    have := arg_nonneg_iff.2 h₂
+    constructor <;> linarith
+
+/-- In the right half-plane the arguments of `z - 1` and `z + 1` add up to a value in the principal
+range `(-π, π]`. -/
+theorem arg_sub_one_add_arg_add_one_mem_Ioc {z : ℂ} (hre : 0 < z.re) :
+    arg (z - 1) + arg (z + 1) ∈ Set.Ioc (-π) π := by
+  have hy : z + 1 ∈ slitPlane := mem_slitPlane_iff.2 (Or.inl (by simp; linarith))
+  by_cases hz : z - 1 ∈ slitPlane
+  · -- `(z² - 1) * conj (z + 1)` is a positive multiple of `z - 1`, and its two factors have
+    -- imaginary parts of opposite signs
+    have hp := sq_sub_one_mem_slitPlane hz hre
+    have hc : (starRingEnd ℂ) (z + 1) ∈ slitPlane := conj_mem_slitPlane.2 hy
+    have h := (arg_mul_eq_add_arg_iff (slitPlane_ne_zero hp) (slitPlane_ne_zero hc)).2
+      (Set.Ioo_subset_Ioc_self (arg_add_arg_mem_Ioo_of_im_mul_nonpos hp hc (by
+        simp only [sub_im, one_im, sub_zero, sq, mul_im, conj_im, add_im]
+        nlinarith [mul_nonneg hre.le (mul_self_nonneg z.im)])))
+    rw [show (z ^ 2 - 1) * (starRingEnd ℂ) (z + 1) = (z - 1) * ((normSq (z + 1) : ℝ) : ℂ) by
+        rw [← mul_conj]; ring,
+      arg_mul_ofReal _ (normSq_pos.2 (slitPlane_ne_zero hy))] at h
+    simp only [arg_conj, slitPlane_arg_ne_pi hy, ite_false] at h
+    rw [show arg (z - 1) + arg (z + 1) = arg (z ^ 2 - 1) by linarith]
+    exact arg_mem_Ioc _
+  · have him : z.im = 0 := by simpa using im_eq_zero_of_notMem_slitPlane hz
+    rw [(arg_eq_zero_iff (z := z + 1)).2 ⟨by simp; linarith, by simp [him]⟩, add_zero]
+    exact arg_mem_Ioc _
 
 /-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
 theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by

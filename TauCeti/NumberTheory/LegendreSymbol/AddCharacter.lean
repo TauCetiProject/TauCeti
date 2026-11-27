@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.Data.ZMod.Pow
 
 /-!
 # Primitive additive characters
@@ -20,10 +21,26 @@ it, a nontrivial additive character of a finite field has vanishing character su
 records the punctured form of that sum, over the units of the field. Without a domain hypothesis,
 the full character sum still vanishes when some value minus one is a non-zero-divisor.
 
+The shift of a primitive character by `a` is trivial only for `a = 0`, by definition of
+primitivity. A primitive character stays primitive under a shift by a unit, and on a finite ring
+these are the only primitive shifts: Mathlib's `AddChar.not_isPrimitive_mulShift` rules out the
+nonunits. This is what identifies the primitive characters among the shifts of one primitive
+character.
+
+For Mathlib's character `AddChar.zmodChar n hζ : i ↦ ζ ^ i` of `ZMod n`, this file also records
+that its order, as a monoid hom out of `Multiplicative (ZMod n)`, is the order of `ζ`.
+
 ## Main results
 
+* `AddChar.orderOf_toMonoidHom_zmodChar`: the character `i ↦ ζ ^ i` of `ZMod n` has the order of
+  `ζ`.
 * `AddChar.IsPrimitive.ne_one`: a primitive additive character on a nontrivial ring is
   nontrivial.
+* `AddChar.IsPrimitive.mulShift_eq_one_iff`: the shift of a primitive character by `a` is
+  trivial if and only if `a = 0`.
+* `AddChar.IsPrimitive.mulShift`: the shift of a primitive character by a unit is primitive.
+* `AddChar.IsPrimitive.isPrimitive_mulShift_iff`: on a finite ring, the shift of a primitive
+  character by `a` is primitive if and only if `a` is a unit.
 * `AddChar.IsPrimitive.natCast_ne_zero`: the level of a primitive additive character of `ZMod n`
   with values in a domain is nonzero in that domain.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field sums to
@@ -39,6 +56,40 @@ the full character sum still vanishes when some value minus one is a non-zero-di
 public section
 
 namespace AddChar
+
+section Shift
+
+variable {R R' : Type*} [CommRing R] [CommMonoid R'] {ψ : AddChar R R'}
+
+/-- The shift of a primitive additive character by `a` is trivial exactly when `a = 0`. -/
+@[simp]
+theorem IsPrimitive.mulShift_eq_one_iff (hψ : ψ.IsPrimitive) {a : R} :
+    ψ.mulShift a = 1 ↔ a = 0 :=
+  ⟨fun h ↦ by_contra fun ha ↦ hψ ha h, fun h ↦ h ▸ mulShift_zero ψ⟩
+
+/-- The shift of a primitive additive character by a unit is primitive. -/
+theorem IsPrimitive.mulShift (hψ : ψ.IsPrimitive) {a : R} (ha : IsUnit a) :
+    (ψ.mulShift a).IsPrimitive := fun b hb ↦ by
+  rw [mulShift_mulShift]
+  exact hψ (ha.mul_right_eq_zero.not.mpr hb)
+
+/-- On a finite ring, the shift of a primitive additive character by `a` is primitive if and only
+if `a` is a unit. -/
+theorem IsPrimitive.isPrimitive_mulShift_iff [Finite R] (hψ : ψ.IsPrimitive) {a : R} :
+    (ψ.mulShift a).IsPrimitive ↔ IsUnit a :=
+  ⟨fun h ↦ by_contra fun ha ↦ not_isPrimitive_mulShift ψ ha h, hψ.mulShift⟩
+
+end Shift
+
+/-- The character `i ↦ ζ ^ i` of `ZMod n` (`AddChar.zmodChar`), as a monoid hom out of
+`Multiplicative (ZMod n)`, has the same order as `ζ`. -/
+theorem orderOf_toMonoidHom_zmodChar {C : Type*} [CommMonoid C] {n : ℕ} [NeZero n] {ζ : C}
+    (hζ : ζ ^ n = 1) : orderOf (zmodChar n hζ).toMonoidHom = orderOf ζ := by
+  refine orderOf_eq_orderOf_iff.mpr fun m ↦ ⟨fun h ↦ ?_, fun h ↦ MonoidHom.ext fun x ↦ ?_⟩
+  · have := congr($h (Multiplicative.ofAdd 1))
+    simpa [zmodChar_apply, TauCeti.pow_val_one hζ, ← pow_mul] using this
+  · simp only [MonoidHom.pow_apply, toMonoidHom_apply, zmodChar_apply, MonoidHom.one_apply]
+    rw [← pow_mul, pow_mul', h, one_pow]
 
 variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
 

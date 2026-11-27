@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.Calculus.Deriv.Second
 
 /-!
 # Airy's equation
@@ -21,13 +22,17 @@ solution satisfies the Riccati equation `W' = z − W²`.
 
 * `TauCeti.deriv_airyAi`, `TauCeti.deriv_airyBi`: the derivatives as regularized `₀F₁` series;
 * `TauCeti.airyAi_ode`, `TauCeti.airyBi_ode`: Airy's equation (DLMF 9.2.1);
+* `TauCeti.hasDerivAt_deriv_of_airy_ode`: the derivative of an entire solution `w` has
+  derivative `z w(z)`;
 * `TauCeti.wronskian_airyAi_airyBi`: `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7);
 * `TauCeti.eq_airy_combination`: every entire solution is
   `π (w(0) Bi′(0) − w′(0) Bi(0)) Ai + π (w′(0) Ai(0) − w(0) Ai′(0)) Bi`;
 * `TauCeti.eq_of_airy_ode`: two entire solutions with the same value and derivative at one point
   are equal;
 * `TauCeti.hasDerivAt_deriv_div_of_airy_ode_at`, `TauCeti.hasDerivAt_deriv_div_of_airy_ode`: the
-  Riccati form (DLMF 9.2.16), pointwise and for entire solutions.
+  Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
+* `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
+  `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`.
 
 ## Implementation notes
 
@@ -40,7 +45,9 @@ Uniqueness is proved with Wronskians: the Wronskian of two entire solutions is c
 * NIST Digital Library of Mathematical Functions, §9.2, <https://dlmf.nist.gov/9.2>.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
-`DLMF/Airy/Basic/Properties.lean` and `DLMF/Bessel/Basic/RegularizedSeries.lean`.
+`DLMF/Airy/Basic/Properties.lean` and `DLMF/Bessel/Basic/RegularizedSeries.lean`;
+`TauCeti.airy_inhomogeneous_ode_rotation` is adapted from `IsAiryInhomSol.rotate` in
+`DLMF/Airy/Scorer/Representations.lean`.
 -/
 
 public section
@@ -153,17 +160,21 @@ theorem airyBi_ode (z : ℂ) : deriv^[2] airyBi z = z * airyBi z := by
     norm_num
     ring
 
+/-- For an entire solution `w` of Airy's equation, `w'` has derivative `z w(z)` at `z`. -/
+theorem hasDerivAt_deriv_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
+    (hw' : ∀ z, deriv^[2] w z = z * w z) (z : ℂ) : HasDerivAt (deriv w) (z * w z) z := by
+  rw [← hw' z, Function.iterate_succ_apply, Function.iterate_one]
+  exact (hw.deriv z).hasDerivAt
+
 /-- The Wronskian of two entire solutions of Airy's equation is constant. -/
 theorem wronskian_eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (hf' : ∀ z, deriv^[2] f z = z * f z)
     (hg' : ∀ z, deriv^[2] g z = z * g z) (z w : ℂ) :
     f z * deriv g z - deriv f z * g z = f w * deriv g w - deriv f w * g w := by
-  have h2 {u : ℂ → ℂ} (hu : Differentiable ℂ u) (hu' : ∀ z, deriv^[2] u z = z * u z) (t : ℂ) :
-      HasDerivAt (deriv u) (id t * u t) t := by
-    rw [id, ← hu' t]
-    exact (hu.deriv t).hasDerivAt
-  have h := wronskian_eq_of_hasDerivAt (q := id) (fun t => (hg t).hasDerivAt) (h2 hg hg')
-    (fun t => (hf t).hasDerivAt) (h2 hf hf') z w
+  have h := wronskian_eq_of_hasDerivAt (q := id) isOpen_univ isPreconnected_univ
+    (fun t _ => (hg t).hasDerivAt) (fun t _ => hasDerivAt_deriv_of_airy_ode hg hg' t)
+    (fun t _ => (hf t).hasDerivAt) (fun t _ => hasDerivAt_deriv_of_airy_ode hf hf' t)
+    (Set.mem_univ z) (Set.mem_univ w)
   linear_combination h
 
 /-- **The Wronskian** `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7). -/
@@ -247,5 +258,16 @@ theorem hasDerivAt_deriv_div_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable 
     (hode : ∀ z, deriv^[2] w z = z * w z) {z : ℂ} (hz : w z ≠ 0) :
     HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z :=
   hasDerivAt_deriv_div_of_airy_ode_at (hw z) (hw.deriv z) (hode z) hz
+
+/-- **Rotation symmetry** of the inhomogeneous Airy equation: if `f'' = z f + c` and `ν³ = 1`,
+then the rotated function `z ↦ ν f(ν z)` satisfies the same equation. No differentiability of `f`
+is needed. With `c = 0`, `z ↦ ν w(ν z)` solves Airy's equation whenever `w` does. -/
+theorem airy_inhomogeneous_ode_rotation {f : ℂ → ℂ} {c ν : ℂ}
+    (hf : ∀ z, deriv^[2] f z = z * f z + c) (hν : ν ^ 3 = 1) (z : ℂ) :
+    deriv^[2] (fun w => ν * f (ν * w)) z = z * (ν * f (ν * z)) + c := by
+  simp only [← iteratedDeriv_eq_iterate, iteratedDeriv_const_mul_field,
+    iteratedDeriv_comp_mul_left, smul_eq_mul]
+  rw [iteratedDeriv_eq_iterate, hf]
+  linear_combination (ν * z * f (ν * z) + c) * hν
 
 end TauCeti

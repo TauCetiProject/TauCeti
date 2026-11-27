@@ -15,22 +15,28 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 /-!
 # Tensor-product naturality, contractions and trace identities
 
-This file records how tensor reassociation interacts with tensoring composite maps. It defines
+This file records how tensor reassociation interacts with tensoring composite maps, and that
+`f ⊗ 𝟙` sends pure tensors with a left factor in the kernel of `f` to zero. It defines
 contraction against a linear functional on the right factor, bundled as a linear map in the
 functional, and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. The file also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication, and writes every tensor as a sum of
-pure tensors over a finite spanning family of the right factor.
+pure tensors over a finite spanning family of the right factor. It also expands pure tensors
+with a multiset sum in one factor. Finally, it shows that a scalar action which can be moved
+across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
 
 ## Main declarations
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
-* `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator on
-  `N ⊗ N` composed with itself, for an involution anticommuting with `b`.
+* `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator
+  `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` composed with itself, for an involution `τ`
+  anticommuting with `b`.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
+* `LinearMap.tmul_mem_ker_rTensor`: tensoring an element of the kernel of `f` with any `w` gives
+  an element of the kernel of `f ⊗ 𝟙`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
   right factor.
@@ -46,11 +52,28 @@ pure tensors over a finite spanning family of the right factor.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
+* `TensorProduct.tmul_multiset_sum`, `TensorProduct.multiset_sum_tmul`: a pure tensor with a
+  multiset sum in one factor is the sum of the pure tensors.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
+* `TensorProduct.mk_one_eq_rTensor_comp_lid_symm`: the map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is the
+  structure map `R → A` tensored with `M`.
+* `TensorProduct.injective_mk_one_iff`: `m ↦ 1 ⊗ m` is injective iff the structure map `R → A`
+  stays injective after tensoring with `M`.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
+* `TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul`: reassociating both arguments of
+  `tensorTensorTensorComm` reassociates its value, and
+  `TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul` is its form after maps into
+  the first two factors.
+* `TensorProduct.CompatibleSMul.tensorProduct`: `K`-balanced and `R`-balanced tensors agreeing in
+  `M ⊗[R] N` agree in `M ⊗[R] (N ⊗[K] P)`.
+* `TensorProduct.map_sum_left` and `TensorProduct.map_sum_right`: the tensor product of linear maps
+  is additive in each factor over finite sums.
+* `TensorProduct.map_sub_left` and `TensorProduct.map_sub_right`, with their applied forms
+  `TensorProduct.map_sub_left_apply` and `TensorProduct.map_sub_right_apply`: the tensor product of
+  linear maps is subtractive in each factor.
 
 ## References
 
@@ -99,30 +122,35 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
 
-/-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N` with itself:
+/-- Tensoring with any `w` sends the kernel of a linear map `f` into the kernel of `f ⊗ 𝟙`. -/
+theorem tmul_mem_ker_rTensor {f : N →ₗ[R] P} {x : N} (hx : x ∈ ker f) (w : M) :
+    x ⊗ₜ w ∈ ker (f.rTensor M) := by
+  rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
+
+/-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
-`(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (b ∘ b)`. -/
-theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = id)
-    (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
-    (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) ∘ₗ (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) =
-      (b ∘ₗ b).rTensor N + (b ∘ₗ b).lTensor N := by
+`(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (d ∘ d)`. -/
+theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (d : P →ₗ[R] P)
+    (hτ : τ ∘ₗ τ = id) (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
+    (b.rTensor P + d.lTensor N ∘ₗ τ.rTensor P) ∘ₗ (b.rTensor P + d.lTensor N ∘ₗ τ.rTensor P) =
+      (b ∘ₗ b).rTensor P + (d ∘ₗ d).lTensor N := by
   refine ext fun w ↦ ?_
-  have hcross : TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
+  have hcross : TensorProduct.map (b ∘ₗ τ) d w + TensorProduct.map (τ ∘ₗ b) d w = 0 := by
     rw [← LinearMap.add_apply, ← TensorProduct.map_add_left, hodd, TensorProduct.map_zero_left,
       LinearMap.zero_apply]
-  have hcommute (y : N ⊗[R] N) : τ.rTensor N (b.lTensor N y) = b.lTensor N (τ.rTensor N y) :=
-    (lTensor_rTensor_comm τ b y).symm
-  have hlast : b.lTensor N (τ.rTensor N (b.lTensor N (τ.rTensor N w))) = (b ∘ₗ b).lTensor N w := by
+  have hcommute (y : N ⊗[R] P) : τ.rTensor P (d.lTensor N y) = d.lTensor N (τ.rTensor P y) :=
+    (lTensor_rTensor_comm τ d y).symm
+  have hlast : d.lTensor N (τ.rTensor P (d.lTensor N (τ.rTensor P w))) = (d ∘ₗ d).lTensor N w := by
     rw [hcommute, ← lTensor_comp_apply, ← rTensor_comp_apply, hτ, rTensor_id_apply]
   have hcrossLeft :
-      b.rTensor N (b.lTensor N (τ.rTensor N w)) = TensorProduct.map (b ∘ₗ τ) b w := by
+      b.rTensor P (d.lTensor N (τ.rTensor P w)) = TensorProduct.map (b ∘ₗ τ) d w := by
     rw [← comp_apply, rTensor_comp_lTensor, map_rTensor]
   have hcrossRight :
-      b.lTensor N (τ.rTensor N (b.rTensor N w)) = TensorProduct.map (τ ∘ₗ b) b w := by
+      d.lTensor N (τ.rTensor P (b.rTensor P w)) = TensorProduct.map (τ ∘ₗ b) d w := by
     rw [← rTensor_comp_apply, ← comp_apply, lTensor_comp_rTensor]
   simp only [LinearMap.add_apply, comp_apply, map_add]
   rw [hcrossLeft, hcrossRight, hlast, ← rTensor_comp_apply]
-  rw [show ∀ A B X Y : N ⊗[R] N, A + Y + (X + B) = A + B + (X + Y) from fun A B X Y ↦ by abel,
+  rw [show ∀ A B X Y : N ⊗[R] P, A + Y + (X + B) = A + B + (X + Y) from fun A B X Y ↦ by abel,
     hcross, add_zero]
 
 end Naturality
@@ -360,6 +388,18 @@ namespace TensorProduct
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N]
 
+/-- A pure tensor with a multiset sum in its right factor is the sum of the pure tensors. This is
+the multiset version of `TensorProduct.tmul_sum`. -/
+theorem tmul_multiset_sum (m : M) (s : Multiset N) :
+    m ⊗ₜ[R] s.sum = (s.map (m ⊗ₜ[R] ·)).sum :=
+  map_multiset_sum (mk R M N m) s
+
+/-- A pure tensor with a multiset sum in its left factor is the sum of the pure tensors. This is
+the multiset version of `TensorProduct.sum_tmul`. -/
+theorem multiset_sum_tmul (s : Multiset M) (n : N) :
+    s.sum ⊗ₜ[R] n = (s.map (· ⊗ₜ[R] n)).sum :=
+  map_multiset_sum ((mk R M N).flip n) s
+
 /-- If a finite family `n` spans `N`, then every element of `M ⊗[R] N` is `∑ j, mⱼ ⊗ nⱼ` for some
 family `m` of elements of `M`. -/
 theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → N}
@@ -415,10 +455,149 @@ theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) 
     | add y y' h h' => simp only [map_add, tmul_add, h, h']
     | tmul p q => simp
 
+variable {O S : Type*} [AddCommMonoid O] [Module R O] [AddCommMonoid S] [Module R S]
+
+/-- **Reassociating both arguments of `tensorTensorTensorComm` reassociates its value.** The
+rearrangement `((m ⊗ n) ⊗ o) ⊗ ((p ⊗ q) ⊗ s) ↦ (m ⊗ p) ⊗ ((n ⊗ q) ⊗ (o ⊗ s))`, applying
+`tensorTensorTensorComm` to the outer factors, then to the first, and reassociating, agrees with
+reassociating both arguments, `(m ⊗ (n ⊗ o)) ⊗ (p ⊗ (q ⊗ s))`, and then applying
+`tensorTensorTensorComm` to the outer factors and to the second. -/
+theorem assoc_rTensor_tensorTensorTensorComm_tmul (x : (M ⊗[R] N) ⊗[R] O)
+    (y : (P ⊗[R] Q) ⊗[R] S) :
+    TensorProduct.assoc R _ _ _ ((tensorTensorTensorComm R M N P Q).toLinearMap.rTensor _
+        (tensorTensorTensorComm R _ O _ S (x ⊗ₜ y))) =
+      (tensorTensorTensorComm R N O Q S).toLinearMap.lTensor _
+        (tensorTensorTensorComm R M _ P _
+          (TensorProduct.assoc R M N O x ⊗ₜ TensorProduct.assoc R P Q S y)) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' h h' => simp only [map_add, add_tmul, h, h']
+  | tmul mn o =>
+    induction mn using TensorProduct.inductionOn with
+    | add z z' h h' => simp only [map_add, add_tmul, h, h']
+    | tmul m n =>
+      induction y using TensorProduct.inductionOn with
+      | add y y' h h' => simp only [map_add, tmul_add, h, h']
+      | tmul pq s =>
+        induction pq using TensorProduct.inductionOn with
+        | add z z' h h' => simp only [map_add, add_tmul, tmul_add, h, h']
+        | tmul p q => simp
+
+variable {X Y X' Y' : Type*} [AddCommMonoid X] [Module R X] [AddCommMonoid Y] [Module R Y]
+  [AddCommMonoid X'] [Module R X'] [AddCommMonoid Y'] [Module R Y']
+
+/-- **`TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul` after maps into the first two
+factors.** Let `p : X → M ⊗ N`, `q : Y → P ⊗ Q`, `p' : X' → N ⊗ O` and `q' : Y' → Q ⊗ S`, and let
+`x`, `y`, `x'`, `y'` be tensors whose images under `p ⊗ 1` and `q ⊗ 1`, reassociated, are the
+images of `x'` and `y'` under `1 ⊗ p'` and `1 ⊗ q'`. Then rearranging `x ⊗ y` by
+`tensorTensorTensorComm` and applying `tensorTensorTensorComm ∘ (p ⊗ q)` to the first factor gives,
+after reassociation, the rearrangement of `x' ⊗ y'` with `tensorTensorTensorComm ∘ (p' ⊗ q')`
+applied to the second factor. -/
+theorem assoc_rTensor_comp_map_tensorTensorTensorComm_tmul {p : X →ₗ[R] M ⊗[R] N}
+    {q : Y →ₗ[R] P ⊗[R] Q} {p' : X' →ₗ[R] N ⊗[R] O} {q' : Y' →ₗ[R] Q ⊗[R] S}
+    {x : X ⊗[R] O} {y : Y ⊗[R] S} {x' : M ⊗[R] X'} {y' : P ⊗[R] Y'}
+    (hx : TensorProduct.assoc R M N O (p.rTensor O x) = p'.lTensor M x')
+    (hy : TensorProduct.assoc R P Q S (q.rTensor S y) = q'.lTensor P y') :
+    TensorProduct.assoc R _ _ _
+        (((tensorTensorTensorComm R M N P Q).toLinearMap ∘ₗ map p q).rTensor _
+          (tensorTensorTensorComm R X O Y S (x ⊗ₜ y))) =
+      ((tensorTensorTensorComm R N O Q S).toLinearMap ∘ₗ map p' q').lTensor _
+        (tensorTensorTensorComm R M X' P Y' (x' ⊗ₜ y')) := by
+  -- Move `p ⊗ q` and `p' ⊗ q'` inside the rearrangements (`tensorTensorTensorComm_comp_map`).
+  have hl : (map p q).rTensor (O ⊗[R] S) (tensorTensorTensorComm R X O Y S (x ⊗ₜ y)) =
+      tensorTensorTensorComm R _ O _ S (p.rTensor O x ⊗ₜ q.rTensor S y) := by
+    have := LinearMap.congr_fun (tensorTensorTensorComm_comp_map R p LinearMap.id q LinearMap.id)
+      (x ⊗ₜ y)
+    simpa [map_id, LinearMap.rTensor_def] using this.symm
+  have hr : (map p' q').lTensor (M ⊗[R] P) (tensorTensorTensorComm R M X' P Y' (x' ⊗ₜ y')) =
+      tensorTensorTensorComm R M _ P _ (p'.lTensor M x' ⊗ₜ q'.lTensor P y') := by
+    have := LinearMap.congr_fun (tensorTensorTensorComm_comp_map R LinearMap.id p' LinearMap.id q')
+      (x' ⊗ₜ y')
+    simpa [map_id, LinearMap.lTensor_def] using this.symm
+  rw [LinearMap.rTensor_comp_apply, hl, assoc_rTensor_tensorTensorTensorComm_tmul, hx, hy,
+    LinearMap.lTensor_comp_apply, hr]
+
 /-- If `M ⊗[R] N` is nontrivial then so is `N`: were `N` trivial, the tensor product would be
 trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
+
+variable (M) in
+/-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is `(Algebra.linearMap R A).rTensor M` composed with the
+identification `M ≃ R ⊗[R] M`. -/
+theorem mk_one_eq_rTensor_comp_lid_symm (A : Type*) [Semiring A] [Algebra R A] :
+    mk R A M 1 = (Algebra.linearMap R A).rTensor M ∘ₗ (TensorProduct.lid R M).symm.toLinearMap := by
+  ext
+  simp
+
+variable (M) in
+/-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is injective iff `(Algebra.linearMap R A).rTensor M`
+is. -/
+theorem injective_mk_one_iff (A : Type*) [Semiring A] [Algebra R A] :
+    Function.Injective (mk R A M 1) ↔ Function.Injective ((Algebra.linearMap R A).rTensor M) := by
+  rw [mk_one_eq_rTensor_comp_lid_symm, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    EquivLike.injective_comp]
+
+section CompatibleSMul
+
+variable {K : Type*} [CommSemiring K] [Algebra R K] [Module K M] [Module K N] [IsScalarTower R K N]
+  [Module K P]
+
+/-- If `K`-balanced and `R`-balanced tensors agree in `M ⊗[R] N`, they agree in
+`M ⊗[R] (N ⊗[K] P)`, where `K` acts on `N ⊗[K] P` through `N`. -/
+-- A pure tensor `n ⊗ p` of `N ⊗[K] P` is the image of `n` under the `K`-linear map `· ⊗ p`.
+instance CompatibleSMul.tensorProduct [CompatibleSMul R K M N] :
+    CompatibleSMul R K M (N ⊗[K] P) where
+  smul_tmul k m t := by
+    induction t using TensorProduct.inductionOn with
+    | add s t hs ht => simp only [smul_add, tmul_add, hs, ht]
+    | tmul n p =>
+      rw [smul_tmul']
+      exact congrArg (LinearMap.lTensor M (((TensorProduct.mk K N P).flip p).restrictScalars R))
+        (TensorProduct.smul_tmul (R := R) k m n)
+
+end CompatibleSMul
+
+/-- The tensor product of linear maps is additive in its left factor, over a finite sum. -/
+theorem map_sum_left {ι : Type*} (s : Finset ι) (f : ι → M →ₗ[R] P) (g : N →ₗ[R] Q) :
+    map (∑ i ∈ s, f i) g = ∑ i ∈ s, map (f i) g := by
+  simp only [← mapBilinear_apply, map_sum, LinearMap.sum_apply]
+
+/-- The tensor product of linear maps is additive in its right factor, over a finite sum. -/
+theorem map_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[R] P) (g : ι → N →ₗ[R] Q) :
+    map f (∑ i ∈ s, g i) = ∑ i ∈ s, map f (g i) := by
+  simp only [← mapBilinear_apply, map_sum]
+
+end TensorProduct
+
+namespace TensorProduct
+
+variable {R M N P Q : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- The tensor product of linear maps is subtractive in its left factor. -/
+theorem map_sub_left [AddCommGroup P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f₁ f₂ : M →ₗ[R] P) (g : N →ₗ[R] Q) : map (f₁ - f₂) g = map f₁ g - map f₂ g := by
+  simp only [← mapBilinear_apply, map_sub, LinearMap.sub_apply]
+
+/-- `TensorProduct.map_sub_left`, applied to an element.  This form only uses subtraction in
+`P ⊗[R] Q`, so it also applies where the linear endomorphisms of a tensor product have no
+synthesizable subtraction, as for the tensor square of a direct sum. -/
+theorem map_sub_left_apply [AddCommGroup P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f₁ f₂ : M →ₗ[R] P) (g : N →ₗ[R] Q) (z : M ⊗[R] N) :
+    map (f₁ - f₂) g z = map f₁ g z - map f₂ g z := by
+  rw [map_sub_left, LinearMap.sub_apply]
+
+/-- The tensor product of linear maps is subtractive in its right factor.  The left target is an
+additive group too, since Mathlib's negation on `P ⊗[R] Q` comes from the left factor. -/
+theorem map_sub_right [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    (f : M →ₗ[R] P) (g₁ g₂ : N →ₗ[R] Q) : map f (g₁ - g₂) = map f g₁ - map f g₂ := by
+  simp only [← mapBilinear_apply, map_sub]
+
+/-- `TensorProduct.map_sub_right`, applied to an element. -/
+theorem map_sub_right_apply [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
+    (f : M →ₗ[R] P) (g₁ g₂ : N →ₗ[R] Q) (z : M ⊗[R] N) :
+    map f (g₁ - g₂) z = map f g₁ z - map f g₂ z := by
+  rw [map_sub_right, LinearMap.sub_apply]
 
 end TensorProduct

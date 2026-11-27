@@ -164,7 +164,7 @@ theorem countable_quotient_isoSetoidOn_nat_infiniteClassesSentence :
       ENat.card (Quotient (r q.out)))
     fun q q' h => ?_
   rw [← Quotient.out_eq q, ← Quotient.out_eq q']
-  refine Quotient.sound (isoSetoidOn_apply.2 ?_)
+  refine Quotient.sound (classIso_apply.2 ?_)
   rw [hr q.out, hr q'.out]
   exact (isoSetoid_fromRel_iff_enatCard_eq (hinf _) (hinf _)).2 h
 
@@ -180,7 +180,7 @@ theorem infinite_quotient_isoSetoidOn_nat_infiniteClassesSentence :
   refine Infinite.of_injective (fun k : ℕ => (⟦⟨_, fromRel_ker_ofNat_mem_modelsOf k⟩⟧ :
     Quotient (isoSetoidOn ℕ infiniteClassesSentence))) fun k k' h => ?_
   have hiso := (isoSetoid_fromRel_iff_enatCard_eq (Setoid.infinite_setOf_ker_finOfNat k)
-    (Setoid.infinite_setOf_ker_finOfNat k')).1 (isoSetoidOn_apply.1 (Quotient.exact h))
+    (Setoid.infinite_setOf_ker_finOfNat k')).1 (classIso_apply.1 (Quotient.exact h))
   rw [Setoid.enatCard_quotient_ker_finOfNat, Setoid.enatCard_quotient_ker_finOfNat] at hiso
   have : k + 1 = k' + 1 := by exact_mod_cast hiso
   omega
@@ -200,7 +200,7 @@ theorem subsingleton_quotient_isoSetoidOn_infiniteClassesSentence {V : Type*} [F
   obtain ⟨r, hc, hr⟩ := mem_modelsOf_infiniteClassesSentence_iff.1 c.property
   obtain ⟨s, hd, -⟩ := mem_modelsOf_infiniteClassesSentence_iff.1 d.property
   have : IsEmpty V := ⟨fun x => hr x (Set.toFinite _)⟩
-  refine isoSetoidOn_apply.2 ?_
+  refine classIso_apply.2 ?_
   rw [hc, hd, isoSetoid_toRelationalConfiguration_fromRel_iff]
   exact ⟨⟨Equiv.refl V, fun {a} => isEmptyElim a⟩⟩
 

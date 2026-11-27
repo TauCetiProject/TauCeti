@@ -13,9 +13,9 @@ public import TauCeti.GroupTheory.GTree.Axis
 Let `G` act on a tree without inversions, and let `A(g)` be the characteristic set of `g ∈ G`: its
 set of fixed vertices if `g` is elliptic, its axis if `g` is hyperbolic. If `A(g)` and `A(h)` are
 disjoint, then `g * h` is hyperbolic; for two elliptic elements this is Serre's lemma
-`TauCeti.GTree.isHyperbolic_mul_of_disjoint`. For any `g` and `h`, the segment between a vertex
-of `A(g)` and a vertex of `A(h)` lies in `A(g) ∪ A(g * h) ∪ A(h)`. This is the key step in
-showing that the union of the axes of the hyperbolic elements of a subgroup is convex.
+`TauCeti.GTree.exists_smul_eq_and_smul_eq_of_isElliptic_mul`. For any `g` and `h`, the segment
+between a vertex of `A(g)` and a vertex of `A(h)` lies in `A(g) ∪ A(g * h) ∪ A(h)`. This is the
+key step in showing that the union of the axes of the hyperbolic elements of a subgroup is convex.
 
 The argument goes through the *bridge* between disjoint sets `A(g)` and `A(h)`: the reduced path
 `[a₀, b₀]` meeting `A(g)` only at `a₀` and `A(h)` only at `b₀`. The bridge, reversed, followed by
@@ -184,8 +184,10 @@ end Bridge
 /-! ### Products and segments -/
 
 /-- The product of two elements with disjoint characteristic sets is hyperbolic. For elliptic
-elements the characteristic sets are the sets of fixed vertices, so this contains Serre's lemma
-`TauCeti.GTree.isHyperbolic_mul_of_disjoint` on pairs of elliptic elements. -/
+elements the characteristic sets are the sets of fixed vertices
+(`GTree.IsElliptic.axis_eq_fixedBy`), so this says that the product of two elliptic elements
+without a common fixed vertex is hyperbolic (Serre's lemma,
+`GTree.exists_smul_eq_and_smul_eq_of_isElliptic_mul`). -/
 theorem isHyperbolic_mul_of_disjoint_axis {g h : G} (hd : Disjoint (T.axis g) (T.axis h)) :
     T.IsHyperbolic (g * h) := by
   obtain ⟨a, ha, b, hb, p, hp, hpab⟩ := ((connected_iff _).mp

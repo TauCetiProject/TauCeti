@@ -9,7 +9,7 @@ public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Induction.Projection
 public import TauCeti.RepresentationTheory.Induction.Transitivity
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
-import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 
 /-!
 # The permutation representation as an induced representation
@@ -22,10 +22,9 @@ More generally, for subgroups `D ≤ C ≤ G`, inducing the permutation represen
 `C ⧸ (D ⊓ C)` gives the permutation representation of `G` on `G ⧸ D`: a permutation
 representation on cosets can be induced in stages.
 
-Combined with Mathlib's induction-restriction adjunction (`Rep.indResHomEquiv`), the first
-identification is Frobenius reciprocity for permutation representations: a morphism
-`k[G ⧸ H] ⟶ Y` is determined by the image of the identity coset, which can be any `H`-invariant
-vector of `Y`.
+The file also records Frobenius reciprocity for permutation representations in `Rep k G`: a
+morphism `k[G ⧸ H] ⟶ Y` is determined by the image of the identity coset, which can be any
+`H`-invariant vector of `Y`.
 
 Feeding the first identification into the projection formula of
 `TauCeti/RepresentationTheory/Induction/Projection.lean` gives the classical description of
@@ -347,24 +346,18 @@ representation `k[G ⧸ H]` to a `G`-representation `Y` correspond to the `H`-in
 (`TauCeti.coe_quotientHomEquivInvariants_apply`), and an invariant vector `y` to the morphism
 sending the coset `⟦x⟧` to `Y.ρ x y` (`TauCeti.quotientHomEquivInvariants_symm_apply_single`).
 
-It is the composite of `TauCeti.indTrivialIso`, the induction-restriction adjunction
-`Rep.indResHomEquiv` for `H ≤ G`, and `Rep.trivialHomEquivInvariants`. -/
+It is the universal property `Representation.ofMulActionQuotientMapEquiv` of the permutation
+representation, read through `Rep.homLinearEquiv`. -/
 noncomputable def quotientHomEquivInvariants :
     (Rep.ofMulAction k G (G ⧸ H) ⟶ Y) ≃ₗ[k] (Rep.res H.subtype Y).ρ.invariants :=
-  (Linear.homCongr k (indTrivialIso k H) (Iso.refl Y)).symm ≪≫ₗ
-    Rep.indResHomEquiv H.subtype _ Y ≪≫ₗ Rep.trivialHomEquivInvariants _
+  Rep.homLinearEquiv _ Y ≪≫ₗ Y.ρ.ofMulActionQuotientMapEquiv H
 
 /-- `TauCeti.quotientHomEquivInvariants` evaluates a morphism at the identity coset. -/
 @[simp]
 theorem coe_quotientHomEquivInvariants_apply (f : Rep.ofMulAction k G (G ⧸ H) ⟶ Y) :
     (quotientHomEquivInvariants k H Y f : Y) =
-      f.hom (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) := by
-  have h := indTrivialIso_hom_hom_apply_mk k H 1 1
-  rw [inv_one] at h
-  rw [quotientHomEquivInvariants, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Rep.coe_trivialHomEquivInvariants_apply]
-  -- Keep `h` unevaluated: `simp` unfolds `Representation.IndV.mk` in both `h` and the goal.
-  simpa [Linear.homCongr_symm_apply, -indTrivialIso_hom_hom_apply_mk] using congrArg f.hom h
+      f.hom (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) :=
+  Representation.coe_ofMulActionQuotientMapEquiv_apply Y.ρ H f.hom
 
 /-- The morphism `k[G ⧸ H] ⟶ Y` attached to an `H`-invariant vector `y` sends the coset `⟦x⟧` to
 `Y.ρ x y`. -/
@@ -372,16 +365,8 @@ theorem coe_quotientHomEquivInvariants_apply (f : Rep.ofMulAction k G (G ⧸ H) 
 theorem quotientHomEquivInvariants_symm_apply_single (y : (Rep.res H.subtype Y).ρ.invariants)
     (x : G) (r : k) :
     (dsimp% only ((quotientHomEquivInvariants k H Y).symm y).hom
-        (MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r)) = r • Y.ρ x y := by
-  set f := (quotientHomEquivInvariants k H Y).symm y
-  have hf : f.hom (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) = y := by
-    rw [← coe_quotientHomEquivInvariants_apply, LinearEquiv.apply_symm_apply]
-  have hx : MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r =
-      r • Representation.ofMulAction k G (G ⧸ H) x
-        (MonoidAlgebra.single (QuotientGroup.mk 1 : G ⧸ H) 1) := by
-    simp [Representation.ofMulAction_single]
-  rw [hx, map_smul]
-  exact congrArg (r • ·) ((Rep.hom_comm_apply f x _).trans (congrArg (Y.ρ x) hf))
+        (MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r)) = r • Y.ρ x y :=
+  Representation.ofMulActionQuotientMapEquiv_symm_apply_single Y.ρ H y x r
 
 end HomEquivInvariants
 
