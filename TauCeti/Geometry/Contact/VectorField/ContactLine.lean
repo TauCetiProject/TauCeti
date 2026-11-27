@@ -423,10 +423,7 @@ theorem mlieBracket_contactVectorField_sub_mem_iff (hV : CMDiff ∞ (T% V))
     rw [← hαD.self_of_nhds, mem_kerDistribution, ContinuousAlternatingMap.map_vecCons_sub,
       hD.apply_mlieBracket_contactVectorField hV hW hαD, sub_eq_zero, eq_comm]
   refine ⟨fun h α x hαD ↦ (key hαD).1 (h x), fun h x ↦ ?_⟩
-  obtain ⟨U, hU, hxU, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt x
-  have hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y :=
-    eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦
-      (SmoothForm.kerDistribution_eq_ker α y).trans (hα y hy).1
+  obtain ⟨α, hαD⟩ := hD.exists_smoothForm_eventually_kerDistribution_eq x
   exact (key hαD).2 (h α x hαD)
 
 end IsContactDistribution

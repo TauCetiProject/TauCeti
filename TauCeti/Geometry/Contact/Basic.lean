@@ -111,6 +111,12 @@ theorem kerDistribution_eq_ker (α : SmoothForm I M ℝ 1) (x : M) :
   ext
   rw [mem_kerDistribution, RoughForm.mem_ker]
 
+/-- The kernel of a smooth one-form at `x` is the whole tangent space exactly when the form
+vanishes at `x`. -/
+theorem kerDistribution_eq_top_iff {α : SmoothForm I M ℝ 1} {x : M} :
+    α.kerDistribution x = ⊤ ↔ α.val x = 0 := by
+  rw [kerDistribution_eq_ker, RoughForm.ker_eq_top_iff]
+
 /-- At each point, `kerDistribution α` is the kernel of the covector `α_x`. -/
 theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
     α.kerDistribution x = LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by

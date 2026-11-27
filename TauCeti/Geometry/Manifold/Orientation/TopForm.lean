@@ -30,9 +30,8 @@ between nowhere-vanishing top forms and orientations; it holds at boundary and c
 * `TauCeti.topFormOrientationAt`: the orientation of a tangent space on which a top form is
   positive, characterized by `TauCeti.topFormOrientationAt_spec`.
 * `TauCeti.eventually_mapOrientation_topFormOrientationAt_eq`: near a point where a continuous top
-  form does not vanish, the orientations it selects are locally constant. Top forms defined and
-  nonvanishing only near each point, such as local volume forms, therefore orient a manifold as
-  soon as they select the same orientations where their domains meet.
+  form does not vanish, the tangent orientations it selects are locally constant in the
+  trivialization of the tangent bundle at that point.
 * `TauCeti.Manifold.Orientation.ofTopForm`: the orientation of a nowhere-vanishing continuous top
   form.
 * `TauCeti.Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff`: a tangent basis is

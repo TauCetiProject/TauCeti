@@ -69,6 +69,8 @@ orientation changes with the coorientation, `α ↦ -α`.
   contact form exactly when `α ∧ (dα)ⁿ` vanishes nowhere.
 * `TauCeti.SmoothForm.IsContactForm.volumeOrientation`: the orientation of a manifold defined by a
   contact form.
+* `TauCeti.SmoothForm.IsContactForm.orientationAt_volumeOrientation`: its tangent orientations are
+  those selected by `α ∧ (dα)ⁿ`.
 * `TauCeti.SmoothForm.wedge_wedgePow_apply_of_eq_smul`: the scaling law
   `(f α) ∧ (d(f α))ⁿ = fⁿ⁺¹ α ∧ (dα)ⁿ`.
 * `TauCeti.SmoothForm.wedge_smul_wedgePow_mextDerivₗ_smul`,
@@ -223,6 +225,15 @@ def IsContactForm.volumeOrientation {α : SmoothForm I M ℝ 1} (hα : α.IsCont
     (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val
     ((wedge α ((mextDerivₗ I 1 α).wedgePow n)).isSmoothForm.of_le bot_le)
     ((isContactForm_iff_wedge_wedgePow_apply_ne_zero hn α).1 hα)
+
+/-- The tangent orientations of a contact form `α` are those selected by its volume form
+`α ∧ (dα)ⁿ`. -/
+theorem IsContactForm.orientationAt_volumeOrientation {α : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) (x : M) :
+    Manifold.Orientation.orientationAt (hα.volumeOrientation hn) x =
+      topFormOrientationAt (I := I) (hn.trans (Nat.add_comm _ _))
+        (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x :=
+  Manifold.Orientation.orientationAt_ofTopForm _ _ _ _ x
 
 /-- A tangent basis is positive for the orientation of a contact form `α` exactly when the volume
 form `α ∧ (dα)ⁿ` is positive on it. -/

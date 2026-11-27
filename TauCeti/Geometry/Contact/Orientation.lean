@@ -99,8 +99,8 @@ theorem exists_ne_zero_wedge_wedgePow_apply_eq_pow_smul {α β : SmoothForm I M 
   set c := β.val x ![(α.val x ![v])⁻¹ • v]
   have hc₀ : c ≠ 0 := by
     intro h
-    rw [h, zero_smul, ← RoughForm.ker_eq_top_iff, ← kerDistribution_eq_ker,
-      hβα.self_of_nhds, kerDistribution_eq_ker, RoughForm.ker_eq_top_iff] at hc
+    rw [h, zero_smul, ← kerDistribution_eq_top_iff, hβα.self_of_nhds,
+      kerDistribution_eq_top_iff] at hc
     exact hα hc
   refine ⟨c, hc₀, hc, ?_⟩
   -- On `ker αₓ` both exterior derivatives are read off the Levi form of `ker α`.
@@ -150,22 +150,13 @@ private theorem topFormOrientationAt_eq (hD : IsContactDistribution I ∞ D)
       topFormOrientationAt (I := I) (hn.trans (Nat.add_comm _ _))
         (SmoothForm.wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x := by
   have hα₀ : α.val x ≠ 0 := by
-    rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hα.self_of_nhds]
+    rw [Ne, ← SmoothForm.kerDistribution_eq_top_iff, hα.self_of_nhds]
     exact hD.ne_top x
   obtain ⟨c, hc₀, -, hc⟩ := SmoothForm.exists_ne_zero_wedge_wedgePow_apply_eq_pow_smul (n := n)
     hα₀ (hβ.and hα |>.mono fun _ h ↦ h.1.trans h.2.symm)
   exact topFormOrientationAt_eq_of_apply_eq_smul _ (hodd.add_one.pow_pos hc₀) hc
 
 variable [T2Space M]
-
-/-- A contact structure is the kernel near each point of a smooth one-form on the whole
-manifold. -/
-private theorem exists_smoothForm_eventually_kerDistribution_eq
-    (hD : IsContactDistribution I ∞ D) (x : M) :
-    ∃ α : SmoothForm I M ℝ 1, ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y := by
-  obtain ⟨W, hW, hxW, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt x
-  exact ⟨α, eventually_of_mem (hW.mem_nhds hxW) fun y hy ↦
-    (SmoothForm.kerDistribution_eq_ker α y).trans (hα y hy).1⟩
 
 /-- A chosen smooth one-form whose kernel is the contact structure near `x`. -/
 private def localForm (hD : IsContactDistribution I ∞ D) (x : M) : SmoothForm I M ℝ 1 :=
@@ -243,16 +234,8 @@ theorem volumeOrientation_eq_of_kerDistribution_eq (hD : IsContactDistribution I
     (hα : α.IsContactForm) (h : α.kerDistribution = D) :
     hD.volumeOrientation hn hodd = hα.volumeOrientation hn := by
   ext x
-  -- Both orientations are positive on the same bases: those on which `α ∧ (dα)ⁿ` is positive.
-  have : Nonempty (Fin (1 + 2 * n)) := ⟨⟨0, by omega⟩⟩
-  have hcard : Fintype.card (Fin (1 + 2 * n)) = finrank ℝ (TangentSpace I x) :=
-    (Fintype.card_fin _).trans (hn.trans (Nat.add_comm _ _)).symm
-  set o := Manifold.Orientation.orientationAt (hD.volumeOrientation hn hodd) x
-  have hb := o.someBasis_orientation hcard
-  rw [← hb]
-  exact (hα.orientation_eq_orientationAt_volumeOrientation_iff hn _).2
-    ((hD.orientation_eq_orientationAt_volumeOrientation_iff hn hodd
-      (.of_forall fun y ↦ congrFun h y) _).1 hb)
+  rw [hD.orientationAt_volumeOrientation hn hodd (.of_forall fun y ↦ congrFun h y),
+    hα.orientationAt_volumeOrientation hn]
 
 /-- **A contact manifold of dimension `4 k + 3` is orientable**, whether or not its contact
 structure is the kernel of a global one-form. -/
