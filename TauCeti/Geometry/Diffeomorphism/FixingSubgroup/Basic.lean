@@ -24,9 +24,9 @@ is treated here: for a compact source manifold,
 `TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology` shows that these pointwise fixing
 subgroups are closed in the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
 
-This file also introduces the smaller subgroup `Diffeomorph.nhdsFixingSubgroup s` of
-diffeomorphisms that are equal to the identity on some neighbourhood of `s`, rather than only on
-`s` itself.
+This file also specializes the generic `TauCeti.MulAction.nhdsFixingSubgroup` to the smaller
+subgroup `Diffeomorph.nhdsFixingSubgroup s` of diffeomorphisms that are equal to the identity on
+some neighbourhood of `s`, rather than only on `s` itself.
 
 ## Main definitions
 
@@ -155,56 +155,41 @@ theorem toRelativeHomeomorphHom_apply (s : Set M) (f : fixingSubgroup (I := I) (
 boundary of a manifold these are the diffeomorphisms that are the identity near the boundary, the
 group of Smale's theorem on the diffeomorphisms of the square.
 
-It is the intersection over `x ∈ s` of the germ kernels `TauCeti.MulAction.germKernel` of the
-tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M`. -/
-def nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
-  ⨅ x ∈ s, TauCeti.MulAction.germKernel (M ≃ₘ^n⟮I, I⟯ M) x
+This is the generic `TauCeti.MulAction.nhdsFixingSubgroup`, the intersection over `x ∈ s` of the
+germ kernels, specialized to the tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M`. -/
+abbrev nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
+  TauCeti.MulAction.nhdsFixingSubgroup (M ≃ₘ^n⟮I, I⟯ M) s
 
 /-- Membership in `nhdsFixingSubgroup s` is being the identity on a neighbourhood of `s`. -/
-@[simp]
 theorem mem_nhdsFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
     f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x := by
-  simp only [nhdsFixingSubgroup, Subgroup.mem_iInf, TauCeti.MulAction.mem_germKernel, smul_def,
-    eventually_nhdsSet_iff_forall]
+  simp only [nhdsFixingSubgroup, TauCeti.MulAction.mem_nhdsFixingSubgroup_iff, smul_def]
 
 /-- Being the identity near a larger set gives a smaller subgroup. -/
 theorem nhdsFixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
     nhdsFixingSubgroup (I := I) (n := n) t ≤ nhdsFixingSubgroup (I := I) (n := n) s :=
-  fun _ hf ↦ mem_nhdsFixingSubgroup_iff.mpr
-    ((mem_nhdsFixingSubgroup_iff.mp hf).filter_mono (nhdsSet_mono hst))
+  TauCeti.MulAction.nhdsFixingSubgroup_antitone (M ≃ₘ^n⟮I, I⟯ M) M hst
 
 /-- Every diffeomorphism is the identity near the empty set. -/
-@[simp]
 theorem nhdsFixingSubgroup_empty :
     nhdsFixingSubgroup (I := I) (M := M) (n := n) (∅ : Set M) = ⊤ :=
-  Subgroup.eq_top_iff' _ |>.mpr fun _ ↦ by
-    rw [mem_nhdsFixingSubgroup_iff, nhdsSet_empty]
-    exact Filter.eventually_bot
+  TauCeti.MulAction.nhdsFixingSubgroup_empty (M ≃ₘ^n⟮I, I⟯ M) M
 
 /-- Only the identity is the identity near every point. -/
-@[simp]
 theorem nhdsFixingSubgroup_univ :
     nhdsFixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ :=
-  (Subgroup.eq_bot_iff_forall _).mpr fun _ hf ↦ Diffeomorph.ext fun x ↦ by
-    rw [mem_nhdsFixingSubgroup_iff, nhdsSet_univ, Filter.eventually_top] at hf
-    exact hf x
+  TauCeti.MulAction.nhdsFixingSubgroup_univ (M ≃ₘ^n⟮I, I⟯ M) M
 
 /-- Being the identity near `s ∪ t` is the same as being the identity near `s` and near `t`. -/
-@[simp]
 theorem nhdsFixingSubgroup_union (s t : Set M) :
     nhdsFixingSubgroup (I := I) (n := n) (s ∪ t) =
       nhdsFixingSubgroup (I := I) (n := n) s ⊓ nhdsFixingSubgroup (I := I) (n := n) t :=
-  Subgroup.ext fun _ ↦ by
-    rw [Subgroup.mem_inf, mem_nhdsFixingSubgroup_iff, mem_nhdsFixingSubgroup_iff,
-      mem_nhdsFixingSubgroup_iff, nhdsSet_union, Filter.eventually_sup]
+  TauCeti.MulAction.nhdsFixingSubgroup_union s t
 
 /-- A diffeomorphism equal to the identity near `s` fixes `s` pointwise. -/
 theorem nhdsFixingSubgroup_le_fixingSubgroup (s : Set M) :
     nhdsFixingSubgroup (I := I) (n := n) s ≤ fixingSubgroup (I := I) (n := n) s :=
-  fun f hf ↦ mem_fixingSubgroup_of_forall fun x hx ↦ by
-    rw [← smul_def, ← MulAction.mem_stabilizer_iff]
-    exact TauCeti.MulAction.germKernel_le_stabilizer x
-      (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hf x) hx)
+  TauCeti.MulAction.nhdsFixingSubgroup_le_fixingSubgroup s
 
 end Diffeomorph
 
