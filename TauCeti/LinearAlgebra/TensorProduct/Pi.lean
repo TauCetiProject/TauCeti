@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 import Mathlib.Algebra.FiveLemma
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.Exact.Pi
 
 /-!
@@ -40,6 +41,8 @@ equivalence and is compatible with identities, composition and inverses.
 
 * `LinearEquiv.extendScalarsPi`: the scalar extension of a linear equivalence between coordinate
   spaces.
+* `Module.Basis.tensorPiEquiv`: for a basis `e` of an `A`-module `W`, the identification
+  `A ⊗[R] (ι → R) ≃ W` of the base change of the coordinate space with `W`.
 
 ## Main results
 
@@ -52,6 +55,13 @@ equivalence and is compatible with identities, composition and inverses.
   `algebraMap R A ∘ v` to `algebraMap R A ∘ e v`.
 * `LinearEquiv.extendScalarsPi_refl`, `LinearEquiv.extendScalarsPi_trans`,
   `LinearEquiv.extendScalarsPi_symm`: functoriality of the scalar extension.
+* `TensorProduct.piScalarRight_tmul_eq_smul`: for a commutative `R`-algebra `A`, the
+  identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a • (algebraMap R A ∘ v)`.
+* `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
+  corresponds to the pure tensor `1 ⊗ v`.
+* `TensorProduct.piScalarRight_rTensor`: `piScalarRight` is natural in the module.
+* `TensorProduct.one_tmul_single_ne_zero`: the basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is
+  nonzero over a nontrivial `A`.
 
 ## References
 
@@ -92,6 +102,46 @@ theorem piRightHom_comp_rTensor (f : N →ₗ[R] N') :
   TensorProduct.ext' fun _ _ ↦ rfl
 
 end CommSemiring
+
+section PiScalarRight
+
+variable {A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Fintype ι] [DecidableEq ι]
+
+/-- Read on `ι → A`, the pure tensor `a ⊗ v` is `a` times the vector `v` with coordinates mapped
+into `A`. -/
+theorem piScalarRight_tmul_eq_smul (a : A) (v : ι → R) :
+    piScalarRight R A A ι (a ⊗ₜ v) = a • (algebraMap R A ∘ v) := by
+  ext i
+  simp [_root_.Algebra.smul_def, mul_comm]
+
+/-- A vector with coordinates mapped from `R` corresponds to the pure tensor `1 ⊗ v`. This is
+Mathlib's `TensorProduct.piScalarRight_symm_algebraMap` with the vector written as a composite,
+the form in which it can be rewritten with. -/
+theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algebra R S]
+    [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N] (v : ι → R) :
+    (piScalarRight R S N ι).symm (algebraMap R N ∘ v) = 1 ⊗ₜ v :=
+  piScalarRight_symm_algebraMap R S ι v
+
+/-- `TensorProduct.piScalarRight` is natural in the module: a linear map `φ : N → N'` acting on
+the left factor of `N ⊗ (ι → R)` acts coordinatewise on `ι → N`. The scalar ring `S` of the
+right-hand side does not occur on the left, so it is explicit. -/
+theorem piScalarRight_rTensor (S : Type*) {S' N N' : Type*} [CommSemiring S] [Algebra R S]
+    [CommSemiring S'] [Algebra R S'] [AddCommMonoid N] [Module R N] [Module S N]
+    [IsScalarTower R S N] [AddCommMonoid N'] [Module R N'] [Module S' N'] [IsScalarTower R S' N']
+    (φ : N →ₗ[R] N') (x : N ⊗[R] (ι → R)) :
+    piScalarRight R S' N' ι (LinearMap.rTensor (ι → R) φ x) = φ ∘ piScalarRight R S N ι x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a f => ext i; simp
+  | add x y hx hy => ext i; simp only [map_add, hx, hy, Pi.add_apply, Function.comp_apply]
+
+omit [Fintype ι] in
+/-- The basis vector `1 ⊗ eᵢ` of `A ⊗[R] (ι → R)` is nonzero over a nontrivial `A`. -/
+theorem one_tmul_single_ne_zero [Nontrivial A] (i : ι) :
+    (1 : A) ⊗ₜ[R] (Pi.single i 1 : ι → R) ≠ 0 := by
+  intro h
+  simpa using congr_arg (fun w ↦ piScalarRightHom R A A ι w i) h
+
+end PiScalarRight
 
 section CommRing
 
@@ -192,3 +242,29 @@ theorem extendScalarsPi_symm (e : (ι → R) ≃ₗ[R] (κ → R)) :
   simp only [extendScalarsPi, baseChange_symm, trans_apply, symm_trans_apply, symm_symm]
 
 end LinearEquiv
+
+namespace Module.Basis
+
+variable (R : Type*) {A W ι : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid W] [Module A W] [Fintype ι] [DecidableEq ι]
+
+/-- For a basis `e` of an `A`-module `W` and an `R`-algebra `A`, the identification
+`A ⊗[R] (ι → R) ≃ W` of the base change of `ι → R` with `W`, sending `a ⊗ x` to
+`a • ∑ i, algebraMap R A (x i) • e i`. -/
+noncomputable def tensorPiEquiv (e : Basis ι A W) : A ⊗[R] (ι → R) ≃ₗ[A] W :=
+  (TensorProduct.piScalarRight R A A ι).trans e.equivFun.symm
+
+/-- The pure tensor `a ⊗ x` corresponds to `a • ∑ i, algebraMap R A (x i) • e i`. -/
+@[simp]
+theorem tensorPiEquiv_tmul (e : Basis ι A W) (a : A) (x : ι → R) :
+    e.tensorPiEquiv R (a ⊗ₜ x) = a • ∑ i, algebraMap R A (x i) • e i := by
+  simp [tensorPiEquiv, Finset.smul_sum, smul_smul, Algebra.smul_def, mul_comm]
+
+/-- The inverse of `e.tensorPiEquiv R` takes a vector to its coordinates in `e`, read in
+`A ⊗[R] (ι → R)`. -/
+@[simp]
+theorem tensorPiEquiv_symm_apply (e : Basis ι A W) (v : W) :
+    (e.tensorPiEquiv R).symm v = (TensorProduct.piScalarRight R A A ι).symm (e.repr v) := by
+  simp [tensorPiEquiv]
+
+end Module.Basis

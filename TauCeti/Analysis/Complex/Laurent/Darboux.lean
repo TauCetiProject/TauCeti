@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Laurent.Basic
 import Mathlib.Analysis.Polynomial.Basic
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.RiemannLebesgue
+import TauCeti.MeasureTheory.Integral.Circle.BoundarySingularity
 
 /-!
 # Darboux's method
@@ -25,6 +26,12 @@ determine the coefficients of `f` up to an error that is `o(r^{-n})`.
 More generally (DLMF 2.10.31), if the `m`-th derivative `f⁽ᵐ⁾ - g⁽ᵐ⁾` extends continuously to
 `ρ ≤ |z - c| ≤ r`, then `f_n = g_n + o(r^{-n} |n|^{-m})`.
 
+Both statements survive finitely many exceptional points `w` on the outer circle (DLMF 2.10.30
+and 2.10.32), provided the extension is continuous away from them and
+`O(|z - w|^{σ - 1})` near each of them, for some `σ > 0`. This covers comparison functions `g` that
+remove only the poles of `f` on the circle and leave algebraic singularities such as
+`(1 - z)^{-1/2}`, whose difference with `f` is unbounded but integrable on the circle.
+
 The proof moves the integration circle out to the boundary circle `|z - c| = r`, which
 `TauCeti.circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable` allows because the
 continuous extension of `f - g` is continuous up to that circle. More generally, the coefficients
@@ -34,6 +41,16 @@ the annulus and holomorphic inside it, are `o(r^{-n})`. On a circle of radius `R
 `θ ↦ f(c + R e^{iθ})` on `[0, 2π]`, and these tend to `0` by the Riemann--Lebesgue lemma.
 For the derivative form, the coefficients of `f⁽ᵐ⁾` are those of `f` multiplied by falling
 factorials (`TauCeti.circleLaurentCoeff_iteratedDeriv`), which are asymptotic to `nᵐ`.
+
+With exceptional points, the circle can only be moved out to every radius `t < r`. As `t → r⁻`, the
+restrictions `θ ↦ f(c + t e^{iθ})` converge to that on the outer circle off the finitely many
+exceptional angles, and they are dominated by an integrable function: the distance from
+`c + t e^{iθ}` to an exceptional point `w` is at least `t |sin ((θ - arg (w - c)) / 2)|`, and
+`|sin|^{σ - 1}` is integrable for `σ > 0` (`TauCeti.intervalIntegrable_abs_sin_rpow`). This
+common bound is `TauCeti.exists_intervalIntegrable_bound_norm_circleMap`. Dominated convergence
+(`TauCeti.tendsto_fourierCoeffOn_circleMap`) then extracts the coefficients on the outer circle
+itself (`TauCeti.circleLaurentCoeff_eq_of_isBigO_rpow`), where the Riemann--Lebesgue lemma applies
+as before.
 
 ## Main results
 
@@ -45,11 +62,19 @@ factorials (`TauCeti.circleLaurentCoeff_iteratedDeriv`), which are asymptotic to
 * `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable`:
   `r ^ n • circleLaurentCoeff f c ρ n → 0` as `n → ±∞` for `f` continuous on the closed annulus
   `ρ ≤ |z - c| ≤ r` and holomorphic off a countable set inside it.
+* `TauCeti.circleLaurentCoeff_eq_of_isBigO_rpow`: the coefficients may be extracted on an outer
+  circle carrying finitely many singularities `O(|z - w|^{σ - 1})`, `σ > 0`.
+* `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_of_isBigO_rpow`: hence still
+  `r ^ n • circleLaurentCoeff f c ρ n → 0` in that case.
 * `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_sub`: Darboux's comparison theorem (DLMF 2.10.29).
+* `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_sub_of_isBigO_rpow`: its form with exceptional
+  points on the circle (DLMF 2.10.30).
 * `TauCeti.tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv`: its refinement for
   continuous `m`-th derivatives (DLMF 2.10.31).
+* `TauCeti.tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv_of_isBigO_rpow`: the
+  refinement with exceptional points (DLMF 2.10.32).
 
-Worked examples with explicit simple poles are in
+Worked examples with explicit simple poles, and with the branch point of `(1 - z)^{-1/2}`, are in
 `TauCeti.Analysis.Complex.Laurent.Examples.Darboux`.
 
 ## References
@@ -61,7 +86,7 @@ Worked examples with explicit simple poles are in
 
 public section
 
-open Complex Set Metric Filter Polynomial Asymptotics
+open Complex Set Metric Filter Polynomial Asymptotics MeasureTheory
 open scoped Real Topology
 
 namespace TauCeti
@@ -115,6 +140,88 @@ theorem tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_co
   (tendsto_zpow_smul_circleLaurentCoeff f c r).congr fun n ↦ by
     rw [circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable hρ hρr hs hc hd]
 
+/-! ### Integrable singularities on the outer circle -/
+
+/-- **Laurent coefficients up to a singular outer circle.** Let `f` be continuous on the closed
+annulus `ρ ≤ |z - c| ≤ r` (`0 < ρ`) except at finitely many points `w` of the outer circle, and
+complex differentiable off a countable set in the open annulus. If near each exceptional point
+`f(z) = O(|z - w| ^ (σ - 1))` inside the disc, for some `σ > 0`, then the Laurent coefficients may
+still be extracted on the outer circle. When `ρ < r`, `f` is integrable on that circle but need not
+be continuous there; when `ρ = r` the two circles coincide and the statement is trivial. -/
+theorem circleLaurentCoeff_eq_of_isBigO_rpow {f : ℂ → E} {c : ℂ} {ρ r : ℝ} (hρ : 0 < ρ)
+    (hρr : ρ ≤ r) {s : Set ℂ} (hs : s.Countable) {S : Set ℂ} (hSfin : S.Finite)
+    (hS : S ⊆ sphere c r) (hc : ContinuousOn f ((closedBall c r \ ball c ρ) \ S))
+    (hd : ∀ z ∈ (ball c r \ closedBall c ρ) \ s, DifferentiableAt ℂ f z)
+    (hO : ∀ w ∈ S, ∃ σ > (0 : ℝ), f =O[𝓝[ball c r] w] fun z ↦ ‖z - w‖ ^ (σ - 1)) (n : ℤ) :
+    circleLaurentCoeff f c r n = circleLaurentCoeff f c ρ n := by
+  rcases hρr.eq_or_lt with rfl | hρr
+  · rfl
+  have hr : 0 < r := hρ.trans hρr
+  -- On each circle of radius `t ∈ (ρ, r)` the scaled coefficient is the one extracted at `ρ`.
+  have heq : ∀ t ∈ Ioo ρ r, t ^ n • circleLaurentCoeff f c ρ n =
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ f (circleMap c t θ)) n := fun t ht ↦ by
+    rw [← zpow_smul_circleLaurentCoeff_eq_fourierCoeffOn f c (hρ.trans ht.1).ne',
+      circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable hρ ht.1.le hs
+        (hc.mono fun z hz ↦ ⟨⟨closedBall_subset_closedBall ht.2.le hz.1, hz.2⟩, fun hzS ↦ ?_⟩)
+        fun z hz ↦ hd z ⟨⟨ball_subset_ball ht.2.le hz.1.1, hz.1.2⟩, hz.2⟩]
+    exact (mem_closedBall.1 hz.1).not_gt ((mem_sphere.1 (hS hzS)).symm ▸ ht.2)
+  -- Letting `t → r⁻` on both sides identifies the coefficient on the outer circle.
+  have hlim : Tendsto (fun t : ℝ ↦ t ^ n • circleLaurentCoeff f c ρ n) (𝓝[<] r)
+      (𝓝 (r ^ n • circleLaurentCoeff f c ρ n)) :=
+    ((continuousAt_zpow₀ r n (Or.inl hr.ne')).tendsto.mono_left nhdsWithin_le_nhds).smul_const _
+  have h := tendsto_nhds_unique (hlim.congr' (eventually_of_mem (Ioo_mem_nhdsLT hρr) heq))
+    (tendsto_fourierCoeffOn_circleMap hρ hρr hSfin hS hc hO n)
+  rw [← zpow_smul_circleLaurentCoeff_eq_fourierCoeffOn f c hr.ne'] at h
+  exact smul_right_injective E (zpow_ne_zero n hr.ne') h.symm
+
+/-- **Riemann--Lebesgue on an annulus with boundary singularities**: let `f` be continuous on the
+closed annulus `ρ ≤ |z - c| ≤ r` (`0 < ρ`) except at finitely many points `w` of the outer circle,
+near each of which `f(z) = O(|z - w| ^ (σ - 1))` inside the disc for some `σ > 0`, and let `f` be
+complex differentiable off a countable set in the open annulus. Then the Laurent coefficients
+extracted on the inner circle satisfy `f_n = o(r ^ (-n))` as `n → ±∞`. -/
+theorem tendsto_zpow_smul_circleLaurentCoeff_of_isBigO_rpow {f : ℂ → E} {c : ℂ} {ρ r : ℝ}
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) {s : Set ℂ} (hs : s.Countable) {S : Set ℂ} (hSfin : S.Finite)
+    (hS : S ⊆ sphere c r) (hc : ContinuousOn f ((closedBall c r \ ball c ρ) \ S))
+    (hd : ∀ z ∈ (ball c r \ closedBall c ρ) \ s, DifferentiableAt ℂ f z)
+    (hO : ∀ w ∈ S, ∃ σ > (0 : ℝ), f =O[𝓝[ball c r] w] fun z ↦ ‖z - w‖ ^ (σ - 1)) :
+    Tendsto (fun n : ℤ ↦ r ^ n • circleLaurentCoeff f c ρ n) cofinite (𝓝 0) :=
+  (tendsto_zpow_smul_circleLaurentCoeff f c r).congr fun n ↦ by
+    rw [circleLaurentCoeff_eq_of_isBigO_rpow hρ hρr hs hSfin hS hc hd hO]
+
+/-! ### Darboux's method -/
+
+/-- **Darboux's method with boundary singularities** (DLMF 2.10.30). Let `f` and `g` be holomorphic
+on the annulus `a < |z - c| < r` (`0 ≤ a`), and let `f - g` agree there with a function `h`
+continuous on the closed annulus `ρ ≤ |z - c| ≤ r`, for some `ρ ∈ (a, r)`, except at finitely many
+points `w` of the outer circle, near each of which `h(z) = O(|z - w| ^ (σ - 1))` inside the disc for
+some `σ > 0`. Then the Laurent coefficients extracted on the circle of radius `ρ` satisfy
+`f_n = g_n + o(r ^ (-n))` as `n → ±∞`. The punctured-disc form of DLMF is the case `a = 0`. -/
+theorem tendsto_zpow_smul_circleLaurentCoeff_sub_of_isBigO_rpow {f g h : ℂ → E} {c : ℂ}
+    {a r ρ : ℝ} (ha : 0 ≤ a) (haρ : a < ρ) (hρr : ρ < r)
+    (hf : DifferentiableOn ℂ f (ball c r \ closedBall c a))
+    (hg : DifferentiableOn ℂ g (ball c r \ closedBall c a)) {S : Set ℂ} (hSfin : S.Finite)
+    (hS : S ⊆ sphere c r) (hh : ContinuousOn h ((closedBall c r \ ball c ρ) \ S))
+    (hO : ∀ w ∈ S, ∃ σ > (0 : ℝ), h =O[𝓝[ball c r] w] fun z ↦ ‖z - w‖ ^ (σ - 1))
+    (hfgh : EqOn (f - g) h (ball c r \ closedBall c a)) :
+    Tendsto (fun n : ℤ ↦ r ^ n • (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n))
+      cofinite (𝓝 0) := by
+  have hρ : 0 < ρ := ha.trans_lt haρ
+  have hU : IsOpen (ball c r \ closedBall c a) := isOpen_ball.sdiff isClosed_closedBall
+  have hsph : sphere c ρ ⊆ ball c r \ closedBall c a := fun z hz ↦
+    ⟨sphere_subset_ball hρr hz, fun hz' ↦ by linarith [mem_sphere.1 hz, mem_closedBall.1 hz']⟩
+  have hann : ball c r \ closedBall c ρ ⊆ ball c r \ closedBall c a :=
+    sdiff_subset_sdiff_right (closedBall_subset_closedBall haρ.le)
+  -- `h` satisfies the annulus hypotheses, and `f_n - g_n` is the coefficient of `h` on the circle
+  -- of radius `ρ`.
+  refine (tendsto_zpow_smul_circleLaurentCoeff_of_isBigO_rpow hρ hρr.le countable_empty hSfin hS
+    hh (fun z hz ↦ ?_) hO).congr fun n ↦ ?_
+  · exact ((hf.sub hg).differentiableAt (hU.mem_nhds (hann hz.1))).congr_of_eventuallyEq
+      (eventuallyEq_of_mem (hU.mem_nhds (hann hz.1)) hfgh).symm
+  · rw [← circleLaurentCoeff_sub ((hf.continuousOn.mono hsph).circleIntegrable hρ.le)
+        ((hg.continuousOn.mono hsph).circleIntegrable hρ.le),
+      circleLaurentCoeff_congr (f := fun z ↦ f z - g z) (g := h) hρ.le
+        (fun z hz ↦ hfgh (hsph hz))]
+
 /-- **Darboux's method** (DLMF 2.10.29). Let `f` and `g` be holomorphic on the annulus
 `a < |z - c| < r` (`0 ≤ a`), and let `f - g` agree there with a function `h` continuous on the
 closed annulus `ρ ≤ |z - c| ≤ r` for some `ρ ∈ (a, r)`. Then the Laurent coefficients extracted on
@@ -127,34 +234,23 @@ theorem tendsto_zpow_smul_circleLaurentCoeff_sub {f g h : ℂ → E} {c : ℂ} {
     (hh : ContinuousOn h (closedBall c r \ ball c ρ))
     (hfgh : EqOn (f - g) h (ball c r \ closedBall c a)) :
     Tendsto (fun n : ℤ ↦ r ^ n • (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n))
-      cofinite (𝓝 0) := by
-  have hρ : 0 < ρ := ha.trans_lt haρ
-  have hU : IsOpen (ball c r \ closedBall c a) := isOpen_ball.sdiff isClosed_closedBall
-  have hsph : sphere c ρ ⊆ ball c r \ closedBall c a := fun z hz ↦
-    ⟨sphere_subset_ball hρr hz, fun hz' ↦ by linarith [mem_sphere.1 hz, mem_closedBall.1 hz']⟩
-  have hann : ball c r \ closedBall c ρ ⊆ ball c r \ closedBall c a :=
-    sdiff_subset_sdiff_right (closedBall_subset_closedBall haρ.le)
-  -- `h` satisfies the annulus hypotheses, and `f_n - g_n` is the coefficient of `h` on the circle
-  -- of radius `ρ`.
-  refine (tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable hρ hρr.le
-    countable_empty hh fun z hz ↦ ?_).congr fun n ↦ ?_
-  · exact ((hf.sub hg).differentiableAt (hU.mem_nhds (hann hz.1))).congr_of_eventuallyEq
-      (eventuallyEq_of_mem (hU.mem_nhds (hann hz.1)) hfgh).symm
-  · rw [← circleLaurentCoeff_sub ((hf.continuousOn.mono hsph).circleIntegrable hρ.le)
-        ((hg.continuousOn.mono hsph).circleIntegrable hρ.le),
-      circleLaurentCoeff_congr (f := fun z ↦ f z - g z) (g := h) hρ.le
-        (fun z hz ↦ hfgh (hsph hz))]
+      cofinite (𝓝 0) :=
+  tendsto_zpow_smul_circleLaurentCoeff_sub_of_isBigO_rpow ha haρ hρr hf hg finite_empty
+    (empty_subset _) (by rwa [sdiff_empty]) (fun _ h ↦ h.elim) hfgh
 
-/-- **Darboux's method with derivatives** (DLMF 2.10.31). Let `f` and `g` be holomorphic on the
-annulus `a < |z - c| < r` (`0 ≤ a`), and let `f⁽ᵐ⁾ - g⁽ᵐ⁾` agree there with a function `h`
-continuous on the closed annulus `ρ ≤ |z - c| ≤ r` for some `ρ ∈ (a, r)`. Then the Laurent
-coefficients extracted on the circle of radius `ρ` satisfy `f_n = g_n + o(r ^ (-n) |n| ^ (-m))` as
-`n → ±∞`. The punctured-disc form of DLMF is the case `a = 0`. -/
-theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv [CompleteSpace E]
-    {f g h : ℂ → E} {c : ℂ} {a r ρ : ℝ} (m : ℕ) (ha : 0 ≤ a) (haρ : a < ρ) (hρr : ρ < r)
-    (hf : DifferentiableOn ℂ f (ball c r \ closedBall c a))
-    (hg : DifferentiableOn ℂ g (ball c r \ closedBall c a))
-    (hh : ContinuousOn h (closedBall c r \ ball c ρ))
+/-- **Darboux's method with derivatives and boundary singularities** (DLMF 2.10.32). Let `f` and `g`
+be holomorphic on the annulus `a < |z - c| < r` (`0 ≤ a`), and let `f⁽ᵐ⁾ - g⁽ᵐ⁾` agree there with a
+function `h` continuous on the closed annulus `ρ ≤ |z - c| ≤ r`, for some `ρ ∈ (a, r)`, except at
+finitely many points `w` of the outer circle, near each of which `h(z) = O(|z - w| ^ (σ - 1))`
+inside the disc for some `σ > 0`. Then the Laurent coefficients extracted on the circle of radius
+`ρ` satisfy `f_n = g_n + o(r ^ (-n) |n| ^ (-m))` as `n → ±∞`. The punctured-disc form of DLMF is
+the case `a = 0`. -/
+theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv_of_isBigO_rpow
+    [CompleteSpace E] {f g h : ℂ → E} {c : ℂ} {a r ρ : ℝ} (m : ℕ) (ha : 0 ≤ a) (haρ : a < ρ)
+    (hρr : ρ < r) (hf : DifferentiableOn ℂ f (ball c r \ closedBall c a))
+    (hg : DifferentiableOn ℂ g (ball c r \ closedBall c a)) {S : Set ℂ} (hSfin : S.Finite)
+    (hS : S ⊆ sphere c r) (hh : ContinuousOn h ((closedBall c r \ ball c ρ) \ S))
+    (hO : ∀ w ∈ S, ∃ σ > (0 : ℝ), h =O[𝓝[ball c r] w] fun z ↦ ‖z - w‖ ^ (σ - 1))
     (hfgh : EqOn (iteratedDeriv m f - iteratedDeriv m g) h (ball c r \ closedBall c a)) :
     Tendsto (fun n : ℤ ↦ ((n : ℝ) ^ m * r ^ n) •
       (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n)) cofinite (𝓝 0) := by
@@ -170,10 +266,10 @@ theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv [Compl
     simpa only [iteratedDeriv_eq_iterate] using
       ((hφ.analyticOnNhd hU).iterated_deriv m).differentiableOn
   -- Riemann--Lebesgue on the annulus `ρ ≤ |z - c| ≤ r` for `h`, read at the degree `n - m`.
-  have hT := ((tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable
-    hρ hρr.le countable_empty hh fun z hz ↦
+  have hT := ((tendsto_zpow_smul_circleLaurentCoeff_of_isBigO_rpow
+    hρ hρr.le countable_empty hSfin hS hh (fun z hz ↦
       (((hD hf).sub (hD hg)).differentiableAt (hU.mem_nhds (hann hz.1))).congr_of_eventuallyEq
-        (eventuallyEq_of_mem (hU.mem_nhds (hann hz.1)) hfgh).symm).comp
+        (eventuallyEq_of_mem (hU.mem_nhds (hann hz.1)) hfgh).symm) hO).comp
     (sub_left_injective (b := (m : ℤ))).tendsto_cofinite).const_smul (r ^ m)
   rw [smul_zero] at hT
   -- The coefficients of `h` are the falling factorial times those of `f - g`.
@@ -201,5 +297,22 @@ theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv [Compl
       ≤ C * ‖(descPochhammer ℂ m).eval (n : ℂ)‖ * r ^ n *
           ‖circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n‖ := by gcongr
     _ = _ := by rw [← hpow]; ring
+
+
+/-- **Darboux's method with derivatives** (DLMF 2.10.31). Let `f` and `g` be holomorphic on the
+annulus `a < |z - c| < r` (`0 ≤ a`), and let `f⁽ᵐ⁾ - g⁽ᵐ⁾` agree there with a function `h`
+continuous on the closed annulus `ρ ≤ |z - c| ≤ r` for some `ρ ∈ (a, r)`. Then the Laurent
+coefficients extracted on the circle of radius `ρ` satisfy `f_n = g_n + o(r ^ (-n) |n| ^ (-m))` as
+`n → ±∞`. The punctured-disc form of DLMF is the case `a = 0`. -/
+theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv [CompleteSpace E]
+    {f g h : ℂ → E} {c : ℂ} {a r ρ : ℝ} (m : ℕ) (ha : 0 ≤ a) (haρ : a < ρ) (hρr : ρ < r)
+    (hf : DifferentiableOn ℂ f (ball c r \ closedBall c a))
+    (hg : DifferentiableOn ℂ g (ball c r \ closedBall c a))
+    (hh : ContinuousOn h (closedBall c r \ ball c ρ))
+    (hfgh : EqOn (iteratedDeriv m f - iteratedDeriv m g) h (ball c r \ closedBall c a)) :
+    Tendsto (fun n : ℤ ↦ ((n : ℝ) ^ m * r ^ n) •
+      (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n)) cofinite (𝓝 0) :=
+  tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv_of_isBigO_rpow m ha haρ hρr hf
+    hg finite_empty (empty_subset _) (by rwa [sdiff_empty]) (fun _ h ↦ h.elim) hfgh
 
 end TauCeti

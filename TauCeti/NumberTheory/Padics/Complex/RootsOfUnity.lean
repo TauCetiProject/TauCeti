@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Field.RootsOfUnity
+public import TauCeti.Analysis.Normed.Field.UnitsBall
 public import TauCeti.NumberTheory.Padics.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
@@ -19,6 +19,11 @@ convergent root-of-unity translations of integral power series.
 
 The norm is computed from the cyclotomic product at one, not the field norm of a
 cyclotomic extension. No choice of an algebraic representative of `ζ` is needed.
+
+The examples at the end check the general bounds of `TauCeti.Analysis.Normed.Field.RootsOfUnity`
+and `TauCeti.Analysis.Normed.Field.UnitsBall` in `ℂ_[p]`: the dyadic root `-1` sits exactly on the
+boundary of the torsion-free ball, a cube root of unity in `ℂ_[2]` lies at distance one from one,
+and the units of `ℂ_[3]` within distance `1 / 2` of one form a torsion-free group.
 
 ## References
 
@@ -68,3 +73,20 @@ example {ζ : ℂ_[3]} (hζ : IsPrimitiveRoot ζ 3) : ‖ζ - 1‖ ^ 2 = (3 : �
 example : ‖(1 : ℂ_[3]) - 1‖ ≠ (3 : ℝ) ^ (-1 / (3 - 1 : ℝ)) := by
   have : 0 < (3 : ℝ) ^ (-1 / (3 - 1 : ℝ)) := Real.rpow_pos_of_pos (by norm_num) _
   simpa using this.ne
+
+/-- A primitive cube root of unity in `ℂ_[2]` lies at distance one from one: its order is prime
+to the residue characteristic. -/
+example {ζ : ℂ_[2]} (hζ : IsPrimitiveRoot ζ 3) : ‖ζ - 1‖ = 1 := by
+  refine hζ.norm_sub_one_eq_one_of_ne_pow Nat.prime_two (PadicComplex.norm_p_lt_one 2)
+    fun k hk ↦ ?_
+  rcases k with _ | k
+  · simp at hk
+  · have := congrArg (· % 2) hk
+    simp [pow_succ] at this
+
+/-- In `ℂ_[3]` the units within distance `1 / 2` of one form a torsion-free group, since
+`(1 / 2) ^ 2 ≤ ‖3‖ = 1 / 3`. -/
+example : IsMulTorsionFree
+    (TauCeti.unitsBallSubgroup ℂ_[3] (r := 1 / 2) (by norm_num) (by norm_num)) :=
+  TauCeti.isMulTorsionFree_unitsBallSubgroup Nat.prime_three (PadicComplex.norm_p_lt_one 3) _ _
+    (by rw [PadicComplex.norm_p 3]; norm_num)

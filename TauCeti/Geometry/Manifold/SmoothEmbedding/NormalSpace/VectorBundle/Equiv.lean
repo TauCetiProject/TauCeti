@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -15,7 +15,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 Let `f : M → N` be an embedding between finite-dimensional manifolds and `E₂` a vector bundle
 over `M`. A family of continuous linear maps `g x : T_(f x) N → E₂ x`, each with kernel exactly
 the tangent range `df_x(T_x M)` and with target of the dimension of the normal space, identifies
-each normal space with the fibre `E₂ x` (`TauCeti.SmoothEmbedding.normalSpaceEquivOfKer`).
+each normal space with the fibre `E₂ x` (`Manifold.IsImmersion.normalSpaceEquivOfKer`).
 If `⟨x, v⟩ ↦ ⟨x, g x v⟩` is `C^m` on the pulled-back ambient tangent bundle, these fibrewise
 equivalences are `C^m` on the intrinsic normal bundle
 (`TauCeti.SmoothEmbedding.contMDiff_normalSpaceEquivOfKer`), so they assemble into a
@@ -59,22 +59,23 @@ induced map from the intrinsic normal bundle, with model fibre `P` of the codime
 `C^m`. -/
 theorem contMDiff_normalSpaceEquivOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd))) :
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(𝕜, P)) (I.prod 𝓘(𝕜, W)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         TotalSpace.mk' W (E := E₂) p.proj
-          (f.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj) p.snd)) := by
+          (f.isImmersion.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj)
+            p.snd)) := by
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
   refine hgs.congr fun ⟨x, v⟩ ↦ ?_
   rw [Function.comp_apply, normalQuotientMap_apply]
   exact congrArg (TotalSpace.mk' W x)
-    (f.normalSpaceEquivOfKer_normalClass x hn (g x) (hg x) (hgdim x) v)
+    (f.isImmersion.normalSpaceEquivOfKer_normalClass x hn (g x) (hg x) (hgdim x) v)
 
 /-- **The normal bundle is diffeomorphic to any bundle it is identified with by a smooth family of
 maps.** For a `C^n` embedding with `m + 1 ≤ n` and a family `g x : T_(f x) N → E₂ x` with kernels
@@ -83,32 +84,35 @@ bundle, with model fibre `P` of the codimension, is `C^m`-diffeomorphic to `E₂
 of `M`, by `[v] ↦ g x v` on each fibre. -/
 def normalBundleDiffeomorphOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd))) :
     letI := f.normalSpaceFiberBundle hn hdim
-    TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, W)⟯
+    TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, W)⟯
       TotalSpace W E₂ :=
   letI := f.normalSpaceFiberBundle hn hdim
   letI := f.normalSpaceVectorBundle hn hdim
-  TauCeti.bundleDiffeomorph (fun x ↦ f.normalSpaceEquivOfKer x hn (g x) (hg x) (hgdim x))
+  TauCeti.bundleDiffeomorph
+    (fun x ↦ f.isImmersion.normalSpaceEquivOfKer x hn (g x) (hg x) (hgdim x))
     (f.contMDiff_normalSpaceEquivOfKer hn hm hdim g hg hgdim hgs)
 
 /-- The diffeomorphism sends a normal vector at `x` to the corresponding vector of `E₂ x`. -/
 @[simp]
 theorem normalBundleDiffeomorphOfKer_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd)))
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfKer hn hm hdim g hg hgdim hgs p =
-      ⟨p.proj, f.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj) p.snd⟩ := by
+      ⟨p.proj,
+        f.isImmersion.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj)
+          p.snd⟩ := by
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   exact TauCeti.bundleDiffeomorph_apply _ _ p
@@ -118,8 +122,8 @@ theorem normalBundleDiffeomorphOfKer_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
 @[simp]
 theorem normalBundleDiffeomorphOfKer_symm_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd)))
@@ -127,7 +131,8 @@ theorem normalBundleDiffeomorphOfKer_symm_apply (hn : n ≠ 0) (hm : m + 1 ≤ n
     letI := f.normalSpaceFiberBundle hn hdim
     (f.normalBundleDiffeomorphOfKer hn hm hdim g hg hgdim hgs).symm q =
       ⟨q.proj,
-        (f.normalSpaceEquivOfKer q.proj hn (g q.proj) (hg q.proj) (hgdim q.proj)).symm q.snd⟩ := by
+        (f.isImmersion.normalSpaceEquivOfKer q.proj hn (g q.proj) (hg q.proj)
+          (hgdim q.proj)).symm q.snd⟩ := by
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   exact TauCeti.bundleDiffeomorph_symm_apply _ _ q

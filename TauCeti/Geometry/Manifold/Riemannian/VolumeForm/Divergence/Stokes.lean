@@ -6,8 +6,7 @@ Authors: Riccardo Brasca, The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Integration
 
 /-!
 # The divergence theorem on an oriented manifold with boundary
@@ -20,9 +19,8 @@ outward-first orientation, of the restriction of the flux form `ι_X dV`:
 `∫_M div X dV = ∫_{∂M} ι_X dV`.
 
 This is Stokes' theorem for `ι_X dV`, combined with the identity `d (ι_X dV) = (div X) dV` and the
-identification of the integral of `f dV` with the integral of `f` against the Riemannian measure.
-On the boundary, `ι_X dV` restricts to `⟨X, N⟩ dA`, where `N` is the outward unit normal and `dA`
-the induced boundary volume form; the statement here keeps the flux-form side.
+identification of the integral of `f dV` with the integral of `f` against the Riemannian measure
+(`TauCeti.integralTopForm_mextDeriv_interior_riemannianVolumeForm`).
 
 ## Main results
 
@@ -46,6 +44,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+section Stokes
+
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
 variable [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
@@ -67,15 +67,13 @@ theorem integral_divergence_eq_integralTopForm_boundaryRestriction
     ∫ x, Manifold.divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M =
       integralTopForm (boundaryOrientation o)
         (boundaryRestriction ((riemannianVolumeForm o).interior X)) := by
-  have : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by norm_num; infer_instance
+  have : IsManifold (𝓡∂ (n + 1)) 2 M := IsManifold.of_le (n := ∞) (by simp)
   have hφ := (isSmoothForm_riemannianVolumeForm (n := 1) o).interior hX
   have hcφ := hc.of_isClosed_subset (isClosed_tsupport _)
     ((riemannianVolumeForm o).tsupport_interior_subset X)
   rw [← integralTopForm_mextDeriv o hφ hcφ,
-    mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero),
-    integralTopForm_smul_riemannianVolumeForm o
-      (Manifold.contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
-        (by simpa using hX)).continuous
-      (hc.divergence _)]
+    integralTopForm_mextDeriv_interior_riemannianVolumeForm o hX hc]
+
+end Stokes
 
 end TauCeti

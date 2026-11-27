@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.Taylor
 import Mathlib.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Taylor translation of entire power series
@@ -34,15 +35,18 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
 
 * `PowerSeries.IsEntire.taylor`: the translate of an entire series is entire.
 * `PowerSeries.IsEntire.taylor_add`, `PowerSeries.IsEntire.taylor_smul`: translation is linear on
-  entire series.
+  entire series; `PowerSeries.IsEntire.order_taylor_smul` and
+  `PowerSeries.IsEntire.order_taylor_C_mul`: over a ring with no zero divisors, nonzero scalar
+  multiplication preserves Taylor order.
 * `PowerSeries.IsEntire.taylor_mul`: translation is multiplicative on entire series.
 * `PowerSeries.IsEntire.evalAt_taylor`: the Taylor identity `(taylor a f)(b) = f(b + a)`.
 * `PowerSeries.IsEntire.hasSum_taylor`: the Taylor expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`
   converges.
 * `PowerSeries.IsEntire.hasseDeriv_taylor`: Hasse derivatives commute with translation.
 * `PowerSeries.IsEntire.taylor_taylor`: `taylor b (taylor a f) = taylor (b + a) f`.
-* `PowerSeries.IsEntire.taylor_inj`, `PowerSeries.IsEntire.taylor_eq_zero_iff`: translation is
-  injective on entire series.
+* `PowerSeries.IsEntire.taylor_inj`, `PowerSeries.IsEntire.taylor_eq_zero_iff`,
+  `PowerSeries.IsEntire.order_taylor_ne_top`: translation is injective on entire series, and
+  nonzero entire series have finite Taylor order at every point.
 -/
 
 public section
@@ -101,6 +105,21 @@ theorem IsEntire.taylor_smul (hf : f.IsEntire) (c a : R) :
   rw [coeff_taylor, map_smul, (hf.hasseDeriv n).evalAt_smul, coeff_smul, coeff_taylor,
     smul_eq_mul]
 
+/-- Over a ring with no zero divisors, multiplying an entire series by a nonzero scalar preserves
+the order of its Taylor translates. -/
+@[simp]
+theorem IsEntire.order_taylor_smul [NoZeroDivisors R] (hf : f.IsEntire) {c : R} (hc : c ≠ 0)
+    (a : R) : (taylor a (c • f)).order = (taylor a f).order := by
+  rw [hf.taylor_smul, smul_eq_C_mul, order_mul,
+    order_eq_zero_iff_constantCoeff_ne_zero.mpr (by simpa using hc), zero_add]
+
+/-- Over a ring with no zero divisors, multiplying an entire series on the left by a nonzero
+constant series preserves the order of its Taylor translates. -/
+@[simp]
+theorem IsEntire.order_taylor_C_mul [NoZeroDivisors R] (hf : f.IsEntire) {c : R} (hc : c ≠ 0)
+    (a : R) : (taylor a (C c * f)).order = (taylor a f).order := by
+  rw [← smul_eq_C_mul, hf.order_taylor_smul hc a]
+
 /-- Taylor translation is multiplicative on entire series, by the Leibniz rule for Hasse
 derivatives. -/
 theorem IsEntire.taylor_mul {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (a : R) :
@@ -153,6 +172,12 @@ theorem IsEntire.taylor_inj {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (
 /-- An entire series has zero Taylor translate exactly when it is zero. -/
 theorem IsEntire.taylor_eq_zero_iff (hf : f.IsEntire) (a : R) : taylor a f = 0 ↔ f = 0 := by
   simpa using hf.taylor_inj isEntire_zero a
+
+/-- A nonzero entire series over a complete normed commutative ring has finite Taylor order at
+every point. -/
+theorem IsEntire.order_taylor_ne_top (hf : f.IsEntire) (hf0 : f ≠ 0) (a : R) :
+    (taylor a f).order ≠ ⊤ :=
+  order_eq_top.not.mpr ((hf.taylor_eq_zero_iff a).not.mpr hf0)
 
 end Complete
 

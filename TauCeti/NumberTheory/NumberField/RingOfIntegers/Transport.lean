@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Over
 
 /-!
 # Transporting ideals of a ring of integers along an isomorphism of fields
@@ -15,7 +16,9 @@ An isomorphism of fields `e : K ≃+* L` restricts to `NumberField.RingOfInteger
 between the rings of integers, and pulling ideals back along it identifies the ideals of `𝓞 L`
 with those of `𝓞 K`.  This file records that this identification is functorial and reflects the
 zero ideal, which is what a construction transported along `e` needs in order to be well defined
-on nonzero ideals.
+on nonzero ideals. If `e` carries a subfield `A` of `K` onto a subfield `B` of `L`, it also
+restricts to an isomorphism `𝓞 A ≃+* 𝓞 B` compatible with `mapRingEquiv e`, along which the ideal
+of `𝓞 A` under an ideal of `𝓞 K` is carried to the ideal of `𝓞 B` under its image.
 
 ## Main results
 
@@ -28,6 +31,12 @@ on nonzero ideals.
   isomorphisms, including inverses.
 * `NumberField.RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv`: extending `mapRingEquiv e` from
   the rings of integers back to their fraction fields recovers `e`.
+* `NumberField.RingOfIntegers.subfieldMapRingEquiv`: the isomorphism `𝓞 A ≃+* 𝓞 B` induced by `e`
+  when it carries a subfield `A` onto a subfield `B`, with
+  `NumberField.RingOfIntegers.algebraMap_subfieldMapRingEquiv` (compatibility with
+  `mapRingEquiv e`) and `NumberField.RingOfIntegers.subfieldMapRingEquiv_symm`.
+* `Ideal.under_map_mapRingEquiv`: the ideal of `𝓞 B` under the image of `P` is the image of the
+  ideal of `𝓞 A` under `P`.
 * `Ideal.comap_mapRingEquiv_refl`, `Ideal.comap_mapRingEquiv_trans`: functoriality on ideals.
 * `Ideal.comap_mapRingEquiv_eq_bot_iff`: the pullback is the zero ideal only for the zero ideal.
 -/
@@ -93,6 +102,36 @@ theorem ringEquivOfRingEquiv_mapRingEquiv [IsFractionRing (𝓞 K) K] [IsFractio
   ext x
   exact IsFractionRing.ringEquivOfRingEquiv_algebraMap (K := K) (L := L) (mapRingEquiv e) x
 
+/-- The isomorphism of rings of integers of subfields `A` of `K` and `B` of `L` induced by an
+isomorphism `e : K ≃+* L` carrying `A` onto `B`. -/
+noncomputable def subfieldMapRingEquiv (e : K ≃+* L) {A : Subfield K} {B : Subfield L}
+    (h : A.map (e : K →+* L) = B) : 𝓞 A ≃+* 𝓞 B :=
+  mapRingEquiv <| e.restrict A B fun x ↦ by
+    rw [← h, Subfield.mem_map]
+    exact ⟨fun hx ↦ ⟨x, hx, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ e.injective hyx ▸ hy⟩
+
+/-- `subfieldMapRingEquiv e h` acts as `e` on underlying field elements. -/
+@[simp]
+theorem subfieldMapRingEquiv_apply (e : K ≃+* L) {A : Subfield K} {B : Subfield L}
+    (h : A.map (e : K →+* L) = B) (x : 𝓞 A) :
+    ((subfieldMapRingEquiv e h x : B) : L) = e ((x : A) : K) :=
+  (rfl)
+
+/-- `subfieldMapRingEquiv e h` is compatible with `mapRingEquiv e` along the inclusions of the
+rings of integers of the subfields. -/
+@[simp]
+theorem algebraMap_subfieldMapRingEquiv (e : K ≃+* L) {A : Subfield K} {B : Subfield L}
+    (h : A.map (e : K →+* L) = B) (x : 𝓞 A) :
+    algebraMap (𝓞 B) (𝓞 L) (subfieldMapRingEquiv e h x) =
+      mapRingEquiv e (algebraMap (𝓞 A) (𝓞 K) x) :=
+  (rfl)
+
+/-- The inverse of `subfieldMapRingEquiv e h` is the same construction for `e.symm`. -/
+theorem subfieldMapRingEquiv_symm (e : K ≃+* L) {A : Subfield K} {B : Subfield L}
+    (h : A.map (e : K →+* L) = B) (h' : B.map (e.symm : L →+* K) = A) :
+    (subfieldMapRingEquiv e h).symm = subfieldMapRingEquiv e.symm h' :=
+  RingEquiv.ext fun _ ↦ RingOfIntegers.ext rfl
+
 end NumberField.RingOfIntegers
 
 namespace Ideal
@@ -125,5 +164,16 @@ theorem comap_mapRingEquiv_eq_bot_iff (I : Ideal (𝓞 L)) (e : K ≃+* L) :
     Ideal.comap (RingOfIntegers.mapRingEquiv e) I = ⊥ ↔ I = ⊥ := by
   rw [← Ideal.map_symm]
   exact Ideal.map_eq_bot_iff_of_injective (RingOfIntegers.mapRingEquiv e).symm.injective
+
+/-- If `e : K ≃+* L` carries a subfield `A` onto a subfield `B`, the ideal of `𝓞 B` under the
+image of an ideal `P` of `𝓞 K` is the image of the ideal of `𝓞 A` under `P`. -/
+theorem under_map_mapRingEquiv (e : K ≃+* L) {A : Subfield K} {B : Subfield L}
+    (h : A.map (e : K →+* L) = B) (P : Ideal (𝓞 K)) :
+    (P.map (RingOfIntegers.mapRingEquiv e)).under (𝓞 B) =
+      (P.under (𝓞 A)).map (RingOfIntegers.subfieldMapRingEquiv e h) := by
+  ext y
+  obtain ⟨x, rfl⟩ := (RingOfIntegers.subfieldMapRingEquiv e h).surjective y
+  rw [Ideal.apply_mem_of_equiv_iff, Ideal.mem_under, Ideal.mem_under,
+    RingOfIntegers.algebraMap_subfieldMapRingEquiv, Ideal.apply_mem_of_equiv_iff]
 
 end Ideal
