@@ -14,7 +14,9 @@ import TauCeti.Analysis.Normed.Operator.Basic
 # Norming sets for continuous linear maps
 
 Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
-domain unit ball, with any prescribed loss greater than one. Norm-separable sets
+domain unit ball, with any prescribed loss greater than one. Every map has a sequence in
+that ball along which its values approach its norm
+(`ContinuousLinearMap.exists_seq_norm_apply_tendsto_opNorm`), and norm-separable sets
 of maps admit countable sets in that ball which recover their norms exactly.
 For a separable domain, a single sequence in its unit ball norms all continuous linear maps,
 even when their family is not norm-separable.
@@ -103,6 +105,20 @@ variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- A continuous linear map admits a sequence in the domain unit ball along which the norms
+of its values tend to its operator norm. -/
+theorem ContinuousLinearMap.exists_seq_norm_apply_tendsto_opNorm (f : E →L[𝕜] F) :
+    ∃ v : ℕ → E, (∀ n, ‖v n‖ ≤ 1) ∧ Tendsto (fun n ↦ ‖f (v n)‖) atTop (𝓝 ‖f‖) := by
+  have hb : BddAbove ((fun x ↦ ‖f x‖) '' ball 0 1) := by
+    refine ⟨‖f‖, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    exact f.unit_le_opNorm x (mem_ball_zero_iff.mp hx).le
+  obtain ⟨a, -, ha, hamem⟩ := exists_seq_tendsto_sSup
+    ((nonempty_ball.mpr zero_lt_one).image (fun x ↦ ‖f x‖)) hb
+  choose v hv hav using hamem
+  refine ⟨v, fun n ↦ (mem_ball_zero_iff.mp (hv n)).le, ?_⟩
+  simpa only [hav, f.sSup_unit_ball_eq_norm] using ha
+
 /-- A norm-separable set of continuous linear maps admits a countable norming set in
 the domain unit ball. The same set recovers the norm of every map in the
 original set, even if the domain is not separable. -/
@@ -113,18 +129,7 @@ theorem TopologicalSpace.IsSeparable.exists_countable_norming
   obtain ⟨d, -, hd, hsd⟩ := hs.exists_countable_dense_subset
   obtain ⟨v, hv⟩ := (hd.insert 0).exists_eq_range (insert_nonempty 0 d)
   -- Choose countably many near-norming vectors for each member of a dense sequence.
-  have hseq (n : ℕ) : ∃ u : ℕ → E, (∀ m, ‖u m‖ ≤ 1) ∧
-      Tendsto (fun m ↦ ‖v n (u m)‖) atTop (𝓝 ‖v n‖) := by
-    have hb : BddAbove ((fun x ↦ ‖v n x‖) '' ball 0 1) := by
-      refine ⟨‖v n‖, ?_⟩
-      rintro _ ⟨x, hx, rfl⟩
-      exact (v n).unit_le_opNorm x (mem_ball_zero_iff.mp hx).le
-    obtain ⟨a, -, ha, hamem⟩ := exists_seq_tendsto_sSup
-      ((nonempty_ball.mpr zero_lt_one).image (fun x ↦ ‖v n x‖)) hb
-    choose u hu hua using hamem
-    refine ⟨u, fun m ↦ (mem_ball_zero_iff.mp (hu m)).le, ?_⟩
-    simpa only [hua, (v n).sSup_unit_ball_eq_norm] using ha
-  choose u hu hlim using hseq
+  choose u hu hlim using fun n ↦ (v n).exists_seq_norm_apply_tendsto_opNorm
   let t : Set E := range (fun p : ℕ × ℕ ↦ u p.1 p.2)
   have ht (n m : ℕ) : u n m ∈ t := mem_range_self (n, m)
   have htunit : ∀ x ∈ t, ‖x‖ ≤ 1 := by
