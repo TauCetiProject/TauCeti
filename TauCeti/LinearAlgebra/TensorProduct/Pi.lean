@@ -111,6 +111,16 @@ theorem piRightHom_lTensor_pi (S : Type*) [CommSemiring S] [Algebra R S] [Module
   | tmul a b => rfl
   | add x y hx hy => simp [hx, hy, Pi.add_def]
 
+/-- For a finite family, a tensor over a product equals a pure tensor exactly when the
+corresponding coordinate equations hold. -/
+theorem lTensor_pi_eq_tmul_iff [Finite ι] (f : ∀ i, N' →ₗ[R] M i)
+    (x : N ⊗[R] N') (n : N) (z : ∀ i, M i) :
+    (LinearMap.pi f).lTensor N x = n ⊗ₜ[R] z ↔ ∀ i, (f i).lTensor N x = n ⊗ₜ[R] z i := by
+  classical
+  let := Fintype.ofFinite ι
+  rw [← (piRight R R N M).injective.eq_iff]
+  simp only [piRight_apply, piRightHom_lTensor_pi, piRightHom_tmul, funext_iff]
+
 end CommSemiring
 
 section PiScalarRight
