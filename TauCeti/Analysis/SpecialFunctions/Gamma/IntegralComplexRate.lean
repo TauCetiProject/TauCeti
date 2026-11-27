@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.Analysis.SpecialFunctions.Integrals.Log.Power
 
 /-!
 # The Gamma integral with a complex rate

@@ -44,7 +44,9 @@ laws:
 * it follows lifts of `γ` to the orientation double cover
   (`TauCeti.VectorBundleOrientationCover.orientationTransport_eq_of_lift`), so along a path inside
   the base set of a linear trivialization it keeps the reading of an orientation in that
-  trivialization (`TauCeti.VectorBundleOrientationCover.orientationTransport_mapOrientation_symm`).
+  trivialization (`TauCeti.VectorBundleOrientationCover.orientationTransport_mapOrientation_symm`),
+  and it carries the start of any continuous family of orientations over a set containing `γ` to
+  its end (`TauCeti.VectorBundleOrientationCover.orientationTransport_eq_of_continuous`).
 
 The last property characterizes it: a family of orientations of the fibres along `γ` that is
 continuous in the orientation double cover is the transport of its initial value.
@@ -70,6 +72,8 @@ charts (`TauCeti.detLineOrientationTransport`), without forming the bundle or it
   only on the homotopy class of the path relative to its endpoints.
 * `TauCeti.VectorBundleOrientationCover.orientationTransport_map`: naturality of transport under
   fibrewise isomorphisms of bundles.
+* `TauCeti.VectorBundleOrientationCover.orientationTransport_eq_of_continuous`: transport along a
+  path carries a continuous family of orientations over a set containing it to itself.
 
 ## References
 
@@ -127,6 +131,28 @@ theorem orientationTransport_eq_of_lift (γ : Path b₀ b₁)
   exact Subtype.ext <| (isCoveringMap_proj hι).monodromy_eq_apply_one hΓ <|
     congrArg Subtype.val ((fiberEquiv_symm_apply _).symm.trans
       ((fiberEquiv F E ι b₀).symm_apply_apply ⟨Γ 0, h₀⟩)).symm
+
+/-- **Transport of a continuous family of orientations.** Let `o b` be an orientation of the fibre
+over each point `b` of a set `S`, such that `b ↦ (b, o b)` is continuous from `S` to the
+orientation double cover. Along a path inside `S`, transport carries the orientation at its start
+to the orientation at its end. -/
+theorem orientationTransport_eq_of_continuous {S : Set B} (o : ∀ b : S, Orientation ℝ (E b) ι)
+    (ho : Continuous fun b : S ↦ (⟨b, o b⟩ : VectorBundleOrientationCover F E ι))
+    (γ : Path b₀ b₁) (hγ : ∀ t, γ t ∈ S) (h₀ : b₀ ∈ S) (h₁ : b₁ ∈ S) :
+    orientationTransport E hι γ (o ⟨b₀, h₀⟩) = o ⟨b₁, h₁⟩ := by
+  let Γ : C(I, VectorBundleOrientationCover F E ι) :=
+    ⟨fun t ↦ ⟨γ t, o ⟨γ t, hγ t⟩⟩, ho.comp (γ.continuous.subtype_mk hγ)⟩
+  -- The points of the lift over the ends of the path.
+  have key (z w : B) (hz : z ∈ S) (hw : w ∈ S) (h : z = w) :
+      (⟨z, o ⟨z, hz⟩⟩ : VectorBundleOrientationCover F E ι) = ⟨w, o ⟨w, hw⟩⟩ := by
+    subst h
+    rfl
+  have h := orientationTransport_eq_of_lift hι γ Γ rfl (by simp [Γ]) (by simp [Γ])
+  have h₀' : (⟨Γ 0, by simp [Γ]⟩ : proj ⁻¹' {b₀}) = ⟨⟨b₀, o ⟨b₀, h₀⟩⟩, rfl⟩ :=
+    Subtype.ext (key _ _ _ _ γ.source)
+  have h₁' : (⟨Γ 1, by simp [Γ]⟩ : proj ⁻¹' {b₁}) = ⟨⟨b₁, o ⟨b₁, h₁⟩⟩, rfl⟩ :=
+    Subtype.ext (key _ _ _ _ γ.target)
+  rwa [h₀', h₁', fiberEquiv_mk, fiberEquiv_mk] at h
 
 /-- **Homotopy invariance.** Transport along homotopic paths, with fixed endpoints, agrees. -/
 theorem orientationTransport_eq_of_homotopic {γ γ' : Path b₀ b₁} (h : γ.Homotopic γ') :

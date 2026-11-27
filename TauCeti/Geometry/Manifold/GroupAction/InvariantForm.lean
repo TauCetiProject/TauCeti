@@ -35,6 +35,8 @@ primitive `λ` of a symplectic form `ω = -dλ` into the moment map identity
   invariant one-form pairing fundamental vector fields with constants vanishes on them.
 * `TauCeti.SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq`: pointwise form of the
   invariance of a one-form under a group element.
+* `TauCeti.RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq`: a form invariant under the
+  inverse of `g` vanishes at `g • x` whenever it vanishes at `x`.
 * `TauCeti.SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`: pointwise form of the invariance
   of a two-form under the action.
 
@@ -74,6 +76,14 @@ theorem SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq {g : G}
     SmoothForm.mpullback_apply_one]
   exact congrArg (fun A : E [⋀^Fin 1]→L[ℝ] F ↦ A _)
     (show α.val (g⁻¹ • g • x) = α.val x by rw [inv_smul_smul])
+
+omit [IsManifold I 1 M] [ContMDiffConstSMul I ∞ G M] in
+/-- A form invariant under the inverse of a group element `g` vanishes at `g • x` whenever it
+vanishes at `x`. -/
+theorem RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq {k : ℕ} {γ : RoughForm I M F k}
+    {g : G} (hγ : mpullback I I (g⁻¹ • ·) γ = γ) {x : M} (hx : γ x = 0) : γ (g • x) = 0 := by
+  rw [← hγ]
+  exact mpullback_apply_eq_zero (by rwa [inv_smul_smul])
 
 end Pointwise
 
