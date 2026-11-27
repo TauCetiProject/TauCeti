@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Esymm
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Prod
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TopPower
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
@@ -237,40 +237,24 @@ theorem hasDerivAt_esymm_relEigenvalues_add_smul {n k : ℕ} (hn : finrank ℂ E
         ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul (β + t • α))).relEigenvalues hn)
         (MvPolynomial.esymm (Fin n) ℝ k))
       (∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α)) 0 := by
-  classical
-  set f := mixedEsymmMultilinear (E := E) hn k
-  set c : Finset (Fin k) → ℝ := fun S ↦ f (S.piecewise (fun _ ↦ α) fun _ ↦ β)
-  have hpw (t : ℝ) (S : Finset (Fin k)) :
-      f (S.piecewise (fun _ ↦ t • α) fun _ ↦ β) = t ^ #S * c S := by
-    have hS : S.piecewise (fun _ ↦ t • α) (fun _ ↦ β) =
-        S.piecewise (fun i ↦ t • S.piecewise (fun _ ↦ α) (fun _ ↦ β) i)
-          (S.piecewise (fun _ ↦ α) fun _ ↦ β) := by
-      funext i
-      by_cases hi : i ∈ S <;> simp [Finset.piecewise, hi]
-    rw [hS, f.map_piecewise_smul, Finset.prod_const, RingHom.id_apply, smul_eq_mul]
-  have hexp (t : ℝ) : MvPolynomial.eval
-      ((isSymm_hermitianSesqForm (realOneOneForms_apply_I_smul (β + t • α))).relEigenvalues hn)
-      (MvPolynomial.esymm (Fin n) ℝ k) = f (fun _ ↦ β) +
-        t * ∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α) +
-        ∑ S with 2 ≤ #S, t ^ #S * c S := by
-    rw [← mixedEsymm_const hn, ← mixedEsymmMultilinear_apply,
-      show (fun _ : Fin k ↦ β + t • α) = (fun _ ↦ β) + fun _ ↦ t • α from rfl,
-      MultilinearMap.map_add_eq_map_add_linearDeriv_add (M := fun _ : Fin k ↦ realOneOneForms E),
-      MultilinearMap.linearDeriv_apply]
-    simp only [f.map_update_smul, RingHom.id_apply, smul_eq_mul, mixedEsymmMultilinear_apply, f,
-      Finset.mul_sum, hpw]
-  simp only [hexp]
-  have hd : HasDerivAt (fun t : ℝ ↦ f (fun _ ↦ β) +
-        t * ∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α) +
-        ∑ S with 2 ≤ #S, t ^ #S * c S)
-      (0 + 1 * ∑ i : Fin k, mixedEsymm hn (Function.update (fun _ ↦ β) i α) +
-        ∑ S with 2 ≤ #S, (#S * (0 : ℝ) ^ (#S - 1)) * c S) 0 :=
-    ((hasDerivAt_const _ _).add ((hasDerivAt_id' 0).mul_const _)).add
-      (HasDerivAt.fun_sum fun S _ ↦ (hasDerivAt_pow #S (0 : ℝ)).mul_const (c S))
-  convert hd using 1
-  rw [zero_add, one_mul, left_eq_add]
-  refine Finset.sum_eq_zero fun S hS ↦ ?_
-  rw [zero_pow (by have := (Finset.mem_filter.1 hS).2; omega), mul_zero, zero_mul]
+  -- Pull `M_k` back along `(a, b) ↦ a β + b α` to a multilinear form on the
+  -- finite-dimensional space `ℝ × ℝ`, where it is automatically continuous.
+  let L : ℝ × ℝ →ₗ[ℝ] realOneOneForms E :=
+    (LinearMap.fst ℝ ℝ ℝ).smulRight β + (LinearMap.snd ℝ ℝ ℝ).smulRight α
+  let g := (mixedEsymmMultilinear hn k).compLinearMap fun _ ↦ L
+  let G : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ ℝ × ℝ) ℝ :=
+    ⟨g, g.continuous_of_finiteDimensional⟩
+  have hG (x : Fin k → ℝ × ℝ) : G x = mixedEsymm hn (L ∘ x) := rfl
+  have hline : HasDerivAt (fun t : ℝ ↦ fun _ : Fin k ↦ ((1 : ℝ), t))
+      (fun _ ↦ ((0 : ℝ), (1 : ℝ))) 0 :=
+    hasDerivAt_pi.2 fun _ ↦ (hasDerivAt_const _ _).prodMk (hasDerivAt_id 0)
+  convert (G.hasFDerivAt _).comp_hasDerivAt (0 : ℝ) hline using 1
+  · funext t
+    simp [hG, Function.comp_def, L]
+  · rw [ContinuousMultilinearMap.linearDeriv_apply]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [hG, Function.comp_update]
+    simp [Function.comp_def, L]
 
 /-- **`M_k` as a derivative**: `(m + 1) M_{m+1}(α, β, …, β)` is the derivative of
 `t ↦ σ_{m+1}(λ[β + t α])` at `0`, by symmetry of `M_{m+1}`. -/
