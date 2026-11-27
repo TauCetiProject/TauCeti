@@ -28,6 +28,13 @@ zero is exactly that volume. We also give conjugation and change-of-norm formula
 The construction is useful for Fourier descriptions of local densities of hermitian
 forms. The elementary API does not require `J` to be hermitian: that hypothesis
 enters the subsequent differencing and density arguments.
+
+## References
+
+The corresponding finite-place integral is `New.Floors.IntegralPlace.classGaussSum` in
+`grh/src/Lib/SiegelWeil/OneVector/ClassGaussSums.lean` of
+[grh-lean](https://github.com/lsernau/grh-lean), commit
+`72fead102f663d5c7a407964a13dc0cf9d977207` (Apache 2.0, Copyright 2026 Anthropic PBC).
 -/
 
 public section

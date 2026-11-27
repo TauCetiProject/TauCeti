@@ -16,6 +16,14 @@ For a subring `R` of a locally compact ring `A` and a unit `g`, the product Haar
 of the class `R.residueClass g x₀ = x₀ + g R^ι` is `Δ(g)^|ι| μ(R)^|ι|`, where `Δ` is
 Mathlib's distributive Haar character. In particular, when `μ(R) = 1`, its volume is
 `Δ(g)^|ι|`.
+
+## References
+
+The normalized finite-place volume formula is
+`New.Floors.IntegralPlace.volume_residueClass` in
+`grh/src/Lib/SiegelWeil/OneVector/ResidueClasses.lean` of
+[grh-lean](https://github.com/lsernau/grh-lean), commit
+`72fead102f663d5c7a407964a13dc0cf9d977207` (Apache 2.0, Copyright 2026 Anthropic PBC).
 -/
 
 public section

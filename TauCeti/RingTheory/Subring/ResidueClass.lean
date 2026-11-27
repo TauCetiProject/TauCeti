@@ -16,6 +16,14 @@ For a subring `R` of a ring `A`, `R.residueClass g x₀` is the class
 `x₀ + g R^ι`, where `g` is a unit of `A`. It is the additive coset through `x₀` of the
 lattice `R.latticeMultiple g = g R^ι`, so centre independence comes from Mathlib's coset API.
 These classes are the domains of local quadratic Gauss integrals.
+
+## References
+
+The corresponding finite-place constructions are `New.Floors.IntegralPlace.latticeMultiple`
+and `New.Floors.IntegralPlace.residueClass` in
+`grh/src/Lib/SiegelWeil/OneVector/ResidueClasses.lean` of
+[grh-lean](https://github.com/lsernau/grh-lean), commit
+`72fead102f663d5c7a407964a13dc0cf9d977207` (Apache 2.0, Copyright 2026 Anthropic PBC).
 -/
 
 public section
