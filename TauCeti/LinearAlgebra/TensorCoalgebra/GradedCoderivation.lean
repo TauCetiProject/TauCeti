@@ -995,7 +995,7 @@ theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self
     rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
       ReducedTensorWords.map_id]
   have h := LinearMap.congr_fun (LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self b
-    (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)) hτ hodd)
+    (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)) b hτ hodd)
     (deconcatenation R M z)
   simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add] at h ⊢
   rw [← h]
@@ -1145,6 +1145,14 @@ theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M ℤ) (c :
 theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M ℤ) (q : ℤ) :
     gradedCoderiv G (0 : ReducedTensorWords R M →ₗ[R] M) q = 0 :=
   congrArg Subtype.val (map_zero (gradedCoderivEquivTaylor G q).symm)
+
+/-- The graded Taylor expansion of a finite sum of Taylor maps is the sum of their expansions. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_sum {ι : Type*} (G : InternalGrading R M ℤ) (s : Finset ι)
+    (F : ι → ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    gradedCoderiv G (∑ i ∈ s, F i) q = ∑ i ∈ s, gradedCoderiv G (F i) q :=
+  congrArg Subtype.val (map_sum (gradedCoderivEquivTaylor G q).symm F s) |>.trans
+    (Submodule.coe_sum _ _ _)
 
 end GradedCoderiv
 

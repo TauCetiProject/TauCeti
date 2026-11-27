@@ -45,6 +45,8 @@ upper-triangular `GL(2, ℝ)` scalings at the rescaled width `(M 1 1 / M 0 0) * 
   is a nonzero constant term (the class-level interface lives in `TauCeti.ModularForm`).
 * `TauCeti.qExpansionOrderAtCusp_mul`: additivity on products (with `qExpansionOrderAtCusp_pow` and
   `qExpansionOrderAtCusp_prod`).
+* `TauCeti.qExpansionOrderAtCusp_smul`: a nonzero constant factor, such as the sign `(-1) ^ k` of
+  the slash action of `-I`, does not change the order.
 
 ## References
 
@@ -115,6 +117,15 @@ lemma qExpansionOrderAtCusp_mul {f g : ℍ → ℂ} (hf : AnalyticAt ℂ (cuspFu
     h_nat]
   push_cast
   ring
+
+/-- Multiplying by a nonzero constant does not change the cusp order, for instance by the sign
+`(-1) ^ k` by which the slash action of `-I` in weight `k` changes a function. -/
+lemma qExpansionOrderAtCusp_smul {c : ℂ} (hc : c ≠ 0) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
+    qExpansionOrderAtCusp h (c • g) = qExpansionOrderAtCusp h g := by
+  rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def, qExpansion_smul hg]
+  refine congrArg _ (congrArg _ (le_antisymm ?_ PowerSeries.le_order_smul))
+  simpa only [smul_smul, inv_mul_cancel₀ hc, one_smul] using
+    PowerSeries.le_order_smul (a := c⁻¹) (φ := c • qExpansion h g)
 
 /-- Every constant function has cusp order zero: a nonzero constant by the nonvanishing
 constant term, the zero function by the junk value. -/
@@ -304,18 +315,10 @@ lemma qExpansionOrderAtCusp_pos_iff (hg : AnalyticAt ℂ (cuspFunction h g) 0)
     ← not_not (a := cuspFunction h g 0 = 0)]
   exact not_congr (qExpansionOrderAtCusp_eq_zero_iff hg hg')
 
-/-- Multiplying by a nonzero complex scalar leaves the cusp `q`-expansion order unchanged. -/
-lemma qExpansionOrderAtCusp_smul (hg : AnalyticAt ℂ (cuspFunction h g) 0) {c : ℂ} (hc : c ≠ 0) :
-    qExpansionOrderAtCusp h (c • g) = qExpansionOrderAtCusp h g := by
-  have hord : (c • qExpansion h g).order = (qExpansion h g).order := by
-    refine le_antisymm ?_ PowerSeries.le_order_smul
-    simpa [inv_smul_smul₀ hc] using PowerSeries.le_order_smul (a := c⁻¹) (φ := c • qExpansion h g)
-  rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def, qExpansion_smul hg c, hord]
-
 /-- Multiplying by a nonzero complex scalar leaves the rational cusp order unchanged. -/
 lemma orderAtCusp_smul (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) {c : ℂ} (hc : c ≠ 0) :
     orderAtCusp h (c • g) = orderAtCusp h g := by
-  rw [orderAtCusp_def, orderAtCusp_def, qExpansionOrderAtCusp_smul hg hc]
+  rw [orderAtCusp_def, orderAtCusp_def, qExpansionOrderAtCusp_smul hc hg]
 
 /-- The rational cusp order is always a half-integer `m / 2` for some `m : ℕ`. -/
 lemma exists_orderAtCusp_eq_natCast_div_two (h : ℝ) (f : ℍ → ℂ) :

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.FredholmAlternative
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
-import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
 /-!
 # The weak maximum principle with bounded drift
@@ -166,25 +165,17 @@ theorem mul_norm_gradient_sq_sub_le_energyFormH1_self
     ← energyFormH1_def] at hle
 
 omit [DecidableEq ι] in
-/-- If `∇v = 0` almost everywhere outside a measurable set `Γ`, then in `ℝ≥0∞` the drift integral
-`∫_Ω |∇v| |v|` is a lower integral that only sees `Γ`. -/
+/-- The unweighted case `w = 1` of `TauCeti.W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq`
+for the drift integral `∫_Ω |∇v| |v|`. -/
 private theorem ofReal_integral_norm_gradient_mul_norm_value_eq {v : W1p mu Omega 2}
     {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : MeasurableSet Γ)
     (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
     ENNReal.ofReal (∫ x in Omega, ‖W1p.gradient v x‖ * ‖W1p.value v x‖ ∂mu) =
       ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
-  set f := W1p.value v
-  set g := W1p.gradient v
-  have hint : Integrable (fun x ↦ ‖g x‖ * ‖f x‖) (mu.restrict Omega) :=
-    (Lp.memLp g).norm.integrable_mul (Lp.memLp f).norm
-  rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun x ↦ by positivity),
-    ← lintegral_indicator hΓ]
-  refine lintegral_congr_ae ?_
-  filter_upwards [hgrad] with x hx
-  by_cases hxΓ : x ∈ Γ
-  · rw [indicator_of_mem hxΓ, ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm]
-  · have hg0 : g x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
-    rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, ENNReal.ofReal_zero]
+  simpa using W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq (w := fun _ ↦ 1)
+    (ae_of_all _ fun _ ↦ zero_le_one)
+    (((Lp.memLp (W1p.gradient v)).norm.integrable_mul (Lp.memLp (W1p.value v)).norm).congr
+      (ae_of_all _ fun x ↦ (one_mul _).symm)) hΓ hgrad
 
 /-- In `ℝ≥0∞`, the drift term is a lower integral that only sees `Γ`, and it balances
 `λ ‖∇v‖²`. -/
@@ -310,32 +301,14 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_measure_rpow_of_not_ae_value_l
       mu.restrict Omega {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0} ^ (2⁻¹ - q.toReal⁻¹) := by
   have hl : 0 ≤ l := hk.trans hkl
   set v := W1p.posPartAbove (by norm_num) hl u
-  have hvalue := W1p.value_posPartAbove_ae (by norm_num) hl u
   have hmem : v ∈ w1p0Submodule mu Omega 2 :=
     W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
-  have hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 →
-      x ∈ {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0} := by
-    filter_upwards [W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hx hne
-    rw [hx] at hne
-    by_cases hlt : l < W1p.value u x
-    · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hlt] at hne
-      exact ⟨hlt, hne⟩
-    · exact absurd (indicator_of_notMem (s := {y | l < W1p.value u y}) hlt _) hne
-  have hT : MeasurableSet {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0} :=
-    (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable).inter
-      ((Lp.stronglyMeasurable (W1p.gradient u)).measurable (measurableSet_singleton 0).compl)
   have hcore := ofReal_mul_enorm_sq_le_of_energyFormH1_self_nonpos h hcoeff hb_bound
-    hc_nonneg hq.le (hsob v hmem) henergy hT hgrad
+    hc_nonneg hq.le (hsob v hmem) henergy (W1p.measurableSet_lt_value_and_gradient_ne_zero u l)
+    (W1p.ae_mem_of_gradient_posPartAbove_ne_zero (by norm_num) hl u)
   -- `∇v ≠ 0`: otherwise the Sobolev inequality forces `v = 0`, that is `u ≤ l`.
-  have hN : ‖W1p.gradient v‖ₑ ≠ 0 := by
-    intro hzero
-    refine hnot ?_
-    have hv0 : eLpNorm (W1p.value v) q (mu.restrict Omega) = 0 :=
-      le_antisymm ((hsob v hmem).trans_eq (by rw [hzero, mul_zero])) zero_le
-    rw [eLpNorm_eq_zero_iff (zero_lt_two.trans hq).ne'] at hv0
-    filter_upwards [hv0, hvalue] with x h₁ h₂
-    rw [h₂, Pi.zero_apply] at h₁
-    linarith [le_max_left (W1p.value u x - l) 0]
+  have hN := W1p.enorm_gradient_posPartAbove_ne_zero (by norm_num) hl (zero_lt_two.trans hq).ne'
+    (hsob v hmem) hnot
   exact (ENNReal.mul_le_mul_iff_left (pow_ne_zero 2 hN) (ENNReal.pow_ne_top eNorm_ne_top)).1 hcore
 
 /-- The level-set argument of the weak maximum principle, under a Sobolev inequality
@@ -362,27 +335,18 @@ private theorem UniformlyEllipticOn.value_le_const_of_forall_energyFormH1_posPar
     · have h2 : (2 : ℝ) < q.toReal := by
         simpa using (ENNReal.toReal_lt_toReal ENNReal.ofNat_ne_top hqtop).2 hq
       exact sub_pos.2 (inv_strictAnti₀ two_pos h2)
-  -- Since `u ∈ L²` and `k ≥ 0`, the superlevel sets `{u > l}`, `l > k`, have finite measure.
-  have hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞ := by
-    intro l hkl
-    exact ((Lp.memLp (W1p.value u)).measure_gt_lt_top two_ne_zero ENNReal.ofNat_ne_top
-      (hk.trans_lt hkl)).ne
-  -- Along suitable levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive measure,
-  -- the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero, so the level estimate fails for large `j`.
-  by_contra hcon
-  obtain ⟨l, hl, htend⟩ :=
-    W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (by norm_num) u hfin hcon
-  have hlim : Tendsto (fun j ↦ ENNReal.ofReal beta * S * mu.restrict Omega
-      {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0} ^ θ) atTop (𝓝 0) := by
-    have h0 : Tendsto (fun j ↦ mu.restrict Omega
-        {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0} ^ θ) atTop (𝓝 0) := by
-      simpa [Function.comp_def, ENNReal.zero_rpow_of_pos hθ] using
-        ((ENNReal.continuous_rpow_const (y := θ)).tendsto 0).comp htend
-    simpa using ENNReal.Tendsto.const_mul h0
-      (Or.inr (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.coe_ne_top))
-  exact (ENNReal.ofReal_pos.2 h.pos).ne' (le_antisymm (ge_of_tendsto' hlim fun j ↦
-    h.ofReal_le_mul_measure_rpow_of_not_ae_value_le hcoeff hb_bound hc_nonneg hq hsob hk
-      (hl j).1 hboundary (henergy (l j) _ (hl j).1) (hl j).2) zero_le)
+  -- Along levels `l ≥ k` exceeded on sets of positive measure, the level estimate
+  -- `λ ≤ β S |{u > l, ∇u ≠ 0}|^θ` fails once the measure of `{u > l, ∇u ≠ 0}` is small.
+  refine W1p.ae_value_le_of_forall_le_of_tendsto (by norm_num) u hk
+    (F := fun Γ ↦ ENNReal.ofReal beta * S * mu.restrict Omega Γ ^ θ) (fun Γ _ htend ↦ ?_)
+    (ENNReal.ofReal_pos.2 h.pos).ne' fun l hkl hnot ↦
+      h.ofReal_le_mul_measure_rpow_of_not_ae_value_le hcoeff hb_bound hc_nonneg hq hsob hk hkl
+        hboundary (henergy l _ hkl) hnot
+  have h0 : Tendsto (fun j ↦ mu.restrict Omega (Γ j) ^ θ) atTop (𝓝 0) := by
+    simpa [Function.comp_def, ENNReal.zero_rpow_of_pos hθ] using
+      ((ENNReal.continuous_rpow_const (y := θ)).tendsto 0).comp htend
+  simpa using ENNReal.Tendsto.const_mul h0
+    (Or.inr (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.coe_ne_top))
 
 /-- **The weak maximum principle with bounded drift**, under a Sobolev inequality. Let
 `Ω ⊆ ℝⁿ` be open, and suppose `‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some exponent `q > 2`. Let
@@ -720,18 +684,13 @@ private theorem ae_energyIntegrand_add_value_mul_inner_eq {l : ℝ} (hl : 0 ≤ 
               ⟪e x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ)) +
           l * (c x * W1p.value (W1p.posPartAbove (by norm_num) hl u) x +
             ⟪e x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ)) := by
-  classical
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u,
-    W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hvx hgx
+  filter_upwards [W1p.ae_posPartAbove_cases (by norm_num) hl u] with x hx
   simp only [energyIntegrand_apply, jetField_apply, massForm_apply, driftForm_apply,
     Pi.sub_apply, Pi.zero_apply, inner_sub_left]
-  rw [hvx, hgx]
-  by_cases hx : l < W1p.value u x
-  · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hx, max_eq_left (sub_nonneg.2 hx.le)]
+  rcases hx with ⟨hv, hg⟩ | ⟨hv, hg⟩
+  · rw [hv, hg]
     ring
-  · rw [indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
-      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
-    simp
+  · simp [hv, hg]
 
 omit [DecidableEq ι] in
 /-- Where `(u - l)⁺` or its gradient is not zero, `u > l ≥ 0`. So `l (u - l)⁺ ≤ |u| (u - l)⁺` and
@@ -771,7 +730,7 @@ nonnegative `φ ∈ H¹₀(Ω)`. For `u ∈ H¹(Ω)` and a level `l ≥ 0` with 
 testing `-∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u` against `v` bounds the energy of `v` for the
 operator `-∂ᵢ(aⁱʲ ∂ⱼ·) + (b - e)ⁱ ∂ᵢ` with no mass:
 `a_{b - e, 0}(v, v) ≤ a_{b, c}(u, v) + ∫ u ⟪e, ∇v⟫`. `Ω` need not have finite measure. -/
-private theorem energyFormH1_sub_zero_posPartAbove_self_le
+theorem energyFormH1_sub_zero_posPartAbove_self_le
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoeff' : MemLp (fun x ↦ energyIntegrand (a x) ((b - e) x)
       ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Omega))
@@ -948,16 +907,7 @@ theorem UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_forall_eLpNorm
   have hsub := h.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he
     hb_bound hc_bound he_bound hsign hq hsob le_rfl (u := u - v)
     (by rwa [W1p.posPartAbove_zero]) fun φ hφ ↦ by
-      have hint : ∫ x in Omega, W1p.value (u - v) x *
-            ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu =
-          (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) -
-            ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu := by
-        rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u _)
-          (integrable_value_mul_inner_gradient he he_bound v _)]
-        refine integral_congr_ae ?_
-        filter_upwards [W1p.value_sub_ae u v] with x hx
-        rw [hx, Pi.sub_apply, sub_mul]
-      rw [energyFormH1_sub_left hcoeff, hint]
+      rw [energyFormH1_sub_left hcoeff, integral_value_sub_mul_inner_gradient he he_bound]
       linarith [huv φ hφ]
   filter_upwards [hsub, W1p.value_sub_ae u v] with x hx hval
   rw [hval, Pi.sub_apply] at hx

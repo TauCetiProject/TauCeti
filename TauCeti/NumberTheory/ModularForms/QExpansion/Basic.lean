@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.NumberTheory.ModularForms.Basic
+import TauCeti.Topology.LimUnder
 
 /-!
 # The `q`-expansion as a linear map, and uniqueness of coefficients for raw functions
@@ -154,13 +155,10 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
-    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · exact fun x ↦ by simp
-  exact _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
-    simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
-      mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
-      Complex.exp_two_pi_mul_I, one_mul]
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h :=
+  _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+    rw [coe_vadd, add_comm]
+    exact TauCeti.Periodic.periodic_qParam h τ
 
 /-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
 `h`-periodic, read on `ℂ` through `ofComplex`. -/
@@ -217,7 +215,7 @@ theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds
   simp only [cuspFunction]
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
     Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
-  exact congrArg lim (Filter.map_congr hfg)
+  exact Filter.limUnder_congr hfg
 
 /-- A cusp function which agrees off `q = 0` with a function continuous at `0` agrees with it
 near `0`. -/

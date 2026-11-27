@@ -12,7 +12,9 @@ public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 Idempotents of a commutative ring correspond to clopen subsets of its prime spectrum
 (`PrimeSpectrum.isIdempotentElemEquivClopens`), and a ring homomorphism `f : R →+* S` sends the
-clopen set `D(e)` of an idempotent `e` to its preimage `D(f e)` under `Spec S → Spec R`.
+clopen set `D(e)` of an idempotent `e` to its preimage `D(f e)` under `Spec S → Spec R`: the
+idempotent of the preimage of a clopen set is the image of its idempotent
+(`PrimeSpectrum.isIdempotentElemEquivClopens_symm_preimage`).
 Consequently, topological properties of the spectral map control how `f` acts on idempotents:
 
 * if `Spec S → Spec R` is surjective, then `f` is injective on idempotents;
@@ -29,6 +31,28 @@ lifting, and hence henselian pairs.
 -/
 
 public section
+
+namespace PrimeSpectrum
+
+open TopologicalSpace
+
+/-- **Idempotents of preimages.** For a ring homomorphism `f : R →+* S` and a clopen subset `U` of
+`Spec R` with idempotent `e_U`, the idempotent of the clopen preimage of `U` under
+`Spec f : Spec S → Spec R` is `f e_U`. -/
+theorem isIdempotentElemEquivClopens_symm_preimage {R S : Type*} [CommRing R] [CommRing S]
+    (f : R →+* S) (U : Clopens (PrimeSpectrum R)) :
+    isIdempotentElemEquivClopens.symm
+        ⟨comap f ⁻¹' U, U.isClopen.preimage (continuous_comap f)⟩ =
+      ⟨f (isIdempotentElemEquivClopens.symm U).val,
+        (isIdempotentElemEquivClopens.symm U).prop.map f⟩ := by
+  rw [OrderIso.symm_apply_eq]
+  -- Both sets are the preimage of the basic open set of `e_U`, which is `U`.
+  ext x
+  rw [coe_isIdempotentElemEquivClopens_apply, ← comap_basicOpen,
+    basicOpen_isIdempotentElemEquivClopens_symm]
+  simp
+
+end PrimeSpectrum
 
 namespace RingHom
 

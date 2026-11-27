@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
+import TauCeti.Analysis.Real.Sqrt
+import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 
 /-!
 # Extending positive functionals to the unitization
@@ -40,6 +43,14 @@ extension of a tracial state is again a tracial state is
 * `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`: if `τ` is
   faithful, `τ (star a * a) = 0 → a = 0`, and `A` has no two-sided unit, then `τ⁺¹` is faithful
   too.
+* `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_sq_le`: **the approximate unit
+  estimate**: for a positive functional `γ` and a positive contraction `e`,
+  `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`, from the Cauchy–Schwarz inequality for `γ⁺¹`,
+  with the left variant `norm_apply_sub_apply_mul_left_sq_le`, the unsquared forms
+  `norm_apply_sub_apply_mul_le` and `norm_apply_sub_apply_mul_left_le`, and the two-sided
+  variant `norm_apply_sub_apply_mul_mul_le`.
+* `TauCeti.surjOn_pullbackFunctional_inr_stateSpace`: every state of `A` is the restriction of a
+  state of `A⁺¹`.
 
 ## Implementation notes
 
@@ -52,6 +63,9 @@ C⋆-algebra `A⁺¹` has the form `x⋆x`. Faithfulness passes to `τ⁺¹` bec
 for every `c ∈ A` and vanishes. If `λ ≠ 0`, then `e = -λ⁻¹ b` is a right unit of `A`,
 and a right unit of a star algebra is a two-sided unit (`TauCeti.exists_right_identity_iff`).
 Without the hypothesis on units this fails: for `A = ℂ` and `τ = id`, `τ⁺¹` vanishes at `1 - 1_A`.
+
+The approximate unit estimate is the Cauchy–Schwarz inequality for `γ⁺¹` applied to `y` and
+`1 - e`, with `(1 - e)² ≤ 1 - e` for a positive contraction `e`.
 
 ## References
 
@@ -211,9 +225,8 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
   have hl : ∀ c : A, x.fst • c + c * x.snd = 0 := fun c => by
     refine hf _ ?_
     have h := TauCeti.map_star_mul_mul_self_eq_zero τ.unitization (c : Unitization ℂ A) hx
-    have hcx : (c : Unitization ℂ A) * x = ((x.fst • c + c * x.snd : A) : Unitization ℂ A) :=
-      Unitization.ext (by simp) (by simp [add_comm])
-    rwa [hcx, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr] at h
+    rwa [Unitization.inr_mul_eq_inr c x, ← Unitization.inr_star, ← Unitization.inr_mul,
+      unitization_apply_inr] at h
   obtain h0 | h0 := eq_or_ne x.fst 0
   · have hsnd : x.snd = 0 := hf _ <| by
       simpa [unitization_apply, h0] using hx
@@ -223,4 +236,115 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
     have hc : c * x.snd = -(x.fst • c) := eq_neg_of_add_eq_zero_right (hl c)
     simp [mul_smul_comm, hc, h0]
 
+/-- **The approximate unit estimate.** For a positive functional `γ` and a positive contraction
+`e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`. -/
+theorem norm_apply_sub_apply_mul_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (y * e)‖ ^ 2 ≤
+      ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re) * ‖y‖ ^ 2 := by
+  set N := ‖(γ : A →L[ℂ] ℂ)‖
+  set u : Unitization ℂ A := star (y : Unitization ℂ A)
+  set v : Unitization ℂ A := 1 - (e : Unitization ℂ A)
+  have hkey : γ y - γ (y * e) = γ.unitization (star u * v) := by
+    simp only [u, v, star_star, mul_sub, mul_one, ← Unitization.inr_mul, map_sub,
+      unitization_apply_inr]
+  have hcs := PositiveLinearMap.norm_map_star_mul_sq_le γ.unitization u v
+  have h1 : ‖γ.unitization (star u * u)‖ ≤ N * ‖y‖ ^ 2 := by
+    simp only [u, star_star, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr]
+    calc ‖γ (y * star y)‖ ≤ N * ‖y * star y‖ := (γ : A →L[ℂ] ℂ).le_opNorm _
+      _ = N * ‖y‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
+  have hval : γ.unitization (star v * v) = N - γ e - γ e + γ (e * e) := by
+    have hv : star v * v =
+        1 - (e : Unitization ℂ A) - e + ((e * e : A) : Unitization ℂ A) := by
+      simp only [v, star_sub, star_one, ← Unitization.inr_star, he.star_eq, Unitization.inr_mul]
+      noncomm_ring
+    rw [hv, map_add, map_sub, map_sub, unitization_apply_one, unitization_apply_inr,
+      unitization_apply_inr]
+  have hnn : 0 ≤ γ.unitization (star v * v) := γ.unitization.map_nonneg (star_mul_self_nonneg v)
+  have hee : (γ (e * e)).re ≤ (γ e).re :=
+    (Complex.le_def.mp (γ.mono (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he he1))).1
+  have h2 : ‖γ.unitization (star v * v)‖ ≤ N - (γ e).re := by
+    rw [← Complex.re_eq_norm.mpr hnn, hval]
+    simp only [Complex.add_re, Complex.sub_re, Complex.ofReal_re]
+    linarith
+  rw [hkey]
+  calc ‖γ.unitization (star u * v)‖ ^ 2
+      ≤ ‖γ.unitization (star u * u)‖ * ‖γ.unitization (star v * v)‖ := hcs
+    _ ≤ (N * ‖y‖ ^ 2) * (N - (γ e).re) :=
+      mul_le_mul h1 h2 (norm_nonneg _) (by positivity)
+    _ = N * (N - (γ e).re) * ‖y‖ ^ 2 := by ring
+
+/-- The left-hand version of `norm_apply_sub_apply_mul_sq_le`:
+`‖γ y - γ (e y)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_left_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (e * y)‖ ^ 2 ≤
+      ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re) * ‖y‖ ^ 2 := by
+  have h := norm_apply_sub_apply_mul_sq_le γ he he1 (star y)
+  have hs : star y * e = star (e * y) := by rw [star_mul, he.star_eq]
+  rwa [hs, map_star, map_star, ← star_sub, norm_star, norm_star] at h
+
+/-- The unsquared form of `norm_apply_sub_apply_mul_sq_le`:
+`‖γ y - γ (y e)‖ ≤ √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (y * e)‖ ≤
+      Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ :=
+  (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_sq_le γ he he1 y)).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
+
+/-- The unsquared form of `norm_apply_sub_apply_mul_left_sq_le`:
+`‖γ y - γ (e y)‖ ≤ √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_left_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (e * y)‖ ≤
+      Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ :=
+  (Real.le_sqrt_of_sq_le (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)).trans_eq
+    (by rw [Real.sqrt_mul_sq, abs_norm])
+
+/-- The two-sided version of `norm_apply_sub_apply_mul_sq_le`:
+`‖γ y - γ (e y e)‖ ≤ 2 √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (e * y * e)‖ ≤
+      2 * Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ := by
+  set c := ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)
+  have h1 := norm_apply_sub_apply_mul_left_le γ he he1 y
+  have h2 := norm_apply_sub_apply_mul_le γ he he1 (e * y)
+  have hey : ‖e * y‖ ≤ ‖y‖ := (norm_mul_le e y).trans (mul_le_of_le_one_left (norm_nonneg y) he1)
+  calc ‖γ y - γ (e * y * e)‖ ≤ ‖γ y - γ (e * y)‖ + ‖γ (e * y) - γ (e * y * e)‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ Real.sqrt c * ‖y‖ + Real.sqrt c * ‖y‖ :=
+        add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left hey (Real.sqrt_nonneg c)))
+    _ = 2 * Real.sqrt c * ‖y‖ := by ring
+
 end PositiveContinuousLinearMap
+
+namespace TauCeti
+
+open Set WeakDual
+
+section Unitization
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- Every state `φ` of `A` is the restriction of a state of `Unitization ℂ A`, namely
+`λ + a ↦ λ + φ a`. -/
+theorem surjOn_pullbackFunctional_inr_stateSpace :
+    SurjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
+      (stateSpace (Unitization ℂ A)) (stateSpace A) := by
+  intro φ hφ
+  let τ : A →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  refine ⟨StrongDual.toWeakDual (τ.unitization : Unitization ℂ A →L[ℂ] ℂ), ?_,
+    DFunLike.ext _ _ fun a => ?_⟩
+  · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
+      PositiveContinuousLinearMap.norm_unitization]
+    exact norm_toStrongDual_of_mem_stateSpace hφ
+  · simp only [pullbackFunctional_apply, Unitization.inrNonUnitalStarAlgHom_apply,
+      StrongDual.toWeakDual_apply]
+    exact (τ.unitization_apply_inr a).trans
+      (PositiveContinuousLinearMap.mk₀_apply (R := ℂ) _ _ a)
+
+end Unitization
+
+end TauCeti

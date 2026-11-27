@@ -215,10 +215,9 @@ lemma orderOfVanishingAt_slash (g : ℍ → ℂ) {γ : GL (Fin 2) ℝ}
   have hcongr : ((g ∣[k] γ) ∘ ofComplex) =ᶠ[nhds (z : ℂ)]
       (fun w : ℂ ↦ ((|(γ.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * denom γ w ^ (-k)) *
         (fun w : ℂ ↦ g (γ • ofComplex w)) := by
-    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
-    rw [Function.comp_apply, ModularForm.slash_apply_of_det_pos k hdet g (ofComplex w),
-      Pi.mul_apply, ofComplex_apply_of_im_pos hw]
-    ring
+    refine (ModularForm.slash_comp_ofComplex_eventuallyEq hdet k g z).trans (.of_eq ?_)
+    funext w
+    simp [ofComplex_apply]
   -- `denom` is unfolded only here, where `fun_prop` needs to see the linear form in `w`.
   have h_an : AnalyticAt ℂ (fun w : ℂ ↦ ((|(γ.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) *
       denom γ w ^ (-k)) (z : ℂ) :=

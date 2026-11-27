@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.Divisors
 public import TauCeti.NumberTheory.ModularForms.Newforms.DirectSum
 public import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
 
+import TauCeti.NumberTheory.ModularForms.SturmBound
+
 /-!
 # Dimensions of newspaces by divisor-count Möbius inversion
 
@@ -47,11 +49,16 @@ dim S_k(N, 1)ⁿᵉʷ  = ∑_{M ∣ N} (μ * μ)(N / M) · dim S_k(Γ₀(M)).
   dimension formula for `S_k(N, χ)ⁿᵉʷ`.
 * `TauCeti.natCast_finrank_cuspFormsNew_inf_cuspFormCharSpace_one_eq_sum_divisors`: the
   Möbius-inverted dimension formula for the trivial-nebentypus (`Γ₀(N)`) newspace.
+* `TauCeti.newDimension`: the dimension `g⁺(N)` of the weight-two trivial-nebentypus newspace,
+  and `TauCeti.newDimension_eq_zero_of_index_lt_six`: it vanishes when `[SL(2, ℤ) : Γ₀(N)] < 6`,
+  that is at the levels `1`, `2` and `3`.
 
 ## References
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
   Theorem 5.8.3.
+* G. Martin, *Dimensions of the spaces of cuspforms and newforms on `Γ₀(N)` and `Γ₁(N)`*,
+  J. Number Theory 112 (2005), 298–331, for the notation `g⁺(N)`.
 -/
 
 public section
@@ -258,5 +265,36 @@ theorem natCast_finrank_cuspFormsNew_inf_cuspFormCharSpace_one_eq_sum_divisors {
     exact one_dvd M
   rw [dite_eq_left hdvd, DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom,
     (cuspFormCharSpaceOneEquiv M k).finrank_eq]
+
+/-! ### The weight-two trivial-nebentypus newspace dimension -/
+
+/-- **The dimension `g⁺(N)` of the weight-two newspace on `Γ₀(N)`**: the complex dimension of the
+intersection of the `Γ₁(N)` newspace `S₂(Γ₁(N))ⁿᵉʷ` with the trivial-nebentypus eigenspace. It is
+the number of weight-two newforms of level `N` with trivial character. -/
+noncomputable def newDimension (N : ℕ) [NeZero N] : ℕ :=
+  Module.finrank ℂ ↥(cuspFormsNew N 2 ⊓ cuspFormCharSpace 2 (1 : (ZMod N)ˣ →* ℂˣ))
+
+theorem newDimension_def (N : ℕ) [NeZero N] :
+    newDimension N =
+      Module.finrank ℂ ↥(cuspFormsNew N 2 ⊓ cuspFormCharSpace 2 (1 : (ZMod N)ˣ →* ℂˣ)) :=
+  (rfl)
+
+/-- **No weight-two newforms at levels of index below six.** If `[SL(2, ℤ) : Γ₀(N)] < 6`, already
+the whole space `S₂(Γ₀(N))` vanishes by the Sturm bound, so `g⁺(N) = 0`. This covers the levels
+`N = 1, 2, 3`, of indices `1, 3, 4`. -/
+theorem newDimension_eq_zero_of_index_lt_six {N : ℕ} [NeZero N] (h : (Gamma0 N).index < 6) :
+    newDimension N = 0 := by
+  rw [newDimension_def, Submodule.finrank_eq_zero, eq_bot_iff]
+  intro f hf
+  have hf0 : (⟨f, hf.2⟩ : cuspFormCharSpace 2 (1 : (ZMod N)ˣ →* ℂˣ)) = 0 :=
+    (cuspFormCharSpaceOneEquiv N 2).injective <| by
+      rw [_root_.map_zero]
+      exact CuspForm.eq_zero_of_mul_index_lt_twelve (by omega) _
+  exact (Submodule.mem_bot ℂ).mpr (congrArg Subtype.val hf0)
+
+/-- There are no weight-two newforms of level one: `g⁺(1) = 0`. -/
+@[simp]
+theorem newDimension_one : newDimension 1 = 0 :=
+  newDimension_eq_zero_of_index_lt_six (by simp)
 
 end TauCeti

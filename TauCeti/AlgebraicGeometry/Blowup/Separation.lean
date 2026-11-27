@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Blowup.Restriction
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
 
 /-!
 # Separating closed subsets by a blowup
@@ -186,10 +187,8 @@ theorem exists_blowup_separating (U : X.Opens) [IsLocallyNoetherian X]
         closure (U.ι '' (Z : Set U.toScheme)) \ (I ⊔ J).support := by
     rintro _ ⟨z, hz, rfl⟩
     exact ⟨subset_closure ⟨z, hz, rfl⟩, Set.disjoint_left.mp hU z.property⟩
-  refine ⟨I ⊔ J, (I ⊔ J).isProper_blowupToBase (fun V ↦ ?_), hU,
+  refine ⟨I ⊔ J, (I ⊔ J).isProper_blowupToBase (I ⊔ J).fg_ideal, hU,
     (I ⊔ J).isIso_blowupToBase_restrict_of_disjoint_support hU, ?_⟩
-  · have := IsLocallyNoetherian.component_noetherian V
-    exact IsNoetherian.noetherian _
   · have hsep := I.disjoint_closure_preimage_support_sdiff_blowup J
     rw [hsI, hsJ] at hsep
     exact hsep.mono (closure_mono (Set.preimage_mono (hsub Z₁)))

@@ -69,6 +69,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `MulAction.finiteIndex_stabilizer`: the stabilizer of a point of a finite type has finite
+  index.
 * `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
@@ -85,8 +87,9 @@ normality of it is equivalent to freeness of the action of the image.
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
-* `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
-  translation on its nonempty proper finite subsets.
+* `TauCeti.stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive`: a transitive group of
+  prime order acts freely on the nonempty proper finite subsets, with
+  `TauCeti.stabilizer_finset_eq_bot_of_prime_card` the case of translation on the group itself.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
@@ -102,6 +105,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
   `TauCeti.MulAction.orbitRelQuotientCongr` induced by an equivariant equivalence preserves the
   stabiliser orders.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv`: so does its instance
+  `TauCeti.MulAction.orbitRelQuotientSMulEquiv`, translation between the orbits of conjugate
+  subgroups.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm`: the splitting
   `TauCeti.MulAction.orbitRelQuotientSumEquiv` of the orbit space of an action on `α ⊕ β`
   preserves the stabiliser orders.
@@ -365,6 +371,26 @@ theorem cardStabilizerOnOrbit_le_card [Finite G] (q : MulAction.orbitRel.Quotien
     cardStabilizerOnOrbit q ≤ Nat.card G :=
   Nat.le_of_dvd Nat.card_pos (cardStabilizerOnOrbit_dvd_card q)
 
+/-- **Stabilisers are finite in a subgroup of finite index exactly when they are finite in the
+larger group.** For `V ≤ U` of finite index, the stabiliser of `x` in `V` is the intersection of
+its stabiliser in `U` with `V`, which has finite index in it. Finiteness is stated as
+`Nat.card ≠ 0`. -/
+theorem natCard_stabilizer_ne_zero_iff_of_le {V U : Subgroup G} (hle : V ≤ U)
+    [V.IsFiniteRelIndex U] (x : α) :
+    Nat.card (MulAction.stabilizer V x) ≠ 0 ↔ Nat.card (MulAction.stabilizer U x) ≠ 0 := by
+  set H : Subgroup U := V.subgroupOf U
+  -- `H ⊓ stabilizer U x` is the stabiliser of `x` in `V`, read inside `U`
+  have he : (H ⊓ MulAction.stabilizer U x : Subgroup U) ≃ MulAction.stabilizer V x :=
+    { toFun u := ⟨⟨u.val.val, Subgroup.mem_subgroupOf.mp (Subgroup.mem_inf.mp u.property).1⟩,
+        (Subgroup.mem_inf.mp u.property).2⟩
+      invFun v := ⟨⟨v.val.val, hle v.val.property⟩, Subgroup.mem_inf.mpr
+        ⟨Subgroup.mem_subgroupOf.mpr v.val.property, v.property⟩⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  have := Subgroup.isFiniteRelIndex_of_finiteIndex (H := H) (K := MulAction.stabilizer U x)
+  rw [← Subgroup.relIndex_mul_card (H := H) (K := MulAction.stabilizer U x), Nat.card_congr he]
+  exact ⟨mul_ne_zero Subgroup.relIndex_ne_zero, right_ne_zero_of_mul⟩
+
 section Congr
 
 variable {H β : Type*} [Group H] [MulAction H β]
@@ -391,6 +417,16 @@ theorem cardStabilizerOnOrbit_orbitRelQuotientCongr (φ : G ≃* H) (e : α ≃ 
     cardStabilizerOnOrbit_mk] using card_stabilizer_congr φ a (he · a) fun _ h ↦ e.injective h
 
 end Congr
+
+open scoped Pointwise in
+/-- `MulAction.orbitRelQuotientSMulEquiv g hHK` preserves the stabiliser orders of the orbits. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) (q : MulAction.orbitRel.Quotient H α) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientSMulEquiv g hHK q) =
+      cardStabilizerOnOrbit q := by
+  rw [MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr]
+  exact cardStabilizerOnOrbit_orbitRelQuotientCongr _ _ _ q
 
 section Sum
 
@@ -557,20 +593,30 @@ section PrimeCard
 
 open scoped Pointwise
 
-/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
-prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
-trivial. -/
-theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
-    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+/-- **A transitive group of prime order acts freely on the nonempty proper subsets.** If `G` has
+prime order and acts transitively on a finite type `α`, the setwise stabiliser of a nonempty
+finset `S ≠ univ` of `α` is trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive {G α : Type*} [Group G]
+    [MulAction G α] [MulAction.IsPretransitive G α] [Fintype α] [DecidableEq α]
+    (hG : (Nat.card G).Prime) {S : Finset α} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
     MulAction.stabilizer G S = ⊥ := by
   have := Fact.mk hG
   refine (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right fun htop ↦ hS ?_
   obtain ⟨a, ha⟩ := hne
   refine Finset.eq_univ_of_forall fun b ↦ ?_
-  have hb : b * a⁻¹ ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
-  rw [MulAction.mem_stabilizer_iff] at hb
-  have hmem := Finset.smul_mem_smul_finset (a := b * a⁻¹) ha
-  rwa [hb, smul_eq_mul, inv_mul_cancel_right] at hmem
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G a b
+  have hg : g ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
+  rw [MulAction.mem_stabilizer_iff] at hg
+  rw [← hg]
+  exact Finset.smul_mem_smul_finset ha
+
+/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
+prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
+trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
+    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+    MulAction.stabilizer G S = ⊥ :=
+  stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive hG hne hS
 
 end PrimeCard
 
@@ -628,5 +674,18 @@ theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
     infer_instance
 
 end MonoidHom
+
+namespace MulAction
+
+open scoped Pointwise
+
+/-- The stabilizer of any point under a group action on a finite type has finite index. -/
+theorem finiteIndex_stabilizer {G X : Type*} [Group G] [MulAction G X] [Finite X] (x : X) :
+    (stabilizer G x).FiniteIndex := by
+  have : Finite (G ⧸ stabilizer G x) :=
+    Finite.of_equiv (orbit G x) (orbitEquivQuotientStabilizer G x)
+  exact Subgroup.finiteIndex_of_finite_quotient
+
+end MulAction
 
 end

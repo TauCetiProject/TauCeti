@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fredholm.Basic
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
 import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
+import TauCeti.Topology.Algebra.Module.Complement
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -70,6 +71,32 @@ theorem IsInvertible.prod_coprod_of_subsingleton {T : E →L[𝕜] F} {D₂ : Λ
   simp [Subsingleton.elim l 0]
 
 end Subsingleton
+
+section Dense
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F]
+
+/-- **Stabilizers inside a dense subspace.** A Fredholm operator `T` has a finite-dimensional
+stabilizer `S` inside any dense subspace `D` of its target: `S` is a topological complement of the
+range of `T`, so `(x, σ) ↦ T x + σ` is onto, with kernel `ker T × {0}`. -/
+theorem IsFredholm.exists_le_isTopCompl_range_of_dense {T : E →L[𝕜] F} (hT : IsFredholm T)
+    {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S ≤ D, FiniteDimensional 𝕜 S ∧ IsTopCompl T.range S ∧
+      Surjective (T.coprod S.subtypeL) ∧ (T.coprod S.subtypeL).ker = T.ker.prod ⊥ := by
+  have := hT.finite_coker
+  obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT.isClosed_range hD
+  refine ⟨S, hSD, (T.range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional, hS, ?_, ?_⟩
+  · apply LinearMap.range_eq_top.mp
+    rw [range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
+    exact hS.isCompl.sup_eq_top
+  · rw [ker_coprod_of_disjoint_range (by
+      rw [Submodule.toLinearMap_subtypeL, Submodule.range_subtype]; exact hS.isCompl.disjoint),
+      Submodule.toLinearMap_subtypeL, Submodule.ker_subtype]
+
+end Dense
 
 variable {𝕜 E F S : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -161,6 +188,22 @@ theorem IsInvertible.prod_coprod_comp {Λ Λ' G G' : Type*} [NormedAddCommGroup 
 variable [CompleteSpace E] [CompleteSpace F]
   {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 
+/-- **Stabilizing a Fredholm operator inside a dense subspace.** A Fredholm operator `T` between
+Banach spaces has a stabilizer `S` inside any dense subspace `D` of the target, for instance a
+space of smooth compactly supported sections: a finite-dimensional topological complement of the
+range of `T`, for which the stabilized operator `(x, σ) ↦ T x + σ` has a bounded linear right
+inverse `Q`. -/
+theorem IsFredholm.exists_le_isTopCompl_rightInverse_coprod_of_dense {T : E →L[𝕜] F}
+    (hT : IsFredholm T) {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S : Submodule 𝕜 F, S ≤ D ∧ IsTopCompl S T.range ∧ FiniteDimensional 𝕜 S ∧
+      ∃ Q : F →L[𝕜] E × S, (T.coprod S.subtypeL).comp Q = ContinuousLinearMap.id 𝕜 F := by
+  obtain ⟨S, hSD, _, hS, hsurj, -⟩ := hT.exists_le_isTopCompl_range_of_dense hD
+  have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
+  obtain ⟨Q, hQ⟩ := ((T.coprod S.subtypeL).exists_rightInverse_iff_closedComplemented_ker
+    ((T.coprod S.subtypeL).isQuotientMap hsurj)).2
+    (hT.coprod_of_finiteDimensional S.subtypeL).closedComplemented_ker
+  exact ⟨S, hSD, hS.symm, inferInstance, Q, ContinuousLinearMap.ext hQ⟩
+
 /-- A family continuous and Fredholm at one point admits a fixed finite-dimensional target
 stabilizer and fixed kernel coordinate on a neighbourhood. The stabilizer can be chosen inside any
 dense subspace `D` of the target, for instance a space of smooth compactly supported sections, and
@@ -177,16 +220,10 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
       ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
           ∀ x ∈ U, (((T x).coprod S.subtypeL).prod q).IsInvertible := by
-  have := hT₀.finite_coker
-  obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT₀.isClosed_range hD
-  have : FiniteDimensional 𝕜 S :=
-    ((T x₀).range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
+  obtain ⟨S, hSD, hS, _, Q, hQ⟩ := hT₀.exists_le_isTopCompl_rightInverse_coprod_of_dense hD
   have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
   let A : X → (E × S) →L[𝕜] F := fun x ↦ (T x).coprod S.subtypeL
-  have hsurj : Surjective (A x₀) := by
-    apply LinearMap.range_eq_top.mp
-    rw [range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-    exact hS.isCompl.sup_eq_top
+  have hsurj : Surjective (A x₀) := fun y ↦ ⟨Q y, DFunLike.congr_fun hQ y⟩
   have hfred : IsFredholm (A x₀) := hT₀.coprod_of_finiteDimensional S.subtypeL
   let q := Classical.choose hfred.closedComplemented_ker
   have hinv : ((A x₀).prod q).IsInvertible := by
@@ -195,7 +232,7 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
     exact coe_implicitCoordEquiv _ _ _
   have hA : ContinuousAt A x₀ := hT.continuousLinearMapCoprod continuousAt_const
   obtain ⟨U, hU, hx₀, hUinv⟩ := exists_isOpen_isInvertible_prod hA hinv
-  exact ⟨S, hSD, hS.symm, inferInstance, q, U, hU, hx₀, hUinv⟩
+  exact ⟨S, hSD, hS, inferInstance, q, U, hU, hx₀, hUinv⟩
 
 /-- **Kernel charts with standard models.** A Fredholm operator between Banach spaces has a finite
 stabilization by `𝕜ⁿ` with a kernel coordinate in `𝕜ᵐ`: some `D₂ : 𝕜ⁿ →L[𝕜] F` and

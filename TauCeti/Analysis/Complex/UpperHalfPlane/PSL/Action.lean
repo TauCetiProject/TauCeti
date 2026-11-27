@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind the projective faithfulness
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # `PSL(2)` actions on the upper half-plane
@@ -31,6 +32,10 @@ Mathlib's `GL(2, ℝ)`-invariance).
   to `ℝ`, descending the `SL(2, R)`-action along the central quotient, with the
   representative compatibility `pslMk_smul` and its pointwise-image form
   `Matrix.SpecialLinearGroup.pslMk_smul_set`.
+* `Subgroup.exists_mem_forall_smul_eq_of_le_map` and
+  `Subgroup.exists_smul_mem_iff_mem_smul_set_of_map_eq` — a subgroup of `PSL(2, R)` lying in the
+  image of `Γ' ≤ SL(2, R)` acts through lifts in `Γ'`, so its orbits meet `W` exactly over the
+  saturation `Γ' • W`.
 * `FaithfulSMul` instances for `PSL(2, ℤ)` and `PSL(2, ℝ)` on `ℍ`, restricting Mathlib's
   faithful `PGL(2, ℝ)`-action along the injective `toPGL` and `psl2zToPSL2R`.
 * `SMulInvariantMeasure` instances for `SL(2, R)` and `PSL(2, R)` (any coefficients
@@ -127,6 +132,24 @@ the pointwise-image counterpart of `UpperHalfPlane.pslMk_smul`. -/
 theorem _root_.Matrix.SpecialLinearGroup.pslMk_smul_set (g : SL(2, R)) (S : Set ℍ) :
     (↑g : PSL(2, R)) • S = g • S :=
   Set.image_congr fun τ _ ↦ pslMk_smul g τ
+
+/-- If `Γ ≤ PSL(2, R)` lies in the image of `Γ' ≤ SL(2, R)`, then every element of `Γ` acts on `ℍ`
+as one of its lifts in `Γ'`. -/
+theorem _root_.Subgroup.exists_mem_forall_smul_eq_of_le_map {Γ : Subgroup PSL(2, R)}
+    {Γ' : Subgroup SL(2, R)} (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (Subgroup.center SL(2, R))))
+    (γ : Γ) : ∃ h ∈ Γ', ∀ τ : ℍ, h • τ = γ • τ := by
+  obtain ⟨h, hh, hhγ⟩ := Subgroup.mem_map.mp (hΓ γ.property)
+  exact ⟨h, hh, fun τ ↦ by rw [← pslMk_smul]; exact congrArg (· • τ) hhγ⟩
+
+/-- If `Γ ≤ PSL(2, R)` is the image of `Γ' ≤ SL(2, R)`, then a point of `ℍ` is moved into `W` by an
+element of `Γ` exactly when it lies in the saturation `Γ' • W`. -/
+theorem _root_.Subgroup.exists_smul_mem_iff_mem_smul_set_of_map_eq {Γ : Subgroup PSL(2, R)}
+    {Γ' : Subgroup SL(2, R)} (hΓ : Γ'.map (QuotientGroup.mk' (Subgroup.center SL(2, R))) = Γ)
+    {W : Set ℍ} {τ : ℍ} : (∃ γ : Γ, γ • τ ∈ W) ↔ τ ∈ (Γ' : Set SL(2, R)) • W := by
+  rw [Subgroup.mem_smul_set_iff_exists_smul_mem]
+  refine ⟨fun ⟨γ, hγ⟩ ↦ ?_, fun ⟨h, hh, hhτ⟩ ↦ ⟨⟨h, hΓ ▸ Subgroup.mem_map_of_mem _ hh⟩, hhτ⟩⟩
+  obtain ⟨h, hh, hhγ⟩ := Subgroup.exists_mem_forall_smul_eq_of_le_map hΓ.ge γ
+  exact ⟨h, hh, (hhγ τ).symm ▸ hγ⟩
 
 noncomputable instance : MeasurableConstSMul PSL(2, R) ℍ where
   measurable_const_smul g := by

@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Polygon.Simple
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.Convex.Between
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Normed.Module.FilledHull
 
 /-!
@@ -35,6 +37,7 @@ which the reflection of the billiard flow in the side is defined.
 * `TauCeti.PolygonalTable.vertexSet`: the set of vertices of the table.
 * `TauCeti.PolygonalTable.Side`, `TauCeti.PolygonalTable.side`: the sides of the table.
 * `TauCeti.PolygonalTable.sideInterior`: the relative interior of a side.
+* `TauCeti.PolygonalTable.Side.direction`: the unit direction of a side.
 * `TauCeti.PolygonalTable.ofSimplePolygon`: the table without holes bounded by a simple polygon.
 * `TauCeti.PolygonalTable.ofSimplePolygonSideEquiv`: the sides of `ofSimplePolygon p` are indexed
   by the edges of `p`.
@@ -44,8 +47,8 @@ which the reflection of the billiard flow in the side is defined.
 * `TauCeti.PolygonalTable.frontier_eq_iUnion_side`: the frontier of the table is the union of its
   sides.
 * `TauCeti.PolygonalTable.finite_vertexSet`: a table has finitely many vertices.
-* `TauCeti.PolygonalTable.disjoint_sideInterior`: the relative interiors of distinct sides are
-  disjoint.
+* `TauCeti.PolygonalTable.disjoint_sideInterior`, `TauCeti.PolygonalTable.eq_of_mem_sideInterior`:
+  the relative interiors of distinct sides are disjoint.
 * `TauCeti.PolygonalTable.sideInterior_eq_side_sdiff_vertexSet`: the relative interior of a side
   is the side minus the vertices.
 * `TauCeti.PolygonalTable.existsUnique_mem_sideInterior_iff`: a point lies in the relative interior
@@ -183,6 +186,19 @@ theorem Side.finish_notMem_sideInterior (s : T.Side) : s.finish ∉ T.sideInteri
   rw [sideInterior_eq_openSegment, right_mem_openSegment_iff]
   exact s.start_ne_finish
 
+/-- The unit direction `exp(i arg(b − a))` of a side from its start `a` to its finish `b`. -/
+noncomputable def Side.direction (s : T.Side) : Circle :=
+  Circle.exp (Complex.arg (s.finish - s.start))
+
+theorem Side.direction_def (s : T.Side) :
+    s.direction = Circle.exp (Complex.arg (s.finish - s.start)) :=
+  (rfl)
+
+/-- The unit direction of a side is the side vector `b − a` divided by its length. -/
+theorem Side.coe_direction (s : T.Side) :
+    (s.direction : ℂ) = (s.finish - s.start) / ‖s.finish - s.start‖ := by
+  rw [direction_def, Circle.coe_exp, Complex.exp_arg_mul_I (sub_ne_zero.2 s.start_ne_finish.symm)]
+
 variable (T)
 
 /-- A table is closed. -/
@@ -267,6 +283,11 @@ theorem disjoint_sideInterior {s t : T.Side} (hst : s ≠ t) :
   · exact Set.disjoint_left.1 (T.pairwise_disjoint_boundary hii)
       (mem_iUnion.2 ⟨j, hs⟩) (mem_iUnion.2 ⟨j', ht⟩)
 
+/-- A point lies in the relative interior of at most one side of a table. -/
+theorem eq_of_mem_sideInterior {x : ℂ} {s t : T.Side} (hs : x ∈ T.sideInterior s)
+    (ht : x ∈ T.sideInterior t) : s = t :=
+  by_contra fun hst => Set.disjoint_left.1 (T.disjoint_sideInterior hst) hs ht
+
 /-- The relative interior of a side contains no vertex of the table. -/
 theorem disjoint_sideInterior_vertexSet (s : T.Side) : Disjoint (T.sideInterior s) T.vertexSet := by
   obtain ⟨i, j⟩ := s
@@ -308,8 +329,7 @@ theorem existsUnique_mem_sideInterior {x : ℂ} (hx : x ∈ frontier T.carrier)
     (hxv : x ∉ T.vertexSet) : ∃! s : T.Side, x ∈ T.sideInterior s := by
   have hx' : x ∈ ⋃ s, T.sideInterior s := T.iUnion_sideInterior ▸ ⟨hx, hxv⟩
   obtain ⟨s, hs⟩ := mem_iUnion.1 hx'
-  exact ⟨s, hs, fun t ht => by_contra fun hts =>
-    Set.disjoint_left.1 (T.disjoint_sideInterior hts) ht hs⟩
+  exact ⟨s, hs, fun t ht => T.eq_of_mem_sideInterior ht hs⟩
 
 /-- **A point lies in the relative interior of exactly one side of a table if and only if it lies
 in the frontier of the table off its vertices.** -/

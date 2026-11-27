@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Sobolev.Poincare.TransverseBoundary
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Measure.Haar.Prod
@@ -34,9 +35,9 @@ Unlike the cylinder, the strip has a boundary, so a section cannot be cut off ne
 * **Interior.** A smooth cutoff `χ` equal to `1` on `[-T, T] × [δ, 1 - δ]` and supported in a
   bounded subset of the open strip turns a test section `ξ` into a `C¹` function `χ ξ` on the
   plane, supported in a fixed bounded set, whose value and derivative are bounded in `L²(ℝ²)` by
-  the `W^{1,2}` norm of `ξ` on the strip (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`). These
-  form a totally bounded family by the Fréchet–Kolmogorov criterion, in the form
-  `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`.
+  the `W^{1,2}` norm of `ξ` on the strip (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`).
+  These form a totally bounded family by the Fréchet–Kolmogorov criterion, in the form
+  `TauCeti.totallyBounded_setOf_ae_eq_smul`.
 * **Boundary layers.** On every segment `{s} × [0, 1]` the squared norm of `ξ` is at most
   `2 ∫₀¹ (‖ξ‖² + ‖∂t ξ‖²)`, by the fundamental theorem of calculus
   (`TauCeti.ofReal_mul_eNorm_sq_le_lintegral_eNorm_sq_add_lintegral_eNorm_deriv_sq`). Integrating
@@ -44,8 +45,10 @@ Unlike the cylinder, the strip has a boundary, so a section cannot be cut off ne
   squared `W^{1,2}` norm of `ξ`, which is small when `L` is the union of the two layers of
   width `δ`.
 
-Hence the restricted values of the unit ball lie within any `ε > 0` of a totally bounded set, and
-are totally bounded. No boundary condition is used, so the theorem holds for every `F₀` and `F₁`.
+Hence the restricted values of the jets of norm less than `1` lie within any `ε > 0` of a totally
+bounded set, and these jets are dense in `H1`, so the restricted value is compact
+(`isCompactOperator_of_denseRange_of_forall_exists_dist_le`). No boundary condition is used, so the
+theorem holds for every `F₀` and `F₁`.
 
 ## Main results
 
@@ -144,9 +147,10 @@ private theorem exists_cutoff (T : ℝ) {δ : ℝ} (hδ : 0 < δ) : ∃ (χ : �
   refine ⟨χ, C + 2, fun z hz ↦ (hχ1 z hz).self_of_nhds, hχ01, hχ.continuous,
     fun z hz ↦ prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self (hχU (subset_tsupport χ hz)),
     fun ξ hξ ↦ ⟨(hχ.of_le (by simp)).smul hξ, ?_,
-      eLpNorm_fderiv_smul_le (hχ.of_le (by simp))
+      eLpNorm_fderiv_smul_le_of_tsupport_subset (hχ.of_le (by simp))
         (fun z ↦ abs_le.2 ⟨by linarith [(hχ01 z).1], (hχ01 z).2⟩) hC
-        (MeasurableSet.univ.prod measurableSet_Icc) hχP hξ⟩⟩
+        (MeasurableSet.univ.prod measurableSet_Icc) hχP hξ (norm_le_norm_jet ξ)
+        (norm_fderiv_le_two_mul_norm_jet ξ) 2⟩⟩
   have hf : Continuous fun z ↦ χ z • ξ z := hχ.continuous.smul hξ.continuous
   have hsub : Function.support (fun z ↦ χ z • ξ z) ⊆ univ ×ˢ Icc 0 1 := fun z hz ↦
     hχP (subset_tsupport χ (left_ne_zero_of_smul hz))
@@ -156,28 +160,6 @@ private theorem exists_cutoff (T : ℝ) {δ : ℝ} (hδ : 0 < δ) : ∃ (χ : �
   exact (mul_le_of_le_one_left (norm_nonneg _) (hχ01 z).2).trans (norm_le_norm_jet ξ z)
 
 /-! ### Rellich's theorem -/
-
-/-- The cut-off test sections of jet norm at most `1` form a totally bounded subset of
-`L²(ℝ × ℝ, V)`, by the Fréchet–Kolmogorov criterion. -/
-private theorem totallyBounded_setOf_smul [FiniteDimensional ℝ V] (F₀ F₁ : Submodule ℝ V)
-    {χ : ℝ × ℝ → ℝ} {A : ℝ} {B : Set (ℝ × ℝ)} (hB : Bornology.IsBounded B)
-    (hχB : ∀ z, χ z ≠ 0 → z ∈ B)
-    (hest : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ 1 ξ → ContDiff ℝ 1 (fun z ↦ χ z • ξ z) ∧
-      eLpNorm (fun z ↦ χ z • ξ z) 2 volume ≤ eLpNorm (jet ξ) 2 stripMeasure ∧
-      eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) 2 volume ≤
-        ENNReal.ofReal A * eLpNorm (jet ξ) 2 stripMeasure) :
-    TotallyBounded {f : Lp V 2 (volume : Measure (ℝ × ℝ)) | ∃ ξ ∈ testSection F₀ F₁,
-      eLpNorm (jet ξ) 2 stripMeasure ≤ 1 ∧ f =ᵐ[volume] fun z ↦ χ z • ξ z} := by
-  refine totallyBounded_of_contDiff_of_eLpNorm_fderiv_le (p := 2) (by norm_num) hB
-    (M := 1 ⊔ ENNReal.ofReal A) (by finiteness) ?_
-  rintro f ⟨ξ, hξ, hξ1, hf⟩
-  have h := hest ξ (contDiff_one_of_mem_testSection hξ)
-  refine ⟨fun z ↦ χ z • ξ z, h.1, fun z hz ↦ ?_, le_sup_of_le_left (h.2.1.trans hξ1),
-    le_sup_of_le_right (h.2.2.trans ?_), hf⟩
-  · by_contra h'
-    exact hz (hχB z (left_ne_zero_of_smul h'))
-  · calc ENNReal.ofReal A * eLpNorm (jet ξ) 2 stripMeasure ≤ ENNReal.ofReal A * 1 := by gcongr
-      _ = ENNReal.ofReal A := mul_one _
 
 /-- **Cutting off away from the boundary.** If `χ` takes values in `[0, 1]` and equals `1` on
 `[-T, T] × [δ, 1 - δ]`, then on `[-T, T] × [0, 1]` the map `ξ - χ ξ` lives on the two boundary
@@ -238,14 +220,14 @@ private theorem eLpNorm_sub_smul_sq_le {χ : ℝ × ℝ → ℝ} {T δ : ℝ} (h
 its cut-off by `ξ - χ ξ`. -/
 private theorem restrictValue_sub_ae_eq {F₀ F₁ : Submodule ℝ V} {T : ℝ} {χ : ℝ × ℝ → ℝ}
     (ξ : testSection F₀ F₁) (hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume) :
-    (restrictValue T (jetLp (testSection F₀ F₁) ξ) -
+    (restrictValue T (jetLp 2 (testSection F₀ F₁) ξ) -
       (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 (Icc (-T) T ×ˢ Icc 0 1)).comp
         (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1)) (hmem.toLp _) : Lp V 2 _)
       =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)]
       fun z ↦ (ξ : ℝ × ℝ → V) z - χ z • (ξ : ℝ × ℝ → V) z := by
   set rect : Set (ℝ × ℝ) := Icc (-T) T ×ˢ Icc 0 1
-  have h₂ : (jetLp (testSection F₀ F₁) ξ : ℝ × ℝ → V × V × V) =ᵐ[stripMeasure.restrict rect]
-      jet (ξ : ℝ × ℝ → V) := ae_restrict_of_ae (coeFn_jetLp ξ)
+  have h₂ : (jetLp 2 (testSection F₀ F₁) ξ : ℝ × ℝ → V × V × V) =ᵐ[stripMeasure.restrict rect]
+      jet (ξ : ℝ × ℝ → V) := ae_restrict_of_ae (coeFn_jetLp 2 ξ)
   have h₃ : (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 rect).comp
       (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1)) (hmem.toLp _)
         =ᵐ[stripMeasure.restrict rect] hmem.toLp _ :=
@@ -253,68 +235,12 @@ private theorem restrictValue_sub_ae_eq {F₀ F₁ : Submodule ℝ V} {T : ℝ} 
   have h₄ : (hmem.toLp _ : ℝ × ℝ → V) =ᵐ[stripMeasure.restrict rect]
       fun z ↦ χ z • (ξ : ℝ × ℝ → V) z :=
     ae_restrict_of_ae (ae_restrict_of_ae hmem.coeFn_toLp)
-  filter_upwards [Lp.coeFn_sub (restrictValue T (jetLp (testSection F₀ F₁) ξ))
+  filter_upwards [Lp.coeFn_sub (restrictValue T (jetLp 2 (testSection F₀ F₁) ξ))
       ((LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 rect).comp
         (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1)) (hmem.toLp _)),
-      coeFn_restrictValue T (jetLp (testSection F₀ F₁) ξ), h₂, h₃, h₄]
+      coeFn_restrictValue T (jetLp 2 (testSection F₀ F₁) ξ), h₂, h₃, h₄]
     with z h₀ h₁ h₂ h₃ h₄
   rw [h₀, Pi.sub_apply, h₁, h₂, h₃, h₄, jet_apply]
-
-/-- The restricted values of the jets of test sections of norm less than `1` form a totally
-bounded set: up to `ε`, they are the restrictions of the cut-off sections of
-`totallyBounded_setOf_smul`, with boundary layers of width `δ = min (ε² / 64) 1`. -/
-private theorem totallyBounded_image_restrictValue [FiniteDimensional ℝ V]
-    (F₀ F₁ : Submodule ℝ V) (T : ℝ) :
-    TotallyBounded (restrictValue T ''
-      (jetLp (testSection F₀ F₁) '' {ξ | ‖jetLp (testSection F₀ F₁) ξ‖ < 1})) := by
-  set rect : Set (ℝ × ℝ) := Icc (-T) T ×ˢ Icc 0 1
-  rw [Metric.totallyBounded_iff]
-  intro ε hε
-  set δ : ℝ := min (ε ^ 2 / 64) 1
-  have hδ : 0 < δ := lt_min (by positivity) one_pos
-  obtain ⟨χ, A, hχ1, hχ01, hχc, hχB, hest⟩ := exists_cutoff (V := V) T hδ
-  -- Restriction from `L²(ℝ × ℝ)` to `L²([-T, T] × [0, 1])`.
-  let Res : Lp V 2 (volume : Measure (ℝ × ℝ)) →L[ℝ] Lp V 2 (stripMeasure.restrict rect) :=
-    (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 rect).comp
-      (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1))
-  obtain ⟨t, ht, hcover⟩ := Metric.totallyBounded_iff.1 ((totallyBounded_setOf_smul F₀ F₁
-    ((isBounded_Icc (-(|T| + 1)) (|T| + 1)).prod (isBounded_Icc (0 : ℝ) 1)) hχB hest).image
-    Res.uniformContinuous) (ε / 2) (by positivity)
-  refine ⟨t, ht, ?_⟩
-  rintro _ ⟨_, ⟨ξ, hξ, rfl⟩, rfl⟩
-  have hc : ContDiff ℝ 1 (ξ : ℝ × ℝ → V) := contDiff_one_of_mem_testSection ξ.property
-  have hξ1 : eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure ≤ 1 := by
-    have h : ‖jetLp (testSection F₀ F₁) ξ‖ ≤ 1 := le_of_lt hξ
-    rw [jetLp_apply, Lp.norm_toLp] at h
-    simpa using
-      (ENNReal.le_ofReal_iff_toReal_le (memLp_jet ξ.property).eLpNorm_ne_top zero_le_one).2 h
-  have hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume :=
-    (hest _ hc).2.1.trans_lt (hξ1.trans_lt ENNReal.one_lt_top)
-  obtain ⟨y, hy, hyd⟩ := mem_iUnion₂.1
-    (hcover ⟨hmem.toLp _, ⟨ξ, ξ.property, hξ1, hmem.coeFn_toLp⟩, rfl⟩)
-  refine mem_iUnion₂.2 ⟨y, hy, ?_⟩
-  have hdiff := restrictValue_sub_ae_eq (T := T) ξ hmem
-  have hclose :
-      dist (restrictValue T (jetLp (testSection F₀ F₁) ξ)) (Res (hmem.toLp _)) ≤ ε / 2 := by
-    rw [dist_eq_norm, Lp.norm_def, eLpNorm_congr_ae hdiff]
-    refine ENNReal.toReal_le_of_le_ofReal (by positivity)
-      ((ENNReal.pow_le_pow_left_iff two_ne_zero).1 ?_)
-    calc _ ≤ ENNReal.ofReal (8 * δ) * eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure ^ 2 :=
-          eLpNorm_sub_smul_sq_le hδ (min_le_right _ _) hχ1 hχ01 hχc hc
-      _ ≤ ENNReal.ofReal (8 * δ) * 1 := by
-          gcongr
-          calc _ ≤ (1 : ℝ≥0∞) ^ 2 := by gcongr
-            _ = 1 := one_pow 2
-      _ ≤ ENNReal.ofReal (ε / 2) ^ 2 := by
-          rw [mul_one, ← ENNReal.ofReal_pow (by positivity)]
-          refine ENNReal.ofReal_le_ofReal ?_
-          have : δ ≤ ε ^ 2 / 64 := min_le_left _ _
-          nlinarith
-  rw [mem_ball] at hyd ⊢
-  calc _ ≤ dist (restrictValue T (jetLp (testSection F₀ F₁) ξ)) (Res (hmem.toLp _)) +
-        dist (Res (hmem.toLp _)) y := dist_triangle _ _ _
-    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt hclose hyd
-    _ = ε := add_halves ε
 
 /-- **Rellich's theorem on the strip.** The value on the compact piece `[-T, T] × [0, 1]` is a
 compact operator from `W^{1,2}_F(ℝ × [0, 1], V)` to `L²`, for every pair of boundary conditions
@@ -322,22 +248,41 @@ compact operator from `W^{1,2}_F(ℝ × [0, 1], V)` to `L²`, for every pair of 
 theorem isCompactOperator_restrictValue_comp_subtypeL [FiniteDimensional ℝ V]
     (F₀ F₁ : Submodule ℝ V) (T : ℝ) :
     IsCompactOperator ((restrictValue (V := V) T).comp (H1 F₀ F₁).subtypeL) := by
-  refine (isCompactOperator_iff_exists_mem_nhds_image_subset_compact _).2
-    ⟨ball 0 1, ball_mem_nhds 0 one_pos, _,
-      (totallyBounded_image_restrictValue F₀ F₁ T).closure.isCompact_of_isClosed isClosed_closure,
-      ?_⟩
-  rintro _ ⟨x, hx, rfl⟩
-  -- An element of the unit ball of `H1` is a limit of jets of norm less than `1`.
-  have hxc : (x : Lp (V × V × V) 2 stripMeasure) ∈
-      closure (jetLp (testSection F₀ F₁) '' {ξ | ‖jetLp (testSection F₀ F₁) ξ‖ < 1}) := by
-    have h : (x : Lp (V × V × V) 2 stripMeasure) ∈
-        ball 0 1 ∩ closure (range (jetLp (testSection F₀ F₁))) := by
-      refine ⟨by simpa using hx, ?_⟩
-      rw [← coe_jetClosure]
-      exact x.property
-    refine closure_mono ?_ (isOpen_ball.inter_closure h)
-    rintro _ ⟨hb, ξ, rfl⟩
-    exact ⟨ξ, by simpa using hb, rfl⟩
-  exact image_closure_subset_closure_image (restrictValue T).continuous ⟨_, hxc, rfl⟩
+  refine isCompactOperator_of_denseRange_of_forall_exists_dist_le _
+    (denseRange_toJetClosure 2 (testSection F₀ F₁)) fun ε hε ↦ ?_
+  -- Cut off with boundary layers of width `δ`, so that the layers contribute at most `ε`.
+  set δ : ℝ := min (ε ^ 2 / 8) 1
+  have hδ : 0 < δ := lt_min (by positivity) one_pos
+  obtain ⟨χ, A, hχ1, hχ01, hχc, hχB, hest⟩ := exists_cutoff (V := V) T hδ
+  -- Restriction from `L²(ℝ × ℝ)` to `L²([-T, T] × [0, 1])`.
+  let Res : Lp V 2 (volume : Measure (ℝ × ℝ)) →L[ℝ]
+      Lp V 2 (stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)) :=
+    (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 (Icc (-T) T ×ˢ Icc 0 1)).comp
+      (LpToLpRestrictCLM (ℝ × ℝ) V ℝ volume 2 (univ ×ˢ Icc 0 1))
+  refine ⟨_, (totallyBounded_setOf_ae_eq_smul (p := 2) (by norm_num)
+    ((isBounded_Icc (-(|T| + 1)) (|T| + 1)).prod (isBounded_Icc (0 : ℝ) 1)) hχB
+    ENNReal.ofReal_ne_top hest).image Res.uniformContinuous, fun ξ hξ ↦ ?_⟩
+  have hc : ContDiff ℝ 1 (ξ : ℝ × ℝ → V) := contDiff_one_of_mem_testSection ξ.property
+  have hξ1 : eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure ≤ 1 := by
+    have h : ‖toJetClosure 2 (testSection F₀ F₁) ξ‖ ≤ 1 := hξ.le
+    rw [norm_toJetClosure] at h
+    simpa using
+      (ENNReal.le_ofReal_iff_toReal_le (memLp_jet ξ.property 2).eLpNorm_ne_top zero_le_one).2 h
+  have hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume :=
+    (hest _ hc).2.1.trans_lt (hξ1.trans_lt ENNReal.one_lt_top)
+  refine ⟨_, ⟨hmem.toLp _, ⟨ξ, hc, hξ1, hmem.coeFn_toLp⟩, rfl⟩, ?_⟩
+  rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, coe_toJetClosure]
+  rw [dist_eq_norm, Lp.norm_def, eLpNorm_congr_ae (restrictValue_sub_ae_eq ξ hmem)]
+  refine ENNReal.toReal_le_of_le_ofReal hε.le ((ENNReal.pow_le_pow_left_iff two_ne_zero).1 ?_)
+  calc _ ≤ ENNReal.ofReal (8 * δ) * eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure ^ 2 :=
+        eLpNorm_sub_smul_sq_le hδ (min_le_right _ _) hχ1 hχ01 hχc hc
+    _ ≤ ENNReal.ofReal (8 * δ) * 1 := by
+        gcongr
+        exact pow_le_one₀ bot_le hξ1
+    _ ≤ ENNReal.ofReal ε ^ 2 := by
+        rw [mul_one, ← ENNReal.ofReal_pow hε.le]
+        refine ENNReal.ofReal_le_ofReal ?_
+        have : δ ≤ ε ^ 2 / 8 := min_le_left _ _
+        linarith
 
 end TauCeti.StripSobolev

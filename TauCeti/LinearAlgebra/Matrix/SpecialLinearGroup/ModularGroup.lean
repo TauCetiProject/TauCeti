@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 
 /-!
@@ -25,6 +26,8 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.modularGroup_S_decompose`: over any commutative ring,
   `S = x₀₁(-1) x₁₀(1) x₀₁(-1)` is a word in three transvections, the word that defines the Weyl
   representative `n_r(-1)` of a rank-one Chevalley group.
+* `TauCeti.Matrix.SpecialLinearGroup.mem_op_modularGroup_S_smul_diagonalTorus_iff`: the
+  antidiagonal elements of `SL₂(R)` form the right coset `T S` of the diagonal torus.
 * `TauCeti.Matrix.SpecialLinearGroup.closure_S_T_mul_S`: `S` and `T S` generate `SL₂(ℤ)`; this
   follows from Mathlib's `Matrix.SpecialLinearGroup.SL2Z_generators` for `S` and `T`, since
   `T = (T S) S⁻¹`.
@@ -102,6 +105,28 @@ theorem modularGroup_S_decompose {R : Type u} [CommRing R] :
     coe_modularGroup_S]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.single_apply]
+
+open scoped Pointwise in
+/-- The antidiagonal elements of `SL₂(R)` form the right coset `T S` of the diagonal torus `T`,
+where `S = !![0, -1; 1, 0]`. -/
+theorem mem_op_modularGroup_S_smul_diagonalTorus_iff {R : Type u} [CommRing R] {g : SL(2, R)} :
+    g ∈ MulOpposite.op ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)) •
+        (Matrix.SpecialLinearGroup.diagonalTorus R 2 : Set SL(2, R)) ↔
+      (g : Matrix (Fin 2) (Fin 2) R) 0 0 = 0 ∧ (g : Matrix (Fin 2) (Fin 2) R) 1 1 = 0 := by
+  rw [Set.mem_smul_set]
+  constructor
+  · rintro ⟨t, ht, rfl⟩
+    rw [SetLike.mem_coe, Matrix.SpecialLinearGroup.mem_diagonalTorus_iff] at ht
+    have h01 : (t : Matrix (Fin 2) (Fin 2) R) 0 1 = 0 := ht (by decide)
+    have h10 : (t : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 := ht (by decide)
+    simp [MulOpposite.smul_eq_mul_unop, Matrix.mul_apply, Fin.sum_univ_two, h01, h10]
+  · rintro ⟨h0, h1⟩
+    refine ⟨g * ((ModularGroup.S : SL(2, ℤ)) : SL(2, R))⁻¹, ?_, by simp⟩
+    rw [SetLike.mem_coe, Matrix.SpecialLinearGroup.mem_diagonalTorus_iff,
+      Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv, coe_modularGroup_S,
+      Matrix.adjugate_fin_two]
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
 
 open ModularGroup in
 /-- `S` and `U = T S` generate `SL₂(ℤ)`. -/

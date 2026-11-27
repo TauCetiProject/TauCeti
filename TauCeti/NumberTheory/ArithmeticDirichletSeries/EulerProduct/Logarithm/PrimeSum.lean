@@ -112,7 +112,8 @@ theorem norm_primePowSum_sub_primeSum_le (hw : ∀ I : Ideal (𝓞 K), ‖w I‖
   rw [primePowSum, w.tsum_prime_pow_eq_tsum_neg_log_one_sub hs, primeSum,
     ← hr.clog_one_sub.neg.tsum_sub hr]
   refine (tsum_of_norm_bounded (summable_absNorm_rpow_primes_of_one_lt one_lt_two).hasSum
-    fun P ↦ ?_).trans tsum_absNorm_rpow_neg_two_le
+    fun P ↦ ?_).trans
+    (tsum_absNorm_rpow_neg_two_le.trans (le_mul_of_one_le_left (Nat.cast_nonneg _) one_le_two))
   have hx := norm_div_absNorm_cpow_le hw P ht.le
   refine (Complex.norm_neg_log_one_sub_sub_le (hx.trans ?_)).trans ?_
   · rw [one_div]

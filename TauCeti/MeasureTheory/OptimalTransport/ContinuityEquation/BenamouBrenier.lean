@@ -10,7 +10,7 @@ import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The Benamou–Brenier formula

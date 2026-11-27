@@ -300,7 +300,7 @@ formula double when `-I ∉ Γ`, and dividing by `2` there recovers the projecti
   k · [SL(2, ℤ) : ±Γ] / 12`.
 
 At level one this is the same weight: `weightedOrderOfVanishingOnOrbit_eq_two_mul_div` in
-`TauCeti/NumberTheory/ModularForms/Norm/Valence/Basic.lean`. -/
+`TauCeti/NumberTheory/ModularForms/Norm/Valence.lean`. -/
 noncomputable def weightedOrderOfVanishingOnSubgroupOrbit
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) : ℚ :=

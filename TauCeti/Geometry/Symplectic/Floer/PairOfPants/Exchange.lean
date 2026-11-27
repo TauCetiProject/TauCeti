@@ -53,7 +53,10 @@ rotation of the end at `∞` under `σ`. The main results are:
 * `TauCeti.Floer.exchangePerturbation_of_norm_le`, `TauCeti.Floer.exchangePerturbation_eq_zero`
   and `TauCeti.Floer.exchangePerturbation_add`: for `0 ≤ c ≤ 1` every member is the pair-of-pants
   datum on the disc `|w| ≤ 3`, vanishes on the annulus `2 ≤ |w - c| ≤ 10`, and off the disc
-  `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
+  `|w - c| < 3/2` is the pair-of-pants datum translated by `c`. So far out it is the
+  pair-of-pants datum on the input ends and its translate by `c` on the output end
+  (`TauCeti.Floer.exchangePerturbation_eq_of_pos_fst_positiveEndCoord`,
+  `TauCeti.Floer.exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`).
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point; so is each member in the domain point of `S`,
   in real coordinates, and the target point
@@ -289,6 +292,51 @@ theorem exchangePerturbation_add {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {
     pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation H w x,
     pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub le_rfl zero_le_one
       (by simpa using hw)]
+
+/-- **The family far out on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end,
+every member of the family is the pair-of-pants datum. -/
+theorem exchangePerturbation_eq_of_pos_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {q : Puncture} (hq : q ≠ inf) {z : ℝ × ℝ} (hz : 0 < (positiveEndCoord q z).1) (x : M) :
+    exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x =
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
+  rw [fst_positiveEndCoord, endSign_eq_one hq, one_mul] at hz
+  have hlt : ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ < 1 / 2 :=
+    not_le.1 fun h ↦ by linarith [re_endCoord_nonpos_of_le_norm_sub_endCenter hq h]
+  have h := norm_add_le (Complex.equivRealProdCLM.symm z - q.endCenter) q.endCenter
+  rw [sub_add_cancel] at h
+  exact exchangePerturbation_of_norm_le hc₀ hc₁ (by linarith [norm_endCenter_le_one q]) x
+
+/-- **The family far out on the output end.** For `0 ≤ c ≤ 1`, beyond the height `1` of the
+output end, the member `c` of the family at `z + (c, 0)` is the pair-of-pants datum at `z`. -/
+theorem exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {z : ℝ × ℝ} (hz : 1 < (positiveEndCoord inf z).1) (x : M) :
+    exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x =
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, exchangePerturbation_add hc₀ hc₁
+    (by linarith [eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz])]
+
+/-- On the part `s > 0` of an input end `q`, for `0 ≤ c ≤ 1`, the components of the member `c` of
+the family are those of the pair-of-pants perturbation. -/
+theorem exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord {c : ℝ} (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {q : Puncture} (hq : q ≠ inf) {z : ℝ × ℝ} (hz : 0 < (positiveEndCoord q z).1) :
+    (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1) =
+        (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+      (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) =
+        fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
+  have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁ hq hz
+  exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
+
+/-- Beyond the height `1` of the output end, for `0 ≤ c ≤ 1`, the components of the member `c` of
+the family at `z + (c, 0)` are those of the pair-of-pants perturbation at `z`. -/
+theorem exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord {c : ℝ}
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℝ × ℝ} (hz : 1 < (positiveEndCoord inf z).1) :
+    (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x 1) =
+        (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+      (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm (z + (c, 0))) x
+          Complex.I) =
+        fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
+  have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ hz
+  exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩
 
 /-- **The family on an input end.** For `0 ≤ c ≤ 1`, on the part `s > 0` of an input end `q`, the
 pullback of every member of the family along the end lift `φ_q` is the continuation datum
@@ -683,8 +731,8 @@ theorem hamiltonianCurvature_exchangePerturbation_eq_zero (ω : SmoothTwoForm I 
       rw [h, norm_one] at hc
       linarith
     have hre : 2 < (positiveEndCoord inf (z - (c, 0))).1 := by
-      rw [fst_positiveEndCoord, TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero, endSign_inf,
-        neg_one_mul, lt_neg_re_endCoord_inf_iff hzc]
+      rw [lt_fst_positiveEndCoord_inf_iff hz'.1,
+        TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero]
       have : Real.exp (2 * π * 2) ≤ Real.exp (2 * π * R) :=
         Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
       linarith

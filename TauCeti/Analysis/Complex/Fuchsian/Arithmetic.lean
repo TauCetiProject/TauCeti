@@ -120,6 +120,14 @@ theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
   · rintro ⟨h, hh, hγ⟩
     exact ⟨_, ⟨h, hh, rfl⟩, (key h).mpr hγ⟩
 
+/-- Matrices representing the same cusp orbit differ by an element of `H` on the left and an
+element fixing `∞` on the right. -/
+theorem exists_eq_mul_mul_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
+    (hγ : H.cuspOrbitOfSL2Z γ = H.cuspOrbitOfSL2Z γ') :
+    ∃ g ∈ H, ∃ M : SL(2, ℤ), M 1 0 = 0 ∧ γ' = g * γ * M := by
+  obtain ⟨g, hg, hc⟩ := (H.cuspOrbitOfSL2Z_eq_iff γ γ').mp hγ
+  exact ⟨g⁻¹, inv_mem hg, γ⁻¹ * g * γ', hc, by group⟩
+
 /-- The matrices `γ` and `-γ` represent the same cusp orbit. -/
 @[simp]
 theorem cuspOrbitOfSL2Z_neg (γ : SL(2, ℤ)) : H.cuspOrbitOfSL2Z (-γ) = H.cuspOrbitOfSL2Z γ :=

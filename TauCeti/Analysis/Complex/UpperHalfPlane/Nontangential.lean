@@ -38,8 +38,12 @@ cake formula bounds its integral against `|g|` by the Hardy–Littlewood maximal
 * `TauCeti.upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone`: the cone comparison of
   Poisson kernels, and `TauCeti.upperHalfPlanePoissonKernel_le_three_mul_of_mem_nontangentialCone`
   its form with constant `3` for aperture one.
-* `TauCeti.upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction`: the Poisson integral of
-  `|g| dx` at a pole `z` is at most `M g(Re z)`.
+* `TauCeti.upperHalfPlanePoissonLIntegral_le_mul_of_mem_nontangentialCone`: the cone comparison
+  for the Poisson integral of a measure.
+* `TauCeti.upperHalfPlanePoissonLIntegral_le_of_measure_ball_le`: the Poisson integral of a
+  measure `μ` at `z` is at most any `M` with `μ(B(Re z, r)) ≤ M |B(Re z, r)|` for all `r > 0`;
+  in particular (`TauCeti.upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction`) the
+  Poisson integral of `|g| dx` at a pole `z` is at most `M g(Re z)`.
 * `TauCeti.nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le` and
   `TauCeti.nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le`: the maximal bound
   `M^α_h P[|g| dx] ≤ max 2 (1 + 2 α ^ 2) · M g`, and their forms
@@ -74,6 +78,18 @@ theorem mem_nontangentialCone {α : ℝ} {h : ℝ≥0∞} {x : ℝ} {z : ℂ} :
     z ∈ nontangentialCone α h x ↔
       0 < z.im ∧ |z.re - x| < α * z.im ∧ ENNReal.ofReal z.im < h :=
   Iff.rfl
+
+/-- A point of the cone `Γ^α_h(x)` lies within `(|α| + 1) Im z` of the vertex. -/
+theorem dist_lt_of_mem_nontangentialCone {α : ℝ} {h : ℝ≥0∞} {x : ℝ} {z : ℂ}
+    (hz : z ∈ nontangentialCone α h x) : dist z x < (|α| + 1) * z.im := by
+  obtain ⟨hz0, hzα, -⟩ := mem_nontangentialCone.1 hz
+  have hre : |z.re - x| < |α| * z.im :=
+    hzα.trans_le (mul_le_mul_of_nonneg_right (le_abs_self α) hz0.le)
+  calc dist z x ≤ |(z - x).re| + |(z - x).im| := by
+        rw [dist_eq_norm]; exact norm_le_abs_re_add_abs_im _
+    _ < |α| * z.im + z.im := by
+        simpa [abs_of_pos hz0] using add_lt_add_of_lt_of_le hre (le_refl z.im)
+    _ = (|α| + 1) * z.im := by ring
 
 /-- Cones grow with the aperture and the height. -/
 theorem nontangentialCone_mono {α β : ℝ} {h k : ℝ≥0∞} (hαβ : α ≤ β) (hhk : h ≤ k) (x : ℝ) :
@@ -115,6 +131,15 @@ theorem nontangentialMaximalFunction_mono {E : Type*} [ENorm E] {α β : ℝ} {h
     nontangentialMaximalFunction α h u x ≤ nontangentialMaximalFunction β k u x :=
   biSup_mono fun _ hz => nontangentialCone_mono hαβ hhk x hz
 
+/-- The nontangential maximal function of the Poisson integral is at most that of the extended
+Poisson integral. -/
+theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+    (α : ℝ) (h : ℝ≥0∞) (ν : Measure ℝ) (x : ℝ) :
+    nontangentialMaximalFunction α h (upperHalfPlanePoissonIntegral ν) x ≤
+      nontangentialMaximalFunction α h (upperHalfPlanePoissonLIntegral ν) x :=
+  nontangentialMaximalFunction_mono_fun fun z hz => by
+    simpa using enorm_upperHalfPlanePoissonIntegral_le ν (mem_nontangentialCone.1 hz).1.le
+
 /-- **The cone comparison.** For `z = x' + iy` in the cone `Γ^α_∞(x)`, the Poisson kernel with
 pole `z` is at most `max 2 (1 + 2 α ^ 2)` times the Poisson kernel with pole `x + iy`. For
 `α = 1` the constant is `3`. -/
@@ -149,6 +174,49 @@ theorem upperHalfPlanePoissonKernel_le_three_mul_of_mem_nontangentialCone {h : �
     upperHalfPlanePoissonKernel z s ≤ 3 * upperHalfPlanePoissonKernel (x + z.im * I) s :=
   (upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone hz s).trans_eq (by norm_num)
 
+/-- **The cone comparison for the Poisson integral of a measure.** For `z` in the cone `Γ^α_h(x)`,
+the extended Poisson integral of `μ` at `z` is at most `max 2 (1 + 2 α ^ 2)` times that at the
+vertical pole `x + i Im z`. -/
+theorem upperHalfPlanePoissonLIntegral_le_mul_of_mem_nontangentialCone (μ : Measure ℝ) {α : ℝ}
+    {h : ℝ≥0∞} {x : ℝ} {z : ℂ} (hz : z ∈ nontangentialCone α h x) :
+    upperHalfPlanePoissonLIntegral μ z ≤
+      ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) *
+        upperHalfPlanePoissonLIntegral μ ((x : ℂ) + z.im * I) := by
+  rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_def,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine lintegral_mono fun s => ?_
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  exact ENNReal.ofReal_le_ofReal (upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone hz s)
+
+/-- **The Poisson integral of a measure is dominated by its ball averages.** If
+`μ(B(Re z, r)) ≤ M |B(Re z, r)|` for every open ball of radius `r > 0`, then the extended Poisson
+integral of `μ` at `z` is at most `M`. -/
+theorem upperHalfPlanePoissonLIntegral_le_of_measure_ball_le {μ : Measure ℝ} {z : ℂ}
+    {M : ℝ≥0∞} (hM : ∀ r > 0, μ (ball z.re r) ≤ M * volume (ball z.re r)) :
+    upperHalfPlanePoissonLIntegral μ z ≤ M := by
+  rcases le_or_gt z.im 0 with hz | hz
+  · simp [upperHalfPlanePoissonLIntegral_def, ENNReal.ofReal_of_nonpos,
+      upperHalfPlanePoissonKernel_nonpos hz]
+  have hnn := upperHalfPlanePoissonKernel_nonneg hz.le
+  have hmeas := measurable_upperHalfPlanePoissonKernel z
+  have hball : ∀ ρ : ℝ, μ (ball z.re ρ) ≤ volume (ball z.re ρ) * M := fun ρ => by
+    rcases le_or_gt ρ 0 with hρ | hρ
+    · simp [ball_eq_empty.2 hρ]
+    · exact (hM ρ hρ).trans_eq (mul_comm _ _)
+  rw [upperHalfPlanePoissonLIntegral_def,
+    lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable]
+  calc ∫⁻ t in Ioi 0, μ {s | t < upperHalfPlanePoissonKernel z s}
+      ≤ ∫⁻ t in Ioi 0, volume {s | t < upperHalfPlanePoissonKernel z s} * M := by
+        refine setLIntegral_mono' measurableSet_Ioi fun t ht => ?_
+        rw [setOf_lt_upperHalfPlanePoissonKernel z ht]
+        exact hball _
+    _ = M := by
+        have hanti : Antitone fun t : ℝ => volume {s | t < upperHalfPlanePoissonKernel z s} :=
+          fun _ _ hab => measure_mono fun _ hs => lt_of_le_of_lt hab hs
+        rw [lintegral_mul_const _ hanti.measurable,
+          ← lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable,
+          ← upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_volume hz, one_mul]
+
 variable {F : Type*} [ENorm F]
 
 /-- **The Poisson integral is dominated by the maximal function.** At every pole `z`, the
@@ -156,27 +224,10 @@ extended Poisson integral of `‖g‖ dx` is at most the Hardy–Littlewood maxi
 `Re z`; off the upper half-plane the left side is `0`. -/
 theorem upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction (g : ℝ → F) (z : ℂ) :
     upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ) z ≤
-      maximalFunction volume g z.re := by
-  rcases le_or_gt z.im 0 with hz | hz
-  · simp [upperHalfPlanePoissonLIntegral_def, ENNReal.ofReal_of_nonpos,
-      upperHalfPlanePoissonKernel_nonpos hz]
-  have hnn := upperHalfPlanePoissonKernel_nonneg hz.le
-  have hmeas := measurable_upperHalfPlanePoissonKernel z
-  rw [upperHalfPlanePoissonLIntegral_def,
-    lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable]
-  calc ∫⁻ t in Ioi 0, volume.withDensity (fun s => ‖g s‖ₑ)
-          {s | t < upperHalfPlanePoissonKernel z s}
-      ≤ ∫⁻ t in Ioi 0, volume {s | t < upperHalfPlanePoissonKernel z s} *
-          maximalFunction volume g z.re := by
-        refine setLIntegral_mono' measurableSet_Ioi fun t ht => ?_
-        rw [setOf_lt_upperHalfPlanePoissonKernel z ht, withDensity_apply _ measurableSet_ball]
-        exact setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
-    _ = maximalFunction volume g z.re := by
-        have hanti : Antitone fun t : ℝ => volume {s | t < upperHalfPlanePoissonKernel z s} :=
-          fun _ _ hab => measure_mono fun _ hs => lt_of_le_of_lt hab hs
-        rw [lintegral_mul_const _ hanti.measurable,
-          ← lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable,
-          ← upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_volume hz, one_mul]
+      maximalFunction volume g z.re :=
+  upperHalfPlanePoissonLIntegral_le_of_measure_ball_le fun _ _ => by
+    rw [withDensity_apply _ measurableSet_ball, mul_comm]
+    exact setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
 
 /-- **The nontangential maximal bound for the extended Poisson integral.** The nontangential
 maximal function of the Poisson integral of `‖g‖ dx`, over cones of aperture `α` and any height,
@@ -192,13 +243,8 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le (α : ℝ
   calc upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ) z
       ≤ ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) *
           upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ)
-            ((x : ℂ) + z.im * I) := by
-        rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_def,
-          ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-        refine lintegral_mono fun s => ?_
-        rw [← ENNReal.ofReal_mul (by positivity)]
-        exact ENNReal.ofReal_le_ofReal
-          (upperHalfPlanePoissonKernel_le_mul_of_mem_nontangentialCone hz s)
+            ((x : ℂ) + z.im * I) :=
+        upperHalfPlanePoissonLIntegral_le_mul_of_mem_nontangentialCone _ hz
     _ ≤ ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * maximalFunction volume g x := by
         gcongr
         simpa using upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction g
@@ -213,9 +259,8 @@ theorem nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le (α : ℝ)
     nontangentialMaximalFunction α h
         (upperHalfPlanePoissonIntegral (volume.withDensity fun s => ‖g s‖ₑ)) x ≤
       ENNReal.ofReal (max 2 (1 + 2 * α ^ 2)) * maximalFunction volume g x :=
-  (nontangentialMaximalFunction_mono_fun fun z hz => by
-      simpa using enorm_upperHalfPlanePoissonIntegral_le _ hz.1.le).trans
-    (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g x)
+  (nontangentialMaximalFunction_upperHalfPlanePoissonIntegral_le_upperHalfPlanePoissonLIntegral
+    α h _ x).trans (nontangentialMaximalFunction_upperHalfPlanePoissonLIntegral_le α h g x)
 
 /-- **The nontangential maximal bound for aperture one.** The nontangential maximal function of
 the Poisson integral of `‖g‖ dx`, over cones of aperture one and any height, is at most `3` times

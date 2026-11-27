@@ -313,8 +313,7 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
         (fun r ↦ β.coord i (sectionCoord ℝ (F := E) γ a (γ t) r)) s t :=
     (LinearMap.toContinuousLinearMap (β.coord i)).differentiableAt.comp_differentiableWithinAt t ha
   have hframe (i : Fin (Module.finrank ℝ E)) : MDiffAt (T% (e.localFrame β i)) (γ t) :=
-    (((e.isLocalFrameOn_localFrame_baseSet I 1 β).contMDiffOn i).mdifferentiableOn
-      one_ne_zero).mdifferentiableAt (e.open_baseSet.mem_nhds hbase)
+    (contMDiffAt_localFrame_of_mem 1 _ β i hbase).mdifferentiableAt one_ne_zero
   have hcoordX (i : Fin (Module.finrank ℝ E)) : DifferentiableWithinAt ℝ
       (sectionCoord ℝ (F := E) γ (fun r ↦ e.localFrame β i (γ r)) (γ t)) s t :=
     differentiableWithinAt_sectionCoord γ (fun r ↦ e.localFrame β i (γ r))
@@ -362,8 +361,7 @@ theorem IsMetricCompatible.hasDerivWithinAt_inner_alongCurveWithin
           innerSL ℝ (cov Y (γ t) v) (Z (γ t)) + innerSL ℝ (Y (γ t)) (cov Z (γ t) v) := by
     intro Y Z hY hZ v
     simp only [innerSL_apply_apply]
-    simpa only [FiberBundle.extend_apply_self] using
-      hcov.mvfderiv_inner_eq (FiberBundle.extend E v) hY hZ
+    exact hcov.mvfderiv_inner_eq (fun _ ↦ v) hY hZ
   -- `innerSL ℝ v w` unfolds to `inner ℝ v w` (`innerSL_apply_apply` is proved by `rfl`), but
   -- `simp` does not rewrite it under the instances found for `TangentSpace I (γ r)`.
   exact hasDerivWithinAt_apply_alongCurveWithin hdiff hcompat hγ hV hW
@@ -439,6 +437,44 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
         inner ℝ (V t) (alongCurve cov γ W t) :=
   (hcov.hasDerivAt_inner_alongCurve hγ hV hW).deriv
 
+/-- For two differentiable tangent fields with constant inner product near `t` within `s`,
+metric compatibility gives `⟪DₜV, W⟫ + ⟪V, DₜW⟫ = 0` at `t`. -/
+theorem
+  IsMetricCompatible.inner_alongCurveWithin_add_inner_alongCurveWithin_eq_zero_of_eventuallyEq_const
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) {c : ℝ}
+    (hc : (fun r ↦ inner ℝ (V r) (W r)) =ᶠ[𝓝[s] t] fun _ ↦ c) :
+    inner ℝ (alongCurveWithin cov γ V s t) (W t) +
+      inner ℝ (V t) (alongCurveWithin cov γ W s t) = 0 := by
+  by_cases hu : UniqueDiffWithinAt ℝ s t
+  · have hd := hcov.hasDerivWithinAt_inner_alongCurveWithin hγ hV hW
+    have := mem_closure_iff_nhdsWithin_neBot.mp hu.mem_closure
+    have ht := tendsto_nhds_unique_of_eventuallyEq hd.continuousWithinAt tendsto_const_nhds hc
+    exact hu.eq_deriv _ hd ((hasDerivWithinAt_const t s c).congr_of_eventuallyEq hc ht)
+  · simp [alongCurveWithin_of_not_uniqueDiffWithinAt cov γ _ hu]
+
+/-- For two differentiable tangent fields along a differentiable curve with locally constant
+inner product, metric compatibility gives `⟪DₜV, W⟫ = −⟪V, DₜW⟫` at the evaluation parameter,
+expressed as the vanishing of their sum. -/
+theorem IsMetricCompatible.inner_alongCurve_add_inner_alongCurve_eq_zero_of_eventuallyEq_const
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
+    {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) {c : ℝ}
+    (hc : (fun r ↦ inner ℝ (V r) (W r)) =ᶠ[𝓝 t] fun _ ↦ c) :
+    inner ℝ (alongCurve cov γ V t) (W t) +
+      inner ℝ (V t) (alongCurve cov γ W t) = 0 := by
+  simpa only [alongCurveWithin_univ] using
+    hcov.inner_alongCurveWithin_add_inner_alongCurveWithin_eq_zero_of_eventuallyEq_const
+      (s := Set.univ) hγ.mdifferentiableWithinAt hV.differentiableWithinAt hW.differentiableWithinAt
+      (by rwa [nhdsWithin_univ])
+
 /-- **A field of locally constant length is orthogonal to its covariant derivative.** If a
 differentiable tangent field `V` along a differentiable real curve has constant metric length on
 the parameter set `s` near `t`, then `D V / dt` is orthogonal to `V` at `t`, for a
@@ -446,17 +482,15 @@ metric-compatible covariant derivative. -/
 theorem IsMetricCompatible.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun x : M ↦ TangentSpace I x) cov)
-    (hu : UniqueDiffWithinAt ℝ s t)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
     {V : ∀ r, TangentSpace I (γ r)}
     (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
     (hnorm : ∀ᶠ r in 𝓝[s] t, ‖V r‖ = ‖V t‖) :
     inner ℝ (alongCurveWithin cov γ V s t) (V t) = 0 := by
-  have hconst : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (V r)) 0 s t :=
-    (hasDerivWithinAt_const t s (‖V t‖ ^ 2)).congr_of_eventuallyEq
+  have h :=
+    hcov.inner_alongCurveWithin_add_inner_alongCurveWithin_eq_zero_of_eventuallyEq_const
+      (c := ‖V t‖ ^ 2) hγ hV hV
       (hnorm.mono fun r hr ↦ by simp only [real_inner_self_eq_norm_sq, hr])
-      (real_inner_self_eq_norm_sq _)
-  have h := hu.eq_deriv _ (hcov.hasDerivWithinAt_inner_alongCurveWithin hγ hV hV) hconst
   linarith [real_inner_comm (alongCurveWithin cov γ V s t) (V t)]
 
 /-- **A field of locally constant length is orthogonal to its covariant derivative**, for the
@@ -470,7 +504,7 @@ theorem IsMetricCompatible.inner_alongCurve_self_eq_zero_of_eventually_norm_eq
     (hnorm : ∀ᶠ r in 𝓝 t, ‖V r‖ = ‖V t‖) :
     inner ℝ (alongCurve cov γ V t) (V t) = 0 := by
   simpa only [alongCurveWithin_univ] using
-    hcov.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq uniqueDiffWithinAt_univ
+    hcov.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq (s := Set.univ)
       hγ.mdifferentiableWithinAt hV.differentiableWithinAt (by rwa [nhdsWithin_univ])
 
 /-- **Parallel transport preserves the inner product.** On a preconnected parameter set, two

@@ -24,7 +24,8 @@ For `γ = [a,b;c,d]` in `SL₂(ℤ)`, the conjugate `γ Tʲ γ⁻¹` depends onl
 column `(a,c)`. Its lower-left entry is `-j c²`. This calculation describes the
 translations fixing the rational cusp `γ ∞` and turns congruence-subgroup membership
 into a divisibility condition on the translation exponent. An element of `SL₂(ℤ)` with
-vanishing lower-left entry, that is one fixing `∞` itself, is a signed translation `±Tʲ`.
+vanishing lower-left entry, that is one fixing `∞` itself, is a signed translation `±Tʲ`,
+and so commutes with every translation.
 
 In `PSL(2, ℤ)`, distinct integer powers of `T` are pairwise non-conjugate
 (`TauCeti.ModularGroup.eq_of_conj_coe_T_zpow_eq`), containment of a conjugate of `⟨T ^ a⟩` in
@@ -77,6 +78,26 @@ theorem ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero {g : SL(2, ℤ)}
     ext i j
     fin_cases i <;> fin_cases j <;> simp [ha, hc, hd, ModularGroup.coe_T_zpow]
 
+/-- An element of `SL₂(ℤ)` with vanishing lower-left entry, being `±Tᵇ`, commutes with every
+integral translation `Tʲ`. -/
+theorem ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero {g : SL(2, ℤ)} (hc : g 1 0 = 0) (j : ℤ) :
+    g * ModularGroup.T ^ j * g⁻¹ = ModularGroup.T ^ j := by
+  have hcomm : Commute g (ModularGroup.T ^ j) := by
+    rcases ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with h | h <;> rw [h]
+    · exact Commute.zpow_zpow_self _ _ _
+    · exact (Commute.zpow_zpow_self _ _ _).neg_left
+  rw [hcomm.eq, mul_inv_cancel_right]
+
+/-- Conjugating a translation by `h γ M`, for `M` fixing `∞`, is conjugating it by `γ` and then
+by `h`: `M` commutes with the translations. -/
+theorem ModularGroup.mul_mul_T_zpow_mul_inv_of_c_eq_zero (h γ : SL(2, ℤ)) {M : SL(2, ℤ)}
+    (hM : M 1 0 = 0) (j : ℤ) :
+    h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
+      h * (γ * ModularGroup.T ^ j * γ⁻¹) * h⁻¹ := by
+  calc h * γ * M * ModularGroup.T ^ j * (h * γ * M)⁻¹ =
+        h * γ * (M * ModularGroup.T ^ j * M⁻¹) * γ⁻¹ * h⁻¹ := by group
+    _ = _ := by rw [ModularGroup.mul_T_zpow_mul_inv_of_c_eq_zero hM]; group
+
 /-- Distinct integer powers of `T` are pairwise non-conjugate in `PSL(2, ℤ)`: since elements of
 `SL(2, ℤ)` have determinant `+1`, any element conjugating a nontrivial power of `T` into `⟨T⟩`
 fixes `∞` and hence centralizes `T`. -/
@@ -128,7 +149,7 @@ theorem ModularGroup.dvd_of_conj_zpowers_coe_T_zpow_le {a b : ℤ} {g : ConjAct 
         Subgroup.zpowers ((_root_.ModularGroup.T : PSL(2, ℤ)) ^ b) :=
     h ⟨(_root_.ModularGroup.T : PSL(2, ℤ)) ^ a, Subgroup.mem_zpowers _, ConjAct.smul_def _ _⟩
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hmem
-  rw [← zpow_mul] at hk
+  rw [← _root_.zpow_mul] at hk
   exact ⟨k, ModularGroup.eq_of_conj_coe_T_zpow_eq hk.symm⟩
 
 /-- Every cyclic translation subgroup `⟨T ^ k⟩` has infinite index (`index = 0`) in `PSL(2, ℤ)`. -/
@@ -145,11 +166,11 @@ theorem ModularGroup.index_zpowers_coe_T_zpow (k : ℤ) :
         _root_.ModularGroup.S⁻¹ * _root_.ModularGroup.T ^ ((j : ℤ) - i) *
           (_root_.ModularGroup.S⁻¹)⁻¹ := by
       rw [_root_.mul_inv_rev, inv_inv, mul_assoc, ← mul_assoc (_root_.ModularGroup.T ^ (i : ℤ))⁻¹,
-        ← zpow_neg, ← zpow_add, sub_eq_neg_add, mul_assoc]
+        ← _root_.zpow_neg, ← _root_.zpow_add, sub_eq_neg_add, mul_assoc]
     have hpsl : ((_root_.ModularGroup.S⁻¹ * _root_.ModularGroup.T ^ ((j : ℤ) - i) *
         (_root_.ModularGroup.S⁻¹)⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) =
         ((_root_.ModularGroup.T ^ (k * m) : SL(2, ℤ)) : PSL(2, ℤ)) := by
-      rw [← hconj, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← hm, ← zpow_mul,
+      rw [← hconj, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← hm, ← _root_.zpow_mul,
         QuotientGroup.mk_zpow]
     have hS0 : (_root_.ModularGroup.S⁻¹ : SL(2, ℤ)) 0 0 = 0 := by decide
     have hS1 : (_root_.ModularGroup.S⁻¹ : SL(2, ℤ)) 1 0 = -1 := by decide

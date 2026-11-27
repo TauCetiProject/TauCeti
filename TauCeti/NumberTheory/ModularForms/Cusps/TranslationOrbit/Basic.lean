@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.ZMod.QuotientGroup
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.GroupTheory.GroupAction.ConjAct
-import TauCeti.GroupTheory.GroupAction.Orbit.Period
+import TauCeti.GroupTheory.GroupAction.Period
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.Modular.ConjugateTranslation

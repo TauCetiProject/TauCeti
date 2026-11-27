@@ -67,6 +67,10 @@ proof is independent of the source's.
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
   `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.toGL_neg_one`, `Matrix.SpecialLinearGroup.neg_one_eq_one_iff` and
+  `Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two`: `-I` of `SL(n, R)` is `-I` of
+  `GL(n, R)`, and it equals `I` exactly when `-1 = 1` in `R`; in `SL(2, ℤ/Nℤ)`, when `N ∣ 2`.
+* `Matrix.SpecialLinearGroup.toGL_neg`: likewise `toGL (-g) = -toGL g`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -83,6 +87,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
   ring, indexed by a nonempty type, is nonzero.
+* `Matrix.SpecialLinearGroup.coe_mul_coe_inv` and `Matrix.SpecialLinearGroup.coe_inv_mul_coe`:
+  an element of `SL(n, R)` and its inverse multiply to `1` as matrices.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring and `mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero` its upper-triangular
@@ -101,6 +107,9 @@ proof is independent of the source's.
   row `(a, b)`.
 * `Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero`: an
   upper triangular `(a b; 0 d)` in `SL₂(R)` has `a d = 1`.
+* `Matrix.SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero` and
+  `Matrix.SpecialLinearGroup.apply_one_one_ne_zero_of_apply_one_zero_eq_zero`: over a nontrivial
+  ring, both diagonal entries of such a matrix are nonzero.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and
@@ -108,8 +117,9 @@ proof is independent of the source's.
   `Subgroup.zpowers (-1)`, when `R` has no zero divisors.
 * `Matrix.SpecialLinearGroup.not_exists_isComplement'_center`: over any commutative ring `R` with
   `(2 : R) ≠ 0`, the centre of `SL₂(R)` admits no complement in `SL₂(R)`.
-* `Matrix.SpecialLinearGroup.finite_center` and
-  `Matrix.SpecialLinearGroup.card_center_le_two`: that centre is finite, of order at most two.
+* `Matrix.SpecialLinearGroup.finite_center`: the centre of `SL(n, R)` is finite when `R` has no
+  zero divisors.
+* `Matrix.SpecialLinearGroup.card_center_le_two`: the centre of `SL₂` has order at most two.
 * `Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem`: a subgroup of `SL₂` contains the centre
   exactly when it contains `-I`.
 * `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
@@ -153,6 +163,18 @@ nonzero. -/
 theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
+
+/-- An element of `SL(n, R)` times its inverse, as matrices, is `1`. -/
+theorem coe_mul_coe_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (A : SpecialLinearGroup n R) : (A : Matrix n n R) * ((A⁻¹ : SpecialLinearGroup n R) :
+      Matrix n n R) = 1 := by
+  rw [← coe_mul, mul_inv_cancel, coe_one]
+
+/-- The inverse of an element of `SL(n, R)` times the element, as matrices, is `1`. -/
+theorem coe_inv_mul_coe {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (A : SpecialLinearGroup n R) : ((A⁻¹ : SpecialLinearGroup n R) : Matrix n n R) *
+      (A : Matrix n n R) = 1 := by
+  rw [← coe_mul, inv_mul_cancel, coe_one]
 
 /-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
 @[simp]
@@ -325,6 +347,16 @@ lemma apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {R : Type*} [C
     {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 * σ 1 1 = 1 := by
   simpa [hσ] using fin_two_mul_sub_mul_eq_one σ
 
+/-- The upper-left entry of an upper triangular `σ = (a b; 0 d)` of `SL₂(R)` is nonzero. -/
+lemma apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] [Nontrivial R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 ≠ 0 :=
+  left_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hσ)
+
+/-- The lower-right entry of an upper triangular `σ = (a b; 0 d)` of `SL₂(R)` is nonzero. -/
+lemma apply_one_one_ne_zero_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] [Nontrivial R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 1 1 ≠ 0 :=
+  right_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hσ)
+
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)
     (A : Type*) [CommRing A] :
@@ -370,6 +402,33 @@ lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Co
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
   rw [mapGL_neg, map_one]
 
+-- Not `@[simp]`: `simp` proves it from `toGL_neg` and `map_one` (`simpNF`).
+/-- `-I` of `SL(n, R)` is `-I` of `GL(n, R)`. -/
+lemma toGL_neg_one {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [Fact (Even (Fintype.card n))] :
+    toGL (-1 : SpecialLinearGroup n R) = -1 :=
+  Units.ext <| by simp
+
+/-- `-I = I` in `SL(n, R)`, for a nonempty index type, exactly when `-1 = 1` in `R`. -/
+lemma neg_one_eq_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [Nonempty n] [CommRing R]
+    [Fact (Even (Fintype.card n))] :
+    (-1 : SpecialLinearGroup n R) = 1 ↔ (-1 : R) = 1 := by
+  obtain ⟨i⟩ := ‹Nonempty n›
+  refine ⟨fun h ↦ by simpa using congr_arg (fun g : SpecialLinearGroup n R ↦ g i i) h, fun h ↦ ?_⟩
+  ext j k
+  by_cases hjk : j = k <;> simp [hjk, h]
+
+/-- `-I = I` in `SL(2, ℤ/Nℤ)` exactly when `N ∣ 2`. -/
+lemma neg_one_eq_one_iff_dvd_two {N : ℕ} : (-1 : SL(2, ZMod N)) = 1 ↔ N ∣ 2 := by
+  rw [neg_one_eq_one_iff, ZMod.neg_one_eq_one_iff, Nat.dvd_prime Nat.prime_two]
+
+/-- The embedding `SL(n, R) → GL(n, R)` commutes with negation, when `n` has even cardinality, so
+that `-g ∈ SL(n, R)`. -/
+@[simp]
+theorem toGL_neg {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n R) : toGL (-g) = -toGL g :=
+  Units.ext <| by simp only [coe_GL_coe_matrix, coe_neg, Units.val_neg]
+
 variable {R : Type*} [CommRing R]
 
 /-- **The centre of `SL₂` is `{±I}`** over any commutative ring without zero divisors.
@@ -404,18 +463,18 @@ theorem center_eq_zpowers_neg_one [NoZeroDivisors R] :
   · exact one_mem _
   · exact Subgroup.mem_zpowers _
 
-/-- The centre of `SL₂` is finite: by `mem_center_iff_eq_one_or_eq_neg_one` it is the set `{±I}`,
-which has at most two elements — exactly two unless `1 = -1` in `R`, where it is a singleton. -/
-theorem finite_center [NoZeroDivisors R] :
-    Finite (Subgroup.center (SpecialLinearGroup (Fin 2) R)) := by
-  have hf : Finite ({1, -1} : Set (SpecialLinearGroup (Fin 2) R)) := Set.toFinite _
-  -- the type ascription on `e` is load-bearing: without it instance search is asked for
-  -- `Finite { x // x = 1 ∨ x = -1 }` and fails, since that subtype is definitionally
-  -- `↥({1, -1} : Set _)` but resolution does not see through the membership unfolding
-  have e : (Subgroup.center (SpecialLinearGroup (Fin 2) R)) ≃
-      ({1, -1} : Set (SpecialLinearGroup (Fin 2) R)) :=
-    Equiv.subtypeEquivRight fun _ ↦ mem_center_iff_eq_one_or_eq_neg_one
-  exact Finite.of_equiv _ e.symm
+/-- **The centre of `SL(n, R)` is finite** over a commutative ring without zero divisors: it
+consists of the scalar matrices `ζ • I` with `ζ` a root of unity of order dividing the size `n`
+(`Matrix.SpecialLinearGroup.center_equiv_rootsOfUnity`), and a polynomial equation `ζ ^ n = 1` has
+finitely many roots in a domain. Over the zero ring the group itself is trivial. For `SL₂` the
+centre is `{±I}` (`Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`). -/
+instance finite_center {n : Type*} [Fintype n] [DecidableEq n] [NoZeroDivisors R] :
+    Finite (Subgroup.center (SpecialLinearGroup n R)) := by
+  cases subsingleton_or_nontrivial R
+  · infer_instance
+  · have := NoZeroDivisors.to_isDomain R
+    have : NeZero (max (Fintype.card n) 1) := ⟨by positivity⟩
+    exact Finite.of_equiv _ center_equiv_rootsOfUnity.symm.toEquiv
 
 /-- **The centre of `SL₂` has at most two elements.** Stated as a bound rather than an equality
 because `1 = -1` when `R` has characteristic `2`, where the centre is trivial.
@@ -489,7 +548,6 @@ private theorem card_center_subgroupOf_pos_and_le_two [NoZeroDivisors R]
     (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
     0 < Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) ∧
       Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) ≤ 2 := by
-  have : Finite (Subgroup.center (SpecialLinearGroup (Fin 2) R)) := finite_center
   -- `subgroupOf` is `comap` along `Γ.subtype`, so the order divides the centre's outright; the
   -- ascription states the divisibility in `subgroupOf` form rather than `comap` form
   have hdvd : Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) ∣

@@ -11,7 +11,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.NumberTheory.ModularForms.SlashActions
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The integer cusp width of a finite-index subgroup
