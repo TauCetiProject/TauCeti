@@ -298,7 +298,7 @@ private theorem exists_equiv [FiniteDimensional ℝ (eigenImage ι B μ)]
         rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, map_sub, (hJ v).2]
         exact F.sub_starProjection_mem_orthogonal (ι x)
       exact ⟨WithLp.toLp 2 (v, ⟨_, hx'⟩), by simp [hW₀]⟩
-  exact ⟨J, W, hJ, fun z ↦ by rw [← hW₀, ← hW]; rfl⟩
+  exact ⟨J, W, hJ, fun z ↦ by rw [← hW₀, ← hW, ContinuousLinearEquiv.coe_coe]⟩
 
 omit [CompleteSpace H] in
 /-- The orthogonal decomposition `U : H ≃ F × Fᗮ` along the image `F` of the eigenspace and an
