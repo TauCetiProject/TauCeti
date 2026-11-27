@@ -16,8 +16,9 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Restriction
 On the chain site `(Fin 3)ᵒᵖ` with coefficients `C₄ → C₂ → C₂` (reduction mod 2, then the
 identity), written additively as `ZMod 4` and `ZMod 2`:
 
-* restriction of compatible central sections sends the generator over the source to the generator
-  over the target, along the composite as along the two successive arrows;
+* restriction of compatible central sections along `U₁ ⟶ U₀` sends the generator over the source
+  to the generator over the target, and successive restrictions along `U₂ ⟶ U₁ ⟶ U₀` agree with
+  restriction along the composite;
 * it kills the coefficient `2` of `C₄`, so it is not injective;
 * there are four compatible sections over the `C₄` object and two over a `C₂` object;
 * the diagram is a gerbe for the bottom topology.
