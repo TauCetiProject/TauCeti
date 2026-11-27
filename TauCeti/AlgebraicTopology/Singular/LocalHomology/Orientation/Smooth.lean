@@ -807,10 +807,7 @@ private theorem localOrientationOfNormedChart_chartAt_eq [I.Boundaryless]
     intro h
     rw [h, sign_zero, SignType.coe_zero] at hs
     exact (Units.ne_zero _) hs
-  have hdiff : DifferentiableAt ℝ f (φx a) := by
-    by_contra hnd
-    rw [fderiv_zero_of_not_differentiableAt hnd] at hdet
-    exact hdet (by simp [ContinuousLinearMap.det, hE])
+  have hdiff : DifferentiableAt ℝ f (φx a) := differentiableAt_of_det_fderiv_ne_zero hdet
   have hModel : finrank ℝ (NormedModel.{w} n) = n + 1 := finrank_euclideanSpace_ulift_fin (n + 1)
   let L : E ≃L[ℝ] NormedModel.{w} n :=
     ContinuousLinearEquiv.ofFinrankEq (hE.trans hModel.symm)

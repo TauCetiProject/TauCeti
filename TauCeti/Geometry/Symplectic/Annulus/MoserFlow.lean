@@ -10,8 +10,10 @@ public import TauCeti.Geometry.Symplectic.Area.StripMoser
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Dynamics.Flow.Variational
 import TauCeti.Geometry.Symplectic.Liouville.Plane
+import TauCeti.Topology.Algebra.Module.Determinant
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -458,19 +460,14 @@ theorem exists_det_fderiv_comp_stripMoserFlow_eq_one {r : ℕ∞} (hr : 1 ≤ r)
   -- The chain rule and the multiplicativity of the determinant.
   have hmem := (hbij 1).mapsTo hp
   -- `h u` is differentiable on the strip, where its Jacobian determinant `1 + g u` is nonzero.
-  have hh : DifferentiableAt ℝ (h u) (ψ u 1 p) := by
-    by_contra hnd
-    have h0 := hdet u hu _ hmem
-    rw [fderiv_zero_of_not_differentiableAt hnd, ContinuousLinearMap.det,
-      ContinuousLinearMap.toLinearMap_zero, LinearMap.det_zero' (Module.Basis.finTwoProd ℝ)] at h0
-    have hq := hpos u hu (ψ u 1 p).1 (ψ u 1 p).2 hmem.2
-    exact hq.ne' h0.symm
+  have hh : DifferentiableAt ℝ (h u) (ψ u 1 p) := differentiableAt_of_det_fderiv_ne_zero <| by
+    rw [hdet u hu _ hmem]
+    exact (hpos u hu (ψ u 1 p).1 (ψ u 1 p).2 hmem.2).ne'
   have hψd : DifferentiableAt ℝ (ψ u 1) p :=
     ((ψ u 1).contMDiff.contDiff.of_le (by exact_mod_cast hr)).differentiable one_ne_zero p
   have hcomp : (fderiv ℝ (h u ∘ ψ u 1) p).det =
       (fderiv ℝ (h u) (ψ u 1 p)).det * (fderiv ℝ (ψ u 1) p).det := by
-    rw [fderiv_comp p hh hψd, ContinuousLinearMap.det,
-      ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp]
+    rw [fderiv_comp p hh hψd, ContinuousLinearMap.det_comp]
   rw [hcomp, hdet u hu _ hmem, hdet₁ p hp]
 
 end TauCeti
