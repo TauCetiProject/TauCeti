@@ -116,9 +116,7 @@ def tangentEquivNormalSpaceOfIsLagrangianMap (x : M) :
   let e : TangentSpace I x ≃ₗ[ℝ] f.isImmersion.NormalSpace x hn :=
     (f.isImmersion.tangentSpaceEquivTangentRange x hn).toLinearEquiv.trans
       (IsMaximalTotallyReal.normalEquiv (L := f.isImmersion.tangentRange x hn)
-        (by exact isMaximalTotallyRealMap_iff.1 (hf.isMaximalTotallyRealMap_of_tames
-          (A := fun y ↦ J.almostComplexStructureAt y)
-          (fun y ↦ hJ.isNondegenerate.tames_iff.1 hJ (f y))) x)
+        (by exact isMaximalTotallyRealMap_iff.1 (hf.isMaximalTotallyRealMap hJ) x)
         ((J.almostComplexStructureAt (f x)).injective_domRestrict _))
   e.toContinuousLinearEquiv
 
@@ -129,9 +127,7 @@ theorem toLinearEquiv_tangentEquivNormalSpaceOfIsLagrangianMap (x : M) :
     (f.tangentEquivNormalSpaceOfIsLagrangianMap hn hJ hf x).toLinearEquiv =
       (f.isImmersion.tangentSpaceEquivTangentRange x hn).toLinearEquiv.trans
         (IsMaximalTotallyReal.normalEquiv (L := f.isImmersion.tangentRange x hn)
-          (by exact isMaximalTotallyRealMap_iff.1 (hf.isMaximalTotallyRealMap_of_tames
-            (A := fun y ↦ J.almostComplexStructureAt y)
-            (fun y ↦ hJ.isNondegenerate.tames_iff.1 hJ (f y))) x)
+          (by exact isMaximalTotallyRealMap_iff.1 (hf.isMaximalTotallyRealMap hJ) x)
           ((J.almostComplexStructureAt (f x)).injective_domRestrict _)) :=
   LinearEquiv.toLinearEquiv_toContinuousLinearEquiv _
 
@@ -148,6 +144,15 @@ theorem tangentEquivNormalSpaceOfIsLagrangianMap_apply (x : M) (v : TangentSpace
     ContinuousLinearEquiv.coe_toLinearEquiv,
     Manifold.IsImmersion.coe_tangentSpaceEquivTangentRange_apply]
   exact congrArg Submodule.Quotient.mk (J.almostComplexStructureAt_apply (f x) _)
+
+/-- The inverse of the identification of the tangent and normal spaces sends the normal class of
+`J df_x v` back to `v`. -/
+@[simp]
+theorem tangentEquivNormalSpaceOfIsLagrangianMap_symm_normalClass (x : M) (v : TangentSpace I x) :
+    (f.tangentEquivNormalSpaceOfIsLagrangianMap hn hJ hf x).symm
+        (f.isImmersion.normalClass x hn (J (f x) (mfderiv I I' f x v))) = v :=
+  (ContinuousLinearEquiv.symm_apply_eq _).2
+    (tangentEquivNormalSpaceOfIsLagrangianMap_apply f hn hJ hf x v).symm
 
 variable {k : ℕ} (hk : finrank ℝ V = k + k)
 
@@ -167,9 +172,7 @@ theorem cokerOfExact_eq_units_smul_map_tangentEquivNormalSpaceOfIsLagrangianMap 
           (f.tangentEquivNormalSpaceOfIsLagrangianMap hn hJ hf x).toLinearEquiv o := by
   rw [toLinearEquiv_tangentEquivNormalSpaceOfIsLagrangianMap]
   have hL : IsMaximalTotallyReal _ (f.isImmersion.tangentRange x hn) :=
-    isMaximalTotallyRealMap_iff.1 (hf.isMaximalTotallyRealMap_of_tames
-      (A := fun y ↦ J.almostComplexStructureAt y)
-      (fun y ↦ hJ.isNondegenerate.tames_iff.1 hJ (f y))) x
+    isMaximalTotallyRealMap_iff.1 (hf.isMaximalTotallyRealMap hJ) x
   set L := f.isImmersion.tangentRange x hn
   set eA := (f.isImmersion.tangentSpaceEquivTangentRange x hn).toLinearEquiv
   have hLk : finrank ℝ L = k := eA.finrank_eq.symm.trans hE
@@ -256,6 +259,7 @@ def normalOrientationOfIsLagrangianMap :
 
 /-- The transported normal orientation at `x` is the image of the orientation of `T_x M` under
 `v ↦ [J df_x v]`. -/
+@[simp]
 theorem normalOrientationOfIsLagrangianMap_apply (x : M) :
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
@@ -289,6 +293,7 @@ def lagrangianNormalOrientation :
 /-- **The fibres of the induced normal orientation.** At each point `x`, the induced normal
 orientation of a Lagrangian embedding is the orientation of `N_x` which, preceded by the
 orientation of `T_x M`, gives the symplectic orientation of `T_{f x} N`. -/
+@[simp]
 theorem lagrangianNormalOrientation_apply (x : M) :
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim

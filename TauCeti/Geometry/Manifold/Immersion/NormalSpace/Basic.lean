@@ -185,8 +185,7 @@ theorem normalClass_surjective (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
 `0 → T_x M → T_{f x} N → N_x → 0`. -/
 theorem exact_mfderiv_normalClass (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0) :
     Function.Exact (mfderiv I J f x).toLinearMap (hf.normalClass x hn) := by
-  rw [LinearMap.exact_iff, normalClass_ker]
-  rfl
+  rw [LinearMap.exact_iff, normalClass_ker, tangentRange_def]
 
 /-- An ambient tangent vector has zero normal class precisely when it is tangent to the image. -/
 @[simp]
