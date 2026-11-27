@@ -210,32 +210,35 @@ abbrev linearModuleFunctorLift :
     fun F ↦ (linearModuleFunctor_iff _).2 ⟨inferInstanceAs (F.liftToModuleCat R).Additive,
       inferInstanceAs ((F.liftToModuleCat R).Linear R)⟩
 
-private def liftForgetIso (G : D ⥤ ModuleCat.{w} R) [G.Additive] [G.Linear R] :
-    (AdditiveFunctor.of (G ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})).liftToModuleCat R ≅ G :=
-  NatIso.ofComponents (fun X ↦
-    let F := AdditiveFunctor.of (G ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
-    let e : (F.liftToModuleCat R).obj X ≃ₗ[R] G.obj X :=
-      { toFun := fun x ↦ x
-        invFun := fun x ↦ x
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun r x ↦ by
-          have h : G.map (r • 𝟙 X) = r • 𝟙 (G.obj X) := by simp
-          exact (AdditiveFunctor.liftToModuleCat_smul R F X r x).trans
-            (ConcreteCategory.congr_hom h x) }
-    e.toModuleIso)
-    (by
-      intro X Y f
-      apply ModuleCat.hom_ext
-      ext x
-      rfl)
-
 variable (R D) in
 /-- Additive functors to abelian groups on an `R`-linear category are equivalent to additive
-`R`-linear functors to `R`-modules, via the canonical module-valued lift. -/
+`R`-linear functors to `R`-modules, via the canonical module-valued lift.
+The definition is exposed so both sides of each unit and counit component have definitionally
+equal underlying types in downstream modules. -/
+@[expose]
 def linearModuleFunctorEquiv :
     (D ⥤+ AddCommGrpCat.{w}) ≌ (linearModuleFunctor R D).FullSubcategory :=
+  let forgetScalars := forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}
+  let liftForgetIso (G : D ⥤ ModuleCat.{w} R) [G.Additive] [G.Linear R] :
+      (AdditiveFunctor.of (G ⋙ forgetScalars)).liftToModuleCat R ≅ G :=
+    NatIso.ofComponents (fun X ↦
+      let F := AdditiveFunctor.of (G ⋙ forgetScalars)
+      let e : (F.liftToModuleCat R).obj X ≃ₗ[R] G.obj X :=
+        { toFun := fun x ↦ x
+          invFun := fun x ↦ x
+          left_inv := fun _ ↦ rfl
+          right_inv := fun _ ↦ rfl
+          map_add' := fun _ _ ↦ rfl
+          map_smul' := fun r x ↦ by
+            have h : G.map (r • 𝟙 X) = r • 𝟙 (G.obj X) := by simp
+            exact (AdditiveFunctor.liftToModuleCat_smul R F X r x).trans
+              (ConcreteCategory.congr_hom h x) }
+      e.toModuleIso)
+      (by
+        intro X Y f
+        apply ModuleCat.hom_ext
+        ext x
+        rfl)
   CategoryTheory.Equivalence.mk (linearModuleFunctorLift R D) (linearModuleFunctorForget R D)
     (NatIso.ofComponents (fun F ↦
       (additiveFunctor D AddCommGrpCat).fullyFaithfulι.preimageIso
@@ -265,42 +268,30 @@ theorem linearModuleFunctorEquiv_functor :
 theorem linearModuleFunctorEquiv_inverse :
     (linearModuleFunctorEquiv.{w} R D).inverse = linearModuleFunctorForget R D := (rfl)
 
--- The casts identify the carriers via the forward and inverse functor formulas.
 -- Simplify the applications before simp rewrites their source and target objects.
 /-- The unit of the scalar lift equivalence acts as the identity on elements. -/
 @[simp↓]
 theorem linearModuleFunctorEquiv_unitIso_hom_app_apply (F : D ⥤+ AddCommGrpCat.{w})
     (X : D) (x : F.obj.obj X) :
-    (((linearModuleFunctorEquiv R D).unitIso.hom.app F).hom.app X) x =
-      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
-  (rfl)
+    (((linearModuleFunctorEquiv R D).unitIso.hom.app F).hom.app X) x = x := (rfl)
 
 /-- The inverse unit of the scalar lift equivalence acts as the identity on elements. -/
 @[simp↓]
 theorem linearModuleFunctorEquiv_unitIso_inv_app_apply (F : D ⥤+ AddCommGrpCat.{w})
-    (X : D) (x : (((linearModuleFunctorEquiv R D).functor ⋙
-      (linearModuleFunctorEquiv R D).inverse).obj F).obj.obj X) :
-    (((linearModuleFunctorEquiv R D).unitIso.inv.app F).hom.app X) x =
-      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
-  (rfl)
+    (X : D) (x : F.obj.obj X) :
+    (((linearModuleFunctorEquiv R D).unitIso.inv.app F).hom.app X) x = x := (rfl)
 
 /-- The counit of the scalar lift equivalence acts as the identity on elements. -/
 @[simp↓]
 theorem linearModuleFunctorEquiv_counitIso_hom_app_apply
-    (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D)
-    (x : (((linearModuleFunctorEquiv R D).inverse ⋙
-      (linearModuleFunctorEquiv R D).functor).obj F).obj.obj X) :
-    (((linearModuleFunctorEquiv R D).counitIso.hom.app F).hom.app X) x =
-      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
-  (rfl)
+    (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D) (x : F.obj.obj X) :
+    (((linearModuleFunctorEquiv R D).counitIso.hom.app F).hom.app X) x = x := (rfl)
 
 /-- The inverse counit of the scalar lift equivalence acts as the identity on elements. -/
 @[simp↓]
 theorem linearModuleFunctorEquiv_counitIso_inv_app_apply
     (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D) (x : F.obj.obj X) :
-    (((linearModuleFunctorEquiv R D).counitIso.inv.app F).hom.app X) x =
-      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
-  (rfl)
+    (((linearModuleFunctorEquiv R D).counitIso.inv.app F).hom.app X) x = x := (rfl)
 
 section SourceLinear
 
