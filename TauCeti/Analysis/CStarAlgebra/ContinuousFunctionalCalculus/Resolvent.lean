@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 public import Mathlib.Analysis.CStarAlgebra.Unitization
-import Mathlib.Algebra.Algebra.StrictPositivity
 import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.Algebra.Algebra.Spectrum

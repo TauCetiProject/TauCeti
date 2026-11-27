@@ -28,7 +28,7 @@ while `(c • e) * a ∈ I` by left ideal absorption. For self-adjointness, the 
 `⋆`-subalgebra of `A`, hence a nonunital C⋆-algebra containing `star a * a` for every `a ∈ I`.
 Along the increasing approximate unit `e` of `S`, right ideal absorption gives
 `(e : A) * star a ∈ I`, while
-`Filter.IsApproximateUnit.tendsto_mul_star_of_star_mul_self_mem` gives
+`Filter.IsApproximateUnit.tendsto_mul_right_star_of_star_mul_self_mem` gives
 `(e : A) * star a → star a` (see, e.g., Gerard J. Murphy, *C*-Algebras and Operator Theory*,
 Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example*, Theorem I.5.3).
 
@@ -128,7 +128,7 @@ theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
   have := hl.neBot
   have hmem : star a * a ∈ S := L.mem_starSubalgebra.mpr
     ⟨I.mul_mem_left (star a) a ha, by rw [star_mul, star_star]; exact I.mul_mem_left (star a) a ha⟩
-  refine hI.mem_of_tendsto (hl.tendsto_mul_star_of_star_mul_self_mem hmem) ?_
+  refine hI.mem_of_tendsto (hl.tendsto_mul_right_star_of_star_mul_self_mem hmem) ?_
   exact Eventually.of_forall fun e =>
     I.mul_mem_right (e : A) (star a) (L.mem_starSubalgebra.mp e.property).1
 

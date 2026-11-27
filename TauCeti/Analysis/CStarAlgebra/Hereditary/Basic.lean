@@ -492,7 +492,7 @@ theorem mem_of_star_mul_self_mem {A : Type*} [NonUnitalCStarAlgebra A]
   have := hl.neBot
   have hmem : star x * x ∈ B :=
     L.mem_starSubalgebra.mpr ⟨hx, by rw [star_mul, star_star]; exact hx⟩
-  refine L.isClosed.mem_of_tendsto (hl.tendsto_mul_of_star_mul_self_mem hmem) ?_
+  refine L.isClosed.mem_of_tendsto (hl.tendsto_mul_left_of_star_mul_self_mem hmem) ?_
   exact Eventually.of_forall fun e => hL x (e : A) (L.mem_starSubalgebra.mp e.property).1
 
 /-- For any closed complex left ideal `L` of a C⋆-algebra `A`, `star x * x ∈ L` if and only if
@@ -612,7 +612,7 @@ theorem exists_mul_eq_of_star_mul_self_mem (B : NonUnitalStarSubalgebra ℂ A)
       x ∈ (Submodule.span ℂ (Set.range fun p : A × B => R p.1 p.2)).topologicalClosure := by
     rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
     refine closure_mono Submodule.subset_span ?_
-    exact mem_closure_of_tendsto (hl.tendsto_mul_of_star_mul_self_mem hx)
+    exact mem_closure_of_tendsto (hl.tendsto_mul_left_of_star_mul_self_mem hx)
       (Eventually.of_forall fun e => ⟨(x, e), rfl⟩)
   obtain ⟨b, y, hb_norm, hy_mem, hy_dist, hfac⟩ :=
     ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span_right R hR_assoc
@@ -648,7 +648,7 @@ theorem starSubalgebra_closedLeftIdeal (B : NonUnitalStarSubalgebra ℂ A)
   have := hl.neBot
   have hsand : Tendsto (fun e : B => (e : A) * x * (e : A)) l (𝓝 x) :=
     TauCeti.tendsto_mul_mul_of_isBoundedUnder ⟨1, eventually_map.mpr hl.eventually_norm⟩
-      (hl.tendsto_mul_of_mul_star_self_mem hx₂) (hl.tendsto_mul_of_star_mul_self_mem hx₁)
+      (hl.tendsto_mul_right_of_mul_star_self_mem hx₂) (hl.tendsto_mul_left_of_star_mul_self_mem hx₁)
   exact hB_closed.mem_of_tendsto hsand (Eventually.of_forall fun e => hB.mul_mem e.property x
       e.property)
 

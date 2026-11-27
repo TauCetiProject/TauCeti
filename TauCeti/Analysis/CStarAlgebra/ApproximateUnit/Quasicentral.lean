@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Ideal
-import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.Convex
@@ -158,14 +157,20 @@ private theorem norm_avg_commutator_lt {N : ℕ} {w p : Fin N → A} {a : A} {M 
 
 variable [PartialOrder A] [StarOrderedRing A]
 
-/-- Along the open-unit-ball restriction of `CStarAlgebra.approximateUnit S`, every positive
-strict contraction `u₀` is eventually dominated by strict contractions. -/
+/-- Along the open-unit-ball restriction of `CStarAlgebra.approximateUnit S`, the filter is a
+proper increasing approximate unit and every positive strict contraction `u₀` is eventually
+dominated by strict contractions. -/
 private theorem eventually_le_and_norm_lt_one_ball (S : NonUnitalStarSubalgebra ℂ A)
     [IsClosed (S : Set A)] {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1) :
-    ∀ᶠ y : S in (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1),
-      u₀ ≤ y ∧ ‖y‖ < 1 :=
-  eventually_of_mem (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
-    (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun _ hy => ⟨hy.1, by simpa using hy.2⟩
+    ((CStarAlgebra.isBasis_nonneg_sections S).filter ⊓
+        𝓟 (Metric.ball 0 1)).IsIncreasingApproximateUnit ∧
+      ((CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1)).NeBot ∧
+      ∀ᶠ y : S in (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1),
+        u₀ ≤ y ∧ ‖y‖ < 1 := by
+  have hl₀ := TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball S
+  exact ⟨hl₀, hl₀.neBot, eventually_of_mem
+    (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
+      (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun _ hy => ⟨hy.1, by simpa using hy.2⟩⟩
 
 /-- Single step in the inductive construction of Arveson's chain: given `p : Fin n → S`, choose a
 strict contraction `w_new ≥ u₀` right-approximating `p` and `p * f`, and then choose `p_new`
@@ -179,13 +184,10 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
         ∀ i, ‖((p j : A) * f i) * (w_new : A) - (p j : A) * f i‖ ≤ δ) ∧
       ∀ i, ‖star ((w_new : A) * f i - f i * (w_new : A)) * (p_new : A) -
         star ((w_new : A) * f i - f i * (w_new : A))‖ ≤ δ := by
-  let l₀ : Filter S := (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1)
-  have hl₀ : l₀.IsIncreasingApproximateUnit :=
-    TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball S
-  have := hl₀.neBot
-  have hu₀_mem := eventually_le_and_norm_lt_one_ball S hu₀ hu₀_norm
-  have hp_mem : ∀ᶠ y : S in l₀, ∀ j : Fin n, ‖(p j : A) * (y : A) - (p j : A)‖ ≤ δ ∧
-      ∀ i, ‖((p j : A) * f i) * (y : A) - (p j : A) * f i‖ ≤ δ :=
+  obtain ⟨hl₀, _, hu₀_mem⟩ := eventually_le_and_norm_lt_one_ball S hu₀ hu₀_norm
+  have hp_mem : ∀ᶠ y : S in (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1),
+      ∀ j : Fin n, ‖(p j : A) * (y : A) - (p j : A)‖ ≤ δ ∧
+        ∀ i, ‖((p j : A) * f i) * (y : A) - (p j : A) * f i‖ ≤ δ :=
     eventually_all.mpr fun j =>
       ((tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_left (p j))).eventually
         (ge_mem_nhds hδ)).and <| eventually_all.mpr fun i => by
@@ -291,12 +293,9 @@ theorem exists_quasicentral_approx (S : NonUnitalStarSubalgebra ℂ A) [IsClosed
     ∃ e : S, u₀ ≤ e ∧ ‖e‖ < 1 ∧
       (∀ j, ‖e * g j - g j‖ < ε) ∧
       (∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε) := by
-  let l₀ : Filter S := (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1)
-  have hl₀ : l₀.IsIncreasingApproximateUnit :=
-    TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball S
-  have := hl₀.neBot
-  have hu₀_mem := eventually_le_and_norm_lt_one_ball S hu₀ hu₀_norm
-  have hg_mem : ∀ᶠ y : S in l₀, ∀ j : κ, ‖y * g j - g j‖ < ε ^ 2 / (‖g j‖ + 1) :=
+  obtain ⟨hl₀, _, hu₀_mem⟩ := eventually_le_and_norm_lt_one_ball S hu₀ hu₀_norm
+  have hg_mem : ∀ᶠ y : S in (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1),
+      ∀ j : κ, ‖y * g j - g j‖ < ε ^ 2 / (‖g j‖ + 1) :=
     eventually_all.mpr fun j =>
       (tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_right (g j))).eventually
         (gt_mem_nhds (by positivity))

@@ -29,8 +29,8 @@ any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply
 
 On `TauCeti.stateSpace`, Cauchy–Schwarz extends spectral attainment to arbitrary (not necessarily
 normal) elements of unital C⋆-algebras (`TauCeti.exists_mem_stateSpace_apply_eq_of_mem_spectrum`),
-and passing through the unitization `A⁺¹` gives state characterizations of norm and order on
-possibly nonunital C⋆-algebras (`TauCeti.exists_mem_stateSpace_apply_eq_norm`,
+and passing through the unitization `A⁺¹` gives state characterizations of order and of the norm
+of normal elements on possibly nonunital C⋆-algebras (`TauCeti.exists_mem_stateSpace_apply_eq_norm`,
 `TauCeti.norm_le_of_forall_mem_stateSpace`, `TauCeti.nonneg_iff_forall_mem_stateSpace`).
 
 ## References

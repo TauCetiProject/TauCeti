@@ -10,7 +10,6 @@ public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolve
 public import TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import TauCeti.Analysis.CStarAlgebra.Quotient
-import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import Mathlib.Topology.Algebra.InfiniteSum.Order
@@ -258,14 +257,6 @@ private theorem exists_mem_stateSpace_compress_eq_norm_sq {u : A} (hu : IsSelfAd
   rw [h1u, ← Unitization.inr_star, ← Unitization.inr_mul, hmul, Unitization.norm_inr] at hω_eq
   exact ⟨ω, hω, hω_eq⟩
 
-private theorem one_sub_inr_resolventApprox_nonneg_and_norm_le_one {h : A} (hh : 0 ≤ h)
-    (m : ℕ) :
-    0 ≤ 1 - (Unitization.inr (resolventApprox h m) : A⁺¹) ∧
-      ‖1 - (Unitization.inr (resolventApprox h m) : A⁺¹)‖ ≤ 1 :=
-  CStarAlgebra.mem_Icc_iff_norm_le_one.mp <| Set.sub_mem_Icc_zero_iff_right.mpr <|
-    CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr
-      ⟨resolventApprox_nonneg hh m, (norm_resolventApprox_lt_one hh m).le⟩
-
 /-- Along `atTop`, compressing any sequence of states `ω m ∈ stateSpace A⁺¹` by
 `1 - ((resolventApprox h m : A) : A⁺¹)` sends `(h : A⁺¹)` to `0`. -/
 private theorem tendsto_compressFunctional_resolventApprox_self {h : A} (hh : 0 ≤ h)
@@ -275,7 +266,8 @@ private theorem tendsto_compressFunctional_resolventApprox_self {h : A} (hh : 0 
   let u : ℕ → A := resolventApprox h
   let v : ℕ → A⁺¹ := fun m => 1 - (u m : A⁺¹)
   have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 :=
-    one_sub_inr_resolventApprox_nonneg_and_norm_le_one hh m
+    one_sub_inr_nonneg_and_norm_le_one (resolventApprox_nonneg hh m)
+      (norm_resolventApprox_lt_one hh m).le
   have hinv : Tendsto (fun m : ℕ => ((m : ℝ) + 1)⁻¹) atTop (𝓝 0) := by
     simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
   refine tendsto_iff_norm_sub_tendsto_zero.mpr <| squeeze_zero_norm' (.of_forall fun m => ?_) hinv
@@ -305,7 +297,8 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
   let u : ℕ → A := resolventApprox h
   let v : ℕ → A⁺¹ := fun m => 1 - (u m : A⁺¹)
   have hv (m : ℕ) : 0 ≤ v m ∧ ‖v m‖ ≤ 1 :=
-    one_sub_inr_resolventApprox_nonneg_and_norm_le_one hh m
+    one_sub_inr_nonneg_and_norm_le_one (resolventApprox_nonneg hh m)
+      (norm_resolventApprox_lt_one hh m).le
   choose ω hω_mem hω_val using fun m =>
     exists_mem_stateSpace_compress_eq_norm_sq (isSelfAdjoint_resolventApprox h m) a
   let ψ : ℕ → WeakDual ℂ A⁺¹ := fun m => compressFunctional (v m) (ω m)
