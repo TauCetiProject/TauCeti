@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Analysis.Matrix.Spectrum
 
 import TauCeti.Analysis.Complex.Basic
@@ -332,3 +333,18 @@ theorem im_inv_sub_smul_one_apply_self_pos {z : 𝕜} (hz : 0 < RCLike.im z) (i 
   simp [Matrix.mul_apply, hrow] at h1
 
 end Matrix.IsHermitian
+
+/-- The square of a nonreal scalar lies outside the spectrum of a positive semidefinite
+matrix. -/
+theorem Matrix.PosSemidef.sq_notMem_spectrum_of_im_ne_zero {n 𝕜 : Type*} [Fintype n]
+    [DecidableEq n] [RCLike 𝕜] {A : Matrix n n 𝕜} (hA : A.PosSemidef) {z : 𝕜}
+    (hz : RCLike.im z ≠ 0) : z ^ 2 ∉ spectrum 𝕜 A := by
+  rw [hA.isHermitian.spectrum_eq_image_range]
+  rintro ⟨_, ⟨i, rfl⟩, hi⟩
+  let f := TauCeti.toComplexStarAlgHom 𝕜
+  have hf (r : ℝ) : f (r : 𝕜) = (r : ℂ) := f.commutes r
+  have heq : (hA.isHermitian.eigenvalues i : ℂ) = f z ^ 2 := by
+    simpa only [map_pow, hf] using congrArg f hi
+  have hnonneg := Complex.zero_le_real.mpr (hA.eigenvalues_nonneg i)
+  rw [heq] at hnonneg
+  exact hz (by simpa [f] using Complex.sq_nonneg_iff.mp hnonneg)

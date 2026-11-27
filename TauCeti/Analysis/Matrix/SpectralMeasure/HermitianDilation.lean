@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.SpectralMeasure.SingularValues
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Matrix.Resolvent.HermitianDilation
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
@@ -15,8 +16,8 @@ import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 # Spectral measures of Hermitian dilations
 
 The spectral measure of the Hermitian dilation `[[0, Aᴴ], [A, 0]]` of a square matrix
-is the symmetrized singular-value measure of `A`. Its resolvent transform at `z` equals
-`z` times the transform of the squared singular-value measure at `z²`.
+is the symmetrized singular-value measure of `A`. For nonreal `z`, its resolvent transform
+at `z` equals `z` times the transform of the squared singular-value measure at `z²`.
 In particular, for `A = X - a • 1`, block resolvent estimates for the dilation give
 information about the singular values needed in Girko's hermitization.
 
@@ -48,22 +49,12 @@ theorem resolventTransform_spectralMeasure_fromBlocks_zero_conjTranspose
       z * resolventTransform
         ((Aᴴ * A).spectralMeasure (isHermitian_conjTranspose_mul_self A) : Measure ℝ) (z ^ 2) := by
   dsimp only
-  have houtside {B : Matrix n n ℂ} (hB : B.PosSemidef) : z ^ 2 ∉ spectrum ℂ B := by
-    rw [hB.isHermitian.spectrum_eq_image_range, RCLike.ofReal_eq_complex_ofReal]
-    rintro ⟨_, ⟨i, rfl⟩, hi⟩
-    have him := congrArg Complex.im hi
-    simp only [Complex.ofReal_im, pow_two, Complex.mul_im] at him
-    have hzr : z.re = 0 := (mul_eq_zero.mp (by linarith only [him] :
-      z.re * z.im = 0)).resolve_right hz
-    have hre := congrArg Complex.re hi
-    simp only [Complex.ofReal_re, pow_two, Complex.mul_re, hzr, zero_mul, zero_sub] at hre
-    nlinarith [hB.eigenvalues_nonneg i, sq_pos_of_ne_zero hz]
   have hgram := spectralMeasure_eq_of_charpoly_eq (isHermitian_mul_conjTranspose_self A)
     (isHermitian_conjTranspose_mul_self A) (charpoly_mul_comm A Aᴴ)
   have hright := resolventTransform_spectralMeasure _ (isHermitian_conjTranspose_mul_self A)
-    (houtside (posSemidef_conjTranspose_mul_self A))
+    ((posSemidef_conjTranspose_mul_self A).sq_notMem_spectrum_of_im_ne_zero hz)
   have hleft := resolventTransform_spectralMeasure _ (isHermitian_mul_conjTranspose_self A)
-    (houtside (posSemidef_self_mul_conjTranspose A))
+    ((posSemidef_self_mul_conjTranspose A).sq_notMem_spectrum_of_im_ne_zero hz)
   rw [hgram] at hleft
   have hd := IsHermitian.fromBlocks isHermitian_zero
     (conjTranspose_conjTranspose A) isHermitian_zero
@@ -76,9 +67,11 @@ theorem resolventTransform_spectralMeasure_fromBlocks_zero_conjTranspose
   rw [← htrace]
   field_simp
 
+variable {𝕜 : Type*} [RCLike 𝕜]
+
 /-- The empirical spectrum of the Hermitian dilation of a square matrix consists of the positive
 and negative copies of its singular values, with the two copies of each zero retained. -/
-theorem spectralMeasure_fromBlocks_zero_conjTranspose (A : Matrix n n ℂ) :
+theorem spectralMeasure_fromBlocks_zero_conjTranspose (A : Matrix n n 𝕜) :
     let D := fromBlocks 0 Aᴴ A 0
     let hD : D.IsHermitian :=
       IsHermitian.fromBlocks isHermitian_zero (conjTranspose_conjTranspose A) isHermitian_zero
@@ -88,25 +81,22 @@ theorem spectralMeasure_fromBlocks_zero_conjTranspose (A : Matrix n n ℂ) :
   dsimp only
   apply ProbabilityMeasure.toMeasure_injective
   refine Measure.ext_of_resolventTransform fun z hz ↦ ?_
+  let f := TauCeti.toComplexStarAlgHom 𝕜
+  have hstar := conjTranspose_map f (map_star f) (A := A)
+  have hD : (fromBlocks 0 Aᴴ A 0).map f = fromBlocks 0 (A.map f)ᴴ (A.map f) 0 := by
+    rw [fromBlocks_map, hstar, Matrix.map_zero f (map_zero f)]
+  have hG : (Aᴴ * A).map f = (A.map f)ᴴ * A.map f := by rw [Matrix.map_mul, hstar]
+  have htransform := resolventTransform_spectralMeasure_fromBlocks_zero_conjTranspose
+    (A.map f) hz.ne'
+  simp only [← hD, ← hG, spectralMeasure_map] at htransform
   let ν : Measure ℝ := A.singularValueMeasure
   have hc := (Complex.continuous_resolvent_real hz.ne').stronglyMeasurable
   have hi : Integrable (resolvent z) ν := integrable_resolvent_of_im_ne_zero hz.ne'
   have hin : Integrable (resolvent z) (ν.map (fun x : ℝ ↦ -x)) :=
     integrable_resolvent_of_im_ne_zero hz.ne'
-  have hkernel (x : ℝ) :
-      (2 : ℂ)⁻¹ * (resolvent z x + resolvent z (-x)) = z * resolvent (z ^ 2) (x ^ 2) := by
-    have hne (y : ℝ) : (y : ℂ) - z ≠ 0 := fun h ↦
-      hz.ne' (by simpa using congrArg Complex.im h)
-    have hfactor : ((x : ℂ) ^ 2 - z ^ 2) = ((x : ℂ) - z) * ((x : ℂ) + z) := by ring
-    have hplus : (x : ℂ) + z ≠ 0 := fun h ↦ hz.ne' (by simpa using congrArg Complex.im h)
-    simp only [Complex.resolvent_real_eq_inv, Complex.ofReal_pow, Complex.ofReal_neg]
-    have hneg : -(x : ℂ) - z ≠ 0 := by simpa using hne (-x)
-    field_simp [hne x, hneg, hfactor, hplus]
-    ring
   have hsq : (A.singularValueMeasure.map (fun x : ℝ ↦ x ^ 2) : Measure ℝ) =
       ν.map (fun x : ℝ ↦ x ^ 2) := ProbabilityMeasure.toMeasure_map _
-  rw [resolventTransform_spectralMeasure_fromBlocks_zero_conjTranspose A hz.ne',
-    ← map_singularValueMeasure_sq, hsq, ProbabilityMeasure.toMeasure_convexComb,
+  rw [htransform, ← map_singularValueMeasure_sq, hsq, ProbabilityMeasure.toMeasure_convexComb,
     ProbabilityMeasure.toMeasure_map, resolventTransform_apply, resolventTransform_apply,
     integral_add_measure (hi.smul_measure (by simp)) (hin.smul_measure (by simp)),
     integral_smul_measure, integral_smul_measure,
@@ -118,12 +108,17 @@ theorem spectralMeasure_fromBlocks_zero_conjTranspose (A : Matrix n n ℂ) :
   simp only [ENNReal.toReal_inv, ENNReal.toReal_ofNat, Complex.real_smul, Complex.ofReal_inv,
     Complex.ofReal_ofNat]
   rw [← mul_add, ← integral_add hi hin', ← integral_const_mul, ← integral_const_mul]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦ (hkernel x).symm)
+  refine integral_congr_ae (.of_forall fun x ↦
+    (Complex.inv_two_mul_add_resolvent_real_neg x ?_).symm)
+  intro h
+  apply hz.ne' (Complex.sq_nonneg_iff.mp ?_)
+  rw [h, ← Complex.ofReal_pow]
+  exact Complex.zero_le_real.mpr (sq_nonneg x)
 
 /-- Taking absolute values in the empirical spectrum of the dilation recovers the singular
 values with their original normalization. -/
 @[simp]
-theorem map_abs_spectralMeasure_fromBlocks_zero_conjTranspose (A : Matrix n n ℂ) :
+theorem map_abs_spectralMeasure_fromBlocks_zero_conjTranspose (A : Matrix n n 𝕜) :
     let D := fromBlocks 0 Aᴴ A 0
     let hD : D.IsHermitian :=
       IsHermitian.fromBlocks isHermitian_zero (conjTranspose_conjTranspose A) isHermitian_zero

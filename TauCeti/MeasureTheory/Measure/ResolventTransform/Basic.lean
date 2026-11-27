@@ -66,6 +66,16 @@ namespace Complex
 theorem resolvent_real_eq_inv (z : ℂ) (x : ℝ) : resolvent (R := ℝ) z x = ((x : ℂ) - z)⁻¹ := by
   rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
 
+/-- Averaging the resolvent kernel at opposite real arguments gives the kernel at the squared
+argument and parameter, multiplied by the original parameter, away from the poles. -/
+theorem inv_two_mul_add_resolvent_real_neg {z : ℂ} (x : ℝ) (hz : z ^ 2 ≠ (x : ℂ) ^ 2) :
+    (2 : ℂ)⁻¹ * (resolvent z x + resolvent z (-x)) = z * resolvent (z ^ 2) (x ^ 2) := by
+  have hp : (x : ℂ) - z ≠ 0 := sub_ne_zero.mpr fun h ↦ hz (by rw [h])
+  have hm : -(x : ℂ) - z ≠ 0 := sub_ne_zero.mpr fun h ↦ hz (by rw [← h, neg_sq])
+  simp only [resolvent_real_eq_inv, Complex.ofReal_pow, Complex.ofReal_neg]
+  field_simp [hp, hm, sub_ne_zero.mpr hz.symm]
+  ring
+
 /-- The imaginary part of the real resolvent kernel, with sign `(x - z)⁻¹`. -/
 theorem im_resolvent_real (z : ℂ) (x : ℝ) :
     (resolvent z x).im = z.im / ((x - z.re) ^ 2 + z.im ^ 2) := by
