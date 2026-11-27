@@ -25,7 +25,7 @@ while it is `±1`.
 Consequently the complement of a simply connected region is connected through shared edges when
 the region is finite: every component of the faces outside `R` is infinite, since a finite one
 would be a hole, and for finite `R` the faces far from `R` all lie in one component, the only
-infinite one (`TauCeti.existsUnique_infinite_supp_of_finite`).
+infinite one (`TauCeti.hexGraph_existsUnique_infinite_supp_of_finite`).
 
 ## Main definitions
 
@@ -179,7 +179,7 @@ theorem IsSimplyConnectedRegion.infinite_supp (hR : IsSimplyConnectedRegion R)
 connected `R`, the faces outside `R` are connected through shared edges. -/
 theorem IsSimplyConnectedRegion.connected_induce_compl (hR : IsSimplyConnectedRegion R)
     (hfin : R.Finite) : (hexGraph.induce Rᶜ).Connected := by
-  obtain ⟨c, -, huniq⟩ := existsUnique_infinite_supp_of_finite hfin
+  obtain ⟨c, -, huniq⟩ := hexGraph_existsUnique_infinite_supp_of_finite hfin
   have hall : ∀ c' : hexGraph.ComponentCompl R, c' = c := fun c' => huniq c' (hR.infinite_supp c')
   obtain ⟨v, hv, -⟩ := c.nonempty
   rw [SimpleGraph.connected_iff_exists_forall_reachable]

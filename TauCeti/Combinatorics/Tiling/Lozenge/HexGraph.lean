@@ -46,8 +46,8 @@ corresponding to the pair of its white and its black face.
   bijection between the edges of the lattice and of `hexGraph` commutes with translations and `ρ`.
 * `TauCeti.vertexCycle_isCycle`, `TauCeti.toFinset_support_vertexCycle`: the six faces at a vertex
   form a `6`-cycle of `hexGraph`.
-* `TauCeti.existsUnique_infinite_supp_of_finite`: for finite `R`, exactly one component of the
-  faces outside `R` is infinite.
+* `TauCeti.hexGraph_existsUnique_infinite_supp_of_finite`: for finite `R`, exactly one component
+  of the faces outside `R` is infinite.
 
 ## References
 
@@ -460,7 +460,7 @@ end Far
 /-- **Exactly one infinite component.** For finite `R`, exactly one component of the graph of faces
 outside `R`, adjacent when they share an edge, is infinite: the one containing every face far from
 `R`. -/
-theorem existsUnique_infinite_supp_of_finite {R : Set TriFace} (hR : R.Finite) :
+theorem hexGraph_existsUnique_infinite_supp_of_finite {R : Set TriFace} (hR : R.Finite) :
     ∃! c : hexGraph.ComponentCompl R, c.supp.Infinite := by
   obtain ⟨N, hN, hRN⟩ := exists_abs_le_of_finite hR
   have hP : ∀ u : ℤ × ℤ, (N < |u.1| ∨ N < |u.2|) → ∀ b, (⟨u, b⟩ : TriFace) ∈ Rᶜ := by
