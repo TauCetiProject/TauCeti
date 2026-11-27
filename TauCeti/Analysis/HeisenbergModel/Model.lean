@@ -51,7 +51,10 @@ sesquilinear form invariant under every `ϱ y` is a multiple of `⟨·, ·⟩`.
 
 * `TauCeti.ReproducingModel.norm_apply_le`, `TauCeti.ReproducingModel.continuous`: elements of
   the model are continuous and bounded by their norm.
-* `TauCeti.ReproducingModel.innerSL_heisenbergRep_vacuum`: `⟨ϱ x e, v⟩ = v x`.
+* The `ContinuousEval` instance: `v x` is jointly continuous in `v` and `x`.
+* `TauCeti.ReproducingModel.innerSL_heisenbergRep_vacuum`,
+  `TauCeti.ReproducingModel.innerSL_heisenbergRep_vacuum_right`: `⟨ϱ x e, v⟩ = v x` and
+  `⟨v, ϱ x e⟩ = conj (v x)`.
 * `TauCeti.ReproducingModel.map_eq_integral`, `TauCeti.ReproducingModel.hom_ext`,
   `TauCeti.ReproducingModel.integrated_eq_smul`, `TauCeti.ReproducingModel.exists_lift`:
   superposition.
@@ -479,6 +482,21 @@ theorem innerSL_heisenbergRep_vacuum : innerSL (heisenbergRep x vacuum) v = v x 
 @[simp]
 theorem innerSL_vacuum : innerSL vacuum v = v 0 := by
   simpa using innerSL_heisenbergRep_vacuum v 0
+
+/-- The reproducing property in the second argument: `⟨v, ϱ x e⟩ = conj (v x)`. -/
+theorem innerSL_heisenbergRep_vacuum_right : innerSL v (heisenbergRep x vacuum) = conj (v x) := by
+  rw [← conj_innerSL, innerSL_heisenbergRep_vacuum]
+
+/-- The value `v x` is jointly continuous in the vector `v` and the point `x`: it is the value at
+`0` of the translate `ϱ (-x) v`. -/
+instance : ContinuousEval (ReproducingModel β μ e) W ℂ where
+  continuous_eval := by
+    have h : Continuous fun p : ReproducingModel β μ e × W ↦
+        evalCLM 0 (heisenbergRep (-p.2) p.1) :=
+      (evalCLM 0).continuous.comp
+        (HeisenbergDatum.Representation.continuous_apply_apply _ continuous_snd.neg continuous_fst)
+    refine h.congr fun p ↦ ?_
+    simp [HeisenbergDatum.apply_zero]
 
 end Inner
 

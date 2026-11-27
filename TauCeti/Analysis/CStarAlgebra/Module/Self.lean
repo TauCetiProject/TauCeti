@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
+public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 
 /-!
 # A C⋆-algebra as a right Hilbert module over itself
@@ -36,6 +37,8 @@ left self-module of `Aᵐᵒᵖ` transported along `MulOpposite.op : A → Aᵐ�
   `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) ≃ₗ[Aᵐᵒᵖ] (ι → Aᵐᵒᵖ)`.
 * `WithCStarModule.sum_op_smul_single_one`: finite standard-basis expansion in
   `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)`.
+* `CStarModule.isAdjointPair_mulLeft`, `CStarModule.isAdjointPair_mulLeft_of_isSelfAdjoint`:
+  left multiplication by `a` has adjoint left multiplication by `star a` on the right self-module.
 
 ## References
 
@@ -130,5 +133,20 @@ theorem topologicalClosure_span_range_unop_inner_mulOpposite :
       = ⊤ :=
   Submodule.dense_iff_topologicalClosure_eq_top.mp <|
     dense_range_unop_inner_mulOpposite.mono Submodule.subset_span
+
+/-- Left multiplication by `a : A` and `star a` form an adjoint pair on the right self-module
+`CStarModule Aᵐᵒᵖ A`. -/
+theorem isAdjointPair_mulLeft (a : A) :
+    LinearMap.IsAdjointPair (innerₛₗ (A := Aᵐᵒᵖ) (E := A)).flip
+      (innerₛₗ (A := Aᵐᵒᵖ) (E := A)).flip (fun x ↦ a * x) (fun x ↦ star a * x) :=
+  isAdjointPair_inner_iff.mpr fun x y ↦ unop_injective <| by
+    simp only [unop_inner_mulOpposite, star_mul, mul_assoc]
+
+/-- Left multiplication by a self-adjoint element `p : A` is self-adjoint on the right self-module
+`CStarModule Aᵐᵒᵖ A`. -/
+theorem isAdjointPair_mulLeft_of_isSelfAdjoint {p : A} (hp : IsSelfAdjoint p) :
+    LinearMap.IsAdjointPair (innerₛₗ (A := Aᵐᵒᵖ) (E := A)).flip
+      (innerₛₗ (A := Aᵐᵒᵖ) (E := A)).flip (fun x ↦ p * x) (fun x ↦ p * x) := by
+  simpa only [hp.star_eq] using isAdjointPair_mulLeft p
 
 end CStarModule
