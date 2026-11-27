@@ -22,10 +22,17 @@ On a Noetherian integral scheme of dimension at most one every point other than 
 is closed, so this applies to the zero locus of a nonzero function on an open subset: that zero
 locus is closed in the whole scheme, not only in the open subset.
 
+In particular a Noetherian quasi-sober `T₁` space is finite: it is the closure of its finitely
+many generic points, and a finite set is closed in a `T₁` space. Mathlib's
+`TopologicalSpace.NoetherianSpace.finite` is the Hausdorff case. This applies to the fibre of a
+morphism of finite type over a point when no point of the fibre specializes to another one.
+
 ## Main results
 
 * `IsLocallyClosed.isClosed_of_subset_closedPoints`: a locally closed set of closed points of a
   Noetherian quasi-sober space is closed.
+* `TopologicalSpace.NoetherianSpace.finite_of_t1Space`: a Noetherian quasi-sober `T₁` space is
+  finite.
 
 ## References
 
@@ -56,3 +63,14 @@ theorem IsLocallyClosed.isClosed_of_subset_closedPoints [NoetherianSpace X] [Qua
   have hgs : g ∈ U ∩ ⋃₀ S := ⟨hgU, subset_sUnion_of_mem hT hg.mem⟩
   rw [← hg.def, (hcl hgs).closure_eq, inter_eq_right.mpr (singleton_subset_iff.mpr hgU)]
   exact hcl hgs
+
+/-- **Noetherian `T₁` spaces are finite.** A Noetherian quasi-sober space in which every point is
+closed is finite: it has finitely many irreducible components, hence finitely many generic points,
+and their closure is the whole space. -/
+theorem TopologicalSpace.NoetherianSpace.finite_of_t1Space [NoetherianSpace X] [QuasiSober X]
+    [T1Space X] : Finite X := by
+  have hfin : (genericPoints X).Finite :=
+    genericPoints.finite NoetherianSpace.finite_irreducibleComponents
+  have h := genericPoints.closure (α := X)
+  rw [hfin.isClosed.closure_eq] at h
+  exact Set.finite_univ_iff.mp (h ▸ hfin)

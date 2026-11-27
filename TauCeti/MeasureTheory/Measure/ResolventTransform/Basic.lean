@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
+public import Mathlib.MeasureTheory.Measure.Sub
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Within
@@ -146,6 +147,16 @@ theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) 
   rw [resolventTransform_apply, ← integral_neg]
   congr 1 with x
   rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
+
+/-- The resolvent transform subtracts a dominated finite measure at points where the
+resolvent is integrable for the larger measure. -/
+theorem Measure.resolventTransform_sub (μ : Measure ℝ) {ν : Measure ℝ} [IsFiniteMeasure ν]
+    (hν : ν ≤ μ) {z : ℂ} (hz : Integrable (resolvent (R := ℝ) z) μ) :
+    resolventTransform (μ - ν) z = resolventTransform μ z - resolventTransform ν z := by
+  apply eq_sub_of_add_eq
+  simp only [resolventTransform_apply]
+  rw [← integral_add_measure (hz.mono_measure Measure.sub_le) (hz.mono_measure hν),
+    Measure.sub_add_cancel_of_le hν]
 
 /-- At a nonreal point, the resolvent transform of a measure `μ` without finite weighted mass
 `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since the resolvent kernel is not integrable. -/

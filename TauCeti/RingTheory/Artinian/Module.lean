@@ -10,6 +10,10 @@ public import Mathlib.RingTheory.Artinian.Module
 /-!
 # Artinian modules embed into finite powers of a separating module
 
+This file also records that an injective linear map from an Artinian module `M` to a module
+isomorphic to `M` is bijective (`IsArtinian.bijective_of_injective_of_linearEquiv`), the
+two-module form of Mathlib's `IsArtinian.bijective_of_injective_endomorphism`.
+
 If the linear maps from an Artinian module `M` to a module `E` separate the points of `M`, then
 finitely many of them already do: `M` embeds into a finite power `Eⁿ`. The descending chain
 condition provides a family of maps whose common kernel is minimal among the common kernels of
@@ -51,3 +55,14 @@ theorem IsArtinian.exists_injective_linearMap_pi [IsArtinian R M]
   · beta_reduce at heq
     rw [← heq] at hm
     simpa using congr_fun (LinearMap.mem_ker.mp hm) 0
+
+/-- **An injective linear map between isomorphic Artinian modules is bijective.** If `M` is
+Artinian and `e : M ≃ N`, then every injective linear map `f : M → N` is bijective: `e⁻¹ ∘ f` is an
+injective, hence bijective, endomorphism of `M`. -/
+theorem IsArtinian.bijective_of_injective_of_linearEquiv [IsArtinian R M] (e : M ≃ₗ[R] E)
+    (f : M →ₗ[R] E) (hf : Function.Injective f) : Function.Bijective f := by
+  have h := IsArtinian.bijective_of_injective_endomorphism (e.symm.toLinearMap ∘ₗ f)
+    (e.symm.injective.comp hf)
+  refine ⟨hf, fun x ↦ ?_⟩
+  obtain ⟨m, hm⟩ := h.2 (e.symm x)
+  exact ⟨m, e.symm.injective hm⟩

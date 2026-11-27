@@ -60,13 +60,14 @@ theorem isSheafFor_bigPresheaf_ofArrows_ι (T : Over S) {ι : Type*} {U : ι →
   -- Read each `x i` as a section `s i` of `G = h^* F` over `U i`; compatibility of the family
   -- makes these sections agree on overlaps, so they glue in the sheaf `G` to a global section.
   let G := (pullback T.hom).obj F
-  have he (V : T.left.Opens) := bijective_bigSectionsRestrictLE_ι F T.hom V
+  have he (V : T.left.Opens) := bijective_bigSectionsRestrictLE_ι F T.hom V rfl
   choose s hs using fun i ↦ (he (U i)).2 (x i)
   have hcompat : TopCat.Presheaf.IsCompatible G.presheaf U s := by
     intro i j
-    refine (he (U i ⊓ U j)).1 ((bigSectionsRestrict_homMk_homOfLE F T inf_le_left (s i)).symm.trans
-      (((congrArg _ (hs i)).trans ?_).trans (bigSectionsRestrict_homMk_homOfLE F T inf_le_right
-        (s j))))
+    refine (he (U i ⊓ U j)).1
+      ((bigSectionsRestrict_homMk_homOfLE F T inf_le_left rfl rfl (s i)).symm.trans
+        (((congrArg _ (hs i)).trans ?_).trans
+          (bigSectionsRestrict_homMk_homOfLE F T inf_le_right rfl rfl (s j))))
     have hij := hx i j (Over.mk ((U i ⊓ U j).ι ≫ T.hom))
       (Over.homMk (T.left.homOfLE (inf_le_left : U i ⊓ U j ≤ U i)) (by simp))
       (Over.homMk (T.left.homOfLE (inf_le_right : U i ⊓ U j ≤ U j)) (by simp))

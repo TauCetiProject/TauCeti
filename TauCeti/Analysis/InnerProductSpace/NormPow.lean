@@ -55,10 +55,13 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
   everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
-* `hasFDerivAt_norm_rpow_smul_self_of_ne`, `norm_rpow_smul_id_add_smulRight_le`,
-  `trace_rpow_smul_id_add_smulRight`: the derivative of the radial field `x ↦ ‖x‖ ^ p • x` away
-  from zero, its size `O(‖x‖ ^ p)`, and its trace `(dim E + p) ‖x‖ ^ p`.
+* `hasFDerivAt_norm_rpow_smul_self_of_ne`, `fderiv_norm_rpow_smul_self_of_ne`,
+  `norm_rpow_smul_id_add_smulRight_le`, `trace_rpow_smul_id_add_smulRight`: the derivative of the
+  radial field `x ↦ ‖x‖ ^ p • x` away from zero, its size `O(‖x‖ ^ p)`, and its trace
+  `(dim E + p) ‖x‖ ^ p`.
 * `continuous_norm_rpow_smul_self`: for `p > -1` the radial field is continuous at the origin.
+* `norm_norm_rpow_smul_sub_le`: for `p ≤ 0` the radial field changes by `O(‖a - b‖ ‖b‖ ^ p)`
+  between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `DifferentiableAt.hasFDerivAt_comp_norm`, `ContDiff.comp_norm`: the derivative and the
   smoothness of a radial function `x ↦ ψ ‖x‖` when `ψ` vanishes near `0`.
 * `differentiableAt_comp_norm_iff`: away from the origin, a radial function `x ↦ ψ ‖x‖` is
@@ -213,6 +216,13 @@ theorem hasFDerivAt_norm_rpow_smul_self_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
         ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).smul (hasFDerivAt_id x)
 
+/-- Away from the origin, the Fréchet derivative of the radial field `x ↦ ‖x‖ ^ p • x` is
+`‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`. -/
+theorem fderiv_norm_rpow_smul_self_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
+    fderiv ℝ (fun y : E ↦ ‖y‖ ^ p • y) x =
+      ‖x‖ ^ p • ContinuousLinearMap.id ℝ E + ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x :=
+  (hasFDerivAt_norm_rpow_smul_self_of_ne p hx).fderiv
+
 /-- For `p > -1` the radial field `x ↦ ‖x‖ ^ p • x` is continuous, also at the origin, where it
 vanishes. -/
 theorem continuous_norm_rpow_smul_self {p : ℝ} (hp : -1 < p) :
@@ -253,6 +263,45 @@ theorem norm_rpow_smul_id_add_smulRight_le (p : ℝ) (x : E) :
     _ = (1 + |p|) * ‖x‖ ^ p := by
         rw [mul_assoc, ← Real.rpow_add_one hx'.ne', sub_add_cancel]
         ring
+
+/-- **Smoothness of the radial field `x ↦ ‖x‖ ^ p • x`** for `p ≤ 0`: if `2 ‖a - b‖ ≤ ‖b‖`, then
+
+`‖‖a‖ ^ p • a - ‖b‖ ^ p • b‖ ≤ (1 + |p|) 2 ^ (-p) ‖a - b‖ ‖b‖ ^ p`.
+
+For `p = -dim E` the field is a multiple of the gradient of the Newtonian kernel, and this is its
+smoothness estimate as a singular kernel homogeneous of degree `1 - dim E`. -/
+theorem norm_norm_rpow_smul_sub_le {p : ℝ} (hp : p ≤ 0) {a b : E} (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
+    ‖‖a‖ ^ p • a - ‖b‖ ^ p • b‖ ≤ (1 + |p|) * 2 ^ (-p) * ‖a - b‖ * ‖b‖ ^ p := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · obtain rfl : a = 0 := by
+      rw [sub_zero, norm_zero] at hab
+      exact norm_eq_zero.mp (by linarith [norm_nonneg a])
+    simp
+  have hbN : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  -- Every point of the segment from `b` to `a` has norm at least `‖b‖ / 2`.
+  have hseg (z : E) (hz : z ∈ segment ℝ b a) : ‖b‖ / 2 ≤ ‖z‖ := by
+    rw [segment_eq_image'] at hz
+    obtain ⟨t, ht, rfl⟩ := hz
+    have htd : ‖t • (a - b)‖ ≤ ‖a - b‖ := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
+      exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+    linarith [norm_sub_le_norm_add b (t • (a - b))]
+  have hne (z : E) (hz : z ∈ segment ℝ b a) : z ≠ 0 :=
+    norm_pos_iff.mp ((half_pos hbN).trans_le (hseg z hz))
+  have hbound (z : E) (hz : z ∈ segment ℝ b a) :
+      ‖‖z‖ ^ p • ContinuousLinearMap.id ℝ E + ((p * ‖z‖ ^ (p - 2)) • innerSL ℝ z).smulRight z‖ ≤
+        (1 + |p|) * 2 ^ (-p) * ‖b‖ ^ p := by
+    refine (norm_rpow_smul_id_add_smulRight_le p z).trans ?_
+    rw [mul_assoc]
+    gcongr
+    calc ‖z‖ ^ p ≤ (‖b‖ / 2) ^ p := Real.rpow_le_rpow_of_nonpos (by positivity) (hseg z hz) hp
+      _ = 2 ^ (-p) * ‖b‖ ^ p := by
+          rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two,
+            mul_comm]
+  have h := (convex_segment b a).norm_image_sub_le_of_norm_hasFDerivWithin_le
+    (fun z hz => (hasFDerivAt_norm_rpow_smul_self_of_ne p (hne z hz)).hasFDerivWithinAt) hbound
+    (left_mem_segment ℝ b a) (right_mem_segment ℝ b a)
+  linarith
 
 /-- For `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable everywhere, including at the origin,
 with derivative `‖y‖ ^ r • id + (r ‖y‖ ^ (r - 2) ⟨y, ·⟩) y`. At the origin the formula gives `0`

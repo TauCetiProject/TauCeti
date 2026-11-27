@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Energy
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The energy of a map from a surface
@@ -50,13 +51,15 @@ surface oriented so that the frames `(e, j e)` are positive, the **energy** of `
 * **Changes of domain.** The energy form is natural under pseudoholomorphic maps of surfaces
   (`TauCeti.SmoothTwoForm.energyForm_comp_apply`). Hence the energy is invariant under
   pseudoholomorphic diffeomorphisms (`TauCeti.SmoothTwoForm.energy_comp_diffeomorph`), and
-  precomposing a smooth pseudoholomorphic map with a proper pseudoholomorphic map multiplies its
-  energy by the degree (`TauCeti.SmoothTwoForm.energy_comp_eq_degree_mul`).
+  precomposing a smooth map, pseudoholomorphic or not, with a proper pseudoholomorphic map
+  multiplies its energy by the degree (`TauCeti.SmoothTwoForm.energy_comp_eq_degree_mul`).
 
-The energy form of a `C¹` map is continuous (`TauCeti.SmoothTwoForm.isSmoothForm_energyForm`), so
-it is integrable on a compact surface; the integral statements about compact surfaces rest on
-this. The comparison of `∫_C u^* form` with the pairing of `[form]` with the homology class of `u`
-is a de Rham comparison not made here.
+The energy form of a `Cⁿ` map is `Cᵐ` for `m + 1 ≤ n`
+(`TauCeti.SmoothTwoForm.isSmoothForm_energyForm`). In particular it is continuous for a `C¹`
+map, so it is integrable on a compact surface; the integral statements about compact surfaces
+rest on this. For a smooth map it is smooth, which is what the degree formula needs. The
+comparison of `∫_C u^* form` with the pairing of `[form]` with the homology class of `u` is a de
+Rham comparison not made here.
 
 ## References
 
@@ -235,34 +238,36 @@ theorem Compatible.energyForm_apply_frame_eq_mpullback_apply_frame_iff
     ← SmoothBundleForm.eval₂_apply, ← h]
   constructor <;> intro h' <;> linarith
 
-/-- **Continuity of the energy form.** The energy form of a `C¹` map is continuous. -/
-theorem isSmoothForm_energyForm [FiniteDimensional ℝ E'] (hu : ContMDiff I' I 1 u) :
-    IsSmoothForm I' 0 (form.energyForm J j u) := by
+/-- **Regularity of the energy form.** The energy form of a `Cⁿ` map is `Cᵐ` whenever
+`m + 1 ≤ n`; in particular it is continuous for a `C¹` map and smooth for a smooth map. -/
+theorem isSmoothForm_energyForm [FiniteDimensional ℝ E'] {m n : WithTop ℕ∞} [ENat.LEInfty m]
+    (hu : ContMDiff I' I n u) (hmn : m + 1 ≤ n) :
+    IsSmoothForm I' m (form.energyForm J j u) := by
   rw [isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply]
   intro x v
   -- The frame fields `y ↦ e.symmL y a` of the tangent trivialization `e` at `x`, and their
   -- images under `j`.
-  have hV (a : E') : ContMDiffAt I' I'.tangent 0
+  have hV (a : E') : ContMDiffAt I' I'.tangent m
       (fun y ↦ (⟨y, (trivializationAt E' (TangentSpace I') x).symmL ℝ y a⟩ :
         TangentBundle I' C)) x :=
-    ((trivializationAt E' (TangentSpace I') x).contMDiffAt_symmL (n := 0)
+    ((trivializationAt E' (TangentSpace I') x).contMDiffAt_symmL (n := m)
       (mem_baseSet_trivializationAt E' (TangentSpace I') x)).clm_bundle_apply
       (by rw [Bundle.contMDiffAt_section_iff]; exact contMDiffAt_const)
-  have hjV (a : E') : ContMDiffAt I' I'.tangent 0
+  have hjV (a : E') : ContMDiffAt I' I'.tangent m
       (fun y ↦ (⟨y, j y ((trivializationAt E' (TangentSpace I') x).symmL ℝ y a)⟩ :
         TangentBundle I' C)) x :=
-    ((j.toEndomorphism.contMDiff x).of_le (by simp)).clm_bundle_apply (hV a)
+    ((j.toEndomorphism.contMDiff x).of_le ENat.LEInfty.out).clm_bundle_apply (hV a)
   -- The images of tangent fields under `du`, and the images of those under `J`.
   have hdu {W : ∀ y, TangentSpace I' y}
-      (hW : ContMDiffAt I' I'.tangent 0 (fun y ↦ (⟨y, W y⟩ : TangentBundle I' C)) x) :
-      ContMDiffAt I' I.tangent 0
+      (hW : ContMDiffAt I' I'.tangent m (fun y ↦ (⟨y, W y⟩ : TangentBundle I' C)) x) :
+      ContMDiffAt I' I.tangent m
         (fun y ↦ (⟨u y, mfderiv I' I u y (W y)⟩ : TangentBundle I X)) x :=
-    (contMDiff_zero_iff.2 (hu.continuous_tangentMap le_rfl)).contMDiffAt.comp x hW
+    (hu.contMDiff_tangentMap hmn).contMDiffAt.comp x hW
   have hJdu {W : ∀ y, TangentSpace I' y}
-      (hW : ContMDiffAt I' I'.tangent 0 (fun y ↦ (⟨y, W y⟩ : TangentBundle I' C)) x) :
-      ContMDiffAt I' I.tangent 0
+      (hW : ContMDiffAt I' I'.tangent m (fun y ↦ (⟨y, W y⟩ : TangentBundle I' C)) x) :
+      ContMDiffAt I' I.tangent m
         (fun y ↦ (⟨u y, J (u y) (mfderiv I' I u y (W y))⟩ : TangentBundle I X)) x :=
-    (((J.toEndomorphism.contMDiff (u x)).of_le (by simp)).comp x
+    (((J.toEndomorphism.contMDiff (u x)).of_le ENat.LEInfty.out).comp x
       ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp x (hdu hW))).clm_bundle_apply (hdu hW)
   have hfr (y : C) : ⇑((trivializationAt E' (TangentSpace I') x).symmL ℝ y) ∘ v =
       ![(trivializationAt E' (TangentSpace I') x).symmL ℝ y (v 0),
@@ -271,17 +276,13 @@ theorem isSmoothForm_energyForm [FiniteDimensional ℝ E'] (hu : ContMDiff I' I 
     fin_cases i <;> rfl
   -- The scalar values of `form` along `u` on two such fields.
   have heval {P Q : ∀ y, TangentSpace I (u y)}
-      (hP : ContMDiffAt I' I.tangent 0 (fun y ↦ (⟨u y, P y⟩ : TangentBundle I X)) x)
-      (hQ : ContMDiffAt I' I.tangent 0 (fun y ↦ (⟨u y, Q y⟩ : TangentBundle I X)) x) :
-      ContMDiffAt I' 𝓘(ℝ) 0 (fun y ↦ SmoothBundleForm.eval₂ form (u y) (P y) (Q y)) x :=
-    (contMDiff_zero_iff.2
-      (continuous_snd.comp (Trivial.homeomorphProd X ℝ).continuous)).contMDiffAt.comp x
-        (SmoothBundleForm.contMDiffAt_eval₂ form hP hQ)
+      (hP : ContMDiffAt I' I.tangent m (fun y ↦ (⟨u y, P y⟩ : TangentBundle I X)) x)
+      (hQ : ContMDiffAt I' I.tangent m (fun y ↦ (⟨u y, Q y⟩ : TangentBundle I X)) x) :
+      ContMDiffAt I' 𝓘(ℝ) m (fun y ↦ SmoothBundleForm.eval₂ form (u y) (P y) (Q y)) x :=
+    (Bundle.Trivial.contMDiffAt_mk_iff.1 (SmoothBundleForm.contMDiffAt_eval₂ form hP hQ)).2
   simp only [hfr, energyForm_apply]
-  refine (((heval (hdu (hjV (v 0))) (hJdu (hV (v 1)))).sub
-    (heval (hdu (hjV (v 1))) (hJdu (hV (v 0))))).const_smul
-      (2⁻¹ : ℝ)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  simp only [Pi.smul_apply, smul_eq_mul]
+  exact ((contDiff_const (c := (2⁻¹ : ℝ))).mul contDiff_id).comp_contMDiffAt
+    ((heval (hdu (hjV (v 0))) (hJdu (hV (v 1)))).sub (heval (hdu (hjV (v 1))) (hJdu (hV (v 0)))))
 
 /-- The pullback `u^* form` along a `C¹` map is continuous. -/
 private theorem isSmoothForm_mpullback (hu : ContMDiff I' I 1 u) :
@@ -347,7 +348,7 @@ two forms. -/
 private theorem energy_sub_integralTopForm_mpullback (hu : ContMDiff I' I 1 u) :
     form.energy J j o u - integralTopForm o (mpullback I' I u form.val) =
       integralTopForm o (form.energyForm J j u + -mpullback I' I u form.val) := by
-  rw [energy, integralTopForm_add_of_compactSpace o (isSmoothForm_energyForm hu)
+  rw [energy, integralTopForm_add_of_compactSpace o (isSmoothForm_energyForm hu le_rfl)
       (isSmoothForm_mpullback hu).neg,
     ← neg_one_smul ℝ (mpullback I' I u form.val), integralTopForm_smul]
   ring
@@ -384,7 +385,7 @@ theorem Compatible.energy_eq_integralTopForm_mpullback_iff (hcompat : form.Compa
     rw [energyForm_add_neg_mpullback_apply] at h0
     linarith
   have := j.integralTopForm_pos_of_forall_nonneg ho
-    ((isSmoothForm_energyForm hu).add (isSmoothForm_mpullback hu).neg)
+    ((isSmoothForm_energyForm hu le_rfl).add (isSmoothForm_mpullback hu).neg)
     (isClosed_tsupport _).isCompact hcompat.energyForm_add_neg_mpullback_apply_frame_nonneg hpos
   rw [← energy_sub_integralTopForm_mpullback hu, h, sub_self] at this
   exact this.false
@@ -399,7 +400,7 @@ theorem Tames.energy_eq_zero_iff (htame : form.Tames J)
   refine ⟨fun h c ↦ ?_, fun h ↦ ?_⟩
   · by_contra hne
     obtain ⟨e, he⟩ := DFunLike.ne_iff.1 hne
-    have := j.integralTopForm_pos_of_forall_nonneg ho (isSmoothForm_energyForm hu)
+    have := j.integralTopForm_pos_of_forall_nonneg ho (isSmoothForm_energyForm hu le_rfl)
       (isClosed_tsupport _).isCompact (htame.energyForm_apply_frame_nonneg (u := u))
       (htame.energyForm_apply_frame_pos he)
     rw [← energy_def, h] at this
@@ -480,21 +481,20 @@ variable {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E' H''
   [TopologicalSpace C'] [ChartedSpace H'' C'] [IsManifold I'' ∞ C']
   {j' : SmoothAlmostComplexStructure I'' C'} {o' : Manifold.Orientation I'' C' (Fin 2)}
 
-/-- **Degree scaling of energy.** Let `u` be a smooth pseudoholomorphic map from a compact
-connected boundaryless surface `C`, and `φ : C' → C` a proper smooth pseudoholomorphic map from a
-boundaryless surface. Then the energy of `u ∘ φ` is the degree of `φ` times the energy of
-`u`. -/
+/-- **Degree scaling of energy.** Let `u` be a smooth map from a compact connected boundaryless
+surface `C`, and `φ : C' → C` a proper smooth pseudoholomorphic map from a boundaryless surface.
+Then the energy of `u ∘ φ` is the degree of `φ` times the energy of `u`. The map `u` need not be
+pseudoholomorphic. -/
 theorem energy_comp_eq_degree_mul [BoundarylessManifold I'' C'] [T2Space C']
     [BoundarylessManifold I' C] [T2Space C] [CompactSpace C] [ConnectedSpace C] {φ : C' → C}
     (hφ : ContMDiff I'' I' ∞ φ) (hφp : IsProperMap φ)
-    (hφhol : ∀ c', IsPseudoholomorphicAt j' j φ c')
-    (hu : ContMDiff I' I ∞ u) (hhol : ∀ c, IsPseudoholomorphicAt j J u c) :
+    (hφhol : ∀ c', IsPseudoholomorphicAt j' j φ c') (hu : ContMDiff I' I ∞ u) :
     form.energy J j' o' (u ∘ φ) = degree o' o φ * form.energy J j o u := by
-  rw [energy_eq_integralTopForm_mpullback fun c' ↦ (hhol (φ c')).comp (hφhol c'),
-    energy_eq_integralTopForm_mpullback hhol,
-    mpullback_comp (hφ.mdifferentiable (by simp)) (hu.mdifferentiable (by simp))]
+  rw [energy, energy, show form.energyForm J j' (u ∘ φ) =
+      mpullback I'' I' φ (form.energyForm J j u) from
+    funext fun c' ↦ energyForm_comp_apply (hφhol c') (hu.mdifferentiableAt (by simp))]
   exact integralTopForm_mpullback_eq_degree_mul o' o hφ hφp
-    ((SmoothForm.isSmoothForm form).mpullback (by simpa using hu)) (isClosed_tsupport _).isCompact
+    (isSmoothForm_energyForm hu (by simp)) (isClosed_tsupport _).isCompact
 
 end DegreeScaling
 

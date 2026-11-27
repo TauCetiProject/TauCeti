@@ -567,14 +567,6 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
         (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
       cellLocalClass C R x hx := by
   let pt : TopCat.disk.{w} 0 := diskCenter 0
-  -- The identification `H₀(D⁰, ∅) ≅ R` sends the class of the point of `D⁰` to `1`.
-  have hinv : (singularHomologyDiskBoundaryPairIso R 0).inv =
-      singularHomology₀Section R pt ≫ (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
-    refine ((Iso.comp_hom_eq_id _).1 ?_).symm
-    rw [singularHomologyDiskBoundaryPairIso_zero_hom]
-    -- The relative and absolute homology of `D⁰` agree only up to unfolding.
-    erw [Category.assoc, IsIso.hom_inv_id_assoc]
-    exact singularHomology₀Section_singularHomology₀ε R pt
   set g := characteristicCellPairMap C i ≫
     skeletonPairToComplSingleton C x (notMem_skeletonLT_of_mem_openCell 0 hx)
   have hpt : TopPair.Hom.fst g pt = x := by
@@ -586,7 +578,7 @@ lemma singularHomology₀Section_comp_singularHomologyπ_eq_cellLocalClass {i : 
     refine (coe_characteristicCellPairMap_fst_apply C i pt).trans ?_
     rw [Set.mem_singleton_iff.mp hx]
     exact congrArg (map 0 i) (Subsingleton.elim _ _)
-  rw [cellLocalClass_def, hinv]
+  rw [cellLocalClass_def, singularHomologyDiskBoundaryPairIso_zero_inv]
   have h₁ : SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst g)) R 0 ≫
       (TopPair.ofSubset ({x}ᶜ : Set (skeletonObj C 1))).singularHomologyπ R 0 =
         (diskBoundaryPair.{w} 0).singularHomologyπ R 0 ≫ TopPair.singularHomologyMap g R 0 :=

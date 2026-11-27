@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Group.OrderIso
 public import Mathlib.Order.SuccPred.Basic
+import Mathlib.Algebra.Order.Monoid.Unbundled.Pow
+import TauCeti.Order.SuccPred.Basic
 
 /-!
 # Successors in ordered additive groups
@@ -17,6 +20,10 @@ with the successor function: `a + succ b = succ (a + b)`. In particular `succ a 
 translation by its least positive element `succ 0`. Unlike Mathlib's `SuccAddOrder`, this does not
 ask the instance `One` to be that element: on `Lex (Fin n → ℤ)` the instance `One` is the constant
 function `1`, which is not the least positive element when `n ≥ 2`.
+
+Consequently, a linearly ordered commutative monoid with a successor order fails to be
+`Archimedean` if and only if some element exceeds all finite multiples `n • succ 0`
+(`TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt`).
 -/
 
 public section
@@ -25,7 +32,11 @@ namespace TauCeti.Order
 
 open _root_.Order
 
-variable {α : Type*} [AddGroup α] [PartialOrder α] [AddLeftMono α] [SuccOrder α]
+variable {α : Type*}
+
+section AddGroup
+
+variable [AddGroup α] [PartialOrder α] [AddLeftMono α] [SuccOrder α]
 
 /-- Translations commute with the successor function. -/
 theorem add_succ (a b : α) : a + succ b = succ (a + b) :=
@@ -47,5 +58,21 @@ theorem succ_iterate_eq_add_nsmul_succ_zero (a : α) (n : ℕ) :
 @[simp]
 theorem succ_iterate_zero (n : ℕ) : succ^[n] (0 : α) = n • succ 0 := by
   rw [succ_iterate_eq_add_nsmul_succ_zero, zero_add]
+
+end AddGroup
+
+/-- A linearly ordered commutative monoid with a successor order is non-Archimedean if and only if
+some element strictly exceeds every finite multiple `n • succ 0`. -/
+theorem not_archimedean_iff_exists_forall_nsmul_succ_zero_lt
+    [AddCommMonoid α] [LinearOrder α] [IsOrderedAddMonoid α] [SuccOrder α] :
+    ¬ Archimedean α ↔ ∃ t : α, ∀ n : ℕ, n • succ 0 < t := by
+  refine ⟨fun h => ?_, fun ⟨t, ht⟩ h => ?_⟩
+  · by_contra! hle
+    refine h ⟨fun x y hy => ?_⟩
+    obtain ⟨n, hn⟩ := hle x
+    exact ⟨n, hn.trans (nsmul_le_nsmul_right (succ_le_of_lt hy) n)⟩
+  · have h01 : (0 : α) < succ 0 := lt_succ_self_of_lt (by simpa using ht 0)
+    obtain ⟨n, hn⟩ := h.arch t h01
+    exact (ht n).not_ge hn
 
 end TauCeti.Order

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Operator
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.TimeReversal
+import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # The backward parabolic operator at every order
@@ -34,6 +35,11 @@ and follow their proofs.
 
 * `TauCeti.ParabolicCkHolderSpace.backwardParabolicOperatorL`: the backward operator.
 * `TauCeti.ParabolicCkHolderSpace.terminalDataL`: the operator `u ↦ (P_back u, u(·, b))`.
+* `TauCeti.ParabolicCkHolderSpace.backwardParabolicOperatorL_sub_backwardParabolicOperatorL`,
+  `terminalDataL_sub_terminalDataL` and `norm_terminalDataL_sub`: differences of backward and
+  terminal-data operators in terms of the differences of the coefficients.
+* `TauCeti.ParabolicCkHolderSpace.norm_backwardParabolicOperatorL_sub_le` and
+  `norm_terminalDataL_sub_le`: their Lipschitz dependence on the coefficients.
 * `TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_timeReverseLIE`: its time reversal.
 * `TauCeti.ParabolicCkHolderSpace.initialDataL_timeReverseLIE`: the initial data of `u ∘ R` are the
   reversed terminal data of `u`.
@@ -162,6 +168,61 @@ theorem terminalDataL_snd (hα : α ≤ 1)
     (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
     (terminalDataL hα A B C u).2 = u.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
   simp [terminalDataL]
+
+section Coefficients
+
+variable (hα : α ≤ 1)
+  (A A' : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+  (B B' : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+  (C C' : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+
+/-- The difference of two backward operators is the spatial operator of the difference of their
+coefficients. This is the backward form of
+`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_sub_parabolicOperatorL`. -/
+theorem backwardParabolicOperatorL_sub_backwardParabolicOperatorL :
+    backwardParabolicOperatorL hα A B C - backwardParabolicOperatorL hα A' B' C' =
+      spatialOperatorL hα (A - A') (B - B') (C - C') := by
+  rw [spatialOperatorL_sub, backwardParabolicOperatorL_def, backwardParabolicOperatorL_def]
+  abel
+
+/-- **Lipschitz dependence on the coefficients.** In operator norm,
+`‖P_back - P_back'‖ ≤
+  21 (k + 1)² 2ᵏ (‖A - A'‖ + 8 (k + 1)² ‖B - B'‖ + 64 (k + 1)² (k + 2)² ‖C - C'‖)`. This is the
+backward form of `TauCeti.ParabolicCkHolderSpace.norm_parabolicOperatorL_sub_le`. -/
+theorem norm_backwardParabolicOperatorL_sub_le :
+    ‖backwardParabolicOperatorL hα A B C - backwardParabolicOperatorL hα A' B' C'‖ ≤
+      21 * (k + 1) ^ 2 * 2 ^ k *
+        (‖A - A'‖ + 8 * (k + 1) ^ 2 * ‖B - B'‖ + 64 * (k + 1) ^ 2 * (k + 2) ^ 2 * ‖C - C'‖) := by
+  rw [backwardParabolicOperatorL_sub_backwardParabolicOperatorL]
+  exact norm_spatialOperatorL_le hα _ _ _
+
+/-- Terminal traces cancel in the difference of two terminal-data operators. -/
+theorem terminalDataL_sub_terminalDataL :
+    terminalDataL hα A B C - terminalDataL hα A' B' C' =
+      (backwardParabolicOperatorL hα A B C - backwardParabolicOperatorL hα A' B' C').prod 0 := by
+  ext u <;> simp
+
+/-- Terminal traces cancel in a difference of terminal-data operators, so the perturbation norm
+is that of the backward operators. -/
+theorem norm_terminalDataL_sub :
+    ‖terminalDataL hα A B C - terminalDataL hα A' B' C'‖ =
+      ‖backwardParabolicOperatorL hα A B C - backwardParabolicOperatorL hα A' B' C'‖ := by
+  rw [terminalDataL_sub_terminalDataL, ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero,
+    max_eq_left (norm_nonneg _)]
+
+/-- A coefficient perturbation has the same explicit bound for the full terminal-data operator as
+for its backward component:
+`‖(P_back, ·(b)) - (P_back', ·(b))‖ ≤
+  21 (k + 1)² 2ᵏ (‖A - A'‖ + 8 (k + 1)² ‖B - B'‖ + 64 (k + 1)² (k + 2)² ‖C - C'‖)`. This is the
+terminal-data form of `TauCeti.ParabolicCkHolderSpace.norm_initialDataL_sub_le`. -/
+theorem norm_terminalDataL_sub_le :
+    ‖terminalDataL hα A B C - terminalDataL hα A' B' C'‖ ≤
+      21 * (k + 1) ^ 2 * 2 ^ k *
+        (‖A - A'‖ + 8 * (k + 1) ^ 2 * ‖B - B'‖ + 64 * (k + 1) ^ 2 * (k + 2) ^ 2 * ‖C - C'‖) := by
+  rw [norm_terminalDataL_sub]
+  exact norm_backwardParabolicOperatorL_sub_le hα A A' B B' C C'
+
+end Coefficients
 
 /-! ### Time reversal -/
 

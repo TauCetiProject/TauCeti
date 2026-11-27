@@ -34,7 +34,8 @@ the integral to `z`.
 * Congruence, uniqueness, and linearity: `HasLaplace.unique`, `HasLaplace.congr_ae`,
   `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `HasLaplace.add`,
   `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`, `HasLaplace.const_smul`,
-  `ContinuousLinearMap.hasLaplace`, and `HasLaplace.conj` (complex conjugation).
+  `ContinuousLinearMap.hasLaplace`, `HasLaplace.conj` (complex conjugation), and
+  `HasLaplace.ofReal_re_of_conj` (real-part averaging).
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
@@ -46,6 +47,9 @@ the integral to `z`.
 * Higher derivatives: `hasLaplace_neg_pow_smul_iteratedDeriv` (the `n`-th derivative is the
   transform of `t ↦ (-t) ^ n • f t`) and `hasLaplace_pow_div_factorial_smul_iteratedDeriv` (the
   normalised coefficient `(-1) ^ n / n ! • F⁽ⁿ⁾` is the transform of `t ↦ (t ^ n / n !) • f t`).
+  For a real input and a real centre `b`, `integrable_and_taylor_term_eq_integral` writes the
+  Taylor term of the transform at `b - t` as the real integral of
+  `u ↦ (t * u) ^ n / n ! * (exp (-b * u) * f u)`.
 * Transform of a derivative: `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`
   establishes the finite-cutoff identity on `[0, T]`; `TauCeti.hasLaplace_deriv_of_primitive` proves
   `HasLaplace g s (s • z - f 0)` for a primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming
@@ -277,6 +281,17 @@ theorem HasLaplace.conj {f : ℝ → ℂ} {s z : ℂ} {μ : Measure ℝ}
   refine ⟨?_, ?_⟩
   · exact Complex.conjCLE.toContinuousLinearEquiv.integrable_comp_iff.mpr h.integrable
   · rw [integral_conj, h.integral_eq]
+
+open scoped ComplexConjugate in
+/-- If a complex input and its conjugate have Laplace transforms at the same parameter,
+then the real part of the input has transform equal to the average of those values. -/
+theorem HasLaplace.ofReal_re_of_conj {f : ℝ → ℂ} {s z z' : ℂ} {μ : Measure ℝ}
+    (h : HasLaplace f s z μ) (h' : HasLaplace (fun u ↦ conj (f u)) s z' μ) :
+    HasLaplace (fun u ↦ ((f u).re : ℂ)) s ((z + z') / 2) μ := by
+  have heq (u : ℝ) : (2 : ℂ)⁻¹ * (f u + conj (f u)) = ((f u).re : ℂ) := by
+    simpa only [div_eq_inv_mul] using (Complex.re_eq_add_conj (f u)).symm
+  simpa only [Pi.smul_apply, smul_eq_mul, heq, div_eq_inv_mul] using
+    (h.fun_add h').fun_const_smul (2 : ℂ)⁻¹
 
 /-- Multiplying `f(t)` by `exp (w * t)` shifts the Laplace parameter from `s` to `s - w`. -/
 theorem hasLaplace_cexp_mul_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -532,6 +547,33 @@ theorem hasLaplace_pow_div_factorial_smul_iteratedDeriv {E : Type*} [NormedAddCo
     rw [div_mul_eq_mul_div, ← mul_pow, neg_one_mul, neg_neg]
   simpa only [Pi.smul_def, smul_smul, hc] using
     (hasLaplace_neg_pow_smul_iteratedDeriv hF n).const_smul ((-1) ^ n / n ! : ℂ)
+
+open scoped Nat in
+/-- **Real Taylor terms of a real Laplace transform.** Let `F` be the Laplace transform of a real
+function `f` near a real point `b`. For real `t`, the function
+`u ↦ (t * u) ^ n / n ! * (exp (-b * u) * f u)` is integrable on `(0, ∞)`, and its integral is the
+`n`-th term of the Taylor expansion of `F` about `b`, evaluated at `b - t`. -/
+theorem integrable_and_taylor_term_eq_integral {f : ℝ → ℝ} {F : ℂ → ℂ} {b : ℝ}
+    (hF : ∀ᶠ w in 𝓝 (b : ℂ), HasLaplace (fun u ↦ (f u : ℂ)) w (F w)) (t : ℝ) (n : ℕ) :
+    Integrable (fun u ↦ (t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u))
+        (volume.restrict (Ioi 0)) ∧
+      (n ! : ℂ)⁻¹ • (-(t : ℂ)) ^ n • iteratedDeriv n F b =
+        ((∫ u in Ioi 0, (t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u) : ℝ) : ℂ) := by
+  have hL := (hasLaplace_pow_div_factorial_smul_iteratedDeriv hF n).const_smul ((t : ℂ) ^ n)
+  have key : ∀ u : ℝ, Complex.exp (-(b : ℂ) * u) • ((t : ℂ) ^ n • ((u : ℂ) ^ n / n !) • (f u : ℂ)) =
+      (((t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u) : ℝ) : ℂ) := fun u ↦ by
+    simp only [smul_eq_mul]
+    push_cast
+    ring
+  have hc := hL.integrable.congr (.of_forall key)
+  refine ⟨hc.re.congr (.of_forall fun u ↦ by
+    simp only [RCLike.re_to_complex, Complex.ofReal_re]), ?_⟩
+  have hI : ∫ u : ℝ in Ioi 0,
+      Complex.exp (-(b : ℂ) * u) • ((t : ℂ) ^ n • ((u : ℂ) ^ n / n !) • (f u : ℂ)) =
+        (t : ℂ) ^ n • ((-1) ^ n / n ! : ℂ) • iteratedDeriv n F b := hL.integral_eq
+  rw [← integral_complex_ofReal, ← integral_congr_ae (.of_forall key), hI]
+  simp only [smul_eq_mul, neg_pow (t : ℂ)]
+  ring
 
 end HalfPlane
 

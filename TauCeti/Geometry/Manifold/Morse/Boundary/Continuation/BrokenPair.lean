@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Transverse
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Pair.Commutation
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Broken continuation trajectories are broken configurations of a transported pair
