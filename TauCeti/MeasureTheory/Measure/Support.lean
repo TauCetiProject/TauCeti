@@ -14,7 +14,8 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 This file characterizes support by singleton masses at isolated points, and identifies the support
 of restriction to an open set (inside that set, and everywhere for a measure positive on nonempty
 open sets), the support of a
-nonzero scalar multiple of a measure, and the support of a pushforward by a continuous map. It also
+nonzero scalar multiple of a measure, the support of a pullback along an open embedding, and the
+support of a pushforward by a continuous map. It also
 shows that pushing a measure forward along an inducing map with closed range, such as a closed
 embedding or a homeomorphism, transports its topological support onto the image of the original
 support.
@@ -35,6 +36,8 @@ global continuity is unnecessary for this inclusion.
   nonempty open sets to an open set gives support equal to that set's closure.
 * `MeasureTheory.Measure.support_restrict_inter_of_isOpen` — restricting a measure to an open set
   does not change its support inside that set.
+* `MeasureTheory.Measure.support_comap_of_isOpenEmbedding` — the support of a pullback along an
+  open embedding is the preimage of the original support.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
   equal to the closure of the image of the support, when the source support has full measure.
 * `MeasureTheory.Measure.support_map_eq_closure_range` — a continuous image of a full-support
@@ -139,6 +142,25 @@ theorem support_restrict_inter_of_isOpen {X : Type*} [TopologicalSpace X] [Measu
     fun x hx ↦ ⟨interior_inter_support ⟨?_, hx.1⟩, hx.2⟩
   rw [hs.interior_eq]
   exact hx.2
+
+/-- The support of a measure pulled back along an open embedding is the preimage of the support. -/
+theorem support_comap_of_isOpenEmbedding {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [MeasurableSpace X] [MeasurableSpace Y]
+    {f : X → Y} (hf : IsOpenEmbedding f) (hf' : MeasurableEmbedding f) (μ : Measure Y) :
+    (μ.comap f).support = f ⁻¹' μ.support := by
+  ext x
+  rw [mem_preimage, mem_support_iff_forall, mem_support_iff_forall]
+  constructor
+  · intro h U hU
+    obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 (hf.continuous.continuousAt.preimage_mem_nhds hU)
+    have := h V (hV.mem_nhds hxV)
+    rw [hf'.comap_apply] at this
+    exact this.trans_le (measure_mono ((image_mono hVU).trans (image_preimage_subset f U)))
+  · intro h U hU
+    obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 hU
+    have := h (f '' V) ((hf.isOpenMap V hV).mem_nhds (mem_image_of_mem f hxV))
+    rw [← hf'.comap_apply] at this
+    exact this.trans_le (measure_mono hVU)
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]

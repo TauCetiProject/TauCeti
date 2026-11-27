@@ -41,6 +41,11 @@ polynomial of degree `m` to its Hasse derivatives, by `(1 + m A) ^ m`.
   (m + A) ^ m` for `0 ≤ A` in an ordered commutative semiring.
 * `Nat.sum_range_factorial_mul_pow_le`: `∑_{k ≤ m} k! · A ^ k ≤ (1 + m A) ^ m` for `0 ≤ A` in an
   ordered commutative semiring.
+* `Nat.pow_mul_sum_range_choose_mul_mul`: weighting the terms of a binomial sum
+  `∑_{i ≤ n} C(n, i) aᵢ bₙ₋ᵢ` by the powers of `h` matching their indices, as in the Leibniz rule
+  in scaled units.
+* `Nat.sum_range_choose_mul_mul_le_two_pow_mul_sum`: such a binomial sum with `0 ≤ aᵢ ≤ B` and
+  `0 ≤ bᵢ` is at most `2ᵏ B ∑_{j ≤ k} bⱼ` for `n ≤ k`.
 -/
 
 public section
@@ -121,3 +126,42 @@ theorem Nat.sum_range_factorial_mul_pow_le {α : Type*} [CommSemiring α] [Parti
   simpa only [one_pow, mul_one] using Nat.sum_range_mul_pow_mul_pow_le m
     (fun k hk ↦ (Nat.factorial_le_pow k).trans ((Nat.pow_le_pow_left hk k).trans
       (Nat.le_mul_of_pos_left _ (Nat.choose_pos hk)))) hA zero_le_one
+
+/-- Weighting the terms of a binomial sum by the powers of `h` matching their indices:
+`hⁿ ∑_{i ≤ n} C(n, i) aᵢ bₙ₋ᵢ = ∑_{i ≤ n} C(n, i) (hⁱ aᵢ) (hⁿ⁻ⁱ bₙ₋ᵢ)`. -/
+theorem Nat.pow_mul_sum_range_choose_mul_mul {α : Type*} [CommSemiring α] (h : α) (n : ℕ)
+    (a b : ℕ → α) :
+    h ^ n * ∑ i ∈ range (n + 1), (n.choose i : α) * a i * b (n - i) =
+      ∑ i ∈ range (n + 1), (n.choose i : α) * (h ^ i * a i) * (h ^ (n - i) * b (n - i)) := by
+  rw [mul_sum]
+  refine sum_congr rfl fun i hi ↦ ?_
+  rw [← Nat.add_sub_cancel' (Nat.lt_succ_iff.1 (mem_range.1 hi)), pow_add,
+    Nat.add_sub_cancel_left]
+  ring
+
+/-- A binomial sum `∑_{i ≤ n} C(n, i) aᵢ bₙ₋ᵢ` with `0 ≤ aᵢ ≤ B` and `0 ≤ bᵢ` for `i ≤ k` is at
+most `2ᵏ B ∑_{j ≤ k} bⱼ`, for `n ≤ k`. -/
+theorem Nat.sum_range_choose_mul_mul_le_two_pow_mul_sum {α : Type*} [CommSemiring α]
+    [PartialOrder α] [IsOrderedRing α] {k n : ℕ} (hn : n ≤ k) {B : α} {a b : ℕ → α}
+    (ha0 : ∀ i ≤ k, 0 ≤ a i) (ha : ∀ i ≤ k, a i ≤ B) (hb0 : ∀ j ≤ k, 0 ≤ b j) :
+    ∑ i ∈ range (n + 1), (n.choose i : α) * a i * b (n - i) ≤
+      2 ^ k * B * ∑ j ∈ range (k + 1), b j := by
+  have hB0 : 0 ≤ B := (ha0 0 (Nat.zero_le k)).trans (ha 0 (Nat.zero_le k))
+  calc ∑ i ∈ range (n + 1), (n.choose i : α) * a i * b (n - i)
+      ≤ ∑ i ∈ range (n + 1), 2 ^ k * B * b (n - i) := by
+        refine sum_le_sum fun i hi ↦ ?_
+        have hik : i ≤ k := (Nat.lt_succ_iff.1 (mem_range.1 hi)).trans hn
+        have hc : (n.choose i : α) ≤ ((2 ^ k : ℕ) : α) :=
+          Nat.mono_cast ((Nat.choose_le_two_pow n i).trans (Nat.pow_le_pow_right two_pos hn))
+        rw [Nat.cast_pow, Nat.cast_ofNat] at hc
+        exact mul_le_mul_of_nonneg_right
+          (mul_le_mul hc (ha i hik) (ha0 i hik) (pow_nonneg zero_le_two k))
+          (hb0 _ ((Nat.sub_le n i).trans hn))
+    _ = 2 ^ k * B * ∑ j ∈ range (n + 1), b j := by
+        -- Reflect the index, `i ↦ n - i`; here `n + 1 - 1 - i` reduces to `n - i`.
+        rw [mul_sum]
+        exact sum_range_reflect (fun j ↦ 2 ^ k * B * b j) (n + 1)
+    _ ≤ _ := mul_le_mul_of_nonneg_left (sum_le_sum_of_subset_of_nonneg
+        (range_subset_range.2 (by omega))
+        fun j hj _ ↦ hb0 j (Nat.lt_succ_iff.1 (mem_range.1 hj)))
+        (mul_nonneg (pow_nonneg zero_le_two k) hB0)

@@ -94,4 +94,13 @@ theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b <
       Nat.sub_add_cancel (Nat.pow_le_pow_left hba.le 2), ha, mul_comm]
   omega
 
+/-- If `1 < p` and either `D < e` or `D < j`, then `D < (p ^ e + 1) * p ^ j`. -/
+theorem lt_add_one_mul_pow_of_lt {p D e j : ℕ} (hp : 1 < p) (h : D < e ∨ D < j) :
+    D < (p ^ e + 1) * p ^ j := by
+  rcases h with he | hj
+  · exact lt_of_lt_of_le (he.trans ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
+      (Nat.le_mul_of_pos_right _ (Nat.pow_pos (zero_lt_one.trans hp)))
+  · exact lt_of_lt_of_le (hj.trans (Nat.lt_pow_self hp))
+      (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
+
 end Nat

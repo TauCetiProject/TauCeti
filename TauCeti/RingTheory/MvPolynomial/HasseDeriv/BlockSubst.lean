@@ -68,6 +68,10 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 * `MvPolynomial.blockSubst_inv_hasseDeriv`: a Hasse derivative of `P`, written in the coordinates
   of the rows of `A`, is a combination of the derivatives of `blockSubst A⁻¹ P` of the same block
   degrees.
+* `TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt` transfers coefficient vanishing
+  above a weighted threshold to the derivative after allowing for the normalized derivative order.
+  This and the one-row result use the shifted-coefficient criterion
+  `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add`.
 * `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero`,
   `MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero_of_le`: if the coefficients of
   `blockSubst A⁻¹ P` vanish below (or at most) the threshold `θ` in the weighted degree
@@ -86,6 +90,8 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
   J. Reine Angew. Math. 548 (2002), 21–127.
 * W. M. Schmidt, *Diophantine Approximation*, Lecture Notes in Mathematics 785, Springer (1980),
   Chapter VI.
+* J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace theorem*,
+  Ann. of Math. 177 (2013), §13, Proposition 13.6.
 -/
 
 public section
@@ -354,6 +360,49 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add [Finite κ]
   refine sum_eq_zero fun e he ↦ ?_
   rw [AddMonoidAlgebra.coeff_smul_apply, hasseDeriv_coeff, hP e (mem_filter.1 he).2, mul_zero,
     smul_zero]
+
+/-- Suppose `A.det` is a unit and the coefficients of `blockSubst A⁻¹ P` vanish above weight
+`θ`. If the weights in block `h` are bounded below by `b h`, the coefficients of
+`blockSubst A⁻¹ (hasseDeriv I P)` vanish above `θ` minus the sum of the blockwise lower bounds
+times the corresponding block orders of `I`. -/
+theorem _root_.TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt_of_blockwise_le
+    [Fintype κ] (hA : IsUnit A.det) {P : MvPolynomial (κ × ι) R}
+    {u : κ × ι → ℝ} {b : κ → ℝ} {θ : ℝ} (hw : ∀ h i, b h ≤ u (h, i))
+    (hP : ∀ n : κ × ι →₀ ℕ, θ < n.weight u → (blockSubst A⁻¹ P).coeff n = 0)
+    {I J : κ × ι →₀ ℕ} (hJ : θ - ∑ h, b h * ((∑ i, I (h, i) : ℕ) : ℝ) < J.weight u) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
+  refine coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add hA fun e he ↦ hP (J + e) ?_
+  have hshift : ∑ h, b h * ((∑ i, I (h, i) : ℕ) : ℝ) ≤ e.weight u := by
+    rw [Finsupp.weight_prod_eq_sum]
+    refine sum_le_sum fun h _ ↦ ?_
+    rw [← he h, Nat.cast_sum, mul_sum]
+    simp only [nsmul_eq_mul]
+    refine sum_le_sum fun i _ ↦ ?_
+    rw [mul_comm (b h)]
+    exact mul_le_mul_of_nonneg_left (hw h i) (Nat.cast_nonneg _)
+  rw [map_add]
+  linarith
+
+/-- Suppose `A.det` is a unit, every weight is at least `-γ`, and coefficients of
+`blockSubst A⁻¹ P` vanish above normalized weight `θ`. The coefficients of
+`blockSubst A⁻¹ (hasseDeriv I P)` then vanish above `θ` plus `γ` times the normalized order.
+Both weights and derivative orders are normalized by the original block degrees. -/
+theorem _root_.TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt
+    [Fintype κ] (hA : IsUnit A.det) {P : MvPolynomial (κ × ι) R} {r : κ → ℕ}
+    {w : κ → ι → ℝ} {γ θ : ℝ} (hw : ∀ h i, -γ ≤ w h i)
+    (hP : ∀ n : κ × ι →₀ ℕ, θ < n.weight (fun p ↦ w p.1 p.2 / r p.1) →
+      (blockSubst A⁻¹ P).coeff n = 0) {I J : κ × ι →₀ ℕ}
+    (hJ : θ + γ * (∑ h, ((∑ i, I (h, i) : ℕ) : ℝ) / r h) <
+      J.weight (fun p ↦ w p.1 p.2 / r p.1)) :
+    (blockSubst A⁻¹ (hasseDeriv I P)).coeff J = 0 := by
+  refine TauCeti.coeff_blockSubst_inv_hasseDeriv_eq_zero_of_weight_gt_of_blockwise_le hA
+    (b := fun h ↦ -γ / r h) (fun h i ↦ div_le_div_of_nonneg_right (hw h i) (Nat.cast_nonneg _))
+    hP ?_
+  have hloss : ∑ h, (-γ / (r h : ℝ)) * ((∑ i, I (h, i) : ℕ) : ℝ) =
+      -(γ * ∑ h, ((∑ i, I (h, i) : ℕ) : ℝ) / r h) := by
+    rw [mul_sum, ← sum_neg_distrib]
+    exact sum_congr rfl fun h _ ↦ by ring
+  rwa [hloss, sub_neg_eq_add]
 
 /-- **Vanishing along a form passes to Hasse derivatives** (Bombieri–Gubler, §7.5.14). Fix a
 row `i` of the invertible matrix `A` and a multidegree `d`. If the coefficients of

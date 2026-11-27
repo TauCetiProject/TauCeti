@@ -78,6 +78,24 @@ lemma app_ofDescentDataMap_self {D D' : F.DescentData f} (φ : D ⟶ D') ⦃T : 
     Hom.app (ofDescentDataMap (hf := hf) φ) a a w = (F.map a.op.toLoc).toFunctor.map (φ.hom i) := by
   rw [app_ofDescentDataMap, DescentData.hom_self _ _ _ rfl, Category.comp_id]
 
+/-- A square of morphisms of `Obj J F U` whose vertical sides are given by morphisms of descent
+data `x` and `y` along fixed covering families commutes as soon as it commutes on the local
+evaluations: the local evaluations of `ofDescentDataMap x` and `ofDescentDataMap y` along single
+morphisms are the pullbacks of the components of `x` and `y`. -/
+lemma comp_ofDescentDataMap_eq_ofDescentDataMap_comp {κ : Type w} {Y : κ → C} {g : ∀ j, Y j ⟶ U}
+    {hg : Sieve.ofArrows Y g ∈ J U} {D₁ D₂ : F.DescentData f} {E₁ E₂ : F.DescentData g}
+    (x : D₁ ⟶ D₂) (y : E₁ ⟶ E₂) (ψ : ofDescentData f hf D₁ ⟶ ofDescentData g hg E₁)
+    (ψ' : ofDescentData f hf D₂ ⟶ ofDescentData g hg E₂)
+    (h : ∀ ⦃T : C⦄ ⦃i : ι⦄ ⦃j : κ⦄ (a : T ⟶ X i) (b : T ⟶ Y j) (w : a ≫ f i = b ≫ g j),
+      Hom.app ψ a b w ≫ (F.map b.op.toLoc).toFunctor.map (y.hom j) =
+        (F.map a.op.toLoc).toFunctor.map (x.hom i) ≫ Hom.app ψ' a b w) :
+    ψ ≫ ofDescentDataMap y = ofDescentDataMap x ≫ ψ' :=
+  hom_ext fun T i j a b w ↦ by
+    rw [comp_app ψ (ofDescentDataMap y) a b b w w rfl,
+      comp_app (ofDescentDataMap x) ψ' a a b w rfl w, app_ofDescentDataMap_self,
+      app_ofDescentDataMap_self]
+    exact h a b w
+
 variable (f hf) in
 /-- Descent data along a fixed covering family embed into `Obj J F U`. -/
 abbrev ofDescentDataFunctor : F.DescentData f ⥤ Obj.{w} J F U where

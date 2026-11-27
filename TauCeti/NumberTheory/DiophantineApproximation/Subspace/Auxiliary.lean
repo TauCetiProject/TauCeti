@@ -94,8 +94,8 @@ private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintyp
   have hm_pos : 0 < (Fintype.card κ : ℝ) := by
     by_contra! hκ
     have hκ0 : (Fintype.card κ : ℝ) = 0 := hκ.antisymm (Nat.cast_nonneg _)
-    linarith [hm, hlog_nn, show Fintype.card ι * (Fintype.card ι + 1) * η ^ 2 *
-      (Fintype.card κ : ℝ) = 0 by rw [hκ0, mul_zero]]
+    rw [hκ0, mul_zero] at hm
+    linarith
   rw [← sq_abs, ← card_univ (α := ι)] at hm
   obtain ⟨D₀, hD₀, htail⟩ :=
     exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt

@@ -26,6 +26,11 @@ one-form to an open subset changes neither where it is contact
 (`TauCeti.SmoothForm.isContactFormAt_mpullback_subtype_val_iff`) nor its Reeb vectors
 (`TauCeti.SmoothForm.reebVectorField_mpullback_subtype_val`).
 
+If a smooth map `f` pulls a one-form `θ` back to a contact form `α`, as for a hypersurface of
+contact type, the kernel of the form `f^* dθ = dα` is the line spanned by the Reeb vector of `α`
+(`TauCeti.SmoothForm.ker_bilinFormAt_mpullback_mextDerivₗ`): the characteristic line of the
+hypersurface.
+
 A smooth map is horizontal for the kernel of a one-form exactly when it pulls the form back to
 zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`).
 
@@ -166,6 +171,13 @@ theorem isContactForm_mpullback_iff {f : M → N} (hf : ContMDiff I J ∞ f)
       (α.contMDiff.of_le (by simp) (f x)) (hdf x)).mp hx
   · exact fun h ↦ h.mpullback f hf hdf
 
+/-- The pullback of the negative of a one-form, which coorients the pulled-back hyperplanes
+oppositely, is a contact form exactly when the pullback of the form is. -/
+theorem isContactForm_mpullback_neg_iff {f : M → N} (hf : ContMDiff I J ∞ f)
+    (α : SmoothForm J N ℝ 1) :
+    (mpullback f hf (-α)).IsContactForm ↔ (mpullback f hf α).IsContactForm := by
+  rw [map_neg, isContactForm_neg_iff]
+
 /-- Diffeomorphisms preserve and reflect contactness. -/
 @[simp]
 theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N)
@@ -219,6 +231,17 @@ theorem IsContactForm.mfderiv_reebVectorField_mpullback
     rw [← mextDerivₗ_mpullback] at hd
     simp only [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply] at hd
     exact hd.symm.trans h
+
+/-- **The characteristic line of a hypersurface of contact type.** If a smooth map `f` pulls a
+one-form `θ` back to a contact form `α = f^* θ`, then at every point the kernel of the form
+`f^* dθ = dα` induced by `dθ` is the line spanned by the Reeb vector of `α`. -/
+theorem ker_bilinFormAt_mpullback_mextDerivₗ [FiniteDimensional ℝ E] {f : M → N}
+    (hf : ContMDiff I J ∞ f) {θ : SmoothForm J N ℝ 1} (hα : (mpullback f hf θ).IsContactForm)
+    (x : M) :
+    LinearMap.ker ((mpullback f hf (mextDerivₗ J 1 θ)).bilinFormAt x) =
+      ℝ ∙ (mpullback f hf θ).reebVectorField x := by
+  rw [← mextDerivₗ_mpullback, ← characteristicVectorField_mextDerivₗ]
+  exact ker_bilinFormAt_eq_span_characteristicVectorField (isContactForm_def.1 hα x)
 
 /-- Restricting a one-form to an open subset does not change where it is a contact form. -/
 theorem isContactFormAt_mpullback_subtype_val_iff {U : TopologicalSpace.Opens M}

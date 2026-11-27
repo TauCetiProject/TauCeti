@@ -349,6 +349,25 @@ theorem multiMons_def (d : κ → ℕ) :
         (Finsupp.equivFunOnFinite.symm.trans Finsupp.curryEquiv.symm).toEmbedding :=
   (rfl)
 
+/-- A multidegree exponent vector is obtained by assembling one exponent vector
+of degree `d h` for each block `h`. -/
+noncomputable def _root_.TauCeti.multiMonsEquiv (d : κ → ℕ) :
+    (∀ h, (univ : Finset ι).finsuppAntidiag (d h)) ≃ multiMons ι d :=
+  (Equiv.subtypePiEquivPi.symm.trans
+    (Equiv.subtypeEquivRight (fun _ ↦ Fintype.mem_piFinset.symm))).trans
+      (Finset.equivMap _ _)
+
+/-- The assembled exponent vector evaluates in each block to the given vector for that block. -/
+theorem _root_.TauCeti.multiMonsEquiv_apply (d : κ → ℕ)
+    (x : ∀ h, (univ : Finset ι).finsuppAntidiag (d h)) (h : κ) (i : ι) :
+    (TauCeti.multiMonsEquiv d x).val (h, i) = (x h).val i := by
+  delta TauCeti.multiMonsEquiv multiMons
+  rw [Equiv.trans_apply, Finset.equivMap_apply_coe]
+  simp only [Equiv.toEmbedding_apply, Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
+    Finsupp.curryEquiv_symm_apply, Finsupp.uncurry_apply,
+    Finsupp.coe_equivFunOnFinite_symm, Equiv.subtypePiEquivPi]
+  rfl
+
 @[simp]
 theorem mem_multiMons {n : κ × ι →₀ ℕ} : n ∈ multiMons ι d ↔ ∀ h, ∑ i, n (h, i) = d h := by
   simp only [multiMons, mem_map, Fintype.mem_piFinset, mem_finsuppAntidiag, subset_univ,
