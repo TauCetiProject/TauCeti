@@ -152,8 +152,14 @@ theorem fourierIntegral_fourierIntegral_traceBilinForm {ι : Type*} [Fintype ι]
       (VectorFourier.fourierIntegral ψ μ (traceBilinForm K ι)
         ⇑(f : LocallyConstant (Matrix ι ι K) E)) X = (f : LocallyConstant _ E) (-X) := by
   let : MeasureSpace K := { volume := ψ.selfDualMeasure }
+  have hvolume : (volume : Measure K) = ψ.selfDualMeasure := rfl
   have : (volume : Measure K).IsAddHaarMeasure := ψ.isAddHaarMeasure_selfDualMeasure
+  have hμ : (Measure.pi fun _ : ι ↦ Measure.pi fun _ : ι ↦ ψ.selfDualMeasure).map
+      (Matrix.ofMeasurableEquiv ι ι K) = volume :=
+    (Matrix.volume_preserving_ofMeasurableEquiv ι ι K).map_eq
   let U (m : ℤ) := (valuation K).leAddSubgroup (uniformizer K ^ m)
+  dsimp only
+  rw [hμ]
   refine inversion_of_coordinate_boxes volume _ (traceBilinForm_flip K ι)
     (by simpa only [traceBilinForm_apply] using
       ((continuous_fst.matrix_mul continuous_snd).matrix_trace :
@@ -173,7 +179,6 @@ theorem fourierIntegral_fourierIntegral_traceBilinForm {ι : Type*} [Fintype ι]
       Valuation.coe_leAddSubgroup, Set.mem_ofPred_eq, traceBilinForm_apply, U] using
       forall_trace_mul_eq_one_iff_forall_valuation_le (setOf_eq_one_mem_nhds_zero hψ) h1 m Y
   · intro m
-    rw [AddSubgroup.coe_matrix, Set.volume_matrix, Valuation.coe_leAddSubgroup]
-    rfl
+    rw [AddSubgroup.coe_matrix, Set.volume_matrix, Valuation.coe_leAddSubgroup, hvolume]
 
 end AddChar
