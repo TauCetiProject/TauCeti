@@ -12,7 +12,6 @@ import Mathlib.Algebra.Category.Grp.AB
 import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.FunctorCategory
 import Mathlib.CategoryTheory.Limits.FunctorCategory.Shapes.Products
 import Mathlib.CategoryTheory.Limits.Shapes.ConcreteCategory
-import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 
 /-!
 # Derived completeness of the cohomology of functors and comparisons modulo an element
@@ -20,7 +19,7 @@ import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 Let `R` be a ring. A functor `Φ : C ⥤ ModuleCat R` gives the coefficient functor
 `Φ ⋙ forget₂ (ModuleCat R) AddCommGrpCat` with the action `CategoryTheory.Functor.smulEnd Φ` of
 `R` by scalar multiplication, so its cohomology groups `Extⁿ(N, Φ)` are `R`-modules
-(`TauCeti.Abelian.ExtWithAction`). This file proves three facts about these modules, which reduce
+(`TauCeti.Abelian.ExtWithAction`). This file proves two facts about such modules, which reduce
 the bijectivity of a comparison map with `a`-adically complete coefficients to its bijectivity
 modulo `a`.
 
@@ -28,26 +27,26 @@ modulo `a`.
   is every `Extⁿ(N, Φ)` (`TauCeti.isDerivedComplete_extWithAction_smulEnd`). Products of functors
   to abelian groups are computed objectwise, so they are exact, and the telescope maps of the
   values of `Φ` assemble into an isomorphism of the coefficient `∏_ℕ Φ`.
-* *Reduction modulo `a`.* If `a` is a non-zero-divisor on every `Φ(A)` and `q : Φ ⟶ G` is onto at
-  every object with kernel `a Φ(A)`, then `0 → Φ → Φ → G → 0`, with first map the action of `a`,
-  is short exact (`TauCeti.shortExact_smulEnd`), so that a class of `Extⁿ(N, Φ)` which
-  vanishes in `Extⁿ(N, G)` is a multiple of `a`
-  (`TauCeti.Abelian.ExtWithAction.exists_smul_eq_of_comp_eq_zero`).
-* *The adic step.* Let `0 → F → F → G → 0` and `0 → F' → F' → G' → 0` be such reductions of
-  coefficients with an action of `R` on `C` and `C'`, and `β : φ ⋙ F ⟶ F'` an equivariant map
-  inducing `γ : φ ⋙ G ⟶ G'`. If the comparison for `γ` is bijective along `α`, the long exact
-  sequences show that the kernel of the comparison map for `β` is `a`-divisible and that it is
-  onto modulo `a`. When the cohomology groups are derived `a`-complete, Nakayama's lemma and
-  successive approximation (`TauCeti.IsDerivedComplete.eq_bot_of_le_pointwise_smul`,
-  `TauCeti.IsDerivedComplete.subset_range_of_subset_range_add_smul`) then show that the
-  comparison for `β` is bijective (`CategoryTheory.Functor.IsExtComparisonBijective.of_shortExact`).
+* *The adic step.* Let `0 → F → F → G → 0` and `0 → F' → F' → G' → 0` be reductions modulo `a` of
+  coefficients with an action of `R` on `C` and `C'`, short exact sequences whose first maps are
+  the actions of `a` (for functors to modules, `TauCeti.shortExact_smulEnd` gives them), and let
+  `β : φ ⋙ F ⟶ F'` commute with the actions of `a` and induce `γ : φ ⋙ G ⟶ G'`. If the comparison
+  for `γ` is bijective along `α`, the long exact sequences show that the kernel of the comparison
+  map for `β` is `a`-divisible and that it is onto modulo `a`. When the cohomology groups are
+  derived `a`-complete, Nakayama's lemma and successive approximation
+  (`TauCeti.IsDerivedComplete.eq_zero_of_mem_of_subset_smul`,
+  `TauCeti.IsDerivedComplete.subset_range_of_subset_range_add_smul`), applied to the comparison
+  maps between the cohomology groups with their actions
+  (`CategoryTheory.Functor.extComparisonWithAction`), then show that the comparison for `β` is
+  bijective (`CategoryTheory.Functor.IsExtComparisonBijective.of_shortExact`).
 
-## Main results
+## Main definitions and results
 
 * `TauCeti.isDerivedComplete_extWithAction_smulEnd`: cohomology with derived complete
   coefficients is derived complete.
-* `TauCeti.shortExact_smulEnd`: the reduction of a functor to modules modulo a
-  non-zero-divisor is short exact.
+* `CategoryTheory.Functor.extComparisonWithAction`: the comparison map between the cohomology
+  groups with actions, which commutes with the action of every element with which `β` commutes
+  (`CategoryTheory.Functor.extComparisonWithAction_smul`).
 * `CategoryTheory.Functor.IsExtComparisonBijective.of_shortExact`: a comparison which is bijective
   modulo `a` is bijective, when the cohomology groups are derived `a`-complete.
 
@@ -55,11 +54,10 @@ modulo `a`.
 
 * [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
   `src/Lib/PadicComparison/Completion.lean` (declarations
-  `New.Variety.IsDerivedComplete.cohomology`,
-  `New.Variety.modShortExact_of_isSMulRegular_of_isReductionMod` and
-  `New.Variety.Comparison.IsBijective.of_mod`); Apache 2.0, Copyright 2026 Anthropic, PBC. The
-  statements are adapted from these declarations, for functors to modules and comparisons with an
-  action of a commutative ring, and the proofs follow their method.
+  `New.Variety.IsDerivedComplete.cohomology` and `New.Variety.Comparison.IsBijective.of_mod`);
+  Apache 2.0, Copyright 2026 Anthropic, PBC. The statements are adapted from these declarations,
+  for functors to modules and comparisons with an action of a commutative ring, and the proofs
+  follow their method.
 * [Stacks Project, Tag 091N](https://stacks.math.columbia.edu/tag/091N), for derived
   completeness and the derived Nakayama lemma.
 -/
@@ -123,41 +121,46 @@ theorem isDerivedComplete_extWithAction_smulEnd {I : Ideal R} {Φ : C ⥤ Module
 
 end Complete
 
-/-! ### Reduction modulo an element -/
-
-section Reduction
-
-variable {C : Type u} [Category.{v} C] {R : Type*} [Ring R]
-
-/-- **Reduction modulo `a`.** Let `Φ` be a functor to `R`-modules on whose values `a` is a
-non-zero-divisor, and `q : Φ ⟶ G` a map to a functor to abelian groups which kills `a Φ`, is onto
-at every object and whose kernel at every object is `a Φ(A)`. Then `0 → Φ → Φ → G → 0`, with first
-map the action of `a`, is short exact. -/
-theorem shortExact_smulEnd {Φ : C ⥤ ModuleCat.{w} R} {G : C ⥤ AddCommGrpCat.{w}} {a : R}
-    {q : Φ ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w} ⟶ G} (hq : (Φ.smulEnd a).asHom ≫ q = 0)
-    (ha : ∀ A, IsSMulRegular (Φ.obj A) a) (hsurj : ∀ A, Function.Surjective (q.app A))
-    (hker : ∀ A (x : Φ.obj A), q.app A x = 0 → ∃ y, a • y = x) :
-    (ShortComplex.mk _ _ hq).ShortExact := by
-  have hf (A : C) : ⇑((Φ.smulEnd a).asHom.app A) = fun x : Φ.obj A ↦ a • x :=
-    funext (Φ.smulEnd_asHom_app_apply a A)
-  refine ShortComplex.shortExact_of_forall_function_exact (fun A ↦ ?_) (fun A x ↦ ?_) hsurj
-  · dsimp only
-    rw [hf]
-    exact ha A
-  · refine ⟨fun hx ↦ ?_, ?_⟩
-    · dsimp only
-      rw [hf]
-      exact hker A x hx
-    · rintro ⟨y, rfl⟩
-      exact congr($(congr_app hq A) y)
-
-end Reduction
-
 end TauCeti
 
-/-! ### The adic step -/
-
 namespace CategoryTheory.Functor
+
+/-! ### Comparison maps between cohomology groups with actions -/
+
+section WithAction
+
+variable {C : Type u} [Category.{v} C] {C' : Type u'} [Category.{v'} C']
+  [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C' ⥤ AddCommGrpCat.{w})]
+  {R : Type*} [Semiring R] {F : C ⥤ AddCommGrpCat.{w}} {F' : C' ⥤ AddCommGrpCat.{w}}
+  (ρ : R →+* End F) (ρ' : R →+* End F') (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F')
+  {N : C ⥤ AddCommGrpCat.{w}} {N' : C' ⥤ AddCommGrpCat.{w}} (α : N' ⟶ φ ⋙ N)
+
+/-- The comparison map `Extⁿ(N, F) ⟶ Extⁿ(N', F')` for `β` along `α`, between the cohomology
+groups with the actions `ρ` and `ρ'` of `R`. It commutes with the action of every `r ∈ R` with
+which `β` commutes (`CategoryTheory.Functor.extComparisonWithAction_smul`), so it is `R`-linear
+when `β` is `R`-equivariant. -/
+noncomputable def extComparisonWithAction (n : ℕ) :
+    ExtWithAction ρ N n →+ ExtWithAction ρ' N' n :=
+  (ExtWithAction.toExt ρ').symm.toAddMonoidHom.comp
+    ((extComparison φ β α n).comp (ExtWithAction.toExt ρ).toAddMonoidHom)
+
+/-- The comparison map between the cohomology groups with actions is the comparison map. -/
+@[simp]
+lemma toExt_extComparisonWithAction {n : ℕ} (x : ExtWithAction ρ N n) :
+    ExtWithAction.toExt ρ' (extComparisonWithAction ρ ρ' φ β α n x) =
+      extComparison φ β α n (ExtWithAction.toExt ρ x) :=
+  AddEquiv.apply_symm_apply _ _
+
+variable {ρ ρ' φ β} in
+/-- The comparison map commutes with the action of every `r` with which `β` commutes. -/
+lemma extComparisonWithAction_smul {r : R}
+    (hβ : φ.whiskerLeft (ρ r).asHom ≫ β = β ≫ (ρ' r).asHom) {n : ℕ} (x : ExtWithAction ρ N n) :
+    extComparisonWithAction ρ ρ' φ β α n (r • x) = r • extComparisonWithAction ρ ρ' φ β α n x :=
+  (ExtWithAction.toExt ρ').injective <| by simp [extComparison_comp_mk₀ φ hβ]
+
+end WithAction
+
+/-! ### The adic step -/
 
 variable {C : Type u} [Category.{v} C] {C' : Type u'} [Category.{v'} C']
   [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C' ⥤ AddCommGrpCat.{w})]
@@ -244,13 +247,13 @@ private lemma exists_add_comp_eq (hS : (ShortComplex.mk _ _ hq).ShortExact)
 
 /-- **The adic step.** Let `0 → F → F → G → 0` and `0 → F' → F' → G' → 0` be short exact, with
 first maps the actions of `a ∈ R` on coefficients `F` on `C` and `F'` on `C'`, and let
-`β : φ ⋙ F ⟶ F'` be `R`-equivariant and induce `γ : φ ⋙ G ⟶ G'`. Suppose that every
-`Extⁿ(N', F')` is derived `a`-complete, and that `Extⁿ(N, F)` is derived `a`-complete whenever
-the kernel of the comparison map `Extⁿ(N, F) ⟶ Extⁿ(N', F')` for `β` is `a`-divisible. If the
-comparison for `γ` is bijective along `α`, so is the comparison for `β`. -/
+`β : φ ⋙ F ⟶ F'` commute with the actions of `a` and induce `γ : φ ⋙ G ⟶ G'`. Suppose that
+every `Extⁿ(N', F')` is derived `a`-complete, and that `Extⁿ(N, F)` is derived `a`-complete
+whenever the kernel of the comparison map `Extⁿ(N, F) ⟶ Extⁿ(N', F')` for `β` is `a`-divisible.
+If the comparison for `γ` is bijective along `α`, so is the comparison for `β`. -/
 theorem IsExtComparisonBijective.of_shortExact (hS : (ShortComplex.mk _ _ hq).ShortExact)
     (hS' : (ShortComplex.mk _ _ hq').ShortExact)
-    (hβ : ∀ r, φ.whiskerLeft (ρ r).asHom ≫ β = β ≫ (ρ' r).asHom)
+    (hβ : φ.whiskerLeft (ρ a).asHom ≫ β = β ≫ (ρ' a).asHom)
     (hγ : φ.whiskerLeft q ≫ γ = β ≫ q')
     (hF' : ∀ n, IsDerivedComplete (Ideal.span {a}) (ExtWithAction ρ' N' n))
     (hF : ∀ n, (∀ x, extComparison φ β α n x = 0 →
@@ -259,42 +262,32 @@ theorem IsExtComparisonBijective.of_shortExact (hS : (ShortComplex.mk _ _ hq).Sh
     (h : IsExtComparisonBijective.{t, t'} φ γ α) : IsExtComparisonBijective.{t, t'} φ β α := by
   rw [isExtComparisonBijective_iff] at h ⊢
   have ha : a ∈ Ideal.span {a} := Ideal.mem_span_singleton_self a
-  -- The comparison map in degree `n`, as an `R`-linear map.
-  let L (n : ℕ) : ExtWithAction ρ N n →ₗ[R] ExtWithAction ρ' N' n :=
-    { toFun x := (ExtWithAction.toExt ρ').symm (extComparison φ β α n (ExtWithAction.toExt ρ x))
-      map_add' x y := by simp
-      map_smul' r x := (ExtWithAction.toExt ρ').injective <| by
-        simp [extComparison_comp_mk₀ φ (hβ r)] }
-  have hL (n : ℕ) (x : ExtWithAction ρ N n) :
-      ExtWithAction.toExt ρ' (L n x) = extComparison φ β α n (ExtWithAction.toExt ρ x) :=
-    AddEquiv.apply_symm_apply _ _
-  have hdiv (n : ℕ) := exists_comp_eq_of_extComparison_eq_zero hS hS' (hβ a) hγ h (n := n)
+  have hdiv (n : ℕ) := exists_comp_eq_of_extComparison_eq_zero hS hS' hβ hγ h (n := n)
   -- Nakayama: the kernel is `a`-divisible inside a derived complete module, so it vanishes.
   have hinj (n : ℕ) : Function.Injective (extComparison φ β α n) := by
     refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-    have hK : LinearMap.ker (L n) ≤ a • LinearMap.ker (L n) := fun x hx ↦ by
-      obtain ⟨y, hy, hyx⟩ := hdiv n (ExtWithAction.toExt ρ x) (by
-        rw [← hL, LinearMap.mem_ker.1 hx, _root_.map_zero])
-      refine (Submodule.mem_smul_pointwise_iff_exists _ _ _).2
-        ⟨(ExtWithAction.toExt ρ).symm y, LinearMap.mem_ker.2 ?_, ?_⟩
-      · exact (ExtWithAction.toExt ρ').injective (by simpa [hL] using hy)
-      · exact (ExtWithAction.toExt ρ).injective (by simpa using hyx)
-    have hx' : (ExtWithAction.toExt ρ).symm x ∈ LinearMap.ker (L n) :=
-      LinearMap.mem_ker.2 <| (ExtWithAction.toExt ρ').injective <| by
-        rw [hL, AddEquiv.apply_symm_apply, hx, _root_.map_zero]
-    have h0 := ((hF n (hdiv n)).eq_bot_of_le_pointwise_smul ha hK).le hx'
-    simpa using congrArg (ExtWithAction.toExt ρ) ((Submodule.mem_bot R).1 h0)
+    have hK : {x | extComparisonWithAction ρ ρ' φ β α n x = 0} ⊆
+        a • {x | extComparisonWithAction ρ ρ' φ β α n x = 0} := fun z hz ↦ by
+      obtain ⟨y, hy, hyz⟩ := hdiv n (ExtWithAction.toExt ρ z)
+        (by simpa using congrArg (ExtWithAction.toExt ρ') hz)
+      refine Set.mem_smul_set.2 ⟨(ExtWithAction.toExt ρ).symm y, ?_, ?_⟩
+      · exact (ExtWithAction.toExt ρ').injective (by simpa using hy)
+      · exact (ExtWithAction.toExt ρ).injective (by simpa using hyz)
+    have h0 := (hF n (hdiv n)).eq_zero_of_mem_of_subset_smul ha hK
+      (x := (ExtWithAction.toExt ρ).symm x) ((ExtWithAction.toExt ρ').injective (by simpa using hx))
+    simpa using congrArg (ExtWithAction.toExt ρ) h0
   -- Successive approximation: the comparison map is onto modulo `a`, so it is onto.
   refine fun n ↦ ⟨hinj n, fun y ↦ ?_⟩
-  have hsub := (hF n (hdiv n)).subset_range_of_subset_range_add_smul (hF' n) ha (L n)
+  have hsub := (hF n (hdiv n)).subset_range_of_subset_range_add_smul (hF' n) ha
+    (extComparisonWithAction ρ ρ' φ β α n) (extComparisonWithAction_smul α hβ)
     (S := Set.univ) fun y _ ↦ by
-      obtain ⟨x, z, hxz⟩ := exists_add_comp_eq hS hS' (hβ a) hγ h (hinj (n + 1))
+      obtain ⟨x, z, hxz⟩ := exists_add_comp_eq hS hS' hβ hγ h (hinj (n + 1))
         (ExtWithAction.toExt ρ' y)
-      refine Set.mem_add.2 ⟨L n ((ExtWithAction.toExt ρ).symm x), ⟨_, rfl⟩,
+      refine Set.mem_add.2 ⟨_, ⟨(ExtWithAction.toExt ρ).symm x, rfl⟩,
         a • (ExtWithAction.toExt ρ').symm z, Set.smul_mem_smul_set (Set.mem_univ _),
         (ExtWithAction.toExt ρ').injective ?_⟩
-      simpa [hL] using hxz
+      simpa using hxz
   obtain ⟨x, hx⟩ := hsub (Set.mem_univ ((ExtWithAction.toExt ρ').symm y))
-  exact ⟨ExtWithAction.toExt ρ x, by simpa [hL] using congrArg (ExtWithAction.toExt ρ') hx⟩
+  exact ⟨ExtWithAction.toExt ρ x, by simpa using congrArg (ExtWithAction.toExt ρ') hx⟩
 
 end CategoryTheory.Functor

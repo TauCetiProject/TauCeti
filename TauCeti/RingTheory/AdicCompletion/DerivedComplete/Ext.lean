@@ -26,28 +26,19 @@ to modules, as coefficients in a category of functors, the endomorphism is an is
 as the values of the functor are derived complete, so derived completeness passes from the
 coefficients to their cohomology.
 
-A short exact sequence `0 → F → F → G → 0` whose first map is the action of `a ∈ R` is a reduction
-of `F` modulo `a`. Its long exact sequence shows that a class of `Extⁿ(P, F)` whose image in
-`Extⁿ(P, G)` vanishes is a multiple of `a`
-(`TauCeti.Abelian.ExtWithAction.exists_smul_eq_of_comp_eq_zero`).
-
 ## Main results
 
 * `TauCeti.Abelian.ExtWithAction.isDerivedComplete_of_isIso`: if the telescope endomorphisms of
   `∏_ℕ F` are isomorphisms for all `f ∈ I`, every `Extⁿ(P, F)` is derived `I`-complete.
-* `TauCeti.Abelian.ExtWithAction.exists_smul_eq_of_comp_eq_zero`: along a reduction
-  `0 → F → F → G → 0` modulo `a`, the classes of `Extⁿ(P, F)` that vanish in `Extⁿ(P, G)` are the
-  multiples of `a`.
 
 ## References
 
 * [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
-  `src/Lib/PadicComparison/Completion.lean` (declarations
-  `New.Variety.IsDerivedComplete.cohomology` and
-  `New.Variety.ModShortExact.exists_smul_eq_of_push_eq_zero`); Apache 2.0, Copyright 2026
-  Anthropic, PBC. The statements are adapted from these declarations and stated for an object with
-  an action in an abelian category with exact countable products; the proof of the first follows
-  their plan, through the commutation of `Ext` with the product of countably many copies of `F`.
+  `src/Lib/PadicComparison/Completion.lean` (declaration
+  `New.Variety.IsDerivedComplete.cohomology`); Apache 2.0, Copyright 2026 Anthropic, PBC. The
+  statement is adapted from this declaration and stated for an object with an action in an abelian
+  category with exact countable products; the proof follows its plan, through the commutation of
+  `Ext` with the product of countably many copies of `F`.
 * [Stacks Project, Tag 091N](https://stacks.math.columbia.edu/tag/091N), for derived
   completeness.
 -/
@@ -60,11 +51,8 @@ universe w v u
 
 namespace TauCeti.Abelian.ExtWithAction
 
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {R : Type*} {F : C}
-
-section Complete
-
-variable [CommRing R] (ρ : R →+* End F)
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {R : Type*} [CommRing R] {F : C}
+  (ρ : R →+* End F)
 
 /-- **Derived completeness of `Ext`.** Let `c` exhibit `c.pt` as the product `∏_ℕ F` of countably
 many copies of an object `F` with an action `ρ` of `R`, in an abelian category with enough
@@ -96,22 +84,5 @@ theorem isDerivedComplete_of_isIso [HasLimitsOfShape (Discrete ℕ) C]
       comp_neg]
   exact (Function.Bijective.of_comp_iff _ e.bijective).1
     (hsq ▸ e.bijective.comp (AddEquiv.bijective _))
-
-end Complete
-
-section Reduction
-
-variable [Semiring R] (ρ : R →+* End F)
-
-/-- **Reduction modulo `a`.** Let `0 → F → F → G → 0` be short exact, with first map the action
-`ρ(a)` of `a ∈ R`. A class of `Extⁿ(P, F)` whose image in `Extⁿ(P, G)` vanishes is a multiple of
-`a`. -/
-theorem exists_smul_eq_of_comp_eq_zero {G : C} {a : R} {q : F ⟶ G} {hq : (ρ a).asHom ≫ q = 0}
-    (hS : (ShortComplex.mk _ _ hq).ShortExact) {P : C} {n : ℕ} (x : ExtWithAction ρ P n)
-    (hx : (toExt ρ x).comp (mk₀ q) (add_zero n) = 0) : ∃ y, a • y = x := by
-  obtain ⟨y, hy⟩ := covariant_sequence_exact₂ P hS (toExt ρ x) hx
-  exact ⟨(toExt ρ).symm y, (toExt ρ).injective (by simpa using hy)⟩
-
-end Reduction
 
 end TauCeti.Abelian.ExtWithAction

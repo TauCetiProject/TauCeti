@@ -54,10 +54,12 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 * `TauCeti.IsDerivedComplete.of_isAdicComplete`: an `I`-adically complete module is derived
   `I`-complete.
 * `TauCeti.IsDerivedComplete.subset_range_of_subset_range_add_smul`: successive approximation.
-  For `u : M → N` between derived `I`-complete modules and `f ∈ I`, a set `S` with
-  `S ⊆ range u + f • S` lies in the range of `u`.
-* `TauCeti.IsDerivedComplete.eq_bot_of_le_pointwise_smul`: Nakayama's lemma, a submodule `K` of
-  a derived `I`-complete module with `K ≤ f • K` for some `f ∈ I` is zero.
+  For an additive map `u : M → N` between derived `I`-complete modules which commutes with
+  multiplication by `f ∈ I`, a set `S` with `S ⊆ range u + f • S` lies in the range of `u`.
+* `TauCeti.IsDerivedComplete.eq_zero_of_mem_of_subset_smul` and
+  `TauCeti.IsDerivedComplete.eq_bot_of_le_pointwise_smul`: Nakayama's lemma, a subset `K` of a
+  derived `I`-complete module with `K ⊆ f • K` for some `f ∈ I` lies in `{0}`, and a submodule
+  `K` with `K ≤ f • K` is zero.
 * `TauCeti.IsDerivedComplete.of_comp_eq_smul`: derived completeness passes along maps
   `a : M → N`, `b : N → M` with `a ∘ b = c` whenever every element of `I` has a power divisible
   by `c`; in particular to retracts.
@@ -334,12 +336,14 @@ theorem le_jacobson (h : IsDerivedComplete I R) : I ≤ Ring.jacobson R := by
   rw [telescope_apply, show z (0 + 1) = z 0 from congrFun hshift 0, smul_eq_mul] at h0
   exact .of_mul_eq_one (z 0) (by linear_combination h0)
 
-/-- **Successive approximation.** Let `u : M → N` be a linear map between derived `I`-complete
-modules and `f ∈ I`. If every point of a set `S ⊆ N` is the sum of a point of the range of `u` and
-of `f` times a point of `S`, then `S` lies in the range of `u`. -/
+/-- **Successive approximation.** Let `u : M → N` be an additive map between derived `I`-complete
+modules which commutes with multiplication by `f ∈ I`. If every point of a set `S ⊆ N` is the sum
+of a point of the range of `u` and of `f` times a point of `S`, then `S` lies in the range of
+`u`. -/
 theorem subset_range_of_subset_range_add_smul (hM : IsDerivedComplete I M)
-    (hN : IsDerivedComplete I N) {f : R} (hf : f ∈ I) (u : M →ₗ[R] N) {S : Set N}
-    (hS : S ⊆ (LinearMap.range u : Set N) + f • S) : S ⊆ LinearMap.range u := by
+    (hN : IsDerivedComplete I N) {f : R} (hf : f ∈ I) (u : M →+ N)
+    (hu : ∀ x, u (f • x) = f • u x) {S : Set N} (hS : S ⊆ Set.range u + f • S) :
+    S ⊆ Set.range u := by
   intro x hx
   have key (y : S) : ∃ e : M, ∃ y' : S, (y : N) = u e + f • (y' : N) := by
     obtain ⟨_, ⟨e, rfl⟩, _, ⟨y', hy', rfl⟩, h⟩ := hS y.property
@@ -352,18 +356,30 @@ theorem subset_range_of_subset_range_add_smul (hM : IsDerivedComplete I M)
     ext n
     have hn : (xs (n + 1) : N) = next (xs n) := by
       simp only [xs, Function.iterate_succ_apply']
-    rw [telescope_apply_compLeft, hz, telescope_apply, hn, hnext (xs n), add_sub_cancel_right]
+    have hu' : telescope N f (fun n ↦ u (z n)) n = u (telescope M f z n) := by
+      rw [telescope_apply, telescope_apply, map_sub, hu]
+    rw [hu', hz, telescope_apply, hn, hnext (xs n), add_sub_cancel_right]
   exact ⟨z 0, (congrFun ((hN.bijective hf).1 h) 0).symm⟩
+
+/-- **Nakayama's lemma for derived complete modules.** If a subset `K` of a derived `I`-complete
+module satisfies `K ⊆ f • K` for some `f ∈ I`, its only possible element is `0`. No finiteness
+of `K` is needed. -/
+theorem eq_zero_of_mem_of_subset_smul (hM : IsDerivedComplete I M) {f : R} (hf : f ∈ I)
+    {K : Set M} (hK : K ⊆ f • K) {x : M} (hx : x ∈ K) : x = 0 := by
+  have h := hM.subset_range_of_subset_range_add_smul hM hf 0 (by simp) (S := K) fun y hy ↦ by
+    obtain ⟨z, hz, rfl⟩ := Set.mem_smul_set.1 (hK hy)
+    exact ⟨0, ⟨0, rfl⟩, f • z, Set.smul_mem_smul_set hz, zero_add _⟩
+  obtain ⟨y, rfl⟩ := h hx
+  rfl
 
 /-- **Nakayama's lemma for derived complete modules.** A submodule `K` of a derived `I`-complete
 module with `K ≤ f • K` for some `f ∈ I` is zero. No finiteness of `K` is needed. -/
 theorem eq_bot_of_le_pointwise_smul (hM : IsDerivedComplete I M) {f : R} (hf : f ∈ I)
-    {K : Submodule R M} (hK : K ≤ f • K) : K = ⊥ := by
-  have h := hM.subset_range_of_subset_range_add_smul hM hf (0 : M →ₗ[R] M) (S := K) fun x hx ↦ by
-    obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists x f K).1 (hK hx)
-    exact ⟨0, (LinearMap.range _).zero_mem, f • y, Set.smul_mem_smul_set hy, zero_add _⟩
-  rw [LinearMap.range_zero] at h
-  exact (Submodule.eq_bot_iff K).2 fun x hx ↦ h hx
+    {K : Submodule R M} (hK : K ≤ f • K) : K = ⊥ :=
+  (Submodule.eq_bot_iff K).2 fun _ hx ↦ hM.eq_zero_of_mem_of_subset_smul hf (K := K)
+    (fun y hy ↦ by
+      obtain ⟨z, hz, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists y f K).1 (hK hy)
+      exact Set.smul_mem_smul_set hz) hx
 
 /-- **Retracts up to a scalar.** Let `a : M → N` and `b : N → M` be linear maps with
 `a (b x) = c • x` for all `x`, where every element of `I` has a power divisible by `c`. If `M` is

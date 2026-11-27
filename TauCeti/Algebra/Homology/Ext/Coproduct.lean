@@ -87,28 +87,19 @@ private lemma bijective_restrict_one (hc : IsColimit c) (Y : C) :
   -- A single injective copresentation computes every component and the coproduct at once.
   let S := TauCeti.injectiveCokernelSequence Y
   have hS := TauCeti.injectiveCokernelSequence_shortExact Y
-  have hrep (Z : C) (e : Ext.{w} Z Y 1) :
-      ∃ a : Z ⟶ S.X₃, (mk₀ a).comp hS.extClass (zero_add 1) = e := by
-    obtain ⟨a, ha⟩ := covariant_sequence_exact₁ Z hS e (eq_zero_of_injective _) rfl
-    exact ⟨addEquiv₀ a, by simpa using ha⟩
   refine ⟨(injective_iff_map_eq_zero _).mpr ?_, ?_⟩
   · intro e he
-    obtain ⟨a, rfl⟩ := hrep c.pt e
-    have hlocal (i : J) : ∃ b : X i ⟶ S.X₂, b ≫ S.g = c.inj i ≫ a := by
-      have hi := congrFun he i
-      have hz : (mk₀ (c.inj i ≫ a)).comp hS.extClass (zero_add 1) = 0 := by
-        simpa [restrict_apply, ← mk₀_comp_mk₀_assoc] using hi
-      obtain ⟨b, hb⟩ := covariant_sequence_exact₃ (X i) hS (mk₀ (c.inj i ≫ a)) rfl hz
-      refine ⟨addEquiv₀ b, (mk₀_bijective _ _).1 ?_⟩
-      simpa only [← mk₀_comp_mk₀, mk₀_addEquiv₀_apply] using hb
+    obtain ⟨a, rfl⟩ := hS.exists_mk₀_comp_extClass_eq e
+    have hlocal (i : J) : ∃ b : X i ⟶ S.X₂, b ≫ S.g = c.inj i ≫ a :=
+      (hS.mk₀_comp_extClass_eq_zero_iff _).1 <| by
+        simpa [restrict_apply, ← mk₀_comp_mk₀_assoc] using congrFun he i
     choose b hb using hlocal
-    have ha : Cofan.IsColimit.desc hc b ≫ S.g = a := by
-      apply Cofan.IsColimit.hom_ext hc
-      intro i
-      simp [hb]
-    rw [← ha, ← mk₀_comp_mk₀_assoc, hS.comp_extClass, comp_zero]
+    refine (hS.mk₀_comp_extClass_eq_zero_iff a).2 ⟨Cofan.IsColimit.desc hc b, ?_⟩
+    apply Cofan.IsColimit.hom_ext hc
+    intro i
+    simpa using hb i
   · intro e
-    choose a ha using fun i ↦ hrep (X i) (e i)
+    choose a ha using fun i ↦ hS.exists_mk₀_comp_extClass_eq (e i)
     refine ⟨(mk₀ (Cofan.IsColimit.desc hc a)).comp hS.extClass (zero_add 1), ?_⟩
     ext i
     simpa [restrict_apply] using ha i
@@ -119,10 +110,6 @@ private lemma bijective_restrict_succ_succ (Y : C) (n : ℕ)
     (h : Function.Bijective (restrict c (TauCeti.injectiveCokernelSequence Y).X₃ (n + 1))) :
     Function.Bijective (restrict c Y (n + 2)) := by
   have hS := TauCeti.injectiveCokernelSequence_shortExact Y
-  have hδ (Z : C) : Function.Bijective (hS.extClass.postcomp Z (show n + 1 + 1 = n + 2 from rfl)) :=
-    hS.extClass_postcomp_bijective Z rfl
-      ⟨fun _ _ ↦ (eq_zero_of_injective _).trans (eq_zero_of_injective _).symm⟩
-      ⟨fun _ _ ↦ (eq_zero_of_injective _).trans (eq_zero_of_injective _).symm⟩
   have hsq : restrict c Y (n + 2) ∘ hS.extClass.postcomp c.pt rfl =
       (fun e i ↦ hS.extClass.postcomp (X i) rfl (e i)) ∘ restrict c _ (n + 1) := by
     ext e i
@@ -130,8 +117,9 @@ private lemma bijective_restrict_succ_succ (Y : C) (n : ℕ)
     exact (comp_assoc _ _ _ (zero_add _) rfl (by lia)).symm
   have h₂ : Function.Bijective fun (e : ∀ i, Ext.{w} (X i) _ (n + 1)) i ↦
       hS.extClass.postcomp (X i) rfl (e i) :=
-    Function.Bijective.piMap fun i ↦ hδ (X i)
-  exact (Function.Bijective.of_comp_iff _ (hδ c.pt)).1 (hsq ▸ h₂.comp h)
+    Function.Bijective.piMap fun i ↦ hS.extClass_postcomp_bijective_of_injective (X i) rfl
+  exact (Function.Bijective.of_comp_iff _
+    (hS.extClass_postcomp_bijective_of_injective c.pt (m := n + 2) rfl)).1 (hsq ▸ h₂.comp h)
 
 private lemma bijective_restrict (hc : IsColimit c) (n : ℕ) :
     ∀ Y : C, Function.Bijective (restrict c Y n) := by

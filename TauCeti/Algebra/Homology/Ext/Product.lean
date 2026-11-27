@@ -158,30 +158,19 @@ private lemma bijective_project_one (X : C) (Y : J → C) :
     Function.Bijective (project X (Fan.mk (∏ᶜ Y) (Pi.π Y)) 1) := by
   have hT := piCopresentation_shortExact Y
   have hS (i : J) := TauCeti.injectiveCokernelSequence_shortExact (Y i)
-  have hrep {S : ShortComplex C} (hS : S.ShortExact) [Injective S.X₂] (e : Ext.{w} X S.X₁ 1) :
-      ∃ a : X ⟶ S.X₃, (mk₀ a).comp hS.extClass (zero_add 1) = e := by
-    obtain ⟨a, ha⟩ := covariant_sequence_exact₁ X hS e (eq_zero_of_injective _) rfl
-    exact ⟨addEquiv₀ a, by simpa using ha⟩
   have hproj (a : X ⟶ (piCopresentation Y).X₃) (i : J) :
       project X (Fan.mk (∏ᶜ Y) (Pi.π Y)) 1 ((mk₀ a).comp hT.extClass (zero_add 1)) i =
         (mk₀ (a ≫ Pi.π _ i)).comp (hS i).extClass (zero_add 1) := by
     rw [project_mk_apply, comp_assoc_of_third_deg_zero, extClass_comp_mk₀_π, mk₀_comp_mk₀_assoc]
   refine ⟨(injective_iff_map_eq_zero _).2 fun e he ↦ ?_, fun e ↦ ?_⟩
-  · obtain ⟨a, rfl⟩ := hrep hT e
-    have hlocal (i : J) :
-        ∃ b : X ⟶ Injective.under (Y i), b ≫ cokernel.π _ = a ≫ Pi.π _ i := by
-      have hz : (mk₀ (a ≫ Pi.π _ i)).comp (hS i).extClass (zero_add 1) = 0 := by
-        rw [← hproj]
-        exact congrFun he i
-      obtain ⟨b, hb⟩ := covariant_sequence_exact₃ X (hS i) (mk₀ (a ≫ Pi.π _ i)) rfl hz
-      refine ⟨addEquiv₀ b, (mk₀_bijective _ _).1 ?_⟩
-      simpa only [← mk₀_comp_mk₀, mk₀_addEquiv₀_apply] using hb
-    choose b hb using hlocal
-    have ha : Pi.lift b ≫ (piCopresentation Y).g = a := by
-      ext i
-      simp [hb]
-    rw [← ha, ← mk₀_comp_mk₀_assoc, hT.comp_extClass, comp_zero]
-  · choose a ha using fun i ↦ hrep (hS i) (e i)
+  · obtain ⟨a, rfl⟩ := hT.exists_mk₀_comp_extClass_eq e
+    -- Every component of `a` lifts to `Iᵢ`, so `a` lifts to `∏ Iᵢ`.
+    choose b hb using fun i ↦ ((hS i).mk₀_comp_extClass_eq_zero_iff (a ≫ Pi.π _ i)).1
+      ((hproj a i).symm.trans (congrFun he i))
+    refine (hT.mk₀_comp_extClass_eq_zero_iff a).2 ⟨Pi.lift b, ?_⟩
+    ext i
+    simp [hb]
+  · choose a ha using fun i ↦ (hS i).exists_mk₀_comp_extClass_eq (e i)
     refine ⟨(mk₀ (Pi.lift a)).comp hT.extClass (zero_add 1), funext fun i ↦ ?_⟩
     rw [hproj, Pi.lift_comp_π, ha]
 
@@ -192,22 +181,19 @@ private lemma bijective_project_add_two (X : C) (Y : J → C) (n : ℕ)
       (n + 1))) :
     Function.Bijective (project X (Fan.mk (∏ᶜ Y) (Pi.π Y)) (n + 2)) := by
   have hT := piCopresentation_shortExact Y
-  have hδ {S : ShortComplex C} (hS : S.ShortExact) [Injective S.X₂] :
-      Function.Bijective (hS.extClass.postcomp X (show n + 1 + 1 = n + 2 from rfl)) :=
-    hS.extClass_postcomp_bijective X rfl
-      ⟨fun _ _ ↦ (eq_zero_of_injective _).trans (eq_zero_of_injective _).symm⟩
-      ⟨fun _ _ ↦ (eq_zero_of_injective _).trans (eq_zero_of_injective _).symm⟩
+  have hS (i : J) := TauCeti.injectiveCokernelSequence_shortExact (Y i)
   have hsq : project X (Fan.mk (∏ᶜ Y) (Pi.π Y)) (n + 2) ∘ hT.extClass.postcomp X rfl =
-      (fun e i ↦ (TauCeti.injectiveCokernelSequence_shortExact (Y i)).extClass.postcomp X rfl
-        (e i)) ∘ project X (Fan.mk _ (Pi.π fun i ↦ cokernel (Injective.ι (Y i)))) (n + 1) := by
+      (fun e i ↦ (hS i).extClass.postcomp X rfl (e i)) ∘
+        project X (Fan.mk _ (Pi.π fun i ↦ cokernel (Injective.ι (Y i)))) (n + 1) := by
     ext e i
     simp only [Function.comp_apply, project_mk_apply, AddMonoidHom.flip_apply,
       bilinearComp_apply_apply]
     rw [comp_assoc_of_third_deg_zero, extClass_comp_mk₀_π, ← comp_assoc_of_second_deg_zero]
   have h₂ : Function.Bijective fun (e : ∀ i, Ext.{w} X (cokernel (Injective.ι (Y i))) (n + 1)) i ↦
-      (TauCeti.injectiveCokernelSequence_shortExact (Y i)).extClass.postcomp X rfl (e i) :=
-    Function.Bijective.piMap fun i ↦ hδ (TauCeti.injectiveCokernelSequence_shortExact (Y i))
-  exact (Function.Bijective.of_comp_iff _ (hδ hT)).1 (hsq ▸ h₂.comp h)
+      (hS i).extClass.postcomp X rfl (e i) :=
+    Function.Bijective.piMap fun i ↦ (hS i).extClass_postcomp_bijective_of_injective X rfl
+  exact (Function.Bijective.of_comp_iff _
+    (hT.extClass_postcomp_bijective_of_injective X (m := n + 2) rfl)).1 (hsq ▸ h₂.comp h)
 
 private lemma bijective_project_pi (X : C) (n : ℕ) :
     ∀ Y : J → C, Function.Bijective (project X (Fan.mk (∏ᶜ Y) (Pi.π Y)) n) := by

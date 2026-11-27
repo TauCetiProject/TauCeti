@@ -32,12 +32,27 @@ This is the algebraic core of flat base change for the cohomology of quasi-coher
 where `P` runs through the free abelian sheaves `ℤ_U` on opens `U` and a short exact sequence
 `0 ⟶ ℤ_{U ∩ V} ⟶ ℤ_U ⊕ ℤ_V ⟶ ℤ_{U ∪ V} ⟶ 0` gives the Mayer–Vietoris sequence.
 
+The long exact sequence of a short exact sequence `0 → F → F → G → 0` whose first map is the
+action of `a ∈ A`, a reduction of `F` modulo `a`, shows that a class of `Extⁿ(P, F)` which vanishes
+in `Extⁿ(P, G)` is a multiple of `a`.
+
 ## Main statements
 
 - `TauCeti.Abelian.ExtWithAction.bijective_baseChange_of_iso`,
   `TauCeti.Abelian.ExtWithAction.bijective_baseChange_biprod`,
   `TauCeti.Abelian.ExtWithAction.bijective_baseChange_of_shortExact`: the closure
   properties of the objects for which the base change maps are bijective.
+- `TauCeti.Abelian.ExtWithAction.exists_smul_eq_of_comp_eq_zero`: along a reduction
+  `0 → F → F → G → 0` modulo `a`, the classes of `Extⁿ(P, F)` that vanish in `Extⁿ(P, G)` are the
+  multiples of `a`.
+
+## References
+
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/PadicComparison/Completion.lean` (declaration
+  `New.Variety.ModShortExact.exists_smul_eq_of_push_eq_zero`); Apache 2.0, Copyright 2026
+  Anthropic, PBC. `TauCeti.Abelian.ExtWithAction.exists_smul_eq_of_comp_eq_zero` is adapted from
+  it and stated for an object with an action in an abelian category.
 -/
 
 public section
@@ -135,6 +150,15 @@ lemma exact_precompLinearMap_extClass_mk₀_g {S : ShortComplex C} (hS : S.Short
       (precompLinearMap ρ (mk₀ S.g) (zero_add (n + 1))) :=
   (ShortComplex.ab_exact_iff_function_exact _).1
     (contravariant_sequence_exact₃' hS F n (n + 1) (add_comm 1 n))
+
+/-- **Reduction modulo `a`.** Let `0 → F → F → G → 0` be short exact, with first map the action
+`ρ(a)` of `a ∈ A`. A class of `Extⁿ(P, F)` whose image in `Extⁿ(P, G)` vanishes is a multiple of
+`a`. -/
+theorem exists_smul_eq_of_comp_eq_zero {G : C} {a : A} {q : F ⟶ G} {hq : (ρ a).asHom ≫ q = 0}
+    (hS : (ShortComplex.mk _ _ hq).ShortExact) {P : C} {n : ℕ} (x : ExtWithAction ρ P n)
+    (hx : (toExt ρ x).comp (mk₀ q) (add_zero n) = 0) : ∃ y, a • y = x := by
+  obtain ⟨y, hy⟩ := covariant_sequence_exact₂ P hS (toExt ρ x) hx
+  exact ⟨(toExt ρ).symm y, (toExt ρ).injective (by simpa using hy)⟩
 
 end ExtWithAction
 

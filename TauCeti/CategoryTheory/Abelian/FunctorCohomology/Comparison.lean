@@ -149,9 +149,14 @@ lemma extComparison_comp_extClass (φ : C' ⥤ C) {S : ShortComplex (C ⥤ AddCo
     (x : Ext.{t} N S.X₃ n) {m : ℕ} (h : n + 1 = m) :
     extComparison φ u.τ₁ α m (x.comp hS.extClass h) =
       (extComparison φ u.τ₃ α n x).comp hS'.extClass h := by
+  -- Restricting `x.comp hS.extClass h` along `φ` gives the restriction of `x` followed by the
+  -- connecting map of the restriction of `S`.
   rw [extComparison_apply, extComparison_apply, Ext.mapExactFunctor_comp,
-    Ext.mapExactFunctor_extClass, Ext.comp_assoc_of_third_deg_zero,
-    (hS.map_of_exact _).extClass_naturality hS' u, ← Ext.comp_assoc_of_second_deg_zero]
+    Ext.mapExactFunctor_extClass]
+  -- Naturality of connecting maps moves `u.τ₁` across the connecting map, as `u.τ₃`.
+  rw [Ext.comp_assoc_of_third_deg_zero, (hS.map_of_exact _).extClass_naturality hS' u,
+    ← Ext.comp_assoc_of_second_deg_zero]
+  -- Both sides are now `α`, then `x`, then `u.τ₃`, then `hS'.extClass`, bracketed differently.
   exact (Ext.comp_assoc _ _ _ (zero_add n) h (by lia)).symm
 
 /-- Comparison maps compose: the comparison map of `(ψ, β')` along `α'` after that of `(φ, β)`

@@ -51,7 +51,13 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `TauCeti.exact_postcompOfLinear₁` and `TauCeti.exact_postcompOfLinear₃`;
 * dimension shifting: the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` of a short exact
   sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
-  (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
+  (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`), in particular when
+  `S.X₂` is injective
+  (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective_of_injective`);
+* in degree one, the connecting map kills the class of `a : X ⟶ S.X₃` exactly when `a` lifts
+  along `S.g` (`CategoryTheory.ShortComplex.ShortExact.mk₀_comp_extClass_eq_zero_iff`), and every
+  class of `Ext¹(X, S.X₁)` comes from such a morphism when `S.X₂` is injective
+  (`CategoryTheory.ShortComplex.ShortExact.exists_mk₀_comp_extClass_eq`);
 * restriction along `S.f` is a bijection `Extⁿ⁺¹(S.X₂, Y) ⟶ Extⁿ⁺¹(S.X₁, Y)` when the cokernel
   `S.X₃` is projective
   (`CategoryTheory.ShortComplex.ShortExact.precomp_mk₀_f_bijective_of_projective`);
@@ -438,6 +444,34 @@ theorem extClass_postcomp_bijective (P : C) {n m : ℕ} (h : n + 1 + 1 = m)
   · obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₃ P hS x h hx
     rw [Subsingleton.elim z 0, Ext.zero_comp]
   · exact Ext.covariant_sequence_exact₁ P hS x (Subsingleton.elim _ _) h
+
+/-- **Dimension shifting along an injective middle term.** If `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is
+short exact and `S.X₂` is injective, the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` is
+bijective. -/
+theorem extClass_postcomp_bijective_of_injective [Injective S.X₂] (P : C) {n m : ℕ}
+    (h : n + 1 + 1 = m) : Function.Bijective (hS.extClass.postcomp P h) := by
+  subst h
+  exact hS.extClass_postcomp_bijective P rfl
+    ⟨fun _ _ ↦ (Ext.eq_zero_of_injective _).trans (Ext.eq_zero_of_injective _).symm⟩
+    ⟨fun _ _ ↦ (Ext.eq_zero_of_injective _).trans (Ext.eq_zero_of_injective _).symm⟩
+
+/-- **Degree-one classes into the kernel of an injective copresentation.** If
+`0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is short exact and `S.X₂` is injective, every class of
+`Ext¹(X, S.X₁)` is the image of a morphism `X ⟶ S.X₃` under the connecting map. -/
+theorem exists_mk₀_comp_extClass_eq [Injective S.X₂] {X : C} (e : Ext.{w} X S.X₁ 1) :
+    ∃ a : X ⟶ S.X₃, (Ext.mk₀ a).comp hS.extClass (zero_add 1) = e := by
+  obtain ⟨a, ha⟩ := Ext.covariant_sequence_exact₁ X hS e (Ext.eq_zero_of_injective _) rfl
+  exact ⟨Ext.addEquiv₀ a, by simpa using ha⟩
+
+/-- **Lifting along the quotient map.** If `S` is short exact, the connecting map kills the class
+of a morphism `a : X ⟶ S.X₃` exactly when `a` lifts along `S.g`. -/
+theorem mk₀_comp_extClass_eq_zero_iff {X : C} (a : X ⟶ S.X₃) :
+    (Ext.mk₀ a).comp hS.extClass (zero_add 1) = 0 ↔ ∃ b : X ⟶ S.X₂, b ≫ S.g = a := by
+  refine ⟨fun h ↦ ?_, fun ⟨b, hb⟩ ↦ ?_⟩
+  · obtain ⟨b, hb⟩ := Ext.covariant_sequence_exact₃ X hS (Ext.mk₀ a) rfl h
+    refine ⟨Ext.addEquiv₀ b, (Ext.mk₀_bijective _ _).1 ?_⟩
+    simpa only [← Ext.mk₀_comp_mk₀, Ext.mk₀_addEquiv₀_apply] using hb
+  · rw [← hb, ← Ext.mk₀_comp_mk₀_assoc, hS.comp_extClass, Ext.comp_zero]
 
 /-- **Restriction to a subobject with projective quotient**: if `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is
 short exact and `S.X₃` is projective, precomposition with `S.f` is a bijection
