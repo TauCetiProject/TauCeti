@@ -63,11 +63,13 @@ It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearization
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`), and `Cⁿ` where
 `J` and `u` are `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` (`contDiffAt_floerLinearizationCoeff`); so two
 linearized operators differ pointwise by the differences of their coefficients
-(`norm_floerLinearization_sub_floerLinearization_le`). For a family of data that is `Cⁿ⁺¹` (with
-`Cⁿ⁺²` Hamiltonians) jointly in a parameter, the coefficient is `Cⁿ` jointly in the parameter and
-`z` (`contDiffAt_floerLinearizationCoeff_family`), in particular continuous for `C¹` data
-(`continuousAt_floerLinearizationCoeff_family`). Translating the data and the direction
-translates the operator (`floerLinearization_comp_add_right`).
+(`norm_floerLinearization_sub_floerLinearization_le`). Moving the map by `d` changes the coefficient
+as reading the data at the moved target point `y + d(z)` does, with `K_t` corrected by
+`-ω(∂t d(z), ·)` (`floerLinearizationCoeff_fun_add_eq_comp_add_right`). For a family of data
+that is `Cⁿ⁺¹` (with `Cⁿ⁺²` Hamiltonians) jointly in a parameter, the coefficient is `Cⁿ` jointly
+in the parameter and `z` (`contDiffAt_floerLinearizationCoeff_family`), in particular continuous
+for `C¹` data (`continuousAt_floerLinearizationCoeff_family`). Translating the data and the
+direction translates the operator (`floerLinearization_comp_add_right`).
 For jointly continuous `J` and jointly `C¹` Hamiltonians, the Floer operator of an almost
 everywhere strongly measurable map is almost everywhere strongly measurable
 (`aestronglyMeasurable_floerOperator`), so its `Lᵖ` norms are defined.
@@ -156,6 +158,7 @@ end TauCeti
 namespace TauCeti.SymplecticForm
 
 open ContinuousLinearMap
+open scoped Topology
 
 variable {P V : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 variable [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -457,6 +460,39 @@ theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
         fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) v -
         J z (u z) (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) v) :=
   (rfl)
+
+/-- **Moving the map is moving the data.** Moving the map `u` by `d` changes the zeroth-order
+part of the linearized Floer operator at `z` as reading the data along the moved target point
+`y + d(z)` does, when the Hamiltonian `K_t` is also corrected by the linear function
+`-ω(∂t d(z), ·)`, whose Hamiltonian vector field is `-∂t d(z)`: the correction keeps the slice
+defect `∂t u - X_{K_t}(u)` of the moved map. The Hamiltonian `K_s` enters only through the target
+derivative of its vector field and needs no correction. -/
+theorem floerLinearizationCoeff_fun_add_eq_comp_add_right (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hu : DifferentiableAt ℝ u z) (hd : DifferentiableAt ℝ d z)
+    (hKt : ∀ᶠ y in 𝓝 (u z + d z), DifferentiableAt ℝ (Kt z) y) :
+    ω.floerLinearizationCoeff J Ks Kt (fun w ↦ u w + d w) z =
+      ω.floerLinearizationCoeff (fun w y ↦ J w (y + d w)) (fun w y ↦ Ks w (y + d w))
+        (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u z := by
+  set c := fderiv ℝ d z stdComplexLineImag
+  -- Near `u z` the corrected Hamiltonian has the translated vector field minus `c`.
+  have hX : ω.hamiltonianVectorField (fun y ↦ Kt z (y + d z) - ω c y) =ᶠ[𝓝 (u z)]
+      fun y ↦ ω.hamiltonianVectorField (Kt z) (y + d z) - c := by
+    have ht : Filter.Tendsto (· + d z) (𝓝 (u z)) (𝓝 (u z + d z)) :=
+      (continuous_id.add continuous_const).tendsto' _ _ rfl
+    filter_upwards [ht.eventually hKt] with y hy
+    have hc : DifferentiableAt ℝ (fun y ↦ ω c y) y :=
+      (ω.contDiffAt_apply_comp (n := 1) contDiffAt_const contDiffAt_id).differentiableAt
+        one_ne_zero
+    have h := ω.hamiltonianVectorField_sub ((differentiableAt_comp_add_right _).2 hy) hc
+    rw [hamiltonianVectorField_comp_add_right, hamiltonianVectorField_apply_left] at h
+    exact h
+  ext v
+  simp only [floerLinearizationCoeff_apply, fderiv_fun_add hu hd, hX.fderiv_eq, hX.eq_of_nhds,
+    fderiv_sub_const, fderiv_comp_add_right, hamiltonianVectorField_comp_add_right,
+    _root_.add_apply, c]
+  congr 3
+  abel
 
 /-- Where the structures are a fixed `J₀`, independent of the target point, and the Hamiltonian
 perturbations vanish, the zeroth-order part of the linearized Floer operator vanishes. -/
