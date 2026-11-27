@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.AddChar
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FractionalIdeal
 
 import TauCeti.Algebra.Group.AddChar.Prod
+import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 
 /-!
@@ -172,19 +173,18 @@ variable (K)
 identity at a real place and `z ↦ z + conj z = 2 Re z` at a complex place, read in `ℂ` through the
 embedding of the completion `K_w`. On `K` it is the trace `Tr_{K/ℚ}`
 (`infiniteAdeleTrace_algebraMap`). -/
-def infiniteAdeleTrace : InfiniteAdeleRing K →+ ℝ :=
-  ∑ w, w.mult • (Complex.reAddGroupHom.comp <| (Completion.extensionEmbedding w).toAddMonoidHom.comp
-    (Pi.evalAddMonoidHom (fun v : InfinitePlace K ↦ v.Completion) w))
+def infiniteAdeleTrace : InfiniteAdeleRing K →+ ℝ where
+  toFun x := ∑ w, (w.mult : ℝ) * (Completion.extensionEmbedding w (x w)).re
+  map_zero' := by simp
+  map_add' x y := by simp [mul_add, Finset.sum_add_distrib]
 
 variable {K}
 
 /-- The trace of an infinite adele is `∑_w mult w * Re x_w`, with `x_w` read in `ℂ` through the
 embedding of the completion. -/
 theorem infiniteAdeleTrace_apply (x : InfiniteAdeleRing K) :
-    infiniteAdeleTrace K x = ∑ w, (w.mult : ℝ) * (Completion.extensionEmbedding w (x w)).re := by
-  simp [infiniteAdeleTrace]
-  -- `InfiniteAdeleRing K` is the product of the completions, so evaluation at `w` is `x w`
-  rfl
+    infiniteAdeleTrace K x = ∑ w, (w.mult : ℝ) * (Completion.extensionEmbedding w (x w)).re :=
+  (rfl)
 
 /-- On the diagonal copy of `K`, the trace of the infinite adeles is the trace `Tr_{K/ℚ}`. -/
 @[simp]

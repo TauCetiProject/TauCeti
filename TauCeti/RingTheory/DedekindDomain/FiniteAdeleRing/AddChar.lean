@@ -78,33 +78,39 @@ private theorem apply_eq_of_sub_mem {a : FiniteAdeleRing R K} {x y : K}
   obtain ⟨r, hr⟩ := (algebraMap_mem_integralAdeles_iff (x - y)).mp hxy
   rw [← sub_add_cancel x y, ← hr, AddChar.map_add_eq_mul, hχ, one_mul]
 
+omit [Monoid M] in
+/-- A representative in `K` of a finite adele modulo the integral finite adeles, which exists by
+strong approximation, `𝔸ᶠ = K + Ô`. -/
+private noncomputable def rep (a : FiniteAdeleRing R K) : K :=
+  (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose
+
+omit [Monoid M] in
+/-- The representative `rep a` differs from `a` by an integral finite adele. -/
+private theorem algebraMap_rep_sub_mem (a : FiniteAdeleRing R K) :
+    algebraMap K (FiniteAdeleRing R K) (rep a) - a ∈ integralAdeles R K :=
+  (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose_spec.2
+
 /-- The extension of an additive character `χ` of `K` that is trivial on `R` to the finite adele
 ring: the value at a finite adele `a` is `χ x` for any `x ∈ K` with `a - x` integral at every finite
 place (`extendAddChar_apply_of_sub_mem`). It is the unique character of the finite adeles that is
 trivial on the integral finite adeles and restricts to `χ` on `K` (`eq_extendAddChar_iff`). -/
 def extendAddChar : AddChar (FiniteAdeleRing R K) M where
-  -- a representative `x ∈ K` of `a` modulo the integral finite adeles, by strong approximation
-  toFun a := χ (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose
+  toFun a := χ (rep a)
   map_zero_eq_one' := by
-    rw [apply_eq_of_sub_mem χ hχ
-      (exists_algebraMap_mem_and_sub_mem_integralAdeles _ Filter.univ_mem).choose_spec.2 (y := 0)
-      (by simp), AddChar.map_zero_eq_one]
+    rw [apply_eq_of_sub_mem χ hχ (algebraMap_rep_sub_mem 0) (y := 0) (by simp),
+      AddChar.map_zero_eq_one]
   map_add_eq_mul' a b := by
-    have ha := (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose_spec.2
-    have hb := (exists_algebraMap_mem_and_sub_mem_integralAdeles b Filter.univ_mem).choose_spec.2
-    rw [apply_eq_of_sub_mem χ hχ
-      (exists_algebraMap_mem_and_sub_mem_integralAdeles (a + b) Filter.univ_mem).choose_spec.2
-      (y := _ + _)
-      (by rw [map_add, add_sub_add_comm]; exact add_mem ha hb), AddChar.map_add_eq_mul]
+    have h : algebraMap K (FiniteAdeleRing R K) (rep a + rep b) - (a + b) ∈ integralAdeles R K := by
+      rw [map_add, add_sub_add_comm]
+      exact add_mem (algebraMap_rep_sub_mem a) (algebraMap_rep_sub_mem b)
+    rw [apply_eq_of_sub_mem χ hχ (algebraMap_rep_sub_mem (a + b)) h, AddChar.map_add_eq_mul]
 
 /-- **The value of the extended character.** At a finite adele `a`, the extension of `χ` takes the
 value `χ x` for every `x ∈ K` such that `a - x` is an integral finite adele. -/
 theorem extendAddChar_apply_of_sub_mem {a : FiniteAdeleRing R K} {x : K}
     (hx : a - algebraMap K (FiniteAdeleRing R K) x ∈ integralAdeles R K) :
     extendAddChar χ hχ a = χ x :=
-  apply_eq_of_sub_mem χ hχ
-    (exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem).choose_spec.2
-    (sub_mem_comm_iff.mp hx)
+  apply_eq_of_sub_mem χ hχ (algebraMap_rep_sub_mem a) (sub_mem_comm_iff.mp hx)
 
 /-- The extended character restricts to `χ` on the diagonal copy of `K`. -/
 @[simp]
