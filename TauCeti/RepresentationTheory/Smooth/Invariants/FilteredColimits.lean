@@ -83,17 +83,28 @@ theorem exists_mem_invariants_of_isColimit {x : c.pt.obj.V}
   -- The stabilizer of `y` in `U` is open, hence of finite index.
   let S := Representation.stabilizer ((F.obj j).obj.ρ.comp U.subtype) y
   have := Fintype.ofFinite (U ⧸ S)
-  -- After some map `f` out of `j`, the image of `y` is fixed by every coset representative.
+  -- Every element of `U` fixes the image of `y`, read as an equation for the action of `G`.
+  have hxG (u : U) : c.pt.obj.ρ u ((c.ι.app j).hom.hom y) = (c.ι.app j).hom.hom y := by
+    rw [← Subgroup.subtype_apply, ← MonoidHom.comp_apply]
+    exact (Representation.mem_invariants _ _).1 hx u
+  -- After some map `f` out of `j`, the image of `y` is fixed by every coset representative. The
+  -- cocone `(ι A G).mapCocone c` has point `c.pt.obj` and legs `(c.ι.app _).hom` by
+  -- `Functor.mapCocone_pt` and `Functor.mapCocone_ι_app`, so `hxG` is the required hypothesis.
   obtain ⟨k, f, hf⟩ := Rep.exists_map_apply_eq_of_isColimit (isColimitOfPreserves (ι A G) hc) y
-    (Finset.univ.image fun q : U ⧸ S ↦ (q.out : G)) (Finset.forall_mem_image.2 fun q _ ↦ hx q.out)
+    (Finset.univ.image fun q : U ⧸ S ↦ (q.out : G))
+    (Finset.forall_mem_image.2 fun q _ ↦ hxG q.out)
   refine ⟨k, (F.map f).hom.hom y, fun u ↦ ?_, ?_⟩
   · -- It is also fixed by `S`, by naturality, so by `U = (U ⧸ S).out * S`.
     obtain ⟨s, hs⟩ := QuotientGroup.mk_out_eq_mul S u
     have hu : (u : G) = ((QuotientGroup.mk u : U ⧸ S).out : G) * ((s⁻¹ : U) : G) := by
       rw [hs, Subgroup.coe_mul, Subgroup.coe_inv, mul_inv_cancel_right]
+    -- `S` is the preimage under `U.subtype` of the stabilizer of `y` in `G`.
+    have hs' : ((s⁻¹ : U) : G) ∈ Representation.stabilizer (F.obj j).obj.ρ y := by
+      rw [← Subgroup.subtype_apply, ← Subgroup.mem_comap, ← Representation.stabilizer_comp]
+      exact S.inv_mem s.property
     rw [MonoidHom.comp_apply, Subgroup.subtype_apply, ← Representation.mem_stabilizer, hu]
     exact mul_mem (hf _ (Finset.mem_image_of_mem _ (Finset.mem_univ _)))
-      ((F.map f).hom.hom.stabilizer_le y (S.inv_mem s.property))
+      ((F.map f).hom.hom.stabilizer_le y hs')
   · -- The image of `F.map f y` in the colimit is that of `y`, by naturality of `c`.
     rw [← c.w f]
     simp only [ObjectProperty.FullSubcategory.comp_hom, Rep.hom_comp,
