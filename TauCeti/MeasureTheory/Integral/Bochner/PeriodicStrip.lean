@@ -12,6 +12,7 @@ import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 
 /-!
@@ -239,11 +240,9 @@ theorem setIntegral_ball_le_two_mul_of_periodic {f : α × ℝ → ℝ} (hf0 : �
     ∫ z in Metric.ball (x, a + n * c) c, f z ∂μ.prod volume ≤
       2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
   -- `n * c` is again a period, so the ball may be moved to `(x, a)`.
-  have hfn (x : α) (t : ℝ) : f (x, t + n * c) = f (x, t) :=
-    Function.Periodic.int_mul (f := fun t ↦ f (x, t)) (hf x) n t
   calc ∫ z in Metric.ball (x, a + n * c) c, f z ∂μ.prod volume
       = ∫ z in Metric.ball (x, a) c, f z ∂μ.prod volume :=
-        setIntegral_ball_add_of_periodic hfn x a c
+        setIntegral_ball_add_of_periodic (Function.apply_add_int_mul_of_periodic hf n) x a c
     _ ≤ ∫ z in univ ×ˢ Ico (a - c) (a + c), f z ∂μ.prod volume :=
         setIntegral_mono_set (integrableOn_prod_Ico_sub_add_of_periodic hf h)
           (Filter.Eventually.of_forall hf0) (ball_subset_univ_prod_Ico_sub_add x).eventuallySubset

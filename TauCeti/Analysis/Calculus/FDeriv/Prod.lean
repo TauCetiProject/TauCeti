@@ -92,6 +92,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   the first variable alone, and the bound of its norm by that of the derivative of the function.
 * `TauCeti.fderiv_add_comp_fst`: the derivative of `y ↦ f y + h y.1`, a function on the product
   plus a function of the first variable alone.
+* `TauCeti.fderiv_comp_add_snd`: translating in the second coordinate commutes with taking the
+  derivative.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
   second coordinate, with no differentiability assumption.
 * `TauCeti.fderiv_apply_fst`: the first coordinate of the derivative of a map into a product is
@@ -284,6 +286,17 @@ theorem fderiv_add_comp_fst {f : E × F → G} {h : E → G} {z : E × F}
     fderiv 𝕜 (fun y ↦ f y + h y.1) z =
       fderiv 𝕜 f z + (fderiv 𝕜 h z.1).comp (ContinuousLinearMap.fst 𝕜 E F) :=
   (hf.hasFDerivAt.add (hh.hasFDerivAt.comp z hasFDerivAt_fst)).fderiv
+
+/-- The derivative of the translate `w ↦ f (w.1, w.2 + c)` at `z` is that of `f` at
+`(z.1, z.2 + c)`. No differentiability is needed: otherwise both sides are zero. -/
+theorem fderiv_comp_add_snd {f : E × F → G} (c : F) (z : E × F) :
+    fderiv 𝕜 (fun w : E × F ↦ f (w.1, w.2 + c)) z = fderiv 𝕜 f (z.1, z.2 + c) := by
+  have htr : (fun w : E × F ↦ f (w.1, w.2 + c)) = fun w ↦ f (w + ((0 : E), c)) := by
+    funext ⟨a, b⟩
+    simp
+  rw [htr, fderiv_comp_add_right]
+  congr 1
+  ext <;> simp
 
 /-- A map `w ↦ (c, g w)` with a constant first coordinate has the derivative of `g` in the second
 coordinate, with no differentiability assumption. -/

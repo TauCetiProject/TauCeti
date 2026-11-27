@@ -18,6 +18,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 import Mathlib.Tactic.Module
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
@@ -60,7 +61,9 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   (`TauCeti.StripSobolev.integrable_inner_apply_jet`). The jet also
   bounds the whole derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`), so a `C¹`
   cutoff supported in a set `P` multiplies a section into a map whose derivative is bounded in
-  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`).
+  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`). A map
+  whose jet is in `Lᵖ` has its directional derivatives in `Lᵖ`
+  (`MeasureTheory.MemLp.fderiv_apply_of_jet`).
 * The **restricted value** `TauCeti.StripSobolev.restrictValue T` takes an `L²` jet on the strip
   to its value on the compact piece `[-T, T] × [0, 1]`, the operator whose compactness is
   Rellich's theorem on the cylinder and on the strip.
@@ -565,6 +568,14 @@ theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
     eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ :=
   (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hξ
     (.of_forall (norm_fderiv_le_two_mul_norm_jet ξ)) p).trans_eq (by simp)
+
+/-- The directional derivatives of a map whose jet is in `Lᵖ` are in `Lᵖ`, in every direction. -/
+theorem _root_.MeasureTheory.MemLp.fderiv_apply_of_jet {μ : Measure (ℝ × ℝ)} {p : ℝ≥0∞}
+    (h : MemLp (jet ξ) p μ) (e : ℝ × ℝ) : MemLp (fun z ↦ fderiv ℝ ξ z e) p μ := by
+  have he : e = e.1 • ((1 : ℝ), (0 : ℝ)) + e.2 • ((0 : ℝ), (1 : ℝ)) := by ext <;> simp
+  rw [he]
+  simpa only [map_add, map_smul, jet_apply, Pi.add_def, Pi.smul_def] using
+    (h.snd.fst.const_smul e.1).add (h.snd.snd.const_smul e.2)
 
 /-! ### The `Lᵖ` jets of a space of sections and their closure -/
 

@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.MeasureTheory.Function.MemLpLoc
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.FDeriv.Periodization
 import TauCeti.Analysis.Sobolev.Cylinder.Morrey
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Integral.Bochner.PeriodicStrip
@@ -24,13 +26,18 @@ annihilating an operator on compactly supported test maps. This file passes betw
 * **Periodization.** For a compactly supported map `ξ`, the sum `∑ₙ ξ (s, t + n)` over `n ∈ ℤ`
   is locally finite (`TauCeti.exists_finset_eventually_eq_zero_add_intCast`) and `C^k` when `ξ`
   is (`TauCeti.contDiff_tsum_add_intCast`). It is a test section of the cylinder when `ξ` is `C²`
-  (`TauCeti.CylinderSobolev.tsum_add_intCast_mem_testSection`); its jet is the sum of the
-  translates of the jet of `ξ` (`TauCeti.CylinderSobolev.jet_tsum_add_intCast`).
+  (`TauCeti.CylinderSobolev.tsum_add_intCast_mem_testSection`); its derivative and its jet are the
+  sums of the translates of the derivative and of the jet of `ξ`
+  (`TauCeti.fderiv_tsum_add_intCast_apply`, `TauCeti.CylinderSobolev.jet_tsum_add_intCast`).
 * **Periodic extension.** An `Lᵖ` function on the strip agrees there with a strongly measurable
   function of period one in `t`
   (`TauCeti.CylinderSobolev.exists_stronglyMeasurable_periodic_ae_eq`), and such a function is
   locally `Lᵖ` on the plane (`TauCeti.CylinderSobolev.memLpLoc_univ_of_periodic`), since a unit
-  ball of the plane sees at most two periods.
+  ball of the plane sees at most two periods. A property of period one in `t` which holds almost
+  everywhere on the strip holds almost everywhere on the plane
+  (`TauCeti.CylinderSobolev.ae_of_ae_stripMeasure_of_periodic`), and the integral over the plane
+  of a compactly supported continuous function times a locally integrable function of period one
+  in `t` unfolds onto the strip (`TauCeti.CylinderSobolev.integral_smul_eq_integral_tsum_smul`).
 * **Weak annihilators.** Let `M` be a continuous coefficient field of period one in `t`,
   essentially bounded on the strip, so that `x ↦ M x` is a bounded operator
   `TauCeti.jetOperator 2 stripMeasure M` on `L²` jets. If `η ∈ L²(ℝ × [0, 1], W)` is orthogonal to
@@ -74,43 +81,26 @@ theorem tsum_add_intCast_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hc : HasComp
     rw [Metric.mem_closedBall, Real.dist_eq, sub_zero] at hsR
     linarith
 
-/-- The derivative of the translate `w ↦ ξ (w.1, w.2 + n)` at `z` is that of `ξ` at
-`(z.1, z.2 + n)`. -/
-private lemma fderiv_comp_add_intCast (n : ℤ) (z : ℝ × ℝ) :
-    fderiv ℝ (fun w : ℝ × ℝ ↦ ξ (w.1, w.2 + n)) z = fderiv ℝ ξ (z.1, z.2 + n) := by
-  have htr : (fun w : ℝ × ℝ ↦ ξ (w.1, w.2 + n)) = fun w ↦ ξ (w + ((0 : ℝ), (n : ℝ))) := by
-    funext ⟨a, b⟩
-    simp
-  rw [htr, fderiv_comp_add_right]
-  congr 1
-  ext <;> simp
-
 /-- A translate that vanishes near `z` has vanishing jet at `z`. -/
 private lemma jet_add_intCast_eq_zero {S : Finset ℤ} {z : ℝ × ℝ}
     (hS : ∀ᶠ w in 𝓝 z, ∀ n ∉ S, ξ (w.1, w.2 + n) = 0) {n : ℤ} (hn : n ∉ S) :
     jet ξ (z.1, z.2 + n) = 0 := by
-  have h0 : (fun w : ℝ × ℝ ↦ ξ (w.1, w.2 + n)) =ᶠ[𝓝 z] fun _ ↦ 0 := hS.mono fun w hw ↦ hw n hn
-  have h1 : ξ (z.1, z.2 + n) = 0 := h0.eq_of_nhds
-  have h2 : fderiv ℝ ξ (z.1, z.2 + n) = 0 := by
-    rw [← fderiv_comp_add_intCast, h0.fderiv_eq]
-    simp
-  simp [jet_apply, h1, h2]
+  have h1 : ξ (z.1, z.2 + n) = 0 := (hS.mono fun w hw ↦ hw n hn).self_of_nhds
+  simp [jet_apply, h1, fderiv_add_intCast_eq_zero hS hn]
 
 /-- **The jet of the periodization is the sum of the translates of the jet.** For a compactly
 supported `C¹` map `ξ`, the jet of `z ↦ ∑ₙ ξ (z.1, z.2 + n)` at `z` is `∑ₙ jet ξ (z.1, z.2 + n)`. -/
 theorem jet_tsum_add_intCast (hξ : ContDiff ℝ 1 ξ) (hc : HasCompactSupport ξ) (z : ℝ × ℝ) :
     jet (fun w : ℝ × ℝ ↦ ∑' n : ℤ, ξ (w.1, w.2 + n)) z = ∑' n : ℤ, jet ξ (z.1, z.2 + n) := by
   obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hc z
-  have hd (n : ℤ) : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ ξ (w.1, w.2 + n)) z :=
-    (hξ.differentiable one_ne_zero).differentiableAt.comp z
-      (differentiableAt_fst.prodMk (differentiableAt_snd.add_const _))
-  -- Near `z` the periodization is the finite sum over `S`.
-  have hev : (fun w : ℝ × ℝ ↦ ∑' n : ℤ, ξ (w.1, w.2 + n)) =ᶠ[𝓝 z]
-      fun w ↦ ∑ n ∈ S, ξ (w.1, w.2 + n) := hS.mono fun w hw ↦ tsum_eq_sum hw
-  rw [tsum_eq_sum fun n hn ↦ jet_add_intCast_eq_zero hS hn, jet_apply, hev.eq_of_nhds,
-    hev.fderiv_eq, fderiv_fun_sum fun n _ ↦ hd n]
-  simp only [sum_apply, fderiv_comp_add_intCast, jet_apply, Prod.ext_iff,
-    Prod.fst_sum, Prod.snd_sum, and_self]
+  -- Only the translates indexed by `S` contribute near `z`.
+  have hd (v : ℝ × ℝ) : fderiv ℝ (fun w : ℝ × ℝ ↦ ∑' n : ℤ, ξ (w.1, w.2 + n)) z v =
+      ∑ n ∈ S, fderiv ℝ ξ (z.1, z.2 + n) v := by
+    rw [fderiv_tsum_add_intCast_apply (hξ.differentiable one_ne_zero) hc,
+      tsum_eq_sum fun n hn ↦ by rw [fderiv_add_intCast_eq_zero hS hn, zero_apply]]
+  rw [tsum_eq_sum fun n hn ↦ jet_add_intCast_eq_zero hS hn, jet_apply, hd, hd,
+    tsum_eq_sum hS.self_of_nhds]
+  simp only [jet_apply, Prod.ext_iff, Prod.fst_sum, Prod.snd_sum, and_self]
 
 end Periodization
 
@@ -130,6 +120,30 @@ theorem exists_stronglyMeasurable_periodic_ae_eq {p : ℝ≥0∞} (f : Lp W p st
   filter_upwards [hmem, hf.ae_eq_mk] with z hz hfz
   rw [hfz, Int.fract_eq_self.2 hz.2]
 
+/-- **Periodic statements on the strip hold on the plane.** A property of the points of the plane
+that does not change under `t ↦ t + 1` and holds almost everywhere on the strip `ℝ × [0, 1]` holds
+almost everywhere on `ℝ × ℝ`: the plane is covered by the integer translates of the strip, and
+translation preserves null sets. -/
+theorem ae_of_ae_stripMeasure_of_periodic {P : ℝ × ℝ → Prop}
+    (hP : ∀ s t, P (s, t + 1) ↔ P (s, t)) (h : ∀ᵐ z ∂stripMeasure, P z) :
+    ∀ᵐ z ∂(volume : Measure (ℝ × ℝ)), P z := by
+  set N : Set (ℝ × ℝ) := {z | ¬P z}
+  have hN : volume (N ∩ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1) = 0 := by
+    rwa [ae_iff, Measure.restrict_apply' (MeasurableSet.univ.prod measurableSet_Icc)] at h
+  -- Every point of `N` has an integer translate in the part of `N` on the strip.
+  have htr (z : ℝ × ℝ) : ((0 : ℝ), ((-⌊z.2⌋ : ℤ) : ℝ)) + z = (z.1, z.2 + ((-⌊z.2⌋ : ℤ) : ℝ)) := by
+    ext <;> simp [add_comm]
+  refine ae_iff.2 (measure_mono_null (t := ⋃ n : ℤ,
+    (fun z : ℝ × ℝ ↦ ((0 : ℝ), (n : ℝ)) + z) ⁻¹' (N ∩ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1))
+    (fun z hz ↦ mem_iUnion.2 ⟨-⌊z.2⌋, ?_⟩)
+    (measure_iUnion_null fun n ↦ by
+      rw [Measure.volume_eq_prod, measure_preimage_add, ← Measure.volume_eq_prod]; exact hN))
+  rw [mem_preimage, htr]
+  refine ⟨by simpa only [N, mem_ofPred_eq, mul_one] using
+    (Function.iff_add_int_mul_of_periodic hP (-⌊z.2⌋) z.1 z.2).not.2 hz, mem_univ _, ?_⟩
+  rw [Int.cast_neg, ← sub_eq_add_neg, Int.self_sub_floor]
+  exact ⟨Int.fract_nonneg z.2, (Int.fract_lt_one z.2).le⟩
+
 /-- **Periodic functions are locally `Lᵖ` on the plane.** A strongly measurable function of
 period one in `t` which is `Lᵖ` on the strip, `1 ≤ p < ∞`, is locally `Lᵖ` on `ℝ × ℝ`. -/
 theorem memLpLoc_univ_of_periodic {f : ℝ × ℝ → W} (hf : StronglyMeasurable f)
@@ -144,6 +158,26 @@ theorem memLpLoc_univ_of_periodic {f : ℝ × ℝ → W} (hf : StronglyMeasurabl
       (ENNReal.mul_lt_top (by simp) h.eLpNorm_lt_top)
   obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.1 (ht hz)
   exact mem_iUnion.2 ⟨⟨i, hi⟩, hzi⟩
+
+/-- **Unfolding onto the strip.** For a compactly supported continuous function `φ` and a locally
+integrable function `g` of period one in `t`, the integral of `φ • g` over the plane is the integral
+over the strip of the periodization of `φ` times `g`. -/
+theorem integral_smul_eq_integral_tsum_smul {φ : ℝ × ℝ → ℝ} (hφ : Continuous φ)
+    (hφc : HasCompactSupport φ) {g : ℝ × ℝ → V} (hg : LocallyIntegrable g)
+    (hgper : ∀ s t, g (s, t + 1) = g (s, t)) :
+    ∫ z, φ z • g z = ∫ z, (∑' n : ℤ, φ (z.1, z.2 + n)) • g z ∂stripMeasure := by
+  have hunf := integral_eq_setIntegral_tsum_add_zsmul (μ := (volume : Measure ℝ)) one_pos
+    (by rw [← Measure.volume_eq_prod]; exact hg.integrable_smul_left_of_hasCompactSupport hφ hφc)
+    0
+  rw [← Measure.volume_eq_prod, zero_add] at hunf
+  rw [hunf, ← stripMeasure_eq_restrict_univ_prod_Ico]
+  refine integral_congr_ae (Eventually.of_forall fun z ↦ ?_)
+  obtain ⟨S, hS⟩ := exists_finset_eventually_eq_zero_add_intCast hφc z
+  have hS' : ∀ n ∉ S, φ (z.1, z.2 + n) = 0 := fun n hn ↦ hS.self_of_nhds n hn
+  simp only [zsmul_eq_mul, Function.apply_add_int_mul_of_periodic hgper]
+  simp only [mul_one]
+  rw [tsum_eq_sum (s := S) fun n hn ↦ by rw [hS' n hn, zero_smul],
+    tsum_eq_sum (s := S) hS', Finset.sum_smul]
 
 end PeriodicExtension
 
@@ -167,11 +201,6 @@ theorem integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero
     ∫ z, ⟪g z, M z (jet ξ z)⟫_ℝ = 0 := by
   set F : ℝ × ℝ → ℝ := fun z ↦ ⟪g z, M z (jet ξ z)⟫_ℝ
   have hξ1 : ContDiff ℝ 1 ξ := hξ.of_le one_le_two
-  -- `g` and `M` have every integer period.
-  have hgZ (n : ℤ) (s t : ℝ) : g (s, t + n) = g (s, t) := by
-    simpa using (Function.Periodic.int_mul (f := fun t ↦ g (s, t)) (hgper s) n) t
-  have hMZ (n : ℤ) (s t : ℝ) : M (s, t + n) = M (s, t) := by
-    simpa using (Function.Periodic.int_mul (f := fun t ↦ M (s, t)) (hMper s) n) t
   have hgloc := memLpLoc_univ_of_periodic hg hgper one_le_two ((Lp.memLp η).ae_eq hgη.symm)
   have hFint : Integrable F := integrable_inner_apply_jet hMc (locallyIntegrableOn_univ.1
     (hgloc.locallyIntegrableOn one_le_two isOpen_univ.isLocallyClosed)) hξ1 hξc
@@ -188,7 +217,9 @@ theorem integral_inner_jet_eq_zero_of_forall_inner_jetOperator_eq_zero
     rw [jet_tsum_add_intCast hξ1 hξc z, ← innerSL_apply_apply (𝕜 := ℝ),
       ← ContinuousLinearMap.comp_apply, ContinuousLinearMap.map_tsum _ hsumm]
     refine tsum_congr fun n ↦ ?_
-    simp only [F, zsmul_one, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hgZ, hMZ]
+    simp only [F, zsmul_eq_mul, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
+      Function.apply_add_int_mul_of_periodic hgper, Function.apply_add_int_mul_of_periodic hMper]
+    simp only [mul_one]
   -- Unfold the integral over the plane onto the band `ℝ × [0, 1)`.
   have hunf := integral_eq_setIntegral_tsum_add_zsmul (μ := (volume : Measure ℝ)) one_pos
     (by rwa [← Measure.volume_eq_prod]) 0
