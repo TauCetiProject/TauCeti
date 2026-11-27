@@ -77,7 +77,9 @@ crossings the path is nondegenerate, so its negative index is constant there by
   symmetric near a regular crossing is nondegenerate near it, except at the crossing itself;
   `ContinuousLinearMap.eventually_nhdsGT_nondegenerate_of_crossingForm_nondegenerate` and
   `ContinuousLinearMap.eventually_nhdsLT_nondegenerate_of_crossingForm_nondegenerate` are the
-  one-sided versions, from one-sided derivatives.
+  one-sided versions, from one-sided derivatives, and
+  `ContinuousLinearMap.eventually_nhdsWithin_Icc_diff_nondegenerate_of_crossingForm_nondegenerate`
+  is the version within an interval `[a, b]`, from the derivative within `[a, b]`.
 * `ContinuousLinearMap.eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`: across a
   regular crossing the negative index drops by the signature of the crossing form.
 * `ContinuousLinearMap.nondegenerate_crossingForm_iff_of_ker_eq_span`: a crossing whose kernel is
@@ -162,10 +164,8 @@ theorem sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot {B : E →L[ℝ] E 
     (hB : B.ker = ⊥) (V' : E →L[ℝ] E →L[ℝ] ℝ) :
     (sigPos (crossingForm B V') : ℤ) - sigNeg (crossingForm B V') = 0 := by
   have h₀ : Module.finrank ℝ B.ker = 0 := by rw [hB, finrank_bot]
-  have hpos := sigPos_le_finrank (crossingForm B V')
-  have hneg := sigPos_le_finrank (-crossingForm B V')
-  rw [sigPos_neg] at hneg
-  omega
+  simp [QuadraticForm.sigPos_eq_zero_of_finrank_eq_zero _ h₀,
+    QuadraticForm.sigNeg_eq_zero_of_finrank_eq_zero _ h₀]
 
 /-- The crossing form of a nondegenerate form lives on the zero space, so its signature
 vanishes. -/
@@ -562,6 +562,32 @@ theorem eventually_nondegenerate_of_crossingForm_nondegenerate {V' : E →L[ℝ]
       (nhdsWithin_le_nhds hsymm) hsymm₀ hl hreg,
     eventually_nhdsGT_nondegenerate_of_crossingForm_nondegenerate
       (nhdsWithin_le_nhds hsymm) hsymm₀ hr hreg⟩
+
+/-- **Regular crossings are isolated in an interval.** A path of continuous bilinear forms,
+symmetric on `[a, b]`, with derivative within `[a, b]` at `t₀ ∈ [a, b]` and nondegenerate crossing
+form there, is nondegenerate at every `t ≠ t₀` of `[a, b]` close to `t₀`. At an endpoint of
+`[a, b]` only the one-sided derivative into `[a, b]` is used. -/
+theorem eventually_nhdsWithin_Icc_diff_nondegenerate_of_crossingForm_nondegenerate {a b : ℝ}
+    {V' : E →L[ℝ] E →L[ℝ] ℝ} (ht₀ : t₀ ∈ Icc a b)
+    (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm) (hV : HasDerivWithinAt V V' (Icc a b) t₀)
+    (hreg : (crossingForm (V t₀) V').Nondegenerate) :
+    ∀ᶠ t in 𝓝[Icc a b \ {t₀}] t₀, (V t).toBilinForm.Nondegenerate := by
+  rw [← Ico_union_Ioc_eq_Icc_sdiff_singleton ht₀.1 ht₀.2, nhdsWithin_union, eventually_sup]
+  constructor
+  · rcases ht₀.1.eq_or_lt with rfl | hat
+    · simp
+    · exact (eventually_nhdsLT_nondegenerate_of_crossingForm_nondegenerate
+        (mem_of_superset (Icc_mem_nhdsLT_of_mem ⟨hat, ht₀.2⟩) hsymm) (hsymm t₀ ht₀)
+        (HasDerivWithinAt.mono_of_mem_nhdsWithin (f := V)
+          (f' := V') hV (Icc_mem_nhdsLE_of_mem ⟨hat, ht₀.2⟩)) hreg).filter_mono
+        (nhdsWithin_mono _ Ico_subset_Iio_self)
+  · rcases ht₀.2.eq_or_lt with rfl | htb
+    · simp
+    · exact (eventually_nhdsGT_nondegenerate_of_crossingForm_nondegenerate
+        (mem_of_superset (Icc_mem_nhdsGT_of_mem ⟨ht₀.1, htb⟩) hsymm) (hsymm t₀ ht₀)
+        (HasDerivWithinAt.mono_of_mem_nhdsWithin (f := V)
+          (f' := V') hV (Icc_mem_nhdsGE_of_mem ⟨ht₀.1, htb⟩)) hreg).filter_mono
+        (nhdsWithin_mono _ Ioc_subset_Ioi_self)
 
 /-- **The jump of the negative index across a regular crossing.** For a path of continuous
 bilinear forms, symmetric at `t₀` and differentiable there with nondegenerate crossing form, the

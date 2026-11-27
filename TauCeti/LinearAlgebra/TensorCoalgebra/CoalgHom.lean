@@ -16,7 +16,9 @@ For `R`-modules `M` and `N`, a linear map `F : Tᶜ(M) ⟶ Tᶜ(N)` between the 
 coalgebras `⨁_{n ≥ 1} M^{⊗n}` and `⨁_{n ≥ 1} N^{⊗n}` is a *coalgebra morphism* when it commutes
 with reduced deconcatenation: `Δ ∘ F = (F ⊗ F) ∘ Δ`.  This file proves the concrete correspondence
 between coalgebra morphisms `Tᶜ(M) ⟶ Tᶜ(N)` and their families of Taylor components, obtained by
-composing with the projection `Tᶜ(N) ⟶ N` onto single letters.
+composing with the projection `Tᶜ(N) ⟶ N` onto single letters.  As a bijection, it is the case
+`C = Tᶜ(M)` of the cofree property of `Tᶜ(N)` among conilpotent coalgebras,
+`LinearMap.IsConilpotent.coalgHomEquiv`.
 
 That a coalgebra morphism is *determined* by its Taylor components is an induction along the
 conilpotence filtration, exactly as for coderivations.  That *every* family `f` of components
@@ -35,8 +37,6 @@ correspondence is the one describing `A∞` morphisms through their components `
 
 * `TauCeti.ReducedTensorWords.IsCoalgHom`: a linear map commuting with reduced deconcatenation.
 * `TauCeti.ReducedTensorWords.coalgHom`: the coalgebra morphism with prescribed Taylor components.
-* `TauCeti.ReducedTensorWords.coalgHomEquivTaylor`: coalgebra morphisms are in bijection with
-  their Taylor components.
 
 ## Main results
 
@@ -281,32 +281,6 @@ theorem IsCoalgHom.eq_of_letter_comp_eq
 theorem IsCoalgHom.eq_coalgHom {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF : IsCoalgHom R F) : F = coalgHom R (letter R N ∘ₗ F) :=
   hF.eq_of_letter_comp_eq (isCoalgHom_coalgHom _) (letter_comp_coalgHom _).symm
-
-variable (R M N) in
-/-- Coalgebra morphisms of reduced tensor coalgebras are in bijection with their Taylor
-components, the linear maps from tensor words to letters.
-
-Its body is sealed; reason about it through
-`TauCeti.ReducedTensorWords.coalgHomEquivTaylor_apply` and
-`TauCeti.ReducedTensorWords.coalgHomEquivTaylor_symm_apply`. -/
-noncomputable def coalgHomEquivTaylor :
-    {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N // IsCoalgHom R F} ≃
-      (ReducedTensorWords R M →ₗ[R] N) where
-  toFun F := letter R N ∘ₗ F.val
-  invFun f := ⟨coalgHom R f, isCoalgHom_coalgHom f⟩
-  left_inv F := Subtype.ext F.property.eq_coalgHom.symm
-  right_inv f := letter_comp_coalgHom f
-
-@[simp]
-theorem coalgHomEquivTaylor_apply
-    (F : {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N // IsCoalgHom R F}) :
-    coalgHomEquivTaylor R M N F = letter R N ∘ₗ F.val :=
-  (rfl)
-
-@[simp]
-theorem coalgHomEquivTaylor_symm_apply (f : ReducedTensorWords R M →ₗ[R] N) :
-    ((coalgHomEquivTaylor R M N).symm f).val = coalgHom R f :=
-  (rfl)
 
 variable (M) in
 /-- The identity is a coalgebra morphism. -/

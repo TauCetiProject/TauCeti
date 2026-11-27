@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.UniformOn
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.Probability.Distributions.Uniform.Finite
+import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 
 /-!
 # The equipartition of the unit interval into `m` cells

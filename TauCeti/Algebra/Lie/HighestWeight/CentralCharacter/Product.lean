@@ -43,6 +43,8 @@ these characters agree exactly when the `Z`-weights agree and the `H`-weights li
 
 * `TauCeti.productHarishChandraIso_symm_tmul`: the inverse on a pure tensor `a ⊗ p` is the product
   of `a ∈ Sym(Z) = U(Z)` and the central element of `U(S)` with Harish-Chandra image `p`.
+* `TauCeti.map_val_productHarishChandraIso_apply`: followed by the inclusion of the invariants,
+  the Harish-Chandra isomorphism is `id ⊗ hcProjection` of the centre comparison.
 * `TauCeti.productCentralCharacter_eq_iff`: Harish-Chandra's theorem on central characters for
   `Z × S`.
 -/
@@ -160,6 +162,29 @@ theorem productHarishChandraLinearIso_symm_tmul (a : _root_.SymmetricAlgebra K Z
   rw [productHarishChandraLinearIso, AlgEquiv.symm_trans_apply,
     Algebra.TensorProduct.congr_symm_apply, Algebra.TensorProduct.map_tmul]
   exact productCenterEquiv_symm_tmul K Z S a _
+
+/-- **The inclusion square of the Harish-Chandra isomorphism of `Z × S`.** Followed by the
+inclusion of the dot-invariants into `S(H)`, the Harish-Chandra isomorphism of `Z × S` is the centre
+comparison followed by `id ⊗ hcProjection` of `S`. -/
+theorem map_val_productHarishChandraIso_apply (z : Subalgebra.center K (U (Z × S))) :
+    Algebra.TensorProduct.map (AlgHom.id K (_root_.SymmetricAlgebra K Z)) (dotInvariants b).val
+        (productHarishChandraIso Z b z) =
+      Algebra.TensorProduct.map (AlgHom.id K _) (hcProjection b) (productCenterEquiv K Z S z) := by
+  obtain ⟨t, rfl⟩ := (productCenterEquiv K Z S).symm.surjective z
+  induction t using TensorProduct.inductionOn with
+  | tmul a c => simp
+  | add s t hs ht => simp only [map_add, hs, ht]
+
+/-- **The inclusion square of the linear Harish-Chandra isomorphism of `Z × S`.** -/
+theorem map_val_productHarishChandraLinearIso_apply (z : Subalgebra.center K (U (Z × S))) :
+    Algebra.TensorProduct.map (AlgHom.id K (_root_.SymmetricAlgebra K Z)) (linearInvariants H).val
+        (productHarishChandraLinearIso Z b z) =
+      Algebra.TensorProduct.map (AlgHom.id K _) (hcProjectionLinear b)
+        (productCenterEquiv K Z S z) := by
+  obtain ⟨t, rfl⟩ := (productCenterEquiv K Z S).symm.surjective z
+  induction t using TensorProduct.inductionOn with
+  | tmul a c => simp
+  | add s t hs ht => simp only [map_add, hs, ht]
 
 /-- The two Harish-Chandra isomorphisms of `Z × S` differ by the translation by `-ρ` on the
 second factor only: `ρ` is extended by zero on `Z`. -/

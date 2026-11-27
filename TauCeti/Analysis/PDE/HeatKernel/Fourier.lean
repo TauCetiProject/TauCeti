@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Fourier.L2Multiplier
-public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
+public import TauCeti.Analysis.PDE.HeatKernel.Generator
+public import TauCeti.Analysis.Semigroups.Rescale
 
 /-!
 # The heat semigroup on `L²` as a Fourier multiplier
@@ -28,6 +29,21 @@ normalization `𝓕 f(ξ) = ∫ e^{-2πi⟪x, ξ⟫} f(x) dx`. The derivative of
   `MeasureTheory.Lp.fourierMultiplierCLM` with symbol `exp(-4π² t ‖ξ‖²)`.
 * `TauCeti.coeFn_fourier_heatSemigroup`: the Fourier representation of the heat semigroup on
   `L²`.
+* `TauCeti.coeFn_fourier_heatSemigroup_rescale` and
+  `TauCeti.eq_heatSemigroup_rescale_of_coeFn_fourier`: the heat semigroup run at speed `c`,
+  `t ↦ e^{c t Δ}`, is the Fourier multiplier semigroup with symbol `exp(-4π² c t ‖ξ‖²)`, and it is
+  the only C₀-semigroup on `L²` with this symbol.
+* `TauCeti.generator_eq_smul_weakLaplacianLp_of_coeFn_fourier`: a C₀-semigroup on `L²` with
+  symbol `exp(-σ t ‖ξ‖²)`, `σ > 0`, has generator `σ (2π)⁻² Δ`.
+
+## The normalization of the symbol
+
+The Laplacian has symbol `-4π² ‖ξ‖²` in this normalization of the Fourier transform, so the
+generator of a multiplier semigroup is read off from the derivative of its symbol at `t = 0`. A
+model of the heat flow with the symbol `exp(-t ‖ξ‖²)`, the natural one for the normalization
+`∫ e^{-i⟪x, ξ⟫} f(x) dx`, is the heat semigroup at speed `(2π)⁻²`: its generator is `(2π)⁻² Δ`,
+not `Δ` (`TauCeti.generator_eq_smul_weakLaplacianLp_of_coeFn_fourier` at `σ = 1`). Confusing the
+two normalizations changes the generator by the factor `4π²`.
 
 ## The argument
 
@@ -87,5 +103,59 @@ theorem coeFn_fourier_heatSemigroup (t : ℝ≥0) (f : Lp F 2 (volume : Measure 
   rw [heatSemigroup_apply _ ht]
   filter_upwards [coeFn_fourier_convolutionLp (integrable_heatKernel ht') f] with ξ hξ
   rw [hξ, fourier_heatKernel ht', Complex.coe_smul]
+
+/-- **The rescaled heat semigroup on `L²` is a Fourier multiplier.** The heat semigroup run at
+speed `c`, `t ↦ e^{c t Δ}`, has symbol `exp(-4π² c t ‖ξ‖²)`: for `f ∈ L²(E; F)`, the `L²` Fourier
+transform of `e^{c t Δ} f` is almost everywhere `ξ ↦ exp(-4π² c t ‖ξ‖²) • 𝓕 f ξ`. -/
+theorem coeFn_fourier_heatSemigroup_rescale (c t : ℝ≥0) (f : Lp F 2 (volume : Measure E)) :
+    ⇑(𝓕 ((heatSemigroup (p := 2) ENNReal.ofNat_ne_top).rescale c t f) :
+        Lp F 2 (volume : Measure E)) =ᵐ[volume]
+      fun ξ ↦ Real.exp (-(4 * π ^ 2 * c * t * ‖ξ‖ ^ 2)) •
+        (𝓕 f : Lp F 2 (volume : Measure E)) ξ := by
+  rw [Semigroups.StronglyContinuousSemigroup.rescale_apply,
+    Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply]
+  filter_upwards [coeFn_fourier_heatSemigroup (c * t) f] with ξ hξ
+  rw [hξ, NNReal.coe_mul, ← mul_assoc]
+
+/-- **A C₀-semigroup on `L²` is determined by its Fourier symbol.** If every operator `T t` of a
+C₀-semigroup on `L²(E; F)` is the Fourier multiplier with symbol `exp(-4π² c t ‖ξ‖²)`, then `T` is
+the heat semigroup run at speed `c`, `t ↦ e^{c t Δ}`. -/
+theorem eq_heatSemigroup_rescale_of_coeFn_fourier {c : ℝ≥0}
+    {T : Semigroups.StronglyContinuousSemigroup (Lp F 2 (volume : Measure E))}
+    (hT : ∀ (t : ℝ≥0) (f : Lp F 2 (volume : Measure E)),
+      ⇑(𝓕 (T t f) : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+        fun ξ ↦ Real.exp (-(4 * π ^ 2 * c * t * ‖ξ‖ ^ 2)) •
+          (𝓕 f : Lp F 2 (volume : Measure E)) ξ) :
+    T = (heatSemigroup (p := 2) ENNReal.ofNat_ne_top).rescale c := by
+  refine Semigroups.StronglyContinuousSemigroup.ext fun t => ContinuousLinearMap.ext fun f => ?_
+  -- The two vectors have the same `L²` Fourier transform, and the Fourier transform is injective.
+  have h : (𝓕 (T t f) : Lp F 2 (volume : Measure E)) =
+      𝓕 ((heatSemigroup (p := 2) ENNReal.ofNat_ne_top).rescale c t f) :=
+    Lp.ext ((hT t f).trans (coeFn_fourier_heatSemigroup_rescale c t f).symm)
+  simpa using congrArg 𝓕⁻ h
+
+/-- **The generator of a heat flow with symbol `exp(-σ t ‖ξ‖²)`.** If every operator `T t` of a
+C₀-semigroup on `L²(E; F)` is the Fourier multiplier with symbol `exp(-σ t ‖ξ‖²)`, `σ > 0`, then
+the generator of `T` is `σ (2π)⁻² Δ`, with `Δ` the Laplacian in the sense of distributions on its
+domain `{f ∈ L² : Δf ∈ L²}`. At `σ = 1` this is the semigroup with symbol `exp(-t ‖ξ‖²)`, whose
+generator is `(2π)⁻² Δ`; the heat semigroup `e^{tΔ}` is the case `σ = 4π²`. -/
+theorem generator_eq_smul_weakLaplacianLp_of_coeFn_fourier {σ : ℝ} (hσ : 0 < σ)
+    {T : Semigroups.StronglyContinuousSemigroup (Lp F 2 (volume : Measure E))}
+    (hT : ∀ (t : ℝ≥0) (f : Lp F 2 (volume : Measure E)),
+      ⇑(𝓕 (T t f) : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+        fun ξ ↦ Real.exp (-(σ * t * ‖ξ‖ ^ 2)) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ) :
+    T.generator = (σ / (2 * π) ^ 2) • weakLaplacianLp E F 2 := by
+  -- `T` is the heat semigroup run at speed `c = σ / (2π)²`.
+  have hc_coe : ((σ / (2 * π) ^ 2).toNNReal : ℝ) = σ / (2 * π) ^ 2 :=
+    Real.coe_toNNReal _ (by positivity)
+  have hc : (σ / (2 * π) ^ 2).toNNReal ≠ 0 := (Real.toNNReal_pos.2 (by positivity)).ne'
+  have hcσ : 4 * π ^ 2 * ((σ / (2 * π) ^ 2).toNNReal : ℝ) = σ := by
+    rw [hc_coe]
+    field_simp
+    ring
+  rw [eq_heatSemigroup_rescale_of_coeFn_fourier (T := T) (c := (σ / (2 * π) ^ 2).toNNReal)
+      (by simpa only [hcσ] using hT),
+    Semigroups.StronglyContinuousSemigroup.rescale_generator _ hc,
+    generator_heatSemigroup_eq_weakLaplacianLp, hc_coe]
 
 end TauCeti

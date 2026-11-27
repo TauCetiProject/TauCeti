@@ -21,8 +21,12 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
 
 * `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated near `0` by `‖h‖ₑ` times a
   finite constant vanishes as `h → 0`.
+* `ENNReal.tendsto_mul_add_pow_mul_of_tendsto_zero`: `C (b + cᵢ)^k cᵢ → 0` when `cᵢ → 0` and
+  `C`, `b` are finite.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
+* `ENNReal.tendsto_of_le_liminf_of_le_div`: a family with lower limit at least `a`, bounded by
+  quotients `gᵢ / dᵢ` with `gᵢ → a` and `dᵢ → 1`, converges to `a`.
 * `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
   `ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ` converge to `ENNReal.ofReal (K / m₀) * T` along
   a filter on which `m i → m₀ > 0` and `s i → a`, for finite `M`.
@@ -71,6 +75,29 @@ theorem tendsto_of_le_add_of_le_add {ι : Type*} {l : Filter ι} {a w : ι → �
     (h := fun i ↦ b + w i) ?_ ?_ (hge.mono fun i hi ↦ tsub_le_iff_right.2 hi) hle
   · simpa using ENNReal.Tendsto.sub tendsto_const_nhds hw (Or.inr ENNReal.zero_ne_top)
   · simpa using tendsto_const_nhds.add hw
+
+/-- In `ℝ≥0∞`, if `cᵢ → 0` and the constants `C` and `b` are finite, then
+`C (b + cᵢ)^k cᵢ → 0`. -/
+theorem _root_.ENNReal.tendsto_mul_add_pow_mul_of_tendsto_zero {ι : Type*} {l : Filter ι}
+    {c : ι → ℝ≥0∞} (hc : Filter.Tendsto c l (𝓝 0)) {C b : ℝ≥0∞} (hC : C ≠ ∞) (hb : b ≠ ∞)
+    (k : ℕ) : Filter.Tendsto (fun i => C * (b + c i) ^ k * c i) l (𝓝 0) := by
+  have h₁ : Filter.Tendsto (fun i => C * (b + c i) ^ k) l (𝓝 (C * (b + 0) ^ k)) :=
+    ENNReal.Tendsto.const_mul (ENNReal.Tendsto.pow (tendsto_const_nhds.add hc)) (Or.inr hC)
+  have hfin : C * (b + 0) ^ k ≠ ∞ := ENNReal.mul_ne_top hC (ENNReal.pow_ne_top (by simpa))
+  simpa using ENNReal.Tendsto.mul h₁ (Or.inr ENNReal.zero_ne_top) hc (Or.inr hfin)
+
+/-- In `ℝ≥0∞`, a family whose lower limit is at least `a` and which is bounded by quotients
+`gᵢ / dᵢ`, with `gᵢ → a` and `dᵢ → 1`, converges to `a`. -/
+theorem _root_.ENNReal.tendsto_of_le_liminf_of_le_div {ι : Type*} {l : Filter ι}
+    {f g d : ι → ℝ≥0∞} {a : ℝ≥0∞} (hg : Filter.Tendsto g l (𝓝 a))
+    (hd : Filter.Tendsto d l (𝓝 1)) (hinf : a ≤ Filter.liminf f l)
+    (hle : ∀ᶠ i in l, f i ≤ g i / d i) : Filter.Tendsto f l (𝓝 a) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact Filter.tendsto_bot
+  have hq : Filter.Tendsto (fun i ↦ g i / d i) l (𝓝 a) := by
+    simpa using ENNReal.Tendsto.div hg (Or.inr one_ne_zero) hd (Or.inl ENNReal.one_ne_top)
+  exact tendsto_of_le_liminf_of_limsup_le hinf
+    ((Filter.limsup_le_limsup hle).trans_eq hq.limsup_eq)
 
 /-- The sum of the lower limits of two `ℝ≥0∞`-valued families is at most the lower limit of their
 sum. -/

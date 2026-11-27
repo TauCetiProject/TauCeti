@@ -20,6 +20,8 @@ page, and, by induction, on every object of every page `r' ≥ r`.
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_add_one`: the comparison at one position, from
   the three positions joined by the differentials of the previous page.
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`: the comparison on later pages.
+* `CategoryTheory.SpectralSequence.Hom.isIso_of_isIso_hom_f`: a morphism which is an isomorphism
+  on every object of the first page is an isomorphism of spectral sequences.
 * `CategoryTheory.SpectralSequence.Hom.hom_add_one_eq`,
   `CategoryTheory.SpectralSequence.Hom.hom_eq_of_le`: two morphisms which agree on the `r`th page
   agree on every later page.
@@ -28,6 +30,11 @@ page, and, by induction, on every object of every page `r' ≥ r`.
   preserve the lines `a + 2b = const`.
 
 An isomorphism of spectral sequences is an isomorphism on every page (an instance on `f.hom r`).
+
+## References
+
+* J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
+  Chapter 3 (comparison theorem).
 -/
 
 public section
@@ -110,5 +117,20 @@ lemma hom_eq_of_le (g : E ⟶ E') (r : ℤ) (hr : r₀ ≤ r) (h : f.hom r hr = 
   induction r', hrr' using Int.leInduction with
   | base => exact h
   | succ r' hrr' ih => exact f.hom_add_one_eq g r' (hr.trans hrr') ih
+
+/-- **The comparison theorem.** A morphism of spectral sequences which is an isomorphism on every
+object of the first page `r₀` is an isomorphism of spectral sequences: its inverse is, on every
+page, the inverse of the morphism of that page, which is an isomorphism on every object by
+`CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`. -/
+lemma isIso_of_isIso_hom_f (h : ∀ pq, IsIso ((f.hom r₀ le_rfl).f pq)) : IsIso f := by
+  have (r : ℤ) (hr : r₀ ≤ r) : IsIso (f.hom r hr) :=
+    have := f.isIso_hom_f_of_le r₀ le_rfl h r hr
+    HomologicalComplex.Hom.isIso_of_components _
+  refine ⟨⟨{ hom r hr := inv (f.hom r hr), comm r r' pq hrr' hr := ?_ }, ?_, ?_⟩⟩
+  · -- The square for the inverses is the square for `f`, composed with the inverses on both sides.
+    rw [← cancel_mono ((f.hom r' (hr.trans (by lia))).f pq), Category.assoc, Category.assoc,
+      ← f.comm r r' pq]
+    simp
+  all_goals ext r hr : 1; simp
 
 end CategoryTheory.SpectralSequence.Hom

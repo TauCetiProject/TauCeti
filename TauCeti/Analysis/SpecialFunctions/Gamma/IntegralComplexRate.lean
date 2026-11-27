@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.Analysis.SpecialFunctions.Integrals.Log.Power
 
 /-!
 # The Gamma integral with a complex rate
@@ -30,6 +32,12 @@ positive reals, so they agree on the half-plane by the identity theorem. Joint a
 `{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}` the weighted integrand `t^{p.1} (log t)^k e^{-p.2 t}`
 admits a single integrable real majorant on `(0, ∞)`.
 
+On a half-line `(δ, ∞)` with `δ > 0` the integrand `t^γ e^{-zt}` is integrable for every `γ`, and
+integration by parts lowers the exponent. Splitting the Gamma integral at `δ` and integrating the
+part over `(δ, ∞)` by parts `n > Re s` times gives an expression that stays continuous as the rate
+reaches the imaginary axis. At the rate `-ix`, `x > 0`, its value is `e^{iπs/2} Γ(s) x^{-s}`: this
+is the Fourier integral of `t^{s-1}`, regularised at `∞`.
+
 ## Main results
 
 * `Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi`,
@@ -45,6 +53,15 @@ admits a single integrable real majorant on `(0, ∞)`.
   right half-plane.
 * `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`: joint analyticity in `(s, z)` on
   `{0 < Re s} × {0 < Re z}`.
+* `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi_of_pos`,
+  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_add_integral`,
+  `Complex.integral_cpow_mul_exp_neg_mul_Ioi_eq_sum_add_integral`: integrability on `(δ, ∞)`
+  for `δ > 0` and one or `n` integrations by parts.
+* `Complex.norm_cpow_mul_exp_neg_mul_le`: the bound `‖t^γ e^{-wt}‖ ≤ t^{Re γ}` for `Re w ≥ 0`.
+* `Complex.integrableOn_cpow_mul_exp_mul_I_Ioi`: on the imaginary axis, `t^γ e^{ixt}` is
+  integrable on `(δ, ∞)` for `Re γ < -1`.
+* `Complex.integral_cpow_mul_exp_mul_I_add_sum_eq`: the Fourier integral of `t^{s-1}`,
+  regularised by integration by parts, is `e^{iπs/2} Γ(s) x^{-s}`.
 * `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
   `(Re w)^{−Re s} Γ(Re s)`.
 
@@ -259,6 +276,214 @@ theorem analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod :
         (mem_slitPlane_iff.mpr (Or.inl hp.2)))).differentiableWithinAt
   exact (DifferentiableOn.analyticOnNhd_of_finiteDimensional hF hUo).congr hUo fun p hp =>
     (integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hp.1 hp.2).symm
+
+section HalfLine
+
+open Finset intervalIntegral
+open scoped Real
+
+/-- For `Re z > 0` and `δ > 0`, `t ↦ t^γ e^{-zt}` is integrable on `(δ, ∞)` for every `γ`. -/
+theorem integrableOn_cpow_mul_exp_neg_mul_Ioi_of_pos (γ : ℂ) {z : ℂ} (hz : 0 < z.re) {δ : ℝ}
+    (hδ : 0 < δ) : IntegrableOn (fun t : ℝ => (t : ℂ) ^ γ * cexp (-(z * t))) (Ioi δ) := by
+  set b : ℝ := max γ.re 0
+  have hb : -1 < ((b : ℂ)).re := by simp only [ofReal_re]; linarith [le_max_right γ.re 0]
+  have hI := ((integrableOn_cpow_mul_log_pow_mul_exp_neg_mul_Ioi hb hz 0).mono_set
+    (Ioi_subset_Ioi hδ.le)).norm.const_mul (δ ^ (γ.re - b))
+  refine Integrable.mono' hI (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+  have ht0 : 0 < t := hδ.trans ht
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht0, pow_zero, mul_one, norm_mul,
+    norm_cpow_eq_rpow_re_of_pos ht0, ofReal_re, ← mul_assoc]
+  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg (cexp (-(z * t))))
+  have h1 : t ^ γ.re = t ^ (γ.re - b) * t ^ b := by
+    rw [← Real.rpow_add ht0]; ring_nf
+  rw [h1]
+  exact mul_le_mul_of_nonneg_right
+    (Real.rpow_le_rpow_of_nonpos hδ ht.le (by linarith [le_max_left γ.re 0])) (by positivity)
+
+/-- One integration by parts in `∫_δ^∞ t^γ e^{-zt} dt`, for `Re z > 0` and `δ > 0`:
+it equals `z⁻¹ δ^γ e^{-zδ} + z⁻¹ γ ∫_δ^∞ t^{γ-1} e^{-zt} dt`. -/
+theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_add_integral (γ : ℂ) {z : ℂ} (hz : 0 < z.re)
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∫ t in Ioi δ, (t : ℂ) ^ γ * cexp (-(z * t)) =
+      z⁻¹ * ((δ : ℂ) ^ γ * cexp (-(z * δ))) +
+        z⁻¹ * (γ * ∫ t in Ioi δ, (t : ℂ) ^ (γ - 1) * cexp (-(z * t))) := by
+  have hz0 : z ≠ 0 := fun h => by simp [h] at hz
+  have hint₁ := integrableOn_cpow_mul_exp_neg_mul_Ioi_of_pos γ hz hδ
+  have hu : ∀ t ∈ Ioi δ, HasDerivAt (fun t : ℝ => (t : ℂ) ^ γ) (γ * (t : ℂ) ^ (γ - 1)) t :=
+    fun t (ht : δ < t) => by
+      simpa using ((hasDerivAt_id (t : ℂ)).cpow_const (c := γ)
+        (ofReal_mem_slitPlane.2 (hδ.trans ht))).comp_ofReal
+  have hv : ∀ t ∈ Ioi δ, HasDerivAt (fun t : ℝ => -z⁻¹ * cexp (-(z * t))) (cexp (-(z * t))) t :=
+    fun t _ => by
+      have h : HasDerivAt (fun w : ℂ => -z⁻¹ * cexp (-(z * w)))
+          (-z⁻¹ * (cexp (-(z * t)) * -(z * 1))) (t : ℂ) :=
+        (((hasDerivAt_id (t : ℂ)).const_mul z).fun_neg.cexp).const_mul (-z⁻¹)
+      convert h.comp_ofReal using 1
+      field_simp
+  have hint : IntegrableOn (fun t : ℝ => γ * (t : ℂ) ^ (γ - 1) * (-z⁻¹ * cexp (-(z * t))))
+      (Ioi δ) := by
+    have h : IntegrableOn (fun t : ℝ => -(γ * z⁻¹) * ((t : ℂ) ^ (γ - 1) * cexp (-(z * t))))
+        (Ioi δ) := (integrableOn_cpow_mul_exp_neg_mul_Ioi_of_pos (γ - 1) hz hδ).const_mul _
+    exact h.congr_fun (fun t _ => by ring) measurableSet_Ioi
+  have hzero : Tendsto (fun t : ℝ => (t : ℂ) ^ γ * (-z⁻¹ * cexp (-(z * t)))) (𝓝[>] δ)
+      (𝓝 ((δ : ℂ) ^ γ * (-z⁻¹ * cexp (-(z * δ))))) := by
+    refine Tendsto.mono_left (ContinuousAt.tendsto ?_) nhdsWithin_le_nhds
+    exact (((hasDerivAt_id (δ : ℂ)).cpow_const (c := γ)
+      (ofReal_mem_slitPlane.2 hδ)).comp_ofReal.continuousAt).mul (by fun_prop)
+  have hinf : Tendsto (fun t : ℝ => (t : ℂ) ^ γ * (-z⁻¹ * cexp (-(z * t)))) atTop (𝓝 0) := by
+    have h := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero γ.re z.re hz).const_mul ‖z⁻¹‖
+    rw [mul_zero] at h
+    refine squeeze_zero_norm' ?_ h
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    rw [norm_mul, norm_mul, norm_neg, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
+    simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, neg_mul]
+    exact le_of_eq (by ring)
+  have h := integral_Ioi_mul_deriv_eq_deriv_mul hu hv hint₁ hint hzero hinf
+  have hc : ∫ t in Ioi δ, γ * (t : ℂ) ^ (γ - 1) * (-z⁻¹ * cexp (-(z * t))) =
+      -(z⁻¹ * γ) * ∫ t in Ioi δ, (t : ℂ) ^ (γ - 1) * cexp (-(z * t)) := by
+    rw [← MeasureTheory.integral_const_mul]
+    exact integral_congr_ae (Eventually.of_forall fun t => by ring)
+  rw [h, hc]
+  ring
+
+/-- `n` integrations by parts in `∫_δ^∞ t^{α-1} e^{-zt} dt`, for `Re z > 0` and `δ > 0`. The
+`k`-th endpoint term carries the falling factorial `(α - 1)(α - 2)⋯(α - k)`. -/
+theorem integral_cpow_mul_exp_neg_mul_Ioi_eq_sum_add_integral (α : ℂ) {z : ℂ} (hz : 0 < z.re)
+    {δ : ℝ} (hδ : 0 < δ) (n : ℕ) :
+    ∫ t in Ioi δ, (t : ℂ) ^ (α - 1) * cexp (-(z * t)) =
+      ∑ k ∈ range n, z⁻¹ ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
+          ((δ : ℂ) ^ (α - 1 - k) * cexp (-(z * δ)))) +
+        z⁻¹ ^ n * ((descPochhammer ℂ n).eval (α - 1) *
+          ∫ t in Ioi δ, (t : ℂ) ^ (α - 1 - n) * cexp (-(z * t))) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    -- The exponent produced by the last integration by parts, `α - 1 - n - 1`, must be put in
+    -- the form `α - 1 - (n + 1)` with a cast natural number to match the statement at `n + 1`.
+    have hexp : α - 1 - (n : ℂ) - 1 = α - 1 - ((n + 1 : ℕ) : ℂ) := by push_cast; ring
+    rw [ih, integral_cpow_mul_exp_neg_mul_Ioi_eq_add_integral (α - 1 - n) hz hδ,
+      sum_range_succ, descPochhammer_succ_eval, hexp]
+    ring
+
+/-- For `Re w ≥ 0` and `t > 0`, `‖t^γ e^{-wt}‖ ≤ t^{Re γ}`. -/
+theorem norm_cpow_mul_exp_neg_mul_le (γ : ℂ) {w : ℂ} (hw : 0 ≤ w.re) {t : ℝ}
+    (ht : 0 < t) : ‖(t : ℂ) ^ γ * cexp (-(w * t))‖ ≤ t ^ γ.re := by
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
+  refine mul_le_of_le_one_right (by positivity) (Real.exp_le_one_iff.2 ?_)
+  simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, Left.neg_nonpos_iff]
+  positivity
+
+/-- For `Re γ < -1` and `δ > 0`, the oscillatory power `t ↦ t^γ e^{ixt}` is integrable on
+`(δ, ∞)` for every real `x`. -/
+theorem integrableOn_cpow_mul_exp_mul_I_Ioi {γ : ℂ} (hγ : γ.re < -1) (x : ℝ) {δ : ℝ}
+    (hδ : 0 < δ) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ γ * cexp (((x * t : ℝ) : ℂ) * I)) (Ioi δ) := by
+  refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt hγ hδ) (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+  rw [norm_mul, norm_exp_ofReal_mul_I, mul_one, norm_cpow_eq_rpow_re_of_pos (hδ.trans ht)]
+
+/-- The Gamma integral `∫₀^∞ t^{α-1} e^{-wt} dt` split at `δ`, with the part over `(δ, ∞)`
+integrated by parts `n` times. For `0 < Re α < n` each term is defined and continuous on the closed
+half-plane `Re w ≥ 0` away from `w = 0`, so this continues the Gamma integral to the imaginary
+axis. -/
+private noncomputable def gammaSplit (α : ℂ) (δ : ℝ) (n : ℕ) (w : ℂ) : ℂ :=
+  (∫ t in (0 : ℝ)..δ, (t : ℂ) ^ (α - 1) * cexp (-(w * t))) +
+    ∑ k ∈ range n, w⁻¹ ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
+      ((δ : ℂ) ^ (α - 1 - k) * cexp (-(w * δ)))) +
+    w⁻¹ ^ n * ((descPochhammer ℂ n).eval (α - 1) *
+      ∫ t in Ioi δ, (t : ℂ) ^ (α - 1 - n) * cexp (-(w * t)))
+
+/-- On `Re z > 0` the split Gamma integral is `Γ(α) z^{-α}`. -/
+private theorem gammaSplit_of_re_pos {α z : ℂ} (hα : 0 < α.re) (hz : 0 < z.re) {δ : ℝ}
+    (hδ : 0 < δ) (n : ℕ) : gammaSplit α δ n z = Gamma α * z ^ (-α) := by
+  have hint := integrableOn_cpow_mul_exp_neg_mul_Ioi hα hz
+  rw [gammaSplit, add_assoc, ← integral_cpow_mul_exp_neg_mul_Ioi_eq_sum_add_integral α hz hδ n,
+    intervalIntegral.integral_of_le hδ.le,
+    ← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
+      (hint.mono_set Ioc_subset_Ioi_self) (hint.mono_set (Ioi_subset_Ioi hδ.le)),
+    Ioc_union_Ioi_eq_Ioi hδ.le, integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hα hz]
+
+/-- The split Gamma integral is continuous at the boundary point `-ix`, approached along
+`ε - ix` as `ε → 0+`; the integrals converge by dominated convergence. -/
+private theorem tendsto_gammaSplit {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α.re < n) {x δ : ℝ}
+    (hx : x ≠ 0) (hδ : 0 < δ) :
+    Tendsto (fun ε : ℝ => gammaSplit α δ n (ε - x * I)) (𝓝[>] 0)
+      (𝓝 (gammaSplit α δ n (-(x * I)))) := by
+  set z : ℝ → ℂ := fun ε => (ε : ℂ) - x * I with hzdef
+  have hz0 : z 0 = -(x * I) := by simp [hzdef]
+  have hzc : Continuous z := by fun_prop
+  have hzne : z 0 ≠ 0 := by simp [hz0, hx]
+  have hpos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 ≤ (z ε).re :=
+    eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) => by simpa [hzdef] using hε.le
+  have hk : ∀ t : ℝ, Tendsto (fun ε => cexp (-(z ε * t))) (𝓝[>] 0) (𝓝 (cexp (-(z 0 * t)))) :=
+    fun t => ((by fun_prop : Continuous fun ε => cexp (-(z ε * t))).tendsto 0).mono_left
+      nhdsWithin_le_nhds
+  have hinv := ((hzc.tendsto 0).inv₀ hzne).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
+  rw [← hz0]
+  refine Tendsto.add (Tendsto.add ?_ (tendsto_finsetSum _ fun k _ => (hinv.pow (k + 1)).mul
+    (((hk δ).const_mul _).const_mul _))) ((hinv.pow n).mul (Tendsto.const_mul _ ?_))
+  · refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence
+      (fun t => t ^ (α.re - 1)) (Eventually.of_forall fun ε => by fun_prop) ?_
+      (intervalIntegral.intervalIntegrable_rpow' (by linarith))
+      (Eventually.of_forall fun t _ => (hk t).const_mul _)
+    filter_upwards [hpos] with ε hε
+    refine Eventually.of_forall fun t ht => ?_
+    rw [uIoc_of_le hδ.le] at ht
+    simpa using norm_cpow_mul_exp_neg_mul_le (α - 1) hε ht.1
+  · refine tendsto_integral_filter_of_dominated_convergence (fun t => t ^ (α.re - 1 - n))
+      (Eventually.of_forall fun ε => by fun_prop) ?_
+      (integrableOn_Ioi_rpow_of_lt (by linarith) hδ)
+      (Eventually.of_forall fun t => (hk t).const_mul _)
+    filter_upwards [hpos] with ε hε
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
+    simpa using norm_cpow_mul_exp_neg_mul_le (α - 1 - n) hε (hδ.trans ht)
+
+/-- The value of the split Gamma integral at `-ix`, `x > 0`, is `Γ(α) (-ix)^{-α} =
+e^{iπα/2} Γ(α) x^{-α}`. -/
+private theorem gammaSplit_neg_mul_I {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α.re < n) {x δ : ℝ}
+    (hx : 0 < x) (hδ : 0 < δ) :
+    gammaSplit α δ n (-(x * I)) = cexp (π * I * α / 2) * Gamma α * (x : ℂ) ^ (-α) := by
+  have hslit : -((x : ℂ) * I) ∈ slitPlane := by simp [mem_slitPlane_iff, hx.ne']
+  have hlim : Tendsto (fun ε : ℝ => gammaSplit α δ n (ε - x * I)) (𝓝[>] 0)
+      (𝓝 (Gamma α * (-(x * I)) ^ (-α))) := by
+    have hc : Tendsto (fun ε : ℝ => ((ε : ℂ) - x * I)) (𝓝 0) (𝓝 (-(x * I))) := by
+      simpa using ((by fun_prop : Continuous fun ε : ℝ => ((ε : ℂ) - x * I)).tendsto 0)
+    refine ((((continuousAt_cpow_const hslit).tendsto.comp hc).const_mul _).mono_left
+      nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+    exact (gammaSplit_of_re_pos hα (by simpa using hε) hδ n).symm
+  -- Writing `-ix` as the product `x • (-i)` of a positive real and `-i` lets the power split as
+  -- `x^{-α} (-i)^{-α}`, and `(-i)^{-α} = e^{iπα/2}` since `log (-i) = -iπ/2`.
+  have hfac : -((x : ℂ) * I) = x * (-I) := by ring
+  rw [tendsto_nhds_unique (tendsto_gammaSplit hα hn hx.ne' hδ) hlim, hfac,
+    ofReal_mul_cpow hx.le, cpow_def_of_ne_zero (neg_ne_zero.2 I_ne_zero), log_neg_I]
+  ring_nf
+
+/-- **The Fourier integral of `t^{α-1}`, regularised by integration by parts.** For
+`0 < Re α < n`, `x > 0` and `δ > 0`, split `∫₀^∞ e^{ixt} t^{α-1} dt` at `δ` and integrate the part
+over `(δ, ∞)` by parts `n` times, so that the remaining integral converges absolutely. The
+resulting expression is `e^{iπα/2} Γ(α) x^{-α}`, the value at `z = -ix` of the Gamma integral
+`∫₀^∞ t^{α-1} e^{-zt} dt = Γ(α) z^{-α}`, which it continues to the imaginary axis. -/
+theorem integral_cpow_mul_exp_mul_I_add_sum_eq {α : ℂ} (hα : 0 < α.re) {n : ℕ} (hn : α.re < n)
+    {x δ : ℝ} (hx : 0 < x) (hδ : 0 < δ) :
+    (∫ t in (0 : ℝ)..δ, (t : ℂ) ^ (α - 1) * cexp (((x * t : ℝ) : ℂ) * I)) +
+        ∑ k ∈ range n, (I / x) ^ (k + 1) * ((descPochhammer ℂ k).eval (α - 1) *
+          ((δ : ℂ) ^ (α - 1 - k) * cexp (((x * δ : ℝ) : ℂ) * I))) +
+        (I / x) ^ n * ((descPochhammer ℂ n).eval (α - 1) *
+          ∫ t in Ioi δ, (t : ℂ) ^ (α - 1 - n) * cexp (((x * t : ℝ) : ℂ) * I)) =
+      cexp (π * I * α / 2) * Gamma α * (x : ℂ) ^ (-α) := by
+  have hinv : (-((x : ℂ) * I))⁻¹ = I / x := by
+    have : (x : ℂ) ≠ 0 := ofReal_ne_zero.2 hx.ne'
+    field_simp
+    ring_nf
+    simp
+  have hexp : ∀ t : ℝ, cexp (-(-((x : ℂ) * I) * t)) = cexp (((x * t : ℝ) : ℂ) * I) := fun t => by
+    push_cast; ring_nf
+  rw [← gammaSplit_neg_mul_I hα hn hx hδ, gammaSplit]
+  simp only [hinv, hexp]
+
+end HalfLine
 
 end Complex
 

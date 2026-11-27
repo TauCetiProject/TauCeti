@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.NumberTheory.Zsqrtd.GaussianInt
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 
 /-!
 # The Iwasawa manifold

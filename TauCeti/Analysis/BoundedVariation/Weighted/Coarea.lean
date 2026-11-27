@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Weighted.VariationMeasure
 public import TauCeti.Analysis.BoundedVariation.Coarea
+public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.InnerProductSpace.NormDet
 
 /-!
 # The weighted coarea formula
@@ -27,6 +29,24 @@ the right side: on a neighbourhood `U ≤ Ω` of `K` the weight is bounded below
 `P_μ({u > t}; Ω) ≥ m P({u > t}; U)` (`TauCeti.exists_mul_totalVariationOn_le_weightedVariation`),
 whose integral over `t` is `m |Du|(U) = ∞` by the Euclidean coarea formula
 `TauCeti.totalVariationOn_eq_lintegral_perimeter`.
+
+For `u` of locally finite Euclidean variation the identity also holds on every Borel subset `B`
+of `Ω`, with the measure `e^{−W} |Du|` of `B` in place of the weighted variation:
+`∫_B e^{−W} d|Du| = ∫_ℝ ∫_B e^{−W} d|D1_{u > t}| dt`
+(`TauCeti.setLIntegral_exp_neg_variationMeasure_eq_lintegral_setLIntegral`). Only measurability
+of the weight enters here.
+
+For a locally Lipschitz `f : E → ℝ` and a measurable `g : E → [0, ∞]`, the weighted Lipschitz
+coarea formula `∫ g ‖∇f‖ dμ = ∫_ℝ ∫_{f⁻¹(t)} g dμ^{n−1} dt` holds, where
+`μ^{n−1} = e^{−W} · μHE[n − 1]`
+(`TauCeti.lintegral_mul_enorm_fderiv_weightedMeasure_eq_lintegral_setLIntegral_preimage`), also
+over every null-measurable set `s` in place of `E`
+(`TauCeti.setLIntegral_mul_enorm_fderiv_weightedMeasure_eq_lintegral_setLIntegral_fiber`). It is
+the coarea formula for
+locally Lipschitz maps
+(`LocallyLipschitz.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber`) with
+the weight `e^{−W} g`, the coarea Jacobian of a map to `ℝ` being the norm of its derivative
+(`ContinuousLinearMap.normDet_adjoint_eq_norm`).
 
 ## References
 
@@ -99,5 +119,63 @@ theorem weightedVariation_eq_lintegral_weightedPerimeter (hW : ContDiff ℝ 1 W)
   · rw [lintegral_weightedPerimeter_eq_top hW hu hfin]
     by_contra h
     exact hfin (exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu h)
+
+/-- **The weighted coarea formula on Borel subsets.** For a measurable weight `W`, `u` locally
+integrable on the open set `Ω` with locally finite Euclidean variation there, and a measurable
+subset `B` of `Ω`, `∫_B e^{−W} d|Du| = ∫_ℝ ∫_B e^{−W} d|D1_{u > t}| dt`. For `B = Ω` and a `C¹`
+weight both sides are `V_μ(u; Ω)` and `∫_ℝ P_μ({u > t}; Ω) dt`
+(`TauCeti.weightedVariation_eq_lintegral_weightedPerimeter`). -/
+theorem setLIntegral_exp_neg_variationMeasure_eq_lintegral_setLIntegral (hW : Measurable W)
+    (hu : LocallyIntegrableOn u Ω)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U u ≠ ∞)
+    {B : Set Ω} (hB : MeasurableSet B) :
+    ∫⁻ x in B, ENNReal.ofReal (Real.exp (-W x)) ∂variationMeasure volume Ω u =
+      ∫⁻ t, ∫⁻ x in B, ENNReal.ofReal (Real.exp (-W x))
+        ∂variationMeasure volume Ω ({x | t < u x}.indicator 1) := by
+  have hρ : Measurable fun x : Ω => ENNReal.ofReal (Real.exp (-W x)) :=
+    (hW.comp measurable_subtypeVal).neg.exp.ennreal_ofReal
+  simp_rw [← lintegral_indicator hB]
+  exact lintegral_variationMeasure_eq_lintegral_lintegral hu hfin (hρ.indicator hB).aemeasurable
+
+section Lipschitz
+
+variable {f : E → ℝ} {g : E → ℝ≥0∞} {s : Set E}
+
+/-- **The weighted Lipschitz coarea formula on a set.** For a locally Lipschitz `f : E → ℝ`, a
+null-measurable set `s`, a weight `W` and a `g : E → [0, ∞]`, both almost everywhere measurable
+on `s`, `∫_s g ‖∇f‖ dμ = ∫_ℝ ∫_{s ∩ f⁻¹(t)} g dμ^{n−1} dt`, where `μ = e^{−W} · volume` and
+`μ^{n−1} = e^{−W} · μHE[n − 1]`. -/
+theorem setLIntegral_mul_enorm_fderiv_weightedMeasure_eq_lintegral_setLIntegral_fiber
+    (hW : AEMeasurable W (volume.restrict s)) (hf : LocallyLipschitz f)
+    (hs : NullMeasurableSet s) (hg : AEMeasurable g (volume.restrict s)) :
+    ∫⁻ x in s, g x * ‖fderiv ℝ f x‖ₑ ∂weightedMeasure W =
+      ∫⁻ t, ∫⁻ x in s ∩ f ⁻¹' {t}, ENNReal.ofReal (Real.exp (-W x)) * g x
+        ∂μHE[Module.finrank ℝ E - 1] := by
+  have hρ : AEMeasurable (fun x => ENNReal.ofReal (Real.exp (-W x))) (volume.restrict s) :=
+    hW.neg.exp.ennreal_ofReal
+  have hcoarea := hf.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hs
+    (hρ.mul hg)
+  simp only [Module.finrank_self, Pi.mul_apply] at hcoarea
+  rw [← hcoarea, weightedMeasure_def, restrict_withDensity',
+    lintegral_withDensity_eq_lintegral_mul₀ (g := fun x => g x * ‖fderiv ℝ f x‖ₑ) hρ
+      (hg.mul (measurable_fderiv ℝ f).eNorm.aemeasurable)]
+  refine lintegral_congr fun x => ?_
+  simp only [Pi.mul_apply, ContinuousLinearMap.normDet_adjoint_eq_norm, ofReal_norm]
+  ring
+
+/-- **The weighted Lipschitz coarea formula.** For an almost everywhere measurable weight `W`, a
+locally Lipschitz `f : E → ℝ` and an almost everywhere measurable `g : E → [0, ∞]`,
+`∫ g ‖∇f‖ dμ = ∫_ℝ ∫_{f⁻¹(t)} g dμ^{n−1} dt`, where `μ = e^{−W} · volume` and
+`μ^{n−1} = e^{−W} · μHE[n − 1]`. -/
+theorem lintegral_mul_enorm_fderiv_weightedMeasure_eq_lintegral_setLIntegral_preimage
+    (hW : AEMeasurable W) (hf : LocallyLipschitz f) (hg : AEMeasurable g) :
+    ∫⁻ x, g x * ‖fderiv ℝ f x‖ₑ ∂weightedMeasure W =
+      ∫⁻ t, ∫⁻ x in f ⁻¹' {t}, ENNReal.ofReal (Real.exp (-W x)) * g x
+        ∂μHE[Module.finrank ℝ E - 1] := by
+  simpa using setLIntegral_mul_enorm_fderiv_weightedMeasure_eq_lintegral_setLIntegral_fiber
+    hW.restrict hf MeasurableSet.univ.nullMeasurableSet hg.restrict
+
+end Lipschitz
 
 end TauCeti
