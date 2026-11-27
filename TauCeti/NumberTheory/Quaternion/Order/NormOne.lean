@@ -52,11 +52,8 @@ variable {Γ : Subalgebra R ℍ[F,c₁,c₂,c₃]}
 
 /-- Inclusion of quaternion orders induces inclusion of their reduced-norm-one groups. -/
 theorem normOne_mono (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) (h : Λ ≤ Γ) :
-    hΛ.normOne ≤ hΓ.normOne := by
-  unfold normOne
-  apply StarOrder.unitarySubgroup_mono
-  rwa [← StarOrder.toSubalgebra_le_toSubalgebra, StarOrder.ofSubalgebra_toSubalgebra,
-    StarOrder.ofSubalgebra_toSubalgebra]
+    hΛ.normOne ≤ hΓ.normOne :=
+  fun _ hx => hΓ.mem_normOne.2 (h (hΛ.mem_normOne.1 hx))
 
 /-- **Any two orders have norm-one groups of finite relative index.** This holds over any
 integrally closed ring with fraction field and finite quotients, including rings of integers of

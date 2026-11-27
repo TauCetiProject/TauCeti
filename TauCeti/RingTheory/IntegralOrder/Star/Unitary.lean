@@ -74,23 +74,32 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
     { toFun := fun x => ⟨(x.val : E), (mem_unitarySubgroup P).mp x.property⟩
       map_one' := rfl
       map_mul' _ _ := rfl }
+  have inclusion_coe (x : P.unitarySubgroup) : ((inclusion x : Γ) : E) = (x.val : E) :=
+    rfl
   let reduction : P.unitarySubgroup →* (Γ ⧸ J)ˣ :=
     ((Ideal.Quotient.mk J).toMonoidHom.comp inclusion).toHomUnits
+  have reduction_val (x : P.unitarySubgroup) :
+      (reduction x : Γ ⧸ J) = Ideal.Quotient.mk J (inclusion x) :=
+    MonoidHom.coe_toHomUnits _ _
   have : reduction.ker.FiniteIndex := inferInstance
+  have hker : reduction.ker ≤ O.unitarySubgroup.subgroupOf P.unitarySubgroup := by
+    intro x hx
+    have hxval : (reduction x : Γ ⧸ J) = 1 :=
+      Units.ext_iff.mp (MonoidHom.mem_ker.mp hx)
+    have hxquot : Ideal.Quotient.mk J (inclusion x) = Ideal.Quotient.mk J 1 := by
+      rw [← reduction_val, map_one]
+      exact hxval
+    have hx' : inclusion x - 1 ∈ J := Ideal.Quotient.eq.mp hxquot
+    rw [Ideal.mem_map_algebraMap_iff, Submodule.ideal_span_singleton_smul] at hx'
+    obtain ⟨y, _, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ r ⊤).mp hx'
+    have hdiff : r • (y : E) = ((inclusion x : Γ) : E) - 1 := by
+      simpa only [Subalgebra.coe_smul, Subalgebra.coe_sub, Subalgebra.coe_one] using
+        congrArg ((↑) : Γ → E) hy
+    have hsub : ((inclusion x : Γ) : E) - 1 ∈ Λ := hdiff ▸ hrΓ y y.property
+    have hmem := Λ.add_mem hsub Λ.one_mem
+    rw [sub_add_cancel, inclusion_coe] at hmem
+    exact (mem_unitarySubgroup O).2 (mem_toSubalgebra.mp hmem)
   rw [Subgroup.isFiniteRelIndex_iff_finiteIndex]
-  refine Subgroup.finiteIndex_of_le (H := reduction.ker) fun x hx => ?_
-  have hxred : reduction x = 1 := MonoidHom.mem_ker.mp hx
-  have hxquot : Ideal.Quotient.mk J (inclusion x) = Ideal.Quotient.mk J 1 := by
-    have hxval := congrArg Units.val hxred
-    simpa only [reduction, MonoidHom.coe_toHomUnits, MonoidHom.comp_apply,
-      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Units.val_one, map_one] using hxval
-  have hx' : inclusion x - 1 ∈ J := Ideal.Quotient.eq.mp hxquot
-  rw [Ideal.mem_map_algebraMap_iff, Submodule.ideal_span_singleton_smul] at hx'
-  obtain ⟨y, _, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ r ⊤).mp hx'
-  have hsub : ((inclusion x : Γ) : E) - 1 ∈ Λ := by
-    rw [← Subalgebra.coe_one Γ, ← Subalgebra.coe_sub, ← hy]
-    exact hrΓ y y.property
-  refine (mem_unitarySubgroup O).2 (mem_toSubalgebra.mp ?_)
-  simpa [inclusion, Λ] using Λ.add_mem hsub Λ.one_mem
+  exact Subgroup.finiteIndex_of_le hker
 
 end TauCeti.IntegralOrder.StarOrder
