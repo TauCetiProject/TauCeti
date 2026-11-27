@@ -137,7 +137,8 @@ private theorem norm_covectorPullback_realChart_inv_le {J : ℝ × ℝ → V →
   rw [covectorPullback_apply, hJ]
   refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
   calc _ ≤ ‖η (TauCeti.Complex.realChart (·⁻¹) ζ)‖ * (r * (1 + N)) :=
-        mul_le_mul_of_nonneg_left (J₀.norm_smul_add_smul_le ha hb) (norm_nonneg _)
+        mul_le_mul_of_nonneg_left (ContinuousLinearMap.norm_smul_one_add_smul_le _ ha hb)
+          (norm_nonneg _)
     _ = _ := by ring
 
 end Inversion

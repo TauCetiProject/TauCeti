@@ -43,8 +43,9 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
 `T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
-(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`), and over `ℝ` or `ℂ` an endomorphism `B`
-with `‖B‖ ≤ 1` satisfies `‖v • B f + conj v • f‖ ≤ 2 ‖v‖ ‖f‖`
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`), for `‖a‖, ‖b‖ ≤ r` the operator
+`a + b L` has norm at most `r (1 + ‖L‖)` (`ContinuousLinearMap.norm_smul_one_add_smul_le`), and
+over `ℝ` or `ℂ` an endomorphism `B` with `‖B‖ ≤ 1` satisfies `‖v • B f + conj v • f‖ ≤ 2 ‖v‖ ‖f‖`
 (`ContinuousLinearMap.norm_smul_apply_add_conj_smul_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
@@ -327,6 +328,15 @@ Mathlib's `norm_one` does not apply. -/
 theorem norm_one_le : ‖(1 : X →L[𝕜] X)‖ ≤ 1 := by
   rw [one_def]
   exact norm_id_le
+
+/-- For an endomorphism `L` and scalars with `‖a‖, ‖b‖ ≤ r`, the operator norm of `a + b L` is at
+most `r (1 + ‖L‖)`. -/
+theorem norm_smul_one_add_smul_le (L : X →L[𝕜] X) {a b : 𝕜} {r : ℝ} (ha : ‖a‖ ≤ r)
+    (hb : ‖b‖ ≤ r) : ‖a • (1 : X →L[𝕜] X) + b • L‖ ≤ r * (1 + ‖L‖) := by
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, mul_add, mul_one]
+  gcongr
+  exact (mul_le_mul ha norm_one_le (norm_nonneg _) ((norm_nonneg a).trans ha)).trans_eq (mul_one r)
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
