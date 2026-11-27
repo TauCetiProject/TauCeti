@@ -340,14 +340,14 @@ theorem add_sub_smul_single_mem_coordinateBox {a b : Fin n → ℝ} {x : Euclide
   · exact hx j
 
 omit [NormedSpace ℝ F] in
-/-- If `u` is `C`-Lipschitz on a closed coordinate box containing `x`, the line function of `u`
-through `x` in the `i`-th direction is `C`-Lipschitz on `[aᵢ, bᵢ]`. -/
+/-- If `u` is `C`-Lipschitz on a set `s` containing the points `x + (t - xᵢ) eᵢ` for `t ∈ I`, the
+line function of `u` through `x` in the `i`-th direction is `C`-Lipschitz on `I`. -/
 theorem _root_.LipschitzOnWith.lineFunction {u : EuclideanSpace ℝ (Fin n) → F} {C : ℝ≥0}
-    {a b : Fin n → ℝ} (hu : LipschitzOnWith C u (coordinateBox a b))
-    {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ coordinateBox a b) (i : Fin n) :
-    LipschitzOnWith C (lineFunction u x i) (Icc (a i) (b i)) := by
-  have h := hu.comp (EuclideanSpace.lipschitzWith_add_sub_smul_single x i).lipschitzOnWith
-    fun t ht ↦ add_sub_smul_single_mem_coordinateBox hx ht
+    {s : Set (EuclideanSpace ℝ (Fin n))} (hu : LipschitzOnWith C u s)
+    {x : EuclideanSpace ℝ (Fin n)} {i : Fin n} {I : Set ℝ}
+    (hs : ∀ t ∈ I, x + (t - x i) • EuclideanSpace.single i 1 ∈ s) :
+    LipschitzOnWith C (lineFunction u x i) I := by
+  have h := hu.comp (EuclideanSpace.lipschitzWith_add_sub_smul_single x i).lipschitzOnWith hs
   rwa [mul_one, show u ∘ _ = TauCeti.lineFunction u x i from
     funext fun t ↦ (lineFunction_apply u x i t).symm] at h
 
@@ -422,7 +422,8 @@ theorem _root_.LocallyLipschitzOn.isACLOn (hu : LocallyLipschitzOn Ω u) : IsACL
     obtain ⟨C, hC⟩ := (hu.mono hQ).exists_lipschitzOnWith_of_compact (isCompact_coordinateBox a b)
     refine (ae_restrict_mem (measurableSet_coordinateBox a b)).mono fun x hx ↦ ?_
     refine LipschitzOnWith.absolutelyContinuousOnInterval (K := C) ?_
-    simpa [uIcc_of_le (hab i).le] using hC.lineFunction hx i
+    simpa [uIcc_of_le (hab i).le] using
+      hC.lineFunction fun t ht ↦ add_sub_smul_single_mem_coordinateBox (i := i) hx ht
 
 /-- A locally Lipschitz map is `ACL^p` on every set, for every exponent `p`; in particular it is
 `ACL^∞`. -/
