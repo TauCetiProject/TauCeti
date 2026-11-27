@@ -46,11 +46,20 @@ is `D` by uniqueness of formal transposes. So `φ ↦ S (D φ)` is the distribut
 coefficients applies
 (`Distribution.IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`).
 
+The same holds for square systems: if `R j` is the transpose `φ ↦ ∑ i, S i (D i j φ)` of
+distributions `S i` by differential operators `D i j`, the matrix of principal symbols
+`σ(D i j)(x, ⟪ξ, ·⟫)` is invertible and every `R j` is microlocally smooth at `(x, ξ)`, then so is
+every `S i` (`Distribution.IsMicrolocallySmoothAt.of_forall_mem_differentialOperators`). In local
+frames, a differential operator between vector bundles is such a system.
+
 ## Main results
 
 * `Distribution.exists_forall_apply_eq_and_isMicrolocallySmoothAt_of_mem_differentialOperators`:
   a differential operator on `C^∞(E)` acts on distributions by transposition without enlarging
   their wave front sets.
+* `Distribution.IsMicrolocallySmoothAt.of_forall_mem_differentialOperators`,
+  `Distribution.waveFrontSet_subset_iUnion_waveFrontSet_union_of_forall_mem_differentialOperators`:
+  microlocal elliptic regularity for square systems of such transposes.
 * `Distribution.IsMicrolocallySmoothAt.of_mem_differentialOperators`,
   `Distribution.waveFrontSet_subset_waveFrontSet_union_of_mem_differentialOperators`: microlocal
   elliptic regularity for this action.
@@ -252,11 +261,109 @@ private theorem principalSymbol_multiIndexWord {n : ℕ} (b : Fin n → E) (m : 
     simp [(Finset.mem_piAntidiag.1 hα).1, hk]
   · exact fun h ↦ absurd (Finset.mem_range.2 (Nat.lt_succ_self m)) h
 
+/-- **Microlocal elliptic regularity for systems of differential operators on `C^∞(E)`**
+(Hörmander I, Theorem 8.3.1). Let `D i j`, for `i j` in a finite type `ι`, be differential
+operators of order at most `m` on the smooth functions on `E`, in Grothendieck's sense, and let
+`ξ` be noncharacteristic for the system at `x`: the matrix of the principal symbols
+`σ(D i j)(x, ⟪ξ, ·⟫)` is invertible. If `R j` is the transpose `φ ↦ ∑ i, S i (D i j φ)` of
+distributions `S i` on `Ω`, and every `R j` is microlocally smooth at `(x, ξ)`, then so is every
+`S i`. -/
+theorem IsMicrolocallySmoothAt.of_forall_mem_differentialOperators {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {D : ι → ι → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ℕ}
+    (hD : ∀ i j, D i j ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m)
+    {S R : ι → 𝓓'(Ω, ℂ)}
+    (hR : ∀ j (φ : 𝓓(Ω, ℝ)) (ψ : ι → 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯), ⇑f = φ →
+      (∀ i, ⇑(ψ i) = D i j f) → R j φ = ∑ i, S i (ψ i))
+    {x ξ : E} (hξ : (Matrix.of fun i j ↦ TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) (x := x)
+      BoundarylessManifold.isInteriorPoint ⟨D i j, hD i j⟩ (innerSL ℝ ξ : E →L[ℝ] ℝ)).det ≠ 0)
+    (h : ∀ j, (R j).IsMicrolocallySmoothAt x ξ) (i : ι) : (S i).IsMicrolocallySmoothAt x ξ := by
+  let _ : MeasurableSpace E := borel E
+  have _ : BorelSpace E := ⟨rfl⟩
+  -- The formal transposes `D' i j` of the `D i j` for a Haar measure, in coordinates
+  -- `∑_{|α| ≤ m} d_α ∂^α`.
+  choose D' hD' hT using fun i j ↦ LinearMap.exists_isFormalTranspose_of_mem_differentialOperators
+    (hD i j)
+  let μ : MeasureTheory.Measure E := MeasureTheory.Measure.addHaar
+  let b := Module.finBasis ℝ E
+  let d (i j : ι) := TauCeti.coordinateCoeff b.smoothCoord (D' i j)
+  -- By uniqueness of formal transposes, `D i j φ = ∑_{|α| ≤ m} (-1) ^ |α| ∂^α (d_α φ)`, so `R j`
+  -- is the distribution `∑ i, ∑_{|α| ≤ m} d_α ∂^α (S i)`.
+  have hDG (i j : ι) := by
+    have hG := LinearMap.isFormalTranspose_coordinateOperator (μ := μ) b m (d i j)
+    rw [← b.eq_coordinateOperator_coordinateCoeff (hD' i j)] at hG
+    exact (hT i j μ).symm.unique hG
+  have hRS (j : ι) : R j = ∑ i, ∑ α ∈ multiIndicesLE _ m, (1 : ℂ) •
+      Distribution.smulLeftCLM (contMDiff_iff_contDiff.1 (d i j α.2).contMDiff)
+        (∂^{b ∘ TauCeti.multiIndexWord α.2 ∘ Fin.rev} (S i)) := by
+    ext φ
+    choose ψ hψ hSψ using fun i ↦ exists_apply_eq_sum_smulLeftCLM_iteratedLineDerivOp b m (d i j)
+      (S i) φ (f := ⟨φ, contMDiff_iff_contDiff.2 φ.contDiff⟩) rfl
+    rw [hR j φ ψ _ rfl fun i ↦ hDG i j ▸ hψ i, _root_.sum_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ hSψ i
+  refine IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp _ (M := m)
+    (fun α hα ↦ ?_) (fun j ↦ hRS j ▸ h j) ?_ i
+  · have hα' : α.1 ≤ m ∧ ∑ j, α.2 j = α.1 := by simpa [multiIndicesLE, Nat.lt_succ_iff] using hα
+    exact hα'.2.le.trans hα'.1
+  -- The principal symbols of the `∑_{|α| ≤ m} d_α ∂^α` are `σ(D' i j) = (-1) ^ m σ(D i j)`.
+  have hσ (i j : ι) : TauCeti.principalSymbol (multiIndicesLE _ m)
+      (fun α y ↦ 1 * (d i j α.2 y : ℂ)) (fun α ↦ b ∘ TauCeti.multiIndexWord α.2 ∘ Fin.rev) m x ξ =
+        (-1 : ℂ) ^ m * (TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) (x := x)
+          BoundarylessManifold.isInteriorPoint ⟨D i j, hD i j⟩ (innerSL ℝ ξ : E →L[ℝ] ℝ) : ℂ) := by
+    have h₁ := b.smoothPrincipalSymbol_eq_sum_coordinateCoeff ⟨D' i j, hD' i j⟩ x
+      (innerSL ℝ ξ : E →L[ℝ] ℝ)
+    have h₂ := LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq (D := ⟨D i j, hD i j⟩)
+      (D' := ⟨D' i j, hD' i j⟩) (hT i j μ) (x := x) (innerSL ℝ ξ : E →L[ℝ] ℝ)
+    have h₃ : (∑ α ∈ Finset.piAntidiag Finset.univ m, d i j α x * ∏ l, ⟪ξ, b l⟫ ^ α l : ℝ) =
+        (-1) ^ m * TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) (x := x)
+          BoundarylessManifold.isInteriorPoint ⟨D i j, hD i j⟩ (innerSL ℝ ξ : E →L[ℝ] ℝ) :=
+      h₁.symm.trans h₂
+    rw [principalSymbol_multiIndexWord, h₃]
+    push_cast
+    ring
+  have hmat : (Matrix.of fun i j ↦ TauCeti.principalSymbol (multiIndicesLE _ m)
+      (fun α y ↦ 1 * (d i j α.2 y : ℂ)) (fun α ↦ b ∘ TauCeti.multiIndexWord α.2 ∘ Fin.rev) m x ξ) =
+        ((-1 : ℂ) ^ m) • (Matrix.of fun i j ↦ TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) (x := x)
+          BoundarylessManifold.isInteriorPoint ⟨D i j, hD i j⟩
+            (innerSL ℝ ξ : E →L[ℝ] ℝ)).map (algebraMap ℝ ℂ) := by
+    ext i j
+    rw [Matrix.of_apply, hσ]
+    simp
+  rw [hmat, Matrix.det_smul, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ (by norm_num)))
+    ((map_ne_zero (algebraMap ℝ ℂ)).2 hξ)
+
+/-- **Microlocal elliptic regularity for systems of differential operators on `C^∞(E)`**: if
+`R j` is the transpose `φ ↦ ∑ i, S i (D i j φ)` of distributions `S i` on `Ω` by differential
+operators `D i j` of order at most `m`, then `WF(S i) ⊆ (⋃ j, WF(R j)) ∪ Char(D)` for every `i`,
+where `Char(D)` is the set of `(x, ξ)` at which the matrix of the principal symbols
+`σ(D i j)(x, ⟪ξ, ·⟫)` is not invertible. -/
+theorem waveFrontSet_subset_iUnion_waveFrontSet_union_of_forall_mem_differentialOperators
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {D : ι → ι → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ℕ}
+    (hD : ∀ i j, D i j ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m)
+    {S R : ι → 𝓓'(Ω, ℂ)}
+    (hR : ∀ j (φ : 𝓓(Ω, ℝ)) (ψ : ι → 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯), ⇑f = φ →
+      (∀ i, ⇑(ψ i) = D i j f) → R j φ = ∑ i, S i (ψ i)) (i : ι) :
+    (S i).waveFrontSet ⊆ (⋃ j, (R j).waveFrontSet) ∪
+      {p | (Matrix.of fun i j ↦ TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) (x := p.1)
+        BoundarylessManifold.isInteriorPoint ⟨D i j, hD i j⟩
+          (innerSL ℝ p.2 : E →L[ℝ] ℝ)).det = 0} := by
+  rintro ⟨x, ξ⟩ hp
+  obtain ⟨hx, hξ, hS⟩ := mem_waveFrontSet_iff.1 hp
+  by_contra h
+  simp only [mem_union, mem_iUnion, mem_waveFrontSet_iff, mem_ofPred_eq, not_or, not_exists,
+    not_and, not_not] at h
+  exact hS (IsMicrolocallySmoothAt.of_forall_mem_differentialOperators hD hR h.2
+    (fun j ↦ h.1 j hx hξ) i)
+
 /-- **Microlocal elliptic regularity for differential operators on `C^∞(E)`** (Hörmander I,
 Theorem 8.3.1). Let `D` be a differential operator of order at most `m` on the smooth functions on
 `E`, in Grothendieck's sense, and let `ξ` be noncharacteristic for `D` at `x`: its principal symbol
 `σ(D)(x, ⟪ξ, ·⟫)` does not vanish. If `R` is the transpose `φ ↦ S (D φ)` of a distribution `S` on
-`Ω`, and `R` is microlocally smooth at `(x, ξ)`, then so is `S`. -/
+`Ω`, and `R` is microlocally smooth at `(x, ξ)`, then so is `S`. This is the system
+`IsMicrolocallySmoothAt.of_forall_mem_differentialOperators` with one component. -/
 theorem IsMicrolocallySmoothAt.of_mem_differentialOperators
     {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ℕ}
     (hD : D ∈ TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
@@ -265,39 +372,11 @@ theorem IsMicrolocallySmoothAt.of_mem_differentialOperators
     (hR : ∀ (φ ψ : 𝓓(Ω, ℝ)) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯), ⇑f = φ → ⇑ψ = D f → R φ = S ψ)
     {x ξ : E} (hξ : TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) (x := x)
       BoundarylessManifold.isInteriorPoint ⟨D, hD⟩ (innerSL ℝ ξ : E →L[ℝ] ℝ) ≠ 0)
-    (h : R.IsMicrolocallySmoothAt x ξ) : S.IsMicrolocallySmoothAt x ξ := by
-  let _ : MeasurableSpace E := borel E
-  have _ : BorelSpace E := ⟨rfl⟩
-  -- The formal transpose `D'` of `D` for a Haar measure, in coordinates `∑_{|α| ≤ m} d_α ∂^α`.
-  obtain ⟨D', hD', hT⟩ := LinearMap.exists_isFormalTranspose_of_mem_differentialOperators hD
-  let μ : MeasureTheory.Measure E := MeasureTheory.Measure.addHaar
-  let b := Module.finBasis ℝ E
-  let d := TauCeti.coordinateCoeff b.smoothCoord D'
-  have hG := LinearMap.isFormalTranspose_coordinateOperator (μ := μ) b m d
-  rw [← b.eq_coordinateOperator_coordinateCoeff hD'] at hG
-  -- By uniqueness of formal transposes, `D φ = ∑_{|α| ≤ m} (-1) ^ |α| ∂^α (d_α φ)`, so the
-  -- transpose `R` of `S` is the distributional operator `∑_{|α| ≤ m} d_α ∂^α S`.
-  have hDG := (hT μ).symm.unique hG
-  have hRS : R = ∑ i ∈ multiIndicesLE _ m, (1 : ℂ) •
-      Distribution.smulLeftCLM (contMDiff_iff_contDiff.1 (d i.2).contMDiff)
-        (∂^{b ∘ TauCeti.multiIndexWord i.2 ∘ Fin.rev} S) := by
-    ext φ
-    obtain ⟨ψ, hψ, hSψ⟩ := exists_apply_eq_sum_smulLeftCLM_iteratedLineDerivOp b m d S φ
-      (f := ⟨φ, contMDiff_iff_contDiff.2 φ.contDiff⟩) rfl
-    rw [hR φ ψ _ rfl (hDG ▸ hψ), hSψ]
-  refine IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp _ (M := m)
-    (fun i hi ↦ ?_) (hRS ▸ h) ?_
-  · have hi' : i.1 ≤ m ∧ ∑ j, i.2 j = i.1 := by simpa [multiIndicesLE, Nat.lt_succ_iff] using hi
-    exact hi'.2.le.trans hi'.1
-  -- The principal symbol of `∑_{|α| ≤ m} d_α ∂^α` is `σ(D') = (-1) ^ m σ(D)`.
-  have h₁ := b.smoothPrincipalSymbol_eq_sum_coordinateCoeff ⟨D', hD'⟩ x (innerSL ℝ ξ : E →L[ℝ] ℝ)
-  have h₂ := LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq (D := ⟨D, hD⟩)
-    (D' := ⟨D', hD'⟩) (hT μ) (x := x) (innerSL ℝ ξ : E →L[ℝ] ℝ)
-  rw [principalSymbol_multiIndexWord]
-  intro h₀
-  refine hξ ((mul_eq_zero.1 (h₂.symm.trans (h₁.trans ?_))).resolve_left (pow_ne_zero _ ?_))
-  · exact_mod_cast h₀
-  · norm_num
+    (h : R.IsMicrolocallySmoothAt x ξ) : S.IsMicrolocallySmoothAt x ξ :=
+  IsMicrolocallySmoothAt.of_forall_mem_differentialOperators (ι := Unit) (D := fun _ _ ↦ D)
+    (fun _ _ ↦ hD) (S := fun _ ↦ S) (R := fun _ ↦ R)
+    (fun _ φ ψ f hf hψ ↦ by simpa using hR φ (ψ ()) f hf (hψ ())) (by simpa using hξ)
+    (fun _ ↦ h) ()
 
 /-- **Microlocal elliptic regularity for differential operators on `C^∞(E)`**: if `R` is the
 transpose `φ ↦ S (D φ)` of a distribution `S` on `Ω` by a differential operator `D` of order at

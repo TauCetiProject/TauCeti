@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.ProdInner
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
+import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Normed.Module.Cone
 
@@ -44,28 +45,43 @@ hypoelliptic, and every distributional solution of `P T = 0` is a function smoot
 constant-coefficient statements are the special case `a i = 1`, and the Laplacian is the basic
 example (`Distribution.waveFrontSet_laplacianCLM`), for which this is Weyl's lemma.
 
+The same holds for square systems `(P T) j = ∑ i, ∑ a ∈ s, c i j a g i j a ∂^(m a) (T i)` acting
+on finitely many distributions `T i`: if the matrix of the principal symbols of the entries is
+invertible at `(x, ξ)` and every `(P T) j` is microlocally smooth there, so is every `T i`
+(`Distribution.IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp`). This is
+the form needed for operators between vector bundles, which are systems in local frames.
+Ellipticity of a system is invertibility of its principal symbol matrix, not nonvanishing of its
+entries, so the scalar statement cannot be applied entry by entry; the scalar statement is the
+system with one component.
+
 ## The argument
 
 Write `L(T, ψ)(η) = T (ψ e_η)` for the localized Fourier transform, and
-`p(y, η) = ∑ i ∈ s, c i a i(y) ∏ₗ 2πi ⟪m i l, η⟫` for the full symbol of `P` in the frequency
-variable of Mathlib's Fourier transform. Moving the derivatives onto the cutoff,
-`L(∂_v T, ψ) = 2πi ⟪v, η⟫ L(T, ψ) - L(T, ∂_v ψ)` and `L(a T, ψ) = L(T, a ψ)`, gives
+`p(y, η) = ∑ a ∈ s, c a g a(y) ∏ₗ 2πi ⟪m a l, η⟫` for the full symbol of a scalar operator in the
+frequency variable of Mathlib's Fourier transform. Moving the derivatives onto the cutoff,
+`L(∂_v T, ψ) = 2πi ⟪v, η⟫ L(T, ψ) - L(T, ∂_v ψ)` and `L(g T, ψ) = L(T, g ψ)`, gives
 
-`L(T, p(·, η) Ψ)(η) = L(P T, Ψ)(η) - ∑ i ∈ s, c i D_i(η)`,
+`L(T, p(·, η) Ψ)(η) = L(P T, Ψ)(η) - ∑ a ∈ s, c a D_a(η)`,
 
-where each error `D_i` only involves `L(T, ∂^β (a i Ψ))` for derivatives of `a i Ψ`, with one
-power of `η` less than `p`. Near a noncharacteristic `(x, ξ)`, `|p(y, η)| ≥ c (1 + ‖η‖) ^ M` for
-`y` near `x` and `η` in an open cone `Γ` around `ξ` outside a ball. To estimate `L(T, φ)(η)` for a
-cutoff `φ`, apply the identity to the frequency-dependent cutoff `Ψ = φ / p(·, η)`
-(Hörmander I, proof of Theorem 8.3.1), whose derivatives are `O((1 + ‖η‖) ^ (-M))`. Since the
-cutoff now depends on `η`, every estimate is made uniform over the cutoffs supported in a fixed
-compact set with bounded derivatives of some order: the polynomial growth of the localized Fourier
-transform (`Distribution.exists_forall_norm_localFourier_le`) and the rapid decay of `L(P T, Ψ)`
-on `Γ`
+where each error `D_a` only involves `L(T, ∂^β (g a Ψ))` for derivatives of `g a Ψ`, with one
+power of `η` less than `p`. For a system, let `A(y, η)` be the matrix of the terms of order `M`
+of the full symbols of the entries, `(2πi) ^ M` times the principal symbol matrix. Near a
+noncharacteristic `(x, ξ)`, `|det A(y, η)| ≥ c (1 + ‖η‖) ^ (M r)`, with `r` the number of
+components, for `y` near `x` and `η` in an open cone `Γ` around `ξ` outside a ball: the
+determinant of the principal symbol matrix is homogeneous of degree `M r`
+(`TauCeti.exists_nhds_cone_le_norm_of_continuous_of_homogeneous`). To estimate `L(T q, φ)(η)`
+for a cutoff `φ`, apply the identity to the frequency-dependent cutoffs `Ψ j = (A⁻¹) j q φ`
+(Hörmander I, proof of Theorem 8.3.1), obtained by multiplying `φ` by an entry of the adjugate of
+`A` and dividing by its determinant, so that `∑ j, A i j Ψ j = δ_iq φ`. Their derivatives are
+`O((1 + ‖η‖) ^ (-M))`, and the terms of order less than `M` of the full symbols become errors one
+power of `η` smaller. Since the cutoffs depend on `η`, every estimate is made uniform over the
+cutoffs supported in a fixed compact set with bounded derivatives of some order: the polynomial
+growth of the localized Fourier transform (`Distribution.exists_forall_norm_localFourier_le`) and
+the rapid decay of `L((P T) j, Ψ)` on `Γ`
 (`IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`).
-If every `L(T, φ)` is `O(B (1 + ‖η‖) ^ (k - j))` on `Γ` for the cutoffs `φ` whose derivatives are
-bounded by `B`, the identity shows that it is `O(B (1 + ‖η‖) ^ (k - j - 1))`, and induction on `j`
-gives rapid decay on `Γ`.
+If every `L(T i, φ)` is `O(B (1 + ‖η‖) ^ (k - d))` on `Γ` for the cutoffs `φ` whose derivatives
+are bounded by `B`, the identity shows that it is `O(B (1 + ‖η‖) ^ (k - d - 1))`, and induction on
+`d` gives rapid decay on `Γ`.
 
 ## Main definitions
 
@@ -82,12 +98,19 @@ gives rapid decay on `Γ`.
   continuously on a point, ellipticity at a point holds at all nearby points.
 * `TauCeti.constCoeffPrincipalSymbol_laplacian`: the principal symbol of the Laplacian is
   `‖ξ‖ ^ 2`.
+* `TauCeti.exists_nhds_cone_le_norm_of_continuous_of_homogeneous`: a continuous function
+  homogeneous in the frequency that does not vanish at `(x, ξ)` is bounded below by
+  `c₀ ‖η‖ ^ N` for `y` near `x` and `η` in an open cone around `ξ`.
 * `TauCeti.exists_nhds_cone_le_norm_principalSymbol`: a principal symbol with
   continuous coefficients that does not vanish at `(x, ξ)` is bounded below by `c₀ ‖η‖ ^ M` for
   `y` near `x` and `η` in an open cone around `ξ`.
 * `TauCeti.exists_mul_one_add_norm_pow_le_norm_sum_mul_prod`: on such a cone the full symbol
   `∑ i ∈ s, b i y ∏ₗ 2πi ⟪m i l, η⟫`, lower-order terms included, is bounded below by a multiple
   of `(1 + ‖η‖) ^ M` outside a ball.
+* `Distribution.IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp` and
+  its wave front set form
+  `waveFrontSet_subset_iUnion_waveFrontSet_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`:
+  microlocal elliptic regularity for square systems with invertible principal symbol matrix.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(x, ξ) ≠ 0`, then `T` is microlocally smooth there.
 * `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`:
@@ -264,6 +287,48 @@ theorem smul_mem_characteristicSet_iff {ι : Type*} {s : Finset ι} {b : ι → 
     (x, t • ξ) ∈ characteristicSet s b m M ↔ (x, ξ) ∈ characteristicSet s b m M := by
   simp [principalSymbol_smul, ht]
 
+/-- **An elliptic cone for a homogeneous function, uniformly near a point.** Let `f (y, η)` be
+continuous and positively homogeneous of degree `N` in `η`. If `f (x, ξ) ≠ 0`, then there are a
+neighbourhood `U` of `x`, an open cone `Γ` around `ξ` and `c₀ > 0` such that
+`c₀ ‖η‖ ^ N ≤ ‖f (y, η)‖` for every `y ∈ U` and `η ∈ Γ`. -/
+theorem exists_nhds_cone_le_norm_of_continuous_of_homogeneous {f : E × E → ℂ}
+    (hf : Continuous f) {N : ℕ}
+    (hhom : ∀ y η : E, ∀ t : ℝ, 0 < t → f (y, t • η) = (t : ℂ) ^ N * f (y, η)) {x ξ : E}
+    (hξ : f (x, ξ) ≠ 0) :
+    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ N ≤ ‖f (y, η)‖ := by
+  -- `‖ξ‖ ^ N ≠ 0`: otherwise `ξ = 0` and `N ≠ 0`, and homogeneity forces `f (x, 0) = 0`.
+  have hξN : 0 < ‖ξ‖ ^ N := by
+    rcases eq_or_ne ξ 0 with rfl | hξ0
+    · rcases Nat.eq_zero_or_pos N with rfl | hN
+      · simp
+      · have h2 := congrArg norm (hhom x 0 2 two_pos)
+        rw [smul_zero, norm_mul, norm_pow, Complex.norm_real, Real.norm_two] at h2
+        have h2N : (2 : ℝ) ≤ 2 ^ N := le_self_pow₀ one_le_two hN.ne'
+        exact absurd (norm_eq_zero.1 (by nlinarith [norm_nonneg (f (x, 0))])) hξ
+    · exact pow_pos (norm_pos_iff.2 hξ0) N
+  set c₀ : ℝ := ‖f (x, ξ)‖ / (2 * ‖ξ‖ ^ N)
+  have hc₀ : 0 < c₀ := div_pos (norm_pos_iff.2 hξ) (by positivity)
+  -- A product neighbourhood `U × V` of `(x, ξ)` on which `c₀ ‖η‖ ^ N < ‖f (y, η)‖`.
+  have hO : IsOpen {p : E × E | c₀ * ‖p.2‖ ^ N < ‖f p‖} :=
+    isOpen_lt (by fun_prop) hf.norm
+  have hxξ : (x, ξ) ∈ {p : E × E | c₀ * ‖p.2‖ ^ N < ‖f p‖} := by
+    simp only [mem_ofPred_eq, c₀]
+    rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξN.ne']
+    linarith [norm_pos_iff.2 hξ]
+  obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 (hO.mem_nhds hxξ)
+  -- The cone over `interior V`.
+  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
+    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hV)
+  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun y hy η hη ↦ ?_⟩
+  obtain ⟨t, ht, hη⟩ := hmem η hη
+  have h : c₀ * ‖t • η‖ ^ N < ‖f (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
+  rw [hhom y η t ht] at h
+  simp only [norm_mul, norm_pow, Complex.norm_real, norm_smul, Real.norm_of_nonneg ht.le,
+    mul_pow] at h
+  refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht N).le).le
+  linarith
+
 /-- **An elliptic cone, uniformly near a point.** Let the coefficients `b i` of a differential
 operator depend continuously on the position. If the principal symbol with the coefficients frozen
 at `x` does not vanish at `ξ`, then there are a neighbourhood `U` of `x`, an open cone `Γ` around
@@ -273,39 +338,10 @@ theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
     {b : ι → E → ℂ} (hb : ∀ i, Continuous (b i)) {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
     {x ξ : E} (hξ : principalSymbol s b m M x ξ ≠ 0) :
     ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
-      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖principalSymbol s b m M y η‖ := by
-  -- `‖ξ‖ ^ M ≠ 0`: otherwise `ξ = 0` and `M ≠ 0`, and every term of the principal symbol at `ξ`
-  -- has a factor `⟪_, 0⟫ = 0`.
-  have hξM : 0 < ‖ξ‖ ^ M := by
-    rcases eq_or_ne ξ 0 with rfl | hξ0
-    · rcases Nat.eq_zero_or_pos M with rfl | hM
-      · simp
-      · refine absurd (Finset.sum_eq_zero fun i hi ↦ ?_) hξ
-        have hki : k i = M := (Finset.mem_filter.1 hi).2
-        rw [Finset.prod_eq_zero (i := ⟨0, hki ▸ hM⟩) (Finset.mem_univ _) (by simp), mul_zero]
-    · exact pow_pos (norm_pos_iff.2 hξ0) M
-  set σ : E × E → ℂ := fun p ↦ principalSymbol s b m M p.1 p.2
-  have hσ : Continuous σ := continuous_principalSymbol s hb m M
-  set c₀ : ℝ := ‖σ (x, ξ)‖ / (2 * ‖ξ‖ ^ M)
-  have hc₀ : 0 < c₀ := div_pos (norm_pos_iff.2 hξ) (by positivity)
-  -- A product neighbourhood `U × V` of `(x, ξ)` on which `c₀ ‖η‖ ^ M < ‖σ (y, η)‖`.
-  have hO : IsOpen {p : E × E | c₀ * ‖p.2‖ ^ M < ‖σ p‖} :=
-    isOpen_lt (by fun_prop) hσ.norm
-  have hxξ : (x, ξ) ∈ {p : E × E | c₀ * ‖p.2‖ ^ M < ‖σ p‖} := by
-    simp only [mem_ofPred_eq, c₀]
-    rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξM.ne']
-    linarith [norm_pos_iff.2 hξ]
-  obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 (hO.mem_nhds hxξ)
-  -- The cone over `interior V`.
-  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
-    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hV)
-  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun y hy η hη ↦ ?_⟩
-  obtain ⟨t, ht, hη⟩ := hmem η hη
-  have h : c₀ * ‖t • η‖ ^ M < ‖σ (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
-  simp only [σ, principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
-    norm_smul, Real.norm_of_nonneg ht.le, mul_pow] at h
-  refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht M).le).le
-  linarith
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖principalSymbol s b m M y η‖ :=
+  exists_nhds_cone_le_norm_of_continuous_of_homogeneous
+    (f := fun p ↦ principalSymbol s b m M p.1 p.2) (continuous_principalSymbol s hb m M)
+    (fun y η t _ ↦ principalSymbol_smul s b m M y t η) hξ
 
 /-- **An elliptic cone.** If the principal symbol does not vanish at `ξ`, then it is bounded
 below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`, for some `c₀ > 0`. -/
@@ -583,67 +619,198 @@ private theorem exists_localFourier_iteratedLineDerivOp_sub_le {T : 𝓓'(Ω, �
           gcongr
       _ = (2 * π * ‖m 0‖ * C₁ + C₂ * ‖m 0‖) * B * (1 + ‖η‖) ^ (k + (r + 1)) := by ring
 
+/-! ### Dividing cutoffs by a matrix of smooth functions -/
+
+/-- **Dividing a test function by a matrix of smooth functions.** Let `φ` be a test function
+supported in `K`, and let `A` be a matrix of smooth functions whose determinant does not vanish on
+an open set `W ⊇ K`. For each `k` there are test functions `Ψ j` supported in `K` with
+`∑ j, A y i j Ψ j y = δ_ik φ y`, namely `Ψ j = (A⁻¹) j k φ`. If the derivatives of order at most
+`n` of the reciprocal of the determinant are bounded by `Q ≥ 0` on `K`, those of the entries of
+the adjugate by `G ≥ 0` on `K`, and those of `φ` by `B`, then those of every `Ψ j` are bounded by
+`2 ^ n Q (2 ^ n G B)`. -/
+private theorem exists_sum_mul_eq_ite {ι : Type*} [Fintype ι] [DecidableEq ι] (φ : 𝓓(Ω, ℂ))
+    {K W : Set E} (hW : IsOpen W) (hKW : K ⊆ W) (hφK : tsupport φ ⊆ K) {A : E → Matrix ι ι ℂ}
+    (hA : ∀ i j, ContDiff ℝ ∞ fun z ↦ A z i j) (hAW : ∀ y ∈ W, (A y).det ≠ 0) {n : ℕ}
+    {Q G B : ℝ} (hQ0 : 0 ≤ Q) (hG0 : 0 ≤ G)
+    (hQ : ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ ((A z).det)⁻¹) y‖ ≤ Q)
+    (hG : ∀ j k, ∀ l ≤ n, ∀ y ∈ K, ‖iteratedFDeriv ℝ l (fun z ↦ (A z).adjugate j k) y‖ ≤ G)
+    (hB : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) (k : ι) :
+    ∃ Ψ : ι → 𝓓(Ω, ℂ), (∀ j, tsupport (Ψ j) ⊆ K) ∧
+      (∀ i y, ∑ j, A y i j * Ψ j y = if i = k then φ y else 0) ∧
+      ∀ j, ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (Ψ j) y‖ ≤ 2 ^ n * Q * (2 ^ n * G * B) := by
+  have hadj (j : ι) := ContDiff.matrix_adjugate hA j k
+  -- The test functions `adj(A) j k φ`.
+  choose φ' hφ' using fun j ↦ TestFunction.exists_coe_eq_of_tsupport_subset
+    ((hadj j).mul φ.contDiff) (tsupport_mul_subset_right (f := fun z ↦ (A z).adjugate j k))
+  have hφ'K (j : ι) : tsupport (φ' j) ⊆ K := by
+    rw [hφ' j]
+    exact tsupport_mul_subset_right.trans hφK
+  have hφ'B (j : ι) : ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (φ' j) y‖ ≤ 2 ^ n * G * B := by
+    intro l hl y
+    rw [hφ' j]
+    refine (TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset isOpen_univ (subset_univ K)
+      (hadj j).contDiffOn φ.contDiff hφK (by exact_mod_cast le_top) hG0
+      (fun l' hl' z hz ↦ hG j k l' (hl'.trans hl) z hz) (fun l' hl' z ↦ hB l' (hl'.trans hl) z)
+      y).trans ?_
+    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) y)
+    gcongr
+    exact one_le_two
+  -- Divide them by the determinant.
+  choose Ψ hΨK hΨ hΨB using fun j ↦ (φ' j).exists_mul_eq_of_forall_ne_zero hW hKW (hφ'K j)
+    (ContDiff.matrix_det hA).contDiffOn hAW hQ0 hQ (hφ'B j)
+  refine ⟨Ψ, hΨK, fun i y ↦ ?_, hΨB⟩
+  by_cases hy : y ∈ W
+  · refine mul_left_cancel₀ (hAW y hy) ?_
+    have h := congrFun (Matrix.mul_adjugate (A y)) i
+    have h' := congrFun h k
+    rw [Matrix.mul_apply] at h'
+    calc (A y).det * ∑ j, A y i j * Ψ j y = ∑ j, A y i j * (A y).adjugate j k * φ y := by
+          rw [Finset.mul_sum]
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          have hj := congrFun (hφ' j) y
+          rw [← hΨ j y] at hj
+          rw [mul_assoc, ← hj]
+          ring
+      _ = (A y).det * if i = k then φ y else 0 := by
+          rw [← Finset.sum_mul, h']
+          split_ifs with hik <;> simp [hik]
+  · have hy' : y ∉ K := fun h ↦ hy (hKW h)
+    have hφy : φ y = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hy' (hφK h)
+    have hΨy (j : ι) : Ψ j y = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hy' (hΨK j h)
+    simp [hφy, hΨy]
+
 /-! ### The regularity induction -/
 
-/-- **The symbol identity.** Let `Ψ` be a cutoff with `p Ψ = φ` for the full symbol
-`p y = ∑ i ∈ s, c i a i y ∏ₗ 2πi ⟪m i l, η⟫` of `P = ∑ i ∈ s, c i a i ∂^(m i)` at the frequency
-`η`. Moving the derivatives of `P` onto the cutoff writes `L(T, φ)(η)` as `L(P T, Ψ)(η)` minus
-the errors `c i (L(∂^(m i) T, a i Ψ)(η) - ∏ₗ 2πi ⟪m i l, η⟫ L(T, a i Ψ)(η))`. -/
-private theorem localFourier_eq_localFourier_sub_sum {ι : Type*} (s : Finset ι) (c : ι → ℂ)
-    {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E)
-    (T : 𝓓'(Ω, ℂ)) {φ Ψ : 𝓓(Ω, ℂ)} {η : E}
-    (hΨ : ∀ y, (∑ i ∈ s, (c i * a i y) * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)) * Ψ y = φ y) :
-    T.localFourier φ η = (∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T)).localFourier Ψ η -
-      ∑ i ∈ s, c i * ((∂^{m i} T).localFourier (TestFunction.smulLeftCLM (ha i) Ψ) η -
-        (∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)) *
-          T.localFourier (TestFunction.smulLeftCLM (ha i) Ψ) η) := by
-  have hφ : φ = ∑ i ∈ s, (c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)) •
-      TestFunction.smulLeftCLM (ha i) Ψ := by
+/-- The terms of order `M` of the full symbol matrix of the system
+`(P T) j = ∑ i, ∑ a ∈ s, c i j a g i j a ∂^(m a) (T i)` at `y`, in the frequency `η` of the
+localized Fourier transform: `(2πi) ^ M` times its principal symbol matrix. -/
+private def topSymbolMatrix {ι τ : Type*} (s : Finset τ) (c : ι → ι → τ → ℂ)
+    (g : ι → ι → τ → E → ℝ) {k : τ → ℕ} (m : ∀ a, Fin (k a) → E) (M : ℕ) (y η : E) :
+    Matrix ι ι ℂ :=
+  Matrix.of fun i j ↦ ∑ a ∈ s with k a = M, (c i j a * g i j a y) *
+    ∏ l, (2 * π * I * ⟪m a l, η⟫ : ℂ)
+
+/-- **The symbol identity for systems.** Let `Ψ j` be cutoffs with
+`∑ j, A y i j Ψ j y = δ_iq φ y` for the matrix `A` of the terms of order `M` of the full symbol of
+the system `(P T) j = ∑ i, ∑ a ∈ s, c i j a g i j a ∂^(m a) (T i)` at the frequency `η`. Moving the
+derivatives onto the cutoffs writes `L(T q, φ)(η)` as `∑ j, L((P T) j, Ψ j)(η)` minus the errors of
+`exists_localFourier_iteratedLineDerivOp_sub_le` and the terms of order less than `M`. -/
+private theorem localFourier_eq_sum_sub_sum_sub_sum {ι τ : Type*} [Fintype ι] [DecidableEq ι]
+    (s : Finset τ) (c : ι → ι → τ → ℂ) {g : ι → ι → τ → E → ℝ}
+    (hg : ∀ i j a, ContDiff ℝ ∞ (g i j a)) {k : τ → ℕ} (m : ∀ a, Fin (k a) → E) (M : ℕ)
+    (T : ι → 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)} {Ψ : ι → 𝓓(Ω, ℂ)} {η : E} {q : ι}
+    (hΨ : ∀ i y, ∑ j, topSymbolMatrix s c g m M y η i j * Ψ j y = if i = q then φ y else 0) :
+    (T q).localFourier φ η =
+      ∑ j, (∑ i, ∑ a ∈ s, c i j a • smulLeftCLM (hg i j a) (∂^{m a} (T i))).localFourier (Ψ j) η -
+      ∑ j, ∑ i, ∑ a ∈ s, c i j a *
+        ((∂^{m a} (T i)).localFourier (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) η -
+          (∏ l, (2 * π * I * ⟪m a l, η⟫ : ℂ)) *
+            (T i).localFourier (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) η) -
+      ∑ j, ∑ i, ∑ a ∈ s with k a ≠ M, c i j a * (∏ l, (2 * π * I * ⟪m a l, η⟫ : ℂ)) *
+        (T i).localFourier (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) η := by
+  set pr : τ → ℂ := fun a ↦ ∏ l, (2 * π * I * ⟪m a l, η⟫ : ℂ)
+  set Lt : ι → ι → τ → ℂ := fun i j a ↦
+    (T i).localFourier (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) η
+  -- The cutoffs `∑ j, A i j Ψ j` are `δ_iq φ`.
+  have hcut (i : ι) : ∑ j, ∑ a ∈ s with k a = M,
+      (c i j a * pr a) • TestFunction.smulLeftCLM (hg i j a) (Ψ j) = if i = q then φ else 0 := by
     ext y
-    rw [← hΨ y, Finset.sum_mul, FunLike.coe_sum, Finset.sum_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp only [IsSMulApply.smul_apply, TestFunction.smulLeftCLM_apply, smul_eq_mul,
-      Complex.real_smul]
+    have h := hΨ i y
+    simp only [topSymbolMatrix, Matrix.of_apply, Finset.sum_mul] at h
+    rw [apply_ite (fun ψ : 𝓓(Ω, ℂ) ↦ ψ y), FunLike.coe_zero, Pi.zero_apply, ← h]
+    simp only [FunLike.coe_sum, Finset.sum_apply, IsSMulApply.smul_apply,
+      TestFunction.smulLeftCLM_apply, smul_eq_mul, Complex.real_smul, pr]
+    refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun a _ ↦ ?_
     ring
-  rw [localFourier_sum, ← Finset.sum_sub_distrib]
-  nth_rw 1 [hφ]
-  rw [localFourier_sum_cutoff]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [localFourier_smul_cutoff, localFourier_smul, localFourier_smulLeftCLM]
+  have hq : (T q).localFourier φ η = ∑ i, ∑ j, ∑ a ∈ s with k a = M, c i j a * pr a * Lt i j a := by
+    rw [Finset.sum_eq_single q (fun i _ hi ↦ ?_) (fun h ↦ absurd (Finset.mem_univ q) h)]
+    · have h0 := congrArg (fun ψ ↦ (T q).localFourier ψ η) (hcut q)
+      simp only [↓reduceIte, localFourier_sum_cutoff, localFourier_smul_cutoff] at h0
+      exact h0.symm
+    · have h0 := congrArg (fun ψ ↦ (T i).localFourier ψ η) (hcut i)
+      simp only [hi, ↓reduceIte, localFourier_zero_cutoff, localFourier_sum_cutoff,
+        localFourier_smul_cutoff] at h0
+      exact h0
+  have hP (j : ι) : (∑ i, ∑ a ∈ s, c i j a • smulLeftCLM (hg i j a) (∂^{m a} (T i))).localFourier
+      (Ψ j) η = ∑ i, ∑ a ∈ s, c i j a *
+        (∂^{m a} (T i)).localFourier (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) η := by
+    simp_rw [localFourier_sum, localFourier_smul, localFourier_smulLeftCLM]
+  simp_rw [hP, hq]
+  rw [Finset.sum_comm (γ := ι) (f := fun i j ↦ ∑ a ∈ s with k a = M, c i j a * pr a * Lt i j a)]
+  simp_rw [← Finset.sum_sub_distrib, ← Finset.sum_filter_add_sum_filter_not s (fun a ↦ k a = M)]
+  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [pr, Lt, mul_sub, Finset.sum_sub_distrib, ne_eq, mul_assoc]
   ring
 
-/-- The arithmetic of the symbol identity at large frequencies: bounds on `w ^ (j + 1) ‖X‖` and on
-every `w ^ (j + 1) ‖e i‖` in terms of `D = BΨ` with `D w ^ M = 2 ^ n Q B` give the bound
-`2 ^ n Q (CP + (∑ i ∈ s, ‖c i‖ Cd i) 2 ^ n G) B w ^ k₀` on `w ^ (j + 1) ‖X - ∑ i ∈ s, c i e i‖`. -/
-private theorem mul_norm_sub_sum_le {ι : Type*} {s : Finset ι} {c e : ι → ℂ} {X : ℂ} {w : ℝ}
-    (hw : 1 ≤ w) {j k₀ n M : ℕ} {k : ι → ℕ} (hk : ∀ i ∈ s, k i ≤ M) {B Q G CP D : ℝ}
-    {Cd : ι → ℝ} (hCd0 : ∀ i, 0 ≤ Cd i) (hG0 : 0 ≤ G) (hCP0 : 0 ≤ CP) (hD0 : 0 ≤ D)
-    (hD : D * w ^ M = 2 ^ n * Q * B) (hX : w ^ (j + 1) * ‖X‖ ≤ CP * D)
-    (he : ∀ i ∈ s, w ^ (j + 1) * ‖e i‖ ≤ Cd i * (2 ^ n * G * D) * w ^ (k₀ + k i)) :
-    w ^ (j + 1) * ‖X - ∑ i ∈ s, c i * e i‖ ≤
-      2 ^ n * Q * (CP + (∑ i ∈ s, ‖c i‖ * Cd i) * (2 ^ n * G)) * B * w ^ k₀ := by
-  have hDle : D ≤ D * w ^ M * w ^ k₀ :=
-    le_mul_of_one_le_right hD0 (one_le_pow₀ hw) |>.trans
-      (le_mul_of_one_le_right (mul_nonneg hD0 (by positivity)) (one_le_pow₀ hw))
-  refine (mul_le_mul_of_nonneg_left (norm_sub_le _ _) (by positivity)).trans ?_
-  rw [mul_add]
-  refine (add_le_add (hX.trans (mul_le_mul_of_nonneg_left hDle hCP0))
-    ((mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans
-      (Finset.mul_sum s _ _).le)).trans ?_
-  have hsum : ∑ i ∈ s, w ^ (j + 1) * ‖c i * e i‖ ≤
-      ∑ i ∈ s, ‖c i‖ * (Cd i * (2 ^ n * G * D) * w ^ (k₀ + M)) := by
-    refine Finset.sum_le_sum fun i hi ↦ ?_
-    rw [norm_mul, mul_left_comm]
-    refine mul_le_mul_of_nonneg_left ((he i hi).trans (mul_le_mul_of_nonneg_left
-      (pow_le_pow_right₀ hw (by have := hk i hi; omega)) ?_)) (norm_nonneg _)
-    exact mul_nonneg (hCd0 i) (mul_nonneg (mul_nonneg (by positivity) hG0) hD0)
-  refine (add_le_add le_rfl hsum).trans_eq ?_
-  have hsum' : ∑ i ∈ s, ‖c i‖ * (Cd i * (2 ^ n * G * D) * w ^ (k₀ + M)) =
-      (∑ i ∈ s, ‖c i‖ * Cd i) * (2 ^ n * G) * (D * w ^ M) * w ^ k₀ := by
-    rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  rw [hsum', hD]
-  ring
+/-- **Dividing cutoffs by the principal symbol matrix of an elliptic system.** Let the
+determinant of the matrix `A y η` of the terms of order `M` of the full symbol of a system be
+bounded below by `c' (1 + ‖η‖) ^ (M card ι)` for `y` in an open set `W` containing a compact set
+`K` and for `η ∈ Γ` with `R ≤ ‖η‖`. Then every cutoff `φ` supported in `K` is
+`∑ j, A i j Ψ j = δ_iq φ` for cutoffs `Ψ j` supported in `K` whose derivatives of order at most `n`
+are bounded by `Z B / (1 + ‖η‖) ^ M` when those of `φ` are bounded by `B`, with `Z` independent of
+`φ`, `B` and `η`. -/
+private theorem exists_forall_exists_sum_topSymbolMatrix_mul_eq_ite {ι τ : Type*} [Fintype ι]
+    [DecidableEq ι] {s : Finset τ} {c : ι → ι → τ → ℂ} {g : ι → ι → τ → E → ℝ}
+    (hg : ∀ i j a, ContDiff ℝ ∞ (g i j a)) {k : τ → ℕ} {m : ∀ a, Fin (k a) → E} {M : ℕ}
+    (hk : ∀ a ∈ s, k a ≤ M) {K W Γ : Set E} (hK : IsCompact K) (hW : IsOpen W) (hKW : K ⊆ W)
+    {R c' : ℝ} (hc' : 0 < c') (hp : ∀ y ∈ W, ∀ η ∈ Γ, R ≤ ‖η‖ →
+      c' * (1 + ‖η‖) ^ (M * Fintype.card ι) ≤ ‖(topSymbolMatrix s c g m M y η).det‖) (n : ℕ) :
+    ∃ Z, 0 ≤ Z ∧ ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) → ∀ η ∈ Γ, R ≤ ‖η‖ → ∀ q : ι,
+        ∃ Ψ : ι → 𝓓(Ω, ℂ), (∀ j, tsupport (Ψ j) ⊆ K) ∧
+          (∀ i y, ∑ j, topSymbolMatrix s c g m M y η i j * Ψ j y = if i = q then φ y else 0) ∧
+          ∀ j, ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (Ψ j) y‖ ≤ Z * B / (1 + ‖η‖) ^ M := by
+  set r := Fintype.card ι
+  have hb (i j : ι) (a : τ) : ContDiff ℝ ∞ fun y ↦ c i j a * (g i j a y : ℂ) :=
+    contDiff_const.mul (ofRealCLM.contDiff.comp (hg i j a))
+  have hA (η : E) (i j : ι) : ContDiff ℝ ∞ fun y ↦ topSymbolMatrix s c g m M y η i j :=
+    ContDiff.sum fun a _ ↦ (hb i j a).mul contDiff_const
+  -- The derivatives of the entries are `O((1 + ‖η‖) ^ M)` on `K`.
+  choose Ae hAe0 hAe using fun ij : ι × ι ↦ exists_norm_iteratedFDeriv_symbol_le
+    (s := s.filter (k · = M)) (m := m) (b := fun a y ↦ c ij.1 ij.2 a * g ij.1 ij.2 a y)
+    (fun a ↦ hb ij.1 ij.2 a) (fun a ha ↦ hk a (Finset.mem_filter.1 ha).1) hK n
+  set A₀ := ∑ ij : ι × ι, Ae ij
+  have hA₀ : 0 ≤ A₀ := Finset.sum_nonneg fun ij _ ↦ hAe0 ij
+  have hent : ∀ y ∈ K, ∀ η : E, ∀ i j, ∀ l ≤ n, ‖iteratedFDeriv ℝ l
+      (fun z ↦ topSymbolMatrix s c g m M z η i j) y‖ ≤ A₀ * (1 + ‖η‖) ^ M := fun y hy η i j l hl ↦
+    (hAe (i, j) y hy η l hl).trans (by
+      gcongr
+      exact Finset.single_le_sum (fun ij _ ↦ hAe0 ij) (Finset.mem_univ (i, j)))
+  -- Bounds for the reciprocal of the determinant and for the adjugate.
+  set Ad := ((r.factorial : ℝ) * 2 ^ (n * r) * A₀ ^ r)
+  set Aa := ((r.factorial : ℝ) * 2 ^ (n * r) * A₀ ^ (r - 1))
+  obtain ⟨Q, hQ0, hQ⟩ := TauCeti.exists_norm_iteratedFDeriv_inv_le_div (E := E) (𝕜 := ℂ) n Ad hc'
+  refine ⟨4 ^ n * Q * Aa, by positivity, fun φ hφK B hB η hη hηR q ↦ ?_⟩
+  have hr : 1 ≤ r := Fintype.card_pos_iff.2 ⟨q⟩
+  have hpow (e : ℕ) : (A₀ * (1 + ‖η‖) ^ M) ^ e = A₀ ^ e * (1 + ‖η‖) ^ (M * e) := by
+    rw [mul_pow, pow_mul]
+  have hdet (y : E) (hy : y ∈ K) : ∀ l ≤ n, ‖iteratedFDeriv ℝ l
+      (fun z ↦ (topSymbolMatrix s c g m M z η).det) y‖ ≤ Ad * (1 + ‖η‖) ^ (M * r) :=
+    fun l hl ↦ (TauCeti.norm_iteratedFDeriv_det_le (hA η) (by exact_mod_cast le_top)
+      (hent y hy η) l hl).trans_eq (by
+        simp only [Finset.prod_const, Finset.card_univ, Finset.sum_const, Fintype.card_perm,
+          nsmul_eq_mul, hpow, Ad]
+        ring)
+  have hadj (y : E) (hy : y ∈ K) (j k : ι) : ∀ l ≤ n, ‖iteratedFDeriv ℝ l
+      (fun z ↦ (topSymbolMatrix s c g m M z η).adjugate j k) y‖ ≤
+        Aa * (1 + ‖η‖) ^ (M * (r - 1)) :=
+    fun l hl ↦ (TauCeti.norm_iteratedFDeriv_adjugate_apply_le (hA η) (by exact_mod_cast le_top)
+      (hent y hy η) j k l hl).trans_eq (by rw [hpow]; ring)
+  obtain ⟨Ψ, hΨK, hΨ, hΨB⟩ := exists_sum_mul_eq_ite φ hW hKW hφK (hA η)
+    (fun y hy ↦ norm_pos_iff.1 ((mul_pos hc' (by positivity)).trans_le (hp y hy η hη hηR)))
+    (Q := Q / (1 + ‖η‖) ^ (M * r)) (G := Aa * (1 + ‖η‖) ^ (M * (r - 1))) (by positivity)
+    (by positivity)
+    (fun l hl y hy ↦ hQ _ _ y (by positivity) ((ContDiff.matrix_det (hA η)).of_le (by simp))
+      (hdet y hy) (hp y (hKW hy) η hη hηR) l hl)
+    (fun j k l hl y hy ↦ hadj y hy j k l hl) hB q
+  refine ⟨Ψ, hΨK, hΨ, fun j l hl y ↦ (hΨB j l hl y).trans_eq ?_⟩
+  -- `(1 + ‖η‖) ^ (M (r - 1)) (1 + ‖η‖) ^ M = (1 + ‖η‖) ^ (M r)`.
+  have hsplit : (1 + ‖η‖) ^ (M * r) = (1 + ‖η‖) ^ (M * (r - 1)) * (1 + ‖η‖) ^ M := by
+    rw [← pow_add]
+    congr 1
+    rw [← Nat.mul_succ, Nat.succ_eq_add_one, Nat.sub_add_cancel hr]
+  rw [hsplit, show (4 : ℝ) ^ n = 2 ^ n * 2 ^ n by rw [← mul_pow]; norm_num]
+  field_simp
 
 omit [InnerProductSpace ℝ E] in
 /-- In the regularity induction, frequencies of norm less than `R` cost only the factor `1 + R`. -/
@@ -655,126 +822,327 @@ private theorem one_add_norm_pow_succ_mul_le {η : E} {R : ℝ} (hηR : ‖η‖
         mul_le_mul (by linarith) hz (by positivity) (by linarith [norm_nonneg η])
     _ = (1 + R) * Y * (1 + ‖η‖) ^ k₀ := by ring
 
-/-- **One step of the regularity induction.** Let `P = ∑ i ∈ s, c i a i ∂^(m i)` have orders at
-most `M`, and suppose that on an open set `W ⊇ K` its full symbol is bounded below by
-`c' (1 + ‖η‖) ^ M` for `η ∈ Γ` outside a ball, and that the localized Fourier transforms of `P T`
-decay rapidly on `Γ`, uniformly over the cutoffs supported in the compact set `K` with bounded
-derivatives. If those of `T` are `O(B (1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ j)` on `Γ`, uniformly over the
-cutoffs supported in `K` whose derivatives of order at most `ρ` are bounded by `B`, then they are
-`O(B (1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ (j + 1))` for the cutoffs whose derivatives of some larger order
-`ρ'` are bounded by `B`. At large frequencies, divide the cutoff by the full symbol and apply the
-symbol identity `localFourier_eq_localFourier_sub_sum`. -/
-private theorem exists_localFourier_le_succ {ι : Type*} {s : Finset ι} {c : ι → ℂ}
-    {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
-    (hk : ∀ i ∈ s, k i ≤ M) {T : 𝓓'(Ω, ℂ)} {K W Γ : Set E} (hK : IsCompact K) (hW : IsOpen W)
-    (hKW : K ⊆ W)
-    (hP : ∀ N : ℕ, ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
-      (∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) → ∀ η ∈ Γ,
-        (1 + ‖η‖) ^ N * ‖(∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T)).localFourier φ η‖ ≤
+omit [InnerProductSpace ℝ E] in
+/-- A bound `w ‖∑ x ∈ u, f x‖ ≤ ∑ x ∈ u, b x` from termwise bounds `w ‖f x‖ ≤ b x`, for `w ≥ 0`. -/
+private theorem mul_norm_sum_le_of_le {α : Type*} {u : Finset α} {f : α → ℂ} {b : α → ℝ} {w : ℝ}
+    (hw : 0 ≤ w) (h : ∀ x ∈ u, w * ‖f x‖ ≤ b x) : w * ‖∑ x ∈ u, f x‖ ≤ ∑ x ∈ u, b x :=
+  (mul_le_mul_of_nonneg_left (norm_sum_le _ _) hw).trans
+    ((Finset.mul_sum _ _ _).trans_le (Finset.sum_le_sum h))
+
+/-- **A term of lower order gains one power.** If `(1 + ‖η‖) ^ d ‖L‖ ≤ C' (1 + ‖η‖) ^ k₀`, then
+the term `c ∏ₗ 2πi ⟪m l, η⟫ L` of order `k < M` satisfies
+`(1 + ‖η‖) ^ (d + 1) ‖c ∏ₗ 2πi ⟪m l, η⟫ L‖ ≤ ‖c‖ (2π) ^ k ∏ₗ ‖m l‖ C' (1 + ‖η‖) ^ (k₀ + M)`. -/
+private theorem one_add_norm_pow_succ_mul_norm_mul_prod_mul_le {k M d k₀ : ℕ} (hkM : k + 1 ≤ M)
+    (c : ℂ) (m : Fin k → E) {η : E} {L : ℂ} {C' : ℝ} (hC' : 0 ≤ C')
+    (hL : (1 + ‖η‖) ^ d * ‖L‖ ≤ C' * (1 + ‖η‖) ^ k₀) :
+    (1 + ‖η‖) ^ (d + 1) * ‖c * (∏ l, (2 * π * I * ⟪m l, η⟫ : ℂ)) * L‖ ≤
+      ‖c‖ * ((2 * π) ^ k * ∏ l, ‖m l‖) * C' * (1 + ‖η‖) ^ (k₀ + M) := by
+  have hw : 1 ≤ 1 + ‖η‖ := le_add_of_nonneg_right (norm_nonneg η)
+  have hpr : ‖∏ l, (2 * π * I * ⟪m l, η⟫ : ℂ)‖ ≤ (2 * π) ^ k * (∏ l, ‖m l‖) * (1 + ‖η‖) ^ k :=
+    (norm_prod_two_pi_I_inner_le _ _).trans (by gcongr; linarith)
+  calc (1 + ‖η‖) ^ (d + 1) * ‖c * (∏ l, (2 * π * I * ⟪m l, η⟫ : ℂ)) * L‖
+      = ‖c‖ * ‖∏ l, (2 * π * I * ⟪m l, η⟫ : ℂ)‖ * (1 + ‖η‖) * ((1 + ‖η‖) ^ d * ‖L‖) := by
+        rw [norm_mul, norm_mul]
+        ring
+    _ ≤ ‖c‖ * ((2 * π) ^ k * (∏ l, ‖m l‖) * (1 + ‖η‖) ^ k) * (1 + ‖η‖) *
+          (C' * (1 + ‖η‖) ^ k₀) := by gcongr
+    _ = ‖c‖ * ((2 * π) ^ k * ∏ l, ‖m l‖) * C' * (1 + ‖η‖) ^ (k₀ + (k + 1)) := by ring
+    _ ≤ _ := by gcongr
+
+omit [InnerProductSpace ℝ E] in
+/-- The arithmetic of the symbol identity for systems at large frequencies: bounds on the three
+groups of terms of `X - Y - Y'` in terms of `D` with `D w ^ M = Z B` give the bound
+`Z (r CP + G' (S₁ + S₂)) B w ^ k₀` on `w ^ (d + 1) ‖X - Y - Y'‖`. -/
+private theorem mul_norm_sub_sub_le {X Y Y' : ℂ} {w : ℝ} (hw : 1 ≤ w) {d k₀ M : ℕ}
+    {r CP S₁ S₂ G' D Z B : ℝ} (hr : 0 ≤ r) (hCP : 0 ≤ CP) (hD0 : 0 ≤ D) (hD : D * w ^ M = Z * B)
+    (hX : w ^ (d + 1) * ‖X‖ ≤ r * (CP * D))
+    (hY : w ^ (d + 1) * ‖Y‖ ≤ S₁ * (G' * D) * w ^ (k₀ + M))
+    (hY' : w ^ (d + 1) * ‖Y'‖ ≤ S₂ * (G' * D) * w ^ (k₀ + M)) :
+    w ^ (d + 1) * ‖X - Y - Y'‖ ≤ Z * (r * CP + G' * (S₁ + S₂)) * B * w ^ k₀ := by
+  have hDle : D ≤ D * w ^ M * w ^ k₀ :=
+    le_mul_of_one_le_right hD0 (one_le_pow₀ hw) |>.trans
+      (le_mul_of_one_le_right (by positivity) (one_le_pow₀ hw))
+  calc w ^ (d + 1) * ‖X - Y - Y'‖
+      ≤ w ^ (d + 1) * ‖X‖ + w ^ (d + 1) * ‖Y‖ + w ^ (d + 1) * ‖Y'‖ := by
+        rw [← mul_add, ← mul_add]
+        gcongr
+        exact (norm_sub_le _ _).trans (add_le_add (norm_sub_le _ _) le_rfl)
+    _ ≤ r * (CP * (D * w ^ M * w ^ k₀)) + S₁ * (G' * D) * w ^ (k₀ + M) +
+          S₂ * (G' * D) * w ^ (k₀ + M) :=
+        add_le_add (add_le_add (hX.trans (by gcongr)) hY) hY'
+    _ = Z * (r * CP + G' * (S₁ + S₂)) * B * w ^ k₀ := by
+        rw [pow_add]
+        linear_combination (r * CP + G' * (S₁ + S₂)) * w ^ k₀ * hD
+
+/-- **The regularity step at large frequencies.** Let the cutoffs `Ψ j`, supported in `K`, satisfy
+`∑ j, A i j Ψ j = δ_iq φ` for the matrix `A` of the terms of order `M` of the full symbol of the
+system at the frequency `η ∈ Γ`, with derivatives of order at most `n` bounded by
+`Z B / (1 + ‖η‖) ^ M`. Suppose that the localized Fourier transforms of every `(P T) j` are
+`O(B' / (1 + ‖η‖) ^ (d + 1))` and those of every `T i` are `O(B' (1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ d)` on
+`Γ` for the cutoffs supported in `K` with derivatives bounded by `B'`, and that the errors of
+`exists_localFourier_iteratedLineDerivOp_sub_le` are bounded accordingly. Then
+`L(T q, φ)` is `O(B (1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ (d + 1))`, by the symbol identity
+`localFourier_eq_sum_sub_sum_sub_sum`. -/
+private theorem one_add_norm_pow_succ_mul_norm_localFourier_le {ι τ : Type*} [Fintype ι]
+    [DecidableEq ι] {s : Finset τ} {c : ι → ι → τ → ℂ} {g : ι → ι → τ → E → ℝ}
+    (hg : ∀ i j a, ContDiff ℝ ∞ (g i j a)) {k : τ → ℕ} {m : ∀ a, Fin (k a) → E} {M : ℕ}
+    (hk : ∀ a ∈ s, k a ≤ M) {T : ι → 𝓓'(Ω, ℂ)} {K Γ : Set E} {n rP ρ d k₀ : ℕ}
+    (hn : ρ + M ≤ n) (hrP : rP ≤ n) {CP C G : ℝ} (hCP0 : 0 ≤ CP) (hC : 0 ≤ C) (hG0 : 0 ≤ G)
+    (hCP : ∀ j, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ rP, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) → ∀ η ∈ Γ, (1 + ‖η‖) ^ (d + 1) *
+        ‖(∑ i, ∑ a ∈ s, c i j a • smulLeftCLM (hg i j a) (∂^{m a} (T i))).localFourier φ η‖ ≤
+          CP * B)
+    (hG : ∀ i j, ∀ a ∈ s, ∀ l ≤ n, ∀ y ∈ K,
+      ‖iteratedFDeriv ℝ l (fun y ↦ (g i j a y : ℂ)) y‖ ≤ G)
+    (hT : ∀ i, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ ρ, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) →
+        ∀ η ∈ Γ, (1 + ‖η‖) ^ d * ‖(T i).localFourier φ η‖ ≤ C * B * (1 + ‖η‖) ^ k₀)
+    {Cd : ι → τ → ℝ} (hCd0 : ∀ i a, 0 ≤ Cd i a) (hCd : ∀ i a, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K →
+      ∀ B : ℝ, (∀ l ≤ ρ + k a, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) → ∀ η ∈ Γ,
+        (1 + ‖η‖) ^ (d + 1) * ‖(∂^{m a} (T i)).localFourier φ η -
+          (∏ l, (2 * π * I * ⟪m a l, η⟫ : ℂ)) * (T i).localFourier φ η‖ ≤
+            Cd i a * B * (1 + ‖η‖) ^ (k₀ + k a))
+    {φ : 𝓓(Ω, ℂ)} {q : ι} {η : E} (hη : η ∈ Γ) {Ψ : ι → 𝓓(Ω, ℂ)}
+    (hΨK : ∀ j, tsupport (Ψ j) ⊆ K)
+    (hΨ : ∀ i y, ∑ j, topSymbolMatrix s c g m M y η i j * Ψ j y = if i = q then φ y else 0)
+    {Z B : ℝ} (hZB : 0 ≤ Z * B)
+    (hΨB : ∀ j, ∀ l ≤ n, ∀ y, ‖iteratedFDeriv ℝ l (Ψ j) y‖ ≤ Z * B / (1 + ‖η‖) ^ M) :
+    (1 + ‖η‖) ^ (d + 1) * ‖(T q).localFourier φ η‖ ≤
+      Z * (Fintype.card ι * CP + 2 ^ n * G * ((∑ j, ∑ i, ∑ a ∈ s, ‖c i j a‖ * Cd i a) +
+        ∑ j, ∑ i, ∑ a ∈ s with k a ≠ M, ‖c i j a‖ * ((2 * π) ^ k a * ∏ l, ‖m a l‖) * C)) * B *
+        (1 + ‖η‖) ^ k₀ := by
+  set D := Z * B / (1 + ‖η‖) ^ M
+  have hD0 : 0 ≤ D := by positivity
+  have hgΨ (i j : ι) (a : τ) (ha : a ∈ s) : ∀ l ≤ n, ∀ y,
+      ‖iteratedFDeriv ℝ l (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) y‖ ≤ 2 ^ n * G * D :=
+    norm_iteratedFDeriv_smulLeftCLM_le (hg i j a) (Ψ j) (hΨK j) hG0
+      (fun l hl y hy ↦ hG i j a ha l hl y hy) (hΨB j)
+  have hgΨK (i j : ι) (a : τ) : tsupport (TestFunction.smulLeftCLM (hg i j a) (Ψ j)) ⊆ K :=
+    (tsupport_smulLeftCLM_subset (hg i j a) (Ψ j)).trans (inter_subset_right.trans (hΨK j))
+  have hw0 : 0 ≤ (1 + ‖η‖) ^ (d + 1) := by positivity
+  rw [localFourier_eq_sum_sub_sum_sub_sum s c hg m M T hΨ]
+  refine mul_norm_sub_sub_le (d := d) (k₀ := k₀) (M := M) (r := Fintype.card ι)
+    (G' := 2 ^ n * G) (le_add_of_nonneg_right (norm_nonneg η)) (by positivity) hCP0 hD0
+    (div_mul_cancel₀ _ (by positivity))
+    -- The terms with `(P T) j`.
+    ((mul_norm_sum_le_of_le hw0 fun j _ ↦ hCP j (Ψ j) (hΨK j) D
+      (fun l hl y ↦ hΨB j l (hl.trans hrP) y) η hη).trans_eq (by simp))
+    -- The errors of `exists_localFourier_iteratedLineDerivOp_sub_le`.
+    ((mul_norm_sum_le_of_le hw0 fun j _ ↦ mul_norm_sum_le_of_le hw0 fun i _ ↦
+      mul_norm_sum_le_of_le (b := fun a ↦ ‖c i j a‖ * (Cd i a * (2 ^ n * G * D) *
+        (1 + ‖η‖) ^ (k₀ + M))) hw0 fun a ha ↦ by
+        rw [norm_mul, mul_left_comm]
+        refine mul_le_mul_of_nonneg_left ((hCd i a _ (hgΨK i j a) _
+          (fun l hl ↦ hgΨ i j a ha l (hl.trans (by have := hk a ha; omega))) η hη).trans ?_)
+          (norm_nonneg _)
+        exact mul_le_mul_of_nonneg_left (pow_le_pow_right₀
+          (le_add_of_nonneg_right (norm_nonneg η)) (by have := hk a ha; omega))
+          (by have := hCd0 i a; positivity)).trans_eq (by
+      simp only [Finset.sum_mul]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+        Finset.sum_congr rfl fun _ _ ↦ by ring))
+    -- The terms of order less than `M`.
+    ((mul_norm_sum_le_of_le hw0 fun j _ ↦ mul_norm_sum_le_of_le hw0 fun i _ ↦
+      mul_norm_sum_le_of_le hw0 fun a ha ↦
+        one_add_norm_pow_succ_mul_norm_mul_prod_mul_le (M := M) (d := d) (k₀ := k₀)
+          (by have := hk a (Finset.mem_filter.1 ha).1; have := (Finset.mem_filter.1 ha).2; omega)
+          (c i j a) (m a) (by positivity) (hT i _ (hgΨK i j a) _ (fun l hl ↦
+            hgΨ i j a (Finset.mem_filter.1 ha).1 l
+              (hl.trans ((Nat.le_add_right ρ M).trans hn))) η hη)).trans_eq (by
+      simp only [Finset.sum_mul]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+        Finset.sum_congr rfl fun _ _ ↦ by ring))
+
+/-- **One step of the regularity induction for systems.** Let the system
+`(P T) j = ∑ i, ∑ a ∈ s, c i j a g i j a ∂^(m a) (T i)` have orders at most `M`, and suppose that
+on an open set `W ⊇ K` the determinant of the matrix of the terms of order `M` of its full symbol
+is bounded below by `c' (1 + ‖η‖) ^ (M card ι)` for `η ∈ Γ` outside a ball, and that the localized
+Fourier transforms of every `(P T) j` decay rapidly on `Γ`, uniformly over the cutoffs supported in
+the compact set `K` with bounded derivatives. If those of every `T i` are
+`O(B (1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ d)` on `Γ`, uniformly over the cutoffs supported in `K` whose
+derivatives of order at most `ρ` are bounded by `B`, then they are
+`O(B (1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ (d + 1))` for the cutoffs whose derivatives of some larger
+order `ρ'` are bounded by `B`. At large frequencies, divide the cutoff by the principal symbol
+matrix (`exists_forall_exists_sum_topSymbolMatrix_mul_eq_ite`) and apply
+`one_add_norm_pow_succ_mul_norm_localFourier_le`. -/
+private theorem exists_localFourier_le_succ {ι τ : Type*} [Fintype ι] [DecidableEq ι]
+    {s : Finset τ} {c : ι → ι → τ → ℂ} {g : ι → ι → τ → E → ℝ}
+    (hg : ∀ i j a, ContDiff ℝ ∞ (g i j a)) {k : τ → ℕ} {m : ∀ a, Fin (k a) → E} {M : ℕ}
+    (hk : ∀ a ∈ s, k a ≤ M) {T : ι → 𝓓'(Ω, ℂ)} {K W Γ : Set E} (hK : IsCompact K)
+    (hW : IsOpen W) (hKW : K ⊆ W)
+    (hP : ∀ N : ℕ, ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ j, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ r, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) → ∀ η ∈ Γ, (1 + ‖η‖) ^ N *
+        ‖(∑ i, ∑ a ∈ s, c i j a • smulLeftCLM (hg i j a) (∂^{m a} (T i))).localFourier φ η‖ ≤
           C * B)
     {R c' : ℝ} (hc' : 0 < c') (hp : ∀ y ∈ W, ∀ η ∈ Γ, R ≤ ‖η‖ →
-      c' * (1 + ‖η‖) ^ M ≤ ‖∑ i ∈ s, (c i * a i y) * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖)
-    {j k₀ ρ : ℕ} {C : ℝ} (hC : 0 ≤ C) (hT : ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
-      (∀ i ≤ ρ, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) →
-        ∀ η ∈ Γ, (1 + ‖η‖) ^ j * ‖T.localFourier φ η‖ ≤ C * B * (1 + ‖η‖) ^ k₀) :
-    ∃ (ρ' : ℕ) (C' : ℝ), 0 ≤ C' ∧ ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
-      (∀ i ≤ ρ', ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) →
-        ∀ η ∈ Γ, (1 + ‖η‖) ^ (j + 1) * ‖T.localFourier φ η‖ ≤ C' * B * (1 + ‖η‖) ^ k₀ := by
-  obtain ⟨rP, CP, hCP0, hCP⟩ := hP (j + 1)
+      c' * (1 + ‖η‖) ^ (M * Fintype.card ι) ≤ ‖(topSymbolMatrix s c g m M y η).det‖)
+    {d k₀ ρ : ℕ} {C : ℝ} (hC : 0 ≤ C) (hT : ∀ i, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ ρ, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) →
+        ∀ η ∈ Γ, (1 + ‖η‖) ^ d * ‖(T i).localFourier φ η‖ ≤ C * B * (1 + ‖η‖) ^ k₀) :
+    ∃ (ρ' : ℕ) (C' : ℝ), 0 ≤ C' ∧ ∀ i, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ ρ', ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) →
+        ∀ η ∈ Γ, (1 + ‖η‖) ^ (d + 1) * ‖(T i).localFourier φ η‖ ≤ C' * B * (1 + ‖η‖) ^ k₀ := by
+  obtain ⟨rP, CP, hCP0, hCP⟩ := hP (d + 1)
   set n := max (ρ + M) rP
-  have hb : ∀ i, ContDiff ℝ ∞ fun y ↦ c i * (a i y : ℂ) :=
-    fun i ↦ contDiff_const.mul (ofRealCLM.contDiff.comp (ha i))
-  obtain ⟨A, -, hA⟩ := exists_norm_iteratedFDeriv_symbol_le hb hk hK n
-  obtain ⟨Q, hQ0, hQ⟩ := exists_norm_iteratedFDeriv_inv_le_div (E := E) (𝕜 := ℂ) n A hc'
-  obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := n)
-    (fun i _ ↦ (ofRealCLM.contDiff.comp (ha i)).of_le (by exact_mod_cast le_top)) hK
-  choose Cd hCd0 hCd using fun i ↦ exists_localFourier_iteratedLineDerivOp_sub_le hC hT (m i)
-  set S := ∑ i ∈ s, ‖c i‖ * Cd i
-  have hS : 0 ≤ S := Finset.sum_nonneg fun i _ ↦ mul_nonneg (norm_nonneg _) (hCd0 i)
-  refine ⟨n, max ((1 + R) * C) (2 ^ n * Q * (CP + S * (2 ^ n * G))), le_max_of_le_right
-    (by positivity), fun φ hφ B hB η hη ↦ ?_⟩
+  obtain ⟨Z, hZ0, hZ⟩ :=
+    exists_forall_exists_sum_topSymbolMatrix_mul_eq_ite (Ω := Ω) hg hk hK hW hKW hc' hp n
+  obtain ⟨G, hG0, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact
+    (Finset.univ ×ˢ Finset.univ ×ˢ s) (f := fun x : ι × ι × τ ↦ fun y ↦ (g x.1 x.2.1 x.2.2 y : ℂ))
+    (n := n) (fun x _ ↦ (ofRealCLM.contDiff.comp (hg _ _ _)).of_le (by exact_mod_cast le_top)) hK
+  choose Cd hCd0 hCd using fun (i : ι) (a : τ) ↦
+    exists_localFourier_iteratedLineDerivOp_sub_le hC (hT i) (m a)
+  set S := (∑ j, ∑ i, ∑ a ∈ s, ‖c i j a‖ * Cd i a) +
+    ∑ j, ∑ i, ∑ a ∈ s with k a ≠ M, ‖c i j a‖ * ((2 * π) ^ k a * ∏ l, ‖m a l‖) * C
+  have hS : 0 ≤ S := add_nonneg (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦
+    Finset.sum_nonneg fun _ _ ↦ mul_nonneg (norm_nonneg _) (hCd0 _ _)) (by positivity)
+  refine ⟨n, max ((1 + R) * C) (Z * (Fintype.card ι * CP + 2 ^ n * G * S)),
+    le_max_of_le_right (by positivity), fun q φ hφ B hB η hη ↦ ?_⟩
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
-  have hw : 1 ≤ 1 + ‖η‖ := le_add_of_nonneg_right (norm_nonneg η)
   rcases lt_or_ge ‖η‖ R with hηR | hηR
   · refine (one_add_norm_pow_succ_mul_le hηR
-      (hT φ hφ B (fun i hi ↦ hB i (by omega)) η hη)).trans ?_
+      (hT q φ hφ B (fun l hl ↦ hB l (by omega)) η hη)).trans ?_
     rw [← mul_assoc]
     gcongr
     exact le_max_left _ _
-  -- At large frequencies, divide the cutoff by the full symbol `p`.
-  set p : E → ℂ := fun y ↦ ∑ i ∈ s, (c i * a i y) * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)
-  have hp' : ContDiff ℝ ∞ p := ContDiff.sum fun i _ ↦ (hb i).mul contDiff_const
-  have hpW : ∀ y ∈ W, p y ≠ 0 := fun y hy ↦
-    norm_pos_iff.1 ((mul_pos hc' (by positivity)).trans_le (hp y hy η hη hηR))
-  obtain ⟨Ψ, hΨK, hpΨ, hΨb⟩ := φ.exists_mul_eq_of_forall_ne_zero hW hKW hφ hp'.contDiffOn hpW
-    (n := n) (by positivity) (fun l hl z hz ↦ hQ p ((1 + ‖η‖) ^ M) z (by positivity)
-      (hp'.of_le (by exact_mod_cast le_top)) (fun j hj ↦ hA z hz η j hj)
-      (hp z (hKW hz) η hη hηR) l hl) hB
-  rw [localFourier_eq_localFourier_sub_sum s c ha m T hpΨ]
-  refine (mul_norm_sub_sum_le hw hk hCd0 hG0 hCP0 (Q := Q) (B := B)
-    (D := 2 ^ n * (Q / (1 + ‖η‖) ^ M) * B)
-    (mul_nonneg (mul_nonneg (by positivity) (div_nonneg hQ0 (by positivity))) hB0)
-    (by field_simp)
-    (hCP Ψ hΨK _ (fun i hi ↦ hΨb i (hi.trans (le_max_right _ _))) η hη) fun i hi ↦
-      hCd i _ ((tsupport_smulLeftCLM_subset (ha i) Ψ).trans (inter_subset_right.trans hΨK)) _
-        (fun l hl ↦ norm_iteratedFDeriv_smulLeftCLM_le (ha i) Ψ hΨK hG0
-          (fun l hl y hy ↦ hG i hi l hl y hy) hΨb l (hl.trans (by have := hk i hi; omega)))
-        η hη).trans ?_
-  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_right _ _) hB0)
-    (by positivity)
+  -- At large frequencies, divide the cutoff by the principal symbol matrix.
+  obtain ⟨Ψ, hΨK, hΨ, hΨB⟩ := hZ φ hφ B (fun l hl ↦ hB l hl) η hη hηR q
+  refine (one_add_norm_pow_succ_mul_norm_localFourier_le hg hk (le_max_left _ _)
+    (le_max_right _ _) hCP0 hC hG0 hCP (fun i j a ha ↦ hG (i, j, a) (by simp [ha])) hT hCd0 hCd
+    hη hΨK hΨ (by positivity) hΨB).trans ?_
+  gcongr
+  exact le_max_right _ _
 
 /-! ### Microlocal elliptic regularity -/
 
 variable [FiniteDimensional ℝ E]
 
-/-- **Microlocal elliptic regularity for differential operators** (Hörmander I, Theorem 8.3.1).
-Let `P = ∑ i ∈ s, c i a i ∂^(m i)` have smooth real coefficients `a i`, complex constants `c i` and
-orders `k i ≤ M`, and let `ξ` be noncharacteristic for `P` at `x`: the principal symbol with the
-coefficients frozen at `x`, `principalSymbol s (fun i y ↦ c i * a i y) m M x`, does not vanish at
-`ξ`. If `P T` is microlocally smooth at `(x, ξ)`, then so is `T`. -/
-theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι : Type*}
-    {s : Finset ι} {c : ι → ℂ} {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ}
-    {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {T : 𝓓'(Ω, ℂ)} {x ξ : E}
-    (hP : (∑ i ∈ s, c i • Distribution.smulLeftCLM (ha i) (∂^{m i} T)).IsMicrolocallySmoothAt x ξ)
-    (hξ : principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0) :
-    T.IsMicrolocallySmoothAt x ξ := by
+omit [FiniteDimensional ℝ E] in
+/-- **An elliptic cone for a system.** If the matrix of the principal symbols of the entries of a
+system, with the coefficients frozen at `x`, is invertible at `ξ`, then for `y` near `x` and `η` in
+an open cone around `ξ` with `1 ≤ ‖η‖`, the determinant of the matrix of the terms of order `M` of
+the full symbol is bounded below by a multiple of `(1 + ‖η‖) ^ (M card ι)`. -/
+private theorem exists_nhds_cone_le_norm_det_topSymbolMatrix {ι τ : Type*} [Fintype ι]
+    [DecidableEq ι] {s : Finset τ} {c : ι → ι → τ → ℂ} {g : ι → ι → τ → E → ℝ}
+    (hg : ∀ i j a, Continuous (g i j a)) {k : τ → ℕ} {m : ∀ a, Fin (k a) → E} {M : ℕ} {x ξ : E}
+    (hξ : (Matrix.of fun i j ↦ principalSymbol s (fun a y ↦ c i j a * g i j a y) m M x ξ).det ≠ 0) :
+    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∃ c' : ℝ, 0 < c' ∧ ∀ y ∈ U, ∀ η ∈ Γ, 1 ≤ ‖η‖ →
+        c' * (1 + ‖η‖) ^ (M * Fintype.card ι) ≤ ‖(topSymbolMatrix s c g m M y η).det‖ := by
+  set N := M * Fintype.card ι
+  set σ : E × E → Matrix ι ι ℂ := fun p ↦
+    Matrix.of fun i j ↦ principalSymbol s (fun a y ↦ c i j a * g i j a y) m M p.1 p.2
+  have hb (i j : ι) (a : τ) : Continuous fun y ↦ c i j a * (g i j a y : ℂ) :=
+    continuous_const.mul (continuous_ofReal.comp (hg i j a))
+  -- The determinant of the principal symbol matrix is homogeneous of degree `N`.
+  have hσc : Continuous fun p ↦ (σ p).det := Continuous.matrix_det <|
+    continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_principalSymbol s (hb i j) m M
+  have hσh (y η : E) (t : ℝ) (_ : 0 < t) : (σ (y, t • η)).det = (t : ℂ) ^ N * (σ (y, η)).det := by
+    have h : σ (y, t • η) = ((t : ℂ) ^ M) • σ (y, η) := by
+      ext i j
+      simp [σ, principalSymbol_smul]
+    rw [h, Matrix.det_smul, ← pow_mul]
+  obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, hell⟩ :=
+    exists_nhds_cone_le_norm_of_continuous_of_homogeneous hσc hσh hξ
+  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, (2 * π) ^ N * c₀ / 2 ^ N, by positivity,
+    fun y hy η hη h1 ↦ ?_⟩
+  -- The terms of order `M` are `(2πi) ^ M` times the principal symbols.
+  have htop : topSymbolMatrix s c g m M y η = ((2 * π * I) ^ M) • σ (y, η) := by
+    ext i j
+    simp only [topSymbolMatrix, σ, Matrix.of_apply, Matrix.smul_apply, smul_eq_mul,
+      principalSymbol_def, constCoeffPrincipalSymbol_def, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a ha ↦ ?_
+    have hpow : (2 * π * I : ℂ) ^ k a = (2 * π * I) ^ M := by rw [(Finset.mem_filter.1 ha).2]
+    rw [prod_two_pi_I_inner, hpow]
+    ring
+  have h2π : ‖(2 * π * I : ℂ)‖ = 2 * π := by simp [abs_of_pos pi_pos]
+  have hpow : (1 + ‖η‖) ^ N ≤ 2 ^ N * ‖η‖ ^ N := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (by positivity) (by linarith) N
+  rw [htop, Matrix.det_smul, norm_mul, norm_pow, norm_pow, h2π, ← pow_mul]
+  calc (2 * π) ^ N * c₀ / 2 ^ N * (1 + ‖η‖) ^ N ≤ (2 * π) ^ N * c₀ / 2 ^ N * (2 ^ N * ‖η‖ ^ N) := by
+        gcongr
+    _ = (2 * π) ^ N * (c₀ * ‖η‖ ^ N) := by field_simp
+    _ ≤ (2 * π) ^ N * ‖(σ (y, η)).det‖ := by gcongr; exact hell y hy η hη
+
+/-- Rapid decay of the localized Fourier transforms of finitely many distributions microlocally
+smooth at `(x, ξ)`, on one neighbourhood of `x` and one cone around `ξ`, uniformly over the cutoffs
+with bounded derivatives. -/
+private theorem exists_nhds_cone_forall_forall_one_add_norm_pow_mul_norm_localFourier_le
+    {ι : Type*} [Finite ι] {R : ι → 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : ∀ j, (R j).IsMicrolocallySmoothAt x ξ) :
+    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ N : ℕ, ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ j, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U → ∀ B : ℝ,
+        (∀ l ≤ r, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) →
+          ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖(R j).localFourier φ η‖ ≤ C * B := by
+  have := Fintype.ofFinite ι
+  choose U hU Γ hΓ hξ hcone hdecay using fun j ↦
+    (h j).exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
+  refine ⟨⋂ j, U j, Filter.iInter_mem.2 hU, ⋂ j, Γ j, isOpen_iInter_of_finite hΓ,
+    mem_iInter.2 hξ, fun t ht η hη ↦ mem_iInter.2 fun j ↦ hcone j t ht η (mem_iInter.1 hη j),
+    fun N ↦ ?_⟩
+  choose r C hC0 hC using fun j ↦ hdecay j N
+  refine ⟨∑ j, r j, ∑ j, C j, Finset.sum_nonneg fun j _ ↦ hC0 j, fun j φ hφ B hB η hη ↦ ?_⟩
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
+  refine (hC j φ (hφ.trans (iInter_subset _ j)) B (fun l hl ↦ hB l (hl.trans
+    (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ j)))) η
+    (mem_iInter.1 hη j)).trans ?_
+  gcongr
+  exact Finset.single_le_sum (fun j _ ↦ hC0 j) (Finset.mem_univ j)
+
+/-- **Microlocal elliptic regularity for systems of differential operators** (Hörmander I,
+Theorem 8.3.1; Taylor, Lecture I, §7). Let `P` be the square system
+`(P T) j = ∑ i, ∑ a ∈ s, c i j a g i j a ∂^(m a) (T i)` with smooth real coefficients `g i j a`,
+complex constants `c i j a` and orders `k a ≤ M`, and let `ξ` be noncharacteristic for `P` at `x`:
+the matrix of the principal symbols of its entries with the coefficients frozen at `x`,
+`principalSymbol s (fun a y ↦ c i j a * g i j a y) m M x ξ`, is invertible. If every component
+`(P T) j` is microlocally smooth at `(x, ξ)`, then so is every component `T i`. -/
+theorem IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι τ : Type*}
+    [Fintype ι] [DecidableEq ι] {s : Finset τ} {c : ι → ι → τ → ℂ} {g : ι → ι → τ → E → ℝ}
+    (hg : ∀ i j a, ContDiff ℝ ∞ (g i j a)) {k : τ → ℕ} {m : ∀ a, Fin (k a) → E} {M : ℕ}
+    (hk : ∀ a ∈ s, k a ≤ M) {T : ι → 𝓓'(Ω, ℂ)} {x ξ : E}
+    (hP : ∀ j, (∑ i, ∑ a ∈ s, c i j a • Distribution.smulLeftCLM (hg i j a)
+      (∂^{m a} (T i))).IsMicrolocallySmoothAt x ξ)
+    (hξ : (Matrix.of fun i j ↦ principalSymbol s (fun a y ↦ c i j a * g i j a y) m M x ξ).det ≠ 0)
+    (i : ι) : (T i).IsMicrolocallySmoothAt x ξ := by
   have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 hP
+    obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 (hP i)
     exact φ.tsupport_subset (subset_tsupport _ hφ)
-  have hb : ∀ i, ContDiff ℝ ∞ fun y ↦ c i * (a i y : ℂ) :=
-    fun i ↦ contDiff_const.mul (ofRealCLM.contDiff.comp (ha i))
-  obtain ⟨U₁, hU₁, Γ₁, hΓ₁, hξ₁, hcone₁, c₀, hc₀, hell⟩ :=
-    exists_nhds_cone_le_norm_principalSymbol (fun i ↦ (hb i).continuous) hξ
+  obtain ⟨U₁, hU₁, Γ₁, hΓ₁, hξ₁, hcone₁, c', hc', hp⟩ :=
+    exists_nhds_cone_le_norm_det_topSymbolMatrix (fun i j a ↦ (hg i j a).continuous) hξ
   obtain ⟨U₂, hU₂, Γ₂, hΓ₂, hξ₂, hcone₂, hdecay⟩ :=
-    hP.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
+    exists_nhds_cone_forall_forall_one_add_norm_pow_mul_norm_localFourier_le hP
   -- Compact neighbourhoods `K ⊆ W = interior K'` of `x`, with `K' ⊆ U₁ ∩ U₂ ∩ Ω`.
-  obtain ⟨K', hK'x, hK'sub, hK'c⟩ :=
+  obtain ⟨K', hK'x, hK'sub, -⟩ :=
     local_compact_nhds (inter_mem (inter_mem hU₁ hU₂) (Ω.isOpen.mem_nhds hx))
   obtain ⟨K, hKx, hKW, hKc⟩ := local_compact_nhds (interior_mem_nhds.2 hK'x)
   have hKΩ : K ⊆ Ω := hKW.trans (interior_subset.trans (hK'sub.trans inter_subset_right))
-  -- On `W` the full symbol is elliptic at large frequencies in `Γ₁ ∩ Γ₂`.
-  obtain ⟨A, -, hA⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := 0)
-    (fun i _ ↦ (hb i).of_le (by exact_mod_cast le_top)) hK'c
-  obtain ⟨R, c', hc', hp⟩ :=
-    exists_mul_one_add_norm_pow_le_norm_sum_mul_prod (b := fun i y ↦ c i * (a i y : ℂ)) hk hc₀
-      (U := interior K') (Γ := Γ₁ ∩ Γ₂) (A := A)
-      (fun y hy i hi ↦ by simpa using hA i hi 0 le_rfl y (interior_subset hy))
-      (fun y hy η hη ↦ hell y (hK'sub (interior_subset hy)).1.1 η hη.1)
-  -- By induction on `j`, the localized Fourier transforms of `T` with cutoffs supported in `K`
-  -- are `O((1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ j)` on `Γ₁ ∩ Γ₂`, uniformly over bounded cutoffs.
-  obtain ⟨k₀, C₀, hC₀, h₀⟩ := exists_forall_norm_localFourier_le T (K := ⟨K, hKc⟩) hKΩ
-  have hind (j : ℕ) : ∃ (ρ : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
-      (∀ i ≤ ρ, ∀ y, ‖iteratedFDeriv ℝ i φ y‖ ≤ B) → ∀ η ∈ Γ₁ ∩ Γ₂,
-        (1 + ‖η‖) ^ j * ‖T.localFourier φ η‖ ≤ C * B * (1 + ‖η‖) ^ k₀ := by
-    induction j with
-    | zero => exact ⟨k₀, C₀, hC₀, fun φ hφ B hB η _ ↦ by simpa using h₀ φ hφ B hB η⟩
-    | succ j ih =>
+  have hKU₂ : K ⊆ U₂ := hKW.trans (interior_subset.trans (hK'sub.trans
+    (inter_subset_left.trans inter_subset_right)))
+  -- By induction on `d`, the localized Fourier transforms of every `T i` with cutoffs supported
+  -- in `K` are `O((1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ d)` on `Γ₁ ∩ Γ₂`, uniformly over bounded cutoffs.
+  choose k₀' C₀ hC₀ h₀ using fun i ↦ exists_forall_norm_localFourier_le (T i) (K := ⟨K, hKc⟩) hKΩ
+  set k₀ := ∑ i, k₀' i
+  have hind (d : ℕ) : ∃ (ρ : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ i, ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ K → ∀ B : ℝ,
+      (∀ l ≤ ρ, ∀ y, ‖iteratedFDeriv ℝ l φ y‖ ≤ B) → ∀ η ∈ Γ₁ ∩ Γ₂,
+        (1 + ‖η‖) ^ d * ‖(T i).localFourier φ η‖ ≤ C * B * (1 + ‖η‖) ^ k₀ := by
+    induction d with
+    | zero =>
+      refine ⟨k₀, ∑ i, C₀ i, Finset.sum_nonneg fun i _ ↦ hC₀ i, fun i φ hφ B hB η _ ↦ ?_⟩
+      have hki : k₀' i ≤ k₀ := Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ i)
+      have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 (Nat.zero_le _) 0)
+      rw [pow_zero, one_mul]
+      refine (h₀ i φ hφ B (fun l hl ↦ hB l (hl.trans hki)) η).trans <|
+        mul_le_mul (mul_le_mul_of_nonneg_right
+          (Finset.single_le_sum (fun i _ ↦ hC₀ i) (Finset.mem_univ i)) hB0)
+          (pow_le_pow_right₀ (le_add_of_nonneg_right (norm_nonneg η)) hki) (by positivity)
+          (mul_nonneg (Finset.sum_nonneg fun i _ ↦ hC₀ i) hB0)
+    | succ d ih =>
       obtain ⟨ρ, C, hC, hT⟩ := ih
-      refine exists_localFourier_le_succ ha hk hKc isOpen_interior hKW (fun N ↦ ?_) hc' hp hC hT
+      refine exists_localFourier_le_succ (Γ := Γ₁ ∩ Γ₂) (R := 1) hg hk hKc isOpen_interior hKW
+        (fun N ↦ ?_) hc' (fun y hy η hη h1 ↦ hp y (hK'sub (interior_subset hy)).1.1 η hη.1 h1)
+        hC hT
       obtain ⟨r, C', hC', h⟩ := hdecay N
-      exact ⟨r, C', hC', fun φ hφ B hB η hη ↦
-        h φ (hφ.trans (hKW.trans (interior_subset.trans (hK'sub.trans
-          (inter_subset_left.trans inter_subset_right))))) B hB η hη.2⟩
+      exact ⟨r, C', hC', fun j φ hφ B hB η hη ↦ h j φ (hφ.trans hKU₂) B hB η hη.2⟩
   obtain ⟨φ, hφK, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤) hKx hKΩ (1 : ℂ)
   refine isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], Γ₁ ∩ Γ₂, hΓ₁.inter hΓ₂, ⟨hξ₁, hξ₂⟩,
     fun t ht η hη ↦ ⟨hcone₁ t ht η hη.1, hcone₂ t ht η hη.2⟩, fun N ↦ ?_⟩
@@ -784,10 +1152,47 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι :
   refine ⟨C * B, fun η hη ↦ ?_⟩
   have hpos : 0 < (1 + ‖η‖) ^ k₀ := by positivity
   refine le_of_mul_le_mul_left ?_ hpos
-  calc (1 + ‖η‖) ^ k₀ * ((1 + ‖η‖) ^ N * ‖T.localFourier φ η‖)
-      = (1 + ‖η‖) ^ (k₀ + N) * ‖T.localFourier φ η‖ := by ring
-    _ ≤ C * B * (1 + ‖η‖) ^ k₀ := h φ hφK B hB η hη
+  calc (1 + ‖η‖) ^ k₀ * ((1 + ‖η‖) ^ N * ‖(T i).localFourier φ η‖)
+      = (1 + ‖η‖) ^ (k₀ + N) * ‖(T i).localFourier φ η‖ := by ring
+    _ ≤ C * B * (1 + ‖η‖) ^ k₀ := h i φ hφK B hB η hη
     _ = (1 + ‖η‖) ^ k₀ * (C * B) := mul_comm _ _
+
+/-- **Microlocal elliptic regularity for systems of differential operators**: for the square
+system `(P T) j = ∑ i, ∑ a ∈ s, c i j a g i j a ∂^(m a) (T i)` with smooth real coefficients and
+orders `k a ≤ M`, every component satisfies `WF(T i) ⊆ (⋃ j, WF((P T) j)) ∪ Char(P)`, where
+`Char(P)` is the set of `(x, ξ)` with `ξ ≠ 0` at which the matrix of the principal symbols of the
+entries, with the coefficients frozen at `x`, is not invertible. -/
+theorem waveFrontSet_subset_iUnion_waveFrontSet_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp_union
+    {ι τ : Type*} [Fintype ι] [DecidableEq ι] (s : Finset τ) (c : ι → ι → τ → ℂ)
+    {g : ι → ι → τ → E → ℝ} (hg : ∀ i j a, ContDiff ℝ ∞ (g i j a)) {k : τ → ℕ}
+    (m : ∀ a, Fin (k a) → E) {M : ℕ} (hk : ∀ a ∈ s, k a ≤ M) (T : ι → 𝓓'(Ω, ℂ)) (i : ι) :
+    (T i).waveFrontSet ⊆
+      (⋃ j, (∑ i, ∑ a ∈ s, c i j a • smulLeftCLM (hg i j a) (∂^{m a} (T i))).waveFrontSet) ∪
+        {p | p.2 ≠ 0 ∧ (Matrix.of fun i j ↦
+          principalSymbol s (fun a y ↦ c i j a * g i j a y) m M p.1 p.2).det = 0} := by
+  rintro ⟨x, ξ⟩ hp
+  obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
+  by_contra h
+  simp only [mem_union, mem_iUnion, mem_waveFrontSet_iff, mem_ofPred_eq, not_or, not_exists,
+    not_and, not_not] at h
+  exact hT (IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk
+    (fun j ↦ h.1 j hx hξ) (fun h0 ↦ (h.2 hξ) h0 |>.elim) i)
+
+/-- **Microlocal elliptic regularity for differential operators** (Hörmander I, Theorem 8.3.1).
+Let `P = ∑ i ∈ s, c i a i ∂^(m i)` have smooth real coefficients `a i`, complex constants `c i` and
+orders `k i ≤ M`, and let `ξ` be noncharacteristic for `P` at `x`: the principal symbol with the
+coefficients frozen at `x`, `principalSymbol s (fun i y ↦ c i * a i y) m M x`, does not vanish at
+`ξ`. If `P T` is microlocally smooth at `(x, ξ)`, then so is `T`. This is the system
+`IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp` with one component. -/
+theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι : Type*}
+    {s : Finset ι} {c : ι → ℂ} {a : ι → E → ℝ} (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ}
+    {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (hP : (∑ i ∈ s, c i • Distribution.smulLeftCLM (ha i) (∂^{m i} T)).IsMicrolocallySmoothAt x ξ)
+    (hξ : principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0) :
+    T.IsMicrolocallySmoothAt x ξ :=
+  IsMicrolocallySmoothAt.of_sum_sum_smul_smulLeftCLM_iteratedLineDerivOp (ι := Unit)
+    (c := fun _ _ ↦ c) (fun _ _ ↦ ha) hk (T := fun _ ↦ T) (fun _ ↦ by simpa using hP)
+    (by simpa using hξ) ()
 
 /-- **Microlocal elliptic regularity for differential operators**: `WF(T) ⊆ WF(P T) ∪ Char(P)` for
 `P = ∑ i ∈ s, c i a i ∂^(m i)` with smooth real coefficients `a i` and orders `k i ≤ M`, where

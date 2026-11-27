@@ -23,6 +23,9 @@ the remainder of Taylor's formula enters the coefficients of a local operator.
 
 In particular a product `f₁ ⋯ fᵣ • u` of `r` functions vanishing at `x` with a map `u` vanishes to
 order `r` at `x` (`TauCeti.iteratedFDeriv_prod_smul_eq_zero_of_lt`).
+
+The Leibniz rule also bounds the derivatives of a finite product of functions by those of its
+factors (`TauCeti.norm_iteratedFDeriv_prod_le_of_forall_le`).
 -/
 
 public section
@@ -150,5 +153,53 @@ theorem iteratedFDeriv_prod_smul_eq_zero_of_lt {r : ℕ} {f : Fin r → E → �
     obtain rfl : i = 0 := by omega
     ext
     simp [hfx]
+
+/-- **Leibniz bound for a finite product.** If the derivatives of order at most `k ≤ N` at `y` of
+finitely many `C^N` functions `f i` are bounded by `C i`, then those of their product are bounded
+by `2 ^ (k * #u) ∏ i ∈ u, C i`. -/
+theorem norm_iteratedFDeriv_prod_le_of_forall_le {ι A' : Type*} [NormedCommRing A']
+    [NormedAlgebra 𝕜 A'] [NormOneClass A'] (u : Finset ι) {f : ι → E → A'} {N : WithTop ℕ∞}
+    (hf : ∀ i ∈ u, ContDiff 𝕜 N (f i)) {k : ℕ} (hk : k ≤ N) {C : ι → ℝ} {y : E}
+    (hC : ∀ i ∈ u, ∀ l ≤ k, ‖iteratedFDeriv 𝕜 l (f i) y‖ ≤ C i) :
+    ∀ l ≤ k, ‖iteratedFDeriv 𝕜 l (fun z ↦ ∏ i ∈ u, f i z) y‖ ≤
+      2 ^ (k * u.card) * ∏ i ∈ u, C i := by
+  classical
+  induction u using Finset.induction_on with
+  | empty =>
+    intro l _
+    rcases Nat.eq_zero_or_pos l with rfl | hl
+    · simp
+    · simp [iteratedFDeriv_const_of_ne hl.ne']
+  | insert i u hi ih =>
+    intro l hl
+    have hCi : 0 ≤ C i :=
+      (norm_nonneg _).trans (hC i (Finset.mem_insert_self i u) 0 (Nat.zero_le _))
+    have ih' := ih (fun j hj ↦ hf j (Finset.mem_insert_of_mem hj))
+      (fun j hj ↦ hC j (Finset.mem_insert_of_mem hj))
+    have hP0 : 0 ≤ 2 ^ (k * u.card) * ∏ j ∈ u, C j :=
+      (norm_nonneg _).trans (ih' 0 (Nat.zero_le _))
+    simp_rw [Finset.prod_insert hi]
+    refine (norm_iteratedFDeriv_mul_le (hf i (Finset.mem_insert_self i u))
+      (contDiff_prod fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)) y
+      ((Nat.cast_le.2 hl).trans hk)).trans ?_
+    calc ∑ q ∈ Finset.range (l + 1), (l.choose q : ℝ) * ‖iteratedFDeriv 𝕜 q (f i) y‖ *
+          ‖iteratedFDeriv 𝕜 (l - q) (fun z ↦ ∏ j ∈ u, f j z) y‖
+        ≤ ∑ q ∈ Finset.range (l + 1), (l.choose q : ℝ) * C i *
+          (2 ^ (k * u.card) * ∏ j ∈ u, C j) := by
+          refine Finset.sum_le_sum fun q hq ↦ ?_
+          have hq' : q ≤ l := Nat.lt_succ_iff.1 (Finset.mem_range.1 hq)
+          gcongr
+          · exact hC i (Finset.mem_insert_self i u) q (hq'.trans hl)
+          · exact ih' _ ((Nat.sub_le _ _).trans hl)
+      _ = 2 ^ l * C i * (2 ^ (k * u.card) * ∏ j ∈ u, C j) := by
+          rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
+          push_cast
+          ring
+      _ ≤ 2 ^ k * C i * (2 ^ (k * u.card) * ∏ j ∈ u, C j) := by
+          gcongr
+          · exact one_le_two
+      _ = 2 ^ (k * (insert i u).card) * (C i * ∏ j ∈ u, C j) := by
+          rw [Finset.card_insert_of_notMem hi, mul_add, mul_one, pow_add]
+          ring
 
 end TauCeti
