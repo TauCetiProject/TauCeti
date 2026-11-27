@@ -59,7 +59,7 @@ theorem continuous_of_finite_pi_cstarModule {ι : Type*} [Finite ι]
   have he : Continuous e := continuous_pi fun i ↦
     (MulOpposite.continuous_op.comp ((continuous_apply i).comp
       (WithCStarModule.equivL ℂ (A := Aᵐᵒᵖ) (E := ι → A)).continuous)).congr
-      fun w ↦ (WithCStarModule.piOpLinearEquiv_apply w i).symm
+      fun w ↦ (TauCeti.WithCStarModule.piOpLinearEquiv_apply w i).symm
   exact ((f.comp e.symm.toLinearMap).continuous_on_pi.comp he).congr fun w ↦ by simp
 
 /-- If `f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E` and `g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` satisfy

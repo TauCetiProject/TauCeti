@@ -58,13 +58,17 @@ def piOpLinearEquiv (A ι : Type*) [Ring A] :
   _root_.WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ (ι → A) ≪≫ₗ
     LinearEquiv.piCongrRight (fun _ ↦ MulOpposite.opLinearEquiv Aᵐᵒᵖ)
 
+@[simp] theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (i : ι) :
+    piOpLinearEquiv A ι w i = op (w i) := by
+  simp [piOpLinearEquiv]
+
+@[simp] theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
+    (piOpLinearEquiv A ι).symm v i = unop (v i) := by
+  simp [piOpLinearEquiv]
+
 end TauCeti.WithCStarModule
 
 namespace WithCStarModule
-
-@[simp] theorem piOpLinearEquiv_apply {A ι : Type*} [Ring A] (w : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) (i : ι) :
-    TauCeti.WithCStarModule.piOpLinearEquiv A ι w i = op (w i) := by
-  simp [TauCeti.WithCStarModule.piOpLinearEquiv]
 
 /-- Every vector in `C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` expands in the standard basis `i ↦ Pi.single i 1`. -/
 theorem sum_op_smul_single_one {A ι : Type*} [Fintype ι] [DecidableEq ι] [Ring A]
@@ -75,14 +79,6 @@ theorem sum_op_smul_single_one {A ι : Type*} [Fintype ι] [DecidableEq ι] [Rin
   simpa [MulOpposite.smul_eq_mul_unop, Pi.single_apply] using Fintype.sum_ite_eq j fun i ↦ v i
 
 end WithCStarModule
-
-namespace Pi
-
-@[simp] theorem piOpLinearEquiv_symm_apply {A ι : Type*} [Ring A] (v : ι → Aᵐᵒᵖ) (i : ι) :
-    (TauCeti.WithCStarModule.piOpLinearEquiv A ι).symm v i = unop (v i) := by
-  simp [TauCeti.WithCStarModule.piOpLinearEquiv]
-
-end Pi
 
 namespace CStarModule
 
