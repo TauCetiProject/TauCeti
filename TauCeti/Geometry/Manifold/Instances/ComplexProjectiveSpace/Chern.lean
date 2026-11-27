@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Clutching
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Symplectic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
+public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
+import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Generator
 
 /-!
 # The first Chern number of complex projective space
@@ -73,5 +75,18 @@ theorem firstChernHom_fubiniStudyForm_apply_mk_lineSquare :
       (Additive.ofMul (Quotient.mk _ (lineSquare n))) = n + 2 := by
   rw [firstChernHom_fubiniStudyForm_eq_clutchingNumberHom_tangentSpace,
     clutchingNumberHom_tangentSpace_lineSquare]
+
+/-- **The generator of `π₂(CPⁿ⁺¹)` has first Chern number `n + 2`** for the Fubini–Study form:
+it is the class of the coordinate line
+(`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`). -/
+@[simp]
+theorem firstChernHom_fubiniStudyForm_apply_pi2MulEquivInt_symm_ofAdd_one :
+    (isSymplectic_fubiniStudyForm (n := n + 1)).isNondegenerate.firstChernHom
+      (mk (n + 1) (affineUnitVector 1 0))
+      (Additive.ofMul ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
+        (Multiplicative.ofAdd 1))) = n + 2 := by
+  rw [pi2MulEquivInt_symm_ofAdd_one]
+  exact (apply_lineClass n fun y a ↦ isSymplectic_fubiniStudyForm.isNondegenerate.firstChernHom y
+    (Additive.ofMul a)).trans firstChernHom_fubiniStudyForm_apply_mk_lineSquare
 
 end TauCeti.ComplexProjectiveSpace

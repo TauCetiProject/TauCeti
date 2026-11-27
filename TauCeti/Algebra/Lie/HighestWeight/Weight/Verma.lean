@@ -108,7 +108,7 @@ private theorem prod_smul_vermaGenerator_mem_weightSpace {κ : Type*} {f : κ �
   | nil => simpa using vermaGenerator_mem_weightSpace b lam
   | cons i word ih =>
     simp only [List.map_cons, List.prod_cons, List.sum_cons]
-    rw [mul_smul, vermaModule_ι_smul]
+    rw [mul_smul, UniversalEnvelopingAlgebra.cyclicModule_ι_smul]
     convert lie_mem_weightSpace_of_mem_weightSpace (hf i) ih using 2
     ext h
     simp only [LinearMap.add_apply, Pi.add_apply]

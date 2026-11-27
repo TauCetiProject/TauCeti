@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ZMod
-public import TauCeti.Topology.Algebra.Group.Heisenberg
+public import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Automorphism
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Basic
 import TauCeti.Data.Fin.Basic

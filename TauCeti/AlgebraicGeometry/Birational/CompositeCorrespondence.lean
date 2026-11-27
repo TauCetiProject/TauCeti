@@ -37,10 +37,12 @@ The projections of `X ×_S (Y ×_S Z)` to the absolute products `X × Y`, `X × 
 `AlgebraicGeometry.Scheme.RationalMap.graph` (through their closed immersions), giving `(q_X, q_Y)`,
 `(q_X, q_Z)` and `(q_Y, q_Z)`. For the first two this is
 `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le`, since `f_U` and `(g ∘ f)_U` are
-restrictions of the representatives of `f` and `g ∘ f` on their domains. For `(q_Y, q_Z)` it is
-`AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_le_of_homOfLE_comp_eq` on `U` intersected with
-the domain of the composite of the representatives of `f` and `g`, where `(f_U, (g ∘ f)_U)` is
-`γ_g` after the restriction of the representative of `f`. The three morphisms are
+restrictions of the representatives of `f` and `g ∘ f` on their domains. For `(q_Y, q_Z)` the
+kernels are compared on the dense open `U ∩ f⁻¹(V_g)`
+(`AlgebraicGeometry.Scheme.RationalMap.compositeDomainYZ`), `U` intersected with the domain of the
+composite of the representatives of `f` and `g`: there `(f_U, (g ∘ f)_U)` is `γ_g` after the
+restriction `AlgebraicGeometry.Scheme.RationalMap.compositeYZToDomain` of the representative of `f`
+(`AlgebraicGeometry.Scheme.RationalMap.homOfLE_opensGraph_tripleToYZ`). The three morphisms are
 proper when their composites with the first projection of the target graph (`q_X`, `q_X`, `q_Y`)
 are, since the projections are separated: for the first two when `Y` and `Z` are proper over `S`,
 and for the third when `X` and `Z` are.
@@ -51,6 +53,10 @@ and for the third when `X` and `Z` are.
 * `AlgebraicGeometry.Scheme.RationalMap.compositeToY`,
   `AlgebraicGeometry.Scheme.RationalMap.compositeToZ`: the morphisms `f_U` and `(g ∘ f)_U`.
 * `AlgebraicGeometry.Scheme.RationalMap.compositeLift`: the morphism `(f_U, (g ∘ f)_U)`.
+* `AlgebraicGeometry.Scheme.RationalMap.compositeDomainYZ`: the dense open `U ∩ f⁻¹(V_g)`, with
+  `V_g` the domain of the representative of `g`.
+* `AlgebraicGeometry.Scheme.RationalMap.compositeYZToDomain`: the restriction of the representative
+  of `f` to `U ∩ f⁻¹(V_g)`, as a morphism into `V_g`.
 * `AlgebraicGeometry.Scheme.RationalMap.compositeCorrespondence`: the correspondence `W_{f,g}`,
   with its closed immersion `compositeCorrespondenceι` into `X ×_S (Y ×_S Z)`, its projections
   `compositeCorrespondenceFst`, `compositeCorrespondenceSndY`, `compositeCorrespondenceSndZ`, and
@@ -69,11 +75,19 @@ and for the third when `X` and `Z` are.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_compositeCorrespondence`: over a
   field, for `X` integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the dimension
   of `X`.
+* `AlgebraicGeometry.Scheme.RationalMap.surjective_compositeCorrespondenceToGraphYZ`: for `X`, `Z`
+  proper over `S` and `γ_g` quasi-compact, `(q_Y, q_Z)` is surjective: on `U ∩ f⁻¹(V_g)`
+  (`AlgebraicGeometry.Scheme.RationalMap.compositeDomainYZ`) it is the dominant restriction of `f`
+  followed by the dominant inclusion of `V_g` into `Γ_g`.
 * `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphXY`,
   `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphXZ`,
   `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphYZ`: the three
   morphisms to the graphs are proper, the first two for `Y`, `Z` proper over `S` and the third for
   `X`, `Z` proper over `S`.
+* `AlgebraicGeometry.Scheme.RationalMap.isModification_compositeCorrespondenceToGraphXY`,
+  `AlgebraicGeometry.Scheme.RationalMap.isModification_compositeCorrespondenceToGraphXZ`:
+  `(q_X, q_Y)` and `(q_X, q_Z)` are modifications, so proper and birational, for `Y`, `Z` proper
+  over `S` and the relevant open inclusions quasi-compact.
 
 ## References
 
@@ -307,34 +321,116 @@ theorem ker_graphLift_le_map_tripleToXZ :
     ((compositeDomain_le_domain_comp f g).trans_eq (f.comp g).toPartialMap_domain.symm) _ _
     (by simp) (by simp [compositeToZ_eq])
 
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- The open `U ∩ f⁻¹(V_g)` of `X`: `U` intersected with the domain of the composite of the
+representatives of `f` and `g`, on which the representative of `f` maps into the domain `V_g` of
+the representative of `g`. -/
+def compositeDomainYZ : X.Opens :=
+  compositeDomain f g ⊓ (f.representative.comp g.representative).domain
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- Unfolding lemma for `compositeDomainYZ`. -/
+theorem compositeDomainYZ_def : compositeDomainYZ f g =
+    compositeDomain f g ⊓ (f.representative.comp g.representative).domain := (rfl)
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- `U ∩ f⁻¹(V_g)` lies in `U`. -/
+theorem compositeDomainYZ_le_compositeDomain : compositeDomainYZ f g ≤ compositeDomain f g :=
+  inf_le_left
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- `U ∩ f⁻¹(V_g)` lies in the domain of the composite of the representatives of `f` and `g`. -/
+theorem compositeDomainYZ_le_comp_domain :
+    compositeDomainYZ f g ≤ (f.representative.comp g.representative).domain :=
+  inf_le_right
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- The open `U ∩ f⁻¹(V_g)` is dense. -/
+theorem dense_compositeDomainYZ : Dense (compositeDomainYZ f g : Set X) :=
+  (dense_compositeDomain f g).inter_of_isOpen_left
+    (f.representative.comp g.representative).dense_domain (compositeDomain f g).isOpen
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- The restriction of the representative of `f` to `U ∩ f⁻¹(V_g)`, as a morphism into the domain
+`V_g` of the representative of `g`. -/
+def compositeYZToDomain : (compositeDomainYZ f g).toScheme ⟶ g.representative.domain :=
+  X.homOfLE (compositeDomainYZ_le_comp_domain f g) ≫
+    PartialMap.compDomainRestrict f.representative g.representative
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- Unfolding lemma for `compositeYZToDomain`. -/
+theorem compositeYZToDomain_def : compositeYZToDomain f g =
+    X.homOfLE (compositeDomainYZ_le_comp_domain f g) ≫
+      PartialMap.compDomainRestrict f.representative g.representative := (rfl)
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- `compositeYZToDomain`, read in `Y`, is the representative of `f` on `U ∩ f⁻¹(V_g)`. -/
+@[reassoc (attr := simp)]
+theorem compositeYZToDomain_ι :
+    compositeYZToDomain f g ≫ g.representative.domain.ι =
+      X.homOfLE ((compositeDomainYZ_le_comp_domain f g).trans
+        (PartialMap.comp_domain_le _ _)) ≫ f.representative.hom := by
+  rw [compositeYZToDomain_def, Category.assoc, PartialMap.compDomainRestrict_ι,
+    Scheme.homOfLE_homOfLE_assoc]
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- `compositeYZToDomain` followed by the representative of `g` is the composite of the
+representatives of `f` and `g` on `U ∩ f⁻¹(V_g)`. -/
+@[reassoc (attr := simp)]
+theorem compositeYZToDomain_hom :
+    compositeYZToDomain f g ≫ g.representative.hom =
+      X.homOfLE (compositeDomainYZ_le_comp_domain f g) ≫
+        (f.representative.comp g.representative).hom := by
+  rw [compositeYZToDomain_def, Category.assoc, PartialMap.compDomainRestrict_hom]
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+  [(f.comp g).IsOver sX sZ] in
+/-- The restriction of the representative of `f` to `U ∩ f⁻¹(V_g)` is dominant, as `f` is. -/
+instance isDominant_compositeYZToDomain : IsDominant (compositeYZToDomain f g) := by
+  have := Opens.isDominant_homOfLE (dense_compositeDomainYZ f g)
+    ((compositeDomainYZ_le_comp_domain f g).trans (PartialMap.comp_domain_le _ _))
+  have : IsDominant (compositeYZToDomain f g ≫ g.representative.domain.ι) := by
+    rw [compositeYZToDomain_ι]
+    infer_instance
+  exact IsDominant.of_comp_of_isOpenImmersion _ g.representative.domain.ι
+
+/-- On `U ∩ f⁻¹(V_g)`, `(f_U, (g ∘ f)_U) : U → Y × Z` is `γ_g` after the restriction of the
+representative of `f`. -/
+theorem homOfLE_opensGraph_tripleToYZ :
+    X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
+      opensGraph sX (pullback.fst sY sZ ≫ sY) (compositeDomain f g)
+        (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g) ≫ tripleToYZ sX sY sZ =
+      compositeYZToDomain f g ≫ graphLift g := by
+  have hP := (f.representative.comp g.representative).hom_eq_homOfLE_comp_toPartialMap
+    (toRationalMap_representative_comp_representative f g)
+    ((f.representative.comp g.representative).le_domain_toRationalMap.trans_eq
+      (by rw [toRationalMap_representative_comp_representative, toPartialMap_domain]))
+  apply pullback.hom_ext
+  · simp [compositeToY_eq, representative_hom_eq f]
+  · simp only [Category.assoc, tripleToYZ_snd, opensGraph_snd_assoc, compositeLift_snd,
+      compositeToZ_eq, Scheme.homOfLE_homOfLE_assoc, opensGraph_snd]
+    rw [compositeYZToDomain_hom, hP, Scheme.homOfLE_homOfLE_assoc]
+
 /-- The ideal of `Γ_g` lies in the pushforward along `X ×_S (Y ×_S Z) → Y × Z` of the ideal of
-`W_{f,g}`, so this projection carries `W_{f,g}` into `Γ_g`. The comparison is made on `U`
-intersected with the domain of the composite of the representatives of `f` and `g`. -/
+`W_{f,g}`, so this projection carries `W_{f,g}` into `Γ_g`. The comparison is made on
+`U ∩ f⁻¹(V_g)` (`homOfLE_opensGraph_tripleToYZ`). -/
 theorem ker_graphLift_le_map_tripleToYZ :
     (graphLift g).ker ≤ (opensGraph sX (pullback.fst sY sZ ≫ sY) (compositeDomain f g)
       (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g)).ker.map
       (tripleToYZ sX sY sZ) := by
   rw [Scheme.IdealSheafData.map_ker]
-  have hP := (f.representative.comp g.representative).hom_eq_homOfLE_comp_toPartialMap
-    (toRationalMap_representative_comp_representative f g)
-    ((f.representative.comp g.representative).le_domain_toRationalMap.trans_eq
-      (by rw [toRationalMap_representative_comp_representative, toPartialMap_domain]))
-  -- the composite of the representatives is the restriction of `f`'s followed by `g`'s
-  rw [PartialMap.comp_hom] at hP
-  refine ker_graphLift_le_of_homOfLE_comp_eq g
-    ((dense_compositeDomain f g).inter_of_isOpen_left
-      (f.representative.comp g.representative).dense_domain (compositeDomain f g).isOpen)
-    inf_le_left _
-    (X.homOfLE (inf_le_right : compositeDomain f g ⊓
-        f.representative.domain.ι ''ᵁ f.representative.hom ⁻¹ᵁ g.representative.domain ≤ _) ≫
-      (f.representative.domain.ι.isoImage _).inv ≫
-      f.representative.hom ∣_ g.representative.domain) ?_ ?_
-  · simp [compositeToY_eq, representative_hom_eq f]
-  · simp only [Category.assoc, tripleToYZ_snd, opensGraph_snd_assoc, compositeLift_snd,
-      compositeToZ_eq, hP, Scheme.homOfLE_homOfLE_assoc]
-    -- the middle open of the right side is the domain of the composite of the representatives,
-    -- which is only definitionally the image form appearing in `hP`, so `simp` cannot merge it
-    exact (X.homOfLE_homOfLE_assoc _ _ _).symm
+  exact Hom.ker_le_ker_of_homOfLE_comp_eq (dense_compositeDomainYZ f g)
+    (compositeDomainYZ_le_compositeDomain f g) _ _ _
+    (homOfLE_opensGraph_tripleToYZ sX sY sZ f g)
 
 /-- The morphism `(q_X, q_Y) : W_{f,g} → Γ_f`. -/
 def compositeCorrespondenceToGraphXY : compositeCorrespondence sX sY sZ f g ⟶ graph f :=
@@ -454,6 +550,33 @@ instance isProper_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ] :
     infer_instance
   exact IsProper.of_comp _ (graphFst g)
 
+/-- **`(q_X, q_Y)` is birational.** For `Y` and `Z` proper over `S` and the inclusions of `U` and
+of the domain of definition of `f` quasi-compact (for instance for `X` Noetherian),
+`(q_X, q_Y) : W_{f,g} → Γ_f` is a modification: its composite with the modification
+`π_1 : Γ_f → X` is the modification `q_X`, an isomorphism over `U`. -/
+theorem isModification_compositeCorrespondenceToGraphXY [IsProper sY] [IsProper sZ]
+    [QuasiCompact (compositeDomain f g).ι] [QuasiCompact f.domain.ι] :
+    IsModification (compositeCorrespondenceToGraphXY sX sY sZ f g) := by
+  have := isModification_graphFst f sX sY
+  have : IsModification (compositeCorrespondenceToGraphXY sX sY sZ f g ≫ graphFst f) := by
+    rw [compositeCorrespondenceToGraphXY_graphFst]
+    exact isModification_graphClosureFst (dense_compositeDomain f g)
+  exact IsModification.of_comp _ (graphFst f)
+
+/-- **`(q_X, q_Z)` is birational.** For `Y` and `Z` proper over `S` and the inclusions of `U` and
+of the domain of definition of `g ∘ f` quasi-compact (for instance for `X` Noetherian),
+`(q_X, q_Z) : W_{f,g} → Γ_{g ∘ f}` is a modification: its composite with the modification
+`π_1 : Γ_{g ∘ f} → X` is the modification `q_X`, an isomorphism over `U`. -/
+theorem isModification_compositeCorrespondenceToGraphXZ [IsProper sY] [IsProper sZ]
+    [QuasiCompact (compositeDomain f g).ι] [QuasiCompact (f.comp g).domain.ι] :
+    IsModification (compositeCorrespondenceToGraphXZ sX sY sZ f g) := by
+  have := isModification_graphFst (f.comp g) sX sZ
+  have : IsModification
+      (compositeCorrespondenceToGraphXZ sX sY sZ f g ≫ graphFst (f.comp g)) := by
+    rw [compositeCorrespondenceToGraphXZ_graphFst]
+    exact isModification_graphClosureFst (dense_compositeDomain f g)
+  exact IsModification.of_comp _ (graphFst (f.comp g))
+
 end Over
 
 section Field
@@ -471,6 +594,36 @@ theorem topologicalKrullDim_compositeCorrespondence :
   exact topologicalKrullDim_graphClosure (compositeLift_comp sX sY sZ f g)
 
 end Field
+
+section Surjective
+
+variable [S.IsSeparated] [f.IsOver sX sY] [(f.comp g).IsOver sX sZ]
+
+/-- On `U ∩ f⁻¹(V_g)`, the inclusion into `W_{f,g}` followed by `(q_Y, q_Z)` is the restriction
+of the representative of `f` followed by the inclusion `V_g → Γ_g`. -/
+theorem homOfLE_toCompositeCorrespondence_compositeCorrespondenceToGraphYZ :
+    X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
+      toCompositeCorrespondence sX sY sZ f g ≫ compositeCorrespondenceToGraphYZ sX sY sZ f g =
+      compositeYZToDomain f g ≫ toGraph g := by
+  rw [← cancel_mono (graphι g)]
+  simpa using homOfLE_opensGraph_tripleToYZ sX sY sZ f g
+
+/-- **`(q_Y, q_Z)` is surjective.** For `X` and `Z` proper over `S` and `γ_g` quasi-compact (for
+instance for `Y` Noetherian), `(q_Y, q_Z) : W_{f,g} → Γ_g` is surjective: it is proper, hence
+closed, and dominant, since on `U ∩ f⁻¹(V_g)` it is the dominant restriction of `f` followed by
+the inclusion `V_g → Γ_g`, which is dominant as `γ_g` is quasi-compact. -/
+instance surjective_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ]
+    [QuasiCompact (graphLift g)] :
+    Surjective (compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
+  have : IsDominant ((X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
+      toCompositeCorrespondence sX sY sZ f g) ≫ compositeCorrespondenceToGraphYZ sX sY sZ f g) := by
+    rw [Category.assoc, homOfLE_toCompositeCorrespondence_compositeCorrespondenceToGraphYZ]
+    infer_instance
+  have := IsDominant.of_comp (X.homOfLE (compositeDomainYZ_le_compositeDomain f g) ≫
+      toCompositeCorrespondence sX sY sZ f g) (compositeCorrespondenceToGraphYZ sX sY sZ f g)
+  exact surjective_of_isDominant_of_isClosed_range _ (Scheme.Hom.isClosedMap _).isClosed_range
+
+end Surjective
 
 end RationalMap
 
