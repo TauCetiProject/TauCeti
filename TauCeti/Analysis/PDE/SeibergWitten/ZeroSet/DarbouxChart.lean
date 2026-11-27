@@ -88,10 +88,13 @@ the chart. The balls of `X` and of the chart are compared through Lipschitz boun
 `TauCeti.measure_closedBall_le_ofReal_mul_mul_pow_of_dist_apply_le_mul_dist`). This gives
 
 * the quadratic lower bound `μX (B_ρ(z)) ≥ c ρ²` for the balls of `X` at a zero of `α`, when the
-  inverse of the chart is `Λ`-Lipschitz at `e z`
+  inverse of the chart is `Λ`-Lipschitz at `e z` and the defect energy of the chart is at most the
+  restricted pushforward of `μX`
   (`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_frame_of_dist_le`);
-* the quadratic upper bound `μX (B_ρ(z)) ≤ C'' ρ²` for the balls of `X` at every centre, when the
-  chart is `Λ`-Lipschitz at `z`
+* the quadratic upper bound `μX (B_ρ(z)) ≤ C'' ρ²` for the balls of `X` at every centre `z` whose
+  chart ball of radius `R / 2` has defect energy at most `M`, when the chart is `Λ`-Lipschitz at
+  `z` on a ball `closedBall z R₁ ⊆ s` and the restricted pushforward of `μX` is at most the defect
+  energy of the chart
   (`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le`);
 * Taubes's packing bound: a set `Z` of zeros of `α` with a Darboux chart about each of its points,
   with uniform constants, is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` balls of `X` of radius
