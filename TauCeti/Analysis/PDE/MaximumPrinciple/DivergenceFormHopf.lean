@@ -60,7 +60,8 @@ of the coefficients is needed
 The proof follows Rosales. For small `ε` the homothety `T z = ε z + y + (R - ε) ν` maps the closed
 unit ball into `closedBall y R` and `ν` to `x₀`, and `u ∘ T` is a weak supersolution on the annulus
 `D = {1/2 < ‖z‖ < 1}` for coefficients `a ∘ T` close to the frozen matrix `A = a x₀`, the drift
-`ε β ∘ T`, small in `L^q(D)` since `q > n + 1`, and the mass `ε² c ∘ T`. The Gaussian
+`ε β ∘ T`, and the mass `ε² c ∘ T`. The exponent enters twice. First, the scaling condition
+`q > n + 1` makes the drift `ε β ∘ T` small in `L^q(D)` as `ε → 0`. The Gaussian
 `Φ(z) = e^{-κ‖z‖²} - e^{-κ}` vanishes on the unit sphere and satisfies `div (A ∇Φ) ≥ λ κ e^{-κ}`
 on `D` for `κ` large; unlike Rosales we use this explicit barrier, so `A` need not be symmetric.
 Lax–Milgram gives corrections `ψ, χ ∈ H¹₀(D)` with
@@ -69,9 +70,10 @@ bound for `|∇Φ|`. The global `C^{1,β}` estimate on the
 annulus (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`, with the charts
 `TauCeti.exists_affineIsometryEquiv_graph_of_mem_frontier_annulus`) makes `∇ψ` and `∇χ` small,
 so `χ` absorbs the drift term `β · ∇(Φ + ψ + χ)`, the margin of `Φ` absorbs the mass term, and
-`ψ, χ` have representatives vanishing at `ν` with small Lipschitz constants. The weak comparison
-principle with a drift in `L^q`
-(`TauCeti.PDE.UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top`) then gives
+`ψ, χ` have representatives vanishing at `ν` with small Lipschitz constants. Second, the weak
+comparison principle with a drift in `L^q`
+(`TauCeti.PDE.UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top`), whose hypotheses
+are `q > 2` and `n + 1 < q.toReal`, so that `q` is finite, then gives
 `g x₀ + θ (Φ + ψ + χ) ≤ u ∘ T` on `D` for some `θ > 0`, and the left-hand side grows like
 `θ κ e^{-κ} t / 2` along the normal at `ν`.
 
@@ -1265,12 +1267,9 @@ normal of `B` at `x₀`, `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` a
 
 This is a result of the type of Rosales's Theorem 4.1, in the case with no lower-order term
 inside the divergence and with a bounded, nonnegative mass coefficient `c` in Tau Ceti's sign
-convention, that is a bounded zeroth-order coefficient `-c ≤ 0` in Rosales's. The exponent enters
-twice. The scaling condition `q > n + 1` makes the rescaled drift `ε β(ε ·)` small in `L^q` as
-`ε → 0`. The comparison step uses the weak maximum principle with a drift in `L^q`
-(`TauCeti.PDE.UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top`), whose hypotheses
-are `q > 2` and `n + 1 < q.toReal`, so that `q` is finite; the bound `q > 2` matters only in
-dimension one.
+convention, that is a bounded zeroth-order coefficient `-c ≤ 0` in Rosales's. The bound
+`q > n + 1` is a scaling condition, and `q > 2`, which matters only in dimension one, is a
+hypothesis of the weak comparison principle with a drift in `L^q`.
 The sign condition cannot be dropped: on the interval `(0, 2)`, `cosh` solves `-u'' + u = 0`, and
 its minimum `cosh 0 = 1` over `[0, 2)` is attained only at the boundary point `0`, where its
 derivative vanishes. -/
