@@ -22,10 +22,10 @@ import TauCeti.NumberTheory.ModularForms.JacobiTheta.Product
 # The theta multiplier on `Γ₀(4)`
 
 For `θ(z) = jacobiTheta (2 * z)` on the upper half-plane `ℍ` and `γ = (a b; c d) ∈ Γ₀(4)`,
-this file defines Shimura's phase `thetaMultiplierPhase d` (`ε_d = 1` for `d ≡ 1 (mod 4)`, `i`
+this file defines Shimura's phase `thetaEpsilon d` (`ε_d = 1` for `d ≡ 1 (mod 4)`, `i`
 for `d ≡ 3 (mod 4)`, and `0` for even `d`), defines the theta automorphy factor
 `thetaAutomorphy γ z = θ(γ • z) / θ(z)`, and proves its explicit formula and square law:
-* `thetaAutomorphy γ z = (thetaMultiplierPhase d)⁻¹ * (c / d) * √(c z + d)` for every
+* `thetaAutomorphy γ z = (thetaEpsilon d)⁻¹ * (c / d) * √(c z + d)` for every
   `γ ∈ Γ₀(4)` (with the principal square root and `TauCeti.kroneckerSym`);
 * `thetaAutomorphy γ z ^ 2 = χ₄(d) * (c z + d)` for every `γ ∈ Γ₀(4)`.
 
@@ -38,14 +38,14 @@ Passing from `γ` to `-γ` extends the formula from `c ≥ 0` to negative `c`.
 
 ## Main definitions
 
-* `TauCeti.thetaMultiplierPhase`: the phase `ε_d` (`1` for `d ≡ 1 (mod 4)`, `i` for
+* `TauCeti.thetaEpsilon`: the phase `ε_d` (`1` for `d ≡ 1 (mod 4)`, `i` for
   `d ≡ 3 (mod 4)`, and `0` for even `d`).
 * `TauCeti.thetaAutomorphy`: the ratio `jacobiTheta (2 * (γ • z)) / jacobiTheta (2 * z)`.
 * `TauCeti.thetaEtaExp`: the level-4 eta-quotient exponent vector for `jacobiTheta (2 * z)`.
 
 ## Main results
 
-* `TauCeti.thetaMultiplierPhase_sq`, `TauCeti.inv_thetaMultiplierPhase_sq`:
+* `TauCeti.thetaEpsilon_sq`, `TauCeti.inv_thetaEpsilon_sq`:
   `ε_d² = ε_d⁻² = χ₄(d)`.
 * `TauCeti.thetaAutomorphy_ne_zero`:
   `thetaAutomorphy γ z ≠ 0` for all `γ : SL(2, ℤ)` and `z : ℍ`.
@@ -74,79 +74,79 @@ namespace TauCeti
 
 /-- **Shimura's theta multiplier phase** `ε_d`: `1` when `d ≡ 1 (mod 4)`, `i` when
 `d ≡ 3 (mod 4)`, and `0` when `d` is even. -/
-noncomputable def thetaMultiplierPhase (d : ℤ) : ℂ :=
+noncomputable def thetaEpsilon (d : ℤ) : ℂ :=
   if d % 4 = 1 then 1 else if d % 4 = 3 then I else 0
 
-/-- The defining formula of `TauCeti.thetaMultiplierPhase`. -/
-theorem thetaMultiplierPhase_def (d : ℤ) :
-    thetaMultiplierPhase d = if d % 4 = 1 then 1 else if d % 4 = 3 then I else 0 :=
+/-- The defining formula of `TauCeti.thetaEpsilon`. -/
+theorem thetaEpsilon_def (d : ℤ) :
+    thetaEpsilon d = if d % 4 = 1 then 1 else if d % 4 = 3 then I else 0 :=
   (rfl)
 
 /-- `ε_d = 1` when `d ≡ 1 (mod 4)`. -/
-theorem thetaMultiplierPhase_of_emod_eq_one {d : ℤ} (hd : d % 4 = 1) :
-    thetaMultiplierPhase d = 1 := by
-  simp [thetaMultiplierPhase_def, hd]
+theorem thetaEpsilon_of_emod_eq_one {d : ℤ} (hd : d % 4 = 1) :
+    thetaEpsilon d = 1 := by
+  simp [thetaEpsilon_def, hd]
 
 /-- `ε_d = i` when `d ≡ 3 (mod 4)`. -/
-theorem thetaMultiplierPhase_of_emod_eq_three {d : ℤ} (hd : d % 4 = 3) :
-    thetaMultiplierPhase d = I := by
-  simp [thetaMultiplierPhase_def, hd]
+theorem thetaEpsilon_of_emod_eq_three {d : ℤ} (hd : d % 4 = 3) :
+    thetaEpsilon d = I := by
+  simp [thetaEpsilon_def, hd]
 
 /-- `ε_d = 0` when `d` is even. -/
-theorem thetaMultiplierPhase_eq_zero_of_even {d : ℤ} (hd : Even d) :
-    thetaMultiplierPhase d = 0 := by
+theorem thetaEpsilon_eq_zero_of_even {d : ℤ} (hd : Even d) :
+    thetaEpsilon d = 0 := by
   obtain ⟨k, rfl⟩ := hd
-  rw [thetaMultiplierPhase_def]
+  rw [thetaEpsilon_def]
   simp [show (k + k) % 4 ≠ 1 by omega, show (k + k) % 4 ≠ 3 by omega]
 
 /-- `ε_0 = 0`. -/
 @[simp]
-theorem thetaMultiplierPhase_zero : thetaMultiplierPhase 0 = 0 :=
-  thetaMultiplierPhase_eq_zero_of_even Even.zero
+theorem thetaEpsilon_zero : thetaEpsilon 0 = 0 :=
+  thetaEpsilon_eq_zero_of_even Even.zero
 
 /-- `ε_1 = 1`. -/
 @[simp]
-theorem thetaMultiplierPhase_one : thetaMultiplierPhase 1 = 1 :=
-  thetaMultiplierPhase_of_emod_eq_one (by norm_num)
+theorem thetaEpsilon_one : thetaEpsilon 1 = 1 :=
+  thetaEpsilon_of_emod_eq_one (by norm_num)
 
 /-- `ε_{-1} = i`. -/
 @[simp]
-theorem thetaMultiplierPhase_neg_one : thetaMultiplierPhase (-1) = I :=
-  thetaMultiplierPhase_of_emod_eq_three (by norm_num)
+theorem thetaEpsilon_neg_one : thetaEpsilon (-1) = I :=
+  thetaEpsilon_of_emod_eq_three (by norm_num)
 
-/-- `thetaMultiplierPhase` depends only on `d` modulo `4`. -/
-theorem thetaMultiplierPhase_congr {d d' : ℤ} (h : d ≡ d' [ZMOD 4]) :
-    thetaMultiplierPhase d = thetaMultiplierPhase d' := by
-  simp only [thetaMultiplierPhase_def, h.eq]
+/-- `thetaEpsilon` depends only on `d` modulo `4`. -/
+theorem thetaEpsilon_congr {d d' : ℤ} (h : d ≡ d' [ZMOD 4]) :
+    thetaEpsilon d = thetaEpsilon d' := by
+  simp only [thetaEpsilon_def, h.eq]
 
 /-- `ε_d` vanishes exactly when `d` is even. -/
 @[simp]
-theorem thetaMultiplierPhase_eq_zero_iff {d : ℤ} :
-    thetaMultiplierPhase d = 0 ↔ Even d := by
-  refine ⟨fun h ↦ ?_, thetaMultiplierPhase_eq_zero_of_even⟩
+theorem thetaEpsilon_eq_zero_iff {d : ℤ} :
+    thetaEpsilon d = 0 ↔ Even d := by
+  refine ⟨fun h ↦ ?_, thetaEpsilon_eq_zero_of_even⟩
   by_contra hodd
   rw [Int.not_even_iff_odd] at hodd
   have hmod := Int.odd_iff.mp hodd
-  rw [thetaMultiplierPhase_def] at h
+  rw [thetaEpsilon_def] at h
   split_ifs at h with h₁ h₃
   · exact one_ne_zero h
   · exact I_ne_zero h
   · omega
 
 /-- `ε_d ≠ 0` exactly when `d` is odd. -/
-theorem thetaMultiplierPhase_ne_zero_iff {d : ℤ} :
-    thetaMultiplierPhase d ≠ 0 ↔ Odd d := by
+theorem thetaEpsilon_ne_zero_iff {d : ℤ} :
+    thetaEpsilon d ≠ 0 ↔ Odd d := by
   simp [ne_eq, ← Int.not_even_iff_odd]
 
 /-- For odd `d`, `ε_d ≠ 0`. -/
-theorem thetaMultiplierPhase_ne_zero {d : ℤ} (hd : Odd d) :
-    thetaMultiplierPhase d ≠ 0 :=
-  thetaMultiplierPhase_ne_zero_iff.mpr hd
+theorem thetaEpsilon_ne_zero {d : ℤ} (hd : Odd d) :
+    thetaEpsilon d ≠ 0 :=
+  thetaEpsilon_ne_zero_iff.mpr hd
 
 /-- For every integer `d`, `ε_d² = χ₄(d)`. -/
-theorem thetaMultiplierPhase_sq (d : ℤ) :
-    thetaMultiplierPhase d ^ 2 = (ZMod.χ₄ (d : ZMod 4) : ℂ) := by
-  rw [thetaMultiplierPhase_def, ZMod.χ₄_int_eq_if_mod_four]
+theorem thetaEpsilon_sq (d : ℤ) :
+    thetaEpsilon d ^ 2 = (ZMod.χ₄ (d : ZMod 4) : ℂ) := by
+  rw [thetaEpsilon_def, ZMod.χ₄_int_eq_if_mod_four]
   have hd : d % 4 = 0 ∨ d % 4 = 1 ∨ d % 4 = 2 ∨ d % 4 = 3 := by omega
   rcases hd with h | h | h | h
   · simp [show d % 2 = 0 by omega, show d % 4 ≠ 1 by omega, show d % 4 ≠ 3 by omega]
@@ -156,62 +156,62 @@ theorem thetaMultiplierPhase_sq (d : ℤ) :
 
 /-- For odd `d`, `‖ε_d‖ = 1`. -/
 @[simp]
-theorem norm_thetaMultiplierPhase {d : ℤ} (hd : Odd d) : ‖thetaMultiplierPhase d‖ = 1 := by
+theorem norm_thetaEpsilon {d : ℤ} (hd : Odd d) : ‖thetaEpsilon d‖ = 1 := by
   have hmod := Int.odd_iff.mp hd
-  rw [thetaMultiplierPhase_def]
+  rw [thetaEpsilon_def]
   split_ifs with h₁ h₃
   · simp
   · simp
   · omega
 
 /-- For odd `d`, `ε_d⁻¹` is `1` when `d ≡ 1 (mod 4)` and `-i` when `d ≡ 3 (mod 4)`. -/
-theorem inv_thetaMultiplierPhase {d : ℤ} (hd : Odd d) :
-    (thetaMultiplierPhase d)⁻¹ = if d % 4 = 1 then 1 else -I := by
+theorem inv_thetaEpsilon {d : ℤ} (hd : Odd d) :
+    (thetaEpsilon d)⁻¹ = if d % 4 = 1 then 1 else -I := by
   have hmod := Int.odd_iff.mp hd
-  rw [thetaMultiplierPhase_def]
+  rw [thetaEpsilon_def]
   split_ifs with h₁ h₃ <;> simp [inv_I]
   omega
 
 /-- For every integer `d`, `(ε_d⁻¹)² = χ₄(d)`. -/
-theorem inv_thetaMultiplierPhase_sq (d : ℤ) :
-    (thetaMultiplierPhase d)⁻¹ ^ 2 = (ZMod.χ₄ (d : ZMod 4) : ℂ) := by
+theorem inv_thetaEpsilon_sq (d : ℤ) :
+    (thetaEpsilon d)⁻¹ ^ 2 = (ZMod.χ₄ (d : ZMod 4) : ℂ) := by
   rcases Int.even_or_odd d with hd | hd
-  · rw [thetaMultiplierPhase_eq_zero_of_even hd, inv_zero, zero_pow two_ne_zero,
+  · rw [thetaEpsilon_eq_zero_of_even hd, inv_zero, zero_pow two_ne_zero,
       ZMod.χ₄_int_eq_if_mod_four]
     simp [Int.dvd_iff_emod_eq_zero.mp (even_iff_two_dvd.mp hd)]
-  · rw [inv_pow, thetaMultiplierPhase_sq]
+  · rw [inv_pow, thetaEpsilon_sq]
     have hsq : (ZMod.χ₄ (d : ZMod 4) : ℂ) ^ 2 = 1 := by
       rw [← kroneckerSym_neg_one_left_of_odd hd, sq_intCast_kroneckerSym_eq_one (by simp)]
     exact inv_eq_of_mul_eq_one_right (by simpa [sq] using hsq)
 
 /-- For every integer `d`, `ε_{-d} = i ε_d⁻¹`. -/
-theorem thetaMultiplierPhase_neg (d : ℤ) :
-    thetaMultiplierPhase (-d) = I * (thetaMultiplierPhase d)⁻¹ := by
+theorem thetaEpsilon_neg (d : ℤ) :
+    thetaEpsilon (-d) = I * (thetaEpsilon d)⁻¹ := by
   rcases Int.even_or_odd d with hd | hd
-  · rw [thetaMultiplierPhase_eq_zero_of_even hd.neg, thetaMultiplierPhase_eq_zero_of_even hd,
+  · rw [thetaEpsilon_eq_zero_of_even hd.neg, thetaEpsilon_eq_zero_of_even hd,
       inv_zero, mul_zero]
   · have hmod := Int.odd_iff.mp hd
-    rw [inv_thetaMultiplierPhase hd, thetaMultiplierPhase_def]
+    rw [inv_thetaEpsilon hd, thetaEpsilon_def]
     split_ifs with h₁ h₃ h₄ <;> simp <;> omega
 
 /-- For odd `d`, `ε_d ε_{-d} = i`. -/
-theorem thetaMultiplierPhase_mul_neg {d : ℤ} (hd : Odd d) :
-    thetaMultiplierPhase d * thetaMultiplierPhase (-d) = I := by
-  rw [thetaMultiplierPhase_neg, ← mul_assoc, mul_comm (thetaMultiplierPhase d) I, mul_assoc,
-    mul_inv_cancel₀ (thetaMultiplierPhase_ne_zero hd), mul_one]
+theorem thetaEpsilon_mul_neg {d : ℤ} (hd : Odd d) :
+    thetaEpsilon d * thetaEpsilon (-d) = I := by
+  rw [thetaEpsilon_neg, ← mul_assoc, mul_comm (thetaEpsilon d) I, mul_assoc,
+    mul_inv_cancel₀ (thetaEpsilon_ne_zero hd), mul_one]
 
 /-- For every integer `d`, `(ε_{-d})⁻¹ = -i (-1 / d) ε_d⁻¹`. -/
-theorem inv_thetaMultiplierPhase_neg (d : ℤ) :
-    (thetaMultiplierPhase (-d))⁻¹ =
-      -I * (kroneckerSym (-1) d : ℂ) * (thetaMultiplierPhase d)⁻¹ := by
+theorem inv_thetaEpsilon_neg (d : ℤ) :
+    (thetaEpsilon (-d))⁻¹ =
+      -I * (kroneckerSym (-1) d : ℂ) * (thetaEpsilon d)⁻¹ := by
   rcases Int.even_or_odd d with hd | hd
-  · rw [thetaMultiplierPhase_eq_zero_of_even hd.neg, thetaMultiplierPhase_eq_zero_of_even hd,
+  · rw [thetaEpsilon_eq_zero_of_even hd.neg, thetaEpsilon_eq_zero_of_even hd,
       inv_zero, mul_zero]
-  · rw [thetaMultiplierPhase_neg, mul_inv, inv_I, inv_inv, kroneckerSym_neg_one_left_of_odd hd,
+  · rw [thetaEpsilon_neg, mul_inv, inv_I, inv_inv, kroneckerSym_neg_one_left_of_odd hd,
       mul_assoc]
     congr 1
-    exact (eq_mul_inv_iff_mul_eq₀ (thetaMultiplierPhase_ne_zero hd)).mpr
-      (by rw [← sq, thetaMultiplierPhase_sq])
+    exact (eq_mul_inv_iff_mul_eq₀ (thetaEpsilon_ne_zero hd)).mpr
+      (by rw [← sq, thetaEpsilon_sq])
 
 /-! ### The theta automorphy factor on `Γ₀(4)` -/
 
@@ -270,25 +270,52 @@ theorem thetaEtaExp_def (δ : ℕ) :
     thetaEtaExp δ = if δ = 2 then 5 else -2 :=
   (rfl)
 
+/-- `thetaEtaExp 1 = -2`. -/
+@[simp]
+theorem thetaEtaExp_one : thetaEtaExp 1 = -2 := by
+  decide
+
+/-- `thetaEtaExp 2 = 5`. -/
+@[simp]
+theorem thetaEtaExp_two : thetaEtaExp 2 = 5 := by
+  decide
+
+/-- `thetaEtaExp 4 = -2`. -/
+@[simp]
+theorem thetaEtaExp_four : thetaEtaExp 4 = -2 := by
+  decide
+
 /-- The exponents of `thetaEtaExp` sum to `1`, corresponding to weight `1 / 2`. -/
 theorem sum_thetaEtaExp : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ = 1 := by
   decide
+
+/-- Expanding a `thetaEtaExp`-weighted product over the divisors of `4`. -/
+theorem prod_zpow_thetaEtaExp {G : Type*} [DivisionCommMonoid G] (f : ℕ → G) :
+    ∏ δ ∈ (4 : ℕ).divisors, f δ ^ thetaEtaExp δ = f 2 ^ 5 / (f 1 ^ 2 * f 4 ^ 2) := by
+  rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.prod_divisors_prime_pow Nat.prime_two,
+    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one]
+  simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_one, thetaEtaExp_two, thetaEtaExp_four,
+    zpow_neg, zpow_ofNat, div_eq_mul_inv, mul_inv]
+  ac_rfl
+
+/-- Expanding a `thetaEtaExp`-weighted sum over the divisors of `4`. -/
+theorem sum_thetaEtaExp_mul (f : ℕ → ℤ) :
+    ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ * f δ = 5 * f 2 - 2 * f 1 - 2 * f 4 := by
+  rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.sum_divisors_prime_pow Nat.prime_two,
+    Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+  simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_one, thetaEtaExp_two, thetaEtaExp_four]
+  ring
 
 /-- For `τ` in the upper half-plane, `jacobiTheta (2 * τ)` equals the level-4 eta quotient
 `ModularForm.etaQuotient 4 thetaEtaExp τ`. -/
 theorem jacobiTheta_two_mul_eq_etaQuotient {τ : ℂ} (hτ : 0 < τ.im) :
     jacobiTheta (2 * τ) = ModularForm.etaQuotient 4 thetaEtaExp τ := by
-  rw [jacobiTheta_two_mul_eq_eta_div hτ, ModularForm.etaQuotient_apply,
-    show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.prod_divisors_prime_pow Nat.prime_two,
-    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one]
-  simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_def,
-    show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte,
-    Nat.cast_one, Nat.cast_ofNat, one_mul, zpow_neg, zpow_ofNat, div_eq_mul_inv, mul_inv]
-  ring
+  rw [jacobiTheta_two_mul_eq_eta_div hτ, ModularForm.etaQuotient_apply, prod_zpow_thetaEtaExp]
+  simp
 
 private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
-    (kroneckerSym 2 d : ℂ) * ModularForm.e24 (3 * d - 3) = (thetaMultiplierPhase d)⁻¹ := by
-  rw [kroneckerSym_two_left d, ZMod.χ₈_int_eq_if_mod_eight, inv_thetaMultiplierPhase hd]
+    (kroneckerSym 2 d : ℂ) * ModularForm.e24 (3 * d - 3) = (thetaEpsilon d)⁻¹ := by
+  rw [kroneckerSym_two_left d, ZMod.χ₈_int_eq_if_mod_eight, inv_thetaEpsilon hd]
   have he24_6 : ModularForm.e24 6 = I := by
     rw [ModularForm.e24_def]
     convert Complex.exp_pi_div_two_mul_I using 2
@@ -316,11 +343,8 @@ private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
 private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
     ∏ δ ∈ (4 : ℕ).divisors, (kroneckerSym ((4 / δ : ℕ) * t) d : ℂ) ^ thetaEtaExp δ =
       kroneckerSym 2 d * kroneckerSym (4 * t) d := by
-  rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.prod_divisors_prime_pow Nat.prime_two,
-    Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one]
-  simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_def, Nat.reduceDiv,
-    show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte,
-    Nat.cast_one, Nat.cast_ofNat, one_mul, zpow_neg, zpow_ofNat]
+  rw [prod_zpow_thetaEtaExp]
+  simp only [Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat, one_mul]
   by_cases hcop : IsCoprime (4 * t) d
   · have hcop4 : (4 * t).gcd d = 1 := Int.isCoprime_iff_gcd_eq_one.mp hcop
     have hcopt : t.gcd d = 1 :=
@@ -336,7 +360,7 @@ private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
       calc (kroneckerSym (2 * t) d : ℂ) ^ 5
           = ((kroneckerSym (2 * t) d : ℂ) ^ 2) ^ 2 * (kroneckerSym (2 * t) d : ℂ) := by ring
         _ = (kroneckerSym (2 * t) d : ℂ) := by rw [hsq, one_pow, one_mul]
-    simp only [h4sq, htsq, h2pow, inv_one, one_mul]
+    simp only [h4sq, htsq, h2pow, one_mul, div_one]
     rcases eq_or_ne d (-1) with rfl | hd1
     · have h4_neg : 4 * t < 0 ↔ 2 * t < 0 := by omega
       simp [kroneckerSym_neg_one_right, h4_neg]
@@ -344,7 +368,7 @@ private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
         kroneckerSym_mul_left_of_ne_neg_one hd1 2 t
       have h4t : kroneckerSym (4 * t) d = kroneckerSym t d := by
         rw [show 4 * t = t * 2 ^ 2 by ring, kroneckerSym_mul_sq two_ne_zero hcop2d]
-      rw [h2t, h4t, Int.cast_mul, mul_one]
+      rw [h2t, h4t, Int.cast_mul]
   · have hnot2 : ¬ IsCoprime (2 * t) d := fun h ↦
       hcop (by
         have h2d : IsCoprime 2 d := h.of_isCoprime_of_dvd_left (dvd_mul_right 2 t)
@@ -358,7 +382,7 @@ private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
 private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 4) (hc : 0 ≤ γ 1 0) :
     ModularForm.etaQuotientMultiplier 4 thetaEtaExp ⟨γ, hγ⟩ =
-      (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) := by
+      (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
   have ht' : γ 1 0 = 4 * t := by simpa using ht
   have ht0 : 0 ≤ t := by omega
@@ -376,11 +400,8 @@ private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
       (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact hdo),
       h00, h01, h10, h11, ModularForm.e24_def]
   have hE : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ * E δ = 3 * γ 1 1 - 3 := by
-    rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.sum_divisors_prime_pow Nat.prime_two,
-      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
-    simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_def, E, Nat.reduceDiv,
-      show (1 : ℕ) ≠ 2 by decide, show (4 : ℕ) ≠ 2 by decide, ↓reduceIte,
-      Nat.cast_one, Nat.cast_ofNat]
+    rw [sum_thetaEtaExp_mul]
+    simp only [E, Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat]
     ring
   rw [ModularForm.etaQuotientMultiplier_eq_prod thetaEtaExp ⟨γ, hγ⟩ hε,
     ModularForm.prod_mul_e24_zpow, hE, prod_kroneckerSym_thetaEtaExp t (γ 1 1), ← ht',
@@ -390,7 +411,7 @@ private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
 private theorem thetaAutomorphy_eq_of_mem_Gamma0_of_nonneg {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4)
     (hc : 0 ≤ γ 1 0) (z : ℍ) :
     thetaAutomorphy γ z =
-      (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+      (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
         Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) := by
   have hsmul := ModularForm.etaQuotient_smul 4 thetaEtaExp ⟨γ, hγ⟩ z
   simp only [sum_thetaEtaExp, zpow_one,
@@ -405,7 +426,7 @@ private theorem thetaAutomorphy_eq_of_mem_Gamma0_of_nonneg {γ : SL(2, ℤ)} (h�
 and the Kronecker symbol `TauCeti.kroneckerSym`. Holds for every sign of `c` and `d`. -/
 theorem thetaAutomorphy_eq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) (z : ℍ) :
     thetaAutomorphy γ z =
-      (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+      (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
         Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) := by
   rcases le_or_gt 0 (γ 1 0) with hc | hc
   · exact thetaAutomorphy_eq_of_mem_Gamma0_of_nonneg hγ hc z
@@ -426,14 +447,14 @@ theorem thetaAutomorphy_eq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
         simpa using mul_neg_of_neg_of_pos (Int.cast_lt_zero.mpr hc) z.im_pos
     have hsym_sq : (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2 = 1 :=
       sq_intCast_kroneckerSym_eq_one (by simp)
-    rw [hmain, inv_thetaMultiplierPhase_neg, kroneckerSym_neg_neg_of_neg hc, Int.cast_mul, hsqrt]
-    calc -I * (kroneckerSym (-1) (γ 1 1) : ℂ) * (thetaMultiplierPhase (γ 1 1))⁻¹ *
+    rw [hmain, inv_thetaEpsilon_neg, kroneckerSym_neg_neg_of_neg hc, Int.cast_mul, hsqrt]
+    calc -I * (kroneckerSym (-1) (γ 1 1) : ℂ) * (thetaEpsilon (γ 1 1))⁻¹ *
           ((kroneckerSym (-1) (γ 1 1) : ℂ) * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ)) *
           (I * Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1))
         = -(I * I) * (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2 *
-            ((thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+            ((thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
               Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1)) := by ring
-      _ = (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+      _ = (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
             Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) := by
           rw [I_mul_I, neg_neg, hsym_sq, one_mul, one_mul]
 
@@ -441,7 +462,7 @@ theorem thetaAutomorphy_eq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
 of `jacobiTheta (2 * z)`. -/
 theorem jacobiTheta_two_mul_smul_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) (z : ℍ) :
     jacobiTheta (2 * ((γ • z : ℍ) : ℂ)) =
-      (thetaMultiplierPhase (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
+      (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) *
         Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) * jacobiTheta (2 * (z : ℂ)) := by
   have h := thetaAutomorphy_eq_of_mem_Gamma0 hγ z
   rw [thetaAutomorphy_def] at h
@@ -455,7 +476,7 @@ theorem thetaAutomorphy_sq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
   have hsym : (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) ^ 2 = 1 :=
     sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp (γ.isCoprime_row 1))
   rw [thetaAutomorphy_eq_of_mem_Gamma0 hγ z, mul_pow, mul_pow,
-    inv_thetaMultiplierPhase_sq, hsym, mul_one, Complex.sq_sqrt]
+    inv_thetaEpsilon_sq, hsym, mul_one, Complex.sq_sqrt]
 
 /-- The theta multiplier square law written with the Kronecker symbol `(-1 / d)`. -/
 theorem thetaAutomorphy_sq_eq_kroneckerSym_mul {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) (z : ℍ) :
