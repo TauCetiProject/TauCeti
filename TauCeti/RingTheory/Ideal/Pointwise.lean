@@ -30,6 +30,8 @@ the pointwise actions of automorphisms of `A` and `B` that `algebraMap A B` inte
   into itself via `MulSemiringAction.toAlgHom`.
 * `Ideal.under_smul_eq_smul_under`: if `algebraMap A B (σ • a) = δ • algebraMap A B a` for all
   `a`, then `(δ • Q).under A = σ • Q.under A`.
+* `Ideal.orbit_inertia_stabilizer`: for any `G`-action, the orbits of the inertia subgroup of
+  `MulAction.stabilizer G Q` coincide with the orbits of `Q.inertia G`.
 -/
 
 public section
@@ -97,5 +99,18 @@ theorem under_smul_eq_smul_under {A B G H : Type*} [CommSemiring A] [Semiring B]
   ext y
   rw [mem_pointwise_smul_iff_inv_smul_mem, mem_under, mem_under, ← smul_inv_smul σ y, h,
     inv_smul_smul, smul_mem_pointwise_smul_iff]
+
+/-- For any action of `G` on `X`, the orbits of the inertia subgroup of the stabilizer of `Q`
+coincide with the orbits of `Q.inertia G`, because `Q.inertia G ≤ MulAction.stabilizer G Q`. -/
+theorem orbit_inertia_stabilizer {G R X : Type*} [Group G] [Ring R] [MulSemiringAction G R]
+    [MulAction G X] (Q : Ideal R) (x : X) :
+    MulAction.orbit (Q.inertia (MulAction.stabilizer G Q)) x = MulAction.orbit (Q.inertia G) x := by
+  ext y
+  simp only [MulAction.mem_orbit_iff, Subgroup.smul_def]
+  constructor
+  · rintro ⟨⟨d, hd⟩, rfl⟩
+    exact ⟨⟨d.val, Ideal.coe_mem_inertia.mpr hd⟩, rfl⟩
+  · rintro ⟨⟨g, hg⟩, rfl⟩
+    exact ⟨⟨⟨g, Q.inertia_le_stabilizer hg⟩, Ideal.coe_mem_inertia.mp hg⟩, rfl⟩
 
 end Ideal

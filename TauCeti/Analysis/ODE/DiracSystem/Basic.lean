@@ -42,6 +42,8 @@ initial value `(1, 0)`, and its second column `(B, D)` the Dirichlet solution, w
   `M_q(t, z) v = v + ∫₀ᵗ -Ω (z - Q_q(s)) M_q(s, z) v ds`, with `M_q(0, z) = 1`
   (`TauCeti.diracFundamentalMatrix_zero`), and its integrand is interval integrable
   (`TauCeti.intervalIntegrable_diracCoeff_mulVec_diracFundamentalMatrix_mulVec`);
+* `TauCeti.continuousOn_diracFundamentalMatrix_apply`: the entries of `M_q(t, z)` are continuous
+  in `t` on `[0, T]` when `q` is integrable there;
 * `TauCeti.isDiracSolution_diracFundamentalMatrix_mulVec`: for every initial value `v`,
   `t ↦ M_q(t, z) v` solves the Dirac system;
 * `TauCeti.IsDiracSolution.eq_diracFundamentalMatrix_mulVec`: every solution is of this form, so
@@ -191,6 +193,14 @@ theorem continuousOn_diracFundamentalMatrix_mulVec (hq : IntegrableOn q (Icc 0 T
     ((continuousOn_propagator_left (integrableOn_toEuclideanCLM_diracCoeff hq z)
       (left_mem_Icc.2 hT)).clm_apply continuousOn_const)
 
+/-- The entries `t ↦ M_q(t, z)ᵢⱼ` of the fundamental matrix are continuous on `[0, T]` when `q` is
+integrable there. -/
+theorem continuousOn_diracFundamentalMatrix_apply (hq : IntegrableOn q (Icc 0 T)) (z : ℂ)
+    (i j : Fin 2) : ContinuousOn (fun t ↦ diracFundamentalMatrix q t z i j) (Icc 0 T) := by
+  have := (continuous_apply i).comp_continuousOn
+    (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single j 1))
+  simpa [Function.comp_def, mulVec_single] using this
+
 /-- **The integral equation of the fundamental matrix.** If `q` is integrable on an interval
 `[a, b]` containing `0` and `t`, then
 `M_q(t, z) v = v + ∫₀ᵗ -Ω (z - Q_q(s)) M_q(s, z) v ds`. -/
@@ -319,10 +329,7 @@ theorem integral_norm_sq_diracFundamentalMatrix_pos (hq : IntegrableOn q (Icc 0 
     (z : ℂ) (j : Fin 2) :
     0 < ∫ s in (0 : ℝ)..t,
       (‖diracFundamentalMatrix q s z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q s z 1 j‖ ^ 2) := by
-  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i j) (Icc 0 t) := by
-    have := (continuous_apply i).comp_continuousOn
-      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single j 1))
-    simpa [Function.comp_def, mulVec_single] using this
+  have hc (i : Fin 2) := continuousOn_diracFundamentalMatrix_apply hq z i j
   refine intervalIntegral.intervalIntegral_pos_of_pos_on ?_ (fun s hs ↦ ?_) ht
   · refine ContinuousOn.intervalIntegrable ?_
     rw [uIcc_of_le ht.le]

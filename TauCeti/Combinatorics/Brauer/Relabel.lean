@@ -43,6 +43,8 @@ imports this file.
   `TauCeti.BrauerDiagram.bottomThrough_relabel` and `TauCeti.BrauerDiagram.topThrough_relabel`:
   relabelling permutes the capped, cupped and through boundary points, so it preserves their
   numbers.
+* `TauCeti.BrauerDiagram.relabel_capCup`, `TauCeti.BrauerDiagram.relabel_one_swap_capCup`, and
+  `TauCeti.BrauerDiagram.relabel_swap_one_capCup`: relabelling a cap-cup diagram.
 
 ## References
 
@@ -228,6 +230,48 @@ theorem card_bottomThrough_relabel :
 @[simp]
 theorem card_topThrough_relabel : (D.relabel σ τ).topThrough.card = D.topThrough.card := by
   rw [topThrough_relabel, Finset.card_image_of_injective _ τ.injective]
+
+/-! ### Relabelling a cap-cup diagram -/
+
+/-- **Relabelling both boundaries of a cap-cup diagram by the same permutation** moves it to the
+renamed pair: relabelling conjugates the underlying matching by `Equiv.Perm.sumCongr σ σ`, which
+carries the transposition that bends the identity diagram into `capCup a b` to the one that bends
+it into `capCup (σ a) (σ b)` and fixes the identity diagram itself. -/
+@[simp]
+theorem relabel_capCup (a b : Fin k) (σ : Equiv.Perm (Fin k)) :
+    (capCup a b).relabel σ σ = capCup (σ a) (σ b) := by
+  have hone : PerfectMatching.congr (Equiv.Perm.sumCongr σ σ)⁻¹
+      (permToBrauer (1 : Equiv.Perm (Fin k))) = permToBrauer 1 := by
+    rw [Equiv.Perm.inv_def, Equiv.Perm.sumCongr_symm, ← relabel_def, relabel_permToBrauer,
+      mul_one, mul_inv_cancel]
+  have hswap := Equiv.swap_apply_apply (Equiv.Perm.sumCongr σ σ) (Sum.inr a) (Sum.inl b)
+  simp only [Equiv.Perm.sumCongr_apply, Sum.map_inr, Sum.map_inl] at hswap
+  rw [capCup_def, capCup_def, hswap, relabel_def, Equiv.Perm.mul_def, Equiv.Perm.mul_def,
+    ← PerfectMatching.congr_trans, hone, ← PerfectMatching.congr_trans]
+
+/-- **Renaming the top boundary by the transposition of the pair fixes a cap-cup diagram**: for
+`a ≠ b` the cap and the cup of `capCup a b` are both the pair `{a, b}`, which the transposition
+preserves. On the degenerate pair the transposition is trivial (`Equiv.swap_self`) and the diagram
+is the identity diagram (`TauCeti.capCup_self`), so it is fixed for that reason instead. -/
+@[simp]
+theorem relabel_one_swap_capCup (a b : Fin k) :
+    (capCup a b).relabel 1 (Equiv.swap a b) = capCup a b := by
+  rcases eq_or_ne a b with rfl | hab
+  · rw [Equiv.swap_self, ← Equiv.Perm.one_def, relabel_one_one]
+  rw [eq_capCup_iff hab]
+  refine ⟨by simp [Equiv.Perm.one_def, hab], by simp [Equiv.Perm.one_def, hab], fun i hia hib => ?_⟩
+  simp [Equiv.Perm.one_def, capCup_val_inl_of_ne hia hib, Equiv.swap_apply_of_ne_of_ne hia hib]
+
+/-- **Renaming the bottom boundary by the transposition of the pair fixes a cap-cup diagram.**
+Renaming both boundaries renames the pair, which the transposition leaves unordered. -/
+@[simp]
+theorem relabel_swap_one_capCup (a b : Fin k) :
+    (capCup a b).relabel (Equiv.swap a b) 1 = capCup a b := by
+  have h : ((capCup a b).relabel 1 (Equiv.swap a b)).relabel (Equiv.swap a b) (Equiv.swap a b)
+      = (capCup a b).relabel (Equiv.swap a b) 1 := by
+    rw [relabel_relabel, mul_one, Equiv.swap_mul_self]
+  rw [← h, relabel_one_swap_capCup, relabel_capCup, Equiv.swap_apply_left, Equiv.swap_apply_right,
+    capCup_comm]
 
 end BrauerDiagram
 

@@ -33,8 +33,10 @@ thickenings as sublevel sets of the distance function, and their complements as 
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
 the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
 (`IsCompact.disjoint_cthickening_left`). A point is not in the closed `δ`-thickening of the
-complement of a ball around it of larger radius (`TauCeti.notMem_cthickening_compl_ball`). In a
-proper space, the closed `δ`-thickening of a compact set is compact
+complement of a ball around it of larger radius (`TauCeti.notMem_cthickening_compl_ball`). A ball
+`B(y, r)` meeting a set has the concentric ball `B(y, ρ)` in its `δ`-thickening when `ρ + r ≤ δ`
+(`TauCeti.ball_subset_thickening_of_inter_nonempty`). In a proper space, the closed
+`δ`-thickening of a compact set is compact
 (`TopologicalSpace.Compacts.cthickening`). If balls of radius `η` cover a set `T`, the closed
 balls of radius `η` meeting `T` among them lie in the closed `2 η`-thickening of `T`, so their
 union contains `T` and has extended diameter at most `ediam T + 4 η`
@@ -153,6 +155,16 @@ theorem notMem_cthickening_compl_ball {X : Type*} [PseudoMetricSpace X] {x : X} 
     (le_infEDist.2 fun y hy ↦ ?_)
   rw [edist_dist]
   exact ENNReal.ofReal_le_ofReal (not_lt.1 fun h ↦ hy (mem_ball'.2 h))
+
+/-- A ball `B(y, r)` that meets `s` has its concentric ball `B(y, ρ)` in the `δ`-thickening of `s`
+when `ρ + r ≤ δ`. -/
+theorem ball_subset_thickening_of_inter_nonempty {X : Type*} [PseudoMetricSpace X] {s : Set X}
+    {y : X} {r ρ δ : ℝ} (hy : (ball y r ∩ s).Nonempty) (h : ρ + r ≤ δ) :
+    ball y ρ ⊆ thickening δ s := by
+  obtain ⟨x, hxy, hxs⟩ := hy
+  refine (ball_subset_ball' ?_).trans (ball_subset_thickening hxs δ)
+  rw [dist_comm]
+  linarith [mem_ball.1 hxy]
 
 /-- The closed `δ`-thickening of a compact set in a proper pseudometric space, as a compact set. -/
 def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
