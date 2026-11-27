@@ -10,8 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 /-!
 # A uniform saving at thin scales
 
-If the logarithm of the conductor is bounded by a power `α < 1` of the logarithm
-of the cutoff, the mixed exponential from a first Riesz error gives a uniform
+If the logarithm of the conductor is bounded by a power `α`, with `1 / 2 ≤ α < 1`,
+of the logarithm of the cutoff, the mixed exponential from a first Riesz error gives a uniform
 saving at exponent `1 - α`. A possible exceptional-zero contribution with a
 fixed gap from one is absorbed at the same scale. The exponential rate of the
 saving does not depend on that gap; the threshold does.
@@ -52,10 +52,9 @@ theorem eventually_riesz_error_profile_le {α c d : ℝ}
     ∀ᶠ V : ℝ in atTop, ∀ ℓ : ℝ, 0 ≤ ℓ → ℓ ≤ V ^ α →
       C * (1 + ℓ) ^ k * exp (-c * V / (√V + ℓ)) + D * exp (-d * V) ≤
         exp (-(c / 4) * V ^ (1 - α)) := by
-  let p := 1 - α
-  have hp : 0 < p := sub_pos.mpr hα₁
+  have hp : 0 < 1 - α := sub_pos.mpr hα₁
   let M := max C 0 * 2 ^ k + max D 0
-  have hdecay := ((tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero ((k : ℝ) / p)
+  have hdecay := ((tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero ((k : ℝ) / (1 - α))
     (c / 4) (by positivity)).comp (tendsto_rpow_atTop hp)).const_mul M
   rw [mul_zero] at hdecay
   have hsmall := hdecay.eventually (gt_mem_nhds (show (0 : ℝ) < 1 by norm_num))
@@ -64,7 +63,7 @@ theorem eventually_riesz_error_profile_le {α c d : ℝ}
   have hgap := hgap0.eventually (gt_mem_nhds hd)
   filter_upwards [eventually_ge_atTop (1 : ℝ), hsmall, hgap] with V hV hsmall hgap ℓ hℓ hℓV
   have hV₀ : 0 < V := zero_lt_one.trans_le hV
-  have hgap' : (c / 2) * V ^ p ≤ d * V := by
+  have hgap' : (c / 2) * V ^ (1 - α) ≤ d * V := by
     have hh := mul_le_mul_of_nonneg_right hgap.le hV₀.le
     rw [mul_assoc, ← rpow_add_one hV₀.ne', neg_add_eq_sub] at hh
     exact hh
@@ -75,25 +74,25 @@ theorem eventually_riesz_error_profile_le {α c d : ℝ}
     have hαV : V ^ α ≤ V := by simpa using rpow_le_rpow_of_exponent_le hV hα₂
     gcongr
     linarith
-  have hsmall' : M * (V ^ k * exp (-(c / 4) * V ^ p)) ≤ 1 := by
-    have hk : (V ^ p) ^ ((k : ℝ) / p) = V ^ k := by
-      rw [← rpow_mul hV₀.le, show p * ((k : ℝ) / p) = k by field_simp, rpow_natCast]
+  have hsmall' : M * (V ^ k * exp (-(c / 4) * V ^ (1 - α))) ≤ 1 := by
+    have hk : (V ^ (1 - α)) ^ ((k : ℝ) / (1 - α)) = V ^ k := by
+      rw [← rpow_mul hV₀.le, mul_div_cancel₀ _ hp.ne', rpow_natCast]
     simpa only [Function.comp_apply, hk] using hsmall.le
   have hfirst : C * (1 + ℓ) ^ k * exp (-c * V / (√V + ℓ)) ≤
-      max C 0 * (2 ^ k * V ^ k) * exp (-(c / 2) * V ^ p) := by
+      max C 0 * (2 ^ k * V ^ k) * exp (-(c / 2) * V ^ (1 - α)) := by
     rw [neg_mul, neg_div]
     gcongr
     · exact le_max_left _ _
     · linarith only [hrate]
-  have hsecond : D * exp (-d * V) ≤ max D 0 * V ^ k * exp (-(c / 2) * V ^ p) := by
+  have hsecond : D * exp (-d * V) ≤ max D 0 * V ^ k * exp (-(c / 2) * V ^ (1 - α)) := by
     have hpow : 1 ≤ V ^ k := one_le_pow₀ hV
     have hD : D ≤ max D 0 * V ^ k :=
       (le_max_left _ _).trans (le_mul_of_one_le_right (le_max_right _ _) hpow)
     exact mul_le_mul hD (exp_le_exp.mpr (by linarith only [hgap']))
       (exp_pos _).le (by positivity)
   calc
-    _ ≤ M * V ^ k * exp (-(c / 2) * V ^ p) := by dsimp [M]; linarith only [hfirst, hsecond]
-    _ = (M * (V ^ k * exp (-(c / 4) * V ^ p))) * exp (-(c / 4) * V ^ p) := by
+    _ ≤ M * V ^ k * exp (-(c / 2) * V ^ (1 - α)) := by dsimp [M]; linarith only [hfirst, hsecond]
+    _ = (M * (V ^ k * exp (-(c / 4) * V ^ (1 - α)))) * exp (-(c / 4) * V ^ (1 - α)) := by
       rw [← mul_assoc M, mul_assoc (M * V ^ k), ← exp_add]
       congr 2
       ring
@@ -106,10 +105,12 @@ private theorem exceptional_riesz_term_le {y β δ : ℝ} (hy : 1 ≤ y) (hδ : 
   have hy₀ : 0 < y := zero_lt_one.trans_le hy
   have hβδ : 0 < β * (1 - β) := mul_pos (by linarith) (by linarith)
   have hβ₁ : β ≤ 1 := by linarith
-  have hnum : y ^ β ≤ y * exp (-δ * log y) := by
-    rw [rpow_def_of_pos hy₀, ← exp_log hy₀, ← exp_add, log_exp]
-    apply exp_le_exp.mpr
-    nlinarith [mul_nonneg (sub_nonneg.mpr hgap) (log_nonneg hy)]
+  have hnum : y ^ β ≤ y * exp (-δ * log y) :=
+    calc
+      _ ≤ y ^ (1 - δ) := rpow_le_rpow_of_exponent_le hy hgap
+      _ = _ := by
+        rw [rpow_sub hy₀, rpow_one, div_eq_mul_inv, ← rpow_neg hy₀.le, rpow_def_of_pos hy₀,
+          mul_comm (log y)]
   have hrec : (β * (1 - β))⁻¹ ≤ 2 / δ := by
     rw [inv_eq_one_div, div_le_div_iff₀ hβδ hδ]
     nlinarith [mul_nonneg (sub_nonneg.mpr hβ) (sub_nonneg.mpr hβ₁)]
