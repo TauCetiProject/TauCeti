@@ -42,7 +42,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   subgroup.
 * `TauCeti.neg_one_pow_mul_succ_div_two_succ`: the signs of successive triangular numbers, as
   natural-number powers of `-1`.
-* `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
+* `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`,
+  `Int.negOnePow_mul_self_sub_mul_self`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
   `Int.negOnePow_mul_negOnePow_sub`, `Int.negOnePow_add_one_sub`,
   `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
@@ -224,6 +225,12 @@ theorem _root_.Int.negOnePow_mul_two_sub (n : ℤ) :
     (n * (2 - n)).negOnePow = n.negOnePow := by
   simp only [mul_sub, mul_comm n 2, Int.negOnePow_sub, Int.negOnePow_two_mul,
     Int.negOnePow_mul_self, one_mul]
+
+/-- A difference of squares has the sign of the sum of the integers squared:
+`(-1) ^ (a * a - b * b) = (-1) ^ (a + b)`. -/
+theorem _root_.Int.negOnePow_mul_self_sub_mul_self (a b : ℤ) :
+    (a * a - b * b).negOnePow = (a + b).negOnePow := by
+  rw [Int.negOnePow_sub, Int.negOnePow_mul_self, Int.negOnePow_mul_self, Int.negOnePow_add]
 
 /-- Reversing a difference and shifting it by one flips the sign:
 `(-1) ^ (a - b - 1) = -(-1) ^ (b - a)`. -/

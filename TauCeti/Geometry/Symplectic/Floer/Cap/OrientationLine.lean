@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.LinearHomComplex.ExactPairing
 public import TauCeti.Algebra.Homology.Monoidal.TwistedPairing
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The cap pairing and its sewing coevaluation
@@ -135,8 +136,7 @@ variable {R : Type v} [CommRing R] (O O' : CochainComplex (ModuleCat.{v} R) ℤ)
 private theorem negOnePow_mul_eq_negOnePow_add (μ n p q : ℤ) (hp : p = -(n + μ))
     (hq : q = μ - n) : (p * q).negOnePow = (μ + n).negOnePow := by
   have hpq : p * q = n * n - μ * μ := by subst hp hq; ring
-  rw [hpq, Int.negOnePow_sub, Int.negOnePow_mul_self, Int.negOnePow_mul_self, Int.negOnePow_add,
-    mul_comm n.negOnePow]
+  rw [hpq, Int.negOnePow_mul_self_sub_mul_self, add_comm]
 
 /-- **The Koszul sign of the cap pairing.** For cochain complexes of modules, on the summand
 `C⁺_p ⊗ C⁻_q` of degree `j = p + q`, the cap pairing is `(-1)^(p q)` times the unsigned flip into
