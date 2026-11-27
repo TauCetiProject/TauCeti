@@ -45,14 +45,7 @@ zeros, including the empty region. -/
 theorem IsSmoothForm.exists_pos_le_norm_metricDual (hα : IsSmoothForm I 0 α)
     (hK : IsCompact K) (hne : ∀ x ∈ K, α x ≠ 0) :
     ∃ c : ℝ, 0 < c ∧ ∀ x ∈ K, c ≤ ‖α.metricDual x‖ := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0)
-  have : IsManifold I ((0 : ℕ∞ω) + 1) M := by
-    simpa only [zero_add] using (inferInstance : IsManifold I 1 M)
-  have hnorm : Continuous (fun x ↦ ‖α.metricDual x‖) :=
-    (continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp
-      hα.contMDiff_metricDual.continuous
-  exact hK.exists_forall_le' hnorm.continuousOn fun x hx ↦
+  exact hK.exists_forall_le' hα.continuous_norm_metricDual.continuousOn fun x hx ↦
     norm_pos_iff.mpr (mt RoughForm.metricDual_eq_zero_iff.mp (hne x hx))
 
 /-- On any measurable selection of interior times where the dual norm is at least `c > 0`,
@@ -65,13 +58,8 @@ theorem IsPrimitiveOn.setLIntegral_enorm_curveVelocity_le_of_le_norm_metricDual
     (hc : 0 < c) (hbound : ∀ t ∈ T, c ≤ ‖α.metricDual (γ t)‖) :
     (∫⁻ t in T, ‖Manifold.curveVelocity I γ t‖ₑ) ≤
       ENNReal.ofReal ((f (γ a) - f (γ b)) / c) := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0)
-  have : IsManifold I ((0 : ℕ∞ω) + 1) M := by
-    simpa only [zero_add] using (inferInstance : IsManifold I 1 M)
   have hcont : ContinuousOn (fun t ↦ ‖α.metricDual (γ t)‖ ^ 2 / c) (Icc a b) :=
-    (((continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
-      (hα.contMDiff_metricDual.continuous.comp_continuousOn hγ.continuousOn)).pow 2
+    ((hα.continuous_norm_metricDual.comp_continuousOn hγ.continuousOn).pow 2
       |>.div_const c).mono hseg
   have hint := (hcont.integrableOn_compact (μ := volume) isCompact_Icc).mono_set Ioo_subset_Icc_self
   have heq : (∫ t in Ioo a b, ‖α.metricDual (γ t)‖ ^ 2 / c) =

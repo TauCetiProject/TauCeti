@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # Metric duals of real one-forms
@@ -151,6 +152,19 @@ theorem IsSmoothForm.contMDiff_metricDual {n : ℕ∞ω} [IsManifold I (n + 1) M
   have h := (hΦ x).clm_bundle_apply hframe
   rw [contMDiffAt_section_iff] at h
   simpa only [Trivial.eq_trivialization M ℝ, Trivial.trivialization_apply] using h
+
+/-- For a continuous metric, the norm of the metric dual of a continuous one-form is
+continuous. -/
+theorem IsSmoothForm.continuous_norm_metricDual
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    {α : RoughForm I M ℝ 1} (hα : IsSmoothForm I 0 α) :
+    Continuous (fun x ↦ ‖α.metricDual x‖) := by
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0)
+  have : IsManifold I ((0 : ℕ∞ω) + 1) M := by
+    simpa only [zero_add] using (inferInstance : IsManifold I 1 M)
+  exact (continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp
+    hα.contMDiff_metricDual.continuous
 
 /-- The negative metric dual has the same regularity as the form and metric. -/
 theorem IsSmoothForm.contMDiff_neg_metricDual {n : ℕ∞ω} [IsManifold I (n + 1) M]
