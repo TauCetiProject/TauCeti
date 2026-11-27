@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.LinearAlgebra.LinearMap.Range
+import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
 
 /-!
 # Real finrank of a compatible complex module
@@ -24,7 +25,8 @@ space with a complex basis of size `k` has real dimension `2 * k`
 (`LinearEquiv.finrank_eq_two_mul_of_basis`). Likewise the range of a complex-linear
 map has real dimension twice its complex dimension
 (`LinearMap.finrank_range_restrictScalars_eq_two_mul`), also when transported to a real-linear
-map along real isomorphisms (`LinearMap.finrank_range_eq_two_mul_of_comp_eq`).
+map along real isomorphisms (`LinearMap.finrank_range_eq_two_mul_of_comp_eq`), and its cokernel
+has even real dimension (`LinearMap.even_finrank_quotient_range_restrictScalars`).
 -/
 
 public section
@@ -98,6 +100,12 @@ theorem finrank_range_restrictScalars_eq_two_mul (f : V →ₗ[ℂ] W) :
     Module.finrank ℝ (range (f.restrictScalars ℝ)) = 2 * Module.finrank ℂ (range f) := by
   rw [range_restrictScalars]
   exact TauCeti.finrank_real_eq_two_mul_finrank_complex (V := (range f).restrictScalars ℝ)
+
+/-- The cokernel of a complex-linear map has even real dimension. -/
+theorem even_finrank_quotient_range_restrictScalars (f : V →ₗ[ℂ] W) :
+    Even (Module.finrank ℝ (W ⧸ range (f.restrictScalars ℝ))) := by
+  rw [(f.cokerRestrictScalarsEquiv ℝ).finrank_eq, TauCeti.finrank_real_eq_two_mul_finrank_complex]
+  exact even_two_mul _
 
 /-- Transported along real isomorphisms `e : V ≃ V'` and `e' : W ≃ W'` intertwining a
 complex-linear `f` with a real-linear `g`, the range of `g` has real dimension twice the complex

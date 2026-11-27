@@ -74,7 +74,8 @@ given by bijectivity multiply
 
 ## Main declarations
 
-* `TauCeti.detLineProdEquiv`: `det U ⊗ det W ≃ det (U × W)`, with its value
+* `TauCeti.detLineProdEquiv`: `det U ⊗ det W ≃ det (U × W)`, the isomorphism of a short exact
+  sequence (`TauCeti.detLineProdEquiv_def`), with its value
   `TauCeti.coe_detLineProdEquiv_tmul`, also on arbitrary lifts of the second factor
   (`TauCeti.coe_detLineProdEquiv_tmul_snd_comp`).
 * `TauCeti.detLineCongr_prodComm_detLineProdEquiv`: exchanging the factors costs
@@ -94,13 +95,16 @@ given by bijectivity multiply
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodAssoc`: reassociating three summands involves no
   sign.
 * `TauCeti.detLineDualProdEquiv`: the isomorphism `(det V₁)^* ⊗ (det V₂)^* ≃ (det (V₁ × V₂))^*`,
-  with its value `TauCeti.detLineDualProdEquiv_tmul_apply`.
+  with its value `TauCeti.detLineDualProdEquiv_tmul_apply` and its naturality
+  `TauCeti.detLineDualProdEquiv_tmul_comp_detLineCongr_prodCongr`.
 * `TauCeti.detLineTensorDualProdEquiv`: the isomorphism
   `(det U₁ ⊗ (det V₁)^*) ⊗ (det U₂ ⊗ (det V₂)^*) ≃ det (U₁ × U₂) ⊗ (det (V₁ × V₂))^*`.
 * `TauCeti.detLineFourTermEquiv_prodMap`: the four-term isomorphism of a product of exact
   sequences is the product of the four-term isomorphisms, up to a Koszul sign.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodCongr`: naturality under products of commuting
   squares.
+* `LinearMap.detLineProdMapEquiv_detLineCongrOfEq`: compatibility with the identifications of the
+  determinant lines of equal maps.
 * `LinearMap.detLineEquivOfBijective_detLineProdMapEquiv_symm_tmul`: for bijective maps the
   trivializations given by bijectivity multiply.
 
@@ -131,6 +135,14 @@ short exact sequence `0 → U → U × W → W → 0`. It sends `(u₁ ∧ ⋯ �
 `(u₁, 0) ∧ ⋯ ∧ (uₐ, 0) ∧ (0, w₁) ∧ ⋯ ∧ (0, w_c)` (`TauCeti.coe_detLineProdEquiv_tmul`). -/
 def detLineProdEquiv : detLine K U ⊗[K] detLine K W ≃ₗ[K] detLine K (U × W) :=
   detLineShortExactEquiv LinearMap.inl_injective Function.Exact.inl_snd LinearMap.snd_surjective
+
+/-- `TauCeti.detLineProdEquiv` is the isomorphism of determinant lines of the short exact sequence
+`0 → U → U × W → W → 0`. -/
+theorem detLineProdEquiv_def :
+    detLineProdEquiv K U W =
+      detLineShortExactEquiv LinearMap.inl_injective Function.Exact.inl_snd
+        LinearMap.snd_surjective :=
+  (rfl)
 
 variable {K U W}
 
@@ -371,6 +383,23 @@ theorem rTensor_detLineCongr_prodCongr_detLineTensorDualProdEquiv {U₁' U₂' :
       induction y using TensorProduct.inductionOn with
       | add y y' hy hy' => simp only [tmul_add, map_add, hy, hy']
       | tmul b ψ => simp [detLineCongr_prodCongr_detLineProdEquiv]
+
+/-- **Naturality of `TauCeti.detLineDualProdEquiv`.** For isomorphisms `e₁ : V₁ ≃ V₁'` and
+`e₂ : V₂ ≃ V₂'`, the product of functionals `φ₁` on `det V₁'` and `φ₂` on `det V₂'`, pulled back
+along the isomorphism induced by `e₁ × e₂`, is the product of their pullbacks along the
+isomorphisms induced by `e₁` and `e₂`. -/
+theorem detLineDualProdEquiv_tmul_comp_detLineCongr_prodCongr {V₁' V₂' : Type*}
+    [AddCommGroup V₁'] [Module K V₁'] [AddCommGroup V₂'] [Module K V₂'] [FiniteDimensional K V₁']
+    [FiniteDimensional K V₂'] (e₁ : V₁ ≃ₗ[K] V₁') (e₂ : V₂ ≃ₗ[K] V₂')
+    (φ₁ : Dual K (detLine K V₁')) (φ₂ : Dual K (detLine K V₂')) :
+    detLineDualProdEquiv K V₁' V₂' (φ₁ ⊗ₜ φ₂) ∘ₗ (e₁.prodCongr e₂).detLineCongr.toLinearMap =
+      detLineDualProdEquiv K V₁ V₂ ((φ₁ ∘ₗ e₁.detLineCongr.toLinearMap) ⊗ₜ
+        (φ₂ ∘ₗ e₂.detLineCongr.toLinearMap)) := by
+  refine LinearMap.ext fun w ↦ ?_
+  obtain ⟨t, rfl⟩ := (detLineProdEquiv K V₁ V₂).surjective w
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul c₁ c₂ => simp [detLineCongr_prodCongr_detLineProdEquiv]
 
 end TensorDual
 
@@ -1220,6 +1249,26 @@ theorem detLineProdMapEquiv_detLineCongr_prodCongr (x : (f.prodMap g).detLine) :
     (fun _ ↦ by simp) _ (fun _ ↦ by simp) x
 
 end Naturality
+
+section OfEq
+
+variable {f₁ : M →ₗ[K] N} {g₁ : M' →ₗ[K] N'} [FiniteDimensional K (ker f₁)]
+  [FiniteDimensional K (ker g₁)] [FiniteDimensional K (N ⧸ range f₁)]
+  [FiniteDimensional K (N' ⧸ range g₁)]
+
+/-- **The direct sum isomorphism of equal maps.** For `f = f₁` and `g = g₁`, the identification of
+the determinant lines of the equal direct sums (`LinearMap.detLineCongrOfEq`) corresponds under
+`LinearMap.detLineProdMapEquiv` to the identifications of the determinant lines of the
+summands. -/
+theorem detLineProdMapEquiv_detLineCongrOfEq (hf : f = f₁) (hg : g = g₁)
+    (x : (f.prodMap g).detLine) :
+    detLineProdMapEquiv f₁ g₁ (detLineCongrOfEq (congrArg₂ prodMap hf hg) x) =
+      TensorProduct.congr (detLineCongrOfEq hf) (detLineCongrOfEq hg)
+        (detLineProdMapEquiv f g x) := by
+  subst hf hg
+  simp
+
+end OfEq
 
 section Assoc
 
