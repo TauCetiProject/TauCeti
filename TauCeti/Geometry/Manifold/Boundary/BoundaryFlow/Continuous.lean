@@ -138,18 +138,17 @@ private theorem exists_pos_forall_continuousWithinAt_forwardIntegralCurve
     ∃ ε > (0 : ℝ), ∀ (x : M), ∀ t ∈ Ico 0 ε,
       ContinuousWithinAt (fun p : M × ℝ ↦ forwardIntegralCurve v p.1 p.2) (univ ×ˢ Ici 0)
         (x, t) := by
-  rcases isEmpty_or_nonempty M with hM | hM
-  · exact ⟨1, one_pos, fun x ↦ isEmptyElim x⟩
   choose U hU ε hε h using exists_mem_nhds_forall_continuousWithinAt_forwardIntegralCurve hv hin
-  -- Finitely many of the neighbourhoods cover `M`; take the least of their times.
-  obtain ⟨s, -, hs⟩ := isCompact_univ.elim_nhds_subcover U fun x _ ↦ hU x
-  have hne : s.Nonempty := by
-    obtain ⟨x⟩ := hM
-    obtain ⟨y, hy, -⟩ := mem_iUnion₂.1 (hs (mem_univ x))
-    exact ⟨y, hy⟩
-  refine ⟨s.inf' hne ε, (Finset.lt_inf'_iff hne).2 fun y _ ↦ hε y, fun x t ht ↦ ?_⟩
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (hs (mem_univ x))
-  exact h y x hxy t ⟨ht.1, ht.2.trans_le (Finset.inf'_le ε hy)⟩
+  -- By the tube lemma, continuity holds at `(x, t)` for all `x` and all small `t ≥ 0`.
+  obtain ⟨δ, hδ, hδh⟩ := Metric.eventually_nhds_iff.1 <|
+    isCompact_univ.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ)) (P := fun t x ↦ 0 ≤ t →
+      ContinuousWithinAt (fun p : M × ℝ ↦ forwardIntegralCurve v p.1 p.2) (univ ×ˢ Ici 0) (x, t))
+      fun y _ ↦ by
+        filter_upwards [prod_mem_nhds (Iio_mem_nhds (hε y)) (hU y)] with p hp hp0
+        exact h y p.2 hp.2 p.1 ⟨hp0, hp.1⟩
+  refine ⟨δ, hδ, fun x t ht ↦ hδh ?_ x (mem_univ x) ht.1⟩
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg ht.1]
+  exact ht.2
 
 /-- **Continuity of the inward flow.** On a compact Hausdorff manifold with boundary, the forward
 flow `(x, t) ↦ forwardIntegralCurve v x t` of a smooth vector field `v` pointing inward along the

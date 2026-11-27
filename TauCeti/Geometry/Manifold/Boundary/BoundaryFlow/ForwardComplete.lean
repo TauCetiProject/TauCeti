@@ -126,17 +126,15 @@ private theorem exists_pos_forall_exists_isMIntegralCurveOn_Ico [CompactSpace M]
         exists_contMDiffOn_localFlow_of_isOutwardPointing_neg v hv.contMDiffOn univ_mem (hin a ha)
       exact ⟨U, hU, ε, hε, fun x hx ↦ ⟨Φ x, (hΦ x hx).1, (hΦ x hx).2.1⟩⟩
   choose U hU ε hε hγ using hloc
-  -- Finitely many of these neighbourhoods cover `M`; take the least of their times.
-  obtain ⟨T, -, hT⟩ := isCompact_univ.elim_nhds_subcover U fun a _ ↦ hU a
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact ⟨1, one_pos, fun x ↦ isEmptyElim x⟩
-  have hTne : T.Nonempty := by
-    obtain ⟨a, ha, -⟩ := mem_iUnion₂.mp (hT (mem_univ x₀))
-    exact ⟨a, ha⟩
-  refine ⟨T.inf' hTne ε, (Finset.lt_inf'_iff hTne).2 fun a _ ↦ hε a, fun x ↦ ?_⟩
-  obtain ⟨a, ha, hxa⟩ := mem_iUnion₂.mp (hT (mem_univ x))
-  obtain ⟨γ, hγ0, hγc⟩ := hγ a x hxa
-  exact ⟨γ, hγ0, hγc.mono (Ico_subset_Ico_right (Finset.inf'_le ε ha))⟩
+  -- By the tube lemma, the curves exist from every point for all small positive times.
+  obtain ⟨t, ht, ht0⟩ := (((isCompact_univ.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ))
+      (P := fun t x ↦ 0 < t → ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ico 0 t))
+      fun a _ ↦ by
+        filter_upwards [prod_mem_nhds (Iio_mem_nhds (hε a)) (hU a)] with p hp _
+        obtain ⟨γ, hγ0, hγc⟩ := hγ a p.2 hp.2
+        exact ⟨γ, hγ0, hγc.mono (Ico_subset_Ico_right hp.1.le)⟩).filter_mono
+      nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  exact ⟨t, ht0, fun x ↦ ht x (mem_univ x) ht0⟩
 
 /-- On a compact manifold, the forward integral curves of an inward field exist through every
 point for every length of time. -/
