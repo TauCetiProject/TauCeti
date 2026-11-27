@@ -322,6 +322,29 @@ theorem algEquivOfLeOne_symm_apply (h : n ≤ 1) (r : R) :
     (algEquivOfLeOne δ h).symm r = algebraMap R (TemperleyLieb R δ n) r := by
   simp only [algEquivOfLeOne, AlgEquiv.ofAlgHom_symm_apply, Algebra.ofId_apply]
 
+/-- On at most one strand, every element of `TemperleyLieb R δ n` is the scalar image of its
+augmentation. -/
+theorem eq_algebraMap_aug_of_le_one {δ : R} {n : ℕ} (hn : n ≤ 1) (x : TemperleyLieb R δ n) :
+    x = algebraMap R (TemperleyLieb R δ n) (aug x) := by
+  have h := ((algEquivOfLeOne δ hn).symm_apply_apply x).symm
+  rwa [algEquivOfLeOne_apply, algEquivOfLeOne_symm_apply] at h
+
+/-- Strand inclusion `TemperleyLieb R δ n →ₐ[R] TemperleyLieb R δ (n + 1)` defined for every
+`n ≥ 0`, extending `strandIncl` by the augmentation-scalar map at `n = 0`. -/
+def strandInclAll {δ : R} : ∀ n : ℕ, TemperleyLieb R δ n →ₐ[R] TemperleyLieb R δ (n + 1)
+  | 0 => (Algebra.ofId R _).comp aug
+  | _ + 1 => strandIncl
+
+/-- On zero strands, `strandInclAll 0` sends an element to the scalar image of its augmentation. -/
+@[simp]
+theorem strandInclAll_zero {δ : R} (x : TemperleyLieb R δ 0) :
+    strandInclAll 0 x = algebraMap R (TemperleyLieb R δ 1) (aug x) := (rfl)
+
+/-- On at least one strand, `strandInclAll (n + 1)` agrees with `strandIncl`. -/
+@[simp]
+theorem strandInclAll_succ {δ : R} (n : ℕ) :
+    strandInclAll (R := R) (δ := δ) (n + 1) = strandIncl := (rfl)
+
 /-- On at most one strand, `1` forms a singleton free `R`-basis of `TemperleyLieb R δ n`. -/
 noncomputable def basisOfLeOne (hn : n ≤ 1) :
     Module.Basis (Fin 1) R (TemperleyLieb R δ n) :=

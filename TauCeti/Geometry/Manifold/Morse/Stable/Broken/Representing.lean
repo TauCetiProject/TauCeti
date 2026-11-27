@@ -56,19 +56,35 @@ main theorem takes `M`, the index type of the levels and `k` in `Type`. In highe
 the boundary has corners, and its collar and its charts need the gluing of trajectories broken
 several times, which is not treated here.
 
+In the same range the representing chain systems are **unique up to homotopy** (Proposition 5.2.8
+of Barraud, Damian, Humilière and Oancea, which asks this in every index difference). The
+fundamental class relative to the boundary is the only class generating the local homology at
+every unbroken trajectory (`IsMorseSmale.existsUnique_isFundamentalClassRel`), so any two twisting
+chain systems representing the fundamental classes represent the same classes, and are therefore
+joined by a homotopy and give isomorphic DG Morse complexes
+(`TauCeti.Geometry.Manifold.Morse.DG.Representing`).
+
+## Main definitions
+
+* `TauCeti.IsAdaptedPseudoGradient.IsFundamentalClassRel`: a class of
+  `H_{ind x - ind y - 1}(L(x, y), ∂L(x, y); k)` generating the local homology at every unbroken
+  trajectory, unfolded by `TauCeti.IsAdaptedPseudoGradient.isFundamentalClassRel_iff`.
+
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
 * `exists_isRepresenting_of_subsingleton_units`: in index differences at most two, fundamental
   classes relative to the boundaries exist and are represented by a twisting chain system.
+* `existsUnique_isFundamentalClassRel`: in index differences one and two, the fundamental class
+  relative to the boundary is unique.
 
 ## References
 
 * J.-F. Barraud, O. Cornea, *Lagrangian intersections and the Serre spectral sequence*, Ann. of
   Math. (2) 166 (2007), 657–722, Lemma 2.2 and Appendix A.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
-  coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Proposition 5.2.6.
+  coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Propositions 5.2.6 and 5.2.8.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 3.
 -/
@@ -154,6 +170,52 @@ private theorem isCollared_morseBrokenTrajectorySpaceBoundary_of_le [Countable �
 
 end Boundary
 
+end IsMorseSmale
+
+/-! ### Fundamental classes relative to the boundary -/
+
+section FundamentalClassRel
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [CompactSpace M] [T2Space M]
+  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {ι : Type}
+  (hX : IsAdaptedPseudoGradient f X) (c : ι → ℝ)
+
+/-- A class `μ` of `H_{ind x - ind y - 1}(L(x, y), ∂L(x, y); k)` is a **fundamental class relative
+to the boundary** when its image in the local homology `H(L(x, y), L(x, y) ∖ {r}; k)` generates it
+at every unbroken trajectory `r`. With coefficients in a commutative ring whose only unit is `1`,
+such as `ZMod 2`, there is exactly one in index differences one and two
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.existsUnique_isFundamentalClassRel`). -/
+def IsFundamentalClassRel (k : Type) [CommRing k] {x y : criticalPoints 𝓘(ℝ, E) f}
+    (μ : ((TopPair.ofSubset (X := TopCat.of (hX.morseBrokenTrajectorySpace c x y))
+      (hX.morseBrokenTrajectorySpaceBoundary c x y)).cubicalChainComplex k).homology
+      ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat) :
+    Prop :=
+  ∀ r (hr : r ∉ hX.morseBrokenTrajectorySpaceBoundary c x y),
+    (k ∙ (TopPair.singularHomologyMap
+      (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
+        (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
+      ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤
+
+/-- Unfolding `IsFundamentalClassRel`: the image of `μ` generates the local homology at every
+unbroken trajectory. -/
+theorem isFundamentalClassRel_iff (k : Type) [CommRing k] {x y : criticalPoints 𝓘(ℝ, E) f}
+    (μ : ((TopPair.ofSubset (X := TopCat.of (hX.morseBrokenTrajectorySpace c x y))
+      (hX.morseBrokenTrajectorySpaceBoundary c x y)).cubicalChainComplex k).homology
+      ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat) :
+    hX.IsFundamentalClassRel c k μ ↔
+      ∀ r (hr : r ∉ hX.morseBrokenTrajectorySpaceBoundary c x y),
+        (k ∙ (TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
+            (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
+          ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤ :=
+  Iff.rfl
+
+end FundamentalClassRel
+
+namespace IsMorseSmale
+
 /-! ### Representing chain systems -/
 
 section Representing
@@ -168,10 +230,40 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 include h hf hc hdense
 
 /-- **Fundamental classes relative to the boundary in index differences one and two.** With
-coefficients in a ring whose only unit is `1`, the trajectory space `L(x, y)` has a class of
+coefficients in a ring whose only unit is `1`, exactly one class of
 `H_{ind x - ind y - 1}(L(x, y), ∂L(x, y); k)`, the boundary written as the complement of the
-unbroken trajectories, whose image in the local homology at every unbroken trajectory generates
-it. -/
+unbroken trajectories, generates the local homology at every unbroken trajectory. -/
+private theorem existsUnique_span_localHomologyRestriction_eq_top (k : Type) [CommRing k]
+    [Subsingleton kˣ] {x y : criticalPoints 𝓘(ℝ, E) f}
+    (hyx : manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x)
+    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2) :
+    ∃! μ : ((TopPair.ofSubset (X := TopCat.of (hX.morseBrokenTrajectorySpace c x y))
+        (range (Subtype.val : ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ →
+          TopCat.of (hX.morseBrokenTrajectorySpace c x y)))ᶜ).cubicalChainComplex k).homology
+        ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat,
+      ∀ r, (k ∙ localHomologyRestriction (ModuleCat.of k k)
+        (singleton_subset_iff.2 (mem_range_self r)) _
+        ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤ := by
+  have := h.compactSpace_morseBrokenTrajectorySpace hf hc x y
+  obtain ⟨C⟩ := h.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary hf hc hdense
+    (x := x) (y := y) (d := ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) -
+      manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat) fun _ ↦ by omega
+  have hcol := h.isCollared_morseBrokenTrajectorySpaceBoundary_of_le hf hc hdense hyx hxy
+  obtain ⟨γ, hγ, huniq⟩ := existsUnique_span_localHomologyRestriction_range_eq_top
+    (E := EuclideanSpace ℝ (Fin ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) -
+      manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat))
+    finrank_euclideanSpace_fin (IsOpen.isOpenEmbedding_subtypeVal
+      (h.isClosed_morseBrokenTrajectorySpaceBoundary hf hc hdense x y).isOpen_compl)
+    (by rw [compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary]
+        simp only [Subtype.range_coe]) k hcol
+  refine ⟨(TopPair.singularCubicalHomologyIso k _ _).hom.hom γ, fun r ↦ ?_, fun μ hμ ↦ ?_⟩
+  · rw [ModuleCat.inv_hom_apply]
+    exact hγ r
+  · rw [← huniq _ hμ, ModuleCat.hom_inv_apply]
+
+/-- **Fundamental classes relative to the boundary in index differences one and two**: the
+existence part of `existsUnique_span_localHomologyRestriction_eq_top`, with a junk value when
+`ind x ≤ ind y`. -/
 private theorem exists_span_localHomologyRestriction_eq_top (k : Type) [CommRing k]
     [Subsingleton kˣ] (x y : criticalPoints 𝓘(ℝ, E) f)
     (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2) :
@@ -184,24 +276,10 @@ private theorem exists_span_localHomologyRestriction_eq_top (k : Type) [CommRing
           (singleton_subset_iff.2 (mem_range_self r)) _
           ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤ := by
   by_cases hyx : (manifoldMorseIndex 𝓘(ℝ, E) f y : ℤ) < manifoldMorseIndex 𝓘(ℝ, E) f x
-  swap
+  · obtain ⟨μ, hμ, -⟩ := h.existsUnique_span_localHomologyRestriction_eq_top hf hc hdense k
+      (Nat.cast_lt.1 hyx) hxy
+    exact ⟨μ, fun _ ↦ hμ⟩
   · exact ⟨0, fun h ↦ absurd h hyx⟩
-  have := h.compactSpace_morseBrokenTrajectorySpace hf hc x y
-  obtain ⟨C⟩ := h.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary hf hc hdense
-    (x := x) (y := y) (d := ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) -
-      manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat) fun _ ↦ by omega
-  have hcol := h.isCollared_morseBrokenTrajectorySpaceBoundary_of_le hf hc hdense
-    (Nat.cast_lt.1 hyx) hxy
-  obtain ⟨γ, hγ, -⟩ := existsUnique_span_localHomologyRestriction_range_eq_top
-    (E := EuclideanSpace ℝ (Fin ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) -
-      manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat))
-    finrank_euclideanSpace_fin (IsOpen.isOpenEmbedding_subtypeVal
-      (h.isClosed_morseBrokenTrajectorySpaceBoundary hf hc hdense x y).isOpen_compl)
-    (by rw [compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary]
-        simp only [Subtype.range_coe]) k hcol
-  refine ⟨(TopPair.singularCubicalHomologyIso k _ _).hom.hom γ, fun _ r ↦ ?_⟩
-  rw [ModuleCat.inv_hom_apply]
-  exact hγ r
 
 /-- The existence of representing chain systems, with the boundary written as the complement of
 the range of the inclusion of the unbroken trajectories, the form in which
@@ -303,11 +381,7 @@ theorem exists_isRepresenting_of_subsingleton_units [Fintype (criticalPoints �
           ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat,
       (∀ x y : criticalPoints 𝓘(ℝ, E) f,
         manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x →
-        ∀ r (hr : r ∉ hX.morseBrokenTrajectorySpaceBoundary c x y),
-          (k ∙ (TopPair.singularHomologyMap
-            (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
-              (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
-            ((TopPair.singularCubicalHomologyIso k _ _).inv.hom (μ x y))) = ⊤) ∧
+          hX.IsFundamentalClassRel c k (μ x y)) ∧
       ∃ S : TwistingChainSystem
           (M := fun x y : criticalPoints 𝓘(ℝ, E) f ↦
             TopCat.of (hX.morseBrokenTrajectorySpace c x y))
@@ -345,6 +419,38 @@ theorem exists_isRepresenting_of_subsingleton_units [Fintype (criticalPoints �
     funext₂ (compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary (hX := hX) (c := c)) ▸
       hG
   exact ⟨μ', hμ', S, hS'⟩
+
+/-- **Fundamental classes relative to the boundary in index differences one and two.** With
+coefficients in a commutative ring `k` whose only unit is `1`, such as `ZMod 2`, exactly one class
+of `H_{ind x - ind y - 1}(L(x, y), ∂L(x, y); k)` generates the local homology
+`H(L(x, y), L(x, y) ∖ {r}; k)` at every unbroken trajectory `r`. Some twisting chain system
+represents these classes by `exists_isRepresenting_of_subsingleton_units`. -/
+theorem existsUnique_isFundamentalClassRel (k : Type) [CommRing k] [Subsingleton kˣ]
+    {x y : criticalPoints 𝓘(ℝ, E) f}
+    (hyx : manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x)
+    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2) :
+    ∃! μ, hX.IsFundamentalClassRel c k (x := x) (y := y) μ := by
+  -- Write the boundary as the complement of the unbroken trajectories, the form of
+  -- `existsUnique_span_localHomologyRestriction_eq_top`.
+  suffices H : ∀ (A : Set (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
+      (_ : (range (Subtype.val : ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ →
+        TopCat.of (hX.morseBrokenTrajectorySpace c x y)))ᶜ = A),
+      ∃! μ : ((TopPair.ofSubset A).cubicalChainComplex k).homology
+        ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat,
+      ∀ r (hr : r ∉ A), (k ∙ (TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
+          (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
+        ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤ from
+    H _ (compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary x y)
+  rintro A rfl
+  refine (existsUnique_congr fun μ ↦ ⟨fun hμ r hr ↦ ?_, fun hμ r ↦ ?_⟩).1
+    (h.existsUnique_span_localHomologyRestriction_eq_top hf hc hdense k hyx hxy)
+  · -- A trajectory outside the complement of the unbroken trajectories is unbroken.
+    obtain ⟨r, rfl⟩ := not_not.1 hr
+    have := hμ r
+    rwa [localHomologyRestriction_def] at this
+  · rw [localHomologyRestriction_def]
+    exact hμ _ (not_not.2 (mem_range_self r))
 
 end Representing
 
