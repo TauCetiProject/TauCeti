@@ -10,8 +10,10 @@ public import Mathlib.RingTheory.Valuation.Basic
 /-!
 # Elementary bounds for valuations
 
-Two elementary consequences of the ultrametric inequality `v (x + y) ≤ max (v x) (v y)`: it
-persists after raising both sides to a power, and every natural number has value at most `1`.
+Three elementary consequences of the ultrametric inequality `v (x + y) ≤ max (v x) (v y)`: it
+persists after raising both sides to a power, every natural number has value at most `1`, and
+when `v x ≠ v y` the corresponding inequality for `x - y` is an equality,
+`v (x - y) = max (v x) (v y)`.
 
 ## Main results
 
