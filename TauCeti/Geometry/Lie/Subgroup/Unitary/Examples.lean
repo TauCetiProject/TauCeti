@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 import Mathlib.LinearAlgebra.BilinearForm.Hom
 import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
@@ -183,15 +184,6 @@ theorem mem_torusSemidirectZ2Subgroup_iff {U : Matrix.unitaryGroup (Fin 2) ℂ} 
         _ = (U * P) * P := (mul_assoc _ _ _).symm
         _ = unitaryTorusHom (Fin 2) z * Matrix.permutationUnitary (Equiv.swap 0 1) := by rw [hz]
 
-/-- A skew-Hermitian `2 × 2` complex matrix has unitary exponential line. -/
-private theorem exp_smul_mem_unitaryGroup_of_conjTranspose_eq_neg
-    {X : Matrix (Fin 2) (Fin 2) ℂ} (hskew : Xᴴ = -X) (t : ℝ) :
-    NormedSpace.exp (t • X) ∈ Matrix.unitaryGroup (Fin 2) ℂ := by
-  have hX : X ∈ (ClosedSubgroup.unitary (Fin 2) ℂ).matrixLieAlgebra :=
-    ClosedSubgroup.mem_matrixLieAlgebra_unitary_iff.mpr hskew
-  obtain ⟨u, -, hu⟩ := ClosedSubgroup.mem_matrixLieAlgebra_iff.mp hX t
-  exact hu ▸ u.property
-
 /-- An exponential line staying in `torusSemidirectZ2Subgroup` remains in the diagonal torus. -/
 private theorem exp_smul_diag_of_mem_torusSemidirectZ2Subgroup
     {X : Matrix (Fin 2) (Fin 2) ℂ} (hX : X ∈ torusSemidirectZ2Subgroup.matrixLieAlgebra)
@@ -265,7 +257,14 @@ theorem mem_matrixLieAlgebra_torusSemidirectZ2_iff (X : Matrix (Fin 2) (Fin 2) �
     have hdiag : t • X = Matrix.diagonal (fun i ↦ (t : ℂ) * X i i) := by
       ext i j
       fin_cases i <;> fin_cases j <;> simp [Complex.real_smul, h01, h10]
-    refine ⟨⟨NormedSpace.exp (t • X), exp_smul_mem_unitaryGroup_of_conjTranspose_eq_neg hskew t⟩,
+    have hexp_unitary : NormedSpace.exp (t • X) ∈ Matrix.unitaryGroup (Fin 2) ℂ :=
+      open scoped Matrix.Norms.Operator in
+      letI : SeminormedAddCommGroup (Matrix (Fin 2) (Fin 2) ℂ) := inferInstance
+      letI := Matrix.linftyOpTopologicalSpace (Fin 2) (Fin 2) ℂ
+      letI := Matrix.linftyOpContinuousStar (Fin 2) ℂ
+      NormedSpace.exp_mem_unitary_of_mem_skewAdjoint
+        (skewAdjoint.smul_mem t (skewAdjoint.mem_iff.mpr hskew))
+    refine ⟨⟨NormedSpace.exp (t • X), hexp_unitary⟩,
       mem_torusSemidirectZ2Subgroup_iff.mpr (Or.inl ?_), rfl⟩
     dsimp only
     rw [hdiag, Matrix.exp_diagonal]
