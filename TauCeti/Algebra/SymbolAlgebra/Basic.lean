@@ -249,6 +249,37 @@ theorem algHom_ext {F G : SymbolAlgebra n ζ a b →ₐ[R] A} (hx : F x = G x) (
 
 end Lift
 
+section DegreeOne
+
+variable (a b)
+
+/-- A degree-one symbol algebra is the base semiring, without nonzero assumptions. -/
+def algEquivOfDegreeOne : SymbolAlgebra 1 1 a b ≃ₐ[R] R :=
+  AlgEquiv.ofAlgHom
+    (lift a b (by simp) (by simp) (by simp [mul_comm]))
+    (Algebra.ofId R (SymbolAlgebra 1 1 a b))
+    (by ext)
+    (by
+      apply algHom_ext
+      · simp only [AlgHom.comp_apply, lift_x, Algebra.ofId_apply, AlgHom.id_apply]
+        simpa only [pow_one] using
+          (x_pow (n := 1) (ζ := (1 : R)) (a := a) (b := b)).symm
+      · simp only [AlgHom.comp_apply, lift_y, Algebra.ofId_apply, AlgHom.id_apply]
+        simpa only [pow_one] using
+          (y_pow (n := 1) (ζ := (1 : R)) (a := a) (b := b)).symm)
+
+/-- The degree-one equivalence sends `x` to its defining scalar. -/
+@[simp]
+theorem algEquivOfDegreeOne_x : algEquivOfDegreeOne a b x = a := by
+  exact lift_x _ _ _ _ _
+
+/-- The degree-one equivalence sends `y` to its defining scalar. -/
+@[simp]
+theorem algEquivOfDegreeOne_y : algEquivOfDegreeOne a b y = b := by
+  exact lift_y _ _ _ _ _
+
+end DegreeOne
+
 /-- The generators generate. -/
 theorem adjoin_x_y : Algebra.adjoin R {(x : SymbolAlgebra n ζ a b), y} = ⊤ := by
   have hrange : ({x, y} : Set (SymbolAlgebra n ζ a b))
