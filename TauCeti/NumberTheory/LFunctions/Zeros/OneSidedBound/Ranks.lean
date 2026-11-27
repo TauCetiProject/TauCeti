@@ -94,7 +94,7 @@ private theorem primeSearchModulus_le (a : ℕ) {x s : ℕ} (hlog : 6 ≤ log (x
 
 /-- Bounds on the dyadic tower obtained by taking the twenty-second power of the rank
 bounds. -/
-private theorem dyadicTower_bounds {x e : ℕ} (hm : √(x : ℝ) ≤ (2 : ℝ) ^ e)
+theorem dyadicTower_bounds {x e : ℕ} (hm : √(x : ℝ) ≤ (2 : ℝ) ^ e)
     (hm₂ : (2 : ℝ) ^ e ≤ 2 * √(x : ℝ)) :
     x ^ 11 ≤ 2 ^ (22 * e) ∧ 2 ^ (22 * e) ≤ 2 ^ 22 * x ^ 11 := by
   have hpow : √(x : ℝ) ^ 22 = (x : ℝ) ^ 11 := by

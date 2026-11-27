@@ -106,6 +106,19 @@ private theorem towerDeg_le_sparse_bound {s n H : ℕ} {W : ℝ} (hn : 0 < n)
       rw [← hWW]
       gcongr
 
+/-- Choose a digit bound for a modular Behrend set. The box fits modulo `2 ^ s`, and the
+Behrend cardinality lower bound, multiplied by `W ^ 6`, covers the tower degree. -/
+theorem exists_sparse_digit_bound_of_tower {s n : ℕ} {W : ℝ} (hn : 0 < n)
+    (hW : W ≤ (2 : ℝ) ^ s) (ho : (2 : ℝ) ^ s ≤ W ^ (n + 1))
+    (hbase : (2 * (l₀ s : ℝ)) ^ n ≤ W) :
+    ∃ H : ℕ, 0 < H ∧ (2 * l₀ s * H) ^ n ≤ 2 ^ s ∧
+      (towerDeg s : ℝ) ≤ ((H : ℝ) ^ n / (n * H ^ 2)) * W ^ 6 := by
+  obtain ⟨H, hfit, hHW, hcover⟩ := exists_sparse_digit_bound hn hW ho hbase
+  have hsize := towerDeg_le_sparse_bound hn hbase hHW hcover
+  have hH : H ≠ 0 := fun heq ↦ by
+    exact (towerDeg_pos s).ne' (by simpa [heq] using hsize)
+  exact ⟨H, Nat.pos_of_ne_zero hH, hfit, hsize⟩
+
 /-- At tower exponent `s`, there is a set of exponents below `2 ^ s` with cardinality at least
 `towerDeg s / W ^ 6`, avoiding all nontrivial modular weighted means with positive weights
 of sum at most `2 * l₀ s`. -/
@@ -116,10 +129,10 @@ theorem exists_large_sparse_exponents {s n : ℕ} {W : ℝ} (hn : 0 < n)
         (a + b) * e₂ ≡ a * e₁ + b * e₃ [MOD 2 ^ s] → e₁ = e₂ ∧ e₂ = e₃ := by
   have hL : 0 < l₀ s := by rw [l₀_def]; positivity
   by_cases hW : W ≤ (2 : ℝ) ^ s
-  · obtain ⟨H, hfit, hHW, hcover⟩ := exists_sparse_digit_bound hn hW ho hbase
+  · obtain ⟨H, _, hfit, hcardinal⟩ := exists_sparse_digit_bound_of_tower hn hW ho hbase
     obtain ⟨S, hS, hcard, hmean⟩ :=
       exists_eq_and_eq_of_add_mul_modEq (n := n) (H := H) (L := 2 * l₀ s) (by omega) hfit
-    refine ⟨S, hS, (towerDeg_le_sparse_bound hn hbase hHW hcover).trans ?_, hmean⟩
+    refine ⟨S, hS, hcardinal.trans ?_, hmean⟩
     push_cast at hcard
     gcongr
   · have hL' : (1 : ℝ) ≤ l₀ s := by exact_mod_cast hL
