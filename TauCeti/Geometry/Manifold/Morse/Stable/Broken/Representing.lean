@@ -75,7 +75,7 @@ complexes (`TauCeti.Geometry.Manifold.Morse.DG.Representing`).
 
 * `TauCeti.IsAdaptedPseudoGradient.IsFundamentalClassRel`: a class of
   `H_{ind x - ind y - 1}(L(x, y), ∂L(x, y); k)` generating the local homology at every unbroken
-  trajectory.
+  trajectory, unfolded by `TauCeti.IsAdaptedPseudoGradient.isFundamentalClassRel_iff`.
 
 ## Main results
 
@@ -210,6 +210,20 @@ def IsFundamentalClassRel (k : Type) [CommRing k] {x y : criticalPoints 𝓘(ℝ
       (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
         (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
       ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤
+
+/-- Unfolding `IsFundamentalClassRel`: the image of `μ` generates the local homology at every
+unbroken trajectory. -/
+theorem isFundamentalClassRel_iff (k : Type) [CommRing k] {x y : criticalPoints 𝓘(ℝ, E) f}
+    (μ : ((TopPair.ofSubset (X := TopCat.of (hX.morseBrokenTrajectorySpace c x y))
+      (hX.morseBrokenTrajectorySpaceBoundary c x y)).cubicalChainComplex k).homology
+      ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat) :
+    hX.IsFundamentalClassRel c k μ ↔
+      ∀ r (hr : r ∉ hX.morseBrokenTrajectorySpaceBoundary c x y),
+        (k ∙ (TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (𝟙 (TopCat.of (hX.morseBrokenTrajectorySpace c x y)))
+            (subset_compl_singleton_iff.2 hr)) (ModuleCat.of k k) _).hom
+          ((TopPair.singularCubicalHomologyIso k _ _).inv.hom μ)) = ⊤ :=
+  Iff.rfl
 
 end FundamentalClassRel
 
