@@ -41,25 +41,26 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable (I M F) in
 /-- **Smooth maps on a compact manifold are bundle tests.** On a compact manifold `M`, the bundle
 tests of the trivial bundle with fibre `F`, its compactly supported smooth sections, are exactly
-the smooth maps `M → F`, keeping the values. -/
+the smooth maps `M → F`, keeping the values: the identification of smooth sections of the trivial
+bundle with smooth maps (`ContMDiffSection.trivialEquiv`), restricted to compactly supported
+sections. -/
 def contMDiffMapEquiv : BundleTest I F (Bundle.Trivial M F) ≃ₗ[ℝ] C^∞⟮I, M; 𝓘(ℝ, F), F⟯ where
-  toFun s := ⟨fun x ↦ s x, (Bundle.Trivial.contMDiff_mk_iff.1 s.contMDiff).2⟩
-  invFun f := ofCompactlySupported I F (Bundle.Trivial M F)
-    ⟨⟨fun x ↦ f x, Bundle.Trivial.contMDiff_mk_iff.2 ⟨contMDiff_id, f.contMDiff⟩⟩,
-      by simp [compactlySupported_eq_top]⟩
-  map_add' _ _ := (rfl)
-  map_smul' _ _ := (rfl)
-  left_inv _ := (rfl)
-  right_inv _ := (rfl)
+  toFun s := trivialEquiv ((ofCompactlySupported I F _).symm s).val
+  invFun f := ofCompactlySupported I F _
+    ⟨trivialEquiv.symm f, by simp [compactlySupported_eq_top]⟩
+  map_add' _ _ := ContMDiffMap.ext fun _ ↦ by simp
+  map_smul' _ _ := ContMDiffMap.ext fun _ ↦ by simp
+  left_inv _ := BundleTest.ext fun _ ↦ by simp
+  right_inv _ := ContMDiffMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem contMDiffMapEquiv_apply (s : BundleTest I F (Bundle.Trivial M F)) (x : M) :
     contMDiffMapEquiv I M F s x = s x :=
-  (rfl)
+  trivialEquiv_apply _ x
 
 @[simp]
 theorem contMDiffMapEquiv_symm_apply (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) (x : M) :
     (contMDiffMapEquiv I M F).symm f x = f x :=
-  (rfl)
+  trivialEquiv_symm_apply f x
 
 end TauCeti.BundleTest

@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PatchedQuantization
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial.BundleTest
-import TauCeti.Analysis.Distribution.TestFunction.CutoffSchwartz
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
@@ -113,9 +113,9 @@ private theorem chartLocalizationCLM_cutoffPullback_apply
       ψ y • BundleTest.contMDiffMapEquiv _ M ℂ u (e.symm y) := by
   rw [Bundle.Trivialization.chartLocalizationCLM_apply]
   by_cases hy : y ∈ e.target
-  · rw [Bundle.Trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ _ hy]
+  · rw [(Bundle.Trivial.trivialization M ℂ).chartLocalization_apply_of_mem (hy := hy)]
     simp [e.cutoffPullback_one_apply_of_mem he _ (e.map_target hy), e.right_inv hy]
-  · rw [Bundle.Trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ _ hy,
+  · rw [(Bundle.Trivial.trivialization M ℂ).chartLocalization_apply_of_notMem (hy := hy),
       image_eq_zero_of_notMem_tsupport fun h ↦ hy (ψ.tsupport_subset h), zero_smul]
 
 /-- **Chart quantizations are continuous on test functions.** On a compact manifold, the chart
