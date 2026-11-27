@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
+public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice
 
 /-!
 # One-sided anodyne pushout-joins
@@ -79,14 +78,8 @@ instance fibration_restrictionMap_of_leftFibration (i : L ⟶ K) [Mono i] (p : X
   obtain ⟨m, ⟨k⟩⟩ := h
   apply (forall_hasLiftingProperty_restrictionMap_iff _ i p).2 ?_ σ
   intro τ
-  suffices (monomorphisms SSet.{u}).rlp (coslice.restrictionMap Λ[m + 1, k].ι p τ) from
-    this i (monomorphisms.infer_property i)
-  rw [rlp_monomorphisms]
-  rintro _ _ _ ⟨n⟩
-  have := (join.leftAnodyneExtensions_unionJoin_horn_boundary n k).hasLiftingProperty p
-  exact (coslice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout Λ[m + 1, k].ι
-    ∂Δ[n].ι p (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
-    (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance τ
+  exact coslice.hasLiftingProperty_restrictionMap_of_unionJoin _ p
+    (fun n ↦ (join.leftAnodyneExtensions_unionJoin_horn_boundary n k).hasLiftingProperty p) τ i
 
 end slice
 
@@ -101,14 +94,8 @@ instance fibration_restrictionMap_of_rightFibration (j : A ⟶ B) [Mono j] (p : 
   obtain ⟨m, ⟨k⟩⟩ := h
   apply (slice.forall_hasLiftingProperty_restrictionMap_iff j Λ[m + 1, k].ι p).1 ?_ τ
   intro σ
-  suffices (monomorphisms SSet.{u}).rlp (slice.restrictionMap Λ[m + 1, k].ι p σ) from
-    this j (monomorphisms.infer_property j)
-  rw [rlp_monomorphisms]
-  rintro _ _ _ ⟨n⟩
-  have := (join.rightAnodyneExtensions_unionJoin_boundary_horn n k).hasLiftingProperty p
-  exact (slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout ∂Δ[n].ι Λ[m + 1, k].ι
-    p (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
-    (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance σ
+  exact slice.hasLiftingProperty_restrictionMap_of_unionJoin _ p
+    (fun n ↦ (join.rightAnodyneExtensions_unionJoin_boundary_horn n k).hasLiftingProperty p) σ j
 
 end coslice
 
