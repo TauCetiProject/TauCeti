@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.Beltrami.Isothermal
 import TauCeti.Analysis.Holder.FaaDiBruno
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
 # The Hartman–Wintner expansion for a variable elliptic principal part
@@ -113,13 +114,14 @@ theorem ellipticStructure_ellipticStructure {a b c : ℝ} (h : 0 < a * c - b ^ 2
     ellipticStructure a b c (ellipticStructure a b c v) = -v := by
   have hs : √(a * c - b ^ 2) ^ 2 = a * c - b ^ 2 := Real.sq_sqrt h.le
   have hs0 : √(a * c - b ^ 2) ≠ 0 := (Real.sqrt_pos.mpr h).ne'
-  simp only [ellipticStructure_apply]
-  apply Complex.ext
-  · simp
-    field_simp
+  simp only [Complex.ext_iff, ellipticStructure_apply, Complex.smul_re, Complex.smul_im,
+    Complex.add_re, Complex.add_im, Complex.sub_re, Complex.sub_im, Complex.neg_re,
+    Complex.neg_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.I_re, Complex.I_im, smul_eq_mul]
+  constructor
+  · field_simp
     linear_combination v.re * hs
-  · simp
-    field_simp
+  · field_simp
     linear_combination v.im * hs
 
 /-- The complex structure depends smoothly on the coefficients where the principal part is
@@ -191,7 +193,9 @@ theorem elliptic_comp_eq_smul_laplacian_add {v : ℂ → X} {e : ℂ → ℂ} {z
   have hs : √(a * c - b ^ 2) ≠ 0 := (Real.sqrt_pos.mpr hD).ne'
   -- The chart condition at `1` and at `i`.
   have hbc : ((b : ℂ) + c * I) = b • (1 : ℂ) + c • I := by simp
-  have hab : (-(a : ℂ) - b * I) = -(a • (1 : ℂ) + b • I) := by simp; ring
+  have hab : (-(a : ℂ) - b * I) = -(a • (1 : ℂ) + b • I) := by
+    rw [real_smul, real_smul, mul_one]
+    ring
   have h₁ : b • P 1 + c • P I = √(a * c - b ^ 2) • (I * P 1) := by
     have h := hJ 1
     simp only [ellipticStructure_apply, Complex.one_re, Complex.one_im, one_smul, zero_smul,
@@ -237,7 +241,9 @@ theorem exists_isothermal_chart_of_elliptic {Ω : Set ℂ} (hΩ : IsOpen Ω) {a 
     have hd (f : ℂ → ℝ) (hf : ContDiffOn ℝ 1 f Ω) : DifferentiableAt ℝ f z :=
       (hf.contDiffAt (hΩ.mem_nhds hz)).differentiableAt one_ne_zero
     rw [(hd a ha).fderiv_prodMk ((hd b hb).prodMk (hd c hc)), (hd b hb).fderiv_prodMk (hd c hc)]
-    rfl
+    -- `prodₗᵢ` packages `prodₗ`, whose underlying map is `ContinuousLinearMap.prod`.
+    simp only [Function.comp_apply, ContinuousLinearMap.prodₗᵢ, LinearIsometryEquiv.coe_mk,
+      ContinuousLinearMap.prodₗ_apply, Equiv.toFun_as_coe, ContinuousLinearMap.prodEquiv_apply]
   -- So is the complex structure `J = Φ ∘ p` near `z₀`, and it squares to `-1` where `D > 0`.
   obtain ⟨r, hr, hrΩ, hJ, H, hJH⟩ := exists_ball_contDiffOn_holderOnWith_fderiv_comp hα1.le
     (hΩ.mem_nhds hz₀) hp hpH (contDiffAt_ellipticStructure (q := p z₀) hell)
@@ -293,26 +299,17 @@ private theorem norm_fderiv_re_pow_smul_sub_le (k : ℕ) (c : Complexification X
     ← smul_sub, ← sub_smul, ← mul_sub]
   exact norm_re_smul_natCast_mul_smul_le k c h _
 
-/-- If `e z₀ = 0` and `e` has derivative `T` at `z₀`, then `e z = T (z - z₀) + o(‖z - z₀‖)` and
-`e z = O(‖z - z₀‖)`. -/
-private theorem isLittleO_sub_apply_sub_and_isBigO {e : ℂ → ℂ} {z₀ : ℂ} {T : ℂ →L[ℝ] ℂ}
-    (hTd : HasFDerivAt e T z₀) (he₀ : e z₀ = 0) :
-    (fun z ↦ e z - T (z - z₀)) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖) ∧
-      e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ :=
-  ⟨by simpa [he₀] using hTd.isLittleO.norm_right,
-    by simpa [he₀] using hTd.isBigO_sub.norm_right⟩
-
-/-- **The leading polynomial pulls back along a differentiable map.** If `e z₀ = 0`, `e` has
-derivative `T` at `z₀`, `v w = Re (w ^ k • c) + o(‖w‖ ^ k)` at `0` and `u = v ∘ e` near `z₀`, then
-`u z = Re ((T (z - z₀)) ^ k • c) + o(‖z - z₀‖ ^ k)`. -/
+/-- **The leading polynomial pulls back along a differentiable map.** If
+`e z = T (z - z₀) + o(‖z - z₀‖)` and `e z = O(‖z - z₀‖)` (as when `e z₀ = 0` and `e` has
+derivative `T` at `z₀`), `v w = Re (w ^ k • c) + o(‖w‖ ^ k)` at `0` and `u = v ∘ e` near `z₀`,
+then `u z = Re ((T (z - z₀)) ^ k • c) + o(‖z - z₀‖ ^ k)`. -/
 private theorem isLittleO_sub_re_pow_smul_of_eventuallyEq_comp {u v : ℂ → X} {e : ℂ → ℂ}
-    {z₀ : ℂ} {T : ℂ →L[ℝ] ℂ} (hTd : HasFDerivAt e T z₀) (he₀ : e z₀ = 0)
-    (huv : u =ᶠ[𝓝 z₀] v ∘ e) {k : ℕ} {c : Complexification X}
-    (h₀ : (fun w ↦ v w - (w ^ k • c).re) =o[𝓝 0] fun w ↦ ‖w‖ ^ k) :
+    {z₀ : ℂ} {T : ℂ →L[ℝ] ℂ} (hlin : (fun z ↦ e z - T (z - z₀)) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖)
+    (heO : e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖) (huv : u =ᶠ[𝓝 z₀] v ∘ e) {k : ℕ}
+    {c : Complexification X} (h₀ : (fun w ↦ v w - (w ^ k • c).re) =o[𝓝 0] fun w ↦ ‖w‖ ^ k) :
     (fun z ↦ u z - ((T (z - z₀)) ^ k • c).re) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖ ^ k) := by
-  obtain ⟨hlin, heO⟩ := isLittleO_sub_apply_sub_and_isBigO hTd he₀
   -- `u z = v (e z)`, and `Re (w ^ k • c)` moves by `o(‖z - z₀‖ ^ k)` from `e z` to `T (z - z₀)`.
-  have hA := (h₀.comp_tendsto (he₀ ▸ hTd.continuousAt.tendsto)).trans_isBigO
+  have hA := (h₀.comp_tendsto (heO.trans_tendsto (tendsto_norm_sub_self z₀))).trans_isBigO
     (heO.norm_left.pow k)
   have hB : (fun z ↦ ((e z) ^ k • c).re - ((T (z - z₀)) ^ k • c).re) =o[𝓝 z₀]
       fun z ↦ ‖z - z₀‖ ^ k := by
@@ -324,22 +321,23 @@ private theorem isLittleO_sub_re_pow_smul_of_eventuallyEq_comp {u v : ℂ → X}
   simp [hz]
 
 /-- **The derivative asymptotic pulls back along a `C¹` map.** If `e` is differentiable near `z₀`
-with `e z₀ = 0`, derivative `T` at `z₀` and derivative continuous at `z₀`, `v` is differentiable
-near `0` with `Dv(w) = D (Re (· ^ k • c)) (w) + o(‖w‖ ^ (k - 1))`, and `u = v ∘ e` near `z₀`,
-then `Du(z) = D (Re ((T (· - z₀)) ^ k • c)) (z) + o(‖z - z₀‖ ^ (k - 1))`. -/
+with derivative `T` at `z₀` and derivative continuous at `z₀`, `e z = T (z - z₀) + o(‖z - z₀‖)`
+and `e z = O(‖z - z₀‖)` (as when `e z₀ = 0`), `v` is differentiable near `0` with
+`Dv(w) = D (Re (· ^ k • c)) (w) + o(‖w‖ ^ (k - 1))`, and `u = v ∘ e` near `z₀`, then
+`Du(z) = D (Re ((T (· - z₀)) ^ k • c)) (z) + o(‖z - z₀‖ ^ (k - 1))`. -/
 private theorem isLittleO_fderiv_sub_fderiv_re_pow_smul_of_eventuallyEq_comp {u v : ℂ → X}
     {e : ℂ → ℂ} {z₀ : ℂ} {T : ℂ →L[ℝ] ℂ} (he : ∀ᶠ z in 𝓝 z₀, DifferentiableAt ℝ e z)
-    (he₀ : e z₀ = 0) (hT : fderiv ℝ e z₀ = T) (hDe : ContinuousAt (fderiv ℝ e) z₀)
+    (hT : fderiv ℝ e z₀ = T) (hDe : ContinuousAt (fderiv ℝ e) z₀)
+    (hlin : (fun z ↦ e z - T (z - z₀)) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖)
+    (heO : e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖)
     (hv : ∀ᶠ w in 𝓝 0, DifferentiableAt ℝ v w) (huv : u =ᶠ[𝓝 z₀] v ∘ e) {k : ℕ}
     {c : Complexification X}
     (h₁ : (fun w ↦ fderiv ℝ v w - fderiv ℝ (fun y ↦ (y ^ k • c).re) w) =o[𝓝 0]
       fun w ↦ ‖w‖ ^ (k - 1)) :
     (fun z ↦ fderiv ℝ u z - fderiv ℝ (fun w ↦ ((T (w - z₀)) ^ k • c).re) z) =o[𝓝 z₀]
       fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
-  have hTd : HasFDerivAt e T z₀ := hT ▸ he.self_of_nhds.hasFDerivAt
-  obtain ⟨hlin, heO⟩ := isLittleO_sub_apply_sub_and_isBigO hTd he₀
   have hTO : (fun z ↦ T (z - z₀)) =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ := (T.isBigO_sub _ _).norm_right
-  have htend : Tendsto e (𝓝 z₀) (𝓝 0) := he₀ ▸ hTd.continuousAt.tendsto
+  have htend : Tendsto e (𝓝 z₀) (𝓝 0) := heO.trans_tendsto (tendsto_norm_sub_self z₀)
   set G := fderiv ℝ (fun w : ℂ ↦ (w ^ k • c).re)
   -- The chain rule on both sides.
   have hfP (z : ℂ) :
@@ -395,12 +393,6 @@ section Expansion
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- A map agrees near each point `z` of the source of `e` with its reading `u ∘ e⁻¹` in the chart,
-composed with `e`. -/
-private theorem eventuallyEq_comp_symm_comp {Y : Type*} {u : ℂ → Y}
-    (e : OpenPartialHomeomorph ℂ ℂ) {z : ℂ} (hz : z ∈ e.source) : u =ᶠ[𝓝 z] (u ∘ e.symm) ∘ e :=
-  (e.eventually_left_inverse hz).mono fun y hy ↦ by simp [hy]
-
 /-- In an isothermal chart `e` of the principal part, `u` and `v = u ∘ e⁻¹` are related at each
 point `z` of the source by `a u_ss + 2 b u_st + c u_tt = λ Δv(e z) + Dv(e z) (a e_ss + 2 b e_st +
 c e_tt)` and `Du(z) = Dv(e z) ∘ De(z)`. -/
@@ -423,7 +415,7 @@ private theorem elliptic_eq_and_fderiv_eq_of_mem_source {Ω : Set ℂ} (hΩ : Is
     refine ContDiffAt.comp (e z) ?_ (hes2.contDiffAt (e.open_target.mem_nhds (e.map_source hz)))
     rw [e.left_inv hz]
     exact hu.contDiffAt (hΩ.mem_nhds (heΩ hz))
-  have hev := eventuallyEq_comp_symm_comp (u := u) e hz
+  have hev := e.eventuallyEq_comp_symm_comp (f := u) hz
   refine ⟨?_, ?_⟩
   · rw [hev.fderiv.fderiv_eq]
     exact elliptic_comp_eq_smul_laplacian_add hv hez (heJ z hz).1 (heJ z hz).2
@@ -553,7 +545,7 @@ theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic {Ω :
     hb.continuousOn hc.continuousOn hu hK hce heΩ he2 hes2 heJ
   have hv2 : ContDiffOn ℝ 2 (u ∘ e.symm) Ω' :=
     hu.comp (hes2.mono hΩ't) fun w hw ↦ heΩ (e.map_target (hΩ't hw))
-  have huv := eventuallyEq_comp_symm_comp (u := u) e hce
+  have huv := e.eventuallyEq_comp_symm_comp (f := u) hce
   -- Apply the expansion for the Laplacian to `v = u ∘ e⁻¹` at `e z₀ = 0`.
   rcases eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul hΩ' hv2 hK' h0Ω'
       (by simp [e.left_inv hce, hu₀]) with h0 | ⟨k, c', hk, hc', h₀, h₁⟩
@@ -566,12 +558,17 @@ theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul_of_elliptic {Ω :
   have he : ∀ᶠ z in 𝓝 z₀, DifferentiableAt ℝ e z :=
     eventually_of_mem (e.open_source.mem_nhds hce) fun z hz ↦
       (he2.contDiffAt (e.open_source.mem_nhds hz)).differentiableAt two_ne_zero
+  -- `e z = T (z - z₀) + o(‖z - z₀‖)` and `e z = O(‖z - z₀‖)`, since `e z₀ = 0` and `De(z₀) = T`.
+  have hTd : HasFDerivAt e (T : ℂ →L[ℝ] ℂ) z₀ := hT ▸ he.self_of_nhds.hasFDerivAt
+  have hlin : (fun z ↦ e z - (T : ℂ →L[ℝ] ℂ) (z - z₀)) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖ := by
+    simpa [he0] using hTd.isLittleO.norm_right
+  have heO : e =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ := by simpa [he0] using hTd.isBigO_sub.norm_right
   refine .inr ⟨k, c', T, hk, hc', fun w ↦ by
     have h := (heJ z₀ hce).2 w
     rw [← hT] at h
     exact h,
-    isLittleO_sub_re_pow_smul_of_eventuallyEq_comp (hT ▸ he.self_of_nhds.hasFDerivAt) he0 huv h₀,
-    isLittleO_fderiv_sub_fderiv_re_pow_smul_of_eventuallyEq_comp he he0 hT.symm hDe
+    isLittleO_sub_re_pow_smul_of_eventuallyEq_comp hlin heO huv h₀,
+    isLittleO_fderiv_sub_fderiv_re_pow_smul_of_eventuallyEq_comp he hT.symm hDe hlin heO
       (eventually_of_mem (hΩ'.mem_nhds (he0 ▸ h0Ω')) fun w hw ↦
         (hv2.contDiffAt (hΩ'.mem_nhds hw)).differentiableAt two_ne_zero) huv h₁⟩
 
