@@ -47,8 +47,7 @@ theorem hasWindows_cyclicFamily_riesz_of_zeroFreeRightOf (ψ : PrimitiveDirichle
     (ψ.cyclicFamilyWeights w) fun η hη ↦ by
       obtain ⟨κ, rfl⟩ := toPrimitiveRayClassCharacter.surjective η
       obtain ⟨hm, hw⟩ := mem_support_cyclicFamilyWeights.mp hη
-      exact (zeroFreeRightOf_congr
-        (fun s _ ↦ κ.heckeLFunctionC_toPrimitiveRayClassCharacter_eventuallyEq s)).mpr
+      exact (κ.zeroFreeRightOf_heckeLFunctionC_toPrimitiveRayClassCharacter_iff σ).mpr
         (h κ (toPrimitiveRayClassCharacter_mem_cyclicFamilyRayClass.mp hm)
           (by simpa only [Equiv.symm_apply_apply] using hw))
   have hbound : ∀ᶠ y : ℝ in atTop,

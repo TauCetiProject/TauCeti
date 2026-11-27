@@ -31,8 +31,7 @@ theorem PrimitiveRayClassCharacter.exists_norm_rieszRemainder_le_of_zeroFreeRigh
     (hη : ZeroFreeRightOf σ (heckeLFunctionC η.character)) :
     ∃ C : ℝ, ∀ y ≥ 1, ‖η.rieszRemainder y‖ ≤ C * y ^ max σ (1 / 2) := by
   obtain ⟨ψ, rfl⟩ := PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter.surjective η
-  have hψ := (zeroFreeRightOf_congr
-    (fun s _ ↦ ψ.heckeLFunctionC_toPrimitiveRayClassCharacter_eventuallyEq s)).mp hη
+  have hψ := (ψ.zeroFreeRightOf_heckeLFunctionC_toPrimitiveRayClassCharacter_iff σ).mp hη
   simp only [PrimitiveDirichletCharacter.rieszRemainder_toPrimitiveRayClassCharacter]
   by_cases h : ψ = 1
   · subst ψ

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
 
@@ -14,7 +15,8 @@ public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
 The rational character dictionary identifies the Dirichlet and ideal-theoretic first Riesz
 remainders, including the constant in the conductor-one main term. This lets explicit formulas
 for Dirichlet characters apply to prime-ideal sums over `ℚ`. The remainder normalization is that
-of Levent Alpöge's `Deduction.Gchi`.
+of Levent Alpöge's `Deduction.Gchi`. The file also transports zero-freeness right of a line
+between the two L-functions.
 -/
 
 public section
@@ -23,6 +25,14 @@ open ArithmeticFunction TauCeti.LFunctions
 open scoped LSeries.notation
 
 namespace TauCeti.PrimitiveDirichletCharacter
+
+/-- A Dirichlet L-function and the Hecke L-function of the corresponding rational ray class
+character have the same zeros right of any line. -/
+@[simp] theorem zeroFreeRightOf_heckeLFunctionC_toPrimitiveRayClassCharacter_iff
+    (ψ : PrimitiveDirichletCharacter) (σ : ℝ) :
+    ZeroFreeRightOf σ (heckeLFunctionC (toPrimitiveRayClassCharacter ψ).character) ↔
+      ZeroFreeRightOf σ ψ.character.LFunction :=
+  zeroFreeRightOf_congr fun s _ ↦ ψ.heckeLFunctionC_toPrimitiveRayClassCharacter_eventuallyEq s
 
 /-- The first Riesz remainder is preserved by the rational ray class character dictionary. -/
 @[simp] theorem rieszRemainder_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter)
@@ -39,7 +49,7 @@ namespace TauCeti.PrimitiveDirichletCharacter
     rw [toPrimitiveRayClassCharacter_one, PrimitiveRayClassCharacter.rieszRemainder_one,
       rieszRemainder_one, NumberField.eulerKroneckerConstant_rat, hcoeff]
     push_cast
-    rfl
+    ring
   · have hne : toPrimitiveRayClassCharacter ψ ≠ 1 := fun h ↦
       hψ (toPrimitiveRayClassCharacter.injective (h.trans toPrimitiveRayClassCharacter_one.symm))
     have hL : heckeLFunctionC (toPrimitiveRayClassCharacter ψ).character = ψ.character.LFunction :=
