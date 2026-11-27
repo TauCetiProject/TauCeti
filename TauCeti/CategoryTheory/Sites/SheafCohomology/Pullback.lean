@@ -42,6 +42,8 @@ formalised here.) In degree zero it is restriction of global sections:
   naturality in the coefficient sheaf, the identity, composition, and compatibility with the
   connecting homomorphisms of a short exact sequence and its image under `pb`, also followed by
   a morphism of short exact sequences.
+* `CategoryTheory.Sheaf.H.map_app_pullback`: a natural transformation `τ : pb ⟶ pb'` applied
+  after the pullback along `pb` gives the pullback along `pb'`.
 * `CategoryTheory.Sheaf.H.equiv₀_pullback_sheafPullback`: for a morphism of sites, the pullback
   in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`; before
   evaluation, `CategoryTheory.Sheaf.H.whiskerLeft_toSheafify_comp_sheafPullback_map` describes
@@ -122,6 +124,16 @@ lemma pullback_naturality {G₁ G₂ : Sheaf J AddCommGrpCat.{w}} (f : G₁ ⟶ 
     (x : H G₁ n) :
     pullback pb c G₂ n (H.map f n x) = H.map (pb.map f) n (pullback pb c G₁ n x) := by
   simp [pullback_apply, H.map_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀]
+
+/-- The map on coefficients induced by a natural transformation `τ : pb ⟶ pb'`, applied after the
+pullback along `pb`, is the pullback along `pb'` for the comparison `c ≫ τ.app ℤ_J`. -/
+lemma map_app_pullback {pb' : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf K AddCommGrpCat.{w}}
+    [pb'.Additive] [PreservesFiniteLimits pb'] [PreservesFiniteColimits pb'] (τ : pb ⟶ pb')
+    {G : Sheaf J AddCommGrpCat.{w}} {n : ℕ} (x : H G n) :
+    H.map (τ.app G) n (pullback pb c G n x) = pullback pb' (c ≫ τ.app _) G n x := by
+  rw [pullback_apply, pullback_apply, H.map_apply, Ext.comp_assoc_of_third_deg_zero,
+    Ext.mapExactFunctor_comp_mk₀_natTransApp, ← Ext.comp_assoc_of_second_deg_zero,
+    Ext.mk₀_comp_mk₀]
 
 /-- The pullback along the identity functor with the identity comparison is the identity. -/
 @[simp]
