@@ -36,9 +36,13 @@ for every smooth section `u` of `E`, where `(eⱼ, t'ⱼ, χⱼ, φⱼ)` is any 
 trivializations of `F`, smooth functions `χⱼ` supported in their base sets and cutoffs, and `ℓₗ`
 any finite family of functionals on `W`
 (`TauCeti.exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`).
-For `p = ∞` this is the Zygmund estimate `‖P u‖_{𝒞^{s - m}(F)} ≤ C ‖u‖_{𝒞^s(E)}` on a compact
-manifold, for every real `s` and `m`; operators of order `0` need not be bounded on `L^∞`. It is
-the bundle form of the scalar estimate
+Its left side is a Besov norm of `P u` when the `φⱼ ∘ eⱼ` add up to `1`, each `χⱼ` equals `1` on
+`eⱼ⁻¹(supp φⱼ)` and the `ℓₗ` are the coordinate functionals of a basis of `W` (so `W` is
+finite-dimensional). For such data and `p = ∞` this is the Zygmund estimate
+`‖P u‖_{𝒞^{s - m}(F)} ≤ C ‖u‖_{𝒞^s(E)}` on a compact manifold, for every real `s` and `m`;
+operators of order `0` need not be bounded on `L^∞`. For other data it bounds the readings
+`φⱼ · (χⱼ ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)` of `P u`, without being a norm of `P u` (for an empty family of
+`ℓₗ` it is `0`). It is the bundle form of the scalar estimate
 `TauCeti.exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`.
 
 The estimates are instances of the patching theorems of
@@ -59,7 +63,10 @@ localized changes of variables are bounded on `B^s_{p,∞}`
   `B^s_{p,∞}` norm of `u` for a partition.
 * `TauCeti.exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`:
   the Besov estimate `‖P u‖_{B^{s - m}_{p,∞}} ≤ C ‖u‖_{B^s_{p,∞}}` in these norms, in particular
-  the Hölder–Zygmund estimate for `p = ∞`.
+  the Hölder–Zygmund estimate for `p = ∞`. Its left side is such a Besov norm of `P u` when the
+  `φⱼ ∘ eⱼ` add up to `1`, each `χⱼ` equals `1` on `eⱼ⁻¹(supp φⱼ)` and the `ℓₗ` are the
+  coordinate functionals of a basis of `W`. For other data it bounds the readings
+  `φⱼ · (χⱼ ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)` of `P u`, without being a norm of `P u`.
 
 ## References
 
@@ -183,7 +190,10 @@ orders: for finitely many cutoffs `φⱼ` in charts `eⱼ`, trivializations `t'�
 `∑ⱼ ∑ₗ ‖φⱼ · (χⱼ ℓₗ(t'ⱼ (P u)) ∘ eⱼ⁻¹)‖_{B^{s - m}_{p,∞}}`
 `  ≤ C ∑ᵢ ∑ₖ ‖ψᵢ · (ρᵢ b_k*(tᵢ u) ∘ e'ᵢ⁻¹)‖_{B^s_{p,∞}}`.
 
-For `p = ∞` these are the Hölder–Zygmund norms `𝒞^s = B^s_{∞,∞}`. -/
+For `p = ∞` the right side is the Hölder–Zygmund norm `𝒞^s = B^s_{∞,∞}` of `u`. The left side is
+the `B^{s - m}_{p,∞}` norm of `P u` (the `𝒞^{s - m}` norm for `p = ∞`) when the `φⱼ ∘ eⱼ` add up
+to `1`, each `χⱼ` equals `1` on `eⱼ⁻¹(supp φⱼ)` and the `ℓₗ` are the coordinate functionals of a
+basis of `W`; for other data it only bounds these readings of `P u`. -/
 theorem exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum
     (hP : P ∈ sectionClassicalPseudodifferentialOperators m) {ν : Type*} [Fintype ν]
     {e : ν → OpenPartialHomeomorph M (CoordinateSpace n)}
