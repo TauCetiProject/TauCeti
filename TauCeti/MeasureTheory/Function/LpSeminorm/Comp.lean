@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
+import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Precomposition by a map with dominated pushforward
@@ -42,6 +44,8 @@ no separability assumption (`MeasureTheory.MemLp.id_map`).
   then `id ∈ Lᵖ(μ.map f)`.
 * `ContinuousLinearMap.eLpNorm_comp_le`: postcomposition with a continuous semilinear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
+* `MeasureTheory.MemLp.comp_of_norm_le_mul_one_add`: over a finite measure, postcomposition with a
+  strongly measurable map of linear growth preserves `Lᵖ`.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
   `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
   linear isometry, preserves `eLpNorm`.
@@ -128,6 +132,20 @@ theorem _root_.ContinuousLinearMap.eLpNorm_comp_le {𝕜 𝕜₂ E F : Type*} [N
     simp [eLpNorm_zero_of_ae_eNorm_zero' hm.aestronglyMeasurable (.of_forall h0)]
   rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top hA]
   exact le_top
+
+/-- **Postcomposition with a map of linear growth.** A strongly measurable map `v` that grows at
+most linearly, `‖v x‖ ≤ C (1 + ‖x‖)`, maps `Lᵖ` into `Lᵖ` over a finite measure: for
+`u ∈ Lᵖ(μ; E)`, the function `v ∘ u` lies in `Lᵖ(μ; F)`. -/
+theorem MemLp.comp_of_norm_le_mul_one_add {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup F] [IsFiniteMeasure μ] {p : ℝ≥0∞} {u : α → E} {v : E → F}
+    {C : ℝ} (hu : MemLp u p μ) (hv : StronglyMeasurable v) (hvC : ∀ x, ‖v x‖ ≤ C * (1 + ‖x‖)) :
+    MemLp (fun a ↦ v (u a)) p μ := by
+  have hbound : MemLp (fun a ↦ C * (1 + ‖u a‖)) p μ :=
+    ((memLp_const (1 : ℝ)).add hu.norm).const_mul C
+  refine hbound.of_le (hv.aestronglyMeasurable.comp_aemeasurable hu.aemeasurable)
+    (.of_forall fun a ↦ ?_)
+  rw [Real.norm_eq_abs]
+  exact (hvC (u a)).trans (le_abs_self _)
 
 end MeasureTheory
 

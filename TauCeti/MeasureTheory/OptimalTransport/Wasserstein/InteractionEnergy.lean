@@ -7,6 +7,10 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PotentialEnergy
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Convex.Strong
+import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Interaction energy and its displacement convexity
@@ -43,15 +47,33 @@ the means: if `w` is smallest at `0`, as a convex even `w` is, then for `m > 0` 
 energy is never `m`-geodesically convex on `P₂(E)`, however strongly convex `w` is
 (`TauCeti.not_geodesicallyConvex_interactionEnergy`). Two Dirac masses already witness this.
 
+The first variation of the interaction energy at `μ` is described by the *interaction gradient*
+`ξ x = (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)` (`TauCeti.interactionGradient`), the convolution
+`∫ ∇w (x - y) dμ(y)` when `w` is even (`TauCeti.interactionGradient_of_even`). For a
+differentiable `m`-strongly convex `w`, with any real `m`, whose gradient grows at most linearly,
+the first-order condition of `w` at `x - x'` towards `y - y'`, integrated over two independent
+pairs `(x, y)` and `(x', y')` drawn from a coupling `γ` of `μ` and `ν`, gives
+(`StrongConvexOn.interactionEnergy_add_le`)
+
+`I(ν) ≥ I(μ) + ∫ ⟪ξ x, y - x⟫ dγ + (m / 4) ∫∫ ‖(x - y) - (x' - y')‖² dγ dγ`.
+
+The linear term is identified by exchanging the two pairs and integrating out the second one. This
+is the inequality that makes `ξ` a Wasserstein subgradient of the interaction energy
+(`StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy`).
+
 ## Main definitions
 
 * `TauCeti.interactionEnergy W μ`: the interaction energy `(1 / 2) ∫∫ W d(μ ⊗ μ)`, as an extended
   real.
+* `TauCeti.interactionGradient w μ`: the interaction gradient
+  `x ↦ (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)` of a kernel `w (x - y)`.
 
 ## Main results
 
 * `TauCeti.interactionEnergy_of_integrable`: for an integrable kernel, the interaction energy is
   half the Bochner integral of the kernel.
+* `TauCeti.interactionEnergy_eq_integral_prod`: for an integrable kernel, the interaction energy
+  as an integral over two independent copies of a measure carried to the law.
 * `TauCeti.interactionEnergy_map`: the interaction energy of a pushforward measure.
 * `TauCeti.interactionEnergy_map_add_right`: the interaction energy of a difference kernel is
   invariant under translation.
@@ -62,6 +84,16 @@ energy is never `m`-geodesically convex on `P₂(E)`, however strongly convex `w
 * `StrongConvexOn.exists_isGeodesicSegment_interactionEnergy_le`: on a separable Hilbert space, the
   displacement convexity inequality with the variance-type remainder.
 * `TauCeti.not_geodesicallyConvex_interactionEnergy`: no positive modulus of geodesic convexity.
+* `TauCeti.interactionGradient_of_even`: for an even kernel the interaction gradient is the
+  convolution `∫ ∇w (x - y) dμ(y)`.
+* `TauCeti.stronglyMeasurable_interactionGradient`: the interaction gradient is strongly
+  measurable.
+* `TauCeti.memLp_interactionGradient`: the interaction gradient at a law with finite second moment
+  is square integrable.
+* `TauCeti.integrable_comp_sub_of_norm_gradient_le`: a differentiable kernel `w (x - y)` with
+  gradient of linear growth is integrable over two copies of a law with finite second moment.
+* `StrongConvexOn.interactionEnergy_add_le`: the first-order inequality of the interaction energy
+  along a coupling.
 
 ## References
 
@@ -70,7 +102,7 @@ energy is never `m`-geodesically convex on `P₂(E)`, however strongly convex `w
   related equations: entropy dissipation and mass transportation estimates*, Rev. Mat.
   Iberoamericana 19 (2003), 971--1018.
 * L. Ambrosio, N. Gigli, G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
-  Probability Measures*, 2nd ed., Birkhäuser 2008, §9.3.
+  Probability Measures*, 2nd ed., Birkhäuser 2008, §9.3 and §10.4.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, §7.3.
 -/
 
@@ -79,7 +111,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal
+open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -105,6 +137,16 @@ against the product measure. -/
 theorem interactionEnergy_of_integrable (h : Integrable W (μ.prod μ)) :
     interactionEnergy W μ = ((∫ z, W z ∂μ.prod μ) / 2 : ℝ) := by
   rw [interactionEnergy, potentialEnergy_of_integrable (h.div_const 2), integral_div]
+
+/-- For an integrable kernel, the interaction energy of `μ` as half the integral of the kernel over
+two independent copies of a measure `γ` carried to `μ` by a measure-preserving map `f`. -/
+theorem interactionEnergy_eq_integral_prod (h : Integrable W (μ.prod μ))
+    {α : Type*} [MeasurableSpace α] {γ : Measure α} [SFinite γ] {f : α → X}
+    (hf : MeasurePreserving f γ μ) :
+    interactionEnergy W μ = ((∫ p, W (f p.1, f p.2) ∂γ.prod γ) / 2 : ℝ) := by
+  have hmp := hf.prod hf
+  rw [interactionEnergy_of_integrable h, ← hmp.map_eq,
+    integral_map hmp.measurable.aemeasurable (hmp.map_eq ▸ h.aestronglyMeasurable), Prod.map_def]
 
 /-- The interaction energy is monotone in the kernel. -/
 theorem interactionEnergy_mono (h : W ≤ᵐ[μ.prod μ] W') :
@@ -403,6 +445,212 @@ theorem _root_.StrongConvexOn.exists_isGeodesicSegment_convexAlong_interactionEn
   obtain ⟨γ, hγ, hle⟩ := hw.exists_isGeodesicSegment_interactionEnergy_le hwm hwAB μ₀ μ₁
   refine ⟨γ, hγ, hγ.convexAlong_iff.2 fun t ht ↦ ?_⟩
   simpa [hmean] using hle t ht
+
+section FirstVariation
+
+variable {C : ℝ} {μ ν : Measure E}
+
+/-- The *interaction gradient* of a kernel `w (x - y)` at a measure `μ`: the vector field
+`x ↦ (1 / 2) ∫ (∇w (x - y) - ∇w (y - x)) dμ(y)`, the gradient of the symmetrized kernel
+`(w z + w (-z)) / 2` convolved with `μ`. For a differentiable semiconvex `w` whose gradient grows
+at most linearly it is a Wasserstein subgradient of the interaction energy
+(`StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy`). For an even kernel `∇w` is
+odd, and the field is the convolution `∫ ∇w (x - y) dμ(y)` (`interactionGradient_of_even`). -/
+def interactionGradient (w : E → ℝ) (μ : Measure E) (x : E) : E :=
+  (2 : ℝ)⁻¹ • ∫ y, (gradient w (x - y) - gradient w (y - x)) ∂μ
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The defining formula of the interaction gradient. -/
+theorem interactionGradient_def (w : E → ℝ) (μ : Measure E) (x : E) :
+    interactionGradient w μ x = (2 : ℝ)⁻¹ • ∫ y, (gradient w (x - y) - gradient w (y - x)) ∂μ :=
+  (rfl)
+
+/-- The interaction gradient at a Dirac mass at `a` is `(∇w (x - a) - ∇w (a - x)) / 2`. -/
+@[simp]
+theorem interactionGradient_dirac (w : E → ℝ) (a x : E) :
+    interactionGradient w (Measure.dirac a) x =
+      (2 : ℝ)⁻¹ • (gradient w (x - a) - gradient w (a - x)) := by
+  rw [interactionGradient_def, integral_dirac]
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- For an even kernel, `w (-z) = w z`, the interaction gradient is the convolution
+`x ↦ ∫ ∇w (x - y) dμ(y)`, since the gradient of an even function is odd. -/
+theorem interactionGradient_of_even (hw : ∀ z, w (-z) = w z) (μ : Measure E) (x : E) :
+    interactionGradient w μ x = ∫ y, gradient w (x - y) ∂μ := by
+  have h (y : E) : gradient w (x - y) - gradient w (y - x) = (2 : ℝ) • gradient w (x - y) := by
+    rw [← neg_sub x y, gradient_neg_of_even hw, sub_neg_eq_add, two_smul]
+  simp_rw [interactionGradient_def, h, integral_smul, smul_smul]
+  norm_num
+
+/-- The interaction gradient at an s-finite measure is strongly measurable. -/
+theorem stronglyMeasurable_interactionGradient (w : E → ℝ) (μ : Measure E) [SFinite μ] :
+    StronglyMeasurable (interactionGradient w μ) := by
+  have : StronglyMeasurable fun z : E × E ↦ gradient w (z.1 - z.2) - gradient w (z.2 - z.1) :=
+    (((measurable_gradient w).comp (by fun_prop)).sub
+      ((measurable_gradient w).comp (by fun_prop))).stronglyMeasurable
+  exact this.integral_prod_right'.const_smul _
+
+/-- For a gradient of linear growth and a finite measure with finite second moment, the integrand
+of the interaction gradient is integrable at every point. -/
+private theorem integrable_gradient_sub_sub [IsFiniteMeasure μ]
+    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) (hμ : HasFiniteMoment 2 μ) (x : E) :
+    Integrable (fun y ↦ gradient w (x - y) - gradient w (y - x)) μ := by
+  have hg := (measurable_gradient w).stronglyMeasurable
+  have h₁ := ((memLp_const x).sub hμ.memLp_id).comp_of_norm_le_mul_one_add hg hw'
+  have h₂ := (hμ.memLp_id.sub (memLp_const x)).comp_of_norm_le_mul_one_add hg hw'
+  exact (h₁.integrable one_le_two).sub (h₂.integrable one_le_two)
+
+/-- For a gradient of linear growth, `‖∇w z‖ ≤ C (1 + ‖z‖)`, and a finite measure `μ` with finite
+second moment, the interaction gradient lies in `L²(μ; E)`. -/
+theorem memLp_interactionGradient [IsFiniteMeasure μ]
+    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) (hμ : HasFiniteMoment 2 μ) :
+    MemLp (interactionGradient w μ) 2 μ := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hw' 0)
+  have hn : Integrable (fun y : E ↦ ‖y‖) μ := (hμ.memLp_id.integrable one_le_two).norm
+  -- The field is bounded by an affine function of `‖x‖`.
+  have hbound : MemLp (fun x : E ↦ C * (μ.real univ * (1 + ‖x‖) + ∫ y, ‖y‖ ∂μ)) 2 μ :=
+    ((((memLp_const 1).add hμ.memLp_id.norm).const_mul _).add (memLp_const _)).const_mul C
+  refine hbound.of_le (stronglyMeasurable_interactionGradient w μ).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
+  have hle : ∀ y, ‖gradient w (x - y) - gradient w (y - x)‖ ≤ 2 * C * (1 + ‖x‖ + ‖y‖) := by
+    intro y
+    have h₁ := hw' (x - y)
+    have h₂ := hw' (y - x)
+    have h₃ := norm_sub_le x y
+    have h₄ := norm_sub_le y x
+    calc _ ≤ ‖gradient w (x - y)‖ + ‖gradient w (y - x)‖ := norm_sub_le _ _
+      _ ≤ _ := by nlinarith
+  have hint : ∫ y, 2 * C * (1 + ‖x‖ + ‖y‖) ∂μ =
+      2 * (C * (μ.real univ * (1 + ‖x‖) + ∫ y, ‖y‖ ∂μ)) := by
+    rw [integral_const_mul, integral_add (integrable_const _) hn, integral_const, smul_eq_mul]
+    ring
+  rw [interactionGradient_def, norm_smul, Real.norm_eq_abs,
+    Real.norm_of_nonneg (by positivity), abs_of_pos (by norm_num)]
+  have hgi : Integrable (fun y ↦ 2 * C * (1 + ‖x‖ + ‖y‖)) μ :=
+    ((integrable_const _).add hn).const_mul _
+  have := norm_integral_le_of_norm_le hgi (.of_forall hle)
+  rw [hint] at this
+  linarith
+
+/-- For a differentiable `w` whose gradient grows at most linearly, `‖∇w z‖ ≤ C (1 + ‖z‖)`, the
+difference kernel `w (x - y)` is integrable over two independent copies of a finite measure with
+finite second moment. -/
+theorem integrable_comp_sub_of_norm_gradient_le [IsFiniteMeasure μ] (hwd : Differentiable ℝ w)
+    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) (hμ : HasFiniteMoment 2 μ) :
+    Integrable (fun z : E × E ↦ w (z.1 - z.2)) (μ.prod μ) :=
+  integrable_comp_of_norm_gradient_le hwd hw'
+    ((hμ.memLp_id.comp_fst μ).sub (hμ.memLp_id.comp_snd μ))
+
+omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
+/-- The first-order condition of the `m`-strong convexity of `w` at `x - x'` towards `y - y'`, for
+two pairs `p = ((x, y), (x', y'))`, with the linear term split along the two pairs. -/
+private theorem add_inner_sub_inner_add_le (hw : StrongConvexOn univ m w)
+    (hwd : Differentiable ℝ w) (p : (E × E) × (E × E)) :
+    w (p.1.1 - p.2.1) + (⟪gradient w (p.1.1 - p.2.1), p.1.2 - p.1.1⟫ -
+      ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫) +
+      m / 2 * ‖(p.1.1 - p.1.2) - (p.2.1 - p.2.2)‖ ^ 2 ≤ w (p.1.2 - p.2.2) := by
+  have := hw.add_add_le_of_hasFDerivWithinAt (mem_univ (p.1.1 - p.2.1))
+    (mem_univ (p.1.2 - p.2.2)) (hwd _).hasFDerivAt.hasFDerivWithinAt
+  rw [← toDual_gradient, InnerProductSpace.toDual_apply_apply] at this
+  have h₁ : p.1.2 - p.2.2 - (p.1.1 - p.2.1) = (p.1.2 - p.1.1) - (p.2.2 - p.2.1) := by abel
+  have h₂ : ‖(p.1.2 - p.1.1) - (p.2.2 - p.2.1)‖ = ‖(p.1.1 - p.1.2) - (p.2.1 - p.2.2)‖ := by
+    rw [← norm_neg]
+    congr 1
+    abel
+  rwa [h₁, inner_sub_right, h₂] at this
+
+/-- The linear term of the first-order inequality, integrated over two independent copies of a
+finite coupling `γ` of `μ` and `ν`, is twice the pairing of the interaction gradient at `μ` with
+the displacement. The proof exchanges the two copies and applies Fubini's theorem. -/
+private theorem integral_inner_sub_integral_inner (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖))
+    {γ : Measure (E × E)} [IsFiniteMeasure γ] (hγ : IsCoupling γ μ ν) (hμ : HasFiniteMoment 2 μ)
+    (hH : Integrable (fun p : (E × E) × (E × E) ↦
+      ⟪gradient w (p.1.1 - p.2.1), p.1.2 - p.1.1⟫) (γ.prod γ))
+    (hK : Integrable (fun p : (E × E) × (E × E) ↦
+      ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫) (γ.prod γ)) :
+    ∫ p, ⟪gradient w (p.1.1 - p.2.1), p.1.2 - p.1.1⟫ ∂γ.prod γ -
+      ∫ p, ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫ ∂γ.prod γ =
+      2 * ∫ z, ⟪interactionGradient w μ z.1, z.2 - z.1⟫ ∂γ := by
+  have : IsFiniteMeasure μ := by rw [← hγ.fst_eq]; infer_instance
+  have hKs : Integrable (fun p : (E × E) × (E × E) ↦
+      ⟪gradient w (p.2.1 - p.1.1), p.1.2 - p.1.1⟫) (γ.prod γ) := hK.swap
+  have hHKs : Integrable (fun p : (E × E) × (E × E) ↦
+      ⟪gradient w (p.1.1 - p.2.1) - gradient w (p.2.1 - p.1.1), p.1.2 - p.1.1⟫) (γ.prod γ) := by
+    refine (hH.sub hKs).congr (.of_forall fun p ↦ ?_)
+    simp only [Pi.sub_apply, inner_sub_left]
+  rw [← integral_prod_swap (fun p : (E × E) × (E × E) ↦
+    ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫)]
+  simp only [Prod.fst_swap, Prod.snd_swap]
+  rw [← integral_sub hH hKs]
+  simp only [← inner_sub_left]
+  rw [integral_prod _ hHKs, ← integral_const_mul]
+  refine integral_congr_ae (.of_forall fun z ↦ ?_)
+  have hg := integrable_gradient_sub_sub hw' hμ z.1
+  simp only [real_inner_comm (z.2 - z.1)]
+  rw [integral_inner (hγ.integrable_comp_fst hg), hγ.integral_comp_fst hg.1,
+    interactionGradient_def, real_inner_smul_right]
+  simp
+
+/-- **The first-order inequality of the interaction energy along a coupling.** Let `w` be a
+differentiable `m`-strongly convex function, for any real `m`, whose gradient grows at most
+linearly, `‖∇w z‖ ≤ C (1 + ‖z‖)`, and let `γ` be a finite coupling of two measures `μ` and `ν` with
+finite second moments. Then the interaction energy `I` of the kernel `w (x - y)` satisfies
+`I(ν) ≥ I(μ) + ∫ ⟪ξ x, y - x⟫ dγ + (m / 4) ∫∫ ‖(x - y) - (x' - y')‖² dγ dγ`,
+where `ξ` is the interaction gradient of `w` at `μ` and the double integral runs over two
+independent pairs `(x, y)` and `(x', y')` drawn from `γ`. -/
+theorem _root_.StrongConvexOn.interactionEnergy_add_le (hw : StrongConvexOn univ m w)
+    (hwd : Differentiable ℝ w) (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖))
+    {γ : Measure (E × E)} [IsFiniteMeasure γ] (hγ : IsCoupling γ μ ν)
+    (hμ : HasFiniteMoment 2 μ) (hν : HasFiniteMoment 2 ν) :
+    interactionEnergy (fun z ↦ w (z.1 - z.2)) μ +
+      ((∫ z, ⟪interactionGradient w μ z.1, z.2 - z.1⟫ ∂γ +
+        m / 4 * ∫ p, ‖(p.1.1 - p.1.2) - (p.2.1 - p.2.2)‖ ^ 2 ∂γ.prod γ : ℝ) : EReal) ≤
+      interactionEnergy (fun z ↦ w (z.1 - z.2)) ν := by
+  have : IsFiniteMeasure μ := by rw [← hγ.fst_eq]; infer_instance
+  have : IsFiniteMeasure ν := by rw [← hγ.snd_eq]; infer_instance
+  rw [interactionEnergy_eq_integral_prod (integrable_comp_sub_of_norm_gradient_le hwd hw' hμ)
+      hγ.measurePreserving_fst,
+    interactionEnergy_eq_integral_prod (integrable_comp_sub_of_norm_gradient_le hwd hw' hν)
+      hγ.measurePreserving_snd,
+    ← EReal.coe_add, EReal.coe_le_coe_iff]
+  -- Integrability over `γ ⊗ γ` of every term of the first-order condition.
+  set P := γ.prod γ
+  have hx : MemLp (fun z : E × E ↦ z.1) 2 γ :=
+    hμ.memLp_id.comp_measurePreserving hγ.measurePreserving_fst
+  have hy : MemLp (fun z : E × E ↦ z.2) 2 γ :=
+    hν.memLp_id.comp_measurePreserving hγ.measurePreserving_snd
+  have hA : MemLp (fun p : (E × E) × (E × E) ↦ p.1.1 - p.2.1) 2 P :=
+    (hx.comp_fst γ).sub (hx.comp_snd γ)
+  have hG : MemLp (fun p : (E × E) × (E × E) ↦ gradient w (p.1.1 - p.2.1)) 2 P :=
+    hA.comp_of_norm_le_mul_one_add (measurable_gradient w).stronglyMeasurable hw'
+  have hwA : Integrable (fun p : (E × E) × (E × E) ↦ w (p.1.1 - p.2.1)) P :=
+    integrable_comp_of_norm_gradient_le hwd hw' hA
+  have hwB : Integrable (fun p : (E × E) × (E × E) ↦ w (p.1.2 - p.2.2)) P :=
+    integrable_comp_of_norm_gradient_le hwd hw' ((hy.comp_fst γ).sub (hy.comp_snd γ))
+  have hH : Integrable (fun p : (E × E) × (E × E) ↦
+      ⟪gradient w (p.1.1 - p.2.1), p.1.2 - p.1.1⟫) P :=
+    hG.integrable_inner_of_holderConjugate ((hy.sub hx).comp_fst γ)
+  have hK : Integrable (fun p : (E × E) × (E × E) ↦
+      ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫) P :=
+    hG.integrable_inner_of_holderConjugate ((hy.sub hx).comp_snd γ)
+  have hsq : Integrable (fun p : (E × E) × (E × E) ↦
+      ‖(p.1.1 - p.1.2) - (p.2.1 - p.2.2)‖ ^ 2) P :=
+    (hx.sub hy).integrable_norm_sub_sq_prod
+  have hHK : Integrable (fun p : (E × E) × (E × E) ↦ ⟪gradient w (p.1.1 - p.2.1),
+      p.1.2 - p.1.1⟫ - ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫) P := hH.sub hK
+  have hwHK : Integrable (fun p : (E × E) × (E × E) ↦ w (p.1.1 - p.2.1) +
+      (⟪gradient w (p.1.1 - p.2.1), p.1.2 - p.1.1⟫ -
+        ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫)) P := hwA.add hHK
+  -- Integrate the first-order condition, then identify the linear term.
+  have hfo : ∫ p, (w (p.1.1 - p.2.1) + (⟪gradient w (p.1.1 - p.2.1), p.1.2 - p.1.1⟫ -
+      ⟪gradient w (p.1.1 - p.2.1), p.2.2 - p.2.1⟫) +
+        m / 2 * ‖(p.1.1 - p.1.2) - (p.2.1 - p.2.2)‖ ^ 2) ∂P ≤ ∫ p, w (p.1.2 - p.2.2) ∂P :=
+    integral_mono (hwHK.add (hsq.const_mul (m / 2))) hwB (add_inner_sub_inner_add_le hw hwd)
+  rw [integral_add hwHK (hsq.const_mul _), integral_add hwA hHK, integral_sub hH hK,
+    integral_inner_sub_integral_inner hw' hγ hμ hH hK, integral_const_mul] at hfo
+  linarith
+
+end FirstVariation
 
 end InnerProductSpace
 
