@@ -156,6 +156,16 @@ def averagedTaylorKernelTerm (φ : EuclideanSpace ℝ ι → ℝ) (j : ℕ)
     ∑ I : Fin j → ι,
       iteratedFDerivAlong ℝ (coordDirections I) (kernelTestTerm φ x I) y
 
+/-- Explicit coordinate formula for `averagedTaylorKernelTerm`. -/
+theorem averagedTaylorKernelTerm_def (φ : EuclideanSpace ℝ ι → ℝ) (j : ℕ)
+    (x y : EuclideanSpace ℝ ι) :
+    averagedTaylorKernelTerm φ j x y =
+      ((-1 : ℝ) ^ j / (j.factorial : ℝ)) *
+        ∑ I : Fin j → ι,
+          iteratedFDerivAlong ℝ (List.ofFn fun l ↦ EuclideanSpace.basisFun ι ℝ (I l))
+            (fun z ↦ (∏ l : Fin j, (x (I l) - z (I l))) * φ z) y :=
+  (rfl)
+
 /-- **Averaged Taylor kernel.** For a cutoff `φ : EuclideanSpace ℝ ι → ℝ`, order `m : ℕ`, target
 point `x`, and integration variable `y`, `y ↦ averagedTaylorKernel φ m x y` is the formal adjoint
 of `u ↦ (y ↦ taylorPolynomial m u y x)` applied to `φ` (so on an additive Haar measure `μ`,
@@ -433,9 +443,11 @@ private theorem kernelMonomialPairing_apply (μ : Measure (EuclideanSpace ℝ ι
       simp [hy])
 
 /-- **The averaged Taylor polynomial on `L¹`.** For any Borel measure `μ` on `EuclideanSpace ℝ ι`
-and any `C^m` compactly supported cutoff `φ`, pairing `f ∈ Lp ℝ 1 μ` against each
-`kernelMonomialWeight` and lifting via `ContinuousLinearMap.smulRight` defines a continuous
-linear map directly into `polynomialsDegLE ι m`. -/
+and any `C^m` compactly supported cutoff `φ`, this continuous linear map into
+`polynomialsDegLE ι m` sends `f ∈ Lp ℝ 1 μ` to the polynomial whose value at `x` is
+`∫ y, f y * averagedTaylorKernel φ m x y ∂μ` (`TauCeti.averagedTaylorPolynomial_apply`),
+constructed by pairing `f` against each `kernelMonomialWeight` and lifting via
+`ContinuousLinearMap.smulRight`. -/
 def averagedTaylorPolynomial (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
     (φ : EuclideanSpace ℝ ι → ℝ) (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) :
     Lp ℝ 1 μ →L[ℝ] polynomialsDegLE ι m :=
@@ -470,15 +482,6 @@ theorem integral_mul_averagedTaylorKernel_mem_polynomialsDegLE
     exact integral_congr_ae (hf1.coeFn_toLp.mono fun y hy ↦ by dsimp only; rw [hy])
   rw [heq]
   exact (averagedTaylorPolynomial μ m φ hφ hsupp (hf1.toLp f)).property
-
-/-- At order `0`, `averagedTaylorPolynomial` sends `f` to the constant function
-`∫ y, f y * φ y ∂μ`. -/
-theorem averagedTaylorPolynomial_zero_order (μ : Measure (EuclideanSpace ℝ ι))
-    (φ : EuclideanSpace ℝ ι → ℝ) (hφ : ContDiff ℝ (0 : ℕ) φ) (hsupp : HasCompactSupport φ)
-    (f : Lp ℝ 1 μ) (x : EuclideanSpace ℝ ι) :
-    (averagedTaylorPolynomial μ 0 φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
-      ∫ y, f y * φ y ∂μ := by
-  simp [averagedTaylorPolynomial_apply]
 
 section AddHaar
 
@@ -677,9 +680,11 @@ end AddHaar
 section LpDomain
 
 /-- **The averaged Taylor polynomial on `Lᵖ`.** For any measure `μ` finite on compact sets,
-exponent `1 ≤ p`, and `C^m` compactly supported cutoff `φ`, composing `averagedTaylorPolynomial`
-with restriction to `tsupport φ` via `Set.LpToL1RestrictCLM` defines a continuous linear operator
-`Lp ℝ p μ →L[ℝ] polynomialsDegLE ι m`. -/
+exponent `1 ≤ p`, and `C^m` compactly supported cutoff `φ`, this continuous linear operator
+`Lp ℝ p μ →L[ℝ] polynomialsDegLE ι m` sends `f` to the polynomial whose value at `x` is
+`∫ y, f y * averagedTaylorKernel φ m x y ∂μ` (`TauCeti.averagedTaylorPolynomialLp_apply`),
+defined by composing `averagedTaylorPolynomial` with restriction to `tsupport φ` via
+`Set.LpToL1RestrictCLM`. -/
 def averagedTaylorPolynomialLp (μ : Measure (EuclideanSpace ℝ ι))
     [IsFiniteMeasureOnCompacts μ] (p : ℝ≥0∞) [Fact (1 ≤ p)] (m : ℕ)
     (φ : EuclideanSpace ℝ ι → ℝ) (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) :
@@ -866,7 +871,7 @@ theorem averagedTaylorPolynomial_zero_halfBall_eq_half
   let P : Set (EuclideanSpace ℝ ι) := {y | 0 ≤ EuclideanSpace.proj (𝕜 := ℝ) i y}
   have hPm : MeasurableSet P :=
     (isClosed_le continuous_const (EuclideanSpace.proj (𝕜 := ℝ) i).continuous).measurableSet
-  ext x; rw [averagedTaylorPolynomial_zero_order]
+  ext x; simp only [averagedTaylorPolynomial_apply, averagedTaylorKernel_zero]
   set φ := (ballBump (0 : EuclideanSpace ℝ ι) hρ).normed μ
   have hind : (fun y ↦ (indicatorConstLp 1 hHm hHfin (1 : ℝ)) y * φ y) =ᵐ[μ] H.indicator φ :=
     (indicatorConstLp_coeFn (μ := μ) (p := 1) (hs := hHm) (hμs := hHfin) (c := (1 : ℝ))).mono
