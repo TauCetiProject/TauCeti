@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
-import TauCeti.Algebra.Module.ZLattice.LinearExtension
+import TauCeti.Algebra.Module.ZLattice.BaseChange
 
 /-!
 # Homomorphisms of commutative Lie groups and the kernels of their exponentials
@@ -270,12 +270,13 @@ theorem existsUnique_continuousMonoidHom_lieMap_ker
     ∃! f : G →ₜ* G', ∀ X : (lieExpAddMonoidHom (I := I) (G := G)).ker,
       lieMap (I := I) (I' := I') f X = g X := by
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
-  -- The real-linear extension of `g` along the full lattice `ker(exp)`.
-  set φ := ZLattice.linearExtension (lieExpLattice (I := I) (G := G))
+  -- The real-linear extension of `g` along the full lattice `ker(exp)`, whose inclusion exhibits
+  -- the Lie algebra as its base change to `ℝ`.
+  set φ := (ZLattice.isBaseChange_subtype ℝ (lieExpLattice (I := I) (G := G))).lift
     ((lieExpAddMonoidHom (I := I') (G := G')).ker.subtype.comp g).toIntLinearMap
   have hφ (X : (lieExpAddMonoidHom (I := I) (G := G)).ker) : φ X = g X := by
     -- `lieExpLattice` is `ker(exp)` as a `ℤ`-submodule, with the same elements.
-    exact ZLattice.linearExtension_apply (lieExpLattice (I := I) (G := G))
+    exact (ZLattice.isBaseChange_subtype ℝ (lieExpLattice (I := I) (G := G))).lift_eq
       ((lieExpAddMonoidHom (I := I') (G := G')).ker.subtype.comp g).toIntLinearMap
       ⟨X.val, X.property⟩
   have hL (X) (hX : X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
@@ -286,7 +287,8 @@ theorem existsUnique_continuousMonoidHom_lieMap_ker
   · rw [lieMap_ofLieLinearMap, hφ]
   · refine (lieMapKerEquiv (I := I) (I' := I')).injective (Subtype.ext ?_)
     -- Both Lie maps agree with `φ` on the kernel, a full lattice in the Lie algebra.
-    refine ZLattice.linearMap_ext (L := lieExpLattice (I := I) (G := G)) fun X hX ↦ ?_
+    refine LinearMap.ext_on (IsZLattice.span_top (K := ℝ) (L := lieExpLattice (I := I) (G := G)))
+      fun X hX ↦ ?_
     simp only [coe_lieMapKerEquiv_apply, lieMap_ofLieLinearMap]
     rw [hφ ⟨X, hX⟩]
     exact hf ⟨X, hX⟩
