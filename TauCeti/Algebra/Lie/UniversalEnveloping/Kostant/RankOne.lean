@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CartanCollection
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CartanLattice
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Chevalley.OppositeRoot
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootNormalization
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MixedBasis
-public import TauCeti.Algebra.Lie.Sl2.Straightening
-public import TauCeti.Algebra.Lie.Chevalley.Basic
-public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.RingTheory.Binomial.IntegralSpan
 
@@ -326,49 +324,36 @@ private theorem rankOneForm_eq (bY : Basis (Fin r) ℤ Y) (s : Fin 2 ≃ ι) :
         (fun j => (1 : ℚ) ⊗ₜ[ℤ] cartan c (bY j)) =
       kostantForm (fun i => (1 : ℚ) ⊗ₜ[ℤ] root c i)
         (fun j => (1 : ℚ) ⊗ₜ[ℤ] cartan c (bY j)) := by
-  apply le_antisymm <;> rw [kostantForm_le_iff]
-  · constructor
-    · intro i n
-      fin_cases i
-      · exact dividedPower_mem_kostantForm _ _ (s 1) n
-      · exact dividedPower_mem_kostantForm _ _ (s 0) n
-    · exact ringChoose_mem_kostantForm _ _
-  · constructor
-    · intro i n
-      obtain ⟨j, rfl⟩ := s.surjective i
-      fin_cases j
-      · exact dividedPower_mem_kostantForm _ _ 1 n
-      · exact dividedPower_mem_kostantForm _ _ 0 n
-    · exact ringChoose_mem_kostantForm _ _
-
-private theorem coroot_mem_span_cartan (bY : Basis (Fin r) ℤ Y) (i : ι) :
-    (1 : ℚ) ⊗ₜ[ℤ] cartan c (P.coroot i) ∈
-      Submodule.span ℤ (Set.range fun j => (1 : ℚ) ⊗ₜ[ℤ] cartan c (bY j)) := by
-  let f : Y →ₗ[ℤ] ℚ ⊗[ℤ] ChevalleyLieAlgebra c :=
-    (TensorProduct.mk ℤ ℚ _ 1).comp (cartan c)
-  have hspan : Submodule.span ℤ (Set.range (f ∘ bY)) = LinearMap.range f := by
-    rw [Set.range_comp, ← Submodule.map_span, bY.span_eq, Submodule.map_top]
-  exact hspan.symm ▸ (LinearMap.mem_range_self f (P.coroot i))
+  have hsurj : Function.Surjective (![s 1, s 0] : Fin 2 → ι) := by
+    intro i
+    obtain ⟨j, rfl⟩ := s.surjective i
+    fin_cases j
+    · exact ⟨1, rfl⟩
+    · exact ⟨0, rfl⟩
+  have he : ![1 ⊗ₜ[ℤ] root c (s 1), 1 ⊗ₜ[ℤ] root c (s 0)] =
+      (fun i => (1 : ℚ) ⊗ₜ[ℤ] root c i) ∘ ![s 1, s 0] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [he]
+  exact kostantForm_comp (fun i => (1 : ℚ) ⊗ₜ[ℤ] root c i)
+    (fun j => (1 : ℚ) ⊗ₜ[ℤ] cartan c (bY j)) _ id hsurj Function.surjective_id
 
 private theorem rankOneForm_closure (bY : Basis (Fin r) ℤ Y) (s : Fin 2 ≃ ι)
     (hs : s 0 = P.reflectionPerm (s 1) (s 1)) :
     (kostantForm (fun i => (1 : ℚ) ⊗ₜ[ℤ] root c i)
       (fun j => (1 : ℚ) ⊗ₜ[ℤ] cartan c (bY j))).toAddSubgroup =
       AddSubgroup.closure (Set.range (rankOneLieBasis c bY s).rankOneKostantRationalBasis) := by
-  have hpair : P.toLinearMap (P.root (s 1)) (P.coroot (s 1)) = 2 := by
-    simp [P.root_coroot_eq_pairing]
   have h := Module.Basis.rankOneKostantForm_closure (rankOneLieBasis c bY s)
     ((1 : ℚ) ⊗ₜ[ℤ] cartan c (P.coroot (s 1)))
     (fun j => P.toLinearMap (P.root (s 1)) (bY j))
   simp only [rankOneLieBasis_middle, rankOneLieBasis_zero, rankOneLieBasis_last] at h
   rw [← rankOneForm_eq c bY s]
   apply h
-  · intro i j; simp [LieAlgebra.ExtendScalars.bracket_tmul]
-  · exact coroot_mem_span_cartan c bY (s 1)
-  · simp [hs, LieAlgebra.ExtendScalars.bracket_tmul]
-  · simp [LieAlgebra.ExtendScalars.bracket_tmul, hpair, two_smul, TensorProduct.tmul_add]
-  · simp [hs, LieAlgebra.ExtendScalars.bracket_tmul, hpair, two_smul, TensorProduct.tmul_add,
-    TensorProduct.tmul_neg]
+  · exact fun i j => tmul_cartan_lie_tmul_cartan c (bY i) (bY j)
+  · exact tmul_cartan_mem_span_tmul_cartan_basis c bY (P.coroot (s 1))
+  · simpa only [hs] using tmul_root_lie_tmul_root_reflectionPerm c (s 1)
+  · exact tmul_cartan_coroot_lie_tmul_root c (s 1)
+  · simpa only [hs] using tmul_cartan_coroot_lie_tmul_root_reflectionPerm c (s 1)
   · intro j
     simp [LieAlgebra.ExtendScalars.bracket_tmul, TensorProduct.tmul_smul]
   · intro j
@@ -398,42 +383,6 @@ theorem coe_rankOneKostantBasis (bY : Basis (Fin r) ℤ Y) (s : Fin 2 ≃ ι)
   exact ((rankOneLieBasis c bY s).rankOneKostantRationalBasis.addSubgroupOfClosure_apply
     _ _ p).trans (by simp only [Module.Basis.rankOneKostantRationalBasis_apply,
       rankOneLieBasis_middle, rankOneLieBasis_last, rankOneLieBasis_zero])
-
-attribute [local instance] TauCeti.moduleNNRat
-
-open TauCeti.Associative Finset
-
-local notation "ιℚ" => _root_.UniversalEnvelopingAlgebra.ι ℚ
-
-/-- The opposite-root straightening formula in the rational enveloping algebra of the
-full Chevalley Lie algebra. The middle argument is the actual coroot in `Y`.
-This calculation works in every rank. -/
-theorem dividedPower_root_mul_dividedPower_opposite (i : ι) (m n : ℕ) :
-    dividedPower m (ιℚ ((1 : ℚ) ⊗ₜ[ℤ] root c i)) *
-        dividedPower n (ιℚ ((1 : ℚ) ⊗ₜ[ℤ] root c (P.reflectionPerm i i))) =
-      ∑ k ∈ range (min m n + 1),
-        dividedPower (n - k) (ιℚ ((1 : ℚ) ⊗ₜ[ℤ] root c (P.reflectionPerm i i))) *
-          Ring.choose (ιℚ ((1 : ℚ) ⊗ₜ[ℤ] cartan c (P.coroot i)) -
-            (m + n : ℕ) + (2 * k : ℕ)) k *
-          dividedPower (m - k) (ιℚ ((1 : ℚ) ⊗ₜ[ℤ] root c i)) := by
-  apply TauCeti.Sl2.dividedPower_ι_e_mul_dividedPower_ι_f
-  · simp [LieAlgebra.ExtendScalars.bracket_tmul]
-  · simp [LieAlgebra.ExtendScalars.bracket_tmul, P.root_coroot_eq_pairing,
-      two_smul, TensorProduct.tmul_add]
-  · simp [LieAlgebra.ExtendScalars.bracket_tmul, P.root_coroot_eq_pairing,
-      two_smul, TensorProduct.tmul_add, TensorProduct.tmul_neg]
-
-/-- Every shifted coroot binomial occurring in opposite-root straightening belongs to
-the full toral binomial subring. In particular no denominator is introduced by expressing
-the coroot in the chosen basis of `Y`. This holds in every rank. -/
-theorem ringChoose_coroot_add_intCast_mem (bY : Basis (Fin r) ℤ Y)
-    (i : ι) (z : ℤ) (n : ℕ) :
-    Ring.choose (ιℚ ((1 : ℚ) ⊗ₜ[ℤ] cartan c (P.coroot i)) + z) n ∈
-      Subring.closure (kostantCartanGenerators
-        (fun j => (1 : ℚ) ⊗ₜ[ℤ] cartan c (bY j))) := by
-  apply ringChoose_add_intCast_mem_closure_kostantCartanGenerators_of_mem_span
-    _ (fun i j => by simp [LieAlgebra.ExtendScalars.bracket_tmul])
-    (coroot_mem_span_cartan c bY i)
 
 /-- Membership in the full-toral rank-one Kostant form is equivalent to a unique finite
 integer expansion in the ordered monomials. -/
