@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Birational.Graph.Degree
 public import TauCeti.Examples.AlgebraicGeometry.Birational.TopologicalDegree
-import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!
 # Regression examples: the degrees of the projections of the graph of `z ↦ z²`
@@ -20,8 +19,8 @@ For `f = (z ↦ z²)` on the affine line over a field `K`, with graph `Γ_f` and
 * `π_2` has topological degree `2 = e(f)`, in every characteristic, although `π_1` is birational:
   the second projection computes the degree of `f`, not of the graph.
 
-For the linear projection `𝔸² → 𝔸¹`, `π_2` is dominant with the junk degree `0`: it is not an
-alteration, so the equal-dimension hypothesis of the alteration statement is needed.
+For the linear projection `𝔸² → 𝔸¹`, `π_2` is dominant but not generically finite, so its
+topological degree is the junk value `0`, that of the projection itself.
 -/
 
 public section
@@ -52,12 +51,9 @@ example : (graphSnd (squareMap (ZMod 2)).toRationalMap).toRationalMap.topologica
 
 /-- For the linear projection `𝔸² → 𝔸¹`, `(x, y) ↦ x`, the second projection of the graph has
 the junk topological degree `0` of the projection itself: `π_2` is dominant but not generically
-finite, so the equal-dimension hypothesis is needed for `π_2` to be an alteration. -/
+finite. -/
 theorem topologicalDegree_graphSnd_projection :
     (graphSnd (projection K).toRationalMap).toRationalMap.topologicalDegree = 0 := by
-  rw [topologicalDegree_graphSnd, Scheme.RationalMap.topologicalDegree_eq_zero_iff K,
-    TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial,
-    TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial, ringKrullDim_eq_zero_of_field]
-  norm_num
+  rw [topologicalDegree_graphSnd, topologicalDegree_projection]
 
 end TauCeti.GraphDegreeExamples
