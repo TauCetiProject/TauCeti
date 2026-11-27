@@ -115,13 +115,13 @@ private lemma diskToDiskBoundary_eq_diskBoundaryNorthPole_iff {z : TopCat.disk.{
 /-! ### The collapse map on the interior of the disk -/
 
 /-- The interior of the disk, the preimage of the complement of the north pole. -/
-private abbrev diskInterior : Set (TopCat.disk.{w} (n + 1)) :=
+private abbrev diskCollapseInterior : Set (TopCat.disk.{w} (n + 1)) :=
   diskToDiskBoundary.{w} n ⁻¹' {diskBoundaryNorthPole.{w} (n + 1)}ᶜ
 
 /-- The collapse map is a bijection from the interior of the disk onto the complement of the
 north pole. -/
 private lemma bijOn_diskToDiskBoundary :
-    BijOn (diskToDiskBoundary.{w} n) (diskInterior.{w} n)
+    BijOn (diskToDiskBoundary.{w} n) (diskCollapseInterior.{w} n)
       {diskBoundaryNorthPole.{w} (n + 1)}ᶜ := by
   refine ⟨fun _ hz ↦ hz, fun z hz w _ h ↦ ?_, fun y hy ↦ ?_⟩
   · rw [diskBoundary_ext_iff, diskToDiskBoundary_apply_down, diskToDiskBoundary_apply_down,
@@ -138,7 +138,7 @@ private lemma bijOn_diskToDiskBoundary :
 
 /-- On the interior of the disk the collapse map is an open embedding. -/
 private lemma isOpenEmbedding_diskToDiskBoundary_domRestrict :
-    IsOpenEmbedding ((diskInterior.{w} n).domRestrict (diskToDiskBoundary.{w} n)) := by
+    IsOpenEmbedding ((diskCollapseInterior.{w} n).domRestrict (diskToDiskBoundary.{w} n)) := by
   refine ⟨IsEmbedding.subtypeVal.comp (g := Subtype.val)
       (f := ({diskBoundaryNorthPole.{w} (n + 1)}ᶜ :
         Set (TopCat.diskBoundary.{w} (n + 2))).restrictPreimage (diskToDiskBoundary.{w} n))

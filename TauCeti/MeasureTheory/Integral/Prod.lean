@@ -33,9 +33,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   conditional laws by any bound the integrand satisfies on the rectangle conditioned on. Use it to
   estimate an integral against two independently conditioned coordinates when the integrand is
   controlled only on the pair of sets being conditioned on.
-* `TauCeti.abs_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
-  differ by at most `C` for almost every point of a probability first factor, the integrals over
-  the product measures differ by at most `C`.
+* `TauCeti.norm_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
+  differ by at most `C` almost everywhere, the product integrals differ by at most `C` times the
+  mass of the common finite first factor.
 * `TauCeti.integrable_prod_restrict_of_continuous`: a continuous function on `α × β` vanishing on
   `(α \ K) × D` for compact `K` and `D` is integrable for `μ × ν|_D`, the integrability needed to
   apply Fubini's theorem to a compactly supported integrand over a compact parameter set.
@@ -63,6 +63,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   measures when the integrand is supported on countably many finite-measure rectangles.
   The supporting sets need not be measurable. The extended norm integral condition ensures
   that divergent sections cannot be hidden by the default value of the Bochner integral.
+* `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`: completeness passes from a countable
+  complete system in the first variable of a product to the whole product, slice by slice.
 
 ## Fubini on sigma-finite supports
 
@@ -293,18 +295,16 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
-/-- If two integrals over the second factor of a product measure with a probability first factor
-differ by at most `C` for almost every point of the first factor, then the two integrals over the
-product measures differ by at most `C`. -/
-theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbabilityMeasure ρ]
-    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → ℝ} {C : ℝ}
+/-- If two integrals over the second factor differ by at most `C` almost everywhere under the
+finite first-factor measure, then the product integrals differ by at most `C` times its mass. -/
+theorem norm_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsFiniteMeasure ρ]
+    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → E} {C : ℝ}
     (h₁ : Integrable F (ρ.prod κ₁)) (h₂ : Integrable F (ρ.prod κ₂))
-    (h : ∀ᵐ t ∂ρ, |∫ w, F (t, w) ∂κ₁ - ∫ w, F (t, w) ∂κ₂| ≤ C) :
-    |∫ p, F p ∂(ρ.prod κ₁) - ∫ p, F p ∂(ρ.prod κ₂)| ≤ C := by
+    (h : ∀ᵐ t ∂ρ, ‖(∫ w, F (t, w) ∂κ₁) - ∫ w, F (t, w) ∂κ₂‖ ≤ C) :
+    ‖(∫ p, F p ∂(ρ.prod κ₁)) - ∫ p, F p ∂(ρ.prod κ₂)‖ ≤ C * ρ.real Set.univ := by
   rw [integral_prod _ h₁, integral_prod _ h₂,
-    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
-  exact le_trans (norm_integral_le_of_norm_le_const (C := C)
-    (by simpa only [Real.norm_eq_abs] using h)) (by simp)
+    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left]
+  exact norm_integral_le_of_norm_le_const h
 
 omit [NormedSpace ℝ E] in
 /-- A continuous function on `α × β` that vanishes on `(α \ K) × D`, for compact sets `K` and
@@ -372,6 +372,30 @@ theorem integral_setIntegral_Iio_eq_setIntegral {μ ν : Measure ℝ} [SFinite �
   dsimp only
   rw [← integral_indicator measurableSet_Iio]
   exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
+
+/-- **Completeness in the first variable of a product.** Let `e k`, `k ∈ ι` countable, be a
+complete system for `μ`: an integrable function orthogonal to every `e k` vanishes almost
+everywhere. If `G` is integrable on `μ × ν` and for every `k` the coefficient
+`y ↦ ∫ G (t, y) e k t dμ(t)` vanishes for almost every `y`, then `G` vanishes almost everywhere.
+For almost every `y` the slice `G (·, y)` is integrable and orthogonal to every `e k`, so it
+vanishes, and Tonelli concludes. This is how completeness passes from a system on an interval to
+the separated systems on a product of intervals. -/
+theorem ae_eq_zero_prod_of_forall_integral_mul_eq_zero {ι : Type*} [Countable ι] [SFinite μ]
+    [SFinite ν] {e : ι → α → ℝ}
+    (he : ∀ g : α → ℝ, Integrable g μ → (∀ k, ∫ t, g t * e k t ∂μ = 0) → g =ᵐ[μ] 0)
+    {G : α × β → ℝ} (hG : Integrable G (μ.prod ν))
+    (h : ∀ k, (fun y => ∫ t, G (t, y) * e k t ∂μ) =ᵐ[ν] 0) :
+    G =ᵐ[μ.prod ν] 0 := by
+  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[μ] 0 := by
+    filter_upwards [ae_all_iff.2 h, hG.prod_left_ae] with y hy hyi
+    exact he _ hyi hy
+  have hlin : ∫⁻ z, ‖G z‖ₑ ∂μ.prod ν = 0 := by
+    rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
+    refine lintegral_eq_zero_of_ae_eq_zero ?_
+    filter_upwards [hslice] with y hy
+    exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
+  filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
+  simpa using hz
 
 section CompactSupport
 

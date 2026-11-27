@@ -87,6 +87,14 @@ def orientationSign (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation
   if IsOrientationPreservingAt o o' f x then 1
   else if IsOrientationReversingAt o o' f x then -1 else 0
 
+open scoped Classical in
+/-- The defining case split of `orientationSign`: `1` where `f` preserves the orientations, `-1`
+where it reverses them, and `0` otherwise. -/
+theorem orientationSign_def : orientationSign o o' f x =
+    if IsOrientationPreservingAt o o' f x then 1
+    else if IsOrientationReversingAt o o' f x then -1 else 0 :=
+  (rfl)
+
 theorem orientationSign_of_isOrientationPreservingAt (h : IsOrientationPreservingAt o o' f x) :
     orientationSign o o' f x = 1 := by
   simp [orientationSign, h]

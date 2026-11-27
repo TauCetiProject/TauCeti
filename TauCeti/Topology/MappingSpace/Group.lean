@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Mapping spaces into topological groups
@@ -16,7 +17,8 @@ For a pointed space `(X, x)` and a topological group `G`, the compact-open mappi
 `{f : C(X, G) // f x = 1}`. The homeomorphism sends `(g, f)` to `g * f`; its inverse sends
 `f` to `(f x, (f x)⁻¹ * f)`. Thus evaluation at `x` is the projection of a trivial product,
 and constant maps give its canonical section. No compactness or separation hypothesis is
-needed on either space.
+needed on either space. When the based mapping space is contractible, evaluation at `x` is
+therefore a homotopy equivalence `C(X, G) ≃ₕ G`, with homotopy inverse the constant maps.
 
 For sphere sources this identifies free sphere maps into a topological group with a group
 coordinate and a based sphere map. The construction uses left multiplication, so it also
@@ -26,6 +28,8 @@ applies to noncommutative groups.
 
 * `TauCeti.mappingSpaceGroupHomeomorph`: `G × {f : C(X, G) // f x = 1} ≃ₜ C(X, G)`, with its
   action `_apply` and the coordinates `_symm_fst`, `_symm_snd_val` of its inverse.
+* `TauCeti.mappingSpaceGroupHomotopyEquiv`: evaluation at `x` is a homotopy equivalence
+  `C(X, G) ≃ₕ G` when `{f : C(X, G) // f x = 1}` is contractible.
 * `TauCeti.mappingSpaceGroupHomeomorph_symm_comp`,
   `TauCeti.mappingSpaceGroupHomeomorph_symm_postcomp`: naturality under precomposition by a
   pointed map and under postcomposition by a continuous group homomorphism.
@@ -81,6 +85,48 @@ theorem mappingSpaceGroupHomeomorph_symm_fst (x : X) (f : C(X, G)) :
 theorem mappingSpaceGroupHomeomorph_symm_snd_val (x : X) (f : C(X, G)) :
     ((mappingSpaceGroupHomeomorph x).symm f).2.val =
       ContinuousMap.const X (f x)⁻¹ * f :=
+  (rfl)
+
+/-- **Evaluation is a homotopy equivalence when the based mapping space is contractible.** If
+`{f : C(X, G) // f x = 1}` is contractible, evaluation at `x` is a homotopy equivalence
+`C(X, G) ≃ₕ G`, with homotopy inverse the constant maps. -/
+def mappingSpaceGroupHomotopyEquiv (x : X) [ContractibleSpace {f : C(X, G) // f x = 1}] :
+    C(X, G) ≃ₕ G where
+  toFun := ⟨fun f ↦ f x, continuous_eval_const x⟩
+  invFun := ⟨ContinuousMap.const X, ContinuousMap.continuous_const'⟩
+  left_inv := by
+    -- evaluation is `C(X, G) ≃ₜ G × Map_*(X, G) ≃ₕ G`, collapsing the contractible factor,
+    -- and the constant maps are a right inverse of it, hence a homotopy inverse
+    let e := (mappingSpaceGroupHomeomorph (G := G) x).symm.toHomotopyEquiv.trans
+      (HomotopyEquiv.prodContractible G {f : C(X, G) // f x = 1})
+    have he : e.toFun = ⟨fun f ↦ f x, continuous_eval_const x⟩ := by
+      ext f
+      -- unfold the composite through the `trans` and `toHomotopyEquiv` coercion lemmas
+      simp only [e, HomotopyEquiv.trans_apply, HomotopyEquiv.prodContractible_toFun,
+        ContinuousMap.fst_apply, Homeomorph.coe_toHomotopyEquiv,
+        mappingSpaceGroupHomeomorph_symm_fst, ContinuousMap.coe_mk]
+    refine Homotopic.comp_homotopic_id_of_comp_homotopic_id ?_ (he ▸ e.left_inv)
+    convert Homotopic.refl (ContinuousMap.id G) using 1
+    ext g
+    simp
+  right_inv := by
+    convert Homotopic.refl (ContinuousMap.id G) using 1
+    ext g
+    simp
+
+/-- `TauCeti.mappingSpaceGroupHomotopyEquiv` is evaluation at the basepoint. -/
+@[simp]
+theorem mappingSpaceGroupHomotopyEquiv_apply (x : X)
+    [ContractibleSpace {f : C(X, G) // f x = 1}] (f : C(X, G)) :
+    mappingSpaceGroupHomotopyEquiv x f = f x :=
+  (rfl)
+
+/-- The homotopy inverse of `TauCeti.mappingSpaceGroupHomotopyEquiv` sends a point to the
+constant map. -/
+@[simp]
+theorem mappingSpaceGroupHomotopyEquiv_symm_apply (x : X)
+    [ContractibleSpace {f : C(X, G) // f x = 1}] (g : G) :
+    (mappingSpaceGroupHomotopyEquiv x).symm g = ContinuousMap.const X g :=
   (rfl)
 
 variable {Y H : Type*} [TopologicalSpace Y] [TopologicalSpace H]

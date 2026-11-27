@@ -32,8 +32,9 @@ Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example*, Theorem I.5.3).
 
 ## Main declarations
 
-* `TwoSidedIdeal.smul_mem_of_isClosed`: closed two-sided ideals in C⋆-algebras absorb complex
-  scalars (specializing `TwoSidedIdeal.smul_mem_of_isApproximateUnit`).
+* `TwoSidedIdeal.smul_mem_of_isClosed`, `AddSubgroup.smul_mem_of_isClosed_right`: closed
+  two-sided ideals and closed right additive subgroups in C⋆-algebras absorb complex scalars
+  (specializing `AddSubgroup.smul_mem_of_isClosed_right_of_tendsto`).
 * `TwoSidedIdeal.star_mem_of_isClosed` and `Ideal.star_mem_of_isClosed`: closed two-sided ideals in
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
@@ -64,6 +65,22 @@ public section
 open Filter Topology
 open scoped CStarAlgebra NNReal
 
+namespace AddSubgroup
+
+/-- Every closed right additive subgroup of a (possibly nonunital) C⋆-algebra `A` is automatically
+closed under complex scalar multiplication. -/
+theorem smul_mem_of_isClosed_right {A : Type*} [NonUnitalCStarAlgebra A]
+    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
+    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I) (c : ℂ) {a : A} (ha : a ∈ I) :
+    c • a ∈ I := by
+  let _ := CStarAlgebra.spectralOrder A
+  have _ := CStarAlgebra.spectralOrderedRing A
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  exact I.smul_mem_of_isClosed_right_of_tendsto hI hmul c (hl.tendsto_mul_left a) ha
+
+end AddSubgroup
+
 namespace TwoSidedIdeal
 
 section CStarAlgebra
@@ -71,11 +88,8 @@ section CStarAlgebra
 variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
 
 /-- Every closed two-sided ideal of a C⋆-algebra is closed under complex scalar multiplication. -/
-theorem smul_mem_of_isClosed (c : ℂ) {a : A} (ha : a ∈ I) : c • a ∈ I := by
-  let _ := CStarAlgebra.spectralOrder A
-  have _ := CStarAlgebra.spectralOrderedRing A
-  exact I.smul_mem_of_isApproximateUnit
-    (CStarAlgebra.increasingApproximateUnit A).toIsApproximateUnit c ha
+theorem smul_mem_of_isClosed (c : ℂ) {a : A} (ha : a ∈ I) : c • a ∈ I :=
+  (AddSubgroup.ofClass I).smul_mem_of_isClosed_right hI (fun hx b ↦ I.mul_mem_right _ b hx) c ha
 
 /-- A closed two-sided ideal of a C⋆-algebra bundled as a complex submodule. -/
 @[expose] def toSubmodule : Submodule ℂ A :=

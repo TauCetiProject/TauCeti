@@ -71,14 +71,21 @@ A smooth cylinder from the loop `γ` to the loop `γ₀` (`TauCeti.IsSmoothCylin
 `u (s, 1) = f (u (s, 0))` instead, so that it joins two `f`-seamed paths, the paths `γ` with
 `γ 1 = f (γ 0)` on which the Floer theory of a symplectomorphism `f` is built; the cylinders are
 defined as the case `f = id`. Seamed cylinders concatenate and reverse, and a smooth family of
-seamed paths gives seamed cylinders between any two of its members.
+seamed paths gives seamed cylinders between any two of its members. Reversing time, that is the
+second coordinate, turns an `f`-seamed cylinder into a `g`-seamed cylinder between the reversed
+paths `t ↦ γ (1 - t)`, for every left inverse `g` of `f`
+(`TauCeti.IsSmoothSeamedCylinder.comp_prodMap_id_one_sub`): this is how the Floer theory of `f`
+is compared with that of `f⁻¹`.
 
 Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
 (`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
 sphere, respectively a torus, vanishes. It vanishes on `f`-seamed tori
 (`TauCeti.VanishesOnSeamedTori`) when its integral vanishes over every map of the square that
 agrees on the two vertical edges and is `f`-seamed along the horizontal ones, so that it sweeps out
-a loop of `f`-seamed paths; for `f = id` these are the tori. Such a form has the same integral over
+a loop of `f`-seamed paths; for `f = id` these are the tori. Reversing time changes the sign of
+the integral and turns `g`-seamed tori into `f`-seamed tori when `f ∘ g = id`, so a form vanishing
+on `f`-seamed tori vanishes on `g`-seamed tori (`TauCeti.VanishesOnSeamedTori.of_rightInverse`).
+Such a form has the same integral over
 any two caps of a loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any
 two seamed cylinders between the same seamed paths
 (`TauCeti.VanishesOnSeamedTori.rectangleIntegral_eq`, and
@@ -107,6 +114,8 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 
 * `TauCeti.rectangleIntegral_comp_add_snd_of_periodic`: rotation invariance in the second
   coordinate over a full period.
+* `TauCeti.rectangleIntegral_add_of_isSmoothForm`, `TauCeti.rectangleIntegral_sub_of_isSmoothForm`:
+  linearity in continuous forms.
 * `TauCeti.rectangleIntegral_add_adjacent_fst`: additivity in the first coordinate.
 * `TauCeti.rectangleIntegral_comp_prodMap_affine`: reparametrization by an affine function in the
   first coordinate.
@@ -115,6 +124,9 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.rectangleIntegral_rectangleTrans`: the integral over a concatenation.
 * `TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`: the integral over two maps
   glued along their common start.
+* `TauCeti.loopwiseTrans_congr`, `TauCeti.loopwiseTrans_mem`, `TauCeti.apply_loopwiseTrans`: a
+  loopwise concatenation only depends on its maps over `t ∈ [0, 1]`, lies in every set containing
+  their values there, and commutes with composition.
 * `TauCeti.contMDiff_loopwiseTrans`, `TauCeti.rectangleIntegral_loopwiseTrans`: smoothness of and
   the integral over a loopwise concatenation.
 * `TauCeti.IsSmoothSeamedCylinder.trans`, `TauCeti.IsSmoothCylinder.trans`: the concatenation of
@@ -122,6 +134,13 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_one_sub`,
   `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub`: a smooth (seamed) cylinder run backwards is a
   smooth (seamed) cylinder.
+* `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_id_one_sub`,
+  `TauCeti.IsSmoothCylinder.comp_prodMap_id_one_sub`: reversing time in a smooth `f`-seamed
+  cylinder gives a smooth `g`-seamed cylinder for a left inverse `g` of `f`, and reversing time in a
+  smooth cylinder gives a smooth cylinder.
+* `TauCeti.VanishesOnSeamedTori.of_rightInverse`,
+  `TauCeti.vanishesOnSeamedTori_iff_of_leftInverse_of_rightInverse`: vanishing on `f`-seamed tori
+  passes to `g`-seamed tori for a right inverse `g` of `f`.
 * `TauCeti.isSmoothSeamedCylinder_comp_prodMap_affine`,
   `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth family of seamed paths, or a
   smooth map `1`-periodic in `t`, from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth
@@ -198,6 +217,28 @@ theorem continuous_integral_mpullback {φ : RoughForm I M F 2} (hφ : IsSmoothFo
     Continuous fun s ↦ ∫ t in a₂..b₂, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)] :=
   intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume)
     ((hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun _ ↦ rfl) a₂ b₂
+
+/-- The integral of a sum of continuous forms over a `C¹` map is the sum of the integrals. -/
+theorem rectangleIntegral_add_of_isSmoothForm {φ ψ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b : ℝ × ℝ) :
+    rectangleIntegral (φ + ψ) u a b = rectangleIntegral φ u a b + rectangleIntegral ψ u a b := by
+  have hint {θ : RoughForm I M F 2} (hθ : IsSmoothForm I 0 θ) (s : ℝ) : IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u θ (s, t) ![(1, 0), (0, 1)]) volume a.2 b.2 :=
+    ((hθ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).comp
+      (Continuous.prodMk_right s)).intervalIntegrable _ _
+  exact rectangleIntegral_add (fun s _ ↦ hint hφ s) (fun s _ ↦ hint hψ s)
+    ((continuous_integral_mpullback hφ hu _ _).intervalIntegrable _ _)
+    ((continuous_integral_mpullback hψ hu _ _).intervalIntegrable _ _)
+
+/-- The integral of a difference of continuous forms over a `C¹` map is the difference of the
+integrals. -/
+theorem rectangleIntegral_sub_of_isSmoothForm {φ ψ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b : ℝ × ℝ) :
+    rectangleIntegral (φ - ψ) u a b = rectangleIntegral φ u a b - rectangleIntegral ψ u a b := by
+  rw [sub_eq_add_neg φ, sub_eq_add_neg, rectangleIntegral_add_of_isSmoothForm hφ hψ.neg hu,
+    rectangleIntegral_neg]
 
 /-- **Additivity in the first coordinate.** For a continuous form and a `C¹` map, the integral
 over `[a.1, b.1] × [a.2, b.2]` is the sum of the integrals over `[a.1, c] × [a.2, b.2]` and
@@ -378,6 +419,26 @@ theorem rectangleTrans_apply_add_snd {u₁ u₂ : ℝ × ℝ → M} {T : ℝ}
   simp only [rectangleTrans, h₁ (_, z.2), h₂ (_, z.2)]
 
 omit [TopologicalSpace M] in
+/-- A map applied to a concatenation is the concatenation of the composites. -/
+theorem apply_rectangleTrans {N : Type*} (f : M → N) (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    f (rectangleTrans u₁ u₂ z) = rectangleTrans (f ∘ u₁) (f ∘ u₂) z := by
+  rw [rectangleTrans, rectangleTrans]
+  rcases le_or_gt z.1 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h, Function.comp_apply]
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h, Function.comp_apply]
+
+omit [TopologicalSpace M] in
+/-- The concatenation of two maps with values in a set `A` has values in `A`. -/
+theorem rectangleTrans_mem {u₁ u₂ : ℝ × ℝ → M} {A : Set M} (h₁ : ∀ z, u₁ z ∈ A)
+    (h₂ : ∀ z, u₂ z ∈ A) (z : ℝ × ℝ) : rectangleTrans u₁ u₂ z ∈ A := by
+  rw [rectangleTrans]
+  rcases le_or_gt z.1 2⁻¹ with h | h
+  · rw [curveConcat_of_le h]
+    exact h₁ _
+  · rw [curveConcat_of_lt h]
+    exact h₂ _
+
+omit [TopologicalSpace M] in
 /-- Below `s = 2/3` the concatenation is a reparametrization of the first map. -/
 theorem rectangleTrans_eq_left {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t, u₁ (1, t) = u₂ (0, t))
     {z : ℝ × ℝ} (hz : z.1 < 2 / 3) :
@@ -520,6 +581,42 @@ theorem loopwiseTrans_eq_right {u₁ u₂ : ℝ × ℝ → M} (h₁ : ∀ s, u�
     rw [loopwiseTrans, hz₂, Int.fract_one, curveConcat_of_le (by norm_num),
       Real.smoothTransition.zero_of_nonpos (by norm_num),
       Real.smoothTransition.one_of_one_le (by norm_num), h₂]
+
+omit [TopologicalSpace M] in
+/-- The loopwise concatenation at `(s, t)` only depends on the two loops `r ↦ u₁ (s, r)` and
+`r ↦ u₂ (s, r)` at parameters `r ∈ [0, 1]`. -/
+theorem loopwiseTrans_congr {u₁ u₂ v₁ v₂ : ℝ × ℝ → M} {s s' t : ℝ}
+    (h₁ : ∀ r ∈ Icc (0 : ℝ) 1, u₁ (s, r) = v₁ (s', r))
+    (h₂ : ∀ r ∈ Icc (0 : ℝ) 1, u₂ (s, r) = v₂ (s', r)) :
+    loopwiseTrans u₁ u₂ (s, t) = loopwiseTrans v₁ v₂ (s', t) := by
+  rw [loopwiseTrans, loopwiseTrans]
+  rcases le_or_gt (Int.fract t) 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h]
+    exact h₁ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h]
+    exact h₂ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+
+omit [TopologicalSpace M] in
+/-- The loopwise concatenation at `(s, t)` lies in a set `A` if the two loops `r ↦ u₁ (s, r)` and
+`r ↦ u₂ (s, r)` lie in `A` at parameters `r ∈ [0, 1]`. -/
+theorem loopwiseTrans_mem {u₁ u₂ : ℝ × ℝ → M} {A : Set M} {s t : ℝ}
+    (h₁ : ∀ r ∈ Icc (0 : ℝ) 1, u₁ (s, r) ∈ A) (h₂ : ∀ r ∈ Icc (0 : ℝ) 1, u₂ (s, r) ∈ A) :
+    loopwiseTrans u₁ u₂ (s, t) ∈ A := by
+  rw [loopwiseTrans]
+  rcases le_or_gt (Int.fract t) 2⁻¹ with h | h
+  · rw [curveConcat_of_le h]
+    exact h₁ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · rw [curveConcat_of_lt h]
+    exact h₂ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+
+omit [TopologicalSpace M] in
+/-- A map applied to a loopwise concatenation is the loopwise concatenation of the composites. -/
+theorem apply_loopwiseTrans {N : Type*} (f : M → N) (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    f (loopwiseTrans u₁ u₂ z) = loopwiseTrans (f ∘ u₁) (f ∘ u₂) z := by
+  rw [loopwiseTrans, loopwiseTrans]
+  rcases le_or_gt (Int.fract z.2) 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h, Function.comp_apply]
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h, Function.comp_apply]
 
 /-- The loopwise concatenation of two `C^n` maps, each ending where the other starts, is
 `C^n`. -/
@@ -697,6 +794,20 @@ theorem IsSmoothSeamedCylinder.comp_prodMap_one_sub (hu : IsSmoothSeamedCylinder
   apply_one t _ := by simp [hu.apply_zero]
   seam s hs := by simpa using hu.seam (1 - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
 
+/-- **Reversing time in a seamed cylinder.** Reversing the second coordinate of a smooth
+`f`-seamed cylinder from `γ` to `γ₀` gives a smooth `g`-seamed cylinder from `t ↦ γ (1 - t)` to
+`t ↦ γ₀ (1 - t)`, for every left inverse `g` of `f`: each reversed path `t ↦ u (s, 1 - t)` runs
+from `f (u (s, 0))` to `u (s, 0) = g (f (u (s, 0)))`. -/
+theorem IsSmoothSeamedCylinder.comp_prodMap_id_one_sub {g : M → M}
+    (hu : IsSmoothSeamedCylinder I f γ γ₀ u) (hgf : Function.LeftInverse g f) :
+    IsSmoothSeamedCylinder I g (fun t ↦ γ (1 - t)) (fun t ↦ γ₀ (1 - t))
+      (u ∘ Prod.map id fun t ↦ 1 - t) where
+  contMDiff := hu.contMDiff.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff
+  apply_zero t := by simp [hu.apply_zero]
+  apply_one t ht := by
+    simpa using hu.apply_one (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩
+  seam s hs := by simp [hu.seam s hs, hgf (u (s, 0))]
+
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth family `u` of
 `f`-seamed paths `u (s, ·)` into a smooth `f`-seamed cylinder from `u (a, ·)` to `u (b, ·)`. -/
 theorem isSmoothSeamedCylinder_comp_prodMap_affine (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u)
@@ -724,6 +835,15 @@ theorem IsSmoothCylinder.comp_prodMap_one_sub {γ γ₀ : ℝ → M} {u : ℝ ×
     (hu : IsSmoothCylinder I γ γ₀ u) :
     IsSmoothCylinder I (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) :=
   isSmoothSeamedCylinder_id_iff.mp (isSmoothSeamedCylinder_id_iff.mpr hu).comp_prodMap_one_sub
+
+/-- Reversing the second coordinate of a smooth cylinder from `γ` to `γ₀` gives a smooth cylinder
+from `t ↦ γ (1 - t)` to `t ↦ γ₀ (1 - t)`. -/
+theorem IsSmoothCylinder.comp_prodMap_id_one_sub {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
+    (hu : IsSmoothCylinder I γ γ₀ u) :
+    IsSmoothCylinder I (fun t ↦ γ (1 - t)) (fun t ↦ γ₀ (1 - t))
+      (u ∘ Prod.map id fun t ↦ 1 - t) :=
+  isSmoothSeamedCylinder_id_iff.mp
+    ((isSmoothSeamedCylinder_id_iff.mpr hu).comp_prodMap_id_one_sub fun _ ↦ rfl)
 
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
 `1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
@@ -789,6 +909,27 @@ theorem vanishesOnSeamedTori_iff (f : M → M) (φ : RoughForm I M F 2) :
 theorem vanishesOnSeamedTori_id_iff (φ : RoughForm I M F 2) :
     VanishesOnSeamedTori id φ ↔ VanishesOnTori φ :=
   Iff.rfl
+
+/-- **Reversing time in seamed tori.** A two-form that vanishes on `f`-seamed tori vanishes on
+`g`-seamed tori for every right inverse `g` of `f`: reversing the second coordinate of a
+`g`-seamed torus gives an `f`-seamed torus, and changes the sign of the integral. -/
+theorem VanishesOnSeamedTori.of_rightInverse {φ : RoughForm I M F 2} {f g : M → M}
+    (hT : VanishesOnSeamedTori f φ) (hfg : Function.RightInverse g f) :
+    VanishesOnSeamedTori g φ := by
+  intro u hu h₁ hseam
+  have hv := hT (u ∘ Prod.map id fun t ↦ 1 - t)
+    (hu.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff)
+    (fun t ht ↦ by simpa using h₁ (1 - t) ⟨by linarith [ht.2], by linarith [ht.1]⟩)
+    (fun s hs ↦ by simp [hseam s hs, hfg (u (s, 0))])
+  rwa [rectangleIntegral_comp_prodMap_id_one_sub φ (hu.mdifferentiable (by simp)),
+    neg_eq_zero] at hv
+
+/-- For mutually inverse maps `f` and `g`, a two-form vanishes on `g`-seamed tori exactly when it
+vanishes on `f`-seamed tori. -/
+theorem vanishesOnSeamedTori_iff_of_leftInverse_of_rightInverse {φ : RoughForm I M F 2}
+    {f g : M → M} (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
+    VanishesOnSeamedTori g φ ↔ VanishesOnSeamedTori f φ :=
+  ⟨fun h ↦ h.of_rightInverse hgf, fun h ↦ h.of_rightInverse hfg⟩
 
 /-! ### Independence of the cylinder -/
 

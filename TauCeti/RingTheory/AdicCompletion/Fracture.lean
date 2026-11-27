@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.RingTheory.AdicCompletion.Regular
+public import TauCeti.RingTheory.AdicCompletion.Regular.Basic
 public import TauCeti.RingTheory.AdicCompletion.Iterated
 public import TauCeti.RingTheory.Regular.Pair
 public import TauCeti.RingTheory.Patching.GlueingPair
