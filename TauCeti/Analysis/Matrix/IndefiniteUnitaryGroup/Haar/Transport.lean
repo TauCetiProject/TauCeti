@@ -10,7 +10,7 @@ import Mathlib.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Matrix.SkewAdjoint
 import Mathlib.RingTheory.Complex
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.Analysis.Normed.Ring.Finite
 
 /-!
 # Transport of the Cayley measure between unitary groups of congruent forms
@@ -260,9 +260,12 @@ Hermitian `J`, `J'` with `J * J = 1 = J' * J'`, `bᴴ (t J) b = J'` and `a b ∈
 theorem measurePreserving_transport_of_mul_self_eq_one (hA : A.IsHermitian) (hAA : A * A = 1)
     (hA'A' : A' * A' = 1) (ht : t ≠ 0) (hb : star (b : Matrix n n ℂ) * (t • A) * b = A')
     {a : GL n ℂ} (hab : a * b ∈ unitaryGroupOf A') :
-    MeasurePreserving (transport ht hb hab) (cayleyMeasure A μ) (cayleyMeasure A' μ) :=
-  measurePreserving_transport μ hA ⟨⟨A, A, hAA, hAA⟩, rfl⟩ ht hb hab
-    (by rw [norm_det_eq_one_of_mul_self_eq_one hAA, norm_det_eq_one_of_mul_self_eq_one hA'A'])
+    MeasurePreserving (transport ht hb hab) (cayleyMeasure A μ) (cayleyMeasure A' μ) := by
+  have h {J : Matrix n n ℂ} (hJ : J * J = 1) : ‖J.det‖ = 1 :=
+    (detMonoidHom.isOfFinOrder <|
+      (isOfFinOrder_iff_pow_eq_one (x := J)).2 ⟨2, two_pos, by rw [sq, hJ]⟩).norm_eq_one
+  exact measurePreserving_transport μ hA ⟨⟨A, A, hAA, hAA⟩, rfl⟩ ht hb hab
+    (by rw [h hAA, h hA'A'])
 
 end Measure
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.LinearAlgebra.Matrix.Adjugate
@@ -65,8 +64,6 @@ differences of the remaining columns.
   determinant one.
 * `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
   radical has unit determinant.
-* `Matrix.norm_det_eq_one_of_mul_self_eq_one`: an involution over a normed commutative ring with
-  multiplicative norm has determinant of norm `1`.
 
 ## Provenance
 
@@ -243,14 +240,6 @@ theorem det_updateRow_one {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     (k : n) (v : n → R) :
     ((1 : Matrix n n R).updateRow k v).det = v k := by
   rw [← Matrix.cramer_transpose_apply, Matrix.transpose_one, Matrix.cramer_one, one_apply_eq_self]
-
-/-- A matrix `J` with `J * J = 1` over a normed commutative ring with multiplicative norm has
-`‖det J‖ = 1`. -/
-theorem norm_det_eq_one_of_mul_self_eq_one {ι R : Type*} [Fintype ι] [DecidableEq ι]
-    [NormedCommRing R] [NormMulClass R] [NormOneClass R] {J : Matrix ι ι R} (hJ : J * J = 1) :
-    ‖J.det‖ = 1 := by
-  have h : ‖J.det‖ ^ 2 = 1 := by rw [sq, ← norm_mul, ← det_mul, hJ, det_one, norm_one]
-  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
 
 end Matrix
 

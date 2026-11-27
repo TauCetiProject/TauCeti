@@ -236,6 +236,28 @@ theorem det_mem_unitary_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R}
   rw [Unitary.mem_iff_star_mul_self]
   exact ((isUnit_iff_isUnit_det A).mp hA).mul_eq_right.mp h
 
+section Congruence
+
+variable {A' : Matrix n n R} {b : GL n R} {K : Type*} [Semifield K] [Algebra K R] {t : K}
+
+/-- If `bᴴ (t A) b = A'` with `A` invertible and `t ≠ 0`, then `A'` is invertible. -/
+theorem isUnit_of_star_mul_smul_mul_eq (hA : IsUnit A) (ht : t ≠ 0)
+    (hb : star (b : Matrix n n R) * (t • A) * b = A') : IsUnit A' := by
+  rw [← hb]
+  exact ((b.isUnit.star).mul (hA.smul (Units.mk0 t ht))).mul b.isUnit
+
+/-- The congruence `bᴴ (t A) b = A'` inverted: `(b⁻¹)ᴴ (t⁻¹ A') b⁻¹ = A`. -/
+theorem star_inv_mul_smul_mul_inv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
+    star ((b⁻¹ : GL n R) : Matrix n n R) * (t⁻¹ • A') * (b⁻¹ : GL n R) = A := by
+  have h1 : star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R) = 1 := by
+    rw [← star_mul, Units.mul_inv, star_one]
+  have h2 : (b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R) = 1 := Units.mul_inv b
+  rw [← hb]
+  simp only [Matrix.mul_smul, Matrix.smul_mul, ← Matrix.mul_assoc, h1, Matrix.one_mul]
+  rw [Matrix.mul_assoc, h2, Matrix.mul_one, smul_smul, inv_mul_cancel₀ ht, one_smul]
+
+end Congruence
+
 namespace unitaryGroupOf
 
 /-- A matrix preserving the form of an invertible Gram matrix `A` is invertible, with inverse
@@ -305,22 +327,6 @@ end CommSemiring
 
 variable {K : Type*} [Semifield K] [Algebra K R] {t : K}
 
-/-- If `bᴴ (t A) b = A'` with `A` invertible and `t ≠ 0`, then `A'` is invertible. -/
-theorem isUnit_of_star_mul_smul_mul_eq (hA : IsUnit A) (ht : t ≠ 0)
-    (hb : star (b : Matrix n n R) * (t • A) * b = A') : IsUnit A' := by
-  rw [← hb]
-  exact ((b.isUnit.star).mul (hA.smul (Units.mk0 t ht))).mul b.isUnit
-
-/-- The congruence `bᴴ (t A) b = A'` inverted: `(b⁻¹)ᴴ (t⁻¹ A') b⁻¹ = A`. -/
-theorem star_inv_mul_smul_mul_inv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
-    star ((b⁻¹ : GL n R) : Matrix n n R) * (t⁻¹ • A') * (b⁻¹ : GL n R) = A := by
-  have h1 : star ((b⁻¹ : GL n R) : Matrix n n R) * star (b : Matrix n n R) = 1 := by
-    rw [← star_mul, Units.mul_inv, star_one]
-  have h2 : (b : Matrix n n R) * ((b⁻¹ : GL n R) : Matrix n n R) = 1 := Units.mul_inv b
-  rw [← hb]
-  simp only [Matrix.mul_smul, Matrix.smul_mul, ← Matrix.mul_assoc, h1, Matrix.one_mul]
-  rw [Matrix.mul_assoc, h2, Matrix.mul_one, smul_smul, inv_mul_cancel₀ ht, one_smul]
-
 /-- The **conjugation isomorphism** `g ↦ b⁻¹ g b` from the unitary group of `A` to that of
 `A' = bᴴ (t A) b`, for a nonzero scalar `t`. Its inverse is `g ↦ b g b⁻¹`. -/
 noncomputable def conjEquiv (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A') :
@@ -370,6 +376,17 @@ theorem coe_transport_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t �
     (((transport ht hb hab g : unitaryGroupOf A') : GL n R) : Matrix n n R) =
       (a : Matrix n n R) * ((g : GL n R) : Matrix n n R) * b := by
   simp [transport_apply, Matrix.mul_assoc]
+
+/-- The inverse of `Matrix.unitaryGroupOf.transport` is `g ↦ a⁻¹ g b⁻¹`. -/
+@[simp]
+theorem coe_transport_symm_apply (ht : t ≠ 0) (hb : star (b : Matrix n n R) * (t • A) * b = A')
+    {a : GL n R} (hab : a * b ∈ unitaryGroupOf A') (g : unitaryGroupOf A') :
+    ((((transport ht hb hab).symm g : unitaryGroupOf A) : GL n R) : Matrix n n R) =
+      (a : Matrix n n R)⁻¹ * ((g : GL n R) : Matrix n n R) * (b : Matrix n n R)⁻¹ := by
+  have h : (((transport ht hb hab).symm g : unitaryGroupOf A) : GL n R) = a⁻¹ * g * b⁻¹ := by
+    change b * ((⟨a * b, hab⟩ : unitaryGroupOf A')⁻¹ * g : unitaryGroupOf A') * b⁻¹ = _
+    simp [mul_assoc]
+  rw [h, Units.val_mul, Units.val_mul, coe_units_inv, coe_units_inv]
 
 end Congruence
 
