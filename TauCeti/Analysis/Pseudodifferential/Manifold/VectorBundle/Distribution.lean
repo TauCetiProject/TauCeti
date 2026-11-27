@@ -238,20 +238,14 @@ private theorem continuous_chartLocalization_apply_chartTestSection
 /-- The linear map underlying `TauCeti.BundleTest.pseudodifferentialCLM`: a properly supported
 operator sends compactly supported sections to compactly supported sections. -/
 private def testLinearMap (hP : IsSectionProperlySupported P) :
-    BundleTest 𝓘(ℝ, CoordinateSpace n) V E →ₗ[ℝ] BundleTest 𝓘(ℝ, CoordinateSpace n) W F where
-  toFun Φ := BundleTest.ofCompactlySupported _ W F
-    ⟨P ((BundleTest.ofCompactlySupported _ V E).symm Φ).val, by
+    BundleTest 𝓘(ℝ, CoordinateSpace n) V E →ₗ[ℝ] BundleTest 𝓘(ℝ, CoordinateSpace n) W F :=
+  (BundleTest.ofCompactlySupported _ W F).toLinearMap ∘ₗ
+    ((P.restrictScalars ℝ).restrict fun s hs ↦ by
       obtain ⟨K', hK', hPK, -⟩ :=
-        isSectionProperlySupported_iff.1 hP _
-          (mem_compactlySupported.1 ((BundleTest.ofCompactlySupported _ V E).symm Φ).property)
+        isSectionProperlySupported_iff.1 hP _ (mem_compactlySupported.1 hs)
       exact mem_compactlySupported.2
-        (hK'.of_isClosed_subset (P _).isClosed_tsupport (hPK _ subset_rfl))⟩
-  map_add' Φ Ψ := by
-    refine BundleTest.ext fun x ↦ ?_
-    simp
-  map_smul' a Φ := by
-    refine BundleTest.ext fun x ↦ ?_
-    simp [LinearMap.map_smul_of_tower]
+        (hK'.of_isClosed_subset (P s).isClosed_tsupport (hPK _ subset_rfl))) ∘ₗ
+    (BundleTest.ofCompactlySupported _ V E).symm.toLinearMap
 
 omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [FiniteDimensional ℂ V]
   [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)] [FiniteDimensional ℂ W]
@@ -260,7 +254,7 @@ private theorem val_symm_testLinearMap (hP : IsSectionProperlySupported P)
     (Φ : BundleTest 𝓘(ℝ, CoordinateSpace n) V E) :
     ((BundleTest.ofCompactlySupported _ W F).symm (testLinearMap hP Φ)).val =
       P ((BundleTest.ofCompactlySupported _ V E).symm Φ).val := by
-  simp [testLinearMap]
+  simp [testLinearMap, LinearMap.restrict_apply]
 
 /-- Extending test functions supported in a compact subset `L` of the target of a chart `c` of the
 maximal atlas through `c` and a trivialization `t`, and then applying `P`, is continuous. -/
