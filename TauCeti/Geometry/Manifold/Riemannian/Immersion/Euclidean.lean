@@ -123,6 +123,7 @@ theorem immersionSecondFundamentalFormAt_affine (p : F) (L : E →L[ℝ] F) (x :
 variable [RiemannianBundle (fun y : E ↦ TangentSpace 𝓘(ℝ, E) y)]
 
 /-- Every shape operator of an affine map into a Euclidean space vanishes. -/
+@[simp]
 theorem immersionShapeOperatorAt_affine (p : F) (L : E →L[ℝ] F) (x : E)
     (ν : TangentSpace 𝓘(ℝ, F) (p + L x)) :
     immersionShapeOperatorAt (I := 𝓘(ℝ, E)) (leviCivitaConnection 𝓘(ℝ, F) F)
@@ -135,6 +136,7 @@ theorem immersionShapeOperatorAt_affine (p : F) (L : E →L[ℝ] F) (x : E)
 
 /-- **Every principal curvature of an affine map vanishes**, in every normal direction. In
 particular an affine hyperplane in a Euclidean space has all principal curvatures `0`. -/
+@[simp]
 theorem immersionPrincipalCurvatures_affine (p : F) (L : E →L[ℝ] F) (x : E)
     (ht : (leviCivitaConnection 𝓘(ℝ, F) F).IsTorsionFree) {m : ℕ} (hm : finrank ℝ E = m)
     (ν : TangentSpace 𝓘(ℝ, F) (p + L x)) (i : Fin m) :
