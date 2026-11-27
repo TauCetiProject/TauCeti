@@ -42,16 +42,20 @@ The first derivatives, the cases `n = 1`, are
 `Complex.hasDerivAt_cpow_neg_mul_upperIncompleteGamma`,
 `Complex.hasDerivAt_exp_mul_lowerIncompleteGamma`,
 `Complex.hasDerivAt_cpow_mul_exp_mul_tricomiIncompleteGamma` and
-`Complex.hasDerivAt_exp_mul_upperIncompleteGamma`.
-`Complex.cpow_neg_mul_lowerIncompleteGamma` is the identity `z^{−a} γ(a, z) = Γ(a) γ*(a, z)` for
-`z ≠ 0`, so 8.8.15 holds off `0` and not only on the slit plane.
+`Complex.hasDerivAt_exp_mul_upperIncompleteGamma`. Off `0`, `z^{−a} γ(a, z)` equals the entire
+function `Γ(a) γ*(a, z)`, so 8.8.15 holds off `0` and not only on the slit plane.
 
 ## Implementation notes
 
 The Pochhammer symbol `(1 − a)ₙ` is `(ascPochhammer ℂ n).eval (1 − a)`. DLMF states 8.8.15 for
-`a ∉ −ℕ` and 8.8.17 for `a − n ∉ −ℕ`. Here `γ(−m, ·)` is Mathlib's junk value `0` at the poles of
-`Γ`, and both formulas then hold, on both sides `0`, at every pole except the ones excluded above:
-`a = 0` for 8.8.15 and `a = 1` for 8.8.17, at `n = 1`, where they fail.
+`a ∉ −ℕ` and 8.8.17 for `a − n ∉ −ℕ`; the hypotheses here are weaker, using that `γ(−m, ·)` is
+Mathlib's junk value `0` at the poles of `Γ`. 8.8.15 is stated for `a + k ≠ 0` for every `k < n`:
+this admits the poles `a = −n, −n − 1, …`, where both sides are `0`, and excludes
+`a = 0, −1, …, −(n − 1)`, where it fails (at `a = −1`, `n = 2` the left side is `0` and the
+right side is `z^{−1} γ(1, z) ≠ 0`). 8.8.17 is stated for `a ∉ {1, …, n}`: this admits every
+`a ∈ −ℕ`, where both sides are `0`; the excluded values are not poles of `Γ`, but there
+`γ(a − n, ·)` hits a pole while `(1 − a)ₙ = 0`, and the formula fails (at `a = 1`, `n = 1` the
+left side is the derivative `e^z` of `e^z γ(1, z) = e^z − 1` and the right side is `0`).
 
 ## References
 
@@ -78,13 +82,6 @@ open scoped Topology
 namespace Complex
 
 /-! ### First derivatives -/
-
-/-- Off `0`, `z^{−a} γ(a, z) = Γ(a) γ*(a, z)` for every `a`. -/
-theorem cpow_neg_mul_lowerIncompleteGamma {z : ℂ} (hz : z ≠ 0) (a : ℂ) :
-    z ^ (-a) * lowerIncompleteGamma a z = Gamma a * tricomiIncompleteGamma a z := by
-  have h : z ^ a ≠ 0 := by simp [cpow_eq_zero_iff, hz]
-  rw [lowerIncompleteGamma_def, regularizedGamma_def, cpow_neg]
-  field_simp
 
 /-- **DLMF 8.8.15** for `n = 1`: for `z ≠ 0`, `z^{−a} γ(a, z)` has derivative
 `−z^{−a−1} γ(a + 1, z)` for `a ≠ 0`. At `a = −1, −2, …` both sides are `0`, since `γ(−m, ·)` is
