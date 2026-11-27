@@ -30,6 +30,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.inter_support_analyticOrderNatAt_subset_support_divisor`,
   `AnalyticOnNhd.support_divisor_eq`, and `AnalyticOnNhd.support_divisor_univ_eq` — support
   relations between `analyticOrderNatAt f` and `MeromorphicOn.divisor f`.
+* `AnalyticOnNhd.support_divisor_subset` — the divisor support of an analytic function is
+  contained in any set containing its zeros on the domain.
 * `AnalyticOnNhd.divisor_closedBall_apply` and `AnalyticOnNhd.finsum_subtype_eq_finsum_divisor` —
   on a closed ball where `f` is analytic, the divisor records the orders of the zeros in the ball,
   so order-weighted sums over those zeros are divisor sums.
@@ -197,6 +199,16 @@ theorem AnalyticOnNhd.support_divisor_univ_eq {𝕜 E : Type*} [NontriviallyNorm
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f Set.univ) :
     (MeromorphicOn.divisor f Set.univ).support = Function.support (analyticOrderNatAt f) := by
   rw [hf.support_divisor_eq, Set.univ_inter]
+
+/-- For a function analytic on a neighbourhood of `U`, the support of its divisor on `U` is
+contained in any set `S` containing all zeros of `f` in `U`. -/
+theorem AnalyticOnNhd.support_divisor_subset {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U S : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hzeros : ∀ z ∈ U, f z = 0 → z ∈ S) :
+    (MeromorphicOn.divisor f U).support ⊆ S :=
+  fun z hz ↦ hzeros z ((MeromorphicOn.divisor f U).supportWithinDomain hz)
+    ((hf z ((MeromorphicOn.divisor f U).supportWithinDomain hz)).apply_eq_zero_of_divisor_ne_zero
+      hz)
 
 /-- On a closed ball where `f` is analytic, the divisor of `f` is the order of vanishing
 `analyticOrderNatAt f` at the zeros of `f` in the ball, and zero elsewhere. -/

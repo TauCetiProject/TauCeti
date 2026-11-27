@@ -33,11 +33,6 @@ open scoped BigOperators
 
 namespace TauCeti
 
-private theorem re_eq_zero_of_mem_divisor_support {g : ℂ → ℂ} (hg : Differentiable ℂ g)
-    (hzeros : ∀ z : ℂ, g z = 0 → z.re = 0) {ρ : ℂ}
-    (hρ : ρ ∈ (MeromorphicOn.divisor g Set.univ).support) : ρ.re = 0 :=
-  hzeros ρ ((hg.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ)
-
 /-- Grouping each upper-half-plane zero `ρ` (`Im ρ > 0`) of an even entire function `g` with `-ρ`
 rewrites `divisorProductOne g z` as a product over `{ρ ∈ d.support | 0 < ρ.im}`. -/
 theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differentiable ℂ g)
@@ -48,17 +43,18 @@ theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differentiable
     divisorProductOne g z =
       ∏' ρ : {ρ : ℂ | ρ ∈ (MeromorphicOn.divisor g Set.univ).support ∧ 0 < ρ.im},
         (1 + z ^ 2 / (ρ.val.im : ℂ) ^ 2) ^ (MeromorphicOn.divisor g Set.univ ρ.val).toNat := by
+  have ha : AnalyticOnNhd ℂ g Set.univ := Complex.analyticOnNhd_univ_iff_differentiable.mpr hg
   have h0_notMem : (0 : ℂ) ∉ (MeromorphicOn.divisor g Set.univ).support :=
     (hg.analyticAt 0).notMem_divisor_support_of_ne_zero hg0
-  have hsupp_re {ρ : ℂ} (hρ : ρ ∈ (MeromorphicOn.divisor g Set.univ).support) : ρ.re = 0 :=
-    re_eq_zero_of_mem_divisor_support hg hzeros hρ
+  have hsupp_re : (MeromorphicOn.divisor g Set.univ).support ⊆ {z : ℂ | z.re = 0} :=
+    ha.support_divisor_subset fun z _ hz ↦ Set.mem_ofPred.2 (hzeros z hz)
   have hdiv_neg (ρ : ℂ) :
       MeromorphicOn.divisor g Set.univ (-ρ) = MeromorphicOn.divisor g Set.univ ρ :=
-    (Complex.analyticOnNhd_univ_iff_differentiable.mpr hg).divisor_neg_eq_of_even heven ρ
+    ha.divisor_neg_eq_of_even heven ρ
   rw [divisorProductOne_def]
   generalize MeromorphicOn.divisor g Set.univ = d at h0_notMem hsupp_re hdiv_neg hsum ⊢
   have hsupp_im_ne {ρ : ℂ} (hρ : ρ ∈ d.support) : ρ.im ≠ 0 := fun him ↦ by
-    have hρ0 : ρ = 0 := Complex.ext (by simp [hsupp_re hρ]) (by simp [him])
+    have hρ0 : ρ = 0 := Complex.ext (by simp [Set.mem_ofPred.1 (hsupp_re hρ)]) (by simp [him])
     exact h0_notMem (hρ0 ▸ hρ)
   have hsupp_neg {ρ : ℂ} (hρ : ρ ∈ d.support) : -ρ ∈ d.support := by
     rw [Function.mem_support, hdiv_neg]; exact hρ
@@ -92,7 +88,8 @@ theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differentiable
         dsimp only [F]
         rw [Complex.coe_upperHalfSumEquivOfNegInvariant_inl,
           Complex.coe_upperHalfSumEquivOfNegInvariant_inr, hdiv_neg]
-        exact weierstrassFactor_one_imag_pair (hsupp_re ρ.property.1) (d ρ.val).toNat z
+        exact weierstrassFactor_one_imag_pair (Set.mem_ofPred.1 (hsupp_re ρ.property.1))
+          (d ρ.val).toNat z
 
 /-- Every entire even function `g` with `g 0 ≠ 0`, zeros on the imaginary axis, and inverse-square
 summable divisor has `divisorProductOne g` represented by a nonnegative sequence `γ : ℕ → ℝ` with
@@ -105,15 +102,16 @@ theorem exists_paired_seq_divisorProductOne {g : ℂ → ℂ} (hg : Differentiab
       ∀ z : ℂ, divisorProductOne g z =
         ∏' n : ℕ, (1 + z ^ 2 / (γ n : ℂ) ^ 2) := by
   have hprod_pos := divisorProductOne_eq_tprod_im_pos hg hg0 heven hzeros hsum
-  have hsupp_re {ρ : ℂ} (hρ : ρ ∈ (MeromorphicOn.divisor g Set.univ).support) : ρ.re = 0 :=
-    re_eq_zero_of_mem_divisor_support hg hzeros hρ
+  have hsupp_re : (MeromorphicOn.divisor g Set.univ).support ⊆ {z : ℂ | z.re = 0} :=
+    (Complex.analyticOnNhd_univ_iff_differentiable.mpr hg).support_divisor_subset
+      fun z _ hz ↦ Set.mem_ofPred.2 (hzeros z hz)
   generalize MeromorphicOn.divisor g Set.univ = d at hprod_pos hsupp_re hsum
   let Spos : Set ℂ := {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}
   have hSpos_sub : Spos ⊆ d.support := fun _ h ↦ h.1
   have hSpos_sum : Summable (fun ρ : Spos ↦ ((d ρ.val).toNat : ℝ) * (ρ.val.im)⁻¹ ^ 2) := by
     refine (hsum.comp_injective (Set.inclusion_injective hSpos_sub)).congr fun ρ ↦ ?_
     have hnorm : ‖(ρ.val)⁻¹‖ = (ρ.val.im)⁻¹ := by
-      rw [norm_inv, ← Complex.abs_im_eq_norm.mpr (hsupp_re ρ.property.1),
+      rw [norm_inv, ← Complex.abs_im_eq_norm.mpr (Set.mem_ofPred.1 (hsupp_re ρ.property.1)),
         abs_of_pos ρ.property.2]
     dsimp only [Function.comp_apply, Set.inclusion]
     rw [hnorm]
