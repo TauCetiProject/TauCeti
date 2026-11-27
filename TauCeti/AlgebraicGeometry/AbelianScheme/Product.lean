@@ -154,6 +154,18 @@ lemma hom_ext {A B C : AbelianScheme S} {f g : C ⟶ A.prod B}
   · rw [← toOverHom_fst, ← toOverHom_comp, ← toOverHom_comp, hfst]
   · rw [← toOverHom_snd, ← toOverHom_comp, ← toOverHom_comp, hsnd]
 
+/-- Precomposing a pairing composes each of its components. -/
+@[reassoc, simp]
+lemma comp_lift {A B C D : AbelianScheme S} (h : D ⟶ C) (f : C ⟶ A) (g : C ⟶ B) :
+    h ≫ lift f g = lift (h ≫ f) (h ≫ g) := by
+  apply hom_ext <;> simp
+
+/-- Pairing the two projections of a homomorphism into a product recovers that homomorphism. -/
+@[simp]
+lemma lift_comp_fst_snd {A B C : AbelianScheme S} (f : C ⟶ A.prod B) :
+    lift (f ≫ fst A B) (f ≫ snd A B) = f := by
+  apply hom_ext <;> simp
+
 /-- The product `A ×_S B` with its two projections is a product in the category of abelian
 schemes over `S`. -/
 def isLimit (A B : AbelianScheme S) : IsLimit (BinaryFan.mk (fst A B) (snd A B)) :=
