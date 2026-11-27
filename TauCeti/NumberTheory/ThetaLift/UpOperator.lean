@@ -9,9 +9,9 @@ public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors.Pi
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PrescribedRowColumn
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UnimodularFrame.Semilocal
 
 /-!
 # Direct and mirror data modulo `N`, and the operator `Up`
@@ -60,7 +60,6 @@ remaining term with a direct lift or a lift by `Ψ_row`, moved by an integral ma
 * `TauCeti.ThetaLift.IsUpFamily` and `TauCeti.ThetaLift.upOperator`: the operator `Up`.
 * `TauCeti.ThetaLift.LiftLaw`: the lift law with factor `γ`.
 * `TauCeti.ThetaLift.IsRamified`: ramified vectors.
-* `TauCeti.ThetaLift.primitiveVectors`: the vectors of `m → P → 𝔽` nonzero at every place.
 * `TauCeti.ThetaLift.gluedLift`: the glued double lift `π''(D'') ∑_y L'(char_y) ∘ L(lastCol_y)`.
 * `TauCeti.ThetaLift.directChain`, `TauCeti.ThetaLift.gluedChain`: the composites of the first
   lifts of a chain with direct data, and of its first glued double lifts.
@@ -73,14 +72,14 @@ remaining term with a direct lift or a lift by `Ψ_row`, moved by an integral ma
   `TauCeti.ThetaLift.LiftLaw.mirrorDatum_eq_smul_directDatum_upOperator` and
   `TauCeti.ThetaLift.LiftLaw.upOperator_directDatum`: on ramified vectors,
   `π'(D') L(mirror) φ = Up(L(direct) φ) = γ · L(direct)(Up φ)`.
-* `TauCeti.ThetaLift.LiftLaw.isRamified_apply`, `TauCeti.ThetaLift.IsRamified.upOperator`: lifts
-  and `Up` keep vectors ramified.
+* `TauCeti.ThetaLift.LiftLaw.isRamified_apply`, `TauCeti.ThetaLift.IsRamified.upOperator` and
+  `TauCeti.ThetaLift.IsRamified.upOperator_pow`: lifts, `Up` and its powers keep vectors ramified.
 * `TauCeti.ThetaLift.LiftLaw.gluedLift_apply_eq_smul`: on ramified vectors, a glued double lift is
-  `#prim · γ' γ` times the two direct lifts after `Up`.
+  `#prim · γ' γ` times the two direct lifts after `Up`, where `#prim` counts the primitive vectors
+  (`TauCeti.primitiveVectors`, the vectors nonzero at every place).
 * `TauCeti.ThetaLift.gluedChain_eq_smul_directChain`: on ramified vectors, the first `p` glued
   double lifts of a chain are `∏_{i<p} (d_i · #prim_i · ∏_{j<2i+2} γ_j)` times the first `2p`
   direct lifts after `Up^p`.
-* `TauCeti.ThetaLift.card_primitiveVectors`: there are `(|𝔽|^|m| - 1)^|P|` primitive vectors.
 
 ## References
 
@@ -402,6 +401,17 @@ theorem IsRamified.upOperator [Fintype P] [DecidableEq P] [Fintype 𝔽] [Decida
   obtain ⟨u, ψ', hu, rfl⟩ := hφ w
   exact ⟨u, ThetaLift.upOperator π D l g ψ ψ', hu, by rw [map_sub, upOperator_map_scalar]⟩
 
+/-- The powers of `Up` keep ramified vectors ramified. -/
+theorem IsRamified.upOperator_pow [Fintype P] [DecidableEq P] [Fintype 𝔽] [DecidableEq 𝔽]
+    {red : A →+* (P → 𝔽)} {π : Representation k (GL m F) V}
+    {φ : V} (hφ : IsRamified red π φ) (D : GL m F) (l : m) (g : (m → P → 𝔽) → GL m A)
+    (ψ : (P → 𝔽) → k) (q : ℕ) : IsRamified red π ((ThetaLift.upOperator π D l g ψ ^ q) φ) := by
+  induction q with
+  | zero => simpa using hφ
+  | succ q ih =>
+    rw [pow_succ', mul_apply_eq_comp]
+    exact ih.upOperator _ _ _ _
+
 /-- Lifts keep ramified vectors ramified. -/
 theorem LiftLaw.isRamified_apply [Fintype P] [DecidableEq 𝔽] {red : A →+* (P → 𝔽)}
     {π : Representation k (GL m F) V} {π' : Representation k (GL m' F) V'} {D : GL m F}
@@ -469,7 +479,7 @@ theorem apply_eq_zero_of_isRamified (hL : LiftLaw red π π' D D' l l' L γ)
 
 /-- On a ramified vector, a lift kills every function of the entry `(l', l)` that vanishes where
 that entry is a unit. -/
-theorem apply_eq_zero_of_not_isUnit (hL : LiftLaw red π π' D D' l l' L γ)
+theorem apply_ite_isUnit_zero_eq_zero (hL : LiftLaw red π π' D D' l l' L γ)
     (hφ : IsRamified red π φ) (f : (P → 𝔽) → k) :
     L (fun T ↦ if IsUnit (T l' l) then 0 else f (T l' l)) φ = 0 := by
   classical
@@ -515,7 +525,7 @@ theorem apply_mirrorDatum (hL : LiftLaw red π π' D D' l l' L γ) (hφ : IsRami
     ext T
     simp only [mirrorDatum_apply, Pi.add_apply]
     split_ifs <;> simp
-  rw [h, map_add, LinearMap.add_apply, hL.apply_eq_zero_of_not_isUnit hφ, add_zero]
+  rw [h, map_add, LinearMap.add_apply, hL.apply_ite_isUnit_zero_eq_zero hφ, add_zero]
 
 /-- **The mirror lift as `Up` after the direct lift.** On a ramified vector,
 `π'(D') L(mirror) φ = Up(L(direct) φ)`, for any `Up`-family `g'` of the target. -/
@@ -557,74 +567,6 @@ theorem upOperator_directDatum (hL : LiftLaw red π π' D D' l l' L γ)
 end LiftLaw
 
 end Places
-
-/-! ### Primitive vectors -/
-
-section Primitive
-
-variable {m : Type*} [Fintype m] [DecidableEq m] {P 𝔽 : Type*} [Fintype P] [DecidableEq P]
-  [Fintype 𝔽] [DecidableEq 𝔽]
-
-section Zero
-
-variable [Zero 𝔽]
-
-variable (m P 𝔽) in
-/-- The *primitive* vectors of `m → P → 𝔽`: those that are nonzero at every place `w ∈ P`. -/
-def primitiveVectors : Finset (m → P → 𝔽) :=
-  univ.filter fun y ↦ ∀ w, (fun i ↦ y i w) ≠ 0
-
-theorem mem_primitiveVectors {y : m → P → 𝔽} :
-    y ∈ primitiveVectors m P 𝔽 ↔ ∀ w, ∃ i, y i w ≠ 0 := by
-  simp [primitiveVectors, funext_iff]
-
-/-- There are `(|𝔽| ^ |m| - 1) ^ |P|` primitive vectors. -/
-theorem card_primitiveVectors :
-    #(primitiveVectors m P 𝔽) = (Fintype.card 𝔽 ^ Fintype.card m - 1) ^ Fintype.card P := by
-  rw [card_equiv (Equiv.piComm fun (_ : m) (_ : P) ↦ 𝔽)
-    (t := Fintype.piFinset fun _ : P ↦ univ.filter fun v : m → 𝔽 ↦ v ≠ 0)
-    (fun y ↦ by simp [primitiveVectors, Equiv.piComm]),
-    Fintype.card_piFinset, prod_const, card_univ, filter_ne', card_erase_of_mem (mem_univ _),
-    card_univ, Fintype.card_fun]
-
-end Zero
-
-variable [Field 𝔽]
-
-/-- A primitive vector is the column `l` of an invertible matrix. -/
-theorem exists_col_eq_of_mem_primitiveVectors {y : m → P → 𝔽}
-    (hy : y ∈ primitiveVectors m P 𝔽) (l : m) :
-    ∃ g : GL m (P → 𝔽), (g : Matrix m m (P → 𝔽)).col l = y := by
-  classical
-  -- a row `s` with `s ⬝ᵥ y = 1`
-  choose i hi using mem_primitiveVectors.1 hy
-  set s : m → P → 𝔽 := fun j w ↦ if j = i w then (y j w)⁻¹ else 0
-  have hs : s ⬝ᵥ y = 1 := by
-    ext w
-    simp [s, dotProduct, Finset.sum_apply, hi w]
-  have h1 : replicateRow Unit (Pi.single l 1 : m → P → 𝔽) *
-      replicateCol Unit (Pi.single l (1 : P → 𝔽)) = 1 := by
-    ext
-    simp
-  have h2 : replicateRow Unit s * replicateCol Unit y = 1 := by
-    ext
-    simp [hs]
-  obtain ⟨g, hg⟩ := exists_smul_eq_of_mul_eq_one h1 h2
-  refine ⟨g, ?_⟩
-  rw [GeneralLinearGroup.smul_def, ← replicateCol_mulVec, mulVec_single_one] at hg
-  exact funext fun j ↦ congrFun₂ hg j ()
-
-/-- Over a reduction that is surjective and reflects units, a primitive vector is the column
-`l` of the reduction of an integral invertible matrix. -/
-theorem exists_map_col_eq_of_mem_primitiveVectors {A : Type*} [CommRing A]
-    (red : A →+* (P → 𝔽)) [IsLocalHom red] (hred : Function.Surjective red) {y : m → P → 𝔽}
-    (hy : y ∈ primitiveVectors m P 𝔽) (l : m) :
-    ∃ a : GL m A, (map red a : Matrix m m (P → 𝔽)).col l = y := by
-  obtain ⟨g, hg⟩ := exists_col_eq_of_mem_primitiveVectors hy l
-  obtain ⟨a, rfl⟩ := map_surjective red hred g
-  exact ⟨a, hg⟩
-
-end Primitive
 
 /-! ### Glued double lifts -/
 
@@ -686,13 +628,14 @@ theorem LiftLaw.gluedLift_apply_eq_smul [IsLocalHom red] (hred : Function.Surjec
       obtain ⟨b, hb⟩ := exists_map_col_eq_of_mem_primitiveVectors red hred hy l'
       rw [← hb, hL.apply_lastColDatum_col, hL'.apply_charDatum_col]
     · -- a column vanishing at a place `w` gives a datum invariant under the scalings at `w`
-      obtain ⟨w, hw⟩ : ∃ w, ∀ i, y i w = 0 := by simpa [mem_primitiveVectors] using hy
+      obtain ⟨w, hw⟩ : ∃ w, ∀ i, y i w = 0 := by simpa using hy
       rw [hL.apply_eq_zero_of_isRamified hφ w fun t ht T ↦
         lastColDatum_mulSingle_smul k l hw ht T, map_zero]
   rw [gluedLift_apply, Finset.sum_congr rfl fun y _ ↦ hterm y, Finset.sum_ite_mem, univ_inter,
-    sum_const, ← Nat.cast_smul_eq_nsmul k, map_smul,
+    sum_const, ← Nat.cast_smul_eq_nsmul k]
+  simp only [map_smul,
     hL'.mirrorDatum_eq_smul_directDatum_upOperator hg' (hL.isRamified_apply hφ _),
-    hL.upOperator_directDatum hg hg' hφ, map_smul, smul_smul, smul_smul]
+    hL.upOperator_directDatum hg hg' hφ, smul_smul, mul_assoc]
 
 end GluedPlaces
 
@@ -746,6 +689,7 @@ theorem gluedChain_zero (π : ∀ j, Representation k (GL (m j) F) (V j)) (D : �
     (ψ : R → k) (d : ℕ → k) : gluedChain π D L l ψ d 0 = LinearMap.id :=
   (rfl)
 
+@[simp]
 theorem gluedChain_succ (π : ∀ j, Representation k (GL (m j) F) (V j)) (D : ∀ j, GL (m j) F)
     (L : ∀ j, (Matrix (m (j + 1)) (m j) R → k) →ₗ[k] V j →ₗ[k] V (j + 1)) (l : ∀ j, m j)
     (ψ : R → k) (d : ℕ → k) (p : ℕ) :
@@ -814,23 +758,17 @@ theorem gluedChain_eq_smul_directChain [IsLocalHom red] (hred : Function.Surject
     · simpa [G'] using hg
     · simpa [G'] using hG (j + 1)
   have hG'0 : G' 0 = g := by simp [G']
-  have hpow (q : ℕ) : IsRamified red (π 0) ((upOperator (π 0) (D 0) (l 0) g ψ ^ q) φ) := by
-    induction q with
-    | zero => simpa using hφ
-    | succ q ih =>
-      rw [pow_succ', mul_apply_eq_comp]
-      exact ih.upOperator _ _ _ _
   induction p with
   | zero => simp
   | succ p ih =>
+    have hp := hφ.upOperator_pow (D 0) (l 0) g ψ p
     have h := (hL (2 * p)).gluedLift_apply_eq_smul hred (hL (2 * p + 1)) (hG' (2 * p))
-      (isRamified_directChain hL (hpow p) (2 * p)) ψ
-    rw [upOperator_directChain hL hG' (hpow p), hG'0] at h
-    rw [gluedChain_succ, LinearMap.smul_apply, LinearMap.comp_apply, ih, map_smul, h,
-      map_smul, map_smul, smul_smul, smul_smul, smul_smul, prod_range_succ, pow_succ',
+      (isRamified_directChain hL hp (2 * p)) ψ
+    rw [upOperator_directChain hL hG' hp, hG'0] at h
+    rw [gluedChain_succ, LinearMap.smul_apply, LinearMap.comp_apply, ih, map_smul, h, pow_succ',
       mul_apply_eq_comp]
+    simp only [map_smul, smul_smul, prod_range_succ]
     congr 1
-    rw [prod_range_succ, prod_range_succ]
     ring
 
 end ChainPlaces

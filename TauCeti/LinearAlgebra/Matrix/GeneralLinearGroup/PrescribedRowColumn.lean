@@ -38,11 +38,6 @@ namespace TauCeti
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
-/-- A row vector times a rank-one perturbation of the identity: `w (1 - u vᵀ) = w - (w ⬝ᵥ u) v`. -/
-private theorem vecMul_one_sub_vecMulVec (u v w : n → R) :
-    w ᵥ* (1 - vecMulVec u v) = w - (w ⬝ᵥ u) • v := by
-  rw [vecMul_sub, vecMul_one, vecMul_vecMulVec]
-
 /-- **Completing a row and a column through a unit.** If `u` and `v` have the same entry at `i`
 and that entry is a unit, some invertible matrix has `u` as its column `i` and `v` as its row
 `i`. -/
@@ -63,21 +58,14 @@ theorem exists_col_eq_and_row_eq_of_isUnit {u v : n → R} {i : n} (huv : u i = 
   let Y := oneSubVecMulVecGL (-1) e b (by rw [hbe]; simp)
   have hcinv : (c : R) * ((c⁻¹ : Rˣ) : R) = 1 := c.mul_inv
   refine ⟨X * Z * Y, ?_, ?_⟩
-  · rw [Units.val_mul, Units.val_mul, ← mulVec_single_one, ← he, ← mulVec_mulVec,
-      ← mulVec_mulVec]
-    simp only [X, Y, Z, coe_oneSubVecMulVecGL, one_sub_vecMulVec_mulVec, hbe, hee, zero_smul,
-      sub_zero, one_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul, mul_one]
-    rw [ha]
-    ext j
-    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-    linear_combination (u j - c * e j) * hcinv
-  · rw [Units.val_mul, Units.val_mul, ← single_one_vecMul, ← he, ← vecMul_vecMul,
-      ← vecMul_vecMul]
-    simp only [X, Y, Z, coe_oneSubVecMulVecGL, vecMul_one_sub_vecMulVec, hea, zero_smul,
-      sub_zero, dotProduct_smul, sub_dotProduct, smul_dotProduct, hee, smul_eq_mul, mul_one]
-    rw [hb]
-    ext j
-    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-    linear_combination (v j - c * e j) * hcinv
+  -- the column `i` is `X Z Y e = X (c e) = u`, and the row `i` is `eᵀ X Z Y = c eᵀ Y = vᵀ`
+  · simp only [Units.val_mul, ← mulVec_single_one, ← he, ← mulVec_mulVec, X, Y, Z,
+      coe_oneSubVecMulVecGL, one_sub_vecMulVec_mulVec, hbe, hee, ha, zero_smul, sub_zero,
+      dotProduct_sub, dotProduct_smul, smul_eq_mul, mul_one, smul_sub, smul_smul]
+    linear_combination (norm := module) hcinv • (u - (c : R) • e)
+  · simp only [Units.val_mul, ← single_one_vecMul, ← he, ← vecMul_vecMul, X, Y, Z,
+      coe_oneSubVecMulVecGL, vecMul_one_sub_vecMulVec, hea, hee, hb, zero_smul, sub_zero,
+      sub_dotProduct, smul_dotProduct, dotProduct_smul, smul_eq_mul, mul_one, smul_sub, smul_smul]
+    linear_combination (norm := module) hcinv • (v - (c : R) • e)
 
 end TauCeti
