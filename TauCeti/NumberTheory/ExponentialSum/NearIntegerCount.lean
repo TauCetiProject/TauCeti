@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ExponentialSum.Interval
 import Mathlib.Data.Rat.Floor
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # The near-integer count
@@ -18,8 +19,8 @@ phase `f : ℝ → ℝ` and real `a`, `N` and `δ`, the *near-integer count*
   `R(f, a, N, δ) = #{n ∈ ℤ | a ≤ n ≤ a + N, ‖f(n)‖ < δ}`
 
 is `TauCeti.nearIntegerCount f a N δ`. It runs over the integers `Finset.Icc ⌈a⌉ ⌊a + N⌋` of the
-exponential sum `TauCeti.intervalExpSum f a (a + N)`, and it counts the integer points within
-`δ` of the curve `y = f(x)` that lie above `[a, a + N]`.
+exponential sum `TauCeti.intervalExpSum f a (a + N)`. For `δ ≤ 1/2` it is the number of integer
+points `(n, m)` with `a ≤ n ≤ a + N` at vertical distance less than `δ` from the curve `y = f(x)`.
 
 ## Main results
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Interval.Finset.Floor
 public import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # Exponential sums over the integers of a real interval
@@ -170,13 +171,6 @@ theorem norm_intervalExpSum_le_toNat (f : ℝ → ℝ) (a b : ℝ) :
     ‖intervalExpSum f a b‖ ≤ (⌊b⌋ + 1 - ⌈a⌉).toNat := by
   rw [intervalExpSum_def, ← Int.card_Icc]
   exact (norm_sum_le _ _).trans (by simp)
-
-/-- The real interval `[a, b]` contains at most `b - a + 1` integers, for `a ≤ b + 1`. -/
-theorem card_Icc_ceil_floor_le (hab : a ≤ b + 1) : (#(Icc ⌈a⌉ ⌊b⌋) : ℝ) ≤ b - a + 1 := by
-  have hcast : ((⌊b⌋ + 1 - ⌈a⌉).toNat : ℝ) = max ((⌊b⌋ : ℝ) + 1 - ⌈a⌉) 0 := by
-    exact_mod_cast Int.toNat_eq_max (⌊b⌋ + 1 - ⌈a⌉)
-  rw [Int.card_Icc, hcast]
-  exact max_le (by linarith [Int.floor_le b, Int.le_ceil a]) (by linarith)
 
 /-- The trivial bound `‖S_f[a, b]‖ ≤ b - a + 1`, for `a ≤ b + 1`. -/
 theorem norm_intervalExpSum_le (f : ℝ → ℝ) (hab : a ≤ b + 1) :
