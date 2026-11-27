@@ -254,23 +254,8 @@ instance : NonUnitalCStarAlgebra (MaxTensorProduct A B) :=
   inferInstanceAs (NonUnitalCStarAlgebra (Completion (MaxTensorAlgebra A B)))
 
 /-- The canonical star homomorphism `A ⊗[ℂ] B → MaxTensorProduct A B`. -/
-def of : A ⊗[ℂ] B →⋆ₙₐ[ℂ] MaxTensorProduct A B where
-  toFun x := (toMaxStarAlgEquiv A B x : Completion (MaxTensorAlgebra A B))
-  map_smul' c x := by
-    rw [map_smul]
-    exact Completion.coe_smul c _
-  map_zero' := by
-    rw [map_zero]
-    exact Completion.coe_zero
-  map_add' x y := by
-    rw [map_add]
-    exact Completion.coe_add _ _
-  map_mul' x y := by
-    rw [map_mul]
-    exact Completion.coe_mul' _ _
-  map_star' x := by
-    rw [map_star]
-    exact Completion.coe_star _
+def of : A ⊗[ℂ] B →⋆ₙₐ[ℂ] MaxTensorProduct A B :=
+  (Completion.coeNonUnitalStarAlgHom ℂ).comp (toMaxStarAlgEquiv A B).toNonUnitalStarAlgHom
 
 variable {A B}
 
@@ -278,12 +263,13 @@ variable {A B}
 @[simp]
 theorem coe_toMax_eq_of (x : A ⊗[ℂ] B) :
     ((toMax x : Completion (MaxTensorAlgebra A B)) : MaxTensorProduct A B) = of A B x :=
-  (rfl)
+  (congrFun (Completion.coe_coeNonUnitalStarAlgHom ℂ) (toMax x)).symm
 
 /-- The norm of the image of `x` in `MaxTensorProduct A B` is its maximal norm. -/
 @[simp]
-theorem norm_of (x : A ⊗[ℂ] B) : ‖of A B x‖ = maxTensorNorm A B x :=
-  Completion.norm_coe (toMax x)
+theorem norm_of (x : A ⊗[ℂ] B) : ‖of A B x‖ = maxTensorNorm A B x := by
+  rw [← coe_toMax_eq_of]
+  exact Completion.norm_coe (toMax x)
 
 /-- `‖a ⊗ b‖ = ‖a‖ ‖b‖` in `MaxTensorProduct A B`. -/
 theorem norm_of_tmul (a : A) (b : B) : ‖of A B (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
@@ -295,8 +281,11 @@ theorem of_injective : Function.Injective (of A B) :=
     maxTensorNorm_eq_zero_iff.1 (by rw [← norm_of, hx, norm_zero])
 
 /-- `A ⊗[ℂ] B` is dense in `MaxTensorProduct A B`. -/
-theorem denseRange_of : DenseRange (of A B) :=
-  Completion.denseRange_coe.comp toMax.surjective.denseRange (Completion.continuous_coe _)
+theorem denseRange_of : DenseRange (of A B) := by
+  rw [show ⇑(of A B) =
+      fun x ↦ ((toMax x : Completion (MaxTensorAlgebra A B)) : MaxTensorProduct A B) from
+    funext fun x ↦ (coe_toMax_eq_of x).symm]
+  exact Completion.denseRange_coe.comp toMax.surjective.denseRange (Completion.continuous_coe _)
 
 /-- To prove a closed property of every element of `MaxTensorProduct A B`, it suffices to prove
 it on `A ⊗[ℂ] B`. -/
