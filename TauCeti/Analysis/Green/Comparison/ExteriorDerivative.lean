@@ -7,19 +7,20 @@ module
 
 public import TauCeti.Analysis.Green.Comparison.Area.Basic
 public import TauCeti.Analysis.Green.DifferentialForm
+import TauCeti.Analysis.Green.FlatDifferentialForm
 
 /-!
 # The planar exterior derivative as an actual area form
 
-The curl coefficient determines the entire top form, by the determinant formula in an actual
-tangent basis. Thus the exterior derivative of the circulation form is the curl times the
-canonical manifold area form, rather than merely agreeing on one chosen tuple.
+The exterior derivative of the circulation form is the curl times the canonical manifold area
+form, by transport from the flat exterior derivative in the canonical chart.
 -/
 
 public section
 
 noncomputable section
 
+open Set
 open scoped Manifold
 
 namespace TauCeti.Green
@@ -30,28 +31,12 @@ attribute [local instance] Complex.finrank_real_complex_fact
 theorem _root_.DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
     mextDeriv (manifoldOneForm P Q) z = curl P Q z • manifoldAreaForm z := by
-  let ω : ℂ [⋀^Fin 2]→L[ℝ] ℝ :=
-    (mextDeriv (manifoldOneForm P Q) z).compContinuousLinearMap
-      (NormedSpace.fromTangentSpace (𝕜 := ℝ) z).symm.toContinuousLinearMap
-  have hc : ω Complex.basisOneI = curl P Q z := by
-    simp only [ω, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      ContinuousLinearEquiv.coe_coe, Complex.coe_basisOneI]
-    exact DifferentiableAt.mextDeriv_manifoldOneForm_apply hP hQ
-  have he : ω = curl P Q z • Complex.orientation.volumeFormL := by
-    ext v
-    rw [ContinuousAlternatingMap.apply_eq_det_mul (ω := ω) (b := Complex.basisOneI),
-      ContinuousAlternatingMap.smul_apply,
-      ContinuousAlternatingMap.apply_eq_det_mul (ω := Complex.orientation.volumeFormL)
-        (b := Complex.basisOneI), hc, Complex.coe_basisOneI,
-        Complex.orientation_volumeFormL_one_I, mul_one,
-      smul_eq_mul]
-    ring
-  ext v
-  have hv := congrArg (fun L : ℂ [⋀^Fin 2]→L[ℝ] ℝ ↦
-    L (fun i ↦ NormedSpace.fromTangentSpace (𝕜 := ℝ) z (v i))) he
-  simp only [ω, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousAlternatingMap.smul_apply] at hv
-  exact hv.trans (congrArg (fun r : ℝ ↦ curl P Q z • r)
-    (manifoldAreaForm_apply z v).symm)
+  have hω := differentiableAt_manifoldOneForm_inChartAt z hP hQ
+  rw [manifoldOneForm_inChartAt] at hω
+  rw [mextDeriv_def, ← RoughForm.inChartAt_extChartAt_self manifoldAreaForm z,
+    manifoldAreaForm_inChartAt, extChartAt_model_space_eq_id]
+  simp only [modelWithCornersSelf_coe, range_id, PartialEquiv.refl_coe, id_eq,
+    extDerivWithin_univ, manifoldOneForm_inChartAt]
+  exact hω.extDeriv_oneForm_eq_smul_volumeFormL
 
 end TauCeti.Green
