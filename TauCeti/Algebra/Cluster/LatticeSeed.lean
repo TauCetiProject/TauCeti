@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Field.Rat
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+import Mathlib.LinearAlgebra.Transvection.Basic
 import Mathlib.Algebra.Order.Group.MinMax
 import Mathlib.Tactic.Ring
 
@@ -17,7 +18,9 @@ A mutable family consists of vectors in a fixed submodule whose positive integer
 lie in a second fixed submodule. It can contain repetitions and need not span. For an
 alternating rational pairing integral on the required pairs, signed mutation preserves these
 conditions. The two signs give mutually inverse transformations, and two positive
-mutations act on each vector by the integral transvection in the pivot direction.
+mutations act by an integral transvection in the pivot direction. The transvection
+preserves the pairing and the mutable submodule, and also the integral submodule
+when the mutable and integral submodules pair integrally.
 
 ## References
 
@@ -68,6 +71,31 @@ theorem weightedPairing_intCast (s : WeightedLatticeFamily U L K)
 
 variable (s : WeightedLatticeFamily U L K) (B : N →ₗ[ℤ] N →ₗ[ℤ] ℚ)
   (hB : ∀ x y, y ∈ U ⊓ L → ∃ n : ℤ, B x y = n)
+
+/-- The integral functional pairing against the weighted mutable vector at `k`. -/
+noncomputable def weightedPairingHom (k : K) : N →ₗ[ℤ] ℤ where
+  toFun x := s.weightedPairing B hB x k
+  map_add' x y := by
+    apply Int.cast_injective (α := ℚ)
+    simp [LinearMap.add_apply]
+  map_smul' n x := by
+    apply Int.cast_injective (α := ℚ)
+    simp [LinearMap.smul_apply, zsmul_eq_mul]
+    ring
+
+/-- Evaluating the integral pivot functional gives the corresponding pairing entry. -/
+@[simp low]
+theorem weightedPairingHom_apply (k : K) (x : N) :
+    s.weightedPairingHom B hB k x = s.weightedPairing B hB x k := by
+  simp [weightedPairingHom]
+
+/-- Alternation forces each integral self-pairing to vanish. -/
+@[simp]
+theorem weightedPairing_self (hAlt : B.IsAlt) (k : K) :
+    s.weightedPairing B hB (s.vector k) k = 0 := by
+  apply Int.cast_injective (α := ℚ)
+  rw [s.weightedPairing_intCast B hB]
+  simp [hAlt.self_eq_zero]
 
 /-- The positive weights skew-symmetrize the matrix of integral pairing entries, with
 row index the unweighted vector and column index the weighted vector. -/
@@ -170,17 +198,84 @@ theorem signedMutation_one_signedMutation_one_vector (hAlt : B.IsAlt) (k i : K) 
     ((s.signedMutation B hB hAlt 1 k).signedMutation B hB hAlt 1 k).vector i =
       s.vector i + s.weightedPairing B hB (s.vector i) k • s.vector k := by
   rcases eq_or_ne i k with rfl | hik
-  · have hz : s.weightedPairing B hB (s.vector i) i = 0 := by
-      apply Int.cast_injective (α := ℚ)
-      rw [s.weightedPairing_intCast B hB]
-      simp [hAlt.self_eq_zero]
-    simp [hz]
+  · simp [hAlt]
   · rw [(s.signedMutation B hB hAlt 1 k).signedMutation_vector_of_ne B hB hAlt 1 hik,
       s.signedMutation_weightedPairing_pivot B hB hAlt 1 i k,
       s.signedMutation_vector_self B hB hAlt 1 k,
       s.signedMutation_vector_of_ne B hB hAlt 1 hik]
     simp only [one_mul, smul_neg, add_assoc]
     rw [← sub_eq_add_neg, ← sub_smul, max_zero_sub_max_neg_zero_eq_self]
+
+/-- The ambient integral transvection corresponding to two positive mutations at `k`.
+Its functional pairs with the weighted pivot and its direction is the unweighted pivot. -/
+noncomputable def mutationSquareEquiv (hAlt : B.IsAlt) (k : K) : N ≃ₗ[ℤ] N :=
+  LinearEquiv.transvection (f := s.weightedPairingHom B hB k) (v := (s.vector k : N))
+    (by simp [hAlt])
+
+/-- The forward mutation-square transvection adds the pivot correction. -/
+theorem mutationSquareEquiv_apply (hAlt : B.IsAlt) (k : K) (x : N) :
+    s.mutationSquareEquiv B hB hAlt k x =
+      x + s.weightedPairing B hB x k • (s.vector k : N) := by
+  rw [mutationSquareEquiv, LinearEquiv.transvection.apply, weightedPairingHom_apply]
+
+/-- The inverse mutation-square transvection subtracts the pivot correction. -/
+theorem mutationSquareEquiv_symm_apply (hAlt : B.IsAlt) (k : K) (x : N) :
+    (s.mutationSquareEquiv B hB hAlt k).symm x =
+      x - s.weightedPairing B hB x k • (s.vector k : N) := by
+  have hneg : s.weightedPairingHom B hB k (-(s.vector k : N)) = 0 := by
+    rw [map_neg]
+    simp [hAlt]
+  rw [mutationSquareEquiv, LinearEquiv.transvection.symm_eq _ hneg,
+    LinearEquiv.transvection.apply, weightedPairingHom_apply, smul_neg, sub_eq_add_neg]
+
+/-- The mutation-square transvection preserves the alternating rational pairing. -/
+theorem pairing_mutationSquareEquiv (hAlt : B.IsAlt) (k : K) (x y : N) :
+    B (s.mutationSquareEquiv B hB hAlt k x) (s.mutationSquareEquiv B hB hAlt k y) =
+      B x y := by
+  simp only [mutationSquareEquiv_apply, map_add, map_zsmul, LinearMap.add_apply,
+    LinearMap.smul_apply, hAlt.self_eq_zero, zsmul_eq_mul, weightedPairing_intCast]
+  rw [← hAlt.neg y (s.vector k : N)]
+  ring
+
+/-- The mutation-square transvection preserves the mutable submodule in both directions. -/
+theorem mutationSquareEquiv_mem_mutable_iff (hAlt : B.IsAlt) (k : K) (x : N) :
+    s.mutationSquareEquiv B hB hAlt k x ∈ U ↔ x ∈ U := by
+  rw [mutationSquareEquiv_apply]
+  exact U.add_mem_iff_left (U.smul_mem _ (s.vector k).property)
+
+private theorem weightedPairing_smul_mem_integral (hAlt : B.IsAlt)
+    (hUL : ∀ x ∈ U, ∀ y ∈ L, ∃ n : ℤ, B x y = n) (k : K) {x : N} (hx : x ∈ L) :
+    s.weightedPairing B hB x k • (s.vector k : N) ∈ L := by
+  obtain ⟨n, hn⟩ := hUL _ (s.vector k).property x hx
+  have hcoeff : s.weightedPairing B hB x k = -n * s.weight k := by
+    apply Int.cast_injective (α := ℚ)
+    rw [weightedPairing_intCast, map_zsmul, zsmul_eq_mul, Int.cast_mul, Int.cast_neg,
+      ← hAlt.neg (s.vector k : N) x, hn]
+    ring
+  rw [hcoeff, mul_smul]
+  exact L.smul_mem _ (s.weight_smul_mem k)
+
+/-- When the mutable and integral submodules pair integrally, the mutation-square
+transvection preserves the integral submodule in both directions. -/
+theorem mutationSquareEquiv_mem_integral_iff (hAlt : B.IsAlt)
+    (hUL : ∀ x ∈ U, ∀ y ∈ L, ∃ n : ℤ, B x y = n) (k : K) (x : N) :
+    s.mutationSquareEquiv B hB hAlt k x ∈ L ↔ x ∈ L := by
+  constructor
+  · intro hx
+    have hm := s.weightedPairing_smul_mem_integral B hB hAlt hUL k hx
+    have hr := L.sub_mem hx hm
+    rwa [← mutationSquareEquiv_symm_apply, LinearEquiv.symm_apply_apply] at hr
+  · intro hx
+    rw [mutationSquareEquiv_apply]
+    exact L.add_mem hx (s.weightedPairing_smul_mem_integral B hB hAlt hUL k hx)
+
+/-- The mutation-square equivalence transports each vector of the family to the corresponding
+vector of the twice positively mutated family, whose weights are unchanged. -/
+theorem mutationSquareEquiv_vector (hAlt : B.IsAlt) (k i : K) :
+    s.mutationSquareEquiv B hB hAlt k (s.vector i) =
+      (((s.signedMutation B hB hAlt 1 k).signedMutation B hB hAlt 1 k).vector i : N) := by
+  rw [mutationSquareEquiv_apply, signedMutation_one_signedMutation_one_vector]
+  rfl
 
 end WeightedLatticeFamily
 
