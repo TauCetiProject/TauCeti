@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
-public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.Algebra.Category.ModuleCat.RatAddCircle
-public import TauCeti.Algebra.Homology.Linear
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
@@ -40,7 +38,9 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
   bijective when `r • 𝟙 M` is an isomorphism, and
   `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology`: so `Hⁿ(X; R, M)` has no torsion when
   every positive integer acts invertibly on `M`, with
-  `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology_rat` the instance `M = ℚ`.
+  `TopCat.eq_zero_of_isOfFinAddOrder_singularCohomology_rat` the instance `M = ℚ`. These are the
+  singular cases of `ChainComplex.bijective_smul_homology_linearYonedaObj` and
+  `ChainComplex.eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj`.
 * `TopCat.singularCohomologyChainCoefficientMap` and `TopCat.singularCohomologyChainCoefficientIso`:
   the change of chain coefficients on singular cohomology, contravariantly functorial in the
   coefficient morphism and natural in the space
@@ -209,19 +209,8 @@ is an isomorphism of the coefficient object, then multiplication by `r` on `Hⁿ
 bijective: it is the map induced by `r • 𝟙 M`. -/
 theorem bijective_smul_singularCohomology (X : TopCat.{w}) (n : ℕ) {r : k}
     (hr : IsIso (r • 𝟙 M)) :
-    Function.Bijective (fun x : X.singularCohomology R k M n ↦ r • x) := by
-  have h : HomologicalComplex.homologyMap
-      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k (r • 𝟙 M)) n = r • 𝟙 _ := by
-    rw [ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id,
-      HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id]
-  have hiso : IsIso (HomologicalComplex.homologyMap
-      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k (r • 𝟙 M)) n) :=
-    Functor.map_isIso (((toSSet.obj X).chainComplex R).linearYonedaObjFunctor k ⋙
-      HomologicalComplex.homologyFunctor _ _ n) (r • 𝟙 M)
-  rw [h] at hiso
-  simpa only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.coe_smul, LinearMap.id_coe,
-    Pi.smul_def, id_eq] using
-    ConcreteCategory.bijective_of_isIso (r • 𝟙 (X.singularCohomology R k M n))
+    Function.Bijective (fun x : X.singularCohomology R k M n ↦ r • x) :=
+  ((toSSet.obj X).chainComplex R).bijective_smul_homology_linearYonedaObj n hr
 
 /-- **Cohomology with uniquely divisible coefficients has no torsion.** If multiplication by every
 positive integer is an automorphism of the coefficient object `M` (for instance `M = ℚ`, by
@@ -229,10 +218,8 @@ positive integer is an automorphism of the coefficient object `M` (for instance 
 vanishes. -/
 theorem eq_zero_of_isOfFinAddOrder_singularCohomology
     (hM : ∀ m : ℕ, m ≠ 0 → IsIso ((m : k) • 𝟙 M)) (X : TopCat.{w}) {n : ℕ}
-    {x : X.singularCohomology R k M n} (hx : IsOfFinAddOrder x) : x = 0 := by
-  obtain ⟨m, hm, hmx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.1 hx
-  refine (X.bijective_smul_singularCohomology n (hM m hm.ne')).1 ?_
-  simp only [smul_zero, Nat.cast_smul_eq_nsmul, hmx]
+    {x : X.singularCohomology R k M n} (hx : IsOfFinAddOrder x) : x = 0 :=
+  ((toSSet.obj X).chainComplex R).eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj hM hx
 
 /-- **Rational cohomology has no torsion**: a class of finite additive order in `Hⁿ(X; R, ℚ)` is
 zero, since multiplication by a nonzero integer is an automorphism of `ℚ`. -/
