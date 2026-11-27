@@ -101,8 +101,7 @@ private theorem fderiv_neg_apply_zero_apply (x w : EuclideanSpace ℝ (Fin (n + 
       (-(EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)) x :=
     (ContinuousLinearMap.hasFDerivAt
       (EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)).neg
-  rw [h.fderiv]
-  rfl
+  rw [h.fderiv, neg_apply, PiLp.proj_apply]
 
 /-- Every value of `x ↦ -x₀` on `ℝⁿ⁺¹` is regular: its derivative is the nonzero linear form
 `w ↦ -w₀`. -/
