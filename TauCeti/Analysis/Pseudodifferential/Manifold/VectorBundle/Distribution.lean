@@ -25,7 +25,8 @@ topologies, so that `P` acts on the bundle tests `TauCeti.BundleTest` as a conti
 (`TauCeti.BundleTest.pseudodifferentialCLM`). Its transpose, the precomposition `T ↦ T ∘ P`, then
 acts on continuous linear functionals on the bundle tests of `F`
 (`TauCeti.BundleTest.pseudodifferentialDualCLM`). For a differential operator, which is local, the
-same transpose is `TauCeti.BundleTest.localOperatorDualCLM`.
+same transpose is `TauCeti.BundleTest.localOperatorDualCLM`
+(`TauCeti.BundleTest.pseudodifferentialDualCLM_eq_localOperatorDualCLM`).
 
 ## The argument
 
@@ -48,11 +49,17 @@ bounds these by the `H^{r + m}` norms of the coordinates of `φ`, which depend c
 ## Main declarations
 
 * `TauCeti.BundleTest.pseudodifferentialCLM`: the action of `P` on bundle tests, as a continuous
-  linear map, with `TauCeti.BundleTest.pseudodifferentialCLM_apply` and the composition rule
-  `TauCeti.BundleTest.pseudodifferentialCLM_comp`.
+  linear map, with `TauCeti.BundleTest.pseudodifferentialCLM_apply`, the identity, addition and
+  composition rules `TauCeti.BundleTest.pseudodifferentialCLM_id`,
+  `TauCeti.BundleTest.pseudodifferentialCLM_add` and
+  `TauCeti.BundleTest.pseudodifferentialCLM_comp`, and the comparison
+  `TauCeti.BundleTest.pseudodifferentialCLM_eq_localOperatorCLM`.
 * `TauCeti.BundleTest.pseudodifferentialDualCLM`: its transpose on functionals on bundle tests,
-  with `TauCeti.BundleTest.pseudodifferentialDualCLM_apply` and the composition rule
-  `TauCeti.BundleTest.pseudodifferentialDualCLM_comp`, composites in the reverse order.
+  with `TauCeti.BundleTest.pseudodifferentialDualCLM_apply`, the identity, addition and
+  composition rules `TauCeti.BundleTest.pseudodifferentialDualCLM_id`,
+  `TauCeti.BundleTest.pseudodifferentialDualCLM_add` and
+  `TauCeti.BundleTest.pseudodifferentialDualCLM_comp` (composites in the reverse order), and the
+  comparison `TauCeti.BundleTest.pseudodifferentialDualCLM_eq_localOperatorDualCLM`.
 
 ## References
 
@@ -357,6 +364,28 @@ theorem pseudodifferentialCLM_eq_localOperatorCLM
     rw [pseudodifferentialCLM_apply]
     exact (localOperatorCLM_apply (P := P.restrictScalars ℝ) hloc _ _).symm
 
+/-- The identity acts on bundle tests as the identity. -/
+@[simp]
+theorem pseudodifferentialCLM_id
+    (hP : (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) ∈ sectionClassicalPseudodifferentialOperators 0 :=
+      id_mem_sectionClassicalPseudodifferentialOperators) :
+    pseudodifferentialCLM LinearMap.id hP =
+      ContinuousLinearMap.id ℝ (BundleTest 𝓘(ℝ, CoordinateSpace n) V E) := by
+  ext
+  simp
+
+/-- The action on bundle tests of a sum is the sum of the actions. -/
+theorem pseudodifferentialCLM_add
+    {P' : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hP' : P' ∈ sectionClassicalPseudodifferentialOperators m)
+    (hPP' : P + P' ∈ sectionClassicalPseudodifferentialOperators m := add_mem hP hP') :
+    pseudodifferentialCLM (P + P') hPP' =
+      pseudodifferentialCLM P hP + pseudodifferentialCLM P' hP' := by
+  ext
+  simp
+
 /-- The action on bundle tests of a composite is the composite of the actions. -/
 theorem pseudodifferentialCLM_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
     {G : M → Type*} [TopologicalSpace (TotalSpace U G)] [∀ x, AddCommGroup (G x)]
@@ -394,6 +423,39 @@ theorem pseudodifferentialDualCLM_apply (hP : P ∈ sectionClassicalPseudodiffer
     (Φ : BundleTest 𝓘(ℝ, CoordinateSpace n) V E) :
     pseudodifferentialDualCLM (G := G) P hP T Φ = T (pseudodifferentialCLM P hP Φ) :=
   ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply _ _ _
+
+/-- For a local operator, such as a differential operator, the transpose is the transpose of
+local operators, `TauCeti.BundleTest.localOperatorDualCLM`. -/
+theorem pseudodifferentialDualCLM_eq_localOperatorDualCLM
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) →
+      P s x = 0) :
+    pseudodifferentialDualCLM (G := G) P hP = localOperatorDualCLM (P.restrictScalars ℝ) hloc := by
+  ext T Φ
+  rw [pseudodifferentialDualCLM_apply, pseudodifferentialCLM_eq_localOperatorCLM hP hloc]
+  exact (localOperatorDualCLM_apply hloc T Φ).symm
+
+/-- The transpose of the identity is the identity. -/
+@[simp]
+theorem pseudodifferentialDualCLM_id
+    (hP : (LinearMap.id : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) ∈ sectionClassicalPseudodifferentialOperators 0 :=
+      id_mem_sectionClassicalPseudodifferentialOperators) :
+    pseudodifferentialDualCLM (G := G) LinearMap.id hP =
+      ContinuousLinearMap.id ℝ (BundleTest 𝓘(ℝ, CoordinateSpace n) V E →L_c[ℝ] G) := by
+  ext
+  simp
+
+/-- The transpose of a sum is the sum of the transposes. -/
+theorem pseudodifferentialDualCLM_add
+    {P' : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hP' : P' ∈ sectionClassicalPseudodifferentialOperators m)
+    (hPP' : P + P' ∈ sectionClassicalPseudodifferentialOperators m := add_mem hP hP') :
+    pseudodifferentialDualCLM (G := G) (P + P') hPP' =
+      pseudodifferentialDualCLM P hP + pseudodifferentialDualCLM P' hP' := by
+  ext
+  simp [pseudodifferentialCLM_add hP hP']
 
 /-- The transpose of a composite is the composite of the transposes, in the reverse order. -/
 theorem pseudodifferentialDualCLM_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
