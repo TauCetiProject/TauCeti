@@ -54,12 +54,18 @@ is, and for coisotropic `U` it is Lagrangian when `L` is
 Lagrangian submanifolds by a coisotropic one.
 
 The underlying construction, valid for any alternating real bilinear form `B`, is the symplectic
-form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
+form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`). A linear equivalence
+`e` with `B' (e v) (e w) = B v w` carries `ker B` onto `ker B'`
+(`LinearMap.BilinForm.map_ker_eq_ker`) and so induces `V ⧸ ker B ≃ W ⧸ ker B'`
+(`LinearMap.BilinForm.quotKerCongr`), a symplectomorphism for alternating forms
+(`LinearMap.BilinForm.IsAlt.isSymplectomorphism_quotKerCongr`).
 
 ## Main definitions
 
 * `LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`: an alternating form descends to a symplectic
   form on the quotient by its kernel.
+* `LinearMap.BilinForm.quotKerCongr`: the equivalence `V ⧸ ker B ≃ W ⧸ ker B'` induced by a
+  form-preserving linear equivalence.
 * `TauCeti.SymplecticForm.ReducedSpace ω U`: the reduced space `U ⧸ (U ∩ U^ω)`.
 * `TauCeti.SymplecticForm.reduction ω U`: its symplectic form `[u], [v] ↦ ω(u, v)`.
 * `TauCeti.SymplecticForm.reducedSpaceTopEquiv ω`: the identification of `V` with the reduced
@@ -150,6 +156,67 @@ theorem symplecticFormQuotKer_mk (hB : B.IsAlt) (v w : V) :
   (rfl)
 
 end LinearMap.BilinForm.IsAlt
+
+namespace LinearMap.BilinForm
+
+section QuotKerEquiv
+
+variable {R V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+  {B : LinearMap.BilinForm R V} {B' : LinearMap.BilinForm R W}
+
+/-- A linear equivalence `e` with `B' (e v) (e w) = B v w` maps a vector into the kernel of `B'`
+exactly when the vector lies in the kernel of `B`. -/
+theorem apply_mem_ker_iff (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) {v : V} :
+    e v ∈ LinearMap.ker B' ↔ v ∈ LinearMap.ker B := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff, LinearMap.zero_apply]
+  refine ⟨fun h w ↦ he v w ▸ h (e w), fun h u ↦ ?_⟩
+  rw [← e.apply_symm_apply u, he, h]
+
+/-- A linear equivalence `e` with `B' (e v) (e w) = B v w` carries the kernel of `B` onto the
+kernel of `B'`. -/
+theorem map_ker_eq_ker (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) :
+    (LinearMap.ker B).map (e : V →ₗ[R] W) = LinearMap.ker B' := by
+  ext u
+  rw [Submodule.mem_map_equiv, ← apply_mem_ker_iff e he, e.apply_symm_apply]
+
+variable (B B') in
+/-- A linear equivalence `e` with `B' (e v) (e w) = B v w` descends to the linear equivalence
+`V ⧸ ker B ≃ W ⧸ ker B'`, `[v] ↦ [e v]`. -/
+noncomputable def quotKerCongr (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) :
+    (V ⧸ LinearMap.ker B) ≃ₗ[R] W ⧸ LinearMap.ker B' :=
+  Submodule.Quotient.equiv _ _ e (map_ker_eq_ker e he)
+
+/-- `quotKerCongr` sends the class of `v` to the class of `e v`. -/
+@[simp]
+theorem quotKerCongr_mk (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) (v : V) :
+    quotKerCongr B B' e he (Submodule.Quotient.mk v) = Submodule.Quotient.mk (e v) :=
+  (rfl)
+
+/-- The inverse of `quotKerCongr` sends the class of `u` to the class of `e⁻¹ u`. -/
+@[simp]
+theorem quotKerCongr_symm_mk (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) (u : W) :
+    (quotKerCongr B B' e he).symm (Submodule.Quotient.mk u) = Submodule.Quotient.mk (e.symm u) :=
+  (rfl)
+
+end QuotKerEquiv
+
+/-- **Form-preserving maps are symplectic on the quotients by the kernels.** For alternating real
+forms `B`, `B'` and a linear equivalence `e` with `B' (e v) (e w) = B v w`, the induced
+`V ⧸ ker B ≃ W ⧸ ker B'` is a linear symplectomorphism for the symplectic forms that `B` and `B'`
+induce on these quotients. -/
+theorem IsAlt.isSymplectomorphism_quotKerCongr {V W : Type*} [AddCommGroup V] [Module ℝ V]
+    [AddCommGroup W] [Module ℝ W] {B : LinearMap.BilinForm ℝ V} {B' : LinearMap.BilinForm ℝ W}
+    (hB : B.IsAlt) (hB' : B'.IsAlt) (e : V ≃ₗ[ℝ] W) (he : ∀ v w, B' (e v) (e w) = B v w) :
+    TauCeti.SymplecticForm.IsSymplectomorphism hB.symplecticFormQuotKer hB'.symplecticFormQuotKer
+      (quotKerCongr B B' e he) := by
+  rw [TauCeti.SymplecticForm.isSymplectomorphism_iff]
+  intro v w
+  induction v using Submodule.Quotient.induction_on with | H v =>
+  induction w using Submodule.Quotient.induction_on with | H w =>
+  rw [quotKerCongr_mk, quotKerCongr_mk, IsAlt.symplecticFormQuotKer_mk,
+    IsAlt.symplecticFormQuotKer_mk, he]
+
+end LinearMap.BilinForm
 
 namespace TauCeti.SymplecticForm
 
@@ -400,12 +467,8 @@ private theorem map_ker_restrict_congr {e : V ≃ₗ[ℝ] V'} (he : IsSymplectom
     {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U') :
     (LinearMap.ker (ω.toBilinForm.restrict U)).map
         (((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU) : U ≃ₗ[ℝ] U') : U →ₗ[ℝ] U') =
-      LinearMap.ker (ω'.toBilinForm.restrict U') := by
-  subst hU
-  ext y
-  rw [Submodule.mem_map_equiv, mem_ker_restrict_iff, mem_ker_restrict_iff,
-    ← he.map_orthogonal U, Submodule.mem_map_equiv]
-  simp [LinearEquiv.submoduleMap_symm_apply]
+      LinearMap.ker (ω'.toBilinForm.restrict U') :=
+  LinearMap.BilinForm.map_ker_eq_ker _ fun u v ↦ he.apply u v
 
 variable (ω ω') in
 /-- A linear symplectomorphism `e : V ≃ V'` carrying `U` onto `U'` induces the linear equivalence
