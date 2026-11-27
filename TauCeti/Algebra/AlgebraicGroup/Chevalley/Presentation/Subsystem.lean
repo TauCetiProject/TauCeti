@@ -103,6 +103,14 @@ theorem steinbergSubsystemSubgroup_le_iff {S : Set (Fin t.numRoots)}
   simp only [steinbergSubsystemSubgroup_def, iSup₂_le_iff]
   exact forall₂_congr fun γ _ => ⟨fun h a => h ⟨a, rfl⟩, fun h _ ⟨a, ha⟩ => ha ▸ h a⟩
 
+variable {t ht A} in
+/-- Enlarging the root set enlarges the root-set subgroup. -/
+@[gcongr]
+theorem steinbergSubsystemSubgroup_mono {S T : Set (Fin t.numRoots)} (hST : S ⊆ T) :
+    t.steinbergSubsystemSubgroup ht A S ≤ t.steinbergSubsystemSubgroup ht A T :=
+  steinbergSubsystemSubgroup_le_iff.mpr fun _ hγ a =>
+    steinbergRootSubgroup_mem_steinbergSubsystemSubgroup (hST hγ) a
+
 end Definition
 
 namespace ChevalleyDatum
