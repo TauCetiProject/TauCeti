@@ -16,13 +16,15 @@ import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Normalization
 
 ## Main results
 
-* `TauCeti.IsFiniteProductOfStandardTameCovers.exists_iso_over_normalization_spec` identifies the
+* `TauCeti.IsFiniteProductOfStandardTameCovers.overNormalizationSpecIso` identifies the
   relative normalization of the restriction of a product of standard tame covers to a principal
-  open with the spectrum of the product algebra, over the base and under the restriction.
+  open with the spectrum of the product algebra, over the base.
+* `TauCeti.IsFiniteProductOfStandardTameCovers.overNormalizationSpecIso_toNormalization`
+  identifies the map from the restriction to this normalization.
 
 The comparison uses Tau Ceti's
 `IsFiniteProductOfStandardTameCovers.isIntegralClosure` and
-`AlgebraicGeometry.exists_iso_normalization_spec_of_isIntegralClosure` for Mathlib's relative
+`AlgebraicGeometry.normalizationSpecIso` for Mathlib's relative
 normalization `Scheme.Hom.normalization`.
 
 ## References
@@ -46,14 +48,23 @@ normalization of a product of standard tame covers restricted to `D(a)` is `Spec
 The comparison identifies both the map from the restriction and the structure map to `Spec A`.
 This is the affine calculation in Stacks, Lemma 58.31.6 (0EYH). -/
 @[stacks 0EYH "relative normalization of the affine standard local model"]
-theorem exists_iso_over_normalization_spec (h : IsFiniteProductOfStandardTameCovers A C a)
+noncomputable def overNormalizationSpecIso (h : IsFiniteProductOfStandardTameCovers A C a)
     (ha : a ∈ nonZeroDivisors A) [IsReduced (A ⧸ Ideal.span {a})]
     [IsLocalization.Away (algebraMap A C a) B] :
-    ∃ e : Over.mk (Spec.algebraMap A B).fromNormalization ≅ Over.mk (Spec.algebraMap A C),
-      (Spec.algebraMap A B).toNormalization ≫ e.hom.left = Spec.algebraMap C B := by
-  have := h.isIntegralClosure ha B
-  obtain ⟨e, hsource, hbase⟩ := AlgebraicGeometry.exists_iso_normalization_spec_of_isIntegralClosure
-    (A := A) (B := B) (C := C)
-  exact ⟨Over.isoMk e hbase, hsource⟩
+    Over.mk (Spec.algebraMap A B).fromNormalization ≅ Over.mk (Spec.algebraMap A C) :=
+  letI := h.isIntegralClosure ha B
+  Over.isoMk (AlgebraicGeometry.normalizationSpecIso A B C)
+    AlgebraicGeometry.normalizationSpecIso_hom_algebraMap
+
+/-- The comparison over `Spec A` identifies the map from the restriction to `D(a)` with
+the localization morphism to the original product of standard tame covers. -/
+@[reassoc (attr := simp)]
+theorem overNormalizationSpecIso_toNormalization
+    (h : IsFiniteProductOfStandardTameCovers A C a) (ha : a ∈ nonZeroDivisors A)
+    [IsReduced (A ⧸ Ideal.span {a})] [IsLocalization.Away (algebraMap A C a) B] :
+    (Spec.algebraMap A B).toNormalization ≫ (h.overNormalizationSpecIso (B := B) ha).hom.left =
+      Spec.algebraMap C B := by
+  simp only [overNormalizationSpecIso, Over.isoMk_hom_left,
+    AlgebraicGeometry.toNormalization_normalizationSpecIso_hom]
 
 end TauCeti.IsFiniteProductOfStandardTameCovers
