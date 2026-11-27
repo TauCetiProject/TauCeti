@@ -256,8 +256,7 @@ theorem coeFn_integralOperatorLp (u : Lp F p ν) :
 the integral operator. -/
 theorem integralOperatorLp_eq_iff {u : Lp F p ν} {v : Lp G p μ} :
     integralOperatorLp K p hK hA hB u = v ↔ (fun x ↦ ∫ y, K x y (u y) ∂ν) =ᵐ[μ] v :=
-  ⟨fun h ↦ h ▸ (coeFn_integralOperatorLp u).symm,
-    fun h ↦ Lp.ext ((coeFn_integralOperatorLp u).trans h)⟩
+  integralOperatorLpOfBound_eq_iff
 
 /-- **Schur's test** on `Lᵖ`: the integral operator has norm at most `A ^ (1 - 1/p) * B ^ (1/p)`,
 where `A` bounds the row integrals and `B` the column integrals of `‖K‖`. For `p = ∞` the bound

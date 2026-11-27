@@ -110,19 +110,22 @@ private def kernelOperator (K : Lp 𝕜 2 (μ.prod ν)) : Lp 𝕜 2 ν →L[𝕜
         eLpNorm_integral_mul_le (Lp.aestronglyMeasurable K) (Lp.aestronglyMeasurable f)
 
 private theorem coeFn_kernelOperator (K : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2 ν) :
-    kernelOperator K f =ᵐ[μ] fun x ↦ ∫ y, K (x, y) * f y ∂ν :=
-  coeFn_integralOperatorLpOfBound f
+    kernelOperator K f =ᵐ[μ] fun x ↦ ∫ y, K (x, y) * f y ∂ν := by
+  -- `kernelOperator K` is by definition `integralOperatorLpOfBound` of the kernel
+  -- `ContinuousLinearMap.mul 𝕜 𝕜 (K (x, y))`, which `mul_apply'` turns into multiplication.
+  refine (coeFn_integralOperatorLpOfBound f).trans (.of_forall fun x ↦ ?_)
+  simp only [ContinuousLinearMap.mul_apply']
 
-private theorem kernelOperator_eq {K : Lp 𝕜 2 (μ.prod ν)} {f : Lp 𝕜 2 ν} {g : Lp 𝕜 2 μ}
-    (h : g =ᵐ[μ] fun x ↦ ∫ y, K (x, y) * f y ∂ν) : kernelOperator K f = g :=
-  Lp.ext ((coeFn_kernelOperator K f).trans h.symm)
+private theorem kernelOperator_eq_iff {K : Lp 𝕜 2 (μ.prod ν)} {f : Lp 𝕜 2 ν} {g : Lp 𝕜 2 μ} :
+    kernelOperator K f = g ↔ (fun x ↦ ∫ y, K (x, y) * f y ∂ν) =ᵐ[μ] g := by
+  simp only [kernelOperator, integralOperatorLpOfBound_eq_iff, ContinuousLinearMap.mul_apply']
 
 private theorem norm_kernelOperator_le (K : Lp 𝕜 2 (μ.prod ν)) : ‖kernelOperator K‖ ≤ ‖K‖ :=
   norm_integralOperatorLpOfBound_le
 
 private theorem kernelOperator_add (K L : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2 ν) :
     kernelOperator (K + L) f = kernelOperator K f + kernelOperator L f := by
-  apply kernelOperator_eq
+  refine kernelOperator_eq_iff.mpr (EventuallyEq.symm ?_)
   filter_upwards [Lp.coeFn_add (kernelOperator K f) (kernelOperator L f),
     coeFn_kernelOperator K f, coeFn_kernelOperator L f,
     ae_integrable_kernel_mul (Lp.memLp K) (Lp.memLp f),
@@ -135,7 +138,7 @@ private theorem kernelOperator_add (K L : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2
 
 private theorem kernelOperator_smul (c : 𝕜) (K : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2 ν) :
     kernelOperator (c • K) f = c • kernelOperator K f := by
-  apply kernelOperator_eq
+  refine kernelOperator_eq_iff.mpr (EventuallyEq.symm ?_)
   filter_upwards [Lp.coeFn_smul c (kernelOperator K f), coeFn_kernelOperator K f,
     Measure.ae_ae_of_ae_prod (Lp.coeFn_smul c K)] with x hx hK hcK
   rw [hx, Pi.smul_apply, hK, smul_eq_mul, ← integral_const_mul]
@@ -166,7 +169,7 @@ theorem coeFn_integralOperatorL2 (K : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2 ν)
 with `x ↦ ∫ y, K (x, y) * f y ∂ν`. -/
 theorem integralOperatorL2_eq_iff {K : Lp 𝕜 2 (μ.prod ν)} {f : Lp 𝕜 2 ν} {g : Lp 𝕜 2 μ} :
     integralOperatorL2 μ ν K f = g ↔ (fun x ↦ ∫ y, K (x, y) * f y ∂ν) =ᵐ[μ] g :=
-  ⟨fun h ↦ h ▸ (coeFn_integralOperatorL2 K f).symm, fun h ↦ kernelOperator_eq h.symm⟩
+  kernelOperator_eq_iff
 
 /-- The operator norm of the integral operator is at most the `L²` norm of its kernel. -/
 theorem norm_integralOperatorL2_apply_le (K : Lp 𝕜 2 (μ.prod ν)) :
