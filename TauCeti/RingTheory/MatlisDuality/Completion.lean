@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Module.Injective.Envelope.AdicCompletion
 public import TauCeti.RingTheory.Artinian.LocalRing
 public import TauCeti.RingTheory.MatlisDuality.Complete
 
-import Mathlib.LinearAlgebra.LeftExact
-
 /-!
 # Matlis duality over the completion of a Noetherian local ring
 
@@ -283,52 +281,6 @@ theorem adicCompletionEquivDoubleDualOfFinite_comp
   simp [_root_.AdicCompletion.map_of, lcomp_apply']
 
 end DoubleDualCompletion
-
-section Exact
-
-/-- The Matlis dual `Hom_R(-, E)` valued in `R̂`-modules sends short exact sequences of
-`R`-modules to short exact sequences of `R̂`-modules, using injectivity of `E` over `R`. -/
-theorem shortExact_lcomp_adicCompletion {P Q M : Type*}
-    [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q] [AddCommGroup M] [Module R M]
-    {f : P →ₗ[R] Q} {g : Q →ₗ[R] M}
-    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-    Function.Injective (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) ∧
-      Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
-        (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) ∧
-      Function.Surjective (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.moduleInjective
-  refine ⟨lcomp_injective_of_surjective g hg, exact_lcomp_of_exact_of_surjective E hfg hg,
-    fun φ ↦ ?_⟩
-  obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property R E P Q f hf φ
-  exact ⟨ψ, hψ⟩
-
-/-- The completion-linear Matlis dual `Hom_{R̂}(-, E)` sends short exact sequences of `R̂`-modules
-to short exact sequences of `R̂`-modules, using injectivity of `E` over `R̂`. -/
-theorem shortExact_lcomp_over_adicCompletion {N₁ N₂ N₃ : Type*}
-    [AddCommGroup N₁] [Module (_root_.AdicCompletion (maximalIdeal R) R) N₁]
-    [AddCommGroup N₂] [Module (_root_.AdicCompletion (maximalIdeal R) R) N₂]
-    [AddCommGroup N₃] [Module (_root_.AdicCompletion (maximalIdeal R) R) N₃]
-    {f : N₁ →ₗ[_root_.AdicCompletion (maximalIdeal R) R] N₂}
-    {g : N₂ →ₗ[_root_.AdicCompletion (maximalIdeal R) R] N₃}
-    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    Function.Injective (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) ∧
-      Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
-        (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) ∧
-      Function.Surjective (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
-  let A := _root_.AdicCompletion (maximalIdeal R) R
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := hι.adicCompletion.moduleInjective
-  refine ⟨lcomp_injective_of_surjective g hg, exact_lcomp_of_exact_of_surjective E hfg hg,
-    fun φ ↦ ?_⟩
-  obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property A E N₁ N₂ f hf φ
-  exact ⟨ψ, hψ⟩
-
-end Exact
 
 end IsInjectiveEnvelope
 
