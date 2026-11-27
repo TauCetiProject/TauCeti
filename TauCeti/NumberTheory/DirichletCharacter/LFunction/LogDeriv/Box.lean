@@ -55,8 +55,9 @@ private theorem norm_LFunction_le_mul_norm_box_center {q : ℕ} [NeZero q]
     refine (Real.exp_le_exp.mpr (neg_le_neg (le_abs_self _))).trans ?_
     simpa only [hc] using χ.exp_neg_re_riemannZeta_le_norm_LFunction
       (s := c) (by rw [hc]; norm_num)
-  have hmul := mul_le_mul_of_nonneg_left hlower (Real.exp_pos |(riemannZeta (3 / 2 : ℝ)).re|).le
-  rw [← Real.exp_add, add_neg_cancel, Real.exp_zero] at hmul
+  have hmul : 1 ≤ rexp |(riemannZeta (3 / 2 : ℝ)).re| * ‖χ.LFunction c‖ := by
+    simpa [← Real.exp_add] using
+      mul_le_mul_of_nonneg_left hlower (Real.exp_pos |(riemannZeta (3 / 2 : ℝ)).re|).le
   rw [mul_assoc]
   exact hgrowth.trans (le_mul_of_one_le_right (by positivity) hmul)
 
@@ -104,7 +105,7 @@ private theorem norm_logDeriv_LFunction_le_in_left_half_box {q : ℕ} [NeZero q]
 Dirichlet `L`-function is zero-free on `Re z > σ`, `|Im z| ≤ Q`, with `σ ≥ 1/2` and
 `Q ≥ q`, then for `δ > 0` its logarithmic derivative on `Re s ≥ σ + δ`, `|Im s| ≤ Q/2` has norm
 at most `C * (1 + δ⁻²) * log Q`, where `C` is absolute. -/
-theorem exists_norm_logDeriv_LFunction_le_of_zero_free_box :
+theorem exists_norm_logDeriv_LFunction_le_of_zeroFree_box :
     ∃ C : ℝ, 0 < C ∧ ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ ≠ 1 →
       ∀ {Q σ δ : ℝ}, (q : ℝ) ≤ Q → 1 / 2 ≤ σ → 0 < δ →
         (∀ z : ℂ, σ < z.re → |z.im| ≤ Q → χ.LFunction z ≠ 0) →
@@ -124,12 +125,17 @@ theorem exists_norm_logDeriv_LFunction_le_of_zero_free_box :
   rcases le_total s.re (3 / 2) with hsre | hsre
   · have hM : Real.log (4 * Q ^ 2 * rexp B) ≤ (4 + B / Real.log 2) * Real.log Q := by
       have hB : 0 ≤ B / Real.log 2 := by dsimp [B]; positivity
-      rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_mul (by norm_num)
-        (by positivity), Real.log_pow, Real.log_exp, show (4 : ℝ) = 2 ^ 2 by norm_num,
-        Real.log_pow, add_mul]
+      have h4 : Real.log 4 = 2 * Real.log 2 := by
+        rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]
+        norm_num
+      have hlhs : Real.log (4 * Q ^ 2 * rexp B) = Real.log 4 + 2 * Real.log Q + B := by
+        rw [Real.log_mul (by positivity) (Real.exp_ne_zero _),
+          Real.log_mul (by norm_num) (by positivity), Real.log_pow, Real.log_exp]
+        norm_num
+      rw [hlhs]
       have hB' : B ≤ B / Real.log 2 * Real.log Q := by
         simpa [div_mul_cancel₀ _ hlog₂.ne'] using mul_le_mul_of_nonneg_left hlog hB
-      linarith
+      nlinarith [h4, hlog, hB']
     calc
       ‖logDeriv χ.LFunction s‖ ≤ 8 / δ ^ 2 * Real.log (4 * Q ^ 2 * rexp B) :=
         norm_logDeriv_LFunction_le_in_left_half_box χ hχ hq hσ hδ hzero hs hsre hsim
