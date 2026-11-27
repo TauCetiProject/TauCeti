@@ -32,8 +32,7 @@ This file supplies two complements:
   `C(Y, Z) → ContinuousMapGeneratedBy G Y Z` is continuous for the compact-open topology on
   `C(Y, Z)`. When `Y` is `G`-generated, this map is a bijection; when, in addition, every compact
   subset of `Y` is the continuous image of a compact subset of some generator `G i`, it is a
-  homeomorphism. This applies immediately to every test space `G i`
-  (`Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapIndex`).
+  homeomorphism.
 
 ## References
 
@@ -183,22 +182,6 @@ theorem homeomorphContinuousMap_symm_apply [IsGeneratedBy G Y]
     (hG : ∀ ⦃K : Set Y⦄, IsCompact K →
       ∃ (i : ι) (L : Set (G i)) (p : C(G i, Y)), IsCompact L ∧ p '' L = K) (f : C(Y, Z)) :
     (homeomorphContinuousMap (Z := Z) hG).symm f = f.toContinuousMapGeneratedBy G := (rfl)
-
-/-- For any member `G i` of the generating family, `ContinuousMapGeneratedBy G (G i) Z` is
-homeomorphic to the compact-open mapping space `C(G i, Z)`. -/
-@[expose]
-def homeomorphContinuousMapIndex (i : ι) :
-    ContinuousMapGeneratedBy G (G i) Z ≃ₜ C(G i, Z) :=
-  homeomorphContinuousMap fun K hKc ↦ ⟨i, K, ContinuousMap.id (G i), hKc, Set.image_id K⟩
-
-@[simp]
-theorem homeomorphContinuousMapIndex_apply (i : ι)
-    (g : ContinuousMapGeneratedBy G (G i) Z) :
-    homeomorphContinuousMapIndex i g = g.toContinuousMap := (rfl)
-
-@[simp]
-theorem homeomorphContinuousMapIndex_symm_apply (i : ι) (g : C(G i, Z)) :
-    (homeomorphContinuousMapIndex i).symm g = g.toContinuousMapGeneratedBy G := (rfl)
 
 end Topology.ContinuousMapGeneratedBy
 

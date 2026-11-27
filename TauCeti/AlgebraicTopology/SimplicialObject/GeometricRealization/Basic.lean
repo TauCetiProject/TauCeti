@@ -92,12 +92,6 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : X.geometricRealizat
     (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h := by
   ext p; obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p; exact H n x t
 
-/-- Taking the product on the right with a topological simplex preserves `v`-compact generation. -/
-instance instUCompactlyGeneratedSpaceProdToTop {Y : Type*} [TopologicalSpace Y]
-    [UCompactlyGeneratedSpace.{v} Y] (d : SimplexCategory) :
-    UCompactlyGeneratedSpace.{v} (Y × toTop.{u}.obj d) :=
-  TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right
-
 instance [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] : LindelofSpace X.geometricRealization :=
   have : ∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) := fun _ ↦ inferInstance
   Quot.lindelofSpace
