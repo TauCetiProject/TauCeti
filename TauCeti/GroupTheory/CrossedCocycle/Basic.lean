@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.End
+public import Mathlib.GroupTheory.GroupAction.Defs
 
 /-!
 # Crossed cocycles and their gauge action
@@ -40,6 +41,8 @@ Related files:
 
 * `TauCeti.CrossedCocycle α`: the crossed cocycles for the action `α : Γ →* MulAut H`.
 * `TauCeti.CrossedCocycle.instMulAction`: the gauge action of `H`.
+* `TauCeti.CrossedCocycle.GaugeClass`: gauge orbits of crossed cocycles.
+* `TauCeti.CrossedCocycle.comap`: restriction along a monoid homomorphism.
 * `TauCeti.CrossedCocycle.map`: change of coefficients along an equivariant homomorphism.
 * `TauCeti.CrossedCocycle.equivMonoidHom`: for the trivial action, crossed cocycles are
   homomorphisms.
@@ -143,6 +146,10 @@ instance instMulAction : MulAction H (CrossedCocycle α) where
   one_smul c := ext fun γ ↦ by simp
   mul_smul h k c := ext fun γ ↦ by simp [mul_assoc]
 
+/-- Algebraic nonabelian first cohomology, the set of gauge orbits of crossed cocycles. -/
+abbrev GaugeClass (α : Γ →* MulAut H) : Type _ :=
+  MulAction.orbitRel.Quotient H (CrossedCocycle α)
+
 /-! ### Change of coefficients -/
 
 section Map
@@ -185,6 +192,53 @@ theorem map_smul (f : H →* H') (hf : ∀ γ x, f (α γ x) = α' γ (f x)) (h 
   ext fun _ ↦ by simp [hf]
 
 end Map
+
+/-! ### Restriction -/
+
+section Restriction
+
+variable {Δ Θ : Type*} [Monoid Δ] [Monoid Θ]
+
+/-- Restriction along `f` gives a crossed cocycle for the pulled-back action. -/
+def comap (c : CrossedCocycle α) (f : Δ →* Γ) : CrossedCocycle (α.comp f) where
+  toFun δ := c (f δ)
+  map_mul' δ ε := by simpa only [map_mul, MonoidHom.comp_apply] using c.apply_mul (f δ) (f ε)
+
+@[simp]
+theorem comap_apply (c : CrossedCocycle α) (f : Δ →* Γ) (δ : Δ) :
+    c.comap f δ = c (f δ) :=
+  (rfl)
+
+@[simp]
+theorem comap_id (c : CrossedCocycle α) : c.comap (MonoidHom.id Γ) = c :=
+  ext fun δ ↦ by simp
+
+@[simp]
+theorem comap_comap (c : CrossedCocycle α) (f : Δ →* Γ) (g : Θ →* Δ) :
+    (c.comap f).comap g = c.comap (f.comp g) :=
+  ext fun δ ↦ by simp
+
+@[simp]
+theorem one_comap (f : Δ →* Γ) : (1 : CrossedCocycle α).comap f = 1 :=
+  ext fun δ ↦ by simp
+
+@[simp]
+theorem comap_one (c : CrossedCocycle α) : c.comap (1 : Δ →* Γ) = 1 :=
+  ext fun δ ↦ by simp
+
+@[simp]
+theorem comap_smul (c : CrossedCocycle α) (f : Δ →* Γ) (h : H) :
+    (h • c).comap f = h • c.comap f :=
+  ext fun δ ↦ by simp
+
+/-- Restriction commutes with equivariant change of coefficients. -/
+@[simp]
+theorem comap_map {K : Type*} [Group K] {β : Γ →* MulAut K} (c : CrossedCocycle α)
+    (f : Δ →* Γ) (u : H →* K) (hu : ∀ γ x, u (α γ x) = β γ (u x)) :
+    (c.map u hu).comap f = (c.comap f).map u (fun δ x ↦ hu (f δ) x) :=
+  ext fun δ ↦ by simp
+
+end Restriction
 
 /-! ### Trivial action -/
 
