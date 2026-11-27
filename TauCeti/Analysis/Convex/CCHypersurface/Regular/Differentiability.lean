@@ -96,7 +96,7 @@ theorem isCCRegular_iff_forall_convex_ae_differentiableAt {μ : Measure E} :
       fun _ hx htop => (hx htop).2,
    fun h => isCCRegular_iff_forall_convexOn_ae_differentiableAt.2 fun v hv => by
      simpa [EReal.toReal_coe] using
-       h (fun x => (v x : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hv)⟩
+       h (fun x => (v x : EReal)) (convexOn_iff_convex_epigraph_coe.1 hv)⟩
 
 end Differentiability
 

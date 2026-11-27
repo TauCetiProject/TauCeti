@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Convex.CCHypersurface.MeasurableSplitting
 
 /-!
@@ -24,15 +23,14 @@ Theorem 1.26) and combines it with Gangbo–McCann's sufficiency theorem to give
 characterization: a finite measure `μ` of finite second moment is `c - c`-regular iff for every
 finite target `ν` of the same total mass and finite second moment, every quadratic optimal coupling
 is induced by a measurable transport map (note uniqueness *alone* holds trivially for Dirac masses).
+For the `WassersteinSpace 2 E` formulations, see
+`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RegularSource`.
 
 ## Main statements
 
 * `TauCeti.exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular`,
   `TauCeti.isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan`, and its existence
   and uniqueness counterpart — **Gigli's converse and Ambrosio–Gigli Theorem 1.26** in `MemLp` form.
-* In `TauCeti.WassersteinSpace`: `isCCRegular_iff_forall_isOptimalCoupling_exists_eq_graphPlan` and
-  `isCCRegular_iff_forall_exists_isKantorovichOptimalTransportMap_and_unique_isOptimalCoupling`
-  — **Ambrosio–Gigli Theorem 1.26** on `WassersteinSpace 2 E`.
 
 ## References
 
@@ -105,11 +103,14 @@ theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {�
   exact ⟨ν, hν2, _,
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ2 hν2
       (ae_add_measure_iff.2 ⟨hsub hT₁m hT₁s, hsub hT₂m hT₂s⟩),
-    smul_graphPlan_add_smul_graphPlan_ne_graphPlan (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
-      (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top) hS₁m.aemeasurable hS₂m.aemeasurable
-      (fun hae => hμB (measure_mono_null (t := {x | ¬ S₁ x = S₂ x})
-        (fun x hx => mem_ofPred_eq.mpr fun hEq => hTne x hx (add_left_cancel hEq))
-        (ae_iff.1 hae)))⟩
+    fun T hEq => hμB (measure_mono_null (t := {x | ¬ S₁ x = S₂ x})
+      (fun x hx => mem_ofPred_eq.mpr fun hEq' => hTne x hx (add_left_cancel hEq'))
+      (ae_iff.1 ((exists_smul_graphPlan_add_smul_graphPlan_eq_graphPlan_iff
+        (a := (2⁻¹ : ℝ≥0∞)) (b := (2⁻¹ : ℝ≥0∞))
+        (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
+        (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
+        hS₁m.aemeasurable hS₂m.aemeasurable).1
+        ⟨T, by simpa only [ENNReal.inv_two_add_inv_two, one_smul] using hEq⟩)))⟩
 
 /-- **Ambrosio–Gigli Theorem 1.26 (determinism of all optimal plans).** Let `μ` be a finite
 measure with `MemLp id 2 μ` on a finite-dimensional real inner product space `E`. Then `μ` is
@@ -153,52 +154,6 @@ theorem
   have hfin := transportCost_norm_sub_sq_div_two_ne_top_of_memLp hνeq.symm hμ2 hν2
   exact let ⟨_, _, _, _, _, hT, hiff, _⟩ := exists_isKantorovichOptimalTransportMap_gradient hμ hfin
     ⟨_, hT, hiff⟩
-
-namespace WassersteinSpace
-
-/-- **Ambrosio–Gigli Theorem 1.26 on `WassersteinSpace 2 E` (determinism form).** A quadratic
-Wasserstein law `μ : WassersteinSpace 2 E` has `c - c`-regular underlying measure iff for every
-target `ν : WassersteinSpace 2 E`, every optimal quadratic coupling is induced by a measurable
-transport map. -/
-theorem isCCRegular_iff_forall_isOptimalCoupling_exists_eq_graphPlan (μ : WassersteinSpace 2 E) :
-    IsCCRegular ((μ : ProbabilityMeasure E) : Measure E) ↔
-      ∀ (ν : WassersteinSpace 2 E) (π : Measure (E × E)),
-        IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π
-          ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) →
-        ∃ T : E → E, Measurable T ∧ π = graphPlan T ((μ : ProbabilityMeasure E) : Measure E) := by
-  rw [isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan μ.hasFiniteMoment.memLp_id]
-  refine ⟨fun h ν π hπ => h _ ν.hasFiniteMoment.memLp_id π hπ,
-    fun h ν hν2 π hπ => ?_⟩
-  have : IsProbabilityMeasure ν := ⟨hπ.toIsCoupling.measure_univ_eq.symm.trans measure_univ⟩
-  let νP : ProbabilityMeasure E := ⟨ν, inferInstance⟩
-  have hmk := h (WassersteinSpace.mk νP (hasFiniteMoment_of_memLp_id hν2)) π
-  rw [WassersteinSpace.coe_mk] at hmk; exact hmk hπ
-
-/-- **Ambrosio–Gigli Theorem 1.26 on `WassersteinSpace 2 E` (existence and uniqueness form).** A
-quadratic Wasserstein law `μ : WassersteinSpace 2 E` has `c - c`-regular underlying measure iff for
-every target `ν : WassersteinSpace 2 E`, there exists an optimal transport map `T` whose graph plan
-is the unique optimal quadratic coupling between `μ` and `ν`. -/
-theorem isCCRegular_iff_forall_exists_isKantorovichOptimalTransportMap_and_unique_isOptimalCoupling
-    (μ : WassersteinSpace 2 E) :
-    IsCCRegular ((μ : ProbabilityMeasure E) : Measure E) ↔
-      ∀ ν : WassersteinSpace 2 E,
-        ∃ T : E → E,
-          IsKantorovichOptimalTransportMap
-            (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-            ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) T ∧
-          ∀ π, IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π
-            ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) ↔
-            π = graphPlan T ((μ : ProbabilityMeasure E) : Measure E) := by
-  rw [
-  isCCRegular_iff_forall_memLp_exists_isKantorovichOptimalTransportMap_and_unique_isOptimalCoupling
-    μ.hasFiniteMoment.memLp_id]
-  refine ⟨fun h ν => h _ (by simp) ν.hasFiniteMoment.memLp_id, fun h ν hνeq hν2 => ?_⟩
-  have : IsProbabilityMeasure ν := ⟨by rw [hνeq, measure_univ]⟩
-  let νP : ProbabilityMeasure E := ⟨ν, inferInstance⟩
-  have hmk := h (WassersteinSpace.mk νP (hasFiniteMoment_of_memLp_id hν2))
-  rw [WassersteinSpace.coe_mk] at hmk; exact hmk
-
-end WassersteinSpace
 
 end SharpCharacterization
 

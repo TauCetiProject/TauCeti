@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.Probability.Distributions.Gaussian.PosDefMap
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique

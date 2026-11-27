@@ -218,7 +218,7 @@ theorem IsCCHypersurface.image_continuousLinearEquiv {F : Type*} [NormedAddCommG
     IsCCHypersurface (L '' s) := by
   obtain ⟨e, he, f, g, hfc, hgc, hf, hg, rfl⟩ := hs
   obtain ⟨e', he', c, hc, B, ℓ, himg⟩ :=
-    image_continuousLinearEquiv_setOf_inner_eq L he (fun y => f y - g y)
+    L.exists_image_setOf_inner_eq he (fun y => f y - g y)
   have heq : L '' {x : E | inner ℝ x e =
         f ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) - g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} =
       {z : F | inner ℝ z e' = c * f (B ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)) -
@@ -227,8 +227,7 @@ theorem IsCCHypersurface.image_continuousLinearEquiv {F : Type*} [NormedAddCommG
     simpa only [mul_sub, sub_sub] using himg
   exact heq ▸ isCCHypersurface_setOf_inner_eq_sub he' (by fun_prop) (by fun_prop)
     ((hf.comp_linearMap B.toLinearMap).smul hc.le)
-    (((hg.comp_linearMap B.toLinearMap).smul hc.le).add
-      ⟨convex_univ, fun _ _ _ _ _ _ _ _ _ => by simp⟩)
+    (((hg.comp_linearMap B.toLinearMap).smul hc.le).add (ℓ.toLinearMap.convexOn convex_univ))
 
 /-- Images under continuous linear equivalences preserve `c - c` hypersurfaces. -/
 @[simp]
@@ -274,7 +273,7 @@ theorem IsLipschitzHypersurface.image_continuousLinearEquiv {F : Type*} [NormedA
     [InnerProductSpace ℝ F] {s : Set E} (hs : IsLipschitzHypersurface s) (L : E ≃L[ℝ] F) :
     IsLipschitzHypersurface (L '' s) := by
   obtain ⟨e, he, _, h, hh, rfl⟩ := hs
-  obtain ⟨e', he', c, _, B, ℓ, himg⟩ := image_continuousLinearEquiv_setOf_inner_eq L he h
+  obtain ⟨e', he', c, _, B, ℓ, himg⟩ := L.exists_image_setOf_inner_eq he h
   have hmul : LipschitzWith ‖c‖₊ (c * ·) := by
     simpa only [smul_eq_mul] using lipschitzWith_smul (β := ℝ) c
   exact himg ▸ isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he'
@@ -373,7 +372,7 @@ theorem isCCHypersurface_iff_exists_linearIsometryEquiv [FiniteDimensional ℝ E
   · obtain ⟨Φ, ψ, hfst, hsnd⟩ := exists_linearIsometryEquiv_of_unit he
     exact ⟨Φ, f ∘ ψ.symm, g ∘ ψ.symm, hf.comp_linearMap ψ.symm.toLinearMap,
       hg.comp_linearMap ψ.symm.toLinearMap, by rw [hs]; ext x; simp [hfst, hsnd]⟩
-  · obtain ⟨e, he, ψ, hfst, hsnd⟩ := exists_unit_of_linearIsometryEquiv Φ
+  · obtain ⟨e, he, ψ, hfst, hsnd⟩ := Φ.exists_unit
     have hs' : s = {x : E | inner ℝ x e =
         (f ∘ ψ) ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) -
           (g ∘ ψ) ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} := by
@@ -395,7 +394,7 @@ theorem isLipschitzHypersurface_iff_exists_linearIsometryEquiv [FiniteDimensiona
   · obtain ⟨Φ, ψ, hfst, hsnd⟩ := exists_linearIsometryEquiv_of_unit he
     exact ⟨Φ, K, h ∘ ψ.symm, by simpa using hh.comp ψ.symm.lipschitzWith,
       by rw [hs]; ext x; simp [hfst, hsnd]⟩
-  · obtain ⟨e, he, ψ, hfst, hsnd⟩ := exists_unit_of_linearIsometryEquiv Φ
+  · obtain ⟨e, he, ψ, hfst, hsnd⟩ := Φ.exists_unit
     have hs' : s = {x : E | inner ℝ x e = (h ∘ ψ) ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} := by
       rw [hs]; ext x; simp [hfst, hsnd]
     exact hs' ▸ isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he

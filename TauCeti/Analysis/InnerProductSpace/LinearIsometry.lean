@@ -63,7 +63,7 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
-* `TauCeti.exists_linearIsometryEquiv_of_unit` and `TauCeti.exists_unit_of_linearIsometryEquiv`:
+* `TauCeti.exists_linearIsometryEquiv_of_unit` and `LinearIsometryEquiv.exists_unit`:
   orthonormal splittings `E ≃ₗᵢ[ℝ] ℝ^{d-1} ×₂ ℝ` from a unit vector and vice versa.
 * `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
   conjugated by a linear isometry equivalence.
@@ -428,7 +428,7 @@ theorem exists_linearIsometryEquiv_of_unit [FiniteDimensional ℝ E] {e : E} (he
 `e` (the preimage of `(0, 1)`) and a linear isometry
 `ψ : ↥(ℝ ∙ e)ᗮ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E - 1))` realizing the two coordinates of
 `Φ` as `ψ ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)` and `⟪x, e⟫`. -/
-theorem exists_unit_of_linearIsometryEquiv
+theorem _root_.LinearIsometryEquiv.exists_unit
     (Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) × ℝ)) :
     ∃ (e : E) (_ : ‖e‖ = 1)
       (ψ : ↥(ℝ ∙ e)ᗮ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1))),

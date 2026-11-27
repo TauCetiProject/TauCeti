@@ -14,7 +14,6 @@ import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
-import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.DisplacementConvexity
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 

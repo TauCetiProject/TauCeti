@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Brenier
 import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!

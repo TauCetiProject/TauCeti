@@ -39,13 +39,15 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   half-squared Brenier cost and the squared-distance cost without changing optimal couplings;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two`,
   `TauCeti.IsCoupling.transportCost_norm_sub_sq_div_two_ne_top`,
-  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`, and
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`,
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_ae_mem_of_isBounded`,
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded`, and
   `TauCeti.IsCoupling.integral_inner_le` — for marginals with finite second moments, the quadratic
   cost of a plan is a second-moment term minus its correlation, the optimal quadratic cost is
   finite whenever a coupling exists (in particular for equal-mass finite measures via the normalised
-  product coupling), and the correlation is at most the second-moment term;
-  `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair of random
-  variables.
+  product coupling, or for probability measures carried by bounded sets), and the correlation is at
+  most the second-moment term; `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the
+  identity for a pair of random variables.
 
 ## References
 
@@ -168,6 +170,49 @@ theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp {μ ν : Measure F} [I
     (hμν : μ Set.univ = ν Set.univ) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
     transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
   (isCoupling_inv_smul_prod hμν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
+
+/-- Probability measures carried almost everywhere by bounded sets have finite transport cost for
+`‖x - y‖ ^ 2 / 2`. -/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_ae_mem_of_isBounded
+    {μ ν : Measure F} {X Y : Set F} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hXb : Bornology.IsBounded X) (hYb : Bornology.IsBounded Y)
+    (hμ : ∀ᵐ x ∂μ, x ∈ X) (hν : ∀ᵐ y ∂ν, y ∈ Y) :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+  obtain ⟨Rx, hRx⟩ := hXb.subset_closedBall 0
+  obtain ⟨Ry, hRy⟩ := hYb.subset_closedBall 0
+  have hπ := isCoupling_prod μ ν
+  have hbdd : ∀ᵐ z ∂(μ.prod ν),
+      ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ≤
+        ENNReal.ofReal ((max Rx 0 + max Ry 0) ^ 2 / 2) := by
+    filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hμ,
+      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hν] with z hz₁ hz₂
+    refine ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
+      (pow_le_pow_left₀ (norm_nonneg _) ((norm_sub_le z.1 z.2).trans <| add_le_add
+        ((mem_closedBall_zero_iff.1 (hRx hz₁)).trans (le_max_left Rx 0))
+        ((mem_closedBall_zero_iff.1 (hRy hz₂)).trans (le_max_left Ry 0))) 2)
+      zero_le_two)
+  refine ((transportCost_le_lintegral hπ _).trans_lt ?_).ne
+  calc ∫⁻ z, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂(μ.prod ν)
+      ≤ ∫⁻ _ : F × F, ENNReal.ofReal ((max Rx 0 + max Ry 0) ^ 2 / 2) ∂(μ.prod ν) :=
+        lintegral_mono_ae hbdd
+    _ < ∞ := by rw [lintegral_const, measure_univ, mul_one]; exact ENNReal.ofReal_lt_top
+
+/-- Probability measures given by densities on bounded sets have finite transport cost for
+`‖x - y‖ ^ 2 / 2`. Neither set need be measurable. -/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded [OpensMeasurableSpace F]
+    {ρ₁ ρ₂ : Measure F} {X Y : Set F} {f g : F → ℝ≥0∞}
+    (hXb : Bornology.IsBounded X) (hYb : Bornology.IsBounded Y)
+    [IsProbabilityMeasure ((ρ₁.restrict X).withDensity f)]
+    [IsProbabilityMeasure ((ρ₂.restrict Y).withDensity g)] :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      ((ρ₁.restrict X).withDensity f) ((ρ₂.restrict Y).withDensity g) ≠ ∞ :=
+  have hae (ρ : Measure F) (S : Set F) (h : F → ℝ≥0∞) :
+      ∀ᵐ z ∂(ρ.restrict S).withDensity h, z ∈ closure S :=
+    (withDensity_absolutelyContinuous (ρ.restrict S) h).ae_le
+      (ae_restrict_of_ae_restrict_of_subset subset_closure
+        (ae_restrict_mem isClosed_closure.measurableSet))
+  transportCost_norm_sub_sq_div_two_ne_top_of_ae_mem_of_isBounded
+    hXb.closure hYb.closure (hae ρ₁ X f) (hae ρ₂ Y g)
 
 end TauCeti
 

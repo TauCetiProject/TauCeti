@@ -29,8 +29,7 @@ extended-real convex functions, and frontiers of convex sets.
 
 ## Main declarations
 
-* `TauCeti.exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner`,
-  `TauCeti.exists_isCCHypersurface_of_subdifferential_separation`,
+* `TauCeti.exists_isCCHypersurface_of_subdifferential_separation`,
   `TauCeti.exists_countable_isCCHypersurface_cover_not_subsingleton_subdifferential`,
   `TauCeti.exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal`,
   `Convex.exists_countable_isCCHypersurface_cover_frontier` — countable `c - c` coverings.
@@ -57,42 +56,6 @@ namespace TauCeti
 section SubdifferentialSeparation
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- **Global convex Lipschitz interpolation on a hyperplane slice.** Given a set `S : Set E`
-and a selection `α : S → E` of subgradients of `u : E → EReal` bounded in norm by `M` with
-constant component `c` along a unit vector `e`, there exists a globally convex,
-`M.toNNReal`-Lipschitz function `F : ↥(ℝ ∙ e)ᗮ → ℝ` whose value at the orthogonal projection
-of each `x ∈ S` is `(u x).toReal - c * ⟪x, e⟫`. -/
-theorem exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner {u : E → EReal} {e : E}
-    (he : ‖e‖ = 1) {M : ℝ} (c : ℝ) {S : Set E} (α : S → E)
-    (hα : ∀ x : S, α x ∈ subdifferential (innerₗ E) u x ∧ ‖α x‖ ≤ M ∧ inner ℝ (α x) e = c) :
-    ∃ F : ↥(ℝ ∙ e)ᗮ → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith M.toNNReal F ∧
-      ∀ x : S, F ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (u x).toReal - c * inner ℝ (x : E) e := by
-  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
-    (x := fun x : S => P x) (p := fun x : S => P (α x))
-    (a := fun x : S => (u x).toReal - c * inner ℝ (x : E) e) (L := M.toNNReal)
-    (fun x => (Submodule.norm_orthogonalProjectionOnto_apply_le _ _).trans
-      ((hα x).2.1.trans (le_max_left _ _)))
-    fun x₁ x₂ => by
-      have hsubg : (u x₁).toReal + inner ℝ ((x₂ : E) - x₁) (α x₁) ≤ (u x₂).toReal := by
-        simpa only [innerₗ_apply_apply] using toReal_add_le_toReal_of_mem_subdifferential
-          (innerₗ E) (hα x₁).1 (ne_top_of_mem_subdifferential (innerₗ E) (hα x₂).1)
-      have hαeq : (P (α x₁) : E) + c • e = α x₁ := by
-        have h := (ℝ ∙ e).starProjection_add_starProjection_orthogonal (α x₁)
-        rwa [Submodule.starProjection_unit_singleton ℝ he (α x₁), Submodule.starProjection_apply,
-          real_inner_comm, (hα x₁).2.2, add_comm] at h
-      have hdec : inner ℝ ((x₂ : E) - x₁) (α x₁) =
-          inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e :=
-        calc inner ℝ ((x₂ : E) - x₁) (α x₁)
-            = inner ℝ ((x₂ : E) - x₁) ((P (α x₁) : E) + c • e) := by rw [hαeq]
-          _ = inner ℝ ((x₂ : E) - x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
-                rw [inner_add_right, real_inner_smul_right]
-          _ = inner ℝ (P x₂ - P x₁) (P (α x₁)) + c * inner ℝ ((x₂ : E) - x₁) e := by
-                rw [← Submodule.inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
-      simp only [inner_sub_left] at hdec hsubg ⊢
-      linarith
-  exact ⟨F, hconv, hlip, hF⟩
 
 /-- **Single-slice subdifferential separation lies in a `c - c` hypersurface.** In any real inner
 product space `E`, for any `u : E → EReal`, unit vector `e`, `a < b`, and `M : ℝ`, the set of
@@ -206,7 +169,7 @@ theorem _root_.Convex.exists_countable_isCCHypersurface_cover_frontier {K : Set 
       (convexOn_const 1 convex_univ)
     obtain ⟨C, hC, hs, hsub⟩ :=
       exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal
-        (u := fun z => (u z : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hu)
+        (u := fun z => (u z : EReal)) (convexOn_iff_convex_epigraph_coe.1 hu)
     refine ⟨C, hC, hs, fun x hx => hsub ⟨by simp, ?_⟩⟩
     simp only [EReal.toReal_coe]
     have hg1 : gauge K₀ (x - z₀) = 1 := (gauge_eq_one_iff_mem_frontier hK₀ hnhds).2 <| by
@@ -273,7 +236,7 @@ theorem exists_convexOn_subset_not_differentiableAt_iff {A : Set E} :
   refine ⟨fun ⟨u, hu, hA⟩ => ?_, fun ⟨C, hC, hs, hA⟩ => ?_⟩
   · obtain ⟨C, hC, hs, hsub⟩ :=
       exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal
-        (u := fun z => (u z : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hu)
+        (u := fun z => (u z : EReal)) (convexOn_iff_convex_epigraph_coe.1 hu)
     exact ⟨C, hC, hs, hA.trans fun x hx => hsub ⟨by simp, by simpa using hx⟩⟩
   · rcases C.eq_empty_or_nonempty with rfl | hCne
     · simp only [sUnion_empty, subset_empty_iff] at hA

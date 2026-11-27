@@ -30,9 +30,10 @@ any point, then `f` equals `⊥` at every interior point of `{x | f x ≠ ⊤}`.
 * `TauCeti.convexOn_toReal` — the real representative is convex on the effective domain;
 * `TauCeti.convex_epigraph_coe_mul_iff` — scaling by a positive real preserves convexity of the
   epigraph;
-* `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot` and `TauCeti.convexOn_iff_convex_epigraph_ite`
-  — a real function extended by `⊤` off `Ω` has effective domain `Ω`, never takes the value `⊥`,
-  and has convex real epigraph exactly when it is convex on `Ω`.
+* `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot`, `TauCeti.convexOn_iff_convex_epigraph_ite`,
+  and `TauCeti.convexOn_iff_convex_epigraph_coe` — a real function extended by `⊤` off `Ω` has
+  effective domain `Ω`, never takes the value `⊥`, and has convex real epigraph exactly when it is
+  convex on `Ω` (with the specialization to `Ω = univ`).
 
 ## References
 
@@ -129,6 +130,12 @@ theorem convexOn_iff_convex_epigraph_ite :
   by_cases hp : p.1 ∈ Ω <;> simp [hp]
 
 end Ite
+
+/-- A real function `u` is convex on `univ` if and only if `(u · : EReal)` has convex real
+epigraph. -/
+theorem convexOn_iff_convex_epigraph_coe {u : E → ℝ} :
+    ConvexOn ℝ univ u ↔ Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
+  simpa only [mem_univ, ite_true] using convexOn_iff_convex_epigraph_ite (Ω := univ) (u := u)
 
 /-- Scaling an extended-real potential by a positive real number `c` does not change convexity of
 its real epigraph: the two epigraphs differ by scaling the height coordinate. -/

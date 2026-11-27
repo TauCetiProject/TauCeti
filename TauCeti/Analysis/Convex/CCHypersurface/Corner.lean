@@ -22,8 +22,8 @@ difference along `e` on `s ∩ closedBall 0 R`, shared by Zajíček's covering t
 
 ## Main declarations
 
-* `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq` — globally Lipschitz
-  convex two-branch representation of a `c - c` hypersurface on a closed ball;
+* `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq` — pair of globally
+  Lipschitz convex branches agreeing on `s ∩ closedBall 0 R`;
 * `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq` — Lipschitz convex
   potential with unit second-difference slope along a `c - c` hypersurface on a closed ball.
 
@@ -48,11 +48,11 @@ section Corner
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- **Lipschitz branch representation of a `c - c` hypersurface on a ball.** Given a `c - c`
-hypersurface `s ⊆ E` and `R : ℝ`, there exist a unit vector `e : E` and globally Lipschitz convex
-branches `f', g' : ↥(ℝ ∙ e)ᗮ → ℝ` such that `x ↦ max (f' (P x)) (g' (P x) + ⟪x, e⟫)` (where `P`
-is orthogonal projection onto `(ℝ ∙ e)ᗮ`) is convex and Lipschitz on `E`, and the two branches agree
-on `s ∩ closedBall 0 R`. -/
+/-- **Convex Lipschitz branch pair agreeing on a `c - c` hypersurface on a ball.** Given a
+`c - c` hypersurface `s ⊆ E` and `R : ℝ`, there exist a unit vector `e : E` and globally
+Lipschitz convex branches `f', g' : ↥(ℝ ∙ e)ᗮ → ℝ` such that
+`x ↦ max (f' (P x)) (g' (P x) + ⟪x, e⟫)` (where `P` is orthogonal projection onto `(ℝ ∙ e)ᗮ`) is
+convex and Lipschitz on `E`, and the two branches agree on `s ∩ closedBall 0 R`. -/
 theorem IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq {s : Set E}
     (hs : IsCCHypersurface s) (R : ℝ) :
     ∃ (e : E) (_ : ‖e‖ = 1) (Lf Lg : ℝ≥0) (f' g' : ↥(ℝ ∙ e)ᗮ → ℝ),
@@ -74,7 +74,7 @@ theorem IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq {s : Set
     exact (abs_real_inner_le_norm _ _).trans_eq (by rw [he, mul_one])
   refine ⟨e, he, Lf, Lg, f', g', hf', hg', hLf', hLg',
     (hf'.comp_linearMap P.toLinearMap).sup ((hg'.comp_linearMap P.toLinearMap).add
-      ⟨convex_univ, fun _ _ _ _ _ _ _ _ _ => by simp [inner_add_left, real_inner_smul_left]⟩),
+      (preimage_univ.symm ▸ (((innerₗ E).flip e).convexOn convex_univ))),
     ((hLf'.comp (Submodule.lipschitzWith_orthogonalProjectionOnto _)).weaken (by simp)).max
       (((hLg'.comp (Submodule.lipschitzWith_orthogonalProjectionOnto _)).weaken (by simp) :
         LipschitzWith Lg (fun x => g' (P x))).add hlip_in),

@@ -66,8 +66,8 @@ with measurable singletons.
   induces a given deterministic plan;
 * `TauCeti.eq_graphPlan_of_absolutelyContinuous` — a plan absolutely continuous with respect to
   the graph plan of `T` is itself a graph plan of `T`;
-* `TauCeti.smul_graphPlan_add_smul_graphPlan_ne_graphPlan` — a nontrivial positive combination of
-  graph plans of a.e.-distinct maps is never a graph plan;
+* `TauCeti.exists_smul_graphPlan_add_smul_graphPlan_eq_graphPlan_iff` — a nontrivial positive
+  combination of two graph plans is a graph plan over `(a + b) • μ` iff the maps agree `μ`-a.e.;
 * `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
   of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
 * `TauCeti.ae_eq_comp_of_map_prodMk_eq_graphPlan` — a pair `(U, t)` of random variables whose
@@ -417,34 +417,41 @@ theorem eq_graphPlan_of_absolutelyContinuous (hT : AEMeasurable T μ)
   rw [fst_graphPlan hT] at hfst
   exact eq_graphPlan_of_ae_snd_eq (hT.mono_ac hfst) (h.ae_le (ae_snd_eq_graphPlan hT))
 
-/-- **A nontrivial positive combination of two distinct graph plans is never a graph plan.** If
-`S₁` and `S₂` are `μ`-a.e. measurable maps that do not agree `μ`-almost everywhere, and `a, b ≠ 0`
-in `ℝ≥0∞`, then `a • graphPlan S₁ μ + b • graphPlan S₂ μ` is not equal to `graphPlan T μ` for any
-map `T : X → Y` (measurable or not). -/
-theorem smul_graphPlan_add_smul_graphPlan_ne_graphPlan {S₁ S₂ : X → Y} {a b : ℝ≥0∞}
-    (ha : a ≠ 0) (hb : b ≠ 0) (hS₁ : AEMeasurable S₁ μ) (hS₂ : AEMeasurable S₂ μ)
-    (hne : ¬ S₁ =ᵐ[μ] S₂) (T : X → Y) :
-    a • graphPlan S₁ μ + b • graphPlan S₂ μ ≠ graphPlan T μ := fun hEq => by
-  have hμ0 : μ ≠ 0 := fun h0 => hne (by simp [h0, Filter.EventuallyEq])
+/-- **Determinism criterion for a mixture of two graph plans.** For nonzero weights `a, b` in
+`ℝ≥0∞` and `μ`-a.e. measurable maps `S₁` and `S₂`, the combination
+`a • graphPlan S₁ μ + b • graphPlan S₂ μ` is a graph plan over `(a + b) • μ` if and only if
+`S₁ =ᵐ[μ] S₂`. -/
+theorem exists_smul_graphPlan_add_smul_graphPlan_eq_graphPlan_iff {S₁ S₂ : X → Y} {a b : ℝ≥0∞}
+    (ha : a ≠ 0) (hb : b ≠ 0) (hS₁ : AEMeasurable S₁ μ) (hS₂ : AEMeasurable S₂ μ) :
+    (∃ T : X → Y, a • graphPlan S₁ μ + b • graphPlan S₂ μ = graphPlan T ((a + b) • μ)) ↔
+      S₁ =ᵐ[μ] S₂ := by
+  refine ⟨?_, fun hEq =>
+    ⟨S₁, by rw [← graphPlan_congr hEq, ← add_smul, ← graphPlan_smul (a + b) hS₁]⟩⟩
+  rintro ⟨T, hEq⟩
+  by_cases hμ0 : μ = 0
+  · simp [hμ0, Filter.EventuallyEq]
+  have hab : a + b ≠ 0 := by simp [ha]
+  have hμab : (a + b) • μ ≠ 0 := fun h0 => hμ0 <| by
+    simpa [hab] using (congrArg (fun m : Measure X => m Set.univ) h0).trans rfl
   obtain ⟨T', μ', hT', hT'eq⟩ : ∃ (T' : X → Y) (μ' : Measure X),
-      AEMeasurable T' μ' ∧ graphPlan T μ = graphPlan T' μ' := by
-    by_cases hT : AEMeasurable T μ
-    · exact ⟨T, μ, hT, rfl⟩
-    · have hnot : ¬ AEMeasurable (fun x ↦ (x, T x)) μ := fun h ↦
+      AEMeasurable T' μ' ∧ graphPlan T ((a + b) • μ) = graphPlan T' μ' := by
+    by_cases hT : AEMeasurable T ((a + b) • μ)
+    · exact ⟨T, (a + b) • μ, hT, rfl⟩
+    · have hnot : ¬ AEMeasurable (fun x ↦ (x, T x)) ((a + b) • μ) := fun h ↦
         hT (by simpa [Function.comp_def] using measurable_snd.comp_aemeasurable h)
       have : Nonempty (X × Y) := Measure.nonempty_of_not_aemeasurable hnot
       let z₀ : X × Y := Classical.ofNonempty
       refine ⟨fun _ ↦ z₀.2, Measure.dirac z₀.1, measurable_const.aemeasurable, ?_⟩
-      rw [graphPlan_def, Measure.map_of_not_aemeasurable_of_ne_zero hnot hμ0,
+      rw [graphPlan_def, Measure.map_of_not_aemeasurable_of_ne_zero hnot hμab,
         graphPlan_def, Measure.map_dirac' (f := fun x : X ↦ (x, z₀.2))
           (measurable_id.prodMk measurable_const)]
   have heq {S : X → Y} {c : ℝ≥0∞} (hc : c ≠ 0) (hS : AEMeasurable S μ)
-      (hle : c • graphPlan S μ ≤ graphPlan T μ) :
+      (hle : c • graphPlan S μ ≤ graphPlan T ((a + b) • μ)) :
       graphPlan S μ = graphPlan T' μ := by
     simpa [fst_graphPlan hS] using eq_graphPlan_of_absolutelyContinuous hT' <|
       (Measure.absolutelyContinuous_smul hc).trans <|
         Measure.absolutelyContinuous_of_le (hle.trans_eq hT'eq)
-  exact hne <| (graphPlan_eq_graphPlan_iff hS₁ hS₂).1 <|
+  exact (graphPlan_eq_graphPlan_iff hS₁ hS₂).1 <|
     (heq ha hS₁ ((Measure.le_add_right le_rfl).trans_eq hEq)).trans
       (heq hb hS₂ ((Measure.le_add_left le_rfl).trans_eq hEq)).symm
 

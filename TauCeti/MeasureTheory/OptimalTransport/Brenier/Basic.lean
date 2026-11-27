@@ -9,12 +9,10 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic
 public import TauCeti.Analysis.Convex.Differentiability
 public import TauCeti.Analysis.Convex.MongeAmpere.Transport
-public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Optimality
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability
 import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Convex.FenchelMoreau
@@ -22,7 +20,6 @@ import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
 import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Finite
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quadratic
 
 /-!
 # Brenier's theorem
@@ -53,19 +50,22 @@ exchanged coordinates, which lies in the subdifferential graph of the Legendre�
 `μ`, and the two maps are inverse to each other almost everywhere: conjugate potentials give
 inverse maps.
 
-Conversely, between finite measures with finite second moments on any real inner product space,
-every plan concentrated on the subdifferential graph of a function `u : E → EReal` is optimal
-(`TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Optimality`),
-and so is every transport map selecting a subgradient of `u` almost everywhere — in particular, on
-a Hilbert space, the gradient `∇ u` of a convex function `u` that never takes `⊥` and has finite,
-differentiable real representative source-almost everywhere. Expanding the square, the quadratic
-cost of a plan is a fixed second-moment term minus its correlation `∫ ⟪x, y⟫`, and on the
-subdifferential graph of a Legendre–Fenchel conjugate the Fenchel–Young inequality
-`⟪x, y⟫ ≤ u x + u⋆ y` is an equality. The real representatives of `u` and `u⋆` are integrable,
-being squeezed between affine functions and the correlation, so integrating Fenchel–Young against
-any other coupling bounds its correlation by that of the given plan. A general `u` is first
-replaced, through Rockafellar's theorem, by a conjugate whose subdifferential graph contains its
-own. With the forward direction this gives the Knott–Smith optimality criterion on separable spaces.
+Conversely, between finite measures with finite second moments on a real inner product space with
+open sets measurable, every plan concentrated on the subdifferential graph of a function
+`u : E → EReal` is optimal (`TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic.Optimality`,
+requiring open sets in `E × E` to be measurable for support and a.e. concentration results), and so
+is every transport map selecting a subgradient of `u` almost everywhere — in particular, on a
+Hilbert space with open sets measurable, the gradient `∇ u` of a convex function `u` that never
+takes `⊥`, is finite source-almost everywhere, and has differentiable real representative
+`u.toReal` there.
+Expanding the square, the quadratic cost of a plan is a fixed second-moment term minus its
+correlation `∫ ⟪x, y⟫`, and on the subdifferential graph of a Legendre–Fenchel conjugate the
+Fenchel–Young inequality `⟪x, y⟫ ≤ u x + u⋆ y` is an equality. The real representatives of `u` and
+`u⋆` are integrable, being squeezed between affine functions and the correlation, so integrating
+Fenchel–Young against any other coupling bounds its correlation by that of the given plan. A
+general `u` is first replaced, through Rockafellar's theorem, by a conjugate whose subdifferential
+graph contains its own. With the forward direction this gives the Knott–Smith optimality criterion
+on second-countable spaces (where open sets in both `E` and `E × E` are measurable).
 
 For Monge–Ampère results, absolute continuity uses an arbitrary additive Haar measure `ρ`, which
 for `E = ℝⁿ` covers Lebesgue measure. The real representative `x ↦ (u x).toReal` is the function
@@ -87,10 +87,6 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` — for a finite `c - c`-regular source,
   an optimal quadratic plan of finite cost is the graph plan of the gradient of a lower
   semicontinuous convex function never taking `⊥`, differentiable almost everywhere;
-* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular` — the graph-plan
-  conclusion of `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` for the cost `edist ^ 2`
-  of the quadratic Wasserstein distance: out of a finite `c - c`-regular source, an optimal plan to
-  a law at finite `W₂` distance is the graph plan of a measurable map;
 * `TauCeti.map_swap_eq_graphPlan_gradient_fenchelConjugate` — for a `c - c`-regular target `ν`,
   when a plan `π` with second marginal `ν` is concentrated on the subdifferential graph of `u`, the
   exchanged plan is the graph plan of the gradient of the conjugate potential `u⋆`;
@@ -143,14 +139,15 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   `g₀ x = det ((1 - t) • 1 + t • D²u x) gₜ (Tₜ x)` holds for `ρ`-almost every `x` in the interior
   of the effective domain of `u`, with `g₀ x = 0` for `ρ`-almost every `x` outside it;
 * `TauCeti.isKantorovichOptimalTransportMap_of_ae_mem_subdifferential` and
-  `TauCeti.isKantorovichOptimalTransportMap_gradient` — the converse of Brenier's theorem: a
-  transport map selecting subgradients of a function almost everywhere — such as the gradient
-  `∇ u` of a convex function never taking `⊥` whose real representative is finite and
-  differentiable almost everywhere — is an optimal transport map;
+  `TauCeti.isKantorovichOptimalTransportMap_gradient` — the converse of Brenier's theorem: when
+  open sets in `E` are measurable, a transport map selecting subgradients of a function almost
+  everywhere — such as the gradient `∇ u` of a convex function never taking `⊥` that is finite
+  source-almost everywhere and has differentiable real representative `u.toReal` there — is an
+  optimal transport map;
 * `TauCeti.IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential` — the **Knott–Smith
-  optimality criterion**: on a separable space, a plan between marginals with finite second
-  moments is optimal exactly when it is concentrated on the subdifferential graph of a proper
-  lower semicontinuous convex function.
+  optimality criterion**: on a second-countable space (so open sets in `E × E` are measurable), a
+  plan between marginals with finite second moments is optimal exactly when it is concentrated on
+  the subdifferential graph of a proper lower semicontinuous convex function.
 
 ## References
 
@@ -194,10 +191,10 @@ theorem ae_mem_subdifferential_fenchelConjugate_map_swap {u : E → EReal}
 
 omit [OpensMeasurableSpace (E × E)] in
 /-- **Subgradient selections are optimal transport maps for the quadratic cost.** Let `μ` and `ν`
-be finite measures with finite second moments on a real inner product space, `u : E → EReal` any
-function, and `T` a transport map from `μ` to `ν` with `T x ∈ ∂u(x)` for `μ`-almost every `x`.
-Then `T` is an optimal transport map for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich
-value. -/
+be finite measures with finite second moments on a real inner product space with open sets
+measurable, `u : E → EReal` any function, and `T` a transport map from `μ` to `ν` with
+`T x ∈ ∂u(x)` for `μ`-almost every `x`. Then `T` is an optimal transport map for the cost
+`‖x - y‖ ^ 2 / 2`, attaining the Kantorovich value. -/
 theorem isKantorovichOptimalTransportMap_of_ae_mem_subdifferential
     [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν)
     {T : E → E} (hT : HasLaw T ν μ)
@@ -228,11 +225,11 @@ theorem isKantorovichOptimalTransportMap_of_ae_mem_subdifferential
 
 omit [OpensMeasurableSpace (E × E)] in
 /-- **Gradients of convex functions are optimal transport maps for the quadratic cost.** Let `μ`
-and `ν` be finite measures with finite second moments on a real Hilbert space, and let
-`u : E → EReal` be convex, never `⊥`, and finite with differentiable real representative at
-`μ`-almost every point. If the gradient `∇ u` pushes `μ` to `ν`, it is an optimal transport map
-for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich value. This is the converse of Brenier's
-theorem `TauCeti.exists_isKantorovichOptimalTransportMap_gradient`. -/
+and `ν` be finite measures with finite second moments on a real Hilbert space with open sets
+measurable, and let `u : E → EReal` be convex, never `⊥`, and finite with differentiable real
+representative `u.toReal` at `μ`-almost every point. If the gradient `∇ u` pushes `μ` to `ν`, it is
+an optimal transport map for the cost `‖x - y‖ ^ 2 / 2`, attaining the Kantorovich value. This is
+the converse of Brenier's theorem `TauCeti.exists_isKantorovichOptimalTransportMap_gradient`. -/
 theorem isKantorovichOptimalTransportMap_gradient [OpensMeasurableSpace E] [CompleteSpace E]
     [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) {u : E → EReal}
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
@@ -243,10 +240,11 @@ theorem isKantorovichOptimalTransportMap_gradient [OpensMeasurableSpace E] [Comp
   isKantorovichOptimalTransportMap_of_ae_mem_subdifferential hμ hν hT
     (hdiff.mono fun _ hx => gradient_toReal_mem_subdifferential hconv hbot hx.1 hx.2)
 
-/-- **The Knott–Smith optimality criterion.** On a separable real inner product space, a coupling
-`π` of finite measures `μ` and `ν` with finite second moments is an optimal plan for the cost
-`‖x - y‖ ^ 2 / 2` exactly when there is a proper (never `⊥`, and finite somewhere) convex, lower
-semicontinuous `u : E → EReal` such that `y ∈ ∂u(x)` for `π`-almost every `(x, y)`. -/
+/-- **The Knott–Smith optimality criterion.** On a second-countable real inner product space (so
+open sets in `E × E` are measurable), a coupling `π` of finite measures `μ` and `ν` with finite
+second moments is an optimal plan for the cost `‖x - y‖ ^ 2 / 2` exactly when there is a proper
+(never `⊥`, and finite somewhere) convex, lower semicontinuous `u : E → EReal` such that
+`y ∈ ∂u(x)` for `π`-almost every `(x, y)`. -/
 theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
     [SecondCountableTopology E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν) :
@@ -688,20 +686,6 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
   exact subset_closure (hK x hxy)
 
 end AbsolutelyContinuous
-
-/-- **Brenier's theorem for the cost `edist ^ 2`.** On a finite-dimensional real inner product
-space, an optimal plan for the cost `edist ^ 2` out of a finite measure `μ` that is `c - c`-regular,
-to a law at finite `W₂` distance from `μ`,
-is the graph plan of a measurable map. -/
-theorem IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular {μ ν : Measure E}
-    [IsFiniteMeasure μ] {π : Measure (E × E)} (hμ : IsCCRegular μ)
-    (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
-    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
-    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ :=
-  let ⟨_, _, _, _, _, hgraph⟩ := (isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h)
-    |>.exists_eq_graphPlan_gradient hμ
-      (transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top hfin)
-  ⟨_, measurable_gradient _, hgraph⟩
 
 section AbsolutelyContinuous
 

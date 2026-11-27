@@ -37,7 +37,7 @@ the collapse of orthogonal graphs and hyperplanes to singletons in dimension one
 * `TauCeti.isClosed_range_add_smul_of_continuous` and
   `TauCeti.isClosed_range_add_smul_of_lipschitzWith`: a continuous or globally Lipschitz graph over
   `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) is closed.
-* `TauCeti.image_continuousLinearEquiv_setOf_inner_eq`: image of a graph over `(ℝ ∙ e)ᗮ` under a
+* `ContinuousLinearEquiv.exists_image_setOf_inner_eq`: image of a graph over `(ℝ ∙ e)ᗮ` under a
   continuous linear equivalence `L : E ≃L[ℝ] F`.
 * `TauCeti.range_eq_singleton_of_finrank_eq_one` and
   `TauCeti.exists_unit_singleton_eq_setOf_inner_eq`: orthogonal graphs and singletons in
@@ -125,7 +125,7 @@ theorem vadd_setOf_inner_eq {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F
 /-- The image of a graph `{x | ⟪x, e⟫ = w (P x)}` over `(ℝ ∙ e)ᗮ` under a continuous linear
 equivalence `L : E ≃L[ℝ] F` is again a graph over `(ℝ ∙ e')ᗮ` for some unit vector `e'` of a
 positively scaled pullback `c * w ∘ B - ℓ`, where `B` and `ℓ` are continuous linear. -/
-theorem image_continuousLinearEquiv_setOf_inner_eq {F : Type*}
+theorem _root_.ContinuousLinearEquiv.exists_image_setOf_inner_eq {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace ℝ F] (L : E ≃L[ℝ] F) {e : E} (he : ‖e‖ = 1)
     (w : ↥(ℝ ∙ e)ᗮ → ℝ) :
     ∃ (e' : F) (_ : ‖e'‖ = 1) (c : ℝ) (_ : 0 < c)
@@ -166,8 +166,8 @@ theorem image_continuousLinearEquiv_setOf_inner_eq {F : Type*}
   rw [hproj] at hmul
   linarith
 
-/-- In a one-dimensional real inner product space, every parametric graph over `(ℝ ∙ e)ᗮ` collapses
-to the singleton `{φ 0 • e}`. -/
+/-- In a one-dimensional real inner product space, every parametric graph over `(ℝ ∙ e)ᗮ` for
+`e ≠ 0` collapses to the singleton `{φ 0 • e}`. -/
 theorem range_eq_singleton_of_finrank_eq_one (hdim : Module.finrank ℝ E = 1) {e : E}
     (he : e ≠ 0) (φ : ↥(ℝ ∙ e)ᗮ → ℝ) :
     (Set.range fun y : ↥(ℝ ∙ e)ᗮ => (y : E) + φ y • e) = {φ 0 • e} := by
