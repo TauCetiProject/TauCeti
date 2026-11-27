@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 import TauCeti.Data.ZMod.Count
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # Generalized Bernoulli numbers

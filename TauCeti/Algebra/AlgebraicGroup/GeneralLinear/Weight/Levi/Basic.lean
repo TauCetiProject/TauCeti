@@ -158,14 +158,17 @@ noncomputable def leviSubgroup (τ : Fin k → ℕ) : Subgroup (GL (Fin k) W) :=
 
 variable {W}
 
+/-- The Levi subgroup is the subgroup of `GL_k(W)` cut out by the weight-Levi Hopf ideal of `τ`. -/
+theorem leviSubgroup_def (τ : Fin k → ℕ) :
+    leviSubgroup W τ =
+      hopfIdealPointsSubgroup k (weightLeviDefiningHopfIdeal ℤ fun i ↦ (τ i : ℤ)) W := (rfl)
+
 /-- Membership in the Levi subgroup: the entries between distinct labels vanish. -/
 @[simp]
 theorem mem_leviSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
     g ∈ leviSubgroup W τ ↔ ∀ i j, τ i ≠ τ j → (g : Matrix (Fin k) (Fin k) W) i j = 0 := by
-  have h := mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero ℤ (fun i ↦ (τ i : ℤ))
-    ((pointsMulEquiv k).symm g)
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, MulEquiv.apply_symm_apply] at h
-  rw [leviSubgroup, mem_hopfIdealPointsSubgroup_iff, h]
+  rw [leviSubgroup_def, mem_hopfIdealPointsSubgroup_iff_symm_mem,
+    mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero, MulEquiv.apply_symm_apply]
   simp only [ne_eq, Nat.cast_inj]
 
 /-- For a constant labelling, the Levi subgroup is all of `GL_k(W)`. -/
