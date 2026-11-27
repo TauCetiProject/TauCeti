@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
-import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -82,8 +81,8 @@ outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is
 integral over the angle and over the segment of radii of `S₀` on each ray, and rescaling the radius
 and the angle of each half to `[0, 1]` turns it into the integral over the core chart
 (`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The module-valued
-basis-determinant identity `AlternatingMap.eq_basis_det_smulRight`, at the standard basis of
-`ℝ × ℝ`, reads the pulled-back form along the chart as its Jacobian times the area density of `u`.
+Jacobian formula `TauCeti.mpullback_comp_apply_eq_det_smul` reads the pulled-back form along the
+chart as its Jacobian times the area density of `u`.
 
 ## References
 
@@ -133,6 +132,63 @@ private theorem contDiff_coreOuterRadius {n : ℕ∞} : ContDiff ℝ n coreOuter
   have h : ContDiff ℝ n fun θ ↦ √(Real.cos θ ^ 2 + 15) :=
     ((Real.contDiff_cos.pow 2).add contDiff_const).sqrt fun θ ↦ by positivity
   exact (Real.contDiff_cos.neg.add h).div_const 2
+
+/-- The distance from the point `k / 2` to the output circle `‖w‖ = 2` along the ray at the angle
+`θ`: the positive root `R` of `R² + k R cos θ = 4 - k² / 4`, for `k² ≤ 16`. For `k = 1` it is
+`coreOuterRadius θ`. -/
+private def outputRayRadius (k θ : ℝ) : ℝ :=
+  (-(k * Real.cos θ) + √((k * Real.cos θ) ^ 2 + 16 - k ^ 2)) / 2
+
+/-- The point of the output circle `‖w‖ = 2` on the ray at the angle `θ` from `k / 2`, in the real
+coordinates `ℝ × ℝ ≃ ℂ`. -/
+private def outputRayPoint (k θ : ℝ) : ℝ × ℝ :=
+  Complex.equivRealProdCLM (circleMap (k / 2 : ℝ) (outputRayRadius k θ) θ)
+
+/-- From `1/2` the ray at the angle `θ` meets the output circle at the distance
+`coreOuterRadius θ`. -/
+private theorem outputRayPoint_one (θ : ℝ) :
+    outputRayPoint 1 θ = Complex.equivRealProdCLM (circleMap (1 / 2) (coreOuterRadius θ) θ) := by
+  simp only [outputRayPoint, outputRayRadius, coreOuterRadius]
+  push_cast
+  ring_nf
+
+private theorem periodic_outputRayPoint (k : ℝ) : Periodic (outputRayPoint k) (2 * π) :=
+  fun θ ↦ by
+    simp only [outputRayPoint, outputRayRadius, Real.cos_add_two_pi, periodic_circleMap _ _ θ]
+
+/-- For `k² ≤ 16` the point `outputRayPoint k θ` lies on the circle `x² + y² = 4`. -/
+private theorem outputRayPoint_sq_add_sq {k : ℝ} (hk : k ^ 2 ≤ 16) (θ : ℝ) :
+    (outputRayPoint k θ).1 ^ 2 + (outputRayPoint k θ).2 ^ 2 = 4 := by
+  have hD : 0 ≤ (k * Real.cos θ) ^ 2 + 16 - k ^ 2 := by nlinarith [sq_nonneg (k * Real.cos θ)]
+  have hs := Real.sq_sqrt hD
+  have hcs := Real.cos_sq_add_sin_sq θ
+  simp only [outputRayPoint, outputRayRadius, circleMap, Complex.equivRealProdCLM_apply,
+    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.mul_re,
+    Complex.mul_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+  linear_combination (1 / 4 : ℝ) * hs +
+    ((-(k * Real.cos θ) + √((k * Real.cos θ) ^ 2 + 16 - k ^ 2)) / 2) ^ 2 * hcs
+
+/-- The point `outputRayPoint k θ` depends smoothly on `k` and `θ` while `k² < 16`. -/
+private theorem contDiff_outputRayPoint {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {k θ : E → ℝ} (hk : ContDiff ℝ n k) (hθ : ContDiff ℝ n θ)
+    (hk₁₆ : ∀ x, k x ^ 2 < 16) : ContDiff ℝ n fun x ↦ outputRayPoint (k x) (θ x) := by
+  have hD : ContDiff ℝ n fun x ↦ √((k x * Real.cos (θ x)) ^ 2 + 16 - k x ^ 2) :=
+    ContDiff.sqrt (by fun_prop) fun x ↦
+      (by nlinarith [sq_nonneg (k x * Real.cos (θ x)), hk₁₆ x] :
+        0 < (k x * Real.cos (θ x)) ^ 2 + 16 - k x ^ 2).ne'
+  have hof : ContDiff ℝ n Complex.ofReal := Complex.ofRealCLM.contDiff
+  have heq : ContDiff ℝ n Complex.equivRealProdCLM := Complex.equivRealProdCLM.contDiff
+  unfold outputRayPoint outputRayRadius circleMap
+  fun_prop
+
+/-- From the centre `0` the ray at the angle `θ` meets the output circle at `2 e^{iθ}`. -/
+private theorem outputRayPoint_zero (θ : ℝ) :
+    outputRayPoint 0 θ = Complex.equivRealProdCLM (2 * Complex.exp (θ * Complex.I)) := by
+  have h4 : √(16 : ℝ) = 4 := by
+    rw [show (16 : ℝ) = 4 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+  simp only [outputRayPoint, outputRayRadius, circleMap, zero_mul, neg_zero, zero_pow two_ne_zero,
+    zero_add, sub_zero, h4, zero_div, Complex.ofReal_zero]
+  norm_num
 
 private theorem norm_sq_circleMap_half (ρ θ : ℝ) :
     ‖circleMap (1 / 2 : ℂ) ρ θ‖ ^ 2 = 1 / 4 + ρ * Real.cos θ + ρ ^ 2 := by
@@ -650,6 +706,14 @@ theorem pairOfPantsCoreChart_mk_one (t : ℝ) :
   · rw [cos_lobeAngle_three_quarters,
       show lobeAngle (3 / 4) r = -(3 * π / 2) - π * r by rw [lobeAngle]; ring]
 
+/-- The output loop of the core chart runs through the points of the output circle on the rays of
+the two lobes from `1/2`. -/
+private theorem pairOfPantsCoreChart_mk_one_eq_loopwiseTrans (t : ℝ) :
+    pairOfPantsCoreChart (1, t) = loopwiseTrans (outputRayPoint 1 ∘ fun z ↦ lobeAngle (1 / 4) z.2)
+      (outputRayPoint 1 ∘ fun z ↦ lobeAngle (3 / 4) z.2) (1, t) := by
+  refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
+    (rw [coreLobe_of_mem hr]; simp [lobeChart, lobePoint, lobeRadius, outputRayPoint_one])
+
 /-! ### The Jacobian of a lobe -/
 
 private theorem hasDerivAt_lobeAngle (a r : ℝ) : HasDerivAt (lobeAngle a) (-π) r := by
@@ -727,23 +791,10 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
           lobeRadius a (smoothTransition z.1) z.2)) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z) ![(1, 0), (0, 1)] := by
   have hL := ((contDiff_lobeChart (n := 1) a).differentiable one_ne_zero z).hasFDerivAt
-  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
-  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`.
-  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z)
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
-  have hv : (fderiv ℝ (lobeChart a) z ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)]) =
-      ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  -- An alternating map of two vectors of `ℝ × ℝ` is their determinant times its value on the
-  -- standard basis vectors.
-  have hdet := congrArg (· ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)])
-    (ψ.toAlternatingMap.eq_basis_det_smulRight (Module.Basis.finTwoProd ℝ))
-  rw [AlternatingMap.smulRight_apply, Module.Basis.det_finTwoProd_apply,
-    Module.Basis.coe_finTwoProd] at hdet
-  refine (congrArg ψ hv).trans (hdet.trans ?_)
-  refine congrArg (· • ψ ![(1, 0), (0, 1)]) ?_
-  rw [fderiv_lobeChart_apply_one_zero, fderiv_lobeChart_apply_zero_one]
+  rw [mpullback_comp_apply_eq_det_smul φ hL hu, ContinuousLinearMap.det,
+    LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe, fderiv_lobeChart_apply_one_zero,
+    fderiv_lobeChart_apply_zero_one]
+  congr 1
   set e := Complex.exp (lobeAngle a z.2 * Complex.I)
   have he : e.re ^ 2 + e.im ^ 2 = 1 := by
     simp only [e, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
