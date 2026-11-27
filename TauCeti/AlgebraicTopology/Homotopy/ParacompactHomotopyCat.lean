@@ -24,6 +24,7 @@ homotopy of continuous maps. Its morphisms are the homotopy classes of continuou
 * `TauCeti.paracompactHomotopicRel`: homotopy of maps, a congruence.
 * `TauCeti.ParacompactHomotopyCat`: the homotopy category.
 * `TauCeti.ParacompactHomotopyCat.homMk`: the homotopy class of a continuous map.
+* `TauCeti.ParacompactHomotopyCat.homEquivQuotient`: morphisms are the free homotopy classes.
 
 ## Main results
 
@@ -107,6 +108,25 @@ theorem homMk_comp {X Y Z : ParacompactHomotopyCat.{u}} (f : C(X.as.obj, Y.as.ob
     (g : C(Y.as.obj, Z.as.obj)) : homMk (g.comp f) = homMk f ≫ homMk g :=
   (CategoryTheory.Quotient.functor _).map_comp
     (ObjectProperty.homMk (TopCat.ofHom f)) (ObjectProperty.homMk (TopCat.ofHom g))
+
+/-- The morphisms `X ⟶ Y` of `HoPara` are the free homotopy classes of continuous maps. -/
+noncomputable def homEquivQuotient (X Y : ParacompactHomotopyCat.{u}) :
+    Quotient (⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩ :
+      Setoid C(X.as.obj, Y.as.obj)) ≃ (X ⟶ Y) :=
+  Equiv.ofBijective (Quotient.lift homMk fun _ _ h ↦ homMk_eq_homMk_iff.2 h)
+    ⟨Quotient.ind₂ fun _ _ h ↦ Quotient.sound (homMk_eq_homMk_iff.1 h),
+      fun g ↦ let ⟨f, hf⟩ := homMk_surjective g; ⟨Quotient.mk _ f, hf⟩⟩
+
+@[simp]
+theorem homEquivQuotient_mk {X Y : ParacompactHomotopyCat.{u}} (f : C(X.as.obj, Y.as.obj)) :
+    homEquivQuotient X Y (Quotient.mk _ f) = homMk f :=
+  (rfl)
+
+@[simp]
+theorem homEquivQuotient_symm_homMk {X Y : ParacompactHomotopyCat.{u}}
+    (f : C(X.as.obj, Y.as.obj)) :
+    (homEquivQuotient X Y).symm (homMk f) = Quotient.mk _ f :=
+  (homEquivQuotient X Y).symm_apply_eq.2 (homEquivQuotient_mk f).symm
 
 end ParacompactHomotopyCat
 

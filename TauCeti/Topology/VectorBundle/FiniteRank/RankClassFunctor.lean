@@ -11,10 +11,11 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.HomotopyInvariance
 /-!
 # Rank-`k` vector bundles as a functor on the homotopy category
 
-For a complete normed `ℝ`-algebra `𝕜`, sending a paracompact Hausdorff space `X` to the set
-`FiniteRankBundleCore.RankClass 𝕜 X k` of isomorphism classes of rank-`k` vector-bundle cores over
-`X`, with pullback of classes, is a functor `TauCeti.rankClassFunctor 𝕜 k : HoParaᵒᵖ ⥤ Type _` on
-the homotopy category `TauCeti.ParacompactHomotopyCat`: homotopic maps pull back isomorphic cores
+For a nontrivially normed field `𝕜` that is a complete normed `ℝ`-algebra, sending a paracompact
+Hausdorff space `X` to the set `FiniteRankBundleCore.RankClass 𝕜 X k` of isomorphism classes of
+rank-`k` vector-bundle cores over `X`, with pullback of classes, is a functor
+`TauCeti.rankClassFunctor 𝕜 k : HoParaᵒᵖ ⥤ Type _` on the homotopy category
+`TauCeti.ParacompactHomotopyCat`: homotopic maps pull back isomorphic cores
 (`TauCeti.FiniteRankBundleCore.pullbackRankClass_eq_of_homotopic`).
 
 ## Main definitions

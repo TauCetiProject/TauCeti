@@ -29,6 +29,8 @@ pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy clas
 * `ContinuousMap.homotopicRel_comp_homeomorph_iff`, `ContinuousMap.homotopic_comp_homeomorph_iff`:
   precomposing with a homeomorphism `e` identifies homotopy relative to `e ⁻¹' S` with homotopy
   relative to `S`, and free homotopy of precomposed maps with free homotopy.
+* `Homeomorph.homotopicQuotientCongr`: post-composition with a homeomorphism is a bijection of
+  free homotopy classes.
 * `ContinuousMap.HomotopicRel.comp`: relative homotopies compose.
 * `ContinuousMap.HomotopicRel.comp_id`: self-maps homotopic to the identity relative to `S` are
   closed under composition.
@@ -98,6 +100,28 @@ with free homotopy. -/
 theorem homotopic_comp_homeomorph_iff (e : W ≃ₜ X) :
     Homotopic (f₀.comp (e : C(W, X))) (f₁.comp (e : C(W, X))) ↔ Homotopic f₀ f₁ := by
   simpa using homotopicRel_comp_homeomorph_iff (f₀ := f₀) (f₁ := f₁) (S := ∅) e
+
+variable (W) in
+/-- Post-composition with a homeomorphism `e : Y ≃ₜ Y'` is a bijection of free homotopy classes
+`[W, Y] ≃ [W, Y']`. -/
+def _root_.Homeomorph.homotopicQuotientCongr {Y' : Type*}
+    [TopologicalSpace Y'] (e : Y ≃ₜ Y') :
+    Quotient (⟨Homotopic, Homotopic.equivalence⟩ : Setoid C(W, Y)) ≃
+      Quotient (⟨Homotopic, Homotopic.equivalence⟩ : Setoid C(W, Y')) where
+  toFun := Quotient.map (fun f ↦ (e : C(Y, Y')).comp f) fun _ _ h ↦ (Homotopic.refl _).comp h
+  invFun := Quotient.map (fun f ↦ (e.symm : C(Y', Y)).comp f) fun _ _ h ↦ (Homotopic.refl _).comp h
+  left_inv := Quotient.ind fun f ↦ congrArg (Quotient.mk _) <| by
+    dsimp only
+    rw [← comp_assoc, Homeomorph.symm_comp_toContinuousMap, id_comp]
+  right_inv := Quotient.ind fun f ↦ congrArg (Quotient.mk _) <| by
+    dsimp only
+    rw [← comp_assoc, Homeomorph.toContinuousMap_comp_symm, id_comp]
+
+@[simp]
+theorem _root_.Homeomorph.homotopicQuotientCongr_mk {Y' : Type*}
+    [TopologicalSpace Y'] (e : Y ≃ₜ Y') (f : C(W, Y)) :
+    e.homotopicQuotientCongr W (Quotient.mk _ f) = Quotient.mk _ ((e : C(Y, Y')).comp f) :=
+  (rfl)
 
 /-- A self-map homotopic to the identity relative to `S` fixes `S` pointwise, so it maps `S` into
 itself. -/
