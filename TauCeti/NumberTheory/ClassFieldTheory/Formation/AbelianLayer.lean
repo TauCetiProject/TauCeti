@@ -66,8 +66,6 @@ class-field correspondences directly in terms of their abelian Galois groups.
 * `OpenNormalSubgroup.natCard_abelianization_gal_eq_degree_maximalAbelianLayer`: the
   abelianized Galois group of a layer has the order of the Galois group of its maximal abelian
   sublayer.
-* `OpenNormalSubgroup.degree_ofOpenNormal_maximalAbelianLayer_dvd`: the degree of the maximal
-  abelian sublayer divides the degree of the layer.
 
 ## References
 
@@ -340,15 +338,5 @@ theorem natCard_abelianization_gal_eq_degree_maximalAbelianLayer (V : OpenNormal
     ← Subgroup.index_map_mk'_eq_index_sup, ← hcomm]
   -- `Group.Abelianization H` is by definition the quotient `H ⧸ commutator H`.
   exact (Subgroup.index_eq_card _).symm
-
-/-- The degree of the maximal abelian sublayer of `V` divides the degree of `V`: the maximal
-abelian subextension is a subextension. -/
-theorem degree_ofOpenNormal_maximalAbelianLayer_dvd (V : OpenNormalSubgroup G) :
-    (NormalLayer.ofOpenNormal V.maximalAbelianLayer).degree ∣
-      (NormalLayer.ofOpenNormal V).degree := by
-  simpa only [NormalLayer.degree_eq_relIndex, NormalLayer.top_ofOpenNormal,
-    NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top,
-    Subgroup.relIndex_top_right] using
-    Subgroup.index_dvd_of_le (OpenNormalSubgroup.toSubgroup_le.mpr V.le_maximalAbelianLayer)
 
 end OpenNormalSubgroup
