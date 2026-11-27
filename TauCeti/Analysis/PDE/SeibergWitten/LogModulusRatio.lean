@@ -388,8 +388,7 @@ theorem norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le
   have hΔ (y : E) : Δ (fun y ↦ -Real.log (‖α y‖ ^ 2)) y = κ * (1 - ‖α y‖ ^ 2) := by
     have h := laplacian_log_norm_sq_eq_mul_sub_one hJ e hb (differentiable_const _) hα
       (differentiable_const _) hα1 hdense hdbar hdbar₁ (hF y) (by simp) (hα₀ y)
-    rw [show (fun y ↦ -Real.log (‖α y‖ ^ 2)) = -fun y ↦ Real.log (‖α y‖ ^ 2) from rfl,
-      laplacian_neg, Pi.neg_apply, h]
+    rw [← Pi.neg_def, laplacian_neg, Pi.neg_apply, h]
     simp only [norm_one, one_pow, mul_one]
     ring
   have hzpow (R : ℝ) (hR : 1 ≤ R) : 0 ≤ R ^ ((Module.finrank ℝ E : ℤ) - 2) :=

@@ -117,9 +117,17 @@ private lemma div_pow_mul_three_mul_zpow_eq {r : ℝ} (hr : r ≠ 0) {n : ℕ} (
     r / r ^ (n - 1) * (3 * r) ^ ((n : ℤ) - 2) = 3 ^ ((n : ℤ) - 2) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
   rw [zpow_sub₀ (mul_ne_zero three_ne_zero hr), zpow_sub₀ three_ne_zero, zpow_natCast,
-    zpow_natCast, zpow_ofNat, zpow_ofNat, Nat.add_sub_cancel]
+    zpow_natCast, Nat.add_sub_cancel]
   field_simp
   ring
+
+/-- `(2 ^ k) ^ n = (2 ^ k) ^ (n - 2) 4 ^ k`, with the integer exponent `n - 2`. -/
+private lemma two_pow_pow_eq_zpow_sub_two_mul_four_pow (k n : ℕ) :
+    ((2 : ℝ) ^ k) ^ n = ((2 : ℝ) ^ k) ^ ((n : ℤ) - 2) * 4 ^ k := by
+  rw [zpow_sub₀ (by positivity), zpow_natCast]
+  field_simp
+  rw [sq, ← mul_pow]
+  norm_num
 
 /-- The sphere integrals about `x₀` of a subharmonic `v` whose Laplacian has integral at most
 `C Rⁿ⁻²` over the balls of radius `R ≥ 1` grow at most linearly in `k` along the radii `2 ^ k`. -/
@@ -230,12 +238,8 @@ private lemma exists_mul_four_pow_le (hv : ContDiff ℝ 2 v) (hv₀ : ∀ x, 0 �
             (isCompact_closedBall x₀ _)).mono_set ball_subset_closedBall)
             (((hv.continuous.min continuous_const).continuousOn.integrableOn_compact
             (isCompact_closedBall x₀ _)).mono_set ball_subset_closedBall) measurableSet_ball hmin
-  -- `(2 ^ k)ⁿ = (2 ^ k)ⁿ⁻² 4ᵏ`; divide the two bounds on the integral of `min v 1` by `(2 ^ k)ⁿ⁻²`.
-  have hRn : ((2 : ℝ) ^ k) ^ Module.finrank ℝ E =
-      ((2 : ℝ) ^ k) ^ ((Module.finrank ℝ E : ℤ) - 2) * 4 ^ k := by
-    rw [zpow_sub₀ hR0.ne', zpow_natCast, zpow_ofNat, show (4 : ℝ) ^ k = ((2 : ℝ) ^ k) ^ 2 by
-      rw [← pow_mul, mul_comm, pow_mul]; norm_num, div_mul_cancel₀ _ (by positivity)]
-  rw [μ.addHaar_real_ball_of_pos x₀ hR0, hRn] at hlow
+  -- Divide the two bounds on the integral of `min v 1` by `(2 ^ k)ⁿ⁻²`.
+  rw [μ.addHaar_real_ball_of_pos x₀ hR0, two_pow_pow_eq_zpow_sub_two_mul_four_pow] at hlow
   have h := hlow.trans (hvC x₀ _ hR1)
   have hz : 0 < ((2 : ℝ) ^ k) ^ ((Module.finrank ℝ E : ℤ) - 2) := zpow_pos hR0 _
   rw [div_le_iff₀ (by positivity)] at h

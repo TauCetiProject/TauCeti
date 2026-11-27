@@ -15,6 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -560,24 +561,6 @@ private lemma neg_integral_deriv_mul_integral_toSphere_le [Nontrivial E]
     _ ≤ 2 * (∫ s, ψ s) / a ^ (Module.finrank ℝ E - 1) * D / 2 := by gcongr
     _ = (∫ s, ψ s) / a ^ (Module.finrank ℝ E - 1) * D := by ring
 
-/-- Integration by parts against the identity: for a compactly supported `C¹` function `ψ` on `ℝ`,
-`x ↦ x ψ' x` is integrable and `∫ x ψ' x = -∫ ψ`. -/
-private lemma integrable_mul_deriv_and_integral_mul_deriv_eq_neg_integral {ψ : ℝ → ℝ}
-    (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
-    (Integrable fun x ↦ x * deriv ψ x) ∧ ∫ x, x * deriv ψ x = -∫ x, ψ x := by
-  have hI : Integrable fun x ↦ x * deriv ψ x :=
-    (continuous_id.mul (hψ.continuous_deriv le_rfl)).integrable_of_hasCompactSupport
-      (hψc.deriv.mul_left (f := fun x : ℝ ↦ x))
-  refine ⟨hI, ?_⟩
-  have h := integral_mul_deriv_eq_deriv_mul_of_integrable (u := fun x : ℝ ↦ x)
-    (u' := fun _ ↦ 1) (v := ψ) (v' := deriv ψ) (fun x _ ↦ hasDerivAt_id x)
-    (fun x _ ↦ (hψ.differentiable one_ne_zero x).hasDerivAt) hI
-    ((continuous_const.mul hψ.continuous).integrable_of_hasCompactSupport
-      (hψc.mul_left (f := fun _ : ℝ ↦ (1 : ℝ))))
-    ((continuous_id.mul hψ.continuous).integrable_of_hasCompactSupport
-      (hψc.mul_left (f := fun x : ℝ ↦ x)))
-  simpa using h
-
 /-- The increment bound for the sphere integrals about the origin, with an auxiliary inner
 radius `a < r₁`. -/
 private lemma integral_toSphere_sub_le_of_lt_zero [Nontrivial E]
@@ -600,7 +583,7 @@ private lemma integral_toSphere_sub_le_of_lt_zero [Nontrivial E]
       (hψs.trans Ioo_subset_Icc_self)
     have hψ1 : ContDiff ℝ 1 ψ := hψ.of_le (by simp)
     have hdψ : Continuous (deriv ψ) := hψ1.continuous_deriv le_rfl
-    obtain ⟨hI₁, hparts⟩ := integrable_mul_deriv_and_integral_mul_deriv_eq_neg_integral hψ1 hψc
+    have hI₁ := hψc.integrable_mul_deriv hψ1
     have hIΦ : Integrable fun x ↦ deriv ψ x * Φ x := by
       refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := tsupport ψ)
         ((hdψ.continuousOn.mul (hΦc.mono ?_)).integrableOn_compact hψc) fun x hx ↦ ?_
@@ -619,7 +602,7 @@ private lemma integral_toSphere_sub_le_of_lt_zero [Nontrivial E]
           ext x
           ring
       _ ≤ 0 := by
-          rw [hparts]
+          rw [hψc.integral_mul_deriv_eq_neg_integral hψ1]
           linarith
   have h := hmono ⟨har₁, by linarith⟩ ⟨by linarith, hr₂R⟩ hr
   simp only at h
