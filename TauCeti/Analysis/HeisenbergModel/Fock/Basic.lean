@@ -325,6 +325,10 @@ instance isVacuum_gaussian : (heisenbergDatum ε).IsVacuum (measure ι) (gaussia
 
 /-! ### The multiplier -/
 
+/-- A sign other than `-1` is `1`. -/
+theorem eq_one_of_ne_neg_one {u : ℤˣ} (h : u ≠ -1) : u = 1 :=
+  (Int.units_eq_one_or u).resolve_right h
+
 variable (ε) in
 /-- The block `u₋₋` of a square matrix on the indices of sign `-1`. -/
 def negBlock (u : Matrix ι ι ℂ) : Matrix {i // ε i = -1} {i // ε i = -1} ℂ :=
@@ -333,6 +337,17 @@ def negBlock (u : Matrix ι ι ℂ) : Matrix {i // ε i = -1} {i // ε i = -1} �
 omit [Fintype ι] [DecidableEq ι] in
 @[simp]
 theorem negBlock_apply (u : Matrix ι ι ℂ) (i j : {i // ε i = -1}) : negBlock ε u i j = u i j :=
+  (rfl)
+
+variable (ε) in
+/-- The block `u₊₊` of a square matrix on the indices of sign other than `-1`, that is, of
+sign `1`. -/
+def posBlock (u : Matrix ι ι ℂ) : Matrix {i // ε i ≠ -1} {i // ε i ≠ -1} ℂ :=
+  u.submatrix Subtype.val Subtype.val
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem posBlock_apply (u : Matrix ι ι ℂ) (i j : {i // ε i ≠ -1}) : posBlock ε u i j = u i j :=
   (rfl)
 
 /-- The negative block of `g⁻¹` is the conjugate transpose of that of `g`, for `g ∈ U(ε)`. -/
@@ -417,8 +432,7 @@ private theorem conjTranspose_posProj : (posProj ε)ᴴ = posProj ε := by
 /-- The determinant of `P₊ + P₋ x` is the minor of `x` on the indices of sign `-1`. -/
 private theorem det_posProjAdd (x : Matrix ι ι ℂ) : (posProjAdd ε x).det = (negBlock ε x).det := by
   let e := Equiv.sumCompl fun i ↦ ε i = -1
-  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 :=
-    (Int.units_eq_one_or (ε i)).resolve_right i.property
+  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 := eq_one_of_ne_neg_one i.property
   have h_blocks : (posProjAdd ε x).submatrix e e =
       fromBlocks (negBlock ε x) (x.submatrix Subtype.val Subtype.val) 0 1 := by
     ext (i | i) (j | j)

@@ -118,15 +118,12 @@ diagonal, with blocks `conj(u₋₋)` and `u₊₊`. -/
 theorem complexLinearPart_submatrix (u : Matrix ι ι ℂ) :
     (complexLinearPart ε u).submatrix (Equiv.sumCompl fun i ↦ ε i = -1)
         (Equiv.sumCompl fun i ↦ ε i = -1) =
-      fromBlocks ((negBlock ε u).map conj) 0 0
-        (u.submatrix (fun i : {i // ε i ≠ -1} ↦ i.val) Subtype.val) := by
-  have hp (i : {i // ε i ≠ -1}) : ε i = 1 :=
-    (Int.units_eq_one_or (ε i)).resolve_right i.property
+      fromBlocks ((negBlock ε u).map conj) 0 0 (posBlock ε u) := by
   ext (i | i) (j | j)
   · simp [Equiv.sumCompl, i.property, j.property]
-  · simp [Equiv.sumCompl, i.property, hp j]
-  · simp [Equiv.sumCompl, hp i, j.property]
-  · simp [Equiv.sumCompl, hp i, hp j]
+  · simp [Equiv.sumCompl, i.property, eq_one_of_ne_neg_one j.property]
+  · simp [Equiv.sumCompl, eq_one_of_ne_neg_one i.property, j.property]
+  · simp [Equiv.sumCompl, eq_one_of_ne_neg_one i.property, eq_one_of_ne_neg_one j.property]
 
 variable [Fintype ι]
 
@@ -144,8 +141,7 @@ theorem complexLinearPart_eq (u : Matrix ι ι ℂ) :
 
 /-- The determinant of the complex-linear part is the product of its two signed blocks. -/
 theorem det_complexLinearPart_eq (u : Matrix ι ι ℂ) :
-    (complexLinearPart ε u).det = conj (negBlock ε u).det *
-      (u.submatrix (fun i : {i // ε i ≠ -1} ↦ i.val) Subtype.val).det := by
+    (complexLinearPart ε u).det = conj (negBlock ε u).det * (posBlock ε u).det := by
   rw [← det_submatrix_equiv_self (Equiv.sumCompl fun i ↦ ε i = -1),
     complexLinearPart_submatrix, det_fromBlocks_zero₂₁]
   congr 1
@@ -161,8 +157,7 @@ theorem det_complexLinearPart (g : unitaryGroup ε) :
   -- The complementary minor is the negative block of the group inverse. Its explicit formula
   -- removes the coordinate-equivalence wrappers in Jacobi's identity.
   have hminor :
-      (((g : GL ι ℂ) : Matrix ι ι ℂ).submatrix
-        (fun i : {i // ε i ≠ -1} ↦ i.val) Subtype.val).det =
+      (posBlock ε ((g : GL ι ℂ) : Matrix ι ι ℂ)).det =
       ((g : GL ι ℂ) : Matrix ι ι ℂ).det *
         (negBlock ε (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ)).det := by
     have hnb : negBlock ε (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) =
@@ -170,7 +165,12 @@ theorem det_complexLinearPart (g : unitaryGroup ε) :
           (fun i : {i // ε i = -1} ↦ i.val) Subtype.val := by
       ext i j
       exact negBlock_apply _ _ _
-    rw [hnb]
+    have hpb : posBlock ε ((g : GL ι ℂ) : Matrix ι ι ℂ) =
+        ((g : GL ι ℂ) : Matrix ι ι ℂ).submatrix
+          (fun i : {i // ε i ≠ -1} ↦ i.val) Subtype.val := by
+      ext i j
+      exact posBlock_apply _ _ _
+    rw [hnb, hpb]
     simpa [Function.comp_def] using h
   rw [det_complexLinearPart_eq, hminor, negBlock_inv, det_conjTranspose, Complex.star_def,
     ← multiplier_apply]
@@ -198,8 +198,7 @@ theorem inv_complexLinearPart_submatrix (u : Matrix ι ι ℂ)
     (hu : IsUnit (complexLinearPart ε u)) :
     (complexLinearPart ε u)⁻¹.submatrix
         (Equiv.sumCompl fun i ↦ ε i = -1) (Equiv.sumCompl fun i ↦ ε i = -1) =
-      fromBlocks (((negBlock ε u).map conj)⁻¹) 0 0
-        ((u.submatrix (fun i : {i // ε i ≠ -1} ↦ i.val) Subtype.val)⁻¹) := by
+      fromBlocks (((negBlock ε u).map conj)⁻¹) 0 0 (posBlock ε u)⁻¹ := by
   have h := (isUnit_submatrix_equiv (Equiv.sumCompl fun i ↦ ε i = -1)
     (Equiv.sumCompl fun i ↦ ε i = -1)).2 hu
   rw [complexLinearPart_submatrix, isUnit_fromBlocks_zero₂₁] at h
@@ -217,8 +216,6 @@ theorem inv_complexLinearPart_apply_of_ne (u : Matrix ι ι ℂ) {i j : ι} (h :
     obtain ⟨i, rfl⟩ := e.surjective i
     obtain ⟨j, rfl⟩ := e.surjective j
     have hblocks := inv_complexLinearPart_submatrix ε u hu
-    have hp (i : {i // ε i ≠ -1}) : ε i = 1 :=
-      (Int.units_eq_one_or (ε i)).resolve_right i.property
     cases i with
     | inl i =>
       cases j with
@@ -229,9 +226,32 @@ theorem inv_complexLinearPart_apply_of_ne (u : Matrix ι ι ℂ) {i j : ι} (h :
       cases j with
       | inl j =>
         simpa [e, submatrix_apply] using congrFun (congrFun hblocks (Sum.inr i)) (Sum.inl j)
-      | inr j => exact (h ((hp i).trans (hp j).symm)).elim
-  · rw [nonsing_inv_apply_not_isUnit _ ((isUnit_iff_isUnit_det _).not.mp hu)]
-    rfl
+      | inr j =>
+        exact (h ((eq_one_of_ne_neg_one i.property).trans
+          (eq_one_of_ne_neg_one j.property).symm)).elim
+  · rw [nonsing_inv_apply_not_isUnit _ ((isUnit_iff_isUnit_det _).not.mp hu),
+      Matrix.zero_apply]
+
+/-- Between coordinates of sign `-1`, the inverse of an invertible complex-linear part is the
+inverse of the conjugate negative block. -/
+@[simp]
+theorem inv_complexLinearPart_apply_of_neg (u : Matrix ι ι ℂ)
+    (hu : IsUnit (complexLinearPart ε u)) {i j : ι} (hi : ε i = -1) (hj : ε j = -1) :
+    (complexLinearPart ε u)⁻¹ i j = ((negBlock ε u).map conj)⁻¹ ⟨i, hi⟩ ⟨j, hj⟩ := by
+  simpa [submatrix_apply] using
+    congrFun (congrFun (inv_complexLinearPart_submatrix ε u hu) (Sum.inl ⟨i, hi⟩))
+      (Sum.inl ⟨j, hj⟩)
+
+/-- Between coordinates of sign `1`, the inverse of an invertible complex-linear part is the
+inverse of the positive block. -/
+@[simp]
+theorem inv_complexLinearPart_apply_of_pos (u : Matrix ι ι ℂ)
+    (hu : IsUnit (complexLinearPart ε u)) {i j : ι} (hi : ε i = 1) (hj : ε j = 1) :
+    (complexLinearPart ε u)⁻¹ i j =
+      (posBlock ε u)⁻¹ ⟨i, by simp [hi]⟩ ⟨j, by simp [hj]⟩ := by
+  simpa [submatrix_apply] using
+    congrFun (congrFun (inv_complexLinearPart_submatrix ε u hu) (Sum.inr ⟨i, by simp [hi]⟩))
+      (Sum.inr ⟨j, by simp [hj]⟩)
 
 /-- Taking the inverse in the signed unitary group conjugate-transposes its complex-linear part.
 This is a statement about the group inverse of `g`, rather than the matrix inverse of `C(g)`. -/
