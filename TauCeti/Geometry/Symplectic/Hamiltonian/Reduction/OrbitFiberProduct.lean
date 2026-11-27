@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Orbit
 public import TauCeti.Geometry.Lie.Subgroup.BalancedProduct
 public import TauCeti.Geometry.Manifold.FiberProduct.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
+import TauCeti.Geometry.Manifold.FiberProduct.Submersion
+import TauCeti.Geometry.Symplectic.Coadjoint.LiePoisson
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.OrbitLevel
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!
@@ -62,7 +66,10 @@ level of the shifting map on `M × O⁻`
 * `TauCeti.OrbitFiberProduct`: the orbit fibre product
   `W_O`, as a subtype of `M × G ⧸ G_c`.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductChartedSpace`: its atlas as a
-  transverse fibre product.
+  transverse fibre product. Since `ι_O` is an immersion, the projection `pr_M : W_O → M` is an
+  immersion (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isImmersion_fst_orbitFiberProduct`)
+  with tangent image `dμ_x⁻¹(𝔤 · μ(x))` at `(x, o)`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.range_mfderiv_fst_orbitFiberProduct`).
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorph`: the diffeomorphism
   `G ×_{G_c} μ⁻¹(c) ≃ W_O`, `[g, z] ↦ (g • z, g G_c)`.
 
@@ -231,6 +238,68 @@ theorem isSmoothEmbedding_coe_orbitFiberProduct (h : σ.IsEquivariantMomentMap �
   isSmoothEmbedding_coe_transverseFiberProduct (by simp) (h.toIsMomentMap.contMDiff_components b)
     (c.contMDiff_orbitMap_coadjointRepresentation_components b)
     (h.range_mfderiv_components_sup_eq_top hreg b)
+
+/-! ### The projection to `M` -/
+
+/-- **The projection of the orbit fibre product to `M` has injective differential.** A tangent
+vector of `W_O` with projections `v` and `w` satisfies `dμ(v) = dι_O(w)`, and `dι_O` is injective
+(`Module.Dual.injective_mfderiv_orbitMap_coadjointRepresentation_components`), so `v = 0` forces
+`w = 0`. -/
+theorem injective_mfderiv_fst_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) (p : OrbitFiberProduct μ c b) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    Injective (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+        (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ) I'
+      (fun p : OrbitFiberProduct μ c b ↦ p.val.1) p) :=
+  injective_mfderiv_fst_transverseFiberProduct (by simp) (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b) p
+    (c.injective_mfderiv_orbitMap_coadjointRepresentation_components b p.val.2)
+
+/-- **The projection of the orbit fibre product to `M` is an immersion**, since the orbit map
+`ι_O` is one. -/
+theorem isImmersion_fst_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    IsImmersion 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+        (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ) I' ∞
+      (fun p : OrbitFiberProduct μ c b ↦ p.val.1) :=
+  isImmersion_fst_transverseFiberProduct (by simp) (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b)
+    fun p ↦ c.injective_mfderiv_orbitMap_coadjointRepresentation_components b p.val.2
+
+/-- **The tangent images of the projection of the orbit fibre product to `M`.** At `(x, o)`, the
+differential of `pr_M` has as image the space `dμ_x⁻¹(𝔤 · μ(x)) = ker dμ_x + 𝔤 · x` of vectors that
+`dμ_x` sends into the tangent space of the coadjoint orbit `O` at `μ(x)`: the tangent space of the
+preimage `μ⁻¹(O)`. It is the tangent image `dμ_x⁻¹(range dι_O)` of the first projection of any
+transverse fibre product, with the tangent image of `ι_O` at `o` computed by
+`Module.Dual.range_mfderiv_orbitMap_coadjointRepresentation_components`. -/
+theorem range_mfderiv_fst_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
+    (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
+    (b : Basis κ ℝ (GroupLieAlgebra I G)) (p : OrbitFiberProduct μ c b) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    LinearMap.range (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ
+        (Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (κ → ℝ)) → ℝ) I'
+      (fun p : OrbitFiberProduct μ c b ↦ p.val.1) p).toLinearMap =
+      (LinearMap.range (μ p.val.1).coadjointTangentMap).comap (h.differential p.val.1) := by
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  ext v
+  have hr := SetLike.ext_iff.1 (range_mfderiv_fst_transverseFiberProduct (by simp)
+    (h.toIsMomentMap.contMDiff_components b)
+    (c.contMDiff_orbitMap_coadjointRepresentation_components b)
+    (h.range_mfderiv_components_sup_eq_top hreg b) p) v
+  rw [← h.toIsMomentMap.exists_mfderiv_components_eq_iff b
+    ((components_eq_orbitMap_iff_apply_eq b).1 p.property)
+    (c.range_mfderiv_orbitMap_coadjointRepresentation_components b p.val.2) v]
+  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, Submodule.mem_comap,
+    ContinuousLinearMap.coe_comp, comp_apply] at hr ⊢
+  exact hr.trans (exists_congr fun _ ↦ eq_comm)
 
 /-! ### The diffeomorphism with the balanced product -/
 

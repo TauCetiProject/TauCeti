@@ -25,8 +25,10 @@ non-instance atlas, characterized by `TauCeti.isManifold_transverseFiberProduct`
 `TauCeti.isSmoothEmbedding_coe_transverseFiberProduct`, and
 `TauCeti.mem_range_mfderiv_coe_transverseFiberProduct_iff`. In terms of the two projections, a
 tangent vector of the fibre product is determined by its two components
-(`TauCeti.eq_zero_of_mfderiv_transverseFiberProduct`), and every pair `(u, w)` with
-`df u = dg w` arises (`TauCeti.exists_mfderiv_eq_of_transverseFiberProduct`).
+(`TauCeti.eq_zero_of_mfderiv_transverseFiberProduct`), these components `(u, w)` satisfy
+`df u = dg w`
+(`TauCeti.mfderiv_comp_mfderiv_fst_eq_mfderiv_comp_mfderiv_snd_transverseFiberProduct`), and
+every such pair arises (`TauCeti.exists_mfderiv_eq_of_transverseFiberProduct`).
 The existence-only form is
 `TauCeti.exists_isManifold_transverseFiberProduct_isSmoothEmbedding`.
 The embedding gives the smooth universal property via
@@ -217,6 +219,26 @@ theorem exists_mfderiv_eq_of_transverseFiberProduct :
     (u, w)).2 h
   exact ⟨ξ, by rw [hval.mfderiv_fst_apply]; exact congrArg Prod.fst hξ,
     by rw [hval.mfderiv_snd_apply]; exact congrArg Prod.snd hξ⟩
+
+/-- The differentials of the two projections of the transverse fibre product carry a tangent
+vector `ξ` to a pair `(u, w)` with `df u = dg w`. -/
+theorem mfderiv_comp_mfderiv_fst_eq_mfderiv_comp_mfderiv_snd_transverseFiberProduct :
+    letI := transverseFiberProductChartedSpace hn hf hg htrans
+    ∀ (p : {p : X × Y // f p.1 = g p.2})
+      (ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) p),
+      mfderiv IX IN f p.val.1 (mfderiv
+          𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IX
+          (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.1) p ξ) =
+        tangentSpaceCast IN (g p.val.2) (f p.val.1) (mfderiv IY IN g p.val.2 (mfderiv
+          𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY
+          (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) p ξ)) := by
+  let := transverseFiberProductChartedSpace hn hf hg htrans
+  intro p ξ
+  have hval := ((isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans).contMDiff
+    p).mdifferentiableAt (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))
+  rw [hval.mfderiv_fst_apply, hval.mfderiv_snd_apply]
+  exact (mem_range_mfderiv_coe_transverseFiberProduct_iff hn hf hg htrans p _).1
+    (LinearMap.mem_range_self _ ξ)
 
 /-- A tangent vector of the transverse fibre product is zero when the differentials of both
 projections vanish on it. -/
