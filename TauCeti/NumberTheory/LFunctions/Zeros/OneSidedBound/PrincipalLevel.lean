@@ -60,19 +60,19 @@ theorem exists_prime_pair_log_mem_Icc_mul_complexConj_eq (K : Type*)
   refine ⟨p, q, hpq, hp', hq', hpQ, hqQ, hpI, hqI, z, ?_⟩
   simp only [← z.intCast_norm_eq_mul_complexConj, hz, Int.cast_mul, Int.cast_natCast]
 
-/-- At large scale `W`, the logarithmic search over `[W, W⁷]` supplies the principal-level
-prime pair in `[b¹⁰, b¹¹]` with its integral norm witness if `W⁶ ≤ log b` and `11 log b ≤ W⁷`.
-In particular the scale `W⁶ ≤ log b ≤ W⁶ + 1` fits. The threshold in `W` does not depend on `Q`. -/
+/-- At large scale `W`, the logarithmic search over `[W, B]` supplies the principal-level
+prime pair in `[b¹⁰, b¹¹]` with its integral norm witness when `W⁶ ≤ log b` and `11 log b ≤ B`.
+The threshold in `W` depends on `K`, not on `b`, `B` or `Q`. -/
 theorem eventually_exists_auxiliary_prime_pair_norm (K : Type*)
     [Field K] [NumberField K] [IsCMField K] [Algebra.IsQuadraticExtension ℚ K] :
-    ∀ᶠ W : ℝ in atTop, ∀ b Q : ℕ, W ^ 6 ≤ Real.log b → 11 * Real.log b ≤ W ^ 7 →
+    ∀ᶠ W : ℝ in atTop, ∀ (b Q : ℕ) (B : ℝ), W ^ 6 ≤ Real.log b → 11 * Real.log b ≤ B →
       (discr K).natAbs ∣ Q →
-      (∀ U ∈ Icc W (W ^ 7), ∃ p : ℕ,
+      (∀ U ∈ Icc W B, ∃ p : ℕ,
         p.Prime ∧ p ≡ 1 [MOD Q] ∧ Real.log p ∈ Icc U (U + W)) →
       ∃ p q : ℕ, p ≠ q ∧ p.Prime ∧ q.Prime ∧ p ≡ 1 [MOD Q] ∧ q ≡ 1 [MOD Q] ∧
         p ∈ Icc (b ^ 10) (b ^ 11) ∧ q ∈ Icc (b ^ 10) (b ^ 11) ∧
         ∃ z : 𝓞 K, z * ringOfIntegersComplexConj K z = (p : 𝓞 K) * (q : 𝓞 K) := by
-  filter_upwards [eventually_log_window_bounds (classNumber K + 1)] with W hW b Q hlo hend hQ hwin
+  filter_upwards [eventually_log_window_bounds (classNumber K + 1)] with W hW b Q B hlo hend hQ hwin
   obtain ⟨hW₁, hstart, hroom, _⟩ := hW (W ^ 6) le_rfl (by linarith)
   have hWp := zero_lt_one.trans_le hW₁
   obtain ⟨p, q, hpq, hp, hq, hpQ, hqQ, hpI, hqI, z, hz⟩ :=
