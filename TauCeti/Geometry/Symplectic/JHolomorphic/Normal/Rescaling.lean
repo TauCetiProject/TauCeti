@@ -75,11 +75,12 @@ tubular map defined on a disk bundle. This file proves:
   (`TauCeti.exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen`,
   `TauCeti.exists_forall_norm_normalDilation_sub_normalLinearization_le`). At each point the
   constant is explicit:
-  `‖δ_a^* J(z, W) - J_N(z, W)‖ ≤ |a| (‖J(z, a W)‖ + M₁ ‖W‖ + (M₂ / 2) ‖W‖²)` for bounds `M₁`,
-  `M₂` on the first and second derivatives of `J` on the normal segment from `(z, 0)` to
-  `(z, a W)` (`TauCeti.norm_normalDilation_sub_normalLinearization_le`). The second
-  derivative enters through the block `E → N`, where `a⁻¹ J_NE(z, a W)` differs from
-  `∂_W J_NE(z, 0)[W]` by a Taylor remainder divided by `a`;
+  `‖δ_a^* J(z, W) - J_N(z, W)‖ ≤ |a| (‖J(z, a W)‖ + M₁ ‖W‖ + (M₂ / 2) ‖W‖²)` for a bound `M₁`
+  on the derivative of `J` on the normal segment from `(z, 0)` to `(z, a W)` and a Lipschitz
+  constant `M₂` of that derivative relative to `(z, 0)`, such as a bound on the second derivative
+  (`TauCeti.norm_normalDilation_sub_normalLinearization_le`). The constant `M₂` enters through the
+  block `E → N`, where `a⁻¹ J_NE(z, a W)` differs from `∂_W J_NE(z, 0)[W]` by a Taylor remainder
+  divided by `a`;
 * the base block of `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
   (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the base block of `J` on the
   zero section uniformly on compact sets as `a → 0` when `J` is only continuous along the zero
@@ -488,21 +489,21 @@ private theorem norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le
   have h₄ : 0 ≤ |a| * ‖A‖ * ‖v‖ := by positivity
   exact max_le (hfst.trans (by nlinarith)) (hsnd.trans (by nlinarith))
 
-/-- **The normal dilations converge to the normal linearization at rate `O(a)`.** Let `J` and its
-derivative be differentiable on the normal segment from `(z, 0)` to `(z, a W)`, with first and
-second derivatives of norms at most `M₁` and `M₂` there, and let `J(z, 0)` preserve `E × {0}`.
-Then for `a ≠ 0`,
+/-- **The normal dilations converge to the normal linearization at rate `O(a)`.** Let `J` be
+differentiable on the normal segment from `(z, 0)` to `(z, a W)`, with derivative of norm at most
+`M₁` there and moving by at most `M₂ ≥ 0` times the distance to `(z, 0)` (as when `M₂` bounds the
+second derivative), and let `J(z, 0)` preserve `E × {0}`. Then for `a ≠ 0`,
 
 `‖δ_a^* J(z, W) - J_N(z, W)‖ ≤ |a| (‖J(z, a W)‖ + M₁ ‖W‖ + (M₂ / 2) ‖W‖²)`.
 
 The block `E → N` of `δ_a^* J` is `a⁻¹ J_NE(z, a W)`, and its distance to `∂_W J_NE(z, 0)[W]` is
-the Taylor remainder of `J_NE` divided by `a`, which is where the second derivative enters. -/
+the Taylor remainder of `J_NE` divided by `a`, which is where `M₂` enters. -/
 theorem norm_normalDilation_sub_normalLinearization_le {J : E × N → E × N →L[ℝ] E × N}
     {a M₁ M₂ : ℝ} {p : E × N} (ha : a ≠ 0)
     (hJ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2), DifferentiableAt ℝ J x)
-    (hJ' : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2), DifferentiableAt ℝ (fderiv ℝ J) x)
     (hM₁ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2), ‖fderiv ℝ J x‖ ≤ M₁)
-    (hM₂ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2), ‖iteratedFDeriv ℝ 2 J x‖ ≤ M₂)
+    (hM₂ : ∀ x ∈ segment ℝ (p.1, 0) (p.1, a • p.2),
+      ‖fderiv ℝ J x - fderiv ℝ J (p.1, 0)‖ ≤ M₂ * ‖x - (p.1, 0)‖) (hM₂₀ : 0 ≤ M₂)
     (hJ₀ : ∀ v, (J (p.1, 0) (v, 0)).2 = 0) :
     ‖normalDilation J a p - normalLinearization J p‖ ≤
       |a| * (‖J (p.1, a • p.2)‖ + M₁ * ‖p.2‖ + M₂ / 2 * ‖p.2‖ ^ 2) := by
@@ -514,51 +515,15 @@ theorem norm_normalDilation_sub_normalLinearization_le {J : E × N → E × N �
   have haW : ‖((0 : E), a • W)‖ = |a| * ‖W‖ := by
     rw [Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _), norm_smul, Real.norm_eq_abs]
   refine norm_normalDilation_sub_normalLinearization_le_of_norm_sub_le ha hJ₀
-    ((norm_nonneg (fderiv ℝ J (z, 0))).trans (hM₁ _ h0))
-    ((norm_nonneg (iteratedFDeriv ℝ 2 J (z, 0))).trans (hM₂ _ h0)) ?_ ?_
+    ((norm_nonneg (fderiv ℝ J (z, 0))).trans (hM₁ _ h0)) hM₂₀ ?_ ?_
   · -- The increment of `J` along the segment, by the mean value inequality.
     have h := hs.norm_image_sub_le_of_norm_fderiv_le hJ hM₁ h0 h1
     rw [hd, haW] at h
     linarith
-  · -- The Taylor remainder, by the quadratic mean value inequality: the derivative of `J` moves by
-    -- at most `M₂` times the distance to `(z, 0)`.
-    have hLip (x : E × N) (hx : x ∈ segment ℝ ((z, 0) : E × N) (z, a • W)) :
-        ‖fderiv ℝ J x - fderiv ℝ J (z, 0)‖ ≤ M₂ * ‖x - (z, 0)‖ :=
-      hs.norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ) (f := fderiv ℝ J) (C := M₂) hJ'
-        (fun y hy ↦ by
-          rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-          exact hM₂ y hy) h0 hx
-    have h := hs.norm_image_sub_sub_le_of_norm_fderiv_sub_le hJ hLip h0 h1
+  · -- The Taylor remainder, by the quadratic mean value inequality.
+    have h := hs.norm_image_sub_sub_le_of_norm_fderiv_sub_le hJ hM₂ h0 h1
     rw [hd, sub_self, norm_zero, zero_add, haW] at h
     linarith [show M₂ / 2 * (|a| * ‖W‖) * (|a| * ‖W‖) = |a| * (|a| * (M₂ / 2 * ‖W‖ ^ 2)) by ring]
-
-/-- Over a compact set `K` of points whose zero-section points lie in an open set `Ω`, the normal
-segments from `(z, 0)` to `(z, a W)`, `(z, W) ∈ K`, lie in one compact subset of `Ω` for all small
-`a`. -/
-private theorem exists_isCompact_forall_segment_subset {Ω K : Set (E × N)} (hΩ : IsOpen Ω)
-    (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
-    ∃ S ⊆ Ω, IsCompact S ∧ ∀ᶠ a in 𝓝 (0 : ℝ), ∀ p ∈ K, segment ℝ (p.1, 0) (p.1, a • p.2) ⊆ S := by
-  have hU : ∀ᶠ a in 𝓝 (0 : ℝ), ∀ p ∈ K, (a, p) ∈ normalSegmentDomain Ω :=
-    hK.eventually_forall_of_forall_eventually fun p hp ↦
-      (isOpen_normalSegmentDomain hΩ).mem_nhds (zero_mem_normalSegmentDomain (hKΩ p hp))
-  obtain ⟨ε, hε, hεU⟩ := Metric.eventually_nhds_iff.1 hU
-  refine ⟨(fun q : ℝ × (E × N) ↦ ((q.2.1, q.1 • q.2.2) : E × N)) ''
-    (Icc (-(ε / 2)) (ε / 2) ×ˢ K), ?_, (isCompact_Icc.prod hK).image (by fun_prop), ?_⟩
-  · rintro _ ⟨⟨s, p⟩, ⟨hs, hp⟩, rfl⟩
-    have hs' : dist s 0 < ε := by
-      rw [Real.dist_eq, sub_zero, abs_lt]
-      constructor <;> linarith [hs.1, hs.2]
-    simpa using (mem_normalSegmentDomain.1 (hεU hs' p hp)) 1 (right_mem_Icc.2 zero_le_one)
-  · filter_upwards [Metric.closedBall_mem_nhds (0 : ℝ) (half_pos hε)] with a ha p hp
-    rw [Metric.mem_closedBall, Real.dist_eq, sub_zero] at ha
-    -- A point of the segment is `(z, (β a) W)` with `0 ≤ β ≤ 1`.
-    rintro _ ⟨α, β, hα, hβ, hαβ, rfl⟩
-    refine ⟨(β * a, p), ⟨abs_le.1 ?_, hp⟩, ?_⟩
-    · rw [abs_mul, abs_of_nonneg hβ]
-      nlinarith [abs_nonneg a]
-    · ext
-      · simp [← add_smul, hαβ]
-      · simp [mul_smul]
 
 /-- **The normal dilations converge to the normal linearization at rate `O(a)`, uniformly on
 compact sets.** If `J` is `C²` on an open set `Ω` and the zero section is `J`-holomorphic where it
@@ -585,11 +550,19 @@ theorem exists_forall_norm_normalDilation_sub_normalLinearization_le_of_isOpen
   refine ⟨M₀ + max M₁ 0 * max R 0 + max M₂ 0 / 2 * max R 0 ^ 2, ?_⟩
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hseg] with a ha haS p hp
   have hx {x : E × N} (hx : x ∈ segment ℝ (p.1, 0) (p.1, a • p.2)) : x ∈ Ω := hSΩ (haS p hp hx)
-  have h := norm_normalDilation_sub_normalLinearization_le (M₁ := max M₁ 0) (M₂ := max M₂ 0) ha
+  -- On the segment, the derivative of `J` moves by at most `max M₂ 0` times the distance to
+  -- `(z, 0)`, by the mean value inequality for `fderiv ℝ J`.
+  have hLip (x : E × N) (hx' : x ∈ segment ℝ (p.1, 0) (p.1, a • p.2)) :
+      ‖fderiv ℝ J x - fderiv ℝ J (p.1, 0)‖ ≤ max M₂ 0 * ‖x - (p.1, 0)‖ :=
+    (convex_segment _ _).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ) (f := fderiv ℝ J)
+      (fun y hy ↦ (hJ₁.contDiffAt (hΩ.mem_nhds (hx hy))).differentiableAt (by norm_num))
+      (fun y hy ↦ by
+        rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+        exact (hM₂ y (haS p hp hy)).trans (le_max_left _ _))
+      (left_mem_segment ℝ _ _) hx'
+  have h := norm_normalDilation_sub_normalLinearization_le (M₁ := max M₁ 0) ha
     (fun x hx' ↦ (hJ.contDiffAt (hΩ.mem_nhds (hx hx'))).differentiableAt (by norm_num))
-    (fun x hx' ↦ (hJ₁.contDiffAt (hΩ.mem_nhds (hx hx'))).differentiableAt (by norm_num))
-    (fun x hx' ↦ (hM₁ x (haS p hp hx')).trans (le_max_left _ _))
-    (fun x hx' ↦ (hM₂ x (haS p hp hx')).trans (le_max_left _ _))
+    (fun x hx' ↦ (hM₁ x (haS p hp hx')).trans (le_max_left _ _)) hLip (le_max_right _ _)
     (hJ₀ p.1 (hKΩ p hp))
   have hJa : ‖J (p.1, a • p.2)‖ ≤ M₀ := hM₀ _ (haS p hp (right_mem_segment ℝ _ _))
   have hW : ‖p.2‖ ≤ max R 0 := (hR p hp).trans (le_max_left _ _)
