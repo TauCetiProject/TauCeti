@@ -14,6 +14,8 @@ import Mathlib.Topology.Homotopy.Contractible
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Complex.CauchyRiemann.NearlyHolomorphic
+import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Analysis.Complex.Conformal.LocalIndex
 
 /-!
@@ -60,6 +62,16 @@ vanishing of `φ` at the points of `σ⁻¹(Z)`
 multiplicities of the disc with `Z`, and it is positive as soon as `σ` meets `Z`
 (`ContinuousMap.zeroCharge_pos`).
 
+The same positivity holds when `f ∘ σ` only extends to a `C¹` function `b` satisfying a
+Cauchy–Riemann inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` with `M` locally bounded
+(`ContinuousMap.zeroCharge_pos_of_norm_le`). By the similarity principle
+(`TauCeti.exists_similarity_of_norm_le`) such a `b` is, near each of its zeros, a continuous
+nonvanishing function times a holomorphic one, so its zeros are isolated unless it vanishes
+identically, and each has positive local index. This is the case of the normal coordinate of a
+pseudoholomorphic disc in coordinates adapted to another, immersed, pseudoholomorphic disc, for an
+almost complex structure that need not be integrable
+(`TauCeti.zeroCharge_pos_of_cauchyRiemann`).
+
 Now let `Y` carry an almost complex structure `J` and let `f` be `J`-holomorphic. If `σ` is the
 restriction of a map `u` that is `J`-holomorphic on the unit disc, then `f ∘ u` is holomorphic
 (`TauCeti.IsPseudoholomorphicOn.differentiableOn_comp`). Hence the zero charges form a positive
@@ -87,12 +99,16 @@ hypothesis that `σ` is nonconstant is needed.
 * `ContinuousMap.zeroCharge_eq_sum_analyticOrderNatAt`: if `f ∘ σ` extends holomorphically, the
   zero charge is the sum of the orders of vanishing.
 * `ContinuousMap.zeroCharge_pos`: it is positive on such discs meeting `Z`.
+* `ContinuousMap.zeroCharge_pos_of_norm_le`: it is positive on discs meeting `Z` along which
+  `f` satisfies a Cauchy–Riemann inequality.
 
 ## References
 
 * C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
   J. Amer. Math. Soc. 9 (1996), 845–918, Section 6.
 * A. Dold, *Lectures on Algebraic Topology*, Springer, 1972, Chapter VIII, §4.
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  AMS Colloquium Publications 52, 2012, Section 2.3 (the similarity principle).
 -/
 
 public section
@@ -375,6 +391,91 @@ theorem zeroCharge_pos {f : C(Y, ℂ)} {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻�
   exact Nat.cast_pos.2 (ENat.toNat_pos ((han x hx).analyticOrderAt_ne_zero.2 hx0)
     (han.analyticOrderAt_ne_top_of_isPreconnected (convex_ball _ _).isPreconnected hw hx
       (by simp [(han w hw).analyticOrderAt_eq_zero.2 hφw])))
+
+end ContinuousMap
+
+/-! ### Discs along which `f` satisfies a Cauchy–Riemann inequality -/
+
+namespace ContinuousMap
+
+variable {f : C(Y, ℂ)} {σ : C(𝔻, Y)} {b : ℂ → ℂ} {M : ℂ → ℝ}
+
+/-- At a zero `z` of `f ∘ σ`, if `f ∘ σ` extends near `z` to `b = v * s` with `v` continuous and
+nonzero at `z` and `s` analytic at `z`, and the zeros of `b` do not accumulate at `z`, the local
+index of `f ∘ σ` at `z` is positive. -/
+private theorem localIndex_pos_of_eventually_eq_mul (hb : ∀ z : 𝔻, b z = f (σ z)) {z : 𝔻}
+    (hz : f (σ z) = 0) (hiso : ∀ᶠ w in 𝓝[≠] (z : ℂ), b w ≠ 0) {v s : ℂ → ℂ}
+    (hv : ContinuousAt v z) (hv₀ : v z ≠ 0) (hs : AnalyticAt ℂ s z)
+    (hbvs : ∀ᶠ w in 𝓝 (z : ℂ), b w = v w * s w) :
+    0 < ((complexHomologicalOrientation ℂ).comap Complex.UnitDisc.isOpenEmbedding_coe).localIndex
+      (complexHomologicalOrientation ℂ) (f.comp σ) z := by
+  have hs₀ : s z = 0 := by
+    have h := hbvs.self_of_nhds
+    rw [hb z, hz] at h
+    exact (mul_eq_zero.1 h.symm).resolve_left hv₀
+  have key := HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_of_eventually_eq_mul
+    (complexHomologicalOrientation ℂ) Complex.UnitDisc.isOpenEmbedding_coe IsOpenEmbedding.id
+    (f := f.comp σ) (φ := b) (x := z) (Eventually.of_forall fun w ↦ hb w) hv hv₀ hs hs₀ hbvs
+  rw [HomologicalOrientation.comap_id] at key
+  rw [key, Nat.cast_pos]
+  -- The order of `s` at `z` is positive since `s z = 0`, and finite since otherwise `s`, hence
+  -- `b`, would vanish near `z`, whose zeros do not accumulate there.
+  refine ENat.toNat_pos (hs.analyticOrderAt_ne_zero.2 hs₀) fun htop ↦ ?_
+  obtain ⟨w, hw, hbw⟩ := ((eventually_nhdsWithin_of_eventually_nhds
+    ((analyticOrderAt_eq_top.1 htop).and hbvs)).and hiso).exists
+  exact hbw (by rw [hw.2, hw.1, mul_zero])
+
+/-- **Positivity of the zero charge for nearly holomorphic discs.** Suppose `f ∘ σ` extends to a
+function `b` of class `C¹` on the unit disc satisfying the Cauchy–Riemann inequality
+`‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖`, for a function `M` bounded above near every point of the disc. If
+`σ⁻¹(f⁻¹(0))` is compact and nonempty, the zero charge of `σ` is positive.
+
+By the similarity principle, `b` is near each of its zeros a continuous nonvanishing function
+times a holomorphic one, and its zeros are isolated unless it vanishes identically, which
+compactness excludes; so each zero has positive local index. For `M = 0` this is
+`ContinuousMap.zeroCharge_pos`. The inequality holds for the normal component of a
+pseudoholomorphic disc in coordinates adapted to another, immersed, one, and this theorem is then
+the positivity of their intersections. -/
+theorem zeroCharge_pos_of_norm_le (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
+    (hb : ∀ z : 𝔻, b z = f (σ z)) (hbC : ContDiffOn ℝ 1 b (ball 0 1))
+    (hM : ∀ z ∈ ball (0 : ℂ) 1, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
+      M z * ‖b z‖)
+    (hZ : ∃ z, f (σ z) = 0) : 0 < f.zeroCharge σ := by
+  -- The zeros of `b` do not accumulate in the disc: otherwise `b` would vanish on it, and the
+  -- whole noncompact disc would be the preimage of the zero set of `f`.
+  have hiso (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : ∀ᶠ w in 𝓝[≠] z, b w ≠ 0 := by
+    by_contra hfreq
+    have h0 := eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le isOpen_ball
+      (convex_ball _ _).isPreconnected hbC hM hle hz (by simpa using hfreq)
+    have huniv : σ ⁻¹' (f ⁻¹' {0}) = univ := eq_univ_of_forall fun w ↦ by
+      simpa [← hb w] using h0 (mem_ball_zero_iff.2 w.norm_lt_one)
+    exact noncompact_univ 𝔻 (huniv ▸ h)
+  -- Hence the image of the preimage in `ℂ` is compact and discrete, so finite.
+  have himg : IsDiscrete (((↑) : 𝔻 → ℂ) '' (σ ⁻¹' (f ⁻¹' {0}))) := by
+    refine isDiscrete_iff_nhdsNE.2 fun _ ⟨z, _, hzx⟩ ↦ inf_principal_eq_bot.2 ?_
+    subst hzx
+    filter_upwards [hiso z (mem_ball_zero_iff.2 z.norm_lt_one)] with w hw ⟨w', hw', hww'⟩
+    subst hww'
+    exact hw (by simpa [hb w'] using hw')
+  have hfin : (σ ⁻¹' (f ⁻¹' {0})).Finite :=
+    ((h.image Complex.UnitDisc.continuous_coe).finite himg).of_finite_image
+      Complex.UnitDisc.coe_injective.injOn
+  have hfib : (f.comp σ) ⁻¹' {0} = σ ⁻¹' (f ⁻¹' {0}) := rfl
+  rw [ContinuousMap.zeroCharge, HomologicalOrientation.localDegree_eq_sum_localIndex _ _ _
+    Complex.finrank_real_complex _ (hfib ▸ hfin)]
+  obtain ⟨z₀, hz₀⟩ := hZ
+  refine Finset.sum_pos (fun z hz ↦ ?_) ⟨z₀, by simpa using hz₀⟩
+  have hz' : f (σ z) = 0 := by simpa using hz
+  -- Near `z`, `b` is a nonvanishing continuous function times a holomorphic one.
+  obtain ⟨r, hr, -, Φ, s, hΦ, hΦu, hs, hbs⟩ := exists_similarity_of_norm_le isOpen_ball hbC hM hle
+    (mem_ball_zero_iff.2 z.norm_lt_one)
+  have hball : ball (z : ℂ) r ∈ 𝓝 (z : ℂ) := ball_mem_nhds _ hr
+  obtain ⟨v, s', hv, hv₀, hs', hbvs⟩ := exists_eventually_eq_mul_of_eventually_eq_clm_apply
+    (hΦ.continuousAt hball) (hΦu z (mem_ball_self hr)) (hs.analyticAt hball)
+    (eventually_of_mem hball hbs)
+  exact localIndex_pos_of_eventually_eq_mul hb hz' (hiso z (mem_ball_zero_iff.2 z.norm_lt_one))
+    hv hv₀ hs' hbvs
 
 end ContinuousMap
 

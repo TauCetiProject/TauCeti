@@ -78,8 +78,8 @@ In the integrable model, `V = ℂ × N` with the structure `i`, the disc `a ↦ 
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`: in the chart, the
   structure is standard along the disc.
 * `TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`: the normal Lipschitz control.
-* `TauCeti.norm_snd_add_I_smul_snd_le`: the resulting Cauchy–Riemann inequality for the normal
-  component.
+* `TauCeti.norm_snd_add_I_smul_snd_le`, `TauCeti.norm_fderiv_snd_add_I_smul_le`: the resulting
+  Cauchy–Riemann inequality for the normal component.
 
 ## References
 
@@ -352,6 +352,22 @@ theorem norm_snd_add_I_smul_snd_le {A : ℂ × N →L[ℝ] ℂ × N} {ε : ℝ}
     _ ≤ ‖A - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ * ‖D I‖ :=
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ ε * ‖D I‖ := mul_le_mul_of_nonneg_right hA (norm_nonneg _)
+
+/-- **The normal Cauchy–Riemann inequality along a disc.** In coordinates `ℂ × N`, let `v` be
+differentiable at `w` and solve `∂ₛv + A ∂ₜv = 0` there, for an endomorphism `A` within
+`C ‖(v w).2‖` of multiplication by `i`. Then its normal component `b = (v ·).2` satisfies
+`‖∂ₛb + i ∂ₜb‖ ≤ C ‖∂ₜv‖ ‖b‖` at `w`. With `A` the structure read in the adapted chart of
+`TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`, this is the inequality to which
+the similarity principle applies. -/
+theorem norm_fderiv_snd_add_I_smul_le {v : ℂ → ℂ × N} {w : ℂ} {A : ℂ × N →L[ℝ] ℂ × N} {C : ℝ}
+    (hv : DifferentiableAt ℝ v w) (hCR : fderiv ℝ v w 1 + A (fderiv ℝ v w I) = 0)
+    (hA : ‖A - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(v w).2‖) :
+    ‖fderiv ℝ (fun w ↦ (v w).2) w 1 + I • fderiv ℝ (fun w ↦ (v w).2) w I‖ ≤
+      C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by
+  rw [hv.hasFDerivAt.snd.fderiv]
+  calc ‖(fderiv ℝ v w 1).2 + I • (fderiv ℝ v w I).2‖
+      ≤ C * ‖(v w).2‖ * ‖fderiv ℝ v w I‖ := norm_snd_add_I_smul_snd_le hA hCR
+    _ = C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by ring
 
 /-! ### Check: the integrable model -/
 

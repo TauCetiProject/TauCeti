@@ -88,11 +88,8 @@ private theorem eqOn_zero_snd_of_cauchyRiemann {Ω : Set ℂ} (hΩ : IsOpen Ω)
       continuousAt_const.mul ((((hv.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply
         continuousOn_const).continuousAt (hΩ.mem_nhds hw)).norm)
     exact ⟨_, hcont.eventually_mem (Iic_mem_nhds (lt_add_one _))⟩
-  · rw [((hv.differentiableOn one_ne_zero w hw).differentiableAt
-      (hΩ.mem_nhds hw)).hasFDerivAt.snd.fderiv]
-    calc ‖(fderiv ℝ v w 1).2 + I • (fderiv ℝ v w I).2‖
-        ≤ C * ‖(v w).2‖ * ‖fderiv ℝ v w I‖ := norm_snd_add_I_smul_snd_le (hA w hw) (hCR w hw)
-      _ = C * ‖fderiv ℝ v w I‖ * ‖(v w).2‖ := by ring
+  · exact norm_fderiv_snd_add_I_smul_le ((hv.differentiableOn one_ne_zero w hw).differentiableAt
+      (hΩ.mem_nhds hw)) (hCR w hw) (hA w hw)
 
 end Normal
 
