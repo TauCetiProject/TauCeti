@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -17,9 +18,10 @@ import TauCeti.Topology.UrysohnsLemma
 /-!
 # Compactness of convolution after multiplication on `Lᵖ`
 
-Let `E` be a finite-dimensional real inner product space, `g : E → ℂ` integrable and `ψ : E → ℂ`
-continuous. The operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(E, F)` is the integral operator with kernel
-`(x, y) ↦ g (x - y) ψ y` (`TauCeti.convMulKernel`). When `ψ` is bounded by `C` and `∫ ‖g‖ ≤ I`,
+Let `E` be a locally compact, second-countable normed additive group with an additive Haar measure
+`μ`, `𝕜` be `ℝ` or `ℂ`, `g : E → 𝕜` integrable and `ψ : E → 𝕜` continuous. The operator
+`w ↦ g ⋆ (ψ w)` on `Lᵖ(μ, F)` is the integral operator with kernel `(x, y) ↦ g (x - y) ψ y`
+(`TauCeti.convMulKernel`). When `ψ` is bounded by `C` and `∫ ‖g‖ ≤ I`,
 the row and column integrals of this kernel are at most `C * I`, so by Schur's test it is bounded
 with norm at most `C * I`. When `F` is finite-dimensional and `ψ` tends to `0` at infinity, it is a
 **compact operator**.
@@ -56,26 +58,30 @@ open scoped ENNReal NNReal Topology Pointwise
 
 namespace TauCeti
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+variable {𝕜 E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+
+section NontriviallyNormedField
+
+variable [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
 
 variable (F) in
 /-- The kernel `(x, y) ↦ g (x - y) ψ y` of `w ↦ g ⋆ (ψ w)`, acting on `F` by scalars. -/
-def convMulKernel (g ψ : E → ℂ) (x y : E) : F →L[ℂ] F :=
-  (g (x - y) * ψ y) • ContinuousLinearMap.id ℂ F
+def convMulKernel (g ψ : E → 𝕜) (x y : E) : F →L[𝕜] F :=
+  (g (x - y) * ψ y) • ContinuousLinearMap.id 𝕜 F
 
 /-- The kernel of `w ↦ g ⋆ (ψ w)` at `(x, y)` multiplies by the scalar `g (x - y) ψ y`. -/
 @[simp]
-theorem convMulKernel_apply (g ψ : E → ℂ) (x y : E) (w : F) :
+theorem convMulKernel_apply (g ψ : E → 𝕜) (x y : E) (w : F) :
     convMulKernel F g ψ x y w = (g (x - y) * ψ y) • w := by
   simp [convMulKernel]
 
 /-- The kernel of `w ↦ g ⋆ (ψ w)` is bounded by `‖g (x - y)‖ ‖ψ y‖`. -/
-theorem enorm_convMulKernel_le (g ψ : E → ℂ) (x y : E) :
+theorem enorm_convMulKernel_le (g ψ : E → 𝕜) (x y : E) :
     ‖convMulKernel F g ψ x y‖ₑ ≤ ‖g (x - y)‖ₑ * ‖ψ y‖ₑ := by
   have h : ‖convMulKernel F g ψ x y‖ ≤ ‖g (x - y)‖ * ‖ψ y‖ := calc
-    ‖convMulKernel F g ψ x y‖ ≤ ‖g (x - y) * ψ y‖ * ‖ContinuousLinearMap.id ℂ F‖ := by
+    ‖convMulKernel F g ψ x y‖ ≤ ‖g (x - y) * ψ y‖ * ‖ContinuousLinearMap.id 𝕜 F‖ := by
       rw [convMulKernel]
-      exact norm_smul_le (g (x - y) * ψ y) (ContinuousLinearMap.id ℂ F)
+      exact norm_smul_le (g (x - y) * ψ y) (ContinuousLinearMap.id 𝕜 F)
     _ ≤ ‖g (x - y) * ψ y‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_id_le
     _ = ‖g (x - y)‖ * ‖ψ y‖ := by rw [mul_one, norm_mul]
   rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
@@ -83,7 +89,7 @@ theorem enorm_convMulKernel_le (g ψ : E → ℂ) (x y : E) :
 
 /-- The kernel of `w ↦ g ⋆ (ψ w)` is linear in `g`: the difference of the kernels for `g₁` and
 `g₂` is the kernel for `g₁ - g₂`. -/
-theorem convMulKernel_sub_left (g₁ g₂ ψ : E → ℂ) :
+theorem convMulKernel_sub_left (g₁ g₂ ψ : E → 𝕜) :
     convMulKernel F (g₁ - g₂) ψ =
       fun x y ↦ convMulKernel F g₁ ψ x y - convMulKernel F g₂ ψ x y := by
   funext x y
@@ -91,7 +97,7 @@ theorem convMulKernel_sub_left (g₁ g₂ ψ : E → ℂ) :
 
 /-- The kernel of `w ↦ g ⋆ (ψ w)` is linear in `ψ`: the difference of the kernels for `ψ₁` and
 `ψ₂` is the kernel for `ψ₁ - ψ₂`. -/
-theorem convMulKernel_sub_right (g ψ₁ ψ₂ : E → ℂ) :
+theorem convMulKernel_sub_right (g ψ₁ ψ₂ : E → 𝕜) :
     convMulKernel F g (ψ₁ - ψ₂) =
       fun x y ↦ convMulKernel F g ψ₁ x y - convMulKernel F g ψ₂ x y := by
   funext x y
@@ -99,57 +105,61 @@ theorem convMulKernel_sub_right (g ψ₁ ψ₂ : E → ℂ) :
 
 /-- The kernel of `w ↦ g ⋆ (ψ w)` vanishes at `(x, y)` unless `y ∈ tsupport ψ` and
 `x ∈ tsupport g + tsupport ψ`. -/
-theorem convMulKernel_eq_zero {g ψ : E → ℂ} {x y : E}
+theorem convMulKernel_eq_zero {g ψ : E → 𝕜} {x y : E}
     (h : (x, y) ∉ (tsupport g + tsupport ψ) ×ˢ tsupport ψ) : convMulKernel F g ψ x y = 0 := by
   by_cases hy : y ∈ tsupport ψ
   · have hx : x - y ∉ tsupport g := fun hx ↦ h ⟨by simpa using add_mem_add hx hy, hy⟩
     simp [convMulKernel, image_eq_zero_of_notMem_tsupport hx]
   · simp [convMulKernel, image_eq_zero_of_notMem_tsupport hy]
 
-variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+end NontriviallyNormedField
+
+variable [RCLike 𝕜] [NormedSpace 𝕜 F] [LocallyCompactSpace E] [SecondCountableTopology E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- The kernel of `w ↦ g ⋆ (ψ w)` is a.e. strongly measurable for `g` a.e. strongly measurable and
 `ψ` continuous. -/
-theorem aestronglyMeasurable_convMulKernel {g ψ : E → ℂ} (hg : AEStronglyMeasurable g volume)
+theorem aestronglyMeasurable_convMulKernel {g ψ : E → 𝕜} (hg : AEStronglyMeasurable g μ)
     (hψ : Continuous ψ) :
-    AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (volume.prod volume) := by
-  have h₁ : AEStronglyMeasurable (fun z : E × E ↦ g (z.1 - z.2)) (volume.prod volume) :=
-    hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub volume volume)
-  have h₂ : AEStronglyMeasurable (fun z : E × E ↦ ψ z.2) (volume.prod volume) :=
+    AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (μ.prod μ) := by
+  have h₁ : AEStronglyMeasurable (fun z : E × E ↦ g (z.1 - z.2)) (μ.prod μ) :=
+    hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub μ μ)
+  have h₂ : AEStronglyMeasurable (fun z : E × E ↦ ψ z.2) (μ.prod μ) :=
     (hψ.comp continuous_snd).aestronglyMeasurable
   exact (h₁.mul h₂).smul aestronglyMeasurable_const
 
 /-- **Schur bounds for `w ↦ g ⋆ (ψ w)`.** If `‖ψ‖ ≤ C` and `∫ ‖g‖ ≤ I`, the row and the column
 integrals of the kernel `g (x - y) ψ y` are at most `C * I`, by translation invariance. -/
-theorem ae_lintegral_enorm_convMulKernel_le {g ψ : E → ℂ} {C I : ℝ≥0}
-    (hψ : ∀ y, ‖ψ y‖ ≤ C) (hg : ∫⁻ z, ‖g z‖ₑ ≤ I) :
-    (∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ≤ ((C * I : ℝ≥0) : ℝ≥0∞)) ∧
-      ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ≤ ((C * I : ℝ≥0) : ℝ≥0∞) := by
+theorem ae_lintegral_enorm_convMulKernel_le {g ψ : E → 𝕜} {C I : ℝ≥0}
+    (hψ : ∀ y, ‖ψ y‖ ≤ C) (hg : ∫⁻ z, ‖g z‖ₑ ∂μ ≤ I) :
+    (∀ᵐ x ∂μ, ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ∂μ ≤ ((C * I : ℝ≥0) : ℝ≥0∞)) ∧
+      ∀ᵐ y ∂μ, ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ∂μ ≤ ((C * I : ℝ≥0) : ℝ≥0∞) := by
   -- Both integrals are bounded by `C` times a translate of `∫ ‖g‖`.
-  have hbd (f : E → E × E) (hf : ∫⁻ z, ‖g ((f z).1 - (f z).2)‖ₑ = ∫⁻ z, ‖g z‖ₑ) :
-      ∫⁻ z, ‖convMulKernel F g ψ (f z).1 (f z).2‖ₑ ≤ ((C * I : ℝ≥0) : ℝ≥0∞) := calc
-    ∫⁻ z, ‖convMulKernel F g ψ (f z).1 (f z).2‖ₑ ≤ ∫⁻ z, ‖g ((f z).1 - (f z).2)‖ₑ * C :=
+  have hbd (f : E → E × E) (hf : ∫⁻ z, ‖g ((f z).1 - (f z).2)‖ₑ ∂μ = ∫⁻ z, ‖g z‖ₑ ∂μ) :
+      ∫⁻ z, ‖convMulKernel F g ψ (f z).1 (f z).2‖ₑ ∂μ ≤ ((C * I : ℝ≥0) : ℝ≥0∞) := calc
+    ∫⁻ z, ‖convMulKernel F g ψ (f z).1 (f z).2‖ₑ ∂μ ≤
+        ∫⁻ z, ‖g ((f z).1 - (f z).2)‖ₑ * C ∂μ :=
       lintegral_mono fun z ↦ (enorm_convMulKernel_le g ψ _ _).trans
         (mul_le_mul_right (eNorm_le_coe.2 (by exact_mod_cast hψ _)) _)
-    _ = (∫⁻ z, ‖g z‖ₑ) * C := by rw [lintegral_mul_const' _ _ ENNReal.coe_ne_top, hf]
+    _ = (∫⁻ z, ‖g z‖ₑ ∂μ) * C := by rw [lintegral_mul_const' _ _ ENNReal.coe_ne_top, hf]
     _ ≤ I * C := by gcongr
     _ = ((C * I : ℝ≥0) : ℝ≥0∞) := by push_cast; ring
   exact ⟨.of_forall fun x ↦ hbd (fun y ↦ (x, y)) (lintegral_sub_left_eq_self (‖g ·‖ₑ) x),
     .of_forall fun y ↦ hbd (fun x ↦ (x, y)) (lintegral_sub_right_eq_self (‖g ·‖ₑ) y)⟩
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable [NormedSpace ℝ F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Two integral operators whose kernels differ by the kernel of `w ↦ g ⋆ (ψ w)`, with `‖ψ‖ ≤ C`
 and `∫ ‖g‖ ≤ I`, are at distance at most `C * I`. -/
-private theorem norm_integralOperatorLp_sub_le {K₁ K₂ : E → E → F →L[ℂ] F} {g ψ : E → ℂ}
+private theorem norm_integralOperatorLp_sub_le {K₁ K₂ : E → E → F →L[𝕜] F} {g ψ : E → 𝕜}
     {C I : ℝ≥0} (hK : convMulKernel F g ψ = fun x y ↦ K₁ x y - K₂ x y)
-    (hg : AEStronglyMeasurable g volume) (hψc : Continuous ψ) (hψ : ∀ y, ‖ψ y‖ ≤ C)
-    (hgI : ∫⁻ z, ‖g z‖ₑ ≤ I) {hK₁ : AEStronglyMeasurable (uncurry K₁) (volume.prod volume)}
-    {A₁ B₁ : ℝ≥0} {hA₁ : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖K₁ x y‖ₑ ≤ A₁}
-    {hB₁ : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖K₁ x y‖ₑ ≤ B₁}
-    {hK₂ : AEStronglyMeasurable (uncurry K₂) (volume.prod volume)} {A₂ B₂ : ℝ≥0}
-    {hA₂ : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖K₂ x y‖ₑ ≤ A₂}
-    {hB₂ : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖K₂ x y‖ₑ ≤ B₂} :
+    (hg : AEStronglyMeasurable g μ) (hψc : Continuous ψ) (hψ : ∀ y, ‖ψ y‖ ≤ C)
+    (hgI : ∫⁻ z, ‖g z‖ₑ ∂μ ≤ I) {hK₁ : AEStronglyMeasurable (uncurry K₁) (μ.prod μ)}
+    {A₁ B₁ : ℝ≥0} {hA₁ : ∀ᵐ x ∂μ, ∫⁻ y, ‖K₁ x y‖ₑ ∂μ ≤ A₁}
+    {hB₁ : ∀ᵐ y ∂μ, ∫⁻ x, ‖K₁ x y‖ₑ ∂μ ≤ B₁}
+    {hK₂ : AEStronglyMeasurable (uncurry K₂) (μ.prod μ)} {A₂ B₂ : ℝ≥0}
+    {hA₂ : ∀ᵐ x ∂μ, ∫⁻ y, ‖K₂ x y‖ₑ ∂μ ≤ A₂}
+    {hB₂ : ∀ᵐ y ∂μ, ∫⁻ x, ‖K₂ x y‖ₑ ∂μ ≤ B₂} :
     ‖integralOperatorLp K₁ p hK₁ hA₁ hB₁ - integralOperatorLp K₂ p hK₂ hA₂ hB₂‖ ≤ C * I := by
   have hK' := aestronglyMeasurable_convMulKernel (F := F) hg hψc
   have hAB := ae_lintegral_enorm_convMulKernel_le (F := F) hψ hgI
@@ -158,25 +168,25 @@ private theorem norm_integralOperatorLp_sub_le {K₁ K₂ : E → E → F →L[�
   exact norm_integralOperatorLp_le_max.trans_eq (by simp)
 
 /-- **Convolution after multiplication is compact on `Lᵖ`.** For an integrable `g` and a continuous
-compactly supported `ψ`, the operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(E, F)`, with kernel `g (x - y) ψ y`,
+compactly supported `ψ`, the operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(μ, F)`, with kernel `g (x - y) ψ y`,
 is compact. Its kernel is the limit in Schur norm of the continuous compactly supported kernels
 `gₙ (x - y) ψ y`, for continuous compactly supported `gₙ → g` in `L¹`. -/
-theorem isCompactOperator_integralOperatorLp_convMulKernel [FiniteDimensional ℂ F]
-    {g ψ : E → ℂ} (hg : Integrable g) (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
-    {hK : AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (volume.prod volume)} {A B : ℝ≥0}
-    {hA : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ≤ A}
-    {hB : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ≤ B} :
+theorem isCompactOperator_integralOperatorLp_convMulKernel [FiniteDimensional 𝕜 F]
+    {g ψ : E → 𝕜} (hg : Integrable g μ) (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
+    {hK : AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (μ.prod μ)} {A B : ℝ≥0}
+    {hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ∂μ ≤ A}
+    {hB : ∀ᵐ y ∂μ, ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ∂μ ≤ B} :
     IsCompactOperator (integralOperatorLp (convMulKernel F g ψ) p hK hA hB) := by
-  have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   obtain ⟨C₀, hC₀⟩ := hψ.bounded_above_of_compact_support hψc
   have hC : ∀ y, ‖ψ y‖ ≤ C₀.toNNReal := fun y ↦ (hC₀ y).trans (Real.le_coe_toNNReal C₀)
   -- Continuous compactly supported approximations `gₙ` of `g` in `L¹`.
   have happrox (n : ℕ) := hg.exists_hasCompactSupport_lintegral_sub_le
     (ε := (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0)) (by simp)
   choose g' hg'c hg'g hg'cont hg'int using happrox
-  have hfin (n : ℕ) : ∫⁻ z, ‖g' n z‖ₑ ≤ (∫⁻ z, ‖g' n z‖ₑ).toNNReal :=
+  have hfin (n : ℕ) : ∫⁻ z, ‖g' n z‖ₑ ∂μ ≤ (∫⁻ z, ‖g' n z‖ₑ ∂μ).toNNReal :=
     (ENNReal.coe_toNNReal (hg'int n).hasFiniteIntegral.ne).ge
-  have hsub (n : ℕ) : ∫⁻ z, ‖(g - g' n) z‖ₑ ≤ (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0) := hg'g n
+  have hsub (n : ℕ) : ∫⁻ z, ‖(g - g' n) z‖ₑ ∂μ ≤ (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0) := hg'g n
   -- The approximating operators are compact, and converge to the given one in norm.
   refine isCompactOperator_of_tendsto (l := atTop)
     (F := fun n ↦ integralOperatorLp (convMulKernel F (g' n) ψ) p
@@ -196,23 +206,23 @@ theorem isCompactOperator_integralOperatorLp_convMulKernel [FiniteDimensional �
 
 /-- **Convolution after multiplication is compact on `Lᵖ`**, for a multiplier vanishing at
 infinity: for an integrable `g` and a continuous `ψ` tending to `0` at infinity, the
-operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(E, F)` is compact. It is the limit in Schur norm of the operators
+operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(μ, F)` is compact. It is the limit in Schur norm of the operators
 for the compactly supported multipliers `χₙ ψ`, where `χₙ` is a continuous cutoff equal to `1`
 where `‖ψ‖ ≥ 1 / (n + 1)`. -/
 theorem isCompactOperator_integralOperatorLp_convMulKernel_of_tendsto
-    [FiniteDimensional ℂ F] {g ψ : E → ℂ} (hg : Integrable g) (hψ : Continuous ψ)
+    [FiniteDimensional 𝕜 F] {g ψ : E → 𝕜} (hg : Integrable g μ) (hψ : Continuous ψ)
     (hψ0 : Tendsto ψ (cocompact E) (𝓝 0))
-    {hK : AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (volume.prod volume)} {A B : ℝ≥0}
-    {hA : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ≤ A}
-    {hB : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ≤ B} :
+    {hK : AEStronglyMeasurable (uncurry (convMulKernel F g ψ)) (μ.prod μ)} {A B : ℝ≥0}
+    {hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖convMulKernel F g ψ x y‖ₑ ∂μ ≤ A}
+    {hB : ∀ᵐ y ∂μ, ∫⁻ x, ‖convMulKernel F g ψ x y‖ₑ ∂μ ≤ B} :
     IsCompactOperator (integralOperatorLp (convMulKernel F g ψ) p hK hA hB) := by
-  have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   obtain ⟨C₀, hC₀⟩ := isBounded_iff_forall_norm_le.1
     (ZeroAtInftyContinuousMap.isBounded_range ⟨⟨ψ, hψ⟩, hψ0⟩)
   have hC (y : E) : ‖ψ y‖ ≤ C₀.toNNReal :=
     (hC₀ _ (mem_range_self y)).trans (Real.le_coe_toNNReal C₀)
-  set I : ℝ≥0 := (∫⁻ z, ‖g z‖ₑ).toNNReal
-  have hfin : ∫⁻ z, ‖g z‖ₑ ≤ I := (ENNReal.coe_toNNReal hg.hasFiniteIntegral.ne).ge
+  set I : ℝ≥0 := (∫⁻ z, ‖g z‖ₑ ∂μ).toNNReal
+  have hfin : ∫⁻ z, ‖g z‖ₑ ∂μ ≤ I := (ENNReal.coe_toNNReal hg.hasFiniteIntegral.ne).ge
   have happrox (n : ℕ) := hψ.exists_hasCompactSupport_norm_sub_le hψ0
     (by positivity : (0 : ℝ) < (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0))
   choose ψ' hψ'cont hψ'c hψ'ψ hsub using happrox
