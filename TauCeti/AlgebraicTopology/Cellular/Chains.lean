@@ -48,8 +48,9 @@ singular homology; no ring or module structure is needed.
 * `TauCeti.cellularChainComplex`: the resulting chain complex.
 * `TauCeti.skeletonObjIsoOfRangeEq`, `TauCeti.skeletonObjIsoOfEqUniv`: a space embedded onto a
   skeleton, and a skeleton equal to the whole space, as skeleta; through them an embedding onto
-  the `j`-skeleton of a space whose `(j + 1)`-skeleton is everything is the inclusion of the
-  skeletal pair (`TauCeti.skeletonObjIsoOfRangeEq_hom_comp_map_comp`).
+  the `(j - 1)`-skeleton `skeletonLT C j` of a space whose `j`-skeleton `skeletonLT C (j + 1)` is
+  everything is the inclusion of the skeletal pair `(Xʲ, Xʲ⁻¹)`
+  (`TauCeti.skeletonObjIsoOfRangeEq_hom_comp_map_comp`).
 
 ## Main results
 
@@ -108,30 +109,35 @@ section SkeletonPresentation
 
 variable {C} {Z : Type w} [TopologicalSpace Z]
 
-/-- An embedding `f : Z → X` onto the `m`-skeleton identifies `Z` with the `m`-skeleton. -/
+/-- An embedding `f : Z → X` onto `skeletonLT C m`, the `(m - 1)`-skeleton, identifies `Z` with
+`skeletonObj C m`. -/
 def skeletonObjIsoOfRangeEq {f : C(Z, X)} (hf : IsEmbedding f) {m : ℕ}
     (hm : Set.range f = skeletonLT C (m : ℕ∞)) : TopCat.of Z ≅ skeletonObj C m :=
   TopCat.isoOfHomeo (hf.toHomeomorph.trans (Homeomorph.setCongr hm))
 
-/-- The identification of `Z` with the `m`-skeleton is `f`. -/
+/-- The identification of `Z` with `skeletonObj C m`, the `(m - 1)`-skeleton, is `f`. Not
+`@[simp]`: its left side is not in simp normal form, since `simp` rewrites the coercion of
+`skeletonObj C m` to a type inside it (`SetLike.coe_sort_coe`). -/
 lemma coe_skeletonObjIsoOfRangeEq_hom_apply {f : C(Z, X)} (hf : IsEmbedding f) {m : ℕ}
     (hm : Set.range f = skeletonLT C (m : ℕ∞)) (z : Z) :
     ((skeletonObjIsoOfRangeEq hf hm).hom z : X) = f z :=
   (rfl)
 
-/-- A skeleton that is the whole space is the whole space. -/
+/-- A skeleton `skeletonLT C m` that is the whole space is the whole space. -/
 def skeletonObjIsoOfEqUniv {m : ℕ} (hm : (skeletonLT C (m : ℕ∞) : Set X) = Set.univ) :
     skeletonObj C m ≅ TopCat.of X :=
   TopCat.isoOfHomeo ((Homeomorph.setCongr hm).trans (Homeomorph.Set.univ X))
 
-/-- The identification of a skeleton equal to the whole space is the inclusion. -/
+/-- The identification of a skeleton equal to the whole space is the inclusion. Not `@[simp]`,
+for the same reason as `TauCeti.coe_skeletonObjIsoOfRangeEq_hom_apply`. -/
 lemma skeletonObjIsoOfEqUniv_hom_apply {m : ℕ} (hm : (skeletonLT C (m : ℕ∞) : Set X) = Set.univ)
     (x : skeletonObj C m) : (skeletonObjIsoOfEqUniv hm).hom x = (x : X) :=
   (rfl)
 
-/-- **An embedding onto the `j`-skeleton of a space whose `(j + 1)`-skeleton is everything** is,
+/-- **An embedding onto the `(j - 1)`-skeleton of a space whose `j`-skeleton is everything** is,
 up to the identifications `skeletonObjIsoOfRangeEq` and `skeletonObjIsoOfEqUniv`, the inclusion
-of the skeletal pair `(Xʲ⁺¹, Xʲ)`. -/
+of the skeletal pair `(Xʲ, Xʲ⁻¹)`. Here the `(j - 1)`-skeleton is `skeletonLT C j` and the
+`j`-skeleton is `skeletonLT C (j + 1)`. -/
 lemma skeletonObjIsoOfRangeEq_hom_comp_map_comp {f : C(Z, X)} (hf : IsEmbedding f) {j : ℕ}
     (hj : Set.range f = skeletonLT C (j : ℕ∞))
     (hu : (skeletonLT C ((j + 1 : ℕ) : ℕ∞) : Set X) = Set.univ) :

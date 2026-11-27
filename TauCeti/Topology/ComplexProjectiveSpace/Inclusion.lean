@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Topology.ComplexProjectiveSpace.Basic
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
-public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # The inclusion `CPⁿ ⊆ CPⁿ⁺¹`
 
 Appending a zero last coordinate is Mathlib's linear isometry
-`LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb : ℂⁿ⁺¹ → ℂⁿ⁺²`. It carries unit vectors to
+`LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb _) : ℂⁿ⁺¹ → ℂⁿ⁺²`, the zero extension along
+`Fin.castLE`. It carries unit vectors to
 unit vectors (`TauCeti.ComplexProjectiveSpace.sphereInclusion`) and commutes with unit complex
 scalars, so it descends to the sphere-quotient models of complex projective space: the inclusion
 `TauCeti.ComplexProjectiveSpace.inclusion n : CPⁿ → CPⁿ⁺¹`, a closed embedding
@@ -26,10 +27,9 @@ In the CW structure `TauCeti.ComplexProjectiveSpace.cwComplex (n + 1)`, the cell
 of dimension at most `2n + 1` make up the image of `CPⁿ`
 (`TauCeti.ComplexProjectiveSpace.skeletonLT_eq_range_inclusion`), and adding the single cell of
 dimension `2n + 2` gives all of `CPⁿ⁺¹`
-(`TauCeti.ComplexProjectiveSpace.skeletonLT_cwComplex_eq_univ`).
+(`TauCeti.ComplexProjectiveSpace.skeletonLT_cwComplex_eq_univ`, for the CW structure alone).
 
-These inclusions model the finite stages of the infinite complex projective space `CP∞`; their
-comparison with the stage maps of `TauCeti.infiniteGrassmannian ℂ 1` is not proved here.
+These inclusions model the finite stages of the infinite complex projective space `CP∞`.
 
 ## Main declarations
 
@@ -57,36 +57,19 @@ variable (n : ℕ)
 /-- Appending a zero last coordinate, `ℂⁿ⁺¹ → ℂⁿ⁺²`, on unit vectors. -/
 def sphereInclusion (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     sphere (0 : EuclideanSpace ℂ (Fin (n + 2))) 1 :=
-  ⟨LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb x, by
+  ⟨LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb (Nat.le_succ (n + 1))) x, by
     rw [mem_sphere_zero_iff_norm, LinearIsometry.norm_map, norm_eq_of_mem_sphere]⟩
 
 @[simp]
 theorem coe_sphereInclusion (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     (sphereInclusion n x : EuclideanSpace ℂ (Fin (n + 2))) =
-      LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb x :=
+      LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb (Nat.le_succ (n + 1))) x :=
   (rfl)
 
 theorem sphereInclusion_smul (c : sphere (0 : ℂ) 1)
     (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     sphereInclusion n (c • x) = c • sphereInclusion n x :=
   Subtype.ext (LinearIsometry.map_smul _ (c : ℂ) _)
-
-/-- The last coordinate of `(v, 0)` vanishes. -/
-private theorem piLpExtendByZero_apply_last (v : EuclideanSpace ℂ (Fin (n + 1))) :
-    LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb v (Fin.last (n + 1)) = 0 :=
-  LinearIsometry.piLpExtendByZero_apply_eq_zero (by
-    rintro ⟨i, hi⟩
-    exact Fin.castSucc_ne_last i hi) v
-
-/-- A vector of `ℂⁿ⁺²` with vanishing last coordinate is `(v, 0)` for its first coordinates `v`. -/
-private theorem piLpExtendByZero_init {w : EuclideanSpace ℂ (Fin (n + 2))}
-    (hw : w (Fin.last (n + 1)) = 0) :
-    LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb
-      (WithLp.toLp 2 fun i ↦ w i.castSucc) = w := by
-  ext i
-  refine Fin.lastCases ?_ (fun i ↦ ?_) i
-  · rw [piLpExtendByZero_apply_last, hw]
-  · simp [(Fin.castSucc_injective (n + 1)).extend_apply]
 
 /-- **The inclusion `CPⁿ → CPⁿ⁺¹`**, sending the class of a unit vector `x` to the class of
 `(x, 0)` (`TauCeti.ComplexProjectiveSpace.inclusion_mk`). -/
@@ -95,7 +78,7 @@ def inclusion : C(ComplexProjectiveSpace n, ComplexProjectiveSpace (n + 1)) wher
     fun c x ↦ by rw [sphereInclusion_smul, mk_smul]
   continuous_toFun := (isOpenQuotientMap_mk n).isQuotientMap.continuous_iff.2 <|
     ((continuous_mk (n + 1)).comp <|
-      ((LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb).continuous.comp
+      ((LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb (Nat.le_succ (n + 1)))).continuous.comp
         continuous_subtypeVal).subtype_mk _).congr fun x ↦
         (ComplexProjectiveSpace.lift_mk n _ _ x).symm
 
@@ -114,7 +97,7 @@ theorem inclusion_injective : Function.Injective (inclusion n) := by
   obtain ⟨c, hc⟩ := h
   rw [← sphereInclusion_smul] at hc
   exact (mk_eq_mk_iff n x y).2 ⟨c, Subtype.ext
-    ((LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb).injective
+    ((LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb (Nat.le_succ (n + 1)))).injective
       (congrArg Subtype.val hc))⟩
 
 /-- The inclusion `CPⁿ → CPⁿ⁺¹` is a closed embedding. -/
@@ -132,13 +115,14 @@ theorem mk_mem_range_inclusion_iff (y : sphere (0 : EuclideanSpace ℂ (Fin (n +
     rw [inclusion_mk, eq_comm, mk_eq_mk_iff] at hp
     obtain ⟨c, rfl⟩ := hp
     rw [← sphereInclusion_smul, coe_sphereInclusion]
-    exact piLpExtendByZero_apply_last n _
+    exact EuclideanSpace.piLpExtendByZero_castLEEmb_apply_of_le _ _ (Fin.val_last _).ge
   · intro hy
-    have hv := piLpExtendByZero_init n hy
-    refine ⟨mk n ⟨WithLp.toLp 2 fun i ↦ (y : EuclideanSpace ℂ (Fin (n + 2))) i.castSucc, ?_⟩, ?_⟩
+    have hv := EuclideanSpace.piLpExtendByZero_castLEEmb_take (Nat.le_succ (n + 1)) fun j hj ↦ by
+      rwa [show j = Fin.last (n + 1) from Fin.ext (by have := j.is_lt; rw [Fin.val_last]; omega)]
+    refine ⟨mk n ⟨EuclideanSpace.take (Nat.le_succ (n + 1)) y, ?_⟩, ?_⟩
     · rw [mem_sphere_zero_iff_norm,
-        ← (LinearIsometry.piLpExtendByZero 2 ℂ ℂ Fin.castSuccEmb).norm_map, hv,
-        norm_eq_of_mem_sphere]
+        ← (LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb (Nat.le_succ (n + 1)))).norm_map,
+        hv, norm_eq_of_mem_sphere]
     · rw [inclusion_mk]
       exact congrArg (mk (n + 1)) (Subtype.ext hv)
 
@@ -166,17 +150,5 @@ theorem skeletonLT_eq_range_inclusion :
         Fin.ext (by have := j.is_lt; rw [Fin.val_last]; omega)]
     obtain ⟨j, hj⟩ := exists_openCell_cwComplex_eq_openCell i
     exact ⟨2 * i, by norm_cast; omega, j, hj ▸ hyi⟩
-
-/-- The `(2n + 2)`-skeleton of `CPⁿ⁺¹` is all of `CPⁿ⁺¹`. -/
-theorem skeletonLT_cwComplex_eq_univ :
-    letI := cwComplex (n + 1)
-    (skeletonLT (univ : Set (ComplexProjectiveSpace (n + 1))) ((2 * n + 2 + 1 : ℕ) : ℕ∞) :
-      Set (ComplexProjectiveSpace (n + 1))) = univ :=
-  letI := cwComplex (n + 1)
-  skeletonLT_eq_complex_of_isEmpty_cell _ (2 * n + 2 + 1) fun m hm ↦
-    have := (finite_cwComplex (n := n + 1)).finite_cell m
-    Finite.card_eq_zero_iff.1 <| by
-      rw [nat_card_cell_cwComplex, ite_eq_right_iff]
-      exact fun h ↦ absurd h.2 (by omega)
 
 end TauCeti.ComplexProjectiveSpace

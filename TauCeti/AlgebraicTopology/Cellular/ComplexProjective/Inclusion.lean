@@ -63,6 +63,7 @@ theorem isIso_singularHomologyMap_inclusion {k : ℕ} (hk : k ≠ 2 * n + 2) :
   exact isIso_singularHomologyMap_of_range_eq_skeletonLT
     (univ : Set (ComplexProjectiveSpace (n + 1))) R (isClosedEmbedding_inclusion n).isEmbedding
     (skeletonLT_eq_range_inclusion n).symm
-    (skeletonLT_cwComplex_eq_univ n) hk (by omega)
+    (by rw [show 2 * n + 2 + 1 = 2 * (n + 1) + 1 by ring]; exact skeletonLT_cwComplex_eq_univ) hk
+    (by omega)
 
 end TauCeti.ComplexProjectiveSpace

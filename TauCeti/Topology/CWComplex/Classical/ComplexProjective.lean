@@ -14,6 +14,7 @@ public import TauCeti.Data.Fin.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Projectivization
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Product
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # The CW structure on complex projective space
@@ -50,6 +51,8 @@ of the real coordinates `TauCeti.complexEuclideanRealCoords`.
 * `TauCeti.ComplexProjectiveSpace.exists_openCell_cwComplex_eq`,
   `TauCeti.ComplexProjectiveSpace.exists_openCell_cwComplex_eq_openCell`: the cells of
   `cwComplex n` are exactly the open cells `openCell n i`, in dimension `2i`.
+* `TauCeti.ComplexProjectiveSpace.skeletonLT_cwComplex_eq_univ`: there are no cells above dimension
+  `2n`.
 * `TauCeti.ComplexProjectiveSpace.finiteCWType`: `CPⁿ` has finite CW type.
 * `TauCeti.finiteCWType_projectivization_complex`: the projectivization `ℙ ℂ V` of a
   finite-dimensional complex space has finite CW type.
@@ -500,6 +503,19 @@ theorem exists_openCell_cwComplex_eq_openCell (i : Fin (n + 1)) :
     · exact absurd ⟨even_two_mul _, by omega⟩ h
   obtain ⟨j⟩ := (Nat.card_ne_zero.1 hm).1
   exact ⟨j, by rw [RelCWComplex.openCell, map_cwComplex i j, image_cellMap_ball]⟩
+
+/-- The `2n`-skeleton (`skeletonLT` at `2n + 1`) of `CPⁿ` is all of `CPⁿ`: there are no cells of
+dimension above `2n`. -/
+theorem skeletonLT_cwComplex_eq_univ :
+    letI := cwComplex n
+    (skeletonLT (univ : Set (ComplexProjectiveSpace n)) ((2 * n + 1 : ℕ) : ℕ∞) :
+      Set (ComplexProjectiveSpace n)) = univ :=
+  letI := cwComplex n
+  skeletonLT_eq_complex_of_isEmpty_cell _ (2 * n + 1) fun m hm ↦
+    have := (finite_cwComplex (n := n)).finite_cell m
+    Finite.card_eq_zero_iff.1 <| by
+      rw [nat_card_cell_cwComplex, ite_eq_right_iff]
+      exact fun h ↦ absurd h.2 (by omega)
 
 /-- Complex projective space has finite CW type. -/
 instance finiteCWType : FiniteCWType (ComplexProjectiveSpace n) :=

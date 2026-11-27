@@ -114,9 +114,9 @@ lemma isIso_homologyMap_skeletonPair_map {j k : ℕ}
   exact isIso_of_mono_of_epi _
 
 /-- **Attaching the top cells leaves homology unchanged away from their dimension.** If an
-embedding `f : Z → X` maps onto the `j`-skeleton of a relative CW structure on `X` whose
-`(j + 1)`-skeleton is all of `X`, then `f` induces an isomorphism on `Hₖ` for `k ≠ j` and
-`k + 1 ≠ j`. -/
+embedding `f : Z → X` maps onto the `(j - 1)`-skeleton `skeletonLT C j` of a relative CW structure
+on `X` whose `j`-skeleton `skeletonLT C (j + 1)` is all of `X`, so that `X` is `Z` with cells of
+dimension `j` attached, then `f` induces an isomorphism on `Hₖ` for `k ≠ j` and `k ≠ j - 1`. -/
 lemma isIso_singularHomologyMap_of_range_eq_skeletonLT {Z : Type w} [TopologicalSpace Z]
     {f : C(Z, X)} (hf : IsEmbedding f) {j k : ℕ} (hj : Set.range f = skeletonLT C (j : ℕ∞))
     (hu : (skeletonLT C ((j + 1 : ℕ) : ℕ∞) : Set X) = Set.univ)
