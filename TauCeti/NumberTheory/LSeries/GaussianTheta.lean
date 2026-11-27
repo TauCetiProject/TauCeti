@@ -15,8 +15,6 @@ public import TauCeti.Analysis.SpecialFunctions.Gaussian.Mellin
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import Mathlib.NumberTheory.LSeries.HurwitzZetaEven
-import Mathlib.NumberTheory.LSeries.HurwitzZetaOdd
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.NumberTheory.LSeries.Dilation
@@ -244,48 +242,6 @@ theorem integrableOn_norm_gaussianThetaSeries_div (hc : ∀ n : ℕ+, ‖c n‖ 
   gcongr
 
 end ThetaSeries
-
-open Complex in
-open scoped Real in
-/-- Poisson summation for the parity-weighted Gaussian on a shifted integer lattice.
-This is the even or odd Hurwitz theta transformation, with the width written as `v`. -/
-theorem hasSum_gaussianMonomial_add_mul (j : Fin 2) (a : ℝ) {v : ℝ} (hv : 0 < v) :
-    HasSum (fun n : ℤ ↦ (gaussianMonomial j ((n + a) * v) : ℂ))
-      ((v : ℂ)⁻¹ * (-I) ^ j.val *
-        ∑' n : ℤ, exp (2 * π * I * a * n) * gaussianMonomial j (n * v⁻¹)) := by
-  have hv2 : 0 < v ^ 2 := sq_pos_of_pos hv
-  have hi : 0 < 1 / v ^ 2 := by positivity
-  have hp₁ : (v ^ 2) ^ (1 / 2 : ℝ) = v := by
-    rw [← Real.sqrt_eq_rpow, Real.sqrt_sq hv.le]
-  have hp₃ : (v ^ 2) ^ (3 / 2 : ℝ) = v ^ 3 := by
-    have hsplit : (3 / 2 : ℝ) = 1 + 1 / 2 := by norm_num
-    rw [hsplit, Real.rpow_add hv2, Real.rpow_one, hp₁]
-    ring
-  have hj : j = 0 ∨ j = 1 := by omega
-  rcases hj with rfl | rfl
-  · have h₁ := hasSum_ofReal.mpr (HurwitzZeta.hasSum_int_evenKernel a hv2)
-    have h₂ := HurwitzZeta.hasSum_int_cosKernel a hi
-    rw [HurwitzZeta.evenKernel_functional_equation, hp₁, one_div, ofReal_mul, ofReal_inv,
-      ← h₂.tsum_eq] at h₁
-    simp only [Fin.val_zero, pow_zero, mul_one]
-    convert h₁ using 1
-    · funext n
-      simp [mul_pow, mul_assoc]
-    · congr 1
-      exact tsum_congr fun n ↦ by simp [mul_pow, div_eq_mul_inv, mul_assoc]
-  · have h₁ := (hasSum_ofReal.mpr (HurwitzZeta.hasSum_int_oddKernel a hv2)).mul_left (v : ℂ)
-    have h₂ := HurwitzZeta.hasSum_int_sinKernel a hi
-    rw [HurwitzZeta.oddKernel_functional_equation, hp₃, one_div, ofReal_mul, ofReal_inv,
-      ← h₂.tsum_eq] at h₁
-    convert h₁ using 1
-    · funext n
-      simp only [gaussianMonomial_one, mul_pow, ofReal_mul]
-      ac_rfl
-    · simp only [Fin.val_one, pow_one, ← tsum_mul_left]
-      refine tsum_congr fun n ↦ ?_
-      rw [gaussianMonomial_one, mul_pow, inv_pow, ← div_eq_mul_inv]
-      push_cast
-      field_simp
 
 section DirichletTheta
 

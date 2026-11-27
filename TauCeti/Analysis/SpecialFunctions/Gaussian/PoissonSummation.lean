@@ -30,8 +30,8 @@ sum into its zero term and paired positive and negative terms gives the correspo
 cosine series used for wrapped normal densities.  The proof specializes Mathlib's
 `Complex.tsum_exp_neg_quadratic`.
 
-For periodically weighted Gaussian sums of degree zero or one, the Hurwitz theta kernels
-give a Poisson formula in terms of the inverse finite Fourier transform of the weights.
+For Gaussian weights of degree zero or one, the Hurwitz theta kernels give a Poisson formula
+on shifted lattices and a periodic version in terms of the inverse finite Fourier transform.
 
 ## References
 
@@ -239,6 +239,53 @@ open Finset HurwitzZeta
 open scoped Real ZMod
 
 local notation "W" j:arg t:arg => ((t ^ j * Real.exp (-Real.pi * t ^ 2) : ℝ) : ℂ)
+
+namespace TauCeti
+
+/-- Poisson summation for the parity-weighted Gaussian on a shifted integer lattice.
+This is the even or odd Hurwitz theta transformation with width `v`. -/
+theorem hasSum_gaussianMonomial_add_mul (j : Fin 2) (a : ℝ) {v : ℝ} (hv : 0 < v) :
+    HasSum (fun n : ℤ ↦ W j.val ((n + a) * v))
+      ((v : ℂ)⁻¹ * (-I) ^ j.val * ∑' n : ℤ, cexp (2 * π * I * a * n) * W j.val (n * v⁻¹)) := by
+  have hv2 : 0 < v ^ 2 := sq_pos_of_pos hv
+  have hi : 0 < v⁻¹ ^ 2 := by positivity
+  have hrecip : 1 / v ^ 2 = v⁻¹ ^ 2 := by rw [one_div, inv_pow]
+  fin_cases j
+  · have hsqrt : (v ^ 2) ^ (1 / 2 : ℝ) = v := by
+      rw [← Real.sqrt_eq_rpow, Real.sqrt_sq hv.le]
+    have hkernel : (evenKernel a (v ^ 2) : ℂ) = (v : ℂ)⁻¹ * (cosKernel a (v⁻¹ ^ 2) : ℂ) := by
+      rw [evenKernel_functional_equation, hsqrt, hrecip]
+      simp only [one_div, ofReal_mul, ofReal_inv]
+    have hFourier : (∑' n : ℤ, cexp (2 * π * I * a * n) * W 0 (n * v⁻¹)) =
+        (cosKernel a (v⁻¹ ^ 2) : ℂ) := by
+      rw [← (hasSum_int_cosKernel a hi).tsum_eq]
+      exact tsum_congr fun n ↦ by simp only [pow_zero, one_mul, mul_pow, mul_assoc]
+    simp only [pow_zero, one_mul] at hFourier
+    simp only [pow_zero, mul_one, one_mul]
+    rw [hFourier, ← hkernel]
+    refine (hasSum_ofReal.mpr (hasSum_int_evenKernel a hv2)).congr_fun fun n ↦ ?_
+    simp only [mul_pow, mul_assoc]
+  · have hcub : (v ^ 2) ^ (3 / 2 : ℝ) = v ^ 3 := by
+      rw [← Real.rpow_natCast_mul hv.le]
+      norm_num
+    have hkernel : (v : ℂ) * (oddKernel a (v ^ 2) : ℂ) =
+        (v : ℂ)⁻¹ ^ 2 * (sinKernel a (v⁻¹ ^ 2) : ℂ) := by
+      rw [oddKernel_functional_equation, hcub, hrecip]
+      simp only [one_div, ofReal_mul, ofReal_inv, ofReal_pow]
+      field_simp [ofReal_ne_zero.mpr hv.ne']
+    have hFourier : (v : ℂ)⁻¹ * -I * (∑' n : ℤ, cexp (2 * π * I * a * n) * W 1 (n * v⁻¹)) =
+        (v : ℂ)⁻¹ ^ 2 * (sinKernel a (v⁻¹ ^ 2) : ℂ) := by
+      rw [← (hasSum_int_sinKernel a hi).tsum_eq, ← tsum_mul_left, ← tsum_mul_left]
+      refine tsum_congr fun n ↦ ?_
+      simp only [pow_one, mul_pow, ← mul_assoc, ofReal_mul, ofReal_inv, ofReal_intCast]
+      ring
+    simp only [pow_one] at hFourier ⊢
+    rw [hFourier, ← hkernel]
+    refine ((hasSum_ofReal.mpr (hasSum_int_oddKernel a hv2)).mul_left (v : ℂ)).congr_fun fun n ↦ ?_
+    simp only [mul_pow, ← mul_assoc, ofReal_mul]
+    ring
+
+end TauCeti
 
 namespace ZMod
 

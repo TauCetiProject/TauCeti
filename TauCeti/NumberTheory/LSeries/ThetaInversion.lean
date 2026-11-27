@@ -97,12 +97,10 @@ theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
   have hN : 0 < (N : ℝ) := Nat.cast_pos.mpr (NeZero.pos N)
   have htheta (u : ℝ) : gaussianTheta j (fun n ↦ χ n) u =
       ∑' n : ℕ, χ (n + 1 : ℕ) * W j.val ((n + 1 : ℕ) * u) := by
-    rw [gaussianTheta_def, ← tsum_pnat_eq_tsum_succ
-      (f := fun n : ℕ ↦ χ n * W j.val ((n : ℝ) * u))]
-    have hj : j = 0 ∨ j = 1 := by omega
-    rcases hj with rfl | rfl
-    · simp only [Fin.val_zero, pow_zero, one_mul, gaussianMonomial_zero]
-    · simp only [Fin.val_one, pow_one, gaussianMonomial_one]
+    rw [gaussianTheta_def, tsum_pnat_eq_tsum_succ
+      (f := fun n : ℕ ↦ χ n * gaussianMonomial j (n * u))]
+    -- The weight is opaque here; use its two public evaluation lemmas.
+    exact tsum_congr fun n ↦ by fin_cases j <;> simp
   simp only [gaussianThetaSeries_def, norm_mul, norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _),
     htheta]
   rcases le_or_gt t 0 with ht | ht
