@@ -46,12 +46,12 @@ the frame of the point `[p, 1]` over an adapted frame `p` is `p` itself
 (`TauCeti.OrthonormalFrameBundle.toFrame_planeFieldSpinCStructureInl`), so it sends `e₀` to `R`
 (`TauCeti.OrthonormalFrameBundle.frameAt_planeFieldSpinCStructureInl_apply_single_zero`). The
 determinant character of the lift is the angle of the rotation (`TauCeti.det_axisSpinCLift`), so
-the determinant line of this structure is the line bundle associated to the adapted frames by the
-rotation of `ξ`, that is `ξ` regarded as a complex line; that identification of line bundles is not
+the determinant line of this structure is expected to be the line bundle associated to the adapted
+frames by the rotation of `ξ`, that is `ξ` regarded as a complex line; this identification is not
 constructed here.
 
-On a closed oriented three-manifold `Y` this is the `Spinᶜ` structure of an oriented plane field,
-or of a nowhere vanishing vector field.
+The construction takes a continuous section of unit vectors. A nowhere vanishing vector field gives
+one after normalisation, which is not done here.
 
 ## Main definitions
 

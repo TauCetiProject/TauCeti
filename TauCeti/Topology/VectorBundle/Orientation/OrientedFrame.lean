@@ -61,6 +61,9 @@ to the special orthogonal group given by the orientation.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization_orientedFrames`: the positively oriented
   frames are locally trivial with fibre the special orthogonal group, equivariantly for the
   action.
+* `TauCeti.OrthonormalFrameBundle.isLocallyTrivialReduction_inter_orientedFrames`: the positively
+  oriented frames of a locally trivial reduction to `H`, with `H` containing an
+  orientation-reversing element, are a locally trivial reduction to `H ⊓ SO(V)`.
 
 ## References
 
