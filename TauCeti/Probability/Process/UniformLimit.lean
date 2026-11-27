@@ -55,6 +55,22 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   [NormedAddCommGroup E] [CompleteSpace E]
   {ℱ : Filtration ℝ≥0 mΩ} {X : ℕ → ℝ≥0 → Ω → E} {u : ℕ → ℝ}
 
+/-- On a fixed horizon `Iic T`, summable uniform increment errors yield a.s. continuity on
+`Iic T` and a.s. uniform convergence on `Iic T` of `limUnder atTop (fun n ↦ X n t ω)`. -/
+private lemma tendstoUniformlyOn_limUnder_of_summable_Iic {T : ℝ≥0}
+    (hc : ∀ n, ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ X n t ω) (Iic T)) (hu : Summable u)
+    (herr : (∑' n, P {ω | ∃ t ≤ T, u n < ‖X (n + 1) t ω - X n t ω‖}) ≠ ∞) :
+    ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ limUnder atTop (fun n ↦ X n t ω)) (Iic T) ∧
+      TendstoUniformlyOn (fun n t ↦ X n t ω)
+        (fun t ↦ limUnder atTop (fun n ↦ X n t ω)) atTop (Iic T) := by
+  have hbound : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ∀ t ∈ Iic T, ‖X (n + 1) t ω - X n t ω‖ ≤ u n := by
+    filter_upwards [ae_eventually_notMem herr] with ω hω
+    exact hω.mono fun n hn t ht ↦ le_of_not_gt fun h ↦ hn ⟨t, ht, h⟩
+  filter_upwards [hbound, ae_all_iff.2 hc] with ω hω hcω
+  have hunif := tendstoUniformlyOn_limUnder_of_eventually (f := fun n t ↦ X n t ω) hu
+    (hω.mono fun _ hn t (ht : t ∈ Iic T) ↦ hn t ht)
+  exact ⟨hunif.continuousOn (Frequently.of_forall hcω), hunif⟩
+
 /-- Select a continuous adapted limit from approximants with summable uniform increment errors.
 Only almost-sure continuity is required of each approximant. The conclusion uses one common
 full-measure event for continuity and uniform convergence on all finite horizons. Neither usual
@@ -73,25 +89,15 @@ theorem exists_stronglyAdapted_tendstoUniformlyOn_of_summable
     intro t
     let : MeasurableSpace Ω := ℱ t
     exact StronglyMeasurable.limUnder (fun n ↦ hX n t)
-  have hbound : ∀ᵐ ω ∂P, ∀ T : ℕ, ∀ᶠ n in atTop, ∀ t ≤ (T : ℝ≥0),
-      ‖X (n + 1) t ω - X n t ω‖ ≤ u n := by
-    refine ae_all_iff.2 fun T ↦ ?_
-    filter_upwards [ae_eventually_notMem (herr T)] with ω hω
-    exact hω.mono fun n hn t ht ↦ le_of_not_gt fun h ↦ hn ⟨t, ht, h⟩
-  refine ⟨Y, hY, ?_⟩
-  filter_upwards [hbound, ae_all_iff.2 hc] with ω hω hcω
-  have hunif (T : ℕ) : TendstoUniformlyOn (fun n t ↦ X n t ω)
-      (fun t ↦ Y t ω) atTop (Iic (T : ℝ≥0)) :=
-    tendstoUniformlyOn_limUnder_of_eventually hu (hω T)
-  have hall : ∀ T : ℝ≥0, TendstoUniformlyOn (fun n t ↦ X n t ω)
-      (fun t ↦ Y t ω) atTop (Iic T) := by
-    intro T
-    obtain ⟨N, hN⟩ := exists_nat_ge T
-    exact (hunif N).mono (Iic_subset_Iic.2 hN)
-  refine ⟨continuous_iff_continuousAt.2 (fun t ↦ ?_), hall⟩
-  obtain ⟨N, hN⟩ := exists_nat_gt t
-  exact ((hunif N).continuousOn (Frequently.of_forall fun n ↦
-    (hcω n).continuousOn) t hN.le).continuousAt (Iic_mem_nhds hN)
+  have hunif : ∀ᵐ ω ∂P, ∀ T : ℕ, ContinuousOn (fun t ↦ Y t ω) (Iic (T : ℝ≥0)) ∧
+      TendstoUniformlyOn (fun n t ↦ X n t ω) (fun t ↦ Y t ω) atTop (Iic (T : ℝ≥0)) :=
+    ae_all_iff.2 fun T ↦ tendstoUniformlyOn_limUnder_of_summable_Iic
+      (fun n ↦ (hc n).mono fun ω hω ↦ hω.continuousOn) hu (herr T)
+  refine ⟨Y, hY, hunif.mono fun ω hω ↦ ⟨continuous_iff_continuousAt.2 fun t ↦ ?_, fun T ↦ ?_⟩⟩
+  · obtain ⟨N, hN⟩ := exists_nat_gt t
+    exact (hω N).1.continuousAt (Iic_mem_nhds hN)
+  · obtain ⟨N, hN⟩ := exists_nat_ge T
+    exact (hω N).2.mono (Iic_subset_Iic.2 hN)
 
 /-- A prescribed fixed-time limit in measure has an adapted, almost surely continuous version
 when its continuous adapted approximants have summable uniform increment errors. The selected
@@ -150,6 +156,38 @@ theorem tendsto_uniformlyInMeasure_of_subseq_tendsto_ae
     exact mem_iUnion.mpr ⟨j, mem_iInter₂.mpr fun k hk ↦ ⟨t, ht, hj k hk⟩⟩
   exact (measure_mono_ae hsub).trans (by rw [hmono.measure_iUnion]; exact iSup_le hB)
 
+omit [CompleteSpace E] in
+/-- Extract a strictly increasing subsequence whose successive increments exceed `(1 / 2) ^ k`
+on `Iic (R k)` with outer probability at most `(1 / 2) ^ k`. -/
+private lemma exists_strictMono_cauchy_subseq (R : ℕ → ℝ≥0)
+    (hR : ∀ k : ℕ, ∃ N : ℕ, ∀ n ≥ N, ∀ m ≥ N,
+      P {ω | ∃ t ≤ R k, (1 / 2 : ℝ) ^ k < ‖X n t ω - X m t ω‖} ≤ (1 / 2 : ℝ≥0∞) ^ k) :
+    ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ k : ℕ,
+      P {ω | ∃ t ≤ R k, (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖} ≤
+        (1 / 2 : ℝ≥0∞) ^ k := by
+  choose N hN using hR
+  obtain ⟨ns, hns, hnsN⟩ := Filter.extraction_forall_of_eventually'
+    (P := fun k n ↦ N k ≤ n) fun k ↦ ⟨N k, fun _ h ↦ h⟩
+  exact ⟨ns, hns, fun k ↦ hN k (ns (k + 1)) ((hnsN k).trans (hns.monotone k.le_succ))
+    (ns k) (hnsN k)⟩
+
+omit [CompleteSpace E] in
+/-- Upgrade a Cauchy condition on `Iic T` and a.e. uniform convergence of a subsequence on
+`Iic T` to uniform convergence in outer probability of the full sequence on `Iic T`. -/
+private lemma tendsto_uniformlyInMeasure_of_cauchy_of_tendstoUniformlyOn
+    {Y : ℝ≥0 → Ω → E} {ns : ℕ → ℕ} {T : ℝ≥0}
+    (hC : ∀ ε : ℝ, 0 < ε → ∀ δ : ℝ≥0∞, 0 < δ →
+      ∃ N : ℕ, ∀ n ≥ N, ∀ m ≥ N,
+        P {ω | ∃ t ≤ T, ε < ‖X n t ω - X m t ω‖} ≤ δ)
+    (hns : StrictMono ns)
+    (hlim : ∀ᵐ ω ∂P, TendstoUniformlyOn (fun k t ↦ X (ns k) t ω) (fun t ↦ Y t ω) atTop (Iic T))
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n ↦ P {ω | ∃ t ≤ T, ε < ‖X n t ω - Y t ω‖}) atTop (𝓝 0) :=
+  tendsto_uniformlyInMeasure_of_subseq_tendsto_ae
+    (fun δ hδ ↦ let ⟨N, hN⟩ := hC (ε / 2) (half_pos hε) δ hδ
+      eventually_atTop.2 ⟨N, fun n hn ↦ eventually_atTop.2 ⟨N, fun m hm ↦ hN n hn m hm⟩⟩)
+    hns.tendsto_atTop (hlim.mono fun _ hω _ ht ↦ hω.tendsto_at ht)
+
 /-- A continuous adapted sequence uniformly Cauchy in probability on each bounded horizon has
 an adapted, almost surely continuous limit. The entire sequence converges uniformly in
 probability; one strictly increasing subsequence converges almost surely uniformly on every
@@ -168,40 +206,30 @@ theorem exists_stronglyAdapted_tendsto_uniformlyInMeasure_of_cauchy [IsFiniteMea
         ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω) ∧ ∀ T : ℝ≥0,
           TendstoUniformlyOn (fun k t ↦ X (ns k) t ω) (fun t ↦ Y t ω) atTop (Iic T) := by
   -- Diagonalize both horizons and error sizes, then make the selected indices increasing.
-  have hr : Summable (fun k : ℕ ↦ (1 / 2 : ℝ) ^ k) := summable_geometric_two
-  have hex (k : ℕ) := hC k ((1 / 2 : ℝ) ^ k) (by positivity)
-    (ENNReal.ofReal ((1 / 2 : ℝ) ^ k)) (by positivity)
-  choose N hN using hex
-  obtain ⟨ns, hns, hnsN⟩ := Filter.extraction_forall_of_eventually'
-    (P := fun k n ↦ N k ≤ n) fun k ↦ ⟨N k, fun _ h ↦ h⟩
+  obtain ⟨ns, hns, hns_le⟩ := exists_strictMono_cauchy_subseq (X := X) (P := P) Nat.cast
+    fun k ↦ hC k ((1 / 2 : ℝ) ^ k) (by positivity)
+      ((1 / 2 : ℝ≥0∞) ^ k) (ENNReal.pow_pos (by norm_num) k)
   have herr (T : ℕ) : (∑' k, P {ω | ∃ t ≤ (T : ℝ≥0),
       (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖}) ≠ ∞ := by
-    let e (k : ℕ) := P {ω | ∃ t ≤ (T : ℝ≥0),
-      (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖}
-    have he : ∀ᶠ k in atTop, e k ≤ ENNReal.ofReal ((1 / 2 : ℝ) ^ k) := by
-      filter_upwards [eventually_ge_atTop T] with k hk
-      have hsub : {ω | ∃ t ≤ (T : ℝ≥0),
-          (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖} ⊆
-          {ω | ∃ t ≤ (k : ℝ≥0),
-            (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖} := by
+    refine ne_top_of_le_ne_top ?_ (tsum_le_tsum (g := fun k ↦
+        (if k < T then P univ else 0) + (1 / 2 : ℝ≥0∞) ^ k) fun k ↦ ?_)
+    · rw [CompleteLattice.summable.tsum_add CompleteLattice.summable,
+        tsum_eq_sum (s := Finset.range T) (fun k hk ↦ ite_eq_right (by simpa using hk)),
+        ENNReal.tsum_geometric]
+      exact ENNReal.add_ne_top.2
+        ⟨ENNReal.sum_ne_top.2 fun _ _ ↦ by split_ifs <;> simp, by norm_num⟩
+    · by_cases hk : k < T
+      · simp only [hk, ↓reduceIte]
+        exact (measure_mono (subset_univ _)).trans le_self_add
+      · simp only [hk, ↓reduceIte, zero_add]
+        refine (measure_mono ?_).trans (hns_le k)
         rintro ω ⟨t, ht, he⟩
-        exact ⟨t, ht.trans (by exact_mod_cast hk), he⟩
-      exact (measure_mono hsub).trans
-        (hN k (ns (k + 1)) ((hnsN k).trans (hns.monotone k.le_succ)) (ns k) (hnsN k))
-    have hs : Summable (fun k ↦ (e k).toReal) :=
-      hr.of_norm_bounded_eventually_nat (he.mono fun k hk ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg ENNReal.toReal_nonneg]
-        simpa only [ENNReal.toReal_ofReal (by positivity : 0 ≤ (1 / 2 : ℝ) ^ k)] using
-          ENNReal.toReal_mono (by finiteness) hk)
-    simpa only [e, ENNReal.ofReal_toReal (measure_ne_top _ _)] using hs.tsum_ofReal_ne_top
+        exact ⟨t, ht.trans (by exact_mod_cast not_lt.1 hk), he⟩
   obtain ⟨Y, hY, hlim⟩ := exists_stronglyAdapted_tendstoUniformlyOn_of_summable
-    (fun k ↦ hX (ns k)) (fun k ↦ hc (ns k)) hr herr
-  refine ⟨Y, hY, ?_, ns, hns, hlim⟩
-  intro T ε hε
-  exact tendsto_uniformlyInMeasure_of_subseq_tendsto_ae
-    (fun δ hδ ↦ let ⟨N, hN⟩ := hC T (ε / 2) (half_pos hε) δ hδ
-      eventually_atTop.2 ⟨N, fun n hn ↦ eventually_atTop.2 ⟨N, fun m hm ↦ hN n hn m hm⟩⟩)
-    hns.tendsto_atTop (hlim.mono fun ω hω t ht ↦ (hω.2 T).tendsto_at ht)
+    (fun k ↦ hX (ns k)) (fun k ↦ hc (ns k)) summable_geometric_two herr
+  refine ⟨Y, hY, fun T ε hε ↦ ?_, ns, hns, hlim⟩
+  exact tendsto_uniformlyInMeasure_of_cauchy_of_tendstoUniformlyOn (hC T) hns
+    (hlim.mono fun _ hω ↦ hω.2 T) hε
 
 /-- A process sequence that is almost surely continuous on `[0, T]` and uniformly Cauchy in outer
 probability on `[0, T]` has a limit process which is almost surely continuous on `[0, T]`: the
@@ -219,33 +247,15 @@ theorem exists_tendsto_uniformlyInMeasure_Iic_of_cauchy {T : ℝ≥0}
       ∃ ns : ℕ → ℕ, StrictMono ns ∧
         ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ Y t ω) (Iic T) ∧
           TendstoUniformlyOn (fun k t ↦ X (ns k) t ω) (fun t ↦ Y t ω) atTop (Iic T) := by
-  have hr : Summable (fun k : ℕ ↦ (1 / 2 : ℝ) ^ k) := summable_geometric_two
-  choose N hN using fun k : ℕ ↦
-    hC ((1 / 2 : ℝ) ^ k) (by positivity) ((1 / 2 : ℝ≥0∞) ^ k) (ENNReal.pow_pos (by norm_num) k)
-  obtain ⟨ns, hns, hnsN⟩ := Filter.extraction_forall_of_eventually'
-    (P := fun k n ↦ N k ≤ n) fun k ↦ ⟨N k, fun _ h ↦ h⟩
-  let Y : ℝ≥0 → Ω → E := fun t ω ↦ limUnder atTop (fun k ↦ X (ns k) t ω)
+  obtain ⟨ns, hns, hns_le⟩ := exists_strictMono_cauchy_subseq (X := X) (P := P) (fun _ ↦ T)
+    fun k ↦ hC ((1 / 2 : ℝ) ^ k) (by positivity)
+      ((1 / 2 : ℝ≥0∞) ^ k) (ENNReal.pow_pos (by norm_num) k)
   have htsum : (∑' k : ℕ, P {ω | ∃ t ≤ T,
-      (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖}) ≠ ∞ := by
-    refine ne_top_of_le_ne_top ?_ (tsum_le_tsum fun k ↦
-      hN k (ns (k + 1)) ((hnsN k).trans (hns.monotone k.le_succ)) (ns k) (hnsN k))
-    rw [ENNReal.tsum_geometric]
-    norm_num
-  have hbound : ∀ᵐ ω ∂P, ∀ᶠ k in atTop, ∀ t ≤ T,
-      ‖X (ns (k + 1)) t ω - X (ns k) t ω‖ ≤ (1 / 2 : ℝ) ^ k := by
-    filter_upwards [ae_eventually_notMem htsum] with ω hω
-    exact hω.mono fun k hk t ht ↦ le_of_not_gt fun h ↦ hk ⟨t, ht, h⟩
-  have hlim : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ Y t ω) (Iic T) ∧
-      TendstoUniformlyOn (fun k t ↦ X (ns k) t ω) (fun t ↦ Y t ω) atTop (Iic T) := by
-    filter_upwards [hbound, ae_all_iff.2 hc] with ω hω hcω
-    have hY_unif : TendstoUniformlyOn (fun k t ↦ X (ns k) t ω) (fun t ↦ Y t ω) atTop (Iic T) :=
-      tendstoUniformlyOn_limUnder_of_eventually hr hω
-    exact ⟨hY_unif.continuousOn (Frequently.of_forall fun k ↦ hcω (ns k)), hY_unif⟩
-  refine ⟨Y, ?_, ns, hns, hlim⟩
-  intro ε hε
-  exact tendsto_uniformlyInMeasure_of_subseq_tendsto_ae
-    (fun δ hδ ↦ let ⟨N, hN⟩ := hC (ε / 2) (half_pos hε) δ hδ
-      eventually_atTop.2 ⟨N, fun n hn ↦ eventually_atTop.2 ⟨N, fun m hm ↦ hN n hn m hm⟩⟩)
-    hns.tendsto_atTop (hlim.mono fun ω hω t ht ↦ hω.2.tendsto_at ht)
+      (1 / 2 : ℝ) ^ k < ‖X (ns (k + 1)) t ω - X (ns k) t ω‖}) ≠ ∞ :=
+    ne_top_of_le_ne_top (by rw [ENNReal.tsum_geometric]; norm_num) (tsum_le_tsum hns_le)
+  have hlim := tendstoUniformlyOn_limUnder_of_summable_Iic
+    (fun k ↦ hc (ns k)) summable_geometric_two htsum
+  exact ⟨_, fun ε hε ↦ tendsto_uniformlyInMeasure_of_cauchy_of_tendstoUniformlyOn hC hns
+    (hlim.mono fun _ hω ↦ hω.2) hε, ns, hns, hlim⟩
 
 end TauCeti.Probability

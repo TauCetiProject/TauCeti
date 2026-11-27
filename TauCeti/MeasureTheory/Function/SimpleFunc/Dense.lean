@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 
 /-!
 # Uniform approximation by simple functions
@@ -42,9 +41,6 @@ representative.
   function is integrable.
 * `MeasureTheory.SimpleFunc.eLpNorm_eq_top_of_not_memLp` — a simple function outside `Lᵖ` for one
   exponent `p` has infinite `L^q` norm for every `0 < q < ∞`.
-* `MeasureTheory.StronglyMeasurable.exists_seq_finset_indicator_tendsto_eLpNorm` — every strongly
-  measurable function with finite `Lᵖ` seminorm (`p < ∞`) is an `eLpNorm` limit of finite sums of
-  measurable-set constant indicators.
 * `MeasureTheory.Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top` — a simple function of `Lᵖ`,
   `0 < p < ∞`, lies in every `Lʳ`.
 * `MeasureTheory.Lp.simpleFunc.memLp_of_ne_top` — the same statement for the function itself.
@@ -57,7 +53,7 @@ representative.
 public section
 
 open Filter Set TopologicalSpace
-open scoped ENNReal Topology
+open scoped ENNReal
 
 namespace MeasureTheory.SimpleFunc
 
@@ -186,29 +182,6 @@ theorem eLpNorm_eq_top_of_not_memLp {p q : ℝ≥0∞} {f : SimpleFunc α E} (hq
     ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h)))
 
 end SimpleFunc
-
-/-- Every strongly measurable function into a normed group with finite `Lᵖ` seminorm (`p ≠ ∞`) is
-the `eLpNorm` limit of a sequence of finite sums of constant indicators over measurable sets. The
-domain σ-algebra `m` is implicit so the theorem applies directly to sub-σ-algebras and trimmed
-measures. -/
-theorem StronglyMeasurable.exists_seq_finset_indicator_tendsto_eLpNorm
-    {α E : Type*} {m : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
-    {p : ℝ≥0∞} (hp : p ≠ ∞) {f : α → E} (hf : StronglyMeasurable[m] f) (hfin : eLpNorm f p μ < ∞) :
-    ∃ (S : ℕ → Finset E) (A : ℕ → E → Set α), (∀ n c, MeasurableSet[m] (A n c)) ∧
-      Tendsto (fun n ↦ eLpNorm
-        (fun x ↦ (∑ c ∈ S n, (A n c).indicator (fun _ ↦ c) x) - f x) p μ) atTop (𝓝 0) := by
-  let _ : MeasurableSpace α := m; borelize E
-  have : SeparableSpace (range f ∪ {0} : Set E) :=
-    StronglyMeasurable.separableSpace_range_union_singleton hf
-  let G (n : ℕ) := SimpleFunc.approxOn f hf.measurable (range f ∪ {0}) 0 (by simp) n
-  refine ⟨fun n ↦ (G n).range, fun n c ↦ G n ⁻¹' {c}, fun n c ↦ (G n).measurableSet_fiber c,
-    (SimpleFunc.tendsto_approxOn_range_Lp_eLpNorm hp hf.measurable hfin).congr fun n ↦
-      eLpNorm_congr_ae (.of_forall fun x ↦ ?_)⟩
-  have hsum : G n x = ∑ c ∈ (G n).range, (G n ⁻¹' {c}).indicator (fun _ ↦ c) x := by
-    refine (((G n).map_apply id x).symm.trans ((G n).map_apply_eq_sum_restrict_const id x)).trans
-      (Finset.sum_congr rfl fun c _ ↦ ?_)
-    rw [SimpleFunc.restrict_apply _ ((G n).measurableSet_fiber c)]; rfl
-  simp only [Pi.sub_apply, ← hsum]; rfl
 
 /-- A simple function of `Lᵖ`, `0 < p < ∞`, has support of finite measure, so it lies in every
 `Lʳ`. -/

@@ -30,8 +30,7 @@ an equivalent measure on the same filtration. This does not assert preservation 
 square energy or that the original driver remains Brownian.
 
 Time measure on `(0,T]` is `TauCeti.Probability.timeMeasure T`, the restriction to `(0,T]` of
-the pullback Lebesgue measure on `ℝ≥0`. Both domain definitions and the bridge to
-`Filtration.predictableMeasure` (`BrownianIntegrable.memLp_predictableMeasure`) use
+the pullback Lebesgue measure on `ℝ≥0`. Both domain definitions use
 `TauCeti.Probability.timeMeasure` directly. Pathwise membership uses native `MemLp`, so square
 energy means a finite nonnegative lower integral, never the default value of a divergent Bochner
 integral.
@@ -249,10 +248,5 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
-
-/-- Every `BrownianIntegrable` integrand lies in `L²(ℱ.predictableMeasure P t)` at each `t`. -/
-theorem BrownianIntegrable.memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
-    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P t) :=
-  (ℱ.memLp_predictableMeasure_iff P hH.isStronglyPredictable t 2).2 (hH.memLp t)
 
 end TauCeti

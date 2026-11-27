@@ -56,8 +56,6 @@ between equivalent finite measures.
 
 ## Main results
 
-* `MeasureTheory.TendstoInMeasure.add`, `const_smul`: algebraic operations preserving convergence
-  in measure.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
 * `TauCeti.tendsto_measure_ge_zero_const_mul`, `tendsto_measure_ge_zero_mul_of_ae_lt_top`,
