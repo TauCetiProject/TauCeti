@@ -60,6 +60,8 @@ measurable equivalences let these characterizations pass to other representation
   equivalence;
 * `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
   variable with that law, without requiring the property to be measurable;
+* `ProbabilityTheory.HasLaw.integrable_comp_iff` — integrability of a measurable observable is
+  equivalent under a random variable and its law;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
 * `ProbabilityTheory.HasLaw.cond_of_restrict`,
   `ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem`, and
@@ -156,6 +158,16 @@ variable with that law, without a measurability assumption on the property. -/
 protected theorem _root_.ProbabilityTheory.HasLaw.ae (hT : HasLaw T ν μ) {p : Y → Prop}
     (hp : ∀ᵐ y ∂ν, p y) : ∀ᵐ x ∂μ, p (T x) :=
   ae_of_ae_map hT.aemeasurable (hT.map_eq ▸ hp)
+
+/-- Integrability of a measurable observable under a random variable is equivalent to its
+integrability under the variable's law. -/
+theorem _root_.ProbabilityTheory.HasLaw.integrable_comp_iff
+    {Ω 𝒳 E : Type*} [MeasurableSpace Ω] [MeasurableSpace 𝒳]
+    [TopologicalSpace E] [ContinuousENorm E] {P : Measure Ω} {ν : Measure 𝒳}
+    {X : Ω → 𝒳} {f : 𝒳 → E} (hX : HasLaw X ν P) (hf : AEStronglyMeasurable f ν) :
+    Integrable (f ∘ X) P ↔ Integrable f ν := by
+  rw [← hX.map_eq] at hf ⊢
+  exact (integrable_map_measure hf hX.aemeasurable).symm
 
 /-- Conditioning a random variable on the preimage of a measurable event gives its law
 conditioned on that event. The statement includes events of zero or infinite mass, when both

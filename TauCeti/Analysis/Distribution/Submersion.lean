@@ -33,9 +33,10 @@ vanishing derivatives along `ker A`. The tensor product commutes with pullback a
 `k₁ × k₂` of submersions, by the identity `(k₁ × k₂)_♯ (φ ⊗ ψ) = k₁_♯ φ ⊗ k₂_♯ ψ` of fibre
 integrals.
 
-Typical submersions are the projections of a product, coordinate charts followed by projections,
-and the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
-constant along parallel hyperplanes.
+Typical submersions are the surjective linear maps
+(`ContinuousLinearMap.surjective_fderiv_of_surjective`), such as the projections of a product and
+the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
+constant along parallel hyperplanes, and coordinate charts followed by projections.
 
 ## Main declarations
 

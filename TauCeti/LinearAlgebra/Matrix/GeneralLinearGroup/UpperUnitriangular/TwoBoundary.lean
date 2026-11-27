@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Nilpotent
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Transvection
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -60,6 +61,10 @@ problem for homomorphisms of Galois groups into `Uₙ₊₁(𝔽_p)/Z` studied b
 * `TauCeti.UpperUnitriangularGroup.twoBoundaryEquiv`: for `r + s < n`, all coordinates give
   `P_(r,s) ≃* R × R^s × R^r`, so `P_(r,s)` is abelian
   (`TauCeti.UpperUnitriangularGroup.isMulCommutative_twoBoundarySubgroup`).
+* `TauCeti.UpperUnitriangularGroup.transvection_mem_twoBoundarySubgroup`: the transvections at
+  the two-boundary positions lie in `P_(r,s)`.
+* `TauCeti.UpperUnitriangularGroup.twoBoundarySubgroup_hom_ext`: for `r + s < n`, homomorphisms
+  from `P_(r,s)` to a commutative monoid are determined by their values on these transvections.
 
 ## References
 
@@ -191,6 +196,15 @@ theorem IsTwoBoundary.isUpperTriangular_mul_mul {M T T' : Matrix (Fin (n + 1)) (
   rw [heq]
   exact (hM.isUpperTriangular_mul hT).mul_isUpperTriangular hT'
 
+/-- For `r + s < n`, the products of matrices supported at the two-boundary positions vanish:
+`(M - 1) (M' - 1) = 0` whenever `M` and `M'` satisfy the two-boundary support condition. -/
+theorem IsTwoBoundary.sub_one_mul_sub_one_eq_zero (h : r + s < n)
+    {M M' : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hM : IsTwoBoundary n r s M)
+    (hM' : IsTwoBoundary n r s M') : (M - 1) * (M' - 1) = 0 := by
+  rw [isTwoBoundary_iff_supported] at hM hM'
+  ext i j
+  exact hM.mul_apply_eq_zero hM' (by omega)
+
 end Ring
 
 namespace UpperUnitriangularGroup
@@ -211,12 +225,6 @@ private theorem supported_sub_one_mul {g h : upperUnitriangularGroup (Fin (n + 1
   simp only [Subgroup.coe_mul, Units.val_mul]
   rw [heq]
   exact hg.add (hh.isUpperTriangular_mul (isUpperTriangular g))
-
-private theorem coe_mul_coe_inv (g : upperUnitriangularGroup (Fin (n + 1)) R) :
-    ((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) *
-        (((g⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-          Matrix (Fin (n + 1)) (Fin (n + 1)) R) = 1 := by
-  rw [Subgroup.coe_inv, Units.mul_inv]
 
 private theorem supported_sub_one_inv {g : upperUnitriangularGroup (Fin (n + 1)) R}
     (hg : Supported n r s (((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1)) :
@@ -249,6 +257,18 @@ theorem mem_twoBoundarySubgroup_iff {g : upperUnitriangularGroup (Fin (n + 1)) R
     g ∈ twoBoundarySubgroup (R := R) n r s ↔
       IsTwoBoundary n r s ((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :=
   Iff.rfl
+
+/-- A transvection `e_ij(t)` lies in the two-boundary subgroup `P_(r,s)` when `(i, j)` is a
+two-boundary position: in row `0` at a column `j ≥ n - s`, or in column `n` at a row `i ≤ r`. -/
+theorem transvection_mem_twoBoundarySubgroup {i j : Fin (n + 1)} (hij : i < j)
+    (hP : (i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r)) (t : R) :
+    transvection hij t ∈ twoBoundarySubgroup (R := R) n r s := by
+  rw [mem_twoBoundarySubgroup_iff, isTwoBoundary_iff]
+  intro a b hab
+  obtain ⟨rfl, rfl⟩ : i = a ∧ j = b := by
+    by_contra hne
+    exact hab (coe_transvection_apply_of_ne hij t hne)
+  exact ⟨hij, hP⟩
 
 private theorem supported_of_mem {g : upperUnitriangularGroup (Fin (n + 1)) R}
     (hg : g ∈ twoBoundarySubgroup (R := R) n r s) :
@@ -605,6 +625,105 @@ theorem twoBoundaryEquiv_symm_apply (x : Multiplicative (R × (Fin s → R) × (
 theorem isMulCommutative_twoBoundarySubgroup (h : r + s < n) :
     IsMulCommutative (twoBoundarySubgroup (R := R) n r s) :=
   .of_comm fun g g' ↦ (twoBoundaryEquiv h).injective <| by rw [map_mul, map_mul, mul_comm]
+
+/-! ### Homomorphisms out of `P_(r,s)` for `r + s < n` -/
+
+/-- The coordinates of a transvection `e_ij(t)` of `P_(r,s)` are the entries of `t Eᵢⱼ` at the
+corner, at the first-row positions `(0, n - s + k)` and at the last-column positions
+`(k + 1, n)`. -/
+private theorem toAdd_twoBoundaryEquiv_transvection {i j : Fin (n + 1)} (hij : i < j)
+    (hP : (i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r)) (t : R) :
+    (twoBoundaryEquiv h ⟨_, transvection_mem_twoBoundarySubgroup hij hP t⟩).toAdd =
+      (single i j t 0 (Fin.last n), fun k : Fin s ↦ single i j t 0 ⟨n - s + k, by omega⟩,
+        fun k : Fin r ↦ single i j t ⟨k + 1, by omega⟩ (Fin.last n)) := by
+  rw [toAdd_twoBoundaryEquiv_apply]
+  refine Prod.ext ?_ (Prod.ext (funext fun k ↦ ?_) (funext fun k ↦ ?_)) <;>
+    simp only [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply]
+  · rw [one_apply_ne (zero_ne_last (by omega)), zero_add]
+  · rw [one_apply_ne (zero_ne_row (by omega) k), zero_add]
+  · rw [one_apply_ne (col_ne_last (by omega) k), zero_add]
+
+/-- The coordinates of the corner transvection `e₀ₙ(t)` are `(t, 0, 0)`. -/
+private theorem twoBoundaryEquiv_transvection_corner (t : R) :
+    Multiplicative.ofAdd (t, 0, 0) = twoBoundaryEquiv h ⟨_,
+      transvection_mem_twoBoundarySubgroup (i := 0) (j := Fin.last n)
+        ((zero_ne_last (by omega)).lt_of_le (Fin.zero_le _)) (Or.inr ⟨rfl, by simp⟩) t⟩ := by
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_twoBoundaryEquiv_transvection h _ (Or.inr ⟨rfl, by simp⟩), toAdd_ofAdd,
+    single_apply_same]
+  refine congrArg (Prod.mk t) (Prod.ext (funext fun k ↦ ?_) (funext fun k ↦ ?_))
+  · exact (single_apply_of_ne _ _ _ _ _ fun h' ↦ row_ne_last (by omega) k h'.2.symm).symm
+  · exact (single_apply_of_ne _ _ _ _ _ fun h' ↦ col_ne_zero (by omega) k h'.1.symm).symm
+
+/-- The coordinates of the first-row transvection `e₀,ₙ₋ₛ₊ₖ(t)` are `(0, tδₖ, 0)`. -/
+private theorem twoBoundaryEquiv_transvection_row (k : Fin s) (t : R) :
+    Multiplicative.ofAdd (0, Pi.single k t, 0) = twoBoundaryEquiv h ⟨_,
+      transvection_mem_twoBoundarySubgroup ((zero_ne_row (by omega) k).lt_of_le
+        (Fin.zero_le _)) (Or.inl ⟨rfl, by simp only; omega⟩) t⟩ := by
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_twoBoundaryEquiv_transvection h _ (Or.inl ⟨rfl, by simp only; omega⟩), toAdd_ofAdd]
+  refine Prod.ext ?_ (Prod.ext (funext fun k' ↦ ?_) (funext fun k' ↦ ?_))
+  · exact (single_apply_of_ne _ _ _ _ _ fun h' ↦ row_ne_last (by omega) k h'.2).symm
+  · dsimp only
+    rcases eq_or_ne k k' with rfl | hk
+    · rw [Pi.single_eq_same, single_apply_same]
+    · rw [Pi.single_eq_of_ne hk.symm, single_apply_of_ne _ _ _ _ _ fun h' ↦
+        hk (Fin.ext (by simpa using h'.2))]
+  · exact (single_apply_of_ne _ _ _ _ _ fun h' ↦ col_ne_zero (by omega) k' h'.1.symm).symm
+
+/-- The coordinates of the last-column transvection `eₖ₊₁,ₙ(t)` are `(0, 0, tδₖ)`. -/
+private theorem twoBoundaryEquiv_transvection_col (k : Fin r) (t : R) :
+    Multiplicative.ofAdd (0, 0, Pi.single k t) = twoBoundaryEquiv h ⟨_,
+      transvection_mem_twoBoundarySubgroup ((col_ne_last (by omega) k).lt_of_le
+        (Fin.le_last _)) (Or.inr ⟨rfl, by simp only; omega⟩) t⟩ := by
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_twoBoundaryEquiv_transvection h _ (Or.inr ⟨rfl, by simp only; omega⟩), toAdd_ofAdd]
+  refine Prod.ext ?_ (Prod.ext (funext fun k' ↦ ?_) (funext fun k' ↦ ?_))
+  · exact (single_apply_of_ne _ _ _ _ _ fun h' ↦ col_ne_zero (by omega) k h'.1).symm
+  · exact (single_apply_of_ne _ _ _ _ _ fun h' ↦ col_ne_zero (by omega) k h'.1).symm
+  · dsimp only
+    rcases eq_or_ne k k' with rfl | hk
+    · rw [Pi.single_eq_same, single_apply_same]
+    · rw [Pi.single_eq_of_ne hk.symm, single_apply_of_ne _ _ _ _ _ fun h' ↦
+        hk (Fin.ext (by simpa using h'.1))]
+
+/-- A coordinate vector `(c, a, b)` is the product of the vectors with a single nonzero
+coordinate. -/
+private theorem eq_ofAdd_mul_prod_mul_prod (x : Multiplicative (R × (Fin s → R) × (Fin r → R))) :
+    x = Multiplicative.ofAdd (x.toAdd.1, 0, 0) *
+      (∏ k, Multiplicative.ofAdd (0, Pi.single k (x.toAdd.2.1 k), 0)) *
+        ∏ k, Multiplicative.ofAdd (0, 0, Pi.single k (x.toAdd.2.2 k)) := by
+  refine Multiplicative.toAdd.injective ?_
+  simp only [toAdd_mul, toAdd_prod, toAdd_ofAdd]
+  refine Prod.ext ?_ (Prod.ext ?_ ?_) <;>
+    simp [Prod.fst_sum, Prod.snd_sum, Finset.univ_sum_single]
+
+/-- **Extensionality for homomorphisms out of `P_(r,s)`**, for `r + s < n`: an element of
+`P_(r,s)` with coordinates `(c, a, b)` is the product of the transvections `e₀ₙ(c)`,
+`e₀,ₙ₋ₛ₊ₖ(a k)` and `eₖ₊₁,ₙ(b k)`, so two homomorphisms from `P_(r,s)` to a commutative monoid
+that agree on the transvections at the two-boundary positions are equal. -/
+theorem twoBoundarySubgroup_hom_ext {M : Type*} [CommMonoid M] (h : r + s < n)
+    {f₁ f₂ : twoBoundarySubgroup (R := R) n r s →* M}
+    (hf : ∀ (i j : Fin (n + 1)) (hij : i < j)
+      (hP : (i = 0 ∧ n ≤ (j : ℕ) + s) ∨ (j = Fin.last n ∧ (i : ℕ) ≤ r)) (t : R),
+      f₁ ⟨_, transvection_mem_twoBoundarySubgroup hij hP t⟩ =
+        f₂ ⟨_, transvection_mem_twoBoundarySubgroup hij hP t⟩) : f₁ = f₂ := by
+  have hg : f₁.comp (twoBoundaryEquiv h).symm.toMonoidHom =
+      f₂.comp (twoBoundaryEquiv h).symm.toMonoidHom := by
+    refine MonoidHom.ext fun x ↦ ?_
+    rw [eq_ofAdd_mul_prod_mul_prod x, map_mul, map_mul, map_mul, map_mul, map_prod, map_prod,
+      map_prod, map_prod]
+    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      twoBoundaryEquiv_transvection_corner h, twoBoundaryEquiv_transvection_row h,
+      twoBoundaryEquiv_transvection_col h, MulEquiv.symm_apply_apply]
+    refine congrArg₂ (· * ·) (congrArg₂ (· * ·) (hf _ _ _ ?_ _)
+      (Finset.prod_congr rfl fun k _ ↦ hf _ _ _ ?_ _))
+      (Finset.prod_congr rfl fun k _ ↦ hf _ _ _ ?_ _)
+    · exact Or.inr ⟨rfl, by simp⟩
+    · exact Or.inl ⟨rfl, by simp only; omega⟩
+    · exact Or.inr ⟨rfl, by simp only; omega⟩
+  ext Q
+  simpa using congrArg (· (twoBoundaryEquiv h Q)) hg
 
 end Abelian
 

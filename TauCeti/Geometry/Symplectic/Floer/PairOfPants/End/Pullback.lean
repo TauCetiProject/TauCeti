@@ -39,6 +39,8 @@ a map `u : S → M` to `u ∘ φ'_q`:
   (`SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen`, and for a
   measurable subset of a band of angular width one
   `SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset_of_isOpen`);
+* pointwise, its energy density is the Jacobian of `φ'_q` times the energy density of `u`
+  (`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_positiveEndChart`);
 * at the time `±t` of the end, `X_{H'_q(±t)} = ±X_{H_q(t)}`
   (`TauCeti.SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul`).
 
@@ -170,6 +172,31 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart {q : Puncture}
     (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
 
+/-- **The energy density of an end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt`
+beyond `T₀` on the end `q`, for differentiable `H_q`, and let `u` be differentiable at the image
+`φ'_q(ζ)` of a point `ζ` with `s ≥ T₀` of the positive end chart. Then the energy density of
+`u ∘ φ'_q` for the end Hamiltonian `H'_q` at `ζ` is the Jacobian of `φ'_q` at `ζ` times the energy
+density of `u` at `φ'_q(ζ)`. -/
+theorem floerEnergyDensity_comp_positiveEndChart {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℝ × ℝ → M} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (positiveEndChart q ζ)) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+        (u ∘ positiveEndChart q) ζ =
+      (fderiv ℝ (positiveEndChart q) ζ).det * ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u (positiveEndChart q ζ) := by
+  rw [floerEnergyDensity_def, perturbedMFDeriv_comp_positiveEndChart_eq hKH hH hζ,
+    ← floerEnergyDensity_def]
+  exact ω.floerEnergyDensity_perturbationPullback
+    (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+    ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hu
+    (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζ 1 _)
+    (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
+
 /-- **The energy of a part of an end of a Floer solution on an open set is the energy of its
 image.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on the end `q`, for differentiable `H_q`, and
 let `u` be differentiable on an open set `U` which contains the part `±s > a` of the end `q`, for
@@ -196,17 +223,10 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_eq_of_subset_of_is
       (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =
         |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
     intro ζ hζ
-    have hζT : T₀ ≤ ζ.1 := haT.trans (hst hζ).1.le
     have hζU := haU ζ (hst hζ).1
-    rw [floerEnergyDensity_def, perturbedMFDeriv_comp_positiveEndChart_eq hKH hH hζT,
-      ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
-    exact ω.floerEnergyDensity_perturbationPullback
-      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
-      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
+    rw [abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
+    exact floerEnergyDensity_comp_positiveEndChart hKH hH hHd (haT.trans (hst hζ).1.le)
       ((hu _ hζU).mdifferentiableAt (hU.mem_nhds hζU))
-      (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
-      (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
   exact (lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
     ((injOn_positiveEndChart q t₀).mono
       (hst.trans (prod_mono (subset_univ _) Ioo_subset_Ico_self)))

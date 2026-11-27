@@ -98,8 +98,8 @@ theorem NoOppositeCovectorsOn.compCLMOfSubmersion {μ : Measure E₀} [μ.IsAddH
   rw [noOppositeCovectorsOn_singleton_iff] at h ⊢
   intro ξ hS hT
   rw [waveFrontSet_compCLMOfSubmersion] at hS hT
-  obtain ⟨hxΩ, η₁, hη₁, hξ₁⟩ := hS
-  obtain ⟨-, η₂, hη₂, hξ₂⟩ := hT
+  obtain ⟨hxΩ, η₁, hη₁, hξ₁⟩ := TauCeti.mem_covectorPullback.1 hS
+  obtain ⟨-, η₂, hη₂, hξ₂⟩ := TauCeti.mem_covectorPullback.1 hT
   dsimp only at hxΩ hη₁ hξ₁ hη₂ hξ₂
   have hinj : Injective (fderiv ℝ k x).adjoint :=
     ContinuousLinearMap.adjoint_injective_iff_denseRange.2 (hks x hxΩ).denseRange
