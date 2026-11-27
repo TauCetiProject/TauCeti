@@ -45,10 +45,11 @@ states `h(-1)|0⟩` are the operator product expansion
 `h₍₁₎ k(-1)|0⟩ = B(h, k)|0⟩` and `h₍ₙ₎ k(-1)|0⟩ = 0` for the other `n ≥ 0`. The form `B` may be
 degenerate, including zero, when every nonnegative product of generating states vanishes.
 
-The construction is functorial for isometries. A linear map `f : H → H'` with
-`B'(f h, f k) = B(h, k)` induces the algebra map `π(H) → π(H')` of symmetric algebras
-(`SymmetricAlgebra.map`), which preserves the vacuum and intertwines the modes,
-`f(h(n) p) = (f h)(n) f(p)` (`TauCeti.HeisenbergFockSpace.map_modeOperator`). Since the states
+The construction is functorial for isometries. An isometry `f : (H, B) → (H', B')`
+(`LinearMap.BilinForm.Isometry`, written `B →bᵢ B'`) induces the algebra map `π(H) → π(H')` of
+symmetric algebras (`SymmetricAlgebra.map`), which preserves the vacuum and intertwines the modes,
+`f(h(n) p) = (f h)(n) f(p)` (`TauCeti.HeisenbergFockSpace.map_modeOperator`, in the Fock module
+file). Since the states
 `h(-1)|0⟩` generate the Heisenberg vertex algebra
 (`TauCeti.HeisenbergFockSpace.adjoin_range_ι_single_zero_eq_top`), it is a morphism of formal
 vertex algebras (`TauCeti.HeisenbergFockSpace.formalVertexAxiomsHom`).
@@ -73,7 +74,6 @@ vertex algebras (`TauCeti.HeisenbergFockSpace.formalVertexAxiomsHom`).
   expansion of two free boson fields.
 * `TauCeti.HeisenbergFockSpace.adjoin_range_ι_single_zero_eq_top`: the states `h(-1)|0⟩` generate
   the Heisenberg vertex algebra.
-* `TauCeti.HeisenbergFockSpace.map_modeOperator`: isometries intertwine the modes.
 
 ## References
 
@@ -245,59 +245,38 @@ section Map
 
 variable {H' : Type*} [AddCommGroup H'] [Module R H'] (B' : LinearMap.BilinForm R H')
 
-/-- **Isometries intertwine the modes.** If `f : H → H'` satisfies `B'(f h, f k) = B(h, k)`, then
-the induced map of Fock spaces carries `h(n) p` to `(f h)(n) f(p)`. For `n ≤ 0` no condition on `f`
-is needed. -/
-theorem map_modeOperator (f : H →ₗ[R] H') (hf : ∀ h k, B' (f h) (f k) = B h k) (n : ℤ) (h : H)
-    (p : HeisenbergFockSpace R H) :
-    SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f) (modeOperator B n h p) =
-      modeOperator B' n (f h) (SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f) p) := by
-  rcases n with (_ | j) | j
-  · simp
-  · rw [Int.ofNat_eq_natCast, Nat.cast_succ, modeOperator_natCast_add_one_apply,
-      modeOperator_natCast_add_one_apply]
-    -- Both sides are derivations along the induced algebra map, so compare them on generators.
-    induction p using SymmetricAlgebra.induction with
-    | algebraMap r => simp
-    | ι v => simp [hf]
-    | mul p q hp hq => simp [Derivation.leibniz, hp, hq]
-    | add p q hp hq => simp [hp, hq]
-  · simp [modeOperator_negSucc]
-
 variable [HasUniqueDiv (HeisenbergFockSpace R H)] [HasUniqueDiv (HeisenbergFockSpace R H')]
   (hB : B.IsSymm) (hB' : B'.IsSymm)
 
 /-- The morphism of Heisenberg vertex algebras induced by an isometry `f : (H, B) → (H', B')`:
 the map of Fock spaces sending `h(-(j+1))|0⟩` to `(f h)(-(j+1))|0⟩`. -/
-def formalVertexAxiomsHom (f : H →ₗ[R] H') (hf : ∀ h k, B' (f h) (f k) = B h k) :
+def formalVertexAxiomsHom (f : B →bᵢ B') :
     (formalVertexAxioms B hB).Hom (formalVertexAxioms B' hB') :=
   FormalVertexAxioms.Hom.ofAdjoinEqTop
-    (SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f)).toLinearMap
+    (SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f.toLinearMap)).toLinearMap
     (adjoin_range_ι_single_zero_eq_top B hB) (by simp) (by
       rintro _ ⟨h, rfl⟩ n b
-      simp [map_modeOperator B B' f hf])
+      simp [map_modeOperator f])
 
 /-- The morphism induced by an isometry is the induced map of symmetric algebras. -/
 @[simp]
-theorem coe_formalVertexAxiomsHom (f : H →ₗ[R] H') (hf : ∀ h k, B' (f h) (f k) = B h k) :
-    ⇑(formalVertexAxiomsHom B B' hB hB' f hf) =
-      SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f) :=
+theorem coe_formalVertexAxiomsHom (f : B →bᵢ B') :
+    ⇑(formalVertexAxiomsHom B B' hB hB' f) =
+      SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f.toLinearMap) :=
   FormalVertexAxioms.Hom.coe_ofAdjoinEqTop ..
 
 /-- The identity isometry induces the identity morphism. -/
 @[simp]
 theorem formalVertexAxiomsHom_id :
-    formalVertexAxiomsHom B B hB hB LinearMap.id (fun _ _ ↦ rfl) =
-      FormalVertexAxioms.Hom.id (formalVertexAxioms B hB) :=
-  FormalVertexAxioms.Hom.ext fun p ↦ by simp
+    formalVertexAxiomsHom B B hB hB (.id B) = FormalVertexAxioms.Hom.id (formalVertexAxioms B hB) :=
+  FormalVertexAxioms.Hom.ext fun p ↦ by simp [LinearMap.BilinForm.Isometry.id]
 
 /-- Composites of isometries induce composites of morphisms. -/
 theorem formalVertexAxiomsHom_comp {H'' : Type*} [AddCommGroup H''] [Module R H'']
     (B'' : LinearMap.BilinForm R H'') [HasUniqueDiv (HeisenbergFockSpace R H'')]
-    (hB'' : B''.IsSymm) (f : H →ₗ[R] H') (hf : ∀ h k, B' (f h) (f k) = B h k)
-    (g : H' →ₗ[R] H'') (hg : ∀ h k, B'' (g h) (g k) = B' h k) :
-    (formalVertexAxiomsHom B' B'' hB' hB'' g hg).comp (formalVertexAxiomsHom B B' hB hB' f hf) =
-      formalVertexAxiomsHom B B'' hB hB'' (g ∘ₗ f) (fun h k ↦ by simp [hg, hf]) :=
+    (hB'' : B''.IsSymm) (f : B →bᵢ B') (g : B' →bᵢ B'') :
+    (formalVertexAxiomsHom B' B'' hB' hB'' g).comp (formalVertexAxiomsHom B B' hB hB' f) =
+      formalVertexAxiomsHom B B'' hB hB'' (g.comp f) :=
   FormalVertexAxioms.Hom.ext fun p ↦ by
     simp [← AlgHom.comp_apply, SymmetricAlgebra.map_comp_map, Finsupp.mapRange.linearMap_comp]
 
