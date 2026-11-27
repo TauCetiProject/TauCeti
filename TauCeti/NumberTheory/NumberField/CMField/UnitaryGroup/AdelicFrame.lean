@@ -265,9 +265,11 @@ for `g ∈ G(s)`. The body is exposed so that the Gram matrix of `V·g` is defin
   frameInf φ := V.frameInf φ * (g.1 φ : GL (Fin n) ℂ)
   frameFin := V.frameFin * (g.2 : GL (Fin n) 𝔸ᶠ[E])
   star_frameInf_mul_mul φ :=
-    unitaryGroupOf.star_mul_mul_mul_eq (V.star_frameInf_mul_mul φ) (g.1 φ).property
+    unitaryGroupOf.star_mul_mul_mul_eq (V.star_frameInf_mul_mul φ)
+      (mem_unitaryGroupOf_iff.mp (g.1 φ).property)
   star_frameFin_mul_mul :=
-    unitaryGroupOf.star_mul_mul_mul_eq V.star_frameFin_mul_mul g.2.property
+    unitaryGroupOf.star_mul_mul_mul_eq V.star_frameFin_mul_mul
+      (mem_unitaryGroupOf_iff.mp g.2.property)
 
 @[simp]
 theorem gram_move (g : AdelicUnitaryGroup n Φ s) : (V.move g).gram = V.gram :=

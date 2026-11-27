@@ -29,8 +29,8 @@ the two ways of moving such a group to another one.
 * `Matrix.star_inv_mul_mul_inv_eq`: if `star x * A * x = B` then `star x⁻¹ * B * x⁻¹ = A`.
 * `Matrix.unitaryGroupOf.inv_mul_mul_mem`: conjugation by a change of frame maps `unitaryGroupOf A`
   into `unitaryGroupOf B`.
-* `Matrix.unitaryGroupOf.star_mul_mul_mul_eq`: a change of frame followed by an element of
-  `unitaryGroupOf B` is again a change of frame from `A` to `B`.
+* `Matrix.unitaryGroupOf.star_mul_mul_mul_eq`: changes of frame from `A` to `B` and from `B` to
+  `C` compose to a change of frame from `A` to `C`.
 * `Matrix.unitaryGroupOf.conjEquiv`: the isomorphism `unitaryGroupOf A ≃* unitaryGroupOf B`, with
   `Matrix.unitaryGroupOf.conjEquiv_trans` for two successive changes of frame.
 * `Matrix.unitaryGroupOf.mapHom`: the change of coefficients along a `star`-compatible ring
@@ -75,12 +75,12 @@ theorem inv_mul_mul_mem {x : GL n R} (hx : star (x : Matrix n n R) * A * x = B) 
         simp only [Matrix.mul_assoc]
     _ = star (x : Matrix n n R) * A * x := by rw [hg']
 
-/-- Following a change of frame `x` from `A` to `B` by an element `h` of `unitaryGroupOf B` gives
-again a change of frame from `A` to `B`: `star (x * h) * A * (x * h) = B`. -/
-theorem star_mul_mul_mul_eq {x h : GL n R} (hx : star (x : Matrix n n R) * A * x = B)
-    (hh : h ∈ unitaryGroupOf B) :
-    star (↑(x * h) : Matrix n n R) * A * (↑(x * h) : Matrix n n R) = B := by
-  conv_rhs => rw [← mem_unitaryGroupOf_iff.mp hh, ← hx]
+/-- Changes of frame `x` from `A` to `B` and `y` from `B` to `C` compose to a change of frame
+from `A` to `C`: `star (x * y) * A * (x * y) = C`. -/
+theorem star_mul_mul_mul_eq {x y : GL n R} (hx : star (x : Matrix n n R) * A * x = B)
+    (hy : star (y : Matrix n n R) * B * y = C) :
+    star (↑(x * y) : Matrix n n R) * A * (↑(x * y) : Matrix n n R) = C := by
+  rw [← hy, ← hx]
   simp only [Units.val_mul, star_mul, Matrix.mul_assoc]
 
 /-- **Change of frame**: for `x ∈ GL_n(R)` with `star x * A * x = B`, conjugation
@@ -118,9 +118,8 @@ theorem conjEquiv_one (hx : star ((1 : GL n R) : Matrix n n R) * A * (1 : GL n R
 /-- Two successive changes of frame `x` and `y` are the change of frame `x * y`. -/
 theorem conjEquiv_trans {x y : GL n R} (hx : star (x : Matrix n n R) * A * x = B)
     (hy : star (y : Matrix n n R) * B * y = C) :
-    (conjEquiv x hx).trans (conjEquiv y hy) = conjEquiv (x * y) (by
-      rw [← hy, ← hx]
-      simp only [Units.val_mul, star_mul, Matrix.mul_assoc]) :=
+    (conjEquiv x hx).trans (conjEquiv y hy) =
+      conjEquiv (x * y) (star_mul_mul_mul_eq hx hy) :=
   MulEquiv.ext fun g => Subtype.ext <| by
     simp only [MulEquiv.trans_apply, coe_conjEquiv_apply]
     group
