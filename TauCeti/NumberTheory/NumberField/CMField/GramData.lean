@@ -37,26 +37,22 @@ variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 /-- In a CM field, the mixed Gram entries of two rational column families are integral if they
 are integral in the same finite adelic unitary frame. The column families may be rectangular. -/
 theorem isIntegral_conjTranspose_mul_apply_of_adelic {n ι κ : Type*} [Fintype n] [DecidableEq n]
-    (g : Matrix n n 𝔸ᶠ[E]) (hg : (g.map (finiteAdeleConj E))ᵀ * g = 1)
+    (g : Matrix n n 𝔸ᶠ[E]) (hg : gᴴ * g = 1)
     {Y : Matrix n ι E} {Z : Matrix n κ E} (i : ι) (j : κ)
     (hY : ∀ k, (g * Y.map (algebraMap E 𝔸ᶠ[E])) k i ∈ integralAdeles (𝓞 E) E)
     (hZ : ∀ k, (g * Z.map (algebraMap E 𝔸ᶠ[E])) k j ∈ integralAdeles (𝓞 E) E) :
     IsIntegral ℤ ((Yᴴ * Z) i j) := by
   let ιE := algebraMap E 𝔸ᶠ[E]
-  let conjE := finiteAdeleConj E
-  have hmap : Yᴴ.map ιE = ((Y.map ιE).map conjE)ᵀ := by
-    ext k l
-    simp only [Matrix.map_apply, Matrix.conjTranspose_apply, Matrix.transpose_apply,
-      conjE, ιE, finiteAdeleConj_algebraMap, star_eq_complexConj]
-  have hgram : (Yᴴ * Z).map ιE =
-      (((g * Y.map ιE).map conjE)ᵀ * (g * Z.map ιE)) := by
-    simp only [Matrix.map_mul, hmap, Matrix.transpose_mul, Matrix.mul_assoc, conjE]
-    rw [← Matrix.mul_assoc (g.map (finiteAdeleConj E))ᵀ g, hg, Matrix.one_mul]
+  have hmap : Yᴴ.map ιE = (Y.map ιE)ᴴ :=
+    Matrix.conjTranspose_map ιE fun x ↦ by
+      simp only [ιE, star_eq_complexConj, algebraMap_complexConj]
+  have hgram : (Yᴴ * Z).map ιE = (g * Y.map ιE)ᴴ * (g * Z.map ιE) := by
+    simp only [Matrix.map_mul, hmap, Matrix.conjTranspose_mul, Matrix.mul_assoc]
+    rw [← Matrix.mul_assoc gᴴ g, hg, Matrix.one_mul]
   have hint : ιE ((Yᴴ * Z) i j) ∈ integralAdeles (𝓞 E) E := by
     rw [← Matrix.map_apply (M := Yᴴ * Z) (f := ιE) (i := i) (j := j), hgram, Matrix.mul_apply]
     refine sum_mem fun k _ ↦ mul_mem ?_ (hZ k)
-    simpa only [Matrix.transpose_apply, Matrix.map_apply, conjE, finiteAdeleConj_apply,
-      star_mem_integralAdeles_iff] using hY k
+    simpa only [Matrix.conjTranspose_apply, star_mem_integralAdeles_iff] using hY k
   obtain ⟨z, hz⟩ := (algebraMap_mem_integralAdeles_iff _).mp hint
   rw [← hz]
   exact RingOfIntegers.isIntegral_coe z
@@ -66,7 +62,7 @@ approximates a right inverse of `g * Y` modulo integral finite adeles, both `Y�
 and `Yᴴ * Y * X` have algebraic-integer entries. -/
 theorem isIntegral_conjTranspose_mul_self_apply_and_conjTranspose_mul_self_mul_apply_of_adelic
     {n : Type*} [Fintype n] [DecidableEq n]
-    (g : Matrix n n 𝔸ᶠ[E]) (hg : (g.map (finiteAdeleConj E))ᵀ * g = 1)
+    (g : Matrix n n 𝔸ᶠ[E]) (hg : gᴴ * g = 1)
     {Y X : Matrix n n E} {B : Matrix n n 𝔸ᶠ[E]}
     (hB : (g * Y.map (algebraMap E 𝔸ᶠ[E])) * B = 1)
     (hY : ∀ k l, (g * Y.map (algebraMap E 𝔸ᶠ[E])) k l ∈ integralAdeles (𝓞 E) E)
