@@ -33,15 +33,17 @@ cutoff is `P ⊓ ker η = ⊥`, even for the trivial action: replacing `ker η` 
 action would be wrong. For trivial `Q` and a cocycle injective on `P`, the cutoff is again `⊥`,
 so it is not `P ⊓ ker η` either.
 
-When `c` is continuous on `P` with finite image there, `η` is continuous on `P` and `Q` is
-discrete, the wild cutoff is open in `P` (`TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf`).
+When `H` is `T₁`, `c` is continuous on `P` with finite image there, `η` is continuous on `P` and
+`Q` is discrete, the wild cutoff is open in `P`
+(`TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf`).
 Conversely, for compact `P` in a topological group, a cutoff open in `P` is the open kernel of the
 lift restricted to `P`, which therefore has finite range, so `c` has finite image on `P`
 (`TauCeti.CrossedCocycle.finite_image_of_isOpen_wildCutoff_subgroupOf`, from
-`MonoidHom.finite_range_of_isOpen_ker`). Thus the wild cutoff
-of a parameter continuous on compact wild inertia is open in wild inertia exactly when the
-parameter has finite image there (`TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf_iff`).
-The analogous criterion for continuous homomorphisms on compact groups is
+`MonoidHom.finite_range_of_isOpen_ker`). Thus, for `T₁` `H` and discrete `Q`, when the parameter
+and `η` are continuous on compact wild inertia, the wild cutoff is open in wild inertia exactly
+when the parameter has finite image there
+(`TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf_iff`).
+The analogous criterion for continuous homomorphisms from compact groups to `T₁` spaces is
 `MonoidHom.isOpen_ker_iff_finite_range`.
 
 ## Main definitions
@@ -57,10 +59,11 @@ The analogous criterion for continuous homomorphisms on compact groups is
 * `TauCeti.CrossedCocycle.wildCutoff_smul`: the wild cutoff is gauge invariant.
 * `TauCeti.CrossedCocycle.comap_wildCutoff`: the wild cutoff of a pulled-back cocycle in a
   pulled-back subgroup is the pullback of the wild cutoff.
-* `TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf`: the wild cutoff of a continuous
-  cocycle with finite image on `P` is open in `P`.
-* `TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf_iff`: for compact `P`, the wild cutoff of
-  a continuous cocycle is open in `P` exactly when the cocycle has finite image on `P`.
+* `TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf`: for `T₁` `H`, discrete `Q` and
+  continuous `η`, the wild cutoff of a continuous cocycle with finite image on `P` is open in `P`.
+* `TauCeti.CrossedCocycle.isOpen_wildCutoff_subgroupOf_iff`: for compact `P`, `T₁` `H`, discrete
+  `Q` and continuous `η`, the wild cutoff of a continuous cocycle is open in `P` exactly when the
+  cocycle has finite image on `P`.
 
 ## References
 
@@ -150,8 +153,9 @@ section Topology
 
 variable [TopologicalSpace Γ]
 
-/-- If `c` is continuous on `P` with finite image there and `η` is continuous on `P` with values in
-the discrete group `Q`, then the wild cutoff of `c` is open in `P`. -/
+/-- If `c` is continuous on `P` with finite image there, with values in the `T₁` group `H`, and `η`
+is continuous on `P` with values in the discrete group `Q`, then the wild cutoff of `c` is open
+in `P`. -/
 theorem isOpen_wildCutoff_subgroupOf [TopologicalSpace H] [T1Space H] [TopologicalSpace Q]
     [DiscreteTopology Q] (hc : ContinuousOn c P) (hfin : (c '' P).Finite)
     (hη : ContinuousOn η P) : IsOpen ((c.wildCutoff P).subgroupOf P : Set P) := by
@@ -181,9 +185,9 @@ theorem finite_image_of_isOpen_wildCutoff_subgroupOf [IsTopologicalGroup Γ]
   rintro _ ⟨γ, hγ, rfl⟩
   exact ⟨_, ⟨⟨γ, hγ⟩, rfl⟩, by simp⟩
 
-/-- For compact `P` in a topological group, a cocycle continuous on `P`, and `η` continuous on `P`
-with values in the discrete group `Q`, the wild cutoff of `c` is open in `P` exactly when `c` has
-finite image on `P`. -/
+/-- For compact `P` in a topological group, a cocycle continuous on `P` with values in the `T₁`
+group `H`, and `η` continuous on `P` with values in the discrete group `Q`, the wild cutoff of `c`
+is open in `P` exactly when `c` has finite image on `P`. -/
 theorem isOpen_wildCutoff_subgroupOf_iff [IsTopologicalGroup Γ] [TopologicalSpace H] [T1Space H]
     [TopologicalSpace Q] [DiscreteTopology Q] (hP : IsCompact (P : Set Γ)) (hc : ContinuousOn c P)
     (hη : ContinuousOn η P) :
