@@ -29,9 +29,10 @@ The completion of `M` only sees `M` modulo `D = ⋂ₙ rⁿ M`, the kernel of `M
 (`IsSMulRegular.smul_iInf_pow_smul_top`). If `N` is `(r)`-adically Hausdorff, then `f` is
 injective and its range `P` meets `D` trivially; multiplication by `r` is bijective on
 `M ⧸ (P + D)` (`IsSMulRegular.bijective_smul_quotient_range_sup_iInf`, in
-`TauCeti.RingTheory.QuotSMulTop`) and on the cokernel of
-`M → M̂` (`IsSMulRegular.bijective_smul_quotient_range_of`). These two quotients record what a
-lattice of lifts and the completion fail to see; neither inclusion `P → M` nor `M → M̂` need split.
+`TauCeti.RingTheory.QuotSMulTop`) and on the cokernel of `M → M̂`
+(`IsSMulRegular.bijective_smul_quotient_range_adicCompletionOf`). These two quotients record what
+a lattice of lifts and the completion fail to see; neither inclusion `P → M` nor `M → M̂` need
+split.
 
 When `R` is a `ℤ_(p)`-algebra and `r = p`, the intersection `D` is the maximal divisible subgroup
 of `M` and every quotient on which `p` acts bijectively is uniquely divisible
@@ -47,7 +48,7 @@ free of rank `t`, completion kernel `Div(T)`, a lattice `P ≃ ℤ_(p)ᵗ` of li
 * `IsSMulRegular.injective_of_injective_quotSMulTop_map`,
   `IsSMulRegular.range_inf_iInf_pow_smul_top_eq_bot`: with a Hausdorff source, the lattice of
   lifts is a copy of the source meeting `⋂ₙ rⁿ M` trivially.
-* `IsSMulRegular.bijective_smul_quotient_range_of`: `r` is bijective on `M̂ ⧸ M`.
+* `IsSMulRegular.bijective_smul_quotient_range_adicCompletionOf`: `r` is bijective on `M̂ ⧸ M`.
 
 ## References
 
@@ -104,7 +105,7 @@ theorem range_inf_iInf_pow_smul_top_eq_bot [IsHausdorff (Ideal.span {r}) N]
 
 /-- **What the completion misses.** If `r` is regular on `M`, then multiplication by `r` is
 bijective on the cokernel `M̂ ⧸ M` of the map to the `(r)`-adic completion. -/
-theorem bijective_smul_quotient_range_of :
+theorem bijective_smul_quotient_range_adicCompletionOf :
     Bijective fun x : AdicCompletion (Ideal.span {r}) M ⧸
         LinearMap.range (AdicCompletion.of (Ideal.span {r}) M) ↦ r • x := by
   set I := Ideal.span {r}
