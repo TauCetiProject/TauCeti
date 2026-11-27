@@ -72,7 +72,7 @@ private theorem integral_scalarCurvature_negPart_mul_sq_le (hn : 2 < finrank ℝ
     · rw [criticalExponent_def]
       field_simp
       ring
-  have hS := (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+  have hS := (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   have h := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := riemannianVolume I M) hpq
     (Filter.Eventually.of_forall fun x ↦ negPart_nonneg _)
     (Filter.Eventually.of_forall fun x ↦ sq_nonneg (u x))
@@ -107,7 +107,7 @@ theorem neg_integral_scalarCurvature_negPart_rpow_le_yamabeQuotient
     Real.rpow_pos_of_pos (integral_abs_rpow_pos hu.continuous hu0 (criticalExponent_pos hn)) _
   rw [yamabeQuotient_def, le_div_iff₀ hN]
   have hS : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   have hg : Continuous fun x ↦ ‖mgradient I u x‖ ^ 2 := by
     simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hu hu
   have hE : Integrable (fun x ↦ conformalCoefficient (finrank ℝ E) *
@@ -157,7 +157,7 @@ theorem exists_pos_le_yamabeQuotient_of_scalarCurvature_pos [I.Boundaryless]
   set μ := riemannianVolume I M
   set a := conformalCoefficient (finrank ℝ E)
   have hSc : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   obtain ⟨s, hs, hsS⟩ := isCompact_univ.exists_forall_le' hSc.continuousOn fun x _ ↦ hS x
   obtain ⟨K, hK, hKu⟩ :=
     exists_integral_abs_rpow_rpow_le_mul_integral_mgradient_sq_add (I := I) (M := M) hn

@@ -68,7 +68,7 @@ private theorem regularized_energy_le {u : M → ℝ}
         ∂riemannianVolume I M := by
   let S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   have hS : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   have hv := ((hu.pow 2).add (contMDiff_const (c := ε))).sqrt
     (fun x ↦ (by positivity : 0 < u x ^ 2 + ε).ne')
   have hgrad (x : M) : ‖mgradient I (fun y ↦ Real.sqrt (u y ^ 2 + ε)) x‖ ^ 2 ≤

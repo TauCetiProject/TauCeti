@@ -85,7 +85,7 @@ private theorem integrable_scalarCurvature_mul {f u : M → ℝ} (hf : Continuou
     (hfc : HasCompactSupport f) (hu : Continuous u) :
     Integrable (fun x ↦ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
       (f x * u x)) (riemannianVolume I M) :=
-  ((CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
+  ((CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.mul
     (hf.mul hu)).integrable_of_hasCompactSupport hfc.mul_right.mul_left
 
 /-- Splitting `∫ f L_g u dV` into its zeroth-order and Laplacian parts:

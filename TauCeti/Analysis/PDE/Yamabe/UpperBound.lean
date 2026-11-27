@@ -115,7 +115,7 @@ private lemma exists_ball_forall_chart_close [I.Boundaryless] (p : M) {η : ℝ}
     exact (contMDiffOn_chartVolumeDensity (I := I) (n := 0) p).continuousOn.continuousAt
       ((trivializationAt E (TangentSpace I) p).open_baseSet.mem_nhds hp)
   have hScal : Continuous Scal :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   have hW : ∀ᶠ x in 𝓝 p, x ∈ U ∧ ρ x ∈ Icc ((1 - η) * ρ p) ((1 + η) * ρ p) ∧
       |Scal x| ≤ |Scal p| + 1 ∧ ∀ f : M → ℝ, DifferentiableAt ℝ (f ∘ φ.symm) (φ x) →
         ‖mgradient I f x‖ ≤ (1 + η) * ‖(fderiv ℝ (f ∘ φ.symm) (φ x) ∘L
@@ -382,7 +382,7 @@ private lemma integral_numerator_le (p : M) {R t η a S J B : ℝ} {u : M → �
     (hg.mul (hu.continuous.pow 2)).integrable_of_hasCompactSupport (huc.mono' fun x hx ↦
       by_contra fun h ↦ hx (by simp [image_eq_zero_of_notMem_tsupport h]))
   have hScalc : Continuous Scal :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   have htn : t ^ finrank ℝ E = t ^ (finrank ℝ E - 2) * t ^ 2 := by
     rw [← pow_add, Nat.sub_add_cancel hn.le]
   calc ∫ x, (a * ‖mgradient I u x‖ ^ 2 + Scal x * u x ^ 2) ∂riemannianVolume I M

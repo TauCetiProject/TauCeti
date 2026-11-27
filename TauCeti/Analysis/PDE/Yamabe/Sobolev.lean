@@ -86,7 +86,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 private def scalarCurvatureLp : Lp ℝ ⊤ (riemannianVolume I M) :=
   ContinuousMap.toLp ⊤ (riemannianVolume I M) ℝ
     ⟨(CovariantDerivative.leviCivitaConnection I M).scalarCurvature,
-      (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous⟩
+      (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature⟩
 
 /-- The **weak Yamabe energy form** `E_g(w, v) = aₙ D_g(w, v) + ∫ Scal_g w v dV_g` on `H¹(M)`, the
 continuous symmetric bilinear form associated with the conformal Laplacian `aₙ Δ⁺_g + Scal_g`. -/
@@ -108,7 +108,7 @@ theorem energyForm_apply (w v : SobolevH1 I M) :
   congr 1
   exact integral_congr_ae <| (ContinuousMap.coeFn_toLp (p := ⊤) (𝕜 := ℝ) (riemannianVolume I M)
     ⟨(CovariantDerivative.leviCivitaConnection I M).scalarCurvature,
-      (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous⟩).mono
+      (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature⟩).mono
     fun x hx ↦ by dsimp only; rw [scalarCurvatureLp, hx, ContinuousMap.coe_mk]
 
 /-- The weak Yamabe energy form is symmetric. -/
@@ -136,7 +136,7 @@ theorem energyForm_ofSmooth (u v : C^∞⟮I, M; ℝ⟯) :
       (v.contMDiff.of_le (by simp)))
   have h2 : Continuous fun x ↦
       (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (u x * v x) :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.mul
       ((map_continuous u).mul (map_continuous v))
   have hpot : ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
       SobolevH1.toLp (SobolevH1.ofSmooth u) x *
@@ -174,7 +174,7 @@ theorem energyForm_ofSmooth_right [I.Boundaryless] (w : SobolevH1 I M) (φ : C^�
   have h2 : Integrable (fun x ↦ SobolevH1.toLp w x *
       ((CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * φ x))
       (riemannianVolume I M) :=
-    hint ((CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
+    hint ((CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.mul
       (map_continuous φ))
   have hpot : ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
       SobolevH1.toLp w x * SobolevH1.toLp (SobolevH1.ofSmooth φ) x ∂riemannianVolume I M =
@@ -206,14 +206,14 @@ theorem neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul {K : ℝ}
       ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
         SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M := by
   obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.continuousOn
   have hsq : Integrable (fun x ↦ SobolevH1.toLp w x ^ 2) (riemannianVolume I M) :=
     (Lp.memLp (SobolevH1.toLp w)).integrable_sq
   have hSff : Integrable (fun x ↦ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
       SobolevH1.toLp w x * SobolevH1.toLp w x) (riemannianVolume I M) := by
     simpa only [mul_assoc, ← sq] using hsq.bdd_mul
       (Continuous.aestronglyMeasurable
-        (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous)
+        (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature)
       (.of_forall fun x ↦ hC x (mem_univ x))
   rw [← SobolevH1.integral_toLp_sq_eq_norm_sq, ← integral_const_mul]
   refine integral_mono (hsq.const_mul _) hSff fun x ↦ ?_
