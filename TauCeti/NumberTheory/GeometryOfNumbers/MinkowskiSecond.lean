@@ -62,6 +62,8 @@ every such `g` satisfies `g j ≤ λ_j`.
 * `ZLattice.successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume`: Minkowski's first theorem
   on the successive minima, `λ₀ⁿ · μ K ≤ 2ⁿ · covolume L μ`, for a symmetric convex body `K` in
   positive dimension `0 < finrank ℝ E`.
+* `ZLattice.exists_ne_zero_mem_norm_le`: the case of the unit ball, as a nonzero lattice vector of
+  norm at most `ρ` once `2ⁿ · covolume L μ ≤ ρⁿ · μ (closedBall 0 1)`.
 * `Convex.prod_mul_volume_real_le_two_pow`: the upper bound for the integer lattice `ℤⁿ ⊆ ℝⁿ` in
   coordinates. If `K ⊆ ℝⁿ` is convex and symmetric and every integer vector `z` with
   `gauge K z < a i` has `z j = 0` for all `j ≥ i`, then `(∏ i, a i) · vol K ≤ 2ⁿ`.
@@ -705,6 +707,34 @@ theorem successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume (L : Submodule
   rw [← Fin.prod_const]
   exact Finset.prod_le_prod₀ (fun _ _ ↦ successiveMin_nonneg L K _)
     fun i _ ↦ monotone_successiveMin L hK₀ (Fin.mk_le_mk.2 i.val.zero_le)
+
+/-- **Minkowski's first theorem for the unit ball.** A full lattice `L` in a real normed space `E`
+of positive dimension `n` has a nonzero vector of norm at most `ρ ≥ 0` as soon as
+`2ⁿ · covolume L μ ≤ ρⁿ · μ.real (closedBall 0 1)`, for a Haar measure `μ` on `E`. -/
+theorem exists_ne_zero_mem_norm_le (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] (hE : 0 < finrank ℝ E) {ρ : ℝ}
+    (hρ : 0 ≤ ρ)
+    (h : 2 ^ finrank ℝ E * ZLattice.covolume L μ ≤
+      ρ ^ finrank ℝ E * μ.real (Metric.closedBall (0 : E) 1)) :
+    ∃ x ∈ L, x ≠ 0 ∧ ‖x‖ ≤ ρ := by
+  have := Module.finite_of_finrank_pos hE
+  have := FiniteDimensional.proper_real E
+  set B := ConvexBody.closedBall (0 : E) 1 zero_le_one
+  have hB : (B : Set E) = Metric.closedBall 0 1 := ConvexBody.coe_closedBall _ _ _
+  have hB0 : 0 < μ.real (Metric.closedBall (0 : E) 1) :=
+    ENNReal.toReal_pos (Metric.measure_closedBall_pos μ 0 one_pos).ne' measure_closedBall_lt_top.ne
+  have h₁ := successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume L μ (K := B)
+    (fun x hx ↦ by
+      rw [← SetLike.mem_coe, hB, mem_closedBall_zero_iff] at hx ⊢
+      rwa [norm_neg]) hE
+  rw [hB] at h₁
+  have h₂ : successiveMin L B ⟨0, hE⟩ ≤ ρ :=
+    (pow_le_pow_iff_left₀ (successiveMin_nonneg _ _ _) hρ hE.ne').1
+      (le_of_mul_le_mul_right (h₁.trans h) hB0)
+  obtain ⟨x, hxL, hx0, hxB⟩ := (successiveMin_zero_le_iff L
+    (ConvexBody.mem_interior_closedBall_self 0 one_pos) hE hρ).1 h₂
+  refine ⟨x, hxL, hx0, ?_⟩
+  rwa [hB, smul_unitClosedBall_of_nonneg hρ, mem_closedBall_zero_iff] at hxB
 
 /-! ### The lower bound -/
 

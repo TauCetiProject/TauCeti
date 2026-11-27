@@ -18,13 +18,17 @@ import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 For a number field `K` with finite adeles `𝔸_f` and integral finite adeles `Ô`, the *generalised
 index* `[a]` of a finite adele `a` is the absolute norm of its fractional ideal when `a` is a unit,
 and `0` otherwise (`NumberField.FiniteAdeleRing.genIndex`). It is multiplicative, it is
-`|N_{K/ℚ} x|` on the diagonal image of `x ∈ K`, and for an integral adele `g` that is a unit of
-`𝔸_f` it is the index `[Ô : gÔ]`. It is invariant under ring automorphisms of `𝔸_f` that preserve
-`Ô`, and the determinant of a square matrix over `Ô` that is invertible over `Ô` has index `1`.
+`|N_{K/ℚ} x|` on the diagonal image of `x ∈ K`, on a finite idele `t` it is the inverse
+`(∏ᶠ v, ‖t_v‖)⁻¹` of the product of the norms of the components, and for an integral adele `g`
+that is a unit of `𝔸_f` it is the index `[Ô : gÔ]`. It is invariant under ring automorphisms of
+`𝔸_f` that preserve `Ô`, and the determinant of a square matrix over `Ô` that is invertible over
+`Ô` has index `1`.
 
 ## Main declarations
 
 * `NumberField.FiniteAdeleRing.genIndex`: the generalised index `𝔸_f →*₀ ℚ`.
+* `NumberField.FiniteAdeleRing.genIndex_units_eq_inv_finprod_norm`: `[t] = (∏ᶠ v, ‖t_v‖)⁻¹` for
+  a finite idele `t`.
 * `NumberField.FiniteAdeleRing.genIndex_algebraMap`: `[x] = |N_{K/ℚ} x|` for `x ∈ K`.
 * `NumberField.FiniteAdeleRing.genIndex_eq_cardQuot`: `[g] = [Ô : gÔ]`.
 * `NumberField.FiniteAdeleRing.genIndex_map`: invariance under automorphisms preserving `Ô`.
@@ -76,6 +80,26 @@ theorem genIndex_units (t : 𝔸ᶠ[K]ˣ) :
     genIndex K t = FractionalIdeal.absNorm (toFractionalIdeal t : FractionalIdeal (𝓞 K)⁰ K) := by
   simp only [genIndex, MonoidWithZeroHom.coe_mk, ZeroHom.coe_mk, dite_eq_left t.isUnit,
     IsUnit.unit_of_val_units]
+
+/-- The generalised index of a finite idele `t` is the inverse of the product of the norms of its
+components, `[t] = (∏ᶠ v, ‖t_v‖)⁻¹`. -/
+theorem genIndex_units_eq_inv_finprod_norm (t : 𝔸ᶠ[K]ˣ) :
+    (genIndex K t : ℝ) = (∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(t : 𝔸ᶠ[K]) v‖)⁻¹ := by
+  -- The absolute norm, as a homomorphism on the invertible fractional ideals.
+  let φ : (FractionalIdeal (𝓞 K)⁰ K)ˣ →* ℝ := (Rat.castHom ℝ).toMonoidHom.comp
+    ((FractionalIdeal.absNorm : FractionalIdeal (𝓞 K)⁰ K →*₀ ℚ).toMonoidHom.comp
+      (Units.coeHom _))
+  have hnorm (v : HeightOneSpectrum (𝓞 K)) :
+      ‖(t : 𝔸ᶠ[K]) v‖ = ((Ideal.absNorm v.asIdeal : ℝ) ^ adicOrd t v)⁻¹ := by
+    rw [FinitePlace.norm_adicCompletion_eq_absNorm_zpow v (coe_units_apply_ne_zero t v),
+      adicOrd_def, zpow_neg, inv_inv]
+  have hφ (v : HeightOneSpectrum (𝓞 K)) :
+      φ (v.unitOfPrime K ^ adicOrd t v) = (Ideal.absNorm v.asIdeal : ℝ) ^ adicOrd t v := by
+    rw [map_zpow]
+    simp [φ, HeightOneSpectrum.coe_unitOfPrime, FractionalIdeal.coeIdeal_absNorm]
+  rw [genIndex_units, toFractionalIdeal_apply, finprod_congr hnorm, finprod_inv_distrib, inv_inv,
+    ← finprod_congr hφ, ← MonoidHom.map_finprod _ (hasFiniteMulSupport_unitOfPrime_zpow_adicOrd t)]
+  simp [φ]
 
 /-- The generalised index of a finite adele that is not a unit is `0`. -/
 theorem genIndex_of_not_isUnit {a : 𝔸ᶠ[K]} (ha : ¬ IsUnit a) : genIndex K a = 0 := by
