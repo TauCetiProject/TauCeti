@@ -25,15 +25,44 @@ open Finset MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti
 
+/-- Under independent Boolean Bernoulli trials with success probabilities `q`, the
+coordinate at `a` is `true` with probability `q a`. -/
+theorem measureReal_pi_bernoulliMeasure_eval_eq_true {α : Type*} [Fintype α]
+    (q : α → unitInterval) (a : α) :
+    (Measure.pi fun a ↦ bernoulliMeasure true false (q a)).real {x | x a = true} = q a := by
+  have h : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
+    ext x
+    simp
+  rw [h, measureReal_def,
+    ← Measure.map_apply (measurable_pi_apply a) (measurableSet_singleton _),
+    (measurePreserving_eval (fun a ↦ bernoulliMeasure true false (q a)) a).map_eq,
+    ← measureReal_def]
+  simp
+
+/-- Under independent Boolean Bernoulli trials, the real indicators of the events that the
+individual coordinates are `true` are independent. -/
+theorem iIndepFun_pi_bernoulliMeasure_indicator_eval {α : Type*} [Fintype α]
+    (q : α → unitInterval) :
+    iIndepFun (fun a ↦ {x : α → Bool | x a = true}.indicator (1 : (α → Bool) → ℝ))
+      (Measure.pi fun a ↦ bernoulliMeasure true false (q a)) := by
+  have h (a : α) : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
+    ext x
+    simp
+  simp only [h]
+  exact iIndepFun_pi (μ := fun a ↦ bernoulliMeasure true false (q a))
+    (X := fun _ ↦ ({true} : Set Bool).indicator (1 : Bool → ℝ))
+    (fun _ ↦ (measurable_const.indicator (measurableSet_singleton _)).aemeasurable)
+
 open Classical in
-/-- Bernoulli selection with probabilities `δ * ω (f a)` over fibres of size `m`. On an event
-of probability at least `1/2`, the selected subset has size within half its expectation, and
-its relative fibre counts approximate the normalized profile `ω / ∑ ω`. At the stronger
-size cutoff, the count is at least two thirds of the expectation. On the same event,
-the weighted bad count is at most `4 * p` times the expected size times the total weight, and
-hence at most `8 * p` times the actual size times the total weight. A bad event `B i a` can
-be arbitrary provided its intersection with the event that `a` is selected has probability
-at most `p` times the probability that `a` is selected. -/
+/-- Bernoulli selection with probabilities `δ * ω (f a)` over fibres of size `m`, where
+`ω q ∈ [ω₀, 1]` with `ω₀ > 0`. Put `D = δ * |α|` and let `E = δ * m * ∑ ω` be the expected
+size, and assume `16 * |Q|² / ω₀² ≤ D`. On an event of probability at least `1/2`, the
+selected subset `S` satisfies `E / 2 ≤ |S| ≤ 3 * E / 2`, and each fibre count differs from
+`(ω q / ∑ ω) * |S|` by at most `4 * (1 + ω₀) / (ω₀² * √D)` times `|S|`; if moreover
+`36 * |Q|² / ω₀² ≤ D`, then `2 * E / 3 ≤ |S|`. On the same event, the weighted bad count is
+at most `4 * p * E` times the total weight, and hence at most `8 * p * |S|` times the total
+weight. A bad event `B i a` can be arbitrary provided its intersection with the event that
+`a` is selected has probability at most `p` times the probability that `a` is selected. -/
 theorem half_le_measureReal_bernoulli_card_fiber_and_weightedEventCount
     {α Q ι : Type*} [Fintype α] [Fintype Q] (f : α → Q) {m : ℕ}
     (hf : ∀ q, (univ.filter fun a ↦ f a = q).card = m)
@@ -61,6 +90,9 @@ theorem half_le_measureReal_bernoulli_card_fiber_and_weightedEventCount
   let μ := Measure.pi ν
   let S (x : α → Bool) := univ.filter fun a ↦ x a = true
   let E := (δ : ℝ) * m * ∑ q, (ω q : ℝ)
+  have hset (a : α) : {x | a ∈ S x} = {x | x a = true} := by
+    ext x
+    simp [S]
   have hmem (a : α) : {x | a ∈ S x} = (fun x : α → Bool ↦ x a) ⁻¹' ({true} : Set Bool) := by
     ext x
     simp [S]
@@ -68,14 +100,10 @@ theorem half_le_measureReal_bernoulli_card_fiber_and_weightedEventCount
     rw [hmem]
     exact (measurableSet_singleton _).preimage (measurable_pi_apply a)
   have hi : iIndepFun (fun a ↦ {x | a ∈ S x}.indicator (1 : (α → Bool) → ℝ)) μ := by
-    simp only [hmem]
-    exact iIndepFun_pi (μ := ν) (X := fun _ ↦ ({true} : Set Bool).indicator (1 : Bool → ℝ))
-      (fun _ ↦ (measurable_const.indicator (measurableSet_singleton _)).aemeasurable)
+    simpa only [hset] using iIndepFun_pi_bernoulliMeasure_indicator_eval fun a ↦ δ * ω (f a)
   have hp (a : α) : μ.real {x | a ∈ S x} = (δ : ℝ) * (ω (f a) : ℝ) := by
-    rw [hmem, measureReal_def,
-      ← Measure.map_apply (measurable_pi_apply a) (measurableSet_singleton _),
-      (measurePreserving_eval ν a).map_eq, ← measureReal_def]
-    simp [ν]
+    rw [hset, measureReal_pi_bernoulliMeasure_eval_eq_true (fun a ↦ δ * ω (f a)) a]
+    simp
   have hmean : (∑ a, μ.real {x | a ∈ S x}) = E := by
     simp only [hp, ← mul_sum, E, mul_assoc]
     congr 1
