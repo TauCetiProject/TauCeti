@@ -84,8 +84,9 @@ mixed norms with constants independent of `h`:
   in the normal directions and on the scale one in the horizontal directions (along the tube), is
   bounded,
   `‖g • f‖_{j,h,V} ≤ (j + 1)² 8ʲ B ‖f‖_{j,h,V}`, in every dimension and for every `j`
-  (`Submodule.mixedSemiclassicalSobolevNorm_smul_le_of_le_left`), and so is an operator-valued
-  multiplier with such bounds, such as a change of frame
+  (`Submodule.mixedSemiclassicalSobolevNorm_smul_le_of_le_left`; with the roles of the two
+  factors exchanged, `Submodule.mixedSemiclassicalSobolevNorm_smul_le_of_le_right`), and so is an
+  operator-valued multiplier with such bounds, such as a change of frame
   (`Submodule.mixedSemiclassicalSobolevNorm_clm_apply_le_of_le_left`);
 * **gauge equivalence**: for a gauge transformation `u`, `‖u‖ = 1`, with these bounds, the inverse
   `ū` has the same bounds, so `‖f‖_{j,h,V} ≤ (j + 1)² 8ʲ B ‖u • f‖_{j,h,V}`
@@ -93,7 +94,8 @@ mixed norms with constants independent of `h`:
 
 The algebra estimate is the uniform one of the isotropic semiclassical norms,
 `TauCeti.exists_semiclassicalSobolevNorm_mul_le`, at scale one, and the multiplier bounds are
-`TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left` and
+`TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left`,
+`TauCeti.semiclassicalSobolevNorm_smul_le_of_le_right` and
 `TauCeti.semiclassicalSobolevNorm_clm_apply_le_of_le_left` at scale one, applied to the normally
 dilated fields.
 
@@ -119,6 +121,7 @@ carry.
   unscaled, normal derivatives cost a factor `h`.
 * `Submodule.exists_mixedSemiclassicalSobolevNorm_mul_le`: the algebra estimate, uniformly in `h`.
 * `Submodule.mixedSemiclassicalSobolevNorm_smul_le_of_le_left`,
+  `Submodule.mixedSemiclassicalSobolevNorm_smul_le_of_le_right`,
   `Submodule.mixedSemiclassicalSobolevNorm_clm_apply_le_of_le_left`: multipliers with mixed
   semiclassical bounds.
 * `Submodule.mixedSemiclassicalSobolevNorm_le_mul_smul_of_norm_eq_one`: gauge equivalence.
@@ -616,7 +619,8 @@ private theorem memLp_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilatio
   obtain ⟨hφD, hφle⟩ := hφ huD fun i hi x ↦ by
     rw [one_pow, one_mul]
     exact (V.norm_iteratedFDeriv_comp_normalDilation_le (hg.of_le (by exact_mod_cast hi)) hh.le
-      (hB i hi) x).trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0)
+      fun a ha ↦ hB i hi a ha _).trans
+        (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0)
   obtain ⟨hφm, hle⟩ :=
     V.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation hh hφD
   refine ⟨hφm, hle.trans ?_⟩
@@ -648,6 +652,23 @@ theorem mixedSemiclassicalSobolevNorm_smul_le_of_le_left {g : E → 𝕜} {f : E
         (j + 1) ^ 2 * 8 ^ j * B * V.mixedSemiclassicalSobolevNorm j h f :=
   V.memLp_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation hg hB hf hfm hh
     fun hD ↦ TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left
+      (hg.comp (V.normalDilation h).contDiff) (hf.comp (V.normalDilation h).contDiff) hD one_pos
+
+/-- **Multiplication by a function with mixed semiclassical bounds.** Let `f` be of class `Cʲ`
+with `h ^ (n - a) ‖∂^{a, n - a} f‖ ≤ B` everywhere for `a ≤ n ≤ j`. For `h > 0` and a scalar
+function `g` of class `Cʲ` whose mixed derivatives through total order `j` are square integrable,
+the mixed derivatives of `g • f` through total order `j` are square integrable and
+
+`‖g • f‖_{j,h,V} ≤ (j + 1)² 8ʲ B ‖g‖_{j,h,V}`. -/
+theorem mixedSemiclassicalSobolevNorm_smul_le_of_le_right {g : E → 𝕜} {f : E → F}
+    (hg : ContDiff ℝ j g) (hf : ContDiff ℝ j f)
+    (hgm : ∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a g) 2) (hh : 0 < h)
+    (hB : ∀ n ≤ j, ∀ a ≤ n, ∀ x, h ^ (n - a) * ‖V.mixedIteratedFDeriv n a f x‖ ≤ B) :
+    (∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a fun y ↦ g y • f y) 2) ∧
+      V.mixedSemiclassicalSobolevNorm j h (fun y ↦ g y • f y) ≤
+        (j + 1) ^ 2 * 8 ^ j * B * V.mixedSemiclassicalSobolevNorm j h g :=
+  V.memLp_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation hf hB hg hgm hh
+    fun hD ↦ TauCeti.semiclassicalSobolevNorm_smul_le_of_le_right
       (hg.comp (V.normalDilation h).contDiff) (hf.comp (V.normalDilation h).contDiff) hD one_pos
 
 /-- **Operator-valued multipliers with mixed semiclassical bounds.** Let `A : E → F →L[ℝ] G` be of
