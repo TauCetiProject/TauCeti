@@ -151,17 +151,10 @@ theorem IsLocallyAt.of_localOperatorDualCLM {A B : (Ω : Opens E) → 𝓓'(Ω, 
   have hD : ∀ η : E, η ≠ 0 → smoothPrincipalSymbol 𝓘(ℝ, E) (x := c x)
       BoundarylessManifold.isInteriorPoint D (innerSL ℝ η : E →L[ℝ] ℝ) ≠ 0 := fun η hη ↦ by
     -- The covector `⟪η, ·⟫ ∘ dc` is nonzero, since `dc ∘ dc⁻¹ = id` at `c x`.
-    have hne : (innerSL ℝ η : E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))) ≠ 0 := by
-      intro h0
-      have hd : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))
-          (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η) = η :=
-        congr($((OpenPartialHomeomorph.MDifferentiable.comp_symm_deriv
-          ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hy)) η)
-      have h1 : inner ℝ η (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))
-          (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η)) = 0 :=
-        congr($h0 (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η))
-      rw [hd] at h1
-      exact hη (inner_self_eq_zero.1 h1)
+    have hne : (innerSL ℝ η : E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))) ≠ 0 :=
+      mt (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_eq_zero_iff
+        ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hy).1
+        fun h0 ↦ hη (by simpa using congr($h0 η))
     rw [c.left_inv hxc] at hne
     exact c.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero he _ hV _ hW
       hℓ hxc (by simp [hU1 _ hyU]) (by simp [hU1 _ hyU]) (hu ▸ hσ _ hne)
@@ -174,11 +167,9 @@ theorem IsLocallyAt.of_localOperatorDualCLM {A B : (Ω : Opens E) → 𝓓'(Ω, 
         restrictCLM_chartComponent_localOperatorDualCLM_apply hP he hV hW hUt hU1 v b 0 hf hψ T)
       hD ((hA.restrictCLM_iff hUt hyU).2 ((isLocallyAt_iff hA _ hc hcs hV hxc).1 h v))
   -- Every component of `T` is a multiple of its component along `b 0`.
-  refine (isLocallyAt_iff hB T hc hcs hW hxc).2 fun w ↦ ?_
-  rw [chartComponent_eq_sum _ c hc hW b T w]
-  exact hB.sum hy fun i _ ↦ by
-    rw [Subsingleton.elim i 0]
-    exact hB.smul _ hS
+  refine (isLocallyAt_iff hB T hc hcs hW hxc).2
+    (chartComponent_of_basis hB.toIsLocalRegularity b T hy fun i ↦ ?_)
+  rwa [Subsingleton.elim i 0]
 
 end TransferPrinciple
 
