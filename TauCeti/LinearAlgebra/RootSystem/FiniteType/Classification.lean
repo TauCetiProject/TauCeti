@@ -8,11 +8,11 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Reindex
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.TripleEdge
--- `TauCeti.LinearAlgebra.RootSystem.Isomorphism` supplies the rigidity theorem
+-- `TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic` supplies the rigidity theorem
 -- `TauCeti.nonempty_equiv_of_hasCartanType`, which `nonempty_equiv_of_classifiedDynkinType_eq`
 -- feeds the selected type to. Nothing from it appears in a statement here, so the import stays
 -- private.
-import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 -- `TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType` supplies the independence of the Cartan type
 -- from the base, `TauCeti.HasCartanType.of_base`. It too appears in no statement here.
 import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
