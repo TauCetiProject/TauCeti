@@ -28,10 +28,9 @@ divisors of `ℤ_p`, once its three hypotheses are checked for `ι`:
 * the kernel of `ι` is the torsion submodule of `T`, finitely generated, so a single nonzero
   `s ∈ ℤ_p` kills it (`IsLocalizedModule.exists_mem_smul_eq_zero_of_mem_ker`);
 * a `ℚ_p`-basis of `V` scaled into the image of `ι` spans an open `ℤ_p`-lattice `W`, and lifting
-  the basis vectors to `T` gives a continuous section of `ι` over `W`
-  (`TauCeti.ContinuousCohomology.exists_isOpen_section_of_bijective`);
-* a nonzero `s ∈ ℤ_p` acts on `V` invertibly, with inverse the morphism `s⁻¹ • -`
-  (`TauCeti.ContinuousCohomology.exists_smul_eq_id`).
+  the basis vectors to `T` gives a continuous section of `ι` over `W`, which
+  `TopRep.exists_map_eq_smul_of_isOpen` turns into the lifting hypothesis;
+* a nonzero `s ∈ ℤ_p` acts on `V` invertibly, with inverse the morphism `s⁻¹ • -`.
 
 ## Main results
 
@@ -72,7 +71,7 @@ variable [IsModuleTopology ℚ_[p] V]
 `ℚ_p`-module topology and `ℚ_p ⊗ T → V` is bijective, then some open
 `ℤ_p`-submodule `W` of `V`, absorbing `V` along the nonzero divisors, has a continuous map
 `σ : W → T` with `ι ∘ σ = id`. -/
-theorem exists_isOpen_section_of_bijective [Module.Finite ℤ_[p] T]
+private theorem exists_isOpen_section_of_bijective [Module.Finite ℤ_[p] T]
     (hι : Function.Bijective (ι.hom.toLinearMap.liftBaseChange ℚ_[p])) :
     ∃ W : Submodule ℤ_[p] V, IsOpen (W : Set V) ∧ (∀ v, ∃ s ∈ nonZeroDivisors ℤ_[p], s • v ∈ W) ∧
       ∃ σ : C(W, T), ∀ w, ι.hom (σ w) = w := by
@@ -112,7 +111,7 @@ theorem exists_isOpen_section_of_bijective [Module.Finite ℤ_[p] T]
 omit [IsModuleTopology ℚ_[p] V] in
 /-- **Nonzero scalars act invertibly on `V`.** For a nonzero `s ∈ ℤ_p`, multiplication by
 `s⁻¹ ∈ ℚ_p` is a morphism `u` of topological representations with `s • u = 𝟙 V`. -/
-theorem exists_smul_eq_id [ContinuousConstSMul ℚ_[p] V] {s : ℤ_[p]}
+private theorem exists_smul_eq_id [ContinuousConstSMul ℚ_[p] V] {s : ℤ_[p]}
     (hs : s ∈ nonZeroDivisors ℤ_[p]) : ∃ u : V ⟶ V, s • u = 𝟙 V := by
   have hs' : algebraMap ℤ_[p] ℚ_[p] s ≠ 0 :=
     IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hs
@@ -149,7 +148,7 @@ theorem isLocalizedModule_coeffMap_of_bijective (n : ℕ) :
     IsLocalizedModule.exists_mem_smul_eq_zero_of_mem_ker (nonZeroDivisors ℤ_[p]) ι.hom.toLinearMap
   obtain ⟨W, hW, habs, σ, hσ⟩ := exists_isOpen_section_of_bijective hι
   exact isLocalizedModule_coeffMap ⟨s, hs, fun a ha ↦ hker a ha⟩
-    (exists_map_eq_smul_of_isOpen W hW habs σ hσ)
+    (TopRep.exists_map_eq_smul_of_isOpen W hW habs σ hσ)
     (fun _ hs ↦ exists_smul_eq_id hs) n
 
 /-- **Rationalisation of lattice cohomology** (Rubin, *Euler Systems*, Appendix B, §2,

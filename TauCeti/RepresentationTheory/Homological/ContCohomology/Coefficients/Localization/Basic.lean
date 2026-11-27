@@ -36,7 +36,7 @@ complexes is used.
 
 For a compact space `X`, `C(X, T) → C(X, V)` is a localization when `T` is an open absorbing
 submodule of `V` (`TauCeti.isLocalizedModule_compLeftContinuous_subtypeL`).
-`TauCeti.ContinuousCohomology.exists_map_eq_smul_of_isOpen` supplies the lifting hypothesis in
+`TopRep.exists_map_eq_smul_of_isOpen` supplies the lifting hypothesis in
 that situation, given a continuous section of `f` over the open submodule.
 
 ## Main results
@@ -46,7 +46,7 @@ that situation, given a continuous section of `f` over the open submodule.
 * `TauCeti.ContinuousCohomology.exists_smul_eq_zero_of_coeffMap_eq_zero`: a class of `Hⁿ(G, X)`
   mapping to zero is killed by some `s ∈ S`.
 * `TauCeti.ContinuousCohomology.isLocalizedModule_coeffMap`: `Hⁿ(G, f)` is a localization at `S`.
-* `TauCeti.ContinuousCohomology.exists_map_eq_smul_of_isOpen`: the lifting hypothesis from a
+* `TopRep.exists_map_eq_smul_of_isOpen`: the lifting hypothesis from a
   continuous section over an open absorbing submodule.
 
 ## References
@@ -72,7 +72,7 @@ variable {k : Type*} [Ring k] [TopologicalSpace k] (S : Submonoid k)
 
 /-- If a single `s ∈ S` kills the kernel of `f`, it kills the kernel of the map induced by `f` on
 every term of the coinduced resolution. -/
-theorem exists_smul_eq_zero_of_resolutionMap_eq_zero
+private theorem exists_smul_eq_zero_of_resolutionMap_eq_zero
     (hker : ∃ s ∈ S, ∀ a, f.hom a = 0 → s • a = 0) :
     ∃ s ∈ S, ∀ (n : ℕ) (a : (resolutionX X n).V),
       (resolutionMap (ContinuousMonoidHom.id G) f n).hom a = 0 → s • a = 0 := by
@@ -82,13 +82,14 @@ theorem exists_smul_eq_zero_of_resolutionMap_eq_zero
   | zero => exact h
   | succ n ih =>
     intro F hF
-    exact ContinuousMap.ext fun g ↦ ih (F g) (congr($hF g))
+    exact ContinuousMap.ext fun g ↦ ih (F g)
+      ((resolutionMap_succ_apply (ContinuousMonoidHom.id G) f n F g).symm.trans congr($hF g))
 
 variable [CompactSpace G]
 
 /-- If `f` lifts continuous maps from compact spaces up to `S`, so does the map it induces on
 every term of the coinduced resolution of a compact group. -/
-theorem exists_resolutionMap_eq_smul
+private theorem exists_resolutionMap_eq_smul
     (hlift : ∀ (Z : Type v) [TopologicalSpace Z] [CompactSpace Z] (y : C(Z, Y.V)),
       ∃ s ∈ S, ∃ x : C(Z, X.V), ∀ z, f.hom (x z) = s • y z) (n : ℕ)
     (Z : Type v) [TopologicalSpace Z] [CompactSpace Z] (y : C(Z, (resolutionX Y n).V)) :
@@ -101,7 +102,8 @@ theorem exists_resolutionMap_eq_smul
     obtain ⟨s, hs, x, hx⟩ := ih (Z × G)
       (ContinuousMap.uncurry (y : C(Z, C(G, (resolutionX Y n).V))))
     exact ⟨s, hs, (x.curry : C(Z, C(G, (resolutionX X n).V))), fun z ↦
-      ContinuousMap.ext fun g ↦ hx (z, g)⟩
+      ContinuousMap.ext fun g ↦
+        (resolutionMap_succ_apply (ContinuousMonoidHom.id G) f n (x.curry z) g).trans (hx (z, g))⟩
 
 variable {S f}
 
@@ -128,9 +130,9 @@ theorem exists_cochainsMap_eq_smul (hker : ∃ s ∈ S, ∀ a, f.hom a = 0 → s
     rw [_root_.map_smul, h]
   refine ⟨s₀ * s, S.mul_mem hs₀ hs, ⟨s₀ • F, hinv⟩, Subtype.ext ?_⟩
   -- a homogeneous cochain is an invariant element of the resolution, and `cochainsMap` acts on
-  -- its underlying element through `r` by definition
-  change r.hom (s₀ • F) = (s₀ * s) • y.val
-  rw [_root_.map_smul, hF, smul_smul]
+  -- its underlying element through `r`
+  refine (coe_cochainsMap_f_apply (ContinuousMonoidHom.id G) f n ⟨s₀ • F, hinv⟩).trans ?_
+  rw [Submodule.coe_smul, _root_.map_smul, hF, smul_smul]
 
 /-- **Classes lift up to `S`.** Under the two lifting hypotheses on `f`, every class of
 `Hⁿ(G, Y)` times some `s ∈ S` is the image of a class of `Hⁿ(G, X)`. -/
@@ -152,7 +154,9 @@ theorem exists_coeffMap_eq_smul (hker : ∃ s ∈ S, ∀ a, f.hom a = 0 → s �
     rw [← h, hx, _root_.map_smul, K.d_iCycles_apply (n + 1) z, smul_zero]
   have hdx : (KX.d n (n + 1)).hom (s₀ • x) = 0 := by
     rw [_root_.map_smul]
-    exact Subtype.ext (h₀ (n + 2) _ (congrArg Subtype.val hd))
+    exact Subtype.ext (h₀ (n + 2) _
+      ((coe_cochainsMap_f_apply (ContinuousMonoidHom.id G) f (n + 1)
+        ((KX.d n (n + 1)).hom x)).symm.trans (congrArg Subtype.val hd)))
   refine ⟨s₀ * s, S.mul_mem hs₀ hs,
     KX.homologyπ n (KX.cyclesMkOfEq (s₀ • x) (n + 1) (CochainComplex.next ℕ n) hdx), ?_⟩
   rw [coeffMap_def]
@@ -190,7 +194,9 @@ theorem exists_smul_eq_zero_of_coeffMap_eq_zero (hker : ∃ s ∈ S, ∀ a, f.ho
     rw [map_sub, _root_.map_smul, ← h, hu, _root_.map_smul, hc, ← hw,
       K.iCycles_toCycles_apply, sub_self]
   have h0 : s₀ • (s • KX.iCycles n z - (KX.d m n).hom u) = 0 :=
-    Subtype.ext (h₀ (n + 1) _ (congrArg Subtype.val hzero))
+    Subtype.ext (h₀ (n + 1) _
+      ((coe_cochainsMap_f_apply (ContinuousMonoidHom.id G) f n
+        (s • KX.iCycles n z - (KX.d m n).hom u)).symm.trans (congrArg Subtype.val hzero)))
   rw [smul_sub, sub_eq_zero] at h0
   refine ⟨s₀ * s, S.mul_mem hs₀ hs, ?_⟩
   rw [← _root_.map_smul]
@@ -207,7 +213,7 @@ variable {k : Type*} [CommRing k] [TopologicalSpace k] {S : Submonoid k}
 /-- **The lifting hypothesis from an open section.** If `W` is an open submodule of `Y` absorbing
 `Y` along `S`, and `f` has a continuous section over `W`, then `f` lifts continuous maps from
 compact spaces up to `S`. -/
-theorem exists_map_eq_smul_of_isOpen [ContinuousConstSMul k Y.V] (W : Submodule k Y.V)
+theorem _root_.TopRep.exists_map_eq_smul_of_isOpen [ContinuousConstSMul k Y.V] (W : Submodule k Y.V)
     (hW : IsOpen (W : Set Y.V)) (habs : ∀ y, ∃ s ∈ S, s • y ∈ W) (σ : C(W, X.V))
     (hσ : ∀ w, f.hom (σ w) = w) (Z : Type*) [TopologicalSpace Z] [CompactSpace Z]
     (y : C(Z, Y.V)) : ∃ s ∈ S, ∃ x : C(Z, X.V), ∀ z, f.hom (x z) = s • y z := by
