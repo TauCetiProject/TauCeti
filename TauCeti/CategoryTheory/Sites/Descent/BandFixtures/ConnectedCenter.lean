@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.CodiscreteCategory
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.GroupTheory.Subgroup.Center
-public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.ComponentCenter
+public import TauCeti.CategoryTheory.Center.Basic
 public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Constant
 
 /-!
@@ -89,14 +89,14 @@ theorem connectedCenter_app_snd (a : Subgroup.center G) (x : Codiscrete I × Sin
 @[simp]
 theorem connectedCenter_mul (a b : Subgroup.center G) :
     connectedCenter (I := I) (a * b) = connectedCenter a * connectedCenter b :=
-  BandFixtures.catCenter_ext_prod_singleObj fun x ↦ by
+  CatCenter.ext_prod_singleObj fun x ↦ by
     simp only [connectedCenter_app_snd, CatCenter.mul_app', prod_comp_snd, SingleObj.comp_as_mul,
       Subgroup.coe_mul]
 
 /-- The centre of the identity element is the identity. -/
 @[simp]
 theorem connectedCenter_one : connectedCenter (I := I) (1 : Subgroup.center G) = 1 :=
-  BandFixtures.catCenter_ext_prod_singleObj fun _ ↦ by simp [CatCenter.app_one, SingleObj.id_as_one]
+  CatCenter.ext_prod_singleObj fun _ ↦ by simp [CatCenter.app_one, SingleObj.id_as_one]
 
 /-- The **centre unit of a central element** `a`, with inverse the centre of `a⁻¹`. -/
 def connectedCenterUnit (a : Subgroup.center G) : (CatCenter (Codiscrete I × SingleObj G))ˣ :=
@@ -131,23 +131,23 @@ theorem connectedCenterUnit_inv (a : Subgroup.center G) :
     (connectedCenterUnit (I := I) a)⁻¹ = connectedCenterUnit a⁻¹ :=
   Units.ext (val_inv_connectedCenterUnit a)
 
-/-- The group component of a centre unit is central, by naturality along the automorphisms of
-one object. -/
-theorem app_snd_mem_center (z : (CatCenter (Codiscrete I × SingleObj G))ˣ)
+/-- The group component of a central endomorphism is central, by naturality along the
+automorphisms of one object. -/
+theorem app_snd_mem_center (z : CatCenter (Codiscrete I × SingleObj G))
     (x : Codiscrete I × SingleObj G) :
-    ((z.val.app x).2 : G) ∈ Subgroup.center G := by
+    ((z.app x).2 : G) ∈ Subgroup.center G := by
   refine Subgroup.mem_center_iff.2 fun g ↦ ?_
   have h := congrArg _root_.Prod.snd
-    (CatCenter.naturality z.val (X := x) (Y := x) (𝟙 x.1, (g : SingleObj.star G ⟶ _)))
+    (CatCenter.naturality z (X := x) (Y := x) (𝟙 x.1, (g : SingleObj.star G ⟶ _)))
   simp only [prod_comp_snd, SingleObj.comp_as_mul] at h
   exact h.symm
 
-/-- The group components of a centre unit at any two objects agree, by naturality along the
-isomorphism between them. -/
-theorem app_snd_eq (z : (CatCenter (Codiscrete I × SingleObj G))ˣ)
+/-- The group components of a central endomorphism at any two objects agree, by naturality
+along the isomorphism between them. -/
+theorem app_snd_eq (z : CatCenter (Codiscrete I × SingleObj G))
     (x y : Codiscrete I × SingleObj G) :
-    ((z.val.app x).2 : G) = (z.val.app y).2 := by
-  have h := congrArg _root_.Prod.snd (CatCenter.naturality z.val
+    ((z.app x).2 : G) = (z.app y).2 := by
+  have h := congrArg _root_.Prod.snd (CatCenter.naturality z
     ((Codiscrete.iso x.1 y.1).hom, (1 : G)))
   simp only [prod_comp_snd, SingleObj.comp_as_mul, mul_one, one_mul] at h
   exact h.symm
@@ -158,10 +158,10 @@ variable (I G) in
 def connectedCenterEquiv (i : I) :
     Subgroup.center G ≃* (CatCenter (Codiscrete I × SingleObj G))ˣ where
   toFun := connectedCenterUnit
-  invFun z := ⟨(z.val.app (⟨i⟩, SingleObj.star G)).2, app_snd_mem_center z _⟩
+  invFun z := ⟨(z.val.app (⟨i⟩, SingleObj.star G)).2, app_snd_mem_center z.val _⟩
   left_inv _ := rfl
-  right_inv z := Units.ext <| BandFixtures.catCenter_ext_prod_singleObj fun x ↦
-    app_snd_eq z (⟨i⟩, SingleObj.star G) x
+  right_inv z := Units.ext <| CatCenter.ext_prod_singleObj fun x ↦
+    app_snd_eq z.val (⟨i⟩, SingleObj.star G) x
   map_mul' := connectedCenterUnit_mul
 
 @[simp]
