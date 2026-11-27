@@ -42,64 +42,104 @@ variable {A : Type u} [CommRing A] {ι : Type v}
   (t : of A (MvPolynomial ι A) ⟶ P.right)
 
 /-- The simplicial set of lifts of a polynomial algebra map through an augmented simplicial
-algebra. Its body is exposed so callers can use its simplices directly as morphisms in
-the slice over the base. -/
-@[expose] def polynomialLifts : SSet.{max u v} :=
+algebra. Its simplices are morphisms in the slice over the base, via
+`polynomialLifts.objEquiv`. -/
+def polynomialLifts : SSet.{max u v} :=
   Over.lift P.left P.hom ⋙ coyoneda.obj (op (Over.mk t))
+
+namespace polynomialLifts
+
+/-- In degree `n`, a simplex is an algebra map from the polynomial algebra to `P.left.obj n`
+over the base of the augmentation. -/
+def objEquiv {n : SimplexCategoryᵒᵖ} :
+    (P.polynomialLifts t).obj n ≃ (Over.mk t ⟶ Over.mk (P.hom.app n)) :=
+  Equiv.refl _
+
+end polynomialLifts
 
 /-- A simplicial operator acts on a lift by postcomposition with the algebra map. -/
 @[simp] lemma polynomialLifts_map_left {n m : SimplexCategoryᵒᵖ} (f : n ⟶ m)
     (x : (P.polynomialLifts t).obj n) :
-    (((P.polynomialLifts t).map f) x).left = x.left ≫ P.left.map f := (rfl)
+    (polynomialLifts.objEquiv P t ((P.polynomialLifts t).map f x)).left =
+      (polynomialLifts.objEquiv P t x).left ≫ P.left.map f := (rfl)
 
-private abbrev underlying := P.left ⋙ forget (CommAlgCat.{max u v} A)
-
-private abbrev augmentation := Functor.whiskerRight P.hom (forget (CommAlgCat.{max u v} A))
+namespace polynomialLifts
 
 /-- Read the image of a polynomial variable in each simplicial degree. -/
-private def evalVar (a : ι) : P.polynomialLifts t ⟶ underlying P where
-  app _ := ↾fun f ↦ f.left.hom (MvPolynomial.X a)
-  naturality _ _ _ := rfl
+def evalVar (a : ι) : P.polynomialLifts t ⟶ P.left ⋙ forget (CommAlgCat.{max u v} A) where
+  app _ := ↾fun x ↦ (objEquiv P t x).left.hom (MvPolynomial.X a)
+  naturality _ _ _ := by
+    apply ConcreteCategory.hom_ext
+    intro x
+    simp only [ConcreteCategory.comp_apply, TypeCat.ofHom_apply, polynomialLifts_map_left,
+      CommAlgCat.hom_comp, AlgHom.comp_apply]
+    -- The forgetful functor acts by the underlying algebra homomorphism.
+    rfl
 
-private lemma evalVar_comp (a : ι) :
-    evalVar P t a ≫ augmentation P = SSet.const (t.hom (MvPolynomial.X a)) := by
+/-- Evaluation at a variable sends every lift to its prescribed image under the augmentation. -/
+@[simp] lemma evalVar_comp_augmentation (a : ι) :
+    evalVar P t a ≫ Functor.whiskerRight P.hom (forget (CommAlgCat.{max u v} A)) =
+      SSet.const (t.hom (MvPolynomial.X a)) := by
   ext n f
-  exact congrArg (fun g ↦ g.hom (MvPolynomial.X a)) (Over.w f)
+  exact congrArg (fun g ↦ g.hom (MvPolynomial.X a)) (Over.w (objEquiv P t f))
 
-private def ofVariables {K : SSet.{max u v}} (s : ι → (K ⟶ underlying P))
-    (hs : ∀ a, s a ≫ augmentation P = SSet.const (t.hom (MvPolynomial.X a))) :
+private lemma obj_ext {n : SimplexCategoryᵒᵖ} {x y : (P.polynomialLifts t).obj n}
+    (h : ∀ a, (objEquiv P t x).left.hom (MvPolynomial.X a) =
+      (objEquiv P t y).left.hom (MvPolynomial.X a)) : x = y := by
+  apply (objEquiv P t).injective
+  exact Over.OverMorphism.ext (CommAlgCat.hom_ext (MvPolynomial.algHom_ext h))
+
+/-- A family of simplicial maps giving the images of the variables over the prescribed base
+elements determines a map into the simplicial set of polynomial lifts. -/
+def lift {K : SSet.{max u v}} (s : ι → (K ⟶ P.left ⋙ forget (CommAlgCat.{max u v} A)))
+    (hs : ∀ a, s a ≫ Functor.whiskerRight P.hom (forget (CommAlgCat.{max u v} A)) =
+      SSet.const (t.hom (MvPolynomial.X a))) :
     K ⟶ P.polynomialLifts t where
-  app n := ↾fun x ↦ Over.homMk (ofHom (MvPolynomial.aeval (fun a ↦ (s a).app n x))) (by
-    apply CommAlgCat.hom_ext
-    apply MvPolynomial.algHom_ext
-    intro a
-    -- Expose the two algebra maps in the slice triangle to evaluate on a generator.
-    change (P.hom.app n).hom (MvPolynomial.aeval _ (MvPolynomial.X a)) = _
-    simpa using ConcreteCategory.congr_hom (NatTrans.congr_app (hs a) n) x)
+  app n := ↾fun x ↦ (objEquiv P t).symm
+    (Over.homMk (ofHom (MvPolynomial.aeval (S₁ := P.left.obj n) (fun a ↦ (s a).app n x))) (by
+      apply CommAlgCat.hom_ext
+      apply MvPolynomial.algHom_ext
+      intro a
+      -- Expose the two algebra maps in the slice triangle to evaluate on a generator.
+      change (P.hom.app n).hom (MvPolynomial.aeval _ (MvPolynomial.X a)) = _
+      simpa using ConcreteCategory.congr_hom (NatTrans.congr_app (hs a) n) x))
   naturality n m f := by
     apply ConcreteCategory.hom_ext
     intro x
-    apply Over.OverMorphism.ext
-    apply CommAlgCat.hom_ext
-    apply MvPolynomial.algHom_ext
+    apply obj_ext P t
     intro a
-    -- At a generator the two induced polynomial maps reduce to naturality of its image.
-    change MvPolynomial.aeval _ (MvPolynomial.X a) =
-      (P.left.map f).hom (MvPolynomial.aeval _ (MvPolynomial.X a))
+    simp only [ConcreteCategory.comp_apply, TypeCat.ofHom_apply, polynomialLifts_map_left,
+      Equiv.apply_symm_apply, Over.homMk_left, CommAlgCat.hom_comp, AlgHom.comp_apply,
+      CommAlgCat.hom_ofHom]
     rw [MvPolynomial.aeval_X, MvPolynomial.aeval_X]
     exact NatTrans.naturality_apply (s a) f x
 
-private lemma hom_ext_variables {K : SSet.{max u v}} {f g : K ⟶ P.polynomialLifts t}
+/-- Evaluation at a variable of a simplex reads the corresponding slice map on that generator. -/
+@[simp↓]
+lemma evalVar_app {n : SimplexCategoryᵒᵖ} (a : ι) (x : (P.polynomialLifts t).obj n) :
+    (evalVar P t a).app n x = (objEquiv P t x).left.hom (MvPolynomial.X a) := (rfl)
+
+/-- The map constructed from variable images recovers those images upon evaluation. -/
+@[simp] lemma lift_comp_evalVar {K : SSet.{max u v}}
+    (s : ι → (K ⟶ P.left ⋙ forget (CommAlgCat.{max u v} A)))
+    (hs : ∀ a, s a ≫ Functor.whiskerRight P.hom (forget (CommAlgCat.{max u v} A)) =
+      SSet.const (t.hom (MvPolynomial.X a))) (a : ι) :
+    lift P t s hs ≫ evalVar P t a = s a := by
+  ext n x
+  exact MvPolynomial.aeval_X (S₁ := P.left.obj n) (fun b ↦ (s b).app n x) a
+
+/-- Maps into the simplicial set of polynomial lifts agree if they agree on every variable. -/
+@[ext] lemma hom_ext {K : SSet.{max u v}} {f g : K ⟶ P.polynomialLifts t}
     (h : ∀ a, f ≫ evalVar P t a = g ≫ evalVar P t a) : f = g := by
   apply SSet.hom_ext
   intro n
   apply ConcreteCategory.hom_ext
   intro x
-  apply Over.OverMorphism.ext
-  apply CommAlgCat.hom_ext
-  apply MvPolynomial.algHom_ext
+  apply obj_ext P t
   intro a
   exact ConcreteCategory.congr_hom (NatTrans.congr_app (h a) n) x
+
+end polynomialLifts
 
 /-- Evaluating a resolution with a trivial Kan augmentation at a polynomial algebra over its
 base gives a simplicial set whose map to the point is a trivial Kan fibration. -/
@@ -109,20 +149,15 @@ theorem rlp_monomorphisms_polynomialLifts
   intro K L i (hi : Mono i)
   have := hP i (monomorphisms.infer_property i)
   refine ⟨fun {f b} _ ↦ ?_⟩
-  have sq (a : ι) : CommSq (f ≫ evalVar P t a) i (augmentation P)
-      (SSet.const (t.hom (MvPolynomial.X a))) :=
-    ⟨by rw [Category.assoc, evalVar_comp]; rfl⟩
-  let l := ofVariables P t (fun a ↦ (sq a).lift) (fun a ↦ (sq a).fac_right)
-  refine ⟨⟨{ l := l,
+  have sq (a : ι) : CommSq (f ≫ polynomialLifts.evalVar P t a) i
+      (Functor.whiskerRight P.hom (forget _)) (SSet.const (t.hom (MvPolynomial.X a))) :=
+    ⟨by simp only [Category.assoc, polynomialLifts.evalVar_comp_augmentation, SSet.comp_const]⟩
+  refine ⟨⟨{ l := polynomialLifts.lift P t (fun a ↦ (sq a).lift) (fun a ↦ (sq a).fac_right),
               fac_right := (Functor.isTerminalConst _ Types.isTerminalPUnit).hom_ext _ _,
               fac_left := ?_ }⟩⟩
-  apply hom_ext_variables
+  apply polynomialLifts.hom_ext
   intro a
-  ext n x
-  -- Specify the algebra carrier behind the underlying-set functor for polynomial evaluation.
-  change MvPolynomial.aeval (S₁ := P.left.obj n) _ (MvPolynomial.X a) = _
-  rw [MvPolynomial.aeval_X]
-  exact ConcreteCategory.congr_hom (NatTrans.congr_app (sq a).fac_left n) x
+  rw [Category.assoc, polynomialLifts.lift_comp_evalVar, (sq a).fac_left]
 
 /-- Objectwise exactness of the augmented complex of free abelian representables: evaluating
 at a polynomial algebra over the base resolves the free abelian group on one generator. -/

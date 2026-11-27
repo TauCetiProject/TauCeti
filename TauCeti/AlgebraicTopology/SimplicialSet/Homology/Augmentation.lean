@@ -47,9 +47,13 @@ theorem homotopyEquivalences_ε_of_rlp_monomorphisms (X : SSet.Augmented.{u})
       homotopyInvHomId := Homotopy.ofEq (by rw [← G.map_comp, h.section_comp, G.map_id]) }
   let e₀ := ((Augmented.ExtraDegeneracy.const X.right).map F).homotopyEquiv
   refine ⟨e.trans e₀, ?_⟩
-  -- Naturality at the map to the constant augmented object identifies the forward map.
+  refine (HomotopyEquiv.trans_hom e e₀).trans ?_
   let c : X ⟶ Augmented.const.obj X.right := { left := X.hom, right := 𝟙 _ }
   let W := (Augmented.whiskering _ _).obj F
+  -- The first forward map is induced by the whiskered augmentation. The forward map of
+  -- ExtraDegeneracy.homotopyEquiv is definitionally the chain augmentation.
+  change (alternatingFaceMapComplex C).map (W.map c).left ≫
+      AlternatingFaceMapComplex.ε.app (W.obj (Augmented.const.obj X.right)) = _
   refine (AlternatingFaceMapComplex.ε.naturality (W.map c)).trans ?_
   have hid : (ChainComplex.single₀ C).map (F.map (𝟙 X.right)) = 𝟙 _ := by simp
   exact (congrArg (AlternatingFaceMapComplex.ε.app _ ≫ ·) hid).trans (Category.comp_id _)
