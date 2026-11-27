@@ -9,7 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Approximate
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Uniqueness
 public import Mathlib.Order.LiminfLimsup
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import TauCeti.Analysis.Convex.Cone.InfDist
+import TauCeti.Analysis.Normed.Module.FiniteDimension.Closedness
 import TauCeti.Geometry.Euclidean.Volume.Density
 
 /-!
@@ -175,11 +175,11 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
     [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E E₁ E₂ : Set V}
 
 /-- If a set `E` contains the line `x + L` through `x`, where `L` is not contained in a subspace
-`P`, then `E` does not have `1`-dimensional density zero outside the cones about `P` at `x`. This
-is `HasFDerivWithinAt.range_le_of_densityZeroOutsideCones` for the parametrization `t ↦ x + t v`
-of the line through `x` in the direction of a vector `v ∈ L \ P`. -/
+`P`, then `E` does not have `1`-dimensional density zero outside the cones about `P` at `x`. -/
 theorem not_densityZeroOutsideCones_of_not_le {x : V} {L P : Submodule ℝ V}
     (hLE : ∀ z ∈ L, x + z ∈ E) (hLP : ¬ L ≤ P) : ¬ DensityZeroOutsideCones 1 E x P := by
+  -- Apply `HasFDerivWithinAt.range_le_of_densityZeroOutsideCones` to the parametrization
+  -- `t ↦ x + t v` of the line through `x` in the direction of a vector `v ∈ L \ P`.
   intro h
   obtain ⟨v, hvL, hvP⟩ := IsConcreteLE.not_le_iff_exists.mp hLP
   have hv0 : v ≠ 0 := fun hv ↦ hvP (hv ▸ P.zero_mem)
@@ -188,11 +188,9 @@ theorem not_densityZeroOutsideCones_of_not_le {x : V} {L P : Submodule ℝ V}
     (A.hasFDerivAt.const_add x).hasFDerivWithinAt
   have hi : AntilipschitzWith ‖v‖₊⁻¹ ((univ : Set ℝ).domRestrict fun t ↦ x + A t) :=
     AntilipschitzWith.of_le_mul_dist fun s t ↦ by
-      change dist (s : ℝ) t ≤ _ * dist (x + A s) (x + A t)
-      rw [dist_add_left, dist_eq_norm, dist_eq_norm, ← map_sub,
-        ContinuousLinearMap.toSpanSingleton_apply, norm_smul, NNReal.coe_inv, coe_nnNorm,
-        mul_comm _ ‖v‖,
-        inv_mul_cancel_left₀ (norm_ne_zero_iff.mpr hv0)]
+      simp [A, Set.domRestrict_apply, Subtype.dist_eq, dist_eq_norm, ← sub_smul, norm_smul]
+      field_simp [norm_ne_zero_iff.mpr hv0]
+      exact le_rfl
   have hsub : (fun t : ℝ ↦ x + A t) '' univ ⊆ E := by
     rintro _ ⟨t, -, rfl⟩
     exact hLE _ (L.smul_mem t hvL)

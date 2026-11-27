@@ -8,9 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.Geometry.Convex.Cone.Pointed
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The distance to a pointed cone
@@ -22,9 +20,6 @@ homogeneous:
 * `AddSubmonoidClass.infDist_add_le`: `dist(x + y, C) ≤ dist(x, C) + dist(y, C)`, for every
   additive submonoid `C`;
 * `PointedCone.infDist_smul`: `dist(c x, C) = c dist(x, C)` for `c ≥ 0`.
-
-A point outside a finite-dimensional subspace has positive distance to it
-(`Submodule.infDist_pos_of_notMem`).
 
 Consequently the distance from a nonnegative combination `∑ cᵢ xᵢ` to `C` is at most
 `∑ cᵢ dist(xᵢ, C)`. This is how an estimate on the distance of a sum of two-forms to a cone of
@@ -74,14 +69,3 @@ theorem infDist_smul {c : ℝ} (hc : 0 ≤ c) (x : E) :
   rwa [hcC, Real.norm_of_nonneg hc.le] at h
 
 end PointedCone
-
-namespace Submodule
-
-/-- **A point outside a finite-dimensional subspace has positive distance to it**, since the
-subspace is closed. -/
-theorem infDist_pos_of_notMem {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {P : Submodule 𝕜 F} [FiniteDimensional 𝕜 P] {x : F}
-    (hx : x ∉ P) : 0 < infDist x (P : Set F) :=
-  (P.isClosed_of_finiteDimensional.notMem_iff_infDist_pos ⟨0, P.zero_mem⟩).mp hx
-
-end Submodule

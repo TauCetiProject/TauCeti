@@ -9,7 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.ApproximateTangentSpace
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Submodule
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Examples.Geometry.MeasureTheory.ApproximateTangentSpace
-import TauCeti.Analysis.Convex.Cone.InfDist
+import TauCeti.Analysis.Normed.Module.FiniteDimension.Closedness
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
@@ -220,53 +220,62 @@ theorem xAxis_ne_yAxis : xAxis ≠ yAxis := by
   simpa using congrArg (· 0) ha
 
 /-- The union of the coordinate axes of `ℝ²`. -/
-abbrev axes : Set (EuclideanSpace ℝ (Fin 2)) :=
+def axes : Set (EuclideanSpace ℝ (Fin 2)) :=
   (xAxis : Set (EuclideanSpace ℝ (Fin 2))) ∪ yAxis
+
+/-- The union of the coordinate axes is `xAxis ∪ yAxis`. -/
+theorem axes_eq : axes = (xAxis : Set (EuclideanSpace ℝ (Fin 2))) ∪ yAxis :=
+  (rfl)
 
 /-- The blow-ups of `H¹⌞M` at `0`, for `M` the union of the coordinate axes, are `H¹⌞M`. -/
 theorem blowUp_axes {r : ℝ} (hr : 0 < r) :
-    (μHE[1].restrict axes).blowUp 1 0 r = μHE[1].restrict axes :=
-  blowUp_euclideanHausdorffMeasure_restrict_union hr
+    (μHE[1].restrict axes).blowUp 1 0 r = μHE[1].restrict axes := by
+  rw [axes_eq]
+  exact blowUp_euclideanHausdorffMeasure_restrict_union hr
 
 /-- `H¹⌞M`, for `M` the union of the coordinate axes of `ℝ²`, has no approximate tangent line at
 the origin. -/
 theorem not_hasApproxTangentSpace_axes_zero {T : Submodule ℝ (EuclideanSpace ℝ (Fin 2))}
     (hT : finrank ℝ T = 1) (θ : ℝ≥0) :
-    ¬ (μHE[1].restrict axes).HasApproxTangentSpace 0 T θ :=
-  not_hasApproxTangentSpace_zero finrank_xAxis finrank_yAxis xAxis_ne_yAxis hT θ
+    ¬ (μHE[1].restrict axes).HasApproxTangentSpace 0 T θ := by
+  rw [axes_eq]
+  exact not_hasApproxTangentSpace_zero finrank_xAxis finrank_yAxis xAxis_ne_yAxis hT θ
 
 /-- The union of the coordinate axes of `ℝ²` has no approximate tangent `1`-plane at the origin,
 in the density formulation. -/
 theorem not_exists_isApproximateTangentPlane_axes_zero :
-    ¬ ∃ P : Submodule ℝ (EuclideanSpace ℝ (Fin 2)), IsApproximateTangentPlane 1 axes 0 P :=
-  not_exists_isApproximateTangentPlane_zero finrank_xAxis finrank_yAxis xAxis_ne_yAxis
+    ¬ ∃ P : Submodule ℝ (EuclideanSpace ℝ (Fin 2)), IsApproximateTangentPlane 1 axes 0 P := by
+  rw [axes_eq]
+  exact not_exists_isApproximateTangentPlane_zero finrank_xAxis finrank_yAxis xAxis_ne_yAxis
 
 /-- At a point `x ≠ 0` of the `x`-axis, `H¹⌞M` has approximate tangent space the `x`-axis with
 multiplicity `1`. -/
 theorem hasApproxTangentSpace_axes_of_mem_xAxis {x : EuclideanSpace ℝ (Fin 2)} (hx : x ∈ xAxis)
-    (hx0 : x ≠ 0) : (μHE[1].restrict axes).HasApproxTangentSpace x xAxis 1 :=
-  hasApproxTangentSpace_of_mem finrank_xAxis finrank_yAxis xAxis_ne_yAxis hx hx0
+    (hx0 : x ≠ 0) : (μHE[1].restrict axes).HasApproxTangentSpace x xAxis 1 := by
+  rw [axes_eq]
+  exact hasApproxTangentSpace_of_mem finrank_xAxis finrank_yAxis xAxis_ne_yAxis hx hx0
 
 /-- At a point `x ≠ 0` of the `y`-axis, `H¹⌞M` has approximate tangent space the `y`-axis with
 multiplicity `1`. -/
 theorem hasApproxTangentSpace_axes_of_mem_yAxis {x : EuclideanSpace ℝ (Fin 2)} (hx : x ∈ yAxis)
     (hx0 : x ≠ 0) : (μHE[1].restrict axes).HasApproxTangentSpace x yAxis 1 := by
-  rw [axes, union_comm]
+  rw [axes_eq, union_comm]
   exact hasApproxTangentSpace_of_mem finrank_yAxis finrank_xAxis xAxis_ne_yAxis.symm hx hx0
 
 /-- At a point `x ≠ 0` of the `x`-axis, the approximate tangent `1`-planes of the union of the
 axes are exactly the `x`-axis. -/
 theorem isApproximateTangentPlane_axes_iff_of_mem_xAxis {x : EuclideanSpace ℝ (Fin 2)}
     (hx : x ∈ xAxis) (hx0 : x ≠ 0) {Q : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} :
-    IsApproximateTangentPlane 1 axes x Q ↔ Q = xAxis :=
-  isApproximateTangentPlane_iff_of_mem finrank_xAxis finrank_yAxis xAxis_ne_yAxis hx hx0
+    IsApproximateTangentPlane 1 axes x Q ↔ Q = xAxis := by
+  rw [axes_eq]
+  exact isApproximateTangentPlane_iff_of_mem finrank_xAxis finrank_yAxis xAxis_ne_yAxis hx hx0
 
 /-- At a point `x ≠ 0` of the `y`-axis, the approximate tangent `1`-planes of the union of the
 axes are exactly the `y`-axis. -/
 theorem isApproximateTangentPlane_axes_iff_of_mem_yAxis {x : EuclideanSpace ℝ (Fin 2)}
     (hx : x ∈ yAxis) (hx0 : x ≠ 0) {Q : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} :
     IsApproximateTangentPlane 1 axes x Q ↔ Q = yAxis := by
-  rw [axes, union_comm]
+  rw [axes_eq, union_comm]
   exact isApproximateTangentPlane_iff_of_mem finrank_yAxis finrank_xAxis xAxis_ne_yAxis.symm hx
     hx0
 
