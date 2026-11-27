@@ -63,6 +63,9 @@ So the equation tested on `∂ₛ` alone loses no information.
   an inhomogeneous term vanishes at a point exactly when it vanishes on one nonzero tangent vector
   there; `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero` is the case of the
   vector `1` over a domain modelled on `ℂ`, such as a Riemann surface.
+* `TauCeti.InhomogeneousTerm.contDiffOn_chartTerm_chartAt_refl`: with values in a normed space
+  read in its identity chart, the term read in a preferred chart is jointly `Cⁿ` on the product of
+  the chart target with the whole space.
 
 ## References
 
@@ -493,6 +496,25 @@ theorem contDiffOn_chartTerm_chartAt (ν : InhomogeneousTerm jY JY) (x : Y) (y :
   simpa [chartTerm_chartAt_eq_chartTermExtend] using ν.contDiffOn_chartTermExtend_chartAt x y
 
 end PreferredCharts
+
+section IdentityChart
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {Y : Type*} [TopologicalSpace Y]
+  [ChartedSpace ℂ Y] [IsManifold 𝓘(ℝ, ℂ) ∞ Y] {jY : ContMDiffAlmostComplexStructure 𝓘(ℝ, ℂ) n Y}
+  {JF : ContMDiffAlmostComplexStructureFamily 𝓘(ℝ, F) F 𝓘(ℝ, ℂ) Y n}
+
+/-- In a preferred chart of a domain modelled on `ℂ` and the identity chart of a normed space, an
+inhomogeneous term read through `chartTerm` is jointly `Cⁿ` on the product of the chart target
+with the whole space. -/
+theorem contDiffOn_chartTerm_chartAt_refl (ν : InhomogeneousTerm jY JF) (x : Y) :
+    ContDiffOn ℝ n
+      (fun q : ℂ × F ↦ ν.chartTerm (chartAt ℂ x) (OpenPartialHomeomorph.refl F) q.1 q.2)
+      ((chartAt ℂ x).target ×ˢ Set.univ) := by
+  simpa only [OpenPartialHomeomorph.extendTrans_modelWithCornersSelf_refl, chartAt_self_eq,
+    extChartAt_model_space_eq_id, PartialEquiv.refl_target] using
+    ν.contDiffOn_chartTerm_chartAt x (0 : F)
+
+end IdentityChart
 
 end InhomogeneousTerm
 
