@@ -281,10 +281,12 @@ theorem singularHomologyMap_cubeBoundaryPairToComplZero (n m : ℕ) :
       rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
       exact ((cubeBoundaryPairToComplZero_fst_apply n _).trans (congrArg (cubeAffineMap n) hx)).symm
     rw [h3, hsx, id_eq]
-  have ha : a ≠ 0 := h₂
+  have ha : a ≠ 0 := hf₂y ▸ Set.mem_compl_singleton_iff.1 h₂
   have hc0 : cubeAffineMap n y ≠ 0 := cubeAffineMap_mapsTo n hy
+  -- `h0` is membership in `{0}` of the value of the affine homotopy at `(τ, y)`.
   have h0' : AffineMap.lineMap (cubeAffineMap n y) (f₂ y) (τ : ℝ) =
-      (0 : EuclideanSpace ℝ (ULift.{w} (Fin n))) := h0
+      (0 : EuclideanSpace ℝ (ULift.{w} (Fin n))) :=
+    (ContinuousMap.Homotopy.affine_apply _ _ (τ, y)).symm.trans (Set.mem_singleton_iff.1 h0)
   simp only [AffineMap.lineMap_apply_module, hcy, hf₂y, smul_smul, ← add_smul, smul_eq_zero, ha,
     or_false] at h0'
   have hτ := unitInterval.nonneg τ
