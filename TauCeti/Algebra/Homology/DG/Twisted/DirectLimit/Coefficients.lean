@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Right.Truncation
 public import TauCeti.Algebra.Homology.DG.Twisted.DirectLimit.Basic
+public import TauCeti.Algebra.Homology.DG.Twisted.DirectedUnion
 public import TauCeti.Algebra.Homology.DG.Twisted.Functor
 import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
-import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Direct limits along continuation maps as functors of the coefficients
@@ -30,11 +30,10 @@ the coefficients (`TauCeti.ContinuationSystem.coefficientHomologyFunctor`), and 
 
 The direct limit commutes with directed unions of coefficient modules. Let `M` be the directed
 union of injective morphisms `j k : N k ⟶ M`: every finite set of elements of `M` lies in the image
-of one `j k`. A twisted complex has finitely many coefficients in each element, so the twisted
-complex of `M` is the directed union of those of the `N k`, and homology commutes with directed
-unions (`HomologicalComplex.exists_homologyMap_eq_of_injective`,
-`HomologicalComplex.exists_homologyMap_eq_zero_of_injective`). Over a filtered `ι`, colimits of
-modules commute with these unions too:
+of one `j k`. The cohomology of the twisted complex of `M` is then the directed union of that of
+the `N k` (`TauCeti.TwistingCocycle.exists_homologyMap_twistedCochainComplexMap_eq`,
+`TauCeti.TwistingCocycle.exists_homologyMap_twistedCochainComplexMap_eq_zero`). Over a filtered
+`ι`, colimits of modules commute with these unions too:
 
 * every element of the direct limit for `M` comes from the direct limit for some `N k`
   (`TauCeti.ContinuationSystem.exists_directLimitFunctor_map_eq`);
@@ -49,11 +48,15 @@ natural transformation between the direct-limit functors of two continuation sys
 isomorphism on every DG right module with cohomology bounded above is an isomorphism on every DG
 right module (`TauCeti.ContinuationSystem.isIso_app_of_forall_cohomologyGrading_eq_bot`).
 
-This is the step by which Barraud, Damian, Humilière and Oancea pass from their Viterbo
-isomorphism with DG coefficients (Theorem K), proved through convergent index spectral sequences
-for coefficients with homology bounded below, to arbitrary DG local systems in their Corollary
-4.17: both sides are direct limits of twisted complexes, natural in the coefficients, and the good
-truncations of a DG local system have homology bounded below.
+Barraud, Damian, Humilière and Oancea prove their Viterbo isomorphism with DG coefficients
+(Theorem K) through convergent index spectral sequences for coefficients with homology bounded
+below, and pass to arbitrary DG local systems in their Corollary 4.17 through the good truncations,
+which have homology bounded below. This file supplies that passage for comparisons whose two sides
+are direct-limit functors of continuation systems over the same DG algebra. A comparison whose
+sides are not of this form, such as one with the Morse side over the finite approximations `𝓛ʳQ`,
+which changes the algebra by restriction of scalars, needs the abstract
+`TauCeti.DGRightModuleCat.isIso_app_of_forall_cohomologyGrading_eq_bot` instead, with the
+exhaustion conditions proved for that side.
 
 ## Main definitions
 
@@ -66,16 +69,13 @@ truncations of a DG local system have homology bounded below.
 
 ## Main results
 
-* `TauCeti.TwistingCocycle.exists_homologyMap_twistedCochainComplexMap_eq`,
-  `TauCeti.TwistingCocycle.exists_homologyMap_twistedCochainComplexMap_eq_zero`: the cohomology of
-  the twisted complex of a directed union of coefficient modules is the directed union of the
-  cohomology of the pieces.
 * `TauCeti.ContinuationSystem.exists_directLimitFunctor_map_eq`,
-  `TauCeti.ContinuationSystem.exists_directLimitFunctor_map_eq_zero`: the same for the direct
-  limit along a continuation system over a filtered preorder.
-* `TauCeti.ContinuationSystem.isIso_app_of_forall_cohomologyGrading_eq_bot`: a comparison of
-  direct limits natural in the coefficients extends from coefficients with cohomology bounded
-  above to arbitrary coefficients.
+  `TauCeti.ContinuationSystem.exists_directLimitFunctor_map_eq_zero`: the direct limit along a
+  continuation system over a filtered preorder of a directed union of coefficient modules is the
+  directed union of the direct limits for the pieces.
+* `TauCeti.ContinuationSystem.isIso_app_of_forall_cohomologyGrading_eq_bot`: a natural
+  transformation between the direct-limit functors of two continuation systems extends from
+  coefficients with cohomology bounded above to arbitrary coefficients.
 
 ## References
 
@@ -93,75 +93,6 @@ universe w w' uR uA uM uP
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
-
-/-! ### Twisted complexes of directed unions -/
-
-namespace TwistingCocycle
-
-variable {P : Type uP} [Fintype P] {ind : P → ℤ} (m : TwistingCocycle 𝒜 d P ind)
-  {κ : Type*} {M : DGRightModuleCat.{uR, uA, uM} h} {N : κ → DGRightModuleCat.{uR, uA, uM} h}
-  {j : ∀ k, N k ⟶ M} (hj : ∀ k, Function.Injective (j k))
-  (hN : ∀ s : Finset M, ∃ k, ∀ x ∈ s, x ∈ Set.range (j k))
-
-include hj hN in
-/-- Every element of the twisted complex of a directed union of DG right modules comes from the
-twisted complex of one of the pieces: it has finitely many coefficients. -/
-private theorem exists_twistedCochainComplexMap_f_eq_of_directed (n : ℤ)
-    (x : (m.twistedCochainComplex M.differential M.isDGRightModule).X n) :
-    ∃ k x', (m.twistedCochainComplexMap (N k).isDGRightModule M.isDGRightModule (j k)).f n x' =
-      x := by
-  classical
-  set g := (twistedCochainComplexXEquiv m.mem_graded m.twisting M.isDGRightModule n x : P → M)
-  obtain ⟨k, hk⟩ := hN (Finset.univ.image g)
-  exact ⟨k, m.exists_twistedCochainComplexMap_f_eq _ _ (hj k) x fun p ↦
-    hk _ (Finset.mem_image_of_mem g (Finset.mem_univ p))⟩
-
-include hj hN in
-/-- **Every cohomology class of the twisted complex of a directed union comes from a piece.** Let
-`M` be the directed union of injective morphisms `j k : N k ⟶ M` of DG right modules. Then every
-cohomology class of the twisted complex `M ⊗ ⟨P⟩` is the image of a class of some `N k ⊗ ⟨P⟩`. -/
-theorem exists_homologyMap_twistedCochainComplexMap_eq (n : ℤ)
-    (z : (m.twistedCochainComplex M.differential M.isDGRightModule).homology n) :
-    ∃ k, ∃ y : (m.twistedCochainComplex (N k).differential (N k).isDGRightModule).homology n,
-      HomologicalComplex.homologyMap
-        (m.twistedCochainComplexMap (N k).isDGRightModule M.isDGRightModule (j k)) n y = z :=
-  HomologicalComplex.exists_homologyMap_eq_of_injective n _
-    (fun k ↦ m.injective_twistedCochainComplexMap_f _ _ (hj k) _)
-    (m.exists_twistedCochainComplexMap_f_eq_of_directed hj hN n) z
-
-include hj hN in
-/-- **A cohomology class of a piece which dies in a directed union dies in a later piece.** Let
-`M` be the directed union of injective morphisms `j k : N k ⟶ M` of DG right modules, indexed by a
-directed preorder and compatible with morphisms `t : N k ⟶ N k'` for `k ≤ k'`. If a cohomology
-class of the twisted complex `N k ⊗ ⟨P⟩` maps to zero in `M ⊗ ⟨P⟩`, then it maps to zero in some
-`N k' ⊗ ⟨P⟩` with `k ≤ k'`. -/
-theorem exists_homologyMap_twistedCochainComplexMap_eq_zero [Preorder κ] [IsDirectedOrder κ]
-    (t : ∀ ⦃k k'⦄, k ≤ k' → (N k ⟶ N k')) (ht : ∀ ⦃k k'⦄ (hkk' : k ≤ k'), t hkk' ≫ j k' = j k)
-    {n : ℤ} {k : κ}
-    (y : (m.twistedCochainComplex (N k).differential (N k).isDGRightModule).homology n)
-    (hy : HomologicalComplex.homologyMap
-      (m.twistedCochainComplexMap (N k).isDGRightModule M.isDGRightModule (j k)) n y = 0) :
-    ∃ k', ∃ hkk' : k ≤ k', HomologicalComplex.homologyMap
-      (m.twistedCochainComplexMap (N k).isDGRightModule (N k').isDGRightModule (t hkk')) n y =
-        0 :=
-  HomologicalComplex.exists_homologyMap_eq_zero_of_injective n
-    (L := fun k ↦ m.twistedCochainComplex (N k).differential (N k).isDGRightModule)
-    (fun k ↦ m.twistedCochainComplexMap _ _ (j k))
-    (fun k ↦ m.injective_twistedCochainComplexMap_f _ _ (hj k) n) (CochainComplex.prev ℤ n)
-    (P := (k ≤ ·)) (fun _ hkk' ↦ m.twistedCochainComplexMap _ _ (t hkk'))
-    (fun _ hkk' ↦ by
-      rw [← twistedCochainComplexMap_comp]
-      exact congrArg (m.twistedCochainComplexMap _ _) (ht hkk'))
-    (fun x ↦ by
-      -- The coefficients of `x` lie in some piece, hence in every later piece above `k`.
-      obtain ⟨k'', x'', rfl⟩ := m.exists_twistedCochainComplexMap_f_eq_of_directed hj hN _ x
-      obtain ⟨k', hkk', hk''k'⟩ := directed_of (· ≤ ·) k k''
-      refine ⟨k', hkk', (m.twistedCochainComplexMap _ _ (t hk''k')).f _ x'', ?_⟩
-      rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, ← twistedCochainComplexMap_comp]
-      exact congrArg (fun φ ↦ ((m.twistedCochainComplexMap _ _ φ).f _) x'') (ht hk''k'))
-    y hy
-
-end TwistingCocycle
 
 /-! ### The direct limit as a functor of the coefficients -/
 
@@ -189,6 +120,24 @@ theorem homologyFunctorMap_app {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M �
       HomologicalComplex.homologyMap (((S.m i).twistedCochainComplexFunctor h).map f) n :=
   (rfl)
 
+@[simp]
+theorem homologyFunctorMap_id (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) :
+    S.homologyFunctorMap (𝟙 M) n = 𝟙 _ :=
+  NatTrans.ext <| funext fun i ↦ (S.homologyFunctorMap_app (𝟙 M) n i).trans <|
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (((S.m i).twistedCochainComplexFunctor h).map_id M)).trans
+        (HomologicalComplex.homologyMap_id _ n)
+
+@[simp]
+theorem homologyFunctorMap_comp {M N L : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N)
+    (g : N ⟶ L) (n : ℤ) :
+    S.homologyFunctorMap (f ≫ g) n = S.homologyFunctorMap f n ≫ S.homologyFunctorMap g n :=
+  NatTrans.ext <| funext fun i ↦ (S.homologyFunctorMap_app (f ≫ g) n i).trans <|
+    ((congrArg (HomologicalComplex.homologyMap · n)
+      (((S.m i).twistedCochainComplexFunctor h).map_comp f g)).trans
+        (HomologicalComplex.homologyMap_comp _ _ n)).trans
+      (congrArg₂ (· ≫ ·) (S.homologyFunctorMap_app f n i) (S.homologyFunctorMap_app g n i)).symm
+
 /-- **The cohomology functors of a continuation system as a functor of the coefficients**:
 `M ↦ (i ↦ H^n(M ⊗ ⟨P i⟩))`. The body is exposed: its objects are the cohomology functors, which the
 statements about its maps need to unfold. -/
@@ -197,15 +146,8 @@ noncomputable def coefficientHomologyFunctor (n : ℤ) :
     DGRightModuleCat.{uR, uA, uM} h ⥤ ι ⥤ ModuleCat.{max uP uM} R where
   obj M := S.homologyFunctor M.isDGRightModule n
   map f := S.homologyFunctorMap f n
-  map_id M := NatTrans.ext <| funext fun i ↦ (S.homologyFunctorMap_app (𝟙 M) n i).trans <|
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (((S.m i).twistedCochainComplexFunctor h).map_id M)).trans
-        (HomologicalComplex.homologyMap_id _ n)
-  map_comp f g := NatTrans.ext <| funext fun i ↦ (S.homologyFunctorMap_app (f ≫ g) n i).trans <|
-    ((congrArg (HomologicalComplex.homologyMap · n)
-      (((S.m i).twistedCochainComplexFunctor h).map_comp f g)).trans
-        (HomologicalComplex.homologyMap_comp _ _ n)).trans
-      (congrArg₂ (· ≫ ·) (S.homologyFunctorMap_app f n i) (S.homologyFunctorMap_app g n i)).symm
+  map_id M := S.homologyFunctorMap_id M n
+  map_comp f g := S.homologyFunctorMap_comp f g n
 
 @[simp]
 theorem coefficientHomologyFunctor_obj (n : ℤ) (M : DGRightModuleCat.{uR, uA, uM} h) :
@@ -238,10 +180,22 @@ theorem directLimitFunctor_map (n : ℤ) {M N : DGRightModuleCat.{uR, uA, uM} h}
   (rfl)
 
 /-- The direct limit of a morphism of coefficients is induced by the maps of cohomology at each
+stage: Mathlib's `colimit.ι_map`, read through `directLimitFunctor`. The colimit instances are
+hypotheses: instance search for the colimits of `ModuleCat.{max uP uM} R` gets stuck on universe
+constraints, so callers supply them by hand. -/
+@[reassoc]
+theorem ι_directLimitFunctor_map (n : ℤ) {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N)
+    (i : ι) [HasColimit ((S.coefficientHomologyFunctor n).obj M)]
+    [HasColimit ((S.coefficientHomologyFunctor n).obj N)] :
+    colimit.ι ((S.coefficientHomologyFunctor n).obj M) i ≫ (S.directLimitFunctor n).map f =
+      (S.homologyFunctorMap f n).app i ≫ colimit.ι ((S.coefficientHomologyFunctor n).obj N) i :=
+  colimit.ι_map (S.homologyFunctorMap f n) i
+
+/-- The direct limit of a morphism of coefficients is induced by the maps of cohomology at each
 stage, on elements: Mathlib's `colimit.ι_map_apply`, read through `directLimitFunctor`. The colimit
 instances are hypotheses: instance search for the colimits of `ModuleCat.{max uP uM} R` gets stuck
 on universe constraints, so callers supply them by hand. -/
-private theorem directLimitFunctor_map_ι_apply (n : ℤ) {M N : DGRightModuleCat.{uR, uA, uM} h}
+theorem directLimitFunctor_map_ι_apply (n : ℤ) {M N : DGRightModuleCat.{uR, uA, uM} h}
     (f : M ⟶ N) (i : ι) [HasColimit ((S.coefficientHomologyFunctor n).obj M)]
     [HasColimit ((S.coefficientHomologyFunctor n).obj N)]
     (y : ((S.coefficientHomologyFunctor n).obj M).obj i) :
@@ -334,9 +288,7 @@ theorem exists_directLimitFunctor_map_ιTruncLE_eq (n : ℤ) {M : DGRightModuleC
     ∃ k, ∃ y : (S.directLimitFunctor n).obj (M.truncLE h𝒜 k),
       (S.directLimitFunctor n).map (M.ιTruncLE h𝒜 k) y = x :=
   S.exists_directLimitFunctor_map_eq (fun k ↦ M.ιTruncLE_injective k)
-    (fun s ↦ (M.exists_forall_mem_truncLESubmodule (h𝒜 := h𝒜) s).imp fun _ hk x hx ↦ by
-      rw [DGRightModuleCat.range_ιTruncLE]
-      exact hk x hx) n x
+    (M.exists_forall_mem_range_ιTruncLE (h𝒜 := h𝒜)) n x
 
 include h𝒜 in
 /-- An element of the direct limit for a canonical truncation `τ^{≤ k} M` of a DG right module
@@ -348,9 +300,7 @@ theorem exists_directLimitFunctor_map_truncLEInclusion_eq_zero [IsFiltered ι] {
     (hy : (S.directLimitFunctor n).map (M.ιTruncLE h𝒜 k) y = 0) :
     ∃ k', ∃ hkk' : k ≤ k', (S.directLimitFunctor n).map (M.truncLEInclusion h𝒜 hkk') y = 0 :=
   S.exists_directLimitFunctor_map_eq_zero (fun k ↦ M.ιTruncLE_injective k)
-    (fun s ↦ (M.exists_forall_mem_truncLESubmodule (h𝒜 := h𝒜) s).imp fun _ hk x hx ↦ by
-      rw [DGRightModuleCat.range_ιTruncLE]
-      exact hk x hx)
+    (M.exists_forall_mem_range_ιTruncLE (h𝒜 := h𝒜))
     (fun _ _ hkk' ↦ M.truncLEInclusion h𝒜 hkk') (fun _ _ hkk' ↦ M.truncLEInclusion_ιTruncLE hkk')
     y hy
 
@@ -361,9 +311,11 @@ algebra concentrated in nonpositive cohomological degrees, let `S` and `S'` be c
 functors in degrees `n` and `n'`. If `α` is an isomorphism on every DG right module whose
 cohomology vanishes above some degree, then it is an isomorphism on every DG right module.
 
-This is how the Viterbo isomorphism with DG coefficients of Barraud, Damian, Humilière and Oancea,
-proved through convergent spectral sequences for DG local systems with homology bounded below,
-extends to every DG local system (their Corollary 4.17). -/
+This is the passage from DG local systems with homology bounded below to all DG local systems in
+Corollary 4.17 of Barraud, Damian, Humilière and Oancea, for comparisons both of whose sides are
+direct-limit functors of continuation systems over `𝒜`. It does not apply to sides of another
+form, such as the Morse side over the finite approximations `𝓛ʳQ`; for those, use
+`TauCeti.DGRightModuleCat.isIso_app_of_forall_cohomologyGrading_eq_bot` directly. -/
 theorem isIso_app_of_forall_cohomologyGrading_eq_bot {ι' : Type w'} [Preorder ι']
     [IsFiltered ι'] (S' : ContinuationSystem.{w', uR, uA, uP} 𝒜 d h ι')
     [HasColimitsOfShape ι' (ModuleCat.{max uP uM} R)]

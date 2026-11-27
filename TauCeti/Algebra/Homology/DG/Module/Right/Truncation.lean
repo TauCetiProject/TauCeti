@@ -359,6 +359,14 @@ theorem range_ιTruncLE (m : ℤ) :
   rintro ⟨y, rfl⟩
   exact (M.truncLEEquiv h𝒜 m y).property
 
+/-- Every finite set of elements of `M` lies in the image of one inclusion `τ^{≤ m} M ⟶ M`: the
+inclusions of the truncations form a directed family exhausting `M`. -/
+theorem exists_forall_mem_range_ιTruncLE (s : Finset M) :
+    ∃ m, ∀ x ∈ s, x ∈ Set.range (M.ιTruncLE h𝒜 m) :=
+  (M.exists_forall_mem_truncLESubmodule (h𝒜 := h𝒜) s).imp fun _ hk x hx ↦ by
+    rw [range_ιTruncLE]
+    exact hk x hx
+
 variable (M h𝒜) in
 /-- The inclusion `τ^{≤ m} M ⟶ τ^{≤ m'} M` of truncations for `m ≤ m'`. -/
 noncomputable def truncLEInclusion {m m' : ℤ} (hmm' : m ≤ m') :
