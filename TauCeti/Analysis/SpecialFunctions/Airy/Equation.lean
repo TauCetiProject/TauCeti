@@ -282,8 +282,9 @@ theorem _root_.ContDiffAt.airy_inhomogeneous_ode_sub {f g : ℂ → ℂ} {c d z 
     (hf : ContDiffAt ℂ 2 f z) (hg : ContDiffAt ℂ 2 g z) (hf' : deriv^[2] f z = z * f z + c)
     (hg' : deriv^[2] g z = z * g z + d) :
     deriv^[2] (f - g) z = z * (f - g) z + (c - d) := by
-  rw [← iteratedDeriv_eq_iterate, iteratedDeriv_sub hf hg, iteratedDeriv_eq_iterate,
-    iteratedDeriv_eq_iterate, hf', hg', Pi.sub_apply]
+  have h : deriv^[2] (f - g) z = deriv^[2] f z - deriv^[2] g z := by
+    simpa only [iteratedDeriv_eq_iterate] using iteratedDeriv_sub hf hg
+  simp only [h, hf', hg', Pi.sub_apply]
   ring
 
 /-- **The inhomogeneous Airy equation**: if `p` and `w` are entire solutions of
@@ -300,8 +301,7 @@ theorem _root_.Differentiable.exists_eq_add_airy_combination {g p w : ℂ → �
   obtain ⟨c₁, c₂, h⟩ : ∃ c₁ c₂ : ℂ, w - p = fun z => c₁ * airyAi z + c₂ * airyBi z :=
     ⟨_, _, eq_airy_combination (hw.sub hp) hode⟩
   refine ⟨c₁, c₂, funext fun z => ?_⟩
-  have hz := congrFun h z
-  rw [Pi.sub_apply] at hz
-  linear_combination hz
+  rw [add_assoc]
+  exact congrFun (eq_add_of_sub_eq' h) z
 
 end TauCeti
