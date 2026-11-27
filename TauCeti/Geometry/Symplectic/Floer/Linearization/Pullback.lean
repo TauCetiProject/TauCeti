@@ -243,9 +243,7 @@ theorem det_mul_norm_sq_le_and_norm_covectorPullback_realChart_sq_le [FiniteDime
   set b := (fderiv ℝ φ ζ stdComplexLineReal).2
   set θ := η (φ ζ)
   have hab : a ^ 2 + b ^ 2 = (fderiv ℝ φ ζ).det := by
-    rw [TauCeti.Complex.det_fderiv_realChart hf, Complex.normSq_apply]
-    simp only [a, b, φ, TauCeti.Complex.fderiv_realChart_apply hf]
-    simp [stdComplexLineReal, sq]
+    rw [← TauCeti.Complex.sq_add_sq_fderiv_realChart hf, ← stdComplexLineReal_eq]
   have hdet : 0 < (fderiv ℝ φ ζ).det := by
     rw [TauCeti.Complex.det_fderiv_realChart hf]
     exact Complex.normSq_pos.2 hf'

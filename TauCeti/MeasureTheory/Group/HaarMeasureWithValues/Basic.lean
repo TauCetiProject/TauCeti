@@ -204,6 +204,11 @@ instance [Semiring R] [Module R A] : MulActionWithZero R (HaarMeasureWithValues 
 
 end SMul
 
+/-- Pushing `μ` forward along the identity gives `μ` back. -/
+@[simp]
+theorem map_id : μ.map (AddMonoidHom.id A) = μ :=
+  ext fun _ ↦ rfl
+
 end AddCommMonoid
 
 /-! ### Compact open sets as unions of cosets -/
