@@ -90,8 +90,8 @@ derivation. -/
 theorem relations_le_ker_iff (f : Ω[B⁄R] →ₗ[B] M) :
     relations R δ ≤ LinearMap.ker f ↔ (f.compDer (D R B)).IsPD δ := by
   rw [relations_le_iff, Derivation.IsPD]
-  simp only [LinearMap.mem_ker, map_sub, map_smul, sub_eq_zero]
-  rfl
+  simp only [LinearMap.mem_ker, map_sub, map_smul, sub_eq_zero, Derivation.coe_comp,
+    LinearMap.comp_apply, LinearMap.restrictScalars_apply, Derivation.coeFn_coe]
 
 end TauCeti.PDKaehlerDifferential
 
@@ -133,7 +133,8 @@ theorem d_dpow_succ (n : ℕ) {x : B} (hx : x ∈ I) :
 theorem span_range_d : Submodule.span B (Set.range (d R δ)) = ⊤ := by
   rw [← (relations R δ).range_mkQ, ← Submodule.map_top, ← span_range_derivation R B,
     Submodule.map_span, ← Set.range_comp]
-  rfl
+  simp only [d, Derivation.coe_comp, LinearMap.coe_comp, LinearMap.coe_restrictScalars,
+    Derivation.coeFn_coe]
 
 variable {R δ}
 

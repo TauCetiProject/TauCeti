@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Kaehler.DeRham.Quotient
 public import TauCeti.RingTheory.Kaehler.DividedPowers
 import TauCeti.Algebra.Subalgebra.Centralizer
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # The divided power de Rham algebra
@@ -87,8 +86,7 @@ private theorem preDerivOne_eq_zero {ω : Ω[B⁄R]} (hω : PDKaehlerDifferentia
   have hω' : ω ∈ PDKaehlerDifferential.relations R δ := by
     rw [← hq]
     exact LinearMap.mem_ker.mpr hω
-  obtain ⟨η, hη, rfl⟩ := hL hω'
-  exact (KaehlerDeRham.preExtDerivOneKer_apply q η).symm.trans (LinearMap.mem_ker.mp hη)
+  exact KaehlerDeRham.preExtDerivOne_eq_zero_of_mem_map_ker q (hL hω')
 
 variable (R) in
 /-- The exterior derivative on divided power forms, extending the universal PD derivation
@@ -107,18 +105,31 @@ theorem extDeriv_algebraMap (b : B) :
   rw [extDeriv, KaehlerDeRham.extDerivDescend_algebraMap, Submodule.mkQ_apply,
     PDKaehlerDifferential.mk_D]
 
+/-- The exterior derivative on divided power forms kills `1`. -/
+@[simp]
+theorem extDeriv_one : extDeriv R δ 1 = 0 :=
+  KaehlerDeRham.extDerivDescend_one _ _ _
+
 /-- Exact one-forms are closed. -/
 @[simp]
 theorem extDeriv_ι_d (b : B) :
     extDeriv R δ (ExteriorAlgebra.ι B (PDKaehlerDifferential.d R δ b)) = 0 := by
   rw [← PDKaehlerDifferential.mk_D, ← Submodule.mkQ_apply, extDeriv]
-  exact KaehlerDeRham.extDerivDescend_ι_map_D _ _ _ b
+  exact KaehlerDeRham.extDerivDescend_ι_apply_D _ _ _ b
 
 /-- The exterior derivative satisfies the graded Leibniz rule expressed by the grade involution. -/
 theorem extDeriv_mul (x y : Forms R δ) :
     extDeriv R δ (x * y) = extDeriv R δ x * y +
       involute (Q := (0 : QuadraticForm B (PDKaehlerDifferential R δ))) x * extDeriv R δ y :=
   KaehlerDeRham.extDerivDescend_mul _ _ _ x y
+
+/-- The exterior derivative of a scalar multiple uses the divided power derivation on the scalar. -/
+@[simp]
+theorem extDeriv_smul (b : B) (x : Forms R δ) :
+    extDeriv R δ (b • x) =
+      ExteriorAlgebra.ι B (PDKaehlerDifferential.d R δ b) * x + b • extDeriv R δ x := by
+  rw [← PDKaehlerDifferential.mk_D, ← Submodule.mkQ_apply, extDeriv]
+  exact KaehlerDeRham.extDerivDescend_smul _ _ _ b x
 
 /-- The quotient by the divided power relations commutes with exterior differentiation. -/
 theorem extDeriv_ofKaehler (x : ExteriorAlgebra B Ω[B⁄R]) :
@@ -128,7 +139,13 @@ theorem extDeriv_ofKaehler (x : ExteriorAlgebra B Ω[B⁄R]) :
 /-- The exterior derivative on divided power forms squares to zero. -/
 @[simp]
 theorem extDeriv_extDeriv (x : Forms R δ) : extDeriv R δ (extDeriv R δ x) = 0 :=
-  KaehlerDeRham.extDerivDescend_sq _ _ _ x
+  KaehlerDeRham.extDerivDescend_extDerivDescend _ _ _ x
+
+/-- The exterior derivative sends divided power forms of degree `n` to degree `n + 1`. -/
+theorem extDeriv_mem_exteriorPower {n : ℕ} {x : Forms R δ}
+    (hx : x ∈ ⋀[B]^n (PDKaehlerDifferential R δ)) :
+    extDeriv R δ x ∈ ⋀[B]^(n + 1) (PDKaehlerDifferential R δ) :=
+  KaehlerDeRham.extDerivDescend_mem_exteriorPower _ _ _ hx
 
 variable (R δ)
 
@@ -208,13 +225,14 @@ private def factorAlgHom (F : ExteriorAlgebra B Ω[B⁄R] →ₐ[R] P)
     rw [PDKaehlerDifferential.relations_le_iff]
     intro n x hx
     exact LinearMap.mem_ker.mpr (Subtype.ext (hF n x hx))
+  have hL (ω : Ω[B⁄R]) : L' (PDKaehlerDifferential.mkQ R δ ω) = L ω :=
+    Submodule.liftQ_apply _ L ω
   have hsq (ω : PDKaehlerDifferential R δ) : L' ω * L' ω = 0 := by
     obtain ⟨ω, rfl⟩ := Submodule.mkQ_surjective (PDKaehlerDifferential.relations R δ) ω
-    have hL : L' (PDKaehlerDifferential.mkQ R δ ω) = L ω := Submodule.liftQ_apply _ L ω
     rw [hL]
-    exact Subtype.ext <| (map_mul F _ _).symm.trans (by
-      rw [ExteriorAlgebra.ι_sq_zero, map_zero]
-      rfl)
+    apply Subtype.ext
+    rw [Subalgebra.coe_mul, Subalgebra.coe_zero]
+    exact (map_mul F _ _).symm.trans (by rw [ExteriorAlgebra.ι_sq_zero, map_zero])
   let G := ExteriorAlgebra.lift B ⟨L', hsq⟩
   refine ⟨S.val.comp (G.restrictScalars R), ?_⟩
   intro ω
@@ -224,8 +242,8 @@ private def factorAlgHom (F : ExteriorAlgebra B Ω[B⁄R] →ₐ[R] P)
     exact hS b
   | ι ω =>
     rw [ofKaehler_ι, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
-      ExteriorAlgebra.lift_ι_apply]
-    rfl
+      ExteriorAlgebra.lift_ι_apply, hL]
+    exact Subalgebra.val_apply _ _
   | mul x y hx hy => simp only [map_mul, hx, hy]
   | add x y hx hy => simp only [map_add, hx, hy]
 
@@ -364,7 +382,7 @@ theorem map_ι (hf : δ.IsDPMorphism ε f.toRingHom) (ω : PDKaehlerDifferential
   | smul b x _ hx =>
     rw [LinearMap.map_smul, Algebra.smul_def, map_mul, map_algebraMap, hx, ← Algebra.smul_def,
       LinearMap.map_smulₛₗ, LinearMap.map_smul]
-    rfl
+    simp
 
 /-- Identity algebra maps act identically on divided power de Rham algebras. -/
 @[simp]

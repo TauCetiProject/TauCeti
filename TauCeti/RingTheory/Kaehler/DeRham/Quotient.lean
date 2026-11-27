@@ -65,6 +65,15 @@ theorem preExtDerivOneKer_apply (ω : LinearMap.ker q) :
     preExtDerivOneKer q ω = preExtDerivOne q ω :=
   (rfl)
 
+/-- A one-form in the image of the restricted derivative's kernel has zero pushed-forward
+derivative. -/
+theorem preExtDerivOne_eq_zero_of_mem_map_ker {ω : Ω[S⁄R]}
+    (hω : ω ∈ (LinearMap.ker (preExtDerivOneKer q)).map (LinearMap.ker q).subtype) :
+    preExtDerivOne q ω = 0 := by
+  obtain ⟨η, hη, rfl⟩ := hω
+  rw [Submodule.subtype_apply, ← preExtDerivOneKer_apply]
+  exact LinearMap.mem_ker.mp hη
+
 variable (hq : Function.Surjective q)
   (hker : ∀ ⦃ω : Ω[S⁄R]⦄, q ω = 0 → preExtDerivOne q ω = 0)
 
@@ -110,11 +119,16 @@ def extDerivDescend : ExteriorAlgebra S M →ₗ[R] ExteriorAlgebra S M :=
 theorem extDerivDescend_algebraMap (s : S) :
     extDerivDescend q hq hker (algebraMap S (ExteriorAlgebra S M) s) =
       ExteriorAlgebra.ι S (q (D R S s)) := by
-  rw [extDerivDescend, ExteriorAlgebra.liftTwistedDerivation_algebraMap]
-  rfl
+  simp only [extDerivDescend, ExteriorAlgebra.liftTwistedDerivation_algebraMap, Derivation.coe_comp,
+    LinearMap.comp_apply, LinearMap.restrictScalars_apply, Derivation.coeFn_coe]
+
+/-- The descended derivative kills `1`. -/
+@[simp]
+theorem extDerivDescend_one : extDerivDescend q hq hker 1 = 0 := by
+  simp only [extDerivDescend, ExteriorAlgebra.liftTwistedDerivation_one]
 
 /-- Exact one-forms are closed under the descended derivative. -/
-theorem extDerivDescend_ι_map_D (s : S) :
+theorem extDerivDescend_ι_apply_D (s : S) :
     extDerivDescend q hq hker (ExteriorAlgebra.ι S (q (D R S s))) = 0 := by
   rw [extDerivDescend, ExteriorAlgebra.liftTwistedDerivation_ι, extDerivOneDescend_apply,
     preExtDerivOne_apply, extDeriv_ι_D, map_zero]
@@ -125,6 +139,14 @@ theorem extDerivDescend_mul (x y : ExteriorAlgebra S M) :
       involute (Q := (0 : QuadraticForm S M)) x * extDerivDescend q hq hker y :=
   ExteriorAlgebra.liftTwistedDerivation_mul _ _ _ _ _ _ x y
 
+/-- The descended derivative satisfies the Leibniz rule for multiplication by a scalar. -/
+@[simp]
+theorem extDerivDescend_smul (s : S) (x : ExteriorAlgebra S M) :
+    extDerivDescend q hq hker (s • x) =
+      ExteriorAlgebra.ι S (q (D R S s)) * x + s • extDerivDescend q hq hker x := by
+  simp only [extDerivDescend, ExteriorAlgebra.liftTwistedDerivation_smul, Derivation.coe_comp,
+    LinearMap.comp_apply, LinearMap.restrictScalars_apply, Derivation.coeFn_coe]
+
 /-- The quotient map on exterior algebras commutes with exterior differentiation. -/
 theorem extDerivDescend_map (x : ExteriorAlgebra S Ω[S⁄R]) :
     extDerivDescend q hq hker (ExteriorAlgebra.map q x) =
@@ -134,14 +156,14 @@ theorem extDerivDescend_map (x : ExteriorAlgebra S Ω[S⁄R]) :
     rw [AlgHom.commutes, extDerivDescend_algebraMap, extDeriv_algebraMap,
       ExteriorAlgebra.map_apply_ι]
   | ι_D s =>
-    rw [ExteriorAlgebra.map_apply_ι, extDerivDescend_ι_map_D, extDeriv_ι_D, map_zero]
+    rw [ExteriorAlgebra.map_apply_ι, extDerivDescend_ι_apply_D, extDeriv_ι_D, map_zero]
   | mul x y hx hy =>
     simp only [map_mul, map_add, extDerivDescend_mul, extDeriv_mul, ExteriorAlgebra.map_involute,
       hx, hy]
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The descended derivative squares to zero. -/
-theorem extDerivDescend_sq (x : ExteriorAlgebra S M) :
+theorem extDerivDescend_extDerivDescend (x : ExteriorAlgebra S M) :
     extDerivDescend q hq hker (extDerivDescend q hq hker x) = 0 := by
   obtain ⟨x, rfl⟩ := ExteriorAlgebra.map_surjective_iff.mpr hq x
   rw [extDerivDescend_map, extDerivDescend_map, extDeriv_extDeriv, map_zero]
@@ -160,5 +182,12 @@ theorem extDerivDescend_mem_integerGrading {n : ℤ} {x : ExteriorAlgebra S M}
         TauCeti.ExteriorAlgebra.integerGrading_natCast]
       exact extDerivOneDescend_mem q hq hker m)
     hx
+
+/-- The descended derivative sends the `n`th exterior power into the `(n + 1)`st. -/
+theorem extDerivDescend_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra S M}
+    (hx : x ∈ ⋀[S]^n M) : extDerivDescend q hq hker x ∈ ⋀[S]^(n + 1) M := by
+  simp only [← TauCeti.ExteriorAlgebra.integerGrading_natCast, Nat.cast_add, Nat.cast_one]
+  exact extDerivDescend_mem_integerGrading q hq hker
+    (by simpa only [TauCeti.ExteriorAlgebra.integerGrading_natCast] using hx)
 
 end TauCeti.KaehlerDeRham
