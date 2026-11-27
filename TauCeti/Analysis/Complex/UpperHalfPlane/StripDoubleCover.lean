@@ -219,7 +219,7 @@ theorem tendsto_log_sub_mul_sub_div_sub_div_pi_comap_re_atTop {p q r : ℝ} (hpq
     (Real.tendsto_log_atTop.comp hnorm).atTop_div_const Real.pi_pos
 
 /-- The real part of `w ↦ log ((w - p) * (w - r) / (w - q)) / π` tends to `+∞` at infinity. -/
-theorem tendsto_log_sub_mul_sub_div_sub_div_pi_cobounded (p q r : ℝ) :
+theorem tendsto_log_sub_mul_sub_div_sub_div_pi_cobounded_comap_re_atTop (p q r : ℝ) :
     Tendsto (fun w : ℂ => log ((w - p) * (w - r) / (w - q)) / π) (cobounded ℂ)
       (comap re atTop) := by
   refine tendsto_comap_iff.mpr ?_

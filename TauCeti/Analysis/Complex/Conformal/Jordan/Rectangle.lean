@@ -291,7 +291,7 @@ theorem exists_mapsTo_strip_ncard_inter_preimage_of_isJordanCurve_frontier {Ω :
       (hfa₂ ▸ hcorner a₂ (by simp [corners, hfa₂])),
     (tendsto_log_sub_mul_sub_div_sub_div_pi_comap_re_atTop ha₁c ha₂c.symm).comp
       (hfc₁ ▸ hcorner c (by simp [corners, hfc₁])),
-    (tendsto_log_sub_mul_sub_div_sub_div_pi_cobounded a₁ c a₂).comp
+    (tendsto_log_sub_mul_sub_div_sub_div_pi_cobounded_comap_re_atTop a₁ c a₂).comp
       (hφy.mono_left (nhdsWithin_mono _ hsub)), f bH, hfH.mapsTo hbH, fun ζ hζ => ?_⟩
   · exact mapsTo_log_sub_mul_sub_div_sub_div_pi_boundary a₁ c a₂
       ⟨hφR ⟨hz.1, fun h => hz.2 (by simp [corners, h])⟩,
