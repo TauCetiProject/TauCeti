@@ -444,10 +444,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
     ξ ∈ wassersteinSubdifferential
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ := by
-  have hφ (ρ : WassersteinSpace 2 E) : potentialEnergy V ((ρ : ProbabilityMeasure E) : Measure E) =
-      ((∫ x, V x ∂((ρ : ProbabilityMeasure E) : Measure E) : ℝ) : EReal) :=
-    potentialEnergy_of_integrable
-      (integrable_comp_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id)
+  have hφ (ρ : WassersteinSpace 2 E) :=
+    potentialEnergy_eq_integral_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id
   refine mem_wassersteinSubdifferential_of_forall_le (m := m) (by simp [hφ]) (by simp [hφ])
     fun ν γ hγ ↦ ?_
   simp only [hφ, ← EReal.coe_add, EReal.coe_le_coe_iff]

@@ -274,6 +274,14 @@ theorem wassersteinStrongSubdifferential_const (c : ℝ) (μ : WassersteinSpace 
   exact subsingleton_wassersteinStrongSubdifferential
     (fun _ ↦ ⟨fun _ ↦ c, 0, .of_forall fun _ _ _ ↦ rfl, hasDerivAt_const 0 c⟩) hξ h₀
 
+/-- Integrating the pairing of a field `ξ` with the displacement `z.2 - z.1` against the graph plan
+of `T` is integrating `⟪ξ x, T x - x⟫` against `ρ`. -/
+private theorem integral_inner_graphPlan {ρ : Measure E} {ξ T : E → E}
+    (hξ : AEStronglyMeasurable ξ ρ) (hT : AEMeasurable T ρ) :
+    ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂graphPlan T ρ = ∫ x, ⟪ξ x, T x - x⟫ ∂ρ :=
+  integral_graphPlan hT ((hξ.comp_measurePreserving
+    (isCoupling_graphPlan_map hT).measurePreserving_fst).inner (by fun_prop))
+
 variable [CompleteSpace E]
 
 /-- **Strong subgradients are Fréchet subgradients where optimal plans are induced by maps.**
@@ -311,8 +319,7 @@ theorem wassersteinStrongSubdifferential_subset_wassersteinSubdifferential
     rw [hx, add_sub_cancel]
   have hpair : ⟪ξ, hv.toLp _⟫ =
       ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂graphPlan T ((μ : ProbabilityMeasure E) : Measure E) := by
-    rw [L2.inner_toLp, integral_graphPlan hT ((Lp.aestronglyMeasurable ξ).comp_measurePreserving
-      hγ.toIsCoupling.measurePreserving_fst |>.inner (by fun_prop))]
+    rw [L2.inner_toLp, integral_inner_graphPlan (Lp.aestronglyMeasurable ξ) hT]
   have := hball (y := hv.toLp _) (by rwa [dist_zero_right, hnorm, dist_comm]) ν hmapv
   rwa [hpair, hnorm] at this
 
@@ -345,10 +352,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinStrongSubdifferential_potentialEner
     ξ ∈ wassersteinStrongSubdifferential
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ := by
-  have hφ (ρ : WassersteinSpace 2 E) : potentialEnergy V ((ρ : ProbabilityMeasure E) : Measure E) =
-      ((∫ x, V x ∂((ρ : ProbabilityMeasure E) : Measure E) : ℝ) : EReal) :=
-    potentialEnergy_of_integrable
-      (integrable_comp_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id)
+  have hφ (ρ : WassersteinSpace 2 E) :=
+    potentialEnergy_eq_integral_of_norm_gradient_le hVd hV' ρ.hasFiniteMoment.memLp_id
   refine mem_wassersteinStrongSubdifferential_of_forall_le (m := m) (by simp [hφ]) (by simp [hφ])
     fun v ν hν ↦ ?_
   have hT : AEMeasurable (fun x ↦ x + v x) ((μ : ProbabilityMeasure E) : Measure E) :=
@@ -356,8 +361,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinStrongSubdifferential_potentialEner
   -- The first-order condition along the graph plan of `x ↦ x + v x`, which couples `μ` and `ν`.
   have hγ := isCoupling_graphPlan ⟨hT, hν.symm⟩
   have h := hV.integral_add_add_le_of_isCoupling hVd hV' hξ hγ
-  rw [integral_graphPlan hT ((Lp.aestronglyMeasurable ξ).comp_measurePreserving
-      hγ.measurePreserving_fst |>.inner (by fun_prop)), integral_graphPlan hT (by fun_prop)] at h
+  rw [integral_inner_graphPlan (Lp.aestronglyMeasurable ξ) hT,
+    integral_graphPlan hT (by fun_prop)] at h
   simp only [add_sub_cancel_left, sub_add_cancel_left, norm_neg] at h
   rw [hφ, hφ, ← EReal.coe_add, EReal.coe_le_coe_iff, L2.inner_def,
     ← Lp.integral_norm_sq_eq_norm_sq]
@@ -377,11 +382,8 @@ theorem subsingleton_wassersteinStrongSubdifferential_potentialEnergy
   refine subsingleton_wassersteinStrongSubdifferential fun ζ ↦
     ⟨fun h ↦ ∫ x, V (x + h • ζ x) ∂((μ : ProbabilityMeasure E) : Measure E), _,
       .of_forall fun h ν hν ↦ ?_, hasDerivAt_integral_comp_add_smul hVd hV' hρ (Lp.memLp ζ)⟩
-  have hζ := (Lp.memLp ζ).const_smul h
-  rw [hν, potentialEnergy_map (f := fun x ↦ x + h • ζ x) hVd.continuous.measurable
-      (aemeasurable_id.add hζ.aestronglyMeasurable.aemeasurable),
-    potentialEnergy_of_integrable (integrable_comp_of_norm_gradient_le
-      (T := fun x ↦ x + h • ζ x) hVd hV' (hρ.add hζ))]
+  rw [potentialEnergy_eq_integral_of_norm_gradient_le hVd hV' ν.hasFiniteMoment.memLp_id, hν,
+    integral_map (by fun_prop) hVd.continuous.aestronglyMeasurable]
 
 end PotentialEnergy
 
