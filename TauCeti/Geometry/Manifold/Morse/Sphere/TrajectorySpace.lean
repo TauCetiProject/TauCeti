@@ -18,7 +18,8 @@ pseudo-gradient adapted to the height function `sphereHeight v` on the unit sphe
 critical points are the north pole `v` and the south pole `-v`, of heights `1` and `-1`. Record the
 broken trajectories from `v` to `-v` on the levels of a family `c`
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpace`). This file identifies this
-compactified space of trajectories, for every choice of `X` and of the levels.
+compactified space of trajectories, for every `X` and every family `c` having some level strictly
+between `-1` and `1`.
 
 * No critical value lies strictly between `-1` and `1`, so every broken trajectory from `v` to `-v`
   is unbroken, and the trajectory space has empty boundary
@@ -29,8 +30,8 @@ compactified space of trajectories, for every choice of `X` and of the levels.
 * The parallel `{h = a}` is a copy of the unit sphere of `(ℝ ∙ v)ᗮ`, through the latitude map
   `u ↦ √(1 - a²) • u + a • v` (`TauCeti.latitudeHomeomorphParallel`).
 
-Hence the trajectory space from the north pole to the south pole is homeomorphic to the unit sphere
-`Sⁿ⁻¹` of `(ℝ ∙ v)ᗮ`
+Hence, whenever some level `c i₀` lies strictly between `-1` and `1`, the trajectory space from the
+north pole to the south pole is homeomorphic to the unit sphere `Sⁿ⁻¹` of `(ℝ ∙ v)ᗮ`
 (`IsAdaptedPseudoGradient.exists_homeomorph_morseBrokenTrajectorySpace_sphereHeight` in
 `TauCeti`), a closed manifold of dimension `ind v - ind (-v) - 1 = n - 1`: a trajectory is the
 meridian through a point of the equator. On the circle `S¹` it is two points, the two
@@ -42,8 +43,9 @@ loops of `Sⁿ`.
 
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_sphereHeight_eq_empty`: the
   trajectory space from the north pole to the south pole has empty boundary.
-* `TauCeti.IsAdaptedPseudoGradient.exists_homeomorph_morseBrokenTrajectorySpace_sphereHeight`: it is
-  homeomorphic to the unit sphere of `(ℝ ∙ v)ᗮ`, through the point of each trajectory on a level.
+* `TauCeti.IsAdaptedPseudoGradient.exists_homeomorph_morseBrokenTrajectorySpace_sphereHeight`: given
+  a level `c i₀` strictly between `-1` and `1`, it is homeomorphic to the unit sphere of `(ℝ ∙ v)ᗮ`,
+  through the point of each trajectory on that level.
 
 ## References
 
