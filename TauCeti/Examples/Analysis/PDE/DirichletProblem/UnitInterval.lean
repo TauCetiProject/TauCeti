@@ -26,18 +26,20 @@ for `u ∈ H¹(0, 1)` with `∫ u' v' = ∫ v` for every `v ∈ H¹₀(0, 1)`, a
   (`TauCeti.W1p.intervalTraceL`) are `(0, 1)` are exactly the functions equal to
   `x (1 - x) / 2 + x` (`intervalTraceL_eq_and_forall_energyFormH1_eq_iff`).
 * **The lifting `g = x`.** The function `x` lies in `H¹(0, 1)`
-  (`exists_value_ae_eq_coord`) and has these boundary values, so the boundary condition
-  `u - x ∈ H¹₀(0, 1)` selects the same solution `x (1 - x) / 2 + x`
-  (`sub_mem_w1p0Submodule_and_forall_energyFormH1_eq_iff`): the solution with boundary values
-  `0, 1` is the solution with zero boundary values plus the lifting, and the difference of the
-  solution and the lifting is the zero-boundary solution `x (1 - x) / 2 ∈ H¹₀(0, 1)`.
+  (`exists_value_ae_eq_coord`, the transfer of `TauCeti.W1p.intervalCoord`) and has these
+  boundary values, so the boundary condition `u - x ∈ H¹₀(0, 1)` selects the same solution
+  `x (1 - x) / 2 + x` (`sub_mem_w1p0Submodule_and_forall_energyFormH1_eq_iff`): the solution
+  with boundary values `0, 1` is the solution with zero boundary values plus the lifting, and the
+  difference of the solution and the lifting is the zero-boundary solution
+  `x (1 - x) / 2 ∈ H¹₀(0, 1)`.
 
 Uniqueness in each case is the coercive Dirichlet problem with boundary values, through the
 Poincaré inequality on the bounded domain `(0, 1)`
 (`TauCeti.PDE.exists_isCoercive_laplacian_of_isBounded`). The explicit solutions are checked on
 the real interval `(0, 1)` along the isometry `t ↦ t e₀` of `ℝ` onto the Euclidean line
 (`TauCeti.PDE.intervalDomainEquivL`), where an integration by parts against the derivative
-`k - t` of `k t - t² / 2` shows `∫ v' (k - t) = ∫ v` for every `v ∈ H¹₀(0, 1)`.
+`k - t` of `k t - t² / 2` (`TauCeti.W1p.setIntegral_sub_intervalIntegral_mul_gradient_eq`) shows
+`∫ v' (k - t) = ∫ v` for every `v ∈ H¹₀(0, 1)`.
 
 ## References
 
@@ -55,49 +57,6 @@ open MeasureTheory Set TopologicalSpace TauCeti TauCeti.PDE
 
 namespace TauCeti.Examples.DirichletProblemUnitInterval
 
-/-- A `C¹` function on `ℝ` restricts to a function in `H¹(0, 1)` with weak derivative its
-derivative. -/
-private theorem exists_value_gradient_ae_eq {f : ℝ → ℝ} (hf : ContDiff ℝ 1 f) :
-    ∃ w : W1p volume (⟨Ioo 0 1, isOpen_Ioo⟩ : Opens ℝ) 2,
-      W1p.value w =ᵐ[volume.restrict (Ioo 0 1)] f ∧
-      W1p.gradient w =ᵐ[volume.restrict (Ioo 0 1)] deriv f :=
-  AbsolutelyContinuousOnInterval.exists_w1p_value_gradient_ae_eq (p := 2)
-    hf.contDiffOn.absolutelyContinuousOnInterval
-    ((hf.continuous_deriv le_rfl).continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc
-      measurableSet_Ioo Ioo_subset_Icc_self 2)
-
-/-- A function in `H¹(0, 1)` equal to a continuous `f` has the endpoint values `(f 0, f 1)`. -/
-private theorem intervalTraceL_eq_of_value_ae_eq {f : ℝ → ℝ} (hf : Continuous f)
-    {w : W1p volume (⟨Ioo 0 1, isOpen_Ioo⟩ : Opens ℝ) 2}
-    (hw : W1p.value w =ᵐ[volume.restrict (Ioo 0 1)] f) :
-    W1p.intervalTraceL zero_lt_one w = (f 0, f 1) := by
-  have hrep := (W1p.intervalRepresentativeL_eq_iff zero_lt_one w
-    ⟨fun t => f t, hf.comp continuous_subtypeVal⟩).2 (by
-      filter_upwards [hw, ae_restrict_mem measurableSet_Ioo] with t ht htI
-      simpa [projIcc_of_mem zero_le_one (Ioo_subset_Icc_self htI)] using ht)
-  simp [W1p.intervalTraceL_apply, hrep]
-
-/-- **Integration by parts against `k - t` on `(0, 1)`**: for `v ∈ H¹₀(0, 1)`,
-`∫ v' (k - t) = ∫ v`, the boundary terms vanishing with the endpoint values of `v`. -/
-private theorem setIntegral_gradient_mul_sub (k : ℝ)
-    {v : W1p volume (⟨Ioo 0 1, isOpen_Ioo⟩ : Opens ℝ) 2}
-    (hv : v ∈ w1p0Submodule volume (⟨Ioo 0 1, isOpen_Ioo⟩ : Opens ℝ) 2) :
-    ∫ t in Ioo 0 1, W1p.gradient v t * (k - t) = ∫ t in Ioo 0 1, W1p.value v t := by
-  have hf : AbsolutelyContinuousOnInterval (fun t : ℝ => k - t) 0 1 :=
-    (contDiff_const.sub contDiff_id).contDiffOn.absolutelyContinuousOnInterval
-  have h := hf.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt (f' := fun _ => -1)
-    (W1p.absolutelyContinuousOnInterval_intervalRepresentativeL zero_lt_one v)
-    (ae_of_all _ fun t _ => by simpa using (hasDerivAt_id t).const_sub k)
-    (W1p.ae_hasDerivAt_intervalRepresentativeL zero_lt_one v)
-  have htr := W1p.intervalTraceL_eq_zero_of_mem_w1p0Submodule zero_lt_one hv
-  rw [W1p.intervalTraceL_apply, Prod.mk_eq_zero] at htr
-  simp only [intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo] at h
-  rw [projIcc_left, projIcc_right, htr.1, htr.2] at h
-  rw [integral_congr_ae (W1p.value_ae_eq_intervalRepresentativeL zero_lt_one v)]
-  simp only [mul_comm (W1p.gradient v _)]
-  rw [h]
-  simp only [mul_zero, sub_zero, zero_sub, neg_mul, one_mul, integral_neg, neg_neg]
-
 /-- The explicit solution `k x - x² / 2` of `-u'' = 1` on the interval domain, with endpoint
 values `(0, k - 1/2)`. -/
 private theorem exists_solution (k : ℝ) :
@@ -112,8 +71,8 @@ private theorem exists_solution (k : ℝ) :
       ((hasDerivAt_id' t).const_mul k).sub ((hasDerivAt_pow 2 t).div_const 2)
     rw [h.deriv]
     ring
-  obtain ⟨w, hw, hg⟩ := exists_value_gradient_ae_eq (f := fun t : ℝ => k * t - t ^ 2 / 2)
-    (by fun_prop)
+  obtain ⟨w, -, hw, hg⟩ := W1p.exists_intervalRepresentativeL_eq_of_contDiff (p := 2) zero_lt_one
+    (f := fun t : ℝ => k * t - t ^ 2 / 2) (by fun_prop)
   rw [hd] at hg
   refine ⟨(intervalDomainEquivL 0 1 2).symm w, ?_, ?_, fun v hv => ?_⟩
   · filter_upwards [value_intervalDomainEquivL_symm_ae w,
@@ -121,12 +80,19 @@ private theorem exists_solution (k : ℝ) :
     rw [h1]
     simpa using h2
   · rw [ContinuousLinearEquiv.apply_symm_apply,
-      intervalTraceL_eq_of_value_ae_eq (by fun_prop) hw]
+      W1p.intervalTraceL_eq_of_value_ae_eq zero_lt_one (by fun_prop) hw]
     norm_num
-  · rw [energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL,
-      ContinuousLinearEquiv.apply_symm_apply, setIntegral_value_intervalDomainEquivL,
-      integral_congr_ae (hg.mono fun t ht => by rw [ht]),
-      setIntegral_gradient_mul_sub k (intervalDomainEquivL_mem_w1p0Submodule_iff.2 hv)]
+  · -- Integration by parts against the flux `k - t`; the boundary terms vanish on `H¹₀(0, 1)`.
+    have h := W1p.setIntegral_sub_intervalIntegral_mul_gradient_eq zero_lt_one
+      (f := fun _ => (1 : ℝ)) (integrableOn_const measure_Ioo_lt_top.ne) k
+      (intervalDomainEquivL 0 1 2 v)
+    rw [W1p.intervalTraceL_eq_zero_of_mem_w1p0Submodule zero_lt_one
+      (intervalDomainEquivL_mem_w1p0Submodule_iff.2 hv)] at h
+    simp only [intervalIntegral.integral_const, smul_eq_mul, mul_one, sub_zero, Prod.fst_zero,
+      Prod.snd_zero, mul_zero, one_mul, zero_add] at h
+    rw [energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL,
+      ContinuousLinearEquiv.apply_symm_apply, setIntegral_value_intervalDomainEquivL, ← h]
+    exact integral_congr_ae (hg.mono fun t ht => by simp only [ht]; ring)
 
 /-- Two weak solutions of `-u'' = 1` on `(0, 1)` with the same boundary values are equal: the
 energy form of `-Δ` is coercive on `H¹₀(0, 1)`. -/
@@ -208,10 +174,10 @@ theorem exists_value_ae_eq_coord :
     ∃ g : W1p volume (intervalDomain 0 1) 2,
       W1p.value g =ᵐ[volume.restrict (intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1)))]
         fun x => x 0 := by
-  obtain ⟨w, hw, -⟩ := exists_value_gradient_ae_eq (f := id) contDiff_id
-  refine ⟨(intervalDomainEquivL 0 1 2).symm w, ?_⟩
-  filter_upwards [value_intervalDomainEquivL_symm_ae w,
-    measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae hw] with x h1 h2
+  refine ⟨(intervalDomainEquivL 0 1 2).symm (W1p.intervalCoord (p := 2)), ?_⟩
+  filter_upwards [value_intervalDomainEquivL_symm_ae (W1p.intervalCoord (p := 2)),
+    measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae
+      (W1p.value_intervalCoord (a := 0) (b := 1) (p := 2))] with x h1 h2
   rw [h1]
   simpa using h2
 
@@ -229,7 +195,7 @@ theorem sub_mem_w1p0Submodule_and_forall_energyFormH1_eq_iff
       W1p.value u =ᵐ[volume.restrict (intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1)))]
         fun x => x 0 * (1 - x 0) / 2 + x 0 := by
   have hgtr : W1p.intervalTraceL zero_lt_one (intervalDomainEquivL 0 1 2 g) = (0, 1) := by
-    refine intervalTraceL_eq_of_value_ae_eq continuous_id ?_
+    refine W1p.intervalTraceL_eq_of_value_ae_eq zero_lt_one (f := id) continuousOn_id ?_
     filter_upwards [value_intervalDomainEquivL_ae g,
       measurePreserving_lineEquiv_restrict.quasiMeasurePreserving.ae hg] with t h1 h2
     rw [h1, h2, lineEquiv_apply_zero, id]
