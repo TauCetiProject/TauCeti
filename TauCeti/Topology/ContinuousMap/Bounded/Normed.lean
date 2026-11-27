@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Analysis.Normed.Group.Bounded
+public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 
 /-!
 # Norm bounds and pointwise operators on bounded continuous functions
@@ -37,11 +38,15 @@ range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_o
 `BoundedContinuousFunction.ball_half_subset_of_mem_ball` are the facts about the tube).
 
 `BoundedContinuousFunction.compContinuousₗᵢ` is precomposition with a homeomorphism, as a linear
-isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
+isometry equivalence of a submodule of `α →ᵇ β` that it preserves,
+`BoundedContinuousFunction.compContinuousPositiveLinearMap` is precomposition with any continuous
+map, as a positive linear map between lattices of bounded continuous functions, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous`,
 `ContinuousLinearMap.norm_compLeftContinuousBounded_apply_le`, and
 `ContinuousLinearMap.norm_compLeftContinuousBounded_le` record naturality and operator-norm bounds
-for postcomposition with a continuous linear map.
+for postcomposition with a continuous linear map, and
+`ContinuousLinearMap.norm_apply_sub_apply_le` bounds `‖f x a - f y a‖` by `‖f‖ * ‖x - y‖` for a
+continuous linear map `f` into bounded continuous functions.
 `ContinuousLinearMap.compLeftContinuousBounded₂` is the pointwise action
 `(f, g) ↦ (t ↦ B (f t) (g t))` of a continuous bilinear map `B` on bounded continuous functions,
 of operator norm at most `‖B‖` (`ContinuousLinearMap.norm_compLeftContinuousBounded₂_le`), and
@@ -228,6 +233,13 @@ theorem norm_compLeftContinuousBounded_le (g : β →L[𝕜] γ) (α : Type*) [T
   (g.compLeftContinuousBounded α).opNorm_le_bound (norm_nonneg g)
     (g.norm_compLeftContinuousBounded_apply_le)
 
+/-- For a continuous linear map `f` into bounded continuous functions, the values of `f x` and
+`f y` at every point are within `‖f‖ * ‖x - y‖` of each other. -/
+theorem norm_apply_sub_apply_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (f : E →L[𝕜] (α →ᵇ β)) (x y : E) (a : α) : ‖f x a - f y a‖ ≤ ‖f‖ * ‖x - y‖ := by
+  rw [← _root_.sub_apply, ← map_sub]
+  exact ((f (x - y)).norm_coe_le_norm a).trans (f.le_opNorm (x - y))
+
 section Bilinear
 
 variable {ζ : Type*} [SeminormedAddCommGroup ζ] [NormedSpace 𝕜 ζ]
@@ -270,6 +282,28 @@ theorem LinearIsometry.norm_compLeftContinuousBounded {α 𝕜 β γ : Type*} [T
     LinearIsometry.norm_map]
 
 namespace BoundedContinuousFunction
+
+section compContinuousPositiveLinearMap
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+  (𝕜 β : Type*) [NormedField 𝕜] [NormedAddCommGroup β] [Lattice β] [NormedSpace 𝕜 β]
+
+/-- Precomposition with a continuous map, as a positive linear map. -/
+noncomputable def compContinuousPositiveLinearMap (g : C(Y, X)) : (X →ᵇ β) →ₚ[𝕜] (Y →ᵇ β) where
+  toLinearMap := (compContinuousCLM β 𝕜 g).toLinearMap
+  monotone' _ _ h y := h (g y)
+
+@[simp]
+theorem compContinuousPositiveLinearMap_apply (g : C(Y, X)) (f : X →ᵇ β) :
+    compContinuousPositiveLinearMap 𝕜 β g f = f.compContinuous g :=
+  (rfl)
+
+@[simp]
+theorem compContinuousPositiveLinearMap_toLinearMap (g : C(Y, X)) :
+    (compContinuousPositiveLinearMap 𝕜 β g).toLinearMap = (compContinuousCLM β 𝕜 g).toLinearMap :=
+  (rfl)
+
+end compContinuousPositiveLinearMap
 
 variable {α 𝕜 β S : Type*} [TopologicalSpace α] [NormedField 𝕜] [SeminormedAddCommGroup β]
   [NormedSpace 𝕜 β] [SetLike S (α →ᵇ β)] [AddSubgroupClass S (α →ᵇ β)]

@@ -250,6 +250,14 @@ theorem SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isMaximalTotallyRealMap_of
   have hx := (SmoothTwoForm.IsNondegenerate.isLagrangianMap_iff_forall).1 h x
   exact hx.isMaximalTotallyReal_of_tames (htame x)
 
+omit [FiniteDimensional ℝ F] in
+/-- A Lagrangian tangent image is maximal totally real for every smooth almost complex structure
+tamed by the ambient form. -/
+theorem SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isMaximalTotallyRealMap
+    (h : hσ.IsLagrangianMap I' f) {J : SmoothAlmostComplexStructure I M} (htame : σ.Tames J) :
+    IsMaximalTotallyRealMap I' I J.almostComplexStructureAt f :=
+  h.isMaximalTotallyRealMap_of_tames fun x ↦ hσ.tames_iff.1 htame (f x)
+
 /-- A half-dimensional `C^n` embedding with Lagrangian tangent images is totally real for
 any pointwise field tame along the image. This allows arbitrary finite embedding regularity. -/
 theorem SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isTotallyRealEmbedding
