@@ -48,7 +48,8 @@ def diagonalNormalOrientation {m : ℕ} (o : Manifold.Orientation I M (Fin m)) :
       (by simp [Module.finrank_prod])
     letI := (diagonal (I := I) (M := M)).normalSpaceVectorBundle (P := E) (by simp)
       (by simp [Module.finrank_prod])
-    VectorBundleOrientation E ((diagonal (I := I) (M := M)).NormalSpace · (by simp)) (Fin m) := by
+    VectorBundleOrientation E ((diagonal (I := I) (M := M)).isImmersion.NormalSpace · (by simp))
+        (Fin m) := by
   letI := (diagonal (I := I) (M := M)).instTopologicalSpaceNormalBundle (K := E) (by simp)
   letI := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
     (by simp [Module.finrank_prod])

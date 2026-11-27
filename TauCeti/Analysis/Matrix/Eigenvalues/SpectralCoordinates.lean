@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.Matrix.Exponential.SkewAdjoint
 public import TauCeti.Analysis.Matrix.SelfAdjoint
-import Mathlib.Analysis.Calculus.FDeriv.Star
+import TauCeti.Analysis.Calculus.FDeriv.Unitary
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -117,29 +117,27 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
   let L := fderiv ℝ F x.2
   have hF : HasFDerivAt F L x.2 :=
     ((contDiff_relativeFrame x.2 (k := 1)).differentiable one_ne_zero x.2).hasFDerivAt
-  have h1 : F x.2 = 1 := by simp [F]
   have hFF := hF.comp x (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
   have hd := ((selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtypeL.comp
     selfAdjointDiagonal).hasFDerivAt.comp x
     (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
-  have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x ((hFF.fun_mul' hd).fun_mul' hFF.star)
+  have hD := hFF.unitary_conj_of_eq_one hd
+    (.of_forall fun y ↦ (relativeFrame x.2 y.2).property) (by simp [F])
+  have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x hD
   refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)).congr_fderiv ?_
   · simp only [Unitary.conjStarAlgAut_apply, Function.comp_apply, F,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', Submodule.subtypeL_apply]
   · apply ContinuousLinearMap.ext
     intro v
-    have hs (i j : Fin n) : star (L v.2 j i) = -(L v.2 i j) := by
-      simpa only [Matrix.star_apply, Matrix.neg_apply] using
-        congrFun₂ (star_fderiv_relativeFrame x.2 v.2) i j
     simp only [ContinuousLinearMap.comp_apply, Function.comp_apply,
-      ContinuousLinearMap.coe_prodMap',
-      ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst', add_apply, smul_apply,
-      h1, star_one, Matrix.one_mul, ContinuousLinearMap.coe_comp, Submodule.coe_subtypeL,
-      Submodule.coe_subtype, coe_selfAdjointDiagonal]
+      ContinuousLinearMap.coe_prodMap', ContinuousLinearMap.coe_snd',
+      ContinuousLinearMap.coe_fst', add_apply,
+      sub_apply, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
+      Submodule.subtypeL_apply, coe_selfAdjointDiagonal]
     apply Prod.ext <;> funext i
-    · simp [mul_diagonal, diagonal_mul, hs, mul_comm]
+    · simp [mul_diagonal, diagonal_mul, mul_comm]
     · simp [spectralAngularFDeriv_apply, mul_diagonal, diagonal_mul,
-        diagonal_apply_ne _ i.property.ne, hs, Algebra.smul_def]
+        diagonal_apply_ne _ i.property.ne, Algebra.smul_def]
       ring
 
 /-- The spectral parametrization is smooth in the diagonal and angular variables. -/
@@ -147,19 +145,14 @@ theorem contDiff_spectralCoordinates {k : WithTop ℕ∞} :
     ContDiff ℝ k (spectralCoordinates (n := n) (𝕜 := 𝕜)) := by
   let D := (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtypeL.comp
     (selfAdjointDiagonal (n := n) (𝕜 := 𝕜))
-  have hparam : spectralCoordinates (n := n) (𝕜 := 𝕜) = fun x ↦
-      selfAdjointCoordinatesLinearMap ((expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜) *
-        D x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
-    funext x
-    rw [spectralCoordinates, Unitary.conjStarAlgAut_apply, ContinuousLinearMap.comp_apply,
-      Submodule.subtypeL_apply]
-  rw [hparam]
-  have h := (contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := k)).comp
+  have h := Matrix.UnitaryGroup.contDiff_conjStarAlgAut_expStrictUpper
+    (1 : unitaryGroup (Fin n) 𝕜)
+    (D.contDiff.comp contDiff_fst)
     (contDiff_snd : ContDiff ℝ k (Prod.snd : SelfAdjointCoordinates n 𝕜 → _))
-  let S := (starL' ℝ : Matrix (Fin n) (Fin n) 𝕜 ≃L[ℝ] _).toContinuousLinearMap
-  have hstar := S.contDiff.comp h
-  exact (selfAdjointCoordinatesLinearMap (n := n) (𝕜 := 𝕜)).contDiff.comp
-    ((h.mul (D.contDiff.comp contDiff_fst)).mul hstar)
+  convert (selfAdjointCoordinatesLinearMap (n := n) (𝕜 := 𝕜)).contDiff.comp h using 1
+  funext x
+  simp only [Function.comp_apply, one_mul, D, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, spectralCoordinates]
 
 /-- In the moving frame, the differential is the angular differential followed by the
 gap operator, with the diagonal component fixed. -/

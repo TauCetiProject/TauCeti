@@ -51,8 +51,9 @@ variable {E V H G M N P : Type*}
 /-- The natural domain in a fixed orthogonal normal fibre is open. -/
 theorem isOpen_normalExpDomain_fiber
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    IsOpen {v : (f.tangentRange x hn)ᗮ |
-      (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+    IsOpen {v : (f.isImmersion.tangentRange x hn)ᗮ |
+      (⟨x, f.isImmersion.normalClass x hn v⟩ : TotalSpace P
+          (fun y ↦ f.isImmersion.NormalSpace y hn)) ∈
         f.normalExpDomain hn} := by
   rw [normalExpDomain_fiber_eq_preimage]
   exact (Manifold.isOpen_expDomain (I := J) (f x)).preimage continuous_subtypeVal
@@ -61,20 +62,23 @@ theorem isOpen_normalExpDomain_fiber
 its natural domain. No smoothness of a choice of normal representatives in the base is assumed. -/
 theorem contMDiffOn_normalExp_fiber
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    ContMDiffOn 𝓘(ℝ, (f.tangentRange x hn)ᗮ) J ∞
-      (fun v : (f.tangentRange x hn)ᗮ ↦
-        f.normalExp (P := P) hn ⟨x, f.normalClass x hn v⟩)
-      {v | (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+    ContMDiffOn 𝓘(ℝ, (f.isImmersion.tangentRange x hn)ᗮ) J ∞
+      (fun v : (f.isImmersion.tangentRange x hn)ᗮ ↦
+        f.normalExp (P := P) hn ⟨x, f.isImmersion.normalClass x hn v⟩)
+      {v |
+          (⟨x, f.isImmersion.normalClass x hn v⟩ : TotalSpace P
+              (fun y ↦ f.isImmersion.NormalSpace y hn)) ∈
         f.normalExpDomain hn} := by
   simp_rw [normalExp_normalClass_orthogonal]
   rw [normalExpDomain_fiber_eq_preimage]
   exact (Manifold.contMDiffOn_riemannianExp (I := J) (f x)).comp
-    ((f.tangentRange x hn)ᗮ.subtypeL.contDiff.contMDiff.contMDiffOn)
+    ((f.isImmersion.tangentRange x hn)ᗮ.subtypeL.contDiff.contMDiff.contMDiffOn)
     (fun _ hv ↦ hv)
 
 /-- The normal exponential sends the zero orthogonal normal vector at `x` to `f x`. -/
 theorem normalExp_fiber_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    f.normalExp (P := P) hn ⟨x, f.normalClass x hn ((0 : (f.tangentRange x hn)ᗮ) :
+    f.normalExp (P := P) hn
+        ⟨x, f.isImmersion.normalClass x hn ((0 : (f.isImmersion.tangentRange x hn)ᗮ) :
       TangentSpace J (f x))⟩ = f x := by
   rw [Submodule.coe_zero, map_zero]
   exact f.normalExp_zeroSection (P := P) hn x
@@ -82,11 +86,13 @@ theorem normalExp_fiber_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x :
 /-- The normal exponential is smooth in the normal vector at zero, at each fixed base point. -/
 theorem contMDiffAt_normalExp_fiber_zero
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    ContMDiffAt 𝓘(ℝ, (f.tangentRange x hn)ᗮ) J ∞
-      (fun v : (f.tangentRange x hn)ᗮ ↦ f.normalExp (P := P) hn ⟨x, f.normalClass x hn v⟩) 0 := by
-  have hmem : (0 : (f.tangentRange x hn)ᗮ) ∈
-      {v : (f.tangentRange x hn)ᗮ |
-        (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+    ContMDiffAt 𝓘(ℝ, (f.isImmersion.tangentRange x hn)ᗮ) J ∞
+      (fun v : (f.isImmersion.tangentRange x hn)ᗮ ↦ f.normalExp (P := P) hn
+          ⟨x, f.isImmersion.normalClass x hn v⟩) 0 := by
+  have hmem : (0 : (f.isImmersion.tangentRange x hn)ᗮ) ∈
+      {v : (f.isImmersion.tangentRange x hn)ᗮ |
+        (⟨x, f.isImmersion.normalClass x hn v⟩ : TotalSpace P
+            (fun y ↦ f.isImmersion.NormalSpace y hn)) ∈
           f.normalExpDomain hn} := by
     simp
   exact (f.contMDiffOn_normalExp_fiber (P := P) hn x).contMDiffAt
@@ -98,24 +104,25 @@ inclusion of the orthogonal normal space into the ambient tangent space. -/
 -- normal-space zero, which simp normalizes before this computation rule can match.
 theorem mfderiv_normalExp_fiber_zero_apply
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M)
-    (v : TangentSpace 𝓘(ℝ, (f.tangentRange x hn)ᗮ) (0 : (f.tangentRange x hn)ᗮ)) :
-    mfderiv 𝓘(ℝ, (f.tangentRange x hn)ᗮ) J
-      (fun w : (f.tangentRange x hn)ᗮ ↦
-        f.normalExp (P := P) hn ⟨x, f.normalClass x hn w⟩) 0 v =
-      ((NormedSpace.fromTangentSpace (0 : (f.tangentRange x hn)ᗮ)) v :
+    (v : TangentSpace 𝓘(ℝ, (f.isImmersion.tangentRange x hn)ᗮ)
+        (0 : (f.isImmersion.tangentRange x hn)ᗮ)) :
+    mfderiv 𝓘(ℝ, (f.isImmersion.tangentRange x hn)ᗮ) J
+      (fun w : (f.isImmersion.tangentRange x hn)ᗮ ↦
+        f.normalExp (P := P) hn ⟨x, f.isImmersion.normalClass x hn w⟩) 0 v =
+      ((NormedSpace.fromTangentSpace (0 : (f.isImmersion.tangentRange x hn)ᗮ)) v :
         TangentSpace J (f x)) := by
-  have hfun : (fun w : (f.tangentRange x hn)ᗮ ↦
-      f.normalExp (P := P) hn ⟨x, f.normalClass x hn w⟩) =
-      Manifold.riemannianExp J N (f x) ∘ (f.tangentRange x hn)ᗮ.subtypeL :=
+  have hfun : (fun w : (f.isImmersion.tangentRange x hn)ᗮ ↦
+      f.normalExp (P := P) hn ⟨x, f.isImmersion.normalClass x hn w⟩) =
+      Manifold.riemannianExp J N (f x) ∘ (f.isImmersion.tangentRange x hn)ᗮ.subtypeL :=
     funext fun v ↦ f.normalExp_normalClass_orthogonal hn x v
   rw [hfun, mfderiv_comp (I' := 𝓘(ℝ, TangentSpace J (f x)))]
   · simp only [ContinuousLinearMap.mfderiv_eq]
     exact Manifold.mfderiv_riemannianExp_apply_zero (I := J) (f x)
-      ((NormedSpace.fromTangentSpace (0 : (f.tangentRange x hn)ᗮ)) v)
+      ((NormedSpace.fromTangentSpace (0 : (f.isImmersion.tangentRange x hn)ᗮ)) v)
   · simpa only [map_zero] using
       (Manifold.contMDiffAt_riemannianExp (I := J)
         (Manifold.zero_mem_expDomain (f x))).mdifferentiableAt (by simp)
-  · exact (f.tangentRange x hn)ᗮ.subtypeL.mdifferentiableAt
+  · exact (f.isImmersion.tangentRange x hn)ᗮ.subtypeL.mdifferentiableAt
 
 /-- Each fixed normal fibre has an open neighbourhood of zero on which the normal exponential
 is an embedding. The neighbourhood lies in the natural normal-exponential domain. Together
@@ -123,11 +130,15 @@ with `contMDiffOn_normalExp_fiber`, this supplies a smooth map that is a topolog
 of an open neighbourhood of zero. -/
 theorem exists_isEmbedding_normalExp_fiber
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    ∃ U : TopologicalSpace.Opens ((f.tangentRange x hn)ᗮ), (0 : (f.tangentRange x hn)ᗮ) ∈ U ∧
-      (∀ v ∈ U, (⟨x, f.normalClass x hn v⟩ : TotalSpace P (fun y ↦ f.NormalSpace y hn)) ∈
+    ∃ U : TopologicalSpace.Opens ((f.isImmersion.tangentRange x hn)ᗮ),
+        (0 : (f.isImmersion.tangentRange x hn)ᗮ) ∈ U ∧
+      (∀ v ∈ U,
+          (⟨x, f.isImmersion.normalClass x hn v⟩ : TotalSpace P
+              (fun y ↦ f.isImmersion.NormalSpace y hn)) ∈
         f.normalExpDomain hn) ∧
       IsEmbedding (fun v : U ↦
-        f.normalExp (P := P) hn ⟨x, f.normalClass x hn (v : (f.tangentRange x hn)ᗮ)⟩) := by
+        f.normalExp (P := P) hn
+            ⟨x, f.isImmersion.normalClass x hn (v : (f.isImmersion.tangentRange x hn)ᗮ)⟩) := by
   have hd := Manifold.isLocalDiffeomorphAt_riemannianExp_zero (I := J) (f x)
   let S := hd.localInverse.target ∩
     (Manifold.expDomain J N (f x) ∩
@@ -135,7 +146,7 @@ theorem exists_isEmbedding_normalExp_fiber
   have hS : IsOpen S := hd.localInverse.open_target.inter
     ((Manifold.continuousOn_riemannianExp (I := J) (f x)).isOpen_inter_preimage
       (Manifold.isOpen_expDomain (I := J) (f x)) hd.localInverse.open_source)
-  let U : TopologicalSpace.Opens ((f.tangentRange x hn)ᗮ) :=
+  let U : TopologicalSpace.Opens ((f.isImmersion.tangentRange x hn)ᗮ) :=
     ⟨Subtype.val ⁻¹' S, hS.preimage continuous_subtypeVal⟩
   let F : U → hd.localInverse.source := fun v ↦
     ⟨Manifold.riemannianExp J N (f x) (v.val : TangentSpace J (f x)), v.property.2.2⟩

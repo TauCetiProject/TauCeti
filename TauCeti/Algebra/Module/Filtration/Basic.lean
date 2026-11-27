@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.LinearAlgebra.Span.Defs
-public import Mathlib.LinearAlgebra.Quotient.Defs
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.Algebra.Order.Group.Int
 public import Mathlib.Order.Directed
 
@@ -18,7 +18,9 @@ Let `F : ℤ → Submodule R M` and `G : ℤ → Submodule R N` be increasing fi
 This file records two basic notions of the theory of filtered modules, in the conventions of
 Deligne and Saito.
 
-* `TauCeti.GradedPiece F p` is the graded piece `gr^F_p M = F_p M / F_{p-1} M`.
+* `TauCeti.GradedPiece F p` is the graded piece `gr^F_p M = F_p M / F_{p-1} M`, and
+  `TauCeti.GradedPiece.map u hu p` is the map `gr^F_p M → gr^G_p N` induced by a filtered linear
+  map `u`.
 * `LinearMap.IsStrict u F G` says that a linear map `u : M → N` is *strict*:
   `u (F_p M) = u M ∩ G_p N` for every `p`. This is the image condition of Deligne
   (*Théorie de Hodge II*, §1.1.5) and Saito (*Modules de Hodge polarisables*, §1.1), used in
@@ -51,6 +53,37 @@ abbrev GradedPiece (F : ℤ → Submodule R M) (p : ℤ) : Type _ :=
 theorem GradedPiece.mk_eq_zero_iff {F : ℤ → Submodule R M} {p : ℤ} (x : F p) :
     (Submodule.Quotient.mk x : GradedPiece F p) = 0 ↔ (x : M) ∈ F (p - 1) := by
   rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.subtype_apply]
+
+variable {N : Type*} [AddCommGroup N] [Module R N] {F : ℤ → Submodule R M}
+  {G : ℤ → Submodule R N}
+
+/-- The map `gr^F_p M → gr^G_p N` induced on graded pieces by a linear map `u` sending each
+`F_p M` into `G_p N`. -/
+noncomputable def GradedPiece.map (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u) (p : ℤ) :
+    GradedPiece F p →ₗ[R] GradedPiece G p :=
+  Submodule.mapQ _ _ (u.restrict fun _ hx ↦ hu p hx) fun _ hx ↦ hu (p - 1) hx
+
+/-- The induced map on graded pieces sends the class of an element to the class of its image. -/
+@[simp]
+theorem GradedPiece.map_mk (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u) (p : ℤ) (x : F p) :
+    GradedPiece.map u hu p (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk ⟨u x, hu p x.property⟩ :=
+  (rfl)
+
+/-- The identity induces the identity on graded pieces. -/
+@[simp]
+theorem GradedPiece.map_id (hu : ∀ p, F p ≤ (F p).comap LinearMap.id := fun _ ↦ le_rfl)
+    (p : ℤ) : GradedPiece.map LinearMap.id hu p = LinearMap.id := by
+  ext; rfl
+
+/-- The map induced on graded pieces by a composite is the composite of the induced maps. -/
+theorem GradedPiece.map_comp {O : Type*} [AddCommGroup O] [Module R O] {H : ℤ → Submodule R O}
+    (f : M →ₗ[R] N) (hf : ∀ p, F p ≤ (G p).comap f) (g : N →ₗ[R] O)
+    (hg : ∀ p, G p ≤ (H p).comap g)
+    (hgf : ∀ p, F p ≤ (H p).comap (g ∘ₗ f) := fun p ↦ (hf p).trans (Submodule.comap_mono (hg p)))
+    (p : ℤ) :
+    GradedPiece.map (g ∘ₗ f) hgf p = GradedPiece.map g hg p ∘ₗ GradedPiece.map f hf p := by
+  ext; rfl
 
 end TauCeti
 

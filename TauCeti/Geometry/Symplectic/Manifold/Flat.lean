@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -61,6 +61,9 @@ skew-adjoint everywhere without changing that value.
   globally and at each point, in finite dimensions.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`: a linear map between tangent
   spaces preserving a nondegenerate form is surjective, in finite dimensions.
+* `TauCeti.SmoothTwoForm.flat_const_apply_apply`,
+  `TauCeti.SmoothTwoForm.surjective_flat_const_iff`: the flat maps of the constant two-form of a
+  bilinear form `B` are `B`, and they are onto the continuous dual exactly when `B` is.
 * `TauCeti.SmoothTwoForm.interiorₗ`: contraction of smooth vector fields, as a linear map to smooth
   one-forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`: for a nondegenerate form in finite
@@ -202,6 +205,13 @@ theorem toBilinForm_flat (σ : SmoothTwoForm I M) (x : M) :
   ext v w
   simp
 
+/-- A two-form is nondegenerate exactly when all its flat maps are injective. This is *weak*
+nondegeneracy; in infinite dimensions the flat maps need not be onto the continuous dual. -/
+theorem isNondegenerate_iff_injective_flat :
+    σ.IsNondegenerate ↔ ∀ x, Function.Injective (σ.flat x) := by
+  simp only [isNondegenerate_iff_separatingLeft, ← flat_apply, injective_iff_map_eq_zero,
+    ContinuousLinearMap.ext_iff, zero_apply]
+
 /-- In finite dimensions, the flat map of a two-form at a point is invertible exactly when the
 form is nondegenerate there. -/
 theorem isInvertible_flat_iff [FiniteDimensional ℝ E] {x : M} :
@@ -236,6 +246,33 @@ theorem IsNondegenerate.surjective_of_eval₂_map [FiniteDimensional ℝ E] (h :
       isNondegenerate_iff_separatingLeft.1 h x u fun w ↦ by
         rw [← hD, hu, ← flat_apply, map_zero, zero_apply]
   exact (LinearMap.injective_iff_surjective (f := (D.toLinearMap : E →ₗ[ℝ] E))).1 hinj
+
+/-! ### Flat maps of constant two-forms -/
+
+section Const
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The flat map of the constant two-form of an alternating continuous bilinear form `B` is `B`,
+read through the identification `NormedSpace.fromTangentSpace` of the tangent space with `V`. -/
+theorem flat_const_apply_apply (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
+    (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (const B).flat x v w =
+      B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
+  rw [flat_apply, const_apply B hB]
+
+/-- **Strong nondegeneracy of a constant two-form.** The flat map at any point of the constant
+two-form of an alternating continuous bilinear form `B` is onto the continuous dual exactly when
+`B` is: it is `B` composed with continuous linear equivalences. -/
+theorem surjective_flat_const_iff (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V) :
+    Function.Surjective ((const B).flat x) ↔ Function.Surjective B := by
+  let e := NormedSpace.fromTangentSpace (𝕜 := ℝ) x
+  have h : ⇑((const B).flat x) = e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ) ∘ B ∘ e := by
+    ext v w
+    simp [e, flat_const_apply_apply B hB]
+  rw [h, EquivLike.comp_surjective, EquivLike.surjective_comp]
+
+end Const
 
 /-! ### Contraction of smooth vector fields -/
 

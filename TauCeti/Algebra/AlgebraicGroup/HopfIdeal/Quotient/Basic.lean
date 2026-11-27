@@ -69,12 +69,20 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
 * `TauCeti.CommHopfAlgCat.quotientIsoOfIso`: the specialization to an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_hom`: pulling a Hopf ideal back along the inverse
   of an isomorphism and then along the isomorphism recovers it.
+* `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_eq_map_hom`: pulling a Hopf ideal back along the
+  inverse of an isomorphism is pushing it forward along the isomorphism.
 * `CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso`: the quotient by the kernel of a surjective
   morphism is its target.
 * `CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq`: the quotient by a Hopf ideal equal to
   the kernel of a surjective morphism is its target.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq`: an ambient isomorphism pulling one Hopf ideal
-  back to another induces an isomorphism of the quotients.
+  back to another induces an isomorphism of the quotients, computed on classes by
+  `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_hom_mk` and `_inv_mk`; it is an involution when the
+  ambient isomorphism is (`TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self` and
+  `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_symm_eq_self`), and an
+  algebra map out of the quotient is fixed by it exactly when its composite with the quotient map
+  is fixed by the ambient automorphism
+  (`TauCeti.CommHopfAlgCat.comp_quotientIsoOfComapEq_eq_self_iff`).
 * `TauCeti.HopfIdeal.comapOfSurjective_eq_of_hom_le_of_inv_le`: two inverse containments under an
   ambient automorphism imply invariance of a Hopf ideal.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotientIsoOfIso`: an ambient isomorphism induces an
@@ -351,6 +359,14 @@ theorem comapOfSurjective_inv_hom (e : H ≅ K) (I : HopfIdeal R H) :
   simp only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← _root_.CommHopfAlgCat.hom_comp,
     e.hom_inv_id, hom_id_eq_bialgHom_id, HopfIdeal.comapOfSurjective_id]
 
+/-- Pulling a Hopf ideal back along the inverse of an isomorphism of commutative Hopf algebras is
+pushing it forward along the isomorphism. -/
+theorem comapOfSurjective_inv_eq_map_hom (e : H ≅ K) (I : HopfIdeal R H) :
+    I.comapOfSurjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2 =
+      I.map e.hom.hom := by
+  conv_rhs => rw [← comapOfSurjective_inv_hom e I]
+  exact (HopfIdeal.map_comapOfSurjective _ _ _).symm
+
 end TauCeti.CommHopfAlgCat
 
 end CommHopfAlgebras
@@ -375,9 +391,7 @@ theorem comapOfSurjective_eq_of_hom_le_of_inv_le (e : H ≅ H) (I : HopfIdeal R 
   rw [mem_comapOfSurjective]
   apply hinv
   rw [mem_comapOfSurjective]
-  have hcancel := congrArg (fun f : H ⟶ H => f.hom x) e.hom_inv_id
-  rw [_root_.CommHopfAlgCat.comp_apply] at hcancel
-  simpa only [_root_.CommHopfAlgCat.id_apply] using hcancel.symm ▸ hx
+  rwa [_root_.CommHopfAlgCat.inv_hom_apply]
 
 end TauCeti.HopfIdeal
 
@@ -402,7 +416,7 @@ noncomputable def quotientIsoOfComapEq (e : H ≅ K) (I : HopfIdeal R K) {J : Ho
 
 /-- The quotient isomorphism induced by an ideal-matching ambient isomorphism commutes with the
 quotient morphisms. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma mkQuotient_comp_quotientIsoOfComapEq_hom (e : H ≅ K) (I : HopfIdeal R K)
     {J : HopfIdeal R H}
     (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J) :
@@ -413,13 +427,78 @@ lemma mkQuotient_comp_quotientIsoOfComapEq_hom (e : H ≅ K) (I : HopfIdeal R K)
 
 /-- The inverse of the quotient isomorphism induced by an ideal-matching ambient isomorphism
 commutes with the quotient morphisms. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma mkQuotient_comp_quotientIsoOfComapEq_inv (e : H ≅ K) (I : HopfIdeal R K)
     {J : HopfIdeal R H}
     (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J) :
     mkQuotient K I ≫ (quotientIsoOfComapEq e I hI).inv = e.inv ≫ mkQuotient H J := by
   rw [← cancel_mono (quotientIsoOfComapEq e I hI).hom]
   simp
+
+/-- The quotient isomorphism induced by an ideal-matching ambient isomorphism `e` sends the class
+of `x` to the class of `e x`. -/
+@[simp↓]
+lemma quotientIsoOfComapEq_hom_mk (e : H ≅ K) (I : HopfIdeal R K) {J : HopfIdeal R H}
+    (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J)
+    (x : H) :
+    (quotientIsoOfComapEq e I hI).hom.hom (Ideal.Quotient.mk J.toIdeal x) =
+      Ideal.Quotient.mk I.toIdeal (e.hom.hom x) := by
+  have h := congr($(mkQuotient_comp_quotientIsoOfComapEq_hom e I hI).hom x)
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply] at h
+  rwa [mkQuotient_apply, mkQuotient_apply] at h
+
+/-- The inverse of the quotient isomorphism induced by an ideal-matching ambient isomorphism `e`
+sends the class of `y` to the class of `e⁻¹ y`. -/
+@[simp↓]
+lemma quotientIsoOfComapEq_inv_mk (e : H ≅ K) (I : HopfIdeal R K) {J : HopfIdeal R H}
+    (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J)
+    (y : K) :
+    (quotientIsoOfComapEq e I hI).inv.hom (Ideal.Quotient.mk I.toIdeal y) =
+      Ideal.Quotient.mk J.toIdeal (e.inv.hom y) := by
+  have h := congr($(mkQuotient_comp_quotientIsoOfComapEq_inv e I hI).hom y)
+  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply] at h
+  rwa [mkQuotient_apply, mkQuotient_apply] at h
+
+/-- The automorphism of `H ⧸ I` induced by an involution `θ` of `H` is an involution. -/
+lemma quotientIsoOfComapEq_hom_comp_self {θ : H ≅ H} (hθ : θ.hom ≫ θ.hom = 𝟙 H)
+    (I : HopfIdeal R H)
+    (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I) :
+    (quotientIsoOfComapEq θ I hI).hom ≫ (quotientIsoOfComapEq θ I hI).hom =
+      𝟙 (quotient H I) := by
+  ext : 1
+  simp [reassoc_of% hθ]
+
+/-- The automorphism of `H ⧸ I` induced by an involution `θ` of `H` is its own inverse. -/
+lemma quotientIsoOfComapEq_symm_eq_self {θ : H ≅ H} (hθ : θ.hom ≫ θ.hom = 𝟙 H)
+    (I : HopfIdeal R H)
+    (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I) :
+    (quotientIsoOfComapEq θ I hI).symm = quotientIsoOfComapEq θ I hI :=
+  Iso.ext <| by
+    rw [Iso.symm_hom, ← cancel_epi (quotientIsoOfComapEq θ I hI).hom, Iso.hom_inv_id,
+      quotientIsoOfComapEq_hom_comp_self hθ]
+
+/-- **Fixed points pass to a stable quotient.** For an automorphism `θ` of `H` mapping the Hopf
+ideal `I` onto itself, an algebra map `p` out of `H ⧸ I` is fixed by the induced automorphism of
+`H ⧸ I` exactly when its composite with the quotient map is fixed by `θ`. -/
+lemma comp_quotientIsoOfComapEq_eq_self_iff {θ : H ≅ H} (I : HopfIdeal R H)
+    (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I)
+    {A : Type*} [CommRing A] [Algebra R A] (p : H ⧸ I.toIdeal →ₐ[R] A) :
+    p.comp ((quotientIsoOfComapEq θ I hI).hom.hom : H ⧸ I.toIdeal →ₐ[R] H ⧸ I.toIdeal) = p ↔
+      (p.comp (Ideal.Quotient.mkₐ R I.toIdeal)).comp (θ.hom.hom : H →ₐ[R] H) =
+        p.comp (Ideal.Quotient.mkₐ R I.toIdeal) := by
+  have hmk (x : H) : (quotientIsoOfComapEq θ I hI).hom.hom (Ideal.Quotient.mk I.toIdeal x) =
+      Ideal.Quotient.mk I.toIdeal (θ.hom.hom x) := quotientIsoOfComapEq_hom_mk θ I hI x
+  constructor
+  · intro hp
+    ext x
+    simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
+    conv_rhs => rw [← hp]
+    exact congrArg p (hmk x).symm
+  · intro hp
+    refine Ideal.Quotient.algHom_ext R (AlgHom.ext fun x ↦ ?_)
+    have h := congr($hp x)
+    simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk] at h ⊢
+    exact (congrArg p (hmk x)).trans h
 
 /-- The forward quotient isomorphism induced by an ambient isomorphism evaluates on quotient
 classes by applying the ambient isomorphism before taking the target quotient. -/
