@@ -64,6 +64,9 @@ Over a field `K` with enough roots of unity for the exponent of `Mˣ`, the cast 
   `M` with `y ∈ M`.
 * `TauCeti.sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq`: the values at a unit `u` of the
   characters `χ` with `χ ^ d = 1` sum to the cast of the number of `y ∈ Mˣ` with `y ^ d = u`.
+* `TauCeti.sum_filter_mulChar_pow_eq_apply_eq_sum_filter_pow_eq`: with enough roots of unity for
+  the exponent of `Mˣ`, the values at `a` of the characters `χ` with `χ ^ d = ρ` sum to
+  `∑_{x ^ d = a} ρ x`, for a character `ρ` of a finite `M` and every `a ∈ M`.
 * `TauCeti.card_pow_eq_eq_one_add_sum_filter_mulChar`: for a finite field `F`, `d ≠ 0`, and a
   coefficient domain with enough roots of unity for the exponent of `Fˣ ⧸ (Fˣ) ^ d`, the cast of
   the number of solutions of `y ^ d = c` in `F` is `1 + ∑_{χ ^ d = 1, χ ≠ 1} χ c`, also at
@@ -242,6 +245,55 @@ theorem sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq (d : ℕ)
       ⟨fun y ↦ hu <| MonoidHom.mem_range.2
         ⟨y, by simpa only [f, powMonoidHom_apply] using y.property⟩⟩
     rw [Nat.card_of_isEmpty, Nat.cast_zero]
+
+/-- **Twisted sums over `d`-th roots.** With enough roots of unity in `R` for the exponent of
+`Mˣ`, for a character `ρ` of a finite commutative monoid `M`, `d : ℕ` and `a ∈ M`, the values at
+`a` of the characters `χ` with `χ ^ d = ρ` sum to `∑_{x ^ d = a} ρ x`. For `ρ = 1` and a unit `a`
+the right side counts the `d`-th roots of `a` in `Mˣ`. At a nonunit `a` both sides vanish. At a
+unit, multiply by `#Mˣ`, expand the indicator of `x ^ d = a` by
+`Units.sum_inv_mul_mulChar_apply_eq_ite`, and sum `ρ ψ ^ d` over `M` by `MulChar.sum_eq_ite`. -/
+theorem sum_filter_mulChar_pow_eq_apply_eq_sum_filter_pow_eq [Fintype M] [DecidableEq M]
+    [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)] (ρ : MulChar M R) (d : ℕ) (a : M)
+    [DecidablePred fun χ : MulChar M R ↦ χ ^ d = ρ] :
+    ∑ χ : MulChar M R with χ ^ d = ρ, χ a = ∑ x : M with x ^ d = a, ρ x := by
+  classical
+  by_cases ha : IsUnit a
+  swap
+  · -- Every `χ a` vanishes, and so does `ρ x` for every `d`-th root `x` of `a`.
+    rw [sum_eq_zero fun χ _ ↦ χ.map_nonunit ha]
+    refine (sum_eq_zero fun x hx ↦ ρ.map_nonunit fun hx' ↦ ha ?_).symm
+    rw [← (mem_filter.1 hx).2]
+    exact hx'.pow d
+  obtain ⟨u, rfl⟩ := ha
+  -- Reindex by `ψ = χ⁻¹`: `χ ^ d = ρ` if and only if `ρ * ψ ^ d = 1`.
+  have hreindex : ∑ χ : MulChar M R with χ ^ d = ρ, χ u =
+      ∑ ψ : MulChar M R with ρ * ψ ^ d = 1, ψ⁻¹ u := by
+    refine (sum_equiv (Equiv.inv _) (fun ψ ↦ ?_) fun ψ _ ↦ rfl).symm
+    simp only [mem_filter, mem_univ, true_and, Equiv.inv_apply, inv_pow]
+    rw [mul_eq_one_iff_eq_inv, eq_comm]
+  have hsum (ψ : MulChar M R) :
+      ∑ x : M, ρ x * ψ (x ^ d) = if ρ * ψ ^ d = 1 then (Nat.card Mˣ : R) else 0 := by
+    rw [← MulChar.sum_eq_ite]
+    refine sum_congr rfl fun x _ ↦ ?_
+    by_cases hx : IsUnit x
+    · obtain ⟨v, rfl⟩ := hx
+      rw [MulChar.mul_apply, MulChar.pow_apply_coe, map_pow]
+    · rw [ρ.map_nonunit hx, zero_mul, (ρ * ψ ^ d).map_nonunit hx]
+  refine mul_left_cancel₀ (natCast_card_ne_zero_of_hasEnoughRootsOfUnity R (G := Mˣ)) ?_
+  rw [hreindex]
+  calc (Nat.card Mˣ : R) * ∑ ψ : MulChar M R with ρ * ψ ^ d = 1, ψ⁻¹ u
+      = ∑ ψ : MulChar M R, ψ⁻¹ u * ∑ x : M, ρ x * ψ (x ^ d) := by
+        rw [mul_sum]
+        simp_rw [hsum, mul_ite, mul_zero, ← sum_filter]
+        exact sum_congr rfl fun ψ _ ↦ mul_comm _ _
+    _ = ∑ x : M, ρ x * ∑ ψ : MulChar M R, ψ⁻¹ u * ψ (x ^ d) := by
+        simp_rw [mul_sum]
+        conv_lhs => rw [sum_comm]
+        exact sum_congr rfl fun x _ ↦ sum_congr rfl fun ψ _ ↦ by ring
+    _ = (Nat.card Mˣ : R) * ∑ x : M with x ^ d = ↑u, ρ x := by
+        simp_rw [Units.sum_inv_mul_mulChar_apply_eq_ite, mul_ite, mul_zero, ← sum_filter]
+        rw [mul_sum]
+        exact sum_congr rfl fun x _ ↦ mul_comm _ _
 
 section GroupWithZero
 

@@ -5,14 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Complex.Basic
-public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
-public import TauCeti.NumberTheory.MulChar.Duality
-import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
-import TauCeti.NumberTheory.MulChar.Orthogonality
 
 /-!
 # Jacobsthal sums
@@ -21,19 +15,19 @@ Let `F` be a finite field with `q` elements and quadratic character `η`. The Ja
 `φ_n(a) = ∑_x η(x) η(x^n + a)` (`TauCeti.jacobsthalPhi`) and `ψ_n(a) = ∑_x η(x^n + a)`
 (`TauCeti.jacobsthalPsi`), with values in `ℤ`.
 
-For `n ≠ 0`, the number of `x` with `x^n = u` is `1 + ∑_{χ^n = 1, χ ≠ 1} χ(u)`, so `ψ_n(a)` is a
-sum of Jacobi sums `J(χ, η)`. For `a ≠ 0` in odd characteristic, `φ_1(a)` is a quadratic Jacobi
-sum, so `φ_1(a) = -1`, and grouping `x` by `x²` gives `ψ_2(a) = ψ_1(a) + φ_1(a) = -1`. The
-substitution `x = s y` scales `φ_n(a sⁿ)` by `η(s)^(n + 1)`. The second moment `∑_e φ_2(e)²` is
-`q (q - 1) (1 + η(-1))`: after the square is expanded, the sum over `e` is a quadratic Jacobi sum
-again. When `q ≡ 1 (mod 4)`,
+For `a ≠ 0` in odd characteristic, `φ_1(a)` is a quadratic Jacobi sum, so `φ_1(a) = -1`, and
+grouping `x` by `x²` gives `ψ_2(a) = ψ_1(a) + φ_1(a) = -1`. The substitution `x = s y` scales
+`φ_n(a sⁿ)` by `η(s)^(n + 1)`. The second moment `∑_e φ_2(e)²` is `q (q - 1) (1 + η(-1))`: after
+the square is expanded, the sum over `e` is a quadratic Jacobi sum again. When `q ≡ 1 (mod 4)`,
 `φ_2(e)²` takes one value on the nonzero squares and one value on the non-squares, so the second
 moment gives Jacobsthal's representation of `q` as a sum of two squares.
 
+The Jacobi-sum expansions of `ψ_n` and `φ_n` are in
+`TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Jacobsthal.JacobiSum`.
+
 ## Main results
 
-* `TauCeti.jacobsthalPsi_eq_sum_jacobiSum`: for `n ≠ 0` and `a ≠ 0`,
-  `ψ_n(a) = η(a) ∑_{χ^n = 1, χ ≠ 1} χ(-a) J(χ, η)`, with complex characters.
+* `TauCeti.jacobsthalPhi_def`, `TauCeti.jacobsthalPsi_def`: the defining formulas.
 * `TauCeti.jacobsthalPhi_one`, `TauCeti.jacobsthalPsi_two`: `φ_1(a) = ψ_2(a) = -1` for `a ≠ 0`.
 * `TauCeti.jacobsthalPhi_zero_right_of_even`, `TauCeti.jacobsthalPhi_zero_right_of_odd`:
   `φ_n(0)` is `0` for even `n` and `q - 1` for odd `n`.
@@ -68,44 +62,15 @@ field `F`. -/
 def jacobsthalPsi (n : ℕ) (a : F) : ℤ :=
   ∑ x : F, quadraticChar F (x ^ n + a)
 
-/-- **The Jacobi-sum expansion of `ψ_n`**: for `n ≠ 0` and `a ≠ 0` in odd characteristic,
-`ψ_n(a) = η(a) ∑_{χ^n = 1, χ ≠ 1} χ(-a) J(χ, η)`, the sum over the nontrivial complex characters
-of order dividing `n`, with `η` the complex quadratic character. -/
-theorem jacobsthalPsi_eq_sum_jacobiSum [DecidableEq (MulChar F ℂ)] (hF : ringChar F ≠ 2) {n : ℕ}
-    (hn : n ≠ 0) {a : F} (ha : a ≠ 0) :
-    (jacobsthalPsi n a : ℂ) = quadraticChar F a *
-      ∑ χ : MulChar F ℂ with χ ^ n = 1 ∧ χ ≠ 1,
-        χ (-a) * jacobiSum χ ((quadraticChar F).ringHomComp (Int.castRingHom ℂ)) := by
-  set η := (quadraticChar F).ringHomComp (Int.castRingHom ℂ)
-  have hη : ∀ u, η u = quadraticChar F u := fun u ↦ by simp [η]
-  -- The number of `n`-th roots of `u`, and the sum of `η(u + a)`.
-  have hcount : ∀ u : F, (#{x : F | x ^ n = u} : ℂ) =
-      1 + ∑ χ : MulChar F ℂ with χ ^ n = 1 ∧ χ ≠ 1, χ u := fun u ↦ by
-    have : NeZero (Monoid.exponent (Fˣ ⧸ (powMonoidHom n : Fˣ →* Fˣ).range)) :=
-      ⟨Monoid.exponent_ne_zero_of_finite⟩
-    rw [← card_pow_eq_eq_one_add_sum_filter_mulChar hn, Nat.card_eq_fintype_card,
-      Fintype.card_subtype]
-  have h0 : ∑ u : F, η (u + a) = 0 := by
-    simp_rw [hη]
-    exact_mod_cast (Fintype.sum_equiv (Equiv.addRight a) (fun u ↦ quadraticChar F (u + a)) _
-      fun _ ↦ rfl).trans (quadraticChar_sum_zero hF)
-  -- For each `χ`, substitute `u = -a t` in `∑_u χ(u) η(u + a)`.
-  have hχ : ∀ χ : MulChar F ℂ, ∑ u : F, χ u * η (u + a) = η a * (χ (-a) * jacobiSum χ η) := by
-    intro χ
-    rw [jacobiSum, mul_sum, mul_sum]
-    refine (Fintype.sum_bijective ((-a) * ·) (mulLeft_bijective₀ _ (neg_ne_zero.mpr ha)) _ _
-      fun t ↦ ?_).symm
-    rw [map_mul, show -a * t + a = a * (1 - t) by ring, map_mul]
-    ring
-  calc (jacobsthalPsi n a : ℂ)
-      = ∑ u : F, (#{x : F | x ^ n = u} : ℂ) * η (u + a) := by
-        rw [jacobsthalPsi, Int.cast_sum, ← sum_fiberwise univ (fun x : F ↦ x ^ n)]
-        refine sum_congr rfl fun u _ ↦ ?_
-        rw [sum_congr rfl fun x hx ↦ by rw [(mem_filter.1 hx).2, ← hη], sum_const, nsmul_eq_mul]
-    _ = _ := by
-        simp_rw [hcount, add_mul, one_mul, sum_add_distrib, h0, zero_add, sum_mul]
-        rw [sum_comm, mul_sum, ← hη]
-        exact sum_congr rfl fun χ _ ↦ hχ χ
+/-- The defining formula of `TauCeti.jacobsthalPhi`. -/
+theorem jacobsthalPhi_def (n : ℕ) (a : F) :
+    jacobsthalPhi n a = ∑ x : F, quadraticChar F x * quadraticChar F (x ^ n + a) :=
+  (rfl)
+
+/-- The defining formula of `TauCeti.jacobsthalPsi`. -/
+theorem jacobsthalPsi_def (n : ℕ) (a : F) :
+    jacobsthalPsi n a = ∑ x : F, quadraticChar F (x ^ n + a) :=
+  (rfl)
 
 /-- The sum of `η(x)²` over a finite field is `q - 1`. -/
 private lemma sum_quadraticChar_sq : ∑ x : F, quadraticChar F x ^ 2 = Fintype.card F - 1 := by
