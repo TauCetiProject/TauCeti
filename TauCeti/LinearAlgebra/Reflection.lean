@@ -334,8 +334,9 @@ variable {K : Type u} {M : Type v} [Field K] [NeZero (2 : K)] [AddCommGroup M] [
 `ker a` changes `B (x₀, ·)` by `-a x * a x₀ * B (c, c) / 2`. -/
 theorem bilinForm_apply_reflection_right (hc : a c = 2) (horth : ∀ x, a x = 0 → B x c = 0)
     (x₀ x : M) : B x₀ (reflection hc x) = B x₀ x - a x * a x₀ * B c c / 2 := by
-  have h := horth (x₀ - (a x₀ / 2) • c) (by simp [hc, div_mul_cancel₀ _ (two_ne_zero' K)])
-  rw [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul, sub_eq_zero] at h
+  have h : B x₀ c = a x₀ / 2 * B c c := by
+    simpa [sub_eq_zero] using horth (x₀ - (a x₀ / 2) • c)
+      (by simp [hc, div_mul_cancel₀ _ (two_ne_zero' K)])
   rw [reflection_apply, map_sub, map_smul, smul_eq_mul, h]
   ring
 

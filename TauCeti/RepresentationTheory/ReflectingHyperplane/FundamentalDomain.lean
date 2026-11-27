@@ -124,23 +124,23 @@ theorem add_mem_openChamber (hx : x ∈ openChamber α x₀) (hy : y ∈ openCha
 /-- The open chamber is convex. -/
 theorem convex_openChamber : Convex ℝ (openChamber α x₀) := by
   intro x hx y hy a b ha hb hab i
-  rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, add_mul, mul_assoc, mul_assoc]
+  simp only [map_add, map_smul, smul_eq_mul]
   rcases ha.lt_or_eq with ha | rfl
-  · exact add_pos_of_pos_of_nonneg (mul_pos ha (hx i)) (mul_nonneg hb (hy i).le)
+  · linarith [mul_pos ha (hx i), mul_nonneg hb (hy i).le]
   · rw [zero_add] at hab
     simpa [hab] using hy i
 
 /-- The closed chamber is convex. -/
 theorem convex_closedChamber : Convex ℝ (closedChamber α x₀) := by
   intro x hx y hy a b ha hb _ i
-  rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, add_mul, mul_assoc, mul_assoc]
-  exact add_nonneg (mul_nonneg ha (hx i)) (mul_nonneg hb (hy i))
+  simp only [map_add, map_smul, smul_eq_mul]
+  linarith [mul_nonneg ha (hx i), mul_nonneg hb (hy i)]
 
 /-- Moving a point of the closed chamber towards `x₀` enters the open chamber. -/
 theorem add_smul_mem_openChamber (hx : x ∈ closedChamber α x₀) (hx₀ : ∀ i, α i x₀ ≠ 0) {t : ℝ}
     (ht : 0 < t) : x + t • x₀ ∈ openChamber α x₀ := fun i ↦ by
-  rw [map_add, map_smul, smul_eq_mul, add_mul, mul_assoc]
-  exact add_pos_of_nonneg_of_pos (hx i) (mul_pos ht (mul_self_pos.2 (hx₀ i)))
+  simp only [map_add, map_smul, smul_eq_mul]
+  linarith [hx i, mul_pos ht (mul_self_pos.2 (hx₀ i))]
 
 /-- The closed chamber is closed when the forms are continuous. -/
 theorem isClosed_closedChamber [TopologicalSpace V] (hα : ∀ i, Continuous (α i)) :
@@ -185,11 +185,11 @@ private theorem exists_pos_add_smul_mem_closedChamber [Finite ι] {y v : V}
   obtain ⟨t, ht, ht0⟩ := ((hev.filter_mono nhdsWithin_le_nhds).and
     (self_mem_nhdsWithin : Set.Ioi (0 : ℝ) ∈ 𝓝[>] 0)).exists
   refine ⟨t, ht0, fun i ↦ ?_⟩
-  rw [map_add, map_smul, smul_eq_mul, add_mul, mul_assoc]
+  simp only [map_add, map_smul, smul_eq_mul]
   by_cases hi : α i y = 0
-  · rw [hi, zero_mul, zero_add]
-    exact mul_nonneg (le_of_lt (Set.mem_Ioi.1 ht0)) (hv i hi)
-  · exact (ht i hi).le
+  · rw [hi]
+    linarith [mul_nonneg (Set.mem_Ioi.1 ht0).le (hv i hi)]
+  · linarith [ht i hi]
 
 end TauCeti
 
@@ -348,8 +348,7 @@ theorem apply_eq_self_of_apply_mem_closedChamber [Finite G] [Finite ι]
     (fun i hi ↦ by
       obtain ⟨c, hc, horth, s, hs⟩ := hrefl i
       refine ⟨c, hc, horth, s, ?_, hs⟩
-      rw [mem_stabilizer, hs, LinearEquiv.coe_coe, Module.reflection_apply, Set.mem_ofPred.1 hi,
-        zero_smul, sub_zero]) x₀ (ρ g x₀)
+      simp [mem_stabilizer, hs, Module.reflection_apply, Set.mem_ofPred.1 hi]) x₀ (ρ g x₀)
   rw [mem_stabilizer] at hh
   set v := ρ h (ρ g x₀)
   -- For small `t > 0`, the point `y + t v` lies in the closed chamber.
@@ -365,12 +364,8 @@ theorem apply_eq_self_of_apply_mem_closedChamber [Finite G] [Finite ι]
   -- Hence `h g = 1`, so `g` fixes `y = ρ g x`, and `ρ g x = x`.
   have hhg := ρ.eq_one_of_apply_mem_openChamber hrefl' hfree hopen (himg ▸ hyv)
   rw [mul_eq_one_iff_eq_inv] at hhg
-  rw [hhg] at hh
-  have hgy : ρ g y = y := by
-    have := congrArg (ρ g) hh
-    rwa [self_inv_apply, eq_comm] at this
-  calc ρ g x = ρ g⁻¹ (ρ g y) := by rw [inv_self_apply]
-    _ = x := by rw [hgy]; exact inv_self_apply ρ g x
+  rw [hhg, inv_self_apply] at hh
+  exact hh.symm
 
 /-- **The closed chamber of a regular point is a strict fundamental domain.** Let `ρ` be a
 representation of a finite group containing, for every `i`, the reflection in `ker α i` along a
