@@ -32,6 +32,10 @@ less than `k` in `Xᵢ` vanishes; it also keeps the coefficients in any additive
 coefficient ring, such as a subring. These are the facts needed to clear the denominators of
 derivatives of polynomials evaluated at algebraic points.
 
+Over a `ℚ≥0`-algebra every partial derivative is surjective (`MvPolynomial.pderiv_surjective`):
+every polynomial has an antiderivative in each variable, as in the univariate case
+`Polynomial.derivative_surjective`.
+
 Over a commutative ring the gradient at a point `t` linearises a polynomial up to a divisibility
 or ideal-product error: if `xᵢ - tᵢ ∈ I`, `x'ᵢ - tᵢ ∈ I` and `x'ᵢ - xᵢ ∈ J`, then
 `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)` lies in `I * J` (and is divisible by `d * e` when `I = (d)`,
@@ -81,6 +85,8 @@ its iterated partial derivatives in `Xᵢ` vanishing there too.
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
 * `MvPolynomial.pderiv_killCompl`, `MvPolynomial.pderiv_rename_of_notMem_range`: compatibility of
   `pderiv` with `killCompl` and renaming away from a variable.
+* `MvPolynomial.pderiv_surjective`: over a `ℚ≥0`-algebra every polynomial has an antiderivative
+  in each variable.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
@@ -332,6 +338,23 @@ theorem pderiv_rename_of_notMem_range {g : τ → σ} {j₀ : σ} (hj₀ : j₀ 
   pderiv_eq_zero_of_notMem_vars fun h ↦ by
     obtain ⟨i, -, hi⟩ := mem_vars_rename g f h
     exact hj₀ ⟨i, hi⟩
+
+/-- Over a `ℚ≥0`-algebra every partial derivative `∂/∂Xᵢ` is surjective: the monomial `a X^s` is
+the partial derivative of `(s i + 1)⁻¹ a X^(s + eᵢ)`. -/
+theorem pderiv_surjective [Algebra ℚ≥0 R] (i : σ) : Function.Surjective (pderiv (R := R) i) := by
+  classical
+  intro p
+  induction p using MvPolynomial.induction_on' with
+  | add p q hp hq =>
+    obtain ⟨p', rfl⟩ := hp
+    obtain ⟨q', rfl⟩ := hq
+    exact ⟨p' + q', map_add _ _ _⟩
+  | monomial s a =>
+    refine ⟨monomial (s + Finsupp.single i 1) ((s i + 1 : ℚ≥0)⁻¹ • a), ?_⟩
+    -- Turn the factor `(s + eᵢ) i` from `pderiv_monomial` into a `ℚ≥0` scalar, which `simp`
+    -- then cancels against `(s i + 1)⁻¹`.
+    simp only [pderiv_monomial, ← nsmul_eq_mul', ← Nat.cast_smul_eq_nsmul ℚ≥0]
+    simp
 
 end CommSemiring
 

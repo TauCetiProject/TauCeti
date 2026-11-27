@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Nullstellensatz
-public import TauCeti.RingTheory.Ideal.Order
+public import TauCeti.RingTheory.Ideal.Order.Basic
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import TauCeti.RingTheory.MvPolynomial.Ideal.Taylor
 

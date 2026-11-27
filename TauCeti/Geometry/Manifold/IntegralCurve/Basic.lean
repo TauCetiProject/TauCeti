@@ -30,6 +30,10 @@ the field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
+* `IsMIntegralCurveOn.union_of_isClosed`: integral curves on two closed sets of times glue to an
+  integral curve on their union.
+* `IsMIntegralCurveOn.comp_neg`: running an integral curve of `v` on `s` backwards gives an
+  integral curve of `-v` on `-s`.
 * `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
   field.
 * `IsMIntegralCurve.comp_neg`: running an integral curve of `v` backwards gives an integral curve
@@ -59,7 +63,7 @@ the field.
 public section
 
 open Bundle Function Manifold Set
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold Pointwise Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -103,6 +107,33 @@ theorem congr {V : (x : M) → TangentSpace I x} {γ γ' : ℝ → M} {s : Set �
   rw [h ht]
   rfl
 
+/-- **Gluing along closed sets of times.** A curve which is an integral curve of `v` on two
+closed sets of times is an integral curve on their union. -/
+theorem union_of_isClosed {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s t : Set ℝ}
+    (hs : IsMIntegralCurveOn γ V s) (ht : IsMIntegralCurveOn γ V t) (hsc : IsClosed s)
+    (htc : IsClosed t) : IsMIntegralCurveOn γ V (s ∪ t) := by
+  intro r hr
+  by_cases hrs : r ∈ s <;> by_cases hrt : r ∈ t
+  · exact (hs r hrs).union (ht r hrt)
+  -- Away from the other closed set, each set is a neighbourhood of `r` within the union.
+  · exact (hs r hrs).mono_of_mem_nhdsWithin
+      (mem_nhdsWithin.2 ⟨tᶜ, htc.isOpen_compl, hrt, fun x hx ↦ hx.2.resolve_right hx.1⟩)
+  · exact (ht r hrt).mono_of_mem_nhdsWithin
+      (mem_nhdsWithin.2 ⟨sᶜ, hsc.isOpen_compl, hrs, fun x hx ↦ hx.2.resolve_left hx.1⟩)
+  · exact absurd hr (by simp [hrs, hrt])
+
+/-- **Time reversal on a set of times.** Running an integral curve of `v` on `s` backwards gives
+an integral curve of `-v` on `-s`. -/
+theorem comp_neg {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ V s) : IsMIntegralCurveOn (fun t ↦ γ (-t)) (-V) (-s) := by
+  convert hγ.comp_mul (-1) using 1
+  · ext t
+    rw [comp_apply, mul_neg_one]
+  · ext y
+    rw [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
+  · ext t
+    simp only [Set.mem_neg, mem_ofPred_eq, mul_neg_one]
+
 end IsMIntegralCurveOn
 
 /-- **Constant integral curves are the zeros of the field.** The constant curve at `x` is an
@@ -123,11 +154,8 @@ theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpac
 theorem IsMIntegralCurve.comp_neg {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
     {v : (x : M) → TangentSpace I x} {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) :
     IsMIntegralCurve (fun t ↦ γ (-t)) (-v) := by
-  convert hγ.comp_mul (-1) using 1
-  · ext t
-    rw [comp_apply, mul_neg_one]
-  · ext y
-    rw [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
+  simpa using hγ.comp_neg
 
 namespace IsMIntegralCurveAt
 

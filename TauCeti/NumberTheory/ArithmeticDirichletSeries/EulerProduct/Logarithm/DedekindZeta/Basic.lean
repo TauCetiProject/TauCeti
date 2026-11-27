@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
 /-!
 # The real Euler product of the Dedekind zeta function in exponential form
@@ -35,6 +35,8 @@ positive real number, and that sum is its real logarithm.
   which is therefore positive.
 * `TauCeti.log_dedekindZeta_re_eq_tsum_neg_log_one_sub`: that real sum is the real logarithm of
   `ζ_K(s)`.
+* `TauCeti.finprod_one_sub_inv_absNorm_inv_eq_exp_primeSummatory`: the finite Euler product
+  `∏_{N(𝔭) ≤ x} (1 - N(𝔭)⁻¹)⁻¹` equals `exp (∑_{N(𝔭) ≤ x} -log (1 - N(𝔭)⁻¹))`.
 
 ## References
 
@@ -127,5 +129,18 @@ theorem log_dedekindZeta_re_eq_tsum_neg_log_one_sub {s : ℝ} (hs : 1 < s) :
 theorem dedekindZeta_re_pos {s : ℝ} (hs : 1 < s) : 0 < (dedekindZeta K s).re := by
   rw [dedekindZeta_re_eq_exp hs]
   exact Real.exp_pos _
+
+/-- The finite Euler product up to `x` is the exponential of the summatory function of
+`-log (1 - N(𝔭)⁻¹)`. -/
+theorem finprod_one_sub_inv_absNorm_inv_eq_exp_primeSummatory (x : ℝ) :
+    (∏ᶠ 𝔭 : HeightOneSpectrum (𝓞 K),
+      if (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x then (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹)⁻¹
+      else 1) = Real.exp (primeSummatory K
+        (fun v ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹)) x) := by
+  rw [finprod_ite_le_eq_prod_normLE, primeSummatory_apply, Real.exp_sum]
+  refine Finset.prod_congr rfl fun v _ ↦ ?_
+  have h1 : 0 < 1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹ := sub_pos.mpr
+    (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)))
+  rw [Real.exp_neg, Real.exp_log h1]
 
 end TauCeti

@@ -98,7 +98,7 @@ private theorem isCompactOperator_jetOperator_comp_endTransferCoeff_sub_smul (q 
     (hdβ : ∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart q ζ) = 0)
     (hMG : ∀ᵐ ζ ∂stripMeasure, β (positiveEndChart q ζ) ≠ 0 → ∀ a b : V,
       M (positiveEndChart q ζ) (endTransferCoeff q (fun _ ↦ 1) ζ (0, a, b)) = G ζ (0, a, b)) :
-    IsCompactOperator ((jetOperator stripMeasure fun ζ ↦
+    IsCompactOperator ((jetOperator 2 stripMeasure fun ζ ↦
       (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ) -
         β (positiveEndChart q ζ) • G ζ).comp (CylinderSobolev.H1 V).subtypeL) := by
   refine CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le
@@ -139,7 +139,7 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ (volume.restrict thricePuncturedSphereReal))
     {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
     {Q : Lp W 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V}
-    (hQ : ∀ h, jetOperator stripMeasure G (Q h) = h)
+    (hQ : ∀ h, jetOperator 2 stripMeasure G (Q h) = h)
     {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
     (hβS : ∀ z ∈ tsupport β, Complex.equivRealProdCLM.symm z ≠ q.endCenter →
       z ∈ thricePuncturedSphereReal)
@@ -152,7 +152,7 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
     (hMG : ∀ᵐ ζ ∂stripMeasure, β (positiveEndChart q ζ) ≠ 0 → ∀ a b : V,
       M (positiveEndChart q ζ) (endTransferCoeff q (fun _ ↦ 1) ζ (0, a, b)) = G ζ (0, a, b)) :
     ∃ K : Lp W 2 stripMeasure →L[ℝ] Lp W 2 stripMeasure, IsCompactOperator K ∧
-      ∀ h, ((positiveEndChartLp q).symm (jetOperator
+      ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
         (volume.restrict thricePuncturedSphereReal) M (endTransfer q β (Q h))) :
           ℝ × ℝ → W) =ᵐ[stripMeasure] fun ζ ↦ β (positiveEndChart q ζ) • h ζ + K h ζ := by
   have hT := memLp_endTransferCoeff (V := V) q hβ hβS hB
@@ -164,7 +164,7 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
   have hEm : MemLp E ∞ stripMeasure :=
     ((hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞
       hT).sub (hβφ.smul hG)
-  refine ⟨((jetOperator stripMeasure E).comp (CylinderSobolev.H1 V).subtypeL).comp Q,
+  refine ⟨((jetOperator 2 stripMeasure E).comp (CylinderSobolev.H1 V).subtypeL).comp Q,
     (isCompactOperator_jetOperator_comp_endTransferCoeff_sub_smul q hM hG hβ hβS hB hβ₀ hdβ
       hMG).comp_clm Q, fun h ↦ ?_⟩
   have hsplit : (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) =
@@ -173,9 +173,9 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
     simp [E]
   rw [jetOperator_endTransfer q hT hM, LinearIsometryEquiv.symm_apply_apply, hsplit,
     jetOperator_add (M := fun ζ ↦ β (positiveEndChart q ζ) • G ζ) (hβφ.smul hG) hEm]
-  filter_upwards [Lp.coeFn_add (jetOperator stripMeasure (fun ζ ↦ β (positiveEndChart q ζ) • G ζ)
-      (Q h)) (jetOperator stripMeasure E (Q h)),
-    coeFn_jetOperator_smul hβφ hG (Q h)] with ζ h₁ h₂
+  filter_upwards [Lp.coeFn_add (jetOperator 2 stripMeasure (fun ζ ↦ β (positiveEndChart q ζ) • G ζ)
+      (Q h)) (jetOperator 2 stripMeasure E (Q h)),
+    coeFn_jetOperator_smul (p := 2) hβφ hG (Q h)] with ζ h₁ h₂
   rw [add_apply, h₁, Pi.add_apply, h₂, hQ h, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
 
@@ -312,7 +312,7 @@ theorem
         (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → β (positiveEndChart q ζ) = 0) →
         (∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart q ζ) = 0) →
         ∃ K : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure, IsCompactOperator K ∧
-          ∀ h, ((positiveEndChartLp q).symm (jetOperator
+          ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
             (volume.restrict thricePuncturedSphereReal) (ω.floerConformalJetCoeff cylindricalWeight
               (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)
                 (endTransfer q β (Q h))) : ℝ × ℝ → V) =ᵐ[stripMeasure]
@@ -352,7 +352,7 @@ theorem
       exact hε.le
   have hA := hinv hPm (ae_of_all _ hPb)
   refine ⟨U, Metric.ball_mem_nhds z₀ hr, ContinuousLinearMap.inverse
-    ((jetOperator stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL),
+    ((jetOperator 2 stripMeasure (G₀ + P)).comp (CylinderSobolev.H1 V).subtypeL),
     fun {β B T₀ T₁} hβ hβS hB hβU hβ₀ hdβ ↦ ?_⟩
   refine exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer_ae_eq_of_principal
     q hM (hG₀.add hPm) (fun h ↦ hA.self_apply_inverse h) hβ hβS hB hβ₀ hdβ

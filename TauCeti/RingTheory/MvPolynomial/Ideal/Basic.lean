@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.Polynomial.Ideal
@@ -85,6 +86,8 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
   the contraction of an ideal in one more variable, and the contraction from the localization.
 * `Ideal.adjoin_range_quotient_mk_X_eq_top`: the residue classes of the variables generate any
   quotient `MvPolynomial σ R ⧸ I` as an `R`-algebra.
+* `Module.IsTorsionBySet.ker_mvPolynomial_map`: an `MvPolynomial σ A`-module annihilated by
+  `RingHom.ker f` over `A` is annihilated by `RingHom.ker (MvPolynomial.map f)`.
 
 ## References
 
@@ -634,3 +637,24 @@ theorem adjoin_range_quotient_mk_X_eq_top (I : Ideal (MvPolynomial σ R)) :
   exact Quotient.mk_surjective
 
 end Ideal
+
+/-- If an `MvPolynomial σ A`-module `M` is annihilated by `RingHom.ker f` over `A`, then it is
+annihilated by `RingHom.ker (MvPolynomial.map f)`. -/
+theorem Module.IsTorsionBySet.ker_mvPolynomial_map {A B σ M : Type*} [CommSemiring A]
+    [CommSemiring B] [AddCommMonoid M] [Module A M] [Module (MvPolynomial σ A) M]
+    [IsScalarTower A (MvPolynomial σ A) M] {f : A →+* B}
+    (hf : Module.IsTorsionBySet A M (RingHom.ker f)) :
+    Module.IsTorsionBySet (MvPolynomial σ A) M
+      (RingHom.ker (MvPolynomial.map (σ := σ) f)) := by
+  rw [Module.isTorsionBySet_iff_subset_annihilator] at hf ⊢
+  intro p hp
+  rw [SetLike.mem_coe, Module.mem_annihilator]
+  intro x
+  rw [MvPolynomial.as_sum p, Finset.sum_smul]
+  refine Finset.sum_eq_zero fun s _ ↦ ?_
+  have hc : p.coeff s ∈ RingHom.ker f := by
+    rw [RingHom.mem_ker]
+    simpa [MvPolynomial.coeff_map] using congrArg (fun q ↦ q.coeff s) (RingHom.mem_ker.mp hp)
+  rw [← mul_one (p.coeff s), ← MvPolynomial.C_mul_monomial, ← MvPolynomial.algebraMap_eq,
+    ← Algebra.smul_def, smul_assoc]
+  exact Module.mem_annihilator.mp (hf hc) (MvPolynomial.monomial s 1 • x)

@@ -16,7 +16,8 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 A path `f : ℝ → E` in a normed group, stopped at time `t`, is the path `s ↦ f (min s t)`. For any
 measure `μ` on `ℝ`, this file studies the classes `F t` of the stopped paths in `L∞(μ, E)` as
 functions of the stopping time `t`. Since stopping changes the path uniformly in `s`, the
-statements hold in the `L∞` distance:
+statements hold in the `L∞` distance (the limit statements for paths on any nonempty linear
+order):
 
 * if `f` is continuous, then `F` is continuous;
 * if `f` tends to `b` at `-∞`, then `F t` tends to the constant class `b` as `t → -∞`;
@@ -40,7 +41,11 @@ open scoped ENNReal Topology
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] {μ : Measure ℝ} {f : ℝ → E} {F : ℝ → Lp E ∞ μ}
+variable {E : Type*} [NormedAddCommGroup E]
+
+section Real
+
+variable {μ : Measure ℝ} {f : ℝ → E} {F : ℝ → Lp E ∞ μ}
 
 /-- If `F t` is the class in `L∞` of the continuous path `f` stopped at time `t`, then `F` is
 continuous. -/
@@ -66,6 +71,13 @@ theorem continuous_of_ae_eq_comp_min (hf : Continuous f)
         (hclose _ ⟨le_min hs (min_le_right _ _), (min_le_right _ _).trans (le_max_right _ _)⟩).le
         (hclose _ ⟨le_min hs (min_le_left _ _), (min_le_right _ _).trans (le_max_left _ _)⟩).le
     _ = ε / 2 := by ring
+
+end Real
+
+section LinearOrder
+
+variable {α : Type*} [MeasurableSpace α] [LinearOrder α] [Nonempty α] {μ : Measure α} {f : α → E}
+  {F : α → Lp E ∞ μ}
 
 /-- If `F t` is the class in `L∞` of the path `f` stopped at time `t`, and `f` tends to `b` at
 `-∞`, then `F t` tends to the constant class `b` as `t → -∞`. -/
@@ -98,5 +110,7 @@ theorem tendsto_atTop_of_ae_eq_comp_min {b : E} (hf : Tendsto f atTop (𝓝 b))
   calc dist (f t) (f s) ≤ dist (f t) b + dist (f s) b := dist_triangle_right _ _ _
     _ ≤ ε / 4 + ε / 4 := add_le_add (hN t ht).le (hN s (ht.trans hst)).le
     _ = ε / 2 := by ring
+
+end LinearOrder
 
 end TauCeti
