@@ -124,10 +124,13 @@ noncomputable def shortComplexBiproductBicone : Bicone S where
     (Limits.biproduct.ι_map (fun i ↦ (S i).f) j)
     (Limits.biproduct.ι_map (fun i ↦ (S i).g) j)
   ι_π j j' := by
+    -- The components of `homMk` reduce to the supplied inclusions and projections.
     split_ifs with h
     · subst j'
-      ext <;> exact Limits.biproduct.ι_π_self _ _
-    · ext <;> exact Limits.biproduct.ι_π_ne _ h
+      ext <;> simp only [comp_τ₁, comp_τ₂, comp_τ₃,
+        eqToHom_refl, id_τ₁, id_τ₂, id_τ₃] <;> exact Limits.biproduct.ι_π_self _ _
+    · ext <;> simp only [comp_τ₁, comp_τ₂, comp_τ₃,
+        zero_τ₁, zero_τ₂, zero_τ₃] <;> exact Limits.biproduct.ι_π_ne _ h
 
 /-- The componentwise direct sum is a biproduct in the category of short complexes. -/
 noncomputable def isBilimitShortComplexBiproductBicone :
