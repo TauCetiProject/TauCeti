@@ -72,19 +72,14 @@ noncomputable def freeNeg :
   have hf : f.comp f = LieHom.id := _root_.FreeLieAlgebra.hom_ext fun i => by simp [f]
   LieEquiv.ofLieHoms f f hf hf
 
-/-- `TauCeti.FreeLieAlgebra.freeNeg` is involutive. -/
-theorem freeNeg_involutive : Function.Involutive (freeNeg R X) := fun x => by
-  dsimp only [freeNeg]
-  rw [LieEquiv.ofLieHoms_apply, LieEquiv.ofLieHoms_apply, ← LieHom.comp_apply]
-  have hf : (_root_.FreeLieAlgebra.lift R fun i : X => -_root_.FreeLieAlgebra.of R i).comp
-      (_root_.FreeLieAlgebra.lift R fun i : X => -_root_.FreeLieAlgebra.of R i) = LieHom.id :=
-    _root_.FreeLieAlgebra.hom_ext fun i => by simp
-  rw [hf, LieHom.id_apply]
-
 /-- `TauCeti.FreeLieAlgebra.freeNeg` is its own inverse. -/
 @[simp]
 theorem freeNeg_symm : (freeNeg R X).symm = freeNeg R X :=
   LieEquiv.symm_ofLieHoms _ _ _ _
+
+/-- `TauCeti.FreeLieAlgebra.freeNeg` is involutive. -/
+theorem freeNeg_involutive : Function.Involutive (freeNeg R X) := fun x => by
+  simpa using (freeNeg R X).symm_apply_apply x
 
 end
 

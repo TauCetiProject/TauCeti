@@ -145,10 +145,10 @@ theorem freeNeg_mem_serreIdeal {R : Type*} [CommRing R] {B : Type*} {CM : Matrix
     TauCeti.FreeLieAlgebra.freeNeg R B b ∈ serreIdeal R CM := by
   induction hb using serreIdeal_induction with
   | relator i j =>
-    rw [← LieEquiv.coe_toLieHom, LieHom.map_ad_pow, LieHom.map_lie, LieEquiv.coe_toLieHom,
-      TauCeti.FreeLieAlgebra.freeNeg_of, TauCeti.FreeLieAlgebra.freeNeg_of, neg_lie, lie_neg,
-      neg_neg, ad_neg_pow_apply]
-    exact Submodule.smul_mem (serreIdeal R CM).toSubmodule _ (relator_mem_serreIdeal R CM i j)
+    have hmem := Submodule.smul_mem (serreIdeal R CM).toSubmodule ((-1 : R) ^ (-CM i j).toNat)
+      (relator_mem_serreIdeal R CM i j)
+    rw [← LieEquiv.coe_toLieHom]
+    simpa [LieHom.map_ad_pow, ad_neg_pow_apply, -map_neg] using hmem
   | zero => simp
   | add _ _ _ _ hu hv => simpa [map_add] using add_mem hu hv
   | smul c _ _ hu => simpa [map_smul] using Submodule.smul_mem _ c hu

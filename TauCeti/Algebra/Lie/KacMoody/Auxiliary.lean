@@ -194,8 +194,8 @@ private noncomputable def auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlg
 @[simp]
 private theorem auxChevalley_involutive (y : AuxLieAlgebra R) :
     auxChevalley R (auxChevalley R y) = y := by
-  rw [auxChevalley, LieEquiv.ofLieHoms_apply, LieEquiv.ofLieHoms_apply, ← LieHom.comp_apply,
-    auxChevalley_comp, LieHom.id_apply]
+  have hsymm : (auxChevalley R).symm = auxChevalley R := LieEquiv.symm_ofLieHoms _ _ _ _
+  simpa only [hsymm] using (auxChevalley R).symm_apply_apply y
 
 private noncomputable def auxPosHom : FreeLieAlgebra K I →ₗ⁅K⁆ AuxLieAlgebra R :=
   FreeLieAlgebra.lift K (auxPos R)

@@ -40,10 +40,11 @@ namespace Matrix
 instance instDecidablePredIsGeneralizedCartan {ι : Type*} [Fintype ι] [DecidableEq ι] :
     DecidablePred (IsGeneralizedCartan (ι := ι)) :=
   fun M =>
-    let m : ι → ι → ℤ := Matrix.of.symm M
+    letI (_i _j : ι) : Decidable (_i ≠ _j → M _i _j ≤ 0) := inferInstance
+    letI (_i _j : ι) : Decidable (M _i _j = 0 ↔ M _j _i = 0) := inferInstance
     decidable_of_iff
-      ((∀ i, m i i = 2) ∧ (∀ i j, i ≠ j → m i j ≤ 0) ∧ ∀ i j, m i j = 0 ↔ m j i = 0)
-      ⟨fun ⟨h₁, h₂, h₃⟩ => ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ => ⟨h₁, h₂, h₃⟩⟩
+      ((∀ i, M i i = 2) ∧ (∀ i j, i ≠ j → M i j ≤ 0) ∧ ∀ i j, M i j = 0 ↔ M j i = 0)
+      ⟨fun ⟨a, b, c⟩ => ⟨a, b, c⟩, fun h => ⟨h.diag, h.offDiag_nonpos, h.zero_comm⟩⟩
 
 namespace IsGeneralizedCartan
 

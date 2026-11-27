@@ -11,6 +11,7 @@ import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.KacMoody.WordRep
 import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
@@ -92,18 +93,13 @@ theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
     (i j k : I) : ⁅F k, (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆⁆ = 0 := by
   obtain rfl | hij := eq_or_ne i j
   · simp
-  -- If `⁅f, e⁆ = 0`, then `ad f` commutes with the powers of `ad e`.
-  have lie_ad_pow_of_lie_eq_zero {e f : L} (hfe : ⁅f, e⁆ = 0) (n : ℕ) (y : L) :
-      ⁅f, (ad K L e ^ n) y⁆ = (ad K L e ^ n) ⁅f, y⁆ := by
-    simpa only [mul_apply_eq_comp, ad_apply] using
-      LinearMap.congr_fun ((LieAlgebra.commute_ad_of_lie_eq_zero hfe).pow_right n).eq y
   have hFE (a b : I) (hab : a ≠ b) : ⁅F b, E a⁆ = 0 := by rw [← lie_skew, hne a b hab, neg_zero]
   have hroot (a b : I) : R.root b (R.coroot a) = (A a b : K) := by simp
   rw [← ad_pow_succ_apply]
   obtain rfl | hki := eq_or_ne k i
   · by_cases h0 : φ (R.coroot k) = 0
-    · rw [lie_ad_pow_of_lie_eq_zero (by rw [← lie_skew, hself, h0, neg_zero]), hFE j k hij.symm,
-        map_zero]
+    · rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero (by rw [← lie_skew, hself, h0, neg_zero]),
+        hFE j k hij.symm, map_zero]
     have t : IsSl2Triple (φ (R.coroot k)) (E k) (F k) :=
       { h_ne_zero := h0
         lie_e_f := hself k
@@ -116,7 +112,7 @@ theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
     have hn : (((-A k j).toNat : ℕ) : K) = -(A k j : K) := by
       rw [← Int.cast_natCast, Int.toNat_of_nonneg (by linarith [hneg k j hij]), Int.cast_neg]
     rw [hn, sub_neg_eq_add, neg_add_cancel, mul_zero, zero_smul]
-  rw [lie_ad_pow_of_lie_eq_zero (hFE i k hki.symm)]
+  rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero (hFE i k hki.symm)]
   obtain rfl | hkj := eq_or_ne k j
   · rw [← lie_skew, hself, pow_succ, mul_apply_eq_comp, map_neg, ad_apply, lie_skew, hφE,
       hroot]
@@ -134,169 +130,7 @@ section TensorAlgebra
 
 open MonoidAlgebra
 
-variable (R) (μ : Module.Dual K H)
-
-/-- The sum of the simple roots along a word. -/
-private def rootSum (w : FreeMonoid I) : Module.Dual K H := (w.toList.map R.root).sum
-
-private theorem rootSum_one : rootSum R (1 : FreeMonoid I) = 0 := by
-  simp [rootSum]
-
-private theorem rootSum_of_mul (i : I) (w : FreeMonoid I) :
-    rootSum R (.of i * w) = R.root i + rootSum R w := by
-  simp [rootSum]
-
-private theorem rootSum_of (i : I) : rootSum R (.of i) = R.root i := by
-  simp [rootSum]
-
-private theorem rootSum_mul (w w' : FreeMonoid I) :
-    rootSum R (w * w') = rootSum R w + rootSum R w' := by
-  simp [rootSum]
-
-/-- The derivation of the tensor algebra multiplying each word by the value at `x` of the sum of
-the simple roots along it, as a linear function of `x ∈ H`. -/
-private noncomputable def weightDerivation : H →ₗ[K] Module.End K K[FreeMonoid I] :=
-  ((MonoidAlgebra.basis (FreeMonoid I) K).constr K).toLinearMap ∘ₗ
-    LinearMap.pi fun w => (rootSum R w).smulRight (single w (1 : K))
-
-private theorem weightDerivation_single (x : H) (w : FreeMonoid I) (c : K) :
-    weightDerivation R x (single w c) = rootSum R w x • single w c := by
-  have hc : single w c = c • MonoidAlgebra.basis (FreeMonoid I) K w := by
-    rw [basis_apply, smul_single', mul_one]
-  rw [hc, map_smul, weightDerivation, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Module.Basis.constr_basis, LinearMap.pi_apply, LinearMap.smulRight_apply, basis_apply,
-    smul_comm]
-
-/-- The weight derivation is a derivation of the tensor algebra. -/
-private theorem weightDerivation_mul (x : H) (y z : K[FreeMonoid I]) :
-    weightDerivation R x (y * z) = weightDerivation R x y * z + y * weightDerivation R x z := by
-  let b := MonoidAlgebra.basis (FreeMonoid I) K
-  have key : (LinearMap.mul K K[FreeMonoid I]).compr₂ (weightDerivation R x) =
-      (LinearMap.mul K K[FreeMonoid I]).compl₁₂ (weightDerivation R x) LinearMap.id +
-        (LinearMap.mul K K[FreeMonoid I]).compl₁₂ LinearMap.id (weightDerivation R x) :=
-    b.ext fun w => b.ext fun w' => by
-      simp [b, weightDerivation_single, single_mul_single, rootSum_mul, add_smul]
-  exact LinearMap.congr_fun₂ key y z
-
-/-- The Cartan operators: `x ∈ H` acts on a word `w` by `(μ - α(w))(x)`, where `α(w)` is the sum
-of the simple roots along `w`. -/
-private noncomputable def cartanAction : H →ₗ[K] Module.End K K[FreeMonoid I] :=
-  μ.smulRight 1 - weightDerivation R
-
-private theorem cartanAction_single (x : H) (w : FreeMonoid I) (c : K) :
-    cartanAction R μ x (single w c) = (μ x - rootSum R w x) • single w c := by
-  simp [cartanAction, weightDerivation_single, sub_smul]
-
-/-- The lowering operator: left multiplication by a letter. -/
-private noncomputable def lowering (i : I) : Module.End K K[FreeMonoid I] :=
-  Algebra.lmul K K[FreeMonoid I] (single (FreeMonoid.of i) 1)
-
-private theorem lowering_apply (i : I) (y : K[FreeMonoid I]) :
-    lowering i y = single (FreeMonoid.of i) 1 * y := rfl
-
-private theorem lowering_single (i : I) (w : FreeMonoid I) (c : K) :
-    lowering i (single w c) = single (FreeMonoid.of i * w) c := by
-  rw [lowering_apply, single_mul_single, one_mul]
-
-/-- `D_x fⱼ = fⱼ D_x + αⱼ(x) fⱼ` for the weight derivation `D_x`. -/
-private theorem weightDerivation_lowering (x : H) (j : I) (y : K[FreeMonoid I]) :
-    weightDerivation R x (lowering j y) =
-      lowering j (weightDerivation R x y) + R.root j x • lowering j y := by
-  rw [lowering_apply, lowering_apply, weightDerivation_mul, weightDerivation_single, rootSum_of,
-    add_comm, smul_mul_assoc]
-
-variable [DecidableEq I]
-
-/-- The raising operator `eₖ` on words: `eₖ 1 = 0` and
-`eₖ (j w) = j (eₖ w) + δⱼₖ (μ - α(w))(hₖ) w`. -/
-private noncomputable def raisingWord (k : I) (w : FreeMonoid I) : K[FreeMonoid I] :=
-  w.mulRecOn 0 fun j w r => single (FreeMonoid.of j) 1 * r +
-    if j = k then (μ (R.coroot k) - rootSum R w (R.coroot k)) • single w 1 else 0
-
-/-- The raising operator `eₖ`, extended linearly from words. -/
-private noncomputable def raising (k : I) : Module.End K K[FreeMonoid I] :=
-  (MonoidAlgebra.basis (FreeMonoid I) K).constr K (raisingWord R μ k)
-
-private theorem raising_single_one (k : I) (w : FreeMonoid I) :
-    raising R μ k (single w 1) = raisingWord R μ k w := by
-  rw [raising, ← basis_apply, Module.Basis.constr_basis]
-
-private theorem raisingWord_one (k : I) : raisingWord R μ k 1 = 0 := by
-  simp [raisingWord]
-
-private theorem raisingWord_of_mul (k j : I) (w : FreeMonoid I) :
-    raisingWord R μ k (.of j * w) = single (FreeMonoid.of j) 1 * raisingWord R μ k w +
-      if j = k then (μ (R.coroot k) - rootSum R w (R.coroot k)) • single w 1 else 0 := by
-  simp [raisingWord]
-
-/-- `eₖ fⱼ = fⱼ eₖ + δⱼₖ hₖ` on the tensor algebra. -/
-private theorem raising_lowering (k j : I) (y : K[FreeMonoid I]) :
-    raising R μ k (lowering j y) = lowering j (raising R μ k y) +
-      if j = k then cartanAction R μ (R.coroot k) y else 0 := by
-  let b := MonoidAlgebra.basis (FreeMonoid I) K
-  have key : raising R μ k ∘ₗ lowering j = lowering j ∘ₗ raising R μ k +
-      if j = k then cartanAction R μ (R.coroot k) else 0 :=
-    b.ext fun w => by
-      rw [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.comp_apply, basis_apply,
-        lowering_single, raising_single_one, raising_single_one, raisingWord_of_mul,
-        lowering_apply]
-      split_ifs <;> simp [cartanAction_single, sub_smul]
-  have := LinearMap.congr_fun key y
-  split_ifs at this ⊢ <;> simpa using this
-
-/-- The raising operator lowers the weight by a simple root. -/
-private theorem weightDerivation_raisingWord (x : H) (k : I) (w : FreeMonoid I) :
-    weightDerivation R x (raisingWord R μ k w) =
-      (rootSum R w x - R.root k x) • raisingWord R μ k w := by
-  induction w using FreeMonoid.inductionOn' with
-  | one => simp [raisingWord_one]
-  | of_mul j w ih =>
-    rw [raisingWord_of_mul, map_add, ← lowering_apply, weightDerivation_lowering, ih,
-      rootSum_of_mul]
-    split_ifs with hjk
-    · subst hjk
-      simp only [map_smul, weightDerivation_single, LinearMap.add_apply, smul_add, smul_smul,
-        lowering_apply]
-      module
-    · simp only [map_zero, add_zero, map_smul, lowering_apply, LinearMap.add_apply]
-      module
-
-/-! ### The Chevalley relations on the tensor algebra -/
-
-omit [DecidableEq I] in
-private theorem lie_cartanAction_cartanAction (x y : H) :
-    ⁅cartanAction R μ x, cartanAction R μ y⁆ = 0 := by
-  refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-  simp only [basis_apply, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-    cartanAction_single, map_smul, smul_smul, mul_comm, sub_self, LinearMap.zero_apply]
-
-private theorem lie_cartanAction_raising (x : H) (k : I) :
-    ⁅cartanAction R μ x, raising R μ k⁆ = R.root k x • raising R μ k := by
-  refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-  simp only [basis_apply, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-    LinearMap.smul_apply, cartanAction_single, map_smul, raising_single_one]
-  simp only [cartanAction, LinearMap.sub_apply, LinearMap.smulRight_apply, LinearMap.smul_apply,
-    one_apply_eq_self, weightDerivation_raisingWord]
-  module
-
-omit [DecidableEq I] in
-private theorem lie_cartanAction_lowering (x : H) (j : I) :
-    ⁅cartanAction R μ x, lowering j⁆ = -(R.root j x • lowering (K := K) j) := by
-  refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
-  simp only [basis_apply, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-    LinearMap.neg_apply, LinearMap.smul_apply, lowering_single, cartanAction_single,
-    map_smul, rootSum_of_mul, LinearMap.add_apply]
-  module
-
-private theorem lie_raising_lowering_self (k : I) :
-    ⁅raising R μ k, lowering k⁆ = cartanAction R μ (R.coroot k) := by
-  refine LinearMap.ext fun y => ?_
-  simp [Ring.lie_def, raising_lowering]
-
-private theorem lie_raising_lowering_of_ne {k j : I} (h : k ≠ j) :
-    ⁅raising R μ k, lowering (K := K) j⁆ = 0 := by
-  refine LinearMap.ext fun y => ?_
-  simp [Ring.lie_def, raising_lowering, Ne.symm h]
+variable (R) (μ : Module.Dual K H) [DecidableEq I]
 
 /-! ### The Serre relations on the tensor algebra -/
 
@@ -338,8 +172,8 @@ Serre elements. -/
 private theorem ad_pow_lie_lowering_lowering (i j : I) :
     (ad K _ (lowering (K := K) i) ^ (-A i j).toNat) ⁅lowering (K := K) i, lowering (K := K) j⁆ =
       Algebra.lmul K K[FreeMonoid I] (serreElement K A i j) := by
-  simp only [lowering, serreElement, ← AlgHom.toLieHom_apply, ← LieHom.map_lie,
-    LieHom.map_ad_pow]
+  simp only [lowering_eq_lmul, MonoidAlgebra.of_apply, serreElement, ← AlgHom.toLieHom_apply,
+    ← LieHom.map_lie, LieHom.map_ad_pow]
 
 variable (K A) in
 /-- The two-sided ideal of the tensor algebra generated by the lowering Serre elements. -/
@@ -423,7 +257,7 @@ private theorem cartanAction_mem_serreIdeal (x : H) {t : K[FreeMonoid I]}
     exact add_mem (add_mem (mul_serreElement_mul_mem _ _ _ _)
       (Submodule.smul_mem _ _ (mul_serreElement_mul_mem _ _ _ _)))
       (mul_serreElement_mul_mem _ _ _ _)
-  simpa [cartanAction] using sub_mem (Submodule.smul_mem _ (μ x) ht) hD
+  simpa [cartanAction_apply] using sub_mem (Submodule.smul_mem _ (μ x) ht) hD
 
 include hdiag hneg hzero in
 /-- The raising operators preserve the Serre ideal: a raising operator commutes with the lowering

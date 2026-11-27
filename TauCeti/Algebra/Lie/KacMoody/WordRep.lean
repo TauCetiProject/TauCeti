@@ -217,7 +217,9 @@ theorem raising_lowering (k j : I) (y : K[FreeMonoid I]) :
   have key : raising R μ k ∘ₗ lowering j = lowering j ∘ₗ raising R μ k +
       if j = k then cartanAction R μ (R.coroot k) else 0 :=
     b.ext fun w => by
-      simp [b, raising_single_one, raisingWord_of_mul, lowering_apply]
+      rw [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.comp_apply, basis_apply,
+        lowering_single, raising_single_one, raising_single_one, raisingWord_of_mul,
+        lowering_apply]
       split_ifs <;> simp [cartanAction_single, sub_smul]
   have := LinearMap.congr_fun key y
   split_ifs at this ⊢ <;> simpa using this
