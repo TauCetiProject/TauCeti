@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.FrobeniusRiesz.PrimeSide
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FrobeniusMainTerm
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.MulChar.Lemmas
 
 /-!
@@ -143,7 +142,7 @@ open scoped Classical IsMulCommutative in
 /-- Twice the Frobenius Riesz sum on the nonidentity coset of a quadratic kernel, minus its
 main term, is the character average. Caps are read on the kernel via `g ↦ c * g`. On a CM
 host one may take `c` to be complex conjugation times the reference place. -/
-theorem frobeniusRieszSum_sub_main [Fintype G]
+theorem two_mul_frobeniusRieszSum_sub_frobeniusRieszMainTerm [Fintype G]
     (f : (ZMod N)ˣ →* G) (hf : Surjective f) (q : G →* ℂˣ) (hq : q * q = 1)
     {c : G} (hc : q c ≠ 1) {w : G → ℝ} (hw : ∀ h ∈ q.ker, 0 < w h) (a : ℝ) :
     2 * (f.frobeniusRieszSum (univ.filter fun g ↦ q g ≠ 1) (fun g ↦ w (c * g)) a : ℂ) -

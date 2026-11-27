@@ -203,11 +203,9 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
 with conjugation; in particular it is real at real arguments. -/
 theorem logDeriv_LFunction_conj_of_inv_eq {χ : PrimitiveDirichletCharacter} (hχ : χ⁻¹ = χ)
     (s : ℂ) :
-    logDeriv χ.character.LFunction (conj s) = conj (logDeriv χ.character.LFunction s) := by
-  have h := χ.character.logDeriv_LFunction_inv_conj s
-  rw [← character_inv] at h
-  exact (congrArg (fun ψ : PrimitiveDirichletCharacter ↦
-    logDeriv ψ.character.LFunction (conj s)) hχ).symm.trans h
+    logDeriv χ.character.LFunction (conj s) = conj (logDeriv χ.character.LFunction s) :=
+  DirichletCharacter.logDeriv_LFunction_conj_of_inv_eq
+    (eq_of_heq (congr_arg_heq character hχ)) s
 
 /-- The inverse character's first Riesz remainder is the complex conjugate of the original. -/
 @[simp] theorem rieszRemainder_inv (χ : PrimitiveDirichletCharacter) (y : ℝ) :
