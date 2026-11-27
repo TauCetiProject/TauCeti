@@ -56,7 +56,7 @@ value `u(1)` itself (`TauCeti.ofReal_re_closureExtend_of_mem_rotatingLineSubspac
 
 The same holds in every rank: for a finite type `ι`, the operator `u ↦ (∂u/∂(conj z), Re u(1))`
 is a Banach isomorphism from the maps `u ∈ C^{1,α}(D, ι → ℂ)` with boundary values in `ℝ^ι`
-(`TauCeti.rotatingLinePiSubspace ι 0 α`) onto `C^{0,α}(D, ι → ℂ) × ℝ^ι`
+(`TauCeti.rotatingLinePiSubspace` with `k = 0`) onto `C^{0,α}(D, ι → ℂ) × ℝ^ι`
 (`TauCeti.rotatingLinePiZeroEvalEquiv`), coordinate by coordinate. This is the linearization at a
 constant disc `u ≡ x` of the Cauchy–Riemann equation for discs in `ℂⁿ` with boundary on a
 Lagrangian or totally real submanifold `L` with `T_x L = ℝⁿ`, together with evaluation at the
@@ -370,28 +370,31 @@ variable (ι α) in
 /-- The operator `u ↦ (∂u/∂(conj z), (Re u(1)ᵢ)ᵢ)` on the maps `D → ℂ^ι` with boundary values in
 `ℝ^ι`, before it is shown to be an isomorphism. -/
 private def rotatingLinePiZeroEvalL :
-    rotatingLinePiSubspace ι 0 α →L[ℝ] HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
+    rotatingLinePiSubspace (fun _ : ι ↦ 0) α →L[ℝ]
+      HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
   (conjWirtingerDerivL α (unitBallOpens ℂ) (ι → ℂ) ∘L
-      (rotatingLinePiSubspace ι 0 α).subtypeL).prod
+      (rotatingLinePiSubspace (fun _ : ι ↦ 0) α).subtypeL).prod
     (ContinuousLinearMap.pi fun i ↦ reCLM ∘L piProjₗ i ∘L
       closureEvalL (k := 0) (convex_unitBallOpens ℂ)
         (mem_closure_unitBallOpens.2 norm_one.le) ∘L
-        (rotatingLinePiSubspace ι 0 α).subtypeL)
+        (rotatingLinePiSubspace (fun _ : ι ↦ 0) α).subtypeL)
 
-private theorem rotatingLinePiZeroEvalL_apply (u : rotatingLinePiSubspace ι 0 α) :
+private theorem rotatingLinePiZeroEvalL_apply
+    (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
     rotatingLinePiZeroEvalL α ι u = (conjWirtingerDerivL α (unitBallOpens ℂ) (ι → ℂ) u,
       fun i ↦ ((u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)).closureExtend 1 i).re) := by
   simp [rotatingLinePiZeroEvalL, closureEvalL_apply]
 
 /-- The `i`-th coordinate of a map `D → ℂ^ι` with boundary values in `ℝ^ι`, a function with real
 boundary values. -/
-private def rotatingLinePiZeroCoord (i : ι) (u : rotatingLinePiSubspace ι 0 α) :
+private def rotatingLinePiZeroCoord (i : ι)
+    (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
     rotatingLineSubspace 0 α :=
   ⟨compLeftL (piProjₗ i) u, mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 u.property i⟩
 
 /-- The operator `u ↦ (∂u/∂(conj z), Re u(1))` acts coordinatewise. -/
 private theorem rotatingLineZeroEvalEquiv_rotatingLinePiZeroCoord (hα0 : 0 < α) (hα1 : α < 1)
-    (i : ι) (u : rotatingLinePiSubspace ι 0 α) :
+    (i : ι) (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
     rotatingLineZeroEvalEquiv hα0 hα1 (rotatingLinePiZeroCoord i u) =
       (HolderSpace.compLeftL (piProjₗ i) (rotatingLinePiZeroEvalL α ι u).1,
         (rotatingLinePiZeroEvalL α ι u).2 i) := by
@@ -411,7 +414,8 @@ submanifold `L` of `ℂ^ι` with `T_x L = ℝ^ι`, combined with evaluation at t
 point `1`: its kernel is the constant maps with values in `T_x L`, and evaluation identifies them
 with `T_x L`. -/
 def rotatingLinePiZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
-    rotatingLinePiSubspace ι 0 α ≃L[ℝ] HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
+    rotatingLinePiSubspace (fun _ : ι ↦ 0) α ≃L[ℝ]
+      HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℝ) :=
   ContinuousLinearEquiv.ofBijective (rotatingLinePiZeroEvalL α ι)
     (LinearMap.ker_eq_bot.2 fun u v huv ↦ by
       rw [ContinuousLinearMap.coe_coe] at huv
@@ -442,7 +446,7 @@ def rotatingLinePiZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
 /-- The isomorphism `TauCeti.rotatingLinePiZeroEvalEquiv` is `u ↦ (∂u/∂(conj z), Re u(1))`. -/
 @[simp]
 theorem rotatingLinePiZeroEvalEquiv_apply (hα0 : 0 < α) (hα1 : α < 1)
-    (u : rotatingLinePiSubspace ι 0 α) :
+    (u : rotatingLinePiSubspace (fun _ : ι ↦ 0) α) :
     rotatingLinePiZeroEvalEquiv ι hα0 hα1 u = (conjWirtingerDerivL α (unitBallOpens ℂ) (ι → ℂ) u,
       fun i ↦ ((u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)).closureExtend 1 i).re) :=
   rotatingLinePiZeroEvalL_apply u
