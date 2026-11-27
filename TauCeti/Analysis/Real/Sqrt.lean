@@ -839,6 +839,7 @@ theorem real_sqrt_lt_nat_sqrt_floor_succ (x : ℝ) : √x < (⌊x⌋₊.sqrt : �
 
 /-- For every real `x`, the floor of `√x` is the natural square root of `⌊x⌋₊`. This extends
 Mathlib's `Real.nat_floor_real_sqrt_eq_nat_sqrt` from natural to real `x`. -/
+@[simp]
 theorem nat_floor_real_sqrt_eq_nat_sqrt_floor (x : ℝ) : ⌊√x⌋₊ = ⌊x⌋₊.sqrt :=
   (Nat.floor_eq_iff (sqrt_nonneg x)).2
     ⟨nat_sqrt_floor_le_real_sqrt x, real_sqrt_lt_nat_sqrt_floor_succ x⟩
