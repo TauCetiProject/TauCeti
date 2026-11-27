@@ -33,9 +33,6 @@ bound.
   parameter.
 * `TauCeti.Semigroups.StronglyContinuousGroup.isComplexLinear_phaseShift`: a phase shift remains
   complex linear.
-* `TauCeti.Semigroups.StronglyContinuousGroup.norm_phaseShift_apply` and
-  `TauCeti.Semigroups.StronglyContinuousGroup.norm_phaseShift`: a phase shift preserves pointwise
-  and operator norms.
 * `TauCeti.Semigroups.StronglyContinuousGroup.HasGrowthBound.phaseShift`: a phase shift preserves
   two-sided growth bounds.
 
@@ -135,18 +132,6 @@ theorem phaseShift_phaseShift (U : StronglyContinuousGroup X)
     rfl
   rw [phaseShift_toSemigroup, hcongr _ (U.phaseShift_toSemigroup hU b),
     StronglyContinuousSemigroup.phaseShift_phaseShift, phaseShift_toSemigroup]
-
-/-- A phase shift preserves pointwise norms. -/
-theorem norm_phaseShift_apply (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
-    (b t : ℝ) (x : X) : ‖U.phaseShift hU b t x‖ = ‖U t x‖ := by
-  rw [phaseShift_apply_apply, norm_smul, Complex.norm_exp]
-  simp
-
-/-- A phase shift preserves operator norms. -/
-theorem norm_phaseShift (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
-    (b t : ℝ) : ‖U.phaseShift hU b t‖ = ‖U t‖ := by
-  rw [phaseShift_apply, norm_smul, Complex.norm_exp]
-  simp
 
 namespace HasGrowthBound
 

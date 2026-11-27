@@ -12,8 +12,7 @@ import Mathlib.LinearAlgebra.FixedSubmodule
 # Common fixed subspaces and eigenspaces of a strongly continuous group
 
 For any strongly continuous group `U` on a real normed space `X`, the common fixed space
-`{x | ∀ t : ℝ, U t x = x}` (`fixedSpace`) is a closed real submodule invariant under time
-reversal.
+`{x | ∀ t : ℝ, U t x = x}` (`fixedSpace`) is a closed real submodule.
 
 For a complex-linear strongly continuous group `U` on a complex normed space `X`, the common fixed
 subspace `{x | ∀ t : ℝ, U t x = x}` (`fixedSubmodule`) and the common eigenspace
@@ -33,10 +32,6 @@ On complete real and complex Hilbert spaces, these subspaces admit orthogonal pr
   satisfying `U t x = exp (ω * t * I) • x` for every `t : ℝ`.
 * `TauCeti.Semigroups.StronglyContinuousGroup.eigenspace_eq_fixedSubmodule_phaseShift`: `eigenspace`
   at `ω` equals the common fixed subspace of `U.phaseShift hU ω`.
-* `TauCeti.Semigroups.StronglyContinuousGroup.reflect_fixedSpace`,
-  `TauCeti.Semigroups.StronglyContinuousGroup.reflect_eigenspace`, and
-  `TauCeti.Semigroups.StronglyContinuousGroup.phaseShift_eigenspace`: behavior of fixed spaces and
-  eigenspaces under time reversal and phase shifts.
 * `TauCeti.Semigroups.StronglyContinuousGroup.isClosed_fixedSpace`,
   `TauCeti.Semigroups.StronglyContinuousGroup.isClosed_fixedSubmodule`, and
   `TauCeti.Semigroups.StronglyContinuousGroup.isClosed_eigenspace`: closedness of the fixed
@@ -75,14 +70,6 @@ theorem isClosed_fixedSpace (U : StronglyContinuousGroup X) :
     simp
   rw [hcar]
   exact isClosed_iInter fun t ↦ isClosed_eq (U t).continuous continuous_id
-
-/-- Time reversal preserves the common fixed space. -/
-@[simp]
-theorem reflect_fixedSpace (U : StronglyContinuousGroup X) :
-    U.reflect.fixedSpace = U.fixedSpace := by
-  ext x
-  simp only [mem_fixedSpace_iff, reflect_apply]
-  exact ⟨fun h t ↦ by simpa only [neg_neg] using h (-t), fun h t ↦ h (-t)⟩
 
 end RealFixedSpace
 
@@ -160,26 +147,6 @@ theorem eigenspace_zero (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsCo
     U.eigenspace hU 0 = U.fixedSubmodule hU := by
   ext x
   simp
-
-/-- Time reversal negates the eigenfrequency of every common eigenspace. -/
-@[simp]
-theorem reflect_eigenspace (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
-    (ω : ℝ) :
-    U.reflect.eigenspace (U.reflect_isComplexLinear hU) ω = U.eigenspace hU (-ω) := by
-  ext x
-  simp only [mem_eigenspace_iff, reflect_apply]
-  refine ⟨fun h t ↦ ?_, fun h t ↦ ?_⟩
-  · simpa only [neg_neg, Complex.ofReal_neg, neg_mul, mul_neg] using h (-t)
-  · simpa only [Complex.ofReal_neg, neg_mul, mul_neg, neg_neg] using h (-t)
-
-/-- Phase shifting by `b` shifts the eigenfrequencies by `b`. -/
-@[simp]
-theorem phaseShift_eigenspace (U : StronglyContinuousGroup X)
-    (hU : U.toSemigroup.IsComplexLinear) (b ω : ℝ) :
-    (U.phaseShift hU b).eigenspace (U.isComplexLinear_phaseShift hU b) ω =
-      U.eigenspace hU (b + ω) := by
-  apply Submodule.restrictScalars_injective ℝ
-  rw [eigenspace_restrictScalars, eigenspace_restrictScalars, phaseShift_phaseShift]
 
 /-- The common eigenspace at any angular frequency `ω` is closed. -/
 theorem isClosed_eigenspace (U : StronglyContinuousGroup X)
