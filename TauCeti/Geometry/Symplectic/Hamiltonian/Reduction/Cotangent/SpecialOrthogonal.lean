@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
 import TauCeti.Geometry.Lie.Subgroup.Stabilizer
-import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Axis
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.UnitaryGroup
 import TauCeti.Topology.Algebra.ProperAction.Basic
@@ -125,15 +125,12 @@ theorem stabilizer_specialOrthogonalGroup_eq_bot {z : T*ℝ³}
     rw [cotangentAngularMomentum_apply, h, map_zero, LinearMap.zero_apply])
   generalize (modelSpaceDiffeomorph (Fin 3 → ℝ) z).1 = q at hgq hqℓ hq0
   generalize cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) z) = ℓ at hz hgℓ hqℓ
-  -- `g` fixes the frame `(q, ℓ, q ⨯₃ ℓ)`, so it fixes its matrix: `g * ofFrame q ℓ = ofFrame q ℓ`.
-  have hB : (g : Matrix (Fin 3) (Fin 3) ℝ) * ofFrame q ℓ = 1 * ofFrame q ℓ := by
-    rw [← ofFrame_mulVec_mulVec g.property, hgq, hgℓ, one_mul]
-  -- Since `q ⊥ ℓ`, the determinant of the frame matrix is `|q ⨯₃ ℓ|² = |q|² |ℓ|² ≠ 0`.
-  have hdet : IsUnit (ofFrame q ℓ).det := by
-    rw [isUnit_iff_ne_zero, det_ofFrame, cross_dot_cross, hqℓ, dotProduct_comm ℓ q, hqℓ,
-      mul_zero, sub_zero]
-    exact mul_ne_zero (mt dotProduct_self_eq_zero.1 hq0) (mt dotProduct_self_eq_zero.1 hz)
-  exact Subtype.ext (((Matrix.isUnit_iff_isUnit_det _).2 hdet).mul_right_cancel hB)
+  -- Since `q ⊥ ℓ`, `(q ⨯₃ ℓ) ⬝ᵥ (q ⨯₃ ℓ) = |q|² |ℓ|² ≠ 0`, so `g` fixes two independent vectors.
+  refine Subtype.ext
+    (eq_one_of_mem_specialOrthogonalGroup_of_mulVec_eq_self_of_isRegular_cross_dotProduct
+      g.property hgq hgℓ (IsRegular.of_ne_zero ?_))
+  rw [cross_dot_cross, hqℓ, dotProduct_comm ℓ q, hqℓ, mul_zero, sub_zero]
+  exact mul_ne_zero (mt dotProduct_self_eq_zero.1 hq0) (mt dotProduct_self_eq_zero.1 hz)
 
 /-! ### The level at a nonzero angular momentum -/
 
