@@ -7,14 +7,20 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 public import TauCeti.MeasureTheory.VectorMeasure.ScalarIntegral
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 
 /-!
 # Integration against a vector measure with density
 
 For a measure `ν` and an integrable `g : X → F`, Mathlib's `ν.withDensityᵥ g` is the vector
 measure `s ↦ ∫ x in s, g x ∂ν`, and its variation is `ν.withDensity ‖g‖ₑ`
-(`MeasureTheory.Measure.variation_withDensityᵥ`). This file computes integrals against it through
-a continuous bilinear pairing `B : E →L[ℝ] F →L[ℝ] G`:
+(`MeasureTheory.Measure.variation_withDensityᵥ`). Hence the variation is dominated by `C • ν`
+exactly when `‖g‖ₑ ≤ C` holds `ν`-almost everywhere, for an arbitrary measure `ν`; in particular
+it is at most `‖g‖_∞ • ν`.
+
+This file computes integrals against `ν.withDensityᵥ g` through a continuous bilinear pairing
+`B : E →L[ℝ] F →L[ℝ] G`:
 
 `∫ᵛ x, f x ∂[B; ν.withDensityᵥ g] = ∫ x, B (f x) (g x) ∂ν`
 
@@ -47,6 +53,11 @@ that of `⟪ξ, ψ⟫`.
 
 ## Main declarations
 
+* `MeasureTheory.Measure.variation_withDensityᵥ_le_smul`,
+  `MeasureTheory.Measure.variation_withDensityᵥ_le_eLpNorm_top_smul` and
+  `MeasureTheory.Measure.variation_withDensityᵥ_le_smul_iff`: a density with `‖g‖ₑ ≤ C`
+  `ν`-almost everywhere gives a vector measure of variation at most `C • ν`, in particular at most
+  `‖g‖_∞ • ν`; conversely for an integrable density with values in a Banach space.
 * `MeasureTheory.VectorMeasure.integral_withDensityᵥ`: integration against `ν.withDensityᵥ g`
   through a bilinear pairing is the Bochner integral of the pairing against `ν`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
@@ -103,6 +114,39 @@ theorem Measure.variation_withDensityᵥ_absolutelyContinuous (ν : Measure X) (
     (ν.withDensityᵥ g).variation ≪ ν :=
   (Measure.absolutelyContinuous_of_le (Measure.variation_withDensityᵥ_le ν g)).trans
     (withDensity_absolutelyContinuous _ _)
+
+/-- If `‖g‖ₑ ≤ C` holds `ν`-almost everywhere, the variation of the vector measure with density `g`
+with respect to `ν` is at most `C • ν`. Neither integrability of `g` nor completeness is needed. -/
+theorem Measure.variation_withDensityᵥ_le_smul {g : X → F} {C : ℝ≥0∞}
+    (hg : ∀ᵐ x ∂ν, ‖g x‖ₑ ≤ C) : (ν.withDensityᵥ g).variation ≤ C • ν := by
+  refine (Measure.variation_withDensityᵥ_le ν g).trans ?_
+  rw [← withDensity_const]
+  exact withDensity_mono hg
+
+/-- The variation of the vector measure with density `g` with respect to `ν` is at most
+`‖g‖_∞ • ν`. -/
+theorem Measure.variation_withDensityᵥ_le_eLpNorm_top_smul (ν : Measure X) (g : X → F) :
+    (ν.withDensityᵥ g).variation ≤ eLpNorm g ∞ ν • ν :=
+  Measure.variation_withDensityᵥ_le_smul <|
+    ae_le_eLpNormEssSup.mono fun _ hx => hx.trans eLpNormEssSup_le_eLpNorm_top
+
+/-- For an integrable density `g` with values in a Banach space, the variation of the vector
+measure with density `g` with respect to `ν` is at most `C • ν` exactly when `‖g‖ₑ ≤ C` holds
+`ν`-almost everywhere. The measure `ν` is arbitrary. -/
+theorem Measure.variation_withDensityᵥ_le_smul_iff [CompleteSpace F] {g : X → F}
+    (hg : Integrable g ν) {C : ℝ≥0∞} :
+    (ν.withDensityᵥ g).variation ≤ C • ν ↔ ∀ᵐ x ∂ν, ‖g x‖ₑ ≤ C := by
+  refine ⟨fun h => ?_, Measure.variation_withDensityᵥ_le_smul⟩
+  rw [Measure.variation_withDensityᵥ hg, ← withDensity_const] at h
+  -- `g` vanishes almost everywhere outside a measurable set `t` on which `ν` is σ-finite, and on
+  -- `t` the bound follows by comparing set integrals.
+  obtain ⟨t, ht, hgt, _⟩ := hg.aefinStronglyMeasurable.exists_set_sigmaFinite
+  refine ae_of_ae_restrict_of_ae_restrict_compl t ?_ (hgt.mono fun x hx => by simp [hx])
+  refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ hg.aestronglyMeasurable.eNorm.restrict
+    fun s hs _ => ?_
+  rw [Measure.restrict_restrict hs, ← withDensity_apply _ (hs.inter ht),
+    ← withDensity_apply _ (hs.inter ht)]
+  exact Measure.le_iff'.1 h _
 
 namespace VectorMeasure
 
