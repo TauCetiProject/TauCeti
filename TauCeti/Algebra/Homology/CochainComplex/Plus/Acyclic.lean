@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.Homology.CochainComplex.Plus.InjectiveResolution
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
 
-import Mathlib.Algebra.Homology.Factorizations.CM5a
+import TauCeti.Algebra.Homology.DerivedCategory.Plus.Basic
+import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Plus
 
 /-!
 # Adapted quasi-isomorphisms on bounded-below cochain complexes
@@ -16,18 +17,18 @@ import Mathlib.Algebra.Homology.Factorizations.CM5a
 Let `F : C ⥤ D` be an additive functor between abelian categories, where `C` has enough
 injectives, and let `P : ObjectProperty C` be closed under isomorphisms, contain injective objects,
 be closed under cokernels of monomorphisms, and have `F` exact on short exact sequences starting in
-`P`. Then `F` preserves quasi-isomorphisms from bounded-below `P`-complexes into bounded-below
-complexes of injectives (`CategoryTheory.Functor.quasiIso_map_of_adapted_to_injective`), and
-consequently preserves quasi-isomorphisms between any two bounded-below `P`-complexes
-(`CategoryTheory.Functor.quasiIso_map_of_adapted`).
+`P`. Then `F` preserves quasi-isomorphisms between any two bounded-below `P`-complexes
+(`CategoryTheory.Functor.quasiIso_map_of_adapted`), and consequently preserves quasi-isomorphisms
+from bounded-below `P`-complexes into bounded-below complexes of injectives
+(`CategoryTheory.Functor.quasiIso_map_of_adapted_to_injective`).
 
 ## References
 
-* `TauCeti/CategoryTheory/Abelian/AcyclicResolution.lean`, whose adapted quasi-isomorphism proof
-  pattern is adapted here to `CochainComplex.Plus`.
-* Mathlib's `Mathlib/Algebra/Homology/Factorizations/CM5b.lean`, whose bounded-below injective
-  monomorphism factorization `CochainComplex.cm5b` is used in
-  `quasiIso_map_of_adapted_to_injective`.
+* `TauCeti/Algebra/Homology/DerivedCategory/RightDerivedFunctor/Plus.lean`, which proves
+  `CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app`, from which
+  `quasiIso_map_of_adapted` follows via unit naturality and localization reflection.
+* `TauCeti/CategoryTheory/Abelian/AcyclicResolution.lean`, whose adapted quasi-isomorphism API is
+  adapted here to `CochainComplex.Plus`.
 * The Stacks Project, Derived Categories, §13.15–§13.16 (tags 05T8, 015E).
 * M. Kashiwara, P. Schapira, *Categories and Sheaves*, Grundlehren 332, Springer, 2006, §13.3.
 -/
@@ -51,6 +52,32 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [EnoughInjectives C]
   (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
 
 include hinj hP hF in
+/-- A quasi-isomorphism between bounded-below complexes in an adapted class remains a
+quasi-isomorphism after applying `F`. -/
+theorem quasiIso_map_of_adapted
+    {K L : CochainComplex.Plus C} (f : K ⟶ L) [QuasiIso f.hom]
+    (hK : ∀ n, P (K.obj.X n)) (hL : ∀ n, P (L.obj.X n)) :
+    QuasiIso ((F.mapHomologicalComplex _).map f.hom) := by
+  let := HasDerivedCategory.standard C
+  let := HasDerivedCategory.standard D
+  have : IsIso (F.rightDerivedFunctorPlusUnit.app K) :=
+    F.isIso_rightDerivedFunctorPlusUnit_app P hP hF hinj K hK
+  have : IsIso (F.rightDerivedFunctorPlusUnit.app L) :=
+    F.isIso_rightDerivedFunctorPlusUnit_app P hP hF hinj L hL
+  have : IsIso (DerivedCategory.Plus.Q.map f) :=
+    TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso f
+  have h := F.rightDerivedFunctorPlusUnit.naturality f
+  dsimp only [Functor.comp_map] at h
+  have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map f) ≫
+      F.rightDerivedFunctorPlusUnit.app L) := by
+    rw [h]
+    infer_instance
+  have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map f)) :=
+    IsIso.of_isIso_comp_right _ (F.rightDerivedFunctorPlusUnit.app L)
+  exact (TauCeti.DerivedCategory.Plus.isIso_Q_map_iff_quasiIso
+    (F.mapCochainComplexPlus.map f)).1 this
+
+include hinj hP hF in
 /-- **Adapted bounded-below complexes preserve quasi-isomorphisms into injective complexes.**
 For a quasi-isomorphism `i : K ⟶ ι(I)` from a bounded-below `P`-complex `K` to a bounded-below
 complex `I` of injective objects, `F(i)` is a quasi-isomorphism. -/
@@ -58,67 +85,7 @@ theorem quasiIso_map_of_adapted_to_injective
     {K : CochainComplex.Plus C} (hK : ∀ n, P (K.obj.X n))
     {I : CochainComplex.Plus (InjectiveObject C)}
     (i : K ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj I) [QuasiIso i.hom] :
-    QuasiIso ((F.mapHomologicalComplex _).map i.hom) := by
-  obtain ⟨b₁, _⟩ := K.property
-  obtain ⟨b₂, _⟩ := I.property
-  let b := min (b₁ - 1) b₂
-  have : K.obj.IsStrictlyGE (b + 1) := K.obj.isStrictlyGE_of_ge (b + 1) b₁ (by omega)
-  let L := ((InjectiveObject.ι C).mapCochainComplexPlus.obj I).obj
-  have : I.obj.IsStrictlyGE b := I.obj.isStrictlyGE_of_ge b b₂ (min_le_right _ _)
-  have : L.IsStrictlyGE b := by
-    dsimp [L]
-    infer_instance
-  -- Factor `i.hom` via `cm5b` as a monomorphism `ψ` followed by the homotopy equivalence `p`.
-  let ψ := CochainComplex.cm5b.i i.hom
-  have : QuasiIso ψ := by
-    have : QuasiIso (ψ ≫ CochainComplex.cm5b.p K.obj L) := by
-      rw [CochainComplex.cm5b.fac]
-      infer_instance
-    exact quasiIso_of_comp_right ψ (CochainComplex.cm5b.p K.obj L)
-  let M := CochainComplex.mappingCone (𝟙 (CochainComplex.cm5b.I K.obj)) ⊞ L
-  have hX₂ (n : ℤ) : P (M.X n) := by
-    have : Injective ((HomologicalComplex.eval C (.up ℤ) n).obj
-        (CochainComplex.mappingCone (𝟙 (CochainComplex.cm5b.I K.obj)))) := by
-      dsimp
-      infer_instance
-    have : Injective ((HomologicalComplex.eval C (.up ℤ) n).obj L) := (I.obj.X n).property
-    have : Injective (M.X n) := Injective.of_iso
-      ((HomologicalComplex.eval C (.up ℤ) n).mapBiprod _ _).symm inferInstance
-    exact hinj _ inferInstance
-  have : M.IsStrictlyGE b := inferInstance
-  have : QuasiIso ((F.mapHomologicalComplex _).map ψ) :=
-    F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF ψ b hK hX₂
-  have : QuasiIso ((F.mapHomologicalComplex _).map (CochainComplex.cm5b.p K.obj L)) :=
-    (F.mapHomotopyEquiv (CochainComplex.cm5b.homotopyEquiv K.obj L)).quasiIso_hom
-  rw [← CochainComplex.cm5b.fac i.hom, Functor.map_comp]
-  infer_instance
-
-include hinj hP hF in
-/-- A quasi-isomorphism between bounded-below complexes in an adapted class remains a
-quasi-isomorphism after applying `F`. -/
-theorem quasiIso_map_of_adapted
-    {K L : CochainComplex.Plus C} (f : K ⟶ L) [QuasiIso f.hom]
-    (hK : ∀ n, P (K.obj.X n)) (hL : ∀ n, P (L.obj.X n)) :
-    QuasiIso ((F.mapHomologicalComplex _).map f.hom) := by
-  obtain ⟨b, _⟩ := L.property
-  obtain ⟨M, j₀, _, hM, _⟩ :=
-    CochainComplex.Plus.modelCategoryQuillen.exists_quasiIso_injective L.obj b
-  let K' : CochainComplex.Plus C := ⟨M, b, inferInstance⟩
-  let I := CochainComplex.Plus.liftInjective K' hM
-  let e := CochainComplex.Plus.liftInjectiveIso K' hM
-  let j : L ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj I :=
-    ObjectProperty.homMk (j₀ ≫ e.inv.hom)
-  have : QuasiIso j.hom := by
-    dsimp [j]
-    infer_instance
-  have : QuasiIso (f ≫ j).hom := inferInstanceAs (QuasiIso (f.hom ≫ j.hom))
-  have : QuasiIso ((F.mapHomologicalComplex _).map j.hom) :=
-    F.quasiIso_map_of_adapted_to_injective P hinj hP hF hL j
-  have : QuasiIso ((F.mapHomologicalComplex _).map f.hom ≫
-      (F.mapHomologicalComplex _).map j.hom) := by
-    rw [← Functor.map_comp]
-    exact F.quasiIso_map_of_adapted_to_injective P hinj hP hF hK (f ≫ j)
-  exact quasiIso_of_comp_right ((F.mapHomologicalComplex _).map f.hom)
-    ((F.mapHomologicalComplex _).map j.hom)
+    QuasiIso ((F.mapHomologicalComplex _).map i.hom) :=
+  F.quasiIso_map_of_adapted P hinj hP hF i hK fun n ↦ hinj _ (I.obj.X n).property
 
 end CategoryTheory.Functor
