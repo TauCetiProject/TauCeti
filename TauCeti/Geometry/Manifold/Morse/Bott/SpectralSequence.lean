@@ -113,6 +113,21 @@ for any cohomological spectral sequence
 filtration of a space
 (`TauCeti.nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero`).
 
+Over any commutative ring `K`, `ℤ` included, the lacunary principle holds for the twisted homology
+groups themselves, not only for their dimensions. Suppose that for every `n`, either
+`H_{n - r j}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n`, or
+`H_{n + 1 - r j}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n + 1`. Then the
+spectral sequence of a critical-band cut degenerates
+(`IsMorseBottFamily.filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology`),
+and the graded piece `F_{q+1} Hₙ(M; K) / F_q Hₙ(M; K)` is the coproduct of the groups
+`H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` over the pieces with values in `(a q, a (q + 1)]` of index at
+most `n` (`IsMorseBottFamily.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology`).
+Over `ℤ` the hypothesis asks for the vanishing of groups, so a piece whose twisted homology is a
+nonzero torsion group, such as `H₀(S¹; o(ν⁻)) ≅ ℤ/2` for a Möbius negative normal line, counts as
+present even though its twisted Betti numbers over `ℚ` vanish. This is the Morse–Bott counterpart
+of `TauCeti.IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one`, in
+which every piece is a point.
+
 In both the characteristic-two and the twisted case the statements are instances of the
 corresponding ones for any field `K` and any contributions `d j` of the pieces to the dimensions of
 the homology of the critical bands
@@ -162,6 +177,11 @@ In the namespace `TauCeti.IsMorseBottFamily`:
 * `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`
   and `finrank_cokernel_abutmentFiltrationMap_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`:
   degeneration and the graded pieces when no two consecutive twisted counts are both nonzero.
+* `filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology` and
+  `nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology`: over any commutative ring,
+  degeneration and the graded pieces of the homology of `M` as coproducts of twisted homology
+  groups, when in each pair of consecutive total degrees the twisted homology of the pieces vanishes
+  in one of them.
 
 ## References
 
@@ -927,6 +947,179 @@ theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomol
     hcompact hcrit hdim g hV K n
   exact ⟨filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) (ModuleCat.of K K)
     ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hpq ≪≫ e⟩
+
+/-! #### Lacunary degeneration over any ring -/
+
+section Lacunary
+
+variable [T2Space M] [SecondCountableTopology M] [∀ j, (J j).Boundaryless]
+  (h : IsMorseBottFamily i f)
+  (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
+  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
+  {κ : ι → Type u} [∀ j, Fintype (κ j)]
+  (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    ∀ j, HasLocalSubbundleFrames (P j) (κ j)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
+  (K : Type u) [CommRing K] {a : ℤ → ℝ}
+  (hlac : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    letI : ∀ j, TopologicalSpace (TotalSpace (κ j → ℝ)
+        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) :=
+      fun j ↦ subbundleTopology (P j)
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+    letI : ∀ j, FiberBundle (κ j → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      fun j ↦ (hV j).fiberBundle
+    haveI : ∀ j, VectorBundle ℝ (κ j → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      fun j ↦ (hV j).vectorBundle
+    ∀ n : ℕ,
+      (∀ j, Fintype.card (κ j) ≤ n → IsZero (twistedHomology (signLocalSystem (κ j → ℝ)
+        (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) K
+        ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
+        (n - Fintype.card (κ j)))) ∨
+      ∀ j, Fintype.card (κ j) ≤ n + 1 → IsZero (twistedHomology (signLocalSystem (κ j → ℝ)
+        (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) K
+        ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
+        (n + 1 - Fintype.card (κ j))))
+
+include hV hlac
+
+/-- If in each total degree `n` either every piece of index at most `n` or every piece of index at
+most `n + 1` has vanishing twisted homology in the complementary degree, then of two positions of
+the first page whose total degrees differ by one, at least one carries the zero object. -/
+private theorem isZero_or_isZero_page_two_X_twistedHomology (ha : IsCriticalBandCut I f a)
+    {pq pq' : ℤ × ℤ} (hdeg : pq.1 + pq.2 + 1 = pq'.1 + pq'.2) :
+    IsZero (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
+        ((sublevel_mono f).comp ha.monotone)).page 2).X pq) ∨
+      IsZero (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
+        ((sublevel_mono f).comp ha.monotone)).page 2).X pq') := by
+  rcases lt_or_ge 0 (pq'.1 + pq'.2) with hpos | hle
+  · exact Or.inr (isZero_filteredSpaceSpectralSequence_page_two_X _ _ pq' hpos)
+  obtain ⟨m, hm⟩ := Int.exists_eq_neg_ofNat hle
+  obtain ⟨c, hc, hcrit⟩ := (ha.isCriticalBand pq.2).exists_mem_Ioo_forall_eq
+  obtain ⟨c', hc', hcrit'⟩ := (ha.isCriticalBand pq'.2).exists_mem_Ioo_forall_eq
+  -- The two positions have total degrees `-(m + 1)` and `-m`; each is the coproduct of the
+  -- twisted homologies of the pieces on its critical level in the complementary degrees.
+  obtain ⟨e⟩ := h.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology hn
+    ha.monotone hc (ha.isCriticalBand pq.2).isCompact hcrit hdim g hV K pq rfl (m + 1)
+    (by push_cast; lia)
+  obtain ⟨e'⟩ := h.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology hn
+    ha.monotone hc' (ha.isCriticalBand pq'.2).isCompact hcrit' hdim g hV K pq' rfl m hm
+  have : Finite {j // (∀ s, f (i j s) = c) ∧ Fintype.card (κ j) ≤ m + 1} :=
+    h.finite_subtype_of_forall_apply_eq (ha.isCriticalBand pq.2).isCompact (Ioo_subset_Icc_self hc)
+      fun _ ↦ And.left
+  have : Finite {j // (∀ s, f (i j s) = c') ∧ Fintype.card (κ j) ≤ m} :=
+    h.finite_subtype_of_forall_apply_eq (ha.isCriticalBand pq'.2).isCompact
+      (Ioo_subset_Icc_self hc') fun _ ↦ And.left
+  rcases hlac m with hz | hz
+  · refine Or.inr (IsZero.of_iso ?_ e')
+    exact (IsZero.iff_id_eq_zero _).2
+      (Sigma.hom_ext _ _ fun j ↦ (hz j.val j.property.2).eq_of_src _ _)
+  · refine Or.inl (IsZero.of_iso ?_ e)
+    exact (IsZero.iff_id_eq_zero _).2
+      (Sigma.hom_ext _ _ fun j ↦ (hz j.val j.property.2).eq_of_src _ _)
+
+/-- **Lacunary degeneration over any ring.** Let the family `i j : S j → M` exhibit `f` as a
+Morse–Bott function on a Hausdorff second-countable boundaryless manifold, with pieces modelled on
+boundaryless models, let `g j` be smooth fibre metrics on the normal bundles of the pieces, and let
+the negative normal spaces relative to `g j` have continuous local frames indexed by a finite type
+`κ j`, so that they form the negative normal bundle `ν⁻ j` of rank `|κ j|`, the index of the piece.
+Let `K` be a commutative ring, for instance `ℤ`, and let `a : ℤ → ℝ` be a critical-band cut of `f`.
+Suppose that for every `n`, either `H_{n - |κ j|}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index
+at most `n`, or `H_{n + 1 - |κ j|}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at most `n + 1`.
+Then every differential on every page of the spectral sequence of the filtration `q ↦ {f ≤ a q}`
+with coefficients in `K` vanishes. -/
+theorem filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_isZero_twistedHomology
+    (ha : IsCriticalBandCut I f a) (r : ℤ) (hr : 2 ≤ r) (pq pq' : ℤ × ℤ) :
+    ((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
+      ((sublevel_mono f).comp ha.monotone)).page r).d pq pq' = 0 :=
+  SpectralSequence.page_d_eq_zero_of_isZero_or_isZero _
+    (fun _ _ ↦ h.isZero_or_isZero_page_two_X_twistedHomology hn hdim g hV K hlac ha) r hr pq pq'
+
+/-- **The graded homology of a lacunary Morse–Bott function over any ring.** Let the family
+`i j : S j → M` exhibit `f` as a Morse–Bott function on a Hausdorff second-countable boundaryless
+manifold, with pieces modelled on boundaryless models, let `g j` be smooth fibre metrics on the
+normal bundles of the pieces, and let the negative normal spaces relative to `g j` have continuous
+local frames indexed by a finite type `κ j`, so that they form the negative normal bundle `ν⁻ j` of
+rank `|κ j|`, the index of the piece. Let `K` be a commutative ring, for instance `ℤ`, and let
+`a : ℤ → ℝ` be a critical-band cut of `f` starting below and ending above all values of `f`; then
+`M` is compact. Filter `Hₙ(M; K)` by the images `F_q Hₙ` of the homology of the sublevels
+`{f ≤ a q}`. Suppose that for every `n`, either `H_{n - |κ j|}(S j; o(ν⁻ j) ⊗ K) = 0` for every
+piece of index at most `n`, or `H_{n + 1 - |κ j|}(S j; o(ν⁻ j) ⊗ K) = 0` for every piece of index at
+most `n + 1`. Then the graded piece `F_{q+1} Hₙ / F_q Hₙ` is the coproduct of the twisted homologies
+`H_{n - |κ j|}(S j; o(ν⁻ j) ⊗ K)` over the pieces with values in `(a q, a (q + 1)]` of index at most
+`n`. No orientation of the bundles `ν⁻ j` is assumed. The graded piece is written as the cokernel of
+the inclusion `F_q Hₙ ⟶ F_{q+1} Hₙ` of the filtration of the abutment of the spectral sequence,
+which is `Hₙ(M)` in total degree `p + q = -n` (`TauCeti.chainFiltrationAbutmentIso`). -/
+theorem nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology
+    (ha : IsCriticalBandCut I f a) {q₀ q₁ : ℤ} (hq₀ : ∀ x, a q₀ < f x) (hq₁ : ∀ x, f x ≤ a q₁)
+    (pq : ℤ × ℤ) (n : ℕ) (hpq : pq.1 + pq.2 = -n) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    letI : ∀ j, TopologicalSpace (TotalSpace (κ j → ℝ)
+        fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) :=
+      fun j ↦ subbundleTopology (P j)
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+    letI : ∀ j, FiberBundle (κ j → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      fun j ↦ (hV j).fiberBundle
+    haveI : ∀ j, VectorBundle ℝ (κ j → ℝ) fun s ↦
+        (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s :=
+      fun j ↦ (hV j).vectorBundle
+    -- The pieces in the compact band are finitely many, so the coproduct exists.
+    haveI : Finite {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
+        Fintype.card (κ j) ≤ n} :=
+      ((h.finite_setOf_range_subset (ha.isCriticalBand pq.2).isCompact).subset
+        (t := {j | (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ Fintype.card (κ j) ≤ n})
+        fun _ hj ↦ range_subset_iff.2 fun s ↦ Ioc_subset_Icc_self (hj.1 s)).to_subtype
+    Nonempty (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) (ModuleCat.of K K)
+        ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
+      ∐ fun j : {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
+          Fintype.card (κ j) ≤ n} ↦
+        twistedHomology (signLocalSystem (κ j → ℝ)
+          (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+            (g j).toRiemannianMetric s) K
+          ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
+          (n - Fintype.card (κ j))) := by
+  obtain ⟨c, hc, hcrit⟩ := (ha.isCriticalBand pq.2).exists_mem_Ioo_forall_eq
+  obtain ⟨e₂⟩ := h.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology hn
+    ha.monotone hc (ha.isCriticalBand pq.2).isCompact hcrit hdim g hV K pq rfl n hpq
+  obtain ⟨e⟩ := nonempty_cokernel_abutmentFiltrationMap_iso_page_two_X_of_isZero_or_isZero
+    (Y := TopCat.of M) (ModuleCat.of K K) ((sublevel_mono f).comp ha.monotone)
+    (eq_empty_of_forall_notMem fun x hx ↦ (hq₀ x).not_ge hx) (eq_univ_of_forall hq₁)
+    (fun _ hpq' ↦ hpq'.elim (h.isZero_or_isZero_page_two_X_twistedHomology hn hdim g hV K hlac ha)
+      fun h' ↦ (h.isZero_or_isZero_page_two_X_twistedHomology hn hdim g hV K hlac ha h').symm)
+  -- In the band, the pieces with values in `(a q, a (q + 1)]` are those on the level `c`.
+  let ε := Equiv.subtypeEquivRight fun j ↦
+    and_congr_left' (c := Fintype.card (κ j) ≤ n) (h.forall_mem_Ioc_iff_forall_eq hc hcrit j).symm
+  have : Finite {j // (∀ s, f (i j s) = c) ∧ Fintype.card (κ j) ≤ n} :=
+    h.finite_subtype_of_forall_apply_eq (ha.isCriticalBand pq.2).isCompact (Ioo_subset_Icc_self hc)
+      fun _ ↦ And.left
+  have := Finite.of_equiv _ ε
+  refine ⟨e ≪≫ e₂ ≪≫ Sigma.whiskerEquiv ε fun _ ↦ ?_⟩
+  exact Iso.refl _
+
+end Lacunary
 
 end IsMorseBottFamily
 
