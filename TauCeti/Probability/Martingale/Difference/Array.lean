@@ -21,9 +21,9 @@ setting of the central limit theorems for martingales, whose conclusions concern
 This file defines the predicate and proves its basic stability and orthogonality properties: the
 partial sums of a row form a martingale for the row's filtration, a martingale difference array
 for `ℱ` stays one for any smaller filtration to which its entries are still adapted, multiplying
-each entry by a factor measurable for the previous σ-algebra preserves the property (in
-particular, stopping each row at a predictable time does), and square-integrable entries of one
-row are orthogonal.
+each entry by a factor measurable for the previous σ-algebra preserves the property as long as
+the products stay integrable (in particular, stopping each row at a predictable time does), and
+square-integrable entries of one row are orthogonal.
 
 ## Main definitions
 
@@ -38,8 +38,8 @@ row are orthogonal.
   filtration for which the entries are still adapted.
 * `TauCeti.MeasureTheory.IsMartingaleDiffArray.mul_left`,
   `TauCeti.MeasureTheory.IsMartingaleDiffArray.indicator`: multiplying entry `j` by an
-  `ℱ n j`-measurable factor, for instance the indicator of the event `{j < τ n}` of a predictable
-  time `τ n`.
+  `ℱ n j`-measurable factor, provided the products stay integrable; for instance by the indicator
+  of the event `{j < τ n}` of a predictable time `τ n`, which needs no integrability hypothesis.
 * `TauCeti.MeasureTheory.IsMartingaleDiffArray.integral_sq_sum_range`: the second moment of a
   partial row sum of square-integrable entries is the sum of their second moments.
 
