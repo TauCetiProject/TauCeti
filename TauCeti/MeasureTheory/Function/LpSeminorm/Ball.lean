@@ -53,6 +53,9 @@ exact form of the bounded-overlap count.
   functions on concentric balls of radii `r` and `κ r`, with the explicit constant `2 κ ^ d`.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: its case `κ = 2` for `lpNorm`, with the
   constant `2 ^ (d + 1)`.
+* `TauCeti.eLpNorm_le_of_forall_eLpNorm_restrict_ball_le`: estimates on the balls `B(0, R/2)`
+  whose error term carries a factor `μ (B(0, R)) ^ e` with `e < 0`, which vanishes as `R → ∞`,
+  give a global estimate without that term.
 * `TauCeti.measure_ball_rpow_mul_eLpNorm_restrict_ball_le`: Hölder's inequality on a ball, scaled
   by the volume of a concentric smaller ball.
 -/
@@ -61,8 +64,8 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Module
-open scoped ENNReal NNReal
+open Filter MeasureTheory Metric Module
+open scoped ENNReal NNReal Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [ProperSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -217,6 +220,46 @@ theorem lintegral_rpow_le_of_forall_setLAverage_rpow_le {g k : E → ℝ≥0∞}
     _ = C * (M⁻¹ ^ e * G ^ (p / t) + ∫⁻ x, k x ^ p ∂μ) := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ he, hpt, ENNReal.rpow_add_of_nonneg _ _ he zero_le_one,
           ENNReal.rpow_one, mul_assoc]
+
+/-- **From balls around the origin to the whole space.** Let `μ` be an additive Haar measure on a
+noncompact space, `e < 0`, and `B, C < ∞`. If for every `R > 0` the `Lᵖ` seminorm of `g` on
+`B(0, R/2)` is at most `C (A + μ (B(0, R)) ^ e B)`, then `‖g‖_{Lᵖ} ≤ C A`: the factor
+`μ (B(0, R)) ^ e` tends to zero as `R → ∞`, and Fatou's lemma along the balls `B(0, k + 1)` passes
+the bound to the whole space. -/
+theorem eLpNorm_le_of_forall_eLpNorm_restrict_ball_le [NoncompactSpace E] {g : E → F}
+    (hg : AEStronglyMeasurable g μ) {e : ℝ} (he : e < 0) {A B C : ℝ≥0∞} (hB : B ≠ ∞)
+    (hC : C ≠ ∞) (h : ∀ R : ℝ, 0 < R → eLpNorm g p (μ.restrict (ball 0 (R / 2))) ≤
+      C * (A + μ (ball (0 : E) R) ^ e * B)) :
+    eLpNorm g p μ ≤ C * A := by
+  have hV : Tendsto (fun k : ℕ => μ (ball (0 : E) (2 * ((k : ℝ) + 1))) ^ e) atTop (𝓝 0) := by
+    have hmono : Monotone fun k : ℕ => ball (0 : E) (2 * ((k : ℝ) + 1)) :=
+      fun k l hkl => ball_subset_ball (by gcongr)
+    have hunion : (⋃ k : ℕ, ball (0 : E) (2 * ((k : ℝ) + 1))) = Set.univ := by
+      refine Set.eq_univ_of_forall fun x => Set.mem_iUnion.2 ?_
+      obtain ⟨k, hk⟩ := exists_nat_gt ‖x‖
+      exact ⟨k, mem_ball_zero_iff.2 (by linarith)⟩
+    have hvol := tendsto_measure_iUnion_atTop (μ := μ) hmono
+    rw [hunion, measure_univ_of_isAddLeftInvariant] at hvol
+    have h := (ENNReal.continuous_rpow_const (y := e)).tendsto ∞ |>.comp hvol
+    rwa [Function.comp_def, ENNReal.top_rpow_of_neg he] at h
+  have hlim : Tendsto (fun k : ℕ => C * (A + μ (ball (0 : E) (2 * ((k : ℝ) + 1))) ^ e * B))
+      atTop (𝓝 (C * A)) := by
+    have h := ENNReal.Tendsto.const_mul (a := C) ((tendsto_const_nhds (x := A)).add
+      (ENNReal.Tendsto.mul_const hV (Or.inr hB))) (Or.inr hC)
+    simpa only [zero_mul, add_zero] using h
+  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm
+    (f := fun k : ℕ => (ball (0 : E) ((k : ℝ) + 1)).indicator g)
+    (fun k => hg.indicator (measurableSet_ball (x := (0 : E)) (ε := (k : ℝ) + 1))) g hg
+    (ae_of_all _ fun x => ?_)).trans ?_
+  · obtain ⟨N, hN⟩ := exists_nat_gt ‖x‖
+    refine tendsto_const_nhds.congr' ((eventually_ge_atTop N).mono fun k hk => ?_)
+    have hk' : (N : ℝ) ≤ k := by exact_mod_cast hk
+    exact (Set.indicator_of_mem (mem_ball_zero_iff.2 (by linarith)) g).symm
+  · rw [← hlim.liminf_eq]
+    refine liminf_le_liminf (Eventually.of_forall fun k => ?_)
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_ball.nullMeasurableSet]
+    have hk := h (2 * ((k : ℝ) + 1)) (by positivity)
+    rwa [mul_div_cancel_left₀ _ two_ne_zero] at hk
 
 section FiniteDimensional
 
