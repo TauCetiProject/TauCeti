@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.Chebyshev.RieszRemainder
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.VonMangoldt
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.VonMangoldt
 
 /-!
 # Lipschitz and size bounds for the Riesz remainder of a Dirichlet character
