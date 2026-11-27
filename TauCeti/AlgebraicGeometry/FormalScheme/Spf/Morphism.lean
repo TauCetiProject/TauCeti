@@ -163,6 +163,12 @@ noncomputable def map : Spf A ⟶ Spf B where
 theorem map_base : (map φ hφ).base = TopCat.ofHom (comap φ hφ) :=
   (rfl)
 
+/-- The preimage of `D(b)` under `Spf.map φ hφ` is `D(φ b)`. -/
+theorem map_preimage_basicOpen (b : B) :
+    (Opens.map (map φ hφ).base).obj (basicOpen b) = basicOpen (φ b) := by
+  rw [map_base]
+  exact comap_basicOpen φ hφ b
+
 /-- The underlying presheafed-space morphism of `Spf.map`, including its sheaf component. -/
 theorem map_toHom : (map φ hφ).toHom =
     { base := TopCat.ofHom (comap φ hφ)

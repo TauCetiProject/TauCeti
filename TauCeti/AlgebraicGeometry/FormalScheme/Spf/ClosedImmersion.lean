@@ -80,19 +80,13 @@ theorem range_map_quotientMk_base :
       simpa only [PrimeSpectrum.comap_asIdeal, Ideal.coe_comap] using hs
     exact ⟨⟨q, hopen⟩, Subtype.ext ((coe_comap_apply φ hφ ⟨q, hopen⟩).trans hq)⟩
 
-/-- The preimage of a principal open under a formal quotient map is the principal open of
-the image of its defining element. -/
-theorem map_quotientMk_preimage_basicOpen (f : A) :
-    (Opens.map (qmap).base).obj (basicOpen f) = basicOpen (Ideal.Quotient.mk J f) := by
-  rw [map_base]
-  exact comap_basicOpen _ _ _
-
 /-- Over a principal open, the formal quotient map is quotient by the extension of `J`
 under the identifications of sections with completed localizations. -/
 theorem map_quotientMk_appLE_basicOpen (f : A) :
     (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f).inv ≫
         (qmap).toHom.appLE (basicOpen f) (basicOpen (Ideal.Quotient.mk J f))
-          (map_quotientMk_preimage_basicOpen J f).ge ≫
+          (map_preimage_basicOpen (Ideal.Quotient.mk J)
+            (QuotientRing.isOpenQuotientMap_mk J).continuous f).ge ≫
         (basicOpenSectionsIso (IsAdicRing.ideal_spec (A ⧸ J)).2.1
           (IsAdicRing.ideal_spec (A ⧸ J)).1 (Ideal.Quotient.mk J f)).hom =
       CommRingCat.ofHom ((AdicRing.CompletedAway.quotientEquiv J f).toRingHom.comp
@@ -108,7 +102,8 @@ theorem map_quotientMk_appLE_basicOpen (f : A) :
 /-- The formal quotient map is surjective on sections over every principal open. -/
 theorem map_quotientMk_appLE_basicOpen_surjective (f : A) :
     Function.Surjective ((qmap).toHom.appLE (basicOpen f) (basicOpen (Ideal.Quotient.mk J f))
-      (map_quotientMk_preimage_basicOpen J f).ge) := by
+      (map_preimage_basicOpen (Ideal.Quotient.mk J)
+        (QuotientRing.isOpenQuotientMap_mk J).continuous f).ge) := by
   let eA := basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f
   let eB := basicOpenSectionsIso (IsAdicRing.ideal_spec (A ⧸ J)).2.1
     (IsAdicRing.ideal_spec (A ⧸ J)).1 (Ideal.Quotient.mk J f)
@@ -129,7 +124,9 @@ theorem map_quotientMk_stalkMap_surjective (q : Spf (A ⧸ J)) :
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective (I := J) b
   let W : Opens (Spf A) := basicOpen f
   let V : Opens (Spf (A ⧸ J)) := basicOpen (Ideal.Quotient.mk J f)
-  have hpre : V ≤ (Opens.map (qmap).base).obj W := (map_quotientMk_preimage_basicOpen J f).ge
+  have hpre : V ≤ (Opens.map (qmap).base).obj W :=
+    (map_preimage_basicOpen (Ideal.Quotient.mk J)
+      (QuotientRing.isOpenQuotientMap_mk J).continuous f).ge
   have hp : (qmap).base q ∈ W := hpre hb
   obtain ⟨s, hs⟩ := map_quotientMk_appLE_basicOpen_surjective J f
     ((Spf (A ⧸ J)).presheaf.map (homOfLE hbU).op t)

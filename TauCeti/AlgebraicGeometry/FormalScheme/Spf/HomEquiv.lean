@@ -385,11 +385,10 @@ theorem continuous_c_app (g : Spf B ⟶ Spf A) (U : Opens (Spf A)) :
 /-- A map on basic-open sections is determined by its action on global coefficients.
 This identifies the sheaf map with a continuous homomorphism of completed localizations. -/
 theorem map_appLE_basicOpen (φ : A →+* B) (hφ : Continuous φ) (a : A)
-    (hpre : basicOpen (φ a) ≤ (Opens.map (map φ hφ).base).obj (basicOpen a))
     (g : AdicRing.CompletedAway A a →+* AdicRing.CompletedAway B (φ a))
     (hg : Continuous g) (hgφ : g.comp (algebraMap A _) = (algebraMap B _).comp φ) :
     (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv ≫
-        (map φ hφ).toHom.appLE (basicOpen a) (basicOpen (φ a)) hpre ≫
+        (map φ hφ).toHom.appLE (basicOpen a) (basicOpen (φ a)) (map_preimage_basicOpen φ hφ a).ge ≫
         (basicOpenSectionsIso (IsAdicRing.ideal_spec B).2.1
           (IsAdicRing.ideal_spec B).1 (φ a)).hom = CommRingCat.ofHom g := by
   let hA := (IsAdicRing.ideal_spec A).2.1
@@ -397,6 +396,7 @@ theorem map_appLE_basicOpen (φ : A →+* B) (hφ : Continuous φ) (a : A)
   let eA := basicOpenSectionsIso hA (IsAdicRing.ideal_spec A).1 a
   let eB := basicOpenSectionsIso hB (IsAdicRing.ideal_spec B).1 (φ a)
   let k := map φ hφ
+  have hpre := (map_preimage_basicOpen φ hφ a).ge
   let m := k.toHom.appLE (basicOpen a) (basicOpen (φ a)) hpre
   let _ := quotientSectionsTopology hA (basicOpen a)
   let _ := quotientSectionsTopology hB (basicOpen (φ a))
