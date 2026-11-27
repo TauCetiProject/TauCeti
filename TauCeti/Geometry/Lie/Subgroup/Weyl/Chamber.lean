@@ -24,9 +24,10 @@ element `X₀ ∈ 𝔱` (`TauCeti.sameSideChamber`) is
 
 the elements lying, for every root, on the same closed side of its kernel as `X₀`. When `X₀` is
 regular, no root vanishing at it, `C` is the closure of the open Weyl chamber containing `X₀`.
-This file proves that for a compact connected group, every Weyl orbit in `𝔱`, hence every adjoint
-orbit in `𝔤` and every coadjoint orbit in `𝔤*`, meets `C` in exactly one point, and that `C` is
-homeomorphic to the adjoint and coadjoint orbit spaces.
+This file proves that for a compact connected group and a regular `X₀`, every Weyl orbit in `𝔱`,
+hence every adjoint orbit in `𝔤` and every coadjoint orbit in `𝔤*`, meets `C` in exactly one
+point, and that `C` is homeomorphic to the adjoint and coadjoint orbit spaces. Existence holds for
+every `X₀`; uniqueness fails without regularity, since `X₀ = 0` gives `C = 𝔱`.
 
 * **Existence**
   (`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_mem_sameSideChamber`).
@@ -46,12 +47,12 @@ homeomorphic to the adjoint and coadjoint orbit spaces.
   is the identity
   (`TauCeti.Lie.IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation`).
 * **Uniqueness on the closed chamber**
-  (`TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`). If `w X = Y` with
-  `X, Y ∈ C`, choose `v ∈ W` fixing `Y` and maximizing `B(v w X₀, X₀)`. The reflections in the roots
-  vanishing at `Y` fix `Y`, so at the maximum these roots are positive at `v w X₀`. Then for small
-  `s > 0` the element `v w` carries `X + s X₀` to `Y + s v w X₀`, both in the open chamber, so
-  `v w = 1` and `X = v w X = v Y = Y`. This is a direct argument for the closed chamber, with walls,
-  not only for the open one.
+  (`TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`). Let `G` be compact
+  connected and `X₀` regular. If `w X = Y` with `X, Y ∈ C`, choose `v ∈ W` fixing `Y` and
+  maximizing `B(v w X₀, X₀)`. The reflections in the roots vanishing at `Y` fix `Y`, so at the
+  maximum these roots are positive at `v w X₀`. Then for small `s > 0` the element `v w` carries
+  `X + s X₀` to `Y + s v w X₀`, both in the open chamber, so `v w = 1` and `X = v w X = v Y = Y`.
+  This is a direct argument for the closed chamber, with walls, not only for the open one.
 
 The chamber is cut out by the roots, not by the reflecting hyperplanes of the finite group `W`
 acting on `𝔱` as in `Representation.chamber`, and not through a root pairing as in
@@ -62,12 +63,13 @@ reflections, the finiteness of `W` and the stabilizers of regular elements enter
 Connectedness is needed for uniqueness: for `G = O(2)` and `T = SO(2)` there are no roots, so
 `C = 𝔱`, while `W` has order two and acts on `𝔱 ≅ ℝ` by `-1`.
 
-Restricting the proper map `𝔱 → 𝔤 / Ad G` (`TauCeti.Lie.IsMaximalTorus.isProperMap_orbitRel_mk_coe`)
-to the closed set `C` gives a continuous proper bijection, so a homeomorphism
-`C ≃ₜ 𝔤 / Ad G` (`TauCeti.Lie.IsMaximalTorus.sameSideChamberOrbitHomeomorph`). Through the
-homeomorphisms of `TauCeti.Geometry.Lie.Subgroup.Weyl.OrbitSpace`, `C` is also homeomorphic to the
-coadjoint orbit space `𝔤* / Ad* G`, placing `X ∈ C` at the coadjoint orbit of its covector for an
-invariant form (`TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph`).
+For a compact connected group and a regular `X₀`, restricting the proper map `𝔱 → 𝔤 / Ad G`
+(`TauCeti.Lie.IsMaximalTorus.isProperMap_orbitRel_mk_coe`) to the closed set `C` gives a continuous
+proper bijection, so a homeomorphism `C ≃ₜ 𝔤 / Ad G`
+(`TauCeti.Lie.IsMaximalTorus.sameSideChamberOrbitHomeomorph`). Through the homeomorphisms of
+`TauCeti.Geometry.Lie.Subgroup.Weyl.OrbitSpace`, `C` is also homeomorphic to the coadjoint orbit
+space `𝔤* / Ad* G`, placing `X ∈ C` at the coadjoint orbit of its covector for an invariant form
+(`TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph`).
 
 ## Main definitions
 
@@ -85,10 +87,10 @@ invariant form (`TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomo
   connected group, the Weyl group acts freely on the regular elements.
 * `TauCeti.Lie.IsMaximalTorus.eq_one_of_forall_pos_mul_apply_weylAdjointRepresentation`: the Weyl
   group acts freely on the open chambers.
-* `TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`: two Weyl-related points of
-  the closed chamber are equal.
-* `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_sameSideChamber_Ad`: every adjoint orbit meets the
-  closed chamber in exactly one point.
+* `TauCeti.Lie.IsMaximalTorus.eq_of_weylAdjointRepresentation_apply_eq`: for a compact connected
+  group and a regular `X₀`, two Weyl-related points of the closed chamber are equal.
+* `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_sameSideChamber_Ad`: for a compact connected group
+  and a regular `X₀`, every adjoint orbit meets the closed chamber in exactly one point.
 
 ## References
 
