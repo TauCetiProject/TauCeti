@@ -409,10 +409,11 @@ theorem tendsto_pow_prime_pow_of_mem_principalUnits {u : (PadicIntegralAlgebra K
     (hu : u ∈ principalUnits K p 1) : Tendsto (fun n ↦ u ^ p ^ n) atTop (𝓝 1) := by
   refine (hasBasis_nhds_one_principalUnits K p).tendsto_right_iff.mpr fun r _ ↦ ?_
   filter_upwards [eventually_ge_atTop r] with n hn
-  have hu' : u ∈ (Ideal.span {(p : PadicIntegralAlgebra K p)}).principalUnitGroup := by
-    simpa only [principalUnits, pow_one] using hu
-  exact principalUnits_antitone K p (by omega : r ≤ n + 1)
-    (Ideal.pow_pow_mem_principalUnitGroup_pow (Ideal.mem_span_singleton_self _) hu' n)
+  rw [principalUnits, pow_one] at hu
+  have h : u ^ p ^ n ∈ principalUnits K p (n + 1) := by
+    rw [principalUnits]
+    exact Ideal.pow_pow_mem_principalUnitGroup_pow (Ideal.mem_span_singleton_self _) hu n
+  exact principalUnits_antitone K p (by omega : r ≤ n + 1) h
 
 end PrincipalUnits
 

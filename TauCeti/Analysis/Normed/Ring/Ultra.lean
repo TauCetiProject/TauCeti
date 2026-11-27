@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.RingTheory.Multiplicity
-import Mathlib.Data.Nat.Choose.Dvd
+import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Data.Nat.Choose.Factorization
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Ideal.Quotient.Defs
@@ -584,15 +584,6 @@ section PrimePower
 
 open Filter Topology
 
-/-- The binomial expansion of `(1 + x) ^ (n + 1) - 1`, with the top term `x ^ (n + 1)` split off
-from the terms of intermediate degree. -/
-private theorem one_add_pow_succ_sub_one {S : Type*} [Ring S] (x : S) (n : ℕ) :
-    (1 + x) ^ (n + 1) - 1 =
-      x ^ (n + 1) + ∑ m ∈ Finset.range n, x ^ (m + 1) * ((n + 1).choose (m + 1) : S) := by
-  rw [add_comm 1 x, (Commute.one_right x).add_pow, Finset.sum_range_succ, Finset.sum_range_succ']
-  simp only [one_pow, mul_one, Nat.choose_self, Nat.cast_one, pow_zero, Nat.choose_zero_right]
-  abel
-
 variable {R : Type*} [SeminormedRing R] [NormOneClass R] [IsUltrametricDist R] {p : ℕ}
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1` and power-multiplicative seminorm in which the
@@ -602,27 +593,29 @@ intermediate binomial coefficients are divisible by `p`, so their terms are stri
 `x ^ p`. -/
 theorem norm_one_add_pow_prime_sub_one (hR : IsPowMul (‖·‖ : R → ℝ)) (hp : p.Prime)
     (hpR : ‖(p : R)‖ < 1) {x : R} (hx : 1 ≤ ‖x‖) : ‖(1 + x) ^ p - 1‖ = ‖x‖ ^ p := by
-  obtain ⟨n, rfl⟩ : ∃ n, p = n + 1 := ⟨p - 1, (Nat.sub_add_cancel hp.one_le).symm⟩
-  have hxp : ‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1) := hR x (Nat.le_add_left 1 n)
-  have hS : ‖∑ m ∈ Finset.range n, x ^ (m + 1) * ((n + 1).choose (m + 1) : R)‖ <
-      ‖x‖ ^ (n + 1) := by
-    rcases (Finset.range n).eq_empty_or_nonempty with h | h
-    · simpa [h] using pow_pos (one_pos.trans_le hx) _
-    obtain ⟨m, hm, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty h
-      fun m ↦ x ^ (m + 1) * ((n + 1).choose (m + 1) : R)
-    have hmn : m + 1 < n + 1 := by simpa using hm
-    obtain ⟨c, hc⟩ := hp.dvd_choose_self m.succ_ne_zero hmn
-    refine hle.trans_lt ?_
-    calc ‖x ^ (m + 1) * ((n + 1).choose (m + 1) : R)‖ ≤ ‖x‖ ^ (m + 1) * ‖((n + 1 : ℕ) : R)‖ := by
-          rw [hc, Nat.cast_mul]
-          refine (norm_mul_le _ _).trans (mul_le_mul (norm_pow_le _ _) ?_ (norm_nonneg _)
-            (by positivity))
-          exact (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
-            (IsUltrametricDist.norm_natCast_le_one R c))
-      _ < ‖x‖ ^ (m + 1) := mul_lt_of_lt_one_right (pow_pos (one_pos.trans_le hx) _) hpR
-      _ ≤ ‖x‖ ^ (n + 1) := pow_le_pow_right₀ hx hmn.le
-  rw [one_add_pow_succ_sub_one, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm
-    (by rw [hxp]; exact hS.ne'), hxp, max_eq_left hS.le]
+  have hx0 : 0 < ‖x‖ := one_pos.trans_le hx
+  have hxp : ‖x ^ p‖ = ‖x‖ ^ p := hR x hp.one_le
+  have hS : ‖(p : R) * ∑ k ∈ Finset.Ioo 0 p, 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)‖ <
+      ‖x‖ ^ p := by
+    refine (norm_mul_le _ _).trans_lt ?_
+    rcases (Finset.Ioo 0 p).eq_empty_or_nonempty with h | h
+    · simpa [h] using pow_pos hx0 p
+    obtain ⟨k, hk, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty h
+      fun k ↦ 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)
+    have hk' := Finset.mem_Ioo.mp hk
+    calc ‖(p : R)‖ * ‖∑ k ∈ Finset.Ioo 0 p, 1 ^ k * x ^ (p - k) * ((p.choose k / p : ℕ) : R)‖
+        ≤ ‖(p : R)‖ * ‖x‖ ^ (p - 1) := by
+          refine mul_le_mul_of_nonneg_left (hle.trans ?_) (norm_nonneg _)
+          rw [one_pow, one_mul]
+          refine (norm_mul_le _ _).trans ?_
+          refine (mul_le_of_le_one_right (norm_nonneg _)
+            (IsUltrametricDist.norm_natCast_le_one R _)).trans ?_
+          exact (norm_pow_le _ _).trans (pow_le_pow_right₀ hx (by omega))
+      _ < ‖x‖ ^ (p - 1) := mul_lt_of_lt_one_left (pow_pos hx0 _) hpR
+      _ ≤ ‖x‖ ^ p := pow_le_pow_right₀ hx (Nat.sub_le _ _)
+  rw [(Commute.one_left x).add_pow_prime_eq' hp, one_pow, add_sub_right_comm, add_sub_cancel_left,
+    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [hxp]; exact hS.ne'), hxp,
+    max_eq_left hS.le]
 
 /-- Iterating `TauCeti.norm_one_add_pow_prime_sub_one`: if `1 ≤ ‖x‖`, then
 `‖(1 + x) ^ p ^ n - 1‖ = ‖x‖ ^ p ^ n` for every `n`. -/
