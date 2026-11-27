@@ -28,12 +28,14 @@ nonzero and divides a power of `q` at every coset whose `S`-orbit meets the imag
 particular at every point of `T`). The set `T` is the union of the `(S ∩ A)`-orbits of one coset
 of a point of `D` in each `S`-orbit meeting the image of `D`: it is finite because `D` meets
 finitely many cosets of the open subgroup `J` and `A` is compact, and at each chosen coset `x J`
-the multiplicity is the index of `A` in the stabiliser `S ∩ x J x⁻¹` of `x J` in `S`
-(`Subgroup.coverMultiplicity_eq_relIndex`), all of whose elements have a `q`-power power in `A`.
+the multiplicity is the relative index `A.relIndex H`, the index of `A ∩ H` in the stabiliser
+`H = S ∩ x J x⁻¹` of `x J` in `S` (`Subgroup.coverMultiplicity_eq_relIndex`), all of whose elements
+have a `q`-power power in `A`.
 
 Such a set `T` is what is needed to write an integral over the quotient by `S`, of a function
 supported on points whose `S`-orbit meets `D`, as a sum over `T` weighted by inverse cover
-multiplicities: the weights are then nonzero and are units away from `q`.
+multiplicities, up to a normalization factor: the multiplicities are then nonzero, so the weights
+are defined, and divide a power of `q`, so the weights are units in any ring where `q` is a unit.
 
 ## Main results
 
@@ -158,12 +160,13 @@ theorem exists_finset_coverMultiplicity_dvd_pow (hA : IsCompact (A : Set G))
 `A` compact, `B` a subgroup containing `A`, `D ⊆ B` compact, and `W` a property such that the
 `S`-orbit of every point satisfying `W` meets `D`. Suppose every `x ∈ D` has an `n` with
 `(x u x⁻¹) ^ q ^ n ∈ A` for all `u ∈ J`. Then there is a finite set `T` of left cosets of `J`,
-stable under `S ∩ A`, whose cosets lie in `B`, such that the cover multiplicity of `x` divides a
-power of `q` whenever `x J ∈ T` or `W x`.
+stable under `S ∩ A`, whose cosets lie in `B`, such that the cover multiplicity of `x J` is
+nonzero and divides a power of `q` whenever `x J ∈ T` or `W x`.
 
 This is the form in which cuts are built in groups of finite adelic points, with `B` the points
-integral at the relevant places; `Subgroup.exists_finset_coverMultiplicity_dvd_pow` is the same
-statement without `B`, `W` and `J ≤ A`, and with `n` allowed to depend on `u`. -/
+integral at the relevant places; `Subgroup.exists_finset_coverMultiplicity_dvd_pow` is the general
+statement, for compact open `A` and `J` without `B`, `W` or `J ≤ A`, and with `n` allowed to depend
+on `u`. -/
 theorem exists_finset_coverMultiplicity_dvd_pow_of_le (hA : IsCompact (A : Set G))
     (hJo : IsOpen (J : Set G)) (hJA : J ≤ A) {B : Subgroup G} (hAB : A ≤ B) {D : Set G}
     (hD : IsCompact D) (hDB : D ⊆ B) {q : ℕ}
@@ -172,11 +175,12 @@ theorem exists_finset_coverMultiplicity_dvd_pow_of_le (hA : IsCompact (A : Set G
     ∃ T : Finset (G ⧸ J), (∀ a ∈ S ⊓ A, ∀ t ∈ T, a • t ∈ T) ∧
       (∀ x : G, (x : G ⧸ J) ∈ T → x ∈ B) ∧
       ∀ x : G, ((x : G ⧸ J) ∈ T ∨ W x) →
-        ∃ n : ℕ, S.coverMultiplicity A (T : Set (G ⧸ J)) x ∣ q ^ n := by
+        S.coverMultiplicity A (T : Set (G ⧸ J)) x ≠ 0 ∧
+          ∃ n : ℕ, S.coverMultiplicity A (T : Set (G ⧸ J)) x ∣ q ^ n := by
   obtain ⟨T, hTA, hTD, hT⟩ := S.exists_finset_coverMultiplicity_dvd_pow hA
     (isOpen_mono hJA hJo) (hA.of_isClosed_subset (J.isClosed_of_isOpen hJo) hJA) hJo hD
     fun x hx u hu ↦ (hq x hx).imp fun n hn ↦ hn u hu
-  refine ⟨T, hTA, fun x hx ↦ ?_, fun x hx ↦ (hT x (hx.imp id fun hWx ↦ ?_)).2⟩
+  refine ⟨T, hTA, fun x hx ↦ ?_, fun x hx ↦ hT x (hx.imp id fun hWx ↦ ?_)⟩
   · -- The coset `x J` is `a y J` with `a ∈ A` and `y ∈ D`.
     obtain ⟨a, ha, y, hy, hay⟩ := hTD _ hx
     rw [MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.eq] at hay

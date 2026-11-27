@@ -21,12 +21,17 @@ the elements of one class `r (S ∩ A)` agree when `T` is stable under `S ∩ A`
 there are infinitely many.
 
 Cover multiplicities are the weights used to write an integral over a quotient by `S` as a sum
-over a finite set `T` of cosets of a compact open subgroup: a coset `t` is covered `mult(t)` times
-by the translates of `T` modulo `S ∩ A`, and dividing by `mult(t)` makes every orbit count once.
-The multiplicity is constant along `S`-orbits, and when `T` meets the `S`-orbit of `t`
-only in the `(S ∩ A)`-orbit of `t` it is the index of `A` in the stabiliser of `t` in `S`. If every
-element of that stabiliser has a `q`-power power in `A`, the multiplicity then divides a power of
-`q`, by `Subgroup.exists_index_dvd_pow_of_forall_exists_pow_pow_mem`.
+over a finite set `T` of cosets of a compact open subgroup. For `T` stable under `S ∩ A`, the
+multiplicity `mult(t)` counts the classes `r (S ∩ A)` of `r ∈ S` with `t ∈ r • T`, and it is
+constant along `S`-orbits, so dividing by it normalizes the translate cover pointwise: at a coset
+`t` of finite, nonzero multiplicity, the sum of `1_T(r⁻¹ • t) / mult(r⁻¹ • t)` over all classes
+`r (S ∩ A)` is `1`. This is distinct from the integral formula, in which the sum of
+`f(t) / mult(t)` over `t ∈ T` gives the integral of `f` only up to a normalization factor.
+
+When the points of `T` in the `S`-orbit of `t` are exactly the `(S ∩ A)`-orbit of `t`, the
+multiplicity of `t` is the relative index `A.relIndex H`, the index of `A ∩ H` in the stabiliser
+`H` of `t` in `S`. If it is finite (nonzero) and every element of `H` has a `q`-power power in
+`A`, it divides a power of `q`, by `Subgroup.exists_index_dvd_pow_of_forall_exists_pow_pow_mem`.
 
 The construction of finite sets `T` with these properties, for compact open subgroups `A` and `J`
 of a topological group, is in `TauCeti.Topology.Algebra.Group.CoverMultiplicity`.
@@ -39,11 +44,11 @@ of a topological group, is in `TauCeti.Topology.Algebra.Group.CoverMultiplicity`
 ## Main results
 
 * `Subgroup.coverMultiplicity_smul`: the cover multiplicity is constant on `S`-orbits.
-* `Subgroup.coverMultiplicity_eq_relIndex`: if the points of `T` in the `S`-orbit of `t` form the
-  `(S ∩ A)`-orbit of `t`, the cover multiplicity of `t` is the index of `A` in the stabiliser of
-  `t` in `S`.
+* `Subgroup.coverMultiplicity_eq_relIndex`: if the points of `T` in the `S`-orbit of `t` are
+  exactly the `(S ∩ A)`-orbit of `t`, the cover multiplicity of `t` is the relative index
+  `A.relIndex H`, the index of `A ∩ H` in the stabiliser `H` of `t` in `S`.
 * `Subgroup.exists_coverMultiplicity_dvd_pow`: in that situation, if the multiplicity is finite
-  and every element of the stabiliser has a `q`-power power in `A`, the multiplicity divides a
+  (nonzero) and every element of `H` has a `q`-power power in `A`, the multiplicity divides a
   power of `q`.
 
 ## References

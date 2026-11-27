@@ -25,8 +25,9 @@ sum of the valuations of its relative index in a larger subgroup `B` and of the 
 If every element of the group has a power `g ^ q ^ n` in a subgroup of finite index, then every
 prime factor of the index divides `q`, so the index divides a power of `q`
 (`Subgroup.exists_index_dvd_pow_of_forall_exists_pow_pow_mem`). For a normal subgroup this says
-that a finite quotient in which every element has `q`-power order has order dividing a power of
-`q` (`isPGroup_iff_card_dvd_pow`); the subgroup need not be normal here.
+that a finite quotient in which every element is killed by some power of `q` (its order divides a
+power of `q`) has order dividing a power of `q` (`isPGroup_iff_card_dvd_pow`); the subgroup need
+not be normal here.
 -/
 
 public section
