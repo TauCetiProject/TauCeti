@@ -57,6 +57,8 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   model generators are the point simplex and the point cube.
 * `TauCeti.singularCubicalHomologyIso_hom_singularHomology₀Section`: on homology in degree zero the
   comparison sends the class of a point to the class of the point cube.
+* `TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubicalCycleOfPoint`: conversely, the inverse
+  comparison sends the class of the point cube to the class of the point.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
   normalized cubical chains induces isomorphisms on singular homology.
 
@@ -473,6 +475,16 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
   rw [iCycles_cubicalCycleOfPoint, HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hi]
   rw [singularToCubical_app_f_zero_simplexChain, Equiv.apply_symm_apply,
     normalizedCubicalChainComplexXEquiv_symm_apply]
+
+/-- The comparison of normalized cubical with singular homology sends the class of the point cube
+at `x` in degree zero to the class of the point `x`. -/
+theorem singularCubicalHomologyIso_inv_homologyπ_cubicalCycleOfPoint {X : TopCat.{u}} (x : X) :
+    (singularCubicalHomologyIso k X 0).inv
+        (((normalizedCubicalChainComplex k).obj X).homologyπ 0 (cubicalCycleOfPoint k x)) =
+      (singularHomology₀Section (ModuleCat.of k k) x).hom 1 := by
+  rw [← singularCubicalHomologyIso_hom_singularHomology₀Section]
+  -- The singular homology of `X` is the homology of `(singularChains k).obj X` by definition.
+  exact Iso.hom_inv_id_apply _ _
 
 /-- The comparison isomorphism on homology is natural. -/
 @[reassoc]

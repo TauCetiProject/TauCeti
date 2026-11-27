@@ -33,10 +33,6 @@ its norm is `‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a �
 (`TauCeti.norm_iteratedFDeriv_comp_add_const_smul`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
 (`HolderOnWith.iteratedFDeriv_comp_const_smul`).
-
-Iterated derivatives and their norms also transport across universe lifting `ULift.up`
-(`iteratedFDeriv_ulift_up`, `iteratedFDeriv_ulift_up_apply`,
-`compContinuousMultilinearMap_ulift_iteratedFDeriv`, and `norm_iteratedFDeriv_ulift_up`).
 -/
 
 public section
@@ -273,48 +269,3 @@ theorem holderOnWith_iteratedFDeriv_comp {E E' T Tu : Type*}
   simpa only [dist_eq_norm] using hxy
 
 end LinearIsometryEquiv
-
-section ULift
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Lifting values by `ULift.up` postcomposes the `k`-th iterated derivative with
-`ContinuousLinearEquiv.ulift.symm`. -/
-theorem iteratedFDeriv_ulift_up (k : ℕ) (f : E → F) (x : E) :
-    iteratedFDeriv 𝕜 k (fun y ↦ ULift.up.{u} (f y)) x =
-      ContinuousLinearMap.compContinuousMultilinearMap
-        (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.toContinuousLinearMap
-        (iteratedFDeriv 𝕜 k f x) :=
-  (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.iteratedFDeriv_comp_left
-    (f := f) (x := x) (i := k)
-
-/-- Evaluating the `k`-th iterated derivative of `y ↦ ULift.up (f y)` commutes with `ULift.up`. -/
-@[simp]
-theorem iteratedFDeriv_ulift_up_apply (k : ℕ) (f : E → F) (x : E) (m : Fin k → E) :
-    iteratedFDeriv 𝕜 k (fun y ↦ ULift.up.{u} (f y)) x m =
-      ULift.up.{u} (iteratedFDeriv 𝕜 k f x m) := by
-  rw [iteratedFDeriv_ulift_up]
-  rfl
-
-/-- Postcomposing the `k`-th iterated derivative of `y ↦ ULift.up (f y)` with
-`ContinuousLinearEquiv.ulift` recovers `iteratedFDeriv 𝕜 k f x`. -/
-theorem compContinuousMultilinearMap_ulift_iteratedFDeriv (k : ℕ) (f : E → F) (x : E) :
-    ContinuousLinearMap.compContinuousMultilinearMap
-        (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).toContinuousLinearMap
-        (iteratedFDeriv 𝕜 k (fun y ↦ ULift.up.{u} (f y)) x) =
-      iteratedFDeriv 𝕜 k f x := by
-  ext m
-  change ContinuousLinearEquiv.ulift (iteratedFDeriv 𝕜 k (fun y ↦ ULift.up.{u} (f y)) x m) =
-    iteratedFDeriv 𝕜 k f x m
-  rw [iteratedFDeriv_ulift_up_apply]
-  rfl
-
-/-- Lifting values by `ULift.up` preserves the norm of the `k`-th iterated derivative. -/
-@[simp]
-theorem norm_iteratedFDeriv_ulift_up (k : ℕ) (f : E → F) (x : E) :
-    ‖iteratedFDeriv 𝕜 k (fun y ↦ ULift.up.{u} (f y)) x‖ = ‖iteratedFDeriv 𝕜 k f x‖ :=
-  (LinearIsometryEquiv.ulift 𝕜 F).symm.norm_iteratedFDeriv_comp_left f x k
-
-end ULift

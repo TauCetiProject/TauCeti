@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Contour.Cycle.HungerbuhlerWasem
 public import TauCeti.Analysis.Contour.Cycle.Residue
 public import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # Contour integration in a star-shaped domain
@@ -24,8 +25,8 @@ neighborhood of a rectangle or triangle, and a contour drawn inside it.
 
 `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex` closes that gap: a closed absolutely
 continuous curve in a set that is star-shaped about some point is null-homologous there. The
-statements below about piecewise-`C¹` immersions use its piecewise-`C¹` form
-`TauCeti.Contour.isNullHomologous_of_starConvex`, and the statements about cycles use
+statements below about piecewise-`C¹` immersions use it too, an immersion being absolutely
+continuous, and the statements about cycles use
 `TauCeti.Contour.Cycle.isNullHomologous_of_starConvex`. This file records the resulting statements,
 in which star-shapedness of the domain discharges the null-homology hypothesis:
 
@@ -93,10 +94,9 @@ which are posed on a disc or a half-plane, both star-shaped.
 ## Provenance
 
 No formalization is vendored: each statement is its null-homologous counterpart with the
-null-homology discharged by `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex` for an
-absolutely continuous curve, by `TauCeti.Contour.isNullHomologous_of_starConvex` for a
-piecewise-`C¹` immersion, and by `TauCeti.Contour.Cycle.isNullHomologous_of_starConvex` for a
-cycle.
+null-homology discharged by `AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex` for a
+curve, a piecewise-`C¹` immersion being absolutely continuous, and by
+`TauCeti.Contour.Cycle.isNullHomologous_of_starConvex` for a cycle.
 
 ## References
 
@@ -252,7 +252,8 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex {S : Finset 
     HasCauchyPV γ a b f
       (2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, windingNumber γ a b s * residue f s)) :=
   hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S γ a b hγ_imm hclosed hγa hγΩ hf
-    hmero (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ) h_simple
+    hmero (hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex
+      hstar hclosed hγΩ) h_simple
 
 /-- **The half-residue on a star-shaped open set.** An on-curve simple pole about which the
 immersion has generalized winding number `½` contributes `πi · Res_s f` to the principal value —
@@ -266,7 +267,8 @@ theorem hasCauchyPV_half_residue_of_simple_pole_starConvex {s : ℂ} (hstar : St
     (hwind : windingNumber γ a b s = 1 / 2) :
     HasCauchyPV γ a b f ((Real.pi : ℂ) * Complex.I * residue f s) :=
   hasCauchyPV_half_residue_of_simple_pole hopen γ a b s hγ_imm hclosed hγa hγΩ hf hmero
-    (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ) h_simple hwind
+    (hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex
+      hstar hclosed hγΩ) h_simple hwind
 
 /-- **The argument principle on a star-shaped open set, for a curve running through the zeros.**
 With `f` analytic and non-vanishing on an open `Ω` star-shaped about `x`, off a finite `S`,
@@ -287,7 +289,8 @@ theorem hasCauchyPV_logDeriv_starConvex {S : Finset ℂ} {ord : ℂ → ℤ} (hs
     HasCauchyPV γ a b (logDeriv f)
       (2 * (Real.pi : ℂ) * Complex.I * ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ)) :=
   hasCauchyPV_logDeriv_nullHomologous hopen hoffS hmero hord hγ_imm hγΩ hclosed hγa
-    (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ)
+    (hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval.isNullHomologous_of_starConvex hstar
+      hclosed hγΩ)
 
 namespace Cycle
 

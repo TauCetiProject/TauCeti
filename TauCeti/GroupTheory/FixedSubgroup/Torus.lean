@@ -57,7 +57,7 @@ theorem surjective_commutatorMap_of_torus_twist (f : (ι → Kˣ) →* (ι → K
 
 variable {G H : Type*} [Group G] [Group H]
 
-/-- An equivariant surjection with a split torus kernel admits fixed lifts when the
+/-- Fixed points in the image of an equivariant map with split torus kernel lift when the
 endomorphism on that torus is a finite-order twist of a power map of exponent greater
 than one. In particular, a fixed Weyl element has a fixed normalizer representative
 once these hypotheses have been verified for its torus and normalizer. -/
@@ -65,11 +65,11 @@ theorem exists_fixed_lift_of_torus_twist (ψ : G →* H)
     (j : (ι → Kˣ) →* G) (hker : j.range = ψ.ker)
     (f : (ι → Kˣ) →* (ι → Kˣ)) (F : G →* G) (F' : H →* H)
     (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
-    (hsurj : Function.Surjective ψ) (θ : (ι → Kˣ) →* (ι → Kˣ))
+    (θ : (ι → Kˣ) →* (ι → Kˣ))
     {q m : ℕ} (hq : 1 < q) (hm : 0 < m) (hθ : ∀ t, (⇑θ)^[m] t = t)
-    (hf : ∀ t, f t = θ t ^ q) {y : H} (hy : F' y = y) :
+    (hf : ∀ t, f t = θ t ^ q) {y : H} (hy_range : y ∈ Set.range ψ) (hy : F' y = y) :
     ∃ x : G, F x = x ∧ ψ x = y := by
-  exact ψ.exists_fixed_lift_of_surjective_commutatorMap j hker f F F' hψ hj hsurj
-    (f.surjective_commutatorMap_of_torus_twist θ hq hm hθ hf) hy
+  exact ψ.exists_fixed_lift_of_surjective_commutatorMap j (mulExact_iff.mpr hker.symm) f F F' hψ hj
+    (f.surjective_commutatorMap_of_torus_twist θ hq hm hθ hf) hy_range hy
 
 end MonoidHom

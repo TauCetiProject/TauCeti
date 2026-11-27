@@ -31,6 +31,9 @@ variable valued in a `Fintype`; this file extends it to countable value spaces w
 singletons, where the finite sum of measures becomes `MeasureTheory.Measure.sum`. Fibres of mass
 zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 
+The real conditional mass of `t` given a measurable event `s` is `μ.real (s ∩ t) / μ.real s`
+for every measure (`ProbabilityTheory.cond_real_apply`).
+
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
 bounded on a measurable event is integrable for the conditional measure on it. Conditioning a
 measure on any set on which its restriction has null singletons preserves null singletons. A
@@ -112,6 +115,12 @@ instance instNullSingletonClass_cond {μ : Measure Ω} {s : Set Ω}
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-- Given a measurable event `s`, the real conditional mass of `t` is the real mass of `s ∩ t`
+divided by the real mass of `s`, for every measure. -/
+theorem cond_real_apply {μ : Measure Ω} {s : Set Ω} (hs : MeasurableSet s) (t : Set Ω) :
+    (cond μ s).real t = μ.real (s ∩ t) / μ.real s := by
+  simp [measureReal_def, cond_apply hs, div_eq_mul_inv, mul_comm]
 
 /-- On a measurable subset of the conditioning event, the real conditional mass is the
 original real mass divided by the real mass of the conditioning event. -/

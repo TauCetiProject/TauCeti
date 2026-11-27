@@ -86,9 +86,6 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`, so `det Dφ⁻¹(y) ≠ 0` (`Equiv.det_fderiv_symm_ne_zero`).
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
-* `differentiableWithinAt_ulift_up_iff`, `differentiableAt_ulift_up_iff`,
-  `differentiableOn_ulift_up_iff`, `differentiable_ulift_up_iff`, and `fderiv_ulift_up_apply`:
-  transport of differentiability and Fréchet derivatives across `ULift.up`.
 
 Precomposition by a continuous linear equivalence preserves the image of the vanishing-derivative
 locus, with no differentiability premise. This follows the totalized derivative calculation in
@@ -492,47 +489,3 @@ theorem IsCompact.finite_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 
     (hf' : ∀ x ∈ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (f ⁻¹' {y}).Finite := by
   simpa using IsCompact.finite_inter_preimage_of_hasFDerivAt (s := univ) (by simpa using hK)
     (by simpa using hf) (by simpa using hf')
-
-section ULift
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Composing on the left with `ULift.up` preserves `DifferentiableWithinAt`. -/
-@[simp]
-theorem differentiableWithinAt_ulift_up_iff {f : E → F} {s : Set E} {x : E} :
-    DifferentiableWithinAt 𝕜 (fun y ↦ ULift.up.{u} (f y)) s x ↔
-      DifferentiableWithinAt 𝕜 f s x :=
-  (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.comp_differentiableWithinAt_iff
-    (f := f) (s := s) (x := x)
-
-/-- Composing on the left with `ULift.up` preserves `DifferentiableAt`. -/
-@[simp]
-theorem differentiableAt_ulift_up_iff {f : E → F} {x : E} :
-    DifferentiableAt 𝕜 (fun y ↦ ULift.up.{u} (f y)) x ↔ DifferentiableAt 𝕜 f x :=
-  (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.comp_differentiableAt_iff
-    (f := f) (x := x)
-
-/-- Composing on the left with `ULift.up` preserves `DifferentiableOn`. -/
-@[simp]
-theorem differentiableOn_ulift_up_iff {f : E → F} {s : Set E} :
-    DifferentiableOn 𝕜 (fun y ↦ ULift.up.{u} (f y)) s ↔ DifferentiableOn 𝕜 f s :=
-  (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.comp_differentiableOn_iff
-    (f := f) (s := s)
-
-/-- Composing on the left with `ULift.up` preserves `Differentiable`. -/
-@[simp]
-theorem differentiable_ulift_up_iff {f : E → F} :
-    Differentiable 𝕜 (fun y ↦ ULift.up.{u} (f y)) ↔ Differentiable 𝕜 f :=
-  (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.comp_differentiable_iff (f := f)
-
-/-- The Fréchet derivative of `y ↦ ULift.up (f y)` evaluated on `v` is `ULift.up (fderiv 𝕜 f x v)`.
--/
-@[simp]
-theorem fderiv_ulift_up_apply (f : E → F) (x v : E) :
-    fderiv 𝕜 (fun y ↦ ULift.up.{u} (f y)) x v = ULift.up.{u} (fderiv 𝕜 f x v) := by
-  have h := (ContinuousLinearEquiv.ulift : ULift.{u} F ≃L[𝕜] F).symm.comp_fderiv (f := f) (x := x)
-  exact congrArg (fun L : E →L[𝕜] ULift.{u} F ↦ L v) h
-
-end ULift

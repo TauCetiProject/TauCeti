@@ -90,6 +90,15 @@ theorem _root_.MulEquiv.comp_mem_irreducibleCharacters_iff {H : Type w} [Group H
   simpa [Function.comp_assoc] using
     e.symm.toMonoidHom.comp_mem_irreducibleCharacters e.symm.surjective h
 
+/-- **An isomorphism matches the irreducible characters**: precomposition with `e : H ≃* G` is a
+bijection from the irreducible characters of `G` onto those of `H`. -/
+theorem _root_.MulEquiv.bijOn_comp_irreducibleCharacters {H : Type w} [Group H] (e : H ≃* G) :
+    Set.BijOn (fun χ : G → k => χ ∘ e) (irreducibleCharacters k G) (irreducibleCharacters k H) :=
+  ⟨fun _ hχ => e.comp_mem_irreducibleCharacters_iff.2 hχ,
+    e.surjective.injective_comp_right.injOn,
+    fun χ hχ => ⟨χ ∘ e.symm, e.symm.comp_mem_irreducibleCharacters_iff.2 hχ, by
+      simp [Function.comp_assoc]⟩⟩
+
 /-- A finite-dimensional representation of `G` over a field of characteristic zero whose
 restriction along `f : H →* G`, for a finite group `H`, has an irreducible character is
 irreducible. -/

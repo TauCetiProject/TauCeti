@@ -65,6 +65,13 @@ def singularChainComplexFunctorObjCompMapIso :
       (singularChainComplexFunctor D).obj (F.obj R) :=
   Functor.isoWhiskerLeft TopCat.toSSet (SSet.chainComplexFunctorObjCompMapIso F R)
 
+/-- The inverse of `F (C(X; R)) ≅ C(X; F R)` at a space `X` is the inverse of Mathlib's simplicial
+comparison at the singular simplicial set of `X`. -/
+lemma singularChainComplexFunctorObjCompMapIso_inv_app (X : TopCat.{w}) :
+    (singularChainComplexFunctorObjCompMapIso F R).inv.app X =
+      (SSet.chainComplexFunctorObjCompMapIso F R).inv.app (TopCat.toSSet.obj X) :=
+  (rfl)
+
 variable [CategoryWithHomology C] [CategoryWithHomology D] [F.PreservesHomology]
 
 /-- **Singular homology commutes with an exact coproduct-preserving functor of coefficients**: for
@@ -88,6 +95,17 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
           (((singularChainComplexFunctor C).obj R).obj X) ≫
         HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).hom.app X)
           n :=
+  (rfl)
+
+/-- The inverse of `F (Hₙ(X; R)) ≅ Hₙ(X; F R)` at a space `X` is the map induced by
+`C(X; F R) ≅ F (C(X; R))`, followed by the comparison of the homology of the image complex with
+the image of the homology. -/
+lemma singularHomologyFunctorObjCompIso_inv_app (n : ℕ) (X : TopCat.{w}) :
+    (singularHomologyFunctorObjCompIso F R n).inv.app X =
+      HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).inv.app X)
+          n ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).hom.app
+          (((singularChainComplexFunctor C).obj R).obj X) :=
   (rfl)
 
 /-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,

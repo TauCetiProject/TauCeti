@@ -295,6 +295,29 @@ theorem baseChangeHomeomorph_symm_apply_tmul (x : A →ₐ[k] R) (c : K) (a : A)
     (baseChangeHomeomorph k K A R).symm x (c ⊗ₜ[k] a) = c • x a :=
   AlgHom.liftEquiv_tmul x c a
 
+variable (k K A R) in
+/-- The base-change adjunction `baseChangeHomeomorph` on the convolution types of points. -/
+noncomputable def baseChangeConvHomeomorph :
+    WithConv (K ⊗[k] A →ₐ[K] R) ≃ₜ WithConv (A →ₐ[k] R) where
+  toEquiv := WithConv.congr (baseChangeHomeomorph k K A R).toEquiv
+  continuous_toFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+    (baseChangeHomeomorph k K A R).continuous.comp isHomeomorph_ofConv.continuous
+  continuous_invFun := isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+    (baseChangeHomeomorph k K A R).symm.continuous.comp isHomeomorph_ofConv.continuous
+
+/-- Restriction along base change of convolution points evaluates at `1 ⊗ a`. -/
+@[simp]
+theorem baseChangeConvHomeomorph_apply (x : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
+    (baseChangeConvHomeomorph k K A R x).ofConv a = x.ofConv (1 ⊗ₜ[k] a) :=
+  baseChangeHomeomorph_apply x.ofConv a
+
+/-- Extending a convolution point across base change uses the prescribed coefficient algebra
+structure. -/
+@[simp]
+theorem baseChangeConvHomeomorph_symm_apply_tmul (x : WithConv (A →ₐ[k] R)) (c : K) (a : A) :
+    ((baseChangeConvHomeomorph k K A R).symm x).ofConv (c ⊗ₜ[k] a) = c • x.ofConv a :=
+  baseChangeHomeomorph_symm_apply_tmul x.ofConv c a
+
 end BaseChange
 
 end TauCeti.PointTopology

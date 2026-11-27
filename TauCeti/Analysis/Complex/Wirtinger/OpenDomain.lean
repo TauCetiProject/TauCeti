@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.SmoothSeries
-import TauCeti.Analysis.Complex.MixedDeriv
+import TauCeti.Analysis.Complex.Parameter.MixedDeriv
 import TauCeti.Analysis.Complex.Runge.Operator
 import TauCeti.Analysis.Complex.Runge.Parameter
 import TauCeti.Analysis.Complex.UniformLimit
@@ -59,7 +59,7 @@ The construction follows the Mittag–Leffler / Runge exhaustion scheme:
 4. Put `u 0 = v 0` (i.e. `a 0 = 0`) and `u j = v j - a j` for `j ≥ 1`, and set
    `U x w = ∑' j, u j x w`. On any local box `ball x₀ ρ ×ˢ ball z₀ r` inside
    `D (m + 1) ×ˢ interior (C (m + 1))`, the Cauchy bound
-   `TauCeti.norm_iteratedFDeriv_le_of_differentiableOn_of_norm_iteratedFDeriv_prod_left_le`
+   `ContDiffOn.norm_iteratedFDeriv_le_of_norm_iteratedFDeriv_partial_le`
    converts the parameter-only bounds on the tail `j ≥ max (m + 1) k` into total `C^k` bounds
    `(1 + 2^k / r)^k * 2⁻ʲ`, so `TauCeti.contDiffOn_tsum_of_eventually` gives joint smoothness on
    `s ×ˢ Ω`. Splitting at `m + 1` shows both `bar∂_z U = f` and holomorphy in `q`.
@@ -238,8 +238,8 @@ private theorem contDiffOn_shell_series_box {s : Set (P × Q)} {Ω : Set ℂ}
   have hhol_j : ∀ x' ∈ ball x₀ ρ, DifferentiableOn ℂ (u j x') (interior (C (m + 1))) :=
     fun x' hx' ↦ (hu_hol j hj1 x' (hD_sub (m + 1) (hball_x hx'))).mono
       (interior_mono (hC_mono hjm))
-  exact norm_iteratedFDeriv_le_of_differentiableOn_of_norm_iteratedFDeriv_prod_left_le k
-    isOpen_ball isOpen_interior (((hu_cd j).mono hCD).of_le (by simp)) hhol_j hp.1 hr hsub_z
+  exact ContDiffOn.norm_iteratedFDeriv_le_of_norm_iteratedFDeriv_partial_le
+    (((hu_cd j).mono hCD).of_le (by simp)) isOpen_ball isOpen_interior hhol_j hp.1 hr hsub_z
     fun l hl w hw ↦ hu_bd j hj1 l (hl.trans hjk) p.1 (hD_mono hjm (hball_x hp.1)) w
       (hC_mono hjm (interior_subset (hsub_z hw)))
 

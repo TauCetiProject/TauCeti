@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Topology.PartitionOfUnity.Basic
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # Smooth partitions of unity: pointwise sums and pullback regularity
@@ -92,3 +93,18 @@ theorem contMDiffAt_finsum_comp {ι E H M E' H' N F : Type*} {n : ℕ∞}
     (hg i ((ρ.mem_fintsupport_iff (π y₀) i).1 hi))
 
 end SmoothPartitionOfUnity
+
+namespace BumpCovering
+
+variable {ι E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {s : Set M}
+
+/-- A `BumpCovering` whose functions are `C^k` generates a `C^k` partition of unity. -/
+theorem contMDiff_toPartitionOfUnity_of_contMDiff {k : ℕ∞ω} (f : BumpCovering ι M s)
+    (hf : ∀ i, ContMDiff I 𝓘(ℝ) k (f i)) (i : ι) :
+    ContMDiff I 𝓘(ℝ) k (f.toPartitionOfUnity i) :=
+  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
+    simp only [Function.mulSupport_one_sub]
+    exact f.locallyFinite
+
+end BumpCovering

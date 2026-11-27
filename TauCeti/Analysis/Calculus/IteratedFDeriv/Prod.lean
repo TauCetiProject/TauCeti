@@ -151,6 +151,14 @@ theorem norm_iteratedFDeriv_prod_right_le (hf : ContDiffAt 𝕜 n f (p, x)) (m :
   exact (iteratedFDeriv 𝕜 m f (p, x)).norm_compContinuous_linearIsometry_le
     fun _ ↦ LinearIsometry.inr 𝕜 P E
 
+/-- An iterated derivative in the first variable is bounded by the total iterated derivative:
+`‖Dᵐ (q ↦ f (q, x)) p‖ ≤ ‖Dᵐ f (p, x)‖` when `f` is `C^n` at `(p, x)` and `m ≤ n`. -/
+theorem norm_iteratedFDeriv_prod_left_le (hf : ContDiffAt 𝕜 n f (p, x)) (m : ℕ) (hm : m ≤ n) :
+    ‖iteratedFDeriv 𝕜 m (fun q ↦ f (q, x)) p‖ ≤ ‖iteratedFDeriv 𝕜 m f (p, x)‖ := by
+  rw [hf.iteratedFDeriv_prod_left m hm]
+  exact (iteratedFDeriv 𝕜 m f (p, x)).norm_compContinuous_linearIsometry_le
+    fun _ ↦ LinearIsometry.inl 𝕜 P E
+
 end ContDiffAt
 
 namespace ContDiff

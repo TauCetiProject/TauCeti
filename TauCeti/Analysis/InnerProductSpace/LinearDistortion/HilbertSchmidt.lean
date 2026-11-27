@@ -40,11 +40,20 @@ arithmetic and geometric means on the `σᵢ²`, `J(A) = σ₁ ⋯ σₙ ≤ (�
 * `Orientation.orientedJacobian_le_frobenius_div_sqrt_pow`: `J(A) ≤ (‖A‖_HS / √n)ⁿ`.
 * `Orientation.one_le_hilbertSchmidtDistortion`: `q_S(A) ≥ 1` when `J(A) > 0`.
 * `Orientation.hilbertSchmidtDistortion_le_outerDistortion`,
-  `Orientation.outerDistortion_le_mul_hilbertSchmidtDistortion`: `q_S ≤ q_O ≤ n^{n/2} q_S`.
+  `Orientation.outerDistortion_le_mul_hilbertSchmidtDistortion`: `q_S ≤ q_O ≤ n^{n/2} q_S`, with
+  `Orientation.outerDistortion_lt_mul_hilbertSchmidtDistortion`: the upper bound is strict when
+  `J(A) > 0` and `n ≥ 2`.
+* `Orientation.hilbertSchmidtDistortion_eq_one_iff_outerDistortion_eq_one`: `q_S(A) = 1` iff
+  `q_O(A) = 1`, the equality case of `q_S ≥ 1`; `Orientation.hilbertSchmidtDistortion_id`.
 * `Orientation.hilbertSchmidtDistortion_smul`,
   `Orientation.hilbertSchmidtDistortion_linearIsometry_comp`,
   `Orientation.hilbertSchmidtDistortion_comp_linearIsometryEquiv`: the invariances of `q_S`
-  under positive scaling (`cⁿ > 0`) and orientation-preserving isometries.
+  under positive scaling (`cⁿ > 0`) and orientation-preserving isometries;
+  `Orientation.hilbertSchmidtDistortion_neg_neg` (reversing both orientations) and
+  `Orientation.hilbertSchmidtDistortion_smul_of_pow_neg` (`cⁿ < 0` makes `q_S` infinite for
+  nonzero `A` with `J(A) ≥ 0`).
+* `Orientation.hilbertSchmidtDistortion_smul_linearIsometry`: a multiple `c • U` with `cⁿ > 0` of
+  a linear isometry `U` of oriented Jacobian `1` has Hilbert–Schmidt distortion `1`.
 
 ## References
 
@@ -244,5 +253,98 @@ theorem hilbertSchmidtDistortion_comp_linearIsometryEquiv (U : X ≃ₗᵢ[ℝ] 
   rw [hilbertSchmidtDistortion_def, hilbertSchmidtDistortion_def,
     oX.orientedJacobian_comp_of_right_eq_one oV oW hU, LinearMap.frobenius_comp_linearIsometryEquiv,
     LinearMap.comp_eq_zero_iff_of_surjective (f := (U : X →ₗ[ℝ] V)) U.surjective]
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- **Equality case of `q_S ≥ 1`.** The Hilbert–Schmidt distortion is `1` exactly when the outer
+distortion is `1`: by the equality case of the inequality of arithmetic and geometric means, all
+the singular values agree. -/
+theorem hilbertSchmidtDistortion_eq_one_iff_outerDistortion_eq_one {A : V →ₗ[ℝ] W} :
+    oV.hilbertSchmidtDistortion oW A = 1 ↔ oV.outerDistortion oW A = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hJ : 0 < oV.orientedJacobian oW A := by
+      by_contra hJ
+      by_cases hA : A = 0
+      · subst hA
+        simp [hilbertSchmidtDistortion_def, hJ] at h
+      · simp [oV.hilbertSchmidtDistortion_of_nonpos oW (not_lt.mp hJ) hA] at h
+    have hc := Real.sqrt_natCast_pow_self_pos n
+    rw [oV.hilbertSchmidtDistortion_of_pos oW hJ, ENNReal.ofReal_eq_one,
+      div_eq_one_iff_eq (mul_pos hc hJ).ne'] at h
+    have hJ' : oV.orientedJacobian oW A = (frobenius ℝ V W A / √(n : ℝ)) ^ n := by
+      rw [div_pow, h, mul_div_cancel_left₀ _ hc.ne']
+    rw [oV.orientedJacobian_eq_prod_singularValues_of_nonneg oW hJ.le,
+      A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues, (Fact.out : finrank ℝ V = n)] at hJ'
+    rcases n.eq_zero_or_pos with rfl | hn
+    · rw [oV.outerDistortion_of_pos oW hJ, oV.orientedJacobian_eq_one_of_fin_zero oW hJ]
+      simp
+    have hall := (Real.prod_eq_sqrt_sum_sq_div_sqrt_card_pow_iff (Finset.range n)
+      A.singularValues fun i _ ↦ A.singularValues_nonneg i).mp (by rwa [Finset.card_range])
+    have hP : ∏ i ∈ Finset.range n, A.singularValues i = A.singularValues 0 ^ n := by
+      rw [Finset.prod_congr rfl fun i hi ↦ hall i hi 0 (Finset.mem_range.mpr hn),
+        Finset.prod_const, Finset.card_range]
+    have hpos : 0 < A.singularValues 0 ^ n := by
+      rw [← hP, ← oV.orientedJacobian_eq_prod_singularValues_of_nonneg oW hJ.le]
+      exact hJ
+    rw [oV.outerDistortion_eq_ofReal_prod_singularValues oW hJ, hP, div_self hpos.ne',
+      ENNReal.ofReal_one]
+  · have hJ := oV.orientedJacobian_pos_of_outerDistortion_ne_zero_of_ne_top oW (A := A)
+      (by simp [h]) (by simp [h])
+    exact le_antisymm (h ▸ oV.hilbertSchmidtDistortion_le_outerDistortion oW A)
+      (oV.one_le_hilbertSchmidtDistortion oW hJ)
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- For `J(A) > 0` in dimension `n ≥ 2` the bound `q_O(A) ≤ n^{n/2} q_S(A)` is strict: the
+second singular value is positive, so `‖A‖ = σ₁ < (σ₁² + ⋯ + σₙ²)^{1/2} = ‖A‖_HS`. -/
+theorem outerDistortion_lt_mul_hilbertSchmidtDistortion (hn : 2 ≤ n) {A : V →ₗ[ℝ] W}
+    (h : 0 < oV.orientedJacobian oW A) :
+    oV.outerDistortion oW A <
+      ENNReal.ofReal (√(n : ℝ) ^ n) * oV.hilbertSchmidtDistortion oW A := by
+  have hc := Real.sqrt_natCast_pow_self_pos n
+  have hℓ := oV.minimalStretch_pos_of_orientedJacobian_ne_zero oW (by omega) h.ne'
+  rw [A.minimalStretch_def, (Fact.out : finrank ℝ V = n)] at hℓ
+  have hlt := A.norm_toContinuousLinearMap_lt_frobenius
+    (hℓ.trans_le (A.singularValues_antitone (by omega)))
+  rw [oV.hilbertSchmidtDistortion_of_pos oW h, oV.outerDistortion_of_pos oW h,
+    ← ENNReal.ofReal_mul hc.le, ← mul_div_assoc, mul_div_mul_left _ _ hc.ne',
+    ENNReal.ofReal_lt_ofReal_iff (div_pos (pow_pos ((norm_nonneg _).trans_lt hlt) n) h)]
+  exact div_lt_div_of_pos_right (pow_lt_pow_left₀ hlt (norm_nonneg _) (by omega)) h
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- The identity has Hilbert–Schmidt distortion `1`. -/
+@[simp]
+theorem hilbertSchmidtDistortion_id :
+    oV.hilbertSchmidtDistortion oV LinearMap.id = 1 :=
+  (oV.hilbertSchmidtDistortion_eq_one_iff_outerDistortion_eq_one oV).mpr oV.outerDistortion_id
+
+omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- Reversing both orientations changes no Hilbert–Schmidt distortion. -/
+@[simp]
+theorem hilbertSchmidtDistortion_neg_neg (A : V →ₗ[ℝ] W) :
+    (-oV).hilbertSchmidtDistortion (-oW) A = oV.hilbertSchmidtDistortion oW A := by
+  simp [hilbertSchmidtDistortion_def]
+
+omit [FiniteDimensional ℝ W] [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- Scaling a nonzero map with `J(A) ≥ 0` by `c` with `cⁿ < 0` (a negative scalar in odd
+dimension) makes the Hilbert–Schmidt distortion infinite. -/
+theorem hilbertSchmidtDistortion_smul_of_pow_neg {c : ℝ} (hc : c ^ n < 0) {A : V →ₗ[ℝ] W}
+    (h : 0 ≤ oV.orientedJacobian oW A) (hA : A ≠ 0) :
+    oV.hilbertSchmidtDistortion oW (c • A) = ⊤ := by
+  have hn : 0 < n := Nat.pos_of_ne_zero (by rintro rfl; norm_num at hc)
+  have hc0 : c ≠ 0 := (pow_ne_zero_iff hn.ne').mp hc.ne
+  refine oV.hilbertSchmidtDistortion_of_nonpos oW ?_ (smul_ne_zero hc0 hA)
+  rw [oV.orientedJacobian_smul oW]
+  exact mul_nonpos_of_nonpos_of_nonneg hc.le h
+
+omit [FiniteDimensional ℝ X] [Fact (finrank ℝ X = n)] in
+/-- A multiple `c • U` with `cⁿ > 0` (any `c > 0`, and any `c ≠ 0` in even dimension) of a linear
+isometry `U` of oriented Jacobian `1` has Hilbert–Schmidt distortion `1`, since
+`1 ≤ q_S ≤ q_O = 1`. -/
+theorem hilbertSchmidtDistortion_smul_linearIsometry {c : ℝ} (hc : 0 < c ^ n) (U : V →ₗᵢ[ℝ] W)
+    (hU : oV.orientedJacobian oW U.toLinearMap = 1) :
+    oV.hilbertSchmidtDistortion oW (c • U.toLinearMap) = 1 := by
+  rw [oV.hilbertSchmidtDistortion_smul oW hc]
+  refine le_antisymm ?_ (oV.one_le_hilbertSchmidtDistortion oW (by rw [hU]; exact one_pos))
+  exact (oV.hilbertSchmidtDistortion_le_outerDistortion oW _).trans_eq
+    (oV.outerDistortion_linearIsometry oW U hU)
 
 end Orientation
