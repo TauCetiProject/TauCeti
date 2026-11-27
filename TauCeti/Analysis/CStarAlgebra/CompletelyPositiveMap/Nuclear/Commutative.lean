@@ -13,7 +13,7 @@ import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Topology.ContinuousMap.StarOrdered
 import TauCeti.Analysis.CStarAlgebra.Basic
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # Commutative C⋆-algebras are nuclear
