@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
-import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
-import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Interlacing
 
@@ -130,15 +128,18 @@ theorem smallestEigenvalue_bot [Nonempty V] [DecidableRel (⊥ : SimpleGraph V).
     (⊥ : SimpleGraph V).smallestEigenvalue = 0 := by
   simp [smallestEigenvalue_def]
 
+private theorem exists_adjEigenvalues_ne_zero_of_ne_bot (h : G ≠ ⊥) :
+    ∃ i ∈ (univ : Finset (Fin (Fintype.card V))), G.adjEigenvalues i ≠ 0 := by
+  simpa [funext_iff] using mt G.adjEigenvalues_eq_zero_iff.mp h
+
 /-- The largest adjacency eigenvalue is positive exactly when the graph has an edge. -/
 theorem largestEigenvalue_pos_iff [Nonempty V] : 0 < G.largestEigenvalue ↔ G ≠ ⊥ := by
   constructor
   · rintro h rfl
     simp at h
   · intro h
-    have hn : ∃ i ∈ (univ : Finset (Fin (Fintype.card V))), G.adjEigenvalues i ≠ 0 := by
-      simpa [funext_iff] using mt G.adjEigenvalues_eq_zero_iff.mp h
-    obtain ⟨i, -, hi⟩ := exists_pos_of_sum_zero_of_exists_nonzero _ G.sum_adjEigenvalues hn
+    obtain ⟨i, -, hi⟩ := exists_pos_of_sum_zero_of_exists_nonzero _ G.sum_adjEigenvalues
+      (G.exists_adjEigenvalues_ne_zero_of_ne_bot h)
     exact hi.trans_le (G.adjEigenvalues_le_largestEigenvalue i)
 
 /-- The smallest adjacency eigenvalue is negative exactly when the graph has an edge. -/
@@ -147,9 +148,8 @@ theorem smallestEigenvalue_neg_iff [Nonempty V] : G.smallestEigenvalue < 0 ↔ G
   · rintro h rfl
     simp at h
   · intro h
-    have hn : ∃ i ∈ (univ : Finset (Fin (Fintype.card V))), G.adjEigenvalues i ≠ 0 := by
-      simpa [funext_iff] using mt G.adjEigenvalues_eq_zero_iff.mp h
-    obtain ⟨i, -, hi⟩ := exists_neg_of_sum_zero_of_exists_nonzero _ G.sum_adjEigenvalues hn
+    obtain ⟨i, -, hi⟩ := exists_neg_of_sum_zero_of_exists_nonzero _ G.sum_adjEigenvalues
+      (G.exists_adjEigenvalues_ne_zero_of_ne_bot h)
     exact (G.smallestEigenvalue_le_adjEigenvalues i).trans_lt hi
 
 /-- The largest adjacency eigenvalue is nonnegative. -/
@@ -166,69 +166,37 @@ theorem smallestEigenvalue_nonpos [Nonempty V] : G.smallestEigenvalue ≤ 0 := b
 
 /-! ### Rayleigh bounds -/
 
-open scoped InnerProductSpace
-
 /-- The adjacency quadratic form is bounded above by the largest eigenvalue times the squared
 Euclidean norm. -/
 theorem dotProduct_mulVec_adjMatrix_le [Nonempty V] (x : V → ℝ) :
     x ⬝ᵥ (G.adjMatrix ℝ *ᵥ x) ≤ G.largestEigenvalue * (x ⬝ᵥ x) := by
-  let y : EuclideanSpace ℝ V := WithLp.toLp 2 x
-  have hA := isSymmetric_toEuclideanLin_iff.mpr (G.isHermitian_adjMatrix ℝ)
-  have h := hA.re_inner_apply_self_le_of_mem_spanIndices finrank_euclideanSpace (s := Set.univ)
-    (fun i _ ↦ by
-      simpa only [G.adjEigenvalues_def, IsHermitian.eigenvalues₀]
-        using G.adjEigenvalues_le_largestEigenvalue i)
-    ((hA.eigenvectorBasis finrank_euclideanSpace).mem_spanIndices_iff (x := y) |>.mpr
-      fun i hi ↦ (hi (Set.mem_univ i)).elim)
-  simpa only [RCLike.re_to_real, ← EuclideanSpace.dotProduct_ofLp_self,
-    EuclideanSpace.inner_eq_star_dotProduct, star_trivial, ofLp_toLpLin, toLin'_apply,
-    y, WithLp.ofLp_toLp, dotProduct_comm (G.adjMatrix ℝ *ᵥ x)] using h
+  simpa only [G.largestEigenvalue_def, G.adjEigenvalues_def, star_trivial, RCLike.re_to_real]
+    using ((G.isHermitian_adjMatrix ℝ).re_star_dotProduct_mulVec_mem_Icc x).2
 
 /-- The adjacency quadratic form is bounded below by the smallest eigenvalue times the squared
 Euclidean norm. -/
 theorem le_dotProduct_mulVec_adjMatrix [Nonempty V] (x : V → ℝ) :
     G.smallestEigenvalue * (x ⬝ᵥ x) ≤ x ⬝ᵥ (G.adjMatrix ℝ *ᵥ x) := by
-  let y : EuclideanSpace ℝ V := WithLp.toLp 2 x
-  have hA := isSymmetric_toEuclideanLin_iff.mpr (G.isHermitian_adjMatrix ℝ)
-  have h := hA.le_re_inner_apply_self_of_mem_spanIndices finrank_euclideanSpace (s := Set.univ)
-    (fun i _ ↦ by
-      simpa only [G.adjEigenvalues_def, IsHermitian.eigenvalues₀]
-        using G.smallestEigenvalue_le_adjEigenvalues i)
-    ((hA.eigenvectorBasis finrank_euclideanSpace).mem_spanIndices_iff (x := y) |>.mpr
-      fun i hi ↦ (hi (Set.mem_univ i)).elim)
-  simpa only [RCLike.re_to_real, ← EuclideanSpace.dotProduct_ofLp_self,
-    EuclideanSpace.inner_eq_star_dotProduct, star_trivial, ofLp_toLpLin, toLin'_apply,
-    y, WithLp.ofLp_toLp, dotProduct_comm (G.adjMatrix ℝ *ᵥ x)] using h
+  simpa only [G.smallestEigenvalue_def, G.adjEigenvalues_def, star_trivial, RCLike.re_to_real]
+    using ((G.isHermitian_adjMatrix ℝ).re_star_dotProduct_mulVec_mem_Icc x).1
 
 /-- Equality in the upper Rayleigh bound is equivalent to membership in the largest
 adjacency eigenspace. -/
 theorem dotProduct_mulVec_adjMatrix_eq_largestEigenvalue_mul_iff [Nonempty V] (x : V → ℝ) :
     x ⬝ᵥ (G.adjMatrix ℝ *ᵥ x) = G.largestEigenvalue * (x ⬝ᵥ x) ↔
       G.adjMatrix ℝ *ᵥ x = G.largestEigenvalue • x := by
-  let D : Matrix V V ℝ := G.largestEigenvalue • 1
-  have hD : D.IsHermitian := by simp [D]
-  have h : (D - G.adjMatrix ℝ).PosSemidef :=
-    .of_dotProduct_mulVec_nonneg (hD.sub (G.isHermitian_adjMatrix ℝ)) fun y ↦ by
-      simpa [D, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, sub_nonneg]
-        using G.dotProduct_mulVec_adjMatrix_le y
-  have hzero := h.dotProduct_mulVec_zero_iff (x := x)
-  simp only [D, star_trivial, sub_mulVec, smul_mulVec, one_mulVec, dotProduct_sub,
-    dotProduct_smul, smul_eq_mul, sub_eq_zero] at hzero
-  exact ⟨fun hx ↦ (hzero.mp hx.symm).symm, fun hx ↦ (hzero.mpr hx.symm).symm⟩
+  simpa only [star_trivial, RCLike.re_to_real] using
+    (G.isHermitian_adjMatrix ℝ).re_star_dotProduct_mulVec_eq_mul_iff_of_forall_le
+      (by simpa only [star_trivial, RCLike.re_to_real] using G.dotProduct_mulVec_adjMatrix_le) x
 
 /-- Equality in the lower Rayleigh bound is equivalent to membership in the smallest
 adjacency eigenspace. -/
 theorem dotProduct_mulVec_adjMatrix_eq_smallestEigenvalue_mul_iff [Nonempty V] (x : V → ℝ) :
     x ⬝ᵥ (G.adjMatrix ℝ *ᵥ x) = G.smallestEigenvalue * (x ⬝ᵥ x) ↔
       G.adjMatrix ℝ *ᵥ x = G.smallestEigenvalue • x := by
-  let D : Matrix V V ℝ := G.smallestEigenvalue • 1
-  have hD : D.IsHermitian := by simp [D]
-  have h : (G.adjMatrix ℝ - D).PosSemidef :=
-    .of_dotProduct_mulVec_nonneg ((G.isHermitian_adjMatrix ℝ).sub hD) fun y ↦ by
-      simpa [D, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, sub_nonneg]
-        using G.le_dotProduct_mulVec_adjMatrix y
-  simpa [D, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, sub_eq_zero]
-    using h.dotProduct_mulVec_zero_iff (x := x)
+  simpa only [star_trivial, RCLike.re_to_real] using
+    (G.isHermitian_adjMatrix ℝ).re_star_dotProduct_mulVec_eq_mul_iff_of_forall_ge
+      (by simpa only [star_trivial, RCLike.re_to_real] using G.le_dotProduct_mulVec_adjMatrix) x
 
 /-! ### Interlacing for induced subgraphs -/
 

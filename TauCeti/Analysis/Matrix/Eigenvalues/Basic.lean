@@ -20,6 +20,10 @@ sorted eigenvalue by at most `card ι * ε`. An entrywise bound on the matrix it
 same a-priori bound on the absolute values of its eigenvalues. These estimates connect
 coordinatewise error bounds to spectral error bounds for random matrices.
 
+The first and last sorted eigenvalues bound the quadratic form after scaling by the
+squared norm. Equality at a uniform upper or lower bound characterizes the corresponding
+eigenspace.
+
 A perturbation smaller than the distance of a sorted eigenvalue from a real threshold
 preserves its membership in `[c, ∞)`. Thus perturbations smaller than a spectral gap
 preserve the number of eigenvalues above the threshold, counted with multiplicity.
@@ -93,6 +97,74 @@ open scoped ComplexOrder
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
   {A B : Matrix ι ι 𝕜}
+
+/-! ### Rayleigh bounds -/
+
+open scoped InnerProductSpace in
+/-- The real part of the Hermitian quadratic form lies between the smallest and largest sorted
+eigenvalues multiplied by the squared Euclidean norm. -/
+theorem IsHermitian.re_star_dotProduct_mulVec_mem_Icc (hA : A.IsHermitian) [Nonempty ι]
+    (x : ι → 𝕜) :
+    RCLike.re (star x ⬝ᵥ A *ᵥ x) ∈
+      Set.Icc (hA.eigenvalues₀ ⟨Fintype.card ι - 1, Nat.sub_lt Fintype.card_pos Nat.one_pos⟩ *
+        RCLike.re (star x ⬝ᵥ x)) (hA.eigenvalues₀ ⟨0, Fintype.card_pos⟩ *
+        RCLike.re (star x ⬝ᵥ x)) := by
+  let y : EuclideanSpace 𝕜 ι := WithLp.toLp 2 x
+  have hT := isSymmetric_toEuclideanLin_iff.mpr hA
+  have hy : y ∈ (hT.eigenvectorBasis finrank_euclideanSpace).spanIndices Set.univ :=
+    (OrthonormalBasis.mem_spanIndices_iff _).mpr (by simp)
+  have hform : RCLike.re ⟪A.toEuclideanLin y, y⟫_𝕜 = RCLike.re (star x ⬝ᵥ A *ᵥ x) := by
+    rw [inner_re_symm, EuclideanSpace.inner_eq_star_dotProduct, toLpLin_apply]
+    simp [y, dotProduct_comm]
+  have hnorm : ‖y‖ ^ 2 = RCLike.re (star x ⬝ᵥ x) := by
+    rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), EuclideanSpace.inner_eq_star_dotProduct]
+    simp [y, dotProduct_comm]
+  -- The sorted matrix eigenvalues are those of its symmetric Euclidean operator.
+  rw [← hform, ← hnorm, IsHermitian.eigenvalues₀]
+  exact ⟨hT.le_re_inner_apply_self_of_mem_spanIndices finrank_euclideanSpace
+      (fun i _ ↦ hA.eigenvalues₀_antitone (Fin.mk_le_mk.mpr (Nat.le_pred_of_lt i.isLt))) hy,
+    hT.re_inner_apply_self_le_of_mem_spanIndices finrank_euclideanSpace
+      (fun i _ ↦ hA.eigenvalues₀_antitone (Fin.mk_le_mk.mpr (Nat.zero_le i))) hy⟩
+
+omit [DecidableEq ι] in
+/-- Equality at a uniform upper bound on the Hermitian quadratic form holds exactly for vectors
+in the corresponding eigenspace. -/
+theorem IsHermitian.re_star_dotProduct_mulVec_eq_mul_iff_of_forall_le (hA : A.IsHermitian)
+    {c : ℝ} (h : ∀ y, RCLike.re (star y ⬝ᵥ A *ᵥ y) ≤ c * RCLike.re (star y ⬝ᵥ y))
+    (x : ι → 𝕜) :
+    RCLike.re (star x ⬝ᵥ A *ᵥ x) = c * RCLike.re (star x ⬝ᵥ x) ↔ A *ᵥ x = c • x := by
+  classical
+  let D : Matrix ι ι 𝕜 := (c : 𝕜) • 1 - A
+  have hc : IsSelfAdjoint (c : 𝕜) := RCLike.conj_ofReal c
+  have hD : D.IsHermitian := (isHermitian_one.smul hc).sub hA
+  have hre (y : ι → 𝕜) : RCLike.re (star y ⬝ᵥ D *ᵥ y) =
+      c * RCLike.re (star y ⬝ᵥ y) - RCLike.re (star y ⬝ᵥ A *ᵥ y) := by
+    simp [D, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, RCLike.smul_re]
+  have him (y : ι → 𝕜) : RCLike.im (star y ⬝ᵥ D *ᵥ y) = 0 :=
+    RCLike.conj_eq_iff_im.mp (hD.star_dotProduct_mulVec_comm y y)
+  have hPSD : D.PosSemidef := .of_dotProduct_mulVec_nonneg hD fun y ↦
+    RCLike.nonneg_iff.mpr ⟨by rw [hre, sub_nonneg]; exact h y, him y⟩
+  have hzero : star x ⬝ᵥ D *ᵥ x = 0 ↔ RCLike.re (star x ⬝ᵥ D *ᵥ x) = 0 :=
+    ⟨fun hz ↦ by simp [hz], fun hz ↦ RCLike.ext (by simpa using hz) (by simpa using him x)⟩
+  rw [← sub_eq_zero, ← neg_sub, neg_eq_zero, ← hre, ← hzero, hPSD.dotProduct_mulVec_zero_iff]
+  simp only [D, sub_mulVec, smul_mulVec, one_mulVec, sub_eq_zero,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+  exact eq_comm
+
+omit [DecidableEq ι] in
+/-- Equality at a uniform lower bound on the Hermitian quadratic form holds exactly for vectors
+in the corresponding eigenspace. -/
+theorem IsHermitian.re_star_dotProduct_mulVec_eq_mul_iff_of_forall_ge (hA : A.IsHermitian)
+    {c : ℝ} (h : ∀ y, c * RCLike.re (star y ⬝ᵥ y) ≤ RCLike.re (star y ⬝ᵥ A *ᵥ y))
+    (x : ι → 𝕜) :
+    RCLike.re (star x ⬝ᵥ A *ᵥ x) = c * RCLike.re (star x ⬝ᵥ x) ↔ A *ᵥ x = c • x := by
+  have hneg (y : ι → 𝕜) :
+      RCLike.re (star y ⬝ᵥ (-A) *ᵥ y) ≤ -c * RCLike.re (star y ⬝ᵥ y) := by
+    simpa [neg_mulVec, dotProduct_neg] using neg_le_neg (h y)
+  simpa [neg_mulVec, dotProduct_neg, neg_smul] using
+    hA.neg.re_star_dotProduct_mulVec_eq_mul_iff_of_forall_le hneg x
+
+/-! ### The sorted enumeration -/
 
 /-- Sorted eigenvalues are congruent along a matrix equality: the enumeration depends only on the
 matrix, not on the Hermitian proof. -/
