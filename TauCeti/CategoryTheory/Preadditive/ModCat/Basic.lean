@@ -75,6 +75,10 @@ example {J : Type*} [Category J] [HasColimitsOfShape J AddCommGrpCat.{w}] :
 
 namespace ModCat
 
+/-- Finite products in the abelian category of additive modules are biproducts. -/
+instance hasFiniteBiproducts : HasFiniteBiproducts (ModCat.{w} C) :=
+  HasFiniteBiproducts.of_hasFiniteProducts
+
 /-- The Yoneda embedding `X ↦ Hom(-, X)` of `C` into `Mod C`: the lift of `preadditiveYoneda`
 through the full subcategory of additive functors. It is fully faithful by the `ObjectProperty.lift`
 instances, and `ObjectProperty.liftCompιIso` recovers `preadditiveYoneda`. -/

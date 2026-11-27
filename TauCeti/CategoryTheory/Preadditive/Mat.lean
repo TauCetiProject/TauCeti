@@ -177,6 +177,66 @@ theorem isoOfEquiv_symm (e : M.ι ≃ N.ι) (φ : ∀ i, M.X i ≅ N.X (e i)) :
     simp [isoOfEquiv_hom_apply, isoOfEquiv_inv_apply]
   · simp [isoOfEquiv_hom_apply, isoOfEquiv_inv_apply, h, e.symm_apply_eq, Ne.symm h]
 
+section Lift
+
+open Limits
+
+variable {E : Type*} [Category* E] [Preadditive E] [HasFiniteBiproducts E]
+
+/-- Extend an additive functor to matrices by taking biproducts. This version of `Mat_.lift`
+allows the source and target to have independent object and morphism universes. -/
+@[expose]
+def liftToBiproducts (F : C ⥤ E) [F.Additive] : Mat_ C ⥤ E where
+  obj X := ⨁ fun i ↦ F.obj (X.X i)
+  map f := biproduct.matrix fun i j ↦ F.map (f i j)
+  map_id X := by
+    ext i j : 2
+    by_cases h : i = j
+    · subst j
+      simp
+    · simp [Mat_.id_apply_of_ne _ _ _ (Ne.symm h), biproduct.ι_π_ne _ (Ne.symm h)]
+  map_comp f g := by
+    ext i j : 2
+    simp [biproduct.lift_desc, ← Functor.map_comp]
+
+@[simp]
+theorem liftToBiproducts_obj (F : C ⥤ E) [F.Additive] (X : Mat_ C) :
+    (liftToBiproducts F).obj X = ⨁ fun i ↦ F.obj (X.X i) := (rfl)
+
+@[simp]
+theorem liftToBiproducts_map (F : C ⥤ E) [F.Additive] {X Y : Mat_ C} (f : X ⟶ Y) :
+    (liftToBiproducts F).map f =
+      biproduct.matrix (fun i j ↦ F.map (f i j)) := (rfl)
+
+instance (F : C ⥤ E) [F.Additive] : (liftToBiproducts F).Additive where
+  map_add := by
+    intros
+    dsimp only [liftToBiproducts]
+    simp only [Mat_.add_apply, Functor.map_add]
+    apply biproduct.hom_ext
+    intro j
+    -- The matrix entries here use the semireducible description of morphisms in `Mat_ C`.
+    erw [Preadditive.add_comp]
+    simp only [biproduct.matrix_π]
+    apply biproduct.hom_ext'
+    intro i
+    erw [Preadditive.comp_add]
+    simp
+
+/-- The extension of a fully faithful additive functor to the category of matrices is fully
+faithful. The inverse on morphisms takes the preimage of each matrix component. -/
+def fullyFaithfulLiftToBiproducts {F : C ⥤ E} [F.Additive] (hF : F.FullyFaithful) :
+    (liftToBiproducts F).FullyFaithful where
+  preimage f i j := hF.preimage (biproduct.components f i j)
+  map_preimage f := by
+    dsimp only [liftToBiproducts] at f ⊢
+    simpa only [hF.map_preimage] using biproduct.components_matrix f
+  preimage_map f := by
+    funext i j
+    simp only [liftToBiproducts_map, biproduct.matrix_components, hF.preimage_map]
+
+end Lift
+
 section Ext
 
 open Limits
