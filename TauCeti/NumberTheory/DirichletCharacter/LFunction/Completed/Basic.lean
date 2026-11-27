@@ -12,6 +12,7 @@ public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
 
 /-!
 # Completed Dirichlet L-functions
@@ -22,7 +23,9 @@ of Mathlib's Hurwitz decomposition cancel, so the completed function is Mathlib'
 completion `ZMod.completedLFunction₀`. The functions themselves are Mathlib's, without any change
 of representative. The conjugation comparison is asserted only away from the possible poles at zero
 and one. A character and its primitive character have the same gamma factor
-(`DirichletCharacter.gammaFactor_primitiveCharacter`).
+(`DirichletCharacter.gammaFactor_primitiveCharacter`). For a primitive nonprincipal character,
+Mathlib's completed functional equation also gives the functional equation of the uncompleted
+`L`-function on `Re s < 1` (`DirichletCharacter.IsPrimitive.LFunction_eq_rootNumber_mul_cpow_mul`).
 
 The analytic input is David Loeffler and Michael Stoll's development in
 `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
@@ -208,5 +211,29 @@ theorem rootNumber_inv : χ⁻¹.rootNumber = conj χ.rootNumber := by
     simp [even_inv_iff, he, hneg]
   · have hneg : χ (-1) = -1 := by simpa only [map_one] using Odd.eval_neg χ 1 ho
     simp [even_inv_iff, ho.not_even, hneg]
+
+variable {χ} in
+/-- **Functional equation of the uncompleted `L`-function.** For a primitive nonprincipal
+character `χ` of conductor `N` and `Re s < 1`,
+`L(s, χ) = ε(χ) N ^ (1/2 - s) (γ_{χ⁻¹}(1 - s) / γ_χ(s)) L(1 - s, χ⁻¹)`, with `ε(χ)` the root
+number. At the trivial zeros of `L(s, χ)` both sides vanish, since Mathlib's `Gammaℝ` is `0` at its
+poles. Unlike the record form
+`AnalyticLFunctionData.HasFunctionalEquation.gammaFactor_mul_continuedL_eq`, it needs no condition
+on `γ_χ(s)`. -/
+theorem IsPrimitive.LFunction_eq_rootNumber_mul_cpow_mul (hχ : χ.IsPrimitive) (hne : χ ≠ 1)
+    {s : ℂ} (hs : s.re < 1) :
+    χ.LFunction s = χ.rootNumber * (N : ℂ) ^ ((1 : ℂ) / 2 - s) *
+      (χ⁻¹.gammaFactor (1 - s) / χ.gammaFactor s) * χ⁻¹.LFunction (1 - s) := by
+  have hN : N ≠ 1 := mt hχ.eq_one_iff.mpr hne
+  have hre : 0 < (1 - s).re := by simpa using hs
+  have hΓ : χ⁻¹.gammaFactor (1 - s) ≠ 0 := χ⁻¹.gammaFactor_ne_zero_of_re_pos hre
+  have hfe := hχ.completedLFunction_one_sub (1 - s)
+  rw [sub_sub_cancel] at hfe
+  have hinv : χ⁻¹.completedLFunction (1 - s) =
+      χ⁻¹.gammaFactor (1 - s) * χ⁻¹.LFunction (1 - s) := by
+    rw [LFunction_eq_completed_div_gammaFactor χ⁻¹ (1 - s) (.inr hN), mul_div_cancel₀ _ hΓ]
+  rw [LFunction_eq_completed_div_gammaFactor χ s (.inr hN), hfe, hinv,
+    show (1 : ℂ) - s - 1 / 2 = 1 / 2 - s by ring]
+  ring
 
 end DirichletCharacter

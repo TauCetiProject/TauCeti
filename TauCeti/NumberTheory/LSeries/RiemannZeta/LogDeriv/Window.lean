@@ -219,7 +219,7 @@ theorem riemannZeta_logDeriv_window :
         C * Real.log (|s.im| + 2) := by
   classical
   obtain ⟨C₁, hC₁⟩ := riemannZeta_local_logDeriv (σ₀ := 2) (r := 3) (r' := 4) one_lt_two
-    (by norm_num) (by norm_num)
+    (by norm_num)
   obtain ⟨C₂, hC₂⟩ := exists_finsum_analyticOrderAt_riemannZeta_le 2 4
   refine ⟨C₁ + C₂, fun s hs₁ hs₂ hs1 hζ ↦ ?_⟩
   set s₀ : ℂ := 2 + s.im * I with hs₀def

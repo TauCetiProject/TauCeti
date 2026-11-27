@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Nonvanishing
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.Analysis.Complex.VerticalStrip.Growth
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 import TauCeti.NumberTheory.LFunctions.Dirichlet.Basic
@@ -24,9 +24,6 @@ the local expansion of `L′/L(s, χ)` with constants uniform in the conductor.
 
 ## Main results
 
-* `DirichletCharacter.IsPrimitive.LFunction_eq_rootNumber_mul_cpow_mul`: the functional equation
-  of the uncompleted `L`-function,
-  `L(s, χ) = ε(χ) N ^ (1/2 - s) γ_{χ⁻¹}(1 - s) / γ_χ(s) · L(1 - s, χ⁻¹)` for `Re s < 1`.
 * `TauCeti.exists_norm_LFunction_le_rpow`: the strip bound, at every height.
 * `TauCeti.exists_norm_LFunction_le_rpow_of_norm_sub_le`: the same bound on closed discs of a fixed
   radius centred on a vertical line, in terms of the height of the centre.
@@ -35,7 +32,8 @@ the local expansion of `L′/L(s, χ)` with constants uniform in the conductor.
 
 Right of `Re s = 1/2` the partial-summation bound `‖L(s, χ)‖ ≤ N ‖s‖ / Re s`
 (`DirichletCharacter.norm_LFunction_le_level_mul_norm_div_re`) suffices. Left of it, the
-functional equation reflects that bound, and the archimedean factor
+functional equation `DirichletCharacter.IsPrimitive.LFunction_eq_rootNumber_mul_cpow_mul` of the
+uncompleted `L`-function reflects that bound, and the archimedean factor
 `N ^ (1/2 - s) γ_{χ⁻¹}(1 - s) / γ_χ(s)` is at most a constant times a power of the analytic
 conductor, uniformly in `N`: this is
 `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_of_shift_re_nonneg` in the namespace
@@ -53,38 +51,7 @@ interpolation is used, so the exponent is not the convexity exponent.
 
 public section
 
-open Complex
-
-namespace DirichletCharacter
-
-variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
-
-/-- **Functional equation of the uncompleted `L`-function.** For a primitive nonprincipal
-character `χ` of conductor `N` and `Re s < 1`,
-`L(s, χ) = ε(χ) N ^ (1/2 - s) (γ_{χ⁻¹}(1 - s) / γ_χ(s)) L(1 - s, χ⁻¹)`, with `ε(χ)` the root
-number. At the trivial zeros of `L(s, χ)` both sides vanish, since Mathlib's `Gammaℝ` is `0` at its
-poles. Unlike the record form
-`AnalyticLFunctionData.HasFunctionalEquation.gammaFactor_mul_continuedL_eq`, it needs no condition
-on `γ_χ(s)`. -/
-theorem IsPrimitive.LFunction_eq_rootNumber_mul_cpow_mul (hχ : χ.IsPrimitive) (hne : χ ≠ 1)
-    {s : ℂ} (hs : s.re < 1) :
-    χ.LFunction s = χ.rootNumber * (N : ℂ) ^ ((1 : ℂ) / 2 - s) *
-      (χ⁻¹.gammaFactor (1 - s) / χ.gammaFactor s) * χ⁻¹.LFunction (1 - s) := by
-  have hN : N ≠ 1 := mt hχ.eq_one_iff.mpr hne
-  have hre : 0 < (1 - s).re := by simpa using hs
-  have hΓ : χ⁻¹.gammaFactor (1 - s) ≠ 0 := χ⁻¹.gammaFactor_ne_zero_of_re_pos hre
-  have hfe := hχ.completedLFunction_one_sub (1 - s)
-  rw [sub_sub_cancel] at hfe
-  have hinv : χ⁻¹.completedLFunction (1 - s) =
-      χ⁻¹.gammaFactor (1 - s) * χ⁻¹.LFunction (1 - s) := by
-    rw [LFunction_eq_completed_div_gammaFactor χ⁻¹ (1 - s) (.inr hN), mul_div_cancel₀ _ hΓ]
-  rw [LFunction_eq_completed_div_gammaFactor χ s (.inr hN), hfe, hinv,
-    show (1 : ℂ) - s - 1 / 2 = 1 / 2 - s by ring]
-  ring
-
-end DirichletCharacter
-
-open DirichletCharacter TauCeti.LFunctions
+open Complex DirichletCharacter TauCeti.LFunctions
 
 namespace TauCeti
 
@@ -198,15 +165,7 @@ theorem exists_norm_LFunction_le_rpow_of_norm_sub_le (σ₀ R : ℝ) :
         ‖χ.LFunction w‖ ≤ K * (N * (|s₀.im| + 2)) ^ B := by
   obtain ⟨C, B, hC, hB, h⟩ := exists_norm_LFunction_le_rpow (σ₀ - R) (σ₀ + R)
   refine ⟨C * (|R| + 1) ^ B, B, by positivity, hB, fun N _ χ hχ hne s₀ w hs₀ hw ↦ ?_⟩
-  have hre := abs_re_le_norm (w - s₀)
-  rw [sub_re, hs₀, abs_le] at hre
-  have him := (abs_sub_abs_le_abs_sub w.im s₀.im).trans ((sub_im w s₀ ▸ abs_im_le_norm _).trans hw)
-  calc ‖χ.LFunction w‖ ≤ C * (N * (|w.im| + 2)) ^ B := h N χ hχ hne w (by linarith) (by linarith)
-    _ ≤ C * ((|R| + 1) * (N * (|s₀.im| + 2))) ^ B := by
-        have ht : |w.im| + 2 ≤ (|R| + 1) * (|s₀.im| + 2) := by
-          nlinarith [abs_nonneg s₀.im, le_abs_self R, abs_nonneg R]
-        rw [mul_left_comm]
-        gcongr
-    _ = _ := by rw [Real.mul_rpow (by positivity) (by positivity), mul_assoc]
+  exact le_mul_rpow_mul_rpow_of_norm_sub_le (g := fun s ↦ ‖χ.LFunction s‖) hC.le N.cast_nonneg hB
+    (h N χ hχ hne) hs₀ hw
 
 end TauCeti
