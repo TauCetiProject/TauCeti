@@ -37,6 +37,9 @@ only finitely many rounded families have entries in `[-R, R]`.
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `Int.fract_sub_eq_sub_iff`, `Int.fract_sub_eq_sub_add_one_iff`: the fractional part of
+  `a - b` is `fract a - fract b` exactly when `fract b ≤ fract a`, and `fract a - fract b + 1`
+  exactly when `fract a < fract b`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
@@ -73,6 +76,31 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- The fractional part of a difference is the difference of the fractional parts exactly when
+the fractional part of the term taken away is at most the other one. -/
+theorem _root_.Int.fract_sub_eq_sub_iff {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {a b : R} :
+    Int.fract (a - b) = Int.fract a - Int.fract b ↔ Int.fract b ≤ Int.fract a := by
+  refine ⟨fun h => sub_nonneg.1 (by rw [← h]; exact Int.fract_nonneg _), fun h =>
+    Int.fract_eq_iff.2 ⟨sub_nonneg.2 h,
+      (sub_le_self _ (Int.fract_nonneg b)).trans_lt (Int.fract_lt_one a), ⌊a⌋ - ⌊b⌋, ?_⟩⟩
+  unfold Int.fract
+  push_cast
+  abel
+
+/-- The fractional part of a difference is the difference of the fractional parts plus one
+exactly when the fractional part of the term taken away is the larger one. -/
+theorem _root_.Int.fract_sub_eq_sub_add_one_iff {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {a b : R} :
+    Int.fract (a - b) = Int.fract a - Int.fract b + 1 ↔ Int.fract a < Int.fract b := by
+  refine ⟨fun h => sub_neg.1 ((add_lt_iff_neg_right 1).1 (by rw [← h]; exact Int.fract_lt_one _)),
+    fun h => Int.fract_eq_iff.2 ⟨?_, (add_lt_iff_neg_right 1).2 (sub_neg.2 h), ⌊a⌋ - ⌊b⌋ - 1, ?_⟩⟩
+  · rw [sub_add_eq_add_sub, sub_nonneg]
+    exact (Int.fract_lt_one b).le.trans (le_add_of_nonneg_left (Int.fract_nonneg a))
+  · unfold Int.fract
+    push_cast
+    abel
 
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
