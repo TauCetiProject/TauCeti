@@ -108,19 +108,19 @@ theorem _root_.IsOpen.exists_wronskian_eq_mul_cpow_mul_one_sub_cpow_of_hypergeom
   have hne (z : ℂ) (hz : z ∈ U) : z ≠ 0 ∧ z ≠ 1 :=
     ⟨slitPlane_ne_zero (hUs z hz).1, fun h => slitPlane_ne_zero (hUs z hz).2 (by rw [h, sub_self])⟩
   -- The power product is nonzero at `z₀`, and both sides satisfy `y′ = −p y` on `U`.
+  have habel := hU.differentiableOn_and_hasDerivAt_wronskian_of_secondOrderLinearEquation
+    (S := univ) (P := fun z => z * (1 - z)) (Q := fun z => c - (a + b + 1) * z)
+    (R := fun _ => -(a * b)) (fun z hz => mul_ne_zero (hne z hz.1).1
+      (sub_ne_zero.mpr (hne z hz.1).2.symm)) hf hg
+    (fun z hz => by linear_combination hf' z hz.1) (fun z hz => by linear_combination hg' z hz.1)
   obtain ⟨C, hC⟩ := hU.exists_eq_const_mul_of_hasDerivAt_mul hUc dense_univ
-    (p := fun z => -((c - (a + b + 1) * z) / (z * (1 - z))))
-    ((hf.fun_mul (hg.deriv hU)).fun_sub ((hf.deriv hU).fun_mul hg))
+    (p := fun z => -((c - (a + b + 1) * z) / (z * (1 - z)))) habel.1
     (v := fun z => z ^ (-c) * (1 - z) ^ (c - a - b - 1))
     (fun z hz => ((hasDerivAt_cpow_mul_one_sub_cpow (a := a) (b := b) (c := c) (hUs z hz).1
       (hUs z hz).2).differentiableAt.differentiableWithinAt)) hz₀
     (mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hUs z₀ hz₀).1)))
       (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hUs z₀ hz₀).2))))
-    (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation (hne z hz.1).1 (hne z hz.1).2
-      (hf.differentiableAt (hU.mem_nhds hz.1)) ((hf.deriv hU).differentiableAt (hU.mem_nhds hz.1))
-      (hg.differentiableAt (hU.mem_nhds hz.1)) ((hg.deriv hU).differentiableAt (hU.mem_nhds hz.1))
-      (hf' z hz.1) (hg' z hz.1))
-    (fun z hz => hasDerivAt_cpow_mul_one_sub_cpow (hUs z hz.1).1 (hUs z hz.1).2)
+    habel.2 (fun z hz => hasDerivAt_cpow_mul_one_sub_cpow (hUs z hz.1).1 (hUs z hz.1).2)
   exact ⟨C, fun z hz => (hC z hz).trans (mul_assoc _ _ _).symm⟩
 
 /-- **The span criterion** for the hypergeometric equation: if `f₁` and `f₂` solve 15.10.1 on a
