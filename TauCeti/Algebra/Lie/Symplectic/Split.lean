@@ -89,8 +89,8 @@ theorem restrictedRootSpace_zero_inf_fixedSubalgebra_diagonalSubalgebra (h2 : Is
         ((cartanInvolution_eq_self_iff X).mp (LieHom.mem_fixedSubalgebra.mp hXk))
   rw [Submodule.mem_bot, ← Subtype.coe_inj]
   ext a b
-  refine h2.left (show (2 : R) * (X : Matrix (l ⊕ l) (l ⊕ l) R) a b = 2 * 0 from ?_)
-  rw [mul_zero, two_mul, ← eq_neg_iff_add_eq_zero]
+  rw [ZeroMemClass.coe_zero, Matrix.zero_apply, ← h2.left.mul_left_eq_zero_iff, two_mul,
+    ← eq_neg_iff_add_eq_zero]
   exact congrFun (congrFun hX a) b
 
 end LieAlgebra.Symplectic

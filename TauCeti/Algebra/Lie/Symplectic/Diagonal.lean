@@ -137,7 +137,7 @@ theorem diagonalSubalgebra_normalizer_eq_self (h2 : IsRegular (2 : R)) :
     (((diagonalSubalgebra l R).mem_normalizer_iff' X).mp hX _
       (diagonalSubalgebraElement i).property) hab
   rw [lie_apply_of_mem_diagonalSubalgebra (diagonalSubalgebraElement i).property] at h
-  exact hi.left (by simpa using h)
+  exact hi.left.mul_left_eq_zero_iff.mp h
 
 /-- The diagonal matrices form a Cartan subalgebra of `𝔰𝔭(2n, R)` when multiplication by `2` is
 injective: they are abelian and self-normalizing. -/
