@@ -82,7 +82,6 @@ of `G_0`. These are the local-field cases of the general local-ring statements i
   `TauCeti.isPGroup_ramificationGroup`: the positive-depth graded pieces, and, for a faithful
   action with finite `G_0`, the positive-depth ramification groups, are `p`-groups.
 * `TauCeti.not_dvd_index_ramificationGroup_one`: the index of `G_1` in `G_0` is prime to `p`.
-* `TauCeti.natCard_ramificationGroup_one`: the order of `G_1` is the `p`-part of the order of `G_0`.
 * `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
   trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of order
   prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
@@ -459,16 +458,6 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p] :
   have : Finite (RamificationGroupGraded G 𝒪[L] 0) := Finite.of_injective _
     (IsLocalRing.tameCharacterGraded_injective (G := G) (FixedPoints.subalgebra ℤ 𝒪[L] G))
   exact IsLocalRing.not_dvd_index_ramificationGroup_one (FixedPoints.subalgebra ℤ 𝒪[L] G) p
-
-variable (G) in
-/-- The order of wild inertia is the residue-characteristic part of the order of inertia:
-`#G_1 = p ^ (v_p #G_0)`. -/
-theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
-    [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
-    Nat.card (ramificationGroup G 𝒪[L] 1) =
-      p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p :=
-  IsDiscreteValuationRing.natCard_ramificationGroup_one G
-    (FixedPoints.subalgebra ℤ 𝒪[L] G) 𝒪[L] p
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the

@@ -112,7 +112,8 @@ theorem natCard_lowerRamificationGroup_one [Module.Finite K L] [IsGalois K L] :
   rw [wildRamificationExponent_def, ← natCard_lowerRamificationGroup_zero K L,
     lowerRamificationGroup_def,
     lowerRamificationGroup_def]
-  exact natCard_ramificationGroup_one _ _
+  exact IsDiscreteValuationRing.natCard_ramificationGroup_one Gal(L/K)
+    (FixedPoints.subalgebra ℤ 𝒪[L] Gal(L/K)) 𝒪[L] (ringChar 𝓀[K])
 
 variable (K L) in
 /-- **Wild inertia is trivial exactly in the tame case.** For a finite Galois extension `L/K` of

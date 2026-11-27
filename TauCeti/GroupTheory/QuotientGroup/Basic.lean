@@ -72,8 +72,6 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
 * `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
-* `QuotientGroup.equivQuotientSubgroupOfOfEq_mk`: evaluating
-  `QuotientGroup.equivQuotientSubgroupOfOfEq` on a coset representative.
 * `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
   `K * Γ = G`.
 * `QuotientAddGroup.image_mk_eq_univ_iff`: the additive form, `K + Γ = G`.
@@ -355,16 +353,6 @@ theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
   rfl
 
 attribute [to_additive existing] QuotientGroup.congr_mk
-
-/-- Evaluating `QuotientGroup.equivQuotientSubgroupOfOfEq` on a coset representative sends it to
-the class of its inclusion into the target subgroup. -/
-@[simp]
-theorem _root_.QuotientGroup.equivQuotientSubgroupOfOfEq_mk
-    {A' A B' B : Subgroup G} [(A'.subgroupOf A).Normal] [(B'.subgroupOf B).Normal]
-    (h' : A' = B') (h : A = B) (x : A) :
-    _root_.QuotientGroup.equivQuotientSubgroupOfOfEq h' h (_root_.QuotientGroup.mk x) =
-      _root_.QuotientGroup.mk (Subgroup.inclusion h.le x) :=
-  _root_.QuotientGroup.quotientMapSubgroupOfOfLe_mk h'.le h.le x
 
 end TauCeti
 

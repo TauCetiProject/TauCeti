@@ -115,6 +115,10 @@ theorem principalUnitGroup_bot : (⊥ : Ideal R).principalUnitGroup = ⊥ := by
   ext u
   rw [mem_principalUnitGroup, Submodule.mem_bot, sub_eq_zero, Subgroup.mem_bot, Units.val_eq_one]
 
+/-- The zeroth principal unit group `(I ^ 0).principalUnitGroup` is the entire unit group. -/
+theorem principalUnitGroup_pow_zero (I : Ideal R) : (I ^ 0).principalUnitGroup = ⊤ := by
+  rw [Submodule.pow_zero, Ideal.one_eq_top, principalUnitGroup_top]
+
 /-- The principal unit group of the kernel of a ring homomorphism is the kernel of the induced
 map on units. -/
 theorem principalUnitGroup_ker {S : Type*} [Ring S] (f : R →+* S) :
