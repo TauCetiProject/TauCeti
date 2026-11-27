@@ -47,7 +47,7 @@ For `q < ∞` the trigonometric polynomials are dense in `B^s_{p,q}(𝕋ᵈ)`, f
 smooth truncations `∑_{i < N} ψᵢ u` converge to `u`, because the blocks of the remainder are
 controlled by the blocks `Δᵢ u` with `i ≥ N`, a tail of an `ℓ^q` sequence. The case `p = ∞` is
 included, since every block is a trigonometric polynomial, and so are `p = 1` and `p = ∞` in the
-duality, unlike `TauCeti.BesovSpace.strongDualEquiv` on `ℝᵈ`, which needs `1 < p < ∞`.
+duality (on `ℝᵈ`, `TauCeti.BesovSpace.strongDualEquiv` needs `1 ≤ p < ∞`, so excludes `p = ∞`).
 Consequently a continuous linear functional `Λ` on `B^s_{p,q}(𝕋ᵈ)` is determined by its values on
 the monomials `eₙ`, and it is the pairing with the formal Fourier series `w(n) = Λ(e₋ₙ)`. That `w`
 lies in `B^{-s}_{p',q'}(𝕋ᵈ)`, with norm at most a constant times `‖Λ‖`, is the norming argument of

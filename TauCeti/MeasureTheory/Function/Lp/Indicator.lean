@@ -50,6 +50,8 @@ constant indicator classes it intersects the supporting sets.
 
 * `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
   the set has measure zero or the constant is zero.
+* `TauCeti.memLp_indicator_const_iff`: for `0 < p < ∞`, the indicator of a set with a nonzero
+  constant value is in `Lᵖ` if and only if the set has finite measure.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
   in `c`.
@@ -57,12 +59,16 @@ constant indicator classes it intersects the supporting sets.
   linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
+* `TauCeti.tendsto_indicatorConstLp_of_monotone`: for a finite exponent, the indicator classes of
+  an increasing family of measurable sets converge to the class of their union of finite measure.
+* `TauCeti.indicatorConstLp_sdiff`, `TauCeti.sum_indicatorConstLp`,
+  `TauCeti.hasSum_indicatorConstLp`: indicator classes are subtractive, finitely additive, and for a
+  finite exponent countably additive on pairwise disjoint sets whose union has finite measure.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
   function `G`, as a sum of indicator classes of the fibres of `G`.
-* `TauCeti.tendsto_indicatorConstLp_accumulate`: for `p < ∞`, the indicator classes of the partial
-  unions of a sequence of sets converge to that of the union, if the union has finite measure.
 * `TauCeti.indicatorConstLp_iUnion_mem`: for `p < ∞`, a closed additive subgroup of `Lᵖ` containing
-  the indicator classes of a pairwise disjoint sequence of sets contains that of their union.
+  the indicator classes of a countable pairwise disjoint family of sets contains that of their
+  union.
 * `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
   simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
@@ -103,6 +109,17 @@ theorem indicatorConstLp_eq_zero_iff {s : Set α} {hs : MeasurableSet s} {hμs :
     simp
   · simp only [hc, or_false, ← indicatorConstLp_empty (p := p) (μ := μ) (c := c),
       indicatorConstLp_inj hs hμs .empty (by simp) hc, ae_eq_empty]
+
+/-- For an exponent `0 < p < ∞`, the indicator of a set with a constant value is in `Lᵖ` if and
+only if the constant is zero or the set has finite measure. -/
+theorem memLp_indicator_const_iff {s : Set α} (hs : NullMeasurableSet s μ) (hp0 : p ≠ 0)
+    (hp : p ≠ ∞) {c : E} : MemLp (s.indicator fun _ ↦ c) p μ ↔ c = 0 ∨ μ s ≠ ∞ := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hc hμs ↦ ?_, memLp_indicator_const p hs c⟩
+  have := h.eLpNorm_lt_top
+  rw [eLpNorm_indicator_const hs hp0 hp, hμs,
+    ENNReal.top_rpow_of_pos (by simp [ENNReal.toReal_pos hp0 hp]),
+    ENNReal.mul_top (eNorm_ne_zero.2 hc)] at this
+  exact lt_irrefl _ this
 
 end Zero
 
@@ -154,6 +171,17 @@ theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs 
   LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
 
 end NormedField
+
+/-- The indicator class of a difference `s \ t` with `t ⊆ s` is the difference of the indicator
+classes. -/
+theorem indicatorConstLp_sdiff {s t : Set α} (hs : MeasurableSet s) (ht : MeasurableSet t)
+    (hμs : μ s ≠ ∞) (hts : t ⊆ s) (c : E) :
+    indicatorConstLp p (hs.diff ht) (ne_top_of_le_ne_top hμs (measure_mono Set.sdiff_subset)) c =
+      indicatorConstLp p hs hμs c -
+        indicatorConstLp p ht (ne_top_of_le_ne_top hμs (measure_mono hts)) c := by
+  rw [eq_sub_iff_add_eq, ← indicatorConstLp_disjoint_union _ _ _ _ Set.disjoint_sdiff_left]
+  congr 1
+  exact Set.sdiff_union_of_subset hts
 
 section Disjoint
 
@@ -211,59 +239,84 @@ theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F 
 
 end Disjoint
 
-section DisjointUnion
+section Countable
 
-open Filter Set
+open Filter
 open scoped symmDiff Topology
 
-variable [Fact (1 ≤ p)] {f : ℕ → Set α} {c : E}
+variable {ι : Type*} {s : ι → Set α}
 
-/-- For `p < ∞`, the indicator classes of the partial unions `accumulate f n` of a sequence of sets
-converge in `Lᵖ` to the indicator class of the whole union, provided the union has finite
-measure. -/
-theorem tendsto_indicatorConstLp_accumulate {hU : MeasurableSet (⋃ i, f i)}
-    {hμU : μ (⋃ i, f i) ≠ ∞} {hA : ∀ n, MeasurableSet (accumulate f n)}
-    {hμA : ∀ n, μ (accumulate f n) ≠ ∞} (hp : p ≠ ∞) :
-    Tendsto (fun n ↦ indicatorConstLp p (hA n) (hμA n) c) atTop
-      (𝓝 (indicatorConstLp p hU hμU c)) := by
+/-- The indicator class of a finite union of pairwise disjoint sets of finite measure is the sum
+of the indicator classes of the sets. -/
+theorem sum_indicatorConstLp (t : Finset ι) (hs : ∀ i, MeasurableSet (s i))
+    (hμs : ∀ i, μ (s i) ≠ ∞) (hd : (t : Set ι).PairwiseDisjoint s) (c : E) :
+    ∑ i ∈ t, indicatorConstLp p (hs i) (hμs i) c =
+      indicatorConstLp p (t.measurableSet_biUnion fun i _ ↦ hs i)
+        (measure_biUnion_lt_top t.finite_toSet fun i _ ↦ (hμs i).lt_top).ne c := by
+  classical
+  induction t using Finset.induction_on with
+  | empty =>
+    rw [Finset.sum_empty]
+    exact (indicatorConstLp_eq_zero_iff.2 (.inl (by simp))).symm
+  | insert i t hi ih =>
+    have hd' : (t : Set ι).PairwiseDisjoint s :=
+      hd.subset (Finset.coe_subset.2 (Finset.subset_insert i t))
+    rw [Finset.sum_insert hi, ih hd', ← indicatorConstLp_disjoint_union (hs i)
+      (t.measurableSet_biUnion fun j _ ↦ hs j) (hμs i) _
+      (Set.disjoint_iUnion₂_right.2 fun j hj ↦ hd (by simp) (by simp [hj])
+        fun h ↦ hi (h ▸ hj))]
+    congr 1
+    rw [Finset.set_biUnion_insert]
+
+/-- For a finite exponent, the indicator classes of an increasing family of measurable sets
+converge to the indicator class of their union, provided the union has finite measure. -/
+theorem tendsto_indicatorConstLp_of_monotone [Fact (1 ≤ p)] (hp : p ≠ ∞) [Preorder ι]
+    [IsCountablyGenerated (atTop : Filter ι)] {u : Set α} {hu : MeasurableSet u} {hμu : μ u ≠ ∞}
+    {t : ι → Set α} (ht : ∀ i, MeasurableSet (t i)) (hmono : Monotone t) (htu : ⋃ i, t i = u)
+    (c : E) :
+    Tendsto (fun i ↦ indicatorConstLp p (ht i)
+        (ne_top_of_le_ne_top hμu (measure_mono (htu ▸ Set.subset_iUnion t i))) c) atTop
+      (𝓝 (indicatorConstLp p hu hμu c)) := by
+  subst htu
+  have hμt (i : ι) : μ (t i) ≠ ∞ := ne_top_of_le_ne_top hμu (measure_mono (Set.subset_iUnion t i))
   refine tendsto_indicatorConstLp_set hp ?_
-  simp_rw [symmDiff_of_le (accumulate_subset_iUnion _)]
-  have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun n ↦ (⋃ i, f i) \ accumulate f n)
-    (fun n ↦ (hU.diff (hA n)).nullMeasurableSet)
-    (fun i j hij ↦ sdiff_subset_sdiff_right (monotone_accumulate hij))
-    ⟨0, measure_ne_top_of_subset sdiff_subset hμU⟩
-  rwa [← sdiff_iUnion, iUnion_accumulate, Set.sdiff_self, measure_empty] at h
+  have hdiff (i : ι) : μ (t i ∆ ⋃ j, t j) = μ (⋃ j, t j) - μ (t i) := by
+    rw [symmDiff_of_le (Set.subset_iUnion t i),
+      measure_sdiff (Set.subset_iUnion t i) (ht i).nullMeasurableSet (hμt i)]
+  simp_rw [hdiff]
+  have := ENNReal.Tendsto.sub tendsto_const_nhds (tendsto_measure_iUnion_atTop (μ := μ) hmono)
+    (.inl hμu)
+  rwa [tsub_self] at this
+
+/-- **Countable additivity of indicator classes.** For a finite exponent, the classes in `Lᵖ` of
+the indicators of countably many pairwise disjoint measurable sets whose union has finite measure
+sum to the class of the indicator of the union. -/
+theorem hasSum_indicatorConstLp [Countable ι] [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (hs : ∀ i, MeasurableSet (s i)) (hd : Pairwise (Function.onFun Disjoint s))
+    (hμ : μ (⋃ i, s i) ≠ ∞) (c : E) :
+    HasSum (fun i ↦ indicatorConstLp p (hs i)
+        (ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i))) c)
+      (indicatorConstLp p (MeasurableSet.iUnion hs) hμ c) := by
+  have hsum := fun t : Finset ι ↦ sum_indicatorConstLp t hs
+    (fun i ↦ ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i)))
+    (hd.set_pairwise (t : Set ι)) c (p := p)
+  simp_rw [HasSum, hsum, SummationFilter.unconditional_filter]
+  exact tendsto_indicatorConstLp_of_monotone hp
+    (fun t : Finset ι ↦ t.measurableSet_biUnion fun i _ ↦ hs i)
+    (fun t t' h ↦ Set.biUnion_subset_biUnion_left h) (Set.iUnion_eq_iUnion_finset s).symm c
 
 /-- If a closed additive subgroup of `Lᵖ`, `p < ∞`, contains the indicator classes of the members
-of a pairwise disjoint sequence of measurable sets, it contains the indicator class of their union,
-provided the union has finite measure. -/
-theorem indicatorConstLp_iUnion_mem {V : AddSubgroup (Lp E p μ)}
-    (hV : IsClosed (V : Set (Lp E p μ))) (hp : p ≠ ∞) (hfm : ∀ i, MeasurableSet (f i))
-    (hfd : Pairwise (Function.onFun Disjoint f)) (hμ : μ (⋃ i, f i) ≠ ∞)
-    (hf : ∀ i (hμi : μ (f i) ≠ ∞), indicatorConstLp p (hfm i) hμi c ∈ V) :
-    indicatorConstLp p (MeasurableSet.iUnion hfm) hμ c ∈ V := by
-  have hA : ∀ n, MeasurableSet (accumulate f n) := fun n ↦
-    MeasurableSet.biUnion (to_countable _) fun i _ ↦ hfm i
-  have hμA : ∀ n, μ (accumulate f n) ≠ ∞ := fun n ↦
-    measure_ne_top_of_subset (accumulate_subset_iUnion n) hμ
-  have hμf : ∀ i, μ (f i) ≠ ∞ := fun i ↦ measure_ne_top_of_subset (subset_iUnion f i) hμ
-  -- the partial unions have indicator classes in `V`
-  have hAV : ∀ n, indicatorConstLp p (hA n) (hμA n) c ∈ V := by
-    intro n
-    induction n with
-    | zero =>
-      convert hf 0 (hμf 0) using 2
-      exact accumulate_zero_nat f
-    | succ n ih =>
-      convert V.add_mem ih (hf _ (hμf (n + 1))) using 1
-      rw [← indicatorConstLp_disjoint_union (hA n) (hfm _) (hμA n) (hμf _)
-        (disjoint_accumulate hfd n.lt_succ_self)]
-      congr 1
-      exact accumulate_succ f n
-  exact hV.mem_of_tendsto (tendsto_indicatorConstLp_accumulate (hA := hA) (hμA := hμA) hp)
-    (Eventually.of_forall hAV)
+of a countable pairwise disjoint family of measurable sets, it contains the indicator class of
+their union, provided the union has finite measure. -/
+theorem indicatorConstLp_iUnion_mem [Countable ι] [Fact (1 ≤ p)] {V : AddSubgroup (Lp E p μ)}
+    (hV : IsClosed (V : Set (Lp E p μ))) (hp : p ≠ ∞) (hs : ∀ i, MeasurableSet (s i))
+    (hd : Pairwise (Function.onFun Disjoint s)) (hμ : μ (⋃ i, s i) ≠ ∞) {c : E}
+    (hsV : ∀ i (hμi : μ (s i) ≠ ∞), indicatorConstLp p (hs i) hμi c ∈ V) :
+    indicatorConstLp p (MeasurableSet.iUnion hs) hμ c ∈ V :=
+  hV.mem_of_tendsto (hasSum_indicatorConstLp hp hs hd hμ c)
+    (Eventually.of_forall fun _ ↦ V.sum_mem fun i _ ↦ hsV i _)
 
-end DisjointUnion
+end Countable
 
 section IndicatorContinuousOn
 

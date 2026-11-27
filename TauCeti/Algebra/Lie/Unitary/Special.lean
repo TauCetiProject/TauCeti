@@ -23,7 +23,10 @@ trace-free skew-Hermitian `n × n` matrices (`TauCeti.specialUnitaryLieAlgebra �
 coordinates of the general linear group these are the matrices of the Lie algebra of the special
 unitary subgroup
 (`TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff`), and inside
-`𝔲(n)` they form its derived algebra (`TauCeti.mem_derivedSeries_one_unitaryLieAlgebra_iff`).
+`𝔲(n)` they form its derived algebra (`TauCeti.coe_mem_specialUnitaryLieAlgebra_iff`), the
+complement of the centre `iℝ · 1`. Its real dimension is `n² - 1`
+(`TauCeti.finrank_specialUnitaryLieAlgebra`): the imaginary part of the trace is a surjection
+`𝔲(n) → ℝ` with kernel `𝔰𝔲(n)` (for `n ≥ 1`), and `𝔲(n)` has dimension `n²`.
 Reindexed along `ι ≃ ι ⊕ ∅`, the same algebra is the indefinite special unitary algebra `𝔰𝔲(n, 0)`
 (`TauCeti.specialIndefiniteUnitaryLieAlgebra`); as for `𝔲(n)`, the compact algebra is given its own
 carrier on `Matrix ι ι ℂ`, so that its block inclusions and conjugations are stated on matrices
@@ -50,16 +53,24 @@ The unitary group acts on `𝔰𝔲(n)` by conjugation, `X ↦ U X Uᴴ`, throug
 (`TauCeti.specialUnitaryAdjoint`) that compose as the group multiplies
 (`TauCeti.specialUnitaryAdjoint_one`, `TauCeti.specialUnitaryAdjoint_mul`), hence are automorphisms;
 for `SU(2)` and `U` a Weyl element this exchanges the two coroots `±diag(i, -i)` of the diagonal
-torus.
+torus. Packaged as a representation (`TauCeti.specialUnitaryAdjointRepresentation`) this is the
+adjoint representation of `SU(n)` extended to `U(n)`; its invariant metric, orientation and kernel
+are computed in `TauCeti.Algebra.Lie.Unitary.Adjoint`.
 
 ## Main definitions
 
 * `TauCeti.specialUnitaryLieAlgebra`: the real Lie algebra `𝔰𝔲(n)`.
 * `TauCeti.specialUnitaryBlockInclusion`: the block inclusion `𝔰𝔲(m) → 𝔰𝔲(m + k)`.
 * `TauCeti.specialUnitaryAdjoint`: conjugation by a unitary matrix on `𝔰𝔲(n)`.
+* `TauCeti.specialUnitaryAdjointRepresentation ι`: the action of `U(n)` on `𝔰𝔲(n)` by
+  conjugation, as a representation.
 
 ## Main results
 
+* `TauCeti.coe_mem_specialUnitaryLieAlgebra_iff`: `𝔰𝔲(n)` is the derived algebra of `𝔲(n)`.
+* `TauCeti.mem_range_scalar_of_forall_mem_specialUnitaryLieAlgebra_commute`: a matrix commuting
+  with every element of `𝔰𝔲(n)` is scalar.
+* `TauCeti.finrank_specialUnitaryLieAlgebra`: `𝔰𝔲(n)` has real dimension `n² - 1`.
 * `TauCeti.killingForm_specialUnitaryLieAlgebra_apply`: `κ(X, Y) = 2 n Re tr(X Y)`.
 * `TauCeti.killingForm_specialUnitaryLieAlgebra_self_neg`: the Killing form is negative definite.
 * `TauCeti.card_smul_killingForm_compl₁₂_specialUnitaryBlockInclusion`,
@@ -73,13 +84,15 @@ torus.
 * E. Meinrenken, *Lie groups and Lie algebras*, lecture notes, §§8 and 12.
 * R. Bott, *An application of the Morse theory to the topology of Lie-groups*, Bull. Soc. Math.
   France 84 (1956), 251–281, §1.
+* Brian C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition,
+  Springer GTM 222, 2015, Chapter 3 (the Lie algebras of the classical groups).
 -/
 
 public section
 
 noncomputable section
 
-open LieAlgebra Matrix Complex
+open LieAlgebra Matrix Module Complex
 open scoped ComplexOrder
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -139,6 +152,69 @@ instance : FiniteDimensional ℝ (specialUnitaryLieAlgebra ι) :=
   Module.Finite.of_injective (LieSubalgebra.inclusion
     (specialUnitaryLieAlgebra_le_unitaryLieAlgebra ι)).toLinearMap
     (LieSubalgebra.inclusion_injective _)
+
+/-- **`𝔰𝔲(n)` is the derived algebra of `𝔲(n)`**: an element of `𝔲(n)` lies in `𝔰𝔲(n)` exactly
+when it lies in `[𝔲(n), 𝔲(n)]`. -/
+theorem coe_mem_specialUnitaryLieAlgebra_iff {X : unitaryLieAlgebra ι} :
+    (X : Matrix ι ι ℂ) ∈ specialUnitaryLieAlgebra ι ↔
+      X ∈ derivedSeries ℝ (unitaryLieAlgebra ι) 1 := by
+  rw [mem_derivedSeries_one_unitaryLieAlgebra_iff, mem_specialUnitaryLieAlgebra_iff]
+  exact and_iff_right (conjTranspose_coe_unitaryLieAlgebra X)
+
+/-- **A matrix commuting with every element of `𝔰𝔲(n)` is scalar.** -/
+theorem mem_range_scalar_of_forall_mem_specialUnitaryLieAlgebra_commute {M : Matrix ι ι ℂ}
+    (h : ∀ X ∈ specialUnitaryLieAlgebra ι, Commute X M) : M ∈ Set.range (scalar ι) := by
+  -- For `i ≠ j`, `E_ij = (A - I • B) / 2` with `A = E_ij - E_ji` and `B = I • (E_ij + E_ji)`.
+  refine mem_range_scalar_of_commute_single fun i j hij ↦ ?_
+  have hA : single i j (1 : ℂ) - single j i 1 ∈ specialUnitaryLieAlgebra ι := by
+    simp [conjTranspose_sub, trace_single_eq_of_ne _ _ _ hij, trace_single_eq_of_ne _ _ _ hij.symm]
+  have hB : I • (single i j (1 : ℂ) + single j i 1) ∈ specialUnitaryLieAlgebra ι := by
+    simp [conjTranspose_add, single_neg, trace_single_eq_of_ne _ _ _ hij,
+      trace_single_eq_of_ne _ _ _ hij.symm, add_comm]
+  have hE : single i j (1 : ℂ) =
+      (2⁻¹ : ℂ) • ((single i j 1 - single j i 1) - I • I • (single i j 1 + single j i 1)) := by
+    rw [smul_smul, I_mul_I]
+    module
+  dsimp only
+  rw [hE]
+  exact ((h _ hA).sub_left ((h _ hB).smul_left I)).smul_left _
+
+/-- The imaginary part of the trace on `𝔲(n)`; its kernel is `𝔰𝔲(n)`. -/
+private def imTrace : unitaryLieAlgebra ι →ₗ[ℝ] ℝ where
+  toFun X := (X : Matrix ι ι ℂ).trace.im
+  map_add' X Y := by simp
+  map_smul' c X := by simp
+
+private theorem imTrace_apply (X : unitaryLieAlgebra ι) :
+    imTrace X = (X : Matrix ι ι ℂ).trace.im :=
+  (rfl)
+
+/-- `𝔰𝔲(n)` is the kernel of the imaginary part of the trace on `𝔲(n)`. -/
+private def specialUnitaryLieAlgebraEquivKer :
+    specialUnitaryLieAlgebra ι ≃ₗ[ℝ] LinearMap.ker (imTrace (ι := ι)) where
+  toFun X := ⟨⟨X, specialUnitaryLieAlgebra_le_unitaryLieAlgebra ι X.property⟩,
+    by simp [imTrace_apply]⟩
+  invFun X := ⟨X.val, conjTranspose_coe_unitaryLieAlgebra X.val,
+    Complex.ext (re_trace_coe_unitaryLieAlgebra X.val)
+      (by rw [← imTrace_apply]; exact LinearMap.mem_ker.mp X.property)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+variable (ι) in
+/-- **`𝔰𝔲(n)` has real dimension `n² - 1`.** For `n = 0` both sides vanish. -/
+theorem finrank_specialUnitaryLieAlgebra :
+    finrank ℝ (specialUnitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι - 1 := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+  · rw [Fintype.card_eq_zero, finrank_zero_iff.mpr inferInstance]
+  have hsurj : Function.Surjective (imTrace (ι := ι)) := fun t ↦ by
+    refine ⟨⟨single i i ((t : ℂ) * I), ?_⟩, ?_⟩
+    · have h : star ((t : ℂ) * I) = -((t : ℂ) * I) := by simp
+      rw [mem_unitaryLieAlgebra_iff, conjTranspose_single, h, single_neg]
+    · simp [imTrace_apply]
+  have h := LinearMap.finrank_range_add_finrank_ker (imTrace (ι := ι))
+  rw [LinearMap.range_eq_top.mpr hsurj, finrank_top, finrank_self, finrank_unitaryLieAlgebra,
+    ← specialUnitaryLieAlgebraEquivKer.finrank_eq] at h
+  omega
 
 /-! ### The Killing form -/
 
@@ -272,5 +348,28 @@ theorem specialUnitaryAdjoint_mul (U V : unitaryGroup ι ℂ) :
     specialUnitaryAdjoint (U * V) = (specialUnitaryAdjoint U).comp (specialUnitaryAdjoint V) := by
   ext X : 2
   simp [Matrix.mul_assoc]
+
+variable (ι) in
+/-- The **adjoint representation** of `U(n)` on `𝔰𝔲(n)`, by conjugation `Ad_U X = U X Uᴴ`
+(`TauCeti.specialUnitaryAdjoint`). Restricted to `SU(n)` it is the adjoint representation of
+`SU(n)`. -/
+def specialUnitaryAdjointRepresentation :
+    Representation ℝ (unitaryGroup ι ℂ) (specialUnitaryLieAlgebra ι) where
+  toFun U := (specialUnitaryAdjoint U).toLinearMap
+  map_one' := by rw [specialUnitaryAdjoint_one]; rfl
+  map_mul' U V := by rw [specialUnitaryAdjoint_mul]; rfl
+
+@[simp]
+theorem coe_specialUnitaryAdjointRepresentation_apply (U : unitaryGroup ι ℂ)
+    (X : specialUnitaryLieAlgebra ι) :
+    (specialUnitaryAdjointRepresentation ι U X : Matrix ι ι ℂ) = U * X * star (U : Matrix ι ι ℂ) :=
+  (rfl)
+
+/-- **The adjoint action on `𝔰𝔲(n)` is by Lie algebra automorphisms.** -/
+theorem specialUnitaryAdjointRepresentation_lie (U : unitaryGroup ι ℂ)
+    (X Y : specialUnitaryLieAlgebra ι) :
+    specialUnitaryAdjointRepresentation ι U ⁅X, Y⁆ =
+      ⁅specialUnitaryAdjointRepresentation ι U X, specialUnitaryAdjointRepresentation ι U Y⁆ :=
+  (specialUnitaryAdjoint U).map_lie X Y
 
 end TauCeti

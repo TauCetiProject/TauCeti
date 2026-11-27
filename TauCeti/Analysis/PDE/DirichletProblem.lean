@@ -123,7 +123,9 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq`: existence and
   uniqueness for prescribed boundary values `u = g` on `∂Ω`, `g ∈ H¹(Ω)`, and forcing
   `ℓ ∈ H⁻¹(Ω)`, with its case of a ball-contained domain
-  `UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball`.
+  `UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball`
+  and, for a bounded domain with a nonnegative mass coefficient and forcing `f - div G`,
+  `UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded`.
 * `TauCeti.PDE.norm_sub_sub_le_of_sub_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`: the
   energy estimate comparing two problems with different coefficients, data and boundary values,
   and its case `TauCeti.PDE.norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`, the
@@ -1336,6 +1338,50 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
   exact existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq hcoeff
     (h.isCoercive_energyFormH1L0_of_subset_ball ha hb hc hb_bound hc_bound hc_nonneg hball hsmall
       hcoeff) g ℓ
+
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace in
+/-- **Weak solvability of the Dirichlet problem with a nonnegative zero-order term on a bounded
+domain.** The Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div G` in `Ω`, `u = g` on `∂Ω`, with `a`
+uniformly elliptic and measurable on `Ω`, `c` measurable with `0 ≤ c ≤ γ`, `f ∈ L²(Ω)` and
+`G ∈ L²(Ω; ℝ^{n+1})`, has exactly one weak solution on a bounded `Ω`: exactly one `u ∈ H¹(Ω)` with
+`u - g ∈ H¹₀(Ω)` and `∫_Ω ⟨a ∇u, ∇v⟩ + ∫_Ω c u v = ∫_Ω ⟨G, ∇v⟩ + ∫_Ω f v` for every
+`v ∈ H¹₀(Ω)`. The energy form is coercive on `H¹₀(Ω)` since `Ω` lies in a ball, and Lax–Milgram
+applies, by
+`UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball`. -/
+theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hc : AEStronglyMeasurable c (volume.restrict Omega))
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
+    (hf : MemLp f 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    (hG : MemLp G 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    (g : W1p volume Omega 2) :
+    ∃! u : W1p volume Omega 2, u - g ∈ w1p0Submodule volume Omega 2 ∧
+      ∀ v : W1p0 volume Omega 2, energyFormH1 a 0 c u (v : W1p volume Omega 2) =
+        (∫ x in Omega, ⟪G x, W1p.gradient (v : W1p volume Omega 2) x⟫_ℝ) +
+          ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x := by
+  -- The right-hand side as a functional on `H¹₀(Ω)`.
+  set ℓ := dirichletForcing (hf.toLp f) - divergenceForcing (hG.toLp G)
+  have hℓ : ∀ v : W1p0 volume Omega 2, ℓ v =
+      (∫ x in Omega, ⟪G x, W1p.gradient (v : W1p volume Omega 2) x⟫_ℝ) +
+        ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x := fun v => by
+    rw [sub_apply, divergenceForcing_toLp_apply hG,
+      dirichletForcing_apply_eq_setIntegral, sub_neg_eq_add, add_comm]
+    congr 1
+    refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp] with x hx
+    rw [hx]
+  obtain ⟨R, hR⟩ := hOmega.subset_ball 0
+  obtain ⟨u, ⟨hu0, hu⟩, huniq⟩ :=
+    h.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
+      (b := 0) (beta := 0) ha aestronglyMeasurable_const hc (fun _ _ => by simp) hc_bound
+      hc_nonneg hR (by simpa using h.pos) ℓ g
+  exact ⟨u, ⟨hu0, fun v => (hu v).trans (hℓ v)⟩,
+    fun u' hu' => huniq u' ⟨hu'.1, fun v => (hu'.2 v).trans (hℓ v).symm⟩⟩
 
 end UniformlyEllipticOn
 
