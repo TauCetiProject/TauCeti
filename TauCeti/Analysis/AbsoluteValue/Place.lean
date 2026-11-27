@@ -53,6 +53,8 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 
 * `AbsoluteValue.Place L`: the `ℚ`-normalised absolute values of a field `L` of characteristic zero.
 * `AbsoluteValue.Place.under K`: the restriction of a place to a subfield `K`.
+* `AbsoluteValue.Place.comap`: the restriction of a place along a field embedding; restriction
+  to a subfield is the case of its inclusion (`AbsoluteValue.Place.comap_algebraMap`).
 * `AbsoluteValue.Place.instMulAction`: the action `(g • w) x = w (g⁻¹ • x)` of a group acting on `L`
   by ring automorphisms.
 * `AbsoluteValue.toPlace`: the place equivalent to an absolute value whose restriction to `ℚ` is
@@ -65,6 +67,8 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 * `AbsoluteValue.Place.isNonarchimedean_iff`, `AbsoluteValue.Place.not_isNonarchimedean_iff`: a
   place is finite if and only if its restriction to `ℚ` is `p`-adic, and infinite if and only if it
   is real.
+* `AbsoluteValue.Place.apply_natCast_lt_one_of_under_eq_padic`: a place above `p` is less than one
+  at `p`.
 * `AbsoluteValue.Place.under_smul`: the action does not change the restriction to a subfield that
   the group fixes pointwise.
 * `AbsoluteValue.Place.existsUnique_isEquiv_of_isNontrivial_under`,
@@ -181,6 +185,15 @@ theorem isNonarchimedean_iff (w : Place L) :
     rw [hp, isNonarchimedean_iff_forall_natCast_le_one]
     exact fun n ↦ by exact_mod_cast Rat.AbsoluteValue.padic_le_one p n
 
+/-- A place above the prime number `p` takes a value less than one at `p`. -/
+theorem apply_natCast_lt_one_of_under_eq_padic {w : Place L} {p : ℕ} [Fact p.Prime]
+    (hp : w.val.under ℚ = Rat.AbsoluteValue.padic p) : w.val (p : L) < 1 := by
+  have h1 : w.val (p : L) = Rat.AbsoluteValue.padic p (p : ℚ) := by
+    rw [← hp, AbsoluteValue.under_apply]
+    simp
+  rw [h1, Rat.AbsoluteValue.padic_eq_padicNorm]
+  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+
 /-- A place is infinite if and only if its restriction to `ℚ` is the real absolute value. -/
 theorem not_isNonarchimedean_iff (w : Place L) :
     ¬ IsNonarchimedean w.val ↔ w.val.under ℚ = Rat.AbsoluteValue.real := by
@@ -227,7 +240,61 @@ theorem under_under (M : Type*) [Field M] [CharZero M] [Algebra K M] [Algebra M 
     [IsScalarTower K M L] (w : Place L) : (w.under M).under K = w.under K :=
   Subtype.ext <| AbsoluteValue.under_under K M w.val
 
+/-- The restriction of an infinite place to a subfield is an infinite place. -/
+theorem not_isNonarchimedean_under {w : Place L} (hw : ¬ IsNonarchimedean w.val) :
+    ¬ IsNonarchimedean (w.under K).val := by
+  rw [not_isNonarchimedean_iff] at hw ⊢
+  rwa [← val_under, under_under, val_under]
+
 end under
+
+/-! ### Restriction along a field embedding -/
+
+section comap
+
+variable {M : Type*} [Field M] [CharZero M]
+
+/-- Pulling an absolute value back along a ring embedding of fields of characteristic zero does
+not change its restriction to `ℚ`. -/
+theorem _root_.AbsoluteValue.under_rat_comp (v : AbsoluteValue M ℝ) {f : L →+* M}
+    (hf : Function.Injective f) : (v.comp hf).under ℚ = v.under ℚ := by
+  ext q
+  simp [AbsoluteValue.under_apply, comp_apply]
+
+/-- The restriction of a place of `M` along a field embedding `f : L →+* M` is a place of `L`. -/
+def comap (w : Place M) (f : L →+* M) : Place L :=
+  ⟨w.val.comp f.injective, by
+    rw [AbsoluteValue.under_rat_comp]
+    exact w.isStandard_under⟩
+
+@[simp]
+theorem val_comap (w : Place M) (f : L →+* M) : (w.comap f).val = w.val.comp f.injective := (rfl)
+
+@[simp]
+theorem comap_apply (w : Place M) (f : L →+* M) (x : L) : w.comap f x = w (f x) := (rfl)
+
+@[simp]
+theorem comap_id (w : Place M) : w.comap (RingHom.id M) = w :=
+  ext fun x ↦ by rw [comap_apply, RingHom.id_apply]
+
+@[simp]
+theorem comap_comap {K : Type*} [Field K] [CharZero K] (w : Place M) (f : L →+* M)
+    (g : K →+* L) : (w.comap f).comap g = w.comap (f.comp g) :=
+  ext fun x ↦ by rw [comap_apply, comap_apply, comap_apply, RingHom.comp_apply]
+
+/-- Restriction to a subfield is restriction along its inclusion. -/
+@[simp]
+theorem comap_algebraMap (K : Type*) [Field K] [CharZero K] [Algebra K M] (w : Place M) :
+    w.comap (algebraMap K M) = w.under K :=
+  ext fun x ↦ by rw [comap_apply, under_apply]
+
+/-- Restricting along a field embedding does not change the restriction to `ℚ`. -/
+@[simp]
+theorem under_comap (w : Place M) (f : L →+* M) : (w.comap f).under ℚ = w.under ℚ := by
+  rw [← comap_algebraMap, ← comap_algebraMap, comap_comap,
+    Subsingleton.elim (f.comp (algebraMap ℚ L)) (algebraMap ℚ M)]
+
+end comap
 
 /-! ### The action of a group of ring automorphisms -/
 

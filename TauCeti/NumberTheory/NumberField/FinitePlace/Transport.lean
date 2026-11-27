@@ -17,7 +17,9 @@ finite place `v` of `K` to the finite place
 `HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v` of `L`. This file records
 that `e` itself carries the `v`-adic valuation to the valuation of any finite place `w` of `L`
 whose ideal is the image of that of `v`, and in particular to the valuation of the corresponding
-place. This is the hypothesis `adicCompletionCongr` needs to extend `e` to the adic completions.
+place, which is the only finite place of `L` doing so. This is the hypothesis
+`adicCompletionCongr` needs to extend `e` to the adic completions, and the finite-place
+counterpart of `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`.
 
 ## Main results
 
@@ -25,6 +27,8 @@ place. This is the hypothesis `adicCompletionCongr` needs to extend `e` to the a
   `w.valuation L (e x) = v.valuation K x`.
 * `RingEquiv.valuation_equivOfRingEquiv`: the same for the finite place of `L` corresponding to
   `v`.
+* `RingEquiv.eq_equivOfRingEquiv_iff`: a finite place `w` of `L` is the place corresponding to `v`
+  exactly when `w.valuation L (e x) = v.valuation K x` for every `x ∈ K`.
 -/
 
 public section
@@ -52,5 +56,15 @@ theorem valuation_equivOfRingEquiv (e : K ≃+* L) (v : HeightOneSpectrum (𝓞 
     (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v).valuation L (e x) =
       v.valuation K x :=
   e.valuation_apply_of_asIdeal_eq (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v) x
+
+/-- **The image of a finite place is characterised by its valuation**: a finite place `w` of `L`
+satisfies `w.valuation L (e x) = v.valuation K x` for all `x ∈ K` exactly when it is the image of
+`v` under the isomorphism `𝓞 K ≃+* 𝓞 L` induced by `e`. -/
+theorem eq_equivOfRingEquiv_iff (e : K ≃+* L) {v : HeightOneSpectrum (𝓞 K)}
+    {w : HeightOneSpectrum (𝓞 L)} :
+    w = HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v ↔
+      ∀ x, w.valuation L (e x) = v.valuation K x := by
+  simpa only [RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv] using
+    HeightOneSpectrum.eq_equivOfRingEquiv_iff (K := K) (K' := L) (RingOfIntegers.mapRingEquiv e)
 
 end RingEquiv

@@ -14,7 +14,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Bernoulli.Polynomials
 import TauCeti.LinearAlgebra.Matrix.GroupMatrix
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros.Basic
 import TauCeti.NumberTheory.MulChar.Basic
 
 /-!

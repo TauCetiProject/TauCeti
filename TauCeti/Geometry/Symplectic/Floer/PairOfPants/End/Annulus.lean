@@ -86,7 +86,7 @@ namespace TauCeti.Floer
 
 /-- The end chart of `q` sends the half-plane `2π (±s) > -log 2`, which contains the circle at
 height `0` of the end, into `S`. This extends
-`TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, for the part `±s > 0` of the end, a little
+`TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, for the part `±s ≥ 0` of the end, a little
 beyond that circle. -/
 theorem endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt {q : Puncture}
     {z : ℝ × ℝ} (hz : -Real.log 2 < 2 * π * (q.endSign * z.1)) :
@@ -181,7 +181,7 @@ private theorem mpullback_comp_endClampChart_apply (φ : RoughForm I M F 2) {u :
       |(fderiv ℝ (endChart q) z).det| • φ (u (endChart q z))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (endChart q z) (1, 0),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I u (endChart q z) (0, 1)] := by
-  have hmem := endChart_mem_thricePuncturedSphereReal hz
+  have hmem := endChart_mem_thricePuncturedSphereReal hz.le
   have hud : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (endChart q z) :=
     (hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hmem)).mdifferentiableAt
       one_ne_zero

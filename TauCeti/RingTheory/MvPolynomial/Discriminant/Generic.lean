@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
-public import TauCeti.RingTheory.Polynomial.Vieta
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Vieta
 
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.FreeMonic
@@ -29,6 +29,8 @@ discriminant `(Polynomial.freeMonic R m).discr` is prime if and only if `(2 : R)
 
 ## Main results
 
+* `MvPolynomial.map_vietaAlgHom_freeMonic`: `Polynomial.freeMonic R m` maps along
+  `MvPolynomial.vietaAlgHom R m` to `∏ j, (X - C (X j))`.
 * `MvPolynomial.vietaAlgHom_discr_freeMonic`: `MvPolynomial.vietaAlgHom` sends
   `(Polynomial.freeMonic R m).discr` to the square of the Vandermonde alternant.
 * `Polynomial.isSquare_discr_freeMonic_of_two_eq_zero`, `Polynomial.prime_discr_freeMonic_iff`:
@@ -49,6 +51,25 @@ open Finset MvPolynomial Polynomial
 namespace Polynomial
 
 section FreeMonicPrime
+
+/-- Mapping `Polynomial.freeMonic R m` along `MvPolynomial.vietaAlgHom` factors it into linear
+root factors `∏ j, (Polynomial.X - Polynomial.C (MvPolynomial.X j))`. -/
+theorem _root_.MvPolynomial.map_vietaAlgHom_freeMonic (R : Type*) [CommRing R] (m : ℕ) :
+    (freeMonic R m).map (vietaAlgHom R m).toRingHom =
+      ∏ j : Fin m, (Polynomial.X - Polynomial.C (MvPolynomial.X j)) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
+  let P : Polynomial (MvPolynomial (Fin m) R) :=
+    ∏ j : Fin m, (Polynomial.X - Polynomial.C (MvPolynomial.X j))
+  have hmon : P.Monic :=
+    monic_prod_of_monic Finset.univ _ fun j _ ↦ monic_X_sub_C _
+  have hdeg : P.natDegree = m := by
+    simp [P, natDegree_finsetProd_X_sub_C_eq_card]
+  have hv_eq : vietaAlgHom R m = MvPolynomial.aeval (fun k : Fin m ↦ P.coeff k) := by
+    refine MvPolynomial.algHom_ext fun k : Fin m ↦ ?_
+    rw [MvPolynomial.aeval_X, vietaAlgHom_X]
+  rw [hv_eq]
+  exact map_aeval_coeff_freeMonic hmon hdeg
 
 /-- Applying `MvPolynomial.vietaAlgHom` to `(Polynomial.freeMonic R m).discr` yields the square of
 the Vandermonde alternant `TauCeti.alternant (Fin m) R (fun j ↦ (j : ℕ))`. -/

@@ -11,7 +11,9 @@ public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Order.OrderClosed
 
 /-!
-# The positive diagonal subgroup is closed
+# Topology of diagonal matrices in the general linear group
+
+The invertible diagonal matrix `diagGL t` depends continuously on the family of units `t`.
 
 The positive diagonal matrices form a closed subgroup of the general linear group over an
 ordered field with closed order and closed points. Invertibility prevents a diagonal entry
@@ -20,6 +22,7 @@ real diagonal factor in the matrix Iwasawa decomposition.
 
 ## Main results
 
+* `TauCeti.continuous_diagGL`: the diagonal embedding of families of units is continuous.
 * `TauCeti.isClosed_posDiagonalSubgroup`: positive diagonal matrices are closed among units.
 
 ## References
@@ -33,6 +36,16 @@ public section
 open Matrix Set Topology
 
 namespace TauCeti
+
+/-- The invertible diagonal matrix `diagGL t` depends continuously on the family of units `t`. -/
+@[continuity, fun_prop]
+theorem continuous_diagGL {ι k : Type*} [Fintype ι] [DecidableEq ι] [Semiring k]
+    [TopologicalSpace k] : Continuous (diagGL : (ι → kˣ) → GL ι k) := by
+  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
+    simp only [Function.comp_def, ← map_inv, diagGL_coe, Pi.inv_apply]
+  · exact (continuous_pi fun i ↦ Units.continuous_val.comp (continuous_apply i)).matrix_diagonal
+  · exact (continuous_pi fun i ↦
+      Units.continuous_coe_inv.comp (continuous_apply i)).matrix_diagonal
 
 variable (ι 𝕜 : Type*) [Fintype ι] [DecidableEq ι] [Field 𝕜] [LinearOrder 𝕜]
   [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [T1Space 𝕜] [OrderClosedTopology 𝕜]
