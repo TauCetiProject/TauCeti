@@ -150,6 +150,11 @@ theorem muInvariant_eq_charDivisor (hM : Module.IsTorsion O⟦X⟧ M) :
   rw [muInvariant_def, (LinearEquiv.ofTop _
     (eq_top_iff.mpr fun x _ ↦ (mem_torsion_iff x).mpr (@hM x))).charDivisor_eq]
 
+/-- The `μ`-invariant of `M` is that of its torsion submodule. -/
+@[simp]
+theorem muInvariant_torsion : muInvariant O (torsion O⟦X⟧ M) = muInvariant O M := by
+  rw [muInvariant_eq_charDivisor (M := torsion O⟦X⟧ M) torsion_isTorsion, muInvariant_def]
+
 /-- The `μ`-invariant of a torsion-free module is zero. -/
 @[simp]
 theorem muInvariant_eq_zero_of_isTorsionFree [Module.IsTorsionFree O⟦X⟧ M] :
