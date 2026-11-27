@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
-import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 
 /-!

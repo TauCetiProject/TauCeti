@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 
 /-!
 # Positive divided differences of the real exponential
@@ -111,18 +112,7 @@ theorem hasSum_dslope_exp_zero (u : ℝ) :
       simp only [norm_eq_abs, abs_div, abs_pow, Nat.abs_cast]
       gcongr
       exact Nat.le_succ n
-    have hexp : HasSum (fun n : ℕ ↦ u ^ n / (n ! : ℝ)) (exp u) := by
-      simpa [exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div] using
-        (NormedSpace.expSeries_div_hasSum_exp (𝔸 := ℝ) u)
-    have hshift : HasSum (fun n : ℕ ↦ u ^ (n + 1) / ((n + 1)! : ℝ)) (exp u - 1) := by
-      simpa [Finset.sum_range_one] using (hasSum_nat_add_iff' 1).mpr hexp
-    have heq : u * (∑' n : ℕ, u ^ n / ((n + 1)! : ℝ)) = exp u - 1 := by
-      refine (hsumm.hasSum.mul_left u).unique ?_
-      convert hshift using 1
-      ext n
-      rw [pow_succ']
-      ring
-    rw [TauCeti.dslope_exp_zero_of_ne hu, ← eq_div_of_mul_eq hu (mul_comm _ u ▸ heq)]
+    rw [TauCeti.dslope_exp_zero_of_ne hu, ← Real.tsum_pow_div_factorial_succ hu]
     exact hsumm.hasSum
 
 /-- `tsum` form of `Real.hasSum_dslope_exp_zero`. -/

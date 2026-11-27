@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.NumberTheory.AbelSummation
-import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
+import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
 /-!
