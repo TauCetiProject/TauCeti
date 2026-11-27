@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.NumberTheory.MulChar.Duality
 import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.VonMangoldt
 
 /-!
 # Bounds at one from von Mangoldt truncations
