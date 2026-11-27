@@ -38,6 +38,8 @@ maximal ideal.
   inertia group exactly when it fixes the residue of every element of `A`.
 * `ValuationSubring.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal`: equivalently, when it moves
   every element of `A` by an element of the maximal ideal.
+* `ValuationSubring.mem_map_inertiaSubgroup_iff`: the displacement criterion for inertia
+  viewed inside the full Galois group.
 * `ValuationSubring.residue_smul_eq_pow_iff`: an element of the decomposition group acts on the
   residue of `x` as the `q`-th power exactly when `g x - x ^ q` is a nonunit of `A`.
 * `ValuationSubring.map_restrictScalarsHom_inertiaSubgroup`: the inertia group of `A` over an
@@ -134,6 +136,35 @@ theorem residue_smul_eq_pow_iff (A : ValuationSubring L) (g : A.decompositionSub
   rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff,
     ← coe_mem_nonunits_iff]
   simp [AlgEquiv.smul_def]
+
+/-- An automorphism belongs to the image of inertia in the ambient Galois group exactly
+when it moves every element of the valuation subring by a nonunit of that subring. -/
+theorem mem_map_inertiaSubgroup_iff {A : ValuationSubring L} {σ : L ≃ₐ[K] L} :
+    σ ∈ (A.inertiaSubgroup K).map (A.decompositionSubgroup K).subtype ↔
+      ∀ x ∈ A, σ x - x ∈ A.nonunits := by
+  rw [Subgroup.mem_map]
+  constructor
+  · rintro ⟨g, hg, rfl⟩ x hx
+    have h := (A.mem_inertiaSubgroup_iff g).mp hg ⟨x, hx⟩
+    simpa only [pow_one, AlgEquiv.smul_def, Subgroup.subtype_apply] using
+      (A.residue_smul_eq_pow_iff g ⟨x, hx⟩ 1).mp (by simpa only [pow_one] using h)
+  · intro h
+    have hσ : σ ∈ A.decompositionSubgroup K := A.mem_decompositionSubgroup_iff σ |>.mpr fun x ↦ by
+      constructor
+      · intro hx
+        by_contra hx'
+        -- The inverse of an element outside the ring is a nonunit.
+        have hinv : x⁻¹ ∈ A.nonunits := A.inv_mem_nonunits_iff.mpr (Or.inr hx')
+        have hd := A.nonunits.add_mem (h _ (A.nonunits_subset hinv)) hinv
+        rw [sub_add_cancel, map_inv₀, A.inv_mem_nonunits_iff] at hd
+        exact hd.elim (fun hz ↦ hx' (σ.injective (hz.trans σ.map_zero.symm) ▸ A.zero_mem))
+          (fun hnot ↦ hnot hx)
+      · intro hx
+        simpa only [sub_add_cancel] using A.add_mem _ _ (A.nonunits_subset (h x hx)) hx
+    refine ⟨⟨σ, hσ⟩, (A.mem_inertiaSubgroup_iff _).mpr fun x ↦ ?_, rfl⟩
+    have hx := (A.residue_smul_eq_pow_iff ⟨σ, hσ⟩ x 1).mpr (by
+      simpa only [pow_one, AlgEquiv.smul_def] using h x x.property)
+    simpa only [pow_one] using hx
 
 /-- **The inertia group over an intermediate field**: the inertia group of `A` over an intermediate
 field `E` of `L / K`, read as automorphisms over `K`, is the part of the inertia group of `A` over

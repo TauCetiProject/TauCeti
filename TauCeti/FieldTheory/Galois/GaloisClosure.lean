@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import TauCeti.FieldTheory.Galois.Restriction
+import Mathlib.FieldTheory.PurelyInseparable.Basic
 
 /-!
 # The normal closure of a finite intermediate field
@@ -29,6 +30,8 @@ finite subextensions.
 * `FiniteGaloisIntermediateField.le_normalClosure`: `L` lies in its normal closure.
 * `FiniteGaloisIntermediateField.normalClosure_le_iff`: the normal closure of `L` is the smallest
   finite Galois intermediate field containing `L`.
+* `FiniteGaloisIntermediateField.exists_expChar_pow_mem`: each element of a normal extension
+  has a power of the exponential characteristic in a finite Galois subextension.
 * `IntermediateField.fixingSubgroup_normalClosure`: in a normal extension, the subgroup fixing
   the normal closure of `L` is the normal core of the subgroup fixing `L`.
 * `IntermediateField.normalClosure_fixedField`: in a finite Galois extension, the normal closure
@@ -66,6 +69,18 @@ field `M` exactly when `L` does. -/
 theorem normalClosure_le_iff {M : FiniteGaloisIntermediateField k K} :
     normalClosure k L ≤ M ↔ L ≤ M.toIntermediateField :=
   IntermediateField.normalClosure_le_iff_of_normal
+
+/-- In a normal extension of exponential characteristic `p`, a power `x ^ p ^ n` of each
+element `x` belongs to a finite Galois intermediate field. -/
+theorem exists_expChar_pow_mem (p : ℕ) [ExpChar k p] (x : K) :
+    ∃ (n : ℕ) (M : FiniteGaloisIntermediateField k K), x ^ p ^ n ∈ M.toIntermediateField := by
+  obtain ⟨n, y, hy⟩ := IsPurelyInseparable.pow_mem (separableClosure k K) p x
+  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable k K).mpr
+    (mem_separableClosure_iff.mp y.property)
+  have hyM := le_normalClosure k (IntermediateField.adjoin k {(y : K)})
+    (IntermediateField.mem_adjoin_simple_self k (y : K))
+  have hy' : (y : K) = x ^ p ^ n := hy
+  exact ⟨n, normalClosure k (IntermediateField.adjoin k {(y : K)}), hy' ▸ hyM⟩
 
 end FiniteGaloisIntermediateField
 
