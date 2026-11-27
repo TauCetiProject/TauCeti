@@ -54,6 +54,10 @@ smoothed limit of Delange's Tauberian theorem is derived.
   `K_λ(t - T)` is an integral of the transform over the segment `s + i [-2λ, 2λ]`.
 * `TauCeti.HigherPoleTauberian.integral_exp_mul_delangeWeight_mul_squaredSinc_sub`: the damped
   identity for the regularised remainder.
+* `TauCeti.HigherPoleTauberian.integrableOn_cexp_mul_squaredSinc_sub`,
+  `TauCeti.HigherPoleTauberian.intervalIntegrable_mul_one_sub_abs_div_mul_cexp` and their damped
+  specialisations: both sides of the smoothing identities are integrable, so they can be split and
+  subtracted in the boundary limit.
 
 ## References
 
@@ -163,29 +167,40 @@ theorem hasLaplace_delangeWeight_mul_sub_exp_mul_pow {α : ℝ → ℝ} {F : ℂ
 
 /-! ### Smoothing against the squared-sinc kernel -/
 
-/-- **Smoothing a Laplace integrand against the squared-sinc kernel.** Let `λ ≥ 0` and let `G` be
-the one-sided Laplace transform of `g` at every point `s + i y` with `y ∈ [-2λ, 2λ]`. Then for
-every real `T`,
+/-- **Integrability of the smoothed Laplace integrand.** If `g` has a one-sided Laplace transform
+at `s`, then `t ↦ exp (-s t) g(t) K_λ(t - T)` is integrable on `(0, ∞)` for every bandwidth `λ` and
+every real `T`, where `K_λ` is `TauCeti.HigherPoleTauberian.squaredSinc λ`. -/
+theorem integrableOn_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {s z : ℂ} (hg : HasLaplace g s z)
+    (ell T : ℝ) :
+    IntegrableOn (fun t : ℝ ↦ cexp (-s * t) * g t * (squaredSinc ell (t - T) : ℂ)) (Ioi 0) := by
+  refine (hg.integrable.mul_bdd (g := fun t ↦ (squaredSinc ell (t - T) : ℂ)) (c := |ell| / π)
+    (Continuous.aestronglyMeasurable (by fun_prop [continuous_squaredSinc]))
+    (.of_forall fun t ↦ ?_)).congr
+    (.of_forall fun t ↦ by simp only [smul_eq_mul])
+  rw [norm_real, Real.norm_eq_abs, squaredSinc_def, abs_mul, abs_div, abs_of_pos Real.pi_pos,
+    abs_pow]
+  exact mul_le_of_le_one_right (div_nonneg (abs_nonneg _) Real.pi_pos.le)
+    (pow_le_one₀ (abs_nonneg _) (Real.abs_sinc_le_one _))
 
-`∫₀^∞ exp (-s t) g(t) K_λ(t - T) dt = (1 / 2π) ∫ y in -2λ..2λ, G(s + i y) (1 - |y| / 2λ) e^(i y T)`,
-
-where `K_λ` is `TauCeti.HigherPoleTauberian.squaredSinc λ`. -/
-theorem integral_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {G : ℂ → ℂ} {s : ℂ} {ell : ℝ}
+/-- The Fubini step behind `integral_cexp_mul_squaredSinc_sub`: the integrand
+`(y, t) ↦ (1 - |y| / 2λ) e^(i y (T - t)) exp (-s t) g(t)` is integrable on
+`(-2λ, 2λ] × (0, ∞)`, and its `t`-integral at each `y ∈ (-2λ, 2λ]` is
+`G(s + i y) (1 - |y| / 2λ) e^(i y T)`. -/
+private theorem integrable_uncurry_and_setIntegral_eq {g : ℝ → ℂ} {G : ℂ → ℂ} {s : ℂ} {ell : ℝ}
     (hell : 0 ≤ ell)
     (hG : ∀ y ∈ Icc (-(2 * ell)) (2 * ell), HasLaplace g (s + y * I) (G (s + y * I))) (T : ℝ) :
-    ∫ t in Ioi (0 : ℝ), cexp (-s * t) * g t * (squaredSinc ell (t - T) : ℂ) =
-      1 / (2 * π) * ∫ y in (-(2 * ell))..(2 * ell),
-        G (s + y * I) * ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T) := by
-  set q : ℝ → ℂ := fun t ↦ cexp (-s * t) * g t with q_def
-  have hq : Integrable q (volume.restrict (Ioi 0)) := by
+    Integrable (Function.uncurry fun (y t : ℝ) ↦
+        ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * ((T - t : ℝ) : ℂ)) * (cexp (-s * t) * g t))
+        ((volume.restrict (uIoc (-(2 * ell)) (2 * ell))).prod (volume.restrict (Ioi 0))) ∧
+      ∀ y ∈ uIoc (-(2 * ell)) (2 * ell),
+        ∫ t in Ioi (0 : ℝ), ((1 - |y| / (2 * ell) : ℝ) : ℂ) *
+            cexp (I * y * ((T - t : ℝ) : ℂ)) * (cexp (-s * t) * g t) =
+          G (s + y * I) * ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T) := by
+  have hq : Integrable (fun t : ℝ ↦ cexp (-s * t) * g t) (volume.restrict (Ioi 0)) := by
     have h0 := (hG 0 ⟨by linarith, by linarith⟩).integrable
     simpa only [ofReal_zero, zero_mul, add_zero, smul_eq_mul] using h0
-  -- `Ψ y t = (1 - |y| / 2λ) * e^(i y (T - t)) * q t`; its `y`-integral is `2π K_λ(t - T) q t`.
-  set Ψ : ℝ → ℝ → ℂ := fun y t ↦
-    ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * ((T - t : ℝ) : ℂ)) * q t with Ψ_def
-  have hΨ : Integrable (Function.uncurry Ψ)
-      ((volume.restrict (uIoc (-(2 * ell)) (2 * ell))).prod (volume.restrict (Ioi 0))) := by
-    refine integrable_uncurry_mul_of_norm_le (C := 1) measurableSet_uIoc measurableSet_Ioi
+  refine ⟨?_, fun y hy ↦ ?_⟩
+  · refine integrable_uncurry_mul_of_norm_le (C := 1) measurableSet_uIoc measurableSet_Ioi
       measure_Ioc_lt_top.ne (Continuous.aestronglyMeasurable (by fun_prop)) (fun y hy t _ ↦ ?_) hq
     have hphase : I * y * ((T - t : ℝ) : ℂ) = ((y * (T - t) : ℝ) : ℂ) * I := by
       push_cast
@@ -193,32 +208,61 @@ theorem integral_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {G : ℂ → ℂ} {s
     rw [uIoc_of_le (by linarith)] at hy
     rw [norm_mul, hphase, norm_exp_ofReal_mul_I, mul_one, norm_real, Real.norm_eq_abs]
     exact abs_one_sub_abs_div_le_one (abs_le.mpr ⟨hy.1.le, hy.2⟩)
-  have hinner (t : ℝ) : cexp (-s * t) * g t * (squaredSinc ell (t - T) : ℂ) =
-      1 / (2 * π) * ∫ y in (-(2 * ell))..(2 * ell), Ψ y t := by
-    simp only [Ψ_def, q_def, intervalIntegral.integral_mul_const]
-    rw [← squaredSinc_neg_right, neg_sub, squaredSinc_fourier hell]
-    ring
-  have houter : ∫ y in (-(2 * ell))..(2 * ell), ∫ t in Ioi 0, Ψ y t =
-      ∫ y in (-(2 * ell))..(2 * ell),
-        G (s + y * I) * ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T) := by
-    refine intervalIntegral.integral_congr_ae (.of_forall fun y hy ↦ ?_)
-    rw [uIoc_of_le (by linarith)] at hy
+  · rw [uIoc_of_le (by linarith)] at hy
     have hD := (hG y ⟨hy.1.le, hy.2⟩).integral_eq
     simp only [smul_eq_mul] at hD
-    have hΨ_shift (t : ℝ) : Ψ y t = cexp (-(s + y * I) * t) * g t *
-        (((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T)) := by
+    have hshift (t : ℝ) : ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * ((T - t : ℝ) : ℂ)) *
+        (cexp (-s * t) * g t) = cexp (-(s + y * I) * t) * g t *
+          (((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T)) := by
       have hexp : cexp (I * y * ((T - t : ℝ) : ℂ)) * cexp (-s * t) =
           cexp (-(s + y * I) * t) * cexp (I * y * T) := by
         rw [← Complex.exp_add, ← Complex.exp_add]
         congr 1
         push_cast
         ring
-      simp only [Ψ_def, q_def]
       linear_combination (((1 - |y| / (2 * ell) : ℝ) : ℂ) * g t) * hexp
-    simp_rw [hΨ_shift, integral_mul_const, hD]
+    simp_rw [hshift, integral_mul_const, hD]
+    ring
+
+/-- **Smoothing a Laplace integrand against the squared-sinc kernel.** Let `λ ≥ 0` and let `G` be
+the one-sided Laplace transform of `g` at every point `s + i y` with `y ∈ [-2λ, 2λ]`. Then for
+every real `T`,
+
+`∫₀^∞ exp (-s t) g(t) K_λ(t - T) dt = (1 / 2π) ∫ y in -2λ..2λ, G(s + i y) (1 - |y| / 2λ) e^(i y T)`,
+
+where `K_λ` is `TauCeti.HigherPoleTauberian.squaredSinc λ`. Both integrands are integrable:
+see `TauCeti.HigherPoleTauberian.integrableOn_cexp_mul_squaredSinc_sub` and
+`TauCeti.HigherPoleTauberian.intervalIntegrable_mul_one_sub_abs_div_mul_cexp`. -/
+theorem integral_cexp_mul_squaredSinc_sub {g : ℝ → ℂ} {G : ℂ → ℂ} {s : ℂ} {ell : ℝ}
+    (hell : 0 ≤ ell)
+    (hG : ∀ y ∈ Icc (-(2 * ell)) (2 * ell), HasLaplace g (s + y * I) (G (s + y * I))) (T : ℝ) :
+    ∫ t in Ioi (0 : ℝ), cexp (-s * t) * g t * (squaredSinc ell (t - T) : ℂ) =
+      1 / (2 * π) * ∫ y in (-(2 * ell))..(2 * ell),
+        G (s + y * I) * ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T) := by
+  obtain ⟨hΨ, hD⟩ := integrable_uncurry_and_setIntegral_eq hell hG T
+  -- The `y`-integral of `(1 - |y| / 2λ) e^(i y (T - t)) exp (-s t) g(t)` is
+  -- `2π K_λ(t - T) exp (-s t) g(t)`.
+  have hinner (t : ℝ) : cexp (-s * t) * g t * (squaredSinc ell (t - T) : ℂ) =
+      1 / (2 * π) * ∫ y in (-(2 * ell))..(2 * ell), ((1 - |y| / (2 * ell) : ℝ) : ℂ) *
+        cexp (I * y * ((T - t : ℝ) : ℂ)) * (cexp (-s * t) * g t) := by
+    simp only [intervalIntegral.integral_mul_const]
+    rw [← squaredSinc_neg_right, neg_sub, squaredSinc_fourier hell]
     ring
   simp_rw [hinner]
-  rw [integral_const_mul, ← intervalIntegral_integral_swap hΨ, houter]
+  rw [integral_const_mul, ← intervalIntegral_integral_swap hΨ,
+    intervalIntegral.integral_congr_ae (.of_forall fun y hy ↦ hD y hy)]
+
+/-- **Integrability of the frequency-side integrand.** Under the hypotheses of
+`TauCeti.HigherPoleTauberian.integral_cexp_mul_squaredSinc_sub`, the function
+`y ↦ G(s + i y) (1 - |y| / 2λ) e^(i y T)` is interval integrable on `[-2λ, 2λ]`. -/
+theorem intervalIntegrable_mul_one_sub_abs_div_mul_cexp {g : ℝ → ℂ} {G : ℂ → ℂ} {s : ℂ}
+    {ell : ℝ} (hell : 0 ≤ ell)
+    (hG : ∀ y ∈ Icc (-(2 * ell)) (2 * ell), HasLaplace g (s + y * I) (G (s + y * I))) (T : ℝ) :
+    IntervalIntegrable (fun y : ℝ ↦ G (s + y * I) * ((1 - |y| / (2 * ell) : ℝ) : ℂ) *
+      cexp (I * y * T)) volume (-(2 * ell)) (2 * ell) := by
+  obtain ⟨hΨ, hD⟩ := integrable_uncurry_and_setIntegral_eq hell hG T
+  rw [intervalIntegrable_iff]
+  exact hΨ.integral_prod_left.congr ((ae_restrict_iff' measurableSet_uIoc).mpr (.of_forall hD))
 
 /-- **The damped identity for Delange's regularised remainder.** Let `α` have transform `F` on the
 half-plane `Re s > a`, let `ε > 0` and `λ ≥ 0`, and write `H` for
@@ -230,7 +274,10 @@ every real `T`,
 `  = (1 / 2π) ∫ y in -2λ..2λ, H(a + ε + i y) (1 - |y| / 2λ) e^(i y T)`,
 
 where `w_k` is `TauCeti.HigherPoleTauberian.delangeWeight k` and `K_λ` is
-`TauCeti.HigherPoleTauberian.squaredSinc λ`. -/
+`TauCeti.HigherPoleTauberian.squaredSinc λ`. Both integrands are integrable: see
+`TauCeti.HigherPoleTauberian.integrableOn_exp_mul_delangeWeight_mul_squaredSinc_sub` and
+`TauCeti.HigherPoleTauberian.intervalIntegrable_regularizedRemainder_mul_one_sub_abs_div_mul_cexp`.
+-/
 theorem integral_exp_mul_delangeWeight_mul_squaredSinc_sub {α : ℝ → ℝ} {F : ℂ → ℂ}
     {a A ε ell : ℝ} (k : ℕ)
     (hF : ∀ s : ℂ, a < s.re → HasLaplace (fun t ↦ (α t : ℂ)) s (F s)) (hε : 0 < ε)
@@ -249,5 +296,40 @@ theorem integral_exp_mul_delangeWeight_mul_squaredSinc_sub {α : ℝ → ℝ} {F
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   push_cast
   ring
+
+/-- **Integrability of the damped smoothed integrand.** Let `α` have transform `F` on the half-plane
+`Re s > a` and let `ε > 0`. Then for every bandwidth `λ` and every real `T`, the time-side integrand
+`t ↦ e^(-(a + ε) t) w_k(t) (α(t) - (A / k!) e^(a t) t ^ k) K_λ(t - T)` of
+`TauCeti.HigherPoleTauberian.integral_exp_mul_delangeWeight_mul_squaredSinc_sub` is integrable on
+`(0, ∞)`, where `w_k` is `TauCeti.HigherPoleTauberian.delangeWeight k` and `K_λ` is
+`TauCeti.HigherPoleTauberian.squaredSinc λ`. -/
+theorem integrableOn_exp_mul_delangeWeight_mul_squaredSinc_sub {α : ℝ → ℝ} {F : ℂ → ℂ}
+    {a A ε : ℝ} (k : ℕ) (hF : ∀ s : ℂ, a < s.re → HasLaplace (fun t ↦ (α t : ℂ)) s (F s))
+    (hε : 0 < ε) (ell T : ℝ) :
+    IntegrableOn (fun t ↦ Real.exp (-(a + ε) * t) *
+        (delangeWeight k t * (α t - A / k ! * (Real.exp (a * t) * t ^ k))) *
+          squaredSinc ell (t - T)) (Ioi 0) := by
+  have h := integrableOn_cexp_mul_squaredSinc_sub
+    (hasLaplace_delangeWeight_mul_sub_exp_mul_pow (A := A) k hF (s := (a : ℂ) + ε)
+      (by simp [hε])) ell T
+  rw [IntegrableOn, Integrable.iff_ofReal (𝕜 := ℂ), RCLike.ofReal_eq_complex_ofReal]
+  refine h.congr (.of_forall fun t ↦ ?_)
+  push_cast
+  ring
+
+/-- **Integrability of the damped frequency-side integrand.** Under the hypotheses of
+`TauCeti.HigherPoleTauberian.integral_exp_mul_delangeWeight_mul_squaredSinc_sub`, the function
+`y ↦ H(a + ε + i y) (1 - |y| / 2λ) e^(i y T)` is interval integrable on `[-2λ, 2λ]`, where `H` is
+`TauCeti.HigherPoleTauberian.regularizedRemainder F a k A`. -/
+theorem intervalIntegrable_regularizedRemainder_mul_one_sub_abs_div_mul_cexp {α : ℝ → ℝ}
+    {F : ℂ → ℂ} {a A ε ell : ℝ} (k : ℕ)
+    (hF : ∀ s : ℂ, a < s.re → HasLaplace (fun t ↦ (α t : ℂ)) s (F s)) (hε : 0 < ε)
+    (hell : 0 ≤ ell) (T : ℝ) :
+    IntervalIntegrable (fun y : ℝ ↦ regularizedRemainder F a k A ((a : ℂ) + ε + y * I) *
+      ((1 - |y| / (2 * ell) : ℝ) : ℂ) * cexp (I * y * T)) volume (-(2 * ell)) (2 * ell) :=
+  intervalIntegrable_mul_one_sub_abs_div_mul_cexp (s := (a : ℂ) + ε)
+    (G := regularizedRemainder F a k A) hell
+    (fun y _ ↦ hasLaplace_delangeWeight_mul_sub_exp_mul_pow (A := A) k hF
+      (s := (a : ℂ) + ε + y * I) (by simp [hε])) T
 
 end TauCeti.HigherPoleTauberian
