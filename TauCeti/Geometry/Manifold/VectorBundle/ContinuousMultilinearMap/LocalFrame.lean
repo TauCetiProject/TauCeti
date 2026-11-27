@@ -21,7 +21,8 @@ on all tuples of local-frame sections of `e` are
 trivializations, a continuous multilinear map `T` on a finite-dimensional space with basis `b` is
 recovered from its values on tuples of basis vectors by
 `T = ∑ₖ (∏ᵢ b.coord (k i)) • T(b ∘ k)`, and each summand depends continuously linearly on
-`T(b ∘ k)`.
+`T(b ∘ k)`. The proof follows `TauCeti.Manifold.contMDiffOn_hom_of_localFrame` step for step,
+with single frame vectors replaced by tuples of them.
 
 Over the reals, using global smooth sections that agree with a local frame near each point, a
 section of this bundle is smooth exactly when it sends every family of smooth sections of `V` to a
