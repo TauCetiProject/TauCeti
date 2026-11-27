@@ -43,7 +43,8 @@ positive. Off the cut `(1, ∞)` the function is odd under conjugation, `D(conj 
 * `TauCeti.Polylog.blochWigner_exp_two_mul_I`: `D(e^{2iθ}) = 2 Λ(θ)`.
 * `TauCeti.Polylog.hasSum_blochWigner_I`, `TauCeti.Polylog.blochWigner_I_pos`: `D(i)` is
   Catalan's constant, hence positive.
-* `TauCeti.Polylog.blochWigner_conj`: `D(conj z) = -D(z)` off the cut `(1, ∞)`.
+* `TauCeti.Polylog.blochWigner_conj`, `TauCeti.Polylog.blochWigner_conj_of_re_le_one`:
+  `D(conj z) = -D(z)` off the cut `(1, ∞)`, in particular on `re z ≤ 1`.
 
 ## References
 
@@ -154,11 +155,14 @@ theorem blochWigner_conj {z : ℂ} (hz : (1 - z).arg ≠ π) :
   simp only [hz, ↓reduceIte, Complex.conj_im, Complex.norm_conj]
   ring
 
+/-- The Bloch–Wigner function is odd under complex conjugation on the closed half-plane
+`re z ≤ 1`, in particular on the closed unit disc. -/
+theorem blochWigner_conj_of_re_le_one {z : ℂ} (hz : z.re ≤ 1) :
+    blochWigner (conj z) = -blochWigner z :=
+  blochWigner_conj (Complex.arg_lt_pi_iff.2 (.inl (by simpa using hz))).ne
+
 /-- The Bloch–Wigner function takes opposite values at `-i` and `i`. -/
 theorem blochWigner_neg_I : blochWigner (-Complex.I) = -blochWigner Complex.I := by
-  have hI : (1 - Complex.I).arg ≠ π := fun h ↦ by
-    have := (Complex.arg_eq_pi_iff.1 h).1
-    norm_num at this
-  simpa using blochWigner_conj hI
+  simpa using blochWigner_conj_of_re_le_one (z := Complex.I) (by simp)
 
 end TauCeti.Polylog
