@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.Friendly.Conjugation
+public import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
 # Friendly places through decomposition groups
@@ -32,9 +33,9 @@ when it fixes the place `u`, the primes `σ • Q` and `Q` both lie over `u`, so
 * `IsDedekindDomain.HeightOneSpectrum.exists_smul_eq_of_complexConj_smul_under_eq`: conversely,
   for `L` Galois over `ℚ`, if complex conjugation fixes that place, it extends to an element of
   the decomposition group at `Q`.
-* `IsDedekindDomain.HeightOneSpectrum.isFriendly_of_smul_eq`: if, when `E_K` is CM, some element
-  of the decomposition group at `Q` acts on `E_K` as complex conjugation, then the place `v` below
-  `Q` is friendly when it is unramified over `ℚ`.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_of_exists_smul_eq`: if, when `E_K` is CM, some
+  element of the decomposition group at `Q` acts on `E_K` as complex conjugation, then the place
+  `v` below `Q` is friendly when it is unramified over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_exists_smul_eq`: for `L` Galois over `ℚ`, `v`
   is friendly if and only if it is unramified over `ℚ` and, when `E_K` is CM, some element of the
   decomposition group at `Q` acts on `E_K` as complex conjugation.
@@ -75,10 +76,7 @@ private theorem under_smul_eq_complexConj_smul [IsCMField (maximalRealOrCMSubfie
     simp only [algebraMap_smul_eq_apply, ← IsScalarTower.algebraMap_apply (𝓞 E) (𝓞 L) L,
       IsScalarTower.algebraMap_apply (𝓞 E) E L, IsScalarTower.algebraMap_apply E K L,
       Subfield.algebraMap_ofSubfield, Subfield.coe_subtype, hδ]
-  ext y
-  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, Ideal.under_def, Ideal.under_def,
-    Ideal.mem_comap, Ideal.mem_comap, ← smul_inv_smul c y, hc, inv_smul_smul,
-    Ideal.smul_mem_pointwise_smul_iff]
+  exact Ideal.under_smul_eq_smul_under hc Q
 
 /-- **The decomposition group and complex conjugation.** Let `Q` be a prime of `𝓞 L` above the
 place `v` of `K`. If `δ ∈ Gal(L/ℚ)` lies in the decomposition group of `Q` and acts on `E_K` as
@@ -112,8 +110,12 @@ theorem exists_smul_eq_of_complexConj_smul_under_eq [IsGalois ℚ L]
   have : IsGalois E L := IsGalois.tower_top_of_isGalois ℚ E L
   -- extend `c` to an automorphism `σ` of `L`
   set σ : L ≃ₐ[ℚ] L := (c.restrictScalars ℚ).liftNormal L
-  have hσ (x : E) : σ (algebraMap K L x) = algebraMap K L (c x) :=
-    AlgEquiv.liftNormal_commutes (c.restrictScalars ℚ) L x
+  -- `E ⊆ K ⊆ L` is a tower, so `E` maps to `L` through `K`
+  have hEKL (x : E) : algebraMap K L x = algebraMap E L x := by
+    rw [IsScalarTower.algebraMap_apply E K L, Subfield.algebraMap_ofSubfield, Subfield.coe_subtype]
+  have hσ (x : E) : σ (algebraMap K L x) = algebraMap K L (c x) := by
+    rw [hEKL, hEKL]
+    exact AlgEquiv.liftNormal_commutes (c.restrictScalars ℚ) L x
   -- `σ • Q` and `Q` lie over the same prime of `𝓞 E`
   have hσQ : (σ • Q).LiesOver (Q.under (𝓞 E)) :=
     ⟨by rw [under_smul_eq_complexConj_smul Q σ hσ, ← Ideal.over_def Q (v.asIdeal.under (𝓞 E)), h]⟩
@@ -128,13 +130,13 @@ theorem exists_smul_eq_of_complexConj_smul_under_eq [IsGalois ℚ L]
       simp only [MulSemiringAction.toRingHom_apply, algebraMap_smul_eq_apply,
         AlgEquiv.restrictScalars_apply]
     rw [mul_smul, Ideal.pointwise_smul_def, hτℚ, ← Ideal.pointwise_smul_def, hτ]
-  · rw [AlgEquiv.mul_apply, hσ, AlgEquiv.restrictScalars_apply]
+  · rw [AlgEquiv.mul_apply, hσ, AlgEquiv.restrictScalars_apply, hEKL]
     exact τ.commutes (c x)
 
 /-- **Friendly places through the decomposition group.** Let `Q` be a prime of `𝓞 L` above the
 place `v` of `K`, with `v` unramified over `ℚ`. If, when `E_K` is CM, some `δ ∈ Gal(L/ℚ)` in the
 decomposition group of `Q` acts on `E_K` as its complex conjugation, then `v` is friendly. -/
-theorem isFriendly_of_smul_eq (v : HeightOneSpectrum (𝓞 K)) (Q : Ideal (𝓞 L))
+theorem isFriendly_of_exists_smul_eq (v : HeightOneSpectrum (𝓞 K)) (Q : Ideal (𝓞 L))
     [Q.LiesOver v.asIdeal] (he : v.asIdeal.ramificationIdx ℤ = 1)
     (h : ∀ [IsCMField (maximalRealOrCMSubfield K)], ∃ δ : L ≃ₐ[ℚ] L, δ • Q = Q ∧
       ∀ x : maximalRealOrCMSubfield K, δ (algebraMap K L x) =
@@ -155,7 +157,7 @@ theorem isFriendly_iff_exists_smul_eq [IsGalois ℚ L] (v : HeightOneSpectrum (�
       ∀ [IsCMField (maximalRealOrCMSubfield K)], ∃ δ : L ≃ₐ[ℚ] L, δ • Q = Q ∧
         ∀ x : maximalRealOrCMSubfield K, δ (algebraMap K L x) =
           algebraMap K L (IsCMField.complexConj (maximalRealOrCMSubfield K) x) := by
-  refine ⟨fun h ↦ ⟨h.ramificationIdx_eq_one, ?_⟩, fun h ↦ isFriendly_of_smul_eq v Q h.1 h.2⟩
+  refine ⟨fun h ↦ ⟨h.ramificationIdx_eq_one, ?_⟩, fun h ↦ isFriendly_of_exists_smul_eq v Q h.1 h.2⟩
   intro hCM
   exact exists_smul_eq_of_complexConj_smul_under_eq v Q
     ((isFriendly_iff_complexConj_smul_eq v).1 h).2
@@ -170,6 +172,6 @@ theorem isFriendly_of_isArithFrobAt (v : HeightOneSpectrum (𝓞 K)) (Q : Ideal 
       δ (algebraMap K L x) =
         algebraMap K L (IsCMField.complexConj (maximalRealOrCMSubfield K) x)) :
     IsFriendly v :=
-  isFriendly_of_smul_eq v Q he ⟨δ, hF.mem_stabilizer, hδ⟩
+  isFriendly_of_exists_smul_eq v Q he ⟨δ, hF.mem_stabilizer, hδ⟩
 
 end IsDedekindDomain.HeightOneSpectrum
