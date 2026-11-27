@@ -23,7 +23,7 @@ import TauCeti.AlgebraicGeometry.Normalization.IsIso
   in the normalization factorization.
 
 The comparison uses Mathlib's `Scheme.Hom.normalizationDesc`, `Scheme.ΓSpecIso`,
-and `HasAffineProperty.iff_of_isAffine`, together with Tau Ceti's
+and `arrowIsoSpecΓOfIsAffine`, together with Tau Ceti's
 `Scheme.Hom.isIso_normalizationDesc_app_iff`.
 
 ## References
@@ -99,29 +99,35 @@ theorem isIso_normalizationDesc_spec_iff [IsIntegralHom (Spec.algebraMap A C)] :
   have htop : g.appLE (h ⁻¹ᵁ ⊤) (f ⁻¹ᵁ ⊤)
       (by simp only [Scheme.Hom.preimage_top, le_refl]) = g.appTop :=
     g.appLE_eq_app (U := ⊤)
-  have hAffine : IsAffine f.normalization := isAffine_of_isAffineHom f.fromNormalization
+  have : IsAffine f.normalization := isAffine_of_isAffineHom f.fromNormalization
   have hiso : IsIso (f.normalizationDesc g h H) ↔
-      IsAffine f.normalization ∧ IsIso (f.normalizationDesc g h H).appTop :=
-    @HasAffineProperty.iff_of_isAffine _ _
-      instHasAffinePropertyIsomorphismsSchemeAndIsAffineIsIsoCommRingCatAppTop
-      _ _ (f.normalizationDesc g h H) inferInstance
+      IsIso (f.normalizationDesc g h H).appTop := by
+    rw [← MorphismProperty.isomorphisms.iff,
+      (MorphismProperty.isomorphisms _).arrow_mk_iso_iff
+        (arrowIsoSpecΓOfIsAffine (f.normalizationDesc g h H)),
+      MorphismProperty.isomorphisms.iff, isIso_SpecMap_iff, ConcreteCategory.isIso_iff_bijective]
   have hcriterion := f.isIso_normalizationDesc_app_iff g h H (isAffineOpen_top _)
   rw [htop] at hcriterion
   simp only [Scheme.Hom.preimage_top] at hcriterion
-  rw [hiso, and_iff_right hAffine, hcriterion]
+  rw [hiso, hcriterion]
   exact injective_and_isIntegralElem_mem_range_appTop_iff
 
 variable [IsIntegralClosure C A B]
 
+/-- The spectrum of an integral closure `C` of `A` in `B` is integral over `Spec A`. -/
+theorem isIntegralHom_algebraMap_of_isIntegralClosure (B : Type u) [CommRing B]
+    [Algebra A B] [Algebra C B] [IsScalarTower A C B] [IsIntegralClosure C A B] :
+    IsIntegralHom (Spec.algebraMap A C) :=
+  IsIntegralHom.SpecMap_iff.mpr
+    (algebraMap_isIntegral_iff.mpr (IsIntegralClosure.isIntegral_algebra A B))
+
 /-- If `C` is the integral closure of `A` in `B`, the canonical map from the relative
 normalization of `Spec A` in `Spec B` to `Spec C` is an isomorphism (Stacks, Tags 035H and 035I). -/
 theorem isIso_normalizationDesc_spec_of_isIntegralClosure :
-    IsIso (@Scheme.Hom.normalizationDesc _ _ (Spec.algebraMap A B) inferInstance inferInstance _
-      (Spec.algebraMap C B) (Spec.algebraMap A C) (IsIntegralHom.SpecMap_iff.mpr
-        (algebraMap_isIntegral_iff.mpr (IsIntegralClosure.isIntegral_algebra A B)))
+    letI := isIntegralHom_algebraMap_of_isIntegralClosure (A := A) (C := C) B
+    IsIso ((Spec.algebraMap A B).normalizationDesc (Spec.algebraMap C B) (Spec.algebraMap A C)
       (Spec.algebraMap_comp_algebraMap A C B).symm) := by
-  have : IsIntegralHom (Spec.algebraMap A C) := IsIntegralHom.SpecMap_iff.mpr
-    (algebraMap_isIntegral_iff.mpr (IsIntegralClosure.isIntegral_algebra A B))
+  have := isIntegralHom_algebraMap_of_isIntegralClosure (A := A) (C := C) B
   exact isIso_normalizationDesc_spec_iff.mpr ⟨IsIntegralClosure.algebraMap_injective C A B,
     fun _ hb ↦ RingHom.mem_range.mpr ((IsIntegralClosure.isIntegral_iff (A := C)).mp hb)⟩
 
@@ -130,14 +136,16 @@ normalization of `Spec A` in `Spec B` to `Spec C` (Stacks, Tags 035H and 035I). 
 noncomputable def normalizationSpecIso (A B C : Type u) [CommRing A] [CommRing B] [CommRing C]
     [Algebra A B] [Algebra A C] [Algebra C B] [IsScalarTower A C B] [IsIntegralClosure C A B] :
     (Spec.algebraMap A B).normalization ≅ Spec (CommRingCat.of C) :=
-  @asIso _ _ _ _ _ isIso_normalizationDesc_spec_of_isIntegralClosure
+  letI := isIntegralHom_algebraMap_of_isIntegralClosure (A := A) (C := C) B
+  letI := isIso_normalizationDesc_spec_of_isIntegralClosure (A := A) (B := B) (C := C)
+  asIso ((Spec.algebraMap A B).normalizationDesc (Spec.algebraMap C B) (Spec.algebraMap A C)
+    (Spec.algebraMap_comp_algebraMap A C B).symm)
 
 /-- The forward map of the affine normalization comparison is the universal descent morphism. -/
 theorem normalizationSpecIso_hom :
+    letI := isIntegralHom_algebraMap_of_isIntegralClosure (A := A) (C := C) B
     (normalizationSpecIso A B C).hom =
-      @Scheme.Hom.normalizationDesc _ _ (Spec.algebraMap A B) inferInstance inferInstance _
-        (Spec.algebraMap C B) (Spec.algebraMap A C) (IsIntegralHom.SpecMap_iff.mpr
-          (algebraMap_isIntegral_iff.mpr (IsIntegralClosure.isIntegral_algebra A B)))
+      (Spec.algebraMap A B).normalizationDesc (Spec.algebraMap C B) (Spec.algebraMap A C)
         (Spec.algebraMap_comp_algebraMap A C B).symm := (rfl)
 
 /-- The affine normalization isomorphism identifies the map from `Spec B` with the map given
