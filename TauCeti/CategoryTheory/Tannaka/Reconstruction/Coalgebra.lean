@@ -332,9 +332,8 @@ private theorem lTensor_comp_coact_of_le {s t : Finset (SmallModel.{u} C)} (hst 
       (ω.toReconstructionCoalgebra t).toLinearMap.lTensor (ω.obj Y) ∘ₗ
         (ω.reconstructionStageComodule h').coact := by
   rw [← ω.lTensor_reconstructionTransition_comp_coact hst h h', ← LinearMap.comp_assoc,
-    ← LinearMap.lTensor_comp, ← ω.toReconstructionCoalgebra_comp_reconstructionTransition hst,
-    CoalgHom.toLinearMap_eq_ofClass, CoalgHom.comp_toLinearMap]
-  rfl
+    ← LinearMap.lTensor_comp, ← ω.toReconstructionCoalgebra_comp_reconstructionTransition hst]
+  simp only [CoalgHom.toLinearMap_eq_ofClass, CoalgHom.comp_toLinearMap]
 
 /-- The right `B`-comodule structure on the fibre `ω Y`, for the coalgebra `B` of `ω`: the
 comodule `reconstructionStageComodule` of a stage `s` with `Y` in the hull of `X_s`, corestricted
