@@ -10,8 +10,12 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Basic.Sign.Basic
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+import Mathlib.Analysis.Calculus.IteratedDeriv.FaaDiBruno
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Transvection.Basic
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Algebra.CharP.Invertible
@@ -19,56 +23,72 @@ import TauCeti.Analysis.Calculus.Bifurcation
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
-# Pitchfork bifurcations of the zeros of an odd family of maps
+# Pitchfork bifurcations of the zeros of an equivariant family of maps
 
-Let `f s : E → E` be a one-parameter family of maps of a finite-dimensional real normed space,
-jointly `C³` near `(t, 0)` and odd near `(t, 0)`, `f s (-x) = -f s x`. Then `0` is a zero of
-`f s` for every `s` near `t`, the *trivial zero*. Suppose that it degenerates at `s = t`: the
-kernel of `D = D(f t)₀` is the line through `v`, and `φ` is a functional vanishing on the range of
-`D`, so that `φ` spans the cokernel. Since `f t` is odd, `D²(f t)₀ = 0`, and the point `(t, 0)` is a
-*pitchfork point* when
+Let `f s : E → F` be a one-parameter family of maps between real Banach spaces, jointly `C³` near
+`(t, 0)`, with `f s 0 = 0` for every `s` near `t`, the *trivial zero*. Let `σ` and `τ` be
+continuous linear involutions of `E` and `F` with `f s (σ x) = τ (f s x)` near `(t, 0)`. Suppose
+that the trivial zero degenerates at `s = t` in the direction of the symmetry: the kernel of
+`D = D(f t)₀` is the line through a vector `v` with `σ v = -v`, and the range of `D` is the kernel
+of a functional `φ` with `φ ∘ τ = -φ`, so that `D` is Fredholm of index zero with kernel and
+cokernel of dimension one, on which the symmetries act by `-1`. Then `(t, 0)` is a *pitchfork
+point* when
 
-`κ = φ (D³(f t)₀ (v, v, v)) · φ (∂ₛ D(f s)₀ v) ≠ 0`.
+`κ = (φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))) · φ (∂ₛ D(f s)₀ v) ≠ 0`,
 
-The second factor is the transversality of the family, the first the nondegeneracy of the
-pitchfork; the sign of `κ` depends neither on `v` nor on `φ`. This file proves that near a
-pitchfork point a single orbit `{x₀, -x₀}` of the symmetry `x ↦ -x` is born or dies
-(`TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork`): there are a sign `ε ≠ 0` and a
+where `w` is any vector with `D w = D²(f t)₀ (v, v)`. The second factor is the transversality of
+the family. The first is the third derivative at `0` of the Lyapunov–Schmidt reduction of `f t`:
+the correction `- 3 φ (D²(f t)₀ (w, v))` accounts for the curvature of the reduced curve. It does
+not depend on the choice of `w`, which is unique up to multiples of `v`, because
+`φ (D²(f t)₀ (v, v)) = φ (D w) = 0`. This file proves that near a pitchfork point a single orbit
+`{x₀, σ x₀}` of the symmetry is born or dies
+(`TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork_of_equivariant`): there is a
 neighbourhood `U` of `0` such that for `s` near `t`
+
+* if `κ (s - t) ≥ 0`, then `0` is the only zero of `f s` in `U`;
+* if `κ (s - t) < 0`, then the zeros of `f s` in `U` are exactly `0`, `x₀` and `σ x₀` for some
+  `x₀` with `σ x₀ ≠ x₀`.
+
+**Odd families of a finite-dimensional space.** When `F = E` is finite-dimensional and
+`σ = τ = -1`, so that `f s` is odd, the hypotheses on `σ`, `τ`, `v` and `φ` hold automatically,
+`D²(f t)₀ = 0` allows `w = 0`, and Jacobian signs are defined. Then there is moreover a sign
+`ε ≠ 0` (`TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork`) such that
 
 * the trivial zero has Jacobian sign `sign det D(f s)₀ = ε · sign (κ (s - t))`, so it is
   nondegenerate for `s ≠ t` and changes sign at `s = t`;
-* if `κ (s - t) ≥ 0`, then `0` is the only zero of `f s` in `U`;
-* if `κ (s - t) < 0`, then the zeros of `f s` in `U` are exactly `0`, `x₀` and `-x₀` for some
-  `x₀ ≠ 0`, and both `x₀` and `-x₀` have Jacobian sign `ε`.
+* the two nontrivial zeros `x₀` and `-x₀` both have Jacobian sign `ε`.
 
 So the signed count of all zeros in `U` is `ε` on both sides of `t`, while the signed count of
 the orbits, in which `{x₀, -x₀}` counts once, changes by `ε`
 (`TauCeti.exists_mem_nhds_finsum_sign_det_fderiv_eq_pitchfork`).
 
-This is meant as the finite-dimensional model of the period doubling of a torus in Taubes's count
-of pseudoholomorphic curves. There the deformation problem of the doubly covered torus is
-expected to reduce to such an odd family, odd under the deck transformation of the double cover,
-with the trivial zero the doubly covered torus and the orbit `{x₀, -x₀}` a single embedded torus
-in twice its class; the change of the orbit count would then be what Taubes's four-twist weights
-of the tori account for. Nothing in this file proves that reduction. The one-dimensional case is
-`TauCeti.eventually_pitchfork`;
-the fold point, where a pair of zeros of opposite signs is born, is
+This is the model of the period doubling of a torus in Taubes's count of pseudoholomorphic curves.
+There the deformation problem of a doubly covered torus is a family of Fredholm maps between
+Banach spaces of sections, equivariant under the deck transformation of the double cover, with
+the trivial zero the doubly covered torus and the orbit `{x₀, σ x₀}` a single embedded torus in
+twice its class; the change of the orbit count is what Taubes's four-twist weights of the tori
+account for. This file does not set up that deformation problem, and in infinite dimensions it
+does not compare orientations. The one-dimensional case is `TauCeti.eventually_pitchfork`; the
+fold point, where a pair of zeros of opposite signs is born, is
 `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_eq_pair`.
 
 The proof is a Lyapunov–Schmidt reduction to `TauCeti.eventually_pitchfork`. Choose `ℓ` with
-`ℓ v = 1` and `c` with `φ c = 1`. The map `Φ (s, x) = (s, f s x - φ (f s x) • c + ℓ x • c)` has
-an invertible derivative at `(t, 0)`, so its local inverse gives a `C³` map `X` with
+`ℓ v = 1` and `ℓ ∘ σ = -ℓ`, and `c` with `φ c = 1` and `τ c = -c`. The map
+`Φ (s, x) = (s, f s x - φ (f s x) • c + ℓ x • c)` has an invertible derivative at `(t, 0)`: it is
+injective because `ker D` is the line through `v`, and onto because `range D = ker φ`; by the
+open mapping theorem its inverse is continuous. The local inverse of `Φ` gives a `C³` map `X` with
 `ℓ (X s σ) = σ` and `f s (X s σ) = h s σ • c`, where `h s σ = φ (f s (X s σ))`, and every zero
-`x` of `f s` near `0` is `X s (ℓ x)`. By uniqueness `X s` is odd, so `h s` is odd and its zeros
-are those of a one-dimensional odd family. Differentiating the identities defining `X` gives
-`∂σ X(t, 0) = v`, hence `∂σ h (t, 0) = 0`,
-`∂σ³ h (t, 0) = φ (D³(f t)₀ (v, v, v))` (since `D²(f t)₀ = 0` and `∂σ² X (t, 0) = 0`), and
-`∂ₛ ∂σ h (t, 0) = φ (∂ₛ D(f s)₀ v)`. Finally, with `M = D(f s) - (φ ∘ D(f s)) ⊗ c + ℓ ⊗ c`
-the derivative of the chart at `X s σ`, `D(f s) = M ∘ (1 + μ ⊗ ∂σ X)` with
-`μ = φ ∘ D(f s) - ℓ`, so the matrix determinant lemma (`LinearMap.transvection.det`) gives
+`x` of `f s` near `0` is `X s (ℓ x)`. By uniqueness `X s (-σ) = σ (X s σ)`, so `h s` is odd and
+its zeros are those of a one-dimensional odd family. Differentiating the identities defining `X`
+gives `∂σ X(t, 0) = v`, `∂σ h (t, 0) = 0`, `∂ₛ ∂σ h (t, 0) = φ (∂ₛ D(f s)₀ v)`, and, since the
+acceleration `∂σ² X (t, 0)` is `-w` up to a multiple of `v`,
+`∂σ³ h (t, 0) = φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))`. For the Jacobian signs in finite
+dimensions, with `M = D(f s) - (φ ∘ D(f s)) ⊗ c + ℓ ⊗ c` the derivative of the chart at
+`X s σ`, `D(f s) = M ∘ (1 + μ ⊗ ∂σ X)` with `μ = φ ∘ D(f s) - ℓ`, so the matrix determinant lemma
+(`LinearMap.transvection.det`) gives
 
 `det D(f s)_{X s σ} = det M · ∂σ h (s, σ)`,
 
@@ -77,8 +97,10 @@ and `det M` has a constant sign near `(t, 0)`. So the Jacobian signs of the zero
 
 ## Main results
 
-* `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork`: the zeros of an odd family near a
-  pitchfork point and their Jacobian signs.
+* `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork_of_equivariant`: the zeros of an
+  equivariant family of maps between Banach spaces near a pitchfork point.
+* `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork`: the zeros of an odd family of maps of
+  a finite-dimensional space near a pitchfork point, and their Jacobian signs.
 * `TauCeti.exists_mem_nhds_finsum_sign_det_fderiv_eq_pitchfork`: the signed counts of all zeros
   and of the nontrivial zeros near a pitchfork point.
 
@@ -98,19 +120,78 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E → E} {t : ℝ}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {t : ℝ}
+
+section Reduction
+
+variable {f : ℝ → E → F}
 
 /-- If the kernel of `D` is the line through `v`, `φ` vanishes on the range of `D`, `ℓ v = 1` and
 `φ c = 1`, then `h ↦ D h + ℓ h • c` is injective. -/
-private theorem eq_zero_of_apply_add_smul_eq_zero {D : E →L[ℝ] E} {v : E}
-    (hker : LinearMap.ker (D : E →ₗ[ℝ] E) = ℝ ∙ v) {φ ℓ : StrongDual ℝ E}
-    (hφ : ∀ y, φ (D y) = 0) (hℓ : ℓ v = 1) {c : E} (hc : φ c = 1) {h : E}
+private theorem eq_zero_of_apply_add_smul_eq_zero {D : E →L[ℝ] F} {v : E}
+    (hker : LinearMap.ker (D : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F} {ℓ : StrongDual ℝ E}
+    (hφ : ∀ y, φ (D y) = 0) (hℓ : ℓ v = 1) {c : F} (hc : φ c = 1) {h : E}
     (hz : D h + ℓ h • c = 0) : h = 0 := by
   have hℓh : ℓ h = 0 := by simpa [hφ, hc] using congrArg φ hz
-  have hDh : h ∈ LinearMap.ker (D : E →ₗ[ℝ] E) := by simpa [hℓh] using hz
+  have hDh : h ∈ LinearMap.ker (D : E →ₗ[ℝ] F) := by simpa [hℓh] using hz
   rw [hker, Submodule.mem_span_singleton] at hDh
   obtain ⟨r, rfl⟩ := hDh
   simp_all
+
+/-- If the range of `D` is the kernel of `φ`, `D v = 0`, `ℓ v = 1` and `φ c = 1`, then
+`h ↦ D h + ℓ h • c` is onto. -/
+private theorem exists_apply_add_smul_eq {D : E →L[ℝ] F} {v : E} (hv : D v = 0)
+    {φ : StrongDual ℝ F}
+    (hrange : LinearMap.range (D : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
+    {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) {c : F} (hc : φ c = 1) (z : F) :
+    ∃ h, D h + ℓ h • c = z := by
+  obtain ⟨h₀, hh₀⟩ : z - φ z • c ∈ LinearMap.range (D : E →ₗ[ℝ] F) := by
+    rw [hrange, LinearMap.mem_ker]
+    simp [hc]
+  have hh₀' : D h₀ = z - φ z • c := hh₀
+  refine ⟨h₀ + (φ z - ℓ h₀) • v, ?_⟩
+  simp only [map_add, map_smul, hv, smul_zero, add_zero, hh₀', hℓ, smul_eq_mul, mul_one,
+    add_sub_cancel]
+  abel
+
+/-- **The derivative of the Lyapunov–Schmidt chart.** Let `Df : ℝ × E →L[ℝ] F` restrict to `D` on
+`0 × E`, let the kernel of `D` be the line through `v` and its range the kernel of `φ`, and let
+`ℓ v = 1` and `φ c = 1`. Then `(a, h) ↦ (a, Df (a, h) - φ (Df (a, h)) • c + ℓ h • c)` is
+bijective: writing `Df (a, h) = Df (a, 0) + D h`, its second component is
+`Df (a, 0) - φ (Df (a, 0)) • c + (D h + ℓ h • c)`, and `h ↦ D h + ℓ h • c` is bijective. -/
+private theorem bijective_prod_sub_add {Df : ℝ × E →L[ℝ] F} {D : E →L[ℝ] F}
+    (hDf : ∀ h, Df (0, h) = D h) {v : E} (hker : LinearMap.ker (D : E →ₗ[ℝ] F) = ℝ ∙ v)
+    {φ : StrongDual ℝ F}
+    (hrange : LinearMap.range (D : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
+    {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) {c : F} (hc : φ c = 1) :
+    Bijective ((ContinuousLinearMap.fst ℝ ℝ E).prod
+      (Df - (φ.comp Df).smulRight c + (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)).smulRight c)) := by
+  have hφ (y : E) : φ (D y) = 0 := LinearMap.mem_ker.1 (hrange ▸ LinearMap.mem_range_self _ y)
+  have hv : D v = 0 := LinearMap.mem_ker.1 (hker ▸ Submodule.mem_span_singleton_self v)
+  have hL₂ (a : ℝ) (h : E) :
+      (Df (a, h) - φ (Df (a, h)) • c + ℓ h • c) =
+        Df (a, 0) - φ (Df (a, 0)) • c + (D h + ℓ h • c) := by
+    rw [show (a, h) = (a, 0) + (0, h) by simp, map_add, hDf, map_add, hφ, add_zero]
+    abel
+  refine ⟨(injective_iff_map_eq_zero _).2 fun ⟨a, h⟩ hz ↦ ?_, fun ⟨a, z⟩ ↦ ?_⟩
+  · -- Injective: the first component gives `a = 0`, and then `D h + ℓ h • c = 0`.
+    have ha : a = 0 := congrArg Prod.fst hz
+    subst ha
+    have h₂ := congrArg Prod.snd hz
+    simp only [ContinuousLinearMap.prod_apply, add_apply, sub_apply,
+      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_snd', hL₂, Prod.mk_zero_zero, map_zero, zero_smul, sub_zero,
+      zero_add, Prod.snd_zero] at h₂
+    simpa using eq_zero_of_apply_add_smul_eq_zero hker hφ hℓ hc h₂
+  · -- Onto: solve `D h + ℓ h • c = z - Df (a, 0) + φ (Df (a, 0)) • c`.
+    obtain ⟨h, hh⟩ := exists_apply_add_smul_eq hv hrange hℓ hc
+      (z - Df (a, 0) + φ (Df (a, 0)) • c)
+    refine ⟨(a, h), Prod.ext rfl ?_⟩
+    simp only [ContinuousLinearMap.prod_apply, add_apply, sub_apply,
+      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_snd', hL₂, hh]
+    abel
 
 omit [NormedSpace ℝ E] in
 /-- If `uncurry X` is continuous at `(t, 0)` and `X t 0 = 0`, then `(s, σ) ↦ (s, X s σ)` tends to
@@ -127,7 +208,7 @@ function `σ ↦ φ (f s (X s σ))` has derivative `φ (D(f s) u)` at `σ`, wher
 of `X s` at `σ`; moreover `D(f s) u = φ (D(f s) u) • c` and `ℓ u = 1`. -/
 private theorem eventually_hasDerivAt_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     {X : ℝ → ℝ → E} (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0)
-    {φ ℓ : StrongDual ℝ E} {c : E}
+    {φ : StrongDual ℝ F} {ℓ : StrongDual ℝ E} {c : F}
     (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2) :
     ∀ᶠ p in 𝓝 (t, (0 : ℝ)),
@@ -160,15 +241,15 @@ private theorem eventually_hasDerivAt_reduction (hf : ContDiffAt ℝ 3 (uncurry 
 `0` at `0`. -/
 private theorem deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) {X : ℝ → ℝ → E}
     (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0) {v : E}
-    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E) = ℝ ∙ v) {φ ℓ : StrongDual ℝ E}
-    (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) (hℓ : ℓ v = 1) {c : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
+    {ℓ : StrongDual ℝ E} (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) (hℓ : ℓ v = 1) {c : F}
     (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2) :
     deriv (X t) 0 = v ∧ HasDerivAt (fun σ ↦ φ (f t (X t σ))) 0 0 := by
   obtain ⟨hh, hD, hℓu⟩ := (eventually_hasDerivAt_reduction hf hX hX0 hev).self_of_nhds
   simp only [hX0, hφ, zero_smul] at hh hD hℓu
   refine ⟨?_, hh⟩
-  have hu : deriv (X t) 0 ∈ LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E) := LinearMap.mem_ker.2 hD
+  have hu : deriv (X t) 0 ∈ LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) := LinearMap.mem_ker.2 hD
   rw [hker, Submodule.mem_span_singleton] at hu
   obtain ⟨r, hr⟩ := hu
   rw [← hr, map_smul, hℓ, smul_eq_mul, mul_one] at hℓu
@@ -178,10 +259,10 @@ private theorem deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) {X : 
 `σ`-derivative at `0` of `φ (f s (X s σ))` is `φ (∂ₛ D(f s)₀ v)`. -/
 private theorem deriv_deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) {X : ℝ → ℝ → E}
     (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : ∀ᶠ s in 𝓝 t, X s 0 = 0) {v : E}
-    (hv : deriv (X t) 0 = v) {φ : StrongDual ℝ E} (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) :
+    (hv : deriv (X t) 0 = v) {φ : StrongDual ℝ F} (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) :
     deriv (fun s ↦ deriv (fun σ ↦ φ (f s (X s σ))) 0) t =
       φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) := by
-  set A : ℝ → E →L[ℝ] E := fun s ↦ fderiv ℝ (f s) 0
+  set A : ℝ → E →L[ℝ] F := fun s ↦ fderiv ℝ (f s) 0
   have hA : ContDiffAt ℝ 2 A t :=
     ContDiffAt.fderiv (g := fun _ ↦ (0 : E)) hf contDiffAt_const (by norm_num)
   -- `deriv (X s) 0 = fderiv ℝ (X s) 0 1` by definition of `deriv`.
@@ -212,10 +293,52 @@ private theorem deriv_deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
   rw [heq.deriv_eq, hR]
   exact (φ.hasFDerivAt.comp_hasDerivAt t (hA'.clm_apply hu')).deriv.trans (by simp [A, hv, hφ])
 
+/-- **The cubic coefficient of the reduction.** Let `X` be a `C³` curve through `0` with velocity
+`v`, where `v` spans the kernel of `Dg(0)`, and suppose `g ∘ X` takes values on the line through
+`c`, with `φ c = 1` and `φ ∘ Dg(0) = 0`. If `Dg(0) w = D²g(0) (v, v)`, then the third derivative
+of `φ ∘ g ∘ X` at `0` is `φ (D³g(0) (v, v, v)) - 3 φ (D²g(0) (w, v))`. -/
+private theorem iteratedDeriv_three_reduction {g : E → F} {X : ℝ → E} (hg : ContDiffAt ℝ 3 g 0)
+    (hX : ContDiffAt ℝ 3 X 0) (hX0 : X 0 = 0) {v : E} (hv : deriv X 0 = v)
+    (hker : LinearMap.ker (fderiv ℝ g 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
+    (hφ : ∀ y, φ (fderiv ℝ g 0 y) = 0) {c : F} (hc : φ c = 1)
+    (hev : ∀ᶠ a in 𝓝 (0 : ℝ), g (X a) = φ (g (X a)) • c) {w : E}
+    (hw : fderiv ℝ g 0 w = fderiv ℝ (fderiv ℝ g) 0 v v) :
+    iteratedDeriv 3 (fun a ↦ φ (g (X a))) 0 =
+      φ (fderiv ℝ (fderiv ℝ (fderiv ℝ g)) 0 v v v) - 3 * φ (fderiv ℝ (fderiv ℝ g) 0 w v) := by
+  have hg' : ContDiffAt ℝ 3 g (X 0) := by rwa [hX0]
+  have hφg : ContDiffAt ℝ 3 (φ ∘ g) (X 0) := φ.contDiff.contDiffAt.comp (X 0) hg'
+  -- The acceleration `u` of `X` at `0` is `-w` up to a multiple of `v`: the second derivative
+  -- `D²g(0) (v, v) + Dg(0) u` of `g ∘ X` lies on the line through `c` and is killed by `φ`.
+  have h₂ := iteratedDeriv_vcomp_two (hg'.of_le (by norm_num)) (hX.of_le (by norm_num))
+  have hev' : g ∘ X =ᶠ[𝓝 (0 : ℝ)] fun a ↦ φ (g (X a)) • c := hev
+  rw [(hev'.iteratedDeriv 2).self_of_nhds,
+    iteratedDeriv_smul_const (show ContDiffAt ℝ 2 (fun a ↦ φ (g (X a))) 0 from
+      (hφg.comp 0 hX).of_le (by norm_num)), iteratedFDeriv_two_apply,
+    hX0, hv] at h₂
+  have hu : fderiv ℝ g 0 (iteratedDeriv 2 X 0 + w) = 0 := by
+    have h := congrArg φ h₂
+    rw [map_add, hφ, add_zero, map_smul, hc, smul_eq_mul, mul_one, ← hw, hφ] at h
+    rw [map_add, hw, add_comm, ← h₂, h, zero_smul]
+  obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1
+    (hker ▸ LinearMap.mem_ker.2 hu : iteratedDeriv 2 X 0 + w ∈ ℝ ∙ v)
+  have hu' : iteratedDeriv 2 X 0 = r • v - w := by rw [hr]; abel
+  -- Faà di Bruno's formula for `(φ ∘ g) ∘ X`, with the symmetric second derivative of `g`.
+  have hsymm := hg.isSymmSndFDerivAt (by simp only [minSmoothness_of_isRCLikeNormedField]; norm_num)
+  have h₃ := iteratedDeriv_vcomp_three hφg hX
+  rw [φ.iteratedFDeriv_comp_left hg' le_rfl,
+    φ.iteratedFDeriv_comp_left hg' (i := 2) (by norm_num),
+    (φ.hasFDerivAt.comp (X 0) (hg'.differentiableAt (by norm_num)).hasFDerivAt).fderiv] at h₃
+  simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+    ContinuousLinearMap.comp_apply, iteratedFDeriv_three_apply, iteratedFDeriv_two_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, hX0, hv, hu', hφ] at h₃
+  rw [show (fun a ↦ φ (g (X a))) = (φ ∘ g) ∘ X from rfl, h₃, hsymm v (r • v - w)]
+  simp only [map_sub, map_smul, sub_apply, smul_apply, ← hw, hφ, nsmul_eq_mul, smul_eq_mul]
+  ring
+
 /-- The function `(s, σ) ↦ φ (f s (X s σ))` is `C³` at `(t, 0)`. -/
 private theorem contDiffAt_apply_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     {X : ℝ → ℝ → E} (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0)
-    (φ : StrongDual ℝ E) :
+    (φ : StrongDual ℝ F) :
     ContDiffAt ℝ 3 (fun q : ℝ × ℝ ↦ φ (f q.1 (X q.1 q.2))) (t, 0) := by
   have h₁ : ContDiffAt ℝ 3 (uncurry f) (t, uncurry X (t, 0)) := by simpa [hX0] using hf
   exact ContDiffAt.comp (g := φ) (t, (0 : ℝ)) φ.contDiff.contDiffAt
@@ -223,18 +346,22 @@ private theorem contDiffAt_apply_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t
       (t, (0 : ℝ)) h₁ (contDiffAt_fst.prodMk hX))
 
 /-- **The one-dimensional pitchfork of the reduction.** In the setting of `exists_reduction`, with
-cubic coefficient `0 < φ (D³(f t)₀ (v, v, v))` and transversality coefficient
-`β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the scalar family `σ ↦ φ (f s (X s σ))` has the zeros and derivative
-signs of `TauCeti.eventually_pitchfork` near `σ = 0`, for `s` near `t`. -/
+cubic coefficient `0 < φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))` and transversality
+coefficient `β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the scalar family `σ ↦ φ (f s (X s σ))` has the zeros
+and derivative signs of `TauCeti.eventually_pitchfork` near `σ = 0`, for `s` near `t`. -/
 private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
-    (hodd : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (-p.2) = -f p.1 p.2) {v : E}
-    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E) = ℝ ∙ v) {φ ℓ : StrongDual ℝ E}
-    (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) (hℓ : ℓ v = 1)
-    (hγ : 0 < φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v))
-    (hβ : φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) ≠ 0) {c : E} {X : ℝ → ℝ → E}
-    (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0)
+    {σ : E →L[ℝ] E} {τ : F →L[ℝ] F}
+    (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
+    (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) (hφτ : ∀ y, φ (τ y) = -φ y) {ℓ : StrongDual ℝ E}
+    (hℓ : ℓ v = 1) {w : E} (hw : fderiv ℝ (f t) 0 w = fderiv ℝ (fderiv ℝ (f t)) 0 v v)
+    (hγ : 0 < φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+      3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v))
+    (hβ : φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) ≠ 0) {c : F} (hc : φ c = 1)
+    {X : ℝ → ℝ → E} (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0)
+    (hXs0 : ∀ᶠ s in 𝓝 t, X s 0 = 0)
     (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
-      ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = -X p.1 p.2) :
+      ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = σ (X p.1 p.2)) :
     ∀ᶠ δ in 𝓝[>] 0, ∀ᶠ s in 𝓝 t,
       (0 ≤ φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) →
         {σ ∈ Ioo (-δ) δ | φ (f s (X s σ)) = 0} = {0}) ∧
@@ -245,8 +372,6 @@ private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f
           {σ ∈ Ioo (-δ) δ | φ (f s (X s σ)) = 0} = {-σ₀, 0, σ₀} ∧
           0 < deriv (fun σ ↦ φ (f s (X s σ))) σ₀ ∧
           deriv (fun σ ↦ φ (f s (X s σ))) (-σ₀) = deriv (fun σ ↦ φ (f s (X s σ))) σ₀) := by
-  -- A real vector space has no additive torsion.
-  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   have hev' : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2 := hev.mono fun p hp ↦ ⟨hp.1, hp.2.1⟩
   obtain ⟨hv, hh0⟩ := deriv_reduction hf hX hX0 hker hφ hℓ hev'
@@ -260,21 +385,21 @@ private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f
       simpa using contDiffAt_apply_reduction hf hX hX0 φ
     exact ContDiffAt.comp (g := fun q : ℝ × ℝ ↦ φ (f q.1 (X q.1 q.2)))
       (f := fun p : ℝ × ℝ ↦ (t + p.2, p.1)) (0 : ℝ × ℝ) h hsm.contDiffAt
+  -- `F` is odd in `σ`, since `X s (-σ) = σ (X s σ)` and `φ ∘ τ = -φ`.
   have hoddF : ∀ᶠ p in 𝓝 (0 : ℝ × ℝ), F (-p.1, p.2) = -F p := by
     have hshift : Tendsto (fun p : ℝ × ℝ ↦ (t + p.2, p.1)) (𝓝 0) (𝓝 (t, 0)) := by
       simpa using hsm.continuous.tendsto (0 : ℝ × ℝ)
     have hq : ∀ᶠ q in 𝓝 (t, (0 : ℝ)), φ (f q.1 (X q.1 (-q.2))) = -φ (f q.1 (X q.1 q.2)) := by
-      filter_upwards [hev, hXt.eventually hodd] with q hq hq'
-      rw [hq.2.2, hq', map_neg]
+      filter_upwards [hev, hXt.eventually hfσ] with q hq hq'
+      rw [hq.2.2, hq', hφτ]
     exact hshift.eventually hq
-  have hgodd : ∀ᶠ σ in 𝓝 (0 : ℝ), X t (-σ) = -X t σ :=
-    ((continuous_const.prodMk continuous_id).tendsto 0).eventually (hev.mono fun q hq ↦ hq.2.2)
+  have hevt : ∀ᶠ a in 𝓝 (0 : ℝ), f t (X t a) = φ (f t (X t a)) • c :=
+    ((continuous_const.prodMk continuous_id).tendsto 0).eventually (hev.mono fun q hq ↦ hq.1)
   have h₃ : iteratedDeriv 3 (fun x ↦ F (x, 0)) 0 =
-      φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) := by
-    simpa [F] using iteratedDeriv_three_comp_of_eventually_odd (g := f t) (f := X t)
-      hf.uncurry_left hX.uncurry_left hX0 hv hgodd hφ
-  have hXs0 : ∀ᶠ s in 𝓝 t, X s 0 = 0 :=
-    eventually_apply_zero_eq_zero_of_eventually_odd (hev.mono fun _ hq ↦ hq.2.2)
+      φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+        3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v) := by
+    simpa [F] using iteratedDeriv_three_reduction hf.uncurry_left hX.uncurry_left hX0 hv hker hφ
+      hc hevt hw
   have hb : deriv (fun s ↦ deriv (fun x ↦ F (x, s)) 0) 0 =
       φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) := by
     simp only [F]
@@ -292,7 +417,8 @@ there is `η > 0` such that for every `0 < δ < η` some neighbourhood `U` of `0
 `f s`, for `|s - t| < η`, exactly in the points `X s σ` with `|σ| < δ` and `φ (f s (X s σ)) = 0`.
 -/
 private theorem exists_pos_forall_setOf_apply_eq_zero_eq_image {X : ℝ → ℝ → E}
-    (hX : ContinuousAt (uncurry X) (t, 0)) (hX0 : X t 0 = 0) {φ ℓ : StrongDual ℝ E} {c : E}
+    (hX : ContinuousAt (uncurry X) (t, 0)) (hX0 : X t 0 = 0) {φ : StrongDual ℝ F}
+    {ℓ : StrongDual ℝ E} {c : F}
     (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2)
     {N : Set (ℝ × E)} (hN : N ∈ 𝓝 (t, (0 : E)))
@@ -327,17 +453,15 @@ private theorem exists_pos_forall_setOf_apply_eq_zero_eq_image {X : ℝ → ℝ 
     exact ⟨⟨hXb', by simpa [hℓX] using abs_lt.2 hσ⟩, by rw [hfX, hσ0, zero_smul]⟩
 
 /-- **Assembling the pitchfork.** If the scalar family `σ ↦ φ (f s (X s σ))` has the zeros and
-derivative signs of the one-dimensional pitchfork with coefficient `β`, its derivative gives the
-Jacobian signs of `f s` along `X s` up to `ε`, and the zeros of `f s` near `0` are the points
-`X s σ` with `φ (f s (X s σ)) = 0`, then the zeros of `f s` near `0` and their signs are those of
-`TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork`, with `β (s - t)` in place of
-`κ (s - t)`. -/
-private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ ℓ : StrongDual ℝ E} {β : ℝ}
-    {ε : SignType} (hβ : β ≠ 0)
-    (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), (ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = -X p.1 p.2) ∧
-      SignType.sign (LinearMap.det (fderiv ℝ (f p.1) (X p.1 p.2) : E →ₗ[ℝ] E)) =
-        ε * SignType.sign (deriv (fun σ ↦ φ (f p.1 (X p.1 σ))) p.2))
-    (hh0 : deriv (fun σ ↦ φ (f t (X t σ))) 0 = 0)
+derivative signs of the one-dimensional pitchfork with coefficient `β`, and the zeros of `f s`
+near `0` are the points `X s σ` with `φ (f s (X s σ)) = 0`, then the zeros of `f s` near `0` are
+`0` alone if `β (s - t) ≥ 0`, and `0`, `X s σ₀` and `X s (-σ₀) = σ (X s σ₀)` if `β (s - t) < 0`,
+with the derivative signs of the scalar family at the corresponding points. A property `Q` that
+holds near `(t, 0)` holds at the parameters of these zeros. -/
+private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ : StrongDual ℝ F}
+    {ℓ : StrongDual ℝ E} {σ : E →L[ℝ] E} {β : ℝ} (hβ : β ≠ 0) {Q : ℝ × ℝ → Prop}
+    (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), (ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = σ (X p.1 p.2)) ∧ Q p)
+    (hXs : ∀ᶠ s in 𝓝 t, X s 0 = 0) (hh0 : deriv (fun σ ↦ φ (f t (X t σ))) 0 = 0)
     (hZ : ∃ η > 0, ∀ δ ∈ Ioo 0 η, ∃ U ∈ 𝓝 (0 : E), ∀ s, dist s t < η →
       {x ∈ U | f s x = 0} = X s '' {σ ∈ Ioo (-δ) δ | φ (f s (X s σ)) = 0})
     (hP : ∀ᶠ δ in 𝓝[>] 0, ∀ᶠ s in 𝓝 t,
@@ -347,15 +471,13 @@ private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ ℓ : S
         {σ ∈ Ioo (-δ) δ | φ (f s (X s σ)) = 0} = {-σ₀, 0, σ₀} ∧
         0 < deriv (fun σ ↦ φ (f s (X s σ))) σ₀ ∧
         deriv (fun σ ↦ φ (f s (X s σ))) (-σ₀) = deriv (fun σ ↦ φ (f s (X s σ))) σ₀)) :
-    ∃ U ∈ 𝓝 (0 : E), ∀ᶠ s in 𝓝 t,
-      SignType.sign (LinearMap.det (fderiv ℝ (f s) 0 : E →ₗ[ℝ] E)) =
-        ε * SignType.sign (β * (s - t)) ∧
+    ∃ U ∈ 𝓝 (0 : E), ∀ᶠ s in 𝓝 t, X s 0 = 0 ∧ Q (s, 0) ∧
+      SignType.sign (deriv (fun σ ↦ φ (f s (X s σ))) 0) = SignType.sign (β * (s - t)) ∧
       (0 ≤ β * (s - t) → {x ∈ U | f s x = 0} = {0}) ∧
-      (β * (s - t) < 0 → ∃ x₀, x₀ ≠ 0 ∧ {x ∈ U | f s x = 0} = {0, x₀, -x₀} ∧
-        SignType.sign (LinearMap.det (fderiv ℝ (f s) x₀ : E →ₗ[ℝ] E)) = ε ∧
-        SignType.sign (LinearMap.det (fderiv ℝ (f s) (-x₀) : E →ₗ[ℝ] E)) = ε) := by
-  -- A real vector space has no additive torsion.
-  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
+      (β * (s - t) < 0 → ∃ σ₀, σ (X s σ₀) ≠ X s σ₀ ∧
+        {x ∈ U | f s x = 0} = {0, X s σ₀, σ (X s σ₀)} ∧ X s (-σ₀) = σ (X s σ₀) ∧
+        Q (s, σ₀) ∧ Q (s, -σ₀) ∧ 0 < deriv (fun σ ↦ φ (f s (X s σ))) σ₀ ∧
+        deriv (fun σ ↦ φ (f s (X s σ))) (-σ₀) = deriv (fun σ ↦ φ (f s (X s σ))) σ₀) := by
   obtain ⟨η₁, hη₁, hZ⟩ := hZ
   obtain ⟨η₂, hη₂, hη₂G⟩ := Metric.mem_nhds_iff.1 hev
   set η := min η₁ η₂
@@ -366,16 +488,13 @@ private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ ℓ : S
   obtain ⟨δ, hδP, hδ⟩ := (hP.and (Ioo_mem_nhdsGT (lt_min hη₁ hη₂))).exists
   obtain ⟨U, hU, hUZ⟩ := hZ δ ⟨hδ.1, lt_of_lt_of_le hδ.2 (min_le_left _ _)⟩
   refine ⟨U, hU, ?_⟩
-  filter_upwards [hδP, Metric.ball_mem_nhds t (lt_min hη₁ hη₂),
-    eventually_apply_zero_eq_zero_of_eventually_odd (hev.mono fun _ hq ↦ hq.1.2)]
-    with s hQ hs hXs
+  filter_upwards [hδP, Metric.ball_mem_nhds t (lt_min hη₁ hη₂), hXs] with s hQ hs hXs
   have hs' : dist s t < η := Metric.mem_ball.1 hs
   have hη0 : |(0 : ℝ)| < η := by rw [abs_zero]; exact lt_min hη₁ hη₂
   rw [hUZ s (lt_of_lt_of_le hs' (min_le_left _ _))]
-  refine ⟨?_, fun hle ↦ by rw [hQ.1 hle, image_singleton, hXs], fun hlt ↦ ?_⟩
-  · -- The trivial zero has the sign of `∂σ φ (f s (X s σ))` at `0`, which is that of `β (s - t)`.
-    rw [← hXs, (hgood hs' hη0).2]
-    congr 1
+  refine ⟨hXs, (hgood hs' hη0).2, ?_, fun hle ↦ by rw [hQ.1 hle, image_singleton, hXs],
+    fun hlt ↦ ?_⟩
+  · -- The `σ`-derivative at the trivial zero has the sign of `β (s - t)`.
     rcases lt_trichotomy (β * (s - t)) 0 with hn | hz | hp
     · rw [sign_neg hn, sign_neg (hQ.2.2 hn).1]
     · obtain rfl : s = t := by
@@ -384,65 +503,113 @@ private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ ℓ : S
         · linarith
       rw [hz, sign_zero, hh0, sign_zero]
     · rw [sign_pos hp, sign_pos (hQ.2.1 hp)]
-  · -- The nontrivial zeros `±X s σ₀` both carry the sign `ε`.
+  · -- The nontrivial zeros are `X s σ₀` and `X s (-σ₀) = σ (X s σ₀)`.
     obtain ⟨-, σ₀, hσ₀, hset, hpos, hdeq⟩ := hQ.2.2 hlt
     have hσ₀η : |σ₀| < η := by
       rw [abs_of_pos hσ₀.1]
       exact lt_trans hσ₀.2 hδ.2
     have hg := hgood hs' hσ₀η
     have hg' := hgood hs' (by rwa [abs_neg])
-    refine ⟨X s σ₀, fun h0 ↦ hσ₀.1.ne (by simpa [h0] using hg.1.1), ?_, ?_, ?_⟩
-    · rw [hset, image_insert_eq, image_insert_eq, image_singleton, hXs, hg.1.2]
+    have hneg : X s (-σ₀) = σ (X s σ₀) := hg.1.2
+    refine ⟨σ₀, fun h ↦ ?_, ?_, hneg, hg.2, hg'.2, hpos, hdeq⟩
+    · -- `ℓ` separates `X s σ₀` from `X s (-σ₀)`.
+      have h' := congrArg ℓ (hneg.trans h)
+      rw [hg.1.1, hg'.1.1] at h'
+      linarith [hσ₀.1]
+    · rw [hset, image_insert_eq, image_insert_eq, image_singleton, hXs, hneg]
       ext x
       simp only [mem_insert_iff, mem_singleton_iff]
       tauto
-    · rw [hg.2, sign_pos hpos, mul_one]
-    · rw [← hg.1.2, hg'.2, hdeq, sign_pos hpos, mul_one]
 
-variable [FiniteDimensional ℝ E]
+/-- **The pitchfork from a reduction, for a positive cubic coefficient.** In the setting of
+`exists_reduction`, with cubic coefficient `γ = φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v)) > 0`
+and transversality coefficient `β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the conclusion of
+`exists_mem_nhds_of_reduction` holds with `κ = γ β` in place of `β`. -/
+private theorem exists_mem_nhds_of_reduction_of_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
+    {σ : E →L[ℝ] E} {τ : F →L[ℝ] F}
+    (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
+    (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) (hφτ : ∀ y, φ (τ y) = -φ y) {ℓ : StrongDual ℝ E}
+    (hℓ : ℓ v = 1) {w : E} (hw : fderiv ℝ (f t) 0 w = fderiv ℝ (fderiv ℝ (f t)) 0 v v)
+    (hγ : 0 < φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+      3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v))
+    (hβ : φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) ≠ 0) {c : F} (hc : φ c = 1)
+    {X : ℝ → ℝ → E} (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0)
+    (hXs0 : ∀ᶠ s in 𝓝 t, X s 0 = 0)
+    (hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
+      ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = σ (X p.1 p.2))
+    {N : Set (ℝ × E)} (hN : N ∈ 𝓝 (t, (0 : E)))
+    (hNX : ∀ z ∈ N, f z.1 z.2 = 0 → X z.1 (ℓ z.2) = z.2) {Q : ℝ × ℝ → Prop}
+    (hQ : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), Q p) :
+    ∃ U ∈ 𝓝 (0 : E), ∀ᶠ s in 𝓝 t, X s 0 = 0 ∧ Q (s, 0) ∧
+      SignType.sign (deriv (fun σ ↦ φ (f s (X s σ))) 0) =
+        SignType.sign ((φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t)) ∧
+      (0 ≤ (φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) →
+        {x ∈ U | f s x = 0} = {0}) ∧
+      ((φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) < 0 →
+        ∃ σ₀, σ (X s σ₀) ≠ X s σ₀ ∧
+        {x ∈ U | f s x = 0} = {0, X s σ₀, σ (X s σ₀)} ∧ X s (-σ₀) = σ (X s σ₀) ∧
+        Q (s, σ₀) ∧ Q (s, -σ₀) ∧ 0 < deriv (fun σ ↦ φ (f s (X s σ))) σ₀ ∧
+        deriv (fun σ ↦ φ (f s (X s σ))) (-σ₀) = deriv (fun σ ↦ φ (f s (X s σ))) σ₀) := by
+  set γ := φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+    3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)
+  have hev' : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
+      ℓ (X p.1 p.2) = p.2 := hev.mono fun p hp ↦ ⟨hp.1, hp.2.1⟩
+  obtain ⟨U, hU, hUs⟩ := exists_mem_nhds_of_reduction hβ
+    ((hev.and hQ).mono fun p hp ↦ ⟨⟨hp.1.2.1, hp.1.2.2⟩, hp.2⟩) hXs0
+    (deriv_reduction hf hX hX0 hker hφ hℓ hev').2.deriv
+    (exists_pos_forall_setOf_apply_eq_zero_eq_image hX.continuousAt hX0 hev' hN hNX)
+    (eventually_pitchfork_reduction hf hfσ hker hφ hφτ hℓ hw hγ hβ hc hX hX0 hXs0 hev)
+  -- Since `γ > 0`, `γ β (s - t)` has the sign of `β (s - t)`.
+  refine ⟨U, hU, hUs.mono fun s hs ↦ ?_⟩
+  simp only [mul_assoc γ]
+  refine ⟨hs.1, hs.2.1, by rw [sign_mul, sign_pos hγ, one_mul]; exact hs.2.2.1,
+    fun hle ↦ hs.2.2.2.1 ?_, fun hlt ↦ hs.2.2.2.2 ?_⟩
+  · exact nonneg_of_mul_nonneg_right hle hγ
+  · exact neg_of_mul_neg_right hlt hγ.le
+
+variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **The Lyapunov–Schmidt chart.** In the setting of `exists_reduction`, the map
 `Φ (s, x) = (s, f s x - φ (f s x) • c + ℓ x • c)` has a `C³` local inverse `ψ` at `(t, 0)`: it
 fixes `(t, 0)`, preserves the parameter, and inverts `Φ` on both sides near `(t, 0)`. -/
 private theorem exists_chart_inverse (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) (h0 : f t 0 = 0)
-    {v : E} (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E) = ℝ ∙ v)
-    {φ ℓ : StrongDual ℝ E} (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) (hℓ : ℓ v = 1) {c : E}
-    (hc : φ c = 1) :
-    ∃ ψ : ℝ × E → ℝ × E, ContDiffAt ℝ 3 ψ (t, 0) ∧ ψ (t, 0) = (t, 0) ∧
-      (∀ᶠ y in 𝓝 (t, (0 : E)), (ψ y).1 = y.1 ∧
+    {v : E} (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
+    (hrange : LinearMap.range (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
+    {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) {c : F} (hc : φ c = 1) :
+    ∃ ψ : ℝ × F → ℝ × E, ContDiffAt ℝ 3 ψ (t, 0) ∧ ψ (t, 0) = (t, 0) ∧
+      (∀ᶠ y in 𝓝 (t, (0 : F)), (ψ y).1 = y.1 ∧
         f y.1 (ψ y).2 - φ (f y.1 (ψ y).2) • c + ℓ (ψ y).2 • c = y.2) ∧
       ∃ S ∈ 𝓝 (t, (0 : E)), ∀ z ∈ S,
         ψ (z.1, f z.1 z.2 - φ (f z.1 z.2) • c + ℓ z.2 • c) = z := by
   have hfd : DifferentiableAt ℝ (uncurry f) (t, 0) := hf.differentiableAt (by norm_num)
-  set Φ : ℝ × E → ℝ × E := fun p ↦ (p.1, uncurry f p - φ (uncurry f p) • c + ℓ p.2 • c)
+  set Φ : ℝ × E → ℝ × F := fun p ↦ (p.1, uncurry f p - φ (uncurry f p) • c + ℓ p.2 • c)
   have hΦ : ContDiffAt ℝ 3 Φ (t, 0) := contDiffAt_fst.prodMk
     ((hf.sub ((φ.contDiff.contDiffAt.comp _ hf).smul contDiffAt_const)).add
       ((ℓ.contDiff.contDiffAt.comp _ contDiffAt_snd).smul contDiffAt_const))
   set Df := fderiv ℝ (uncurry f) (t, 0)
-  set L : ℝ × E →L[ℝ] ℝ × E := (ContinuousLinearMap.fst ℝ ℝ E).prod
+  set L : ℝ × E →L[ℝ] ℝ × F := (ContinuousLinearMap.fst ℝ ℝ E).prod
     (Df - (φ.comp Df).smulRight c + (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)).smulRight c)
   have hL : HasFDerivAt Φ L (t, 0) := hasFDerivAt_fst.prodMk
     ((hfd.hasFDerivAt.sub ((φ.hasFDerivAt.comp _ hfd.hasFDerivAt).smul_const c)).add
       ((ℓ.hasFDerivAt.comp _ hasFDerivAt_snd).smul_const c))
-  -- The derivative `(a, h) ↦ (a, a ∂ₛf + D h - φ (a ∂ₛf + D h) • c + ℓ h • c)` is injective.
-  have hinj : Injective L := by
-    refine (injective_iff_map_eq_zero _).2 fun ⟨a, h⟩ hz ↦ ?_
-    simp only [L, ContinuousLinearMap.prod_apply, Prod.mk_eq_zero] at hz
-    obtain ⟨rfl, hz⟩ := hz
-    simp only [add_apply, sub_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd', Df,
-      fderiv_uncurry_apply hfd, zero_smul, zero_add, hφ, sub_zero] at hz
-    simpa using eq_zero_of_apply_add_smul_eq_zero hker hφ hℓ hc hz
-  set e : (ℝ × E) ≃L[ℝ] ℝ × E :=
-    (LinearMap.linearEquivOfInjective L.toLinearMap hinj rfl).toContinuousLinearEquiv
-  have he : (e : ℝ × E →L[ℝ] ℝ × E) = L := by
-    ext x <;> simp [e]
-  have hΦ' : HasFDerivAt Φ (e : ℝ × E →L[ℝ] ℝ × E) (t, 0) := hL.congr_fderiv he.symm
+  obtain ⟨hinj, hsurj⟩ := bijective_prod_sub_add (D := fderiv ℝ (f t) 0)
+    (fun h ↦ by rw [fderiv_uncurry_apply hfd]; simp) hker hrange hℓ hc
+  set e : (ℝ × E) ≃L[ℝ] ℝ × F := ContinuousLinearEquiv.ofBijective L
+    (LinearMap.ker_eq_bot.2 hinj) (LinearMap.range_eq_top.2 hsurj)
+  have hΦ' : HasFDerivAt Φ (e : ℝ × E →L[ℝ] ℝ × F) (t, 0) :=
+    hL.congr_fderiv (ContinuousLinearEquiv.coe_ofBijective _ _ _).symm
   set P := hΦ.toOpenPartialHomeomorph Φ hΦ' (by norm_num)
   have hΦ0 : Φ (t, 0) = (t, 0) := by simp [Φ, h0]
   have hsrc : (t, (0 : E)) ∈ P.source :=
     hΦ.mem_toOpenPartialHomeomorph_source hΦ' (by norm_num)
-  have htgt : (t, (0 : E)) ∈ P.target :=
+  have htgt : (t, (0 : F)) ∈ P.target :=
     hΦ0 ▸ hΦ.image_mem_toOpenPartialHomeomorph_target hΦ' (by norm_num)
   refine ⟨P.symm, hΦ0 ▸ hΦ.to_localInverse hΦ' (by norm_num),
     by
@@ -458,28 +625,29 @@ private theorem exists_chart_inverse (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) 
   simp only [Φ, uncurry_def] at h2
   rwa [h1] at h2
 
-/-- **The Lyapunov–Schmidt reduction of an odd family.** Let `f s` be a family of maps of a
-finite-dimensional space, jointly `C³` near `(t, 0)` and odd near `(t, 0)`, let the kernel of
-`D = D(f t)₀` be the line through `v`, and let `φ` vanish on the range of `D`. For `ℓ v = 1` and
-`φ c = 1` there is a jointly `C³` map `X` with `X t 0 = 0` such that, near `(t, 0)`, `X s σ` is
-the point with `ℓ (X s σ) = σ` at which `f s` takes a value on the line through `c`, `X s` is odd,
-and every zero `x` of `f s` near `0` is `X s (ℓ x)`. -/
+/-- **The Lyapunov–Schmidt reduction of an equivariant family.** Let `f s : E → F` be a family of
+maps between Banach spaces, jointly `C³` near `(t, 0)` with `f s 0 = 0` for `s` near `t` and
+`f s (σ x) = τ (f s x)` near `(t, 0)`. Let the kernel of `D = D(f t)₀` be the line through `v`,
+let the range of `D` be the kernel of `φ`, and let `ℓ v = 1`, `ℓ ∘ σ = -ℓ`, `φ c = 1` and
+`τ c = -c`. Then there is a jointly `C³` map `X` with `X s 0 = 0` for `s` near `t` such that,
+near `(t, 0)`, `X s σ` is the point with `ℓ (X s σ) = σ` at which `f s` takes a value on the line
+through `c`, `X s (-σ) = σ (X s σ)`, and every zero `x` of `f s` near `0` is `X s (ℓ x)`. -/
 private theorem exists_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
-    (hodd : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (-p.2) = -f p.1 p.2) {v : E}
-    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E) = ℝ ∙ v)
-    {φ : StrongDual ℝ E} (hφ : ∀ y, φ (fderiv ℝ (f t) 0 y) = 0) {ℓ : StrongDual ℝ E}
-    (hℓ : ℓ v = 1) {c : E} (hc : φ c = 1) :
+    (h0 : ∀ᶠ s in 𝓝 t, f s 0 = 0) {σ : E →L[ℝ] E} {τ : F →L[ℝ] F}
+    (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
+    (hrange : LinearMap.range (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
+    {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) (hℓσ : ∀ x, ℓ (σ x) = -ℓ x) {c : F} (hc : φ c = 1)
+    (hτc : τ c = -c) :
     ∃ X : ℝ → ℝ → E, ContDiffAt ℝ 3 (uncurry X) (t, 0) ∧ X t 0 = 0 ∧
+      (∀ᶠ s in 𝓝 t, X s 0 = 0) ∧
       (∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
-        ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = -X p.1 p.2) ∧
+        ℓ (X p.1 p.2) = p.2 ∧ X p.1 (-p.2) = σ (X p.1 p.2)) ∧
       ∃ N ∈ 𝓝 (t, (0 : E)), ∀ z ∈ N, f z.1 z.2 = 0 → X z.1 (ℓ z.2) = z.2 := by
-  -- A real vector space has no additive torsion.
-  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   obtain ⟨ψ, hψ, hψ0, hright, S, hS, hleft⟩ :=
-    exists_chart_inverse hf (eventually_apply_zero_eq_zero_of_eventually_odd hodd).self_of_nhds
-      hker hφ hℓ hc
+    exists_chart_inverse hf h0.self_of_nhds hker hrange hℓ hc
   -- The reduced map `X s σ`, the space component of `ψ (s, σ • c)`.
-  set y : ℝ × ℝ → ℝ × E := fun p ↦ (p.1, p.2 • c)
+  set y : ℝ × ℝ → ℝ × F := fun p ↦ (p.1, p.2 • c)
   have hy : ContDiff ℝ 3 y := contDiff_fst.prodMk (contDiff_snd.smul contDiff_const)
   have hyt : Tendsto y (𝓝 (t, 0)) (𝓝 (t, 0)) := by simpa [y] using hy.continuous.tendsto (t, 0)
   set X : ℝ → ℝ → E := fun s σ ↦ (ψ (s, σ • c)).2
@@ -494,9 +662,9 @@ private theorem exists_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     exact ⟨Prod.ext hp.1 rfl, hp.2⟩
   have hX0 : X t 0 = 0 := by simpa [X, y] using congrArg Prod.snd hψ0'
   have hXt := tendsto_prodMk_reduction hX.continuousAt hX0
-  have hXt' : Tendsto (fun p : ℝ × ℝ ↦ (p.1, -X p.1 p.2)) (𝓝 (t, 0)) (𝓝 (t, 0)) := by
+  have hXt' : Tendsto (fun p : ℝ × ℝ ↦ (p.1, σ (X p.1 p.2))) (𝓝 (t, 0)) (𝓝 (t, 0)) := by
     simpa [Function.comp_def] using
-      (continuous_fst.prodMk continuous_snd.neg).continuousAt.tendsto.comp hXt
+      (continuous_fst.prodMk (σ.continuous.comp continuous_snd)).continuousAt.tendsto.comp hXt
   -- Applying `φ` to the chart identity gives `ℓ (X s σ) = σ`, and then `f s (X s σ) ∈ ℝ c`.
   have hev : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2 := by
@@ -506,20 +674,129 @@ private theorem exists_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     have h := hp.2
     rw [hℓX] at h
     exact sub_eq_zero.1 (add_eq_right.1 h)
-  refine ⟨X, hX, hX0, ?_, S, hS, fun z hz hz0 ↦ ?_⟩
-  · filter_upwards [hev, hev₁, hXt.eventually hodd, hXt'.eventually hS] with p hp hp₁ hodd' hS'
+  refine ⟨X, hX, hX0, ?_, ?_, S, hS, fun z hz hz0 ↦ ?_⟩
+  · -- The chart fixes `(s, 0)` since `f s 0 = 0`, so `X s 0 = 0`.
+    have hS0 : ∀ᶠ s in 𝓝 t, (s, (0 : E)) ∈ S :=
+      ((continuous_id.prodMk continuous_const).tendsto t).eventually_mem hS
+    filter_upwards [hS0, h0] with s hs hs0
+    have h := hleft _ hs
+    simp only [hs0, map_zero, zero_smul, sub_zero, zero_add] at h
+    simpa [X] using congrArg Prod.snd h
+  · filter_upwards [hev, hXt.eventually hfσ, hXt'.eventually_mem hS] with p hp hσp hS'
     refine ⟨hp.1, hp.2, ?_⟩
-    -- The chart sends `(s, -X s σ)` to `(s, -σ • c)`, so `ψ (s, -σ • c) = (s, -X s σ)`.
+    -- The chart sends `(s, σ (X s σ))` to `(s, -σ • c)`, so `ψ (s, -σ • c) = (s, σ (X s σ))`.
     have h := hleft _ hS'
-    have hneg : f p.1 (-X p.1 p.2) - φ (f p.1 (-X p.1 p.2)) • c + ℓ (-X p.1 p.2) • c =
-        (-p.2) • c := by
-      rw [hodd', map_neg, map_neg, neg_smul, neg_smul, neg_smul, ← hp₁.2]
-      abel
+    have hneg : f p.1 (σ (X p.1 p.2)) - φ (f p.1 (σ (X p.1 p.2))) • c +
+        ℓ (σ (X p.1 p.2)) • c = (-p.2) • c := by
+      rw [hσp, hp.1, map_smul, hτc, hℓσ, hp.2]
+      simp [hc]
     rw [hneg] at h
     exact congrArg Prod.snd h
   · have h := hleft z hz
     simp only [hz0, map_zero, zero_smul, sub_zero, zero_add] at h
     exact congrArg Prod.snd h
+
+/-- **The pitchfork of an equivariant family for a positive cubic coefficient.** This is
+`TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork_of_equivariant` under the additional
+assumption `0 < φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))`; the general case applies it to
+`φ` or `-φ`. -/
+private theorem exists_mem_nhds_pitchfork_of_equivariant_of_pos
+    (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) (h0 : ∀ᶠ s in 𝓝 t, f s 0 = 0)
+    {σ : E →L[ℝ] E} {τ : F →L[ℝ] F} (hσ : Involutive σ) (hτ : Involutive τ)
+    (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) (hσv : σ v = -v)
+    {φ : StrongDual ℝ F}
+    (hrange : LinearMap.range (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
+    (hφτ : ∀ y, φ (τ y) = -φ y) {w : E}
+    (hw : fderiv ℝ (f t) 0 w = fderiv ℝ (fderiv ℝ (f t)) 0 v v)
+    (hγ : 0 < φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+      3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v))
+    (hβ : φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) ≠ 0) :
+    ∃ U ∈ 𝓝 (0 : E), ∀ᶠ s in 𝓝 t,
+      (0 ≤ (φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) →
+        {x ∈ U | f s x = 0} = {0}) ∧
+      ((φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) < 0 →
+        ∃ x₀, σ x₀ ≠ x₀ ∧ {x ∈ U | f s x = 0} = {0, x₀, σ x₀}) := by
+  have hφ (y : E) : φ (fderiv ℝ (f t) 0 y) = 0 :=
+    LinearMap.mem_ker.1 (hrange ▸ LinearMap.mem_range_self _ y)
+  -- Auxiliary vectors and functionals, odd under the symmetries: `φ c = 1`, `τ c = -c`,
+  -- `ℓ v = 1` and `ℓ ∘ σ = -ℓ`.
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hγ
+  obtain ⟨c₀, hc₀⟩ : ∃ c₀, φ c₀ = 1 := by
+    obtain ⟨y, hy⟩ : ∃ y, φ y ≠ 0 := by
+      by_contra! h
+      exact hβ (h _)
+    exact ⟨(φ y)⁻¹ • y, by simp [hy]⟩
+  set c : F := (2 : ℝ)⁻¹ • (c₀ - τ c₀)
+  have hc : φ c = 1 := by simp only [c, map_smul, map_sub, hφτ, hc₀]; norm_num
+  have hτc : τ c = -c := by simp only [c, map_smul, map_sub, hτ c₀]; module
+  obtain ⟨ℓ₀, hℓ₀⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
+  set ℓ : StrongDual ℝ E := (2 : ℝ)⁻¹ • (ℓ₀ - ℓ₀.comp σ)
+  have hℓ : ℓ v = 1 := by simp [ℓ, hσv, hℓ₀]; norm_num
+  have hℓσ (x : E) : ℓ (σ x) = -ℓ x := by simp [ℓ, hσ x]; ring
+  -- Reduce to the scalar family `σ ↦ φ (f s (X s σ))`.
+  obtain ⟨X, hX, hX0, hXs0, hev, N, hN, hNX⟩ :=
+    exists_reduction hf h0 hfσ hker hrange hℓ hℓσ hc hτc
+  obtain ⟨U, hU, hUs⟩ := exists_mem_nhds_of_reduction_of_pos hf hfσ hker hφ hφτ hℓ hw hγ hβ hc
+    hX hX0 hXs0 hev hN hNX (Q := fun _ ↦ True) (by simp)
+  exact ⟨U, hU, hUs.mono fun s hs ↦ ⟨hs.2.2.2.1, fun hlt ↦
+    let ⟨σ₀, hne, hset, _⟩ := hs.2.2.2.2 hlt; ⟨X s σ₀, hne, hset⟩⟩⟩
+
+/-- **A pitchfork of zeros at the trivial zero of an equivariant family.** Let `f s : E → F` be a
+one-parameter family of maps between real Banach spaces, jointly `C³` near `(t, 0)`, with
+`f s 0 = 0` for `s` near `t`, and let `σ` and `τ` be continuous linear involutions with
+`f s (σ x) = τ (f s x)` near `(t, 0)`. Let the kernel of `D(f t)₀` be the line through `v`, with
+`σ v = -v`, and let its range be the kernel of `φ`, with `φ ∘ τ = -φ`. Let `w` be a vector with
+`D(f t)₀ w = D²(f t)₀ (v, v)`, and suppose that
+
+`κ = (φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))) · φ (∂ₛ D(f s)₀ v) ≠ 0`.
+
+Then there is a neighbourhood `U` of `0` such that for every `s` near `t`:
+
+* if `κ (s - t) ≥ 0`, then `0` is the only zero of `f s` in `U`;
+* if `κ (s - t) < 0`, then the zeros of `f s` in `U` are exactly `0`, `x₀` and `σ x₀` for some
+  `x₀` with `σ x₀ ≠ x₀`.
+
+So a single orbit `{x₀, σ x₀}` of the symmetry is born on one side of `t`. -/
+theorem exists_mem_nhds_setOf_apply_eq_zero_pitchfork_of_equivariant
+    (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) (h0 : ∀ᶠ s in 𝓝 t, f s 0 = 0)
+    {σ : E →L[ℝ] E} {τ : F →L[ℝ] F} (hσ : Involutive σ) (hτ : Involutive τ)
+    (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
+    (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) (hσv : σ v = -v)
+    {φ : StrongDual ℝ F}
+    (hrange : LinearMap.range (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
+    (hφτ : ∀ y, φ (τ y) = -φ y) {w : E}
+    (hw : fderiv ℝ (f t) 0 w = fderiv ℝ (fderiv ℝ (f t)) 0 v v)
+    (hκ : (φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+      3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) * φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) ≠ 0) :
+    ∃ U ∈ 𝓝 (0 : E), ∀ᶠ s in 𝓝 t,
+      (0 ≤ (φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) →
+        {x ∈ U | f s x = 0} = {0}) ∧
+      ((φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v) -
+          3 * φ (fderiv ℝ (fderiv ℝ (f t)) 0 w v)) *
+          φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t) * (s - t) < 0 →
+        ∃ x₀, σ x₀ ≠ x₀ ∧ {x ∈ U | f s x = 0} = {0, x₀, σ x₀}) := by
+  rcases (left_ne_zero_of_mul hκ).lt_or_gt with hγ | hγ
+  · -- For a negative cubic coefficient use `-φ`, which leaves the product `κ` unchanged.
+    have h := exists_mem_nhds_pitchfork_of_equivariant_of_pos hf h0 hσ hτ hfσ hker hσv (φ := -φ)
+      (by rw [hrange]; ext; simp) (by simp [hφτ]) hw (by simp only [neg_apply]; linarith)
+      (by simpa using right_ne_zero_of_mul hκ)
+    have e (a b d x : ℝ) : (-a - 3 * -b) * -d * x = (a - 3 * b) * d * x := by ring
+    simpa only [neg_apply, e] using h
+  · exact exists_mem_nhds_pitchfork_of_equivariant_of_pos hf h0 hσ hτ hfσ hker hσv hrange hφτ hw
+      hγ (right_ne_zero_of_mul hκ)
+
+end Reduction
+
+section FiniteDimensional
+
+variable {f : ℝ → E → E} [FiniteDimensional ℝ E]
 
 /-- **The Jacobian sign of the reduction.** Near `(t, 0)`, the sign of `det D(f s)` at `X s σ` is
 a fixed nonzero sign times the sign of the `σ`-derivative of `φ (f s (X s σ))`. -/
@@ -601,33 +878,54 @@ private theorem exists_mem_nhds_pitchfork_of_pos (hf : ContDiffAt ℝ 3 (uncurry
         ∃ x₀, x₀ ≠ 0 ∧ {x ∈ U | f s x = 0} = {0, x₀, -x₀} ∧
           SignType.sign (LinearMap.det (fderiv ℝ (f s) x₀ : E →ₗ[ℝ] E)) = ε ∧
           SignType.sign (LinearMap.det (fderiv ℝ (f s) (-x₀) : E →ₗ[ℝ] E)) = ε) := by
-  set γ := φ (fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) 0 v v v)
-  set β := φ (deriv (fun r ↦ fderiv ℝ (f r) 0 v) t)
+  -- A real vector space has no additive torsion.
+  have : HasUniqueDiv E := .of_isTorsionFree ℝ E
   -- Auxiliary vectors and functionals: `φ c = 1` and `ℓ v = 1`.
-  have hv0 : v ≠ 0 := by rintro rfl; simp [γ] at hγ
-  obtain ⟨w, hw⟩ : ∃ w, φ w ≠ 0 := by
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hγ
+  obtain ⟨y, hy⟩ : ∃ y, φ y ≠ 0 := by
     by_contra! h
     exact hβ (h _)
-  set c : E := (φ w)⁻¹ • w
-  have hc : φ c = 1 := by simp [c, hw]
+  set c : E := (φ y)⁻¹ • y
+  have hc : φ c = 1 := by simp [c, hy]
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
+  -- The range of `D(f t)₀` is the kernel of `φ`: both are hyperplanes, the first inside the second.
+  have hrange : LinearMap.range (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E) = LinearMap.ker (φ : E →ₗ[ℝ] ℝ) := by
+    refine Submodule.eq_of_le_of_finrank_eq
+      (fun _ ⟨x, hx⟩ ↦ hx ▸ LinearMap.mem_ker.2 (hφ x)) ?_
+    have h₁ := LinearMap.finrank_range_add_finrank_ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] E)
+    have h₂ := LinearMap.finrank_range_add_finrank_ker (φ : E →ₗ[ℝ] ℝ)
+    rw [hker, finrank_span_singleton hv0] at h₁
+    rw [LinearMap.range_eq_top.2 fun r ↦ ⟨(r / φ y) • y, by simp [hy]⟩, finrank_top,
+      finrank_self] at h₂
+    omega
+  -- `f s` is equivariant for `σ = τ = -1`, and `D²(f t)₀ = 0`, so `w = 0` corrects nothing.
+  have hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)),
+      f p.1 ((-ContinuousLinearMap.id ℝ E) p.2) = (-ContinuousLinearMap.id ℝ E) (f p.1 p.2) := by
+    simpa using hodd
+  have hoddt : ∀ᶠ x in 𝓝 (0 : E), f t (-x) = -f t x :=
+    ((continuous_const.prodMk continuous_id).tendsto 0).eventually hodd
+  have hw : fderiv ℝ (f t) 0 0 = fderiv ℝ (fderiv ℝ (f t)) 0 v v := by
+    rw [map_zero, fderiv_fderiv_apply_eq_zero_of_eventually_odd
+      (hf.uncurry_left.of_le (by norm_num)) hoddt]
   -- Reduce to the scalar family `σ ↦ φ (f s (X s σ))`.
-  obtain ⟨X, hX, hX0, hev, N, hN, hNX⟩ := exists_reduction hf hodd hker hφ hℓ hc
+  obtain ⟨X, hX, hX0, hXs0, hev, N, hN, hNX⟩ := exists_reduction hf
+    (eventually_apply_zero_eq_zero_of_eventually_odd hodd) hfσ hker hrange hℓ (by simp) hc
+    (by simp)
   have hev' : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2 := hev.mono fun p hp ↦ ⟨hp.1, hp.2.1⟩
   obtain ⟨ε, hε, hsgn⟩ := exists_eventually_sign_det_fderiv_eq hf hX hX0 hker hφ hℓ hc hev'
-  obtain ⟨U, hU, hUs⟩ := exists_mem_nhds_of_reduction hβ
-    ((hev.and hsgn).mono fun p hp ↦ ⟨⟨hp.1.2.1, hp.1.2.2⟩, hp.2⟩)
-    (deriv_reduction hf hX hX0 hker hφ hℓ hev').2.deriv
-    (exists_pos_forall_setOf_apply_eq_zero_eq_image hX.continuousAt hX0 hev' hN hNX)
-    (eventually_pitchfork_reduction hf hodd hker hφ hℓ hγ hβ hX hX0 hev)
-  -- Since `γ > 0`, `γ β (s - t)` has the sign of `β (s - t)`.
+  obtain ⟨U, hU, hUs⟩ := exists_mem_nhds_of_reduction_of_pos hf hfσ hker hφ (by simp) hℓ hw
+    (by simpa using hγ) hβ hc hX hX0 hXs0 hev hN hNX hsgn
   refine ⟨ε, hε, U, hU, hUs.mono fun s hs ↦ ?_⟩
-  simp only [mul_assoc γ]
-  refine ⟨by rw [sign_mul, sign_pos hγ, one_mul]; exact hs.1, fun hle ↦ hs.2.1 ?_,
-    fun hlt ↦ hs.2.2 ?_⟩
-  · exact nonneg_of_mul_nonneg_right hle hγ
-  · exact neg_of_mul_neg_right hlt hγ.le
+  obtain ⟨hs0, hQ0, hsign, hle, hlt⟩ := hs
+  simp only [map_zero, zero_apply, mul_zero, sub_zero] at hsign hle hlt
+  refine ⟨by rw [← hsign, ← hQ0, hs0], hle, fun hneg ↦ ?_⟩
+  -- The nontrivial zeros `X s σ₀` and `X s (-σ₀) = -X s σ₀` both carry the sign `ε`.
+  obtain ⟨σ₀, hne, hset, hX', hQ₁, hQ₂, hpos, hdeq⟩ := hlt hneg
+  simp only [neg_apply, ContinuousLinearMap.id_apply] at hne hset hX'
+  refine ⟨X s σ₀, fun h ↦ hne (by rw [h, neg_zero]), hset, ?_, ?_⟩
+  · simp [hQ₁, sign_pos hpos]
+  · rw [← hX', hQ₂, hdeq, sign_pos hpos, mul_one]
 
 /-- **A pitchfork of zeros at the trivial zero of an odd family.** Let `f s : E → E` be a
 one-parameter family of maps of a finite-dimensional real normed space, jointly `C³` near
@@ -720,5 +1018,7 @@ theorem exists_mem_nhds_finsum_sign_det_fderiv_eq_pitchfork
     rw [sign_pos hpos] at h0
     rw [hle hpos.le]
     simp [h0, sign_pos hpos]
+
+end FiniteDimensional
 
 end TauCeti

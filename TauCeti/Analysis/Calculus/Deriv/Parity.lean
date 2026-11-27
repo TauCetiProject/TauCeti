@@ -16,7 +16,8 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 The derivative of a function that is odd near `x` takes the same value at `-x` and `x`, and the
 derivative of a function that is even near `x` takes opposite values there. Consequently the
 second derivative at `0` of a function that is odd near `0` vanishes, provided the codomain has no
-additive torsion. Along a curve that is odd near `0`, the third derivative of a composition at `0`
+additive torsion, and so does the second derivative at `0` of a map between normed spaces that
+is odd near `0`. Along a curve that is odd near `0`, the third derivative of a composition at `0`
 reduces to the third derivative of the outer map in the direction of the velocity, once the first
 derivative of the outer map has been projected away. A family of maps that is odd near `(t, 0)`
 vanishes at `0` for all parameters near `t`.
@@ -26,6 +27,8 @@ vanishes at `0` for all parameters near `t`.
 * `TauCeti.deriv_neg_eq_of_eventually_odd`: `f'(-x) = f'(x)` for `f` odd near `x`.
 * `TauCeti.deriv_neg_eq_neg_of_eventually_even`: `f'(-x) = -f'(x)` for `f` even near `x`.
 * `TauCeti.iteratedDeriv_two_eq_zero_of_eventually_odd`: `f''(0) = 0` for `f` odd near `0`.
+* `TauCeti.fderiv_fderiv_apply_eq_zero_of_eventually_odd`: `D²g(0) (v, w) = 0` for a map `g`
+  odd near `0`.
 * `TauCeti.iteratedDeriv_three_comp_of_eventually_odd`: `(L ∘ g ∘ f)'''(0) = L (D³g(0) (v, v, v))`
   for `f` odd near `0` with `f'(0) = v`, when `L` vanishes on the range of `Dg(0)`.
 * `TauCeti.eventually_apply_zero_eq_zero_of_eventually_odd`: a family odd near `(t, 0)` vanishes
@@ -63,6 +66,39 @@ theorem iteratedDeriv_two_eq_zero_of_eventually_odd [IsAddTorsionFree F]
   rw [neg_zero] at h₂
   rw [iteratedDeriv_succ, iteratedDeriv_one]
   exact self_eq_neg.1 h₂
+
+/-- The second derivative at `0` of a map between normed spaces that is odd near `0` vanishes. -/
+theorem fderiv_fderiv_apply_eq_zero_of_eventually_odd {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup G] [NormedSpace 𝕜 G] [IsAddTorsionFree G] {g : E → G}
+    (hg : ContDiffAt 𝕜 2 g 0) (h : ∀ᶠ x in 𝓝 0, g (-x) = -g x) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 g) 0 v w = 0 := by
+  have hd : ∀ᶠ x in 𝓝 (0 : E), DifferentiableAt 𝕜 g x :=
+    (hg.eventually (by simp)).mono fun x hx ↦ hx.differentiableAt (by norm_num)
+  have hneg : Tendsto (fun x : E ↦ -x) (𝓝 0) (𝓝 0) := by
+    simpa using (continuous_neg (G := E)).tendsto 0
+  -- Differentiating `g (-y) = -g y` shows that `Dg` is even near `0`.
+  have heven : ∀ᶠ x in 𝓝 (0 : E), fderiv 𝕜 g (-x) = fderiv 𝕜 g x := by
+    filter_upwards [h.eventually_nhds, hd, hneg.eventually hd] with x hx hdx hdnx
+    have h₁ : HasFDerivAt (fun y ↦ g (-y)) ((fderiv 𝕜 g (-x)).comp (-ContinuousLinearMap.id 𝕜 E))
+        x := hdnx.hasFDerivAt.comp x (hasFDerivAt_id x).neg
+    have h₂ : HasFDerivAt (fun y ↦ g (-y)) (-fderiv 𝕜 g x) x :=
+      hdx.hasFDerivAt.neg.congr_of_eventuallyEq hx
+    ext u
+    simpa using congrArg (· (-u)) (h₁.unique h₂)
+  -- So the derivative of `Dg` at `0` is its own composition with `-1`, hence zero.
+  have hdd : DifferentiableAt 𝕜 (fderiv 𝕜 g) 0 :=
+    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have h₁ : HasFDerivAt (fun x ↦ fderiv 𝕜 g (-x))
+      ((fderiv 𝕜 (fderiv 𝕜 g) 0).comp (-ContinuousLinearMap.id 𝕜 E)) 0 := by
+    have h : HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) 0) (-0) := by
+      rw [neg_zero]
+      exact hdd.hasFDerivAt
+    exact h.comp 0 (hasFDerivAt_id 0).neg
+  have h₂ := (h₁.congr_of_eventuallyEq (heven.mono fun _ hx ↦ hx.symm)).unique hdd.hasFDerivAt
+  have h₃ := congrArg (fun L : E →L[𝕜] E →L[𝕜] G ↦ L v w) h₂
+  simp only [ContinuousLinearMap.comp_apply, neg_apply,
+    ContinuousLinearMap.id_apply, map_neg] at h₃
+  exact self_eq_neg.1 h₃.symm
 
 /-- **The third derivative along an odd curve.** If `f` is a `C³` curve through `0`, odd near `0`,
 with velocity `v`, and `L` vanishes on the range of `Dg(0)`, then the third derivative of
