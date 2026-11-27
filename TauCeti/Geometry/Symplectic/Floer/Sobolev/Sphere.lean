@@ -75,9 +75,8 @@ sections are dense in `W^{1,2}` of the sphere.
   cokernel element is represented by a `C²` square-integrable covector field annihilated by the
   formal adjoint, a holomorphic one-form on the sphere, which is zero
   (`TauCeti.SymplecticForm.eq_zero_of_floerLinearizationAdjoint_const_eq_zero`). So `D_u` is
-  onto (`range_floerConformalSobolevOperator_sphereWeight_const`) and its index is the dimension
-  of its kernel (`index_floerConformalSobolevOperator_sphereWeight_const`), both in the namespace
-  `TauCeti.SymplecticForm`.
+  onto (`TauCeti.SymplecticForm.range_floerConformalSobolevOperator_sphereWeight_const`), and its
+  index is the dimension of its kernel (`ContinuousLinearMap.index_of_surjective`).
 
 The target is a symplectic vector space. The kernel of `D_u` for constant data is not identified
 here; Riemann–Roch predicts the constant sections, which would make the index `dim V`.
@@ -715,22 +714,6 @@ theorem range_floerConformalSobolevOperator_sphereWeight_const (ω : SymplecticF
     simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using hcl
   rw [← hcl'.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff]
   exact orthogonal_range_floerConformalSobolevOperator_sphereWeight_const ω h₀
-
-/-- **The index of the linearized operator of constant data on the sphere is the dimension of its
-kernel.** Let the Floer data on the whole sphere be an `ω`-compatible structure `J₀` and the zero
-perturbation. Then along every map `u` the realization of `D_u` from `W^{1,2}` of the sphere to
-`L²` is onto (`range_floerConformalSobolevOperator_sphereWeight_const`), so its index is the
-dimension of its kernel. -/
-theorem index_floerConformalSobolevOperator_sphereWeight_const (ω : SymplecticForm V)
-    (h₀ : ω.Compatible J₀) (u : ℝ × ℝ → V) :
-    (ω.floerConformalSobolevOperator univ sphereWeight
-      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).index =
-      Module.finrank ℝ (ω.floerConformalSobolevOperator univ sphereWeight
-        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).ker := by
-  have hs :=
-    LinearMap.range_eq_top.1 (range_floerConformalSobolevOperator_sphereWeight_const ω h₀ u)
-  rw [ContinuousLinearMap.index_eq_finrank_sub, LinearMap.range_eq_top.2 hs,
-    Module.finrank_zero_of_subsingleton (M := _ ⧸ (⊤ : Submodule ℝ _)), Nat.cast_zero, sub_zero]
 
 end ConstantData
 

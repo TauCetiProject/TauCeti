@@ -9,9 +9,9 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Pullback
 public import TauCeti.Analysis.Complex.RealChart
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Conformal
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Complex.HolomorphicFunctions.Lp.Removable
+import TauCeti.Analysis.Complex.Liouville
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -253,20 +253,16 @@ theorem eq_zero_of_floerLinearizationAdjoint_const_eq_zero (hJ₀ : ω.Invariant
   obtain ⟨g, hgd, hgeq⟩ := HolomorphicFunctions.exists_differentiableOn_eq_inv_sq_smul_comp_inv
     hG.differentiableOn
     (integrableOn_sq_norm_covectorComplexify (T := 1) (fun z _ ↦ hη z) hL2.integrableOn x)
-  -- Beyond the unit circle `G s = s⁻² g s⁻¹`, with `g` continuous at `0`, so `G` tends to `0`.
+  -- Beyond the unit circle `G s = -s⁻² (-g) s⁻¹`, with `g` continuous at `0`, so `G` vanishes.
   have hg0 : ContinuousAt g 0 :=
     hgd.continuousOn.continuousAt (ball_mem_nhds 0 (by norm_num))
-  have hinv : Tendsto (fun s : ℂ ↦ s⁻¹) (cocompact ℂ) (𝓝 0) := by
-    rw [← Metric.cobounded_eq_cocompact]
-    exact tendsto_inv₀_cobounded
-  have hlim : Tendsto (fun s : ℂ ↦ s⁻¹ ^ 2 • g s⁻¹) (cocompact ℂ) (𝓝 0) := by
-    simpa using (hinv.pow 2).smul (hg0.tendsto.comp hinv)
-  have hG0 : G (e.symm z) = 0 := hG.apply_eq_of_tendsto_cocompact _ (hlim.congr' (by
+  have hG0 : G (e.symm z) = 0 := hG.eq_zero_of_eq_neg_inv_sq_smul hg0.neg (by
     filter_upwards [(isCompact_closedBall (0 : ℂ) 1).compl_mem_cocompact] with s hs
     have hs1 : 1 < ‖s‖ := by simpa using hs
     have hs0 : s ≠ 0 := norm_pos_iff.1 (one_pos.trans hs1)
-    rw [hgeq s⁻¹ (by simpa [norm_inv] using inv_lt_one_of_one_lt₀ hs1) (inv_ne_zero hs0),
-      smul_smul, inv_inv, mul_inv_cancel₀ (pow_ne_zero _ (inv_ne_zero hs0)), one_smul]))
+    rw [Pi.neg_apply, hgeq s⁻¹ (by simpa [norm_inv] using inv_lt_one_of_one_lt₀ hs1)
+      (inv_ne_zero hs0), inv_inv, inv_pow, inv_inv, neg_smul, smul_neg, neg_neg, smul_smul,
+      inv_mul_cancel₀ (pow_ne_zero _ hs0), one_smul]) _
   simpa [G, re_covectorComplexify] using congrArg Complex.re hG0
 
 end TauCeti.SymplecticForm
