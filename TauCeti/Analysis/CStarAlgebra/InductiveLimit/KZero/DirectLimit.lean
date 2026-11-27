@@ -64,7 +64,6 @@ def projectionKZeroSystem (i j : ι) (h : i ≤ j) :
     ProjectionKZero (A i) →+ ProjectionKZero (A j) :=
   ProjectionKZero.map (ofClass (f i j h))
 
-@[simp]
 theorem projectionKZeroSystem_apply {i j : ι} (h : i ≤ j) (y : ProjectionKZero (A i)) :
     projectionKZeroSystem A f i j h y = ProjectionKZero.map (ofClass (f i j h)) y :=
   (rfl)
