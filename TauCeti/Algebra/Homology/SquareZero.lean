@@ -43,6 +43,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a semilinear chain map
   `f` across coefficient rings with `f ∘ d = e ∘ f`.
+* `LinearMap.homologyEquivOfHomotopy`: the isomorphism of homologies induced by a chain homotopy
+  equivalence.
 * `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a semilinear equivalence `f`
   with `f ∘ d = e ∘ f`.
 * `LinearMap.homologyRTensorProdEquiv`: the homology of `d ⊗ 1` on `M ⊗ (S × S)` is the homology
@@ -363,6 +365,44 @@ theorem comp_comp_sub_id_eq_of_sub_id_eq {f : M →ₗ[S] N} {g : N →ₗ[S] M}
     map_add]
   rw [← sub_add_sub_cancel _ (g (f x)), h₁, h₂]
   abel
+
+/-- **A chain homotopy equivalence induces an isomorphism on homology.** If chain maps
+`f : (M, d) → (N, e)` and `g : (N, e) → (M, d)` between square-zero endomorphisms have
+`g ∘ f - 1 = d ∘ h + h ∘ d` and `f ∘ g - 1 = e ∘ k + k ∘ e` for some `h` and `k`, the maps they
+induce on homology are mutually inverse. -/
+noncomputable def homologyEquivOfHomotopy (f : M →ₗ[S] N) (g : N →ₗ[S] M) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ e = d ∘ₗ g)
+    (hgf : ∃ h : M →ₗ[S] M, g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hfg : ∃ k : N →ₗ[S] N, f ∘ₗ g - LinearMap.id = e ∘ₗ k + k ∘ₗ e) :
+    d.homology hd ≃ₗ[S] e.homology he :=
+  LinearEquiv.ofLinearMap (homologyMap f hd he hf) (homologyMap g he hd hg)
+    (by
+      obtain ⟨k, hk⟩ := hfg
+      rw [homologyMap_comp_homologyMap, homologyMap_eq_of_sub_eq _ _ k he he _ (by simp) hk,
+        homologyMap_id])
+    (by
+      obtain ⟨h, hh⟩ := hgf
+      rw [homologyMap_comp_homologyMap, homologyMap_eq_of_sub_eq _ _ h hd hd _ (by simp) hh,
+        homologyMap_id])
+
+/-- The isomorphism induced by a chain homotopy equivalence is the map induced by `f`. -/
+@[simp]
+theorem homologyEquivOfHomotopy_apply (f : M →ₗ[S] N) (g : N →ₗ[S] M) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ e = d ∘ₗ g)
+    (hgf : ∃ h : M →ₗ[S] M, g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hfg : ∃ k : N →ₗ[S] N, f ∘ₗ g - LinearMap.id = e ∘ₗ k + k ∘ₗ e) (c : d.homology hd) :
+    homologyEquivOfHomotopy f g hd he hf hg hgf hfg c = homologyMap f hd he hf c :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by a chain homotopy equivalence is the map induced by
+`g`. -/
+@[simp]
+theorem homologyEquivOfHomotopy_symm_apply (f : M →ₗ[S] N) (g : N →ₗ[S] M) (hd : d ∘ₗ d = 0)
+    (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ e = d ∘ₗ g)
+    (hgf : ∃ h : M →ₗ[S] M, g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hfg : ∃ k : N →ₗ[S] N, f ∘ₗ g - LinearMap.id = e ∘ₗ k + k ∘ₗ e) (c : e.homology he) :
+    (homologyEquivOfHomotopy f g hd he hf hg hgf hfg).symm c = homologyMap g he hd hg c :=
+  (rfl)
 
 end Homotopy
 
