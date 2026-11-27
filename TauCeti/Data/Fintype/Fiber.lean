@@ -226,6 +226,16 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
       · rw [occCount_subtype_ne u ha, occCount_subtype_ne v ha, h a ha]
   exact ⟨σ, congrFun hσ⟩
 
+/-- A finite set containing a distinguished value `z` and the ranges of two finite families. -/
+private theorem exists_finset_mem_and_forall_mem {Y : Type*} [Finite X] [Finite Y]
+    (u : X → S) (v : Y → S) (z : S) :
+    ∃ T : Finset S, z ∈ T ∧ (∀ x, u x ∈ T) ∧ (∀ y, v y ∈ T) := by
+  classical
+  let := Fintype.ofFinite X
+  let := Fintype.ofFinite Y
+  exact ⟨insert z (Finset.univ.image u ∪ Finset.univ.image v), Finset.mem_insert_self z _,
+    fun _ => Finset.mem_insert_of_mem (by simp), fun _ => Finset.mem_insert_of_mem (by simp)⟩
+
 /-- Two finite families on index types of the same cardinality with equal occurrence counts away
 from `z` also have equal occurrence count at `z`. -/
 theorem occCount_eq_of_forall_ne {Y : Type*} [Finite X] [Finite Y] {u : X → S} {v : Y → S}
@@ -234,10 +244,7 @@ theorem occCount_eq_of_forall_ne {Y : Type*} [Finite X] [Finite Y] {u : X → S}
   classical
   let := Fintype.ofFinite X
   let := Fintype.ofFinite Y
-  let T := insert z (Finset.univ.image u ∪ Finset.univ.image v)
-  have hzT : z ∈ T := Finset.mem_insert_self z _
-  have huT : ∀ x, u x ∈ T := fun x => Finset.mem_insert_of_mem (by simp)
-  have hvT : ∀ y, v y ∈ T := fun y => Finset.mem_insert_of_mem (by simp)
+  obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
   have hsumu := sum_occCount_eq_card u huT; have hsumv := sum_occCount_eq_card v hvT
   rw [← Finset.add_sum_erase _ _ hzT] at hsumu hsumv
   have herase : ∑ a ∈ T.erase z, occCount u a = ∑ a ∈ T.erase z, occCount v a :=
@@ -253,10 +260,7 @@ theorem isSquare_prod_fiber_subtype_mul_of_forall_ne {Y G : Type*} [Fintype X] [
     (hne : ∀ a, a ≠ z →
       IsSquare ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val)) :
     IsSquare ((∏ x : {x // u x = z}, f x.val) * ∏ y : {y // v y = z}, g y.val) := by
-  let T := insert z (Finset.univ.image u ∪ Finset.univ.image v)
-  have hzT : z ∈ T := Finset.mem_insert_self z _
-  have huT : ∀ x, u x ∈ T := fun x => Finset.mem_insert_of_mem (by simp)
-  have hvT : ∀ y, v y ∈ T := fun y => Finset.mem_insert_of_mem (by simp)
+  obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
   have hmul :
       ((∏ x : {x // u x = z}, f x.val) * ∏ y : {y // v y = z}, g y.val) *
         ∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val) =

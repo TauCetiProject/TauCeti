@@ -230,6 +230,10 @@ theorem primaryDecomposition_toFiniteBilinearModule :
       (FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule).trans
         A.toFiniteBilinearModule.primaryDecomposition := by
   refine FiniteBilinearModule.Isometry.ext fun x ↦ ?_
+  -- `primaryComponents` and `FiniteQuadraticModule.restrict` are `@[expose]` over `abbrev pi`,
+  -- and `CoeSort` / `AddCommGroup` on `FiniteQuadraticModule` project directly to
+  -- `toFiniteBilinearModule`. Both bundled carriers therefore reduce structurally to
+  -- `∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val`, so `cast_eq` holds.
   have hcast : ∀ p : (Nat.card A).primeFactors,
       (FiniteBilinearModule.Isometry.ofEq A.primaryComponents_toFiniteBilinearModule x p).val =
         (x p).val := fun p ↦ by
