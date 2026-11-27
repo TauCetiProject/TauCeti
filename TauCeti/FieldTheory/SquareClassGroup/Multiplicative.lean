@@ -35,8 +35,9 @@ may move between the two conventions without choosing representatives.
   generic elementary-two quotient.
 * `TauCeti.natCard_multiplicativeSquareClassGroup`: equality of the cardinalities of the two
   presentations.
-* `RingEquiv.squareClassMap_symm_squareClassMap`, `RingEquiv.squareClassMap_injective`: along a
-  ring isomorphism, pushforward of square classes is inverted by pushforward along the inverse.
+* `RingEquiv.squareClassMap_symm_squareClassMap`, `RingEquiv.squareClassMap_squareClassMap_symm`,
+  `RingEquiv.squareClassMap_injective`, `RingEquiv.squareClassMap_surjective`: along a ring
+  isomorphism, pushforward of square classes is inverted by pushforward along the inverse.
 * `RingHom.multiplicativeSquareClassMap` and `RingHom.squareClassMap`: pushforward of square
   classes along a field homomorphism, in the two conventions.
 -/
@@ -290,5 +291,18 @@ theorem squareClassMap_symm_squareClassMap (e : K ≃+* L) (x : TauCeti.SquareCl
 theorem squareClassMap_injective (e : K ≃+* L) :
     Function.Injective (e : K →+* L).squareClassMap :=
   Function.LeftInverse.injective (squareClassMap_symm_squareClassMap e)
+
+/-- Pushforward of additive square classes along the inverse of a ring isomorphism of fields is
+undone by pushforward along the isomorphism. -/
+@[simp]
+theorem squareClassMap_squareClassMap_symm (e : K ≃+* L) (y : TauCeti.SquareClassGroup L) :
+    (e : K →+* L).squareClassMap ((e.symm : L →+* K).squareClassMap y) = y := by
+  rw [← LinearMap.comp_apply, ← RingHom.squareClassMap_comp, RingEquiv.comp_symm,
+    RingHom.squareClassMap_id, LinearMap.id_apply]
+
+/-- Pushforward of additive square classes along a ring isomorphism of fields is surjective. -/
+theorem squareClassMap_surjective (e : K ≃+* L) :
+    Function.Surjective (e : K →+* L).squareClassMap :=
+  Function.RightInverse.surjective (squareClassMap_squareClassMap_symm e)
 
 end RingEquiv

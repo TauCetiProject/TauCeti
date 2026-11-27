@@ -141,12 +141,12 @@ theorem realHasse_map_realEquivOfRingEquiv (w : {w : InfinitePlace K // w.IsReal
   simp
 
 /-- **Local discriminants of the transported system.** For finite places `v` of `K` and `w` of `L`
-and a ring isomorphism `τ : K_v ≃+* L_w` extending `e`, the discriminant of the transported system
+and a ring homomorphism `τ : K_v →+* L_w` extending `e`, the discriminant of the transported system
 at `w` is the image under `τ` of the discriminant of the system at `v`. -/
 theorem discrAtFinitePlace_map {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
-    (τ : v.adicCompletion K ≃+* w.adicCompletion L)
+    (τ : v.adicCompletion K →+* w.adicCompletion L)
     (hτ : ∀ x, τ (algebraMap K (v.adicCompletion K) x) = algebraMap L (w.adicCompletion L) (e x)) :
-    (I.map e).discrAtFinitePlace w = (τ : _ →+* _).squareClassMap (I.discrAtFinitePlace v) := by
+    (I.map e).discrAtFinitePlace w = τ.squareClassMap (I.discrAtFinitePlace v) := by
   have h : (algebraMap L (w.adicCompletion L)).comp (e : K →+* L) =
       (τ : _ →+* _).comp (algebraMap K (v.adicCompletion K)) :=
     RingHom.ext fun x ↦ (hτ x).symm
@@ -217,7 +217,8 @@ theorem IsAdmissible.map {I : GlobalFormInvariants K} (hI : I.IsAdmissible) :
     rw [finiteHasse_map]
     refine hI.finiteHasse_eq_one_of_rank_eq_two hn _ ?_
     let τ := adicCompletionCongr _ w e (valuation_eq_valuation_equivOfRingEquiv_symm e w)
-    rw [discrAtFinitePlace_map e I τ (adicCompletionCongr_algebraMap _)] at hd
+    rw [discrAtFinitePlace_map e I τ.toRingHom (adicCompletionCongr_algebraMap _),
+      RingEquiv.toRingHom_eq_coe] at hd
     apply RingEquiv.squareClassMap_injective τ
     rw [hd, RingHom.squareClassMap_apply]
     congr 1
@@ -254,7 +255,9 @@ theorem map (hL : I.IsLocalRealization U R)
   discr_finite w :=
     (congrArg RegularFormClass.discr (QuadraticForm.formClass_transport (τ w) _ (U _)
       (hL.nondegenerate_finite _))).trans <| by
-        rw [RegularFormClass.discr_map, hL.discr_finite, discrAtFinitePlace_map e I (τ w) (hτ w)]
+        rw [RegularFormClass.discr_map, hL.discr_finite,
+          discrAtFinitePlace_map e I (τ w).toRingHom (hτ w),
+          RingEquiv.toRingHom_eq_coe]
   localHasse_finite w := by
     let _ : Finite (𝓞 K ⧸
         ((HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).symm w).asIdeal) :=
@@ -307,7 +310,8 @@ theorem globalInvariants_transport (e : K ≃+* L) (f : V ≃ₛₗ[(e : K →+*
   have ha' := ha.transport f (LinearEquiv.piCongrRightₛₗ fun _ ↦ e.toSemilinearEquiv)
   rw [transport_weightedSumSquares] at ha'
   replace ha' : (Q.transport f).Equivalent
-      (weightedSumSquares L fun i ↦ (Units.map (e : K →* L) (a i) : L)) := ha'
+      (weightedSumSquares L fun i ↦ (Units.map (e : K →* L) (a i) : L)) := by
+    simpa only [Units.coe_map, MonoidHom.coe_ofClass] using ha'
   refine GlobalFormInvariants.ext ?_ ?_ (funext fun w ↦ ?_) (funext fun w ↦ ?_)
   · -- the rank: a semilinear equivalence over a ring isomorphism preserves the dimension
     have h := congrArg Cardinal.toNat (lift_rank_eq_of_equiv_equiv (e : K → L) f.toAddEquiv
