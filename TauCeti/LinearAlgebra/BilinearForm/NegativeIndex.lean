@@ -26,8 +26,8 @@ facts give the algebraic part of defining the Morse index by compactly supported
 computing it along an exhaustion.
 
 The index is unchanged by positive scaling of the form and by linear isomorphisms, and pulling
-the form back along an injective linear map computes the index on the image; so it is monotone
-under inclusion of test spaces. If `C` is orthogonal to `A` on both sides and the form is
+the form back along a linear map computes the index on the image; so it is monotone under
+inclusion of test spaces. If `C` is orthogonal to `A` on both sides and the form is
 nonnegative on `C`, the index on `A ⊔ C` is the index on `A`
 (`LinearMap.BilinForm.negativeIndexOn_sup_eq_left`). This is the algebraic step of the finite
 reduction in the proof of the Morse index theorem: the index form on fields along a geodesic
@@ -42,9 +42,9 @@ nullity is `LinearMap.BilinForm.finrank_ker_restrict_sup`.
 * `LinearMap.BilinForm.negativeIndex_eq_sigNeg` and
   `LinearMap.BilinForm.negativeIndexOn_eq_sigNeg_restrict`: in finite dimension the index is the
   negative index of inertia.
-* `LinearMap.BilinForm.negativeIndexOn_comp_of_injective`,
+* `LinearMap.BilinForm.negativeIndexOn_comp`,
   `LinearMap.BilinForm.negativeIndex_congr`, `LinearMap.BilinForm.negativeIndex_restrict` and
-  `LinearMap.BilinForm.negativeIndexOn_smul_of_pos`: transport along injective linear maps and
+  `LinearMap.BilinForm.negativeIndexOn_smul_of_pos`: transport along linear maps and
   isomorphisms, restriction and positive scaling.
 * `LinearMap.BilinForm.negativeIndexOn_sup_eq_left`: the index on an orthogonal sum with a
   nonnegative summand.
@@ -150,48 +150,59 @@ theorem negativeIndexOn_le_finrank [Module.Finite 𝕜 S] :
   intro W _ hWS _
   exact ENat.natCast_le_natCast.mpr (Submodule.finrank_mono hWS)
 
-/-! ### Transport along injective linear maps -/
+/-! ### Transport along linear maps -/
 
 section Comp
 
 variable {V' : Type*} [AddCommGroup V'] [Module 𝕜 V']
 
-/-- Pulling a form back along an injective linear map computes the negative index on the image
-of the admissible submodule. -/
-theorem negativeIndexOn_comp_of_injective {f : V' →ₗ[𝕜] V} (hf : Function.Injective f)
-    (S : Submodule 𝕜 V') :
+/-- Pulling a form back along a linear map computes the negative index on the image of the
+admissible submodule. -/
+theorem negativeIndexOn_comp (f : V' →ₗ[𝕜] V) (S : Submodule 𝕜 V') :
     (B.comp f f).negativeIndexOn S = B.negativeIndexOn (S.map f) := by
   apply le_antisymm
   · rw [negativeIndexOn_le_iff]
     intro W _ hWS hW
-    rw [(Submodule.equivMapOfInjective f hf W).finrank_eq]
-    refine B.finrank_le_negativeIndexOn _ (Submodule.map_mono hWS) ?_
-    rintro _ ⟨w, hw, rfl⟩ hw0
-    simpa using hW w hw (by rintro rfl; simp at hw0)
+    -- `f` is injective on a negative subspace of the pulled-back form.
+    have hinj : Function.Injective (f ∘ₗ W.subtype) := by
+      rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+      intro w hw
+      by_contra hw0
+      have hfw : f w = 0 := hw
+      have hneg := hW w w.property (by simpa using hw0)
+      simp [hfw] at hneg
+    rw [← LinearMap.finrank_range_of_inj hinj]
+    refine B.finrank_le_negativeIndexOn _ ?_ ?_
+    · rintro _ ⟨w, rfl⟩
+      exact ⟨w, hWS w.property, rfl⟩
+    · rintro _ ⟨w, rfl⟩ hw0
+      exact hW w w.property fun h0 ↦ hw0 (by simp [h0])
   · rw [negativeIndexOn_le_iff]
     intro W _ hWS hW
-    have hWf : W ≤ LinearMap.range f :=
-      hWS.trans (LinearMap.range_eq_map f ▸ Submodule.map_mono le_top)
-    let e := (Submodule.equivMapOfInjective f hf (W.comap f)).trans
-      (LinearEquiv.ofEq _ _ (Submodule.map_comap_eq_of_le hWf))
-    have : Module.Finite 𝕜 (W.comap f) := Module.Finite.equiv e.symm
-    rw [← LinearEquiv.finrank_eq e]
-    refine (B.comp f f).finrank_le_negativeIndexOn _ (fun w hw ↦ ?_) fun w hw hw0 ↦ ?_
-    · obtain ⟨s, hs, hsw⟩ := hWS hw
-      exact hf hsw ▸ hs
-    · simpa using hW (f w) hw (by simpa [map_eq_zero_iff f hf] using hw0)
+    -- Lift `W` through the surjection `S → S.map f`.
+    obtain ⟨h, hh⟩ := Module.projective_lifting_property (f.submoduleMap S)
+      (Submodule.inclusion hWS) (f.submoduleMap_surjective S)
+    have hfh (w : W) : f (h w) = w := congr(($hh w : V))
+    let φ : W →ₗ[𝕜] V' := S.subtype ∘ₗ h
+    have hinj : Function.Injective φ := fun w w' hww' ↦
+      Subtype.ext (by rw [← hfh w, ← hfh w']; exact congrArg f hww')
+    rw [← LinearMap.finrank_range_of_inj hinj]
+    refine (B.comp f f).finrank_le_negativeIndexOn _ ?_ ?_
+    · rintro _ ⟨w, rfl⟩
+      exact (h w).property
+    · rintro _ ⟨w, rfl⟩ hw0
+      have hw : (w : V) ≠ 0 := fun h0 ↦ hw0 (by rw [show w = 0 from Subtype.ext h0, map_zero])
+      simpa [φ, hfh] using hW w w.property hw
 
-/-- The negative index of a pullback along an injective linear map is the negative index on its
-range. -/
-theorem negativeIndex_comp_of_injective {f : V' →ₗ[𝕜] V} (hf : Function.Injective f) :
+/-- The negative index of a pullback along a linear map is the negative index on its range. -/
+theorem negativeIndex_comp (f : V' →ₗ[𝕜] V) :
     (B.comp f f).negativeIndex = B.negativeIndexOn (LinearMap.range f) := by
-  rw [negativeIndex, negativeIndexOn_comp_of_injective B hf, LinearMap.range_eq_map]
+  rw [negativeIndex, negativeIndexOn_comp, LinearMap.range_eq_map]
 
-/-- Restricting the admissible vectors along an injective linear map cannot increase the negative
-index. -/
-theorem negativeIndex_comp_le_of_injective {f : V' →ₗ[𝕜] V} (hf : Function.Injective f) :
+/-- Pulling a form back along a linear map cannot increase the negative index. -/
+theorem negativeIndex_comp_le (f : V' →ₗ[𝕜] V) :
     (B.comp f f).negativeIndex ≤ B.negativeIndex := by
-  rw [negativeIndex_comp_of_injective B hf]
+  rw [negativeIndex_comp]
   exact B.negativeIndexOn_mono le_top
 
 /-- The negative index is invariant under linear isomorphisms. -/
@@ -201,7 +212,7 @@ theorem negativeIndex_congr (e : V ≃ₗ[𝕜] V') :
   have h : LinearMap.BilinForm.congr e B = B.comp e.symm e.symm := by
     ext
     simp [LinearMap.BilinForm.congr_apply]
-  rw [h, negativeIndex_comp_of_injective B e.symm.injective, LinearEquiv.range, negativeIndex]
+  rw [h, negativeIndex_comp, LinearEquiv.range, negativeIndex]
 
 end Comp
 
@@ -212,7 +223,7 @@ theorem negativeIndex_restrict : (B.restrict S).negativeIndex = B.negativeIndexO
   have h : B.restrict S = B.comp S.subtype S.subtype := by
     ext
     simp
-  rw [h, negativeIndex_comp_of_injective B S.injective_subtype, Submodule.range_subtype]
+  rw [h, negativeIndex_comp, Submodule.range_subtype]
 
 variable [IsStrictOrderedRing 𝕜]
 
