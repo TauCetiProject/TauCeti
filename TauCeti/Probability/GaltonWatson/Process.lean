@@ -102,6 +102,7 @@ theorem lintegral_gwKernel_apply (j : ℕ) :
 
 /-- The mean number of descendants of `j` individuals after `n` generations is `j m ^ n`, in
 `[0, ∞]`, for every offspring law; here `0 ^ 0 = 1`. -/
+@[simp]
 theorem lintegral_gwKernel_pow_apply (n j : ℕ) :
     ∫⁻ k, (k : ℝ≥0∞) ∂(ν.gwKernel ^ n) j = j * ν.offspringMean ^ n := by
   induction n with
@@ -116,6 +117,7 @@ theorem lintegral_gwKernel_pow_apply (n j : ℕ) :
 /-- The mean number of descendants of `j` individuals after `n` generations, as a real integral,
 is `j m ^ n`. No integrability is needed: if the offspring mean is infinite, both sides are the
 junk value `0` as soon as `j ≠ 0` and `n ≠ 0`. -/
+@[simp]
 theorem integral_gwKernel_pow_apply (n j : ℕ) :
     ∫ k, (k : ℝ) ∂(ν.gwKernel ^ n) j = j * (∫ k, (k : ℝ) ∂ν) ^ n := by
   -- both real integrals are the real parts of the corresponding lower integrals
@@ -127,25 +129,39 @@ theorem integral_gwKernel_pow_apply (n j : ℕ) :
   rw [htoReal, htoReal, lintegral_gwKernel_pow_apply, ← offspringMean_def, ENNReal.toReal_mul,
     ENNReal.toReal_pow, ENNReal.toReal_natCast]
 
+/-- The mean number of offspring of `j` individuals, as a real integral, is `j m`. No
+integrability is needed: if the offspring mean is infinite, both sides are the junk value `0` as
+soon as `j ≠ 0`. -/
+theorem integral_gwKernel_apply (j : ℕ) :
+    ∫ k, (k : ℝ) ∂ν.gwKernel j = j * ∫ k, (k : ℝ) ∂ν := by
+  have h := integral_gwKernel_pow_apply (ν := ν) 1 j
+  simp only [pow_one] at h
+  exact h
+
+/-- The offspring of `j` individuals have a moment of order `p` when `ν` does. -/
+theorem memLp_gwKernel_apply {p : ℝ≥0∞} (hν : MemLp (fun k : ℕ => (k : ℝ)) p ν) (j : ℕ) :
+    MemLp (fun k : ℕ => (k : ℝ)) p (ν.gwKernel j) := by
+  simpa using
+    memLp_addMonoidHom_convolutionPower (Nat.castAddMonoidHom ℝ) (measurable_of_countable _) hν j
+
 variable (hν : MemLp (fun k : ℕ => (k : ℝ)) 2 ν)
 include hν
 
-/-- The offspring of `j` individuals have a second moment when `ν` does. -/
-theorem memLp_gwKernel_apply (j : ℕ) : MemLp (fun k : ℕ => (k : ℝ)) 2 (ν.gwKernel j) := by
-  simpa using
-    memLp_addMonoidHom_convolutionPower (Nat.castAddMonoidHom ℝ) (measurable_of_countable _) hν j
+/-- The variance of the number of offspring of `j` individuals is `j σ²`, where `σ²` is the
+variance of `ν`. -/
+theorem variance_gwKernel_apply (j : ℕ) :
+    Var[fun k : ℕ => (k : ℝ); ν.gwKernel j] = j * Var[fun k : ℕ => (k : ℝ); ν] := by
+  simpa using variance_addMonoidHom_convolutionPower (Nat.castAddMonoidHom ℝ)
+    (measurable_of_countable _) hν j
 
 /-- The second moment of the offspring of `j` individuals is `j σ² + (j m) ^ 2`. -/
 private theorem integral_sq_gwKernel_apply (j : ℕ) :
     ∫ k, (k : ℝ) ^ 2 ∂ν.gwKernel j =
       j * Var[fun k : ℕ => (k : ℝ); ν] + (j * ∫ k, (k : ℝ) ∂ν) ^ 2 := by
-  have hvar := variance_addMonoidHom_convolutionPower (Nat.castAddMonoidHom ℝ)
-    (measurable_of_countable _) hν j
-  have hmean := integral_gwKernel_pow_apply (ν := ν) 1 j
-  simp only [Nat.coe_castAddMonoidHom, pow_one] at hvar hmean
-  rw [← gwKernel_apply, variance_eq_sub (memLp_gwKernel_apply hν j)] at hvar
+  have hvar := variance_gwKernel_apply hν j
+  rw [variance_eq_sub (memLp_gwKernel_apply hν j)] at hvar
   simp only [Pi.pow_apply] at hvar
-  rw [← hmean]
+  rw [← integral_gwKernel_apply]
   linarith
 
 /-- The descendants of `j` individuals after `n` generations have a second moment when `ν`
