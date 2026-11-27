@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Bernoulli
 public import TauCeti.Probability.Concentration.SubsetSelection
 public import TauCeti.Probability.Concentration.WeightedEventCount
+public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Prescribed selection profiles with weighted bad events
@@ -24,34 +24,6 @@ public section
 open Finset MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti
-
-/-- Under independent Boolean Bernoulli trials with success probabilities `q`, the
-coordinate at `a` is `true` with probability `q a`. -/
-theorem measureReal_pi_bernoulliMeasure_eval_eq_true {α : Type*} [Fintype α]
-    (q : α → unitInterval) (a : α) :
-    (Measure.pi fun a ↦ bernoulliMeasure true false (q a)).real {x | x a = true} = q a := by
-  have h : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
-    ext x
-    simp
-  rw [h, measureReal_def,
-    ← Measure.map_apply (measurable_pi_apply a) (measurableSet_singleton _),
-    (measurePreserving_eval (fun a ↦ bernoulliMeasure true false (q a)) a).map_eq,
-    ← measureReal_def]
-  simp
-
-/-- Under independent Boolean Bernoulli trials, the real indicators of the events that the
-individual coordinates are `true` are independent. -/
-theorem iIndepFun_pi_bernoulliMeasure_indicator_eval {α : Type*} [Fintype α]
-    (q : α → unitInterval) :
-    iIndepFun (fun a ↦ {x : α → Bool | x a = true}.indicator (1 : (α → Bool) → ℝ))
-      (Measure.pi fun a ↦ bernoulliMeasure true false (q a)) := by
-  have h (a : α) : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
-    ext x
-    simp
-  simp only [h]
-  exact iIndepFun_pi (μ := fun a ↦ bernoulliMeasure true false (q a))
-    (X := fun _ ↦ ({true} : Set Bool).indicator (1 : Bool → ℝ))
-    (fun _ ↦ (measurable_const.indicator (measurableSet_singleton _)).aemeasurable)
 
 open Classical in
 /-- Bernoulli selection with probabilities `δ * ω (f a)` over fibres of size `m`, where
@@ -100,9 +72,10 @@ theorem half_le_measureReal_bernoulli_card_fiber_and_weightedEventCount
     rw [hmem]
     exact (measurableSet_singleton _).preimage (measurable_pi_apply a)
   have hi : iIndepFun (fun a ↦ {x | a ∈ S x}.indicator (1 : (α → Bool) → ℝ)) μ := by
-    simpa only [hset] using iIndepFun_pi_bernoulliMeasure_indicator_eval fun a ↦ δ * ω (f a)
+    simpa only [hset] using
+      Probability.iIndepFun_pi_bernoulliMeasure_indicator_eval fun a ↦ δ * ω (f a)
   have hp (a : α) : μ.real {x | a ∈ S x} = (δ : ℝ) * (ω (f a) : ℝ) := by
-    rw [hset, measureReal_pi_bernoulliMeasure_eval_eq_true (fun a ↦ δ * ω (f a)) a]
+    rw [hset, Probability.measureReal_pi_bernoulliMeasure_eval_eq_true (fun a ↦ δ * ω (f a)) a]
     simp
   have hmean : (∑ a, μ.real {x | a ∈ S x}) = E := by
     simp only [hp, ← mul_sum, E, mul_assoc]

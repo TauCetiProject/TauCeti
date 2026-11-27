@@ -29,6 +29,9 @@ This file computes the elementary moments and transforms of the real-valued Bern
   corresponding random-variable statements;
 * `hasLaw_natCast_bernoulliMeasure` and `hasLaw_cast_eval_bernoulliMeasure` relate native
   Bernoulli variables to their real casts;
+* `measureReal_pi_bernoulliMeasure_eval_eq_true` and
+  `iIndepFun_pi_bernoulliMeasure_indicator_eval` give the coordinate marginals and the
+  independence of the coordinate indicators under a product of Boolean Bernoulli laws;
 * `pgf_bernoulliMeasure` computes the probability-generating function on the native carrier;
 * `integrableExpSet_bernoulliMeasure` identifies the exact exponential-integrability domain;
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
@@ -99,6 +102,34 @@ theorem hasLaw_cast_eval_bernoulliMeasure {ι : Type*} [Fintype ι]
   simpa [Function.comp_def] using
     (hasLaw_natCast_bernoulliMeasure (p i)).comp
       (measurePreserving_eval (fun i : ι ↦ Ber((1 : ℕ), 0, p i)) i).hasLaw
+
+/-- Under independent Boolean Bernoulli trials with success probabilities `q`, the
+coordinate at `a` is `true` with probability `q a`. -/
+theorem measureReal_pi_bernoulliMeasure_eval_eq_true {α : Type*} [Fintype α]
+    (q : α → unitInterval) (a : α) :
+    (Measure.pi fun a ↦ bernoulliMeasure true false (q a)).real {x | x a = true} = q a := by
+  have h : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
+    ext x
+    simp
+  rw [h, measureReal_def,
+    ← Measure.map_apply (measurable_pi_apply a) (measurableSet_singleton _),
+    (measurePreserving_eval (fun a ↦ bernoulliMeasure true false (q a)) a).map_eq,
+    ← measureReal_def]
+  simp
+
+/-- Under independent Boolean Bernoulli trials, the real indicators of the events that the
+individual coordinates are `true` are independent. -/
+theorem iIndepFun_pi_bernoulliMeasure_indicator_eval {α : Type*} [Fintype α]
+    (q : α → unitInterval) :
+    iIndepFun (fun a ↦ {x : α → Bool | x a = true}.indicator (1 : (α → Bool) → ℝ))
+      (Measure.pi fun a ↦ bernoulliMeasure true false (q a)) := by
+  have h (a : α) : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
+    ext x
+    simp
+  simp only [h]
+  exact iIndepFun_pi (μ := fun a ↦ bernoulliMeasure true false (q a))
+    (X := fun _ ↦ ({true} : Set Bool).indicator (1 : Bool → ℝ))
+    (fun _ ↦ (measurable_const.indicator (measurableSet_singleton _)).aemeasurable)
 
 /-- The mean of the real-valued Bernoulli law with success probability `p` is `p`. -/
 @[simp]
