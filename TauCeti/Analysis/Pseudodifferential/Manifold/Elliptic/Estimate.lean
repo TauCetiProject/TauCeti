@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Interior
 
 /-!
 # The elliptic estimate on a compact manifold
@@ -28,13 +26,11 @@ any finite family of charts and cutoffs). It is meaningful for `r < s + m`. The 
 cannot be dropped: on the circle, the Laplacian kills the constant function `1`, whose `H^2` norm
 is positive.
 
-The estimate follows from a parametrix. For every `N : ℕ` there is an operator `Q` of order `-m`
-such that `R = Q ∘ P - 1` has order `-N`
-(`TauCeti.IsClassicalElliptic.exists_comp_sub_id_mem_classicalPseudodifferentialOperators`), so
-`u = Q (P u) - R u`. The Sobolev estimate on `M`
-(`TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`)
-bounds `Q (P u)` in `H^{s + m}` by `P u` in `H^s`, and `R u` in `H^{r + N}` by `u` in `H^r`. For
-`N ≥ s + m - r` the space `H^{r + N}` embeds continuously into `H^{s + m}`.
+The estimate is the sum over the cutoffs `φⱼ` of the interior elliptic estimate
+(`TauCeti.IsClassicalElliptic.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_add`),
+which comes from a parametrix of `P`. On a compact manifold every operator is properly supported
+(`TauCeti.isProperlySupported_of_compactSpace`), and cutoffs `ψᵢ` adding up to `1` everywhere add
+up to `1` on whichever compact set the interior estimate asks for.
 
 The estimate is the a priori half of the regularity theory of an elliptic operator on a compact
 manifold. Finiteness of its smooth kernel is proved separately, from Rellich's theorem
@@ -89,51 +85,16 @@ theorem IsClassicalElliptic.exists_sum_norm_le_add
           ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM r 2
             ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖) := by
   have := compactSpace_of_forall_sum_cutoffPullback_eq_one he' ψ hψ
-  -- A parametrix `Q` of order `-m` with `R = Q P - 1` of order `-N`, where `s + m ≤ r + N`.
-  set N := ⌈s + m - r⌉₊
-  have hN : s + m ≤ r - -(N : ℝ) := by
-    linarith [Nat.le_ceil (s + m - r)]
-  obtain ⟨Q, hQ, -, hR⟩ := hPe.exists_comp_sub_id_mem_classicalPseudodifferentialOperators N
-  set R : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := Q ∘ₗ P - LinearMap.id with hRdef
-  obtain ⟨A, hA⟩ := exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
-    hQ he φ he' ψ hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top s
-  rw [sub_neg_eq_add] at hA
-  obtain ⟨B, hB⟩ := exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
-    hR he φ he' ψ hψ ENNReal.one_lt_two ENNReal.ofNat_ne_top r
-  set c := ‖(BesselPotentialSpace.inclusion (E := CoordinateSpace n) (G := ℂ) (p := 2) hN)‖
-  refine ⟨|A| + c * |B|, fun u ↦ ?_⟩
-  set X := ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
-    ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) (P u))‖
-  set Y := ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM r 2
-    ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖
-  have hX : 0 ≤ X := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-  have hY : 0 ≤ Y := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-  -- Each reading of `u = Q (P u) - R u` is split accordingly.
-  have hu (j : κ) : ‖SchwartzMap.toBesselPotentialSpaceCLM (s + m) 2
-      ((e j).cutoffPushforwardSchwartz (he j) (φ j) u)‖ ≤
-      ‖SchwartzMap.toBesselPotentialSpaceCLM (s + m) 2
-        ((e j).cutoffPushforwardSchwartz (he j) (φ j) (Q (P u)))‖ +
-      c * ‖SchwartzMap.toBesselPotentialSpaceCLM (r - -(N : ℝ)) 2
-        ((e j).cutoffPushforwardSchwartz (he j) (φ j) (R u))‖ := by
-    have hsplit : u = Q (P u) - R u := by simp [hRdef]
-    conv_lhs => rw [hsplit, map_sub, map_sub]
-    refine (norm_sub_le _ _).trans (add_le_add le_rfl ?_)
-    rw [← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM hN]
-    exact ContinuousLinearMap.le_opNorm _ _
-  calc ∑ j, ‖SchwartzMap.toBesselPotentialSpaceCLM (s + m) 2
-          ((e j).cutoffPushforwardSchwartz (he j) (φ j) u)‖
-      ≤ A * X + c * (B * Y) := by
-        refine (Finset.sum_le_sum fun j _ ↦ hu j).trans ?_
-        rw [Finset.sum_add_distrib, ← Finset.mul_sum]
-        exact add_le_add (hA (P u)) (mul_le_mul_of_nonneg_left (hB u) (norm_nonneg _))
-    _ ≤ |A| * X + c * (|B| * Y) := by
-        gcongr
-        · exact le_abs_self A
-        · exact le_abs_self B
-    _ ≤ (|A| + c * |B|) * (X + Y) := by
-        have := mul_nonneg (abs_nonneg A) hY
-        have := mul_nonneg (mul_nonneg (norm_nonneg _ : 0 ≤ c) (abs_nonneg B)) hX
-        nlinarith
+  -- On a compact manifold `P` is properly supported and the cutoffs `ψᵢ` cover every compact set,
+  -- so the interior estimate holds near each `φⱼ`; the global estimate is their sum.
+  choose K _ hK using fun j ↦ hPe.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_add
+    (isProperlySupported_of_compactSpace P) (he j) (φ j)
+  choose C hC using fun j ↦ hK j he' ψ (fun x _ ↦ hψ x) 2 ENNReal.one_lt_two
+    ENNReal.ofNat_ne_top s r
+  refine ⟨∑ j, |C j|, fun u ↦ ?_⟩
+  rw [Finset.sum_mul]
+  exact Finset.sum_le_sum fun j _ ↦ (hC j u).trans (mul_le_mul_of_nonneg_right (le_abs_self _)
+    (add_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+      (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)))
 
 end TauCeti
