@@ -91,7 +91,8 @@ theorem norm_mgradient_eq_norm_gradient_of_eq {F : Type*} [NormedAddCommGroup F]
   subst hg
   exact norm_tangentSpace_vectorSpace
 
-/-- The gradient of the squared norm in the standard flat metric is the radial vector field.
+/-- The gradient of the squared norm in the standard flat metric is the radial vector field: read
+in `F` through `NormedSpace.fromTangentSpace`, it is `2 • x`.
 
 Source: `Mathlib.Analysis.InnerProductSpace.Calculus.fderiv_norm_sq_apply`.
 -/
@@ -100,7 +101,7 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
     let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
       ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
-    mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x = 2 • x := by
+    NormedSpace.fromTangentSpace x (mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x) = (2 : ℝ) • x := by
   dsimp only
   have hx : (InnerProductSpace.toDual ℝ F).symm ((innerSL ℝ) x) = x := by
     have hdual : (innerSL ℝ) x = (InnerProductSpace.toDual ℝ F) x := by
@@ -108,9 +109,17 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
       rw [InnerProductSpace.toDual_apply_apply, innerSL_apply_apply]
     rw [hdual]
     exact (InnerProductSpace.toDual ℝ F).symm_apply_apply x
-  rw [mgradient_eq_gradient]
-  simp [gradient, fderiv_norm_sq_apply, hx]
-  rfl
+  rw [NormedSpace.fromTangentSpace_apply, mgradient_eq_gradient]
+  simp [gradient, fderiv_norm_sq_apply, hx, two_smul]
+
+/-- In the standard flat metric, the gradient of the squared norm has length `2 ‖x‖`. -/
+theorem norm_mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
+    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    ‖mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x‖ = 2 * ‖x‖ := by
+  dsimp only
+  rw [norm_tangentSpace_vectorSpace, mgradient_norm_sq_model_space, norm_smul, Real.norm_two]
 
 /-- A genuine nonzero linear defining functional has nonzero native metric gradient. -/
 theorem _root_.ContinuousLinearMap.mgradient_ne_zero {F : Type*} [NormedAddCommGroup F]

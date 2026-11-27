@@ -20,8 +20,13 @@ In a real inner product space `E` of dimension `n + 1`, the value `1` of `x ↦ 
 `{‖x‖² ≤ 1}` carries the half-space atlas `TauCeti.scalarRegularSublevelChartedSpace`, whose
 manifold boundary is the unit sphere (`TauCeti.boundary_scalarRegularSublevel_norm_sq`).
 
-This file compares both with Mathlib's unit sphere `Metric.sphere (0 : E) 1`, with its
-stereographic atlas modelled on `EuclideanSpace ℝ (Fin n)`:
+More generally, for `c > 0` the closed ball `{‖x‖² ≤ c}` of radius `√c` carries the half-space
+atlas `TauCeti.normSqLeChartedSpace`, of which the atlas of the unit ball is the case `c = 1`; its
+boundary points have norm `√c` (`TauCeti.norm_eq_sqrt_of_mem_boundary_normSqLe`).
+
+This file compares the level `{‖x‖² = 1}` and the boundary of the closed unit ball with Mathlib's
+unit sphere `Metric.sphere (0 : E) 1`, with its stereographic atlas modelled on
+`EuclideanSpace ℝ (Fin n)`:
 
 * `TauCeti.normSqLevelDiffeomorphSphere`: the identity of points is a smooth diffeomorphism from
   the level `{‖x‖² = 1}` onto the stereographic sphere;
@@ -49,7 +54,46 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {n : ℕ} [Fact (finrank ℝ E = n + 1)]
+  {n : ℕ}
+
+section Radius
+
+variable {c : ℝ} (hc : 0 < c) (hn : finrank ℝ E = n + 1)
+
+/-- The sublevel atlas `TauCeti.scalarRegularSublevelChartedSpace` of the closed ball
+`{‖x‖² ≤ c}` of radius `√c`, modelled on the half-space of dimension `n + 1`. -/
+noncomputable abbrev normSqLeChartedSpace :
+    ChartedSpace (EuclideanHalfSpace (n + 1)) {x : E | ‖x‖ ^ 2 ≤ c} :=
+  scalarRegularSublevelChartedSpace (contDiff_norm_sq ℝ).contMDiff
+    (isRegularValue_norm_sq hc.ne') hn
+
+/-- The closed ball `{‖x‖² ≤ c}` is a `C^m` manifold with boundary for its sublevel atlas, for
+every `m ≥ 1`. -/
+theorem isManifold_normSqLe {m : ℕ∞ω} (hm : 1 ≤ m) :
+    letI := normSqLeChartedSpace hc hn
+    IsManifold (𝓡∂ (n + 1)) m {x : E | ‖x‖ ^ 2 ≤ c} :=
+  isManifold_scalarRegularSublevel (isRegularValue_norm_sq hc.ne') hn hm
+    (contDiff_norm_sq ℝ).contMDiff
+
+/-- A boundary point of the closed ball `{‖x‖² ≤ c}`, for its sublevel atlas, lies on the
+sphere: `‖x‖² = c`. -/
+theorem norm_sq_eq_of_mem_boundary_normSqLe
+    (q : letI := normSqLeChartedSpace hc hn
+      (𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ c}) :
+    ‖((q : {x : E | ‖x‖ ^ 2 ≤ c}) : E)‖ ^ 2 = c :=
+  (Set.ext_iff.1 (boundary_scalarRegularSublevel (isRegularValue_norm_sq hc.ne') hn le_rfl
+    (contDiff_norm_sq ℝ).contMDiff) q).1 q.property
+
+/-- A boundary point of the closed ball `{‖x‖² ≤ c}`, for its sublevel atlas, has norm `√c`. -/
+theorem norm_eq_sqrt_of_mem_boundary_normSqLe
+    (q : letI := normSqLeChartedSpace hc hn
+      (𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ c}) :
+    ‖((q : {x : E | ‖x‖ ^ 2 ≤ c}) : E)‖ = √c := by
+  rw [← Real.sqrt_sq (norm_nonneg _), norm_sq_eq_of_mem_boundary_normSqLe hc hn q]
+
+end Radius
+
+variable [Fact (finrank ℝ E = n + 1)]
 
 variable (E n) in
 /-- The level atlas `TauCeti.regularLevelChartedSpace` of the level `{‖x‖² = 1}`, modelled on
@@ -59,12 +103,11 @@ noncomputable abbrev normSqLevelChartedSpace : ChartedSpace (Fin n → ℝ) {x :
     (isRegularValue_norm_sq one_ne_zero) (finrank_sub_finrank_real_eq Fact.out)
 
 variable (E n) in
-/-- The sublevel atlas `TauCeti.scalarRegularSublevelChartedSpace` of the closed unit ball
-`{‖x‖² ≤ 1}`, modelled on the half-space of dimension `n + 1`. -/
+/-- The sublevel atlas of the closed unit ball `{‖x‖² ≤ 1}`, modelled on the half-space of
+dimension `n + 1`: `TauCeti.normSqLeChartedSpace` at radius one. -/
 noncomputable abbrev normSqSublevelChartedSpace :
     ChartedSpace (EuclideanHalfSpace (n + 1)) {x : E | ‖x‖ ^ 2 ≤ 1} :=
-  scalarRegularSublevelChartedSpace (contDiff_norm_sq ℝ).contMDiff
-    (isRegularValue_norm_sq one_ne_zero) Fact.out
+  normSqLeChartedSpace one_pos Fact.out
 
 attribute [local instance] normSqLevelChartedSpace normSqSublevelChartedSpace
 
