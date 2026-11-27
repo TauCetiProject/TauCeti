@@ -36,15 +36,18 @@ combinatorial Laplacian of the adjacency matrix of a simple graph with Mathlib's
   adjacency matrix is Mathlib's `G.lapMatrix ℝ`.
 * `TauCeti.WeightedGraph.laplacian_mulVec_apply`: `(L f) i = ∑ j, W i j * (f i - f j)`, and hence
   `TauCeti.WeightedGraph.laplacian_mulVec_one`: the constants lie in the kernel of `L`.
-* `TauCeti.WeightedGraph.positiveGraph_adjMatrix`: the graph of positive weights of the adjacency
-  matrix of `G` is `G`.
+* `SimpleGraph.isWeightedGraph_adjMatrix`, `SimpleGraph.degree_adjMatrix`: the adjacency matrix
+  of `G` is a weighted graph, whose weighted degrees are the degrees of `G`.
+* `SimpleGraph.positiveGraph_adjMatrix`: the graph of positive weights of the adjacency matrix of
+  `G` is `G`.
 
 ## Implementation notes
 
-The names follow `TauCetiRoadmap/KernelsAndSpectralMethods/Suggested.lean`, Layer 1. The
-predicate `TauCeti.IsWeightedGraph` and its lemmas live in the namespace `TauCeti`; the other
+The predicate `TauCeti.IsWeightedGraph` and its lemmas live in the namespace `TauCeti`; the other
 declarations live in `TauCeti.WeightedGraph`, since `TauCeti.degree` is already the mapping
-degree of a map of manifolds.
+degree of a map of manifolds. The lemmas `isWeightedGraph_adjMatrix`, `degree_adjMatrix` and
+`positiveGraph_adjMatrix`, whose first explicit argument is a simple graph, live in the namespace
+`SimpleGraph`.
 
 The file was written from scratch, with AI assistance (Claude).
 
@@ -86,14 +89,6 @@ theorem IsWeightedGraph.apply_comm {W : Matrix V V ℝ} (hW : IsWeightedGraph W)
 @[simp] theorem isWeightedGraph_zero : IsWeightedGraph (0 : Matrix V V ℝ) :=
   ⟨isSymm_zero, fun _ _ ↦ le_rfl⟩
 
-/-- The adjacency matrix of a simple graph is a weighted graph. -/
-theorem isWeightedGraph_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] :
-    IsWeightedGraph (G.adjMatrix ℝ) where
-  symm := G.isSymm_adjMatrix
-  nonneg i j := by
-    rw [SimpleGraph.adjMatrix_apply]
-    split_ifs <;> norm_num
-
 namespace WeightedGraph
 
 section Fintype
@@ -115,11 +110,6 @@ theorem degree_def (W : Matrix V V ℝ) (i : V) : degree W i = ∑ j, W i j := (
 to every vertex of a weighted graph. -/
 theorem degree_nonneg {W : Matrix V V ℝ} {i : V} (h : ∀ j, 0 ≤ W i j) : 0 ≤ degree W i :=
   sum_nonneg fun j _ ↦ h j
-
-/-- The weighted degree of the adjacency matrix of a simple graph is the degree of the graph. -/
-@[simp] theorem degree_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] (i : V) :
-    degree (G.adjMatrix ℝ) i = G.degree i := by
-  simp [degree_def, SimpleGraph.adjMatrix_apply, G.degree_eq_sum_if_adj (R := ℝ) i]
 
 variable [DecidableEq V]
 
@@ -159,13 +149,6 @@ theorem laplacian_mulVec_apply (W : Matrix V V ℝ) (f : V → ℝ) (i : V) :
 theorem isSymm_laplacian {W : Matrix V V ℝ} (hW : W.IsSymm) : (laplacian W).IsSymm :=
   (isSymm_diagonal _).sub hW
 
-/-- For a simple graph, the weighted Laplacian of its adjacency matrix is Mathlib's
-`SimpleGraph.lapMatrix`. -/
-theorem laplacian_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] :
-    laplacian (G.adjMatrix ℝ) = G.lapMatrix ℝ := by
-  have h : degree (G.adjMatrix ℝ) = fun i ↦ (G.degree i : ℝ) := funext (degree_adjMatrix G)
-  rw [laplacian_def, h, SimpleGraph.lapMatrix, SimpleGraph.degMatrix]
-
 /-- The normalized Laplacian `𝓛 = D^{-1/2} L D^{-1/2}`, with the convention `(√0)⁻¹ = 0`: a
 vertex of degree `0` gives a zero row and column. -/
 noncomputable def normalizedLaplacian (W : Matrix V V ℝ) : Matrix V V ℝ :=
@@ -182,8 +165,9 @@ theorem normalizedLaplacian_apply (W : Matrix V V ℝ) (i j : V) :
     normalizedLaplacian W i j = (√(degree W i))⁻¹ * laplacian W i j * (√(degree W j))⁻¹ := by
   simp [normalizedLaplacian_def, diagonal_mul, mul_diagonal]
 
-/-- The random-walk Laplacian `L_rw = D⁻¹ L = I - D⁻¹ W`, with the convention `0⁻¹ = 0`: a vertex
-of degree `0` gives a zero row. -/
+/-- The random-walk Laplacian `L_rw = D⁻¹ L`, with the convention `0⁻¹ = 0`: a vertex of degree `0`
+gives a zero row. When every degree is nonzero, `L_rw = I - D⁻¹ W`; at a vertex of degree `0` the
+row of `I - D⁻¹ W` is that of `I`, not zero. -/
 noncomputable def randomWalkLaplacian (W : Matrix V V ℝ) : Matrix V V ℝ :=
   diagonal (fun i ↦ (degree W i)⁻¹) * laplacian W
 
@@ -219,15 +203,53 @@ theorem positiveGraph_adj_of_isSymm {W : Matrix V V ℝ} (hW : W.IsSymm) {i j : 
   ext i j
   simp
 
+end WeightedGraph
+
+end TauCeti
+
+namespace SimpleGraph
+
+variable {V : Type*}
+
+/-- The adjacency matrix of a simple graph is a weighted graph. -/
+@[simp] theorem isWeightedGraph_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] :
+    TauCeti.IsWeightedGraph (G.adjMatrix ℝ) where
+  symm := G.isSymm_adjMatrix
+  nonneg i j := by
+    rw [adjMatrix_apply]
+    split_ifs <;> norm_num
+
+section Fintype
+
+variable [Fintype V]
+
+/-- The weighted degree of the adjacency matrix of a simple graph is the degree of the graph. -/
+@[simp] theorem degree_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] (i : V) :
+    TauCeti.WeightedGraph.degree (G.adjMatrix ℝ) i = G.degree i := by
+  simp [TauCeti.WeightedGraph.degree_def, adjMatrix_apply, G.degree_eq_sum_if_adj (R := ℝ) i]
+
+end Fintype
+
 /-- The graph of positive weights of the adjacency matrix of a simple graph is the graph. -/
 @[simp] theorem positiveGraph_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] :
-    positiveGraph (G.adjMatrix ℝ) = G := by
+    TauCeti.WeightedGraph.positiveGraph (G.adjMatrix ℝ) = G := by
   ext i j
-  simp only [positiveGraph_adj_of_isSymm G.isSymm_adjMatrix, SimpleGraph.adjMatrix_apply]
+  simp only [TauCeti.WeightedGraph.positiveGraph_adj_of_isSymm G.isSymm_adjMatrix, adjMatrix_apply]
   by_cases h : G.Adj i j
   · simp [h, h.ne]
   · simp [h]
 
-end WeightedGraph
+end SimpleGraph
 
-end TauCeti
+namespace TauCeti.WeightedGraph
+
+variable {V : Type*} [Fintype V] [DecidableEq V]
+
+/-- For a simple graph, the weighted Laplacian of its adjacency matrix is Mathlib's
+`SimpleGraph.lapMatrix`. -/
+@[simp] theorem laplacian_adjMatrix (G : SimpleGraph V) [DecidableRel G.Adj] :
+    laplacian (G.adjMatrix ℝ) = G.lapMatrix ℝ := by
+  have h : degree (G.adjMatrix ℝ) = fun i ↦ (G.degree i : ℝ) := funext G.degree_adjMatrix
+  rw [laplacian_def, h, SimpleGraph.lapMatrix, SimpleGraph.degMatrix]
+
+end TauCeti.WeightedGraph
