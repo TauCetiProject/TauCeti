@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Interface
+public import TauCeti.Analysis.BoundedVariation.Weighted.Cluster.Interface.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 import TauCeti.Analysis.BoundedVariation.Weighted.ZeroPerimeter
 
@@ -45,6 +45,7 @@ edge `{i, j}` whenever `i ≠ j` and the interface area `A_ij` is nonzero. -/
 def interfaceGraph (Ω : Cluster W q) : SimpleGraph (Fin q) :=
   SimpleGraph.fromRel fun i j => Ω.interfaceArea i j ≠ 0
 
+@[simp]
 theorem interfaceGraph_adj {Ω : Cluster W q} {i j : Fin q} :
     Ω.interfaceGraph.Adj i j ↔ i ≠ j ∧ Ω.interfaceArea i j ≠ 0 := by
   rw [interfaceGraph, SimpleGraph.fromRel_adj, Ω.interfaceArea_comm j i, or_self]
