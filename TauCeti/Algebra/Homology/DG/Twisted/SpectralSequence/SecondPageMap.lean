@@ -37,8 +37,8 @@ cohomology of `ℳ`, the morphism is the matrix of the actions of the entries `�
 morphism on the second page is the map induced by the classical continuation map on the homology
 of the classical complexes
 (`TauCeti.ContinuationCocycle.indexSpectralSequenceMap_hom_three_f_comp_secondPageXIso_hom`). This
-is the comparison of the maps on `E₂` with the classical continuation maps that identifies the
-second page of a direct limit of index spectral sequences along continuation maps.
+comparison is what is needed to identify the second page of a direct limit of index spectral
+sequences along continuation maps.
 
 ## Main definitions
 
@@ -155,16 +155,16 @@ private theorem sum_op_smul_sub_sum_op_smul_eq (q : ℤ) (x : {x : P // ind x = 
     Int.cast_smul_eq_zsmul, smul_comm]
 
 /-- **The classical continuation map commutes with the classical differentials, entrywise**: for
-generators `x` of index `q + 1` and `y` of index `q`, the two composites agree. On a class `[α]`
-they are the classes of `op (∑ z, mP x z * ν z y) • ε α` and `op (∑ z, ν x z * mQ z y) • ε α`,
-with `ε` the Koszul sign, whose difference is `op (d (ν x y)) • ε α` by the continuation equation,
-a boundary by the Leibniz rule. -/
+generators `x` of index `q + 1` and `y` of index `q`, the two composites agree. -/
 theorem sum_indexClassicalEntry_comp (k q : ℤ) (x : {x : P // ind x = q + 1})
     (y : {y : Q // indQ y = q}) :
     ∑ z : {z : P // ind z = q},
         mP.indexClassicalEntry hM k q x z ≫ indexClassicalEntry hM hν k q z y =
       ∑ z : {z : Q // indQ z = q + 1},
         indexClassicalEntry hM hν k (q + 1) x z ≫ mQ.indexClassicalEntry hM k q z y := by
+  -- On a class `[α]` the two composites are the classes of `op (∑ z, mP x z * ν z y) • ε α` and
+  -- `op (∑ z, ν x z * mQ z y) • ε α`, with `ε` the Koszul sign. Their difference is
+  -- `op (d (ν x y)) • ε α` by the continuation equation, a boundary by the Leibniz rule.
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1)).exists_homologyπ_moduleCatCyclesMk_eq (k - (q + 1) + 1) (by simp) c
@@ -282,12 +282,9 @@ theorem indexGradedPiece_continuationHom_comp_indexGradedPieceEval (p : ℤ)
         (ν.d_ν_eq_zero_of_eq hν (x.property.trans y.property.symm)) p := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
     (shiftedModuleComplexXEquiv hM p n).injective (Subtype.ext ?_))
-  rw [show (∑ x : {x : P // ind x = p}, indexGradedPieceEval hM ind x ≫ shiftedModuleComplexMul hM
-      (ν.ν_mem_zero_of_eq (x.property.trans y.property.symm))
-      (ν.d_ν_eq_zero_of_eq hν (x.property.trans y.property.symm)) p).f n = _ from
-    map_sum (HomologicalComplex.Hom.fAddMonoidHom n) _ _, ModuleCat.hom_sum, LinearMap.sum_apply,
-    map_sum, Submodule.coe_sum]
-  simp only [HomologicalComplex.Hom.fAddMonoidHom_apply, HomologicalComplex.comp_f,
+  rw [HomologicalComplex.sum_f, ModuleCat.hom_sum, LinearMap.sum_apply, map_sum,
+    Submodule.coe_sum]
+  simp only [HomologicalComplex.comp_f,
     ModuleCat.hom_comp, LinearMap.comp_apply, shiftedModuleComplexXEquiv_indexGradedPieceEval_f,
     shiftedModuleComplexXEquiv_shiftedModuleComplexMul_f, continuationHom_f_apply,
     continuationMap_apply, indexGradedPiece_ν]
@@ -304,12 +301,7 @@ theorem homologyMap_continuationHom_comp_indexGradedPieceHomologyIso_hom [Decida
   rw [Category.assoc, indexGradedPieceHomologyIso_hom_π, ← HomologicalComplex.homologyMap_comp,
     indexGradedPiece_continuationHom_comp_indexGradedPieceEval, Category.assoc,
     indexClassicalHom_π, Preadditive.comp_sum]
-  have hsum := (HomologicalComplex.homologyFunctor _ _ (k - p)).map_sum
-    (fun x : {x : P // ind x = p} ↦ indexGradedPieceEval hM ind x ≫ shiftedModuleComplexMul hM
-      (ν.ν_mem_zero_of_eq (x.property.trans y.property.symm))
-      (ν.d_ν_eq_zero_of_eq hν (x.property.trans y.property.symm)) p) Finset.univ
-  simp only [HomologicalComplex.homologyFunctor_map] at hsum
-  rw [hsum]
+  rw [HomologicalComplex.homologyMap_sum]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [indexGradedPieceHomologyIso_hom_π_assoc]
   exact HomologicalComplex.homologyMap_comp _ _ _

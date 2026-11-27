@@ -245,27 +245,6 @@ theorem shiftedModuleComplexXEquiv_shiftedModuleComplexMul_f {a : A} (ha : a ∈
       op a • (shiftedModuleComplexXEquiv hM q n α : M) :=
   shiftedModuleComplexXEquiv_shiftedModuleComplexMulX hM ha q n α
 
-/-- The action of a cycle of degree zero on cohomology, on classes: it sends the class of `α` to
-the class of `op a • α`. -/
-theorem homologyMap_shiftedModuleComplexMul_homologyπ {a : A} (ha : a ∈ 𝒜 0) (hda : d a = 0)
-    (q n : ℤ) (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n)
-    (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n (n + 1)).hom α = 0)
-    (β : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n)
-    (hβ : (shiftedModuleComplexXEquiv hM q n β : M) =
-      op a • (shiftedModuleComplexXEquiv hM q n α : M))
-    (hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n (n + 1)).hom β = 0) :
-    (HomologicalComplex.homologyMap (shiftedModuleComplexMul hM ha hda q) n).hom
-        (((shiftedModuleComplex.{uR, uA, uM, uP} hM q).homologyπ n).hom
-          ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk α (n + 1) (by simp)
-            hα)) =
-      ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).homologyπ n).hom
-        ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk β (n + 1) (by simp)
-          hβ') := by
-  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
-  congr 2
-  exact (shiftedModuleComplexXEquiv hM q n).injective (Subtype.ext (by
-    rw [shiftedModuleComplexXEquiv_shiftedModuleComplexMul_f, hβ]))
-
 end Action
 
 end TauCeti

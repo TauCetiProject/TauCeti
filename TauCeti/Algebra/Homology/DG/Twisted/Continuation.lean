@@ -481,11 +481,12 @@ theorem ν_mem_zero_of_eq (ν : ContinuationCocycle mP mQ) {x : P} {y : Q}
   rwa [show indQ y - ind x = 0 by omega] at h
 
 /-- For a continuation cocycle with no entries strictly increasing the index, the entries between
-generators of equal index are cycles: in the continuation equation every product passes through
-a generator whose index is strictly between theirs. -/
+generators of equal index are cycles. -/
 theorem d_ν_eq_zero_of_eq (ν : ContinuationCocycle mP mQ)
     (hν : ∀ x y, ind x < indQ y → ν.ν x y = 0) {x : P} {y : Q} (hxy : ind x = indQ y) :
     d (ν.ν x y) = 0 := by
+  -- In the continuation equation every product passes through a generator whose index is
+  -- strictly between theirs, so it vanishes.
   have h₁ : ∀ z, mP.m x z * ν.ν z y = 0 := fun z ↦ by
     rcases le_or_gt (ind x) (ind z) with h | h
     · rw [mP.one_sided x z h, zero_mul]
