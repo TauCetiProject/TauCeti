@@ -70,7 +70,11 @@ odd `j`. -/
 theorem pow_apply_of_apply_eq_neg (hneg : ∀ v : V, ρ g v = -v) (j : ℕ) (v : V) :
     ρ (g ^ j) v = if Even j then v else -v := by
   let _ : DistribMulAction G V := DistribMulAction.compHom V ρ
-  exact TauCeti.pow_smul_of_smul_eq_neg (G := G) (M := V) hneg j v
+  have hsmul : ∀ w : V, g • w = -w := fun w ↦ by
+    rw [MulAction.compHom_smul_def, Module.End.smul_def]
+    exact hneg w
+  rw [← Module.End.smul_def, ← MulAction.compHom_smul_def]
+  exact TauCeti.pow_smul_of_smul_eq_neg (G := G) (M := V) hsmul j v
 
 /-- **The norm vanishes for a negation action of an even-order cyclic group.** If `G` is generated
 by an element `g` of even order acting as `-1`, then consecutive terms `v + (-v)` cancel in pairs,
@@ -80,7 +84,11 @@ theorem norm_apply_eq_zero_of_apply_eq_neg [Fintype G] (hg : ∀ x, x ∈ Subgro
     ρ.norm v = 0 := by
   rw [Representation.norm, LinearMap.sum_apply]
   let _ : DistribMulAction G V := DistribMulAction.compHom V ρ
-  exact TauCeti.sum_smul_eq_zero_of_smul_eq_neg (G := G) (M := V) hg hord hneg v
+  have hsmul : ∀ w : V, g • w = -w := fun w ↦ by
+    rw [MulAction.compHom_smul_def, Module.End.smul_def]
+    exact hneg w
+  simp_rw [← Module.End.smul_def, ← MulAction.compHom_smul_def]
+  exact TauCeti.sum_smul_eq_zero_of_smul_eq_neg (G := G) (M := V) hg hord hsmul v
 
 end Negation
 

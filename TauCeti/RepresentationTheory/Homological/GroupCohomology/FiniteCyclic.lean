@@ -871,16 +871,24 @@ noncomputable def groupCohomologyEvenEquivTorsionBy (hord : Even (orderOf g))
     (hneg : ∀ x : A, A.ρ g x = -x) (i : ℕ) [NeZero i] (hi : Even i) :
     groupCohomology A i ≃ₗ[k] Submodule.torsionBy k A (2 : k) :=
   let ι := (Submodule.torsionBy k A (2 : k)).subtype.codRestrict _ fun x ↦
-    (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).2 x.property
+    (Submodule.subtype_apply x).symm ▸
+      (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).2 x.property
   (LinearEquiv.ofBijective ((groupCohomologyπEven A g hg i hi).hom ∘ₗ ι)
     ⟨fun x y h ↦ by
       simp only [LinearMap.comp_apply] at h
       rw [groupCohomologyπEven_eq_iff, Rep.mem_range_norm_iff_of_ρ_eq_neg A g hg hord hneg] at h
+      dsimp only [ι] at h
+      rw [LinearMap.codRestrict_apply, LinearMap.codRestrict_apply,
+        Submodule.subtype_apply, Submodule.subtype_apply] at h
       exact Subtype.ext (sub_eq_zero.1 h),
     fun c ↦ by
       obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective A g hg i hi c
-      exact ⟨⟨x.val,
-        (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).1 x.property⟩, rfl⟩⟩).symm
+      refine ⟨⟨x.val,
+        (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).1 x.property⟩, ?_⟩
+      rw [LinearMap.comp_apply]
+      exact congrArg (groupCohomologyπEven A g hg i hi) <| Subtype.ext <| by
+        dsimp only [ι]
+        rw [LinearMap.codRestrict_apply, Submodule.subtype_apply]⟩).symm
 
 /-- The positive even-degree class corresponding to `x : A[2]` under
 `groupCohomologyEvenEquivTorsionBy` is the class of `x`. -/
