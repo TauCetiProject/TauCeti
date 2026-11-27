@@ -63,8 +63,12 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
   `Subgroup.inv_toUnits_polarUnitary_mul_mem_of_isClosed` and
   `Subgroup.mul_inv_toUnits_polarUnitary_mem_of_isClosed`: the unitary and positive polar factors
   of an element of `H` lie in `H`.
+* `Subgroup.expUnit_smul_mem_of_isClosed`: the same line statement in the form of the hypothesis
+  of `Subgroup.cartanHomeomorph`.
 * `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra`: the Hermitian part
   `𝔭_H` is the Hermitian part of the Lie algebra `Subgroup.linearLieSubalgebra H`.
+* `Subgroup.hermitianLieSubmodule`: the Hermitian part `𝔭_H` of the Lie algebra of `H`, as a real
+  subspace of the matrices, with `Subgroup.mem_hermitianLieSubmodule_iff` for closed `H`.
 * `Subgroup.cartanHomeomorphOfIsClosed`: the homeomorphism `K_H × 𝔭_H ≃ₜ H`,
   `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
 * `Subgroup.existsUnique_unitary_mul_exp_of_isClosed`: every `g ∈ H` is uniquely `k * exp X` with
@@ -336,6 +340,8 @@ open scoped Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal TauCeti.normedAlgebraRatOfReal
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {H : Subgroup (GL n 𝕜)}
 
 /-- A unit whose matrix is `exp x` is the unit exponential of `x`. -/
@@ -378,10 +384,31 @@ theorem forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra
       X ∈ H.linearLieSubalgebra := by
   rw [H.mem_linearLieSubalgebra_iff hH, mem_linearLieAlgebra_iff_forall_exp]
 
+variable (H) in
+/-- The Hermitian part `𝔭_H` of the Lie algebra of a subgroup `H` of `GL n 𝕜`: the Hermitian
+matrices of `Subgroup.linearLieSubalgebra H`. For a closed `H` these are the Hermitian matrices
+whose exponential line lies in `H` (`Subgroup.mem_hermitianLieSubmodule_iff`). -/
+def hermitianLieSubmodule : Submodule ℝ (Matrix n n 𝕜) :=
+  selfAdjoint.submodule ℝ (Matrix n n 𝕜) ⊓ H.linearLieSubalgebra.toSubmodule
+
+/-- A matrix lies in `𝔭_H` exactly when it is Hermitian and lies in the Lie algebra of `H`. -/
+@[simp]
+theorem mem_hermitianLieSubmodule {X : Matrix n n 𝕜} :
+    X ∈ H.hermitianLieSubmodule ↔ IsSelfAdjoint X ∧ X ∈ H.linearLieSubalgebra :=
+  Iff.rfl
+
+/-- For a closed subgroup `H` of `GL n 𝕜`, a matrix lies in the Hermitian part `𝔭_H` of the Lie
+algebra of `H` exactly when it is Hermitian and its whole exponential line lies in `H`. -/
+theorem mem_hermitianLieSubmodule_iff (hH : IsClosed (H : Set (GL n 𝕜))) {X : Matrix n n 𝕜} :
+    X ∈ H.hermitianLieSubmodule ↔
+      X.IsHermitian ∧ ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
+  rw [mem_hermitianLieSubmodule, forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra hH,
+    ← Matrix.isHermitian_iff_isSelfAdjoint]
+
 /-- For a closed subgroup `H` of `GL n 𝕜` stable under the conjugate transpose and with finitely
 many connected components, the line through a Hermitian `x` with `exp x ∈ H` lies in `H`: the line
 hypothesis of `Subgroup.cartanHomeomorph`. -/
-private theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
+theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (x : Matrix n n 𝕜)
     (hx : IsSelfAdjoint x) (hxH : TauCeti.expUnit x ∈ H) (t : ℝ) :
     TauCeti.expUnit (t • x) ∈ H :=
