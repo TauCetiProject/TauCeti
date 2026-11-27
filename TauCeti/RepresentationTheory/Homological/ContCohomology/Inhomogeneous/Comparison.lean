@@ -55,8 +55,8 @@ universe u v w
 
 variable {k : Type u} {G : Type v} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [LocallyCompactSpace G] {X : TopRep.{max v w} k G}
- 
 
+variable (X) in
 /-- **Dehomogenization of continuous cochains.** Over a locally compact group, and for a
 representation whose action map `G × X → X` is jointly continuous, a homogeneous `n`-cochain `F`
 corresponds to the continuous function `g ↦ F (1, g₀, g₀ g₁, …, g₀ ⋯ gₙ₋₁)` on `Gⁿ`, the values of
@@ -70,7 +70,7 @@ noncomputable def homogeneousCochainsLinearEquiv (hX : Continuous fun p : G × X
         (continuous_pi fun i ↦ Continuous.finPartialProd (fun j ↦ continuous_apply j) i) }
   map_add' F F' := by ext g; simp
   map_smul' c F := by ext g; simp
-  invFun f := ⟨homogenization hX n f, ρ_homogenization hX n f⟩
+  invFun f := ⟨homogenization X hX n f, ρ_homogenization hX n f⟩
   left_inv F := by
     refine Subtype.ext (resolutionEval_injective X (n + 1) (funext fun x ↦ ?_))
     rw [resolutionEval_homogenization]
@@ -82,21 +82,22 @@ noncomputable def homogeneousCochainsLinearEquiv (hX : Continuous fun p : G × X
 `simp` first rewrites the carrier `(homogeneousCochains X).X n` in its implicit arguments. -/
 theorem homogeneousCochainsLinearEquiv_apply (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2)
     (n : ℕ) (F : (homogeneousCochains X).X n) (g : Fin n → G) :
-    homogeneousCochainsLinearEquiv hX n F g = resolutionEval X (n + 1) F.val (Fin.partialProd g) :=
+    homogeneousCochainsLinearEquiv X hX n F g =
+      resolutionEval X (n + 1) F.val (Fin.partialProd g) :=
   (rfl)
 
 /-- The inverse of dehomogenization is the homogeneous partner `TopRep.homogenization`. -/
 theorem coe_homogeneousCochainsLinearEquiv_symm_apply
     (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ) (f : C(Fin n → G, X.V)) :
-    ((homogeneousCochainsLinearEquiv hX n).symm f).val = homogenization hX n f :=
+    ((homogeneousCochainsLinearEquiv X hX n).symm f).val = homogenization X hX n f :=
   (rfl)
 
 /-- Dehomogenization carries the differential of the homogeneous cochains to the inhomogeneous
 differential. -/
 theorem homogeneousCochainsLinearEquiv_d (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2)
     (n : ℕ) (F : (homogeneousCochains X).X n) :
-    homogeneousCochainsLinearEquiv hX (n + 1) (((homogeneousCochains X).d n (n + 1)).hom F) =
-      continuousInhomogeneousCochainsD hX n (homogeneousCochainsLinearEquiv hX n F) := by
+    homogeneousCochainsLinearEquiv X hX (n + 1) (((homogeneousCochains X).d n (n + 1)).hom F) =
+      continuousInhomogeneousCochainsD X hX n (homogeneousCochainsLinearEquiv X hX n F) := by
   ext g
   rw [homogeneousCochainsLinearEquiv_apply, homogeneousCochains.d_apply]
   exact resolutionEval_d_partialProd hX F.property (fun _ ↦ rfl) g
@@ -112,14 +113,29 @@ noncomputable def continuousInhomogeneousCochainsIso
       ((forget₂ (TopModuleCat k) (ModuleCat k)).mapHomologicalComplex _).obj
         (homogeneousCochains X) :=
   HomologicalComplex.Hom.isoOfComponents
-    (fun n ↦ (homogeneousCochainsLinearEquiv hX n).toModuleIso.symm) <| by
+    (fun n ↦ (homogeneousCochainsLinearEquiv X hX n).toModuleIso.symm) <| by
       rintro n _ rfl
       ext f : 2
-      refine (homogeneousCochainsLinearEquiv hX (n + 1)).injective ?_
+      refine (homogeneousCochainsLinearEquiv X hX (n + 1)).injective ?_
       -- Both sides are composites in `ModuleCat`; their values are the dehomogenized differential
       -- of the homogeneous partner of `f` and the inhomogeneous differential of `f`.
       exact (homogeneousCochainsLinearEquiv_d hX n _).trans <|
-        (congrArg _ ((homogeneousCochainsLinearEquiv hX n).apply_symm_apply f)).trans (by simp)
+        (congrArg _ ((homogeneousCochainsLinearEquiv X hX n).apply_symm_apply f)).trans (by simp)
+
+/-- In degree `n`, the isomorphism of complexes sends a continuous inhomogeneous cochain to its
+homogeneous partner, the inverse of dehomogenization. -/
+theorem continuousInhomogeneousCochainsIso_hom_f_apply
+    (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ) (f : C(Fin n → G, X.V)) :
+    ((continuousInhomogeneousCochainsIso X hX).hom.f n).hom f =
+      (homogeneousCochainsLinearEquiv X hX n).symm f :=
+  (rfl)
+
+/-- In degree `n`, the inverse of the isomorphism of complexes is dehomogenization. -/
+theorem continuousInhomogeneousCochainsIso_inv_f_apply
+    (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ) (F : (homogeneousCochains X).X n) :
+    ((continuousInhomogeneousCochainsIso X hX).inv.f n).hom F =
+      homogeneousCochainsLinearEquiv X hX n F :=
+  (rfl)
 
 variable (X) in
 /-- **Continuous inhomogeneous cochains compute continuous cohomology.** Over a locally compact

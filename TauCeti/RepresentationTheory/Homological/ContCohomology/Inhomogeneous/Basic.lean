@@ -25,7 +25,7 @@ compactness or discreteness assumed of the coefficients. Joint continuity of the
 keeps `d f` continuous; continuity of each operator separately, as in `TopRep`, is not enough.
 
 The relation `d ∘ d = 0` is not proved by hand. A continuous cochain `f` has a homogeneous partner
-`TopRep.homogenization hX n f`, the invariant element of the coinduced resolution with values
+`TopRep.homogenization X hX n f`, the invariant element of the coinduced resolution with values
 `x ↦ x₀ • f (x₀⁻¹ x₁, …, xₙ₋₁⁻¹ xₙ)`, and `f` is recovered from the values of its partner at the
 partial products `(1, g₀, g₀ g₁, …)` of a tuple
 (`TopRep.resolutionEval_homogenization_partialProd`).
@@ -64,8 +64,8 @@ universe u v w
 
 variable {k : Type u} {G : Type v} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] {X : TopRep.{max v w} k G}
- 
 
+variable (X) in
 /-- The inhomogeneous differential `C(Gⁿ, X) → C(Gⁿ⁺¹, X)`,
 `(d f)(g₀, …, gₙ) = g₀ • f (g₁, …, gₙ) + ∑ⱼ (-1)ʲ⁺¹ f (g₀, …, gⱼ gⱼ₊₁, …, gₙ)`, of a representation
 whose action map `G × X → X` is jointly continuous. -/
@@ -77,12 +77,9 @@ noncomputable def continuousInhomogeneousCochainsD
         ∑ j : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + 1) • f (Fin.contractNth j (· * ·) g)
       continuous_toFun := by
         have h₀ : Continuous fun g : Fin (n + 1) → G ↦ (g 0, f (Fin.tail g)) := by fun_prop
-        have hc (j : Fin (n + 1)) :
-            Continuous (Fin.contractNth j (· * ·) : (Fin (n + 1) → G) → Fin n → G) := by
-          refine continuous_pi fun i ↦ ?_
-          simp only [Fin.contractNth]
-          split_ifs <;> fun_prop
-        exact (hX.comp h₀).add (continuous_finsetSum _ fun j _ ↦ by have := hc j; fun_prop) }
+        exact (hX.comp h₀).add <| continuous_finsetSum _ fun j _ ↦
+          (f.continuous.comp (continuous_id.finContractNth j)).const_smul
+            ((-1 : ℤ) ^ ((j : ℕ) + 1)) }
   map_add' f f' := by
     ext g
     simp [Finset.sum_add_distrib, add_add_add_comm]
@@ -93,7 +90,7 @@ noncomputable def continuousInhomogeneousCochainsD
 @[simp]
 theorem continuousInhomogeneousCochainsD_apply (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2)
     (n : ℕ) (f : C(Fin n → G, X.V)) (g : Fin (n + 1) → G) :
-    continuousInhomogeneousCochainsD hX n f g = X.ρ (g 0) (f (Fin.tail g)) +
+    continuousInhomogeneousCochainsD X hX n f g = X.ρ (g 0) (f (Fin.tail g)) +
       ∑ j : Fin (n + 1), (-1 : ℤ) ^ ((j : ℕ) + 1) • f (Fin.contractNth j (· * ·) g) :=
   (rfl)
 
@@ -106,7 +103,7 @@ theorem resolutionEval_d_partialProd (hX : Continuous fun p : G × X.V ↦ X.ρ 
     {f : C(Fin n → G, X.V)} (hf : ∀ g, resolutionEval X (n + 1) F (Fin.partialProd g) = f g)
     (g : Fin (n + 1) → G) :
     resolutionEval X (n + 2) ((d X (n + 1)).hom F) (Fin.partialProd g) =
-      continuousInhomogeneousCochainsD hX n f g := by
+      continuousInhomogeneousCochainsD X hX n f g := by
   rw [resolutionEval_d_apply, Fin.sum_univ_succ, continuousInhomogeneousCochainsD_apply]
   congr 1
   · have h0 : Fin.partialProd g ∘ (0 : Fin (n + 2)).succAbove =
@@ -129,6 +126,7 @@ private noncomputable def homogenizationFun (hX : Continuous fun p : G × X.V �
         (x 0, f fun i ↦ (x i.castSucc)⁻¹ * x i.succ) := by fun_prop
     exact hX.comp h₀
 
+variable (X) in
 /-- The homogeneous partner of a continuous inhomogeneous `n`-cochain `f`: the element of the
 `(n + 1)`-st term of the coinduced resolution with values `x ↦ x₀ • f (x₀⁻¹ x₁, …, xₙ₋₁⁻¹ xₙ)`
 (`TopRep.resolutionEval_homogenization`). It is `G`-invariant (`TopRep.ρ_homogenization`), that is,
@@ -140,14 +138,14 @@ noncomputable def homogenization (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 
 /-- The values of the homogeneous partner: `x ↦ x₀ • f (x₀⁻¹ x₁, …, xₙ₋₁⁻¹ xₙ)`. -/
 theorem resolutionEval_homogenization (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ)
     (f : C(Fin n → G, X.V)) (x : Fin (n + 1) → G) :
-    resolutionEval X (n + 1) (homogenization hX n f) x =
+    resolutionEval X (n + 1) (homogenization X hX n f) x =
       X.ρ (x 0) (f fun i ↦ (x i.castSucc)⁻¹ * x i.succ) :=
   congrFun (resolutionEval_resolutionCurry X (n + 1) (homogenizationFun X hX n f)) x
 
 /-- The homogeneous partner of a continuous inhomogeneous cochain is `G`-invariant. -/
 theorem ρ_homogenization (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ)
     (f : C(Fin n → G, X.V)) (g : G) :
-    (resolutionX X (n + 1)).ρ g (homogenization hX n f) = homogenization hX n f := by
+    (resolutionX X (n + 1)).ρ g (homogenization X hX n f) = homogenization X hX n f := by
   refine resolutionEval_injective X (n + 1) (funext fun x ↦ ?_)
   rw [resolutionEval_ρ_apply, resolutionEval_homogenization, resolutionEval_homogenization,
     ← mul_apply_eq_comp, ← map_mul]
@@ -158,16 +156,17 @@ partial products `(1, g₀, g₀ g₁, …)`. -/
 theorem resolutionEval_homogenization_partialProd
     (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ) (f : C(Fin n → G, X.V))
     (g : Fin n → G) :
-    resolutionEval X (n + 1) (homogenization hX n f) (Fin.partialProd g) = f g := by
+    resolutionEval X (n + 1) (homogenization X hX n f) (Fin.partialProd g) = f g := by
   rw [resolutionEval_homogenization]
   simp [Fin.partialProd_right_inv]
 
 /-- The inhomogeneous differential squares to zero. -/
 theorem continuousInhomogeneousCochainsD_comp_eq_zero
     (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) (n : ℕ) :
-    continuousInhomogeneousCochainsD hX (n + 1) ∘ₗ continuousInhomogeneousCochainsD hX n = 0 := by
+    continuousInhomogeneousCochainsD X hX (n + 1) ∘ₗ continuousInhomogeneousCochainsD X hX n =
+      0 := by
   ext f g
-  set F := homogenization hX n f
+  set F := homogenization X hX n f
   have hF : ∀ h, (resolutionX X (n + 1)).ρ h F = F := ρ_homogenization hX n f
   have hdF : ∀ h, (resolutionX X (n + 2)).ρ h ((d X (n + 1)).hom F) = (d X (n + 1)).hom F :=
     fun h ↦ by rw [← ContIntertwiningMap.isIntertwining, hF]
@@ -187,7 +186,7 @@ differential `TopRep.continuousInhomogeneousCochainsD`. -/
 noncomputable abbrev continuousInhomogeneousCochains
     (hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2) : CochainComplex (ModuleCat.{max v w} k) ℕ :=
   CochainComplex.of (fun n ↦ ModuleCat.of k C(Fin n → G, X.V))
-    (fun n ↦ ModuleCat.ofHom (continuousInhomogeneousCochainsD hX n))
+    (fun n ↦ ModuleCat.ofHom (continuousInhomogeneousCochainsD X hX n))
     fun n ↦ by
       ext1
       exact continuousInhomogeneousCochainsD_comp_eq_zero hX n

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.CyclicCohomology.ConnesOperator
 public import Mathlib.Topology.Algebra.Module.Multilinear.Basic
+public import TauCeti.Topology.Algebra.Monoid
 
 /-!
 # Continuous cyclic and mixed cochain operators
@@ -45,17 +46,11 @@ theorem continuous_hochschildFace (A : Type*) [TopologicalSpace A] [Mul A]
     Continuous (hochschildFace (A := A) i) := by
   cases i using Fin.lastCases with
   | last =>
-    apply (continuous_congr (fun a ↦ hochschildFace_last_eq_contractNth a)).2
-    apply continuous_pi
-    intro j
-    simp only [Fin.contractNth, Function.comp_apply]
-    split_ifs <;> fun_prop
+    exact (continuous_congr (fun a ↦ hochschildFace_last_eq_contractNth a)).2 <|
+      (continuous_pi fun k ↦ continuous_apply ((finRotate (n + 2)).symm k)).finContractNth 0
   | cast i =>
-    apply (continuous_congr (fun a ↦ hochschildFace_castSucc i a)).2
-    apply continuous_pi
-    intro j
-    simp only [Fin.contractNth]
-    split_ifs <;> fun_prop
+    exact (continuous_congr (fun a ↦ hochschildFace_castSucc i a)).2 <|
+      continuous_id.finContractNth i.castSucc
 
 end TauCeti
 
