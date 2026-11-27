@@ -71,6 +71,10 @@ theorem sphereInclusion_smul (c : sphere (0 : ℂ) 1)
     sphereInclusion n (c • x) = c • sphereInclusion n x :=
   Subtype.ext (LinearIsometry.map_smul _ (c : ℂ) _)
 
+/-- The only index `j` of `Fin (n + 2)` with `n + 1 ≤ j` is the last one. -/
+private theorem eq_last_of_le (j : Fin (n + 2)) (hj : n + 1 ≤ (j : ℕ)) : j = Fin.last (n + 1) :=
+  Fin.ext (by have := j.is_lt; rw [Fin.val_last]; omega)
+
 /-- **The inclusion `CPⁿ → CPⁿ⁺¹`**, sending the class of a unit vector `x` to the class of
 `(x, 0)` (`TauCeti.ComplexProjectiveSpace.inclusion_mk`). -/
 def inclusion : C(ComplexProjectiveSpace n, ComplexProjectiveSpace (n + 1)) where
@@ -118,7 +122,7 @@ theorem mk_mem_range_inclusion_iff (y : sphere (0 : EuclideanSpace ℂ (Fin (n +
     exact EuclideanSpace.piLpExtendByZero_castLEEmb_apply_of_le _ _ (Fin.val_last _).ge
   · intro hy
     have hv := EuclideanSpace.piLpExtendByZero_castLEEmb_take (Nat.le_succ (n + 1)) fun j hj ↦ by
-      rwa [show j = Fin.last (n + 1) from Fin.ext (by have := j.is_lt; rw [Fin.val_last]; omega)]
+      rwa [eq_last_of_le n j hj]
     refine ⟨mk n ⟨EuclideanSpace.take (Nat.le_succ (n + 1)) y, ?_⟩, ?_⟩
     · rw [mem_sphere_zero_iff_norm,
         ← (LinearIsometry.piLpExtendByZero 2 ℂ ℂ (Fin.castLEEmb (Nat.le_succ (n + 1)))).norm_map,
@@ -146,8 +150,7 @@ theorem skeletonLT_eq_range_inclusion :
     exact hj.2 _ (Fin.lt_def.2 (by rw [Fin.val_last]; exact hi))
   · intro hy
     obtain ⟨i, hi, hyi⟩ := exists_lt_mk_mem_openCell y (k := n + 1) fun j hj ↦ by
-      rwa [show j = Fin.last (n + 1) from
-        Fin.ext (by have := j.is_lt; rw [Fin.val_last]; omega)]
+      rwa [eq_last_of_le n j hj]
     obtain ⟨j, hj⟩ := exists_openCell_cwComplex_eq_openCell i
     exact ⟨2 * i, by norm_cast; omega, j, hj ▸ hyi⟩
 
