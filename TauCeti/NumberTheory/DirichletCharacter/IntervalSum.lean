@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import Mathlib.NumberTheory.MulChar.Lemmas
 public import Mathlib.Order.Interval.Finset.Defs
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import Mathlib.Algebra.Order.Interval.Finset.Basic
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Periodic
+import Mathlib.Data.Nat.Squarefree
+import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 
 /-!
@@ -31,6 +36,12 @@ with values in a normed field it is at most twice that.
 These are the elementary identities used by Pomerance (*Remarks on the Pólya–Vinogradov
 inequality*, Integers 11 (2011)) and by Frolenkov (*Numerically explicit version of the
 Pólya–Vinogradov inequality*, arXiv:1107.0381, equation (1)).
+
+Every character modulo `q ≥ 1` is induced from its primitive character `χ*` of conductor `q* ∣ q`,
+so `χ(n)` agrees with `χ*(n)` when `n` is coprime to the product `r` of the primes dividing `q`
+but not `q*`, and vanishes otherwise. Sieving by `r` via Möbius inversion reduces `S_χ(M, N)` to
+a divisor sum over `r` of interval sums of `χ*`, yielding `M_χ ≤ 2 ^ ω(r) * M_{χ*}` for `χ ≠ 1`
+(Montgomery and Vaughan, *Multiplicative Number Theory I: Classical Theory*, §9.4).
 
 ## Main definitions
 
@@ -55,11 +66,17 @@ Pólya–Vinogradov inequality*, arXiv:1107.0381, equation (1)).
   with values in an `RCLike` field, `M_χ = 2 max_{0 ≤ N < q} ‖∑_{0 < n ≤ N} χ n‖`;
   `maxIntervalSum_le_two_mul` is the inequality for every nonprincipal character with values in a
   normed field.
+* `DirichletCharacter.intervalSum_eq_sum_divisors_primitiveCharacter`: expresses `S_χ(M, N)` as a
+  Möbius-weighted sum over the divisors of `r = ∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p` of
+  interval sums of `χ.primitiveCharacter`.
+* `DirichletCharacter.maxIntervalSum_le_two_pow_omega_mul_primitiveCharacter`: for `χ ≠ 1`,
+  `M_χ ≤ 2 ^ ω r * M_{χ*}`.
 -/
 
 public section
 
 open Finset
+open scoped ArithmeticFunction.Moebius ArithmeticFunction.omega
 
 namespace DirichletCharacter
 
@@ -392,5 +409,198 @@ theorem Even.maxIntervalSum_eq_two_mul_sup' (hχe : χ.Even) (hχ : χ ≠ 1) :
   exact hχe.two_mul_norm_intervalSum_zero_le hχ N
 
 end ParityRCLike
+
+section PrimitiveReduction
+
+private lemma coprime_level_iff_coprime_conductor_and_prod {R : Type*} [CommMonoidWithZero R]
+    {q : ℕ} [NeZero q] (χ : DirichletCharacter R q) (n : ℕ) :
+    n.Coprime q ↔ n.Coprime χ.conductor ∧
+      n.Coprime (∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p) := by
+  let s := q.primeFactors.filter fun p ↦ ¬ p ∣ χ.conductor
+  have hrq : (∏ p ∈ s, p) ∣ q :=
+    (prod_dvd_prod_of_subset _ _ _ (filter_subset _ _)).trans (Nat.prod_primeFactors_dvd q)
+  constructor
+  · intro h
+    exact ⟨h.coprime_dvd_right χ.conductor_dvd_level, h.coprime_dvd_right hrq⟩
+  · rintro ⟨hc, hr⟩
+    rw [Nat.coprime_comm, Nat.coprime_iff_forall_mem_primeFactors_not_dvd (NeZero.ne q)]
+    intro p hp hpn
+    have hpp : p.Prime := Nat.prime_of_mem_primeFactors hp
+    by_cases hpc : p ∣ χ.conductor
+    · have := Nat.dvd_gcd hpn hpc
+      rw [hc.gcd_eq_one] at this
+      exact hpp.not_dvd_one this
+    · have hpr : p ∣ ∏ p ∈ s, p := dvd_prod_of_mem _ (mem_filter.mpr ⟨hp, hpc⟩)
+      have := Nat.dvd_gcd hpn hpr
+      rw [hr.gcd_eq_one] at this
+      exact hpp.not_dvd_one this
+
+/-- Evaluating `χ` at an integer `n` agrees with `χ.primitiveCharacter n` when `n` is coprime to
+the product `r` of primes dividing the level `q` but not the conductor, and is `0` otherwise. -/
+theorem intCast_eq_ite_coprime_primitiveCharacter {R : Type*} [CommMonoidWithZero R]
+    {q : ℕ} [NeZero q] (χ : DirichletCharacter R q) (n : ℤ) :
+    χ n = if n.natAbs.Coprime (∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p) then
+      χ.primitiveCharacter n else 0 := by
+  have hunit_iff {m : ℕ} (k : ℤ) : IsUnit (k : ZMod m) ↔ k.natAbs.Coprime m := by
+    rw [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm, Int.isCoprime_iff_nat_coprime,
+      Int.natAbs_natCast]
+  split_ifs with hr
+  · by_cases hc : n.natAbs.Coprime χ.conductor
+    · have hq : IsCoprime n (q : ℤ) := Int.isCoprime_iff_nat_coprime.mpr <| by
+        simpa [Int.natAbs_natCast] using
+          (coprime_level_iff_coprime_conductor_and_prod χ n.natAbs).mpr ⟨hc, hr⟩
+      have hval := changeLevel_eq_cast_of_dvd' χ.primitiveCharacter χ.conductor_dvd_level hq
+      rwa [χ.changeLevel_primitiveCharacter] at hval
+    · have hnu₁ : ¬ IsUnit (n : ZMod q) := by
+        rw [hunit_iff, coprime_level_iff_coprime_conductor_and_prod χ]
+        exact fun h ↦ hc h.1
+      have hnu₂ : ¬ IsUnit (n : ZMod χ.conductor) := by
+        rwa [hunit_iff]
+      rw [χ.map_nonunit hnu₁, χ.primitiveCharacter.map_nonunit hnu₂]
+  · have hnu : ¬ IsUnit (n : ZMod q) := by
+      rw [hunit_iff, coprime_level_iff_coprime_conductor_and_prod χ]
+      exact fun h ↦ hr h.2
+    exact χ.map_nonunit hnu
+
+/-- **Reduction of character interval sums to the primitive character.** Writing `r` for the
+product of the primes dividing the level `q ≥ 1` and not the conductor of `χ`,
+`S_χ(M, N) = ∑_{d ∣ r} μ(d) χ*(d) ∑_{M/d < m ≤ (M+N)/d} χ*(m)`. -/
+theorem intervalSum_eq_sum_divisors_primitiveCharacter {R : Type*} [CommRing R]
+    {q : ℕ} [NeZero q] (χ : DirichletCharacter R q) (M : ℤ) (N : ℕ) :
+    χ.intervalSum M N =
+      ∑ d ∈ (∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p).divisors,
+        (μ d : R) * χ.primitiveCharacter d *
+          ∑ m ∈ Ioc (M / (d : ℤ)) ((M + N) / (d : ℤ)), χ.primitiveCharacter m := by
+  set r := ∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p
+  have hr : r ≠ 0 :=
+    prod_ne_zero_iff.mpr fun p hp ↦ (Nat.prime_of_mem_primeFactors (mem_filter.mp hp).1).ne_zero
+  -- Indicator of `n.natAbs.Coprime r` via Möbius inversion over divisors of `r`.
+  have hmob (n : ℤ) : (if n.natAbs.Coprime r then (1 : R) else 0) =
+      ∑ d ∈ r.divisors, if (d : ℤ) ∣ n then (μ d : R) else 0 := by
+    have hfilt : (r.divisors.filter fun d : ℕ ↦ (d : ℤ) ∣ n) = (Nat.gcd n.natAbs r).divisors := by
+      ext d
+      simp only [mem_filter, Nat.mem_divisors, Int.natCast_dvd, ne_eq, Nat.gcd_eq_zero_iff,
+        hr, and_false, not_false_eq_true, and_true, Nat.dvd_gcd_iff]
+      tauto
+    rw [← sum_filter, hfilt]
+    have hsum :
+        ∑ d ∈ (Nat.gcd n.natAbs r).divisors, μ d = if Nat.gcd n.natAbs r = 1 then 1 else 0 := by
+      rw [← ArithmeticFunction.coe_mul_zeta_apply, ArithmeticFunction.moebius_mul_coe_zeta,
+        ArithmeticFunction.one_apply]
+    have := congrArg (Int.cast (R := R)) hsum
+    push_cast at this
+    simpa [Nat.Coprime] using this.symm
+  calc
+    χ.intervalSum M N = ∑ n ∈ Ioc M (M + N),
+        (if n.natAbs.Coprime r then (1 : R) else 0) * χ.primitiveCharacter n := by
+      refine sum_congr rfl fun n _ ↦ ?_
+      rw [intCast_eq_ite_coprime_primitiveCharacter]
+      split_ifs <;> simp
+    _ = ∑ n ∈ Ioc M (M + N),
+        ∑ d ∈ r.divisors, (if (d : ℤ) ∣ n then (μ d : R) else 0) * χ.primitiveCharacter n := by
+      refine sum_congr rfl fun n _ ↦ ?_
+      rw [hmob n, sum_mul]
+    _ = ∑ d ∈ r.divisors, ∑ n ∈ Ioc M (M + N),
+        if (d : ℤ) ∣ n then (μ d : R) * χ.primitiveCharacter n else 0 := by
+      rw [sum_comm]
+      refine sum_congr rfl fun d _ ↦ sum_congr rfl fun n _ ↦ ?_
+      split_ifs <;> simp
+    _ = ∑ d ∈ r.divisors, (μ d : R) * χ.primitiveCharacter d *
+        ∑ m ∈ Ioc (M / (d : ℤ)) ((M + N) / (d : ℤ)), χ.primitiveCharacter m := by
+      refine sum_congr rfl fun d hd ↦ ?_
+      have hdpos : (0 : ℤ) < d := Int.natCast_pos.mpr (Nat.pos_of_mem_divisors hd)
+      rw [mul_sum, ← sum_filter]
+      refine sum_bij' (fun n _ ↦ n / (d : ℤ)) (fun m _ ↦ m * (d : ℤ)) ?_ ?_ ?_ ?_ ?_
+      · intro n hn
+        simp only [mem_filter, mem_Ioc] at hn
+        rcases hn with ⟨⟨hMn, hnMN⟩, k, rfl⟩
+        rw [mul_comm (d : ℤ) k, mem_Ioc, Int.mul_ediv_cancel _ hdpos.ne']
+        refine ⟨?_, (Int.le_ediv_iff_mul_le hdpos).mpr (mul_comm (d : ℤ) k ▸ hnMN)⟩
+        by_contra! hle
+        have := (Int.le_ediv_iff_mul_le hdpos).mp hle
+        rw [mul_comm (d : ℤ) k] at hMn
+        omega
+      · intro m hm
+        simp only [mem_Ioc] at hm
+        simp only [mem_filter, mem_Ioc, dvd_mul_left, and_true]
+        refine ⟨?_, (Int.le_ediv_iff_mul_le hdpos).mp hm.2⟩
+        by_contra! hle
+        have := (Int.le_ediv_iff_mul_le hdpos).mpr hle
+        omega
+      · intro n hn
+        simp only [mem_filter] at hn
+        rw [Int.ediv_mul_cancel hn.2]
+      · intro m _
+        exact Int.mul_ediv_cancel _ hdpos.ne'
+      · intro n hn
+        simp only [mem_filter] at hn
+        rcases hn.2 with ⟨m, rfl⟩
+        rw [Int.cast_mul, Int.cast_natCast, map_mul, mul_comm (d : ℤ) m,
+          Int.mul_ediv_cancel _ hdpos.ne']
+        ring
+
+/-- For a nonprincipal character `χ` modulo `q ≥ 1` with `r` the product of primes dividing `q`
+but not `χ.conductor`, every interval sum of `χ` has norm at most `2 ^ ω r * M_{χ*}`. -/
+theorem norm_intervalSum_le_two_pow_omega_mul_maxIntervalSum_primitiveCharacter
+    {F : Type*} [NormedField F] {q : ℕ} [NeZero q] {χ : DirichletCharacter F q}
+    (hχ : χ ≠ 1) (M : ℤ) (N : ℕ) :
+    ‖χ.intervalSum M N‖ ≤
+      2 ^ ω (∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p) *
+        χ.primitiveCharacter.maxIntervalSum := by
+  set r := ∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p
+  have hr : r ≠ 0 :=
+    prod_ne_zero_iff.mpr fun p hp ↦ (Nat.prime_of_mem_primeFactors (mem_filter.mp hp).1).ne_zero
+  have hsq : Squarefree r := (Nat.squarefree_prod_primeFactors q).squarefree_of_dvd
+    (prod_dvd_prod_of_subset _ _ _ (filter_subset _ _))
+  have hcard : #r.divisors = 2 ^ ω r := by
+    rw [Nat.card_divisors hr, ArithmeticFunction.cardDistinctFactors_eq_card_primeFactors,
+      ← prod_const]
+    refine prod_congr rfl fun p hp ↦ ?_
+    rw [Nat.factorization_eq_one_of_squarefree hsq (Nat.prime_of_mem_primeFactors hp)
+      (Nat.dvd_of_mem_primeFactors hp)]
+  have hχprim : χ.primitiveCharacter ≠ 1 := mt χ.primitiveCharacter_eq_one_iff.mp hχ
+  have hmob_norm (d : ℕ) : ‖(μ d : F)‖ ≤ 1 := by
+    rcases ArithmeticFunction.moebius_eq_or d with h | h | h <;> simp [h]
+  rw [intervalSum_eq_sum_divisors_primitiveCharacter]
+  calc
+    ‖∑ d ∈ r.divisors, (μ d : F) * χ.primitiveCharacter d *
+        ∑ m ∈ Ioc (M / (d : ℤ)) ((M + N) / (d : ℤ)), χ.primitiveCharacter m‖
+      ≤ ∑ d ∈ r.divisors, ‖(μ d : F) * χ.primitiveCharacter d *
+          ∑ m ∈ Ioc (M / (d : ℤ)) ((M + N) / (d : ℤ)), χ.primitiveCharacter m‖ := norm_sum_le _ _
+    _ ≤ ∑ _d ∈ r.divisors, χ.primitiveCharacter.maxIntervalSum := by
+        refine sum_le_sum fun d hd ↦ ?_
+        have hdpos : (0 : ℤ) < d := Int.natCast_pos.mpr (Nat.pos_of_mem_divisors hd)
+        have hle : M / (d : ℤ) ≤ (M + N) / (d : ℤ) :=
+          Int.ediv_le_ediv hdpos (by omega)
+        have hsum_eq : ∑ m ∈ Ioc (M / (d : ℤ)) ((M + N) / (d : ℤ)), χ.primitiveCharacter m =
+            χ.primitiveCharacter.intervalSum (M / d) (((M + N) / d - M / d).toNat) := by
+          rw [intervalSum_def]
+          congr 2
+          omega
+        rw [norm_mul, norm_mul, hsum_eq]
+        calc
+          ‖(μ d : F)‖ * ‖χ.primitiveCharacter d‖ *
+              ‖χ.primitiveCharacter.intervalSum (M / d) (((M + N) / d - M / d).toNat)‖
+            ≤ 1 * 1 * χ.primitiveCharacter.maxIntervalSum := by
+              gcongr
+              · exact hmob_norm d
+              · exact χ.primitiveCharacter.norm_le_one d
+              · exact norm_intervalSum_le_maxIntervalSum hχprim _ _
+          _ = χ.primitiveCharacter.maxIntervalSum := by ring
+    _ = 2 ^ ω r * χ.primitiveCharacter.maxIntervalSum := by
+        rw [sum_const, nsmul_eq_mul, hcard, Nat.cast_pow, Nat.cast_ofNat]
+
+/-- For a nonprincipal character `χ` modulo `q ≥ 1` with `r` the product of primes dividing `q`
+but not `χ.conductor`, `M_χ ≤ 2 ^ ω r * M_{χ*}`. -/
+theorem maxIntervalSum_le_two_pow_omega_mul_primitiveCharacter
+    {F : Type*} [NormedField F] {q : ℕ} [NeZero q] {χ : DirichletCharacter F q}
+    (hχ : χ ≠ 1) :
+    χ.maxIntervalSum ≤
+      2 ^ ω (∏ p ∈ q.primeFactors with ¬ p ∣ χ.conductor, p) *
+        χ.primitiveCharacter.maxIntervalSum :=
+  (maxIntervalSum_le_iff hχ).mpr fun M N ↦
+    norm_intervalSum_le_two_pow_omega_mul_maxIntervalSum_primitiveCharacter hχ M N
+
+end PrimitiveReduction
 
 end DirichletCharacter
