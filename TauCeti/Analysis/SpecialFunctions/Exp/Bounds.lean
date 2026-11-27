@@ -72,6 +72,8 @@ is bounded on `x ≥ 0`.
   `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
+* `TauCeti.exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le`: `exp (c u) ≤ exp (|c| A) exp (c v)`
+  for `|u - v| ≤ A`, with its squared form `TauCeti.sq_exp_mul_le_of_abs_sub_le`.
 -/
 
 public section
@@ -461,5 +463,22 @@ theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤
   calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
     _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
     _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
+
+/-- Changing the exponent of an exponential weight by at most `A` changes it by at most the factor
+`exp (|c| A)`: `exp (c u) ≤ exp (|c| A) exp (c v)` for `|u - v| ≤ A`. -/
+theorem exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le {c u v A : ℝ} (h : |u - v| ≤ A) :
+    Real.exp (c * u) ≤ Real.exp (|c| * A) * Real.exp (c * v) := by
+  rw [← Real.exp_add, Real.exp_le_exp]
+  have := le_abs_self (c * (u - v))
+  rw [abs_mul] at this
+  nlinarith [abs_nonneg c]
+
+/-- The squared form of `exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le`, comparing the squared
+weights that enter weighted `L²` norms: `exp (c u)² ≤ exp (|c| A)² exp (c v)²` for
+`|u - v| ≤ A`. -/
+theorem sq_exp_mul_le_of_abs_sub_le {c u v A : ℝ} (h : |u - v| ≤ A) :
+    Real.exp (c * u) ^ 2 ≤ Real.exp (|c| * A) ^ 2 * Real.exp (c * v) ^ 2 := by
+  rw [← mul_pow]
+  exact pow_le_pow_left₀ (Real.exp_pos _).le (exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le h) 2
 
 end TauCeti

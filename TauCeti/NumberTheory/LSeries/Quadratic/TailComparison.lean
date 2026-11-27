@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.LegendreTwist
-public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail
+public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail.Basic
 
 /-!
 # Theta tails of Legendre twists
