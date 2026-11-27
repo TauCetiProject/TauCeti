@@ -83,6 +83,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `morseLevelPoint_eq`: the point on the level `a` is the point of any broken trajectory recorded
   by `w` on that level.
+* `morseLevelPoint_eq_of_orbit`: its case for the record of a single trajectory.
 * `apply_morseLevelPoint`, `morseLevelPoint_apply_level`: it lies on the level `a`, and on the
   recorded levels it is the recorded point.
 * `continuousOn_morseLevelPoint`: it depends continuously on the record and the level.
@@ -588,6 +589,23 @@ theorem morseLevelPoint_eq (hf : IsMorse 𝓘(ℝ, E) f) (hdense : Ioo (f r) (f 
     (hX.mem_morseBrokenTrajectoryRecords.2 ⟨k, x, z, hx0, hxk, hxc, hxne, hz, hw⟩) (f m)
   rw [min_eq_left h.mem_Icc.2, max_eq_right h.mem_Icc.1] at h'
   exact h'.unique hf hdense h
+
+/-- On the record `w` of the trajectory through `y` from `p` to `r`, the point on the level of a
+point `m` of that trajectory, or of one of its ends, is `m`: the case of one component of
+`TauCeti.IsAdaptedPseudoGradient.morseLevelPoint_eq`. -/
+theorem morseLevelPoint_eq_of_orbit {y : M} (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : Ioo (f r) (f p) ⊆ closure (range c)) (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
+    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (hpr : p ≠ r)
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r)
+    (hw : ∀ i, f (w i) = c i ∧ ∃ t, hX.flow t y = w i)
+    (hm : m = p ∨ m = r ∨ ∃ t, hX.flow t y = m) : hX.morseLevelPoint p r c w (f m) = m := by
+  refine hX.morseLevelPoint_eq (k := 1) (x := ![p, r]) (z := ![y]) hf hdense rfl rfl
+    (fun j ↦ by fin_cases j; exacts [hp, hr]) (fun j ↦ by fin_cases j; exact hpr)
+    (fun j ↦ by fin_cases j; exact hy) (fun i ↦ ⟨(hw i).1, 0, (hw i).2⟩) ?_
+  rcases hm with rfl | rfl | ⟨t, rfl⟩
+  · exact Or.inl ⟨0, rfl⟩
+  · exact Or.inl ⟨1, rfl⟩
+  · exact Or.inr ⟨0, t, rfl⟩
 
 /-- The point on the level `a`, between the levels of the ends, of a recorded broken trajectory
 lies on the level `a`. -/
