@@ -84,18 +84,6 @@ theorem binaryResultant_def (F G : MvPolynomial (Fin 2) R) (m n : ℕ) :
       (aeval ![Polynomial.X, 1] F : R[X]).resultant (aeval ![Polynomial.X, 1] G) m n :=
   (rfl)
 
-/-- Dehomogenising the homogenisation of `p` in degree `n` recovers the coefficients of `p` of
-index at most `n`. -/
-private theorem coeff_aeval_homogenize (p : R[X]) {n i : ℕ} (hi : i ≤ n) :
-    (aeval ![Polynomial.X, 1] (p.homogenize n) : R[X]).coeff i = p.coeff i := by
-  rw [aeval_homogenize_eq_sum, finsetSum_coeff, Finset.sum_eq_single (i, n - i)]
-  · simp
-  · rintro ⟨k, l⟩ hkl hne
-    rw [Finset.mem_antidiagonal] at hkl
-    have hki : k ≠ i := fun h ↦ hne (by simp only [Prod.mk.injEq]; lia)
-    simp [hki.symm]
-  · simp [hi]
-
 /-- On homogenisations, the resultant of binary forms is Mathlib's resultant of the
 polynomials. No degree bound is needed: homogenising in degree `m` keeps exactly the coefficients
 of index at most `m`, which are the ones the resultant with formal degree `m` uses. -/
@@ -103,8 +91,8 @@ of index at most `m`, which are the ones the resultant with formal degree `m` us
 theorem binaryResultant_homogenize (p q : R[X]) (m n : ℕ) :
     (p.homogenize m).binaryResultant (q.homogenize n) m n = p.resultant q m n := by
   rw [binaryResultant_def]
-  exact resultant_congr_of_coeff_eq (fun i hi ↦ coeff_aeval_homogenize p hi)
-    (fun i hi ↦ coeff_aeval_homogenize q hi)
+  exact resultant_congr_of_coeff_eq (fun i hi ↦ coeff_aeval_homogenize_X_one p hi)
+    (fun i hi ↦ coeff_aeval_homogenize_X_one q hi)
 
 /-- Scaling the first form by `c` scales the resultant by `c ^ n`. -/
 @[simp]
@@ -140,11 +128,13 @@ theorem binaryResultant_map (φ : R →+* S) (F G : MvPolynomial (Fin 2) R) (m n
     binaryResultant_def]
 
 /-- The resultant of the zero form with a form of positive formal degree vanishes. -/
+@[simp]
 theorem binaryResultant_zero_left (G : MvPolynomial (Fin 2) R) (m : ℕ) {n : ℕ} (hn : n ≠ 0) :
     (0 : MvPolynomial (Fin 2) R).binaryResultant G m n = 0 := by
   rw [binaryResultant_def, map_zero, resultant_zero_left, zero_pow hn, zero_mul]
 
 /-- The resultant of a form of positive formal degree with the zero form vanishes. -/
+@[simp]
 theorem binaryResultant_zero_right (F : MvPolynomial (Fin 2) R) {m : ℕ} (n : ℕ) (hm : m ≠ 0) :
     F.binaryResultant 0 m n = 0 := by
   rw [binaryResultant_def, map_zero, resultant_zero_right, zero_pow hm, zero_mul]
@@ -170,9 +160,11 @@ theorem binaryResultant_X_pow_X_pow_swap (m n : ℕ) :
 theorem binaryResultant_C_mul_X_add_C_mul_X (a b c e : R) :
     (C a * X 0 + C b * X 1 : MvPolynomial (Fin 2) R).binaryResultant (C c * X 0 + C e * X 1)
       1 1 = a * e - b * c := by
-  rw [binaryResultant_def, resultant]
-  simp [sylvester, Matrix.det_fin_two, Fin.addCases]
-  ring
+  have h₀ : (aeval ![Polynomial.X, 1] (C a * X 0 + C b * X 1 : MvPolynomial (Fin 2) R) : R[X]) =
+      Polynomial.C a * Polynomial.X + Polynomial.C b := by simp
+  have h₁ : (aeval ![Polynomial.X, 1] (C c * X 0 + C e * X 1 : MvPolynomial (Fin 2) R) : R[X]) =
+      Polynomial.C c * Polynomial.X + Polynomial.C e := by simp
+  rw [binaryResultant_def, h₀, h₁, resultant_C_mul_X_add_C_C_mul_X_add_C]
 
 /-- The standard lift `(p.homogenize p.natDegree, X₁ ^ p.natDegree)` of a polynomial map has
 resultant `p.leadingCoeff ^ p.natDegree`. -/
@@ -185,11 +177,6 @@ theorem binaryResultant_toTupleMvPolynomial (p : R[X]) :
   rw [binaryResultant_def, toTupleMvPolynomial_zero_eq, aeval_homogenize_X_one _ le_rfl, h₁,
     resultant_one_right, coeff_natDegree]
 
-/-- The dehomogenisation `F(X, 1)` of a binary form of degree `m` has degree at most `m`. -/
-private theorem natDegree_aeval_X_one_le {F : MvPolynomial (Fin 2) R} {m : ℕ}
-    (hF : F.IsHomogeneous m) : (aeval ![Polynomial.X, 1] F : R[X]).natDegree ≤ m :=
-  hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp [natDegree_X_le]
-
 /-- **Bimultiplicativity of the resultant**, in the first form: for binary forms `F₁, F₂, G`
 homogeneous of degrees `m₁, m₂, n`,
 `Res_{m₁+m₂,n}(F₁ F₂, G) = Res_{m₁,n}(F₁, G) · Res_{m₂,n}(F₂, G)`. -/
@@ -198,7 +185,7 @@ theorem binaryResultant_mul_left {F₁ F₂ G : MvPolynomial (Fin 2) R} {m₁ m�
     (F₁ * F₂).binaryResultant G (m₁ + m₂) n =
       F₁.binaryResultant G m₁ n * F₂.binaryResultant G m₂ n := by
   rw [binaryResultant_def, map_mul, resultant_mul_left_of_natDegree_le
-    (natDegree_aeval_X_one_le hF₁) (natDegree_aeval_X_one_le hF₂) (natDegree_aeval_X_one_le hG),
+    hF₁.natDegree_aeval_X_one_le hF₂.natDegree_aeval_X_one_le hG.natDegree_aeval_X_one_le,
     binaryResultant_def, binaryResultant_def]
 
 /-- **Bimultiplicativity of the resultant**, in the second form: for binary forms `F, G₁, G₂`
@@ -224,45 +211,31 @@ theorem exists_mul_add_mul_eq_C_binaryResultant_mul_X_pow {F G : MvPolynomial (F
     ∃ A B : MvPolynomial (Fin 2) R, A.IsHomogeneous (n - 1) ∧ B.IsHomogeneous (m - 1) ∧
       A * F + B * G = C (F.binaryResultant G m n) * X k ^ (m + n - 1) := by
   -- Dehomogenise: `F = f.homogenize m` and `G = g.homogenize n` with `deg f ≤ m`, `deg g ≤ n`.
-  have dehom {H : MvPolynomial (Fin 2) R} {d : ℕ} (hH : H.IsHomogeneous d) :
-      (MvPolynomial.aeval ![Polynomial.X, 1] H : R[X]).natDegree ≤ d ∧
-        (MvPolynomial.aeval ![Polynomial.X, 1] H : R[X]).homogenize d = H :=
-    ⟨natDegree_aeval_X_one_le hH, homogenize_eq_of_isHomogeneous hH rfl⟩
   set f : R[X] := MvPolynomial.aeval ![Polynomial.X, 1] F
   set g : R[X] := MvPolynomial.aeval ![Polynomial.X, 1] G
-  -- Homogenising `h * q` with `deg h ≤ d` and `deg q < e` in degree `d + e - 1` multiplies the
-  -- homogenisations in degrees `d` and `e - 1`; for `e = 0` both sides vanish since `q = 0`.
-  have homogenize_mul' {h q : R[X]} {d e : ℕ} (hh : h.natDegree ≤ d) (hq : q.degree < e) :
-      (h * q).homogenize (d + e - 1) = h.homogenize d * q.homogenize (e - 1) := by
-    rcases eq_or_ne q 0 with rfl | hq0
-    · simp
-    have hqe : q.natDegree < e := (natDegree_lt_iff_degree_lt hq0).mpr hq
-    rw [show d + e - 1 = d + (e - 1) by lia, homogenize_mul _ _ hh (by lia)]
+  have hf : f.natDegree ≤ m := hF.natDegree_aeval_X_one_le
+  have hg : g.natDegree ≤ n := hG.natDegree_aeval_X_one_le
   -- The polynomial `P` whose homogenisation in degree `m + n - 1` is `X_k ^ (m + n - 1)`.
   set P : R[X] := if k = 0 then Polynomial.X ^ (m + n - 1) else 1 with hP
-  have hPdeg : P ∈ degreeLT R (m + n) := by
-    rw [mem_degreeLT]
-    refine lt_of_le_of_lt (b := ((m + n - 1 : ℕ) : WithBot ℕ)) ?_
-      (by exact_mod_cast (show m + n - 1 < m + n by lia))
+  have hPle : P.degree ≤ (m + n - 1 : ℕ) := by
     rw [hP]
     split_ifs
     · exact degree_X_pow_le _
     · exact degree_one_le.trans (by exact_mod_cast Nat.zero_le _)
+  -- `m + n - 1 < m + n` since `m + n ≥ 1`.
+  have hPdeg : P.degree < ↑(m + n) := hPle.trans_lt (by exact_mod_cast Nat.sub_lt (by lia) one_pos)
   have hPh : P.homogenize (m + n - 1) = X k ^ (m + n - 1) := by
     fin_cases k <;> simp [hP]
-  -- Mathlib's adjugate of the Sylvester map produces `p, q` with `f q + g p = Res · P`.
-  set pq := adjSylvester f g ⟨P, hPdeg⟩
-  have key : f * (pq.2 : R[X]) + g * (pq.1 : R[X]) = Polynomial.C (f.resultant g m n) * P := by
-    have := congr(($(sylvesterMap_comp_adjSylvester f g (dehom hF).1 (dehom hG).1)
-      ⟨P, hPdeg⟩).val)
-    simpa [Algebra.smul_def, pq] using this
-  have hp : (pq.1 : R[X]).degree < m := mem_degreeLT.mp pq.1.property
-  have hq : (pq.2 : R[X]).degree < n := mem_degreeLT.mp pq.2.property
-  refine ⟨(pq.2 : R[X]).homogenize (n - 1), (pq.1 : R[X]).homogenize (m - 1),
+  obtain ⟨p, q, hp, hq, key⟩ := exists_mul_add_mul_eq_C_resultant_mul hf hg hPdeg
+  refine ⟨p.homogenize (n - 1), q.homogenize (m - 1),
     isHomogeneous_homogenize _, isHomogeneous_homogenize _, ?_⟩
-  conv_lhs => rw [mul_comm, mul_comm _ G, ← (dehom hF).2, ← (dehom hG).2]
-  rw [← homogenize_mul' (dehom hF).1 hq, ← homogenize_mul' (dehom hG).1 hp, add_comm n m,
-    ← homogenize_add, key, homogenize_C_mul, hPh, binaryResultant_def]
+  -- Homogenise `f p + g q = Res · P` in degree `m + n - 1`.
+  have hgq := homogenize_mul_of_degree_lt g q hg hq
+  rw [add_comm n m] at hgq
+  have h := congr(homogenize $key (m + n - 1))
+  rw [homogenize_add, homogenize_mul_of_degree_lt f p hf hp, hgq, homogenize_C_mul, hPh,
+    homogenize_eq_of_isHomogeneous hF rfl, homogenize_eq_of_isHomogeneous hG rfl] at h
+  rw [binaryResultant_def, ← h, mul_comm _ F, mul_comm _ G]
 
 /-- At a common zero `x` of binary forms `F` and `G` of degrees `m` and `n` with `m + n ≥ 1`, the
 resultant satisfies `Res_{m,n}(F, G) · x_k ^ (m + n - 1) = 0` for each coordinate `x_k`. -/
