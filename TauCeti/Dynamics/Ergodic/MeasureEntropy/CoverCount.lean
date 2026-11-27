@@ -143,12 +143,10 @@ theorem isInlSeparated_restrictLabel_iUnion {a : X → ι} {F : ι → Set X}
     IsInlSeparated (restrictLabel a (⋃ i, F i)) U := by
   -- A point of the union with `Sum.inl` value `i` lies in `F i`.
   have hmem {z : X} {i : ι} (hz : restrictLabel a (⋃ i, F i) z = .inl i) : z ∈ F i := by
-    by_cases hzF : z ∈ ⋃ i, F i
-    · rw [restrictLabel_of_mem hzF, Sum.inl.injEq] at hz
-      obtain ⟨k, hk⟩ := mem_iUnion.1 hzF
-      have hak : a z = k := hF k hk
-      rwa [← hz, hak]
-    · simp [restrictLabel_of_notMem hzF] at hz
+    rw [← mem_singleton_iff, ← mem_preimage, preimage_restrictLabel_inl] at hz
+    obtain ⟨hzU, hai⟩ := hz
+    obtain ⟨k, hk⟩ := mem_iUnion.1 hzU
+    rwa [← mem_singleton_iff.1 hai, mem_singleton_iff.1 (hF k hk)]
   refine isInlSeparated_iff.2 fun y z z' hz hz' i j hzi hzj ↦ by_contra fun hij ↦ ?_
   exact disjoint_left.1 (hU hij) (SetRel.mem_image.2 ⟨z, hmem hzi, hz⟩)
     (SetRel.mem_image.2 ⟨z', hmem hzj, hz'⟩)
