@@ -8,9 +8,8 @@ module
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.ContinuousOn
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteLimit
-public import TauCeti.MeasureTheory.Function.StronglyMeasurable.ScalarTests
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.AEScalarTests
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Operator.Norming
 
 /-!
@@ -23,16 +22,16 @@ of functionals suffices. The exceptional null set may depend on the functional.
 
 The support condition matters for arbitrary measures: on a singleton of infinite measure,
 the constant one is strongly measurable but is not a.e. finitely strongly measurable.
-Countably many separating tests supply a common measurable sigma-finite support; comparison
-of their generated sigma-algebra with the Borel sigma-algebra supplies measurability.
+Countably many separating tests supply a common measurable sigma-finite support; the
+a.e. Pettis criteria of `AEScalarTests` supply a.e. strong measurability.
 
 ## References
 
 * T. Hytönen, J. van Neerven, M. Veraar, L. Weis, *Analysis in Banach Spaces*, Vol. I,
   Springer, 2016, §1.1.b, Theorem 1.1.20 and Corollaries 1.1.21–1.1.25.
 
-The measurability argument uses the pointwise scalar-test criteria in `ScalarTests` and
-Mathlib's `aestronglyMeasurable_iff_nullMeasurable_separable`.
+The measurability argument uses the a.e. scalar-test criteria in `AEScalarTests`
+(`aestronglyMeasurable_iff_scalar_tests`, `aestronglyMeasurable_iff_separating_tests`).
 -/
 
 public section
@@ -62,19 +61,16 @@ theorem exists_set_sigmaFinite_of_separating_tests [SeparableSpace X]
   filter_upwards [ae_all_iff.2 hzero] with s hs
   exact hsep₀ _ fun x' hx' ↦ hs ⟨x', hx'⟩
 
-variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
-
-/-- Reconstruct finite strong measurability from tests on an essentially supporting subspace.
-This combines the Borel comparison and the common-support argument. -/
+/-- Upgrade a.e. strong measurability to a.e. finite strong measurability when a family of
+tests separating an essentially supporting separable subspace is a.e. finitely strongly
+measurable. The tests supply a common measurable sigma-finite support. -/
 private theorem aefinStronglyMeasurable_of_subspace_tests (E : Submodule 𝕜 X)
     [SeparableSpace E] {T : Set (StrongDual 𝕜 X)}
-    (hB : evalMeasurableSpace ((fun x' : StrongDual 𝕜 X ↦ x'.comp E.subtypeL) '' T) = borel E)
     (hsep : ∀ x ∈ E, (∀ x' ∈ T, x' x = 0) → x = 0)
-    {f : S → X} (hfE : ∀ᵐ s ∂μ, f s ∈ E)
+    {f : S → X} (hf : AEStronglyMeasurable f μ) (hfE : ∀ᵐ s ∂μ, f s ∈ E)
     (htest : ∀ x' ∈ T, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ) :
     AEFinStronglyMeasurable f μ := by
   classical
-  borelize ↥E
   let g (s : S) : E := if hs : f s ∈ E then ⟨f s, hs⟩ else 0
   have hgf : (fun s ↦ (g s : X)) =ᵐ[μ] f := by
     filter_upwards [hfE] with s hs using by simp [g, hs]
@@ -83,23 +79,11 @@ private theorem aefinStronglyMeasurable_of_subspace_tests (E : Submodule 𝕜 X)
     rintro _ ⟨x', hx', rfl⟩
     obtain ⟨k, hk, hfk⟩ := htest x' hx'
     exact ⟨k, hk, (hgf.fun_comp x').trans hfk⟩
-  have hg : AEStronglyMeasurable g μ := by
-    refine aestronglyMeasurable_iff_nullMeasurable_separable.2 ⟨?_, univ,
-      .of_separableSpace univ, Eventually.of_forall fun _ ↦ mem_univ _⟩
-    -- Use the null-measurable sigma-algebra, keeping the domain of `g` as `S`. The scalar tests
-    -- enter through `NullMeasurable.measurable'`; the goal `NullMeasurable g μ` unfolds by
-    -- definition to measurability for `NullMeasurableSpace S μ`, so `hmeas` closes it.
-    have hmeas : @Measurable S E
-        (inferInstance : MeasurableSpace (NullMeasurableSpace S μ)) (borel E) g := by
-      rw [← hB]
-      exact measurable_evalMeasurableSpace_iff.2 fun y hy ↦
-        (htestg y hy).aemeasurable.nullMeasurable.measurable'
-    exact hmeas
   obtain ⟨t, ht, hzero, hσ⟩ := exists_set_sigmaFinite_of_separating_tests
     (f := g) (T := (fun x' : StrongDual 𝕜 X ↦ x'.comp E.subtypeL) '' T) (fun x hx ↦
       Subtype.ext <| hsep x x.property fun x' hx' ↦ hx _ (mem_image_of_mem _ hx')) htestg
   refine aefinStronglyMeasurable_iff_aestronglyMeasurable_and_exists_set_sigmaFinite.2
-    ⟨(E.subtypeL.continuous.comp_aestronglyMeasurable hg).congr hgf, t, ht, ?_, hσ⟩
+    ⟨hf, t, ht, ?_, hσ⟩
   filter_upwards [hzero, ae_restrict_of_ae hgf] with s hs hsf
   exact hsf.symm.trans (congrArg Subtype.val hs)
 
@@ -125,15 +109,11 @@ theorem aefinStronglyMeasurable_iff_scalar_tests {f : S → X} :
     obtain ⟨⟨E, hEc, hEs, hgE⟩, -⟩ :=
       (stronglyMeasurable_iff_scalar_tests (𝕜 := 𝕜) g).1 hg.stronglyMeasurable
     exact ⟨E, hEc, hEs, by filter_upwards [hfg] with s hs using hs.symm ▸ hgE s⟩
-  · rintro ⟨⟨E, -, hEs, hfE⟩, htest⟩
+  · rintro ⟨⟨E, hEc, hEs, hfE⟩, htest⟩
     have : SeparableSpace E := hEs.separableSpace
-    have hsurj : (fun x' : StrongDual 𝕜 X ↦ x'.comp E.subtypeL) '' univ = univ := by
-      apply eq_univ_of_forall
-      intro y
-      obtain ⟨x', hx', -⟩ := exists_extension_norm_eq E y
-      exact ⟨x', mem_univ _, ContinuousLinearMap.ext hx'⟩
-    refine aefinStronglyMeasurable_of_subspace_tests E
-      (T := univ) (by rw [hsurj]; exact evalMeasurableSpace_univ_eq_borel) ?_ hfE
+    have hf : AEStronglyMeasurable f μ := (aestronglyMeasurable_iff_scalar_tests (𝕜 := 𝕜)).2
+      ⟨⟨E, hEc, hEs, hfE⟩, fun x' ↦ (htest x').aemeasurable⟩
+    refine aefinStronglyMeasurable_of_subspace_tests E (T := univ) ?_ hf hfE
       (fun x' _ ↦ htest x')
     exact fun x _ hzero ↦
       SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun x' ↦ hzero x' (mem_univ _)
@@ -154,11 +134,10 @@ theorem aefinStronglyMeasurable_iff_separating_tests {E : Submodule 𝕜 X}
     {f : S → X} (hfE : ∀ᵐ s ∂μ, f s ∈ E) :
     AEFinStronglyMeasurable f μ ↔
       ∀ x' ∈ T, AEFinStronglyMeasurable (fun s ↦ x' (f s)) μ := by
-  refine ⟨?_, aefinStronglyMeasurable_of_subspace_tests E ?_ hsep hfE⟩
-  · exact fun hf x' _ ↦ x'.continuous.comp_aefinStronglyMeasurable hf (map_zero x')
-  · apply evalMeasurableSpace_eq_borel_of_separating
-    intro x hx
-    exact Subtype.ext <| hsep x x.property fun x' hx' ↦ hx _ (mem_image_of_mem _ hx')
+  refine ⟨fun hf x' _ ↦ x'.continuous.comp_aefinStronglyMeasurable hf (map_zero x'),
+    fun htest ↦ aefinStronglyMeasurable_of_subspace_tests E hsep ?_ hfE htest⟩
+  exact (aestronglyMeasurable_iff_separating_tests hsep hfE).2 fun x' hx' ↦
+    (htest x' hx').aemeasurable
 
 end Separating
 
