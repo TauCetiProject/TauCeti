@@ -39,7 +39,6 @@ theorem exists_pos_eventually_le_norm_regularizedLFunction_of_card_primeFactors_
     Complex.continuous_re.continuousAt.tendsto.eventually_const_lt (by norm_num)
   refine ⟨c * K, mul_pos hc hK, ?_⟩
   filter_upwards [hnear, hre] with s hs hsre N inst hN χ hχ
-  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
   have h₁ := hs χ.conductor hχ χ.primitiveCharacter
   have h₂ := one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow χ.primitiveCharacter hN
     (by norm_num : (0 : ℝ) ≤ 1 / 2) hsre.le

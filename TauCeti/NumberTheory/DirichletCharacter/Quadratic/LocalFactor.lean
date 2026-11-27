@@ -108,9 +108,12 @@ theorem factorization_two_conductor_eq_zero_or_two_or_three_of_sq_eq_one (hχ : 
 
 /-- If the prime divisors of the level lie in `S`, the conductor of a character of order
 dividing two is at most the product of the cubes of the primes in `S`. -/
-theorem conductor_le_prod_cube_of_sq_eq_one [NeZero N] (χ : DirichletCharacter R N)
+theorem conductor_le_prod_cube_of_sq_eq_one (χ : DirichletCharacter R N)
     (hχ : χ ^ 2 = 1) {S : Finset ℕ} (hS : N.primeFactors ⊆ S) :
     χ.conductor ≤ ∏ p ∈ S.filter Nat.Prime, p ^ 3 := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp [conductor_eq_zero_iff_level_eq_zero.mpr rfl]
+  have : NeZero N := ⟨hN⟩
   have hsub : χ.conductor.primeFactors ⊆ S.filter Nat.Prime := by
     intro p hp
     exact Finset.mem_filter.mpr ⟨hS (Nat.primeFactors_mono χ.conductor_dvd_level (NeZero.ne N) hp),
@@ -169,7 +172,7 @@ theorem factorization_two_conductor_eq_zero_or_two_or_three (hχ : χ.IsQuadrati
 
 /-- The conductor of a quadratic character is at most the product of the cubes of the primes in
 any finite set `S` containing the prime divisors of its level. -/
-theorem conductor_le_prod_cube [NeZero N] (hχ : χ.IsQuadratic) {S : Finset ℕ}
+theorem conductor_le_prod_cube (hχ : χ.IsQuadratic) {S : Finset ℕ}
     (hS : N.primeFactors ⊆ S) : χ.conductor ≤ ∏ p ∈ S.filter Nat.Prime, p ^ 3 :=
   χ.conductor_le_prod_cube_of_sq_eq_one hχ.sq_eq_one hS
 

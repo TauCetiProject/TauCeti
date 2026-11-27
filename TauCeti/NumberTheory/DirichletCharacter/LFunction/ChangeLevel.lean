@@ -22,21 +22,26 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
-meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
-pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
-`regularizedLFunction_eq_primitiveCharacter_mul_prod_one_sub_mul_prime_cpow` gives the
-comparison with the primitive character at every point for regularized L-functions.
-For principal characters `LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow` also gives the
+The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves exact meromorphic
+orders there, including the simple pole at `s = 1` for principal characters.
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`, so the
+level change preserves zeros off the imaginary axis. At `s = 1` pointwise L-function comparison
+requires nonprincipal characters, as in the native continuation API.
+
+`regularizedLFunction_eq_primitiveCharacter_mul_prod_one_sub_mul_prime_cpow` compares
+regularized L-functions with those of the inducing primitive characters at every point.
+For principal characters `LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow` gives the
 comparison after the pole is removed but before dividing by `s`.
-`one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow`
-bounds the correction from below in terms of the number of distinct prime divisors, rather than
-the size of the new level.
-The factors are also nonzero on `Re(s) < 0`:
-`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
+`one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow` bounds the correction from below
+in terms of the number of distinct prime divisors, rather than the size of the new level.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
-by David Loeffler and Michael Stoll.
+by David Loeffler and Michael Stoll. When the levels have the same prime factors,
+`DirichletCharacter.LFunction_changeLevel_eq_of_primeFactors_eq` shows that no correction
+is needed, away from the possible pole. This comparison is used in
+`New.exists_regularL_eq_of_sq_eq_one` in `grh/src/Lib/Analytic/Primes.lean` of
+https://github.com/lsernau/grh-lean (rev. `72fead1`).
+
 For the elementary finite-product estimates see Davenport, *Multiplicative Number Theory*,
 the treatment of imprimitive characters and Siegel's theorem.
 -/
@@ -48,17 +53,29 @@ open scoped Topology
 
 namespace DirichletCharacter
 
-private theorem norm_mul_prime_cpow_le {M p : ℕ} (χ : DirichletCharacter ℂ M)
-    (hp : p.Prime) {δ : ℝ} (hδ : 0 ≤ δ) {s : ℂ} (hs : δ ≤ s.re) :
+private theorem norm_mul_natCast_cpow_le {M p : ℕ} (χ : DirichletCharacter ℂ M)
+    (hp : 2 ≤ p) {δ : ℝ} (hδ : 0 ≤ δ) {s : ℂ} (hs : δ ≤ s.re) :
     ‖χ p * (p : ℂ) ^ (-s)‖ ≤ (2 : ℝ) ^ (-δ) := by
-  rw [norm_mul, norm_natCast_cpow_of_pos hp.pos, neg_re]
+  have hp₁ : 1 ≤ p := (by decide : 1 ≤ 2).trans hp
+  rw [norm_mul, norm_natCast_cpow_of_pos hp₁, neg_re]
   calc
     ‖χ p‖ * (p : ℝ) ^ (-s.re) ≤ (p : ℝ) ^ (-s.re) :=
       mul_le_of_le_one_left (by positivity) (χ.norm_le_one p)
     _ ≤ (p : ℝ) ^ (-δ) :=
-      Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hp.one_lt.le) (by linarith)
+      Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hp₁) (by linarith)
     _ ≤ (2 : ℝ) ^ (-δ) :=
-      Real.rpow_le_rpow_of_nonpos (by norm_num) (by exact_mod_cast hp.two_le) (by linarith)
+      Real.rpow_le_rpow_of_nonpos (by norm_num) (by exact_mod_cast hp) (by linarith)
+
+private theorem one_sub_rpow_le_norm_one_sub_mul_natCast_cpow {M p : ℕ}
+    (χ : DirichletCharacter ℂ M) (hp : 2 ≤ p) {δ : ℝ} {s : ℂ} (hs : δ ≤ s.re) :
+    1 - (2 : ℝ) ^ (-δ) ≤ ‖1 - χ p * (p : ℂ) ^ (-s)‖ := by
+  rcases le_or_gt 0 δ with hδ | hδ
+  · have h := norm_mul_natCast_cpow_le χ hp hδ hs
+    have htri := norm_sub_norm_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
+    rw [norm_one] at htri
+    linarith
+  · have h := Real.one_le_rpow (by norm_num : (1 : ℝ) ≤ 2) (neg_nonneg.mpr hδ.le)
+    exact (sub_nonpos.mpr h).trans (norm_nonneg _)
 
 /-- Deleted Euler factors have no zeros off the imaginary axis, for arbitrary complex Dirichlet
 characters, including principal ones. Each term `χ(p) p⁻ˢ` is `0` or has absolute value
@@ -79,7 +96,7 @@ theorem prod_one_sub_mul_prime_cpow_ne_zero {M N : ℕ} (χ : DirichletCharacter
       exact lt_irrefl _ hlt
     · rw [χ.map_nonunit hu, zero_mul] at h1
       exact zero_ne_one h1
-  · have hlt := (norm_mul_prime_cpow_le χ hp hs.le le_rfl).trans_lt
+  · have hlt := (norm_mul_natCast_cpow_le χ hp.two_le hs.le le_rfl).trans_lt
       (Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (neg_neg_of_pos hs))
     rw [h1, norm_one] at hlt
     exact (lt_self_iff_false 1).mp hlt
@@ -101,11 +118,10 @@ theorem exists_norm_prod_one_sub_mul_prime_cpow_le_rpow {δ ε : ℝ}
   refine ⟨A, hA, fun M N hN χ s hs ↦ ?_⟩
   have hlocal (p : ℕ) (hp : p ∈ N.primeFactors) :
       ‖1 - χ p * (p : ℂ) ^ (-s)‖ ≤ K ∧ ‖(1 - χ p * (p : ℂ) ^ (-s))⁻¹‖ ≤ K := by
-    have hz := norm_mul_prime_cpow_le χ (Nat.prime_of_mem_primeFactors hp) hδ.le hs
-    have hlo : 1 - r ≤ ‖1 - χ p * (p : ℂ) ^ (-s)‖ := by
-      have := norm_sub_norm_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
-      simp only [norm_one] at this
-      linarith
+    have hp₂ := (Nat.prime_of_mem_primeFactors hp).two_le
+    have hz := norm_mul_natCast_cpow_le χ hp₂ hδ.le hs
+    have hlo : 1 - r ≤ ‖1 - χ p * (p : ℂ) ^ (-s)‖ :=
+      one_sub_rpow_le_norm_one_sub_mul_natCast_cpow χ hp₂ hs
     constructor
     · have hu := norm_sub_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
       simp only [norm_one] at hu
@@ -134,11 +150,8 @@ theorem one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow {M N k : ℕ}
   have hbase' : 1 - (2 : ℝ) ^ (-δ) ≤ 1 := sub_le_self _ (by positivity)
   refine (pow_le_pow_of_le_one hbase hbase' hk).trans ?_
   rw [norm_prod, ← prod_const]
-  refine prod_le_prod₀ (fun _ _ ↦ hbase) fun p hp ↦ ?_
-  have h := norm_mul_prime_cpow_le χ (Nat.prime_of_mem_primeFactors hp) hδ hs
-  have htri := norm_sub_norm_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
-  rw [norm_one] at htri
-  linarith
+  exact prod_le_prod₀ (fun _ _ ↦ hbase) fun p hp ↦
+    one_sub_rpow_le_norm_one_sub_mul_natCast_cpow χ (Nat.prime_of_mem_primeFactors hp).two_le hs
 
 /-- After removing the principal pole, the change-of-level formula from level one holds
 at every `s`, including `s = 1`. -/
@@ -196,14 +209,23 @@ theorem LFunction_changeLevel_eventuallyEq_nhds {M N : ℕ} [NeZero M] [NeZero N
   · exact Eventually.of_forall fun z ↦ by
       simp [Finset.prod_apply, LFunction_changeLevel hMN χ (.inl hχ), mul_comm]
 
-/-- Raising the level preserves the zeros of the continued L-function in the open right
-half-plane. At the possible pole `1`, require the original character to be nonprincipal. -/
+/-- Raising the level without adding prime factors leaves the L-function unchanged, away from
+`1` in the principal case and everywhere in the nonprincipal case. -/
+theorem LFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) (h : N.primeFactors = M.primeFactors)
+    {s : ℂ} (hs : χ ≠ 1 ∨ s ≠ 1) : (χ.changeLevel hMN).LFunction s = χ.LFunction s := by
+  rw [LFunction_changeLevel hMN χ hs, h, Finset.prod_eq_one, mul_one]
+  intro p hp
+  simp [χ.map_nonunit (ZMod.not_isUnit_of_mem_primeFactors hp)]
+
+/-- Raising the level preserves the zeros of the continued L-function off the imaginary axis.
+At the possible pole `1`, require the original character to be nonprincipal. -/
 @[simp] theorem LFunction_changeLevel_eq_zero_iff {M N : ℕ} [NeZero M] [NeZero N]
-    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re)
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : s.re ≠ 0)
     (h : χ ≠ 1 ∨ s ≠ 1) :
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
-  simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne']
+  simp only [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs, or_false]
 
 /-- A Dirichlet character and its inducing primitive character have the same zeros of the
 continued L-function in the open right half-plane. At the possible pole `1`, require the primitive
@@ -212,7 +234,7 @@ theorem LFunction_primitiveCharacter_eq_zero_iff {N : ℕ} [NeZero N] (χ : Diri
     {s : ℂ} (hs : 0 < s.re) (h : χ.primitiveCharacter ≠ 1 ∨ s ≠ 1) :
     χ.primitiveCharacter.LFunction s = 0 ↔ χ.LFunction s = 0 := by
   conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
-  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs h).symm
+  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs.ne' h).symm
 
 /-- Raising the level preserves the meromorphic order of the continued L-function at every point of
 the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
