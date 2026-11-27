@@ -47,25 +47,8 @@ theorem hasTorAmplitude_iff_exists_flat_model
     K.HasTorAmplitude a b ↔
       ∃ P : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ,
         P.IsStrictlyGE a ∧ P.IsStrictlyLE b ∧
-          (∀ i, PreservesFiniteLimits (tensorLeft (P.X i))) ∧ Nonempty (Q.obj P ≅ K) := by
-  constructor
-  · intro hK
-    have := hK.isLE
-    obtain ⟨L, hL, ⟨e⟩⟩ := K.exists_iso_Q_obj_of_isLE b
-    obtain ⟨P, π, hπ, hflat, hKFlat, hPb⟩ :=
-      CochainComplex.exists_quasiIso_isKFlat_sheafOfModules_of_isStrictlyLE (R := R) L b
-    let eP : Q.obj P ≅ K := asIso (Q.map π) ≪≫ e.symm
-    have hP := hK.of_iso eP.symm
-    have : P.IsGE a := (isGE_Q_obj_iff P a).mp hP.isGE
-    have h (M : SheafOfModules.{u} (ringCatSheaf R)) :
-        (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj P).ExactAt (a - 1) :=
-      (CochainComplex.isGE_iff _ a).mp ((hasTorAmplitude_Q_obj_iff P a b).mp hP M).1
-        (a - 1) (by omega)
-    exact ⟨P.truncGE a, inferInstance, inferInstance,
-      fun i ↦ P.preservesFiniteLimits_tensorLeft_truncGE_X a i h,
-      ⟨(asIso (Q.map (P.πTruncGE a))).symm ≪≫ eP⟩⟩
-  · rintro ⟨P, hPa, hPb, hflat, ⟨e⟩⟩
-    have := P.isKFlat_of_bounded_flat a b
-    exact (hasTorAmplitude_Q_obj P a b).of_iso e
+          (∀ i, PreservesFiniteLimits (tensorLeft (P.X i))) ∧ Nonempty (Q.obj P ≅ K) :=
+  hasTorAmplitude_iff_exists_flat_model_of_exists_quasiIso fun L _ ↦
+    CochainComplex.exists_quasiIso_isKFlat_sheafOfModules_of_isStrictlyLE (R := R) L b
 
 end DerivedCategory
