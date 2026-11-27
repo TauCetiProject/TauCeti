@@ -107,8 +107,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   manifold, and symmetrically at the points of the stable manifold.
 * `coord_toChart_flow_neg_eq_zero_of_not_weight_neg`: once the backward orbit of a point of the
   unstable manifold is linear in the chart, its coordinates of positive weight vanish.
+* `negativeCoord_toChart_flow_eq_zero_of_mem_stableSet`: once the forward orbit of a point of the
+  stable manifold is linear in the chart, its coordinates of negative weight vanish.
+* `coord_toChart_flow_add`: along a linear stretch of an orbit in the chart, its coordinates follow
+  the linear flow.
 * `unstableFrame_exp_smul_negativeCoord`: the frame sends the direction in which a trajectory leaves
   the critical point to its velocity.
+* `negativeCoord_toChart_flow_neg_ne_zero`: that direction is nonzero away from the critical point.
 * `flow_log_eq_of_exp_smul_negativeCoord_eq`: two points of the unstable manifold whose directions
   are positive multiples of each other lie on the same orbit.
 * `eventually_mem_unstableSet_and_unstableFrame_eq`: on the unstable axis of a Morse chart, the
@@ -299,6 +304,18 @@ theorem coord_mfderiv_toChart_comp_flow_add {y : M} {T s : ℝ}
   rw [← mfderiv_toChart_comp_flow_mfderiv_flow hsrc, hX.coord_mfderiv_toChart_comp_flow φ hφ hT hs,
     mfderiv_comp_apply y (φ.mdifferentiableAt_toChart hT) hd]
 
+/-- **The flow along a linear stretch.** If the orbit of `y` lies in the Morse chart `φ` at time
+`T` and its linear orbit stays in the chart for the times between `0` and `s`, then the coordinates
+of `Φ_{s + T} y` are those of `Φ_T y` moved by the linear flow for the time `s`. -/
+theorem coord_toChart_flow_add {y : M} {T s : ℝ} (hT : hX.flow T y ∈ φ.toChart.source)
+    (hs : ∀ t ∈ uIcc 0 s, φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart (hX.flow T y)))) ∈
+      φ.toChart.target) :
+    φ.coord (φ.toChart (hX.flow (s + T) y)) =
+      φ.linearFlow s (φ.coord (φ.toChart (hX.flow T y))) := by
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs
+  rw [φ.toChart_symm_coord_symm_coord hT, ← Flow.map_add] at hflow
+  rw [hflow, φ.toChart.right_inv (hs s right_mem_uIcc), LinearEquiv.apply_symm_apply]
+
 /-- The times of linear forward flow are closed under waiting, and along the wait the coordinates
 of the orbit follow the linear flow. -/
 theorem add_mem_linearForwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearForwardTimes φ y)
@@ -306,12 +323,11 @@ theorem add_mem_linearForwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearForw
     s + T ∈ hX.linearForwardTimes φ y ∧
       φ.coord (φ.toChart (hX.flow (s + T) y)) =
         φ.linearFlow s (φ.coord (φ.toChart (hX.flow T y))) := by
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ (t := s) fun t ht ↦
-    hT.2 t (by rw [uIcc_of_le hs] at ht; exact ht.1)
+  have hs' : ∀ t ∈ uIcc 0 s, φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart (hX.flow T y)))) ∈
+      φ.toChart.target := fun t ht ↦ hT.2 t (by rw [uIcc_of_le hs] at ht; exact ht.1)
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs'
   rw [φ.toChart_symm_coord_symm_coord hT.1, ← Flow.map_add] at hflow
-  have hcoord : φ.coord (φ.toChart (hX.flow (s + T) y)) =
-      φ.linearFlow s (φ.coord (φ.toChart (hX.flow T y))) := by
-    rw [hflow, φ.toChart.right_inv (hT.2 s hs), LinearEquiv.apply_symm_apply]
+  have hcoord := coord_toChart_flow_add hφ hT.1 hs'
   refine ⟨⟨hflow ▸ φ.toChart.map_target (hT.2 s hs), fun t ht ↦ ?_⟩, hcoord⟩
   rw [hcoord, ← φ.linearFlow_add]
   exact hT.2 _ (by linarith)
@@ -323,15 +339,44 @@ theorem add_mem_linearBackwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearBac
     T + s ∈ hX.linearBackwardTimes φ y ∧
       φ.coord (φ.toChart (hX.flow (-(T + s)) y)) =
         φ.linearFlow (-s) (φ.coord (φ.toChart (hX.flow (-T) y))) := by
-  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ (t := -s) fun t ht ↦
+  have hs' : ∀ t ∈ uIcc 0 (-s), φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart
+      (hX.flow (-T) y)))) ∈ φ.toChart.target := fun t ht ↦
     hT.2 t (by rw [uIcc_of_ge (by linarith)] at ht; exact ht.2)
+  have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs'
   rw [φ.toChart_symm_coord_symm_coord hT.1, ← Flow.map_add, ← neg_add, add_comm s] at hflow
   have hcoord : φ.coord (φ.toChart (hX.flow (-(T + s)) y)) =
       φ.linearFlow (-s) (φ.coord (φ.toChart (hX.flow (-T) y))) := by
-    rw [hflow, φ.toChart.right_inv (hT.2 (-s) (by linarith)), LinearEquiv.apply_symm_apply]
+    rw [neg_add_rev]
+    exact coord_toChart_flow_add hφ hT.1 hs'
   refine ⟨⟨hflow ▸ φ.toChart.map_target (hT.2 (-s) (by linarith)), fun t ht ↦ ?_⟩, hcoord⟩
   rw [hcoord, ← φ.linearFlow_add]
   exact hT.2 _ (by linarith)
+
+/-- **Points of the stable manifold have no coordinates of negative weight along their linear
+forward orbits.** If `T` is a time of linear forward flow of a point `y` of `W^s(x)`, then the
+coordinates of negative weight of `Φ_T y` vanish: waiting for the time `s` multiplies them by
+`e^{s}`, whereas the orbit tends to the centre of the chart. This is the forward counterpart of
+`TauCeti.IsAdaptedPseudoGradient.coord_toChart_flow_neg_eq_zero_of_not_weight_neg`. -/
+theorem negativeCoord_toChart_flow_eq_zero_of_mem_stableSet {y : M}
+    (hy : y ∈ hX.flow.stableSet x) {T : ℝ} (hT : T ∈ hX.linearForwardTimes φ y) :
+    φ.negativeCoord (φ.toChart (hX.flow T y)) = 0 := by
+  set v := φ.negativeCoord (φ.toChart (hX.flow T y))
+  have hlin : ∀ s, 0 ≤ s → φ.negativeCoord (φ.toChart (hX.flow (s + T) y)) = Real.exp s • v :=
+    fun s hs ↦ φ.negativeCoord_eq_exp_smul_of_coord_eq (add_mem_linearForwardTimes hφ hT hs).2
+  -- The orbit tends to `x`, where the chart vanishes.
+  have hlim : Tendsto (fun s ↦ φ.negativeCoord (φ.toChart (hX.flow (s + T) y))) atTop (𝓝 0) := by
+    have h₁ : Tendsto (fun s ↦ hX.flow (s + T) y) atTop (𝓝 x) :=
+      (Flow.mem_stableSet.1 hy).comp (tendsto_atTop_add_const_right atTop T tendsto_id)
+    have h₂ := (φ.negativeCoord.continuous_of_finiteDimensional.tendsto _).comp
+      ((φ.toChart.continuousAt φ.mem_source).tendsto.comp h₁)
+    rwa [φ.apply_self, map_zero] at h₂
+  have hnorm : Tendsto (fun s ↦ ‖Real.exp s • v‖) atTop (𝓝 0) := by
+    simpa using (hlim.congr' ((eventually_ge_atTop 0).mono hlin)).norm
+  -- But `‖e^{s} v‖ ≥ ‖v‖` for `s ≥ 0`.
+  refine norm_le_zero_iff.1 (le_of_tendsto_of_tendsto tendsto_const_nhds hnorm ?_)
+  filter_upwards [eventually_ge_atTop 0] with s hs
+  rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos s).le]
+  exact le_mul_of_one_le_left (norm_nonneg v) (Real.one_le_exp hs)
 
 /-! ### The normal coordinates of the stable manifold -/
 
@@ -794,6 +839,20 @@ theorem unstableFrame_exp_smul_negativeCoord (hf : IsMorse 𝓘(ℝ, E) f) {y : 
     rw [φ.negativeCoord_apply, Pi.smul_apply, smul_eq_mul]
     linarith
   rw [he, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul, ha]
+
+/-- **The direction in which a trajectory leaves the critical point is nonzero.** Let `T` be a
+time of linear backward flow of a point `y ≠ x` of `W^u(x)`. Then the coordinates of negative
+weight of `Φ_{-T} y` do not all vanish: `e^{T}` times them is sent to the velocity `X y` by the
+unstable frame (`unstableFrame_exp_smul_negativeCoord`), and `X` vanishes only at the critical
+points, which are rest points of the flow. -/
+theorem negativeCoord_toChart_flow_neg_ne_zero (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) (hyx : y ≠ x) {T : ℝ}
+    (hT : T ∈ hX.linearBackwardTimes φ y) :
+    φ.negativeCoord (φ.toChart (hX.flow (-T) y)) ≠ 0 := by
+  intro h
+  have hX0 : X y = 0 := by
+    rw [← unstableFrame_exp_smul_negativeCoord hφ hf hy hT, h, smul_zero, map_zero]
+  exact hyx (hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero (hX.eq_zero_iff.1 hX0) hy)
 
 /-- **Points leaving the critical point in the same direction lie on the same trajectory.** Let
 `T₁` and `T₂` be times of linear backward flow of points `y₁` and `y₂` of `W^u(x)`. If the direction

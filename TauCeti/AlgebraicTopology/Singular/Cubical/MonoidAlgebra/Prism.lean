@@ -18,7 +18,10 @@ with the right chain action without a sign.
 
 `cubicalChainModulePrism` is the degree-minus-one operator in cohomological grading. Its
 boundary is the difference of the endpoint maps. `cubicalChainModulePrismLinearMap` bundles
-its linearity over the acting chain algebra when every time slice is equivariant.
+its linearity over the acting chain algebra when every time slice is equivariant. Read on the
+direct sums of chains, it fills the difference of the two ends of a homotopy on every cycle, by a
+chain that every map forgetting the time of the homotopy pushes to zero
+(`TauCeti.exists_cubicalChainDifferential_eq_sub_of_homotopy`).
 
 For a monoid acting on the **left**, the prism with time as its last coordinate is the one that
 commutes with the action, `cubicalChainModulePrismLast`. Moving a chain of degree `i` of the
@@ -89,6 +92,38 @@ theorem cubicalChainModuleDifferential_prism_add_prism_differential (H : f.Homot
     | succ n =>
       rw [cubicalChainModuleDifferential_lof_succ, cubicalChainModulePrism_lof, ← map_add,
         NormalizedCubicalChain.boundary_prism_add_prism_boundary, map_sub]
+
+/-- **A homotopy fills the difference of its ends on cycles.** Let `H` be a homotopy from `f` to
+`g` and `z` a cycle of cohomological degree `i` in `⨁ n, C^□_n(X; R)`. Some chain `c` of
+cohomological degree `i - 1` has `∂ c = g_* z - f_* z`, and it is pushed to zero by any map `φ`
+for which `φ ∘ H` does not depend on time: `c` is the prism of `z`, whose cubes become degenerate
+in their time coordinate (`TauCeti.NormalizedCubicalChain.map_prism_eq_zero`). -/
+theorem exists_cubicalChainDifferential_eq_sub_of_homotopy {Z : Type*} [TopologicalSpace Z]
+    (H : f.Homotopy g) {φ : C(Y, Z)} (hφ : ∀ t x, φ (H (t, x)) = φ (H (0, x))) {i : ℤ}
+    {z : normalizedCubicalChainAlgebra X R} (hz : z ∈ cubicalChainGrading X R i)
+    (hdz : cubicalChainDifferential X R z = 0) :
+    ∃ c ∈ cubicalChainGrading Y R (i - 1),
+      cubicalChainDifferential Y R c = cubicalChainSumMap R g z - cubicalChainSumMap R f z ∧
+        cubicalChainSumMap R φ c = 0 := by
+  -- The prism of `z`, read on the direct sums through the module of chains with trivial action.
+  set m := (cubicalChainModuleEquiv X Unit R).symm z
+  have hm : cubicalChainModuleDifferential X Unit R m = 0 := by
+    rw [← cubicalChainModuleEquiv_symm_differential, hdz, map_zero]
+  refine ⟨cubicalChainModuleEquiv Y Unit R (cubicalChainModulePrism R H m),
+    mem_cubicalChainModuleGrading.1 (cubicalChainModulePrism_mem H
+      (mem_cubicalChainModuleGrading.2 (by rwa [LinearEquiv.apply_symm_apply]))), ?_, ?_⟩
+  · have h := cubicalChainModuleDifferential_prism_add_prism_differential H m
+    rw [hm, map_zero, add_zero] at h
+    rw [← cubicalChainModuleEquiv_differential, h, map_sub, cubicalChainModuleEquiv_linearMap,
+      cubicalChainModuleEquiv_linearMap, LinearEquiv.apply_symm_apply]
+  · have h (a : cubicalChainModule X Unit R) :
+        cubicalChainModuleLinearMap (G' := Unit) R φ (cubicalChainModulePrism R H a) = 0 := by
+      induction a using cubicalChainModule.induction_on with
+      | add a b ha hb => rw [map_add, map_add, ha, hb, add_zero]
+      | lof n c =>
+        rw [cubicalChainModulePrism_lof, cubicalChainModuleLinearMap_lof,
+          NormalizedCubicalChain.map_prism_eq_zero R H hφ, map_zero]
+    rw [← cubicalChainModuleEquiv_linearMap, h, map_zero]
 
 section Action
 
