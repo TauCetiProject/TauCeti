@@ -208,6 +208,24 @@ theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g
   · simp only [h hx]
   · simp [φ.zero_on_compl hx]
 
+/-- Integration against a function `g` through a continuous bilinear map `B` only depends on `g`
+almost everywhere on `Ω`. This is Mathlib's `Distribution.ofFun_congr_ae` for the general pairing
+`TestFunction.integralAgainstBilinCLM`. -/
+theorem integralAgainstBilinCLM_congr_ae [OpensMeasurableSpace E] {F₂ F₃ : Type*}
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    (B : F →L[ℝ] F₂ →L[ℝ] F₃) {μ : Measure E} {g₁ g₂ : E → F₂} (h : g₁ =ᵐ[μ.restrict Ω] g₂) :
+    (integralAgainstBilinCLM B μ g₁ : 𝓓^{n}(Ω, F) →L[ℝ] F₃) = integralAgainstBilinCLM B μ g₂ := by
+  by_cases hg : LocallyIntegrableOn g₁ Ω μ
+  · ext φ
+    rw [integralAgainstBilinCLM_eq_integral hg, integralAgainstBilinCLM_eq_integral (hg.congr h)]
+    refine integral_congr_ae ?_
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 h] with x hx
+    by_cases hxΩ : x ∈ (Ω : Set E)
+    · rw [hx hxΩ]
+    · simp [φ.zero_on_compl hxΩ]
+  · rw [integralAgainstBilinCLM_eq_zero hg,
+      integralAgainstBilinCLM_eq_zero fun h' ↦ hg (h'.congr h.symm)]
+
 section InnerPairing
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]

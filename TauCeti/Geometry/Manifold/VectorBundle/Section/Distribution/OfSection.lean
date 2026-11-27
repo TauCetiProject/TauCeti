@@ -9,6 +9,12 @@ public import TauCeti.Geometry.Manifold.Density.Integral
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
+import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Distributional sections of locally integrable sections
@@ -27,7 +33,16 @@ analogue of Mathlib's `Distribution.ofFun`, and follows its convention: the func
 A section is **locally integrable** (`TauCeti.LocallyIntegrableSection`) when its local
 representatives `TauCeti.FirstJetBundle.localRep I G u α` in the preferred chart and trivialization
 at every point `α` are locally integrable where they are defined, for the Haar measure of the fixed
-basis of the model.
+basis of the model. Local integrability can be checked in any cover of `M` by open sets lying in
+the chart and trivialization domains of points `β j`
+(`TauCeti.locallyIntegrableSection_iff_of_iUnion_eq_univ`), since a change of charts is a
+diffeomorphism and a change of trivializations a continuous field of linear isomorphisms, which
+preserve local integrability (`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`,
+`MeasureTheory.LocallyIntegrableOn.continuousOn_clm_apply`). For the same reason readings agreeing
+almost everywhere in such a cover agree almost everywhere in every preferred chart
+(`TauCeti.localRep_ae_eq_of_iUnion_eq_univ`), and the distributional section of `u` only depends
+on its readings almost everywhere (`TauCeti.BundleDistribution.ofSection_congr_ae`, the analogue of
+`Distribution.ofFun_congr_ae`).
 
 The key computation is in a restriction `c` of the preferred chart at `α` and the preferred frame
 of the dual-density bundle (`TauCeti.RoughDensity.inChartAt_pairing`): there the density paired
@@ -51,10 +66,14 @@ the integrals in charts are Mathlib's `TestFunction.integralAgainstBilinCLM`, th
   `TauCeti.locallyIntegrableSection_def`, `TauCeti.LocallyIntegrableSection.locallyIntegrableOn`,
   `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add` and
   `TauCeti.LocallyIntegrableSection.smul`.
+* `TauCeti.locallyIntegrableSection_iff_of_iUnion_eq_univ`,
+  `TauCeti.localRep_ae_eq_of_iUnion_eq_univ`: local integrability and almost everywhere equality of
+  readings from a chart cover.
 * `TauCeti.BundleDistribution.ofSection`: the distributional section of a section, zero unless
   the section is locally integrable, with `TauCeti.BundleDistribution.ofSection_apply`,
   `TauCeti.BundleDistribution.ofSection_zero`, `TauCeti.BundleDistribution.ofSection_add` and
-  `TauCeti.BundleDistribution.ofSection_smul`.
+  `TauCeti.BundleDistribution.ofSection_smul`; it only depends on the readings almost everywhere
+  (`TauCeti.BundleDistribution.ofSection_congr_ae`).
 * `TauCeti.integralDensity_chartTestCLM`: the pairing with a test extended through a restriction
   of a preferred chart.
 * `TauCeti.chartDistributionCLM_ofSection_apply_apply`: the local representative.
@@ -190,6 +209,194 @@ theorem LocallyIntegrableSection.zero : LocallyIntegrableSection I G fun x ↦ (
     ((ae_restrict_iff' (measurableSet_inter_preimage_baseSet α)).2 (ae_of_all _ fun y hy ↦ by
       simp only [FirstJetBundle.localRep_apply,
         Trivialization.apply_eq_prod_continuousLinearEquivAt ℝ _ _ hy.2, map_zero]))
+
+/-! ### Changes of chart -/
+
+section ChangeOfChart
+
+omit [IsManifold I ∞ M]
+
+variable [I.Boundaryless] {α β : M} {D : Set M}
+
+omit [I.Boundaryless] [FiniteDimensional ℝ E] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)]
+  [∀ x, Module ℝ (W x)] [VectorBundle ℝ G W] [MeasurableSpace E] [BorelSpace E] in
+/-- Every point where the readings at `α` are defined is the image in the preferred chart at `α` of
+a point of one of the sets `D j ∩ baseSet α`, when the `D j` cover `M`. -/
+private theorem exists_mem_image_inter_baseSet {ι : Type*} {D : ι → Set M}
+    (hcover : ⋃ j, D j = univ) {y : E}
+    (hy : y ∈ (extChartAt I α).target ∩
+      (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet) :
+    ∃ j, y ∈ extChartAt I α '' (D j ∩ FirstJetBundle.baseSet (H := H) G W α) := by
+  obtain ⟨j, hj⟩ := mem_iUnion.1 (hcover ▸ mem_univ ((extChartAt I α).symm y))
+  have hx := (extChartAt I α).map_target hy.1
+  rw [extChartAt_source] at hx
+  exact ⟨j, _, ⟨hj, (FirstJetBundle.mem_baseSet_iff G W).2 ⟨hy.2, hx⟩⟩,
+    (extChartAt I α).right_inv hy.1⟩
+
+omit [FiniteDimensional ℝ E] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [VectorBundle ℝ G W] [MeasurableSpace E] [BorelSpace E] in
+/-- The image in the preferred chart at `α` of an open subset of the first-jet chart domain at `α`
+is open. -/
+private theorem isOpen_image_extChartAt (hD : IsOpen D)
+    (hDα : D ⊆ FirstJetBundle.baseSet (H := H) G W α) : IsOpen (extChartAt I α '' D) := by
+  have hDs : D ⊆ (extChartAt I α).source := fun x hx ↦ by
+    rw [extChartAt_source]
+    exact ((FirstJetBundle.mem_baseSet_iff G W).1 (hDα hx)).2
+  rw [← inter_eq_right.2 hDs, (extChartAt I α).image_source_inter_eq']
+  exact (continuousOn_extChartAt_symm α).isOpen_inter_preimage (isOpen_extChartAt_target α) hD
+
+variable [IsManifold I 1 M]
+
+omit [FiniteDimensional ℝ E] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [VectorBundle ℝ G W] [MeasurableSpace E] [BorelSpace E] in
+/-- On the image in the preferred chart at `α` of an open set `D` of the first-jet chart domains at
+`α` and `β`, the change of preferred charts from `α` to `β` is `C¹` with invertible derivative,
+injective, and maps into the image of `D` in the chart at `β`; the inverse chart at `α` maps into
+the base sets of both preferred trivializations. -/
+private theorem image_extChartAt_props (hD : IsOpen D)
+    (hDα : D ⊆ FirstJetBundle.baseSet (H := H) G W α)
+    (hDβ : D ⊆ FirstJetBundle.baseSet (H := H) G W β) :
+    ContDiffOn ℝ 1 (extChartAt I β ∘ (extChartAt I α).symm) (extChartAt I α '' D) ∧
+      (∀ y ∈ extChartAt I α '' D,
+        (fderiv ℝ (extChartAt I β ∘ (extChartAt I α).symm) y).det ≠ 0) ∧
+      MapsTo (extChartAt I β ∘ (extChartAt I α).symm) (extChartAt I α '' D)
+        (extChartAt I β '' D) ∧
+      InjOn (extChartAt I β ∘ (extChartAt I α).symm) (extChartAt I α '' D) ∧
+      MapsTo (extChartAt I α).symm (extChartAt I α '' D)
+        ((trivializationAt G W β).baseSet ∩ (trivializationAt G W α).baseSet) := by
+  have hb (γ : M) (hDγ : D ⊆ FirstJetBundle.baseSet (H := H) G W γ) {x : M} (hx : x ∈ D) :=
+    (FirstJetBundle.mem_baseSet_iff G W).1 (hDγ hx)
+  have hDs : D ⊆ (extChartAt I α).source ∩ (extChartAt I β).source := fun x hx ↦ by
+    rw [extChartAt_source, extChartAt_source]
+    exact ⟨(hb α hDα hx).2, (hb β hDβ hx).2⟩
+  have hsrc : extChartAt I α '' D ⊆
+      (extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (chartAt H β).source := by
+    rintro _ ⟨x, hx, rfl⟩
+    refine ⟨(extChartAt I α).map_source (hDs hx).1, ?_⟩
+    rw [mem_preimage, (extChartAt I α).left_inv (hDs hx).1]
+    exact (hb β hDβ hx).2
+  refine ⟨(contDiffOn_ext_coord_change (n := 1) β α).mono fun y hy ↦ ?_, fun y hy ↦ ?_, ?_,
+    (injOn_extChartAt_coordChange α β hDs).congr fun _ _ ↦ (rfl), ?_⟩
+  · rw [PartialEquiv.trans_source, PartialEquiv.symm_source, extChartAt_source]
+    exact hsrc hy
+  · exact I.det_fderiv_extendCoordChange_ne_zero one_ne_zero
+      (IsManifold.chart_mem_maximalAtlas α) (IsManifold.chart_mem_maximalAtlas β)
+      (interior_maximal hsrc (isOpen_image_extChartAt hD hDα) hy)
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨x, hx, by rw [Function.comp_apply, (extChartAt I α).left_inv (hDs hx).1]⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    rw [(extChartAt I α).left_inv (hDs hx).1]
+    exact ⟨(hb β hDβ hx).1, (hb α hDα hx).1⟩
+
+omit [I.Boundaryless] [IsManifold I 1 M] [FiniteDimensional ℝ E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- On the image in the preferred chart at `α` of a set `D` of the first-jet chart domains at `α`
+and `β`, the reading of a section at `α` is the coordinate change of `W` applied to its reading at
+`β` after the change of charts: the pointwise form of
+`TauCeti.FirstJetBundle.localRep_eventuallyEq_fiberCoordChange_nhds`. -/
+private theorem localRep_eq_fiberCoordChange (u : (x : M) → W x)
+    (hDα : D ⊆ FirstJetBundle.baseSet (H := H) G W α)
+    (hDβ : D ⊆ FirstJetBundle.baseSet (H := H) G W β) {y : E} (hy : y ∈ extChartAt I α '' D) :
+    FirstJetBundle.localRep I G u α y = FirstJetBundle.fiberCoordChange I G W β α y
+      (FirstJetBundle.localRep I G u β ((extChartAt I β ∘ (extChartAt I α).symm) y)) := by
+  obtain ⟨x, hx, rfl⟩ := hy
+  exact (FirstJetBundle.localRep_eventuallyEq_fiberCoordChange_nhds I G u (hDβ hx)
+    (hDα hx)).eq_of_nhds
+
+/-- Local integrability of the readings of a section passes from the chart at `β` to the chart at
+`α`, on the images of an open set of both first-jet chart domains. -/
+private theorem locallyIntegrableOn_localRep_of_locallyIntegrableOn (μ : Measure E)
+    [μ.IsAddHaarMeasure] {u : (x : M) → W x} (hD : IsOpen D)
+    (hDα : D ⊆ FirstJetBundle.baseSet (H := H) G W α)
+    (hDβ : D ⊆ FirstJetBundle.baseSet (H := H) G W β)
+    (hu : LocallyIntegrableOn (FirstJetBundle.localRep I G u β) (extChartAt I β '' D) μ) :
+    LocallyIntegrableOn (FirstJetBundle.localRep I G u α) (extChartAt I α '' D) μ := by
+  have hO := isOpen_image_extChartAt (I := I) hD hDα
+  obtain ⟨hT, hdet, hmaps, -, hsymm⟩ := image_extChartAt_props (I := I) hD hDα hDβ
+  have hc : ContinuousOn (FirstJetBundle.fiberCoordChange I G W β α) (extChartAt I α '' D) := by
+    refine ((continuousOn_coordChange ℝ (trivializationAt G W β) (trivializationAt G W α)).comp
+      ((continuousOn_extChartAt_symm α).mono ?_) hsymm).congr
+      fun z _ ↦ FirstJetBundle.fiberCoordChange_apply I G W β α z
+    rintro _ ⟨x, hx, rfl⟩
+    exact (extChartAt I α).map_source (by
+      rw [extChartAt_source]
+      exact ((FirstJetBundle.mem_baseSet_iff G W).1 (hDα hx)).2)
+  exact ((hu.comp_contDiffOn_diffeo hO hT hdet hmaps).continuousOn_clm_apply hO.isLocallyClosed
+    hc).congr ((ae_restrict_iff' hO.measurableSet).2 (ae_of_all _ fun y hy ↦
+      (localRep_eq_fiberCoordChange u hDα hDβ hy).symm))
+
+/-- Almost everywhere equality of the readings of two sections passes from the chart at `β` to the
+chart at `α`, on the images of an open set of both first-jet chart domains. -/
+private theorem localRep_ae_eq_of_ae_eq (μ : Measure E) [μ.IsAddHaarMeasure]
+    {u v : (x : M) → W x} (hD : IsOpen D) (hDα : D ⊆ FirstJetBundle.baseSet (H := H) G W α)
+    (hDβ : D ⊆ FirstJetBundle.baseSet (H := H) G W β)
+    (h : FirstJetBundle.localRep I G u β =ᵐ[μ.restrict (extChartAt I β '' D)]
+      FirstJetBundle.localRep I G v β) :
+    FirstJetBundle.localRep I G u α =ᵐ[μ.restrict (extChartAt I α '' D)]
+      FirstJetBundle.localRep I G v α := by
+  have hO := isOpen_image_extChartAt (I := I) hD hDα
+  obtain ⟨hT, hdet, hmaps, hinj, -⟩ := image_extChartAt_props (I := I) hD hDα hDβ
+  filter_upwards [ae_restrict_comp_of_differentiableOn μ
+      (P := fun z ↦ FirstJetBundle.localRep I G u β z = FirstJetBundle.localRep I G v β z) hO
+      (hT.differentiableOn one_ne_zero) hinj hdet hmaps h,
+    ae_restrict_mem hO.measurableSet] with y hy hyO
+  rw [localRep_eq_fiberCoordChange u hDα hDβ hyO, localRep_eq_fiberCoordChange v hDα hDβ hyO, hy]
+
+variable (I G) in
+/-- **Local integrability in a chart cover.** Let the open sets `D j` cover `M`, each inside the
+first-jet chart domain at a point `β j` (the chart source and the trivialization base set at
+`β j`). A section is locally integrable exactly when its readings at `β j` are locally integrable on
+the images of the `D j`, for any additive Haar measure `μ` of the model: the readings in all other
+preferred charts follow by the change of charts, which preserves local integrability
+(`MeasureTheory.LocallyIntegrableOn.comp_contDiffOn_diffeo`). -/
+theorem locallyIntegrableSection_iff_of_iUnion_eq_univ {ι : Type*} (β : ι → M) (D : ι → Set M)
+    (hD : ∀ j, IsOpen (D j)) (hDβ : ∀ j, D j ⊆ FirstJetBundle.baseSet (H := H) G W (β j))
+    (hcover : ⋃ j, D j = univ) (μ : Measure E) [μ.IsAddHaarMeasure] {u : (x : M) → W x} :
+    LocallyIntegrableSection I G u ↔
+      ∀ j, LocallyIntegrableOn (FirstJetBundle.localRep I G u (β j)) (extChartAt I (β j) '' D j)
+        μ := by
+  refine ⟨fun hu j ↦ ((hu.locallyIntegrableOn (β j)).mono_set ?_).of_isAddHaarMeasure μ,
+    fun h ↦ locallyIntegrableSection_def.2 fun α y hy ↦ ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    have hx' := (FirstJetBundle.mem_baseSet_iff G W).1 (hDβ j hx)
+    have hxs : x ∈ (extChartAt I (β j)).source := by
+      rw [extChartAt_source]
+      exact hx'.2
+    refine ⟨(extChartAt I (β j)).map_source hxs, ?_⟩
+    rw [mem_preimage, (extChartAt I (β j)).left_inv hxs]
+    exact hx'.1
+  · obtain ⟨j, hj⟩ := exists_mem_image_inter_baseSet (I := I) (G := G) (W := W) hcover hy
+    have hD' := (hD j).inter (FirstJetBundle.isOpen_baseSet (H := H) G W α)
+    have hloc := locallyIntegrableOn_localRep_of_locallyIntegrableOn (Module.finBasis ℝ E).addHaar
+      hD' inter_subset_right (inter_subset_left.trans (hDβ j))
+      (((h j).of_isAddHaarMeasure _).mono_set (image_mono inter_subset_left))
+    refine (hloc y hj).filter_mono ?_
+    rw [(isOpen_image_extChartAt (I := I) hD' inter_subset_right).nhdsWithin_eq hj]
+    exact nhdsWithin_le_nhds
+
+variable (I G) in
+/-- **Almost everywhere equality in a chart cover.** Let the open sets `D j`, countably many, cover
+`M`, each inside the first-jet chart domain at a point `β j`. If the readings at `β j` of two
+sections agree almost everywhere on the images of the `D j`, for an additive Haar measure `μ` of
+the model, then their readings in every preferred chart agree almost everywhere where they are
+defined. -/
+theorem localRep_ae_eq_of_iUnion_eq_univ {ι : Type*} [Countable ι] (β : ι → M) (D : ι → Set M)
+    (hD : ∀ j, IsOpen (D j)) (hDβ : ∀ j, D j ⊆ FirstJetBundle.baseSet (H := H) G W (β j))
+    (hcover : ⋃ j, D j = univ) (μ : Measure E) [μ.IsAddHaarMeasure] {u v : (x : M) → W x}
+    (h : ∀ j, FirstJetBundle.localRep I G u (β j) =ᵐ[μ.restrict (extChartAt I (β j) '' D j)]
+      FirstJetBundle.localRep I G v (β j)) (α : M) :
+    FirstJetBundle.localRep I G u α =ᵐ[(Module.finBasis ℝ E).addHaar.restrict
+      ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet)]
+      FirstJetBundle.localRep I G v α := by
+  have hac := Measure.absolutelyContinuous_isAddHaarMeasure (Module.finBasis ℝ E).addHaar μ
+  refine ae_restrict_of_ae_restrict_of_subset (fun y hy ↦ mem_iUnion.2
+    (exists_mem_image_inter_baseSet (I := I) (G := G) (W := W) hcover hy)) ?_
+  refine (ae_restrict_iUnion_iff _ _).2 fun j ↦ (hac.restrict _).ae_le ?_
+  exact localRep_ae_eq_of_ae_eq μ ((hD j).inter (FirstJetBundle.isOpen_baseSet (H := H) G W α))
+    inter_subset_right (inter_subset_left.trans (hDβ j))
+    (ae_restrict_of_ae_restrict_of_subset (image_mono inter_subset_left) (h j))
+
+end ChangeOfChart
 
 variable [ContMDiffVectorBundle ∞ G W I] [T2Space M]
   {u : (x : M) → W x} {α : M}
@@ -505,6 +712,30 @@ theorem BundleDistribution.ofSection_apply (hu : LocallyIntegrableSection I G u)
 theorem BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection
     (hu : ¬LocallyIntegrableSection I G u) : BundleDistribution.ofSection I G u = 0 := by
   exact dite_eq_right hu
+
+/-- The distributional section of a section only depends on its readings almost everywhere where
+they are defined: the analogue of Mathlib's `Distribution.ofFun_congr_ae`. -/
+theorem BundleDistribution.ofSection_congr_ae {v : (x : M) → W x}
+    (h : ∀ α, FirstJetBundle.localRep I G u α =ᵐ[(Module.finBasis ℝ E).addHaar.restrict
+      ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet)]
+      FirstJetBundle.localRep I G v α) :
+    BundleDistribution.ofSection I G u = BundleDistribution.ofSection I G v := by
+  by_cases hu : LocallyIntegrableSection I G u
+  · have hv : LocallyIntegrableSection I G v :=
+      locallyIntegrableSection_def.2 fun α ↦ (hu.locallyIntegrableOn α).congr (h α)
+    obtain ⟨A, hA, hAα⟩ := exists_chartCutoffs (I := I) (G := G) (W := W)
+    ext φ
+    rw [BundleDistribution.ofSection_apply hu, BundleDistribution.ofSection_apply hv,
+      (integrableDensity_and_integralDensity_eq_sum hu A hA hAα φ
+        (BundleTest.isCompact_tsupport φ) subset_rfl).2,
+      (integrableDensity_and_integralDensity_eq_sum hv A hA hAα φ
+        (BundleTest.isCompact_tsupport φ) subset_rfl).2]
+    refine Finset.sum_congr rfl fun α _ ↦ ?_
+    rw [TestFunction.integralAgainstBilinCLM_congr_ae _ (ae_restrict_of_ae_restrict_of_subset
+      (target_subset_inter_preimage_baseSet (A.chart α) (hA α) (hAα α)) (h α))]
+  · rw [BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection hu,
+      BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection fun hv ↦ hu
+        (locallyIntegrableSection_def.2 fun α ↦ (hv.locallyIntegrableOn α).congr (h α).symm)]
 
 variable [FiniteDimensional ℝ G] in
 include hcα in
