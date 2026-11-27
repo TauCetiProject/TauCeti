@@ -12,7 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Divergence on a smooth symmetric slab
@@ -219,24 +219,10 @@ theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : 
   have hA0 {y : (ℝ ∙ e)ᗮ} (hy : y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀))
       (t : ℝ) : A y t = 0 := by simp [hA_def, hψ0 hy t]
   obtain ⟨hP1c, hP2c⟩ := continuous_trace_fderiv_comp_mul (hA.of_le (by simp)) ha
-  have hswap {P : ℝ × (ℝ ∙ e)ᗮ → ℝ} (hP : Continuous P)
-      (hvan : ∀ u, ∀ y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀),
-        P (u, y) = 0) :
-      Integrable (fun y : (ℝ ∙ e)ᗮ => ∫ u in (-1 : ℝ)..1, P (u, y)) volume ∧
-        (∫ u in (-1 : ℝ)..1, ∫ y : (ℝ ∙ e)ᗮ, P (u, y)) =
-          ∫ y : (ℝ ∙ e)ᗮ, ∫ u in (-1 : ℝ)..1, P (u, y) := by
-    have hint : Integrable P ((volume.restrict (uIoc (-1 : ℝ) 1)).prod volume) := by
-      rw [Measure.restrict_prod_eq_prod_univ]
-      exact (hP.continuousOn.integrableOn_compact (isCompact_uIcc.prod hK)).of_forall_sdiff_eq_zero
-        (measurableSet_uIoc.prod MeasurableSet.univ) fun ⟨u, y⟩ ⟨⟨hu, _⟩, hnot⟩ =>
-          hvan u y fun hy => hnot ⟨uIoc_subset_uIcc hu, hy⟩
-    refine ⟨?_, intervalIntegral_integral_swap (f := Function.curry P) hint⟩
-    simpa only [intervalIntegral.integral_of_le (by norm_num : (-1 : ℝ) ≤ 1),
-      uIoc_of_le (by norm_num : (-1 : ℝ) ≤ 1)] using hint.integral_prod_right
-  have h1 := hswap hP1c fun u y hy =>
-    (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hy).1
-  have h2 := hswap hP2c fun u y hy =>
-    (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hy).2
+  have h1 := intervalIntegral.integrable_and_integral_swap_of_continuous (-1) 1 hK hP1c
+    fun u _ y hy => (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hy).1
+  have h2 := intervalIntegral.integrable_and_integral_swap_of_continuous (-1) 1 hK hP2c
+    fun u _ y hy => (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hy).2
   have hp1_eq (y : (ℝ ∙ e)ᗮ) : (∫ u in (-1 : ℝ)..1,
       a y * LinearMap.trace ℝ (ℝ ∙ e)ᗮ
         (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z (a y * u)) y : (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ)) =
@@ -272,20 +258,20 @@ theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : 
     intervalIntegral.integral_neg]
 
 /-- Continuity and integrability of the longitudinal boundary half-difference at `±(ℓ y / 2)` for
-a smooth signed thickness profile `ℓ`. -/
+a continuous signed thickness profile `ℓ`. -/
 theorem continuous_and_integrable_slabVerticalDiff (e : E) (he : ‖e‖ = 1)
-    (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
+    (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : Continuous ℓ) :
     Continuous (fun y : (ℝ ∙ e)ᗮ => (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
         ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)) ∧
       Integrable (fun y : (ℝ ∙ e)ᗮ => (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
         ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)) volume := by
   have hpos : Continuous fun y : (ℝ ∙ e)ᗮ => ⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ :=
     (innerSL ℝ e).continuous.comp (ψ₀.continuous.comp
-      ((ℝ ∙ e)ᗮ.subtypeL.continuous.add ((hℓ.continuous.div_const 2).smul continuous_const)))
+      ((ℝ ∙ e)ᗮ.subtypeL.continuous.add ((hℓ.div_const 2).smul continuous_const)))
   have hneg : Continuous fun y : (ℝ ∙ e)ᗮ => ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫ :=
     (innerSL ℝ e).continuous.comp (ψ₀.continuous.comp
       ((ℝ ∙ e)ᗮ.subtypeL.continuous.add
-        ((hℓ.continuous.div_const 2).neg.smul continuous_const)))
+        ((hℓ.div_const 2).neg.smul continuous_const)))
   have hdc : Continuous fun y : (ℝ ∙ e)ᗮ => (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
       ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫) :=
     continuous_const.mul (hpos.sub hneg)
@@ -310,7 +296,7 @@ theorem integrable_and_integral_divergenceCLM_symmSlab_eq (e : E) (he : ‖e‖ 
           ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)) -
         ∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y) := by
   obtain ⟨hi1, heq1⟩ := integrable_and_integral_horizontal_divergence_symmSlab_eq e he ψ₀ hℓ
-  obtain ⟨-, hdi⟩ := continuous_and_integrable_slabVerticalDiff e he ψ₀ hℓ
+  obtain ⟨-, hdi⟩ := continuous_and_integrable_slabVerticalDiff e he ψ₀ hℓ.continuous
   let d : (ℝ ∙ e)ᗮ → ℝ := fun y =>
     (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ - ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)
   have hline (y : (ℝ ∙ e)ᗮ) :

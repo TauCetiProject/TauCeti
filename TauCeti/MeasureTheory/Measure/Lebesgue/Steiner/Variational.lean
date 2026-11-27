@@ -114,7 +114,7 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
     (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (L_ρ y / 2) • e)⟫ -
       ⟪e, ψ₀ ((y : E) + (-(L_ρ y / 2)) • e)⟫) with hd_def
   obtain ⟨-, hdi⟩ : Continuous d ∧ Integrable d volume :=
-    continuous_and_integrable_slabVerticalDiff e he ψ₀ hLρ_s
+    continuous_and_integrable_slabVerticalDiff e he ψ₀ hLρ_s.continuous
   have hφ_sq (z : (ℝ ∙ e)ᗮ) : ‖φ z‖ ^ 2 + (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z ^ 2 ≤ 1 := by
     rw [hφ_def, mollify_apply]
     simpa only [Real.norm_eq_abs, sq_abs] using
