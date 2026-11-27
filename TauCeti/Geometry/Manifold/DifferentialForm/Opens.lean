@@ -29,7 +29,9 @@ of `W` outside `U` (`TauCeti.IsSmoothForm.extendByZero`); this applies in partic
 product of a form with a cut-off function (`TauCeti.IsSmoothForm.extendByZero_smul`), and, on a
 Hausdorff manifold, to every compactly supported form on `U`, whose extension vanishes near the
 points outside `U` (`TauCeti.RoughForm.eventually_extendByZero_eq_zero`) and is again compactly
-supported (`TauCeti.RoughForm.isCompact_tsupport_extendByZero`).
+supported (`TauCeti.RoughForm.isCompact_tsupport_extendByZero`). Likewise, the restriction of a
+`C^n` form on `M` to an open set, extended by zero, is `C^n` when it vanishes near every point
+outside the open set (`TauCeti.IsSmoothForm.indicator`).
 
 The exterior derivative is local, so, without any regularity assumption, it commutes with
 restriction to an open subset (`TauCeti.mpullback_inclusion_mextDeriv`) and with extension by zero
@@ -88,6 +90,12 @@ theorem mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : 
   simp only [mpullback_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply]
   rfl
+
+/-- Restricting a form on `M` to an open subset `U` does not see the points outside `U`. -/
+@[simp]
+theorem RoughForm.mpullback_subtypeVal_indicator (U : Opens M) (ω : RoughForm I M F k) :
+    mpullback I I ((↑) : U → M) (ω.indicator U) = mpullback I I ((↑) : U → M) ω := by
+  rw [mpullback_indicator, Subtype.coe_preimage_self, indicator_univ]
 
 /-- The extension by zero of a rough form on an open subset `U` to an open subset `W`: it agrees
 with the form at the points of `W` lying in `U` and vanishes at the others. -/
@@ -386,6 +394,25 @@ theorem IsSmoothForm.extendByZero {U W : Opens M} (h : U ≤ W) {n : WithTop ℕ
       |>.congr_of_eventuallyEq ?_
     filter_upwards [hzero x hx] with y hy
     rw [hy]
+    rfl
+
+/-- The restriction of a `C^n` form to an open set `U`, extended by zero, is `C^n` provided it
+vanishes near every point outside `U`. -/
+theorem IsSmoothForm.indicator {n : WithTop ℕ∞} {ω : RoughForm I M F k}
+    (hω : IsSmoothForm I n ω) {U : Set M} (hU : IsOpen U)
+    (hzero : ∀ x ∉ U, ∀ᶠ y in 𝓝 x, ω.indicator U y = 0) :
+    IsSmoothForm I n (ω.indicator U) := by
+  rw [isSmoothForm_def] at hω ⊢
+  intro x
+  by_cases hx : x ∈ U
+  · refine (hω x).congr_of_eventuallyEq ?_
+    filter_upwards [hU.mem_nhds hx] with y hy
+    rw [RoughForm.indicator_apply_of_mem ω hy]
+  · refine ((isSmoothForm_def n (0 : RoughForm I M F k)).mp (IsSmoothForm.zero n) x)
+      |>.congr_of_eventuallyEq ?_
+    filter_upwards [hzero x hx] with y hy
+    rw [hy]
+    -- The zero form takes the value `0` of the model fibre at every point.
     rfl
 
 /-- Multiplying a `C^n` form on an open subset `U ≤ W` by a `C^n` function on `W` that vanishes near
