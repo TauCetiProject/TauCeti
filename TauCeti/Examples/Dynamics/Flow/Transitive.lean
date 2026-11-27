@@ -39,9 +39,7 @@ theorem isTopologicallyTransitive_translationFlow :
   refine eq_univ_of_forall fun y ↦ ?_
   induction y using QuotientAddGroup.induction_on with
   | H z =>
-    refine ⟨z, ?_⟩
-    change AddCircle.translationFlow 1 z 0 = _
-    simp
+    exact (Flow.mem_orbit_iff _).2 ⟨z, by simp⟩
 
 /-- **Check.** The time-`1` map of the unit-speed flow on the circle is the identity, and its
 iterates are not topologically transitive: the time-`t` map of a transitive flow need not be
@@ -82,24 +80,14 @@ noncomputable def erealTranslationFlow : Flow ℝ EReal where
 theorem erealTranslationFlow_apply (t : ℝ) (x : EReal) : erealTranslationFlow t x = x + t :=
   (rfl)
 
-/-- The reals are dense in `EReal`. -/
-theorem dense_range_coe_ereal : Dense (range ((↑) : ℝ → EReal)) := by
-  refine dense_iff_inter_open.2 fun U hU ⟨x, hx⟩ ↦ ?_
-  induction x using EReal.rec with
-  | bot =>
-    obtain ⟨y, hy⟩ := EReal.mem_nhds_bot_iff.1 (hU.mem_nhds hx)
-    exact ⟨_, hy (EReal.coe_lt_coe_iff.2 (sub_one_lt y)), _, rfl⟩
-  | coe x => exact ⟨_, hx, _, rfl⟩
-  | top =>
-    obtain ⟨y, hy⟩ := EReal.mem_nhds_top_iff.1 (hU.mem_nhds hx)
-    exact ⟨_, hy (EReal.coe_lt_coe_iff.2 (lt_add_one y)), _, rfl⟩
-
 /-- **Check.** The translation flow on `EReal` is topologically transitive: the orbit of `0` is
 the dense set of reals. -/
 theorem isTopologicallyTransitive_erealTranslationFlow :
     erealTranslationFlow.IsTopologicallyTransitive := by
   refine Flow.isTopologicallyTransitive_of_dense_orbit (x := 0) ?_
-  convert dense_range_coe_ereal using 1
+  have hd : Dense (range ((↑) : ℝ → EReal)) :=
+    EReal.denseRange_ratCast.mono (range_comp_subset_range _ _)
+  convert hd using 1
   ext y
   simp [Flow.orbit_eq_range]
 

@@ -64,6 +64,7 @@ theorem isTopologicallyTransitive_iff :
       V.Nonempty → ∃ t : τ, (ϕ t '' U ∩ V).Nonempty := by
   let := ϕ.toAddAction
   rw [isTopologicallyTransitive_def, AddAction.isTopologicallyTransitive_iff]
+  -- `t +ᵥ U` is `ϕ t '' U` by definition of `Flow.toAddAction`.
   rfl
 
 /-- **Time-`t` maps.** If the time-`t` map of a flow is topologically transitive, as the
@@ -90,16 +91,16 @@ theorem isTopologicallyTransitive_of_dense_orbit {x : X} (hx : Dense (ϕ.orbit x
   AddAction.isTopologicallyTransitive_of_dense_orbit hx
 
 /-- A flow with a dense forward orbit is topologically transitive. -/
-theorem isTopologicallyTransitive_of_dense_forwardOrbit [PartialOrder τ] [AddLeftMono τ] {x : X}
+theorem isTopologicallyTransitive_of_dense_forwardOrbit [Preorder τ] [AddLeftMono τ] {x : X}
     (hx : Dense (ϕ.forwardOrbit x)) : ϕ.IsTopologicallyTransitive :=
   isTopologicallyTransitive_of_dense_orbit (hx.mono (ϕ.forwardOrbit_subset_orbit x))
 
 /-- On a nonempty second-countable Baire space, a topologically transitive flow has a dense
-orbit; the points with dense orbit form a residual set. -/
+orbit. -/
 theorem IsTopologicallyTransitive.exists_dense_orbit [SecondCountableTopology X] [BaireSpace X]
     [Nonempty X] (h : ϕ.IsTopologicallyTransitive) : ∃ x, Dense (ϕ.orbit x) := by
   let := ϕ.toAddAction
-  have : ContinuousConstVAdd τ X := ⟨fun t ↦ ϕ.continuous continuous_const continuous_id⟩
+  have := ϕ.continuousVAdd
   have : AddAction.IsTopologicallyTransitive τ X := h
   exact AddAction.exists_dense_orbit τ
 
