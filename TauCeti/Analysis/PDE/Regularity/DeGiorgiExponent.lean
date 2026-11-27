@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.MeyersExample
+public import TauCeti.Analysis.PDE.Regularity.Meyers.Example
 public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 
 /-!
@@ -23,7 +23,7 @@ In particular `α ≤ √((n + 1) λ / Λ)`, and for `n ≥ 1` also `α ≤ (n +
 dimension `α` tends to `0` as the ellipticity ratio `Λ / λ` tends to infinity. In the plane,
 `n = 0`, the bound reads `α ≤ √(λ / Λ)`.
 
-The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.MeyersExample`). For
+The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.Meyers.Example`). For
 `0 < μ ≤ 1` the coefficient field `a = TauCeti.PDE.meyersCoefficient μ` on `ℝ^{n+2}`, with
 eigenvalue `1` in the radial direction and `κ = μ (μ + n) / (n + 1)` in the tangential directions,
 is uniformly elliptic with constants `κ` and `1`, and `u(x) = ‖x‖ ^ (μ - 1) x₀` is a weak solution
@@ -85,23 +85,14 @@ theorem mul_add_le_mul_div_of_forall_exists_holderOnWith {n : ℕ} {lam Lam : �
       ∃ C, HolderOnWith C α (preciseRepresentative volume (W1p.value u)) s) :
     (α : ℝ) * (α + n) ≤ (n + 1) * (lam / Lam) := by
   have hLam0 : 0 < Lam := hlam.trans_le hLam
-  obtain ⟨μ, hμ0, hμ1, hμ⟩ := exists_meyersEigenvalue_eq (n := n) (div_pos hlam hLam0)
+  obtain ⟨μ, hμ0, -, hμ⟩ := exists_meyersEigenvalue_eq (n := n) (div_pos hlam hLam0)
     ((div_le_one hLam0).2 hLam)
   -- Meyers' solution for the field `Λ a`, uniformly elliptic with constants `Λ κ = λ` and `Λ`.
   obtain ⟨u, hu⟩ := exists_w1p_value_ae_eq_meyersSolution hμ0 (p := 2) (by norm_num) hb
     (by simp only [ENNReal.toReal_ofNat]; nlinarith)
-  have hell : UniformlyEllipticOn (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))
-      (Lam • meyersCoefficient μ) lam Lam := by
-    have := (uniformlyEllipticOn_meyersCoefficient hμ0 hμ1
-      (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))).const_smul hLam0
-    rwa [hμ, mul_div_cancel₀ _ hLam0.ne', mul_one] at this
-  have hsol : ∀ v : W1p0 volume Ω 2,
-      energyFormH1 (Lam • meyersCoefficient μ) 0 0 u (v : W1p volume Ω 2) = 0 := fun v => by
-    have := energyFormH1_smul_coefficients (meyersCoefficient μ) 0 0 Lam u (v : W1p volume Ω 2)
-    rw [smul_zero, smul_zero] at this
-    rw [this, energyFormH1_meyersCoefficient_eq_zero hμ0 u hu v, mul_zero]
-  obtain ⟨C, hC⟩ := h _ u hell
-    (stronglyMeasurable_meyersCoefficient.const_smul Lam).aestronglyMeasurable hsol
+  obtain ⟨C, hC⟩ := h _ u (uniformlyEllipticOn_smul_meyersCoefficient hμ0 hlam hLam hμ _)
+    (stronglyMeasurable_meyersCoefficient.const_smul Lam).aestronglyMeasurable
+    (energyFormH1_smul_meyersCoefficient_eq_zero hμ0 Lam u hu)
   -- On `Ω` the precise representative is Meyers' solution itself, which is continuous.
   have heq : EqOn (preciseRepresentative volume (W1p.value u)) (meyersSolution μ) Ω :=
     eqOn_preciseRepresentative_of_continuousOn Ω.isOpen

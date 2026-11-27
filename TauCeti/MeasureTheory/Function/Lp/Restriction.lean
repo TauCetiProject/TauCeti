@@ -63,6 +63,10 @@ finite-measure sets.
   `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
   integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
   to any constant.
+* `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_two_le` and
+  `MeasureTheory.MemLp.integrableOn_norm_rpow_of_subset`: for a function in `Lᵖ(t)`, the squared
+  distance to any constant, `2 ≤ p`, and the `q`-th power of the norm, `0 < q ≤ p`, are integrable
+  on every subset of `t` of finite measure.
 * `MeasureTheory.MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow`: Hölder's
   inequality bounding the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure by
   `‖g‖²_{L^q(t)} μ(s)^{1 - 2/q}`, `2 ≤ q`.
@@ -287,6 +291,27 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset {F : Type*} [SeminormedAddCommG
   simp only [norm_pow, Real.norm_eq_abs]
   gcongr
   exact (norm_sub_le _ _).trans (le_abs_self _)
+
+/-- For a function `g` in `Lᵖ(t)`, `2 ≤ p`, the squared distance `‖g - c‖²` to a constant `c` is
+integrable on every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_norm_sub_sq_of_two_le {F : Type*} [SeminormedAddCommGroup F]
+    {g : X → F} {p : ℝ≥0∞} (hg : MemLp g p (μ.restrict t)) (hp : 2 ≤ p) (hst : s ⊆ t)
+    (hs : μ s ≠ ⊤) (c : F) :
+    IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  exact ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).mono_exponent hp)
+    |>.integrableOn_norm_sub_sq_of_subset subset_rfl hs c
+
+/-- For a function `g` in `Lᵖ(t)` and `0 < q` with `q ≤ p`, the power `‖g‖ ^ q` is integrable on
+every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_norm_rpow_of_subset {F : Type*} [NormedAddCommGroup F]
+    {g : X → F} {p : ℝ≥0∞} (hg : MemLp g p (μ.restrict t)) {q : ℝ} (hq : 0 < q)
+    (hqp : ENNReal.ofReal q ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+    IntegrableOn (fun x ↦ ‖g x‖ ^ q) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have h := ((hg.mono_measure (Measure.restrict_mono hst le_rfl)).mono_exponent hqp)
+    |>.integrable_norm_rpow (by simp [hq]) ENNReal.ofReal_ne_top
+  rwa [ENNReal.toReal_ofReal hq.le] at h
 
 /-- **Hölder's inequality for the `L²` mass on a subset.** For `2 ≤ q` and a function `g` in
 `L^q(t)`, the integral of `‖g‖²` over a subset `s ⊆ t` of finite measure is at most

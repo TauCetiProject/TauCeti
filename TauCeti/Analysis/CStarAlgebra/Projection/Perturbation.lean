@@ -15,6 +15,7 @@ import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Projection.Pair
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.InvSqrtOneSub
 import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 
@@ -87,45 +88,8 @@ section Defect
 /-! In this section `h` is a self-adjoint element with `‖h‖ < 1`, so that `1 - h` has the
 inverse square root `cfc (fun t ↦ (√(1 - t))⁻¹) h`. -/
 
-variable {h : A}
-
-private theorem one_sub_eq_cfc (hh : IsSelfAdjoint h) : 1 - h = cfc (fun t : ℝ ↦ 1 - t) h := by
-  rw [cfc_sub (fun _ : ℝ ↦ (1 : ℝ)) (fun t : ℝ ↦ t) h, cfc_const_one ℝ h, cfc_id' ℝ h]
-
-variable (hh : IsSelfAdjoint h) (h₁ : ‖h‖ < 1)
-include h₁
-
-private theorem one_sub_pos_of_mem_spectrum {t : ℝ} (ht : t ∈ spectrum ℝ h) : 0 < 1 - t := by
-  have := spectrum.norm_le_norm_of_mem ht
-  rw [Real.norm_eq_abs] at this
-  linarith [le_abs_self t]
-
-private theorem continuousOn_inv_sqrt_one_sub :
-    ContinuousOn (fun t : ℝ ↦ (√(1 - t))⁻¹) (spectrum ℝ h) :=
-  ContinuousOn.inv₀ (by fun_prop) fun _ ht ↦
-    (Real.sqrt_pos.2 (one_sub_pos_of_mem_spectrum h₁ ht)).ne'
-
-include hh
-
-/-- `(1 - h) ^ (-1 / 2) * (1 - h) = (1 - h) ^ (1 / 2)`. -/
-private theorem cfc_inv_sqrt_one_sub_mul_one_sub :
-    cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h * (1 - h) = cfc (fun t : ℝ ↦ √(1 - t)) h := by
-  rw [one_sub_eq_cfc hh, ← cfc_mul _ _ h (continuousOn_inv_sqrt_one_sub h₁) (by fun_prop)]
-  refine cfc_congr fun t ht ↦ ?_
-  have h₀ := one_sub_pos_of_mem_spectrum h₁ ht
-  have := Real.sq_sqrt h₀.le
-  have := (Real.sqrt_pos.2 h₀).ne'
-  field_simp
-  linarith
-
-/-- `(1 - h) ^ (-1 / 2) * (1 - h) ^ (-1 / 2) * (1 - h) = 1`. -/
-private theorem cfc_inv_sqrt_one_sub_mul_self_mul_one_sub :
-    cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h * cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h * (1 - h) = 1 := by
-  have hc := continuousOn_inv_sqrt_one_sub h₁
-  rw [mul_assoc, cfc_inv_sqrt_one_sub_mul_one_sub hh h₁, ← cfc_mul _ _ h hc (by fun_prop),
-    ← cfc_const_one ℝ h]
-  refine cfc_congr fun t ht ↦ ?_
-  exact inv_mul_cancel₀ (Real.sqrt_pos.2 (one_sub_pos_of_mem_spectrum h₁ ht)).ne'
+variable {h : A} (hh : IsSelfAdjoint h) (h₁ : ‖h‖ < 1)
+include hh h₁
 
 /-- `‖2 - 2 * (1 - h) ^ (1 / 2)‖ ≤ 2 * ‖h‖`. -/
 private theorem norm_two_sub_two_mul_cfc_sqrt_one_sub_le :
@@ -159,7 +123,7 @@ theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjec
   -- `c = (1 - h) ^ (-1 / 2)` commutes with `p`, `q`, `h`, `z` and `star z`.
   set c := cfc (fun t : ℝ ↦ (√(1 - t))⁻¹) h
   have hc : star c = c := IsSelfAdjoint.cfc.star_eq
-  have hcc : c * c * (1 - h) = 1 := cfc_inv_sqrt_one_sub_mul_self_mul_one_sub hh h₁
+  have hcc : c * c * (1 - h) = 1 := TauCeti.cfc_inv_sqrt_one_sub_mul_self_mul_one_sub hh h₁
   have hcp : Commute c p := Commute.cfc_real (hp'.commute_sub_sq_left hq').symm _
   have hcq : Commute c q := Commute.cfc_real (hp'.commute_sub_sq_right hq').symm _
   have hc₁ : Commute c (1 - h) := (Commute.one_right c).sub_right (Commute.cfc_real (.refl h) _)
@@ -187,7 +151,7 @@ theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjec
     have hzs : z + star z = 2 * (1 - h) := hp.intertwiner_add_star_intertwiner hq
     have hre : z * c + star (z * c) = 2 * cfc (fun t : ℝ ↦ √(1 - t)) h := by
       rw [star_mul, hc, ← hcz.eq, ← mul_add, hzs, two_mul, mul_add, ← two_mul,
-        cfc_inv_sqrt_one_sub_mul_one_sub hh h₁]
+        TauCeti.cfc_inv_sqrt_one_sub_mul_one_sub hh h₁]
     rw [← hre, star_sub, star_one, sub_mul, mul_sub, mul_sub, hu₁, mul_one, one_mul, one_mul,
       ← one_add_one_eq_two]
     abel
@@ -290,11 +254,7 @@ theorem Continuous.isMurrayVonNeumannEquivalent {A : Type*} [NonUnitalCStarAlgeb
     rw [CStarMatrix.ofMatrix_eq_ofMatrixL]
     exact CStarMatrix.ofMatrixL.continuous.comp hf
   obtain ⟨v, hv₁, hv₂⟩ := hg.exists_star_mul_self_eq hfp' x y
-  refine ⟨hfp x, hfp y, CStarMatrix.ofMatrix.symm v, ?_, ?_⟩
-  · rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul, hv₁,
-      Equiv.symm_apply_apply]
-  · rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul, hv₂,
-      Equiv.symm_apply_apply]
+  simpa using CStarMatrix.isMurrayVonNeumannEquivalent_of_star_mul_self_eq (hfp' x) (hfp' y) hv₁ hv₂
 
 end Continuous
 
