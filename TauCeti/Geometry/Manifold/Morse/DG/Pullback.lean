@@ -48,7 +48,7 @@ for a Hurewicz fibration `p' : E' → Y'`, the DG Morse complex for `θ` with co
 chains on the fibre of the Moore-path replacement of the base change `Y ×_{Y'} E' → Y` is
 quasi-isomorphic to the DG Morse complex for `g ∘ θ` with coefficients in the chains on the fibre
 of the Moore-path replacement of `p'`
-(`quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_pullbackSnd_comp`).
+(`quasiIso_map_fibrationLocalSystemSquareMap_pullbackSnd_comp_dgMorseComplexPullbackIso_hom`).
 
 ## Main definitions
 
@@ -67,9 +67,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the identity of the underlying functions on the critical points.
 * `dgMorseComplexPullbackIso_hom_comp_dgMorseComplexIsoOfHomotopy_hom`: the isomorphisms commute
   with the continuation isomorphisms of homotopies of chain systems.
-* `quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_comp`: a map of Hurewicz
-  fibrations over `g` that is a homotopy equivalence on the fibres induces a quasi-isomorphism of
-  DG Morse complexes.
+* `quasiIso_map_fibrationLocalSystemSquareMap_comp_dgMorseComplexPullbackIso_hom`: a map of
+  Hurewicz fibrations over `g` that is a homotopy equivalence on the fibres induces a
+  quasi-isomorphism of DG Morse complexes.
 
 ## References
 
@@ -337,8 +337,8 @@ fibrations `p : E → Y` and `p' : E' → Y'`, the DG Morse complex for `θ` wit
 chains `C_*(F'_p)` on the fibre of the Moore-path replacement of `p` is quasi-isomorphic to the DG
 Morse complex for `g ∘ θ` with coefficients in `C_*(F'_{p'})`, through the morphism induced by the
 square followed by `dgMorseComplexPullbackIso`. -/
-theorem quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_comp {E E' : Type u}
-    [TopologicalSpace E] [TopologicalSpace E'] {p : C(E, Y)} {p' : C(E', Y')}
+theorem quasiIso_map_fibrationLocalSystemSquareMap_comp_dgMorseComplexPullbackIso_hom
+    {E E' : Type u} [TopologicalSpace E] [TopologicalSpace E'] {p : C(E, Y)} {p' : C(E', Y')}
     (hp : IsHurewiczFibration.{u} p) (hp' : IsHurewiczFibration.{u} p') (h : C(E, E'))
     (hsq : p'.comp h = g.comp p) (e : {x // p x = y₀} ≃ₕ {x // p' x = y₁})
     (he : ∀ x, (e x : E') = h x) :
@@ -358,7 +358,7 @@ theorem quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_comp {E
 a based map `g : (Y, y₀) → (Y', y₁)`, the DG Morse complex for `θ` with coefficients in the chains
 on the fibre of the Moore-path replacement of the base change `Y ×_{Y'} E' → Y` is
 quasi-isomorphic to the DG Morse complex for `g ∘ θ` with coefficients in `C_*(F'_{p'})`. -/
-theorem quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_pullbackSnd_comp
+theorem quasiIso_map_fibrationLocalSystemSquareMap_pullbackSnd_comp_dgMorseComplexPullbackIso_hom
     {E' : Type u} [TopologicalSpace E'] {p' : C(E', Y')} (hp' : IsHurewiczFibration.{u} p') :
     QuasiIso ((hX.dgMorseComplexFunctor hf hdense hθ hc S).map
         (fibrationLocalSystemSquareMap R
@@ -372,7 +372,7 @@ theorem quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_pullbac
     (hφ := hX.quasiIso_dgMorseComplexFunctor_map hf hdense hθ hc S
       (isQuasiIso_fibrationLocalSystemSquareMap_pullbackSnd hp' g y₀))
     -- Elaborated without the expected type, as in
-    -- `quasiIso_dgMorseComplexFunctor_map_fibrationLocalSystemSquareMap_comp`.
+    -- `quasiIso_map_fibrationLocalSystemSquareMap_comp_dgMorseComplexPullbackIso_hom`.
     (hφ' := (quasiIso_of_isIso
       (hX.dgMorseComplexPullbackIso hf hdense hθ g rfl hc S (fibrationLocalSystem R p' _)).hom :))
 
