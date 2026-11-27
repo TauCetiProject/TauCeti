@@ -55,6 +55,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
+* `TauCeti.sub_ofReal_div_one_sub_ofReal_mul_sub_I_div_add_I`: in Cayley coordinates, a real disc
+  automorphism `w ↦ (w - r) / (1 - r w)` is a dilation of the upper half-plane.
 * `TauCeti.sub_I_div_add_I_I_mul_one_add_div_one_sub`: the other inverse identity, away from
   `w = 1`.
 * `TauCeti.I_mul_one_add_div_one_sub_add_I_ne_zero`: the inverse transform keeps `z + i` away
@@ -213,6 +215,32 @@ theorem sub_I_div_add_I_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
 /-- The inverse Cayley transform takes the Cayley image of a point back to that point. -/
 theorem I_mul_one_add_sub_I_div_add_I_div_one_sub {z : ℂ} (hz : z + I ≠ 0) :
     I * (1 + (z - I) / (z + I)) / (1 - (z - I) / (z + I)) = z := by
+  field_simp
+  ring
+
+/-- In the Cayley coordinate `w = (z - i) / (z + i)` of the upper half-plane, the real disc
+automorphism `w ↦ (w - r) / (1 - r w)` with `-1 < r < 1` is the dilation `z ↦ l z` by
+`l = (1 - r) / (1 + r)`. -/
+theorem sub_ofReal_div_one_sub_ofReal_mul_sub_I_div_add_I {z : ℂ} (hz : 0 < z.im) {r : ℝ}
+    (hr₀ : -1 < r) (hr₁ : r < 1) :
+    ((z - I) / (z + I) - r) / (1 - r * ((z - I) / (z + I))) =
+      (z * ((1 - r) / (1 + r) : ℝ) - I) / (z * ((1 - r) / (1 + r) : ℝ) + I) := by
+  have hI : z + I ≠ 0 := add_I_ne_zero_of_im_nonneg hz.le
+  have hr : (1 + r : ℂ) ≠ 0 := by exact_mod_cast (by linarith : (1 + r : ℝ) ≠ 0)
+  have hden : z + I - r * (z - I) ≠ 0 := fun h => by
+    have := congrArg im h
+    simp only [sub_im, add_im, mul_im, ofReal_re, ofReal_im, I_im, zero_im] at this
+    nlinarith
+  have hnum : (z - I) / (z + I) - r = (z - I - r * (z + I)) / (z + I) := by
+    field_simp
+  have hden' : 1 - r * ((z - I) / (z + I)) = (z + I - r * (z - I)) / (z + I) := by
+    field_simp
+  have hle : z * ((1 - r) / (1 + r) : ℝ) + I ≠ 0 := fun h => by
+    have := congrArg im h
+    simp only [add_im, mul_im, ofReal_re, ofReal_im, mul_zero, zero_add, I_im, zero_im] at this
+    nlinarith [mul_pos hz (div_pos (by linarith : 0 < 1 - r) (by linarith : 0 < 1 + r))]
+  rw [hnum, hden', div_div_div_cancel_right₀ hI, div_eq_div_iff hden hle]
+  push_cast
   field_simp
   ring
 

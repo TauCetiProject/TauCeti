@@ -219,8 +219,6 @@ theorem finite_unramifiedOutside_of_finrank_le (S : Set (HeightOneSpectrum (𝓞
   refine ⟨⟨L, hfin⟩, ⟨hn, fun v hv ↦ ?_⟩, rfl⟩
   rw [Set.Finite.mem_toFinset]
   by_contra hvS
-  obtain ⟨P, hP⟩ := TauCeti.NumberField.mem_ramifiedSupport_iff_exists.1 hv
-  have := P.property.1
-  exact hP.ne' ((hL v hvS).ramificationIdx_eq_one P.property.2)
+  exact TauCeti.NumberField.notMem_ramifiedSupport_of_isUnramifiedIn (hL v hvS) hv
 
 end TauCeti.RestrictedRamification
