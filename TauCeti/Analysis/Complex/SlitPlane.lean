@@ -555,14 +555,10 @@ theorem norm_div_one_sub_lt_one {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
 /-- If `‖x‖ + ‖y‖ < 1`, then `x y / ((1 - x)(1 - y))` lies in the open unit disc. -/
 theorem norm_mul_div_one_sub_mul_one_sub_lt_one {x y : ℂ} (hxy : ‖x‖ + ‖y‖ < 1) :
     ‖x * y / ((1 - x) * (1 - y))‖ < 1 := by
-  have hx : 1 - ‖x‖ ≤ ‖1 - x‖ := by simpa using norm_sub_norm_le (1 : ℂ) x
-  have hy : 1 - ‖y‖ ≤ ‖1 - y‖ := by simpa using norm_sub_norm_le (1 : ℂ) y
-  have hx0 := norm_nonneg x
-  have hy0 := norm_nonneg y
-  have hpos : 0 < (1 - ‖x‖) * (1 - ‖y‖) := mul_pos (by linarith) (by linarith)
-  rw [norm_div, norm_mul, norm_mul, div_lt_one (hpos.trans_le (mul_le_mul hx hy
-    (by linarith) (norm_nonneg _)))]
-  nlinarith [mul_le_mul hx hy (by linarith) (norm_nonneg _)]
+  rw [mul_comm (1 - x), ← div_mul_div_comm, norm_mul]
+  exact (mul_le_of_le_one_right (norm_nonneg _)
+    (norm_div_one_sub_lt_one (x := y) (y := x) (by linarith)).le).trans_lt
+    (norm_div_one_sub_lt_one hxy)
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
