@@ -53,6 +53,9 @@ the map `x ↦ 2x` has `J = 2`, `M = 1`, `k = 1` and the two zeros `0` and `4` c
 * `TauCeti.IsAdicComplete.existsUnique_eval_eq_zero_of_dvd_pow` and
   `TauCeti.pow_dvd_sub_of_eval_eq_zero_of_dvd_pow`: Hensel's lemma for a polynomial `f` with
   `f(t) ≡ 0 mod π ^ (2k + 1)` and `f'(t) ∣ π ^ k`, and its error bound.
+* `TauCeti.IsAdicComplete.existsUnique_eval_eq_zero_of_mul_add_mul_eq_C`: the same conclusion
+  when a Bézout identity `f a + f' b = r` with `r ∣ π ^ k` bounds the derivative, for instance
+  with `r` the resultant of `f` and `f'`; this makes `f'(t) ∣ π ^ k` automatic.
 
 ## References
 
@@ -359,6 +362,29 @@ theorem IsAdicComplete.existsUnique_eval_eq_zero_of_dvd_pow [IsAdicComplete (Ide
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalUnit_sub x x' hx n hn hxx'
   exact ⟨u (), ⟨hu (), congrFun hfu ()⟩, fun y ⟨hy, hfy⟩ ↦
     congrFun (huniq (fun _ ↦ y) ⟨fun _ ↦ hy, funext fun _ ↦ hfy⟩) ()⟩
+
+/-- **Hensel's lemma for a polynomial coprime to its derivative.** Let `R` be `π`-adically
+complete with `π` a non-zero-divisor, and let `f * a + f' * b = r` for polynomials `a, b` and a
+constant `r ∣ π ^ k`, for instance the resultant of `f` and `f'`
+(`Polynomial.exists_mul_add_mul_eq_C_resultant`). If `f(t) ≡ 0 mod π ^ (2k + 1)`, then `f` has
+exactly one root congruent to `t` modulo `π ^ (k + 1)`. The Bézout identity forces
+`f'(t) ∣ π ^ k`, so no hypothesis on `f'(t)` is needed. -/
+theorem IsAdicComplete.existsUnique_eval_eq_zero_of_mul_add_mul_eq_C
+    [IsAdicComplete (Ideal.span {π}) R] (hπ : IsLeftRegular π) {a b : R[X]} {r : R}
+    (hab : f * a + derivative f * b = C r) (hr : r ∣ π ^ k)
+    (ht : π ^ (2 * k + 1) ∣ f.eval t) : ∃! u : R, π ^ (k + 1) ∣ u - t ∧ f.eval u = 0 := by
+  refine IsAdicComplete.existsUnique_eval_eq_zero_of_dvd_pow hπ (dvd_trans ?_ hr) ht
+  -- At `t` the Bézout identity reads `f(t) a(t) + f'(t) b(t) = r`, where `r π ^ (k + 1)` divides
+  -- `f(t)`; so `f'(t) b(t)` is `r` times `1 - π (…)`, a unit as `π` lies in the Jacobson radical.
+  obtain ⟨s, hs⟩ := hr
+  obtain ⟨e, he⟩ := ht
+  have hu := Ring.mem_jacobson_iff.mp (IsAdicComplete.le_jacobson _
+    (Ideal.mem_span_singleton_self π)) (-(π ^ k * s * e * a.eval t))
+  have hev := congrArg (eval t) hab
+  simp only [eval_add, eval_mul, eval_C] at hev
+  refine ⟨b.eval t * ↑hu.unit⁻¹, ?_⟩
+  rw [← mul_assoc, Units.eq_mul_inv_iff_mul_eq, IsUnit.unit_spec]
+  linear_combination -hev + a.eval t * he + π ^ (k + 1) * e * a.eval t * hs
 
 end Polynomial
 

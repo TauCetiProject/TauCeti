@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Polynomial.ScaleRoots
 
 /-!
-# Root scaling of finite products
+# Root scaling of finite products, derivatives and separability
 
 Scaling roots commutes with finite products over a commutative semiring without zero
 divisors, and with finite products of monic polynomials over any commutative semiring.
 This transports factorizations into linear factors through integral normalization.
 Over any semiring, scaling the roots by `s` also multiplies the subleading coefficient by `s`
 on the right, so it preserves the vanishing of that coefficient.
+
+The derivative of `p.scaleRoots s` is `(derivative p).scaleRoots s` up to the factor
+`s ^ (natDegree p - 1 - natDegree p')`, so scaling the roots by a unit preserves separability.
+This is how a separable polynomial over a valued field is given integral coefficients without
+losing separability.
 -/
 
 public section
@@ -66,5 +72,32 @@ theorem map_eval_scaleRoots {S T : Type*} [Semiring S] [Semiring T]
     ext n
     simp [hp]
   rw [← hmap, eval_map, eval₂_at_apply]
+
+/-- **The derivative of a root scaling.** Scaling the roots of `p` by `s` and differentiating
+agrees with scaling the roots of `p'` by `s`, up to the factor `s ^ (d - 1 - d')` accounting for
+the drop from `d = natDegree p` to `d' = natDegree p'`. -/
+theorem derivative_scaleRoots (p : R[X]) (s : R) :
+    derivative (p.scaleRoots s) =
+      C (s ^ (p.natDegree - 1 - (derivative p).natDegree)) * (derivative p).scaleRoots s := by
+  ext i
+  rw [coeff_derivative, coeff_C_mul, coeff_scaleRoots, coeff_scaleRoots, coeff_derivative]
+  rcases le_or_gt i (derivative p).natDegree with hi | hi
+  · -- the exponents agree, as `i ≤ natDegree p' ≤ natDegree p - 1`
+    have hd := natDegree_derivative_le p
+    rw [show p.natDegree - (i + 1) = p.natDegree - 1 - (derivative p).natDegree +
+      ((derivative p).natDegree - i) by omega, pow_add]
+    ring
+  · -- both coefficients vanish above the degree of `p'`
+    have h0 : p.coeff (i + 1) * (i + 1 : R) = 0 := by
+      rw [← coeff_derivative]
+      exact coeff_eq_zero_of_natDegree_lt hi
+    rw [mul_right_comm, h0]
+    simp
+
+/-- **Scaling the roots by a unit preserves separability.** -/
+theorem Separable.scaleRoots {p : R[X]} (hp : p.Separable) {s : R} (hs : IsUnit s) :
+    (p.scaleRoots s).Separable := by
+  rw [Separable, derivative_scaleRoots, isCoprime_mul_unit_left_right (isUnit_C.mpr (hs.pow _))]
+  exact isCoprime_scaleRoots _ _ s hs hp
 
 end Polynomial

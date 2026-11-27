@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Perfectoid.Field
 public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots.Existence
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Basic
 import Mathlib.Algebra.CharP.Algebra
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # The tilt of a perfectoid field
@@ -36,6 +37,8 @@ normed field. It is perfect of characteristic `p`, hence a perfectoid field.
 ## Main results
 
 * `TauCeti.Perfectoid.uniformTilt.norm_coeff_zero_add_le`: `‖(x + y)♯‖ ≤ max ‖x♯‖ ‖y♯‖`.
+* `TauCeti.Perfectoid.tiltField.mem_integer_iff`: the valuation ring `𝒪[K♭]` is the closed unit
+  ball of `tiltField p K`.
 * `TauCeti.Perfectoid.tiltField.isHomeomorph_equiv`: the norm topology of `tiltField p K` is the
   inverse-limit topology of `uniformTilt p K`.
 * `TauCeti.Perfectoid.tiltField.instIsPerfectoidField`: the tilt of a perfectoid field is a
@@ -51,6 +54,7 @@ normed field. It is perfect of characteristic `p`, hence a perfectoid field.
 public section
 
 open Filter Topology TauCeti.Huber
+open scoped NormedField Valued
 
 namespace TauCeti.Perfectoid
 
@@ -150,6 +154,11 @@ variable (p K) in
 instance instIsUltrametricDist : IsUltrametricDist (tiltField p K) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm (S' := tiltField p K)
     fun x y ↦ norm_coeff_zero_add_le (WithAbs.equiv _ x) (WithAbs.equiv _ y)
+
+/-- **Membership in the valuation ring of the tilt** is the bound `‖x‖ ≤ 1`. Mathlib's
+`Valued.integer.mem_iff` needs a nontrivially normed field, which `tiltField p K` need not be. -/
+theorem mem_integer_iff {x : tiltField p K} : x ∈ 𝒪[tiltField p K] ↔ ‖x‖ ≤ 1 := by
+  simp [Valuation.mem_integer_iff, ← NNReal.coe_le_coe]
 
 variable (p K) in
 /-- **The norm topology of the tilt is its inverse-limit topology**: a sequence tends to zero in
