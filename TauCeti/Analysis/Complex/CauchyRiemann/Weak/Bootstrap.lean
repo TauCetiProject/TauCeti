@@ -188,6 +188,23 @@ theorem contDiffOn_of_isWeakCauchyRiemannOn {p : ℝ≥0∞} (hp : 2 < p) {ℓ :
   | top => exact contDiffOn_infty.2 fun n => hC n le_top
   | coe n => exact_mod_cast hC n le_rfl
 
+/-- **Regularity of classical solutions.** Let `J` and `η` be of class `C^ℓ`, `ℓ ≤ ∞`, jointly in
+`(z, x)` on an open set `W` containing the graph of `u` over `Ω`, with `J(z, u z)² = -1` on `Ω`
+(stated pointwise, `J(z, u z) (J(z, u z) v) = -v`).
+A map `u` of class `C¹` on `Ω` solving `∂ₛu + J(z, u) ∂ₜu = η(z, u)` pointwise on `Ω` is of class
+`C^ℓ` on `Ω`. -/
+theorem contDiffOn_of_cauchyRiemann {ℓ : ℕ∞} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × V => J x.1 x.2) W)
+    (hη : ContDiffOn ℝ ℓ (fun x : ℂ × V => η x.1 x.2) W) (huW : ∀ z ∈ Ω, (z, u z) ∈ W)
+    (hJ2 : ∀ z ∈ Ω, ∀ v, J z (u z) (J z (u z) v) = -v) (hu : ContDiffOn ℝ 1 u Ω)
+    (h : ∀ z ∈ (Ω : Set ℂ), fderiv ℝ u z 1 + J z (u z) (fderiv ℝ u z I) = η z (u z)) :
+    ContDiffOn ℝ ℓ u Ω :=
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  contDiffOn_of_isWeakCauchyRiemannOn (p := ⊤) (by simp) hW hJ hη huW
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).2
+      (.of_forall fun z hz ↦ ContinuousLinearMap.ext fun v ↦ by simp [hJ2 z hz v]))
+    (isWeakCauchyRiemannOn_of_contDiffOn hu h)
+
 end Bootstrapping
 
 /-! ### Structures depending only on the target -/

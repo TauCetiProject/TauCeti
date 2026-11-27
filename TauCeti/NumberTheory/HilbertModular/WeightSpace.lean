@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.PadicIntegralAlgebra
+public import TauCeti.NumberTheory.NumberField.PadicIntegralAlgebra.Basic
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 public import TauCeti.NumberTheory.Padics.WeightSpace.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units

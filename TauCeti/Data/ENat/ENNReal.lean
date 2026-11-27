@@ -11,7 +11,8 @@ public import Mathlib.Basic.Real.ENatENNReal
 # Extended natural numbers as extended nonnegative reals
 
 The `WithTop.recTopCoe` expression used for extended hitting-time means agrees with the
-canonical coercion from `ℕ∞` to `ℝ≥0∞`.
+canonical coercion from `ℕ∞` to `ℝ≥0∞`. The real part of an element `v` of `ℕ∞`, seen in `ℝ≥0∞`,
+is `v.toNat`.
 -/
 
 public section
@@ -30,3 +31,12 @@ theorem recTopCoe_top_natCast_eq_toENNReal (t : WithTop ℕ) :
   | coe n => exact (ENat.toENNReal_coe n).symm
 
 end WithTop
+
+namespace ENat
+
+/-- The real part of an element of `ℕ∞`, seen in `ℝ≥0∞`, is its `toNat`; both are `0` at `⊤`. -/
+@[simp]
+theorem toReal_toENNReal (v : ℕ∞) : (v : ℝ≥0∞).toReal = (v.toNat : ℝ) := by
+  induction v using ENat.recTopCoe <;> simp
+
+end ENat
