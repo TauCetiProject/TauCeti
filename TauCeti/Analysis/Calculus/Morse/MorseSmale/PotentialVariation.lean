@@ -12,7 +12,6 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.Morse.GradientFlow
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Caratheodory
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -40,7 +39,7 @@ neighbourhood of one point `γ s₀` of the trajectory that is not a critical po
 
 * a path orthogonal to the range of `D_γ` and to the potential variations vanishes, when `f` is
   `Cⁿ` with `2 ≤ n` and the gradient is bounded along `γ`
-  (`TauCeti.eq_zero_of_mem_orthogonal_range_of_mem_orthogonal_potentialVariations`),
+  (`eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_potentialVariations`),
   so the range and the variations span `L²(ℝ, E)` whenever the range is closed of finite
   codimension, as for a Fredholm operator
   (`TauCeti.range_trajectoryOperator_sup_potentialVariations_eq_top_of_isClosed_of_coFG`);
@@ -78,13 +77,14 @@ then excluded by the adjoint identity instead.
 ## Main definitions
 
 * `TauCeti.potentialVariations γ n U`: the potential variations of class `Cⁿ` along `γ` localized
-  in `U`.
+  in `U`, the smallest submodule containing the paths of these variations
+  (`TauCeti.potentialVariations_le_iff`).
 
 ## Main results
 
 * `TauCeti.inner_gradient_comp_eq_zero_of_memLp`: a square-integrable solution of the adjoint
   equation is normal to the trajectory.
-* `TauCeti.eq_zero_of_mem_orthogonal_range_of_mem_orthogonal_potentialVariations`:
+* `eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_potentialVariations`:
   a path orthogonal to the range of `D_γ` and to the potential variations localized near a regular
   point of `γ` vanishes.
 * `TauCeti.range_trajectoryOperator_sup_potentialVariations_eq_top`: the range of `D_γ` and the
@@ -131,6 +131,19 @@ theorem mem_potentialVariations_of_ae_eq {n : ℕ∞} {U : Set E} {h : E → ℝ
     (hg : g =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)] fun s ↦ ∇ h (γ s)) :
     g ∈ potentialVariations γ n U :=
   Submodule.subset_span ⟨h, hh, hc, hU, hγ, hg⟩
+
+/-- A submodule contains the potential variations if and only if it contains the class of the
+path `s ↦ ∇h (γ s)` of every compactly supported `Cⁿ` function `h` supported in `U` and vanishing
+on `γ`: the potential variations are the smallest such submodule. -/
+theorem potentialVariations_le_iff {n : ℕ∞} {U : Set E}
+    {S : Submodule ℝ (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))} :
+    potentialVariations γ n U ≤ S ↔ ∀ h : E → ℝ, ContDiff ℝ n h → HasCompactSupport h →
+      tsupport h ⊆ U → (∀ s, h (γ s) = 0) →
+      ∀ g : Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)),
+        (g =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)] fun s ↦ ∇ h (γ s)) →
+        g ∈ S :=
+  Submodule.span_le.trans ⟨fun hS h hh hc hU hγ _ hg ↦ hS ⟨h, hh, hc, hU, hγ, hg⟩,
+    fun hS _ ⟨h, hh, hc, hU, hγ, hg⟩ ↦ hS h hh hc hU hγ _ hg⟩
 
 /-- Potential variations localized in a smaller set are potential variations localized in a
 larger one. -/
@@ -234,8 +247,7 @@ private theorem exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner {n : ℕ∞
   rw [fderiv_inner_apply ℝ (differentiableAt_const w) hsub, fderiv_const_apply, zero_apply,
     inner_zero_left, add_zero, fderiv_fun_sub (f := fun x : E ↦ x) differentiableAt_id
       ((hk hs).differentiableAt hn0), sub_apply, fderiv_fun_id, ContinuousLinearMap.id_apply,
-    show (fun x ↦ γ (σ (f x))) = (fun a ↦ γ (σ a)) ∘ f from rfl,
-    fderiv_comp _ hγσ (hf.differentiable hn0 _), ContinuousLinearMap.comp_apply,
+    fderiv_fun_comp _ hγσ (hf.differentiable hn0 _), ContinuousLinearMap.comp_apply,
     ← inner_gradient_left, real_inner_comm v, hv, map_zero, sub_zero]
 
 section FiniteDimensional
@@ -255,18 +267,8 @@ private theorem exists_potentialVariation_integral_inner_pos {n : ℕ∞} (hf : 
     (hu0 : u s₀ ≠ 0) (hnormal : ∀ s, ⟪u s, ∇ f (γ s)⟫ = 0) :
     ∃ h : E → ℝ, ContDiff ℝ n h ∧ HasCompactSupport h ∧ tsupport h ⊆ U ∧ (∀ s, h (γ s) = 0) ∧
       HasCompactSupport (fun s ↦ ∇ h (γ s)) ∧ 0 < ∫ s, ⟪∇ h (γ s), u s⟫ := by
-  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
-    have : (2 : WithTop ℕ∞) ≤ n := WithTop.coe_le_coe.2 hn
-    intro h0
-    rw [h0] at this
-    exact absurd this (by decide)
-  -- The trajectory is as regular as `f`, being an integral curve of `-∇f`.
-  have hγn : ContDiff ℝ n γ := by
-    have hsub : ((n - 1 : ℕ∞) : WithTop ℕ∞) + 1 = n := by
-      exact_mod_cast tsub_add_cancel_of_le (one_le_two.trans hn)
-    have h := contDiff_succ_of_hasDerivAt (n := n - 1) (X := fun _ y ↦ -∇ f y)
-      ((hf.gradient_right (m := ((n - 1 : ℕ∞) : WithTop ℕ∞)) hsub.le).neg.comp contDiff_snd) hγ
-    rwa [hsub] at h
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_two.trans_le hn).ne'
+  have hγn : ContDiff ℝ n γ := hγ.contDiff_neg_gradient hf (one_le_two.trans hn)
   obtain ⟨O, hO, hx₀, g, hgO, hg0, hgd⟩ :=
     exists_contDiffAt_eventually_eq_zero_fderiv_eq_inner hf hγn hn0 hγ hcrit (u s₀)
   -- A bump `ψ` at `γ s₀` inside `U ∩ O`, met by `γ` only at times in a unit interval around `s₀`
@@ -297,7 +299,7 @@ private theorem exists_potentialVariation_integral_inner_pos {n : ℕ∞} (hf : 
     dsimp only
     rw [inner_gradient_left]
     by_cases hs : γ s ∈ tsupport ψ
-    · rw [show (fun x ↦ ψ x * g x) = ψ * g from rfl, fderiv_mul ((hψ.differentiable (by simp)) _)
+    · rw [fderiv_fun_mul ((hψ.differentiable (by simp)) _)
         ((hgO _ (hψO hs)).differentiableAt hn0), add_apply, smul_apply, smul_apply,
         hgd s (hψO hs) (u s) (hnormal s), (hψs hs).1, zero_smul, add_zero, smul_eq_mul]
     · rw [fderiv_of_notMem_tsupport ℝ (hh0 hs), image_eq_zero_of_notMem_tsupport hs,
@@ -310,7 +312,7 @@ with `2 ≤ n`, and `γ` a negative gradient trajectory along which `∇f` is bo
 a neighbourhood of a point `γ s₀` of the trajectory which is not a critical point of `f`. A path
 `v ∈ L²(ℝ, E)` orthogonal to the range of the linearized operator `ξ ↦ ξ' + Hess f(γ) ξ` and to the
 potential variations of class `Cⁿ` localized in `U` vanishes. -/
-theorem eq_zero_of_mem_orthogonal_range_of_mem_orthogonal_potentialVariations
+theorem eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_potentialVariations
     {n : ℕ∞} (hf : ContDiff ℝ n f) (hn : 2 ≤ n) (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
     {C : ℝ} (hC : ∀ s, ‖∇ f (γ s)‖ ≤ C)
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
@@ -382,7 +384,7 @@ theorem range_trajectoryOperator_sup_potentialVariations_eq_top_of_isClosed_of_c
   rw [← Submodule.orthogonal_eq_bot_iff, eq_bot_iff]
   intro v hv
   rw [← Submodule.inf_orthogonal] at hv
-  exact eq_zero_of_mem_orthogonal_range_of_mem_orthogonal_potentialVariations
+  exact eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_mem_orthogonal_potentialVariations
     hf hn hγ hC hAL hU hcrit hv.1 hv.2
 
 /-- **Localized potential variations make the linearized operator onto.** Let `f` be a `Cⁿ`

@@ -212,13 +212,7 @@ private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f
     (hf.continuous_gradient (by norm_num)).comp hγ.continuous
   have hq : Continuous fun s ↦ ⟪B (∇ f (γ s)), u s⟫ := (B.continuous.comp hg).inner huc
   -- A small ball around `γ s₀` meets the trajectory only at times close to `s₀`.
-  have hvisit : comap γ (𝓝 (γ s₀)) ≤ 𝓝 s₀ := by
-    intro S hS
-    obtain ⟨δ, hδ, hδS⟩ := Metric.mem_nhds_iff.1 hS
-    obtain ⟨r, hr, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo
-      (fun t ↦ hf.differentiable (by norm_num) _) hcrit hδ
-    exact mem_comap.2 ⟨Metric.ball (γ s₀) r, Metric.ball_mem_nhds _ hr,
-      fun s hs ↦ hδS (by rw [Real.ball_eq_Ioo]; exact hrs s hs)⟩
+  have hvisit := hγ.comap_nhds_le_nhds (fun t ↦ hf.differentiable (by norm_num) _) hcrit
   obtain ⟨ψ, hψ, hψc, hψU, hψγ, hpos⟩ := exists_contDiff_tsupport_subset_integral_comp_mul_pos
     hγ.continuous hvisit hU hq (inner_rankOne_add_rankOne_apply_pos hcrit hu0)
   refine ⟨fun x ↦ ψ x • B, hψ.smul contDiff_const, hψc.smul_right,

@@ -6,18 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 -- Private: monotonicity, constant-curve recognition, time reparametrization, the fundamental
--- theorem of calculus and the gradient of `-f` are used only in proofs; no declaration below
--- exposes their APIs.
+-- theorem of calculus, the gradient of `-f`, the calculus of `Cⁿ` maps and the regularity of
+-- ODE solutions are used only in proofs; no declaration below exposes their APIs.
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.ODE.Regularity
 
 /-!
 # Negative gradient trajectories
@@ -50,6 +53,8 @@ route to Morse homology.
   critical points of `f`.
 * `IsIntegralCurveOn.hasDerivWithinAt_comp_neg_gradient`: derivative of `f` along a
   negative gradient trajectory.
+* `IsIntegralCurve.contDiff_neg_gradient`: a global trajectory of a `Cⁿ` function, `1 ≤ n`, is
+  `Cⁿ`.
 * `IsIntegralCurveOn.antitoneOn_comp_neg_gradient` and
   `IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
   descent away from critical points.
@@ -238,6 +243,17 @@ theorem hasDerivAt_comp_neg_gradient
     HasDerivAt (f ∘ γ) (-‖∇ f (γ t)‖ ^ 2) t :=
   ((hγ.isIntegralCurveOn univ).hasDerivWithinAt_comp_neg_gradient (mem_univ t) hf).hasDerivAt
     univ_mem
+
+/-- **Trajectories are as regular as the function.** A global negative gradient trajectory of a
+`Cⁿ` function `f`, `1 ≤ n`, is `Cⁿ`: its velocity `-∇f(γ)` is the composite of the `Cⁿ⁻¹`
+gradient with the curve itself. -/
+theorem contDiff_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {n : ℕ∞}
+    (hf : ContDiff ℝ n f) (hn : 1 ≤ n) : ContDiff ℝ n γ := by
+  have hsub : ((n - 1 : ℕ∞) : WithTop ℕ∞) + 1 = n := by
+    exact_mod_cast tsub_add_cancel_of_le hn
+  have h := TauCeti.contDiff_succ_of_hasDerivAt (n := n - 1) (X := fun _ y ↦ -∇ f y)
+    ((hf.gradient_right (m := ((n - 1 : ℕ∞) : WithTop ℕ∞)) hsub.le).neg.comp contDiff_snd) hγ
+  rwa [hsub] at h
 
 /-- The value of `f` is antitone along a global negative gradient trajectory. -/
 theorem antitone_comp_neg_gradient
