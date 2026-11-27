@@ -8,7 +8,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Determinant.RTT.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.NoncommRing
+import Mathlib.Tactic.Module
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # The RTT matrix of a Toda site
@@ -68,28 +69,18 @@ coordinate is the coordinate itself. -/
   constructor
   · intro h
     have h' := isRTT_iff.mp h 1 0 0 0 0 1
-    simp [add_mul, mul_add] at h'
+    simp only [todaSite_apply_zero_zero, todaSite_apply_zero_one, map_one, map_zero, sub_zero,
+      one_smul, zero_add, add_mul, mul_add, mul_neg, neg_mul, one_mul, mul_one] at h'
     linear_combination (norm := abel) -h'
   · intro h
     have hc : p * (c : A) = (c : A) * p + c := by
       linear_combination (norm := abel) h
-    have hi : p * (↑c⁻¹ : A) = (↑c⁻¹ : A) * p - (↑c⁻¹ : A) := by
-      have h' := congrArg (fun z : A ↦ (↑c⁻¹ : A) * z * (↑c⁻¹ : A)) hc
-      simp only [mul_add, add_mul, ← mul_assoc, Units.inv_mul, one_mul] at h'
-      have h'' : (↑c⁻¹ : A) * p = p * (↑c⁻¹ : A) + (↑c⁻¹ : A) := by
-        simpa only [mul_assoc, Units.mul_inv, mul_one] using h'
-      exact eq_sub_of_add_eq h''.symm
+    have hi := Units.mul_inv_eq_inv_mul_sub_inv hc
     refine isRTT_iff.mpr fun u v i j k l ↦ ?_
+    -- Write the scalars as `• 1`, expand, and use `[p, c] = c` and `[p, c⁻¹] = -c⁻¹` to order
+    -- every product; what remains is linear over `K`.
     fin_cases i <;> fin_cases j <;> fin_cases k <;> fin_cases l <;>
-      simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, todaSite_apply_zero_zero,
-        todaSite_apply_zero_one, todaSite_apply_one_zero, todaSite_apply_one_one,
-        Algebra.smul_def, map_sub, add_mul, mul_add, sub_mul, mul_sub, mul_neg, neg_mul,
-        mul_zero, zero_mul, sub_self, zero_add, neg_zero, neg_neg,
-        Units.mul_inv, Units.inv_mul,
-        Algebra.commutes u p, Algebra.commutes v p,
-        Algebra.commutes u (c : A), Algebra.commutes v (c : A),
-        Algebra.commutes u (↑c⁻¹ : A), Algebra.commutes v (↑c⁻¹ : A),
-        Algebra.commutes u (algebraMap K A v), hc, hi] <;>
-      noncomm_ring
+      simp [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, hc, hi] <;>
+      module
 
 end TauCeti
