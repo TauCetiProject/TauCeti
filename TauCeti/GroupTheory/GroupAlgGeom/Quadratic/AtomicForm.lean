@@ -10,7 +10,6 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.StandardForm
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 import TauCeti.Data.List.OfFn
 import TauCeti.Data.List.Pair
-import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Automorphism
 
 /-!
 # Quadratic words in atomic form
