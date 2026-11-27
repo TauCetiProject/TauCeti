@@ -173,6 +173,12 @@ theorem differentialSymbol_filter_smul_id (M : ℕ) (β : ι → CoordinateSpace
   simp only [real_inner_comm]
   ring
 
+/-- A nonzero multiple of the identity of `ℂ` is invertible. -/
+private theorem isInvertible_smul_id_of_ne_zero {a : ℂ} (ha : a ≠ 0) :
+    (a • ContinuousLinearMap.id ℂ ℂ).IsInvertible := by
+  rw [ContinuousLinearMap.isInvertible_smul_iff ha, ← ContinuousLinearEquiv.coe_refl]
+  exact ContinuousLinearMap.isInvertible_equiv
+
 /-- **Ellipticity of a scalar differential operator.** The classical symbol of a differential
 operator with scalar coefficients `β i` is elliptic exactly when, at every position `y`, the
 principal symbol of the operator with coefficients frozen at `y` vanishes at no `ξ ≠ 0`. -/
@@ -189,9 +195,7 @@ theorem ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff (M : ℕ)
   · -- A multiple `0 • id` of the identity is not an isomorphism of `ℂ`.
     have he1 := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) he
     simp [h0] at he1
-  · rw [ContinuousLinearMap.isInvertible_smul_iff
-      (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
-    exact ⟨ContinuousLinearEquiv.refl ℂ ℂ, rfl⟩
+  · exact isInvertible_smul_id_of_ne_zero (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)
 
 open Metric in
 /-- **Freezing the coefficients away from a point.** If the principal symbol of
@@ -477,7 +481,7 @@ theorem IsMicrolocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
   · -- At `ξ = 0` this is local regularity: the principal symbol at `0` is `0 ^ M` times its value
     -- at any `η`, so it vanishes nowhere.
     refine (IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk (fun η _ ↦ ?_)
-      (isMicrolocallySobolevAt_zero_iff.1 hPT)).isMicrolocallySobolevAt 0
+      (isMicrolocallySobolevAt_zero_covector_iff.1 hPT)).isMicrolocallySobolevAt 0
     have h0 := principalSymbol_smul t (fun i y ↦ c i * g i y) m M x 0 η
     rw [zero_smul] at h0
     have hη := right_ne_zero_of_mul (h0 ▸ hξ)
@@ -508,10 +512,9 @@ theorem IsMicrolocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
       (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).principal.coefficient
         (x, ξ)).IsInvertible := by
     rw [ClassicalSymbol.coefficient_principal_ofDifferentialSymbol _ _ _ _ _ _ hξ0,
-      differentialSymbol_filter_smul_id, ContinuousLinearMap.isInvertible_smul_iff
-        (mul_ne_zero (pow_ne_zero _ I_ne_zero)
-          (by simpa [principalSymbol_def, hψx x hx4] using hξ))]
-    exact ⟨ContinuousLinearEquiv.refl ℂ ℂ, rfl⟩
+      differentialSymbol_filter_smul_id]
+    exact isInvertible_smul_id_of_ne_zero (mul_ne_zero (pow_ne_zero _ I_ne_zero)
+      (by simpa [principalSymbol_def, hψx x hx4] using hξ))
   obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, R, hell⟩ :=
     ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal hξ0 hprin
   -- `ψ P T` agrees with `P T` near `x`, and `χ T` with `T`.

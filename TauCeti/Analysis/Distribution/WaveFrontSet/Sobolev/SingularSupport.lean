@@ -56,8 +56,8 @@ The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s �
 
 * `Distribution.isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt`: `T` is `H^s` near a point
   `x ∈ Ω` exactly when it is microlocally `H^s` at `x` in every nonzero direction.
-* `Distribution.isMicrolocallySobolevAt_zero_iff`: at the zero covector, being microlocally `H^s`
-  is being `H^s` near the point.
+* `Distribution.isMicrolocallySobolevAt_zero_covector_iff`: at the zero covector, being
+  microlocally `H^s` is being `H^s` near the point.
 * `Distribution.fst_image_sobolevWaveFrontSet`: the projection of the `H^s` wave front set is the
   `H^s` singular support.
 * `Distribution.isMicrolocallySobolevAt_iff_of_isVanishingOn_sub`: microlocal `H^s` regularity
@@ -127,7 +127,7 @@ theorem IsLocallySobolevAt.isMicrolocallySobolevAt {s : ℝ} {T : 𝓓'(Ω, ℂ)
 
 /-- At the zero covector, being microlocally `H^s` is being `H^s` near the point: an open cone
 containing `0` is all of `E`. -/
-theorem isMicrolocallySobolevAt_zero_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} :
+theorem isMicrolocallySobolevAt_zero_covector_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} :
     T.IsMicrolocallySobolevAt s x 0 ↔ T.IsLocallySobolevAt s x := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.isMicrolocallySobolevAt 0⟩
   obtain ⟨φ, hφ, Γ, hΓ, h0, hcone, hL⟩ := isMicrolocallySobolevAt_iff.1 h
