@@ -55,8 +55,6 @@ The indexed component `Representation.conjSubrepIsotypicComponent` is defined in
   conjugating the abstract `N`-representation it carries agree on isomorphism classes.
 * `Representation.mem_inertia_fdRepOf_toRepresentation_iff`: a group element lies in the inertia
   group of a constituent exactly when its translate carries an equivalent `k[N]`-submodule.
-* `Representation.nonempty_linearEquiv_conjSubrep_iff`: translating two constituents by the same
-  `g` preserves whether they are isomorphic, in any dimension.
 * `Representation.conjSubmoduleHom_isotypicComponent`: translation carries the isotypic component
   of a constituent onto that of its translate.
 * `Representation.isPretransitive_isotypicComponents` and
@@ -162,38 +160,6 @@ theorem conjSubmoduleHom_symm (g : G) :
   RelIso.ext fun S ↦ by
     rw [OrderIso.symm_apply_eq, ← RelIso.mul_apply, ← map_mul, mul_inv_cancel, map_one,
       RelIso.one_apply]
-
-/-- Translation by `ρ g`, transporting a `k[N]`-linear equivalence `σ ≃ τ` to one between the
-translates. Each of `ρ g⁻¹` and `ρ g` is only semilinear over conjugation, and the two twists
-cancel. -/
-private noncomputable def conjSubrepLinearEquiv (g : G) {σ τ : Subrepresentation (ρ.comp N.subtype)}
-    (e : σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule) :
-    (conjSubrep ρ g σ).asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g τ).asSubmodule where
-  toFun x := conjSubrepMap ρ g (fun v hv ↦ mem_conjSubrep_iff.mpr (by rwa [ρ.inv_self_apply]))
-    (e (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) x))
-  invFun y := conjSubrepMap ρ g (fun v hv ↦ mem_conjSubrep_iff.mpr (by rwa [ρ.inv_self_apply]))
-    (e.symm (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) y))
-  map_add' x y := by simp
-  map_smul' a x := by
-    simp only [conjSubrepMap_smul, map_smul, RingHom.id_apply, ← AlgEquiv.mul_apply, ← map_mul,
-      mul_inv_cancel, map_one, AlgEquiv.one_apply]
-  left_inv x := by simp
-  right_inv y := by simp
-
-/-- Translating two `N`-subrepresentations by the same `g` does not change whether they are
-isomorphic as representations of `N`. -/
-theorem nonempty_linearEquiv_conjSubrep_iff (g : G)
-    (σ τ : Subrepresentation (ρ.comp N.subtype)) :
-    Nonempty ((conjSubrep ρ g σ).asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g τ).asSubmodule) ↔
-      Nonempty (σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule) := by
-  refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨conjSubrepLinearEquiv ρ g e⟩⟩
-  have hσ : conjSubrep ρ g⁻¹ (conjSubrep ρ g σ) = σ := by
-    rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
-  have hτ : conjSubrep ρ g⁻¹ (conjSubrep ρ g τ) = τ := by
-    rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
-  exact ⟨(LinearEquiv.ofEq _ _ (congrArg Subrepresentation.asSubmodule hσ)).symm.trans
-    ((conjSubrepLinearEquiv ρ g⁻¹ e).trans
-      (LinearEquiv.ofEq _ _ (congrArg Subrepresentation.asSubmodule hτ)))⟩
 
 /-- **Translation carries isotypic components to isotypic components**: `ρ g` carries the isotypic
 component of `σ` onto that of the translate `conjSubrep ρ g σ`. -/
