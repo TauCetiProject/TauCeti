@@ -178,9 +178,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
       ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦
           exchangePerturbation H p.1 (equivRealProdCLM.symm p.2) x w) (p, x) :=
-    (((contMDiffAt_exchangePerturbation hH hHs p.1 ⟨equivRealProdCLM.symm p.2, hp.2⟩ x).comp
-      (p, x) contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const).of_le
-        (by norm_num)
+    contMDiffAt_uncurry_exchangePerturbation_apply hH hHs w hp.2 x
   have hWS : IsOpen (W ∩ univ ×ˢ S) := hW.inter (isOpen_univ.prod isOpen_thricePuncturedSphereReal)
   have hCDWS : C ×ˢ D ⊆ W ∩ univ ×ˢ S :=
     subset_inter hCDW (prod_mono (subset_univ _) hDS)

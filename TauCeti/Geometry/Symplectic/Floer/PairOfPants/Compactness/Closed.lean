@@ -180,12 +180,13 @@ injective and differentiable, with the structures `J_q` uniformly tame with resp
 `c ‖d e v‖² ≤ ω(v, J_q v)` with `c > 0`, and the pushforwards through `e` of the Hamiltonian
 vector fields of the end Hamiltonians `H'_q(t)` at most `L`. Fix a compact window
 `D ⊆ (max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end chart. There is a threshold `δ > 0` with
-the following property. Let `Kₖ` be perturbations on `S = ℂ ∖ {0, 1}` equal to `H_q(t) dt` beyond
-`T₀` on the end `q`, and `Jₖ(z, x)` structures on the tangent spaces of `M`, `z ∈ S` read in real
+the following property. Let `Kₖ` be perturbations on `ℂ` equal to `H_q(t) dt` beyond
+`T₀` on the end `q`, and `Jₖ(z, x)` structures on the tangent spaces of `M`, `z` read in real
 coordinates, with `Jₖ(φ_q(±s, t), x) = J_q(t, x)` on the end `q` beyond `T₀`. Let `uₖ` be `C³`
-solutions of `(du - X_{Kₖ})^{0,1} = 0` on `S` for `Jₖ(z, u)` with energy at most `E ≥ 0`, let
-`Rₖ ≥ 0` be heights, and let `Ω ⊆ D` be open. Then there are a subsequence `φ` and a finite set
-`Z ⊆ Ω` with `#Z * δ ≤ E` such that, along `φ`, for the translated ends
+solutions of `(du - X_{Kₖ})^{0,1} = 0` for `Jₖ(z, u)` with energy at most `E ≥ 0` on open sets
+`Uₖ` containing the part `s > max T₀ 0` of the positive end chart, such as Floer pairs of pants on
+`S = Uₖ`, let `Rₖ ≥ 0` be heights, and let `Ω ⊆ D` be open. Then there are a subsequence `φ` and a
+finite set `Z ⊆ Ω` with `#Z * δ ≤ E` such that, along `φ`, for the translated ends
 `vₖ(z) = uₖ(φ'_q(z + (Rₖ, 0)))`, every disc about a point of `Z` eventually carries energy at least
 `δ` for the cylindrical datum `H'_q dt`, the energy densities are uniformly bounded on every
 compact subset of `Ω \ Z`, and the translated ends converge on `Ω \ Z` to a continuous map `v`,
@@ -206,18 +207,19 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_
     (hDT : D ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
     ∃ δ > 0, ∀ ⦃K : ℕ → ℂ → M → ℂ →L[ℝ] ℝ⦄
       ⦃J : ℕ → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)⦄
-      ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
+      ⦃Ω : Set (ℝ × ℝ)⦄ ⦃U : ℕ → Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
       (∀ k w x, T₀ ≤ q.endSign * (q.endCoord w).re →
         K k w x = H q (q.endCoord w).im x • q.endAngularForm w) →
       (∀ k s t x, T₀ ≤ s → J k (endChart q (q.endSign * s, t)) x = Jq t x) →
-      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) →
-      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) thricePuncturedSphereReal) →
-      (∀ k, ∀ z ∈ thricePuncturedSphereReal,
+      IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) → (∀ k, IsOpen (U k)) →
+      (∀ k (ζ : ℝ × ℝ), max T₀ 0 < ζ.1 → positiveEndChart q ζ ∈ U k) →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) (U k)) →
+      (∀ k, ∀ z ∈ U k,
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z (u k z))
           (ω.perturbedMFDeriv (fun z x ↦ K k (equivRealProdCLM.symm z) x 1)
             (fun z x ↦ K k (equivRealProdCLM.symm z) x Complex.I) (u k) z).toLinearMap) →
       0 ≤ E →
-      (∀ k, ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (∀ k, ∫⁻ z in U k, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K k (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K k (equivRealProdCLM.symm z) x Complex.I) (u k) z) ≤ ENNReal.ofReal E) →
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Finset (ℝ × ℝ), ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
@@ -256,12 +258,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_comp_
       simp only [hamiltonianVectorField_const, Pi.zero_apply, map_zero]
       exact norm_zero.trans_le ((norm_nonneg _).trans (hL 0 x)))
     fun w _ x ↦ hL w.2 x
-  refine ⟨δ, hδ, fun K J Ω u R E hKH hJ hΩ hΩD hR hu hfl hE0 hE ↦ ?_⟩
+  refine ⟨δ, hδ, fun K J Ω U u R E hKH hJ hΩ hΩD hR hU hUq hu hfl hE0 hE ↦ ?_⟩
   -- The translated ends solve the Floer equation of the end, with energy at most `E`.
   have h (k : ℕ) :=
     contMDiffOn_and_isComplexLinearMap_and_integral_le_comp_positiveEndChart_add hω (hKH k) hH
-      hHq (hJ k) (C := univ) (fun t x _ ↦ hJt t x) hΩ hΩD hDT (hR k) (hu k) (hfl k) hE0 (hE k)
-      fun _ _ ↦ mem_univ _
+      hHq (hJ k) (C := univ) (fun t x _ ↦ hJt t x) hΩ hΩD hDT (hR k) (hU k) (hUq k) (hu k)
+      (hfl k) hE0 (hE k) fun _ _ ↦ mem_univ _
   exact hconv hΩ hΩD (fun k ↦ (h k).1) (fun k ↦ (h k).2.1) (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
 
