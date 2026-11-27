@@ -69,10 +69,10 @@ section Bounds
 variable {t : K}
 
 private theorem norm_pos_of_lt_norm (h₀ : (p : ℝ)⁻¹ < ‖t‖) : 0 < ‖t‖ :=
-  (inv_pos.2 p_pos).trans h₀
+  (inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)).trans h₀
 
 private theorem one_lt_mul_norm (h₀ : (p : ℝ)⁻¹ < ‖t‖) : 1 < (p : ℝ) * ‖t‖ := by
-  rwa [inv_lt_iff_one_lt_mul₀' (p_pos (p := p))] at h₀
+  rwa [inv_lt_iff_one_lt_mul₀' (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)] at h₀
 
 /-- The bound `‖t‖ ^ i (p ‖t‖)⁻¹ ^ j` on the monomial values `‖a_(i,j) t ^ i (p / t) ^ j‖` is
 summable over the exponents `(i, j)`. -/
@@ -88,8 +88,8 @@ private theorem summable_pow_mul_pow (h₀ : (p : ℝ)⁻¹ < ‖t‖) (h₁ : �
 /-- A point with `‖t‖ ^ N = p ^ (-k)` and `k < N` lies outside the circle `‖t‖ = p⁻¹`. -/
 private theorem lt_norm_of_norm_pow_eq {k N : ℕ} (hkN : k < N) (h : ‖t‖ ^ N = (p : ℝ)⁻¹ ^ k) :
     (p : ℝ)⁻¹ < ‖t‖ := by
-  have hp : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ one_lt_p
-  have hp₀ : (0 : ℝ) < (p : ℝ)⁻¹ := inv_pos.2 p_pos
+  have hp : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
+  have hp₀ : (0 : ℝ) < (p : ℝ)⁻¹ := inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)
   refine (pow_lt_pow_iff_left₀ hp₀.le (norm_nonneg t) (by omega : N ≠ 0)).1 ?_
   rw [h]
   exact pow_lt_pow_right_of_lt_one₀ hp₀ hp hkN
@@ -97,7 +97,7 @@ private theorem lt_norm_of_norm_pow_eq {k N : ℕ} (hkN : k < N) (h : ‖t‖ ^ 
 /-- A point with `‖t‖ ^ N = p ^ (-k)` and `0 < k` lies inside the unit circle. -/
 private theorem norm_lt_one_of_norm_pow_eq {k N : ℕ} (hk : 0 < k)
     (h : ‖t‖ ^ N = (p : ℝ)⁻¹ ^ k) : ‖t‖ < 1 := by
-  have hp : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ one_lt_p
+  have hp : (p : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
   have hlt : (p : ℝ)⁻¹ ^ k < 1 := pow_lt_one₀ (by positivity) hp hk.ne'
   have hN : N ≠ 0 := by
     rintro rfl
@@ -112,7 +112,8 @@ end Bounds
 private theorem neg_valuation_le (x : AnnularRing p) {m : ℤ} (hm : x.coeff m ≠ 0) :
     -((x.coeff m).valuation : ℤ) ≤ min 0 m := by
   have h := x.norm_coeff_le m
-  rwa [PadicInt.norm_eq_zpow_neg_valuation hm, zpow_le_zpow_iff_right₀ one_lt_p] at h
+  rwa [PadicInt.norm_eq_zpow_neg_valuation hm,
+    zpow_le_zpow_iff_right₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)] at h
 
 /-- The exponent `E(m) = v_p(d_m) N + k m`, for which `‖d_m t ^ m‖ ^ N = p ^ (-E(m))` when
 `‖t‖ ^ N = p ^ (-k)`. -/
@@ -204,10 +205,10 @@ variable {t : K}
 private theorem norm_term_pow {k N : ℕ} (h : ‖t‖ ^ N = (p : ℝ)⁻¹ ^ k) (x : AnnularRing p)
     {m : ℤ} (hm : x.coeff m ≠ 0) :
     ‖algebraMap ℚ_[p] K (x.coeff m) * t ^ m‖ ^ N = (p : ℝ) ^ (-exponent x k N m) := by
-  have hp : (p : ℝ) ≠ 0 := (p_pos (p := p)).ne'
+  have hp : (p : ℝ) ≠ 0 := (Nat.cast_pos.mpr (Fact.out : p.Prime).pos).ne'
   have hN : (‖t‖ ^ m) ^ N = ((p : ℝ) ^ (-(k : ℤ))) ^ m := by
-    rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, h, inv_pow, zpow_neg,
-      zpow_natCast]
+    rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, h]
+    simp [zpow_neg]
   rw [norm_mul, ← padicIntAlgebraMap_apply, norm_padicIntAlgebraMap, norm_zpow, mul_pow, hN,
     PadicInt.norm_eq_zpow_neg_valuation hm, ← zpow_natCast, ← zpow_mul, ← zpow_mul, ← zpow_add₀ hp,
     exponent]
@@ -304,7 +305,8 @@ theorem eq_zero_of_forall_eval_eq_zero {x : AnnularRing p}
     · simpa [hxm] using hpos
     · refine (pow_lt_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) (by omega : 2 * k + 1 ≠ 0)).1 ?_
       rw [norm_term_pow ht x hxm, norm_term_pow ht x hm₀]
-      exact zpow_lt_zpow_right₀ one_lt_p (neg_lt_neg (hdom m hm hxm))
+      exact zpow_lt_zpow_right₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
+        (neg_lt_neg (hdom m hm hxm))
   rw [h t h₀ h₁, norm_zero] at hnorm
   exact hpos.ne hnorm
 

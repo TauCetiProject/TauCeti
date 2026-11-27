@@ -93,11 +93,7 @@ namespace AnnularRing
 
 variable {p}
 
-/-- For a prime `p`, `(1 : ℝ) < p`. -/
-theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-
-/-- For a prime `p`, `(0 : ℝ) < p`. -/
-theorem p_pos : (0 : ℝ) < p := zero_lt_one.trans one_lt_p
+private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
 
 /-- The norm condition defining `AnnularRing` is the divisibility `p ^ (-m) ∣ d_m`, read as
 `p ^ 0 ∣ d_m` for `m ≥ 0`. -/

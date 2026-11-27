@@ -79,9 +79,9 @@ variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedDivisionRing K] [NormedAlge
 `‖localizedEval t x‖ ≤ ‖x‖`. -/
 theorem norm_localizedEval_le_of_eq (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1) (x : A) :
     letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors
-      ((inv_pos.2 (p_pos (p := p))).trans ht₀) ht₁
+      ((inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)).trans ht₀) ht₁
     ‖localizedEval t ht₀ ht₁ x‖ ≤ ‖x‖ := by
-  have htpos : 0 < ‖t‖ := (inv_pos.2 (p_pos (p := p))).trans ht₀
+  have htpos : 0 < ‖t‖ := (inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)).trans ht₀
   let := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors htpos ht₁
   rw [Huber.norm_awayNormedCommRing]
   set d := Huber.awayTateNormDatum
@@ -118,7 +118,7 @@ theorem not_exists_bound_localizedEval_of_ne {α : ℝ} (hα₀ : 0 < α) (hα�
   have : NormOneClass A :=
     Huber.normOneClass_awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
   rintro ⟨C, hC⟩
-  have htpos : 0 < ‖t‖ := (inv_pos.2 (p_pos (p := p))).trans ht₀
+  have htpos : 0 < ‖t‖ := (inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)).trans ht₀
   have hpow (k : ℤ) : ‖t‖ ^ k ≤ C * α ^ k := by
     set u : Aˣ := (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit
     have hnorm_u : ‖((u ^ k : Aˣ) : A)‖ = α ^ k := by

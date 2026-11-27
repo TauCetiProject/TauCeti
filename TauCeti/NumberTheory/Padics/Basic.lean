@@ -33,7 +33,8 @@ by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
-when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1`
+when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` it is bounded
+(`TauCeti.exists_norm_padicIntAlgebraMap_le`), and when `‖1‖ ≤ 1`
 (including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
@@ -162,6 +163,14 @@ variable {p : ℕ} [Fact (Nat.Prime p)] {K : Type*} [SeminormedRing K] [NormedAl
 theorem norm_padicIntAlgebraMap [NormOneClass K] (a : ℤ_[p]) :
     ‖padicIntAlgebraMap p K a‖ = ‖a‖ := by
   simp [norm_algebraMap']
+
+/-- In a seminormed `ℚ_p`-algebra, the structure map `ℤ_p → K` is bounded:
+`‖padicIntAlgebraMap p K a‖ ≤ ‖(1 : K)‖ * ‖a‖`. -/
+theorem exists_norm_padicIntAlgebraMap_le :
+    ∃ C : ℝ, ∀ a : ℤ_[p], ‖padicIntAlgebraMap p K a‖ ≤ C * ‖a‖ :=
+  ⟨‖(1 : K)‖, fun a ↦ by
+    rw [padicIntAlgebraMap_apply, Algebra.algebraMap_eq_smul_one, mul_comm]
+    simpa [PadicInt.norm_coe] using norm_smul_le (a : ℚ_[p]) (1 : K)⟩
 
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the structure map `ℤ_p → K` is an isometry. -/
 theorem isometry_padicIntAlgebraMap [NormOneClass K] : Isometry (padicIntAlgebraMap p K) :=

@@ -34,6 +34,8 @@ series, and the `T`-adic filtration `T ^ n H` is characterized by
 
 * `TauCeti.AnnularRing.localizedCoeff`: the coefficient family `ℤ → ℤ_p` of an element of any
   localization `A` of `AnnularRing p` away from `T`.
+* `TauCeti.AnnularRing.localizedCoeffAddHom`: the `m`-th coefficient map `localizedCoeff p · m` as
+  an additive monoid homomorphism `A →+ ℤ_p`.
 
 ## Main results
 
@@ -87,7 +89,8 @@ instance instIsHausdorffSpanT : IsHausdorff (Ideal.span {(T : AnnularRing p)}) (
   have hle (n : ℕ) : ‖x.coeff m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
     simpa using (smodEq_span_T_pow_iff.mp (hx n)) m
   have ht : Tendsto (fun _ : ℕ ↦ x.coeff m) atTop (𝓝 0) :=
-    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p)) hle (tendsto_min_zero_sub_nat m)
+    tendsto_zero_of_norm_le_zpow (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt) hle
+      (tendsto_min_zero_sub_nat m)
   exact tendsto_const_nhds_iff.mp ht
 
 /-- `AnnularRing p` is `(T)`-adically precomplete: a `(T)`-adically Cauchy sequence converges
@@ -102,7 +105,7 @@ instance instIsPrecompleteSpanT :
   have hconv (m : ℤ) : ∃ c : ℤ_[p], Tendsto (fun n ↦ (f n).coeff m) atTop (𝓝 c) := by
     refine cauchySeq_tendsto_of_complete (Metric.cauchySeq_iff'.2 fun ε hε ↦ ?_)
     have hlim : Tendsto (fun n : ℕ ↦ (p : ℝ) ^ min (0 : ℤ) (m - n)) atTop (𝓝 0) :=
-      tendsto_zero_of_norm_le_zpow (one_lt_p (p := p))
+      tendsto_zero_of_norm_le_zpow (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
         (fun n ↦ by rw [Real.norm_of_nonneg (by positivity)]) (tendsto_min_zero_sub_nat m)
     obtain ⟨N, hN⟩ := (hlim.eventually (gt_mem_nhds hε)).exists
     refine ⟨N, fun n hn ↦ ?_⟩
@@ -158,10 +161,8 @@ theorem localizedCoeff_eq_of_mul_pow {x : A} {a : AnnularRing p} {k : ℕ}
     ring
   have hc := congr_arg (coeff · (m + k + k')) heq
   rw [coeff_T_pow_mul, coeff_T_pow_mul] at hc
-  have h1 : m + (k : ℤ) + (k' : ℤ) - (k : ℤ) = m + (k' : ℤ) := by omega
-  have h2 : m + (k : ℤ) + (k' : ℤ) - (k' : ℤ) = m + (k : ℤ) := by omega
-  rw [h1, h2] at hc
-  exact hc
+  dsimp only [localizedCoeff]
+  convert hc using 2 <;> omega
 
 /-- The coefficients of the image of `a ∈ H` in `H[1/T]` are the coefficients of `a`. -/
 @[simp] theorem localizedCoeff_algebraMap (a : AnnularRing p) (m : ℤ) :
@@ -181,10 +182,7 @@ theorem localizedCoeff_injective : Function.Injective (localizedCoeff p (A := A)
     have hy := localizedCoeff_eq_of_mul_pow h₂ (m - k₁ - k₂)
     have hm := congr_fun hxy (m - k₁ - k₂)
     rw [hx, hy] at hm
-    have h1 : m - (k₁ : ℤ) - (k₂ : ℤ) + (k₁ : ℤ) = m - (k₂ : ℤ) := by omega
-    have h2 : m - (k₁ : ℤ) - (k₂ : ℤ) + (k₂ : ℤ) = m - (k₁ : ℤ) := by omega
-    rw [h1, h2] at hm
-    exact hm
+    convert hm using 2 <;> omega
   have hmul : x * algebraMap (AnnularRing p) A T ^ (k₁ + k₂) =
       y * algebraMap (AnnularRing p) A T ^ (k₁ + k₂) := by
     calc x * algebraMap (AnnularRing p) A T ^ (k₁ + k₂)
@@ -225,26 +223,43 @@ constructor rather than an abstract type variable `A`). -/
     ring
   rw [localizedCoeff_eq_of_mul_pow hsum, coeff_add, coeff_T_pow_mul, coeff_T_pow_mul,
     localizedCoeff_eq_of_mul_pow h₁, localizedCoeff_eq_of_mul_pow h₂]
-  have h1 : m + ((k₁ + k₂ : ℕ) : ℤ) - (k₂ : ℤ) = m + (k₁ : ℤ) := by omega
-  have h2 : m + ((k₁ + k₂ : ℕ) : ℤ) - (k₁ : ℤ) = m + (k₂ : ℤ) := by omega
-  rw [h1, h2]
+  congr 2 <;> omega
+
+/-- The `m`-th coefficient map `localizedCoeff p · m` on `H[1/T]` as an additive monoid
+homomorphism `A →+ ℤ_p`. -/
+def localizedCoeffAddHom (p : ℕ) [Fact p.Prime] {A : Type*} [CommRing A]
+    [Algebra (AnnularRing p) A] [IsLocalization.Away (T : AnnularRing p) A] (m : ℤ) :
+    A →+ ℤ_[p] where
+  toFun x := localizedCoeff p x m
+  map_zero' := localizedCoeff_zero m
+  map_add' x y := localizedCoeff_add x y m
+
+@[simp] theorem localizedCoeffAddHom_apply (m : ℤ) (x : A) :
+    localizedCoeffAddHom p m x = localizedCoeff p x m := (rfl)
 
 @[simp] theorem localizedCoeff_neg (x : A) (m : ℤ) :
-    localizedCoeff p (-x) m = -localizedCoeff p x m := by
-  obtain ⟨k, a, h⟩ := IsLocalization.Away.surj (T : AnnularRing p) x
-  have hneg : (-x) * algebraMap (AnnularRing p) A T ^ k = algebraMap (AnnularRing p) A (-a) := by
-    rw [neg_mul, h, map_neg]
-  rw [localizedCoeff_eq_of_mul_pow hneg, localizedCoeff_eq_of_mul_pow h, coeff_neg]
+    localizedCoeff p (-x) m = -localizedCoeff p x m :=
+  (localizedCoeffAddHom p m).map_neg x
 
 @[simp] theorem localizedCoeff_sub (x y : A) (m : ℤ) :
-    localizedCoeff p (x - y) m = localizedCoeff p x m - localizedCoeff p y m := by
-  rw [sub_eq_add_neg, localizedCoeff_add, localizedCoeff_neg, sub_eq_add_neg]
+    localizedCoeff p (x - y) m = localizedCoeff p x m - localizedCoeff p y m :=
+  (localizedCoeffAddHom p m).map_sub x y
 
-private theorem localizedCoeff_nsmul (n : ℕ) (x : A) (m : ℤ) :
-    localizedCoeff p (n • x) m = n • localizedCoeff p x m := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [succ_nsmul, succ_nsmul, localizedCoeff_add, ih]
+theorem localizedCoeff_nsmul (n : ℕ) (x : A) (m : ℤ) :
+    localizedCoeff p (n • x) m = n • localizedCoeff p x m :=
+  (localizedCoeffAddHom p m).map_nsmul n x
+
+theorem localizedCoeff_zsmul (n : ℤ) (x : A) (m : ℤ) :
+    localizedCoeff p (n • x) m = n • localizedCoeff p x m :=
+  (localizedCoeffAddHom p m).map_zsmul n x
+
+@[simp] theorem localizedCoeff_natCast_mul (n : ℕ) (x : A) (m : ℤ) :
+    localizedCoeff p ((n : A) * x) m = (n : ℤ_[p]) * localizedCoeff p x m := by
+  rw [← nsmul_eq_mul, localizedCoeff_nsmul, nsmul_eq_mul]
+
+@[simp] theorem localizedCoeff_intCast_mul (n : ℤ) (x : A) (m : ℤ) :
+    localizedCoeff p ((n : A) * x) m = (n : ℤ_[p]) * localizedCoeff p x m := by
+  rw [← zsmul_eq_mul, localizedCoeff_zsmul, zsmul_eq_mul]
 
 /-- Any localization `H[1/T]` is `p`-adically separated, since divisibility by `p ^ n` forces the
 same divisibility on every localized coefficient. -/
@@ -255,11 +270,11 @@ instance instIsHausdorffSpanP : IsHausdorff (Ideal.span {(p : A)}) A := by
     rw [SModEq.sub_mem, sub_zero, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
       Ideal.mem_span_singleton] at hmem
     obtain ⟨r, hr⟩ := hmem
-    rw [hr, ← Nat.cast_pow, ← nsmul_eq_mul, localizedCoeff_nsmul, nsmul_eq_mul, Nat.cast_pow,
-      norm_mul, PadicInt.norm_p_pow]
+    rw [hr, ← Nat.cast_pow, localizedCoeff_natCast_mul, Nat.cast_pow, norm_mul,
+      PadicInt.norm_p_pow]
     exact mul_le_of_le_one_right (by positivity) (PadicInt.norm_le_one _)
   have ht : Tendsto (fun _ : ℕ ↦ localizedCoeff p x m) atTop (𝓝 0) :=
-    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p)) hle
+    tendsto_zero_of_norm_le_zpow (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt) hle
       (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
   simpa using tendsto_const_nhds_iff.mp ht
 
@@ -323,7 +338,7 @@ degrees. -/
     have hinv : (((u ^ ((n + 1 : ℕ) : ℤ) : Aˣ) : A) *
         (((u ^ Int.negSucc n : Aˣ) : A) * x)) = x := by
       rw [Int.negSucc_eq, ← Nat.cast_add_one, zpow_neg]
-      exact ((Units.inv_mul_eq_iff_eq_mul (u ^ ((n + 1 : ℕ) : ℤ))).mp rfl).symm
+      exact Units.mul_inv_cancel_left (u ^ ((n + 1 : ℕ) : ℤ)) x
     have hmul : algebraMap (AnnularRing p) A T ^ (n + 1) * (((u ^ Int.negSucc n : Aˣ) : A) * x) =
         x := by
       simpa only [zpow_natCast, Units.val_pow_eq_pow_val, hu] using hinv
