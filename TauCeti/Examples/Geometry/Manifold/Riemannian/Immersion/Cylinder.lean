@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Euclidean
 
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
 
 /-!
@@ -36,7 +35,8 @@ cylinder at `cyl (θ, z)`. With the outward unit normal `ν = (cos θ, sin θ, 0
   (`TauCeti.CylinderCheck.immersionMeanCurvatureVector_cyl`); `H` does not involve a choice of
   normal, and reversing `ν` reverses the signs of both principal curvatures and of `ν`.
 
-These are the cylinder Checks of the RiemannianGeometry roadmap, R5a and R5a.2.
+The cylinder is the basic example of a surface whose second fundamental form is not a multiple of
+the metric and whose Gauss curvature vanishes although it is curved in `ℝ³`.
 -/
 
 public section
@@ -78,7 +78,7 @@ def ν (y : ℝ²) : ℝ³ := cos (y 0) • e 0 + sin (y 0) • e 1
 def τ (y : ℝ²) : ℝ³ := -sin (y 0) • e 0 + cos (y 0) • e 1
 
 /-- The derivative of `ν` is `(π₀ ·) • τ`. -/
-theorem hasFDerivAt_ν (y : ℝ²) : HasFDerivAt ν ((π₀).smulRight (τ y)) y := by
+private theorem hasFDerivAt_ν (y : ℝ²) : HasFDerivAt ν ((π₀).smulRight (τ y)) y := by
   have hfun : ν = fun y ↦ cos (π₀ y) • e 0 + sin (π₀ y) • e 1 := by
     funext y
     simp [ν]
@@ -90,7 +90,7 @@ theorem hasFDerivAt_ν (y : ℝ²) : HasFDerivAt ν ((π₀).smulRight (τ y)) y
   simp [τ, smul_smul, mul_comm]
 
 /-- The derivative of `τ` is `-(π₀ ·) • ν`. -/
-theorem hasFDerivAt_τ (y : ℝ²) : HasFDerivAt τ ((π₀).smulRight (-ν y)) y := by
+private theorem hasFDerivAt_τ (y : ℝ²) : HasFDerivAt τ ((π₀).smulRight (-ν y)) y := by
   have hfun : τ = fun y ↦ -sin (π₀ y) • e 0 + cos (π₀ y) • e 1 := by
     funext y
     simp [τ]
@@ -122,27 +122,27 @@ theorem contDiff_cyl : ContDiff ℝ 2 cyl := by
 /-- The differential of the parametrization: `d cyl (w) = w₀ τ + w₁ e₂`. -/
 theorem mfderiv_cyl (y w : ℝ²) :
     mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ³) cyl y w = w 0 • τ y + w 1 • e 2 := by
-  rw [(hasFDerivAt_cyl y).hasMFDerivAt.mfderiv]
-  rfl
+  have h : ((π₀).smulRight (τ y) + (π₁).smulRight (e 2)) w = w 0 • τ y + w 1 • e 2 := by simp
+  exact (DFunLike.congr_fun (hasFDerivAt_cyl y).hasMFDerivAt.mfderiv w).trans h
 
 /-- `τ` and `ν` are orthogonal. -/
-theorem inner_τ_ν (y : ℝ²) : ⟪τ y, ν y⟫_ℝ = 0 := by
+private theorem inner_τ_ν (y : ℝ²) : ⟪τ y, ν y⟫_ℝ = 0 := by
   simp only [τ, ν, PiLp.inner_apply, Fin.sum_univ_three]
   simp
   ring
 
 /-- `ν` is a unit vector. -/
-theorem inner_ν_ν (y : ℝ²) : ⟪ν y, ν y⟫_ℝ = 1 := by
+private theorem inner_ν_ν (y : ℝ²) : ⟪ν y, ν y⟫_ℝ = 1 := by
   simp only [ν, PiLp.inner_apply, Fin.sum_univ_three]
   simp
 
 /-- `e₂` and `ν` are orthogonal. -/
-theorem inner_e₂_ν (y : ℝ²) : ⟪e 2, ν y⟫_ℝ = 0 := by
+private theorem inner_e₂_ν (y : ℝ²) : ⟪e 2, ν y⟫_ℝ = 0 := by
   simp only [ν, PiLp.inner_apply, Fin.sum_univ_three]
   simp
 
 /-- The outward normal `ν` is orthogonal to the image of the differential. -/
-theorem inner_mfderiv_cyl_ν (y u : ℝ²) :
+private theorem inner_mfderiv_cyl_ν (y u : ℝ²) :
     ⟪(mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ³) cyl y u : ℝ³), ν y⟫_ℝ = 0 := by
   have h : ⟪u 0 • τ y + u 1 • e 2, ν y⟫_ℝ = 0 := by
     rw [inner_add_left, real_inner_smul_left, real_inner_smul_left, inner_τ_ν, inner_e₂_ν,
@@ -177,9 +177,11 @@ theorem immersionSecondFundamentalFormAt_cyl (x v w : ℝ²) :
     exact hD.differentiableAt.mdifferentiableAt
   have hval : mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ³) (fun y ↦ (mfderiv 𝓘(ℝ, ℝ²) 𝓘(ℝ, ℝ³) cyl y w : ℝ³)) x v =
       -(v 0 * w 0) • ν x := by
-    rw [hY, hD.hasMFDerivAt.mfderiv]
-    change w 0 • (v 0 • -ν x) = -(v 0 * w 0) • ν x
-    module
+    have h : (w 0 • (π₀).smulRight (-ν x)) v = -(v 0 * w 0) • ν x := by
+      simp
+      module
+    rw [hY]
+    exact (DFunLike.congr_fun hD.hasMFDerivAt.mfderiv v).trans h
   rw [immersionSecondFundamentalFormAt_apply (X := fun _ ↦ v) (Y := fun _ ↦ w) hf (hc v) (hc w),
     immersionSecondFundamentalForm_model_space (I := 𝓘(ℝ, ℝ²)) (X := fun _ ↦ v)
       (Y := fun _ ↦ w) (hf.mdifferentiableAt (by norm_num)) hdY, hval]
@@ -190,20 +192,18 @@ theorem immersionSecondFundamentalFormAt_cyl (x v w : ℝ²) :
 theorem immersionSecondFundamentalFormAt_cyl_eθ (x : ℝ²) :
     immersionSecondFundamentalFormAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x
       eθ eθ = -ν x := by
-  rw [immersionSecondFundamentalFormAt_cyl]
-  change -((1 : ℝ) * 1) • ν x = -ν x
-  rw [mul_one, neg_smul, one_smul]
+  have h : (-(eθ 0 * eθ 0) • ν x : ℝ³) = -ν x := by simp
+  exact (immersionSecondFundamentalFormAt_cyl x eθ eθ).trans h
 
 /-- `B(e_z, e_z) = 0` on the unit cylinder. -/
 theorem immersionSecondFundamentalFormAt_cyl_ez (x : ℝ²) :
     immersionSecondFundamentalFormAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x
       ez ez = 0 := by
-  rw [immersionSecondFundamentalFormAt_cyl]
-  change -((0 : ℝ) * 0) • ν x = 0
-  rw [mul_zero, neg_zero, zero_smul]
+  have h : (-(ez 0 * ez 0) • ν x : ℝ³) = 0 := by simp
+  exact (immersionSecondFundamentalFormAt_cyl x ez ez).trans h
 
 /-- The pairing of the shape operator of the cylinder with a tangent vector. -/
-theorem inner_immersionShapeOperatorAt_cyl (x v w : ℝ²) :
+private theorem inner_immersionShapeOperatorAt_cyl (x v w : ℝ²) :
     ⟪immersionShapeOperatorAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x (ν x) v,
       w⟫_ℝ = ⟪-(v 0) • eθ, w⟫_ℝ := by
   refine (inner_immersionShapeOperatorAt (ν x) v w).trans
@@ -220,12 +220,13 @@ theorem immersionShapeOperatorAt_cyl_apply (x v : ℝ²) :
 /-- **The principal curvatures of the unit cylinder** in the outward direction are `0, -1`, in
 decreasing order: the zero eigenvalue is counted. -/
 theorem immersionPrincipalCurvatures_cyl (x : ℝ²)
-    (ht : (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³).IsTorsionFree)
-    (hm : finrank ℝ ℝ² = 2) :
-    immersionPrincipalCurvatures 𝓘(ℝ, ℝ²) cyl x ht hm (ν x) = ![0, -1] := by
+    (ht : (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³).IsTorsionFree) :
+    immersionPrincipalCurvatures 𝓘(ℝ, ℝ²) cyl x ht finrank_euclideanSpace_fin (ν x) =
+      ![0, -1] := by
   let b : Module.Basis (Fin 2) ℝ ℝ² :=
     (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.reindex (Equiv.swap 0 1)
-  refine immersionPrincipalCurvatures_eq_of_eigenbasis ht hm (ν x) b ?_ fun i ↦ ?_
+  refine immersionPrincipalCurvatures_eq_of_eigenbasis ht finrank_euclideanSpace_fin (ν x) b ?_
+    fun i ↦ ?_
   · intro i j hij
     fin_cases i <;> fin_cases j <;> simp_all
   · have hb0 : b 0 = ez := by
@@ -236,40 +237,40 @@ theorem immersionPrincipalCurvatures_cyl (x : ℝ²)
         EuclideanSpace.basisFun_apply, OrthonormalBasis.coe_toBasis]
     have h0 : immersionShapeOperatorAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x
         (ν x) (b 0) = (0 : ℝ) • b 0 := by
+      have h : (-(ez 0) • eθ : ℝ²) = (0 : ℝ) • ez := by simp
       rw [hb0]
-      refine (immersionShapeOperatorAt_cyl_apply x ez).trans ?_
-      change -(ez 0) • eθ = (0 : ℝ) • ez
-      simp
+      exact (immersionShapeOperatorAt_cyl_apply x ez).trans h
     have h1 : immersionShapeOperatorAt (I := 𝓘(ℝ, ℝ²)) (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³) cyl x
         (ν x) (b 1) = (-1 : ℝ) • b 1 := by
+      have h : (-(eθ 0) • eθ : ℝ²) = (-1 : ℝ) • eθ := by simp
       rw [hb1]
-      refine (immersionShapeOperatorAt_cyl_apply x eθ).trans ?_
-      change -(eθ 0) • eθ = (-1 : ℝ) • eθ
-      simp
+      exact (immersionShapeOperatorAt_cyl_apply x eθ).trans h
     fin_cases i
     · exact h0
     · exact h1
 
 /-- In the inward direction `-ν` the principal curvatures of the unit cylinder are `1, 0`. -/
 theorem immersionPrincipalCurvatures_cyl_neg (x : ℝ²)
-    (ht : (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³).IsTorsionFree)
-    (hm : finrank ℝ ℝ² = 2) :
-    immersionPrincipalCurvatures 𝓘(ℝ, ℝ²) cyl x ht hm (-ν x) = ![1, 0] := by
+    (ht : (leviCivitaConnection 𝓘(ℝ, ℝ³) ℝ³).IsTorsionFree) :
+    immersionPrincipalCurvatures 𝓘(ℝ, ℝ²) cyl x ht finrank_euclideanSpace_fin (-ν x) =
+      ![1, 0] := by
   funext i
-  refine (immersionPrincipalCurvatures_neg ht hm (ν x) i).trans ?_
+  refine (immersionPrincipalCurvatures_neg ht finrank_euclideanSpace_fin (ν x) i).trans ?_
   rw [immersionPrincipalCurvatures_cyl]
   fin_cases i <;> simp
 
 /-- The standard basis of the plane, as an orthonormal basis of the tangent space at `x`. -/
-def tangentBasis (x : ℝ²) : OrthonormalBasis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℝ²) x) :=
+private def tangentBasis (x : ℝ²) : OrthonormalBasis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℝ²) x) :=
   OrthonormalBasis.mk (v := ⇑(EuclideanSpace.basisFun (Fin 2) ℝ))
+    -- `TangentSpace 𝓘(ℝ, ℝ²) x` is `ℝ²` by definition; the round trip through
+    -- `orthonormal_iff_ite` transports orthonormality across that definitional equality.
     (by
       have h := orthonormal_iff_ite.1 (EuclideanSpace.basisFun (Fin 2) ℝ).orthonormal
       exact orthonormal_iff_ite.2 h)
     (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.span_eq.ge
 
 /-- The vectors of `TauCeti.CylinderCheck.tangentBasis` are `e_θ` and `e_z`. -/
-theorem tangentBasis_apply (x : ℝ²) (i : Fin 2) :
+private theorem tangentBasis_apply (x : ℝ²) (i : Fin 2) :
     tangentBasis x i = (EuclideanSpace.single i 1 : ℝ²) := by
   unfold tangentBasis
   exact (congrFun (OrthonormalBasis.coe_mk _ _) i).trans (EuclideanSpace.basisFun_apply (Fin 2) ℝ i)
@@ -281,10 +282,10 @@ theorem immersionMeanCurvatureVector_cyl (x : ℝ²) :
       -(1 / 2 : ℝ) • ν x := by
   have h0 := immersionSecondFundamentalFormAt_cyl_eθ x
   have h1 := immersionSecondFundamentalFormAt_cyl_ez x
+  have h : ((2 : ℕ) : ℝ)⁻¹ • (-ν x + 0 : ℝ³) = -(1 / 2 : ℝ) • ν x := by module
   rw [immersionMeanCurvatureVector_eq_sum (tangentBasis x), Fin.sum_univ_two,
     tangentBasis_apply, tangentBasis_apply, h0, h1, finrank_euclideanSpace_fin]
-  change ((2 : ℕ) : ℝ)⁻¹ • (-ν x + 0) = -(1 / 2 : ℝ) • ν x
-  rw [add_zero, smul_neg, ← neg_smul]
-  norm_num
+  -- the sum lives in the tangent space of `ℝ³` at `cyl x`, which is `ℝ³` by definition
+  exact h
 
 end TauCeti.CylinderCheck
