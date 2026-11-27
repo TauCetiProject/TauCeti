@@ -584,7 +584,7 @@ theorem innerIdeal_idealSubmodule (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
     have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit J
     have := hl.neBot
     have hlim : Tendsto (fun e : J => (e : A) * a * (e : A)) l (𝓝 a) :=
-      (continuous_subtypeVal.tendsto ⟨a, haJ⟩).comp (hl.tendsto_mul_self ⟨a, haJ⟩)
+      (continuous_subtypeVal.tendsto ⟨a, haJ⟩).comp (hl.tendsto_mul_mul ⟨a, haJ⟩)
     exact (isClosed_innerIdeal (A := A) (E := idealSubmodule J E)).mem_of_tendsto hlim
       (Eventually.of_forall fun e => mul_mem_innerIdeal_idealSubmodule haI e.property e.property)
 
