@@ -39,6 +39,12 @@ noncomputable def localPrimeSum (d : ℕ) [Fact d.Prime] (p : ℕ) (f : ℕ → 
   (if p = d then 1 / 2 else 1) * ∑' e : ℕ,
     if 0 < e ∧ (p = d ∨ legendreSym d p = -1 ∧ Odd e) then f (p ^ e) else 0
 
+/-- The local sum uses the positive exponents selected by the Legendre symbol, with
+half weight at the ramified prime. -/
+theorem localPrimeSum_def (d : ℕ) [Fact d.Prime] (p : ℕ) (f : ℕ → ℝ) :
+    localPrimeSum d p f = (if p = d then 1 / 2 else 1) * ∑' e : ℕ,
+      if 0 < e ∧ (p = d ∨ legendreSym d p = -1 ∧ Odd e) then f (p ^ e) else 0 := (rfl)
+
 variable {d : ℕ} [Fact d.Prime]
 
 /-- At the ramified prime, every positive exponent contributes with weight `1/2`. -/
