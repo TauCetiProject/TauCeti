@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cap.AbsoluteRelative
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.AlgebraicTopology.Cohomology.Collar
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.BoundaryFundamentalClass
@@ -370,13 +371,28 @@ section AbsoluteProof
 /-! The boundary `∂X` is assumed here to be a manifold of dimension `n - 1`, charted on `E'`; it is
 compact, as a closed subset of `X`. -/
 
+omit [T2Space X] [T2Space M] in
+include hι in
+/-- The boundary `∂X = X ∖ ι(M)` is compact, as a closed subset of the compact space `X`. -/
+private lemma compactSpace_boundary : CompactSpace ((range ι)ᶜ : Set X) :=
+  isCompact_iff_compactSpace.1 hι.isOpen_range.isClosed_compl.isCompact
+
+/-- Two equal signs `(-1)ᵖ` acting on an abelian group cancel. -/
+private lemma neg_one_pow_zsmul_neg_one_pow_zsmul {G : Type*} [AddCommGroup G] (p : ℕ) (a : G) :
+    (-1 : ℤ) ^ p • (-1 : ℤ) ^ p • a = a := by
+  rw [smul_smul, neg_one_pow_mul_neg_one_pow, one_zsmul]
+
 variable {E' : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [ChartedSpace E' ((range ι)ᶜ : Set X)]
 
 omit [FiniteDimensional ℝ E'] [ChartedSpace E' ((range ι)ᶜ : Set X)] in
 /-- The boundary `∂[X, ∂X] ∈ Hₙ₋₁(∂X; ℤ)` of the relative fundamental class, a fundamental class of
-the boundary. -/
-private abbrev boundaryClass (hE' : finrank ℝ E' + 1 = n) :=
+the boundary. It is typed as a class of the singular homology of the space `∂X`, rather than of
+the subspace of the pair, so that `TopCat.singularCapAddHom_apply` rewrites the cap products with
+it. -/
+private abbrev boundaryClass (hE' : finrank ℝ E' + 1 = n) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (finrank ℝ E')).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of ((range ι)ᶜ : Set X)) :=
   (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
     (ModuleCat.of ℤ (ULift.{0} ℤ)) n (finrank ℝ E') hE' (o.fundamentalClassRel hn hι hιf hf)
 
@@ -385,8 +401,7 @@ private lemma bijective_singularCapAddHom_boundary (hE' : finrank ℝ E' + 1 = n
     (h' : p' + q' = finrank ℝ E') :
     Function.Bijective ((TopCat.of ((range ι)ᶜ : Set X)).singularCapAddHom ℤ (ρ_ _).inv (ρ_ L).hom
       h' (o.boundaryClass hn hι hιf hf hE')) := by
-  have : CompactSpace ((range ι)ᶜ : Set X) :=
-    isCompact_iff_compactSpace.1 hι.isOpen_range.isClosed_compl.isCompact
+  have := compactSpace_boundary hι
   subst hE'
   exact (o.isFundamentalClass_singularHomologyδ_fundamentalClassRel hn hι hιf hf)
     |>.bijective_singularCapAddHom rfl L p' q' h'
@@ -417,8 +432,7 @@ private lemma singularCohomologyMap_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q 
       0 := by
   rcases q with _ | q'
   · -- `Hⁿ(∂X) = 0` above the dimension of the boundary.
-    have : CompactSpace ((range ι)ᶜ : Set X) :=
-      isCompact_iff_compactSpace.1 hι.isOpen_range.isClosed_compl.isCompact
+    have := compactSpace_boundary hι
     -- The vanishing theorem is stated for the `ℤ`-linear structure of a category of modules, the
     -- cohomology here for that of a preadditive category; they agree by uniqueness.
     have hz : IsZero ((TopCat.of ((range ι)ᶜ : Set X)).singularCohomology
@@ -433,10 +447,9 @@ private lemma singularCohomologyMap_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q 
     refine (injective_iff_map_eq_zero _).1
       (o.bijective_singularCapAddHom_boundary hn hι hιf hf L hE' p q' (by omega)).1 _ ?_
     refine (TopCat.singularCapAddHom_apply _ _ _ _ _ _ _).trans ?_
-    -- Cancel the sign `(-1)ᵖ = ±1`.
-    rcases neg_one_pow_eq_or ℤ p with hs | hs <;> rw [hs] at h₀
-    · exact (one_zsmul _).symm.trans h₀.symm
-    · exact neg_eq_zero.1 ((neg_one_zsmul _).symm.trans h₀.symm)
+    -- Cancel the sign `(-1)ᵖ`.
+    exact (neg_one_pow_zsmul_neg_one_pow_zsmul p _).symm.trans
+      ((congrArg _ h₀.symm).trans (zsmul_zero _))
 
 /-- **Injectivity at the pair.** A relative class of `Hᵖ(X, ∂X)` whose dual in `H_q(X)` comes from
 `∂X` maps to zero in `Hᵖ(X)`. -/
@@ -462,8 +475,7 @@ private lemma singularCohomologyπ_eq_zero (hE' : finrank ℝ E' + 1 = n) (p q :
   · -- `z` is dual to a class `w` of `∂X`, and `y = δw`, which vanishes on `X`.
     obtain ⟨w, rfl⟩ := (o.bijective_singularCapAddHom_boundary hn hι hιf hf L rfl p' q
       (by omega)).2 z
-    -- The cap product on the boundary is read on the subspace of the pair, hence `erw`.
-    erw [TopCat.singularCapAddHom_apply] at hz
+    rw [TopCat.singularCapAddHom_apply] at hz
     have hy : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyδ
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p' (p' + 1) rfl w = y :=
       (o.bijective_capFundamentalClassRel hn hι hιf hf L (p' + 1) q h).1 <|
@@ -493,7 +505,7 @@ private lemma exists_sub_mem_range (hE' : finrank ℝ E' + 1 = n) (p q : ℕ) (h
   -- `(-1)ᵖ ∂c` is dual to a class `w` of `∂X`.
   obtain ⟨w, hw⟩ := (o.bijective_singularCapAddHom_boundary hn hι hιf hf L rfl p q'
     (by omega)).2 (((-1 : ℤ) ^ p) • P.singularHomologyδ L (q' + 1) q' rfl c)
-  erw [TopCat.singularCapAddHom_apply] at hw
+  rw [TopCat.singularCapAddHom_apply] at hw
   -- `δw` is dual to `(-1)ᵖ i_*∂c = 0`, so it vanishes and `w` is restricted from `X`.
   have hδw : P.singularCohomologyδ (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p (p + 1) rfl w = 0 := by
     refine (o.bijective_capFundamentalClassRel hn hι hιf hf L (p + 1) q' (by omega)).1 <|
@@ -516,13 +528,7 @@ private lemma exists_sub_mem_range (hE' : finrank ℝ E' + 1 = n) (p q : ℕ) (h
   dsimp only
   rw [map_sub, o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L rfl p (q' + 1) q'
     h rfl x, hx, hw]
-  -- The two signs act on the same group, presented once through the pair and once through its
-  -- subspace, so the second rewrite needs `erw`.
-  rcases neg_one_pow_eq_or ℤ p with hs | hs <;> rw [hs]
-  · rw [one_zsmul]
-    erw [one_zsmul, sub_self]
-  · rw [neg_one_zsmul]
-    erw [neg_one_zsmul, neg_neg, sub_self]
+  exact sub_eq_zero.2 (neg_one_pow_zsmul_neg_one_pow_zsmul p _).symm
 
 /-- Lefschetz duality from absolute cohomology, for a boundary carrying a manifold structure. -/
 private lemma bijective_absoluteCapFundamentalClassRel_aux (hE' : finrank ℝ E' + 1 = n)

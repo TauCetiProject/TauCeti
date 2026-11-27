@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Pairing
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
-import TauCeti.Algebra.Homology.Bifunctor.Basic
 
 /-!
 # The cap product of absolute cohomology with relative homology
@@ -123,6 +122,19 @@ lemma absoluteSingularCap_homologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Lin
         (P.singularChainComplex N).homologyπ q :=
   TauCeti.ChainComplex.cap_homologyπ _ _ _ _ _ _ _
 
+omit [HasCoproducts.{w} C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)] in
+/-- The identity of a chain complex `K` induces the identity on the cohomology of the cochains
+`Hom(K, M)`. `TauCeti.ChainComplex.cap_naturality` types this map between `linearYonedaObj`
+complexes, so it is stated that way for `rw` to find it; the identity morphism's type is matched
+only up to unfolding `linearYonedaFunctor`, which `exact` performs. -/
+private lemma homologyMap_linearYonedaFunctor_map_id (K : ChainComplex C ℕ) (k : Type*) [Ring k]
+    [Linear k C] (p : ℕ) :
+    HomologicalComplex.homologyMap (K := K.linearYonedaObj k M) (L := K.linearYonedaObj k M)
+      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 K).op) p = 𝟙 _ := by
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact HomologicalComplex.homologyMap_id _ _
+
 /-- **Compatibility of the absolute and relative cap products**: for a class `x` of `Hₙ(X)` with
 image `j_*x` in `Hₙ(X, A)` and a class `α` of `Hᵖ(X)`, `j_*(x ⌢ α) = j_*x ⌢ α`. -/
 lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) [Ring k]
@@ -136,16 +148,7 @@ lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) 
     (P.singularChainComplexπ S) (P.singularChainComplexπ N)
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
-  -- `cap_naturality` types this map between `linearYonedaObj` complexes, so state it that way
-  -- for `rw` to find it; the identity morphism's type is matched only up to unfolding
-  -- `linearYonedaFunctor`, which `exact` performs.
-  have hid : HomologicalComplex.homologyMap
-      (K := ((TopCat.toSSet.obj P.fst).chainComplex R).linearYonedaObj k M)
-      (L := ((TopCat.toSSet.obj P.fst).chainComplex R).linearYonedaObj k M)
-      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
-    rw [op_id, CategoryTheory.Functor.map_id]
-    exact HomologicalComplex.homologyMap_id _ _
-  rw [hid, ModuleCat.id_apply] at this
+  rw [homologyMap_linearYonedaFunctor_map_id, ModuleCat.id_apply] at this
   rw [TopCat.singularCap_def, absoluteSingularCap_def]
   exact this.symm
 
@@ -187,27 +190,6 @@ theorem absoluteSingularCap_comp_singularHomologyδ (P : TopPair.{w}) (k : Type*
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n q' n' h h' α hq hn
 
-/-- The doubly relative Alexander–Whitney diagonal `C(X, A) ⟶ C(X, A) ⊗ C(X, A)` is both relative
-diagonals followed by the quotient map on the remaining absolute factor. -/
-private lemma alexanderWhitneyDiagonal_whiskerLeft_eq (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
-    P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
-      P.rightAlexanderWhitneyDiagonal u ≫
-        (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
-  rw [← cancel_epi (P.singularChainComplexπ T)]
-  -- Term-mode steps: the ambient chains appear both as `(toSSetPair.obj P).right.chainComplex R`
-  -- and as `(TopCat.toSSet.obj P.fst).chainComplex R`, so `rw` cannot match.
-  refine (Category.assoc _ _ _).symm.trans ?_
-  refine (congrArg (· ≫ _) (singularChainComplexπ_alexanderWhitneyDiagonal P u)).trans ?_
-  refine Eq.trans ?_ (Category.assoc _ _ _)
-  refine Eq.trans ?_
-    (congrArg (· ≫ _) (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)).symm
-  refine (Category.assoc _ _ _).trans (Eq.trans (congrArg (_ ≫ ·) ?_) (Category.assoc _ _ _).symm)
-  -- Both whiskerings compose to the tensor product of the two quotient maps. The identities are
-  -- those of the ambient chains in the two presentations above, hence `erw`.
-  refine (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _).symm.trans <|
-    Eq.trans ?_ (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _)
-  erw [Category.id_comp, Category.id_comp, Category.comp_id, Category.comp_id]
-
 /-- **Compatibility of the absolute and relative cap products on relative cohomology**: for a class
 `α` of `Hᵖ(X, A)` with image `j^*α` in `Hᵖ(X)`, and a class `x` of `Hₙ(X, A)`,
 `x ⌢ j^*α = j_*(x ⌢ α)` in `H_q(X, A)`, where `j_* : H_q(X) ⟶ H_q(X, A)`. -/
@@ -221,7 +203,8 @@ lemma absoluteSingularCap_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ri
     (P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
     ((toSSetPair.obj P).chainComplexPairing μ) (P.rightAlexanderWhitneyDiagonal u)
     ((toSSetPair.obj P).chainComplexPairing μ) (𝟙 _) (P.singularChainComplexπ R) (𝟙 _) (𝟙 _)
-    ((Category.id_comp _).trans (alexanderWhitneyDiagonal_whiskerLeft_eq P u)) (by simp) p q n h α
+    ((Category.id_comp _).trans (alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ P u))
+    (by simp) p q n h α
   have h₂ := TauCeti.ChainComplex.cap_naturality (k := k)
     (P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
     ((toSSetPair.obj P).chainComplexPairing μ) (P.alexanderWhitneyDiagonal u)
@@ -230,15 +213,8 @@ lemma absoluteSingularCap_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ri
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
   rw [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_id, Category.comp_id,
     Category.id_comp] at h₁
-  -- As in `singularHomologyπ_comp_absoluteSingularCap`, the identity of the cochains is stated
-  -- between `linearYonedaObj` complexes for `rw` to find it.
-  have hid : HomologicalComplex.homologyMap
-      (K := (P.singularChainComplex R).linearYonedaObj k M)
-      (L := (P.singularChainComplex R).linearYonedaObj k M)
-      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
-    rw [op_id, CategoryTheory.Functor.map_id]
-    exact HomologicalComplex.homologyMap_id _ _
-  rw [HomologicalComplex.homologyMap_id, Category.id_comp, hid, ModuleCat.id_apply] at h₂
+  rw [HomologicalComplex.homologyMap_id, Category.id_comp, homologyMap_linearYonedaFunctor_map_id,
+    ModuleCat.id_apply] at h₂
   rw [absoluteSingularCap_def, singularCap_def]
   exact h₁.trans h₂.symm
 
