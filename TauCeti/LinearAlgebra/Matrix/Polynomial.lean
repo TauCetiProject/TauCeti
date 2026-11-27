@@ -36,7 +36,8 @@ In particular, linear coefficients of matrix-valued curves commute with constant
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
 and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
-intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
+intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). A polynomial in a diagonal
+matrix is the diagonal matrix of its values (`Matrix.aeval_diagonal`). Natural matrix identities
 valid at unit parameters extend to all parameters by polynomial specialization
 (`Matrix.identity_of_units`).
 -/
@@ -96,6 +97,14 @@ theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemi
   apply toLin'.injective
   rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
   exact Module.End.aeval_comp_of_comp_eq hAV q
+
+/-- A polynomial evaluated at a diagonal matrix is the diagonal matrix of its values at the
+diagonal entries. -/
+@[simp]
+theorem aeval_diagonal [CommSemiring R] (d : n → R) (q : R[X]) :
+    aeval (diagonal d) q = diagonal fun i ↦ q.eval (d i) := by
+  rw [← diagonalAlgHom_apply R, aeval_algHom_apply, aeval_pi_apply, diagonalAlgHom_apply]
+  simp only [coe_aeval_eq_eval]
 
 omit [DecidableEq n] in
 /-- Taking an entrywise polynomial coefficient commutes with multiplication on the left by a
