@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
-public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.ProductMeasure
 
 import TauCeti.InformationTheory.KullbackLeibler.Basic
@@ -88,8 +87,12 @@ theorem klDiv_infinitePi {ι : Type*} {X : ι → Type*} [∀ i, MeasurableSpace
     (measurePreserving_piEquivPiSubtypeProd_infinitePi R (· ∈ S)).map_eq
   have hcompl : (fun i : {i // i ∉ S} ↦ P i) = fun i : {i // i ∉ S} ↦ Q i :=
     funext fun i ↦ hPQ i i.property
-  rw [← Measure.klDiv_map_measurableEquiv _ _ e, hmap, hmap, klDiv_prod_prod, hcompl, klDiv_self,
-    add_zero, Measure.infinitePi_eq_pi, Measure.infinitePi_eq_pi, klDiv_pi]
+  -- Split both products into the block over `S` and the block over its complement.
+  rw [← Measure.klDiv_map_measurableEquiv _ _ e, hmap P, hmap Q, klDiv_prod_prod]
+  -- The complement blocks are the same law, so they contribute nothing.
+  rw [hcompl, klDiv_self, add_zero]
+  -- The blocks over `S` are finite products, which tensorize.
+  simp_rw [Measure.infinitePi_eq_pi, klDiv_pi]
   exact Finset.sum_coe_sort S fun i ↦ klDiv (P i) (Q i)
 
 end TauCeti
