@@ -52,7 +52,7 @@ theorem norm_map_det_gram_le_of_norm_inner_sum_smul_le_one
   have hdet : P.det = star U.det * (Matrix.gram ℂ x).det * V.det := by
     have hconj : (U.map (starRingEnd ℂ)).det = star U.det := by
       rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, starRingEnd_apply]
-    simp only [P, inner_sum_smul_matrix, det_mul, det_transpose, hconj, Matrix.gram]
+    simp only [P, of_inner_sum_smul, det_mul, det_transpose, hconj, Matrix.gram]
   have hnorm : ‖ι.iso P.det‖ ≤ 1 := by
     rw [ι.iso.map_det, RingEquiv.mapMatrix_apply]
     simpa only [prod_const_one] using

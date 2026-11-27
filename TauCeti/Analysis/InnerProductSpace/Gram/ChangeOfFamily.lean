@@ -28,7 +28,7 @@ inner product space, where no coordinate matrix is given.
 ## Main results
 
 * `LinearIsometry.gram_comp`: a linear isometry preserves the Gram matrix of any indexed family.
-* `Matrix.inner_sum_smul_matrix`: independent changes of the two families in a matrix of inner
+* `Matrix.of_inner_sum_smul`: independent changes of the two families in a matrix of inner
   products act by a conjugated matrix on the left and a transposed matrix on the right.
 * `Matrix.gram_sum_smul`: the Gram matrix of `fun k ↦ ∑ j, U k j • v j` is
   `U.map conj * gram 𝕜 v * Uᵀ`, for a possibly rectangular `U`.
@@ -70,7 +70,7 @@ variable {ι 𝕜 E : Type*} [Fintype ι] [RCLike 𝕜] [SeminormedAddCommGroup 
 
 /-- The matrix of inner products of two families transforms by independent changes of the
 families. The left coefficient matrix is conjugated and the right one is transposed. -/
-theorem inner_sum_smul_matrix {κ μ ν : Type*} [Fintype κ]
+theorem of_inner_sum_smul {κ μ ν : Type*} [Fintype κ]
     (U : Matrix μ ι 𝕜) (V : Matrix ν κ 𝕜) (x : ι → E) (y : κ → E) :
     of (fun i k ↦ ⟪∑ j, U i j • x j, ∑ j, V k j • y j⟫_𝕜) =
       U.map (starRingEnd 𝕜) * of (fun i j ↦ ⟪x i, y j⟫_𝕜) * Vᵀ := by
@@ -85,7 +85,7 @@ in its first argument. The coefficient matrix `U` may be rectangular: the new fa
 any index type `κ`. -/
 theorem gram_sum_smul {κ : Type*} (U : Matrix κ ι 𝕜) (v : ι → E) :
     gram 𝕜 (fun i ↦ ∑ j, U i j • v j) = U.map (starRingEnd 𝕜) * gram 𝕜 v * Uᵀ := by
-  simpa only [gram] using inner_sum_smul_matrix U U v v
+  simpa only [gram] using of_inner_sum_smul U U v v
 
 variable [DecidableEq ι]
 
