@@ -10,6 +10,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.InformationTheory.Hamming
 public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Algebra.Notation.Indicator
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # Hamming support, and Hamming data under coordinate decompositions and reindexing
@@ -49,7 +50,9 @@ meets every closed ball of radius `D`
 (`TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`). Both are adapted from the
 lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
 `CKSD/Nonparametric/LowerBounds/Testing.lean` (`CKSD.sum_pow_hammingDist_eq`,
-`CKSD.exists_hamming_packing`).
+`CKSD.exists_hamming_packing`). For a finite code `C`, the sum of the distances over the ordered
+pairs of words plus `∑_i ∑_a m_{i,a}²` is `n |C|²`, where `m_{i,a}` is the number of words with
+letter `a` at `i` (`Finset.sum_sum_hammingDist_add_sum_sum_sq`); the Plotkin bound uses it.
 -/
 
 public section
@@ -333,6 +336,29 @@ theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : �
   · simpa [SetRel.IsSeparated, R] using hN.1.2
   · obtain ⟨x, hx, hxy⟩ := hcover (Set.mem_univ y)
     exact ⟨x, by simpa using hx, hxy⟩
+
+/-- The sum of the distances over the ordered pairs of words of a code `C`, plus the number of
+pairs that agree in each coordinate, summed over the coordinates, is `n |C|²`. The pairs that agree
+in the coordinate `i` number `∑_a m_{i,a}²`, where `m_{i,a}` is the number of words with letter
+`a` at `i`. -/
+theorem _root_.Finset.sum_sum_hammingDist_add_sum_sum_sq {ι : Type*} {β : ι → Type*} [Fintype ι]
+    [∀ i, Fintype (β i)] [∀ i, DecidableEq (β i)] (C : Finset (∀ i, β i)) :
+    ∑ x ∈ C, ∑ y ∈ C, hammingDist x y + ∑ i, ∑ a : β i, #{x ∈ C | x i = a} ^ 2 =
+      Fintype.card ι * #C ^ 2 := by
+  have hpair (x y : ∀ i, β i) :
+      hammingDist x y + ∑ i, (if x i = y i then 1 else 0) = Fintype.card ι := by
+    rw [sum_boole, Nat.cast_id, hammingDist, add_comm, ← card_univ]
+    exact card_filter_add_card_filter_not _
+  have hswap : ∑ i, ∑ x ∈ C, ∑ y ∈ C, (if x i = y i then 1 else 0) =
+      ∑ x ∈ C, ∑ y ∈ C, ∑ i, (if x i = y i then 1 else 0 : ℕ) :=
+    sum_comm.trans (sum_congr rfl fun _ _ ↦ sum_comm)
+  have hfib (i : ι) : ∑ x ∈ C, ∑ y ∈ C, (if x i = y i then 1 else 0) =
+      ∑ a : β i, #{x ∈ C | x i = a} ^ 2 :=
+    sum_sum_ite_eq_sum_card_filter_sq C fun x ↦ x i
+  simp_rw [← hfib]
+  rw [hswap, ← sum_add_distrib]
+  simp_rw [← sum_add_distrib, hpair, sum_const, smul_eq_mul]
+  ring
 
 end Codes
 
