@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Polynomial.ExpTwistDeriv
 
 /-!

@@ -8,8 +8,6 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Expand
-public import Mathlib.RingTheory.PowerSeries.Exp
-public import TauCeti.Algebra.Polynomial.ExpTwistDeriv
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -51,8 +49,6 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   for an operator intertwined with the derivative by substitution.
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
-* `PowerSeries.iterate_derivative_coe_mul_rescale_exp`: over a `ℚ`-algebra, the `m`-th derivative
-  of `P(X) e^{cX}` is `(expTwistDeriv c m P)(X) e^{cX}`, with `expTwistDeriv c m = (d/dX + c) ^ m`.
 * `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
   and negating the variable commute with the Euler operator `X * d⁄dX`.
 * `PowerSeries.X_mul_derivative_multiset_prod_rescale`: if `Q G = X Q'`, the logarithmic
@@ -567,20 +563,5 @@ theorem coeff_eq_zero_of_derivative_eq_zero {R : Type*} [CommRing R] {p : ℕ}
   simp only [coeff_derivative, map_zero] at h
   exact (CharP.isUnit_natCast_iff (R := R) (Fact.out : p.Prime)).mpr hn |>.mul_right_eq_zero.mp
     (by simpa [Nat.cast_add, Nat.cast_one, mul_comm] using h)
-
-/-- **Derivatives of an exponential polynomial**: over a commutative `ℚ`-algebra, the `m`-th
-derivative of `P(X) e^{cX}` is `(expTwistDeriv c m P)(X) e^{cX}`, where
-`expTwistDeriv c m = (d/dX + c) ^ m`. -/
-theorem iterate_derivative_coe_mul_rescale_exp {R : Type*} [CommRing R] [Algebra ℚ R] (c : R)
-    (m : ℕ) (P : Polynomial R) :
-    d⁄dX^[m] ((P : R⟦X⟧) * rescale c (exp R)) =
-      (Polynomial.expTwistDeriv c m P : R⟦X⟧) * rescale c (exp R) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [Function.iterate_succ_apply', ih, Derivation.leibniz, derivative_rescale, derivative_exp,
-      derivative_coe, Polynomial.expTwistDeriv_succ, Polynomial.coe_add, Polynomial.smul_eq_C_mul,
-      Polynomial.coe_mul, Polynomial.coe_C, smul_eq_mul, smul_eq_mul]
-    ring
 
 end PowerSeries
