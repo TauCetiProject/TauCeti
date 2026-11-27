@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 
 import Mathlib.Analysis.Normed.Unbundled.SeminormFromBounded
+import TauCeti.Algebra.Order.Ring.IsPowMul
 import TauCeti.Analysis.Normed.Unbundled.RingSeminorm
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
@@ -289,12 +290,8 @@ theorem smoothing_eq_zero_iff {μ : RingSeminorm R} : μ.smoothing = 0 ↔ μ = 
 
 /-- `μ.smoothing` kills every nilpotent element. -/
 theorem smoothing_eq_zero_of_isNilpotent (μ : RingSeminorm R) {x : R} (hx : IsNilpotent x) :
-    μ.smoothing x = 0 := by
-  obtain ⟨m, hm⟩ := hx
-  have hm1 : x ^ (m + 1) = 0 := by rw [pow_succ', hm, mul_zero]
-  have hpow : μ.smoothing x ^ (m + 1) = 0 := by
-    rw [← μ.isPowMul_smoothing x (Nat.le_add_left 1 m), hm1, map_zero]
-  exact eq_zero_of_pow_eq_zero hpow
+    μ.smoothing x = 0 :=
+  μ.isPowMul_smoothing.eq_zero_of_isNilpotent (map_zero μ.smoothing) hx
 
 /-- **Subadditivity of `smoothingFun` on commutative rings.** For any ring seminorm `μ` on a
 commutative ring, `smoothingFun μ` satisfies the triangle inequality, without assuming `μ 1 ≤ 1`

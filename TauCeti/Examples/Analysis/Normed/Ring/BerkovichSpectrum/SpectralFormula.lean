@@ -75,28 +75,13 @@ theorem gaussNorm_point_tateAlgebra
       (∀ x : Spectrum T, x ≤ normPoint) ∧
       sSup (Set.range fun x : Spectrum T ↦ x f) = ‖f‖ ∧
       smoothingFun (normRingSeminorm T) f = ‖f‖ :=
-  ⟨(normPoint_apply f).trans (norm_eq_gaussNorm f), le_normPoint,
+  ⟨(normPoint_apply f).trans (norm_eq_gaussNorm f), fun _ ↦ le_top,
     sSup_range_eval_of_normMulClass f,
     (smoothingFun_eq_sSup f).trans (sSup_range_eval_of_normMulClass f)⟩
 
 end TateAlgebra
 
 /-! ### Trivial square-zero extensions and dual numbers -/
-
-private theorem spectral_eq_zero_of_isNilpotent {A : Type*} [SeminormedCommRing A] {a : A}
-    (ha : IsNilpotent a) :
-    smoothingFun (normRingSeminorm A) a = 0 ∧
-      sSup (Set.range fun x : Spectrum A ↦ x a) = 0 := by
-  have hsm : smoothingFun (normRingSeminorm A) a = 0 := by
-    rw [← (normRingSeminorm A).smoothing_apply]
-    exact (normRingSeminorm A).smoothing_eq_zero_of_isNilpotent ha
-  exact ⟨hsm, by rw [← smoothingFun_eq_sSup, hsm]⟩
-
-private theorem not_exists_apply_eq_norm_of_isNilpotent {A : Type*} [SeminormedRing A] {a : A}
-    (ha : IsNilpotent a) (ha_norm : ‖a‖ ≠ 0) :
-    ¬∃ x : Spectrum A, ∀ b, x b = ‖b‖ := by
-  rintro ⟨x, hx⟩
-  exact ha_norm (by rw [← hx a, x.eq_zero_of_isNilpotent ha])
 
 private theorem eps_checks_of_sq_zero_of_norm_one {A : Type*} [SeminormedCommRing A] {a : A}
     (ha_sq : a * a = 0) (ha_norm : ‖a‖ = 1) :
@@ -106,11 +91,11 @@ private theorem eps_checks_of_sq_zero_of_norm_one {A : Type*} [SeminormedCommRin
       ‖a * a‖ ≠ ‖a‖ * ‖a‖ ∧
       ¬∃ x : Spectrum A, ∀ b, x b = ‖b‖ := by
   have hnil : IsNilpotent a := ⟨2, by rw [sq, ha_sq]⟩
-  obtain ⟨hsm, hsup⟩ := spectral_eq_zero_of_isNilpotent hnil
   have hmul : ‖a * a‖ ≠ ‖a‖ * ‖a‖ := by
     rw [ha_sq, norm_zero, ha_norm, mul_one]
     exact zero_ne_one
-  exact ⟨ha_norm, hsm, hsup, hmul,
+  exact ⟨ha_norm, smoothingFun_eq_zero_of_isNilpotent hnil,
+    sSup_range_eval_eq_zero_of_isNilpotent hnil, hmul,
     not_exists_apply_eq_norm_of_isNilpotent hnil (by rw [ha_norm]; exact one_ne_zero)⟩
 
 section TrivSqZeroExt
@@ -151,63 +136,16 @@ end TrivSqZeroExt
 
 section MaxDualNumber
 
-private noncomputable def maxDualNumberInlHom (K : Type*) [NormedCommRing K]
-    [IsUltrametricDist K] : K →+* MaxDualNumber K :=
-  MaxDualNumber.ofDualNumber.toRingHom.comp (TrivSqZeroExt.inlHom K K)
-
-private noncomputable def maxDualNumberFstHom (K : Type*) [NormedCommRing K]
-    [IsUltrametricDist K] : MaxDualNumber K →+* K :=
-  (TrivSqZeroExt.fstHom ℕ K K).toRingHom.comp MaxDualNumber.ofDualNumber.symm.toRingHom
-
-private theorem maxDualNumberInlHom_apply (K : Type*) [NormedCommRing K] [IsUltrametricDist K]
-    (x : K) :
-    maxDualNumberInlHom K x = MaxDualNumber.ofDualNumber (TrivSqZeroExt.inl x) := by
-  simp only [maxDualNumberInlHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, TrivSqZeroExt.inlHom_apply]
-
-private theorem maxDualNumberFstHom_apply (K : Type*) [NormedCommRing K] [IsUltrametricDist K]
-    (y : MaxDualNumber K) :
-    maxDualNumberFstHom K y = (MaxDualNumber.ofDualNumber.symm y).fst := by
-  simp only [maxDualNumberFstHom, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply]
-
-private theorem maxDualNumber_inl_isBounded (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
-    (maxDualNumberInlHom K).IsBounded :=
-  ⟨1, zero_lt_one, fun x ↦ by simp [maxDualNumberInlHom_apply]⟩
-
-private theorem maxDualNumber_fst_isBounded (K : Type*) [NormedCommRing K] [IsUltrametricDist K] :
-    (maxDualNumberFstHom K).IsBounded :=
-  ⟨1, zero_lt_one, fun y ↦ by
-    obtain ⟨z, rfl⟩ := MaxDualNumber.ofDualNumber.surjective y
-    rw [maxDualNumberFstHom_apply, RingEquiv.symm_apply_apply,
-      MaxDualNumber.norm_ofDualNumber, one_mul]
-    exact le_max_left _ _⟩
-
-private theorem maxDualNumber_fst_inl (K : Type*) [NormedCommRing K] [IsUltrametricDist K]
-    (x : K) :
-    maxDualNumberFstHom K (maxDualNumberInlHom K x) = x := by
-  rw [maxDualNumberFstHom_apply, maxDualNumberInlHom_apply, RingEquiv.symm_apply_apply,
-    TrivSqZeroExt.fst_inl]
-
-private theorem maxDualNumber_sub_inl_fst_isNilpotent (K : Type*) [NormedCommRing K]
-    [IsUltrametricDist K] (y : MaxDualNumber K) :
-    IsNilpotent (y - maxDualNumberInlHom K (maxDualNumberFstHom K y)) := by
-  rw [maxDualNumberFstHom_apply, maxDualNumberInlHom_apply]
-  have hnil := (TrivSqZeroExt.isNilpotent_sub_inl_fst
-    (MaxDualNumber.ofDualNumber.symm y)).map MaxDualNumber.ofDualNumber.toRingHom
-  simpa only [map_sub, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    RingEquiv.apply_symm_apply] using hnil
-
 private noncomputable def maxDualNumberHomeomorph (K : Type*) [NormedCommRing K]
     [IsUltrametricDist K] :
     Spectrum (MaxDualNumber K) ≃ₜ Spectrum K :=
   retractHomeomorph
-    (maxDualNumberInlHom K)
-    (maxDualNumber_inl_isBounded K)
-    (maxDualNumberFstHom K)
-    (maxDualNumber_fst_isBounded K)
-    (maxDualNumber_fst_inl K)
-    (maxDualNumber_sub_inl_fst_isNilpotent K)
+    (MaxDualNumber.inlHom K)
+    (MaxDualNumber.isBounded_inlHom K)
+    (MaxDualNumber.fstHom K)
+    (MaxDualNumber.isBounded_fstHom K)
+    MaxDualNumber.fstHom_inlHom
+    MaxDualNumber.isNilpotent_sub_inlHom_fstHom
 
 /-- Over an ultrametric normed field `K`, the ultrametric dual numbers `MaxDualNumber K` have a
 singleton Berkovich spectrum, while `MaxDualNumber.eps` has norm `1`, spectral seminorm `0`, and
@@ -244,7 +182,7 @@ theorem sq_zero_apply_and_sSup_eq_zero {A : Type*} [SeminormedCommRing A] {a : A
     (∀ x : Spectrum A, x a = 0) ∧
       sSup (Set.range fun x : Spectrum A ↦ x a) = 0 := by
   have hnil : IsNilpotent a := ⟨2, by rwa [sq]⟩
-  exact ⟨fun x ↦ x.eq_zero_of_isNilpotent hnil, (spectral_eq_zero_of_isNilpotent hnil).2⟩
+  exact ⟨fun x ↦ x.eq_zero_of_isNilpotent hnil, sSup_range_eval_eq_zero_of_isNilpotent hnil⟩
 
 /-- **Negative control (dropping `map_zero`).** On any ring `R`, the constant-`1` function
 `fun _ : R ↦ (1 : ℝ)` is nonnegative, even, subadditive, normalized (`f 1 = 1`), and
