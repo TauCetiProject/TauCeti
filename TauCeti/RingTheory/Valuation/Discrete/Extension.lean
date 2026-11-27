@@ -65,7 +65,7 @@ This file develops two complementary parts of the extension theory of discrete v
 * `Valuation.eq_normalizedExtension_of_forall_le_one` and
   `Valuation.eq_normalizedExtension_of_isEquiv`: uniqueness among surjective valuations of `E`.
 * `Valuation.isEquiv_comap_normalizedExtension_of_isScalarTower` and
-  `Valuation.ordIndex_comap_normalizedExtension_eq_mul`: compatibility with a finite tower, and
+  `Valuation.ramificationIdx_normalizedExtension_eq_mul`: compatibility with a finite tower, and
   multiplicativity of ramification indices.
 
 ## References
@@ -585,18 +585,33 @@ theorem isEquiv_comap_normalizedExtension :
     rw [comap_apply, normalizedExtension_le_one_iff, isIntegral_algebraMap_iff_le_one]
 
 /-- **On `F`, the order function of the normalized extension is the ramification index times
-that of `v`.** The ramification index is the index of the restriction of the normalized
-extension to `F`, which is positive by `Valuation.ordIndex_comap_normalizedExtension_pos`. -/
+that of `v`.** The ramification index is positive by
+`Valuation.ramificationIdx_normalizedExtension_pos`. -/
 theorem ord_normalizedExtension_algebraMap (a : F) :
     ord (v.normalizedExtension E hv) (algebraMap F E a) =
-      ordIndex ((v.normalizedExtension E hv).comap (algebraMap F E)) * ord v a := by
-  rw [← ord_comap]
-  exact IsEquiv.ord_eq_ordIndex_mul (isEquiv_comap_normalizedExtension v E hv) hv a
+      (v.normalizedExtension E hv).ramificationIdx F * ord v a := by
+  have := v.nontrivial_valueGroup_of_surjective hv
+  have : v.IsRankOneDiscrete := .mk' v
+  have := (v.normalizedExtension E hv).nontrivial_valueGroup_of_surjective
+    (normalizedExtension_surjective v E hv)
+  have : (v.normalizedExtension E hv).IsRankOneDiscrete := .mk' _
+  have : v.HasExtension (v.normalizedExtension E hv) :=
+    ⟨(isEquiv_comap_normalizedExtension v E hv).symm⟩
+  simpa [intValuation_eq_self_of_surjective hv,
+    intValuation_eq_self_of_surjective (normalizedExtension_surjective v E hv)] using
+    ord_intValuation_algebraMap v (v.normalizedExtension E hv) a
 
 /-- **The ramification index of the normalized extension is positive.** -/
-theorem ordIndex_comap_normalizedExtension_pos :
-    0 < ordIndex ((v.normalizedExtension E hv).comap (algebraMap F E)) :=
-  (isEquiv_comap_normalizedExtension v E hv).ordIndex_pos hv
+theorem ramificationIdx_normalizedExtension_pos :
+    0 < (v.normalizedExtension E hv).ramificationIdx F := by
+  have := v.nontrivial_valueGroup_of_surjective hv
+  have : v.IsRankOneDiscrete := .mk' v
+  have := (v.normalizedExtension E hv).nontrivial_valueGroup_of_surjective
+    (normalizedExtension_surjective v E hv)
+  have : (v.normalizedExtension E hv).IsRankOneDiscrete := .mk' _
+  have : v.HasExtension (v.normalizedExtension E hv) :=
+    ⟨(isEquiv_comap_normalizedExtension v E hv).symm⟩
+  exact HasExtension.ramificationIdx_pos v (v.normalizedExtension E hv)
 
 /-- **Uniqueness of the normalized extension.** A surjective `ℤᵐ⁰`-valued valuation of `E` that is
 at most `1` on the valuation ring of `v` is the normalized extension. -/
@@ -647,14 +662,13 @@ theorem isEquiv_comap_normalizedExtension_of_isScalarTower :
       isIntegral_algebraMap_iff]
 
 /-- **Ramification indices multiply in a tower** `F ⊆ K ⊆ E` of finite extensions. -/
-theorem ordIndex_comap_normalizedExtension_eq_mul :
-    ordIndex ((v.normalizedExtension E hv).comap (algebraMap F E)) =
-      ordIndex ((v.normalizedExtension E hv).comap (algebraMap K E)) *
-        ordIndex ((v.normalizedExtension K hv).comap (algebraMap F K)) := by
-  refine ordIndex_eq_mul_of_forall_ord_eq _ _ fun a ↦ ?_
-  rw [ord_comap, ord_comap, IsScalarTower.algebraMap_apply F K E, ← ord_comap _ (algebraMap K E)]
-  exact IsEquiv.ord_eq_ordIndex_mul (isEquiv_comap_normalizedExtension_of_isScalarTower v K E hv)
-    (normalizedExtension_surjective v K hv) _
+theorem ramificationIdx_normalizedExtension_eq_mul :
+    (v.normalizedExtension E hv).ramificationIdx F =
+      (v.normalizedExtension K hv).ramificationIdx F *
+        (v.normalizedExtension E hv).ramificationIdx K := by
+  have : (v.normalizedExtension K hv).HasExtension (v.normalizedExtension E hv) :=
+    ⟨(isEquiv_comap_normalizedExtension_of_isScalarTower v K E hv).symm⟩
+  exact ramificationIdx_tower F (v.normalizedExtension K hv) (v.normalizedExtension E hv)
 
 end Tower
 
