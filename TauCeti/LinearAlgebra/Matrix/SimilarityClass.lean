@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.End.Invariant
 import Mathlib.Algebra.Module.PID
 import Mathlib.Algebra.Polynomial.Module.FiniteDimensional
@@ -37,6 +37,10 @@ These classes index the class functions on all square matrices of the Hall algeb
 
 * `TauCeti.SimilarityClass.ofEnd_eq_iff`: two endomorphisms have the same class if and only if a
   linear isomorphism intertwines them.
+* `TauCeti.SimilarityClass.ofEnd_toLin'_fromBlocks`: a block upper triangular matrix has the
+  class of the corresponding block map `Module.End.blockTriangular`.
+* `TauCeti.SimilarityClass.isConj_of_ofEnd_toLin'_eq`: invertible matrices of the same class are
+  conjugate in `GL n k`.
 * `TauCeti.SimilarityClass.ofEnd_invtRestrict_eq_of_injective`,
   `TauCeti.SimilarityClass.ofEnd_invtQuot_eq_of_surjective`: classes of the endomorphisms induced
   on invariant subspaces and quotients (`Module.End.invtRestrict`, `Module.End.invtQuot`), computed
@@ -51,10 +55,6 @@ These classes index the class functions on all square matrices of the Hall algeb
   `TauCeti.SimilarityClass.ofEnd_invtQuot_dualAnnihilator`: the transpose of `g` on the annihilator
   of an invariant subspace `W`, and on the quotient by it, has the class of `g` on `V ⧸ W`, and on
   `W`.
-* `TauCeti.SimilarityClass.ofEnd_toLin'_fromBlocks`: a block upper triangular matrix has the
-  class of the corresponding block map `Module.End.blockTriangular`.
-* `TauCeti.SimilarityClass.isConj_of_ofEnd_toLin'_eq`: invertible matrices of the same class are
-  conjugate in `GL n k`.
 
 ## References
 
@@ -62,13 +62,11 @@ These classes index the class functions on all square matrices of the Hall algeb
   (1955), 402–447, §1.
 * The similarity classes `New.SimClass`, `New.simClassOf`, `New.SimClass.charpoly`, and the lemmas
   `New.simClassOf_eq_iff`, `New.simClassOf_endOnSub`, `New.simClassOf_endOnQuot`,
-  `New.simClassOf_endOnSub_comap`, `New.simClassOf_endOnQuot_comap` and
-  `New.simClassOf_eq_dualMap` of
+  `New.simClassOf_endOnSub_comap`, `New.simClassOf_endOnQuot_comap`,
+  `New.simClassOf_eq_dualMap` and `New.simClassOf_submatrix` of
   `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean (https://github.com/lsernau/grh-lean,
   Apache 2.0, Copyright 2026 Anthropic PBC), here with `Mathlib`'s `ConjClasses` of matrices as
   the carrier.
-* Adapted from grh-lean as above: `New.simClassOf_submatrix` in
-  `src/Lib/LocalGL/Green/HallAlgebra.lean`.
 -/
 
 public section
@@ -204,6 +202,47 @@ theorem charpoly_ofEnd {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite 
   conv_rhs => rw [← this]
   exact (LinearEquiv.charpoly_conj e _).symm
 
+/-! ### Matrices with block structure -/
+
+section BlockMatrix
+
+/-- Reindexing the rows and the columns of a square matrix by one bijection does not change its
+similarity class. -/
+theorem ofEnd_toLin'_submatrix {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+    [DecidableEq n] (e : m ≃ n) (M : Matrix n n k) :
+    ofEnd (Matrix.toLin' (M.submatrix e e)) = ofEnd (Matrix.toLin' M) :=
+  ofEnd_eq_of_apply_eq (LinearEquiv.funCongrLeft k k e.symm) fun x ↦ by
+    ext j
+    simp [LinearEquiv.funCongrLeft_apply]
+
+/-- The class of a block upper triangular matrix is that of the block map
+`(v, w) ↦ (A v + M w, C w)`. -/
+theorem ofEnd_toLin'_fromBlocks {n₁ n₂ : Type*} [Fintype n₁] [DecidableEq n₁] [Fintype n₂]
+    [DecidableEq n₂] (A : Matrix n₁ n₁ k) (M : Matrix n₁ n₂ k) (C : Matrix n₂ n₂ k) :
+    ofEnd (Matrix.toLin' (Matrix.fromBlocks A M 0 C)) =
+      ofEnd (Module.End.blockTriangular (Matrix.toLin' A) (Matrix.toLin' C) (Matrix.toLin' M)) :=
+  ofEnd_eq_of_apply_eq (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k) fun x ↦ by
+    -- The two components of `x` are its restrictions to `n₁` and to `n₂`.
+    have h₁ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).1 = y ∘ Sum.inl :=
+      funext (LinearEquiv.sumArrowLequivProdArrow_apply_fst y)
+    have h₂ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).2 = y ∘ Sum.inr :=
+      funext (LinearEquiv.sumArrowLequivProdArrow_apply_snd y)
+    ext <;> simp [Matrix.fromBlocks_mulVec, Module.End.blockTriangular_apply, h₁, h₂]
+
+/-- Elements of `GL n k` whose matrices have the same similarity class are conjugate. -/
+theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h : GL n k}
+    (hgh : ofEnd (Matrix.toLin' (g : Matrix n n k)) = ofEnd (Matrix.toLin' (h : Matrix n n k))) :
+    IsConj g h := by
+  obtain ⟨e, he⟩ := ofEnd_eq_iff.1 hgh
+  -- The matrix of `e` conjugates `g` to `h`.
+  let u : GL n k := Matrix.GeneralLinearGroup.toLin.symm
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv e)
+  refine isConj_iff.2 ⟨u, mul_inv_eq_of_eq_mul (Matrix.GeneralLinearGroup.toLin.injective
+    (Units.ext (LinearMap.ext fun x ↦ ?_)))⟩
+  simpa [u, Matrix.GeneralLinearGroup.coe_toLin, Matrix.toLin'_apply'] using he x
+
+end BlockMatrix
+
 /-! ### Classes on invariant subspaces and quotients -/
 
 section Invariant
@@ -277,47 +316,6 @@ theorem ofEnd_invtQuot_invtRestrict_comap_mkQ {U : Submodule k V} (hU : U ∈ g.
     exact Subtype.ext_iff.trans ((hp x).symm ▸ Submodule.Quotient.mk_eq_zero U (x := x.val))
 
 end Invariant
-
-/-! ### Block matrices and block maps -/
-
-section Block
-
-/-- Reindexing the rows and the columns of a square matrix by one bijection does not change its
-similarity class. -/
-theorem ofEnd_toLin'_submatrix {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
-    [DecidableEq n] (e : m ≃ n) (M : Matrix n n k) :
-    ofEnd (Matrix.toLin' (M.submatrix e e)) = ofEnd (Matrix.toLin' M) :=
-  ofEnd_eq_of_apply_eq (LinearEquiv.funCongrLeft k k e.symm) fun x ↦ by
-    ext j
-    simp [LinearEquiv.funCongrLeft_apply]
-
-/-- The class of a block upper triangular matrix is that of the block map
-`(v, w) ↦ (A v + M w, C w)`. -/
-theorem ofEnd_toLin'_fromBlocks {n₁ n₂ : Type*} [Fintype n₁] [DecidableEq n₁] [Fintype n₂]
-    [DecidableEq n₂] (A : Matrix n₁ n₁ k) (M : Matrix n₁ n₂ k) (C : Matrix n₂ n₂ k) :
-    ofEnd (Matrix.toLin' (Matrix.fromBlocks A M 0 C)) =
-      ofEnd (Module.End.blockTriangular (Matrix.toLin' A) (Matrix.toLin' C) (Matrix.toLin' M)) :=
-  ofEnd_eq_of_apply_eq (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k) fun x ↦ by
-    -- The two components of `x` are its restrictions to `n₁` and to `n₂`.
-    have h₁ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).1 = y ∘ Sum.inl :=
-      funext (LinearEquiv.sumArrowLequivProdArrow_apply_fst y)
-    have h₂ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).2 = y ∘ Sum.inr :=
-      funext (LinearEquiv.sumArrowLequivProdArrow_apply_snd y)
-    ext <;> simp [Matrix.fromBlocks_mulVec, Module.End.blockTriangular_apply, h₁, h₂]
-
-/-- Elements of `GL n k` whose matrices have the same similarity class are conjugate. -/
-theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h : GL n k}
-    (hgh : ofEnd (Matrix.toLin' (g : Matrix n n k)) = ofEnd (Matrix.toLin' (h : Matrix n n k))) :
-    IsConj g h := by
-  obtain ⟨e, he⟩ := ofEnd_eq_iff.1 hgh
-  -- The matrix of `e` conjugates `g` to `h`.
-  let u : GL n k := Matrix.GeneralLinearGroup.toLin.symm
-    (LinearMap.GeneralLinearGroup.ofLinearEquiv e)
-  refine isConj_iff.2 ⟨u, mul_inv_eq_of_eq_mul (Matrix.GeneralLinearGroup.toLin.injective
-    (Units.ext (LinearMap.ext fun x ↦ ?_)))⟩
-  simpa [u, Matrix.GeneralLinearGroup.coe_toLin, Matrix.toLin'_apply'] using he x
-
-end Block
 
 end SimilarityClass
 
