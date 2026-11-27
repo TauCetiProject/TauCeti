@@ -269,16 +269,6 @@ attribute [local simp] whiskerLeft_comp_tensorHom whiskerLeft_comp_tensorHom_ass
   whiskerRight_comp_tensorHom whiskerRight_comp_tensorHom_assoc tensorHom_comp_whiskerLeft
   tensorHom_comp_whiskerLeft_assoc tensorHom_comp_whiskerRight tensorHom_comp_whiskerRight_assoc
 
-omit [MonoidalCategory C] [MonoidalCategory D] in
-/-- Naturality of the inverse of any isomorphism `i : X ≅ Y` with respect to a family of morphisms
-`F.obj Z ⟶ G.obj Z`, derived from naturality of `i.hom`. -/
-theorem map_iso_inv_comp_eq_of_map_iso_hom {F G : C ⥤ D} {X Y : C} (i : X ≅ Y)
-    {eX : F.obj X ⟶ G.obj X} {eY : F.obj Y ⟶ G.obj Y}
-    (h : F.map i.hom ≫ eY = eX ≫ G.map i.hom) :
-    F.map i.inv ≫ eX = eY ≫ G.map i.inv := by
-  rw [← cancel_epi (F.map i.hom)]
-  simp [reassoc_of% h, ← F.map_comp_assoc, ← G.map_comp]
-
 /-- Naturality of the forward associator with respect to a family of morphisms `e` satisfying the
 tensor comparison formula. -/
 theorem associator_hom_naturality_of_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal]
@@ -298,6 +288,8 @@ theorem leftUnitor_hom_naturality_of_unit_tensor {F G : C ⥤ D} [F.Monoidal] [G
     F.map (λ_ X).hom ≫ e X = e (𝟙_ C ⊗ X) ≫ G.map (λ_ X).hom := by
   rw [← cancel_epi (ε F ▷ F.obj X ≫ μ F (𝟙_ _) X)]
   simp [hunit, htensor]
+  -- After cancelling the unit and tensor comparisons, split the remaining `(η F ≫ ε G) ⊗ₘ e X`
+  -- so `ε_η` and `left_unitality` cancel on each side.
   simp [tensorHom_def']
 
 /-- Naturality of the forward right unitor with respect to a family of morphisms `e` satisfying the
@@ -309,6 +301,8 @@ theorem rightUnitor_hom_naturality_of_unit_tensor {F G : C ⥤ D} [F.Monoidal] [
     F.map (ρ_ X).hom ≫ e X = e (X ⊗ 𝟙_ C) ≫ G.map (ρ_ X).hom := by
   rw [← cancel_epi (F.obj X ◁ ε F ≫ μ F X (𝟙_ _))]
   simp [hunit, htensor]
+  -- After cancelling the unit and tensor comparisons, split the remaining `e X ⊗ₘ (η F ≫ ε G)`
+  -- so `ε_η` and `right_unitality` cancel on each side.
   simp [MonoidalCategory.tensorHom_def]
 
 /-- Naturality of left whiskering with respect to a family of morphisms `e` satisfying the tensor

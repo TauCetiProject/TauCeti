@@ -260,12 +260,10 @@ def eval (f : α → C) : RigidObject α → C
   induction X with
   | of a => rw [FreeMonoidalCategory.toRigidObject_of]; rfl
   | unit =>
-    change eval f (𝟙_ (FreeMonoidalCategory α)).toRigidObject =
-      FreeMonoidalCategory.projectObj f (𝟙_ (FreeMonoidalCategory α))
-    rw [FreeMonoidalCategory.toRigidObject_unit]; rfl
+    rw [FreeMonoidalCategory.unit_eq_unit, FreeMonoidalCategory.toRigidObject_unit]; rfl
   | tensor X Y ihX ihY =>
-    change eval f (X ⊗ Y).toRigidObject = FreeMonoidalCategory.projectObj f (X ⊗ Y)
-    rw [FreeMonoidalCategory.toRigidObject_tensor, eval_tensor, ihX, ihY]; rfl
+    rw [FreeMonoidalCategory.tensor_eq_tensor, FreeMonoidalCategory.toRigidObject_tensor,
+      eval_tensor, ihX, ihY]; rfl
 
 section EvalIso
 

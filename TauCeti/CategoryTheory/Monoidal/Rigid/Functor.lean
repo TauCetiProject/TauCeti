@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 public import TauCeti.CategoryTheory.Monoidal.Rigid.OfClosed
+import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 
 /-!
 # Exact pairings under strong monoidal functors
@@ -518,9 +519,7 @@ the image pairing `F.mapExactPairing` to that of `G.mapExactPairing`. -/
 theorem NatTrans.tensorHom_app_comp_μ_map_comp_η (τ : F ⟶ G) [τ.IsMonoidal] {X Y : C}
     (f : X ⊗ Y ⟶ 𝟙_ C) :
     (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y ≫ G.map f ≫ η G = μ F X Y ≫ F.map f ≫ η F := by
-  have hη : τ.app (𝟙_ C) ≫ η G = η F := by
-    rw [← cancel_epi (ε F), IsMonoidal.unit_assoc, ε_η, ε_η]
-  rw [← IsMonoidal.tensor_assoc, ← τ.naturality_assoc, hη]
+  rw [← IsMonoidal.tensor_assoc, ← τ.naturality_assoc, IsMonoidal.app_unit_comp_η]
 
 /-- A monoidal natural transformation `τ : F ⟶ G` between strong monoidal functors is compatible
 with the images of a morphism `g : 𝟙_ C ⟶ X ⊗ Y` out of the unit, such as a coevaluation:
@@ -530,9 +529,7 @@ the image pairing `F.mapExactPairing` to that of `G.mapExactPairing`. -/
 theorem NatTrans.ε_map_comp_δ_comp_tensorHom_app (τ : F ⟶ G) [τ.IsMonoidal] {X Y : C}
     (g : 𝟙_ C ⟶ X ⊗ Y) :
     ε F ≫ F.map g ≫ δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) = ε G ≫ G.map g ≫ δ G X Y := by
-  have hδ : δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) = τ.app (X ⊗ Y) ≫ δ G X Y := by
-    rw [← cancel_epi (μ F X Y), μ_δ_assoc, IsMonoidal.tensor_assoc, μ_δ, Category.comp_id]
-  rw [hδ, τ.naturality_assoc, IsMonoidal.unit_assoc]
+  rw [IsMonoidal.δ_comp_tensor, τ.naturality_assoc, IsMonoidal.unit_assoc]
 
 /-- A monoidal natural transformation `τ : F ⟶ G` between strong monoidal functors cancels against
 the mate of its own component at the left member of an exact pairing: for an exact pairing

@@ -137,21 +137,25 @@ scoped instance leftRigidCategory : LeftRigidCategory (SingleObj M) where
 scoped instance rigidCategory : RigidCategory (SingleObj M) where
 
 /-- Right coevaluation in `SingleObj M` is `1 : M`. -/
+@[simp]
 theorem coevaluation_right_as_one (X : SingleObj M) :
     @ExactPairing.coevaluation (SingleObj M) _ _ X _ (RightRigidCategory.rightDual X).exact =
       (1 : M) := rfl
 
 /-- Right evaluation in `SingleObj M` is `1 : M`. -/
+@[simp]
 theorem evaluation_right_as_one (X : SingleObj M) :
     @ExactPairing.evaluation (SingleObj M) _ _ X _ (RightRigidCategory.rightDual X).exact =
       (1 : M) := rfl
 
 /-- Left coevaluation in `SingleObj M` is `1 : M`. -/
+@[simp]
 theorem coevaluation_left_as_one (X : SingleObj M) :
     @ExactPairing.coevaluation (SingleObj M) _ _ _ X (LeftRigidCategory.leftDual X).exact =
       (1 : M) := rfl
 
 /-- Left evaluation in `SingleObj M` is `1 : M`. -/
+@[simp]
 theorem evaluation_left_as_one (X : SingleObj M) :
     @ExactPairing.evaluation (SingleObj M) _ _ _ X (LeftRigidCategory.leftDual X).exact =
       (1 : M) := rfl
