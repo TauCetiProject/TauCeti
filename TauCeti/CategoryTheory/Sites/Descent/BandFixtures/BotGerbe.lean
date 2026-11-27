@@ -16,19 +16,19 @@ public import TauCeti.CategoryTheory.Sites.Descent.IsStack
 
 For the bottom Grothendieck topology `⊥` on a category `C`, whose only covering sieves are the
 maximal ones, every pseudofunctor is a stack (`Pseudofunctor.isStack_bot`). The constant
-pseudofunctor `Pseudofunctor.constant C D` is then a gerbe as soon as `D` is a nonempty groupoid
-any two of whose objects are isomorphic (`BandFixtures.isGerbe_constant_bot`). In particular, on
-the point category `Discrete PUnit`, the constant diagram with fibre the one-object groupoid
-`Discrete PUnit × SingleObj G` of a group `G` is a gerbe (`BandFixtures.point_connected_gerbe`):
-this is the gerbe `B G` on a point used for the fixtures of the intrinsic band of the Stacks
-Project, Lemma 8.11.8 (0CJY).
+pseudofunctor `Pseudofunctor.constant C D` is a gerbe for any topology for which it is a stack, in
+particular for `⊥`, as soon as `D` is a nonempty groupoid any two of whose objects are isomorphic
+(`BandFixtures.isGerbe_constant`). In particular, on the point category `Discrete PUnit`, the
+constant diagram with fibre the one-object groupoid `Discrete PUnit × SingleObj G` of a group `G`
+is a gerbe (`BandFixtures.point_connected_gerbe`): this is the gerbe `B G` on a point used for the
+fixtures of the intrinsic band of the Stacks Project, Lemma 8.11.8 (0CJY).
 
 ## Main results
 
 In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 
-* `isGerbe_constant_bot`: a constant diagram with a nonempty connected groupoid fibre is a gerbe
-  for `⊥`.
+* `isGerbe_constant`: a constant diagram with a nonempty connected groupoid fibre is a gerbe for
+  any topology for which it is a stack.
 * `point_connected_gerbe`: the constant diagram `B G` on the point is a gerbe for `⊥`.
 
 ## References
@@ -47,23 +47,21 @@ namespace CategoryTheory.Pseudofunctor.BandFixtures
 
 variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
 
-/-- **A constant diagram with a nonempty connected groupoid fibre is a gerbe for the bottom
-topology**: it is a stack (`isStack_bot`), its fibres are groupoids, the maximal sieve has an
-object over every arrow, and any two objects of the fibre are isomorphic. -/
-theorem isGerbe_constant_bot [IsGroupoid D] [Nonempty D] (h : ∀ x y : D, Nonempty (x ≅ y)) :
-    (constant C D).IsGerbe ⊥ where
-  toIsStack := inferInstance
+/-- **A constant diagram with a nonempty connected groupoid fibre is a gerbe** for any topology
+`J` for which it is a stack: its fibres are groupoids, the maximal sieve has an object over every
+arrow, and any two objects of the fibre are isomorphic. For `J = ⊥` the stack property is
+`isStack_bot`. -/
+theorem isGerbe_constant (J : GrothendieckTopology C) [(constant C D).IsStack J] [IsGroupoid D]
+    [Nonempty D] (h : ∀ x y : D, Nonempty (x ≅ y)) : (constant C D).IsGerbe J where
   isGroupoid _ := inferInstanceAs (IsGroupoid D)
-  exists_covering_nonempty _ :=
-    ⟨⊤, (GrothendieckTopology.bot_covering).2 rfl, fun _ _ _ ↦ inferInstanceAs (Nonempty D)⟩
-  exists_covering_iso x y :=
-    ⟨⊤, (GrothendieckTopology.bot_covering).2 rfl, fun _ _ _ ↦ h x y⟩
+  exists_covering_nonempty U := ⟨⊤, J.top_mem U, fun _ _ _ ↦ inferInstanceAs (Nonempty D)⟩
+  exists_covering_iso x y := ⟨⊤, J.top_mem _, fun _ _ _ ↦ h x y⟩
 
 /-- **The constant diagram `B G` on the point is a gerbe**: on `Discrete PUnit` with the bottom
 topology, the constant diagram with fibre `Discrete PUnit × SingleObj G` of a group `G` is a
 gerbe. -/
 instance point_connected_gerbe (G : Type v') [Group G] :
     (constant (Discrete PUnit.{u + 1}) (Discrete PUnit.{u' + 1} × SingleObj G)).IsGerbe ⊥ :=
-  isGerbe_constant_bot fun x y ↦ ⟨eqToIso (Subsingleton.elim x y)⟩
+  isGerbe_constant ⊥ fun x y ↦ ⟨eqToIso (Subsingleton.elim x y)⟩
 
 end CategoryTheory.Pseudofunctor.BandFixtures

@@ -63,6 +63,9 @@ example : Function.Injective
 /-- The automorphism groups of the fibres of `B C₃` are commutative. -/
 theorem aut_comm (_V : pt) (z : (B C₃).obj (.mk (op _V))) (a b : Aut z) : a * b = b * a := by
   refine Aut.ext (Iso.ext (Prod.hom_ext (Subsingleton.elim _ _) ?_))
+  -- The fibre `(B C₃).obj _` is `Cat.of (Discrete PUnit × SingleObj C₃)` only up to unfolding
+  -- `constant`, so its composition is not syntactically `SingleObj` composition and
+  -- `SingleObj.comp_as_mul` does not match until the type is restated.
   change (_ ≫ _ : SingleObj.star C₃ ⟶ SingleObj.star C₃) = _ ≫ _
   rw [SingleObj.comp_as_mul, SingleObj.comp_as_mul]
   exact mul_comm (G := C₃) _ _
