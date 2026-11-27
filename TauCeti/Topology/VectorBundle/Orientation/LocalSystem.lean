@@ -40,7 +40,7 @@ with the constant coefficient system: evaluate both factors at either orientatio
 For a local system `N` with coefficients in the same universe, evaluation at an orientation of
 `E_b` identifies the fibre of the twisted system `N ⊗ o(E)` over `b` with the fibre of `N`
 (`TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`); along a path, these
-identifications turn transport in `N ⊗ o(E)` into transport in `N` exactly when orientation
+identifications turn transport in `N ⊗ o(E)` into transport in `N` when orientation
 transport carries the first orientation to the second.
 If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without any orientation
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
