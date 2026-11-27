@@ -18,8 +18,9 @@ A truncation estimate for the logarithmic derivative at one is converted to a bo
 its norm by Mertens' theorem. If the estimate holds up to a zero-free box height `Q`,
 the choice `x = (log Q) ^ (2 + ε)` makes the truncation error bounded. The short sum
 then costs `((2 + ε) / δ₀) * log (log Q)` plus a constant, uniformly in the character.
-The fixed-width bound with coefficient `1000` is the one used in Levent Alpöge's
-formalization of the Riemann hypothesis for Dirichlet L-functions.
+With `δ₀ = 1 / 400` and `ε = 1 / 2` the coefficient is `1000`, which is the fixed-width
+bound used in Levent Alpöge's formalization of the Riemann hypothesis for Dirichlet
+L-functions.
 -/
 
 public section
@@ -50,7 +51,6 @@ theorem exists_norm_logDeriv_one_le_of_level_le (M : ℕ) :
     ∃ B : ℝ, ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q), q ≤ M →
       ‖logDeriv χ.LFunction 1‖ ≤ B := by
   let J := Σ q : Fin (M + 1), DirichletCharacter ℂ (q : ℕ)
-  let (q : Fin (M + 1)) : Finite (DirichletCharacter ℂ (q : ℕ)) := inferInstance
   let F : J → ℝ := fun j ↦ if h : (j.1 : ℕ) = 0 then 0 else
     letI : NeZero (j.1 : ℕ) := ⟨h⟩
     ‖logDeriv j.2.LFunction 1‖
