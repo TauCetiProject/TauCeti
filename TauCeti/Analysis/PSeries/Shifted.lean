@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.PSeries
-import TauCeti.Analysis.Convex.FourPoint
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 
 /-!
@@ -23,8 +21,8 @@ keeps a summable family of nonpositive powers summable.
 
 For real translates of the naturals, `Real.summable_one_div_nat_add_pow_iff` gives the exact
 convergence criterion for reciprocal natural powers.
-`Real.norm_one_div_add_pow_add_one_div_add_sub_pow_le` bounds the paired shifted summands
-by the sum at the endpoints using `TauCeti.add_le_add_of_convexOn_of_add_eq`.
+`TauCeti.hasSum_one_div_sub_pow_add_one_div_add_pow` uses this criterion to split the paired
+series into the nearest term and the remaining paired tail.
 
 ## Main results
 
@@ -36,20 +34,6 @@ public section
 open Filter Set
 
 namespace Real
-
-/-- Moving two positive bases towards one another with their sum fixed bounds the
-norm of the sum of their reciprocal powers by the original reciprocal-power sum. -/
-theorem norm_one_div_add_pow_add_one_div_add_sub_pow_le {a s t : ℝ}
-    (ha : 0 < a) (ht : t ∈ Icc 0 s) (k : ℕ) :
-    ‖1 / (a + t) ^ k + 1 / (a + s - t) ^ k‖ ≤ 1 / a ^ k + 1 / (a + s) ^ k := by
-  have hf : ConvexOn ℝ (Ioi 0) (fun x : ℝ ↦ 1 / x ^ k) := by
-    simpa only [zpow_neg, zpow_natCast, one_div] using (convexOn_zpow (𝕜 := ℝ) (-(k : ℤ)))
-  have ht₀ : 0 ≤ t := ht.1
-  have hb : 0 < a + s := by linarith [ht.2]
-  have hb' : 0 < a + s - t := by linarith [ht.2]
-  rw [norm_of_nonneg (by positivity)]
-  exact TauCeti.add_le_add_of_convexOn_of_add_eq hf ha hb (by linarith)
-    (by linarith [ht.2]) (by ring)
 
 /-- The reciprocal natural-power series of any real translate of the naturals
 is summable exactly when its exponent exceeds one. -/
@@ -66,6 +50,35 @@ theorem summable_one_div_nat_add_pow_iff (a : ℝ) {k : ℕ} :
 end Real
 
 namespace TauCeti
+
+/-- The paired reciprocal-power series converges for every shift when `k > 1`. Its sum
+splits into the term at `1 - |t|` and the paired tail with successive starting indices. -/
+theorem hasSum_one_div_sub_pow_add_one_div_add_pow {k : ℕ} (hk : 1 < k) (t : ℝ) :
+    HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 1 - t) ^ k + 1 / ((n : ℝ) + 1 + t) ^ k)
+      (1 / (1 - |t|) ^ k +
+        ∑' n : ℕ, (1 / ((n : ℝ) + 1 + |t|) ^ k + 1 / ((n : ℝ) + 2 - |t|) ^ k)) := by
+  have heven (n : ℕ) :
+      1 / ((n : ℝ) + 1 - t) ^ k + 1 / ((n : ℝ) + 1 + t) ^ k =
+        1 / ((n : ℝ) + 1 - |t|) ^ k + 1 / ((n : ℝ) + 1 + |t|) ^ k := by
+    rcases le_or_gt 0 t with h | h
+    · rw [abs_of_nonneg h]
+    · simp only [abs_of_neg h, sub_eq_add_neg, neg_neg]
+      exact add_comm _ _
+  have hminus : Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 1 - |t|) ^ k) := by
+    simpa only [add_sub_assoc] using (Real.summable_one_div_nat_add_pow_iff (1 - |t|)).mpr hk
+  have hplus : Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 1 + |t|) ^ k) := by
+    simpa only [add_assoc] using (Real.summable_one_div_nat_add_pow_iff (1 + |t|)).mpr hk
+  convert ((hminus.add hplus).hasSum.congr_fun fun n ↦ heven n) using 1
+  symm
+  rw [hminus.tsum_add hplus, hminus.tsum_eq_zero_add, add_assoc]
+  simp only [Nat.cast_zero, zero_add]
+  congr 1
+  have hshift : Summable (fun n : ℕ ↦ 1 / (((n + 1 : ℕ) : ℝ) + 1 - |t|) ^ k) :=
+    hminus.comp_injective Nat.succ_injective
+  rw [← hshift.tsum_add hplus]
+  refine tsum_congr fun n ↦ ?_
+  simp only [Nat.cast_add, Nat.cast_one, add_assoc, one_add_one_eq_two]
+  exact add_comm _ _
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
 theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.Analysis.Normed.Group.FunctionSeries
+import TauCeti.Analysis.Convex.FourPoint
 import TauCeti.Analysis.PSeries.Shifted
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # Symmetric sums of shifted reciprocal powers
@@ -17,8 +19,14 @@ After removing the term at the nearest pole, the paired sum of reciprocal powers
 zero and by the limiting remainder at either endpoint. The cubic case bounds the error sum
 in the approximation of ζ by a partial sum at a half-integer.
 
-The estimates use `Real.norm_one_div_add_pow_add_one_div_add_sub_pow_le` and Mathlib's
-`zeta_nat_eq_tsum_of_gt_one` and `continuousOn_tsum`.
+* `TauCeti.tsum_one_div_sub_pow_add_one_div_add_pow_le` bounds the paired sum.
+* `TauCeti.tendsto_tsum_one_div_sub_pow_add_one_div_add_pow_sub` gives the endpoint limit
+  after removal of the nearest-pole term.
+
+The estimates use `Real.norm_one_div_add_pow_add_one_div_add_sub_pow_le` and
+`TauCeti.hasSum_one_div_sub_pow_add_one_div_add_pow`. The comparison series is evaluated with
+`TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`, and Mathlib's `continuousOn_tsum` gives
+continuity of the remainder at the endpoints.
 -/
 
 public section
@@ -34,55 +42,15 @@ theorem hasSum_one_div_natCast_add_one_pow_add_one_div_natCast_add_two_pow
     {k : ℕ} (hk : 1 < k) :
     HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ k + 1 / ((n : ℝ) + 2) ^ k)
       (2 * (riemannZeta k).re - 1) := by
-  have hs : Summable (fun n : ℕ ↦ 1 / (n : ℝ) ^ k) :=
-    by simpa only [one_div] using Real.summable_nat_pow_inv.mpr hk
-  have hr : (∑' n : ℕ, 1 / (n : ℝ) ^ k) = (riemannZeta k).re := by
-    have h := Complex.ofReal_tsum (L := SummationFilter.unconditional ℕ)
-      (fun n : ℕ ↦ 1 / (n : ℝ) ^ k)
-    simp only [Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_natCast, Complex.ofReal_one,
-      ← zeta_nat_eq_tsum_of_gt_one hk] at h
-    exact Complex.ofReal_re _ ▸ congrArg Complex.re h
-  have hs₁ : Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ k) := by
-    simpa only [Nat.cast_add, Nat.cast_one] using (summable_nat_add_iff 1).mpr hs
-  have hs₂ : Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 2) ^ k) := by
-    simpa only [Nat.cast_add, Nat.cast_ofNat] using (summable_nat_add_iff 2).mpr hs
-  have h₁ := hs.tsum_eq_zero_add
-  have h₂ := hs₁.tsum_eq_zero_add
-  convert (hs₁.add hs₂).hasSum using 1
-  rw [hs₁.tsum_add hs₂]
-  have hk₀ : k ≠ 0 := by omega
-  simp only [Nat.cast_zero, Nat.cast_add, Nat.cast_one, zero_pow hk₀, div_zero, zero_add,
-    one_pow, div_one, add_assoc, one_add_one_eq_two] at h₁ h₂
-  linarith only [hr, h₁, h₂]
-
-/-- The paired reciprocal-power series converges for every shift when `k > 1`. Its sum
-splits into the term at `1 - |t|` and the paired tail with successive starting indices. -/
-theorem hasSum_one_div_sub_pow_add_one_div_add_pow {k : ℕ} (hk : 1 < k) (t : ℝ) :
-    HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 1 - t) ^ k + 1 / ((n : ℝ) + 1 + t) ^ k)
-      (1 / (1 - |t|) ^ k +
-        ∑' n : ℕ, (1 / ((n : ℝ) + 1 + |t|) ^ k + 1 / ((n : ℝ) + 2 - |t|) ^ k)) := by
-  have heven (n : ℕ) :
-      1 / ((n : ℝ) + 1 - t) ^ k + 1 / ((n : ℝ) + 1 + t) ^ k =
-        1 / ((n : ℝ) + 1 - |t|) ^ k + 1 / ((n : ℝ) + 1 + |t|) ^ k := by
-    rcases le_or_gt 0 t with h | h
-    · rw [abs_of_nonneg h]
-    · simp only [abs_of_neg h, sub_eq_add_neg, neg_neg]
-      exact add_comm _ _
-  have hminus : Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 1 - |t|) ^ k) := by
-    simpa only [add_sub_assoc] using (Real.summable_one_div_nat_add_pow_iff (1 - |t|)).mpr hk
-  have hplus : Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 1 + |t|) ^ k) := by
-    simpa only [add_assoc] using (Real.summable_one_div_nat_add_pow_iff (1 + |t|)).mpr hk
-  convert ((hminus.add hplus).hasSum.congr_fun fun n ↦ heven n) using 1
-  symm
-  rw [hminus.tsum_add hplus, hminus.tsum_eq_zero_add, add_assoc]
-  simp only [Nat.cast_zero, zero_add]
-  congr 1
-  have hshift : Summable (fun n : ℕ ↦ 1 / (((n + 1 : ℕ) : ℝ) + 1 - |t|) ^ k) :=
-    hminus.comp_injective Nat.succ_injective
-  rw [← hshift.tsum_add hplus]
-  refine tsum_congr fun n ↦ ?_
-  simp only [Nat.cast_add, Nat.cast_one, add_assoc, one_add_one_eq_two]
-  exact add_comm _ _
+  have h₁ : HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ k) (riemannZeta k).re := by
+    have h := hasSum_nat_add_one_rpow_neg_riemannZeta_re (s := k) (by exact_mod_cast hk)
+    rw [Complex.ofReal_natCast] at h
+    refine h.congr_fun fun n ↦ ?_
+    rw [Real.rpow_neg (by positivity), Real.rpow_natCast, one_div]
+  have h₂ : HasSum (fun n : ℕ ↦ 1 / ((n : ℝ) + 2) ^ k) ((riemannZeta k).re - 1) := by
+    simpa only [Nat.cast_add, Nat.cast_one, add_assoc, one_add_one_eq_two, Finset.sum_range_one,
+      Nat.cast_zero, zero_add, one_pow, div_one] using (hasSum_nat_add_iff' 1).2 h₁
+  simpa only [two_mul, add_sub_assoc] using h₁.add h₂
 
 /-- The paired reciprocal-power sum is at most its nearest-pole term plus
 `2 re (ζ(k)) - 1` for `k > 1` and `|t| ≤ 1`. At `t = 0` the bound is attained.
