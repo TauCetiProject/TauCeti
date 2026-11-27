@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLeftInverse
-public import TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint.Basic
 import TauCeti.Analysis.Fredholm.Criteria
 
 /-!

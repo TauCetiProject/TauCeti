@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Divisor.Family
-public import TauCeti.Analysis.PDE.Vortex.Sobolev.AdjointInverse
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Adjoint.Inverse
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 import TauCeti.Analysis.PDE.Vortex.Reduced.HigherSmoothness
 import TauCeti.Analysis.Polynomial.AtInfinity

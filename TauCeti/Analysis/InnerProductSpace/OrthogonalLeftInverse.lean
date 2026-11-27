@@ -183,6 +183,23 @@ private theorem orthogonalLeftInverse_spec (h : L.HasLeftInverse) :
   rw [← comp_apply L, hLR]
   exact horth x f
 
+/-- **Characterization of the orthogonal left inverse.** A continuous left inverse of `L` vanishing
+on the orthogonal complement of its range is the orthogonal left inverse. -/
+theorem eq_orthogonalLeftInverse (hR : R ∘L L = .id 𝕜 E)
+    (hR0 : ∀ f, (∀ x, ⟪L x, f⟫_𝕜 = 0) → R f = 0) : R = L.orthogonalLeftInverse := by
+  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection hR]
+  exact eq_comp_idempotentRangeProjection hR hR hR0
+
+/-- `L ∘ R` is a star projection: the orthogonal projection onto the range of `L`
+(`ContinuousLinearMap.comp_orthogonalLeftInverse_eq_starProjection`), and `0` when `L` has no
+continuous left inverse. -/
+theorem isStarProjection_comp_orthogonalLeftInverse :
+    IsStarProjection (L ∘L L.orthogonalLeftInverse) := by
+  by_cases h : L.HasLeftInverse
+  · exact (orthogonalLeftInverse_spec h).2.2.1
+  · rw [orthogonalLeftInverse_of_not_hasLeftInverse h, comp_zero]
+    exact .zero _
+
 variable (h : L.HasLeftInverse)
 include h
 
@@ -199,19 +216,6 @@ theorem orthogonalLeftInverse_apply_self (x : E) : L.orthogonalLeftInverse (L x)
 theorem orthogonalLeftInverse_apply_eq_zero {f : F} (hf : ∀ x, ⟪L x, f⟫_𝕜 = 0) :
     L.orthogonalLeftInverse f = 0 :=
   (orthogonalLeftInverse_spec h).2.1 f hf
-
-/-- **Characterization of the orthogonal left inverse.** A continuous left inverse of `L` vanishing
-on the orthogonal complement of its range is the orthogonal left inverse. -/
-theorem eq_orthogonalLeftInverse (hR : R ∘L L = .id 𝕜 E)
-    (hR0 : ∀ f, (∀ x, ⟪L x, f⟫_𝕜 = 0) → R f = 0) : R = L.orthogonalLeftInverse := by
-  rw [orthogonalLeftInverse_eq_comp_idempotentRangeProjection h.leftInverse_comp_self]
-  exact eq_comp_idempotentRangeProjection h.leftInverse_comp_self hR hR0
-
-/-- `L ∘ R` is a star projection: the orthogonal projection onto the range of `L`
-(`ContinuousLinearMap.comp_orthogonalLeftInverse_eq_starProjection`). -/
-theorem isStarProjection_comp_orthogonalLeftInverse :
-    IsStarProjection (L ∘L L.orthogonalLeftInverse) :=
-  (orthogonalLeftInverse_spec h).2.2.1
 
 /-- The star projection `L ∘ R` has the range of `L`. -/
 theorem range_comp_orthogonalLeftInverse : (L ∘L L.orthogonalLeftInverse).range = L.range := by
