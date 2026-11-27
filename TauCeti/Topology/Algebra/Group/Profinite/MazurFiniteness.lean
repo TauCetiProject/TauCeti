@@ -11,6 +11,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.DualRank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import Mathlib.GroupTheory.SemidirectProduct
 import Mathlib.RingTheory.Finiteness.Cardinality
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.BoundedIndex
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Mazur's finiteness condition `Φ_p`
@@ -58,6 +60,8 @@ coordinate characters are pairwise distinct.
   subgroups is topologically finitely generated.
 * `TauCeti.IsTopologicallyFinitelyGenerated.mazurFiniteness`: a topologically finitely generated
   compact group satisfies `Φ_p`.
+* `TauCeti.mazurFiniteness_of_finite_setOf_isOpen_index_le`: a compact group with finitely many
+  open subgroups of each bounded index satisfies `Φ_p`.
 * `TauCeti.mazurFiniteness_of_finite`, `TauCeti.mazurFiniteness_multiplicative_padicInt`: finite
   groups and the additive group of `ℤ_p` satisfy `Φ_p`.
 * `TauCeti.not_mazurFiniteness_pi_zmod`: the countable power of `ℤ/p` does not satisfy `Φ_p`.
@@ -158,6 +162,16 @@ topology is needed. -/
 theorem mazurFiniteness_of_finite [Finite G] : MazurFiniteness p G := fun U ↦
   Finite.of_injective (β := U.toSubgroup → Multiplicative (ZMod p)) (fun χ ↦ ⇑χ.toMul)
     fun _ _ h ↦ Additive.toMul.injective (DFunLike.coe_injective h)
+
+/-- A compact group with separately continuous multiplication and finitely many open subgroups
+of each bounded finite index satisfies `Φ_p`. The bounded-index finiteness passes to each open
+subgroup by `finite_setOf_isOpen_index_le_of_isOpen`. -/
+theorem mazurFiniteness_of_finite_setOf_isOpen_index_le [SeparatelyContinuousMul G] [CompactSpace G]
+    (h : ∀ n, {H : Subgroup G | IsOpen (H : Set G) ∧ H.FiniteIndex ∧ H.index ≤ n}.Finite) :
+    MazurFiniteness p G :=
+  mazurFiniteness_iff_forall_finite.mpr fun U ↦
+    finite_continuousMonoidHom_of_finite_setOf_isOpen_index_le
+      (finite_setOf_isOpen_index_le_of_isOpen U.isOpen _ (h _))
 
 end NeZero
 

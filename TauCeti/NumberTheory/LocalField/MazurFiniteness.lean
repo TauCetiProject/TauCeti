@@ -47,9 +47,7 @@ theorem mazurFiniteness_absoluteGaloisGroup (p : ℕ) (K : Type*) [Field K] [Val
   let := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
   let := finiteIntermediateFieldTopology K (SeparableClosure K) L
   have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
-  have : NeZero (p : L) := ⟨by
-    rw [← map_natCast (algebraMap K L)]
-    exact (map_ne_zero (algebraMap K L)).2 (NeZero.ne (p : K))⟩
+  have : NeZero (p : L) := NeZero.nat_of_injective (algebraMap K L).injective
   have hU : L.val.fieldRange.fixingSubgroup = U.toSubgroup := by
     rw [fieldRange_val, toSubgroup_eq_fixingSubgroup_of_fixedField_eq (E := L) rfl]
   let e : Field.absoluteGaloisGroup L ≃ₜ* U.toSubgroup := hU ▸
