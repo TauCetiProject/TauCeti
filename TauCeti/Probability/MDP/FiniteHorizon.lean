@@ -113,33 +113,30 @@ theorem finiteReturn_eq_add_sum_integral (γ : ℝ≥0) (N : ℕ) (v : ℕ → B
       ∫ ω, M.reward (ω n).1 (ω n).2 + γ * M.expect (v (n + 1)) (ω n).1 (ω n).2 - v n (ω n).1
         ∂(π.trajLaw M.transKernel s) := by
   set μ := π.trajLaw M.transKernel s
-  -- Every bounded function of the pair at a fixed time is integrable.
-  have hb (n : ℕ) {f : S × A → ℝ} {C : ℝ} (hf : ∀ x, ‖f x‖ ≤ C) :
-      Integrable (fun ω : ℕ → S × A ↦ f (ω n)) μ :=
-    Integrable.of_bound
-      ((measurable_of_countable f).comp (measurable_pi_apply n)).aestronglyMeasurable C
-      (Eventually.of_forall fun _ ↦ hf _)
   have hr (n : ℕ) : Integrable (fun ω : ℕ → S × A ↦ M.reward (ω n).1 (ω n).2) μ :=
-    hb n (f := fun x ↦ M.reward x.1 x.2) fun x ↦ (Real.norm_eq_abs _).trans_le (M.abs_reward_le _ _)
+    integrable_comp_eval_of_abs_le n (f := fun x ↦ M.reward x.1 x.2)
+      (fun x ↦ M.abs_reward_le x.1 x.2) μ
   have hv (n k : ℕ) : Integrable (fun ω : ℕ → S × A ↦ v k (ω n).1) μ :=
-    hb n (f := fun x ↦ v k x.1) fun x ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero (v k) x.1
+    integrable_comp_eval_of_abs_le n (f := fun x ↦ v k x.1)
+      (fun x ↦ (Real.norm_eq_abs _).symm.trans_le
+        (lp.norm_apply_le_norm ENNReal.top_ne_zero (v k) x.1)) μ
   have he (n k : ℕ) : Integrable (fun ω : ℕ → S × A ↦ M.expect (v k) (ω n).1 (ω n).2) μ :=
-    hb n (f := fun x ↦ M.expect (v k) x.1 x.2) fun x ↦
-      (Real.norm_eq_abs _).trans_le (M.abs_expect_le _ _ _)
+    integrable_comp_eval_of_abs_le n (f := fun x ↦ M.expect (v k) x.1 x.2)
+      (fun x ↦ M.abs_expect_le _ _ _) μ
   -- Each residual of the actual transition integrates to the residual with the expected next
   -- value.
   have hstep (n : ℕ) : ∫ ω, (M.reward (ω n).1 (ω n).2 + γ * v (n + 1) (ω (n + 1)).1 -
       v n (ω n).1) ∂μ = ∫ ω, (M.reward (ω n).1 (ω n).2 +
         γ * M.expect (v (n + 1)) (ω n).1 (ω n).2 - v n (ω n).1) ∂μ := by
-    have h₁ : Integrable (fun ω : ℕ → S × A ↦
-        M.reward (ω n).1 (ω n).2 + γ * v (n + 1) (ω (n + 1)).1) μ :=
-      (hr n).add ((hv (n + 1) (n + 1)).const_mul _)
-    have h₂ : Integrable (fun ω : ℕ → S × A ↦
-        M.reward (ω n).1 (ω n).2 + γ * M.expect (v (n + 1)) (ω n).1 (ω n).2) μ :=
-      (hr n).add ((he n (n + 1)).const_mul _)
-    rw [integral_sub h₁ (hv n n), integral_sub h₂ (hv n n),
-      integral_add (hr n) ((hv (n + 1) (n + 1)).const_mul _),
-      integral_add (hr n) ((he n (n + 1)).const_mul _), integral_const_mul, integral_const_mul,
+    -- Both residual integrals are affine in the integral of the next-value term.
+    have h (X : (ℕ → S × A) → ℝ) (hX : Integrable X μ) :
+        ∫ ω, (M.reward (ω n).1 (ω n).2 + γ * X ω - v n (ω n).1) ∂μ =
+          ∫ ω, (M.reward (ω n).1 (ω n).2 - v n (ω n).1) ∂μ + γ * ∫ ω, X ω ∂μ := by
+      have hR : Integrable (fun ω : ℕ → S × A ↦ M.reward (ω n).1 (ω n).2 - v n (ω n).1) μ :=
+        (hr n).sub (hv n n)
+      rw [← integral_const_mul, ← integral_add hR (hX.const_mul _)]
+      exact integral_congr_ae (Eventually.of_forall fun ω ↦ by ring)
+    rw [h _ (hv (n + 1) (n + 1)), h _ (he n (n + 1)),
       M.integral_state_succ_eq_integral_expect π s n]
   have hres (n : ℕ) : Integrable (fun ω : ℕ → S × A ↦ (γ : ℝ) ^ n *
       (M.reward (ω n).1 (ω n).2 + γ * v (n + 1) (ω (n + 1)).1 - v n (ω n).1)) μ :=
