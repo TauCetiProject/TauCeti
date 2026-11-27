@@ -58,15 +58,12 @@ theorem frobeniusRieszMainTerm_def [Fintype G] (f : (ZMod N)ˣ →* G) (q : G �
 @[simp] theorem conj_frobeniusRieszMainTerm [Fintype G] (f : (ZMod N)ˣ →* G) (q : G →* ℂˣ)
     (hq : q * q = 1) (w : G → ℝ) (a : ℝ) :
     conj (f.frobeniusRieszMainTerm q w a) = f.frobeniusRieszMainTerm q w a := by
-  have hsq : MulChar.ofUnitHom (q.comp f) * MulChar.ofUnitHom (q.comp f) = 1 := by
-    apply MulChar.mulEquivToUnitHom.injective
-    have hχ : MulChar.mulEquivToUnitHom (MulChar.ofUnitHom (q.comp f)) = q.comp f := by
-      rw [MulChar.ofUnitHom_eq_mulEquivToUnitHom_symm, MulEquiv.apply_symm_apply]
-    rw [map_mul, map_one, hχ]
-    exact DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun hq (f u)
+  have hinv : (q.comp f)⁻¹ = q.comp f :=
+    inv_eq_of_mul_eq_one_right (a := q.comp f) <| by
+      rw [← MonoidHom.mul_comp, hq, MonoidHom.one_comp]
   have hp : (PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (q.comp f)))⁻¹ =
       PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (q.comp f)) := by
-    rw [← PrimitiveDirichletCharacter.of_inv, inv_eq_of_mul_eq_one_right hsq]
+    rw [← PrimitiveDirichletCharacter.of_inv, ← MulChar.ofUnitHom_inv, hinv]
   -- The pullback of `q` is its own inverse, so its logarithmic derivative at `1` is real.
   have hreal := PrimitiveDirichletCharacter.logDeriv_LFunction_conj_of_inv_eq hp 1
   rw [map_one] at hreal

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Expect
 import Mathlib.RingTheory.IntegralDomain
 import Mathlib.Algebra.Ring.CharZero
+import TauCeti.Data.Finset.Card
 
 /-!
 # Character means on the complement of a quadratic kernel
@@ -67,13 +68,9 @@ theorem two_mul_card_filter_apply_ne_one {G K : Type*} [Group G] [Fintype G] [Co
   obtain ⟨c, hc⟩ : ∃ c, q c ≠ 1 := by
     by_contra! h
     exact hq₁ (MonoidHom.ext h)
-  have hcard := Finset.card_equiv (Equiv.mulLeft c) (s := Finset.univ.filter fun g ↦ q g ≠ 1)
-    (t := Finset.univ.filter fun h ↦ q h = 1)
-    (fun g ↦ by simpa using q.apply_ne_one_iff_apply_mul_eq_one hq hc g)
-  rw [two_mul]
-  nth_rw 1 [hcard]
-  rw [← Finset.card_univ]
-  convert Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun g ↦ q g = 1)
+  simpa using TauCeti.two_mul_card_filter_eq_true (fun g ↦ decide (q g ≠ 1)) (Equiv.mulLeft c)
+    fun g ↦ (decide_eq_decide.2
+      (not_congr (q.apply_ne_one_iff_apply_mul_eq_one hq hc g)).symm).trans decide_not
 
 /-- The mean of a linear character off the kernel of a nontrivial quadratic character `q`.
 Only the trivial character and `q` have nonzero mean there. -/
