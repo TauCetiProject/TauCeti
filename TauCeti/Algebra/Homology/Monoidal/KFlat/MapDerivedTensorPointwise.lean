@@ -189,7 +189,7 @@ instance isIso_mapDerivedTensorComparison_app_of_isKFlat (K L : CochainComplex C
 
 /-- Pointwise compatible K-flat replacements suffice for the canonical derived tensor
 comparison to be an isomorphism. No functorial choice of replacements is required. -/
-theorem isIso_mapDerivedTensorComparison_of_exists
+theorem isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat
     (h : ∀ K : CochainComplex C ℤ, ∃ (P : CochainComplex C ℤ) (f : P ⟶ K),
       QuasiIso f ∧ P.IsKFlat ∧
         CochainComplex.IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj P)) :
