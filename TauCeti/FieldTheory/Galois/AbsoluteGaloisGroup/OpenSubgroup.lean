@@ -68,23 +68,6 @@ theorem finiteDimensional_fixedField_inf_separableClosure_of_isOpen
     TauCeti.fixingSubgroup_fixedField (Subgroup.isClosed_of_isOpen H hH)]
   exact hH
 
-/-- For a separable intermediate field `N` of a normal extension, containment in an arbitrary
-intermediate field `M` is equivalent to reverse containment of their fixing subgroups. -/
-theorem fixingSubgroup_le_iff_of_le_separableClosure
-    {M N : IntermediateField K Ω} (hN : N ≤ separableClosure K Ω) :
-    M.fixingSubgroup ≤ N.fixingSubgroup ↔ N ≤ M := by
-  refine ⟨fun h ↦ ?_, fun h ↦ fixingSubgroup_antitone h⟩
-  have hM := fixedField_fixingSubgroup_inf_separableClosure
-    (inf_le_right : M ⊓ separableClosure K Ω ≤ separableClosure K Ω)
-  rw [fixingSubgroup_inf_separableClosure] at hM
-  calc
-    N = fixedField N.fixingSubgroup ⊓ separableClosure K Ω :=
-      (fixedField_fixingSubgroup_inf_separableClosure hN).symm
-    _ ≤ fixedField M.fixingSubgroup ⊓ separableClosure K Ω :=
-      inf_le_inf_right _ (fixedField_le h)
-    _ = M ⊓ separableClosure K Ω := hM
-    _ ≤ M := inf_le_left
-
 variable (L : IntermediateField K Ω) [Algebra.IsSeparable K L]
 
 /-- Finite intermediate fields contained in a separable `L/K` correspond, reversing inclusion,
