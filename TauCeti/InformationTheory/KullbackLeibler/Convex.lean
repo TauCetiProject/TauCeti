@@ -91,7 +91,7 @@ private theorem withDensity_ofReal_ac_and_llr {α : Type*} [MeasurableSpace α] 
     rw [← heq]
     exact Measure.rnDeriv_withDensity₀ η (hdm.mono_ac hημ)
   refine ⟨hac, ?_⟩
-  show llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x)
+  change llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x)
   filter_upwards [hac.ae_le hrn, hρμ.ae_le hf, hρμ.ae_le hh] with x hdx hfx hhx
   simp only [llr, hdx, d, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
 
