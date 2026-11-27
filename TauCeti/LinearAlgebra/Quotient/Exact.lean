@@ -14,8 +14,8 @@ import all TauCeti.LinearAlgebra.Exact
 /-!
 # Exact sequences of quotient modules
 
-For an injection `f : M → N` and a submodule `S` of `M`, the quotient `N / f(S)` is an
-extension of `N / f(M)` by `M / S`. If the cokernel of `f` is projective, this sequence splits.
+For an injection `f : M → N` with projective cokernel and a submodule `S` of `M`, this file
+provides an abstract linear isomorphism `N / f(S) ≃ (M / S) × (N / f(M))`.
 This permits finite projectivity and constant ranks to be transported along injections.
 -/
 
@@ -26,8 +26,8 @@ namespace Submodule
 variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] (p : Submodule R M)
 
-/-- For an injective map with projective cokernel, quotienting its target by the image of a
-submodule gives a split extension of the source quotient by the cokernel. -/
+/-- For an injective map with projective cokernel, `N ⧸ p.map f` is noncanonically linearly
+isomorphic to `(M ⧸ p) × (N ⧸ LinearMap.range f)`. -/
 theorem nonempty_quotient_map_equiv_prod (f : M →ₗ[R] N) (hf : Function.Injective f)
     [Module.Projective R (N ⧸ LinearMap.range f)] :
     Nonempty ((N ⧸ p.map f) ≃ₗ[R] (M ⧸ p) × (N ⧸ LinearMap.range f)) := by

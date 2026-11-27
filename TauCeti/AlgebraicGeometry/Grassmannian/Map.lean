@@ -33,8 +33,8 @@ splits; the complementary summand need not be invariant.
   (https://github.com/TauCetiProject/TauCeti/pull/47414), for the affine-point isomorphism
   argument, adapted here to image kernels and changing quotient rank.
 
-The construction uses `Module.Grassmannian.incidenceLocus`, `schemeIdealLocus` and the split
-quotient sequence of `Submodule.nonempty_quotient_map_equiv_prod`.
+The construction uses `Module.Grassmannian.incidenceLocus`, `schemeIdealLocus` and the quotient
+product decomposition of `Submodule.nonempty_quotient_map_equiv_prod`.
 -/
 
 public section

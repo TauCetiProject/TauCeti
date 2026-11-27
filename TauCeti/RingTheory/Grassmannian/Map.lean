@@ -40,6 +40,24 @@ universe u v v' w
 
 open TensorProduct
 
+namespace LinearMap
+
+open scoped Module.Grassmannian
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+  {N : Type v'} [AddCommGroup N] [Module R N] {d : ℕ}
+  {A : Type w} [CommRing A] [Algebra R A]
+
+/-- A quotient presentation of the cokernel makes an injection universally injective. -/
+theorem baseChange_injective_of_toSubmodule_eq_range (i : M →ₗ[R] N)
+    (hi : Function.Injective i) (P : G(d, N; R))
+    (hP : P.toSubmodule = LinearMap.range i) :
+    Function.Injective (i.baseChange A) :=
+  i.baseChange_injective_of_isComplemented hi (by
+    rw [← hP]; exact P.toSubmodule.isComplemented_of_projective_quotient)
+
+end LinearMap
+
 namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
@@ -198,13 +216,6 @@ section Coefficients
 
 variable {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
-/-- A quotient presentation of the cokernel makes an injection universally injective. -/
-theorem baseChange_injective_of_range (P : G(d, N; R)) (i : M →ₗ[R] N)
-    (hi : Function.Injective i) (hP : P.toSubmodule = LinearMap.range i) :
-    Function.Injective (i.baseChange A) :=
-  i.baseChange_injective_of_isComplemented hi (by
-    rw [← hP]; exact P.toSubmodule.isComplemented_of_projective_quotient)
-
 /-- The extended cokernel presentation has kernel the range of the extended injection. -/
 theorem toSubmodule_baseChange_eq_range (P : G(d, N; R)) (i : M →ₗ[R] N)
     (hP : P.toSubmodule = LinearMap.range i) :
@@ -219,7 +230,7 @@ noncomputable def mapEquivOfInjectiveBaseChange (r : ℕ) (i : M →ₗ[R] N)
     G(r, A ⊗[R] M; A) ≃
       {T : G(r + d, A ⊗[R] N; A) // T.toSubmodule ≤ (P.baseChange A).toSubmodule} :=
   mapEquivOfInjective r (i.baseChange A)
-    (P.baseChange_injective_of_range i hi hP)
+    (i.baseChange_injective_of_toSubmodule_eq_range hi P hP)
     (P.baseChange A) (P.toSubmodule_baseChange_eq_range i hP)
 
 /-- The injection construction on points over a coefficient algebra. -/
@@ -275,9 +286,9 @@ theorem mapOfInjectiveBaseChange_comp {L : Type*} [AddCommGroup L] [Module R L] 
       S.mapOfInjectiveBaseChange (j ∘ₗ i) (hj.comp hi) Q hQ := by
   simpa only [mapOfInjectiveBaseChange, mapEquivOfInjectiveBaseChange,
     mapEquivOfInjective_apply_val, LinearMap.baseChange_comp] using
-    mapOfInjective_comp S (i.baseChange A) (P.baseChange_injective_of_range i hi hP)
+    mapOfInjective_comp S (i.baseChange A) (i.baseChange_injective_of_toSubmodule_eq_range hi P hP)
       (P.baseChange A) (P.toSubmodule_baseChange_eq_range i hP)
-      (j.baseChange A) (P'.baseChange_injective_of_range j hj hP')
+      (j.baseChange A) (j.baseChange_injective_of_toSubmodule_eq_range hj P' hP')
       (P'.baseChange A) (P'.toSubmodule_baseChange_eq_range j hP')
       (Q.baseChange A) (by
         simpa only [LinearMap.baseChange_comp] using Q.toSubmodule_baseChange_eq_range (j ∘ₗ i) hQ)
@@ -303,7 +314,7 @@ theorem mapOfInjectiveBaseChange_mem_invtSubmodule_iff (S : G(r, A ⊗[R] M; A))
     (S.mapOfInjectiveBaseChange i hi P hP).toSubmodule ∈ Module.End.invtSubmodule (u.baseChange A) ↔
       S.toSubmodule ∈ Module.End.invtSubmodule (t.baseChange A) := by
   apply mapOfInjective_mem_invtSubmodule_iff (i := i.baseChange A)
-    (hi := P.baseChange_injective_of_range i hi hP) (P := P.baseChange A)
+    (hi := i.baseChange_injective_of_toSubmodule_eq_range hi P hP) (P := P.baseChange A)
     (hP := P.toSubmodule_baseChange_eq_range i hP) (t := t.baseChange A) (u := u.baseChange A)
   simpa only [LinearMap.baseChange_comp] using congrArg (LinearMap.baseChange A) htu
 
