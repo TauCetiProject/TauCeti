@@ -835,7 +835,7 @@ def chartClassicalPrincipalSymbol (m : ℝ)
     CoordinateSpace n × CoordinateSpace n → ℂ :=
   chartCotangentSymbol (classicalPrincipalSymbol m P) e
 
-theorem chartClassicalPrincipalSymbol_eq (e : OpenPartialHomeomorph M (CoordinateSpace n)) :
+theorem chartClassicalPrincipalSymbol_def (e : OpenPartialHomeomorph M (CoordinateSpace n)) :
     chartClassicalPrincipalSymbol m P e = chartCotangentSymbol (classicalPrincipalSymbol m P) e :=
   (rfl)
 
