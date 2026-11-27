@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Prod
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Prod
 import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 import Mathlib.RingTheory.Flat.Basic
@@ -29,11 +29,10 @@ the maps `1 ⊗ f_j` on `A ⊗ M` have common kernel `A ⊗ ⋂ ker f_j`
 (`TensorProduct.forall_lTensor_eq_zero_iff_mem_range`), read off coordinates in a basis of `A`
 (`Module.Basis.mem_range_lTensor_subtype_iff`).
 
-This is the abelian-factor case of the invariant side of the reductive Lie–Chevalley square:
-through `TauCeti.centerDerivedEquiv : L ≃ z(L) × [L, L]` for a reductive Lie algebra `L` it
-identifies `S(L)^L` with `S(z(L)) ⊗ S([L, L])^{[L, L]}`, matching the decomposition
-`Z(U(Z × S)) ≃ S(Z) ⊗ Z(U(S))` of the centre of the enveloping algebra
-(`TauCeti.UniversalEnvelopingAlgebra.productCenterEquiv`).
+Composed with `TauCeti.centerDerivedEquiv : L ≃ z(L) × [L, L]` (for a reductive Lie algebra `L`
+over a field of characteristic zero), this gives `S(L)^L ≃ S(z(L)) ⊗ S([L, L])^{[L, L]}`, the
+counterpart of the decomposition `Z(U(Z × S)) ≃ S(Z) ⊗ Z(U(S))` of the centre of the enveloping
+algebra (`TauCeti.UniversalEnvelopingAlgebra.productCenterEquiv`).
 
 ## Main results
 
