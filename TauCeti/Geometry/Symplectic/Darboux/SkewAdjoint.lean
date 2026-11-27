@@ -85,9 +85,9 @@ theorem exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint [FiniteDimensi
     (σ := Neg.neg) neg_involutive hspan
     fun χ ψ hψ v hv w hw ↦ by_contra fun h ↦ hψ (horth hv hw h)
   choose χ hχ using hdW
-  have hb : ω.IsDarbouxBasis (d.reindex (darbouxIndexEquiv m).symm) :=
+  have hb : ω.IsDarbouxBasis (d.reindex (darbouxIndexEquiv (Fin m)).symm) :=
     isDarbouxBasis_reindex_symm_iff.2 hd
-  refine ⟨m, d.reindex (darbouxIndexEquiv m).symm, fun i k ↦ χ (.inr k) i, hb, fun i k ↦ ?_⟩
+  refine ⟨m, d.reindex (darbouxIndexEquiv (Fin m)).symm, fun i k ↦ χ (.inr k) i, hb, fun i k ↦ ?_⟩
   have hneg : χ (.inl k) = -χ (.inr k) := horth (hχ (.inr k)) (hχ (.inl k)) <| by
     simpa [Basis.reindex_apply] using (hb.apply_fst_snd k k).trans_ne (by simp)
   simp only [Basis.reindex_apply, Equiv.symm_symm, darbouxIndexEquiv_apply_zero,

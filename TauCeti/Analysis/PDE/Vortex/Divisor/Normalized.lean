@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Divisor.JointSmooth
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Polynomial
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
@@ -73,6 +74,9 @@ moduli space.
 ## Main results
 
 * `TauCeti.Vortex.normalizedVortex_mem_framedFieldSpace`: `y_c` lies in every `A_m^s`.
+* `TauCeti.Vortex.equation_normalizedVortex`,
+  `TauCeti.Vortex.isZeroMultiplicity_sectionValue_normalizedVortex`: `y_c` is a vortex whose zero
+  divisor has coefficients `c`.
 * `TauCeti.Vortex.SobolevFieldSpace.contDiff_subRef_normalizedVortex`: the coordinates of `y_c` in
   `H^s(ℂ)⁴` are smooth in `c`, for every `s ≥ 0`.
 * `TauCeti.Vortex.SobolevFieldSpace.continuous_normalizedVortex`: `c ↦ y_c` is continuous into
@@ -114,6 +118,28 @@ theorem normalizedVortex_mem_framedFieldSpace (hm : 0 < m) (f : ContDiffBump (0 
     (equation_polynomialVortex hP hd) hframe (ρ := fun z ↦
       Real.exp (backgroundAmplitude (monicOfCoeff c).eval z + reducedSolution (monicOfCoeff c) z))
     fun z ↦ sectionValue_polynomialVortex _ z).1 s
+
+/-- The normalized vortex `y_c` solves the vortex equations. -/
+theorem equation_normalizedVortex (hm : 0 < m) (c : Fin m → ℂ) (z : ℂ) :
+    equation (normalizedVortex c) z = 0 := by
+  have hd : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
+  have hx := contDiff_polynomialVortex (monicOfCoeff c)
+  rw [normalizedVortex_def]
+  exact (equation_gaugeTransform_eq_zero_iff
+    ((contDiff_polynomialGauge.comp (contDiff_prodMk_right c)).contDiffAt.of_le (by simp))
+    fun i ↦ (((contDiff_piLp 2).1 hx i).differentiable (by simp)) z).2
+      (equation_polynomialVortex (monic_monicOfCoeff c) hd z)
+
+/-- **The zero divisor of the normalized vortex.** The section of `y_c` vanishes exactly at the
+roots of `P_c`, with their multiplicities: its zero divisor is the point of `Sym ℂ m` with
+coefficients `c`. -/
+theorem isZeroMultiplicity_sectionValue_normalizedVortex (c : Fin m → ℂ) :
+    IsZeroMultiplicity (sectionValue (normalizedVortex c))
+      fun z ↦ (((Sym.coeffEquiv ℂ m).symm c : Sym ℂ m) : Multiset ℂ).count z := by
+  rw [normalizedVortex_def, Sym.coeffEquiv_symm_apply]
+  exact isZeroMultiplicity_sectionValue_gaugeTransform
+    (contDiff_polynomialGauge.comp (contDiff_prodMk_right c)).continuous
+    (isZeroMultiplicity_sectionValue_polynomialVortex (monic_monicOfCoeff c).ne_zero)
 
 /-! ### The background and reduced parts of the normalized vortex -/
 
@@ -858,6 +884,12 @@ def normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) (s : ℝ) (c : Fi
 theorem coe_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) (s : ℝ) (c : Fin m → ℂ) :
     ⇑(normalizedVortex hm f s c) = Vortex.normalizedVortex c :=
   (rfl)
+
+/-- The normalized vortex of `A_m^s` solves the vortex equations. -/
+theorem equation_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) (s : ℝ) (c : Fin m → ℂ)
+    (z : ℂ) : equation (normalizedVortex hm f s c) z = 0 := by
+  rw [coe_normalizedVortex]
+  exact Vortex.equation_normalizedVortex hm c z
 
 /-- **The normalized plane vortices form a smooth family in every Sobolev space.** For `m ≥ 1` and
 `s ≥ 0`, the coordinates `y_c - x_m` in `H^s(ℂ)⁴` of the normalized vortex `y_c` with divisor

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.ODE.InitialCondition
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Dynamics.Flow.LieBracket
-import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 
 /-!
 # The straightening theorem for vector fields on a normed space
@@ -155,8 +155,7 @@ private theorem fderiv_apply_eq_of_eventually_add_smul_eq [CompleteSpace E] {g :
     fderiv ℝ ψ z u = g (ψ z) := by
   have hΦ := hasDerivAt_flowOfLipschitz hg (ψ z) 0
   rw [Flow.map_zero_apply] at hΦ
-  rw [← hd.lineDeriv_eq_fderiv]
-  exact HasLineDerivAt.lineDeriv (hΦ.congr_of_eventuallyEq h)
+  exact hd.fderiv_apply_eq_of_hasDerivAt_add_smul hΦ (by simpa using h)
 
 section FlowBox
 

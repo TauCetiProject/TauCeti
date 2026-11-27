@@ -48,6 +48,8 @@ constant along parallel hyperplanes.
 * `Distribution.compCLMOfSubmersion_comp`: `(g ∘ f)^* = f^* ∘ g^*`.
 * `Distribution.compCLMOfSubmersion_congr`, `Distribution.restrictCLM_compCLMOfSubmersion`: the
   pullback only depends on `f` on `Ω`, and commutes with restriction to open subsets of `Ω`.
+* `Distribution.compCLMOfSubmersion_id`: the pullback along the inclusion of an open subset is the
+  restriction to it.
 * `Distribution.complexPairing_compCLMOfSubmersion`: the pairing of `f^* T` with a complex test
   function `φ` is that of `T` with the fibre integral of `φ`.
 * `Distribution.lineDerivOp_compCLMOfSubmersion_eq_zero`: the pullback along a linear map `A` has
@@ -141,6 +143,20 @@ theorem restrictCLM_compCLMOfSubmersion {U : Opens E} (hU : U ≤ Ω) (T : 𝓓'
   ext φ
   rw [restrictCLM_apply, compCLMOfSubmersion_apply, compCLMOfSubmersion_apply,
     fiberIntegralCLM_monoCLM μ ν hf hfΩ hsurj hU]
+
+/-- **Pullback along an open inclusion.** For an open set `U` mapped into `Ω₁` by the identity,
+the pullback along the identity, with one Haar measure, is the restriction to `U`. -/
+@[simp]
+theorem compCLMOfSubmersion_id {U Ω₁ : Opens E} {hid : ContDiffOn ℝ ∞ (id : E → E) U}
+    {hidΩ : MapsTo (id : E → E) U Ω₁}
+    {hidsurj : ∀ x ∈ U, Function.Surjective (fderiv ℝ (id : E → E) x)} :
+    (compCLMOfSubmersion μ μ id hid hidΩ hidsurj : 𝓓'(Ω₁, F) →L[ℝ] 𝓓'(U, F)) = restrictCLM := by
+  have hU : U ≤ Ω₁ := fun x hx ↦ hidΩ hx
+  ext T φ
+  rw [compCLMOfSubmersion_apply, restrictCLM_apply]
+  congr 1
+  refine ((eq_fiberIntegralCLM_iff μ μ _ _ _).2 fun g _ _ _ ↦ ?_).symm
+  simp [monoCLM_apply, hU]
 
 /-- **The pullback is functorial**: pulling back along `g` and then along `f` is pulling back
 along `g ∘ f`. -/

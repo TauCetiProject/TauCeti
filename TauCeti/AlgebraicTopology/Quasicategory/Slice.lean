@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration
+public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice
+public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 
 /-!
 # Slices and coslices of quasicategories
@@ -30,7 +31,9 @@ fibrations (HTT Proposition 2.1.2.1). Those are proved through the pushout-join 
   `SSet.coslice.leftFibration_map`, `SSet.coslice.leftFibration_π`, `SSet.coslice.quasicategory`
   are the duals for coslices.
 * `SSet.slice.hasLift_of_isEquivalence`: the restriction of cones along a monomorphism lifts, with
-  prescribed source, every edge whose image in `C` is an equivalence.
+  prescribed source, every edge whose image in `C` is an equivalence;
+  `SSet.slice.hasLift_restrictionMap_of_isEquivalence` is the relative form, for the relative
+  slice map of an inner fibration to a quasicategory.
 * `SSet.slice.hasLiftingProperty_map_horn_ι`: for a simplex `τ : Δ[m] ⟶ C` and `j < m`, the
   restriction of cones `C_{/τ} ⟶ C_{/(Λ[m, j] ⟶ Δ[m] ⟶ C)}` is a trivial fibration, by the inner
   horns `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])`; in particular
@@ -99,6 +102,33 @@ theorem hasLift_of_isEquivalence [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [
       ((isEquivalence_iff_of_edge_eq (by rw [map_edge, mk'_edge, mk'_edge, yonedaEquiv_comp])).2
         hb))
 
+open Edge in
+/-- For an inner fibration `p : X ⟶ S` to a quasicategory, a diagram `σ : K ⟶ X` and a
+monomorphism `j : L ⟶ K`, **the relative slice map
+`X_{/σ} ⟶ X_{/j ≫ σ} ×_{S_{/j ≫ σ ≫ p}} S_{/σ ≫ p}` lifts, with prescribed source, every edge
+whose image in `X` is an equivalence**: a commutative square from `Λ[1, 0] ⟶ Δ[1]` to it has a
+lift when the edge of `X` underlying its bottom edge is an equivalence. This is the relative form
+of `SSet.slice.hasLift_of_isEquivalence`: the target of the relative slice map lies over `X` by a
+right fibration, a base change of the restriction of cones `S_{/σ ≫ p} ⟶ S_{/j ≫ σ ≫ p}` followed
+by the projection `X_{/j ≫ σ} ⟶ X`, and right fibrations reflect equivalences. -/
+theorem hasLift_restrictionMap_of_isEquivalence {X S : SSet.{u}} [Quasicategory S] (p : X ⟶ S)
+    [InnerFibration p] (σ : K ⟶ X) (j : L ⟶ K) [Mono j] {t : (Λ[1, 0] : SSet) ⟶ slice σ}
+    {b : Δ[1] ⟶ pullback (map (𝟙 L) p (by simp) : slice (j ≫ σ) ⟶ slice (j ≫ σ ≫ p))
+      (map j (𝟙 S) (by simp) : slice (σ ≫ p) ⟶ slice (j ≫ σ ≫ p))}
+    (sq : CommSq t Λ[1, 0].ι (restrictionMap j p σ) b)
+    (hb : (Edge.mk' (yonedaEquiv (b ≫ pullback.fst _ _ ≫ π (j ≫ σ)))).IsEquivalence) :
+    sq.HasLift := by
+  have := quasicategory_of_innerFibration p
+  let f₁ : slice (j ≫ σ) ⟶ slice (j ≫ σ ≫ p) := map (𝟙 L) p (by simp)
+  let f₂ : slice (σ ≫ p) ⟶ slice (j ≫ σ ≫ p) := map j (𝟙 S) (by simp)
+  have : RightFibration (pullback.fst f₁ f₂) :=
+    RightFibration.of_isPullback (IsPullback.of_hasPullback _ _).flip
+  have := quasicategory_of_innerFibration (pullback.fst f₁ f₂ ≫ π (j ≫ σ))
+  exact RightFibration.hasLift_of_isEquivalence _ sq
+    ((isEquivalence_map_iff_of_rightFibration (pullback.fst f₁ f₂ ≫ π (j ≫ σ)) _).1
+      ((isEquivalence_iff_of_edge_eq (by rw [map_edge, mk'_edge, mk'_edge, yonedaEquiv_comp])).2
+        hb))
+
 variable {m : ℕ} {j : Fin (m + 1)}
 
 /-- For a quasicategory `C`, a simplex `τ : Δ[m] ⟶ C` and `j < m`, **the restriction of cones
@@ -149,11 +179,7 @@ theorem hasLiftingProperty_map_δ_one [Quasicategory C] (g : Δ[1] ⟶ C) {p : �
   -- isomorphism, through which restricting to the source factors as restricting to `Λ[1, 0]`.
   let e : Δ[0] ⟶ (Λ[1, 0] : SSet.{u}) := horn.ι 0 1 (by decide)
   have he : e ≫ Λ[1, 0].ι = stdSimplex.δ 1 := horn.ι_ι _ _ _
-  have : IsIso e := ⟨stdSimplex.isTerminalObj₀.from _, stdSimplex.isTerminalObj₀.hom_ext _ _,
-    horn.hom_ext' fun j hj ↦ by
-      obtain rfl : j = 1 := Fin.eq_one_of_ne_zero j hj
-      rw [← Category.assoc, stdSimplex.isTerminalObj₀.hom_ext (horn.ι 0 1 hj ≫ _) (𝟙 _),
-        Category.id_comp, Category.comp_id]⟩
+  have : IsIso e := horn.isIso_ι_one 0 1 (by decide)
   have hmap : map (stdSimplex.δ 1) (𝟙 C) h = map (q := Λ[1, 0].ι ≫ g) Λ[1, 0].ι (𝟙 C) (by simp) ≫
       map e (𝟙 C) (by rw [← h, ← he]; simp) := by
     -- After `map_comp`, the two sides differ only in the restriction maps, equal by `he`.

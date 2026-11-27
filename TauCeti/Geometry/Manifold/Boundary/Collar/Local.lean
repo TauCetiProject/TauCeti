@@ -149,6 +149,20 @@ theorem continuous_normalRay : Continuous normalRay := by
   refine Continuous.subtype_mk ?_ _
   fun_prop
 
+/-- The normal ray along a nonnegative `C^k` function is `C^k` into the one-dimensional
+half-space model. -/
+theorem _root_.ContMDiff.normalRay {E' H' M : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I : ModelWithCorners ℝ E' H'} [TopologicalSpace M]
+    [ChartedSpace H' M] {k : WithTop ℕ∞} {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f)
+    (hf0 : ∀ x, 0 ≤ f x) : ContMDiff I (𝓡∂ 1) k fun x ↦ normalRay (f x) := by
+  have hcoord : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
+      fun x ↦ (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm (f x) :=
+    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.comp hf
+  have hrange (x : M) : (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm (f x) ∈ range (𝓡∂ 1) := by
+    rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
+    simpa using hf0 x
+  exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun x ↦ normalRay_eq_symm _
+
 /-- A point of the one-dimensional half-space model vanishes exactly when its normal coordinate
 does. -/
 @[simp]

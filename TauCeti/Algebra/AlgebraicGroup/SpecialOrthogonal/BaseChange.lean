@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
@@ -28,6 +29,9 @@ counterparts over `K`, so the general base-change theorem for Hopf-ideal quotien
   the quotient coordinate morphisms from `O(GLₙ)`.
 * `TauCeti.SpecialOrthogonal.finiteTypeCoordinateHopfAlgebraBaseChangeIso`: the finite-type form
   of the same isomorphism.
+* `TauCeti.SpecialOrthogonal.groupSchemeBaseChangeIso`: base change of the group scheme `SOₙ`,
+  compatible with the inclusions into `GLₙ`
+  (`map_inclusion_comp_groupSchemeBaseChangeIso_hom`).
 
 ## References
 
@@ -49,6 +53,8 @@ open scoped TensorProduct
 namespace TauCeti.SpecialOrthogonal
 
 universe u v
+
+section Coordinate
 
 variable (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
 variable (n : ℕ)
@@ -197,5 +203,76 @@ theorem finiteTypeCoordinateHopfAlgebraBaseChangeIso_hom :
     (finiteTypeCoordinateHopfAlgebra_obj R n)
     (finiteTypeCoordinateHopfAlgebra_obj K n)
     (coordinateHopfAlgebraBaseChangeIso R K n)
+
+/-- The inverse base-change isomorphism is compatible with the quotient coordinate morphisms. -/
+@[reassoc]
+theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv :
+    coordinateMap K n ≫ (coordinateHopfAlgebraBaseChangeIso R K n).inv =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n) := by
+  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
+  exact CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
+
+end Coordinate
+
+/-! ### Base change of the group scheme -/
+
+section GroupScheme
+
+variable (R K : Type u) [CommRing R] [CommRing K] [Algebra R K] (n : ℕ)
+
+/-- **Base change of `SOₙ`**: the base change to `K` of the special orthogonal group scheme over
+`R` is the special orthogonal group scheme over `K`, the Hopf-ideal base-change comparison of
+`GLₙ` at the defining Hopf ideals, between the quotient-spectrum presentations
+`groupScheme_def`. -/
+noncomputable def groupSchemeBaseChangeIso :
+    (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.obj
+        (groupScheme R n) ≅ groupScheme K n :=
+  (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.mapIso
+      (eqToIso (groupScheme_def R n)) ≪≫
+    GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n) (definingHopfIdeal K n)
+      (coordinateHopfAlgebraBaseChangeIso R K n).symm ≪≫
+    eqToIso (groupScheme_def K n).symm
+
+/-- The base-change isomorphism of `SOₙ` is the Hopf-ideal base-change comparison of `GLₙ` for
+the inverse base-change isomorphism of coordinate Hopf algebras. -/
+theorem groupSchemeBaseChangeIso_def :
+    groupSchemeBaseChangeIso R K n =
+      (Over.pullback (AlgebraicGeometry.Spec.map
+          (CommRingCat.ofHom (algebraMap R K)))).mapGrp.mapIso (eqToIso (groupScheme_def R n)) ≪≫
+        GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n)
+          (definingHopfIdeal K n) (coordinateHopfAlgebraBaseChangeIso R K n).symm ≪≫
+        eqToIso (groupScheme_def K n).symm :=
+  (rfl)
+
+/-- Followed by the quotient-spectrum presentation `groupScheme_def` over `K`, the base-change
+isomorphism of `SOₙ` is the Hopf-ideal base-change comparison of `GLₙ`, after the presentation
+over `R`. -/
+@[reassoc]
+theorem groupSchemeBaseChangeIso_hom_comp_eqToHom :
+    (groupSchemeBaseChangeIso R K n).hom ≫ eqToHom (groupScheme_def K n) =
+      (Over.pullback (AlgebraicGeometry.Spec.map
+          (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map (eqToHom (groupScheme_def R n)) ≫
+        (GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n)
+          (definingHopfIdeal K n) (coordinateHopfAlgebraBaseChangeIso R K n).symm).hom := by
+  simp only [groupSchemeBaseChangeIso_def, Iso.trans_hom, Functor.mapIso_hom, eqToIso.hom,
+    Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+
+/-- **Base change of `SOₙ` is compatible with the inclusions.** Along the base-change
+isomorphisms, the base change of the inclusion of `SOₙ` into `GLₙ` over `R` is the inclusion over
+`K`. -/
+@[reassoc]
+theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom :
+    (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (inclusion R n) ≫ (GeneralLinear.groupSchemeBaseChangeIso R K n).hom =
+      (groupSchemeBaseChangeIso R K n).hom ≫ inclusion K n := by
+  have he := coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv R K n
+  rw [coordinateMap_def, coordinateMap_def] at he
+  have h := GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K n _ _
+    (coordinateHopfAlgebraBaseChangeIso R K n).symm he
+  rw [inclusion_eq_eqToHom_comp_hopfIdealInclusion, inclusion_eq_eqToHom_comp_hopfIdealInclusion,
+    Functor.map_comp, Category.assoc, h, groupSchemeBaseChangeIso_hom_comp_eqToHom_assoc]
+
+end GroupScheme
 
 end TauCeti.SpecialOrthogonal

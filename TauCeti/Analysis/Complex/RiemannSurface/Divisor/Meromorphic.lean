@@ -26,7 +26,16 @@ constants. On a compact connected Riemann surface this produces a finite holomor
 the sphere, with the prescribed pole bound. This is the linear-algebra step converting a
 lower bound on the dimension of a divisor's section space into an actual finite map. When the
 divisor `D` bounding the poles is effective, the degree of this map is at most `deg D`, so a
-second section of the divisor of a single point gives a map of degree one.
+section space of dimension at least two for the divisor of a single point gives a map of degree
+one. More generally, for `D = n[p]`,
+`TauCeti.RiemannSurface.exists_finiteHolomorphicMap_singlePole_of_one_lt_finrank_divisorSections`
+specializes `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections`:
+it gives a map whose sole pole is `p`, with order minus its degree and degree at most `n`.
+This converts a Riemann–Roch dimension bound into a map with a prescribed pole; the fibre and
+order conclusions come from
+`TauCeti.RiemannSurface.FiniteHolomorphicMap.singlePole_of_neg_le_meromorphicOrderAt` and its
+underlying pullback-divisor bound
+`FiniteHolomorphicMap.divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt`.
 
 If adding a point `x` to `D` enlarges the space of sections, a new section is a meromorphic
 function whose order at `x` is exactly the newly allowed `-(D(x) + 1)`.
@@ -279,5 +288,16 @@ theorem exists_finiteHolomorphicMap_degree_eq_one_of_one_lt_finrank_divisorSecti
   rw [WeilDivisor.degree_ofPoint] at hle
   have := degree_pos F
   omega
+
+/-- If the global sections of `𝒪(n[p])` have complex dimension at least two, there is a finite
+holomorphic map of degree at most `n` whose fibre over infinity is `{p}` and whose affine part
+has meromorphic order minus its degree at `p`. -/
+theorem exists_finiteHolomorphicMap_singlePole_of_one_lt_finrank_divisorSections
+    [CompactSpace X] [T2Space X]
+    (p : X) (n : ℕ) (h : 1 < Module.finrank ℂ (divisorSections (n • WeilDivisor.ofPoint p) ⊤)) :
+    ∃ F : FiniteHolomorphicMap X (OnePoint ℂ), degree F ≤ n ∧ F ⁻¹' {(∞ : OnePoint ℂ)} = {p} ∧
+      meromorphicOrderAt (fun y ↦ affineChart (F y)) p = ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
+  obtain ⟨F, hF⟩ := exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections _ h
+  exact ⟨F, F.singlePole_of_neg_le_meromorphicOrderAt p n hF⟩
 
 end TauCeti.RiemannSurface

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Lp.CalderonZygmund
+public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 import TauCeti.Analysis.Pseudodifferential.Frequency.BesselConjugation
 
 /-!
@@ -47,6 +48,8 @@ functions.
 
 ## Main declarations
 
+* `TauCeti.Symbol.IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le`: the
+  `H^{s,p}` Schwartz estimate `‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for `1 < p < ∞`.
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`: the operator
   `H^{s,p} → H^{s - m,p}` extends `Op(a)` from Schwartz functions.
 * `TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension`: equivalently, `a` has the extension
@@ -56,6 +59,14 @@ functions.
   the lemmas after it), its compatibility with raising the order, with the inclusions
   `H^{s,p} ⊆ H^{r,p}`, with composition and across exponents, and the multiplication operators of
   symbols `f(x)`.
+* `TauCeti.Symbol.IsUniformlySmoothing.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM`:
+  the quantization of a uniformly smoothing symbol extends to a bounded operator
+  `H^{r,p} → H^{σ,p}` for all real `r` and `σ`, the `Lᵖ` form of
+  `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`.
+* `TauCeti.Symbol.IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq`,
+  `TauCeti.Symbol.IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace`:
+  uniformly smoothing symbols between complex Hilbert spaces gain every order of `H^{·,p}`
+  regularity (`1 < p < ∞`).
 
 ## References
 
@@ -80,9 +91,10 @@ variable {n : ℕ} {m : ℝ}
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
 
-/-- **The `H^{s,p}` estimate on Schwartz functions.** For a uniform symbol `a` of order `m` and
-`1 < p < ∞`, `‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for every Schwartz function `u`. -/
-private theorem IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le
+/-- **The `H^{s,p}` estimate on Schwartz functions.** For a uniform symbol `a` of order `m` between
+complex Hilbert spaces and `1 < p < ∞`, `‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for every
+Schwartz function `u`. -/
+theorem IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le
     {a : Symbol n V W m} (ha : a.IsUniform) (s : ℝ) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ u : 𝓢(CoordinateSpace n, V),
@@ -116,6 +128,45 @@ theorem IsUniform.hasBesselPotentialSpaceExtension (ha : a.IsUniform) (hp : 1 < 
     (hp_top : p ≠ ∞) : a.HasBesselPotentialSpaceExtension ha p :=
   hasBesselPotentialSpaceExtension_iff.2 fun s ↦
     quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM ha s hp hp_top
+
+/-- **Uniformly smoothing symbols gain every number of derivatives on `H^{s,p}`.** Let
+`1 < p < ∞`. The quantization of a uniformly smoothing symbol extends from Schwartz functions to a
+bounded operator `H^{r,p} → H^{σ,p}` for all real `r` and `σ`. -/
+theorem IsUniformlySmoothing.exists_comp_toBesselPotentialSpaceCLM_eq_quantizeUniformCLM
+    {q : Symbol n V W m} (hq : q.IsUniformlySmoothing) (hp : 1 < p) (hp_top : p ≠ ∞) (r σ : ℝ) :
+    ∃ K : H^{r, p}(CoordinateSpace n, V) →L[ℂ] H^{σ, p}(CoordinateSpace n, W),
+      K ∘L SchwartzMap.toBesselPotentialSpaceCLM r p =
+        SchwartzMap.toBesselPotentialSpaceCLM σ p ∘L quantizeUniformCLM q hq.isUniform := by
+  obtain ⟨q', hq', hqq'⟩ := isUniformlySmoothing_iff.1 hq (r - σ)
+  refine ⟨BesselPotentialSpace.inclusion (by linarith) ∘L
+    q'.quantizeUniformBesselPotentialSpace hq' r p, ContinuousLinearMap.ext fun u ↦ ?_⟩
+  simp [quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hq' r hp hp_top,
+    quantizeUniformCLM_congr hq.isUniform hq' hqq'.symm]
+
+/-- **Uniformly smoothing operators gain every number of derivatives on `H^{s,p}`.** For complex
+Hilbert spaces `V` and `W` and `1 < p < ∞`, a uniformly smoothing symbol `a` quantizes to a bounded
+operator `T : H^{r,p} →L[ℂ] H^{s,p}` agreeing with `Op(a)` on tempered distributions across all
+orders `t`. -/
+theorem IsUniformlySmoothing.exists_toDistr_quantizeUniformBesselPotentialSpace_eq
+    (ha : a.IsUniformlySmoothing) (r s : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ T : H^{r, p}(CoordinateSpace n, V) →L[ℂ] H^{s, p}(CoordinateSpace n, W),
+      ∀ {t : ℝ} {v : H^{t, p}(CoordinateSpace n, V)} {u : H^{r, p}(CoordinateSpace n, V)},
+        v.toDistr = u.toDistr →
+          (a.quantizeUniformBesselPotentialSpace ha.isUniform t p v).toDistr = (T u).toDistr :=
+  ha.exists_toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall r s hp_top
+    fun _ _ hb ↦ hb.hasBesselPotentialSpaceExtension hp hp_top
+
+/-- **Uniformly smoothing operators gain every order of regularity on `H^{s,p}`.** For complex
+Hilbert spaces `V` and `W` and `1 < p < ∞`,
+`(a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr` belongs to `H^{t,p}`
+(`TemperedDistribution.MemSobolev t p`) for every real `t`. -/
+theorem IsUniformlySmoothing.memSobolev_toDistr_quantizeUniformBesselPotentialSpace
+    (ha : a.IsUniformlySmoothing) (s t : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞)
+    (u : H^{s, p}(CoordinateSpace n, V)) :
+    TemperedDistribution.MemSobolev t p
+      (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr :=
+  ha.memSobolev_toDistr_quantizeUniformBesselPotentialSpace_of_forall s t hp_top
+    (fun _ _ hb ↦ hb.hasBesselPotentialSpaceExtension hp hp_top) u
 
 end Symbol
 
