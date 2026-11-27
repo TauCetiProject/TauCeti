@@ -36,6 +36,8 @@ group in that universe.
 
 ## Main definitions
 
+* `TauCeti.GroupAlgGeom.GHom.equivUnderHom`: `G`-homomorphisms are the morphisms of groups under
+  `G`.
 * `TauCeti.GroupAlgGeom.AlgSetCat ι`: algebraic sets over `ι` with word maps.
 * `TauCeti.GroupAlgGeom.AlgSetCat.homEquiv`: word maps `A → B` are the coefficient-preserving
   homomorphisms `Γ(B) → Γ(A)`.
@@ -56,6 +58,60 @@ open CategoryTheory
 namespace TauCeti.GroupAlgGeom
 
 universe u v
+
+/-! ### `G`-homomorphisms as morphisms under `G` -/
+
+section Under
+
+variable {G H K L : Type u} [Group G] [Group H] [Group K] [Group L]
+  {ιH : G →* H} {ιK : G →* K} {ιL : G →* L}
+
+/-- `G`-homomorphisms `H → K` are the morphisms between `H` and `K` in the category of groups
+under `G`. -/
+def GHom.equivUnderHom :
+    GHom ιH ιK ≃ (Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (GrpCat.ofHom ιK)) where
+  toFun φ := Under.homMk (GrpCat.ofHom φ.toMonoidHom) (by ext g; exact φ.map_coeff g)
+  invFun f :=
+    { toMonoidHom := f.right.hom
+      map_coeff' g := congrArg (fun f' : GrpCat.of G ⟶ _ ↦ f'.hom g) (Under.w f) }
+  left_inv _ := rfl
+  right_inv _ := by ext; rfl
+
+/-- The `G`-homomorphism of a morphism under `G` is its underlying homomorphism. -/
+@[simp]
+theorem coe_equivUnderHom_symm (f : Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (GrpCat.ofHom ιK)) :
+    ⇑(GHom.equivUnderHom.symm f) = f.right.hom :=
+  (rfl)
+
+/-- The underlying homomorphism of the morphism under `G` of a `G`-homomorphism, pointwise. -/
+@[simp]
+theorem GHom.equivUnderHom_right_hom_apply (φ : GHom ιH ιK) (x : H) :
+    -- Stated with the coercion in `H →* K`, the form `simp` puts the left-hand side in, rather
+    -- than in `(Under.mk (GrpCat.ofHom ιH)).right →* (Under.mk (GrpCat.ofHom ιK)).right`.
+    @DFunLike.coe (H →* K) H (fun _ ↦ K) _ (GHom.equivUnderHom φ).right.hom x = φ x :=
+  (rfl)
+
+/-- The identity `G`-homomorphism is the identity morphism under `G`. -/
+@[simp]
+theorem GHom.equivUnderHom_id :
+    GHom.equivUnderHom (GHom.id ιH) = 𝟙 (Under.mk (GrpCat.ofHom ιH)) := by
+  apply GHom.equivUnderHom.symm.injective
+  rw [Equiv.symm_apply_apply]
+  ext x
+  simp
+
+/-- Composition of `G`-homomorphisms is composition of morphisms under `G`. -/
+@[simp]
+theorem GHom.equivUnderHom_comp (ψ : GHom ιK ιL) (φ : GHom ιH ιK) :
+    GHom.equivUnderHom (ψ.comp φ) = GHom.equivUnderHom φ ≫ GHom.equivUnderHom ψ := by
+  apply GHom.equivUnderHom.symm.injective
+  rw [Equiv.symm_apply_apply]
+  ext x
+  simp only [coe_comp, Function.comp_apply, coe_equivUnderHom_symm, Under.comp_right,
+    GrpCat.hom_comp, MonoidHom.coe_comp]
+  rfl
+
+end Under
 
 variable {G : Type u} {H : Type v} [Group G] [Group H]
 
@@ -144,11 +200,10 @@ variable (ι : G →* H)
 
 /-- **The coordinate-group functor.** It sends an algebraic set `Y` to its coordinate group
 `G[X] ⧸ I_H(Y)` under `G`, and a word map `Y → Y'` to the induced coefficient-preserving
-homomorphism of coordinate groups `Γ(Y') → Γ(Y)`.
-
-The body is exposed so that `coordGroupFunctor_map` typechecks outside this declaration: its two
-sides live in `(coordGroupFunctor ι).obj A ⟶ (coordGroupFunctor ι).obj B` and in the hom-set
-between the explicit coordinate groups, which agree only by unfolding `obj`. -/
+homomorphism of coordinate groups `Γ(Y') → Γ(Y)`. -/
+-- The body is exposed so that `coordGroupFunctor_map` typechecks outside this declaration: its
+-- two sides live in `(coordGroupFunctor ι).obj A ⟶ (coordGroupFunctor ι).obj B` and in the
+-- hom-set between the explicit coordinate groups, which agree only by unfolding `obj`.
 @[expose] noncomputable def coordGroupFunctor : (AlgSetCat ι)ᵒᵖ ⥤ Under (GrpCat.of G) where
   obj A := Under.mk (GrpCat.ofHom (coeff ι A.unop.ideal))
   map {A B} f := GHom.equivUnderHom (AlgSetCat.homEquiv B.unop A.unop f.unop)

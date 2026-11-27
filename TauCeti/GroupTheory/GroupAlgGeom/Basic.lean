@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.Algebra.Group.Equiv.Basic
-public import Mathlib.CategoryTheory.Comma.Over.Basic
 public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.FreeGroup.Basic
 import Mathlib.Algebra.Group.Action.End
@@ -35,8 +33,7 @@ injectivity.
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.GGroup`: a group with an embedding of `G`.
-* `TauCeti.GroupAlgGeom.GHom ιH ιK`: homomorphisms `H →* K` with `φ ∘ ιH = ιK`, which are the
-  morphisms of groups under `G` (`TauCeti.GroupAlgGeom.GHom.equivUnderHom`).
+* `TauCeti.GroupAlgGeom.GHom ιH ιK`: homomorphisms `H →* K` with `φ ∘ ιH = ιK`.
 * `TauCeti.GroupAlgGeom.GX G X`: the free `G`-group `G[X] = Monoid.Coprod G (FreeGroup X)`.
 * `TauCeti.GroupAlgGeom.eval ι v`: evaluation `G[X] →* H` at a point `v : X → H`.
 * `TauCeti.GroupAlgGeom.wordMap ι w`: the map on tuples defined by substituting words `w`.
@@ -261,54 +258,6 @@ theorem mem_of_pow_mem {F : Subgroup H} (φ : GHom F.subtype (.id F)) (hn : n �
   simpa using φ.mem_range_of_pow_mem_range hn (by simpa using hh)
 
 end Retraction
-
-/-! ### `G`-homomorphisms as morphisms under `G` -/
-
-section Under
-
-open CategoryTheory
-
-variable {G H K L : Type u} [Group G] [Group H] [Group K] [Group L]
-  {ιH : G →* H} {ιK : G →* K} {ιL : G →* L}
-
-/-- `G`-homomorphisms `H → K` are the morphisms between `H` and `K` in the category of groups
-under `G`. -/
-def equivUnderHom :
-    GHom ιH ιK ≃ (Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (GrpCat.ofHom ιK)) where
-  toFun φ := Under.homMk (GrpCat.ofHom φ.toMonoidHom) (by ext g; exact φ.map_coeff g)
-  invFun f :=
-    { toMonoidHom := f.right.hom
-      map_coeff' g := congrArg (fun f' : GrpCat.of G ⟶ _ ↦ f'.hom g) (Under.w f) }
-  left_inv _ := rfl
-  right_inv _ := by ext; rfl
-
-/-- The `G`-homomorphism of a morphism under `G` is its underlying homomorphism. -/
-@[simp]
-theorem coe_equivUnderHom_symm (f : Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (GrpCat.ofHom ιK)) :
-    ⇑(equivUnderHom.symm f) = f.right.hom :=
-  (rfl)
-
-/-- The underlying homomorphism of the morphism under `G` of a `G`-homomorphism. Not a `simp`
-lemma: `simp` first rewrites the coercion of `(equivUnderHom φ).right.hom` to one in `H →* K`,
-where this left-hand side no longer matches. -/
-theorem equivUnderHom_apply_right_hom (φ : GHom ιH ιK) :
-    ⇑(equivUnderHom φ).right.hom = φ :=
-  (rfl)
-
-/-- The identity `G`-homomorphism is the identity morphism under `G`. -/
-@[simp]
-theorem equivUnderHom_id : equivUnderHom (GHom.id ιH) = 𝟙 (Under.mk (GrpCat.ofHom ιH)) := by
-  ext
-  rfl
-
-/-- Composition of `G`-homomorphisms is composition of morphisms under `G`. -/
-@[simp]
-theorem equivUnderHom_comp (ψ : GHom ιK ιL) (φ : GHom ιH ιK) :
-    equivUnderHom (ψ.comp φ) = equivUnderHom φ ≫ equivUnderHom ψ := by
-  ext
-  rfl
-
-end Under
 
 end GHom
 
