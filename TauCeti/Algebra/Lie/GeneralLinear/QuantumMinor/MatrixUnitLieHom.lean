@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.Algebra.Lie.GeneralLinear.QuantumMinor.Alternating
 import Mathlib.LinearAlgebra.Basis.Bilinear
+import Mathlib.LinearAlgebra.Matrix.StdBasis
 import TauCeti.Data.Matrix.Basis
 
 /-!
@@ -35,10 +36,10 @@ variable {ι K A : Type*} [Fintype ι] [DecidableEq ι] [CommRing K] [Ring A] [A
 
 /-- Extend a family satisfying the matrix-unit relations to the general linear Lie algebra. -/
 noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K →ₗ⁅K⁆ A where
-  __ := (stdBasis K ι ι).constr K fun i ↦ E i.1 i.2
+  __ := liftLinear K fun i j ↦ LinearMap.toSpanSingleton K A (E i j)
   map_lie' {x y} := by
     let b := stdBasis K ι ι
-    let f := b.constr K fun i ↦ E i.1 i.2
+    let f : Matrix ι ι K →ₗ[K] A := liftLinear K fun i j ↦ LinearMap.toSpanSingleton K A (E i j)
     let bracket₁ := (LieAlgebra.ad K (Matrix ι ι K)).toLinearMap
     let bracket₂ := (LieAlgebra.ad K A).toLinearMap
     have h : bracket₁.compr₂ f = bracket₂.compl₁₂ f f := by
@@ -46,28 +47,27 @@ noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K �
       rintro ⟨i, j⟩ ⟨k, l⟩
       simp only [bracket₁, bracket₂, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
         LieHom.coe_toLinearMap, LieAlgebra.ad_apply, b, stdBasis_eq_single, Ring.lie_def,
-        single_mul_single_eq_ite, mul_one, map_sub, apply_ite, map_zero, f, stdBasis_constr_single]
+        single_mul_single_eq_ite, mul_one, map_sub, apply_ite, map_zero, f, liftLinear_single,
+        LinearMap.toSpanSingleton_apply, one_smul]
       by_cases hli : l = i <;>
         simpa only [hli, ite_true, ite_false] using
           ((hasMatrixUnitLieRelations_iff E).mp hE i j k l).symm
-    exact DFunLike.congr_fun (DFunLike.congr_fun h x) y
+    simpa only [bracket₁, bracket₂, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
+      LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LinearMap.toFun_eq_coe, f] using
+      DFunLike.congr_fun (DFunLike.congr_fun h x) y
 
--- The underlying linear map of the extension is the linear extension along the matrix-unit
--- basis. This is the one place where the definition of `toLieHom` is unfolded.
-private theorem toLieHom_toLinearMap (hE : E.HasMatrixUnitLieRelations) :
-    (hE.toLieHom (K := K) : Matrix ι ι K →ₗ[K] A) = (stdBasis K ι ι).constr K fun i ↦ E i.1 i.2 :=
-  rfl
-
-/-- The extension sends each matrix unit to its prescribed value. -/
-@[simp] theorem toLieHom_single (hE : E.HasMatrixUnitLieRelations) (i j : ι) :
-    hE.toLieHom (K := K) (single i j 1) = E i j := by
-  rw [← LieHom.coe_toLinearMap, toLieHom_toLinearMap, stdBasis_constr_single]
+-- The underlying linear map of `toLieHom` is `liftLinear K fun i j ↦ toSpanSingleton K A (E i j)`
+-- by definition; `toLieHom_apply` and `toLieHom_single` are the only places that use this.
 
 /-- The extension is the linear combination of the family with the input matrix's entries. -/
 theorem toLieHom_apply (hE : E.HasMatrixUnitLieRelations) (X : Matrix ι ι K) :
-    hE.toLieHom X = ∑ i, ∑ j, X i j • E i j := by
-  simpa only [LieHom.coe_toLinearMap, toLieHom_single] using
-    hE.toLieHom.toLinearMap.apply_eq_sum_sum_smul_single X
+    hE.toLieHom X = ∑ i, ∑ j, X i j • E i j :=
+  liftLinear_apply K _ X
+
+/-- The extension sends each matrix unit to its prescribed value. -/
+@[simp] theorem toLieHom_single (hE : E.HasMatrixUnitLieRelations) (i j : ι) :
+    hE.toLieHom (K := K) (single i j 1) = E i j :=
+  (liftLinear_single K _ i j 1).trans (one_smul K (E i j))
 
 /-- A Lie homomorphism with the prescribed values on matrix units is the extension. -/
 theorem toLieHom_eq (hE : E.HasMatrixUnitLieRelations) (f : Matrix ι ι K →ₗ⁅K⁆ A)
