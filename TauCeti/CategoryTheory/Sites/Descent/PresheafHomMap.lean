@@ -48,7 +48,6 @@ variable {C : Type u} [Category.{v} C] (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{
 /-- **Precomposition with a morphism `φ : M' ⟶ M`** as a morphism of presheaves of morphisms
 `F.presheafHom M N ⟶ F.presheafHom M' N`: at `(T, t)` a local morphism `p : t^* M ⟶ t^* N` goes
 to `t^* φ ≫ p`. -/
-@[expose]
 def presheafHomPrecomp {M M' : F.obj (.mk (op S))} (φ : M' ⟶ M) (N : F.obj (.mk (op S))) :
     F.presheafHom M N ⟶ F.presheafHom M' N where
   app T := TypeCat.ofHom fun p ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ p
@@ -73,7 +72,6 @@ theorem presheafHomPrecomp_id (M N : F.obj (.mk (op S))) :
 the morphism of presheaves `F.presheafHom M N ⟶ F.presheafHom M' N'` sending a local morphism
 `p : t^* M ⟶ t^* N` over `t : T ⟶ S` to `t^* φ ≫ p ≫ t^* ψ`, precomposition with `φ` followed by
 postcomposition with `ψ`. -/
-@[expose]
 def presheafHomMap {M M' N N' : F.obj (.mk (op S))} (φ : M' ⟶ M) (ψ : N ⟶ N') :
     F.presheafHom M N ⟶ F.presheafHom M' N' :=
   F.presheafHomPrecomp φ N ≫ F.presheafHomPostcomp M' ψ
@@ -111,13 +109,22 @@ theorem presheafHomMap_id_left (M : F.obj (.mk (op S))) {N N' : F.obj (.mk (op S
 /-- **Isomorphisms act on presheaves of morphisms by isomorphisms**: for `e : M ≅ M'` and
 `e' : N ≅ N'`, the isomorphism `F.presheafHom M N ≅ F.presheafHom M' N'` sending `p` over `t` to
 `t^* e⁻¹ ≫ p ≫ t^* e'`. -/
-@[expose, simps]
 def presheafHomIso {M M' N N' : F.obj (.mk (op S))} (e : M ≅ M') (e' : N ≅ N') :
     F.presheafHom M N ≅ F.presheafHom M' N' where
   hom := F.presheafHomMap e.inv e'.hom
   inv := F.presheafHomMap e.hom e'.inv
   hom_inv_id := by rw [← presheafHomMap_comp, e.hom_inv_id, e'.hom_inv_id, presheafHomMap_id]
   inv_hom_id := by rw [← presheafHomMap_comp, e.inv_hom_id, e'.inv_hom_id, presheafHomMap_id]
+
+@[simp]
+theorem presheafHomIso_hom {M M' N N' : F.obj (.mk (op S))} (e : M ≅ M') (e' : N ≅ N') :
+    (F.presheafHomIso e e').hom = F.presheafHomMap e.inv e'.hom :=
+  (rfl)
+
+@[simp]
+theorem presheafHomIso_inv {M M' N N' : F.obj (.mk (op S))} (e : M ≅ M') (e' : N ≅ N') :
+    (F.presheafHomIso e e').inv = F.presheafHomMap e.hom e'.inv :=
+  (rfl)
 
 @[simp]
 theorem presheafHomIso_refl (M N : F.obj (.mk (op S))) :
@@ -139,7 +146,6 @@ theorem presheafHomIso_symm {M M' N N' : F.obj (.mk (op S))} (e : M ≅ M') (e' 
 
 /-- **Isomorphisms act on sheaves of morphisms by isomorphisms**: for a prestack `F`, the
 isomorphism `F.sheafHom J M N ≅ F.sheafHom J M' N'` of `presheafHomIso e e'`. -/
-@[expose]
 def sheafHomIso (J : GrothendieckTopology C) [F.IsPrestack J] {M M' N N' : F.obj (.mk (op S))}
     (e : M ≅ M') (e' : N ≅ N') : F.sheafHom J M N ≅ F.sheafHom J M' N' :=
   (fullyFaithfulSheafToPresheaf (J.over S) (Type _)).preimageIso (F.presheafHomIso e e')
