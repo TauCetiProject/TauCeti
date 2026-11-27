@@ -255,12 +255,10 @@ theorem finite_shafarevichTateGroup_iff (f : Hom W₁.toAffine W₂.toAffine)
 /-- **A degree-one morphism induces an isomorphism on Shafarevich–Tate groups**, with inverse
 induced by its dual. -/
 def shafarevichTateMapEquivOfDegreeEqOne (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
-    W₁.shafarevichTateGroup τ ≃+ W₂.shafarevichTateGroup τ where
-  toFun := f.shafarevichTateMap τ
-  invFun := f.dual.shafarevichTateMap τ
-  left_inv c := by rw [dual_shafarevichTateMap_shafarevichTateMap, hf, one_smul]
-  right_inv c := by rw [shafarevichTateMap_dual_shafarevichTateMap, hf, one_smul]
-  map_add' := (f.shafarevichTateMap τ).map_add'
+    W₁.shafarevichTateGroup τ ≃+ W₂.shafarevichTateGroup τ :=
+  (f.shafarevichTateMap τ).toAddEquiv (f.dual.shafarevichTateMap τ)
+    (by ext; simp [dual_shafarevichTateMap_shafarevichTateMap, hf])
+    (by ext; simp [shafarevichTateMap_dual_shafarevichTateMap, hf])
 
 /-- Applying `shafarevichTateMapEquivOfDegreeEqOne` is `shafarevichTateMap`. -/
 @[simp]
@@ -469,19 +467,10 @@ theorem shaMap_eq_zero_iff (f : Hom W₁.toAffine W₂.toAffine)
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     f.shaMap = 0 ↔ f.shafarevichTateMap τ = 0 := by
-  have hinj : Function.Injective
-      (AddEquiv.addSubgroupCongr (W₂.sha_eq_shafarevichTateGroup τ) :
-        W₂.sha →+ W₂.shafarevichTateGroup τ) := by
-    simpa using (AddEquiv.addSubgroupCongr (W₂.sha_eq_shafarevichTateGroup τ)).injective
-  have hsurj : Function.Surjective
-      (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ) :
-        W₁.sha →+ W₁.shafarevichTateGroup τ) := by
-    simpa using (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ)).surjective
-  rw [← AddMonoidHom.cancel_left hinj, AddMonoidHom.comp_zero, f.addSubgroupCongr_comp_shaMap τ,
-    ← AddMonoidHom.zero_comp
-      (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ) :
-        W₁.sha →+ W₁.shafarevichTateGroup τ),
-    AddMonoidHom.cancel_right hsurj]
+  rw [← f.shafarevichTateMap_eq_zero_iff (defaultPlaceEmbeddings K) τ]
+  refine ⟨fun h ↦ AddMonoidHom.ext fun c ↦ ?_,
+    fun h ↦ by rw [shaMap, h, AddMonoidHom.comp_zero, AddMonoidHom.zero_comp]⟩
+  simpa [shaMap] using congrArg (shaCongr W₂) (DFunLike.congr_fun h ((shaCongr W₁).symm c))
 
 /-- Along any family `τ` of embeddings over the places of `K`, the canonical identification
 `AddEquiv.addSubgroupCongr` maps `f.shaMap.ker` onto `(f.shafarevichTateMap τ).ker`. -/
