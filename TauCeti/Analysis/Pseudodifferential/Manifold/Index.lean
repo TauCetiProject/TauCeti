@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Analysis.Fredholm.Criteria
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Fredholm
+import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
+import TauCeti.Analysis.Pseudodifferential.Manifold.SymbolQuantization
 
 /-!
 # The index of an elliptic operator on a compact manifold
@@ -35,6 +38,22 @@ rules for this index of Atiyah and Singer, §6:
   (`TauCeti.IsClassicalElliptic.index_chartSobolevExtension_comp_of_bijective`); this is how the
   order of an elliptic operator is normalized by composing with powers of a positive elliptic
   operator.
+* **Operators with principal symbol in the slit plane have index zero.** If the principal symbol
+  of `P` takes values in the slit plane `ℂ \ (-∞, 0]` at nonzero covectors, for instance if it is
+  real and positive, the index of `P` is `0`
+  (`TauCeti.index_chartSobolevExtension_eq_zero_of_mem_slitPlane`). The square root of its
+  principal symbol, taken in the slit plane, is again a smooth homogeneous function
+  (`TauCeti.cpow_mem_homogeneousCotangentSymbols`) and so the principal symbol of an operator `R`
+  of order `m / 2` with principal symbol in the slit plane. Then `R ∘ R` and `P` have the same
+  principal symbol, so the index of `P` is twice that of `R`. Repeating, the index is divisible by
+  every power of `2`, hence `0`.
+* **Changing the order keeps the index** (Atiyah and Singer, (6.3)). Composing an elliptic `P` with
+  such an operator keeps the index
+  (`TauCeti.IsClassicalElliptic.index_chartSobolevExtension_comp_of_mem_slitPlane`). On a compact
+  manifold there are operators of every real order with positive principal symbol
+  (`TauCeti.exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos`), so
+  every elliptic operator has the index of an elliptic operator of any prescribed order
+  (`TauCeti.IsClassicalElliptic.exists_index_chartSobolevExtension_eq`).
 * **A parametrix has the opposite index.** If `Q` of order `-m` satisfies `P ∘ Q - 1` of order
   `-1`, then the extension of `P ∘ Q` to `H^{s - m}(M)` is the identity plus a compact operator,
   of index `0`, so `index Q = -index P`
@@ -70,6 +89,12 @@ rules for this index of Atiyah and Singer, §6:
   `TauCeti.index_chartSobolevExtension_eq_of_segment`: the index is locally constant along
   continuous finite-dimensional families of elliptic operators, in particular along a
   straight-line homotopy of elliptic principal symbols.
+* `TauCeti.index_chartSobolevExtension_eq_zero_of_mem_slitPlane`: an operator whose principal
+  symbol lies in the slit plane at nonzero covectors has index `0`.
+* `TauCeti.IsClassicalElliptic.index_chartSobolevExtension_comp_of_mem_slitPlane`: composing with
+  such an operator keeps the index.
+* `TauCeti.IsClassicalElliptic.exists_index_chartSobolevExtension_eq`: the index of an elliptic
+  operator is the index of an elliptic operator of any prescribed real order.
 
 ## References
 
@@ -328,5 +353,116 @@ theorem index_chartSobolevExtension_eq_of_segment
   have hconst := (isLocallyConstant_index_chartSobolevExtension_sum_smul hA hf he hψ hφ
     s).apply_eq_of_preconnectedSpace 0 1
   simpa [hsum] using hconst
+
+/-! ### Principal symbols in the slit plane -/
+
+/-- The index of the extension `H^s(M) → H^{s - m}(M)` of an operator `P` whose principal symbol
+takes values in the slit plane at nonzero covectors is divisible by every power of `2`. The square
+root of the principal symbol lies again in the slit plane and is the principal symbol of an
+operator `R` of order `m / 2`. Then `R ∘ R` has the principal symbol of `P`, so the index of `P` is
+twice that of `R`. -/
+private theorem two_pow_dvd_index_chartSobolevExtension_of_mem_slitPlane
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) (k : ℕ)
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hσ : ∀ x ξ, ξ ≠ 0 → classicalPrincipalSymbol m P x ξ ∈ Complex.slitPlane) (s : ℝ) :
+    (2 : ℤ) ^ k ∣ (chartSobolevExtension hc ψ hc ψ P s (s - m)).index := by
+  induction k generalizing m P with
+  | zero => simp
+  | succ k ih =>
+    -- The square root of the principal symbol is the principal symbol of some `R`.
+    obtain ⟨R, hR, hRσ⟩ :=
+      exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_eq
+        (cpow_mem_homogeneousCotangentSymbols
+          classicalPrincipalSymbol_mem_homogeneousCotangentSymbols hσ (r := 2⁻¹) (by norm_num))
+        isCompact_univ fun x hx ↦ (hx (Set.mem_univ x)).elim
+    have hRslit (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) (hξ : ξ ≠ 0) :
+        classicalPrincipalSymbol (m * 2⁻¹) R x ξ ∈ Complex.slitPlane := by
+      rw [hRσ]
+      exact Complex.mem_slitPlane_iff.2 <| Or.inl <| by
+        simpa using (Complex.cpow_one_half_re_pos_iff _).2 (hσ x ξ hξ)
+    have hRe := isClassicalElliptic_of_mem_slitPlane hRslit
+    -- `R ∘ R` is an operator of order `m` with the principal symbol of `P`.
+    have hm : m * 2⁻¹ + m * 2⁻¹ = m := by ring
+    have hRR := comp_mem_classicalPseudodifferentialOperators hR hR
+    rw [hm] at hRR
+    have hRRσ (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+        classicalPrincipalSymbol m (R ∘ₗ R) x ξ = classicalPrincipalSymbol m P x ξ := by
+      have h := classicalPrincipalSymbol_comp hR hR x ξ
+      rw [hm] at h
+      rw [h, hRσ, ← sq]
+      simp
+    -- So the index of `P` is that of `R ∘ R`, twice that of `R`.
+    have hPe := isClassicalElliptic_of_mem_slitPlane hσ
+    have hcomp := hRe.index_chartSobolevExtension_comp hR hR hRe hψ hψ hψ s
+    rw [hRe.index_chartSobolevExtension_eq hR hψ hψ s (s - m * 2⁻¹),
+      show s - m * 2⁻¹ - m * 2⁻¹ = s - m by ring] at hcomp
+    rw [← hPe.index_chartSobolevExtension_eq_of_classicalPrincipalSymbol_eq hP hRR hRRσ hψ hψ s,
+      hcomp, ← two_mul, pow_succ']
+    exact mul_dvd_mul_left 2 (ih hR hRslit)
+
+/-- **Operators with principal symbol in the slit plane have index zero.** On a compact manifold,
+let `P` be a classical pseudodifferential operator of order `m` whose principal symbol takes values
+in the slit plane `ℂ \ (-∞, 0]` at nonzero covectors, for instance a real positive principal
+symbol. Then `P` is elliptic (`TauCeti.isClassicalElliptic_of_mem_slitPlane`), and its extension
+`H^s(M) → H^{s - m}(M)` has index `0`, for every real `s`. -/
+theorem index_chartSobolevExtension_eq_zero_of_mem_slitPlane
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hσ : ∀ x ξ, ξ ≠ 0 → classicalPrincipalSymbol m P x ξ ∈ Complex.slitPlane)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    (chartSobolevExtension hc ψ hc' φ P s (s - m)).index = 0 := by
+  -- The index is divisible by `2 ^ k` for `k` its absolute value, which exceeds it.
+  rw [← index_chartSobolevExtension_partitions_eq_of_mem hP hψ hψ hφ hψ le_rfl]
+  set i := (chartSobolevExtension hc ψ hc ψ P s (s - m)).index
+  exact Int.eq_zero_of_dvd_of_natAbs_lt_natAbs
+    (two_pow_dvd_index_chartSobolevExtension_of_mem_slitPlane hψ i.natAbs hP hσ s)
+    (by simpa [Int.natAbs_pow] using Nat.lt_two_pow_self)
+
+/-- **Changing the order keeps the index.** On a compact manifold, let `P` be an elliptic classical
+pseudodifferential operator of order `m` and `Q` a classical pseudodifferential operator of order
+`m'` whose principal symbol takes values in the slit plane `ℂ \ (-∞, 0]` at nonzero covectors.
+Then the extension of `P ∘ Q` to `H^s(M) → H^{s - m' - m}(M)` has the same index as that of `P` to
+`H^{s - m'}(M) → H^{s - m' - m}(M)`, since the extension of `Q` has index `0`. -/
+theorem IsClassicalElliptic.index_chartSobolevExtension_comp_of_mem_slitPlane
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m')
+    (hσ : ∀ x ξ, ξ ≠ 0 → classicalPrincipalSymbol m' Q x ξ ∈ Complex.slitPlane)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1)
+    (hχ : ∀ x, ∑ k, (c'' k).cutoffPullback (hc'' k) (χ k) 1 x = 1) (s : ℝ) :
+    (chartSobolevExtension hc ψ hc'' χ (P ∘ₗ Q) s (s - m' - m)).index =
+      (chartSobolevExtension hc' φ hc'' χ P (s - m') (s - m' - m)).index := by
+  rw [hPe.index_chartSobolevExtension_comp hP hQ (isClassicalElliptic_of_mem_slitPlane hσ) hψ hφ
+    hχ s, index_chartSobolevExtension_eq_zero_of_mem_slitPlane hQ hσ hψ hφ s, add_zero]
+
+/-- **Every order carries the same indices.** On a compact manifold, let `P` be an elliptic
+classical pseudodifferential operator of order `m`. For every real `k` there is an elliptic
+classical pseudodifferential operator `P'` of order `k` whose extensions `H^t(M) → H^{t - k}(M)`
+have the index of the extensions `H^s(M) → H^{s - m}(M)` of `P`, for all real `s` and `t`. One can
+take `P' = P ∘ Q` for an operator `Q` of order `k - m` with positive principal symbol
+(`TauCeti.exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos`). -/
+theorem IsClassicalElliptic.exists_index_chartSobolevExtension_eq
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (k : ℝ) :
+    ∃ P' ∈ classicalPseudodifferentialOperators k, IsClassicalElliptic k P' ∧
+      ∀ s t, (chartSobolevExtension hc ψ hc' φ P' t (t - k)).index =
+        (chartSobolevExtension hc ψ hc' φ P s (s - m)).index := by
+  obtain ⟨Q, hQ, hQσ⟩ :=
+    exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos (n := n) (M := M)
+      (k - m)
+  have hQslit (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) (hξ : ξ ≠ 0) :
+      classicalPrincipalSymbol (k - m) Q x ξ ∈ Complex.slitPlane :=
+    Complex.mem_slitPlane_iff.2 (Or.inl (Complex.pos_iff.1 (hQσ x ξ hξ)).1)
+  have hk : m + (k - m) = k := by ring
+  have hPQ := comp_mem_classicalPseudodifferentialOperators hP hQ
+  have hPQe := hPe.comp hP hQ (isClassicalElliptic_of_mem_slitPlane hQslit)
+  rw [hk] at hPQ hPQe
+  refine ⟨P ∘ₗ Q, hPQ, hPQe, fun s t ↦ ?_⟩
+  -- The extension of `P ∘ Q` to `H^t(M)` has the index of that of `P` to `H^{t - (k - m)}(M)`.
+  have h := hPe.index_chartSobolevExtension_comp_of_mem_slitPlane hP hQ hQslit hψ hψ hφ t
+  rw [show t - (k - m) - m = t - k by ring] at h
+  rw [h, ← hPe.index_chartSobolevExtension_eq hP hψ hφ s (t - (k - m)),
+    show t - (k - m) - m = t - k by ring]
 
 end TauCeti
