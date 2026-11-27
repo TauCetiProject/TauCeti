@@ -5,26 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Primitive
 import TauCeti.Algebra.Group.Hom.Rational
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
-# Uniqueness of ordered positive-root products in the full-weight Chevalley model
+# Uniqueness of ordered positive-root products for a Chevalley datum
 
-Over every commutative ring, a product of distinct positive root elements in any fixed
-order determines all its parameters. The result applies to any list of positive roots,
-so also to any enumeration of all positive roots, in the existing full-weight Chevalley
-point group. It supplies uniqueness of positive-root coordinates; existence of such
-coordinates for every element of the positive subgroup is a separate collection theorem.
+Over every commutative ring and for **any** Chevalley datum `D`, a product of distinct positive
+root elements in any fixed order determines all its parameters. The result applies to any
+duplicate-free list of positive roots, and in particular to any enumeration of all positive roots,
+regardless of the isogeny type of `D`.
 
-The proof applies `list_prod_map_kostantRootSubgroupParam_inj` to the named all-root
-Chevalley system. Its operator-faithfulness hypothesis is discharged integrally: the
-fundamental modules supply primitive simple-root steps, transported to every root by
-Weyl automorphisms. Thus no restriction on characteristic or reducedness is needed.
+This is the uniqueness half of positive-root factorization on `D.positivePoints A`, pairing with
+positive-root collection in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic` to
+build the coordinate bijection `ChevalleyDatum.positiveRootEquiv` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates`, and supplying the point-level
+faithfulness needed for scheme-theoretic monomorphicity of `D.rootProduct` in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Scheme`.
+
+## Main results
+
+* `TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`: an ordered product of
+  distinct positive root elements of `D` determines its parameters over every commutative ring.
 
 ## References
 
@@ -34,25 +40,26 @@ Weyl automorphisms. Thus no restriction on characteristic or reducedness is need
 
 public section
 
-namespace TauCeti.DynkinType
+namespace TauCeti.DynkinType.ChevalleyDatum
 
 open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
 attribute [local instance high] Algebra.toModule
 
-variable (t : DynkinType) (ht : t.Valid)
+universe v
 
-/-- In the full-weight Chevalley point group, an ordered product of distinct positive
-root elements determines exactly the parameters of the roots occurring in the list.
-The order is arbitrary and the value ring may have nilpotents or positive characteristic. -/
-theorem list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj (A : Type*) [CommRing A]
+variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
+
+/-- In the point group of any Chevalley datum, an ordered product of distinct positive root
+elements determines the parameters of all roots occurring in the list. The order is arbitrary and
+the value ring may have nilpotents or arbitrary characteristic. -/
+theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
     {l : List (Fin t.numRoots)} (hl : l.Nodup)
     (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     {u v : Fin t.numRoots → A} :
-    (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
-      (Multiplicative.ofAdd (u γ))).prod =
-        (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
-          (Multiplicative.ofAdd (v γ))).prod ↔ ∀ γ ∈ l, u γ = v γ := by
+    (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ))).prod =
+      (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (v γ))).prod ↔
+      ∀ γ ∈ l, u γ = v γ := by
   obtain ⟨n, degree, hn, hdegree⟩ := (t.weightDegree ht).exists_pos_nat_mul_eq_intCast
   have hposdegree (γ : Fin t.numRoots) (hγ : γ ∈ l) :
       0 < degree ((t.simplyConnectedRootDatum ht).root γ) := by
@@ -60,7 +67,6 @@ theorem list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj (A : Type*) [CommR
       (t.weightDegree_root_pos ht (hpos γ hγ))
     rw [hdegree] at h
     exact_mod_cast h
-  let D := t.scChevalleyDatum ht
   let hAll := kostantForm_chevalleySystem_smul_mem D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
   have hnative := list_prod_map_kostantRootSubgroupParam_inj
@@ -73,7 +79,7 @@ theorem list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj (A : Type*) [CommR
     (fun γ _ => t.lie_lieBasis_h_chevalleySystem ht γ)
     hposdegree
     (fun γ _ c hc =>
-      (t.smul_baseChange_kostantRootOperator_chevalleySystem_scLattice_eq_zero_iff ht γ A c).mp hc)
+      (D.smul_baseChange_kostantRootOperator_chevalleySystem_eq_zero_iff γ A c).mp hc)
     (u := u) (v := v)
   simp only [kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator] at hnative
@@ -85,8 +91,8 @@ theorem list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj (A : Type*) [CommR
       (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
     have hmat := congrArg (D.points A).subtype huv
     simpa only [map_list_prod, List.map_map, Function.comp_def, Subgroup.subtype_apply,
-      ChevalleyDatum.coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe, D] using hmat
+      coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe] using hmat
   · intro huv
     exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
 
-end TauCeti.DynkinType
+end TauCeti.DynkinType.ChevalleyDatum
