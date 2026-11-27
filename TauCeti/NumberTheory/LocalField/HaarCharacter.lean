@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Matrix
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
@@ -51,6 +52,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   has `q⁻¹` times the mass of `𝒪[K]`.
 * `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue`: the Haar character of `a ∈ Kˣ`
   is `|a|_K`; `MeasureTheory.distribHaarChar_eq_zpow` writes it as `q ^ (-v_K(a))`.
+* `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`: an invertible matrix `g` scales
+  additive Haar measure on `ι → K` by `|det g|_K`.
 * `MeasureTheory.distribHaarChar_of_isUniformizer`: a uniformizer has character `q⁻¹`.
 * `MeasureTheory.distribHaarChar_eq_one_iff`: the kernel of the character is the unit group
   of `𝒪[K]`.
@@ -58,6 +61,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   for every `a ∈ K`, including `a = 0`.
 * `MeasureTheory.Measure.map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul`: for `a ≠ 0`,
   multiplication by `a` pushes `μ` forward to `|a|_K⁻¹ • μ`.
+* `MeasureTheory.Measure.addHaar_image_mulVec`: a square matrix over `𝒪[K]` whose determinant is
+  associated to `ϖ ^ k` scales Haar measure on `ι → K` by `q ^ (-k)`.
 * `MeasureTheory.Measure.addHaar_setOf_valuation_le_uniformizer_zpow`: the fractional ideal
   `𝓂[K] ^ m = {x | valuation K x ≤ uniformizer K ^ m}` has mass `q ^ (-m)` times that of `𝒪[K]`.
 * `MeasureTheory.Measure.addHaar_setOf_normalizedAbsoluteValue_le`,
@@ -220,6 +225,15 @@ theorem distribHaarChar_eq_normalizedAbsoluteValue (x : Kˣ) :
     distribHaarChar K x = normalizedAbsoluteValue K (x : K) := by
   rw [distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe, NNRat.cast_zpow, NNRat.cast_natCast]
 
+/-- **The Haar character of `GL_n` over a local field.** An invertible matrix `g` scales additive
+Haar measure on `ι → K` by the normalized absolute value `|det g|_K` of its determinant. -/
+@[simp]
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (g : GL ι K) :
+    distribHaarChar (ι → K) g = normalizedAbsoluteValue K (g : Matrix ι ι K).det := by
+  rw [distribHaarChar_eq_distribHaarChar_det, distribHaarChar_eq_normalizedAbsoluteValue,
+    Matrix.GeneralLinearGroup.val_det_apply]
+
 /-- A uniformizer scales additive Haar measure by `q⁻¹`, where `q` is the cardinality of the
 residue field. -/
 theorem distribHaarChar_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) :
@@ -352,6 +366,46 @@ cardinality of the residue field: they are the complement in `𝒪[K]` of the ma
 theorem addHaar_setOf_valuation_eq_one :
     μ {x : K | valuation K x = 1} = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
   simpa using addHaar_setOf_normalizedAbsoluteValue_eq μ (1 : K)
+
+end Measure
+
+/-! ### The scaling law on `ι → K` -/
+
+namespace Measure
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
+
+/-- **The scaling law for Haar measure.** If the determinant of a square matrix `A` over `𝒪[K]`
+is associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every additive Haar measure `μ`
+on `ι → K` and every set `s`, `μ (A '' s) = q ^ (-k) * μ s`, where `q = Nat.card 𝓀[K]`. This is
+the nonarchimedean analogue of `MeasureTheory.Measure.addHaar_image_linearMap`, and the case of
+an integral matrix of `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`. -/
+theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
+    {A : Matrix ι ι 𝒪[K]} {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) {k : ℕ}
+    (hk : Associated A.det (ϖ ^ k)) (s : Set (ι → K)) :
+    μ ((A.map (algebraMap 𝒪[K] K)).mulVec '' s) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k * μ s := by
+  obtain ⟨u, hu⟩ := hk
+  have hdet : (A.map (algebraMap 𝒪[K] K)).det = (A.det : K) := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, Algebra.algebraMap_ofSubsemiring_apply]
+  -- The determinant of `A` has absolute value `q ^ (-k)`, the unit `u` having absolute value one.
+  have habs : normalizedAbsoluteValue K (A.det : K) = ((Nat.card 𝓀[K] : ℚ≥0) ^ k)⁻¹ := by
+    have h := congrArg (fun x : 𝒪[K] ↦ normalizedAbsoluteValue K (x : K)) hu
+    simpa [map_mul, map_pow, normalizedAbsoluteValue_irreducible hϖ] using h
+  have hne : (A.map (algebraMap 𝒪[K] K)).det ≠ 0 := by
+    rw [hdet, ← (normalizedAbsoluteValue K).ne_zero_iff, habs]
+    exact inv_ne_zero (pow_ne_zero _ (by exact_mod_cast natCard_residueField_pos.ne'))
+  -- The image under `A` is the translate by the corresponding element of `GL ι K`.
+  have himage : (A.map (algebraMap 𝒪[K] K)).mulVec '' s =
+      Matrix.GeneralLinearGroup.mkOfDetNeZero _ hne • s := by
+    have hg : (Matrix.GeneralLinearGroup.mkOfDetNeZero _ hne • · : (ι → K) → ι → K) =
+        (A.map (algebraMap 𝒪[K] K)).mulVec := by
+      ext x : 1
+      rw [Units.smul_def, Matrix.GeneralLinearGroup.val_mkOfDetNeZero, Matrix.smul_eq_mulVec]
+    rw [← Set.image_smul, hg]
+  rw [himage, ← distribHaarChar_mul, distribHaarChar_eq_normalizedAbsoluteValue_det,
+    Matrix.GeneralLinearGroup.val_mkOfDetNeZero, hdet, habs]
+  push_cast
+  rw [one_div]
 
 end Measure
 
