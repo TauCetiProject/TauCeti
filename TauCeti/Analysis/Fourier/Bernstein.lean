@@ -32,7 +32,9 @@ Some dyadic multiplier `Qⱼ` reproduces the homogeneous Littlewood–Paley bloc
 (`ContDiffBump.exists_fourierMultiplierCLM_dyadicMultiplier_eq`): its symbols equal one on the
 support of `ψⱼ`. So the `L²` image of `Pⱼ` gains integrability at the cost `2^{jn (1/p - 1/q)}`,
 uniformly in `j`: `‖Pⱼ f‖_q ≤ C 2^{jn (1/p - 1/q)} ‖Pⱼ f‖_p`
-(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and in particular
+(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`). With the uniform `Lᵖ`
+bound of the blocks this gives `‖Pⱼ f‖_q ≤ C 2^{jn (1/p - 1/q)} ‖f‖_p`
+(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_eLpNorm`), and in particular
 `‖Pⱼ f‖_r ≤ C 2^{j (n/2 - n/r)} ‖f‖₂` for `r ≥ 2`
 (`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le`). This is how
 estimates for frequency-localized operators are moved from one Lebesgue exponent to a larger one,
@@ -153,6 +155,30 @@ theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le {p q : ℝ≥0∞
   rw [ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate σ 0 _).eLpNorm_ne_top]
   ring
 
+/-- **Bernstein's inequality from `Lᵖ` to `L^q` for the Littlewood–Paley blocks.** For
+`1 ≤ p ≤ q ≤ ∞` there is `C` such that for every `j ∈ ℤ` and every `f ∈ L²(V, F)`,
+
+`‖Pⱼ f‖_q ≤ C 2^{jn (1/p - 1/q)} ‖f‖_p`,
+
+where `n` is the dimension of `V` and `Pⱼ` is the `L²` Fourier multiplier with any symbol in `L^∞`
+almost everywhere equal to `ψⱼ`. This combines
+`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le` with the uniform `Lᵖ` bound
+`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le` of the blocks. -/
+theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_eLpNorm {p q : ℝ≥0∞} (hp : 1 ≤ p)
+    (hpq : p ≤ q) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure V)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp F 2 (volume : Measure V),
+        eLpNorm (Lp.fourierMultiplierCLM F m f) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^
+            ((Module.finrank ℝ V : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹))) * eLpNorm f p volume := by
+  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (F := F) hp hpq
+  set K := eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume
+  refine ⟨C * K.toNNReal, fun j m hm f ↦ (hC j m hm f).trans ?_⟩
+  rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (φ.memLp_fourierInv_littlewoodPaley 0 1).eLpNorm_ne_top,
+    mul_right_comm _ K, mul_assoc _ K]
+  gcongr
+  exact φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hp
+
 /-- **Bernstein's inequality from `L²` for the Littlewood–Paley blocks.** For `2 ≤ r ≤ ∞` there is
 `C` such that for every `j ∈ ℤ` and every `f ∈ L²(V, F)`,
 
@@ -166,20 +192,14 @@ theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le {r : �
         eLpNorm (Lp.fourierMultiplierCLM F m f) r volume ≤
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^
             ((Module.finrank ℝ V : ℝ) / 2 - Module.finrank ℝ V * (r⁻¹).toReal)) * ‖f‖ₑ := by
-  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (F := F) one_le_two hr
-  refine ⟨C, fun j m hm f ↦ (hC j m hm f).trans ?_⟩
-  have hP : eLpNorm (Lp.fourierMultiplierCLM F m f) 2 volume ≤ ‖f‖ₑ := by
-    have h1 : ‖Lp.fourierMultiplierCLM (E := V) F m‖ₑ ≤ 1 := by
-      rw [← ofReal_norm]
-      exact ENNReal.ofReal_le_one.2 (φ.norm_fourierMultiplierCLM_littlewoodPaley_le hm)
-    rw [← Lp.eNorm_def]
-    simpa using (Lp.fourierMultiplierCLM F m).le_of_opENorm_le h1 f
+  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_eLpNorm (F := F)
+    one_le_two hr
+  refine ⟨C, fun j m hm f ↦ (hC j m hm f).trans_eq ?_⟩
   have hexp : (Module.finrank ℝ V : ℝ) * ((2 : ℝ≥0∞).toReal⁻¹ - r.toReal⁻¹) =
       (Module.finrank ℝ V : ℝ) / 2 - Module.finrank ℝ V * (r⁻¹).toReal := by
     rw [ENNReal.toReal_inv, ENNReal.toReal_ofNat]
     ring
-  rw [hexp]
-  gcongr
+  rw [hexp, Lp.eNorm_def]
 
 /-- **Continuity of the Littlewood–Paley blocks into `L^r`.** Let `2 ≤ r ≤ ∞`. If `y : α → L²(V, F)`
 is continuous, then so is `a ↦ Pⱼ y(a)` for the `L^r` distance:

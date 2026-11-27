@@ -58,6 +58,7 @@ and the antipode is read off from its inverse.
   flatness.
 * `Subalgebra.IsHopfSubalgebra.of_finiteDimensional`: over a field, a finite-dimensional
   subalgebra of a commutative Hopf algebra stable under comultiplication is a Hopf subalgebra.
+* `TauCeti.CommHopfAlgCat.HopfSubalgebra`: the Hopf subalgebras, ordered by inclusion.
 * `TauCeti.CommHopfAlgCat.ofHopfSubalgebra`: a Hopf subalgebra as a bundled commutative Hopf
   algebra.
 * `TauCeti.CommHopfAlgCat.hopfSubalgebraι`: the inclusion morphism, a bialgebra morphism which
@@ -372,6 +373,12 @@ namespace TauCeti.CommHopfAlgCat
 open CategoryTheory
 
 variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R} {A : Subalgebra R H}
+
+variable (H) in
+/-- The Hopf subalgebras of a commutative Hopf algebra, ordered by inclusion. -/
+abbrev HopfSubalgebra : Type v :=
+  {B : Subalgebra R H // B.IsHopfSubalgebra}
+
 variable [Module.Flat R H] [Module.Flat R A]
 
 /-- A flat Hopf subalgebra of a flat commutative Hopf algebra, as a bundled commutative Hopf
