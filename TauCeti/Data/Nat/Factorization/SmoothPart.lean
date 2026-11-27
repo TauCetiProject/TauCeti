@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.NumberTheory.SmoothNumbers
+import TauCeti.Data.Nat.ExactDivisor
 import TauCeti.Data.Nat.Factorization.PowMul
 
 /-!
@@ -23,28 +24,28 @@ namespace Nat
 
 /-- The product of the full prime powers of `m` at primes below `k`, with value `1` at `m = 0`. -/
 def smoothPart (m k : ℕ) : ℕ :=
-  (m.primeFactorsList.filter (· < k)).prod
-
-@[simp] theorem zero_smoothPart (k : ℕ) : (0 : ℕ).smoothPart k = 1 := by simp [smoothPart]
-
-@[simp] theorem one_smoothPart (k : ℕ) : (1 : ℕ).smoothPart k = 1 := by simp [smoothPart]
-
-@[simp] theorem smoothPart_mem_smoothNumbers (m k : ℕ) : m.smoothPart k ∈ smoothNumbers k :=
-  prod_mem_smoothNumbers m k
+  TauCeti.Nat.prodPrimePow m (Finset.range k)
 
 theorem smoothPart_pos (m k : ℕ) : 0 < m.smoothPart k :=
-  pos_of_ne_zero (smoothPart_mem_smoothNumbers m k).1
+  (TauCeti.Nat.isExactDivisor_prodPrimePow (N := m) (s := Finset.range k)).pos
+
+@[simp] theorem smoothPart_mem_smoothNumbers (m k : ℕ) : m.smoothPart k ∈ smoothNumbers k := by
+  apply mem_smoothNumbers_of_primeFactors_subset (smoothPart_pos m k).ne'
+  rw [smoothPart, TauCeti.Nat.primeFactors_prodPrimePow]
+  exact Finset.inter_subset_left
 
 /-- The smooth part has precisely the restriction of the original prime exponents. -/
 @[simp] theorem factorization_smoothPart (m k : ℕ) :
     (m.smoothPart k).factorization = m.factorization.filter (· < k) := by
-  have hperm := primeFactorsList_unique (n := m.smoothPart k) rfl fun p hp ↦
-    prime_of_mem_primeFactorsList (List.mem_of_mem_filter hp)
   ext p
-  rw [← primeFactorsList_count_eq, ← hperm.count_eq, Finsupp.filter_apply]
-  by_cases hp : p < k
-  · simp [hp, primeFactorsList_count_eq]
-  · simp [hp, List.count_eq_zero]
+  simp only [smoothPart, TauCeti.Nat.factorization_prodPrimePow, Finset.mem_range,
+    Finsupp.filter_apply]
+
+@[simp] theorem zero_smoothPart (k : ℕ) : (0 : ℕ).smoothPart k = 1 :=
+  eq_of_factorization_eq' (smoothPart_pos 0 k).ne' one_ne_zero (by simp [Finsupp.filter_zero])
+
+@[simp] theorem one_smoothPart (k : ℕ) : (1 : ℕ).smoothPart k = 1 :=
+  eq_of_factorization_eq' (smoothPart_pos 1 k).ne' one_ne_zero (by simp [Finsupp.filter_zero])
 
 /-- The smooth part as a product of full prime powers. -/
 theorem smoothPart_def (m k : ℕ) :
@@ -56,27 +57,29 @@ theorem smoothPart_def (m k : ℕ) :
 
 @[simp] theorem primeFactors_smoothPart (m k : ℕ) :
     (m.smoothPart k).primeFactors = m.primeFactors.filter (· < k) := by
-  rw [← support_factorization, factorization_smoothPart,
-    Finsupp.support_filter, support_factorization]
+  rw [smoothPart, TauCeti.Nat.primeFactors_prodPrimePow]
+  ext p
+  simp [and_comm]
 
-theorem smoothPart_dvd (m k : ℕ) : m.smoothPart k ∣ m := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · exact dvd_zero _
-  apply (factorization_le_iff_dvd (smoothPart_pos ..).ne' hm).mp
-  intro p
-  by_cases hp : p < k <;> simp [hp]
+theorem smoothPart_dvd (m k : ℕ) : m.smoothPart k ∣ m :=
+  (TauCeti.Nat.isExactDivisor_prodPrimePow (N := m) (s := Finset.range k)).dvd
 
 /-- The smooth part is multiplicative on nonzero natural numbers. -/
 theorem smoothPart_mul {a b : ℕ} (ha : a ≠ 0) (hb : b ≠ 0) (k : ℕ) :
     (a * b).smoothPart k = a.smoothPart k * b.smoothPart k := by
-  simpa [smoothPart, List.filter_append] using
-    ((perm_primeFactorsList_mul ha hb).filter (fun p ↦ decide (p < k))).prod_eq
+  have ha' := (smoothPart_pos a k).ne'
+  have hb' := (smoothPart_pos b k).ne'
+  apply eq_of_factorization_eq' (smoothPart_pos ..).ne' (mul_ne_zero ha' hb')
+  simp only [factorization_mul ha hb, factorization_mul ha' hb', factorization_smoothPart,
+    Finsupp.filter_add]
 
 /-- A number equals its smooth part precisely when it is smooth. -/
 @[simp] theorem smoothPart_eq_self_iff {m k : ℕ} : m.smoothPart k = m ↔ m ∈ smoothNumbers k := by
   refine ⟨fun h ↦ h ▸ smoothPart_mem_smoothNumbers m k, fun hm ↦ ?_⟩
-  rw [smoothPart, List.filter_eq_self.mpr, prod_primeFactorsList hm.1]
-  simpa using hm.2
+  apply eq_of_factorization_eq' (smoothPart_pos ..).ne' hm.1
+  rw [factorization_smoothPart, Finsupp.filter_eq_self_iff]
+  exact fun p hp ↦ hm.2 p (mem_primeFactors_iff_mem_primeFactorsList.mp
+    (Finsupp.mem_support_iff.mpr hp))
 
 /-- A smooth number divides the smooth part of a nonzero number exactly when it divides
 the original number. -/
