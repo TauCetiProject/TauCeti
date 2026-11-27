@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
 /-!
@@ -185,9 +186,7 @@ theorem isContiguous_const_of_absolutelyContinuous {Ω₀ : Type*} [MeasurableSp
   intro A _ hP
   have hP' : Tendsto (fun i ↦ P₀ (A i)) l (𝓝 0) :=
     (ENNReal.tendsto_toReal_zero_iff (fun _ ↦ measure_ne_top P₀ _)).1 hP
-  have hQ' := tendsto_setLIntegral_zero (μ := P₀) (f := Q₀.rnDeriv P₀)
-    (Measure.lintegral_rnDeriv_lt_top Q₀ P₀).ne hP'
-  simp_rw [Measure.setLIntegral_rnDeriv h] at hQ'
+  have hQ' := h.tendsto_measure_zero hP'
   exact (ENNReal.tendsto_toReal_zero_iff (fun _ ↦ measure_ne_top Q₀ _)).2 hQ'
 
 end Basic
