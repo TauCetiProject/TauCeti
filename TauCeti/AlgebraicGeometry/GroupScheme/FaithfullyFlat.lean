@@ -8,12 +8,12 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Geometrically.Reduced
 public import TauCeti.AlgebraicGeometry.GroupAction.LocallyClosed
-public import TauCeti.CategoryTheory.Monoidal.Mod.Algebra
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Equivariance
 import TauCeti.AlgebraicGeometry.Pullback.Over
 import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.CategoryTheory.Monoidal.Cartesian.ComapRegular
 import TauCeti.CategoryTheory.Monoidal.Grp.Translation
 
 /-!
@@ -26,7 +26,7 @@ same dimension.
 
 Over an algebraically closed field the proof is the translation argument. Through `f`, the group
 `G` acts on `H` by left multiplication (`CategoryTheory.Mod.comapRegular`), and the orbit
-morphism of the unit point is `f` (`TauCeti.GroupScheme.orbitMap_one_eq`). Left translation by a
+morphism of the unit point is `f` (`TauCeti.orbitMap_one_comapRegular`). Left translation by a
 rational point `g` of `G` commutes with `f` and with translation by `f(g)` on `H`. Since `f` is
 surjective, every point of `H` lies in the orbit of the unit, so the translations by rational
 points of `G` act transitively on the closed points of `H`. Generic flatness gives a nonempty open
@@ -40,21 +40,17 @@ from the base change.
 
 In the namespace `TauCeti.GroupScheme`:
 
-* `orbitMap_one_eq`: for the action of `G` on `H` through `f`, the orbit morphism of the unit
-  point is `f`.
 * `flat_of_surjective_of_isAlgClosed`: the case of an algebraically closed field, where a reduced
   target suffices.
 * `flat_of_surjective`: a surjective homomorphism of group schemes of finite type over a field,
-  with geometrically reduced target, is flat.
-* `faithfullyFlat_of_surjective`: such a homomorphism is flat and surjective, that is, faithfully
-  flat.
+  with geometrically reduced target, is flat, hence faithfully flat.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 1.65(a), flatness of equivariant
   morphisms.
-* The Stacks Project, Proposition 29.28.1 (Tag 052A), generic flatness, and Lemma 35.23.17
-  (Tag 02L2), descent of flatness.
+* The Stacks Project, Tag 0529, generic flatness over a reduced locally Noetherian base, and
+  Lemma 35.23.17 (Tag 02L2), descent of flatness.
 -/
 
 public section
@@ -67,20 +63,6 @@ namespace TauCeti.GroupScheme
 universe u
 
 variable {k : Type u} [Field k] {G H : Over (Spec (.of k))} [GrpObj G] [GrpObj H]
-
-section Action
-
-/-- For the action of `G` on `H` by left multiplication through `f` (`Mod.comapRegular f`), the
-orbit morphism of the unit point is `f`. -/
-theorem orbitMap_one_eq (f : G ⟶ H) [IsMonHom f] :
-    letI : ModObj G H := (Mod.comapRegular f).mod
-    orbitMap G (1 : 𝟙_ (Over (Spec (.of k))) ⟶ H) = f := by
-  let : ModObj G H := (Mod.comapRegular f).mod
-  rw [← Category.id_comp (orbitMap G _), comp_orbitMap, Hom.smul_def]
-  change lift (𝟙 G) (toUnit G ≫ η[H]) ≫ f ▷ H ≫ μ[H] = f
-  rw [lift_whiskerRight_assoc, Category.id_comp, ← Hom.mul_def, ← Hom.one_def, _root_.mul_one]
-
-end Action
 
 section AlgClosed
 
@@ -99,11 +81,11 @@ theorem flat_of_surjective_of_isAlgClosed [LocallyOfFiniteType G.hom] [CompactSp
   have : QuasiCompact f.left := inferInstance
   have hcomm (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
       (leftTranslation g).hom.left ≫ f.left = f.left ≫ (translation H g).hom.left := by
-    have := congrArg Over.Hom.left (leftTranslation_hom_orbitMap g (1 : _ ⟶ H))
-    simpa only [orbitMap_one_eq, Over.comp_left] using this
+    simpa only [orbitMap_one_comapRegular] using
+      (SchemeAction.orbitMap_left_translation G g (1 : _ ⟶ H)).symm
   have hrange : Set.range (𝟙 H.left) ⊆ SchemeAction.orbit G (1 : _ ⟶ H) := by
     rintro _ ⟨y, rfl⟩
-    rw [SchemeAction.orbit_def, orbitMap_one_eq]
+    rw [SchemeAction.orbit_def, orbitMap_one_comapRegular]
     exact Surjective.surj y
   exact f.left.flat_of_transitive_closedPoints_of_finiteType
     (fun g ↦ (Over.forget _).mapIso (leftTranslation g))
@@ -127,13 +109,5 @@ theorem flat_of_surjective [LocallyOfFiniteType G.hom] [CompactSpace G.left]
     MorphismProperty.of_isPullback h.flip ‹_›
   exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact h
     (flat_of_surjective_of_isAlgClosed ((Over.pullback φ).map f))
-
-/-- **Surjective homomorphisms of algebraic groups are faithfully flat.** Over any field, a
-surjective homomorphism of group schemes of finite type with geometrically reduced target is flat
-and surjective. -/
-theorem faithfullyFlat_of_surjective [LocallyOfFiniteType G.hom] [CompactSpace G.left]
-    [LocallyOfFiniteType H.hom] [GeometricallyReduced H.hom] [Surjective f.left] :
-    Flat f.left ∧ Surjective f.left :=
-  ⟨flat_of_surjective f, ‹_›⟩
 
 end TauCeti.GroupScheme
