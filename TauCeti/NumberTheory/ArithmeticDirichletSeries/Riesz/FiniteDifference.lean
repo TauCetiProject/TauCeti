@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Finite differences of first Riesz sums
@@ -50,9 +51,8 @@ theorem norm_rieszSum_sub_sub_mul_sum_div_le (a : ℕ → ℂ) {z y : ℝ} (hzy 
   have hn₀ : 0 < (n : ℝ) := Nat.cast_pos.mpr hn'
   have h₁ := (Nat.floor_lt' hn'.ne').mp hzn
   have h₂ := (Nat.le_floor_iff' hn'.ne').mp hny
-  rw [norm_mul, ← Complex.ofReal_natCast n, ← Complex.ofReal_div, ← Complex.ofReal_one,
-    ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (sub_nonneg.mpr ((one_le_div hn₀).mpr h₂))]
+  rw [norm_mul, ← Complex.ofReal_natCast n, ← Complex.ofReal_div,
+    Complex.norm_ofReal_sub_one ((one_le_div hn₀).mpr h₂)]
   calc
     _ ≤ ‖a n‖ * ((y - z) / n) := by
       gcongr
