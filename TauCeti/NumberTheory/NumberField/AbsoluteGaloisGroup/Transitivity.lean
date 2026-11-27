@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Invariant.Profinite
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
 import Mathlib.FieldTheory.Galois.IsGaloisGroup
+import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.Invariant.Galois
 
 /-!

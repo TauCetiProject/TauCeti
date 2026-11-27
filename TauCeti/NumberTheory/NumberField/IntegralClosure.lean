@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.RingTheory.DedekindDomain.Prufer
 import TauCeti.RingTheory.IntegralClosure.Transfer
-import TauCeti.RingTheory.Invariant.Galois
+import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # The integral closure of `𝓞 K` in an extension of a number field

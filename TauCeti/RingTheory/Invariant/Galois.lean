@@ -10,6 +10,9 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Invariant.Defs
 
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
+import TauCeti.RingTheory.Invariant.Basic
+
 /-!
 # Integral elements fixed by a Galois group
 
@@ -17,9 +20,9 @@ Let `R` be integrally closed in a field `K` and let `L / K` be a Galois extensio
 infinite. An element of `L` lies in the image of `R` exactly when it is integral over `R` and
 fixed by every `K`-automorphism of `L`. This combines the fixed-field theorem for infinite Galois
 extensions with the integral closedness of `R` in `K`. For instance, an algebraic integer in an
-algebraic closure of `ℚ` fixed by the absolute Galois group is a rational integer. In the
-language of `Algebra.IsInvariant`, the same holds on the integral closure of `R` in `L` for any
-group acting on `L` with fixed field `K`, not only for `Gal(L/K)`.
+algebraic closure of `ℚ` fixed by the absolute Galois group is a rational integer. The nontrivial
+direction is `Algebra.isInvariant_integralClosure` (`TauCeti/RingTheory/Invariant/Basic.lean`),
+stated for any group acting on `L` with fixed field `K`, applied to `Gal(L/K)`.
 
 Mathlib's `Algebra.isInvariant_of_isGalois` records the analogous fact for a finite Galois
 extension of the fraction field of an integrally closed domain, phrased through the integral
@@ -29,31 +32,11 @@ closure of that domain in `L`.
 
 * `TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed`: an element of a Galois
   extension `L / K` comes from `R` if and only if it is integral over `R` and fixed by `Gal(L/K)`.
-* `Algebra.isInvariant_integralClosure`: the elements of the integral closure of `R` in `L` fixed
-  by a group with fixed field `K`, such as `Gal(L/K)`, are those of `R`.
 * `TauCeti.InfiniteGalois.continuousSMul_integralClosure`: `Gal(L/K)` acts continuously on the
   integral closure of `R` in `L`, with the discrete topology on the latter.
 -/
 
 public section
-
-/-- **Invariants of an integral closure.** Let `R` be integrally closed in a field `K` and let a
-group `G` act on a field `L ⊇ K` by ring automorphisms commuting with `R`, with fixed field `K`,
-for instance `Gal(L/K)` for a Galois extension `L / K`, possibly infinite (Mathlib's
-`IsGaloisGroup.isInvariant`). Then the elements of the integral closure of `R` in `L` fixed by
-`G` are those of `R`. -/
-theorem Algebra.isInvariant_integralClosure (R K L G : Type*) [CommRing R] [Field K] [Field L]
-    [Algebra R K] [Algebra K L] [Algebra R L] [IsScalarTower R K L] [IsIntegrallyClosedIn R K]
-    [Group G] [MulSemiringAction G L] [SMulCommClass G R L] [Algebra.IsInvariant K L G] :
-    Algebra.IsInvariant R (integralClosure R L) G where
-  isInvariant x hx := by
-    obtain ⟨k, hk⟩ := Algebra.IsInvariant.isInvariant (A := K) (G := G) (x : L)
-      fun g ↦ congrArg Subtype.val (hx g)
-    have hint : IsIntegral R (algebraMap K L k) := hk ▸ x.property
-    obtain ⟨r, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp <|
-      (isIntegral_algHom_iff ((Algebra.ofId K L).restrictScalars R)
-        (algebraMap K L).injective).mp hint
-    exact ⟨r, Subtype.ext ((IsScalarTower.algebraMap_apply R K L r).trans hk)⟩
 
 namespace TauCeti.InfiniteGalois
 
@@ -69,11 +52,9 @@ theorem mem_range_algebraMap_iff_isIntegral_and_fixed (x : L) :
   · rintro ⟨r, rfl⟩
     refine ⟨isIntegral_algebraMap, fun τ ↦ ?_⟩
     rw [IsScalarTower.algebraMap_apply R K L, τ.commutes]
-  obtain ⟨q, rfl⟩ := (_root_.InfiniteGalois.mem_range_algebraMap_iff_fixed x).mpr hfix
-  obtain ⟨r, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp <|
-    (isIntegral_algHom_iff ((Algebra.ofId K L).restrictScalars R)
-      (algebraMap K L).injective).mp hx
-  exact ⟨r, IsScalarTower.algebraMap_apply R K L r⟩
+  obtain ⟨r, hr⟩ := (Algebra.isInvariant_integralClosure R K L Gal(L/K)).isInvariant
+    (⟨x, hx⟩ : integralClosure R L) fun σ ↦ Subtype.ext (hfix σ)
+  exact ⟨r, congrArg Subtype.val hr⟩
 
 omit [IsIntegrallyClosedIn R K] [IsGalois K L] in
 variable (R K L) in
