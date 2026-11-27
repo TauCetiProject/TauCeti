@@ -21,9 +21,10 @@ that is an additive map `φ : H → H` with `φ(xy) = x φ(y) = φ(x) y` (Mathli
 homomorphisms, so they form an element of the centre of the category `NondegMod A H`.
 
 This gives a ring homomorphism `CentroidHom H →+* CatCenter (NondegMod A H)`
-(`TauCeti.NondegMod.centroidToCatCenter`), injective because on the nondegenerate part `H` of the
-regular module of the unitization, `φ` acts by `x ↦ φ(x)`
-(`TauCeti.NondegMod.centroidToCatCenter_injective`).
+(`TauCeti.NondegMod.centroidToCatCenter`), defined for modules in every universe. For
+`NondegMod.{max u₁ u₂} A H`, modules in a universe large enough to contain the regular module of
+the unitization, it is injective, because on the nondegenerate part `H` of that regular module,
+`φ` acts by `x ↦ φ(x)` (`TauCeti.NondegMod.centroidToCatCenter_injective`).
 
 ## Main definitions
 
@@ -36,8 +37,10 @@ regular module of the unitization, `φ` acts by `x ↦ φ(x)`
 * `CentroidHom.moduleEnd_apply_of_smul_eq`,
   `TauCeti.NondegMod.centroidToCatCenter_app_apply`: `φ` acts on `m` by `φ(e)` for every
   `e ∈ H` with `e • m = m`.
+* `CentroidHom.moduleEnd_one`, `CentroidHom.moduleEnd_zero`, `CentroidHom.moduleEnd_add`,
+  `CentroidHom.moduleEnd_mul`: the action respects the ring operations of `CentroidHom H`.
 * `TauCeti.NondegMod.centroidToCatCenter_injective`: distinct bimodule endomorphisms act
-  differently.
+  differently on nondegenerate modules in universe `max u₁ u₂`.
 
 ## References
 
@@ -128,6 +131,49 @@ theorem moduleEnd_comp {N : Type*} [AddCommMonoid N] [Module (Unitization A H) N
   simp only [LinearMap.comp_apply]
   rw [φ.moduleEnd_apply_of_smul_eq hN hge, φ.moduleEnd_apply_of_smul_eq hM he, map_smul]
 
+variable (hM : IsNondegenerate A H M)
+
+/-- The identity bimodule endomorphism acts as the identity. -/
+@[simp]
+theorem moduleEnd_one : (1 : CentroidHom H).moduleEnd hM = LinearMap.id := by
+  ext m
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
+  rw [moduleEnd_apply_of_smul_eq _ hM he, CentroidHom.one_apply, he, LinearMap.id_apply]
+
+/-- The zero bimodule endomorphism acts as zero. -/
+@[simp]
+theorem moduleEnd_zero : (0 : CentroidHom H).moduleEnd hM = 0 := by
+  ext m
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
+  rw [moduleEnd_apply_of_smul_eq _ hM he, CentroidHom.zero_apply, Unitization.inr_zero, zero_smul,
+    LinearMap.zero_apply]
+
+/-- The action of a sum of bimodule endomorphisms is the sum of their actions. -/
+@[simp]
+theorem moduleEnd_add (φ ψ : CentroidHom H) :
+    (φ + ψ).moduleEnd hM = φ.moduleEnd hM + ψ.moduleEnd hM := by
+  ext m
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
+  rw [LinearMap.add_apply, moduleEnd_apply_of_smul_eq _ hM he, moduleEnd_apply_of_smul_eq _ hM he,
+    moduleEnd_apply_of_smul_eq _ hM he, CentroidHom.add_apply, Unitization.inr_add, add_smul]
+
+/-- The action of a composite of bimodule endomorphisms is the composite of their actions. -/
+@[simp]
+theorem moduleEnd_mul (φ ψ : CentroidHom H) :
+    (φ * ψ).moduleEnd hM = φ.moduleEnd hM ∘ₗ ψ.moduleEnd hM := by
+  classical
+  ext m
+  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
+  -- A local unit `f` of `ψ(e)` fixes `ψ(e) • m`, and `φ(f) ψ(e) = φ(f ψ(e)) = φ(ψ(e))`.
+  obtain ⟨f, -, hf⟩ := IsIdempotented.exists_isIdempotentElem {ψ e}
+  have hfψ : f * ψ e = ψ e := (hf (ψ e) (by simp)).1
+  have hfm :
+      (f : Unitization A H) • (ψ e : Unitization A H) • m = (ψ e : Unitization A H) • m := by
+    rw [smul_smul, ← Unitization.inr_mul, hfψ]
+  rw [LinearMap.comp_apply, moduleEnd_apply_of_smul_eq _ hM he, moduleEnd_apply_of_smul_eq _ hM he,
+    moduleEnd_apply_of_smul_eq _ hM hfm, smul_smul, ← Unitization.inr_mul, ← map_mul_right, hfψ,
+    CentroidHom.mul_apply]
+
 end CentroidHom
 
 namespace TauCeti.NondegMod
@@ -151,10 +197,9 @@ private noncomputable def centroidToCatCenterAux (φ : CentroidHom H) :
           (φ.moduleEnd_comp M.isNondegenerate N.isNondegenerate g.hom.hom) m }
 
 variable {A H} in
-private theorem centroidToCatCenterAux_app_apply (φ : CentroidHom H) (M : NondegMod.{v} A H)
-    {m : M.obj} {e : H} (he : (e : Unitization A H) • m = m) :
-    ((centroidToCatCenterAux.{v} A H φ).app M).hom.hom m = (φ e : Unitization A H) • m :=
-  φ.moduleEnd_apply_of_smul_eq M.isNondegenerate he
+private theorem centroidToCatCenterAux_app_hom_hom (φ : CentroidHom H) (M : NondegMod.{v} A H) :
+    ((centroidToCatCenterAux.{v} A H φ).app M).hom.hom = φ.moduleEnd M.isNondegenerate :=
+  rfl
 
 /-- **Bimodule endomorphisms of `H` give central endomorphisms of nondegenerate modules.** The
 ring homomorphism from the centroid of `H` to the centre of `NondegMod A H`, sending `φ` to the
@@ -163,28 +208,16 @@ noncomputable def centroidToCatCenter : CentroidHom H →+* CatCenter (NondegMod
   toFun := centroidToCatCenterAux.{v} A H
   map_one' := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
-    simp [centroidToCatCenterAux_app_apply _ M he, he]
+    simp [centroidToCatCenterAux_app_hom_hom]
   map_mul' φ ψ := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
-    -- A local unit `f` of `ψ(e)` fixes `ψ(e) • m`, and `φ(f) ψ(e) = φ(f ψ(e)) = φ(ψ(e))`.
-    obtain ⟨f, -, hf⟩ := IsIdempotented.exists_isIdempotentElem {ψ e}
-    have hfψ : f * ψ e = ψ e := (hf (ψ e) (by simp)).1
-    have hfm :
-        (f : Unitization A H) • (ψ e : Unitization A H) • m = (ψ e : Unitization A H) • m := by
-      rw [smul_smul, ← Unitization.inr_mul, hfψ]
-    simp [CatCenter.mul_app', centroidToCatCenterAux_app_apply ψ M he,
-      centroidToCatCenterAux_app_apply φ M hfm, centroidToCatCenterAux_app_apply (φ * ψ) M he,
-      smul_smul, ← Unitization.inr_mul, ← map_mul_right, hfψ]
+    simp [CatCenter.mul_app', centroidToCatCenterAux_app_hom_hom]
   map_zero' := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
-    simp [centroidToCatCenterAux_app_apply _ M he]
+    simp [centroidToCatCenterAux_app_hom_hom]
   map_add' φ ψ := by
     ext M m
-    obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 M.isNondegenerate m
-    simp [centroidToCatCenterAux_app_apply _ M he, add_smul]
+    simp [centroidToCatCenterAux_app_hom_hom]
 
 variable {A H}
 
@@ -193,10 +226,11 @@ variable {A H}
 theorem centroidToCatCenter_app_apply (φ : CentroidHom H) (M : NondegMod.{v} A H) {m : M.obj}
     {e : H} (he : (e : Unitization A H) • m = m) :
     ((centroidToCatCenter.{v} A H φ).app M).hom.hom m = (φ e : Unitization A H) • m :=
-  centroidToCatCenterAux_app_apply φ M he
+  φ.moduleEnd_apply_of_smul_eq M.isNondegenerate he
 
-/-- **Distinct bimodule endomorphisms act differently** on nondegenerate modules: on the
-nondegenerate part `H` of the regular module of the unitization, `φ` acts by `x ↦ φ(x)`. -/
+/-- **Distinct bimodule endomorphisms act differently** on nondegenerate modules in universe
+`max u₁ u₂`, large enough to contain the regular module of the unitization: on its nondegenerate
+part `H`, `φ` acts by `x ↦ φ(x)`. -/
 theorem centroidToCatCenter_injective :
     Function.Injective (centroidToCatCenter.{max u₁ u₂} A H) := by
   classical
@@ -204,9 +238,7 @@ theorem centroidToCatCenter_injective :
   ext x
   obtain ⟨e, -, he⟩ := IsIdempotented.exists_isIdempotentElem {x}
   have hex : e * x = x := (he x (by simp)).1
-  let X : NondegMod.{max u₁ u₂} A H :=
-    ⟨ModuleCat.of _ (nondegeneratePart A H (Unitization A H)),
-      (nondegenerateModuleProperty_iff _).2 isNondegenerate_nondegeneratePart⟩
+  let X := (nondegeneratePartFunctor.{max u₁ u₂} A H).obj (ModuleCat.of _ (Unitization A H))
   have hx : (x : Unitization A H) ∈ nondegeneratePart A H (Unitization A H) := by
     simpa [← Unitization.inr_mul, hex] using
       inr_smul_mem_nondegeneratePart (A := A) e (x : Unitization A H)
@@ -217,7 +249,10 @@ theorem centroidToCatCenter_injective :
   have := congrArg (fun z : CatCenter (NondegMod.{max u₁ u₂} A H) ↦
     ((z.app X).hom.hom m).val) h
   simp only [centroidToCatCenter_app_apply _ X hm] at this
-  rw [Submodule.coe_smul, Submodule.coe_smul, smul_eq_mul, smul_eq_mul] at this
+  -- The action on `X.obj` is that of the submodule `H • (A ⊕ H)` only after unfolding
+  -- `nondegeneratePartFunctor` inside the instance, so `Submodule.coe_smul` cannot rewrite it;
+  -- by definition both sides are the products `φ(e) x` and `ψ(e) x` in the unitization.
+  replace this : (φ e : Unitization A H) * x = (ψ e : Unitization A H) * x := this
   rwa [← Unitization.inr_mul, ← Unitization.inr_mul, ← map_mul_right, ← map_mul_right, hex,
     Unitization.inr_injective.eq_iff] at this
 
