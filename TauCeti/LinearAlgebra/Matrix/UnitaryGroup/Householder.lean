@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
@@ -112,39 +113,14 @@ noncomputable def householderSpecialUnitary (i j : ι) (y : ι → 𝕜) : Matri
 private theorem ofReal_one_add_norm_ne_zero (z : 𝕜) : ((1 + ‖z‖ : ℝ) : 𝕜) ≠ 0 :=
   RCLike.ofReal_ne_zero.2 (by positivity)
 
-private theorem ofReal_norm_ne_zero {z : 𝕜} (hz : z ≠ 0) : ((‖z‖ : ℝ) : 𝕜) ≠ 0 :=
-  RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)
-
-/-- The phase `ω = z / |z|` of a nonzero scalar `z` has `conj ω * ω = 1`. -/
-private theorem star_phase_mul_self {z : 𝕜} (hz : z ≠ 0) :
-    star (‖z‖⁻¹ • z) * (‖z‖⁻¹ • z) = 1 := by
-  have := ofReal_norm_ne_zero hz
-  rw [RCLike.real_smul_eq_coe_mul, star_mul', mul_mul_mul_comm, RCLike.star_def,
-    RCLike.conj_ofReal, RCLike.conj_mul]
-  push_cast
-  field_simp
-
-/-- The phase `ω = z / |z|` of a nonzero scalar `z` has `conj ω * z = |z|`. -/
-private theorem star_phase_mul {z : 𝕜} (hz : z ≠ 0) : star (‖z‖⁻¹ • z) * z = (‖z‖ : 𝕜) := by
-  have := ofReal_norm_ne_zero hz
-  rw [RCLike.real_smul_eq_coe_mul, star_mul', mul_assoc, RCLike.star_def, RCLike.conj_ofReal,
-    RCLike.conj_mul]
-  push_cast
-  field_simp
-
-/-- The phase `ω = z / |z|` of a nonzero scalar `z` has `conj z * ω = |z|`. -/
-private theorem star_mul_phase {z : 𝕜} (hz : z ≠ 0) : star z * (‖z‖⁻¹ • z) = (‖z‖ : 𝕜) := by
-  rw [← star_star (‖z‖⁻¹ • z), ← star_mul, star_phase_mul hz, RCLike.star_def,
-    RCLike.conj_ofReal]
-
 /-- The Hermitian square of the axis `ω eᵢ + y` of a unit vector `y` is `2 + 2 |yᵢ|`. -/
 private theorem star_householderSpecialUnitaryAxis_dotProduct_self (hy : star y ⬝ᵥ y = 1)
     (hi : y i ≠ 0) :
     star (householderSpecialUnitaryAxis i y) ⬝ᵥ householderSpecialUnitaryAxis i y =
       algebraMap ℝ 𝕜 (2 + 2 * ‖y i‖) := by
-  have h₁ := star_phase_mul hi
-  have h₂ := star_mul_phase hi
-  have h₃ := star_phase_mul_self hi
+  have h₁ := RCLike.star_inv_norm_smul_mul hi
+  have h₂ := RCLike.star_mul_inv_norm_smul hi
+  have h₃ := RCLike.star_inv_norm_smul_mul_self hi
   rw [householderSpecialUnitaryAxis]
   generalize ‖y i‖⁻¹ • y i = ω at h₁ h₂ h₃ ⊢
   simp only [star_add, add_dotProduct, dotProduct_add, hy,
@@ -178,7 +154,7 @@ private theorem det_householderReflection (hy : star y ⬝ᵥ y = 1) (hi : y i �
 
 private theorem diagonal_householderSpecialUnitaryDiag_mem_unitary (hi : y i ≠ 0) :
     diagonal (householderSpecialUnitaryDiag i j y) ∈ unitary (Matrix ι ι 𝕜) := by
-  have h₁ := star_phase_mul_self hi
+  have h₁ := RCLike.star_inv_norm_smul_mul_self hi
   rw [diagonal_mem_unitary, Unitary.mem_iff, householderSpecialUnitaryDiag]
   generalize ‖y i‖⁻¹ • y i = ω at h₁ ⊢
   have h₁' : starRingEnd 𝕜 ω * ω = 1 := h₁
@@ -192,7 +168,7 @@ private theorem det_diagonal_householderSpecialUnitaryDiag (hi : y i ≠ 0) (hji
   rw [det_diagonal, householderSpecialUnitaryDiag, Finset.prod_update_of_mem (Finset.mem_univ _),
     Finset.prod_update_of_mem (by simpa using hji)]
   simp only [Pi.one_apply, Finset.prod_const_one, mul_one]
-  rw [neg_mul, mul_comm, star_phase_mul_self hi]
+  rw [neg_mul, mul_comm, RCLike.star_inv_norm_smul_mul_self hi]
 
 /-- For a unit vector `y` with `yᵢ ≠ 0` and an index `j ≠ i`, the matrix
 `Matrix.householderSpecialUnitary i j y` is special unitary. -/
@@ -209,8 +185,8 @@ theorem householderSpecialUnitary_mem_specialUnitaryGroup (hy : star y ⬝ᵥ y 
 diagonal factor sends `eᵢ` to `-ω eᵢ`, and the reflection sends `-ω eᵢ` to `y`. -/
 theorem householderSpecialUnitary_mulVec_single (hi : y i ≠ 0) :
     householderSpecialUnitary i j y *ᵥ Pi.single i 1 = y := by
-  have h₁ := star_phase_mul_self hi
-  have h₂ := star_mul_phase hi
+  have h₁ := RCLike.star_inv_norm_smul_mul_self hi
+  have h₂ := RCLike.star_mul_inv_norm_smul hi
   have hc : (1 + ‖y i‖)⁻¹ • (-(1 + (‖y i‖ : 𝕜))) = -1 := by
     have := ofReal_one_add_norm_ne_zero (y i)
     rw [RCLike.real_smul_eq_coe_mul]

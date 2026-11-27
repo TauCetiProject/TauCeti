@@ -279,8 +279,9 @@ def specialUnitarySphereTrivialization (g : specialUnitaryGroup (Fin (1 + n)) �
 theorem specialUnitarySphereTrivialization_baseSet (g : specialUnitaryGroup (Fin (1 + n)) ℂ) :
     (specialUnitarySphereTrivialization g).baseSet =
       {p : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1 |
-        ⟪(specialUnitarySphereMap n g : EuclideanSpace ℂ (Fin (1 + n))), p⟫_ℂ ≠ 0} :=
-  Subgroup.localSectionTrivializationOfCosetFibers_baseSet
+        ⟪(specialUnitarySphereMap n g : EuclideanSpace ℂ (Fin (1 + n))), p⟫_ℂ ≠ 0} := by
+  rw [specialUnitarySphereTrivialization, Bundle.Trivialization.transFiberHomeomorph_baseSet,
+    Subgroup.localSectionTrivializationOfCosetFibers_baseSet, sphereSectionDomain]
 
 /-- The chart through `g` is defined at `g e₀`. -/
 theorem mem_specialUnitarySphereTrivialization_baseSet (g : specialUnitaryGroup (Fin (1 + n)) ℂ) :
@@ -290,6 +291,7 @@ theorem mem_specialUnitarySphereTrivialization_baseSet (g : specialUnitaryGroup 
 
 /-- The inverse of the chart through `g` sends `(p, B)` to `s(p) diag(1, B)`, for the local section
 `s = TauCeti.specialUnitarySphereLocalSection g`. -/
+@[simp]
 theorem specialUnitarySphereTrivialization_symm_apply
     (g : specialUnitaryGroup (Fin (1 + n)) ℂ)
     (x : sphere (0 : EuclideanSpace ℂ (Fin (1 + n))) 1 × specialUnitaryGroup (Fin n) ℂ) :
