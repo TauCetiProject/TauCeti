@@ -51,6 +51,7 @@ that of `⟪ξ, ψ⟫`.
   through a bilinear pairing is the Bochner integral of the pairing against `ν`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
   `∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν` for every `f`.
+* `MeasureTheory.withDensityᵥ_of_not_integrable`: the junk value of `ν.withDensityᵥ g`.
 * `MeasureTheory.withDensityᵥ_one_apply`, `MeasureTheory.Measure.variation_withDensityᵥ_one` and
   `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ_one`: a finite positive measure as a
   scalar measure, its values, its variation, and integration against it.
@@ -84,6 +85,11 @@ namespace MeasureTheory
 variable {X E F G : Type*} [MeasurableSpace X] {ν : Measure X}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- A density that is not integrable against `ν` gives the zero vector measure. -/
+theorem withDensityᵥ_of_not_integrable {g : X → F} (hg : ¬Integrable g ν) :
+    ν.withDensityᵥ g = 0 := by
+  rw [Measure.withDensityᵥ, dite_eq_right hg]
 
 /-- The variation of a vector measure with density `g` with respect to `ν` is at most the measure
 with density `‖g‖ₑ` with respect to `ν`. This is an equality when the space is complete and `g` is
