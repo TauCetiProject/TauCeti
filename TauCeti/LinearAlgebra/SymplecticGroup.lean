@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
@@ -89,6 +90,12 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   the condition is that `Ψ` does not have the eigenvalue `-1`. On every vector the quadratic form
   of `Ψᵀ * J - J * Ψ` is twice that of `-(J * Ψ)`
   (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+* `Matrix.symplecticShear`: the shear `1 + (Ψ - 1) * N⁻¹` of `Ψ`, `N = 1 - b • (J * (Ψ - 1))`.
+  Where `N` is invertible it is symplectic with `Ψ` (`Matrix.symplecticShear_mem`), the eigenvalue
+  `1` has the same multiplicity for both (`Matrix.finrank_eigenspace_symplecticShear`), and
+  congruence by `N` takes its matrix `Φᵀ * J - J * Φ` to
+  `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`
+  (`Matrix.transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul`).
 * `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
   `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
@@ -419,6 +426,129 @@ theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [transpose_mul, J_transpose, hS.eq, ← Matrix.mul_assoc, Matrix.mul_assoc, Matrix.neg_mul,
     J_squared]
   simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
+
+/-- The **symplectic shear** `1 + (Ψ - 1) * (1 - b • (J * (Ψ - 1)))⁻¹` of a matrix `Ψ` by a
+scalar `b`. Where `N = 1 - b • (J * (Ψ - 1))` is invertible, it is symplectic with `Ψ`
+(`Matrix.symplecticShear_mem`), its fixed vectors are the images under `N` of those of `Ψ`
+(`Matrix.finrank_eigenspace_symplecticShear`), `(symplecticShear b Ψ + 1) * N` is
+`Ψ + 1 - (2 * b) • (J * (Ψ - 1))` (`Matrix.symplecticShear_add_one_mul`), and congruence by `N`
+takes its matrix `Φᵀ * J - J * Φ` to `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`
+(`Matrix.transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul`). -/
+@[expose] noncomputable def symplecticShear (b : R) (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) :
+    Matrix (l ⊕ l) (l ⊕ l) R :=
+  1 + (Ψ - 1) * (1 - b • (J l R * (Ψ - 1)))⁻¹
+
+section SymplecticShear
+
+variable {b : R} {Ψ : Matrix (l ⊕ l) (l ⊕ l) R}
+
+/-- With `N = 1 - b • (J * D)`, the product `Nᵀ * J * D` is `J * D - b • (Dᵀ * D)`. -/
+private theorem transpose_one_sub_smul_J_mul_mul_J_mul (b : R) (D : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (1 - b • (J l R * D))ᵀ * J l R * D = J l R * D - b • (Dᵀ * D) := by
+  simp only [transpose_sub, transpose_one, transpose_smul, transpose_mul, J_transpose,
+    Matrix.sub_mul, Matrix.one_mul, Matrix.smul_mul, Matrix.mul_neg, Matrix.neg_mul,
+    Matrix.mul_assoc, J_squared, smul_neg, neg_neg]
+
+/-- With `N = 1 - b • (J * D)`, the product `Dᵀ * J * N` is `Dᵀ * J + b • (Dᵀ * D)`. -/
+private theorem transpose_mul_J_mul_one_sub_smul_J_mul (b : R) (D : Matrix (l ⊕ l) (l ⊕ l) R) :
+    Dᵀ * J l R * (1 - b • (J l R * D)) = Dᵀ * J l R + b • (Dᵀ * D) := by
+  simp only [Matrix.mul_sub, Matrix.mul_one, Matrix.mul_smul, Matrix.mul_assoc,
+    ← Matrix.mul_assoc (J l R) (J l R), J_squared, neg_one_mul, Matrix.mul_neg, smul_neg,
+    sub_neg_eq_add]
+
+/-- The shear by `0` is the identity. -/
+theorem symplecticShear_zero (Ψ : Matrix (l ⊕ l) (l ⊕ l) R) : symplecticShear 0 Ψ = Ψ := by
+  simp [symplecticShear]
+
+/-- Where `N = 1 - b • (J * (Ψ - 1))` is invertible, `symplecticShear b Ψ * N` is
+`Ψ - b • (J * (Ψ - 1))`. -/
+theorem symplecticShear_mul (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) :
+    symplecticShear b Ψ * (1 - b • (J l R * (Ψ - 1))) = Ψ - b • (J l R * (Ψ - 1)) := by
+  rw [symplecticShear, Matrix.add_mul, Matrix.one_mul, Matrix.mul_assoc, nonsing_inv_mul _ h,
+    Matrix.mul_one]
+  abel
+
+/-- Where `N = 1 - b • (J * (Ψ - 1))` is invertible, `(symplecticShear b Ψ + 1) * N` is
+`Ψ + 1 - (2 * b) • (J * (Ψ - 1))`, so the shear does not have the eigenvalue `-1` exactly when
+this matrix is invertible. -/
+theorem symplecticShear_add_one_mul (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) :
+    (symplecticShear b Ψ + 1) * (1 - b • (J l R * (Ψ - 1))) =
+      Ψ + 1 - (2 * b) • (J l R * (Ψ - 1)) := by
+  rw [Matrix.add_mul, symplecticShear_mul h, Matrix.one_mul, two_mul, add_smul]
+  abel
+
+/-- Where `N = 1 - b • (J * (Ψ - 1))` is invertible, `symplecticShear b Ψ * N` is
+`(Ψ - 1) + N`, the form in which the congruences below expand. -/
+private theorem symplecticShear_mul_eq_sub_one_add (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) :
+    symplecticShear b Ψ * (1 - b • (J l R * (Ψ - 1))) = Ψ - 1 + (1 - b • (J l R * (Ψ - 1))) := by
+  rw [symplecticShear_mul h]
+  abel
+
+/-- **The shear of a symplectic matrix is symplectic.** With `N = 1 - b • (J * (Ψ - 1))`, the
+congruence by `N` of `Φᵀ * J * Φ`, `Φ = symplecticShear b Ψ`, is `Ψᵀ * J * Ψ - J + Nᵀ * J * N`. -/
+theorem symplecticShear_mem (hΨ : Ψ ∈ symplecticGroup l R)
+    (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) : symplecticShear b Ψ ∈ symplecticGroup l R := by
+  obtain ⟨N, hN⟩ : ∃ N, N = 1 - b • (J l R * (Ψ - 1)) := ⟨_, rfl⟩
+  have hX : symplecticShear b Ψ * N = Ψ - 1 + N := by
+    rw [hN, symplecticShear_mul_eq_sub_one_add h]
+  rw [SymplecticGroup.mem_iff'] at hΨ ⊢
+  have hcong : Nᵀ * ((symplecticShear b Ψ)ᵀ * J l R * symplecticShear b Ψ) * N =
+      Nᵀ * J l R * N := by
+    calc Nᵀ * ((symplecticShear b Ψ)ᵀ * J l R * symplecticShear b Ψ) * N
+        = (symplecticShear b Ψ * N)ᵀ * J l R * (symplecticShear b Ψ * N) := by
+          simp only [transpose_mul, Matrix.mul_assoc]
+      _ = Ψᵀ * J l R * Ψ - J l R + Nᵀ * J l R * N := by
+          rw [hX, transpose_add, Matrix.add_mul, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
+            hN, transpose_mul_J_mul_one_sub_smul_J_mul, transpose_one_sub_smul_J_mul_mul_J_mul]
+          simp only [transpose_sub, transpose_one, Matrix.sub_mul, Matrix.mul_sub,
+            Matrix.one_mul, Matrix.mul_one]
+          abel
+      _ = Nᵀ * J l R * N := by rw [hΨ, sub_self, zero_add]
+  have hNu : IsUnit N := (isUnit_iff_isUnit_det N).2 (hN ▸ h)
+  have hNTu : IsUnit Nᵀ := (isUnit_iff_isUnit_det _).2 (by rw [det_transpose, hN]; exact h)
+  exact hNTu.mul_left_cancel (hNu.mul_right_cancel hcong)
+
+/-- Congruence by `N = 1 - b • (J * (Ψ - 1))` takes the matrix `Φᵀ * J - J * Φ` of the shear
+`Φ = symplecticShear b Ψ` to `Ψᵀ * J - J * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1))`. -/
+theorem transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul
+    (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) :
+    (1 - b • (J l R * (Ψ - 1)))ᵀ *
+        ((symplecticShear b Ψ)ᵀ * J l R - J l R * symplecticShear b Ψ) *
+        (1 - b • (J l R * (Ψ - 1))) =
+      Ψᵀ * J l R - J l R * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1)) := by
+  obtain ⟨N, hN⟩ : ∃ N, N = 1 - b • (J l R * (Ψ - 1)) := ⟨_, rfl⟩
+  have hX : symplecticShear b Ψ * N = Ψ - 1 + N := by
+    rw [hN, symplecticShear_mul_eq_sub_one_add h]
+  rw [← hN]
+  calc Nᵀ * ((symplecticShear b Ψ)ᵀ * J l R - J l R * symplecticShear b Ψ) * N
+      = (symplecticShear b Ψ * N)ᵀ * J l R * N - Nᵀ * J l R * (symplecticShear b Ψ * N) := by
+        simp only [transpose_mul, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
+    _ = Ψᵀ * J l R - J l R * Ψ + (2 * b) • ((Ψ - 1)ᵀ * (Ψ - 1)) := by
+        rw [hX, transpose_add, Matrix.add_mul, Matrix.add_mul, Matrix.mul_add,
+          add_sub_add_right_eq_sub, hN,
+          transpose_mul_J_mul_one_sub_smul_J_mul, transpose_one_sub_smul_J_mul_mul_J_mul]
+        simp only [transpose_sub, transpose_one, Matrix.sub_mul, Matrix.mul_sub, Matrix.one_mul,
+          Matrix.mul_one, two_mul, add_smul]
+        abel
+
+/-- The fixed vectors of the shear are the images under `N = 1 - b • (J * (Ψ - 1))` of those of
+`Ψ`, so the eigenvalue `1` has the same geometric multiplicity for both. -/
+theorem finrank_eigenspace_symplecticShear (h : IsUnit (1 - b • (J l R * (Ψ - 1))).det) :
+    Module.finrank R (Module.End.eigenspace (toLin' (symplecticShear b Ψ)) 1) =
+      Module.finrank R (Module.End.eigenspace (toLin' Ψ) 1) := by
+  set N := 1 - b • (J l R * (Ψ - 1))
+  have hNi : Invertible N⁻¹ := invertibleOfIsUnitDet _ (isUnit_nonsing_inv_det N h)
+  set e := toLinearEquiv' N⁻¹ hNi
+  have heq : Module.End.eigenspace (toLin' (symplecticShear b Ψ)) 1 =
+      (Module.End.eigenspace (toLin' Ψ) 1).comap e.toLinearMap := by
+    ext w
+    simp only [Module.End.mem_eigenspace_iff, toLin'_apply, one_smul, Submodule.mem_comap, e,
+      toLinearEquiv'_apply]
+    rw [symplecticShear, add_mulVec, one_mulVec, ← mulVec_mulVec, add_eq_left, sub_mulVec,
+      one_mulVec, sub_eq_zero]
+  rw [heq, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+
+end SymplecticShear
 
 /-- If `S` is symmetric and `G'ᵀ * J * G + Gᵀ * J * G' = 0`, as for the derivative `G'` of a path
 `G` of symplectic matrices, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric. This is the matrix of

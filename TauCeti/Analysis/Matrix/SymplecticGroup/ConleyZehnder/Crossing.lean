@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Normalization
-import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Topology.Subpath
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Homotopy
 import TauCeti.LinearAlgebra.Eigenspace.Matrix
@@ -61,13 +60,14 @@ the space of fixed vectors of `Ψ` where `Ψ + 1 - c J (Ψ - 1)` is invertible, 
 correction `c (Ψ'ᵀ (Ψ - 1) + (Ψ - 1)ᵀ Ψ')` of its derivative vanishes: its crossing form is again
 twice `Γ(Ψ, t)`. Every symplectic `Ψ` admits such a `c` in any interval `(-ε, ε)`: the determinant
 of `Ψ + 1 - c J (Ψ - 1)` is a polynomial in `c`, which at `c = i` is, up to a factor, the
-determinant of the straightened graph frame of `Ψ`, and so does not vanish identically.
+determinant of the straightened graph frame of `Ψ`, and so does not vanish identically
+(`TauCeti.exists_mem_Ioo_isUnit_det_add_one_sub_smul`).
 
 To compute the index from `K_c`, the path is sheared. With `N = 1 - (c / 2) J (Ψ - 1)`, the
-matrix `Φ = 1 + (Ψ - 1) N⁻¹` is symplectic, its fixed vectors are the images under `N` of those of
-`Ψ`, `(Φ + 1) N = Ψ + 1 - c J (Ψ - 1)`, and `Nᵀ (Φᵀ J - J Φ) N = K_c`. For `|c|` small, the shears
-by `s c / 2`, `s ∈ [0, 1]`, are a homotopy from `Ψ` to `Φ` along which the eigenvalue `1` keeps
-its multiplicity at the endpoints, so `Ψ` and `Φ` have the same index
+shear `Φ = 1 + (Ψ - 1) N⁻¹` (`Matrix.symplecticShear`) is symplectic, its fixed vectors are the
+images under `N` of those of `Ψ`, `(Φ + 1) N = Ψ + 1 - c J (Ψ - 1)`, and `Nᵀ (Φᵀ J - J Φ) N = K_c`.
+For `|c|` small, the shears by `s c / 2`, `s ∈ [0, 1]`, are a homotopy from `Ψ` to `Φ` along which
+the eigenvalue `1` keeps its multiplicity at the endpoints, so `Ψ` and `Φ` have the same index
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopy_of_finrank_eigenspace_eq`). The path `Φ`
 avoids `-1`, and by Sylvester's law of inertia its index is half the drop of the signature of
 `K_c`.
@@ -128,6 +128,13 @@ private noncomputable def crossingMatrixDeriv (c : R) (Ψ Ψ' : Matrix (n ⊕ n)
     Matrix (n ⊕ n) (n ⊕ n) R :=
   Ψ'ᵀ * J n R - J n R * Ψ' + c • (Ψ'ᵀ * (Ψ - 1) + (Ψ - 1)ᵀ * Ψ')
 
+/-- Where `Ψ + 1 - c • (J * (Ψ - 1))` is invertible, the kernel of `crossingMatrix c Ψ` is the
+space of fixed vectors of `Ψ`. -/
+private theorem ker_mulVecLin_crossingMatrix {Ψ : Matrix (n ⊕ n) (n ⊕ n) R}
+    (hΨ : Ψ ∈ symplecticGroup n R) {c : R} (h : IsUnit (Ψ + 1 - c • (J n R * (Ψ - 1))).det) :
+    LinearMap.ker (crossingMatrix c Ψ).mulVecLin = LinearMap.ker (Ψ - 1).mulVecLin := by
+  rw [crossingMatrix, ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul hΨ h]
+
 /-- Where `Ψ + 1 - c • (J * (Ψ - 1))` is invertible, the crossing form of `crossingMatrix c` at `Ψ`
 with derivative `crossingMatrixDeriv c Ψ Ψ'` is isometric to twice the crossing form of `Ψ` with
 derivative `Ψ'`: the two forms live on the same space of fixed vectors of `Ψ`, and there the
@@ -137,108 +144,16 @@ private noncomputable def crossingFormIsometryEquivSymplectic {Ψ : Matrix (n �
     (Ψ' : Matrix (n ⊕ n) (n ⊕ n) R) :
     (crossingForm (crossingMatrix c Ψ) (crossingMatrixDeriv c Ψ Ψ')).IsometryEquiv
       ((2 : R) • crossingForm (Ψ - 1) (-(J n R * Ψ'))) :=
-  ⟨LinearEquiv.ofEq _ _ (ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul hΨ h), fun v ↦ by
+  ⟨LinearEquiv.ofEq _ _ (ker_mulVecLin_crossingMatrix hΨ h), fun v ↦ by
     have hv : (Ψ - 1) *ᵥ (v : n ⊕ n → R) = 0 :=
-      LinearMap.mem_ker.1 ((LinearEquiv.ofEq _ _
-        (ker_mulVecLin_transpose_mul_J_sub_J_mul_add_smul hΨ h)) v).property
+      LinearMap.mem_ker.1 ((ker_mulVecLin_crossingMatrix hΨ h).le v.property)
     have hextra : (v : n ⊕ n → R) ⬝ᵥ (Ψ'ᵀ * (Ψ - 1) + (Ψ - 1)ᵀ * Ψ') *ᵥ v = 0 := by
-      rw [add_mulVec, dotProduct_add, ← mulVec_mulVec, hv, mulVec_zero, dotProduct_zero,
-        ← mulVec_mulVec, dotProduct_mulVec, vecMul_transpose, hv, zero_dotProduct, add_zero]
+      simp only [add_mulVec, ← mulVec_mulVec, hv, mulVec_zero, zero_add,
+        dotProduct_mulVec, vecMul_transpose, zero_vecMul, zero_dotProduct]
     rw [crossingMatrixDeriv, crossingForm_apply, add_mulVec, dotProduct_add, smul_mulVec,
       dotProduct_smul, hextra, smul_zero, add_zero, dotProduct_transpose_mul_J_sub_J_mul_mulVec]
-    simp [crossingForm_apply]
-    rfl⟩
-
-/-! ### The shear of a symplectic matrix -/
-
-/-- The **shear** `1 + (Ψ - 1) (1 - b J (Ψ - 1))⁻¹` of a matrix `Ψ`. Where
-`N = 1 - b J (Ψ - 1)` is invertible, it is symplectic with `Ψ`, its fixed vectors are the images
-under `N` of those of `Ψ`, it does not have the eigenvalue `-1` exactly when
-`Ψ + 1 - 2 b J (Ψ - 1)` is invertible, and its matrix `Ψᵀ J - J Ψ` is congruent to
-`crossingMatrix (2 b) Ψ`. -/
-private noncomputable def shear (b : R) (Ψ : Matrix (n ⊕ n) (n ⊕ n) R) :
-    Matrix (n ⊕ n) (n ⊕ n) R :=
-  1 + (Ψ - 1) * (1 - b • (J n R * (Ψ - 1)))⁻¹
-
-section Shear
-
-variable {b : R} {Ψ : Matrix (n ⊕ n) (n ⊕ n) R}
-
-private theorem shear_zero (Ψ : Matrix (n ⊕ n) (n ⊕ n) R) : shear 0 Ψ = Ψ := by
-  simp [shear]
-
-private theorem shear_mul (h : IsUnit (1 - b • (J n R * (Ψ - 1))).det) :
-    shear b Ψ * (1 - b • (J n R * (Ψ - 1))) = Ψ - b • (J n R * (Ψ - 1)) := by
-  rw [shear, Matrix.add_mul, Matrix.one_mul, Matrix.mul_assoc, nonsing_inv_mul _ h,
-    Matrix.mul_one]
-  abel
-
-private theorem shear_add_one_mul (h : IsUnit (1 - b • (J n R * (Ψ - 1))).det) :
-    (shear b Ψ + 1) * (1 - b • (J n R * (Ψ - 1))) = Ψ + 1 - (2 * b) • (J n R * (Ψ - 1)) := by
-  rw [Matrix.add_mul, shear_mul h, Matrix.one_mul, two_mul, add_smul]
-  abel
-
-/-- The shear of a symplectic matrix is symplectic: with `N = 1 - b J (Ψ - 1)`, the identity
-`(Ψ - b J (Ψ - 1))ᵀ J (Ψ - b J (Ψ - 1)) - Nᵀ J N = Ψᵀ J Ψ - J` holds for every matrix. -/
-private theorem shear_mem (hΨ : Ψ ∈ symplecticGroup n R)
-    (h : IsUnit (1 - b • (J n R * (Ψ - 1))).det) : shear b Ψ ∈ symplecticGroup n R := by
-  set N := 1 - b • (J n R * (Ψ - 1)) with hN
-  have hkey : (Ψ - b • (J n R * (Ψ - 1)))ᵀ * J n R * (Ψ - b • (J n R * (Ψ - 1))) -
-      Nᵀ * J n R * N = Ψᵀ * J n R * Ψ - J n R := by
-    simp only [hN, transpose_sub, transpose_smul, transpose_mul, J_transpose, transpose_one,
-      Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_neg,
-      Matrix.neg_mul, Matrix.mul_one, Matrix.one_mul, Matrix.mul_assoc, smul_sub, smul_neg,
-      smul_smul]
-    abel
-  rw [SymplecticGroup.mem_iff'] at hΨ ⊢
-  have hcong : Nᵀ * ((shear b Ψ)ᵀ * J n R * shear b Ψ) * N = Nᵀ * J n R * N := by
-    calc Nᵀ * ((shear b Ψ)ᵀ * J n R * shear b Ψ) * N
-        = (shear b Ψ * N)ᵀ * J n R * (shear b Ψ * N) := by
-          simp only [transpose_mul, Matrix.mul_assoc]
-      _ = Nᵀ * J n R * N := by rw [shear_mul h, ← sub_eq_zero, hkey, hΨ, sub_self]
-  have hNu : IsUnit N := (isUnit_iff_isUnit_det N).2 h
-  have hNTu : IsUnit Nᵀ := (isUnit_iff_isUnit_det _).2 (by rwa [det_transpose])
-  exact hNTu.mul_left_cancel (hNu.mul_right_cancel hcong)
-
-/-- Congruence by `N = 1 - b J (Ψ - 1)` takes the matrix `Ψᵀ J - J Ψ` of the shear to
-`crossingMatrix (2 b) Ψ`. -/
-private theorem transpose_mul_mul_shear_mul (h : IsUnit (1 - b • (J n R * (Ψ - 1))).det) :
-    (1 - b • (J n R * (Ψ - 1)))ᵀ * ((shear b Ψ)ᵀ * J n R - J n R * shear b Ψ) *
-        (1 - b • (J n R * (Ψ - 1))) = crossingMatrix (2 * b) Ψ := by
-  set N := 1 - b • (J n R * (Ψ - 1)) with hN
-  calc Nᵀ * ((shear b Ψ)ᵀ * J n R - J n R * shear b Ψ) * N
-      = (shear b Ψ * N)ᵀ * J n R * N - Nᵀ * J n R * (shear b Ψ * N) := by
-        simp only [transpose_mul, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
-    _ = Ψᵀ * J n R - J n R * Ψ - (2 * b) • ((Ψ - 1)ᵀ * (J n R * J n R) * (Ψ - 1)) := by
-        rw [shear_mul h, hN]
-        simp only [transpose_sub, transpose_smul, transpose_mul, J_transpose, transpose_one,
-          Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_neg,
-          Matrix.neg_mul, Matrix.mul_one, Matrix.one_mul, Matrix.mul_assoc, smul_sub, smul_neg,
-          smul_smul, two_mul, add_smul]
-        abel
-    _ = crossingMatrix (2 * b) Ψ := by
-        rw [J_squared, crossingMatrix]
-        simp only [Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_one, smul_neg, sub_neg_eq_add]
-
-end Shear
-
-/-- The fixed vectors of the shear are the images under `N = 1 - b J (Ψ - 1)` of those of `Ψ`, so
-the eigenvalue `1` has the same geometric multiplicity for both. -/
-private theorem finrank_eigenspace_shear {b : ℝ} {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (h : IsUnit (1 - b • (J n ℝ * (Ψ - 1))).det) :
-    Module.finrank ℝ (Module.End.eigenspace (toLin' (shear b Ψ)) 1) =
-      Module.finrank ℝ (Module.End.eigenspace (toLin' Ψ) 1) := by
-  set N := 1 - b • (J n ℝ * (Ψ - 1))
-  have hNi : Invertible N⁻¹ := invertibleOfIsUnitDet _ (isUnit_nonsing_inv_det N h)
-  set e := toLinearEquiv' N⁻¹ hNi
-  have heq : Module.End.eigenspace (toLin' (shear b Ψ)) 1 =
-      (Module.End.eigenspace (toLin' Ψ) 1).comap e.toLinearMap := by
-    ext w
-    simp only [Module.End.mem_eigenspace_iff, toLin'_apply, one_smul, Submodule.mem_comap, e,
-      toLinearEquiv'_apply]
-    rw [shear, add_mulVec, one_mulVec, ← mulVec_mulVec, add_eq_left, sub_mulVec, one_mulVec,
-      sub_eq_zero]
-  rw [heq, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+    simp only [smul_apply, crossingForm_apply, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+      LinearEquiv.coe_ofEq_apply, smul_eq_mul]⟩
 
 end Matrix
 
@@ -250,56 +165,17 @@ namespace GLSymplectic
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-! ### Complements of the graph -/
-
-/-- **A complement close to the anti-diagonal.** For a real symplectic matrix `Ψ` and every
-`ε > 0` there is `c ∈ (-ε, ε)` such that `Ψ + 1 - c • (J * (Ψ - 1))` is invertible. Its
-determinant is a polynomial in `c` which does not vanish at `c = i`, where the matrix is `√2` times
-the diagonal straightening of the graph frame of `Ψ`
-(`TauCeti.diagonalStraightening_mul_graphFrame`), so it has finitely many real roots. -/
-private theorem exists_mem_Ioo_isUnit_det_add_one_sub_smul {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (hΨ : Ψ ∈ symplecticGroup n ℝ) {ε : ℝ} (hε : 0 < ε) :
-    ∃ c ∈ Ioo (-ε) ε, IsUnit (Ψ + 1 - c • (J n ℝ * (Ψ - 1))).det := by
-  set p : Polynomial ℝ := ((1 + Ψ).map Polynomial.C +
-    (Polynomial.X : Polynomial ℝ) • (J n ℝ * (1 - Ψ)).map Polynomial.C).det with hp
-  have heval (c : ℝ) : p.eval c = (Ψ + 1 - c • (J n ℝ * (Ψ - 1))).det := by
-    rw [hp, ← Polynomial.coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    simp [Matrix.mul_sub, Matrix.sub_apply]
-    ring
-  have hI : Polynomial.aeval Complex.I p ≠ 0 := by
-    rw [hp, AlgHom.map_det]
-    have hne : (diagonalStraightening n * graphFrame Ψ).det ≠ 0 := by
-      rw [det_mul]
-      exact mul_ne_zero (isUnit_det_of_left_inverse (mem_unitaryGroup_iff'.1
-        (diagonalStraightening_mem_unitaryGroup (n := n)))).ne_zero
-        (isUnit_det_graphFrame hΨ).ne_zero
-    rw [diagonalStraightening_mul_graphFrame, det_smul] at hne
-    have heq : (Polynomial.aeval Complex.I).mapMatrix ((1 + Ψ).map Polynomial.C +
-        (Polynomial.X : Polynomial ℝ) • (J n ℝ * (1 - Ψ)).map Polynomial.C) =
-        (1 + Ψ).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - Ψ)).map ((↑) : ℝ → ℂ) := by
-      ext i j
-      simp only [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply,
-        map_add, map_mul, smul_eq_mul, Polynomial.aeval_C, Polynomial.aeval_X,
-        Complex.coe_algebraMap, Complex.ofReal_add]
-    rw [heq]
-    exact right_ne_zero_of_mul hne
-  have hp0 : p ≠ 0 := fun h ↦ hI (by rw [h, map_zero])
-  obtain ⟨c, hc, hroot⟩ := ((Ioo_infinite (by linarith : -ε < ε)).sdiff
-    (Polynomial.finite_setOfPred_isRoot hp0)).nonempty
-  exact ⟨c, hc, isUnit_iff_ne_zero.2 fun h ↦ hroot (Polynomial.IsRoot.def.2 ((heval c).trans h))⟩
-
-/-- **Shearing a path.** If the shears `shear (s b) (Ψ t)`, `s ∈ [0, 1]`, of the matrices `Ψ t`
-of a path `γ` are all defined, then the path `t ↦ shear b (Ψ t)` has the same Conley–Zehnder index
-as `γ`: the shears form a homotopy along which the eigenvalue `1` of the endpoints keeps its
-multiplicity. -/
+/-- **Shearing a path.** If the shears `symplecticShear (s b) (Ψ t)`, `s ∈ [0, 1]`, of the
+matrices `Ψ t` of a path `γ` are all defined, then the path `t ↦ symplecticShear b (Ψ t)` has the
+same Conley–Zehnder index as `γ`: the shears form a homotopy along which the eigenvalue `1` of the
+endpoints keeps its multiplicity. -/
 private theorem exists_path_shear_and_conleyZehnderIndex_eq {A B : GLSymplectic n ℝ}
     (γ : Path A B) {b : ℝ}
     (hN : ∀ s t : I, IsUnit (1 - ((s : ℝ) * b) • (J n ℝ *
       (((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) - 1))).det) :
     ∃ (C D : GLSymplectic n ℝ) (δ : Path C D), (∀ t, ((δ t : GL (n ⊕ n) ℝ) :
-      Matrix (n ⊕ n) (n ⊕ n) ℝ) = shear b ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∧
+      Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+        symplecticShear b ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∧
         conleyZehnderIndex γ = conleyZehnderIndex δ := by
   set m : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ ((γ t : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ)
   have hm : Continuous m := Units.continuous_val.comp (continuous_subtypeVal.comp γ.continuous)
@@ -310,32 +186,35 @@ private theorem exists_path_shear_and_conleyZehnderIndex_eq {A B : GLSymplectic 
     continuous_iff_continuousAt.2 fun p ↦ (continuousAt_matrix_inv _ (by
       rw [Ring.inverse_eq_inv']
       exact continuousAt_inv₀ (hN p.1 p.2).ne_zero)).comp hNc.continuousAt
-  let G : I × I → symplecticGroup n ℝ := fun p ↦ ⟨shear ((p.1 : ℝ) * b) (m p.2),
-    shear_mem (mem_iff_mem_symplecticGroup.1 (γ p.2).property) (hN p.1 p.2)⟩
-  have hG : Continuous G :=
-    (continuous_const.add (((hm.comp continuous_snd).sub continuous_const).matrix_mul
-      hinv)).subtype_mk _
+  let G : I × I → symplecticGroup n ℝ := fun p ↦ ⟨symplecticShear ((p.1 : ℝ) * b) (m p.2),
+    symplecticShear_mem (mem_iff_mem_symplecticGroup.1 (γ p.2).property) (hN p.1 p.2)⟩
+  have hS : Continuous fun p : I × I ↦ symplecticShear ((p.1 : ℝ) * b) (m p.2) := by
+    simp only [symplecticShear]
+    exact continuous_const.add (((hm.comp continuous_snd).sub continuous_const).matrix_mul hinv)
+  have hG : Continuous G := hS.subtype_mk _
   let F : C(I × I, GLSymplectic n ℝ) :=
     ⟨fun p ↦ symplecticGroupContinuousMulEquiv n ℝ (G p),
       (symplecticGroupContinuousMulEquiv n ℝ).continuous.comp hG⟩
   have hF (p : I × I) : ((F p : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
-      shear ((p.1 : ℝ) * b) (m p.2) := by
+      symplecticShear ((p.1 : ℝ) * b) (m p.2) := by
     simp [F, G]
   refine ⟨F (1, 0), F (1, 1),
     ⟨⟨fun t ↦ F (1, t), F.continuous.comp (continuous_const.prodMk continuous_id)⟩, rfl, rfl⟩,
     fun t ↦ by simp [hF, m], ?_⟩
   exact conleyZehnderIndex_eq_of_homotopy_of_finrank_eigenspace_eq γ _ F
-    (fun t ↦ Subtype.ext (Units.ext (by rw [hF, Set.Icc.coe_zero, zero_mul, shear_zero])))
-    (fun t ↦ rfl) (fun s ↦ by rw [hF, finrank_eigenspace_shear (hN s 0)])
-    fun s ↦ by rw [hF, finrank_eigenspace_shear (hN s 1)]
+    (fun t ↦ Subtype.ext (Units.ext (by
+      rw [hF, Set.Icc.coe_zero, zero_mul, symplecticShear_zero])))
+    (fun t ↦ rfl) (fun s ↦ by rw [hF, finrank_eigenspace_symplecticShear (hN s 0)])
+    fun s ↦ by rw [hF, finrank_eigenspace_symplecticShear (hN s 1)]
 
 /-- **The Conley–Zehnder index through a complement `c`.** Let `γ` be a path of symplectic
 matrices `Ψ t` such that `Ψ t + 1 - c • (J (Ψ t - 1))` is invertible for every `t`, and such that
-the shears `shear (s c / 2) (Ψ t)`, `s ∈ [0, 1]`, are defined. Then the Conley–Zehnder index of
-`γ` is half the drop of the signature of `crossingMatrix c` from `Ψ 0` to `Ψ 1`. For `c = 0` this
-is `TauCeti.GLSymplectic.conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one`, to which the
-general case reduces by shearing: the path `t ↦ shear (c / 2) (Ψ t)` has the same index and avoids
-the eigenvalue `-1`, and its matrices `Ψᵀ J - J Ψ` are congruent to `crossingMatrix c (Ψ t)`. -/
+the shears `symplecticShear (s c / 2) (Ψ t)`, `s ∈ [0, 1]`, are defined. Then the Conley–Zehnder
+index of `γ` is half the drop of the signature of `crossingMatrix c` from `Ψ 0` to `Ψ 1`. For
+`c = 0` this is `TauCeti.GLSymplectic.conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one`,
+to which the general case reduces by shearing: the path `t ↦ symplecticShear (c / 2) (Ψ t)` has the
+same index and avoids the eigenvalue `-1`, and its matrices `Ψᵀ J - J Ψ` are congruent to
+`crossingMatrix c (Ψ t)`. -/
 private theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one_sub_smul
     {A B : GLSymplectic n ℝ} (γ : Path A B) {c : ℝ}
     (hN : ∀ s t : I, IsUnit (1 - ((s : ℝ) * (c / 2)) • (J n ℝ *
@@ -353,21 +232,24 @@ private theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one_sub_sm
   -- The sheared path avoids `-1`, and its matrices `Ψᵀ J - J Ψ` are congruent to the given ones.
   have hunit (t : I) : IsUnit ((((δ t : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) :
       Matrix (n ⊕ n) (n ⊕ n) ℝ) + 1).det := by
-    have hd : IsUnit ((shear (c / 2) (m t) + 1) * (1 - (c / 2) • (J n ℝ * (m t - 1)))).det := by
-      rw [shear_add_one_mul (hN1 t), hc]
+    have hd : IsUnit ((symplecticShear (c / 2) (m t) + 1) *
+        (1 - (c / 2) • (J n ℝ * (m t - 1)))).det := by
+      rw [symplecticShear_add_one_mul (hN1 t), hc]
       exact h t
     rw [det_mul] at hd
     rw [hδ]
     exact isUnit_of_mul_isUnit_left hd
-  have hsig (t : I) : signature ((shear (c / 2) (m t))ᵀ * J n ℝ - J n ℝ * shear (c / 2) (m t)) =
-      signature (crossingMatrix c (m t)) := by
+  have hsig (t : I) : signature ((symplecticShear (c / 2) (m t))ᵀ * J n ℝ -
+      J n ℝ * symplecticShear (c / 2) (m t)) = signature (crossingMatrix c (m t)) := by
     have := signature_congr (P := (1 - (c / 2) • (J n ℝ * (m t - 1)))ᵀ)
       (by rw [det_transpose]; exact hN1 t)
-      ((shear (c / 2) (m t))ᵀ * J n ℝ - J n ℝ * shear (c / 2) (m t))
-    rwa [transpose_transpose, transpose_mul_mul_shear_mul (hN1 t), hc, eq_comm] at this
-  have hC : ((C : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = shear (c / 2) (m 0) := by
+      ((symplecticShear (c / 2) (m t))ᵀ * J n ℝ - J n ℝ * symplecticShear (c / 2) (m t))
+    rw [crossingMatrix]
+    rwa [transpose_transpose, transpose_mul_transpose_mul_J_sub_J_mul_symplecticShear_mul (hN1 t),
+      hc, eq_comm] at this
+  have hC : ((C : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = symplecticShear (c / 2) (m 0) := by
     rw [← δ.source, hδ]
-  have hD : ((D : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = shear (c / 2) (m 1) := by
+  have hD : ((D : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = symplecticShear (c / 2) (m 1) := by
     rw [← δ.target, hδ]
   rw [hCZ, conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one δ hunit, hC, hD, hsig, hsig]
   simp only [m, γ.source, γ.target]
@@ -445,12 +327,11 @@ private theorem continuousOn_crossingMatrix {Ψ : ℝ → Matrix (n ⊕ n) (n �
       (((continuous_id.sub continuous_const).matrix_transpose.matrix_mul
         (continuous_id.sub continuous_const)).const_smul c)).comp_continuousOn hΨc)
 
-/-- The determinant of `Ψ t + 1 - c • (J (Ψ t - 1))` is continuous where `Ψ` is. -/
-private theorem continuousOn_det_add_one_sub_smul {Ψ : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    {s : Set ℝ} (hΨc : ContinuousOn Ψ s) (c : ℝ) :
-    ContinuousOn (fun t ↦ (Ψ t + 1 - c • (J n ℝ * (Ψ t - 1))).det) s :=
-  (((continuous_id.add continuous_const).sub ((continuous_const.matrix_mul
-    (continuous_id.sub continuous_const)).const_smul c)).matrix_det.comp_continuousOn hΨc)
+/-- The determinant of `M + 1 - c • (J (M - 1))` is continuous in the matrix `M`. -/
+private theorem continuous_det_add_one_sub_smul (c : ℝ) :
+    Continuous fun M : Matrix (n ⊕ n) (n ⊕ n) ℝ ↦ (M + 1 - c • (J n ℝ * (M - 1))).det :=
+  ((continuous_id.add continuous_const).sub ((continuous_const.matrix_mul
+    (continuous_id.sub continuous_const)).const_smul c)).matrix_det
 
 /-- Along a path `Ψ` of symplectic matrices on `[a, b]` such that `Ψ + 1 - c • (J (Ψ - 1))` stays
 invertible, with regular crossings, the signature of `crossingMatrix c Ψ` changes by the signatures
@@ -531,8 +412,9 @@ private theorem eventually_nhdsWithin_Icc_diff_det_sub_one_ne_zero
   -- Near `t` in `[0, 1]` the matrix `Ψ + 1 - c • (J (Ψ - 1))` stays invertible, so those are the
   -- crossings of `Ψ`.
   have hnear : ∀ᶠ s in 𝓝[Icc 0 1 \ {t}] t, (Ψ s + 1 - c • (J n ℝ * (Ψ s - 1))).det ≠ 0 :=
-    nhdsWithin_mono _ Set.sdiff_subset ((continuousOn_det_add_one_sub_smul hΨc c t ht).eventually
-      (isOpen_ne.mem_nhds hunit.ne_zero))
+    nhdsWithin_mono _ Set.sdiff_subset
+      (((continuous_det_add_one_sub_smul c).comp_continuousOn hΨc t ht).eventually
+        (isOpen_ne.mem_nhds hunit.ne_zero))
   filter_upwards [hK, hnear, self_mem_nhdsWithin] with s hs hs' hsI
   rw [hV, nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero] at hs
   exact fun h ↦ hs ((det_transpose_mul_J_sub_J_mul_add_smul_eq_zero_iff (hmem s hsI.1)
@@ -626,7 +508,7 @@ private theorem exists_pos_forall_isUnit_det_one_sub_smul {Ψ : I → Matrix (n 
   exact hβ
 
 /-- `[0, 1]` subdivides into intervals on each of which `Ψ + 1 - c • (J (Ψ - 1))` is invertible
-for some `c ∈ (-ε, ε)`: by `exists_mem_Ioo_isUnit_det_add_one_sub_smul`, the open sets of such
+for some `c ∈ (-ε, ε)`: by `TauCeti.exists_mem_Ioo_isUnit_det_add_one_sub_smul`, the open sets of
 parameters, one for each `c`, cover `[0, 1]`. -/
 private theorem exists_monotone_isUnit_det_add_one_sub_smul
     {Ψ : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ} (hΨI : Continuous fun t : I ↦ Ψ t)
@@ -635,9 +517,7 @@ private theorem exists_monotone_isUnit_det_add_one_sub_smul
       ∀ r ∈ Icc (t m : ℝ) (t (m + 1)), IsUnit (Ψ r + 1 - c • (J n ℝ * (Ψ r - 1))).det := by
   obtain ⟨t, ht0, htm, hN, htc⟩ := exists_monotone_Icc_subset_open_cover_unitInterval
     (c := fun c : Ioo (-ε) ε ↦ {t : I | (Ψ t + 1 - (c : ℝ) • (J n ℝ * (Ψ t - 1))).det ≠ 0})
-    (fun c ↦ isOpen_ne_fun ((((continuous_id.add continuous_const).sub
-      ((continuous_const.matrix_mul (continuous_id.sub continuous_const)).const_smul
-        (c : ℝ))).matrix_det.comp hΨI)) continuous_const)
+    (fun c ↦ isOpen_ne_fun ((continuous_det_add_one_sub_smul (c : ℝ)).comp hΨI) continuous_const)
     fun t _ ↦ mem_iUnion.2 <| by
       obtain ⟨c, hc, hu⟩ := exists_mem_Ioo_isUnit_det_add_one_sub_smul (hmem t t.property) hε
       exact ⟨⟨c, hc⟩, hu.ne_zero⟩
@@ -661,8 +541,8 @@ private theorem exists_mem_Icc_coe_subpath_eq
   exact ⟨t, ⟨Subtype.coe_le_coe.2 ht.1, Subtype.coe_le_coe.2 ht.2⟩, by rw [← hts, hγ]⟩
 
 /-- On an interval `[a, b]` of `[0, 1]` on which `Ψ + 1 - c • (J (Ψ - 1))` is invertible and the
-shears `shear (s c / 2) Ψ` are defined, the Conley–Zehnder index of the subpath of `γ` is the
-crossing sum. -/
+shears `symplecticShear (s c / 2) Ψ` are defined, the Conley–Zehnder index of the subpath of `γ`
+is the crossing sum. -/
 private theorem conleyZehnderIndex_subpath_eq_crossingSum
     (hγ : ∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = Ψ t)
     (hΨc : ContinuousOn Ψ (Icc 0 1)) (hmem : ∀ t ∈ Icc (0 : ℝ) 1, Ψ t ∈ symplecticGroup n ℝ)

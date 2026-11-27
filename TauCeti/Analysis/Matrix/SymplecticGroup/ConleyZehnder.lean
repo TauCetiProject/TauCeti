@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.SymplecticGroup.Graph
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
+import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 import Mathlib.Topology.Homotopy.Product
 import TauCeti.Analysis.Complex.Circle.Basic
@@ -111,6 +112,9 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
   `A` is `(1/√2) ((1 + A) + i J (1 - A))`.
 * `TauCeti.map_star_diagonalStraightening_mul_graphFrame_sub`: the imaginary part of the
   straightened graph frame, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`.
+* `TauCeti.exists_mem_Ioo_isUnit_det_add_one_sub_smul`: for a real symplectic `Ψ`, the matrix
+  `Ψ + 1 - c • (J (Ψ - 1))` is invertible for some `c` in every interval `(-ε, ε)`, since at
+  `c = i` it is a multiple of the straightened graph frame.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
@@ -280,6 +284,44 @@ theorem map_star_diagonalStraightening_mul_graphFrame_sub (A : Matrix (n ⊕ n) 
   ext (i | i) (j | j) <;>
   simp [Matrix.one_apply, Complex.ext_iff, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;>
   split_ifs <;> simp <;> ring
+
+/-- **A complement close to the anti-diagonal.** For a real symplectic matrix `Ψ` and every
+`ε > 0` there is `c ∈ (-ε, ε)` such that `Ψ + 1 - c • (J * (Ψ - 1))` is invertible. Its
+determinant is a polynomial in `c` which does not vanish at `c = i`, where the matrix is `√2` times
+the diagonal straightening of the graph frame of `Ψ`
+(`TauCeti.diagonalStraightening_mul_graphFrame`), so it has finitely many real roots. -/
+theorem exists_mem_Ioo_isUnit_det_add_one_sub_smul {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hΨ : Ψ ∈ symplecticGroup n ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c ∈ Set.Ioo (-ε) ε, IsUnit (Ψ + 1 - c • (J n ℝ * (Ψ - 1))).det := by
+  set p : Polynomial ℝ := ((1 + Ψ).map Polynomial.C +
+    (Polynomial.X : Polynomial ℝ) • (J n ℝ * (1 - Ψ)).map Polynomial.C).det with hp
+  have heval (c : ℝ) : p.eval c = (Ψ + 1 - c • (J n ℝ * (Ψ - 1))).det := by
+    rw [hp, ← Polynomial.coe_evalRingHom, RingHom.map_det]
+    congr 1
+    ext i j
+    simp [Matrix.mul_sub, Matrix.sub_apply]
+    ring
+  have hI : Polynomial.aeval Complex.I p ≠ 0 := by
+    rw [hp, AlgHom.map_det]
+    have hne : (diagonalStraightening n * graphFrame Ψ).det ≠ 0 := by
+      rw [det_mul]
+      exact mul_ne_zero (isUnit_det_of_left_inverse (mem_unitaryGroup_iff'.1
+        (diagonalStraightening_mem_unitaryGroup (n := n)))).ne_zero
+        (isUnit_det_graphFrame hΨ).ne_zero
+    rw [diagonalStraightening_mul_graphFrame, det_smul] at hne
+    have heq : (Polynomial.aeval Complex.I).mapMatrix ((1 + Ψ).map Polynomial.C +
+        (Polynomial.X : Polynomial ℝ) • (J n ℝ * (1 - Ψ)).map Polynomial.C) =
+        (1 + Ψ).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - Ψ)).map ((↑) : ℝ → ℂ) := by
+      ext i j
+      simp only [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply,
+        map_add, map_mul, smul_eq_mul, Polynomial.aeval_C, Polynomial.aeval_X,
+        Complex.coe_algebraMap, Complex.ofReal_add]
+    rw [heq]
+    exact right_ne_zero_of_mul hne
+  have hp0 : p ≠ 0 := fun h ↦ hI (by rw [h, map_zero])
+  obtain ⟨c, hc, hroot⟩ := ((Set.Ioo_infinite (by linarith : -ε < ε)).sdiff
+    (Polynomial.finite_setOfPred_isRoot hp0)).nonempty
+  exact ⟨c, hc, isUnit_iff_ne_zero.2 fun h ↦ hroot (Polynomial.IsRoot.def.2 ((heval c).trans h))⟩
 
 namespace GLSymplectic
 
