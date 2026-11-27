@@ -7,17 +7,18 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
-public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.QcEtale
+public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.QcEtale.Sheaf
 public import TauCeti.RingTheory.Etale.Field
 
 /-!
 # Checks for the quasi-compact small Nisnevich site
 
 The identity of `X` and the empty étale `X`-scheme are objects of `X.QcEtale`, and the empty sieve
-covers the empty object. For an étale field extension `k → K` of degree other than `1` the
-morphism `Spec K ⟶ Spec k` is an object of `(Spec k).QcEtale` whose generated sieve does not cover
-the final object, since `k → K` is not an isomorphism on residue fields; in particular this holds
-for `Spec ℂ ⟶ Spec ℝ`.
+covers the empty object. Over a quasi-separated scheme every representable presheaf on `X.QcEtale`
+is a sheaf. For an étale field extension `k → K` of degree other than `1` the morphism
+`Spec K ⟶ Spec k` is an object of `(Spec k).QcEtale` whose generated sieve does not cover the final
+object, since `k → K` is not an isomorphism on residue fields; in particular this holds for
+`Spec ℂ ⟶ Spec ℝ`.
 -/
 
 open CategoryTheory Limits AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme Module
@@ -51,6 +52,10 @@ example : (⊥ : Sieve (emptyObj X)) ∈ X.qcNisnevichTopology (emptyObj X) := b
       ⟨fun i ↦ i.elim, fun s ↦ (IsEmpty.false (α := (∅ : Scheme.{u})) s).elim⟩)
   rw [Sieve.ofArrows, Sieve.generate_le_iff, Presieve.ofArrows_le_iff]
   exact fun i ↦ i.elim
+
+-- Every representable presheaf on the basis is a sheaf for the quasi-compact Nisnevich topology.
+example (U : X.QcEtale) : Presieve.IsSheaf X.qcNisnevichTopology (yoneda.obj U) :=
+  GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable _
 
 variable (k K : Type u) [Field k] [Field K] [Algebra k K] [Algebra.Etale k K]
 

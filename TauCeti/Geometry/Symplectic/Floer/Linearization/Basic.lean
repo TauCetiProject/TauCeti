@@ -17,7 +17,9 @@ import TauCeti.Topology.Constructions.SumProd
 
 The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. For the cylindrical datum
 `K = H_t dt` and `J_t` independent of `s` it commutes with translations in `s`
-(`floerOperator_comp_sub`). We differentiate it along
+(`floerOperator_comp_sub`). It is quasilinear: it is `∂s u + J(z, u) ∂t u + G(z, u)` for the
+zeroth-order term `G = -X_Ks - J X_Kt` (`floerZerothOrder`,
+`floerOperator_eq_add_floerZerothOrder`). We differentiate it along
 jointly `C²` families of maps and Hamiltonians and differentiable families of endomorphisms.
 The formula includes the target derivative of `J`, both Hamiltonian linearizations, and the
 independent parameter variations of `K` and `J`. Domain dependence of the coefficients is
@@ -221,6 +223,31 @@ theorem floerOperator_sub_floerOperator (ω : SymplecticForm V)
         (J z (u z) - J z (v z))
           (fderiv ℝ v z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (v z)) := by
   simp only [floerOperator_def, fderiv_sub hu hv, _root_.sub_apply, map_sub]
+  abel
+
+/-- The zeroth-order term `G(z, y) = -X_{K_s(z)}(y) - J(z, y) X_{K_t(z)}(y)` of the Floer operator,
+which is `∂s u + J(u) ∂t u + G(u)`
+(`TauCeti.SymplecticForm.floerOperator_eq_add_floerZerothOrder`). -/
+noncomputable def floerZerothOrder (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (y : V) : V :=
+  -ω.hamiltonianVectorField (Ks z) y - J z y (ω.hamiltonianVectorField (Kt z) y)
+
+/-- The defining formula of the zeroth-order term of the Floer operator. -/
+theorem floerZerothOrder_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (z : ℝ × ℝ) (y : V) :
+    ω.floerZerothOrder J Ks Kt z y =
+      -ω.hamiltonianVectorField (Ks z) y - J z y (ω.hamiltonianVectorField (Kt z) y) :=
+  (rfl)
+
+/-- **The Floer operator is quasilinear.** It is `∂s u + J(u) ∂t u + G(u)` for the zeroth-order
+term `G = -X_{K_s} - J X_{K_t}`. -/
+theorem floerOperator_eq_add_floerZerothOrder (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerOperator J Ks Kt u z =
+      fderiv ℝ u z (1, 0) + J z (u z) (fderiv ℝ u z (0, 1)) +
+        ω.floerZerothOrder J Ks Kt z (u z) := by
+  rw [floerOperator_def, floerZerothOrder_def, stdComplexLineReal_eq, stdComplexLineImag_eq,
+    map_sub]
   abel
 
 /-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
