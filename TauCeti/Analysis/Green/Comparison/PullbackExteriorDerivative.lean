@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.Comparison.ExteriorDerivative
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Analysis.Green.FlatDifferentialForm
 
 /-!
 # Coordinate area for pulled-back planar circulation forms
@@ -26,18 +27,6 @@ open scoped Manifold Topology
 namespace TauCeti.Green
 
 attribute [local instance] Complex.finrank_real_complex_fact
-
-private theorem extDeriv_manifoldOneForm_inChartAt {P Q : ℂ → ℝ} {z : ℂ}
-    (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
-    extDeriv ((manifoldOneForm P Q).inChartAt z) z =
-      curl P Q z • Complex.orientation.volumeFormL := by
-  have h := DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area hP hQ
-  rw [mextDeriv_def, extChartAt_model_space_eq_id] at h
-  simp only [modelWithCornersSelf_coe, range_id, PartialEquiv.refl_coe, id_eq,
-    extDerivWithin_univ] at h
-  rw [← RoughForm.inChartAt_extChartAt_self manifoldAreaForm z,
-    manifoldAreaForm_inChartAt] at h
-  exact h
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -65,15 +54,17 @@ theorem _root_.ContMDiff.mextDeriv_mpullback_manifoldOneForm_apply {f : M → �
       ((hf _).mdifferentiableAt (by norm_num)), RoughForm.inChartAt_modelSpace]
     rfl
   have hTx : T z = f x := by simp only [T, z, Function.comp_apply, extChartAt_to_inv]
+  have hform := differentiableAt_manifoldOneForm_inChartAt (f x) hP hQ
   have hω : DifferentiableWithinAt ℝ ((manifoldOneForm P Q).inChartAt (f x))
       univ (T z) := by
     rw [hTx]
-    exact (differentiableAt_manifoldOneForm_inChartAt (f x) hP hQ).differentiableWithinAt
+    exact hform.differentiableWithinAt
   have hd := extDerivWithin_pullback (f := T) (x := z) hω
     hT (by norm_num : minSmoothness ℝ 2 ≤ (2 : WithTop ℕ∞)) I.uniqueDiffOn
     (I.range_subset_closure_interior hz) hz (mapsTo_univ T (range I))
+  rw [manifoldOneForm_inChartAt] at hform
   rw [mextDeriv_def, heq.extDerivWithin_eq_of_mem hz, hd, extDerivWithin_univ, hTx,
-    extDeriv_manifoldOneForm_inChartAt hP hQ]
+    manifoldOneForm_inChartAt, hform.extDeriv_oneForm_eq_smul_volumeFormL]
   rw [← RoughForm.inChartAt_extChartAt_self
     (mpullback I 𝓘(ℝ, ℂ) f manifoldAreaForm) x,
     RoughForm.inChartAt_mpullback_modelSpace _ f x (mem_extChartAt_target x)
