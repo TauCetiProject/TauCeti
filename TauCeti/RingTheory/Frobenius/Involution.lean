@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Frobenius
+import TauCeti.FieldTheory.Finite.Frobenius
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
@@ -107,10 +108,12 @@ theorem natCard_quotient_eq_sq [Q.IsPrime] (H : σ.IsArithFrobAt Q) (hσ : Funct
     rw [sq, pow_mul, ← Nat.card_eq_fintype_card, ← H.mk_apply, ← H.mk_apply, hσ x]
   -- so `S ⧸ Q` is finite, hence a field
   have : _root_.Finite (S ⧸ Q) := by
-    have hq : 1 < Fintype.card (R ⧸ P) ^ 2 := Nat.one_lt_pow two_ne_zero Fintype.one_lt_card
-    refine Set.finite_univ_iff.mp ((Polynomial.finite_setOfPred_isRoot
-      (Polynomial.X_pow_sub_X_ne_zero hq)).subset fun θ _ ↦ ?_)
-    simp [hq2 θ]
+    have := TauCeti.FiniteField.finite_frobeniusFixedSubalgebra (K := R ⧸ P) (A := S ⧸ Q)
+      two_ne_zero
+    refine .of_injective (β := TauCeti.FiniteField.frobeniusFixedSubalgebra (R ⧸ P) (S ⧸ Q) 2)
+      (fun θ ↦ ⟨θ, TauCeti.FiniteField.mem_frobeniusFixedSubalgebra.mpr ?_⟩)
+      fun _ _ ↦ congrArg Subtype.val
+    rw [Nat.card_eq_fintype_card, hq2]
   have : Q.IsMaximal := Ideal.Quotient.maximal_of_isField Q (Finite.isField_of_domain (S ⧸ Q))
   let := Ideal.Quotient.field Q
   -- the `q`-power Frobenius of `S ⧸ Q` over `R ⧸ P` has order two

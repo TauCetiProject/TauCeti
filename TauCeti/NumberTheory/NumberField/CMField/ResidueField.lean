@@ -135,8 +135,9 @@ theorem natCard_quotient_under_mod_four_eq_three (w : Ideal (𝓞 K)) [w.IsMaxim
       linear_combination hθ2 - h1
     · linear_combination (θ ^ 2 - 1) * hθ2
   have hfin : IsOfFinOrder θ := orderOf_pos_iff.mp (by rw [horder]; norm_num)
-  have := hfin.pow_inj_mod.mp (show θ ^ Nat.card (𝓞 K⁺ ⧸ w.under (𝓞 K⁺)) = θ ^ 3 by
-    linear_combination -h - θ * hθ2)
+  have hpow : θ ^ Nat.card (𝓞 K⁺ ⧸ w.under (𝓞 K⁺)) = θ ^ 3 := by
+    linear_combination -h - θ * hθ2
+  have := hfin.pow_inj_mod.mp hpow
   rwa [horder] at this
 
 /-- **The residue fields of a CM field with fourth and seventh roots of unity at the primes fixed
@@ -173,8 +174,8 @@ theorem exists_natCard_quotient_eq_sq_and_mod_four_eq_three {ζ₄ ζ₇ : K}
     · linear_combination hsum + (3 + η + η ^ 2 + η ^ 3) * h7
   -- conjugation moves `i` modulo `w`
   have hne : ringOfIntegersComplexConj K i - i ∉ w := by
-    rw [ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi, show -i - i = -(2 * i) by ring,
-      neg_mem_iff]
+    have hneg : -i - i = -(2 * i) := by ring
+    rw [ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi, hneg, neg_mem_iff]
     refine fun h ↦ (Ideal.IsPrime.mem_or_mem inferInstance h).elim h2 fun hiw ↦ ?_
     refine Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one w).mpr ?_)
     convert w.mul_mem_left (-i) hiw using 1
