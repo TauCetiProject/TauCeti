@@ -117,16 +117,16 @@ theorem expDerivFactor_zero_left (m : ℕ) (P : R[X]) :
     expDerivFactor (0 : R) m P = derivative^[m] P := by
   induction m with
   | zero => simp
-  | succ m ih => rw [expDerivFactor_succ, ih, map_zero, zero_mul, add_zero,
-      Function.iterate_succ_apply']
+  | succ m ih => simp [expDerivFactor_succ, ih, Function.iterate_succ_apply']
 
 /-- On a constant the derivative contributes nothing: `(D + c) ^ m a = c ^ m a`. -/
 @[simp]
 theorem expDerivFactor_C (c a : R) (m : ℕ) : expDerivFactor c m (C a) = C (c ^ m * a) := by
   induction m with
   | zero => simp
-  | succ m ih => rw [expDerivFactor_succ, ih, derivative_C, zero_add, ← C_mul, pow_succ',
-      mul_assoc]
+  | succ m ih =>
+    rw [expDerivFactor_succ, ih, derivative_C]
+    simp [pow_succ', mul_assoc]
 
 /-- `(D + c) ^ m 1 = c ^ m`. -/
 @[simp]
@@ -138,8 +138,7 @@ theorem derivative_expDerivFactor (c : R) (m : ℕ) (P : R[X]) :
     derivative (expDerivFactor c m P) = expDerivFactor c m (derivative P) := by
   induction m with
   | zero => simp
-  | succ m ih => rw [expDerivFactor_succ, expDerivFactor_succ, derivative_add, derivative_C_mul,
-      ih]
+  | succ m ih => simp [expDerivFactor_succ, ih]
 
 /-- **The binomial form** `(D + c) ^ m P = ∑_{j ≤ m} (m choose j) c ^ (m - j) P⁽ʲ⁾`. -/
 theorem expDerivFactor_eq_sum (c : R) (m : ℕ) (P : R[X]) :
@@ -169,8 +168,7 @@ theorem map_expDerivFactor {S : Type*} [CommSemiring S] (f : R →+* S) (c : R) 
     (P : R[X]) : (expDerivFactor c m P).map f = expDerivFactor (f c) m (P.map f) := by
   induction m with
   | zero => simp
-  | succ m ih => rw [expDerivFactor_succ, expDerivFactor_succ, Polynomial.map_add,
-      Polynomial.map_mul, ← derivative_map, map_C, ih]
+  | succ m ih => simp [expDerivFactor_succ, ← ih, ← derivative_map]
 
 end CommSemiring
 
