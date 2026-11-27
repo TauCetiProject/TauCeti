@@ -53,6 +53,25 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {s : Set M}
 
+/-- The derivative of a `C^n` chart `q` with values in the model vector space and with `C^n`
+inverse, for `n ≠ 0`, is invertible at each point of its source, so the preimage under it of a
+subspace `V` of the model space has the dimension of `V`. -/
+theorem _root_.OpenPartialHomeomorph.finrank_comap_mfderiv {n : ℕ∞ω} (hn : n ≠ 0)
+    {q : OpenPartialHomeomorph M E} (hq : ∀ z ∈ q.source, ContMDiffAt I 𝓘(𝕜, E) n q z)
+    (hqs : ∀ z ∈ q.target, ContMDiffAt 𝓘(𝕜, E) I n q.symm z) (V : Submodule 𝕜 E) {x : M}
+    (hx : x ∈ q.source) :
+    Module.finrank 𝕜 (V.comap (mfderiv I 𝓘(𝕜, E) q x).toLinearMap) = Module.finrank 𝕜 V := by
+  have he : q.MDifferentiable I 𝓘(𝕜, E) :=
+    ⟨fun z hz ↦ ((hq z hz).mdifferentiableAt hn).mdifferentiableWithinAt,
+      fun z hz ↦ ((hqs z hz).mdifferentiableAt hn).mdifferentiableWithinAt⟩
+  let e : TangentSpace I x ≃ₗ[𝕜] E := (he.mfderiv hx).toLinearEquiv
+  have key : Module.finrank 𝕜 (V.comap (e : TangentSpace I x →ₗ[𝕜] E)) = Module.finrank 𝕜 V := by
+    rw [Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+  -- The underlying linear map of `e` is the derivative of `q` at `x` by definition, but its
+  -- codomain is `E` rather than the tangent space `TangentSpace 𝓘(𝕜, E) (q x)`, which `rw` does
+  -- not see through, so the two statements are matched up to definitional unfolding.
+  exact key
+
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   (e : s → OpenPartialHomeomorph M (F × G))

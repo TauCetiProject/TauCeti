@@ -165,27 +165,26 @@ theorem covectorPullback_add_snd_of_periodic_snd {φ : ℝ × ℝ → ℝ × ℝ
     covectorPullback φ J u η (s, t + c) = covectorPullback φ J u η (s, t) := by
   simp only [covectorPullback_apply, hφ, fderiv_add_snd_of_periodic_snd hφ]
 
-/-- The pulled-back covector field is `C^n` when `φ` is `C^(n+1)`, `η ∘ φ` is `C^n`, and on an open
-set `U` containing the support of `η ∘ φ` the structure `J ∘ φ` agrees with a jointly `C^n` family
-`J_e` and `u` is `C^n` at `φ ζ`. This is how a covector field supported far out on a cylindrical
-end, where `J` is an end structure `J_e(t)`, reads in the end chart. -/
+/-- The pulled-back covector field is `C^n` when `η ∘ φ` is `C^n`, and on an open set `U`
+containing the support of `η ∘ φ` the map `φ` is `C^(n+1)`, the structure `J ∘ φ` agrees with a
+jointly `C^n` family `J_e` and `u` is `C^n` at `φ ζ`. This is how a covector field supported far
+out on a cylindrical end, where `J` is an end structure `J_e(t)`, reads in the end chart. -/
 theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Je : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞}
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hφ : ContDiff ℝ (n + 1) φ)
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hφ : ∀ ζ ∈ U, ContDiffAt ℝ (n + 1) φ ζ)
     (hJe : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ Je p.1 p.2) (hJeq : EqOn (J ∘ φ) Je U)
     (hu : ∀ ζ ∈ U, ContDiffAt ℝ n u (φ ζ)) (hηφ : ContDiff ℝ n (η ∘ φ))
     (hsupp : tsupport (η ∘ φ) ⊆ U) :
     ContDiff ℝ n (covectorPullback φ J u η) := by
-  have hA : ContDiff ℝ n fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
-    (hφ.fderiv_right le_rfl).clm_apply contDiff_const
   refine contDiff_covectorPullback_of_contDiffOn hU (fun ζ hζ ↦ ?_) hηφ hsupp
+  have hA : ContDiffAt ℝ n (fun ζ' ↦ fderiv ℝ φ ζ' stdComplexLineReal) ζ :=
+    ((hφ ζ hζ).fderiv_right le_rfl).clm_apply contDiffAt_const
   -- Near `ζ ∈ U` the factor `a + b J(φ ·, u ∘ φ)` is `a + b J_e(·, u ∘ φ)`, which is `C^n`.
   have hJζ : ContDiffAt ℝ n (fun ζ' ↦ Je ζ' (u (φ ζ'))) ζ :=
     hJe.contDiffAt.comp ζ (contDiffAt_id.prodMk ((hu ζ hζ).comp ζ
-      (hφ.contDiffAt.of_le le_self_add)))
-  refine (ContDiffAt.congr_of_eventuallyEq (((contDiff_fst.comp hA).contDiffAt.smul
-    (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add
-    ((contDiff_snd.comp hA).contDiffAt.smul hJζ)) ?_).contDiffWithinAt
+      ((hφ ζ hζ).of_le le_self_add)))
+  refine (ContDiffAt.congr_of_eventuallyEq ((hA.fst.smul
+    (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add (hA.snd.smul hJζ)) ?_).contDiffWithinAt
   filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
   simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
 

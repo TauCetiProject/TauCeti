@@ -278,6 +278,13 @@ instance epi_homologyMap_fibreInclusionChainMap_succ (n : ℕ)
     Epi (homologyMap (fibreInclusionChainMap φ R) (n + 1)) :=
   (wang_exact₃ φ R n).epi_f (wangδ_eq_zero φ R n)
 
+/-- If `𝟙 - φ_*` is a monomorphism on `Hₙ(F)` and `Hₙ₊₁(F)` vanishes, then `Hₙ₊₁(T_φ)` vanishes. -/
+theorem isZero_homology_succ (n : ℕ) [Mono (homologyMap (wangEndomorphism φ R) n)]
+    (h : IsZero ((((singularChainComplexFunctor A).obj R).obj (TopCat.of F)).homology (n + 1))) :
+    IsZero ((((singularChainComplexFunctor A).obj R).obj
+      (TopCat.of (MappingTorus φ))).homology (n + 1)) :=
+  h.of_epi (homologyMap (fibreInclusionChainMap φ R) (n + 1))
+
 /-- If the monodromy acts trivially on `Hₙ(F)`, the fibre inclusion `Hₙ(F) ⟶ Hₙ(T_φ)` is a
 monomorphism. -/
 theorem mono_homologyMap_fibreInclusionChainMap (n : ℕ)

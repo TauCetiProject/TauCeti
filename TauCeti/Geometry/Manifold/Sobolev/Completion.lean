@@ -406,7 +406,7 @@ theorem exists_norm_chartReading_le
     ∃ C, ∀ u, ‖chartReading he' φ s u‖ ≤ C * ‖chartReading he ψ s u‖ := by
   choose C hC using fun j i ↦
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le (he' j) (he i)
-      (φ j) (ψ i) s
+      (φ j) (ψ i) ENNReal.one_lt_two ENNReal.ofNat_ne_top s
   refine ⟨∑ j, ∑ i, |C j i|, fun u ↦ ?_⟩
   -- `u = ∑ᵢ Ψᵢ u`, and each piece is read again in every chart `e'ⱼ`.
   have hu : u = ∑ i, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal ((e i).cutoffPullback (he i) (ψ i) 1))
