@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Covering
-public import TauCeti.AlgebraicGeometry.Sites.Proetale.EtaleComparison
+public import Mathlib.AlgebraicGeometry.Sites.Proetale
 
 /-!
 # The étale and pro-étale sites of the empty scheme
 
 For the empty scheme `X`, every object of the small étale site and of the small pro-étale site
 has empty underlying scheme, so the empty sieve covers it and both topologies are the topology
-`⊤` in which every sieve covers. Every sheaf on either site, with values in any category, is then
-terminal, so between two sheaves there is exactly one morphism: each sheaf category is a point.
+`⊤` in which every sieve covers. Every sheaf on either site, with values in any category `A`, is
+then terminal, so between two sheaves there is at most one morphism, and exactly one when both
+exist. Each sheaf category is therefore empty or a point; it is a point when `A` has a terminal
+object.
 -/
 
 public section

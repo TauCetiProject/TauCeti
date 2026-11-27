@@ -38,8 +38,6 @@ along the inclusion and pro-étale sheafification exist.
 
 * `AlgebraicGeometry.Scheme.toProEt`: the inclusion `X.Etale ⥤ X.ProEt`, fully faithful
   (`AlgebraicGeometry.Scheme.toProEtFullyFaithful`), with `toProEt_comp_forget`.
-* `AlgebraicGeometry.Scheme.isEmpty_proEt_left`: a weakly étale scheme over an empty scheme is
-  empty, as Tau Ceti's `AlgebraicGeometry.Scheme.isEmpty_etale_left` says for étale schemes.
 * `AlgebraicGeometry.Scheme.preservesFiniteLimits_toProEt` and
   `AlgebraicGeometry.Scheme.isContinuous_toProEt`: the inclusion is a morphism of sites.
 * `AlgebraicGeometry.Scheme.proetalePushforward`, `AlgebraicGeometry.Scheme.proetalePullback`,
@@ -105,11 +103,6 @@ instance preservesFiniteLimits_toProEt : PreservesFiniteLimits (toProEt X) :=
 
 instance : RepresentablyFlat (toProEt X) :=
   flat_of_preservesFiniteLimits _
-
-variable {X} in
-/-- Every scheme weakly étale over an empty scheme is itself empty. -/
-instance isEmpty_proEt_left [IsEmpty X] (V : X.ProEt) : IsEmpty V.left :=
-  Function.isEmpty (β := X) V.hom
 
 /-- The small pro-étale topology is restricted from the big pro-étale topology on `X`-schemes
 along the forgetful functor. -/
