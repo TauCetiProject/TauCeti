@@ -383,13 +383,8 @@ theorem cohomologyMap_homologyπ_eq_of_forall_nhds {f g : C(X, Y)} {n : ℕ}
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0) :
     (cohomologyMap R M f n).hom (((cochainComplex R Y M).homologyπ n).hom z) =
       (cohomologyMap R M g n).hom (((cochainComplex R Y M).homologyπ n).hom z) := by
-  have hnat (k : C(X, Y)) :
-      (cohomologyMap R M k n).hom (((cochainComplex R Y M).homologyπ n).hom z) =
-        ((cochainComplex R X M).homologyπ n).hom
-          ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) :=
-    (ConcreteCategory.congr_hom
-      (HomologicalComplex.homologyπ_naturality (cochainComplexMap R M k) n) z)
-  rw [hnat, hnat]
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ,
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
   have hinj := (ModuleCat.mono_iff_injective ((cochainComplex R X M).iCycles n)).1 inferInstance
   have hi (k : C(X, Y)) : ((cochainComplex R X M).iCycles n).hom
       ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) =

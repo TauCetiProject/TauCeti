@@ -45,8 +45,9 @@ in the other order for an L² function given by an almost-everywhere representat
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). Integration against a square-integrable real function
 `h` is the inner product with `h`, hence Lipschitz on `Lp ℝ 2 μ` with constant `‖h‖₂`
 (`MeasureTheory.MemLp.lipschitzWith_integral_mul`). On a finite measure space the pairing of a
-constant class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`). The zero class
-pairs to zero with every function
+constant class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`), and in the other
+order `⟪∫ f, c⟫` (`MeasureTheory.L2.inner_const_right`). The zero class pairs to zero with every
+function
 (`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
 preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
@@ -329,6 +330,13 @@ theorem MemLp.lipschitzWith_integral_mul {h : α → ℝ} (hh : MemLp h 2 μ) :
 theorem L2.inner_const_left [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E] (c : E)
     (f : Lp E 2 μ) : ⟪Lp.const 2 μ c, f⟫_𝕜 = ⟪c, ∫ x, f x ∂μ⟫_𝕜 := by
   rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_eq_inner_setIntegral, setIntegral_univ]
+
+/-- On a finite measure space, the L² inner product of an L² function `f` with the constant class
+`c` is the inner product of `∫ f` with `c`. -/
+@[simp]
+theorem L2.inner_const_right [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E] (c : E)
+    (f : Lp E 2 μ) : ⟪f, Lp.const 2 μ c⟫_𝕜 = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  rw [← inner_conj_symm, L2.inner_const_left, inner_conj_symm]
 
 /-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
 theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :

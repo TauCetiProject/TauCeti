@@ -246,7 +246,7 @@ theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
   exact (Complex.measurable_ofReal.comp continuous_sqrt.measurable).mul measurable_gaussianTheta
 
 /-- A pointwise exponential majorant for the Gaussian weights of both parities. -/
-private theorem norm_gaussianMonomial_le (j : Fin 2) (x : ℝ) :
+theorem norm_gaussianMonomial_le (j : Fin 2) (x : ℝ) :
     ‖gaussianMonomial j x‖ ≤ 3 * exp (-|x|) ^ 2 := by
   have hpow : |x| ^ j.val ≤ exp |x| :=
     calc |x| ^ j.val ≤ |x| + 1 := by fin_cases j <;> simp
@@ -352,6 +352,13 @@ theorem gaussianDirichletTheta_def (j : ℕ) (a : ℕ → ℂ) (t : ℝ) :
     ∑' n : ℕ, a (n + 1) *
       (((n + 1 : ℕ) * t) ^ j * Real.exp (-Real.pi * ((n + 1 : ℕ) * t) ^ 2) : ℝ) :=
   (rfl)
+
+/-- At parity degrees, the positive-natural and successor-indexed theta sums agree. -/
+theorem gaussianTheta_eq_gaussianDirichletTheta (j : Fin 2) (a : ℕ → ℂ) (t : ℝ) :
+    gaussianTheta j a t = gaussianDirichletTheta j.val a t := by
+  rw [gaussianTheta_def, gaussianDirichletTheta_def]
+  simpa only [gaussianMonomial, PNat.mk_coe] using
+    (tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ a n * (gaussianMonomial j (n * t) : ℂ)))
 
 /-- The theta sum with the zero coefficient sequence vanishes. -/
 @[simp] theorem gaussianDirichletTheta_zero (j : ℕ) (t : ℝ) :

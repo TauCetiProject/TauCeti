@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Center.Basic
 public import Mathlib.CategoryTheory.Discrete.Basic
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Center.Basic
 
 /-!
 # The centre of a disjoint union of copies of a one-object groupoid
@@ -49,12 +50,6 @@ namespace CategoryTheory.Pseudofunctor.BandFixtures
 
 variable {I : Type u} {G : Type v}
 
-/-- A central endomorphism of `Discrete I × SingleObj G` is determined by its group components. -/
-theorem catCenter_ext_discrete_prod_singleObj [Monoid G]
-    {z w : CatCenter (Discrete I × SingleObj G)}
-    (h : ∀ x : Discrete I × SingleObj G, (z.app x).2 = (w.app x).2) : z = w :=
-  CatCenter.ext _ _ fun x ↦ Prod.hom_ext (Subsingleton.elim _ _) (h x)
-
 section CommMonoid
 
 variable [CommMonoid G]
@@ -88,13 +83,13 @@ theorem componentCenter_app_snd (a : I → G) (x : Discrete I × SingleObj G) :
 @[simp]
 theorem componentCenter_mul (a b : I → G) :
     componentCenter (a * b) = componentCenter a * componentCenter b :=
-  catCenter_ext_discrete_prod_singleObj fun x ↦ by
+  CatCenter.ext_prod_singleObj fun x ↦ by
     simp [CatCenter.mul_app', SingleObj.comp_as_mul]
 
 /-- The centre of the trivial profile is the identity. -/
 @[simp]
 theorem componentCenter_one : componentCenter (1 : I → G) = 1 :=
-  catCenter_ext_discrete_prod_singleObj fun _ ↦ by
+  CatCenter.ext_prod_singleObj fun _ ↦ by
     simp [CatCenter.app_one, SingleObj.id_as_one]
 
 end CommMonoid
@@ -141,7 +136,7 @@ def componentCenterEquiv : (I → G) ≃* (CatCenter (Discrete I × SingleObj G)
   toFun := componentCenterUnit
   invFun z i := (z.val.app (⟨i⟩, SingleObj.star G)).2
   left_inv _ := rfl
-  right_inv _ := Units.ext <| catCenter_ext_discrete_prod_singleObj fun ⟨⟨_⟩, ⟨⟩⟩ ↦ rfl
+  right_inv _ := Units.ext <| CatCenter.ext_prod_singleObj fun ⟨⟨_⟩, ⟨⟩⟩ ↦ rfl
   map_mul' := componentCenterUnit_mul
 
 @[simp]

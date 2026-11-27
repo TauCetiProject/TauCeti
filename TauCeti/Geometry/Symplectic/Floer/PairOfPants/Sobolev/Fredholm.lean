@@ -42,7 +42,7 @@ the cokernel comes from a right parametrix spliced from local inverses.
   (`Real.smoothTransition.norm_sub_mul_norm_fderiv_add_mul_norm_sub_sq_le`) does not depend on
   `b`. Far enough out, an inverse of the end model
   carries such a cutoff up to a compact operator and an operator of norm at most `1 / 4`
-  (`exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer`, in
+  (`hasEndParametrixPiece_floerConformalJetCoeff`, in
   the namespace `TauCeti.SymplecticForm`). The three end cutoffs sum to one outside the compact
   truncation `S_{T+1}` of `S` (`TauCeti.ThricePuncturedSphere.truncation`).
 * **The core.** The leftover `1 - ∑ β_q` is supported in that compact region. A finite partition
@@ -54,6 +54,13 @@ the cokernel comes from a right parametrix spliced from local inverses.
   matters: it is the stationary cylinder operator over the orbit of the end at `0`, with the
   constant structure `J(z₀, u z₀)`, which is invertible
   (`TauCeti.SymplecticForm.isInvertible_stationarySobolevOperator_of_compatible`).
+
+The splicing uses the data only through the end pieces, so it proves more generally that `D_u`
+is Fredholm as soon as its kernel is finite-dimensional and each end carries an end piece
+(`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_of_endParametrix`); for data
+that are the pair-of-pants data far out on an end with a nondegenerate asymptotic orbit, the end
+piece is the one above
+(`TauCeti.SymplecticForm.hasEndParametrixPiece_floerConformalJetCoeff_of_isNondegenerateFixedPt`).
 
 The invertibility of the stationary operators at the asymptotic orbits is where the unitary
 trivialization, the `C³` end Hamiltonians, the periodicity of the orbits and the `C²` structures
@@ -536,76 +543,26 @@ namespace TauCeti.SymplecticForm
 open Floer StripSobolev
 open scoped NNReal
 
-section Fredholm
+section EndPieces
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The end pieces of a right parametrix.** Under the hypotheses of
-`isFredholm_floerConformalSobolevOperator_pairOfPants`, for every large enough height `T` the
-cutoff of each end `q` at the height `T` carries an inverse of the end model of `D_u` up to a
-compact operator and an operator of norm at most `1 / 4`. -/
-private theorem exists_endCutoff_pieces (ω : SymplecticForm F)
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : Puncture → ℝ → F → ℝ} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 3 (uncurry (H q))) {L : Puncture → ℝ≥0}
-    (hX : ∀ q, LipschitzWith (L q)
-      (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
-    {x : Puncture → ℝ → F}
-    (hx : ∀ q t, HasDerivAt (x q)
-      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x q t)) t)
-    (hxp : ∀ q, Periodic (x q) 1)
-    (hnd : ∀ q, IsNondegenerateFixedPt 𝓘(ℝ, F)
-      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) (hX q) 0 1) (x q 0))
-    {J : ℝ × ℝ → F → AlmostComplexStructure F}
-    {Je : Puncture → ℝ → F → AlmostComplexStructure F} {R₁ : ℝ}
-    (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × F ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
-    (hJx : ∀ q, ContDiff ℝ 2 fun t ↦ (Je q t (x q t)).toLinearMap.toContinuousLinearMap)
-    (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
-    {Ks Kt : ℝ × ℝ → F → ℝ}
-    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
-      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
-        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    {u : ℝ × ℝ → F} (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
-    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] F))
-    (hM : MemLp (ω.floerConformalJetCoeff cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
-        (volume.restrict thricePuncturedSphereReal))
-    (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
-      (Icc 0 1))
-    (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
-      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
-        (s, t)) 0 atTop (Icc 0 1)) :
-    ∃ T₀, ∀ T, T₀ ≤ T → ∀ q, ∃ (Q : Lp F 2 stripMeasure →L[ℝ] CylinderSobolev.H1 F)
-      (K E : Lp F 2 stripMeasure →L[ℝ] Lp F 2 stripMeasure), IsCompactOperator K ∧
+/-- **The end pieces of a right parametrix.** Let `D` be a first-order operator on `S` with an
+essentially bounded coefficient field `M` on conformal jets, and let each end `q` carry an end
+piece (`TauCeti.Floer.HasEndParametrixPiece`): an operator `Q` inverting `D` on cutoffs living far
+enough out on `q`, up to a compact operator and an operator of norm at most `B ε`. Then for every
+large enough height `T` the cutoff of each end `q` at the height `T` carries such an inverse with
+an error of norm at most `1 / 4`. -/
+private theorem exists_endCutoff_pieces {M : ℝ × ℝ → V × V × V →L[ℝ] V}
+    (hend : ∀ q : Puncture, HasEndParametrixPiece q M) :
+    ∃ T₀, ∀ T, T₀ ≤ T → ∀ q, ∃ (Q : Lp V 2 stripMeasure →L[ℝ] CylinderSobolev.H1 V)
+      (K E : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure), IsCompactOperator K ∧
         ‖E‖ ≤ 1 / 4 ∧ ∀ h, ((positiveEndChartLp q).symm (jetOperator 2
-          (volume.restrict thricePuncturedSphereReal) (ω.floerConformalJetCoeff cylindricalWeight
-            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)
-              (endTransfer q (endCutoff q T) (Q h))) : ℝ × ℝ → F) =ᵐ[stripMeasure]
+          (volume.restrict thricePuncturedSphereReal) M
+              (endTransfer q (endCutoff q T) (Q h))) : ℝ × ℝ → V) =ᵐ[stripMeasure]
           fun ζ ↦ endCutoff q T (positiveEndChart q ζ) • h ζ + K h ζ + E h ζ := by
   obtain ⟨L', hL'⟩ := smoothTransition.exists_forall_norm_deriv_le
-  -- Far out on each end the data are those of the end, and the end model is invertible.
-  have hend (q : Puncture) :=
-    ω.exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer hH
-      ((hHs q).of_le (by norm_num)) (hJe q) (T := max R₁ 1)
-    (fun ζ hζ ↦ hJeq q ζ ((le_max_left _ _).trans hζ))
-    (fun ζ hζ ↦ hK q _ (positiveEndChart_mem_thricePuncturedSphereReal
-      (by linarith [le_max_right R₁ 1])) (by
-        rw [fst_positiveEndCoord_positiveEndChart]; exact (le_max_left _ _).trans hζ))
-    (fun ζ hζ ↦ (hu _ (positiveEndChart_mem_thricePuncturedSphereReal
-      (by linarith [le_max_right R₁ 1]))).differentiableAt one_ne_zero)
-    (fun ζ hζ ↦ hF q _ (positiveEndChart_mem_thricePuncturedSphereReal
-      (by linarith [le_max_right R₁ 1])) (by
-        rw [fst_positiveEndCoord_positiveEndChart]; exact (le_max_left _ _).trans hζ))
-    hM (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt) (hux q) (hδ q)
-    (isInvertible_stationarySobolevOperator_of_compatible ω hω (hX q)
-      (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (periodic_positiveEndHamiltonian (hH q))
-      (hx q) (hxp q) (hnd q) (fun t ↦ hJex q t) (hJx q) fun t ↦ by
-        have h₁ := hJeq q (R₁, t + 1) le_rfl
-        rw [positiveEndChart_add_one, hJeq q (R₁, t) le_rfl] at h₁
-        simp only [hxp q t, ← h₁])
-  choose Q hQ using hend
+  choose Q hQ using fun q ↦ (hasEndParametrixPiece_def q M).1 (hend q)
   -- The bound `B` of the end cutoffs does not depend on the height.
   set B := 3 + L' * (2 * ‖(Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)‖ * 3)
   have hB : 0 < B := by
@@ -626,6 +583,12 @@ private theorem exists_endCutoff_pieces (ω : SymplecticForm F)
     (fun ζ hζ ↦ endCutoff_positiveEndChart_eq_zero q (hζ.trans hTq))
     (fun ζ hζ ↦ fderiv_endCutoff_positiveEndChart_eq_zero q (hζ.imp (·.trans hTq) id))
   exact ⟨Q q, K, E, hKc, hE.trans_eq (by field_simp; ring), hid⟩
+
+end EndPieces
+
+section Fredholm
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
 
 /-- **A frozen piece of the core.** At each point `z₀` of `S` there are a neighbourhood `U` and
 an operator `Q` such that every cutoff supported in `U`, admissible for the transfer along the end
@@ -752,6 +715,136 @@ private theorem exists_core_pieces (ω : SymplecticForm F)
   · rw [image_eq_zero_of_notMem_tsupport hz, zero_mul]
     exact (image_eq_zero_of_notMem_tsupport hz).symm
 
+/-- **The linearized Floer operator on the pair of pants is Fredholm once its ends carry
+parametrix pieces.** Let `F` be a finite-dimensional complex inner product space whose symplectic
+form `ω` is `Im ⟪·, ·⟫`, and let `(J, K_s, K_t)` be Floer data on the pair of pants
+`S = ℂ ∖ {0, 1}` with `J(z, u z)` continuous along `u` and `ω`-compatible, whose coefficient field
+on the conformal jets of the cylindrical weight is essentially bounded along `u`. Suppose that the
+realization `D_u : W^{1,2}_0(S, F) → L²(S, F)` of the linearized Floer operator has
+finite-dimensional kernel, and that each end `q` carries an end piece of a right parametrix
+(`TauCeti.Floer.HasEndParametrixPiece`): an operator `Q` such that `D_u` applied to the transfer
+`β · (Q h ∘ ψ)` along the end chart, for a cutoff `β` living far enough out on `q`, is the transfer
+of `β(φ'_q) h + K h + E h` with `K` compact and `‖E‖ ≤ B ε`, as given by
+`TauCeti.Floer.hasEndParametrixPiece_of_tendsto_endModelCoeff`. Then `D_u` is
+Fredholm.
+
+The ends are not otherwise constrained, so this applies whether the data are the pair-of-pants
+data far out on each end or, for instance, a translate of them on an end. The core of `S` is
+covered by frozen pieces, whose models are stationary cylinder operators with constant compatible
+structures; their invertibility is what the nondegenerate one-periodic orbit `x₀` of the auxiliary
+`C³` Hamiltonian `H₀` supplies. -/
+theorem isFredholm_floerConformalSobolevOperator_of_endParametrix (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H₀ : ℝ → F → ℝ} {L₀ : ℝ≥0}
+    (hX₀ : LipschitzWith L₀ (ω.timeDependentHamiltonianSuspension H₀))
+    (hH₀ : ContDiff ℝ 3 (uncurry H₀)) (hH₀p : Periodic H₀ 1) {x₀ : ℝ → F}
+    (hx₀ : ∀ t, HasDerivAt x₀ (ω.hamiltonianVectorField (H₀ t) (x₀ t)) t) (hx₀p : Periodic x₀ 1)
+    (hnd₀ : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H₀ hX₀ 0 1) (x₀ 0))
+    {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ → F → ℝ} {u : ℝ × ℝ → F}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal,
+      ContinuousAt (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap) z)
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hM : MemLp (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
+        (volume.restrict thricePuncturedSphereReal))
+    (hker : FiniteDimensional ℝ (ω.floerConformalSobolevOperator thricePuncturedSphereReal
+      cylindricalWeight (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).ker)
+    (hend : ∀ q : Puncture, HasEndParametrixPiece q (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u)) :
+    (ω.floerConformalSobolevOperator thricePuncturedSphereReal cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).IsFredholm := by
+  classical
+  -- The end pieces, at a height `T` where their operators `E_q` have norms at most `1 / 4`.
+  obtain ⟨T₀, hT₀⟩ := exists_endCutoff_pieces hend
+  set T := max T₀ 1
+  have hT1 : 1 ≤ T := le_max_right _ _
+  choose Qe Ke Ee hKe hEe hide using hT₀ T (le_max_left _ _)
+  -- The core pieces, in the end chart of `0`.
+  obtain ⟨ι, _, γ, Qc, Kc, hγ, hγS, hγB, hγsum, hKc, hidc⟩ := exists_core_pieces (J := J) (u := u)
+    (Ks := Ks) (Kt := Kt) ω hω hX₀ hH₀ hH₀p hx₀ hx₀p hnd₀ hJ hc hM hT1
+  obtain ⟨L', hL'⟩ := smoothTransition.exists_forall_norm_deriv_le
+  -- Splicing the pieces gives a right parametrix modulo compact operators.
+  have hcofg := cofg_range_jetOperator_comp_subtypeL_of_sum_eq_one (ι := Puncture ⊕ ι)
+    (Sum.elim id fun _ ↦ zero) (β := Sum.elim (fun q ↦ endCutoff q T) γ)
+    (fun i ↦ by rcases i with q | i; exacts [contDiff_endCutoff q T, hγ i])
+    (fun i ↦ by rcases i with q | i; exacts [fun z hz hc ↦
+      mem_thricePuncturedSphereReal_of_mem_tsupport_endCutoff q hT1 hz hc, hγS i])
+    (fun i ↦ by rcases i with q | i; exacts [⟨_, fun z hc ↦ endCutoff_bound hL' q hT1 hc⟩, hγB i])
+    (fun z _ ↦ by simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, hγsum]; ring)
+    (Sum.elim Qe Qc) (Sum.elim Ke Kc) (Sum.elim Ee fun _ ↦ 0)
+    (fun i ↦ by rcases i with q | i; exacts [hKe q, hKc i])
+    (by
+      simp [Fintype.sum_sum_type, Puncture.sum_univ, ContinuousLinearMap.opNorm_zero]
+      linarith [hEe zero, hEe one, hEe inf])
+    (fun i h ↦ by
+      rcases i with q | i
+      · exact hide q h
+      · filter_upwards [hidc i h, Lp.coeFn_zero (E := F) (p := 2) (μ := stripMeasure)] with ζ h₁ h₂
+        simp only [Sum.elim_inr]
+        rw [h₁, zero_apply, h₂, Pi.zero_apply, add_zero])
+  rw [floerConformalSobolevOperator_def] at hker ⊢
+  exact .of_finite_ker_coker _ hker hcofg
+
+/-- **The end piece of a pair of pants at a nondegenerate orbit.** Let `F` be a
+finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and let
+the Floer data `(J, K_s, K_t)` beyond the height `R₁` of the end `q` of `S` be the structures
+`J_q(t)` of a `C¹` family, read in the positive end chart, and the pair-of-pants perturbation of
+period-one Hamiltonians `H` with `H_q` jointly `C³`. Let `u` be differentiable and solve the Floer
+equation there, with essentially bounded coefficient field on conformal jets, and let the loops of
+`u ∘ φ'_q` converge uniformly to a nondegenerate one-periodic orbit `x` of the end Hamiltonian, with
+slice defect tending uniformly to zero, along which `J_q(t)` is `ω`-compatible and `C²` in `t`.
+Then `D_u` has an end piece of a right parametrix on `q`
+(`TauCeti.Floer.HasEndParametrixPiece`): the stationary operator at `x` is invertible
+(`isInvertible_stationarySobolevOperator_of_compatible`), so
+`hasEndParametrixPiece_floerConformalJetCoeff` applies. -/
+theorem hasEndParametrixPiece_floerConformalJetCoeff_of_isNondegenerateFixedPt
+    (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : Puncture → ℝ → F → ℝ}
+    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} (hHs : ContDiff ℝ 3 (uncurry (H q))) {L : ℝ≥0}
+    (hX : LipschitzWith L (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
+    {x : ℝ → F}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    (hxp : Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) hX 0 1) (x 0))
+    {J : ℝ × ℝ → F → AlmostComplexStructure F} {Jq : ℝ → F → AlmostComplexStructure F} {R₁ : ℝ}
+    (hJq : ContDiff ℝ 1 fun p : ℝ × F ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJqx : ∀ t, ω.Compatible (Jq t (x t)))
+    (hJx : ContDiff ℝ 2 fun t ↦ (Jq t (x t)).toLinearMap.toContinuousLinearMap)
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Jq ζ.2)
+    {Ks Kt : ℝ × ℝ → F → ℝ}
+    (hK : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {u : ℝ × ℝ → F}
+    (hu : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      DifferentiableAt ℝ u z)
+    (hF : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] F))
+    (hM : MemLp (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
+        (volume.restrict thricePuncturedSphereReal))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) x atTop (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1)) :
+    HasEndParametrixPiece q (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) := by
+  -- Beyond the height `max R₁ 1`, the chart lands in `S` at end coordinates at least `R₁`.
+  have hS {ζ : ℝ × ℝ} (hζ : max R₁ 1 ≤ ζ.1) : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal (by linarith [le_max_right R₁ 1])
+  have hR {ζ : ℝ × ℝ} (hζ : max R₁ 1 ≤ ζ.1) : R₁ ≤ (positiveEndCoord q (positiveEndChart q ζ)).1 :=
+    by rw [fst_positiveEndCoord_positiveEndChart]; exact (le_max_left _ _).trans hζ
+  exact ω.hasEndParametrixPiece_floerConformalJetCoeff hH (hHs.of_le (by norm_num)) hJq
+    (T := max R₁ 1) (fun ζ hζ ↦ hJeq ζ ((le_max_left _ _).trans hζ))
+    (fun ζ hζ ↦ hK _ (hS hζ) (hR hζ)) (fun ζ hζ ↦ hu _ (hS hζ) (hR hζ))
+    (fun ζ hζ ↦ hF _ (hS hζ) (hR hζ)) hM
+    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) hux hδ
+    (isInvertible_stationarySobolevOperator_of_compatible ω hω hX
+      (contDiff_uncurry_positiveEndHamiltonian hHs) (periodic_positiveEndHamiltonian (hH q))
+      hx hxp hnd hJqx hJx
+      (periodic_apply_of_forall_positiveEndChart_add_eq q 0
+        (fun ζ hζ ↦ by rw [add_zero]; exact hJeq ζ hζ) hxp))
+
 /-- **The linearized operator of a pair of pants is Fredholm.** Let `F` be a finite-dimensional
 complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and let `H_q` be jointly
 `C³` period-one Hamiltonians on the three ends of the pair of pants `S = ℂ ∖ {0, 1}`, with
@@ -801,47 +894,21 @@ theorem isFredholm_floerConformalSobolevOperator_pairOfPants (ω : SymplecticFor
         (s, t)) 0 atTop (Icc 0 1)) :
     (ω.floerConformalSobolevOperator thricePuncturedSphereReal cylindricalWeight
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).IsFredholm := by
-  classical
   have hHs₂ (q : Puncture) : ContDiff ℝ 2 (uncurry (H q)) := (hHs q).of_le (by norm_num)
   have hM := ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs₂
     (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn) hJe
     hJeq hK hJ hKs hKt hu hF hux hδ
-  -- The end pieces, at a height `T` where their operators `E_q` have norms at most `1 / 4`.
-  obtain ⟨T₀, hT₀⟩ := exists_endCutoff_pieces ω hω hH hHs hX hx hxp hnd hJe hJex hJx hJeq hK hu hF
-    hM hux hδ
-  set T := max T₀ 1
-  have hT1 : 1 ≤ T := le_max_right _ _
-  choose Qe Ke Ee hKe hEe hide using hT₀ T (le_max_left _ _)
-  -- The core pieces, in the end chart of `0`.
-  obtain ⟨ι, _, γ, Qc, Kc, hγ, hγS, hγB, hγsum, hKc, hidc⟩ := exists_core_pieces (J := J) (u := u)
-    (Ks := Ks) (Kt := Kt) ω hω (hX zero)
+  -- Far out on each end the data are those of the end, at a nondegenerate orbit.
+  have hend (q : Puncture) :=
+    ω.hasEndParametrixPiece_floerConformalJetCoeff_of_isNondegenerateFixedPt hω hH (hHs q) (hX q)
+      (hx q) (hxp q) (hnd q) (hJe q) (hJex q) (hJx q) (hJeq q) (hK q)
+      (fun z hz _ ↦ (hu z hz).differentiableAt one_ne_zero) (hF q) hM (hux q) (hδ q)
+  exact isFredholm_floerConformalSobolevOperator_of_endParametrix ω hω (hX zero)
     (contDiff_uncurry_positiveEndHamiltonian (hHs zero)) (periodic_positiveEndHamiltonian (hH zero))
     (hx zero) (hxp zero) (hnd zero) (fun z hz ↦ (hJ z hz).continuousAt.comp
-      (f := fun z ↦ (z, u z)) (continuousAt_id.prodMk (hu z hz).continuousAt)) hc hM hT1
-  obtain ⟨L', hL'⟩ := smoothTransition.exists_forall_norm_deriv_le
-  -- Splicing the pieces gives a right parametrix modulo compact operators.
-  have hcofg := cofg_range_jetOperator_comp_subtypeL_of_sum_eq_one (ι := Puncture ⊕ ι)
-    (Sum.elim id fun _ ↦ zero) (β := Sum.elim (fun q ↦ endCutoff q T) γ)
-    (fun i ↦ by rcases i with q | i; exacts [contDiff_endCutoff q T, hγ i])
-    (fun i ↦ by rcases i with q | i; exacts [fun z hz hc ↦
-      mem_thricePuncturedSphereReal_of_mem_tsupport_endCutoff q hT1 hz hc, hγS i])
-    (fun i ↦ by rcases i with q | i; exacts [⟨_, fun z hc ↦ endCutoff_bound hL' q hT1 hc⟩, hγB i])
-    (fun z _ ↦ by simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, hγsum]; ring)
-    (Sum.elim Qe Qc) (Sum.elim Ke Kc) (Sum.elim Ee fun _ ↦ 0)
-    (fun i ↦ by rcases i with q | i; exacts [hKe q, hKc i])
-    (by
-      simp [Fintype.sum_sum_type, Puncture.sum_univ, ContinuousLinearMap.opNorm_zero]
-      linarith [hEe zero, hEe one, hEe inf])
-    (fun i h ↦ by
-      rcases i with q | i
-      · exact hide q h
-      · filter_upwards [hidc i h, Lp.coeFn_zero (E := F) (p := 2) (μ := stripMeasure)] with ζ h₁ h₂
-        simp only [Sum.elim_inr]
-        rw [h₁, zero_apply, h₂, Pi.zero_apply, add_zero])
-  have hker := ω.finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants hH hHs₂ hX hx hnd
-    hJe hJex hJeq hK hJ hKs hKt hu hc hF hux hδ
-  rw [floerConformalSobolevOperator_def] at hker ⊢
-  exact .of_finite_ker_coker _ hker hcofg
+      (f := fun z ↦ (z, u z)) (continuousAt_id.prodMk (hu z hz).continuousAt)) hc hM
+    (ω.finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants hH hHs₂ hX hx hnd
+      hJe hJex hJeq hK hJ hKs hKt hu hc hF hux hδ) hend
 
 end Fredholm
 
