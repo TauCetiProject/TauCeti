@@ -49,7 +49,8 @@ complex torus.
 * `PeriodPair.analyticOrderAt_weierstrassSigma_coe`: these zeros are simple.
 * `PeriodPair.weierstrassSigma_neg`, `PeriodPair.hasDerivAt_weierstrassSigma_zero`: `σ` is odd
   and `σ'(0) = 1`.
-* `PeriodPair.logDeriv_weierstrassSigma`: `σ' / σ = ζ` away from `Λ`.
+* `PeriodPair.logDeriv_weierstrassSigma`, `PeriodPair.hasDerivAt_weierstrassSigma`: `σ' / σ = ζ`
+  away from `Λ`.
 * `PeriodPair.weierstrassSigma_add_coe_of_div_two_notMem`,
   `PeriodPair.weierstrassSigma_add_coe_of_div_two_mem`, `PeriodPair.weierstrassSigma_add_coe`:
   the quasi-periodicity of `σ`.
@@ -219,6 +220,13 @@ theorem hasDerivAt_logDeriv_weierstrassSigma {z : ℂ} (hz : z ∉ L.lattice) :
   refine (L.hasDerivAt_weierstrassZeta hz).congr_of_eventuallyEq ?_
   filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hz] with w hw
   exact L.logDeriv_weierstrassSigma hw
+
+/-- **`σ' = ζ σ`** away from the lattice. -/
+theorem hasDerivAt_weierstrassSigma {z : ℂ} (hz : z ∉ L.lattice) :
+    HasDerivAt L.weierstrassSigma (L.weierstrassZeta z * L.weierstrassSigma z) z := by
+  have h := L.logDeriv_weierstrassSigma hz
+  rw [logDeriv_apply, div_eq_iff (L.weierstrassSigma_ne_zero hz)] at h
+  exact h ▸ (L.differentiable_weierstrassSigma z).hasDerivAt
 
 /-- For `l ∈ Λ`, the functions `σ(z + l)` and `exp(η(l) z) σ(z)` have the same logarithmic
 derivative `ζ(z) + η(l)` on the connected set `ℂ ∖ Λ`, so they are proportional there. -/
