@@ -70,6 +70,9 @@ theorem IsPreconnected.exists_eventually_forall_le_mul_of_locally
     (hloc : ∀ x ∈ s, ∃ V ∈ 𝓝[s] x, ∃ C : R, 0 < C ∧
       ∀ᶠ i in l, ∀ y ∈ V, u i y ≤ C * u i x ∧ u i x ≤ C * u i y) :
     ∃ C : R, 1 ≤ C ∧ ∀ᶠ i in l, ∀ x ∈ K, u i x ≤ C * u i p ∧ u i p ≤ C * u i x := by
+  -- Carry the comparison constant as an atTop coordinate so compactness chooses one constant
+  -- and one set of indices in l for all of K. Enlarging the constant preserves both bounds
+  -- because hbase gives u i p ≥ 0 and the reverse comparison gives u i x ≥ 0 (hy0 below).
   let Q (t : R × ι) (x : K) := u t.2 x ≤ t.1 * u t.2 p ∧ u t.2 p ≤ t.1 * u t.2 x
   have hnear (x : K) : ∀ᶠ z : (R × ι) × K in (atTop ×ˢ l) ×ˢ 𝓝 x, Q z.1 z.2 := by
     obtain ⟨V, hV, A, hA, hlocal⟩ := hloc x (hKs x.property)
