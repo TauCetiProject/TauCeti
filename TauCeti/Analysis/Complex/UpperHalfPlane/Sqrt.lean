@@ -21,6 +21,7 @@ automorphy factor, as in half-integral-weight transformation laws; it never vani
 ## Main results
 
 * `UpperHalfPlane.continuous_sqrt_ofReal_mul_add`: `τ ↦ √(m τ + n)` is continuous on `ℍ`.
+* `UpperHalfPlane.arg_ofReal_mul_add_eq_pi_iff`: `arg (m τ + n) = π ↔ m = 0 ∧ n < 0`.
 * `UpperHalfPlane.sqrt_denom_ne_zero`: the square root `√(c τ + d)` of an automorphy factor does
   not vanish on `ℍ`.
 -/
@@ -29,7 +30,7 @@ public section
 
 open Complex
 
-open scoped UpperHalfPlane MatrixGroups
+open scoped Real UpperHalfPlane MatrixGroups
 
 namespace UpperHalfPlane
 
@@ -45,6 +46,19 @@ theorem continuous_sqrt_ofReal_mul_add (m n : ℝ) :
     simpa [hm] using τ.im_pos.ne'
   exact (continuousAt_sqrt (Or.inr him)).comp
     (f := fun τ : ℍ ↦ (m : ℂ) * τ + n) (by fun_prop)
+
+/-- A real linear combination `m τ + n` at `τ ∈ ℍ` lies on the negative real branch cut
+(`arg = π`) if and only if `m = 0` and `n < 0`. -/
+theorem arg_ofReal_mul_add_eq_pi_iff (m n : ℝ) (τ : ℍ) :
+    ((m : ℂ) * τ + n).arg = π ↔ m = 0 ∧ n < 0 := by
+  rw [Complex.arg_eq_pi_iff]
+  constructor
+  · rintro ⟨hre, him⟩
+    have hm : m = 0 := by simpa [τ.im_ne_zero] using him
+    subst hm
+    exact ⟨rfl, by simpa using hre⟩
+  · rintro ⟨rfl, hn⟩
+    simpa using hn
 
 /-- The principal square root `√(c τ + d)` of the automorphy factor of `γ = (a b; c d)` in
 `SL(2, ℤ)` does not vanish on the upper half-plane. -/

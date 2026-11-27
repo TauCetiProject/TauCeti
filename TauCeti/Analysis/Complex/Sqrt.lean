@@ -18,11 +18,11 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
-squares back to it, proves the negation law `Complex.sqrt_neg`, and packages the principal square
-root of a nonzero complex number as a unit, `Complex.sqrtUnit`. On the open upper half-plane the
-principal square root lies in the open first quadrant (`Complex.sqrt_re_pos_iff`,
-`Complex.sqrt_im_pos`). A complex unit of absolute value one has a square root of absolute value
-one, `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
+squares back to it, proves the negation law `Complex.sqrt_neg` and inversion product law
+`Complex.sqrt_inv_mul_sqrt`, and packages the principal square root of a nonzero complex number
+as a unit, `Complex.sqrtUnit`. On the open upper half-plane the principal square root lies in the
+open first quadrant (`Complex.sqrt_re_pos_iff`, `Complex.sqrt_im_pos`). A complex unit of absolute
+value one has a square root of absolute value one, `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
@@ -103,6 +103,36 @@ theorem sqrt_neg (z : ℂ) :
     simp_rw [hcond, sqrt_eq_real_add_ite, hpos, hneg]
     simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg]
     split_ifs <;> linear_combination (√((‖z‖ - z.re) / 2) : ℂ) * I_sq
+
+/-- Multiplying `√(z⁻¹)` by `√z` for `z ≠ 0` gives `-1` on the negative real branch cut
+(`z.arg = π`) and `1` elsewhere. -/
+theorem sqrt_inv_mul_sqrt {z : ℂ} (hz : z ≠ 0) :
+    sqrt z⁻¹ * sqrt z = if z.arg = π then -1 else 1 := by
+  have hne (w : ℂ) (hw : w ≠ 0) (harg : w.arg ≠ π) : sqrt w⁻¹ * sqrt w = 1 := by
+    rw [sqrt, sqrt, inv_cpow w _ harg, ← sqrt]
+    exact inv_mul_cancel₀ (sqrt_eq_zero_iff.not.mpr hw)
+  by_cases h : z.arg = π
+  · rw [ite_eq_left h]
+    obtain ⟨hx, hy⟩ := arg_eq_pi_iff.mp h
+    have hs1 : sqrt z = I * sqrt (-z) := by
+      have h' := sqrt_neg (-z)
+      rw [neg_neg, ite_eq_right (by simp [hy, hx.le])] at h'
+      exact h'
+    have hs2 : sqrt z⁻¹ = I * sqrt (-z)⁻¹ := by
+      have hre : 0 < (-z⁻¹).re := by
+        simpa [inv_re] using neg_pos.mpr (div_neg_of_neg_of_pos hx (normSq_pos.mpr hz))
+      have him : (-z⁻¹).im = 0 := by simp [inv_im, hy]
+      have h' := sqrt_neg (-z⁻¹)
+      rw [neg_neg, ite_eq_right (by rintro (h0 | ⟨_, h0⟩) <;> linarith), ← inv_neg] at h'
+      exact h'
+    have harg_neg : (-z).arg ≠ π := fun hpi ↦ by
+      have hlt := (arg_eq_pi_iff.mp hpi).1
+      rw [neg_re] at hlt
+      linarith
+    calc sqrt z⁻¹ * sqrt z = (I * I) * (sqrt (-z)⁻¹ * sqrt (-z)) := by rw [hs1, hs2]; ring
+      _ = -1 := by rw [I_mul_I, hne (-z) (neg_ne_zero.mpr hz) harg_neg, mul_one]
+  · rw [ite_eq_right h]
+    exact hne z hz h
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

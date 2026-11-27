@@ -56,8 +56,8 @@ matched by the reciprocity law of Dedekind sums.
 * `TauCeti.ModularForm.eta_neg_one_div`: the inversion law with the root `√(-i τ)`.
 * `TauCeti.ModularForm.eta_smul`: `η(γ τ) = ε(γ) √(c τ + d) η(τ)` for `γ ∈ SL(2, ℤ)`.
 * `TauCeti.ModularForm.etaMultiplier_pow_twentyFour`,
-  `TauCeti.ModularForm.etaMultiplier_ne_zero`, `TauCeti.ModularForm.norm_etaMultiplier`,
-  `TauCeti.ModularForm.conj_etaMultiplier`: `ε(γ)²⁴ = 1` and its unit-circle consequences.
+  `TauCeti.ModularForm.etaMultiplier_ne_zero`, `TauCeti.ModularForm.norm_etaMultiplier`:
+  `ε(γ)²⁴ = 1`, `ε(γ) ≠ 0`, and `‖ε(γ)‖ = 1`.
 * `TauCeti.ModularForm.etaMultiplier_eq_of_eta_smul_eq`: `ε(γ)` is determined by the
   transformation law at a single point.
 * `TauCeti.ModularForm.etaMultiplier_T_zpow`, `TauCeti.ModularForm.etaMultiplier_S`,
@@ -76,8 +76,7 @@ matched by the reciprocity law of Dedekind sums.
 * `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero`,
   `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero_of_d_pos`,
   `TauCeti.ModularForm.etaMultiplier_of_c_eq_zero_of_d_neg`: explicit multiplier when `c = 0`.
-* `TauCeti.ModularForm.etaMultiplier_inv`, `TauCeti.ModularForm.etaMultiplier_inv_of_c_ne_zero`:
-  behavior of `ε` under matrix inversion.
+* `TauCeti.ModularForm.etaMultiplier_inv`: behavior of `ε` under matrix inversion.
 
 ## References
 
@@ -200,12 +199,6 @@ theorem etaMultiplier_ne_zero (γ : SL(2, ℤ)) : etaMultiplier γ ≠ 0 := by
 @[simp]
 theorem norm_etaMultiplier (γ : SL(2, ℤ)) : ‖etaMultiplier γ‖ = 1 :=
   norm_eq_one_of_pow_eq_one (etaMultiplier_pow_twentyFour γ) (by decide)
-
-/-- Complex conjugation inverts the eta multiplier. -/
-@[simp]
-theorem conj_etaMultiplier (γ : SL(2, ℤ)) :
-    (starRingEnd ℂ) (etaMultiplier γ) = (etaMultiplier γ)⁻¹ :=
-  (Complex.inv_eq_conj (norm_etaMultiplier γ)).symm
 
 /-- The eta multiplier is determined by the transformation law of `η` at a single point. -/
 theorem etaMultiplier_eq_of_eta_smul_eq {γ : SL(2, ℤ)} {ε : ℂ} {τ : ℍ}
@@ -492,29 +485,26 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
   have hw : w = z⁻¹ := by
     have hcoc := Matrix.SpecialLinearGroup.denom_mapGL_mul γ γ⁻¹ UpperHalfPlane.I
     rw [mul_inv_cancel, map_one, UpperHalfPlane.denom_one,
-      Matrix.SpecialLinearGroup.denom_mapGL, Matrix.SpecialLinearGroup.denom_mapGL] at hcoc
-    simp only [algebraMap_int_eq, eq_intCast] at hcoc
+      ModularGroup.denom_mapGL, ModularGroup.denom_mapGL] at hcoc
     exact eq_inv_of_mul_eq_one_left hcoc.symm
   -- An upper-triangular matrix in `SL(2, ℤ)` has `a * d = 1`, so its diagonal entries agree (`±1`).
-  have hdiag (hc : γ 1 0 = 0) :
-      (γ 0 0 = 1 ∧ γ 1 1 = 1) ∨ (γ 0 0 = -1 ∧ γ 1 1 = -1) :=
-    Int.mul_eq_one_iff_eq_one_or_neg_one.mp
+  have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 := by
+    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp
       (Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
+      with ⟨h0, h1⟩ | ⟨h0, h1⟩ <;> simp [h0, h1]
   have harg : z.arg = π ↔ γ 1 0 = 0 ∧ γ 1 1 < 0 := by
-    have hz_re : z.re = (γ 0 0 : ℝ) := by simp [z]
-    have hz_im : z.im = -(γ 1 0 : ℝ) := by simp [z]
-    rw [Complex.arg_eq_pi_iff, hz_re, hz_im, neg_eq_zero, Int.cast_eq_zero, Int.cast_lt_zero,
-      and_comm]
-    exact and_congr_right fun hc ↦ by rcases hdiag hc with ⟨h0, h1⟩ | ⟨h0, h1⟩ <;> simp [h0, h1]
+    have h := UpperHalfPlane.arg_ofReal_mul_add_eq_pi_iff
+      ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℝ) ((γ⁻¹ : SL(2, ℤ)) 1 1 : ℝ) UpperHalfPlane.I
+    simp only [Complex.ofReal_intCast] at h
+    rw [show ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℝ) = -(γ 1 0 : ℝ) by simp,
+      show ((γ⁻¹ : SL(2, ℤ)) 1 1 : ℝ) = (γ 0 0 : ℝ) by simp,
+      neg_eq_zero, Int.cast_eq_zero, Int.cast_lt_zero] at h
+    exact h.trans (and_congr_right fun hc ↦ by rw [hdiag hc])
   have hroot : Complex.sqrt w * Complex.sqrt z =
       if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1 := by
-    by_cases h : γ 1 0 = 0 ∧ γ 1 1 < 0
-    · have ha : γ 0 0 = -1 := by rcases hdiag h.1 with ⟨_, h1⟩ | ⟨h0, _⟩ <;> omega
-      have hz : z = -1 := by simp [z, h.1, ha]
-      rw [ite_eq_left h, hw, hz, inv_neg, inv_one, Complex.sqrt_neg_one, I_mul_I]
-    · rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h),
-        ← Complex.sqrt]
-      exact inv_mul_cancel₀ (UpperHalfPlane.sqrt_denom_ne_zero γ⁻¹ UpperHalfPlane.I)
+    have hz : z ≠ 0 := Complex.sqrt_eq_zero_iff.not.mp (UpperHalfPlane.sqrt_denom_ne_zero γ⁻¹ _)
+    rw [hw, Complex.sqrt_inv_mul_sqrt hz]
+    simp only [harg]
   have hprod : etaMultiplier γ * etaMultiplier γ⁻¹ *
       (if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1) = 1 := by
     apply mul_right_cancel₀ (_root_.ModularForm.eta_ne_zero UpperHalfPlane.I.coe_im_pos)
@@ -526,13 +516,5 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
     linear_combination -hprod
   · rw [mul_inv_cancel₀ (etaMultiplier_ne_zero γ)]
     linear_combination hprod
-
-/-- When `c ≠ 0`, the eta multiplier of `γ⁻¹` is the inverse of the eta multiplier of `γ`:
-`ε(γ⁻¹) = ε(γ)⁻¹`. The hypothesis `c ≠ 0` cannot be dropped altogether: when `c = 0`, the
-identity holds for `d > 0` (`γ = T ^ b`) and fails for `d < 0` (e.g. at `γ = -1`, where
-`ε(-1) = -i ≠ i = ε(-1)⁻¹`). -/
-theorem etaMultiplier_inv_of_c_ne_zero (γ : SL(2, ℤ)) (hc : γ 1 0 ≠ 0) :
-    etaMultiplier γ⁻¹ = (etaMultiplier γ)⁻¹ := by
-  rw [etaMultiplier_inv, ite_eq_right (fun h ↦ hc h.1)]
 
 end TauCeti.ModularForm
