@@ -44,7 +44,8 @@ the value of every element: the value `ξ` of an `Lᵖ` jet `(ξ, ξ_s, ξ_t) �
 `continuousValue p` of it (`TauCeti.CylinderSobolev.valueL_ae_eq_continuousValue`;
 `TauCeti.CylinderSobolev.fst_ae_eq_continuousValue` for the first component of the jet). Two
 continuous representatives are uniformly within the norm of the embedding times the `W^{1,p}`
-distance (`TauCeti.CylinderSobolev.norm_continuousValue_sub_le`). The
+distance (`ContinuousLinearMap.norm_apply_sub_apply_le`, in
+`TauCeti.Topology.ContinuousMap.Bounded.Normed`). The
 continuous representative is a section of the cylinder, of period one in `t`
 (`TauCeti.CylinderSobolev.continuousValue_add_one`), it commutes with translation
 (`TauCeti.CylinderSobolev.continuousValue_translate`), and it tends to zero along both ends,
@@ -243,20 +244,6 @@ theorem fst_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     ∀ᵐ z ∂stripMeasure, ((x : Lp (V × V × V) p stripMeasure) z).1 = continuousValue p x z := by
   filter_upwards [coeFn_valueL x, valueL_ae_eq_continuousValue hp hpt x] with z h₁ h₂
   rw [← h₁, h₂]
-
-/-- The continuous representative of a difference is the difference of the continuous
-representatives. -/
-theorem continuousValue_sub_apply (x y : W1p V p) (z : ℝ × ℝ) :
-    continuousValue p (x - y) z = continuousValue p x z - continuousValue p y z := by
-  rw [map_sub, sub_apply]
-
-/-- The continuous representatives of two elements of `W1p V p` are uniformly within the norm of
-the Sobolev embedding times their distance. -/
-theorem norm_continuousValue_sub_le (x y : W1p V p) (z : ℝ × ℝ) :
-    ‖continuousValue p x z - continuousValue p y z‖ ≤ ‖continuousValue (V := V) p‖ * ‖x - y‖ := by
-  rw [← continuousValue_sub_apply]
-  exact (BoundedContinuousFunction.norm_coe_le_norm _ _).trans
-    ((continuousValue (V := V) p).le_opNorm (x - y))
 
 /-- **The continuous representative is a section of the cylinder**: it has period one in `t`. -/
 theorem continuousValue_add_one (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) (s t : ℝ) :

@@ -18,11 +18,15 @@ In a real inner product space the coefficient `⟪f, x⟫` against a vector `f` 
 ball is at most `‖x‖`, with equality at `f = ‖x‖⁻¹ • x`, so `‖x‖` is the supremum of these
 coefficients.
 
+Over `ℝ`, splitting `d` into its component `⟪d, e⟫ e` along a vector `e` of norm at most `1` and
+the remainder `d - ⟪d, e⟫ e` does not increase length: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²`.
+
 ## Main results
 
 * `TauCeti.norm_inner_sub_one_le`: `‖⟪ξ, x⟫ - 1‖ ≤ ‖x - ξ‖` for a unit vector `ξ`.
 * `TauCeti.real_inner_inv_norm_smul_self`: `⟪‖x‖⁻¹ • x, x⟫ = ‖x‖`.
 * `TauCeti.norm_eq_iSup_real_inner`: `‖x‖ = ⨆ ‖f‖ ≤ 1, ⟪f, x⟫`.
+* `TauCeti.inner_sq_add_norm_sub_sq_le`: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²` for `‖e‖ ≤ 1`.
 -/
 
 public section
@@ -62,5 +66,13 @@ theorem norm_eq_iSup_real_inner (x : F) : ‖x‖ = ⨆ f : {f : F // ‖f‖ �
       ⟨_, hball⟩)
 
 end Real
+
+/-- For `‖e‖ ≤ 1`, the component `⟪d, e⟫` of `d` along `e` and the remainder `d - ⟪d, e⟫ e`
+together have length at most `‖d‖`. -/
+theorem inner_sq_add_norm_sub_sq_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (d : F) {e : F} (he : ‖e‖ ≤ 1) : ⟪d, e⟫_ℝ ^ 2 + ‖d - ⟪d, e⟫_ℝ • e‖ ^ 2 ≤ ‖d‖ ^ 2 := by
+  rw [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  have : ‖e‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg e) he
+  nlinarith [mul_le_mul_of_nonneg_left this (sq_nonneg ⟪d, e⟫_ℝ)]
 
 end TauCeti
