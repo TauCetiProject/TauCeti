@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Plumbing pair-of-pants perturbation data along a neck
@@ -95,6 +96,11 @@ does not depend on `L`. The curvature of the neck itself vanishes, as the datum 
   and `L > 4`, off the collar `s_∞ < 2 - L` of the inserted pair of pants, `u ∘ ψ` solves the
   Floer equation of the inserted pair of pants where `u` solves that of the glued datum, and its
   energy density is the Jacobian of `ψ` times that of `u`.
+* `TauCeti.SmoothTwoForm.perturbedMFDeriv_plumbedPerturbation_of_mem_truncation`,
+  `TauCeti.SmoothTwoForm.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le`: for a manifold
+  target and `L ≥ R + 2`, on the truncation `S_R` of the receiving pair of pants the Floer equation
+  of the glued datum is that of the receiving pair of pants, and the energy over a region of `S_R`
+  for the receiving datum is at most the energy for the glued datum.
 
 ## References
 
@@ -283,7 +289,7 @@ end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
 
-open Floer MeasureTheory
+open Floer _root_.MeasureTheory
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
@@ -520,11 +526,52 @@ theorem abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le (ω : Smooth
     (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL hBa
       hBb u))
 
+/-- On the truncation `S_R` of the receiving pair of pants, `L ≥ R + 2`, the perturbed derivative
+`du - X_K` for the plumbed perturbation `K` is the one for the perturbation of the receiving pair
+of pants. In particular `u` solves the Floer equation of one datum there exactly when it solves
+that of the other. -/
+theorem perturbedMFDeriv_plumbedPerturbation_of_mem_truncation (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hab : Hb q = Ha inf) {R : ℝ} (hRL : R + 2 ≤ L) (u : ℝ × ℝ → M) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ∈ truncation R) :
+    ω.perturbedMFDeriv
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z =
+      ω.perturbedMFDeriv
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z :=
+  ω.perturbedMFDeriv_congr_perturbation u
+    (funext fun x ↦ DFunLike.congr_fun
+      (plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation hq hab hRL hz x) 1)
+    (funext fun x ↦ DFunLike.congr_fun
+      (plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation hq hab hRL hz x) Complex.I)
+
+/-- On a measurable subset `Ω` of the truncation `S_R` of the receiving pair of pants,
+`L ≥ R + 2`, the Floer energy of `u` over `Ω` for the perturbation of the receiving pair of pants
+is at most the Floer energy of `u` for the plumbed perturbation. -/
+theorem setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hab : Hb q = Ha inf) {R : ℝ} (hRL : R + 2 ≤ L) {u : ℝ × ℝ → M}
+    {Ω : Set (ℝ × ℝ)} (hΩ : MeasurableSet Ω)
+    (hΩT : Ω ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R) {E : NNReal}
+    (hE : ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z) ≤ E) :
+    ∫ z in Ω, ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z ≤ E := by
+  refine (setIntegral_congr_fun hΩ fun z hz ↦ ?_).trans_le
+    (MeasureTheory.setIntegral_le_of_lintegral_ofReal_le hE Ω)
+  rw [floerEnergyDensity_def, floerEnergyDensity_def,
+    ω.perturbedMFDeriv_plumbedPerturbation_of_mem_truncation hq hab hRL u (hΩT hz)]
+
 end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SymplecticForm
 
-open Floer MeasureTheory
+open Floer _root_.MeasureTheory
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture} {L : ℝ}

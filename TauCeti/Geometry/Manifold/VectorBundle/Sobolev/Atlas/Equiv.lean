@@ -290,14 +290,8 @@ an element for any other: its expressions in the charts and trivializations of t
 in the local Sobolev classes, and these determine an element for the second. -/
 theorem transfersTo (hn : n ≠ 0) (hkn : (k : WithTop ℕ∞) ≤ n)
     (A A' : FiniteBundleAtlas ℂ M F V) : TransfersTo A A' volume p k :=
-  transfersTo_iff.2 fun w s hs ↦
-  haveI : IsManifold 𝓘(ℝ, ℂ) 1 M := IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
-  exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm A.chart
-    (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv (fun i ↦ A.image i)
-    (fun i ↦ (A.image i).isOpen)
-    (fun x ↦ let ⟨i, hi⟩ := A.exists_mem_dom x
-      ⟨i, A.dom_subset_chart_source i hi, A.dom_subset_baseSet i hi, A.mem_image.2 ⟨_, hi, rfl⟩⟩)
-    (fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i) hn hkn
+  transfersTo_iff.2 fun w _ hs ↦
+    exists_ae_eq_coord_of_forall_memWkpLoc_coord hn hkn (memWkpLoc_coord w hs)
 
 /-- **Equivalence of norms over surfaces.** For a `Cⁿ` bundle over a `Cⁿ` surface, `n ≠ 0`, and an
 order `k ≤ n`, the norms of `W^{k,p}(V)` for two finite bundle atlases are

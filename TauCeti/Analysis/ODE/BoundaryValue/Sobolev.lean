@@ -37,9 +37,10 @@ Floer strip over the chord. The linearized Floer operator on a strip between two
 over a common domain (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`) asks for
 invertible limits `A(±∞)` on that domain. This file constructs the domain of paths with boundary
 values in `F₀` and `F₁`, and shows that at a nondegenerate chord the operator `w' - S w` is
-invertible on it. The realization of `J` as a bounded operator on `L²`, the compactness of the
-embedding of this domain into `L²`, and the symmetry of `J (w' - S w)` for Lagrangian `F₀` and
-`F₁`, which that Fredholm theory also asks for, are not treated here.
+invertible on it. That Fredholm theory also asks for the embedding of the domain into `L²` to be
+compact, which is `TauCeti.PathSobolev.isCompactOperator_valueL` in
+`TauCeti.Analysis.ODE.BoundaryValue.Rellich`, and for the symmetry of `J (w' - S w)` for Lagrangian
+`F₀` and `F₁`, with `J` realized as a bounded operator on `L²`, which is not treated here.
 
 * **The space.** `TauCeti.PathSobolev.H1 F₀ F₁` is the closure, in `L²((0, 1], X × X)`, of the
   jets `t ↦ (w t, w' t)` of the `C¹` paths `w` with `w 0 ∈ F₀` and `w 1 ∈ F₁`
@@ -209,6 +210,12 @@ def jetH1 : boundaryPath F₀ F₁ →ₗ[ℝ] H1 F₀ F₁ :=
 theorem coe_jetH1 (w : boundaryPath F₀ F₁) :
     (jetH1 F₀ F₁ w : Lp (X × X) 2 μ₁) = jetLp F₀ F₁ w :=
   (rfl)
+
+/-- The `L²((0, 1])` norm of the jet of a path is the norm of its jet in `H1`. -/
+theorem eLpNorm_pathJet_eq (w : boundaryPath F₀ F₁) :
+    eLpNorm (pathJet (w : ℝ → X)) 2 μ₁ = ENNReal.ofReal ‖jetH1 F₀ F₁ w‖ := by
+  rw [← Submodule.norm_coe, coe_jetH1, jetLp_apply, Lp.norm_toLp,
+    ENNReal.ofReal_toReal (memLp_pathJet w).eLpNorm_ne_top]
 
 /-- The jets of classical paths are dense in `H1`. -/
 theorem denseRange_jetH1 : DenseRange (jetH1 F₀ F₁) := by
