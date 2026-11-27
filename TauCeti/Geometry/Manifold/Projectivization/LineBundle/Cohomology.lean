@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Twist
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Cech
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle
+public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Cech
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import TauCeti.Topology.Separation.Hausdorff
 import TauCeti.Topology.Sheaves.Cech.Functoriality
@@ -23,7 +24,8 @@ bundle `𝒪(k)` (`Projectivization.twistCore k`) on the complex projective line
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`). This is
 the vanishing `H¹(ℂℙ¹, 𝒪(k)) = 0` that makes a holomorphic sphere `u` with
 `u* TX ≅ 𝒪(a₁) ⊕ ⋯ ⊕ 𝒪(aₘ)`, all `aᵢ ≥ -1`, a regular sphere: for a line in `ℂPⁿ`,
-`u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`.
+`u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`. The file then carries this vanishing to such split bundles
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`).
 
 The proof compares `𝒪(k)` with the divisor sheaf `𝒪(k [∞])` of the Riemann sphere `OnePoint ℂ`,
 whose cohomology is known from Riemann–Roch on `ℙ¹`
@@ -44,6 +46,12 @@ degree `k`.
 The argument uses no Serre duality: it computes `H¹(ℂℙ¹, 𝒪(k))` from the divisor sheaves of the
 Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
 
+**Split bundles.** On `ℂℙⁿ`, `Hᵐ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` vanishes exactly when every
+`Hᵐ(ℂℙⁿ, 𝒪(k l))` does (`Projectivization.isZero_holomorphicSectionCechCohomology_twistSumCore_iff`,
+in `TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Cech`), so `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0`
+when every `k l ≥ -1`. The tangent bundle of `ℂPᵐ⁺¹` along the coordinate line is treated in
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent.Cohomology`.
+
 ## Main declarations
 
 * `Projectivization.projectiveLineToSphere`: the identification of `ℂℙ¹` with the Riemann sphere,
@@ -57,6 +65,8 @@ Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
   and its inverse by `Projectivization.inv_twistCoreDivisorHom_app_apply`.
 * `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`:
   `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`.
+* `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`:
+  `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.
 
 ## References
 
@@ -740,5 +750,22 @@ theorem isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (hk 
   exact (isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree hdeg).of_epi
     (TopCat.Hom.cechCohomologyPullback projectiveLineToSphere 1 (twistCoreDivisorHom k))
 
+/-! ### Split bundles -/
+
+section Sum
+
+variable {κ : Type} [Fintype κ] (k : κ → ℤ)
+
+/-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf
+of holomorphic sections of a finite direct sum of line bundles `𝒪(k l)` on the complex projective
+line vanishes when every twist is at least `-1`. -/
+theorem isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
+    (hk : ∀ l, -1 ≤ k l) :
+    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (κ → ℂ)
+      (twistSumCore (𝕜 := ℂ) (n := 1) k).Fiber 1) :=
+  (isZero_holomorphicSectionCechCohomology_twistSumCore_iff k 1).2 fun l ↦
+    isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (k l) (hk l)
+
+end Sum
 
 end Projectivization
