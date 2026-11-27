@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.ExactSections
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.RightExact
 public import TauCeti.AlgebraicGeometry.Sites.Big.LocallySurjective
 
