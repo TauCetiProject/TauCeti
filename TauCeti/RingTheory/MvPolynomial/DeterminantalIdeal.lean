@@ -17,11 +17,12 @@ import TauCeti.LinearAlgebra.Matrix.Determinant.PluckerRelation
 # Alternating properties, sorted generators and Plücker relations for generic minors
 
 The generic minors `Matrix.mvPolynomialMinor` of `Matrix.mvPolynomialX` are homogeneous of degree
-`Fintype.card t`, alternate under row/column permutations, vanish on repeated indices, and satisfy
-the shuffle and exchange Plücker relations. Consequently, `MvPolynomial.determinantalIdeal` is
-homogeneous, spanned by minors on `OrderEmbedding`s for linearly ordered index types, and every
-sorted minor is monic under `renameEquiv R toLex` for `MonomialOrder.lex` with diagonal leading
-term.
+`Fintype.card t`, alternate under row/column permutations, do not change when their rows and
+columns are reindexed together (for minors on the first `k` columns, also across a propositional
+equality `k = k'`), vanish on repeated indices, and satisfy the shuffle and exchange Plücker
+relations. Consequently, `MvPolynomial.determinantalIdeal` is homogeneous, spanned by minors on
+`OrderEmbedding`s for linearly ordered index types, and every sorted minor is monic under
+`renameEquiv R toLex` for `MonomialOrder.lex` with diagonal leading term.
 
 A generic minor is the generic determinant of its size with the variables renamed along its rows
 and columns (`Matrix.mvPolynomialMinor_eq_rename`). So it is nonzero on injective rows and columns
@@ -71,6 +72,17 @@ theorem mvPolynomialMinor_comp_equiv {t' : Type*} [Fintype t'] [DecidableEq t'] 
     ← det_submatrix_equiv_self e, Matrix.submatrix_submatrix]
 
 variable {R}
+
+/-- Generic minors on the first columns agree when their lists of rows agree: the minor on the
+rows `r` and the first `k` columns is the minor on the rows `r'` and the first `k'` columns when
+`k = k'` (a propositional equality, such as one between two column lengths of a Young diagram)
+and `r` lists the same rows as `r'`. -/
+theorem mvPolynomialMinor_castLE_congr {p k k' : ℕ} (hk : k = k') {r : Fin k → m}
+    {r' : Fin k' → m} (hr : ∀ a : Fin k, r a = r' (Fin.cast hk a)) (h₁ : k ≤ p) (h₂ : k' ≤ p) :
+    mvPolynomialMinor R r (Fin.castLE h₁) = mvPolynomialMinor R r' (Fin.castLE h₂) := by
+  subst hk
+  congr 1
+  exact funext fun a ↦ by simpa using hr a
 
 /-- A generic minor with a repeated row index vanishes. -/
 theorem mvPolynomialMinor_eq_zero_of_not_injective_left {r : t → m} (hr : ¬ Function.Injective r)

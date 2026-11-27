@@ -11,6 +11,8 @@ public import Mathlib.Combinatorics.Young.YoungDiagram
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Subst
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # The polynomial model of the dual Weyl modules of `GL_N`
@@ -31,6 +33,11 @@ and `TauCeti.DualWeylModule.aeval_add_ite_mul_eq_aeval`: in every commutative `R
 at every matrix over `S`, scaling a column by `c` multiplies a member by `c` to the power of the
 degree of that column, and adding `c` times an earlier column to a later one does not change its
 value.
+
+The group acts on the rows: for an `N' × N` matrix `z`, the substitution of `z * x` for the
+`N' × n` matrix of variables (`Matrix.mvPolynomialMulLeft`) keeps the column degrees and commutes
+with the column operations, so it maps the dual Weyl module in `N'` rows into the one in `N` rows
+(`TauCeti.DualWeylModule.mvPolynomialMulLeft_mem_dualWeylModule`).
 
 The minor of `x` on any `k` rows and the first `k` columns lies in the module of the column degrees
 `(1, …, 1, 0, …, 0)` (`k` ones), and the modules form a graded monoid. So the **bideterminant**
@@ -55,6 +62,9 @@ lengths of `μ` (`TauCeti.DualWeylModule.bideterminant_mem_dualWeylModule`).
   over any commutative algebra.
 * `TauCeti.DualWeylModule.map_mem_dualWeylModule_iff`: saturation, `∇_R(d) = ∇_S(d) ∩ R[x]` for
   an injective change of coefficients `R → S`.
+* `TauCeti.DualWeylModule.columnOperation_mvPolynomialMulLeft` and
+  `TauCeti.DualWeylModule.mvPolynomialMulLeft_mem_dualWeylModule`: the row action of rectangular
+  matrices commutes with the column operations and maps dual Weyl modules into dual Weyl modules.
 * `TauCeti.DualWeylModule.mvPolynomialMinor_mem_dualWeylModule`: minors on initial columns are
   members.
 * `TauCeti.DualWeylModule.bideterminant_mem_dualWeylModule`: bideterminants are members.
@@ -247,6 +257,44 @@ theorem map_mem_dualWeylModule_iff {φ : R →+* S} (hφ : Function.Injective φ
   exact Polynomial.map_injective _ (map_injective φ hφ) h
 
 end Map
+
+section RowAction
+
+variable {N' : ℕ}
+
+/-- The substitution of `z * x` commutes with the column operations, which act on the columns:
+`columnOperation` of the image is the image of `columnOperation` under the coefficientwise
+substitution. -/
+theorem columnOperation_mvPolynomialMulLeft (z : Matrix (Fin N') (Fin N) R) (s t : Fin n)
+    (f : MvPolynomial (Fin N' × Fin n) R) :
+    columnOperation R s t (Matrix.mvPolynomialMulLeft z f) =
+      Polynomial.mapAlgHom (Matrix.mvPolynomialMulLeft (n := Fin n) z)
+        (columnOperation R s t f) := by
+  have h : (columnOperation R s t).comp (Matrix.mvPolynomialMulLeft (n := Fin n) z) =
+      (Polynomial.mapAlgHom (Matrix.mvPolynomialMulLeft z)).comp
+        (columnOperation (N := N') R s t) :=
+    MvPolynomial.algHom_ext fun p => by
+      by_cases hp : p.2 = t <;>
+        simp [hp, mul_add, Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
+  exact congr($h f)
+
+/-- **The row action preserves the dual Weyl module.** For every `N' × N` matrix `z`, the
+substitution `f ↦ f (z * x)` maps the dual Weyl module of column degrees `d` in `N'` rows into the
+one in `N` rows: it keeps the column degrees and commutes with the column operations. -/
+theorem mvPolynomialMulLeft_mem_dualWeylModule (z : Matrix (Fin N') (Fin N) R) {d : Fin n → ℕ}
+    {f : MvPolynomial (Fin N' × Fin n) R} (hf : f ∈ dualWeylModule R N' d) :
+    Matrix.mvPolynomialMulLeft z f ∈ dualWeylModule R N d := by
+  rw [mem_dualWeylModule] at hf ⊢
+  refine ⟨isWeightedHomogeneous_pi_single_snd_iff.mp ?_, fun s t hst => ?_⟩
+  · rw [Matrix.mvPolynomialMulLeft_def]
+    refine (isWeightedHomogeneous_pi_single_snd_iff.mpr hf.1).aeval fun p => ?_
+    simp only [Matrix.mul_apply, Matrix.map_apply, Matrix.mvPolynomialX_apply]
+    exact IsWeightedHomogeneous.sum _ _ _ fun a _ => by
+      simpa using (isWeightedHomogeneous_C _ (z p.1 a)).mul (isWeightedHomogeneous_X R _ (a, p.2))
+  · rw [columnOperation_mvPolynomialMulLeft, hf.2 s t hst, Polynomial.coe_mapAlgHom,
+      Polynomial.map_C, AlgHom.coe_toRingHom]
+
+end RowAction
 
 end DualWeylModule
 

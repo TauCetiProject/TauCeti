@@ -18,54 +18,16 @@ tableau of shape `ν` with entries smaller than `N`, these columns are forced to
 `0, 1, …, N - 1` from top to bottom, since the entries increase strictly down a column. Deleting
 them is therefore a bijection `TauCeti.BoundedSSYT.fullColumnsEquiv` onto the semistandard
 tableaux of shape `μ` with entries smaller than `N`; its inverse writes `0, 1, …, N - 1` into the
-`d` new columns.
+`d` new columns. The cells of `ν` are matched with those of `μ` and the `d` full columns by
+`YoungDiagram.add_mem_iff_of_rowLen_eq_add` and `YoungDiagram.mem_of_rowLen_eq_add`.
 
 ## Main results
 
-* `YoungDiagram.colLen_eq_of_rowLen_eq_add` and `YoungDiagram.colLen_add_of_rowLen_eq_add`: the
-  columns of `ν` are `d` columns of height `N` followed by the columns of `μ`.
 * `TauCeti.BoundedSSYT.val_eq_of_mem_of_lt`: the entries of a full column are forced.
 * `TauCeti.BoundedSSYT.fullColumnsEquiv`: deleting the `d` full columns.
 -/
 
 public section
-
-namespace YoungDiagram
-
-variable {N d : ℕ} {μ ν : YoungDiagram}
-
-/-- Shifting a cell of `μ` by the `d` prepended columns gives a cell of `ν`, and conversely. -/
-private theorem add_mem_iff_of_rowLen_eq_add (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N)
-    (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) {i j : ℕ} : (i, j + d) ∈ ν ↔ (i, j) ∈ μ := by
-  rcases lt_or_ge i N with hi | hi
-  · rw [mem_iff_lt_rowLen, mem_iff_lt_rowLen, h i hi]
-    omega
-  · exact iff_of_false (fun hc => absurd ((lt_colLen_zero_of_mem hc).trans_le hν) (not_lt.mpr hi))
-      fun hc => absurd ((lt_colLen_zero_of_mem hc).trans_le hμ) (not_lt.mpr hi)
-
-/-- The first `d` columns of `ν` have the full height `N`. -/
-private theorem mem_of_rowLen_eq_add (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) {i j : ℕ}
-    (hi : i < N) (hj : j < d) : (i, j) ∈ ν := by
-  rw [mem_iff_lt_rowLen, h i hi]
-  omega
-
-/-- If `ν` is `μ` with `d` columns of the full height `N` prepended, these columns have height
-`N`. -/
-theorem colLen_eq_of_rowLen_eq_add (hν : ν.colLen 0 ≤ N)
-    (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) {j : ℕ} (hj : j < d) : ν.colLen j = N :=
-  eq_of_forall_lt_iff fun i => by
-    rw [← mem_iff_lt_colLen]
-    exact ⟨fun hc => (lt_colLen_zero_of_mem hc).trans_le hν, fun hi => mem_of_rowLen_eq_add h hi hj⟩
-
-/-- If `ν` is `μ` with `d` columns of the full height `N` prepended (both with at most `N` rows),
-the column `j + d` of `ν` is the column `j` of `μ`. -/
-theorem colLen_add_of_rowLen_eq_add (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N)
-    (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d) (j : ℕ) : ν.colLen (j + d) = μ.colLen j :=
-  eq_of_forall_lt_iff fun i => by
-    rw [← mem_iff_lt_colLen, ← mem_iff_lt_colLen]
-    exact add_mem_iff_of_rowLen_eq_add hμ hν h
-
-end YoungDiagram
 
 namespace TauCeti
 
@@ -114,7 +76,8 @@ private def addTableau (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N)
   row_weak' {i j₁ j₂} hj hc := by
     have hi := (lt_colLen_zero_of_mem hc).trans_le hν
     by_cases hj₂ : j₂ < d
-    · simp [show j₁ < d by omega, hj₂]
+    · have hj₁ : j₁ < d := by omega
+      simp [hj₁, hj₂]
     have hc' := (sub_mem_iff hμ hν h hj₂).mpr hc
     by_cases hj₁ : j₁ < d
     · simpa [hj₁, hj₂, hi] using U.val.le_entry hc'

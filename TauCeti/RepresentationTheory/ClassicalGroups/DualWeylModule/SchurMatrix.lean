@@ -11,8 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Subst
 public import TauCeti.RepresentationTheory.ClassicalGroups.DualWeylModule.Basis
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import Mathlib.Topology.Algebra.MvPolynomial
+import TauCeti.RingTheory.MvPolynomial.DeterminantalIdeal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Schur matrices
@@ -43,12 +43,12 @@ A shape may have columns of the full height `N`, and its tableaux in `N` letters
 both with at most `N` rows. Deleting these columns (`TauCeti.BoundedSSYT.fullColumnsEquiv`, written
 `e`) turns the bideterminant of a tableau of shape `ν` into `Δ(y) ^ d` times that of a tableau of
 shape `μ`, `Δ(y)` the minor of `y` on all rows and the first `N` columns. So the matrix
-`(schurMatrix ν z).submatrix id e.symm` is the matrix of the expansion
-`b_T(z * y) = Δ(y) ^ d * ∑ U, S T U • b_U(y)` over the tableaux `U` of the shape `μ` without full
-columns (`TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant_eq_pow_mul`), and for square
-`g` the Schur matrix of `ν` is `det g ^ d` times that of `μ`
+`S(z) = (schurMatrix ν z).submatrix id e.symm` is the matrix of the expansion
+`b_T(z * y) = Δ(y) ^ d * ∑ U, S(z) T U • b_U(y)` over the tableaux `U` of the shape `μ` without
+full columns (`TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant_eq_pow_mul`), and for
+square `g` the Schur matrix of `ν` is `det g ^ d` times that of `μ`
 (`TauCeti.DualWeylModule.schurMatrix_eq_det_pow_smul_submatrix`), so that
-`S(z * g) = det g ^ d • S(z) * S(g)` in that normalisation
+`S(z * g) = det g ^ d • (S(z) * schurMatrix μ g)`
 (`TauCeti.DualWeylModule.submatrix_schurMatrix_mul_eq_det_pow_smul`). A shape with a column taller
 than `N` has no tableau in `N` letters, and then `b_T(z * y) = 0`.
 
@@ -106,63 +106,6 @@ namespace TauCeti
 open MvPolynomial Matrix Finset
 
 namespace DualWeylModule
-
-/-! ### The row action on the dual Weyl module -/
-
-section RowAction
-
-variable {R : Type*} [CommSemiring R] {N N' n : ℕ}
-
-/-- The column degrees of the monomial `m` are the weight of `m` for the weights `Pi.single s 1`
-of the variables `x_{a,s}` of the column `s`. -/
-private theorem weight_single_snd (m : Fin N × Fin n →₀ ℕ) (s : Fin n) :
-    Finsupp.weight (fun p : Fin N × Fin n => (Pi.single p.2 1 : Fin n → ℕ)) m s =
-      ∑ a, m (a, s) := by
-  classical
-  simp [Finsupp.weight_apply, Finsupp.sum_fintype, Finset.sum_apply, Fintype.sum_prod_type,
-    Pi.single_apply]
-
-/-- The column degree condition of the dual Weyl module as a weighted homogeneity, for the weights
-`Pi.single s 1` of the variables of the column `s`. -/
-private theorem isWeightedHomogeneous_iff_sum_eq {d : Fin n → ℕ}
-    {f : MvPolynomial (Fin N × Fin n) R} :
-    f.IsWeightedHomogeneous (fun p : Fin N × Fin n => (Pi.single p.2 1 : Fin n → ℕ)) d ↔
-      ∀ m ∈ f.support, ∀ s, ∑ a, m (a, s) = d s := by
-  refine ⟨fun hf m hm s => ?_, fun hf m hm => funext fun s => ?_⟩
-  · rw [← weight_single_snd, hf (mem_support_iff.mp hm)]
-  · rw [weight_single_snd, hf m (mem_support_iff.mpr hm)]
-
-/-- The substitution of `z * y` commutes with the column operations, which act on the columns:
-`columnOperation` of the image is the image of `columnOperation` under the coefficientwise
-substitution. -/
-theorem columnOperation_mvPolynomialMulLeft (z : Matrix (Fin N') (Fin N) R) (s t : Fin n)
-    (f : MvPolynomial (Fin N' × Fin n) R) :
-    columnOperation R s t (mvPolynomialMulLeft z f) =
-      Polynomial.mapAlgHom (mvPolynomialMulLeft (n := Fin n) z) (columnOperation R s t f) := by
-  have h : (columnOperation R s t).comp (mvPolynomialMulLeft (n := Fin n) z) =
-      (Polynomial.mapAlgHom (mvPolynomialMulLeft z)).comp (columnOperation (N := N') R s t) :=
-    MvPolynomial.algHom_ext fun p => by
-      by_cases hp : p.2 = t <;>
-        simp [hp, mul_add, Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
-  exact congr($h f)
-
-/-- **The row action preserves the dual Weyl module.** For every `N' × N` matrix `z`, the
-substitution `f ↦ f (z * y)` maps the dual Weyl module of column degrees `d` in `N'` rows into the
-one in `N` rows: it keeps the column degrees and commutes with the column operations. -/
-theorem mvPolynomialMulLeft_mem_dualWeylModule (z : Matrix (Fin N') (Fin N) R) {d : Fin n → ℕ}
-    {f : MvPolynomial (Fin N' × Fin n) R} (hf : f ∈ dualWeylModule R N' d) :
-    mvPolynomialMulLeft z f ∈ dualWeylModule R N d := by
-  rw [mem_dualWeylModule] at hf ⊢
-  refine ⟨isWeightedHomogeneous_iff_sum_eq.mp ?_, fun s t hst => ?_⟩
-  · rw [mvPolynomialMulLeft_def]
-    refine (isWeightedHomogeneous_iff_sum_eq.mpr hf.1).aeval fun p => ?_
-    simp only [Matrix.mul_apply, Matrix.map_apply, mvPolynomialX_apply]
-    exact IsWeightedHomogeneous.sum _ _ _ fun a _ => by
-      simpa using (isWeightedHomogeneous_C _ (z p.1 a)).mul (isWeightedHomogeneous_X R _ (a, p.2))
-  · rw [columnOperation_mvPolynomialMulLeft, hf.2 s t hst, Polynomial.coe_mapAlgHom,
-      Polynomial.map_C, AlgHom.coe_toRingHom]
-
-end RowAction
 
 /-! ### The Schur matrix -/
 
@@ -406,15 +349,6 @@ end SchurMatrix
 section FullColumns
 
 variable {R : Type*} [CommRing R] {N N' n d : ℕ} {μ ν : YoungDiagram}
-
-/-- Minors on the first columns agree when their lists of rows agree. -/
-private theorem mvPolynomialMinor_castLE_congr {k k' : ℕ} (hk : k = k') {r : Fin k → Fin N}
-    {r' : Fin k' → Fin N} (hr : ∀ a : Fin k, r a = r' (Fin.cast hk a)) (h₁ : k ≤ n)
-    (h₂ : k' ≤ n) :
-    mvPolynomialMinor R r (Fin.castLE h₁) = mvPolynomialMinor R r' (Fin.castLE h₂) := by
-  subst hk
-  congr 1
-  exact funext fun a => by simpa using hr a
 
 variable (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N) (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d)
 include hμ hν h
