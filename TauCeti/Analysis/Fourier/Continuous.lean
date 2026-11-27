@@ -18,11 +18,11 @@ pairing and its negation, packaged so that consumers do not repeat the pairing-c
 at every call site.
 
 This file also records the elementary algebraic and `L¹` properties of the Fourier integral of a
-function: it is homogeneous for every function and additive on integrable functions, it is
-bounded from `L¹` to `L^∞` with norm at most one, and `L¹` convergence of integrable functions
-makes their Fourier integrals converge uniformly. For a family of functions depending on a real
-parameter, the inverse Fourier integral can be differentiated in the parameter under the integral
-sign under the usual domination hypothesis.
+function: it is homogeneous for every function, additive on integrable functions and zero on
+non-integrable ones, it is bounded from `L¹` to `L^∞` with norm at most one, and `L¹` convergence
+of integrable functions makes their Fourier integrals converge uniformly. For a family of functions
+depending on a real parameter, the inverse Fourier integral can be differentiated in the parameter
+under the integral sign under the usual domination hypothesis.
 
 ## Main declarations
 
@@ -30,6 +30,8 @@ sign under the usual domination hypothesis.
 * `MeasureTheory.Integrable.continuous_fourierInv`: `𝓕⁻ f` is continuous for integrable `f`.
 * `Real.fourier_const_smul`, `Real.fourier_neg`: `𝓕 (c • f) = c • 𝓕 f` and `𝓕 (-f) = -𝓕 f`;
   `Real.fourierInv_const_smul`: `𝓕⁻ (c • f) = c • 𝓕⁻ f`.
+* `Real.fourier_eq_zero_of_not_integrable`: the Fourier integral of a non-integrable function is
+  `0`.
 * `MeasureTheory.Integrable.fourier_add`, `MeasureTheory.Integrable.fourier_sub`: the Fourier
   integral is additive on integrable functions; `MeasureTheory.Integrable.fourierInv_add`: so is
   the inverse Fourier integral.
@@ -89,6 +91,14 @@ theorem fourierInv_const_smul (c : ℂ) (f : V → E) : 𝓕⁻ (c • f) = c �
 @[simp]
 theorem fourier_neg (f : V → E) : 𝓕 (-f) = -𝓕 f := by
   simpa only [neg_one_smul] using fourier_const_smul (-1) f
+
+/-- The Fourier integral of a function that is not integrable vanishes: its integrand
+`v ↦ 𝐞 (-⟪v, w⟫) • f v` is not integrable either, and the Bochner integral of a non-integrable
+function is `0` by convention. -/
+theorem fourier_eq_zero_of_not_integrable {f : V → E} (hf : ¬Integrable f) : 𝓕 f = 0 := by
+  ext w
+  rw [fourier_eq, Pi.zero_apply]
+  exact integral_undef ((fourierIntegral_convergent_iff w).not.mpr hf)
 
 end Real
 
