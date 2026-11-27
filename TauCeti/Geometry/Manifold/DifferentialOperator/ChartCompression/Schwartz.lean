@@ -32,8 +32,9 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 
 * `OpenPartialHomeomorph.overlapCutoff_spec`: the overlap cutoff is smooth with compact support in
   the source of the transition map.
-* `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback`: a cutoff `τ`
-  read on `M` absorbs a pullback through a cutoff equal to `1` on the support of `τ`.
+* `mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback` (in the
+  `OpenPartialHomeomorph` namespace): a cutoff `τ` read on `M` absorbs a pullback through a cutoff
+  equal to `1` on the support of `τ`.
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
@@ -84,7 +85,7 @@ theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
 /-- **Absorbing a cutoff into a pullback.** Multiplying the pullback `(χ₁ f) ∘ e` by a cutoff `τ`
 read on `M` through the chart, where `χ₁` equals `1` on the support of `τ`, gives the pullback
 `(τ f) ∘ e`. -/
-theorem mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback
+theorem mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback
     {τ χ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ₁ : ∀ y ∈ tsupport τ, χ₁ y = 1)
     (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) :
     LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e.cutoffPullback he τ 1))

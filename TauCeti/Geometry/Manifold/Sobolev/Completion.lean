@@ -484,6 +484,7 @@ def chartSobolevReading (s : ℝ) : chartSobolevSpace he ψ s →L[ℂ] H^{s}(Co
 
 /-- For a chart partition, the reading of `H^s(M)` in the chart `c` through the cutoff `χ` sends a
 smooth function `u` to its reading `χ · (u ∘ c⁻¹)`. -/
+@[simp]
 theorem chartSobolevReading_toChartSobolevSpace
     (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) (s : ℝ)
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
@@ -536,7 +537,8 @@ theorem exists_norm_chartReading_complexCutoffPullback_le (s : ℝ) :
   have hi (i : ι) : ‖chartReading he ψ s (c.complexCutoffPullback hc χ U) i‖ ≤
       |C i| * (‖BesselPotentialSpace.smulLeftCLM (F := ℂ) s θ‖ *
         ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖) := by
-    rw [chartReading_apply, ← mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback hc h1]
+    rw [chartReading_apply,
+      ← mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback hc h1]
     refine (hC i _).trans ?_
     rw [hread]
     exact mul_le_mul (le_abs_self _) (ContinuousLinearMap.le_opNorm _ _) (norm_nonneg _)
