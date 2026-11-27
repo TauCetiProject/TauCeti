@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Round
 public import Mathlib.Data.Nat.Factorization.Basic
+public import Mathlib.Data.Rat.Floor
 public import TauCeti.Data.ZMod.CubeRootOfUnity
 public import TauCeti.Data.ZMod.Thue
 
@@ -34,7 +36,11 @@ The proof is elementary and stays in `ℤ` and `ZMod p`.
 
 ## Main results
 
-* `Int.sq_sub_mul_add_sq_mul`: the form is multiplicative.
+* `TauCeti.sq_sub_mul_add_sq_mul`: the form is multiplicative, over any commutative ring.
+* `Int.exists_quotient_remainder_sq_sub_mul_add_sq`: Euclidean division, with a remainder of norm
+  at most `3 / 4` of the norm of the divisor.
+* `Int.exists_four_mul_eq_sq_add_three_mul_sq_iff`: `m` is of the form `a ^ 2 - a * b + b ^ 2`
+  exactly when `4 * m` is of the form `u ^ 2 + 3 * v ^ 2`.
 * `Nat.Prime.dvd_and_dvd_of_dvd_sq_sub_mul_add_sq`: a prime `q ≡ 2 (mod 3)` dividing
   `a ^ 2 - a * b + b ^ 2` divides `a` and `b`.
 * `Nat.Prime.exists_eq_sq_sub_mul_add_sq_iff`: a prime `p` is of the form
@@ -47,14 +53,46 @@ public section
 
 open Finset
 
-namespace Int
+namespace TauCeti
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- The form `a ^ 2 - a * b + b ^ 2` is multiplicative: this is the multiplicativity of the norm
+of `a + b ω` for a primitive cube root of unity `ω`. -/
+theorem sq_sub_mul_add_sq_mul (a b c d : R) :
+    (a ^ 2 - a * b + b ^ 2) * (c ^ 2 - c * d + d ^ 2) =
+      (a * c - b * d) ^ 2 - (a * c - b * d) * (a * d + b * c - b * d) +
+        (a * d + b * c - b * d) ^ 2 := by
+  ring
+
+/-- A product of two elements of the form `a ^ 2 - a * b + b ^ 2` is again of this form. -/
+theorem exists_eq_sq_sub_mul_add_sq_mul {m n : R} (hm : ∃ a b : R, m = a ^ 2 - a * b + b ^ 2)
+    (hn : ∃ c d : R, n = c ^ 2 - c * d + d ^ 2) :
+    ∃ e f : R, m * n = e ^ 2 - e * f + f ^ 2 := by
+  obtain ⟨a, b, rfl⟩ := hm
+  obtain ⟨c, d, rfl⟩ := hn
+  exact ⟨_, _, sq_sub_mul_add_sq_mul a b c d⟩
+
+/-- Completing the square: `4 (a ^ 2 - a * b + b ^ 2) = (2 a - b) ^ 2 + 3 b ^ 2`. -/
+theorem four_mul_sq_sub_mul_add_sq (a b : R) :
+    4 * (a ^ 2 - a * b + b ^ 2) = (2 * a - b) ^ 2 + 3 * b ^ 2 := by
+  ring
+
+end CommRing
+
+section LinearOrder
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- The form `a ^ 2 - a * b + b ^ 2` is nonnegative. -/
-theorem sq_sub_mul_add_sq_nonneg (a b : ℤ) : 0 ≤ a ^ 2 - a * b + b ^ 2 := by
+theorem sq_sub_mul_add_sq_nonneg (a b : R) : 0 ≤ a ^ 2 - a * b + b ^ 2 := by
   nlinarith [sq_nonneg (2 * a - b), sq_nonneg b]
 
 /-- The form `a ^ 2 - a * b + b ^ 2` vanishes only at `a = b = 0`. -/
-theorem sq_sub_mul_add_sq_eq_zero_iff {a b : ℤ} : a ^ 2 - a * b + b ^ 2 = 0 ↔ a = 0 ∧ b = 0 := by
+@[simp]
+theorem sq_sub_mul_add_sq_eq_zero_iff {a b : R} : a ^ 2 - a * b + b ^ 2 = 0 ↔ a = 0 ∧ b = 0 := by
   constructor
   · intro h
     have hb : b ^ 2 = 0 := by nlinarith [sq_nonneg (2 * a - b), sq_nonneg b]
@@ -63,25 +101,79 @@ theorem sq_sub_mul_add_sq_eq_zero_iff {a b : ℤ} : a ^ 2 - a * b + b ^ 2 = 0 �
   · rintro ⟨rfl, rfl⟩
     ring
 
-/-- The form `a ^ 2 - a * b + b ^ 2` is multiplicative: this is the multiplicativity of the norm
-of `a + b ω` for a primitive cube root of unity `ω`. -/
-theorem sq_sub_mul_add_sq_mul (a b c d : ℤ) :
-    (a ^ 2 - a * b + b ^ 2) * (c ^ 2 - c * d + d ^ 2) =
-      (a * c - b * d) ^ 2 - (a * c - b * d) * (a * d + b * c - b * d) +
-        (a * d + b * c - b * d) ^ 2 := by
-  ring
+end LinearOrder
 
-/-- A product of two integers of the form `a ^ 2 - a * b + b ^ 2` is again of this form. -/
-theorem exists_eq_sq_sub_mul_add_sq_mul {m n : ℤ} (hm : ∃ a b : ℤ, m = a ^ 2 - a * b + b ^ 2)
-    (hn : ∃ c d : ℤ, n = c ^ 2 - c * d + d ^ 2) :
-    ∃ e f : ℤ, m * n = e ^ 2 - e * f + f ^ 2 := by
-  obtain ⟨a, b, rfl⟩ := hm
-  obtain ⟨c, d, rfl⟩ := hn
-  exact ⟨_, _, sq_sub_mul_add_sq_mul a b c d⟩
+end TauCeti
+
+namespace Int
+
+open TauCeti
+
+/-- **Euclidean division for the form `a ^ 2 - a * b + b ^ 2`.** For integers `a`, `b` and
+`(c, d) ≠ (0, 0)` there are a quotient `(q₁, q₂)` and a remainder `(r₁, r₂)` with
+`a + b ω = (q₁ + q₂ ω) (c + d ω) + (r₁ + r₂ ω)`, written out in coordinates, and
+`4 (r₁ ^ 2 - r₁ * r₂ + r₂ ^ 2) ≤ 3 (c ^ 2 - c * d + d ^ 2)`: the norm of the remainder is at most
+`3 / 4` of the norm of the divisor. -/
+theorem exists_quotient_remainder_sq_sub_mul_add_sq (a b : ℤ) {c d : ℤ} (hcd : c ≠ 0 ∨ d ≠ 0) :
+    ∃ q₁ q₂ r₁ r₂ : ℤ, a = q₁ * c - q₂ * d + r₁ ∧ b = q₁ * d + q₂ * c - q₂ * d + r₂ ∧
+      4 * (r₁ ^ 2 - r₁ * r₂ + r₂ ^ 2) ≤ 3 * (c ^ 2 - c * d + d ^ 2) := by
+  have hN : (0 : ℚ) < (c : ℚ) ^ 2 - c * d + (d : ℚ) ^ 2 := by
+    refine lt_of_le_of_ne (sq_sub_mul_add_sq_nonneg _ _) fun h ↦ ?_
+    have h0 := sq_sub_mul_add_sq_eq_zero_iff.1 h.symm
+    exact hcd.elim (fun hc ↦ hc (by exact_mod_cast h0.1)) fun hd ↦ hd (by exact_mod_cast h0.2)
+  -- The exact quotient `x + y ω` in `ℚ(ω)`, rounded coordinatewise.
+  obtain ⟨x, hx⟩ : ∃ x : ℚ, x = (a * c - a * d + b * d) / ((c : ℚ) ^ 2 - c * d + (d : ℚ) ^ 2) :=
+    ⟨_, rfl⟩
+  obtain ⟨y, hy⟩ : ∃ y : ℚ, y = (b * c - a * d) / ((c : ℚ) ^ 2 - c * d + (d : ℚ) ^ 2) := ⟨_, rfl⟩
+  have hxN : x * ((c : ℚ) ^ 2 - c * d + (d : ℚ) ^ 2) = a * c - a * d + b * d := by
+    rw [hx, div_mul_cancel₀ _ hN.ne']
+  have hyN : y * ((c : ℚ) ^ 2 - c * d + (d : ℚ) ^ 2) = b * c - a * d := by
+    rw [hy, div_mul_cancel₀ _ hN.ne']
+  have ha : (a : ℚ) = x * c - y * d :=
+    mul_right_cancel₀ hN.ne' (by linear_combination (-(c : ℚ)) * hxN + (d : ℚ) * hyN)
+  have hb : (b : ℚ) = x * d + y * c - y * d :=
+    mul_right_cancel₀ hN.ne' (by linear_combination (-(d : ℚ)) * hxN + (-(c : ℚ) + d) * hyN)
+  have hu := abs_le.1 (abs_sub_round x)
+  have hv := abs_le.1 (abs_sub_round y)
+  refine ⟨round x, round y, a - (round x * c - round y * d),
+    b - (round x * d + round y * c - round y * d), by ring, by ring, ?_⟩
+  -- The remainder is `(u + v ω) (c + d ω)` with `u = x - round x`, `v = y - round y`.
+  have hmul := sq_sub_mul_add_sq_mul (x - round x) (y - round y) (c : ℚ) (d : ℚ)
+  have hnorm : (x - round x) ^ 2 - (x - round x) * (y - round y) + (y - round y) ^ 2 ≤ 3 / 4 := by
+    nlinarith [hu.1, hu.2, hv.1, hv.2]
+  have hcast : (4 : ℚ) * (((a - (round x * c - round y * d) : ℤ) : ℚ) ^ 2 -
+      ((a - (round x * c - round y * d) : ℤ) : ℚ) *
+        ((b - (round x * d + round y * c - round y * d) : ℤ) : ℚ) +
+      ((b - (round x * d + round y * c - round y * d) : ℤ) : ℚ) ^ 2) ≤
+      3 * ((c : ℚ) ^ 2 - c * d + (d : ℚ) ^ 2) := by
+    push_cast
+    rw [ha, hb]
+    nlinarith [mul_le_mul_of_nonneg_right hnorm hN.le, hmul]
+  exact_mod_cast hcast
+
+/-- **The shifted-witness criterion.** An integer `m` is of the form `a ^ 2 - a * b + b ^ 2`
+exactly when `4 * m` is of the form `u ^ 2 + 3 * v ^ 2`: take `u = 2 a - b` and `v = b`, and
+conversely `u` and `v` have the same parity, so `a = (u + v) / 2`, `b = v`. -/
+theorem exists_four_mul_eq_sq_add_three_mul_sq_iff {m : ℤ} :
+    (∃ u v : ℤ, 4 * m = u ^ 2 + 3 * v ^ 2) ↔ ∃ a b : ℤ, m = a ^ 2 - a * b + b ^ 2 := by
+  constructor
+  · rintro ⟨u, v, h⟩
+    obtain ⟨s, rfl | rfl⟩ := Int.even_or_odd' u <;> obtain ⟨t, rfl | rfl⟩ := Int.even_or_odd' v
+    · exact ⟨s + t, 2 * t, by linarith [four_mul_sq_sub_mul_add_sq (s + t) (2 * t)]⟩
+    · ring_nf at h
+      omega
+    · ring_nf at h
+      omega
+    · exact ⟨s + t + 1, 2 * t + 1, by
+        linarith [four_mul_sq_sub_mul_add_sq (s + t + 1) (2 * t + 1)]⟩
+  · rintro ⟨a, b, rfl⟩
+    exact ⟨2 * a - b, b, four_mul_sq_sub_mul_add_sq a b⟩
 
 end Int
 
 namespace Nat
+
+open TauCeti
 
 /-- A prime `q ≡ 2 (mod 3)` dividing `a ^ 2 - a * b + b ^ 2` divides both `a` and `b`. -/
 theorem Prime.dvd_and_dvd_of_dvd_sq_sub_mul_add_sq {q : ℕ} (hq : q.Prime) (hq3 : q % 3 = 2)
@@ -124,7 +216,7 @@ theorem even_factorization_of_eq_sq_sub_mul_add_sq {q : ℕ} (hq3 : q % 3 = 2)
         rw [← h]
         exact_mod_cast hqn
       obtain ⟨⟨a', rfl⟩, ⟨b', rfl⟩⟩ := hq.dvd_and_dvd_of_dvd_sq_sub_mul_add_sq hq3 hdvd
-      obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (Int.sq_sub_mul_add_sq_nonneg a' b')
+      obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (sq_sub_mul_add_sq_nonneg a' b')
       have hnm' : (n : ℤ) = ((q ^ 2 * m : ℕ) : ℤ) := by
         push_cast
         rw [h, ← hm]
@@ -160,8 +252,8 @@ theorem Prime.exists_eq_sq_sub_mul_add_sq {p : ℕ} (hp : p.Prime) (hp3 : p % 3 
     push_cast
     linear_combination ((a : ZMod p) - t * b - b) * hmod + (b : ZMod p) ^ 2 * ht
   have hpos : 0 < a ^ 2 - a * b + b ^ 2 :=
-    lt_of_le_of_ne (Int.sq_sub_mul_add_sq_nonneg a b) fun h0 ↦ by
-      have h0' := Int.sq_sub_mul_add_sq_eq_zero_iff.1 h0.symm
+    lt_of_le_of_ne (sq_sub_mul_add_sq_nonneg a b) fun h0 ↦ by
+      have h0' := sq_sub_mul_add_sq_eq_zero_iff.1 h0.symm
       exact hab.elim (fun ha0 ↦ ha0 h0'.1) fun hb0 ↦ hb0 h0'.2
   have hlt : a ^ 2 - a * b + b ^ 2 < 3 * p := by
     have h1 : a ^ 2 ≤ (p.sqrt : ℤ) ^ 2 := sq_le_sq' (abs_le.1 ha1).1 (abs_le.1 ha1).2
@@ -238,7 +330,7 @@ theorem exists_eq_sq_sub_mul_add_sq_of_even_factorization {n : ℕ}
         exact hq'.1 (by split_ifs <;> simp)
       have hcast : (n : ℤ) = (n.minFac : ℤ) ^ 2 * m := by exact_mod_cast hm
       rw [hcast]
-      exact Int.exists_eq_sq_sub_mul_add_sq_mul ⟨n.minFac, 0, by ring⟩ (ih m hlt hfac)
+      exact exists_eq_sq_sub_mul_add_sq_mul ⟨n.minFac, 0, by ring⟩ (ih m hlt hfac)
     · -- A prime `p ≢ 2 (mod 3)` is of the required form; split off `p`.
       obtain ⟨m, hm⟩ := Nat.minFac_dvd n
       have hm0 : m ≠ 0 := by
@@ -255,7 +347,7 @@ theorem exists_eq_sq_sub_mul_add_sq_of_even_factorization {n : ℕ}
           Finsupp.single_eq_of_ne hpq.symm, zero_add] at hq'
       have hcast : (n : ℤ) = (n.minFac : ℤ) * m := by exact_mod_cast hm
       rw [hcast]
-      exact Int.exists_eq_sq_sub_mul_add_sq_mul (hp.exists_eq_sq_sub_mul_add_sq hp3)
+      exact exists_eq_sq_sub_mul_add_sq_mul (hp.exists_eq_sq_sub_mul_add_sq hp3)
         (ih m hlt hfac)
 
 /-- **The Eisenstein norm criterion.** A natural number `n` is of the form
@@ -266,6 +358,13 @@ theorem exists_eq_sq_sub_mul_add_sq_iff {n : ℕ} :
       ∀ q : ℕ, q.Prime → q % 3 = 2 → Even (n.factorization q) :=
   ⟨fun ⟨_, _, h⟩ _ _ hq3 ↦ even_factorization_of_eq_sq_sub_mul_add_sq hq3 h,
     exists_eq_sq_sub_mul_add_sq_of_even_factorization⟩
+
+/-- The shifted form of the criterion: `4 * n` is of the form `u ^ 2 + 3 * v ^ 2` with integers
+`u` and `v` if and only if every prime `q ≡ 2 (mod 3)` divides `n` to an even power. -/
+theorem exists_four_mul_eq_sq_add_three_mul_sq_iff {n : ℕ} :
+    (∃ u v : ℤ, 4 * (n : ℤ) = u ^ 2 + 3 * v ^ 2) ↔
+      ∀ q : ℕ, q.Prime → q % 3 = 2 → Even (n.factorization q) :=
+  Int.exists_four_mul_eq_sq_add_three_mul_sq_iff.trans exists_eq_sq_sub_mul_add_sq_iff
 
 /-! ### Examples -/
 

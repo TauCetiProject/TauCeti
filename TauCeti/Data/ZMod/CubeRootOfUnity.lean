@@ -17,7 +17,9 @@ For a prime `p`, the polynomial `T ^ 2 + T + 1` has a root in `ZMod p` exactly w
 multiplicative order `3`, which exists exactly when `3` divides the order `p - 1` of the cyclic
 group of units.
 
-This decides which primes split in the Eisenstein integers `ℤ[ω]`, `ω ^ 2 + ω + 1 = 0`.
+This decides which primes are not inert in the Eisenstein integers `ℤ[ω]`, `ω ^ 2 + ω + 1 = 0`:
+the primes `p ≡ 1 (mod 3)` split and the prime `3` ramifies, while the primes `p ≡ 2 (mod 3)`
+stay prime.
 
 ## Main results
 
