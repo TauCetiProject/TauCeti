@@ -105,6 +105,13 @@ theorem mem_strictKernel_iff {A : ArtinLocalAlg Λ k} {a : GL n A.obj.left} :
     a ∈ A.strictKernel n ↔ GeneralLinearGroup.map (A.augmentation : A.obj.left →+* k) a = 1 :=
   MonoidHom.mem_ker
 
+/-- A matrix lies in the strict kernel exactly when each of its entries reduces to the
+corresponding entry of the identity matrix. -/
+theorem mem_strictKernel_iff_apply {A : ArtinLocalAlg Λ k} {a : GL n A.obj.left} :
+    a ∈ A.strictKernel n ↔ ∀ i j, A.augmentation (a i j) = (1 : Matrix n n k) i j := by
+  rw [mem_strictKernel_iff, GeneralLinearGroup.ext_iff]
+  simp
+
 /-- A morphism of `C_Λ` maps the strict kernel of its source into that of its target. -/
 theorem map_mem_strictKernel {A B : ArtinLocalAlg Λ k} (f : A ⟶ B) {a : GL n A.obj.left}
     (ha : a ∈ A.strictKernel n) :

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Fourier.Uniqueness
 
 /-!
@@ -57,6 +57,11 @@ orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Fub
 * `TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`: completeness of the
   quarter-wave sines `sin ((2k + 1) π (x - a) / (2 (b - a)))`, `k ≥ 0`, the eigenfunctions with a
   Dirichlet condition at `a` and a Neumann condition at `b`.
+* `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero`,
+  `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero` and
+  `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero`: the same three
+  systems are complete among the integrable functions on the open interval `(a, b)`, with set
+  integrals over `(a, b)` in place of interval integrals.
 * `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`: completeness of the products of
   sines among the integrable functions on a box.
 
@@ -381,42 +386,64 @@ theorem ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero {g : ℝ �
     hzero, ae_restrict_mem measurableSet_Ioc] with x hx hxm
   simpa [hxm.2] using hx
 
-/-- Completeness of the sine system in the first variable of a product, with a parameter `y`:
-if for every `k ≥ 1` the coefficient `y ↦ ∫ G (t, y) sin (k π (t - a) / (b - a)) dt` vanishes for
-almost every `y`, then `G` vanishes almost everywhere. For almost every `y` the slice `G (·, y)`
-is orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Tonelli concludes.
--/
-private theorem ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero {β : Type*}
-    [MeasurableSpace β] {ν : Measure β} [SFinite ν] {G : ℝ × β → ℝ}
-    (hG : Integrable G ((volume.restrict (Ioo a b)).prod ν))
-    (h : ∀ k : ℕ, 0 < k → (fun y => ∫ t, G (t, y) * Real.sin (k * π * (t - a) / (b - a))
-      ∂volume.restrict (Ioo a b)) =ᵐ[ν] 0) :
-    G =ᵐ[(volume.restrict (Ioo a b)).prod ν] 0 := by
-  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[volume.restrict (Ioo a b)] 0 := by
-    have hall : ∀ᵐ y ∂ν, ∀ k : ℕ, 0 < k → ∫ t, G (t, y) *
-        Real.sin (k * π * (t - a) / (b - a)) ∂volume.restrict (Ioo a b) = 0 := by
-      rw [ae_all_iff]
-      intro k
-      by_cases hk : 0 < k
-      · filter_upwards [h k hk] with y hy _ using hy
-      · exact ae_of_all _ fun _ h => absurd h hk
-    filter_upwards [hall, hG.prod_left_ae] with y hy hyi
-    rcases le_or_gt a b with hab | hab
-    · have hIoc : volume.restrict (Ioo a b) = volume.restrict (Ioc a b) :=
-        Measure.restrict_congr_set Ioo_ae_eq_Ioc
-      have := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (g := fun t => G (t, y))
-        (by simpa [IntegrableOn, hIoc] using hyi) fun k hk => by
-          rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo]
-          exact hy k hk
-      simpa [hIoc] using this
-    · simp [Ioo_eq_empty_of_le hab.le, Filter.EventuallyEq]
-  have hlin : ∫⁻ z, ‖G z‖ₑ ∂(volume.restrict (Ioo a b)).prod ν = 0 := by
-    rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
-    refine lintegral_eq_zero_of_ae_eq_zero ?_
-    filter_upwards [hslice] with y hy
-    exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
-  filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
-  simpa using hz
+/-! ### The open interval with set integrals
+
+The same systems are complete among the integrable functions on the open interval `(a, b)`, with
+the orthogonality written as set integrals over `(a, b)`; this is the form in which the systems
+enter products of restricted measures. -/
+
+/-- A completeness statement on `(a, b]` with interval integrals transfers to `(a, b)` with set
+integrals, since `(a, b)` and `(a, b]` differ by a null set. -/
+private theorem ae_eq_zero_of_forall_setIntegral_mul_eq_zero_of_Ioc {ι : Type*}
+    {e : ι → ℝ → ℝ}
+    (he : ∀ g : ℝ → ℝ, IntegrableOn g (Ioc a b) → (∀ k, ∫ x in a..b, g x * e k x = 0) →
+      g =ᵐ[volume.restrict (Ioc a b)] 0)
+    {g : ℝ → ℝ} (hg : IntegrableOn g (Ioo a b)) (h : ∀ k, ∫ x in Ioo a b, g x * e k x = 0) :
+    g =ᵐ[volume.restrict (Ioo a b)] 0 := by
+  rcases le_or_gt a b with hab | hab
+  · have hIoc : volume.restrict (Ioo a b) = volume.restrict (Ioc a b) :=
+      Measure.restrict_congr_set Ioo_ae_eq_Ioc
+    rw [IntegrableOn, hIoc] at hg
+    rw [hIoc]
+    refine he g hg fun k => ?_
+    rw [intervalIntegral.integral_of_le hab, ← hIoc]
+    exact h k
+  · simp [Ioo_eq_empty_of_le hab.le, Filter.EventuallyEq]
+
+/-- **Completeness of the Fourier sine system on the open interval.** A function `g` integrable on
+`(a, b)` with `∫ x in Ioo a b, g x * sin (k π (x - a) / (b - a)) = 0` for every `k ≥ 1` vanishes
+almost everywhere on `(a, b)`. -/
+theorem ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero {g : ℝ → ℝ}
+    (hg : IntegrableOn g (Ioo a b))
+    (h : ∀ k : ℕ, 0 < k → ∫ x in Ioo a b, g x * Real.sin (k * π * (x - a) / (b - a)) = 0) :
+    g =ᵐ[volume.restrict (Ioo a b)] 0 :=
+  ae_eq_zero_of_forall_setIntegral_mul_eq_zero_of_Ioc
+    (e := fun (k : {k : ℕ // 0 < k}) x => Real.sin (k * π * (x - a) / (b - a)))
+    (fun _ hg hgk => ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg fun k hk => hgk ⟨k, hk⟩)
+    hg fun k => h k k.property
+
+/-- **Completeness of the Fourier cosine system on the open interval.** A function `g` integrable
+on `(a, b)` with `∫ x in Ioo a b, g x * cos (k π (x - a) / (b - a)) = 0` for every `k ≥ 0`
+vanishes almost everywhere on `(a, b)`. -/
+theorem ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero {g : ℝ → ℝ}
+    (hg : IntegrableOn g (Ioo a b))
+    (h : ∀ k : ℕ, ∫ x in Ioo a b, g x * Real.cos (k * π * (x - a) / (b - a)) = 0) :
+    g =ᵐ[volume.restrict (Ioo a b)] 0 :=
+  ae_eq_zero_of_forall_setIntegral_mul_eq_zero_of_Ioc
+    (e := fun (k : ℕ) x => Real.cos (k * π * (x - a) / (b - a)))
+    (fun _ hg hgk => ae_eq_zero_of_forall_integral_mul_cos_eq_zero hg hgk) hg h
+
+/-- **Completeness of the quarter-wave sine system on the open interval.** A function `g`
+integrable on `(a, b)` with `∫ x in Ioo a b, g x * sin ((2k + 1) π (x - a) / (2 (b - a))) = 0` for
+every `k ≥ 0` vanishes almost everywhere on `(a, b)`. -/
+theorem ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero {g : ℝ → ℝ}
+    (hg : IntegrableOn g (Ioo a b))
+    (h : ∀ k : ℕ,
+      ∫ x in Ioo a b, g x * Real.sin ((2 * k + 1) * π * (x - a) / (2 * (b - a))) = 0) :
+    g =ᵐ[volume.restrict (Ioo a b)] 0 :=
+  ae_eq_zero_of_forall_setIntegral_mul_eq_zero_of_Ioc
+    (e := fun (k : ℕ) x => Real.sin ((2 * k + 1) * π * (x - a) / (2 * (b - a))))
+    (fun _ hg hgk => ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg hgk) hg h
 
 /-- The sine system on a box, in the coordinates `Fin n → ℝ` and with the product of the
 restricted measures, by induction on the dimension. -/
@@ -476,7 +503,10 @@ private theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin :
         Fin.cons_succ]
       ring
     have hG0 : G =ᵐ[(μ 0).prod ν] 0 :=
-      ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero hG hH
+      ae_eq_zero_prod_of_forall_integral_mul_eq_zero
+        (e := fun (k : {k : ℕ // 0 < k}) t => Real.sin (k * π * (t - a 0) / (b 0 - a 0)))
+        (fun _ hg hgk => ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero hg fun k hk =>
+          hgk ⟨k, hk⟩) hG fun k => hH k k.property
     have hGe : G ∘ e = g := funext fun x => by simp [G]
     rw [← hGe]
     exact hmp.quasiMeasurePreserving.ae_eq_comp hG0

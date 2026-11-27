@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+import TauCeti.Topology.VectorBundle.Orientation.Comap
+import TauCeti.Topology.VectorBundle.ModelFiber
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
@@ -37,7 +39,10 @@ where two of the sets meet, and the gluing over arbitrary trivializing covers
 The glued class is `TauCeti.VectorBundleOrientation.thomClassOfModel`. When `g` generates
 `Hʳ(F, F ∖ {0})` it is a Thom class, the Thom class compatible with `o`. In particular **every
 oriented real vector bundle has a Thom class with coefficients in any commutative ring**, integral
-coefficients included (`TauCeti.VectorBundleOrientation.exists_isThomClass`). Without an
+coefficients included (`TauCeti.VectorBundleOrientation.exists_isThomClass`), for a model fibre
+in any universe: the gluing takes place for a model fibre in the universe of the base, to which the
+model fibre (`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`) and the orientation
+(`TauCeti.VectorBundleOrientation.comap`) are moved. Without an
 orientation the existence is established for coefficient rings in which `2 = 0`
 (`TauCeti.exists_isThomClass_of_two_eq_zero`), and the uniqueness for coefficient rings with a
 single unit, such as `ZMod 2` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). For an
@@ -103,7 +108,7 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `isThomClass_thomClassOfModel` shows that normalization by a generator gives a Thom class, and
   `thomClassOfModel_neg` that reversing the orientation negates it.
 * `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle has a Thom
-  class with coefficients in any commutative ring.
+  class with coefficients in any commutative ring, for a model fibre in any universe.
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_fiberThomPairMap_thomClass`: the integral
   Thom class restricts on each fibre to the generator selected by the fibre orientation, read in
   any linear trivialization.
@@ -669,12 +674,9 @@ theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
       ← Set.neg_singleton, Submodule.span_neg]
     exact hge
 
-/-- **An oriented real vector bundle has a Thom class** with coefficients in any commutative ring
-`K`, in particular with integral coefficients: a class of `Hʳ(E, E₀; K, K)`, `r = dim F`,
-restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on every fibre. The base is arbitrary.
-The class compatible with the orientation is unique by
-`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`. -/
-theorem exists_isThomClass (hι : Fintype.card ι = finrank ℝ F)
+/-- An oriented real vector bundle whose model fibre lies in the universe of the base has a Thom
+class with coefficients in any commutative ring. -/
+private theorem exists_isThomClass_of_univ (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (K : Type w) [CommRing K] :
     ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
       IsThomClass F E u := by
@@ -688,6 +690,37 @@ theorem exists_isThomClass (hι : Fintype.card ι = finrank ℝ F)
   exact ⟨_, o.isThomClass_thomClassOfModel hι ω hg⟩
 
 end ExistsThomClass
+
+section ExistsThomClassOfModel
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  [VectorBundle ℝ F E] {ι : Type*} [Fintype ι]
+
+/-- **An oriented real vector bundle has a Thom class** with coefficients in any commutative ring
+`K`, in particular with integral coefficients: a class of `Hʳ(E, E₀; K, K)`, `r = dim F`,
+restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on every fibre. The base is arbitrary,
+and the model fibre may lie in any universe.
+The class compatible with the orientation is unique by
+`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`. -/
+theorem exists_isThomClass (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (K : Type w) [CommRing K] :
+    ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
+      IsThomClass F E u := by
+  -- Read `E` with the model fibre `ULift (Fin r → ℝ)`, which lies in the universe of the base,
+  -- and transport the orientation along the identity of the fibres.
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  have hF : finrank ℝ F = finrank ℝ (ULift.{w} (Fin (finrank ℝ F) → ℝ)) := by simp
+  have hφ : Continuous fun v : TotalSpace (ULift.{w} (Fin (finrank ℝ F) → ℝ)) E ↦
+      TotalSpace.mk' F (ContinuousMap.id B v.proj)
+        (ContinuousLinearEquiv.refl ℝ (E v.proj) v.snd) := by
+    simpa using h_ind.continuous
+  exact (exists_isThomClass_iff_of_isInducing h_ind hF.symm).2
+    (exists_isThomClass_of_univ (hι.trans hF)
+      (o.comap (g := ContinuousMap.id B) (φ := fun b ↦ .refl ℝ (E b)) (hι.trans hF) hφ) K)
+
+end ExistsThomClassOfModel
 
 section ThomClass
 

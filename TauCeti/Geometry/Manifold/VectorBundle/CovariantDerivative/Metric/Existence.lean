@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Existence
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Analysis.InnerProductSpace.Dual
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
