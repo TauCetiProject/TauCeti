@@ -23,9 +23,11 @@ subgroup preserves, for every threshold `t`, the span of the standard basis vect
 labelling `TauCeti.GeneralLinear.twoBlockLabel r` with `0 < r < k`, the span of the `e b` with
 `b ≥ r` is the unique nonzero proper threshold subspace; for `r = 0` or `r ≥ k` there is none. In
 the letter matrices of a Frobenius cycle
-(`TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`), the entries forced into
-the maximal ideal give divisibility by `p` of the entry `(i, j)` when `τ i < τ j` at an even
-letter, and, since odd letters use the inverse transpose, when `τ j < τ i` at an odd letter.
+(`TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`, stated for the subgroup
+`TauCeti.parahoricSubgroup τ (maximalIdeal W)`, which has the same members by
+`TauCeti.GeneralLinear.mem_parahoricSubgroup_iff`), the entries forced into the maximal ideal
+give divisibility by `p` of the entry `(i, j)` when `τ i < τ j` at an even letter, and, since odd
+letters use the inverse transpose, when `τ j < τ i` at an odd letter.
 
 ## Main definitions
 
