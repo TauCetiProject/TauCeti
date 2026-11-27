@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
 
@@ -36,6 +37,9 @@ that `T†` preserves decay at rate `-c` into one showing that `T` preserves dec
 * `ContinuousLinearMap.eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le`: a weighted `L^{q'} → L^{p'}`
   bound for the adjoint gives the dual weighted `Lᵖ → L^q` bound for the operator.
 * `ContinuousLinearMap.eLpNorm_le_of_eLpNorm_adjoint_le`: the unweighted case.
+* `ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_of_aestronglyMeasurable`: on `L²`,
+  an operator that preserves decay at rate `-c` in the weight `exp(c φ)` has an adjoint that
+  preserves decay at rate `c`.
 
 ## References
 
@@ -149,5 +153,31 @@ theorem eLpNorm_le_of_eLpNorm_adjoint_le [SigmaFinite ν] (T : Lp E 2 μ →L[�
     eLpNorm (T f) q ν ≤ C * eLpNorm f p μ := by
   simpa using eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le T (u := 1) (w := 1)
     (ae_of_all _ fun _ ↦ one_ne_zero) aestronglyMeasurable_const (by simpa using hT) f
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [SigmaFinite μ]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- **Exponential weights pass to the adjoint.** Let `φ` be an almost everywhere strongly
+measurable real function and let `T` be a bounded operator on `L²(μ; F)` with
+`‖exp(-c φ) T f‖₂ ≤ C ‖exp(-c φ) f‖₂` for every `f`. Then its Hilbert space adjoint satisfies
+`‖exp(c φ) T† g‖₂ ≤ C ‖exp(c φ) g‖₂` for every `g`, where either side may be infinite. -/
+theorem eLpNorm_exp_mul_smul_adjoint_apply_le_of_aestronglyMeasurable {φ : X → ℝ}
+    (hφ : AEStronglyMeasurable φ μ) {c : ℝ} {C : ℝ≥0∞} (T : Lp F 2 μ →L[ℝ] Lp F 2 μ)
+    (hT : ∀ f, eLpNorm (fun z ↦ Real.exp (-c * φ z) • T f z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (-c * φ z) • f z) 2 μ)
+    (g : Lp F 2 μ) :
+    eLpNorm (fun z ↦ Real.exp (c * φ z) • ContinuousLinearMap.adjoint T g z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (c * φ z) • g z) 2 μ := by
+  have h := eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
+    (ContinuousLinearMap.adjoint T) (p := 2) (p' := 2) (q := 2) (q' := 2)
+    (ae_of_all _ fun z ↦ (Real.exp_pos (c * φ z)).ne')
+    (Real.continuous_exp.comp_aestronglyMeasurable (hφ.const_mul c)) (C := C) (fun f ↦ ?_) g
+  · simpa using h
+  · -- `T†† = T`, and `exp(c φ)⁻¹ = exp(-c φ)`.
+    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using hT f
 
 end ContinuousLinearMap
