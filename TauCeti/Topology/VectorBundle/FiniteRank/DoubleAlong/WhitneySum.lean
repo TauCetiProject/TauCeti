@@ -66,8 +66,6 @@ theorem fiberMap_whitneySnd_star (x : X) (v : Fin (whitneySum C D).rank → ℂ)
   rw [fiberMap_whitneySnd]
   exact congrArg Prod.snd (splitCoords_star v)
 
-variable {C D} (hC : C.IsRealAlong A) (hD : D.IsRealAlong A)
-
 /-- The first inclusion of a Whitney sum commutes with coordinatewise conjugation. -/
 theorem fiberMap_whitneyInl_star (x : X) (u : Fin C.rank → ℂ) :
     (whitneyInl C D).fiberMap x (star u) = star ((whitneyInl C D).fiberMap x u) := by
@@ -85,6 +83,8 @@ theorem fiberMap_whitneyInr_star (x : X) (w : Fin D.rank → ℂ) :
   exact (congrArg (splitCoords (𝕜 := ℂ) C.rank D.rank).symm
     (Prod.ext (star_zero _).symm rfl : ((0, star w) : (Fin C.rank → ℂ) × (Fin D.rank → ℂ)) =
       star (0, w))).trans (splitCoords_symm_star (0, w))
+
+variable {C D} (hC : C.IsRealAlong A) (hD : D.IsRealAlong A)
 
 /-- The comparison map from the double of a Whitney sum to the Whitney sum of the doubles: the
 pairing of the doubled projections. -/

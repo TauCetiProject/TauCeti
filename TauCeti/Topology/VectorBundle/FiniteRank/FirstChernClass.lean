@@ -106,8 +106,15 @@ theorem firstChernClass_trivial_whitneySum (n : ℕ) (D : FiniteRankBundleCore �
       ((whitneySumFiberEquiv (trivial ℂ B n) D b).apply_symm_apply w)
   have hdiag := (FiberBundle.Prod.isInducing_diag (Fin n → ℂ) (Trivial B (Fin n → ℂ))
     (Fin D.rank → ℂ) D.core.Fiber).continuous
+  -- Each bullet proves continuity of one coordinate block of `φ`, first the trivial block and
+  -- then the block of `D` (`continuous_mk_whitneySum_iff`), from the continuity of the diagonal
+  -- map `hdiag` of the direct-sum bundle `Trivial B (Fin n → ℂ) ×ᵇ D.core.Fiber`.
   refine (continuous_mk_whitneySum_iff (trivial ℂ B n) D).2 ⟨?_, ?_⟩
-  · refine Continuous.congr (f := fun y ↦ (⟨y.proj, y.snd.1⟩ : (trivial ℂ B n).core.TotalSpace))
+  · -- The fibres of `Trivial B (Fin n → ℂ)` and of `(trivial ℂ B n).core.Fiber` are both
+    -- `Fin n → ℂ` by definition, and the coordinate of `⟨b, v⟩` in the trivial total space is
+    -- `(Trivial.homeomorphProd B _ ⟨b, v⟩).2 = v` (`Trivial.homeomorphProd` is
+    -- `TotalSpace.toProd`).
+    refine Continuous.congr (f := fun y ↦ (⟨y.proj, y.snd.1⟩ : (trivial ℂ B n).core.TotalSpace))
       (continuous_trivial_iff.2 ⟨FiberBundle.continuous_proj _ _, continuous_snd.comp
         ((Trivial.homeomorphProd B _).continuous.comp (continuous_fst.comp hdiag))⟩) fun y ↦ ?_
     exact TotalSpace.ext rfl (heq_of_eq (congrArg Prod.fst (hsplit y.proj y.snd)).symm)
