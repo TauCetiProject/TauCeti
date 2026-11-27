@@ -487,9 +487,7 @@ private theorem exists_mul_sum_eq_diag_of_zero_last {S : Type*} [BooleanRing S]
   · rw [Fin.sum_univ_castSucc]
     simp only [Fin.snoc_castSucc, Fin.snoc_last, zero_mul, add_zero, Finset.mul_sum]
     dsimp only [r, last] at hrd hrk ⊢; rw [hrd]
-    exact Finset.sum_eq_zero fun i _ ↦ by
-      rw [← mul_assoc, mul_comm ((1 - a (Fin.last (m + 1)) (Fin.last (m + 1))) * _),
-        mul_assoc, hrk, mul_zero]
+    exact Finset.sum_eq_zero fun i _ ↦ by linear_combination u₀ i * hrk i
   · rw [Fin.sum_univ_castSucc]
     simp only [Fin.snoc_castSucc, Fin.snoc_last, zero_mul, add_zero]
     exact congrArg (r * ·) (hu₀ j)
