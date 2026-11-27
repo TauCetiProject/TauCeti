@@ -551,35 +551,6 @@ section OfInclusion
 variable {k : Type w} [CommRing k] {Y F : TopCat.{w}} {s t r : Set Y} {s' t' r' : Set ↑(Y ⊗ F)}
   (R S : ModuleCat.{w} k)
 
-variable (F) in
-/-- The map `t × F ⟶ t'`, `(x, y) ↦ (x, y)`, onto a subspace `t'` of `Y × F` with the same points
-as `t × F`. -/
-def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) : TopCat.of t ⊗ F ⟶ TopCat.of t' :=
-  ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), (ht _).2 x.1.property⟩, by fun_prop⟩
-
-/-- `TopCat.prodSubspaceMap` sends `(x, y)` to `(x, y)`. -/
-theorem prodSubspaceMap_apply (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : ↑(TopCat.of t ⊗ F)) :
-    (prodSubspaceMap F ht x).val = (x.1.val, x.2) :=
-  (rfl)
-
-/-- The pair `(t × F, fst⁻¹(s))`, the product of the pair `(t, s)` with `F` as in
-`TopCat.singularHomologyCrossRel`, is the pair `(t', s')` of subspaces of `Y × F` with the same
-points as `t × F` and `s × F`. -/
-def prodSubspacePairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
-    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
-    TopPair.ofSubset (fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s)) ≅
-      TopPair.ofInclusion hst' where
-  hom := TopPair.ofHom (prodSubspaceMap F ht)
-    (ofHom ⟨fun x ↦ ⟨((fst _ F x.val).val, snd _ F x.val), (hs _).2 x.property⟩, by fun_prop⟩)
-    rfl
-  inv := TopPair.ofHom
-    (ofHom ⟨fun x ↦ (⟨fst Y F x.val, (ht _).1 x.property⟩, snd Y F x.val), by fun_prop⟩)
-    (ofHom ⟨fun x ↦ ⟨(⟨fst Y F x.val, (ht _).1 (hst' x.property)⟩, snd Y F x.val),
-      (hs _).1 x.property⟩, by fun_prop⟩)
-    rfl
-  hom_inv_id := by ext : 2 <;> rfl
-  inv_hom_id := by ext : 2 <;> rfl
-
 /-- **The relative cross product for nested subspaces** `Hₐ(t, s; R) ⊗ H_b(F; S) ⟶
 Hₙ(t', s'; R ⊗ S)`: the relative cross product `TopCat.singularHomologyCrossRel` of the pair
 `(t, s)` with `F`, transported along the identifications of `(t, s)` with the pair of `t` and the

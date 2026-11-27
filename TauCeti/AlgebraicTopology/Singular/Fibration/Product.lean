@@ -329,17 +329,6 @@ private lemma auxIso_congr (k q n n' : ℕ) (hn : k + q = n) (hn' : k + q = n') 
   obtain rfl : b = b' := by lia
   rfl
 
-/-- The first-page identification of a filtered space only depends on the value of the total
-degree `m`. -/
-private lemma filteredSpaceSpectralSequenceFirstPageXIso_congr {Y : _root_.TopCat.{u}}
-    {X : ℤ → Set Y} (R : ModuleCat.{u} K) (hX : Monotone X) (pq : ℤ × ℤ) (a b : ℤ)
-    (ha : a = pq.2) (hb : b = pq.2 + 1) (m m' : ℤ) (hm : m = pq.1 + pq.2)
-    (hm' : m' = pq.1 + pq.2) (n : ℕ) (hn : m = -n) (hn' : m' = -n) :
-    filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn =
-      filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m' hm' n hn' := by
-  subst hm hm'
-  rfl
-
 /-- With coefficients in `K ⊗ K`, the first differential of the spectral sequence of the product
 corresponds under `auxIso` to the first differential of the skeletal filtration of the base,
 tensored with `H_q(F; K)`. -/
@@ -357,9 +346,9 @@ private lemma auxIso_hom_d (k q : ℕ) (p b p₀ : ℤ) (hb : b = k) (hm : p + b
   rw [filteredSpaceSpectralSequence_first_page_d_eq _ _ b p (k + q) hm,
     filteredSpaceSpectralSequence_first_page_d_eq _ _ b p₀ k hm₀]
   simp only [auxIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, whiskerRightIso_hom, Category.assoc]
-  rw [filteredSpaceSpectralSequenceFirstPageXIso_congr K _ _ (p + 2, b - 1) (b - 1) b _ _
+  rw [filteredSpaceSpectralSequenceFirstPageXIso_congr _ _ (p + 2, b - 1) (b - 1) b _ _
       (p + 2 + (b - 1)) (p + b + 1) _ (by dsimp only; lia) _ _ (by lia),
-    filteredSpaceSpectralSequenceFirstPageXIso_congr K _ _ (p₀ + 2, b - 1) (b - 1) b _ _
+    filteredSpaceSpectralSequenceFirstPageXIso_congr _ _ (p₀ + 2, b - 1) (b - 1) b _ _
       (p₀ + 2 + (b - 1)) (p₀ + b + 1) _ (by dsimp only; lia) _ _ (by lia)]
   have hC := _root_.TopCat.whiskerRight_singularHomologyδ_comp_singularHomologyCrossRelOfInclusion
     (ModuleCat.of K K) (ModuleCat.of K K)

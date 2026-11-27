@@ -70,6 +70,10 @@ includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y
 `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
 (`TopCat.prodPreimageFstIso`).
 
+For nested subsets `s ⊆ t` of `Y` and subsets `s' ⊆ t'` of `Y × F` with the same points as
+`s × F` and `t × F`, the map `TopCat.prodSubspaceMap : t × F ⟶ t'` identifies the pair
+`(t × F, fst⁻¹(s))` with the pair `(t', s')` (`TopCat.prodSubspacePairIso`).
+
 For a map `π : X → Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, the pair `(π⁻¹ S, π⁻¹ S ∩ Z)` over
 `S` includes into `(X, Z)` (`TopCat.restrictPreimagePairMap`), isomorphically when `S` contains
 the image of `π` (`TopCat.isIso_restrictPreimagePairMap`). For subsets `U` and `V` of `Y`, the
@@ -871,6 +875,42 @@ lemma prodPreimageFstIso_hom_comp_map_snd :
   (rfl)
 
 end Preimage
+
+section ProdSubspace
+
+variable {Y F : TopCat.{u}} {s t : Set Y} {s' t' : Set ↑(Y ⊗ F)}
+
+variable (F) in
+/-- The map `t × F ⟶ t'`, `(x, y) ↦ (x, y)`, onto a subspace `t'` of `Y × F` with the same points
+as `t × F`. -/
+@[expose] def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopCat.of t ⊗ F ⟶ TopCat.of t' :=
+  ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), (ht _).2 x.1.property⟩, by fun_prop⟩
+
+/-- `TopCat.prodSubspaceMap` sends `(x, y)` to `(x, y)`. -/
+theorem prodSubspaceMap_apply (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : ↑(TopCat.of t ⊗ F)) :
+    (prodSubspaceMap F ht x).val = (x.1.val, x.2) :=
+  (rfl)
+
+/-- The pair `(t × F, fst⁻¹(s))`, the product of the pair `(t, s)` with `F` written with the
+preimage of `s` under the first projection, is the pair `(t', s')` of subspaces of `Y × F` with the
+same points as `t × F` and `s × F`. -/
+@[expose] def prodSubspacePairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopPair.ofSubset (fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s)) ≅
+      TopPair.ofInclusion hst' where
+  hom := TopPair.ofHom (prodSubspaceMap F ht)
+    (ofHom ⟨fun x ↦ ⟨((fst _ F x.val).val, snd _ F x.val), (hs _).2 x.property⟩, by fun_prop⟩)
+    rfl
+  inv := TopPair.ofHom
+    (ofHom ⟨fun x ↦ (⟨fst Y F x.val, (ht _).1 x.property⟩, snd Y F x.val), by fun_prop⟩)
+    (ofHom ⟨fun x ↦ ⟨(⟨fst Y F x.val, (ht _).1 (hst' x.property)⟩, snd Y F x.val),
+      (hs _).1 x.property⟩, by fun_prop⟩)
+    rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+end ProdSubspace
 
 section RestrictPreimage
 

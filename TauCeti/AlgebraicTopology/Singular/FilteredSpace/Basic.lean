@@ -255,6 +255,17 @@ lemma filteredSpaceSpectralSequenceFirstPageXIso_hom (pq : ℤ × ℤ) (a b : �
       (Category.assoc _ _ _)).trans <|
       congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _)
 
+/-- The identification of the first page of the spectral sequence of a filtered space with
+relative singular homology only depends on the value of the total degree `m`, not on the equation
+`hm` that presents it. -/
+lemma filteredSpaceSpectralSequenceFirstPageXIso_congr (pq : ℤ × ℤ) (a b : ℤ) (ha : a = pq.2)
+    (hb : b = pq.2 + 1) (m m' : ℤ) (hm : m = pq.1 + pq.2) (hm' : m' = pq.1 + pq.2) (n : ℕ)
+    (hn : m = -n) (hn' : m' = -n) :
+    filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn =
+      filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m' hm' n hn' := by
+  subst hm hm'
+  rfl
+
 /-- The first page of the spectral sequence of a filtered space vanishes in positive total
 degree `p + q`, since singular chains are concentrated in nonpositive cohomological degrees. -/
 lemma isZero_filteredSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 < pq.1 + pq.2) :
