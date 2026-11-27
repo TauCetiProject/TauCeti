@@ -84,10 +84,6 @@ theorem norm_fourierCoeff_apply_le (hρ : Function.Injective ρ) (g : G)
 theorem fourierCoeff_star (hρ : Function.Injective ρ) (g : G)
     (x : regularAlgebra α ρ Measure.count) :
     fourierCoeff α ρ hρ g (star x) = α g (star (fourierCoeff α ρ hρ g⁻¹ x)) := by
-  have hc : Measure.modularCharacter g = 1 := by
-    rw [modularCharacter_apply,
-      Measure.modularCharacterFun_eq_haarScalarFactor (Measure.count : Measure G)]
-    simp only [map_mul_right_eq_self, Measure.haarScalarFactor_self]
   have hstar : Continuous (star : regularAlgebra α ρ Measure.count →
       regularAlgebra α ρ Measure.count) := by
     apply continuous_induced_rng.mpr
@@ -102,7 +98,8 @@ theorem fourierCoeff_star (hρ : Function.Injective ρ) (g : G)
         (continuous_star.comp (fourierCoeff α ρ hρ g⁻¹).continuous))
   | ih f =>
     rw [← map_star, fourierCoeff_of, fourierCoeff_of,
-      ConvolutionAlgebra.ofConv_star, twistedInvolution_apply, hc]
+      ConvolutionAlgebra.ofConv_star, twistedInvolution_apply,
+      modularCharacter_eq_one_of_discreteTopology]
     simp only [NNReal.coe_one, Complex.ofReal_one, one_smul]
 
 /-- The compact-support formula characterizes the Fourier-coefficient map among continuous

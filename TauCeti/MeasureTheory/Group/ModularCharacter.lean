@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Measure.Count.Topology
 import TauCeti.Topology.Instances.NNReal
 
 /-!
@@ -49,6 +50,7 @@ none of this assumes σ-finiteness.
 
 * `TauCeti.le_ker_modularCharacter_of_isCompact` and `TauCeti.center_le_ker_modularCharacter`:
   the modular character is trivial on every compact subgroup and on the centre.
+* `TauCeti.modularCharacter_eq_one_of_discreteTopology`: discrete groups are unimodular.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul`: right translation of compactly
   supported integrands.
 * `TauCeti.integral_modularCharacter_smul_inv_eq_self` and
@@ -95,6 +97,15 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 /-- The bundled modular character evaluates to the modular character function. -/
 theorem modularCharacter_apply (g : G) :
     Measure.modularCharacter g = Measure.modularCharacterFun g := rfl
+
+/-- A discrete group is unimodular: right translation preserves counting measure, which is a Haar
+measure. -/
+theorem modularCharacter_eq_one_of_discreteTopology {G : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] (g : G) : Measure.modularCharacter g = 1 := by
+  borelize G
+  rw [modularCharacter_apply,
+    Measure.modularCharacterFun_eq_haarScalarFactor (Measure.count : Measure G) g]
+  simp only [map_mul_right_eq_self, Measure.haarScalarFactor_self]
 
 /-- A nonzero test integral computes the modular character by right translation.
 No regularity assumption on the Haar measure is needed. -/

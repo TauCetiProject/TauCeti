@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Fourier
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Discrete
+import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # Coefficients inside discrete regular crossed products
@@ -41,47 +43,21 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   (α : CStarAction G A) (ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H))
 
-open scoped Classical in
-/-- The compactly supported coefficient concentrated at the group identity. -/
-private def identitySupported (a : A) : C_c(G, A) where
-  toFun := fun g => if g = 1 then a else 0
-  continuous_toFun := continuous_of_discreteTopology
-  hasCompactSupport' := HasCompactSupport.intro
-    (isCompact_singleton (x := (1 : G))) fun g hg => by
-    simp only [Set.mem_singleton_iff] at hg
-    simp [hg]
-
-open scoped Classical in
-omit [MeasurableSpace G] [BorelSpace G] in
-private theorem identitySupported_apply (a : A) (g : G) :
-    identitySupported (G := G) a g = if g = 1 then a else 0 := rfl
-
-private theorem integratedOperator_identitySupported (a : A) :
+private theorem integratedOperator_single_one (a : A) :
     (CovariantRepresentation.regular α ρ Measure.count).integratedOperator Measure.count
-      (identitySupported a) =
+      (ConvolutionAlgebra.single 1 a : ConvolutionAlgebra α Measure.count).ofConv =
       (CovariantRepresentation.regular α ρ Measure.count).coefficient a := by
-  classical
-  apply ContinuousLinearMap.ext
-  intro v
-  rw [CovariantRepresentation.integratedOperator_apply]
-  have h (g : G) :
-      (CovariantRepresentation.regular α ρ Measure.count).coefficient
-        (identitySupported a g) ((CovariantRepresentation.regular α ρ Measure.count).group g v) =
-      ({1} : Set G).indicator
-        (fun _ => (CovariantRepresentation.regular α ρ Measure.count).coefficient a v) g := by
-    by_cases hg : g = 1 <;> simp [identitySupported_apply, hg]
-  simp_rw [h]
-  rw [integral_indicator (measurableSet_singleton _), integral_singleton]
-  simp only [count_real_singleton]
-  exact one_smul ℝ _
+  refine ContinuousLinearMap.ext fun v => ?_
+  rw [CovariantRepresentation.integratedOperator_apply, integral_count_eq_single 1 fun g hg => by
+    rw [ConvolutionAlgebra.ofConv_single_of_ne hg, map_zero, zero_apply],
+    ConvolutionAlgebra.ofConv_single_same, map_one, one_apply_eq_self]
 
 /-- The coefficient inclusion into the discrete concrete regular crossed product. -/
 def coefficient : A →⋆ₙₐ[ℂ] regularAlgebra α ρ Measure.count :=
   (CovariantRepresentation.regular α ρ Measure.count).coefficient.codRestrict _ fun a => by
-    rw [← integratedOperator_identitySupported α ρ a]
-    simpa only [coe_of, CovariantRepresentation.integratedStarAlgHom_apply,
-      ConvolutionAlgebra.ofConv_toConv] using
-      (of α ρ Measure.count (ConvolutionAlgebra.toConv (identitySupported a))).property
+    rw [← integratedOperator_single_one α ρ a]
+    simpa only [coe_of, CovariantRepresentation.integratedStarAlgHom_apply] using
+      (of α ρ Measure.count (ConvolutionAlgebra.single 1 a)).property
 
 /-- The inclusion acts by the coefficient representation of the regular covariant pair. -/
 @[simp]
@@ -90,18 +66,17 @@ theorem coe_coefficient (a : A) :
       (CovariantRepresentation.regular α ρ Measure.count).coefficient a := (rfl)
 
 private theorem coefficient_eq_of (a : A) :
-    coefficient α ρ a = of α ρ Measure.count (ConvolutionAlgebra.toConv (identitySupported a)) := by
+    coefficient α ρ a = of α ρ Measure.count (ConvolutionAlgebra.single 1 a) := by
   apply Subtype.ext
-  simpa only [coe_coefficient, coe_of, CovariantRepresentation.integratedStarAlgHom_apply,
-    ConvolutionAlgebra.ofConv_toConv] using (integratedOperator_identitySupported α ρ a).symm
+  simpa only [coe_coefficient, coe_of, CovariantRepresentation.integratedStarAlgHom_apply] using
+    (integratedOperator_single_one α ρ a).symm
 
 open scoped Classical in
 /-- Fourier coefficients of an included coefficient vanish off the identity. -/
 @[simp]
 theorem fourierCoeff_coefficient (hρ : Function.Injective ρ) (g : G) (a : A) :
     fourierCoeff α ρ hρ g (coefficient α ρ a) = if g = 1 then a else 0 := by
-  rw [coefficient_eq_of, fourierCoeff_of]
-  exact identitySupported_apply a g
+  rw [coefficient_eq_of, fourierCoeff_of, ConvolutionAlgebra.ofConv_single_apply]
 
 /-- Faithfulness of the inducing representation makes the coefficient inclusion isometric. -/
 theorem isometry_coefficient (hρ : Function.Injective ρ) : Isometry (coefficient α ρ) := by
