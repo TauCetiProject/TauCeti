@@ -1,0 +1,705 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Flat.CategoryTheory
+public import TauCeti.Algebra.Homology.Semisimple
+public import TauCeti.AlgebraicTopology.Singular.Fibration.BaseRow
+public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
+
+/-!
+# The Serre spectral sequence of a product
+
+Let `B` and `F` be topological spaces, `C ⊆ B` a relative CW complex with skeleta
+`Xᵏ = skeletonLT C (k + 1)`, and `K` a field. The first projection `p : B × F ⟶ B`
+(`CartesianMonoidalCategory.fst B F`) is the trivial fibration with fibre `F`. Its Serre spectral
+sequence `TauCeti.TopCat.serreSpectralSequence C p K` is computed from that of the identity of `B`,
+the spectral sequence of the skeletal filtration of `C`, by tensoring with the homology of `F`.
+
+* **The cross product on the first page.** The preimages of the skeleta are `p⁻¹(Xᵏ) = Xᵏ × F`,
+  and the relative cross product
+  `H_k(Xᵏ, Xᵏ⁻¹; K) ⊗ H_q(F; K) ⟶ H_{k+q}(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); K)`
+  (`TauCeti.TopCat.singularHomologyCrossPreimageSkeletonPair`) is an isomorphism
+  (`TauCeti.TopCat.isIso_singularHomologyCrossPreimageSkeletonPair`). By the relative Künneth
+  theorem over a field (`TopCat.isIso_singularHomologyKunnethRel`) the relative Künneth map
+  `⨁_{a + b = k + q} H_a(Xᵏ, Xᵏ⁻¹; K) ⊗ H_b(F; K) ⟶ H_{k+q}(Xᵏ × F, Xᵏ⁻¹ × F; K ⊗ K)` is an
+  isomorphism, and only the summand `a = k` survives, since `H_a(Xᵏ, Xᵏ⁻¹; K) = 0` for `a ≠ k`
+  (`TauCeti.isZero_singularHomology_skeletonPair_of_ne`).
+* **The first page.** In the classical indexing, `E¹_{k,q}(p) ≅ E¹_{k,0}(𝟙 B) ⊗ H_q(F; K)`, where
+  `E¹_{k,0}(𝟙 B) = H_k(Xᵏ, Xᵏ⁻¹; K)` is the `k`-th cellular chain group of `C`
+  (`TauCeti.TopCat.serreSpectralSequenceFstFirstPageXIsoTensor`); its inverse is induced by the
+  cross product (`TauCeti.TopCat.serreSpectralSequenceFstFirstPageXIsoTensor_inv`).
+* **The first differential.** The first differential of the spectral sequence of a filtered space
+  is the connecting map of the triple of three consecutive stages
+  (`TauCeti.filteredSpaceSpectralSequence_first_page_d_eq`), which factors through the connecting
+  map of a pair. The connecting map of the pair `(Xᵏ, Xᵏ⁻¹) × F` sends `a × b` to `∂a × b`, without
+  a sign since the pair is the first factor
+  (`TopCat.singularHomologyCrossRel_comp_singularHomologyδ`).
+  So under the identifications of the first pages, `d¹(p) = d¹(𝟙 B) ⊗ H_q(F; K)`
+  (`TauCeti.TopCat.d_comp_serreSpectralSequenceFstFirstPageXIsoTensor_hom`).
+* **The second page.** Tensoring with the vector space `H_q(F; K)` is exact, so it commutes with the
+  homology of the first page. For a CW complex `B` this gives
+  `E²_{k,q}(p) ≅ E²_{k,0}(𝟙 B) ⊗ H_q(F; K) ≅ H_k(B; K) ⊗ H_q(F; K)`
+  (`TauCeti.TopCat.serreSpectralSequenceFstSecondPageXIsoTensor`), the row `q = 0` of the spectral
+  sequence of the skeletal filtration being the homology of `B`
+  (`TauCeti.TopCat.serreSpectralSequenceIdSecondPageXIsoSingularHomology`).
+
+The cross product takes values in homology with coefficients in `K ⊗ K`. The two spectral sequences
+of `p` with coefficients in `K ⊗ K` and in `K` are identified by the isomorphism of spectral
+sequences induced by the unitor `K ⊗ K ≅ K`
+(`TauCeti.filteredSpaceSpectralSequenceCoefficientIso`), which commutes with the differentials.
+
+The spectral sequences are indexed as in `TauCeti.filteredSpaceSpectralSequence`: the first page
+is the page numbered `2`, the second page is the page numbered `3`, and the classical position
+`(k, q)` is `(a, b) = (1 - q - 2k, k - 1)`.
+
+## Main definitions
+
+* `TauCeti.TopCat.singularHomologyCrossPreimageSkeletonPair`: the relative cross product
+  `H_k(Xᵏ, Xᵏ⁻¹; K) ⊗ H_q(F; K) ⟶ H_{k+q}(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); K)`.
+* `TauCeti.TopCat.serreSpectralSequenceFstFirstPageXIsoTensor`:
+  `E¹_{k,q}(p) ≅ E¹_{k,0}(𝟙 B) ⊗ H_q(F; K)`.
+* `TauCeti.TopCat.serreSpectralSequenceFstSecondPageXIsoTensor`:
+  `E²_{k,q}(p) ≅ H_k(B; K) ⊗ H_q(F; K)` for a CW complex `B`.
+
+## Main results
+
+* `TauCeti.TopCat.isIso_singularHomologyCrossPreimageSkeletonPair`: the cross product on the first
+  page is an isomorphism.
+* `TauCeti.TopCat.d_comp_serreSpectralSequenceFstFirstPageXIsoTensor_hom`: the first differential
+  of the spectral sequence of `p` is that of the skeletal filtration of `B` tensored with
+  `H_q(F; K)`.
+
+## References
+
+* J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
+  425–505, Chapter II.
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1 (the homology spectral sequence, and the product of a CW complex with a
+  space).
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 3.B, the relative cross product and the relative Künneth formula.
+* E. H. Spanier, *Algebraic Topology*, Chapter 5, Section 3.
+-/
+
+public section
+
+noncomputable section
+
+universe u
+
+open CategoryTheory Limits Set Topology Topology.RelCWComplex MonoidalCategory
+  CartesianMonoidalCategory AlgebraicTopology
+
+namespace TauCeti
+
+namespace TopCat
+
+/-! ### The relative cross product for nested subspaces
+
+For nested subsets `s ⊆ t` of a space `Y` and subsets `s' ⊆ t'` of `Y × F` with the same points
+as `s × F` and `t × F`, the relative cross product of the pair `(t, s)` with `F` lands in the
+relative homology of `(t', s')`. -/
+
+section Cross
+
+variable {Y F : _root_.TopCat.{u}} {s t w : Set Y} {s' t' w' : Set ↑(Y ⊗ F)}
+  (K : Type u) [Field K]
+
+variable (F) in
+/-- The map `t × F ⟶ t'`, `(x, y) ↦ (x, y)`, onto a subspace `t'` of `Y × F` with the same points
+as `t × F`. -/
+private def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    _root_.TopCat.of t ⊗ F ⟶ _root_.TopCat.of t' :=
+  _root_.TopCat.ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), (ht _).2 x.1.property⟩, by fun_prop⟩
+
+/-- The pair `(t × F, fst⁻¹(s))`, the product of the pair `(t, s)` with `F` as in
+`TopCat.singularHomologyCrossRel`, is the pair `(t', s')` of subspaces of `Y × F` with the same
+points as `t × F` and `s × F`. -/
+private def prodPairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopPair.ofSubset (fst (_root_.TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s)) ≅
+      TopPair.ofInclusion hst' where
+  hom := TopPair.ofHom (prodSubspaceMap F ht)
+    (_root_.TopCat.ofHom ⟨fun x ↦ ⟨((fst _ F x.val).val, snd _ F x.val), (hs _).2 x.property⟩,
+      by fun_prop⟩)
+    rfl
+  inv := TopPair.ofHom
+    (_root_.TopCat.ofHom ⟨fun x ↦ (⟨fst Y F x.val, (ht _).1 x.property⟩, snd Y F x.val),
+      by fun_prop⟩)
+    (_root_.TopCat.ofHom ⟨fun x ↦ ⟨(⟨fst Y F x.val, (ht _).1 (hst' x.property)⟩, snd Y F x.val),
+      (hs _).1 x.property⟩, by fun_prop⟩)
+    rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- The relative cross product `Hₐ(t, s; K) ⊗ H_b(F; K) ⟶ Hₙ(t', s'; K ⊗ K)`: the relative cross
+product `TopCat.singularHomologyCrossRel` of the pair `(t, s)` with `F`, transported along the
+identifications of `(t, s)` with the pair of `t` and the preimage of `s`, and of the product pair
+with `(t', s')`. -/
+private def crossOfInclusion (hst : s ⊆ t) (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (a b n : ℕ) (h : a + b = n) :
+    (TopPair.ofInclusion hst).singularHomology (ModuleCat.of K K) a ⊗
+        ((singularHomologyFunctor _ b).obj (ModuleCat.of K K)).obj F ⟶
+      (TopPair.ofInclusion hst').singularHomology (ModuleCat.of K K ⊗ ModuleCat.of K K) n :=
+  (TopPair.singularHomologyMap (TopPair.ofSubsetPreimageValIso hst).inv _ a ▷ _) ≫
+    _root_.TopCat.singularHomologyCrossRel (_root_.TopCat.of t) F (Subtype.val ⁻¹' s) _ _ a b n h ≫
+    TopPair.singularHomologyMap (prodPairIso hst' hs ht).hom _ n
+
+/-- Over a field, the relative cross product `H_k(X, S) ⊗ H_q(F) ⟶ H_n(X × F, S × F)` is an
+isomorphism when `(X, S)` has no relative homology outside degree `k`: it is the summand `(k, q)` of
+the relative Künneth isomorphism, and the other summands vanish. -/
+private lemma isIso_singularHomologyCrossRel_of_isZero (X : _root_.TopCat.{u}) (S : Set X)
+    (k q n : ℕ) (h : k + q = n)
+    (hz : ∀ a, a ≠ k → IsZero ((TopPair.ofSubset S).singularHomology (ModuleCat.of K K) a)) :
+    IsIso (_root_.TopCat.singularHomologyCrossRel X F S (ModuleCat.of K K) (ModuleCat.of K K)
+      k q n h) := by
+  have := GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left
+    (fun p ↦ (TopPair.ofSubset S).singularHomology (ModuleCat.of K K) p)
+    (fun q ↦ ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F) hz q n h
+  rw [← _root_.TopCat.ι_singularHomologyKunnethRel]
+  infer_instance
+
+/-- Over a field, the relative cross product of `(t, s)` with `F` in degree `k` is an isomorphism
+when `(t, s)` has no relative homology outside degree `k`. -/
+private lemma isIso_crossOfInclusion (hst : s ⊆ t) (hst' : s' ⊆ t')
+    (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s) (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (k q n : ℕ)
+    (h : k + q = n)
+    (hz : ∀ a, a ≠ k → IsZero ((TopPair.ofInclusion hst).singularHomology (ModuleCat.of K K) a)) :
+    IsIso (crossOfInclusion K hst hst' hs ht k q n h) := by
+  have := isIso_singularHomologyCrossRel_of_isZero (F := F) K (_root_.TopCat.of t)
+    (Subtype.val ⁻¹' s) k q n h fun a ha ↦ (hz a ha).of_iso
+      (TopPair.singularHomologyMapIso _ (TopPair.ofSubsetPreimageValIso hst) a)
+  unfold crossOfInclusion
+  infer_instance
+
+/-- The relative cross product of the image in `H_a(t, s)` of a class of `H_a(t)` is the image in
+relative homology of the absolute cross product. -/
+private lemma whiskerRight_singularHomologyπ_comp_crossOfInclusion (hst : s ⊆ t) (hst' : s' ⊆ t')
+    (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s) (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (a b n : ℕ)
+    (h : a + b = n) :
+    ((TopPair.ofInclusion hst).singularHomologyπ (ModuleCat.of K K) a ▷
+        ((singularHomologyFunctor _ b).obj (ModuleCat.of K K)).obj F) ≫
+      crossOfInclusion K hst hst' hs ht a b n h =
+    _root_.TopCat.singularHomologyCross (_root_.TopCat.of t) F (ModuleCat.of K K)
+        (ModuleCat.of K K) a b n h ≫
+      ((singularHomologyFunctor _ n).obj _).map (prodSubspaceMap F ht) ≫
+        (TopPair.ofInclusion hst').singularHomologyπ _ n := by
+  have h₁ : (TopPair.ofInclusion hst).singularHomologyπ (ModuleCat.of K K) a ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetPreimageValIso hst).inv _ a =
+        (TopPair.ofSubset (X := _root_.TopCat.of t) (Subtype.val ⁻¹' s)).singularHomologyπ _ a := by
+    exact (HomologicalComplex.homologyMap_comp _ _ a).symm.trans
+      (congrArg (HomologicalComplex.homologyMap · a)
+        (TopPair.singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id _
+          (TopPair.ofSubsetPreimageValIso hst).inv TopPair.ofSubsetPreimageValIso_inv_fst))
+  have h₂ := _root_.TopCat.singularHomologyCross_comp_singularHomologyπ (_root_.TopCat.of t) F
+    (Subtype.val ⁻¹' s) (ModuleCat.of K K) (ModuleCat.of K K) a b n h
+  have h₃ := TopPair.singularHomologyπ_naturality (prodPairIso hst' hs ht).hom
+    (ModuleCat.of K K ⊗ ModuleCat.of K K) n
+  unfold crossOfInclusion
+  rw [← comp_whiskerRight_assoc, h₁]
+  exact ((reassoc_of% h₂) _).symm.trans (congrArg (_ ≫ ·) h₃.symm)
+
+/-- The connecting map of the pair `(w', t')` sends the relative cross product `a × b` to the
+absolute cross product `∂a × b`, carried to `t'`. -/
+private lemma crossOfInclusion_comp_singularHomologyδ (htw : t ⊆ w) (htw' : t' ⊆ w')
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (hw : ∀ x, x ∈ w' ↔ fst Y F x ∈ w) (a b n : ℕ)
+    (h : a + b = n) :
+    crossOfInclusion K htw htw' ht hw (a + 1) b (n + 1) (by omega) ≫
+        (TopPair.ofInclusion htw').singularHomologyδ (ModuleCat.of K K ⊗ ModuleCat.of K K)
+          (n + 1) n =
+      ((TopPair.ofInclusion htw).singularHomologyδ (ModuleCat.of K K) (a + 1) a ▷
+          ((singularHomologyFunctor _ b).obj (ModuleCat.of K K)).obj F) ≫
+        _root_.TopCat.singularHomologyCross (_root_.TopCat.of t) F (ModuleCat.of K K)
+          (ModuleCat.of K K) a b n h ≫
+        ((singularHomologyFunctor _ n).obj _).map (prodSubspaceMap F ht) := by
+  have h₁ := TopPair.singularHomologyδ_naturality (ModuleCat.of K K ⊗ ModuleCat.of K K)
+    (prodPairIso htw' ht hw).hom (n + 1) n
+  have h₂ := _root_.TopCat.singularHomologyCrossRel_comp_singularHomologyδ (_root_.TopCat.of w) F
+    (Subtype.val ⁻¹' t) (ModuleCat.of K K) (ModuleCat.of K K) (a + 1) b (n + 1) (by omega)
+    (p' := a) rfl h
+  have h₃ := TopPair.singularHomologyδ_naturality (ModuleCat.of K K)
+    (TopPair.ofSubsetPreimageValIso htw).inv (a + 1) a
+  have h₄ := _root_.TopCat.singularHomologyCross_naturality
+    (TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htw).inv) (𝟙 F) (ModuleCat.of K K)
+    (ModuleCat.of K K) a b n h
+  rw [CategoryTheory.Functor.map_id, tensorHom_id] at h₄
+  -- The composite of `t × F ⟶ t₀ × F ⟶ fst⁻¹(t₀) ⟶ t'`, where `t₀` is the preimage of `t` in
+  -- `w`, is the map `(x, y) ↦ (x, y)`.
+  have h₅ : (TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htw).inv ▷ F) ≫
+      (_root_.TopCat.prodPreimageFstIso (_root_.TopCat.of w) F (Subtype.val ⁻¹' t)).hom ≫
+        TopPair.Hom.snd (prodPairIso htw' ht hw).hom = prodSubspaceMap F ht := by
+    ext x
+    have hP : ((_root_.TopCat.prodPreimageFstIso (_root_.TopCat.of w) F (Subtype.val ⁻¹' t)).hom
+        ((TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htw).inv ▷ F) x)).val =
+          ((TopPair.Hom.snd (TopPair.ofSubsetPreimageValIso htw).inv x.1).val, x.2) :=
+      ConcreteCategory.congr_hom (_root_.TopCat.prodPreimageFstIso_hom_comp_map
+        (_root_.TopCat.of w) F (Subtype.val ⁻¹' t)) _
+    have hi := TopPair.ofSubsetPreimageValIso_inv_snd_apply (hst := htw) x.1
+    exact Subtype.ext (Prod.ext ((congrArg (fun z ↦ (fst (_root_.TopCat.of w) F z).val) hP).trans
+      (congrArg Subtype.val hi)) (congrArg (snd (_root_.TopCat.of w) F) hP))
+  -- The connecting maps are moved from the pair `(w', t')` to the product pair (`h₁`), across the
+  -- relative cross product (`h₂`), and to the pair `(w, t)` (`h₃`); the cross product is then
+  -- natural in the subspace (`h₄`). The composites mix the two descriptions of absolute homology,
+  -- as the homology of a subobject of a pair and as singular homology, which agree only up to
+  -- unfolding, so they are assembled as terms.
+  unfold crossOfInclusion
+  simp only [Category.assoc]
+  refine (congrArg (_ ≫ _ ≫ ·) h₁.symm).trans ?_
+  refine (congrArg (_ ≫ ·) (((reassoc_of% h₂) _).trans (Category.assoc _ _ _))).trans ?_
+  refine (comp_whiskerRight_assoc (C := ModuleCat.{u} K) _ _ _ _).symm.trans ?_
+  refine (congrArg (fun f ↦ MonoidalCategory.whiskerRight (C := ModuleCat.{u} K) f _ ≫ _)
+    h₃.symm).trans ?_
+  refine (comp_whiskerRight_assoc (C := ModuleCat.{u} K) _ _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+    ((reassoc_of% h₄) _))).trans ?_
+  refine congrArg (_ ≫ _ ≫ ·) ?_
+  exact (congrArg (_ ≫ ·) (((singularHomologyFunctor _ n).obj
+    (ModuleCat.of K K ⊗ ModuleCat.of K K)).map_comp _ _).symm).trans
+      ((((singularHomologyFunctor _ n).obj _).map_comp _ _).symm.trans (congrArg _ h₅))
+
+/-- **The relative cross product commutes with the connecting maps of triples.** For nested
+subsets `s ⊆ t ⊆ w` and the corresponding subsets `s' ⊆ t' ⊆ w'` of `Y × F`, the connecting map
+`H_{n+1}(w', t') ⟶ Hₙ(t', s')` of the triple sends `a × b` to `∂a × b`, where `∂` is the connecting
+map of the triple `(w, t, s)`. -/
+private lemma whiskerRight_singularHomologyδ_comp_crossOfInclusion (hst : s ⊆ t) (htw : t ⊆ w)
+    (hst' : s' ⊆ t') (htw' : t' ⊆ w') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (hw : ∀ x, x ∈ w' ↔ fst Y F x ∈ w) (a b n : ℕ)
+    (h : a + b = n) :
+    ((TopTriple.ofInclusions hst htw).singularHomologyδ (ModuleCat.of K K) (a + 1) a ▷
+        ((singularHomologyFunctor _ b).obj (ModuleCat.of K K)).obj F) ≫
+      crossOfInclusion K hst hst' hs ht a b n h =
+    crossOfInclusion K htw htw' ht hw (a + 1) b (n + 1) (by omega) ≫
+      (TopTriple.ofInclusions hst' htw').singularHomologyδ _ (n + 1) n := by
+  rw [TopTriple.singularHomologyδ_eq_comp_singularHomologyπ _ _ (a + 1) a,
+    TopTriple.singularHomologyδ_eq_comp_singularHomologyπ _ _ (n + 1) n]
+  refine (comp_whiskerRight_assoc (C := ModuleCat.{u} K) _ _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·)
+    (whiskerRight_singularHomologyπ_comp_crossOfInclusion K hst hst' hs ht a b n h)).trans ?_
+  refine Eq.symm (((reassoc_of% (crossOfInclusion_comp_singularHomologyδ K htw htw' ht hw a b n
+    h)) _).trans ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _))))
+
+/-- The map induced on relative homology by the unitor `K ⊗ K ≅ K` of the coefficients. -/
+private abbrev unitorHomologyMap (P : TopPair.{u}) (n : ℕ) :
+    P.singularHomology (ModuleCat.of K K ⊗ ModuleCat.of K K) n ⟶
+      P.singularHomology (ModuleCat.of K K) n :=
+  HomologicalComplex.homologyMap (((SSetPair.chainComplexFunctor _).map
+    (λ_ (ModuleCat.of K K)).hom).app (TopPair.toSSetPair.obj P)) n
+
+/-- The relative cross product followed by the unitor of the coefficients only depends on the
+subsets, not on how they are written. -/
+private lemma crossOfInclusion_comp_unitorHomologyMap_congr {s₁ t₁ : Set Y}
+    {s₁' t₁' : Set ↑(Y ⊗ F)} (hst : s ⊆ t) (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (hst₁ : s₁ ⊆ t₁) (hst₁' : s₁' ⊆ t₁')
+    (hs₁ : ∀ x, x ∈ s₁' ↔ fst Y F x ∈ s₁) (ht₁ : ∀ x, x ∈ t₁' ↔ fst Y F x ∈ t₁) (e₁ : s = s₁)
+    (e₂ : t = t₁) (e₁' : s' = s₁') (e₂' : t' = t₁') (a b n : ℕ) (h : a + b = n) :
+    crossOfInclusion K hst hst' hs ht a b n h ≫ unitorHomologyMap K (TopPair.ofInclusion hst') n =
+      (eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of K K) a)
+          (TopPair.ofInclusion_congr hst hst₁ e₁ e₂)) ▷ _) ≫
+        crossOfInclusion K hst₁ hst₁' hs₁ ht₁ a b n h ≫
+          unitorHomologyMap K (TopPair.ofInclusion hst₁') n ≫
+            eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of K K) n)
+              (TopPair.ofInclusion_congr hst' hst₁' e₁' e₂')).symm := by
+  subst e₁ e₂ e₁' e₂'
+  simp
+
+end Cross
+
+/-! ### Change of coefficients -/
+
+section Coefficients
+
+variable (K : Type u) [Field K] {Y : _root_.TopCat.{u}} {X : ℤ → Set Y} (hX : Monotone X)
+
+/-- The isomorphism of spectral sequences of a filtered space induced by the unitor `K ⊗ K ≅ K` of
+the coefficients, with its source written with coefficients in `K ⊗ K`. -/
+private abbrev unitorSpectralSequenceIso :
+    filteredSpaceSpectralSequence (ModuleCat.of K K ⊗ ModuleCat.of K K) hX ≅
+      filteredSpaceSpectralSequence (ModuleCat.of K K) hX :=
+  filteredSpaceSpectralSequenceCoefficientIso hX (λ_ (ModuleCat.of K K))
+
+/-- The component on the first page of `unitorSpectralSequenceIso`. -/
+private def unitorPageTwoXIso (pq : ℤ × ℤ) :
+    ((filteredSpaceSpectralSequence (ModuleCat.of K K ⊗ ModuleCat.of K K) hX).page 2).X pq ≅
+      ((filteredSpaceSpectralSequence (ModuleCat.of K K) hX).page 2).X pq :=
+  (HomologicalComplex.eval _ _ pq).mapIso
+    ((SpectralSequence.pageFunctor _ _ _ 2).mapIso (unitorSpectralSequenceIso K hX))
+
+/-- `unitorPageTwoXIso` is the component of the morphism of spectral sequences induced by the
+unitor. -/
+private lemma unitorPageTwoXIso_hom (pq : ℤ × ℤ) :
+    (unitorPageTwoXIso K hX pq).hom =
+      ((filteredSpaceSpectralSequenceCoefficientMap hX (λ_ (ModuleCat.of K K)).hom).hom 2).f
+        pq := by
+  rw [← filteredSpaceSpectralSequenceCoefficientIso_hom]
+  rfl
+
+/-- The inverse of `unitorPageTwoXIso` is the component of the morphism of spectral sequences
+induced by the inverse unitor. -/
+private lemma unitorPageTwoXIso_inv (pq : ℤ × ℤ) :
+    (unitorPageTwoXIso K hX pq).inv = ((unitorSpectralSequenceIso K hX).inv.hom 2).f pq :=
+  (rfl)
+
+end Coefficients
+
+/-! ### The first page -/
+
+section SpectralSequence
+
+variable {B : _root_.TopCat.{u}} [T2Space B] {C D : Set B} [RelCWComplex C D]
+  (F : _root_.TopCat.{u}) (K : Type u) [Field K]
+
+/-- A point of `B × F` lies over the `b`-skeleton exactly when its first coordinate does. -/
+private lemma mem_preimageSkeleton_fst_iff (b : ℤ) (x : ↑(B ⊗ F)) :
+    x ∈ preimageSkeleton C (fst B F) b ↔ fst B F x ∈ preimageSkeleton C (𝟙 B) b :=
+  (mem_preimageSkeleton_iff _ _ _).trans (mem_preimageSkeleton_iff (C := C) (𝟙 B) b _).symm
+
+/-- The relative homology `Hₙ(Xᵇ, Xᵇ⁻¹; K)` of consecutive stages of the skeletal filtration of the
+base vanishes for `n ≠ b`. -/
+private lemma isZero_singularHomology_preimageSkeleton_id (a b : ℤ) (hab : b = a + 1) (n : ℕ)
+    (hn : (n : ℤ) ≠ b) :
+    IsZero ((TopPair.ofInclusion (monotone_preimageSkeleton (C := C) (𝟙 B)
+      (by lia : a ≤ b))).singularHomology (ModuleCat.of K K) n) := by
+  subst hab
+  exact (isZero_serreSpectralSequence_id_page_two_X K (-(n : ℤ) - a, a) (by dsimp; lia)).of_iso
+    (filteredSpaceSpectralSequenceFirstPageXIso _ _ (-(n : ℤ) - a, a) a (a + 1) rfl rfl _ rfl n
+      (by dsimp; lia)).symm
+
+variable (C) in
+/-- **The cross product on the first page of the Serre spectral sequence of a product.** For the
+first projection `p : B × F ⟶ B` and a relative CW complex `C ⊆ B` with skeleta `Xᵏ`, the relative
+cross product `H_k(Xᵏ, Xᵏ⁻¹; K) ⊗ H_q(F; K) ⟶ Hₙ(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); K)`, for `k + q = n`: the
+relative cross product `TopCat.singularHomologyCrossRel` of the pair `(Xᵏ, Xᵏ⁻¹)` with `F`, read on
+`p⁻¹(Xᵏ) = Xᵏ × F`, followed by the unitor `K ⊗ K ≅ K` of the coefficients. Its source is the
+first page of the Serre spectral sequence of the identity of `B` at the classical position `(k, 0)`,
+tensored with `H_q(F; K)`, and its target that of `p` at `(k, q)`. -/
+def singularHomologyCrossPreimageSkeletonPair (k q n : ℕ) (h : k + q = n) :
+    (preimageSkeletonPair (𝟙 B) C k).singularHomology (ModuleCat.of K K) k ⊗
+        ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F ⟶
+      (preimageSkeletonPair (fst B F) C k).singularHomology (ModuleCat.of K K) n :=
+  crossOfInclusion K (preimage_mono (f := 𝟙 B) (skeletonLT_subset_skeletonLT_succ C k))
+      (preimage_mono (f := fst B F) (skeletonLT_subset_skeletonLT_succ C k)) (fun _ ↦ Iff.rfl)
+      (fun _ ↦ Iff.rfl) k q n h ≫
+    unitorHomologyMap K (preimageSkeletonPair (fst B F) C k) n
+
+/-- **The cross product on the first page is an isomorphism.** Over a field, the relative cross
+product `H_k(Xᵏ, Xᵏ⁻¹; K) ⊗ H_q(F; K) ⟶ H_{k+q}(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); K)` is an isomorphism: it is a
+summand of the relative Künneth isomorphism, whose other summands vanish since
+`H_a(Xᵏ, Xᵏ⁻¹; K) = 0` for `a ≠ k`. -/
+instance isIso_singularHomologyCrossPreimageSkeletonPair (k q n : ℕ) (h : k + q = n) :
+    IsIso (singularHomologyCrossPreimageSkeletonPair C F K k q n h) := by
+  have := isIso_crossOfInclusion K
+    (preimage_mono (f := 𝟙 B) (skeletonLT_subset_skeletonLT_succ C k))
+    (preimage_mono (f := fst B F) (skeletonLT_subset_skeletonLT_succ C k)) (fun _ ↦ Iff.rfl)
+    (fun _ ↦ Iff.rfl) k q n h fun a ha ↦
+      isZero_singularHomology_skeletonPair_of_ne C (ModuleCat.of K K) ha
+  unfold singularHomologyCrossPreimageSkeletonPair
+  infer_instance
+
+/-- The cross product on the stages `a ≤ b = a + 1` of the skeletal filtrations is an isomorphism
+in degree `b`. -/
+private lemma isIso_crossOfInclusion_preimageSkeleton (a b : ℤ) (hab : a ≤ b) (k q n : ℕ)
+    (hk : b = k) (hb : b = a + 1) (hn : k + q = n) :
+    IsIso (crossOfInclusion K (monotone_preimageSkeleton (C := C) (𝟙 B) hab)
+      (monotone_preimageSkeleton (C := C) (fst B F) hab) (mem_preimageSkeleton_fst_iff F a)
+      (mem_preimageSkeleton_fst_iff F b) k q n hn) :=
+  isIso_crossOfInclusion K _ _ _ _ k q n hn fun m hm ↦
+    isZero_singularHomology_preimageSkeleton_id (C := C) K a b hb m (by lia)
+
+/-- The first-page identification `E¹_{k,q}(fst; K ⊗ K) ≅ E¹_{k,0}(𝟙; K) ⊗ H_q(F; K)` through the
+first-page identifications of both filtered spaces and the inverse of the cross product, with all
+indices given together with equations. -/
+private def auxIso (k q n : ℕ) (hn : k + q = n) (pq pq₀ : ℤ × ℤ) (a b : ℤ) (ha : a = pq.2)
+    (hb : b = pq.2 + 1) (hk : b = k) (hm : pq.1 + pq.2 = -n) (ha₀ : a = pq₀.2)
+    (hb₀ : b = pq₀.2 + 1) (hm₀ : pq₀.1 + pq₀.2 = -k) :
+    ((filteredSpaceSpectralSequence (ModuleCat.of K K ⊗ ModuleCat.of K K)
+        (monotone_preimageSkeleton (C := C) (fst B F))).page 2).X pq ≅
+      ((serreSpectralSequence C (𝟙 B) K).page 2).X pq₀ ⊗
+        ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F :=
+  filteredSpaceSpectralSequenceFirstPageXIso _ _ pq a b ha hb _ rfl n hm ≪≫
+    (@asIso _ _ _ _ (crossOfInclusion K (monotone_preimageSkeleton (C := C) (𝟙 B) (by lia))
+        (monotone_preimageSkeleton (C := C) (fst B F) (by lia : a ≤ b))
+        (mem_preimageSkeleton_fst_iff F a) (mem_preimageSkeleton_fst_iff F b) k q n hn)
+      (isIso_crossOfInclusion_preimageSkeleton F K a b (by lia) k q n hk (by lia) hn)).symm ≪≫
+    whiskerRightIso (filteredSpaceSpectralSequenceFirstPageXIso _ _ pq₀ a b ha₀ hb₀ _ rfl k
+      hm₀).symm _
+
+/-- `auxIso` only depends on the values of the indices. -/
+private lemma auxIso_congr (k q n n' : ℕ) (hn : k + q = n) (hn' : k + q = n') (pq pq₀ : ℤ × ℤ)
+    (a b a' b' : ℤ) (ha : a = pq.2) (hb : b = pq.2 + 1) (hk : b = k) (hm : pq.1 + pq.2 = -n)
+    (ha₀ : a = pq₀.2) (hb₀ : b = pq₀.2 + 1) (hm₀ : pq₀.1 + pq₀.2 = -k) (ha' : a' = pq.2)
+    (hb' : b' = pq.2 + 1) (hk' : b' = k) (hm' : pq.1 + pq.2 = -n') (ha₀' : a' = pq₀.2)
+    (hb₀' : b' = pq₀.2 + 1) :
+    auxIso (C := C) F K k q n hn pq pq₀ a b ha hb hk hm ha₀ hb₀ hm₀ =
+      auxIso F K k q n' hn' pq pq₀ a' b' ha' hb' hk' hm' ha₀' hb₀' hm₀ := by
+  obtain rfl : n = n' := by lia
+  obtain rfl : a = a' := by lia
+  obtain rfl : b = b' := by lia
+  rfl
+
+/-- The first-page identification of a filtered space only depends on the value of the total
+degree `m`. -/
+private lemma filteredSpaceSpectralSequenceFirstPageXIso_congr {Y : _root_.TopCat.{u}}
+    {X : ℤ → Set Y} (R : ModuleCat.{u} K) (hX : Monotone X) (pq : ℤ × ℤ) (a b : ℤ)
+    (ha : a = pq.2) (hb : b = pq.2 + 1) (m m' : ℤ) (hm : m = pq.1 + pq.2)
+    (hm' : m' = pq.1 + pq.2) (n : ℕ) (hn : m = -n) (hn' : m' = -n) :
+    filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn =
+      filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m' hm' n hn' := by
+  subst hm hm'
+  rfl
+
+/-- With coefficients in `K ⊗ K`, the first differential of the spectral sequence of the product
+corresponds under `auxIso` to the first differential of the skeletal filtration of the base,
+tensored with `H_q(F; K)`. -/
+private lemma auxIso_hom_d (k q : ℕ) (p b p₀ : ℤ) (hb : b = k) (hm : p + b = -(k + q + 1 : ℕ))
+    (hm₀ : p₀ + b = -(k + 1 : ℕ)) :
+    ((filteredSpaceSpectralSequence (ModuleCat.of K K ⊗ ModuleCat.of K K)
+        (monotone_preimageSkeleton (C := C) (fst B F))).page 2).d (p, b) (p + 2, b - 1) ≫
+      (auxIso F K k q (k + q) rfl (p + 2, b - 1) (p₀ + 2, b - 1) (b - 1) b rfl
+        (by dsimp only; lia) hb (by dsimp only; lia) rfl (by dsimp only; lia)
+        (by dsimp only; lia)).hom =
+    (auxIso F K (k + 1) q (k + q + 1) (by lia) (p, b) (p₀, b) b (b + 1) rfl rfl (by lia)
+        (by dsimp only; lia) rfl rfl (by dsimp only; lia)).hom ≫
+      (((serreSpectralSequence C (𝟙 B) K).page 2).d (p₀, b) (p₀ + 2, b - 1) ▷ _) := by
+  -- Both first differentials are connecting maps of triples, which the cross product intertwines.
+  rw [filteredSpaceSpectralSequence_first_page_d_eq _ _ b p (k + q) hm,
+    filteredSpaceSpectralSequence_first_page_d_eq _ _ b p₀ k hm₀]
+  simp only [auxIso, Iso.trans_hom, Iso.symm_hom, asIso_inv, whiskerRightIso_hom, Category.assoc]
+  rw [filteredSpaceSpectralSequenceFirstPageXIso_congr K _ _ (p + 2, b - 1) (b - 1) b _ _
+      (p + 2 + (b - 1)) (p + b + 1) _ (by dsimp only; lia) _ _ (by lia),
+    filteredSpaceSpectralSequenceFirstPageXIso_congr K _ _ (p₀ + 2, b - 1) (b - 1) b _ _
+      (p₀ + 2 + (b - 1)) (p₀ + b + 1) _ (by dsimp only; lia) _ _ (by lia)]
+  have hC := whiskerRight_singularHomologyδ_comp_crossOfInclusion K
+    (monotone_preimageSkeleton (C := C) (𝟙 B) (by lia : b - 1 ≤ b))
+    (monotone_preimageSkeleton (C := C) (𝟙 B) (by lia : b ≤ b + 1))
+    (monotone_preimageSkeleton (C := C) (fst B F) (by lia : b - 1 ≤ b))
+    (monotone_preimageSkeleton (C := C) (fst B F) (by lia : b ≤ b + 1))
+    (mem_preimageSkeleton_fst_iff F (b - 1)) (mem_preimageSkeleton_fst_iff F b)
+    (mem_preimageSkeleton_fst_iff F (b + 1)) k q (k + q) rfl
+  have i₁ := isIso_crossOfInclusion_preimageSkeleton (C := C) F K (b - 1) b (by lia) k q (k + q)
+    hb (by lia) rfl
+  have i₂ := isIso_crossOfInclusion_preimageSkeleton (C := C) F K b (b + 1) (by lia) (k + 1) q
+    (k + q + 1) (by lia) rfl (by lia)
+  have key := (Iso.eq_inv_comp (@asIso _ _ _ _ _ i₂)).2 ((Category.assoc _ _ _).symm.trans
+    ((Iso.comp_inv_eq (@asIso _ _ _ _ _ i₁)).2 hC.symm))
+  refine congrArg (_ ≫ ·) ?_
+  refine ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Iso.inv_hom_id_assoc _ _))).trans ?_
+  refine (Category.assoc _ _ _).symm.trans (((congrArg (· ≫ _) key).trans
+    (Category.assoc _ _ _)).trans (congrArg (_ ≫ ·) ?_))
+  exact (comp_whiskerRight (C := ModuleCat.{u} K) _ _ _).symm.trans
+    ((congrArg (MonoidalCategory.whiskerRight (C := ModuleCat.{u} K) · _)
+      (Iso.inv_hom_id_assoc _ _).symm).trans (comp_whiskerRight _ _ _))
+
+variable (C) in
+/-- **The first page of the Serre spectral sequence of a product.** For the first projection
+`p : B × F ⟶ B` and a relative CW complex `C ⊆ B`, over a field `K`, the object of the first page
+(numbered `2`) of the Serre spectral sequence of `p` at `pq = (a, b)`, with `b = k - 1` and
+`a + b = -(q + k)`, is the object of the first page of the spectral sequence of the skeletal
+filtration of `C` at `pq₀ = (a₀, b)`, with `a₀ + b = -k`, tensored with `H_q(F; K)`. In the
+classical indexing this is `E¹_{k,q}(p) ≅ E¹_{k,0}(𝟙 B) ⊗ H_q(F; K)`; the inverse is induced by the
+cross product (`TauCeti.TopCat.serreSpectralSequenceFstFirstPageXIsoTensor_inv`). -/
+def serreSpectralSequenceFstFirstPageXIsoTensor (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) (pq₀ : ℤ × ℤ) (hb₀ : pq₀.2 = k - 1)
+    (ha₀ : pq₀.1 + pq₀.2 = -k) :
+    ((serreSpectralSequence C (fst B F) K).page 2).X pq ≅
+      ((serreSpectralSequence C (𝟙 B) K).page 2).X pq₀ ⊗
+        ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F :=
+  (unitorPageTwoXIso K _ pq).symm ≪≫
+    auxIso F K k q (k + q) rfl pq pq₀ pq.2 (pq.2 + 1) rfl rfl (by lia) (by lia) (by lia) (by lia)
+      ha₀
+
+/-- The inverse of the identification `E¹_{k,q}(p) ≅ E¹_{k,0}(𝟙 B) ⊗ H_q(F; K)` is the relative
+cross product `TauCeti.TopCat.singularHomologyCrossPreimageSkeletonPair`, read through the
+first-page identifications of both spectral sequences with the relative homology of consecutive
+(preimages of) skeleta. -/
+lemma serreSpectralSequenceFstFirstPageXIsoTensor_inv (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) (pq₀ : ℤ × ℤ) (hb₀ : pq₀.2 = k - 1)
+    (ha₀ : pq₀.1 + pq₀.2 = -k) :
+    (serreSpectralSequenceFstFirstPageXIsoTensor C F K k q pq hb ha pq₀ hb₀ ha₀).inv =
+      (((filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of K K)
+          (monotone_preimageSkeleton (C := C) (𝟙 B)) pq₀ pq₀.2 (pq₀.2 + 1) rfl rfl _ rfl k
+            ha₀).hom ≫
+          eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of K K) k)
+            (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq₀.2 hb₀))) ▷ _) ≫
+        singularHomologyCrossPreimageSkeletonPair C F K k q (k + q) rfl ≫
+          eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of K K) (k + q))
+            (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)).symm ≫
+          (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of K K)
+            (monotone_preimageSkeleton (C := C) (fst B F)) pq pq.2 (pq.2 + 1) rfl rfl _ rfl
+              (k + q) (by lia)).inv := by
+  obtain ⟨p, b⟩ := pq
+  obtain ⟨p₀, b₀⟩ := pq₀
+  dsimp only at hb ha hb₀ ha₀
+  obtain rfl : b = b₀ := by lia
+  have hN := filteredSpaceSpectralSequenceFirstPageXIso_hom_coefficient_naturality
+    (monotone_preimageSkeleton (C := C) (fst B F)) (λ_ (ModuleCat.of K K)).hom (p, b) b (b + 1)
+    rfl rfl _ rfl (k + q) (by dsimp only; lia)
+  dsimp only at hN
+  have key := (Iso.inv_comp_eq _).2 (((Iso.eq_comp_inv _).2 hN).trans (Category.assoc _ _ _))
+  have hc := crossOfInclusion_comp_unitorHomologyMap_congr K
+    (monotone_preimageSkeleton (C := C) (𝟙 B) (Int.le_add_one le_rfl : b ≤ b + 1))
+    (monotone_preimageSkeleton (C := C) (fst B F) (Int.le_add_one le_rfl : b ≤ b + 1))
+    (mem_preimageSkeleton_fst_iff F b) (mem_preimageSkeleton_fst_iff F (b + 1))
+    (preimage_mono (f := 𝟙 B) (skeletonLT_subset_skeletonLT_succ C k))
+    (preimage_mono (f := fst B F) (skeletonLT_subset_skeletonLT_succ C k)) (fun _ ↦ Iff.rfl)
+    (fun _ ↦ Iff.rfl) (preimageSkeleton_eq_preimage_skeletonLT _ k b hb)
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT _ k b hb)
+    (preimageSkeleton_eq_preimage_skeletonLT _ k b hb)
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT _ k b hb) k q (k + q) rfl
+  simp only [serreSpectralSequenceFstFirstPageXIsoTensor, auxIso, Iso.trans_inv, Iso.symm_inv,
+    whiskerRightIso_inv, asIso_hom, Category.assoc, unitorPageTwoXIso_hom]
+  refine Eq.trans ?_ (comp_whiskerRight_assoc (C := ModuleCat.{u} K) _ _ _ _).symm
+  refine congrArg (_ ≫ ·) ?_
+  refine (congrArg (_ ≫ ·) key).trans ?_
+  -- `singularHomologyCrossPreimageSkeletonPair` is by definition the cross product followed by
+  -- the unitor of the coefficients, so the two sides agree after reassociating.
+  exact ((reassoc_of% hc) _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm)
+
+/-- **The first differential of the Serre spectral sequence of a product.** Under the
+identifications `E¹_{k,q}(p) ≅ E¹_{k,0}(𝟙 B) ⊗ H_q(F; K)`, the first differential
+`E¹_{k+1,q}(p) ⟶ E¹_{k,q}(p)` of the Serre spectral sequence of `p : B × F ⟶ B` is the first
+differential of the spectral sequence of the skeletal filtration of `C`, the cellular boundary
+map, tensored with `H_q(F; K)`. Here `pq = (a, k)` is the classical position `(k + 1, q)`. -/
+@[reassoc]
+theorem d_comp_serreSpectralSequenceFstFirstPageXIsoTensor_hom (k q : ℕ)
+    (pq pq' pq₀ pq₀' : ℤ × ℤ) (hb : pq.2 = k) (ha : pq.1 + pq.2 = -(q + (k + 1) : ℕ))
+    (hb₀ : pq₀.2 = k) (ha₀ : pq₀.1 + pq₀.2 = -(k + 1 : ℕ)) (h' : pq' = (pq.1 + 2, pq.2 - 1))
+    (h₀' : pq₀' = (pq₀.1 + 2, pq₀.2 - 1)) :
+    ((serreSpectralSequence C (fst B F) K).page 2).d pq pq' ≫
+        (serreSpectralSequenceFstFirstPageXIsoTensor C F K k q pq' (by rw [h']; dsimp only; lia)
+          (by rw [h']; dsimp only; lia) pq₀' (by rw [h₀']; dsimp only; lia)
+          (by rw [h₀']; dsimp only; lia)).hom =
+      (serreSpectralSequenceFstFirstPageXIsoTensor C F K (k + 1) q pq (by lia) ha pq₀ (by lia)
+          ha₀).hom ≫
+        (((serreSpectralSequence C (𝟙 B) K).page 2).d pq₀ pq₀' ▷ _) := by
+  obtain ⟨p, b⟩ := pq
+  obtain ⟨p₀, b₀⟩ := pq₀
+  dsimp only at hb ha hb₀ ha₀ h' h₀'
+  subst h' h₀'
+  obtain rfl : b = b₀ := by lia
+  -- The identification passes to coefficients in `K ⊗ K` by an isomorphism of spectral
+  -- sequences, which commutes with the differentials, and then is `auxIso`.
+  have hφ := ((unitorSpectralSequenceIso K (monotone_preimageSkeleton (C := C)
+    (fst B F))).inv.hom 2).comm (p, b) (p + 2, b - 1)
+  have hA := auxIso_hom_d (C := C) F K k q p b p₀ hb (by lia) (by lia)
+  simp only [serreSpectralSequenceFstFirstPageXIsoTensor, Iso.trans_hom, Iso.symm_hom,
+    unitorPageTwoXIso_inv]
+  rw [auxIso_congr F K k q (k + q) (k + q) rfl rfl _ _ (b - 1) (b - 1 + 1) (b - 1) b _ _ _ _ _ _ _
+      rfl (by dsimp only; lia) (by lia) (by dsimp only; lia) rfl (by dsimp only; lia),
+    auxIso_congr F K (k + 1) q (k + 1 + q) (k + q + 1) _ (by lia) _ _ b (b + 1) b (b + 1) _ _ _ _ _
+      _ _ rfl rfl (by lia) (by dsimp only; lia) rfl rfl,
+    ← reassoc_of% hφ, hA, Category.assoc]
+
+end SpectralSequence
+
+/-! ### The second page -/
+
+section SecondPage
+
+variable {B : _root_.TopCat.{u}} [T2Space B] [CWComplex (univ : Set B)] (F : _root_.TopCat.{u})
+  (K : Type u) [Field K]
+
+/-- The differential of the first page into `pq` starts at `(a - 2, b + 1)`. -/
+private lemma up'_rel_two (pq : ℤ × ℤ) :
+    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).Rel (pq.1 - 2, pq.2 + 1) pq :=
+  Prod.ext (by simp only [Prod.fst_add]; lia) (by simp only [Prod.snd_add]; lia)
+
+/-- The differential of the first page out of `pq` ends at `(a + 2, b - 1)`. -/
+private lemma up'_rel_two' (pq : ℤ × ℤ) :
+    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).Rel pq (pq.1 + 2, pq.2 - 1) :=
+  Prod.ext (by simp only [Prod.fst_add]) (by simp only [Prod.snd_add]; lia)
+
+/-- The identification of the first page at the target of the first differential out of the
+column `k`; for `k = 0` both sides vanish. -/
+private def thirdIso (q : ℕ) : (k : ℕ) → (pq pq₀ : ℤ × ℤ) → pq.2 = k - 1 → pq₀.2 = k - 1 →
+    pq.1 + pq.2 = -(q + k : ℕ) → pq₀.1 + pq₀.2 = -k →
+    (((serreSpectralSequence univ (fst B F) K).page 2).X (pq.1 + 2, pq.2 - 1) ≅
+      ((serreSpectralSequence univ (𝟙 B) K).page 2).X (pq₀.1 + 2, pq₀.2 - 1) ⊗
+        ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F)
+  | 0, _, _, hb, hb₀, _, _ =>
+    IsZero.iso (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two K univ _
+      (by dsimp only; lia)) ((tensorRight _).map_isZero
+        (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two K univ _ (by dsimp only; lia)))
+  | k + 1, _, _, hb, hb₀, ha, ha₀ =>
+    serreSpectralSequenceFstFirstPageXIsoTensor univ F K k q _ (by dsimp only; lia)
+      (by dsimp only; lia) _ (by dsimp only; lia) (by dsimp only; lia)
+
+/-- The identification of the first page commutes with the first differential out of the column
+`k`, including for `k = 0`. -/
+private lemma d_comp_thirdIso_hom (q k : ℕ) (pq pq₀ : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (hb₀ : pq₀.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) (ha₀ : pq₀.1 + pq₀.2 = -k) :
+    ((serreSpectralSequence univ (fst B F) K).page 2).d pq (pq.1 + 2, pq.2 - 1) ≫
+        (thirdIso F K q k pq pq₀ hb hb₀ ha ha₀).hom =
+      (serreSpectralSequenceFstFirstPageXIsoTensor univ F K k q pq hb ha pq₀ hb₀ ha₀).hom ≫
+        (((serreSpectralSequence univ (𝟙 B) K).page 2).d pq₀ (pq₀.1 + 2, pq₀.2 - 1) ▷ _) := by
+  cases k with
+  | zero =>
+    exact ((tensorRight _).map_isZero
+      (isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two K univ _
+        (by dsimp only; lia))).eq_of_tgt _ _
+  | succ k =>
+    exact d_comp_serreSpectralSequenceFstFirstPageXIsoTensor_hom (C := univ) (D := ∅) F K
+      k q pq _ pq₀ _ (by lia) (by lia) (by lia) (by lia) rfl rfl
+
+/-- The homology of the first page of the Serre spectral sequence of the product projection at
+`(k, q)` is the homology of the first page of the skeletal filtration of `B` at `(k, 0)`, tensored
+with `H_q(F; K)`. -/
+private def pageTwoHomologyIso (k q : ℕ) (pq pq₀ : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (hb₀ : pq₀.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) (ha₀ : pq₀.1 + pq₀.2 = -k) :
+    ((serreSpectralSequence univ (fst B F) K).page 2).homology pq ≅
+      ((serreSpectralSequence univ (𝟙 B) K).page 2).homology pq₀ ⊗
+        ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F :=
+  have : (tensorRight (((singularHomologyFunctor (ModuleCat.{u} K) q).obj
+      (ModuleCat.of K K)).obj F)).PreservesHomology :=
+    Functor.preservesHomology_of_map_exact _ fun S hS ↦
+      Module.Flat.rTensor_shortComplex_exact _ S hS
+  ((serreSpectralSequence univ (fst B F) K).page 2).homologyIsoSc' _ pq _
+      ((ComplexShape.up' _).prev_eq' (up'_rel_two pq))
+      ((ComplexShape.up' _).next_eq' (up'_rel_two' pq)) ≪≫
+    ShortComplex.homologyMapIso (ShortComplex.isoMk
+      (S₂ := (((serreSpectralSequence univ (𝟙 B) K).page 2).sc' (pq₀.1 - 2, pq₀.2 + 1) pq₀
+        (pq₀.1 + 2, pq₀.2 - 1)).map (tensorRight _))
+      (serreSpectralSequenceFstFirstPageXIsoTensor univ F K (k + 1) q (pq.1 - 2, pq.2 + 1)
+        (by dsimp only; lia) (by dsimp only; lia) (pq₀.1 - 2, pq₀.2 + 1) (by dsimp only; lia)
+        (by dsimp only; lia))
+      (serreSpectralSequenceFstFirstPageXIsoTensor univ F K k q pq hb ha pq₀ hb₀ ha₀)
+      (thirdIso F K q k pq pq₀ hb hb₀ ha ha₀)
+      (d_comp_serreSpectralSequenceFstFirstPageXIsoTensor_hom (C := univ) (D := ∅) F K k q
+        _ pq _ pq₀ (by dsimp only; lia) (by dsimp only; lia) (by dsimp only; lia)
+        (by dsimp only; lia) (Prod.ext (by simp) (by simp)) (Prod.ext (by simp) (by simp))).symm
+      (d_comp_thirdIso_hom F K q k pq pq₀ hb hb₀ ha ha₀).symm) ≪≫
+    ShortComplex.mapHomologyIso _ (tensorRight _) ≪≫
+    whiskerRightIso (((serreSpectralSequence univ (𝟙 B) K).page 2).homologyIsoSc' _ pq₀ _
+      ((ComplexShape.up' _).prev_eq' (up'_rel_two pq₀))
+      ((ComplexShape.up' _).next_eq' (up'_rel_two' pq₀))).symm _
+
+variable (B) in
+/-- **The second page of the Serre spectral sequence of a product.** For the first projection
+`p : B × F ⟶ B` over a CW complex `B` and a field `K`, the object at `pq = (a, b)`, with
+`b = k - 1` and `a + b = -(q + k)`, of the second page (numbered `3`) of the Serre spectral
+sequence of `p` is `H_k(B; K) ⊗ H_q(F; K)`. In the classical indexing this is
+`E²_{k,q} ≅ H_k(B; K) ⊗ H_q(F; K)`. The first page of `p` is that of the skeletal filtration of
+`B` tensored with `H_q(F; K)`, differentials included
+(`TauCeti.TopCat.d_comp_serreSpectralSequenceFstFirstPageXIsoTensor_hom`); tensoring with a vector
+space is exact, and the second page of the skeletal filtration is the homology of `B`
+(`TauCeti.TopCat.serreSpectralSequenceIdSecondPageXIsoSingularHomology`). -/
+def serreSpectralSequenceFstSecondPageXIsoTensor (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
+    ((serreSpectralSequence univ (fst B F) K).page 3).X pq ≅
+      ((singularHomologyFunctor (ModuleCat.{u} K) k).obj (ModuleCat.of K K)).obj B ⊗
+        ((singularHomologyFunctor _ q).obj (ModuleCat.of K K)).obj F :=
+  ((serreSpectralSequence univ (fst B F) K).iso 2 3 pq).symm ≪≫
+    pageTwoHomologyIso F K k q pq (pq.1 + q, pq.2) hb hb ha (by dsimp only; lia) ≪≫
+    whiskerRightIso (((serreSpectralSequence univ (𝟙 B) K).iso 2 3 (pq.1 + q, pq.2)) ≪≫
+      serreSpectralSequenceIdSecondPageXIsoSingularHomology K k (pq.1 + q, pq.2) hb
+        (by dsimp only; lia)) _
+
+end SecondPage
+
+end TopCat
+
+end TauCeti
