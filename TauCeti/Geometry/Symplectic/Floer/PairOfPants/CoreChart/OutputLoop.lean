@@ -84,10 +84,16 @@ private theorem coreLoopParam_add_one (t : ℝ) : coreLoopParam (t + 1) = coreLo
   simp only [coreLoopParam, Int.floor_add_one, Int.fract_add_one, Int.cast_add, Int.cast_one]
   ring
 
+/-- At the fractional part the integer part of the lifted parameter vanishes. -/
+private theorem coreLoopParam_fract (t : ℝ) :
+    coreLoopParam (Int.fract t) =
+      (smoothTransition (6 * Int.fract t - 1) + smoothTransition (6 * Int.fract t - 4)) / 2 := by
+  rw [coreLoopParam, Int.floor_fract, Int.fract_fract, Int.cast_zero, zero_add]
+
 /-- The lifted parameter differs from its value at the fractional part by the integer part. -/
 private theorem coreLoopParam_eq_floor_add_fract (t : ℝ) :
     coreLoopParam t = ⌊t⌋ + coreLoopParam (Int.fract t) := by
-  rw [coreLoopParam, coreLoopParam, Int.floor_fract, Int.fract_fract, Int.cast_zero, zero_add]
+  rw [coreLoopParam_fract, coreLoopParam]
 
 private theorem coreLoopParam_eq {n : ℤ} {t : ℝ} (h₁ : (n : ℝ) - 1 / 6 < t) (h₂ : t < n + 1) :
     coreLoopParam t =
@@ -135,7 +141,7 @@ private theorem pairOfPantsCoreChart_mk_one_eq_outputRayPoint (t : ℝ) :
   congr 1
   have hfr := Int.fract_nonneg t
   have hfr₁ := Int.fract_lt_one t
-  rw [coreLoopParam, Int.floor_fract, Int.fract_fract, Int.cast_zero, zero_add]
+  rw [coreLoopParam_fract]
   rcases le_or_gt (Int.fract t) (1 / 2) with h | h
   · rw [loopwiseTrans_of_le _ _ hfr h,
       smoothTransition.zero_of_nonpos (show 6 * Int.fract t - 4 ≤ 0 by linarith)]

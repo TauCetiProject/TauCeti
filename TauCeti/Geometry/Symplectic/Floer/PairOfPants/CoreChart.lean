@@ -152,12 +152,9 @@ private theorem outputRayPoint_one (θ : ℝ) :
   push_cast
   ring_nf
 
-private theorem outputRayPoint_add_two_pi (k θ : ℝ) :
-    outputRayPoint k (θ + 2 * π) = outputRayPoint k θ := by
-  simp only [outputRayPoint, outputRayRadius, Real.cos_add_two_pi, periodic_circleMap _ _ θ]
-
 private theorem periodic_outputRayPoint (k : ℝ) : Periodic (outputRayPoint k) (2 * π) :=
-  outputRayPoint_add_two_pi k
+  fun θ ↦ by
+    simp only [outputRayPoint, outputRayRadius, Real.cos_add_two_pi, periodic_circleMap _ _ θ]
 
 /-- For `k² ≤ 16` the point `outputRayPoint k θ` lies on the circle `x² + y² = 4`. -/
 private theorem outputRayPoint_sq_add_sq {k : ℝ} (hk : k ^ 2 ≤ 16) (θ : ℝ) :
