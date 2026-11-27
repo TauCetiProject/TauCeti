@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Meyers.Example
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.Sobolev.WeakDeriv.LinearSurjection
+import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -42,6 +45,12 @@ infinity (`TauCeti.Analysis.PDE.Regularity.Meyers.Exponent`).
   is uniformly elliptic with constants `μ²` and `1`;
   `TauCeti.PDE.uniformlyEllipticOn_smul_cylindricalMeyersCoefficient`: for `μ² = λ / Λ`, the field
   `Λ a` has constants `λ` and `Λ`.
+* `TauCeti.PDE.hasGradientAt_cylindricalMeyersSolution`,
+  `TauCeti.PDE.gradient_cylindricalMeyersSolution`: the classical gradient off the subspace
+  `x₀ = x₁ = 0`;
+  `TauCeti.PDE.norm_gradient_cylindricalMeyersSolution_le` and
+  `TauCeti.PDE.mul_rpow_le_norm_gradient_cylindricalMeyersSolution`: it has size comparable to
+  `‖(x₀, x₁)‖ ^ (μ - 1)`.
 * `TauCeti.PDE.energyFormH1_cylindricalMeyersCoefficient_eq_zero`: an element of `H¹(Ω)` equal to
   the solution is a weak solution of `div(a ∇u) = 0` on `Ω`.
 * `TauCeti.PDE.gradient_ae_eq_gradient_cylindricalMeyersSolution`: the weak gradient of an element
@@ -139,6 +148,17 @@ private theorem inner_proj_single_one (x : EuclideanSpace ℝ (Fin (n + 2))) :
     ⟪proj n x, EuclideanSpace.single 1 (1 : ℝ)⟫_ℝ = x 1 := by
   simp [proj_apply, EuclideanSpace.inner_single_right]
 
+private theorem proj_apply_zero (x : EuclideanSpace ℝ (Fin (n + 2))) : proj n x 0 = x 0 := by
+  simp [proj_apply]
+
+private theorem inner_single_zero_proj (w : EuclideanSpace ℝ (Fin (n + 2))) :
+    ⟪EuclideanSpace.single 0 (1 : ℝ), proj n w⟫_ℝ = w 0 := by
+  rw [real_inner_comm, inner_proj_single_zero]
+
+private theorem inner_single_one_proj (w : EuclideanSpace ℝ (Fin (n + 2))) :
+    ⟪EuclideanSpace.single 1 (1 : ℝ), proj n w⟫_ℝ = w 1 := by
+  rw [real_inner_comm, inner_proj_single_one]
+
 private theorem lift_apply_zero (x : EuclideanSpace ℝ (Fin (n + 2))) : lift n x 0 = x 0 := by
   simp [lift_apply]
 
@@ -166,6 +186,9 @@ private theorem norm_proj_le (x : EuclideanSpace ℝ (Fin (n + 2))) : ‖proj n 
     Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _)
       fun i _ _ => sq_nonneg _
   simpa [Finset.sum_pair (show (0 : Fin (n + 2)) ≠ 1 by simp), sq_abs] using this
+
+private theorem proj_ne_zero {x : EuclideanSpace ℝ (Fin (n + 2))} (hx : x 0 ^ 2 + x 1 ^ 2 ≠ 0) :
+    proj n x ≠ 0 := fun h => hx (by rw [← norm_proj_sq, h, norm_zero, sq, mul_zero])
 
 /-- Almost every point lies off the subspace `x₀ = x₁ = 0`. -/
 private theorem ae_proj_ne_zero :
@@ -254,6 +277,12 @@ private theorem cylindricalMeyersSolution_eq_comp :
   funext x
   rw [Function.comp_apply, proj_apply, cylindricalMeyersSolution_apply]
 
+/-- The cylindrical Meyers solution is continuous for `μ > 0`. -/
+theorem continuous_cylindricalMeyersSolution (hμ : 0 < μ) :
+    Continuous (cylindricalMeyersSolution (n := n) μ) := by
+  rw [cylindricalMeyersSolution_eq_comp]
+  exact (continuous_meyersSolution hμ).comp (proj n).continuous
+
 /-- The function `Rᵥ(x) = ‖P x‖ ^ (μ - 1) ⟪P x, v⟫`, with `P x = (x₀, x₁)`. -/
 private def cylCoord (μ : ℝ) (v : EuclideanSpace ℝ (Fin 2)) (x : EuclideanSpace ℝ (Fin (n + 2))) :
     ℝ :=
@@ -281,13 +310,10 @@ private def cylGrad (μ : ℝ) (x : EuclideanSpace ℝ (Fin (n + 2))) : Euclidea
 private theorem cylCoordDeriv_zero (x : EuclideanSpace ℝ (Fin (n + 2))) :
     cylCoordDeriv μ (EuclideanSpace.single 0 1) x = innerSL ℝ (cylGrad μ x) := by
   ext w
-  have h1 : ⟪EuclideanSpace.single 0 (1 : ℝ), proj n w⟫_ℝ = w 0 := by
-    rw [real_inner_comm, inner_proj_single_zero]
-  have h2 : ⟪EuclideanSpace.single (0 : Fin (n + 2)) (1 : ℝ), w⟫_ℝ = w 0 := by
-    simp [EuclideanSpace.inner_single_left]
   simp only [cylCoordDeriv, cylGrad, ContinuousLinearMap.coe_comp, Function.comp_apply,
     add_apply, smul_apply, innerSL_apply_apply, smul_eq_mul, inner_add_left,
-    real_inner_smul_left, inner_proj, inner_lift, inner_proj_single_zero, h1, h2]
+    real_inner_smul_left, inner_proj, inner_lift, inner_proj_single_zero, proj_apply_zero,
+    EuclideanSpace.inner_single_left, map_one, one_mul]
 
 private theorem cylCoord_zero :
     cylCoord μ (EuclideanSpace.single 0 1) = cylindricalMeyersSolution (n := n) μ := by
@@ -304,21 +330,75 @@ private theorem hasWeakFDerivOn_cylindricalMeyersSolution (hμ0 : 0 < μ)
     fun x => innerSL ℝ (cylGrad (n := n) μ x) from funext cylCoordDeriv_zero] at h
 
 /-- Off the subspace `x₀ = x₁ = 0` the candidate gradient is the classical gradient. -/
-private theorem hasGradientAt_cylindricalMeyersSolution {x : EuclideanSpace ℝ (Fin (n + 2))}
+private theorem hasGradientAt_cylGrad {x : EuclideanSpace ℝ (Fin (n + 2))}
     (hx : proj n x ≠ 0) : HasGradientAt (cylindricalMeyersSolution μ) (cylGrad μ x) x := by
   rw [hasGradientAt_iff_hasFDerivAt, cylindricalMeyersSolution_eq_comp]
   convert (hasGradientAt_meyersSolution (μ := μ) hx).hasFDerivAt.comp x (proj n).hasFDerivAt
     using 1
   ext w
-  have h0 : proj n x 0 = x 0 := by simp [proj_apply]
-  have he : ⟪EuclideanSpace.single 0 (1 : ℝ), proj n w⟫_ℝ = w 0 := by
-    rw [real_inner_comm, inner_proj_single_zero]
-  have hw : ⟪EuclideanSpace.single (0 : Fin (n + 2)) (1 : ℝ), w⟫_ℝ = w 0 := by
-    simp [EuclideanSpace.inner_single_left]
   simp only [cylGrad, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    InnerProductSpace.toDual_apply_apply, inner_add_left, real_inner_smul_left, inner_lift, he,
-    hw, h0, show μ - 3 = μ - 1 - 2 by ring]
-  rw [inner_proj]
+    InnerProductSpace.toDual_apply_apply, inner_add_left, real_inner_smul_left, inner_lift,
+    EuclideanSpace.inner_single_left, map_one, one_mul, proj_apply_zero,
+    show μ - 3 = μ - 1 - 2 by ring]
+  rw [inner_proj, proj_apply_zero]
+
+private theorem cylGrad_eq (x : EuclideanSpace ℝ (Fin (n + 2))) :
+    cylGrad μ x = ‖!₂[x 0, x 1]‖ ^ (μ - 1) • EuclideanSpace.single 0 1 +
+      ((μ - 1) * ‖!₂[x 0, x 1]‖ ^ (μ - 3) * x 0) •
+        (EuclideanSpace.single 0 (x 0) + EuclideanSpace.single 1 (x 1)) := by
+  rw [cylGrad, proj_apply, lift_apply, show μ - 1 - 2 = μ - 3 by ring]
+
+/-- Off the subspace `x₀ = x₁ = 0`, the cylindrical Meyers solution has gradient
+`‖(x₀, x₁)‖ ^ (μ - 1) e₀ + (μ - 1) ‖(x₀, x₁)‖ ^ (μ - 3) x₀ (x₀, x₁, 0, …, 0)`: the gradient of
+Meyers' planar solution at `(x₀, x₁)`, placed in the first two coordinates. -/
+theorem hasGradientAt_cylindricalMeyersSolution {x : EuclideanSpace ℝ (Fin (n + 2))}
+    (hx : x 0 ^ 2 + x 1 ^ 2 ≠ 0) :
+    HasGradientAt (cylindricalMeyersSolution μ)
+      (‖!₂[x 0, x 1]‖ ^ (μ - 1) • EuclideanSpace.single 0 1 +
+        ((μ - 1) * ‖!₂[x 0, x 1]‖ ^ (μ - 3) * x 0) •
+          (EuclideanSpace.single 0 (x 0) + EuclideanSpace.single 1 (x 1))) x := by
+  rw [← cylGrad_eq]
+  exact hasGradientAt_cylGrad (proj_ne_zero hx)
+
+/-- The gradient of the cylindrical Meyers solution off the subspace `x₀ = x₁ = 0`. -/
+theorem gradient_cylindricalMeyersSolution {x : EuclideanSpace ℝ (Fin (n + 2))}
+    (hx : x 0 ^ 2 + x 1 ^ 2 ≠ 0) :
+    ∇ (cylindricalMeyersSolution μ) x =
+      ‖!₂[x 0, x 1]‖ ^ (μ - 1) • EuclideanSpace.single 0 1 +
+        ((μ - 1) * ‖!₂[x 0, x 1]‖ ^ (μ - 3) * x 0) •
+          (EuclideanSpace.single 0 (x 0) + EuclideanSpace.single 1 (x 1)) :=
+  (hasGradientAt_cylindricalMeyersSolution hx).gradient
+
+/-- Off the subspace `x₀ = x₁ = 0`, the candidate gradient has the length of the gradient of
+Meyers' planar solution at `(x₀, x₁)`. -/
+private theorem norm_cylGrad {x : EuclideanSpace ℝ (Fin (n + 2))} (hx : proj n x ≠ 0) :
+    ‖cylGrad μ x‖ = ‖∇ (meyersSolution (n := 0) μ) (proj n x)‖ := by
+  have hl : ⟪EuclideanSpace.single 0 (1 : ℝ), lift n x⟫_ℝ = x 0 := by
+    rw [real_inner_comm, inner_lift]
+    simp
+  rw [gradient_meyersSolution hx, proj_apply_zero, show μ - 3 = μ - 1 - 2 by ring]
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  simp only [cylGrad, norm_add_sq_real, real_inner_smul_left, real_inner_smul_right, hl,
+    norm_smul, norm_lift, PiLp.norm_single]
+  rw [inner_single_zero_proj]
+
+/-- Off the subspace `x₀ = x₁ = 0`, the gradient of the cylindrical Meyers solution has length at
+most `(1 + |μ - 1|) ‖(x₀, x₁)‖ ^ (μ - 1)`. -/
+theorem norm_gradient_cylindricalMeyersSolution_le {x : EuclideanSpace ℝ (Fin (n + 2))}
+    (hx : x 0 ^ 2 + x 1 ^ 2 ≠ 0) :
+    ‖∇ (cylindricalMeyersSolution μ) x‖ ≤ (1 + |μ - 1|) * ‖!₂[x 0, x 1]‖ ^ (μ - 1) := by
+  rw [(hasGradientAt_cylGrad (proj_ne_zero hx)).gradient, norm_cylGrad (proj_ne_zero hx),
+    ← proj_apply]
+  exact norm_gradient_meyersSolution_le (proj_ne_zero hx)
+
+/-- Off the subspace `x₀ = x₁ = 0`, for `0 < μ ≤ 1`, the gradient of the cylindrical Meyers
+solution has length at least `μ ‖(x₀, x₁)‖ ^ (μ - 1)`. -/
+theorem mul_rpow_le_norm_gradient_cylindricalMeyersSolution (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
+    {x : EuclideanSpace ℝ (Fin (n + 2))} (hx : x 0 ^ 2 + x 1 ^ 2 ≠ 0) :
+    μ * ‖!₂[x 0, x 1]‖ ^ (μ - 1) ≤ ‖∇ (cylindricalMeyersSolution μ) x‖ := by
+  rw [(hasGradientAt_cylGrad (proj_ne_zero hx)).gradient, norm_cylGrad (proj_ne_zero hx),
+    ← proj_apply]
+  exact mul_rpow_le_norm_gradient_meyersSolution hμ0 hμ1 (proj_ne_zero hx)
 
 /-- The weak gradient of an element of `W^{1,p}(Ω)` equal to the cylindrical solution. -/
 private theorem gradient_ae_eq_cylGrad (hμ0 : 0 < μ) {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -341,7 +421,7 @@ theorem gradient_ae_eq_gradient_cylindricalMeyersSolution (hμ0 : 0 < μ) {p : �
     W1p.gradient u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))]
       ∇ (cylindricalMeyersSolution μ) := by
   filter_upwards [gradient_ae_eq_cylGrad hμ0 u hu, ae_restrict_of_ae ae_proj_ne_zero] with x hx h0
-  rw [hx, (hasGradientAt_cylindricalMeyersSolution h0).gradient]
+  rw [hx, (hasGradientAt_cylGrad h0).gradient]
 
 /-! ### The weak equation -/
 
@@ -357,9 +437,6 @@ private theorem dotProduct_coeff_mulVec_cylGrad {x : EuclideanSpace ℝ (Fin (n 
   have hs : ‖proj n x‖ ^ (μ - 1) = ‖proj n x‖ ^ (μ - 1 - 2) * (x 0 ^ 2 + x 1 ^ 2) := by
     rw [← norm_proj_sq, ← Real.rpow_natCast, ← Real.rpow_add hρ]
     norm_num
-  have hP : ∀ w : EuclideanSpace ℝ (Fin (n + 2)),
-      ⟪EuclideanSpace.single (1 : Fin 2) (1 : ℝ), proj n w⟫_ℝ = w 1 := fun w => by
-    rw [real_inner_comm, inner_proj_single_one]
   have hηl : ⟪η, lift n x⟫_ℝ = η 0 * x 0 + η 1 * x 1 := by
     rw [real_inner_comm, inner_lift]
     ring
@@ -367,7 +444,8 @@ private theorem dotProduct_coeff_mulVec_cylGrad {x : EuclideanSpace ℝ (Fin (n 
     simp [EuclideanSpace.inner_single_right]
   simp only [dotProduct_cylindricalMeyersCoefficient_mulVec, cylGrad, cylCoordDeriv,
     inner_add_right, real_inner_smul_right, hηl, hη0, ContinuousLinearMap.coe_comp,
-    Function.comp_apply, add_apply, smul_apply, innerSL_apply_apply, smul_eq_mul, hP,
+    Function.comp_apply, add_apply, smul_apply, innerSL_apply_apply, smul_eq_mul,
+    inner_single_one_proj,
     inner_proj, inner_proj_single_one, PiLp.add_apply, PiLp.smul_apply, lift_apply_zero,
     lift_apply_one, PiLp.single_apply]
   simp only [show (0 : Fin (n + 2)) ≠ 1 by simp, show (1 : Fin (n + 2)) ≠ 0 by simp, ite_true,
@@ -386,16 +464,9 @@ private theorem integral_lineDeriv_smul_cylCoordDeriv_comm (hμ0 : 0 < μ)
       ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ (Fin (n + 2)) → ℝ) x (EuclideanSpace.single 1 1) •
         cylCoordDeriv μ (EuclideanSpace.single 1 1) x (EuclideanSpace.single 0 1) := by
   have hψ := hasWeakFDerivOn_cylCoord (n := n) hμ0 (EuclideanSpace.single 1 1) Ω
-  have h1 := HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul
-    (hψ.hasWeakLineDerivOn (EuclideanSpace.single 1 (1 : ℝ)))
-    (∂_{EuclideanSpace.single (0 : Fin (n + 2)) (1 : ℝ)} φ)
-  have h0 := HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul
-    (hψ.hasWeakLineDerivOn (EuclideanSpace.single 0 (1 : ℝ)))
-    (∂_{EuclideanSpace.single (1 : Fin (n + 2)) (1 : ℝ)} φ)
-  simp only [TestFunction.lineDeriv_lineDerivOp_comm φ
-    (EuclideanSpace.single (0 : Fin (n + 2)) (1 : ℝ)) (EuclideanSpace.single 1 (1 : ℝ))] at h1
-  rw [h0] at h1
-  simpa [TestFunction.lineDerivOp_apply] using h1.symm
+  simpa only [Real.inner_apply, smul_eq_mul] using
+    (hψ.hasWeakLineDerivOn (EuclideanSpace.single 1 (1 : ℝ))).integral_inner_lineDeriv_comm
+      (hψ.hasWeakLineDerivOn (EuclideanSpace.single 0 (1 : ℝ))) φ
 
 /-- The weak equation against a test function: by the pointwise identity
 `a ∇u = μ (∂₁R_{e₁}, -∂₀R_{e₁}, 0, …, 0)`, the energy form is
@@ -414,9 +485,7 @@ private theorem energyFormH1_cylindricalMeyersCoefficient_ofTestFunctionₗ_eq_z
   have hd : ∀ x i, (∇ (φ : EuclideanSpace ℝ (Fin (n + 2)) → ℝ) x) i =
       lineDeriv ℝ (φ : EuclideanSpace ℝ (Fin (n + 2)) → ℝ) x (EuclideanSpace.single i (1 : ℝ)) := by
     intro x i
-    rw [(φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv, ← inner_gradient_left,
-      EuclideanSpace.inner_single_right]
-    simp
+    rw [gradient_apply_eq_fderiv_apply_single, TestFunction.lineDeriv_eq_fderiv]
   -- The two integrands `∂₀φ ∂₁R_{e₁}` and `∂₁φ ∂₀R_{e₁}`, integrable on `Ω`.
   set A : EuclideanSpace ℝ (Fin (n + 2)) → ℝ := fun x =>
     lineDeriv ℝ (φ : EuclideanSpace ℝ (Fin (n + 2)) → ℝ) x (EuclideanSpace.single 0 1) •
@@ -464,12 +533,8 @@ theorem energyFormH1_cylindricalMeyersCoefficient_eq_zero (hμ0 : 0 < μ)
       rw [cylindricalMeyersCoefficient_apply]
       exact abs_dotProduct_radialCoefficient_mulVec_le (α := μ ^ 2) (β := 1 - μ ^ 2) _ η ξ)
     (fun _ _ => by simp) (fun _ _ => by simp)
-  have hclosed : IsClosed {w : W1p volume Ω 2 | energyFormH1L hcoeff u w = 0} :=
-    isClosed_eq (energyFormH1L hcoeff u).continuous continuous_const
-  refine (energyFormH1L_apply hcoeff u _).symm.trans
-    (w1p0Submodule_subset_of_isClosed hclosed (fun φ => ?_) v.property)
-  rw [Set.mem_ofPred_eq, energyFormH1L_apply]
-  exact energyFormH1_cylindricalMeyersCoefficient_ofTestFunctionₗ_eq_zero hμ0 u hu φ
+  exact forall_energyFormH1_eq_zero_of_forall_testFunction hcoeff
+    (energyFormH1_cylindricalMeyersCoefficient_ofTestFunctionₗ_eq_zero hμ0 u hu) v
 
 /-- **The cylindrical Meyers solution solves the equation of every multiple of the coefficient.**
 For `μ > 0`, every `c` and every open `Ω ⊆ ℝ^{n+2}`, an element `u ∈ H¹(Ω)` equal to
@@ -487,21 +552,6 @@ theorem energyFormH1_smul_cylindricalMeyersCoefficient_eq_zero (hμ0 : 0 < μ) (
   rw [this, energyFormH1_cylindricalMeyersCoefficient_eq_zero hμ0 u hu v, mul_zero]
 
 /-! ### Integrability of the gradient -/
-
-/-- Off the subspace `x₀ = x₁ = 0`, the candidate gradient has the length of the gradient of
-Meyers' planar solution at `(x₀, x₁)`. -/
-private theorem norm_cylGrad {x : EuclideanSpace ℝ (Fin (n + 2))} (hx : proj n x ≠ 0) :
-    ‖cylGrad μ x‖ = ‖∇ (meyersSolution (n := 0) μ) (proj n x)‖ := by
-  have hl : ⟪EuclideanSpace.single 0 (1 : ℝ), lift n x⟫_ℝ = x 0 := by
-    rw [real_inner_comm, inner_lift]
-    simp
-  have hp : ⟪EuclideanSpace.single 0 (1 : ℝ), proj n x⟫_ℝ = x 0 := by
-    rw [real_inner_comm, inner_proj_single_zero]
-  have h0 : proj n x 0 = x 0 := by simp [proj_apply]
-  rw [gradient_meyersSolution hx, h0, show μ - 3 = μ - 1 - 2 by ring]
-  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  simp only [cylGrad, norm_add_sq_real, real_inner_smul_left, real_inner_smul_right, hl, hp,
-    norm_smul, norm_lift, PiLp.norm_single]
 
 private theorem measurable_cylGrad : Measurable (cylGrad (n := n) μ) := by
   unfold cylGrad
@@ -528,8 +578,8 @@ theorem exists_w1p_value_ae_eq_cylindricalMeyersSolution (hμ0 : 0 < μ) {p : �
   have hsol := cylindricalMeyersSolution_eq_comp (n := n) (μ := μ)
   have hu : MemLp (cylindricalMeyersSolution μ) p
       (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))) := by
-    refine MemLp.of_bound (hsol ▸ ((continuous_meyersSolution hμ0).comp
-      (proj n).continuous).aestronglyMeasurable) (R ^ μ) ?_
+    refine MemLp.of_bound (continuous_cylindricalMeyersSolution hμ0).aestronglyMeasurable
+      (R ^ μ) ?_
     filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hx
     rw [Real.norm_eq_abs, hsol, Function.comp_apply]
     refine (abs_meyersSolution_le _).trans (Real.rpow_le_rpow (norm_nonneg _) ?_ hμ0.le)

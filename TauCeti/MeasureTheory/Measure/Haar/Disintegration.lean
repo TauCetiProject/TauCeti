@@ -115,6 +115,20 @@ variable {E E' G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDime
   {μ : Measure E} [μ.IsAddHaarMeasure] {ν : Measure E'} [ν.IsAddHaarMeasure]
   {A : E →L[ℝ] E'}
 
+omit [μ.IsAddHaarMeasure] in
+/-- Integrability of a function of the first coordinate against the image of `μ` under
+`ContinuousLinearMap.linearCoord` is integrability of its pullback along `A`. -/
+private theorem integrableOn_map_linearCoord_iff (hA : Function.Surjective A) {g : E' → G}
+    {s : Set (E' × (A : E →ₗ[ℝ] E').ker)} :
+    IntegrableOn (fun z : E' × (A : E →ₗ[ℝ] E').ker => g z.1) s (μ.map (A.linearCoord hA)) ↔
+      IntegrableOn (g ∘ A) (A.linearCoord hA ⁻¹' s) μ := by
+  have hgL : (fun z : E' × (A : E →ₗ[ℝ] E').ker => g z.1) ∘ (A.linearCoord hA).toHomeomorph =
+      g ∘ A :=
+    funext fun y => by simp
+  refine (A.linearCoord hA).toHomeomorph.measurableEmbedding.integrableOn_map_iff.trans ?_
+  rw [hgL]
+  rfl
+
 /-- Local integrability on an open set `V` pulls back along a surjective linear map `A` to
 `A⁻¹ V`. -/
 theorem LocallyIntegrableOn.comp_surjective {g : E' → G} {V : Set E'} (hV : IsOpen V)
@@ -128,11 +142,7 @@ theorem LocallyIntegrableOn.comp_surjective {g : E' → G} {V : Set E'} (hV : Is
   intro x hx
   obtain ⟨t, ht, hgt⟩ := hp (L x) (by simpa [L] using hx)
   refine ⟨L ⁻¹' t, L.continuous.continuousWithinAt.tendsto_nhdsWithin
-    (fun y hy => by simpa [L] using hy) ht, ?_⟩
-  have hgL : (fun z : E' × (A : E →ₗ[ℝ] E').ker => g z.1) ∘ L.toHomeomorph = g ∘ A :=
-    funext fun y => by simp [L]
-  have := L.toHomeomorph.measurableEmbedding.integrableOn_map_iff.1 hgt
-  rwa [hgL] at this
+    (fun y hy => by simpa [L] using hy) ht, (integrableOn_map_linearCoord_iff hA).1 hgt⟩
 
 /-- If `g ∘ A` is integrable on a neighbourhood of `x`, for a surjective linear map `A`, then `g`
 is integrable on a neighbourhood of `A x`. -/
@@ -145,13 +155,9 @@ theorem IntegrableOn.exists_mem_nhds_integrableOn_of_comp_surjective {g : E' →
   obtain ⟨t₁, ht₁, t₂, ht₂, hst⟩ := mem_nhds_prod_iff.1 hs'
   refine ⟨t₁, by simpa [L] using ht₁, ?_⟩
   -- Pass to `μ.map L`, a positive multiple of the product measure.
-  have hgL : (fun z : E' × (A : E →ₗ[ℝ] E').ker => g z.1) ∘ L.toHomeomorph = g ∘ A :=
-    funext fun y => by simp [L]
   have hmap : IntegrableOn (fun z : E' × (A : E →ₗ[ℝ] E').ker => g z.1) (t₁ ×ˢ t₂)
       (μ.map L) := by
-    refine L.toHomeomorph.measurableEmbedding.integrableOn_map_iff.2 ?_
-    rw [hgL]
-    refine hg.mono_set fun y hy => ?_
+    refine (integrableOn_map_linearCoord_iff hA).2 (hg.mono_set fun y hy => ?_)
     simpa [L] using hst hy
   have hc : (A.linearScale hA μ ν)⁻¹ • μ.map L = ν.prod Measure.addHaar := by
     rw [A.map_linearCoord hA μ ν, smul_smul, inv_mul_cancel₀ (A.linearScale_pos hA μ ν).ne',
