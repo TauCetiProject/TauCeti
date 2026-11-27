@@ -18,15 +18,17 @@ multiplicative (for instance `w(n) = e(nα)`). The proof follows the plan of Mat
 `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum`, through
 `Nat.divisorsAntidiagonal_eq_prod_filter_of_le`.
 
-The file also records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the number `Ω n` of
-prime factors of `n` counted with multiplicity.
+The file also records the elementary bound `z ^ Ω n ≤ n`, for `n ≠ 0` all of whose prime factors
+are at least `z`, on the number `Ω n` of prime factors of `n` counted with multiplicity; in
+particular `2 ^ Ω n ≤ n`.
 
 ## Main results
 
 * `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`:
   `∑_{0<n≤N} (f * g)(n) • w(n) = ∑_{0<m≤N} f(m) • ∑_{0<ℓ≤N/m} g(ℓ) • w(mℓ)`.
-* `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, since each of the
-  `Ω n` prime factors of `n`, counted with multiplicity, is at least `2`.
+* `ArithmeticFunction.pow_cardFactors_le`: `z ^ Ω n ≤ n` for `n ≠ 0` all of whose prime factors
+  are at least `z`, since `n` is the product of its `Ω n` prime factors, counted with multiplicity.
+* `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, the case `z = 2`.
 -/
 
 public section
@@ -75,11 +77,18 @@ theorem sum_Ioc_mul_smul_eq_sum_sum (f g : ArithmeticFunction R) (w : ℕ → A)
         exact sum_congr rfl fun ℓ _ ↦ (smul_smul _ _ _).symm
 
 open scoped ArithmeticFunction.Omega in
-/-- A nonzero natural number `n` is at least `2 ^ Ω n`, since each of its `Ω n` prime factors
-(counted with multiplicity) is at least `2`. -/
-theorem two_pow_cardFactors_le {n : ℕ} (hn : n ≠ 0) : 2 ^ Ω n ≤ n := by
+/-- If every prime factor of `n ≠ 0` is at least `z`, then `z ^ Ω n ≤ n`: the number `n` is the
+product of its `Ω n` prime factors, counted with multiplicity. -/
+theorem pow_cardFactors_le {z n : ℕ} (hn : n ≠ 0) (h : ∀ p ∈ n.primeFactors, z ≤ p) :
+    z ^ Ω n ≤ n := by
   conv_rhs => rw [← Nat.prod_primeFactorsList hn]
   rw [cardFactors_apply]
-  exact List.pow_length_le_prod _ _ fun p hp ↦ (Nat.prime_of_mem_primeFactorsList hp).two_le
+  exact List.pow_length_le_prod _ _ fun p hp ↦ h p (by simpa using hp)
+
+open scoped ArithmeticFunction.Omega in
+/-- A nonzero natural number `n` is at least `2 ^ Ω n`, since each of its `Ω n` prime factors
+(counted with multiplicity) is at least `2`. -/
+theorem two_pow_cardFactors_le {n : ℕ} (hn : n ≠ 0) : 2 ^ Ω n ≤ n :=
+  pow_cardFactors_le hn fun _ hp ↦ (Nat.prime_of_mem_primeFactors hp).two_le
 
 end ArithmeticFunction
