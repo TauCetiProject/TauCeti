@@ -41,7 +41,7 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R]
 variable [P.IsCrystallographic]
 
 omit [CharZero R] in
-private lemma corootCoordInt_injective [P.IsRootSystem] :
+private lemma injective_pairingIn_support [P.IsRootSystem] :
     Injective (fun j (k : b.support) ↦ P.pairingIn ℤ k j) := fun i j hij ↦ by
   apply P.coroot.injective
   apply (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective
@@ -50,7 +50,7 @@ private lemma corootCoordInt_injective [P.IsRootSystem] :
     ← P.algebraMap_pairingIn ℤ]
   exact congrArg (algebraMap ℤ R) (congrFun hij k)
 
-private lemma corootCoordInt_reflectionPerm (i j : ι) (k : b.support) :
+private lemma pairingIn_reflectionPerm_support (i j : ι) (k : b.support) :
     P.pairingIn ℤ k (P.reflectionPerm i j) =
       P.pairingIn ℤ k j - P.pairingIn ℤ i j * P.pairingIn ℤ k i := by
   apply FaithfulSMul.algebraMap_injective ℤ R
@@ -61,42 +61,44 @@ private lemma corootCoordInt_reflectionPerm (i j : ι) (k : b.support) :
 
 variable [P.IsRootSystem]
 
+@[simps]
+private noncomputable def rationalModelRoot : ι ↪ (b.support → ℚ) :=
+  ⟨fun i k ↦ (b.rootCoefficients i k : ℚ), fun _ _ h ↦
+    b.rootCoefficients_injective (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
+
+@[simps]
+private noncomputable def rationalModelCoroot : ι ↪ (b.support → ℚ) :=
+  ⟨fun j k ↦ (P.pairingIn ℤ k j : ℚ), fun _ _ h ↦
+    b.injective_pairingIn_support (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
+
 /-- **The rational coordinate model of a crystallographic root system.** Its weight and coweight
 spaces are `b.support → ℚ` paired by the dot product. -/
 noncomputable def rationalModel : RootPairing ι ℚ (b.support → ℚ) (b.support → ℚ) where
   toLinearMap := dotProductBilin ℚ ℚ
-  root := ⟨fun i k ↦ (b.rootCoefficients i k : ℚ), fun _ _ h ↦
-    b.rootCoefficients_injective (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
-  coroot := ⟨fun j k ↦ (P.pairingIn ℤ k j : ℚ), fun _ _ h ↦
-    b.corootCoordInt_injective (funext fun k ↦ Int.cast_injective (congrFun h k))⟩
+  root := b.rationalModelRoot
+  coroot := b.rationalModelCoroot
   root_coroot_two i := by
-    rw [dotProductBilin_apply_apply, dotProduct]
-    have h := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt i i)
-    simp only [dotProduct, Int.cast_sum, Int.cast_mul, P.pairingIn_same ℤ i, Int.cast_ofNat] at h
-    exact h
+    rw [dotProductBilin_apply_apply]
+    simpa [rationalModelRoot_apply, rationalModelCoroot_apply, dotProduct,
+      P.pairingIn_same ℤ i] using
+      congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dotProduct_pairingIn i i)
   reflectionPerm := P.reflectionPerm
   reflectionPerm_root i j := by
     ext k
-    simp only [dotProductBilin_apply_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt j i)
+    simp only [dotProductBilin_apply_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
+      rationalModelRoot_apply, rationalModelCoroot_apply, dotProduct]
+    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dotProduct_pairingIn j i)
     simp only [dotProduct, Int.cast_sum, Int.cast_mul] at hdot
-    have h : (b.rootCoefficients j k : ℚ) -
-        ((fun k ↦ (b.rootCoefficients j k : ℚ)) ⬝ᵥ fun k ↦ (P.pairingIn ℤ k i : ℚ)) *
-          (b.rootCoefficients i k : ℚ) = (b.rootCoefficients (P.reflectionPerm i j) k : ℚ) := by
-      rw [dotProduct, hdot, b.rootCoefficients_reflectionPerm i j]
-      simp [zsmul_eq_mul]
-    exact h
+    rw [hdot, b.rootCoefficients_reflectionPerm i j]
+    simp [zsmul_eq_mul]
   reflectionPerm_coroot i j := by
     ext k
-    simp only [dotProductBilin_apply_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt i j)
+    simp only [dotProductBilin_apply_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
+      rationalModelRoot_apply, rationalModelCoroot_apply, dotProduct]
+    have hdot := congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dotProduct_pairingIn i j)
     simp only [dotProduct, Int.cast_sum, Int.cast_mul] at hdot
-    have h : (P.pairingIn ℤ k j : ℚ) -
-        ((fun k ↦ (b.rootCoefficients i k : ℚ)) ⬝ᵥ fun k ↦ (P.pairingIn ℤ k j : ℚ)) *
-          (P.pairingIn ℤ k i : ℚ) = (P.pairingIn ℤ k (P.reflectionPerm i j) : ℚ) := by
-      rw [dotProduct, hdot, b.corootCoordInt_reflectionPerm i j k]
-      simp
-    exact h
+    rw [hdot, b.pairingIn_reflectionPerm_support i j k]
+    simp
 
 /-- The bilinear pairing of `b.rationalModel` is the standard dot product. -/
 @[simp]
@@ -131,7 +133,7 @@ theorem rationalModel_pairing (i j : ι) :
     b.rationalModel.pairing i j = (P.pairingIn ℤ i j : ℚ) := by
   rw [← root_coroot_eq_pairing, rationalModel_toLinearMap]
   simpa [dotProduct, rationalModel_root_apply, rationalModel_coroot_apply] using
-    congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dot_corootCoordInt i j)
+    congrArg (Int.cast (R := ℚ)) (b.rootCoefficients_dotProduct_pairingIn i j)
 
 instance isCrystallographic_rationalModel : b.rationalModel.IsCrystallographic where
   exists_value i j := ⟨P.pairingIn ℤ i j, by simp⟩

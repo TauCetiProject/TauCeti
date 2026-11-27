@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -34,8 +35,9 @@ The ambient ring can be any domain that is a rational algebra. The proof reuses
 polynomials over the rationals.
 
 Over a field, if instead the roots `ζ ^ e i` are stable under inversion with multiplicity, as
-for the eigenvalues of a linear map conjugate to its inverse, and no `e i` is divisible by `h`,
-then the residues `e i % h` pair off as `a` and `h - a`, so they add up to `h / 2` per factor
+for the eigenvalues of a linear map conjugate to its inverse, then the residues `e i` in `ZMod h`
+are negation-stable (`IsPrimitiveRoot.map_neg_natCast_eq_of_prod_X_sub_C_pow_eq`), and when no
+`e i` is divisible by `h` they pair off as `a` and `h - a`, adding up to `h / 2` per factor
 (`IsPrimitiveRoot.two_mul_sum_mod_eq_mul_card`).
 -/
 
@@ -90,13 +92,14 @@ section Field
 
 variable {K ι : Type*} [Field K] [Fintype ι]
 
-/-- If the roots `ζ ^ e i` of `∏ i, (X - ζ ^ e i)`, for a primitive `h`-th root of unity `ζ`,
-are stable under inversion with multiplicity, and no `e i` is divisible by `h`, then the residues
-`e i % h` add up to `h / 2` per factor: they pair off as `a` and `h - a`. -/
-theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimitiveRoot ζ h)
-    {e : ι → ℕ} (he : ∀ i, ¬ h ∣ e i)
+/-- If the roots `ζ ^ e i` of `∏ i, (X - C (ζ ^ e i))`, for a primitive `h`-th root of unity `ζ`,
+are stable under inversion with multiplicity, then the exponent residues `e i : ZMod h` are stable
+under negation with multiplicity. -/
+theorem map_neg_natCast_eq_of_prod_X_sub_C_pow_eq {h : ℕ} [NeZero h] {ζ : K}
+    (hζ : IsPrimitiveRoot ζ h) {e : ι → ℕ}
     (hprod : ∏ i, (X - C (ζ ^ e i)) = ∏ i, (X - C (ζ⁻¹ ^ e i))) :
-    2 * ∑ i, e i % h = h * Fintype.card ι := by
+    (Finset.univ.val.map fun i ↦ -(e i : ZMod h)) =
+      Finset.univ.val.map fun i ↦ (e i : ZMod h) := by
   classical
   -- Read the exponents as residues: `a ↦ ζ ^ a.val` is injective on `ZMod h`.
   let f : ZMod h → K := fun a ↦ ζ ^ a.val
@@ -109,12 +112,19 @@ theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimi
     have hdvd : h ∣ (-(n : ZMod h)).val + n := (ZMod.natCast_eq_zero_iff _ _).mp (by simp)
     rw [inv_pow]
     exact eq_inv_of_mul_eq_one_left (by rw [← pow_add]; exact (hζ.pow_eq_one_iff_dvd _).mpr hdvd)
-  -- Comparing roots, the residues `e i` are stable under negation, with multiplicity.
-  have hs : (Finset.univ.val.map fun i ↦ -(e i : ZMod h)) =
-      Finset.univ.val.map fun i ↦ (e i : ZMod h) := by
-    refine Multiset.map_injective hf ?_
-    simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, roots_prod_X_sub_C_map] using
-      (congrArg Polynomial.roots hprod).symm
+  refine Multiset.map_injective hf ?_
+  simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, roots_prod_X_sub_C_map] using
+    (congrArg Polynomial.roots hprod).symm
+
+/-- If the roots `ζ ^ e i` of `∏ i, (X - ζ ^ e i)`, for a primitive `h`-th root of unity `ζ`,
+are stable under inversion with multiplicity, and no `e i` is divisible by `h`, then the residues
+`e i % h` add up to `h / 2` per factor: they pair off as `a` and `h - a`. -/
+theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimitiveRoot ζ h)
+    {e : ι → ℕ} (he : ∀ i, ¬ h ∣ e i)
+    (hprod : ∏ i, (X - C (ζ ^ e i)) = ∏ i, (X - C (ζ⁻¹ ^ e i))) :
+    2 * ∑ i, e i % h = h * Fintype.card ι := by
+  classical
+  have hs := hζ.map_neg_natCast_eq_of_prod_X_sub_C_pow_eq hprod
   have hsum : ∑ i, (-(e i : ZMod h)).val = ∑ i, e i % h := by
     simpa only [Multiset.map_map, Function.comp_def, ZMod.val_natCast,
       ← Finset.sum_eq_multiset_sum] using congrArg (fun t ↦ (t.map ZMod.val).sum) hs

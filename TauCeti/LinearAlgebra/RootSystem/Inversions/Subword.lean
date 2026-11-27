@@ -187,6 +187,70 @@ private lemma wordProd_smul_sub_root_mem_span [DecidableEq ι] (s : b.support)
     refine Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ?_)) ih'
     exact ⟨j, Finset.mem_coe.mpr (Finset.mem_erase.mpr ⟨hj_ne, j.property⟩), rfl⟩
 
+omit [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
+/-- If a simple reflection `s` does not appear in `l`, then `s` is not an inversion of
+`(wordProd P b l)⁻¹`: expressing `-wordProd P b l.reverse • P.root s` both as a non-negative
+combination of simple roots and via `wordProd_smul_sub_root_mem_span` yields coefficient
+`1 + f s = 0` on `P.root s`, impossible in characteristic zero. -/
+private lemma not_mem_inversions_inv_wordProd_of_not_mem (s : b.support) (l : List b.support)
+    (hl : s ∉ l) : (s : ι) ∉ inversions P b (wordProd P b l)⁻¹ := by
+  classical
+  intro hmem
+  have hneg := ((mem_inversions P b (wordProd P b l)⁻¹ s).mp hmem).2
+  rw [← wordProd_reverse] at hneg
+  have hs_rev : s ∉ l.reverse := by simpa using hl
+  have hspan := wordProd_smul_sub_root_mem_span P b s l.reverse hs_rev
+  rw [Submodule.mem_span_image_finset_iff_exists_fun] at hspan
+  obtain ⟨c, hc⟩ := hspan
+  set c' : ι → R := fun k ↦ if hk : k ∈ b.support.erase (s : ι) then c ⟨k, hk⟩ else 0
+  have hc' : ∑ k ∈ b.support.erase (s : ι), c' k • P.root k =
+      wordProd P b l.reverse • P.root s - P.root s := by
+    rw [← hc, ← Finset.sum_coe_sort (b.support.erase (s : ι))]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    dsimp [c']
+    split_ifs with hk
+    · rfl
+    · exact absurd k.property hk
+  set j : ι := P.weylGroupToPerm (wordProd P b l.reverse) s
+  have hneg' : b.IsPos (P.reflectionPerm j j) := by
+    let := P.indexNeg
+    rw [← RootPairing.indexNeg_neg]
+    exact (RootPairing.Base.IsPos.neg_iff_not b j).mpr hneg
+  obtain ⟨f, -, hf⟩ :=
+    exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b _).mpr hneg')
+  rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self] at hf
+  have hroot_eq : wordProd P b l.reverse • P.root s = P.root j :=
+    P.weylGroup_apply_root _ _
+  -- Comparing the `P.root s`-coefficient in `(P.root s + ∑_{k ≠ s} c' k • P.root k) - P.root j = 0`
+  -- gives `1 + f s = 0` since `c'` is supported off `s`.
+  have hzero : ∑ k ∈ b.support,
+      (if k = (s : ι) then 1 + (f k : R) else c' k + (f k : R)) • P.root k = 0 := by
+    have hadd : -P.root j = ∑ k ∈ b.support, (f k : R) • P.root k := by
+      simpa only [Nat.cast_smul_eq_nsmul] using hf
+    have h1 : ∑ k ∈ b.support, (if k = (s : ι) then (1 : R) else 0) • P.root k =
+        P.root (s : ι) := by
+      simp [s.property]
+    have h2 : ∑ k ∈ b.support, (if k = (s : ι) then (0 : R) else c' k) • P.root k =
+        ∑ k ∈ b.support.erase (s : ι), c' k • P.root k := by
+      rw [← Finset.add_sum_erase _ _ s.property]
+      simp only [↓reduceIte, zero_smul, zero_add]
+      refine Finset.sum_congr rfl fun k hk ↦ ?_
+      simp [Finset.ne_of_mem_erase hk]
+    calc
+      ∑ k ∈ b.support, (if k = (s : ι) then 1 + (f k : R) else c' k + (f k : R)) • P.root k
+          = ∑ k ∈ b.support, ((if k = (s : ι) then (1 : R) else 0) +
+              (if k = (s : ι) then (0 : R) else c' k) + (f k : R)) • P.root k := by
+            refine Finset.sum_congr rfl fun k _ ↦ ?_
+            split_ifs <;> simp
+      _ = P.root (s : ι) + ∑ k ∈ b.support.erase (s : ι), c' k • P.root k + (-P.root j) := by
+            simp only [add_smul, Finset.sum_add_distrib, h1, h2, ← hadd]
+      _ = 0 := by rw [hc', hroot_eq]; abel
+  have hcoeff := linearIndepOn_iff'.mp b.linearIndepOn_root b.support _ subset_rfl hzero
+    s.val s.property
+  simp only [↓reduceIte] at hcoeff
+  have hnat : ((1 + f s.val : ℕ) : R) = 0 := by simpa [Nat.cast_add] using hcoeff
+  exact Nat.succ_ne_zero (f s.val) (by simpa [Nat.add_comm] using Nat.cast_eq_zero.mp hnat)
+
 /-- **Every word without duplicate simple reflections is reduced**: its inversion count equals its
 length. -/
 theorem ncard_inversions_wordProd_eq_length_of_nodup (l : List b.support) (hl : l.Nodup) :
@@ -197,60 +261,7 @@ theorem ncard_inversions_wordProd_eq_length_of_nodup (l : List b.support) (hl : 
   | cons s l ih =>
     rw [List.nodup_cons] at hl
     have ih' := ih hl.2
-    have hnot : (s : ι) ∉ inversions P b (wordProd P b l)⁻¹ := by
-      intro hmem
-      have hneg := ((mem_inversions P b (wordProd P b l)⁻¹ s).mp hmem).2
-      rw [← wordProd_reverse] at hneg
-      have hs_rev : s ∉ l.reverse := by simpa using hl.1
-      have hspan := wordProd_smul_sub_root_mem_span P b s l.reverse hs_rev
-      rw [Submodule.mem_span_image_finset_iff_exists_fun] at hspan
-      obtain ⟨c, hc⟩ := hspan
-      set c' : ι → R := fun k ↦ if hk : k ∈ b.support.erase (s : ι) then c ⟨k, hk⟩ else 0
-      have hc' : ∑ k ∈ b.support.erase (s : ι), c' k • P.root k =
-          wordProd P b l.reverse • P.root s - P.root s := by
-        rw [← hc, ← Finset.sum_coe_sort (b.support.erase (s : ι))]
-        refine Finset.sum_congr rfl fun k _ ↦ ?_
-        dsimp [c']
-        split_ifs with hk
-        · rfl
-        · exact absurd k.property hk
-      set j : ι := P.weylGroupToPerm (wordProd P b l.reverse) s
-      have hneg' : b.IsPos (P.reflectionPerm j j) := by
-        let := P.indexNeg
-        rw [← RootPairing.indexNeg_neg]
-        exact (RootPairing.Base.IsPos.neg_iff_not b j).mpr hneg
-      obtain ⟨f, -, hf⟩ :=
-        exists_root_eq_sum_nat_of_mem_posRoots P b ((mem_posRoots P b _).mpr hneg')
-      rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self] at hf
-      have hroot_eq : wordProd P b l.reverse • P.root s = P.root j :=
-        P.weylGroup_apply_root _ _
-      have hzero : ∑ k ∈ b.support,
-          (if k = (s : ι) then 1 + (f k : R) else c' k + (f k : R)) • P.root k = 0 := by
-        have hadd : -P.root j = ∑ k ∈ b.support, (f k : R) • P.root k := by
-          simpa only [Nat.cast_smul_eq_nsmul] using hf
-        have h1 : ∑ k ∈ b.support, (if k = (s : ι) then (1 : R) else 0) • P.root k =
-            P.root (s : ι) := by
-          simp [s.property]
-        have h2 : ∑ k ∈ b.support, (if k = (s : ι) then (0 : R) else c' k) • P.root k =
-            ∑ k ∈ b.support.erase (s : ι), c' k • P.root k := by
-          rw [← Finset.add_sum_erase _ _ s.property]
-          simp only [↓reduceIte, zero_smul, zero_add]
-          refine Finset.sum_congr rfl fun k hk ↦ ?_
-          simp [Finset.ne_of_mem_erase hk]
-        calc
-          ∑ k ∈ b.support, (if k = (s : ι) then 1 + (f k : R) else c' k + (f k : R)) • P.root k
-              = ∑ k ∈ b.support, ((if k = (s : ι) then (1 : R) else 0) +
-                  (if k = (s : ι) then (0 : R) else c' k) + (f k : R)) • P.root k := by
-                refine Finset.sum_congr rfl fun k _ ↦ ?_
-                split_ifs <;> simp
-          _ = P.root (s : ι) + ∑ k ∈ b.support.erase (s : ι), c' k • P.root k + (-P.root j) := by
-                simp only [add_smul, Finset.sum_add_distrib, h1, h2, ← hadd]
-          _ = 0 := by rw [hc', hroot_eq]; abel
-      have hcoeff := linearIndepOn_iff'.mp b.linearIndepOn_root b.support _ subset_rfl hzero
-        s.val s.property
-      simp only [↓reduceIte] at hcoeff
-      have hnat : ((1 + f s.val : ℕ) : R) = 0 := by simpa [Nat.cast_add] using hcoeff
-      exact Nat.succ_ne_zero (f s.val) (by simpa [Nat.add_comm] using Nat.cast_eq_zero.mp hnat)
+    have hnot := not_mem_inversions_inv_wordProd_of_not_mem P b s l hl.1
     have hlt : (inversions P b (wordProd P b l)).ncard <
         (inversions P b (wordProd P b (s :: l))).ncard := by
       rw [wordProd_cons]

@@ -30,10 +30,10 @@ and when `P(0)` is a unit and `P(u)` is invertible modulo `e`, `P(u (1 - e))` is
 (`Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem`).
 
 For an `R[X]`-algebra `S` compatible with its `R`-algebra structure, the algebra map `R[X] → S` is
-evaluation at the image of `X` (`Polynomial.algebraMap_eq_aeval`).
-
-A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
-`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`), and evaluating
+evaluation at the image of `X` (`Polynomial.algebraMap_eq_aeval`), and mapping `p.map C` by
+coefficientwise `aeval r` yields `p.map (algebraMap R A)` (`Polynomial.map_aeval_map_C`).
+For a monic polynomial of positive degree dividing every polynomial that vanishes at `f : B`,
+`A` acts faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`), and evaluating
 `1 - C c * P` at `u` recovers `c • P(u)` via `1 - (1 - C c * P)(u)`
 (`Polynomial.one_sub_aeval_one_sub_C_mul`).
 -/
@@ -56,6 +56,17 @@ theorem irreducible_map_iff_of_algEquiv {F K K' : Type*} [CommSemiring F] [Semir
 end TauCeti
 
 namespace Polynomial
+
+/-- Coefficientwise evaluation of `p.map C` at `r` recovers `p.map (algebraMap R A)`. -/
+@[simp]
+theorem map_aeval_map_C {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    (p : R[X]) (r : A) :
+    (p.map Polynomial.C).map (↑(aeval r : R[X] →ₐ[R] A) : R[X] →+* A) =
+      p.map (algebraMap R A) := by
+  rw [Polynomial.map_map]
+  congr 1
+  ext x
+  simp
 
 /-- For an `R[X]`-algebra `S` whose `R`-algebra structure factors through `R[X]`, the algebra map
 `R[X] → S` is evaluation at the image of `X`. -/

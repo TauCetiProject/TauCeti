@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.RingTheory.RootsOfUnity.Complex
-import TauCeti.Analysis.Complex.Angle
 import TauCeti.GroupTheory.Coxeter.CoxeterElement
+import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Regular
@@ -38,9 +38,7 @@ primitive `h`-th root of unity corresponds to the Perron–Frobenius eigenvalue 
 matrix.
 
 This file combines that colour-part construction with the Perron–Frobenius spectral bound
-(`Matrix.norm_one_add_sq_div_le_sq_of_mulVec_eq_smul` and
-`Real.eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le`) to identify `2 - κ = 2 * Real.cos (π / h)`,
-and deduces:
+(`Matrix.norm_le_of_mulVec_le_smul`) to identify `2 - κ = 2 * Real.cos (π / h)`, and deduces:
 
 ## Main results
 
@@ -71,6 +69,254 @@ open Matrix Polynomial TauCeti
 namespace RootPairing
 
 section SpectralHelpers
+
+private lemma one_add_exp_sq_div_exp_eq (h : ℕ) :
+    (1 + Complex.exp (2 * Real.pi * Complex.I / h)) ^ 2 /
+        Complex.exp (2 * Real.pi * Complex.I / h) =
+      (((2 * Real.cos (Real.pi / h)) ^ 2 : ℝ) : ℂ) := by
+  set ξ : ℂ := Complex.exp (((Real.pi / h : ℝ) : ℂ) * Complex.I)
+  have hω : Complex.exp (2 * Real.pi * Complex.I / h) = ξ ^ 2 := by
+    simp only [ξ, sq, ← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
+  have hdiv : (1 + ξ ^ 2) ^ 2 / ξ ^ 2 = (ξ + ξ⁻¹) ^ 2 := by
+    field_simp [Complex.exp_ne_zero _]
+    ring
+  rw [hω, hdiv]
+  dsimp only [ξ]
+  rw [← Complex.exp_neg, ← neg_mul, ← Complex.two_cos]
+  push_cast
+  ring
+
+private lemma pi_div_le_of_exp_sq_pow_eq_one {θ : ℝ} {h : ℕ} (hθ_pos : 0 < θ) (hh_pos : 0 < h)
+    (hζ_pow : (Complex.exp ((θ : ℂ) * Complex.I) ^ 2) ^ h = 1) : Real.pi / h ≤ θ := by
+  have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
+  have hexp1 : Complex.exp (((2 * (h : ℝ) * θ : ℝ) : ℂ) * Complex.I) = 1 := by
+    simp only [← Complex.exp_natCast_mul] at hζ_pow
+    convert hζ_pow using 2
+    push_cast
+    ring
+  obtain ⟨m, hm⟩ := Complex.exp_eq_one_iff.1 hexp1
+  have hre : 2 * (h : ℝ) * θ = (m : ℝ) * (2 * Real.pi) := Complex.ofReal_injective
+    (mul_right_cancel₀ Complex.I_ne_zero (by simpa [mul_assoc] using hm))
+  have hm_real : (0 : ℝ) < m := by nlinarith [Real.pi_pos, mul_pos hh_real hθ_pos]
+  have hm_pos : (0 : ℤ) < m := by exact_mod_cast hm_real
+  have hm_one : (1 : ℤ) ≤ m := hm_pos
+  have hm_ge : (1 : ℝ) ≤ m := by exact_mod_cast hm_one
+  rw [div_le_iff₀ hh_real]
+  nlinarith [Real.pi_pos]
+
+private lemma eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le (lam : ℝ) {h : ℕ}
+    (hlam_nonneg : 0 ≤ lam) (hlam_lt : lam < 2) (h2le : 2 ≤ h)
+    (hζ_pow : (Complex.exp ((Real.arccos (lam / 2) : ℂ) * Complex.I) ^ 2) ^ h = 1)
+    (hbound : ‖(1 + Complex.exp (2 * Real.pi * Complex.I / h)) ^ 2 /
+      Complex.exp (2 * Real.pi * Complex.I / h)‖ ≤ lam ^ 2) :
+    lam = 2 * Real.cos (Real.pi / h) := by
+  set θ : ℝ := Real.arccos (lam / 2)
+  have hcosθ : Real.cos θ = lam / 2 := Real.cos_arccos (by linarith) (by linarith)
+  have hlam_eq : lam = 2 * Real.cos θ := by linarith
+  have hθ_pos : 0 < θ := by
+    rw [← Real.arccos_one]
+    exact Real.arccos_lt_arccos (by linarith) (by linarith) le_rfl
+  have hθ_le : θ ≤ Real.pi / 2 := by
+    rw [← Real.arccos_zero]
+    exact Real.arccos_le_arccos (by linarith : (0 : ℝ) ≤ lam / 2)
+  rw [one_add_exp_sq_div_exp_eq h, Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)] at hbound
+  have hh_pos : 0 < h := lt_of_lt_of_le (by norm_num) h2le
+  have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
+  have hpi_le_θ : Real.pi / h ≤ θ := pi_div_le_of_exp_sq_pow_eq_one hθ_pos hh_pos hζ_pow
+  have hcos_le : Real.cos (Real.pi / h) ≤ Real.cos θ := by
+    have hcos_nonneg_pi : 0 ≤ Real.cos (Real.pi / h) := by
+      refine Real.cos_nonneg_of_mem_Icc
+        ⟨by linarith [Real.pi_pos, div_nonneg Real.pi_pos.le hh_real.le], ?_⟩
+      have h2 : (2 : ℝ) ≤ h := by exact_mod_cast h2le
+      rw [div_le_div_iff₀ hh_real (by norm_num)]
+      nlinarith [Real.pi_pos]
+    have : Real.cos (Real.pi / h) ^ 2 ≤ Real.cos θ ^ 2 := by
+      rw [hlam_eq] at hbound
+      nlinarith
+    nlinarith
+  have hcos_ge : Real.cos θ ≤ Real.cos (Real.pi / h) := Real.strictAntiOn_cos.antitoneOn
+    ⟨by positivity, le_trans hpi_le_θ (le_trans hθ_le (by linarith [Real.pi_pos]))⟩
+    ⟨hθ_pos.le, le_trans hθ_le (by linarith [Real.pi_pos])⟩ hpi_le_θ
+  linarith [le_antisymm hcos_ge hcos_le]
+
+private lemma mulVec_sq_map_of_bipartite_mulVec_eq_smul {n : Type*} [Fintype n]
+    (A : Matrix n n ℝ) {M₁ M₂ : Matrix n n ℂ} {col : n → Bool}
+    (hA_same : ∀ i j, col i = col j → A i j = 0)
+    (hM₁_mul : ∀ (z : n → ℂ) (i : n), (M₁ *ᵥ z) i = if col i = true then
+        -z i + ∑ j : n, (if col j = false then (A i j : ℂ) * z j else 0) else z i)
+    (hM₂_mul : ∀ (z : n → ℂ) (i : n), (M₂ *ᵥ z) i = if col i = false then
+        -z i + ∑ j : n, (if col j = true then (A i j : ℂ) * z j else 0) else z i)
+    {ω : ℂ} {z : n → ℂ} (hω : ω ≠ 0) (heig : (M₁ * M₂) *ᵥ z = ω • z) :
+    (A * A).map Complex.ofReal *ᵥ z = ((1 + ω) ^ 2 / ω) • z := by
+  classical
+  set AC : Matrix n n ℂ := A.map Complex.ofReal
+  have hM₁_invol : ∀ y : n → ℂ, M₁ *ᵥ (M₁ *ᵥ y) = y := fun y ↦ by
+    ext i
+    rw [hM₁_mul]
+    cases hci : col i
+    · simp [hM₁_mul, hci]
+    · have hsum : (∑ j : n, if col j = false then (A i j : ℂ) * (M₁ *ᵥ y) j else 0) =
+          ∑ j : n, if col j = false then (A i j : ℂ) * y j else 0 :=
+        Finset.sum_congr rfl fun j _ ↦ by
+          split_ifs with hcj
+          · simp [hM₁_mul, hcj]
+          · rfl
+      rw [hM₁_mul]
+      simp only [hci, ite_true, hsum]
+      ring
+  have hM₂_eq : M₂ *ᵥ z = ω • (M₁ *ᵥ z) := by
+    have h1 := congrArg (M₁ *ᵥ ·) heig
+    rwa [← mulVec_mulVec, hM₁_invol, mulVec_smul] at h1
+  set z₁ : n → ℂ := fun i ↦ if col i = true then z i else 0
+  set z₂ : n → ℂ := fun i ↦ if col i = false then z i else 0
+  have hz_split : z = z₁ + z₂ := by
+    ext i
+    simp only [z₁, z₂, Pi.add_apply]
+    cases col i <;> simp
+  have hAz_color (b0 : Bool) (i : n) :
+      (AC *ᵥ fun j ↦ if col j = b0 then z j else 0) i = if col i = !b0 then
+        ∑ j : n, (if col j = b0 then (A i j : ℂ) * z j else 0) else 0 := by
+    simp only [mulVec, dotProduct, AC, Matrix.map_apply]
+    split_ifs with hci
+    · exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> simp
+    · have hsame : col i = b0 := by cases h1 : col i <;> cases b0 <;> simp_all
+      exact Finset.sum_eq_zero fun j _ ↦ by
+        split_ifs with hcj
+        · simp [hA_same i j (hsame.trans hcj.symm)]
+        · simp
+  have heq₁ : (1 + ω) • z₁ = ω • (AC *ᵥ z₂) := by
+    ext i
+    have hi := congrFun hM₂_eq i
+    have hAz := hAz_color false i
+    simp only [Bool.not_false, z₁, z₂, Pi.smul_apply, smul_eq_mul, hM₂_mul, hM₁_mul] at hi hAz ⊢
+    rw [hAz]
+    cases hci : col i <;> simp [hci] at hi ⊢
+    linear_combination hi
+  have heq₂ : AC *ᵥ z₁ = (1 + ω) • z₂ := by
+    ext i
+    have hi := congrFun hM₂_eq i
+    have hAz := hAz_color true i
+    simp only [Bool.not_true, z₁, z₂, Pi.smul_apply, smul_eq_mul, hM₂_mul, hM₁_mul] at hi hAz ⊢
+    rw [hAz]
+    cases hci : col i <;> simp [hci] at hi ⊢
+    linear_combination hi
+  have h1 : ω • (AC *ᵥ (AC *ᵥ z₁)) = (1 + ω) ^ 2 • z₁ := by
+    rw [heq₂, mulVec_smul, smul_comm, ← heq₁, smul_smul, sq]
+  have h2 : ω • (AC *ᵥ (AC *ᵥ z₂)) = (1 + ω) ^ 2 • z₂ := by
+    have := congrArg (AC *ᵥ ·) heq₁
+    rw [mulVec_smul, mulVec_smul, heq₂, smul_smul, ← sq] at this
+    exact this.symm
+  have hsum : ω • ((AC * AC) *ᵥ z) = (1 + ω) ^ 2 • z := by
+    rw [hz_split, mulVec_add, ← mulVec_mulVec, ← mulVec_mulVec, smul_add, h1, h2, ← smul_add]
+  have hA2_map : (A * A).map Complex.ofReal = AC * AC := by
+    ext i j
+    simp [AC, Matrix.mul_apply]
+  rw [hA2_map]
+  ext i
+  have hi := congrFun hsum i
+  simp only [Pi.smul_apply, smul_eq_mul] at hi ⊢
+  exact mul_left_cancel₀ hω (by rw [hi]; field_simp [hω])
+
+private lemma norm_one_add_sq_div_le_sq_of_mulVec_eq_smul {n : Type*} [Fintype n]
+    (A : Matrix n n ℝ) {M₁ M₂ : Matrix n n ℂ} {col : n → Bool} {a : n → ℝ} {r : ℝ}
+    (hA_nonneg : ∀ i j, 0 ≤ A i j) (hA_same : ∀ i j, col i = col j → A i j = 0)
+    (ha_pos : ∀ i, 0 < a i) (ha_eig : A *ᵥ a = r • a)
+    (hM₁_mul : ∀ (z : n → ℂ) (i : n), (M₁ *ᵥ z) i = if col i = true then
+        -z i + ∑ j : n, (if col j = false then (A i j : ℂ) * z j else 0) else z i)
+    (hM₂_mul : ∀ (z : n → ℂ) (i : n), (M₂ *ᵥ z) i = if col i = false then
+        -z i + ∑ j : n, (if col j = true then (A i j : ℂ) * z j else 0) else z i)
+    {ω : ℂ} {z : n → ℂ} (hω : ω ≠ 0) (hz : z ≠ 0) (heig : (M₁ * M₂) *ᵥ z = ω • z) :
+    ‖(1 + ω) ^ 2 / ω‖ ≤ r ^ 2 := by
+  have hA2_eig := mulVec_sq_map_of_bipartite_mulVec_eq_smul A hA_same hM₁_mul hM₂_mul hω heig
+  have hA2_nonneg : ∀ i j, 0 ≤ (A * A) i j := fun i j ↦ by
+    rw [Matrix.mul_apply]
+    exact Finset.sum_nonneg fun k _ ↦ mul_nonneg (hA_nonneg i k) (hA_nonneg k j)
+  exact norm_le_of_mulVec_le_smul hA2_nonneg ha_pos
+    (le_of_eq (by rw [← mulVec_mulVec, ha_eig, mulVec_smul, ha_eig, smul_smul, sq]))
+    hz hA2_eig
+
+private lemma mem_map_symm_iff {α β : Type*} (e : α ≃ β) (l : List β) (i : α) :
+    i ∈ l.map e.symm ↔ e i ∈ l :=
+  ⟨fun h ↦ by rcases List.mem_map.1 h with ⟨a, ha, rfl⟩; simpa using ha,
+    fun h ↦ List.mem_map.2 ⟨e i, h, e.symm_apply_apply i⟩⟩
+
+private noncomputable def coloringBaseChangeRat
+    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
+    [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base)
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
+    (coxeterMatrixOfBase
+      (rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap)
+      (rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+        b.rationalModelBase)).graph.Coloring Bool :=
+  SimpleGraph.Coloring.mk
+    (fun i ↦ col (b.supportEquivRootPairingBaseChangeRationalModel ℂ i)) fun {i j} hadj ↦ by
+    rw [graph_coxeterMatrixOfBase, diagramGraph_adj] at hadj
+    have h1 := b.cartanMatrix_rootPairingBaseChangeRationalModel ℂ i j
+    have h2 := b.cartanMatrix_rootPairingBaseChangeRationalModel ℂ j i
+    exact col.valid (by
+      rw [graph_coxeterMatrixOfBase, diagramGraph_adj]
+      exact ⟨(b.supportEquivRootPairingBaseChangeRationalModel ℂ).injective.ne hadj.1,
+        h1 ▸ hadj.2.1, h2 ▸ hadj.2.2⟩)
+
+@[simp]
+private lemma coloringBaseChangeRat_apply
+    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
+    [P.IsCrystallographic] [P.IsRootSystem] (b : P.Base)
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    (i : (rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).support) :
+    coloringBaseChangeRat P b col i =
+      col (b.supportEquivRootPairingBaseChangeRationalModel ℂ i) := rfl
+
+private lemma wordProd_mul_wordProd_eq_bipartiteCoxeterElement
+    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    {l₁ l₂ : List b.support} (hl₁ : l₁.Nodup) (hl₂ : l₂.Nodup)
+    (hcol₁ : ∀ i : b.support, i ∈ l₁ ↔ col i = true)
+    (hcol₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false) :
+    wordProd P b l₁ * wordProd P b l₂ =
+      (weylCoxeterSystem P b).bipartiteCoxeterElement col := by
+  rw [← weylCoxeterSystem_wordProd P b l₁, ← weylCoxeterSystem_wordProd P b l₂,
+    (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₁ hcol₁,
+    (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₂ hcol₂,
+    CoxeterSystem.bipartiteCoxeterElement_def]
+
+private lemma bipartiteCoxeterElement_coloringBaseChangeRat
+    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] [P.IsRootSystem] (b : P.Base)
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
+    {l₁ l₂ : List b.support} (hl₁ : l₁.Nodup) (hl₂ : l₂.Nodup)
+    (hmem₁ : ∀ i : b.support, i ∈ l₁ ↔ col i = true)
+    (hmem₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false) :
+    (weylCoxeterSystem
+        (rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap)
+        (rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+          b.rationalModelBase)).bipartiteCoxeterElement (coloringBaseChangeRat P b col) =
+      wordProd (rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap)
+        (rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+          b.rationalModelBase)
+        ((l₁ ++ l₂).map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm) := by
+  let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
+  let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
+    b.rationalModelBase
+  let eCB := b.supportEquivRootPairingBaseChangeRationalModel ℂ
+  have hl₁C : (l₁.map eCB.symm).Nodup := hl₁.map eCB.symm.injective
+  have hl₂C : (l₂.map eCB.symm).Nodup := hl₂.map eCB.symm.injective
+  have hmemC (x : Bool) {l : List b.support} (hlx : ∀ j, j ∈ l ↔ col j = x) (i : bC.support) :
+      i ∈ l.map eCB.symm ↔ coloringBaseChangeRat P b col i = x := by
+    rw [mem_map_symm_iff, coloringBaseChangeRat_apply, hlx]
+  rw [CoxeterSystem.bipartiteCoxeterElement_def,
+    ← (weylCoxeterSystem PC bC).wordProd_eq_colorClassProd _ hl₁C (hmemC true hmem₁),
+    ← (weylCoxeterSystem PC bC).wordProd_eq_colorClassProd _ hl₂C (hmemC false hmem₂),
+    weylCoxeterSystem_wordProd, weylCoxeterSystem_wordProd, List.map_append, wordProd_append]
 
 open Classical in
 /-- Matrix entry of the integer matrix `W` representing a colour-class product
@@ -247,46 +493,19 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   let eCB := b.supportEquivRootPairingBaseChangeRationalModel ℂ
-  let colC : (coxeterMatrixOfBase PC bC).graph.Coloring Bool :=
-    SimpleGraph.Coloring.mk (fun i ↦ col (eCB i)) fun {i j} hadj ↦ by
-      rw [graph_coxeterMatrixOfBase, diagramGraph_adj] at hadj
-      have h1 := b.cartanMatrix_rootPairingBaseChangeRationalModel ℂ i j
-      have h2 := b.cartanMatrix_rootPairingBaseChangeRationalModel ℂ j i
-      exact col.valid (by
-        rw [graph_coxeterMatrixOfBase, diagramGraph_adj]
-        exact ⟨eCB.injective.ne hadj.1, h1 ▸ hadj.2.1, h2 ▸ hadj.2.2⟩)
+  let colC := coloringBaseChangeRat P b col
   let yC : bC.support → ℝ := fun i ↦ y (eCB i)
   have hyC0 : ∀ i, 0 < yC i := fun i ↦ hy0 (eCB i)
   have hyC (j : bC.support) : ∑ i : bC.support, yC i * PC.pairingIn ℤ i j = κ * yC j := by
-    have hpair (i : bC.support) : PC.pairingIn ℤ i j = P.pairingIn ℤ (eCB i) (eCB j) := by
-      exact b.cartanMatrix_rootPairingBaseChangeRationalModel ℂ i j
+    have hpair (i : bC.support) : PC.pairingIn ℤ i j = P.pairingIn ℤ (eCB i) (eCB j) :=
+      b.cartanMatrix_rootPairingBaseChangeRationalModel ℂ i j
     simp_rw [yC, hpair]
     exact (Fintype.sum_equiv eCB _ _ fun _ ↦ rfl).trans (hy (eCB j))
-  have hcolC_word : (weylCoxeterSystem PC bC).bipartiteCoxeterElement colC =
-      wordProd PC bC ((l₁ ++ l₂).map eCB.symm) := by
-    have hl₁C : (l₁.map eCB.symm).Nodup := hl₁.map eCB.symm.injective
-    have hl₂C : (l₂.map eCB.symm).Nodup := hl₂.map eCB.symm.injective
-    have hmem₁C (i : bC.support) : i ∈ l₁.map eCB.symm ↔ colC i = true := by
-      change i ∈ l₁.map eCB.symm ↔ col (eCB i) = true
-      rw [← hmem₁ (eCB i)]
-      exact ⟨fun h ↦ by
-          rcases List.mem_map.1 h with ⟨a, ha, hfa⟩
-          rw [← hfa, eCB.apply_symm_apply]; exact ha,
-        fun h ↦ List.mem_map.2 ⟨eCB i, h, eCB.symm_apply_apply i⟩⟩
-    have hmem₂C (i : bC.support) : i ∈ l₂.map eCB.symm ↔ colC i = false := by
-      change i ∈ l₂.map eCB.symm ↔ col (eCB i) = false
-      rw [← hmem₂ (eCB i)]
-      exact ⟨fun h ↦ by
-          rcases List.mem_map.1 h with ⟨a, ha, hfa⟩
-          rw [← hfa, eCB.apply_symm_apply]; exact ha,
-        fun h ↦ List.mem_map.2 ⟨eCB i, h, eCB.symm_apply_apply i⟩⟩
-    rw [CoxeterSystem.bipartiteCoxeterElement_def,
-      ← (weylCoxeterSystem PC bC).wordProd_eq_colorClassProd colC hl₁C hmem₁C,
-      ← (weylCoxeterSystem PC bC).wordProd_eq_colorClassProd colC hl₂C hmem₂C,
-      weylCoxeterSystem_wordProd, weylCoxeterSystem_wordProd, List.map_append, wordProd_append]
+  have hcolC_word :=
+    bipartiteCoxeterElement_coloringBaseChangeRat P b col hl₁ hl₂ hmem₁ hmem₂
   have hordC : orderOf ((weylCoxeterSystem PC bC).bipartiteCoxeterElement colC) = h := by
     dsimp only [h]
-    rw [hcolC_word, ← b.orderOf_wordProd_baseChangeRat ℂ (l₁ ++ l₂), hc_eq]
+    rw [hcolC_word, ← b.orderOf_wordProd_rootPairingBaseChange_rationalModel ℂ (l₁ ++ l₂), hc_eq]
   have hζinv_prim : IsPrimitiveRoot ζ⁻¹ h :=
     hordC ▸ PC.isPrimitiveRoot_bipartiteCoxeterElement_of_quadratic hyC hyC0 hκ hκ2 hζinv_quad
   have hζ_prim : IsPrimitiveRoot ζ h := by simpa using hζinv_prim.inv
@@ -299,7 +518,9 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hp_PC : p.map (algebraMap ℚ ℂ) =
       (PC.weylGroupRootRep ((weylCoxeterSystem PC bC).bipartiteCoxeterElement colC)).charpoly := by
     dsimp only [p]
-    rw [hcolC_word, ← b.charpoly_weylGroupRootRep_wordProd_baseChangeRat ℂ (l₁ ++ l₂), hW_word]
+    rw [hcolC_word,
+      ← b.charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel ℂ (l₁ ++ l₂),
+      hW_word]
   have hζinv_root : (p.map (algebraMap ℚ ℂ)).IsRoot ζ⁻¹ := by
     rw [hp_PC, ← Module.End.hasEigenvalue_iff_isRoot_charpoly]
     have hreg := PC.isRegularWeight_one_add_smul_colorPart_add_smul (c := colC) hyC hyC0 hκ hκ2
@@ -356,8 +577,8 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hM₁C_mul := colorClassProd_matrix_mulVec P b col A (fun _ _ ↦ rfl) true hW₁_acts
   have hM₂C_mul := colorClassProd_matrix_mulVec P b col A (fun _ _ ↦ rfl) false hW₂_acts
   simp only [Bool.not_true, Bool.not_false] at hM₁C_mul hM₂C_mul
-  exact Real.eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le lam hlam_nonneg hlam_lt h2le
-    hζ_prim.pow_eq_one (A.norm_one_add_sq_div_le_sq_of_mulVec_eq_smul hA_nonneg hA_same hy0 hA_eig
+  exact eq_two_mul_cos_pi_div_of_norm_one_add_sq_div_le lam hlam_nonneg hlam_lt h2le
+    hζ_prim.pow_eq_one (norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
       hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1))
 
 /-- For a rank-1 root system, every bipartite Coxeter element has order `2`. -/
@@ -460,14 +681,8 @@ theorem exists_coxeterPlane_bipartite [P.IsIrreducible] (b : P.Base) [Nontrivial
   have : Nonempty b.support := b.nonempty_support_of_isIrreducible
   obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
     (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
-  have hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := fun j ↦ by
-    simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
-  have hc_bip : wordProd P b l₁ * wordProd P b l₂ =
-      (weylCoxeterSystem P b).bipartiteCoxeterElement col := by
-    rw [← weylCoxeterSystem_wordProd P b l₁, ← weylCoxeterSystem_wordProd P b l₂,
-      (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₁ hcol₁,
-      (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₂ hcol₂,
-      CoxeterSystem.bipartiteCoxeterElement_def]
+  have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
+  have hc_bip := wordProd_mul_wordProd_eq_bipartiteCoxeterElement P b col hl₁ hl₂ hcol₁ hcol₂
   have hlam : 2 - κ = 2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂)) := by
     rw [hc_bip]
     exact two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement P b col hy hy0 hκ hκ2
@@ -493,32 +708,17 @@ theorem exists_coxeterPlane_bipartite [P.IsIrreducible] (b : P.Base) [Nontrivial
         exact ⟨j, by cases hcj : col j <;> simp_all⟩
     refine Fintype.linearIndependent_iff.2 fun f hf ↦ ?_
     have hsum : f 0 • v₁ + f 1 • v₂ = 0 := by simpa [Fin.sum_univ_two] using hf
-    have hrepr (i : b.support) (b0 : Bool) (hcol : col i = b0) :
-        b.toWeightBasis.repr (colorPart P b col y b0) i = y i ∧
-        b.toWeightBasis.repr (colorPart P b col y (!b0)) i = 0 := by
-      have aux (z : Bool) : b.toWeightBasis.repr (colorPart P b col y z) i =
-          if col i = z then y i else 0 := by
-        rw [colorPart_def, map_sum, Finset.sum_apply', Finset.sum_eq_single i
-          (fun j _ hij ↦ by
-            by_cases hcj : col j = z
-            · simp [hcj, b.toWeightBasis_repr_root, hij]
-            · simp [hcj])
-          (by simp)]
-        by_cases hci : col i = z
-        · simp [hci, b.toWeightBasis_repr_root]
-        · simp [hci]
-      simp [aux, hcol]
     have hf0 : f 0 = 0 := by
       have h0 := congrArg (fun m ↦ b.toWeightBasis.repr m i_true) hsum
-      obtain ⟨h1, h2⟩ := hrepr i_true true hi_true
       simp only [map_add, map_smul, map_zero, Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul,
-        v₁, v₂, h1, Bool.not_true.symm ▸ h2, mul_zero, add_zero] at h0
+        v₁, v₂, P.toWeightBasis_repr_colorPart b, hi_true, ↓reduceIte, Bool.true_eq_false,
+        mul_zero, add_zero] at h0
       exact (mul_eq_zero.1 h0).resolve_right (hy0 i_true).ne'
     have hf1 : f 1 = 0 := by
       have h0 := congrArg (fun m ↦ b.toWeightBasis.repr m i_false) hsum
-      obtain ⟨h1, h2⟩ := hrepr i_false false hi_false
       simp only [map_add, map_smul, map_zero, Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul,
-        v₁, v₂, Bool.not_false.symm ▸ h2, h1, mul_zero, zero_add] at h0
+        v₁, v₂, P.toWeightBasis_repr_colorPart b, hi_false, ↓reduceIte, Bool.false_eq_true,
+        mul_zero, zero_add] at h0
       exact (mul_eq_zero.1 h0).resolve_right (hy0 i_false).ne'
     intro k
     fin_cases k <;> assumption
@@ -550,16 +750,8 @@ theorem exists_dihedral_colorPart_bipartite [P.IsIrreducible] (b : P.Base)
   let := Fintype.ofFinite ι
   have : Nonempty b.support := b.nonempty_support_of_isIrreducible
   rcases subsingleton_or_nontrivial b.support with hsub | _
-  · have hy : ∀ j : b.support, ∑ i : b.support, (1 : ℝ) * P.pairingIn ℤ i j = 2 * 1 := fun j ↦ by
-      rw [Finset.sum_eq_single j (fun i _ hij ↦ absurd (Subsingleton.elim i j) hij) (by simp),
-        P.pairingIn_same ℤ j]
-      norm_num
-    have hc_bip : wordProd P b l₁ * wordProd P b l₂ =
-        (weylCoxeterSystem P b).bipartiteCoxeterElement col := by
-      rw [← weylCoxeterSystem_wordProd P b l₁, ← weylCoxeterSystem_wordProd P b l₂,
-        (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₁ hcol₁,
-        (weylCoxeterSystem P b).wordProd_eq_colorClassProd col hl₂ hcol₂,
-        CoxeterSystem.bipartiteCoxeterElement_def]
+  · have hy := P.sum_pairingIn_eq_two_of_subsingleton b
+    have hc_bip := wordProd_mul_wordProd_eq_bipartiteCoxeterElement P b col hl₁ hl₂ hcol₁ hcol₂
     have hlam : 2 - (2 : ℝ) =
         2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂)) := by
       rw [hc_bip, orderOf_bipartiteCoxeterElement_eq_two_of_subsingleton P b col, sub_self,
@@ -606,8 +798,7 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
       exact ⟨v, hv_reg, by rwa [hμ_eq_neg_one, ← hexp_eq] at hv_eig⟩
     · obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
         (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
-      have hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := fun j ↦ by
-        simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
+      have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
       have hlam : 2 - κ = 2 * Real.cos (Real.pi / orderOf c) :=
         two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement P b col hy hy0 hκ hκ2
       set ν : ℂ := (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹

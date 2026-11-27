@@ -23,20 +23,14 @@ the roots need not span), so the order of `w` is the order of `W`.
 
 Every element of the Weyl group acts by some integer matrix, because every root is an integer
 combination of the simple roots. When the roots span, the simple roots form a basis of the weight
-  space and `W` is the matrix of `w` in that basis. Over an algebra extension `R` of a field `S`,
-`ActsBy` translates directly into matrix-vector multiplication on `S`-linear combinations of
-simple roots (`ActsBy.smul_sum_algebraMap_root`, `ActsBy.mulVec_eq_of_smul_sum`). Moreover, the
-characteristic polynomial of every Weyl-group element has integer coefficients, and its roots are
-closed under Galois conjugation.
+space and `W` is the matrix of `w` in that basis. Moreover, the characteristic polynomial of every
+Weyl-group element has integer coefficients, and its roots are closed under Galois conjugation.
 
 ## Main results
 
 * `RootPairing.Base.actsBy_wordProd`: a word in the simple reflections acts by the product of the
   corresponding reflection matrices.
 * `RootPairing.Base.ActsBy.orderOf_eq`: if `w` acts by `W`, then `orderOf w = orderOf W`.
-* `RootPairing.Base.ActsBy.smul_sum_algebraMap_root` and
-  `RootPairing.Base.ActsBy.mulVec_eq_of_smul_sum`: acting-by translates Weyl-group action on
-  combinations of simple roots into matrix-vector multiplication.
 * `RootPairing.Base.exists_actsBy`: every element of the Weyl group acts by an integer matrix.
 * `RootPairing.Base.ActsBy.toMatrix_weylGroupRootRep` and
   `RootPairing.Base.ActsBy.charpoly_weylGroupRootRep`: for a root system, the integer matrix of `w`
@@ -44,7 +38,8 @@ closed under Galois conjugation.
   characteristic polynomial.
 * `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map`: the characteristic polynomial of
   every Weyl-group element on the weight space of a root system has integer coefficients.
-* `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map_rat` and
+* `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map_rat`,
+  `RootPairing.Base.ActsBy.charpoly_weylGroupRootRep_eq_map_rat`, and
   `RootPairing.Base.charpoly_weylGroupRootRep_wordProd_eq_map_rat`: over a `ℚ`-algebra, the same
   characteristic polynomial has rational coefficients.
 * `RootPairing.Base.orderOf_wordProd_of_cartanMatrix_eq`: for a base whose Cartan matrix is `A` up
@@ -97,38 +92,6 @@ theorem ActsBy.pow {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.suppor
   induction k with
   | zero => simpa using actsBy_one b
   | succ k ih => rw [pow_succ, pow_succ]; exact ih.mul h
-
-omit [DecidableEq ι] in
-/-- Pushing an `S`-linear combination of simple roots by a Weyl-group element acting by an integer
-matrix `W` multiplies its coordinate vector on the left by `W`. -/
-theorem ActsBy.smul_sum_algebraMap_root {S : Type*} [CommRing S] [Algebra S R]
-    {b : P.Base} {g : P.weylGroup} {W : Matrix b.support b.support ℤ} (hgW : b.ActsBy g W)
-    (x : b.support → S) :
-    g • (∑ i : b.support, algebraMap S R (x i) • P.root i) =
-      ∑ i : b.support, algebraMap S R ((W.map (algebraMap ℤ S) *ᵥ x) i) • P.root i := by
-  rw [Finset.smul_sum]
-  simp_rw [smul_comm g, actsBy_iff.1 hgW, Finset.smul_sum, smul_comm (algebraMap S R _)]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [← Int.cast_smul_eq_zsmul R, smul_smul, ← Finset.sum_smul, mulVec, dotProduct,
-    Matrix.map_apply, eq_intCast, map_sum, map_mul, map_intCast, mul_comm]
-
-omit [DecidableEq ι] in
-/-- Extracting matrix-vector equality from a Weyl-group action on an `S`-linear combination of
-simple roots in a root system over a nontrivial `S`-algebra `R` with `S` a field. -/
-theorem ActsBy.mulVec_eq_of_smul_sum {S : Type*} [Field S] [Nontrivial R] [Algebra S R]
-    [P.IsRootSystem] {b : P.Base} {g : P.weylGroup} {W : Matrix b.support b.support ℤ}
-    (hgW : b.ActsBy g W) {x w : b.support → S}
-    (hgx : g • (∑ i : b.support, algebraMap S R (x i) • P.root i) =
-      ∑ i : b.support, algebraMap S R (w i) • P.root i) :
-    W.map (algebraMap ℤ S) *ᵥ x = w := by
-  rw [hgW.smul_sum_algebraMap_root x] at hgx
-  ext i
-  apply (algebraMap S R).injective
-  classical
-  have h1 := congrArg (fun m ↦ b.toWeightBasis.repr m i) hgx
-  simp_rw [map_sum, map_smul, ← b.toWeightBasis_apply, b.toWeightBasis.repr_self] at h1
-  simpa [Finset.sum_apply', Finsupp.single_apply] using h1
 
 /-- The simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`. -/
 theorem actsBy_ofIdx [P.IsCrystallographic] (b : P.Base) (i : b.support) :
@@ -273,6 +236,18 @@ theorem exists_charpoly_weylGroupRootRep_eq_map_rat [Algebra ℚ R] [Module.Free
   congr 1
   exact Subsingleton.elim _ _
 
+omit [P.IsCrystallographic] in
+/-- Over a `ℚ`-algebra, if `w` acts on the simple roots of a root system by the integer matrix `W`,
+then the characteristic polynomial of `w` acting on the weight space equals the characteristic
+polynomial of `W` over `ℚ`, coefficients mapped into `R`. -/
+theorem ActsBy.charpoly_weylGroupRootRep_eq_map_rat [Algebra ℚ R] [Module.Free R M]
+    [Module.Finite R M] {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ}
+    (h : ActsBy b w W) :
+    (W.map (Int.castRingHom ℚ)).charpoly.map (algebraMap ℚ R) =
+      (P.weylGroupRootRep w).charpoly := by
+  rw [h.charpoly_weylGroupRootRep, Matrix.charpoly_map, Polynomial.map_map]
+  congr 1; exact RingHom.ext_int _ _
+
 /-- Over a `ℚ`-algebra, the characteristic polynomial of a word in the simple reflections equals
 the characteristic polynomial of the corresponding product of reflection matrices over `ℚ`,
 coefficients mapped into `R`. -/
@@ -280,10 +255,8 @@ theorem charpoly_weylGroupRootRep_wordProd_eq_map_rat [Algebra ℚ R] [Module.Fr
     [Module.Finite R M] (b : P.Base) (l : List b.support) :
     (((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly).map
         (algebraMap ℚ R) =
-      (P.weylGroupRootRep (wordProd P b l)).charpoly := by
-  classical
-  rw [(b.actsBy_wordProd l).charpoly_weylGroupRootRep, Matrix.charpoly_map, Polynomial.map_map]
-  congr 1; exact RingHom.ext_int _ _
+      (P.weylGroupRootRep (wordProd P b l)).charpoly :=
+  (b.actsBy_wordProd l).charpoly_weylGroupRootRep_eq_map_rat
 
 end RootSystem
 

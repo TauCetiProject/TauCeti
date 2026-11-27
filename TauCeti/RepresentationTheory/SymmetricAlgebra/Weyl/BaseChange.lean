@@ -7,14 +7,17 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Rational
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.Dual.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+import TauCeti.RepresentationTheory.BaseChange.Dual
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.SymmetricAlgebra.BaseChange
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
-import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
+import TauCeti.RingTheory.GradedAlgebra.HilbertSeries
+import TauCeti.RingTheory.GradedAlgebra.Subalgebra
 
 /-!
 # Field-invariance of Weyl polynomial invariant degrees
@@ -26,10 +29,12 @@ representation, to the Weyl reflection representation on `Dual`: extending a coo
 pairing `Q` on `σ → ℚ` to any characteristic-zero field `S` preserves the graded dimensions of
 `Sym(M*)^W`:
 `RootPairing.finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange`.
-Compared with `RootPairing.Base.equivBaseChangeRationalModel`, this yields the Weyl-specific graded
-comparison and multiset invariance of basic invariant degrees across characteristic-zero ground
-fields (in `RootPairing.Base`):
-`finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_eq_rootPairingBaseChange_rationalModel`.
+Combined with `RootPairing.Base.equivBaseChangeRationalModel`, this yields the Weyl-specific
+graded comparison and multiset invariance of basic invariant degrees across characteristic-zero
+ground fields (in `RootPairing.Base`):
+`finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_eq_rootPairingBaseChange_rationalModel`
+and
+`map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual_rootPairingBaseChange_rationalModel`.
 -/
 
 public section
@@ -38,23 +43,6 @@ open Finset Function Module Representation SymmetricAlgebra TauCeti TauCeti.Symm
   TensorProduct
 
 namespace RootPairing
-
-private theorem dual_baseChange_baseChangeEvaluationEquiv
-    {R A G M : Type*} [CommRing R] [CommRing A] [Algebra R A] [Group G]
-    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
-    (ρ : Representation R G M) (g : G) (ψ : A ⊗[R] Module.Dual R M) :
-    (ρ.baseChange A).dual g (TauCeti.Module.Dual.baseChangeEvaluationEquiv ψ) =
-      TauCeti.Module.Dual.baseChangeEvaluationEquiv ((ρ.dual.baseChange A) g ψ) := by
-  induction ψ using TensorProduct.inductionOn with
-  | tmul s φ =>
-    apply LinearMap.ext; intro z
-    induction z using TensorProduct.inductionOn with
-    | tmul t v =>
-      simp [TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply,
-        TauCeti.Module.Dual.baseChangeEvaluation_tmul, _root_.Representation.dual_apply,
-        Module.Dual.transpose_apply, LinearMap.baseChange_tmul]
-    | add x y hx hy => simp only [map_add, hx, hy]
-  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Extending a coordinate root pairing on `σ → ℚ` to a characteristic-zero field `S` preserves
 the dimension of each graded component of the Weyl invariants in `Sym(M*)`. -/
@@ -76,8 +64,7 @@ theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBase
   have hePi_tmul (s : S) (x : σ → ℚ) :
       ePi (s ⊗ₜ[ℚ] x) = s • Pi.algebraMap σ ℚ S x := by
     ext j
-    have hpi : Pi.algebraMap σ ℚ S x j = algebraMap ℚ S (x j) := rfl
-    simp [ePi, TensorProduct.piScalarRight_apply, Algebra.smul_def, mul_comm, hpi]
+    simp [ePi, TensorProduct.piScalarRight_apply, Algebra.smul_def, mul_comm, piAlgebraMap_apply]
   have hePi (w : Q.weylGroup) :
       ePi.toLinearMap ∘ₗ (Q.weylGroupRootRep.baseChange S) w =
         ((rootPairingBaseChange S Q hQ).weylGroupRootRep.comp eG.toMonoidHom) w ∘ₗ
@@ -103,7 +90,7 @@ theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBase
       (rootPairingBaseChange S Q hQ).weylGroupRootRep.dual (eG w) (eDual ψ) =
         eDual ((Q.weylGroupRootRep.dual.baseChange S) w ψ) := by
     dsimp only [eDual, LinearEquiv.trans_apply]
-    rw [← dual_baseChange_baseChangeEvaluationEquiv Q.weylGroupRootRep w ψ]
+    rw [← _root_.Representation.dual_baseChange_baseChangeEvaluationEquiv Q.weylGroupRootRep w ψ]
     have h₁ := IntertwiningMap.isIntertwining _ _ eqvPi.dual.toIntertwiningMap w
       (TauCeti.Module.Dual.baseChangeEvaluationEquiv ψ)
     simpa only [_root_.Representation.dual_apply, MonoidHom.comp_apply,
@@ -181,18 +168,17 @@ theorem map_univ_eq_of_bijective_aeval_weylGroupRootRep_dual_rootPairingBaseChan
     P.weylGroupRootRep.dual.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hf hbij.1
   have he : ∀ j, e j ≠ 0 :=
     PL.weylGroupRootRep.dual.ne_zero_of_injective_aeval_symmetricAlgebraInvariants hg hgbij.1
-  have hH1 := mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_mul_prod_one_sub_X_pow
-    P.weylGroupRootRep.dual ℤ hf hbij
-  have hH2 := mk_finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_mul_prod_one_sub_X_pow
-    PL.weylGroupRootRep.dual ℤ hg hgbij
-  have hfin :=
+  let := Subalgebra.gradedAlgebra P.weylGroupRootRep.dual.isHomogeneous_symmetricAlgebraInvariants
+  let := Subalgebra.gradedAlgebra PL.weylGroupRootRep.dual.isHomogeneous_symmetricAlgebraInvariants
+  refine Multiset.map_univ_eq_of_natCard_weight_eq hd he fun n ↦ ?_
+  rw [← TauCeti.GradedAlgebra.finrank_eq_natCard_weight _
+      (fun i ↦ (Subalgebra.mem_grading_iff _ _).2 (hf i)) hbij n,
+    ← TauCeti.GradedAlgebra.finrank_eq_natCard_weight _
+      (fun j ↦ (Subalgebra.mem_grading_iff _ _).2 (hg j)) hgbij n,
+    Subalgebra.finrank_grading, Subalgebra.finrank_grading]
+  exact
     finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_eq_rootPairingBaseChange_rationalModel
-      b L
-  simp_rw [hfin] at hH1
-  refine Multiset.eq_of_prod_map_one_sub_X_pow_eq (R := ℤ) (by simpa using hd)
-    (by simpa using he) ?_
-  simpa [Multiset.map_map, Function.comp_def] using
-    left_inv_eq_right_inv ((mul_comm _ _).trans hH1) hH2
+      b L n
 
 end Base
 

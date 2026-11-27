@@ -190,8 +190,9 @@ theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
     SymmetricAlgebra.mapEquiv_apply R eV p
   have hφ_symm (q : SymmetricAlgebra R V₂) :
       φ.symm q = SymmetricAlgebra.map R eV.symm.toLinearMap q := by
-    change (SymmetricAlgebra.mapEquiv R eV).symm q = _
-    rw [SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply]
+    dsimp only [φ]
+    rw [← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply,
+      SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply]
   have hinv_map : (Subalgebra.toSubmodule ρ₁.symmetricAlgebraInvariants).map φ.toLinearMap =
       Subalgebra.toSubmodule ρ₂.symmetricAlgebraInvariants := by
     have hsub := map_symmetricAlgebraInvariants_of_leftInverse hf hs eV.apply_symm_apply

@@ -99,6 +99,17 @@ theorem colorPart_def (c : b.support → Bool) (y : b.support → ℝ) (x : Bool
       ∑ i : b.support, algebraMap ℝ K (if c i = x then y i else 0) • P.root i :=
   (rfl)
 
+omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
+/-- The `i`-th simple-root coordinate of a colour part `colorPart P b c y x`. -/
+@[simp]
+theorem toWeightBasis_repr_colorPart [P.IsRootSystem] (c : b.support → Bool)
+    (y : b.support → ℝ) (x : Bool) (i : b.support) :
+    b.toWeightBasis.repr (colorPart P b c y x) i = algebraMap ℝ K (if c i = x then y i else 0) := by
+  classical
+  rw [colorPart, map_sum, Finset.sum_apply', Finset.sum_eq_single i
+    (fun j _ hij ↦ by split_ifs <;> simp [b.toWeightBasis_repr_root, hij]) (by simp)]
+  split_ifs <;> simp [b.toWeightBasis_repr_root, Algebra.smul_def]
+
 variable {b} {c : (coxeterMatrixOfBase P b).graph.Coloring Bool} {y : b.support → ℝ} {κ : ℝ}
 
 omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
@@ -349,6 +360,24 @@ private theorem exists_quadratic_root [IsAlgClosed K] (L : K) :
 
 variable [Algebra ℝ K]
 
+omit [Finite ι] [P.IsReduced] [Algebra ℝ K] in
+/-- When `b.support` is subsingleton, the constant vector `1` satisfies the rank-1 left
+eigenvector identity `∑ i, 1 * P.pairingIn ℤ i j = 2 * 1`. -/
+theorem sum_pairingIn_eq_two_of_subsingleton [Subsingleton b.support] (j : b.support) :
+    ∑ i : b.support, (1 : ℝ) * P.pairingIn ℤ i j = 2 * 1 := by
+  rw [sum_eq_single j (fun i _ hij ↦ absurd (Subsingleton.elim i j) hij) (by simp),
+    P.pairingIn_same]
+  push_cast
+  ring
+
+omit [CharZero K] [Finite ι] [P.IsReduced] [Algebra ℝ K] in
+/-- Unfolds a left eigenvector equation `Matrix.vecMul y (b.cartanMatrix.map Int.cast) = κ • y`
+into the componentwise pairing sum identity `∑ i, y i * P.pairingIn ℤ i j = κ * y j`. -/
+theorem sum_mul_pairingIn_eq_of_vecMul_eq_smul {y : b.support → ℝ} {κ : ℝ}
+    (hyC : Matrix.vecMul y (b.cartanMatrix.map (Int.cast : ℤ → ℝ)) = κ • y) (j : b.support) :
+    ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := by
+  simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
+
 /-- With a single simple root `α`, the bipartite Coxeter element is the reflection in `α`, and `α`
 is a regular eigenvector for `-1`. -/
 private theorem exists_isRegularWeight_smul_eq_of_subsingleton
@@ -356,13 +385,7 @@ private theorem exists_isRegularWeight_smul_eq_of_subsingleton
     ∃ (x : M) (μ : K), P.IsRegularWeight x ∧
       (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = μ • x ∧
       IsPrimitiveRoot μ (orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)) := by
-  -- The constant vector `1` is a left eigenvector of the Cartan matrix `(2)` for `κ = 2`.
-  have hy : ∀ j : b.support, ∑ i : b.support, (1 : ℝ) * P.pairingIn ℤ i j = 2 * 1 := by
-    intro j
-    rw [sum_eq_single j (fun i _ hij ↦ absurd (Subsingleton.elim i j) hij) (by simp),
-      P.pairingIn_same]
-    push_cast
-    ring
+  have hy := P.sum_pairingIn_eq_two_of_subsingleton b
   have hx := exists_pos_coroot'_colorPart_add P (c := c) hy (fun _ ↦ one_pos) two_pos
   set x := colorPart P b c (fun _ ↦ 1) true + colorPart P b c (fun _ ↦ 1) false with hxdef
   have hgx : (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = (-1 : K) • x := by
@@ -392,8 +415,7 @@ theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveR
   -- At least two simple roots: the Perron eigenvector of the Cartan matrix spans the plane.
   obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
     (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
-  have hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := fun j ↦ by
-    simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
+  have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
   obtain ⟨μ, hμ⟩ := exists_quadratic_root (algebraMap ℝ K (2 - κ))
   exact ⟨_, μ, P.isRegularWeight_one_add_smul_colorPart_add_smul hy hy0 hκ hκ2 hμ,
     P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul hy hμ,

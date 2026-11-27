@@ -22,11 +22,12 @@ reflections from `(P, b)` to that base-changed rational model over `S`, using `A
 
 ## Main results
 
-* `RootPairing.Base.orderOf_wordProd_baseChangeRat`: rational base change to `S` preserves the
-  order of any word in the simple reflections.
-* `RootPairing.Base.charpoly_weylGroupRootRep_wordProd_baseChangeRat`: the characteristic
-  polynomial of a simple-reflection word on the weight space of the base-changed rational model
-  over `S` is the rational reflection-matrix characteristic polynomial mapped into `S`.
+* `RootPairing.Base.orderOf_wordProd_rootPairingBaseChange_rationalModel`: rational base change
+  to `S` preserves the order of any word in the simple reflections.
+* `RootPairing.Base.charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel`: the
+  characteristic polynomial of a simple-reflection word on the weight space of the base-changed
+  rational model over `S` is the rational reflection-matrix characteristic polynomial mapped into
+  `S`.
 -/
 
 public section
@@ -41,8 +42,8 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R]
 
 /-- Rational base change to a characteristic-zero `ℚ`-algebra domain `S` preserves the order of
 any word in the simple reflections. -/
-theorem orderOf_wordProd_baseChangeRat [IsDomain R] (b : P.Base) (S : Type*) [CommRing S]
-    [IsDomain S] [CharZero S] [Algebra ℚ S] (l : List b.support) :
+theorem orderOf_wordProd_rootPairingBaseChange_rationalModel [IsDomain R] (b : P.Base)
+    (S : Type*) [CommRing S] [IsDomain S] [CharZero S] [Algebra ℚ S] (l : List b.support) :
     orderOf (wordProd P b l) =
       orderOf (wordProd (rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap)
         (rootPairingBaseChangeBase S b.rationalModel
@@ -64,8 +65,9 @@ theorem orderOf_wordProd_baseChangeRat [IsDomain R] (b : P.Base) (S : Type*) [Co
 /-- Over any characteristic-zero `ℚ`-algebra domain `S`, the characteristic polynomial of a
 simple-reflection word on the weight space of the base-changed rational model equals the rational
 reflection-matrix characteristic polynomial with coefficients mapped into `S`. -/
-theorem charpoly_weylGroupRootRep_wordProd_baseChangeRat [DecidableEq ι] (b : P.Base)
-    (S : Type*) [CommRing S] [IsDomain S] [CharZero S] [Algebra ℚ S] (l : List b.support) :
+theorem charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel [DecidableEq ι]
+    (b : P.Base) (S : Type*) [CommRing S] [IsDomain S] [CharZero S] [Algebra ℚ S]
+    (l : List b.support) :
     (((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)).charpoly).map
         (algebraMap ℚ S) =
       ((rootPairingBaseChange S b.rationalModel b.rationalModel_toLinearMap).weylGroupRootRep

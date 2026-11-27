@@ -24,9 +24,6 @@ same nonzero eigenvalues with multiplicity.
 * `Module.End.eigenspaceCompEquiv`: the linear equivalence induced by `f` between the
   `μ`-eigenspaces of `g ∘ₗ f` and `f ∘ₗ g`.
 * `Module.End.finrank_eigenspace_comp_comm`: the two eigenspaces have the same dimension.
-* `LinearMap.apply_apply_add_smul_eq_inv_sq_smul`: a vector `x₁ + μ • x₂` on which two linear
-  maps act dihedrally with parameter `μ + μ⁻¹` satisfies the eigenvalue equation
-  `f₁ (f₂ (x₁ + μ • x₂)) = (μ ^ 2)⁻¹ • (x₁ + μ • x₂)` (so it is an eigenvector when nonzero).
 
 ## References
 
@@ -38,12 +35,11 @@ public section
 
 namespace Module.End
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- For a unit `μ`, `f` restricts to a linear equivalence from the `μ`-eigenspace of `g ∘ₗ f`
 onto the `μ`-eigenspace of `f ∘ₗ g`; the inverse is the restriction of `μ⁻¹ • g`. -/
-noncomputable def eigenspaceCompEquiv {N : Type*} [AddCommGroup N] [Module R N]
-    (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ) :
+noncomputable def eigenspaceCompEquiv (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ) :
     eigenspace (g ∘ₗ f) μ ≃ₗ[R] eigenspace (f ∘ₗ g) μ :=
   LinearEquiv.ofLinearMap
     (f.restrict fun _ hx ↦ mapsTo_genEigenspace_of_comp f (LinearMap.comp_assoc f g f) μ 1 hx)
@@ -59,46 +55,19 @@ noncomputable def eigenspaceCompEquiv {N : Type*} [AddCommGroup N] [Module R N]
       simp [hx, smul_smul])
 
 @[simp]
-theorem coe_eigenspaceCompEquiv_apply {N : Type*} [AddCommGroup N] [Module R N]
-    (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ)
+theorem coe_eigenspaceCompEquiv_apply (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ)
     (x : eigenspace (g ∘ₗ f) μ) : (eigenspaceCompEquiv f g hμ x : N) = f x :=
   (rfl)
 
 @[simp]
-theorem coe_eigenspaceCompEquiv_symm_apply {N : Type*} [AddCommGroup N] [Module R N]
-    (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ) (y : eigenspace (f ∘ₗ g) μ) :
+theorem coe_eigenspaceCompEquiv_symm_apply (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R}
+    (hμ : IsUnit μ) (y : eigenspace (f ∘ₗ g) μ) :
     ((eigenspaceCompEquiv f g hμ).symm y : M) = (↑hμ.unit⁻¹ : R) • g y :=
   (rfl)
 
 /-- At a unit `μ`, the `μ`-eigenspaces of `g ∘ₗ f` and `f ∘ₗ g` have the same dimension. -/
-theorem finrank_eigenspace_comp_comm {N : Type*} [AddCommGroup N] [Module R N]
-    (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ) :
+theorem finrank_eigenspace_comp_comm (f : M →ₗ[R] N) (g : N →ₗ[R] M) {μ : R} (hμ : IsUnit μ) :
     finrank R (eigenspace (g ∘ₗ f) μ) = finrank R (eigenspace (f ∘ₗ g) μ) :=
   (eigenspaceCompEquiv f g hμ).finrank_eq
 
 end Module.End
-
-namespace LinearMap
-
-/-- **Dihedral eigenvector identity.** If two linear endomorphisms `f₁, f₂` negate `x₁, x₂`
-respectively and satisfy `f₁ x₂ = x₂ + (μ + μ⁻¹) • x₁` and `f₂ x₁ = x₁ + (μ + μ⁻¹) • x₂` for a
-nonzero scalar `μ`, then `f₁ (f₂ (x₁ + μ • x₂)) = (μ ^ 2)⁻¹ • (x₁ + μ • x₂)` (so `x₁ + μ • x₂`
-is an eigenvector of `f₁ ∘ₗ f₂` with eigenvalue `(μ ^ 2)⁻¹` whenever it is nonzero).
--/
-theorem apply_apply_add_smul_eq_inv_sq_smul {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-    (f₁ f₂ : V →ₗ[K] V) {x₁ x₂ : V} {μ : K} (hμ : μ ≠ 0)
-    (hf₁₁ : f₁ x₁ = -x₁) (hf₁₂ : f₁ x₂ = x₂ + (μ + μ⁻¹) • x₁)
-    (hf₂₂ : f₂ x₂ = -x₂) (hf₂₁ : f₂ x₁ = x₁ + (μ + μ⁻¹) • x₂) :
-    f₁ (f₂ (x₁ + μ • x₂)) = (μ ^ 2)⁻¹ • (x₁ + μ • x₂) := by
-  have hc₁ : -1 + μ⁻¹ * (μ + μ⁻¹) = (μ ^ 2)⁻¹ := by field_simp [hμ]; ring
-  have hc₂ : (μ ^ 2)⁻¹ * μ = μ⁻¹ := by field_simp [hμ]
-  have h2 : f₂ (x₁ + μ • x₂) = x₁ + μ⁻¹ • x₂ := by
-    rw [map_add, map_smul, hf₂₁, hf₂₂, add_smul, smul_neg]
-    abel
-  calc f₁ (f₂ (x₁ + μ • x₂))
-      = -x₁ + μ⁻¹ • (x₂ + (μ + μ⁻¹) • x₁) := by
-          rw [h2, map_add, map_smul, hf₁₁, hf₁₂]
-    _ = (-1 + μ⁻¹ * (μ + μ⁻¹)) • x₁ + μ⁻¹ • x₂ := by module
-    _ = (μ ^ 2)⁻¹ • (x₁ + μ • x₂) := by rw [hc₁, ← hc₂]; module
-
-end LinearMap

@@ -231,7 +231,7 @@ theorem eq_highestRoot_of_forall_rootCoefficients_le [Finite ι] [Nonempty ι] {
 
 /-- The dot product of a root's simple-root coefficient column with the integer pairings of the
 simple roots against a coroot `j` equals the integer pairing `⟨αᵢ, αⱼ^∨⟩`. -/
-theorem rootCoefficients_dot_corootCoordInt [P.IsCrystallographic] (i j : ι) :
+theorem rootCoefficients_dotProduct_pairingIn [P.IsCrystallographic] (i j : ι) :
     b.rootCoefficients i ⬝ᵥ (fun k : b.support ↦ P.pairingIn ℤ k j) = P.pairingIn ℤ i j := by
   apply FaithfulSMul.algebraMap_injective ℤ R
   rw [P.algebraMap_pairingIn ℤ i j, dotProduct, map_sum]

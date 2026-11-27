@@ -28,8 +28,6 @@ containing a suitable primitive root of unity, this file also records the root m
   root of unity `ζ₀`, it vanishes at any primitive `h`-th root of unity `ζ`.
 * `IsPrimitiveRoot.isRoot_map_of_isRoot_map`: root transfer across primitive `h`-th roots of unity
   for rational polynomials.
-* `Polynomial.map_aeval_map_C`: mapping `p.map C` by coefficientwise `aeval r` yields
-  `p.map (algebraMap R A)`.
 * `Polynomial.map_aeval_eq_of_isPrimitiveRoot`: equality of `(ℚ[X])[X]` polynomials after
   coefficientwise evaluation at one primitive `h`-th root transfers to any primitive `h`-th root.
 * `Polynomial.roots_sum_range_X_pow`, `Polynomial.roots_X_pow_add_one`, and
@@ -80,17 +78,6 @@ theorem isRoot_map_of_isRoot_map {K A : Type*} [CommRing K] [IsDomain K] [Algebr
 end IsPrimitiveRoot
 
 namespace Polynomial
-
-/-- Coefficientwise evaluation of `p.map C` at `r` recovers `p.map (algebraMap R A)`. -/
-@[simp]
-theorem map_aeval_map_C {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-    (p : R[X]) (r : A) :
-    (p.map Polynomial.C).map (↑(aeval r : R[X] →ₐ[R] A) : R[X] →+* A) =
-      p.map (algebraMap R A) := by
-  rw [Polynomial.map_map]
-  congr 1
-  ext x
-  simp
 
 /-- **Cyclotomic transfer for `(ℚ[X])[X]` polynomials.** If two polynomials over `ℚ[X]` have equal
 images under coefficientwise evaluation at a primitive `h`-th root of unity `ζ₀` in a `ℚ`-algebra
