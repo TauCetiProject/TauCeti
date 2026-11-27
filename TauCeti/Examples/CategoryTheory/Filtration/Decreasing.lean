@@ -85,7 +85,7 @@ theorem antitone_adicStep (ℓ : ℤ) : Antitone (adicStep ℓ) := fun p q hpq �
 
 /-- The `ℓ`-adic filtration of `ℤ` as a decreasingly filtered `ℤ`-module. -/
 noncomputable abbrev adicFiltration (ℓ : ℤ) : FilteredObject (ModuleCat.{0} ℤ) ℤᵒᵖ :=
-  ofSubmodules (fun p ↦ adicStep ℓ p.unop) fun _ _ f ↦ antitone_adicStep ℓ (leOfHom f.unop)
+  ofAntitone (adicStep ℓ) (antitone_adicStep ℓ)
 
 /-- The `ℓ`-adic filtration of `ℤ` is exhaustive: its step `F^0` is `ℤ`. -/
 theorem isExhaustive_adicFiltration (ℓ : ℤ) : (adicFiltration ℓ).IsExhaustive :=
