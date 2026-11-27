@@ -290,16 +290,10 @@ the projections at the other vertices killing `eᵥ M`. -/
 private theorem moduleHomAux_apply_of_mem [Fintype Q]
     (φ : quiverRepOfModule k Q M ⟶ quiverRepOfModule k Q N) {v : Q} (x : vertexComponent k M v) :
     moduleHomAux k Q φ (x : M) = ((quiverRepHomComponent k Q φ v) x : N) := by
-  -- the projection lemmas are stated on the ambient values in `M`, so `Subtype.ext` lifts them to
-  -- the equalities in `eᵥ M` that the summands are built from
-  have hfix : vertexProjection k M v (x : M) = x :=
-    Subtype.ext (coe_vertexProjection_apply_of_mem x.property)
-  have hkill : ∀ u : Q, u ≠ v → vertexProjection k M u (x : M) = 0 := fun u hu ↦
-    Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne hu x.property)
   rw [moduleHomAux_apply, Finset.sum_eq_single v]
-  · rw [hfix]
+  · rw [vertexProjection_apply_of_mem]
   · intro u _ hu
-    rw [hkill u hu, map_zero, ZeroMemClass.coe_zero]
+    rw [vertexProjection_apply_eq_zero_of_ne hu x.property, map_zero, ZeroMemClass.coe_zero]
   · intro hv
     exact absurd (Finset.mem_univ v) hv
 

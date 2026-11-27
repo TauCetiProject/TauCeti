@@ -142,12 +142,9 @@ private theorem glueVertex_apply_of_mem
     (f : ∀ v : Q, vertexComponent k X v →ₗ[k] vertexComponent k N v) {v : Q}
     (m : vertexComponent k X v) : glueVertex f m = f v m := by
   rw [glueVertex_apply, Finset.sum_eq_single v]
-  · rw [show vertexProjection k X v m = m from
-      Subtype.ext (coe_vertexProjection_apply_of_mem m.property)]
+  · rw [vertexProjection_apply_of_mem]
   · intro u _ hu
-    rw [show vertexProjection k X u m = 0 from
-      Subtype.ext (coe_vertexProjection_apply_eq_zero_of_ne hu m.property), map_zero,
-      ZeroMemClass.coe_zero]
+    rw [vertexProjection_apply_eq_zero_of_ne hu m.property, map_zero, ZeroMemClass.coe_zero]
   · simp
 
 /-- The value of a map out of the vertex term on a generator lies in the vertex component. -/
@@ -211,6 +208,24 @@ noncomputable def standardVertexTermHomEquiv :
     rw [LinearMap.domRestrict_apply, liftVertex_vertexTermComponent, LinearMap.comp_apply]
     exact congrArg g (Subtype.ext (mem_standardVertexTerm_iff.1 z.property))
   right_inv f := funext fun v ↦ vertexTermComponent_liftVertex f v
+
+/-- The family of vertex maps of `g` sends `m ∈ eᵥ X` to `g (eᵥ ⊗ m)`. -/
+@[simp]
+theorem coe_standardVertexTermHomEquiv_apply (g : standardVertexTerm k Q X →ₗ[𝒜] N) (v : Q)
+    (m : vertexComponent k X v) :
+    Subtype.val (standardVertexTermHomEquiv k Q X N g v m) =
+      g ⟨(ε v : 𝒜) ⊗ₜ[k] (m : X), vertexIdempotent_tmul_mem_standardVertexTerm m.property⟩ :=
+  (rfl)
+
+/-- The map out of the vertex term with a given family of vertex maps sends `x ⊗ m` to
+`x • ∑ᵥ fᵥ (eᵥ m)`. -/
+@[simp]
+theorem standardVertexTermHomEquiv_symm_apply_tmul
+    (f : QuiverRep.HomVertex (quiverRepOfModule k Q X) (quiverRepOfModule k Q N)) (x : 𝒜) (m : X)
+    (h : x ⊗ₜ[k] m ∈ standardVertexTerm k Q X) :
+    (standardVertexTermHomEquiv k Q X N).symm f ⟨x ⊗ₜ[k] m, h⟩ =
+      x • ∑ v : Q, Subtype.val (f v (vertexProjection k X v m)) :=
+  (liftVertex_tmul f x m).trans (congrArg (x • ·) (glueVertex_apply f m))
 
 end VertexTerm
 
@@ -288,8 +303,7 @@ private theorem arrowTermComponent_liftArrow
     arrowTermComponent ((liftArrow f).domRestrict (standardArrowTerm k Q X)) i j b = f i j b := by
   refine LinearMap.ext fun m ↦ Subtype.ext ?_
   rw [coe_arrowTermComponent, LinearMap.domRestrict_apply, coe_arrowGen, liftArrow_single_tmul,
-    show vertexProjection k X i m = m from
-      Subtype.ext (coe_vertexProjection_apply_of_mem m.property),
+    vertexProjection_apply_of_mem,
     vertexIdempotent_smul_eq_self_of_mem_vertexComponent (f i j b m).property]
 
 variable (k Q X N) in
@@ -308,6 +322,27 @@ noncomputable def standardArrowTermHomEquiv :
     rw [LinearMap.domRestrict_apply, liftArrow_arrowTermComponent, LinearMap.comp_apply]
     exact congrArg g (Subtype.ext (mem_standardArrowTerm_iff.1 y.property))
   right_inv f := funext fun i ↦ funext fun j ↦ funext fun b ↦ arrowTermComponent_liftArrow f b
+
+/-- The family of arrow maps of `g` sends `m ∈ eᵢ X` at `b : i ⟶ j` to `g (eⱼ ⊗ m)` in the
+component of `b`. -/
+@[simp]
+theorem coe_standardArrowTermHomEquiv_apply (g : standardArrowTerm k Q X →ₗ[𝒜] N) {i j : Q}
+    (b : i ⟶ j) (m : vertexComponent k X i) :
+    Subtype.val (standardArrowTermHomEquiv k Q X N g i j b m) =
+      g ⟨Finsupp.single ⟨i, j, b⟩ ((ε j : 𝒜) ⊗ₜ[k] (m : X)),
+        single_vertexIdempotent_tmul_mem_standardArrowTerm b m.property⟩ :=
+  (rfl)
+
+/-- The map out of the arrow term with a given family of arrow maps sends `x ⊗ m` in the
+component of `b : i ⟶ j` to `x • f_b (eᵢ m)`. -/
+@[simp]
+theorem standardArrowTermHomEquiv_symm_apply_single_tmul
+    (f : QuiverRep.HomArrow (quiverRepOfModule k Q X) (quiverRepOfModule k Q N)) {i j : Q}
+    (b : i ⟶ j) (x : 𝒜) (m : X)
+    (h : Finsupp.single (⟨i, j, b⟩ : Σ i j : Q, i ⟶ j) (x ⊗ₜ[k] m) ∈ standardArrowTerm k Q X) :
+    (standardArrowTermHomEquiv k Q X N).symm f ⟨Finsupp.single ⟨i, j, b⟩ (x ⊗ₜ[k] m), h⟩ =
+      x • Subtype.val (f i j b (vertexProjection k X i m)) :=
+  liftArrow_single_tmul f b x m
 
 end ArrowTerm
 
@@ -337,10 +372,8 @@ theorem standardArrowTermHomEquiv_comp_standardDifferential
       (ofPath ⟨i, j, b.toPath⟩ : 𝒜) • vertexGen i m - vertexGen j (pathMap k X b.toPath m) :=
     Subtype.ext (by
       simp [coe_arrowGen, coe_vertexGen, smul_tmul'])
-  rw [coe_arrowTermComponent, LinearMap.comp_apply, h, LinearMap.sub_apply, LinearMap.comp_apply,
-    LinearMap.comp_apply, Submodule.coe_sub, coe_pathMap_apply, coe_vertexTermComponent,
-    coe_vertexTermComponent]
-  exact (map_sub g _ _).trans (by rw [map_smul])
+  simp only [coe_arrowTermComponent, coe_vertexTermComponent, coe_pathMap_apply, h,
+    LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, map_sub g, map_smul]
 
 section Ext
 
@@ -453,13 +486,7 @@ algebra `kQ` of a quiver with finitely many vertices over a field, the cokernel 
 differential `(fᵥ) ↦ (N(b) fᵢ - fⱼ X(b))` between the representations they carry is `k`-linearly
 `Ext¹(X, N)`. There is no finiteness or acyclicity hypothesis on the quiver beyond the finite
 vertex set, and the modules may be infinite-dimensional; the path algebra is assumed `t`-small,
-so that `Ext` is defined in `ModuleCat.{t} kQ`.
-
-The comparison applies `Hom(-, N)` to the standard resolution of `X`: maps out of its two terms
-are the families of vertex maps and of arrow maps (`standardVertexTermHomEquiv`,
-`standardArrowTermHomEquiv`), precomposition with its differential is the Hom differential
-(`standardArrowTermHomEquiv_comp_standardDifferential`), and since its middle term is projective
-the cokernel of that precomposition is `Ext¹(X, N)` (`TauCeti.homCokernelEquivExt`). -/
+so that `Ext` is defined in `ModuleCat.{t} kQ`. -/
 noncomputable def homDifferentialCokerEquivExt (X N : ModuleCat.{t} 𝒜) :
     (QuiverRep.HomArrow (quiverRepOfModule k Q X) (quiverRepOfModule k Q N) ⧸
       (QuiverRep.homDifferential (quiverRepOfModule k Q X) (quiverRepOfModule k Q N)).range) ≃ₗ[k]
