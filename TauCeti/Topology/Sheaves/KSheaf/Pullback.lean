@@ -99,6 +99,8 @@ private lemma map_comp_ι_app_eq {L : Compacts Y} {K₁ K₂ : K.compactNhds}
         P.map (opHomOfLE ((Compacts.map_mono f f.hom.continuous hle).trans h)) ≫
           s.ι.app (op (K₁ ⊓ K₂)) := by
     rw [← s.w (homOfLE hle).op]
+    simp only [Functor.comp_map, Functor.op_map, pullback_obj_map]
+    -- Restrictions of `P` compose, as morphisms between compacts are unique.
     exact (P.map_comp_assoc _ _ _).symm
   rw [h₁₂ K₁ inf_le_left h₁, h₁₂ K₂ inf_le_right h₂]
 
@@ -123,11 +125,13 @@ private noncomputable def imageCocone :
   pt := s.pt
   ι.app L := P.map (opHomOfLE (map_chosenNhd_le f L.unop)) ≫ s.ι.app (op (chosenNhd f L.unop))
   ι.naturality L M g := by
-    rw [Functor.const_obj_map]
-    refine Eq.trans ?_ (Category.comp_id _).symm
-    exact (P.map_comp_assoc _ _ _).symm.trans
-      (map_comp_ι_app_eq f s ((map_chosenNhd_le f M.unop).trans
-        (leOfHom g.unop : (M.unop : Compacts Y) ≤ L.unop)) (map_chosenNhd_le f L.unop))
+    simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.comp_id, Functor.comp_map,
+      Functor.op_map]
+    -- The composite of the two restrictions of `P` is the restriction along the composite
+    -- inclusion, as morphisms between compacts are unique.
+    exact (P.map_comp_assoc _ _ _).symm.trans <| map_comp_ι_app_eq f s
+      ((map_chosenNhd_le f M.unop).trans (leOfHom g.unop : (M.unop : Compacts Y) ≤ L.unop))
+      (map_chosenNhd_le f L.unop)
 
 private lemma imageCocone_ι_app_eq (L : (Compacts.map f f.hom.continuous K).compactNhds) :
     (imageCocone f s).ι.app (op L) =
@@ -170,6 +174,7 @@ theorem IsKSheaf.pullback (hf : Function.Injective f) (hP : P.IsKSheaf) :
       have h := hK.fac (imageCocone f s) (op ⟨_, hKL⟩)
       rw [imageCocone_ι_app f s (K' := K'.unop)
         (Compacts.subset_of_mem_compactNhds L.unop.property)] at h
+      simp only [coconeOfCompacts_ι_app, pullback_obj_map] at h ⊢
       exact (P.map_comp_assoc _ _ _).symm.trans h
     · -- A map out of `P(f(K))` is determined by its composites with the restrictions from the
       -- compact neighbourhoods `L` of `f(K)`, each of which factors through some `P(f(K'))`.
@@ -178,7 +183,8 @@ theorem IsKSheaf.pullback (hf : Function.Injective f) (hP : P.IsKSheaf) :
         Compacts.exists_map_le_of_mem_compactNhds f.hom.continuous L.unop.property
       refine Eq.trans ?_ (imageCocone_ι_app f s (L := L.unop) (K' := ⟨K', hK'⟩) hle).symm
       rw [← hm]
-      exact (P.map_comp_assoc _ _ _)
+      simp only [coconeOfCompacts_ι_app, pullback_obj_map]
+      exact P.map_comp_assoc _ _ _
 
 end KPresheaf
 
