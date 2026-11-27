@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Uniform
 import Mathlib.Analysis.Normed.MulAction
-import TauCeti.Topology.MetricSpace.UniformConvergence
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Lipschitz constants of multiplication and commutators in seminormed rings

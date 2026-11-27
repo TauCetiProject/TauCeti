@@ -13,7 +13,8 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.Normed.Ring.Lipschitz
 import TauCeti.RingTheory.TwoSidedIdeal.Operations
-import TauCeti.Topology.MetricSpace.UniformConvergence
+import TauCeti.Topology.Algebra.Monoid
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Quasicentral approximate units in C⋆-algebras
@@ -55,9 +56,10 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
 * `TwoSidedIdeal.IsQuasicentralApproximateUnit.map`: a surjective `⋆`-algebra homomorphism carries
   a quasicentral approximate unit of `I` to one of `I.map f` (and hence of its closure).
 * `TwoSidedIdeal.quasicentralSet`, `TwoSidedIdeal.mem_quasicentralSet_iff`,
-  `TwoSidedIdeal.quasicentralSet_anti`, and `TwoSidedIdeal.quasicentralApproximateUnit`: the
-  finite-set quasicentral approximation neighborhoods of `I` and the canonical filter they
-  generate, characterized by `hasBasis_quasicentralApproximateUnit`,
+  `TwoSidedIdeal.quasicentralSet_subset_quasicentralSet`, and
+  `TwoSidedIdeal.quasicentralApproximateUnit`: the finite-set quasicentral approximation
+  neighborhoods of `I` and the canonical filter they generate, characterized by
+  `hasBasis_quasicentralApproximateUnit`,
   `mem_quasicentralApproximateUnit_iff`, and the universal property
   `isQuasicentralApproximateUnit_iff_neBot_and_le`.
 * `TwoSidedIdeal.quasicentralSet_nonempty`,
@@ -243,7 +245,7 @@ theorem topologicalClosure (hl : I.IsQuasicentralApproximateUnit l) :
 theorem tendstoUniformlyOn_mul_right (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
     (hK : IsCompact K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => e * x) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (hl.eventually_nnNorm.mono fun e he => (TauCeti.lipschitzWith_mul_left e).weaken he)
+    (TauCeti.eventually_lipschitzWith_mul_left hl.eventually_norm)
     hK fun _ hx => hl.tendsto_mul_right (hKI hx)
 
 /-- Along a quasicentral approximate unit, commutators `e * a - a * e` tend to `0` uniformly on
@@ -268,9 +270,9 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
     (l.comap ((↑) : I → A)).IsIncreasingApproximateUnit where
   neBot := hl.neBot.comap_of_range_mem (by rw [Subtype.range_coe]; exact hl.eventually_mem)
   tendsto_mul_left x :=
-    tendsto_mul_left_coe_iff.mp ((hl.tendsto_mul_left x.property).comp tendsto_comap)
+    TauCeti.tendsto_mul_left_coe_iff.mp ((hl.tendsto_mul_left x.property).comp tendsto_comap)
   tendsto_mul_right x :=
-    tendsto_mul_right_coe_iff.mp ((hl.tendsto_mul_right x.property).comp tendsto_comap)
+    TauCeti.tendsto_mul_right_coe_iff.mp ((hl.tendsto_mul_right x.property).comp tendsto_comap)
   eventually_nonneg := (hl.eventually_nonneg.comap _).mono fun _ h => Subtype.coe_le_coe.mp h
   eventually_norm := (hl.eventually_norm.comap _).mono fun _ h => by
     rwa [AddSubgroupClass.coe_norm]
@@ -357,7 +359,7 @@ theorem isQuasicentralApproximateUnit_map_coe_iff {I : TwoSidedIdeal A} [IsClose
       (eventually_map.mpr <| hl.eventually_norm.mono fun _ h => by
         rwa [← AddSubgroupClass.coe_norm])
       (fun x hx => tendsto_map'_iff.mpr <|
-        tendsto_mul_right_coe_iff.mpr (hl.tendsto_mul_right ⟨x, hx⟩))
+        TauCeti.tendsto_mul_right_coe_iff.mpr (hl.tendsto_mul_right ⟨x, hx⟩))
       (fun a => tendsto_map'_iff.mpr (hc a))
 
 end Basic
@@ -465,8 +467,8 @@ theorem norm_sub_mul_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset
   exact hright
 
 /-- `I.quasicentralSet G F ε` is antitone in `(G, F)` and monotone in `ε`. -/
-theorem quasicentralSet_anti (I : TwoSidedIdeal A) {G₁ G₂ : Finset I} (hG : G₁ ⊆ G₂)
-    {F₁ F₂ : Finset A} (hF : F₁ ⊆ F₂) {ε₁ ε₂ : ℝ} (hε : ε₂ ≤ ε₁) :
+theorem quasicentralSet_subset_quasicentralSet (I : TwoSidedIdeal A) {G₁ G₂ : Finset I}
+    (hG : G₁ ⊆ G₂) {F₁ F₂ : Finset A} (hF : F₁ ⊆ F₂) {ε₁ ε₂ : ℝ} (hε : ε₂ ≤ ε₁) :
     I.quasicentralSet G₂ F₂ ε₂ ⊆ I.quasicentralSet G₁ F₁ ε₁ := by
   intro _ he
   obtain ⟨h1, h2, h3, h4, h5⟩ := mem_quasicentralSet_iff.mp he
@@ -491,8 +493,10 @@ theorem hasBasis_quasicentralApproximateUnit (I : TwoSidedIdeal A) :
   refine hasBasis_biInf_principal' ?_ ⟨(∅, ∅, 1), zero_lt_one⟩
   rintro ⟨G₁, F₁, ε₁⟩ hε₁ ⟨G₂, F₂, ε₂⟩ hε₂
   refine ⟨(G₁ ∪ G₂, F₁ ∪ F₂, min ε₁ ε₂), lt_min hε₁ hε₂,
-    quasicentralSet_anti I Finset.subset_union_left Finset.subset_union_left (min_le_left _ _),
-    quasicentralSet_anti I Finset.subset_union_right Finset.subset_union_right (min_le_right _ _)⟩
+    quasicentralSet_subset_quasicentralSet I Finset.subset_union_left Finset.subset_union_left
+      (min_le_left _ _),
+    quasicentralSet_subset_quasicentralSet I Finset.subset_union_right Finset.subset_union_right
+      (min_le_right _ _)⟩
 
 /-- Membership in `I.quasicentralApproximateUnit` in terms of the finite-set neighborhoods
 `I.quasicentralSet G F ε` (`G ⊆ I`, `F ⊆ A`, `ε > 0`); see `TwoSidedIdeal.mem_quasicentralSet_iff`
@@ -631,9 +635,9 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
   have hl₀ : l₀.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit I
   have := hl₀.neBot
   have hmul_l {y : A} (hy : y ∈ I) : Tendsto (fun v : I => y * (v : A)) l₀ (𝓝 y) :=
-    tendsto_mul_left_coe_iff.mpr (hl₀.tendsto_mul_left ⟨y, hy⟩)
+    TauCeti.tendsto_mul_left_coe_iff.mpr (hl₀.tendsto_mul_left ⟨y, hy⟩)
   have hmul_r {y : A} (hy : y ∈ I) : Tendsto (fun v : I => (v : A) * y) l₀ (𝓝 y) :=
-    tendsto_mul_right_coe_iff.mpr (hl₀.tendsto_mul_right ⟨y, hy⟩)
+    TauCeti.tendsto_mul_right_coe_iff.mpr (hl₀.tendsto_mul_right ⟨y, hy⟩)
   have hG : ∀ᶠ v : I in l₀, ∀ x ∈ G,
       ‖(v : A) * (x : A) - x‖ < ε ∧ ‖(x : A) * (v : A) - x‖ < ε :=
     eventually_forall_mem_mul_sub_lt (I := I) (φ := ((↑) : I → A)) G hε

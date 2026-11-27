@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Module.Basic
@@ -296,26 +295,6 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
   exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
 
 end ApproximateUnit
-
-section Subtype
-
-variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
-
-/-- Convergence of left multiplication `x * e` in `A` along a filter on a two-sided ideal `I`
-is equivalent to convergence in the subtype `I`. -/
-theorem tendsto_mul_left_coe_iff {I : TwoSidedIdeal A} {l : Filter I} {x y : I} :
-    Tendsto (fun e : I => (x : A) * (e : A)) l (𝓝 (y : A)) ↔ Tendsto (x * ·) l (𝓝 y) := by
-  rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-  simp only [Function.comp_def, MulMemClass.coe_mul]
-
-/-- Convergence of right multiplication `e * x` in `A` along a filter on a two-sided ideal `I`
-is equivalent to convergence in the subtype `I`. -/
-theorem tendsto_mul_right_coe_iff {I : TwoSidedIdeal A} {l : Filter I} {x y : I} :
-    Tendsto (fun e : I => (e : A) * (x : A)) l (𝓝 (y : A)) ↔ Tendsto (· * x) l (𝓝 y) := by
-  rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-  simp only [Function.comp_def, MulMemClass.coe_mul]
-
-end Subtype
 
 end TwoSidedIdeal
 

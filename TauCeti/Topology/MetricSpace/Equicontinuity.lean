@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Holder
-import Mathlib.Topology.MetricSpace.UniformConvergence
+public import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.Topology.UniformSpace.Ascoli
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
@@ -26,8 +28,10 @@ valid whenever `g_k` moves by at most `η` over distances at most `√(s p)`, in
 smallness `F k p < ε` for all `k` once `s p` is small enough.
 
 Finally, the iterates of a `1`-Lipschitz map are `1`-Lipschitz, so they form a uniformly
-equicontinuous family, and maps that are Hölder on a set with one constant and one positive exponent
-form a family uniformly equicontinuous on that set.
+equicontinuous family; maps that are Hölder on a set with one constant and one positive exponent
+form a family uniformly equicontinuous on that set; and a family that is eventually `K`-Lipschitz
+along a filter `l` upgrades pointwise convergence on a subset to its closure and pointwise
+convergence on a compact set to uniform convergence on that set.
 
 ## Main statements
 
@@ -41,6 +45,11 @@ form a family uniformly equicontinuous on that set.
   equicontinuous.
 * `HolderOnWith.uniformEquicontinuousOn`: maps sharing a Hölder constant and a positive exponent on
   a set are uniformly equicontinuous on it.
+* `TauCeti.tendsto_of_mem_closure_of_lipschitzWith`: pointwise convergence on a subset extends to
+  its closure for an eventually `K`-Lipschitz family.
+* `TauCeti.tendstoUniformlyOn_of_lipschitzOnWith` and
+  `TauCeti.tendstoUniformlyOn_of_lipschitzWith`: pointwise convergence on a compact set upgrades to
+  uniform convergence on that set for an eventually `K`-Lipschitz family.
 -/
 
 public section
@@ -157,3 +166,52 @@ theorem HolderOnWith.uniformEquicontinuousOn {ι X Y : Type*} [PseudoEMetricSpac
     ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos ENNReal.coe_ne_top hr
   obtain ⟨δ, hδ, H⟩ := ENNReal.nhds_zero_basis.mem_iff.1 (hC (gt_mem_nhds hε))
   exact ⟨δ, hδ, fun x y hxy i ↦ ((h i).edist_le hxy.2.1 hxy.2.2).trans_lt (H hxy.1)⟩
+
+namespace TauCeti
+
+open scoped NNReal
+
+variable {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+
+/-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz along `l : Filter ι`, converges
+pointwise to `f` on `s`, and `f` tends to `z` along `𝓝[s] x` at a point `x ∈ closure s`, then
+`F · x` tends to `z` along `l`. -/
+theorem tendsto_of_mem_closure_of_lipschitzWith {l : Filter ι} {F : ι → X → Y} {f : X → Y}
+    {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzWith K (F i)) {s : Set X} {x : X} {z : Y}
+    (hf : Tendsto f (𝓝[s] x) (𝓝 z)) (hs : ∀ y ∈ s, Tendsto (F · y) l (𝓝 (f y)))
+    (hx : x ∈ closure s) : Tendsto (F · x) l (𝓝 z) := by
+  let S : Set ι := {i | LipschitzWith K (F i)}
+  have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
+    map_comap_of_mem (by rw [Subtype.range_coe]; exact hF)
+  have heq : EquicontinuousAt (fun j : S => F j.val) x :=
+    (LipschitzWith.uniformEquicontinuous (fun j : S => F j.val) K
+      fun j => j.property).equicontinuous x
+  have hmem : Tendsto (fun j : S => F j.val x) (l.comap (↑)) (𝓝 z) :=
+    heq.tendsto_of_mem_closure hf (fun y hy => (hs y hy).comp tendsto_comap) hx
+  rwa [← hmap, tendsto_map'_iff]
+
+/-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz on a compact set `s` along
+`l : Filter ι` and converges pointwise to `f` on `s`, then `F` converges uniformly to `f` on `s`
+along `l`. -/
+theorem tendstoUniformlyOn_of_lipschitzOnWith {l : Filter ι} {F : ι → X → Y} {f : X → Y}
+    {s : Set X} {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzOnWith K (F i) s) (hs : IsCompact s)
+    (hpt : ∀ x ∈ s, Tendsto (F · x) l (𝓝 (f x))) : TendstoUniformlyOn F f l s := by
+  let S : Set ι := {i | LipschitzOnWith K (F i) s}
+  have hmap : (l.comap ((↑) : S → ι)).map ((↑) : S → ι) = l :=
+    map_comap_of_mem (by rw [Subtype.range_coe]; exact hF)
+  have heq : EquicontinuousOn (fun j : S => F j.val) s :=
+    (LipschitzOnWith.uniformEquicontinuousOn (fun j : S => F j.val) K
+      fun j => j.property).equicontinuousOn
+  have hunif : TendstoUniformlyOn (fun j : S => F j.val) f (l.comap (↑)) s :=
+    heq.tendstoUniformlyOn_of_tendsto hs fun x hx => (hpt x hx).comp tendsto_comap
+  rw [← hmap]
+  exact tendstoUniformlyOn_map_iff.mpr hunif
+
+/-- If a family `F : ι → X → Y` is eventually `K`-Lipschitz along `l : Filter ι` and converges
+pointwise to `f` on a compact set `s`, then `F` converges uniformly to `f` on `s` along `l`. -/
+theorem tendstoUniformlyOn_of_lipschitzWith {l : Filter ι} {F : ι → X → Y} {f : X → Y}
+    {s : Set X} {K : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzWith K (F i)) (hs : IsCompact s)
+    (hpt : ∀ x ∈ s, Tendsto (F · x) l (𝓝 (f x))) : TendstoUniformlyOn F f l s :=
+  tendstoUniformlyOn_of_lipschitzOnWith (hF.mono fun _ h => h.lipschitzOnWith) hs hpt
+
+end TauCeti

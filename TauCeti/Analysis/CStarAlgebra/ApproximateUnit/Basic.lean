@@ -11,7 +11,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 import TauCeti.Analysis.Normed.Ring.Lipschitz
-import TauCeti.Topology.MetricSpace.UniformConvergence
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Increasing approximate units: images and uniform convergence
@@ -69,14 +69,14 @@ theorem tendsto_mul_self {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (a 
 theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
     {K : Set A} (hK : IsCompact K) : TendstoUniformlyOn (fun e a => e * a) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (hl.eventually_nnNorm.mono fun e he => (TauCeti.lipschitzWith_mul_left e).weaken he)
+    (TauCeti.eventually_lipschitzWith_mul_left hl.eventually_norm)
     hK fun a _ => hl.tendsto_mul_right a
 
 /-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a compact set. -/
 theorem tendstoUniformlyOn_mul_left {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
     {K : Set A} (hK : IsCompact K) : TendstoUniformlyOn (fun e a => a * e) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (hl.eventually_nnNorm.mono fun e he => (TauCeti.lipschitzWith_mul_right e).weaken he)
+    (TauCeti.eventually_lipschitzWith_mul_right hl.eventually_norm)
     hK fun a _ => hl.tendsto_mul_left a
 
 end Uniform
