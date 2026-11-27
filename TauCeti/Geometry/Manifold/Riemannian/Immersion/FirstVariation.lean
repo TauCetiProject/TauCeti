@@ -45,7 +45,9 @@ the relative volume `V(t) = ∫ (J_t - 1) dV_{g_{t₀}}` of the induced metrics 
   compactly supported normal variations of a noncompact one
   (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal`).
   In particular a minimal immersion, `H = 0`, is stationary for these variations
-  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_normal_of_minimal`).
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_normal_of_minimal` and
+  its compactly supported analogue
+  `ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal_of_minimal`).
 
 The metric of `M` used for the mean curvature vector is an arbitrary instance, assumed to be the
 metric induced by `Φ t₀`, and the metric `h` of `N` that is pulled back is assumed to be the
@@ -86,33 +88,7 @@ variable
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {Φ : ℝ → M → N} {t₀ : ℝ} {x : M}
 
-/-- The parametrized surface `(t, s) ↦ Φ t (c s)` of a family `C²` at `(t₀, c 0)` and a curve
-`C²` at `0` is `C²` at `(t₀, 0)`. -/
-private theorem contMDiffAt_surface_family {c : ℝ → M}
-    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, c 0))
-    (hc : ContMDiffAt 𝓘(ℝ, ℝ) I 2 c 0) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) J 2 (fun z : ℝ × ℝ ↦ Φ z.1 (c z.2)) (t₀, 0) :=
-  hΦ.comp (t₀, (0 : ℝ)) ((contDiffAt_fst.contMDiffAt (n := 2)).prodMk
-    (hc.comp (t₀, (0 : ℝ)) contDiffAt_snd.contMDiffAt))
-
 variable [IsManifold I 2 M] [IsManifold J 2 N]
-
-/-- The coordinate reading of `t ↦ dΦ_t v` along `t ↦ Φ t x` is differentiable at `t₀`. -/
-private theorem differentiableAt_sectionCoord_mfderiv_family
-    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x)) (hx : I.IsInteriorPoint x)
-    (v : TangentSpace I x) (y : N) (hy : Φ t₀ x ∈ (trivializationAt F (TangentSpace J) y).baseSet) :
-    DifferentiableAt ℝ (sectionCoord ℝ (F := F) (fun t ↦ Φ t x)
-      (fun t ↦ mfderiv I J (Φ t) x v) y) t₀ := by
-  obtain ⟨c, hc0, hc, hcv⟩ := exists_contMDiffAt_curveVelocity_eq (n := 2) x hx v (0 : ℝ)
-  subst hc0 hcv
-  have hc1 : MDifferentiableAt 𝓘(ℝ, ℝ) I c 0 := hc.mdifferentiableAt (by norm_num)
-  have hσ := contMDiffAt_surface_family hΦ hc
-  have hd := ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_snd
-    (f := fun t s ↦ Φ t (c s)) hσ hy
-  refine hd.congr_of_eventuallyEq ?_
-  filter_upwards [eventually_mdifferentiableAt_family hΦ two_ne_zero] with t ht
-  simp only [sectionCoord_apply]
-  exact congrArg _ (curveVelocity_map ht hc1).symm
 
 /-! ### The variation of the induced metric -/
 
@@ -363,5 +339,29 @@ theorem hasDerivAt_relativeVolume_pullback_of_normal_of_minimal [CompactSpace M]
     HasDerivAt (fun t ↦ ContMDiffRiemannianMetric.relativeVolume g₀
         (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t))) 0 t₀ := by
   simpa [hH] using hasDerivAt_relativeVolume_pullback_of_normal h g₀ hh hcov ht hn hΦ hinj hM hX
+
+/-- **Minimal immersions are stationary for compactly supported normal variations.** Under the
+hypotheses of
+`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal`, if
+the mean curvature vector of `Φ t₀` vanishes, the relative volume of `Φ_t^* h` with respect to
+`Φ_{t₀}^* h` has derivative `0` at `t₀`. -/
+theorem hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal_of_minimal
+    [LindelofSpace M] [T2Space M] [BoundarylessManifold I M]
+    [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
+    (hh : ∀ y (v w : TangentSpace J y), h.inner y v w = ⟪v, w⟫_ℝ)
+    (hcov : CovariantDerivative.IsMetricCompatible (I := J) (V := fun y : N ↦ TangentSpace J y) cov)
+    (ht : cov.IsTorsionFree) (hn : 1 ≤ n)
+    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (uncurry Φ))
+    (hinj : ∀ t x, Injective (mfderiv I J (Φ t) x))
+    (hM : ∀ y (v w : TangentSpace I y),
+      ⟪v, w⟫_ℝ = ⟪mfderiv I J (Φ t₀) y v, mfderiv I J (Φ t₀) y w⟫_ℝ)
+    (hX : ∀ y, familyVariationField J Φ t₀ y ∈ orthogonalNormalSpace I J (Φ t₀) y)
+    {K : Set M} (hK : IsCompact K) (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ y ∉ K, Φ t y = Φ t₀ y)
+    (hH : ∀ y, immersionMeanCurvatureVector (I := I) cov (Φ t₀) y = 0) :
+    HasDerivAt (fun t ↦ ContMDiffRiemannianMetric.relativeVolume
+        (h.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀))
+        (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t))) 0 t₀ := by
+  simpa [hH] using
+    hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal h hh hcov ht hn hΦ hinj hM hX hK hΦK
 
 end Bundle.ContMDiffRiemannianMetric

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 
 /-!
 # The variation field of a family of maps
@@ -32,6 +34,10 @@ deformation in the first variation of volume of an immersion
   `TauCeti.mdifferentiableAt_sectionCoord_familyVariationField`: the variation field of a family
   which is `C²` at `(t₀, x)` is a `C¹` section along `Φ t₀` near `x`, with a differentiable
   coordinate reading.
+* `TauCeti.contMDiffAt_surface_family`,
+  `TauCeti.differentiableAt_sectionCoord_mfderiv_family`: through a curve `c`, a `C²` family
+  gives the `C²` parametrized surface `(t, s) ↦ Φ t (c s)`, and the coordinate reading of
+  `t ↦ dΦ_t v` along `t ↦ Φ t x` is differentiable.
 -/
 
 public section
@@ -89,6 +95,15 @@ theorem familyVariationField_eq_mfderiv {y : M}
     familyVariationField J Φ t₀ y = mfderiv (𝓘(ℝ).prod I) J (uncurry Φ) (t₀, y) (1, 0) :=
   hΦ.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero (g := id) (hasDerivAt_id t₀)
 
+/-- The parametrized surface `(t, s) ↦ Φ t (c s)` of a family `C²` at `(t₀, c 0)` and a curve
+`C²` at `0` is `C²` at `(t₀, 0)`. -/
+theorem contMDiffAt_surface_family {c : ℝ → M}
+    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, c 0))
+    (hc : ContMDiffAt 𝓘(ℝ, ℝ) I 2 c 0) :
+    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) J 2 (fun z : ℝ × ℝ ↦ Φ z.1 (c z.2)) (t₀, 0) :=
+  hΦ.comp (t₀, (0 : ℝ)) ((contDiffAt_fst.contMDiffAt (n := 2)).prodMk
+    (hc.comp (t₀, (0 : ℝ)) contDiffAt_snd.contMDiffAt))
+
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-- The variation field of a family which is `C²` at `(t₀, x)` is `C¹` at `x`, as a section of
@@ -117,5 +132,22 @@ theorem mdifferentiableAt_sectionCoord_familyVariationField
   mdifferentiableAt_sectionCoord (Φ t₀) _
     ((contMDiffAt_familyVariationField hΦ).mdifferentiableAt (by norm_num))
     (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (Φ t₀ x))
+
+/-- The coordinate reading of `t ↦ dΦ_t v` along `t ↦ Φ t x` is differentiable at `t₀`. -/
+theorem differentiableAt_sectionCoord_mfderiv_family
+    (hΦ : ContMDiffAt (𝓘(ℝ).prod I) J 2 (uncurry Φ) (t₀, x)) (hx : I.IsInteriorPoint x)
+    (v : TangentSpace I x) (y : N) (hy : Φ t₀ x ∈ (trivializationAt F (TangentSpace J) y).baseSet) :
+    DifferentiableAt ℝ (sectionCoord ℝ (F := F) (fun t ↦ Φ t x)
+      (fun t ↦ mfderiv I J (Φ t) x v) y) t₀ := by
+  obtain ⟨c, hc0, hc, hcv⟩ := exists_contMDiffAt_curveVelocity_eq (n := 2) x hx v (0 : ℝ)
+  subst hc0 hcv
+  have hc1 : MDifferentiableAt 𝓘(ℝ, ℝ) I c 0 := hc.mdifferentiableAt (by norm_num)
+  have hσ := contMDiffAt_surface_family hΦ hc
+  have hd := ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_snd
+    (f := fun t s ↦ Φ t (c s)) hσ hy
+  refine hd.congr_of_eventuallyEq ?_
+  filter_upwards [eventually_mdifferentiableAt_family hΦ two_ne_zero] with t ht
+  simp only [sectionCoord_apply]
+  exact congrArg _ (curveVelocity_map ht hc1).symm
 
 end TauCeti
