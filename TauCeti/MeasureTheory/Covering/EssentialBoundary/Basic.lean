@@ -657,6 +657,35 @@ section ContinuousClosedBall
 
 variable [OpensMeasurableSpace α]
 
+/-- Real-function dichotomy: if `f` is continuous on `(0, ε)`, eventually `0 ≤ f ≤ 1 ≤ f + g`
+as `r → 0⁺`, and `min (f r) (g r) → 0`, then `f → 0` or `f → 1`. -/
+private theorem tendsto_zero_or_one_of_continuousOn_Ioo {ε : ℝ} (hε : 0 < ε)
+    {f g : ℝ → ℝ} (hf : ContinuousOn f (Set.Ioo 0 ε))
+    (hbounds : ∀ᶠ r in 𝓝[>] 0, 0 ≤ f r ∧ f r ≤ 1 ∧ 1 ≤ f r + g r)
+    (hmin : Tendsto (fun r => min (f r) (g r)) (𝓝[>] 0) (𝓝 0)) :
+    Tendsto f (𝓝[>] 0) (𝓝 0) ∨ Tendsto f (𝓝[>] 0) (𝓝 1) := by
+  by_contra! hnot
+  -- Clamp `r ↦ min r (ε / 2)` so `f'` is continuous on `Ioi 0` and agrees with `f` near `0⁺`.
+  set f' : ℝ → ℝ := fun r => f (min r (ε / 2))
+  have hf'_cont : ContinuousOn f' (Ioi 0) :=
+    hf.comp (continuous_id.min continuous_const).continuousOn
+      fun r hr => ⟨lt_min hr (half_pos hε), (min_le_right _ _).trans_lt (half_lt_self hε)⟩
+  have hf'_eq : f' =ᶠ[𝓝[>] 0] f :=
+    eventually_of_mem (Ioo_mem_nhdsGT (half_pos hε)) fun r hr => congrArg f (min_eq_left hr.2.le)
+  have hf'_Icc : ∀ᶠ r in 𝓝[>] 0, f' r ∈ Icc 0 1 := by
+    filter_upwards [hbounds, hf'_eq] with r hr heq
+    exact heq.symm ▸ ⟨hr.1, hr.2.1⟩
+  -- Since `f'` tends to neither `0` nor `1`, it visits an interior interval `[c, d] ⊆ (0, 1)`
+  -- arbitrarily close to `0⁺`, bounding `min f g` away from `0`.
+  obtain ⟨c, d, hc, hd, hfreq⟩ := hf'_cont.exists_frequently_mem_Icc_of_not_tendsto hf'_Icc
+    (fun h0 => hnot.1 (h0.congr' hf'_eq)) (fun h1 => hnot.2 (h1.congr' hf'_eq))
+  have hfreq_min : ∃ᶠ r in 𝓝[>] 0, min c (1 - d) ≤ min (f r) (g r) := by
+    refine (hfreq.and_eventually (hf'_eq.and hbounds)).mono fun r ⟨hrf, heq, hr⟩ => ?_
+    rw [heq] at hrf
+    exact le_min ((min_le_left _ _).trans hrf.1)
+      ((min_le_right _ _).trans (by linarith [hrf.2, hr.2.2]))
+  exact (lt_min hc (sub_pos.2 hd)).not_ge (ge_of_tendsto_of_frequently hmin hfreq_min)
+
 /-- **Zero-one density dichotomy.** On a metric space with measurable closed balls, if `μ` has
 positive, finite, continuous closed-ball mass `r ↦ μ (closedBall x r)` on `(0, ε)` (`ε > 0`), and
 `min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) → 0` as `r → 0⁺`, then
@@ -678,12 +707,14 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn {ε : ℝ} (
   have hf_cont : ContinuousOn f (Set.Ioo 0 ε) :=
     (μ.continuousOn_real_inter_closedBall x s hfin hb_cont).div hb_cont
       fun r hr => (hb_pos hr).ne'
-  have hsum {r : ℝ} (hr : r ∈ Set.Ioo 0 ε) : 1 ≤ f r + g r ∧ f r ≤ 1 := by
+  have hbounds : ∀ᶠ r in 𝓝[>] 0, 0 ≤ f r ∧ f r ≤ 1 ∧ 1 ≤ f r + g r := by
+    refine eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_
     have hle : b r ≤ μ.real (s ∩ closedBall x r) + μ.real (closedBall x r \ s) := by
       simpa only [b, inter_comm s, inter_union_sdiff] using
         measureReal_union_le (s ∩ closedBall x r) (closedBall x r \ s)
-    exact ⟨by rw [← add_div, one_le_div (hb_pos hr)]; exact hle,
-      div_le_one_of_le₀ (measureReal_mono inter_subset_right (hfin r hr)) (hb_pos hr).le⟩
+    exact ⟨div_nonneg measureReal_nonneg measureReal_nonneg,
+      div_le_one_of_le₀ (measureReal_mono inter_subset_right (hfin r hr)) (hb_pos hr).le,
+      by rw [← add_div, one_le_div (hb_pos hr)]; exact hle⟩
   have hf_toReal (r : ℝ) : (μ (s ∩ closedBall x r) / μ (closedBall x r)).toReal = f r := by
     rw [ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
   have hmin : Tendsto (fun r => min (f r) (g r)) (𝓝[>] 0) (𝓝 0) := by
@@ -703,26 +734,8 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn {ε : ℝ} (
       (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_))
     rw [← hf_toReal r, ENNReal.ofReal_toReal
       (ENNReal.div_ne_top (measure_ne_top_of_subset inter_subset_right (hfin r hr)) (hpos r hr))]
-  by_contra! hnot
-  set f' : ℝ → ℝ := fun r => f (min r (ε / 2))
-  have hf'_cont : ContinuousOn f' (Ioi 0) :=
-    hf_cont.comp (continuous_id.min continuous_const).continuousOn
-      fun r hr => ⟨lt_min hr (half_pos hε), (min_le_right _ _).trans_lt (half_lt_self hε)⟩
-  have hf'_eq : f' =ᶠ[𝓝[>] 0] f :=
-    eventually_of_mem (Ioo_mem_nhdsGT (half_pos hε)) fun r hr => congrArg f (min_eq_left hr.2.le)
-  have hf'_Icc : ∀ᶠ r in 𝓝[>] 0, f' r ∈ Icc 0 1 := by
-    filter_upwards [Ioo_mem_nhdsGT (half_pos hε), hf'_eq] with r hr heq
-    exact ⟨heq.symm ▸ div_nonneg measureReal_nonneg measureReal_nonneg,
-      heq.symm ▸ (hsum ⟨hr.1, hr.2.trans (half_lt_self hε)⟩).2⟩
-  obtain ⟨c, d, hc, hd, hfreq⟩ := hf'_cont.exists_frequently_mem_Icc_of_not_tendsto hf'_Icc
-    (fun h0 => hnot.1 (by simpa using hconv (h0.congr' hf'_eq)))
-    (fun h1 => hnot.2 (by simpa using hconv (h1.congr' hf'_eq)))
-  have hfreq_min : ∃ᶠ r in 𝓝[>] 0, min c (1 - d) ≤ min (f r) (g r) := by
-    refine (hfreq.and_eventually (hf'_eq.and (Ioo_mem_nhdsGT hε))).mono fun r ⟨hrf, heq, hrε⟩ => ?_
-    rw [heq] at hrf
-    exact le_min ((min_le_left _ _).trans hrf.1)
-      ((min_le_right _ _).trans (by linarith [hrf.2, (hsum hrε).1]))
-  exact (lt_min hc (sub_pos.2 hd)).not_ge (ge_of_tendsto_of_frequently hmin hfreq_min)
+  exact (tendsto_zero_or_one_of_continuousOn_Ioo hε hf_cont hbounds hmin).imp
+    (fun h0 => by simpa using hconv h0) (fun h1 => by simpa using hconv h1)
 
 end ContinuousClosedBall
 
