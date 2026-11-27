@@ -187,9 +187,11 @@ private theorem exists_forall_setIntegral_covectorPullback_le_capped_one (ω : S
     exact norm_sub_one_sq_le_inv_cappedCylindricalWeight (hηU hz) (hpos z hz)
   calc _ ≤ ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (positiveEndChart one)
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ :=
-        setIntegral_mono_set (integrableOn_sobolevDensity_covectorPullback_positiveEndChart
+        setIntegral_mono_set
+          (integrableOn_sobolevDensity_covectorPullback_of_le_fst_positiveEndCoord
           (fun z hz ↦ hJ z (hSU hz)) (fun z hz ↦ hu z (hSU hz)) (hη.of_le one_le_two) hηc
-          (fun z hz ↦ (hηS hz).1) one 0)
+          (fun z hz ↦ (hηS hz).1) (contDiff_positiveEndChart one 2)
+          (fun ζ _ ↦ (fst_positiveEndCoord_positiveEndChart one ζ).ge) 0)
           (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)
           (.of_forall fun _ hζ ↦ prod_mono (Ioi_subset_Ioi (by norm_num)) subset_rfl hζ)
     _ ≤ C * ∫ z, ‖Complex.equivRealProdCLM.symm z - one.endCenter‖ ^ 2 *
