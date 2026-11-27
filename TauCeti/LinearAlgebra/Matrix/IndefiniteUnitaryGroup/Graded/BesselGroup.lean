@@ -375,7 +375,9 @@ theorem gradedInclusion_injective : Function.Injective (gradedInclusion X s N) :
     simpa using congrArg (fun g : unitaryGroupOf (gradedGram X s N) ↦
       ((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R).toBlocks₁₁) h
 
-/-- The image of `U(X)` lies in the Bessel group. -/
+/-- The image of `U(X)` lies in the Bessel group. The high `simp` priority takes precedence over
+the entrywise expansion `mem_gradedBesselGroup_iff`. -/
+@[simp high]
 theorem gradedInclusion_mem_gradedBesselGroup (a : unitaryGroup X R) :
     gradedInclusion X s N a ∈ gradedBesselGroup X s N :=
   mem_gradedBesselGroup_iff.mpr fun i b _ _ ↦ by rcases i with x | c <;> simp [Matrix.one_apply]
@@ -391,7 +393,9 @@ theorem coe_gradedBesselInclusion (a : unitaryGroup X R) :
       gradedInclusion X s N a :=
   (rfl)
 
-/-- The unipotent group of the grades meets the image of `U(X)` only in `1`. -/
+/-- The unipotent group of the grades meets the image of `U(X)` only in `1`. The high `simp`
+priority takes precedence over the entrywise expansion `mem_gradedUnipotent_iff`. -/
+@[simp high]
 theorem gradedInclusion_mem_gradedUnipotent_iff {a : unitaryGroup X R} :
     gradedInclusion X s N a ∈ gradedUnipotent X s N ↔ a = 1 := by
   refine ⟨fun h ↦ Subtype.ext ?_, fun h ↦ by rw [h, map_one]; exact one_mem _⟩
