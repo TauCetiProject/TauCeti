@@ -61,9 +61,9 @@ the same holds along every path, between any two points, once both fundamental g
 `ℤ` through the winding number: changing the basepoint preserves winding numbers
 (`AddCircle.windingNumberIso_fundamentalGroupMulEquivOfPath`), so the isomorphism carries the
 action of the class of winding number `n` to the action of the class of winding number `n`
-(`TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_windingNumberIso_symm`). A
-DG local system on the circle with homology in degree `0` is a module over `ℤ[π₁(S¹)] = ℤ[t, t⁻¹]`,
-and changing its basepoint does not change this module.
+(`TauCeti.tensorPathChainPointCohomologyEquiv_cohomologyRepresentation_windingNumberIso_symm`). So,
+for coefficients in a commutative ring `S`, the `S`-linear isomorphism of homologies intertwines the
+actions of `π₁(S¹)`, identified with `ℤ` at both basepoints through the winding number.
 
 ## Main definitions
 
