@@ -154,6 +154,13 @@ theorem apply_map_map (h : IsRootPlane B t α E J) (v w : E) :
     B (J v) (J w) = B v w := by
   rw [h.apply_left, h.apply_apply, Submodule.coe_neg, map_neg, neg_neg]
 
+/-- **Reversing the rotation negates the root.** If `E` is a root plane with rotation `J` and root
+`α`, it is also a root plane with rotation `-J` and root `-α`. -/
+protected theorem neg (h : IsRootPlane B t α E J) : IsRootPlane B t (-α) E (-J) where
+  apply_apply v := by simp [h.apply_apply]
+  apply_left v w := by simp [h.apply_left]
+  lie_apply H v := by simp [h.lie_apply]
+
 /-- The rotation of a root plane is injective. -/
 theorem injective (h : IsRootPlane B t α E J) : Function.Injective J := fun v w hvw ↦ by
   rw [← neg_neg v, ← h.apply_apply v, hvw, h.apply_apply, neg_neg]
