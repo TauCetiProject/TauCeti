@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different
-import TauCeti.FieldTheory.Separable.FractionRing
+import TauCeti.FieldTheory.Separable.FractionRing.Basic
 
 /-!
 # The different exponent of an extension of local fields

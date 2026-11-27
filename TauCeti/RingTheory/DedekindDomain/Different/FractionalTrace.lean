@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.FractionalIdeal.Trace
 public import TauCeti.RingTheory.DedekindDomain.Different.Trace
-import TauCeti.FieldTheory.Separable.FractionRing
+import TauCeti.FieldTheory.Separable.FractionRing.Basic
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!
