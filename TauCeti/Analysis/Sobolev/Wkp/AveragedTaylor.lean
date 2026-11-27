@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
+public import TauCeti.Analysis.Calculus.IteratedGradient.RankOne
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Taylor.Pairing.Basic
 import TauCeti.Analysis.Calculus.Taylor.Pairing.Polynomial
 import TauCeti.Analysis.Sobolev.WeakDeriv.TaylorPairing
 import TauCeti.Analysis.Sobolev.Wkp.IntegrationByParts
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Integral.ClosedBall
 
@@ -22,8 +23,8 @@ import TauCeti.MeasureTheory.Function.Lp.Integral.ClosedBall
 # Averaged Taylor pairings, weak-derivative commutation, and diameter bounds on `W^{k,p}`
 
 On `W^{k,p}(Ω)` (`1 ≤ p ≤ ∞`, without smooth-function density):
-* `TauCeti.Wkp.fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv`: Brenner–Scott
-  Proposition 4.1.17 weak-derivative commutation for averaged Taylor pairings.
+* `TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`: Brenner–Scott Proposition 4.1.17
+  weak-derivative commutation for averaged Taylor pairings along arbitrary direction tuples.
 * `TauCeti.Wkp.fderiv_setIntegral_fullContractL_sub_zero_eq` and
   `TauCeti.Wkp.fderiv_setIntegral_fullContractL_sub_succ_eq`: coordinate-free spatial derivative
   commutation for compactly supported weights continuous on `tsupport`.
@@ -68,56 +69,65 @@ private theorem fderiv_averagedTaylorTerm {ι : Type*} [Fintype ι] (b : Orthono
   have hd1 : (d + 1 : ℝ) ≠ 0 := by positivity
   push_cast; field_simp [hd1]; ring
 
-private theorem iteratedFDerivAlong_replicate_sum_eq_of_ge
+private theorem iteratedFDerivAlong_ofFn_sum_eq_of_ge
     {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) {φ : E → ℝ} (hφc : HasCompactSupport φ)
-    (hφs : tsupport φ ⊆ Omega) (h : E) :
-    ∀ (j d : ℕ) (u : Wkp mu Omega p (j + 1)), ContDiff ℝ (d + j + 1) φ → ∀ x : E,
-      iteratedFDerivAlong ℝ (List.replicate (j + 1) h)
+    (hφs : tsupport φ ⊆ Omega) :
+    ∀ (j d : ℕ) (u : Wkp mu Omega p (j + 1)), ContDiff ℝ (d + j + 1) φ →
+      ∀ (v : Fin (j + 1) → E) (x : E),
+      iteratedFDerivAlong ℝ (List.ofFn v)
         (averagedTaylorTerm b mu Omega φ (value (j + 1) u) (d + j + 1)) x =
-        averagedTaylorTerm b mu Omega φ (fun y => fullContractL j h (iteratedGradient j u y)) d x
-  | 0, d, u, hφ, x => by
+        averagedTaylorTerm b mu Omega φ
+          (fun y => evalTupleL j (v ∘ Fin.rev) (iteratedGradient j u y)) d x
+  | 0, d, u, hφ, v, x => by
       have hw : HasWeakLineDerivOn mu Omega (value 1 u)
-          (fun y => fullContractL 0 h (iteratedGradient 0 u y)) h :=
-        ((hasWeakFDerivOn_value u).hasWeakLineDerivOn h).congr_ae_deriv
+          (fun y => evalTupleL 0 (v ∘ Fin.rev) (iteratedGradient 0 u y)) (v 0) :=
+        ((hasWeakFDerivOn_value u).hasWeakLineDerivOn (v 0)).congr_ae_deriv
           (.of_forall fun _ => by simp [real_inner_comm])
-      simp only [Nat.zero_add, List.replicate_one, iteratedFDerivAlong_cons_apply,
+      simp only [Nat.zero_add, List.ofFn_succ, List.ofFn_zero, iteratedFDerivAlong_cons_apply,
         iteratedFDerivAlong_nil]
       simp only [Nat.add_zero] at hφ ⊢
       exact fderiv_averagedTaylorTerm b hw d hφ hφc hφs x
-  | j + 1, d, u, hφ, x => by
+  | j + 1, d, u, hφ, v, x => by
       have hidx : d + (j + 1) + 1 = (d + 1) + j + 1 := by omega
-      have hih : iteratedFDerivAlong ℝ (List.replicate (j + 1) h)
+      have hih : iteratedFDerivAlong ℝ (List.ofFn (Fin.tail v))
           (averagedTaylorTerm b mu Omega φ (value (j + 1 + 1) u) (d + (j + 1) + 1)) =
-          averagedTaylorTerm b mu Omega φ (fun y => fullContractL j h
+          averagedTaylorTerm b mu Omega φ (fun y => evalTupleL j ((Fin.tail v) ∘ Fin.rev)
             (iteratedGradient j (lowerOrder (j + 1) u) y)) (d + 1) := funext fun x' => by
         rw [hidx, value_succ]
-        exact iteratedFDerivAlong_replicate_sum_eq_of_ge b hφc hφs h j (d + 1)
-          (lowerOrder (j + 1) u) (hφ.of_le (by norm_cast; omega)) x'
+        exact iteratedFDerivAlong_ofFn_sum_eq_of_ge b hφc hφs j (d + 1)
+          (lowerOrder (j + 1) u) (hφ.of_le (by norm_cast; omega)) (Fin.tail v) x'
       have hw : HasWeakLineDerivOn mu Omega
-          (fun y => fullContractL j h (iteratedGradient j (lowerOrder (j + 1) u) y))
-          (fun y => fullContractL (j + 1) h (iteratedGradient (j + 1) u y)) h :=
+          (fun y => evalTupleL j ((Fin.tail v) ∘ Fin.rev)
+            (iteratedGradient j (lowerOrder (j + 1) u) y))
+          (fun y => evalTupleL (j + 1) (v ∘ Fin.rev) (iteratedGradient (j + 1) u y)) (v 0) :=
         (((hasWeakFDerivOn_iteratedGradient j u).clm_comp
-          (fullContractL j h)).hasWeakLineDerivOn h).congr_ae_deriv (.of_forall fun _ => by
-            simp only [fullContractL_succ, ContinuousLinearMap.comp_apply]
-            rw [ContinuousLinearMap.apply_apply])
-      rw [List.replicate_succ, iteratedFDerivAlong_cons_apply, hih]
+          (evalTupleL j ((Fin.tail v) ∘ Fin.rev))).hasWeakLineDerivOn (v 0)).congr_ae_deriv
+            (.of_forall fun _ => by
+              simp only [evalTupleL_succ, ContinuousLinearMap.comp_apply,
+                Fin.init_comp_rev, Function.comp_apply, Fin.rev_last, Fin.tail_def]
+              rw [ContinuousLinearMap.apply_apply])
+      simp only [Fin.tail_def] at hih
+      rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply, hih]
       exact fderiv_averagedTaylorTerm b hw d (hφ.of_le (by norm_cast; omega)) hφc hφs x
 
-/-- **Brenner–Scott weak derivative commutation identity.** For `u ∈ W^{j+1,p}(Ω)` (`1 ≤ p ≤ ∞`),
-`h : E`, and `φ : E → ℝ` of class `C^m` compactly supported in `Ω`, contracting
-`iteratedGradientChain · j x` of the degree-`m` averaged Taylor pairing of `u` along `h` yields the
-degree-`(m - j - 1)` averaged Taylor pairing of `fullContractL j h (Wkp.iteratedGradient j u ·)`. -/
-theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
+/-- **Mixed weak derivative commutation for averaged Taylor pairings.**
+For `u ∈ W^{j+1,p}(Ω)` (`1 ≤ p ≤ ∞`),
+`v : Fin (j + 1) → E`, and `φ : E → ℝ` of class `C^m` compactly supported in `Ω`, evaluating the
+order-`(j + 1)` derivative of the degree-`m` averaged Taylor pairing of `u` at `v` yields the
+degree-`(m - j - 1)` averaged Taylor pairing of the corresponding weak derivative component
+`evalTupleL j (v ∘ Fin.rev) (Wkp.iteratedGradient j u ·)`. The reversal accounts for the order
+of the nested continuous linear maps. If `m ≤ j`, both sides vanish. -/
+theorem iteratedFDeriv_sum_setIntegral_iteratedFDeriv
     {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) (j m : ℕ) (u : Wkp mu Omega p (j + 1))
     {φ : E → ℝ} (hφ : ContDiff ℝ m φ) (hφc : HasCompactSupport φ) (hφs : tsupport φ ⊆ Omega)
-    (x h : E) :
-    fullContractL j h (iteratedGradientChain (fun x' => ∑ r ∈ Finset.range (m + 1),
+    (x : E) (v : Fin (j + 1) → E) :
+    iteratedFDeriv ℝ (j + 1) (fun x' => ∑ r ∈ Finset.range (m + 1),
       ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι, ∫ y in Omega,
         iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z) y (b ∘ I) *
-          value (j + 1) u y ∂mu) j x) =
+          value (j + 1) u y ∂mu) x v =
       ∑ d ∈ Finset.range (m - j), ((-1 : ℝ) ^ d / (d.factorial : ℝ)) * ∑ J : Fin d → ι,
         ∫ y in Omega, iteratedFDeriv ℝ d (fun z => (∏ l : Fin d, ⟪b (J l), x - z⟫_ℝ) * φ z)
-          y (b ∘ J) * fullContractL j h (iteratedGradient j u y) ∂mu := by
+          y (b ∘ J) * evalTupleL j (v ∘ Fin.rev) (iteratedGradient j u y) ∂mu := by
   let term := averagedTaylorTerm b mu Omega φ (value (j + 1) u)
   have hloc : LocallyIntegrableOn (value (j + 1) u) Omega mu := Lp.locallyIntegrableOn _ Fact.out
   have hI : ∀ {k : ℕ∞ω} {r : ℕ}, r ≤ m → ∀ I : Fin r → ι, ContDiff ℝ k (fun x' =>
@@ -131,7 +141,7 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
   have hterm_smooth : ∀ {k : ℕ∞ω}, ∀ r ∈ Finset.range (m + 1), ContDiff ℝ k (term r) :=
     fun _ hr => contDiff_const.mul (hS_smooth (Nat.lt_succ_iff.1 (Finset.mem_range.1 hr)))
   have hvanish : ∀ r ≤ m, r ≤ j →
-      iteratedFDerivAlong ℝ (List.replicate (j + 1) h) (term r) x = 0 := fun r hrm hrj => by
+      iteratedFDerivAlong ℝ (List.ofFn v) (term r) x = 0 := fun r hrm hrj => by
     dsimp only [term]; unfold averagedTaylorTerm
     rw [congrFun (iteratedFDerivAlong_const_mul (n := ∞) (hS_smooth hrm) _ _ (by simp)) x,
       iteratedFDerivAlong_fun_sum (n := ∞) Finset.univ (fun I _ => hI hrm I) _ (by simp),
@@ -143,8 +153,8 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
       fun x' => ∑ r ∈ Finset.range (m + 1), ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
         ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
           y (b ∘ I) * value (j + 1) u y ∂mu := by ext x'; simp [term, averagedTaylorTerm]
-  rw [← hgoal, fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong j
-      (ContDiff.sum hterm_smooth).contDiffAt h,
+  rw [← hgoal, ← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
+      (ContDiff.sum hterm_smooth) v x,
     iteratedFDerivAlong_fun_sum (n := ∞) _ hterm_smooth _ (by simp)]
   rcases lt_or_ge j m with hjm | hmj
   · have hm_split : m + 1 = (j + 1) + (m - j) := by omega
@@ -155,7 +165,8 @@ theorem fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv
     have hdm : d + j + 1 ≤ m := by have := Finset.mem_range.1 hd; omega
     have heq_idx : j + 1 + d = d + j + 1 := by omega
     dsimp only [term]; rw [heq_idx]
-    exact iteratedFDerivAlong_replicate_sum_eq_of_ge b hφc hφs h j d u (hφ.of_le (by norm_cast)) x
+    exact iteratedFDerivAlong_ofFn_sum_eq_of_ge b hφc hφs j d u
+      (hφ.of_le (by norm_cast)) v x
   · rw [Nat.sub_eq_zero_of_le hmj, Finset.range_zero, Finset.sum_empty]
     exact Finset.sum_eq_zero fun r hr => hvanish r (Nat.lt_succ_iff.1 (Finset.mem_range.1 hr))
       ((Nat.lt_succ_iff.1 (Finset.mem_range.1 hr)).trans hmj)
