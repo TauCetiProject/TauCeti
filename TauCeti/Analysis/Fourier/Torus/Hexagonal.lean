@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.Hexagonal
-public import TauCeti.Analysis.Fourier.LaplacianSymbol
+public import TauCeti.Analysis.Fourier.Laplacian.Symbol
 
 /-!
 # The Laplacian-symbol minimum for the hexagonal flat torus
