@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Riemannian.HalfSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Completeness
+import TauCeti.Analysis.InnerProductSpace.UnitVector
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -103,25 +104,16 @@ theorem lipschitzWith_one_of_coe_comp_eq {f : UpperHalfSpace E → UpperHalfSpac
           gcongr
           exact (height_pos (f x)).le
       _ ≤ _ := div_le_div_of_nonneg_left (norm_nonneg _) (height_pos x) (hheight x)
-  refine LipschitzWith.of_edist_le fun x y ↦ ?_
-  rw [IsRiemannianManifold.out (I := 𝓘(ℝ, WithLp 2 (F × ℝ))),
-    IsRiemannianManifold.out (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))]
-  simpa using TauCeti.Manifold.riemannianEDist_le_mul hf one_ne_zero hbound x y
+  exact IsRiemannianManifold.lipschitzWith_of_norm_mfderiv_le hf one_ne_zero hbound
 
 /-- The distance formula in the two-dimensional model, transported from Mathlib's
 `UpperHalfPlane.dist_eq` along `TauCeti.UpperHalfPlane.upperHalfSpaceIsometry`. -/
 private theorem dist_eq_of_real (p q : UpperHalfSpace ℝ) :
     dist p q = 2 * arsinh (dist (p : WithLp 2 (ℝ × ℝ)) q / (2 * √(height p * height q))) := by
-  have hc (r : UpperHalfSpace ℝ) :
-      ((TauCeti.UpperHalfPlane.upperHalfSpaceIsometry.symm r : UpperHalfPlane) : ℂ) =
-        Complex.equivRealProdLp.symm r := by
-    rw [TauCeti.UpperHalfPlane.coe_upperHalfSpaceIsometry_symm_apply,
-      Complex.equivRealProdLp_symm_apply, snd_coe]
-  rw [dist_edist p q, IsRiemannianManifold.out (I := 𝓘(ℝ, WithLp 2 (ℝ × ℝ))),
-    TauCeti.UpperHalfPlane.riemannianEDist_eq_edist_upperHalfSpaceIsometry_symm, ← dist_edist,
-    UpperHalfPlane.dist_eq, hc, hc,
-    LinearIsometryEquiv.dist_map, TauCeti.UpperHalfPlane.im_upperHalfSpaceIsometry_symm_apply,
-    TauCeti.UpperHalfPlane.im_upperHalfSpaceIsometry_symm_apply]
+  rw [← TauCeti.UpperHalfPlane.upperHalfSpaceIsometryEquiv.symm.dist_eq p q,
+    TauCeti.UpperHalfPlane.upperHalfSpaceIsometryEquiv_symm_apply,
+    TauCeti.UpperHalfPlane.upperHalfSpaceIsometryEquiv_symm_apply, UpperHalfPlane.dist_eq]
+  simp [Complex.dist_eq_re_im, WithLp.prod_dist_eq_of_L2, Real.dist_eq, sq_abs]
 
 /-! ### Comparison maps with the two-dimensional model -/
 
@@ -177,14 +169,6 @@ private theorem contDiffAt_projAmbient (a e : E) {y : WithLp 2 (E × ℝ)} (hy :
     ((((WithLp.fstL 2 ℝ E ℝ).contDiff.sub contDiff_const).inner ℝ
       contDiff_const).contDiffAt).prodMk
       ((contDiffAt_norm ℝ hne).comp y ((contDiff_orthAmbient a e).contDiffAt.of_le (by simp)))
-
-/-- For `‖e‖ ≤ 1`, the component `⟪d, e⟫` of `d` along `e` and the remainder `d - ⟪d, e⟫ e`
-together have length at most `‖d‖`. -/
-private theorem inner_sq_add_norm_sub_sq_le (d : E) {e : E} (he : ‖e‖ ≤ 1) :
-    ⟪d, e⟫ ^ 2 + ‖d - ⟪d, e⟫ • e‖ ^ 2 ≤ ‖d‖ ^ 2 := by
-  rw [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  have : ‖e‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg e) he
-  nlinarith [mul_le_mul_of_nonneg_left this (sq_nonneg ⟪d, e⟫)]
 
 private theorem lipschitzWith_projAmbient (a : E) {e : E} (he : ‖e‖ ≤ 1) :
     LipschitzWith 1 (projAmbient a e) := by
@@ -293,9 +277,8 @@ theorem dist_eq (p q : UpperHalfSpace E) :
     exact (lipschitzWith_incl a he).dist_le_mul _ _ |>.trans_eq (by simp)
   have hdist : dist (proj a e p : WithLp 2 (ℝ × ℝ)) (proj a e q) =
       dist (p : WithLp 2 (E × ℝ)) q := by
-    rw [WithLp.prod_dist_eq_of_L2, WithLp.prod_dist_eq_of_L2, hp₁, hq₁, ha, hv, snd_coe,
-      snd_coe, snd_coe, snd_coe, hp₂, hq₂, dist_self_add_right, Real.dist_eq, zero_sub, abs_neg,
-      abs_norm]
+    simp only [WithLp.prod_dist_eq_of_L2, snd_coe, hp₁, hq₁, ha, hv, hp₂, hq₂]
+    simp [Real.dist_eq]
   rw [heq, dist_eq_of_real, hdist, hp₂, hq₂]
 
 /-- The closed formula for the hyperbolic distance on the upper half-space model:
@@ -306,8 +289,9 @@ theorem cosh_dist (p q : UpperHalfSpace E) :
     cosh (dist p q) = 1 + dist (p : WithLp 2 (E × ℝ)) q ^ 2 / (2 * height p * height q) := by
   have hp := height_pos p
   have hq := height_pos q
-  rw [dist_eq, cosh_two_mul, cosh_sq', add_assoc, ← two_mul, sinh_arsinh, div_pow, mul_pow,
-    sq_sqrt, sq (2 : ℝ), mul_assoc, ← mul_div_assoc, mul_assoc, mul_div_mul_left] <;> positivity
+  rw [dist_eq, cosh_two_mul, cosh_sq', sinh_arsinh, div_pow, mul_pow, sq_sqrt (by positivity)]
+  field_simp
+  ring
 
 /-- On a vertical line the hyperbolic distance is the distance of the logarithms of the heights:
 `dist (x, s) (x, t) = |log t - log s|`. -/
@@ -317,10 +301,9 @@ theorem dist_of_fst_eq {p q : UpperHalfSpace E}
   have hp := height_pos p
   have hq := height_pos q
   refine cosh_injOn dist_nonneg dist_nonneg ?_
-  rw [cosh_dist, Real.dist_eq, cosh_abs, cosh_eq, WithLp.prod_dist_eq_of_L2, h, dist_self,
-    sq_sqrt (by positivity), ← log_div hp.ne' hq.ne', ← log_inv, exp_log (by positivity),
-    exp_log (by positivity), Real.dist_eq, sq_abs]
-  simp only [snd_coe]
+  rw [cosh_dist, WithLp.prod_dist_eq_of_L2, h, dist_self, sq_sqrt (by positivity),
+    Real.dist_eq (log _), cosh_abs]
+  simp [Real.cosh_eq, exp_sub, exp_log hp, exp_log hq, sq_abs, Real.dist_eq]
   field_simp
   ring
 

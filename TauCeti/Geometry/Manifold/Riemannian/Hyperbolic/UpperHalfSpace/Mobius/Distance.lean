@@ -54,15 +54,11 @@ namespace TauCeti.UpperHalfSpace
 
 /-- The Möbius action of `SL(2, ℂ)` on `ℍ³` is by isometries of the hyperbolic distance. -/
 instance : IsIsometricSMul SL(2, ℂ) (UpperHalfSpace ℂ) where
-  isometry_smul A := by
-    have h := IsometryClass.isometry (slToIsom A)
-    rwa [show ⇑(slToIsom A) = (A • ·) from funext (slToIsom_apply A)] at h
+  isometry_smul A := funext (slToIsom_apply A) ▸ IsometryClass.isometry (slToIsom A)
 
 /-- The Möbius action of `PSL(2, ℂ)` on `ℍ³` is by isometries of the hyperbolic distance. -/
 instance : IsIsometricSMul PSL(2, ℂ) (UpperHalfSpace ℂ) where
-  isometry_smul g := by
-    have h := IsometryClass.isometry (pslToIsom g)
-    rwa [show ⇑(pslToIsom g) = (g • ·) from funext (pslToIsom_apply g)] at h
+  isometry_smul g := funext (pslToIsom_apply g) ▸ IsometryClass.isometry (pslToIsom g)
 
 /-- The point `(x, y)` of `ℍ³`, over the real axis, corresponding to `x + i y` in the upper
 half-plane. -/
@@ -105,17 +101,25 @@ theorem ofUpperHalfPlane_smul (g : SL(2, ℝ)) (z : ℍ) :
     ofUpperHalfPlane (g • z) = g.map Complex.ofRealHom • ofUpperHalfPlane z := by
   have hJ : denom (g.map Complex.ofRealHom) (ofUpperHalfPlane z) =
       Complex.normSq (g 1 0 * (z : ℂ) + g 1 1) := by
-    simp [denom_def, Complex.normSq_apply]
+    simp only [denom_def, Fin.isValue, SpecialLinearGroup.map_apply_coe, map_apply,
+      Complex.ofRealHom_eq_coe, fst_ofUpperHalfPlane, Complex.normSq_apply, Complex.add_re,
+      Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero, Complex.add_im,
+      Complex.mul_im, zero_mul, add_zero, height_ofUpperHalfPlane, UpperHalfPlane.coe_re,
+      UpperHalfPlane.coe_im, add_right_inj]
     ring
   have hre : (g • z).re = ((g 0 0 * z.re + g 0 1) * (g 1 0 * z.re + g 1 1) +
       g 0 0 * g 1 0 * z.im ^ 2) / Complex.normSq (g 1 0 * (z : ℂ) + g 1 1) := by
     rw [← UpperHalfPlane.coe_re, UpperHalfPlane.coe_specialLinearGroup_apply, Complex.div_re,
       ← add_div]
-    simp
+    simp only [Algebra.algebraMap_self, Fin.isValue, RingHom.id_apply, Complex.add_re,
+      Complex.mul_re, Complex.ofReal_re, UpperHalfPlane.coe_re, Complex.ofReal_im,
+      UpperHalfPlane.coe_im, zero_mul, sub_zero, Complex.add_im, Complex.mul_im, add_zero]
     ring
   refine ext_fst_height ?_ ?_
   · rw [fst_ofUpperHalfPlane, fst_smul, hJ, hre, height_ofUpperHalfPlane, fst_ofUpperHalfPlane]
-    simp
+    simp only [Fin.isValue, Complex.ofReal_div, Complex.ofReal_add, Complex.ofReal_mul,
+      Complex.ofReal_pow, SpecialLinearGroup.map_apply_coe, map_apply, Complex.ofRealHom_eq_coe,
+      map_add, map_mul, Complex.conj_ofReal]
   · rw [height_ofUpperHalfPlane, height_smul, hJ, height_ofUpperHalfPlane,
       ← UpperHalfPlane.coe_im, UpperHalfPlane.coe_specialLinearGroup_apply, Complex.div_im,
       ← sub_div]
@@ -123,7 +127,9 @@ theorem ofUpperHalfPlane_smul (g : SL(2, ℝ)) (z : ℍ) :
     have hdet : g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
       rw [← Matrix.det_fin_two]
       exact g.det_coe
-    simp
+    simp only [Algebra.algebraMap_self, Fin.isValue, RingHom.id_apply, Complex.add_im,
+      Complex.mul_im, Complex.ofReal_re, UpperHalfPlane.coe_im, Complex.ofReal_im,
+      UpperHalfPlane.coe_re, zero_mul, add_zero, Complex.add_re, Complex.mul_re, sub_zero]
     linear_combination z.im * hdet
 
 end TauCeti.UpperHalfSpace
