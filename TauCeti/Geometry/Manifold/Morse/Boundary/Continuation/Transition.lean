@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Basic
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
+public import TauCeti.Geometry.Manifold.Flow.TimeDependent.Parametric
 
 /-!
 # Continuation trajectories through the transition diffeomorphisms of the slab
@@ -56,7 +57,8 @@ this form the transversality condition for continuations is the transversality o
 
 * `TauCeti.continuationSpaceField`: the space component of a field on `M × ℝ` along the base
   trajectory, a time-dependent vector field on `M`.
-* `TauCeti.contMDiff_continuationSpaceField`: it is as smooth as the field.
+* `TauCeti.contMDiff_continuationSpaceField`: it is as smooth as the field, and
+  `TauCeti.contMDiff_continuationSpaceField_param` states this for families of fields.
 * `TauCeti.isMIntegralCurve_timeDependentFlowOf_continuationSpaceField`: the curves
   `s ↦ (φ_{τ, s} x, β s)` are trajectories of `V`.
 * `TauCeti.exists_eq_timeDependentFlowOf_continuationSpaceField`: every trajectory of `V` through
@@ -93,6 +95,8 @@ this form the transversality condition for continuations is the transversality o
   as a smooth diffeomorphism of `M`.
 * `TauCeti.IsContinuationField.eventually_continuationTransition_apply_eq_flow`: moving the
   endpoints `a` and `b` further out composes the transition map with the flows of `X₀` and `X₁`.
+* `TauCeti.contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField`: the transition maps of
+  a smooth family of fields are jointly smooth in the parameter and the point.
 
 ## References
 
@@ -133,6 +137,29 @@ theorem continuationSpaceField_apply (s : ℝ) (x : M) :
     continuationSpaceField C V s x = (V (x, intervalBaseOrbit C s) : E × ℝ).1 :=
   (rfl)
 
+/-- **The space components of a family of fields form a family**: for a family `V a` of vector
+fields on `M × ℝ`, indexed by the points `a` of a manifold `N` and jointly `C^n` in the parameter
+and the point, the time-dependent fields `continuationSpaceField C (V a)` are jointly `C^n` in the
+parameter, the time and the point. -/
+theorem contMDiff_continuationSpaceField_param [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ∞ω}
+    {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+    {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    {V : N → (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}
+    (hV : ContMDiff (J.prod (𝓘(ℝ, E).prod 𝓘(ℝ))) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent n
+      fun w : N × (M × ℝ) ↦ (⟨w.2, V w.1 w.2⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ))) :
+    ContMDiff (J.prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E))) 𝓘(ℝ, E).tangent n
+      fun z : N × ℝ × M ↦
+        (⟨z.2.2, continuationSpaceField C (V z.1) z.2.1 z.2.2⟩ : TangentBundle 𝓘(ℝ, E) M) := by
+  have hq : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ) n (intervalBaseOrbit C) :=
+    contMDiff_iff_contDiff.2 (contDiff_intervalBaseOrbit C)
+  have hg : ContMDiff (J.prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E))) (J.prod (𝓘(ℝ, E).prod 𝓘(ℝ))) n
+      fun z : N × ℝ × M ↦ (z.1, (z.2.2, intervalBaseOrbit C z.2.1)) :=
+    contMDiff_fst.prodMk ((contMDiff_snd.comp contMDiff_snd).prodMk
+      (hq.comp (contMDiff_fst.comp contMDiff_snd)))
+  -- The tangent bundle of `M × ℝ` splits as a product, and the first factor of the split
+  -- section is the space component.
+  exact contMDiff_fst.comp (contMDiff_equivTangentBundleProd.comp (hV.comp hg))
+
 /-- **The space component along the base trajectory is as smooth as the field**: for a `C^n`
 vector field `V` on `M × ℝ`, the time-dependent field `continuationSpaceField C V` is jointly
 `C^n` in the time and the point. -/
@@ -140,15 +167,10 @@ theorem contMDiff_continuationSpaceField [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ�
     (hV : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent n
       fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ))) :
     ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E).tangent n
-      fun p : ℝ × M ↦ (⟨p.2, continuationSpaceField C V p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M) := by
-  have hq : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ) n (intervalBaseOrbit C) :=
-    contMDiff_iff_contDiff.2 (contDiff_intervalBaseOrbit C)
-  have hg : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) (𝓘(ℝ, E).prod 𝓘(ℝ)) n
-      fun p : ℝ × M ↦ (p.2, intervalBaseOrbit C p.1) :=
-    contMDiff_snd.prodMk (hq.comp contMDiff_fst)
-  -- The tangent bundle of `M × ℝ` splits as a product, and the first factor of the split
-  -- section is the space component.
-  exact contMDiff_fst.comp (contMDiff_equivTangentBundleProd.comp (hV.comp hg))
+      fun p : ℝ × M ↦ (⟨p.2, continuationSpaceField C V p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M) :=
+  -- The constant family at `V`, indexed by `ℝ`, read at the parameter `0`.
+  (contMDiff_continuationSpaceField_param (J := 𝓘(ℝ, ℝ)) (V := fun _ ↦ V)
+    (hV.comp contMDiff_snd)).comp ((contMDiff_const (c := (0 : ℝ))).prodMk contMDiff_id)
 
 /-! ### Trajectories through the slab -/
 
@@ -539,6 +561,34 @@ theorem continuationTransition_symm_apply (a b : ℝ) (x : M) :
   timeDependentFlowDiffeomorph_symm_apply _ _ _ a b x
 
 end TransitionDiffeomorph
+
+/-! ### Families of transition maps -/
+
+section Family
+
+variable [CompleteSpace E] [IsManifold 𝓘(ℝ, E) 1 M] [CompactSpace M] [T2Space M]
+  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N] [T2Space N]
+  [BoundarylessManifold J N] [IsManifold J 1 N]
+
+/-- **The transition maps of a family of fields depend smoothly on the parameter.** Let `V a` be a
+family of vector fields on `M × ℝ`, indexed by the points `a` of a manifold `N` and jointly `C^n`
+in the parameter and the point, with `1 ≤ n`, and let `φ^a_{s, t}` be the time-dependent flow of
+the space component of `V a` along the base trajectory (`TauCeti.continuationSpaceField`). Then
+for all times `a₀` and `b₀` the transition maps `(a, y) ↦ φ^a_{a₀, b₀} y` are jointly `C^n` in
+the parameter and the point. -/
+theorem contMDiff_uncurry_timeDependentFlowOf_continuationSpaceField {n : ℕ∞} (hn : 1 ≤ n)
+    [IsManifold 𝓘(ℝ, E) n M] [IsManifold J n N]
+    {V : N → (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}
+    (hV : ContMDiff (J.prod (𝓘(ℝ, E).prod 𝓘(ℝ))) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent n
+      fun w : N × (M × ℝ) ↦ (⟨w.2, V w.1 w.2⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
+    (a₀ b₀ : ℝ) :
+    ContMDiff (J.prod 𝓘(ℝ, E)) 𝓘(ℝ, E) n
+      (Function.uncurry fun a ↦ timeDependentFlowOf (continuationSpaceField C (V a)) a₀ b₀) :=
+  contMDiff_uncurry_timeDependentFlowOf_param (X := fun a ↦ continuationSpaceField C (V a)) hn
+    (contMDiff_continuationSpaceField_param hV) a₀ b₀
+
+end Family
 
 /-! ### Moving the endpoints of the slab -/
 
