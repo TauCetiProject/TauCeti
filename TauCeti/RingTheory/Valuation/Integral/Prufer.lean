@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Valuation.AlgebraicExtension
-import TauCeti.RingTheory.Valuation.ValuationRingCriterion
+import TauCeti.RingTheory.Valuation.ValuationRing.Criterion
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!

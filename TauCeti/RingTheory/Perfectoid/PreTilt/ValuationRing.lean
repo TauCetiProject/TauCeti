@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Perfectoid.Untilt
-public import TauCeti.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
