@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Algebra.Order.Field.GeomSum
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -106,10 +106,9 @@ theorem sum_dyadic_perron_zero_terms_le (S : Finset ℂ) (m : ℂ → ℕ) {σ X
     nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 2 by norm_num), Real.sqrt_nonneg 2]
   have hgeom : (∑ j ∈ range J, ((2 : ℝ) ^ (-σ)) ^ j) ≤ 4 := by
     refine (sum_le_sum (fun j _ ↦ pow_le_pow_left₀ hr₀ hr j)).trans ?_
-    have hs := (summable_geometric_of_lt_one (by norm_num : (0 : ℝ) ≤ 3 / 4)
-      (by norm_num)).sum_le_tsum (range J) (fun j _ ↦ by positivity)
-    rwa [tsum_geometric_of_lt_one (by norm_num) (by norm_num), show
-      (1 - (3 / 4 : ℝ))⁻¹ = 4 by norm_num] at hs
+    have hs := geom_sum_Ico_le_of_lt_one (m := 0) (n := J) (x := (3 / 4 : ℝ)) (by norm_num)
+      (by norm_num)
+    rwa [← range_eq_Ico, show (3 / 4 : ℝ) ^ 0 / (1 - 3 / 4) = 4 by norm_num] at hs
   calc
     _ ≤ ∑ j ∈ range J, (2 * X ^ σ * W) * ((2 : ℝ) ^ (-σ)) ^ j := sum_le_sum hblock
     _ = (2 * X ^ σ * W) * ∑ j ∈ range J, ((2 : ℝ) ^ (-σ)) ^ j := (mul_sum ..).symm
