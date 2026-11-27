@@ -17,8 +17,10 @@ that any two such maps factor through a common surjection onto a finite set
 `S` onto a discrete quotient, as an object `(Profinite.Extend.functor S.asLimitCone).obj Q`.
 Every locally constant function on `S` is pulled back along such a map
 (`Profinite.liftOfDiscreteQuotient`, `Profinite.comap_liftOfDiscreteQuotient`,
-`Profinite.exists_structuredArrow_comap_eq`), and pulling back is compatible with morphisms of
-`StructuredArrow S FintypeCat.toProfinite` (`Profinite.comap_comap_of_structuredArrow_hom`).
+`Profinite.exists_structuredArrow_comap_eq`), finitely many of them along a common surjection
+(`Profinite.exists_structuredArrow_surjective_forall_comap_eq`), and pulling back is compatible
+with morphisms of `StructuredArrow S FintypeCat.toProfinite`
+(`Profinite.comap_comap_of_structuredArrow_hom`).
 -/
 
 public section
@@ -76,6 +78,19 @@ theorem exists_structuredArrow_comap_eq (S : Profinite.{u}) {Z : Type*}
       (φ : LocallyConstant (FintypeCat.toProfinite.obj j.right) Z),
       LocallyConstant.comap j.hom.hom.hom φ = f :=
   ⟨_, _, S.comap_liftOfDiscreteQuotient f⟩
+
+/-- Finitely many locally constant functions on a profinite set `S` are pulled back along a common
+surjection from `S` onto a finite set. -/
+theorem exists_structuredArrow_surjective_forall_comap_eq (S : Profinite.{u}) {Z : Type*}
+    (s : Finset (LocallyConstant S Z)) :
+    ∃ j : StructuredArrow S FintypeCat.toProfinite, Function.Surjective j.hom ∧
+      ∀ f ∈ s, ∃ φ : LocallyConstant (FintypeCat.toProfinite.obj j.right) Z,
+        LocallyConstant.comap j.hom.hom.hom φ = f := by
+  let F : LocallyConstant S (s → Z) := LocallyConstant.unflip fun f ↦ f.val
+  refine ⟨(Extend.functor S.asLimitCone).obj F.discreteQuotient, F.discreteQuotient.proj_surjective,
+    fun f hf ↦ ⟨(S.liftOfDiscreteQuotient F).map (· ⟨f, hf⟩), ?_⟩⟩
+  ext x
+  exact congrFun (LocallyConstant.congr_fun (S.comap_liftOfDiscreteQuotient F) x) ⟨f, hf⟩
 
 /-- Pulling back along a morphism `k : j ⟶ j'` of maps from `S` to finite sets and then along `j`
 is pulling back along `j'`. -/

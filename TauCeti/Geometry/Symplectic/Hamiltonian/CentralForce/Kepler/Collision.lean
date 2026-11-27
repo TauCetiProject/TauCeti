@@ -226,13 +226,8 @@ private theorem hasDerivAt_coe_maximalIntegralCurve_kepler (x : puncturedPhaseSp
             puncturedPhaseSpace V) : V × V)) t := by
   -- The inclusion carries the restricted Hamiltonian vector field to the ambient one.
   have hγ := (isMIntegralCurveOn_maximalIntegralCurve
-    (contMDiff_hamiltonianVectorField_kepler (m := m) (κ := κ)) (x := x)).map_of_mfderiv_eq
-    (f := Subtype.val)
-    (W := (stdSymplecticForm (V := V)).constSmooth.hamiltonianVectorField
-      (centralForceHamiltonian m (fun r ↦ -κ / r)))
-    (fun _ _ ↦ (contMDiff_subtypeVal (n := 1)).mdifferentiableAt one_ne_zero) fun s _ ↦ by
-      rw [SmoothTwoForm.hamiltonianVectorField_comp_subtype_val, Manifold.mfderiv_subtype_val,
-        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+    (contMDiff_hamiltonianVectorField_kepler (m := m) (κ := κ))
+      (x := x)).coe_of_hamiltonianVectorField_mpullback_subtype_val
   rw [isMIntegralCurveOn_iff_isIntegralCurveOn] at hγ
   have h := (hγ t ht).hasDerivAt (isOpen_maximalIntegralCurveInterval.mem_nhds ht)
   rw [SymplecticForm.hamiltonianVectorField_constSmooth] at h

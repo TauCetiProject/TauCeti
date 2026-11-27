@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.NowhereVanish
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Duality
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 import TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Order
+import TauCeti.Analysis.Complex.RiemannSurface.Genus
 
 /-!
 # Holomorphic `1`-forms in genus one

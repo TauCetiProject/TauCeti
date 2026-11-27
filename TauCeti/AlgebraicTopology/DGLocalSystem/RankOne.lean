@@ -696,6 +696,14 @@ theorem mapRingHom_pullback {B' : Type*} [TopologicalSpace B'] {b' : B'} (φ : R
     mapRingHom φ (pullback f hf L) = pullback f hf (mapRingHom φ L) :=
   (rfl)
 
+/-- Extension of coefficients along an injective ring homomorphism is injective: a rank-one local
+system over `R` is determined by its extension of coefficients. -/
+theorem mapRingHom_injective {φ : R →+* R'} (hφ : Function.Injective φ) :
+    Function.Injective (mapRingHom φ : RankOneLocalSystem B b R → RankOneLocalSystem B b R') :=
+  fun L L' h ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦
+    Units.map_injective (f := (φ : R →* R')) hφ <| by
+      rw [← mapRingHom_ρ_apply, ← mapRingHom_ρ_apply, h]
+
 /-- **The twist commutes with extension of coefficients**: in each degree, extending the
 coefficients of the chains on the Moore loops along `φ` carries the twist `Φ^L` to the twist
 `Φ^{φ_* L}` of the extended local system, `φ_* ∘ Φ^L = Φ^{φ_* L} ∘ φ_*`. -/
