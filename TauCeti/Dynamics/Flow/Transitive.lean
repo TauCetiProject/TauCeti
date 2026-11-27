@@ -15,10 +15,11 @@ A flow `ϕ` of `τ` on `X` is topologically transitive when its action `ϕ.toAdd
 Mathlib's `AddAction.IsTopologicallyTransitive τ X`: every nonempty open set `U` meets every
 nonempty open set `V` after some time `t`, `(ϕ t '' U ∩ V).Nonempty`.
 
-* A flow with a dense orbit is transitive, in particular one with a dense forward orbit
-  (`Flow.isTopologicallyTransitive_of_dense_forwardOrbit`). On a nonempty second-countable Baire
-  space, for instance a nonempty compact metric space, a transitive flow has a dense orbit, so
-  transitivity is equivalent to the existence of a dense orbit
+* A flow of an additive group with a dense orbit is transitive, in particular one with a dense
+  forward orbit (`Flow.isTopologicallyTransitive_of_dense_forwardOrbit`). On a nonempty
+  second-countable Baire space, for instance a nonempty compact metric space, a transitive flow of
+  any additive monoid has a dense orbit (`Flow.IsTopologicallyTransitive.exists_dense_orbit`), so
+  for groups transitivity is equivalent to the existence of a dense orbit
   (`Flow.isTopologicallyTransitive_iff_exists_dense_orbit`).
 * If some time-`t` map is topologically transitive, as the `ℕ`-action of its iterates, so is the
   flow (`Flow.isTopologicallyTransitive_of_iterateMulAct`).
@@ -78,6 +79,15 @@ theorem isTopologicallyTransitive_of_iterateMulAct (t : τ)
   rw [ϕ.map_nsmul]
   simpa only [← image_smul, IterateMulAct.mk_smul] using hn
 
+/-- On a nonempty second-countable Baire space, a topologically transitive flow has a dense
+orbit. -/
+theorem IsTopologicallyTransitive.exists_dense_orbit [SecondCountableTopology X] [BaireSpace X]
+    [Nonempty X] (h : ϕ.IsTopologicallyTransitive) : ∃ x, Dense (ϕ.orbit x) := by
+  let := ϕ.toAddAction
+  have := ϕ.continuousVAdd
+  have : AddAction.IsTopologicallyTransitive τ X := h
+  exact AddAction.exists_dense_orbit τ
+
 end AddMonoid
 
 section AddGroup
@@ -94,15 +104,6 @@ theorem isTopologicallyTransitive_of_dense_orbit {x : X} (hx : Dense (ϕ.orbit x
 theorem isTopologicallyTransitive_of_dense_forwardOrbit [Preorder τ] [AddLeftMono τ] {x : X}
     (hx : Dense (ϕ.forwardOrbit x)) : ϕ.IsTopologicallyTransitive :=
   isTopologicallyTransitive_of_dense_orbit (hx.mono (ϕ.forwardOrbit_subset_orbit x))
-
-/-- On a nonempty second-countable Baire space, a topologically transitive flow has a dense
-orbit. -/
-theorem IsTopologicallyTransitive.exists_dense_orbit [SecondCountableTopology X] [BaireSpace X]
-    [Nonempty X] (h : ϕ.IsTopologicallyTransitive) : ∃ x, Dense (ϕ.orbit x) := by
-  let := ϕ.toAddAction
-  have := ϕ.continuousVAdd
-  have : AddAction.IsTopologicallyTransitive τ X := h
-  exact AddAction.exists_dense_orbit τ
 
 /-- On a nonempty second-countable Baire space, for instance a nonempty compact metric space, a
 flow is topologically transitive exactly when it has a dense orbit. -/
