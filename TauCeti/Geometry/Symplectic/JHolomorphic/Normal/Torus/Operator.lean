@@ -272,7 +272,7 @@ def torusCauchyRiemannSobolevL :
 
 /-- The realization is the generic realization
 `TauCeti.IsRealCauchyRiemannOperator.sobolevL` of the normal operator of the torus. -/
-theorem torusCauchyRiemannSobolevL_eq :
+theorem torusCauchyRiemannSobolevL_def :
     torusCauchyRiemannSobolevL A hν hμ p =
       (isRealCauchyRiemannOperator_torusCauchyRiemannOperator ν μ).sobolevL A
         (contMDiffCovariantDerivativeOn_torusCauchyRiemannOperator le_rfl hν hμ) volume p :=
@@ -282,7 +282,7 @@ theorem torusCauchyRiemannSobolevL_eq :
 (`TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL`). -/
 theorem isFredholm_torusCauchyRiemannSobolevL (hp : 1 < p) (hp_top : p ≠ ⊤) :
     (torusCauchyRiemannSobolevL A hν hμ p).IsFredholm := by
-  rw [torusCauchyRiemannSobolevL_eq]
+  rw [torusCauchyRiemannSobolevL_def]
   exact IsRealCauchyRiemannOperator.isFredholm_sobolevL A _ _ hp hp_top
 
 /-- **The index does not depend on the coefficients**: any two pairs of smooth coefficients give
@@ -292,7 +292,7 @@ theorem index_torusCauchyRiemannSobolevL_eq {ν' μ' : ℂ ⧸ Λ → ℂ}
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
     (torusCauchyRiemannSobolevL A hν' hμ' p).index =
       (torusCauchyRiemannSobolevL A hν hμ p).index := by
-  rw [torusCauchyRiemannSobolevL_eq, torusCauchyRiemannSobolevL_eq]
+  rw [torusCauchyRiemannSobolevL_def, torusCauchyRiemannSobolevL_def]
   exact IsRealCauchyRiemannOperator.index_sobolevL_eq A _ _ _ _ hp hp_top
 
 variable {p}
