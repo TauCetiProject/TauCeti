@@ -21,7 +21,7 @@ compactified space of trajectories, for every choice of `X` and of the levels.
 
 * No critical value lies strictly between `-1` and `1`, so every broken trajectory from `v` to `-v`
   is unbroken, and the trajectory space has empty boundary
-  (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_sphereHeight`).
+  (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_sphereHeight_eq_empty`).
 * Every point of height `a ∈ (-1, 1)` flows out of the north pole and into the south pole
   (`IsAdaptedPseudoGradient.unstableSet_inter_stableSet_inter_setOf_sphereHeight_eq` in
   `TauCeti`), so a trajectory is determined by its point on the parallel `{h = a}`.
@@ -39,8 +39,8 @@ loops of `Sⁿ`.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_sphereHeight`: the trajectory
-  space from the north pole to the south pole has empty boundary.
+* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_sphereHeight_eq_empty`: the
+  trajectory space from the north pole to the south pole has empty boundary.
 * `TauCeti.IsAdaptedPseudoGradient.exists_homeomorph_morseBrokenTrajectorySpace_sphereHeight`: it is
   homeomorphic to the unit sphere of `(ℝ ∙ v)ᗮ`, through the point of each trajectory on a level.
 
@@ -92,7 +92,7 @@ private theorem sphereHeight_notMem_Ioo_of_mfderiv_eq_zero {x : sphere (0 : E) 1
 /-- **The trajectory space from the north pole to the south pole has empty boundary.** No critical
 value of the height function lies strictly between `-1` and `1`, so every broken trajectory from
 `v` to `-v` is unbroken. -/
-theorem morseBrokenTrajectorySpaceBoundary_sphereHeight :
+theorem morseBrokenTrajectorySpaceBoundary_sphereHeight_eq_empty :
     hX.morseBrokenTrajectorySpaceBoundary c v (-v) = ∅ :=
   hX.morseBrokenTrajectorySpaceBoundary_eq_empty_of_forall_notMem
     ((mfderiv_sphereHeight_eq_zero_iff v v).2 (Or.inl rfl))
