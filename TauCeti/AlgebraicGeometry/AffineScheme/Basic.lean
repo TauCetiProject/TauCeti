@@ -592,6 +592,26 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
   obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
   exact Subtype.ext hzw.symm
 
+/-- Pulling a section to a nested open and identifying its top sections is restriction to
+that open. -/
+lemma Scheme.Opens.topIso_hom_appLE {X : Scheme.{u}} (U : X.Opens) (V : X.Opens) (s : Γ(X, V))
+    (he : (⊤ : (U.ι ⁻¹ᵁ V).toScheme.Opens) ≤
+      ((U.ι ⁻¹ᵁ V).ι ≫ U.ι) ⁻¹ᵁ V) :
+    (U.ι ⁻¹ᵁ V).topIso.hom
+      (((U.ι ⁻¹ᵁ V).ι ≫ U.ι).appLE V ⊤ he s) = U.ι.app V s := by
+  let W := U.ι ⁻¹ᵁ V
+  have hcomp : (W.ι ≫ U.ι).appLE V ⊤ he =
+      U.ι.app V ≫ W.ι.appLE W ⊤ W.ι_preimage_self.ge :=
+    Scheme.Hom.comp_appLE W.ι U.ι V ⊤ he
+  have heq : W.ι.appLE W ⊤ W.ι_preimage_self.ge ≫ W.topIso.hom =
+      𝟙 Γ(U.toScheme, W) := by
+    -- The appLE/topIso components are the presheaf restrictions on definitionally equal
+    -- opens; their composite is the restriction along the unique identity inclusion.
+    erw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_hom, ← Functor.map_comp]
+    convert U.toScheme.presheaf.map_id (Opposite.op W) using 1
+  rw [hcomp, CommRingCat.comp_apply]
+  exact ConcreteCategory.congr_hom heq (U.ι.app V s)
+
 /-- Let `j : Y ⟶ X` be an open immersion and `U` a quasi-compact and quasi-separated open of `X`,
 for instance an affine open, whose intersection with the image of `j` is the basic open of
 `s ∈ Γ(X, U)`. Then the sections of `Y` over `j⁻¹ U` are the localization `Γ(X, U)_s`, as a
@@ -821,3 +841,25 @@ theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom
     (hsV (Set.mem_image_of_mem f hx))
   obtain ⟨r, hsr, hrW⟩ := hpre.exists_basicOpen_superset_le hs hsPre hsW
   exact ⟨X.basicOpen r, hpre.basicOpen r, hsr, hrW⟩
+
+namespace AlgebraicGeometry
+
+/-- An affine test morphism factors through the complement of a zero locus exactly
+when the defining ideal becomes the unit ideal. -/
+lemma Scheme.Hom.range_subset_compl_zeroLocus_iff {T W : Scheme.{u}} [IsAffine W]
+    (a : W ⟶ T)
+    (J : Ideal Γ(T, ⊤)) :
+    Set.range a ⊆ (T.zeroLocus (U := ⊤) (J : Set Γ(T, ⊤)))ᶜ ↔ J.map a.appTop.hom = ⊤ := by
+  have hpre : a ⁻¹' T.zeroLocus (U := ⊤) (J : Set Γ(T, ⊤)) =
+      W.zeroLocus (U := ⊤) (a.appTop.hom '' (J : Set Γ(T, ⊤))) :=
+    Scheme.preimage_zeroLocus a _
+  have himage : (W.toSpecΓ : W → PrimeSpectrum Γ(W, ⊤)) ''
+      W.zeroLocus (U := ⊤) (a.appTop.hom '' (J : Set Γ(T, ⊤))) =
+        PrimeSpectrum.zeroLocus (a.appTop.hom '' (J : Set Γ(T, ⊤))) :=
+    W.toSpecΓ_image_zeroLocus _
+  rw [Set.subset_compl_iff_disjoint_left, ← Set.preimage_eq_empty_iff, hpre,
+    ← Set.image_eq_empty (f := (W.toSpecΓ : W → PrimeSpectrum Γ(W, ⊤))), himage,
+    ← PrimeSpectrum.zeroLocus_span, ← Ideal.map_span, Ideal.span_eq]
+  exact PrimeSpectrum.zeroLocus_empty_iff_eq_top
+
+end AlgebraicGeometry

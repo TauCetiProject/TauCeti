@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.Support
+public import Mathlib.RingTheory.Flat.LocallyFree
 
 /-!
 # Local generators of finite flat modules
@@ -20,6 +21,23 @@ neighbourhood is detected by the annihilator of the cokernel.
 public section
 
 namespace Module
+
+/-- A spanning family in a finite flat module is linearly independent when its
+cardinality equals the module's rank at every maximal ideal. -/
+theorem linearIndependent_of_span_eq_top_of_rankAtStalk {A M ι : Type*} [CommRing A]
+    [AddCommGroup M] [Module A M] [Module.Flat A M]
+    [Fintype ι] (v : ι → M) (hv : Submodule.span A (Set.range v) = ⊤)
+    (hM : ∀ (m : Ideal A) [m.IsMaximal],
+      Module.rankAtStalk (R := A) M ⟨m, inferInstance⟩ = Fintype.card ι) :
+    LinearIndependent A v := by
+  have hsurj : Function.Surjective (Finsupp.linearCombination A v) := by
+    rwa [← LinearMap.range_eq_top, Finsupp.range_linearCombination]
+  have : Module.Finite A M := Module.Finite.of_surjective _ hsurj
+  refine (Module.bijective_of_surjective_of_rankAtStalk_eq (M := ι →₀ A) (N := M)
+    (φ := Finsupp.linearCombination A v) hsurj fun m hm ↦ ?_).1
+  have := Ideal.Quotient.nontrivial_iff.mpr hm.ne_top
+  have := (Ideal.Quotient.mk_surjective (I := m)).nontrivial
+  simp [hM]
 
 attribute [local instance] Module.free_of_flat_of_isLocalRing in
 /-- From a spanning family of a finite flat module of rank `d` at `p`, one can select `d`

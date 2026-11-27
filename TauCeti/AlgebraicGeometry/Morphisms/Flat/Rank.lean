@@ -10,6 +10,9 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 public import TauCeti.AlgebraicGeometry.ResidueDegree
 public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.Flat.Rank
+public import TauCeti.RingTheory.RingHom.FiniteLocallyFree
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 
 /-!
 # The rank of finite flat morphisms
@@ -117,12 +120,74 @@ universe u
 
 variable {X Y S : Scheme.{u}}
 
+/-- Finiteness, flatness and constant rank are invariant under precomposition with an
+isomorphism of sources. -/
+theorem Scheme.Hom.isFinite_flat_finrank_comp_left_iff_of_isIso
+    {A B C : Scheme.{u}} (e : A ⟶ B) [IsIso e]
+    (p : B ⟶ C) (d : ℕ) :
+    (IsFinite (e ≫ p) ∧ Flat (e ≫ p) ∧ (e ≫ p).finrank = fun _ ↦ d) ↔
+      IsFinite p ∧ Flat p ∧ p.finrank = fun _ ↦ d := by
+  rw [MorphismProperty.cancel_left_of_respectsIso @IsFinite,
+    MorphismProperty.cancel_left_of_respectsIso @Flat]
+  exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ by
+    rw [Scheme.Hom.finrank_comp_left_of_isIso]
+
 /-- Composing a finite flat morphism with an isomorphism of targets transports its rank: the
 rank of `f ≫ e` at `e y` is the rank of `f` at `y`. -/
 @[simp]
 theorem Scheme.Hom.finrank_comp_right_of_isIso (f : X ⟶ Y) (e : Y ⟶ S) [IsIso e] [Flat f]
     [IsFinite f] (y : Y) : (f ≫ e).finrank (e y) = f.finrank y :=
   (finrank_of_isPullback (𝟙 X) f (f ≫ e) e (.of_horiz_isIso ⟨by simp⟩) y).symm
+
+/-- The rank of a finite flat morphism of affine schemes `f : X ⟶ Y` at `y` is the rank of the
+ring map `Γ(Y) ⟶ Γ(X)` at the prime corresponding to `y`. -/
+lemma Scheme.Hom.finrank_eq_finrank_appTop {Y : Scheme.{u}} [IsAffine Y]
+    (f : X ⟶ Y) [Flat f] [IsFinite f] (y : Y) :
+    f.finrank y = f.appTop.hom.finrank (Y.isoSpec.hom y) := by
+  have : IsAffine X := isAffine_of_isAffineHom f
+  have : Flat (Spec.map f.appTop) := Flat.SpecMap_iff.mpr f.flat_appTop
+  have : IsFinite (Spec.map f.appTop) := (IsFinite.SpecMap_iff _).mpr f.finite_appTop
+  rw [← finrank_comp_right_of_isIso f Y.isoSpec.hom, ← Scheme.isoSpec_hom_naturality,
+    finrank_comp_left_of_isIso, finrank_SpecMap_eq_finrank f.finite_appTop f.flat_appTop]
+
+/-- A finite flat morphism whose rank is locally constant is locally of finite presentation. -/
+theorem Scheme.Hom.locallyOfFinitePresentation_of_isLocallyConstant_finrank (f : X ⟶ Y)
+    [IsFinite f] [Flat f] (hrank : IsLocallyConstant f.finrank) :
+    LocallyOfFinitePresentation f := by
+  have : IsZariskiLocalAtTarget @LocallyOfFinitePresentation.{u} :=
+    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := RingHom.FinitePresentation)
+  let V (y : Y) : Y.Opens := ⟨{z | f.finrank z = f.finrank y}, hrank.isOpen_fiber _⟩
+  choose U hU hmem hle using fun y : Y ↦
+    TopologicalSpace.Opens.isBasis_iff_nbhd.1 Y.isBasis_affineOpens
+      (show y ∈ V y from rfl)
+  have hcover : ⨆ y, U y = ⊤ := by
+    apply top_le_iff.mp
+    intro y _
+    exact TopologicalSpace.Opens.mem_iSup.mpr ⟨y, hmem y⟩
+  let 𝒰 := Y.openCoverOfIsOpenCover U (.mk hcover)
+  refine IsZariskiLocalAtTarget.of_openCover (P := @LocallyOfFinitePresentation.{u})
+    𝒰 fun i ↦ ?_
+  let g := 𝒰.pullbackHom f i
+  have : IsAffine (𝒰.X i) := hU i
+  have : IsFinite g := inferInstanceAs (IsFinite (Limits.pullback.snd f (𝒰.f i)))
+  have : Flat g := inferInstanceAs (Flat (Limits.pullback.snd f (𝒰.f i)))
+  have : IsAffine ((𝒰.pullback₁ f).X i) := isAffine_of_isAffineHom g
+  rw [HasRingHomProperty.iff_of_isAffine (P := @LocallyOfFinitePresentation.{u})]
+  apply RingHom.IsFiniteLocallyFreeOfRank.finitePresentation (d := f.finrank i)
+  apply RingHom.isFiniteLocallyFreeOfRank_iff.mpr
+  refine ⟨g.finite_appTop, g.flat_appTop, fun p ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := (Scheme.homeoOfIso (𝒰.X i).isoSpec).surjective p
+  simpa only [Scheme.homeoOfIso_apply] using
+    (g.finrank_eq_finrank_appTop y).symm.trans
+      ((Scheme.Hom.finrank_pullback_snd f (𝒰.f i) y).trans (hle i y.property))
+
+/-- A finite flat morphism of constant rank is locally of finite presentation. -/
+theorem Scheme.Hom.locallyOfFinitePresentation_of_finrank_eq (f : X ⟶ Y)
+    [IsFinite f] [Flat f] {d : ℕ} (hrank : ∀ y, f.finrank y = d) :
+    LocallyOfFinitePresentation f := by
+  apply f.locallyOfFinitePresentation_of_isLocallyConstant_finrank
+  rw [show f.finrank = fun _ ↦ d from funext hrank]
+  exact IsLocallyConstant.const d
 
 /-- Over an affine open `U` of `Y`, a finite flat morphism `f : X ⟶ Y` is the spectrum of the map
 of coordinate rings `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`, so the rank of `f` at the point of `U` given by a

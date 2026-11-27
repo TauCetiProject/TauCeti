@@ -78,6 +78,13 @@ theorem app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶ Y) {U : Y.Opens
     exact ⟨_, h.trans (Category.assoc _ _ _)⟩
   rw [← ConcreteCategory.comp_apply, e, ConcreteCategory.comp_apply, hs, map_zero]
 
+/-- Pulling back a section of an ideal and restricting it to a smaller open gives a section
+of the inverse-image ideal. -/
+theorem appLE_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶ Y)
+    {U : Y.Opens} {V : X.Opens} (e : V ≤ g ⁻¹ᵁ U) {s : Γ(Y, U)}
+    (hs : s ∈ I.sections U) : g.appLE U V e s ∈ (I.comap g).sections V :=
+  (I.comap g).map_mem_sections (homOfLE e) (I.app_mem_sections_comap g hs)
+
 variable (I : Y.IdealSheafData) (g : X ⟶ Y)
 
 /-- The transpose of `g^* I ⟶ g^* 𝒪_Y ≅ 𝒪_X` is the inclusion `I ⟶ 𝒪_Y` followed by the map
