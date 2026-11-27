@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Contact.Transition
+public import TauCeti.Geometry.Manifold.Distribution.Coorientation.Pullback
 
 /-!
 # Contactomorphisms
@@ -32,7 +33,11 @@ contactomorphism exactly when `e^* β = f α` for a unique nowhere vanishing smo
 exactly when moreover `f > 0` (`Diffeomorph.preservesCoorientation_iff_exists_fun_smul`). On a
 connected manifold the multiplier has constant sign, so a contactomorphism preserves either the
 coorientation given by `β` or the opposite one given by `-β`
-(`Diffeomorph.IsContactomorphism.preservesCoorientation_or_neg`). A contactomorphism preserves
+(`Diffeomorph.IsContactomorphism.preservesCoorientation_or_neg`). For nowhere vanishing forms
+with kernels `D` and `D'` and `D = e^* D'`, preserving the coorientation is the same as pulling
+the coorientation of `D'` given by `β` back to the coorientation of `D` given by `α`, in the sense
+of the coorientations of hyperplane fields
+(`Diffeomorph.preservesCoorientation_iff_pullbackCoorientation_eq`). A contactomorphism preserves
 and reflects contactness (`Diffeomorph.IsContactomorphism.isContactForm_iff`), and a strict
 contactomorphism carries the Reeb vector field of `α` to that of `β`
 (`Diffeomorph.IsStrictContactomorphism.mfderiv_reebVectorField`).
@@ -61,6 +66,8 @@ when `c > 0`, and it is strict exactly when `c = 1`
   `Diffeomorph.preservesCoorientation_iff_exists_fun_smul`: descriptions by smooth multipliers.
 * `Diffeomorph.IsContactomorphism.preservesCoorientation_or_neg`: on a connected manifold, a
   contactomorphism preserves or reverses the coorientation.
+* `Diffeomorph.preservesCoorientation_iff_pullbackCoorientation_eq`: preserving the coorientation
+  is pulling back the coorientation of the hyperplane field.
 * `TauCeti.exists_isContactomorphism_not_preservesCoorientation`,
   `TauCeti.exists_preservesCoorientation_not_isStrictContactomorphism`: the three notions differ.
 
@@ -258,6 +265,28 @@ theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.val x ≠ 0)
   have hcf : c = f x := smul_left_injective ℝ (hα x) (hx.symm.trans (hmul x))
   exact hcf ▸ hc
 
+/-- **Preserving the coorientation is pulling the coorientation back.** Let `α` and `β` vanish
+nowhere, with kernels `D` and `D'`, and let the diffeomorphism `e` satisfy `D = e^* D'`. Then `e`
+preserves the coorientation from `α` to `β` exactly when it pulls the coorientation of `D'` given
+by `β` back to the coorientation of `D` given by `α`
+(`IsLocalDiffeomorph.pullbackCoorientation`, `TauCeti.SmoothForm.coorientation`). -/
+theorem preservesCoorientation_iff_pullbackCoorientation_eq
+    {D : Π x : M, Submodule ℝ (TangentSpace I x)} {D' : Π y : N, Submodule ℝ (TangentSpace J y)}
+    (hD : ∀ x, (D' (e x)).comap (mfderiv I J e x).toLinearMap = D x)
+    (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x)
+    (hβ : ∀ y, β.val y ≠ 0 ∧ RoughForm.ker β.val y = D' y) :
+    e.PreservesCoorientation α β ↔
+      e.isLocalDiffeomorph.pullbackCoorientation hD (β.coorientation hβ) = α.coorientation hα := by
+  have hβ' := SmoothForm.mpullback_val_ne_zero_and_ker_eq e.isLocalDiffeomorph hD hβ
+  rw [← SmoothForm.coorientation_mpullback e.isLocalDiffeomorph hD hβ, funext_iff]
+  refine forall_congr' fun x ↦
+    ⟨fun ⟨c, hc, h⟩ ↦ (SmoothForm.coorientation_eq_iff_pos hα hβ' h).2 hc, fun h ↦ ?_⟩
+  -- Two nonzero covectors on the same ray differ by a positive factor.
+  rw [SmoothForm.coorientation_eq_coorientation_iff] at h
+  obtain ⟨c, hc, hcv⟩ := h.exists_pos_right (SmoothForm.degreeOneEquiv_ne_zero (hβ' x).1)
+    (SmoothForm.degreeOneEquiv_ne_zero (hα x).1)
+  exact ⟨c, hc, SmoothForm.degreeOneEquiv_eq_smul_iff.1 hcv⟩
+
 /-- On a connected manifold, a contactomorphism from a nowhere vanishing form either preserves
 the coorientation given by `β` or the opposite coorientation given by `-β`: its multiplier is a
 continuous nowhere vanishing function, so it has constant sign. -/
@@ -330,7 +359,9 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-private theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
+/-- A diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space pulls the standard
+contact form back to `c` times itself. -/
+theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
     {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) :
     SmoothForm.mpullback e e.contMDiff (innerProductContactForm V) =
       c • innerProductContactForm V := by

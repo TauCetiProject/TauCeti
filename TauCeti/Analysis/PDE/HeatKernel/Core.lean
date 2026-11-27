@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.Generator
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import Mathlib.Topology.Algebra.Module.LinearPMap
+public import TauCeti.Analysis.Fourier.LaplacianSymbol
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Smoothing
 import TauCeti.Analysis.Semigroups.Generator.Closed
@@ -51,6 +53,8 @@ dense and the core is the space of smooth functions with bounded derivatives
   the generator of the heat semigroup on `Lᵖ`.
 * `TauCeti.weakLaplacianLp_hasCore_range_ambientToLp`: equivalently, the distributional Laplacian
   on `Lᵖ` with domain `{f ∈ Lᵖ : Δf ∈ Lᵖ}` is the closure of the Laplacian on test functions.
+* `TauCeti.exists_tendsto_toLp_and_tendsto_toLp_laplacian`: on `L²`, in Fourier form, every `ψ`
+  with `Δψ ∈ L²` is the limit of Schwartz functions `φₙ` with `Δφₙ → Δψ` in `L²`.
 
 ## References
 
@@ -74,7 +78,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-- The classes of test functions lie in the domain of the heat generator. -/
 private theorem range_ambientToLp_le_domain_generator_heatSemigroup (hp : p ≠ ∞) :
-    LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+    LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
       𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap ≤
         (heatSemigroup hp).generator.domain := by
   rintro _ ⟨φ, rfl⟩
@@ -92,14 +96,14 @@ private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
     (hf : (f : Lp F p (volume : Measure E)) =ᵐ[volume] u) :
     ((f : Lp F p (volume : Measure E)), (heatSemigroup hp).generator f) ∈
       closure (SetLike.coe ((heatSemigroup hp).generator.domRestrict
-        (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+        (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
           𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap)).graph) := by
   have hD := range_ambientToLp_le_domain_generator_heatSemigroup (E := E) (F := F) hp
   obtain ⟨g, hg, -, hlim⟩ :=
     exists_contDiff_hasCompactSupport_approximation hp (m := ⊤) hu 2 (by simp) hmem
   let φ (n : ℕ) : 𝓓((⊤ : Opens E), F) := ⟨g n, (hg n).1, (hg n).2, by simp⟩
-  have hφ (n : ℕ) : TestFunction.ambientToLp p volume (φ n) =ᵐ[volume] g n := by
-    simpa [φ] using TestFunction.coeFn_ambientToLp (p := p) (ν := volume) (φ n)
+  have hφ (n : ℕ) : TestFunction.ambientToLp ℝ p volume (φ n) =ᵐ[volume] g n := by
+    simpa [φ] using TestFunction.coeFn_ambientToLp (𝕜 := ℝ) (p := p) (ν := volume) (φ n)
   have hu2 : ContDiff ℝ 2 u := hu.of_le (by simp)
   have hg2 (n : ℕ) : ContDiff ℝ 2 (g n) := (hg n).1.of_le (by simp)
   have hΔ : MemLp (Δ u) p volume := (hmem 2 le_rfl).of_le_mul
@@ -115,7 +119,7 @@ private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
     (hg2 n).continuous_laplacian.memLp_of_hasCompactSupport (hg n).2.laplacian
   have hgen (n : ℕ) : (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩ = (hΔg n).toLp _ :=
     generator_heatSemigroup hp (hg2 n) (hg n).2 (hφ n) (hΔg n).coeFn_toLp
-  refine mem_closure_of_tendsto (b := atTop) (f := fun n => (TestFunction.ambientToLp p volume
+  refine mem_closure_of_tendsto (b := atTop) (f := fun n => (TestFunction.ambientToLp ℝ p volume
       (φ n), (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩)) (Tendsto.prodMk_nhds ?_ ?_)
     (Eventually.of_forall fun n => (LinearPMap.mem_graph_iff' _).mpr
       ⟨⟨_, ⟨φ n, rfl⟩, hD ⟨φ n, rfl⟩⟩, Prod.ext rfl (LinearPMap.domRestrict_apply rfl)⟩)
@@ -148,7 +152,7 @@ of the test functions `C_c^∞(E; F)` lie in the domain of the generator of the 
 `Lᵖ(E; F)`, and the closure of its restriction to them is the whole generator. -/
 theorem generator_heatSemigroup_hasCore_range_ambientToLp (hp : p ≠ ∞) :
     (heatSemigroup (E := E) (F := F) hp).generator.HasCore
-      (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+      (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
         𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap) := by
   set S := (heatSemigroup (E := E) (F := F) hp).toStronglyContinuousSemigroup
   refine (S.isClosed_generator.hasCore_iff_graph_subset_closure
@@ -183,9 +187,56 @@ For `1 ≤ p < ∞`, the test functions form a core for the Laplacian in the sen
 on `Lᵖ`, with domain `{f ∈ Lᵖ : Δf ∈ Lᵖ}`. -/
 theorem weakLaplacianLp_hasCore_range_ambientToLp (hp : p ≠ ∞) :
     (weakLaplacianLp E F p).HasCore
-      (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
+      (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
         𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap) := by
   rw [← generator_heatSemigroup_eq_weakLaplacianLp hp]
   exact generator_heatSemigroup_hasCore_range_ambientToLp hp
+
+/-! ### Schwartz functions are a core for the Laplacian on `L²` -/
+
+section L2
+
+open scoped FourierTransform SchwartzMap
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+
+/-- **Schwartz functions are a core for the Laplacian on `L²`.** If `ψ, χ ∈ L²(E, G)` satisfy
+`𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ` almost everywhere, that is `χ = Δψ` with `ψ` in the domain of the Laplacian
+on `L²`, then there are Schwartz functions `φₙ` with `φₙ → ψ` and `Δφₙ → χ` in `L²`. This is the
+case `p = 2` of `TauCeti.weakLaplacianLp_hasCore_range_ambientToLp`, in Fourier form. -/
+theorem exists_tendsto_toLp_and_tendsto_toLp_laplacian {ψ χ : Lp G 2 (volume : Measure E)}
+    (h : 𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) :
+    ∃ φ : ℕ → 𝓢(E, G), Tendsto (fun n ↦ (φ n).toLp 2) atTop (𝓝 ψ) ∧
+      Tendsto (fun n ↦ (Δ (φ n)).toLp 2) atTop (𝓝 χ) := by
+  set T : Set (Lp G 2 (volume : Measure E) × Lp G 2 (volume : Measure E)) :=
+    range fun φ : 𝓢(E, G) ↦ (φ.toLp 2, (Δ φ).toLp 2)
+  -- The graph of the Laplacian on test functions consists of Schwartz pairs `(φ, Δφ)`.
+  have hsub : (((weakLaplacianLp E G 2).domRestrict
+      (LinearMap.range (TestFunction.ambientToLp ℝ 2 (volume : Measure E) :
+        𝓓((⊤ : Opens E), G) →L[ℝ] Lp G 2 (volume : Measure E)).toLinearMap)).graph :
+          Set (Lp G 2 (volume : Measure E) × Lp G 2 (volume : Measure E))) ⊆ T := by
+    intro q hq
+    obtain ⟨⟨x, ⟨φ, hφ⟩, hx⟩, rfl⟩ := (LinearPMap.mem_graph_iff' _).1 hq
+    set φ' := TestFunction.toSchwartzMapCLM ℝ φ
+    have hφ' : (x : Lp G 2 (volume : Measure E)) =ᵐ[volume] φ' := by
+      rw [← hφ, TestFunction.coe_toSchwartzMapCLM]
+      exact TestFunction.coeFn_ambientToLp φ
+    refine ⟨φ', Prod.ext (Lp.ext (φ'.coeFn_toLp 2 volume |>.trans hφ'.symm)) ?_⟩
+    refine (weakLaplacianLp E G 2).mem_graph_snd_inj
+      (mem_graph_weakLaplacianLp_of_contDiff (φ'.smooth 2) hφ'
+        (((Δ φ').coeFn_toLp 2 volume).trans (ae_of_all _ (SchwartzMap.laplacian_apply φ'))))
+      ((weakLaplacianLp E G 2).mem_graph ⟨x, hx⟩) rfl |>.trans ?_
+    exact (LinearPMap.domRestrict_apply rfl).symm
+  have hmem := (weakLaplacianLp_hasCore_range_ambientToLp (p := 2)
+    ENNReal.ofNat_ne_top).graph_subset_of_isClosed isClosed_closure (hsub.trans subset_closure)
+    (mem_graph_weakLaplacianLp_of_laplacian_toTemperedDistribution_eq
+      ((Lp.laplacian_toTemperedDistribution_eq_iff ψ χ).2 h))
+  obtain ⟨q, hq, hlim⟩ := mem_closure_iff_seq_limit.1 hmem
+  choose φ hφ using hq
+  refine ⟨φ, ?_, ?_⟩
+  · simpa only [← hφ] using hlim.fst_nhds
+  · simpa only [← hφ] using hlim.snd_nhds
+
+end L2
 
 end TauCeti

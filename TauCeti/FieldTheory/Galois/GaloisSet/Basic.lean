@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 import TauCeti.Logic.Equiv.Basic
 import TauCeti.Logic.Equiv.Option
@@ -25,7 +26,8 @@ the multiplicities needed when counting étale algebras by their Galois actions.
 
 The stabilizer of each point is open, its fixed field is finite over `K`, and its degree
 is the orbit size. In particular, a nonempty labelled action is transitive exactly when
-the fixed field of a point stabilizer has degree `n`. These results use Mathlib's infinite
+the fixed field of a point stabilizer has degree `n`; one of size two is transitive unless it is
+trivial (`TauCeti.GaloisSet.isTransitive_or_eq_trivial`). These results use Mathlib's infinite
 Galois correspondence and orbit–stabilizer theorem. The conversion from continuous finite
 actions uses `TauCeti.isOpen_ker_toPermHom`.
 
@@ -144,8 +146,7 @@ theorem fixingSubgroup_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)).fixingSubgroup =
       MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i := by
   let := ρ.mulAction
-  exact InfiniteGalois.fixingSubgroup_fixedField
-    ⟨_, Subgroup.isClosed_of_isOpen _ (ρ.isOpen_stabilizer i)⟩
+  exact IntermediateField.fixingSubgroup_fixedField_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The field fixed by a point stabilizer is a finite extension of `K`. -/
 theorem finiteDimensional_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
@@ -153,8 +154,7 @@ theorem finiteDimensional_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n)
     FiniteDimensional K (IntermediateField.fixedField
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)) := by
   let := ρ.mulAction
-  rw [← InfiniteGalois.isOpen_iff_finite, ρ.fixingSubgroup_fixedField_stabilizer]
-  exact ρ.isOpen_stabilizer i
+  exact IntermediateField.finiteDimensional_fixedField_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The degree of the fixed field of a point stabilizer is the size of its orbit. -/
 theorem finrank_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
@@ -163,8 +163,7 @@ theorem finrank_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)) =
       Nat.card (MulAction.orbit (SeparableClosure K ≃ₐ[K] SeparableClosure K) i) := by
   let := ρ.mulAction
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index,
-    ρ.fixingSubgroup_fixedField_stabilizer, MulAction.index_stabilizer, Nat.card_coe_set_eq]
+  exact IntermediateField.finrank_fixedField_stabilizer_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The cardinality of an orbit equals the degree of its stabilizer's fixed field. -/
 theorem finrank_fixedField_stabilizer_eq_card_fiber (ρ : GaloisSet K n)
@@ -258,6 +257,16 @@ theorem fixedField_stabilizer_trivial (i : Fin n) :
     ext σ
     simp [MulAction.mem_stabilizer_iff]
   rw [hstab, InfiniteGalois.fixedField_bot]
+
+/-- A labelled Galois set of size two is either transitive or trivial: a permutation of `Fin 2`
+that moves one label exchanges the two. -/
+theorem isTransitive_or_eq_trivial (ρ : GaloisSet K 2) : ρ.IsTransitive ∨ ρ = trivial K 2 := by
+  have key : ∀ (e : Equiv.Perm (Fin 2)) (i a b : Fin 2), e i ≠ i → a ≠ b → e a = b := by decide
+  refine or_iff_not_imp_left.2 fun hρ ↦ ext fun σ i ↦ by_contra fun h ↦ hρ ?_
+  refine (isTransitive_iff ρ).2 fun a b ↦ ?_
+  by_cases hab : a = b
+  · exact ⟨1, by simp [hab]⟩
+  · exact ⟨σ, key _ i a b h hab⟩
 
 /-- Disjoint union of a family of Galois sets, labelled along `b : Fin n ≃ Σ i, Fin (d i)`. -/
 def sigma {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))

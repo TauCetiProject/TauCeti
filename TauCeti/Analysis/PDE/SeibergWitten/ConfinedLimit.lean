@@ -56,8 +56,10 @@ The proof assembles three steps.
   `b = b' - Im (h⁻¹ dh)` for the pulled-back connection `b'` of the vortex
   (`TauCeti.SeibergWitten.norm_eq_one_and_eq_normalConnection_sub_phaseForm`).
 
-The extraction of such a limit from actual large-parameter solutions, with its curvature and
-vacuum bounds, is not treated here.
+Limits of blown-up large-parameter solutions, in radial gauge, are extracted in
+`TauCeti.Analysis.PDE.SeibergWitten.Rescaling.Compactness` from uniform bounds on the blown-up
+fields; those bounds for actual solutions, and the vacuum bounds used here, are not treated
+here.
 
 ## Main results
 
@@ -305,7 +307,9 @@ theorem exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm (hb : Co
     rw [quadraticTwoForm_sqrt_smul o ρ hkl (by norm_num), Submodule.coe_smul, hF y]
     norm_num
   have hdbar (y : V) : covariantDBar J b α y = 0 :=
-    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀' b α y).1 (hD y)
+    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃) hu₀ hu₀' b α y).1
+      (hD y)
   -- The curvature is `J`-invariant, since its self-dual part is a multiple of `ω`.
   have hJF (y u w : V) : extDeriv b y ![J u, J w] = extDeriv b y ![u, w] := by
     have hP : cliffordProjection o ρ J.kahlerForm (α y • u₀) = α y • u₀ := by

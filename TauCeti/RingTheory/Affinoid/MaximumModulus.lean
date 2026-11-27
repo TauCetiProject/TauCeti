@@ -7,9 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 
-import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
@@ -26,11 +24,10 @@ the supremum `|f|sup` of the absolute values `|f(x)|` over the classical points 
 attained: there is a maximal ideal `x` of `A` with `|f(x)| = |f|sup`. For the Tate algebra
 `Tₙ = K⟨X₁, …, Xₙ⟩` the supremum seminorm is moreover the Gauss norm.
 
-For `Tₙ`, a series `f` attains its Gauss norm at a point whose coordinates are `m`-th roots of
-unity in the cyclotomic extension `E = K(μₘ)`, for a suitable `m` of norm one
-(`MvPowerSeries.exists_norm_restrictedEval₂_eq_norm`). The field `E` is finite over `K` and
-carries the spectral norm, so the kernel of evaluation at that point is a classical point `x` of
-`Tₙ`, at which `|f(x)|` is the norm of the value in `E`.
+For `Tₙ`, a series `f` attains its Gauss norm at a point over a finite normed field extension `E`
+of `K` (`MvPowerSeries.exists_finiteDimensional_norm_restrictedEval₂_eq_norm`). The norm of `E` is
+its spectral norm, so the kernel of evaluation at that point is a classical point `x` of `Tₙ`, at
+which `|f(x)|` is the norm of the value in `E`.
 
 For a general affinoid algebra, `|f|sup` is attained on the quotient by a minimal prime, so it
 suffices to treat an affinoid domain `B`. Choose a finite injective map `Tₙ → B`, and let
@@ -75,39 +72,11 @@ local notation "T" => IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)
 /-- **Maximum modulus principle for Tate algebras.** Every series `f ∈ K⟨X₁, …, Xₙ⟩` attains its
 Gauss norm at a classical point: `|f(x)| = ‖f‖` for some maximal ideal `x`. -/
 theorem exists_pointNorm_eq_norm (f : T) : ∃ x : MaximalSpectrum T, pointNorm K x f = ‖f‖ := by
-  classical
-  rcases eq_or_ne f 0 with rfl | hf
-  · obtain ⟨m, hm⟩ := Ideal.exists_maximal T
-    exact ⟨⟨m, hm⟩, by simp⟩
-  -- Choose `m` of norm one exceeding every exponent of every coefficient of norm `‖f‖`; there are
-  -- finitely many such coefficients since `f` is restricted and nonzero.
-  have hD : {t : Fin n →₀ ℕ | ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖}.Finite := by
-    have h := f.property.eventually (gt_mem_nhds (norm_pos_iff.mpr hf))
-    simp only [Filter.eventually_cofinite, not_lt, one_pow, Finsupp.prod_fun_one, mul_one] at h
-    exact h.subset fun t ht ↦ ht.ge
-  obtain ⟨m, hNm, hm⟩ := IsUltrametricDist.exists_lt_norm_natCast_eq_one K
-    (hD.toFinset.sup Finsupp.degree)
-  have hfm (t : Fin n →₀ ℕ) (ht : ‖coeff t (f : MvPowerSeries (Fin n) K)‖ = ‖f‖) (i : Fin n) :
-      t i < m :=
-    (Finsupp.le_degree i t).trans_lt ((Finset.le_sup (hD.mem_toFinset.mpr ht)).trans_lt hNm)
-  -- Evaluate at roots of unity in the cyclotomic extension `E = K(μₘ)` with its spectral norm.
-  have : NeZero (m : K) := ⟨fun h ↦ by simp [h] at hm⟩
-  have : NeZero m := ⟨fun h ↦ by simp [h] at hm⟩
-  let E := CyclotomicField m K
-  have : FiniteDimensional K E := IsCyclotomicExtension.finiteDimensional {m} K E
-  let : NormedField E := spectralNorm.normedField K E
-  let : NormedAlgebra K E := spectralNorm.normedAlgebra K E
-  have : IsUltrametricDist E :=
-    IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
-      isNonarchimedean_spectralNorm (K := K) (L := E) a b
-  have : CompleteSpace E := FiniteDimensional.completeSpace K E
-  have hφ (r : K) : ‖algebraMap K E r‖ = ‖r‖ := norm_algebraMap' E r
-  have hmE : ‖(m : E)‖ = 1 := by rw [← map_natCast (algebraMap K E), hφ, hm]
-  obtain ⟨x, hx, -, hfx⟩ := exists_norm_restrictedEval₂_eq_norm (algebraMap K E) hφ
-    (IsCyclotomicExtension.zeta_spec m K E) hmE f hfm
-  -- The kernel of evaluation at `x` is a classical point at which `|f|` is `‖f‖`.
-  let ψ : T →ₐ[K] E :=
-    { restrictedEval₂ (algebraMap K E) x (fun r ↦ (hφ r).le) hx with
+  -- `f` attains its Gauss norm at a point over a finite extension `L`, whose norm is the spectral
+  -- norm; the kernel of evaluation at that point is a classical point at which `|f|` is `‖f‖`.
+  obtain ⟨L, _, _, _, _, _, x, hx, hfx⟩ := exists_finiteDimensional_norm_restrictedEval₂_eq_norm f
+  let ψ : T →ₐ[K] L :=
+    { restrictedEval₂ (algebraMap K L) x (fun r ↦ (norm_algebraMap' L r).le) hx with
       commutes' := restrictedEval₂_algebraMap _ _ _ _ }
   refine ⟨⟨RingHom.ker ψ, ψ.ker_isMaximal_of_isAlgebraic⟩, ?_⟩
   rw [pointNorm_eq_spectralNorm (ψ := ψ) le_rfl, ← NormedAlgebra.norm_eq_spectralNorm K]

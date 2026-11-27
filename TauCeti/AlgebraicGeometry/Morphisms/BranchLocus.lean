@@ -41,13 +41,8 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFiniteType f]
 ramification locus, namely the generic point of an irreducible component of the closed
 ramification locus. -/
 theorem exists_maximal_ramificationLocus_specializes {x : X} (hx : x ∈ f.ramificationLocus) :
-    ∃ z ∈ f.ramificationLocus, z ⤳ x ∧ ∀ z' ∈ f.ramificationLocus, z' ⤳ z → z' = z := by
-  let : QuasiSober f.ramificationLocus :=
-    (f.isClosed_ramificationLocus).isClosedEmbedding_subtypeVal.quasiSober
-  obtain ⟨z, hz, hzx⟩ := (f.isClosed_ramificationLocus).exists_genericPoint_specializes hx
-  refine ⟨z, z.property, hzx, fun z' hz' hzz' ↦ ?_⟩
-  exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨z', hz'⟩
-    ((subtype_specializes_iff _ _).mpr hzz'))
+    ∃ z ∈ f.ramificationLocus, z ⤳ x ∧ ∀ z' ∈ f.ramificationLocus, z' ⤳ z → z' = z :=
+  f.isClosed_ramificationLocus.exists_maximal_specializes hx
 
 /-- A branch point without proper generizations in the branch locus lifts to a ramified
 point without proper generizations in the ramification locus. The lift may be chosen to

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Generation.Yosida.Basic
 import TauCeti.Analysis.Normed.Operator.Exponential
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import Mathlib.Topology.UniformSpace.UniformApproximation
 
 /-!

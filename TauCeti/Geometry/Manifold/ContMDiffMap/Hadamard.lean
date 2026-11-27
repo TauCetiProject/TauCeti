@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.LinearAlgebra.Basis.Defs
-import TauCeti.Analysis.Calculus.Hadamard
+import TauCeti.Analysis.Calculus.Hadamard.Basic
 
 /-!
 # Hadamard's lemma for smooth functions on a normed space

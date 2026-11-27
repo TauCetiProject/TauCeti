@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.One
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Holder
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!

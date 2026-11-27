@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.Ray
 public import Mathlib.Order.Interval.Set.ProjIcc
+import Mathlib.Analysis.Normed.Affine.Convex
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Affine segments and membership criteria
@@ -63,7 +65,11 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   `t ↦ t • y`.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
+* `TauCeti.zero_notMem_segment_of_norm_sub_smul_lt` — the segment from `c` to a point of the open
+  ball of radius `μ ‖c‖` about `μ • c`, for some `μ > 0`, avoids the origin.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
+* `TauCeti.norm_mem_Icc_of_mem_segment` — a chord of length at most `r` between two vectors of
+  norm `r` stays in the annulus `r / 2 ≤ ‖z‖ ≤ r`.
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
@@ -241,6 +247,38 @@ theorem norm_sub_le_of_smul_add_smul_eq {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : 0 �
     _ ≤ ‖x - ((1 - t) • x + t • x')‖ + ‖((1 - t) • x + t • x') - y'‖ := norm_add_le _ _
     _ = t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
       rw [h₁, h₂, norm_smul, norm_smul, Real.norm_of_nonneg ht₀, Real.norm_of_nonneg ht₁]
+
+/-- **Short chords stay in an annulus.** The points of a chord of length at most `r` between two
+vectors of norm `r` have norm between `r / 2` and `r`: the two pieces of the chord add up to its
+length (`dist_add_dist_of_mem_segment`), and closed balls are convex. -/
+theorem norm_mem_Icc_of_mem_segment {r : ℝ} {p q z : E} (hp : ‖p‖ = r) (hq : ‖q‖ = r)
+    (hpq : ‖p - q‖ ≤ r) (hz : z ∈ [p -[ℝ] q]) : r / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ r := by
+  have hd := dist_add_dist_of_mem_segment hz
+  rw [dist_eq_norm, dist_eq_norm, dist_eq_norm] at hd
+  refine ⟨by linarith [norm_sub_norm_le p z, norm_sub_norm_le q z, norm_sub_rev z q], ?_⟩
+  exact mem_closedBall_zero_iff.1 ((convex_closedBall (0 : E) r).segment_subset
+    (mem_closedBall_zero_iff.2 hp.le) (mem_closedBall_zero_iff.2 hq.le) hz)
+
+/-- The segment from a point `T` of the open ball of radius `μ ‖c‖` about `μ • c`, for some
+`μ > 0`, to `c` avoids the origin: such points lie in the open cone of positive multiples of the
+ball of radius `‖c‖` about `c`, which is convex and does not contain `0`. -/
+theorem zero_notMem_segment_of_norm_sub_smul_lt {T c : E} {μ : ℝ} (hμ : 0 < μ)
+    (hT : ‖T - μ • c‖ < μ * ‖c‖) : (0 : E) ∉ segment ℝ T c := by
+  rintro ⟨a, b, ha, hb, hab, h⟩
+  have hc : 0 < ‖c‖ := pos_of_mul_pos_right ((norm_nonneg _).trans_lt hT) hμ.le
+  -- The point is `(a μ + b) c` plus `a` times the deviation `T - μ c`.
+  have h' : (a * μ + b) • c = -(a • (T - μ • c)) := by
+    rw [← sub_eq_zero, sub_neg_eq_add, smul_sub, ← h]
+    module
+  have hn := congrArg norm h'
+  rw [norm_neg, norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
+    Real.norm_of_nonneg ha] at hn
+  -- So `b ‖c‖ ≤ 0`, hence `b = 0` and `a = 1`, and then `μ ‖c‖ = ‖T - μ c‖ < μ ‖c‖`.
+  have h₁ : b * ‖c‖ ≤ 0 := by nlinarith [mul_le_mul_of_nonneg_left hT.le ha]
+  obtain rfl : b = 0 := le_antisymm (by nlinarith) hb
+  obtain rfl : a = 1 := by linarith
+  simp only [one_mul, add_zero] at hn
+  linarith
 
 end Normed
 

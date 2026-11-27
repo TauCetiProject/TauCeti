@@ -9,7 +9,9 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.Persistence
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Algebra.AddCircle
 
 /-!
 # Morse and non-Morse functions on the circle
@@ -46,6 +48,11 @@ they are open in the `C²` topology, but not in the `C¹` topology.
   Hence no `C¹` neighbourhood of the cosine consists of functions with only nondegenerate critical
   points (`TauCeti.not_eventually_nhds_circleCos_forall_isManifoldNondegenerateCriticalPoint`):
   openness of the Morse condition needs the `C^k` topology with `k ≥ 2`.
+
+The cosine itself is the height function of the circle. Its critical points are its maximum `0`
+and its minimum `π` (`TauCeti.mem_criticalPoints_circleCos_iff`), labelled as critical points by
+`TauCeti.circleCosMaxCrit` and `TauCeti.circleCosMinCrit`, and a point at which it takes the value
+`a ∈ [-1, 1]` is `± arccos a` (`TauCeti.eq_or_eq_neg_arccos_of_circleCos_eq`).
 
 ## References
 
@@ -84,6 +91,74 @@ theorem isMorse_circleCos : IsMorse 𝓘(ℝ) circleCos := by
   rw [show iteratedDeriv 2 cos θ = -cos θ by simp, neg_ne_zero]
   intro hc
   simpa [hθ, hc] using sin_sq_add_cos_sq θ
+
+/-! ### Values, level sets and critical points of the cosine -/
+
+/-- A point of the circle at which the cosine takes the value `a ∈ [-1, 1]` is `± arccos a`. -/
+theorem eq_or_eq_neg_arccos_of_circleCos_eq {x : AddCircle (2 * π)} {a : ℝ}
+    (hx : circleCos x = a) (ha₁ : -1 ≤ a) (ha₂ : a ≤ 1) :
+    x = (Real.arccos a : ℝ) ∨ x = (-Real.arccos a : ℝ) :=
+  Real.Angle.cos_eq_real_cos_iff_eq_or_eq_neg.1 (hx.trans (Real.cos_arccos ha₁ ha₂).symm)
+
+/-- The cosine takes its maximum `1` at `0`. -/
+@[simp]
+theorem circleCos_zero : circleCos 0 = 1 :=
+  Real.Angle.cos_zero
+
+/-- The cosine takes its minimum `-1` at `π`. -/
+theorem circleCos_pi : circleCos ((π : ℝ) : AddCircle (2 * π)) = -1 :=
+  Real.Angle.cos_coe_pi
+
+/-- **The critical points of the cosine on the circle** are its maximum `0` and its minimum `π`. -/
+theorem mem_criticalPoints_circleCos_iff {x : AddCircle (2 * π)} :
+    x ∈ criticalPoints 𝓘(ℝ) circleCos ↔ x = 0 ∨ x = (π : ℝ) := by
+  have hlift : circleCos = Real.cos_periodic.lift := funext fun x ↦ by
+    induction x using QuotientAddGroup.induction_on with | H φ =>
+    rw [circleCos_coe, Real.cos_periodic.lift_coe]
+  induction x using QuotientAddGroup.induction_on with | H φ =>
+  rw [hlift]
+  refine (Real.cos_periodic.coe_mem_criticalPoints_lift_iff φ).trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [Real.deriv_cos, neg_eq_zero, Real.sin_eq_zero_iff] at h
+    obtain ⟨n, rfl⟩ := h
+    obtain ⟨m, rfl | rfl⟩ := Int.even_or_odd' n
+    · exact .inl <| (AddCircle.coe_eq_coe_iff_exists_zsmul.2
+        ⟨m, by push_cast; rw [zsmul_eq_mul]; ring⟩).trans
+        (AddCircle.coe_zero ..)
+    · exact .inr <| AddCircle.coe_eq_coe_iff_exists_zsmul.2
+        ⟨m, by push_cast; rw [zsmul_eq_mul]; ring⟩
+  · rw [Real.deriv_cos, neg_eq_zero]
+    rcases h with h | h
+    · obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (QuotientAddGroup.eq_zero_iff φ |>.1 h)
+      rw [← hk, zsmul_eq_mul, show (k : ℝ) * (2 * π) = ((2 * k : ℤ) : ℝ) * π by push_cast; ring,
+        Real.sin_int_mul_pi]
+    · obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (QuotientAddGroup.eq_iff_sub_mem.1 h)
+      rw [show φ = ((2 * k + 1 : ℤ) : ℝ) * π by push_cast; rw [zsmul_eq_mul] at hk; linarith,
+        Real.sin_int_mul_pi]
+
+-- The bodies are exposed so that objects indexed by these critical points, such as spaces of
+-- trajectories between them, are by definition those of the points `0` and `π` of the circle.
+/-- The maximum `0` of the cosine, as a critical point. -/
+@[expose] noncomputable def circleCosMaxCrit : criticalPoints 𝓘(ℝ) circleCos :=
+  ⟨0, mem_criticalPoints_circleCos_iff.2 (.inl rfl)⟩
+
+/-- The minimum `π` of the cosine, as a critical point. -/
+@[expose] noncomputable def circleCosMinCrit : criticalPoints 𝓘(ℝ) circleCos :=
+  ⟨(π : ℝ), mem_criticalPoints_circleCos_iff.2 (.inr rfl)⟩
+
+@[simp]
+theorem coe_circleCosMaxCrit : (circleCosMaxCrit : AddCircle (2 * π)) = 0 :=
+  (rfl)
+
+@[simp]
+theorem coe_circleCosMinCrit : (circleCosMinCrit : AddCircle (2 * π)) = (π : ℝ) :=
+  (rfl)
+
+/-- The cosine has finitely many critical points, its maximum and its minimum. -/
+noncomputable instance : Fintype (criticalPoints 𝓘(ℝ) circleCos) :=
+  ((Set.toFinite ({0, ((π : ℝ) : AddCircle (2 * π))} : Set (AddCircle (2 * π)))).subset fun _ hx ↦
+    mem_criticalPoints_circleCos_iff.1 hx).fintype
+
+/-! ### Stability of the cosine -/
 
 /-- **Explicit `C²` stability of the cosine.** If `h` is a `2π`-periodic `C²` function with
 `h'(θ)² + h''(θ)² < 1` for every `θ`, then every critical point of `cos + h` on the circle is

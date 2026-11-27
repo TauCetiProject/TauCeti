@@ -19,6 +19,10 @@ The index types are arbitrary and all sums take values in `ℝ≥0∞`. The iden
 apply to infinite orthogonal decompositions and to operators of infinite energy, without
 summability assumptions. Orthogonal projections onto a subspace and its orthogonal complement
 give the binary splitting formulas.
+For an operator of finite energy, the splitting by an orthogonal projection `p` becomes
+Pythagoras for the norm, `‖T‖_HS² = ‖p T‖_HS² + ‖(1 - p) T‖_HS²`. Applied to `p` and to the
+pieces `(1 - p) T` and `p (1 - q) T` of `(1 - p q) T`, it bounds the energy removed by `p q`:
+`‖(1 - p q) T‖_HS² ≤ ‖(1 - p) T‖_HS² + ‖(1 - q) T‖_HS²` for every operator `q` on the target.
 
 ## References
 
@@ -26,6 +30,9 @@ give the binary splitting formulas.
   revised edition, Academic Press, 1980, Section VI.6.
 * B. Simon, *Trace Ideals and Their Applications*, second edition, American Mathematical
   Society, 2005, Section 2.
+* The bound for `1 - p q` follows the statement `New.hilbertSchmidtNorm_one_sub_mul_comp_sq_le`
+  in the folder `grh` of https://github.com/lsernau/grh-lean at commit
+  72fead102f663d5c7a407964a13dc0cf9d977207.
 -/
 
 public section
@@ -89,6 +96,44 @@ theorem hilbertSchmidtEnergy_comp_starProjection_add_orthogonal (T : E →L[𝕜
   simpa only [← star_eq_adjoint, (isSelfAdjoint_starProjection U).star_eq,
     (isSelfAdjoint_starProjection Uᗮ).star_eq] using
     hilbertSchmidtEnergy_starProjection_comp_add_orthogonal (adjoint T) c U
+
+/-- **Pythagoras for the Hilbert–Schmidt norm.** For an orthogonal projection `p` of the target
+and an operator `T` of finite energy, `‖T‖_HS² = ‖p T‖_HS² + ‖(1 - p) T‖_HS²`. On a
+finite-dimensional source the energy hypothesis is `hilbertSchmidtEnergy_ne_top`. -/
+theorem sq_hilbertSchmidtNorm_eq_comp_add_one_sub_comp {p : F →L[𝕜] F}
+    (hp : IsStarProjection p) (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
+    (h : T.hilbertSchmidtEnergy b ≠ ∞) :
+    T.hilbertSchmidtNorm ^ 2 =
+      (p ∘L T).hilbertSchmidtNorm ^ 2 + ((1 - p) ∘L T).hilbertSchmidtNorm ^ 2 := by
+  obtain ⟨V, _, rfl⟩ := isStarProjection_iff_eq_starProjection.mp hp
+  have hsum := hilbertSchmidtEnergy_starProjection_comp_add_orthogonal T b V
+  rw [← hsum, ENNReal.add_ne_top] at h
+  simp only [← Submodule.starProjection_orthogonal', sq_hilbertSchmidtNorm _ b]
+  rw [← ENNReal.toReal_add h.1 h.2, hsum]
+
+/-- **Energy removed by a product with a projection.** For an orthogonal projection `p`, any
+operator `q` on the target and an operator `T` of finite energy,
+`‖(1 - p q) T‖_HS² ≤ ‖(1 - p) T‖_HS² + ‖(1 - q) T‖_HS²`. -/
+theorem sq_hilbertSchmidtNorm_one_sub_mul_comp_le {p : F →L[𝕜] F} (hp : IsStarProjection p)
+    (q : F →L[𝕜] F) (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
+    (h : T.hilbertSchmidtEnergy b ≠ ∞) :
+    ((1 - p * q) ∘L T).hilbertSchmidtNorm ^ 2 ≤
+      ((1 - p) ∘L T).hilbertSchmidtNorm ^ 2 + ((1 - q) ∘L T).hilbertSchmidtNorm ^ 2 := by
+  have hfin (X : F →L[𝕜] F) : (X ∘L T).hilbertSchmidtEnergy b ≠ ∞ :=
+    ne_top_of_le_ne_top (ENNReal.mul_ne_top (by simp) h) (hilbertSchmidtEnergy_comp_le_left X T b)
+  have hpp : p * p = p := hp.isIdempotentElem.eq
+  -- `1 - p q = (1 - p) + p (1 - q)`, and the two pieces have orthogonal ranges.
+  have h₁ : p * (1 - p * q) = p * (1 - q) := by
+    rw [mul_sub, mul_sub, ← mul_assoc, hpp]
+  have h₂ : (1 - p) * (1 - p * q) = 1 - p := by
+    rw [sub_mul, one_mul, h₁, mul_sub, mul_one]
+    abel
+  rw [sq_hilbertSchmidtNorm_eq_comp_add_one_sub_comp hp _ b (hfin _), ← comp_assoc, ← mul_def,
+    h₁, ← comp_assoc, ← mul_def, h₂, add_comm, mul_def, comp_assoc]
+  have hle := (hilbertSchmidtNorm_comp_le_left p ((1 - q) ∘L T) b (hfin _)).trans
+    (mul_le_of_le_one_left (hilbertSchmidtNorm_nonneg _) hp.norm_le)
+  gcongr
+  exact hilbertSchmidtNorm_nonneg _
 
 /-- Squared-norm splittings on the target and on the adjoints of source operators give the
 joint Pythagoras identity for Hilbert–Schmidt energy. The blocks may have a different source

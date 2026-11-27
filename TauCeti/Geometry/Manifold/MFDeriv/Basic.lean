@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Basic facts about manifold derivatives
 
 This file collects general facts about `mfderiv` that need nothing beyond Mathlib's basic
-manifold-derivative API.
+manifold-derivative API and the derivatives of extended charts.
 
 ## Main results
 
@@ -36,6 +37,12 @@ manifold-derivative API.
   differentiability hypothesis.
 * `TauCeti.finiteDimensional_of_injective_mfderiv`: a map into a finite-dimensional manifold
   whose differential is injective at some point has a finite-dimensional source model.
+* `TauCeti.injective_mfderiv_of_injective_mfderiv_comp`: if `d(g ∘ f)_x` is injective and `f`, `g`
+  are differentiable at `x`, `f x`, then `df_x` is injective.
+* `TauCeti.mfderiv_ne_zero_of_injective`: an injective differential out of a manifold with a
+  nontrivial model space is nonzero.
+* `TauCeti.injective_mfderiv_of_eventuallyEq_comp_extChartAt`: a map agreeing near `x` with
+  `g ∘ extChartAt I x` has injective differential at `x` when `g` does at the chart image of `x`.
 -/
 
 public section
@@ -201,5 +208,47 @@ theorem finiteDimensional_of_injective_mfderiv {f : M → N}
   have : FiniteDimensional 𝕜 (TangentSpace I x) :=
     Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
   exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
+
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] in
+/-- If `g ∘ f` has injective differential at `x`, where `f` is differentiable at `x` and `g` at
+`f x`, then `f` has injective differential at `x`: by the chain rule,
+`d(g ∘ f)_x = dg_(f x) ∘ df_x`. -/
+theorem injective_mfderiv_of_injective_mfderiv_comp {f : M → N} {g : N → P}
+    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x)
+    (hinj : Function.Injective (mfderiv I K (g ∘ f) x)) :
+    Function.Injective (mfderiv I J f x) := by
+  rw [mfderiv_comp x hg hf, ContinuousLinearMap.coe_comp] at hinj
+  exact hinj.of_comp
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map out of a manifold modelled on a nontrivial space whose differential at `x` is injective
+has nonzero differential at `x`. -/
+theorem mfderiv_ne_zero_of_injective [Nontrivial E] {f : M → N}
+    (hinj : Function.Injective (mfderiv I J f x)) : mfderiv I J f x ≠ 0 := by
+  -- The tangent space at `x` is the nontrivial model space, so the zero map is not injective.
+  have : Nontrivial (TangentSpace I x) := ‹Nontrivial E›
+  exact fun h0 ↦ LinearMap.ne_zero_of_injective hinj
+    (by rw [h0, ContinuousLinearMap.toLinearMap_zero])
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map agreeing near `x` with `g ∘ φ`, for the extended chart `φ` at `x` and a map `g` on the
+model space with injective differential at `φ x`, has injective differential at `x`: the
+differential of `φ` at `x` is invertible. -/
+theorem injective_mfderiv_of_eventuallyEq_comp_extChartAt [IsManifold I 1 M] {f : M → N}
+    {g : E → N} (hgd : MDifferentiableAt 𝓘(𝕜, E) J g (extChartAt I x x))
+    (hg : Function.Injective (mfderiv 𝓘(𝕜, E) J g (extChartAt I x x)))
+    (hev : f =ᶠ[𝓝 x] g ∘ extChartAt I x) : Function.Injective (mfderiv I J f x) := by
+  have hφ := (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H x)).hasMFDerivAt
+  rw [((hgd.hasMFDerivAt.comp x hφ).congr_of_eventuallyEq hev).mfderiv,
+    ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
+  refine (tangentSpaceCast _ _ _).injective.comp (hg.comp ?_)
+  obtain ⟨A, hA⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x)
+  rw [← hA]
+  exact A.injective
 
 end TauCeti

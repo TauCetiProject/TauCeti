@@ -21,8 +21,11 @@ the complex root multiset of this polynomial, which is used to compute with the 
 for instance to show that `φ` is a Pisot number and that the Mahler measure of `X² - X - 1` is `φ`.
 It also records the identity `φ⁻¹ = φ - 1`, which keeps computations with `φ⁻¹` inside `ℤ[φ]`, the
 integer and fractional parts of `φ` (so that `φ` is a fixed point of the Gauss map), the
-evaluation `TauCeti.goldenEval` of `ℤ[φ] = QuadraticAlgebra ℤ 1 1` at `φ`, and the elementary bound
-`log φ < 1 / 2` (`φ² < e`).
+evaluation `TauCeti.goldenEval` of `ℤ[φ] = QuadraticAlgebra ℤ 1 1` at `φ`, the elementary bound
+`log φ < 1 / 2` (`φ² < e`), and the lower bound `1 ≤ |q * φ - p| * |q * ψ - p|` for integers `p`
+and `q` that are not both zero, which holds because the product is the nonzero integer
+`p ^ 2 - p * q - q ^ 2`. Since `q * ψ - p = q * φ - p - q * √5`, this gives the bound
+`1 ≤ x * (x + |q| * √5)` on `x = |q * φ - p|`.
 
 ## Main results
 
@@ -33,6 +36,10 @@ evaluation `TauCeti.goldenEval` of `ℤ[φ] = QuadraticAlgebra ℤ 1 1` at `φ`,
 * `TauCeti.inv_goldenRatio_eq_goldenRatio_sub_one`: `φ⁻¹ = φ - 1`.
 * `TauCeti.goldenEval_apply`: the evaluation at `φ` sends `a + b ω` to `a + b φ`.
 * `TauCeti.log_goldenRatio_lt_one_half`: `Real.log Real.goldenRatio < 1 / 2`.
+* `TauCeti.one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub`: for integers `p` and `q`
+  that are not both zero, `1 ≤ |q * φ - p| * |q * ψ - p|`.
+* `TauCeti.one_le_abs_mul_goldenRatio_sub_mul_add`: for integers `p` and `q` that are not both
+  zero, `1 ≤ |q * φ - p| * (|q * φ - p| + |q| * √5)`.
 -/
 
 public section
@@ -91,5 +98,38 @@ theorem log_goldenRatio_lt_one_half : Real.log Real.goldenRatio < 1 / 2 := by
   have h := (Real.log_lt_log_iff (pow_pos Real.goldenRatio_pos 2) (Real.exp_pos 1)).mpr hφ_sq
   rw [Real.log_pow, Nat.cast_ofNat, Real.log_exp] at h
   linarith
+
+/-- For integers `p` and `q` that are not both zero, the product of `|q * φ - p|` and
+`|q * ψ - p|` is at least `1`, where `ψ` is the conjugate of `φ`. -/
+theorem one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub {p q : ℤ} (h : p ≠ 0 ∨ q ≠ 0) :
+    1 ≤ |q * φ - p| * |q * ψ - p| := by
+  -- `q * x - p` vanishes for no irrational `x`: this is `p ≠ 0` when `q = 0`
+  have hne : ∀ {x : ℝ}, Irrational x → (q : ℝ) * x - p ≠ 0 := fun {x} hx ↦ by
+    rcases eq_or_ne q 0 with rfl | hq
+    · simpa using h
+    · exact sub_ne_zero.mpr ((hx.intCast_mul hq).ne_int p)
+  have hprod : ((q : ℝ) * φ - p) * (q * ψ - p) = ((p ^ 2 - p * q - q ^ 2 : ℤ) : ℝ) := by
+    push_cast
+    linear_combination (q : ℝ) ^ 2 * Real.goldenRatio_mul_goldenConj -
+      (p * q : ℝ) * Real.goldenRatio_add_goldenConj
+  have h0 : p ^ 2 - p * q - q ^ 2 ≠ 0 := fun h0 ↦
+    mul_ne_zero (hne Real.goldenRatio_irrational) (hne Real.goldenConj_irrational)
+      (by rw [hprod, h0, Int.cast_zero])
+  rw [← abs_mul, hprod, ← Int.cast_abs]
+  exact_mod_cast Int.one_le_abs h0
+
+/-- For integers `p` and `q` that are not both zero, `x = |q * φ - p|` satisfies
+`1 ≤ x * (x + |q| * √5)`. This bounds the approximation error `x` from below in terms of `|q|`. -/
+theorem one_le_abs_mul_goldenRatio_sub_mul_add {p q : ℤ} (h : p ≠ 0 ∨ q ≠ 0) :
+    1 ≤ |q * φ - p| * (|q * φ - p| + |(q : ℝ)| * √5) := by
+  have hy : (q : ℝ) * ψ - p = q * φ - p - q * √5 := by
+    rw [← Real.goldenRatio_sub_goldenConj]
+    ring
+  have hle : |(q : ℝ) * ψ - p| ≤ |q * φ - p| + |(q : ℝ)| * √5 :=
+    calc |(q : ℝ) * ψ - p| = |q * φ - p - q * √5| := by rw [hy]
+      _ ≤ |q * φ - p| + |(q : ℝ) * √5| := abs_sub _ _
+      _ = |q * φ - p| + |(q : ℝ)| * √5 := by rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg 5)]
+  exact (one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub h).trans
+    (mul_le_mul_of_nonneg_left hle (abs_nonneg _))
 
 end TauCeti

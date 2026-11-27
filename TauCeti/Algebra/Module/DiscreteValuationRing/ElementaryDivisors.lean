@@ -101,11 +101,7 @@ theorem length_pow_maximalIdeal_smul_top_quotient_smul_top
     (maximalIdeal R ^ k • ⊤ : Submodule R M)
   rw [← Submodule.mul_smul, ← pow_succ', length_quotient_pow_maximalIdeal_smul_top f,
     length_quotient_pow_maximalIdeal_smul_top f] at h
-  -- termwise, `min (k + 1) (e i) = min k (e i) + [k < e i]`
-  have hsum : ∑ i, min (k + 1) (e i) = ∑ i, min k (e i) + #{i | k < e i} := by
-    rw [Finset.card_filter, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ by split_ifs <;> omega
-  rw [hsum, Nat.cast_add, add_comm] at h
+  rw [Finset.sum_min_add_one, Nat.cast_add, add_comm] at h
   exact (WithTop.add_right_cancel (ENat.natCast_ne_top _) h).symm
 
 /-- **The graded ranks of a module of type `e`.** If `M ≃ ∏ i, R ⧸ 𝔪 ^ e i`, then the graded

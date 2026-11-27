@@ -44,15 +44,28 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
 * `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
   change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
   `B ⊗[R] M`.
+* `LinearMap.injective_lTensor_baseChange_iff`: tensoring with a module over an `R`-algebra gives
+  the same injectivity test before and after extending scalars to that algebra.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
   `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
+* `AlgHom.distribBaseChange_symm_rTensor_tmul`: the same comparison is natural in the scalar
+  algebra, along an algebra map `f : A →ₐ[R] B`.
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `Submodule.map_cancelBaseChange_baseChange_baseChange`: along a tower `R → K → A`, cancelling
+  the base change carries `(N_K)_A` onto `N_A`.
 * `LinearMap.baseChange_leftInverse`: base change preserves left inverses.
+* `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`,
+  `LinearMap.ext_one_tmul`, `LinearMap.eq_liftBaseChangeSemilinear_iff`,
+  `AddMonoidHom.eq_liftBaseChangeSemilinear_iff`, `LinearMap.apply_liftBaseChangeSemilinear`,
+  `AddMonoidHom.apply_liftBaseChangeSemilinear`, and
+  `AddMonoidHom.liftBaseChangeSemilinear_mk_one`: semilinear extensions out of `S ⊗[R] M`,
+  generalizing Mathlib's linear construction `LinearMap.liftBaseChangeEquiv`, together with their
+  universal property and compatibility with linear forms.
 -/
 
 public section
@@ -101,6 +114,23 @@ theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 
   | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
 
+/-- For an `A`-module `B` with compatible `R`-action, tensoring an `R`-linear map with `B` over
+`R` gives an injective map if and only if extending scalars to `A` and then tensoring with `B`
+over `A` does. -/
+theorem LinearMap.injective_lTensor_baseChange_iff {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    (A B : Type*) [CommSemiring A] [Algebra R A] [AddCommMonoid B] [Module A B] [Module R B]
+    [IsScalarTower R A B] :
+    Function.Injective ((f.baseChange A).lTensor B) ↔ Function.Injective (f.lTensor B) := by
+  let eM := AlgebraTensorModule.cancelBaseChange R A A B M
+  let eN := AlgebraTensorModule.cancelBaseChange R A A B N
+  have hcomm : eN ∘ (f.baseChange A).lTensor B = f.lTensor B ∘ eM := by
+    -- The scalar-linear tensor maps in the naturality lemma have the same underlying functions.
+    funext z
+    exact LinearMap.congr_fun
+      (AlgebraTensorModule.lTensor_comp_cancelBaseChange R A A f).symm z
+  rw [← EquivLike.comp_injective _ eN, hcomm, EquivLike.injective_comp]
+
 /-- The comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` distributing scalar
 extension over a tensor product is natural in both tensor factors. -/
 theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange
@@ -130,6 +160,25 @@ theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul
       (TensorProduct.map f g).baseChange A ((distribBaseChange R A M N).symm (x ⊗ₜ[A] y)) :=
   LinearMap.congr_fun (distribBaseChange_symm_comp_map_baseChange f g) (x ⊗ₜ[A] y)
 
+/-- On pure tensors, the comparison maps of scalar extensions along `f : A →ₐ[R] B` intertwine
+the comparisons `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two scalar algebras. -/
+theorem AlgHom.distribBaseChange_symm_rTensor_tmul {R A B M N : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (f : A →ₐ[R] B) (u : A ⊗[R] M) (v : A ⊗[R] N) :
+    (AlgebraTensorModule.distribBaseChange R B M N).symm
+        (LinearMap.rTensor M f.toLinearMap u ⊗ₜ[B] LinearMap.rTensor N f.toLinearMap v) =
+      LinearMap.rTensor (M ⊗[R] N) f.toLinearMap
+        ((AlgebraTensorModule.distribBaseChange R A M N).symm (u ⊗ₜ[A] v)) := by
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ hu₁ hu₂ => simp only [map_add, add_tmul, hu₁, hu₂]
+  | tmul a m =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ hv₁ hv₂ => simp only [map_add, tmul_add, hv₁, hv₂]
+    | tmul b n =>
+      simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply,
+        AlgebraTensorModule.distribBaseChange_symm_tmul, map_mul]
+
 /-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
 sign: `r ⊗ m = 1 ⊗ r • m`. -/
 theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [AddCommMonoid M]
@@ -148,6 +197,23 @@ theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemir
     ← tmul_smul]
   exact tmul_mem_baseChange_of_mem 1 hx
 
+/-- Along a tower `R → K → A`, cancelling the base change `A ⊗[K] (K ⊗[R] M) ≃ A ⊗[R] M` carries
+`(N_K)_A` onto `N_A`. -/
+@[simp]
+theorem Submodule.map_cancelBaseChange_baseChange_baseChange {R K M : Type*} [CommSemiring R]
+    [CommSemiring K] [Algebra R K] [AddCommMonoid M] [Module R M] (N : Submodule R M)
+    (A : Type*) [CommSemiring A] [Algebra R A] [Algebra K A] [IsScalarTower R K A] :
+    ((N.baseChange K).baseChange A).map
+        (TensorProduct.AlgebraTensorModule.cancelBaseChange R K A A M).toLinearMap =
+      N.baseChange A := by
+  conv_lhs => rw [← N.span_eq]
+  conv_rhs => rw [← N.span_eq]
+  rw [baseChange_span, baseChange_span, baseChange_span, map_span, Set.image_image,
+    Set.image_image]
+  simp only [mk_apply, LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_tmul, one_smul]
+  -- both sides are spanned by the `1 ⊗ₜ x` for `x ∈ N`
+  exact congrArg (span A) (Set.image_congr fun x _ ↦ (mk_apply 1 x).symm)
+
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/
 theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [Semiring A]
@@ -156,6 +222,115 @@ theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [Sem
     Function.LeftInverse (f.baseChange A) (g.baseChange A) := fun z ↦ by
   rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, h, LinearMap.baseChange_id,
     LinearMap.id_apply]
+
+section Semilinear
+
+variable {R S T M V : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [Semiring T]
+  {σ : S →+* T} [AddCommMonoid M] [Module R M] [AddCommMonoid V] [Module T V]
+
+private def liftBaseChangeSemilinearAux (f : M →ₛₗ[σ.comp (algebraMap R S)] V) :
+    { g : (S ⊗[R] M) →ₛₗ[σ] V // ∀ s m, g (s ⊗ₜ[R] m) = σ s • f m } :=
+  letI : Module S V := Module.compHom V σ
+  letI : Module R V := Module.compHom V (algebraMap R S)
+  haveI : IsScalarTower R S V := IsScalarTower.of_compHom R S V
+  let f' : M →ₗ[R] V :=
+    { toFun := f, map_add' := f.map_add, map_smul' := fun r m ↦ (f.map_smulₛₗ r m).trans
+        ((MulAction.compHom_smul_def σ.toMonoidHom (algebraMap R S r) (f m)).symm.trans
+          (MulAction.compHom_smul_def (algebraMap R S : R →* S) r (f m)).symm) }
+  let g : @LinearMap S S _ _ (RingHom.id S) (S ⊗[R] M) V _ _ _ (Module.compHom V σ) :=
+    AlgebraTensorModule.lift ((LinearMap.ringLmapEquivSelf S ℕ (M →ₗ[R] V)).symm f')
+  ⟨{ toFun := g, map_add' := g.map_add, map_smul' := fun s z ↦ (g.map_smul s z).trans
+      (MulAction.compHom_smul_def σ.toMonoidHom s (g z)) },
+   fun s m ↦ by
+     dsimp only [g, f']
+     rw [LinearMap.coe_mk, AddHom.coe_mk, AlgebraTensorModule.lift_tmul,
+       LinearMap.ringLmapEquivSelf_symm_apply]
+     exact MulAction.compHom_smul_def σ.toMonoidHom s (f m)⟩
+
+/-- Lift `f : M →ₛₗ[σ.comp (algebraMap R S)] V` to `(S ⊗[R] M) →ₛₗ[σ] V` via `s ⊗ₜ m ↦ σ s • f m`,
+generalizing Mathlib's linear construction `LinearMap.liftBaseChangeEquiv`. -/
+def LinearMap.liftBaseChangeSemilinear (f : M →ₛₗ[σ.comp (algebraMap R S)] V) :
+    (S ⊗[R] M) →ₛₗ[σ] V :=
+  (liftBaseChangeSemilinearAux f).val
+
+@[simp]
+theorem LinearMap.liftBaseChangeSemilinear_tmul (f : M →ₛₗ[σ.comp (algebraMap R S)] V) (s : S)
+    (m : M) : f.liftBaseChangeSemilinear (s ⊗ₜ[R] m) = σ s • f m :=
+  (liftBaseChangeSemilinearAux f).property s m
+
+/-- Two `σ`-semilinear maps out of `S ⊗[R] M` are equal if they agree on every `1 ⊗ₜ[R] m`. -/
+theorem LinearMap.ext_one_tmul {g₁ g₂ : (S ⊗[R] M) →ₛₗ[σ] V}
+    (h : ∀ m : M, g₁ (1 ⊗ₜ[R] m) = g₂ (1 ⊗ₜ[R] m)) : g₁ = g₂ := by
+  ext z
+  induction z using TensorProduct.inductionOn with
+  | tmul s m => rw [TensorProduct.tmul_eq_smul_one_tmul, map_smulₛₗ, map_smulₛₗ, h]
+  | add x y hx hy => simp [hx, hy]
+
+/-- Universal property of `LinearMap.liftBaseChangeSemilinear`. -/
+theorem LinearMap.eq_liftBaseChangeSemilinear_iff {f : M →ₛₗ[σ.comp (algebraMap R S)] V}
+    {g : (S ⊗[R] M) →ₛₗ[σ] V} :
+    g = f.liftBaseChangeSemilinear ↔ ∀ m : M, g (1 ⊗ₜ[R] m) = f m :=
+  ⟨fun hg m ↦ by simp [hg], fun h ↦ LinearMap.ext_one_tmul fun m ↦ by simp [h]⟩
+
+/-- Evaluating `F : V →ₗ[T] T` on `f.liftBaseChangeSemilinear z` agrees with `σ (φ z)` whenever
+they agree on every `1 ⊗ₜ[R] m`. -/
+theorem LinearMap.apply_liftBaseChangeSemilinear (f : M →ₛₗ[σ.comp (algebraMap R S)] V)
+    (F : V →ₗ[T] T) (φ : (S ⊗[R] M) →ₗ[S] S)
+    (hF : ∀ m : M, F (f m) = σ (φ (1 ⊗ₜ[R] m))) (z : S ⊗[R] M) :
+    F (f.liftBaseChangeSemilinear z) = σ (φ z) := by
+  let g₁ : (S ⊗[R] M) →ₛₗ[σ] T := F.comp f.liftBaseChangeSemilinear
+  let g₂ : (S ⊗[R] M) →ₛₗ[σ] T := σ.toSemilinearMap.comp φ
+  exact LinearMap.congr_fun (LinearMap.ext_one_tmul (g₁ := g₁) (g₂ := g₂) fun m ↦ by
+    simpa [g₁, g₂] using hF m) z
+
+end Semilinear
+
+section AddMonoidHomSemilinear
+
+variable {S T X V : Type*} [Ring S] [Ring T] [AddCommGroup X] [AddCommGroup V] [Module T V]
+
+/-- Lift `f : X →+ V` across `S ⊗[ℤ] X` along `σ : S →+* T` via `s ⊗ₜ x ↦ σ s • f x`. -/
+def AddMonoidHom.liftBaseChangeSemilinear (f : X →+ V) (σ : S →+* T) : (S ⊗[ℤ] X) →ₛₗ[σ] V :=
+  LinearMap.liftBaseChangeSemilinear (R := ℤ) (σ := σ)
+    { toFun := f.toIntLinearMap
+      map_add' := f.toIntLinearMap.map_add
+      map_smul' n x := by
+        rw [eq_intCast, Int.cast_smul_eq_zsmul]
+        exact f.toIntLinearMap.map_smul n x }
+
+@[simp]
+theorem AddMonoidHom.liftBaseChangeSemilinear_tmul (f : X →+ V) (σ : S →+* T) (s : S) (x : X) :
+    f.liftBaseChangeSemilinear σ (s ⊗ₜ[ℤ] x) = σ s • f x :=
+  LinearMap.liftBaseChangeSemilinear_tmul _ _ _
+
+/-- Composing `AddMonoidHom.liftBaseChangeSemilinear` with `x ↦ 1 ⊗ₜ x` recovers `f`. -/
+@[simp]
+theorem AddMonoidHom.liftBaseChangeSemilinear_comp_mk (f : X →+ V) (σ : S →+* T) :
+    (f.liftBaseChangeSemilinear σ).toAddMonoidHom.comp (TensorProduct.mk ℤ S X 1).toAddMonoidHom =
+      f := by
+  ext x
+  simp [TensorProduct.mk_apply]
+
+/-- Evaluating `f.liftBaseChangeSemilinear σ` on `TensorProduct.mk ℤ S X 1 x` recovers `f x`. -/
+theorem AddMonoidHom.liftBaseChangeSemilinear_mk_one (f : X →+ V) (σ : S →+* T) (x : X) :
+    f.liftBaseChangeSemilinear σ (TensorProduct.mk ℤ S X 1 x) = f x :=
+  DFunLike.congr_fun (f.liftBaseChangeSemilinear_comp_mk σ) x
+
+/-- Universal property of `AddMonoidHom.liftBaseChangeSemilinear`. -/
+theorem AddMonoidHom.eq_liftBaseChangeSemilinear_iff {f : X →+ V} {σ : S →+* T}
+    {g : (S ⊗[ℤ] X) →ₛₗ[σ] V} :
+    g = f.liftBaseChangeSemilinear σ ↔ ∀ x : X, g (1 ⊗ₜ[ℤ] x) = f x :=
+  LinearMap.eq_liftBaseChangeSemilinear_iff
+
+/-- Evaluating `F : V →ₗ[T] T` on `f.liftBaseChangeSemilinear σ z` agrees with `σ (φ z)` whenever
+they agree on every `1 ⊗ₜ[ℤ] x`. -/
+theorem AddMonoidHom.apply_liftBaseChangeSemilinear (f : X →+ V) (σ : S →+* T)
+    (F : V →ₗ[T] T) (φ : (S ⊗[ℤ] X) →ₗ[S] S)
+    (hF : ∀ x : X, F (f x) = σ (φ (1 ⊗ₜ[ℤ] x))) (z : S ⊗[ℤ] X) :
+    F (f.liftBaseChangeSemilinear σ z) = σ (φ z) :=
+  LinearMap.apply_liftBaseChangeSemilinear _ F φ hF z
+
+end AddMonoidHomSemilinear
 
 namespace TauCeti
 

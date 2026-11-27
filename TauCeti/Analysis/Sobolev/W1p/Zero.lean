@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -42,6 +43,8 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 
 * `TauCeti.W1p.ofTestFunctionₗ` and `TauCeti.W1p.ofTestFunctionₗ_injective`: the linear embedding
   `C_c^∞(Ω) → W^{1,p}(Ω)`, and its injectivity.
+* `TauCeti.W1p.norm_sq_ofTestFunctionₗ_top_le`: on the whole space, the squared `W^{1,2}` norm of
+  a finite family of test functions is at most the integral of their squared values and gradients.
 * `TauCeti.w1p0Submodule` and `TauCeti.W1p0`: the space `W^{1,p}_0(Ω)`, complete for the graph
   norm.
 * `TauCeti.W1p0.valueL`: the canonical continuous value map into `Lᵖ(Ω)`.
@@ -51,6 +54,8 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.mem_w1p0Submodule_iff_exists_seq_tendsto`: the elements of `W^{1,p}_0(Ω)` are exactly
+  the graph-norm limits of sequences of test-function jets.
 * `TauCeti.W1p.ofExponentLE_mem_w1p0Submodule` and `TauCeti.W1p0.ofExponentLEL`: on a set of
   finite measure and for `p ≤ q`, lowering the exponent maps `W^{1,q}_0(Ω)` into `W^{1,p}_0(Ω)`,
   as a continuous linear inclusion whose underlying `W^{1,p}(Ω)` function is
@@ -153,6 +158,31 @@ theorem W1p.norm_gradient_ofTestFunctionₗ_top_sq (phi : 𝓓((⊤ : Opens E), 
   exact integral_congr_ae ((W1p.gradient_ofTestFunctionₗ_top_ae (p := 2) phi).mono fun x hx ↦ by
     simp only [hx, norm_gradient_eq_norm_fderiv])
 
+open scoped Gradient in
+/-- On the whole space, the squared `W^{1,2}` norm of a finite family of embedded test functions,
+with the sup norm on the family, is at most the integral of the sum of their squares plus the sum
+of their squared gradients. -/
+theorem W1p.norm_sq_ofTestFunctionₗ_top_le {ι : Type*} [Fintype ι]
+    (phi : ι → 𝓓((⊤ : Opens E), ℝ)) :
+    ‖fun i ↦ W1p.ofTestFunctionₗ mu ⊤ 2 (phi i)‖ ^ 2 ≤
+      ∫ x, (∑ i, phi i x ^ 2 + ∑ i, ‖∇ (phi i : E → ℝ) x‖ ^ 2) ∂mu := by
+  have hphi (i : ι) : Integrable (fun x ↦ phi i x ^ 2) mu := by
+    simpa using (phi i).continuous.integrable_norm_sq_of_hasCompactSupport (μ := mu)
+      (phi i).hasCompactSupport
+  have hgrad (i : ι) : Integrable (fun x ↦ ‖∇ (phi i : E → ℝ) x‖ ^ 2) mu :=
+    (continuous_gradient_testFunction (phi i)).integrable_norm_sq_of_hasCompactSupport
+      (phi i).hasCompactSupport.gradient
+  have hnorm (i : ι) : ‖W1p.ofTestFunctionₗ mu ⊤ 2 (phi i)‖ ^ 2 =
+      (∫ x, phi i x ^ 2 ∂mu) + ∫ x, ‖∇ (phi i : E → ℝ) x‖ ^ 2 ∂mu := by
+    simp only [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
+      W1p.norm_value_ofTestFunctionₗ_top_sq, W1p.norm_gradient_ofTestFunctionₗ_top_sq,
+      norm_gradient_eq_norm_fderiv]
+  refine (Pi.norm_pow_le_sum_norm_pow _ two_ne_zero).trans (le_of_eq ?_)
+  simp_rw [hnorm, Finset.sum_add_distrib]
+  rw [← integral_finsetSum _ fun i _ ↦ hphi i, ← integral_finsetSum _ fun i _ ↦ hgrad i,
+    ← integral_add (integrable_finsetSum _ fun i _ ↦ hphi i)
+      (integrable_finsetSum _ fun i _ ↦ hgrad i)]
+
 /-- The embedding of the test functions is **injective**: two test functions with the same jet
 agree almost everywhere on `Ω`, hence everywhere, being continuous, supported in `Ω`, and measured
 by a Haar measure, which is positive on nonempty open sets. So `W^{1,p}(Ω)` really does contain a
@@ -190,6 +220,21 @@ theorem w1p0Submodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (hs : IsClos
     (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1p0Submodule]
   exact closure_minimal (by rintro _ ⟨phi, rfl⟩; exact h phi) hs
+
+open Filter Topology in
+/-- **Sequential characterization of `W^{1,p}_0(Ω)`**: an element of `W^{1,p}(Ω)` lies in
+`W^{1,p}_0(Ω)` exactly when it is the graph-norm limit of a sequence of test-function jets. -/
+theorem mem_w1p0Submodule_iff_exists_seq_tendsto {u : W1p mu Omega p} :
+    u ∈ w1p0Submodule mu Omega p ↔
+      ∃ phi : ℕ → 𝓓(Omega, ℝ),
+        Tendsto (fun k => W1p.ofTestFunctionₗ mu Omega p (phi k)) atTop (𝓝 u) := by
+  rw [← SetLike.mem_coe, coe_w1p0Submodule, mem_closure_iff_seq_limit]
+  constructor
+  · rintro ⟨w, hw, hlim⟩
+    choose phi hphi using hw
+    exact ⟨phi, by simpa only [hphi] using hlim⟩
+  · rintro ⟨phi, hphi⟩
+    exact ⟨_, fun k => ⟨phi k, rfl⟩, hphi⟩
 
 /-- **The Sobolev space `W^{1,p}_0(Ω)`**, the closure of `C_c^∞(Ω)` in `W^{1,p}(Ω)`. -/
 abbrev W1p0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ENNReal)
@@ -356,7 +401,7 @@ end Exponent
 
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_0(Ω)`
 
-The two instances below are `local`, so they take part in instance search only in a file that
+The instances below are `local`, so they take part in instance search only in a file that
 registers them with `attribute [local instance]`. -/
 
 /-- Shortcut instance for the normed group structure of `W^{1,p}_0(Ω)`, the separated form of
@@ -371,5 +416,15 @@ jet space through the two nested closed subspaces. A file that applies abstract 
 results to `W^{1,2}_0(Ω)` registers it together with `W1p0.instNormedAddCommGroup`. -/
 noncomputable local instance W1p0.instInnerProductSpace :
     InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+
+/-- Shortcut for the canonical normed group structure on the Sobolev dual. Register this
+locally when operator-norm synthesis would otherwise expand the nested Sobolev subtypes. -/
+noncomputable local instance W1p0.instStrongDualNormedAddCommGroup :
+    NormedAddCommGroup (StrongDual ℝ (W1p0 mu Omega p)) := inferInstance
+
+/-- Shortcut for the canonical real normed space structure on the Sobolev dual. Use together
+with `W1p0.instStrongDualNormedAddCommGroup` in files applying operator-norm lemmas. -/
+noncomputable local instance W1p0.instStrongDualNormedSpace :
+    NormedSpace ℝ (StrongDual ℝ (W1p0 mu Omega p)) := inferInstance
 
 end TauCeti

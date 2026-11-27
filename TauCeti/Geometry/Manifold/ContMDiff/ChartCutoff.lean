@@ -36,6 +36,8 @@ space to a manifold.
 * `OpenPartialHomeomorph.contMDiff_indicator_comp_extend`: for a chart `e` of the maximal atlas,
   a `C^n` function on the model space with compact support in the target of the extended chart,
   read in the chart and extended by zero outside the chart source, is `C^n`.
+* `OpenPartialHomeomorph.exists_contMDiff_eq_comp_prodMap`: the same through the product of two
+  charts, giving a compactly supported `C^n` function on a product of manifolds.
 * `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`: a `C^n` function on the model
   space with compact support in the chart target is the coordinate expression of a compactly
   supported `C^n` function on the manifold.
@@ -43,6 +45,9 @@ space to a manifold.
   supported in a compact subset of a coordinate ball transplants to a `C^n` nonnegative compactly
   supported function on the manifold supported in any prescribed set containing the chart
   preimage of the ball.
+* `TauCeti.Manifold.exists_contMDiff_eq_comp_extChartAt`: a `C^n` map from the model space to a
+  manifold that is constant outside a closed ball in the chart target is the coordinate expression
+  of a `C^n` map on the manifold, constant off the chart domain.
 -/
 
 public section
@@ -142,6 +147,32 @@ theorem contMDiff_indicator_comp_extend (he : e ∈ IsManifold.maximalAtlas I n 
     (Filter.eventually_of_mem (e.open_source.mem_nhds hys) fun z hz ↦ indicator_of_mem hz _)
   exact hw.contMDiff.contMDiffAt.comp _ (e.contMDiffAt_extend he hys)
 
+omit [NormedSpace 𝕜 F] in
+/-- **Transplanting a function through a product chart.** For charts `e` of `M` and `e'` of `M'`
+in the maximal `C^n` atlases, and a `C^n` function `v` on the product of the model spaces with
+compact support in the product of the targets of the extended charts, there is a compactly
+supported `C^n` function `K` on `M × M'` equal to `v` read through `e` and `e'` on the product of
+the chart sources, and to `0` elsewhere. -/
+theorem exists_contMDiff_eq_comp_prodMap [NormedSpace 𝕜 F] {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [T2Space M'] [IsManifold I n M]
+    [IsManifold I' n M'] {e' : OpenPartialHomeomorph M' H'}
+    (he : e ∈ IsManifold.maximalAtlas I n M) (he' : e' ∈ IsManifold.maximalAtlas I' n M')
+    {v : E × E' → F} (hv : ContDiff 𝕜 n v) (hvc : HasCompactSupport v)
+    (hvt : tsupport v ⊆ (e.extend I).target ×ˢ (e'.extend I').target) :
+    ∃ K : M × M' → F, ContMDiff (I.prod I') 𝓘(𝕜, F) n K ∧ HasCompactSupport K ∧
+      (∀ p ∈ e.source ×ˢ e'.source, K p = v (e.extend I p.1, e'.extend I' p.2)) ∧
+        ∀ p ∉ e.source ×ˢ e'.source, K p = 0 := by
+  -- `K` is `v` read through the product chart `e × e'` of the maximal atlas of `M × M'`.
+  have hEt : tsupport v ⊆ ((e.prod e').extend (I.prod I')).target := by
+    simpa [extend_prod] using hvt
+  refine ⟨(e.prod e').source.indicator (v ∘ (e.prod e').extend (I.prod I')),
+    contMDiff_indicator_comp_extend (IsManifold.mem_maximalAtlas_prod he he') hv hvc hEt,
+    (hvc.isCompact.image_of_continuousOn
+      ((e.prod e').continuousOn_extend_symm.mono hEt)).of_isClosed_subset (isClosed_tsupport _)
+      (tsupport_indicator_comp_extend_subset hvc hEt),
+    fun p hp ↦ by simp [hp], fun p hp ↦ indicator_of_notMem (by simpa using hp) _⟩
+
 end OpenPartialHomeomorph
 
 namespace TauCeti.Manifold
@@ -215,5 +246,51 @@ theorem exists_contMDiff_transplant (p : M) {R : ℝ} {U : Set M}
       rw [hu_symm y (hballt (hKR (hwK hy)))]
       exact hw0 _
     · rw [image_eq_zero_of_notMem_tsupport hx]
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [ProperSpace E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {n : WithTop ℕ∞} [IsManifold I n M]
+
+/-- **Extending a map constant off a coordinate ball.** A `C^n` map `g` from the model space to a
+manifold `N` which is constant, equal to `c`, outside a closed ball inside the target of the
+extended chart at `x₀` is, on the chart domain, the coordinate expression of a `C^n` map on `M`
+equal to `c` off the chart domain. -/
+theorem exists_contMDiff_eq_comp_extChartAt (x₀ : M) {r : ℝ}
+    (hball : closedBall (extChartAt I x₀ x₀) r ⊆ (extChartAt I x₀).target) {g : E → N}
+    (hg : ContMDiff 𝓘(𝕜, E) J n g) {c : N}
+    (hc : ∀ z, r < dist z (extChartAt I x₀ x₀) → g z = c) :
+    ∃ f : M → N, ContMDiff I J n f ∧
+      (∀ x ∈ (chartAt H x₀).source, f x = g (extChartAt I x₀ x)) ∧
+      ∀ x ∉ (chartAt H x₀).source, f x = c := by
+  classical
+  set φ := extChartAt I x₀
+  have hsrc : φ.source = (chartAt H x₀).source := extChartAt_source I x₀
+  let f : M → N := fun x ↦ if x ∈ (chartAt H x₀).source then g (φ x) else c
+  have hfg : ∀ x ∈ (chartAt H x₀).source, f x = g (φ x) := fun x hx ↦ by simp [f, hx]
+  -- Outside the compact preimage `K` of the closed ball, `f` is `c`.
+  set K := φ.symm '' closedBall (φ x₀) r
+  have hK : IsClosed K := ((isCompact_closedBall _ _).image_of_continuousOn
+    ((continuousOn_extChartAt_symm x₀).mono hball)).isClosed
+  have hKs : K ⊆ (chartAt H x₀).source := by
+    rintro _ ⟨z, hz, rfl⟩
+    rw [← hsrc]
+    exact φ.map_target (hball hz)
+  have hfK (x : M) (hx : x ∉ K) : f x = c := by
+    simp only [f]
+    split_ifs with hxs
+    · refine hc _ (not_le.1 fun h ↦ hx ⟨φ x, mem_closedBall.2 h, φ.left_inv (by rwa [hsrc])⟩)
+    · rfl
+  -- `f` is smooth on the chart domain and on the complement of `K`, which cover `M`.
+  refine ⟨f, contMDiff_of_contMDiffOn_union_of_isOpen
+    ((hg.comp_contMDiffOn contMDiffOn_extChartAt).congr hfg) (contMDiffOn_const.congr hfK)
+    (eq_univ_of_forall fun x ↦ (em (x ∈ K)).imp (fun h ↦ hKs h) id)
+    (chartAt H x₀).open_source hK.isOpen_compl, hfg, fun x hx ↦ by simp [f, hx]⟩
 
 end TauCeti.Manifold

@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
+import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 import TauCeti.Geometry.Manifold.IntegralCurve.BoundedSpeed
+import TauCeti.Geometry.Manifold.ExtChartAt
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Complete vector fields
@@ -46,7 +49,11 @@ make completeness available without choosing a global flow or assuming finite di
   `TauCeti.isCompleteVectorField_of_isProperMap`: fields whose maximal integral curves stay in
   the compact fibres of a map, for instance of a proper map, are complete.
 * `TauCeti.isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le`: a field `v` is complete when
-  some proper real function `f` has bounded derivative `|df(v)| ≤ C` along it.
+  some proper real function `f` has bounded derivative `|df(v)| ≤ C` along it, with no
+  completeness assumption on the model space.
+* `IsCompact.exists_isCompleteVectorField_eventuallyEq`: a `C^n` field given on an open set agrees
+  near a compact subset with a complete `C^n` field on the whole manifold, which is a multiple
+  `c • v`, `c ∈ [0, 1]`, of it at every point.
 
 ## References
 
@@ -194,8 +201,7 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   rcases isEmpty_or_nonempty M with hM | hM
   · exact fun x ↦ isEmptyElim x
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have := CompleteSpace.of_locallyCompact_manifold M I
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     isCompact_univ fun _ _ ↦ mem_univ _
 
@@ -225,12 +231,15 @@ theorem isCompleteVectorField_of_isProperMap {Y : Type*} [TopologicalSpace Y]
   isCompleteVectorField_of_isCompact_preimage_singleton hv
     (fun _ ↦ hG.isCompact_preimage isCompact_singleton) hGv
 
+omit [CompleteSpace E] in
 /-- **A `C¹` vector field along which a proper function changes at a bounded rate is complete.**
 If `f : M → ℝ` is proper and differentiable and `|df(v)| ≤ C` everywhere, then along the maximal
 integral curve `γ` through `x` the mean value inequality gives `|f (γ t) - f x| ≤ C |t|`. Up to a
 finite time `T` the curve therefore stays in the compact set `f⁻¹ [f x - C T, f x + C T]`, so by
 the escape lemma neither end of its maximal interval of existence is finite. The function `f` need
-not be bounded below, and no metric is involved. -/
+not be bounded below, and no metric is involved. Nor is completeness of the model space assumed: a
+proper real function makes a nonempty manifold locally compact, hence modelled on a
+finite-dimensional space. -/
 theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
     {v : (x : M) → TangentSpace I x}
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
@@ -239,6 +248,9 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
+  have : Nonempty M := ⟨x⟩
+  have : FiniteDimensional ℝ E := hfp.finiteDimensional_of_manifold I
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
   refine maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo hv fun T ↦ ?_
   obtain ⟨K, hK, hmem⟩ := (isMIntegralCurveOn_maximalIntegralCurve hv)
@@ -246,5 +258,35 @@ theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
       ordConnected_maximalIntegralCurveInterval.convex (fun _ _ ↦ hf _) hfp (fun _ _ ↦ hC _) h0 T
   rw [Real.closedBall_eq_Icc, zero_sub, zero_add] at hmem
   exact ⟨K, hK, hmem⟩
+
+omit [CompleteSpace E] in
+open scoped ContDiff Topology in
+/-- **Cutting a vector field off near a compact set.** Let `v` be a `C^n` vector field, `1 ≤ n`, on
+an open set `U` of a Hausdorff manifold modelled on a finite-dimensional space, and let `K ⊆ U` be
+compact. Then there is a complete `C^n` vector field `w` on the whole manifold which agrees with
+`v` on a neighbourhood of `K`, is a multiple `c • v`, `c ∈ [0, 1]`, of `v` at every point, and
+vanishes outside a compact subset of `U`. Its integral curves through the points where it agrees
+with `v` are integral curves of `v` for as long as they stay there. -/
+theorem _root_.IsCompact.exists_isCompleteVectorField_eventuallyEq [FiniteDimensional ℝ E]
+    [IsManifold I ∞ M] {n : ℕ∞} (hn : 1 ≤ n) {v : (x : M) → TangentSpace I x} {U : Set M}
+    (hU : IsOpen U) (hv : ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) U)
+    {K : Set M} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ w : (x : M) → TangentSpace I x,
+      ContMDiff I I.tangent n (fun x ↦ (⟨x, w x⟩ : TangentBundle I M)) ∧
+      IsCompleteVectorField w ∧ (∀ᶠ x in 𝓝ˢ K, w x = v x) ∧
+      (∀ x, ∃ c ∈ Icc (0 : ℝ) 1, w x = c • v x) ∧
+      ∃ C, IsCompact C ∧ C ⊆ U ∧ ∀ x ∉ C, w x = 0 := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  -- a smooth cutoff `σ`, equal to `1` near `K`, with compact support in `U`
+  obtain ⟨σ, hσ, hσ1, hσc, hσU, hσ01⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I hU hKU
+  have hw : ContMDiff I I.tangent n (fun x ↦ (⟨x, (σ • v) x⟩ : TangentBundle I M)) :=
+    ContMDiffOn.smul_section_of_tsupport (hσ.of_le (mod_cast le_top)).contMDiffOn hU hσU hv
+  have hw0 : ∀ x ∉ tsupport σ, (σ • v) x = 0 := fun x hx ↦ by
+    simp [image_eq_zero_of_notMem_tsupport hx]
+  refine ⟨σ • v, hw,
+    isCompleteVectorField_of_isCompact_of_eq_zero_off (hw.of_le (mod_cast hn)) hσc hw0, ?_,
+    fun x ↦ ⟨σ x, hσ01 x, rfl⟩, tsupport σ, hσc, hσU, hw0⟩
+  filter_upwards [hσ1] with x hx
+  simp [hx]
 
 end TauCeti
