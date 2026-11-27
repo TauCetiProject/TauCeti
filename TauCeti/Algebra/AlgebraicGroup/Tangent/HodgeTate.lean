@@ -100,7 +100,7 @@ private theorem factorialRadius_smul_mem_testModule
       (LinearMap.mem_range_self (cotangentRelation O(C) A) (b ⊗ₜ[O(C)] c))))
     simpa only [cotangentRelation_tmul, map_sub, map_smul, smul_eq_mul] using h
   simpa only [map_smul, smul_eq_mul] using
-    WithConv.dvd_mul_apply_of_groupLike p hp hpC D hq hgroup hrel κ hκ a
+    TauCeti.dvd_mul_apply_of_groupLike p hp hpC D hq hgroup hrel κ hκ a
 
 /-- A nonzero annihilator of the cotangent space suffices for the factorial-radius bound
 on a finite free commutative and cocommutative bialgebra over a valuation ring. -/
@@ -134,11 +134,10 @@ theorem smul_mem_span_cotangentMap_groupLike
     κ • x ∈ Submodule.span O(C)
       (Set.range fun u : GroupLike O(C) A ↦ cotangentMap O(C) A u.val) := by
   by_cases hp0 : (p : C) = 0
-  · have hpow : ‖(κ : C)‖ ^ (p - 1) = 0 :=
-      le_antisymm (by simpa only [hp0, norm_zero] using hκ) (by positivity)
-    have hκ0 : κ = 0 := Subtype.ext (norm_eq_zero.mp (eq_zero_of_pow_eq_zero hpow))
+  · have hκ0 : κ = 0 := Subtype.ext (eq_zero_of_pow_eq_zero (norm_le_zero_iff.mp
+      (by simpa only [norm_pow, hp0, norm_zero] using hκ : ‖(κ : C) ^ (p - 1)‖ ≤ 0)))
     simp [hκ0]
-  have : CharZero C := NormedField.charZero_of_prime_norm_lt_one hp hpC hp0
+  have : CharZero C := NormedField.charZero_of_norm_natCast_lt_one hpC hp0
   have : Module.Free O(C) A := Module.free_of_flat_of_isLocalRing
   have : Nontrivial A := _root_.Bialgebra.nontrivial O(C)
   have hq : (Module.finrank O(C) A : O(C)) ≠ 0 :=

@@ -63,32 +63,19 @@ theorem algHom_ext_convPostcomp {f g : WithConv (A →ₗ[R] S) →ₐ[S] S}
   AlgHom.toLinearMap_injective <|
     LinearMap.ext_on_range span_range_convPostcomp h
 
-omit [Module.Finite R A] [Module.Projective R A] in
-/-- Evaluation of coefficient-valued functionals at a group-like element is a character over
-the coefficient ring. -/
-def evalGroupLikeCoefficients (u : GroupLike R A) : WithConv (A →ₗ[R] S) →ₐ[S] S where
-  toFun f := f.ofConv u.val
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  map_one' := by simp [LinearMap.convOne_apply]
-  map_mul' f g := u.isGroupLikeElem_val.ofConv_convMul_apply f g
-  commutes' s := by simp
-
-omit [Module.Finite R A] [Module.Projective R A] in
-/-- The coefficient-valued evaluation character applies the underlying functional. -/
-@[simp]
-theorem evalGroupLikeCoefficients_apply (u : GroupLike R A) (f : WithConv (A →ₗ[R] S)) :
-    evalGroupLikeCoefficients u f = f.ofConv u.val := (rfl)
-
-/-- Every coefficient-valued character is evaluation at a group-like element of the base
-coalgebra if the base is integrally closed in the coefficients. -/
-theorem exists_groupLike_algHom_coefficients [IsIntegrallyClosedIn R S]
+/-- Every coefficient-valued character is evaluation at a unique group-like element of the
+base coalgebra if the base is integrally closed in the coefficients. -/
+theorem existsUnique_groupLike_algHom_coefficients [IsIntegrallyClosedIn R S]
     (χ : WithConv (A →ₗ[R] S) →ₐ[S] S) :
-    ∃ u : GroupLike R A, ∀ f : WithConv (A →ₗ[R] S), χ f = f.ofConv u.val := by
-  obtain ⟨u, hu, -⟩ := existsUnique_groupLike_algHom R A S
+    ∃! u : GroupLike R A, ∀ f : WithConv (A →ₗ[R] S), χ f = f.ofConv u.val := by
+  obtain ⟨u, hu, huniq⟩ := existsUnique_groupLike_algHom R A S
     ((χ.restrictScalars R).comp (Algebra.ofId R S).convPostcomp)
-  have heq : χ = evalGroupLikeCoefficients u :=
+  have heq : χ = evalGroupLike R A u :=
     algHom_ext_convPostcomp fun φ ↦ by simpa using hu φ
-  exact ⟨u, fun f ↦ by rw [heq, evalGroupLikeCoefficients_apply]⟩
+  refine ⟨u, fun f ↦ by rw [heq, evalGroupLike_apply], ?_⟩
+  intro v hv
+  apply huniq v
+  intro φ
+  simpa using hv ((Algebra.ofId R S).convPostcomp φ)
 
 end TauCeti.ConvolutionDual
