@@ -32,8 +32,8 @@ along an inward semiflow.
 Because any two homotopy inverses of the same chain map are chain homotopic
 (`HomotopyEquiv.homotopyInv`), the transferred homotopy inverse is independent up to chain homotopy
 of the auxiliary manifold `N`, the maps `j` and `r`, the homotopy `Φ`, and the inverse `s`
-(`ContMDiff.smoothSingularChainHomotopyOfRetractInv`), and the resulting homology isomorphism is
-canonical (`ContMDiff.toHomologyIso_smoothSingularChainHomotopyEquivOfRetract_eq`).
+(`ContMDiff.smoothSingularChainHomotopyEquivOfRetractInvHomotopy`), and the resulting homology
+isomorphism is canonical (`ContMDiff.toHomologyIso_smoothSingularChainHomotopyEquivOfRetract_eq`).
 
 Dual cochain transfer is in `TauCeti.Geometry.Manifold.SmoothSingular.Transfer.Cochain`, concrete
 inward-domination transfer on the closed half-line `[0, ∞)` is in
@@ -46,7 +46,7 @@ without `j ∘ r ~ id_M` the transferred-inverse formula `r_* ≫ s ≫ j_*` can
 * `ContMDiff.smoothSingularChainHomotopyEquivOfRetract`: transfer of a smooth-to-singular chain
   homotopy equivalence from `N` to `M` along `j : N → M`, `r : M → N`, and `Φ : ℝ × M → M` from
   `j ∘ r` to `id_M`.
-* `ContMDiff.smoothSingularChainHomotopyOfRetractInv`,
+* `ContMDiff.smoothSingularChainHomotopyEquivOfRetractInvHomotopy`,
   `ContMDiff.toHomologyIso_smoothSingularChainHomotopyEquivOfRetract_eq`: independence of
   `(N, j, r, Φ, eN)` up to chain homotopy and on homology.
 
@@ -174,7 +174,7 @@ namespace ContMDiff
 /-- **Independence of the auxiliary domination data.** Two smooth-chain homotopy inverses on `M`
 transferred along possibly different manifolds `N₁` and `N₂`, maps `(j₁, r₁)` and `(j₂, r₂)`,
 homotopies `Φ₁` and `Φ₂`, and inverses `eN₁` and `eN₂` are chain homotopic. -/
-def smoothSingularChainHomotopyOfRetractInv
+def smoothSingularChainHomotopyEquivOfRetractInvHomotopy
     {j₁ : N₁ → M} (hj₁ : ContMDiff J₁ I ∞ j₁) {r₁ : M → N₁} (hr₁ : ContMDiff I J₁ ∞ r₁)
     {Φ₁ : ℝ × M → M} (hΦ₁ : ContMDiff (𝓘(ℝ).prod I) I ∞ Φ₁)
     (hΦ₁₀ : ∀ x, Φ₁ (0, x) = j₁ (r₁ x)) (hΦ₁₁ : ∀ x, Φ₁ (1, x) = x)
@@ -190,9 +190,9 @@ def smoothSingularChainHomotopyOfRetractInv
     Homotopy
       (hj₁.smoothSingularChainHomotopyEquivOfRetract hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).inv
       (hj₂.smoothSingularChainHomotopyEquivOfRetract hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).inv :=
-  HomotopyEquiv.homotopyInv _ _ (.ofEq
-    ((hj₁.smoothSingularChainHomotopyEquivOfRetract_hom hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).trans
-      (hj₂.smoothSingularChainHomotopyEquivOfRetract_hom hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).symm))
+  TauCeti.smoothSingularChainHomotopyEquivInvHomotopy _ _
+    (hj₁.smoothSingularChainHomotopyEquivOfRetract_hom hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁)
+    (hj₂.smoothSingularChainHomotopyEquivOfRetract_hom hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂)
 
 /-- The homology isomorphism induced by `smoothSingularChainHomotopyEquivOfRetract` is independent
 of the auxiliary domination data `(N, j, r, Φ, eN)`. -/
@@ -212,9 +212,9 @@ theorem toHomologyIso_smoothSingularChainHomotopyEquivOfRetract_eq [CategoryWith
     (hj₁.smoothSingularChainHomotopyEquivOfRetract hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).toHomologyIso n =
       (hj₂.smoothSingularChainHomotopyEquivOfRetract hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).toHomologyIso
         n :=
-  HomotopyEquiv.toHomologyIso_eq_of_homotopy
-    (.ofEq ((hj₁.smoothSingularChainHomotopyEquivOfRetract_hom hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).trans
-      (hj₂.smoothSingularChainHomotopyEquivOfRetract_hom hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).symm)) n
+  TauCeti.toHomologyIso_smoothSingularChainHomotopyEquiv_eq _ _
+    (hj₁.smoothSingularChainHomotopyEquivOfRetract_hom hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁)
+    (hj₂.smoothSingularChainHomotopyEquivOfRetract_hom hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂) n
 
 end ContMDiff
 

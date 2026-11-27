@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+public import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
 public import TauCeti.Geometry.Manifold.SmoothSingular.Transfer.Basic
-
-import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
 
 /-!
 # Smooth-chain transfer on the closed half-line `[0, ∞)`
@@ -39,8 +38,10 @@ whose difference from `[0]` is the boundary of the smooth curve `t ↦ t²` (`Ta
 * `TauCeti.halfLineInwardDeformation`, `TauCeti.contMDiff_halfLineInwardDeformation`,
   `TauCeti.halfLineInwardDeformation_zero`, `TauCeti.halfLineInwardDeformation_one`: the global
   smooth inward deformation `(t, x) ↦ x + (1 - t)²` from `j ∘ r` to `id`.
-* `TauCeti.smoothSingularChainHomotopyEquivHalfLine`: concrete inward-translation transfer from
-  `(0, ∞)` to `[0, ∞)`.
+* `TauCeti.smoothSingularChainHomotopyEquivHalfLine`,
+  `TauCeti.smoothSingularChainHomotopyEquivHalfLine_hom`,
+  `TauCeti.smoothSingularChainHomotopyEquivHalfLine_inv`: concrete inward-translation transfer
+  from `(0, ∞)` to `[0, ∞)` and its forward and inverse maps.
 * `TauCeti.ι_smoothSingularChainHomotopyEquivHalfLine_inv_f_zero`: the inverse sends every
   singular `0`-simplex to `[1]`.
 * `TauCeti.halfLineBridge`, `TauCeti.ιChainComplex_halfLineBridge_d`: the smooth `1`-simplex
@@ -155,7 +156,8 @@ theorem halfLineInwardDeformation_one (x : EuclideanHalfSpace 1) :
   rw [Subsingleton.elim i 0, coe_halfLineInwardDeformation_apply]
   ring
 
-private theorem starConvex_openHalfLine :
+/-- The open positive half-line `(0, ∞)` is star-convex about `1`. -/
+theorem starConvex_openHalfLine :
     StarConvex ℝ (1 : ℝ)
       (𝓘(ℝ) '' ((⟨Ioi 0, isOpen_Ioi⟩ : TopologicalSpace.Opens ℝ) : Set ℝ)) := by
   simpa using (convex_Ioi (0 : ℝ)).starConvex (zero_lt_one : (1 : ℝ) ∈ Ioi 0)
@@ -184,6 +186,23 @@ theorem smoothSingularChainHomotopyEquivHalfLine_hom
     {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{0} C] (R : C) :
     (smoothSingularChainHomotopyEquivHalfLine R).hom =
       SSet.chainComplexMap (smoothSingularSubcomplex (𝓡∂ 1) (EuclideanHalfSpace 1)).ι R := by
+  simp [smoothSingularChainHomotopyEquivHalfLine]
+
+/-- The homotopy inverse of `smoothSingularChainHomotopyEquivHalfLine` pushes continuous singular
+chains of `[0, ∞)` into `(0, ∞)` by `halfLineInwardTranslation`, applies the star-convex
+homotopy inverse on `(0, ∞)`, and pushes smooth chains back along `openHalfLineInclusion`. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivHalfLine_inv
+    {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{0} C] (R : C) :
+    (smoothSingularChainHomotopyEquivHalfLine R).inv =
+      SSet.chainComplexMap
+          (TopCat.toSSet.map
+            (TopCat.ofHom ⟨EuclideanHalfSpace.halfLineInwardTranslation,
+              EuclideanHalfSpace.contMDiff_halfLineInwardTranslation.continuous⟩)) R ≫
+        (smoothSingularChainHomotopyEquivOfStarConvex R starConvex_openHalfLine).inv ≫
+          SSet.chainComplexMap
+            (smoothSingularSubcomplexMap openHalfLineInclusion
+              contMDiff_openHalfLineInclusion) R := by
   simp [smoothSingularChainHomotopyEquivHalfLine]
 
 /-- On `[0, ∞)`, the transferred inverse sends every singular `0`-simplex (and in particular the

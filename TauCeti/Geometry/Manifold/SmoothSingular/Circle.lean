@@ -96,34 +96,24 @@ of de Rham cohomology with integral smooth singular homology is nonzero on the c
 theorem deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleLoopClass :
     deRhamCohomology.smoothHomologyPeriod (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
       circleLoopClass = 2 * Real.pi := by
-  -- reparametrising `t ↦ exp (2π i t)` on `[0, 1]` as `Circle.exp` on `[0, 2π]`
-  have h := pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
-    (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1
   rw [circleLoopClass_eq_homologyπ, deRhamCohomology.smoothHomologyPeriod_mk,
     LinearMap.toAddMonoidHom_coe, smoothHomologyPeriodHom_homologyπ
       (circleAngularClosedForm.val.isSmoothForm.of_le (by simp))
       ((mem_closedForms _ _).mp circleAngularClosedForm.property),
     HomologicalComplex.iCycles_moduleCatCyclesMk, integrationCochain_ιChainComplex]
-  simpa [circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve,
-    pathIntegral_circleAngularForm_circleExp] using h
+  simpa [circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve] using
+    pathIntegral_circleAngularForm_circleExp_two_pi_mul
 
 /-- The integral of `circleAngularForm` along the continuous path of `circleLoopSimplex` is
 `2π`. -/
 private theorem pathClassIntegral_circleAngularForm_circleLoopSimplex :
     pathClassIntegral circleAngularForm (.mk (TauCeti.TopCat.path₁ circleLoopSimplex.val)) =
       2 * Real.pi := by
-  have hclosed : mextDeriv circleAngularForm = 0 := by
-    simpa [coe_circleAngularClosedForm] using
-      (mem_closedForms (𝓡 1) circleAngularClosedForm.val).mp circleAngularClosedForm.property
   rw [circleLoopSimplex_eq_ofCurve, SmoothSimplex.coe_ofCurve,
     pathClassIntegral_mk_eq_pathIntegral (isSmoothForm_circleAngularForm.of_le (by norm_num))
-      hclosed (contMDiff_circleExp_two_pi_mul.of_le (by norm_num))
+      mextDeriv_circleAngularForm (contMDiff_circleExp_two_pi_mul.of_le (by norm_num))
       (fun t ↦ TauCeti.TopCat.path₁_simplex₁_apply _ t)]
-  have hchg := pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le zero_le)
-    (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1
-  simp only [add_zero, mul_zero, mul_one, pathIntegral_circleAngularForm_circleExp, sub_zero]
-    at hchg
-  exact hchg
+  exact pathIntegral_circleAngularForm_circleExp_two_pi_mul
 
 /-- On `Circle`, the inclusion of smooth singular chains into continuous singular chains is nonzero
 on `H₁(Circle; ℤ)`: the class of `circleLoopSimplex` has period `2π ≠ 0` under

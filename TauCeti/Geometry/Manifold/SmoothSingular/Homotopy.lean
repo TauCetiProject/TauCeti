@@ -56,10 +56,9 @@ inverse of `f`, only a smooth homotopy from the identity to `g ∘ f`; for mutua
 maps, take the constant homotopy `Prod.snd`.
 
 Any two chain homotopy equivalences from smooth singular chains to continuous singular chains whose
-forward map is the subcomplex inclusion have chain-homotopic inverses, and the resulting homotopy
-inverses and homology isomorphisms are natural under smooth maps
-(`ContMDiff.smoothSingularChainHomotopyInvNaturality`,
-`ContMDiff.homologyMap_comp_toHomologyIso_inv_smoothSingular`). On a subsingleton manifold, the
+forward map is the subcomplex inclusion have chain-homotopic inverses and induce the same
+isomorphism on homology (`TauCeti.smoothSingularChainHomotopyEquivInvHomotopy`,
+`TauCeti.toHomologyIso_smoothSingularChainHomotopyEquiv_eq`). On a subsingleton manifold, the
 inclusion of smooth singular chains is an isomorphism and hence a chain homotopy equivalence
 (`ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`).
 
@@ -80,9 +79,10 @@ Mayer–Vietoris induction; its consequences for smoothly contractible manifolds
 * `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy`: the inclusion of
   smooth singular chains into singular chains stays a quasi-isomorphism on smooth homotopy
   retracts.
-* `ContMDiff.smoothSingularChainHomotopyInvNaturality`,
-  `ContMDiff.homologyMap_comp_toHomologyIso_inv_smoothSingular`: naturality of homotopy inverses and
-  inverse homology isomorphisms for the smooth-to-singular chain inclusion.
+* `TauCeti.smoothSingularChainHomotopyEquivInvHomotopy`,
+  `TauCeti.toHomologyIso_smoothSingularChainHomotopyEquiv_eq`: uniqueness up to chain homotopy of
+  homotopy inverses and equality of induced homology isomorphisms for the smooth-to-singular chain
+  inclusion.
 * `ModelWithCorners.smoothSingularChainHomotopyEquivOfSubsingleton`: chain homotopy equivalence on
   a subsingleton manifold.
 
@@ -427,47 +427,29 @@ theorem chainComplexMap_smoothSingularSubcomplexMap_ι {f : M → N₁} (hf : Co
         SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R := by
   rw [← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι hf]
 
+/-- **Uniqueness up to chain homotopy of smooth-chain homotopy inverses.** Any two chain
+homotopy equivalences from smooth singular chains to continuous singular chains on `M` whose
+forward maps equal the subcomplex inclusion have chain-homotopic inverses. -/
+def smoothSingularChainHomotopyEquivInvHomotopy {R : C}
+    (e₁ e₂ : HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R))
+    (he₁ : e₁.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
+    (he₂ : e₂.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) :
+    Homotopy e₁.inv e₂.inv :=
+  HomotopyEquiv.homotopyInv e₁ e₂ (.ofEq (he₁.trans he₂.symm))
+
+/-- Any two chain homotopy equivalences from smooth singular chains to continuous singular
+chains on `M` whose forward maps equal the subcomplex inclusion induce the same isomorphism on
+homology. -/
+theorem toHomologyIso_smoothSingularChainHomotopyEquiv_eq [CategoryWithHomology C] {R : C}
+    (e₁ e₂ : HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R))
+    (he₁ : e₁.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
+    (he₂ : e₂.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) (n : ℕ) :
+    e₁.toHomologyIso n = e₂.toHomologyIso n :=
+  HomotopyEquiv.toHomologyIso_eq_of_homotopy (.ofEq (he₁.trans he₂.symm)) n
+
 end TauCeti
-
-open TauCeti
-
-namespace ContMDiff
-
-/-- **Chain-homotopy naturality of smooth-chain homotopy inverses.** For any smooth map `f : M → N₁`
-and smooth-chain homotopy equivalences `eM` on `M` and `eN` on `N₁` whose forward maps are the
-subcomplex inclusions, `f_* ≫ eN.inv` is chain homotopic to `eM.inv ≫ f_*`. -/
-def smoothSingularChainHomotopyInvNaturality {f : M → N₁} (hf : ContMDiff I J₁ ∞ f) (R : C)
-    (eM : HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
-      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R))
-    (heM : eM.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
-    (eN : HomotopyEquiv ((smoothSingularSubcomplex J₁ N₁ : SSet).chainComplex R)
-      ((TopCat.toSSet.obj (TopCat.of N₁)).chainComplex R))
-    (heN : eN.hom = SSet.chainComplexMap (smoothSingularSubcomplex J₁ N₁).ι R) :
-    Homotopy
-      (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R ≫ eN.inv)
-      (eM.inv ≫ SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R) :=
-  (eM.invNaturality eN (.ofEq (by
-    rw [heM, heN, (chainComplexMap_smoothSingularSubcomplexMap_ι hf R).symm]))).symm
-
-/-- **Naturality on homology of the smooth-chain inverse isomorphism.** For a smooth map
-`f : M → N₁`, the inverse homology isomorphisms `(toHomologyIso n).inv` commute with pushforward on
-continuous and smooth singular homology. -/
-@[reassoc]
-theorem homologyMap_comp_toHomologyIso_inv_smoothSingular [CategoryWithHomology C]
-    {f : M → N₁} (hf : ContMDiff I J₁ ∞ f) (R : C)
-    (eM : HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
-      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R))
-    (heM : eM.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
-    (eN : HomotopyEquiv ((smoothSingularSubcomplex J₁ N₁ : SSet).chainComplex R)
-      ((TopCat.toSSet.obj (TopCat.of N₁)).chainComplex R))
-    (heN : eN.hom = SSet.chainComplexMap (smoothSingularSubcomplex J₁ N₁).ι R) (n : ℕ) :
-    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R n ≫
-        (eN.toHomologyIso n).inv =
-      (eM.toHomologyIso n).inv ≫ SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n :=
-  eM.homologyMap_comp_toHomologyIso_inv eN
-    (.ofEq (by rw [heM, heN, chainComplexMap_smoothSingularSubcomplexMap_ι hf R])) n
-
-end ContMDiff
 
 end Naturality
 
