@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.Topology.MappingSpace.Based
 public import TauCeti.Topology.MappingSpace.Group
+import TauCeti.Topology.Circle.Arc
+import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Based maps into the circle from a simply connected compact space
@@ -100,23 +102,10 @@ end Lift
 
 section Continuity
 
-/-- The points of the circle where the principal argument is continuous: all but `-1`. -/
-private def argDomain : Set Circle := {z | (z : ℂ) ∈ Complex.slitPlane}
-
-private theorem isOpen_argDomain : IsOpen argDomain :=
-  Complex.isOpen_slitPlane.preimage (by fun_prop)
-
-private theorem one_mem_argDomain : (1 : Circle) ∈ argDomain := by
-  simp [argDomain]
-
-private theorem continuousAt_arg {z : Circle} (hz : z ∈ argDomain) :
-    ContinuousAt (fun w : Circle ↦ Complex.arg w) z :=
-  (Complex.continuousAt_arg hz).comp (by fun_prop : Continuous ((↑) : Circle → ℂ)).continuousAt
-
 /-- Near `f₀`, the angle function of `f` is that of `f₀` plus the principal argument of
 `f / f₀`, as long as `f / f₀` avoids `-1`. -/
 private theorem basedMapLift_apply_eq_add_arg {f₀ f : BasedMap Y Circle y₀ 1}
-    (hf : ∀ y, f.val y * (f₀.val y)⁻¹ ∈ argDomain) (y : Y) :
+    (hf : ∀ y, f.val y * (f₀.val y)⁻¹ ≠ -1) (y : Y) :
     (basedMapLift f).val y =
       (basedMapLift f₀).val y + Complex.arg (f.val y * (f₀.val y)⁻¹ : Circle) := by
   have hcont : Continuous fun y ↦ Complex.arg (f.val y * (f₀.val y)⁻¹ : Circle) :=
@@ -143,16 +132,20 @@ locally path-connected space `Y`, the lift `Map_*(Y, S¹) → Map_*(Y, ℝ)` thr
 continuous for the compact-open topologies. -/
 theorem continuous_basedMapLift :
     Continuous (basedMapLift : BasedMap Y Circle y₀ 1 → BasedMap Y ℝ y₀ 0) := by
+  have h1 : (1 : Circle) ≠ -1 := fun h ↦ by
+    have := congrArg ((↑) : Circle → ℂ) h
+    norm_num at this
   refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
   refine continuous_iff_continuousAt.2 fun ⟨f₀, y₁⟩ ↦ ?_
   -- the maps `f` with `f / f₀` avoiding `-1` form a neighbourhood of `f₀`, as `Y` is compact
   have hnhds : ∀ᶠ f : BasedMap Y Circle y₀ 1 in 𝓝 f₀,
-      ∀ y, f.val y * (f₀.val y)⁻¹ ∈ argDomain := by
+      ∀ y, f.val y * (f₀.val y)⁻¹ ≠ -1 := by
     have hc : Continuous fun f : BasedMap Y Circle y₀ 1 ↦ f.val * f₀.val⁻¹ :=
       continuous_subtypeVal.mul continuous_const
     filter_upwards [hc.continuousAt.eventually (ContinuousMap.eventually_mapsTo isCompact_univ
-      isOpen_argDomain fun y _ ↦ by
-        simpa only [mul_inv_cancel, ContinuousMap.one_apply] using one_mem_argDomain)] with f hf y
+      isOpen_ne fun y _ ↦ by
+        simpa only [mul_inv_cancel, ContinuousMap.one_apply, Set.mem_ofPred_eq] using h1)]
+      with f hf y
     exact hf (Set.mem_univ y)
   -- on that neighbourhood the angle function is given by `basedMapLift_apply_eq_add_arg`
   refine ContinuousAt.congr ?_ ((hnhds.prod_inl_nhds y₁).mono fun p hp ↦
@@ -162,7 +155,7 @@ theorem continuous_basedMapLift :
       (f₀.val.continuous.comp continuous_snd).inv
   refine ((basedMapLift f₀).val.continuous.comp continuous_snd).continuousAt.add
     (ContinuousAt.comp (g := fun w : Circle ↦ Complex.arg w) ?_ hev.continuousAt)
-  simpa only [mul_inv_cancel] using continuousAt_arg one_mem_argDomain
+  simpa only [mul_inv_cancel] using continuousAt_arg h1
 
 /-- **Based maps into the circle are based angle functions.** For a compact, simply connected and
 locally path-connected space `Y`, postcomposition with `Circle.exp` is a homeomorphism
@@ -205,16 +198,17 @@ def continuousMapHomotopyEquiv (y₀ : Y) : ContinuousMap.HomotopyEquiv C(Y, Cir
   toFun := ⟨fun f ↦ f y₀, continuous_eval_const y₀⟩
   invFun := ⟨ContinuousMap.const Y, ContinuousMap.continuous_const'⟩
   left_inv := by
-    -- under `C(Y, S¹) ≃ₜ S¹ × Map_*(Y, S¹)` the composite collapses the contractible factor
-    let Φ := mappingSpaceGroupHomeomorph (G := Circle) y₀
-    let b : BasedMap Y Circle y₀ 1 := ⟨1, rfl⟩
-    have hF : (ContinuousMap.const (BasedMap Y Circle y₀ 1) b).Homotopic (ContinuousMap.id _) := by
-      obtain ⟨x, hx⟩ := id_nullhomotopic (BasedMap Y Circle y₀ 1)
-      exact (ContinuousMap.homotopic_const_iff.2 (PathConnectedSpace.joined b x)).trans hx.symm
-    have h := (ContinuousMap.Homotopic.refl (Φ : C(Circle × _, C(Y, Circle)))).comp
-      (((ContinuousMap.Homotopic.refl (ContinuousMap.id Circle)).prodMap hF).comp
-        (ContinuousMap.Homotopic.refl (Φ.symm : C(C(Y, Circle), Circle × _))))
-    convert h using 1 <;> ext f y <;> simp [Φ, b]
+    -- evaluation is `C(Y, S¹) ≃ₜ S¹ × Map_*(Y, S¹) ≃ₕ S¹`, collapsing the contractible factor,
+    -- and the constant maps are a right inverse of it, hence a homotopy inverse
+    let e := (mappingSpaceGroupHomeomorph (G := Circle) y₀).symm.toHomotopyEquiv.trans
+      (ContinuousMap.HomotopyEquiv.prodContractible Circle (BasedMap Y Circle y₀ 1))
+    have he : e.toFun = ⟨fun f ↦ f y₀, continuous_eval_const y₀⟩ := by
+      ext f
+      simp [e, -Homeomorph.symm_toHomotopyEquiv]
+    refine ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id ?_ (he ▸ e.left_inv)
+    convert ContinuousMap.Homotopic.refl (ContinuousMap.id Circle) using 1
+    ext z
+    simp
   right_inv := by
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id Circle) using 1
     ext z
