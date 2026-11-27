@@ -78,30 +78,6 @@ open IsDiscreteValuationRing Module MvPolynomial
 
 namespace Submodule
 
-section Coordinates
-
-variable {O V G ι : Type*} [CommRing O] [AddCommGroup V] [Module O V] [DecidableEq ι]
-  {N : Submodule O (ι → O)} {Φ : V →ₗ[O] ι → O} {z : G → V} {gen : ι → G}
-
-/-- If `Φ (z (gen i)) ≡ e_i` and `Φ (p • v) ≡ 0` modulo a submodule `N ⊆ O^ι` over a discrete
-valuation ring, with `p ≠ 0`, the colength of `N` is at most the length of its module of functions
-modulo `C`-torsion plus `#ι v(C)`. -/
-private theorem length_quotient_le_add [Fintype ι] [IsDomain O] [IsDiscreteValuationRing O] {p : O}
-    (hp : p ≠ 0) (hpN : ∀ v, Φ (p • v) ∈ N) (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N) (C : O) :
-    length O ((ι → O) ⧸ N) ≤ length O (N.functionModule Φ z p ⧸
-      torsionBy O (N.functionModule Φ z p) C) + Fintype.card ι • addVal O C := by
-  classical
-  have hdet : (N.functionModule Φ z p).IsDetectedBy ↑(Finset.univ.image gen) := by
-    rw [Finset.coe_image, Finset.coe_univ, Set.image_univ]
-    exact functionModule_isDetectedBy_range h p
-  rw [← length_functionModule hp hpN h]
-  refine (hdet.length_le C).trans ?_
-  gcongr
-  · exact length_torsionBy_quotient_span_singleton_le p C
-  · exact Finset.card_image_le.trans (by simp)
-
-end Coordinates
-
 section TriangleCost
 
 variable {O G B J : Type*} [CommRing O] [AddCommGroup B] [Module O B] [LinearOrder J]
@@ -285,8 +261,9 @@ private theorem length_quotient_map_add_le [Fintype ι] [DecidableEq ι] {gen : 
   have hsingle (i : ι) : ev (Pi.single i 1) = Pi.single i 1 := by
     ext k
     by_cases h : k = i <;> simp [ev, h]
-  have hU := length_quotient_le_add (N := U) (Φ := ev ∘ₗ Φ) (z := z) (gen := gen) hp
-    (fun v ↦ hev _ (hN (hpN v))) (fun i ↦ by simpa [hsingle] using hev _ (hN (hgen i))) C
+  have hU := length_quotient_le_length_functionModule_quotient_add (N := U) (Φ := ev ∘ₗ Φ) (z := z)
+    (gen := gen) hp (fun v ↦ hev _ (hN (hpN v)))
+    (fun i ↦ by simpa [hsingle] using hev _ (hN (hgen i))) C
   calc _ ≤ length O (Z'' ⧸ torsionBy O Z'' C) + Fintype.card ι • addVal O C +
         length O (N.functionModule Φ z p ⧸
           (pi A fun _ ↦ ⊥).comap (N.functionModule Φ z p).subtype) := by gcongr

@@ -237,14 +237,6 @@ theorem length_linearMap_fractionRing_quotient [IsPrincipalIdealRing O] (hO : ¬
   exact TauCeti.length_linearMap_of_forall_isMaximal
     (fun _ h𝔪 ↦ length_linearMap_quotient_of_isMaximal hO h𝔪) M
 
-omit [IsDomain O] [IsDiscreteValuationRing O] [Field K] [Algebra O K] [IsFractionRing O K] in
-/-- Over a field, a module killed by some `a ≠ 0` is trivial. -/
-private theorem subsingleton_of_isField (hO : IsField O) {Q : Type*} [AddCommGroup Q]
-    [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) : Subsingleton Q := by
-  obtain ⟨b, hb⟩ := hO.mul_inv_cancel ha
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  rw [← one_smul O x, ← hb, mul_comm, mul_smul, h, smul_zero]
-
 omit [IsDiscreteValuationRing O] [Field K] [Algebra O K] [IsFractionRing O K] in
 /-- For an `O`-module `Q` killed by `a ≠ 0` over a principal ideal domain,
 `Hom_O(Q, O ⧸ Ideal.span {a})` has the same length as `Q`. -/
@@ -252,7 +244,10 @@ theorem length_linearMap_quotient_span_singleton_right [IsPrincipalIdealRing O]
     {Q : Type*} [AddCommGroup Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0) :
     Module.length O (Q →ₗ[O] O ⧸ Ideal.span {a}) = Module.length O Q := by
   by_cases hO : IsField O
-  · have := subsingleton_of_isField hO ha h
+  · -- over a field, `a` is a unit, so `Q` is zero
+    obtain ⟨b, hb⟩ := hO.mul_inv_cancel ha
+    have : Subsingleton Q :=
+      subsingleton_of_forall_eq 0 fun x ↦ (IsUnit.of_mul_eq_one b hb).smul_eq_zero.1 (h x)
     rw [Module.length_eq_zero, Module.length_eq_zero]
   rw [(linearMapQuotientSpanEquivFractionRingQuotient (K := FractionRing O) ha h).length_eq,
     length_linearMap_fractionRing_quotient hO]
@@ -265,8 +260,9 @@ theorem exists_linearMap_quotient_span_singleton_apply_ne_zero [IsPrincipalIdeal
     {Q : Type*} [AddCommGroup Q] [Module O Q] {a : O} (ha : a ≠ 0) (h : ∀ x : Q, a • x = 0)
     {x : Q} (hx : x ≠ 0) : ∃ Ψ : Q →ₗ[O] O ⧸ Ideal.span {a}, Ψ x ≠ 0 := by
   by_cases hO : IsField O
-  · have := subsingleton_of_isField hO ha h
-    exact absurd (Subsingleton.elim x 0) hx
+  · -- over a field, `a` is a unit, so `x = 0`
+    obtain ⟨b, hb⟩ := hO.mul_inv_cancel ha
+    exact absurd ((IsUnit.of_mul_eq_one b hb).smul_eq_zero.1 (h x)) hx
   let e := linearMapQuotientSpanEquivFractionRingQuotient (K := FractionRing O) ha h
   obtain ⟨ψ, hψ⟩ := TauCeti.exists_apply_ne_zero_of_forall_isMaximal
     (TauCeti.nontrivial_linearMap_of_isMaximal

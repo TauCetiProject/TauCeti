@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Length
 public import TauCeti.LinearAlgebra.Pi.Detection
+import TauCeti.LinearAlgebra.Quotient.Pi.Generators
 import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 import TauCeti.RingTheory.Length
 
@@ -27,10 +30,12 @@ definition uses no structure on `G`, so it stands in for a module of cocycles ov
 Over a principal ideal domain, when `p ≠ 0` kills `V ⧸ Φ⁻¹(N)`, duality with values in `O ⧸ (p)`
 (`IsDiscreteValuationRing.length_linearMap_quotient_span_singleton_right`) turns the module of
 functions into a measure of the relations. If `N ⊆ O^ι` and the `Φ (z (gen i))` are congruent to
-the standard basis vectors modulo `N`, the module of functions has the length of `O^ι ⧸ N` and is
-detected by the `gen i`. For any `A ⊆ G`, the image in `F ⧸ N` of the relations `Φ (z a)`,
-`a ∈ A`, is no longer than the quotient of the module of functions by its members vanishing on
-`A`, because linear maps to `O ⧸ (p)` extend
+the standard basis vectors modulo `N`, the classes of the `z (gen i)` span `V ⧸ Φ⁻¹(N)`
+(`Submodule.span_range_mkQ_comap_eq_top`), so the module of functions has the length of
+`O^ι ⧸ N` and is detected by the `gen i`; over a discrete valuation ring, the colength of `N` is
+then bounded by a length modulo `C`-torsion. For any `A ⊆ G`, the image in `F ⧸ N` of the
+relations `Φ (z a)`, `a ∈ A`, is no longer than the quotient of the module of functions by its
+members vanishing on `A`, because linear maps to `O ⧸ (p)` extend
 (`IsDiscreteValuationRing.exists_linearMap_quotient_span_singleton_comp_eq`).
 
 ## Main definitions
@@ -50,6 +55,9 @@ detected by the `gen i`. For any `A ⊆ G`, the image in `F ⧸ N` of the relati
 * `Submodule.functionModule_isDetectedBy_range`, `Submodule.length_functionModule`: for a module
   of relations in `O^ι` in which `Φ (z (gen i)) ≡ e_i`, the module of functions is detected by the
   `gen i` and, over a principal ideal domain, has the length of `O^ι ⧸ N`.
+* `Submodule.length_quotient_le_length_functionModule_quotient_add`: over a discrete valuation
+  ring, the colength of such an `N` is at most the length of its module of functions modulo
+  `C`-torsion plus `#ι v(C)`.
 * `Submodule.length_map_mkQ_span_image_le`: over a principal ideal domain, the image of the
   relations `Φ (z a)`, `a ∈ A`, is no longer than the module of functions modulo its members
   vanishing on `A`.
@@ -157,42 +165,6 @@ section Coordinates
 variable {O V G ι : Type*} [CommRing O] [AddCommGroup V] [Module O V] [DecidableEq ι]
   {N : Submodule O (ι → O)} {Φ : V →ₗ[O] ι → O} {z : G → V} {gen : ι → G}
 
-/-- If `Φ (z (gen i)) ≡ e_i` modulo `N`, every `y ∈ O^ι` is congruent to `∑ i, y i • Φ (z (gen i))`
-modulo `N`. -/
-private theorem sub_sum_smul_mem [Fintype ι] (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N)
-    (y : ι → O) :
-    y - ∑ i, y i • Φ (z (gen i)) ∈ N := by
-  have hy : y - ∑ i, y i • Φ (z (gen i)) = ∑ i, y i • (Pi.single i 1 - Φ (z (gen i))) := by
-    simp_rw [smul_sub, Finset.sum_sub_distrib]
-    congr 1
-    ext j
-    simp [Finset.sum_apply, Pi.single_apply]
-  rw [hy]
-  exact sum_mem fun i _ ↦ smul_mem _ _ (by simpa using neg_mem (h i))
-
-/-- If `Φ (z (gen i)) ≡ e_i` modulo `N`, the classes of the `z (gen i)` span `V ⧸ Φ⁻¹(N)`. -/
-private theorem span_range_mkQ_eq_top [Finite ι]
-    (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N) :
-    span O (Set.range fun i ↦ ((N.restrictScalars O).comap Φ).mkQ (z (gen i))) = ⊤ := by
-  have := Fintype.ofFinite ι
-  refine eq_top_iff.2 fun q _ ↦ ?_
-  obtain ⟨v, rfl⟩ := ((N.restrictScalars O).comap Φ).mkQ_surjective q
-  have hv : ((N.restrictScalars O).comap Φ).mkQ v =
-      ∑ i, Φ v i • ((N.restrictScalars O).comap Φ).mkQ (z (gen i)) := by
-    simp_rw [← map_smul, ← map_sum]
-    refine (Quotient.eq _).2 ?_
-    simpa using sub_sum_smul_mem h (Φ v)
-  rw [hv]
-  exact sum_mem fun i _ ↦ smul_mem _ _ (subset_span ⟨i, rfl⟩)
-
-/-- If `Φ (z (gen i)) ≡ e_i` modulo `N`, a linear map on `V ⧸ Φ⁻¹(N)` vanishing at the classes of
-the `z (gen i)` is zero. -/
-private theorem eq_zero_of_forall_apply_mkQ_eq_zero [Finite ι] {M : Type*} [AddCommGroup M]
-    [Module O M] (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N)
-    {Ψ : V ⧸ (N.restrictScalars O).comap Φ →ₗ[O] M}
-    (hΨ : ∀ i, Ψ (((N.restrictScalars O).comap Φ).mkQ (z (gen i))) = 0) : Ψ = 0 :=
-  LinearMap.ext_on_range (span_range_mkQ_eq_top h) hΨ
-
 /-- If `Φ (z (gen i)) ≡ e_i` modulo a submodule `N ⊆ O^ι`, the module of functions of `N` is
 detected by the `gen i`. -/
 theorem functionModule_isDetectedBy_range [Finite ι]
@@ -200,9 +172,10 @@ theorem functionModule_isDetectedBy_range [Finite ι]
     (N.functionModule Φ z p).IsDetectedBy (Set.range gen) := by
   refine isDetectedBy_iff.2 fun c hc hcs ↦ ?_
   obtain ⟨Ψ, hΨ⟩ := toFunctionModule_surjective (N := N) (z := z) ⟨c, hc⟩
-  have hΨ0 : Ψ = 0 := eq_zero_of_forall_apply_mkQ_eq_zero h fun i ↦ by
-    rw [← coe_toFunctionModule_apply, hΨ]
-    exact hcs _ ⟨i, rfl⟩
+  have hΨ0 : Ψ = 0 :=
+    eq_zero_of_forall_apply_mkQ_comap_eq_zero (N := N.restrictScalars O) h fun i ↦ by
+      rw [← coe_toFunctionModule_apply, hΨ]
+      exact hcs _ ⟨i, rfl⟩
   simpa [hΨ0] using congrArg Subtype.val hΨ.symm
 
 /-- If `Φ (z (gen i)) ≡ e_i` and `Φ (p • v) ≡ 0` modulo a submodule `N ⊆ O^ι` over a principal
@@ -214,9 +187,10 @@ theorem length_functionModule [Finite ι] [IsDomain O] [IsPrincipalIdealRing O] 
   set W := (N.restrictScalars O).comap Φ
   -- Evaluation at the `z g` identifies `Hom_O(V ⧸ Φ⁻¹(N), O ⧸ (p))` with the module of functions.
   have hinj : Function.Injective (N.toFunctionModule Φ z p) :=
-    (injective_iff_map_eq_zero _).2 fun Ψ hΨ ↦ eq_zero_of_forall_apply_mkQ_eq_zero h fun i ↦ by
-      rw [← coe_toFunctionModule_apply, hΨ]
-      rfl
+    (injective_iff_map_eq_zero _).2 fun Ψ hΨ ↦
+      eq_zero_of_forall_apply_mkQ_comap_eq_zero (N := N.restrictScalars O) h fun i ↦ by
+        rw [← coe_toFunctionModule_apply, hΨ]
+        rfl
   -- `Φ` induces an isomorphism `V ⧸ Φ⁻¹(N) ≃ O^ι ⧸ N`.
   have hW : W ≤ N.comap Φ := le_rfl
   have hinj' : Function.Injective (W.mapQ N Φ hW) := by
@@ -231,6 +205,25 @@ theorem length_functionModule [Finite ι] [IsDomain O] [IsPrincipalIdealRing O] 
     _ = length O (V ⧸ W) :=
         length_linearMap_quotient_span_singleton_right hp (smul_quotient_comap_eq_zero hpN)
     _ = length O ((ι → O) ⧸ N) := (LinearEquiv.ofBijective _ ⟨hinj', hsurj⟩).length_eq
+
+/-- If `Φ (z (gen i)) ≡ e_i` and `Φ (p • v) ≡ 0` modulo a submodule `N ⊆ O^ι` over a discrete
+valuation ring, with `p ≠ 0`, the colength of `N` is at most the length of its module of functions
+modulo `C`-torsion plus `#ι v(C)`: the module of functions is detected by the `#ι` points `gen i`,
+and `O ⧸ (p)` has `C`-torsion of length at most `v(C)`. -/
+theorem length_quotient_le_length_functionModule_quotient_add [Fintype ι] [IsDomain O]
+    [IsDiscreteValuationRing O] {p : O} (hp : p ≠ 0) (hpN : ∀ v, Φ (p • v) ∈ N)
+    (h : ∀ i, Φ (z (gen i)) - Pi.single i 1 ∈ N) (C : O) :
+    length O ((ι → O) ⧸ N) ≤ length O (N.functionModule Φ z p ⧸
+      torsionBy O (N.functionModule Φ z p) C) + Fintype.card ι • addVal O C := by
+  classical
+  have hdet : (N.functionModule Φ z p).IsDetectedBy ↑(Finset.univ.image gen) := by
+    rw [Finset.coe_image, Finset.coe_univ, Set.image_univ]
+    exact functionModule_isDetectedBy_range h p
+  rw [← length_functionModule hp hpN h]
+  refine (hdet.length_le C).trans ?_
+  gcongr
+  · exact length_torsionBy_quotient_span_singleton_le p C
+  · exact Finset.card_image_le.trans (by simp)
 
 end Coordinates
 
