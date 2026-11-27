@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle.SelmerModule
 
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 import TauCeti.RingTheory.Ideal.ArtinRees
 
 /-!
@@ -57,10 +58,9 @@ depends only on `z(g)` modulo `I ^ k M`.
   coefficients preserves Ribet cocycles, and an injective one reflects them.
 * `TauCeti.mem_cocycleSelmerModule_iff_isLocallyConstant_and_mem_ribetCocycles`: on a topological
   group, the locally constant Ribet cocycles form a Selmer module of cocycles.
-* `TauCeti.apply_mem_span_range_of_cocycle`: the span of the values of a cocycle is stable.
 * `TauCeti.exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top`: over a noetherian ring and
-  for `z` in a finite module, there is `k` such that the Ribet cocycles with values killed by `I`
-  kill every combination `θ` with `∑_g θ_g • z(g) ∈ I ^ k M`.
+  for `z` in a finite module, there is `k` such that every map `c` obeying the scalar relations of
+  `z`, with values killed by `I`, kills every combination `θ` with `∑_g θ_g • z(g) ∈ I ^ k M`.
 * `TauCeti.exists_forall_apply_eq_apply_of_sub_mem_pow_smul_top`: in particular `c(g) = c(h)`
   whenever `z(g) - z(h) ∈ I ^ k M`.
 * `TauCeti.exists_submodule_injOn_fst_of_mem_ribetCocycles`: for a cocycle `z` in a finite module
@@ -206,57 +206,32 @@ theorem mem_cocycleSelmerModule_iff_isLocallyConstant_and_mem_ribetCocycles [Top
 
 end Definition
 
-section Span
-
-variable {G O M : Type*} [Mul G] [Ring O] [AddCommGroup M] [Module O M]
-
-/-- **The span of the values of a cocycle is stable.** If `z : G → M` satisfies
-`z (g * h) = z g + σ g (z h)` for linear maps `σ g`, then every `σ g` maps the span of the values
-of `z` into itself, since `σ g (z h) = z (g * h) - z g`. -/
-theorem apply_mem_span_range_of_cocycle {σ : G → Module.End O M} {z : G → M}
-    (hz : ∀ g h, z (g * h) = z g + σ g (z h)) (g : G) {m : M}
-    (hm : m ∈ Submodule.span O (Set.range z)) : σ g m ∈ Submodule.span O (Set.range z) := by
-  induction hm using Submodule.span_induction with
-  | mem _ hx =>
-    obtain ⟨h, rfl⟩ := hx
-    have : σ g (z h) = z (g * h) - z g := by
-      rw [hz]
-      abel
-    rw [this]
-    exact sub_mem (Submodule.subset_span (Set.mem_range_self _))
-      (Submodule.subset_span (Set.mem_range_self _))
-  | zero => simp
-  | add _ _ _ _ hx hy => simpa using Submodule.add_mem _ hx hy
-  | smul r _ _ hx => simpa using Submodule.smul_mem _ r hx
-
-end Span
-
 section ArtinRees
 
-variable {G : Type*} [Mul G] {O : Type*} [CommRing O] [IsNoetherianRing O] {A M V : Type*}
-  [Semiring A] [Algebra O A] [AddCommGroup V] [Module A V] [Module O V] [IsScalarTower O A V]
-  [AddCommGroup M] [Module O M] [Module.Finite O M]
+variable {G : Type*} {O : Type*} [CommRing O] [IsNoetherianRing O] {M V : Type*}
+  [AddCommGroup V] [Module O V] [AddCommGroup M] [Module O M] [Module.Finite O M]
 
-/-- **Combinations deep in the `I`-adic filtration are killed by Ribet cocycles.** Over a noetherian
-ring, for `z` with values in a finite module `M` and an ideal `I` killing `V`, there is `k` such
-that every Ribet cocycle `c` relative to `z` with values in `V` has `∑_g θ_g • c(g) = 0` whenever
-`∑_g θ_g • z(g) ∈ I ^ k M`. The same `k` serves every such `c`. -/
-theorem exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top {z : G → M} {ρ : G → A}
-    {T : Set G} {I : Ideal O} (hV : Module.IsTorsionBySet O V I) :
-    ∃ k : ℕ, ∀ c ∈ ribetCocycles O V z ρ T, ∀ θ : G →₀ O,
-      Finsupp.linearCombination O z θ ∈ I ^ k • (⊤ : Submodule O M) →
-        Finsupp.linearCombination O c θ = 0 := by
+/-- **Combinations deep in the `I`-adic filtration vanish for maps obeying the scalar relations.**
+Over a noetherian ring, for `z` with values in a finite module `M` and an ideal `I` killing `V`,
+there is `k` such that every `c : G → V` obeying the scalar relations of `z` has
+`∑_g θ_g • c(g) = 0` whenever `∑_g θ_g • z(g) ∈ I ^ k M`. The same `k` serves every such `c`. -/
+theorem exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top {z : G → M} {I : Ideal O}
+    (hV : Module.IsTorsionBySet O V I) :
+    ∃ k : ℕ, ∀ c : G → V,
+      (∀ θ : G →₀ O, Finsupp.linearCombination O z θ = 0 → Finsupp.linearCombination O c θ = 0) →
+        ∀ θ : G →₀ O, Finsupp.linearCombination O z θ ∈ I ^ k • (⊤ : Submodule O M) →
+          Finsupp.linearCombination O c θ = 0 := by
   -- Artin–Rees for the span of the `z(g)`, which is the range of `θ ↦ ∑_g θ_g • z(g)`.
   obtain ⟨k, hk⟩ := ArtinRees.exists_controlled_lift I
     (LinearMap.range (Finsupp.linearCombination O z))
-  refine ⟨1 + k, fun c hc θ hθ ↦ ?_⟩
+  refine ⟨1 + k, fun c hrel θ hθ ↦ ?_⟩
   -- The combination `∑_g θ_g • z(g)` is also `∑_g θ'_g • z(g)` with `θ' ∈ I • ⊤`.
   obtain ⟨θ', hθ', hθ'θ⟩ := hk (Finsupp.linearCombination O z).rangeRestrict
     (LinearMap.surjective_rangeRestrict _) 1 ⟨_, LinearMap.mem_range_self _ θ⟩ hθ
   have hzθ : Finsupp.linearCombination O z (θ - θ') = 0 := by
     rw [map_sub, sub_eq_zero]
     exact (congrArg Subtype.val hθ'θ).symm
-  have hcθ := linearCombination_eq_zero_of_mem_ribetCocycles hc hzθ
+  have hcθ := hrel (θ - θ') hzθ
   rw [map_sub, sub_eq_zero] at hcθ
   -- So `∑_g θ_g • c(g) = ∑_g θ'_g • c(g)` lies in `I • V = 0`.
   have h := Submodule.smul_top_le_comap_smul_top _ (Finsupp.linearCombination O c) hθ'
@@ -264,19 +239,27 @@ theorem exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top {z : G → M
   exact (Submodule.mem_bot O).mp
     ((Submodule.smul_le.mpr fun r hr v _ ↦ (Submodule.mem_bot O).mpr (@hV v ⟨r, hr⟩)) h)
 
-/-- **A Ribet cocycle depends only on `z` modulo a power of the ideal.** Over a noetherian ring, for
-`z` with values in a finite module `M` and an ideal `I` killing `V`, there is `k` such that every
-Ribet cocycle `c` relative to `z` with values in `V` has `c(g) = c(h)` whenever
-`z(g) - z(h) ∈ I ^ k M`. -/
-theorem exists_forall_apply_eq_apply_of_sub_mem_pow_smul_top {z : G → M} {ρ : G → A} {T : Set G}
-    {I : Ideal O} (hV : Module.IsTorsionBySet O V I) :
-    ∃ k : ℕ, ∀ c ∈ ribetCocycles O V z ρ T, ∀ g h,
-      z g - z h ∈ I ^ k • (⊤ : Submodule O M) → c g = c h := by
-  obtain ⟨k, hk⟩ := exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top
-    (z := z) (ρ := ρ) (T := T) hV
-  refine ⟨k, fun c hc g h hgh ↦ ?_⟩
-  have := hk c hc (Finsupp.single g 1 - Finsupp.single h 1) (by simpa using hgh)
+/-- **A map obeying the scalar relations of `z` depends only on `z` modulo a power of the ideal.**
+Over a noetherian ring, for `z` with values in a finite module `M` and an ideal `I` killing `V`,
+there is `k` such that every `c : G → V` obeying the scalar relations of `z` has `c(g) = c(h)`
+whenever `z(g) - z(h) ∈ I ^ k M`. -/
+theorem exists_forall_apply_eq_apply_of_sub_mem_pow_smul_top {z : G → M} {I : Ideal O}
+    (hV : Module.IsTorsionBySet O V I) :
+    ∃ k : ℕ, ∀ c : G → V,
+      (∀ θ : G →₀ O, Finsupp.linearCombination O z θ = 0 → Finsupp.linearCombination O c θ = 0) →
+        ∀ g h, z g - z h ∈ I ^ k • (⊤ : Submodule O M) → c g = c h := by
+  obtain ⟨k, hk⟩ := exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top (z := z) hV
+  refine ⟨k, fun c hrel g h hgh ↦ ?_⟩
+  have := hk c hrel (Finsupp.single g 1 - Finsupp.single h 1) (by simpa using hgh)
   simpa [sub_eq_zero] using this
+
+end ArtinRees
+
+section Graph
+
+variable {G : Type*} [Mul G] {O : Type*} [CommRing O] [IsNoetherianRing O] {A M V : Type*}
+  [Semiring A] [Algebra O A] [AddCommGroup V] [Module A V] [Module O V] [IsScalarTower O A V]
+  [AddCommGroup M] [Module O M] [Module.Finite O M]
 
 /-- **Ribet cocycles are graphs up to a power of the ideal.** Let `O` be noetherian, `z : G → M` a
 cocycle for `σ : G → End_O(M)` with values in a finite `O`-module, and `c` a Ribet cocycle relative
@@ -291,8 +274,7 @@ theorem exists_submodule_injOn_fst_of_mem_ribetCocycles {σ : G → Module.End O
     ∃ k : ℕ, ∃ Y : Submodule O (M × V), (∀ g, ∀ y ∈ Y, (σ g y.1, ρ g • y.2) ∈ Y) ∧
       Set.InjOn Prod.fst (Y : Set (M × V)) ∧
         ∀ g, ∀ w ∈ I ^ k • (⊤ : Submodule O M), (z g + w, c g) ∈ Y := by
-  obtain ⟨k, hk⟩ := exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top
-    (z := z) (ρ := ρ) (T := T) hV
+  obtain ⟨k, hk⟩ := exists_forall_linearCombination_eq_zero_of_mem_pow_smul_top (z := z) hV
   have hpair (θ : G →₀ O) : Finsupp.linearCombination O (fun g ↦ (z g, c g)) θ =
       (Finsupp.linearCombination O z θ, Finsupp.linearCombination O c θ) := by
     induction θ using Finsupp.induction_linear with
@@ -329,14 +311,14 @@ theorem exists_submodule_injOn_fst_of_mem_ribetCocycles {σ : G → Module.End O
     obtain ⟨θ, rfl⟩ := hp
     rw [hpair] at hy₁ ⊢
     have hθ : Finsupp.linearCombination O z θ = -q.1 := eq_neg_of_add_eq_zero_left hy₁
-    simp [hq₂, hk c hc θ (hθ ▸ Submodule.neg_mem _ hq₁)]
+    simp [hq₂, hk c hc.2.2 θ (hθ ▸ Submodule.neg_mem _ hq₁)]
   · -- Membership: `(z(g) + w, c(g)) = (z(g), c(g)) + (w, 0)`.
     have h : (z g + w, c g) = (z g, c g) + (w, 0) := by simp
     rw [h]
     exact Submodule.add_mem_sup (Submodule.subset_span ⟨g, rfl⟩)
       (Submodule.mem_prod.mpr ⟨hw, zero_mem _⟩)
 
-end ArtinRees
+end Graph
 
 section Matrix
 
