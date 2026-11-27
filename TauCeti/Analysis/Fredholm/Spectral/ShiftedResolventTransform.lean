@@ -21,9 +21,9 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 Let `ι : D →L H` be an injective bounded operator from a Banach space `D` into a Hilbert space `H`,
 and `A : D →L H` a bounded operator which is symmetric through `ι`: `⟪A x, ι y⟫ = ⟪ι x, A y⟫`.
 The bounded operator `A` on the common domain `D` describes the unbounded operator
-`ContinuousLinearMap.domainOperator ι A hι` on `H` with domain `range ι`; this is how a self-adjoint
-unbounded operator, such as `-J ∂_t` on a Sobolev space of loops, is given by a bounded operator on
-its domain with the graph norm. For a real shift `c ≠ 0` at which `c ι - A` is invertible, the
+`LinearMap.domainOperator ι A hι` on `H` with domain `range ι`; this is how a self-adjoint unbounded
+operator, such as `-J ∂_t` on a Sobolev space of loops, is given by a bounded operator on its domain
+with the graph norm. For a real shift `c ≠ 0` at which `c ι - A` is invertible, the
 **shifted resolvent transform**
 
 `τ_c A = c A (c ι - A)⁻¹ = c² ι (c ι - A)⁻¹ - c`
