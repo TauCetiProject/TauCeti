@@ -109,30 +109,32 @@ private theorem eqOn_zero_of_forall_inner_eq_inner_integral {s : Set ℝ} [s.Ord
   have hwI : ContinuousOn w (Icc (0 ⊓ t) (0 ⊔ t)) := hw.mono hI
   -- Testing with `φ = P χ` and `ψ = Q χ` for every `χ` gives `P (w τ) = ∫₀^τ (τ - r) Q (w r) dr`.
   have hPs (x y : Lp F 2 (volume : Measure E)) :
-      ⟪Lp.laplacianResolventCLM F x, y⟫ = ⟪x, Lp.laplacianResolventCLM F y⟫ :=
-    Lp.isSelfAdjoint_laplacianResolventCLM.isSymmetric x y
+      ⟪Lp.laplacianResolventCLM F one_pos x, y⟫ = ⟪x, Lp.laplacianResolventCLM F one_pos y⟫ :=
+    (Lp.isSelfAdjoint_laplacianResolventCLM one_pos).isSymmetric x y
   have hQs (x y : Lp F 2 (volume : Measure E)) :
-      ⟪Lp.laplacianMulResolventCLM F x, y⟫ = ⟪x, Lp.laplacianMulResolventCLM F y⟫ :=
-    Lp.isSelfAdjoint_laplacianMulResolventCLM.isSymmetric x y
-  have hP (τ : ℝ) (hτ : τ ∈ Icc (0 ⊓ t) (0 ⊔ t)) : Lp.laplacianResolventCLM F (w τ) =
-      ∫ r in (0 : ℝ)..τ, (τ - r) • Lp.laplacianMulResolventCLM F (w r) := by
+      ⟪Lp.laplacianMulResolventCLM F one_pos x, y⟫ =
+        ⟪x, Lp.laplacianMulResolventCLM F one_pos y⟫ :=
+    (Lp.isSelfAdjoint_laplacianMulResolventCLM one_pos).isSymmetric x y
+  have hP (τ : ℝ) (hτ : τ ∈ Icc (0 ⊓ t) (0 ⊔ t)) : Lp.laplacianResolventCLM F one_pos (w τ) =
+      ∫ r in (0 : ℝ)..τ, (τ - r) • Lp.laplacianMulResolventCLM F one_pos (w r) := by
     have hint := intervalIntegral.intervalIntegrable_sub_smul (hwI.mono (uIcc_subset_Icc h0I hτ))
     refine ext_inner_left ℂ fun χ ↦ ?_
-    rw [← hPs, h _ _ (Lp.laplacian_laplacianResolventCLM_apply χ) τ (hI hτ), hQs,
-      ← (Lp.laplacianMulResolventCLM F).intervalIntegral_comp_comm hint]
+    rw [← hPs, h _ _ (Lp.laplacian_laplacianResolventCLM_apply one_pos χ) τ (hI hτ), hQs,
+      ← (Lp.laplacianMulResolventCLM F one_pos).intervalIntegral_comp_comm hint]
     simp only [ContinuousLinearMap.map_smul_of_tower]
   -- So `P ∘ w` is a strong solution of the free wave equation with zero data on `[0 ⊓ t, 0 ⊔ t]`.
-  have hQ : ContinuousOn (fun τ ↦ Lp.laplacianMulResolventCLM F (w τ)) (Icc (0 ⊓ t) (0 ⊔ t)) :=
-    (Lp.laplacianMulResolventCLM F).continuous.comp_continuousOn hwI
-  have hsol : IsWaveSolutionOn (fun τ ↦ Lp.laplacianResolventCLM F (w τ))
-      (fun τ ↦ ∫ r in (0 : ℝ)..τ, Lp.laplacianMulResolventCLM F (w r))
-      (fun τ ↦ Lp.laplacianMulResolventCLM F (w τ)) 0 (Icc (0 ⊓ t) (0 ⊔ t)) :=
+  have hQ : ContinuousOn (fun τ ↦ Lp.laplacianMulResolventCLM F one_pos (w τ))
+      (Icc (0 ⊓ t) (0 ⊔ t)) :=
+    (Lp.laplacianMulResolventCLM F one_pos).continuous.comp_continuousOn hwI
+  have hsol : IsWaveSolutionOn (fun τ ↦ Lp.laplacianResolventCLM F one_pos (w τ))
+      (fun τ ↦ ∫ r in (0 : ℝ)..τ, Lp.laplacianMulResolventCLM F one_pos (w r))
+      (fun τ ↦ Lp.laplacianMulResolventCLM F one_pos (w τ)) 0 (Icc (0 ⊓ t) (0 ⊔ t)) :=
     ⟨fun τ hτ ↦ (intervalIntegral.hasDerivWithinAt_integral_sub_smul hQ h0I hτ).congr
       (fun σ hσ ↦ hP σ hσ) (hP τ hτ),
     fun τ hτ ↦ intervalIntegral.hasDerivWithinAt_integral hQ h0I hτ,
-    fun τ _ ↦ by simpa using Lp.laplacian_laplacianResolventCLM_apply (w τ)⟩
+    fun τ _ ↦ by simpa using Lp.laplacian_laplacianResolventCLM_apply one_pos (w τ)⟩
   have hzero := hsol.eq_zero h0I (by simp [hP 0 h0I]) (by simp) ⟨inf_le_right, le_sup_right⟩
-  exact Lp.laplacianResolventCLM_injective (hzero.trans (map_zero _).symm)
+  exact Lp.laplacianResolventCLM_injective one_pos (hzero.trans (map_zero _).symm)
 
 /-- A weak solution of the free equation with zero data against Schwartz functions is one against
 every pair `φ, ψ ∈ L²` with `Δφ = ψ`, since Schwartz functions are a core for the Laplacian. -/
