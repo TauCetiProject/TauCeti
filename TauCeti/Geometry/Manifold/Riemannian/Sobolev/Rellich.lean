@@ -84,7 +84,7 @@ omit [I.Boundaryless] [FiniteDimensional ℝ F] in
 with `F`, and let `V` be an open subset of a compact set `K` of `F` that `L⁻¹` maps into the chart
 target at `p`. The integral of a function `g ≥ 0` over the corresponding open set of `M` is at
 most a constant multiple, independent of `g`, of the integral over `V` of `g` read in the chart. -/
-private theorem exists_setLIntegral_le_mul_setLIntegral_comp (L : E ≃L[ℝ] F) (p : M) {V K : Set F}
+theorem exists_setLIntegral_le_mul_setLIntegral_comp (L : E ≃L[ℝ] F) (p : M) {V K : Set F}
     (hV : IsOpen V) (hK : IsCompact K) (hVK : V ⊆ K)
     (hKt : MapsTo L.symm K (extChartAt I p).target) :
     ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ g : M → ℝ≥0∞,

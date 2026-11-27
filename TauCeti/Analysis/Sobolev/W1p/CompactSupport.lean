@@ -71,6 +71,9 @@ Neither `ψ` nor `w` need have compact support, so it applies to unbounded `Ω` 
   product extended by zero to a larger open set.
 * `TauCeti.W1p.exists_top_value_gradient_ae_eq_on_of_isCompact`: near a compact subset of `Ω`,
   a function in `W^{1,p}(Ω)` agrees in value and gradient with one in `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.exists_isCompact_tendsto_ofTestFunctionₗ`: a whole-space Sobolev function
+  vanishing outside a compact set `K` is a limit of test functions supported in a fixed compact
+  subset of any open neighbourhood of `K`.
 * `TauCeti.W1p.exists_top_value_gradient_ae_eq_mul_sub_const`: for a smooth `ψ` compactly
   supported in `Ω` and a constant `m`, the function `ψ (u - m)` extends by zero to `W^{1,p}(ℝⁿ)`
   with weak gradient `ψ ∇u + (u - m) ∇ψ`; value and gradient are both stated.
@@ -400,5 +403,46 @@ theorem W1p.exists_top_value_gradient_ae_eq_mul_sub_const (hp : p ≠ (∞ : ℝ
       rw [indicator_of_notMem hx, image_eq_zero_of_notMem_tsupport hxK,
         gradient_of_notMem_tsupport hxK]
       simp
+
+/-- **Test functions with supports in a fixed compact set approximate a compactly supported
+Sobolev function.** Let `1 ≤ p < ∞`, let `v ∈ W^{1,p}(ℝⁿ)` have value vanishing almost
+everywhere outside a compact set `K`, and let `U ⊇ K` be open. There are a compact set `S ⊆ U`
+and test functions `φₙ`, all supported in `S`, converging to `v` in `W^{1,p}`. They are the
+products of arbitrary approximating test functions with a cutoff equal to `1` near `K` and
+supported in `S`. -/
+theorem W1p.exists_isCompact_tendsto_ofTestFunctionₗ (hp : p ≠ (∞ : ℝ≥0∞)) (v : W1p mu ⊤ p)
+    (hK : IsCompact K) {U : Set E} (hU : IsOpen U) (hKU : K ⊆ U)
+    (hv : ∀ᵐ x ∂mu, x ∉ K → W1p.value v x = 0) :
+    ∃ S : Set E, IsCompact S ∧ S ⊆ U ∧ ∃ φs : ℕ → 𝓓((⊤ : Opens E), ℝ),
+      (∀ n, tsupport (φs n : E → ℝ) ⊆ S) ∧
+        Tendsto (fun n ↦ W1p.ofTestFunctionₗ mu ⊤ p (φs n)) atTop (𝓝 v) := by
+  obtain ⟨θ, M, hθ, -, hθ1, hθc, hθU, hM, hθM, hθgM⟩ :=
+    hK.exists_contDiff_cutoff_with_bounds hU hKU
+  -- Test functions converging to `v`.
+  obtain ⟨u, hu, hlim⟩ := mem_closure_iff_seq_limit.1 (W1p.denseRange_ofTestFunctionₗ_top
+    (mu := mu) hp v)
+  choose φs hφs using hu
+  -- Multiplication by `θ` is continuous and fixes `v`, since `θ = 1` where `v ≠ 0`.
+  set Θ := W1p.contDiffSMulL (mu := mu) (Omega := ⊤) (p := p) θ hθ hM (fun x _ ↦ hθM x)
+    (fun x _ ↦ hθgM x)
+  have hΘv : Θ v = v := by
+    refine W1p.ext_value (Lp.ext ?_)
+    simp only [Θ, W1p.contDiffSMulL_apply]
+    filter_upwards [W1p.value_contDiffSMul_ae hθ hM (fun x _ ↦ hθM x) (fun x _ ↦ hθgM x) v,
+      ae_restrict_of_ae hv] with x h1 h2
+    rw [h1, smul_eq_mul]
+    by_cases hxK : x ∈ K
+    · have hθx : θ x = 1 := by simpa using interior_subset (hθ1 hxK)
+      rw [hθx, one_mul]
+    · rw [h2 hxK, mul_zero]
+  let ψs : ℕ → 𝓓((⊤ : Opens E), ℝ) := fun n ↦
+    ⟨θ * (φs n : E → ℝ), hθ.mul (φs n).contDiff, hθc.mul_right, subset_univ _⟩
+  refine ⟨tsupport θ, hθc.isCompact, hθU, ψs, fun n ↦ tsupport_mul_subset_left, ?_⟩
+  have h := (Θ.continuous.tendsto v).comp (show Tendsto (fun n ↦ W1p.ofTestFunctionₗ mu ⊤ p
+    (φs n)) atTop (𝓝 v) by simpa only [hφs] using hlim)
+  rw [hΘv] at h
+  refine h.congr fun n ↦ ?_
+  simp only [Function.comp_apply, Θ, W1p.contDiffSMulL_apply]
+  exact W1p.contDiffSMul_ofTestFunctionₗ hθ hM _ _ (φs n) (ψs n) rfl
 
 end TauCeti
