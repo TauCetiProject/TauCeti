@@ -108,9 +108,9 @@ theorem hasSum_dslope_exp_zero (u : ℝ) :
       (fun n hn ↦ by simp [zero_pow hn])
   · have hsumm : Summable fun n : ℕ ↦ u ^ n / ((n + 1)! : ℝ) := by
       refine .of_norm_bounded (summable_pow_div_factorial |u|) fun n ↦ ?_
-      rw [norm_eq_abs, abs_div, abs_pow, abs_of_pos (by positivity : (0 : ℝ) < ((n + 1)! : ℝ))]
-      refine div_le_div_of_nonneg_left (pow_nonneg (abs_nonneg u) _) (by positivity) ?_
-      exact_mod_cast Nat.factorial_le (Nat.le_succ n)
+      simp only [norm_eq_abs, abs_div, abs_pow, Nat.abs_cast]
+      gcongr
+      exact Nat.le_succ n
     have hexp : HasSum (fun n : ℕ ↦ u ^ n / (n ! : ℝ)) (exp u) := by
       simpa [exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div] using
         (NormedSpace.expSeries_div_hasSum_exp (𝔸 := ℝ) u)

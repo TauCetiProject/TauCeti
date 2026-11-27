@@ -256,17 +256,28 @@ theorem intervalIntegrable_inv_log_sub_inv_sub_one {a b : ℝ} (ha : 0 ≤ a) (h
 `[0, 1]`. -/
 theorem intervalIntegrable_inv_log_one_add_sub_inv :
     IntervalIntegrable (fun u : ℝ ↦ (log (1 + u))⁻¹ - u⁻¹) volume 0 1 := by
-  have h := intervalIntegrable_inv_log_sub_inv_sub_one (a := 1) (b := 2) zero_le_one (by norm_num)
+  have h := (intervalIntegrable_inv_log_sub_inv_sub_one (a := 1) (b := 2)
+    zero_le_one (by norm_num)).comp_add_left 1
+  have hfun : (fun u : ℝ ↦ (log (1 + u))⁻¹ - (1 + u - 1)⁻¹) =
+      fun u : ℝ ↦ (log (1 + u))⁻¹ - u⁻¹ := by
+    ext u
+    ring
   have h21 : (2 : ℝ) - 1 = 1 := by norm_num
-  simpa [add_comm, add_sub_cancel_left, h21] using h.comp_add_left 1
+  rw [hfun, sub_self, h21] at h
+  exact h
 
 /-- The left-shifted regularized integrand `(log (1 - u))⁻¹ + u⁻¹` is interval integrable on
 `[0, 1]`. -/
 theorem intervalIntegrable_inv_log_one_sub_add_inv :
     IntervalIntegrable (fun u : ℝ ↦ (log (1 - u))⁻¹ + u⁻¹) volume 0 1 := by
-  have h := intervalIntegrable_inv_log_sub_inv_sub_one (a := 0) (b := 1) le_rfl zero_le_one
-  simpa [sub_zero, sub_self, sub_sub_cancel_left, inv_neg, sub_neg_eq_add] using
-    (h.comp_sub_left 1).symm
+  have h := ((intervalIntegrable_inv_log_sub_inv_sub_one (a := 0) (b := 1)
+    le_rfl zero_le_one).comp_sub_left 1).symm
+  have hfun : (fun u : ℝ ↦ (log (1 - u))⁻¹ - (1 - u - 1)⁻¹) =
+      fun u : ℝ ↦ (log (1 - u))⁻¹ + u⁻¹ := by
+    ext u
+    ring
+  rw [hfun, sub_self, sub_zero] at h
+  exact h
 
 /-- The symmetric integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹` is interval integrable on
 `[0, 1]`. -/

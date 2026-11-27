@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
@@ -43,11 +42,12 @@ the prime number theorem of Schoenfeld, Büthe and later authors, for instance
 constant `li 2` on `(1, ∞)`, so that bounds stated with either normalisation convert into each
 other.
 
-Termwise differentiation of `liSeries` gives `(e^y - 1) / y` at `y = log x`
-(`Real.tsum_pow_div_factorial_succ`), and the chain rule then gives `li' x = (log x)⁻¹` on `(0, 1)`
-and on `(1, ∞)`. Hence `li` is an antiderivative of `(log t)⁻¹` on both intervals: it is strictly
-decreasing on `(0, 1)`, strictly increasing on `(1, ∞)`, tends to `0` as `x → 0⁺`, to `-∞` at `1`
-from either side, and to `+∞` at infinity. From `γ > 1 / 2` (Mathlib), `log (3 / 2) > 2 / 5`
+Termwise differentiation of the entire-part series (`Real.hasDerivAt_tsum_pow_div_mul_factorial`)
+gives `dslope exp 0 y`, which equals `(e^y - 1) / y` away from `0` (`TauCeti.dslope_exp_zero_of_ne`)
+at `y = log x`, and the chain rule then gives `li' x = (log x)⁻¹` on `(0, 1)` and on `(1, ∞)`.
+Hence `li` is an antiderivative of `(log t)⁻¹` on both intervals: it is strictly decreasing on
+`(0, 1)`, strictly increasing on `(1, ∞)`, tends to `0` as `x → 0⁺`, to `-∞` at `1` from either
+side, and to `+∞` at infinity. From `γ > 1 / 2` (Mathlib), `log (3 / 2) > 2 / 5`
 (`Real.two_fifths_lt_log_three_halves`) and the first two terms of the series one gets
 `li (3 / 2) > 0`, so `li` has exactly one zero in `(1, ∞)`, Soldner's constant, and it lies in
 `(1, 3 / 2)`.
@@ -55,14 +55,8 @@ from either side, and to `+∞` at infinity. From `γ > 1 / 2` (Mathlib), `log (
 ## Main declarations
 
 * `TauCeti.Real.li`, `TauCeti.Real.li_def`, `TauCeti.Real.li_eq_add_log_abs`,
-  `TauCeti.Real.li_zero`, `TauCeti.Real.li_one`, `TauCeti.Real.li_neg_eq` — the unoffset logarithmic
-  integral and its normalization lemmas.
-* `TauCeti.Real.liSeries`, `TauCeti.Real.liSeries_def`, `TauCeti.Real.li_eq_add_liSeries`,
-  `TauCeti.Real.hasSum_liSeries`,
-  `TauCeti.Real.hasDerivAt_liSeries`, `TauCeti.Real.hasDerivAt_liSeries_of_ne_zero`,
-  `TauCeti.Real.hasDerivAt_liSeries_zero`, `TauCeti.Real.continuous_liSeries`,
-  `TauCeti.Real.liSeries_zero`, `TauCeti.Real.sum_range_le_liSeries` — the entire part
-  `∑_{n ≥ 1} yⁿ / (n · n!)` and its calculus.
+  `TauCeti.Real.li_zero`, `TauCeti.Real.li_one`, `TauCeti.Real.li_neg_eq_li` — the unoffset
+  logarithmic integral and its normalization lemmas.
 * `TauCeti.Real.hasDerivAt_li`, `TauCeti.Real.deriv_li`, `TauCeti.Real.differentiableAt_li`,
   `TauCeti.Real.continuousAt_li`, `TauCeti.Real.measurable_li` — derivative `(log x)⁻¹` and
   regularity of `li`.
@@ -137,79 +131,8 @@ theorem li_one : li 1 = eulerMascheroniConstant := by
 
 /-- `li` is symmetric in sign (for `x < 0`, `li x` takes the junk value `li (-x)`). -/
 @[simp]
-theorem li_neg_eq (x : ℝ) : li (-x) = li x := by
+theorem li_neg_eq_li (x : ℝ) : li (-x) = li x := by
   simp [li_def]
-
-/-! ### The series `∑_{n ≥ 1} yⁿ / (n · n!)` -/
-
-/-- The entire part `∑_{n ≥ 1} yⁿ / (n · n!)` of the exponential integral, so that
-`li x = γ + log |log x| + liSeries (log x)`. -/
-noncomputable def liSeries (y : ℝ) : ℝ :=
-  ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))
-
-/-- Defining equation of `TauCeti.Real.liSeries`. -/
-theorem liSeries_def (y : ℝ) :
-    liSeries y = ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := (rfl)
-
-/-- `li x = γ + log |log x| + liSeries (log x)`. -/
-theorem li_eq_add_liSeries (x : ℝ) :
-    li x = eulerMascheroniConstant + log (log x) + liSeries (log x) := (rfl)
-
-/-- The series `∑_{n ≥ 1} yⁿ / (n · n!)` sums to `liSeries y`. -/
-theorem hasSum_liSeries (y : ℝ) :
-    HasSum (fun n : ℕ ↦ y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) (liSeries y) := by
-  rw [liSeries_def]
-  exact (summable_pow_div_mul_factorial y).hasSum
-
-/-- The termwise derivative `∑_{n ≥ 0} yⁿ / (n + 1)!` of `liSeries`. -/
-theorem hasDerivAt_liSeries (y : ℝ) :
-    HasDerivAt liSeries (∑' n : ℕ, y ^ n / ((n + 1)! : ℝ)) y := by
-  set R : ℝ := |y| + 1
-  have hR : 0 < R := by positivity
-  unfold liSeries
-  refine hasDerivAt_tsum_of_isPreconnected (u := fun n ↦ R ^ n / (n ! : ℝ))
-    (g' := fun n z ↦ z ^ n / ((n + 1)! : ℝ))
-    (Real.summable_pow_div_factorial R) Metric.isOpen_ball (convex_ball (0 : ℝ) R).isPreconnected
-    (fun n z _ ↦ ?_) (fun n z hz ↦ ?_) (Metric.mem_ball_self hR) (by simp)
-    (by simp [R])
-  · have hn : ((n : ℝ) + 1) ≠ 0 := by positivity
-    convert (hasDerivAt_pow (n + 1) z).div_const (((n : ℝ) + 1) * ((n + 1)! : ℝ)) using 1
-    push_cast [Nat.factorial_succ, add_tsub_cancel_right]
-    field_simp
-  · have hz' : |z| ≤ R := by simpa [Real.dist_eq] using (Metric.mem_ball.1 hz).le
-    have hf : (0 : ℝ) < n ! := mod_cast n.factorial_pos
-    rw [norm_div, norm_pow, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
-    exact div_le_div₀ (by positivity) (pow_le_pow_left₀ (abs_nonneg z) hz' n) hf
-      (mod_cast Nat.factorial_le n.le_succ)
-
-/-- For `y ≠ 0`, the derivative of `liSeries` at `y` is `(e^y - 1) / y`. -/
-theorem hasDerivAt_liSeries_of_ne_zero {y : ℝ} (hy : y ≠ 0) :
-    HasDerivAt liSeries ((exp y - 1) / y) y := by
-  simpa [Real.tsum_pow_div_factorial_succ hy] using hasDerivAt_liSeries y
-
-/-- The derivative of `liSeries` at `0` is `1`. -/
-theorem hasDerivAt_liSeries_zero : HasDerivAt liSeries 1 0 := by
-  convert hasDerivAt_liSeries 0 using 1
-  rw [tsum_eq_single 0 fun n hn ↦ by simp [hn]]
-  simp
-
-/-- The series `liSeries` is continuous. -/
-theorem continuous_liSeries : Continuous liSeries := by
-  have hdef : liSeries = fun y : ℝ ↦ ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) :=
-    funext liSeries_def
-  rw [hdef]
-  exact continuous_tsum_pow_div_mul_factorial
-
-/-- The series `liSeries` vanishes at `0`. -/
-@[simp]
-theorem liSeries_zero : liSeries 0 = 0 := by
-  simp [liSeries]
-
-/-- The first `k` terms of `liSeries` bound it below for `y ≥ 0`. -/
-theorem sum_range_le_liSeries {y : ℝ} (hy : 0 ≤ y) (k : ℕ) :
-    ∑ n ∈ Finset.range k, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) ≤ liSeries y := by
-  rw [liSeries_def]
-  exact sum_range_le_tsum_pow_div_mul_factorial hy k
 
 /-! ### Derivative, regularity, and behaviour at `0⁺` -/
 
@@ -218,14 +141,14 @@ theorem hasDerivAt_li {x : ℝ} (hx : 0 < x) (hx1 : x ≠ 1) :
     HasDerivAt li (log x)⁻¹ x := by
   have hl : log x ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hx hx1
   have hlog := Real.hasDerivAt_log hx.ne'
-  have h := ((hlog.log hl).const_add eulerMascheroniConstant).add
-    ((hasDerivAt_liSeries_of_ne_zero hl).comp x hlog)
+  have hser : HasDerivAt
+      (fun y : ℝ ↦ ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
+      ((exp (log x) - 1) / log x) (log x) := by
+    simpa only [dslope_exp_zero_of_ne hl] using hasDerivAt_tsum_pow_div_mul_factorial (log x)
+  have h := ((hlog.log hl).const_add eulerMascheroniConstant).add (hser.comp x hlog)
   rw [Real.exp_log hx] at h
-  convert h using 1
-  · ext y
-    exact li_eq_add_liSeries y
-  · field_simp
-    ring
+  exact (h.congr_of_eventuallyEq (Eventually.of_forall fun y ↦ li_def y)).congr_deriv
+    (by field_simp; ring)
 
 /-- The derivative of the unoffset logarithmic integral at `x > 0`, `x ≠ 1`. -/
 @[simp]
@@ -398,12 +321,11 @@ theorem tendsto_li_nhdsNE_one : Tendsto li (𝓝[≠] 1) atBot := by
     · simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
     · filter_upwards [inter_mem_nhdsWithin _ (Ioi_mem_nhds zero_lt_one), self_mem_nhdsWithin]
         with x hx hx1 using Real.log_ne_zero_of_pos_of_ne_one hx.2 hx1
-  have hser : Tendsto (fun x ↦ liSeries (log x)) (𝓝[≠] 1) (𝓝 0) := by
-    rw [← liSeries_zero]
-    exact (continuous_liSeries.tendsto 0).comp (hlog.mono_right nhdsWithin_le_nhds)
+  have hser := tendsto_tsum_log_pow_div_mul_factorial_nhds_one.mono_left
+    (nhdsWithin_le_nhds (s := ({1} : Set ℝ)ᶜ))
   exact ((tendsto_atBot_add_const_left _ eulerMascheroniConstant
     (Real.tendsto_log_nhdsNE_zero.comp hlog)).atBot_add hser).congr
-    fun x ↦ (li_eq_add_liSeries x).symm
+    fun x ↦ (li_def x).symm
 
 /-- `li x → -∞` as `x → 1⁺`. -/
 theorem tendsto_li_nhdsGT_one : Tendsto li (𝓝[>] 1) atBot :=
@@ -424,16 +346,18 @@ theorem tendsto_li_atTop : Tendsto li atTop atTop := by
 /-! ### Positivity and Soldner's constant -/
 
 /-- `li (3 / 2) > 0`: with `y = log (3 / 2) > 2 / 5`, the bounds `γ > 1 / 2` and
-`liSeries y ≥ y + y² / 4` reduce it to `1 < y e^(1 / 2 + y + y² / 4)`, and
+`∑_{n ≥ 1} yⁿ / (n · n!) ≥ y + y² / 4` reduce it to `1 < y e^(1 / 2 + y + y² / 4)`, and
 `e^(47 / 50) > 5 / 2` by the first four terms of the exponential series. -/
 private theorem li_three_halves_pos : 0 < li (3 / 2) := by
   set y := log (3 / 2) with hy_def
   have hy := Real.two_fifths_lt_log_three_halves
   rw [← hy_def] at hy
   have hy0 : 0 < y := by linarith
-  have hs := sum_range_le_liSeries hy0.le 2
-  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty] at hs
-  norm_num [Nat.factorial] at hs
+  have hs : y + y ^ 2 / 4 ≤
+      ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) := by
+    refine le_trans ?_ (sum_range_le_tsum_pow_div_mul_factorial hy0.le 2)
+    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty]
+    norm_num [Nat.factorial]
   have he : (5 / 2 : ℝ) < exp (47 / 50) := by
     refine lt_of_lt_of_le ?_ (Real.sum_le_exp_of_nonneg (by norm_num) 4)
     norm_num [Finset.sum_range_succ, Nat.factorial]
@@ -441,7 +365,7 @@ private theorem li_three_halves_pos : 0 < li (3 / 2) := by
   have hlog : -(1 / 2 + y + y ^ 2 / 4) < log y := by
     rw [Real.lt_log_iff_exp_lt hy0, Real.exp_neg, inv_lt_iff_one_lt_mul₀ (exp_pos _)]
     nlinarith
-  rw [li_eq_add_liSeries]
+  rw [li_def, ← hy_def]
   linarith [Real.one_half_lt_eulerMascheroniConstant]
 
 /-- The unoffset logarithmic integral is positive from `3 / 2` on. -/

@@ -53,11 +53,11 @@ theorem summable_pow_div_mul_factorial (y : ℝ) :
   have hdom : Summable fun n : ℕ ↦ |y| ^ (n + 1) / ((n + 1)! : ℝ) :=
     (summable_nat_add_iff 1).mpr (summable_pow_div_factorial |y|)
   refine .of_norm_bounded hdom fun n ↦ ?_
-  rw [norm_eq_abs, abs_div, abs_pow, abs_mul,
-    abs_of_pos (by positivity : (0 : ℝ) < ((n : ℝ) + 1)),
-    abs_of_pos (by positivity : (0 : ℝ) < ((n + 1)! : ℝ))]
+  simp only [norm_eq_abs, abs_div, abs_pow, abs_mul, Nat.abs_cast]
+  have hpos : (0 : ℝ) ≤ (n : ℝ) + 1 := by positivity
+  rw [abs_of_nonneg hpos]
   refine div_le_div_of_nonneg_left (pow_nonneg (abs_nonneg y) _) (by positivity) ?_
-  exact le_mul_of_one_le_left (by positivity) (by linarith [Nat.cast_nonneg (α := ℝ) n])
+  exact le_mul_of_one_le_left (by positivity) (by linarith)
 
 /-- Termwise integration of `dslope exp 0` on `[0, y]` yields
 `∑' n, y ^ (n + 1) / ((n + 1) * (n + 1)!)`. -/
@@ -82,10 +82,9 @@ theorem integral_dslope_exp_zero_eq_tsum (y : ℝ) :
       · rw [uIcc_of_ge hy] at hmem
         rw [abs_of_nonpos hmem.2, abs_of_nonpos hy]
         linarith [hmem.1]
-    rw [norm_eq_abs, abs_div, abs_pow,
-      abs_of_pos (by positivity : (0 : ℝ) < ((n + 1)! : ℝ))]
-    refine div_le_div₀ (by positivity) (pow_le_pow_left₀ (abs_nonneg u) habs n) (by positivity) ?_
-    exact_mod_cast Nat.factorial_le (Nat.le_succ n)
+    simp only [norm_eq_abs, abs_div, abs_pow, Nat.abs_cast]
+    gcongr
+    exact Nat.le_succ n
   rw [← hsum.tsum_eq]
   refine tsum_congr fun n ↦ ?_
   rw [intervalIntegral.integral_div, integral_pow, zero_pow (Nat.succ_ne_zero n), sub_zero,
@@ -144,6 +143,15 @@ theorem sum_range_le_tsum_pow_div_mul_factorial {y : ℝ} (hy : 0 ≤ y) (N : �
       ∑' n : ℕ, y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)) :=
   (summable_pow_div_mul_factorial y).sum_le_tsum (Finset.range N) fun _ _ ↦ by positivity
 
+private theorem pow_div_mul_factorial_succ_le {y : ℝ} (hy : 0 ≤ y) (n : ℕ) :
+    y ^ (n + 1 + 1) / ((((n + 1 : ℕ) : ℝ) + 1) * ((n + 1 + 1)! : ℝ)) ≤
+      (y ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) * (y / (((n : ℝ) + 1) + 1)) := by
+  rw [pow_succ, Nat.factorial_succ]
+  push_cast
+  rw [← mul_div_mul_comm, div_le_div_iff₀ (by positivity) (by positivity)]
+  have hy_nonneg : 0 ≤ y ^ (n + 1) * y * ((n + 1)! : ℝ) := by positivity
+  nlinarith [Nat.cast_nonneg (α := ℝ) n]
+
 /-- Geometric-tail upper bound for the entire-part series `∑_{n ≥ 1} y^n / (n * n!)` when
 `0 ≤ y < N + 2`. -/
 theorem tsum_pow_div_mul_factorial_le_sum_range_add {y : ℝ} (hy : 0 ≤ y) {N : ℕ}
@@ -164,18 +172,13 @@ theorem tsum_pow_div_mul_factorial_le_sum_range_add {y : ℝ} (hy : 0 ≤ y) {N 
     | zero => simp
     | succ k ih =>
         have hstep : a (k + 1 + N) ≤ a (k + N) * r := by
-          dsimp only [a, r]
-          rw [add_right_comm k 1 N, pow_succ, Nat.factorial_succ, Nat.cast_mul]
-          rw [← mul_div_mul_comm, div_le_div_iff₀ (by positivity) (by positivity)]
-          have hcast1 : ((k + N + 1 : ℕ) : ℝ) + 1 = (N : ℝ) + k + 2 := by push_cast; ring
-          have hcast2 : ((k + N : ℕ) : ℝ) + 1 = (N : ℝ) + k + 1 := by push_cast; ring
-          have hcast3 : ((k + N + 1 + 1 : ℕ) : ℝ) = (N : ℝ) + k + 2 := by push_cast; ring
-          rw [hcast1, hcast2, hcast3]
-          have hmul_le : ((N : ℝ) + k + 1) * ((N : ℝ) + 2) ≤
-              ((N : ℝ) + k + 2) * ((N : ℝ) + k + 2) := by
-            nlinarith [Nat.cast_nonneg (α := ℝ) k, Nat.cast_nonneg (α := ℝ) N]
-          have hyk : 0 ≤ y ^ (k + N + 1) * y * ((k + N + 1)! : ℝ) := by positivity
-          nlinarith
+          have hr_le : y / (((k + N : ℕ) : ℝ) + 1 + 1) ≤ r := by
+            refine div_le_div_of_nonneg_left hy (by positivity) ?_
+            push_cast
+            linarith
+          rw [add_right_comm k 1 N]
+          exact (pow_div_mul_factorial_succ_le hy (k + N)).trans
+            (mul_le_mul_of_nonneg_left hr_le (by positivity))
         calc a (k + 1 + N)
             ≤ a (k + N) * r := hstep
           _ ≤ (a N * r ^ k) * r := mul_le_mul_of_nonneg_right ih hr0

@@ -212,6 +212,12 @@ theorem continuousAt_inv_log_one_add_add_inv_log_one_sub_one :
     exact h0.comp (continuous_sub_left (1 : ℝ)).continuousAt
   exact h1.add h2
 
+private theorem mul_log_le_log_one_sub_add_mul {s a : ℝ} (hs0 : 0 ≤ s) (hs1 : s ≤ 1)
+    (ha : 0 < a) : s * log a ≤ log (1 - s + s * a) := by
+  have hconc := strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num : (1 : ℝ) ∈ Ioi 0) ha
+    (sub_nonneg.mpr hs1) hs0 (by ring)
+  simpa [smul_eq_mul, log_one] using hconc
+
 /-- Explicit bound on `(0, 1 / 2]` for the symmetric integrand `(log (1 + u))⁻¹ + (log (1 - u))⁻¹`:
 `|(log (1 + u))⁻¹ + (log (1 - u))⁻¹| ≤ 16 * log (4 / 3) / 3`. -/
 theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu0 : 0 < u) (hu : u ≤ 1 / 2) :
@@ -233,24 +239,17 @@ theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu0 : 0 < u) (hu :
   rw [abs_of_nonneg (by rw [hrew]; positivity), hrew]
   -- Lower bound `log (1 + u) ≥ (3 / 4) * u` by concavity of `log` on `[1, 3 / 2]`.
   have hlp_ge : 3 / 4 * u ≤ log (1 + u) := by
-    have hlog32 : (3 / 8 : ℝ) ≤ log (3 / 2) := by linarith [lt_log_three_halves]
-    have hconc : (1 - 2 * u) • log 1 + (2 * u) • log (3 / 2) ≤
-        log ((1 - 2 * u) • 1 + (2 * u) • (3 / 2)) :=
-      strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)
-        (by linarith) (by linarith) (by ring)
-    simp only [smul_eq_mul, log_one, mul_zero, zero_add] at hconc
-    have hcomb : (1 - 2 * u) * 1 + 2 * u * (3 / 2) = 1 + u := by ring
+    have hconc := mul_log_le_log_one_sub_add_mul (s := 2 * u) (a := 3 / 2)
+      (by linarith) (by linarith) (by norm_num)
+    have hcomb : 1 - 2 * u + 2 * u * (3 / 2) = 1 + u := by ring
     rw [hcomb] at hconc
-    nlinarith
+    nlinarith [lt_log_three_halves]
   have hlm_ge : u ≤ -log (1 - u) := by linarith [log_le_sub_one_of_pos h1mu]
   -- Upper bound `-log (1 - u^2) ≤ 4 * log (4 / 3) * u^2` by concavity of `log` on `[3 / 4, 1]`.
   have hnum_le : -log (1 - u ^ 2) ≤ 4 * log (4 / 3) * u ^ 2 := by
-    have hconc : (1 - 4 * u ^ 2) • log 1 + (4 * u ^ 2) • log (3 / 4) ≤
-        log ((1 - 4 * u ^ 2) • 1 + (4 * u ^ 2) • (3 / 4)) :=
-      strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)
-        (by nlinarith) (by positivity) (by ring)
-    simp only [smul_eq_mul, log_one, mul_zero, zero_add] at hconc
-    have hcomb : (1 - 4 * u ^ 2) * 1 + 4 * u ^ 2 * (3 / 4) = 1 - u ^ 2 := by ring
+    have hconc := mul_log_le_log_one_sub_add_mul (s := 4 * u ^ 2) (a := 3 / 4)
+      (by positivity) (by nlinarith) (by norm_num)
+    have hcomb : 1 - 4 * u ^ 2 + 4 * u ^ 2 * (3 / 4) = 1 - u ^ 2 := by ring
     have hlog34 : log (3 / 4 : ℝ) = -log (4 / 3) := by rw [← log_inv]; norm_num
     rw [hcomb, hlog34] at hconc
     linarith

@@ -229,8 +229,9 @@ theorem li_eq_log_abs_sub_one_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 
     have hdiff := intervalIntegral.integral_sub
       (intervalIntegrable_inv_log_of_lt_one le_rfl one_pos hx0.le hx_lt)
       (intervalIntegrable_sub_inv_iff.mpr (Or.inr h1))
-    rw [← li_eq_integral_inv_log hx0 hx_lt, integral_sub_inv h1, zero_sub, abs_neg, abs_one,
-      log_one, sub_zero] at hdiff
+    rw [← li_eq_integral_inv_log hx0 hx_lt, integral_sub_inv h1] at hdiff
+    norm_num [log_one] at hdiff
+    rw [log_abs]
     linarith
   · have h1 := (TauCeti.intervalIntegral.tendsto_integral_excise (c := 1)
       (by rw [uIoo_of_le hx0.le]; exact ⟨one_pos, hx_gt⟩)
