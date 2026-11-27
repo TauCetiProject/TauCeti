@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Quotient
 public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
 import TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Topology.Algebra.ProperAction.Orbit
 
@@ -164,10 +165,11 @@ theorem injective_mfderiv_ofQuotientStabilizer [T2Space M] {x : M}
   rw [hrange] at hker
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot, ← Submodule.finrank_eq_zero]
   -- `dim 𝔤 - dim 𝔤_x = dim (G ⧸ G_x)`, so the kernel is zero-dimensional. For `omega` to match
-  -- the dimension counts, `e₁` and `e₃` hold because `GroupLieAlgebra I G` and the tangent spaces
-  -- of `G ⧸ G_x` unfold to their model spaces, and `e₂` because a Lie subalgebra and its
-  -- underlying submodule have the same carrier.
-  have e₁ : Module.finrank ℝ (GroupLieAlgebra I G) = Module.finrank ℝ E := rfl
+  -- the dimension counts, `e₃` holds because the tangent spaces of `G ⧸ G_x` unfold to their
+  -- model spaces, and `e₂` because a Lie subalgebra and its underlying submodule have the same
+  -- carrier.
+  have e₁ : Module.finrank ℝ (GroupLieAlgebra I G) = Module.finrank ℝ E :=
+    finrank_tangentSpace (1 : G)
   have e₂ : Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I)
       (MulAction.stabilizer G x)).toSubmodule =
       Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I) (MulAction.stabilizer G x)) := rfl

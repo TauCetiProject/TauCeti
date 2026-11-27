@@ -32,7 +32,8 @@ supported smooth functions `φ` shows that the continuous function `⟪u, u⟫` 
 
 * `ContMDiffSection.innerSection`: pairing with a fixed section, linear over the smooth functions.
 * `ContMDiffSection.integrable_inner`: the pointwise inner product of two sections, one of which
-  has compact support, is integrable.
+  has compact support, is integrable; `ContMDiff.integrable_inner_bundle` is its form for sections
+  given as functions.
 * `ContMDiffSection.eq_zero_of_forall_integral_inner_eq_zero`: the fundamental lemma for sections,
   a smooth section pairing to zero with every compactly supported smooth section vanishes.
 -/
@@ -102,6 +103,17 @@ theorem integrable_inner [MeasurableSpace M] [OpensMeasurableSpace M] {μ : Meas
     {s t : Cₛ^n⟮I; F, V⟯} (h : IsCompact s.tsupport ∨ IsCompact t.tsupport) :
     Integrable (fun x ↦ ⟪s x, t x⟫) μ :=
   (continuous_inner s t).integrable_of_hasCompactSupport (hasCompactSupport_inner h)
+
+/-- The pointwise inner product of two `C^n` sections of a continuous Riemannian bundle, given as
+functions, one of which has compact support, is integrable for a measure that is finite on compact
+sets. This is `ContMDiffSection.integrable_inner` for sections that are not bundled. -/
+theorem _root_.ContMDiff.integrable_inner_bundle [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ] {s t : Π x, V x} (hs : CMDiff n (T% s))
+    (ht : CMDiff n (T% t))
+    (h : IsCompact (closure {x | s x ≠ 0}) ∨ IsCompact (closure {x | t x ≠ 0})) :
+    Integrable (fun x ↦ ⟪s x, t x⟫) μ :=
+  integrable_inner (s := ⟨s, hs⟩) (t := ⟨t, ht⟩)
+    (by simpa only [tsupport_def, coeFn_mk] using h)
 
 /-- **The fundamental lemma for sections.** For a locally finite measure that is positive on open
 sets of a Hausdorff σ-compact manifold, a smooth section of a continuous Riemannian bundle that

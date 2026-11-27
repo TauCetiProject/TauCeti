@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Pseudo.Pi
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Data.Nat.Cast.Order.Field
 
 /-!
 # The sup distance on finite products
@@ -24,6 +25,10 @@ distances `∑ᵢ wᵢ dist(xᵢ, pᵢ)²` with nonnegative weights: outside the
 (`TauCeti.mul_sq_le_sum_mul_dist_sq_of_notMem_ball`), and on the closed ball of radius `δ` it is
 at most `(∑ᵢ wᵢ) δ²` (`TauCeti.sum_mul_dist_sq_le_mul_sq_of_mem_closedBall`). On `ι → ℝ` these
 are the weighted sums of squares `∑ᵢ wᵢ (xᵢ - pᵢ)²`, by `Real.dist_eq` and `sq_abs`.
+
+Over a finite index type, the product of the balls of radii `r i` around `c i` is the increasing
+union of the concentric product balls of radii `r i - 1 / (k + 1)`
+(`TauCeti.exists_polyradius_exhaustion`).
 -/
 
 public section
@@ -100,5 +105,25 @@ theorem sum_mul_dist_sq_le_mul_sq_of_mem_closedBall {δ : ℝ} (hw : ∀ i, 0 �
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left ?_ (hw i)
   exact pow_le_pow_left₀ dist_nonneg ((dist_le_pi_dist x p i).trans (mem_closedBall.1 hx)) 2
+
+omit [Fintype ι] in
+/-- There are polyradii `s k` with `s k i < r i` (namely `s k i = r i - 1 / (k + 1)`) that
+increase strictly in `k`, so the concentric product balls of radii `s k i` around `c` form an
+increasing family exhausting the product of the balls of radii `r i`. -/
+theorem exists_polyradius_exhaustion [Finite ι] (c : ∀ i, X i) (r : ι → ℝ) :
+    ∃ s : ℕ → ι → ℝ, (∀ k i, s k i < s (k + 1) i) ∧ Monotone s ∧ (∀ k i, s k i < r i) ∧
+      ∀ z ∈ Set.univ.pi fun i ↦ ball (c i) (r i),
+        ∃ k, z ∈ Set.univ.pi fun i ↦ ball (c i) (s k i) := by
+  refine ⟨fun k i ↦ r i - 1 / ((k : ℝ) + 1), fun k i ↦ ?_, fun m k hmk i ↦ ?_, fun k i ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · exact sub_lt_sub_left (by exact_mod_cast Nat.one_div_lt_one_div (Nat.lt_succ_self k)) _
+  · exact sub_le_sub_left (Nat.one_div_le_one_div hmk) _
+  · exact sub_lt_self _ Nat.one_div_pos_of_nat
+  · have h (i : ι) : ∀ᶠ k : ℕ in Filter.atTop, dist (z i) (c i) < r i - 1 / ((k : ℝ) + 1) := by
+      obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.2 (hz i (Set.mem_univ i)))
+      exact Filter.eventually_atTop.2 ⟨n, fun k hk ↦
+        lt_sub_comm.1 ((Nat.one_div_le_one_div hk).trans_lt hn)⟩
+    obtain ⟨k, hk⟩ := (Filter.eventually_all.2 h).exists
+    exact ⟨k, fun i _ ↦ hk i⟩
 
 end TauCeti

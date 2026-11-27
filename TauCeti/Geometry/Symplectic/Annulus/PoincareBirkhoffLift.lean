@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.FixedPoints.Defs
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Symplectic.Annulus.DensityNormalization
 public import TauCeti.Geometry.Symplectic.Shear
+import TauCeti.Analysis.Sobolev.Trace.Reflection.Seeley
 
 /-!
 # Lifts of area-preserving annulus maps with a boundary twist
@@ -43,12 +44,14 @@ boundary lines, preserves the order of first coordinates and pulls `a dx ∧ dy`
 * `Φ` maps the fixed points of `F` in `[0, 1) × (0, 1)` bijectively onto those of the conjugate
   (`TauCeti.IsPoincareBirkhoffLift.bijOn_stripDensityNormalization_fixedPoints`).
 
-So the theorem for the standard area form implies it for every density
-(`TauCeti.IsPoincareBirkhoffLift.exists_ne_fixedPoints_of_forall_one`). The normalization is built
-from integrals of `ρ`, and its smoothness along the boundary lines of the strip uses smoothness of
-`ρ` on a neighbourhood of them; so the reduction takes `ρ` smooth on the whole plane. The predicate
-only reads `ρ` on the strip (`TauCeti.IsPoincareBirkhoffLift.congr_density`), so any smooth
-extension of a density given on the strip can be used.
+The normalization is built from integrals of `ρ`, and its smoothness along the boundary lines of
+the strip uses smoothness of `ρ` on a neighbourhood of them, while the predicate only asks for `ρ`
+to be smooth on the closed strip. The predicate only reads `ρ` on the strip
+(`TauCeti.IsPoincareBirkhoffLift.congr_density`), and Seeley's extension across the two boundary
+lines (`TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_prod_Icc`) extends `ρ` from the strip to a
+function smooth on the whole plane (`TauCeti.IsPoincareBirkhoffLift.exists_contDiff_density`). So
+the theorem for the standard area form implies it for every density smooth on the closed strip
+(`TauCeti.IsPoincareBirkhoffLift.exists_ne_fixedPoints_of_forall_one`).
 
 The affine twist `(x, y) ↦ (x + y - 1 / 2, y)` is a Poincaré–Birkhoff lift for the constant
 density (`TauCeti.isPoincareBirkhoffLift_linearPlaneShear_trans_addRight`).
@@ -108,6 +111,15 @@ theorem congr_density (hF : IsPoincareBirkhoffLift ρ F) (h : EqOn ρ' ρ (univ 
       hF.density_add_one x y hy]
   density_mul_det p hp := by
     rw [h (hF.mapsTo hp), h hp, hF.density_mul_det p hp]
+
+/-- The density of a Poincaré–Birkhoff lift agrees on the strip with a density smooth on the whole
+plane, for which `F` is again a Poincaré–Birkhoff lift. -/
+theorem exists_contDiff_density (hF : IsPoincareBirkhoffLift ρ F) :
+    ∃ ρ' : ℝ × ℝ → ℝ, ContDiff ℝ ∞ ρ' ∧ EqOn ρ' ρ (univ ×ˢ Icc 0 1) ∧
+      IsPoincareBirkhoffLift ρ' F := by
+  obtain ⟨ρ', hρ', hρ'ρ⟩ :=
+    HalfSpaceExtension.exists_contDiff_eqOn_prod_Icc hF.contDiffOn_density
+  exact ⟨ρ', hρ', hρ'ρ, hF.congr_density hρ'ρ⟩
 
 /-- The conjugate `Φ ∘ F ∘ Φ⁻¹` of a Poincaré–Birkhoff lift `F` by the density normalization `Φ` of
 its density, an open partial homeomorphism of the plane. -/
@@ -290,17 +302,18 @@ theorem bijOn_stripDensityNormalization_fixedPoints (hF : IsPoincareBirkhoffLift
 
 /-- **The strict annulus fixed-point theorem reduces to the standard area form.** If every
 Poincaré–Birkhoff lift for the constant density `1` has two fixed points in the fundamental domain
-`[0, 1) × (0, 1)`, then so does every Poincaré–Birkhoff lift for a density smooth on the plane. -/
+`[0, 1) × (0, 1)`, then so does every Poincaré–Birkhoff lift. -/
 theorem exists_ne_fixedPoints_of_forall_one (hF : IsPoincareBirkhoffLift ρ F)
-    (hρ : ContDiff ℝ ∞ ρ)
     (h : ∀ G : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ), IsPoincareBirkhoffLift (fun _ ↦ 1) G →
       ∃ p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1, ∃ q ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1,
         p ≠ q ∧ G p = p ∧ G q = q) :
     ∃ p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1, ∃ q ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1,
       p ≠ q ∧ F p = p ∧ F q = q := by
-  have hρ₁ : ContDiff ℝ 1 ρ := hρ.of_le (by simp)
-  obtain ⟨p, hp, q, hq, hpq, hpG, hqG⟩ := h _ (hF.isPoincareBirkhoffLift_one_conj hρ₁ hρ)
-  have hbij := hF.bijOn_stripDensityNormalization_fixedPoints hρ₁
+  -- Replace `ρ` by a density smooth on the plane, which the normalization needs.
+  obtain ⟨ρ', hρ', -, hF'⟩ := hF.exists_contDiff_density
+  have hρ₁ : ContDiff ℝ 1 ρ' := hρ'.of_le (by simp)
+  obtain ⟨p, hp, q, hq, hpq, hpG, hqG⟩ := h _ (hF'.isPoincareBirkhoffLift_one_conj hρ₁ hρ')
+  have hbij := hF'.bijOn_stripDensityNormalization_fixedPoints hρ₁
   obtain ⟨p', ⟨hp'F, hp'⟩, rfl⟩ := hbij.surjOn ⟨hpG, hp⟩
   obtain ⟨q', ⟨hq'F, hq'⟩, rfl⟩ := hbij.surjOn ⟨hqG, hq⟩
   exact ⟨p', hp', q', hq', fun h ↦ hpq (congrArg _ h), hp'F, hq'F⟩

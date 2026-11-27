@@ -51,6 +51,9 @@ image is one
 an immersion is itself one, with no separate smoothness hypothesis
 (`Manifold.IsSmoothEmbedding.isImmersion_of_isImmersion_comp`). Pairing an immersion with any
 `C^n` map into a finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
+Conversely, since its differential is injective, an immersion into a manifold with
+finite-dimensional model has finite-dimensional tangent spaces
+(`Manifold.IsImmersion.finiteDimensional_tangentSpace`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -380,5 +383,23 @@ theorem Manifold.IsImmersion.prodMk [FiniteDimensional 𝕜 E'] [FiniteDimension
   exact fun u v huv ↦ hf.mfderiv_injective hn0 x congr(($huv).1)
 
 end Manifold
+
+namespace Manifold.IsImmersion
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F H G M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω} {f : M → N}
+
+/-- The tangent spaces of a positive-regularity immersion into a manifold with
+finite-dimensional model space are finite-dimensional, since the differential is injective. -/
+theorem finiteDimensional_tangentSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    [FiniteDimensional 𝕜 F] : FiniteDimensional 𝕜 (TangentSpace I x) :=
+  .of_injective (mfderiv I J f x).toLinearMap (hf.mfderiv_injective hn x)
+
+end Manifold.IsImmersion
 
 end
