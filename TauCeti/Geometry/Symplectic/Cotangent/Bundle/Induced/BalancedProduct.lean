@@ -157,18 +157,11 @@ private theorem eval₂_inducedFormRT_fundamental (hf : ContMDiff IN 𝓘(ℝ, E
     -- `-ι ξ` is negated in `GroupLieAlgebra I G`, while `mvfderiv IN f x.2 u` is linear on the
     -- model space `E`; the two negations agree only up to unfolding, hence `erw`.
     erw [map_neg, neg_neg]
-  have hv : (prodVectorField (InfinitesimalAction.fundamental 𝓘(ℝ, F) K I K.RightTranslation ξ)
-      (InfinitesimalAction.fundamental 𝓘(ℝ, F) K IN N ξ) x : TangentSpace (I.prod IN) x) =
-      (mulInvariantVectorField (-ι ξ) (K.toRightTranslation.symm x.1),
-        fundamentalVectorField IN ξ x.2) :=
-    Prod.ext (by rw [prodVectorField_fst, InfinitesimalAction.fundamental_apply,
-        Subgroup.RightTranslation.fundamentalVectorField_eq_mulInvariantVectorField_neg])
-      (by rw [prodVectorField_snd, InfinitesimalAction.fundamental_apply])
   rw [SmoothForm.eval₂_mpullback,
     Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
     Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
-    InfinitesimalAction.fundamental_prod,
-    InfinitesimalAction.prod_apply, hv]
+    InfinitesimalAction.fundamental_apply,
+    Subgroup.RightTranslation.fundamentalVectorField_prod_apply]
   exact eval₂_inducedForm_eq_zero (I := I) (G := G) (IN := IN) (σ := σ) hf
     (p := (K.toRightTranslation.symm x.1, x.2))
     (v := (mulInvariantVectorField (-ι ξ) (K.toRightTranslation.symm x.1),
