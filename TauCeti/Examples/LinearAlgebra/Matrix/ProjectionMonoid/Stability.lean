@@ -20,8 +20,8 @@ isomorphism of the corner `e₀₀`, and `K₀(ℂ)` with `ℤ` by the rank
 * The corner `λ ↦ λ e₀₀` sends the class `[1]` of `K₀(ℂ)` to the class of the projection `e₀₀`,
   which corresponds to the generator `1` of `ℤ`.
 * The corner `λ ↦ λ (e₀₀ + e₁₁) = λ 1` of the rank-two projection `1 = e₀₀ + e₁₁` of `M₂(ℂ)`
-  sends `[1]` to `2`, so it induces multiplication by `2` on `ℤ` and is not an isomorphism: the
-  stability isomorphism needs a rank-one corner.
+  sends `[1]` to `2`, so it induces multiplication by `2` on `ℤ` and is not an isomorphism,
+  unlike the rank-one corner `e₀₀`.
 
 These are finite-matrix analogues of the corresponding statements for the compact operators.
 -/
@@ -35,10 +35,6 @@ namespace TauCeti.CornerKZeroExample
 /-- The class `[1]` of `K₀(ℂ)`, of the `1 × 1` identity matrix. -/
 noncomputable abbrev classOne : ProjectionKZero ℂ :=
   GrothendieckAddGroup.of (ProjectionMonoid.mk (1 : Matrix (Fin 1) (Fin 1) ℂ) (.one _))
-
-/-- `[1]` corresponds to `1` under the rank. -/
-theorem rankAddEquiv_classOne : ProjectionKZero.rankAddEquiv ℂ classOne = 1 := by
-  rw [ProjectionKZero.rankAddEquiv_of_mk_one, Nat.cast_one]
 
 /-- The `1 × 1` matrix over `M₂(ℂ)` with entry `e₀₀`, the image of `1` under the corner. -/
 noncomputable abbrev cornerOne : Matrix (Fin 1) (Fin 1) (Matrix (Fin 2) (Fin 2) ℂ) :=
@@ -57,16 +53,16 @@ example : ProjectionKZero.map (singleNonUnitalStarRingHom ℂ (0 : Fin 2)) class
     GrothendieckAddGroup.of (ProjectionMonoid.mk cornerOne isStarProjection_cornerOne) :=
   ProjectionKZero.map_of_mk _ _
 
-/-- **The rank-one corner induces the identity of `ℤ`.** Under the stability isomorphism of the
-corner `e₀₀` and the rank, the image `[e₀₀]` of `[1]` corresponds to the generator `1`. -/
+/-- **`[e₀₀]` corresponds to the generator `1`.** Under the stability isomorphism of the corner
+`e₀₀` and the rank, the image `[e₀₀]` of `[1]` corresponds to the generator `1` of `ℤ`. -/
 example : ProjectionKZero.rankAddEquiv ℂ ((ProjectionKZero.cornerEquiv (0 : Fin 2)).symm
     (GrothendieckAddGroup.of (ProjectionMonoid.mk cornerOne isStarProjection_cornerOne))) = 1 := by
   rw [ProjectionKZero.cornerEquiv_symm_of, ProjectionMonoid.cornerEquiv_symm_mk,
     ProjectionKZero.rankAddEquiv_of_mk]
-  have h : comp (Fin 1) (Fin 1) (Fin 2) (Fin 2) ℂ cornerOne = single (0, 0) (0, 0) 1 := by
-    ext ⟨i, k⟩ ⟨j, l⟩
-    simp [Subsingleton.elim i 0, Subsingleton.elim j 0, single_apply]
-  rw [h, ← diagonal_single, rank_diagonal]
+  have h : cornerOne = single 0 0 (single 0 0 1) := by
+    ext1 i j
+    rw [cornerOne_apply, Subsingleton.elim i 0, Subsingleton.elim j 0, single_apply_same]
+  rw [h, comp_single_single, ← diagonal_single, rank_diagonal]
   simp
 
 /-- The unital corner `λ ↦ λ 1` of the rank-two projection `1 = e₀₀ + e₁₁` of `M₂(ℂ)`. -/
@@ -87,7 +83,7 @@ noncomputable def rankTwoCornerInt : ℤ →+ ℤ :=
 /-- **The rank-two corner sends `[1]` to `2`.** -/
 theorem rankTwoCornerInt_one : rankTwoCornerInt 1 = 2 := by
   have h : (ProjectionKZero.rankAddEquiv ℂ).symm 1 = classOne := by
-    rw [AddEquiv.symm_apply_eq, rankAddEquiv_classOne]
+    simpa using ProjectionKZero.rankAddEquiv_symm_natCast ℂ 1
   simp only [rankTwoCornerInt, AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom,
     Function.comp_apply, h, ProjectionKZero.map_of_mk, ProjectionKZero.cornerEquiv_symm_of,
     ProjectionMonoid.cornerEquiv_symm_mk, ProjectionKZero.rankAddEquiv_of_mk]
