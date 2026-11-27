@@ -158,6 +158,16 @@ def normalChartLift (ν : Π x, f.isImmersion.NormalSpace x hn) (x : M) (z : E) 
 
 variable {f hn}
 
+/-- The defining formula of the chart lift: at the point with chart coordinate `z` in the chart at
+`x`, it is the orthogonal representative of `ν` there, read in the trivialization of the tangent
+bundle of `X` at `f x`. -/
+theorem normalChartLift_apply (ν : Π x, f.isImmersion.NormalSpace x hn) (x : M) (z : E) :
+    f.normalChartLift hn ν x z =
+      (trivializationAt V (TangentSpace I') (f x)
+        ⟨f ((extChartAt I x).symm z),
+          f.normalRepresentative ((extChartAt I x).symm z) hn (ν ((extChartAt I x).symm z))⟩).2 :=
+  (rfl)
+
 theorem normalChartLift_add (ν ν' : Π x, f.isImmersion.NormalSpace x hn) (x : M) :
     f.normalChartLift hn (ν + ν') x = f.normalChartLift hn ν x + f.normalChartLift hn ν' x := by
   funext z
@@ -215,6 +225,17 @@ def normalChartLinearization (ν : Π x, f.isImmersion.NormalSpace x hn) (x : M)
     TangentSpace I x →L[ℝ] TangentSpace I' (f x) :=
   cauchyRiemannLinearization (U := E) (V := V) (j.inChart x (extChartAt I x x)) (J.inChart (f x))
     (writtenInExtChartAt I I' x f) (f.normalChartLift hn ν x) (extChartAt I x x)
+
+variable {f hn j J} in
+omit [FiniteDimensional ℝ E] in
+/-- The defining formula of the chart linearization: the Cauchy–Riemann linearization of the
+coordinate expression of `f` at the chart centre, in the direction of the chart lift of `ν`. -/
+theorem normalChartLinearization_def (ν : Π x, f.isImmersion.NormalSpace x hn) (x : M) :
+    f.normalChartLinearization hn j J ν x =
+      cauchyRiemannLinearization (U := E) (V := V) (j.inChart x (extChartAt I x x))
+        (J.inChart (f x)) (writtenInExtChartAt I I' x f) (f.normalChartLift hn ν x)
+        (extChartAt I x x) :=
+  (rfl)
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
   [Fact (finrank ℝ P = 2 * finrank ℂ G)]
