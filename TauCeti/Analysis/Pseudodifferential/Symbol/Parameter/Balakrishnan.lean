@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.HomogeneousAb
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Contour
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Homogeneous
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.TruncatedParametrix
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.IntegralRepresentation
@@ -52,9 +53,22 @@ and the integral of a truncated right parametrix `Bₙ` of `a` with at least one
 `-m - 2 σ + 1`, one order lower
 (`TauCeti.ParameterSymbol.exists_coefficient_balakrishnanIntegral_rightParametrix_eq_rpow_add`).
 For `m = 2` this identifies the leading term of Seeley's symbol of the power `A^{-σ}`, of order
-`-2 σ`, with the pointwise power of the full symbol wherever the latter is strictly positive. The
-comparison of the quantization of this symbol with the spectral power of an operator is not made
-here.
+`-2 σ`, with the pointwise power of the full symbol wherever the latter is strictly positive.
+
+**Quantization.** Write `B_σ(b)` for the Balakrishnan integral of `b`. Its quantization is the
+integral of the quantizations, the operator form of Balakrishnan's formula with `(A + t)⁻¹`
+replaced by `Op(b(-t))`:
+
+`Op(B_σ(b)) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) dt`,
+
+on Schwartz functions at each point
+(`TauCeti.ParameterSymbol.quantizeSchwartzValue_balakrishnanIntegral`) and, for `b` vanishing at
+the positions outside a compact set, as a Bochner integral of operators `H^s → H^{s - m'}` for
+`m - 2 σ + 2 < m' ≤ 0` (`TauCeti.ParameterSymbol.quantizeSobolev_balakrishnanIntegral`). These are
+cases of `TauCeti.ParameterSymbol.quantizeSchwartzValue_contourIntegral` and
+`TauCeti.ParameterSymbol.quantizeSobolev_contourIntegral`. The comparison of these operators with
+the spectral power of an operator, which needs the resolvent `(A + t)⁻¹` to be the quantization
+`Op(b(-t))` up to remainders decaying in `t`, is not made here.
 For the shifted Laplacian `s - Δ`, `s > 0`, the integral of its resolvent symbol is the Fourier
 multiplier `(s + ‖ξ‖²) ^ (-σ)`
 (`TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse_shiftedLaplacian`); the
@@ -87,6 +101,9 @@ principal symbol `σ(A) ^ (-σ)`
   `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral` for its coefficient. It is linear in
   the parameter-dependent symbol (`TauCeti.ParameterSymbol.balakrishnanIntegralₗ`) and commutes
   with the order inclusions.
+* `TauCeti.ParameterSymbol.quantizeSchwartzValue_balakrishnanIntegral`,
+  `TauCeti.ParameterSymbol.quantizeSobolev_balakrishnanIntegral`: its quantization is the
+  Balakrishnan integral of the quantizations, on Schwartz functions and on Sobolev spaces.
 * `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_eq_rpow`: the integral of a left
   inverse of `A + t` along the axis is `A ^ (-σ)`.
 * `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`: the integral of the inverse
@@ -166,6 +183,20 @@ private theorem exists_norm_indicator_rpow_le (σ : ℝ) :
   · rw [indicator_of_notMem (notMem_Ioi.2 ht), norm_zero, one_mul]
     positivity
 
+/-- The integral against the weight `t ^ (-σ)` on `t > 0` along the path `t ↦ -|t|` is the
+integral over `t > 0` along `t ↦ -t`. -/
+private theorem integral_indicator_rpow_smul_neg_abs {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] (σ : ℝ) (f : ℂ → E) :
+    ∫ t : ℝ, (Ioi 0).indicator (fun t : ℝ ↦ ((t ^ (-σ) : ℝ) : ℂ)) t • f (-((|t| : ℝ) : ℂ)) =
+      ∫ t in Ioi (0 : ℝ), t ^ (-σ) • f (-(t : ℂ)) := by
+  rw [← integral_indicator measurableSet_Ioi]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rcases lt_or_ge 0 t with ht | ht
+  · rw [indicator_of_mem (mem_Ioi.2 ht), indicator_of_mem (mem_Ioi.2 ht), abs_of_pos ht,
+      Complex.coe_smul]
+  · rw [indicator_of_notMem (notMem_Ioi.2 ht), indicator_of_notMem (notMem_Ioi.2 ht), zero_smul]
+
 variable (hΛ : ∀ t : ℝ, t ≤ 0 → (t : ℂ) ∈ Λ) (hσ : σ < 1)
 
 section
@@ -199,15 +230,7 @@ theorem coefficient_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
       ∫ t in Ioi (0 : ℝ), t ^ (-σ) • b.coefficient (p, -(t : ℂ)) := by
   simp only [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul,
     Pi.smul_apply, coefficient_contourIntegral]
-  rw [← integral_indicator measurableSet_Ioi, Complex.coe_smul]
-  congr 1
-  refine integral_congr_ae (.of_forall fun t ↦ ?_)
-  dsimp only
-  rcases lt_or_ge 0 t with ht | ht
-  · rw [indicator_of_mem (mem_Ioi.2 ht), indicator_of_mem (mem_Ioi.2 ht),
-      abs_of_pos ht, Complex.coe_smul]
-  · rw [indicator_of_notMem (notMem_Ioi.2 ht),
-      indicator_of_notMem (notMem_Ioi.2 ht), zero_smul]
+  rw [integral_indicator_rpow_smul_neg_abs σ fun z ↦ b.coefficient (p, z), Complex.coe_smul]
 
 @[simp]
 theorem balakrishnanIntegral_zero :
@@ -268,6 +291,100 @@ theorem balakrishnanIntegral_inclusion {m' : ℝ} (h : m ≤ m') (hm' : m' - 2 *
       Symbol.coefficient_inclusion]
 
 end Integral
+
+/-! ### Quantization -/
+
+section Quantization
+
+open scoped SchwartzMap
+
+variable {n : ℕ} {Λ : TopologicalSpace.Opens ℂ} {m σ : ℝ}
+  (hΛ : ∀ t : ℝ, t ≤ 0 → (t : ℂ) ∈ Λ) (hσ : σ < 1) (hm : m - 2 * σ + 2 < 0)
+
+section Schwartz
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W]
+
+/-- **Quantization of a Balakrishnan integral, on Schwartz functions.** For a Schwartz function `u`
+and a position `x`,
+
+`Op(B_σ(b)) u (x) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) u (x) dt`,
+
+where `B_σ(b)` is the Balakrishnan integral of `b`. For a resolvent parametrix `b` of an operator
+`A`, the right side is Balakrishnan's formula for `A ^ (-σ)` with the resolvents `(A + t)⁻¹`
+replaced by the quantizations `Op(b(-t))`. -/
+theorem quantizeSchwartzValue_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (b.balakrishnanIntegral hΛ hσ hm).coefficient u x =
+      (Real.sin (Real.pi * σ) / Real.pi) •
+        ∫ t in Ioi (0 : ℝ),
+          t ^ (-σ) • quantizeSchwartzValue (b.toSymbol (-(t : ℂ))).coefficient u x := by
+  rw [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul,
+    quantizeSchwartzValue_smul_left, quantizeSchwartzValue_contourIntegral,
+    integral_indicator_rpow_smul_neg_abs σ fun z ↦
+      quantizeSchwartzValue (b.toSymbol z).coefficient u x, Complex.coe_smul]
+
+/-- If `b` vanishes at the positions outside a compact set `K`, for every frequency and spectral
+parameter, then so does its Balakrishnan integral. -/
+theorem hasCompactSpatialSupport_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (hb : ∀ x ∉ K, ∀ ξ z, b.coefficient ((x, ξ), z) = 0) :
+    (b.balakrishnanIntegral hΛ hσ hm).HasCompactSpatialSupport :=
+  ((b.hasCompactSpatialSupport_contourIntegral continuous_neg_abs (neg_abs_mem hΛ)
+    (aestronglyMeasurable_indicator_rpow σ) exists_one_add_abs_le_neg_abs
+    (exists_norm_indicator_rpow_le σ) (by linarith) (by linarith) hK hb).smul _).inclusion _
+
+end Schwartz
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m' : ℝ}
+
+/-- **Quantization of a Balakrishnan integral, on Sobolev spaces.** Let `b` vanish at the positions
+outside a compact set `K`, and let `m - 2 σ + 2 < m' ≤ 0`. As bounded operators
+`H^s → H^{s - m'}`, the quantization of the Balakrishnan integral `B_σ(b)` of `b` is
+
+`Op(B_σ(b)) = (sin (π σ) / π) ∫₀^∞ t ^ (-σ) Op(b(-t)) dt`,
+
+a Bochner integral of operators. For a resolvent parametrix `b` of an operator `A`, this is
+Balakrishnan's formula for `A ^ (-σ)` with the resolvents `(A + t)⁻¹` replaced by the operators
+`Op(b(-t))`. -/
+theorem quantizeSobolev_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
+    (hm' : m - 2 * σ + 2 < m') (hm'0 : m' ≤ 0) (K : TopologicalSpace.Compacts (CoordinateSpace n))
+    (hb : ∀ x ∉ K, ∀ ξ z, b.coefficient ((x, ξ), z) = 0) (s : ℝ) :
+    (Symbol.inclusion hm'.le (b.balakrishnanIntegral hΛ hσ hm)).quantizeSobolev
+        ((b.hasCompactSpatialSupport_balakrishnanIntegral hΛ hσ hm K.isCompact hb).inclusion
+          hm'.le) s =
+      (Real.sin (Real.pi * σ) / Real.pi) • ∫ t in Ioi (0 : ℝ), t ^ (-σ) •
+        (Symbol.inclusion (m' := m') (by linarith) (b.toSymbol (-(t : ℂ)))).quantizeSobolev
+          ((b.hasCompactSpatialSupport_toSymbol _ K.isCompact fun x hx ξ ↦ hb x hx ξ _).inclusion
+            (by linarith)) s := by
+  have hσ' : -1 < -σ := by linarith
+  have hm₁ : m + 2 * -σ + 2 < 0 := by linarith
+  have hm₂ : m + 2 * -σ + 2 < m' := by linarith
+  set c := b.contourIntegral continuous_neg_abs (neg_abs_mem hΛ)
+    (aestronglyMeasurable_indicator_rpow σ) exists_one_add_abs_le_neg_abs
+    (exists_norm_indicator_rpow_le σ) hσ' hm₁
+  have hc := (b.hasCompactSpatialSupport_contourIntegral continuous_neg_abs (neg_abs_mem hΛ)
+    (aestronglyMeasurable_indicator_rpow σ) exists_one_add_abs_le_neg_abs
+    (exists_norm_indicator_rpow_le σ) hσ' hm₁ K.isCompact hb).inclusion hm₂.le
+  have heq : Symbol.inclusion hm'.le (b.balakrishnanIntegral hΛ hσ hm) =
+      ((Real.sin (Real.pi * σ) / Real.pi : ℝ) : ℂ) • Symbol.inclusion hm₂.le c :=
+    Symbol.ext <| funext fun p ↦ by
+      simp only [balakrishnanIntegral, Symbol.coefficient_inclusion, Symbol.coefficient_smul, c]
+  calc _ = (((Real.sin (Real.pi * σ) / Real.pi : ℝ) : ℂ) •
+        Symbol.inclusion hm₂.le c).quantizeSobolev (hc.smul _) s := by congr 1
+    _ = _ := by
+      rw [Symbol.quantizeSobolev_smul hc, b.quantizeSobolev_contourIntegral continuous_neg_abs
+        (neg_abs_mem hΛ) (aestronglyMeasurable_indicator_rpow σ) exists_one_add_abs_le_neg_abs
+        (exists_norm_indicator_rpow_le σ) hσ' hm₁ hm₂ hm'0 K hb s,
+        integral_indicator_rpow_smul_neg_abs σ fun z ↦
+          (Symbol.inclusion (m' := m') (by linarith) (b.toSymbol z)).quantizeSobolev
+            ((b.hasCompactSpatialSupport_toSymbol _ K.isCompact fun x hx ξ ↦ hb x hx ξ _).inclusion
+              (by linarith)) s,
+        Complex.coe_smul]
+
+end Quantization
 
 /-! ### Homogeneous expansions -/
 
