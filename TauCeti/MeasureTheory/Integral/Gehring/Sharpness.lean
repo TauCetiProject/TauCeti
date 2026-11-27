@@ -19,9 +19,9 @@ reverse Hölder inequality
 
 `⨍_{B(y, ρ)} g ^ q ≤ b (⨍_{B(y, 2ρ)} g) ^ q`
 
-on all balls is integrable to a higher power `q + δ`, for every `δ` up to a gain `δ₀ > 0`
-depending on `d`, `q` and `b`. This file shows that the gain cannot be chosen independently of
-the constant `b`: it tends to zero as `b` grows.
+on all balls is integrable to a higher power `q + δ`, for every `δ` up to the explicit gain
+`TauCeti.gehringGain d q b > 0`. This file shows that no gain can be chosen independently of the
+constant `b`: every admissible gain tends to zero as `b` grows.
 
 The witnesses are the power weights `g(x) = ‖x‖ ^ (-a)` with `0 ≤ a q < d`. Such a weight
 satisfies the reverse Hölder inequality on every ball, with the constant `d 4ᵈ / (d - a q)`

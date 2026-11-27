@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.InverseCoercive
 public import TauCeti.Analysis.PDE.Regularity.Harnack
+public import TauCeti.Analysis.PDE.Regularity.HigherIntegrability
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
-import TauCeti.Analysis.PDE.Regularity.HigherIntegrability
 import TauCeti.MeasureTheory.Measure.Restrict.Chain
 
 /-!
@@ -97,7 +97,7 @@ depends only on the dimension, so the constant does too.
 
 public section
 
-open MeasureTheory Metric Set TopologicalSpace TauCeti.MeasureTheory
+open MeasureTheory Metric Module Set TopologicalSpace TauCeti.MeasureTheory
 open scoped ENNReal NNReal InnerProductSpace
 
 namespace TauCeti.PDE
@@ -294,10 +294,11 @@ theorem exists_ae_ae_value_le_mul_value_of_isUniformlyEllipticAE (ratio : ℝ) :
     field_simp; ring
   linarith
 
-/-- **Meyers' higher integrability estimate.** Fix a bound `ratio` for the ellipticity ratio. In
-every dimension `n ≥ 1` there is `ε₀ > 0`, and for each `0 < ε ≤ ε₀` a constant `C`, depending
-only on `ratio`, `ε`, the dimension and the normalization of the additive Haar measure `mu`, such
-that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` in the
+/-- **Meyers' higher integrability estimate.** In every dimension `n ≥ 1` there is a constant `A`,
+depending only on the dimension and the normalization of the additive Haar measure `mu`, with the
+following property. Fix a bound `ratio` for the ellipticity ratio and
+`0 < ε ≤ meyersGain n (A (1 + ratio²))`. There is a constant `C`, depending only on `A`, `ratio`
+and `ε`, such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` in the
 inverse-coercive sense with constants `λ, Λ`, `Λ ≤ ratio · λ`, not necessarily symmetric, let
 `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`, that is
 `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. Then for every ball `B(x₀, R) ⊆ Ω`,
@@ -306,8 +307,9 @@ inverse-coercive sense with constants `λ, Λ`, `Λ ≤ ratio · λ`, not necess
 
 The averages are extended-valued. -/
 theorem exists_setLAverage_enorm_gradient_rpow_le_divergence_of_isUniformlyEllipticAE
-    [Nonempty ι] (ratio : ℝ) :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∃ C : ℝ≥0,
+    [Nonempty ι] :
+    ∃ A : ℝ≥0, ∀ ratio ε : ℝ, 0 < ε →
+      ε ≤ meyersGain (finrank ℝ (EuclideanSpace ℝ ι)) (A * (1 + ratio ^ 2)) → ∃ C : ℝ≥0,
       ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
         {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
         {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
@@ -319,9 +321,9 @@ theorem exists_setLAverage_enorm_gradient_rpow_le_divergence_of_isUniformlyEllip
       ⨍⁻ x in ball x₀ (R / 2), ‖W1p.gradient u x‖ₑ ^ (2 + ε) ∂mu ≤
         C * ((⨍⁻ x in ball x₀ R, ‖W1p.gradient u x‖ₑ ^ (2 : ℝ) ∂mu) ^ ((2 + ε) / 2) +
           ⨍⁻ x in ball x₀ R, (‖F x‖ₑ / ENNReal.ofReal lam) ^ (2 + ε) ∂mu) := by
-  obtain ⟨ε₀, hε₀, hM⟩ := exists_setLAverage_enorm_gradient_rpow_le_divergence (mu := mu) ratio
-  refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
-  obtain ⟨C, hC⟩ := hM ε hε hεle
+  obtain ⟨A, hM⟩ := exists_setLAverage_enorm_gradient_rpow_le_divergence (mu := mu)
+  refine ⟨A, fun ratio ε hε hεle => ?_⟩
+  obtain ⟨C, hC⟩ := hM ratio ε hε hεle
   refine ⟨C, fun {Omega a lam Lam F u x₀ R} h hratio ha hF hu hball => ?_⟩
   obtain ⟨a', h', ha', hu'⟩ :=
     h.exists_uniformlyEllipticOn_energyFormH1_eq_divergence hratio ha hu
@@ -332,16 +334,16 @@ theorem exists_setLAverage_enorm_gradient_rpow_le_divergence_of_isUniformlyEllip
       ENNReal.ofReal_inv_of_pos h.pos, div_eq_mul_inv, mul_comm]
   simpa only [hF'] using key
 
-/-- **Meyers' theorem: higher integrability of the gradient.** Fix a bound `ratio` for the
-ellipticity ratio. In every dimension `n ≥ 1` there is `ε₀ > 0`, depending only on `ratio` and
-the dimension, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` in the inverse-coercive sense with constants `λ, Λ`, `Λ ≤ ratio · λ`, not necessarily
-symmetric, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every
-`v ∈ H¹₀(Ω)`. If `B(x₀, R) ⊆ Ω`, `0 < ε ≤ ε₀` and `F` lies in `L^{2+ε}(B(x₀, R))`, then `∇u`
-lies in `L^{2+ε}(B(x₀, R/2))`. -/
-theorem exists_memLp_gradient_ball_divergence_of_isUniformlyEllipticAE [Nonempty ι]
-    (ratio : ℝ) :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+/-- **Meyers' theorem: higher integrability of the gradient.** In every dimension `n ≥ 1` there is
+a constant `A`, depending only on the dimension and the normalization of `mu`, with the following
+property. Fix a bound `ratio` for the ellipticity ratio. Let `a` be measurable and uniformly
+elliptic on `Ω` in the inverse-coercive sense with constants `λ, Λ`, `Λ ≤ ratio · λ`, not
+necessarily symmetric, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫`
+for every `v ∈ H¹₀(Ω)`. If `B(x₀, R) ⊆ Ω`, `0 < ε ≤ meyersGain n (A (1 + ratio²))` and `F` lies
+in `L^{2+ε}(B(x₀, R))`, then `∇u` lies in `L^{2+ε}(B(x₀, R/2))`. -/
+theorem exists_memLp_gradient_ball_divergence_of_isUniformlyEllipticAE [Nonempty ι] :
+    ∃ A : ℝ≥0, ∀ ratio ε : ℝ, 0 < ε →
+      ε ≤ meyersGain (finrank ℝ (EuclideanSpace ℝ ι)) (A * (1 + ratio ^ 2)) →
       ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
         {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
         {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
@@ -352,12 +354,12 @@ theorem exists_memLp_gradient_ball_divergence_of_isUniformlyEllipticAE [Nonempty
       ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       MemLp F (ENNReal.ofReal (2 + ε)) (mu.restrict (ball x₀ R)) →
       MemLp (W1p.gradient u) (ENNReal.ofReal (2 + ε)) (mu.restrict (ball x₀ (R / 2))) := by
-  obtain ⟨ε₀, hε₀, hM⟩ := exists_memLp_gradient_ball_divergence (mu := mu) ratio
-  refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
+  obtain ⟨A, hM⟩ := exists_memLp_gradient_ball_divergence (mu := mu)
+  refine ⟨A, fun ratio ε hε hεle => ?_⟩
   intro Omega a lam Lam F u x₀ R h hratio ha hF hu hball hFp
   obtain ⟨a', h', ha', hu'⟩ :=
     h.exists_uniformlyEllipticOn_energyFormH1_eq_divergence hratio ha hu
-  exact hM ε hε hεle h' (le_of_eq (mul_one ratio).symm) ha' (hF.const_smul lam⁻¹) hu' hball
+  exact hM ratio ε hε hεle h' (le_of_eq (mul_one ratio).symm) ha' (hF.const_smul lam⁻¹) hu' hball
     (hFp.const_smul lam⁻¹)
 
 /-! ### A right-hand side `f + ∂ᵢFⁱ` -/

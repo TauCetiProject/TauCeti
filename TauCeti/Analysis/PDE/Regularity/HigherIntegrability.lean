@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Divergence
+public import TauCeti.MeasureTheory.Integral.Gehring
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Sobolev
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.Gehring
 import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
@@ -46,9 +46,15 @@ Sobolev–Poincaré inequality `(⨍ |u - u_B|²)^{1/2} ≤ C ρ (⨍ ‖∇u‖
 
 `⨍_{B(y, ρ)} ‖∇u‖² ≤ b (⨍_{B(y, 2ρ)} ‖∇u‖ ^ s) ^ (2/s) + b ⨍_{B(y, 2ρ)} (‖F‖/λ)²`,
 
-whose constant `b` is invariant under dilations. Gehring's lemma, applied to `‖∇u‖ ^ s` with the
-exponent `2/s > 1` (`TauCeti.exists_setLAverage_rpow_add_le_of_rpow`), improves it to the higher
-integrability.
+whose constant `b` is invariant under dilations and is `A (1 + K²)` for a constant `A` depending
+only on `n`, `s` and the normalization of the measure. Gehring's lemma, applied to `‖∇u‖ ^ s` with
+the exponent `2/s > 1` (`TauCeti.exists_setLAverage_rpow_add_le_of_rpow`), improves it to the
+higher integrability. With `s = 2n/(n + 1)` this makes the gain explicit through Gehring's gain
+`TauCeti.gehringGain`: Meyers' estimate holds for every `0 < ε ≤ ε₀`, where
+
+`ε₀ = meyersGain n (A (1 + K²)) = (2n / (n + 1)) · gehringGain n ((n + 1) / n) (A (1 + K²))`
+
+(`TauCeti.PDE.meyersGain`) is positive and decreases as `K ≥ 0` grows.
 
 ## Up to the boundary
 
@@ -76,7 +82,8 @@ data, and their uniqueness within a class of solutions. Uniqueness among all wea
 ## Main declarations
 
 * `TauCeti.PDE.exists_setLAverage_enorm_gradient_sq_le_divergence`: the reverse Hölder
-  inequality for the gradient.
+  inequality for the gradient, with constant `A (1 + K²)`.
+* `TauCeti.PDE.meyersGain`: the explicit gain in Meyers' estimate, through Gehring's gain.
 * `TauCeti.PDE.exists_setLAverage_enorm_gradient_rpow_le_divergence`: **Meyers' higher
   integrability estimate**.
 * `TauCeti.PDE.exists_memLp_gradient_ball_divergence`: its qualitative form, `∇u ∈ L^{2 + ε}` on
@@ -228,20 +235,36 @@ private theorem setLAverage_enorm_sq_le_of_setIntegral_le_of_le_mul_sq
         simp (disch := positivity) only [ENNReal.ofReal_mul]
         ring
 
+/-- The two coefficients of the reverse Hölder inequality for the gradient, assembled from the
+Caccioppoli constant `C`, the Sobolev–Poincaré constant `c` and the bound `K` on the ellipticity
+ratio, are at most `2ⁿ (32 C² c² + 12) (1 + K²)`. -/
+private theorem coeff_le_two_pow_mul_mul_one_add_sq (n : ℕ) (C c K s : ℝ) :
+    2 ^ n * (2 * ((2 * K) ^ 2 + 1) * C ^ 2 * c ^ 2 * (2 / (2 - 1)) ^ 2) * ((2 / 2) ^ n) ^ (2 / s) ≤
+        2 ^ n * (32 * C ^ 2 * c ^ 2 + 12) * (1 + K ^ 2) ∧
+      2 ^ n * 12 ≤ 2 ^ n * (32 * C ^ 2 * c ^ 2 + 12) * (1 + K ^ 2) := by
+  have h4 : (2 / (2 - 1) : ℝ) ^ 2 = 4 := by norm_num
+  have h1 : ((2 : ℝ) / 2) ^ n = 1 := by norm_num
+  rw [h4, h1, Real.one_rpow, mul_one]
+  have hX : 0 ≤ (2 : ℝ) ^ n * (C ^ 2 * c ^ 2) := by positivity
+  have hP : (0 : ℝ) ≤ 2 ^ n := by positivity
+  constructor <;> nlinarith [mul_nonneg hX (sq_nonneg K), mul_nonneg hP (sq_nonneg K)]
+
 /-- **The reverse Hölder inequality for the gradient of a weak solution.** Let `n ≥ 1` be the
-dimension, let `1 ≤ s ≤ 2` with `1/s - 1/2 < 1/n`, and let `K` bound the ellipticity ratio.
-There is `b`, independent of the domain, the coefficients, the solution, the datum and the ball,
-with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with constants
+dimension and let `1 ≤ s ≤ 2` with `1/s - 1/2 < 1/n`. There is a constant `A`, depending only on
+`n`, `s` and the normalization of `mu`, with the following property. Let `K` bound the
+ellipticity ratio, let `a` be measurable and uniformly elliptic on `Ω` with constants
 `0 < λ ≤ Λ ≤ K λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for
-every `v ∈ H¹₀(Ω)`. For every ball with `B(y, 2ρ) ⊆ Ω`,
+every `v ∈ H¹₀(Ω)`. For every ball with `B(y, 2ρ) ⊆ Ω`, with `b = A (1 + K²)`,
 
 `⨍_{B(y, ρ)} ‖∇u‖² ≤ b (⨍_{B(y, 2ρ)} ‖∇u‖ ^ s) ^ (2/s) + b ⨍_{B(y, 2ρ)} (‖F‖/λ)²`.
 
-The averages are extended-valued. -/
+The constant `b` is independent of the domain, the coefficients, the solution, the datum and the
+ball, and grows quadratically in the ellipticity ratio. The averages are extended-valued. -/
 theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : ℝ≥0}
     (hs1 : 1 ≤ s) (hs2 : s ≤ 2)
-    (hsn : (s : ℝ)⁻¹ - 2⁻¹ < (finrank ℝ (EuclideanSpace ℝ ι) : ℝ)⁻¹) (K : ℝ) :
-    ∃ b : ℝ≥0, ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hsn : (s : ℝ)⁻¹ - 2⁻¹ < (finrank ℝ (EuclideanSpace ℝ ι) : ℝ)⁻¹) :
+    ∃ A : ℝ≥0, ∀ {K : ℝ} {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
       {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
       {y : EuclideanSpace ℝ ι} {ρ : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam → Lam ≤ K * lam →
@@ -250,19 +273,25 @@ theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : �
         -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu) →
       0 < ρ → ball y (2 * ρ) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ⨍⁻ x in ball y ρ, ‖W1p.gradient u x‖ₑ ^ (2 : ℝ) ∂mu ≤
-        b * (⨍⁻ x in ball y (2 * ρ), ‖W1p.gradient u x‖ₑ ^ (s : ℝ) ∂mu) ^ (2 / (s : ℝ)) +
-          b * ⨍⁻ x in ball y (2 * ρ), (‖F x‖ₑ / ENNReal.ofReal lam) ^ (2 : ℝ) ∂mu := by
+        ENNReal.ofReal (A * (1 + K ^ 2)) *
+            (⨍⁻ x in ball y (2 * ρ), ‖W1p.gradient u x‖ₑ ^ (s : ℝ) ∂mu) ^ (2 / (s : ℝ)) +
+          ENNReal.ofReal (A * (1 + K ^ 2)) *
+            ⨍⁻ x in ball y (2 * ρ), (‖F x‖ₑ / ENNReal.ofReal lam) ^ (2 : ℝ) ∂mu := by
   obtain ⟨C, -, hC⟩ :=
     exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence (ι := ι)
   have : Fact (1 ≤ (s : ℝ≥0∞)) := ⟨by exact_mod_cast hs1⟩
   obtain ⟨c, -, hP⟩ := exists_setLAverage_enorm_value_sub_setAverage_sq_le (mu := mu) hs2 hsn
   set n := finrank ℝ (EuclideanSpace ℝ ι)
+  set A₀ : ℝ := 2 ^ n * (32 * C ^ 2 * c ^ 2 + 12)
+  have hA₀ : ((A₀.toNNReal : ℝ≥0) : ℝ) = A₀ := Real.coe_toNNReal _ (by positivity)
+  refine ⟨A₀.toNNReal, ?_⟩
+  intro K Omega a lam Lam F u y ρ h hK ha hF hu hρ hball
+  rw [hA₀]
   set A : ℝ := 2 * ((2 * K) ^ 2 + 1)
   set K₁ : ℝ := 2 ^ n * (A * C ^ 2 * c ^ 2 * (2 / (2 - 1)) ^ 2) * ((2 / 2) ^ n) ^ (2 / (s : ℝ))
   have hA0 : 0 ≤ A := by positivity
-  have hK₁ : 0 ≤ K₁ := by positivity
-  refine ⟨(K₁ + 2 ^ n * 12).toNNReal, ?_⟩
-  intro Omega a lam Lam F u y ρ h hK ha hF hu hρ hball
+  -- Both coefficients of the assembled inequality are at most `A₀ (1 + K²)`.
+  obtain ⟨hK₁, h12⟩ := coeff_le_two_pow_mul_mul_one_add_sq n C c K s
   set m := ⨍ z in ball y (2 * ρ), W1p.value u z ∂mu
   -- Caccioppoli's inequality for `u - m`, with its constant bounded through `Λ ≤ K λ`.
   have hIρ : ∫ x in ball y ρ, ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
@@ -287,20 +316,19 @@ theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : �
   rw [← mul_div_assoc, ofReal_div_sq_mul_setLAverage_eq _ h.pos] at hav
   refine hav.trans (add_le_add ?_ ?_)
   · gcongr ?_ * _
-    rw [ENNReal.ofNNReal_toNNReal]
-    exact ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right (by positivity))
+    exact ENNReal.ofReal_le_ofReal hK₁
   · gcongr ?_ * _
-    rw [ENNReal.ofNNReal_toNNReal]
-    exact ENNReal.ofReal_le_ofReal (le_add_of_nonneg_left hK₁)
+    exact ENNReal.ofReal_le_ofReal h12
 
 /-- An exponent `s < 2` close enough to `2` for the Sobolev–Poincaré inequality from `Lˢ` to
 `L²` in dimension `n ≥ 1`: `s = 2n/(n + 1)`, for which `1/s - 1/2 = 1/(2n) < 1/n`. -/
 private theorem exists_one_le_lt_two_inv_sub_inv_lt {n : ℕ} (hn : 0 < n) :
-    ∃ s : ℝ≥0, (1 : ℝ) ≤ s ∧ (s : ℝ) < 2 ∧ (s : ℝ)⁻¹ - 2⁻¹ < (n : ℝ)⁻¹ := by
+    ∃ s : ℝ≥0, (s : ℝ) = 2 * n / (n + 1) ∧ (1 : ℝ) ≤ s ∧ (s : ℝ) < 2 ∧
+      (s : ℝ)⁻¹ - 2⁻¹ < (n : ℝ)⁻¹ := by
   have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
   refine ⟨(2 * n / (n + 1) : ℝ).toNNReal, ?_⟩
   rw [Real.coe_toNNReal _ (by positivity)]
-  refine ⟨by rw [le_div_iff₀ (by positivity)]; linarith,
+  refine ⟨rfl, by rw [le_div_iff₀ (by positivity)]; linarith,
     by rw [div_lt_iff₀ (by positivity)]; linarith, ?_⟩
   have : (2 * n / (n + 1) : ℝ)⁻¹ - 2⁻¹ = (2 * n : ℝ)⁻¹ := by
     field_simp
@@ -308,19 +336,56 @@ private theorem exists_one_le_lt_two_inv_sub_inv_lt {n : ℕ} (hn : 0 < n) :
   rw [this]
   exact inv_strictAnti₀ (by positivity) (by linarith)
 
-/-- **Meyers' higher integrability estimate.** Let `n ≥ 1` be the dimension and let `K` bound the
-ellipticity ratio. There is `ε₀ > 0`, and for each `0 < ε ≤ ε₀` a constant `C`, both independent
-of the domain, the coefficients, the solution, the datum and the ball, with the following
-property. Let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ ≤ K λ`, let
-`F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`.
-For every ball `B = B(x₀, R) ⊆ Ω`, with `½B = B(x₀, R/2)`,
+/-- **The gain in Meyers' theorem** in dimension `n` for the reverse Hölder constant `b`:
+
+`meyersGain n b = s · gehringGain n (2 / s) b`, where `s = 2n / (n + 1)` and `2 / s = (n + 1) / n`.
+
+This is the gain of Gehring's lemma (`TauCeti.gehringGain`) for the reverse Hölder inequality
+between the exponents `s < 2` satisfied by the gradient of a weak solution, converted to a gain
+in the exponent of `‖∇u‖`. With `b = A (1 + K²)` for a bound `K` on the ellipticity ratio and a
+constant `A` depending only on `n` and the normalization of the measure, Meyers' higher
+integrability holds for every exponent `2 + ε` with `0 < ε ≤ meyersGain n b`
+(`TauCeti.PDE.exists_setLAverage_enorm_gradient_rpow_le_divergence`). -/
+noncomputable def meyersGain (n : ℕ) (b : ℝ) : ℝ :=
+  2 * n / (n + 1) * gehringGain n ((n + 1) / n) b
+
+/-- The defining formula of `TauCeti.PDE.meyersGain`. -/
+theorem meyersGain_def (n : ℕ) (b : ℝ) :
+    meyersGain n b = 2 * n / (n + 1) * gehringGain n ((n + 1) / n) b :=
+  (rfl)
+
+/-- The gain in Meyers' theorem is positive in every dimension `n ≥ 1` for `b > -1`. -/
+theorem meyersGain_pos {n : ℕ} (hn : 0 < n) {b : ℝ} (hb : -1 < b) : 0 < meyersGain n b := by
+  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+  exact mul_pos (by positivity)
+    (gehringGain_pos n ((one_lt_div hn').2 (by linarith)) hb)
+
+/-- The gain in Meyers' theorem decreases as the reverse Hölder constant grows. -/
+theorem meyersGain_antitoneOn {n : ℕ} (hn : 0 < n) : AntitoneOn (meyersGain n) (Ioi (-1)) := by
+  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+  intro b hb b' hb' hbb'
+  exact mul_le_mul_of_nonneg_left
+    (gehringGain_antitoneOn n ((one_lt_div hn').2 (by linarith)) hb hb' hbb') (by positivity)
+
+/-- **Meyers' higher integrability estimate.** Let `n ≥ 1` be the dimension. There is a constant
+`A`, depending only on `n` and the normalization of `mu`, with the following property. Let `K`
+bound the ellipticity ratio and let `0 < ε ≤ meyersGain n (A (1 + K²))`, explicitly
+
+`ε ≤ (2n / (n + 1)) · gehringGain n ((n + 1) / n) (A (1 + K²))`.
+
+There is a constant `C`, independent of the domain, the coefficients, the solution, the datum and
+the ball, such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with
+constants `0 < λ ≤ Λ ≤ K λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy
+`a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. For every ball `B = B(x₀, R) ⊆ Ω`, with
+`½B = B(x₀, R/2)`,
 
 `⨍_{½B} ‖∇u‖ ^ (2 + ε) ≤ C ((⨍_B ‖∇u‖²) ^ ((2 + ε)/2) + ⨍_B (‖F‖/λ) ^ (2 + ε))`.
 
 The averages are extended-valued. When `F` is `(2 + ε)`-integrable on `B(x₀, R)` the right-hand
 side is finite, so `∇u` is `(2 + ε)`-integrable on `B(x₀, R/2)`. -/
-theorem exists_setLAverage_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : ℝ) :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∃ C : ℝ≥0,
+theorem exists_setLAverage_enorm_gradient_rpow_le_divergence [Nonempty ι] :
+    ∃ A : ℝ≥0, ∀ K ε : ℝ, 0 < ε →
+      ε ≤ meyersGain (finrank ℝ (EuclideanSpace ℝ ι)) (A * (1 + K ^ 2)) → ∃ C : ℝ≥0,
       ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
         {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
         {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
@@ -332,31 +397,44 @@ theorem exists_setLAverage_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : 
       ⨍⁻ x in ball x₀ (R / 2), ‖W1p.gradient u x‖ₑ ^ (2 + ε) ∂mu ≤
         C * ((⨍⁻ x in ball x₀ R, ‖W1p.gradient u x‖ₑ ^ (2 : ℝ) ∂mu) ^ ((2 + ε) / 2) +
           ⨍⁻ x in ball x₀ R, (‖F x‖ₑ / ENNReal.ofReal lam) ^ (2 + ε) ∂mu) := by
-  obtain ⟨s, hs1', hs2', hsn⟩ := exists_one_le_lt_two_inv_sub_inv_lt
-    (Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ ι))
+  have hn := Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ ι)
+  obtain ⟨s, hs, hs1', hs2', hsn⟩ := exists_one_le_lt_two_inv_sub_inv_lt hn
   have hs1 : 1 ≤ s := by exact_mod_cast hs1'
   have hs2 : s ≤ 2 := by exact_mod_cast hs2'.le
   have hs0 : (0 : ℝ) < s := one_pos.trans_le hs1'
-  obtain ⟨b, hb⟩ := exists_setLAverage_enorm_gradient_sq_le_divergence (mu := mu) hs1 hs2 hsn K
-  -- Gehring's lemma for the reverse Hölder inequality between the exponents `s < 2`.
-  obtain ⟨ε₀, hε₀, hG⟩ := exists_setLAverage_rpow_add_le_of_rpow (μ := mu) hs0 hs2' b
-  refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
-  obtain ⟨C, hC⟩ := hG ε hε hεle
+  obtain ⟨A, hA⟩ := exists_setLAverage_enorm_gradient_sq_le_divergence (mu := mu) hs1 hs2 hsn
+  refine ⟨A, fun K ε hε hεle => ?_⟩
+  -- Gehring's lemma for the reverse Hölder inequality between the exponents `s < 2`, with the
+  -- constant `b = A (1 + K²)`; its gain `s · gehringGain n (2 / s) b` is `meyersGain n b`.
+  set b : ℝ≥0 := (A * (1 + K ^ 2) : ℝ).toNNReal
+  have hb : (b : ℝ) = A * (1 + K ^ 2) := Real.coe_toNNReal _ (by positivity)
+  have hgain : (s : ℝ) * gehringGain (finrank ℝ (EuclideanSpace ℝ ι)) (2 / s) b =
+      meyersGain (finrank ℝ (EuclideanSpace ℝ ι)) (A * (1 + K ^ 2)) := by
+    have : (0 : ℝ) < finrank ℝ (EuclideanSpace ℝ ι) := by exact_mod_cast hn
+    rw [meyersGain_def, hb, hs]
+    congr 2
+    field_simp
+  obtain ⟨C, hC⟩ := exists_setLAverage_rpow_add_le_of_rpow (μ := mu) hs0 hs2' b hε
+    (hεle.trans_eq hgain.symm)
   refine ⟨C, fun {Omega a lam Lam F u x₀ R} h hK ha hF hu hball => ?_⟩
   have hball' : mu.restrict (ball x₀ R) ≤ mu.restrict Omega := Measure.restrict_mono hball le_rfl
   exact hC (f := fun x => ‖W1p.gradient u x‖ₑ) (φ := fun x => ‖F x‖ₑ / ENNReal.ofReal lam)
     ((Lp.aestronglyMeasurable (W1p.gradient u)).eNorm.mono_measure hball')
     ((hF.aestronglyMeasurable.eNorm.div_const _).mono_measure hball')
-    fun y ρ hρ hsub => hb h hK ha hF hu hρ (hsub.trans hball)
+    fun y ρ hρ hsub => by
+      rw [← ENNReal.ofReal_coe_nnreal, hb]
+      exact hA h hK ha hF hu hρ (hsub.trans hball)
 
-/-- **Meyers' theorem: higher integrability of the gradient.** Let `n ≥ 1` be the dimension and
-let `K` bound the ellipticity ratio. There is `ε₀ > 0`, depending only on `n` and `K`, with the
-following property. Let `a` be measurable and uniformly elliptic on `Ω` with constants
-`0 < λ ≤ Λ ≤ K λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for
-every `v ∈ H¹₀(Ω)`. If `B(x₀, R) ⊆ Ω`, `0 < ε ≤ ε₀` and `F` lies in `L^{2 + ε}(B(x₀, R))`, then
-`∇u` lies in `L^{2 + ε}(B(x₀, R/2))`. -/
-theorem exists_memLp_gradient_ball_divergence [Nonempty ι] (K : ℝ) :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
+/-- **Meyers' theorem: higher integrability of the gradient.** Let `n ≥ 1` be the dimension. There
+is a constant `A`, depending only on `n` and the normalization of `mu`, with the following
+property. Let `K` bound the ellipticity ratio, let `a` be measurable and uniformly elliptic on `Ω`
+with constants `0 < λ ≤ Λ ≤ K λ`, let `F ∈ L²(Ω; ℝⁿ)`, and let `u ∈ H¹(Ω)` satisfy
+`a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`. If `B(x₀, R) ⊆ Ω`,
+`0 < ε ≤ meyersGain n (A (1 + K²))` and `F` lies in `L^{2 + ε}(B(x₀, R))`, then `∇u` lies in
+`L^{2 + ε}(B(x₀, R/2))`. -/
+theorem exists_memLp_gradient_ball_divergence [Nonempty ι] :
+    ∃ A : ℝ≥0, ∀ K ε : ℝ, 0 < ε →
+      ε ≤ meyersGain (finrank ℝ (EuclideanSpace ℝ ι)) (A * (1 + K ^ 2)) →
       ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
         {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
         {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
@@ -367,9 +445,9 @@ theorem exists_memLp_gradient_ball_divergence [Nonempty ι] (K : ℝ) :
       ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       MemLp F (ENNReal.ofReal (2 + ε)) (mu.restrict (ball x₀ R)) →
       MemLp (W1p.gradient u) (ENNReal.ofReal (2 + ε)) (mu.restrict (ball x₀ (R / 2))) := by
-  obtain ⟨ε₀, hε₀, hM⟩ := exists_setLAverage_enorm_gradient_rpow_le_divergence (mu := mu) K
-  refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
-  obtain ⟨C, hC⟩ := hM ε hε hεle
+  obtain ⟨A, hM⟩ := exists_setLAverage_enorm_gradient_rpow_le_divergence (mu := mu)
+  refine ⟨A, fun K ε hε hεle => ?_⟩
+  obtain ⟨C, hC⟩ := hM K ε hε hεle
   intro Omega a lam Lam F u x₀ R h hK ha hF hu hball hFp
   -- For `R ≤ 0` the half ball is empty.
   rcases le_or_gt R 0 with hR | hR
@@ -708,16 +786,18 @@ theorem exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence [Nonempty
           ⨍⁻ x in ball x₀ R,
             (‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ₑ / ENNReal.ofReal lam) ^ (2 + ε)
               ∂mu) := by
-  obtain ⟨s, hs1', hs2', hsn⟩ := exists_one_le_lt_two_inv_sub_inv_lt
+  obtain ⟨s, -, hs1', hs2', hsn⟩ := exists_one_le_lt_two_inv_sub_inv_lt
     (Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ ι))
   have hs1 : 1 ≤ s := by exact_mod_cast hs1'
   have hs0 : (0 : ℝ) < s := one_pos.trans_le hs1'
   obtain ⟨b, hb⟩ := exists_setLAverage_enorm_indicator_gradient_sq_le_divergence (mu := mu) hs1
     (by exact_mod_cast hs2'.le) hsn K hθ
   -- Gehring's lemma for the reverse Hölder inequality between the exponents `s < 2`.
-  obtain ⟨ε₀, hε₀, hG⟩ := exists_setLAverage_rpow_add_le_of_rpow (μ := mu) hs0 hs2' b
-  refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
-  obtain ⟨C, hC⟩ := hG ε hε hεle
+  refine ⟨s * gehringGain (finrank ℝ (EuclideanSpace ℝ ι)) (2 / s) b,
+    mul_pos hs0 (gehringGain_pos _ ((one_lt_div hs0).2 hs2')
+      (neg_one_lt_zero.trans_le (NNReal.coe_nonneg b))),
+    fun ε hε hεle => ?_⟩
+  obtain ⟨C, hC⟩ := exists_setLAverage_rpow_add_le_of_rpow (μ := mu) hs0 hs2' b hε hεle
   refine ⟨C, fun {Omega a lam Lam F u r₀ x₀ R} h hK ha hF hu hdens hR => ?_⟩
   have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   exact hC

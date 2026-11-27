@@ -22,14 +22,18 @@ and `b ≥ 0`. **Gehring's lemma** says that the reverse Hölder inequality
 
 `⨍_{B(y, ρ)} g ^ q ≤ b (⨍_{B(y, 2ρ)} g) ^ q + ⨍_{B(y, 2ρ)} h ^ q`,
 
-assumed on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`, improves itself: there is `δ₀ > 0` such that for
-`0 < δ ≤ δ₀`
+assumed on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`, improves itself: for
+`0 < δ ≤ δ₀ = gehringGain d q b`, with `d` the dimension of `E`,
 
 `⨍_{B(x₀, R/2)} g ^ (q + δ) ≤ C ((⨍_{B(x₀, R)} g ^ q) ^ ((q + δ) / q) + ⨍_{B(x₀, R)} h ^ (q + δ))`
 
-(`TauCeti.exists_setLAverage_rpow_add_le`). The gain `δ₀` and the constant `C` do not depend on
-`g`, `h`, the centre `x₀` or the radius `R`. No integrability of `g` or `h` is assumed, and the
-averages are extended-valued: when `g ^ q` and `h ^ (q + δ)` have finite integrals over
+(`TauCeti.exists_setLAverage_rpow_add_le`). The gain is explicit,
+
+`gehringGain d q b = min 1 ((q - 1) (4 (b + 1))^(-q) / (4 · 4ᵈ (b + 1)))`
+
+(`TauCeti.gehringGain`), and decreases as `b` grows. The gain `δ₀` and the constant `C` do not
+depend on `g`, `h`, the centre `x₀` or the radius `R`. No integrability of `g` or `h` is assumed,
+and the averages are extended-valued: when `g ^ q` and `h ^ (q + δ)` have finite integrals over
 `B(x₀, R)`, the right-hand side is finite, so `g` lies in `L^{q + δ}` of the half ball.
 
 The lemma is the source of higher integrability in elliptic regularity. For a weak solution of a
@@ -202,6 +206,50 @@ end MeasureTheory.Measure
 
 namespace TauCeti
 
+/-! ### The gain -/
+
+/-- **The gain in Gehring's lemma**, explicit in the dimension `d`, the exponent `q` and the
+reverse Hölder constant `b`:
+
+`gehringGain d q b = min 1 ((q - 1) (4 (b + 1))^(-q) / (4 · 4ᵈ (b + 1)))`.
+
+For `q > 1` and `b ≥ 0`, Gehring's lemma (`TauCeti.exists_setLAverage_rpow_add_le`) improves the
+reverse Hölder inequality with constant `b` in a space of dimension `d` from `L^q` to `L^{q + δ}`
+for every `0 < δ ≤ gehringGain d q b`. The gain is positive (`TauCeti.gehringGain_pos`) and
+decreases as `b` grows (`TauCeti.gehringGain_antitoneOn`). It is a lower bound for the optimal
+gain, which is itself at most `q 4ᵈ / (b - 4ᵈ)` for `b > 4ᵈ`
+(`TauCeti.lt_div_sub_of_forall_setLAverage_rpow_add_le`). -/
+noncomputable def gehringGain (d : ℕ) (q b : ℝ) : ℝ :=
+  min 1 ((q - 1) * (4 * (b + 1))⁻¹ ^ q / (4 * 4 ^ d * (b + 1)))
+
+/-- The defining formula of `TauCeti.gehringGain`. -/
+theorem gehringGain_def (d : ℕ) (q b : ℝ) :
+    gehringGain d q b = min 1 ((q - 1) * (4 * (b + 1))⁻¹ ^ q / (4 * 4 ^ d * (b + 1))) :=
+  (rfl)
+
+/-- The gain in Gehring's lemma is at most `1`. -/
+theorem gehringGain_le_one (d : ℕ) (q b : ℝ) : gehringGain d q b ≤ 1 := by
+  rw [gehringGain_def]
+  exact min_le_left _ _
+
+/-- The gain in Gehring's lemma is positive for `q > 1` and `b > -1`. -/
+theorem gehringGain_pos (d : ℕ) {q b : ℝ} (hq : 1 < q) (hb : -1 < b) : 0 < gehringGain d q b := by
+  have : 0 < b + 1 := by linarith
+  have : 0 < q - 1 := sub_pos.2 hq
+  rw [gehringGain_def]
+  exact lt_min one_pos (by positivity)
+
+/-- The gain in Gehring's lemma decreases as the reverse Hölder constant grows. -/
+theorem gehringGain_antitoneOn (d : ℕ) {q : ℝ} (hq : 1 < q) :
+    AntitoneOn (gehringGain d q) (Ioi (-1)) := by
+  intro b hb b' hb' hbb'
+  have h0 : 0 < b + 1 := by simp only [mem_Ioi] at hb; linarith
+  have h0' : 0 < b' + 1 := by simp only [mem_Ioi] at hb'; linarith
+  have : 0 < q - 1 := sub_pos.2 hq
+  simp only [gehringGain_def]
+  refine min_le_min_left _ ?_
+  gcongr
+
 section General
 
 variable {α : Type*} [MeasurableSpace α]
@@ -281,12 +329,13 @@ private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ
     _ ≤ 2 * (b * t ^ (q - 1) * G + H) := by gcongr
 
 /-- The arithmetic of the thresholds in Gehring's lemma. For `q > 1`, `b ≥ 0` and a dimension `d`
-there is a height ratio `ε ∈ (0, 1]` with `b ε + ε ^ q ≤ 1 / 2`, and a gain `δ₀ > 0` such that for
-`0 < δ ≤ δ₀` the absorption coefficient `2 · 4 ^ d · b · δ / (q + δ - 1) · ε ^ (1 - q - δ)` is at
-most `1 / 2`. -/
+there is a height ratio `ε ∈ (0, 1]` with `b ε + ε ^ q ≤ 1 / 2` such that for
+`0 < δ ≤ gehringGain d q b` the absorption coefficient
+`2 · 4 ^ d · b · δ / (q + δ - 1) · ε ^ (1 - q - δ)` is at most `1 / 2`. The height ratio is
+`ε = (4 (b + 1))⁻¹`. -/
 private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d : ℕ) :
     ∃ ε : ℝ≥0∞, ε ≠ 0 ∧ ε ≤ 1 ∧ (b : ℝ≥0∞) * ε + ε ^ q ≤ 2⁻¹ ∧
-      ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ →
+      ∀ δ, 0 < δ → δ ≤ gehringGain d q b →
         2 * ENNReal.ofReal (4 ^ d) *
           (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1)) ≤ 2⁻¹ := by
   have _hq0 : 0 < q := one_pos.trans hq
@@ -309,8 +358,8 @@ private theorem exists_gehring_constants {q : ℝ} (hq : 1 < q) (b : ℝ≥0) (d
   set D : ℝ := 4 ^ d with _hD
   have hD0 : 0 < D := by positivity
   have heq0 : 0 < e ^ q := Real.rpow_pos_of_pos he0 q
-  refine ⟨min 1 ((q - 1) * e ^ q / (4 * D * (b + 1))),
-    lt_min one_pos (by have := sub_pos.2 hq; positivity), fun δ hδ hδ₀ => ?_⟩
+  intro δ hδ hδ₀
+  rw [gehringGain_def] at hδ₀
   have hp : 0 < q + δ - 1 := by linarith
   have hδ1 : δ ≤ 1 := hδ₀.trans (min_le_left _ _)
   have hδ2 : δ ≤ (q - 1) * e ^ q / (4 * D * (b + 1)) := hδ₀.trans (min_le_right _ _)
@@ -765,8 +814,9 @@ private theorem setLAverage_rpow_add_le_of_setLIntegral_le {q δ : ℝ} (hq : 0 
         linarith
 
 /-- Gehring's lemma for measurable functions; see `exists_setLAverage_rpow_add_le`. -/
-private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
-    ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ → ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
+private theorem exists_setLAverage_rpow_add_le_of_measurable {q δ : ℝ} (hq : 1 < q) (b : ℝ≥0)
+    (hδ : 0 < δ) (hδb : δ ≤ gehringGain (finrank ℝ E) q b) :
+    ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
       0 < R → Measurable g → Measurable h →
       (∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
         ⨍⁻ x in ball y ρ, g x ^ q ∂μ ≤
@@ -775,15 +825,14 @@ private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 <
         C * ((⨍⁻ x in ball x₀ R, g x ^ q ∂μ) ^ ((q + δ) / q) +
           ⨍⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ) := by
   have hq0 : 0 < q := one_pos.trans hq
-  -- The height ratio `ε`, the gain `δ₀`, and for each `δ` the constant `C₀` of the absorption
-  -- lemma for the coefficient `θ < 1` and the exponent `β = dim E · δ / q`.
-  obtain ⟨ε, hε0, hε1, hε, δ₀, hδ₀, hθ⟩ := exists_gehring_constants hq b (finrank ℝ E)
-  refine ⟨δ₀, hδ₀, fun δ hδ hδδ₀ => ?_⟩
+  -- The height ratio `ε`, and the constant `C₀` of the absorption lemma for the coefficient
+  -- `θ < 1` and the exponent `β = dim E · δ / q`.
+  obtain ⟨ε, hε0, hε1, hε, hθ⟩ := exists_gehring_constants hq b (finrank ℝ E)
   set d := finrank ℝ E
   set β : ℝ := d * δ / q
   have hθ1 : (2 * ENNReal.ofReal (4 ^ d) *
       ((b : ℝ≥0∞) * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1))).toReal < 1 := by
-    have := ENNReal.toReal_mono (by simp) (hθ δ hδ hδδ₀)
+    have := ENNReal.toReal_mono (by simp) (hθ δ hδ hδb)
     rw [ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
     linarith
   obtain ⟨C₀, hC₀pos, hC₀⟩ := exists_le_mul_mul_rpow_add_of_le_mul_add ENNReal.toReal_nonneg hθ1 β
@@ -832,10 +881,10 @@ private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 <
   exact setLAverage_rpow_add_le_of_setLIntegral_le hq0 hδ hC₀pos.le hKh hR hIg hIh
     (le_of_tendsto' hlim hk)
 
-/-- **Gehring's lemma.** Let `q > 1` and `b ≥ 0`. There is `δ₀ > 0` such that for every
-`0 < δ ≤ δ₀` there is a constant `C`, independent of the functions, the centre and the radius, with
-the following property. Let `g` and `h` be nonnegative and a.e. measurable on a ball `B(x₀, R)`,
-and suppose that `g` satisfies the reverse Hölder inequality
+/-- **Gehring's lemma.** Let `q > 1` and `b ≥ 0`. For every `0 < δ ≤ gehringGain d q b`, where `d`
+is the dimension of `E`, there is a constant `C`, independent of the functions, the centre and the
+radius, with the following property. Let `g` and `h` be nonnegative and a.e. measurable on a ball
+`B(x₀, R)`, and suppose that `g` satisfies the reverse Hölder inequality
 
 `⨍_{B(y, ρ)} g ^ q ≤ b (⨍_{B(y, 2ρ)} g) ^ q + ⨍_{B(y, 2ρ)} h ^ q`
 
@@ -846,8 +895,9 @@ on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`. Then
 No integrability is assumed and the averages are extended-valued. If the integrals of `g ^ q` and
 `h ^ (q + δ)` over `B(x₀, R)` are finite, the right-hand side is finite, so `g` is integrable to the
 higher power `q + δ` on the half ball; otherwise the right-hand side is infinite. -/
-theorem exists_setLAverage_rpow_add_le {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
-    ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ → ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
+theorem exists_setLAverage_rpow_add_le {q δ : ℝ} (hq : 1 < q) (b : ℝ≥0) (hδ : 0 < δ)
+    (hδb : δ ≤ gehringGain (finrank ℝ E) q b) :
+    ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
       AEMeasurable g (μ.restrict (ball x₀ R)) →
       AEMeasurable h (μ.restrict (ball x₀ R)) →
       (∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
@@ -856,9 +906,7 @@ theorem exists_setLAverage_rpow_add_le {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
       ⨍⁻ x in ball x₀ (R / 2), g x ^ (q + δ) ∂μ ≤
         C * ((⨍⁻ x in ball x₀ R, g x ^ q ∂μ) ^ ((q + δ) / q) +
           ⨍⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ) := by
-  obtain ⟨δ₀, hδ₀, hmain⟩ := exists_setLAverage_rpow_add_le_of_measurable (μ := μ) hq b
-  refine ⟨δ₀, hδ₀, fun δ hδ hδδ₀ => ?_⟩
-  obtain ⟨C, hC⟩ := hmain δ hδ hδδ₀
+  obtain ⟨C, hC⟩ := exists_setLAverage_rpow_add_le_of_measurable (μ := μ) hq b hδ hδb
   refine ⟨C, fun {g h x₀ R} hg hh hRH => ?_⟩
   -- For `R ≤ 0` the half ball is empty.
   rcases le_or_gt R 0 with hR | hR
@@ -879,8 +927,9 @@ theorem exists_setLAverage_rpow_add_le {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
     ← hav subset_rfl (hhp (q + δ))] at key
 
 /-- **Gehring's lemma for a reverse Hölder inequality between two exponents.** Let `0 < s < p`
-and `b ≥ 0`. There is `ε₀ > 0` such that for every `0 < ε ≤ ε₀` there is a constant `C`,
-independent of the functions, the centre and the radius, with the following property. Let `f`
+and `b ≥ 0`. For every `0 < ε ≤ s · gehringGain d (p / s) b`, where `d` is the dimension of `E`,
+there is a constant `C`, independent of the functions, the centre and the radius, with the
+following property. Let `f`
 and `φ` be nonnegative and a.e. measurable on `B(x₀, R)`, and suppose that
 
 `⨍_{B(y, ρ)} f ^ p ≤ b (⨍_{B(y, 2ρ)} f ^ s) ^ (p/s) + b ⨍_{B(y, 2ρ)} φ ^ p`
@@ -890,8 +939,9 @@ on every ball with `B(y, 2ρ) ⊆ B(x₀, R)`. Then
 `⨍_{B(x₀, R/2)} f ^ (p + ε) ≤ C ((⨍_{B(x₀, R)} f ^ p) ^ ((p + ε)/p) + ⨍_{B(x₀, R)} φ ^ (p + ε))`.
 
 This is `TauCeti.exists_setLAverage_rpow_add_le` for `f ^ s` at the exponent `p/s > 1`. -/
-theorem exists_setLAverage_rpow_add_le_of_rpow {s p : ℝ} (hs : 0 < s) (hsp : s < p) (b : ℝ≥0) :
-    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∃ C : ℝ≥0, ∀ {f φ : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
+theorem exists_setLAverage_rpow_add_le_of_rpow {s p ε : ℝ} (hs : 0 < s) (hsp : s < p) (b : ℝ≥0)
+    (hε : 0 < ε) (hεb : ε ≤ s * gehringGain (finrank ℝ E) (p / s) b) :
+    ∃ C : ℝ≥0, ∀ {f φ : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
       AEMeasurable f (μ.restrict (ball x₀ R)) → AEMeasurable φ (μ.restrict (ball x₀ R)) →
       (∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
         ⨍⁻ x in ball y ρ, f x ^ p ∂μ ≤
@@ -903,12 +953,10 @@ theorem exists_setLAverage_rpow_add_le_of_rpow {s p : ℝ} (hs : 0 < s) (hsp : s
   set q : ℝ := p / s
   have hq : 1 < q := (one_lt_div hs).2 hsp
   have hsq : s * q = p := mul_div_cancel₀ _ hs.ne'
-  obtain ⟨δ₀, hδ₀, hG⟩ := exists_setLAverage_rpow_add_le (μ := μ) hq b
-  refine ⟨s * δ₀, by positivity, fun ε hε hεle => ?_⟩
-  have hδle : ε / s ≤ δ₀ := by
+  have hδle : ε / s ≤ gehringGain (finrank ℝ E) q b := by
     rw [div_le_iff₀ hs]
     linarith
-  obtain ⟨C, hC⟩ := hG (ε / s) (div_pos hε hs) hδle
+  obtain ⟨C, hC⟩ := exists_setLAverage_rpow_add_le (μ := μ) hq b (div_pos hε hs) hδle
   have hexp : s * (q + ε / s) = p + ε := by rw [mul_add, hsq, mul_div_cancel₀ _ hs.ne']
   have hexp' : (q + ε / s) / q = (p + ε) / p := by
     rw [← hexp, ← hsq, mul_div_mul_left _ _ hs.ne']

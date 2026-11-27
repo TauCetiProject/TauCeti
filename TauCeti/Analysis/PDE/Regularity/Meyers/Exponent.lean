@@ -13,8 +13,10 @@ public import TauCeti.Analysis.PDE.Regularity.Meyers.Cylinder
 Meyers' theorem (`TauCeti.PDE.exists_memLp_gradient_ball_divergence`) gives, for a bound `K` on
 the ellipticity ratio, an exponent gain `ε₀ > 0` such that every weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` with measurable coefficients, uniformly elliptic with constants
-`λ ≤ Λ ≤ K λ`, has gradient in `L^{2 + ε}` on half balls whenever `F` is, for `0 < ε ≤ ε₀`. This
-file shows that in every dimension every such gain satisfies
+`λ ≤ Λ ≤ K λ`, has gradient in `L^{2 + ε}` on half balls whenever `F` is, for `0 < ε ≤ ε₀`. The
+gain is explicit through Gehring's lemma, `ε₀ = TauCeti.PDE.meyersGain n (A (1 + K²))` with `A`
+depending only on the dimension `n`, so it is bounded below in terms of `K`. This file shows that
+in every dimension every such gain satisfies
 
 `ε (√K - 1) < 2`,
 
