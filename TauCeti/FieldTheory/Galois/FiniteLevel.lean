@@ -46,6 +46,14 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
   (H : ∀ M : FiniteGaloisIntermediateField K L, Subgroup (M ≃ₐ[K] M))
 
+/-- A subgroup condition at a finite Galois level has closed pullback in the Krull topology. -/
+theorem _root_.FiniteGaloisIntermediateField.isClosed_comap_restrictNormalHom
+    (M : FiniteGaloisIntermediateField K L) (S : Subgroup Gal(M/K)) :
+    IsClosed (S.comap (AlgEquiv.restrictNormalHom M : Gal(L/K) →* Gal(M/K)) :
+      Set Gal(L/K)) :=
+  (isClosed_discrete _).preimage
+    (InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField)
+
 /-- Conditions on restrictions to finite Galois subextensions cut out a closed subgroup in the
 Krull topology. No compatibility between the conditions is needed for closedness. -/
 theorem isClosed_iInf_comap_restrictNormalHom :
@@ -53,8 +61,7 @@ theorem isClosed_iInf_comap_restrictNormalHom :
       (AlgEquiv.restrictNormalHom M : Gal(L/K) →* Gal(M/K))) : Subgroup Gal(L/K)) :
       Set Gal(L/K)) := by
   rw [Subgroup.coe_iInf]
-  exact isClosed_iInter fun M ↦ (isClosed_discrete _).preimage
-    (InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField)
+  exact isClosed_iInter fun M ↦ M.isClosed_comap_restrictNormalHom (H M)
 
 /-- If restriction carries each finite-level subgroup into the subgroup below it, their
 pullbacks to `Gal(L/K)` form an antitone family. No surjectivity between subgroups is needed. -/
@@ -67,10 +74,7 @@ theorem antitone_comap_restrictNormalHom
   simp only [Subgroup.mem_comap] at hσ ⊢
   apply hH hMN
   refine ⟨AlgEquiv.restrictNormalHom N σ, hσ, ?_⟩
-  rw [← IntermediateField.restrictNormalHom_val N.toIntermediateField,
-    ← IntermediateField.restrictNormalHom_val M.toIntermediateField,
-    AlgHom.restrictNormalHom_restrictNormalHom]
-  rfl
+  exact IntermediateField.restrictNormalHom_inclusion _ σ
 
 /-- In a normal extension, every compatible family of subgroups of the finite Galois groups
 is realized by its intersection of pullbacks: restriction from that intersection surjects onto
@@ -87,8 +91,7 @@ theorem map_restrictNormalHom_iInf_comap [Normal K L]
     (H N).comap (AlgEquiv.restrictNormalHom N)
   have hanti : Antitone S := antitone_comap_restrictNormalHom H fun _ _ h ↦ (hH h).le
   have hclosed (N : FiniteGaloisIntermediateField K L) : IsClosed (S N : Set Gal(L/K)) :=
-    (isClosed_discrete _).preimage
-      (InfiniteGalois.restrictNormalHom_continuous N.toIntermediateField)
+    N.isClosed_comap_restrictNormalHom (H N)
   rw [MonoidHom.map_iInf_of_isClosed _ (InfiniteGalois.restrictNormalHom_continuous
     M.toIntermediateField) S hclosed (fun N P ↦ ⟨N ⊔ P, hanti le_sup_left, hanti le_sup_right⟩)]
   refine le_antisymm ?_ (le_iInf fun N ↦ ?_)
@@ -99,9 +102,6 @@ theorem map_restrictNormalHom_iInf_comap [Normal K L]
     obtain ⟨ρ, hρ, hρτ⟩ := hτ
     obtain ⟨σ, hσ⟩ := AlgEquiv.restrictNormalHom_surjective L ρ
     refine ⟨σ, hanti (le_sup_right : N ≤ M ⊔ N) (by simpa [S, hσ] using hρ), ?_⟩
-    rw [← hρτ, ← hσ, ← IntermediateField.restrictNormalHom_val (M ⊔ N).toIntermediateField,
-      ← IntermediateField.restrictNormalHom_val M.toIntermediateField,
-      AlgHom.restrictNormalHom_restrictNormalHom]
-    rfl
+    rw [← hρτ, ← hσ, IntermediateField.restrictNormalHom_inclusion]
 
 end TauCeti

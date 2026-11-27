@@ -40,6 +40,8 @@ restriction, and conjugation transport properties.
   restriction.
 * `AlgHom.restrictNormalHom_restrictNormalHom`: restriction along a composite of embeddings is
   the composite of the restrictions.
+* `IntermediateField.restrictNormalHom_inclusion`: restricting through a larger normal
+  intermediate field agrees with direct restriction.
 * `IntermediateField.normalClosure_eq_fieldRange` and `AlgHom.exists_comp_eq_of_normal`: the
   embeddings of a normal extension all have the same image and differ by automorphisms.
 * `AlgHom.restrictNormalHom_surjective` and `AlgHom.ker_restrictNormalHom`: for a normal `K/F`
@@ -176,6 +178,18 @@ theorem _root_.AlgHom.restrictNormalHom_restrictNormalHom {N : Type*} [Field N] 
   ((f.comp h).restrictNormalHom_eq_iff.2 fun x ↦ by
     rw [AlgHom.comp_apply, AlgHom.comp_apply, h.restrictNormalHom_commutes,
       f.restrictNormalHom_commutes]).symm
+
+/-- Restricting first to a normal intermediate field and then along an inclusion is the same
+as restricting directly to the smaller field. -/
+@[simp]
+theorem _root_.IntermediateField.restrictNormalHom_inclusion
+    {M N : IntermediateField F K} [Normal F M] [Normal F N] (h : M ≤ N) (σ : Gal(K/F)) :
+    (IntermediateField.inclusion h).restrictNormalHom (AlgEquiv.restrictNormalHom N σ) =
+      AlgEquiv.restrictNormalHom M σ := by
+  have hcomp : N.val.comp (IntermediateField.inclusion h) = M.val :=
+    AlgHom.ext (IntermediateField.coe_inclusion h)
+  rw [← IntermediateField.restrictNormalHom_val N,
+    AlgHom.restrictNormalHom_restrictNormalHom, hcomp, IntermediateField.restrictNormalHom_val]
 
 /-- **The normal closure of a normal extension is its image**: every `F`-embedding of a normal
 extension `M/F` into `K` has image the normal closure of `M` in `K`, so all of them have the

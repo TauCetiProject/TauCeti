@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 import Mathlib.Topology.Algebra.ProperAction.Basic
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.Group.DirectedIntersection
 
 /-!
 # Profinite groups: the finite-quotient limit description
@@ -254,48 +255,26 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
       (H U).map (QuotientGroup.mapOfLE hUV) = H V)
     (U : OpenNormalSubgroup G) :
     (limitSubgroup H).map (QuotientGroup.mk' U.toSubgroup) = H U := by
-  apply le_antisymm
-  · rw [Subgroup.map_le_iff_le_comap]
-    exact fun g hg ↦ mem_limitSubgroup_iff.mp hg U
+  let S (V : OpenNormalSubgroup G) : Subgroup G :=
+    (H V).comap (QuotientGroup.mk' V.toSubgroup)
+  have hmono : Monotone S := by
+    intro V W hVW g hg
+    have hmem : (QuotientGroup.mk g : G ⧸ W.toSubgroup) ∈
+        (H V).map (QuotientGroup.mapOfLE hVW) :=
+      ⟨QuotientGroup.mk g, hg, QuotientGroup.mapOfLE_mk _ g⟩
+    rwa [hH hVW] at hmem
+  have hclosed (V : OpenNormalSubgroup G) : IsClosed (S V : Set G) :=
+    (isClosed_discrete _).preimage QuotientGroup.continuous_mk
+  rw [limitSubgroup, MonoidHom.map_iInf_of_isClosed _ QuotientGroup.continuous_mk S hclosed
+    (fun V W ↦ ⟨V ⊓ W, hmono inf_le_left, hmono inf_le_right⟩)]
+  refine le_antisymm ?_ (le_iInf fun V ↦ ?_)
+  · exact (iInf_le _ U).trans_eq
+      (Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective U.toSubgroup) _)
   · intro y hy
-    -- Find a preimage of `y` that lies in the inverse image of every `H V`, by compactness.
-    let t : OpenNormalSubgroup G → Set G := fun V ↦
-      (QuotientGroup.mk' U.toSubgroup) ⁻¹' {y} ∩
-        (QuotientGroup.mk' V.toSubgroup) ⁻¹' (H V : Set (G ⧸ V.toSubgroup))
-    have ht_nonempty (V : OpenNormalSubgroup G) : (t V).Nonempty := by
-      have hyW : y ∈ (H (U ⊓ V)).map (QuotientGroup.mapOfLE inf_le_left) := by
-        rwa [hH inf_le_left]
-      obtain ⟨z, hz, hzy⟩ := hyW
-      obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective (U ⊓ V).toSubgroup z
-      refine ⟨g, ?_, ?_⟩
-      · simpa using hzy
-      · have hzV : (QuotientGroup.mk g : G ⧸ V.toSubgroup) ∈
-            (H (U ⊓ V)).map (QuotientGroup.mapOfLE inf_le_right) :=
-          ⟨QuotientGroup.mk g, hz, QuotientGroup.mapOfLE_mk _ g⟩
-        rwa [hH inf_le_right] at hzV
-    have ht_closed (V : OpenNormalSubgroup G) : IsClosed (t V) :=
-      (isClosed_singleton.preimage QuotientGroup.continuous_mk).inter
-        ((isClosed_discrete _).preimage QuotientGroup.continuous_mk)
-    have ht_directed : Directed (· ⊇ ·) t := by
-      intro V W
-      refine ⟨V ⊓ W, ?_, ?_⟩
-      · rintro g ⟨hgy, hg⟩
-        refine ⟨hgy, ?_⟩
-        have : (QuotientGroup.mk g : G ⧸ V.toSubgroup) ∈
-            (H (V ⊓ W)).map (QuotientGroup.mapOfLE inf_le_left) :=
-          ⟨QuotientGroup.mk g, hg, QuotientGroup.mapOfLE_mk _ g⟩
-        rwa [hH inf_le_left] at this
-      · rintro g ⟨hgy, hg⟩
-        refine ⟨hgy, ?_⟩
-        have : (QuotientGroup.mk g : G ⧸ W.toSubgroup) ∈
-            (H (V ⊓ W)).map (QuotientGroup.mapOfLE inf_le_right) :=
-          ⟨QuotientGroup.mk g, hg, QuotientGroup.mapOfLE_mk _ g⟩
-        rwa [hH inf_le_right] at this
-    obtain ⟨g, hg⟩ :=
-      IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t ht_directed ht_nonempty
-        (fun V ↦ (ht_closed V).isCompact) ht_closed
-    exact ⟨g, mem_limitSubgroup_iff.mpr fun V ↦ (Set.mem_iInter.mp hg V).2,
-      (Set.mem_iInter.mp hg U).1⟩
+    rw [← hH (inf_le_left : U ⊓ V ≤ U)] at hy
+    obtain ⟨z, hz, hzy⟩ := hy
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective (U ⊓ V).toSubgroup z
+    exact ⟨g, hmono (inf_le_right : U ⊓ V ≤ V) hz, by simpa using hzy⟩
 
 end LimitSubgroup
 
