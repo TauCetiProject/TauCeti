@@ -39,8 +39,6 @@ geometrically connected fibres.
 
 ## Main results
 
-* `WittVector.mem_range_map_iff`: `x` lies in the image of `W(f)` iff all its Witt coordinates lie
-  in the image of `f`.
 * `WittVector.forall_mul_p_pow_mem_range_map_iff`: in characteristic `p`, `p ^ c` carries `W(B)`
   into the image of `W(f)` iff `b ^ p ^ c ∈ f(A)` for every `b ∈ B`.
 * `WittVector.isoModSerre_isBoundedTorsion_map_iff`: `W(f)` is an isomorphism up to bounded
@@ -73,16 +71,6 @@ variable {p : ℕ} [hp : Fact p.Prime] {A B : Type*} [CommRing A] [CommRing B]
 
 local notation "𝕎" => WittVector p
 
-/-- A Witt vector lies in the image of `W(f)` exactly when each of its Witt coordinates lies in the
-image of `f`. -/
-theorem mem_range_map_iff {f : A →+* B} {x : 𝕎 B} :
-    x ∈ (map f).range ↔ ∀ n, x.coeff n ∈ f.range := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨y, rfl⟩ n
-    exact ⟨y.coeff n, (map_coeff f y n).symm⟩
-  · choose a ha using h
-    exact ⟨mk p a, ext fun n ↦ by rw [map_coeff, coeff_mk, ha]⟩
-
 section CharP
 
 variable [CharP B p]
@@ -91,15 +79,15 @@ variable [CharP B p]
 exactly when `b ^ p ^ c` lies in the image of `f` for every `b ∈ B`. -/
 theorem forall_mul_p_pow_mem_range_map_iff {f : A →+* B} {c : ℕ} :
     (∀ y : 𝕎 B, y * (p : 𝕎 B) ^ c ∈ (map f).range) ↔ ∀ b, b ^ p ^ c ∈ f.range := by
-  refine ⟨fun h b ↦ ?_, fun h y ↦ mem_range_map_iff.mpr fun n ↦ ?_⟩
+  refine ⟨fun h b ↦ ?_, fun h y ↦ (mem_range_map_iff f _).mpr fun n ↦ ?_⟩
   · -- The `c`-th Witt coordinate of `[b] * p ^ c` is `b ^ p ^ c`.
     have := mul_pow_charP_coeff_succ (p := p) (teichmuller p b) (m := 0) (n := c)
     rw [zero_add, teichmuller_coeff_zero] at this
-    exact this ▸ mem_range_map_iff.mp (h _) c
+    exact this ▸ (mem_range_map_iff f _).mp (h _) c
   · -- The Witt coordinates of `y * p ^ c` are `0` below `c` and `y_m ^ p ^ c` in degree `m + c`.
     rcases lt_or_ge n c with hn | hn
     · rw [mul_pow_charP_coeff_zero y hn]
-      exact zero_mem _
+      exact ⟨0, map_zero f⟩
     · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
       rw [mul_pow_charP_coeff_succ]
       exact h _
