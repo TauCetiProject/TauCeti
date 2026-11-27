@@ -1009,6 +1009,16 @@ theorem isLoopCylinder_comp_pairOfPantsCoreChart {u : ℝ × ℝ → M}
     simp only [Function.comp_def]
   apply_one _ := Function.comp_apply
 
+omit [TopologicalSpace M] in
+/-- Maps ending at `s = 1` at the loops of `u` along the input ends at height `0`, placed side by
+side, end where the core of `u` starts. -/
+private theorem loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart {u D₀ D₁ : ℝ × ℝ → M}
+    (h₀ : ∀ t, D₀ (1, t) = u (endChart Puncture.zero (0, t)))
+    (h₁ : ∀ t, D₁ (1, t) = u (endChart Puncture.one (0, t))) (t : ℝ) :
+    loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
+  rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
+  exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
+
 /-- **Gluing discs of the inputs to the core.** Let `u` be a map of the pair of pants `S` into a
 manifold `M`, `C¹` on `S`, and let `D₀` and `D₁` be `C¹` maps of the plane which end at `s = 1`
 at the loops of `u` along the circles of the input ends `0` and `1` at height `0`, and share
@@ -1029,11 +1039,9 @@ theorem rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart
       rectangleIntegral φ D₀ (0, 0) (1, 1) + rectangleIntegral φ D₁ (0, 0) (1, 1) -
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation 0,
           φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  have hmatch (t : ℝ) : loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
-    rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
-    exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
   rw [rectangleIntegral_rectangleTrans hφ (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
-    (contMDiff_comp_pairOfPantsCoreChart hu) hmatch 0 1,
+    (contMDiff_comp_pairOfPantsCoreChart hu)
+    (loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart h₀ h₁) 0 1,
     rectangleIntegral_loopwiseTrans hφ hD₀ hD₁ h₀₁ h₁₀ 0 1,
     rectangleIntegral_comp_pairOfPantsCoreChart hφ hu, ← sub_eq_add_neg]
 
@@ -1308,6 +1316,14 @@ theorem isLoopCylinder_comp_pairOfPantsOutputCylinder {u : ℝ × ℝ → M}
   apply_zero t := by rw [Function.comp_apply, pairOfPantsOutputCylinder_mk_zero]
   apply_one t := by rw [Function.comp_apply, pairOfPantsOutputCylinder_mk_one]
 
+omit [TopologicalSpace M] in
+/-- A map followed by the core of `u` ends where the output cylinder of `u` starts. -/
+private theorem rectangleTrans_comp_pairOfPantsCoreChart_mk_one (w u : ℝ × ℝ → M) (t : ℝ) :
+    rectangleTrans w (u ∘ pairOfPantsCoreChart) (1, t) =
+      (u ∘ pairOfPantsOutputCylinder) (0, t) := by
+  rw [rectangleTrans_apply_one, Function.comp_apply, Function.comp_apply,
+    pairOfPantsOutputCylinder_mk_zero]
+
 /-! ### Discs of the output end loop glued from discs of the input end loops -/
 
 /-- The **disc of the output end loop glued from discs of the input end loops** along a map `u`
@@ -1326,6 +1342,30 @@ theorem pairOfPantsGluedDisc_def (D₀ D₁ u : ℝ × ℝ → M) :
       rectangleTrans (rectangleTrans (loopwiseTrans D₀ D₁) (u ∘ pairOfPantsCoreChart))
         (u ∘ pairOfPantsOutputCylinder) :=
   (rfl)
+
+omit [TopologicalSpace M] in
+/-- The glued disc ends at `s = 1` at the loop of `u` along the output end at height `0`. -/
+@[simp]
+theorem pairOfPantsGluedDisc_mk_one (D₀ D₁ u : ℝ × ℝ → M) (t : ℝ) :
+    pairOfPantsGluedDisc D₀ D₁ u (1, t) = u (endChart Puncture.inf (0, t)) := by
+  rw [pairOfPantsGluedDisc_def, rectangleTrans_apply_one, Function.comp_apply,
+    pairOfPantsOutputCylinder_mk_one]
+
+/-- **The glued disc is `Cⁿ`.** Let `u` be a map of the pair of pants into a manifold `M`, `Cⁿ` on
+`S`, and let `D₀` and `D₁` be `Cⁿ` maps of the plane which end at `s = 1` at the loops of `u` along
+the input ends `0` and `1` at height `0` and share their seam. Then the glued disc is `Cⁿ`. -/
+theorem contMDiff_pairOfPantsGluedDisc {n : ℕ∞} {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) {D₀ D₁ : ℝ × ℝ → M}
+    (hD₀ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n D₀) (hD₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n D₁)
+    (h₀₁ : ∀ s, D₀ (s, 1) = D₁ (s, 0)) (h₁₀ : ∀ s, D₁ (s, 1) = D₀ (s, 0))
+    (h₀ : ∀ t, D₀ (1, t) = u (endChart Puncture.zero (0, t)))
+    (h₁ : ∀ t, D₁ (1, t) = u (endChart Puncture.one (0, t))) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (pairOfPantsGluedDisc D₀ D₁ u) := by
+  exact contMDiff_rectangleTrans (contMDiff_rectangleTrans (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
+    (contMDiff_comp_pairOfPantsCoreChart hu)
+    (loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart h₀ h₁))
+    (contMDiff_comp_pairOfPantsOutputCylinder hu)
+    (rectangleTrans_comp_pairOfPantsCoreChart_mk_one _ u)
 
 /-- **The glued disc is a disc of the output end loop.** Let `u` be a map of the pair of pants
 into a manifold `M`, `C²` on `S`, and let `D₀` and `D₁` be discs centred at a common point `x`
@@ -1366,16 +1406,12 @@ theorem rectangleIntegral_pairOfPantsGluedDisc [IsManifold I 1 M] {φ : RoughFor
       rectangleIntegral φ D₀ (0, 0) (1, 1) + rectangleIntegral φ D₁ (0, 0) (1, 1) -
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation 0,
           φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  have hmatch (t : ℝ) : loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
-    rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
-    exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
   have hfirst := contMDiff_rectangleTrans (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
-    (contMDiff_comp_pairOfPantsCoreChart hu) hmatch
+    (contMDiff_comp_pairOfPantsCoreChart hu)
+    (loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart h₀ h₁)
   rw [pairOfPantsGluedDisc, rectangleIntegral_rectangleTrans hφ hfirst
       (contMDiff_comp_pairOfPantsOutputCylinder hu)
-      (fun t ↦ by
-        rw [rectangleTrans_apply_one, Function.comp_apply, Function.comp_apply,
-          pairOfPantsOutputCylinder_mk_zero]) 0 1,
+      (rectangleTrans_comp_pairOfPantsCoreChart_mk_one _ u) 0 1,
     rectangleIntegral_comp_pairOfPantsOutputCylinder hu,
     rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart hφ hu hD₀ hD₁ h₀₁ h₁₀
       h₀ h₁, add_zero]
