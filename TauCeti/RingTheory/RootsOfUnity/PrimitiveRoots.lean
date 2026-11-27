@@ -217,6 +217,7 @@ theorem _root_.IsPrimitiveRoot.autToPow_eq_one_iff {K M : Type*} [CommRing K] [C
 
 /-- **The cyclotomic character detects inverting `ζ`.** `autToPow` sends `x` to `-1` exactly
 when `x` sends the chosen primitive root to its inverse. -/
+@[simp]
 theorem _root_.IsPrimitiveRoot.autToPow_eq_neg_one_iff {K L : Type*} [CommRing K] [Field L]
     [Algebra K L] {m : ℕ} [NeZero m] {ζ : L} (hζ : IsPrimitiveRoot ζ m) (x : L ≃ₐ[K] L) :
     hζ.autToPow K x = -1 ↔ x ζ = ζ⁻¹ := by

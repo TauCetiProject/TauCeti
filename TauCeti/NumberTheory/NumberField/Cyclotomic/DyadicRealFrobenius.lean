@@ -69,7 +69,7 @@ arithmetic Frobenius on `E` at a prime `𝔭` of `K` not dividing `2 ^ n` has od
 norm of `𝔭` is congruent to `1` or `-1` modulo `2 ^ n`. The conjugation on `E` is the restriction
 of the conjugation attached to the chosen infinite place of `L`, ramified over `K`. For `K = ℚ`
 the norm is the rational prime. -/
-theorem natCast_absNorm_eq_one_or_neg_one_of_odd_orderOf_complexConjugation_mul
+theorem natCast_absNorm_eq_one_or_neg_one_of_odd_orderOf_complexConjugationAt_restrictNormal_mul
     {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
     [IsGalois K L] {n : ℕ} {ζ : L} (hζ : IsPrimitiveRoot ζ (2 ^ n))
     (E : IntermediateField K L) [Normal K E] (hreal : ζ + ζ⁻¹ ∈ E)
