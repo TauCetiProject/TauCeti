@@ -15,8 +15,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.Hom.Prod
 
 Let `M` be a complex curve without boundary with a finite bundle atlas `A` of a complex vector
 bundle `V` (so `M` is compact). This file reduces the index of a smooth real Cauchy–Riemann
-operator on `V` to that of an operator on a line bundle, following McDuff–Salamon, proof of
-Theorem C.1.10, steps 1 and 2:
+operator on `V` to that of an operator on a line bundle, as in the reduction to line bundles in
+the proof of the Riemann–Roch theorem for real Cauchy–Riemann operators (McDuff–Salamon,
+Theorem C.1.10 (ii), p. 583):
 
 * if `V` is isomorphic to a direct sum `V₁ ×ᵇ V₂`, then the realization `W^{1,p} → Lᵖ` of a smooth
   real Cauchy–Riemann operator on `V` has the sum of the indices of the realizations of any smooth
@@ -50,7 +51,7 @@ bundle `L` and to `∂bar` on functions.
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Theorem C.1.10 and its proof, steps 1 and 2.
+  Theorem C.1.10 (ii), p. 583, and its proof.
 -/
 
 public section
@@ -99,11 +100,11 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] [ContMDiffVectorBundle �
 
 namespace IsRealCauchyRiemannOperator
 
-/-- **The index on a bundle isomorphic to a direct sum** (McDuff–Salamon, proof of Theorem C.1.10,
-step 1). Let `Φ : V ≃ V₁ ×ᵇ V₂` be a smooth isomorphism of complex vector bundles over a closed
-surface. Then for `1 < p < ∞` the realization `W^{1,p} → Lᵖ` of a smooth real Cauchy–Riemann
-operator on `V` has the sum of the indices of the realizations of any smooth real Cauchy–Riemann
-operators on `V₁` and `V₂`, all on the charts of the same atlas `A`. -/
+/-- **The index on a bundle isomorphic to a direct sum** (used in the proof of McDuff–Salamon,
+Theorem C.1.10 (ii), p. 583). Let `Φ : V ≃ V₁ ×ᵇ V₂` be a smooth isomorphism of complex vector
+bundles over a closed surface. Then for `1 < p < ∞` the realization `W^{1,p} → Lᵖ` of a smooth real
+Cauchy–Riemann operator on `V` has the sum of the indices of the realizations of any smooth real
+Cauchy–Riemann operators on `V₁` and `V₂`, all on the charts of the same atlas `A`. -/
 theorem index_sobolevL_eq_add_of_bundleEquiv (A : FiniteBundleAtlas ℂ M F V)
     (h₁ : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₁ V₁ (A.center i)).baseSet)
     (h₂ : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₂ V₂ (A.center i)).baseSet)
@@ -124,7 +125,7 @@ theorem index_sobolevL_eq_add_of_bundleEquiv (A : FiniteBundleAtlas ℂ M F V)
       (hD₁.sobolevL (A.ofBaseSet h₁) hD₁s volume p).index +
         (hD₂.sobolevL (A.ofBaseSet h₂) hD₂s volume p).index := by
   have hprod := index_sobolevL_prod (A := A.ofBaseSet h₁) (h := h₂) hD₁ hD₂ hD₁s hD₂s p hp hp_top
-  rw [FiniteBundleAtlas.ofBaseSet_prod A h₁ h₂,
+  rw [FiniteBundleAtlas.prod_ofBaseSet A h₁ h₂,
     FiniteBundleAtlas.ofBaseSet_ofBaseSet (A := A) (h := h₁) h₂] at hprod
   set hW : ∀ i, closure (A.dom i) ⊆
       (trivializationAt (F₁ × F₂) (V₁ ×ᵇ V₂) (A.center i)).baseSet :=
@@ -169,10 +170,10 @@ private theorem index_sobolevL_trivial_succ {m : ℕ}
     ((ofComplexManifold ℂ M).contMDiffCovariantDerivativeOn_dbarFunction le_rfl) hp hp_top
   exact this
 
-/-- **The index on a trivial bundle** (McDuff–Salamon, proof of Theorem C.1.10, step 1). On a
-closed surface, the realization `W^{1,p} → Lᵖ`, `1 < p < ∞`, of a smooth real Cauchy–Riemann
-operator on the trivial bundle with fibre `ℂᵐ` has `m` times the index of the realization of
-`∂bar` on complex functions, on the charts of the same atlas (`hB` defaults to
+/-- **The index on a trivial bundle** (used in the proof of McDuff–Salamon, Theorem C.1.10 (ii),
+p. 583). On a closed surface, the realization `W^{1,p} → Lᵖ`, `1 < p < ∞`, of a smooth real
+Cauchy–Riemann operator on the trivial bundle with fibre `ℂᵐ` has `m` times the index of the
+realization of `∂bar` on complex functions, on the charts of the same atlas (`hB` defaults to
 `TauCeti.FiniteBundleAtlas.closure_dom_subset_baseSet_trivial`). -/
 theorem index_sobolevL_trivial_pi (m : ℕ)
     (B : FiniteBundleAtlas ℂ M (Fin m → ℂ) (Trivial M (Fin m → ℂ)))
@@ -210,12 +211,12 @@ theorem index_sobolevL_trivial_pi (m : ℕ)
 
 end Trivial
 
-/-- **Reduction of the index to a line bundle** (McDuff–Salamon, proof of Theorem C.1.10, steps 1
-and 2). Let `Φ : V ≃ ℂᵐ ⊕ L` be a smooth isomorphism of complex vector bundles over a closed
-surface. Then for `1 < p < ∞` the realization `W^{1,p} → Lᵖ` of a smooth real Cauchy–Riemann
-operator on `V` has the index of the realization of any smooth real Cauchy–Riemann operator on `L`
-plus `m` times the index of the realization of `∂bar` on complex functions, all on the charts of
-the same atlas `A`. -/
+/-- **Reduction of the index to a line bundle** (the reduction in the proof of McDuff–Salamon,
+Theorem C.1.10 (ii), p. 583). Let `Φ : V ≃ ℂᵐ ⊕ L` be a smooth isomorphism of complex vector bundles
+over a closed surface. Then for `1 < p < ∞` the realization `W^{1,p} → Lᵖ` of a smooth real
+Cauchy–Riemann operator on `V` has the index of the realization of any smooth real Cauchy–Riemann
+operator on `L` plus `m` times the index of the realization of `∂bar` on complex functions, all on
+the charts of the same atlas `A`. -/
 theorem index_sobolevL_eq_mul_add_of_bundleEquiv_trivialProd {m : ℕ}
     (A : FiniteBundleAtlas ℂ M F V)
     (h₂ : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₂ V₂ (A.center i)).baseSet)

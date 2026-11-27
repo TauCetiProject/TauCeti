@@ -119,7 +119,7 @@ omit [∀ x, Zero (V x)] in
 /-- The product atlas on the charts of `A.ofBaseSet h₁` is the atlas of the product bundle on the
 charts of `A`. -/
 @[simp]
-theorem ofBaseSet_prod {F₁ : Type*} [TopologicalSpace F₁] {V₁ : M → Type*}
+theorem prod_ofBaseSet {F₁ : Type*} [TopologicalSpace F₁] {V₁ : M → Type*}
     [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)] [FiberBundle F₁ V₁]
     [∀ x, Zero (V₁ x)]
     (h₁ : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₁ V₁ (A.center i)).baseSet)
