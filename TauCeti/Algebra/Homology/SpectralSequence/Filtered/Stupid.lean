@@ -395,15 +395,17 @@ lemma homologyπ_stupidFiltrationSpectralSequenceSecondPageXIso_hom (p q : ℤ) 
 /-- **The pages `r ≥ 2` of the spectral sequence of the brutal filtration are the homology.** On
 every page `r ≥ 2`, the object `E^r_{p,0}` is the homology `H_p(C) = H^{-p}(K)`: its neighbours
 vanish (`CochainComplex.isZero_stupidFiltrationSpectralSequence_page_X`), so it survives from the
-second page (`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero`). -/
+second page (`CategoryTheory.SpectralSequence.pageXIsoOfStabilises`). -/
 noncomputable def stupidFiltrationSpectralSequencePageXIso (r : ℤ) (hr : 2 ≤ r) (p q : ℤ)
     (hq : q = 0) :
     (K.stupidFiltrationSpectralSequence.page r).X (p, q) ≅ K.homology (-(p + q)) :=
-  K.stupidFiltrationSpectralSequence.pageXIsoOfLEOfIsZero (r := 2) (by norm_num)
-    (fun s hs pq' hpq' ↦ K.isZero_stupidFiltrationSpectralSequence_page_X 2 (by norm_num) _ _ (by
-      obtain ⟨p', q'⟩ := pq'
-      simp only [ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq] at hpq'
-      omega)) r hr ≪≫
+  (K.stupidFiltrationSpectralSequence.pageXIsoOfStabilises (p, q) 2 (by norm_num)
+      (K.stupidFiltrationSpectralSequence.stabilisesAt_of_forall_isZero (by norm_num)
+        (fun s hs pq' hpq' ↦ K.isZero_stupidFiltrationSpectralSequence_page_X 2 (by norm_num) _ _
+          (by
+            obtain ⟨p', q'⟩ := pq'
+            simp only [ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq] at hpq'
+            omega))) r hr).symm ≪≫
     K.stupidFiltrationSpectralSequenceSecondPageXIso p q hq
 
 /-- On the second page, `CochainComplex.stupidFiltrationSpectralSequencePageXIso` is
@@ -427,7 +429,8 @@ lemma stupidFiltrationSpectralSequencePageXIso_add_one (r : ℤ) (hr : 2 ≤ r) 
         (K.stupidFiltrationSpectralSequence.page r).iCyclesIso (p, q) _ rfl
           (K.stupidFiltrationSpectralSequence_page_d_eq_zero r hr _ _) ≪≫
         K.stupidFiltrationSpectralSequencePageXIso r hr p q hq := by
-  simp only [stupidFiltrationSpectralSequencePageXIso,
-    SpectralSequence.pageXIsoOfLEOfIsZero_add_one _ _ _ r hr, Iso.trans_assoc]
+  ext
+  simp [stupidFiltrationSpectralSequencePageXIso,
+    SpectralSequence.pageXIsoOfStabilises_add_one _ _ _ _ _ r hr]
 
 end CochainComplex

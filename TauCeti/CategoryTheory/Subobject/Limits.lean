@@ -32,8 +32,8 @@ theorem kernelSubobject_eq_top_iff [HasZeroMorphisms C] {X Y : C} (f : X ⟶ Y) 
     kernelSubobject f = ⊤ ↔ f = 0 :=
   ⟨fun h ↦ by
     have : IsIso (kernelSubobject f).arrow := (Subobject.isIso_arrow_iff_eq_top _).mpr h
-    rw [← Category.id_comp f, ← IsIso.inv_hom_id (kernelSubobject f).arrow, Category.assoc,
-      kernelSubobject_arrow_comp, comp_zero],
+    rw [← cancel_epi (kernelSubobject f).arrow]
+    simp,
    fun h ↦ h ▸ kernelSubobject_zero⟩
 
 /-- The image subobject of `f` is `⊥` if and only if `f = 0`. -/

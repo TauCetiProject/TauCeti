@@ -612,11 +612,8 @@ lemma pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s
       ShortComplex.homologyPresentation_eq_refl_mapIso _ (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst),
       ← HomologicalComplex.XIsoHomologyOfDEqZero_eq_shortComplex,
       SubquotientPresentation.trans_mapIso]
-    have htr : ((E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst)).trans
-        (SubquotientPresentation.refl (((E.page t (hs.trans hst)).sc pq).X₂)) =
-      (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst) :=
-      SubquotientPresentation.trans_refl _
-    rw [htr, SubquotientPresentation.mapIso_trans, SubquotientPresentation.mapIso_trans]
+    simp only [HomologicalComplex.shortComplexFunctor_obj_X₂, SubquotientPresentation.trans_refl,
+      SubquotientPresentation.mapIso_trans, Iso.trans_assoc]
 
 /-- Composition compatibility of `pageXIsoOfStabilises` for `s ≤ t ≤ r`. -/
 lemma pageXIsoOfStabilises_trans {s t r : ℤ} (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs)

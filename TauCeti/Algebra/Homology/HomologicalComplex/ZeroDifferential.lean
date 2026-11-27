@@ -102,6 +102,14 @@ lemma XIsoHomologyOfDEqZero_inv (K : HomologicalComplex C c) (i : ι) [K.HasHomo
       K.iCycles i := by
   simp [XIsoHomologyOfDEqZero]
 
+/-- `K.iCycles i` is definitionally `(K.sc i).iCycles`. -/
+private lemma iCycles_eq_sc (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] :
+    K.iCycles i = (K.sc i).iCycles := rfl
+
+/-- `K.homologyπ i` is definitionally `(K.sc i).homologyπ`. -/
+private lemma homologyπ_eq_sc (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] :
+    K.homologyπ i = (K.sc i).homologyπ := rfl
+
 /-- `K.XIsoHomologyOfDEqZero i h₁ h₂` agrees with `(cyclesIsoX₂ _).symm ≪≫ asIsoHomologyπ _` on
 `K.sc i`. -/
 lemma XIsoHomologyOfDEqZero_eq_shortComplex (K : HomologicalComplex C c) (i : ι)
@@ -110,10 +118,10 @@ lemma XIsoHomologyOfDEqZero_eq_shortComplex (K : HomologicalComplex C c) (i : ι
       ((K.sc i).cyclesIsoX₂ h₂).symm ≪≫ (K.sc i).asIsoHomologyπ h₁ := by
   ext
   have hinj : (K.iCyclesIso i (c.next i) rfl h₂).inv = ((K.sc i).cyclesIsoX₂ h₂).inv := by
-    rw [← cancel_mono (K.sc i).iCycles, ShortComplex.cyclesIsoX₂_inv_hom_id]
-    simpa [HomologicalComplex.iCycles] using K.iCyclesIso_inv_hom_id i (c.next i) rfl h₂
+    rw [← cancel_mono (K.sc i).iCycles, ShortComplex.cyclesIsoX₂_inv_hom_id,
+      ← iCycles_eq_sc, K.iCyclesIso_inv_hom_id]; rfl
   rw [XIsoHomologyOfDEqZero_hom, Iso.trans_hom, Iso.symm_hom, ShortComplex.asIsoHomologyπ_hom,
-    hinj, HomologicalComplex.homologyπ]
+    hinj, homologyπ_eq_sc]
 
 /-- If the differentials into and out of degree `i` vanish, the homology in degree `i` is the
 term in degree `i`, so it is projective when that term is. -/

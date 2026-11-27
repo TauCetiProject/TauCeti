@@ -141,11 +141,11 @@ lemma homologyPresentation_eq_refl_mapIso (hf : S.f = 0) (hg : S.g = 0) :
         rw [π_homologyPresentation', ← Category.assoc, ← Category.assoc]
         refine congrArg (· ≫ S.homologyπ) ?_
         rw [← cancel_mono S.iCycles]
-        simp [cyclesIsoX₂]
+        simp [cyclesIsoX₂_inv_hom_id]
     _ = _ := by
         rw [TauCeti.SubquotientPresentation.π_mapIso', TauCeti.SubquotientPresentation.π_refl,
           Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_arrow_assoc]
-        simp [asIsoHomologyπ]
+        simp [asIsoHomologyπ_hom]
 
 /-- Naturality of `homologyPresentation`: the induced map is `ShortComplex.homologyMap φ`. -/
 lemma mapInduced_homologyPresentation {S S' : ShortComplex C} (φ : S ⟶ S') :

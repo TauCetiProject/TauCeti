@@ -735,11 +735,12 @@ lemma isoOfEq_trans {P' : SubquotientPresentation A Y} {P'' : SubquotientPresent
 @[simp]
 lemma isoOfEq_symm (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
     (P.isoOfEq P' hB hZ).symm = P'.isoOfEq P hB.symm hZ.symm :=
-  Iso.ext (by
-    rw [← cancel_epi (P.isoOfEq P' hB hZ).hom, Iso.symm_hom, Iso.hom_inv_id]
-    have h := congrArg Iso.hom (P.isoOfEq_trans hB hZ hB.symm hZ.symm)
-    rw [P.isoOfEq_self] at h
-    exact ((Iso.trans_hom _ _).symm.trans h).symm)
+  P'.mapIso_injective (calc
+    P'.mapIso (P.isoOfEq P' hB hZ).symm
+      = (P.mapIso (P.isoOfEq P' hB hZ)).mapIso (P.isoOfEq P' hB hZ).symm := by
+        rw [mapIso_isoOfEq]
+    _ = P := by rw [mapIso_trans, Iso.self_symm_id, mapIso_refl]
+    _ = P'.mapIso (P'.isoOfEq P hB.symm hZ.symm) := (P'.mapIso_isoOfEq P hB.symm hZ.symm).symm)
 
 @[simp]
 lemma isoOfEq_mapIso (P' : SubquotientPresentation A Y) (e : Y ≅ W)
@@ -761,10 +762,8 @@ lemma mapIso_isoOfEq_left (e : X ≅ Y) (P' : SubquotientPresentation A W)
     (P.mapIso e).isoOfEq P' hB hZ =
       e.symm ≪≫ P.isoOfEq P' ((P.mapIso_B e).symm.trans hB) ((P.mapIso_Z e).symm.trans hZ) :=
   (P.mapIso e).mapIso_injective (by
-    rw [mapIso_isoOfEq, ← mapIso_trans]
-    have h : (P.mapIso e).mapIso e.symm = P := by
-      rw [mapIso_trans, show e ≪≫ e.symm = Iso.refl X from Iso.ext (by simp), mapIso_refl]
-    rw [h, mapIso_isoOfEq])
+    rw [mapIso_isoOfEq, ← mapIso_trans, mapIso_trans P e e.symm, Iso.self_symm_id, mapIso_refl,
+      mapIso_isoOfEq])
 
 /-- An isomorphism between two composite presentations with a common left factor `P` agrees with
 the isomorphism between the right factors. -/

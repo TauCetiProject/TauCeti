@@ -44,9 +44,7 @@ lemma inv_hom_id_hom_f (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
 /-- An isomorphism of spectral sequences induces an isomorphism on every page. -/
 instance isIso_hom_of_isIso (f : E ⟶ E') [IsIso f] (r : ℤ) (hr : r₀ ≤ r) :
     IsIso (f.hom r hr) :=
-  ⟨⟨(inv f).hom r hr,
-    by rw [← comp_hom _ _ r hr, IsIso.hom_inv_id, id_hom],
-    by rw [← comp_hom _ _ r hr, IsIso.inv_hom_id, id_hom]⟩⟩
+  Functor.map_isIso (pageFunctor C c r₀ r hr) f
 
 /-- A morphism of spectral sequences commutes with the inverses of the isomorphisms between the
 homology of a page and the next page: this is the inverse form of `Hom.comm`. -/
