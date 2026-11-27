@@ -341,16 +341,6 @@ theorem span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (hx : x ∈ S) (
   rw [localHomologyRestriction_def] at hγ hγ'
   exact span_singularHomologyKunnethPair_tmul_eq_top hX hγ hγ'
 
-/-- The complement of `{z₁}ᶜ × Z₂ ∪ Z₁ × {z₂}ᶜ` in `Z₁ × Z₂` is the point `(z₁, z₂)`. -/
-private theorem preimage_fst_compl_union_preimage_snd_compl {Z₁ Z₂ : TopCat.{w}} (z₁ : Z₁)
-    (z₂ : Z₂) :
-    CartesianMonoidalCategory.fst Z₁ Z₂ ⁻¹' ({z₁}ᶜ : Set Z₁) ∪
-      CartesianMonoidalCategory.snd Z₁ Z₂ ⁻¹' ({z₂}ᶜ : Set Z₂) = {(z₁, z₂)}ᶜ := by
-  -- The cartesian projections of `TopCat` are `Prod.fst` and `Prod.snd` by definition, and Mathlib
-  -- has no lemma rewriting them as such.
-  change Prod.fst ⁻¹' {z₁}ᶜ ∪ Prod.snd ⁻¹' {z₂}ᶜ = ({(z₁, z₂)}ᶜ : Set (Z₁ × Z₂))
-  rw [← singleton_prod_singleton, compl_prod_eq_union, prod_univ, univ_prod]
-
 section ProdMap
 
 variable {E F : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -421,8 +411,8 @@ theorem localHomologyMap_prodMap_eq_smul (φ : OpenPartialHomeomorph X E) (hx : 
       TopPair.singularHomologyMap (ofSubsetMap _ h) (ModuleCat.of k k) (m + n) = (a * b) • 𝟙 _ := by
     rintro S rfl _
     exact key
-  exact aux _ (preimage_fst_compl_union_preimage_snd_compl (Z₁ := TopCat.of X)
-    (Z₂ := TopCat.of Y) x y) _
+  exact aux _ (TopCat.preimage_fst_compl_union_preimage_snd_compl (X := TopCat.of X)
+    (Y := TopCat.of Y) x y) _
 
 end ProdMap
 
@@ -491,7 +481,7 @@ private theorem isIso_singularHomologyMap_ofSubsetMap_preimage_union [T1Space X�
       CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) {f (j₁ r.1, j₂ r.2)}ᶜ)
     (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (ofSubsetMap f h) (ModuleCat.of k k) n) := by
-  have hS := preimage_fst_compl_union_preimage_snd_compl (j₁ r.1) (j₂ r.2)
+  have hS := TopCat.preimage_fst_compl_union_preimage_snd_compl (j₁ r.1) (j₂ r.2)
   have hf' : f.hom ⁻¹' {f.hom (j₁ r.1, j₂ r.2)} ⊆ {(j₁ r.1, j₂ r.2)} := fun z hz ↦
     not_not.1 fun hzr ↦ h (hS.symm ▸ hzr) hz
   have hloc : IsIso (localHomologyMap (ModuleCat.of k k) f.hom hf' n) :=
