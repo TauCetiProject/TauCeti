@@ -88,10 +88,12 @@ private theorem exists_action_of_lifts {i : I} (Y : Over (D.obj i))
             simpa [a, b] using hf (.inr (g, h)) } }
   let E := (Over.pullbackCompIsoOfEq (c.w f)).app Y ≪≫ e
   refine ⟨j, f, B, rfl, ⟨Action.mkIso E fun g ↦ ?_⟩⟩
+  -- Naturality of the pullback comparison transports each lifted action map.
   have hn := (Over.pullbackCompIsoOfEq (c.w f)).hom.naturality (r g)
   dsimp only [Functor.comp_map] at hn
-  exact (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ e.hom) hn).trans <| by simp [E, Category.assoc, hr]
+  dsimp [E, B, Functor.mapAction]
+  rw [← Category.assoc, hn]
+  simp [Category.assoc, hr]
 
 variable [∀ i, QuasiSeparatedSpace (D.obj i)]
 
@@ -106,15 +108,15 @@ theorem exists_action_pullback_iso (A : Action (Over c.pt) G)
       LocallyOfFinitePresentation B.V.hom ∧ QuasiCompact B.V.hom ∧ QuasiSeparated B.V.hom ∧
         Nonempty (((Over.pullback (c.π.app j)).mapAction G).obj B ≅ A) := by
   obtain ⟨i₀⟩ := IsCofiltered.nonempty (C := I)
-  obtain ⟨i, Y, p, hfp, hqc, hqs, a, hs⟩ :=
+  obtain ⟨i, Y, p, _, _, _, a, hs⟩ :=
     hc.exists_isPullback_of_finitePresentation i₀ A.V.hom
-  have := hfp
-  have := hqc
-  have := hqs
   let X : Over (D.obj i) := Over.mk p
-  have : LocallyOfFinitePresentation X.hom := hfp
-  have : QuasiCompact X.hom := hqc
-  have : QuasiSeparated X.hom := hqs
+  have : LocallyOfFinitePresentation X.hom := by
+    simpa only [X, Over.mk_hom] using ‹LocallyOfFinitePresentation p›
+  have : QuasiCompact X.hom := by
+    simpa only [X, Over.mk_hom] using ‹QuasiCompact p›
+  have : QuasiSeparated X.hom := by
+    simpa only [X, Over.mk_hom] using ‹QuasiSeparated p›
   let e : (Over.pullback (c.π.app i)).obj X ≅ A.V :=
     Over.isoMk hs.isoPullback.symm (by simp [X])
   let r := e.symm.conj.toMonoidHom.comp A.ρ
