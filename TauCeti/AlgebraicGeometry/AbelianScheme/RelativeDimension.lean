@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
+import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
+import TauCeti.AlgebraicGeometry.Morphisms.Unramified.Section
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
 
 /-!
@@ -30,6 +32,11 @@ The relative dimension is pulled back by base change, since the fibre of `A_T` o
 base change of the fibre of `A` over the image of `t` along an extension of residue fields. It is
 zero for the identity abelian scheme, and it only depends on the underlying scheme over `S`.
 
+Conversely, an abelian scheme of relative dimension zero is canonically the identity abelian scheme:
+its zero section is an isomorphism. Its structure morphism is smooth of relative dimension zero,
+that is étale, with connected fibres, and a section of such a morphism (indeed of any unramified
+one) is an isomorphism (`TauCeti.AlgebraicGeometry.isIso_of_comp_eq_id_of_unramified`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension`: the function `s ↦ dim A_s`.
@@ -41,10 +48,18 @@ zero for the identity abelian scheme, and it only depends on the underlying sche
   relative dimension `n` over `S` exactly when its relative dimension is constantly `n`.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_baseChange`: for `f : T ⟶ S`, the
   relative dimension of `A_T` at `t` is that of `A` at `f t`.
+* `AbelianScheme.smoothOfRelativeDimension_baseChange_fromSpecResidueField`: the fibre of `A` over
+  `s`, its base change to `Spec κ(s)`, is smooth of relative dimension `A.relativeDimension s`.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_identity`: the identity abelian
   scheme has relative dimension zero.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_eq_of_iso`: abelian schemes with
   isomorphic underlying schemes over `S` have the same relative dimension.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff_isIso_hom`: the zero section is
+  an isomorphism exactly when the structure morphism is one.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff`: the zero section is an
+  isomorphism exactly when the relative dimension is zero everywhere.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isoIdentity`: an abelian scheme of relative dimension
+  zero is isomorphic to the identity abelian scheme through its structure morphism.
 
 ## References
 
@@ -54,7 +69,7 @@ zero for the identity abelian scheme, and it only depends on the underlying sche
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry MonoidalCategory CartesianMonoidalCategory MonObj
 
 namespace TauCeti
 
@@ -103,6 +118,15 @@ theorem relativeDimension_baseChange (A : AbelianScheme S) (f : T ⟶ S) (t : T)
   rw [topologicalKrullDim_fiber, topologicalKrullDim_fiber] at h
   exact_mod_cast h
 
+/-- The fibre of `A` over `s`, its base change along `Spec κ(s) ⟶ S`, is smooth of relative
+dimension `A.relativeDimension s`. -/
+theorem smoothOfRelativeDimension_baseChange_fromSpecResidueField (A : AbelianScheme S) (s : S) :
+    SmoothOfRelativeDimension (A.relativeDimension s)
+      (A.baseChange (S.fromSpecResidueField s)).toOver.hom := by
+  rw [smoothOfRelativeDimension_iff]
+  intro q
+  rw [relativeDimension_baseChange, S.fromSpecResidueField_apply]
+
 /-- The identity abelian scheme has relative dimension zero. -/
 @[simp]
 theorem relativeDimension_identity (s : S) : (identity S).relativeDimension s = 0 := by
@@ -125,6 +149,55 @@ theorem relativeDimension_eq_of_iso {A B : AbelianScheme S} (e : A.toOver ≅ B.
       (IsPullback.of_horiz_isIso (fst := e.hom.left) (g := 𝟙 S) ⟨by simp⟩) s
   rw [topologicalKrullDim_fiber, topologicalKrullDim_fiber] at h
   exact_mod_cast h
+
+/-- The zero section of an abelian scheme is an isomorphism exactly when its structure morphism
+is one. -/
+lemma isIso_zeroSection_iff_isIso_hom (A : AbelianScheme S) :
+    IsIso A.zeroSection ↔ IsIso A.toOver.hom :=
+  ⟨fun _ ↦ IsIso.eq_inv_of_hom_inv_id A.zeroSection_comp_toOver_hom ▸ inferInstance,
+    fun _ ↦ IsIso.eq_inv_of_inv_hom_id A.zeroSection_comp_toOver_hom ▸ inferInstance⟩
+
+/-- **Abelian schemes of relative dimension zero.** The zero section of an abelian scheme `A`
+over `S` is an isomorphism exactly when the relative dimension of `A` is zero at every point
+of `S`. -/
+theorem isIso_zeroSection_iff (A : AbelianScheme S) :
+    IsIso A.zeroSection ↔ ∀ s, A.relativeDimension s = 0 := by
+  rw [← smoothOfRelativeDimension_iff, isIso_zeroSection_iff_isIso_hom]
+  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
+  rw [← isIso_zeroSection_iff_isIso_hom]
+  -- The structure morphism is étale, with connected fibres.
+  have : Etale A.toOver.hom := (Etale.iff_smoothOfRelativeDimension_zero _).mpr ‹_›
+  exact isIso_of_comp_eq_id_of_unramified A.toOver.hom _ A.zeroSection_comp_toOver_hom
+
+/-- An abelian scheme `A` of relative dimension zero is canonically isomorphic to the identity
+abelian scheme `S`: the isomorphism is the structure morphism of `A`, with inverse the zero
+section (`isIso_zeroSection_iff`). -/
+noncomputable def isoIdentity (A : AbelianScheme S) (h : ∀ s, A.relativeDimension s = 0) :
+    A ≅ identity S :=
+  have : IsIso (toUnit A.toOver) :=
+    have : IsIso A.toOver.hom :=
+      (isIso_zeroSection_iff_isIso_hom A).mp ((isIso_zeroSection_iff A).mpr h)
+    have : IsIso ((Over.forget S).map (toUnit A.toOver)) := by
+      rwa [Over.forget_map, Over.toUnit_left]
+    isIso_of_reflects_iso _ (Over.forget S)
+  -- `toUnit` preserves the group laws because morphisms into the unit
+  -- `(identity S).toOver = 𝟙_ (Over S)` (`identity_toOver`) are unique.
+  @isoMk _ _ _ (@asIso _ _ _ _ (toUnit A.toOver) this) ⟨toUnit_unique _ _, toUnit_unique _ _⟩
+
+@[simp]
+lemma toOverHom_isoIdentity_hom (A : AbelianScheme S) (h : ∀ s, A.relativeDimension s = 0) :
+    toOverHom (A.isoIdentity h).hom = toUnit A.toOver :=
+  toUnit_unique _ _
+
+/-- The inverse of `isoIdentity` is the zero section. -/
+@[simp]
+lemma toOverHom_isoIdentity_inv (A : AbelianScheme S) (h : ∀ s, A.relativeDimension s = 0) :
+    toOverHom (A.isoIdentity h).inv = η[A.toOver] := by
+  -- The unit of the identity abelian scheme is the identity of `S`, and `isoIdentity` preserves
+  -- units.
+  have h₁ : η[(identity S).toOver] = 𝟙 _ := toUnit_unique _ _
+  rw [← one_hom (A.isoIdentity h).inv, h₁]
+  exact (Category.id_comp _).symm
 
 end AbelianScheme
 
