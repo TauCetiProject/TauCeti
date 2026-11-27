@@ -8,12 +8,14 @@ module
 public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere.Basic
 import TauCeti.Analysis.Complex.EquivRealProd
-import TauCeti.Analysis.Complex.LogCutoff
+import TauCeti.Analysis.Fredholm.SemiFredholm
+import TauCeti.Geometry.Manifold.Riemannian.Surface.LogCutoff.Plane
 import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -114,13 +116,10 @@ private theorem floerLinearizationAdjoint_const_eq_zero_of_eq_base (ω : Symplec
     ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z = 0 := by
   have hzT : max T 0 < ‖z‖ := by linarith [norm_equivRealProdCLM_symm_le_two_mul z]
-  have hev : (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) =ᶠ[𝓝 z]
-      fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap := by
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hzT] with w hw
-    funext y
-    simp [hJ₀ w ((le_max_left _ _).trans hw.le) y]
   have hT : T ≤ ‖z‖ := (le_max_left _ _).trans hzT.le
-  rw [← ω.floerLinearizationAdjoint_congr_data u η hev (funext (hKs₀ z hT)) (funext (hKt₀ z hT))]
+  rw [← ω.floerLinearizationAdjoint_congr_data u η
+    (eventuallyEq_const_of_eq_base hJ₀ (by linarith [le_max_left T 0]))
+    (funext (hKs₀ z hT)) (funext (hKt₀ z hT))]
   exact hD z
 
 /-- **Decay at infinity of solutions of the adjoint.** Let the data be `J₀` and the zero
@@ -338,11 +337,10 @@ private theorem integral_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : Sym
   refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ by positivity) (hχi.const_mul _)
     (ae_of_all _ fun z ↦ ?_)
   dsimp only
-  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le (Ks := Ks) (Kt := Kt) (u := u)
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero (Ks := Ks) (Kt := Kt)
+    (u := u) (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
     ((hχ.differentiable one_ne_zero) z) ((hη.differentiable one_ne_zero) z)
-    (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero)
-  rw [hD z, norm_zero, mul_zero, zero_add] at hle
+    (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero) (hD z)
   rcases lt_or_ge ‖Complex.equivRealProdCLM.symm z‖ n with hz | hz
   · -- Inside `|w| < n` the cutoff is locally constant.
     rw [hχd z hz, norm_zero, zero_mul, zero_mul] at hle
@@ -460,10 +458,7 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
       hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc
   obtain ⟨B, hB⟩ :=
     exists_forall_norm_le_of_eq_base hJ₀ (fun z ↦ (hJ z).continuousAt) hu.continuous
-  -- `J₀` is compatible, being the structure `J` at a point far out.
-  have h₀ : ω.Compatible J₀ := by
-    have hz : T ≤ ‖((|T|, 0) : ℝ × ℝ)‖ := by simp [Prod.norm_def, le_abs_self]
-    simpa [hJ₀ _ hz] using hc (|T|, 0)
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base hJ₀ hc
   set m := max 1 ((1 + B) ^ 2)
   refine ⟨R, m * C, fun η hη hD hηi ↦ ?_⟩
   obtain ⟨r₁, S, hS0, hS⟩ := exists_mul_norm_sq_le_of_floerLinearizationAdjoint_eq_zero ω hJ₀
@@ -552,26 +547,20 @@ theorem isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base
     (hu : ContDiff ℝ 3 u) (hc : ∀ z, ω.Compatible (J z (u z))) :
     (ω.floerConformalSobolevOperator univ sphereWeight
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).IsFredholm := by
-  set D := ω.floerConformalSobolevOperator univ sphereWeight
-    (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
   have hJ1 (z : ℝ × ℝ) : ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z) :=
     (hJ z).of_le (by norm_num)
   have hKs2 (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry Ks) (z, u z) := (hKs z).of_le (by norm_num)
   have hKt2 (z : ℝ × ℝ) : ContDiffAt ℝ 2 (uncurry Kt) (z, u z) := (hKt z).of_le (by norm_num)
   have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
-  rw [TauCeti.isFredholm_iff_finite_ker_coker]
-  refine ⟨finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀
-    hKt₀ hJ1 hKs2 hKt2 hu1 hc, ?_⟩
-  -- The range is closed, so the cokernel is the orthogonal complement of the range.
   have hcl := isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀
     hKt₀ hJ1 hKs2 hKt2 hu1 hc
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range] at hcl
-  have : CompleteSpace D.range := hcl.completeSpace_coe
-  have := finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
-    ω hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc
-  exact (Submodule.quotientEquivOfIsCompl D.range D.rangeᗮ
-    (Submodule.isCompl_orthogonal _)).symm.finiteDimensional
+  exact ContinuousLinearMap.isFredholm_of_isClosed_range_of_finiteDimensional_orthogonal
+    (finiteDimensional_ker_floerConformalSobolevOperator_sphereWeight_of_eq_base ω hJ₀ hKs₀
+      hKt₀ hJ1 hKs2 hKt2 hu1 hc) hcl
+    (finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base
+      ω hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc)
 
 end SymplecticForm
 

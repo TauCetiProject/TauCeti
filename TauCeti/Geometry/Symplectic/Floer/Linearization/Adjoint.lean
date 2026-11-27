@@ -58,7 +58,9 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`floerLinearizationAdjoint_smul_fst`); for a function `f` of both variables the derivative of
   `f` in `t` also enters, through `η ∘ J` (`floerLinearizationAdjoint_fun_smul`), so
   `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`
-  (`norm_floerLinearizationAdjoint_fun_smul_le`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`,
+  (`norm_floerLinearizationAdjoint_fun_smul_le`), which is `‖df‖ (1 + ‖J‖) ‖η‖` when `D^* η = 0`
+  (`norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and
+  `‖J‖ ≤ B`,
   `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
   (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
   the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
@@ -409,6 +411,18 @@ theorem norm_floerLinearizationAdjoint_fun_smul_le {f : ℝ × ℝ → ℝ} (hf 
   have h₁ := mul_le_mul_of_nonneg_right hre (norm_nonneg (η z))
   have h₂ := mul_le_mul hJ him (norm_nonneg _) (by positivity)
   nlinarith [norm_nonneg (fderiv ℝ f z), norm_nonneg (η z), norm_nonneg (J z (u z))]
+
+/-- **The adjoint on a cut-off solution, pointwise.** If `D^* η = 0` at `z`, where `f`, `η` and
+`w ↦ J(w, u w)` are differentiable, then `‖D^* (f η)‖ ≤ ‖df‖ (1 + ‖J‖) ‖η‖`: the adjoint of `f η`
+only involves the derivative of `f`. -/
+theorem norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero {f : ℝ × ℝ → ℝ}
+    (hf : DifferentiableAt ℝ f z) (hη : DifferentiableAt ℝ η z)
+    (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z)
+    (hD : ω.floerLinearizationAdjoint J Ks Kt u η z = 0) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ≤
+      ‖fderiv ℝ f z‖ * (1 + ‖J z (u z)‖) * ‖η z‖ :=
+  (ω.norm_floerLinearizationAdjoint_fun_smul_le hf hη hJu).trans_eq
+    (by rw [hD, norm_zero, mul_zero, zero_add])
 
 /-- **The formal adjoint on a cut-off covector field, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and
 `‖J‖ ≤ B` at `z`, then `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²` at `z`. This is the

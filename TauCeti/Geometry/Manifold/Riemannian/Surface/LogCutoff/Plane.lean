@@ -34,7 +34,8 @@ far away whose Dirichlet energy `∫ ‖dχ‖²` is as small as we like. In the
   Dirichlet energy is at most `8π c₀² / log (δ / ε)`
   (`TauCeti.Complex.exists_contDiff_logCutoff`).
 
-The factor `2` bounds the derivative of `z ↦ |w|` in the sup norm of `ℝ × ℝ`. The energy tends to
+The factor `2` bounds the derivative of `z ↦ |w|` in the sup norm of `ℝ × ℝ`
+(`TauCeti.lipschitzWith_two_norm_equivRealProdCLM_symm`). The energy tends to
 `0` as `δ / ε → ∞`, while the cutoffs with linear profile have energy bounded below independently
 of the scale. Read through the inversion `w ↦ w⁻¹`, the same cutoffs cut off a neighbourhood of
 the point at infinity of the Riemann sphere.
@@ -78,15 +79,6 @@ theorem integral_indicator_Icc_inv_sq_norm_equivRealProdCLM_symm {ε δ : ℝ} (
   simp only [smul_eq_mul, ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal zero_le_one,
     one_pow, one_mul, ENNReal.coe_toReal, NNReal.coe_real_pi]
   ring
-
-/-- The Euclidean norm `|w|` of the plane is `2`-Lipschitz in the sup norm of `ℝ × ℝ`. -/
-private theorem lipschitzWith_two_norm_equivRealProdCLM_symm :
-    LipschitzWith 2 fun z : ℝ × ℝ ↦ ‖Complex.equivRealProdCLM.symm z‖ :=
-  LipschitzWith.of_dist_le_mul fun a b ↦ by
-    rw [Real.dist_eq, dist_eq_norm]
-    refine (abs_norm_sub_norm_le _ _).trans ?_
-    rw [← map_sub]
-    simpa using norm_equivRealProdCLM_symm_le_two_mul (a - b)
 
 /-- The logarithmic cutoff `1 - ψ(|w|)` of the plane, for the logarithmic cutoff profile
 `ψ = TauCeti.logCutoffProfile ε δ`. -/

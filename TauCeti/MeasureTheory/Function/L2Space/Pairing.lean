@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Pairing with a real square-integrable function
@@ -20,6 +21,9 @@ trace.
 * `MeasureTheory.Lp.pairingL`: the functional `v ↦ ∫ f · T v dν`, with its evaluation
   `MeasureTheory.Lp.pairingL_apply` and the bound `MeasureTheory.Lp.norm_pairingL_le` by
   `‖f‖ ‖T‖`.
+* `MeasureTheory.Lp.integral_norm_sq_eq_and_integrable_of_ae_eq`: a covector field almost
+  everywhere equal to the pairing `⟪h, ·⟫` with `h ∈ L²(ν, V)` is square integrable, with the
+  squared norm of `h` as the integral of its squared norm.
 -/
 
 public section
@@ -50,5 +54,19 @@ theorem pairingL_apply (f : Lp ℝ 2 ν) (T : W →L[ℝ] Lp ℝ 2 ν) (v : W) :
 theorem norm_pairingL_le (f : Lp ℝ 2 ν) (T : W →L[ℝ] Lp ℝ 2 ν) :
     ‖pairingL f T‖ ≤ ‖f‖ * ‖T‖ :=
   ((innerSL ℝ f).opNorm_comp_le T).trans_eq (by rw [innerSL_apply_norm])
+
+/-- A covector field almost everywhere equal to `⟪h, ·⟫` for `h ∈ L²(ν, V)` is square integrable
+with the norm of `h`. -/
+theorem integral_norm_sq_eq_and_integrable_of_ae_eq {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {h : Lp V 2 ν} {η : X → V →L[ℝ] ℝ}
+    (hae : (fun x ↦ innerSL ℝ (h x)) =ᵐ[ν] η) :
+    ∫ x, ‖η x‖ ^ 2 ∂ν = ‖h‖ ^ 2 ∧ Integrable (fun x ↦ ‖η x‖ ^ 2) ν := by
+  have hn : (fun x ↦ ‖η x‖ ^ 2) =ᵐ[ν] fun x ↦ ‖h x‖ ^ 2 :=
+    hae.mono fun x hx ↦ by
+      simp only at hx ⊢
+      rw [← hx, innerSL_apply_norm]
+  have hm : MemLp (⇑h) ((2 : ℕ) : ENNReal) ν := by simpa using Lp.memLp h
+  refine ⟨?_, (hm.integrable_norm_pow two_ne_zero).congr hn.symm⟩
+  rw [integral_congr_ae hn, Lp.integral_norm_sq_eq_norm_sq]
 
 end MeasureTheory.Lp

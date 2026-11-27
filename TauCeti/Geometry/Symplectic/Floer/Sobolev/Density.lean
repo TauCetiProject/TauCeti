@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -43,6 +44,8 @@ records the derivatives of a section cut off by a function of `s`.
   most `B + 1` times the `W^{1,2}` energy.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
+* `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity_of_eq`: likewise on a disc
+  `|w| ≤ a`, for the `L²` norm of `η` and the energy of a `C¹` map `g` equal to `η` there.
 * `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near every point
   of `s` and `s ⊆ t` with `t` compact, the energy of `ξ` on `s` is at most that of `β ξ` on `t`.
 -/
@@ -153,6 +156,21 @@ theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
+
+/-- If `g = η` on the disc `|w| ≤ a`, the `L²` norm of `η` there is at most the `W^{1,2}` energy of
+`g` there. -/
+theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity_of_eq {η g : ℝ × ℝ → V}
+    (hηi : Integrable fun z ↦ ‖η z‖ ^ 2) (hg : ContDiff ℝ 1 g) {a : ℝ}
+    (hgη : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → g z = η z) :
+    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, ‖η z‖ ^ 2 ≤
+      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, sobolevDensity g z :=
+  setIntegral_mono_on hηi.integrableOn
+    ((continuous_sobolevDensity hg).continuousOn.integrableOn_compact
+      (isCompact_setOf_norm_equivRealProdCLM_symm_le _))
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).measurableSet fun z hz ↦ by
+      rw [sobolevDensity_apply, hgη z hz]
+      nlinarith [sq_nonneg ‖fderiv ℝ g z stdComplexLineReal‖,
+        sq_nonneg ‖fderiv ℝ g z stdComplexLineImag‖]
 
 /-- **Comparing with a cut-off map.** If `β = 1` near every point of a measurable set `s`, and `s`
 lies in a compact set `t`, then the `W^{1,2}` energy of `ξ` on `s` is at most the energy of the

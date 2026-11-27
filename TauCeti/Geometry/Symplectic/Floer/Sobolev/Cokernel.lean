@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -57,73 +58,11 @@ open scoped ENNReal InnerProductSpace Topology
 
 namespace TauCeti
 
-section Disc
-
-variable {E : Type*} [NormedAddCommGroup E]
-
-/-- If `g = η` on the disc `|w| ≤ n`, then on every set the `L²` norm of `η` is at most that of `g`
-plus the `L²` norm of `η` on `|w| ≥ n`. -/
-theorem setIntegral_norm_sq_le_setIntegral_add {η g : ℝ × ℝ → E} {n : ℝ} {S : Set (ℝ × ℝ)}
-    (hηi : Integrable fun z ↦ ‖η z‖ ^ 2) (hgi : Integrable fun z ↦ ‖g z‖ ^ 2)
-    (hgη : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ n → g z = η z) :
-    ∫ z in S, ‖η z‖ ^ 2 ≤ (∫ z in S, ‖g z‖ ^ 2) +
-      ∫ z in {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖}, ‖η z‖ ^ 2 := by
-  set T := {z : ℝ × ℝ | n ≤ ‖Complex.equivRealProdCLM.symm z‖}
-  have hT : MeasurableSet T :=
-    measurableSet_le measurable_const Complex.equivRealProdCLM.symm.continuous.norm.measurable
-  have hind : Integrable (T.indicator fun z ↦ ‖η z‖ ^ 2) := hηi.indicator hT
-  calc ∫ z in S, ‖η z‖ ^ 2 ≤ ∫ z in S, (‖g z‖ ^ 2 + T.indicator (fun z ↦ ‖η z‖ ^ 2) z) := by
-        refine setIntegral_mono hηi.integrableOn (hgi.integrableOn.add hind.integrableOn)
-          fun z ↦ ?_
-        by_cases hz : z ∈ T
-        · rw [indicator_of_mem hz]
-          linarith [sq_nonneg ‖g z‖]
-        · rw [indicator_of_notMem hz, hgη z (not_le.1 hz).le, add_zero]
-    _ = (∫ z in S, ‖g z‖ ^ 2) + ∫ z in S, T.indicator (fun z ↦ ‖η z‖ ^ 2) z :=
-        integral_add hgi.integrableOn hind.integrableOn
-    _ ≤ (∫ z in S, ‖g z‖ ^ 2) + ∫ z in T, ‖η z‖ ^ 2 := by
-        gcongr
-        rw [← integral_indicator hT]
-        exact setIntegral_le_integral hind (ae_of_all _ (indicator_nonneg fun z _ ↦ by positivity))
-
-/-- If `g = η` on the disc `|w| ≤ a`, the `L²` norm of `η` there is at most the `W^{1,2}` energy of
-`g` there. -/
-theorem Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity_of_eq [NormedSpace ℝ E]
-    {η g : ℝ × ℝ → E} (hηi : Integrable fun z ↦ ‖η z‖ ^ 2) (hg : ContDiff ℝ 1 g) {a : ℝ}
-    (hgη : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → g z = η z) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, ‖η z‖ ^ 2 ≤
-      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, Floer.sobolevDensity g z :=
-  setIntegral_mono_on hηi.integrableOn
-    ((Floer.continuous_sobolevDensity hg).continuousOn.integrableOn_compact
-      (isCompact_setOf_norm_equivRealProdCLM_symm_le _))
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).measurableSet fun z hz ↦ by
-      rw [Floer.sobolevDensity_apply, hgη z hz]
-      nlinarith [sq_nonneg ‖fderiv ℝ g z stdComplexLineReal‖,
-        sq_nonneg ‖fderiv ℝ g z stdComplexLineImag‖]
-
-end Disc
-
 namespace SymplecticForm
 
 open Floer ConformalSobolev
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- A covector field almost everywhere equal to `⟪h, ·⟫` for `h ∈ L²(ℂ, V)` is square integrable
-with the norm of `h`. -/
-private theorem integral_norm_sq_eq_and_integrable_of_ae_eq
-    {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hae : (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η) :
-    ∫ z, ‖η z‖ ^ 2 = ‖h‖ ^ 2 ∧ Integrable fun z ↦ ‖η z‖ ^ 2 := by
-  have hn : (fun z ↦ ‖η z‖ ^ 2) =ᵐ[volume] fun z ↦ ‖h z‖ ^ 2 :=
-    hae.mono fun z hz ↦ by
-      simp only at hz ⊢
-      rw [← hz, innerSL_apply_norm]
-  have hm : MemLp (⇑h) 2 volume := by simpa only [Measure.restrict_univ] using Lp.memLp h
-  have hm' : MemLp (⇑h) ((2 : ℕ) : ℝ≥0∞) volume := by simpa using hm
-  refine ⟨?_, (hm'.integrable_norm_pow two_ne_zero).congr hn.symm⟩
-  rw [integral_congr_ae hn, ← Lp.integral_norm_sq_eq_norm_sq]
-  exact setIntegral_univ.symm
 
 /-- The jets in `W^{1,2}` of the cut-offs `χ η` of cokernel elements are bounded: if the weighted
 energy of `χ η` is at most `K ∫ ‖η‖²`, `η` represents `h ∈ L²(ℂ, V)` and `‖h‖ ≤ r`, then the class
@@ -136,7 +75,9 @@ private theorem norm_toLp_jet_le {ρ : ℝ × ℝ → ℝ} (hρ : IsWeight univ 
       ∫ z, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
         K * ∫ z, ‖η z‖ ^ 2) :
     ‖(memLp_jet hρ hg).toLp (jet ρ g)‖ ≤ √(max K 0 * r ^ 2) := by
-  obtain ⟨hηn, hηi⟩ := integral_norm_sq_eq_and_integrable_of_ae_eq hηae
+  obtain ⟨hηn, hηi⟩ := Lp.integral_norm_sq_eq_and_integrable_of_ae_eq (ae_restrict_of_ae hηae)
+  rw [setIntegral_univ] at hηn
+  rw [Measure.restrict_univ] at hηi
   have h1 := sq_norm_le_integral hρ hg (memLp_jet hρ hg).coeFn_toLp
   rw [setIntegral_univ] at h1
   have h4 : ∫ z, ‖η z‖ ^ 2 ≤ r ^ 2 := by
@@ -195,7 +136,9 @@ private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V)
     have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
     filter_upwards [hsub, hae₁, hae₂] with z h1 h2 h3
     rw [h1 (mem_univ z), Pi.sub_apply, map_sub, h2, h3, Pi.sub_apply]
-  obtain ⟨hdn, hdi⟩ := integral_norm_sq_eq_and_integrable_of_ae_eq hae
+  obtain ⟨hdn, hdi⟩ := Lp.integral_norm_sq_eq_and_integrable_of_ae_eq (ae_restrict_of_ae hae)
+  rw [setIntegral_univ] at hdn
+  rw [Measure.restrict_univ] at hdi
   have hdD (z : ℝ × ℝ) : ω.floerLinearizationAdjoint
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (η₁ - η₂) z = 0 := by
     rw [floerLinearizationAdjoint_sub ((hη₁.differentiable (by norm_num)) z)
@@ -255,11 +198,10 @@ private theorem integral_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplec
   rw [← integral_const_mul]
   refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ by positivity) (hηi.const_mul _)
     (ae_of_all _ fun z ↦ ?_)
-  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le (Ks := Ks) (Kt := Kt)
+  have hle := ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero (Ks := Ks) (Kt := Kt)
     (J := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
     ((hχ.differentiable one_ne_zero) z) ((hη.differentiable one_ne_zero) z)
-    (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero)
-  rw [hD z, norm_zero, mul_zero, zero_add] at hle
+    (((hJ z).comp₂ contDiffAt_id hu.contDiffAt).differentiableAt one_ne_zero) (hD z)
   have hle' : ‖ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
       Ks Kt u (fun z ↦ χ z • η z) z‖ ≤ M * (1 + |B|) * ‖η z‖ := by
     refine hle.trans ?_
@@ -276,9 +218,9 @@ private theorem integral_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplec
 
 /-- **The weighted energy of a cut-off cokernel element.** Let `J` be `C¹` and `K_s`, `K_t` be
 `C²` along a `C¹` map `u`, with `J` compatible along `u`, and let `ρ` be a continuous weight. Let
-`χ` be a `C²` cutoff with values in `[0, 1]`, vanishing on `|w| ≥ a`, whose derivative vanishes on
-`|w| > a` and has norm at most `M`. Then there is `K₀` such that for every square-integrable `C²`
-covector field `η` with `D_u^* η = 0` the weighted energy of `χ η` is at most `K₀ ∫ ‖η‖²`. -/
+`χ` be a `C²` cutoff with values in `[0, 1]`, vanishing on `|w| ≥ a`, whose derivative has norm
+at most `M`. Then there is `K₀` such that for every square-integrable `C²` covector field `η` with
+`D_u^* η = 0` the weighted energy of `χ η` is at most `K₀ ∫ ‖η‖²`. -/
 private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V) {ρ : ℝ × ℝ → ℝ}
     (hρc : Continuous ρ)
     (hJ : ∀ z, ContDiffAt ℝ 1
@@ -288,7 +230,6 @@ private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V) {ρ : �
     (hc : ∀ z, ω.Compatible (J z (u z))) {χ : ℝ × ℝ → ℝ} (hχ : ContDiff ℝ 2 χ)
     (hχ01 : ∀ z, χ z ∈ Icc 0 1) {a M : ℝ}
     (hχa : ∀ z, a ≤ ‖Complex.equivRealProdCLM.symm z‖ → χ z = 0)
-    (hχd : ∀ z, a < ‖Complex.equivRealProdCLM.symm z‖ → fderiv ℝ χ z = 0)
     (hχM : ∀ z, ‖fderiv ℝ χ z‖ ≤ M) :
     ∃ K₀, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
       (∀ z, ω.floerLinearizationAdjoint (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
@@ -307,13 +248,17 @@ private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V) {ρ : �
       hJ hKs hKt hu (w := fun _ ↦ 1) (fun _ ↦ zero_le_one) continuous_const
       (fun _ _ ↦ one_pos) (fun z _ ↦ hc z) (show a < a + 1 by linarith)
   simp only [one_mul] at hdisc
+  -- `χ` vanishes near every point of `|w| > a`, and so do its derivative and the cut-offs `χ η`.
+  have hχ0 (z : ℝ × ℝ) (hz : a < ‖Complex.equivRealProdCLM.symm z‖) : χ =ᶠ[𝓝 z] 0 :=
+    eventually_of_mem ((isOpen_lt continuous_const
+      Complex.equivRealProdCLM.symm.continuous.norm).mem_nhds hz) fun w hw ↦ hχa w (le_of_lt hw)
+  have hχd (z : ℝ × ℝ) (hz : a < ‖Complex.equivRealProdCLM.symm z‖) : fderiv ℝ χ z = 0 := by
+    rw [(hχ0 z hz).fderiv_eq, fderiv_zero, Pi.zero_apply]
   refine ⟨max m₀ 1 * (C' * ((M * (1 + |B|)) ^ 2 + 1)), fun η hη hD hηi ↦ ?_⟩
   have hg : ContDiff ℝ 2 fun z ↦ χ z • η z := hχ.smul hη
   have hg0 (z : ℝ × ℝ) (hz : a < ‖Complex.equivRealProdCLM.symm z‖) :
-      (fun z ↦ χ z • η z) =ᶠ[𝓝 z] 0 := by
-    filter_upwards [(isOpen_lt continuous_const
-      Complex.equivRealProdCLM.symm.continuous.norm).mem_nhds hz] with w hw
-    simp [hχa w (le_of_lt hw)]
+      (fun z ↦ χ z • η z) =ᶠ[𝓝 z] 0 :=
+    (hχ0 z hz).mono fun w hw ↦ by simp [hw]
   have hW := integral_weighted_le_mul_setIntegral_sobolevDensity hρc (hg.of_le one_le_two)
     (le_max_right m₀ 1) (fun z hz ↦ ((le_abs_self _).trans (by simpa using hm₀ z hz)).trans
       (le_max_left _ _)) hg0
@@ -355,7 +300,7 @@ private theorem exists_cutoff_integral_weighted_smul_le (ω : SymplecticForm V)
         ∫ z, (ρ z * ‖χ z • η z‖ ^ 2 + ‖fderiv ℝ (fun z ↦ χ z • η z) z (1, 0)‖ ^ 2 +
             ‖fderiv ℝ (fun z ↦ χ z • η z) z (0, 1)‖ ^ 2) ≤ K₀ * ∫ z, ‖η z‖ ^ 2 := by
   obtain ⟨r₀, hr₀⟩ := (hKb.image Complex.equivRealProdCLM.symm.continuous).isBounded.exists_norm_le
-  obtain ⟨χ, hχs, hχ01, hχ1, hχ0, -, hχd2, hχM⟩ :=
+  obtain ⟨χ, hχs, hχ01, hχ1, hχ0, -, -, hχM⟩ :=
     exists_contDiff_cutoff_comp_continuousLinearMap
       (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) (lt_max_of_lt_right one_pos : 0 < max r₀ 1)
   have hχ2 : ContDiff ℝ 2 χ := hχs.of_le (by simp)
@@ -363,7 +308,7 @@ private theorem exists_cutoff_integral_weighted_smul_le (ω : SymplecticForm V)
     (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * max r₀ 1))
       fun z hz ↦ hχ0 z (not_le.1 hz).le,
     fun z hz ↦ hχ1 z ((hr₀ _ (mem_image_of_mem _ hz)).trans (le_max_left _ _)),
-    exists_integral_weighted_smul_le ω hρc hJ hKs hKt hu hc hχ2 hχ01 hχ0 hχd2 hχM⟩
+    exists_integral_weighted_smul_le ω hρc hJ hKs hKt hu hc hχ2 hχ01 hχ0 hχM⟩
 
 /-- **Cokernel elements are regular.** When the data are regular enough, every element of the
 orthogonal complement of the range of `D_u` is represented by a `C²` covector field annihilated by

@@ -17,6 +17,8 @@ import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Fredholm.SemiFredholm
 
 /-!
 # The linearized operator of a PSS plane is Fredholm
@@ -202,9 +204,8 @@ private theorem inv_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : Symplect
   -- `‖D^* (χ η)‖ ≤ ‖dχ‖ (1 + B) ‖η‖`, since `D^* η = 0`.
   have hle : ‖ω.floerLinearizationAdjoint J' Ks Kt u (fun z ↦ χ z • η z) z‖ ≤
       ‖fderiv ℝ χ z‖ * (1 + B) * ‖η z‖ := by
-    refine (ω.norm_floerLinearizationAdjoint_fun_smul_le (Ks := Ks) (Kt := Kt)
-      ((hχ.differentiable one_ne_zero) z) ((hη.differentiable one_ne_zero) z) hJu).trans ?_
-    rw [hD z, norm_zero, mul_zero, zero_add]
+    refine (ω.norm_floerLinearizationAdjoint_fun_smul_le_of_eq_zero (Ks := Ks) (Kt := Kt)
+      ((hχ.differentiable one_ne_zero) z) ((hη.differentiable one_ne_zero) z) hJu (hD z)).trans ?_
     gcongr
     exact hB z
   have hρ : (PSSPlane.cylindricalWeight z)⁻¹ = 1 + ν ^ 2 := inv_cylindricalWeight z
@@ -465,18 +466,12 @@ theorem isFredholm_floerConformalSobolevOperator_positive (ω : SymplecticForm V
             ‖η z‖ ^ 2)) :
     (ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u).IsFredholm := by
-  set D := ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
-    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
-  rw [TauCeti.isFredholm_iff_finite_ker_coker]
-  refine ⟨finiteDimensional_ker_floerConformalSobolevOperator_pssPlane ω positive hM hest, ?_⟩
-  -- The range is closed, so the cokernel is the orthogonal complement of the range.
   have hcl := isClosed_range_floerConformalSobolevOperator_pssPlane ω positive hM hest
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range] at hcl
-  have : CompleteSpace D.range := hcl.completeSpace_coe
-  have := finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive ω hJ hKs hKt
-    hu hc hB hM hadj
-  exact (Submodule.quotientEquivOfIsCompl D.range D.rangeᗮ
-    (Submodule.isCompl_orthogonal _)).symm.finiteDimensional
+  exact ContinuousLinearMap.isFredholm_of_isClosed_range_of_finiteDimensional_orthogonal
+    (finiteDimensional_ker_floerConformalSobolevOperator_pssPlane ω positive hM hest) hcl
+    (finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positive ω hJ hKs hKt
+      hu hc hB hM hadj)
 
 /-- On the end of the positive plane, the slice defect of a map `u` read in end coordinates has
 period one in the angular coordinate, for a Hamiltonian of period one. -/
