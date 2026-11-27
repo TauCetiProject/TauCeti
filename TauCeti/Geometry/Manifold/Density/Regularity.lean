@@ -340,14 +340,6 @@ section ZeroDim
 
 variable [Subsingleton E]
 
-/-- On a zero-dimensional model space, the Haar integral of a function over any nonempty set is
-its value at any point `x`. -/
-private theorem integral_addHaar_subsingleton [MeasurableSpace E] [BorelSpace E]
-    (b : Basis (Fin 0) ℝ E) (f : E → ℝ) {s : Set E} (hs : s.Nonempty) (x : E) :
-    (∫ y in s, f y ∂b.addHaar) = f x := by
-  rw [hs.eq_univ, Measure.restrict_univ, Basis.addHaar_eq_dirac, integral_dirac,
-    Subsingleton.elim 0 x]
-
 /-- On a zero-dimensional manifold, a rough density is integrable iff its support is finite. -/
 theorem integrableDensity_zeroDim_iff (μ : RoughDensity I M 0) :
     IntegrableDensity μ ↔ {x | μ x ≠ 0}.Finite := by
@@ -396,7 +388,7 @@ theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
   have hterm (i : Fin s.card) : (∫ y in (extChartAt I (α i)) '' disjointed (fun j ↦ {α j}) i,
       μ.inChartAt b (α i) y ∂b.addHaar) = μ (α i) 0 := by
     rw [disjointed_eq_self fun j hj ↦ hdisj hj.ne, image_singleton,
-      integral_addHaar_subsingleton b _ (singleton_nonempty _) (extChartAt I (α i) (α i)),
+      b.setIntegral_addHaar_of_subsingleton _ (singleton_nonempty _) (extChartAt I (α i) (α i)),
       μ.inChartAt_self]
     exact congrArg (μ (α i)) (Subsingleton.elim _ 0)
   simp_rw [hterm]

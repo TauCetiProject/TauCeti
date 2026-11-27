@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -29,6 +30,8 @@ carries the normalized Haar measure of the first to that of the second.
   `volume`.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
+* `Module.Basis.setIntegral_addHaar_of_subsingleton` — on a subsingleton normed space, the set
+  integral against `b.addHaar` over any nonempty set is evaluation at any point.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
 * `ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar` — a continuous linear
@@ -88,6 +91,17 @@ theorem addHaar_eq_dirac {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ 
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   · rw [hs.eq_univ, Measure.dirac_apply_of_mem (Set.mem_univ 0), ← hp, addHaar_self]
+
+/-- On a subsingleton normed space, the set integral of a function against the normalized Haar
+measure of any basis over a nonempty set equals its value at any point `x`. -/
+theorem setIntegral_addHaar_of_subsingleton {V ι F : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [Subsingleton V]
+    [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (b : Basis ι ℝ V) (f : V → F) {s : Set V} (hs : s.Nonempty) (x : V) :
+    (∫ y in s, f y ∂b.addHaar) = f x := by
+  have : IsEmpty ι := ⟨fun i ↦ (zero_ne_one : (0 : ℝ) ≠ 1)
+    (by simpa [Subsingleton.elim (b i) 0] using (b.repr_self i).symm)⟩
+  rw [hs.eq_univ, Measure.restrict_univ, addHaar_eq_dirac, integral_dirac, Subsingleton.elim 0 x]
 
 section ChangeBasis
 
