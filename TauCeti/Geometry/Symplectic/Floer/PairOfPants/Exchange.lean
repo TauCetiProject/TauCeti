@@ -56,12 +56,17 @@ rotation of the end at `∞` under `σ`. The main results are:
   `|w - c| < 3/2` is the pair-of-pants datum translated by `c`. So far out it is the
   pair-of-pants datum on the input ends and its translate by `c` on the output end
   (`TauCeti.Floer.exchangePerturbation_eq_of_pos_fst_positiveEndCoord`,
-  `TauCeti.Floer.exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`).
+  `TauCeti.Floer.exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`). In the end
+  coordinates, beyond the height `2` every member is `H_q(t) dt` on the input end `q`, and its
+  translate by `c` is `H_∞(t) dt` on the output end
+  (`TauCeti.Floer.exchangePerturbation_eq_smul_endAngularForm`,
+  `TauCeti.Floer.exchangePerturbation_add_eq_smul_endAngularForm`).
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point; so is each member in the domain point of `S`,
   in real coordinates, and the target point
   (`TauCeti.Floer.contMDiffAt_exchangePerturbation_apply`), and so are its components
-  (`TauCeti.Floer.contMDiffOn_uncurry_exchangePerturbation`).
+  (`TauCeti.Floer.contMDiffOn_uncurry_exchangePerturbation`), also jointly in the parameter
+  (`TauCeti.Floer.contMDiffAt_uncurry_exchangePerturbation_apply`).
 * `TauCeti.Floer.contDiffAt_exchangePerturbation_apply`: for `C^n` Hamiltonians on a normed
   space, the components of the family are `C^n` jointly in the parameter `c`, the domain point of
   `S`, in real coordinates, and the target point; in particular every member is `C^n` jointly in

@@ -265,6 +265,13 @@ private noncomputable def window (T a : ℝ) : Option (Puncture × ℕ × Bool) 
   | some (q, m, b) =>
     (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0)) + endOffset a q) '' endWindow T b
 
+/-- An end window is the image of an end window of the cylinder under the positive end chart
+moved by the offset of the end. -/
+private theorem window_some (T a : ℝ) (q : Puncture) (m : ℕ) (b : Bool) :
+    window T a (some (q, m, b)) =
+      (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0)) + endOffset a q) '' endWindow T b :=
+  (rfl)
+
 /-- The end windows are mapped into `S`. -/
 private theorem positiveEndChart_add_mem {T : ℝ} (hT : 0 ≤ T) (q : Puncture) (m : ℕ) {b : Bool}
     {y : ℝ × ℝ} (hy : y ∈ endWindow T b) :
@@ -277,7 +284,7 @@ under `y ↦ φ'_q(y + (m, 0))`. -/
 private theorem window_zero_some (T : ℝ) (q : Puncture) (m : ℕ) (b : Bool) :
     window T 0 (some (q, m, b)) =
       (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' endWindow T b := by
-  simp only [window, endOffset_zero, add_zero]
+  simp only [window_some, endOffset_zero, add_zero]
 
 /-- The windows are open, since the positive end charts are open maps. -/
 private theorem isOpen_window (T a : ℝ) (i : Option (Puncture × ℕ × Bool)) :
@@ -743,6 +750,8 @@ private theorem exists_pos_family_window_data (hω : ω.IsNondegenerate)
     -- The end chart is `1`-periodic in `t`, so `γ q t` lies on the arc of `γ q` over `[0, 1)`.
     obtain ⟨t', ht', heq⟩ := (periodic_comp_endChart q (· + endOffset (a p₀) q)
       (q.endSign * T)).exists_mem_Ico₀ one_pos t
+    -- `heq` reads `(f ∘ endChart q) (±T, t) = (f ∘ endChart q) (±T, t')` for `f = (· + o)`,
+    -- which is `γ q t = γ q t'` after unfolding the composition.
     have hγt : γ q t = γ q t' := heq
     have h : c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J p₀ (γ q t') x v) :=
       hJcD p₀ hp₀ _ (Or.inr (mem_iUnion.2 ⟨q, t', Ico_subset_Icc_self ht', rfl⟩)) x v
@@ -1068,6 +1077,7 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
       (fun k s t x hs ↦ hJe _ (hpC _) q s t x (hTT₀.trans hs))
       (fun k ζ hζ ↦ positiveEndChart_add_endOffset_mem hA0 (hA₀ _ (hpC _)) q (by linarith))
       (fun k ↦ hu _) (fun k ↦ hfl _) hE0 (fun k ↦ hEl _) m
+    rw [window_some]
     exact ⟨φ, hφ, Z, fun z hz N hN ↦ (hconc z hz N hN).mono fun n hn ↦
       (ENNReal.ofReal_le_ofReal ((min_le_right _ _).trans (Finset.inf'_le
         (fun p : Puncture × Bool ↦ δe p.1 p.2) (Finset.mem_univ (q, b))))).trans hn, v, hv⟩
