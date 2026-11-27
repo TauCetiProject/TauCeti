@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realiz
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic

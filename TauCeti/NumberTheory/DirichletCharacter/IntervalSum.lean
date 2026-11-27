@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.AbelSummation
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import Mathlib.NumberTheory.MulChar.Lemmas
 public import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Algebra.Order.Interval.Finset.Basic
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Periodic
+import Mathlib.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 
 /-!

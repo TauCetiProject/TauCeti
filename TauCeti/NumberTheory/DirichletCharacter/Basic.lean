@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import TauCeti.Data.ZMod.Units
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
@@ -32,10 +31,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 ## Main results
 
 * `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
-* `DirichletCharacter.three_le_level_of_ne_one`,
-  `DirichletCharacter.three_le_conductor_of_ne_one`: any nonprincipal character at a nonzero level
-  has level and conductor at least `3`.
-* `DirichletCharacter.conductor_le_level`: the conductor is at most a nonzero level.
+* `DirichletCharacter.three_le_level_of_ne_one`: any nonprincipal character at a nonzero level has
+  level at least `3`.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
@@ -264,16 +261,6 @@ theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [N
     {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
   by_contra! h
   exact hχ ((subsingleton_of_le_two (by omega)).elim χ 1)
-
-/-- Any nonprincipal Dirichlet character at a nonzero level has conductor at least `3`. -/
-theorem three_le_conductor_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor :=
-  three_le_level_of_ne_one ((primitiveCharacter_eq_one_iff χ).not.mpr hχ)
-
-/-- The conductor of a Dirichlet character at a nonzero level is at most the level. -/
-theorem conductor_le_level {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter R N) : χ.conductor ≤ N :=
-  Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
