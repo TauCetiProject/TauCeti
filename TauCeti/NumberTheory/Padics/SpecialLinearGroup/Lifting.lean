@@ -21,6 +21,7 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift
 import TauCeti.NumberTheory.Padics.Matrix
 import TauCeti.NumberTheory.Padics.PrincipalUnits
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
 /-!
 # Serre's lifting lemma for `SL₂(ℤ_ℓ)` and `GL₂(ℤ_ℓ)`
@@ -450,39 +451,31 @@ private theorem eq_top_of_range_toGL_le (hℓ2 : ℓ ≠ 2) {H : Subgroup (GL (F
   -- The units `u` with `diag(1, u) ∈ H` form a closed subgroup `D` of `ℤ_ℓˣ`.
   let δ : ℤ_[ℓ]ˣ →* GL (Fin 2) ℤ_[ℓ] := diagGL.comp (MonoidHom.mulSingle (fun _ ↦ ℤ_[ℓ]ˣ) 1)
   have hδ (u : ℤ_[ℓ]ˣ) : GeneralLinearGroup.det (δ u) = u := by simp [δ]
-  have hval : Continuous fun u ↦ (δ u : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) := by
-    simp only [δ, MonoidHom.coe_comp, Function.comp_apply, diagGL_coe, MonoidHom.mulSingle_apply]
-    exact Continuous.matrix_diagonal (continuous_pi fun i ↦ Units.continuous_val.comp
-      ((continuous_apply i).comp (continuous_mulSingle (A := fun _ : Fin 2 ↦ ℤ_[ℓ]ˣ) 1)))
-  have hD : IsClosed (H.comap δ : Set ℤ_[ℓ]ˣ) := by
-    refine hH.preimage (Units.continuous_iff.2 ⟨hval, ?_⟩)
-    simpa only [Function.comp_def, map_inv] using hval.comp continuous_inv
+  have hD : IsClosed (H.comap δ : Set ℤ_[ℓ]ˣ) :=
+    hH.preimage (continuous_diagGL.comp (continuous_mulSingle (A := fun _ : Fin 2 ↦ ℤ_[ℓ]ˣ) 1))
   -- `D` contains every determinant of `H`, since `H` contains `SL₂(ℤ_ℓ)`.
   have hSL' (g : GL (Fin 2) ℤ_[ℓ]) : (δ (GeneralLinearGroup.det g))⁻¹ * g ∈ H := hSL <| by
     rw [SpecialLinearGroup.range_toGL_eq_ker_det, MonoidHom.mem_ker, map_mul, map_inv, hδ,
       inv_mul_cancel]
   have hdetD (h : GL (Fin 2) ℤ_[ℓ]) (hh : h ∈ H) : GeneralLinearGroup.det h ∈ H.comap δ :=
     Subgroup.mem_comap.2 (by simpa using H.mul_mem hh (H.inv_mem (hSL' h)))
-  -- So `D` contains a unit of exact level `1`, hence `1 + ℓ ℤ_ℓ`, and so it is everything.
-  obtain ⟨u, hu, hu'⟩ := exists_mem_unitsPrincipal_and_notMem_succ_of_pos ℓ one_pos
-  obtain ⟨h₁, hh₁, he₁⟩ := exists_mem_inv_det_mul_mem_unitsPrincipal hmap u
-  have hU2 : unitsPrincipal ℓ 2 ≤ unitsPrincipal ℓ 1 := unitsPrincipal_antitone ℓ one_le_two
-  have hd : GeneralLinearGroup.det h₁ = u * ((GeneralLinearGroup.det h₁)⁻¹ * u)⁻¹ := by group
-  have hU1 : unitsPrincipal ℓ 1 ≤ H.comap δ := by
-    rw [← topologicalClosure_zpowers_eq_unitsPrincipal one_pos (fun h ↦ absurd h hℓ2)
-      (u := GeneralLinearGroup.det h₁) (hd ▸ mul_mem hu (inv_mem (hU2 he₁)))
-      (fun h ↦ hu' (by rw [hd] at h; simpa using mul_mem h he₁))]
-    exact Subgroup.topologicalClosure_minimal _ (Subgroup.zpowers_le.2 (hdetD h₁ hh₁)) hD
+  -- So `D` surjects onto `(ℤ/ℓ²)ˣ`, and hence it is all of `ℤ_ℓˣ`.
+  have hDtop : H.comap δ = ⊤ := by
+    refine eq_top_of_isClosed_of_map_unitsToZModPow_eq_top le_rfl (fun h ↦ absurd h hℓ2) hD
+      (eq_top_iff.2 fun x _ ↦ ?_)
+    obtain ⟨v, rfl⟩ := unitsToZModPow_surjective 2 x
+    obtain ⟨h, hh, he⟩ := exists_mem_inv_det_mul_mem_unitsPrincipal hmap v
+    refine ⟨_, hdetD h hh, ?_⟩
+    rwa [← ker_unitsToZModPow, MonoidHom.mem_ker, map_mul, map_inv, inv_mul_eq_one] at he
   refine eq_top_iff.2 fun g _ ↦ ?_
-  obtain ⟨h, hh, he⟩ := exists_mem_inv_det_mul_mem_unitsPrincipal hmap (GeneralLinearGroup.det g)
-  have hg : GeneralLinearGroup.det g ∈ H.comap δ := by
-    simpa using mul_mem (hdetD h hh) (hU1 (hU2 he))
+  have hg : GeneralLinearGroup.det g ∈ H.comap δ := hDtop ▸ Subgroup.mem_top _
   simpa using H.mul_mem hg (hSL' g)
 
 /-- **The lifting lemma modulo `ℓ²`, the `GL₂` form.** For an odd prime `ℓ`, a closed subgroup of
 `GL₂(ℤ_ℓ)` whose truncation modulo `ℓ²` is all of `GL₂(ℤ/ℓ²)` is all of `GL₂(ℤ_ℓ)`. Unlike the
 residual criterion `TauCeti.eq_top_of_isClosed_of_map_det_eq_top`, no hypothesis on the determinant
-is needed: a closed subgroup of `ℤ_ℓˣ` surjecting onto `(ℤ/ℓ²)ˣ` is all of `ℤ_ℓˣ`. -/
+is needed: a closed subgroup of `ℤ_ℓˣ` surjecting onto `(ℤ/ℓ²)ˣ` is all of `ℤ_ℓˣ`
+(`TauCeti.eq_top_of_isClosed_of_map_unitsToZModPow_eq_top`). -/
 theorem eq_top_of_isClosed_of_map_generalLinearGroupMap_toZModPow_two_eq_top (hℓ2 : ℓ ≠ 2)
     {H : Subgroup (GL (Fin 2) ℤ_[ℓ])} (hH : IsClosed (H : Set (GL (Fin 2) ℤ_[ℓ])))
     (hmap : H.map (GeneralLinearGroup.map (toZModPow (p := ℓ) 2)) = ⊤) : H = ⊤ := by
