@@ -48,6 +48,8 @@ other.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
   elements of `A` and is integral over `A` has its numerator divisible by its denominator, when
   `A` is integrally closed.
+* `TauCeti.isIntegral_leadingCoeff_pow_mul_aeval`: at a root `x` of `q`, the power
+  `lc(q) ^ d` clears the denominator of `p(x)` for every `p` of degree at most `d`.
 * `TauCeti.isIntegral_pow_card_mul_prod_sub`: an integral common denominator for a finite set
   clears the denominators of the product of differences from any one of its elements.
 * `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
@@ -282,6 +284,22 @@ theorem dvd_of_isIntegral_div
   obtain ⟨e, he⟩ := IsIntegrallyClosed.isIntegral_iff.mp ((isIntegral_algHom_iff f hf).mp (hw ▸ h))
   refine ⟨e, IsFractionRing.injective A (FractionRing A) ?_⟩
   rw [map_mul, he, mul_div_cancel₀ _ hdF]
+
+/-- **Clearing the denominators of a polynomial at a root.** If `x` is a root of `q`, then
+`lc(q) ^ d * p(x)` is integral over `R` for every `p` of degree at most `d`. For `p = X` and
+`d = 1` this is Mathlib's `isIntegral_leadingCoeff_smul`. -/
+theorem isIntegral_leadingCoeff_pow_mul_aeval {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] {q p : Polynomial R} {x : A} (hx : Polynomial.aeval x q = 0) {d : ℕ}
+    (hp : p.natDegree ≤ d) :
+    IsIntegral R (algebraMap R A q.leadingCoeff ^ d * Polynomial.aeval x p) := by
+  have hqx : IsIntegral R (algebraMap R A q.leadingCoeff ^ 1 * x) := by
+    simpa [Algebra.smul_def] using isIntegral_leadingCoeff_smul q x hx
+  rw [Polynomial.aeval_eq_sum_range' (Nat.lt_succ_of_le hp)]
+  refine IsIntegral.pow_mul_sum fun i hi ↦ ?_
+  rw [Algebra.smul_def, mul_left_comm]
+  refine isIntegral_algebraMap.mul ?_
+  simpa using (hqx.pow_mul_mul_pow (Commute.all _ _) i).pow_mul_of_le isIntegral_algebraMap
+    (by simpa using Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))
 
 /-- If `l` and every `l x` for `x ∈ S` are integral over `R`, then
 `l ^ S.card * ∏ x ∈ S.erase a, (a - x)` is integral over `R` for every `a ∈ S`. -/
