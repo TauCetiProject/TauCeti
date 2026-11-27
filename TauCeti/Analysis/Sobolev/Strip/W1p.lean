@@ -64,7 +64,14 @@ holomorphic strip with boundary on two Lagrangians, in a trivialization in which
 spaces along the boundary are `F₀` and `F₁`: for `p > 2` an element of `W^{1,p}` is a continuous
 section, so it can be inserted into the nonlinear coefficients, and its boundary values lie in the
 linearized boundary conditions. For `p ≤ 2` Morrey's estimate fails, and `continuousValue F₀ F₁ p`
-is `0` by the convention of `LinearMap.extendOfNorm`.
+is `0` by the convention of `LinearMap.extendOfNorm`. The nonlinear sections of
+`TauCeti.Analysis.Sobolev.QuasilinearSection` evaluate their coefficients at continuous
+representatives defined on the whole plane, where the strip measure lives; for the strip these
+are the images under `TauCeti.StripSobolev.continuousValueIccExtend F₀ F₁ p`, the Sobolev embedding
+followed by the extension from the closed strip that is constant in `t` on either side of it, as
+`Set.IccExtend` does for functions on an interval. For `2 < p < ∞`, the first component of the jet
+of every element of `W^{1,p}` agrees with it almost everywhere on the strip
+(`TauCeti.StripSobolev.fst_ae_eq_continuousValueIccExtend`).
 
 ## Main definitions
 
@@ -73,6 +80,8 @@ is `0` by the convention of `LinearMap.extendOfNorm`.
 * `TauCeti.StripSobolev.testSectionToBCF`: a test section on the closed strip, as a bounded
   continuous function.
 * `TauCeti.StripSobolev.continuousValue F₀ F₁ p`: the Sobolev embedding `W^{1,p} ⊂ C⁰_b`, `p > 2`.
+* `TauCeti.StripSobolev.continuousValueIccExtend F₀ F₁ p`: the Sobolev embedding followed by the
+  extension from the closed strip to the plane that is constant in `t` outside `[0, 1]`.
 
 ## References
 
@@ -219,6 +228,42 @@ theorem valueL_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p F�
     with z hz hzs
   simp only [continuousValue_toW1p_apply hp hpt, projIcc_of_mem zero_le_one hzs.2, coe_toJetClosure,
     hz, jet_apply]
+
+variable (F₀ F₁ p) in
+/-- **The Sobolev embedding of the strip, read on the plane.** The image of an element of
+`W^{1,p}_F(ℝ × [0, 1], V)` under the Sobolev embedding `TauCeti.StripSobolev.continuousValue`,
+extended from the closed strip to `ℝ × ℝ` by precomposition with `(s, t) ↦ (s, projIcc 0 1 t)`, so
+that it is constant in `t` on either side of the strip. On the closed strip it is the continuous
+representative (`TauCeti.StripSobolev.continuousValueIccExtend_apply_coe`), and for `2 < p < ∞` the
+first component of the jet of every element agrees with it almost everywhere on the strip
+(`TauCeti.StripSobolev.fst_ae_eq_continuousValueIccExtend`). -/
+def continuousValueIccExtend : W1p F₀ F₁ p →L[ℝ] (ℝ × ℝ →ᵇ V) :=
+  BoundedContinuousFunction.compContinuousCLM V ℝ
+    ⟨fun z ↦ (z.1, projIcc 0 1 zero_le_one z.2),
+      continuous_fst.prodMk (continuous_projIcc.comp continuous_snd)⟩ ∘L
+    continuousValue F₀ F₁ p
+
+/-- The extended Sobolev embedding at a point of the plane is the Sobolev embedding at the nearest
+point of the closed strip on the same vertical line. -/
+theorem continuousValueIccExtend_apply (x : W1p F₀ F₁ p) (z : ℝ × ℝ) :
+    continuousValueIccExtend F₀ F₁ p x z =
+      continuousValue F₀ F₁ p x (z.1, projIcc 0 1 zero_le_one z.2) :=
+  (rfl)
+
+/-- On the closed strip the extended Sobolev embedding is the Sobolev embedding. -/
+@[simp]
+theorem continuousValueIccExtend_apply_coe (x : W1p F₀ F₁ p) (z : ℝ × I) :
+    continuousValueIccExtend F₀ F₁ p x (z.1, z.2) = continuousValue F₀ F₁ p x z := by
+  rw [continuousValueIccExtend_apply, projIcc_val]
+
+/-- For `2 < p < ∞`, the first component of the jet of an element of `W^{1,p}_F(ℝ × [0, 1], V)`
+is its continuous representative, read on the plane through
+`TauCeti.StripSobolev.continuousValueIccExtend`, almost everywhere on the strip. -/
+theorem fst_ae_eq_continuousValueIccExtend (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p F₀ F₁ p) :
+    ∀ᵐ z ∂stripMeasure,
+      ((x : Lp (V × V × V) p stripMeasure) z).1 = continuousValueIccExtend F₀ F₁ p x z := by
+  filter_upwards [coeFn_valueL x, valueL_ae_eq_continuousValue hp hpt x] with z h₁ h₂
+  rw [← h₁, h₂, continuousValueIccExtend_apply]
 
 /-- **Uniqueness of the continuous representative.** For `2 < p < ∞`, a function continuous on the
 closed strip whose restriction agrees almost everywhere with the value of an element of
