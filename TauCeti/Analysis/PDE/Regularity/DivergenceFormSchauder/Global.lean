@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Scaled
+import TauCeti.Analysis.Holder.Localization
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -58,6 +59,9 @@ there and the structural constants, so the global constant does not depend on `u
 
 * `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph`: the global `C^{1,β}`
   estimate for the Dirichlet problem with zero boundary values on a bounded `C^{1,α}` domain.
+* `TauCeti.PDE.forall_frontier_chart_of_le`: the boundary charts of a `C^{1,α}` domain are also
+  charts of a `C^{1,β}` domain for every `β ≤ min α 1`, so the estimate also applies with a
+  coefficient exponent below the exponent of the boundary graphs.
 
 ## References
 
@@ -251,6 +255,36 @@ private theorem exists_hasLocalGradientEstimate_of_mem_closure {E : Type*} [Norm
       hbdry x ⟨hx, by rwa [Ω.isOpen.interior_eq]⟩
     exact exists_hasLocalGradientEstimate_of_graph hβ hβ1 hβα hq hβq lam Lam M hex hh₀ hr₀
       hγ0 hγ hγK hgraph
+
+/-- **Lowering the exponent of boundary charts.** The boundary charts of a set `s` with
+`C^{1,α}` boundary can be replaced by charts, with the same coordinates and cylinders, whose graphs
+have `β`-Hölder derivatives on the whole space, for every `β ≤ min α 1`. So the global estimate
+`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph` applies with a coefficient
+exponent below the exponent of the boundary graphs. The charts make `E` finite-dimensional, so
+that the graphs can be cut off outside a ball (`ContDiff.exists_eqOn_ball_holderWith_fderiv`). -/
+theorem forall_frontier_chart_of_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} {α β : ℝ≥0} (hβα : β ≤ α) (hβ1 : β ≤ 1)
+    (hbdry : ∀ x ∈ frontier s,
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
+          HolderWith Kγ α (fderiv ℝ γ) ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ s ↔ γ z.snd < z.fst)) :
+    ∀ x ∈ frontier s,
+      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
+        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
+          HolderWith Kγ β (fderiv ℝ γ) ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ s ↔ γ z.snd < z.fst) := by
+  intro x hx
+  obtain ⟨e, γ, h₀, r₀, Kγ, hex, hh₀, hr₀, hγ0, hγ, hγK, hgraph⟩ := hbdry x hx
+  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
+    e.linearIsometryEquiv.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ E := Module.Finite.of_surjective
+    ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
+    fun y => ⟨WithLp.toLp 2 (0, y), by simp⟩
+  obtain ⟨γ', K, -, hγ', heq, hK, -⟩ := hγ.exists_eqOn_ball_holderWith_fderiv hγK hβα hβ1 0 hr₀
+  refine ⟨e, γ', h₀, r₀, K, hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK,
+    fun z hz => ?_⟩
+  rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
 
 /-- **The global Schauder estimate for divergence-form equations with zero boundary values.** Let
 `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{1,α}` boundary: at each point `x` of its frontier

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 public import TauCeti.Analysis.Fourier.Torus.Multiplier
@@ -46,9 +47,15 @@ It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝ�
 
 ## Main declarations
 
+* `SchwartzMap.summable_norm_apply_latticePoint`: a Schwartz function is absolutely summable over
+  the integer points.
 * `SchwartzMap.periodicKernel`: the periodic kernel `∑ₙ σ(n) eₙ` of a Schwartz symbol.
 * `SchwartzMap.mFourierCoeff_periodicKernel`: its Fourier coefficients are the values `σ(n)`.
 * `SchwartzMap.eLpNorm_periodicKernel_le`: its `L¹` norm is at most `‖𝓕⁻ σ‖_{L¹(ℝᵈ)}`.
+* `SchwartzMap.eLpNorm_periodicKernel_convolution_le`: Young's inequality for convolution with it,
+  on `Lᵖ(𝕋ᵈ; E)` for every complex normed space `E`.
+* `TauCeti.UnitAddTorus.mFourier_euclidean_apply`: lifted to `ℝᵈ`, the monomial `eₙ` is the
+  character `x ↦ 𝐞 ⟪x, n⟫`.
 * `TauCeti.UnitAddTorus.eLpNorm_fourierMultiplier_le`: the `Lᵖ` bound for a Fourier multiplier
   whose symbol is a Schwartz function sampled on `ℤᵈ`.
 * `TauCeti.UnitAddTorus.eLpNorm_tsum_mul_mFourierCoeff_mul_mFourier_le`: the same bound for the
@@ -79,14 +86,14 @@ variable {d : Type*} [Fintype d]
 /-! ### The periodic kernel -/
 
 /-- A Schwartz function is absolutely summable over the integer points. -/
-private theorem summable_norm_apply_latticePoint (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+theorem _root_.SchwartzMap.summable_norm_apply_latticePoint (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
     Summable fun n : d → ℤ ↦ ‖σ (latticePoint n)‖ := by
   simpa only [← latticePoint_eq_sum] using
     σ.summable_norm_apply_sum_intCast_smul (EuclideanSpace.basisFun d ℝ)
 
 private theorem summable_smul_mFourier (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
     Summable fun n : d → ℤ ↦ σ (latticePoint n) • mFourier n :=
-  .of_norm <| (summable_norm_apply_latticePoint σ).congr fun n ↦ by
+  .of_norm <| σ.summable_norm_apply_latticePoint.congr fun n ↦ by
     rw [norm_smul, mFourier_norm, mul_one]
 
 /-- The periodic kernel `K = ∑ₙ σ(n) eₙ` of the multiplier with symbol `σ`. -/
@@ -108,7 +115,7 @@ theorem _root_.SchwartzMap.mFourierCoeff_periodicKernel (σ : 𝓢(EuclideanSpac
   have h : ⇑σ.periodicKernel = fun z ↦ ∑' m : d → ℤ, σ (latticePoint m) • mFourier m z :=
     funext fun z ↦ by simp only [SchwartzMap.periodicKernel_apply, smul_eq_mul]
   rw [h]
-  exact mFourierCoeff_tsum_smul_mFourier (summable_norm_apply_latticePoint σ) n
+  exact mFourierCoeff_tsum_smul_mFourier σ.summable_norm_apply_latticePoint n
 
 /-- **The `L¹` norm of the periodic kernel** is at most the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`: the
 kernel is the periodization of `𝓕⁻ σ`. -/
@@ -125,6 +132,27 @@ theorem _root_.SchwartzMap.eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace �
   -- product of the Haar probability measures `AddCircle.haarAddCircle` on the circle factors.
   simp only [SchwartzMap.periodicKernel_apply]
   exact h
+
+/-! ### Fourier monomials lifted to `ℝᵈ` -/
+
+omit [Fintype d] in
+/-- The reduction modulo `ℤᵈ` from `EuclideanSpace ℝ d` onto the torus is continuous. -/
+theorem continuous_euclidean_coe :
+    Continuous fun (x : EuclideanSpace ℝ d) (i : d) ↦ (x i : UnitAddCircle) :=
+  continuous_pi fun i ↦ continuous_quotient_mk'.comp
+    ((continuous_apply i).comp (PiLp.continuous_ofLp 2 _))
+
+/-- The value of the Fourier monomial `eₙ` at the image of `x : EuclideanSpace ℝ d` on the torus
+is `𝐞 ⟪x, n⟫`. -/
+theorem mFourier_euclidean_apply (n : d → ℤ) (x : EuclideanSpace ℝ d) :
+    mFourier n (fun i ↦ (x i : UnitAddCircle)) = 𝐞 ⟪x, latticePoint n⟫ := by
+  rw [mFourier_coe_apply (x := fun i ↦ x i), Real.fourierChar_apply]
+  congr 1
+  simp only [PiLp.inner_apply, latticePoint_apply, RCLike.inner_apply, conj_trivial]
+  push_cast
+  rw [Finset.mul_sum, Finset.mul_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  ring
 
 -- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
 -- measures on the circle factors, given by this instance; use it here so that the multipliers act
@@ -161,11 +189,12 @@ variable (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {m : ℓ^∞(d → ℤ, ℂ)}
 convergent Fourier series `∑ₙ σ(n) f̂(n) eₙ`. -/
 private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply {f : UnitAddTorus d → ℂ}
     (hf : Integrable f) (x : UnitAddTorus d) :
-    (σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) x =
+    (σ.periodicKernel ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f) x =
       ∑' n : d → ℤ, σ (latticePoint n) * mFourierCoeff f n * mFourier n x := by
   replace hf : Integrable (fun t ↦ f (x - t)) := hf.comp_sub_left x
   rw [convolution_def]
-  simp only [ContinuousLinearMap.mul_apply', SchwartzMap.periodicKernel_apply, ← tsum_mul_right]
+  simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, SchwartzMap.periodicKernel_apply,
+    ← tsum_mul_right]
   rw [← integral_tsum_of_summable_integral_norm]
   · refine tsum_congr fun n ↦ ?_
     simp_rw [mul_assoc, integral_const_mul, integral_mFourier_mul_sub]
@@ -174,7 +203,7 @@ private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply {f : UnitAd
       (c := ‖σ (latticePoint n)‖)
       ((continuous_const.mul (mFourier n).continuous).aestronglyMeasurable)
       (Filter.Eventually.of_forall fun t ↦ by simp)
-  · refine ((summable_norm_apply_latticePoint σ).mul_right (∫ t, ‖f (x - t)‖)).congr fun n ↦ ?_
+  · refine (σ.summable_norm_apply_latticePoint.mul_right (∫ t, ‖f (x - t)‖)).congr fun n ↦ ?_
     simp only [norm_mul, norm_mFourier_apply, mul_one]
     rw [integral_const_mul]
 
@@ -183,10 +212,10 @@ the periodic kernel. -/
 private theorem fourierMultiplier_ae_eq_convolution (hm : ∀ n, m n = σ (latticePoint n))
     (f : L²(UnitAddTorus d)) :
     fourierMultiplier m f =ᵐ[volume]
-      σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f := by
+      σ.periodicKernel ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f := by
   set c : (d → ℤ) → ℂ := fun n ↦ m n * mFourierCoeff f n
   have hc : Summable fun n ↦ c n • mFourier n := .of_norm <|
-    ((summable_norm_apply_latticePoint σ).mul_right ‖f‖).of_nonneg_of_le
+    (σ.summable_norm_apply_latticePoint.mul_right ‖f‖).of_nonneg_of_le
       (fun _ ↦ norm_nonneg _) fun n ↦ by
         rw [norm_smul, mFourier_norm, mul_one, norm_mul, hm]
         exact mul_le_mul_of_nonneg_left (norm_mFourierCoeff_le_norm f n) (norm_nonneg _)
@@ -202,23 +231,23 @@ private theorem fourierMultiplier_ae_eq_convolution (hm : ∀ n, m n = σ (latti
 
 /-! ### The `Lᵖ` bound -/
 
-/-- Young's inequality for the periodic kernel: convolution with it is bounded on `Lᵖ(𝕋ᵈ)`,
-`1 ≤ p ≤ ∞`, by the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`. -/
-private theorem eLpNorm_periodicKernel_convolution_le {p : ℝ≥0∞} (hp : 1 ≤ p)
-    {f : UnitAddTorus d → ℂ} (hf : AEStronglyMeasurable f) :
-    eLpNorm (σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) p volume ≤
-      ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
-  refine (eLpNorm_convolution_le _ σ.periodicKernel.continuous.aestronglyMeasurable hf hp).trans ?_
-  have hL : ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ ≤ 1 := by
-    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff, ← NNReal.coe_le_one, coe_nnNorm]
-    exact ContinuousLinearMap.opNorm_mul_le ℂ ℂ
-  calc ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ * eLpNorm σ.periodicKernel 1 volume * eLpNorm f p volume
-      ≤ 1 * ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
+/-- **Young's inequality for the periodic kernel**: convolution with it is bounded on `Lᵖ(𝕋ᵈ; E)`,
+`1 ≤ p ≤ ∞`, for every complex normed space `E`, by the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`. -/
+theorem _root_.SchwartzMap.eLpNorm_periodicKernel_convolution_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] {p : ℝ≥0∞} (hp : 1 ≤ p) {g : UnitAddTorus d → E}
+    (hg : AEStronglyMeasurable g) :
+    eLpNorm (⇑σ.periodicKernel ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g) p volume ≤
+      ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm g p volume := by
+  refine (eLpNorm_convolution_le _ σ.periodicKernel.continuous.aestronglyMeasurable hg hp).trans ?_
+  calc ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ *
+        eLpNorm σ.periodicKernel 1 volume * eLpNorm g p volume
+      ≤ 1 * ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm g p volume := by
         gcongr
+        · exact ContinuousLinearMap.opENorm_lsmul_le
         -- The bound is stated for the global volume, the product of the Haar probability
         -- measures, which is by definition the volume given by the local instance here.
-        have h := σ.eLpNorm_periodicKernel_le
-        rwa [volume_eq_pi_haarAddCircle] at h
+        · have h := σ.eLpNorm_periodicKernel_le
+          rwa [volume_eq_pi_haarAddCircle] at h
     _ = _ := by rw [one_mul]
 
 /-- **Fourier multipliers with Schwartz symbols are bounded on `Lᵖ(𝕋ᵈ)`.** If the symbol `m` of a
@@ -234,7 +263,7 @@ theorem eLpNorm_fourierMultiplier_le (hm : ∀ n, m n = σ (latticePoint n)) {p 
     eLpNorm (fourierMultiplier m f) p volume ≤
       ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
   rw [eLpNorm_congr_ae (fourierMultiplier_ae_eq_convolution σ hm f)]
-  exact eLpNorm_periodicKernel_convolution_le σ hp (Lp.aestronglyMeasurable f)
+  exact σ.eLpNorm_periodicKernel_convolution_le hp (Lp.aestronglyMeasurable f)
 
 /-- **Schwartz multipliers of `Lᵖ` functions on the torus.** Let `σ` be a Schwartz function on
 `ℝᵈ` and let `1 ≤ p ≤ ∞`. For every `f ∈ Lᵖ(𝕋ᵈ)`, not necessarily in `L²(𝕋ᵈ)`, the Fourier series
@@ -249,7 +278,7 @@ theorem eLpNorm_tsum_mul_mFourierCoeff_mul_mFourier_le {p : ℝ≥0∞} (hp : 1 
         volume ≤
       ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
   -- The series is the convolution of `f` with the periodic kernel.
-  have h := eLpNorm_periodicKernel_convolution_le σ hp hf.aestronglyMeasurable
+  have h := σ.eLpNorm_periodicKernel_convolution_le hp hf.aestronglyMeasurable
   rwa [funext (periodicKernel_convolution_apply σ (hf.integrable hp))] at h
 
 end TauCeti.UnitAddTorus

@@ -920,6 +920,14 @@ theorem _root_.LinearMap.IsHomogeneous.koszulTwist_apply
     ring_nf
   | add x y hx hy => simp [map_add, hx, hy, smul_add]
 
+/-- A degree-zero homogeneous linear map commutes pointwise with the Koszul twist. -/
+theorem _root_.LinearMap.IsHomogeneous.koszulTwist_apply_zero
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+    {f : M →ₗ[R] N} (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) (q : ℤ) (x : M) :
+    H.koszulTwist q (f x) = f (G.koszulTwist q x) := by
+  simpa only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul] using
+    hf.koszulTwist_apply q x
+
 /-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
 the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
 map past a homogeneous input. The sign acts through its central scalar endomorphism, so this

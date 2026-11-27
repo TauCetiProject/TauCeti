@@ -422,7 +422,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     have hle : ∀ u : Icc (0 : ℝ) r₁, (u : ℝ) * ε ≤ r₁ * ε := fun u ↦
       mul_le_mul_of_nonneg_right u.property.2 hε.le
     obtain ⟨hBu, -, t₀, ht₀⟩ := hBs s hs
-    obtain ⟨b, hpb, hb, -⟩ := exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hf hBu
+    obtain ⟨b, hpb, hb, -⟩ := exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hBu
       (t := t₀) (by rw [ht₀]; exact hBq s) (by linarith [hfa₁.1, hfa₁.2])
     have hsrc := mem_splitPassage_source.1 (mem_splitGluingPairs.1 hz).1
     have hsrc' := mem_splitPassage_source.1 (mem_splitGluingPairs.1 hz').1
@@ -451,7 +451,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     obtain ⟨t, ht⟩ := hwt
     have hw2u : w.2 ∈ hX.flow.unstableSet p := ht ▸ (Flow.apply_mem_unstableSet_iff _ _).2 hw1
     have hw2fq : f w.2 < f q := (hCm _ hw₂C).2.1
-    obtain ⟨b, hpb, hb, -⟩ := exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hf hw1
+    obtain ⟨b, hpb, hb, -⟩ := exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hw1
       (t := t) (by rw [ht]; exact hw2fq) (by linarith [hfa₁.1, hfa₁.2])
     -- Off the broken trajectory, the coordinate that vanishes on it does not vanish.
     have hsnd₁ : (Φ w.1).snd ≠ 0 := fun h0 ↦ by
@@ -499,7 +499,7 @@ level of `flow T₁ a₁`, is reached by the arc below its end, then the broken 
 `(a₁, y)` has a neighbourhood among the recorded points of `W^u(p) ∩ Z` homeomorphic to a
 half-open interval, as in `IsMorseSmale.exists_homeomorph_Ico_of_isSliceChart`. -/
 private theorem exists_homeomorph_Ico_of_gluingArc {hX : IsAdaptedPseudoGradient f X}
-    (hf : IsMorse 𝓘(ℝ, E) f) {p q a₁ y : M} {Z : Set M} (hpq' : p ≠ q)
+    {p q a₁ y : M} {Z : Set M} (hpq' : p ≠ q)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) {c T₁ T₂ δ : ℝ} (hδ : 0 < δ)
     (hca₁ : c < f a₁) (hcT₁ : c < f (hX.flow T₁ a₁)) (hfy : f y < c)
     {B : Icc (0 : ℝ) δ → M × M} (hBc : Continuous B)
@@ -532,7 +532,7 @@ private theorem exists_homeomorph_Ico_of_gluingArc {hX : IsAdaptedPseudoGradient
       (B s).1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧ f b < c := by
     intro s hs
     obtain ⟨hs₁, -, t, ht⟩ := hBS s hs
-    exact exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hf hs₁ (t := t)
+    exact exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hs₁ (t := t)
       (by rw [ht]; exact hBc' s) (by linarith [hfa₁.1, hfa₁.2])
   have hB : ∀ s, ∃ b, p ≠ b ∧ (B s).1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧
       f b < f a₁ := by
@@ -601,7 +601,7 @@ private theorem exists_homeomorph_Ico_of_gluingArc {hX : IsAdaptedPseudoGradient
       have hw1u : w.1 ∈ hX.flow.unstableSet p := by
         rw [← ht] at hw2u
         exact (Flow.apply_mem_unstableSet_iff _ _).1 hw2u
-      exact exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hf hw1u (t := t)
+      exact exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hw1u (t := t)
         (by rw [ht]; exact hw2) (by linarith [hfa₁.1, hfa₁.2])
     have hm₁ := hX.tendsto_flow_levelCrossingTime hpq' ha₁ (σ₀ := T₁) rfl
       ((continuous_fst.tendsto _).mono_left nhdsWithin_le_nhds)
@@ -757,7 +757,7 @@ entrance face with `‖u‖ ‖v‖ / ε < r₀ ε` and its model entrance point
 form a gluing pair at the centre, and `w₁` flows to the point with the coordinates of that entrance
 point. -/
 private theorem exists_flow_eq_and_mem_splitCenterBallGluingPairs (hX : IsAdaptedPseudoGradient f X)
-    (hf : IsMorse 𝓘(ℝ, E) f) {p q : M} (hpq : p ≠ q) (φ : MorseChart E f q)
+    {p q : M} (hpq : p ≠ q) (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {ε ρ r₀ : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
@@ -796,7 +796,7 @@ private theorem exists_flow_eq_and_mem_splitCenterBallGluingPairs (hX : IsAdapte
   have hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target := fun z hz ↦ hε₂ z (by linarith)
   have hr₀ε : r₀ * ε ≤ ε := mul_le_of_le_one_left hε.le hr₀
   have hw2u : w₂ ∈ hX.flow.unstableSet p := ht ▸ (Flow.apply_mem_unstableSet_iff _ _).2 hw₁u
-  obtain ⟨b, hpb, hb, -⟩ := exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hf hw₁u
+  obtain ⟨b, hpb, hb, -⟩ := exists_mem_unstableSet_inter_stableSet_of_apply_flow_lt hX hw₁u
     (t := t) (by rw [ht]; exact hw₂p) le_rfl
   have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpb hb
   -- Off `W^u(q)`, the point `w₂` has a nonzero contracting coordinate.
@@ -897,7 +897,7 @@ lie on the graph of `g`, and that near `q` the points of `Z` lie on the graph of
 `w₂` and the split coordinates of `w₂` form a gluing pair at the centre with `‖u‖ < r₀ ε`, and
 `w₁` flows to the point with the coordinates of that entrance point. -/
 private theorem eventually_mem_splitCenterBallGluingPairs (hX : IsAdaptedPseudoGradient f X)
-    (hf : IsMorse 𝓘(ℝ, E) f) {p q y₁ : M} (hpq : p ≠ q) (hqp : f q < f p) (φ : MorseChart E f q)
+    {p q y₁ : M} (hpq : p ≠ q) (hqp : f q < f p) (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {ε ρ r₀ : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
@@ -951,7 +951,7 @@ private theorem eventually_mem_splitCenterBallGluingPairs (hX : IsAdaptedPseudoG
     with w hw hw1u hw1f hw2Z hwt
   obtain ⟨⟨⟨⟨hw₁s, hw₁f0, hw₁f, hw₁n⟩, hκw⟩, hw₁g⟩, ⟨⟨hw₂s, hw₂ρ⟩, hw₂f, hw₂n, hw₂p⟩, hw₂k⟩ := hw
   obtain ⟨t, ht⟩ := hwt
-  obtain ⟨hP, hflow⟩ := hX.exists_flow_eq_and_mem_splitCenterBallGluingPairs hf hpq φ hφ hε hε₂ hloc
+  obtain ⟨hP, hflow⟩ := hX.exists_flow_eq_and_mem_splitCenterBallGluingPairs hpq φ hφ hε hε₂ hloc
     hr₀₁ hn hw1u hw₁s hw₁f0 hw₁f hw₁n hκw (hw₁g hw1u hw1f) hw₂s hw₂ρ hw₂f hw₂n (hw₂k hw2Z) hw₂p ht
   exact ⟨hP, hw₂f, ⟨_, hflow⟩, by simp [φ.toChart.left_inv hw₂s]⟩
 
@@ -1141,7 +1141,7 @@ private theorem IsMorseSmale.exists_centerGluingArc {hX : IsAdaptedPseudoGradien
       filter_upwards [hexh₁ _ hgexh] with w hw hwu hwf
       obtain ⟨z, hzg, rfl⟩ := hw hwu hwf
       exact hzg
-    filter_upwards [hX.eventually_mem_splitCenterBallGluingPairs hf hpq' (by linarith [hfa₁.2]) φ hφ
+    filter_upwards [hX.eventually_mem_splitCenterBallGluingPairs hpq' (by linarith [hfa₁.2]) φ hφ
       hε hε₂ hρ (fun w hw hwρ ↦ (hloc w hw hwρ).2.2) hr₀ hr₀₁.le hn
       (hnear₁.mono fun w hw ↦ ⟨hw.1, hw.2.1, hw.2.2.1, hw.2.2.2.1⟩) hκ₁ hgraph hkexh]
       with w hw hw1u hw1f hw2Z hwt
@@ -1193,7 +1193,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_isSliceChart {hX : IsAdaptedPseudo
   · -- At the critical point itself, glue into `Z` through the centre of a Morse box.
     obtain ⟨c, T₁, δ, hδ, B, hca₁, hcT₁, hqc, hBc, hB₀, hBS, hBc', hBinj, hBfwd⟩ :=
       h.exists_centerGluingArc hf hpq ha₁ hφZ hZ hyφZ hyZ hdim htr
-    exact exists_homeomorph_Ico_of_gluingArc hf hpq' ha₁ (T₂ := 0) hδ hca₁ hcT₁ hqc hBc
+    exact exists_homeomorph_Ico_of_gluingArc hpq' ha₁ (T₂ := 0) hδ hca₁ hcT₁ hqc hBc
       (by rw [hB₀, Flow.map_zero_apply])
       (by simpa only [neg_zero, Flow.map_zero_apply] using hBS) hBc' hBinj
       (by simpa only [neg_zero, Flow.map_zero_apply] using hBfwd)
@@ -1203,7 +1203,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_isSliceChart {hX : IsAdaptedPseudo
   have hfy₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq'
     (hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁)
   have hfyq : f y < f q := by
-    obtain ⟨r, -, hyr⟩ := hX.exists_tendsto_atTop hf y
+    obtain ⟨r, -, hyr⟩ := hX.exists_tendsto_atTop y
     have hqr : q ≠ r := by
       rintro rfl
       exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, Flow.mem_stableSet.2 hyr⟩)
@@ -1230,7 +1230,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_isSliceChart {hX : IsAdaptedPseudo
       obtain ⟨-, -, t', ht'⟩ := hBS s' hs'
       exact hBinj s s' hs hs' (-t' + t) (by
         rw [Flow.map_add, ht, hss', ← ht', Flow.map_neg_apply_map])
-  exact exists_homeomorph_Ico_of_gluingArc hf hpq' ha₁ hδ hfa₁.1 hfy₁.1 hfyq hBc hB₀ hBS
+  exact exists_homeomorph_Ico_of_gluingArc hpq' ha₁ hδ hfa₁.1 hfy₁.1 hfyq hBc hB₀ hBS
     hBq hBinj' hBfwd
 
 /-- **The level cut of a stable manifold at a broken trajectory.** For a point `a₂` of a

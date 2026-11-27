@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.MeasureTheory.Integral.Bochner.DisjointSequence
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # The Dunford–Pettis weak compactness criterion and weak sequential completeness of `L¹`

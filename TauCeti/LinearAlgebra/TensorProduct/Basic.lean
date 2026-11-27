@@ -49,11 +49,14 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   reassociation.
 * `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
   functional which splits on products splits the contraction accordingly.
-* `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.lid_lTensor_apply` and `LinearMap.rid_rTensor_apply`: naturality of the left and
+  right tensor unitors.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
 * `TensorProduct.tmul_multiset_sum`, `TensorProduct.multiset_sum_tmul`: a pure tensor with a
   multiset sum in one factor is the sum of the pure tensors.
+* `TensorProduct.map_neg_left` and `TensorProduct.map_neg_right`: negating either argument of
+  `TensorProduct.map` negates the tensor-product map.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
 * `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
@@ -302,6 +305,14 @@ theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C
 
 end
 
+/-- The left tensor unitor is natural with respect to a linear map in its right factor. -/
+@[simp]
+theorem lid_lTensor_apply (f : M →ₗ[R] N) (t : R ⊗[R] M) :
+    TensorProduct.lid R N (lTensor R f t) = f (TensorProduct.lid R M t) := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-- The right tensor unitor is natural with respect to a linear map in its left factor. -/
 @[simp]
 theorem rid_rTensor_apply (f : M →ₗ[R] N) (t : M ⊗[R] R) :
@@ -439,6 +450,25 @@ theorem map_sub_sub_add_eq {R : Type*} [CommSemiring R] {P : Type*} [AddCommGrou
   simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
     LinearMap.lTensor_def]
   abel
+
+/-- Negating the left map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_left {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommMonoid N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map (-f) g = -map f g := by
+  simpa only [LinearMap.flip_apply, mapBilinear_apply] using
+    map_neg ((mapBilinear σ₁₂ M N M₂ N₂).flip g) f
+
+/-- Negating the right map of `TensorProduct.map` negates the tensor-product map. -/
+@[simp]
+theorem map_neg_right {R₁ R₂ M N M₂ N₂ : Type*} [CommSemiring R₁] [CommSemiring R₂]
+    {σ₁₂ : R₁ →+* R₂} [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₁ N]
+    [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
+    (f : M →ₛₗ[σ₁₂] M₂) (g : N →ₛₗ[σ₁₂] N₂) :
+    map f (-g) = -map f g := by
+  simpa only [mapBilinear_apply] using map_neg (mapBilinear σ₁₂ M N M₂ N₂ f) g
 
 variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
 

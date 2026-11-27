@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
-public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
+public import TauCeti.Analysis.Sobolev.W1p.Interval.VanishingOn
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Data.ENNReal.Inv
 
@@ -24,8 +24,9 @@ particular `t ↦ t - a` lies in `W^{1,p}_{{a}}(a, b)` for finite `p`. At `p = �
 every generator has derivative zero near `a` while `t ↦ t - a` has derivative `1`; so finite `p`
 is assumed.
 
-The restriction of a test function whose support misses `a` vanishes at `a`
-(`TauCeti.W1p.intervalTraceL_restrictL_ofTestFunctionₗ`), and the condition is closed. For the
+Every class of `W^{1,p}_{{a}}(a, b)` vanishes at `a`, for every `p`, as every class of
+`W^{1,p}_Γ(a, b)` vanishes on `[a, b] ∩ closure Γ`
+(`TauCeti.W1p.intervalRepresentativeL_eq_zero_of_mem_w1pVanishingOnSubmodule`). For the
 converse, the affine function `t ↦ t - a` is the restriction to `(a, b)` of the tent
 `(b - a) - |t - b|`, which lies in `W^{1,p}_0(a, 2b - a)`, and restriction maps `W^{1,p}_0` of a
 larger open set missing `Γ` into `W^{1,p}_Γ` (`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`).
@@ -150,30 +151,24 @@ private theorem intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule (hp : p ≠ �
     ring
 
 /-- A class in `W^{1,p}_{{a}}(a, b)` has continuous representative vanishing at `a`, even at
-`p = ∞`: the condition is closed and holds for every generator, whose support misses `a`. -/
+`p = ∞`, as every class of `W^{1,p}_Γ(a, b)` vanishes on `[a, b] ∩ closure Γ`. -/
 theorem intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
     (hu : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a}) :
     (intervalTraceL hab u).1 = 0 := by
-  refine w1pVanishingOnSubmodule_subset_of_isClosed
-    (isClosed_eq (continuous_fst.comp (intervalTraceL hab).continuous) continuous_const)
-    (fun φ hφ ↦ ?_) hu
-  rw [closure_singleton, disjoint_singleton_right] at hφ
-  rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
-  exact (image_eq_zero_of_notMem_tsupport hφ : φ a = 0)
+  rw [intervalTraceL_apply]
+  exact intervalRepresentativeL_eq_zero_of_mem_w1pVanishingOnSubmodule hab hu
+    (subset_closure (mem_singleton a))
 
 /-- A class in `W^{1,p}_{{b}}(a, b)` has continuous representative vanishing at `b`, even at
-`p = ∞`: the condition is closed and holds for every generator, whose support misses `b`. -/
+`p = ∞`, as every class of `W^{1,p}_Γ(a, b)` vanishes on `[a, b] ∩ closure Γ`. -/
 theorem intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
     (hu : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b}) :
     (intervalTraceL hab u).2 = 0 := by
-  refine w1pVanishingOnSubmodule_subset_of_isClosed
-    (isClosed_eq (continuous_snd.comp (intervalTraceL hab).continuous) continuous_const)
-    (fun φ hφ ↦ ?_) hu
-  rw [closure_singleton, disjoint_singleton_right] at hφ
-  rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
-  exact (image_eq_zero_of_notMem_tsupport hφ : φ b = 0)
+  rw [intervalTraceL_apply]
+  exact intervalRepresentativeL_eq_zero_of_mem_w1pVanishingOnSubmodule hab hu
+    (subset_closure (mem_singleton b))
 
 /-- **The trace characterization of `W^{1,p}_{{a}}(a, b)`.** For `1 ≤ p < ∞`, a class lies in the
 space of Sobolev functions vanishing at the endpoint `a` exactly when its continuous representative

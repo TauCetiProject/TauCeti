@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Holder.LowOrder
+import Mathlib.Analysis.InnerProductSpace.LinearMap
+import TauCeti.Analysis.Holder.CompLinear
+import TauCeti.Analysis.Holder.Translation
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# The sine function in the bounded Hölder spaces `C_b^{k,α}(ℝ)`
+# Sine and cosine plane waves in the bounded Hölder spaces `C_b^{k,α}`
 
 The sine function is the basic calibrating element of the spaces `C_b^{k,α}(ℝ)` of bounded `C^k`
 maps with bounded derivatives and globally `α`-Hölder `k`-th derivative
@@ -35,6 +39,10 @@ are never equal: its sum norm is its `C1HolderSpace` norm plus one. By the bound
 
 By contrast `x ↦ x²` lies in no `C_b^{k,α}(ℝ)`, since it is unbounded.
 
+Translating `sin` by `π / 2` and composing with a linear form puts every cosine plane wave
+`x ↦ cos ⟪ξ, x⟫` on a real inner product space in `C_b^{k,α}`; these are the initial data whose
+heat flow is `exp (-t ‖ξ‖²) cos ⟪ξ, x⟫`.
+
 ## Main declarations
 
 * `TauCeti.holderWith_iteratedFDeriv_sin`, `TauCeti.nnHolderNorm_iteratedFDeriv_sin_le`,
@@ -46,6 +54,7 @@ By contrast `x ↦ x²` lies in no `C_b^{k,α}(ℝ)`, since it is unbounded.
   `k + 2` when `π^α < 2`.
 * `TauCeti.CkHolderSpace.norm_eq_norm_equivC1HolderSpace_add_one_of_coe_eq_sin`: at `k = 1` the
   sum norm of `sin` is its `C1HolderSpace` norm plus one.
+* `TauCeti.CkHolderSpace.exists_coe_eq_cos_inner`: `cos ⟪ξ, ·⟫ ∈ C_b^{k,α}(E)` for `α ≤ 1`.
 * `TauCeti.CkHolderSpace.not_exists_coe_eq_sq`: `x ↦ x²` is not in `C_b^{k,α}(ℝ)`.
 
 ## References
@@ -59,7 +68,7 @@ public section
 noncomputable section
 
 open Real
-open scoped NNReal
+open scoped NNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -115,6 +124,15 @@ variable {k : ℕ}
 theorem exists_coe_eq_sin (hα : α ≤ 1) : ∃ f : CkHolderSpace k α ℝ ℝ, ⇑f = sin :=
   ⟨ofContDiff sin contDiff_sin (fun i _ ↦ ⟨1, norm_iteratedFDeriv_sin_le_one i⟩)
     (holderWith_iteratedFDeriv_sin hα k).memHolder, coe_ofContDiff _ _ _ _⟩
+
+/-- For `α ≤ 1` and a vector `ξ` of a real inner product space `E`, the cosine plane wave
+`x ↦ cos ⟪ξ, x⟫` is a bounded `C^{k,α}` map on `E` for every `k`. -/
+theorem exists_coe_eq_cos_inner {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (hα : α ≤ 1) (ξ : E) : ∃ f : CkHolderSpace k α E ℝ, ⇑f = fun x ↦ cos ⟪ξ, x⟫ := by
+  -- `cos ⟪ξ, x⟫ = sin (⟪ξ, x⟫ + π / 2)`: translate `sin`, then compose with `⟪ξ, ·⟫`.
+  obtain ⟨f, hf⟩ := exists_coe_eq_sin (k := k) hα
+  refine ⟨compLinearL (innerSL ℝ ξ) (translateLIE k α ℝ (π / 2) f), funext fun x ↦ ?_⟩
+  rw [compLinearL_apply, translateLIE_apply, hf, innerSL_apply_apply, sin_add_pi_div_two]
 
 /-- Every derivative field of `sin` in `C_b^{k,α}(ℝ)` has supremum norm `1`. -/
 theorem norm_iteratedFDeriv_eq_one_of_coe_eq_sin {f : CkHolderSpace k α ℝ ℝ} (hf : ⇑f = sin)
