@@ -190,6 +190,25 @@ theorem isLittleO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h
   exact mul_le_mul_of_nonneg_left ((Real.rpow_le_rpow_of_exponent_le hn' (Nat.le_ceil _)).trans_eq
     (Real.rpow_natCast _ _)) (by positivity)
 
+/-- The comparison `rⁿ = o(ρⁿ n^α)` for `‖r‖ < ‖ρ‖`. -/
+theorem isLittleO_pow_pow_mul_cpow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖r‖ < ‖ρ‖) :
+    (fun n : ℕ ↦ r ^ n) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
+  set k := ⌈-α.re⌉₊
+  have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) k
+    (show ‖r‖ < ‖ρ‖ from h)
+  refine IsLittleO.of_bound fun ε hε ↦ ?_
+  filter_upwards [hlo.bound hε, eventually_ge_atTop 1] with n hn hn1
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn1
+  simp only [norm_mul, norm_pow, Real.norm_natCast, norm_norm] at hn
+  rw [norm_pow_mul_cpow ρ α (by omega), norm_pow]
+  -- `‖r‖ⁿ ≤ ε ‖ρ‖ⁿ n⁻ᵏ ≤ ε ‖ρ‖ⁿ n^{Re α}`
+  have hpow : ((n : ℝ) ^ k)⁻¹ ≤ (n : ℝ) ^ α.re := by
+    rw [← Real.rpow_natCast, ← Real.rpow_neg (by positivity)]
+    exact Real.rpow_le_rpow_of_exponent_le hn' (by linarith [Nat.le_ceil (-α.re)])
+  calc ‖r‖ ^ n = ((n : ℝ) ^ k * ‖r‖ ^ n) * ((n : ℝ) ^ k)⁻¹ := by field_simp
+    _ ≤ (ε * ‖ρ‖ ^ n) * (n : ℝ) ^ α.re := mul_le_mul hn hpow (by positivity) (by positivity)
+    _ = ε * (‖ρ‖ ^ n * (n : ℝ) ^ α.re) := by ring
+
 variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For `a < b` and any real `c`, `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/

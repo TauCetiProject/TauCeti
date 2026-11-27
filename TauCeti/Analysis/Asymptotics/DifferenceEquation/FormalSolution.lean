@@ -432,6 +432,18 @@ theorem mul_differenceCoeff {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ₀ : ρ * (fs 
     rw [differenceCoeff_succ, ← mul_assoc, Nat.cast_succ,
       mul_inv_cancel₀ (mul_ne_zero hρ₀ (Nat.cast_add_one_ne_zero s)), one_mul]
 
+/-- A root `ρ` of `ρ² + f₀ ρ + g₀ = 0` whose modulus differs from that of the other root `g₀ / ρ`,
+that is `‖ρ‖ ^ 2 ≠ ‖g₀‖`, is nonzero and simple: `ρ (f₀ + 2ρ) ≠ 0`, as
+`TauCeti.mul_differenceCoeff` requires. -/
+theorem mul_ne_zero_of_norm_sq_ne {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ : ρ ^ 2 + fs 0 * ρ + gs 0 = 0)
+    (hne : ‖ρ‖ ^ 2 ≠ ‖gs 0‖) : ρ * (fs 0 + 2 * ρ) ≠ 0 := by
+  refine mul_ne_zero (fun h ↦ hne ?_) fun h ↦ hne ?_
+  · subst h
+    have : gs 0 = 0 := by linear_combination hρ
+    simp [this]
+  · have : gs 0 = ρ ^ 2 := by linear_combination hρ - ρ * h
+    rw [this, norm_pow]
+
 /-- For an equation with constant coefficients, `f n = f₀` and `g n = g₀`, and `α = 0`, all the
 coefficients `aₛ` with `s ≥ 1` vanish, for every `ρ`. So when `ρ` is a root of the characteristic
 equation `ρ² + f₀ ρ + g₀ = 0` (and `α = 0` satisfies DLMF 2.9.6), the formal solution is `ρⁿ`,

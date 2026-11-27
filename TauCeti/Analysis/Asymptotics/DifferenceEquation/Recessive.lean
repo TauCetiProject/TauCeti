@@ -63,8 +63,9 @@ over `k` is dominated by a geometric series in `|ρ|² / γ`, so that
 the expansion needs its own `M`; the solutions so obtained coincide, because the Casoratian of two
 solutions is multiplied by `g n` at each step and so cannot be `O((r ^ 2)ⁿ)` without vanishing.
 
-The solution for the root of larger modulus, and the case of roots of equal modulus, are not
-treated here.
+The solution for the root of larger modulus is constructed in
+`TauCeti.Analysis.Asymptotics.DifferenceEquation.Dominant`; the case of roots of equal modulus is
+not treated.
 
 ## References
 
@@ -526,18 +527,6 @@ theorem difference_solution_unique_of_norm_sq_lt {f g w w' : ℕ → ℂ} {g₀ 
 
 /-! ### The recessive solution -/
 
-/-- The characteristic root `ρ` with `‖ρ‖ ^ 2 < ‖g₀‖` is nonzero and simple. -/
-private lemma mul_ne_zero_of_norm_sq_lt {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ : ρ ^ 2 + fs 0 * ρ + gs 0 = 0)
-    (hlt : ‖ρ‖ ^ 2 < ‖gs 0‖) : ρ * (fs 0 + 2 * ρ) ≠ 0 := by
-  refine mul_ne_zero (fun h ↦ ?_) fun h ↦ ?_
-  · subst h
-    have : gs 0 = 0 := by linear_combination hρ
-    rw [this, norm_zero] at hlt
-    exact (sq_nonneg _).not_gt hlt
-  · have : gs 0 = ρ ^ 2 := by linear_combination hρ - ρ * h
-    rw [this, norm_pow] at hlt
-    exact lt_irrefl _ hlt
-
 /-- For `M ≥ 1` and `a₀ = 1`, the truncation `ρⁿ n^α ∑_{s < M} aₛ n⁻ˢ` is eventually between
 half and twice `|ρ|ⁿ n^{Re α}` in norm. -/
 private lemma eventually_norm_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (ρ α : ℂ)
@@ -566,7 +555,7 @@ private theorem exists_eventually_solution_isBigO {f g fs gs : ℕ → ℂ} {ρ 
       ∀ N' ≤ N, (fun n ↦ w n - formalDifferenceSolution (differenceCoeff fs gs ρ α) ρ α N' n)
         =O[atTop] fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - N') := by
   set a := differenceCoeff fs gs ρ α
-  have hρ₀ := mul_ne_zero_of_norm_sq_lt hρ hlt
+  have hρ₀ := mul_ne_zero_of_norm_sq_ne hρ hlt.ne
   have hR : 0 < ‖ρ‖ := norm_pos_iff.2 (left_ne_zero_of_mul hρ₀)
   -- the comparison function `u` is the truncation after `M` terms
   set M := N + ⌈α.re + 3 * |α.re|⌉₊ + 1
