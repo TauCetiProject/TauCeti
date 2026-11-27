@@ -168,12 +168,11 @@ omit [FiniteDimensional ℝ E] in
 @[simp]
 theorem orthogonalNormalSpace_subtypeVal_sphere (x : sphere (0 : E) 1) :
     orthogonalNormalSpace (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x = ℝ ∙ (x : E) := by
-  rw [orthogonalNormalSpace_def]
-  have h := range_mvfderiv_subtypeVal (n := n) x
-  -- For a map into the vector space `E`, `mfderiv` and `mvfderiv` are the same linear map up to
-  -- the identification `TangentSpace 𝓘(ℝ, E) x = E`; restate the range with `mvfderiv`.
-  change (LinearMap.range (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x).toLinearMap)ᗮ = _
-  rw [h, Submodule.orthogonal_orthogonal]
+  -- Transfer the tangent image of the sphere, computed for `mvfderiv`, to `mfderiv`.
+  rw [orthogonalNormalSpace_def, LinearMap.range_eq_map,
+    ← Submodule.map_mvfderiv_eq_map_mfderiv, ← LinearMap.range_eq_map,
+    range_mvfderiv_subtypeVal (n := n) x]
+  exact (ℝ ∙ (x : E)).orthogonal_orthogonal
 
 /-- The Weingarten pairing of the sphere with the outward position field `ν y = y`: its shape
 operator is `-df`, so `⟪B(X, Y), x⟫ = -⟪X x, Y x⟫`. -/
