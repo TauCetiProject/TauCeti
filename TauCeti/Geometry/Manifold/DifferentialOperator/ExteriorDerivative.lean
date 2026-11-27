@@ -302,11 +302,12 @@ theorem isSectionEllipticAt_mextDerivSection_zero_iff (hx : I.IsInteriorPoint x)
     rw [hrank.1, hrank.2] at h01
     omega
   · -- In dimension one, `0`-covectors and `1`-covectors both form lines.
-    have hpos : 0 < finrank ℝ (TangentSpace I x →L[ℝ] ℝ) :=
+    -- The covector `ξ ≠ 0` lives on `TangentSpace I x`, which is by definition `E`.
+    have hpos : 0 < finrank ℝ (E →L[ℝ] ℝ) :=
       Module.finrank_pos_iff_exists_ne_zero.2 ⟨ξ, hξ⟩
     rw [ContinuousLinearMap.dual_finrank_eq] at hpos
     rw [hrank.1, hrank.2]
-    exact (hE.antisymm hpos).symm
+    omega
 
 end PrincipalSymbol
 
