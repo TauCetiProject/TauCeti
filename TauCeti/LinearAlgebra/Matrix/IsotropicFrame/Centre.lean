@@ -14,7 +14,8 @@ import Mathlib.LinearAlgebra.Matrix.SchurComplement
 /-!
 # Central unipotents along an isotropic frame
 
-For a hermitian Gram matrix `J` and a matrix `k` of isotropic columns, the matrices
+For a hermitian Gram matrix `J` and a matrix `k` with `kᴴ * J * k = 0` (its columns span
+a totally isotropic subspace), the matrices
 `z(M) = 1 + k (M - Mᴴ) kᴴ J` preserve `J`, have determinant one, and fix `k` and its orthogonal
 pointwise. The parameter is additive: `z(M + N) = z(M) z(N)`. Every isometry fixing `k`
 pointwise commutes with them. Thus these are central translations in the unipotent radical
@@ -105,7 +106,7 @@ theorem frameUnipotent_add (hk : kᴴ * J * k = 0) (M N : Matrix p p R) :
   abel
 
 /-- The central translations commute with each other. -/
-theorem frameUnipotent_commute (hk : kᴴ * J * k = 0) (M N : Matrix p p R) :
+theorem commute_frameUnipotent_frameUnipotent (hk : kᴴ * J * k = 0) (M N : Matrix p p R) :
     Commute (J.frameUnipotent k M) (J.frameUnipotent k N) := by
   exact (frameUnipotent_add hk M N).symm.trans (by rw [add_comm, frameUnipotent_add hk])
 
@@ -132,7 +133,7 @@ theorem conjTranspose_frameUnipotent_mul (hJ : J.IsHermitian) (M : Matrix p p R)
   abel
 
 /-- The central translations preserve a hermitian form. -/
-theorem conjTranspose_frameUnipotent_mul_self (hJ : J.IsHermitian)
+theorem conjTranspose_frameUnipotent_mul_mul_frameUnipotent (hJ : J.IsHermitian)
     (hk : kᴴ * J * k = 0) (M : Matrix p p R) :
     (J.frameUnipotent k M)ᴴ * J * J.frameUnipotent k M = J := by
   have hzero := frameUnipotent_sub_one_mul_sub_one hk M M
@@ -147,7 +148,7 @@ theorem conjTranspose_frameUnipotent_mul_self (hJ : J.IsHermitian)
   abel
 
 /-- Changing the coordinates of the isotropic frame acts on parameters by congruence. -/
-theorem frameUnipotent_mul_right [Fintype q] (a : Matrix p q R) (M : Matrix q q R) :
+theorem frameUnipotent_frame_mul [Fintype q] (a : Matrix p q R) (M : Matrix q q R) :
     J.frameUnipotent (k * a) M = J.frameUnipotent k (a * M * aᴴ) := by
   simp [frameUnipotent_def, conjTranspose_mul, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
 
@@ -244,7 +245,7 @@ def frameUnipotentHom (hJ : J.IsHermitian) (hk : kᴴ * J * k = 0) :
     Multiplicative (Matrix p p R) →* J.specialIsometryGroup (starRingEnd R) where
   toFun M := ⟨⟨J.frameUnipotent k M.toAdd, det_frameUnipotent hk M.toAdd⟩,
     mem_specialIsometryGroup_iff.mpr
-      (conjTranspose_frameUnipotent_mul_self hJ hk M.toAdd)⟩
+      (conjTranspose_frameUnipotent_mul_mul_frameUnipotent hJ hk M.toAdd)⟩
   map_one' := by apply specialIsometryGroup_ext; simp
   map_mul' M N := by
     apply specialIsometryGroup_ext
