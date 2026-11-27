@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.Minor
 import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
+import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 
 /-!
 # Principal minors of unitary matrices
@@ -40,22 +41,6 @@ namespace Matrix
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
-/-- The rows of a unitary matrix are unit vectors. -/
-private theorem sum_norm_sq_row {k : Matrix n n 𝕜} (hk : k ∈ unitaryGroup n 𝕜) (i : n) :
-    ∑ j, ‖k i j‖ ^ 2 = 1 := by
-  have h : (k * star k) i i = 1 := by rw [mem_unitaryGroup_iff.mp hk, one_apply_eq]
-  rw [Matrix.mul_apply] at h
-  simp only [star_apply, RCLike.star_def, RCLike.mul_conj] at h
-  exact_mod_cast h
-
-/-- The columns of a unitary matrix are unit vectors. -/
-private theorem sum_norm_sq_col {k : Matrix n n 𝕜} (hk : k ∈ unitaryGroup n 𝕜) (j : n) :
-    ∑ i, ‖k i j‖ ^ 2 = 1 := by
-  have h : (star k * k) j j = 1 := by rw [mem_unitaryGroup_iff'.mp hk, one_apply_eq]
-  rw [Matrix.mul_apply] at h
-  simp only [star_apply, RCLike.star_def, RCLike.conj_mul] at h
-  exact_mod_cast h
-
 /-- **A principal minor of a unitary matrix is small when the matrix moves its coordinates.**
 For a unitary matrix `k`, a finite set `s` of indices and the coordinate projection `P` onto `s`,
 `‖det k_s‖ ^ 2 ≤ exp (-‖[P, k]‖ ^ 2 / 2)`, in the Frobenius norm. -/
@@ -79,11 +64,13 @@ theorem norm_principalMinor_sq_le_exp (k : Matrix n n 𝕜) (hk : k ∈ unitaryG
     by_cases hi : i ∈ s <;> by_cases hj : j ∈ s <;>
       simp [Ring.lie_def, hi, hj, q, one_add_one_eq_two]
   have hrow : ∑ i, ∑ j, q i * ‖k i j‖ ^ 2 = s.card := by
-    simp only [← Finset.mul_sum, sum_norm_sq_row hk, mul_one, q, Finset.sum_boole]
+    simp only [← Finset.mul_sum, sum_norm_sq_row_of_mem_unitaryGroup hk, mul_one, q,
+      Finset.sum_boole]
     simp
   have hcol : ∑ i, ∑ j, q j * ‖k i j‖ ^ 2 = s.card := by
     rw [Finset.sum_comm]
-    simp only [← Finset.mul_sum, sum_norm_sq_col hk, mul_one, q, Finset.sum_boole]
+    simp only [← Finset.mul_sum, sum_norm_sq_col_of_mem_unitaryGroup hk, mul_one, q,
+      Finset.sum_boole]
     simp
   have hsplit : ∑ i, ∑ j, (q i + q j - 2 * q i * q j) * ‖k i j‖ ^ 2 =
       ∑ i, ∑ j, q i * ‖k i j‖ ^ 2 + ∑ i, ∑ j, q j * ‖k i j‖ ^ 2 -

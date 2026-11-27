@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.InnerProductSpace.SchurHorn
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 
 /-!
 # Diagonals of unitary orbits: the Schur–Horn theorem for matrices
@@ -122,14 +123,8 @@ theorem of_norm_sq_mem_doublyStochastic {U : Matrix ι ι 𝕜} (hU : U ∈ unit
     (of fun k i ↦ ‖U k i‖ ^ 2) ∈ doublyStochastic ℝ ι := by
   refine mem_doublyStochastic_iff_sum.2
     ⟨fun _ _ ↦ by rw [of_apply]; positivity, fun k ↦ ?_, fun i ↦ ?_⟩
-  · have h := congr_fun₂ (mem_unitaryGroup_iff.1 hU) k k
-    simp only [Matrix.mul_apply, Matrix.star_apply, RCLike.star_def, RCLike.mul_conj,
-      one_apply_eq] at h
-    simpa only [of_apply] using (by exact_mod_cast h : ∑ j, ‖U k j‖ ^ 2 = 1)
-  · have h := congr_fun₂ (mem_unitaryGroup_iff'.1 hU) i i
-    simp only [Matrix.mul_apply, Matrix.star_apply, RCLike.star_def, RCLike.conj_mul,
-      one_apply_eq] at h
-    simpa only [of_apply] using (by exact_mod_cast h : ∑ k, ‖U k i‖ ^ 2 = 1)
+  · simpa only [of_apply] using sum_norm_sq_row_of_mem_unitaryGroup hU k
+  · simpa only [of_apply] using sum_norm_sq_col_of_mem_unitaryGroup hU i
 
 /-- **Schur's theorem.** For a unitary `U`, the diagonal of `U diag(w) Uᴴ` lies in the convex hull
 of the rearrangements `w ∘ σ` of `w`. -/

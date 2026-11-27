@@ -15,10 +15,13 @@ import TauCeti.LinearAlgebra.Matrix.Triangular
 /-!
 # The trace expansion of the determinant near the identity
 
-For a complex square matrix `Y` of Frobenius norm `‖Y‖ < 1`, the logarithm of `det (1 + Y)` is the
-trace of the logarithm series of `1 + Y`:
-`log det (1 + Y) = ∑ j ≥ 1, (-1) ^ (j + 1) tr (Y ^ j) / j`. This file proves the truncated form
-with an explicit remainder: for `k ≥ 1`,
+For a complex square matrix `Y` of Frobenius norm `‖Y‖ < 1`, the determinant `det (1 + Y)` is the
+exponential of the trace of the logarithm series of `1 + Y`:
+`det (1 + Y) = exp (∑ j ≥ 1, (-1) ^ (j + 1) tr (Y ^ j) / j)`. The series is the analytic logarithm
+of `det (1 + Y)` normalized to vanish at `Y = 0`. It need not be the principal logarithm
+`Complex.log (det (1 + Y))`: the two can differ by a multiple of `2πi`, since in large dimension
+the arguments of the factors `1 + λ` over the eigenvalues `λ` of `Y` can add up to more than `π`.
+This file proves the truncated form with an explicit remainder: for `k ≥ 1`,
 `det (1 + Y) = exp (∑ j ≤ k, (-1) ^ (j + 1) tr (Y ^ j) / j + r)` with
 `‖r‖ ≤ ‖Y‖ ^ (k + 1) / ((k + 1) (1 - ‖Y‖))`.
 
@@ -132,10 +135,13 @@ private theorem exists_det_one_add_eq_exp_sum_trace_pow_aux [LinearOrder n] (Y :
     exact prod_congr rfl fun i _ ↦ (Complex.exp_log (hne i)).symm
   · exact norm_sum_log_sub_logTaylor_le (norm_nonneg _) hY hti hsq hk
 
-/-- **The trace expansion of `log det (1 + Y)` with a remainder independent of the size.** For a
+/-- **The trace expansion of the determinant with a remainder independent of the size.** For a
 complex square matrix `Y` of Frobenius norm `‖Y‖ < 1` and `k ≥ 1`,
 `det (1 + Y) = exp (∑ j ≤ k, (-1) ^ (j + 1) tr (Y ^ j) / j + r)` with
-`‖r‖ ≤ ‖Y‖ ^ (k + 1) / ((k + 1) (1 - ‖Y‖))`. (The term `j = 0` of the sum is `0`.) -/
+`‖r‖ ≤ ‖Y‖ ^ (k + 1) / ((k + 1) (1 - ‖Y‖))`. (The term `j = 0` of the sum is `0`.) The sum
+truncates at order `k` the logarithm series, the analytic logarithm of `det (1 + Y)` normalized to
+vanish at `Y = 0`, which can differ from the principal logarithm `Complex.log (det (1 + Y))` by a
+multiple of `2πi`. -/
 theorem exists_det_one_add_eq_exp_sum_trace_pow [DecidableEq n] (Y : Matrix n n ℂ)
     (hY : ‖Y‖ < 1) {k : ℕ} (hk : 1 ≤ k) :
     ∃ r : ℂ, (1 + Y).det =

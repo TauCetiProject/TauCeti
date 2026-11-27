@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Algebra.Star.StarProjection
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Matrix
+import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Complex.Schwarz
 import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.LogDet.TraceExpansion
@@ -56,6 +59,10 @@ remainder at `w = 1`.
 
 ## Main results
 
+* `Matrix.crossTrace_map_conj`: the cross term is invariant under conjugation by an invertible
+  matrix commuting with `Q`.
+* `Matrix.differentiable_crossTrace`: the cross term of a list of differentiable matrix-valued maps
+  is differentiable.
 * `Matrix.det_one_add_mul_list_prod_exp_sub_one_of_forall_commute`: the exact formula
   `det (1 + Q (∏ exp Aᵢ - 1)) = exp (tr (Q ∑ Aᵢ))` when the `Aᵢ` commute with an idempotent `Q`.
 * `Matrix.exists_det_one_add_mul_list_prod_exp_sub_one_eq_exp_of_sum_norm_le`: the second-order
@@ -90,7 +97,8 @@ variable {𝕜 : Type*} [Field 𝕜]
 
 /-- The second-order cross term of a list `[A₁, …, Aₘ]` of square matrices against `Q`:
 `∑_{i < j} tr (Q Aᵢ (1 - Q) Aⱼ) + ½ ∑ᵢ tr (Q Aᵢ (1 - Q) Aᵢ)`. For an orthogonal projection `Q`
-it is the second-order term of `log det (1 + Q (exp A₁ ⋯ exp Aₘ - 1))` beyond `tr (Q ∑ Aᵢ)`. -/
+it is the second-order term, beyond `tr (Q ∑ Aᵢ)`, of the analytic logarithm of
+`det (1 + Q (exp A₁ ⋯ exp Aₘ - 1))` that vanishes at `A₁ = ⋯ = Aₘ = 0`. -/
 def crossTrace (Q : Matrix n n 𝕜) : List (Matrix n n 𝕜) → 𝕜
   | [] => 0
   | A :: L => (Q * A * (1 - Q) * A).trace / 2 + (Q * A * (1 - Q) * L.sum).trace + crossTrace Q L
@@ -115,7 +123,57 @@ theorem crossTrace_eq_zero_of_forall_commute (Q : Matrix n n 𝕜) (hQ : IsIdemp
         hQ.eq, sub_self, Matrix.mul_zero]
     simp [h0, ih fun B hB ↦ hL B (List.mem_cons_of_mem _ hB)]
 
+/-- The cross term is invariant under conjugation of every matrix of the list by an invertible
+matrix commuting with `Q`. -/
+theorem crossTrace_map_conj {Q U : Matrix n n 𝕜} (hU : IsUnit U) (hQU : Commute Q U)
+    (L : List (Matrix n n 𝕜)) : crossTrace Q (L.map fun A ↦ U * A * U⁻¹) = crossTrace Q L := by
+  have hUU : U⁻¹ * U = 1 := nonsing_inv_mul U ((isUnit_iff_isUnit_det U).mp hU)
+  have hQ' : U⁻¹ * (1 - Q) * U = 1 - Q := by
+    rw [Matrix.mul_assoc, ((Commute.one_left U).sub_left hQU).eq, ← Matrix.mul_assoc, hUU,
+      Matrix.one_mul]
+  -- each term of the conjugated list is the conjugate of the original term
+  have key (X Y : Matrix n n 𝕜) :
+      (Q * (U * X * U⁻¹) * (1 - Q) * (U * Y * U⁻¹)).trace = (Q * X * (1 - Q) * Y).trace := by
+    have h : Q * (U * X * U⁻¹) * (1 - Q) * (U * Y * U⁻¹) = U * (Q * X * (1 - Q) * Y) * U⁻¹ :=
+      calc _ = Q * U * X * (U⁻¹ * (1 - Q) * U) * Y * U⁻¹ := by simp only [Matrix.mul_assoc]
+        _ = _ := by rw [hQ', hQU.eq]; simp only [Matrix.mul_assoc]
+    rw [h, trace_mul_cycle, hUU, Matrix.one_mul]
+  have hsum (L : List (Matrix n n 𝕜)) : (L.map fun A ↦ U * A * U⁻¹).sum = U * L.sum * U⁻¹ := by
+    rw [List.sum_map_mul_right, List.sum_map_mul_left, List.map_id']
+  induction L with
+  | nil => rfl
+  | cons A L ih => simp only [List.map_cons, crossTrace_cons, ih, hsum, key]
+
 end CrossTrace
+
+/-! ### Differentiability of the cross term -/
+
+section Differentiable
+
+variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The cross term of a list of differentiable matrix-valued maps is differentiable (matrices carry
+the Frobenius norm). -/
+theorem differentiable_crossTrace (Q : Matrix n n 𝕜) {f : ι → E → Matrix n n 𝕜} {L : List ι}
+    (hf : ∀ i ∈ L, Differentiable 𝕜 (f i)) :
+    Differentiable 𝕜 fun x ↦ crossTrace Q (L.map fun i ↦ f i x) := by
+  -- the entries of a differentiable matrix-valued map are differentiable
+  have hent {g : E → Matrix n n 𝕜} (hg : Differentiable 𝕜 g) (i j : n) :
+      Differentiable 𝕜 fun x ↦ g x i j :=
+    (ContinuousLinearMap.differentiable
+      (⟨entryLinearMap 𝕜 𝕜 i j, continuous_id.matrix_elem i j⟩ : Matrix n n 𝕜 →L[𝕜] 𝕜)).comp hg
+  induction L with
+  | nil => simp
+  | cons a L ih =>
+    have hL : ∀ i ∈ L, Differentiable 𝕜 (f i) := fun i hi ↦ hf i (List.mem_cons_of_mem a hi)
+    have ha := hent (hf a List.mem_cons_self)
+    have hs := hent (differentiable_list_sum L hL)
+    have ih' := ih hL
+    simp only [List.map_cons, crossTrace_cons, Matrix.trace, diag_apply, Matrix.mul_apply,
+      div_eq_mul_inv]
+    fun_prop
+
+end Differentiable
 
 /-! ### Matrices commuting with the projection -/
 
@@ -376,24 +434,6 @@ private theorem sum_map_conj (L : List (Matrix n n ℂ)) :
     (L.map fun A ↦ U * A * U).sum = U * L.sum * U := by
   rw [List.sum_map_mul_right, List.sum_map_mul_left, List.map_id']
 
-private theorem crossTrace_map_conj (hU : U * U = 1) {Q : Matrix n n ℂ} (hQU : Commute Q U)
-    (L : List (Matrix n n ℂ)) : crossTrace Q (L.map fun A ↦ U * A * U) = crossTrace Q L := by
-  have hQ' : U * (1 - Q) * U = 1 - Q := by
-    rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one, hU, conj_of_commute hU hQU]
-  have key (X Y : Matrix n n ℂ) :
-      (Q * (U * X * U) * (1 - Q) * (U * Y * U)).trace = (Q * X * (1 - Q) * Y).trace := by
-    have hl : Q * (U * X * U) = U * (Q * X) * U := by
-      conv_lhs => rw [← conj_of_commute hU hQU]
-      exact conj_mul_conj hU Q X
-    have hr : (1 - Q) * (U * Y * U) = U * ((1 - Q) * Y) * U := by
-      conv_lhs => rw [← hQ']
-      exact conj_mul_conj hU _ _
-    rw [Matrix.mul_assoc (Q * (U * X * U)), hr, hl, conj_mul_conj hU, trace_mul_cycle, hU,
-      Matrix.one_mul, ← Matrix.mul_assoc]
-  induction L with
-  | nil => rfl
-  | cons A L ih => simp only [List.map_cons, crossTrace_cons, ih, sum_map_conj, key]
-
 private theorem det_one_add_mul_conj_sub_one (hU : U * U = 1) {Q : Matrix n n ℂ}
     (hQU : Commute Q U) (M : Matrix n n ℂ) :
     (1 + Q * (U * M * U - 1)).det = (1 + Q * (M - 1)).det := by
@@ -406,56 +446,6 @@ private theorem det_one_add_mul_conj_sub_one (hU : U * U = 1) {Q : Matrix n n �
   rw [e, det_mul, det_mul, mul_right_comm, ← det_mul, hU, det_one, one_mul]
 
 end Conj
-
-/-! ### Differentiability along a complex parameter -/
-
-section Differentiable
-
-private theorem differentiable_det_comp {f : ℂ → Matrix n n ℂ} (hf : Differentiable ℂ f) :
-    Differentiable ℂ fun w ↦ (f w).det := by
-  have h (i j : n) : Differentiable ℂ fun w ↦ f w i j :=
-    ((entryLinearMap ℂ ℂ i j).toContinuousLinearMap.differentiable).comp hf
-  simp only [det_apply]
-  fun_prop
-
-omit [DecidableEq n] in
-private theorem differentiable_trace_comp {f : ℂ → Matrix n n ℂ} (hf : Differentiable ℂ f) :
-    Differentiable ℂ fun w ↦ (f w).trace :=
-  ((traceLinearMap n ℂ ℂ).toContinuousLinearMap.differentiable).comp hf
-
-variable {ι : Type*} {f : ι → ℂ → Matrix n n ℂ}
-
-private theorem differentiable_list_prod (hf : ∀ i, Differentiable ℂ (f i)) (L : List ι) :
-    Differentiable ℂ fun w ↦ (L.map fun i ↦ f i w).prod := by
-  induction L with
-  | nil => simp
-  | cons a L ih =>
-    simp only [List.map_cons, List.prod_cons]
-    have ha := hf a
-    fun_prop
-
-private theorem differentiable_list_sum {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {g : ι → ℂ → E} (hg : ∀ i, Differentiable ℂ (g i)) (L : List ι) :
-    Differentiable ℂ fun w ↦ (L.map fun i ↦ g i w).sum := by
-  induction L with
-  | nil => simp
-  | cons a L ih =>
-    simp only [List.map_cons, List.sum_cons]
-    exact (hg a).add ih
-
-private theorem differentiable_crossTrace (Q : Matrix n n ℂ) (hf : ∀ i, Differentiable ℂ (f i))
-    (L : List ι) : Differentiable ℂ fun w ↦ crossTrace Q (L.map fun i ↦ f i w) := by
-  induction L with
-  | nil => simp
-  | cons a L ih =>
-    simp only [List.map_cons, crossTrace_cons]
-    have ha := hf a
-    have hs := differentiable_list_sum hf L
-    refine (((differentiable_trace_comp ?_).div_const 2).add (differentiable_trace_comp ?_)).add ih
-    · exact (((differentiable_const Q).mul ha).mul (differentiable_const _)).mul ha
-    · exact (((differentiable_const Q).mul ha).mul (differentiable_const _)).mul hs
-
-end Differentiable
 
 /-! ### The reflection `2 Q - 1` -/
 
@@ -554,15 +544,22 @@ private theorem differentiable_remFactor (Q : Matrix n n ℂ) (L : List (Matrix 
     fun_prop
   have he (A : Matrix n n ℂ) : Differentiable ℂ fun w ↦ exp (reflPath Q A w) := fun w ↦
     (NormedSpace.exp_analytic (𝕂 := ℂ) _).differentiableAt.comp w (hp A w)
-  have hdet : Differentiable ℂ fun w ↦
-      (1 + Q * ((L.map fun A ↦ exp (reflPath Q A w)).prod - 1)).det :=
-    differentiable_det_comp ((differentiable_const _).add
-      ((differentiable_const _).mul ((differentiable_list_prod he L).sub (differentiable_const _))))
-  have htr :=
-    differentiable_trace_comp ((differentiable_const Q).mul (differentiable_list_sum hp L))
+  have hprod : Differentiable ℂ fun w ↦ (L.map fun A ↦ exp (reflPath Q A w)).prod := fun w ↦
+    (HasFDerivAt.list_prod' fun A _ ↦ (he A w).hasFDerivAt).differentiableAt
+  -- a holomorphic matrix-valued map has holomorphic, hence smooth, entries
+  have hdet {M : ℂ → Matrix n n ℂ} (hM : Differentiable ℂ M) :
+      Differentiable ℂ fun w ↦ (M w).det :=
+    (ContDiff.matrix_det fun i j ↦ (entryLinearMap ℂ ℂ i j).toContinuousLinearMap.contDiff.comp
+      (hM.contDiff (n := 1))).differentiable one_ne_zero
+  have htr : Differentiable ℂ fun w ↦ (Q * (L.map fun A ↦ reflPath Q A w).sum).trace :=
+    (ContinuousLinearMap.differentiable
+      (⟨traceLinearMap n ℂ ℂ, continuous_id.matrix_trace⟩ : Matrix n n ℂ →L[ℂ] ℂ)).comp
+      ((differentiable_const Q).mul (differentiable_list_sum L fun A _ ↦ hp A))
   unfold remFactor
   simp only [List.map_map, Function.comp_def]
-  exact hdet.mul (((htr.add (differentiable_crossTrace Q hp L)).neg).cexp)
+  exact (hdet ((differentiable_const _).add ((differentiable_const _).mul
+    (hprod.sub (differentiable_const _))))).mul
+    (((htr.add (differentiable_crossTrace Q fun A _ ↦ hp A)).neg).cexp)
 
 /-- `remFactor` is even, by conjugation with the reflection `2 Q - 1`. -/
 private theorem remFactor_neg (hQ : IsIdempotentElem Q) (L : List (Matrix n n ℂ)) (w : ℂ) :
@@ -575,8 +572,10 @@ private theorem remFactor_neg (hQ : IsIdempotentElem Q) (L : List (Matrix n n �
       (L.map fun A ↦ reflPath Q A w).map fun B ↦ U * B * U := by
     simp only [List.map_map, Function.comp_def]
     exact List.map_congr_left fun A _ ↦ (conj_path hU A w).symm
+  have hc := crossTrace_map_conj ⟨⟨U, U, hU, hU⟩, rfl⟩ hQU (L.map fun A ↦ reflPath Q A w)
+  rw [Matrix.inv_eq_left_inv hU] at hc
   rw [remFactor, remFactor, hL, prod_map_exp_conj hU, det_one_add_mul_conj_sub_one hU hQU,
-    sum_map_conj, trace_mul_conj hU hQU, crossTrace_map_conj hU hQU]
+    sum_map_conj, trace_mul_conj hU hQU, hc]
 
 /-- At `w = 0` every matrix of the path commutes with `Q`, and `remFactor` is `1`. -/
 private theorem remFactor_zero (hQ : IsIdempotentElem Q) (L : List (Matrix n n ℂ)) :

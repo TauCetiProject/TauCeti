@@ -15,6 +15,10 @@ by functions `𝕜`-differentiable on `Ω ⊆ E`, then the finite sum `∑ i ∈
 uniformly approximable on `K` by functions `𝕜`-differentiable on `Ω`
 (`TauCeti.exists_differentiableOn_norm_sum_sub_lt`).
 
+A list sum `x ↦ (l.map fun i ↦ f i x).sum` of differentiable functions is differentiable, even
+when the list has repeated entries (`differentiable_list_sum`, the counterpart of Mathlib's
+`continuous_list_sum`).
+
 For a linear family of functions `P : Λ →ₗ[R] E → F`, moving the parameter from `p` to
 `p + s • q` subtracts `s • P q` from `g - P p` (`LinearMap.sub_map_add_smul`), and so subtracts
 `s • d(P q)_x` from the differential of `g - P p` at `x` (`LinearMap.fderiv_sub_map_add_smul`).
@@ -25,6 +29,15 @@ corresponding point of the segment between their derivatives
 -/
 
 public section
+
+/-- A list sum of differentiable functions is differentiable, allowing repetitions. -/
+theorem differentiable_list_sum {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : ι → E → F} (l : List ι) (h : ∀ i ∈ l, Differentiable 𝕜 (f i)) :
+    Differentiable 𝕜 fun x ↦ (l.map fun i ↦ f i x).sum := by
+  classical
+  simp only [Finset.sum_list_map_count]
+  exact Differentiable.fun_sum fun i hi ↦ (h i (List.mem_toFinset.mp hi)).const_smul (l.count i)
 
 namespace TauCeti
 
