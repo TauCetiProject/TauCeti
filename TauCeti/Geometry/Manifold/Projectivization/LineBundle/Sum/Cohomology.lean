@@ -216,10 +216,10 @@ theorem isZero_holomorphicSectionCechCohomology_twistSumCore {p : ℕ}
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
       (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber p) := by
   classical
-  exact (isBilimitOfPreserves (sheafToPresheaf (Opens.grothendieckTopology
-      (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) _ ⋙
+  exact Bicone.isZero_pt_of_isLimit (isBilimitOfPreserves (sheafToPresheaf
+    (Opens.grothendieckTopology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) _ ⋙
     Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) p)
-      (twistSumSheafBiconeIsBilimit k)).isZero_pt h
+      (twistSumSheafBiconeIsBilimit k)).isLimit h
 
 /-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf of
 holomorphic sections of the split bundle `⨁ₗ 𝒪(k l)` on the complex projective line vanishes as
