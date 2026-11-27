@@ -94,6 +94,16 @@ theorem map_star (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
     map f (star x) = star (map f x) := by
   simp only [star_def, map_reverse, map_involute]
 
+/-- The Clifford equivalence induced by a quadratic isometry commutes with conjugation. -/
+theorem equivOfIsometry_star (e : Q₁.IsometryEquiv Q₂) (x : CliffordAlgebra Q₁) :
+    equivOfIsometry e (star x) = star (equivOfIsometry e x) := by
+  simp only [equivOfIsometry_apply, map_star]
+
+/-- The Clifford equivalence induced by a quadratic isometry intertwines grade involutions. -/
+theorem equivOfIsometry_involute (e : Q₁.IsometryEquiv Q₂) (x : CliffordAlgebra Q₁) :
+    equivOfIsometry e (involute x) = involute (equivOfIsometry e x) := by
+  simp only [equivOfIsometry_apply, map_involute]
+
 /-- A quadratic isometry maps each piece `evenOdd Q₁ i` of the `ℤ/2`-grading into
 `evenOdd Q₂ i`. -/
 theorem map_evenOdd_le (f : Q₁ →qᵢ Q₂) (i : ZMod 2) :

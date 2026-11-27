@@ -52,12 +52,16 @@ theorem cliffordAlgEquiv_ι (g : unitary (V →L[ℝ] V)) (v : V) :
   simp only [cliffordAlgEquiv_def, CliffordAlgebra.equivOfIsometry_ι,
     LinearIsometryEquiv.negNormSqFormIsometryEquiv_apply, hv]
 
-private theorem cliffordAlgEquiv_one : cliffordAlgEquiv (1 : unitary (V →L[ℝ] V)) =
+/-- The identity orthogonal transformation induces the identity Clifford automorphism. -/
+@[simp]
+theorem cliffordAlgEquiv_one : cliffordAlgEquiv (1 : unitary (V →L[ℝ] V)) =
     AlgEquiv.refl := by
   simp [cliffordAlgEquiv_def, LinearIsometryEquiv.one_def]
 
-private theorem cliffordAlgEquiv_mul (g h : unitary (V →L[ℝ] V)) :
-    cliffordAlgEquiv (g * h) = (cliffordAlgEquiv h).trans (cliffordAlgEquiv g) := by
+/-- Composition of the induced Clifford automorphisms corresponds to orthogonal multiplication. -/
+@[simp]
+theorem cliffordAlgEquiv_mul (g h : unitary (V →L[ℝ] V)) :
+    (cliffordAlgEquiv h).trans (cliffordAlgEquiv g) = cliffordAlgEquiv (g * h) := by
   simp [cliffordAlgEquiv_def, LinearIsometryEquiv.mul_def]
 
 /-- The orthogonal group acts by semiring automorphisms extending its action on generators. -/
@@ -68,7 +72,7 @@ instance instMulSemiringActionCliffordAlgebra : MulSemiringAction (unitary (V �
   smul_one g := map_one (cliffordAlgEquiv g)
   smul_mul g := map_mul (cliffordAlgEquiv g)
   one_smul x := by exact DFunLike.congr_fun cliffordAlgEquiv_one x
-  mul_smul g h x := by exact DFunLike.congr_fun (cliffordAlgEquiv_mul g h) x
+  mul_smul g h x := by exact DFunLike.congr_fun (cliffordAlgEquiv_mul g h).symm x
 
 /-- A Clifford algebra action by orthogonal transformations commutes with real scalars. -/
 instance instSMulCommClassCliffordAlgebra : SMulCommClass (unitary (V →L[ℝ] V)) ℝ C where
@@ -77,6 +81,18 @@ instance instSMulCommClassCliffordAlgebra : SMulCommClass (unitary (V →L[ℝ] 
 /-- The action on Clifford elements is the induced algebra automorphism. -/
 theorem smul_clifford_eq (g : unitary (V →L[ℝ] V)) (x : C) :
     g • x = cliffordAlgEquiv g x := (rfl)
+
+/-- Orthogonal transformations commute with Clifford conjugation. -/
+@[simp]
+theorem smul_clifford_star (g : unitary (V →L[ℝ] V)) (x : C) :
+    g • star x = star (g • x) := by
+  simp only [smul_clifford_eq, cliffordAlgEquiv_def, CliffordAlgebra.equivOfIsometry_star]
+
+/-- Orthogonal transformations commute with the Clifford grade involution. -/
+@[simp]
+theorem smul_clifford_involute (g : unitary (V →L[ℝ] V)) (x : C) :
+    g • CliffordAlgebra.involute x = CliffordAlgebra.involute (g • x) := by
+  simp only [smul_clifford_eq, cliffordAlgEquiv_def, CliffordAlgebra.equivOfIsometry_involute]
 
 end Algebra
 
