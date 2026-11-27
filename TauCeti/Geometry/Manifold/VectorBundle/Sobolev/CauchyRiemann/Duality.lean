@@ -127,14 +127,13 @@ private theorem chartDensity_pos {i : Fin A.n} {z : ℂ} (hz : z ∈ A.image i) 
 
 variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
 /-- **Integration in chart `i`.** If `f` vanishes off the points read in chart `i` inside an open
-subset `Q` of the chart image, its integral against the Riemannian volume is the integral over `Q`
+subset `Q` of the chart target, its integral against the Riemannian volume is the integral over `Q`
 of `f` read in the chart, weighted by the chart density. -/
 private theorem integral_riemannianVolume_eq_setIntegral_chart {i : Fin A.n} {Q : Opens ℂ}
-    (hQ : (Q : Set ℂ) ⊆ A.image i) {f : M → ℝ} (hf : ∀ x ∉ (A.chart i).symm '' Q, f x = 0) :
+    (hQt : (Q : Set ℂ) ⊆ (A.chart i).target) {f : M → ℝ}
+    (hf : ∀ x ∉ (A.chart i).symm '' Q, f x = 0) :
     ∫ x, f x ∂riemannianVolume 𝓘(ℝ, ℂ) M =
       ∫ z in Q, chartDensity A i z * f ((A.chart i).symm z) := by
-  have hQt : (Q : Set ℂ) ⊆ (A.chart i).target := fun z hz ↦
-    (A.image_subset_target_inter_preimage_baseSet i (hQ hz)).1
   have hSs : (A.chart i).symm '' Q ⊆ (A.chart i).source := by
     rintro _ ⟨z, hz, rfl⟩
     exact (A.chart i).map_target (hQt hz)
@@ -187,19 +186,40 @@ omit [T2Space M] [FiniteDimensional ℝ F] [RiemannianBundle fun x : M ↦ Tange
   [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
   [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
   [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
-/-- On the image of chart `i`, a one-form at the point read at `z` is recovered from its reading
-by the inverse of the trivialization. -/
-private theorem symmL_coord_tangentHom {i : Fin A.n} {z : ℂ} (hz : z ∈ A.image i)
+/-- At a point of the base set of the trivialization of one-forms, a one-form is recovered from its
+reading in chart `i` by the inverse of the trivialization. -/
+private theorem symmL_coord_tangentHom {i : Fin A.n} {z : ℂ}
+    (hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet)
     (t : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :
     (A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (A.tangentHom.coord i t z) =
       t ((A.chart i).symm z) := by
-  have hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet := by
-    have := A.tangentHom.image_subset_target_inter_preimage_baseSet i
-    rw [image_tangentHom] at this
-    exact (this hz).2
   rw [Trivialization.symmL_apply _ hb]
   exact (congrArg _ (A.tangentHom.coord_def i t z)).trans
     (Trivialization.symm_apply_apply_mk _ hb _)
+
+omit [T2Space M] [FiniteDimensional ℝ F] [RiemannianBundle fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x]
+  [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
+/-- A multiple of the one-form that reads in chart `i` as the antilinear maps with values `R z` at
+`1`, and vanishes off the chart domain, is a `(0,1)`-form. -/
+private theorem isZeroOneForm_smul_chartSection {i : Fin A.n} (R : ℂ → F) (c : ℝ) (x : M) :
+    (ofComplexManifold ℂ M).IsZeroOneForm
+      (c • A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z)) x) := by
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  set η := A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z))
+  have hηx : (ofComplexManifold ℂ M).IsZeroOneForm (η x) := by
+    by_cases hx : x ∈ A.dom i
+    · have hy : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
+      have hη : A.tangentHom.coord i η (A.chart i x) = antilinearOfOneL F (R (A.chart i x)) :=
+        coord_chartSection _ (by rwa [image_tangentHom])
+      have h := (A.isZeroOneForm_iff_coord_tangentHom i η hy).2 fun v ↦ by
+        rw [hη, ContinuousLinearMap.antilinearOfOneL_apply_I_smul]
+      rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
+    · rw [show η x = 0 from chartSection_eq_zero fun h ↦ (hx h).elim]
+      exact isZeroOneForm_iff.2 fun v ↦ by simp
+  refine isZeroOneForm_iff.2 fun v ↦ ?_
+  simp only [smul_apply, isZeroOneForm_iff.1 hηx v, smul_neg, smul_comm c Complex.I]
 
 omit [T2Space M] in
 /-- **One chart of the representing form.** Let `Q₀ ⊆ Q₁` be open subsets of the image of chart
@@ -231,9 +251,10 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
         Λ (zeroOnePartSobolevL A volume p 0
             (SobolevSection.contMDiffSMulL A.tangentHom volume p 0 hχs w)) =
           ∫ x, (ζ x).hilbertSchmidtInner (s x) ∂riemannianVolume 𝓘(ℝ, ℂ) M := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  have himage := A.tangentHom.image_subset_target_inter_preimage_baseSet i
+  rw [image_tangentHom] at himage
   -- The values at `1` of the representing form, in chart `i`: `g / ρ` through the Gram form.
-  obtain ⟨R, hR, hRg⟩ := A.exists_contDiffOn_hilbertSchmidtInner_eq i hQ₁
+  obtain ⟨R, hR, hRg⟩ := A.exists_contDiffOn_hilbertSchmidtInner_eq i (hQ₁.trans himage)
     (g := fun z ↦ (chartDensity A i z)⁻¹ • g z)
     ((((contDiffOn_chartDensity A i).mono hQ₁).inv fun z hz ↦
       (chartDensity_pos A (hQ₁ hz)).ne').smul hg)
@@ -248,24 +269,15 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
     refine ⟨A.symm_mem_dom hzi, show A.chart i ((A.chart i).symm z) ∈ Q₁ from ?_⟩
     rw [(A.chart i).right_inv (A.image_subset_target_inter_preimage_baseSet i hzi).1]
     exact hQ₀₁ hz
-  · -- `η` is a `(0,1)`-form: in chart `i` it reads as antilinear maps, and it vanishes off it.
-    have hηx : (ofComplexManifold ℂ M).IsZeroOneForm (η x) := by
-      by_cases hx : x ∈ A.dom i
-      · have hy : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
-        have h := (A.isZeroOneForm_iff_coord_tangentHom i η hy).2 fun v ↦ by
-          rw [hη _ hy, ContinuousLinearMap.antilinearOfOneL_apply_I_smul]
-        rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
-      · rw [show η x = 0 from chartSection_eq_zero fun h ↦ (hx h).elim]
-        exact isZeroOneForm_iff.2 fun v ↦ by simp
-    refine isZeroOneForm_iff.2 fun v ↦ ?_
-    simp only [smul_apply, isZeroOneForm_iff.1 hηx v, smul_neg, smul_comm (χ x) Complex.I]
+  · exact isZeroOneForm_smul_chartSection A R (χ x) x
   · -- `w` vanishes off the points read in chart `i` inside `Q₁`, where `Λ` is represented by `θ`.
     have hmem := SobolevSection.aeZeroOff_mono (hχ.trans (image_mono hQ₀₁))
       (zeroOnePartSobolevL_mem_aeZeroOff (SobolevSection.contMDiffSMulL_mem_aeZeroOff hχs
         (w : SobolevSection A.tangentHom volume p 0)))
     have hQ₁s : (Q₁ : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
       rwa [sectionChartData_image_tangentHom]
-    rw [hrep _ hmem, integral_riemannianVolume_eq_setIntegral_chart A hQ₁ fun x hx ↦ by
+    rw [hrep _ hmem, integral_riemannianVolume_eq_setIntegral_chart A
+      (fun z hz ↦ (A.image_subset_target_inter_preimage_baseSet i (hQ₁ hz)).1) fun x hx ↦ by
       beta_reduce
       rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (image_mono hQ₀₁ (hχ h)), zero_smul,
         ContinuousLinearMap.hilbertSchmidtInner_zero_left]]
@@ -281,12 +293,13 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
       ae_restrict_of_ae_restrict_of_subset hQ₁s (mem_zeroOneSobolevSections_iff.1 w.prop i),
       ae_restrict_mem Q₁.isOpen.measurableSet] with z hθz h₁ h₂ h₃ hw hz
     have hzi := hQ₁ hz
+    -- The charts of the atlas of one-forms are those of `A`, by definition.
     have h₂' : _ = χ ((A.chart i).symm z) • _ := h₂
     rw [h₃] at hw
     rw [hθz, h₁, h₂', h₃, map_smul, ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 hw,
       ContinuousLinearMap.hilbertSchmidtInner_smul_left,
-      ← symmL_coord_tangentHom A hzi η, ← symmL_coord_tangentHom A hzi s, hη z hzi,
-      hRg z hz _ hw]
+      ← symmL_coord_tangentHom A (himage hzi).2 η, ← symmL_coord_tangentHom A (himage hzi).2 s,
+      hη z hzi, hRg z hz _ hw]
     simp only [smul_apply, map_smul, smul_eq_mul]
     field_simp [(chartDensity_pos A hzi).ne']
 

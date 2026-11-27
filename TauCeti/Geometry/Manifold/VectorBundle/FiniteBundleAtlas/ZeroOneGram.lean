@@ -22,8 +22,8 @@ In chart `i`, a `V`-valued one-form at the point read at `z` is read as a real l
 
 The Hilbert–Schmidt inner product of the one-forms read as the antilinear maps with values `u` and
 `v` at `1` is a bilinear form on `F`, the *chart Gram form*
-(`TauCeti.FiniteBundleAtlas.chartZeroOneGram`). It is smooth in `z`
-(`TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOneGram`) and nondegenerate on the chart image
+(`TauCeti.FiniteBundleAtlas.chartZeroOneGram`). Where the trivialization of one-forms is defined,
+it is smooth in `z` (`TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOneGram`) and nondegenerate
 (`TauCeti.FiniteBundleAtlas.isInvertible_chartZeroOneGram`), since the Hilbert–Schmidt inner
 product is positive definite. Inverting it represents a smooth covector field `g` on `F` by a
 smooth field `R` of values at `1`: the pairing of the one-form read as `antilinearOfOneL (R z)`
@@ -37,8 +37,9 @@ pairings `∫ g z (a z 1) dz` of `(0,1)`-forms into Hilbert–Schmidt pairings o
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOneGram`: it is smooth on the chart image.
-* `TauCeti.FiniteBundleAtlas.isInvertible_chartZeroOneGram`: it is invertible on the chart image.
+* `TauCeti.FiniteBundleAtlas.contDiffOn_chartZeroOneGram`: it is smooth where the trivialization of
+  one-forms is defined.
+* `TauCeti.FiniteBundleAtlas.isInvertible_chartZeroOneGram`: it is invertible there.
 * `TauCeti.FiniteBundleAtlas.exists_contDiffOn_hilbertSchmidtInner_eq`: smooth covector fields are
   represented through the Hilbert–Schmidt inner product.
 -/
@@ -101,13 +102,11 @@ private theorem antilinearOfOneL_injective : Function.Injective (antilinearOfOne
     simpa only [ContinuousLinearMap.antilinearOfOneL_apply_apply_one] using
       congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h
 
-/-- **The chart Gram form is invertible** at every point of the image of chart `i`. -/
-theorem isInvertible_chartZeroOneGram {z : ℂ} (hz : z ∈ A.image i) :
+/-- **The chart Gram form is invertible** at every `z` read in chart `i` from a point of the base
+set of the trivialization of one-forms. -/
+theorem isInvertible_chartZeroOneGram {z : ℂ}
+    (hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet) :
     (A.chartZeroOneGram i z).IsInvertible := by
-  have hb : (A.chart i).symm z ∈ (A.tangentHom.triv i).baseSet := by
-    have := A.tangentHom.image_subset_target_inter_preimage_baseSet i
-    rw [image_tangentHom] at this
-    exact (this hz).2
   have hinj : Function.Injective (A.chartZeroOneGram i z) := by
     refine (injective_iff_map_eq_zero _).2 fun u hu ↦ antilinearOfOneL_injective ?_
     have h0 := congrArg (fun L : F →L[ℝ] ℝ ↦ L u) hu
@@ -138,9 +137,11 @@ private theorem contMDiffOn_symm_const
   e.contMDiffOn_section_baseSet_iff.2 <|
     contMDiffOn_const.congr fun _ hy ↦ by rw [e.apply_mk_symm hy L]
 
-/-- **The chart Gram form is smooth** on the image of chart `i`. -/
+/-- **The chart Gram form is smooth** on the points of the target of chart `i` read from the base
+set of the trivialization of one-forms. -/
 theorem contDiffOn_chartZeroOneGram :
-    ContDiffOn ℝ ∞ (A.chartZeroOneGram i) (A.image i) := by
+    ContDiffOn ℝ ∞ (A.chartZeroOneGram i)
+      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.tangentHom.triv i).baseSet) := by
   set e := A.tangentHom.triv i
   refine contDiffOn_clm_apply.2 fun u ↦ contDiffOn_clm_apply.2 fun v ↦ ?_
   simp only [chartZeroOneGram_apply_apply]
@@ -152,20 +153,20 @@ theorem contDiffOn_chartZeroOneGram :
     (((contMDiffOn_symm_const e _).contMDiffAt hy').hilbertSchmidtInner_bundle
       ((contMDiffOn_symm_const e _).contMDiffAt hy')).contMDiffWithinAt
   rw [← contMDiffOn_iff_contDiffOn]
-  have himage := A.tangentHom.image_subset_target_inter_preimage_baseSet i
-  rw [image_tangentHom] at himage
-  refine (hφ.comp (contMDiffOn_chart_symm.mono fun z hz ↦ (himage hz).1)
-    fun z hz ↦ (himage hz).2).congr fun z hz ↦ ?_
-  have hb : (A.chart i).symm z ∈ e.baseSet := (himage hz).2
+  refine (hφ.comp (contMDiffOn_chart_symm.mono inter_subset_left) fun z hz ↦ hz.2).congr
+    fun z hz ↦ ?_
+  have hb : (A.chart i).symm z ∈ e.baseSet := hz.2
   exact congrArg₂ ContinuousLinearMap.hilbertSchmidtInner (Trivialization.symmL_apply _ hb _)
     (Trivialization.symmL_apply _ hb _)
 
-/-- **Representing a chart covector field.** Let `W` be a subset of the image of chart `i` and `g`
-a covector field on `F` that is smooth on `W`. There is a field `R : ℂ → F`, smooth on `W`, such
-that at every `z ∈ W` the one-form read as the antilinear map `antilinearOfOneL (R z)` pairs with
-every one-form read as a complex antilinear map `a` to `g z (a 1)`, under the Hilbert–Schmidt
-inner product. -/
-theorem exists_contDiffOn_hilbertSchmidtInner_eq {W : Set ℂ} (hW : W ⊆ A.image i)
+/-- **Representing a chart covector field.** Let `W` be a set of points of the target of chart `i`
+read from the base set of the trivialization of one-forms, for instance a subset of the image of
+chart `i`, and `g` a covector field on `F` that is smooth on `W`. There is a field `R : ℂ → F`,
+smooth on `W`, such that at every `z ∈ W` the one-form read as the antilinear map
+`antilinearOfOneL (R z)` pairs with every one-form read as a complex antilinear map `a` to
+`g z (a 1)`, under the Hilbert–Schmidt inner product. -/
+theorem exists_contDiffOn_hilbertSchmidtInner_eq {W : Set ℂ}
+    (hW : W ⊆ (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.tangentHom.triv i).baseSet)
     {g : ℂ → F →L[ℝ] ℝ} (hg : ContDiffOn ℝ ∞ g W) :
     ∃ R : ℂ → F, ContDiffOn ℝ ∞ R W ∧ ∀ z ∈ W, ∀ a : ℂ →L[ℝ] F,
       (∀ w, a (Complex.I • w) = -(Complex.I • a w)) →
@@ -174,11 +175,11 @@ theorem exists_contDiffOn_hilbertSchmidtInner_eq {W : Set ℂ} (hW : W ⊆ A.ima
             ((A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) a) = g z (a 1) := by
   refine ⟨fun z ↦ (A.chartZeroOneGram i z).inverse (g z), ?_, fun z hz a ha ↦ ?_⟩
   · refine ContDiffOn.clm_apply (fun z hz ↦ ?_) hg
-    exact (isInvertible_chartZeroOneGram A i (hW hz)).contDiffAt_map_inverse.comp_contDiffWithinAt
+    exact (isInvertible_chartZeroOneGram A i (hW hz).2).contDiffAt_map_inverse.comp_contDiffWithinAt
       z ((contDiffOn_chartZeroOneGram A i).mono hW z hz)
   · rw [← ContinuousLinearMap.antilinearOfOneL_apply_eq_of_antilinear a ha,
       ← chartZeroOneGram_apply_apply,
-      (isInvertible_chartZeroOneGram A i (hW hz)).self_apply_inverse,
+      (isInvertible_chartZeroOneGram A i (hW hz).2).self_apply_inverse,
       ContinuousLinearMap.antilinearOfOneL_apply_apply_one]
 
 end FiniteBundleAtlas
