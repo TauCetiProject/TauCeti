@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.ComapDomain
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.CentralCharacter
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Sylow
 public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Correspondent
@@ -15,7 +16,7 @@ public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.NormalPSubgr
 
 Let `k` be a field of characteristic `p`, `G` a finite group and `f : H →* G` injective, for
 instance the inclusion of a subgroup. For `z ∈ k[G]`, `z_H ∈ k[H]` keeps the coefficients on `H`
-(`TauCeti.comapDomainLinearMap`); it maps `Z(k[G])` to `Z(k[H])`
+(`MonoidAlgebra.comapDomainLinearMap`); it maps `Z(k[G])` to `Z(k[H])`
 (`TauCeti.centerComapDomain`). A block `B` of `k[G]` is **induced** from a block `b` of `k[H]`,
 `b^G = B`, when the central characters satisfy `λ_B(z) = λ_b(z_H)` for every `z ∈ Z(k[G])`
 (`TauCeti.IsInducedBlock`; Sambale, Definition 1.10, p. 16, and Martínez, p. 25, over an
@@ -63,51 +64,6 @@ namespace TauCeti
 
 open MonoidAlgebra
 open scoped Pointwise
-
-section Restrict
-
-variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
-
-/-- The **restriction of coefficients** `k[G] → k[H]` along an injective homomorphism
-`f : H →* G`: the coefficient of `comapDomainLinearMap f hf x` at `h` is that of `x` at `f h`. For a
-subgroup `H ≤ G` it sends `z` to `z_H`, which keeps the coefficients on `H`. -/
-noncomputable def comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) :
-    MonoidAlgebra k G →ₗ[k] MonoidAlgebra k H where
-  toFun := comapDomain f hf
-  map_add' := comapDomain_add _ _
-  map_smul' c x := by
-    ext
-    simp
-
-/-- The coefficient of `comapDomainLinearMap f hf x` at `h` is the coefficient of `x` at `f h`. -/
-@[simp]
-theorem coeff_comapDomainLinearMap (f : H →* G) (hf : Function.Injective f) (x : MonoidAlgebra k G)
-    (h : H) : (comapDomainLinearMap f hf x).coeff h = x.coeff (f h) := by
-  simp [comapDomainLinearMap]
-
-/-- Restriction of coefficients along the identity is the identity. -/
-@[simp]
-theorem comapDomainLinearMap_id (x : MonoidAlgebra k G) :
-    comapDomainLinearMap (MonoidHom.id G) Function.injective_id x = x := by
-  ext
-  simp
-
-/-- Restriction of coefficients along a composite is the composite of the restrictions. -/
-theorem comapDomainLinearMap_comp {K : Type*} [Monoid K] (f₂ : H →* G) (hf₂ : Function.Injective f₂)
-    (f₁ : K →* H) (hf₁ : Function.Injective f₁) (x : MonoidAlgebra k G) :
-    comapDomainLinearMap (f₂.comp f₁) (hf₂.comp hf₁) x =
-      comapDomainLinearMap f₁ hf₁ (comapDomainLinearMap f₂ hf₂ x) := by
-  ext
-  simp
-
-/-- The restriction of `1` is `1`. -/
-@[simp]
-theorem comapDomainLinearMap_one (f : H →* G) (hf : Function.Injective f) :
-    comapDomainLinearMap f hf (1 : MonoidAlgebra k G) = 1 := by
-  ext h
-  simpa [one_def] using Finsupp.single_apply_left hf (1 : H) h (1 : k)
-
-end Restrict
 
 section CenterRestrict
 
@@ -453,8 +409,7 @@ theorem IsBlockIdempotent.exists_isInducedBlock_apply_centerBrauerCorrespondent 
       ∀ ψ : Subalgebra.center k (MonoidAlgebra k G) →ₐ[k] k, ψ B' = 1 →
         ∀ B, φ (centerBrauerCorrespondent hCH hHN B) = ψ B := by
   classical
-  obtain ⟨D, hD⟩ := exists_isDefectGroup p (e := (b : MonoidAlgebra k H))
-    fun h => hb.ne_zero (Subtype.ext h)
+  obtain ⟨D, hD⟩ := hb.exists_isDefectGroup p
   -- `P ≤ D`, so elements centralizing `D` centralize `P`.
   have hPD : P ≤ D.map H.subtype := by
     simpa [Subgroup.map_subgroupOf_eq_of_le hPH] using
@@ -563,8 +518,7 @@ theorem IsInducedBlock.isDefectGroup_subgroupOf (hPH : P ≤ H)
     (hP : IsDefectGroup k p (B : MonoidAlgebra k G) P) :
     IsDefectGroup k p (b : MonoidAlgebra k H) (P.subgroupOf H) := by
   have hb := h.isBlockIdempotent_left
-  obtain ⟨D, hD⟩ := exists_isDefectGroup p (e := (b : MonoidAlgebra k H))
-    fun h => hb.ne_zero (Subtype.ext h)
+  obtain ⟨D, hD⟩ := hb.exists_isDefectGroup p
   -- A defect group `D` of `b` contains `P` and lies in a defect group of `B`, a conjugate of `P`.
   have hPD := hb.subgroupOf_le_of_isDefectGroup hP.isPGroup hPH hHN hD
   obtain ⟨E, hE, hDE⟩ := h.exists_isDefectGroup_le hD

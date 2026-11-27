@@ -32,7 +32,7 @@ idempotent of `R[N_G(D)]` with defect group `D`, the idempotent of the Brauer co
 * `TauCeti.brauerCorrespondent hCH`: for `C_G(D) ≤ H`, the `R`-linear map `R[G] → R[H]`,
   `e ↦ Br_D(e)`.
 * `TauCeti.centerBrauerCorrespondent hCH hHN`: for `C_G(D) ≤ H ≤ N_G(D)`, its restriction
-  `Z(R[G]) → Z(R[H])` to centres.
+  `Z(R[G]) →ₗ[R] Z(R[H])` to centres.
 
 ## Main results
 
@@ -198,13 +198,15 @@ theorem IsDefectGroup.brauerCorrespondent_ne_zero {p : ℕ} {e : MonoidAlgebra R
   brauerCorrespondent_eq_zero_iff.not.2 hD.brauerProjection_ne_zero
 
 /-- The **Brauer correspondent on centres** (Martínez, Theorem 4.5, p. 26): for
-`C_G(D) ≤ H ≤ N_G(D)`, the map `Z(R[G]) → Z(R[H])`, `z ↦ Br_D(z)`, with the coefficients of `z` on
-`C_G(D)` and `0` elsewhere (`TauCeti.brauerCorrespondent_mem_center`). -/
+`C_G(D) ≤ H ≤ N_G(D)`, the `R`-linear map `Z(R[G]) → Z(R[H])`, `z ↦ Br_D(z)`, with the
+coefficients of `z` on `C_G(D)` and `0` elsewhere (`TauCeti.brauerCorrespondent_mem_center`). -/
 noncomputable def centerBrauerCorrespondent (hCH : Subgroup.centralizer (D : Set G) ≤ H)
-    (hHN : H ≤ Subgroup.normalizer (D : Set G)) (z : Subalgebra.center R (MonoidAlgebra R G)) :
-    Subalgebra.center R (MonoidAlgebra R H) :=
-  ⟨brauerCorrespondent hCH (z : MonoidAlgebra R G),
+    (hHN : H ≤ Subgroup.normalizer (D : Set G)) :
+    Subalgebra.center R (MonoidAlgebra R G) →ₗ[R] Subalgebra.center R (MonoidAlgebra R H) where
+  toFun z := ⟨brauerCorrespondent hCH (z : MonoidAlgebra R G),
     brauerCorrespondent_mem_center hCH hHN (center_le_conjInvariants H z.property)⟩
+  map_add' z w := Subtype.ext (map_add (brauerCorrespondent hCH) (z : MonoidAlgebra R G) w)
+  map_smul' c z := Subtype.ext (map_smul (brauerCorrespondent hCH) c (z : MonoidAlgebra R G))
 
 /-- `centerBrauerCorrespondent hCH hHN z` is the Brauer correspondent of `z`. -/
 @[simp]
