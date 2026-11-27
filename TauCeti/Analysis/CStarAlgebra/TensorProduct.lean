@@ -81,6 +81,39 @@ instance : FunLike (CStarTensorNorm A B) (A ⊗[ℂ] B) ℝ where
     congr
     exact DFunLike.coe_injective h
 
+/-- A C*-norm is a ring norm, so the generic `RingNormClass` API applies to it. -/
+instance : RingNormClass (CStarTensorNorm A B) (A ⊗[ℂ] B) ℝ where
+  map_zero N := map_zero N.toRingNorm
+  map_add_le_add N := map_add_le_add N.toRingNorm
+  map_mul_le_mul N := map_mul_le_mul N.toRingNorm
+  map_neg_eq_map N := map_neg_eq_map N.toRingNorm
+  eq_zero_of_map_eq_zero N := eq_zero_of_map_eq_zero N.toRingNorm
+
+/-- The underlying ring norm of a C*-norm has the same values. -/
+@[simp]
+theorem coe_toRingNorm (N : CStarTensorNorm A B) : ⇑N.toRingNorm = N :=
+  (rfl)
+
+/-- Two C*-norms with the same values are equal. -/
+@[ext]
+theorem ext {N N' : CStarTensorNorm A B} (h : ∀ x, N x = N' x) : N = N' :=
+  DFunLike.ext N N' h
+
+/-- A C*-norm is absolutely homogeneous. -/
+theorem map_smul_eq_mul (N : CStarTensorNorm A B) (c : ℂ) (x : A ⊗[ℂ] B) :
+    N (c • x) = ‖c‖ * N x :=
+  N.smul' c x
+
+/-- A C*-norm is star-invariant. -/
+@[simp]
+theorem map_star (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) : N (star x) = N x :=
+  N.star' x
+
+/-- A C*-norm satisfies the C*-identity. -/
+theorem map_star_mul_self (N : CStarTensorNorm A B) (x : A ⊗[ℂ] B) :
+    N (star x * x) = N x ^ 2 :=
+  N.star_mul_self' x
+
 end CStarTensorNorm
 
 variable {A B}
@@ -141,7 +174,7 @@ instance : NormedSpace ℂ (CStarTensorAlgebra N) where
   __ : Module ℂ (CStarTensorAlgebra N) := inferInstance
   norm_smul_le c x := by
     rw [norm_def, norm_def, map_smul]
-    exact (N.smul' c _).le
+    exact (N.map_smul_eq_mul c _).le
 
 /-- A C*-norm is submultiplicative, so `TauCeti.CStarTensorAlgebra N` is a normed ring. -/
 instance : NonUnitalNormedRing (CStarTensorAlgebra N) where
@@ -149,19 +182,19 @@ instance : NonUnitalNormedRing (CStarTensorAlgebra N) where
   __ : NonUnitalRing (CStarTensorAlgebra N) := inferInstance
   norm_mul_le x y := by
     rw [norm_def, norm_def, norm_def, map_mul]
-    exact map_mul_le_mul N.toRingNorm _ _
+    exact map_mul_le_mul N _ _
 
 /-- The star operation is isometric for a C*-norm. -/
 instance : NormedStarGroup (CStarTensorAlgebra N) where
   norm_star_le x := by
     rw [norm_def, norm_def, map_star]
-    exact (N.star' _).le
+    exact (N.map_star _).le
 
 /-- A C*-norm satisfies the C*-identity. -/
 instance : CStarRing (CStarTensorAlgebra N) where
   norm_mul_self_le x := by
     rw [norm_def, norm_def, map_mul, map_star, ← sq]
-    exact (N.star_mul_self' _).ge
+    exact (N.map_star_mul_self _).ge
 
 end CStarTensorAlgebra
 
@@ -223,7 +256,7 @@ theorem norm_of (x : A ⊗[ℂ] B) : ‖of N x‖ = N x :=
 /-- The canonical map `A ⊗[ℂ] B → CStarTensorProduct N` is injective. -/
 theorem of_injective : Function.Injective (of N) :=
   (injective_iff_map_eq_zero (of N)).2 fun x hx ↦
-    N.eq_zero_of_map_eq_zero' x ((norm_of x).symm.trans (by rw [hx, norm_zero]))
+    eq_zero_of_map_eq_zero N ((norm_of x).symm.trans (by rw [hx, norm_zero]))
 
 /-- `A ⊗[ℂ] B` is dense in `CStarTensorProduct N`. -/
 theorem denseRange_of : DenseRange (of N) :=

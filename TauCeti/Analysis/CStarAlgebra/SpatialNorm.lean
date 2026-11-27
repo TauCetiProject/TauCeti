@@ -408,15 +408,10 @@ theorem mem_minTensor_iff {T : Completion (E ⊗[𝕜] F) →L[𝕜] Completion 
     T ∈ minTensor A B ↔ T ∈ closure (Set.range (spatialTensorHom A B)) := by
   rw [← SetLike.mem_coe, coe_minTensor]
 
-/-- The spatial tensor product is closed. -/
-theorem isClosed_minTensor :
+/-- The spatial tensor product is closed, so over `ℂ` it is a C*-algebra. -/
+instance isClosed_minTensor :
     IsClosed (minTensor A B : Set (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F))) :=
   isClosed_topologicalClosure _
-
-/-- The spatial tensor product is closed, so over `ℂ` it is a C*-algebra. -/
-instance instIsClosedMinTensor :
-    IsClosed (minTensor A B : Set (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F))) :=
-  isClosed_minTensor A B
 
 /-- The spatial tensor product contains the image of the algebraic tensor product. -/
 @[simp]
