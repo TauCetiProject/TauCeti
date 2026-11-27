@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.AppellHumbert.Basic
-import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Positive Appell–Humbert data and the parts of the form
@@ -19,7 +20,8 @@ Riemann form `E` (`TauCeti.AppellHumbertData`).
 of `E` is positive definite. A positive Riemann form is nondegenerate
 (`TauCeti.AppellHumbertData.IsPositive.nondegenerate`), and on a finite-dimensional space
 `E (i u, u)` is bounded below by a positive multiple of `‖u‖²`
-(`TauCeti.AppellHumbertData.IsPositive.exists_pos_mul_sq_le`).
+(`TauCeti.AppellHumbertData.IsPositive.exists_pos_mul_sq_le`, from the coercivity of positive
+continuous bilinear forms, `IsCompact.exists_pos_forall_mul_norm_sq_le`).
 
 **The parts of `B`.** The form `B` is real linear in its first and complex linear in its second
 variable. Its part that is complex linear in both variables,
@@ -48,7 +50,7 @@ the diagonal is `Re (B - B₁) (u, u) = π E (i u, u)`. For a positive datum thi
 
 public section
 
-open Complex Metric
+open Complex
 open scoped Real
 
 namespace TauCeti.AppellHumbertData
@@ -76,28 +78,15 @@ theorem IsPositive.pos (hD : D.IsPositive) {u : V} (hu : u ≠ 0) : 0 < D.rieman
 `(i u, u)`. -/
 theorem IsPositive.exists_pos_mul_sq_le [FiniteDimensional ℂ V] (hD : D.IsPositive) :
     ∃ c > 0, ∀ u : V, c * ‖u‖ ^ 2 ≤ D.riemannForm (I • u) u := by
-  have hcont : Continuous fun u : V ↦ D.riemannForm (I • u) u := by
-    simp only [riemannForm_apply]
-    fun_prop
-  have := FiniteDimensional.proper ℂ V
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · exact ⟨1, one_pos, fun u ↦ by simp [Subsingleton.elim u 0]⟩
-  -- The minimum on the unit sphere, which is compact and avoids `0`.
-  obtain ⟨u₀, hu₀, hmin⟩ := (isCompact_sphere (0 : V) 1).exists_isMinOn
-    (NormedSpace.sphere_nonempty.mpr zero_le_one) hcont.continuousOn
-  have hu₀_ne : u₀ ≠ 0 := ne_zero_of_mem_unit_sphere ⟨u₀, hu₀⟩
-  refine ⟨_, hD.pos hu₀_ne, fun u ↦ ?_⟩
-  rcases eq_or_ne u 0 with rfl | hu
-  · simp
-  -- Scale `u` to the sphere: the form is homogeneous of degree two.
-  have hunit : ‖u‖⁻¹ • u ∈ sphere (0 : V) 1 := by
-    simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hu)]
-  have h := hmin hunit
-  simp only [Set.mem_ofPred_eq, smul_comm I (‖u‖⁻¹) u, map_smul, LinearMap.smul_apply,
-    smul_eq_mul] at h
-  calc D.riemannForm (I • u₀) u₀ * ‖u‖ ^ 2
-      ≤ ‖u‖⁻¹ * (‖u‖⁻¹ * D.riemannForm (I • u) u) * ‖u‖ ^ 2 := by gcongr
-    _ = D.riemannForm (I • u) u := by field_simp
+  -- `(u, v) ↦ E (i u, v)` is a continuous real bilinear form on the finite-dimensional space `V`,
+  -- positive on the diagonal away from `0`, hence coercive.
+  let b : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
+    (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ D.riemannForm ∘ₗ
+      ((I • LinearMap.id : V →ₗ[ℂ] V).restrictScalars ℝ))
+  have hb (u v : V) : b u v = D.riemannForm (I • u) v := by simp [b]
+  obtain ⟨c, hc, hle⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le
+    (b := fun _ ↦ b) continuousOn_const fun _ _ v hv ↦ by simpa only [hb] using hD.pos hv
+  exact ⟨c, hc, fun u ↦ by simpa only [hb] using hle () rfl u⟩
 
 /-- A positive Riemann form is nondegenerate. -/
 theorem IsPositive.nondegenerate (hD : D.IsPositive) : D.riemannForm.Nondegenerate := by

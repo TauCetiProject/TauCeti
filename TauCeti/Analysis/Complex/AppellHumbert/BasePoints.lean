@@ -20,9 +20,9 @@ every `n ≥ 2` the theta functions of the multiple `n D = (n B, χⁿ)` have no
 (`TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_nsmul_apply_ne_zero`). Write
 `n = m + 1` and take a nonzero theta function `f` of `D`. For every `a ∈ V` the product of the
 twisted translates of `f ^ m` by `a` and of `f` by `-m a` is a theta function of `n D`: the twists
-of the semicharacters, `exp (± 2πi m E (a, ·))`, cancel. At a common zero `z` this product, up to a
-nowhere vanishing factor `f (z + a) ^ m f (z - m a)`, vanishes for every `a`; this is a product of
-two entire functions of `a`, neither identically zero
+of the semicharacters, `exp (± 2πi m E (a, ·))`, cancel. At a common zero `z` this product is a
+nowhere vanishing exponential times `f (z + a) ^ m f (z - m a)`, so the latter vanishes for every
+`a`; this is a product of two entire functions of `a`, neither identically zero
 (`AnalyticOnNhd.eqOn_zero_or_eqOn_zero_of_mul_eq_zero`).
 
 ## Provenance

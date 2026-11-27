@@ -56,9 +56,10 @@ the canonical multiplier `χ_b (x) = exp (πi E (x, b x))`. If
 (`TauCeti.AppellHumbertData.normalizedTranslate_normalizedTranslate`), and the theta functions of
 the datum `(B, χ_b)` of `TauCeti.AppellHumbertData.ofCanonicalSemichar` are the entire functions
 fixed by every `N_l`, `l ∈ L` (`TauCeti.AppellHumbertData.mem_thetaSpace_ofCanonicalSemichar_iff`).
-The Riemann form here is `E = Im H`; the roadmap's form `E_B (u, v) = Im (B (u, v) - B (v, u)) / 2π`
-is `-E`, so its multiplier `exp (πi E_B (b x, x))` is `exp (πi E (x, b x))` here, and its phase
-`exp (2πi E_B (b x, y))` is `exp (2πi E (y, b x))`.
+The Riemann form here is `E = Im H`. With the opposite convention
+`E_B (u, v) = Im (B (u, v) - B (v, u)) / 2π = -E (u, v)`, used for instance for the canonical
+factors of Birkenhake–Lange, Section 3.1, the multiplier `exp (πi E_B (b x, x))` is
+`exp (πi E (x, b x))`, and the phase `exp (2πi E_B (b x, y))` is `exp (2πi E (y, b x))`.
 
 ## Main declarations
 
@@ -370,12 +371,13 @@ theorem twistedTranslateEnd_mul (a b : D.riemannForm.dualSubmodule L) :
 /-! ### Normalised translations -/
 
 variable (D) in
-/-- The **normalised translation** `N_x = χ_b (x)⁻¹ U_x` by `x ∈ V`: the twisted translation
+/-- The **normalised translation** `N_x = χ_b (x)⁻¹ T_x` by `x ∈ V`: the twisted translation
 divided by the canonical multiplier `χ_b (x) = exp (πi E (x, b x))` of a complex linear map `b`. -/
 noncomputable def normalizedTranslate (b : V →L[ℂ] V) (x : V) : (V → ℂ) →ₗ[ℂ] V → ℂ :=
   (Circle.exp (π * D.riemannForm x (b x)) : ℂ)⁻¹ • D.twistedTranslate x
 
 /-- The defining formula of the normalised translation. -/
+@[simp]
 theorem normalizedTranslate_apply (b : V →L[ℂ] V) (x : V) (f : V → ℂ) :
     D.normalizedTranslate b x f = (Circle.exp (π * D.riemannForm x (b x)) : ℂ)⁻¹ •
       D.twistedTranslate x f := (rfl)

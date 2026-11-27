@@ -16,14 +16,14 @@ Let `P y` and `Q y`, for `y` in some index type, be endomorphisms of a vector sp
 endomorphism `A` with `P y * A * Q y = e y • A` for every `y` is a joint eigenvector, with
 eigenvalue function `e`, of the maps `A ↦ P y * A * Q y` on `Module.End K M`. Joint eigenvectors
 with distinct eigenvalue functions are linearly independent
-(`Module.End.linearIndependent_of_forall_mul_mul_eq_smul`). With `P y = U y⁻¹` and `Q y = U y` for
+(`linearIndependent_of_forall_mul_mul_eq_smul`). With `P y = U y⁻¹` and `Q y = U y` for
 a projective representation `U`, this is the independence of operators on which conjugation acts by
 distinct characters, as for the translations in a Heisenberg group.
 -/
 
 public section
 
-namespace Module.End
+open Module
 
 variable {K M : Type*} [Field K] [AddCommGroup M] [Module K M]
 
@@ -35,9 +35,7 @@ theorem linearIndependent_of_forall_mul_mul_eq_smul {ι Y : Type*} {A : ι → E
     (h : ∀ i y, P y * A i * Q y = e i y • A i) : LinearIndependent K A := by
   let cj (y : Y) : End K (End K M) := LinearMap.mulLeftRight K (P y, Q y)
   have eigen (i : ι) : A i ∈ ⨅ y, (cj y).eigenspace (e i y) := by
-    simp only [Submodule.mem_iInf, mem_eigenspace_iff]
+    simp only [Submodule.mem_iInf, End.mem_eigenspace_iff]
     intro y
     rw [LinearMap.mulLeftRight_apply, h]
   exact ((TauCeti.iSupIndep_iInf_eigenspace cj).comp he).linearIndependent _ eigen hA
-
-end Module.End

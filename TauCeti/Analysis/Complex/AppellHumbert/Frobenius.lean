@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Index
 import Mathlib.Algebra.Central.End
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.Algebra.Module.ZLattice.BilinFormDual
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.MulLeftRight
 import TauCeti.LinearAlgebra.LinearIndependent.SpanEq
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
@@ -31,9 +32,11 @@ preserve `Θ` (`TauCeti.AppellHumbertData.twistedTranslateEnd`). This file prove
 * `Θ` is finite-dimensional and not zero
   (`TauCeti.AppellHumbertData.IsPositive.finiteDimensional_thetaSpace`,
   `TauCeti.AppellHumbertData.IsPositive.finrank_thetaSpace_pos`);
-* for any nondegenerate Riemann form, `L` has finite index in `L^⊥` and is the dual of `L^⊥`
-  (`TauCeti.AppellHumbertData.finite_dualQuotient`,
-  `TauCeti.AppellHumbertData.dualSubmodule_flip_dualSubmodule`);
+* for any nondegenerate Riemann form, `L` has finite index in `L^⊥`
+  (`TauCeti.AppellHumbertData.finite_dualQuotient`); this and the double duality `L = (L^⊥)^⊥`
+  used below are the general facts
+  `LinearMap.BilinForm.finite_quotient_dualSubmodule` and
+  `LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule_of_isZLattice` for the Riemann form;
 * the restrictions of the `U_a`, `a ∈ L^⊥`, span `End_ℂ (Θ)`, and those attached to representatives
   of `L^⊥ / L` are linearly independent
   (`TauCeti.AppellHumbertData.IsPositive.span_range_twistedTranslateEnd`,
@@ -65,7 +68,7 @@ so `n² ≤ [L^⊥ : L]`.
 The lower bound: conjugation by `U_y`, `y ∈ L^⊥`, multiplies `U_a` by the character
 `exp (2πi E (y, a))` of `y`, and distinct classes of `L^⊥ / L` give distinct characters, as `L` is
 the dual of `L^⊥`. Eigenvectors for distinct characters are linearly independent
-(`Module.End.linearIndependent_of_forall_mul_mul_eq_smul`), so
+(`linearIndependent_of_forall_mul_mul_eq_smul`), so
 `[L^⊥ : L] ≤ dim End (Θ) = n²`. Equality makes the translations a basis of `End (Θ)`, which gives
 the spanning statement, irreducibility and Schur's lemma.
 
@@ -289,27 +292,6 @@ private theorem torusMean_const_mul (c : ℂ) (G : V → ℂ) :
     torusMean L (fun x ↦ c * G x) = c * torusMean L G :=
   integral_const_mul c _
 
-/-- For a nondegenerate Riemann form, the dual lattice `L^⊥` is spanned by the basis dual to
-`latticeBasis L` for the Riemann form. -/
-private theorem dualSubmodule_eq_span (hE : D.riemannForm.Nondegenerate) :
-    D.riemannForm.dualSubmodule L =
-      Submodule.span ℤ (range (D.riemannForm.dualBasis hE (latticeBasis L))) := by
-  classical
-  have h := LinearMap.BilinForm.dualSubmodule_span_of_basis (R := ℤ) D.riemannForm hE
-    (latticeBasis L)
-  rwa [latticeBasis, Basis.ofZLatticeBasis_span] at h
-
-/-- **Double duality.** For a nondegenerate Riemann form, `L` is the dual of its dual `L^⊥`: a
-vector `v` with `E (a, v) ∈ ℤ` for every `a ∈ L^⊥` lies in `L`. -/
-theorem dualSubmodule_flip_dualSubmodule (hE : D.riemannForm.Nondegenerate) :
-    D.riemannForm.flip.dualSubmodule (D.riemannForm.dualSubmodule L) = L := by
-  classical
-  have hN : Submodule.span ℤ (range (latticeBasis L)) = L :=
-    Basis.ofZLatticeBasis_span ℝ L _
-  have h := LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule_of_basis (R := ℤ) D.riemannForm hE
-    (latticeBasis L)
-  rwa [hN] at h
-
 /-- **Fourier uniqueness on the torus.** For a positive datum, a continuous `L`-periodic function
 all of whose Fourier coefficients `∫ exp (2πi E (a, x)) G (x)`, `a ∈ L^⊥`, vanish is zero. -/
 private theorem IsPositive.eq_zero_of_forall_torusMean_eq_zero (hD : D.IsPositive) {G : V → ℂ}
@@ -325,7 +307,8 @@ private theorem IsPositive.eq_zero_of_forall_torusMean_eq_zero (hD : D.IsPositiv
     -- The character of `a = -∑ⱼ nⱼ eⱼ` is the monomial `mFourier (-n)`.
     set a : V := ∑ j, ((-n j : ℤ) : ℝ) • e j
     have ha : a ∈ D.riemannForm.dualSubmodule L := by
-      rw [dualSubmodule_eq_span hD.nondegenerate]
+      rw [D.riemannForm.dualSubmodule_eq_span_dualBasis_ofZLatticeBasis hD.nondegenerate L
+        (Free.chooseBasis ℤ L)]
       exact Submodule.sum_mem _ fun j _ ↦ by
         rw [Int.cast_smul_eq_zsmul]
         exact zsmul_mem (Submodule.subset_span (mem_range_self j)) _
@@ -502,33 +485,14 @@ private theorem mem_submoduleOf_toAddSubgroup {N : Submodule ℤ V} (x : N) :
   rw [Submodule.mem_toAddSubgroup, Submodule.submoduleOf, Submodule.mem_comap,
     Submodule.subtype_apply]
 
-omit [NormedSpace ℂ V] [FiniteDimensional ℂ V] [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- The index of `L` in `N` is the order of the quotient of `N` by `L ∩ N`. The proof is `rfl`:
-`relIndex` is by definition the index of `L.toAddSubgroup.addSubgroupOf N.toAddSubgroup`, whose
-underlying subgroup of `N` is by definition the same as that of `L.submoduleOf N`, the preimage of
-`L` under the inclusion of `N`. -/
-private theorem natCard_quotient_submoduleOf (N : Submodule ℤ V) :
-    Nat.card (N ⧸ (L.submoduleOf N).toAddSubgroup) = L.toAddSubgroup.relIndex N.toAddSubgroup :=
-  rfl
-
 variable (D) in
 /-- The quotient `L^⊥ / L` of the dual of `L` for the Riemann form by `L`. -/
 abbrev DualQuotient : Type _ :=
   D.riemannForm.dualSubmodule L ⧸ (L.submoduleOf (D.riemannForm.dualSubmodule L)).toAddSubgroup
 
 /-- For a nondegenerate Riemann form, `L` has finite index in its dual `L^⊥`. -/
-theorem finite_dualQuotient (hE : D.riemannForm.Nondegenerate) : Finite D.DualQuotient := by
-  have hspan := dualSubmodule_eq_span hE
-  have : ∃ _ : DiscreteTopology (D.riemannForm.dualSubmodule L),
-      IsZLattice ℝ (D.riemannForm.dualSubmodule L) := by
-    rw [hspan]
-    exact ⟨inferInstance, inferInstance⟩
-  obtain ⟨_, _⟩ := this
-  have := ZLattice.module_free ℝ (D.riemannForm.dualSubmodule L)
-  have := ZLattice.module_finite ℝ (D.riemannForm.dualSubmodule L)
-  refine (Submodule.finiteQuotient_iff _).mpr ?_
-  rw [(Submodule.submoduleOfEquivOfLe D.le_dualSubmodule).finrank_eq, ZLattice.rank ℝ L,
-    ZLattice.rank ℝ (D.riemannForm.dualSubmodule L)]
+theorem finite_dualQuotient (hE : D.riemannForm.Nondegenerate) : Finite D.DualQuotient :=
+  D.riemannForm.finite_quotient_dualSubmodule hE L D.le_dualSubmodule
 
 /-- The map `t ↦ (q ↦ m (U_q s, t, 0))` from tuples of theta functions to the functions on
 `L^⊥ / L`, for a tuple `s` of theta functions. -/
@@ -607,7 +571,8 @@ theorem IsPositive.linearIndependent_twistedTranslateEnd_out (hD : D.IsPositive)
     intro q q' h_eq
     -- `E (y, q' - q) ∈ ℤ` for every `y ∈ L^⊥`, so `q' - q` lies in the dual of `L^⊥`, which is `L`.
     have h_mem : ((q'.out : V) - q.out) ∈ L := by
-      refine (dualSubmodule_flip_dualSubmodule hD.nondegenerate).le fun y hy ↦ ?_
+      refine (D.riemannForm.dualSubmodule_flip_dualSubmodule_of_isZLattice hD.nondegenerate L).le
+        fun y hy ↦ ?_
       obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.mp (congrFun h_eq ⟨y, hy⟩)
       have h2 : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
       have hk' : ((D.riemannForm y q.out : ℝ) : ℂ) = (D.riemannForm y q'.out : ℝ) + k :=
@@ -640,7 +605,7 @@ theorem IsPositive.linearIndependent_twistedTranslateEnd_out (hD : D.IsPositive)
     simp only [coe_twistedTranslateEnd_apply, twistedTranslate_apply, sub_add_cancel,
       LinearMap.zero_apply, ZeroMemClass.coe_zero, Pi.zero_apply] at h1
     exact hw ((mul_eq_zero.mp h1).resolve_left (exp_ne_zero _))
-  exact Module.End.linearIndependent_of_forall_mul_mul_eq_smul e_inj h_ne h_eigen
+  exact linearIndependent_of_forall_mul_mul_eq_smul e_inj h_ne h_eigen
 
 /-- For a positive datum, the index of `L` in its dual is the dimension of the endomorphisms of the
 space of theta functions. -/
@@ -657,7 +622,7 @@ theorem IsPositive.relIndex_eq_finrank_end (hD : D.IsPositive) :
   have le_card : finrank ℂ (Module.End ℂ D.thetaSpace) ≤ Fintype.card D.DualQuotient := by
     simpa [Module.finrank_linearMap, Module.finrank_pi_fintype,
       Module.finrank_fintype_fun_eq_card] using h_embed
-  rw [← natCard_quotient_submoduleOf, Nat.card_eq_fintype_card]
+  rw [← Submodule.natCard_quotient_submoduleOf, Nat.card_eq_fintype_card]
   exact card_le.antisymm le_card
 
 /-- **The translations span the endomorphisms.** For a positive datum, the twisted translations
@@ -725,11 +690,9 @@ theorem IsPositive.exists_eq_smul_one_of_commute (hD : D.IsPositive)
 theorem relIndex_ne_zero_and_nsmul_relIndex_mem (hE : D.riemannForm.Nondegenerate) :
     L.toAddSubgroup.relIndex (D.riemannForm.dualSubmodule L).toAddSubgroup ≠ 0 ∧
       ∀ a ∈ D.riemannForm.dualSubmodule L,
-        L.toAddSubgroup.relIndex (D.riemannForm.dualSubmodule L).toAddSubgroup • a ∈ L := by
-  refine ⟨?_, fun a ha ↦ L.toAddSubgroup.nsmul_relIndex_mem ha⟩
-  have := finite_dualQuotient hE
-  rw [← natCard_quotient_submoduleOf]
-  exact Nat.card_pos.ne'
+        L.toAddSubgroup.relIndex (D.riemannForm.dualSubmodule L).toAddSubgroup • a ∈ L :=
+  ⟨D.riemannForm.relIndex_dualSubmodule_ne_zero hE L D.le_dualSubmodule,
+    fun _ ha ↦ L.toAddSubgroup.nsmul_relIndex_mem ha⟩
 
 end Dimension
 
