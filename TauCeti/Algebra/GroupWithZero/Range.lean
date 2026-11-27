@@ -29,6 +29,10 @@ surjective as soon as it attains a generator of the units of its codomain.
 
 * `MonoidWithZeroHom.ValueGroup₀.embedding_coe`: the embedding sends `x : valueGroup f`, viewed
   in `ValueGroup₀ f`, to `((x : Bˣ) : B)`.
+* `MonoidWithZeroHom.mem_valueGroup_iff`: for a homomorphism between groups with zero,
+  membership in `f.valueGroup` is equivalent to being attained by `f`.
+* `MonoidWithZeroHom.valueGroup_eq_range_unitsMap`: for a homomorphism between groups with zero,
+  `f.valueGroup` is the range of `Units.map f.toMonoidHom`.
 * `MonoidWithZeroHom.valueGroup_eq_top_of_surjective`: a surjective monoid-with-zero homomorphism
   has full value group.
 * `MonoidWithZeroHom.valueGroup_eq_top_iff_surjective`: between groups with zero, the converse
@@ -39,7 +43,32 @@ surjective as soon as it attains a generator of the units of its codomain.
 
 public section
 
-namespace MonoidWithZeroHom.ValueGroup₀
+namespace MonoidWithZeroHom
+
+section GroupWithZero
+
+variable {A B : Type*} [GroupWithZero A] [GroupWithZero B]
+
+/-- For a homomorphism `f : A →*₀ B` between groups with zero, an element `γ : Bˣ` lies in
+`f.valueGroup` if and only if `(γ : B)` is attained by `f`. -/
+theorem mem_valueGroup_iff {f : A →*₀ B} {γ : Bˣ} :
+    γ ∈ f.valueGroup ↔ ∃ a : A, f a = γ := by
+  have h := Set.ext_iff.mp (valueGroup_eq_range f) (γ : B)
+  simpa [Units.val_inj, Units.ne_zero] using h
+
+/-- For a homomorphism `f : A →*₀ B` between groups with zero, `f.valueGroup` is the range of
+`Units.map f.toMonoidHom`. -/
+theorem valueGroup_eq_range_unitsMap (f : A →*₀ B) :
+    f.valueGroup = (Units.map f.toMonoidHom).range := by
+  ext γ
+  rw [mem_valueGroup_iff, MonoidHom.mem_range]
+  refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun ⟨a, ha⟩ ↦ ⟨a, congrArg Units.val ha⟩⟩
+  have ha0 : a ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using ha.symm)
+  exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩
+
+end GroupWithZero
+
+namespace ValueGroup₀
 
 variable {A B : Type*} [MonoidWithZero A] [GroupWithZero B] {f : A →*₀ B}
 
@@ -49,9 +78,7 @@ value group, viewed in `ValueGroup₀ f`, to its underlying element `((x : Bˣ) 
 theorem embedding_coe (x : valueGroup f) : embedding (x : ValueGroup₀ f) = ((x : Bˣ) : B) := by
   simp [embedding_apply]
 
-end MonoidWithZeroHom.ValueGroup₀
-
-namespace MonoidWithZeroHom
+end ValueGroup₀
 
 section MonoidWithZero
 

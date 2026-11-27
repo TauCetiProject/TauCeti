@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
+public import TauCeti.NumberTheory.LocalField.DiscreteValuation
 public import TauCeti.NumberTheory.NewtonPolygon.Ramification
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.Valuation.Denominator
@@ -21,7 +22,8 @@ the real `p`-adic additive valuation `TauCeti.padicRealValuation p` normalised b
   `ℚ_[p]` containing a `p`-th root of `p`, with a valuation `w` extending `v`, every `e` for which
   `e • w` takes integer values on `L` is divisible by `p`. If `[L : ℚ_[p]] = p` and `e • w` is the
   integral normalisation of `w`, so that `e` is the ramification index, then `e = p`: the
-  extension is totally ramified.
+  extension is totally ramified. For a compatible local-field extension `L / ℚ_[p]`, these apply
+  directly to `TauCeti.ramificationIndex ℚ_[p] L` and `TauCeti.IsTotallyRamified ℚ_[p] L`.
 * The shifted cyclotomic polynomial `Φ_p(X + 1) = ∑_{i < p} (p choose i + 1) X ^ i` is Eisenstein,
   so it is pure of slope `-1 / (p - 1)` with multiplicity `p - 1`. Dividing by its constant
   coefficient `p` gives the constant-one polynomial `p⁻¹ Φ_p(X + 1)` with the same slopes.
@@ -106,6 +108,30 @@ theorem eq_of_pow_eq_of_finrank_eq (hw : ∀ x, w (algebraMap ℚ_[p] L x) = pad
     rw [hw, padicRealValuation_p, Nat.cast_zero, div_zero] at hn
     exact one_ne_zero (WithTop.coe_eq_coe.mp hn)
   exact le_antisymm hle (Nat.le_of_dvd (Nat.pos_of_ne_zero he) (dvd_of_pow_eq hw hL hα))
+
+/-- In any compatible nonarchimedean local-field extension `L / ℚ_[p]` containing a `p`-th root of
+`p`, `p` divides `ramificationIndex ℚ_[p] L`. -/
+theorem dvd_ramificationIndex_of_pow_eq [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension ℚ_[p] L] {α : L}
+    (hα : α ^ p = algebraMap ℚ_[p] L p) : p ∣ ramificationIndex ℚ_[p] L := by
+  rw [← ramificationIdx_valuation_eq_ramificationIndex]
+  refine dvd_of_pow_eq (fun x ↦ ?_)
+    (fun _ hy ↦ (ValuativeRel.valuation L).exists_div_ramificationIdx_extRealAddVal hy) hα
+  rw [Valuation.extRealAddVal_algebraMap (ValuativeRel.valuation ℚ_[p])
+    (ValuativeRel.valuation L), realAddVal_valuation_padic]
+
+/-- Any compatible nonarchimedean local-field extension `L / ℚ_[p]` of degree `p` containing a
+`p`-th root of `p` is totally ramified. -/
+theorem isTotallyRamified_of_pow_eq_of_finrank_eq [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [ValuativeExtension ℚ_[p] L]
+    (hfin : Module.finrank ℚ_[p] L = p) {α : L} (hα : α ^ p = algebraMap ℚ_[p] L p) :
+    IsTotallyRamified ℚ_[p] L := by
+  have : Module.Finite ℚ_[p] L :=
+    Module.finite_of_finrank_pos (by have := (Fact.out : p.Prime).pos; omega)
+  rw [isTotallyRamified_iff_ramificationIdx_eq_finrank]
+  refine (ValuativeRel.valuation L).ramificationIdx_eq_finrank_of_dvd ?_ hfin.le
+  rw [ramificationIdx_valuation_eq_ramificationIndex]
+  exact dvd_ramificationIndex_of_pow_eq hα
 
 end XPowSubP
 

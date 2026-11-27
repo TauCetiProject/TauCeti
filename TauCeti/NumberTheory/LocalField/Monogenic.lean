@@ -35,9 +35,9 @@ extension this valuation is independent of the choice of uniformizer.
 * `TauCeti.IsTotallyRamified.addVal_eq_iInf_integralPowerBasis_repr`: the additive valuation of
   `x ∈ 𝒪[L]` is the least of `e(L/K) · v_K(a_i) + i` over the coordinates `a_i` of `x` in that
   basis.
-* `TauCeti.realAddValuation_sub_algebraMap_le_of_adjoin_eq_top`: an integral generator `x` of
+* `TauCeti.realAddVal_sub_algebraMap_le_of_adjoin_eq_top`: an integral generator `x` of
   `𝒪[L]` over `𝒪[K]` minimizes `v_M(σ y - y)` over `y ∈ 𝒪[L]` for every `σ : L →ₐ[K] M`.
-* `TauCeti.realAddValuation_sub_algebraMap_eq_of_irreducible`: in a totally ramified extension
+* `TauCeti.realAddVal_sub_algebraMap_eq_of_irreducible`: in a totally ramified extension
   `L/K`, any two uniformizers have equal root-difference valuation at every `σ : L →ₐ[K] M`.
 
 ## References
@@ -138,17 +138,18 @@ variable {M : Type*} [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchi
 
 /-- If `x ∈ 𝒪[L]` generates `𝒪[L]` over `𝒪[K]`, then `v_M(σ x - x) ≤ v_M(σ y - y)` for every
 `y ∈ 𝒪[L]` and `σ : L →ₐ[K] M`. -/
-theorem realAddValuation_sub_algebraMap_le_of_adjoin_eq_top
+theorem realAddVal_sub_algebraMap_le_of_adjoin_eq_top
     {x : 𝒪[L]} (hx : Algebra.adjoin 𝒪[K] {x} = ⊤) (y : 𝒪[L]) (σ : L →ₐ[K] M) :
-    realAddValuation M (σ (x : L) - algebraMap L M (x : L)) ≤
-      realAddValuation M (σ (y : L) - algebraMap L M (y : L)) := by
+    (valuation M).realAddVal (σ (x : L) - algebraMap L M (x : L)) ≤
+      (valuation M).realAddVal (σ (y : L) - algebraMap L M (y : L)) := by
   have : ValuativeExtension K M := ValuativeExtension.trans K L M
   obtain ⟨P, hP⟩ : y ∈ (Polynomial.aeval x : 𝒪[K][X] →ₐ[𝒪[K]] 𝒪[L]).range := by
     rw [← Algebra.adjoin_singleton_eq_range_aeval, hx]; exact Algebra.mem_top
   have hmem (τ : L →ₐ[K] M) : τ (x : L) ∈ 𝒪[M] := by
-    rw [mem_integer_iff_realAddValuation_nonneg, τ.realAddValuation_apply,
-      ← realAddValuation_algebraMap, ← Valuation.HasExtension.val_algebraMap (vA := valuation M)]
-    exact mem_integer_iff_realAddValuation_nonneg.mp (algebraMap 𝒪[L] 𝒪[M] x).property
+    rw [mem_integer_iff_realAddVal_valuation_nonneg, τ.realAddVal_valuation_apply,
+      ← realAddVal_valuation_algebraMap,
+      ← Valuation.HasExtension.val_algebraMap (vA := valuation M)]
+    exact mem_integer_iff_realAddVal_valuation_nonneg.mp (algebraMap 𝒪[L] 𝒪[M] x).property
   let c (τ : L →ₐ[K] M) : 𝒪[M] := ⟨τ (x : L), hmem τ⟩
   have heval (τ : L →ₐ[K] M) :
       algebraMap 𝒪[M] M ((P.map (algebraMap 𝒪[K] 𝒪[M])).eval (c τ)) = τ (y : L) := by
@@ -168,19 +169,19 @@ theorem realAddValuation_sub_algebraMap_le_of_adjoin_eq_top
     Algebra.algebraMap_ofSubsemiring_apply, Algebra.algebraMap_ofSubsemiring_apply,
     Algebra.algebraMap_ofSubsemiring_apply] at hval
   simp only [c, IsScalarTower.coe_toAlgHom'] at hval
-  rw [hval, (realAddValuation M).map_mul]
-  exact le_add_of_nonneg_right (mem_integer_iff_realAddValuation_nonneg.mp q.property)
+  rw [hval, (valuation M).realAddVal.map_mul]
+  exact le_add_of_nonneg_right (mem_integer_iff_realAddVal_valuation_nonneg.mp q.property)
 
 /-- **Uniformizer invariance of root-difference valuations.** In a totally ramified extension
 `L/K`, any two uniformizers of `𝒪[L]` have equal root-difference valuation at `σ : L →ₐ[K] M`. -/
-theorem realAddValuation_sub_algebraMap_eq_of_irreducible
+theorem realAddVal_sub_algebraMap_eq_of_irreducible
     (h : IsTotallyRamified K L) {ξ ξ' : 𝒪[L]} (hξ : Irreducible ξ) (hξ' : Irreducible ξ')
     (σ : L →ₐ[K] M) :
-    realAddValuation M (σ (ξ : L) - algebraMap L M (ξ : L)) =
-      realAddValuation M (σ (ξ' : L) - algebraMap L M (ξ' : L)) :=
+    (valuation M).realAddVal (σ (ξ : L) - algebraMap L M (ξ : L)) =
+      (valuation M).realAddVal (σ (ξ' : L) - algebraMap L M (ξ' : L)) :=
   le_antisymm
-    (realAddValuation_sub_algebraMap_le_of_adjoin_eq_top (h.adjoin_eq_top_of_irreducible hξ) ξ' σ)
-    (realAddValuation_sub_algebraMap_le_of_adjoin_eq_top (h.adjoin_eq_top_of_irreducible hξ') ξ σ)
+    (realAddVal_sub_algebraMap_le_of_adjoin_eq_top (h.adjoin_eq_top_of_irreducible hξ) ξ' σ)
+    (realAddVal_sub_algebraMap_le_of_adjoin_eq_top (h.adjoin_eq_top_of_irreducible hξ') ξ σ)
 
 end Tower
 

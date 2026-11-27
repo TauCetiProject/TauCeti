@@ -36,13 +36,18 @@ long as the order of `N` is prime to the index of one of the two subgroups.
   form.
 * `IsCyclic.index_inf_eq_lcm`: in a cyclic group the index of `H ⊓ K` is the least common multiple
   of the indices of `H` and `K`.
-* `IsCyclic.index_zpowGroupHom_range`, `IsCyclic.index_zpowGroupHom_range_of_infinite`: in a cyclic
-  commutative group `G`, the `m`-th power subgroup has index `m.gcd (Nat.card G)` (and `m.natAbs`
-  when `G` is infinite), with additive versions for `zsmulAddGroupHom`.
+* `IsCyclic.index_zpowGroupHom_range`, `IsCyclic.index_zpowGroupHom_range_of_infinite`, and
+  `Subgroup.index_zpowers_zpow_of_isMulTorsionFree`: in a cyclic commutative group `G`, the
+  `m`-th power subgroup has index `m.gcd (Nat.card G)` (and `m.natAbs` when `G` is infinite or
+  torsion-free with nontrivial generator), with additive versions.
 * `Subgroup.index_inf_eq_lcm_of_isCyclic_quotient`: the same holds in a group with a normal
   subgroup `N` whose quotient is cyclic, provided the order of `N` is prime to the index of one of
   the two subgroups. This is the group theory behind Abhyankar's lemma, where `N` is the wild
   inertia group inside the inertia group.
+* `Subgroup.isCyclic_of_finiteIndex` and `Subgroup.isCyclic_of_isFiniteRelIndex`: in a torsion-free
+  commutative group, a finite-index (or finite-relative-index) extension of a cyclic subgroup is
+  cyclic, with `AddSubgroup.isAddCyclic_of_finiteIndex` and
+  `AddSubgroup.isAddCyclic_of_isFiniteRelIndex` their additive forms.
 -/
 
 public section
@@ -180,6 +185,28 @@ theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyc
       Nat.mul_div_assoc _ ((Nat.gcd_dvd_left _ _).mul_right _)]
   rw [index_inf, ← relIndex_mul_index (le_sup_left : B ≤ B ⊔ N), hmul, ← hcyc, mul_left_comm]
 
+/-- **A torsion-free commutative group with a cyclic subgroup of finite index is cyclic.** -/
+@[to_additive
+/-- **A torsion-free additive commutative group with a cyclic subgroup of finite index is
+cyclic.** -/]
+theorem isCyclic_of_finiteIndex {G : Type*} [CommGroup G] [IsMulTorsionFree G]
+    (H : Subgroup G) [IsCyclic H] [H.FiniteIndex] : IsCyclic G := by
+  -- Raising to the `H.index`-th power lands in `H` and is injective since `G` is torsion-free.
+  let f : G →* H := (powMonoidHom H.index).codRestrict H H.pow_index_mem
+  refine isCyclic_of_injective f fun x y hxy ↦ ?_
+  exact (Commute.all x y).eq_of_pow_eq_pow FiniteIndex.index_ne_zero (congrArg Subtype.val hxy)
+
+/-- **A subgroup of a torsion-free commutative group in which a cyclic subgroup has finite relative
+index is cyclic.** No inclusion `H ≤ K` is needed. -/
+@[to_additive
+/-- **A subgroup of a torsion-free additive commutative group in which a cyclic subgroup has finite
+relative index is cyclic.** No inclusion `H ≤ K` is needed. -/]
+theorem isCyclic_of_isFiniteRelIndex {G : Type*} [CommGroup G] [IsMulTorsionFree G]
+    (H K : Subgroup G) [IsCyclic H] [H.IsFiniteRelIndex K] : IsCyclic K := by
+  have : IsCyclic (H.subgroupOf K) :=
+    isCyclic_of_injective _ (K.subtype.subgroupComap_injective H K.subtype_injective)
+  exact isCyclic_of_finiteIndex (H.subgroupOf K)
+
 /-- **Index of the `m`-th power subgroup of a cyclic group.** In a cyclic commutative group `G`,
 the image of `zpowGroupHom m : G →* G` has index `m.gcd (Nat.card G)`. This holds for both finite
 and infinite cyclic groups (with `Nat.card G = 0` when `G` is infinite, giving `m.natAbs`). -/
@@ -205,5 +232,16 @@ theorem _root_.IsCyclic.index_zpowGroupHom_range_of_infinite {G : Type*} [CommGr
     (zpowGroupHom m : G →* G).range.index = m.natAbs := by
   rw [IsCyclic.index_zpowGroupHom_range, Nat.card_eq_zero_of_infinite, Int.natCast_zero,
     Int.gcd_zero_right]
+
+/-- **Index of a power-generated subgroup in a torsion-free cyclic group.** If `g ≠ 1` generates
+a torsion-free group `G`, then `zpowers (g ^ e)` has index `e.natAbs`. -/
+@[to_additive
+/-- **Index of a multiple-generated subgroup in a torsion-free additive cyclic group.** If `g ≠ 0`
+generates a torsion-free additive group `G`, then `zmultiples (e • g)` has index `e.natAbs`. -/]
+theorem index_zpowers_zpow_of_isMulTorsionFree [IsMulTorsionFree G]
+    (hg : zpowers g = ⊤) (h1 : g ≠ 1) (e : ℤ) :
+    (zpowers (g ^ e)).index = e.natAbs := by
+  rw [index_zpowers_zpow hg, orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree h1),
+    Nat.cast_zero, Int.gcd_zero_right]
 
 end Subgroup

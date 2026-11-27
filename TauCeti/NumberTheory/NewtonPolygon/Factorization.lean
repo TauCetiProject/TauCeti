@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Irreducible
+public import TauCeti.NumberTheory.NewtonPolygon.Ramification
 public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -55,6 +56,9 @@ the slope-`m` factor.
   coprime cofactors and uniqueness of pure slope factorisations.
 * `Polynomial.IsPureSlopeFactorization.irreducible_apply`: for a valuation taking integer values on
   nonzero elements, a factor whose degree is the denominator of its rational slope is irreducible.
+* `Polynomial.IsPureSlopeFactorization.den_dvd_of_aeval_eq_zero` and
+  `Polynomial.IsPureSlopeFactorization.den_dvd_ramificationIdx_of_aeval_eq_zero`: roots of a
+  rational-slope factor `g q` force `q.den` to divide the ramification index.
 * `Polynomial.exists_mul_newtonSlopes_filter_le`: threshold factorisation `f = P * Q` separating
   finite slopes `≤ σ` from finite slopes `> σ`.
 * `Polynomial.existsUnique_isPureSlopeFactorization`,
@@ -189,6 +193,13 @@ theorem newtonPolygon_ne_top (hg : f.IsPureSlopeFactorization v g) (m : ℝ) :
 /-- Every factor `g m` divides `f`. -/
 theorem dvd (hg : f.IsPureSlopeFactorization v g) (m : ℝ) : g m ∣ f :=
   hg.finprod_eq ▸ finprod_mem_dvd m hg.finite_mulSupport
+
+/-- Every root of a factor `g m` in a nontrivial `R`-algebra is nonzero. -/
+theorem ne_zero_of_aeval_eq_zero {A : Type*} [Semiring A] [Algebra R A] [Nontrivial A]
+    (hg : f.IsPureSlopeFactorization v g) {m : ℝ} {α : A} (hroot : aeval α (g m) = 0) :
+    α ≠ 0 := by
+  rintro rfl
+  simp [aeval_def, hg.coeff_zero m] at hroot
 
 /-- The constant family `1` is a pure slope factorisation of `1`. -/
 theorem one (v : AddValuation R (WithTop ℝ)) : (1 : R[X]).IsPureSlopeFactorization v 1 :=
@@ -382,6 +393,37 @@ theorem isPureSlopeFactorization_one_iff :
   ⟨fun h => h.unique (.one v), fun h => h ▸ .one v⟩
 
 end Field
+
+section Ramification
+
+namespace IsPureSlopeFactorization
+
+/-- If `g` is a pure slope factorisation of `f : K[X]` for `v`, `w` on an extension `L / K`
+restricts to `v` with `e • w` integer-valued on the nonzero elements of `L`, and `α : L` is a root
+of the slope-`q` factor `g q`, then `q.den ∣ e`. -/
+theorem den_dvd_of_aeval_eq_zero {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {v : AddValuation K (WithTop ℝ)} {w : AddValuation L (WithTop ℝ)}
+    (hw : ∀ x, w (algebraMap K L x) = v x) {e : ℕ}
+    (hL : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e : ℝ) : WithTop ℝ)) {f : K[X]} {g : ℝ → K[X]}
+    (hg : f.IsPureSlopeFactorization v g) {q : ℚ} {α : L} (hroot : aeval α (g q) = 0) :
+    q.den ∣ e :=
+  Polynomial.den_dvd_of_forall_mem_newtonSlopes_eq hw hL (hg.apply_ne_zero q)
+    (hg.newtonSlopes_eq q) (hg.ne_zero_of_aeval_eq_zero hroot) hroot
+
+/-- If `g` is a pure slope factorisation of `f : K[X]` for `v.realAddVal`, `w` on an extension
+`L / K` extends the rank-one discrete valuation `v`, and `α : L` is a root of the slope-`q` factor
+`g q`, then `q.den ∣ w.ramificationIdx K`. -/
+theorem den_dvd_ramificationIdx_of_aeval_eq_zero {K L ΓK ΓL : Type*} [Field K] [Field L]
+    [Algebra K L] [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
+    (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w] {f : K[X]}
+    {g : ℝ → K[X]} (hg : f.IsPureSlopeFactorization v.realAddVal g) {q : ℚ} {α : L}
+    (hroot : aeval α (g q) = 0) : q.den ∣ w.ramificationIdx K :=
+  Polynomial.den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq v w (hg.apply_ne_zero q)
+    (hg.newtonSlopes_eq q) (hg.ne_zero_of_aeval_eq_zero hroot) hroot
+
+end IsPureSlopeFactorization
+
+end Ramification
 
 end PureSlopeFactorization
 
@@ -769,11 +811,8 @@ theorem setOf_norm_eq_and_evalAt_eq_zero {L : Type*} [NormedField L]
         (Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne').mp (hnorm'.symm.trans hnorm)
       rwa [← hmm']
   · intro hroot
-    have hx_ne : x ≠ 0 := by
-      rintro rfl
-      simp [Polynomial.aeval_def, Polynomial.eval₂_at_zero, hc0 m] at hroot
     have hnorm := Polynomial.norm_eq_rpow_of_forall_mem_newtonSlopes_eq v hb hv
-      (hg_fact.apply_ne_zero m) (hslopes m) hx_ne hroot
+      (hg_fact.apply_ne_zero m) (hslopes m) (hg_fact.ne_zero_of_aeval_eq_zero hroot) hroot
     refine ⟨hnorm, ?_⟩
     have hgm_ne_one : g m ≠ 1 := by
       rintro h1
