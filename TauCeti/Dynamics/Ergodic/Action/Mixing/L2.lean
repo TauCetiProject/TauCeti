@@ -75,7 +75,7 @@ of measurable sets to all of `L²(μ)`. -/
 @[to_additive tendsto_integral_mul_vadd_of_indicator_left /-- Convergence of the correlations
 against a fixed square-integrable `g` passes from indicators of measurable sets to all of `L²(μ)`.
 -/]
-theorem tendsto_integral_mul_of_indicator_left {g : X → ℝ} (hg : MemLp g 2 μ)
+private theorem tendsto_integral_mul_of_indicator_left {g : X → ℝ} (hg : MemLp g 2 μ)
     (hind : ∀ (c : ℝ) ⦃s : Set X⦄, MeasurableSet s →
       Tendsto (fun m : M ↦ ∫ x, s.indicator (fun _ ↦ c) x * g (m • x) ∂μ) l
         (𝓝 ((∫ x, s.indicator (fun _ ↦ c) x ∂μ) * ∫ x, g x ∂μ)))
@@ -112,7 +112,7 @@ theorem tendsto_integral_mul_of_indicator_left {g : X → ℝ} (hg : MemLp g 2 �
 measurable sets to all of `L²(μ)`. -/
 @[to_additive tendsto_integral_mul_vadd_of_indicator_right /-- Convergence of the correlations of a
 fixed square-integrable `f` passes from indicators of measurable sets to all of `L²(μ)`. -/]
-theorem tendsto_integral_mul_of_indicator_right {f : X → ℝ} (hf : MemLp f 2 μ)
+private theorem tendsto_integral_mul_of_indicator_right {f : X → ℝ} (hf : MemLp f 2 μ)
     (hind : ∀ (d : ℝ) ⦃t : Set X⦄, MeasurableSet t →
       Tendsto (fun m : M ↦ ∫ x, f x * t.indicator (fun _ ↦ d) (m • x) ∂μ) l
         (𝓝 ((∫ x, f x ∂μ) * ∫ x, t.indicator (fun _ ↦ d) x ∂μ)))
