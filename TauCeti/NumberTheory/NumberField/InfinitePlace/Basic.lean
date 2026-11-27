@@ -80,6 +80,8 @@ equivalent to a nonarchimedean absolute value.
 * `NumberField.InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or`: the
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
+* `NumberField.InfinitePlace.mk_eq_mk_iff_of_isUnramified`: embeddings with a common restriction
+  and the same unramified infinite place are equal.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
 * `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
   equivalent to a nonarchimedean absolute value.
@@ -335,6 +337,19 @@ theorem InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq
   · refine .inr ⟨?_, h⟩
     rw [← h, ComplexEmbedding.conjugate_comp]
     exact (ComplexEmbedding.involutive_conjugate k _).symm
+
+/-- Two complex embeddings over a common restriction agree if they induce the same infinite
+place and that place is unramified over the base. -/
+theorem InfinitePlace.mk_eq_mk_iff_of_isUnramified {L : Type*} [Field L] [Algebra K L]
+    {φ ψ : L →+* ℂ} (h : φ.comp (algebraMap K L) = ψ.comp (algebraMap K L))
+    (hφ : (mk φ).IsUnramified K) : mk φ = mk ψ ↔ φ = ψ := by
+  refine ⟨fun he ↦ ?_, congrArg mk⟩
+  rcases mk_eq_iff.mp he with he | hc
+  · exact he
+  have hr : ComplexEmbedding.IsReal (φ.comp (algebraMap K L)) := by
+    rw [ComplexEmbedding.isReal_iff, ← ComplexEmbedding.conjugate_comp, hc, h]
+  have hφreal := (isUnramified_mk_iff_isUnmixed.mp hφ) hr
+  exact (ComplexEmbedding.isReal_iff.mp hφreal).symm.trans hc
 
 /-- An infinite place is archimedean: it takes the value `2` at `2`. -/
 theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchimedean v.val := by

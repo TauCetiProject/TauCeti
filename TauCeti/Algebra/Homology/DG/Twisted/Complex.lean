@@ -383,6 +383,16 @@ theorem twistedCochainComplexXEquiv_d (n : ℤ) (f : (twistedCochainComplex hm h
   unfold twistedCochainComplexXEquiv
   exact gradedCochainComplexXEquiv_d n f
 
+/-- Under `twistedCochainComplexXEquiv`, the differential of the twisted complex between any two
+consecutive degrees is the twisted differential. -/
+theorem twistedCochainComplexXEquiv_d_of_add_one_eq {n n' : ℤ} (hn : n + 1 = n')
+    (f : (twistedCochainComplex hm htw hM).X n) :
+    (twistedCochainComplexXEquiv hm htw hM n'
+        (((twistedCochainComplex hm htw hM).d n n').hom f) : P → M) =
+      twistedDifferential m ℳ dM (twistedCochainComplexXEquiv hm htw hM n f) := by
+  unfold twistedCochainComplexXEquiv
+  exact gradedCochainComplexXEquiv_d_of_add_one_eq hn f
+
 end SqZero
 
 namespace TwistingCocycle

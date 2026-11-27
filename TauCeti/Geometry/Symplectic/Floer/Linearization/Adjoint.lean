@@ -49,7 +49,9 @@ Integrating by parts against this pairing gives the **formal adjoint**
   (`floerLinearizationAdjoint_const_eq_neg_flatEquiv`). From
   the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
-  the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
+  the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`). The adjoint
+  on `η` only sees the data over the support of `η`: the structures near it and the perturbation
+  on it (`floerLinearizationAdjoint_congr_data_of_tsupport`).
 * **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`); for a function `f` of both variables the derivative of
   `f` in `t` also enters, through `η ∘ J` (`floerLinearizationAdjoint_fun_smul`), so
@@ -236,6 +238,21 @@ theorem floerLinearizationAdjoint_of_notMem_tsupport (hz : z ∉ tsupport η) :
     ω.floerLinearizationAdjoint J Ks Kt u η z = 0 := by
   rw [floerLinearizationAdjoint_congr_of_eventuallyEq ω J Ks Kt u
     (notMem_tsupport_iff_eventuallyEq.1 hz), floerLinearizationAdjoint_zero]
+
+/-- The formal adjoint on a covector field `η` depends on the data only over the topological
+support of `η`: near each of its points for the structures `J`, and at the point for the
+perturbation `Ks`, `Kt`. This is the counterpart of `floerLinearization_congr_data_of_tsupport`. -/
+theorem floerLinearizationAdjoint_congr_data_of_tsupport (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ)
+    (h : ∀ z ∈ tsupport η, J =ᶠ[𝓝 z] J' ∧ Ks z = Ks' z ∧ Kt z = Kt' z) :
+    ω.floerLinearizationAdjoint J Ks Kt u η = ω.floerLinearizationAdjoint J' Ks' Kt' u η := by
+  funext z
+  by_cases hz : z ∈ tsupport η
+  · obtain ⟨hJ, hKs, hKt⟩ := h z hz
+    exact ω.floerLinearizationAdjoint_congr_data u η hJ hKs hKt
+  · rw [floerLinearizationAdjoint_of_notMem_tsupport hz,
+      floerLinearizationAdjoint_of_notMem_tsupport hz]
 
 /-! ### The Cauchy–Riemann form and weights -/
 

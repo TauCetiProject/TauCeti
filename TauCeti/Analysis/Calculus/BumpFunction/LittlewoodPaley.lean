@@ -93,6 +93,10 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.littlewoodPaleyOverlap`, `ContDiffBump.inhomogeneousLittlewoodPaley_mul_eq_zero`,
   and `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: explicit overlap width and
   finite overlap of the pieces, also between the partitions of two bump functions.
+* `ContDiffBump.sum_Ico_inhomogeneousLittlewoodPaley_mul` and
+  `ContDiffBump.mul_one_sub_sum_range_eq_sum_Ico`: with the overlap width `L`, only the pieces
+  `ψᵢ` with `k - L ≤ i < k + L` meet `ψₖ`, so `∑_{k - L ≤ i < k + L} ψₖ ψᵢ = ψₖ`, and the tail
+  `ψₖ (1 - ∑_{i < N} ψᵢ)` is the sum of the products `ψₖ ψᵢ` over that window with `N ≤ i`.
 * `ContDiffBump.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero`: a piece `ψⱼ` translated
   by `θ` meets only pieces `ψₖ` with `2^j ≤ c (1 + ‖θ‖) 2^k`, so that
   `ContDiffBump.inhomogeneousLittlewoodPaley_add_mul_eq_zero`: the product `ψⱼ (ζ + θ) ψₖ ζ`
@@ -773,6 +777,60 @@ theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
       φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ = 0 :=
   ⟨φ.littlewoodPaleyOverlap φ', fun _ _ hjk ξ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ' hjk ξ⟩
+
+/-- **Finite overlap in a window.** The pieces `ψₖ` and `ψᵢ` of the partition have disjoint
+supports unless `i` lies in the window `k - L ≤ i < k + L`, for the overlap width
+`L = φ.littlewoodPaleyOverlap φ`. -/
+theorem inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico {k i : ℕ}
+    (hi : i ∉ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ))
+    (ξ : E) : φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ = 0 := by
+  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hi
+  rcases hi with hi | hi
+  · rw [mul_comm]
+    exact φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ (by omega) ξ
+  · exact φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ hi ξ
+
+/-- **The partition of unity seen by one piece.** `∑_{k - L ≤ i < k + L} ψₖ ψᵢ = ψₖ` for the overlap
+width `L = φ.littlewoodPaleyOverlap φ`: the pieces sum to one, and only those in the window meet
+`ψₖ`. -/
+theorem sum_Ico_inhomogeneousLittlewoodPaley_mul (k : ℕ) (ξ : E) :
+    ∑ i ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
+      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ =
+      φ.inhomogeneousLittlewoodPaley k ξ := by
+  rw [← Finset.mul_sum, mul_comm]
+  refine sum_mul_eq_right_of_mul_eq_zero (e := Nat.cast)
+    (fun i j h ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ (by exact_mod_cast h) ξ)
+    (fun _ ↦ φ.hasSum_inhomogeneousLittlewoodPaley ξ) fun i hi ↦ ?_
+  rw [abs_sub_lt_iff] at hi
+  rw [Finset.mem_Ico]
+  omega
+
+/-- **The tail of the partition seen by one piece.** For the overlap width
+`L = φ.littlewoodPaleyOverlap φ`, `ψₖ (1 - ∑_{i < N} ψᵢ) = ∑_{k - L ≤ i < k + L, N ≤ i} ψₖ ψᵢ`: the
+pieces `ψᵢ` with `i` at least `L` away from `k` do not meet `ψₖ`. -/
+theorem mul_one_sub_sum_range_eq_sum_Ico (k N : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaley k ξ *
+        (1 - ∑ i ∈ Finset.range N, φ.inhomogeneousLittlewoodPaley i ξ) =
+      ∑ i ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
+        if N ≤ i then φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ
+        else 0 := by
+  set W := Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ)
+  have hN : ∑ i ∈ Finset.range N,
+      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ =
+      ∑ i ∈ W, if i < N then
+        φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ else 0 := by
+    rw [← Finset.sum_filter]
+    refine (Finset.sum_subset (fun i hi ↦ ?_) fun i hi hi' ↦
+      φ.inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico (fun hiW ↦ hi' ?_) ξ).symm
+    · simp only [Finset.mem_filter, Finset.mem_range] at hi ⊢
+      exact hi.2
+    · simp only [Finset.mem_filter, Finset.mem_range] at hi ⊢
+      exact ⟨hiW, hi⟩
+  rw [mul_sub, mul_one, Finset.mul_sum, hN]
+  nth_rw 1 [← φ.sum_Ico_inhomogeneousLittlewoodPaley_mul k ξ]
+  rw [← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  split_ifs <;> first | omega | ring
 
 /-- **Translated pieces meet only pieces of comparable size.** If the translate `ψⱼ (· + θ)` and
 the piece `ψₖ` are both nonzero at `ζ`, then `2^j ≤ c (1 + ‖θ‖) 2^k` with
