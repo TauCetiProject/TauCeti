@@ -80,6 +80,7 @@ theorem centerMapRingHom_algebraMap (f : R →+* S) (r : R) :
 
 /-- The map on centres is `f`-semilinear: it sends `r • z` to `f r • z'`, for `z'` the image of
 `z`. -/
+@[simp]
 theorem centerMapRingHom_smul (f : R →+* S) (r : R) (z : Subalgebra.center R R[G]) :
     centerMapRingHom G f (r • z) = f r • centerMapRingHom G f z := by
   rw [Algebra.smul_def, map_mul, centerMapRingHom_algebraMap, ← Algebra.smul_def]

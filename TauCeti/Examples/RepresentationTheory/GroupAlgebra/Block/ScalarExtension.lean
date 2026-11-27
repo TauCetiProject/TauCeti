@@ -67,16 +67,17 @@ theorem blockTwoS₃_mul_classSumCenter (g : S₃) :
 variable {K K' : Type*} [Field K] [Field K']
 
 /-- The class sums act on `ρ + ρ²` by scalars. -/
-theorem forall_exists_mul_classSumCenter_blockTwoS₃ (C : ConjClasses S₃) :
+theorem exists_blockTwoS₃_mul_classSumCenter (C : ConjClasses S₃) :
     ∃ c : ZMod 2, blockTwoS₃ * classSumCenter C = c • blockTwoS₃ := by
   obtain ⟨g, rfl⟩ := C.exists_rep
   exact ⟨_, blockTwoS₃_mul_classSumCenter g⟩
 
 /-- The class sums act on each image of `ρ + ρ²` by scalars. -/
-theorem exists_mul_classSumCenter_blockTwoS₃_map (f : ZMod 2 →+* K) (C : ConjClasses S₃) :
+theorem exists_centerMapRingHom_blockTwoS₃_mul_classSumCenter (f : ZMod 2 →+* K)
+    (C : ConjClasses S₃) :
     ∃ c : K, centerMapRingHom S₃ f blockTwoS₃ * classSumCenter C =
       c • centerMapRingHom S₃ f blockTwoS₃ :=
-  exists_mul_classSumCenter_centerMapRingHom f forall_exists_mul_classSumCenter_blockTwoS₃ C
+  exists_centerMapRingHom_mul_classSumCenter f exists_blockTwoS₃_mul_classSumCenter C
 
 /-- The augmentation is the central character of `1 + ρ + ρ²` over every `K`: it takes the value
 `f 1 = 1` at its image. -/
@@ -95,7 +96,7 @@ theorem isBlockIdempotent_blockOneS₃_map (f : ZMod 2 →+* K) :
 theorem isBlockIdempotent_blockTwoS₃_map (f : ZMod 2 →+* K) :
     IsBlockIdempotent (centerMapRingHom S₃ f blockTwoS₃) :=
   isBlockIdempotent_blockTwoS₃.centerMapRingHom_of_forall_exists_mul_classSumCenter f
-    forall_exists_mul_classSumCenter_blockTwoS₃
+    exists_blockTwoS₃_mul_classSumCenter
 
 /-- **The central character of `1 + ρ + ρ²` over a field `K` of characteristic `2`**, the
 augmentation, takes the values `1`, `0`, `1` on the class sums of `1`, of the `3`-cycles and of the
@@ -110,13 +111,13 @@ theorem centerAugmentation_classSumCenter_of_charP [CharP K 2] (g : S₃) :
 
 /-- **The central character of `ρ + ρ²` over `K`** takes the values `1`, `1`, `0` on the class sums
 of `1`, of the `3`-cycles and of the transpositions. -/
-theorem exists_centralCharacter_blockTwoS₃_map (f : ZMod 2 →+* K) :
+theorem exists_algHom_centerMapRingHom_blockTwoS₃_eq_one_and_classSumCenter (f : ZMod 2 →+* K) :
     ∃ φ : Subalgebra.center K (MonoidAlgebra K S₃) →ₐ[K] K,
       φ (centerMapRingHom S₃ f blockTwoS₃) = 1 ∧ ∀ g : S₃,
         φ (classSumCenter (ConjClasses.mk g)) = if g ≠ 1 ∧ g * g = 1 then 0 else 1 := by
   have hb := isBlockIdempotent_blockTwoS₃_map f
   obtain ⟨φ, hφ1, hφ⟩ := hb.exists_algHom_of_forall_exists_mul_classSumCenter
-    (exists_mul_classSumCenter_blockTwoS₃_map f)
+    (exists_centerMapRingHom_blockTwoS₃_mul_classSumCenter f)
   refine ⟨φ, hφ1, fun g ↦ (apply_eq_of_mul_eq_smul hb.ne_zero hφ
     (centerMapRingHom_mul_classSumCenter f (blockTwoS₃_mul_classSumCenter g))).trans ?_⟩
   split_ifs <;> simp
@@ -129,7 +130,7 @@ theorem isBlockIdempotent_centerMapRingHom_blockS₃ (f : ZMod 2 →+* K) (f' : 
       IsBlockIdempotent (centerMapRingHom S₃ f' (centerMapRingHom S₃ f blockTwoS₃)) :=
   ⟨(isBlockIdempotent_blockOneS₃_map f).centerMapRingHom f' (centerAugmentation_blockOneS₃_map f),
     (isBlockIdempotent_blockTwoS₃_map f).centerMapRingHom_of_forall_exists_mul_classSumCenter f'
-      (exists_mul_classSumCenter_blockTwoS₃_map f)⟩
+      (exists_centerMapRingHom_blockTwoS₃_mul_classSumCenter f)⟩
 
 /-! ### `C₃` -/
 
@@ -147,7 +148,10 @@ private theorem exists_mul_classSumCenter_of_mul_of {b : MonoidAlgebra K C₃} (
     (hb : ∀ g, b * of K C₃ g = c g • b) (C : ConjClasses C₃) :
     ∃ c : K, toCenter b * classSumCenter C = c • toCenter b := by
   obtain ⟨g, rfl⟩ := C.exists_rep
-  exact ⟨c g, Subtype.ext (by simpa using hb g)⟩
+  refine ⟨c g, Subtype.ext ?_⟩
+  rw [classSumCenter_mk_of_commGroup, Subalgebra.coe_mul, Subalgebra.coe_smul, coe_toCenter,
+    coe_toCenter]
+  exact hb g
 
 /-- **The blocks of `K[C₃]` stay blocks.** Over a field `K` of characteristic `2` containing a
 root `α` of `X² + X + 1`, for instance `𝔽₄`, the blocks `1 + r + r²`, `1 + α² r + α r²` and
@@ -158,9 +162,10 @@ theorem isBlockIdempotent_centerMapRingHom_blockC₃ [CharP K 2] (hα : α ^ 2 +
     IsBlockIdempotent (centerMapRingHom C₃ f (toCenter (1 + of K C₃ r + of K C₃ (r ^ 2)))) ∧
       IsBlockIdempotent (centerMapRingHom C₃ f (toCenter (eOne α))) ∧
       IsBlockIdempotent (centerMapRingHom C₃ f (toCenter (eTwo α))) :=
-  ⟨(toCenter_one_add_r_add_r_sq (K := K)).symm ▸
-      (isBlockIdempotent_principalBlockIdempotent K C₃).centerMapRingHom f
-        (centerAugmentation_principalBlockIdempotent K C₃),
+  ⟨by
+    rw [toCenter_one_add_r_add_r_sq]
+    exact (isBlockIdempotent_principalBlockIdempotent K C₃).centerMapRingHom f
+      (centerAugmentation_principalBlockIdempotent K C₃),
     (isBlockIdempotent_eOne hα).centerMapRingHom_of_forall_exists_mul_classSumCenter f
       (exists_mul_classSumCenter_of_mul_of _ (eOne_mul_of hα)),
     (isBlockIdempotent_eTwo hα).centerMapRingHom_of_forall_exists_mul_classSumCenter f
