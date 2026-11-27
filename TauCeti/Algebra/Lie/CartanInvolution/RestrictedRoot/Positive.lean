@@ -19,11 +19,12 @@ restricted root spaces is
 
 Since `[𝔤_λ, 𝔤_μ] ⊆ 𝔤_{λ + μ}` and `λ(H₀) > 0`, `μ(H₀) ≥ 0` give `(λ + μ)(H₀) > 0`, the space `𝔫` is
 a Lie subalgebra (`Submodule.positiveRestrictedRootSubalgebra`), normalized by `𝔞` and by the
-centralizer `𝔤_0` of `𝔞`. If the restricted root spaces span `L` and `L` is Noetherian, each
-`ad x`, `x ∈ 𝔫`, is nilpotent on `L`: it strictly raises the value at `H₀` of the restricted roots
-involved, which takes finitely many values. By Engel's theorem `𝔫` acts nilpotently on `L` and is a
-nilpotent Lie algebra. For an automorphism `θ` with `𝔞 ⊆ 𝔭`, `θ` maps `𝔫` onto the negative
-counterpart `𝔫⁻ = positiveRestrictedRootSpace 𝔞 (-H₀)`, and `𝔤_0 + 𝔫` meets `𝔫⁻` trivially.
+centralizer `𝔤_0` of `𝔞`. If `L` is Noetherian, each `ad x`, `x ∈ 𝔫`, strictly raises the value at
+`H₀` of the restricted roots involved, which takes finitely many values, so a power of `ad x` kills
+`𝔫` and `𝔫` is a nilpotent Lie algebra. If moreover the restricted root spaces span `L`, `ad x` is
+nilpotent on `L`, and by Engel's theorem `𝔫` acts nilpotently on `L`. For an automorphism `θ`
+with `𝔞 ⊆ 𝔭`, `θ` maps `𝔫` onto the negative counterpart `𝔫⁻ = positiveRestrictedRootSpace 𝔞 (-H₀)`,
+and `𝔤_0 + 𝔫` meets `𝔫⁻` trivially.
 
 For a Cartan involution of a real Lie algebra and an abelian `𝔞 ⊆ 𝔭` these hypotheses hold. For
 `𝔞` maximal abelian and `H₀` regular, `𝔫` is the Lie algebra of the nilpotent factor `N` of the
@@ -51,14 +52,15 @@ and `𝔤₀ = 𝔨 ⊕ 𝔞 ⊕ 𝔫` are in `TauCeti.Algebra.Lie.CartanInvolut
   and `Submodule.disjoint_positiveRestrictedRootSpace`: `𝔤_0 ∩ 𝔫 = 0`, and `𝔞 ∩ 𝔫 = 0` for abelian
   `𝔞`.
 * `LieEquiv.map_positiveRestrictedRootSpace`: `θ 𝔫 = 𝔫⁻` for `𝔞 ⊆ 𝔭`.
+* `Submodule.lieRing_isNilpotent_positiveRestrictedRootSubalgebra`: `𝔫` is a nilpotent Lie
+  algebra if `L` is torsion-free and Noetherian over a linearly ordered commutative ring;
+  `LieEquiv.IsCartanInvolution.lieRing_isNilpotent_positiveRestrictedRootSubalgebra` is its form
+  for a Lie algebra with a Cartan involution.
 * `Submodule.isNilpotent_ad_of_mem_positiveRestrictedRootSpace`,
-  `Submodule.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`,
-  `Submodule.lieRing_isNilpotent_positiveRestrictedRootSubalgebra`: if the restricted root spaces
-  span a torsion-free Noetherian `L` over a linearly ordered commutative ring, `ad x` is nilpotent
-  for `x ∈ 𝔫`, `𝔫` acts nilpotently on `L`, and `𝔫` is a nilpotent Lie algebra.
-* `LieEquiv.IsCartanInvolution.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`,
-  `LieEquiv.IsCartanInvolution.lieRing_isNilpotent_positiveRestrictedRootSubalgebra`: the same for
-  a Cartan involution of a real Lie algebra and an abelian `𝔞 ⊆ 𝔭`.
+  `Submodule.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`: if moreover the restricted
+  root spaces span `L`, `ad x` is nilpotent for `x ∈ 𝔫` and `𝔫` acts nilpotently on `L`.
+* `LieEquiv.IsCartanInvolution.lieModule_isNilpotent_positiveRestrictedRootSubalgebra`: the same
+  for a Cartan involution of a real Lie algebra and an abelian `𝔞 ⊆ 𝔭`.
 
 ## References
 
@@ -238,12 +240,12 @@ private theorem lie_mem_iSup_lt_of_mem_positiveRestrictedRootSpace
   rw [ad_apply]
   exact mem_iSup_of_mem (ν + μ) (mem_iSup_of_mem hlt (lie_mem_restrictedRootSpace hz hy))
 
-/-- **`ad x` is nilpotent for `x ∈ 𝔫`.** If the restricted root spaces of `𝔞` span a torsion-free
-Noetherian Lie algebra `L` over a linearly ordered commutative ring, then `ad x` is nilpotent for
-every `x` in the positive restricted root space `𝔫`. -/
-theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsTorsionFree K L] [IsNoetherian K L]
-    (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤)
-    (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) : IsNilpotent (ad K L x) := by
+/-- `ad x`, `x ∈ 𝔫`, has a power killing the sum of the restricted root spaces of the functionals
+whose value at `H₀` exceeds `t`. -/
+private theorem exists_iSup_lt_le_ker_ad_pow [IsTorsionFree K L] [IsNoetherian K L]
+    (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) (t : K) :
+    ∃ n : ℕ, ⨆ (μ : Dual K 𝔞) (_ : t < μ H₀), 𝔞.restrictedRootSpace μ ≤
+      LinearMap.ker ((ad K L x) ^ n) := by
   have hfin : {μ : Dual K 𝔞 | 𝔞.restrictedRootSpace μ ≠ ⊥}.Finite :=
     finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace
   set F := hfin.toFinset
@@ -278,11 +280,22 @@ theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsTorsionFree K L] [I
         (lie_mem_iSup_lt_of_mem_positiveRestrictedRootSpace hx hz)
       rw [LinearMap.mem_ker, pow_succ, mul_apply_eq_comp, ad_apply]
       exact LinearMap.mem_ker.mp hz'
+  exact ⟨_, key _ t le_rfl⟩
+
+/-- **`ad x` is nilpotent for `x ∈ 𝔫`.** If the restricted root spaces of `𝔞` span a torsion-free
+Noetherian Lie algebra `L` over a linearly ordered commutative ring, then `ad x` is nilpotent for
+every `x` in the positive restricted root space `𝔫`. -/
+theorem isNilpotent_ad_of_mem_positiveRestrictedRootSpace [IsTorsionFree K L] [IsNoetherian K L]
+    (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤)
+    (hx : x ∈ 𝔞.positiveRestrictedRootSpace H₀) : IsNilpotent (ad K L x) := by
+  have hfin : {μ : Dual K 𝔞 | 𝔞.restrictedRootSpace μ ≠ ⊥}.Finite :=
+    finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace
   -- Take `t` below the value at `H₀` of every functional with nonzero restricted root space.
   obtain ⟨b, hb⟩ := (hfin.image fun μ ↦ μ H₀).bddBelow
-  refine ⟨(F.filter ((b - 1) < · H₀)).card, LinearMap.ext fun y ↦ ?_⟩
+  obtain ⟨n, hn⟩ := exists_iSup_lt_le_ker_ad_pow hx (b - 1)
+  refine ⟨n, LinearMap.ext fun y ↦ ?_⟩
   rw [LinearMap.zero_apply, ← LinearMap.mem_ker]
-  refine key _ (b - 1) le_rfl ?_
+  refine hn ?_
   refine (hspan.symm.le.trans (iSup_le fun μ ↦ ?_)) mem_top
   by_cases hbot : 𝔞.restrictedRootSpace μ = ⊥
   · exact hbot.le.trans bot_le
@@ -299,15 +312,20 @@ theorem lieModule_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K 
   ext y
   simp
 
-/-- **`𝔫` is a nilpotent Lie algebra.** If the restricted root spaces of `𝔞` span a torsion-free
-Noetherian Lie algebra `L` over a linearly ordered commutative ring, the positive restricted root
-subalgebra is nilpotent. -/
-theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K L] [IsNoetherian K L]
-    (hspan : ⨆ μ : Dual K 𝔞, 𝔞.restrictedRootSpace μ = ⊤) :
-    LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) :=
-  LieAlgebra.isNilpotent_iff_forall.mpr fun x ↦
-    LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad _
-      (isNilpotent_ad_of_mem_positiveRestrictedRootSpace hspan x.property)
+/-- **`𝔫` is a nilpotent Lie algebra.** For a torsion-free Noetherian Lie algebra `L` over a
+linearly ordered commutative ring, the positive restricted root subalgebra is nilpotent: for
+`x ∈ 𝔫`, a power of `ad x` kills `𝔫`. -/
+theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra [IsTorsionFree K L]
+    [IsNoetherian K L] : LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) := by
+  refine (LieAlgebra.isNilpotent_iff_forall (R := K)).mpr fun x ↦ ?_
+  obtain ⟨n, hn⟩ := exists_iSup_lt_le_ker_ad_pow x.property 0
+  rw [← positiveRestrictedRootSpace_eq_iSup] at hn
+  refine ⟨n, LinearMap.ext fun y ↦ Subtype.ext ?_⟩
+  have h := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute
+    ((𝔞.positiveRestrictedRootSubalgebra H₀).ad_comp_incl_eq x) n) y
+  simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieSubalgebra.coe_incl] at h
+  rw [LinearMap.mem_ker.mp (hn y.property)] at h
+  rw [← h, LinearMap.zero_apply, ZeroMemClass.coe_zero]
 
 end LinearOrderedRing
 
@@ -336,6 +354,8 @@ namespace LieEquiv.IsCartanInvolution
 
 open Submodule
 
+section Real
+
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L} {𝔞 : Submodule ℝ L}
 
 /-- **`𝔫` acts nilpotently.** For a Cartan involution `θ` of a real Lie algebra and an abelian
@@ -348,14 +368,21 @@ theorem lieModule_isNilpotent_positiveRestrictedRootSubalgebra (hθ : θ.IsCarta
   Submodule.lieModule_isNilpotent_positiveRestrictedRootSubalgebra
     (hθ.iSup_restrictedRootSpace_eq_top h𝔞 hab)
 
-/-- **`𝔫` is a nilpotent Lie algebra.** For a Cartan involution `θ` of a real Lie algebra and an
-abelian subspace `𝔞` of `𝔭`, the positive restricted root subalgebra of any `H₀ ∈ 𝔞` is
-nilpotent. -/
+end Real
+
+section LinearOrderedField
+
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L} {𝔞 : Submodule K L}
+
+/-- **`𝔫` is a nilpotent Lie algebra.** For a Cartan involution `θ` of a Lie algebra over a
+linearly ordered field and any subspace `𝔞`, the positive restricted root subalgebra of any
+`H₀ ∈ 𝔞` is nilpotent. -/
 theorem lieRing_isNilpotent_positiveRestrictedRootSubalgebra (hθ : θ.IsCartanInvolution)
-    (h𝔞 : 𝔞 ≤ θ.cartanP) (hab : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) (H₀ : 𝔞) :
-    LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) :=
+    (H₀ : 𝔞) : LieRing.IsNilpotent (𝔞.positiveRestrictedRootSubalgebra H₀) :=
   have := hθ.finiteDimensional
   Submodule.lieRing_isNilpotent_positiveRestrictedRootSubalgebra
-    (hθ.iSup_restrictedRootSpace_eq_top h𝔞 hab)
+
+end LinearOrderedField
 
 end LieEquiv.IsCartanInvolution
