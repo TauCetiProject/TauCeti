@@ -18,9 +18,9 @@ In infinite dimensions, compact operators and nonlinear lower-order terms `g ∘
 globally weakly continuous, and compactly defined constraint sets such as `{u ∈ S | J u ∈ C}` (for
 example, Rayleigh normalization spheres `{u | ‖J u‖ = 1}`) need not be weakly closed in general.
 Nevertheless, once an energy controls norm sublevels (`TauCeti.HasBoundedSublevelsOn`), every
-variational argument localizes to closed norm balls, which are weakly closed over `ℝ` or `ℂ` and on
-which a compact operator `J` is weak-to-norm continuous
-(`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`).
+variational argument localizes to closed norm balls, which are weakly closed over `ℝ` or `ℂ`
+(`TauCeti.isClosed_toWeakSpace_closedBall`) and on which a compact operator `J` is weak-to-norm
+continuous (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`).
 
 This file provides weak lower semicontinuity inputs for compactly perturbed energies:
 * `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded`: if `E₀` is

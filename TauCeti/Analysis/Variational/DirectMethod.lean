@@ -10,8 +10,7 @@ public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Order.Filter.Extr
-import Mathlib.Analysis.LocallyConvex.WeakSpace
-import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 
 /-!
 # The direct method in the weak topology
@@ -148,15 +147,8 @@ theorem lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn {�
   have hB_lsc : LowerSemicontinuousOn f (toWeakSpace 𝕜 V '' B) :=
     hloc inter_subset_left (Metric.isBounded_closedBall.subset inter_subset_right)
   obtain ⟨v₀, hv₀, hBv₀⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hB_lsc b
-  have hball : IsClosed (toWeakSpace 𝕜 V '' Metric.closedBall (0 : V) R) := by
-    let : NormedSpace ℝ V := .restrictScalars ℝ 𝕜 V
-    let : Module ℝ V := .restrictScalars ℝ 𝕜 V
-    have : IsScalarTower ℝ 𝕜 V := .restrictScalars ℝ 𝕜 V
-    have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace
-    rw [← Metric.isClosed_closedBall.closure_eq,
-      (convex_closedBall (0 : V) R).toWeakSpace_closure 𝕜]
-    exact isClosed_closure
-  refine ⟨(toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀, hball.inter hv₀, ?_⟩
+  refine ⟨(toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀,
+    (isClosed_toWeakSpace_closedBall (0 : V) R).inter hv₀, ?_⟩
   have hinter : (toWeakSpace 𝕜 V '' S) ∩ ((toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀) =
       (toWeakSpace 𝕜 V '' B) ∩ v₀ := by
     rw [← inter_assoc, ← image_inter (toWeakSpace 𝕜 V).injective]
