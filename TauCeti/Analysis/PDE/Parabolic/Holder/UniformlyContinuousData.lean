@@ -120,9 +120,9 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 * `exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le`: the Schauder estimate at
   positive times for bounded uniformly continuous initial data.
 * `euclideanTerminalSolutionBUC`: the solution operator of the terminal-value problem, the time
-  reversal of `euclideanCauchySolutionBUC`
-  (`euclideanTerminalSolutionBUC_apply`) along `slabReverse`, with coefficients reversed by
-  `reverseL` and data by `reverseDataL`.
+  reversal of `euclideanCauchySolutionBUC` (`euclideanTerminalSolutionBUC_apply`) along
+  `slabTimeReverse`, with coefficients reversed by `terminalTimeReverseL` and data by
+  `terminalDataTimeReverseL`.
 
 ## References
 
@@ -1069,75 +1069,64 @@ end Uniform
 
 section Terminal
 
-/-- Time reversal `(x, t) ↦ (x, T - t)`, mapping the slab `ℝⁿ × [0, T]` onto itself. -/
-def slabReverse (T : ℝ≥0) :
-    slab (E := EuclideanSpace ℝ ι) 0 T ≃ᵢ slab (E := EuclideanSpace ℝ ι) 0 T :=
-  slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm
-
-/-- The time reversal `slabReverse T` sends `(x, t)` to `(x, T - t)`. -/
-@[simp]
-theorem coe_slabReverse (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
-    (slabReverse T p : ParabolicSpaceTime (EuclideanSpace ℝ ι)) = timeReverse T p :=
-  coe_slabTimeReverse ..
-
-private theorem slabReverse_slabMk (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
-    slabReverse T (slabMk x t) =
-      slabMk x (iccTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm t) :=
-  slabTimeReverse_slabMk _ _ _ x t
-
-private theorem coe_slabTime_slabReverse (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
-    (slabTime (slabReverse T p) : ℝ) = T - slabTime p :=
-  coe_slabTime_slabTimeReverse ..
-
-/-- Reversing a coefficient or forcing field in time, `f ↦ f ∘ R`, `R (x, t) = (x, T - t)`. -/
-def reverseL : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ →L[ℝ]
+/-- Reversing a coefficient or forcing field of the terminal-value problem on `ℝⁿ × [0, T]` in
+time, `f ↦ f ∘ R`, `R (x, t) = (x, T - t)`. -/
+def terminalTimeReverseL : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ →L[ℝ]
     HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ :=
-  HolderSpace.compLipschitzL _ (slabReverse T).isometry.lipschitzWith
+  HolderSpace.compLipschitzL _
+    (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith
 
-/-- `reverseL f` is `f ∘ R`, `R (x, t) = (x, T - t)`. -/
-theorem reverseL_apply (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (p : slab (E := EuclideanSpace ℝ ι) 0 T) : reverseL f p = f (slabReverse T p) :=
+/-- `terminalTimeReverseL f` is `f ∘ R`, `R (x, t) = (x, T - t)`. -/
+@[simp]
+theorem terminalTimeReverseL_apply (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
+    terminalTimeReverseL f p = f (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm p) :=
   HolderSpace.compLipschitzL_apply _ f p
 
-/-- Reversing a field in time does not increase its Hölder norm. -/
-theorem norm_reverseL_apply_le (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) :
-    ‖reverseL f‖ ≤ ‖f‖ := by
-  simpa using (reverseL (α := α) (T := T)).le_of_opNorm_le
-    (HolderSpace.norm_compLipschitzL_le_one _) f
+/-- Reversing a field in time keeps its Hölder norm: `terminalTimeReverseL` is
+`HolderSpace.slabTimeReverseLIE`. -/
+@[simp]
+theorem norm_terminalTimeReverseL_apply
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) :
+    ‖terminalTimeReverseL f‖ = ‖f‖ := by
+  rw [terminalTimeReverseL, ← HolderSpace.slabTimeReverseLIE_eq_compLipschitzL,
+    LinearIsometryEquiv.norm_map]
 
 /-- The data `(f, g)` of the terminal-value problem become the data `(-f ∘ R, g)` of the reversed
 Cauchy problem. -/
-def reverseDataL : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+def terminalDataTimeReverseL : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ →L[ℝ]
     HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ :=
-  (-reverseL).prodMap (ContinuousLinearMap.id ℝ _)
+  (-terminalTimeReverseL).prodMap (ContinuousLinearMap.id ℝ _)
 
-/-- `reverseDataL` sends `(f, g)` to `(-f ∘ R, g)`. -/
-theorem reverseDataL_apply (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+/-- `terminalDataTimeReverseL` sends `(f, g)` to `(-f ∘ R, g)`. -/
+@[simp]
+theorem terminalDataTimeReverseL_apply (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
     (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
-    reverseDataL (f, w) = (-reverseL f, w) :=
+    terminalDataTimeReverseL (f, w) = (-terminalTimeReverseL f, w) :=
   (rfl)
 
-/-- Reversing the data in time does not increase their norm. -/
-theorem norm_reverseDataL_apply_le
+/-- Reversing the data in time keeps their norm. -/
+@[simp]
+theorem norm_terminalDataTimeReverseL_apply
     (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
-    ‖reverseDataL d‖ ≤ ‖d‖ := by
+    ‖terminalDataTimeReverseL d‖ = ‖d‖ := by
   obtain ⟨f, w⟩ := d
-  rw [reverseDataL_apply, Prod.norm_def, Prod.norm_def, norm_neg]
-  exact max_le_max (norm_reverseL_apply_le f) le_rfl
+  rw [terminalDataTimeReverseL_apply, Prod.norm_def, Prod.norm_def, norm_neg,
+    norm_terminalTimeReverseL_apply]
 
 variable [DecidableEq ι]
 
 /-- Reversing the coefficients in time keeps them uniformly elliptic. -/
-theorem reverse_ellipticity
+theorem ellipticity_terminalTimeReverseL
     {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
     (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
     ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ reverseL (a i j) p).toQuadraticForm' ξ :=
-  ha.imp fun _ h ↦ ⟨h.1, fun p ξ ↦ by simpa only [reverseL_apply] using h.2 (slabReverse T p) ξ⟩
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ terminalTimeReverseL (a i j) p).toQuadraticForm' ξ :=
+  ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩
 
 variable (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
   (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
@@ -1157,9 +1146,11 @@ def euclideanTerminalSolutionBUC :
     HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ →L[ℝ]
         (slab (E := EuclideanSpace ℝ ι) 0 T →ᵇ ℝ) :=
-  (compContinuousCLM ℝ ℝ ⟨slabReverse T, (slabReverse T).continuous⟩).comp
-    ((euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ reverseL (a i j)) (fun i ↦ reverseL (b i))
-      (reverseL c) (reverse_ellipticity ha)).comp reverseDataL)
+  (compContinuousCLM ℝ ℝ
+      ⟨_, (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).continuous⟩).comp
+    ((euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ terminalTimeReverseL (a i j))
+      (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c)
+      (ellipticity_terminalTimeReverseL ha)).comp terminalDataTimeReverseL)
 
 variable {a b c}
 
@@ -1170,8 +1161,10 @@ theorem euclideanTerminalSolutionBUC_apply
     (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
     (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
     euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p =
-      euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ reverseL (a i j)) (fun i ↦ reverseL (b i))
-        (reverseL c) (reverse_ellipticity ha) (-reverseL f, w) (slabReverse T p) :=
+      euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ terminalTimeReverseL (a i j))
+        (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c)
+        (ellipticity_terminalTimeReverseL ha) (-terminalTimeReverseL f, w)
+        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm p) :=
   (rfl)
 
 /-- **Agreement with the classical solution.** If `u ∈ C_b^{2+α,1+α/2}` solves the terminal-value
@@ -1187,16 +1180,19 @@ theorem euclideanTerminalSolutionBUC_eq_valueL
   -- The time reversal `v = u ∘ R` solves the reversed Cauchy problem with data `(-f ∘ R, u(·, T))`.
   obtain ⟨v, hv⟩ : ∃ v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
       v = timeReverseLIE (T : ℝ) (sub_self _).symm (sub_zero _).symm u := ⟨_, rfl⟩
-  have hPv : euclideanParabolicOperatorL hα₁.le (fun i j ↦ reverseL (a i j))
-      (fun i ↦ reverseL (b i)) (reverseL c) v = -reverseL f := by
+  have hPv : euclideanParabolicOperatorL hα₁.le (fun i j ↦ terminalTimeReverseL (a i j))
+      (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c) v =
+        -terminalTimeReverseL f := by
     rw [hv, ← hu]
     exact euclideanParabolicOperatorL_timeReverseLIE hα₁.le u
-  have hv₀ : (euclideanInitialDataCLE hα₀ hα₁ hT (fun i j ↦ reverseL (a i j))
-      (fun i ↦ reverseL (b i)) (reverseL c) (reverse_ellipticity ha)).symm
-        (-reverseL f, v.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩) = v := by
+  have hv₀ : (euclideanInitialDataCLE hα₀ hα₁ hT (fun i j ↦ terminalTimeReverseL (a i j))
+      (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c)
+      (ellipticity_terminalTimeReverseL ha)).symm
+        (-terminalTimeReverseL f, v.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩) = v := by
     rw [ContinuousLinearEquiv.symm_apply_eq, euclideanInitialDataCLE_apply, hPv]
   have hcl := euclideanCauchySolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT
-    (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha) (-reverseL f) w
+    (b := fun i ↦ terminalTimeReverseL (b i)) (c := terminalTimeReverseL c)
+    (ellipticity_terminalTimeReverseL ha) (-terminalTimeReverseL f) w
     (v.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩) fun x ↦ by
       rw [hw, spatialTrace_apply, hv, timeReverseLIE_apply, slabTimeReverse_slabMk,
         iccTimeReverse_left _ _ _ hT.le]
@@ -1271,15 +1267,16 @@ theorem norm_euclideanTerminalSolutionBUC_le :
     ‖euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha‖ ≤ Real.exp (‖c‖ * T) * (1 + T) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun ⟨f, w⟩ ↦ ?_
   calc ‖euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w)‖ ≤
-        ‖euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ reverseL (a i j))
-          (fun i ↦ reverseL (b i)) (reverseL c) (reverse_ellipticity ha) (reverseDataL (f, w))‖ :=
+        ‖euclideanCauchySolutionBUC hα₀ hα₁ hT (fun i j ↦ terminalTimeReverseL (a i j))
+          (fun i ↦ terminalTimeReverseL (b i)) (terminalTimeReverseL c)
+          (ellipticity_terminalTimeReverseL ha) (terminalDataTimeReverseL (f, w))‖ :=
         norm_compContinuous_le _ _
-    _ ≤ Real.exp (‖reverseL c‖ * T) * (1 + T) * ‖reverseDataL (f, w)‖ :=
-        norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (a := fun i j ↦ reverseL (a i j))
-          (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha) _
-    _ ≤ Real.exp (‖c‖ * T) * (1 + T) * ‖(f, w)‖ := by
-        gcongr
-        exacts [norm_reverseL_apply_le c, norm_reverseDataL_apply_le _]
+    _ ≤ Real.exp (‖terminalTimeReverseL c‖ * T) * (1 + T) * ‖terminalDataTimeReverseL (f, w)‖ :=
+        norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
+          (a := fun i j ↦ terminalTimeReverseL (a i j)) (b := fun i ↦ terminalTimeReverseL (b i))
+          (c := terminalTimeReverseL c) (ellipticity_terminalTimeReverseL ha) _
+    _ = Real.exp (‖c‖ * T) * (1 + T) * ‖(f, w)‖ := by
+        rw [norm_terminalTimeReverseL_apply, norm_terminalDataTimeReverseL_apply]
 
 /-- **The supremum bound for the terminal-value solution.**
 `‖u‖_∞ ≤ exp (‖c‖ T) (1 + T) max (‖f‖, ‖g‖_∞)`. -/
@@ -1315,11 +1312,12 @@ theorem euclideanTerminalSolutionBUC_apply_le {γ M K : ℝ} (hc : ∀ p, c p �
     (hw : ∀ x, (w : EuclideanSpace ℝ ι →ᵇ ℝ) x ≤ M) (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
     euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p ≤
       Real.exp (γ * (T - slabTime p)) * (M + (T - slabTime p) * K) := by
-  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabReverse]
-  exact euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (a := fun i j ↦ reverseL (a i j))
-    (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha)
-    (fun q ↦ by rw [reverseL_apply]; exact hc _) hγ hM hK (-reverseL f) w
-    (fun q ↦ by rw [HolderSpace.neg_apply, reverseL_apply]; exact neg_le.1 (hf _)) hw _
+  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabTimeReverse]
+  exact euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
+    (a := fun i j ↦ terminalTimeReverseL (a i j)) (b := fun i ↦ terminalTimeReverseL (b i))
+    (c := terminalTimeReverseL c) (ellipticity_terminalTimeReverseL ha)
+    (fun q ↦ by rw [terminalTimeReverseL_apply]; exact hc _) hγ hM hK (-terminalTimeReverseL f) w
+    (fun q ↦ by rw [HolderSpace.neg_apply, terminalTimeReverseL_apply]; exact neg_le.1 (hf _)) hw _
 
 /-- **The two-sided maximum principle bound.** If `c ≤ γ` with `0 ≤ γ`, `|f| ≤ K` and `|g| ≤ M`,
 then the terminal-value solution satisfies `|u(x, t)| ≤ exp (γ (T - t)) (M + (T - t) K)`. -/
@@ -1329,11 +1327,12 @@ theorem abs_euclideanTerminalSolutionBUC_apply_le {γ M K : ℝ} (hc : ∀ p, c 
     (hw : ∀ x, |(w : EuclideanSpace ℝ ι →ᵇ ℝ) x| ≤ M) (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
     |euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p| ≤
       Real.exp (γ * (T - slabTime p)) * (M + (T - slabTime p) * K) := by
-  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabReverse]
-  exact abs_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (a := fun i j ↦ reverseL (a i j))
-    (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha)
-    (fun q ↦ by rw [reverseL_apply]; exact hc _) hγ (-reverseL f) w
-    (fun q ↦ by rw [HolderSpace.neg_apply, reverseL_apply, abs_neg]; exact hf _) hw _
+  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabTimeReverse]
+  exact abs_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
+    (a := fun i j ↦ terminalTimeReverseL (a i j)) (b := fun i ↦ terminalTimeReverseL (b i))
+    (c := terminalTimeReverseL c) (ellipticity_terminalTimeReverseL ha)
+    (fun q ↦ by rw [terminalTimeReverseL_apply]; exact hc _) hγ (-terminalTimeReverseL f) w
+    (fun q ↦ by rw [HolderSpace.neg_apply, terminalTimeReverseL_apply, abs_neg]; exact hf _) hw _
 
 /-- **The comparison principle for the terminal-value solution.** If `f' ≤ f` and `g ≤ g'`, then
 the solution with data `(f, g)` lies below the solution with data `(f', g')`. -/
@@ -1345,9 +1344,12 @@ theorem euclideanTerminalSolutionBUC_apply_le_apply
     euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p ≤
       euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f', w') p := by
   rw [euclideanTerminalSolutionBUC_apply, euclideanTerminalSolutionBUC_apply]
-  exact euclideanCauchySolutionBUC_apply_le_apply hα₀ hα₁ hT (a := fun i j ↦ reverseL (a i j))
-    (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha)
-    (fun q ↦ by simp only [HolderSpace.neg_apply, reverseL_apply, neg_le_neg_iff]; exact hf _) hw _
+  exact euclideanCauchySolutionBUC_apply_le_apply hα₀ hα₁ hT
+    (a := fun i j ↦ terminalTimeReverseL (a i j)) (b := fun i ↦ terminalTimeReverseL (b i))
+    (c := terminalTimeReverseL c) (ellipticity_terminalTimeReverseL ha)
+    (fun q ↦ by
+      simp only [HolderSpace.neg_apply, terminalTimeReverseL_apply, neg_le_neg_iff]; exact hf _)
+    hw _
 
 /-- **The terminal condition.** The terminal-value solution takes the terminal datum at `t = T`. -/
 @[simp]
@@ -1356,7 +1358,7 @@ theorem euclideanTerminalSolutionBUC_apply_slabMk_right
     (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
     euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w)
         (slabMk x ⟨T, right_mem_Icc.2 hT.le⟩) = (w : EuclideanSpace ℝ ι →ᵇ ℝ) x := by
-  rw [euclideanTerminalSolutionBUC_apply, slabReverse_slabMk, iccTimeReverse_right _ _ _ hT.le,
+  rw [euclideanTerminalSolutionBUC_apply, slabTimeReverse_slabMk, iccTimeReverse_right _ _ _ hT.le,
     euclideanCauchySolutionBUC_apply_slabMk_zero]
 
 /-- **Uniform attainment of the terminal datum.** As `t → T⁻`, the terminal-value solution
@@ -1372,12 +1374,13 @@ theorem tendstoUniformly_euclideanTerminalSolutionBUC
   have hσ := (iccTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).continuous.tendsto
     ⟨(T : ℝ), right_mem_Icc.2 hT.le⟩
   rw [iccTimeReverse_right _ _ _ hT.le] at hσ
-  have h := tendstoUniformly_euclideanCauchySolutionBUC hα₀ hα₁ hT (b := fun i ↦ reverseL (b i))
-    (c := reverseL c) (reverse_ellipticity ha) (-reverseL f) w
+  have h := tendstoUniformly_euclideanCauchySolutionBUC hα₀ hα₁ hT
+    (b := fun i ↦ terminalTimeReverseL (b i))
+    (c := terminalTimeReverseL c) (ellipticity_terminalTimeReverseL ha) (-terminalTimeReverseL f) w
   rw [Metric.tendstoUniformly_iff] at h ⊢
   intro ε hε
   filter_upwards [hσ.eventually (h ε hε)] with t ht x
-  rw [euclideanTerminalSolutionBUC_apply, slabReverse_slabMk]
+  rw [euclideanTerminalSolutionBUC_apply, slabTimeReverse_slabMk]
   exact ht x
 
 end Terminal
