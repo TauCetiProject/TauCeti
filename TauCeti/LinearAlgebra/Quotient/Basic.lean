@@ -14,7 +14,8 @@ public import Mathlib.RingTheory.Regular.IsSMulRegular
 A surjective linear map `f : M → M₂` sending `p` into `q` induces a surjective map
 `M ⧸ p → M₂ ⧸ q`, and the induced map is injective exactly when `f⁻¹(q) ≤ p`. The quotient by a
 submodule is torsion-free exactly when the submodule is saturated, that is, contains every element
-of which it contains a multiple by a regular scalar.
+of which it contains a multiple by a regular scalar. A scalar `p` kills the quotient of `V` by the
+inverse image `Φ⁻¹(N)` of a submodule as soon as `Φ` sends every multiple `p • v` into `N`.
 
 ## Main results
 
@@ -23,6 +24,8 @@ of which it contains a multiple by a regular scalar.
   when `f⁻¹(q) ≤ p`.
 * `Submodule.isTorsionFree_quotient_iff`: a submodule has torsion-free quotient if and only if
   it is saturated.
+* `Submodule.smul_quotient_comap_eq_zero`: if `Φ (p • v) ∈ N` for all `v`, then `p` kills
+  `V ⧸ Φ⁻¹(N)`.
 -/
 
 public section
@@ -52,5 +55,20 @@ theorem isTorsionFree_quotient_iff {S : Submodule R M} :
     Module.IsTorsionFree R (M ⧸ S) ↔ ∀ (c : R) (z : M), IsRegular c → c • z ∈ S → z ∈ S :=
   ⟨fun _ c _ hc ↦ (isSMulRegular_quotient_iff_mem_of_smul_mem S c).mp hc.isSMulRegular _,
     fun hS ↦ ⟨fun c hc ↦ (isSMulRegular_quotient_iff_mem_of_smul_mem S c).mpr (hS c · hc)⟩⟩
+
+end Submodule
+
+namespace Submodule
+
+variable {O R F V : Type*} [CommRing O] [Semiring R] [AddCommMonoid F] [Module O F] [Module R F]
+  [SMul O R] [IsScalarTower O R F] [AddCommGroup V] [Module O V] {N : Submodule R F}
+  {Φ : V →ₗ[O] F} {p : O}
+
+/-- If `Φ (p • v) ∈ N` for all `v`, then `p` kills `V ⧸ Φ⁻¹(N)`. -/
+theorem smul_quotient_comap_eq_zero (hpN : ∀ v, Φ (p • v) ∈ N)
+    (q : V ⧸ (N.restrictScalars O).comap Φ) : p • q = 0 := by
+  obtain ⟨v, rfl⟩ := ((N.restrictScalars O).comap Φ).mkQ_surjective q
+  rw [← map_smul, mkQ_apply, Quotient.mk_eq_zero]
+  simpa using hpN v
 
 end Submodule

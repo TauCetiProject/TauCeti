@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.Algebra.Module.FunctionModule
 public import TauCeti.RingTheory.FittingIdeal.Length
 import Mathlib.Algebra.MvPolynomial.Eval
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.RingTheory.FittingIdeal.Span
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.MatlisDuality.PrincipalIdealRing

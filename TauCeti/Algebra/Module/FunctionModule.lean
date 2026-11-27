@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Length
 public import TauCeti.LinearAlgebra.Pi.Detection
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.Quotient.Pi.Generators
 import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 import TauCeti.RingTheory.Length
@@ -50,8 +51,6 @@ members vanishing on `A`, because linear maps to `O ⧸ (p)` extend
   more relations give fewer functions.
 * `Submodule.toFunctionModule_surjective`, `Submodule.apply_mkQ_mem_functionModule`: evaluation
   is onto the module of functions.
-* `Submodule.smul_quotient_comap_eq_zero`: if `Φ (p • v) ∈ N` for all `v`, then `p` kills
-  `V ⧸ Φ⁻¹(N)`.
 * `Submodule.functionModule_isDetectedBy_range`, `Submodule.length_functionModule`: for a module
   of relations in `O^ι` in which `Φ (z (gen i)) ≡ e_i`, the module of functions is detected by the
   `gen i` and, over a principal ideal domain, has the length of `O^ι ⧸ N`.
@@ -150,13 +149,6 @@ theorem functionModule_le_functionModule {R' F' : Type*} [Semiring R'] [AddCommM
     N'.functionModule Φ' z p ≤ N.functionModule Φ z p := fun c hc ↦ by
   obtain ⟨Ψ, hΨ, hc⟩ := mem_functionModule.1 hc
   exact mem_functionModule.2 ⟨Ψ, fun v hv ↦ hΨ v (h v hv), hc⟩
-
-/-- If `Φ (p • v) ∈ N` for all `v`, then `p` kills `V ⧸ Φ⁻¹(N)`. -/
-theorem smul_quotient_comap_eq_zero (hpN : ∀ v, Φ (p • v) ∈ N)
-    (q : V ⧸ (N.restrictScalars O).comap Φ) : p • q = 0 := by
-  obtain ⟨v, rfl⟩ := ((N.restrictScalars O).comap Φ).mkQ_surjective q
-  rw [← map_smul, mkQ_apply, Quotient.mk_eq_zero]
-  simpa using hpN v
 
 end FunctionModule
 
