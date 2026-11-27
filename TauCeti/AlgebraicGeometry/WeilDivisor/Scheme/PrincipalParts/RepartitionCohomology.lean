@@ -238,9 +238,10 @@ private lemma exists_eq_sheafMul_comp_sheafHomOfLE {D E : SchemeWeilDivisor X}
   have hle : D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g ≤ E := by
     refine le_of_sections_le (isLocallyPrincipal_of_forall_coheight_le_one hdim _)
       fun U t ht ↦ ?_
-    obtain ⟨s, rfl⟩ := (range_sheafι_app _ U).ge ht
-    rw [← hχ, Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
-    exact sheafι_app_mem E U _
+    have := rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq
+      (hχ.trans (by rw [Scheme.rationalFunctionsMul_one, Category.comp_id])) U ht
+    rwa [Scheme.rationalFunctionsMul_one, Scheme.Modules.Hom.id_app,
+      ConcreteCategory.id_apply] at this
   refine ⟨hle, ?_⟩
   rw [← sheafMulIso_hom, ← Iso.inv_comp_eq, ← hχdef, ← cancel_mono (sheafι E), hχ,
     sheafHomOfLE_ι]
