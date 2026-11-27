@@ -134,6 +134,22 @@ theorem innerCovariantDerivative_eq_zero_of_apply_eq_zero_right {x : M} (h : cov
     cov.innerCovariantDerivative σ τ x = 0 := by
   simp [innerCovariantDerivative_def, h]
 
+/-- `⟪∇σ, ∇τ⟫` is additive in `σ` at points where both summands are differentiable:
+`⟪∇(σ + σ'), ∇τ⟫ = ⟪∇σ, ∇τ⟫ + ⟪∇σ', ∇τ⟫`. -/
+theorem innerCovariantDerivative_add_left {σ' : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x)
+    (hσ' : MDiffAt (T% σ') x) :
+    cov.innerCovariantDerivative (σ + σ') τ x =
+      cov.innerCovariantDerivative σ τ x + cov.innerCovariantDerivative σ' τ x := by
+  simp only [innerCovariantDerivative_def, cov.isCovariantDerivativeOnUniv.add hσ hσ',
+    ContinuousLinearMap.hilbertSchmidtInner_add_left]
+
+/-- `⟪∇σ, ∇τ⟫` is homogeneous in `σ` at points where `σ` is differentiable:
+`⟪∇(c σ), ∇τ⟫ = c ⟪∇σ, ∇τ⟫`. -/
+theorem innerCovariantDerivative_const_smul_left (c : ℝ) {x : M} (hσ : MDiffAt (T% σ) x) :
+    cov.innerCovariantDerivative (c • σ) τ x = c * cov.innerCovariantDerivative σ τ x := by
+  simp only [innerCovariantDerivative_def, cov.isCovariantDerivativeOnUniv.smul_const c hσ,
+    ContinuousLinearMap.hilbertSchmidtInner_smul_left]
+
 variable [VectorBundle ℝ F V]
 
 /-- `⟪∇σ, ∇τ⟫` vanishes off the closure of the nonzero locus of `σ`. -/
