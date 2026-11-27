@@ -43,10 +43,10 @@ their normalizations, and shows the value a competing convention would give.
 * **The identity of the two-torus.** Every point is fixed by the identity, so its return map is
   degenerate and an orbit product over its fixed points is undefined. The homological Lefschetz
   series `det (1 - t P) / (1 - t) ^ 2` with `P = 1` is `(1 - t) ^ 2 / (1 - t) ^ 2 = 1`
-  (`lefschetzZeta_id`): every nonvacuum coefficient vanishes.
+  (`lefschetzZeta_id_pi_addCircle`): every nonvacuum coefficient vanishes.
 * **The three-torus.** The mapping torus `T³` of the identity of `T²` has
-  `b₁ = dim ker (1 - 1) + 1 = 2 + 1 = 3` (`finrank_homology_one_mappingTorus_refl`), so `b₁ > 1`
-  and the product `S¹ × T³ = T⁴` falls under the comparison for `b₂⁺ > 1`.
+  `b₁ = dim ker (1 - 1) + 1 = 2 + 1 = 3` (`finrank_homology_one_mappingTorus_refl_pi_addCircle`),
+  so `b₁ > 1` and the product `S¹ × T³ = T⁴` falls under the comparison for `b₂⁺ > 1`.
 
 The normalizations for Arnold's cat map, `det (1 - P) = -1` and the series
 `(1 - 3 t + t ^ 2) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯` with coarse coefficients
@@ -100,11 +100,8 @@ theorem mk_spinCircle_circleExp_two_pi_ne_one :
     spinCGroup.mk Q hQ (spinCircle Q u w huw h (Circle.exp (2 * π / 2)), Circle.exp (2 * π)) ≠
       1 := by
   rw [mul_div_cancel_left₀ π two_ne_zero, spinCircle_circleExp_pi hQ, Circle.exp_two_pi,
-    ← spinCGroup.ofSpin_apply, spinCGroup.ofSpin_negOne, ← map_one (spinCGroup.ofCircle Q hQ),
-    (spinCGroup.ofCircle_injective Q hQ).ne_iff]
-  intro h1
-  have := congrArg (fun z : Circle ↦ (z : ℂ).re) h1
-  norm_num at this
+    ← spinCGroup.ofSpin_apply, spinCGroup.ofSpin_negOne, ← map_one (spinCGroup.ofCircle Q hQ)]
+  exact (spinCGroup.ofCircle_injective Q hQ).ne (Circle.neg_ne_self 1)
 
 end SpinC
 
@@ -174,22 +171,24 @@ end Chamber
 /-- **The Lefschetz series of the identity of the two-torus is `1`**: with `P = 1`,
 `det (1 - t P) / (1 - t) ^ 2 = (1 - t) ^ 2 / (1 - t) ^ 2 = 1`, so every nonvacuum coefficient
 vanishes. -/
-theorem lefschetzZeta_id (p : ℝ) [Fact (0 < p)] (k : Type) [Field k] [Algebra ℚ k] :
+theorem lefschetzZeta_id_pi_addCircle (p : ℝ) [NeZero p] (k : Type) [Field k] [Algebra ℚ k] :
     (ContinuousMap.id (Fin 2 → AddCircle p)).lefschetzZeta k = 1 := by
   have hid : ((1 : Matrix (Fin 2) (Fin 2) ℤ).smulVecHom (AddCircle p) :
       C(Fin 2 → AddCircle p, Fin 2 → AddCircle p)) = ContinuousMap.id _ := by
-    ext x i
-    simp
+    rw [Matrix.smulVecHom_one]
+    rfl
   have hchar : ((1 : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom k)).charpolyRev =
       (1 - Polynomial.X) ^ 2 := by
     simp [Matrix.charpolyRev, Matrix.det_fin_two, sq]
-  rw [← hid, Matrix.lefschetzZeta_smulVecHom_fin_two_of_det_eq_one (by simp) k
-    (Fact.out : 0 < p).ne', hchar, Polynomial.coe_pow, Polynomial.coe_sub, Polynomial.coe_one,
-    Polynomial.coe_X, ← mul_pow, mul_comm, PowerSeries.mk_one_mul_one_sub_eq_one, one_pow]
+  rw [← hid, Matrix.lefschetzZeta_smulVecHom_fin_two_of_det_eq_one (by simp) k (NeZero.ne p),
+    hchar]
+  push_cast
+  rw [← mul_pow, mul_comm, PowerSeries.mk_one_mul_one_sub_eq_one, one_pow]
 
 /-- **The first Betti number of the three-torus is `3`.** Over any field, the mapping torus of the
 identity of the two-torus `Fin 2 → AddCircle p` has `b₁ = dim ker (1 - 1) + 1 = 2 + 1 = 3`. -/
-theorem finrank_homology_one_mappingTorus_refl (p : ℝ) [NeZero p] (k : Type) [Field k] :
+theorem finrank_homology_one_mappingTorus_refl_pi_addCircle (p : ℝ) [NeZero p] (k : Type)
+    [Field k] :
     finrank k ((((singularChainComplexFunctor (ModuleCat.{0} k)).obj (ModuleCat.of k k)).obj
       (TopCat.of (MappingTorus (Homeomorph.refl (Fin 2 → AddCircle p))))).homology 1) = 3 := by
   have h₂ := ModuleCat.finrank_singularHomology_pi_addCircle (ModuleCat.of k k)
