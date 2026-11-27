@@ -36,7 +36,8 @@ topological manifold with boundary or with corners and its boundary. Then the to
 These hold in every index difference and with coefficients in every commutative ring: they are
 the uniqueness statement of Barraud–Damian–Humilière–Oancea, Proposition 5.2.8, for every family
 of spaces with this structure. The existence of representing chain systems of fundamental classes
-on the same spaces, when `1` is the only unit of the coefficients, is
+on such spaces, when `1` is the only unit of the coefficients and under further hypotheses on the
+boundary faces and the classes `μ`, is
 `TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units`. For the Morse
 trajectory spaces in index differences at most two, uniqueness is proved directly from the
 discreteness of their boundaries

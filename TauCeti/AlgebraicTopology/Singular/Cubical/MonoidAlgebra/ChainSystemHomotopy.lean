@@ -333,9 +333,9 @@ associative composition maps `ι` with values in the subspaces `A x y`. If the m
 
 For the compactified trajectory spaces of a Morse function, `M x y` is a compact manifold with
 corners of dimension `ind x - ind y - 1` with collared boundary `A x y`, so the injectivity
-holds, by `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy_of_isCollared`. The
-push-forwards of the homotopy then relate the Barraud–Cornea cocycles of `S` and `S'` by a
-continuation cocycle
+holds by `TauCeti.injective_homologyMap_cokernel_π_of_isCollared`; the resulting specialization is
+`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy_of_isCollared`. The push-forwards
+of the homotopy then relate the Barraud–Cornea cocycles of `S` and `S'` by a continuation cocycle
 (`TauCeti.TwistingChainSystem.Homotopy.continuationCocycle`). -/
 theorem IsRepresenting.nonempty_homotopy (hS : S.IsRepresenting A μ)
     (hS' : S'.IsRepresenting A μ)
@@ -432,7 +432,8 @@ classes `ν x y` of `H_{ind x - indQ y}(N x y, B x y)`, for associative composit
 
 For the compactified spaces of continuation trajectories of a homotopy of Morse functions,
 `N x y` is a compact manifold with corners of dimension `ind x - indQ y` with collared boundary
-`B x y`, so the injectivity holds, by
+`B x y`, so the injectivity holds by `TauCeti.injective_homologyMap_cokernel_π_of_isCollared`; the
+resulting specialization is
 `TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem_of_isCollared`.
 The push-forwards of the parametrized chain system then relate the continuation cocycles of `T₀`
 and `T₁` by a parametrized cocycle
