@@ -44,8 +44,9 @@ variable (φ : A →+* B) [Group G] [ContinuousConstSMul G G] (μ : HaarMeasureW
 /-- **Integration commutes with change of coefficients**: `∫ φ ∘ f d(φ μ) = φ (∫ f dμ)`. -/
 @[simp]
 theorem integral_map_mapCoeff (f : compactlySupported A G A) :
-    (μ.map (φ : A →+ B)).integral (compactlySupported.mapCoeff φ f) = φ (μ.integral f) :=
-  integral_comp_commSL μ φ φ.toSemilinearMap f
+    (μ.map (φ : A →+ B)).integral (compactlySupported.mapCoeff φ f) = φ (μ.integral f) := by
+  rw [compactlySupported.mapCoeff_eq_map]
+  exact integral_comp_commSL μ φ φ.toSemilinearMap f
 
 variable [T2Space G] [IsTopologicalGroup G]
 
