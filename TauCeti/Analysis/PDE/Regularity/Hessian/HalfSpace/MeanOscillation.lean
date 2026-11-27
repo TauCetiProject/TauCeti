@@ -34,11 +34,9 @@ real `t`
 `∫_{B_ρ⁺} ‖D²u τ - p_ρ‖² ≤ C (ρ / r)^(n + 3) ∫_{B_r⁺} ‖D²u τ - t ν‖²`
 `  + C ‖τ‖² (∫_{B_r⁺} f² + ∫_{B_r⁺} θ² ‖D²u‖²)`,
 
-where `p_ρ` is the multiple of `ν` closest to `D²u τ` in `L²(B_ρ⁺)`. These are
-`exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le`
-for constant coefficients, `a = A`, and
-`exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le_add`
-in general.
+where `p_ρ` is the multiple of `ν` closest to `D²u τ` in `L²(B_ρ⁺)`. This is
+`exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le_add`,
+whose case `a = A`, `K = 0` covers constant coefficients.
 If `θ ≤ K` on `B_r⁺` and `D²u ∈ L^{2q}(B_r⁺)` for Hölder conjugate exponents `q, q'`, the
 coefficient term becomes a mean deviation of `a`, and the estimate takes the scale-invariant form
 
@@ -148,8 +146,8 @@ constants `λ`, `Λ`, and let `u ∈ W^{2,2}(H)`, with first-order part in `H¹�
 where `p_ρ = (⟪(D²u τ)_{B_ρ⁺}, ν⟫ / ‖ν‖²) ν` is the multiple of `ν` closest to `D²u τ` in
 `L²(B_ρ⁺)`. Here `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, and
 `∂ᵢ∂ⱼu = ⟪D²u eᵢ, eⱼ⟫`. -/
-theorem
-    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le
+private theorem
+    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le_add_of_sum_mul_inner_eq
     {lam Lam : ℝ} (hlam : 0 < lam) :
     ∃ C : ℝ, 0 < C ∧ ∀ {H : Opens E} {u : Wkp volume H 2 2}
       {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {f : E → ℝ} {ν z τ : E} {c₀ r ρ : ℝ},
@@ -237,7 +235,7 @@ theorem
             ∫ x in ball z r ∩ H, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ^ 2 *
               ‖Wkp.iteratedGradient 1 u x‖ ^ 2) := by
   obtain ⟨C, hC, hest⟩ :=
-    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_inner_setAverage_div_smul_sq_le
+    exists_setIntegral_ball_inter_norm_iteratedGradient_apply_sub_sq_le_add_of_sum_mul_inner_eq
       (n := n) (Lam := Lam) hlam
   refine ⟨2 * (n + 1) ^ 2 * C, by positivity, ?_⟩
   intro H u a A f ν z τ c₀ r ρ K hA ha haK hν hH hzc hτ hu0 heq hρ hρr t
