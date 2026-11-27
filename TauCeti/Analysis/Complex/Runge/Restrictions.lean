@@ -35,7 +35,7 @@ namespace TauCeti
 
 /-- Runge's theorem (Rainer, *Advanced Complex Analysis*, §11). For compact `K ⊆ U`,
 restrictions of functions holomorphic on the open set `U` are dense in `O(K)` in the sup-norm
-topology if and only if `K` is filled in `U`, meaning that no connected component of `U \\ K`
+topology if and only if `K` is filled in `U`, meaning that no connected component of `U \ K`
 has compact closure contained in `U`. -/
 theorem isFilledIn_iff_denseRange_restrictToHolomorphicRestrictions {U : Opens ℂ} {K : Set ℂ}
     (hK : IsCompact K) (hKU : K ⊆ U) :

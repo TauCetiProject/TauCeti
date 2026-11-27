@@ -34,7 +34,7 @@ The algebra `O(s)` is neither open nor closed in general. As soon as `s` has int
 small multiples `ε • conj z` of the conjugate coordinate tend to `0` without ever lying in
 `O(s)`, so `O(s)` is not open (`not_isOpen_holomorphicRestrictions`). For the closed unit
 disc a uniform limit of polynomials outside `O(s)` shows that it is not closed either; this
-example is in the companion module on nonclosedness.
+example is in `TauCeti.Analysis.Complex.Germ.HolomorphicRestrictions.NotClosed`.
 
 ## Main definitions
 
