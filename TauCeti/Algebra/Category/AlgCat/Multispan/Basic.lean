@@ -168,41 +168,48 @@ def multispanSectionsLinearEquiv : AlgCat.sectionsSubalgebra I.multispan ≃ₗ[
   (AlgCat.sectionsLinearEquiv I.multispan).trans
     (SemimoduleCat.sectionsLinearEquivOfIso I.asSemimoduleIndexIso)
 
+-- At either constructor, the forgotten object and the algebra object have definitionally
+-- equal carriers. Thus the identity-map application is on the same carrier as the section value.
+
 /-- The comparison of sections preserves a face component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_apply_left
     (s : AlgCat.sectionsSubalgebra I.multispan) (a : J.L) :
     (I.multispanSectionsLinearEquiv s).val (.left a) = s.val (.left a) := by
-  simp [multispanSectionsLinearEquiv]
-  -- The linear map underlying the categorical identity is the linear identity.
-  rfl
+  simp only [multispanSectionsLinearEquiv, LinearEquiv.trans_apply,
+    SemimoduleCat.sectionsLinearEquivOfIso_apply, asSemimoduleIndexIso_hom_app_left,
+    AlgCat.sectionsLinearEquiv_apply]
+  exact LinearMap.id_apply (R := R) (s.val (.left a))
 
 /-- The comparison of sections preserves a chamber component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_apply_right
     (s : AlgCat.sectionsSubalgebra I.multispan) (b : J.R) :
     (I.multispanSectionsLinearEquiv s).val (.right b) = s.val (.right b) := by
-  simp [multispanSectionsLinearEquiv]
-  -- The linear map underlying the categorical identity is the linear identity.
-  rfl
+  simp only [multispanSectionsLinearEquiv, LinearEquiv.trans_apply,
+    SemimoduleCat.sectionsLinearEquivOfIso_apply, asSemimoduleIndexIso_hom_app_right,
+    AlgCat.sectionsLinearEquiv_apply]
+  exact LinearMap.id_apply (R := R) (s.val (.right b))
 
 /-- The inverse comparison of sections preserves a face component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_symm_apply_left
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (a : J.L) :
     (I.multispanSectionsLinearEquiv.symm s).val (.left a) = s.val (.left a) := by
-  simp [multispanSectionsLinearEquiv]
-  -- The linear map underlying the categorical identity is the linear identity.
-  rfl
+  simp only [multispanSectionsLinearEquiv, LinearEquiv.symm_trans_apply,
+    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
+    asSemimoduleIndexIso_inv_app_left]
+  exact LinearMap.id_apply (R := R) (s.val (.left a))
 
 /-- The inverse comparison of sections preserves a chamber component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_symm_apply_right
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (b : J.R) :
     (I.multispanSectionsLinearEquiv.symm s).val (.right b) = s.val (.right b) := by
-  simp [multispanSectionsLinearEquiv]
-  -- The linear map underlying the categorical identity is the linear identity.
-  rfl
+  simp only [multispanSectionsLinearEquiv, LinearEquiv.symm_trans_apply,
+    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
+    asSemimoduleIndexIso_inv_app_right]
+  exact LinearMap.id_apply (R := R) (s.val (.right b))
 
 /-- A chamber family is compatible over the algebras exactly when it is compatible over
 their underlying semimodules. -/
