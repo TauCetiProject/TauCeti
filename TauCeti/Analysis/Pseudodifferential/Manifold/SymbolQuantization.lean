@@ -356,18 +356,6 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
 /-! ### Square partitions in charts -/
 
 omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
-/-- If the chart cutoffs `χᵢ`, read on `M`, have locally finite supports, then only finitely many
-of them are nonzero at a given point. -/
-private theorem finite_support_cutoffPullback {ι : Type*}
-    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    {χ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)}
-    (hS : LocallyFinite fun i ↦ (e i).symm '' tsupport (χ i)) (x : M) :
-    (Function.support fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 x).Finite :=
-  (hS.point_finite x).subset fun i hi ↦
-    ((e i).tsupport_cutoffPullback_one (he i) (χ i)).subset (subset_tsupport _ hi)
-
-omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 /-- If the chart cutoffs `χᵢ`, read on `M`, have locally finite supports and squares adding up to
 `1`, then `∑ᵢ χᵢ(x)² z = z`. -/
 private theorem finsum_cutoffPullback_sq_mul {ι : Type*}
