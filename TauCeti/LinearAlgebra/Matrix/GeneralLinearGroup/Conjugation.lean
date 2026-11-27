@@ -41,6 +41,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   `u (h - 1) v` to `(u g) (h - 1) (g⁻¹ v)`.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
   `Rˣ → GL n R` is injective.
+* `Matrix.GeneralLinearGroup.unitsMulEquivCenter`: for nonempty `n`, the isomorphism
+  `Rˣ ≃* Subgroup.center (GL n R)` induced by the scalar embedding.
 * `Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`: matrices are conjugate under `GL n R`
   exactly when their linear maps are conjugate by a linear automorphism of `n → R`.
 -/
@@ -88,6 +90,35 @@ theorem dotProduct_conj_sub_one_mulVec [Ring R] (g h : GL n R) (u v : n → R) :
   rw [hconj, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec]
 
 variable [CommRing R]
+
+variable (n) in
+/-- **The center of `GL n R` is isomorphic to `Rˣ`** for nonempty `n`, via the scalar embedding
+`u ↦ scalar n u`. -/
+noncomputable def unitsMulEquivCenter [Nonempty n] : Rˣ ≃* Subgroup.center (GL n R) :=
+  (MonoidHom.ofInjective (scalar_injective (n := n) (R := R))).trans
+    (MulEquiv.subgroupCongr center_eq_range_scalar.symm)
+
+/-- Applying `unitsMulEquivCenter n` to `u` yields `scalar n u` inside `GL n R`. -/
+@[simp] theorem coe_unitsMulEquivCenter_apply [Nonempty n] (u : Rˣ) :
+    ((unitsMulEquivCenter n u : Subgroup.center (GL n R)) : GL n R) = scalar n u := by rfl
+
+/-- Applying `scalar n` to `(unitsMulEquivCenter n).symm z` recovers `z`. -/
+@[simp] theorem scalar_unitsMulEquivCenter_symm [Nonempty n] (z : Subgroup.center (GL n R)) :
+    scalar n ((unitsMulEquivCenter n).symm z) = z := by
+  simpa only [← coe_unitsMulEquivCenter_apply] using
+    congrArg Subtype.val ((unitsMulEquivCenter n).apply_symm_apply z)
+
+/-- The inverse of `unitsMulEquivCenter n` recovers `u` from `scalar n u`. -/
+@[simp] theorem unitsMulEquivCenter_symm_scalar [Nonempty n] (u : Rˣ)
+    (hu : scalar n u ∈ Subgroup.center (GL n R)) :
+    (unitsMulEquivCenter n).symm ⟨scalar n u, hu⟩ = u :=
+  scalar_injective (n := n) (scalar_unitsMulEquivCenter_symm ⟨scalar n u, hu⟩)
+
+/-- The underlying scalar of `(unitsMulEquivCenter n).symm z` equals any diagonal entry of `z`. -/
+theorem val_unitsMulEquivCenter_symm_apply [Nonempty n] (z : Subgroup.center (GL n R)) (i : n) :
+    (((unitsMulEquivCenter n).symm z : Rˣ) : R) = ((z : GL n R) : Matrix n n R) i i := by
+  simpa only [coe_scalar, Matrix.scalar_apply, Matrix.diagonal_apply_eq] using
+    congrArg (fun g : GL n R ↦ (g : Matrix n n R) i i) (scalar_unitsMulEquivCenter_symm z)
 
 /-- Shifting a matrix by a scalar and taking its determinant is invariant under conjugation by an
 element of the general linear group. -/

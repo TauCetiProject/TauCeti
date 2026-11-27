@@ -59,7 +59,8 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   `TensorProduct.map` negates the tensor-product map.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
-* `TensorProduct.nontrivial_right`: the right factor is nontrivial when the tensor product is.
+* `TensorProduct.nontrivial_left` and `TensorProduct.nontrivial_right`: both factors are
+  nontrivial when the tensor product is.
 * `TensorProduct.mk_one_eq_rTensor_comp_lid_symm`: the map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is the
   structure map `R → A` tensored with `M`.
 * `TensorProduct.injective_mk_one_iff`: `m ↦ 1 ⊗ m` is injective iff the structure map `R → A`
@@ -545,6 +546,12 @@ theorem assoc_rTensor_comp_map_tensorTensorTensorComm_tmul {p : X →ₗ[R] M �
     simpa [map_id, LinearMap.lTensor_def] using this.symm
   rw [LinearMap.rTensor_comp_apply, hl, assoc_rTensor_tensorTensorTensorComm_tmul, hx, hy,
     LinearMap.lTensor_comp_apply, hr]
+
+/-- If `M ⊗[R] N` is nontrivial then so is `M`: were `M` trivial, the tensor product would be
+trivial too (`TensorProduct.uniqueLeft`). -/
+theorem nontrivial_left [Nontrivial (M ⊗[R] N)] : Nontrivial M :=
+  not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (M ⊗[R] N) uniqueLeft.instSubsingleton
 
 /-- If `M ⊗[R] N` is nontrivial then so is `N`: were `N` trivial, the tensor product would be
 trivial too (`TensorProduct.uniqueRight`). -/

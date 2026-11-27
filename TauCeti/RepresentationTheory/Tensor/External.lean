@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Character.Twist
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Subrepresentation
 
@@ -34,7 +36,8 @@ which the classification of the irreducible representations of a product of grou
 
 * the character of `ρ.externalTensor σ` at `(g, h)` is `χ_ρ(g) * χ_σ(h)`;
 * over an algebraically closed field, the external tensor product of a finite-dimensional
-  irreducible representation and an irreducible representation is irreducible.
+  irreducible representation and an irreducible representation is irreducible, and over any field
+  irreducibility of `ρ.externalTensor σ` forces both `ρ` and `σ` to be irreducible.
 
 Only the first factor needs to be finite-dimensional, and neither factor needs to be a
 representation of a finite group.
@@ -57,9 +60,11 @@ representation of a finite group.
 * `Representation.externalTensor_charTwist`: twisting the two factors by linear characters twists
   the external tensor product by their product.
 * `Representation.char_externalTensor`: the character is `χ_ρ(g) * χ_σ(h)`.
-* `Representation.isIrreducible_externalTensor`: over an algebraically closed field, the external
-  tensor product of a finite-dimensional irreducible representation and an irreducible
-  representation is irreducible.
+* `Representation.isIrreducible_externalTensor`,
+  `Representation.IsIrreducible.of_externalTensor_left`,
+  `Representation.IsIrreducible.of_externalTensor_right`, and
+  `Representation.isIrreducible_externalTensor_iff`: irreducibility of an external tensor product
+  compared with irreducibility of its factors.
 
 ## References
 
@@ -399,6 +404,61 @@ theorem isIrreducible_externalTensor [IsAlgClosed k] [FiniteDimensional k V]
   rintro _ ⟨v, w, rfl⟩
   have hw : w ∈ M.toSubmodule := by simp [hM]
   exact hw v
+
+/-- **If `ρ.externalTensor σ` is irreducible over a field, then `ρ` is irreducible.** -/
+theorem IsIrreducible.of_externalTensor_left {ρ : Representation k G V} {σ : Representation k H W}
+    (h : (ρ.externalTensor σ).IsIrreducible) : ρ.IsIrreducible := by
+  have : Nontrivial (V ⊗[k] W) := h.nontrivial
+  have : Nontrivial V := _root_.TensorProduct.nontrivial_left (R := k) (N := W)
+  have : Nontrivial W := _root_.TensorProduct.nontrivial_right (R := k) (M := V)
+  obtain ⟨w₀, hw₀⟩ := exists_ne (0 : W)
+  obtain ⟨g, hg⟩ := Module.Projective.exists_dual_ne_zero k hw₀
+  refine ⟨fun S => by_contra fun hS => ?_⟩
+  rw [not_or] at hS
+  obtain ⟨v₀, hv₀S, hv₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot fun hb =>
+    hS.1 (Subrepresentation.toSubmodule_injective (hb.trans Subrepresentation.toSubmodule_bot.symm))
+  obtain ⟨v₁, -, hv₁S⟩ := IsConcreteLE.not_le_iff_exists.mp fun hle =>
+    hS.2 (Subrepresentation.toSubmodule_injective
+      ((top_unique hle).trans Subrepresentation.toSubmodule_top.symm))
+  let T : Subrepresentation (ρ.externalTensor σ) :=
+    { toSubmodule := LinearMap.range (S.toSubmodule.subtype.rTensor W)
+      apply_mem_toSubmodule := by
+        rintro ⟨x, y⟩ _ ⟨t, rfl⟩
+        exact ⟨_root_.TensorProduct.map (S.toRepresentation x) (σ y) t,
+          _root_.TensorProduct.inductionOn t
+            (fun _ _ => by simp [externalTensor_apply, _root_.TensorProduct.map_tmul,
+              LinearMap.rTensor_tmul])
+            fun _ _ h1 h2 => by simp [map_add, h1, h2]⟩ }
+  rcases h.eq_bot_or_eq_top T with hT | hT
+  · have hmem : v₀ ⊗ₜ[k] w₀ ∈ T.toSubmodule := ⟨⟨v₀, hv₀S⟩ ⊗ₜ[k] w₀, rfl⟩
+    rw [hT, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
+    exact TauCeti.tmul_ne_zero hv₀ hw₀ hmem
+  · have hmem : v₁ ⊗ₜ[k] w₀ ∈ T.toSubmodule := by
+      rw [hT, Subrepresentation.toSubmodule_top]; exact Submodule.mem_top
+    obtain ⟨t, ht⟩ := hmem
+    let π : V ⊗[k] W →ₗ[k] V := (_root_.TensorProduct.rid k V).toLinearMap.comp (g.lTensor V)
+    have hπS : ∀ x, π (S.toSubmodule.subtype.rTensor W x) ∈ S.toSubmodule := fun x =>
+      _root_.TensorProduct.inductionOn x
+        (fun s w => by simpa [π] using S.toSubmodule.smul_mem (g w) s.property)
+        fun _ _ hx hy => by simpa only [map_add] using S.toSubmodule.add_mem hx hy
+    have h1 := hπS t
+    rw [ht] at h1
+    have hsmul : g w₀ • v₁ ∈ S.toSubmodule := by simpa [π] using h1
+    exact hv₁S (by simpa [inv_smul_smul₀ hg] using S.toSubmodule.smul_mem (g w₀)⁻¹ hsmul)
+
+/-- **If `ρ.externalTensor σ` is irreducible over a field, then `σ` is irreducible.** -/
+theorem IsIrreducible.of_externalTensor_right {ρ : Representation k G V} {σ : Representation k H W}
+    (h : (ρ.externalTensor σ).IsIrreducible) : σ.IsIrreducible :=
+  ((ρ.externalTensorComm σ).isIrreducible
+    ((MulEquiv.isIrreducible_comp_equiv_iff (MulEquiv.prodComm (M := H) (N := G)) _).mpr
+      h)).of_externalTensor_left
+
+/-- **Irreducibility of an external tensor product** over an algebraically closed field with
+finite-dimensional first factor. -/
+theorem isIrreducible_externalTensor_iff [IsAlgClosed k] [FiniteDimensional k V] :
+    (ρ.externalTensor σ).IsIrreducible ↔ ρ.IsIrreducible ∧ σ.IsIrreducible :=
+  ⟨fun h => ⟨h.of_externalTensor_left, h.of_externalTensor_right⟩,
+    fun ⟨hρ, hσ⟩ => isIrreducible_externalTensor ρ σ hρ hσ⟩
 
 end Field
 

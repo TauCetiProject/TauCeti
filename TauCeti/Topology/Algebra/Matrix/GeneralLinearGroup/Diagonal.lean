@@ -11,7 +11,11 @@ public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Order.OrderClosed
 
 /-!
-# The positive diagonal subgroup is closed
+# Topology of diagonal matrices in the general linear group
+
+The diagonal embedding `TauCeti.diagGL : (ι → Rˣ) →* GL ι R` and the central scalar embedding
+`Matrix.GeneralLinearGroup.scalar ι : Rˣ →* GL ι R` are continuous over any topological semiring
+(`TauCeti.continuous_diagGL`, `Matrix.GeneralLinearGroup.continuous_scalar`).
 
 The positive diagonal matrices form a closed subgroup of the general linear group over an
 ordered field with closed order and closed points. Invertibility prevents a diagonal entry
@@ -20,6 +24,8 @@ real diagonal factor in the matrix Iwasawa decomposition.
 
 ## Main results
 
+* `TauCeti.continuous_diagGL`: the diagonal embedding `(ι → Rˣ) → GL ι R` is continuous.
+* `Matrix.GeneralLinearGroup.continuous_scalar`: the scalar embedding `Rˣ → GL ι R` is continuous.
 * `TauCeti.isClosed_posDiagonalSubgroup`: positive diagonal matrices are closed among units.
 
 ## References
@@ -31,6 +37,34 @@ real diagonal factor in the matrix Iwasawa decomposition.
 public section
 
 open Matrix Set Topology
+
+namespace TauCeti
+
+/-- The diagonal embedding `diagGL : (ι → Rˣ) → GL ι R` is continuous over any topological
+semiring. -/
+@[fun_prop] theorem continuous_diagGL {ι R : Type*} [Fintype ι] [DecidableEq ι] [Semiring R]
+    [TopologicalSpace R] : Continuous (diagGL (ι := ι) (k := R)) :=
+  Units.continuous_iff.mpr
+    ⟨by
+      simpa only [Function.comp_def, diagGL_coe] using
+        (continuous_pi fun i => Units.continuous_val.comp (continuous_apply i)).matrix_diagonal,
+     by
+      simpa only [Function.comp_def, ← map_inv, diagGL_coe, Pi.inv_apply] using
+        (continuous_pi fun i =>
+          (Units.continuous_coe_inv (M := R)).comp (continuous_apply i)).matrix_diagonal⟩
+
+end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+/-- The central scalar embedding `Matrix.GeneralLinearGroup.scalar ι : Rˣ → GL ι R` is continuous
+over any topological semiring. -/
+@[fun_prop] theorem continuous_scalar {ι R : Type*} [Fintype ι] [DecidableEq ι] [Semiring R]
+    [TopologicalSpace R] : Continuous (scalar ι : Rˣ → GL ι R) := by
+  simpa only [Function.comp_def, id_eq, TauCeti.diagGL_const] using
+    (TauCeti.continuous_diagGL (ι := ι) (R := R)).comp (continuous_pi fun _ => continuous_id)
+
+end Matrix.GeneralLinearGroup
 
 namespace TauCeti
 
