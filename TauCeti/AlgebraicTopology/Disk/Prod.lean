@@ -54,9 +54,9 @@ nothing. With these names, attaching handles to `X` along a map `φ` is the push
 `TopCat.sigmaIsoSigma` of coproducts in `TopCat` with disjoint unions. So
 `attachingRegionIncl k m` is a closed embedding
 (`TauCeti.TopCat.isClosedEmbedding_attachingRegionIncl`), the pushout contains `X` as a closed
-subspace (`TauCeti.TopCat.isClosedEmbedding_pushout_inl`), and the pushout is Hausdorff when `X` is
-(`TauCeti.TopCat.t2Space_pushout`). It deformation retracts, relative to `X`, onto `X` with the
-cores `𝔻 (k i) × {0}` of the handles attached
+subspace (`TauCeti.TopCat.isClosedEmbedding_pushout_inl_attachingRegionIncl`), and the pushout is
+Hausdorff when `X` is (`TauCeti.TopCat.t2Space_pushout_attachingRegionIncl`). It deformation
+retracts, relative to `X`, onto `X` with the cores `𝔻 (k i) × {0}` of the handles attached
 (`CategoryTheory.IsPushout.exists_strong_deformation_retraction_cores`, in
 `TauCeti.AlgebraicTopology.Disk.Handle`).
 
@@ -264,10 +264,7 @@ theorem isPushout_attachingRegionIncl_iff
   -- carries each map out of a disjoint union to the map glued from its restrictions.
   have hφ : (TopCat.sigmaIsoSigma A).hom ≫ φ = Sigma.desc fun i ↦ TopCat.ofHom
       (φ.hom.comp (ContinuousMap.sigmaMk (X := fun i ↦ attachingRegion.{u} (k i) m) i)) :=
-    Sigma.hom_ext _ _ fun i ↦ by
-      rw [TopCat.sigmaIsoSigma_hom_ι_assoc, Sigma.ι_comp_desc]
-      ext
-      simp
+    sigmaIsoSigma_hom_comp_eq_desc (X := A) φ
   have hincl : (TopCat.sigmaIsoSigma A).hom ≫ TopCat.ofHom (attachingRegionIncl k m) =
       Limits.Sigma.map (fun i ↦ TopCat.ofHom ((TopCat.diskBoundaryInclusion (k i)).hom.prodMap
         (ContinuousMap.id (TopCat.disk.{u} (m - k i))))) ≫ (TopCat.sigmaIsoSigma B).hom :=
@@ -277,10 +274,7 @@ theorem isPushout_attachingRegionIncl_iff
       exact TopCat.hom_ext (ContinuousMap.ext fun q ↦ attachingRegionIncl_apply k m i q)
   have hχ : (TopCat.sigmaIsoSigma B).hom ≫ χ = Sigma.desc fun i ↦ TopCat.ofHom
       (χ.hom.comp (ContinuousMap.sigmaMk (X := fun i ↦ handle.{u} (k i) m) i)) :=
-    Sigma.hom_ext _ _ fun i ↦ by
-      rw [TopCat.sigmaIsoSigma_hom_ι_assoc, Sigma.ι_comp_desc]
-      ext
-      simp
+    sigmaIsoSigma_hom_comp_eq_desc (X := B) χ
   refine ⟨fun h ↦ h.of_iso' (TopCat.sigmaIsoSigma A) (Iso.refl X) (TopCat.sigmaIsoSigma B)
     (Iso.refl P) (by simpa using hφ) hincl (by simp) (by simpa using hχ), fun h ↦ h.of_iso
     (TopCat.sigmaIsoSigma A) (Iso.refl X) (TopCat.sigmaIsoSigma B) (Iso.refl P)
@@ -289,7 +283,7 @@ theorem isPushout_attachingRegionIncl_iff
 /-- Attaching handles to a space `X` along any map `φ` of their attaching regions gives a space
 containing `X` as a closed subspace: the first inclusion of the pushout of `φ` and
 `attachingRegionIncl k m` is a closed embedding. -/
-theorem isClosedEmbedding_pushout_inl
+theorem isClosedEmbedding_pushout_inl_attachingRegionIncl
     (φ : _root_.TopCat.of ((i : ι) × attachingRegion.{u} (k i) m) ⟶ X) :
     IsClosedEmbedding (pushout.inl φ (TopCat.ofHom (attachingRegionIncl k m))) :=
   isClosedEmbedding_of_isPushout (IsPushout.of_hasPushout _ _)
@@ -298,7 +292,7 @@ theorem isClosedEmbedding_pushout_inl
 /-- Attaching handles to a Hausdorff space `X` along any map `φ` of their attaching regions gives a
 Hausdorff space: the pushout of `φ` and `attachingRegionIncl k m` is Hausdorff. No finiteness of
 the family of handles is needed. -/
-instance t2Space_pushout [T2Space X]
+instance t2Space_pushout_attachingRegionIncl [T2Space X]
     (φ : _root_.TopCat.of ((i : ι) × attachingRegion.{u} (k i) m) ⟶ X) :
     T2Space (pushout φ (TopCat.ofHom (attachingRegionIncl k m)) : _root_.TopCat.{u}) := by
   have h := (isPushout_attachingRegionIncl_iff (φ := φ)).1
