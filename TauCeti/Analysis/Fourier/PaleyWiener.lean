@@ -403,7 +403,8 @@ theorem integral_norm_paleyWienerKernel_sq_eq_sinh (ht : 0 ≤ t) {w : ℂ} (hw 
   rw [integral_norm_paleyWienerKernel_sq ht, paleyWienerKernel_self t hw]
   norm_cast
 
-/-- **The norm of the reproducing kernel at a real point**: `‖k_t(x, ·)‖²_{L²(ℝ)} = t/π`. -/
+/-- **The norm of the reproducing kernel at a real point**: `‖k_t(x, ·)‖²_{L²(ℝ)} = t/π` for
+`t ≥ 0`. -/
 theorem integral_norm_paleyWienerKernel_ofReal_sq (ht : 0 ≤ t) (x : ℝ) :
     ∫ y : ℝ, ‖paleyWienerKernel t x y‖ ^ 2 = t / π := by
   rw [integral_norm_paleyWienerKernel_sq ht, paleyWienerKernel_self_ofReal]
