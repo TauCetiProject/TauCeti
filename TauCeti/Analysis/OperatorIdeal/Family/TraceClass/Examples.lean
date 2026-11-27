@@ -35,8 +35,9 @@ approximation numbers `1` below `r` and `0` from `r` on, so its trace norm is `r
   trace class iff its coefficients are summable.
 * `lp.diagonalCLM_ofAntitone_mem_hilbertSchmidt_iff`: it is Hilbert–Schmidt iff their squares are
   summable.
-* `lp.diagonalCLM_inv_succ_mem_hilbertSchmidt` and `lp.diagonalCLM_inv_succ_notMem_traceClass`:
-  the diagonal operator with coefficients `1 / (n + 1)` is Hilbert–Schmidt and not trace class.
+* `lp.diagonalCLM_one_div_add_one_mem_hilbertSchmidt` and
+  `lp.diagonalCLM_one_div_add_one_notMem_traceClass`: the diagonal operator with coefficients
+  `1 / (n + 1)` is Hilbert–Schmidt and not trace class.
 * `Submodule.nuclearENorm_starProjection` and `ContinuousLinearMap.trace_starProjection`: the
   orthogonal projection onto a subspace of dimension `r` has trace norm `r` and trace `r`.
 
@@ -81,14 +82,9 @@ theorem diagonalCLM_ofAntitone_mem_hilbertSchmidt_iff :
   simp_rw [singularValue_diagonalCLM_ofAntitone hc, ← ENNReal.coe_pow]
   exact ENNReal.tsum_coe_ne_top_iff_summable
 
-/-- The coefficients `1 / (n + 1)` decrease. -/
-theorem antitone_inv_succ : Antitone fun n : ℕ ↦ ((n + 1 : ℝ≥0))⁻¹ := fun m n hmn ↦ by
-  dsimp only
-  gcongr
-
 /-- **The diagonal operator `diag(1 / (n + 1))` is Hilbert–Schmidt**, since `∑ 1 / (n + 1)² < ∞`. -/
-theorem diagonalCLM_inv_succ_mem_hilbertSchmidt :
-    diagonalCLM (p := 2) (ofAntitone 𝕜 antitone_inv_succ) ∈
+theorem diagonalCLM_one_div_add_one_mem_hilbertSchmidt :
+    diagonalCLM (p := 2) (ofAntitone 𝕜 antitone_one_div_add_one) ∈
       ((hilbertSchmidt.{u, u, u} 𝕜).operatorGauge ℓ²(ℕ, 𝕜) ℓ²(ℕ, 𝕜)).finiteSubmodule := by
   rw [diagonalCLM_ofAntitone_mem_hilbertSchmidt_iff, ← NNReal.summable_coe]
   push_cast
@@ -96,8 +92,8 @@ theorem diagonalCLM_inv_succ_mem_hilbertSchmidt :
 
 /-- **The diagonal operator `diag(1 / (n + 1))` is not trace class**, since
 `∑ 1 / (n + 1) = ∞`. -/
-theorem diagonalCLM_inv_succ_notMem_traceClass :
-    diagonalCLM (p := 2) (ofAntitone 𝕜 antitone_inv_succ) ∉
+theorem diagonalCLM_one_div_add_one_notMem_traceClass :
+    diagonalCLM (p := 2) (ofAntitone 𝕜 antitone_one_div_add_one) ∉
       ((traceClass.{u, u, u} 𝕜).operatorGauge ℓ²(ℕ, 𝕜) ℓ²(ℕ, 𝕜)).finiteSubmodule := by
   rw [diagonalCLM_ofAntitone_mem_traceClass_iff, ← NNReal.summable_coe]
   push_cast

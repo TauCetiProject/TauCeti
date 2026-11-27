@@ -348,4 +348,10 @@ open scoped ComplexOrder in
 theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
     0 ≤ ofAntitone 𝕜 hc n := by simp
 
+/-- The coefficients `1 / (n + 1)` decrease, so they define the diagonal sequence
+`lp.ofAntitone 𝕜 lp.antitone_one_div_add_one`. -/
+theorem antitone_one_div_add_one : Antitone fun n : ℕ ↦ (1 / (n + 1) : ℝ≥0) := fun _ _ h ↦ by
+  dsimp only
+  gcongr
+
 end lp

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Positive
 public import TauCeti.Analysis.OperatorIdeal.Family.DixmierTrace.Linear
 import Mathlib.Analysis.PSeries
+import TauCeti.Analysis.OperatorIdeal.Family.TraceClass.Examples
 import Mathlib.Data.Nat.Log
 import Mathlib.NumberTheory.Harmonic.Bounds
 
@@ -481,9 +482,8 @@ theorem exists_isPositive_mem_logarithmic_notMem_traceClass_complexDixmierTrace_
   have hpos : T.IsPositive := lp.isPositive_diagonalCLM_ofAntitone invMulLogNNSeq_antitone
   have hlim : Tendsto T.kyFanLogMean atTop (𝓝 0) := tendsto_kyFanLogMean_invMulLogSeq
   have hnot_tc : T ∉ ((traceClass ℂ).operatorGauge ℓ^2(ℕ, ℂ) ℓ^2(ℕ, ℂ)).finiteSubmodule := by
-    rw [mem_finiteSubmodule_traceClass_iff, ← NNReal.summable_coe]
-    simpa only [hT, lp.singularValue_diagonalCLM_ofAntitone, coe_invMulLogNNSeq] using
-      not_summable_invMulLogSeq
+    rw [hT, lp.diagonalCLM_ofAntitone_mem_traceClass_iff, ← NNReal.summable_coe]
+    simpa only [coe_invMulLogNNSeq] using not_summable_invMulLogSeq
   refine ⟨T, hpos, (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 hlim.bddAbove_range, hnot_tc,
     isDixmierMeasurable_of_isPositive_of_tendsto_kyFanLogMean hpos hlim,
     fun ω ↦ dixmierTrace_eq_of_tendsto ω hlim, fun ω ↦ ?_⟩
