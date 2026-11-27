@@ -67,6 +67,9 @@ In the language of `TauCeti.LowDimTopology.Heegaard.Grading` and
 
 * `TauCeti.GridDiagram.exists_eq_add_of_isDomainBetween_self`: a domain from a generator to
   itself is a sum of horizontal and vertical annuli.
+* `TauCeti.GridDiagram.eq_sub_of_isDomainBetween`: a quantity attached to domains which is
+  additive, vanishes on the domains from a generator to itself and is the change of a function of
+  grid states across every rectangle is the change of that function across every domain.
 * `TauCeti.GridDiagram.maslovIndex_sub_two_mul_sum_basepoint_inl_of_isDomainBetween`,
   `TauCeti.GridDiagram.maslovIndex_sub_two_mul_sum_basepoint_inr_of_isDomainBetween`,
   `TauCeti.GridDiagram.sum_basepoint_inr_sub_sum_basepoint_inl_of_isDomainBetween`: the grid
@@ -194,7 +197,7 @@ variable {G}
 /-- A quantity attached to domains which is additive under juxtaposition, vanishes on the domains
 from a generator to itself and is the change of a function `f` of grid states across every
 rectangle is the change of `f` across every domain. -/
-private theorem eq_sub_of_isDomainBetween
+theorem eq_sub_of_isDomainBetween
     (φ : G.heegaardRegionSystem.Generator → G.heegaardRegionSystem.Generator →
       (Fin n × Fin n → ℤ) → ℚ) (f : GridState n → ℚ)
     (hadd : ∀ {g h k : G.heegaardRegionSystem.Generator} {D E : Fin n × Fin n → ℤ},
