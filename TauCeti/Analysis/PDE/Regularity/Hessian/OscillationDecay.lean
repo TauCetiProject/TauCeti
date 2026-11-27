@@ -282,7 +282,7 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inne
 /-- **Decay of the `L^γ` mean oscillation of the Hessian for constant coefficients.** Let `A` be a
 square matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, let `1 ≤ γ` with `γ ≤ p`, and let
 `u ∈ W^{2,p}(Ω)` solve `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` almost everywhere on a ball `B_R = ball x₀ R ⊆ Ω ⊆ ℝⁿ`.
-Then for every constant `c` and every `0 < ρ ≤ R`, the weak Hessian `D²u` satisfies
+Then for every constant `c` and every `0 ≤ ρ ≤ R`, the weak Hessian `D²u` satisfies
 
 `⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ^ γ ≤ (C (Λ / λ)^((n + 1) / 2) (ρ / R)) ^ γ ⨍_{B_R} ‖D²u - c‖ ^ γ`
 with `C = 2^(3n + 4) (n + 1)`,
@@ -297,7 +297,7 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_
     (hball : ball x₀ R ⊆ Omega)
     (heq : ∀ᵐ x ∂mu.restrict (ball x₀ R), ∑ i, ∑ j, A i j *
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
-    (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 < ρ) (hρR : ρ ≤ R) :
+    (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
     ⨍ x in ball x₀ ρ,
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ^ γ ∂mu ≤
       (2 ^ (3 * Fintype.card ι + 4) * (Fintype.card ι + 1) *
@@ -340,8 +340,6 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
       2 ^ (3 * Fintype.card ι + 4) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
         (ρ / R) * ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
-  rcases hρ.eq_or_lt with rfl | hρ
-  · simp
   simpa using setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero
     hlam hA hA' le_rfl (by simpa using (Fact.out : 1 ≤ p)) u hball heq c hρ hρR
 

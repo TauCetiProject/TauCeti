@@ -444,7 +444,7 @@ private theorem setAverage_norm_iteratedGradient_sub_rpow_le
   have hdec := setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_inner_eq_zero
     (ι := Fin (n + 1)) (Lam := Lam) hA.pos (hA.lower_bound (mem_ball_self hr))
     (fun ξ => (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A ξ).trans (by gcongr))
-    hγ.le le_rfl h subset_rfl heqh 0 hρ (le_mul_of_one_le_left hρ.le hκ)
+    hγ.le le_rfl h subset_rfl heqh 0 hρ.le (le_mul_of_one_le_left hρ.le hκ)
   simp only [Fintype.card_fin, sub_zero] at hdec
   -- Fold the constant of the decay estimate into `oscConstRpow`.
   have hO : 2 ^ (3 * (n + 1) + 4) * (((n + 1 : ℕ) : ℝ) + 1) * √(Lam / lam) ^ (n + 1 + 1) =
