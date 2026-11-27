@@ -99,18 +99,8 @@ def euclideanTerminalSolutionBUCRestrictL :
         ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ (sub_pos.2 hδT) :=
   (timeReverseLIE (E := EuclideanSpace ℝ ι) (F := ℝ) (α := α) (hab := hδT) (T : ℝ)
       (sub_self (T : ℝ)).symm rfl).toContinuousLinearEquiv.toContinuousLinearMap.comp
-    ((euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT
-      (fun i j ↦ HolderSpace.compLipschitzL _
-        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith
-          (a i j))
-      (fun i ↦ HolderSpace.compLipschitzL _
-        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith (b i))
-      (HolderSpace.compLipschitzL _
-        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith c)
-      (ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩) hδ hδT).comp
-      (ContinuousLinearMap.prodMap (-HolderSpace.compLipschitzL _
-        (slabTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm).isometry.lipschitzWith)
-        (ContinuousLinearMap.id ℝ _)))
+    ((euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT (fun i j ↦ reverseL (a i j))
+      (fun i ↦ reverseL (b i)) (reverseL c) (reverse_ellipticity ha) hδ hδT).comp reverseDataL)
 
 variable {a b c}
 
@@ -126,12 +116,10 @@ theorem euclideanTerminalSolutionBUCRestrictL_apply
       euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha d
         (inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le)) p) := by
   obtain ⟨f, w⟩ := d
-  rw [euclideanTerminalSolutionBUC_apply_eq_euclideanCauchySolutionBUC hα₀ hα₁ hT ha
-    (ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩)]
+  rw [euclideanTerminalSolutionBUC_apply]
   simp only [euclideanTerminalSolutionBUCRestrictL, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
-    timeReverseLIE_apply, euclideanCauchySolutionBUCRestrictL_apply]
+    reverseDataL_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearEquiv.coe_coe, timeReverseLIE_apply, euclideanCauchySolutionBUCRestrictL_apply]
   congr 1
   ext <;> simp
 
@@ -165,31 +153,25 @@ theorem euclideanBackwardParabolicOperatorL_euclideanTerminalSolutionBUCRestrict
         (euclideanTerminalSolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (f, w)) =
       HolderSpace.compLipschitzL _
         (LipschitzWith.inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le))) f := by
-  set R := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
-    (sub_zero (T : ℝ)).symm
   set S := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
     (rfl : (T : ℝ) - δ = T - δ)
   ext p
   -- The forward equation of the reversed problem at `S p` is the backward equation at `p`.
   have h := congrArg (fun g ↦ g (S p))
     (euclideanParabolicOperatorL_euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT
-      (a := fun i j ↦ HolderSpace.compLipschitzL _ R.isometry.lipschitzWith (a i j))
-      (b := fun i ↦ HolderSpace.compLipschitzL _ R.isometry.lipschitzWith (b i))
-      (c := HolderSpace.compLipschitzL _ R.isometry.lipschitzWith c)
-      (ha.imp fun _ h ↦ ⟨h.1, mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ h.2⟩) hδ hδT
-      (-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith f) w)
-  have hp : R (inclusion (slab_subset_slab hδ.le le_rfl) (S p)) =
+      (a := fun i j ↦ reverseL (a i j)) (b := fun i ↦ reverseL (b i)) (c := reverseL c)
+      (reverse_ellipticity ha) hδ hδT (-reverseL f) w)
+  have hp : slabReverse T (inclusion (slab_subset_slab hδ.le le_rfl) (S p)) =
       inclusion (slab_subset_slab le_rfl (sub_le_self (T : ℝ) hδ.le)) p := by
-    ext <;> simp [R, S]
+    ext <;> simp [S]
   simp only [euclideanParabolicOperatorL_apply, HolderSpace.compLipschitzL_apply,
-    HolderSpace.neg_apply, hp] at h
+    HolderSpace.neg_apply, reverseL_apply, hp] at h
   simp only [euclideanTerminalSolutionBUCRestrictL, euclideanBackwardParabolicOperatorL_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_prodMap', Prod.map_apply,
-    ContinuousLinearMap.id_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousLinearEquiv.coe_coe, timeReverseLIE_apply, timeDerivL_timeReverseLIE,
-    spatialFDerivL_timeReverseLIE, spatialSecondFDerivL_timeReverseLIE,
-    HolderSpace.compLipschitzL_apply, _root_.neg_apply]
-  simp only [R, S] at h
+    ContinuousLinearMap.comp_apply, reverseDataL_apply,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
+    timeReverseLIE_apply, timeDerivL_timeReverseLIE, spatialFDerivL_timeReverseLIE,
+    spatialSecondFDerivL_timeReverseLIE, HolderSpace.compLipschitzL_apply]
+  simp only [S] at h
   linarith
 
 /-- **Schauder estimate before the terminal time for bounded uniformly continuous data.** For
@@ -217,24 +199,18 @@ theorem exists_rpow_mul_norm_euclideanTerminalSolutionBUCRestrictL_le {lam : ℝ
             C * ‖d‖ := by
   obtain ⟨C, hC, hest⟩ :=
     exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le (ι := ι) hα₀ hα₁ hlam K T₀
-  refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT ⟨f, w⟩ ↦ ?_⟩
-  set R := slabTimeReverse (E := EuclideanSpace ℝ ι) (T : ℝ) (sub_self (T : ℝ)).symm
-    (sub_zero (T : ℝ)).symm
-  have hR (g : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) :
-      ‖HolderSpace.compLipschitzL _ R.isometry.lipschitzWith g‖ ≤ ‖g‖ :=
-    HolderSpace.norm_compLipschitzL_apply_le _ g
+  refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
   -- The forward estimate for the reversed coefficients and data; reversing the data does not
   -- increase its norm, and reversing the solution keeps it.
-  have h := hest T hT hTT₀ _ _ _ (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
-    (fun i j ↦ (hR _).trans (hak i j)) (fun i ↦ (hR _).trans (hbk i)) ((hR c).trans hck) hδ hδT
-    (-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith f, w)
-  have hd : ‖(-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith f, w)‖ ≤ ‖(f, w)‖ := by
-    simp only [Prod.norm_def, norm_neg]
-    exact max_le_max (hR f) le_rfl
-  refine le_trans (le_of_eq ?_) (h.trans (mul_le_mul_of_nonneg_left hd hC))
+  have h := hest T hT hTT₀ (fun i j ↦ reverseL (a i j)) (fun i ↦ reverseL (b i)) (reverseL c)
+    (fun p ξ ↦ by simpa only [reverseL_apply] using ha (slabReverse T p) ξ)
+    (fun i j ↦ (norm_reverseL_apply_le _).trans (hak i j))
+    (fun i ↦ (norm_reverseL_apply_le _).trans (hbk i)) ((norm_reverseL_apply_le c).trans hck) hδ hδT
+    (reverseDataL d)
+  refine le_trans (le_of_eq ?_)
+    (h.trans (mul_le_mul_of_nonneg_left (norm_reverseDataL_apply_le d) hC))
   simp only [euclideanTerminalSolutionBUCRestrictL, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_prodMap', Prod.map_apply, ContinuousLinearMap.id_apply,
-    _root_.neg_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.norm_map, R]
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.norm_map]
 
 end TauCeti.ParabolicC2HolderSpace
