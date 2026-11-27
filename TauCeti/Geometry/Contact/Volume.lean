@@ -228,6 +228,7 @@ def IsContactForm.volumeOrientation {α : SmoothForm I M ℝ 1} (hα : α.IsCont
 
 /-- The tangent orientations of a contact form `α` are those selected by its volume form
 `α ∧ (dα)ⁿ`. -/
+@[simp]
 theorem IsContactForm.orientationAt_volumeOrientation {α : SmoothForm I M ℝ 1}
     (hα : α.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) (x : M) :
     Manifold.Orientation.orientationAt (hα.volumeOrientation hn) x =
