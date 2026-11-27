@@ -55,8 +55,8 @@ this derivative vanishes for every `C^n` variation with fixed endpoints
   through the first variation formula by
   `TauCeti.Manifold.isEnergyCritical_iff_integral_inner_eq_zero`.
 * `TauCeti.Manifold.exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity`: the squared speed of a
-  `C^n` family is jointly `C^(n-1)` near `{0} × [a, b]`, the input to differentiating the energy
-  and the length under the integral sign.
+  `C^n` family `F : P → ℝ → M` over any normed-space parameter is jointly `C^(n-1)` near
+  `{w₀} × [a, b]`, the input to differentiating the energy and the length under the integral sign.
 
 ## References
 
