@@ -29,8 +29,8 @@ As a consequence, restrictions to `Ω` of test functions on the whole space are 
 restrictions are smooth up to the boundary, so a bounded operator on `W^{1,p}(Ω)` is determined
 by its values on functions continuous on `closure Ω`.
 
-The same holds on a bounded Lipschitz domain `U` of any finite-dimensional real inner product
-space `F`, such as `EuclideanSpace ℝ (Fin (n + 1))`, for the intrinsic predicate
+The extension operator also exists on a bounded Lipschitz domain `U` of any finite-dimensional
+real inner product space `F`, such as `EuclideanSpace ℝ (Fin (n + 1))`, for the intrinsic predicate
 `Set.IsLipschitzDomain` and every additive Haar measure on `F`
 (`TauCeti.W1p.exists_extensionL_of_isLipschitzDomain`). The operator is transported from the
 model space: a boundary chart is an affine isometry `g : F ≃ᵃⁱ[ℝ] ℝ × E` carrying `U` onto a
