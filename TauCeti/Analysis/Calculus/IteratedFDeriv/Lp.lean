@@ -47,7 +47,10 @@ the `1/p`-th power of the measure of the ball times `(card ι)² B`
 
 The iterated derivatives of order at most `k` of a compactly supported `C^k` function are in every
 `Lᵖ`, also when evaluated on fixed directions (`ContDiff.memLp_iteratedFDeriv_of_hasCompactSupport`,
-`ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`). For a continuous bilinear map `B`,
+`ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`), and those of sums, differences and
+constant multiples of `C^k` functions are in `Lᵖ` when those of the functions are
+(`ContDiff.memLp_iteratedFDeriv_add`, `ContDiff.memLp_iteratedFDeriv_sub`,
+`MeasureTheory.MemLp.iteratedFDeriv_const_smul`). For a continuous bilinear map `B`,
 the Leibniz rule and Hölder's inequality bound the `Lᵖ` norm of `D^k (B (u, v))` by a binomial sum
 of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
 (`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`). The derivative of the `k`-th
@@ -225,6 +228,41 @@ theorem ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport (hn : n ≤ N)
   (hu.continuous_iteratedFDeriv_apply hn v).memLp_of_hasCompactSupport (hc.iteratedFDeriv_apply v)
 
 end CompactSupport
+
+section Algebra
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [MeasurableSpace E] {μ : Measure E} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {N : WithTop ℕ∞} {n : ℕ} {u v : E → F} {p : ℝ≥0∞}
+
+/-- The `n`-th derivative of a sum of `C^N` functions, `n ≤ N`, is in `Lᵖ` when those of the two
+summands are. -/
+theorem ContDiff.memLp_iteratedFDeriv_add (hn : n ≤ N) (hu : ContDiff 𝕜 N u)
+    (hv : ContDiff 𝕜 N v) (hum : MemLp (iteratedFDeriv 𝕜 n u) p μ)
+    (hvm : MemLp (iteratedFDeriv 𝕜 n v) p μ) : MemLp (iteratedFDeriv 𝕜 n (u + v)) p μ := by
+  rw [iteratedFDeriv_add (hu.of_le hn) (hv.of_le hn)]
+  exact hum.add hvm
+
+/-- The `n`-th derivative of a difference of `C^N` functions, `n ≤ N`, is in `Lᵖ` when those of
+the two functions are. -/
+theorem ContDiff.memLp_iteratedFDeriv_sub (hn : n ≤ N) (hu : ContDiff 𝕜 N u)
+    (hv : ContDiff 𝕜 N v) (hum : MemLp (iteratedFDeriv 𝕜 n u) p μ)
+    (hvm : MemLp (iteratedFDeriv 𝕜 n v) p μ) : MemLp (iteratedFDeriv 𝕜 n (u - v)) p μ := by
+  rw [iteratedFDeriv_sub (hu.of_le hn) (hv.of_le hn)]
+  exact hum.sub hvm
+
+/-- The `n`-th derivative of a constant multiple of a function is in `Lᵖ` when that of the
+function is. No smoothness is needed, by `TauCeti.iteratedFDeriv_fun_const_smul_apply`. -/
+theorem MeasureTheory.MemLp.iteratedFDeriv_const_smul (hum : MemLp (iteratedFDeriv 𝕜 n u) p μ)
+    (c : 𝕜) : MemLp (iteratedFDeriv 𝕜 n (c • u)) p μ := by
+  rw [show iteratedFDeriv 𝕜 n (c • u) = c • iteratedFDeriv 𝕜 n u from
+    funext fun x ↦ TauCeti.iteratedFDeriv_fun_const_smul_apply u c x n]
+  exact hum.const_smul c
+
+end Algebra
 
 namespace TauCeti
 

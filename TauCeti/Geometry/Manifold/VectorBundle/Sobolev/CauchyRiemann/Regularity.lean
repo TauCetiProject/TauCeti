@@ -60,6 +60,8 @@ planar theory.
   kernel of `D`.
 * `TauCeti.IsRealCauchyRiemannOperator.ofContMDiffSection_mem_ker_sobolevL_iff`: the Sobolev
   section of a `C¹` section `s` is in the kernel exactly when `D s = 0`.
+* `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquivComap`: the kernel, for `p > 1`, is
+  linearly equivalent to the space of `C¹` sections whose Sobolev sections lie in it.
 * `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquiv`,
   `TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevL_eq`: the kernels at two
   exponents `p, p' > 1` are linearly equivalent, so they have the same dimension.
@@ -104,17 +106,6 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 
 namespace IsRealCauchyRiemannOperator
 
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- The chart reading of the zero `(0,1)`-form vanishes almost everywhere on the chart image. -/
-private theorem chartValueL_zero_ae (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL volume p 0 i
-        (((0 : zeroOneSobolevSections A volume p 0) : SobolevSection A.tangentHom volume p 0) :
-          A.tangentHom.sectionChartData.SobolevData volume p 0)
-      =ᵐ[volume.restrict (A.image i)] 0 := by
-  simp only [ZeroMemClass.coe_zero, map_zero]
-  exact (ae_image_tangentHom_iff A volume i).1
-    (Lp.coeFn_zero (ℂ →L[ℝ] F) p (volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
-
 /-! ### The kernel -/
 
 include hD hDs in
@@ -125,8 +116,8 @@ theorem sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(ℝ, ℂ); F, V�
   refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_)
   refine (ae_image_tangentHom_iff A volume i).2 ?_
   filter_upwards [chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p s i,
-    chartValueL_zero_ae A (p := p) i, ae_restrict_mem (A.image i).isOpen.measurableSet]
-    with y h₁ h₂ hy
+    chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i,
+    ae_restrict_mem (A.image i).isOpen.measurableSet] with y h₁ h₂ hy
   rw [h₁, h₂, show D s = 0 from funext hs]
   exact A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n)) (A.image_tangentHom i ▸ hy)
 
@@ -148,7 +139,8 @@ theorem apply_eq_zero_of_sobolevL_ofContMDiffSection_eq_zero {s : Cₛ^1⟮𝓘(
   have h' := chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs volume p s i
   rw [h] at h'
   rw [A.image_tangentHom]
-  filter_upwards [h'.symm.trans (chartValueL_zero_ae A (p := p) i),
+  filter_upwards [h'.symm.trans
+      (chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i),
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hyi
   exact hy.trans (A.tangentHom.coord_zero (i := (i : Fin A.tangentHom.n))
     (A.image_tangentHom i ▸ hyi)).symm
@@ -171,7 +163,9 @@ theorem exists_contDiffOn_ae_eq_chartValueL_of_sobolevL_eq_zero (hp : 1 < p)
     contDiffOn_const
     ((contDiffOn_const.clm_comp (A.contDiffOn_chartZeroOrder_image hD hDs i)).const_smul _)
     (fun _ _ ↦ lsmul_I_mul_lsmul_I) hp (Lp.memLp _).memLpLoc hDu ?_
-  filter_upwards [hchart, chartValueL_zero_ae A (p := p) i] with y h₁ h₂
+  filter_upwards [hchart,
+    chartValueL_zero_zeroOneSobolevSections_ae (A := A) (μ := volume) (p := p) (k := 0) i]
+    with y h₁ h₂
   rw [h₂] at h₁
   have h1 := congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h₁
   simp only [Pi.zero_apply, zero_apply, add_apply, complexAntilinearPartL_apply_one] at h1
@@ -232,8 +226,9 @@ private theorem map_comap_ker_sobolevL (hp : 1 < p) :
   exact ⟨_, hw, rfl⟩
 
 /-- The kernel of the realization of `D` at exponent `p`, as the space of `C¹` sections whose
-Sobolev sections lie in it. -/
-private def kerSobolevLEquivComap (hp : 1 < p) :
+Sobolev sections lie in it: every kernel element is the Sobolev section of exactly one such
+section. -/
+def kerSobolevLEquivComap (hp : 1 < p) :
     ((hD.sobolevL A hDs volume p).ker).comap
         (SobolevSection.ofContMDiffSection A volume p 1) ≃ₗ[ℝ]
       (hD.sobolevL A hDs volume p).ker :=
@@ -242,11 +237,22 @@ private def kerSobolevLEquivComap (hp : 1 < p) :
 
 /-- `kerSobolevLEquivComap` sends a `C¹` section to its Sobolev section. -/
 @[simp]
-private theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
+theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
     (t : (hD.sobolevL A hDs volume p).ker.comap (SobolevSection.ofContMDiffSection A volume p 1)) :
     (kerSobolevLEquivComap A hD hDs hp t : SobolevSection A volume p 1) =
       SobolevSection.ofContMDiffSection A volume p 1 t := by
   simp [kerSobolevLEquivComap, Submodule.coe_equivMapOfInjective_apply, LinearEquiv.coe_ofEq_apply]
+
+/-- The inverse of `kerSobolevLEquivComap` sends the Sobolev section of a `C¹` section `s` in the
+kernel back to `s`. -/
+@[simp]
+theorem kerSobolevLEquivComap_symm_ofContMDiffSection (hp : 1 < p)
+    {s : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯}
+    (hs : SobolevSection.ofContMDiffSection A volume p 1 s ∈
+      (hD.sobolevL A hDs volume p).ker) :
+    (kerSobolevLEquivComap A hD hDs hp).symm ⟨_, hs⟩ = ⟨s, hs⟩ :=
+  (kerSobolevLEquivComap A hD hDs hp).symm_apply_eq.2
+    (Subtype.ext (coe_kerSobolevLEquivComap_apply A hD hDs hp ⟨s, hs⟩).symm)
 
 variable {p' : ℝ≥0∞} [Fact (1 ≤ p')]
 
@@ -274,10 +280,7 @@ theorem kerSobolevLEquiv_apply_ofContMDiffSection (hp : 1 < p) (hp' : 1 < p')
       (hD.sobolevL A hDs volume p).ker) :
     (kerSobolevLEquiv A hD hDs hp hp' ⟨_, hs⟩ : SobolevSection A volume p' 1) =
       SobolevSection.ofContMDiffSection A volume p' 1 s := by
-  have h : (kerSobolevLEquivComap A hD hDs hp).symm ⟨_, hs⟩ = ⟨s, hs⟩ :=
-    (kerSobolevLEquivComap A hD hDs hp).symm_apply_eq.2
-      (Subtype.ext (coe_kerSobolevLEquivComap_apply A hD hDs hp ⟨s, hs⟩).symm)
-  simp [kerSobolevLEquiv, h]
+  simp [kerSobolevLEquiv]
 
 /-- **The dimension of the kernel does not depend on the exponent.** -/
 theorem finrank_ker_sobolevL_eq (hp : 1 < p) (hp' : 1 < p') :
