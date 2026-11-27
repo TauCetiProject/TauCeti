@@ -51,7 +51,7 @@ theorem mem_coefficientRange {φ : R →+* S} {f : BinaryQuartic S} :
   ⟨f, rfl⟩
 
 /-- Projective transformations coming from the source ring preserve the coefficient range. -/
-theorem smul_mem_coefficientRange_iff {φ : R →+* S} {g : PGL(2, S)}
+@[simp] theorem smul_mem_coefficientRange_iff {φ : R →+* S} {g : PGL(2, S)}
     (hg : g ∈ (GeneralLinearGroup.map (n := Fin 2) φ).projectiveImage) (f : BinaryQuartic S) :
     g • f ∈ coefficientRange φ ↔ f ∈ coefficientRange φ := by
   have stable : ∀ {h : PGL(2, S)}, h ∈ (GeneralLinearGroup.map (n := Fin 2) φ).projectiveImage →

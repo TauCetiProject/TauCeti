@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.BinaryQuartic.Action
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 
 /-!
@@ -39,6 +40,17 @@ instance : MulAction (PGL(2, R)) (BinaryQuartic R) :=
 @[simp] theorem mk_smul (g : GL (Fin 2) R) (f : BinaryQuartic R) :
     ProjGenLinGroup.mk g • f = twistedSMul g f :=
   (rfl)
+
+/-- The coefficient of `x^(4-i) y^i` under the twisted action of `diag(1,u)` is
+scaled by `u^(i-2)`. Multiplying by `u²` writes the formula with natural powers. -/
+theorem sq_mul_mk_diagGL_smul_apply (u : Rˣ) (f : BinaryQuartic R) (i : Fin 5) :
+    (u : R) ^ 2 * (ProjGenLinGroup.mk (diagGL ![1, u]) • f) i =
+      (u : R) ^ i.val * f i := by
+  rw [mk_smul, twistedSMul_def, det_diagGL, Fin.prod_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, one_mul, Pi.smul_apply,
+    smul_eq_mul, ← mul_assoc, ← mul_pow, Units.mul_inv, one_pow, one_mul]
+  rw [smul_eq_subst, diagGL_coe, subst_def]
+  fin_cases i <;> simp [eval_def, Matrix.diagonal] <;> ring
 
 /-- The projective action preserves the quadratic invariant. -/
 @[simp] theorem invI_smul_projGenLinGroup (g : PGL(2, R)) (f : BinaryQuartic R) :

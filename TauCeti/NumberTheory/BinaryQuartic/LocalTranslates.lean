@@ -34,35 +34,6 @@ namespace TauCeti.BinaryQuartic
 
 variable {R : Type*} [CommRing R]
 
-/-- A divisor of the leading coefficient and of the square of the second coefficient
-also divides the discriminant. -/
-theorem dvd_disc_of_dvd_coeff_zero_of_dvd_sq_coeff_one {d : R} {f : BinaryQuartic R}
-    (h0 : d ∣ f 0) (h1 : d ∣ f 1 ^ 2) : d ∣ f.disc := by
-  let I : Ideal R := Ideal.span {d}
-  let q := Ideal.Quotient.mk I
-  have h0' : q (f 0) = 0 :=
-    Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h0)
-  have h1' : q (f 1) ^ 2 = 0 := by
-    rw [← map_pow]
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h1)
-  have h3 : q (f 1) ^ 3 = 0 := pow_eq_zero_of_le (by decide) h1'
-  have h4 : q (f 1) ^ 4 = 0 := pow_eq_zero_of_le (by decide) h1'
-  have hd : q f.disc = 0 := by
-    rw [← disc_comp]
-    simp [disc_def, h0', h1', h3, h4]
-  exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hd)
-
-/-- The coefficient of `x^(4-i) y^i` under the twisted action of `diag(1,u)` is
-scaled by `u^(i-2)`. Multiplying by `u²` writes the formula with natural powers. -/
-theorem sq_mul_mk_diagGL_smul_apply (u : Rˣ) (f : BinaryQuartic R) (i : Fin 5) :
-    (u : R) ^ 2 * (ProjGenLinGroup.mk (diagGL ![1, u]) • f) i =
-      (u : R) ^ i.val * f i := by
-  rw [mk_smul, twistedSMul_def, det_diagGL, Fin.prod_univ_two]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, one_mul, Pi.smul_apply,
-    smul_eq_mul, ← mul_assoc, ← mul_pow, Units.mul_inv, one_pow, one_mul]
-  rw [smul_eq_subst, diagGL_coe, subst_def]
-  fin_cases i <;> simp [eval_def, Matrix.diagonal] <;> ring
-
 /-- For a diagonal translate to have coefficients in the source ring, it is necessary
 and sufficient that `r²` divide the leading coefficient and `r` divide the next coefficient,
 where `r` maps to the unit `u` defining the diagonal. -/
@@ -91,19 +62,16 @@ theorem mk_diagGL_smul_mem_coefficientRange_iff {S : Type*} [CommRing S]
     rw [hcoeff i]
     fin_cases i <;> simp [ha, hb, hu, Function.comp_apply] <;> ring
 
-section FractionField
-
-variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-
 /-- If a projective translate of an integral quartic is integral and the translating element
-lies in the `k`th Cartan double coset, then the `2k`th power of the uniformizer divides the
-discriminant. -/
-theorem pow_mul_two_dvd_disc_of_mem_doubleCoset {ϖ : R} {π : Kˣ}
-    (hπ : algebraMap R K ϖ = π) {k : ℕ} {g : PGL(2, K)} (f : BinaryQuartic R)
+lies in the double coset of `diag(1, π ^ k)`, then `ϖ ^ (k * 2)` divides the discriminant,
+where the coefficient map sends `ϖ` to the unit `π`. -/
+theorem pow_mul_two_dvd_disc_of_mem_doubleCoset {S : Type*} [CommRing S]
+    {φ : R →+* S} (hφ : Function.Injective φ) {ϖ : R} {π : Sˣ}
+    (hπ : φ ϖ = π) {k : ℕ} {g : PGL(2, S)} (f : BinaryQuartic R)
     (hg : g ∈ doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k]))
-      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
-      (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage)
-    (hf : g • (algebraMap R K ∘ f) ∈ coefficientRange (algebraMap R K)) :
+      (GeneralLinearGroup.map (n := Fin 2) φ).projectiveImage
+      (GeneralLinearGroup.map (n := Fin 2) φ).projectiveImage)
+    (hf : g • (φ ∘ f) ∈ coefficientRange φ) :
     ϖ ^ (k * 2) ∣ f.disc := by
   obtain ⟨l, hl, r, hr, rfl⟩ := mem_doubleCoset.mp hg
   obtain ⟨a, rfl⟩ := (MonoidHom.mem_projectiveImage _).mp hr
@@ -111,9 +79,13 @@ theorem pow_mul_two_dvd_disc_of_mem_doubleCoset {ϖ : R} {π : Kˣ}
     simpa only [mul_smul] using hf)
   rw [← ProjGenLinGroup.map_mk, projGenLinGroup_map_smul_comp] at htranslate
   rw [pow_mul, ← disc_smul_projGenLinGroup (ProjGenLinGroup.mk a) f]
-  have h := (mk_diagGL_smul_mem_coefficientRange_iff (r := ϖ ^ k) (IsFractionRing.injective R K)
+  have h := (mk_diagGL_smul_mem_coefficientRange_iff (r := ϖ ^ k) hφ
     (by simp [map_pow, hπ]) _).mp htranslate
   exact dvd_disc_of_dvd_coeff_zero_of_dvd_sq_coeff_one h.1 (pow_dvd_pow_of_dvd h.2 2)
+
+section FractionField
+
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 variable [IsDomain R] [IsDiscreteValuationRing R]
 
@@ -131,8 +103,8 @@ theorem smul_mem_coefficientRange_iff_of_not_sq_dvd_disc {ϖ : R} (hϖ : Irreduc
   obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
   rcases k with _ | k
   · rwa [doubleCoset_mk_diagGL_pow_zero] at hk
-  · exact (hf ((pow_dvd_pow ϖ (by omega)).trans
-      (pow_mul_two_dvd_disc_of_mem_doubleCoset hπ f hk hg))).elim
+  · have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset (IsFractionRing.injective R K) hπ f hk hg
+    exact (hf ((pow_dvd_pow ϖ (by omega)).trans hdiv)).elim
 
 /-- For a nonsingular integral quartic over a DVR with finite residue field, the set of
 right cosets that admit an integral translate is finite. -/
@@ -165,7 +137,7 @@ theorem finite_orbitWeightCosets_of_disc_ne_zero [Finite (IsLocalRing.ResidueFie
   intro c hc
   obtain ⟨g, hg, rfl⟩ := Subgroup.mem_orbitWeightCosets.mp hc
   obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
-  have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset hπ f hk hg
+  have hdiv := pow_mul_two_dvd_disc_of_mem_doubleCoset (IsFractionRing.injective R K) hπ f hk hg
   have hmul : FiniteMultiplicity ϖ f.disc := .of_not_isUnit hϖ.not_isUnit hf
   have hk' : k * 2 ≤ multiplicity ϖ f.disc := hmul.pow_dvd_iff_le_multiplicity.mp hdiv
   exact Set.mem_iUnion₂.mpr ⟨k, Nat.le_trans (by omega : k ≤ k * 2) hk', ⟨g, hk, rfl⟩⟩

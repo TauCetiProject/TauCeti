@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Divisibility.Basic
 public import Mathlib.Algebra.Group.Action.Pi
 public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Nat.Cast.Basic
+import Mathlib.RingTheory.Ideal.Quotient.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -127,6 +129,24 @@ theorem disc_comp (φ : F) (f : BinaryQuartic R) : disc (φ ∘ f) = φ (disc f)
   simp [disc_def, map_ofNat]
 
 end map
+
+/-- A divisor of the leading coefficient and of the square of the second coefficient
+also divides the discriminant. -/
+theorem dvd_disc_of_dvd_coeff_zero_of_dvd_sq_coeff_one {d : R} {f : BinaryQuartic R}
+    (h0 : d ∣ f 0) (h1 : d ∣ f 1 ^ 2) : d ∣ f.disc := by
+  let I : Ideal R := Ideal.span {d}
+  let q := Ideal.Quotient.mk I
+  have h0' : q (f 0) = 0 :=
+    Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h0)
+  have h1' : q (f 1) ^ 2 = 0 := by
+    rw [← map_pow]
+    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h1)
+  have h3 : q (f 1) ^ 3 = 0 := pow_eq_zero_of_le (by decide) h1'
+  have h4 : q (f 1) ^ 4 = 0 := pow_eq_zero_of_le (by decide) h1'
+  have hd : q f.disc = 0 := by
+    rw [← disc_comp]
+    simp [disc_def, h0', h1', h3, h4]
+  exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hd)
 
 end BinaryQuartic
 
