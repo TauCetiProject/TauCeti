@@ -415,12 +415,7 @@ theorem exists_sub_patchedQuantization_mem_smoothingPseudodifferentialOperators
     hWf.subset fun i ↦ image_mono (union_subset (hχW i) (hψW i))
   -- The pullbacks of the `ρᵢ`, read as complex functions, add up to `1`.
   have hρ' (x : M) : ∑ᶠ i, (e i).complexCutoffPullback (he i) (ρ i) 1 x = 1 := by
-    have hfin : (Function.support fun i ↦ (e i).cutoffPullback (he i) (ρ i) 1 x).Finite :=
-      (hWf.point_finite x).subset fun i hi ↦ image_mono (hW i).2.1
-        ((e i).tsupport_cutoffPullback_subset (he i) _ _ (subset_tsupport _ hi))
-    simp only [OpenPartialHomeomorph.complexCutoffPullback_one_apply]
-    rw [← Complex.ofReal_one, ← hρ x]
-    exact (map_finsum Complex.ofRealHom hfin).symm
+    rw [finsum_complexCutoffPullback_one_apply he, hρ x, Complex.ofReal_one]
   refine ⟨ι, c, χ, ψ, hS, fun m P hP ↦ ?_⟩
   choose a ha using fun i ↦
     (mem_classicalPseudodifferentialOperators_iff.1 hP).2 (e i) (he i) (ρ i) (χ i)

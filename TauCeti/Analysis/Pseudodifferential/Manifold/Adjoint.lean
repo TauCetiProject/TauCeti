@@ -715,12 +715,7 @@ theorem exists_mem_classicalPseudodifferentialOperators_forall_hasCompactSupport
   have hhB (i : ι) : tsupport (h i) ⊆ (e i).symm '' tsupport (χ i) :=
     (e i).tsupport_complexCutoffPullback_subset (he i) _ _
   have hg1 (x : M) : ∑ᶠ i, g i x = 1 := by
-    have hfin : (Function.support fun i ↦ (e i).cutoffPullback (he i) (ρ i) 1 x).Finite :=
-      (hWf.point_finite x).subset fun i hi ↦ image_mono (hW i).2.1
-        ((e i).tsupport_cutoffPullback_subset (he i) _ _ (subset_tsupport _ hi))
-    simp only [g, OpenPartialHomeomorph.complexCutoffPullback_one_apply]
-    rw [← Complex.ofReal_one, ← hρ x]
-    exact (map_finsum Complex.ofRealHom hfin).symm
+    rw [finsum_complexCutoffPullback_one_apply he, hρ x, Complex.ofReal_one]
   -- Each piece `gᵢ P gⱼ` is a finite sum of chart quantizations, so it has a formal adjoint.
   obtain ⟨Q, hQ, hadj⟩ := exists_mem_forall_hasCompactSupport_integral_inner_eq_of_partition
     (hWf.subset fun i ↦ image_mono (hχW i)) (fun i ↦ (e i).isCompact_symm_image_tsupport (χ i))

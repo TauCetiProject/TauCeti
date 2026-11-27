@@ -853,6 +853,29 @@ theorem compactSpace_of_forall_sum_cutoffPullback_eq_one {ι : Type*} [Fintype �
   exact mem_iUnion.2 ⟨i, OpenPartialHomeomorph.tsupport_cutoffPullback_subset (he i) (ψ i) 1
     (subset_tsupport _ hi)⟩
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- Complex pullbacks of chart cutoffs add up to the sum of the real pullbacks, read as a complex
+number. The sums are `finsum`s, so no finiteness of the family is needed. -/
+theorem finsum_complexCutoffPullback_one_apply {ι : Type*} {e : ι → OpenPartialHomeomorph M E}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)) (x : M) :
+    ∑ᶠ i, (e i).complexCutoffPullback (he i) (ψ i) 1 x =
+      ((∑ᶠ i, (e i).cutoffPullback (he i) (ψ i) 1 x : ℝ) : ℂ) := by
+  simp only [OpenPartialHomeomorph.complexCutoffPullback_one_apply]
+  exact (Complex.ofRealHom.toAddMonoidHom.map_finsum_of_injective Complex.ofReal_injective _).symm
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- If finitely many chart cutoffs `ψᵢ`, read on `M` as `ψᵢ ∘ eᵢ` extended by `0`, add up to `1`
+at every point, then so do their complex pullbacks: `∑ᵢ ψᵢ ∘ eᵢ = 1` as complex-valued smooth
+functions on `M`. -/
+theorem sum_complexCutoffPullback_one_eq_one {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M E} (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) :
+    ∑ i, (e i).complexCutoffPullback (he i) (ψ i) 1 = 1 := by
+  ext x
+  simp [OpenPartialHomeomorph.complexCutoffPullback_one_apply, ← Complex.ofReal_sum, hψ x]
+
 /-- **Chart cutoffs whose squares sum to one.** A Hausdorff σ-compact manifold modelled on a
 finite-dimensional space has points `cᵢ` and cutoffs `χᵢ` with compact supports in the targets of
 the preferred charts at the `cᵢ`, such that the chart preimages `(chartAt cᵢ)⁻¹(supp χᵢ)` form a

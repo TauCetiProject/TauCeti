@@ -141,13 +141,9 @@ theorem exists_forall_mulLeft_comp_eq_sum_mulLeft_comp_comp_mulLeft
   simp only [Fintype.sum_sigma, ← hP]
   -- `ρ P u = ∑ₗ ρ P (τₗ u)`, since `∑ₗ τₗ = 1`.
   ext u p
-  have hτ1 : ∑ l, (chartAt E (c l)).complexCutoffPullback
-      (IsManifold.chart_mem_maximalAtlas (c l)) (τ l) 1 * u = u := by
-    ext q
-    simp [← Finset.sum_mul, OpenPartialHomeomorph.complexCutoffPullback_one_apply,
-      ← Complex.ofReal_sum, hτ q (mem_univ q)]
   simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.sum_apply,
-    ← Finset.mul_sum, ← map_sum, hτ1]
+    ← Finset.mul_sum, ← map_sum, ← Finset.sum_mul, sum_complexCutoffPullback_one_eq_one _ τ
+      fun q ↦ hτ q (mem_univ q), one_mul]
 
 /-- **Splitting operators along pairs of cutoffs in common charts.** On a compact manifold modelled
 on a nontrivial finite-dimensional real space, there are finitely many charts `eᵢ` of the maximal
@@ -172,8 +168,9 @@ theorem exists_forall_eq_sum_mulLeft_comp_comp_mulLeft :
   simp only [Fintype.sum_sigma, ← hP]
   -- `P u = ∑ₖ ρₖ P u`, since `∑ₖ ρₖ = 1`.
   ext u p
-  simp [← Finset.sum_mul, OpenPartialHomeomorph.complexCutoffPullback_one_apply,
-    ← Complex.ofReal_sum, hρ p (mem_univ p)]
+  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.sum_apply,
+    ← Finset.sum_mul, sum_complexCutoffPullback_one_eq_one _ ρ fun q ↦ hρ q (mem_univ q),
+    one_mul]
 
 end Compact
 
