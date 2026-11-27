@@ -299,13 +299,6 @@ private def liftKer (hp : 1 < p) :
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-@[simp]
-private theorem coe_liftKer_apply (hp : 1 < p)
-    (t : (torusCauchyRiemannSobolevL A hν hμ p).ker.comap
-      (SobolevSection.ofContMDiffSection A volume p 1)) :
-    (liftKer A hν hμ hp t : ℂ → ℂ) = fun z : ℂ ↦ t.val z :=
-  rfl
-
 /-- **The kernel of the realization on the plane.** Every element of the kernel of the
 realization, `p > 1`, is the Sobolev section of a smooth function `σ` on `ℂ ⧸ Λ`
 (`TauCeti.IsRealCauchyRiemannOperator.exists_contMDiff_of_sobolevL_eq_zero`); this linear map sends
@@ -363,14 +356,13 @@ theorem mem_range_kerTorusCauchyRiemannSobolevLLift_iff (hp : 1 < p)
     funext fun z ↦ signTwistedZeroEquivQuotientFun_apply_mk _ z
   have hσs : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ((1 : ℕ) : WithTop ℕ∞) σ := by
     refine (Λ.contMDiff_quotient_iff (I := 𝓘(ℝ, ℂ)) (n := ∞) (by simp) σ).2 ?_
-    rw [show σ ∘ QuotientAddGroup.mk = fun z : ℂ ↦ σ z from rfl, hσv]
+    rw [Function.comp_def, hσv]
     exact contMDiff_iff_contDiff.2 (by simpa using hv)
   let s : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); ℂ, Trivial (ℂ ⧸ Λ) ℂ⟯ :=
     ⟨σ, Trivial.contMDiff_mk_iff.2 ⟨contMDiff_id, hσs⟩⟩
+  have hsσ : (s : ℂ ⧸ Λ → ℂ) = σ := ContMDiffSection.coeFn_mk _ _
   have hker : (fun z : ℂ ↦ s z) ∈ cauchyRiemannKernel (fun z : ℂ ↦ ν z) (fun z : ℂ ↦ μ z) := by
-    -- The section `s` is the function `σ`.
-    change (fun z : ℂ ↦ σ z) ∈ _
-    rw [hσv]
+    rw [hsσ, hσv]
     exact (Submodule.mem_inf.1 v.property).2
   have hs : SobolevSection.ofContMDiffSection A volume p 1 s ∈
       (torusCauchyRiemannSobolevL A hν hμ p).ker :=
