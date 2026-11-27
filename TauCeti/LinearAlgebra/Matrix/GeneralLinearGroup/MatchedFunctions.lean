@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.MulChar.Basic
 import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 import TauCeti.LinearAlgebra.Matrix.Determinant.ComplementaryMinor
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Completion
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
@@ -218,22 +220,21 @@ private theorem shadows_mul_of_rows_eq_one (m : GL n R)
       ext (i | i) (j | j) <;> simp [hm, Matrix.one_apply, σ.injective.eq_iff]
     rw [← det_submatrix_equiv_self σ, hblocks, det_fromBlocks_zero₂₁, det_one, mul_one]
 
-/-- The invertible matrix that is `h` on the indices `b` and the identity on the indices `a`. -/
-private noncomputable def blockDiagOne [Fintype a] [DecidableEq a] (σ : b ⊕ a ≃ n) (h : GL b R) :
-    GL n R :=
-  GeneralLinearGroup.mk'' ((fromBlocks (h : Matrix b b R) 0 0 1).submatrix σ.symm σ.symm) <| by
-    rw [det_submatrix_equiv_self, det_fromBlocks_zero₂₁, det_one, mul_one]
-    exact isUnits_det_units h
-
-private theorem blockDiagOne_apply_inr [Fintype a] [DecidableEq a] (h : GL b R) (i : a) (j : n) :
-    (blockDiagOne σ h : Matrix n n R) (σ (.inr i)) j = (1 : Matrix n n R) (σ (.inr i)) j := by
+/-- The reindex along `σ` of the block diagonal matrix `h ⊕ 1` is the identity on the rows indexed
+by `a`. -/
+private theorem reindexGL_fromBlocksGL_one_apply_inr [Fintype a] [DecidableEq a] (h : GL b R)
+    (i : a) (j : n) :
+    (σ.reindexGL R (TauCeti.fromBlocksGL (h, 1)) : Matrix n n R) (σ (.inr i)) j =
+      (1 : Matrix n n R) (σ (.inr i)) j := by
   obtain ⟨j, rfl⟩ := σ.surjective j
-  rcases j with j | j <;> simp [blockDiagOne, Matrix.one_apply]
+  rcases j with j | j <;> simp [Matrix.one_apply]
 
-private theorem submatrix_blockDiagOne [Fintype a] [DecidableEq a] (h : GL b R) :
-    (blockDiagOne σ h : Matrix n n R).submatrix (σ ∘ Sum.inl) (σ ∘ Sum.inl) = h := by
+/-- The reindex along `σ` of the block diagonal matrix `h ⊕ 1` is `h` on the indices `b`. -/
+private theorem submatrix_reindexGL_fromBlocksGL_one [Fintype a] [DecidableEq a] (h : GL b R) :
+    (σ.reindexGL R (TauCeti.fromBlocksGL (h, 1)) : Matrix n n R).submatrix (σ ∘ Sum.inl)
+      (σ ∘ Sum.inl) = h := by
   ext i j
-  simp [blockDiagOne]
+  simp
 
 /-- The second function of a matched pair transforms by `χ⁻¹ ∘ det` under `GL_b(R)` acting on the
 right: `χ (det h) * Ψ (y h) = Ψ y`. -/
@@ -243,10 +244,10 @@ theorem AreMatched.mul_apply_mul (hm : χ.AreMatched σ Φ Ψ) (h : GL b R) (y :
   let _ := fintypeOfSplitting σ
   by_cases hy : ∃ k : GL n R, (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) = y
   · obtain ⟨k, rfl⟩ := hy
-    obtain ⟨hx, hyk, hdet⟩ :=
-      shadows_mul_of_rows_eq_one (blockDiagOne σ h) (blockDiagOne_apply_inr h) k
-    rw [submatrix_blockDiagOne] at hyk hdet
-    have e := hm.apply_eq (k * blockDiagOne σ h)
+    obtain ⟨hx, hyk, hdet⟩ := shadows_mul_of_rows_eq_one
+      (σ.reindexGL R (TauCeti.fromBlocksGL (h, 1))) (reindexGL_fromBlocksGL_one_apply_inr h) k
+    rw [submatrix_reindexGL_fromBlocksGL_one] at hyk hdet
+    have e := hm.apply_eq (k * σ.reindexGL R (TauCeti.fromBlocksGL (h, 1)))
     rw [hx, hyk, GeneralLinearGroup.coe_mul, det_mul, hdet, hm.apply_eq k, map_mul,
       mul_assoc] at e
     exact ((isUnit_apply_det χ k).mul_left_cancel e).symm
@@ -254,10 +255,11 @@ theorem AreMatched.mul_apply_mul (hm : χ.AreMatched σ Φ Ψ) (h : GL b R) (y :
     have hy' (k : GL n R) :
         (k : Matrix n n R).submatrix id (σ ∘ Sum.inl) ≠ y * (h : Matrix b b R) := by
       intro hk
-      obtain ⟨-, hyk, -⟩ :=
-        shadows_mul_of_rows_eq_one (blockDiagOne σ h⁻¹) (blockDiagOne_apply_inr h⁻¹) k
-      rw [submatrix_blockDiagOne, hk, Matrix.mul_assoc, ← Units.val_mul, mul_inv_cancel,
-        Units.val_one, Matrix.mul_one] at hyk
+      obtain ⟨-, hyk, -⟩ := shadows_mul_of_rows_eq_one
+        (σ.reindexGL R (TauCeti.fromBlocksGL (h⁻¹, 1)))
+        (reindexGL_fromBlocksGL_one_apply_inr h⁻¹) k
+      rw [submatrix_reindexGL_fromBlocksGL_one, hk, Matrix.mul_assoc, ← Units.val_mul,
+        mul_inv_cancel, Units.val_one, Matrix.mul_one] at hyk
       exact hy _ hyk
     rw [hm.eq_zero_right hy, hm.eq_zero_right hy', mul_zero]
 
@@ -431,7 +433,7 @@ theorem sum_rowBlockFun_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Dec
         refine (Finset.sum_bij (fun p _ ↦ (p.1 : Matrix a a R) *
           (fromCols p.2 1).submatrix id σ.symm) (fun p _ ↦ ?_) (fun p _ p' _ hpp' ↦ ?_)
           (fun x hx ↦ ?_) (fun p _ ↦ ?_)).symm
-        · simp [submatrix_mul_fromCols_submatrix_comp_inr]
+        · simp
         · have h₁ := congrArg (fun x : Matrix a n R ↦ x.submatrix id (σ ∘ Sum.inr)) hpp'
           have h₂ := congrArg (fun x : Matrix a n R ↦ x.submatrix id (σ ∘ Sum.inl)) hpp'
           simp only [submatrix_mul_fromCols_submatrix_comp_inr,
@@ -473,7 +475,7 @@ theorem sum_colBlockFun_mul [Fintype R] [Fintype a] [Fintype b] [Fintype n] [Dec
         refine (Finset.sum_bij (fun p _ ↦ (fromRows 1 (-p.2)).submatrix σ.symm id *
           (p.1 : Matrix b b R)) (fun p _ ↦ ?_) (fun p _ p' _ hpp' ↦ ?_)
           (fun y hy ↦ ?_) (fun p _ ↦ ?_)).symm
-        · simp [submatrix_fromRows_submatrix_mul_comp_inl]
+        · simp
         · have h₁ := congrArg (fun y : Matrix n b R ↦ y.submatrix (σ ∘ Sum.inl) id) hpp'
           have h₂ := congrArg (fun y : Matrix n b R ↦ y.submatrix (σ ∘ Sum.inr) id) hpp'
           simp only [submatrix_fromRows_submatrix_mul_comp_inl,

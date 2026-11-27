@@ -178,6 +178,7 @@ variable [NonUnitalNonAssocSemiring R] (σ : b ⊕ c ≃ n)
 
 /-- The column block `σ ∘ Sum.inl` of `h * (A B)`, with the columns of `(A B)` reindexed along
 `σ : b ⊕ c ≃ n`, is `h * A`. -/
+@[simp]
 theorem submatrix_mul_fromCols_submatrix_comp_inl [Fintype m] (h : Matrix l m R)
     (A : Matrix m b R) (B : Matrix m c R) :
     (h * (fromCols A B).submatrix id σ.symm).submatrix id (σ ∘ Sum.inl) = h * A := by
@@ -186,6 +187,7 @@ theorem submatrix_mul_fromCols_submatrix_comp_inl [Fintype m] (h : Matrix l m R)
 
 /-- The column block `σ ∘ Sum.inr` of `h * (A B)`, with the columns of `(A B)` reindexed along
 `σ : b ⊕ c ≃ n`, is `h * B`. -/
+@[simp]
 theorem submatrix_mul_fromCols_submatrix_comp_inr [Fintype m] (h : Matrix l m R)
     (A : Matrix m b R) (B : Matrix m c R) :
     (h * (fromCols A B).submatrix id σ.symm).submatrix id (σ ∘ Sum.inr) = h * B := by
@@ -194,6 +196,7 @@ theorem submatrix_mul_fromCols_submatrix_comp_inr [Fintype m] (h : Matrix l m R)
 
 /-- The row block `σ ∘ Sum.inl` of `(A; B) * h`, with the rows of `(A; B)` reindexed along
 `σ : b ⊕ c ≃ n`, is `A * h`. -/
+@[simp]
 theorem submatrix_fromRows_submatrix_mul_comp_inl [Fintype m] (A : Matrix b m R)
     (B : Matrix c m R) (h : Matrix m l R) :
     ((fromRows A B).submatrix σ.symm id * h).submatrix (σ ∘ Sum.inl) id = A * h := by
@@ -202,6 +205,7 @@ theorem submatrix_fromRows_submatrix_mul_comp_inl [Fintype m] (A : Matrix b m R)
 
 /-- The row block `σ ∘ Sum.inr` of `(A; B) * h`, with the rows of `(A; B)` reindexed along
 `σ : b ⊕ c ≃ n`, is `B * h`. -/
+@[simp]
 theorem submatrix_fromRows_submatrix_mul_comp_inr [Fintype m] (A : Matrix b m R)
     (B : Matrix c m R) (h : Matrix m l R) :
     ((fromRows A B).submatrix σ.symm id * h).submatrix (σ ∘ Sum.inr) id = B * h := by
