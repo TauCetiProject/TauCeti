@@ -240,6 +240,30 @@ theorem conjTranspose_mem_matsOfSize_iff {M : Matrix m n A} :
   simp only [mem_matsOfSize, conjTranspose_apply, star_mem_iff]
   exact forall_comm
 
+@[simp]
+theorem zero_mem_matsOfSize (i : ℕ) : (0 : Matrix m n A) ∈ S.matsOfSize i :=
+  fun _ _ => S.zero_mem i
+
+theorem one_mem_matsOfSize [DecidableEq n] (i : ℕ) : (1 : Matrix n n A) ∈ S.matsOfSize i := by
+  intro a b
+  by_cases h : a = b
+  · subst h; simp
+  · simp [one_apply_ne h]
+
+theorem smul_mem_matsOfSize {M : Matrix m n A} (hx : x ∈ S.ofSize i) (hM : M ∈ S.matsOfSize j) :
+    x • M ∈ S.matsOfSize (i + j) :=
+  fun a b => S.mul_mem hx (hM a b)
+
+/-- A sum of two matrices of size `i` has size `i + 1`, provided `ι` is nonempty. -/
+theorem add_mem_matsOfSize [Nonempty ι] {M N : Matrix m n A} (hM : M ∈ S.matsOfSize i)
+    (hN : N ∈ S.matsOfSize i) : M + N ∈ S.matsOfSize (i + 1) :=
+  fun a b => S.add_mem (hM a b) (hN a b)
+
+/-- A difference of two matrices of size `i` has size `i + 1`, provided `ι` is nonempty. -/
+theorem sub_mem_matsOfSize [Nonempty ι] {M N : Matrix m n A} (hM : M ∈ S.matsOfSize i)
+    (hN : N ∈ S.matsOfSize i) : M - N ∈ S.matsOfSize (i + 1) :=
+  fun a b => S.sub_mem (hM a b) (hN a b)
+
 theorem gram_mem_matsOfSize : J ∈ S.matsOfSize 1 :=
   S.gram_mem
 
@@ -283,6 +307,11 @@ section ofNorm
 variable {B : Type*} [NormedCommRing B] [NormOneClass B] [StarRing B] [NormedStarGroup B]
   {K : Matrix ι ι B}
 
+omit [DecidableEq ι] in
+/-- A scale `L ≥ #ι + 1` is at least `1`. -/
+private theorem one_le_of_card_add_one_le {L : ℝ} (hL : (Fintype.card ι : ℝ) + 1 ≤ L) : 1 ≤ L :=
+  (le_add_of_nonneg_left (Nat.cast_nonneg _)).trans hL
+
 /-- **The size at a real place**: in a normed commutative ring with an isometric involution, the
 numbers of norm at most `L ^ i` are a size for a Gram matrix `K` whenever the scale `L` is at
 least `#ι + 1` and bounds the norms of the entries of `K` and `K⁻¹`. -/
@@ -290,12 +319,12 @@ def ofNorm (L : ℝ) (hL : (Fintype.card ι : ℝ) + 1 ≤ L) (hK : ∀ a b, ‖
     (hK' : ∀ a b, ‖K⁻¹ a b‖ ≤ L) : GramSize K where
   ofSize i := {x | ‖x‖ ≤ L ^ i}
   mul_mem' {i j x y} hx hy := by
-    have hL0 : 0 ≤ L := by linarith [(Nat.cast_nonneg (Fintype.card ι) : (0 : ℝ) ≤ _)]
+    have hL0 : 0 ≤ L := zero_le_one.trans (one_le_of_card_add_one_le hL)
     calc ‖x * y‖ ≤ ‖x‖ * ‖y‖ := norm_mul_le x y
       _ ≤ L ^ i * L ^ j := mul_le_mul hx hy (norm_nonneg y) (pow_nonneg hL0 i)
       _ = L ^ (i + j) := (pow_add L i j).symm
   multiset_sum_mem' {i} s hs h := by
-    have hL0 : 0 ≤ L := by linarith [(Nat.cast_nonneg (Fintype.card ι) : (0 : ℝ) ≤ _)]
+    have hL0 : 0 ≤ L := zero_le_one.trans (one_le_of_card_add_one_le hL)
     calc ‖s.sum‖ ≤ (s.map norm).sum := norm_multiset_sum_le s
       _ ≤ Multiset.card (s.map norm) • L ^ i :=
           Multiset.sum_le_card_nsmul _ _ (by simpa using fun x hx => h x hx)
@@ -306,12 +335,8 @@ def ofNorm (L : ℝ) (hL : (Fintype.card ι : ℝ) + 1 ≤ L) (hK : ∀ a b, ‖
       _ = L ^ (i + 1) := by ring
   neg_mem_iff' := by simp
   star_mem_iff' := by simp
-  zero_mem' i := by
-    have hL0 : 0 ≤ L := by linarith [(Nat.cast_nonneg (Fintype.card ι) : (0 : ℝ) ≤ _)]
-    simpa using pow_nonneg hL0 i
-  one_mem' i := by
-    have hL1 : 1 ≤ L := by linarith [(Nat.cast_nonneg (Fintype.card ι) : (0 : ℝ) ≤ _)]
-    simpa using one_le_pow₀ hL1
+  zero_mem' i := by simpa using pow_nonneg (zero_le_one.trans (one_le_of_card_add_one_le hL)) i
+  one_mem' i := by simpa using one_le_pow₀ (one_le_of_card_add_one_le hL)
   gram_mem' a b := by simpa using hK a b
   gram_inv_mem' a b := by simpa using hK' a b
 

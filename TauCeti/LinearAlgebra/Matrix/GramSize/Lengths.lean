@@ -9,16 +9,21 @@ public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.LinearAlgebra.Matrix.GramSize.Basic
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Lengths of vectors at points of a unitary group, and their comparison at two points
 
 Let `S` be a size for the Gram matrix `J` of a sesquilinear form `⟨v, w⟩ = star v ⬝ᵥ J *ᵥ w` on
-`ι → A` (`TauCeti.GramSize`), let `L` be its scale (so that size `i` reads as at most `L ^ i`),
-and let `e₀, e₁, …` be a family of vectors (in the application, the basis vectors of an isotropic
-flag). For `l : ℕ`, a vector `ω` is *orthogonal below `l`* if `⟨e_b, ω⟩ = 0` for `b < l`, and two
-vectors are *congruent below `l`* if they differ by an element of the span of the `e_b`, `b < l`;
-the classes of the vectors orthogonal below `l` form the quotient `Y^(l)` along the flag.
+`ι → A` (`TauCeti.GramSize`), and let `e₀, e₁, …` be a family of vectors (in the application,
+the basis vectors of an isotropic flag). For `l : ℕ`, a vector `ω` is *orthogonal below `l`* if
+`⟨e_b, ω⟩ = 0` for `b < l`, and two vectors are *congruent below `l`* if they differ by an element
+of the span of the `e_b`, `b < l`; the classes of the vectors orthogonal below `l` form the
+quotient `Y^(l)` along the flag.
+
+A size has no scale of its own; the phrase *length at most `L ^ i`* is informal notation for
+size `i`, so named because for the size `TauCeti.GramSize.ofNorm L` at a real place, size `i`
+means norm at most `L ^ i`. The exponents below are sizes in this sense.
 
 * A vector `y` has **length at most `L ^ i` at `g`** if `g⁻¹ y` has size `i`
   (`TauCeti.GramSize.LengthLeAt`); its class in `Y^(l)` has **induced length at most `L ^ i`** if
@@ -34,16 +39,20 @@ the classes of the vectors orthogonal below `l` form the quotient `Y^(l)` along 
   modulo `ρ` up to size `c` with a lift of its class in `Y^(a)` read at `g'`
   (`TauCeti.GramSize.HasShortDual`).
 
-The main results compare the lengths at two points `g` and `g'` of the unitary group of a
+The first two results compare the lengths at two points `g` and `g'` of the unitary group of a
 Hermitian form, for a self-adjoint unit `ρ` of size `1`:
 
-* if the class of `e_a` in `Y^(a)` has induced length at most `L ^ c` at `g` and at `g'`, `e_a`
-  has a short dual of exponent `c`, and the lengths differ by at most `L ^ t` on `Y^(a + 1)`, then
-  they differ by at most `L ^ (t + 4c + 12)` on `Y^(a)`
-  (`TauCeti.GramSize.LengthsDifferLe.of_succ`);
-* by induction, if this holds for every `a < j` and the lengths differ by at most `L ^ t` on
-  `Y^(j)`, then they differ by at most `L ^ (t + (4c + 12) j)` on the whole space `Y^(0)`
-  (`TauCeti.GramSize.LengthsDifferLe.zero_of_hasShortDual`);
+* if `e_b` is orthogonal to `e_0, …, e_a` for every `b < a`, the class of `e_a` in `Y^(a)` has
+  induced length at most `L ^ c` at `g` and at `g'`, `e_a` has a short dual of exponent `c`, and
+  the lengths differ by at most `L ^ t` on `Y^(a + 1)`, then they differ by at most
+  `L ^ (t + 4c + 12)` on `Y^(a)` (`TauCeti.GramSize.LengthsDifferLe.of_succ`);
+* by induction, if `e_0, …, e_(j-1)` are pairwise orthogonal, the hypotheses on `e_a` hold for
+  every `a < j`, and the lengths differ by at most `L ^ t` on `Y^(j)`, then they differ by at most
+  `L ^ (t + (4c + 12) j)` on the whole space `Y^(0)`
+  (`TauCeti.GramSize.LengthsDifferLe.zero_of_hasShortDual`).
+
+The third holds for any invertible Gram matrix `J` and self-adjoint unit `ρ`:
+
 * if the lengths at `g` and `g x` differ by at most `L ^ i` on the whole space, for `x` in the
   unitary group, then `(x - 1) / ρ` has size `i + 4`
   (`TauCeti.GramSize.LengthsDifferLe.smul_sub_one_mem_matsOfSize`): `x` is close to `1`.
@@ -82,8 +91,9 @@ namespace GramSize
 variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [CommRing A] [StarRing A]
   {J : Matrix ι ι A} (S : GramSize J)
 
-/-- A vector `y` has **length at most `L ^ i` at `g`**, for the scale `L` of the size `S`, when
-`g⁻¹ y` has size `i`. -/
+/-- A vector `y` has **length at most `L ^ i` at `g`** when `g⁻¹ y` has size `i`. Here `L ^ i` is
+informal notation for size `i` (for `TauCeti.GramSize.ofNorm L`, the entries of `g⁻¹ y` have norm
+at most `L ^ i`); a size has no scale `L` of its own. -/
 def LengthLeAt (g : GL ι A) (i : ℕ) (y : ι → A) : Prop :=
   ((g⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ y ∈ S.vecsOfSize i
 
@@ -150,34 +160,10 @@ theorem hasShortDual_iff {e : ℕ → ι → A} {a : ℕ} {ρ : Aˣ} {g g' : GL 
 
 section Form
 
-variable {e : ℕ → ι → A} {l : ℕ}
-
-omit [DecidableEq ι] in
-/-- A vector orthogonal to the `e_b`, `b < l`, is orthogonal to their span, on the right. -/
-private theorem star_dotProduct_mulVec_eq_zero_of_mem_span {w s : ι → A}
-    (h : ∀ b < l, star (e b) ⬝ᵥ J *ᵥ w = 0) (hs : s ∈ Submodule.span A (e '' Set.Iio l)) :
-    star s ⬝ᵥ J *ᵥ w = 0 := by
-  induction hs using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨b, hb, rfl⟩ := hx
-    exact h b hb
-  | zero => simp
-  | add x y _ _ hx hy => simp [add_dotProduct, hx, hy]
-  | smul c x _ hx => simp [star_smul, smul_dotProduct, hx]
-
-omit [DecidableEq ι] in
-/-- A vector to which the `e_b`, `b < l`, are orthogonal is orthogonal to their span, on the
-left. -/
-private theorem star_dotProduct_mulVec_eq_zero_of_mem_span' {w s : ι → A}
-    (h : ∀ b < l, star w ⬝ᵥ J *ᵥ e b = 0) (hs : s ∈ Submodule.span A (e '' Set.Iio l)) :
-    star w ⬝ᵥ J *ᵥ s = 0 := by
-  induction hs using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨b, hb, rfl⟩ := hx
-    exact h b hb
-  | zero => simp
-  | add x y _ _ hx hy => simp [mulVec_add, dotProduct_add, hx, hy]
-  | smul c x _ hx => simp [mulVec_smul, dotProduct_smul, hx]
+/-- The inverse of a self-adjoint unit is self-adjoint. -/
+private theorem star_val_inv_eq {ρ : Aˣ} (hρ : star (ρ : A) = ρ) :
+    star ((ρ⁻¹ : Aˣ) : A) = ((ρ⁻¹ : Aˣ) : A) := by
+  rw [← Units.coe_star_inv, show star ρ = ρ from Units.ext hρ]
 
 omit [DecidableEq ι] in
 /-- The difference of two values of the form at nearby vectors: with `D₁ = (u - u') / ρ` and
@@ -187,8 +173,7 @@ private theorem star_dotProduct_mulVec_sub_eq {ρ : Aˣ} (hρ : star (ρ : A) = 
     star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v' =
       ρ * (star (((ρ⁻¹ : Aˣ) : A) • (u - u')) ⬝ᵥ J *ᵥ v +
         star u' ⬝ᵥ J *ᵥ (((ρ⁻¹ : Aˣ) : A) • (v - v'))) := by
-  have hρ' : star ((ρ⁻¹ : Aˣ) : A) = ((ρ⁻¹ : Aˣ) : A) :=
-    (Units.inv_eq_of_mul_eq_one_left (by rw [← hρ, ← star_mul, Units.mul_inv, star_one])).symm
+  have hρ' := star_val_inv_eq hρ
   have h1 : (ρ : A) * ((ρ⁻¹ : Aˣ) : A) = 1 := Units.mul_inv ρ
   simp only [star_smul, hρ', star_sub, mulVec_smul, mulVec_sub, smul_dotProduct, dotProduct_smul,
     sub_dotProduct, dotProduct_sub, smul_eq_mul]
@@ -207,9 +192,8 @@ private theorem star_dotProduct_mulVec_mem_of_inducedLengthLe (hg : g ∈ unitar
     (hω : ∀ b < a, star (e b) ⬝ᵥ J *ᵥ ω = 0) (hωg : S.LengthLeAt g i ω) :
     star (e a) ⬝ᵥ J *ᵥ ω ∈ S.ofSize (c + i + 3) := by
   obtain ⟨e₁, he₁, he₁g⟩ := h
-  have hsub := star_dotProduct_mulVec_eq_zero_of_mem_span hω he₁
-  rw [star_sub, sub_dotProduct, sub_eq_zero] at hsub
-  rw [hsub, ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg)]
+  rw [star_dotProduct_mulVec_eq_of_sub_mem_span (by rintro _ ⟨b, hb, rfl⟩; exact hω b hb) he₁,
+    ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg)]
   exact S.star_dotProduct_mulVec_mem he₁g hωg
 
 omit [DecidableEq ι] in
@@ -244,7 +228,8 @@ private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
   -- `μ = ⟨ζ, ω₀⟩ - ⟨ζ, ω₀'⟩`, since `⟨ζ, e_a⟩ = 1` and `ζ` is orthogonal to `s`.
   have hμ : μ = star ζ ⬝ᵥ J *ᵥ ω₀ - star ζ ⬝ᵥ J *ᵥ ω₀' := by
     have hζs : star ζ ⬝ᵥ J *ᵥ s = 0 :=
-      star_dotProduct_mulVec_eq_zero_of_mem_span' (fun b hb => by
+      dotProduct_mulVec_eq_zero_of_mem_span (by
+        rintro _ ⟨b, hb, rfl⟩
         rw [← hJ.star_dotProduct_mulVec_comm, hζ b hb, star_zero]) hs
     have hζea : star ζ ⬝ᵥ J *ᵥ e a = 1 := by
       rw [← hJ.star_dotProduct_mulVec_comm, hζa, star_one]
@@ -258,12 +243,11 @@ private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
       rw [← hys]
       refine Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨a, by simp, rfl⟩))
         (Submodule.span_mono (Set.image_mono (Set.Iio_subset_Iio (Nat.le_succ a))) hs)
-    have h0 := star_dotProduct_mulVec_eq_zero_of_mem_span'
-      (fun b' hb' => he b hb b' (by omega)) hsp
+    have h0 := dotProduct_mulVec_eq_zero_of_mem_span
+      (by rintro _ ⟨b', hb', rfl⟩; exact he b hb b' (Nat.le_of_lt_succ hb')) hsp
     rwa [mulVec_sub, dotProduct_sub, hω₀ b (by omega), zero_sub, neg_eq_zero] at h0
-  have hζζ'ω₀' : star ζ ⬝ᵥ J *ᵥ ω₀' = star ζ' ⬝ᵥ J *ᵥ ω₀' := by
-    have h0 := star_dotProduct_mulVec_eq_zero_of_mem_span hω₀' hζζ'
-    rwa [star_sub, sub_dotProduct, sub_eq_zero] at h0
+  have hζζ'ω₀' : star ζ ⬝ᵥ J *ᵥ ω₀' = star ζ' ⬝ᵥ J *ᵥ ω₀' :=
+    star_dotProduct_mulVec_eq_of_sub_mem_span (by rintro _ ⟨b, hb, rfl⟩; exact hω₀' b hb) hζζ'
   rw [hμ, hζζ'ω₀', ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg) ζ ω₀,
     ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg') ζ' ω₀',
     star_dotProduct_mulVec_sub_eq hρ, ← mul_assoc, Units.inv_mul, one_mul]
@@ -377,22 +361,20 @@ theorem LengthsDifferLe.smul_sub_one_mem_matsOfSize (hJ : IsUnit J) {x : GL ι A
       have h0 : Set.Iio (0 : ℕ) = ∅ := Set.Iio_eq_empty_iff.mpr isMin_bot
       rw [h0, Set.image_empty, Submodule.span_empty, Submodule.mem_bot, sub_eq_zero] at hω'
       exact hω'.symm
-    rw [hω'eq, zero_add] at hk
-    rw [mulVec_mulVec, Units.inv_mul, one_mulVec, _root_.mul_inv_rev, Units.val_mul, mulVec_mulVec,
-      Matrix.mul_assoc, Units.inv_mul, Matrix.mul_one, mulVec_single_one] at hk
+    have hgx : (((g * x)⁻¹ : GL ι A) : Matrix ι ι A) * g = ((x⁻¹ : GL ι A) : Matrix ι ι A) := by
+      rw [← Units.val_mul, _root_.mul_inv_rev, inv_mul_cancel_right]
+    simp only [hω'eq, zero_add, mulVec_mulVec, Units.inv_mul, hgx, one_mulVec] at hk
     convert hk using 1
     ext a
     simp [hM, hr, Matrix.one_apply, Pi.single_apply]
   -- `x = J⁻¹ * star x⁻¹ * J`, so that `(x - 1) / ρ = -(J⁻¹ * Mᴴ * J)`.
   have hxJ : (x : Matrix ι ι A) = J⁻¹ * star ((x⁻¹ : GL ι A) : Matrix ι ι A) * J := by
     rw [← val_inv_of_mem_unitaryGroupOf hJ (inv_mem hx), inv_inv]
-  have hρ' : star r = r :=
-    (Units.inv_eq_of_mul_eq_one_left (by rw [← hρ, ← star_mul, Units.mul_inv, star_one])).symm
+  have hρ' : star r = r := star_val_inv_eq hρ
   have hJJ : J⁻¹ * J = 1 := nonsing_inv_mul J ((isUnit_iff_isUnit_det J).mp hJ)
   have hkey : r • ((x : Matrix ι ι A) - 1) = -(J⁻¹ * Mᴴ * J) := by
-    rw [hM, conjTranspose_smul, hρ', conjTranspose_sub, conjTranspose_one, Matrix.mul_smul,
-      Matrix.smul_mul, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one, hJJ, ← star_eq_conjTranspose,
-      ← hxJ, ← smul_neg, neg_sub]
+    rw [hxJ]
+    simp [hM, hρ', Matrix.mul_sub, Matrix.sub_mul, hJJ, star_eq_conjTranspose, smul_sub]
   rw [hkey, neg_mem_matsOfSize_iff]
   have h₁ := S.mul_mem_matsOfSize S.gram_inv_mem_matsOfSize
     ((S.conjTranspose_mem_matsOfSize_iff).mpr hMS)
