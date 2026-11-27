@@ -17,20 +17,15 @@ write `d = dist(x, ·)`.
 * If `μ` is s-finite and `f` is integrable on `ball x r`, the radial layer-cake identity
   `∫_{B_r(x)} f (r - d)² / 2 dμ = ∫₀^r ∫₀^τ ∫_{B_ρ(x)} f dμ dρ dτ` holds. It follows from Fubini's
   theorem, applied twice to the weights `1` and `τ - d`.
-* If `f` is integrable and nonnegative on the larger ball and `0 ≤ t`, then
-  `t² ∫_{B_{r - 2t}(x)} f dμ ≤ ∫_{B_r(x)} f (r - d)² / 2 dμ`, since the weight is at least `t²` on
-  the smaller ball.
+
+For the polar Jacobian equation `j'' = -Kj`, integrating twice and then in the radial
+variable gives the area defect as `-∫_{B_r(x)} K (r - d)² / 2 dμ`. The layer-cake identity
+rewrites this as an iterated integral of curvature over concentric balls.
 
 ## Main statements
 
 * `TauCeti.intervalIntegral_setIntegral_ball_mul_eq`: Fubini for a radial weight.
 * `TauCeti.setIntegral_ball_mul_sq_sub_dist_div_two_eq`: the radial layer-cake identity.
-* `TauCeti.sq_mul_integral_ball_le_integral_radialWeight`.
-
-## References
-
-* T. H. Colding and W. P. Minicozzi II, *The space of embedded minimal surfaces of fixed genus
-  in a 3-manifold II; Multi-valued graphs in disks*, Ann. of Math. 160 (2004), Corollary 1.7.
 -/
 
 public section
@@ -153,40 +148,5 @@ theorem setIntegral_ball_mul_sq_sub_dist_div_two_eq
   ring
 
 end PseudoMetric
-
-/-- A quadratic radial weight bounds the mass of the smaller concentric ball. -/
-theorem sq_mul_integral_ball_le_integral_radialWeight {X : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} {f : X → ℝ}
-    {p : X} {r t : ℝ} (ht : 0 ≤ t) (hf : IntegrableOn f (ball p r) μ)
-    (hf₀ : 0 ≤ᵐ[μ.restrict (ball p r)] f) :
-    t ^ 2 * ∫ y in ball p (r - 2 * t), f y ∂μ ≤
-      ∫ y in ball p r, f y * (r - dist p y) ^ 2 / 2 ∂μ := by
-  let w (y : X) : ℝ := (r - dist p y) ^ 2 / 2
-  have hw_def (y : X) : w y = (r - dist p y) ^ 2 / 2 := rfl
-  have hw : Continuous w := by fun_prop
-  have hsub : ball p (r - 2 * t) ⊆ ball p r := ball_subset_ball (by linarith)
-  have hi : IntegrableOn (fun y ↦ f y * w y) (ball p r) μ := by
-    refine hf.mul_bdd (c := r ^ 2) hw.measurable.aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
-    have hd := mem_ball'.mp hy
-    have h := dist_nonneg (x := p) (y := y)
-    rw [Real.norm_of_nonneg (div_nonneg (sq_nonneg _) (by norm_num))]
-    have hrad : 0 ≤ 2 * r - dist p y := by linarith
-    nlinarith [mul_nonneg (sub_nonneg.mpr h) hrad]
-  simp_rw [mul_div_assoc, ← hw_def]
-  rw [← integral_const_mul]
-  calc
-    _ ≤ ∫ y in ball p (r - 2 * t), f y * w y ∂μ := by
-      refine setIntegral_mono_ae_restrict ((hf.mono_set hsub).const_mul _) (hi.mono_set hsub) ?_
-      filter_upwards [ae_restrict_mem measurableSet_ball, ae_restrict_of_ae_restrict_of_subset hsub
-        hf₀] with y hy hy₀
-      have hd : 2 * t ≤ r - dist p y := by linarith [mem_ball'.mp hy]
-      have hsq := sq_le_sq' (by linarith : -(r - dist p y) ≤ 2 * t) hd
-      have hweight : t ^ 2 ≤ w y := by
-        dsimp [w]
-        nlinarith [sq_nonneg t]
-      exact (mul_le_mul_of_nonneg_right hweight hy₀).trans_eq (mul_comm _ _)
-    _ ≤ _ := setIntegral_mono_set hi (hf₀.mono fun y hy ↦
-      mul_nonneg hy (div_nonneg (sq_nonneg _) (by norm_num))) (Eventually.of_forall hsub)
 
 end TauCeti
