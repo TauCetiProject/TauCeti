@@ -54,12 +54,8 @@ theorem tendsto_integral_negMulLog_condAtomProb_iSup (ℱ : Filtration ℕ mX) (
       (𝓝 (∫ x, negMulLog (condAtomProb μ (⨆ n, ℱ n) a i x) ∂μ)) := by
   refine tendsto_integral_of_dominated_convergence (fun _ ↦ (1 : ℝ)) (fun n ↦ ?_)
     (integrable_const 1) (fun n ↦ ?_) ?_
-  · exact continuous_negMulLog.comp_aestronglyMeasurable
-      ((stronglyMeasurable_condAtomProb (μ := μ) (m := ℱ n) a i).mono
-        (ℱ.le n)).aestronglyMeasurable
-  · filter_upwards [condAtomProb_mem_Icc (μ := μ) (m := ℱ n) a i] with x hx
-    rw [Real.norm_of_nonneg (negMulLog_nonneg hx.1 hx.2)]
-    exact (negMulLog_le_one_sub_self hx.1).trans (by linarith [hx.1])
+  · exact (integrable_negMulLog_condAtomProb (m := ℱ n) a i).aestronglyMeasurable
+  · exact norm_negMulLog_condAtomProb_le_one a i
   · filter_upwards [tendsto_ae_condExp (μ := μ) (ℱ := ℱ) ((a ⁻¹' {i}).indicator (1 : X → ℝ))]
       with x hx
     simp only [condAtomProb_def]

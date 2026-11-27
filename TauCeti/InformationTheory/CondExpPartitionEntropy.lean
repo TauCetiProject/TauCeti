@@ -118,6 +118,14 @@ theorem condAtomProb_mem_Icc (a : X → ι) (i : ι) :
     (Eventually.of_forall fun x ↦ ?_)
   by_cases hx : x ∈ a ⁻¹' {i} <;> simp [hx]
 
+/-- `negMulLog` of the conditional probability of an atom has norm at most `1` almost
+everywhere. -/
+theorem norm_negMulLog_condAtomProb_le_one (a : X → ι) (i : ι) :
+    ∀ᵐ x ∂μ, ‖negMulLog (condAtomProb μ m a i x)‖ ≤ 1 := by
+  filter_upwards [condAtomProb_mem_Icc a i] with x hx
+  rw [Real.norm_of_nonneg (negMulLog_nonneg hx.1 hx.2)]
+  exact (negMulLog_le_one_sub_self hx.1).trans (by linarith [hx.1])
+
 /-- The integral of `negMulLog` of the conditional probability of an atom is nonnegative. -/
 theorem integral_negMulLog_condAtomProb_nonneg (m : MeasurableSpace X) (a : X → ι) (i : ι) :
     0 ≤ ∫ x, negMulLog (condAtomProb μ m a i x) ∂μ :=
@@ -190,12 +198,9 @@ theorem integrable_negMulLog_condAtomProb (a : X → ι) (i : ι) :
     Integrable (fun x ↦ negMulLog (condAtomProb μ m a i x)) μ := by
   rcases condAtomProb_eq_zero_or (μ := μ) (m := m) a i with h | ⟨hm, -, -⟩
   · simp [h]
-  refine Integrable.of_bound (C := 1) ?_ ?_
-  · exact continuous_negMulLog.comp_aestronglyMeasurable
-      ((stronglyMeasurable_condAtomProb a i).mono hm).aestronglyMeasurable
-  · filter_upwards [condAtomProb_mem_Icc a i] with x hx
-    rw [Real.norm_of_nonneg (negMulLog_nonneg hx.1 hx.2)]
-    exact (negMulLog_le_one_sub_self hx.1).trans (by linarith [hx.1])
+  exact .of_bound (continuous_negMulLog.comp_aestronglyMeasurable
+    ((stronglyMeasurable_condAtomProb a i).mono hm).aestronglyMeasurable) 1
+    (norm_negMulLog_condAtomProb_le_one a i)
 
 /-- The conditional entropy is the sum over the atoms of the integrals of `negMulLog pᵢ`. -/
 theorem condExpPartitionEntropy_eq_sum (m : MeasurableSpace X) (a : X → ι) :
