@@ -37,6 +37,18 @@ namespace ModuleCat
 
 universe u
 
+/-- Left multiplication gives a ring homomorphism to the endomorphisms of the right
+regular module. -/
+def rightRegularEnd {A : Type u} [Ring A] : A →+* End (of Aᵐᵒᵖ A) :=
+  ((RingEquiv.moduleEndSelfOp A).trans (endRingEquiv (of Aᵐᵒᵖ A)).symm).toRingHom
+
+/-- The endomorphism of the right regular module associated to `a` is left multiplication
+by `a`. -/
+@[simp]
+theorem rightRegularEnd_asHom {A : Type u} [Ring A] (a : A) :
+    (rightRegularEnd a).asHom = ofHom (LinearMap.mulLeft Aᵐᵒᵖ a) :=
+  (rfl)
+
 variable {R : Type u} [Ring R]
 
 /-- An automorphism of the rank-one free module sends one to a unit. -/

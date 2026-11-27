@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.TransposeExt
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.ShortExact
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.FiniteLength
 public import TauCeti.Algebra.Homology.Ext.Copresentation
+import TauCeti.Algebra.Category.ModuleCat.End
 import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Stable.Basic
 
 /-!
@@ -28,13 +29,6 @@ open scoped ModuleCat.Algebra
 universe u v w
 
 namespace ModuleCat
-
-private def regularEnd {A : Type u} [Ring A] : A →+* End (of Aᵐᵒᵖ A) :=
-  ((RingEquiv.moduleEndSelfOp A).trans (endRingEquiv (of Aᵐᵒᵖ A)).symm).toRingHom
-
-private theorem regularEnd_asHom {A : Type u} [Ring A] (a : A) :
-    (regularEnd a).asHom = ofHom (LinearMap.mulLeft Aᵐᵒᵖ a) :=
-  (rfl)
 
 variable (R : Type w) [CommRing R] (E : Type v) [AddCommGroup E] [Module R E]
   {A : Type (max u v)} [Ring A] [Algebra R A]
@@ -62,7 +56,8 @@ variable {M : ModuleCat.{max u v} A} {n : ℕ}
 /-- Left multiplication acts on Ext from the dual of the right regular module by pullback. -/
 noncomputable def matlisDualRegularExtAction :
     A →+* AddMonoid.End (Ext (matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A)) M n) where
-  toFun a := (Ext.mk₀ (matlisDualOpMap R E (regularEnd.{max u v} a).asHom)).precomp M (zero_add n)
+  toFun a := (Ext.mk₀ (matlisDualOpMap R E (rightRegularEnd.{max u v} a).asHom)).precomp M
+    (zero_add n)
   map_one' := by
     apply AddMonoidHom.ext
     intro x
@@ -75,9 +70,10 @@ noncomputable def matlisDualRegularExtAction :
     apply AddMonoidHom.ext
     intro x
     -- Multiplication of additive endomorphisms is function composition.
-    change _ = (Ext.mk₀ (matlisDualOpMap R E (regularEnd a).asHom)).comp
-      ((Ext.mk₀ (matlisDualOpMap R E (regularEnd b).asHom)).comp x (zero_add n)) (zero_add n)
-    simp [End.mul_asHom]
+    change _ = (Ext.mk₀ (matlisDualOpMap R E (rightRegularEnd a).asHom)).comp
+      ((Ext.mk₀ (matlisDualOpMap R E (rightRegularEnd b).asHom)).comp x (zero_add n))
+        (zero_add n)
+    simp [End.mul_asHom, -rightRegularEnd_asHom]
   map_zero' := by
     apply AddMonoidHom.ext
     intro x
@@ -91,9 +87,9 @@ noncomputable def matlisDualRegularExtAction :
     apply AddMonoidHom.ext
     intro x
     -- Addition of additive endomorphisms is pointwise.
-    change _ = (Ext.mk₀ (matlisDualOpMap R E (regularEnd a).asHom)).comp x (zero_add n) +
-      (Ext.mk₀ (matlisDualOpMap R E (regularEnd b).asHom)).comp x (zero_add n)
-    simp [matlisDualOpMap_add, Ext.mk₀_add]
+    change _ = (Ext.mk₀ (matlisDualOpMap R E (rightRegularEnd a).asHom)).comp x (zero_add n) +
+      (Ext.mk₀ (matlisDualOpMap R E (rightRegularEnd b).asHom)).comp x (zero_add n)
+    simp [matlisDualOpMap_add, Ext.mk₀_add, -rightRegularEnd_asHom]
 
 noncomputable instance (M : ModuleCat.{max u v} A) (n : ℕ) :
     Module A (ExtFromMatlisDualRegular R E M n) :=
@@ -110,9 +106,9 @@ theorem ExtFromMatlisDualRegular.toExt_smul {M : ModuleCat.{max u v} A} {n : ℕ
       (Ext.mk₀ (matlisDualOpMap R E (ofHom (LinearMap.mulLeft Aᵐᵒᵖ a)))).comp (toExt R E x)
         (zero_add n) := by
   -- The module structure is restriction along the ring map of pullback operators.
-  change (Ext.mk₀ (matlisDualOpMap R E (regularEnd.{max u v} a).asHom)).comp
+  change (Ext.mk₀ (matlisDualOpMap R E (rightRegularEnd.{max u v} a).asHom)).comp
     (toExt R E x) (zero_add n) = _
-  rw [regularEnd_asHom]
+  rw [rightRegularEnd_asHom]
 
 /-- An additive Ext comparison compatible with pullback by dual left multiplications is
 an equivalence of left `A`-modules. -/
@@ -168,7 +164,8 @@ theorem ExtFromMatlisDualRegular.linearEquivOfIso_toExt
     (x : ExtFromMatlisDualRegular R E M n) :
     toExt R E (linearEquivOfIso R E e n x) =
       TauCeti.extAddEquivOfIso (Iso.refl _) e n (toExt R E x) := by
-  exact (toExt R E).apply_symm_apply _
+  unfold linearEquivOfIso
+  exact linearEquivOfCompat_toExt R E _ _ x
 
 end ModuleCat
 
