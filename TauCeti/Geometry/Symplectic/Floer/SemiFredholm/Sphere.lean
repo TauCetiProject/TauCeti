@@ -381,7 +381,7 @@ adjoint is `-ω♭` of the Cauchy–Riemann operator of `-J₀` on `ξ = ω♭�
 (`TauCeti.SymplecticForm.floerLinearizationAdjoint_const_eq_neg_flatEquiv`), and `-J₀` is
 compatible with `-ω`, so the energy estimate of the Cauchy–Riemann operator of `-J₀` for `-ω`
 bounds the Dirichlet energy of `ξ`. -/
-private theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible J₀) :
+theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible J₀) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
         C * ∫ z, ‖ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
@@ -447,7 +447,7 @@ zero perturbation, read a covector field `η` in the chart `ζ = w⁻¹` of the 
 `(0, 1)`-form `η' = η (ζ⁻¹) ∘ (a + b J₀)` (`TauCeti.Floer.covectorPullback`). Away from `ζ = 0`, the
 formal adjoint of `η'` at `ζ` is the Jacobian `|ζ⁻¹|⁴` of the inversion times the formal adjoint of
 `η` at `ζ⁻¹`. -/
-private theorem floerLinearizationAdjoint_const_covectorPullback_realChart_inv
+theorem floerLinearizationAdjoint_const_covectorPullback_realChart_inv
     {η : ℝ × ℝ → V →L[ℝ] ℝ} {ζ : ℝ × ℝ} (hζ : Complex.equivRealProdCLM.symm ζ ≠ 0)
     (hη : DifferentiableAt ℝ η (TauCeti.Complex.realChart (·⁻¹) ζ)) :
     ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
@@ -733,6 +733,27 @@ private theorem eventuallyEq_const_of_eq_base (hJ₀ : ∀ z : ℝ × ℝ, T ≤
   funext y
   simp [hJ₀ z hz.le y]
 
+/-- **The formal adjoint near infinity is that of the constant data.** Let the data be `J₀` and
+`0` on `‖w‖ ≥ T`. At every point with `2 T < |w|`, the formal adjoint of the data along `u` is
+that of the constant data `J₀`, `0` along the zero map, on every covector field. -/
+theorem floerLinearizationAdjoint_eq_const_of_eq_base
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0) (η : ℝ × ℝ → V →L[ℝ] ℝ) {w : ℝ × ℝ}
+    (hw : 2 * T < ‖Complex.equivRealProdCLM.symm w‖) :
+    ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
+        η w =
+      ω.floerLinearizationAdjoint
+        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η w := by
+  have hT : T ≤ ‖w‖ := by linarith [norm_equivRealProdCLM_symm_le_two_mul w]
+  rw [ω.floerLinearizationAdjoint_congr_data (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0) u η
+    (eventuallyEq_const_of_eq_base hJ₀ hw) (funext (hKs₀ w hT)) (funext (hKt₀ w hT))]
+  -- The constant data have no zeroth-order part, along any map.
+  simp only [floerLinearizationAdjoint_def,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base
+      (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+      (Kt := fun _ _ ↦ 0) _ (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
+
 /-- Let the data be `J₀` and `0` on `‖w‖ ≥ T`. For a covector field `η₂` vanishing on the disc
 `|w| < a`, with `2 T < a`, the formal adjoint of the data along `u` is that of the constant data
 `J₀`, `0` along the zero map. -/
@@ -751,15 +772,7 @@ private theorem floerLinearizationAdjoint_const_eq_of_eq_base
       (notMem_tsupport_iff_eventuallyEq.2 (Filter.mem_of_superset
         ((isOpen_lt Complex.equivRealProdCLM.symm.continuous.norm continuous_const).mem_nhds h)
         fun z hz ↦ hη₂0 z hz)) hw
-    have hT : T ≤ ‖w‖ := by linarith [norm_equivRealProdCLM_symm_le_two_mul w]
-    rw [ω.floerLinearizationAdjoint_congr_data (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0) u η₂
-      (eventuallyEq_const_of_eq_base hJ₀ (by linarith)) (funext (hKs₀ w hT))
-      (funext (hKt₀ w hT))]
-    -- The constant data have no zeroth-order part, along any map.
-    simp only [floerLinearizationAdjoint_def,
-      ω.floerLinearizationCoeff_eq_zero_of_eq_base
-        (J := fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-        (Kt := fun _ _ ↦ 0) _ (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
+    exact (floerLinearizationAdjoint_eq_const_of_eq_base hJ₀ hKs₀ hKt₀ η₂ (by linarith)).symm
   · rw [floerLinearizationAdjoint_of_notMem_tsupport hw,
       floerLinearizationAdjoint_of_notMem_tsupport hw]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
+public import TauCeti.Analysis.Complex.RealChart
 
 /-!
 # Change of variables in the plane for densities scaling by the Jacobian
@@ -26,6 +27,8 @@ plane, where densities of this kind arise as coefficients of two-forms.
   of a density scaling by `|det dφ|`.
 * `TauCeti.setIntegral_det_mul_comp_le_integral`: for a nonnegative Jacobian and a nonnegative
   integrable `g`, the integral of `det dφ · g ∘ φ` over `s` is at most the integral of `g`.
+* `TauCeti.integral_image_realChart_inv`: the change of variables along the inversion `w ↦ w⁻¹`
+  of the plane, on sets avoiding `0`.
 * `TauCeti.lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul`: the lower Lebesgue integral
   of the size of a density scaling by `det dφ`.
 * `TauCeti.lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul`: the lower Lebesgue
@@ -108,5 +111,18 @@ theorem setIntegral_det_mul_comp_le_integral {g : ℝ × ℝ → ℝ} (hs : Meas
   rw [← integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
     rw [abs_of_nonneg (hdet w hw), smul_eq_mul]]
   exact setIntegral_le_integral hgi (ae_of_all _ hg)
+
+/-- **Change of variables along the inversion.** For a measurable set `s` of the plane avoiding
+`0`, the integral of `g` over the image of `s` under the inversion `ι = realChart (·⁻¹)` is the
+integral of `det dι • g ∘ ι` over `s`. -/
+theorem integral_image_realChart_inv (hs : MeasurableSet s)
+    (hs0 : ∀ w ∈ s, Complex.equivRealProdCLM.symm w ≠ 0) (g : ℝ × ℝ → F) :
+    ∫ z in Complex.realChart (·⁻¹) '' s, g z =
+      ∫ w in s, (fderiv ℝ (Complex.realChart (·⁻¹)) w).det • g (Complex.realChart (·⁻¹) w) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs Complex.realChart_inv_involutive.injective.injOn
+    (fun w hw ↦ (Complex.contDiffAt_realChart_inv (hs0 w hw) (n := 1)).differentiableAt
+      one_ne_zero)
+    fun w hw ↦ by
+      rw [abs_of_nonneg (by rw [Complex.det_fderiv_realChart_inv (hs0 w hw)]; positivity)]
 
 end TauCeti
