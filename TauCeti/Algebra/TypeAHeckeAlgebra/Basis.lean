@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.ReducedWord
-public import TauCeti.GroupTheory.Coxeter.Hecke.Operator
-public import TauCeti.GroupTheory.Coxeter.Matrix
+public import TauCeti.GroupTheory.Coxeter.Hecke.Basis
 
 /-!
 # The basis theorem for the type-A Hecke algebra
@@ -19,13 +16,14 @@ Hecke algebra `TypeAHeckeAlgebra R q n` (`TauCeti.TypeAHeckeAlgebra.Tw`) span it
 that they are linearly independent over every commutative ring `R` and every unit `q`, so that they
 form a basis `TauCeti.TypeAHeckeAlgebra.basisTw`.
 
-The proof is Iwahori's. The left regular operators `CoxeterSystem.heckeLeftMul` on the free module
-`W →₀ R`, with quadratic coefficient `q - q⁻¹`, satisfy the defining relations of the Hecke algebra,
-which gives the **regular representation** `TauCeti.TypeAHeckeAlgebra.regularRep`. It sends `T_w`
-to an operator taking the basis vector of `1` to that of `w`, so evaluating at the basis vector of
-`1` is a linear map sending the family `T_w` to the standard basis of `W →₀ R`. That evaluation is
-then the coordinate map of the basis (`TauCeti.TypeAHeckeAlgebra.basisTw_repr_apply`), and the
-regular representation is faithful.
+The statements are transported from the basis theorem for the Hecke algebra of a Coxeter system
+(`TauCeti.GroupTheory.Coxeter.Hecke.Basis`) along the isomorphism
+`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra` with the Hecke algebra of the type-A Coxeter
+matrix and parameter `q - q⁻¹`, which matches the elements `T_w` of the two algebras. In
+particular the **regular representation** `TauCeti.TypeAHeckeAlgebra.regularRep`, in which the
+generator `T i` acts by the left regular operator `CoxeterSystem.heckeLeftMul`, is the general one
+composed with this isomorphism, and the coordinates of the basis are read off from it
+(`TauCeti.TypeAHeckeAlgebra.basisTw_repr_apply`).
 
 The Coxeter system is an arbitrary one of type `A_(n-1)`. For the abstract Coxeter group
 `(CoxeterMatrix.A (n - 1)).Group` this shows that the Hecke algebra is a free module; for a
@@ -42,6 +40,8 @@ is the order of that group (`TauCeti.TypeAHeckeAlgebra.finrank_eq_natCard`).
 * `TauCeti.TypeAHeckeAlgebra.regularRep_Tw_apply_single_one`: `T_w` takes the basis vector of `1`
   to that of `w`.
 * `TauCeti.TypeAHeckeAlgebra.linearIndependent_Tw`: the elements `T_w` are linearly independent.
+* `TauCeti.TypeAHeckeAlgebra.basisTw_repr`: the coordinates in the basis `T_w` are those of the
+  image in the Hecke algebra of the type-A Coxeter matrix.
 * `TauCeti.TypeAHeckeAlgebra.basisTw_repr_apply`: the coordinates in the basis `T_w` are read off
   from the regular representation.
 * `TauCeti.TypeAHeckeAlgebra.regularRep_injective`: the regular representation is faithful.
@@ -71,91 +71,68 @@ variable (q) in
 /-- The **regular representation** of the type-A Hecke algebra on the free module `W →₀ R`: the
 generator `T i` acts by the left regular operator `CoxeterSystem.heckeLeftMul` with quadratic
 coefficient `q - q⁻¹`, sending the basis vector of `w` to that of `s i * w` when `i` is not a left
-descent of `w`, and to `(q - q⁻¹)` times itself plus that of `s i * w` when it is. -/
+descent of `w`, and to `(q - q⁻¹)` times itself plus that of `s i * w` when it is. It is the
+regular representation `CoxeterMatrix.HeckeAlgebra.regularRep` of the Hecke algebra of the type-A
+Coxeter matrix, composed with `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra`. -/
 noncomputable def regularRep : TypeAHeckeAlgebra R q n →ₐ[R] Module.End R (W →₀ R) :=
-  lift (fun i ↦ cs.heckeLeftMul ((q : R) - ↑q⁻¹) i) (fun i ↦ cs.heckeLeftMul_mul_self _ i)
-    (fun {i j} h ↦ by
-      have hb := cs.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i j
-      rw [braidWord, coxeterMatrixA_eq_three (.inl h), braidWord,
-        coxeterMatrixA_eq_three (.inr h), prod_map_alternatingWord_three,
-        prod_map_alternatingWord_three] at hb
-      exact hb.symm)
-    (fun {i j} h ↦ by
-      have hb := cs.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i j
-      rw [braidWord, coxeterMatrixA_eq_two (.inl h), braidWord,
-        coxeterMatrixA_eq_two (.inr h), prod_map_alternatingWord_two,
-        prod_map_alternatingWord_two] at hb
-      exact hb)
+  (CoxeterMatrix.HeckeAlgebra.regularRep _ cs).comp (algEquivHeckeAlgebra R q n).toAlgHom
+
+/-- The regular representation is the general one applied to the image under
+`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra`. -/
+theorem regularRep_apply (x : TypeAHeckeAlgebra R q n) :
+    regularRep q cs x =
+      CoxeterMatrix.HeckeAlgebra.regularRep _ cs (algEquivHeckeAlgebra R q n x) :=
+  (rfl)
 
 /-- The regular representation takes the generator `T i` to the left regular operator of the
 simple reflection `s i`. -/
 @[simp]
 theorem regularRep_T (i : Fin (n - 1)) :
-    regularRep q cs (T q i) = cs.heckeLeftMul ((q : R) - ↑q⁻¹) i :=
-  lift_T _ _ _ _ i
+    regularRep q cs (T q i) = cs.heckeLeftMul ((q : R) - ↑q⁻¹) i := by
+  simp [regularRep_apply]
 
 /-- The regular representation commutes with every right regular Hecke operator. -/
 theorem commute_regularRep_heckeRightMul (x : TypeAHeckeAlgebra R q n)
     (i : Fin (n - 1)) :
-    Commute (regularRep q cs x) (cs.heckeRightMul ((q : R) - ↑q⁻¹) i) := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-    rw [adjoin_range_T]; trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem _ hx =>
-    obtain ⟨j, rfl⟩ := hx
-    simpa using cs.commute_heckeLeftMul_heckeRightMul ((q : R) - ↑q⁻¹) j i
-  | algebraMap r => simp only [AlgHom.commutes]; exact Algebra.commutes _ _
-  | add a b _ _ ha hb => simpa only [map_add] using ha.add_left hb
-  | mul a b _ _ ha hb => simpa only [map_mul] using ha.mul_left hb
+    Commute (regularRep q cs x) (cs.heckeRightMul ((q : R) - ↑q⁻¹) i) :=
+  CoxeterMatrix.HeckeAlgebra.commute_regularRep_heckeRightMul _ cs _ i
 
 /-- In the regular representation, `T_w` takes the basis vector of `1` to that of `w`. -/
 @[simp]
 theorem regularRep_Tw_apply_single_one (w : W) :
     regularRep q cs (Tw q cs w) (single 1 1) = single w (1 : R) := by
-  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
-  have hT : ⇑(regularRep q cs) ∘ T q = cs.heckeLeftMul ((q : R) - ↑q⁻¹) :=
-    funext (regularRep_T cs)
-  rw [Tw_wordProd cs hω, map_list_prod, List.map_map, hT,
-    cs.prod_map_heckeLeftMul_apply_single_one _ hω]
-
-/-- Evaluation of the regular representation at the basis vector of `1`. -/
-private noncomputable def evalOne : TypeAHeckeAlgebra R q n →ₗ[R] W →₀ R :=
-  LinearMap.applyₗ (single 1 1) ∘ₗ (regularRep q cs).toLinearMap
-
-private theorem evalOne_apply (x : TypeAHeckeAlgebra R q n) :
-    evalOne cs x = regularRep q cs x (single 1 1) :=
-  (rfl)
-
-/-- **The elements `T_w` are linearly independent** over every commutative ring and for every unit
-parameter. -/
-theorem linearIndependent_Tw : LinearIndependent R (Tw q cs : W → TypeAHeckeAlgebra R q n) := by
-  refine LinearIndependent.of_comp (evalOne cs) ?_
-  have h : ⇑(evalOne cs) ∘ Tw q cs = ⇑(Finsupp.basisSingleOne : Module.Basis W R (W →₀ R)) := by
-    funext w
-    simp [evalOne_apply]
-  rw [h]
-  exact Finsupp.basisSingleOne.linearIndependent
+  simp [regularRep_apply]
 
 variable (q) in
 /-- **The basis theorem**: the elements `T_w`, `w : W`, form a basis of the type-A Hecke algebra
 over every commutative ring and for every unit parameter. -/
 noncomputable def basisTw : Module.Basis W R (TypeAHeckeAlgebra R q n) :=
-  .mk (linearIndependent_Tw cs) (span_range_Tw cs).ge
+  (CoxeterMatrix.HeckeAlgebra.basisTw _ cs).map (algEquivHeckeAlgebra R q n).symm.toLinearEquiv
 
 /-- The basis vectors of `TauCeti.TypeAHeckeAlgebra.basisTw` are the elements `T_w`. -/
 @[simp]
-theorem coe_basisTw : ⇑(basisTw q cs) = (Tw q cs : W → TypeAHeckeAlgebra R q n) :=
-  Module.Basis.coe_mk _ _
+theorem coe_basisTw : ⇑(basisTw q cs) = (Tw q cs : W → TypeAHeckeAlgebra R q n) := by
+  ext w
+  simp [basisTw]
+
+/-- The coordinates of `x` in the basis `T_w` are those of its image under
+`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra` in the basis `T_w` of the Hecke algebra of the
+Coxeter matrix. -/
+theorem basisTw_repr (x : TypeAHeckeAlgebra R q n) :
+    (basisTw q cs).repr x =
+      (CoxeterMatrix.HeckeAlgebra.basisTw _ cs).repr (algEquivHeckeAlgebra R q n x) := by
+  simp [basisTw]
+
+/-- **The elements `T_w` are linearly independent** over every commutative ring and for every unit
+parameter. -/
+theorem linearIndependent_Tw : LinearIndependent R (Tw q cs : W → TypeAHeckeAlgebra R q n) := by
+  simpa using (basisTw q cs).linearIndependent
 
 /-- The coordinates of `x` in the basis `T_w` are the image under the regular representation of
 `x` of the basis vector of `1`. -/
 theorem basisTw_repr_apply (x : TypeAHeckeAlgebra R q n) :
     (basisTw q cs).repr x = regularRep q cs x (single 1 1) := by
-  have h : ((basisTw q cs).repr : TypeAHeckeAlgebra R q n →ₗ[R] W →₀ R) = evalOne cs :=
-    (basisTw q cs).ext fun w ↦ by
-      rw [LinearEquiv.coe_coe, Module.Basis.repr_self, evalOne_apply, coe_basisTw,
-        regularRep_Tw_apply_single_one]
-  exact (LinearMap.congr_fun h x).trans (evalOne_apply cs x)
+  rw [basisTw_repr, CoxeterMatrix.HeckeAlgebra.basisTw_repr_apply, regularRep_apply]
 
 open scoped Classical in
 /-- The coefficient of `T_w` after left multiplication by a simple generator. -/
@@ -163,27 +140,7 @@ theorem basisTw_repr_T_mul (i : Fin (n - 1)) (x : TypeAHeckeAlgebra R q n) (w : 
     (basisTw q cs).repr (T q i * x) w =
       (if cs.IsLeftDescent w i then ((q : R) - ↑q⁻¹) * (basisTw q cs).repr x w else 0) +
         (basisTw q cs).repr x (cs.simple i * w) := by
-  classical
-  let b := basisTw q cs
-  have h : (b.coord w).comp (LinearMap.mulLeft R (T q i)) =
-      (if cs.IsLeftDescent w i then ((q : R) - ↑q⁻¹) • b.coord w else 0) +
-        b.coord (cs.simple i * w) := by
-    apply b.ext
-    intro v
-    have heq : cs.simple i * v = w ↔ v = cs.simple i * w := by
-      constructor
-      · intro hv; rw [← hv, cs.simple_mul_simple_cancel_left]
-      · intro hv; rw [hv, cs.simple_mul_simple_cancel_left]
-    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, b, coe_basisTw]
-    by_cases hv : cs.IsLeftDescent v i
-    · rw [T_mul_Tw_of_isLeftDescent cs hv]
-      by_cases hw : cs.IsLeftDescent w i <;>
-        simp [hw, ← coe_basisTw] <;> grind
-    · rw [T_mul_Tw_of_not_isLeftDescent cs hv]
-      by_cases hw : cs.IsLeftDescent w i <;>
-        simp [hw, ← coe_basisTw] <;> grind
-  by_cases hw : cs.IsLeftDescent w i <;>
-    simpa [b, hw] using LinearMap.congr_fun h x
+  simp [basisTw_repr, CoxeterMatrix.HeckeAlgebra.basisTw_repr_T_mul]
 
 open scoped Classical in
 /-- The coefficient of `T_w` after right multiplication by a simple generator. -/
@@ -191,33 +148,13 @@ theorem basisTw_repr_mul_T (x : TypeAHeckeAlgebra R q n) (i : Fin (n - 1)) (w : 
     (basisTw q cs).repr (x * T q i) w =
       (if cs.IsRightDescent w i then ((q : R) - ↑q⁻¹) * (basisTw q cs).repr x w else 0) +
         (basisTw q cs).repr x (w * cs.simple i) := by
-  classical
-  let b := basisTw q cs
-  have h : (b.coord w).comp (LinearMap.mulRight R (T q i)) =
-      (if cs.IsRightDescent w i then ((q : R) - ↑q⁻¹) • b.coord w else 0) +
-        b.coord (w * cs.simple i) := by
-    apply b.ext
-    intro v
-    have heq : v * cs.simple i = w ↔ v = w * cs.simple i := by
-      constructor
-      · intro hv; rw [← hv, cs.simple_mul_simple_cancel_right]
-      · intro hv; rw [hv, cs.simple_mul_simple_cancel_right]
-    simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, b, coe_basisTw]
-    by_cases hv : cs.IsRightDescent v i
-    · rw [Tw_mul_T_of_isRightDescent cs hv]
-      by_cases hw : cs.IsRightDescent w i <;>
-        simp [hw, ← coe_basisTw] <;> grind
-    · rw [Tw_mul_T_of_not_isRightDescent cs hv]
-      by_cases hw : cs.IsRightDescent w i <;>
-        simp [hw, ← coe_basisTw] <;> grind
-  by_cases hw : cs.IsRightDescent w i <;>
-    simpa [b, hw] using LinearMap.congr_fun h x
+  simp [basisTw_repr, CoxeterMatrix.HeckeAlgebra.basisTw_repr_mul_T]
 
 /-- **The regular representation is faithful.** -/
 theorem regularRep_injective :
     Function.Injective (regularRep q cs : TypeAHeckeAlgebra R q n → Module.End R (W →₀ R)) :=
-  fun x y h ↦ (basisTw q cs).repr.injective <| by
-    rw [basisTw_repr_apply, basisTw_repr_apply, h]
+  (CoxeterMatrix.HeckeAlgebra.regularRep_injective _ cs).comp
+    (algEquivHeckeAlgebra R q n).injective
 
 /-- The type-A Hecke algebra is a free module, with basis the elements `T_w` of the abstract
 Coxeter group of type `A_(n-1)`. -/
