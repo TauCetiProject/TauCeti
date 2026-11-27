@@ -18,8 +18,8 @@ least-squares objective
 `f(z) = c ‖y - A z‖² / 2 + h(z)`,
 
 which covers the lasso (`h` a multiple of the `ℓ¹` norm) and nuclear-norm penalized trace
-regression. For a convex penalty `h`, a point `x` minimizes `f` iff `c A*(y - A x)` is a
-subgradient of `h` at `x`, written without adjoints as the variational inequality
+regression. For `c ≥ 0` and a convex penalty `h`, a point `x` minimizes `f` iff `c A*(y - A x)`
+is a subgradient of `h` at `x`, written without adjoints as the variational inequality
 `c ⟪y - A x, A (b - x)⟫ ≤ h b - h x` for every `b`. For `c > 0` the strict convexity of the
 quadratic part forces all minimizers to have the same image under `A`, and then the same
 penalty; for `c = 0` the minimizers of `h` trivially have the same penalty.
@@ -68,8 +68,8 @@ theorem mul_inner_le_of_forall_mem_Ioo
     intro s hs
     have h1 := penalized_sub_eq A y c h x (x + s • (b - x))
     have h2 := isMinOn_univ_iff.1 hx (x + s • (b - x))
-    rw [add_sub_cancel_left, map_smul, norm_smul, inner_smul_right, Real.norm_eq_abs, mul_pow,
-      sq_abs] at h1
+    simp only [add_sub_cancel_left, map_smul, norm_smul, inner_smul_right, Real.norm_eq_abs,
+      mul_pow, sq_abs] at h1
     have h3 := hb s hs
     have h4 : 0 ≤ s * (D + s * Q) := by
       simp only [D, Q] at h2 ⊢

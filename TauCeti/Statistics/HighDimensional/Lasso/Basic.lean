@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Sparsity
 import TauCeti.Analysis.InnerProductSpace.PenalizedLeastSquares
+import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # The lasso: existence and optimality
@@ -167,15 +168,6 @@ private theorem convexOn_penalty (hlam : 0 ≤ lam) :
     ConvexOn ℝ univ fun β : EuclideanSpace ℝ ι ↦ lam * β.restrictedL1Norm Finset.univ := by
   simpa only [smul_eq_mul] using (EuclideanSpace.convexOn_restrictedL1Norm _).smul hlam
 
-/-- The inner product `⟪r, Xd⟫ / n` is `∑ⱼ (Xᵀr)ⱼ dⱼ / n`. -/
-private theorem inner_toEuclideanLin_div_eq_sum (X : Matrix (Fin n) ι ℝ)
-    (r : EuclideanSpace ℝ (Fin n)) (d : EuclideanSpace ℝ ι) :
-    ⟪r, Matrix.toEuclideanLin X d⟫ / n = ∑ j, Matrix.toEuclideanLin Xᵀ r j / n * d j := by
-  rw [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm, star_trivial, Matrix.ofLp_toLpLin,
-    Matrix.toLin'_apply, Matrix.dotProduct_mulVec, dotProduct, Finset.sum_div]
-  simp only [Matrix.ofLp_toLpLin, Matrix.toLin'_apply, Matrix.mulVec_transpose,
-    div_mul_eq_mul_div]
-
 /-- If `⟪y - Xβ̂, X(b - β̂)⟫ / n ≤ λ (‖b‖₁ - ‖β̂‖₁)` for every `b`, then `β̂` is a lasso
 solution. -/
 theorem isLassoSolution_of_forall_inner_le
@@ -209,7 +201,8 @@ theorem isLassoSolution_iff (X : Matrix (Fin n) ι ℝ) (y : EuclideanSpace ℝ 
         (βh j = 0 → |Matrix.toEuclideanLin Xᵀ (y - Matrix.toEuclideanLin X βh) j / n| ≤ lam) := by
   rw [isLassoSolution_iff_forall_inner_le hlam,
     ← EuclideanSpace.forall_sum_mul_sub_le_iff βh _ hlam]
-  simp only [inner_toEuclideanLin_div_eq_sum, PiLp.sub_apply]
+  simp only [Matrix.inner_toEuclideanLin_eq_sum, Finset.sum_div, div_mul_eq_mul_div,
+    PiLp.sub_apply]
 
 /-- The zero vector is a lasso solution iff `|(Xᵀy)ⱼ| / n ≤ λ` for every `j`. -/
 theorem isLassoSolution_zero_iff :
@@ -226,22 +219,17 @@ theorem isLassoSolution_zero_iff :
         simp only [zero_add, sub_zero, EuclideanSpace.restrictedL1Norm_smul, abs_of_pos hs.1,
           EuclideanSpace.restrictedL1Norm_zero, mul_zero]
         exact le_of_eq (by ring)
-      rwa [map_zero, sub_zero, sub_zero, EuclideanSpace.restrictedL1Norm_zero, mul_zero, sub_zero,
-        inv_mul_eq_div, inner_toEuclideanLin_div_eq_sum] at hb) j
-    have h1 := H 1
-    have h2 := H (-1)
+      simpa [Matrix.inner_toEuclideanLin_eq_sum, Finset.sum_div, div_mul_eq_mul_div,
+        inv_mul_eq_div] using hb) j
     rw [← Nat.abs_cast n, ← abs_div]
-    simp only [mul_one, abs_one, mul_neg, abs_neg] at h1 h2
-    exact abs_le.2 ⟨by linarith, by linarith⟩
+    exact forall_mul_le_mul_abs_iff.1 H
   · intro h
     refine isLassoSolution_of_forall_inner_le fun b ↦ ?_
-    simp only [inner_toEuclideanLin_div_eq_sum, map_zero, sub_zero,
-      EuclideanSpace.restrictedL1Norm_zero]
-    refine hsum.2 (fun j t ↦ ?_) b
-    calc Matrix.toEuclideanLin Xᵀ y j / n * t ≤ |Matrix.toEuclideanLin Xᵀ y j / n| * |t| := by
-          rw [← abs_mul]; exact le_abs_self _
-      _ ≤ lam * |t| := by
-          rw [abs_div, Nat.abs_cast]; gcongr; exact h j
+    have hj (j : ι) : |Matrix.toEuclideanLin Xᵀ y j / n| ≤ lam := by
+      rw [abs_div, Nat.abs_cast]
+      exact h j
+    simpa [Matrix.inner_toEuclideanLin_eq_sum, Finset.sum_div, div_mul_eq_mul_div] using
+      hsum.2 (fun j ↦ forall_mul_le_mul_abs_iff.2 (hj j)) b
 
 /-- For `λ ≥ 0`, any two lasso solutions have the same fit `Xβ̂`. -/
 theorem IsLassoSolution.toEuclideanLin_eq (hlam : 0 ≤ lam) (h : IsLassoSolution X y lam βh)

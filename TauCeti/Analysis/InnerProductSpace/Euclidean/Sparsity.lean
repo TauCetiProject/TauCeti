@@ -37,7 +37,8 @@ approximation of `x` (Foucart–Rauhut, Def 2.2).
 * `EuclideanSpace.forall_sum_mul_sub_le_iff`: the subgradients of `λ ‖·‖₁` at `x` for `λ ≥ 0`,
   computed coordinatewise: `cⱼ = λ sign xⱼ` where `xⱼ ≠ 0` and `|cⱼ| ≤ λ` where `xⱼ = 0`.
   `EuclideanSpace.forall_sum_mul_sub_le_iff_forall_mul_sub_le` is the reduction to one
-  coordinate, valid for every `λ`.
+  coordinate, valid for every `λ`, and `forall_mul_le_mul_abs_iff` is the scalar case at `0`:
+  `d t ≤ λ |t|` for every `t` iff `|d| ≤ λ`.
 * `EuclideanSpace.bestSparseL1Error_le_restrictedL1Norm_sub`,
   `EuclideanSpace.le_bestSparseL1Error_iff_forall_sparse`: `σₛ(x)₁` is the greatest lower bound
   of the `ℓ¹` distances from `x` to `s`-sparse vectors.
@@ -225,6 +226,17 @@ theorem forall_sum_mul_sub_le_iff_forall_mul_sub_le (x : EuclideanSpace ℝ ι) 
     sum_eq_single j (fun k _ hk ↦ by simp [hk]) (by simp)] at hb
   simpa using hb
 
+/-- The bound `d t ≤ λ |t|` holds for every real `t` iff `|d| ≤ λ`: the subgradients of `λ |·|`
+at `0` form the interval `[-λ, λ]`. -/
+theorem _root_.forall_mul_le_mul_abs_iff {d lam : ℝ} :
+    (∀ t : ℝ, d * t ≤ lam * |t|) ↔ |d| ≤ lam := by
+  refine ⟨fun H ↦ abs_le.2 ⟨?_, by simpa using H 1⟩, fun h t ↦ ?_⟩
+  · have h1 := H (-1)
+    simp only [mul_neg, mul_one, abs_neg, abs_one] at h1
+    linarith
+  · calc d * t ≤ |d| * |t| := (le_abs_self _).trans (abs_mul d t).le
+      _ ≤ lam * |t| := by gcongr
+
 /-- For `λ ≥ 0`, the subgradients of `λ‖·‖₁` at `x`, for the pairing `(c, d) ↦ ∑ⱼ cⱼ dⱼ`: the
 inequality `∑ⱼ cⱼ (bⱼ - xⱼ) ≤ λ (‖b‖₁ - ‖x‖₁)` holds for every `b` iff for every `j`,
 `cⱼ = λ sign xⱼ` when `xⱼ ≠ 0` and `|cⱼ| ≤ λ` when `xⱼ = 0`. -/
@@ -254,14 +266,11 @@ theorem forall_sum_mul_sub_le_iff (x : EuclideanSpace ℝ ι) (c : ι → ℝ) {
         rw [Real.sign_of_pos ha']
         linarith [(mul_eq_zero.1 hda).resolve_right ha]
     · subst ha
-      have h1 := H 1
-      have h2 := H (-1)
-      simp only [sub_zero, abs_one, abs_zero, abs_neg] at h1 h2
-      exact abs_le.2 ⟨by linarith, by linarith⟩
+      exact forall_mul_le_mul_abs_iff.1 fun t ↦ by simpa using H t
   · rintro ⟨h1, h2⟩ t
     rcases eq_or_ne a 0 with rfl | ha
     · rw [sub_zero, abs_zero, sub_zero]
-      exact (le_abs_self _).trans (by rw [abs_mul]; gcongr; exact h2 rfl)
+      exact forall_mul_le_mul_abs_iff.2 (h2 rfl) t
     · rw [h1 ha]
       rcases ha.lt_or_gt with ha' | ha'
       · rw [Real.sign_of_neg ha', abs_of_neg ha']
