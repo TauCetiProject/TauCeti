@@ -278,7 +278,7 @@ theorem hasParallelCurvature_iff_isLocallyConstant_scalarCurvature_of_finrank_eq
         (cov.scalarCurvature y / 2) • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) :=
     .of_forall fun y ↦ cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov (hx y)
   have hK : MDifferentiable I 𝓘(ℝ) fun y ↦ cov.scalarCurvature y / 2 :=
-    (cov.contMDiff_scalarCurvature.div_const 2).mdifferentiable (by simp)
+    ((cov.contMDiff_scalarCurvature (n := ⊤)).div_const 2).mdifferentiable (by simp)
   have hiff : IsLocallyConstant cov.scalarCurvature ↔
       IsLocallyConstant fun y ↦ cov.scalarCurvature y / 2 :=
     ⟨fun h ↦ h.comp (· / 2), fun h ↦ by

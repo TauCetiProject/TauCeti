@@ -191,7 +191,7 @@ private theorem mul_norm_toLp_sq_le_energyForm_ofSmooth {u : C^∞⟮I, M; ℝ�
       (mgradient I g x) + S x * (f x * g x)) (riemannianVolume I M) :=
     ((continuous_const.mul (continuous_inner_mgradient (f.contMDiff.of_le (by simp))
       (g.contMDiff.of_le (by simp)))).add
-      ((CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.mul
+      ((CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.mul
         ((map_continuous f).mul (map_continuous g)))).integrable_of_compactSpace
   -- Write `φ = u v`. Then `E_g(u v², u) = c ∫ u² v² dV`, and pointwise
   -- `|∇(u v)|² = ⟪∇(u v²), ∇u⟫ + u² |∇v|²`, so `E_g(u v², u) ≤ E_g(φ, φ)`.
@@ -271,7 +271,7 @@ theorem firstEigenvalue_eq_integral_scalarCurvature_div_iff [Nonempty M] :
   set l := firstEigenvalue I M
   have hV := riemannianTotalVolume_pos (I := I) (M := M)
   have hS : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   constructor
   · intro h
     -- The constant function `1` attains `λ₁`, so it is a weak eigenfunction: `∫ Scal φ = λ₁ ∫ φ`.

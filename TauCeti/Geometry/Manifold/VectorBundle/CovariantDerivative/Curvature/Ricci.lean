@@ -39,9 +39,11 @@ to `κ g`.
 The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart, so
 the Ricci tensor pairs vector fields differentiable (respectively smooth) at a point to a function
 differentiable (respectively smooth) there.
-The tensor is itself a smooth bilinear-form bundle section. This supplies the continuity
-hypothesis for compact-bundle coercivity, which turns pointwise positive Ricci curvature into a
-uniform lower bound.
+The tensor is itself a smooth bilinear-form bundle section; evaluating it twice on the
+tautological tangent vector is continuous
+(`CovariantDerivative.continuous_ricciTensor_apply_self_tangentBundle`).
+This supplies the continuity hypothesis for compact-bundle coercivity, which turns pointwise
+positive Ricci curvature into a uniform lower bound.
 
 The bundle-smoothness proof originated in
 [`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/dc053c9/ForTauCeti/Geometry/Manifold/Riemannian/Curvature/Ricci/Continuity.lean).
@@ -300,6 +302,22 @@ theorem contMDiff_ricciTensor :
   refine ⟨contMDiff_id, fun x ↦ ?_⟩
   simpa only [LinearMap.toContinuousBilinearMap_apply] using
     (cov.contMDiffAt_ricciTensor_apply (hσ x) (hτ x))
+
+/-- Evaluating the Ricci tensor on the tautological tangent vector twice gives a continuous
+function on the tangent bundle. -/
+theorem continuous_ricciTensor_apply_self_tangentBundle :
+    Continuous (fun v : TangentBundle I M ↦ cov.ricciTensor v.proj v.snd v.snd) := by
+  have hπ := FiberBundle.continuous_proj E (TangentSpace I : M → Type _)
+  -- Reconstructing a total-space point from its base and fibre is the identity.
+  have hv : Continuous (fun v : TangentBundle I M ↦ TotalSpace.mk' E v.proj v.snd) :=
+    continuous_id
+  -- The second coordinate in the trivial-bundle product is the evaluated scalar.
+  have h : Continuous (fun v : TangentBundle I M ↦
+      (cov.ricciTensor v.proj).toContinuousBilinearMap v.snd v.snd) :=
+    continuous_snd.comp ((Trivial.homeomorphProd M ℝ).continuous.comp
+      ((cov.contMDiff_ricciTensor.continuous.comp hπ).clm_bundle_apply₂
+        (F₁ := E) (F₂ := E) (E₃ := Trivial M ℝ) hv hv))
+  simpa only [LinearMap.toContinuousBilinearMap_apply] using h
 
 section Prod
 
