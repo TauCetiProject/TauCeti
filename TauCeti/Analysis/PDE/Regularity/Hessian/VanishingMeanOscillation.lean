@@ -270,9 +270,6 @@ private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 1 < p) (hp_top : p 
     (ae_of_all _ fun x i j => haΛ.abs_apply_le (mem_univ x) i j) hTU
   have hζf : MemLp (fun x => ζ x * f x) p (volume.restrict U) := hζ_top.smul hf
   -- The equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ(ζ u) = ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` and the estimate for `ζ u`.
-  have hwp : MemLp (Wkp.iteratedGradient 1 w : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p
-      (volume.restrict U) := (hζH.add hTU).ae_eq (hDw.mono fun _ h => h.symm)
   have hkey := hW0 ha haΛ hosc w hw0 (hζf.add hE) (by
       filter_upwards [hDw, heq] with x h1 h2
       rw [h1, map_add, map_smul, h2, smul_eq_mul, Pi.add_apply])
@@ -280,7 +277,7 @@ private theorem exists_lpNorm_smul_iteratedGradient_le (hp : 1 < p) (hp_top : p 
       lpNorm (fun x => Wkp.iteratedGradient 1 w x - T x) p (volume.restrict U) :=
     lpNorm_congr_ae (hDw.mono fun x h => by dsimp only; rw [h, add_sub_cancel_right])
   rw [hsub]
-  have h1 := lpNorm_sub_le (g := T) hwp Fact.out
+  have h1 := lpNorm_sub_le (g := T) (Lp.memLp (Wkp.iteratedGradient 1 w)) Fact.out
   have h2 := lpNorm_add_le (g := fun x => Matrix.contraction (a x) (T x)) hζf Fact.out
   have hC : (0 : ℝ) ≤ C := C.property
   calc _ ≤ _ := h1
