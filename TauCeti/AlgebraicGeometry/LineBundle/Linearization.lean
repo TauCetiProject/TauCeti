@@ -117,17 +117,17 @@ lemma trivial_obj :
 def forgetObjTrivialIso : (forget G X).obj (trivial G X) ≅ InvertibleSheaf.trivial X.left :=
   ObjectProperty.isoMk _ (InvertibleSheaf.pullbackTrivialObjIso (toUnit X).left)
 
-/-- An endomorphism `α` of the structure sheaf, multiplication by a global function `r`, is
-compatible with the trivial linearization exactly when `r` is `G`-invariant. -/
-lemma trivial_comm_iff_mem_invariantGlobalSections
-    (α : (trivial G X).obj.obj ⟶ (trivial G X).obj.obj) (r : Γ(X.left, ⊤))
-    (hα : α = ((forget G X).obj (trivial G X)).obj.globalSectionsSmul r) :
-    ((Descent.modulesPseudofunctor.over S).map γ[G,X].op.toLoc).toFunctor.map α ≫
-        (trivial G X).obj.iso.hom =
+/-- The multiplication by a global function `r` on the structure sheaf is compatible with the
+trivial linearization exactly when `r` is `G`-invariant. -/
+lemma trivial_comm_iff_mem_invariantGlobalSections (r : Γ(X.left, ⊤)) :
+    ((Descent.modulesPseudofunctor.over S).map γ[G,X].op.toLoc).toFunctor.map
+        (((forget G X).obj (trivial G X)).obj.globalSectionsSmul r :
+          (trivial G X).obj.obj ⟶ (trivial G X).obj.obj) ≫ (trivial G X).obj.iso.hom =
       (trivial G X).obj.iso.hom ≫
-        ((Descent.modulesPseudofunctor.over S).map (snd G X).op.toLoc).toFunctor.map α ↔
+        ((Descent.modulesPseudofunctor.over S).map (snd G X).op.toLoc).toFunctor.map
+          (((forget G X).obj (trivial G X)).obj.globalSectionsSmul r :
+            (trivial G X).obj.obj ⟶ (trivial G X).obj.obj) ↔
     r ∈ invariantGlobalSections G X := by
-  subst hα
   have : SheafOfModules.isInvertible (G ⊗ X).left
       ((Scheme.Modules.pullback (toUnit (G ⊗ X)).left).obj (InvertibleSheaf.trivial S).obj) :=
     SheafOfModules.isInvertible_pullback (hM := (InvertibleSheaf.trivial S).property) _ _
@@ -144,12 +144,12 @@ lemma trivial_comm_iff_mem_invariantGlobalSections
 def endTrivialMulEquiv : End (trivial G X) ≃* invariantGlobalSections G X where
   toFun φ := ⟨(Scheme.Modules.globalSectionsActionRingEquiv
       ((forget G X).obj (trivial G X)).obj).symm (End.of φ.asHom.hom.hom),
-      (trivial_comm_iff_mem_invariantGlobalSections G X _ _
-        (Scheme.Modules.globalSectionsSmul_globalSectionsActionRingEquiv_symm
-          ((forget G X).obj (trivial G X)).obj φ.asHom.hom.hom).symm).1 φ.asHom.hom.comm⟩
+      (trivial_comm_iff_mem_invariantGlobalSections G X _).1
+        ((Scheme.Modules.globalSectionsSmul_globalSectionsActionRingEquiv_symm
+          ((forget G X).obj (trivial G X)).obj φ.asHom.hom.hom).symm ▸ φ.asHom.hom.comm)⟩
   invFun r := End.of (ObjectProperty.homMk
     ⟨((forget G X).obj (trivial G X)).obj.globalSectionsSmul r,
-      (trivial_comm_iff_mem_invariantGlobalSections G X _ r rfl).2 r.property⟩)
+      (trivial_comm_iff_mem_invariantGlobalSections G X r).2 r.property⟩)
   left_inv φ := by
     ext : 1
     apply ObjectProperty.hom_ext

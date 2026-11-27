@@ -295,6 +295,12 @@ section Base
 
 open LinearizedObject
 
+/-- In `LocallyDiscrete Cᵒᵖ`, the composite of `toUnit X` with (the opposite of) any
+`x : Y ⟶ X` is `toUnit Y`. -/
+lemma _root_.CategoryTheory.CartesianMonoidalCategory.toUnit_op_toLoc_comp {Y X : C} (x : Y ⟶ X) :
+    (toUnit X).op.toLoc ≫ x.op.toLoc = (toUnit Y).op.toLoc := by
+  rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit]
+
 /-- The linearized object `t^* M`, for `t : X ⟶ 𝟙_ C` and an object `M` of `F` over the terminal
 object, with the linearization given by the comparison isomorphisms of `F`: both `γ ≫ t` and
 `pr₂ ≫ t` are the morphism `G ⊗ X ⟶ 𝟙_ C`. Exposed because the statement of
@@ -304,9 +310,9 @@ def LinearizedObject.ofObj (M : F.obj (.mk (op (𝟙_ C)))) : F.LinearizedObject
   mk' ((F.map (toUnit X).op.toLoc).toFunctor.obj M)
     (fun Y _ x gx _ ↦
       (F.mapComp' (toUnit X).op.toLoc gx.op.toLoc (toUnit Y).op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).inv.toNatTrans.app M ≫
+          (toUnit_op_toLoc_comp _)).inv.toNatTrans.app M ≫
         (F.mapComp' (toUnit X).op.toLoc x.op.toLoc (toUnit Y).op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).hom.toNatTrans.app M)
+          (toUnit_op_toLoc_comp _)).hom.toNatTrans.app M)
     inferInstance
     (fun Y _ x gx _ Y' f _ fx fgx _ hx hgx ↦ by
       rw [pullHom_comp _ _ f fgx (toUnit Y') fx hgx (comp_toUnit _) hx,
@@ -321,13 +327,14 @@ lemma LinearizedObject.ofObj_obj (M : F.obj (.mk (op (𝟙_ C)))) :
 
 /-- The trivial linearization at `(g, x)` is the composite of the comparison isomorphisms
 `(g • x)^* t^* M ≅ t^* M ≅ x^* t^* M` of `F`. -/
+@[simp]
 lemma LinearizedObject.ofObj_hom (M : F.obj (.mk (op (𝟙_ C)))) ⦃Y : C⦄ (g : Y ⟶ G)
     (x gx : Y ⟶ X) (h : g • x = gx) :
     (ofObj F G X M).hom g x gx h =
       (F.mapComp' (toUnit X).op.toLoc gx.op.toLoc (toUnit Y).op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).inv.toNatTrans.app M ≫
+          (toUnit_op_toLoc_comp _)).inv.toNatTrans.app M ≫
         (F.mapComp' (toUnit X).op.toLoc x.op.toLoc (toUnit Y).op.toLoc
-          (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).hom.toNatTrans.app M := by
+          (toUnit_op_toLoc_comp _)).hom.toNatTrans.app M := by
   unfold ofObj
   exact mk'_hom _ _ _ _ _ _ _ _ _ _
 
@@ -350,12 +357,12 @@ lemma LinearizedObject.ofObj_comm_iff {M M' : F.obj (.mk (op (𝟙_ C)))}
       pullHom α γ[G,X] (toUnit (G ⊗ X)) (toUnit (G ⊗ X)) (comp_toUnit _) (comp_toUnit _) =
         pullHom α (snd G X) (toUnit (G ⊗ X)) (toUnit (G ⊗ X)) (comp_toUnit _) (comp_toUnit _) := by
   unfold ofObj
-  rw [mk'_iso_hom, mk'_iso_hom, pullHom, pullHom, ← cancel_epi
-    ((F.mapComp' (toUnit X).op.toLoc γ[G,X].op.toLoc (toUnit (G ⊗ X)).op.toLoc
-      (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit]; rfl)).hom.toNatTrans.app M),
-    ← cancel_mono ((F.mapComp' (toUnit X).op.toLoc (snd G X).op.toLoc (toUnit (G ⊗ X)).op.toLoc
-      (by rw [← Quiver.Hom.comp_toLoc, ← op_comp, comp_toUnit])).inv.toNatTrans.app M')]
-  simp only [Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app,
+  rw [mk'_iso_hom, mk'_iso_hom, pullHom_eq_compIso, pullHom_eq_compIso,
+    ← cancel_epi (F.compIso (toUnit X).op γ[G,X].op (toUnit (G ⊗ X)).op
+      (congrArg Quiver.Hom.op (comp_toUnit _)) M).hom,
+    ← cancel_mono (F.compIso (toUnit X).op (snd G X).op (toUnit (G ⊗ X)).op
+      (congrArg Quiver.Hom.op (comp_toUnit _)) M').inv]
+  simp only [compIso_hom, compIso_inv, Category.assoc, Cat.Hom.hom_inv_id_toNatTrans_app,
     Cat.Hom.hom_inv_id_toNatTrans_app_assoc, Category.comp_id]
 
 end Base
@@ -395,6 +402,7 @@ lemma LinearizedObject.pull_obj (D : F.LinearizedObject G Z) :
 
 /-- The linearization of the pullback along `f` at `(g, x)` is that of `M` at `(g, x ≫ f)`,
 read through the comparison isomorphisms of `F`. -/
+@[simp]
 lemma LinearizedObject.pull_hom (D : F.LinearizedObject G Z) ⦃Y : C⦄ (g : Y ⟶ G) (x gx : Y ⟶ X)
     (h : g • x = gx) :
     (D.pull f).hom g x gx h =
