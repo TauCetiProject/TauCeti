@@ -198,6 +198,20 @@ from `trivializationAt F E b` along `e`. -/
         trivializationAtlas F E :=
   FiberBundle.trivializationAtlas_ofHomeomorph F (fun b ↦ (e b).toHomeomorph) h_ind
 
+/-- `FiberBundle.ofContinuousLinearEquiv` agrees with `FiberBundle.ofHomeomorph` on the underlying
+fibrewise homeomorphisms. -/
+theorem FiberBundle.ofContinuousLinearEquiv_eq_ofHomeomorph {B : Type*} [TopologicalSpace B]
+    {𝕜 : Type*} [Semiring 𝕜] (F : Type*) [TopologicalSpace F]
+    {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
+    [∀ b, TopologicalSpace (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+    {E' : B → Type*} [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
+    [∀ b, TopologicalSpace (E' b)] [TopologicalSpace (TotalSpace F E')]
+    (e : ∀ b : B, E' b ≃L[𝕜] E b)
+    (h_ind : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, e p.proj p.snd⟩ : TotalSpace F E))) :
+    FiberBundle.ofContinuousLinearEquiv F e h_ind =
+      FiberBundle.ofHomeomorph F (fun b ↦ (e b).toHomeomorph) h_ind := by
+  rfl
+
 /-- Transfer a `VectorBundle 𝕜 F E` structure to `E'` along `e : ∀ b, E' b ≃L[𝕜] E b` inducing the
 total-space topology on `TotalSpace F E'`. -/
 theorem VectorBundle.ofContinuousLinearEquiv {B : Type*} [TopologicalSpace B]

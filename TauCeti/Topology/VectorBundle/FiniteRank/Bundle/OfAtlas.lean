@@ -48,14 +48,7 @@ variable (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}]
 noncomputable def toBundleShrinkStratumEquiv (n : ℕ) (y : {x : X // A.rank x = n}) :
     Shrink.{w} (A.Fiber y.val) ≃L[𝕜] (A.charts n).Fiber y :=
   (Shrink.continuousLinearEquiv 𝕜 (A.Fiber y.val)).trans
-    { toFun := fun v i ↦ v (Fin.cast y.property.symm i)
-      invFun := fun v i ↦ v (Fin.cast y.property i)
-      left_inv := fun v ↦ funext fun i ↦ by simp
-      right_inv := fun v ↦ funext fun i ↦ by simp
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl
-      continuous_toFun := continuous_pi fun i ↦ continuous_apply (Fin.cast y.property.symm i)
-      continuous_invFun := continuous_pi fun i ↦ continuous_apply (Fin.cast y.property i) }
+    (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) (finCongr y.property))
 
 @[simp] theorem toBundleShrinkStratumEquiv_rfl_apply (x : X) (u : Shrink.{w} (A.Fiber x)) :
     A.toBundleShrinkStratumEquiv (A.rank x) ⟨x, rfl⟩ u =

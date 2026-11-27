@@ -53,18 +53,18 @@ noncomputable def toAtlasToBundleShrinkIso : (toAtlasFunctor.{w} 𝕜 X).obj A.t
       A.toBundleShrink.toAtlasHomeomorph.symm.continuous).congr fun p ↦ by
       simp only [Function.comp_apply, toAtlasHomeomorph_symm_apply,
         FiniteRankAtlas.toBundleShrinkHomeomorph_apply]
-      rw [show A.toBundleShrink.fiberContinuousLinearEquiv p.proj =
-          Shrink.continuousLinearEquiv 𝕜 (A.Fiber p.proj) from
-          fiberContinuousLinearEquiv_toBundleShrink A p.proj]
+      -- `erw` unifies `A.toBundleShrink.toAtlas.Fiber p.proj` with `A.Fiber p.proj` via the `rfl`
+      -- lemmas `rank_toBundleShrink` and `FiniteRankAtlas.rank_ofBundles`, and
+      -- `A.toBundleShrink.Fiber p.proj` with `Shrink (A.Fiber p.proj)` via `fiber_toBundleShrink`.
+      erw [fiberContinuousLinearEquiv_toBundleShrink A p.proj]
       exact congrArg (TotalSpace.mk p.proj)
         ((Shrink.continuousLinearEquiv 𝕜 (A.Fiber p.proj)).apply_symm_apply _))
     ((A.toBundleShrink.toAtlasHomeomorph.continuous.comp
       A.toBundleShrinkHomeomorph.symm.continuous).congr fun p ↦ by
       simp only [Function.comp_apply, FiniteRankAtlas.toBundleShrinkHomeomorph_symm_apply,
         toAtlasHomeomorph_apply]
-      rw [show A.toBundleShrink.fiberContinuousLinearEquiv p.proj =
-          Shrink.continuousLinearEquiv 𝕜 (A.Fiber p.proj) from
-          fiberContinuousLinearEquiv_toBundleShrink A p.proj]
+      -- Same `rfl` wrapper alignment as in the forward continuity proof above.
+      erw [fiberContinuousLinearEquiv_toBundleShrink A p.proj]
       exact congrArg (TotalSpace.mk p.proj)
         ((Shrink.continuousLinearEquiv 𝕜 (A.Fiber p.proj)).apply_symm_apply _))
 

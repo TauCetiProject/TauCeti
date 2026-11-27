@@ -66,6 +66,11 @@ noncomputable def uliftToAtlasNatIso :
       rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_comp]
       dsimp only [LinearMap.comp_apply]
       erw [FiniteRankAtlas.fiberMap_isoMk_hom, FiniteRankAtlas.fiberMap_isoMk_hom]
+      -- `change` reduces the `LinearEquiv.refl` identities on both sides and realigns
+      -- `V.ulift.toAtlas.Fiber x` and `W.ulift.toAtlas.Fiber x` with `V.toAtlas.Fiber x` and
+      -- `W.toAtlas.Fiber x` across the `rfl` lemmas `rank_ulift` and
+      -- `FiniteRankAtlas.rank_ofBundles` (which `rw`/`simp` do not unify at `implicit`
+      -- transparency).
       change (((toAtlasFunctor.{max w w'} 𝕜 X).map
             ((uliftFunctor.{w, w'} 𝕜 X).map f)).fiberMap x) u =
         (((toAtlasFunctor.{w} 𝕜 X).map f).fiberMap x) u

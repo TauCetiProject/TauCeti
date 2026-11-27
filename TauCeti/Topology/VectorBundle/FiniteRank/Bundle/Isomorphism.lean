@@ -46,11 +46,15 @@ theorem isIso_iff_bijective (f : E ⟶ F) :
       fun _ ↦ isIso_of_fully_faithful (toAtlasFunctor.{w} 𝕜 X) f⟩
   rw [hIso, FiniteRankAtlas.isIso_iff_bijective]
   refine forall_congr' fun x ↦ ?_
-  rw [toAtlasFunctor_map, fiberMap_toAtlasMap]
-  change Function.Bijective
-      (⇑(F.fiberContinuousLinearEquiv x) ∘
-        ⇑(f.fiberMap x) ∘
-        ⇑(E.fiberContinuousLinearEquiv x).symm) ↔ _
+  -- `E.toAtlas.Fiber x` and `F.toAtlas.Fiber x` agree with `Fin (E.rank x) → 𝕜` and
+  -- `Fin (F.rank x) → 𝕜` by the `rfl` lemma `FiniteRankAtlas.rank_ofBundles`.
+  have hcomp :
+      ⇑(((toAtlasFunctor.{w} 𝕜 X).map f).fiberMap x) =
+        ⇑(F.fiberContinuousLinearEquiv x) ∘
+          ⇑(f.fiberMap x) ∘
+          ⇑(E.fiberContinuousLinearEquiv x).symm :=
+    funext fun v ↦ fiberMap_toAtlasMap_apply E f x v
+  rw [hcomp]
   have hL : Function.Bijective (F.fiberContinuousLinearEquiv x) :=
     ContinuousLinearEquiv.bijective _
   have hR : Function.Bijective (E.fiberContinuousLinearEquiv x).symm :=
@@ -100,7 +104,7 @@ private noncomputable def ofBundleConstWitness (E : FiniteRankBundle.{w} 𝕜 X)
         (⟨p.proj, p.snd⟩ : TotalSpace (Fin n → 𝕜) ((toStratum : X → _) *ᵖ (E.StratumFiber n))) :=
       Bundle.Pullback.continuous_iff.2 ⟨E.continuous_proj, hstr⟩
     exact (hB.symm.continuous.comp hpb).congr fun p ↦ by
-      change hB.symm ⟨p.proj, p.snd⟩ = ⟨p.proj, p.snd⟩
+      rw [Function.comp_apply]
       exact @ofBundleHomeomorph_symm_apply 𝕜 _ X _ n ((toStratum : X → _) *ᵖ (E.StratumFiber n))
         _ (fun x ↦ E.moduleFiber x) (fun x ↦ E.topologicalSpaceFiber x) hts hfb hvb ⟨p.proj, p.snd⟩
   exact ⟨(toStratum : X → _) *ᵖ (E.StratumFiber n), _, fun x ↦ E.moduleFiber x,
