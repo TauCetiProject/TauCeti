@@ -485,6 +485,12 @@ open Asymptotics Topology in
 derivative `1` at `0`, where both sides vanish. It parallels Mathlib's `Complex.isEquivalent_sinh`
 and `Complex.isEquivalent_sin`. -/
 theorem isEquivalent_complexTanh : Complex.tanh ~[𝓝 0] id := by
-  simpa using! (Complex.hasDerivAt_tanh 0 (by simp)).isLittleO
+  refine IsLittleO.isEquivalent ?_
+  -- At `0` the derivative remainder `tanh z - tanh 0 - (z - 0) • (1 / cosh 0 ^ 2)` is
+  -- `tanh z - z`, since `tanh 0 = 0` and `cosh 0 = 1`; the goal `(tanh - id) =o[𝓝 0] id` is
+  -- that statement with `Pi.sub` and `id` unfolded.
+  have h : (fun z ↦ Complex.tanh z - z) =o[𝓝 0] fun z ↦ z := by
+    simpa using (Complex.hasDerivAt_tanh 0 (by simp)).isLittleO
+  exact h
 
 end TauCeti
