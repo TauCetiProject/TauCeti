@@ -98,6 +98,26 @@ public section
 
 namespace Matrix
 
+/-- A matrix supported at a single entry has rank at most one. -/
+theorem rank_single_le_one.{u} {R : Type u} {m n : Type*} [CommSemiring R]
+    [DecidableEq m] [DecidableEq n]
+    (i : m) (j : n) (a : R) : (single i j a).rank ≤ 1 := by
+  have hspan : Submodule.span R (Set.range (single i j a).col) ≤
+      Submodule.span R {Pi.single i a} := by
+    rw [Submodule.span_le, Set.range_subset_iff]
+    intro k
+    rw [← row_transpose, transpose_single, row_single, Pi.single_apply]
+    split_ifs
+    · exact Submodule.subset_span (Set.mem_singleton _)
+    · exact Submodule.zero_mem _
+  rw [← finrank_span_range_col]
+  apply Module.finrank_le_of_rank_le
+  rw [Nat.cast_one]
+  refine (Submodule.rank_mono hspan).trans ?_
+  rw [← LinearMap.range_toSpanSingleton, ← Cardinal.lift_le.{u}]
+  simpa only [CommSemiring.rank_self, Cardinal.lift_one] using
+    lift_rank_range_le (LinearMap.toSpanSingleton R (m → R) (Pi.single i a))
+
 /-- The difference of matrices that agree outside one column has rank at most one. -/
 theorem rank_sub_le_one_of_col_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
     [Finite n] (A B : Matrix m n R) (j : n)

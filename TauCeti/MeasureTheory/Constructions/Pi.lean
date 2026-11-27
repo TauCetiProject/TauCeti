@@ -290,8 +290,8 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
         MeasurableEquiv.piEquivPiSubtypeProd α (· = i₀) =
       ⇑(MeasurableEquiv.piSplitAt i₀ α) := by
     funext x
-    simp only [Function.comp_apply, Prod.map_apply, MeasurableEquiv.piSplitAt_apply,
-      MeasurableEquiv.piEquivPiSubtypeProd_apply, MeasurableEquiv.piUnique_apply, id_eq]
+    rw [MeasurableEquiv.piSplitAt_apply]
+    -- The singleton factor evaluates at its default element `⟨i₀, rfl⟩`.
     rfl
   rw [← hfun]
   exact ((measurePreserving_piUnique fun i : {i : ι // i = i₀} => μ i).prod

@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.ResolventReplacement
 
 import TauCeti.Data.Matrix.Basis
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.MeasureTheory.Integral.TruncatedMoment
 
 /-!
@@ -105,11 +106,7 @@ theorem norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_
   have hnorm (i) : ‖B i‖ = a := by
     have ha : 0 ≤ a := by positivity
     simp only [B, l2_opNorm_single, Complex.norm_real, Real.norm_of_nonneg ha]
-  have hrank (i) : (B i).rank ≤ 1 := by
-    dsimp only [B]
-    rw [single_eq_smul_single_one _ _ (a : ℂ), smul_eq_diagonal_mul,
-      single_eq_single_vecMulVec_single]
-    exact (rank_mul_le_right _ _).trans (rank_vecMulVec_le _ _)
+  have hrank (i) : (B i).rank ≤ 1 := rank_single_le_one _ _ _
   have heq (x : Fin (k + 1) × Fin (k + 1) → ℂ) :
       A + ∑ i, (x i • B i + conj (x i) • (B i)ᴴ) =
         fromBlocks 0 (D + a • Matrix.of (fun i j ↦ x (i, j)))
