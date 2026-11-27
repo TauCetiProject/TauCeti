@@ -18,8 +18,9 @@ entropy is a two-sided generator when the σ-algebras of the labels `ξ ∘ e^[k
 
 The proof runs the one-sided argument with the windows
 `windowLabel e ξ N x = (ξ (e^[j - N] x))_{0 ≤ j ≤ 2 N}`, the itinerary of length `2 N + 1` started
-at `e.symm^[N] x`. Their σ-algebras increase and generate (`TauCeti.monotone_comap_windowLabel`),
-and each has entropy rate at most `h_μ(e, ξ)`, since `e.symm^[N]` is a factor map from `e` to
+at `e.symm^[N] x`. Their σ-algebras increase (`TauCeti.monotone_comap_windowLabel`) and contain
+those of the forward and backward labels (`TauCeti.iSup_comap_le_iSup_comap_windowLabel`), and each
+has entropy rate at most `h_μ(e, ξ)`, since `e.symm^[N]` is a factor map from `e` to
 itself (`TauCeti.partitionEntropyRate_windowLabel_le`); then
 `TauCeti.partitionEntropyRate_le_of_monotone_comap` applies.
 
@@ -59,10 +60,6 @@ theorem windowLabel_apply (e : X ≃ X) (ξ : X → ι) (N : ℕ) (x : X) (j : F
     windowLabel e ξ N x j = ξ (e^[j] (e.symm^[N] x)) := by
   rw [windowLabel, comp_apply, iteratedPartitionLabel_apply]
 
-/-- Iterating `e` after the same number of iterations of `e.symm` gives back the point. -/
-private theorem iterate_iterate_symm (e : X ≃ X) (d : ℕ) (x : X) : e^[d] (e.symm^[d] x) = x :=
-  LeftInverse.iterate (fun y ↦ e.apply_symm_apply y) d x
-
 /-- A narrower window is a function of a wider one. -/
 theorem windowLabel_eq_comp_of_le (e : X ≃ X) (ξ : X → ι) {N N' : ℕ} (h : N ≤ N') :
     windowLabel e ξ N =
@@ -71,7 +68,7 @@ theorem windowLabel_eq_comp_of_le (e : X ≃ X) (ξ : X → ι) {N N' : ℕ} (h 
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
   funext x j
   simp only [comp_apply, windowLabel_apply, Nat.add_sub_cancel_left]
-  rw [add_comm N d, iterate_add_apply, iterate_add_apply, iterate_iterate_symm]
+  rw [add_comm N d, iterate_add_apply, iterate_add_apply, e.rightInverse_symm.iterate d]
 
 variable [MeasurableSpace ι]
 
@@ -82,11 +79,9 @@ theorem measurable_windowLabel {e : X ≃ X} (he : Measurable e) (hes : Measurab
 
 /-- The σ-algebras of the windows increase. -/
 theorem monotone_comap_windowLabel (e : X ≃ X) (ξ : X → ι) :
-    Monotone fun N ↦ MeasurableSpace.comap (windowLabel e ξ N) inferInstance := fun N N' h ↦ by
-  simp only
-  rw [windowLabel_eq_comp_of_le e ξ h, ← MeasurableSpace.comap_comp]
-  exact MeasurableSpace.comap_mono
-    (measurable_pi_iff.mpr fun _ ↦ measurable_pi_apply _).comap_le
+    Monotone fun N ↦ MeasurableSpace.comap (windowLabel e ξ N) inferInstance := fun _ _ h ↦
+  MeasurableSpace.comap_le_comap_of_eq_comp _
+    (measurable_pi_iff.mpr fun _ ↦ measurable_pi_apply _) (windowLabel_eq_comp_of_le e ξ h)
 
 /-- The σ-algebras of the labels `ξ ∘ e^[k]` and `ξ ∘ e.symm^[k]` lie in those of the windows. -/
 theorem iSup_comap_le_iSup_comap_windowLabel (e : X ≃ X) (ξ : X → ι) :
@@ -94,19 +89,15 @@ theorem iSup_comap_le_iSup_comap_windowLabel (e : X ≃ X) (ξ : X → ι) :
         MeasurableSpace.comap (fun x ↦ ξ (e.symm^[k] x)) ‹MeasurableSpace ι›) ≤
       ⨆ N, MeasurableSpace.comap (windowLabel e ξ N) inferInstance := by
   refine iSup_le fun k ↦ le_iSup_of_le k (sup_le ?_ ?_)
-  · have : (fun x ↦ ξ (e^[k] x)) =
-        (fun w : Fin (2 * k + 1) → ι ↦ w ⟨2 * k, by omega⟩) ∘ windowLabel e ξ k := by
-      funext x
-      simp only [comp_apply, windowLabel_apply]
-      rw [two_mul, iterate_add_apply, iterate_iterate_symm]
-    rw [this, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
-  · have : (fun x ↦ ξ (e.symm^[k] x)) =
-        (fun w : Fin (2 * k + 1) → ι ↦ w ⟨0, by omega⟩) ∘ windowLabel e ξ k := by
-      funext x
-      simp [windowLabel_apply]
-    rw [this, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
+  · refine MeasurableSpace.comap_le_comap_of_eq_comp
+      (fun w : Fin (2 * k + 1) → ι ↦ w ⟨2 * k, by omega⟩) (measurable_pi_apply _) ?_
+    funext x
+    simp only [comp_apply, windowLabel_apply]
+    rw [two_mul, iterate_add_apply, e.rightInverse_symm.iterate k]
+  · refine MeasurableSpace.comap_le_comap_of_eq_comp
+      (fun w : Fin (2 * k + 1) → ι ↦ w ⟨0, by omega⟩) (measurable_pi_apply _) ?_
+    funext x
+    simp [windowLabel_apply]
 
 variable [Countable ι] [MeasurableSingletonClass ι]
 
@@ -118,7 +109,8 @@ theorem partitionEntropyRate_windowLabel_le [IsZeroOrProbabilityMeasure μ] (e :
   have hcomm : Function.Commute e.symm e := fun x ↦ by simp
   have hπ : IsFactorMap (e.symm^[N]) e e μ μ :=
     .of_semiconj (he.symm.iterate N) (hcomm.iterate_left N)
-  calc partitionEntropyRate μ e (windowLabel e.toEquiv ξ N)
+  rw [windowLabel, MeasurableEquiv.coe_toEquiv_symm]
+  calc partitionEntropyRate μ e (iteratedPartitionLabel e ξ (2 * N + 1) ∘ e.symm^[N])
       = partitionEntropyRate μ e (iteratedPartitionLabel e ξ (2 * N + 1)) :=
         hπ.partitionEntropyRate_comp he.quasiMeasurePreserving e.measurable
           (measurable_iteratedPartitionLabel e.measurable hξ _)
