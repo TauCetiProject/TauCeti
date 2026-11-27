@@ -185,6 +185,17 @@ theorem differentiable_integral_gaussianKernel_smul {E : Type*} [NormedAddCommGr
     exact (mul_le_mul (mul_le_mul (norm_gaussianKernel_le c t (hD z hz)) hlin
       (norm_nonneg _) (by positivity)) (hB t) (norm_nonneg _) (by positivity)).trans_eq (by ring)
 
+private theorem heatKernel_one_div_four_mul_sq_eq_gaussianDensity {c : ℝ} (hc : 0 < c) (t : ℝ) :
+    TauCeti.heatKernel (1 / (4 * c ^ 2)) t = Real.gaussianDensity c t := by
+  rw [TauCeti.heatKernel_apply, Real.gaussianDensity_def]
+  simp only [Module.finrank_self, Nat.cast_one, Real.norm_eq_abs, sq_abs, neg_div,
+    Real.rpow_neg (by positivity : 0 ≤ 4 * π * (1 / (4 * c ^ 2))), ← Real.sqrt_eq_rpow]
+  have hsqrt : √(4 * π * (1 / (4 * c ^ 2))) = √π / c := by
+    rw [show 4 * π * (1 / (4 * c ^ 2)) = π / c ^ 2 by field_simp, Real.sqrt_div pi_pos.le,
+      Real.sqrt_sq hc.le]
+  rw [hsqrt, show -(t ^ 2 / (4 * (1 / (4 * c ^ 2)))) = -(c * t) ^ 2 by field_simp, inv_div]
+  ring
+
 /-- As `c → ∞`, integrating a bounded continuous function against `Complex.gaussianKernel c · 0`
 tends to `f 0`. -/
 theorem tendsto_integral_gaussianKernel_smul {E : Type*} [NormedAddCommGroup E]
@@ -199,17 +210,10 @@ theorem tendsto_integral_gaussianKernel_smul {E : Type*} [NormedAddCommGroup E]
       (eventually_gt_atTop 0).mono fun c hc => Set.mem_Ioi.mpr (by positivity)⟩
   have hlim := (TauCeti.tendsto_heatKernel_convolution hg.aestronglyMeasurable
     (ae_of_all _ fun u => hB (-u)) (x₀ := 0) hg.continuousAt).comp (ht.prodMk tendsto_const_nhds)
-  rw [show g 0 = f 0 by simp [g]] at hlim
+  simp only [g, neg_zero] at hlim
   refine hlim.congr' ((eventually_gt_atTop 0).mono fun c hc => ?_)
-  have hkernel (t : ℝ) : TauCeti.heatKernel (1 / (4 * c ^ 2)) t = Real.gaussianDensity c t := by
-    rw [TauCeti.heatKernel_apply]; simp only [Module.finrank_self, Nat.cast_one, Real.norm_eq_abs,
-      sq_abs]
-    rw [neg_div, Real.rpow_neg (by positivity), ← Real.sqrt_eq_rpow,
-      show 4 * π * (1 / (4 * c ^ 2)) = π / c ^ 2 by field_simp, Real.sqrt_div' _ (sq_nonneg c),
-      Real.sqrt_sq hc.le, show -t ^ 2 / (4 * (1 / (4 * c ^ 2))) = -(c * t) ^ 2 by field_simp,
-      Real.gaussianDensity_def]; simp only [inv_div]; ring
   simp only [Function.comp_apply, convolution_def, ContinuousLinearMap.lsmul_apply, zero_sub,
-    hkernel, g, neg_neg]
+    heatKernel_one_div_four_mul_sq_eq_gaussianDensity hc, neg_neg]
   congr 1 with t; rw [gaussianKernel, Real.gaussianDensity_def, ← Complex.coe_smul]
   congr 1; push_cast; ring_nf
 

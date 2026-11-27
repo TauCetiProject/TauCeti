@@ -60,16 +60,8 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 /-- The classes of entire analytic elements are dense in the GNS Hilbert space. -/
 theorem denseRange_toGNS_entireAnalytic (α : CStarAction (Multiplicative ℝ) A)
-    (f : A →ₚ[ℂ] ℂ) : DenseRange (fun a : α.entireAnalytic => f.toGNS (a : A)) := by
-  intro v
-  have hrange : Set.range (fun a : α.entireAnalytic => f.toGNS (a : A)) =
-      f.toGNS '' (α.entireAnalytic : Set A) := by ext w; simp
-  rw [hrange]
-  refine (closure_minimal ?_ isClosed_closure) (f.denseRange_toGNS v)
-  calc Set.range f.toGNS = f.toGNS '' closure (α.entireAnalytic : Set A) := by
-        rw [α.dense_entireAnalytic.closure_eq, Set.image_univ]
-    _ ⊆ closure (f.toGNS '' (α.entireAnalytic : Set A)) :=
-        image_closure_subset_closure_image f.toGNS.continuous
+    (f : A →ₚ[ℂ] ℂ) : DenseRange (fun a : α.entireAnalytic => f.toGNS (a : A)) :=
+  f.denseRange_toGNS.comp α.dense_entireAnalytic.denseRange_subtypeVal f.toGNS.continuous
 
 /-- The pre-modular conjugation `[a] ↦ [α_{iβ/2}(a⋆)]` on the entire analytic subalgebra. -/
 private def preModularConjugation (α : CStarAction (Multiplicative ℝ) A) (β : ℝ)
@@ -172,6 +164,14 @@ theorem IsKMSState.modularConjugation_apply_toGNS (hω : α.IsKMSState β ω) {a
   ext v
   exact hω.modularConjugation.symm_apply_eq.mpr
     (hω.modularConjugation_modularConjugation v).symm
+
+/-- Conjugation by `J₀` is an involution: `J₀ (J₀ T J₀) J₀ = T`. -/
+@[simp] theorem IsKMSState.conjOperator_modularConjugation_conjOperator_modularConjugation
+    (hω : α.IsKMSState β ω)
+    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
+    hω.modularConjugation.conjOperator (hω.modularConjugation.conjOperator T) = T := by
+  simpa only [LinearIsometryEquiv.conjOperator_symm, hω.modularConjugation_symm] using
+    hω.modularConjugation.conjOperator.symm_apply_apply T
 
 /-- **Antiunitarity of the modular conjugation:** `⟪J₀ u, J₀ v⟫ = ⟪v, u⟫`. -/
 theorem IsKMSState.inner_modularConjugation (hω : α.IsKMSState β ω)
@@ -293,11 +293,8 @@ theorem IsKMSState.conjOperator_modularConjugation_mem_commutant (hω : α.IsKMS
   have hc := VonNeumannAlgebra.mem_commutant_iff.mp
     (hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_mem_commutant a) x hx
   have h := congrArg hω.modularConjugation.conjOperator hc
-  have hinvol (T : f.GNS →L[ℂ] f.GNS) :
-      hω.modularConjugation.conjOperator (hω.modularConjugation.conjOperator T) = T := by
-    simpa only [LinearIsometryEquiv.conjOperator_symm, hω.modularConjugation_symm] using
-      hω.modularConjugation.conjOperator.symm_apply_apply T
-  rw [LinearIsometryEquiv.conjOperator_mul, LinearIsometryEquiv.conjOperator_mul, hinvol] at h
+  rw [LinearIsometryEquiv.conjOperator_mul, LinearIsometryEquiv.conjOperator_mul,
+    hω.conjOperator_modularConjugation_conjOperator_modularConjugation] at h
   exact h.symm
 
 end NonUnital

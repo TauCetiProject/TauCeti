@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
 public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
+public import TauCeti.Analysis.CStarAlgebra.GNS.RadonNikodym
 public import TauCeti.RepresentationTheory.Continuous.Unitary.OneParameter
 import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.Analysis.CStarAlgebra.Action.Generator.Resolvent
@@ -154,6 +155,28 @@ theorem gnsCovariantRepresentation_coefficient :
 theorem gnsCovariantRepresentation_group :
     (α.gnsCovariantRepresentation hf).group = α.gnsImplementingGroup hf :=
   (rfl)
+
+/-- The GNS Radon–Nikodym operator of an `α`-invariant dominated functional commutes with the
+GNS implementing unitary group. -/
+theorem gnsImplementingGroup_commute_gnsRadonNikodym
+    {g : A →ₚ[ℂ] ℂ} {C : ℝ} (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a)
+    (hg : ∀ t a, g (α t a) = g a) (t : G) :
+    Commute (α.gnsImplementingGroup hf t) (f.gnsRadonNikodym g) := by
+  let U := α.gnsImplementingGroup hf
+  have hU := α.isUnitary_gnsImplementingGroup hf
+  rw [commute_iff_eq]
+  ext v
+  refine ext_inner_left ℂ fun u =>
+    f.denseRange_toGNS.induction_on u (isClosed_eq (by fun_prop) (by fun_prop)) fun a =>
+      f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop)) fun b => ?_
+  have hUa (x : A) (s : G) : U s (f.toGNS x) = f.toGNS (α s x) := by
+    simp [U, toGNS_apply]
+  simp only [mul_apply_eq_comp]
+  rw [(ContinuousLinearMap.adjoint_inner_left (U t) _ _).symm, hU.adjoint_eq_inv t, hUa, hUa,
+    inner_gnsRadonNikodym_toGNS hfg, inner_gnsRadonNikodym_toGNS hfg,
+    show star (α t⁻¹ a) * b = α t⁻¹ (star a * α t b) by
+      rw [map_mul, map_star, ← CStarAction.mul_apply, inv_mul_cancel, CStarAction.one_apply],
+    hg]
 
 end ImplementingGroup
 

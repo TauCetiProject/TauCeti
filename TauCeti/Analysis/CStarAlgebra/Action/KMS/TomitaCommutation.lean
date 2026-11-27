@@ -317,6 +317,31 @@ private theorem isAnalyticCommutantFamily_rightMul (hω : α.IsKMSState β ω) (
     rw [hcov, LinearIsometryEquiv.conjOperator_mul, LinearIsometryEquiv.conjOperator_mul,
       hUconj, hUconj]
 
+/-- Conjugating a commutant operator by the KMS implementing unitaries keeps it in the commutant. -/
+private theorem conj_kmsUnitary_mem_commutant (hω : α.IsKMSState β ω) (hβ : β ≠ 0)
+    {R : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS}
+    (hR : R ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant) (t : ℝ) :
+    kmsUnitary hω hβ (.ofAdd t) * R * kmsUnitary hω hβ (.ofAdd (-t)) ∈
+      ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant := by
+  let f := ω.toPositiveLinearMap; let ρ := f.gnsNonUnitalStarAlgHom; let U := kmsUnitary hω hβ
+  refine f.mem_gnsVonNeumannAlgebra_commutant_iff.mpr fun a => ?_
+  have hcov (r : ℝ) (x : A) : U (.ofAdd r) * ρ x = ρ (α (.ofAdd r) x) * U (.ofAdd r) := by
+    ext w
+    simpa [U, ρ, mul_apply_eq_comp] using (α.gnsCovariantRepresentation
+      (fun s y => hω.apply_action hβ s y)).covariance (.ofAdd r) x w
+  have h1 : ρ a * U (.ofAdd t) = U (.ofAdd t) * ρ (α (.ofAdd (-t)) a) := by
+    simpa [← CStarAction.mul_apply, ← ofAdd_add] using (hcov t (α (.ofAdd (-t)) a)).symm
+  have hRa : ρ (α (.ofAdd (-t)) a) * R = R * ρ (α (.ofAdd (-t)) a) :=
+    f.mem_gnsVonNeumannAlgebra_commutant_iff.mp hR (α (.ofAdd (-t)) a)
+  calc ρ a * (U (.ofAdd t) * R * U (.ofAdd (-t)))
+      = (ρ a * U (.ofAdd t)) * R * U (.ofAdd (-t)) := by simp only [mul_assoc]
+    _ = U (.ofAdd t) * (ρ (α (.ofAdd (-t)) a) * R) * U (.ofAdd (-t)) := by
+      rw [h1]; simp only [mul_assoc]
+    _ = U (.ofAdd t) * R * (ρ (α (.ofAdd (-t)) a) * U (.ofAdd (-t))) := by
+      rw [hRa]; simp only [mul_assoc]
+    _ = U (.ofAdd t) * R * U (.ofAdd (-t)) * ρ a := by
+      rw [← hcov (-t) a]; simp only [mul_assoc]
+
 /-- Gaussian smearing of a commutant operator `R ∈ M_ω'` produces an analytic commutant family. -/
 private theorem isAnalyticCommutantFamily_smearOp (hω : α.IsKMSState β ω) (hβ : β ≠ 0)
     {R : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS}
@@ -324,7 +349,7 @@ private theorem isAnalyticCommutantFamily_smearOp (hω : α.IsKMSState β ω) (h
     IsAnalyticCommutantFamily hω hβ
       ((α.isUnitary_gnsImplementingGroup (fun s a => hω.apply_action hβ s a)).gaussianSmear
         (α.continuous_gnsImplementingGroup_apply (fun s a => hω.apply_action hβ s a)) R c) := by
-  let f := ω.toPositiveLinearMap; let ρ := f.gnsNonUnitalStarAlgHom
+  let f := ω.toPositiveLinearMap
   have hU := α.isUnitary_gnsImplementingGroup (fun s a => hω.apply_action hβ s a)
   have hcont := α.continuous_gnsImplementingGroup_apply (fun s a => hω.apply_action hβ s a)
   refine ⟨hU.differentiable_gaussianSmear_apply hcont R c, fun v => ?_,
@@ -333,28 +358,9 @@ private theorem isAnalyticCommutantFamily_smearOp (hω : α.IsKMSState β ω) (h
     exact hU.differentiable_gaussianSmear_apply hcont (star R) c v
   · intro z
     refine f.mem_gnsVonNeumannAlgebra_commutant_iff.mpr fun a => ?_
-    refine hU.commute_gaussianSmear_of_commute hcont (fun t => ?_) c z
-    have hcov (r : ℝ) (x : A) :
-        α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd r) * ρ x =
-          ρ (α (.ofAdd r) x) *
-            α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd r) := by
-      ext w; simpa [ρ, mul_apply_eq_comp] using (α.gnsCovariantRepresentation
-        (fun s a => hω.apply_action hβ s a)).covariance (.ofAdd r) x w
-    have h1 : ρ a * α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd t) =
-        α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd t) *
-          ρ (α (.ofAdd (-t)) a) := by
-      simpa [← CStarAction.mul_apply, ← ofAdd_add] using (hcov t (α (.ofAdd (-t)) a)).symm
-    have hRa := f.mem_gnsVonNeumannAlgebra_commutant_iff.mp hR (α (.ofAdd (-t)) a)
-    rw [show ρ a * (α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd t) * R *
-        α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd (-t))) =
-        (ρ a * α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd t)) * R *
-          α.gnsImplementingGroup (fun s y => hω.apply_action hβ s y) (.ofAdd (-t)) by
-        simp only [mul_assoc],
-      h1, mul_assoc _ (ρ (α (.ofAdd (-t)) a)) R, hRa,
-      ← mul_assoc (α.gnsImplementingGroup _ (.ofAdd t)) R _,
-      mul_assoc (α.gnsImplementingGroup _ (.ofAdd t) * R) (ρ (α (.ofAdd (-t)) a)) _,
-      ← hcov (-t) a]
-    simp only [ρ, mul_assoc]
+    exact hU.commute_gaussianSmear_of_commute hcont
+      (fun t => f.mem_gnsVonNeumannAlgebra_commutant_iff.mp
+        (conj_kmsUnitary_mem_commutant hω hβ hR t) a) c z
 
 /-- For two analytic commutant families `R, R'`, `J₀ (R 0) J₀` commutes with `R' 0`. -/
 private theorem commute_conjOperator_modularConjugation_of_isAnalyticCommutantFamily
@@ -479,13 +485,7 @@ theorem IsKMSState.conjOperator_modularConjugation_mem_gnsVonNeumannAlgebra_iff
     (hω : α.IsKMSState β ω) {T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS} :
     hω.modularConjugation.conjOperator T ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra ↔
       T ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant :=
-  ⟨fun h => by
-    have h1 := hω.conjOperator_modularConjugation_mem_commutant h
-    have hinvol : hω.modularConjugation.conjOperator (hω.modularConjugation.conjOperator T) =
-        T := by
-      simpa only [LinearIsometryEquiv.conjOperator_symm, hω.modularConjugation_symm] using
-        hω.modularConjugation.conjOperator.symm_apply_apply T
-    rwa [hinvol] at h1,
+  ⟨fun h => by simpa using hω.conjOperator_modularConjugation_mem_commutant h,
     hω.conjOperator_modularConjugation_mem_gnsVonNeumannAlgebra⟩
 
 /-- Conjugation by `J₀` sends an operator into `M_ω'` if and only if it lies in `M_ω`. -/
@@ -493,13 +493,7 @@ theorem IsKMSState.conjOperator_modularConjugation_mem_commutant_iff
     (hω : α.IsKMSState β ω) {T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS} :
     hω.modularConjugation.conjOperator T ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant ↔
       T ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra :=
-  ⟨fun h => by
-    have h1 := hω.conjOperator_modularConjugation_mem_gnsVonNeumannAlgebra h
-    have hinvol : hω.modularConjugation.conjOperator (hω.modularConjugation.conjOperator T) =
-        T := by
-      simpa only [LinearIsometryEquiv.conjOperator_symm, hω.modularConjugation_symm] using
-        hω.modularConjugation.conjOperator.symm_apply_apply T
-    rwa [hinvol] at h1,
+  ⟨fun h => by simpa using hω.conjOperator_modularConjugation_mem_gnsVonNeumannAlgebra h,
     hω.conjOperator_modularConjugation_mem_commutant⟩
 
 end TauCeti.CStarAction
