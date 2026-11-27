@@ -68,7 +68,9 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
 * `TauCeti.Manifold.eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`: the
   sharp converse, comparing the length of the gradient near `p` with the length, for the metric
-  at `p`, of the coordinate differential, up to a factor arbitrarily close to `1`.
+  at `p`, of the coordinate differential, up to a factor arbitrarily close to `1`, and
+  `TauCeti.Manifold.exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`, its
+  coarser form bounding the gradient by a fixed multiple of the plain coordinate differential.
 -/
 
 public section
@@ -509,6 +511,24 @@ theorem eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
     rfl
   rw [norm_mgradient_eq_norm_mvfderiv, hfac, mul_comm]
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
+
+/-- **The gradient is controlled by the plain differential in a chart.** For a continuous metric,
+near `p` the Riemannian length of the gradient of `f` is at most a fixed multiple, independent of
+`f`, of the operator norm of the coordinate differential of `f` in the extended chart at `p`. -/
+theorem exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
+      DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) →
+      ‖mgradient I f y‖ ≤ C * ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ := by
+  set e := (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p
+  refine ⟨2 * (‖e‖ + 1), by positivity, ?_⟩
+  filter_upwards [eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm (I := I) p
+    one_lt_two] with y hy f hf
+  refine (hy f hf).trans ?_
+  rw [mul_assoc]
+  gcongr
+  rw [mul_comm]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr; linarith)
 
 /-- **Every tangent vector is a gradient.** On a finite-dimensional Hausdorff smooth manifold with a
 Riemannian metric, every tangent vector `w` at `x` is the gradient at `x` of a smooth function. -/

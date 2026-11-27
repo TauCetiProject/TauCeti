@@ -50,6 +50,10 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals, and
   `TauCeti.setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: where it is at
   most `m`, Riemannian integrals over a chart preimage are at most `m` times coordinate integrals.
+* `TauCeti.exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: over the
+  chart preimage of an open set of coordinates, read through a linear identification `L` of the
+  model space and contained in a compact set that `L⁻¹` maps into the chart target, Riemannian
+  integrals are at most a constant multiple of coordinate integrals.
 * `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
   function supported in the chart preimage of an open coordinate set, and
   `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset`, the resulting upper bound
@@ -289,6 +293,48 @@ theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω
     _ ≤ ∫⁻ x, ENNReal.ofReal (f x) ∂riemannianVolume I M := setLIntegral_le_lintegral _ _
 
 end Coordinates
+
+/-- **Integrals over a chart neighbourhood in coordinates.** Let `L` identify the model space
+with `F`, and let `V` be an open subset of a compact set `K` of `F` that `L⁻¹` maps into the chart
+target at `α`. The integral of a function `g ≥ 0` over the corresponding open set of `M` is at
+most a constant multiple, independent of `g`, of the integral over `V` of `g` read in the chart. -/
+theorem exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasureSpace F] [BorelSpace F]
+    [(volume : Measure F).IsAddHaarMeasure] (L : E ≃L[ℝ] F) (α : M) {V K : Set F}
+    (hV : IsOpen V) (hK : IsCompact K) (hVK : V ⊆ K)
+    (hKt : MapsTo L.symm K (extChartAt I α).target) :
+    ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ g : M → ℝ≥0∞,
+      ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' (L.symm '' V), g x
+          ∂riemannianVolume I M ≤
+        C * ∫⁻ y in V, g ((extChartAt I α).symm (L.symm y)) ∂volume := by
+  let _ : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  set W := L.symm '' V
+  have hWo : IsOpen W := L.symm.toHomeomorph.isOpenMap _ hV
+  have hWt : W ⊆ (extChartAt I α).target := (image_mono hVK).trans (mapsTo_iff_image_subset.1 hKt)
+  -- The chart density is bounded by `D` over `W`.
+  obtain ⟨D, hD⟩ := (hK.image L.symm.continuous).exists_bound_of_continuousOn
+    ((continuousOn_chartVolumeDensity_extChartAt_symm (I := I) α).mono
+      (mapsTo_iff_image_subset.1 hKt))
+  -- The image of the Haar measure of `F` is a positive multiple `c` of the Haar measure of `E`.
+  obtain ⟨c, hc0, hc⟩ := L.symm.exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F)
+  replace hc0 : (c : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hc0
+  refine ⟨ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹,
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hc0), fun g ↦ ?_⟩
+  -- Changing variables along `L⁻¹`, the integral over `W` is `c⁻¹` times that over `V`.
+  have hcoord : (c : ℝ≥0∞) * ∫⁻ z in W, g ((extChartAt I α).symm z)
+      ∂(Module.finBasis ℝ E).addHaar = ∫⁻ y in V, g ((extChartAt I α).symm (L.symm y)) := by
+    have hL : MeasurableEmbedding L.symm := L.symm.toHomeomorph.measurableEmbedding
+    rw [← smul_eq_mul, ← ENNReal.smul_def, ← lintegral_smul_measure, ← hc, hL.lintegral_map,
+      L.symm.injective.preimage_image]
+  calc ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' W, g x ∂riemannianVolume I M
+      ≤ ENNReal.ofReal D * ∫⁻ z in W, g ((extChartAt I α).symm z)
+          ∂(Module.finBasis ℝ E).addHaar :=
+        setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm α hWo hWt
+          (fun z hz ↦ (Real.le_norm_self _).trans (hD z (image_mono hVK hz))) g
+    _ = ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹ *
+          ∫⁻ y in V, g ((extChartAt I α).symm (L.symm y)) := by
+        rw [← hcoord, mul_assoc, ENNReal.inv_mul_cancel_left hc0 ENNReal.coe_ne_top]
 
 /-- **Integration in coordinates** against the Riemannian volume using Lebesgue measure on
 `EuclideanSpace ℝ (Fin m)` and `TauCeti.stdChartVolumeDensity`. -/

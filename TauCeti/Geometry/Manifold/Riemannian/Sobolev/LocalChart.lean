@@ -12,7 +12,7 @@ import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.Sobolev.W1p.Multiplication
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
-import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 
 /-!
 # `H¹(M)` is the space of functions that are `W^{1,2}` in charts
@@ -38,7 +38,7 @@ of a gradient is at most a fixed multiple of the length of the coordinate gradie
 smooth function `Φ` on `M` supported in a fixed compact set `Q` of the chart neighbourhood, and
 equal to a test function `ϑ` in the chart, has `‖Φ‖_{H¹} ≤ A ‖ϑ‖_{W^{1,2}}` with `A` independent
 of `Φ`; this uses the comparison of integrals over a chart neighbourhood with integrals in
-coordinates (`TauCeti.Manifold.SobolevH1.exists_setLIntegral_le_mul_setLIntegral_comp`).
+coordinates (`TauCeti.exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`).
 
 Let `χ` be a smooth function supported near `p`. In the chart, `χ f` is the product of the chart
 reading of `f`, an element of `W^{1,2}(Ω)`, with a compactly supported smooth function, so it is
@@ -78,23 +78,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- Near `p`, the Riemannian length of the gradient of a function is at most a fixed multiple of
-the length of its coordinate derivative in the extended chart at `p`. -/
-private theorem exists_nhds_norm_mgradient_le [IsManifold I 1 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ᶠ x in 𝓝 p, ∀ f : M → ℝ,
-      DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p x) →
-      ‖mgradient I f x‖ ≤ C * ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p x)‖ := by
-  set e := (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p
-  refine ⟨2 * ‖e‖, by positivity, ?_⟩
-  filter_upwards [eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm (I := I) p
-    one_lt_two] with x hx f hf
-  refine (hx f hf).trans ?_
-  rw [mul_assoc]
-  gcongr
-  rw [mul_comm]
-  exact ContinuousLinearMap.opNorm_comp_le _ _
+omit [FiniteDimensional ℝ E] in
+/-- If `L⁻¹` maps a set `B` of coordinates into the chart target at `p`, the chart image of a
+subset `S` of `B` lies in the chart neighbourhood of `B`. -/
+private theorem image_symm_subset_source_inter_preimage {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (L : E ≃L[ℝ] F) (p : M) {S B : Set F} (hSB : S ⊆ B)
+    (hBt : ∀ y ∈ B, L.symm y ∈ (extChartAt I p).target) :
+    (extChartAt I p).symm '' (L.symm '' S) ⊆
+      (extChartAt I p).source ∩ extChartAt I p ⁻¹' (L.symm '' B) := by
+  rw [(extChartAt I p).symm_image_eq_source_inter_preimage
+    (image_subset_iff.2 fun y hy ↦ hBt y (hSB hy))]
+  exact inter_subset_inter_right _ (preimage_mono (image_mono hSB))
 
 variable [I.Boundaryless] [CompactSpace M] [T2Space M] [IsManifold I ∞ M] [MeasurableSpace M]
   [BorelSpace M]
@@ -116,8 +110,9 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_comp (L : E ≃L[ℝ] F) (p : M)
       eLpNorm g 2 (riemannianVolume I M) ≤
         C * eLpNorm (fun y ↦ g ((extChartAt I p).symm (L.symm y))) 2 (volume.restrict V) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨C, hC, hle⟩ := exists_setLIntegral_le_mul_setLIntegral_comp (I := I) (M := M) L p hV hK
-    hVK hKt
+  obtain ⟨C, hC, hle⟩ :=
+    exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (I := I) (M := M)
+      L p hV hK hVK hKt
   have hC1 : C + 1 ≠ ⊤ := ENNReal.add_ne_top.2 ⟨hC, ENNReal.one_ne_top⟩
   refine ⟨(C + 1) ^ (1 / 2 : ℝ), ENNReal.rpow_ne_top_of_nonneg (by norm_num) hC1,
     fun g hgm hg ↦ ?_⟩
@@ -285,22 +280,18 @@ private theorem exists_norm_ofSmooth_le (L : E ≃L[ℝ] F) (p : M) {r R C₂ : 
   obtain ⟨C, hC, hE2⟩ := exists_eLpNorm_le_mul_eLpNorm_comp (I := I) L p isOpen_ball
     (isCompact_closedBall y₀ R) ball_subset_closedBall hKt
   set Q := φ.symm '' (L.symm '' Kθ)
-  have hKθt : L.symm '' Kθ ⊆ φ.target := by
-    rintro _ ⟨y, hy, rfl⟩
-    exact hrt y (ball_subset_ball hRr.le (hKθR hy))
+  have hVt (y : F) (hy : y ∈ V) : L.symm y ∈ φ.target := hrt y (ball_subset_ball hRr.le hy)
   have hQ : IsClosed Q :=
     ((hKθ.image L.symm.continuous).image_of_continuousOn
-      ((continuousOn_extChartAt_symm p).mono hKθt)).isClosed
-  have hQS (x : M) (hxQ : x ∈ Q) : x ∈ φ.source ∩ φ ⁻¹' (L.symm '' V) := by
-    obtain ⟨_, ⟨y, hy, rfl⟩, rfl⟩ := hxQ
-    have hyt : L.symm y ∈ φ.target := hrt y (ball_subset_ball hRr.le (hKθR hy))
-    exact ⟨φ.map_target hyt, y, hKθR hy, (φ.right_inv hyt).symm⟩
+      ((continuousOn_extChartAt_symm p).mono
+        (image_subset_iff.2 fun y hy ↦ hVt y (hKθR hy)))).isClosed
+  have hQS : Q ⊆ φ.source ∩ φ ⁻¹' (L.symm '' V) :=
+    image_symm_subset_source_inter_preimage L p hKθR hVt
   have hvan (g : M → ℝ) (hg : ∀ x ∉ Q, g x = 0) :
       ∀ᵐ x ∂riemannianVolume I M, x ∉ φ.source ∩ φ ⁻¹' (L.symm '' V) → g x = 0 :=
-    Eventually.of_forall fun x hx ↦ hg x fun hxQ ↦ hx (hQS x hxQ)
+    Eventually.of_forall fun x hx ↦ hg x fun hxQ ↦ hx (hQS hxQ)
   have hψV : ContinuousOn (fun y ↦ φ.symm (L.symm y)) V :=
-    (continuousOn_extChartAt_symm p).comp L.symm.continuous.continuousOn
-      fun y hy ↦ hrt y (ball_subset_ball hRr.le hy)
+    (continuousOn_extChartAt_symm p).comp L.symm.continuous.continuousOn hVt
   set nL := ‖(L : E →L[ℝ] F)‖
   refine ⟨C.toReal * (1 + C₂ * nL), by positivity, fun Φ ϑ hΦQ hΦϑ ↦ ?_⟩
   set u := W1p.ofTestFunctionₗ volume ⊤ 2 ϑ
@@ -393,10 +384,8 @@ private theorem exists_contMDiff_eq_testFunction (L : E ≃L[ℝ] F) (p : M) {r 
   have hwts : tsupport (fun z ↦ ϑ (L z)) ⊆ L.symm '' S :=
     closure_minimal (fun z hz ↦ ⟨L z, hϑS (subset_tsupport _ hz), L.symm_apply_apply z⟩)
       (hS.image L.symm.continuous).isClosed
-  have hwt : tsupport (fun z ↦ ϑ (L z)) ⊆ (extChartAt I p).target := by
-    refine hwts.trans ?_
-    rintro _ ⟨y, hy, rfl⟩
-    exact hrt y (hSr hy)
+  have hwt : tsupport (fun z ↦ ϑ (L z)) ⊆ (extChartAt I p).target :=
+    hwts.trans (image_subset_iff.2 fun y hy ↦ hrt y (hSr hy))
   obtain ⟨Φ₀, hΦ₀, -, hΦ₀supp, hΦ₀eq⟩ := exists_contMDiff_comp_extChartAt_symm_eq (I := I)
     (n := ∞) (c := p) (ϑ.contDiff.comp L.contDiff)
     (ϑ.hasCompactSupport.comp_homeomorph L.toHomeomorph) hwt
@@ -419,7 +408,8 @@ private theorem exists_ball_subset_and_norm_mgradient_le (L : E ≃L[ℝ] F) (p 
           C₂ * ‖fderiv ℝ (g ∘ (extChartAt I p).symm) (L.symm y)‖ := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   set φ := extChartAt I p
-  obtain ⟨C₂, hC₂, hgradp⟩ := exists_nhds_norm_mgradient_le (I := I) (M := M) p
+  obtain ⟨C₂, hC₂, hgradp⟩ :=
+    exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm (I := I) (M := M) p
   have hL : Tendsto L.symm (𝓝 (L (φ p))) (𝓝 (φ p)) := by
     simpa using L.symm.continuous.tendsto (L (φ p))
   have hψ : Tendsto (fun y ↦ φ.symm (L.symm y)) (𝓝 (L (φ p))) (𝓝 p) := by
@@ -429,7 +419,7 @@ private theorem exists_ball_subset_and_norm_mgradient_le (L : E ≃L[ℝ] F) (p 
   obtain ⟨r, hr, hgood⟩ := Metric.eventually_nhds_iff_ball.1
     ((show ∀ᶠ y in 𝓝 (L (φ p)), y ∈ Ω from hΩ).and
       ((hL.eventually (extChartAt_target_mem_nhds (I := I) p)).and (hψ.eventually hgradp)))
-  refine ⟨C₂, hC₂, r, hr, fun y hy ↦ (hgood y hy).1, fun y hy ↦ (hgood y hy).2.1,
+  refine ⟨C₂, hC₂.le, r, hr, fun y hy ↦ (hgood y hy).1, fun y hy ↦ (hgood y hy).2.1,
     fun y hy g hg ↦ ?_⟩
   have h := (hgood y hy).2.2 g
   rw [φ.right_inv (hgood y hy).2.1] at h
@@ -525,15 +515,11 @@ private theorem exists_toLp_ae_eq_of_tendsto_ofTestFunctionₗ (L : E ≃L[ℝ] 
       _ < ε := mul_lt_of_lt_one_right hε ((div_lt_one (by positivity)).2 (by linarith))
   obtain ⟨w, hw⟩ := cauchySeq_tendsto_of_complete hcauchy
   -- Their values converge to `g` in `L²(M)`, since `‖Φ - g‖_{L²} ≤ C ‖ϑ - v‖_{W^{1,2}}`.
-  have hQS (x : M) (hxQ : x ∈ φ.symm '' (L.symm '' S)) :
-      x ∈ φ.source ∩ φ ⁻¹' (L.symm '' ball y₀ (3 * r / 4)) := by
-    obtain ⟨_, ⟨y, hy, rfl⟩, rfl⟩ := hxQ
-    have hyt : L.symm y ∈ φ.target := hrt y (hBr (hSB hy))
-    exact ⟨φ.map_target hyt, y, hSB hy, (φ.right_inv hyt).symm⟩
+  have hQS := image_symm_subset_source_inter_preimage L p hSB fun y hy ↦ hrt y (hBr hy)
   have hconv : Tendsto (fun n ↦ toLp (ofSmooth (Φs n))) atTop (𝓝 (hg.toLp g)) := by
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (fun n ↦ norm_nonneg _) (fun n ↦ norm_toLp_ofSmooth_sub_le L p hC hE2
-      (Φs n) hg (fun x hx ↦ ⟨hΦs0 n x fun h ↦ hx (hQS x h), hg0 x hx⟩) (ϑ n) v ?_) ?_
+      (Φs n) hg (fun x hx ↦ ⟨hΦs0 n x fun h ↦ hx (hQS h), hg0 x hx⟩) (ϑ n) v ?_) ?_
     · filter_upwards [ae_restrict_mem measurableSet_ball, hgv] with y hy hgy
       rw [hΦsϑ n y (hBr hy), hgy]
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.1 hϑ).const_mul C.toReal
