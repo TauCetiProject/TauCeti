@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.CodiscreteCategory
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.ComponentCenter
 public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Constant
 
 /-!
@@ -62,12 +63,6 @@ namespace CategoryTheory.Pseudofunctor.ConnectedBandFixtures
 
 variable {I : Type u'} {G : Type v'} [Group G]
 
-/-- A central endomorphism of `Codiscrete I × SingleObj G` is determined by its group
-components. -/
-theorem catCenter_ext {z w : CatCenter (Codiscrete I × SingleObj G)}
-    (h : ∀ x : Codiscrete I × SingleObj G, (z.app x).2 = (w.app x).2) : z = w :=
-  CatCenter.ext _ _ fun x ↦ Prod.hom_ext (Subsingleton.elim _ _) (h x)
-
 /-- The **centre of a central element** `a` of `G`: the natural endomorphism of the identity of
 `Codiscrete I × SingleObj G` with component `(𝟙, a)` at every object. It is natural because `a`
 commutes with every element of `G`. -/
@@ -94,14 +89,14 @@ theorem connectedCenter_app_snd (a : Subgroup.center G) (x : Codiscrete I × Sin
 @[simp]
 theorem connectedCenter_mul (a b : Subgroup.center G) :
     connectedCenter (I := I) (a * b) = connectedCenter a * connectedCenter b :=
-  catCenter_ext fun x ↦ by
+  BandFixtures.catCenter_ext_prod_singleObj fun x ↦ by
     simp only [connectedCenter_app_snd, CatCenter.mul_app', prod_comp_snd, SingleObj.comp_as_mul,
       Subgroup.coe_mul]
 
 /-- The centre of the identity element is the identity. -/
 @[simp]
 theorem connectedCenter_one : connectedCenter (I := I) (1 : Subgroup.center G) = 1 :=
-  catCenter_ext fun _ ↦ by simp [CatCenter.app_one, SingleObj.id_as_one]
+  BandFixtures.catCenter_ext_prod_singleObj fun _ ↦ by simp [CatCenter.app_one, SingleObj.id_as_one]
 
 /-- The **centre unit of a central element** `a`, with inverse the centre of `a⁻¹`. -/
 def connectedCenterUnit (a : Subgroup.center G) : (CatCenter (Codiscrete I × SingleObj G))ˣ :=
@@ -124,6 +119,17 @@ theorem val_inv_connectedCenterUnit (a : Subgroup.center G) :
 theorem connectedCenterUnit_mul (a b : Subgroup.center G) :
     connectedCenterUnit (I := I) (a * b) = connectedCenterUnit a * connectedCenterUnit b :=
   Units.ext (connectedCenter_mul a b)
+
+/-- The centre unit of the identity element is the identity. -/
+@[simp]
+theorem connectedCenterUnit_one : connectedCenterUnit (I := I) (1 : Subgroup.center G) = 1 :=
+  Units.ext connectedCenter_one
+
+/-- The inverse of the centre unit of `a` is the centre unit of `a⁻¹`. -/
+@[simp]
+theorem connectedCenterUnit_inv (a : Subgroup.center G) :
+    (connectedCenterUnit (I := I) a)⁻¹ = connectedCenterUnit a⁻¹ :=
+  Units.ext (val_inv_connectedCenterUnit a)
 
 /-- The group component of a centre unit is central, by naturality along the automorphisms of
 one object. -/
@@ -154,7 +160,8 @@ def connectedCenterEquiv (i : I) :
   toFun := connectedCenterUnit
   invFun z := ⟨(z.val.app (⟨i⟩, SingleObj.star G)).2, app_snd_mem_center z _⟩
   left_inv _ := rfl
-  right_inv z := Units.ext <| catCenter_ext fun x ↦ app_snd_eq z (⟨i⟩, SingleObj.star G) x
+  right_inv z := Units.ext <| BandFixtures.catCenter_ext_prod_singleObj fun x ↦
+    app_snd_eq z (⟨i⟩, SingleObj.star G) x
   map_mul' := connectedCenterUnit_mul
 
 @[simp]
@@ -173,23 +180,13 @@ theorem coe_connectedCenterEquiv_symm_apply (i : I)
 /-! ### Automorphisms and isomorphisms of the fibre -/
 
 /-- The automorphism `(𝟙, g)` of an object `x` of `Codiscrete I × SingleObj G`, with inverse
-`(𝟙, g⁻¹)`, as a group homomorphism `G →* Aut x`: the product in `Aut x` composes in the order of
-`Function.comp` and composition in `SingleObj G` multiplies in the opposite order, so the two
-reversals cancel. -/
-def connectedAut (x : Codiscrete I × SingleObj G) : G →* Aut x where
-  toFun g := .of
-    { hom := (𝟙 x.1, (g : SingleObj.star G ⟶ SingleObj.star G))
-      inv := (𝟙 x.1, (g⁻¹ : SingleObj.star G ⟶ SingleObj.star G))
-      hom_inv_id := Prod.hom_ext (Subsingleton.elim _ _) (by
-        simp only [prod_comp_snd, SingleObj.comp_as_mul, inv_mul_cancel, prod_id_snd,
-          SingleObj.id_as_one])
-      inv_hom_id := Prod.hom_ext (Subsingleton.elim _ _) (by
-        simp only [prod_comp_snd, SingleObj.comp_as_mul, mul_inv_cancel, prod_id_snd,
-          SingleObj.id_as_one]) }
-  map_one' := Aut.ext <| Iso.ext <| Prod.hom_ext (Subsingleton.elim _ _) (by
-    simp only [Aut.one_asIso, Iso.refl_hom, prod_id_snd, SingleObj.id_as_one])
-  map_mul' _ _ := Aut.ext <| Iso.ext <| Prod.hom_ext (Subsingleton.elim _ _) (by
-    simp only [Aut.mul_asIso, Iso.trans_hom, prod_comp_snd, SingleObj.comp_as_mul])
+`(𝟙, g⁻¹)`, as a group homomorphism `G →* Aut x`: the automorphism `Units.toAut` of the unique
+object of `SingleObj G`, carried to `x` by `Functor.mapAut` along `Prod.sectR x.1`. The product in
+`Aut x` composes in the order of `Function.comp` and composition in `SingleObj G` multiplies in
+the opposite order, so the two reversals cancel. -/
+def connectedAut (x : Codiscrete I × SingleObj G) : G →* Aut x :=
+  ((Prod.sectR x.1 (SingleObj G)).mapAut (SingleObj.star G)).comp
+    ((Units.toAut G).toMonoidHom.comp (toUnits : G ≃* Gˣ).toMonoidHom)
 
 /-- The forward arrow of `connectedAut x g` is `(𝟙, g)`. -/
 @[simp]
@@ -229,9 +226,21 @@ theorem connectedIso_hom_fst (x y : Codiscrete I × SingleObj G) :
     (connectedIso x y).hom.1 = (Codiscrete.iso x.1 y.1).hom :=
   (rfl)
 
-@[simp]
 theorem connectedIso_hom_snd (x y : Codiscrete I × SingleObj G) :
-    (connectedIso x y).hom.2 = (eqToIso (Subsingleton.elim (α := SingleObj G) x.2 y.2)).hom :=
+    (connectedIso x y).hom.2 = eqToHom (Subsingleton.elim (α := SingleObj G) x.2 y.2) :=
+  (rfl)
+
+/-- The group component of the isomorphism between two objects is the identity element. -/
+@[simp]
+theorem connectedIso_hom_snd_eq_one (x y : Codiscrete I × SingleObj G) :
+    ((connectedIso x y).hom.2 : G) = 1 :=
+  (rfl)
+
+/-- The group component of the inverse of the isomorphism between two objects is the identity
+element. -/
+@[simp]
+theorem connectedIso_inv_snd_eq_one (x y : Codiscrete I × SingleObj G) :
+    ((connectedIso x y).inv.2 : G) = 1 :=
   (rfl)
 
 /-! ### Central sections of the constant pseudofunctor -/
@@ -264,7 +273,7 @@ theorem coe_connectedSectionsEquiv_symm_apply (i : I) (U : C)
       ((s.val U (𝟙 U)).val.app (⟨i⟩, SingleObj.star G)).2 := by
   rw [connectedSectionsEquiv, MulEquiv.symm_trans_apply,
     BandFixtures.constantSectionsEquiv_symm_apply]
-  rfl
+  exact coe_connectedCenterEquiv_symm_apply i _
 
 /-- Restriction along any arrow carries the section of `a` to the section of `a`. -/
 @[simp]
@@ -275,35 +284,37 @@ theorem restrict_connectedSectionsEquiv (i : I) {U V : C} (f : V ⟶ U) (a : Sub
     BandFixtures.restrict_constantSection]
 
 /-- The evaluation of the section of `a` at any arrow and object is the automorphism `(𝟙, a)`. -/
+@[simp]
 theorem evaluation_connectedSectionsEquiv (i : I) {U V : C} (f : V ⟶ U)
     (x : Codiscrete I × SingleObj G) (a : Subgroup.center G) :
     IntrinsicBandSections.evaluation (F := constant C (Codiscrete I × SingleObj G)) f x
         (connectedSectionsEquiv C i U a) =
       connectedAut x (a : G) :=
   Aut.ext <| Iso.ext <| (IntrinsicBandSections.evaluation_asIso_hom f x _).trans (by
-    rw [val_connectedSectionsEquiv i U a f])
+    rewrite [val_connectedSectionsEquiv i U a f, val_connectedCenterUnit]
+    exact (connectedCenter_app a x).trans (connectedAut_asIso_hom x a).symm)
 
 /-- **Evaluation is injective** on the central sections of the connected constant fixture, at
 every object, for an arbitrary group `G`. -/
-theorem connected_eval_injective (i : I) (U : C) (x : Codiscrete I × SingleObj G) :
+theorem connected_eval_injective (U : C) (x : Codiscrete I × SingleObj G) :
     Function.Injective
       (IntrinsicBandSections.evaluation (F := constant C (Codiscrete I × SingleObj G)) (𝟙 U)
         x) := by
   intro s t hst
-  obtain ⟨a, rfl⟩ := (connectedSectionsEquiv C i U).surjective s
-  obtain ⟨b, rfl⟩ := (connectedSectionsEquiv C i U).surjective t
+  obtain ⟨a, rfl⟩ := (connectedSectionsEquiv C x.1.as U).surjective s
+  obtain ⟨b, rfl⟩ := (connectedSectionsEquiv C x.1.as U).surjective t
   rw [evaluation_connectedSectionsEquiv, evaluation_connectedSectionsEquiv] at hst
   rw [Subtype.ext (connectedAut_injective x hst)]
 
 /-- **The image of evaluation**: an automorphism `e` of an object is the evaluation of a central
 section exactly when its group component is central. -/
-theorem connected_eval_image (i : I) (U : C) (x : Codiscrete I × SingleObj G) (e : Aut x) :
+theorem connected_eval_image (U : C) (x : Codiscrete I × SingleObj G) (e : Aut x) :
     (∃ s, IntrinsicBandSections.evaluation (F := constant C (Codiscrete I × SingleObj G)) (𝟙 U) x
         s = e) ↔
       (e.asIso.hom.2 : G) ∈ Subgroup.center G := by
-  refine ⟨?_, fun h ↦ ⟨connectedSectionsEquiv C i U ⟨_, h⟩, ?_⟩⟩
+  refine ⟨?_, fun h ↦ ⟨connectedSectionsEquiv C x.1.as U ⟨_, h⟩, ?_⟩⟩
   · rintro ⟨s, rfl⟩
-    obtain ⟨a, rfl⟩ := (connectedSectionsEquiv C i U).surjective s
+    obtain ⟨a, rfl⟩ := (connectedSectionsEquiv C x.1.as U).surjective s
     rw [evaluation_connectedSectionsEquiv]
     exact a.property
   · rw [evaluation_connectedSectionsEquiv]
@@ -311,12 +322,12 @@ theorem connected_eval_image (i : I) (U : C) (x : Codiscrete I × SingleObj G) (
 
 /-- **Evaluation is surjective** onto the automorphisms of an object exactly when the centre of
 `G` is all of `G`. -/
-theorem connected_eval_surjective_iff (i : I) (U : C) (x : Codiscrete I × SingleObj G) :
+theorem connected_eval_surjective_iff (U : C) (x : Codiscrete I × SingleObj G) :
     Function.Surjective
       (IntrinsicBandSections.evaluation (F := constant C (Codiscrete I × SingleObj G)) (𝟙 U) x) ↔
       Subgroup.center G = ⊤ := by
   refine ⟨fun h ↦ eq_top_iff.2 fun g _ ↦ ?_, fun h e ↦ ?_⟩
-  · simpa using (connected_eval_image i U x (connectedAut x g)).1 (h _)
-  · exact (connected_eval_image i U x e).2 (h ▸ Subgroup.mem_top _)
+  · simpa using (connected_eval_image U x (connectedAut x g)).1 (h _)
+  · exact (connected_eval_image U x e).2 (h ▸ Subgroup.mem_top _)
 
 end CategoryTheory.Pseudofunctor.ConnectedBandFixtures

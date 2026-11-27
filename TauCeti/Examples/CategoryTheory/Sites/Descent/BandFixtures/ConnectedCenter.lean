@@ -32,8 +32,7 @@ theorem card_sections_C3 :
     Nat.card (IntrinsicBandSections
       (constant C (Codiscrete Bool × SingleObj (Multiplicative (ZMod 3)))) U) = 3 := by
   rw [← Nat.card_congr (connectedSectionsEquiv C false U).toEquiv, CommGroup.center_eq_top,
-    Subgroup.card_top, Nat.card_eq_fintype_card]
-  rfl
+    Subgroup.card_top, Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card]
 
 /-- **The `C₃` Check, evaluation.** Evaluation of the central sections of the constant
 pseudofunctor with fibre `Codiscrete Bool × B(C₃)` is surjective onto the automorphisms of every
@@ -41,10 +40,10 @@ object. -/
 theorem eval_surjective_C3 (x : Codiscrete Bool × SingleObj (Multiplicative (ZMod 3))) :
     Function.Surjective (IntrinsicBandSections.evaluation
       (F := constant C (Codiscrete Bool × SingleObj (Multiplicative (ZMod 3)))) (𝟙 U) x) :=
-  (connected_eval_surjective_iff false U x).2 CommGroup.center_eq_top
+  (connected_eval_surjective_iff U x).2 CommGroup.center_eq_top
 
 /-- The centre of `S₃` is trivial. -/
-theorem center_perm_fin_three : Subgroup.center (Equiv.Perm (Fin 3)) = ⊥ := by
+theorem center_perm_fin_three_eq_bot : Subgroup.center (Equiv.Perm (Fin 3)) = ⊥ := by
   refine eq_bot_iff.2 fun g hg ↦ Subgroup.mem_bot.2 ?_
   have key : ∀ g : Equiv.Perm (Fin 3), (∀ h : Equiv.Perm (Fin 3), h * g = g * h) → g = 1 := by
     decide
@@ -55,7 +54,7 @@ theorem center_perm_fin_three : Subgroup.center (Equiv.Perm (Fin 3)) = ⊥ := by
 theorem card_sections_S3 :
     Nat.card (IntrinsicBandSections
       (constant C (Codiscrete Bool × SingleObj (Equiv.Perm (Fin 3)))) U) = 1 := by
-  rw [← Nat.card_congr (connectedSectionsEquiv C false U).toEquiv, center_perm_fin_three,
+  rw [← Nat.card_congr (connectedSectionsEquiv C false U).toEquiv, center_perm_fin_three_eq_bot,
     Subgroup.card_bot]
 
 /-- **The `S₃` Check, evaluation.** The automorphism of an object of `Codiscrete Bool × B(S₃)`
@@ -65,7 +64,7 @@ theorem not_eval_swap_S3 (x : Codiscrete Bool × SingleObj (Equiv.Perm (Fin 3)))
     ¬ ∃ s, IntrinsicBandSections.evaluation
       (F := constant C (Codiscrete Bool × SingleObj (Equiv.Perm (Fin 3)))) (𝟙 U) x s =
         connectedAut x (Equiv.swap 0 1) := by
-  rw [connected_eval_image false U x, connectedAut_asIso_hom_snd, center_perm_fin_three]
+  rw [connected_eval_image U x, connectedAut_asIso_hom_snd, center_perm_fin_three_eq_bot]
   exact fun h ↦ (by decide : Equiv.swap (0 : Fin 3) 1 ≠ 1) (Subgroup.mem_bot.1 h)
 
 end TauCeti.Examples.ConnectedBandFixtures
