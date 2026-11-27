@@ -58,7 +58,10 @@ in every `Lᵖ`, `1 ≤ p ≤ ∞`, without a change of exponent:
 dimension, including `d = 1`, because on `Ω` the Riesz potential of order one only integrates
 `‖x - y‖^(1 - d)` over a ball of radius `diam Ω` (`TauCeti.eLpNorm_rieszPotential_restrict_le`).
 The factor `diam Ω` is the scaling of one derivative, which is how a scalar datum enters a
-divergence-form estimate on a ball of radius `R` with the weight `R`.
+divergence-form estimate on a ball of radius `R` with the weight `R`. On a ball `B = B(x₀, r)`, an
+`f` integrable on `B` is minus the divergence in `B` of a field with
+`‖H‖_{Lᵖ(B)} ≤ 2 d r ‖f‖_{Lᵖ(B)}`
+(`TauCeti.exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq`).
 
 ## Data in a Morrey space
 
@@ -655,6 +658,16 @@ theorem exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le
   exact dist_divField_le hhi hα' hα1' hgrowth x x'
 
 
+/-- The field of an integrable, compactly supported datum is almost everywhere strongly
+measurable. -/
+private theorem aestronglyMeasurable_divField [FiniteDimensional ℝ E] [BorelSpace E]
+    [Nontrivial E] [μ.IsAddHaarMeasure] {h : E → ℝ} (hhi : Integrable h μ)
+    (hhc : HasCompactSupport h) : AEStronglyMeasurable (divField μ h) μ := by
+  simp only [funext (divField_apply μ h)]
+  exact Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
+    (hhc.locallyIntegrable_convolution_right _ (locallyIntegrable_divKernel μ _)
+      hhi).aestronglyMeasurable.smul_const _
+
 /-- **Compactly supported `L^q` data are minus divergences of `Lᵖ` fields.** Let `E` be a nontrivial
 finite-dimensional real inner product space of dimension `d` with an additive Haar measure `μ`,
 and let `1 < q` and `1 / p = 1 / q - 1 / d`. There is a constant `C` such that every compactly
@@ -675,11 +688,7 @@ theorem exists_eLpNorm_le_and_integral_inner_gradient_eq [FiniteDimensional ℝ 
     ((hh.locallyIntegrable (by exact_mod_cast hq.le)).integrableOn_isCompact
       hhc.isCompact).integrable_of_forall_notMem_eq_zero
         fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
-  have hmeas : AEStronglyMeasurable (divField μ h) μ := by
-    simp only [funext (divField_apply μ h)]
-    exact Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
-      (hhc.locallyIntegrable_convolution_right _ (locallyIntegrable_divKernel μ _)
-        hhi).aestronglyMeasurable.smul_const _
+  have hmeas : AEStronglyMeasurable (divField μ h) μ := aestronglyMeasurable_divField hhi hhc
   refine ⟨divField μ h, hmeas, ?_, fun φ hφ hφc ↦ integral_inner_divField_gradient hhi hhc hφ hφc⟩
   calc eLpNorm (divField μ h) p μ
       ≤ (((finrank ℝ E : ℝ≥0) * ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹.toNNReal :
@@ -712,11 +721,7 @@ theorem exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq [FiniteDimensi
             ENNReal.ofReal (finrank ℝ E * diam Ω) * eLpNorm h p (μ.restrict Ω)) ∧
       ∀ φ : E → ℝ, ContDiff ℝ 1 φ → HasCompactSupport φ →
         ∫ x, ⟪H x, ∇ φ x⟫_ℝ ∂μ = ∫ x, h x * φ x ∂μ := by
-  have hmeas : AEStronglyMeasurable (divField μ h) μ := by
-    simp only [funext (divField_apply μ h)]
-    exact Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
-      (hhc.locallyIntegrable_convolution_right _ (locallyIntegrable_divKernel μ _)
-        hhi).aestronglyMeasurable.smul_const _
+  have hmeas : AEStronglyMeasurable (divField μ h) μ := aestronglyMeasurable_divField hhi hhc
   refine ⟨divField μ h, hmeas, fun {Ω} hb hh0 {p} hp ↦ ?_,
     fun φ hφ hφc ↦ integral_inner_divField_gradient hhi hhc hφ hφc⟩
   set d : ℝ := (finrank ℝ E : ℝ)
@@ -744,7 +749,47 @@ theorem exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq [FiniteDimensi
         congr 2
         push_cast
         rw [Real.coe_toNNReal _ (by positivity), Real.rpow_one, div_one]
+        have hd' : (finrank ℝ E : ℝ) ≠ 0 := hd.ne'
         field_simp
-        exact mul_div_cancel_left₀ _ hd.ne'
+
+/-- **Integrable data on a ball are minus divergences of fields controlled on the ball.** Let `E`
+be a nontrivial finite-dimensional real inner product space of dimension `d` with an additive Haar
+measure `μ`, and let `f` be integrable on the ball `B = B(x₀, r)`. There is a field `H` with
+`∫_B ⟪H, ∇φ⟫ = ∫_B f φ` for every `C¹` function `φ` with compact support in `B`, so that
+`-div H = f` weakly in `B`, controlled in every `Lᵖ(B)`, `1 ≤ p ≤ ∞`, by
+
+`‖H‖_{Lᵖ(B)} ≤ 2 d r ‖f‖_{Lᵖ(B)}`.
+
+This is `TauCeti.exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq` applied to `f` cut off
+outside `B`. -/
+theorem exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq [FiniteDimensional ℝ E]
+    [BorelSpace E] [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] {x₀ : E} {r : ℝ}
+    (hr : 0 ≤ r) {f : E → ℝ} (hf : IntegrableOn f (ball x₀ r) μ) :
+    ∃ H : E → E, AEStronglyMeasurable H μ ∧
+      (∀ {p : ℝ≥0∞}, 1 ≤ p → eLpNorm H p (μ.restrict (ball x₀ r)) ≤
+        ENNReal.ofReal (finrank ℝ E * (2 * r)) * eLpNorm f p (μ.restrict (ball x₀ r))) ∧
+      ∀ φ : E → ℝ, ContDiff ℝ 1 φ → HasCompactSupport φ → tsupport φ ⊆ ball x₀ r →
+        ∫ x in ball x₀ r, ⟪H x, ∇ φ x⟫_ℝ ∂μ = ∫ x in ball x₀ r, f x * φ x ∂μ := by
+  -- The datum cut off outside the ball is integrable with compact support.
+  have hhi : Integrable ((ball x₀ r).indicator f) μ :=
+    (integrable_indicator_iff measurableSet_ball).2 hf
+  have hhc : HasCompactSupport ((ball x₀ r).indicator f) :=
+    HasCompactSupport.intro (isCompact_closedBall x₀ r) fun x hx =>
+      indicator_of_notMem (fun hxB => hx (ball_subset_closedBall hxB)) f
+  obtain ⟨H, hHm, hHle, hHeq⟩ := exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq μ hhi hhc
+  refine ⟨H, hHm, fun {p} hp => ?_, fun φ hφ1 hφc hφs => ?_⟩
+  · refine (hHle isBounded_ball (fun x hx => indicator_of_notMem hx f) hp).trans ?_
+    rw [eLpNorm_congr_ae (indicator_ae_eq_restrict measurableSet_ball.nullMeasurableSet)]
+    gcongr
+    exact diam_ball hr
+  calc ∫ x in ball x₀ r, ⟪H x, ∇ φ x⟫_ℝ ∂μ
+      = ∫ x, ⟪H x, ∇ φ x⟫_ℝ ∂μ :=
+        setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+          rw [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hφs h), map_zero,
+            inner_zero_right]
+    _ = ∫ x, (ball x₀ r).indicator f x * φ x ∂μ := hHeq φ hφ1 hφc
+    _ = ∫ x in ball x₀ r, f x * φ x ∂μ := by
+        rw [← integral_indicator measurableSet_ball]
+        exact integral_congr_ae (ae_of_all _ fun x => (indicator_mul_left _ _ _).symm)
 
 end TauCeti
