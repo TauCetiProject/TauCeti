@@ -97,6 +97,10 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
   continuous linear map of a matrix, whose columns have squared norms
   `Matrix.norm_toEuclideanCLM_single_sq`, and which depends continuously on the matrix
   (`Matrix.continuous_toEuclideanCLM`) and conversely (`Matrix.continuous_toEuclideanCLM_symm`);
+* `TauCeti.euclideanEntryCLM` — the entry `(T e_j)_i` of an operator `T` on Euclidean space, as
+  a continuous linear functional of `T`, which reads off the matrix entries of
+  `Matrix.toEuclideanCLM` (`TauCeti.euclideanEntryCLM_toEuclideanCLM`,
+  `TauCeti.euclideanEntryCLM_comp_toEuclideanCLM`);
 * `Matrix.toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply` — the map of an invertible
   matrix undoes the map of its inverse;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
@@ -136,6 +140,40 @@ theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype
   simp
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+variable (𝕜) in
+/-- The `(i, j)` entry `(T e_j)_i` of an operator `T` on `EuclideanSpace 𝕜 ι`, as a continuous
+linear functional of `T`. -/
+noncomputable def euclideanEntryCLM (i j : ι) :
+    (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →L[𝕜] 𝕜 :=
+  (EuclideanSpace.proj i).comp
+    (ContinuousLinearMap.apply 𝕜 (EuclideanSpace 𝕜 ι) (EuclideanSpace.single j 1))
+
+@[simp]
+theorem euclideanEntryCLM_apply (i j : ι) (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :
+    euclideanEntryCLM 𝕜 i j T = T (EuclideanSpace.single j 1) i := by
+  simp [euclideanEntryCLM]
+
+/-- The entry functional reads off the entries of the operator of a matrix. -/
+theorem euclideanEntryCLM_toEuclideanCLM (i j : ι) (A : Matrix ι ι 𝕜) :
+    euclideanEntryCLM 𝕜 i j (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) A) = A i j := by
+  simp
+
+/-- The entries of `T ∘L A`, for the operator of a matrix `A`, are `∑ₖ Tᵢₖ Aₖⱼ`. -/
+theorem euclideanEntryCLM_comp_toEuclideanCLM (i j : ι)
+    (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (A : Matrix ι ι 𝕜) :
+    euclideanEntryCLM 𝕜 i j (T ∘L Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) A) =
+      ∑ k, euclideanEntryCLM 𝕜 i k T * A k j := by
+  obtain ⟨B, rfl⟩ : ∃ B, Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) B = T :=
+    ⟨_, StarAlgEquiv.apply_symm_apply _ T⟩
+  rw [← ContinuousLinearMap.mul_def, ← map_mul]
+  simp only [euclideanEntryCLM_toEuclideanCLM, Matrix.mul_apply]
+
+end TauCeti
 
 namespace Matrix
 
