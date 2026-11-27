@@ -24,7 +24,7 @@ compactified space with the signs of broken trajectories.
 
 * **The crossing times diverge.** The time `T` taking the first point of an unbroken pair to its
   second point, which is positive since `f` decreases along the flow, tends to `+∞` as the pairs
-  tend to `x` (`tendsto_atTop_of_tendsto_of_mem_stableSet`): no time takes `x₁ ∈ W^s(q)` to
+  tend to `x` (`tendsto_atTop_of_tendsto_morseTrajectoryPairs`): no time takes `x₁ ∈ W^s(q)` to
   `x₂ ∈ W^s(r)`, so by `Flow.tendsto_abs_atTop_of_forall_apply_ne` the times cannot stay bounded.
   These are the times along which the nearby orbits cross the Morse chart of `q` linearly, as in
   `TauCeti.IsAdaptedPseudoGradient.eventually_forall_linearFlow_mem_target_of_broken`.
@@ -52,8 +52,11 @@ compactified space with the signs of broken trajectories.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `tendsto_atTop_of_tendsto_of_mem_stableSet`: the crossing times of unbroken pairs tending to a
-  broken end tend to `+∞`.
+* `tendsto_atTop_of_tendsto_morseTrajectoryPairs`: the crossing times of unbroken pairs tending
+  to a broken end tend to `+∞`.
+* `exists_tendsto_atTop_tendsto_flow_of_tendsto_morseTrajectoryPairs`: such pairs have crossing
+  times tending to `+∞` along which their first points flow to their second points, as the
+  broken-trajectory limit theorems require.
 * `tendsto_trajectoryComparison_of_tendsto_morseTrajectoryPairs`: their comparison maps converge.
 * `eventually_pos_negativeCoord_toChart_flow_of_tendsto_morseTrajectoryPairs`: they lie on the
   positive side of the leaving coordinate.
@@ -91,7 +94,7 @@ variable {hX : IsAdaptedPseudoGradient f X} {p q r : M} {c₁ c₂ : ℝ}
 `c₁ > c₂` tend to a pair `x` whose first point lies in `W^s(q)` and whose second point lies in
 `W^s(r)`, for `q ≠ r`, as the broken trajectory pairs through `q` do. Then the times `T n` taking
 the first point of `w n` to its second point tend to `+∞`. -/
-theorem tendsto_atTop_of_tendsto_of_mem_stableSet (h₂₁ : c₂ < c₁) {x : M × M}
+theorem tendsto_atTop_of_tendsto_morseTrajectoryPairs (h₂₁ : c₂ < c₁) {x : M × M}
     (hx₁ : x.1 ∈ hX.flow.stableSet q) (hx₂ : x.2 ∈ hX.flow.stableSet r) (hqr : q ≠ r)
     {ι : Type*} {l : Filter ι} {w : ι → M × M} {T : ι → ℝ} (hw : Tendsto w l (𝓝 x))
     (hwP : ∀ᶠ n in l, w n ∈ hX.morseTrajectoryPairs p r c₁ c₂)
@@ -109,10 +112,13 @@ theorem tendsto_atTop_of_tendsto_of_mem_stableSet (h₂₁ : c₂ < c₁) {x : M
   obtain ⟨-, hn₁, hn₂, -⟩ := hX.mem_morseTrajectoryPairs.1 hn
   exact (hX.antitone_flow (w n).1).reflect_lt (by simpa [hTn, hn₁, hn₂] using h₂₁)
 
-/-- Unbroken pairs tending to a broken end have crossing times tending to `+∞`, along which their
-first points flow to their second points. -/
-private theorem exists_tendsto_atTop_and_tendsto_flow (h₂₁ : c₂ < c₁) {x : M × M}
-    (hx₁ : x.1 ∈ hX.flow.stableSet q) (hx₂ : x.2 ∈ hX.flow.stableSet r) (hqr : q ≠ r)
+/-- **Crossing times at a broken end.** Let unbroken pairs `w n` on the levels `c₁ > c₂` tend to a
+pair `x` whose first point lies in `W^s(q)` and whose second point lies in `W^s(r)`, for `q ≠ r`.
+Then there are times `T n → +∞` with `Φ_{T n}` of the first point of `w n` tending to `x₂`: the time
+hypotheses of the limit theorems near a broken trajectory, such as
+`TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`. -/
+theorem exists_tendsto_atTop_tendsto_flow_of_tendsto_morseTrajectoryPairs (h₂₁ : c₂ < c₁)
+    {x : M × M} (hx₁ : x.1 ∈ hX.flow.stableSet q) (hx₂ : x.2 ∈ hX.flow.stableSet r) (hqr : q ≠ r)
     {ι : Type*} {l : Filter ι} {w : ι → M × M} (hw : Tendsto w l (𝓝 x))
     (hwP : ∀ᶠ n in l, w n ∈ hX.morseTrajectoryPairs p r c₁ c₂) :
     ∃ T : ι → ℝ, Tendsto T l atTop ∧ Tendsto (fun n ↦ hX.flow (T n) (w n).1) l (𝓝 x.2) := by
@@ -124,7 +130,7 @@ private theorem exists_tendsto_atTop_and_tendsto_flow (h₂₁ : c₂ < c₁) {x
       · exact ⟨0, fun h ↦ absurd h hn⟩
   choose T hT using hex
   replace hT : ∀ᶠ n in l, hX.flow (T n) (w n).1 = (w n).2 := hwP.mono hT
-  exact ⟨T, tendsto_atTop_of_tendsto_of_mem_stableSet h₂₁ hx₁ hx₂ hqr hw hwP hT,
+  exact ⟨T, tendsto_atTop_of_tendsto_morseTrajectoryPairs h₂₁ hx₁ hx₂ hqr hw hwP hT,
     ((continuous_snd.tendsto x).comp hw).congr' (hT.mono fun _ hn ↦ hn.symm)⟩
 
 /-! ### Comparison maps and the leaving coordinate near a broken end -/
@@ -153,7 +159,8 @@ theorem eventually_pos_negativeCoord_toChart_flow_of_tendsto_morseTrajectoryPair
     {ι : Type*} {l : Filter ι} {w : ι → M × M} (hw : Tendsto w l (𝓝 x))
     (hwP : ∀ᶠ n in l, w n ∈ hX.morseTrajectoryPairs p r c₁ c₂) :
     ∀ᶠ n in l, 0 < ℓ (φq.negativeCoord (φq.toChart (hX.flow a (w n).1))) := by
-  obtain ⟨T, hT, hz⟩ := exists_tendsto_atTop_and_tendsto_flow h₂₁ hx₁ hx₂.2 hqr hw hwP
+  obtain ⟨T, hT, hz⟩ :=
+    exists_tendsto_atTop_tendsto_flow_of_tendsto_morseTrajectoryPairs h₂₁ hx₁ hx₂.2 hqr hw hwP
   exact eventually_pos_negativeCoord_toChart_flow_of_broken hφq hf hx₁ ha hx₂.1 hb
     ((continuous_fst.tendsto x).comp hw) hT hz ℓ hℓ
 
@@ -181,7 +188,8 @@ theorem tendsto_trajectoryComparison_of_tendsto_morseTrajectoryPairs (hf : IsMor
       (𝓝 (((ContinuousLinearMap.id ℝ ℝ).prodMap
         ((hX.stableNormal φr x.2).comp (hX.unstableFrame φq x.2))).comp
           (hX.trajectoryComparison φp φq x.1))) := by
-  obtain ⟨T, hT, hz⟩ := exists_tendsto_atTop_and_tendsto_flow h₂₁ hx₁.2 hx₂.2 hqr hw hwP
+  obtain ⟨T, hT, hz⟩ :=
+    exists_tendsto_atTop_tendsto_flow_of_tendsto_morseTrajectoryPairs h₂₁ hx₁.2 hx₂.2 hqr hw hwP
   exact tendsto_trajectoryComparison_of_broken hφp hφq hφr hf hx₁.1 hx₁.2 ha hx₂.1 hb hx₂.2
     ((continuous_fst.tendsto x).comp hw) (hwP.mono fun _ hn ↦ (hX.mem_morseTrajectoryPairs.1 hn).1)
     hT hz
