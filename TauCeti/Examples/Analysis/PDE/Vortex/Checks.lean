@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Index
 public import TauCeti.Analysis.PDE.Vortex.Moduli.Symmetry
 public import TauCeti.Analysis.PDE.Vortex.Moduli.Topology
 public import TauCeti.Topology.Sym.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Normalization checks for framed plane vortices
@@ -152,11 +153,8 @@ theorem bijective_sobolevGaugeFixedOperator_vacuumField {a : Lp (EuclideanSpace 
     (by rw [show sectionValue vacuumField = 1 from funext sectionValue_vacuumField]
         exact tendsto_const_nhds) ha
   -- The coordinates of the vacuum are constant.
-  refine ⟨‖iteratedFDeriv ℝ n (fun _ : ℂ ↦ vacuumField 0 i) 0‖, fun z ↦ le_of_eq ?_⟩
-  rw [show (fun z ↦ vacuumField z i) = fun _ ↦ vacuumField 0 i by simp [vacuumField_apply]]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · simp [iteratedFDeriv_const_of_ne hn]
+  rw [vacuumField_eq_const]
+  exact ⟨_, norm_iteratedFDeriv_const_le n _⟩
 
 /-! ### The moduli space -/
 
@@ -177,15 +175,10 @@ theorem exists_mem_framedGaugeGroup_apply_zero_eq (c : Circle) :
   obtain ⟨θ, rfl⟩ := Circle.exp_surjective c
   -- A bump `φ` equal to `1` near the origin, and the gauge `exp (i θ φ)`.
   let φ : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
-  refine ⟨fun z ↦ Circle.exp (θ * φ z), (mem_framedGaugeGroup _).2 ⟨?_, ?_⟩, ?_⟩
-  · simp only [Circle.coe_exp]
-    exact Complex.contDiff_exp.comp
-      ((ofRealCLM.contDiff.comp (contDiff_const.mul φ.contDiff)).mul contDiff_const)
-  · have h0 : (fun z ↦ Circle.exp (θ * φ z)) =ᶠ[cocompact ℂ] fun _ ↦ 1 := by
-      filter_upwards [φ.hasCompactSupport.isCompact.compl_mem_cocompact] with z hz
-      rw [image_eq_zero_of_notMem_tsupport hz, mul_zero, Circle.exp_zero]
-    exact tendsto_const_nhds.congr' h0.symm
-  · simp [φ.one_of_mem_closedBall (Metric.mem_closedBall_self zero_le_one)]
+  refine ⟨fun z ↦ Circle.exp (θ * φ z), exp_mem_framedGaugeGroup
+    (contDiff_const.mul φ.contDiff)
+    (by simpa using (φ.hasCompactSupport.is_zero_at_infty).const_mul θ), ?_⟩
+  simp [φ.one_of_mem_closedBall (Metric.mem_closedBall_self zero_le_one)]
 
 /-- **Based gauges see the value at the origin.** Two gauge transforms `u • (0, 1)` and
 `v • (0, 1)` of the vacuum are related by a framed gauge `w` with `w(0) = 1` exactly when
