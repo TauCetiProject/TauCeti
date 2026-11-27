@@ -87,12 +87,16 @@ theorem reflexNorm_eq_smulDet (Φ : CMType E) (hk : Φ.reflexField ≤ k)
     (hV : ∀ c : E, (LinearMap.trace k V (DistribSMul.toLinearMap k V c) : ℂ) =
       Φ.typeTrace c) :
     Φ.reflexNorm hk = smulDet E k V := by
+  -- The choices made in the definition of `reflexNorm`: `E` acts on `Fin n → k` through `ρ`,
+  -- whose trace is the type trace.
   let n := (Φ.exists_trace_eq_typeTrace hk).choose
   let ρ : E →+* Module.End k (Fin n → k) := (Φ.exists_trace_eq_typeTrace hk).choose_spec.choose
   have hρ : ∀ c, (LinearMap.trace k (Fin n → k) (ρ c) : ℂ) = Φ.typeTrace c :=
     (Φ.exists_trace_eq_typeTrace hk).choose_spec.choose_spec
   let := Module.compHom (Fin n → k) ρ
   have := SMul.comp.smulCommClass (α := Fin n → k) (β := k) ρ
+  -- With these instances, `reflexNorm Φ hk` unfolds by definition to `smulDet E k (Fin n → k)`,
+  -- which `smulDet_eq_smulDet_of_trace_eq` compares with `smulDet E k V`.
   refine smulDet_eq_smulDet_of_trace_eq Φ (fun c ↦ ?_) hV
   rw [DistribSMul.toLinearMap_compHom]
   exact hρ c
@@ -115,9 +119,11 @@ theorem reflexNorm_apply_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
     Φ.reflexNorm le_rfl a = c := by
   -- `E* = φ(E)`.
   have hrange := reflexField_eq_fieldRange_of_coe_eq_singleton hΦ
-  have hmem (c : E) : φ c ∈ Φ.reflexField := hrange ▸ ⟨c, rfl⟩
+  have hmem (c : E) : φ c ∈ Φ.reflexField :=
+    hrange ▸ AlgHom.mem_fieldRange.2 ⟨c, φ.toRatAlgHom_apply c⟩
   -- `E` acts on `E*` through `φ`.
   let ψ : E →+* Φ.reflexField := φ.codRestrict Φ.reflexField.toSubalgebra hmem
+  have hψφ (c : E) : (ψ c : ℂ) = φ c := RingHom.codRestrict_apply _ _ hmem c
   let := Module.compHom Φ.reflexField ψ
   -- `Module.compHom` defines `c • v` as `ψ c * v`.
   have hψ (c : E) (v : Φ.reflexField) : c • v = ψ c * v := rfl
@@ -128,8 +134,7 @@ theorem reflexNorm_apply_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
     refine (finrank_eq_one_iff_of_ne_zero' (1 : Φ.reflexField) one_ne_zero).mpr fun w ↦ ?_
     obtain ⟨c', hc'⟩ := hrange.le w.prop
     refine ⟨c', Subtype.ext ?_⟩
-    rw [hψ, mul_one]
-    exact hc'
+    rw [hψ, mul_one, hψφ, ← hc', AlgHom.toRingHom_eq_coe, RingHom.toRatAlgHom_toRingHom]
   have htrace (c : E) : (LinearMap.trace Φ.reflexField Φ.reflexField
       (DistribSMul.toLinearMap Φ.reflexField Φ.reflexField c) : ℂ) = Φ.typeTrace c := by
     have h : DistribSMul.toLinearMap Φ.reflexField Φ.reflexField c = ψ c • LinearMap.id :=
@@ -137,7 +142,7 @@ theorem reflexNorm_apply_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
     rw [h, map_smul, LinearMap.trace_id, Module.finrank_self, typeTrace_eq_of_coe_eq_singleton hΦ]
     simp [ψ]
   have hsmul (v : Φ.reflexField) : a • v = c • v := by
-    rw [hψ, smul_eq_mul, show ψ c = a from Subtype.ext ha.symm]
+    rw [hψ, smul_eq_mul, show ψ c = a from Subtype.ext ((hψφ c).trans ha.symm)]
   rw [reflexNorm_eq_smulDet Φ le_rfl Φ.reflexField htrace, smulDet_eq_pow_of_smul_eq hsmul, hdim,
     pow_one]
 
