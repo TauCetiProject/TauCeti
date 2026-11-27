@@ -20,6 +20,9 @@ a module over a division ring `k`. For `a ≤ b`, compare the relative singular 
 `(X b, X a)` with that of the steps `(X (q + 1), X q)`, `a ≤ q < b`. Write
 `bᵢ = dim Hᵢ(X b, X a; V)` and `cᵢ = ∑_{a ≤ q < b} dim Hᵢ(X (q + 1), X q; V)`. Then:
 
+* **vanishing**: if the homology of the steps vanishes in degree `n`, so does `Hₙ(X b, X a)`,
+  with coefficients in any abelian category with coproducts
+  (`Monotone.isZero_singularHomology_ofInclusion_of_forall_mem_Ico`);
 * **weak inequalities**: if the homology of the steps is finite-dimensional in degree `n`, so is
   `Hₙ(X b, X a)`, and `bₙ ≤ cₙ`
   (`Monotone.finite_singularHomology_ofInclusion_of_forall_mem_Ico` and
@@ -123,6 +126,21 @@ end TauCeti
 namespace Monotone
 
 open TauCeti
+
+/-- **Vanishing along a filtration.** If the steps `(X (q + 1), X q)`, `a ≤ q < b`, have vanishing
+relative homology in degree `n`, so does `(X b, X a)`, with coefficients in any abelian category
+with coproducts. -/
+theorem isZero_singularHomology_ofInclusion_of_forall_mem_Ico {A : Type*} [Category A] [Abelian A]
+    [HasCoproducts.{w} A] (R : A) {a b : ℤ} (hab : a ≤ b) (n : ℕ)
+    (h : ∀ q ∈ Finset.Ico a b,
+      IsZero ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology R n)) :
+    IsZero ((TopPair.ofInclusion (hX hab)).singularHomology R n) := by
+  induction b, hab using Int.leInduction with
+  | base => exact TopPair.isZero_singularHomology_ofInclusion_self R (X a) n
+  | succ b hab ih =>
+    exact (stepTriple hX hab).isZero_singularHomology_totalPair R n
+      (ih fun q hq ↦ h q (Finset.Ico_subset_Ico_right (lt_add_one b).le hq))
+      (h b (Finset.mem_Ico.2 ⟨hab, lt_add_one b⟩))
 
 /-- **Finiteness along a filtration.** If the steps `(X (q + 1), X q)`, `a ≤ q < b`, have
 finite-dimensional relative homology in degree `n`, so does `(X b, X a)`. -/
