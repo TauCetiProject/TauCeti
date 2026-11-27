@@ -15,16 +15,18 @@ import TauCeti.Analysis.Asymptotics.ExpGrowth
 # Exponential growth of the entry sums of powers of a matrix
 
 For a real square matrix `M`, the sums `∑ i, (M ^ n *ᵥ 1) i` of all entries of its powers grow
-exponentially at most like its spectral radius `ρ`: each row sum of `M ^ n` is bounded by the
-`L∞` operator norm of `M ^ n`, whose `n`-th roots tend to `ρ` by Gelfand's formula. If `M` is
-entrywise nonnegative they grow at least like `ρ`, by the Perron–Frobenius theorem: a nonzero
-nonnegative eigenvector `v` for `ρ` gives `ρ ^ n ∑ v ≤ (∑ v) ∑ i, (M ^ n *ᵥ 1) i`. So for a
-nonnegative matrix the upper exponential growth of these sums is exactly `log ρ`.
+exponentially at most like the spectral radius `ρ` of `M` viewed as a complex matrix: each row sum
+of `M ^ n` is bounded by the `L∞` operator norm of `M ^ n`, whose `n`-th roots tend to `ρ` by
+Gelfand's formula. If `M` is entrywise nonnegative, `ρ` is also the real spectral radius
+`spectralRadius ℝ M` (`Matrix.spectralRadius_real_eq_of_nonneg`), and the sums grow at least like
+`ρ`, by the Perron–Frobenius theorem: a nonzero nonnegative eigenvector `v` for `ρ` gives
+`ρ ^ n ∑ v ≤ (∑ v) ∑ i, (M ^ n *ᵥ 1) i`. So for a nonnegative matrix the upper exponential growth
+of these sums is exactly `log ρ`.
 
 ## Main results
 
 * `Matrix.expGrowthSup_sum_pow_mulVec_le`: the entry sums of `M ^ n` grow at most like the
-  spectral radius of `M`.
+  spectral radius of `M` viewed as a complex matrix.
 * `Matrix.log_le_expGrowthInf_sum_pow_mulVec`: for a nonnegative matrix they grow at least like
   the spectral radius.
 * `Matrix.expGrowthSup_sum_pow_mulVec_eq`: for a nonnegative matrix their upper exponential growth
@@ -41,7 +43,7 @@ namespace Matrix
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The entry sums `∑ i, (M ^ k *ᵥ 1) i` of the powers of a real square matrix grow at most like
-its spectral radius. -/
+the spectral radius of `M` viewed as a complex matrix. -/
 theorem expGrowthSup_sum_pow_mulVec_le (M : Matrix n n ℝ) :
     expGrowthSup (fun k ↦ ENNReal.ofReal (∑ i, (M ^ k *ᵥ 1) i)) ≤
       ENNReal.log (spectralRadius ℂ (M.map (↑) : Matrix n n ℂ)) := by
