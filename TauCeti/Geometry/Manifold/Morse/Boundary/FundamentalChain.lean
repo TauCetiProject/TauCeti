@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import TauCeti.Geometry.Manifold.Morse.Boundary.OneDimensional
-import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
+import TauCeti.Geometry.Manifold.Morse.Stable.Orientation.Basic
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -188,6 +188,13 @@ theorem fundamentalSign_eq_one_or_eq_neg_one {p : criticalPoints 𝓘(ℝ, E) f}
     hX.fundamentalSign 𝔬 oM p = 1 ∨ hX.fundamentalSign 𝔬 oM p = -1 := by
   rw [fundamentalSign_of_morseIndex_eq hp]
   split_ifs <;> simp
+
+/-- At a critical point of top index the fundamental sign squares to `1`, in every ring. -/
+theorem fundamentalSign_mul_self {R : Type*} [NonAssocRing R] {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    (hX.fundamentalSign 𝔬 oM p : R) * hX.fundamentalSign 𝔬 oM p = 1 := by
+  rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX) (𝔬 := 𝔬) (oM := oM) hp with h | h <;>
+    simp [h]
 
 /-- Modulo two, the fundamental sign is `1` at the critical points of top index and `0`
 elsewhere, whatever the orientations. -/

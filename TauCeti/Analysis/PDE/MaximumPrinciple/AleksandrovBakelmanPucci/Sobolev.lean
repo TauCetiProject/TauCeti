@@ -88,7 +88,10 @@ slope has norm at most `s`, and these are contact points on `Ω`
 ## Main declarations
 
 * `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_iteratedGradient`: the Aleksandrov measure
-  estimate for `W^{2,n}` functions, for any additive Haar measure.
+  estimate for `W^{2,n}` functions, for any additive Haar measure, and
+  `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_iteratedGradient_of_le`: its form for the slopes
+  in a ball of radius `r ≤ (ū x - m) / diam Ω`, which bounds `μ (ball 0 r)` by the integral over
+  the contact points with supporting slope of norm at most `r`.
 * `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet_of_wkp`: the measure form for strong
   subsolutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f`, `|B(0, (ū x - m) / diam Ω)| ≤ ∫_{Γ⁺} (f⁻ / n)ⁿ / det a`.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp`: **the Aleksandrov–Bakelman–Pucci
@@ -335,7 +338,7 @@ for `x ∈ Ω`, `r ≤ (ū x - m) / diam Ω` and every additive Haar measure `μ
 `μ (ball 0 r) ≤ ∫ |det D²u|`, the integral taken over the points at which `ū` is touched from
 above on `Ω` by an affine function with slope in `closedBall 0 r` and at which the weak Hessian
 `D²u` is symmetric and nonpositive. -/
-private theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient_of_le {p : ℝ≥0∞}
+theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient_of_le {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (hΩb : Bornology.IsBounded (Ω : Set E)) (hp : p = finrank ℝ E)
     (u : Wkp μ Ω p 2) (hcont : ContinuousOn ū (closure Ω))
     (hū : (Wkp.value 2 u : E → ℝ) =ᵐ[μ.restrict Ω] ū) (hm : ∀ z ∈ frontier (Ω : Set E), ū z ≤ m)

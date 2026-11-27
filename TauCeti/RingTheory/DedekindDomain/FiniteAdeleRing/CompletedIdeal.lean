@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FractionalIdeal
 import TauCeti.Algebra.Algebra.NatCast
 
@@ -19,8 +20,9 @@ is chosen.
 For `N ≠ ⊥`, the ideal `NÔ` is the trace on `Ô` of the finite adelic extension
 `IsDedekindDomain.FiniteAdeleRing.finiteAdelicIdeal` of `N`, viewed as a nonzero fractional ideal.
 It is open and closed in `Ô`, its rational points are `N`, and the diagonal map induces a ring
-isomorphism `R ⧸ N ≃ Ô ⧸ NÔ`. The proofs use only that `R` is dense in `Ô` and that `aÔ` is open
-in the finite adeles for every nonzero `a ∈ R`; no ideal factorization is needed.
+isomorphism `R ⧸ N ≃ Ô ⧸ NÔ`, so `NÔ` has the same index in `Ô` as `N` in `R`. The proofs use
+only that `R` is dense in `Ô` and that `aÔ` is open in the finite adeles for every nonzero
+`a ∈ R`; no ideal factorization is needed.
 
 ## Main declarations
 
@@ -31,10 +33,11 @@ in the finite adeles for every nonzero `a ∈ R`; no ideal factorization is need
 * `IsDedekindDomain.FiniteAdeleRing.coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal`: an integral
   finite adele lies in `NÔ` exactly when it lies in the finite adelic extension of `N`.
 * `IsDedekindDomain.FiniteAdeleRing.isOpen_completedIdeal`,
-  `IsDedekindDomain.FiniteAdeleRing.isClosed_completedIdeal`: for `N ≠ ⊥`, `NÔ` is open and closed
-  in `Ô`.
+  `IsDedekindDomain.FiniteAdeleRing.isClosed_completedIdeal`: for `N ≠ ⊥`, `NÔ` is open in `Ô`,
+  and it is closed for every `N`.
 * `IsDedekindDomain.FiniteAdeleRing.quotientEquivQuotientCompletedIdeal`: the diagonal ring
   isomorphism `R ⧸ N ≃ Ô ⧸ NÔ` for `N ≠ ⊥`.
+* `IsDedekindDomain.FiniteAdeleRing.cardQuot_completedIdeal`: `[Ô : NÔ] = [R : N]` for `N ≠ ⊥`.
 
 ## References
 
@@ -141,10 +144,14 @@ theorem isOpen_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
     (Filter.mem_of_superset (hU.mem_nhds h0) hUN)
 
 variable (K) in
-/-- For `N ≠ ⊥`, the completion `NÔ` is closed in the integral finite adeles. -/
-theorem isClosed_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
-    IsClosed (completedIdeal K N : Set (integralAdeles R K)) :=
-  (completedIdeal K N).toAddSubgroup.isClosed_of_isOpen (isOpen_completedIdeal K hN)
+/-- The completion `NÔ` is closed in the integral finite adeles: for `N ≠ ⊥` it is an open
+subgroup, and `0Ô = 0`. -/
+theorem isClosed_completedIdeal (N : Ideal R) :
+    IsClosed (completedIdeal K N : Set (integralAdeles R K)) := by
+  rcases eq_or_ne N ⊥ with rfl | hN
+  · rw [completedIdeal_bot, Submodule.bot_coe]
+    exact isClosed_singleton
+  · exact (completedIdeal K N).toAddSubgroup.isClosed_of_isOpen (isOpen_completedIdeal K hN)
 
 /-- For `N ≠ ⊥`, every integral finite adele is congruent modulo `NÔ` to the diagonal image of an
 element of `R`: `R` is dense in `Ô` and `NÔ` is open. -/
@@ -210,6 +217,14 @@ theorem quotientEquivQuotientCompletedIdeal_mk {N : Ideal R} (hN : N ≠ ⊥) (r
       Ideal.Quotient.mk _ (algebraMap R (integralAdeles R K) r) := by
   rw [quotientEquivQuotientCompletedIdeal, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, RingHom.comp_apply]
+
+variable (K) in
+/-- For `N ≠ ⊥`, the completion `NÔ` has the same index in `Ô` as `N` has in `R`. -/
+@[simp]
+theorem cardQuot_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
+    (completedIdeal K N).cardQuot = N.cardQuot := by
+  rw [Submodule.cardQuot_apply, Submodule.cardQuot_apply,
+    Nat.card_congr (quotientEquivQuotientCompletedIdeal K hN).toEquiv]
 
 variable (K) in
 /-- For `N ≠ ⊥` with `R ⧸ N` finite, for instance over the ring of integers of a number field,
