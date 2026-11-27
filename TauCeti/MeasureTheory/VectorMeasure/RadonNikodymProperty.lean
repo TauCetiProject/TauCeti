@@ -195,7 +195,7 @@ theorem HasRNPWith.restrict (h : HasRNPWith X μ) {A : Set S} (hA : MeasurableSe
   ext B hB
   have hvar : (μ.withDensityᵥ f).variation Aᶜ = 0 :=
     hac (by rw [Measure.restrict_apply hA.compl, compl_inter_self, measure_empty])
-  rw [← VectorMeasure.apply_diff_of_variation_eq_zero hB hA.compl hvar,
+  rw [← VectorMeasure.apply_sdiff_of_variation_eq_zero hB hA.compl hvar,
     withDensityᵥ_apply hf (hB.diff hA.compl), withDensityᵥ_apply hf.restrict hB,
     Measure.restrict_restrict hB, sdiff_compl]
 
@@ -228,7 +228,7 @@ theorem HasRNPWith.mono_ac [SigmaFinite ν] [ν.HaveLebesgueDecomposition μ]
   ext A hA
   rw [withDensityᵥ_apply hg hA, ← setIntegral_rnDeriv_smul hνμ hA, hrg,
     setIntegral_indicator hZ.compl, ← withDensityᵥ_apply hf (hA.inter hZ.compl), ← sdiff_eq,
-    VectorMeasure.apply_diff_of_variation_eq_zero hA hZ (hac hνZ)]
+    VectorMeasure.apply_sdiff_of_variation_eq_zero hA hZ (hac hνZ)]
 
 /-- Equivalent σ-finite measures give the same Radon–Nikodým property. -/
 theorem hasRNPWith_congr_ac [SigmaFinite μ] [SigmaFinite ν] (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :

@@ -23,7 +23,7 @@ absolutely continuous with respect to `|μ|`.
 ## Main declarations
 
 * `MeasureTheory.VectorMeasure.variation_absolutelyContinuous_iff`: `|μ| ≪ ν ↔ μ ≪ᵥ ν`.
-* `MeasureTheory.VectorMeasure.apply_diff_of_variation_eq_zero`: `μ (s \ t) = μ s` when
+* `MeasureTheory.VectorMeasure.apply_sdiff_of_variation_eq_zero`: `μ (s \ t) = μ s` when
   `|μ| t = 0`.
 * `MeasureTheory.VectorMeasure.variation_mapRangeL_le`: `|φ ∘ μ| ≤ ‖φ‖₊ • |μ|`.
 * `MeasureTheory.VectorMeasure.variation_mapRangeL_absolutelyContinuous`: `|φ ∘ μ| ≪ |μ|`.
@@ -61,7 +61,7 @@ theorem variation_absolutelyContinuous_iff {ν : Measure X} :
 
 /-- Removing a measurable set of zero variation from a measurable set does not change the value of
 a vector measure. -/
-theorem apply_diff_of_variation_eq_zero {s t : Set X} (hs : MeasurableSet s)
+theorem apply_sdiff_of_variation_eq_zero {s t : Set X} (hs : MeasurableSet s)
     (ht : MeasurableSet t) (h : μ.variation t = 0) : μ (s \ t) = μ s := by
   have h0 : μ (t ∩ s) = 0 :=
     (variation_apply_eq_zero ht).1 h _ Set.inter_subset_left (ht.inter hs)
