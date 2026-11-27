@@ -37,12 +37,6 @@ namespace AbsoluteValue
 
 variable {G L S : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace L] [DiscreteTopology L]
 
-/-- For a continuous action on a discrete space, the set of `σ` such that `σ • x` satisfies a
-given property is closed. -/
-private theorem isClosed_setOf_smul [MulAction G L] [ContinuousSMul G L] (x : L) (p : L → Prop) :
-    IsClosed {σ : G | p (σ • x)} :=
-  (isClosed_discrete {y | p y}).preimage (continuous_id.smul continuous_const)
-
 /-- **The decomposition group of an absolute value is closed.** If `G` acts continuously on a ring
 `L` with the discrete topology, the stabilizer of every absolute value of `L` is closed. -/
 theorem isClosed_stabilizer [Semiring L] [MulSemiringAction G L] [ContinuousSMul G L] [Semiring S]
@@ -52,7 +46,8 @@ theorem isClosed_stabilizer [Semiring L] [MulSemiringAction G L] [ContinuousSMul
     ext σ
     simpa using mem_stabilizer_iff_forall_apply_smul_eq (w := w) (σ := σ)
   rw [this]
-  exact isClosed_iInter fun x ↦ isClosed_setOf_smul x (fun y ↦ w y = w x)
+  exact isClosed_iInter fun x ↦
+    (isClosed_discrete {y | w y = w x}).preimage (continuous_id.smul continuous_const)
 
 /-- **The inertia group of an absolute value is closed.** If `G` acts continuously on a ring `L`
 with the discrete topology, the inertia group of every absolute value of `L` is closed. -/
@@ -66,7 +61,7 @@ theorem isClosed_inertia [Ring L] [MulSemiringAction G L] [ContinuousSMul G L] [
       simp [mem_inertia_iff_of_isNonarchimedean hw]
     rw [this]
     exact (isClosed_stabilizer w).inter <| isClosed_iInter fun x ↦ isClosed_iInter fun _ ↦
-      isClosed_setOf_smul x (fun y ↦ w (y - x) < 1)
+      (isClosed_discrete {y | w (y - x) < 1}).preimage (continuous_id.smul continuous_const)
   · rw [inertia_eq_stabilizer hw]
     exact isClosed_stabilizer w
 
