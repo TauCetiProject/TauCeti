@@ -41,9 +41,11 @@ open-cover entropy with the entropy of that uniformity.
 ## Main results
 
 * `TauCeti.openCoverMincard_finite_iff`, `TauCeti.openCoverMincard_eq_zero_iff`,
-  `TauCeti.le_openCoverMincard_iff`, `TauCeti.openCoverMincard_antitone`,
-  `TauCeti.openCoverMincard_monotone_time`, `TauCeti.le_openCoverEntropy`, and
-  `TauCeti.openCoverEntropy_le_iff`: the basic API of these definitions.
+  `TauCeti.le_openCoverMincard_iff`, `TauCeti.openCoverMincard_of_univ_mem`,
+  `TauCeti.openCoverMincard_le_pow`, `TauCeti.openCoverMincard_finite_of_compactSpace`,
+  `TauCeti.openCoverMincard_antitone`, `TauCeti.openCoverMincard_monotone_time`,
+  `TauCeti.le_openCoverEntropy`, `TauCeti.openCoverEntropy_le_iff`, and
+  `TauCeti.openCoverEntropy_nonneg`: the basic API of these definitions.
 * `TauCeti.openCoverEntropy_le_coverEntropy`, `TauCeti.coverEntropy_le_openCoverEntropy`, and
   `TauCeti.openCoverEntropy_eq_coverEntropy`: on a compact uniform space the open-cover entropy
   is `coverEntropy T univ`.
@@ -126,6 +128,29 @@ theorem one_le_openCoverMincard_iff : 1 ≤ openCoverMincard T 𝒰 n ↔ Nonemp
   refine le_antisymm ?_ (one_le_openCoverMincard_iff.2 ‹_›)
   simpa using openCoverMincard_le_card (T := T) (𝒰 := 𝒰) (s := {Fin.elim0}) (by simp) (by simp)
 
+/-- If `univ` belongs to `𝒰`, the single word with every letter `univ` covers a nonempty space,
+so the `n`-fold join needs one cylinder. -/
+theorem openCoverMincard_of_univ_mem [Nonempty X] (h : univ ∈ 𝒰) :
+    openCoverMincard T 𝒰 n = 1 := by
+  refine le_antisymm ?_ (one_le_openCoverMincard_iff.2 ‹_›)
+  simpa using openCoverMincard_le_card (T := T) (s := {fun _ : Fin n ↦ univ})
+    (by simpa using fun _ : Fin n ↦ h) (by simp)
+
+/-- For a finite cover `𝒱`, all words with letters in `𝒱` cover `X`, so the `n`-fold join needs
+at most `𝒱.card ^ n` cylinders. -/
+theorem openCoverMincard_le_pow {𝒱 : Finset (Set X)} (hcov : ⋃₀ (𝒱 : Set (Set X)) = univ)
+    (n : ℕ) : openCoverMincard T 𝒱 n ≤ (𝒱.card : ℕ∞) ^ n := by
+  classical
+  refine (openCoverMincard_le_card (s := Fintype.piFinset fun _ : Fin n ↦ 𝒱) ?_ ?_).trans
+    (by simp)
+  · intro w hw k
+    exact Finset.mem_coe.2 (Fintype.mem_piFinset.1 hw k)
+  · intro x
+    have hmem : ∀ k : Fin n, ∃ V ∈ 𝒱, T^[k] x ∈ V := fun k ↦ by
+      simpa using hcov.symm.subset (mem_univ (T^[k] x))
+    choose w hw hxw using hmem
+    exact ⟨w, Fintype.mem_piFinset.2 hw, hxw⟩
+
 /-- Enlarging the cover can only decrease `openCoverMincard`. -/
 theorem openCoverMincard_antitone :
     Antitone fun 𝒰 : Set (Set X) ↦ openCoverMincard T 𝒰 n :=
@@ -152,6 +177,24 @@ theorem le_openCoverEntropy [TopologicalSpace X] (hopen : ∀ U ∈ 𝒰, IsOpen
     (hcov : ⋃₀ 𝒰 = univ) :
     expGrowthSup (fun n ↦ (openCoverMincard T 𝒰 n : ℝ≥0∞)) ≤ openCoverEntropy T :=
   le_iSup₂_of_le 𝒰 hopen (le_iSup_of_le hcov le_rfl)
+
+/-- On a compact space, `openCoverMincard` of an open cover is finite. -/
+theorem openCoverMincard_finite_of_compactSpace [TopologicalSpace X] [CompactSpace X]
+    (hopen : ∀ U ∈ 𝒰, IsOpen U) (hcov : ⋃₀ 𝒰 = univ) (n : ℕ) :
+    openCoverMincard T 𝒰 n < ⊤ := by
+  obtain ⟨𝒱, h𝒱𝒰, h𝒱, hsub⟩ := isCompact_univ.elim_finite_subcover_image (c := id) hopen
+    (by simpa [← sUnion_eq_biUnion] using hcov.symm.subset)
+  have hcov' : ⋃₀ (h𝒱.toFinset : Set (Set X)) = univ := by
+    simpa [sUnion_eq_biUnion] using univ_subset_iff.1 hsub
+  exact ((openCoverMincard_antitone (by simpa using h𝒱𝒰)).trans
+    (openCoverMincard_le_pow hcov' n)).trans_lt
+    (ENat.pow_lt_top_iff.2 (.inl (ENat.natCast_lt_top _)))
+
+/-- The open-cover entropy of a map of a nonempty space is nonnegative. -/
+theorem openCoverEntropy_nonneg [TopologicalSpace X] [Nonempty X] : 0 ≤ openCoverEntropy T := by
+  have h := le_openCoverEntropy (T := T) (𝒰 := {univ}) (by simp) (by simp)
+  simpa [openCoverMincard_of_univ_mem (mem_singleton univ),
+    expGrowthSup_const one_ne_zero ENNReal.one_ne_top] using h
 
 /-- The open-cover entropy is at most `c` exactly when the growth rate of `openCoverMincard` is
 at most `c` for every open cover. -/
