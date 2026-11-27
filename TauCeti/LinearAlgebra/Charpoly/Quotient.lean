@@ -208,7 +208,6 @@ and on the quotient. -/
 theorem Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot {k V : Type*} [Field k]
     [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
     (hU : U ∈ g.invtSubmodule) :
-    (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly :=
-  (LinearMap.charpoly_eq_mul_of_exact U.injective_subtype U.mkQ_surjective
-    (LinearMap.exact_subtype_mkQ U) (LinearMap.ext fun _ ↦ by simp)
-    (LinearMap.ext fun _ ↦ by simp)).symm
+    (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly := by
+  rw [g.invtRestrict_def, g.invtQuot_def,
+    ← LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ]

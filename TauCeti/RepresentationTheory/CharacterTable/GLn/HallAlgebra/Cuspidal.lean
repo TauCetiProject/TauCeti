@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Mackey
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import Mathlib.RingTheory.Artinian.Module
-import TauCeti.FieldTheory.Finite.ArootsOrbit
+import TauCeti.FieldTheory.Finite.MinpolyOrbit
 import TauCeti.FieldTheory.Minpoly.Dvd
 import TauCeti.LinearAlgebra.Charpoly.Aeval.Comp
 import TauCeti.LinearAlgebra.Charpoly.Degree
