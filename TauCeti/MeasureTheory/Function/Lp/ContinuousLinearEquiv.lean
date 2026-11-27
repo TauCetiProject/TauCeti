@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
@@ -14,7 +15,9 @@ Mathlib's `ContinuousLinearMap.compLpL` postcomposes `Lp E p μ` classes with a 
 map. For a continuous linear equivalence `e : E ≃L[𝕜] F`, postcomposition with `e` and with
 `e.symm` are mutually inverse, which gives the continuous linear equivalence
 `ContinuousLinearEquiv.compLpL e p μ : Lp E p μ ≃L[𝕜] Lp F p μ`. It is the counterpart for
-continuous linear equivalences of `LinearIsometryEquiv.compLpₗᵢ`.
+continuous linear equivalences of `LinearIsometryEquiv.compLpₗᵢ`. In particular, postcomposition
+with an invertible continuous linear map is invertible
+(`ContinuousLinearMap.IsInvertible.compLpL`).
 -/
 
 public section
@@ -62,3 +65,16 @@ theorem coeFn_compLpL (u : Lp E p μ) : e.compLpL p μ u =ᵐ[μ] fun a ↦ e (u
   (e : E →L[𝕜] F).coeFn_compLpL u
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable {α 𝕜 E F : Type*} {_ : MeasurableSpace α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Postcomposing `Lᵖ` classes with an invertible continuous linear map is invertible. -/
+theorem IsInvertible.compLpL {L : E →L[𝕜] F} (hL : L.IsInvertible) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (μ : Measure α) : (L.compLpL p μ).IsInvertible := by
+  obtain ⟨e, rfl⟩ := hL
+  exact ⟨e.compLpL p μ, rfl⟩
+
+end ContinuousLinearMap
