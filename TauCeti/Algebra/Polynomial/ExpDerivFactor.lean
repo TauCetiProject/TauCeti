@@ -190,13 +190,17 @@ theorem norm_coeff_expDerivFactor_le (c : K) {P : K[X]} {B : ℝ} (hP : ∀ i, �
   | succ m ih =>
     set A := max 1 ‖c‖ ^ m * B
     have hA : 0 ≤ A := mul_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) m) hB
-    rw [expDerivFactor_succ, coeff_add, coeff_derivative, coeff_C_mul, pow_succ,
-      mul_comm _ (max _ _), mul_assoc]
+    have hpow : max 1 ‖c‖ ^ (m + 1) * B = max 1 ‖c‖ * A := by ring
+    rw [expDerivFactor_succ, coeff_add, coeff_derivative, coeff_C_mul, hpow]
     refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
     · -- the derivative multiplies the coefficient by the natural number `i + 1`
-      rw [← Nat.cast_succ, mul_comm, ← nsmul_eq_mul]
-      exact (IsUltrametricDist.norm_nsmul_le _ _).trans
-        ((ih _).trans (le_mul_of_one_le_left hA (le_max_left _ _)))
+      calc ‖(expDerivFactor c m P).coeff (i + 1) * (i + 1)‖
+          = ‖(i + 1) • (expDerivFactor c m P).coeff (i + 1)‖ := by
+            congr 1
+            push_cast [nsmul_eq_mul]
+            ring
+        _ ≤ A := (IsUltrametricDist.norm_nsmul_le _ _).trans (ih _)
+        _ ≤ max 1 ‖c‖ * A := le_mul_of_one_le_left hA (le_max_left _ _)
     · exact (norm_mul_le _ _).trans
         (mul_le_mul (le_max_right _ _) (ih i) (norm_nonneg _) (by positivity))
 

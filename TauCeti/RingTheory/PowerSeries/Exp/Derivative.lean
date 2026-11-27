@@ -45,8 +45,8 @@ namespace PowerSeries
 theorem derivative_coe_mul_of_derivative_eq_C_mul {A : Type*} [CommSemiring A] {f : A⟦X⟧}
     {c : A} (hf : d⁄dX f = C c * f) (Q : A[X]) :
     d⁄dX ((Q : A⟦X⟧) * f) = ((Polynomial.expDerivFactor c 1 Q : A[X]) : A⟦X⟧) * f := by
-  rw [Polynomial.expDerivFactor_one, Derivation.leibniz, hf, derivative_coe, smul_eq_mul,
-    smul_eq_mul, Polynomial.coe_add, Polynomial.coe_mul, Polynomial.coe_C]
+  rw [Polynomial.expDerivFactor_one, Derivation.leibniz, hf]
+  push_cast [derivative_coe, smul_eq_mul]
   ring
 
 /-- If `f′ = c f`, then the `m`-th derivative of `Q f` is `((D + c) ^ m Q) f` for a polynomial

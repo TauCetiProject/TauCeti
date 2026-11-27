@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
 import Mathlib.Analysis.Normed.Algebra.Ultra
-import TauCeti.NumberTheory.Padics.Exp.Disc
+import TauCeti.RingTheory.PowerSeries.Exp.Eval
+import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # Exponential polynomials `Q (X) exp (ψ X)` over a normed field over `ℚ_p`
@@ -49,7 +50,6 @@ radius `r > 1`.
 
 public section
 
-open Finset
 open scoped Polynomial
 
 namespace PowerSeries
@@ -78,30 +78,6 @@ theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le {Q : L[X]} {ψ : L} {r M : ℝ
 
 variable [CompleteSpace L]
 
-/-- For `‖ψ x‖ < p ^ (-1 / (p - 1))`, the series `exp (ψ X)` converges at `x` to
-`NormedSpace.exp (ψ x)`. -/
-private theorem hasSum_coeff_rescale_exp_mul_pow {ψ x : L}
-    (hψx : ‖ψ * x‖ < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
-    HasSum (fun k ↦ coeff k (rescale ψ (exp L)) * x ^ k) (NormedSpace.exp (ψ * x)) := by
-  have hρ : TauCeti.amiceRadius p 0 = (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
-    simp [TauCeti.amiceRadius_def]
-  convert TauCeti.expSeries_hasSum_exp_of_norm_lt (hρ ▸ hψx) using 1
-  funext k
-  simp only [coeff_rescale, coeff_exp, one_div, map_inv₀, map_natCast, Algebra.smul_def, mul_pow]
-  ring
-
-/-- The series `X ^ i exp (ψ X)` converges at `x` to `x ^ i exp (ψ x)`. -/
-private theorem hasSum_coeff_X_pow_mul_rescale_exp_mul_pow (i : ℕ) {ψ x : L}
-    (hψx : ‖ψ * x‖ < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
-    HasSum (fun k ↦ coeff k (X ^ i * rescale ψ (exp L)) * x ^ k)
-      (x ^ i * NormedSpace.exp (ψ * x)) := by
-  rw [← hasSum_nat_add_iff' i]
-  convert (hasSum_coeff_rescale_exp_mul_pow hψx).mul_left (x ^ i) using 1
-  · funext k
-    simp only [coeff_X_pow_mul', Nat.le_add_left, ↓reduceIte, Nat.add_sub_cancel, pow_add]
-    ring
-  · rw [sum_eq_zero fun j hj ↦ by simp [coeff_X_pow_mul', (mem_range.1 hj).not_ge], sub_zero]
-
 /-- **The value of `Q (X) exp (ψ X)`.** Over a complete normed field over `ℚ_[p]`, if
 `‖ψ x‖ < p ^ (-1 / (p - 1))`, the coefficients `c_k` of `Q (X) exp (ψ X)` satisfy
 `∑ c_k x ^ k = Q (x) exp (ψ x)`. -/
@@ -109,15 +85,13 @@ theorem hasSum_coeff_coe_mul_rescale_exp (Q : L[X]) {ψ x : L}
     (hψx : ‖ψ * x‖ < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) :
     HasSum (fun k ↦ coeff k ((Q : L⟦X⟧) * rescale ψ (exp L)) * x ^ k)
       (Q.eval x * NormedSpace.exp (ψ * x)) := by
-  have hQ : (Q : L⟦X⟧) = ∑ i ∈ range (Q.natDegree + 1), C (Q.coeff i) * X ^ i := by
-    conv_lhs => rw [Q.as_sum_range_C_mul_X_pow]
-    simp only [← Polynomial.coeToPowerSeries.ringHom_apply, map_sum]
-    simp [Polynomial.coeToPowerSeries.ringHom_apply]
-  rw [hQ, Polynomial.eval_eq_sum_range, sum_mul]
-  convert hasSum_sum (s := range (Q.natDegree + 1)) fun i _ ↦
-    (hasSum_coeff_X_pow_mul_rescale_exp_mul_pow i hψx).mul_left (Q.coeff i) using 1
-  · funext k
-    simp only [sum_mul, map_sum, mul_assoc, coeff_C_mul]
-  · simp only [sum_mul, mul_assoc]
+  have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
+  -- both factors are restricted at `‖x‖`, and evaluation there is multiplicative
+  have hE := isRestricted_rescale_exp (p := p) (norm_nonneg x) (by rwa [← norm_mul])
+  have hQ := TauCeti.PowerSeries.isRestricted_polynomial (c := ‖x‖) Q
+  have hQE : ((Q : L⟦X⟧) * rescale ψ (exp L)).IsRestricted ‖x‖ := hQ.mul hE
+  have h := hQE.hasSum_evalAt le_rfl
+  rw [IsRestricted.evalAt_mul hQ hE le_rfl, evalAt_coe, evalAt_rescale, evalAt_exp] at h
+  simpa only [smul_eq_mul, Polynomial.coe_aeval_eq_eval] using h
 
 end PowerSeries
