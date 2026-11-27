@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Length
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
 /-!
@@ -24,7 +26,10 @@ metric `g_D = j^* g` pulled back along `j` (`TauCeti.scalarRegularSublevelMetric
   theorems for local isometries, which assume no boundaryless source, then apply to `j`;
 * `dj` carries gradients of restrictions to gradients: `dj(grad^D (u ∘ j)) = grad^N u` for every
   `u : N → ℝ` differentiable at the point
-  (`TauCeti.mfderiv_mgradient_comp_subtypeVal_scalarRegularSublevel`).
+  (`TauCeti.mfderiv_mgradient_comp_subtypeVal_scalarRegularSublevel`);
+* `j` preserves the lengths of `C¹` curves, so `d_N(j x, j y) ≤ d_D(x, y)`
+  (`TauCeti.pathELength_subtypeVal_comp_scalarRegularSublevel`,
+  `TauCeti.riemannianEDist_le_scalarRegularSublevel`).
 
 The metric-free facts about `D` live with the topology of regular sublevels: `a - f` is a global
 boundary defining function of `D` (`TauCeti.isBoundaryDefiningFunctionOn_scalarRegularSublevel`),
@@ -127,5 +132,37 @@ theorem mfderiv_mgradient_comp_subtypeVal_scalarRegularSublevel {u : N → ℝ} 
   letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
     ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
   (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel hf hreg hn).mfderiv_mgradient_comp hu
+
+/-- **Lengths in a regular sublevel.** A `C¹` curve `γ` in the regular sublevel `D = {f ≤ a}`, with
+the pulled-back metric, has the same length as its image `j ∘ γ` in `N`. -/
+theorem pathELength_subtypeVal_comp_scalarRegularSublevel {γ : ℝ → {x | f x ≤ a}} {s t : ℝ}
+    (hγ : letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+      ContMDiffOn 𝓘(ℝ) (𝓡∂ (n + 1)) 1 γ (Icc s t)) :
+    letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+    haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+    letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+      ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+    Manifold.pathELength I ((Subtype.val : {x | f x ≤ a} → N) ∘ γ) s t =
+      Manifold.pathELength (𝓡∂ (n + 1)) γ s t :=
+  letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+  haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+  letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+    ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+  (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel hf hreg hn).pathELength_comp hγ
+
+/-- **Distances in a regular sublevel.** The Riemannian extended distance of the regular sublevel
+`D = {f ≤ a}`, with the pulled-back metric, is at least the Riemannian extended distance of `N`
+between the same points. -/
+theorem riemannianEDist_le_scalarRegularSublevel (x y : {x | f x ≤ a}) :
+    letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+    haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+    letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+      ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+    Manifold.riemannianEDist I (x : N) y ≤ Manifold.riemannianEDist (𝓡∂ (n + 1)) x y :=
+  letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+  haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+  letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+    ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+  (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel hf hreg hn).riemannianEDist_le x y
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Wave.Energy
+import TauCeti.Analysis.Calculus.Taylor.OrderOne
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
 
@@ -66,6 +67,14 @@ inequality in space and in time
 the evolutions of data in homogeneous Besov spaces, defined as such limits, as solutions of the
 wave equation.
 
+Integrating twice in time, Taylor's formula of order one gives the **weak formulation**: for all
+such `φ, ψ` and every time `t`,
+
+`⟪φ, u(t)⟫ = ⟪φ, f⟫ + t ⟪φ, g⟫ + ∫₀ᵗ (t - s) (⟪ψ, u(s)⟫ + ⟪φ, G(s)⟫) ds`
+
+(`TauCeti.inner_waveDuhamelSolution`, and `TauCeti.inner_toLp_waveDuhamelSolution` for Schwartz
+`φ`), which makes sense for every `u` continuous in time with values in `L²`.
+
 By the subtraction formula `TauCeti.waveSinPropagator_sub`, for continuous forcing `G` the
 retarded term is
 
@@ -89,7 +98,9 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
 * `TauCeti.integral_deriv_deriv_mul_inner_waveDuhamelSolution`: the wave equation tested against
   `θ(t) φ(x)`;
 * `TauCeti.integral_deriv_deriv_mul_integral_inner_eq_of_tendsto_waveDuhamelSolution`: limits of
-  free waves in a mixed norm `L^q_t L^r_x` solve the wave equation in the sense of distributions.
+  free waves in a mixed norm `L^q_t L^r_x` solve the wave equation in the sense of distributions;
+* `TauCeti.inner_waveDuhamelSolution`, `TauCeti.inner_toLp_waveDuhamelSolution`: Duhamel's formula
+  satisfies the weak formulation, integrated twice in time.
 
 ## References
 
@@ -169,6 +180,20 @@ theorem waveDuhamelSolution_add (f₁ f₂ g₁ g₂ : Lp F 2 (volume : Measure 
     intervalIntegral.integral_add hG₁.waveSinPropagator_sub_apply hG₂.waveSinPropagator_sub_apply]
   abel
 
+/-- Every `L²` Fourier multiplier commutes with the solution: for a forcing integrable between `0`
+and `t`, applying it to the solution at time `t` gives the solution at time `t` with the multiplier
+applied to the data and to the forcing. -/
+theorem fourierMultiplierCLM_waveDuhamelSolution (m : Lp ℂ ∞ (volume : Measure E))
+    (f g : Lp F 2 (volume : Measure E)) {G : ℝ → Lp F 2 (volume : Measure E)} {t : ℝ}
+    (hG : IntervalIntegrable G volume 0 t) :
+    Lp.fourierMultiplierCLM F m (waveDuhamelSolution F f g G t) =
+      waveDuhamelSolution F (Lp.fourierMultiplierCLM F m f) (Lp.fourierMultiplierCLM F m g)
+        (fun s ↦ Lp.fourierMultiplierCLM F m (G s)) t := by
+  rw [waveDuhamelSolution_def, waveDuhamelSolution_def, map_add, map_add,
+    fourierMultiplierCLM_waveCosPropagator_apply, fourierMultiplierCLM_waveSinPropagator_apply,
+    ← ContinuousLinearMap.intervalIntegral_comp_comm _ hG.waveSinPropagator_sub_apply]
+  simp_rw [fourierMultiplierCLM_waveSinPropagator_apply]
+
 /-- The **a priori bound** `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`, for forcing `G`
 integrable between `0` and `t`. -/
 theorem norm_waveDuhamelSolution_le (f g : Lp F 2 (volume : Measure E))
@@ -201,6 +226,22 @@ theorem waveDuhamelSolution_eq_setIntegral_Iio (f g : Lp F 2 (volume : Measure E
   rw [waveDuhamelSolution_def, hind, setIntegral_indicator measurableSet_Icc, hset,
     integral_Ico_eq_integral_Ioo,
     ← integral_Ioc_eq_integral_Ioo, intervalIntegral.integral_of_le ht]
+
+/-- If the forcing `G` is almost everywhere strongly measurable on `[0, T]`, then so is the
+solution `t ↦ u(t)` given by Duhamel's formula: on `[0, T]` it is the free solution plus the
+retarded integral of the forcing restricted to `[0, T]`. -/
+theorem aestronglyMeasurable_waveDuhamelSolution_restrict (f g : Lp F 2 (volume : Measure E))
+    {G : ℝ → Lp F 2 (volume : Measure E)} {T : ℝ}
+    (hG : AEStronglyMeasurable G (volume.restrict (Set.Icc 0 T))) :
+    AEStronglyMeasurable (fun t ↦ waveDuhamelSolution F f g G t)
+      (volume.restrict (Set.Icc 0 T)) := by
+  have hGi : AEStronglyMeasurable ((Set.Icc 0 T).indicator G) volume :=
+    (aestronglyMeasurable_indicator_iff measurableSet_Icc).2 hG
+  refine (((continuous_waveCosPropagator_apply f).add
+    (continuous_waveSinPropagator_apply g)).aestronglyMeasurable.add
+      (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub hGi)).restrict.congr ?_
+  exact ae_restrict_of_forall_mem measurableSet_Icc fun t ht ↦
+    (waveDuhamelSolution_eq_setIntegral_Iio f g G ht.1 ht.2).symm
 
 /-- A strong solution of `∂ₜ²u - Δu = G` on an order-connected set of times `s` containing `0` and
 `t`, with `G` integrable between `0` and `t`, is given at time `t` by Duhamel's formula with the
@@ -378,6 +419,33 @@ theorem hasDerivAt_deriv_inner_toLp_waveDuhamelSolution (φ : 𝓢(E, F))
     HasDerivAt (deriv fun t ↦ ⟪φ.toLp 2, waveDuhamelSolution F f g G t⟫)
       (⟪(Δ φ).toLp 2, waveDuhamelSolution F f g G t⟫ + ⟪φ.toLp 2, G t⟫) t :=
   hasDerivAt_deriv_inner_waveDuhamelSolution (by simp) f g hG t
+
+/-- **Duhamel's formula is a weak solution** of the wave equation `∂ₜ²u - Δu = G`, `u(0) = f`,
+`∂ₜu(0) = g`, for continuous forcing `G`: for all `φ, ψ ∈ L²` with `Δφ = ψ` and every time `t`,
+
+`⟪φ, u t⟫ = ⟪φ, f⟫ + t ⟪φ, g⟫ + ∫₀ᵗ (t - r) (⟪ψ, u r⟫ + ⟪φ, G r⟫) dr`. -/
+theorem inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F)))
+    (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) (t : ℝ) :
+    ⟪φ, waveDuhamelSolution F f g G t⟫ = ⟪φ, f⟫ + t • ⟪φ, g⟫ +
+      ∫ r in (0 : ℝ)..t, (t - r) • (⟪ψ, waveDuhamelSolution F f g G r⟫ + ⟪φ, G r⟫) := by
+  have hc : Continuous fun r ↦ ⟪ψ, waveDuhamelSolution F f g G r⟫ + ⟪φ, G r⟫ :=
+    (continuous_const.inner (continuous_waveDuhamelSolution f g hG)).add
+      (continuous_const.inner hG)
+  rw [intervalIntegral.eq_add_sub_smul_add_integral_sub_smul
+    (fun τ _ ↦ (hasDerivAt_inner_waveDuhamelSolution hφψ f g hG τ).differentiableAt.hasDerivAt)
+    (fun τ _ ↦ hasDerivAt_deriv_inner_waveDuhamelSolution hφψ f g hG τ) hc.continuousOn,
+    (hasDerivAt_inner_waveDuhamelSolution_zero hφψ f g hG).deriv, waveDuhamelSolution_zero,
+    sub_zero]
+
+/-- **The wave equation in the sense of distributions, integrated in time.** Duhamel's formula
+satisfies the weak formulation against every Schwartz function `φ`:
+`⟪φ, u t⟫ = ⟪φ, f⟫ + t ⟪φ, g⟫ + ∫₀ᵗ (t - r) (⟪Δφ, u r⟫ + ⟪φ, G r⟫) dr`. -/
+theorem inner_toLp_waveDuhamelSolution (φ : 𝓢(E, F)) (f g : Lp F 2 (volume : Measure E))
+    (hG : Continuous G) (t : ℝ) :
+    ⟪φ.toLp 2, waveDuhamelSolution F f g G t⟫ = ⟪φ.toLp 2, f⟫ + t • ⟪φ.toLp 2, g⟫ +
+      ∫ r in (0 : ℝ)..t,
+        (t - r) • (⟪(Δ φ).toLp 2, waveDuhamelSolution F f g G r⟫ + ⟪φ.toLp 2, G r⟫) :=
+  inner_waveDuhamelSolution (by simp) f g hG t
 
 /-- **The wave equation tested in space and time.** For a test function `φ ∈ L²` with
 `Δφ = ψ ∈ L²`, continuous forcing `G` and a compactly supported `C²` function `θ` of time, the

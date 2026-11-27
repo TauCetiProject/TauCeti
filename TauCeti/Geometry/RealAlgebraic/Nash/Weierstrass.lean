@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
 import TauCeti.Analysis.Analytic.Constructions

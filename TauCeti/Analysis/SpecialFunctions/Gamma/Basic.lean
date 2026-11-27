@@ -62,7 +62,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 * `Real.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(x + k) = (x)ₖ Γ(x)` off the poles.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
-* `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
+* `Real.Gamma_nat_add_half_eq_factorial`, `Complex.Gamma_natCast_add_half_eq_factorial` —
+  `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.Gamma_three_halves` — `Γ(3 / 2) = √π / 2`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
@@ -88,7 +89,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   `(-k, -k + 1)`, `k ≥ 1`, with the even case `Real.pi_div_factorial_le_Gamma_of_mem_Ioo`.
 * `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
   `−ℕ`.
-* `Real.eventually_ne_neg_natCast` — the points near a real number off `−ℕ` are off `−ℕ`.
+* `Real.eventually_ne_neg_natCast`, `Complex.eventually_ne_neg_natCast` — the points near a
+  number off `−ℕ` are off `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Complex.norm_inv_Gamma_add_natCast_mul_factorial_le` —
@@ -284,6 +286,16 @@ end Real
 
 namespace Complex
 
+open scoped Real in
+/-- The complex half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the complex form of
+`Real.Gamma_nat_add_half_eq_factorial`. -/
+theorem Gamma_natCast_add_half_eq_factorial (n : ℕ) :
+    Gamma (n + 1 / 2) = (2 * n)! * √π / (4 ^ n * n !) := by
+  have h := congrArg ((↑) : ℝ → ℂ) (Real.Gamma_nat_add_half_eq_factorial n)
+  rw [← Gamma_ofReal] at h
+  push_cast at h
+  exact h
+
 /-- `Γ(c + k) = (c)ₖ Γ(c)` for `c` off the poles of `Γ`. -/
 theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {c : ℂ} (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) :
     Gamma (c + k) = (ascPochhammer ℂ k).eval c * Gamma c := by
@@ -296,6 +308,15 @@ theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
   have heq := congrArg re h
   simp only [neg_re, natCast_re] at heq
   linarith [n.cast_nonneg (α := ℝ)]
+
+/-- The points near a complex number off `−ℕ` are off `−ℕ`: the poles of `Γ` are isolated. -/
+theorem eventually_ne_neg_natCast {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
+    ∀ᶠ w in 𝓝 s, ∀ m : ℕ, w ≠ -(m : ℂ) := by
+  -- The poles are the zeros of the entire function `1 / Γ`.
+  have hne : (Gamma s)⁻¹ ≠ 0 := inv_ne_zero (Gamma_ne_zero hs)
+  filter_upwards [differentiable_one_div_Gamma.continuous.continuousAt.eventually_ne hne]
+    with w hw m hm
+  exact hw (by simp [hm, Gamma_neg_nat_eq_zero])
 
 /-- `Complex.Gamma` does not vanish off the real axis. -/
 theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=

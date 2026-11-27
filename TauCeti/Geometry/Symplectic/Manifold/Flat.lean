@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -224,10 +224,14 @@ invertible. -/
 theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
     σ.IsNondegenerate ↔ ∀ x, (σ.flat x).IsInvertible := by
   rw [isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
-  -- For the alternating form at `x`, nondegeneracy is triviality of the kernel.
-  refine forall_congr' fun x ↦ Iff.symm <| isInvertible_flat_iff.trans ?_
-  exact (SmoothForm.isAlt_bilinFormAt σ x).isRefl.nondegenerate_iff_separatingLeft.trans
-    LinearMap.separatingLeft_iff_ker_eq_bot
+  exact forall_congr' fun x ↦ Iff.symm <| isInvertible_flat_iff.trans
+    (SmoothForm.nondegenerate_bilinFormAt_iff_ker_eq_bot σ x)
+
+/-- In finite dimensions, the points at which a two-form is nondegenerate form an open set. -/
+theorem isOpen_setOf_nondegenerate_bilinFormAt [FiniteDimensional ℝ E] (σ : SmoothTwoForm I M) :
+    IsOpen {x | (σ.bilinFormAt x).Nondegenerate} := by
+  simp_rw [← isInvertible_flat_iff]
+  exact Continuous.isOpen_setOf_clm_bundle_isInvertible σ.contMDiff_flat.continuous
 
 /-- The flat maps of a nondegenerate two-form on a finite-dimensional manifold are invertible. -/
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)

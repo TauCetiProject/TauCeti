@@ -1042,6 +1042,24 @@ theorem exists_contDiff_step {a b : ℝ} (hab : a < b) :
     fun r hr ↦ by simp [hνb r hr], fun r ↦ by rw [deriv_const_sub, abs_neg]; exact hντ r,
     fun r hr ↦ by rw [deriv_const_sub, hν' r hr, neg_zero]⟩
 
+/-- **Interpolating two periodic maps.** Two `C^n` maps `x₋`, `x₊ : ℝ → E` of period `p` are the
+ends of a `C^n` map `u` of `ℝ × ℝ`, of period `p` in the second variable, equal to `x₋` for
+`s ≤ -a` and to `x₊` for `s ≥ a`: `u (s, t) = x₋ t + ψ((s + a) / 2a) (x₊ t - x₋ t)` for the smooth
+transition `ψ`. -/
+theorem exists_contDiff_eq_comp_snd {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {xm xp : ℝ → E} (hxm : ContDiff ℝ n xm) (hxp : ContDiff ℝ n xp) {p : ℝ}
+    (hxmp : Function.Periodic xm p) (hxpp : Function.Periodic xp p) {a : ℝ} (ha : 0 < a) :
+    ∃ u : ℝ × ℝ → E, ContDiff ℝ n u ∧ (∀ s t, u (s, t + p) = u (s, t)) ∧
+      (∀ s ≤ -a, ∀ t, u (s, t) = xm t) ∧ ∀ s, a ≤ s → ∀ t, u (s, t) = xp t := by
+  refine ⟨fun z ↦ xm z.2 + Real.smoothTransition ((z.1 + a) / (2 * a)) • (xp z.2 - xm z.2),
+    (hxm.comp contDiff_snd).add ((Real.smoothTransition.contDiff.comp
+      ((contDiff_fst.add contDiff_const).div_const _)).smul ((hxp.sub hxm).comp contDiff_snd)),
+    fun s t ↦ by simp only [hxmp t, hxpp t], fun s hs t ↦ ?_, fun s hs t ↦ ?_⟩ <;> dsimp only
+  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
+      (by linarith)), zero_smul, add_zero]
+  · rw [Real.smoothTransition.one_of_one_le ((one_le_div (by linarith)).2 (by linarith)),
+      one_smul, add_sub_cancel]
+
 /-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are smooth cutoffs `βp`, `βm`, `β₀`
 summing to one, with `βp` vanishing for `s ≤ R`, `βm` vanishing for `s ≥ -R` and `β₀` vanishing
 outside `(-(R + 1), R + 1)`. Each satisfies `|β| ≤ 1`, and their derivatives are bounded by a common
