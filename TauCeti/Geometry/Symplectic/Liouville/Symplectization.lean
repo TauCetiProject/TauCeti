@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Symplectization.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Geometry.Symplectic.Liouville.Collar
+import TauCeti.Geometry.Symplectic.Liouville.Collar.Basic
 
 /-!
 # The cylindrical end of a completion is a symplectization

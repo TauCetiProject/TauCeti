@@ -64,7 +64,7 @@ standard primitive by an exact form on a ball, which is absorbed into `t`.
 ## Acknowledgements
 
 The flow-map arguments adapt those for the local Liouville flow out of a hypersurface in
-`TauCeti/Geometry/Symplectic/Liouville/Collar.lean`
+`TauCeti/Geometry/Symplectic/Liouville/Collar/Basic.lean`
 (`TauCeti.mpullback_flowOf_comp_apply_eq_symplectization`,
 `TauCeti.mpullback_flowOf_comp_mextDeriv_apply`, `TauCeti.injective_mfderiv_flowOf_comp`,
 `TauCeti.isLocalDiffeomorphAt_flowOf_comp`), with the time coordinate placed last as in the
