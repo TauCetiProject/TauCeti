@@ -96,10 +96,9 @@ def cartanDiffeomorphOfIsClosed (hH : IsClosed (H : Set (GL n 𝕜)))
   contMDiff_toFun := by
     refine hHe.contMDiff_iff_comp.2 ?_
     have hsub : ContMDiff 𝓘(ℝ, H.hermitianLieSubmodule) 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) ∞
-        (Subtype.val : H.hermitianLieSubmodule → selfAdjoint (Matrix n n 𝕜)) :=
-      have hc : ContDiff ℝ ∞ H.hermitianLieSubmodule.subtypeL := by
-        exact ContinuousLinearMap.contDiff _
-      hc.contMDiff
+        (Subtype.val : H.hermitianLieSubmodule → selfAdjoint (Matrix n n 𝕜)) := by
+      have hc : ContDiff ℝ ∞ H.hermitianLieSubmodule.subtypeL := ContinuousLinearMap.contDiff _
+      simpa only [Submodule.coe_subtypeL, Submodule.coe_subtype] using hc.contMDiff
     have h := (cartanDiffeomorph n 𝕜).contMDiff.comp
       ((hKe.contMDiff.comp contMDiff_fst).prodMk (hsub.comp contMDiff_snd))
     refine h.congr fun p ↦ Units.ext ?_

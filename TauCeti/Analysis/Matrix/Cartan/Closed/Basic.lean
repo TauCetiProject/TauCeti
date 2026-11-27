@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.UnitaryPart
+public import TauCeti.Algebra.Star.Unitary
 public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
@@ -424,12 +424,6 @@ Hermitian matrices. -/
 theorem hermitianLieSubmodule_top : (⊤ : Subgroup (GL n 𝕜)).hermitianLieSubmodule = ⊤ :=
   eq_top_iff.2 fun X _ ↦ (mem_hermitianLieSubmodule_iff isClosed_univ).2 fun t ↦
     ⟨TauCeti.expUnit (t • (X : Matrix n n 𝕜)), mem_top _, TauCeti.expUnit_coe _⟩
-
-/-- The unitary part `K_H` of a closed subgroup `H` of `GL n 𝕜` is closed in the unitary group. -/
-theorem isClosed_unitaryPart (hH : IsClosed (H : Set (GL n 𝕜))) :
-    IsClosed (H.unitaryPart : Set (unitaryGroup n 𝕜)) := by
-  rw [coe_unitaryPart]
-  exact hH.preimage Unitary.continuous_toUnits
 
 /-- The unitary part `K_H` of a closed subgroup `H` of `GL n 𝕜` is compact. -/
 theorem isCompact_unitaryPart (hH : IsClosed (H : Set (GL n 𝕜))) :

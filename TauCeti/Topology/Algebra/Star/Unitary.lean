@@ -44,6 +44,8 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
 * `TauCeti.isCompact_unitarySubgroup_units_iff`: the unitary subgroup of `Mˣ` is compact exactly
   when `unitary M` is.
+* `Subgroup.isClosed_unitaryPart`: the unitary part of a closed subgroup of `Mˣ` is closed in
+  `unitary M`.
 -/
 
 public section
@@ -131,3 +133,15 @@ theorem isCompact_unitarySubgroup_units_iff {M : Type*} [Monoid M] [StarMul M]
     exact isCompact_range Unitary.continuous_toUnits
 
 end TauCeti
+
+namespace Subgroup
+
+/-- The unitary part of a closed subgroup `H` of the units of a topological star monoid is closed
+in `unitary M`: it is the preimage of `H` under the continuous map `Unitary.toUnits`. -/
+theorem isClosed_unitaryPart {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M]
+    [ContinuousStar M] {H : Subgroup Mˣ} (hH : IsClosed (H : Set Mˣ)) :
+    IsClosed (H.unitaryPart : Set (unitary M)) := by
+  rw [coe_unitaryPart]
+  exact hH.preimage Unitary.continuous_toUnits
+
+end Subgroup
