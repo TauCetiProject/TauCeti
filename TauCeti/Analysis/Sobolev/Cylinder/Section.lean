@@ -33,10 +33,13 @@ hypotheses it may take the junk value `0`. Under them, its zeros are the `ξ` in
 the weak equation `ξ_s + A(z, w + ξ) (b + ξ_t) - A(z, w) b + G(z, w + ξ) - G(z, w) = 0` almost
 everywhere, with the weak derivatives `ξ_s`, `ξ_t` of `ξ`. The section is related to `F` only on
 smooth `ξ` with `b = ∂t w` (`TauCeti.CylinderSobolev.quasilinearSection_toW1p_ae`), where this
-equation reads `F(w + ξ) = F(w)`; that a general `W^{1,p}` zero is a classical solution is elliptic
-regularity, which is not proved here. For a reference map with `F(w)` in `Lᵖ`, such as a pre-glued
-map, the section plus the constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on such smooth `ξ`, an affine
-shift with the same derivative.
+equation reads `F(w + ξ) = F(w)`. When moreover `b = ∂t w` and `F(w) = 0`, the pointwise formula
+shows that a zero satisfies `F(u) = 0` almost everywhere for `u = w + ξ`, with the weak derivatives
+of `ξ`; for `p < ∞` and periodic `w`, `A`, `G` of class `C^ℓ`, with `A(z, u z)² = -1`, elliptic
+regularity then makes `u` of class `C^ℓ`
+(`TauCeti.CylinderSobolev.contDiff_add_continuousValue_of_ae_eq_zero`). For a reference map with
+`F(w)` in `Lᵖ`, such as a pre-glued map, the section plus the constant `F(w)` agrees with
+`ξ ↦ F(w + ξ)` on such smooth `ξ`, an affine shift with the same derivative.
 
 **The section.** For `x = (ξ, ξ_s, ξ_t)` in `W^{1,p}` (`TauCeti.CylinderSobolev.W1p`), with `ξ`
 read through its continuous representative (`TauCeti.CylinderSobolev.continuousValue`), and for
