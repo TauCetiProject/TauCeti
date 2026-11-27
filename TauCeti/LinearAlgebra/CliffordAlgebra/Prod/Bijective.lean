@@ -15,16 +15,13 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 # Bijectivity of the graded tensor product of Clifford endomorphism modules
 
 When `E` and `F` are finite projective `R`-modules and `ρ₁ : CliffordAlgebra Q₁ →ₐ[R] End_R E`,
-`ρ₂ : CliffordAlgebra Q₂ →ₐ[R] End_R F` are surjective (respectively bijective), the graded tensor
-product action
+`ρ₂ : CliffordAlgebra Q₂ →ₐ[R] End_R F` are bijective, the graded tensor product action
 `AlgHom.cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ : CliffordAlgebra (Q₁.prod Q₂) →ₐ[R] End_R (E ⊗ F)` is
-surjective (respectively bijective) onto `End_R (E ⊗ F)`. No finiteness assumption on `M₁` or `M₂`
-and no invertibility of `2` is needed.
+bijective onto `End_R (E ⊗ F)`. No finiteness assumption on `M₁` or `M₂` and no invertibility of
+`2` is needed.
 
 ## Main results
 
-* `AlgHom.cliffordProdTensor_surjective`: for finite projective `E` and `F`, surjectivity of `ρ₁`
-  and `ρ₂` implies surjectivity of `cliffordProdTensor`.
 * `AlgHom.cliffordProdTensor_bijective`: for finite projective `E` and `F`, bijectivity of `ρ₁` and
   `ρ₂` implies bijectivity of `cliffordProdTensor`.
 -/
@@ -86,36 +83,6 @@ private theorem cliffordProdTensor_eq_linearEquiv_tmul
       TensorProduct.map (ρ₁ a * γ ^ j.val) (ρ₂ y) := by
     simp [cliffordProdTensorLinearEquiv, hmid, TensorProduct.homTensorHomMap_apply]
   rw [hΨ, prodTensorLinearEquiv_symm_tmul, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hy]
-
-/-- **Surjectivity of the graded tensor product of endomorphism representations.** When `E` and
-`F` are finite projective `R`-modules and `ρ₁`, `ρ₂` are surjective onto `End_R E` and `End_R F`,
-the graded tensor product action `cliffordProdTensor` is surjective onto `End_R (E ⊗ F)`. No
-finiteness assumption on `M₁` or `M₂` and no invertibility of `2` is needed. -/
-theorem cliffordProdTensor_surjective [Module.Finite R E] [Module.Projective R E]
-    [Module.Finite R F] [Module.Projective R F]
-    (hρ₁ : Function.Surjective ρ₁) (hρ₂ : Function.Surjective ρ₂) :
-    Function.Surjective (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) := by
-  obtain ⟨g, hg⟩ := hρ₁ γ
-  intro T
-  obtain ⟨U, rfl⟩ := (homTensorHomEquiv R E F E F).surjective T
-  suffices hmem : homTensorHomEquiv R E F E F U ∈
-      LinearMap.range (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂).toLinearMap from
-    LinearMap.mem_range.mp hmem
-  induction U using TensorProduct.inductionOn with
-  | tmul u v =>
-    obtain ⟨a, rfl⟩ := hρ₁ u
-    obtain ⟨b, rfl⟩ := hρ₂ v
-    obtain ⟨b₀, hb₀, b₁, hb₁, hadd⟩ := Submodule.mem_sup.mp
-      ((evenOdd_isCompl Q₂).sup_eq_top ▸ Submodule.mem_top (x := b))
-    rw [← hadd, map_add, TensorProduct.tmul_add, map_add]
-    refine Submodule.add_mem _ ?_ ?_
-    · refine ⟨toProd Q₁ Q₂ (a ᵍ⊗ₜ b₀), ?_⟩
-      rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb₀]
-      simp [homTensorHomEquiv_apply, homTensorHomMap_apply]
-    · refine ⟨toProd Q₁ Q₂ ((a * g) ᵍ⊗ₜ b₁), ?_⟩
-      rw [AlgHom.toLinearMap_apply, cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ (a * g) hb₁]
-      simp [hg, ZMod.val_one, hγ, mul_assoc, homTensorHomEquiv_apply, homTensorHomMap_apply]
-  | add x y hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
 
 /-- **Bijectivity of the graded tensor product of endomorphism representations.** When `E` and `F`
 are finite projective `R`-modules and `ρ₁`, `ρ₂` are bijective onto `End_R E` and `End_R F`, the

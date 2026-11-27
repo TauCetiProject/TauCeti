@@ -152,7 +152,20 @@ theorem scalarTrace_eq_inv_two_pow_mul_trace (a : CliffordAlgebra (Q.baseChange 
       (2 ^ (finrank ℝ V / 2) : ℂ)⁻¹ * LinearMap.trace ℂ S (ρ a) := by
   have heven : Even (finrank ℂ (ℂ ⊗[ℝ] V)) := even_finrank_of_algEquiv_end _ ρ
   have hevenR : Even (finrank ℝ V) := by simpa only [finrank_baseChange] using heven
-  have hdim := finrank_eq_two_pow_of_bijective (Q.baseChange ℂ) (ρ := ρ.toAlgHom) ρ.bijective
+  -- Use the dimension theorem for the module whose action is exactly `ρ`.
+  let : Module (CliffordAlgebra (Q.baseChange ℂ)) S := Module.compHom S ρ.toRingHom
+  have hact (a : CliffordAlgebra (Q.baseChange ℂ)) (s : S) : a • s = ρ a s := rfl
+  let : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S :=
+    ⟨fun c a s => by simp only [hact, map_smul, LinearMap.smul_apply]⟩
+  have hlsmul : Algebra.lsmul ℂ ℂ S = ρ.toAlgHom := by
+    apply AlgHom.ext
+    intro a
+    exact LinearMap.ext (hact a)
+  have hbij : Function.Bijective (Algebra.lsmul ℂ ℂ S :
+      CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) := by
+    rw [hlsmul]
+    exact ρ.bijective
+  have hdim := finrank_eq_two_pow_of_bijective_lsmul (Q.baseChange ℂ) hbij
   rw [finrank_baseChange] at hdim
   have htrace := trace_map_eq_finrank_mul_scalarTrace hQ hevenR ρ.toAlgHom a
   simp only [AlgEquiv.toAlgHom_apply] at htrace
