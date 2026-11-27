@@ -139,7 +139,8 @@ private lemma aeval_conj_eq_zero {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ]
       · intro i
         simp [rec_U' i, U'_first, ih (Fin.last n), ih i.castSucc]
   refine by_contra fun hne ↦ (hB _ hne).ne' ?_
-  rw [B.apply_aeval_map_starRingEnd_apply adj R, kills_span _ 0, map_zero]
+  rw [B.apply_aeval_apply_eq_apply_aeval_map adj, Polynomial.map_map,
+    RingHomCompTriple.comp_eq, Polynomial.map_id, kills_span _ 0, map_zero]
 
 /-- Prefix evaluation of `glnHeckePolynomial` at `U` along the `U`-recursion. -/
 private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ} {t : Fin (n + 2) → ℂ}
@@ -284,12 +285,9 @@ private lemma aeval_quot_eq_zero_of_two_roots {B : V →ₛₗ[starRingEnd ℂ] 
     rw [← smul_smul]; exact (eq_inv_smul_iff₀ hc).mpr (by simpa [hqc.eq_zero] using U'_z)
   have orth_x : B x (aeval U F x) = 0 := by
     simpa [hqc.eq_zero, hc, pow_sub_pos.ne'] using pair_x
-  have hF_conj : (F.map (starRingEnd ℂ)).map (starRingEnd ℂ) = F := by
-    rw [Polynomial.map_map]; simp
-  have hself : B (aeval U ((F.map (starRingEnd ℂ)).map (starRingEnd ℂ)) x) (aeval U F x) = 0 := by
-    rw [B.apply_aeval_map_starRingEnd_apply adj',
+  have hself : B (aeval U F x) (aeval U F x) = 0 := by
+    rw [B.apply_aeval_apply_eq_apply_aeval_map adj',
       Module.End.aeval_apply_of_mem_apply_eq_smul eigen_z, map_smul, orth_x, smul_zero]
-  rw [hF_conj] at hself
   exact by_contra fun hz ↦ (hB _ hz).ne' hself
 
 /-- Shared pairing and two-root vanishing setup for the `GL_N` Hecke polynomial adjoint lemma. -/

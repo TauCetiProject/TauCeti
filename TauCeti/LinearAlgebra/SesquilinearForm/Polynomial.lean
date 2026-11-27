@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
-public import Mathlib.Algebra.Star.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
 import Mathlib.Algebra.Polynomial.Inductions
@@ -14,11 +13,11 @@ import Mathlib.Algebra.Polynomial.Inductions
 /-!
 # Polynomial adjointness for sesquilinear forms
 
-For a sesquilinear form `B : V →ₛₗ[starRingEnd R] V →ₗ[R] R` over a commutative star semiring `R`
-and endomorphisms `U, U' : Module.End R V`:
+For a `σ`-sesquilinear pairing `B : V →ₛₗ[σ] V →ₗ[R] M₂` over a commutative semiring `R` with
+`σ : R →+* R` and endomorphisms `U, U' : Module.End R V`:
 
-* `LinearMap.apply_aeval_map_starRingEnd_apply`: if `U'` is left-adjoint to `U`, then
-  `B (aeval U' (G.map (starRingEnd R)) a) y = B a (aeval U G y)` for every polynomial `G`.
+* `LinearMap.apply_aeval_apply_eq_apply_aeval_map`: if `U'` is left-adjoint to `U`, then
+  `B (aeval U' G a) y = B a (aeval U (G.map σ) y)` for every polynomial `G`.
 -/
 
 public section
@@ -27,17 +26,18 @@ open Module Polynomial
 
 namespace LinearMap
 
-variable {R V : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid V] [Module R V]
+variable {R V M₂ : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
+  [AddCommMonoid M₂] [Module R M₂]
 
-/-- If `U'` is left-adjoint to `U` for a sesquilinear form `B`, then
-`B (aeval U' (G.map (starRingEnd R)) a) y = B a (aeval U G y)` for every polynomial `G`. -/
-theorem apply_aeval_map_starRingEnd_apply (B : V →ₛₗ[starRingEnd R] V →ₗ[R] R) {U U' : End R V}
-    (adj : ∀ a y : V, B (U' a) y = B a (U y)) (G : R[X]) (a y : V) :
-    B (aeval U' (G.map (starRingEnd R)) a) y = B a (aeval U G y) := by
+/-- If `U'` is left-adjoint to `U` for a `σ`-sesquilinear pairing `B`, then
+`B (aeval U' G a) y = B a (aeval U (G.map σ) y)` for every polynomial `G`. -/
+theorem apply_aeval_apply_eq_apply_aeval_map {σ : R →+* R} (B : V →ₛₗ[σ] V →ₗ[R] M₂)
+    {U U' : End R V} (adj : ∀ a y : V, B (U' a) y = B a (U y)) (G : R[X]) (a y : V) :
+    B (aeval U' G a) y = B a (aeval U (G.map σ) y) := by
   induction G using recOnHorner generalizing a y with
   | M0 => simp
   | MC G c _ _ ih => simp [ih]
   | MX G _ ih =>
-    simpa [mul_comm (G.map _) X, adj] using ih a (U y)
+    simpa [mul_comm (G.map σ) X, adj] using ih (U' a) y
 
 end LinearMap
