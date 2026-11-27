@@ -22,7 +22,8 @@ relabeling of the edge set. The graph is connected exactly when the edge action 
 transitive, as stated in
 `TauCeti.BipartiteRibbonGraph.isConnected_iff_nonempty_and_isPretransitive_edgeFunctor_obj`.
 
-The forward action uses `FreeGroup.lift`. The inverse functor reconstructs each object with
+The forward action uses `FreeGroup.lift`. The inverse functor
+`Action.toBipartiteRibbonGraphFunctor` reconstructs each object with
 `Action.toBipartiteRibbonGraph`, which uses `Equiv.Perm.bipartiteRibbonGraph` to recover
 vertices as cycles of the generators.
 
@@ -283,7 +284,9 @@ instance : edgeFunctor.{u}.IsEquivalence where
   full := fullyFaithfulEdgeFunctor.full
   essSurj.mem_essImage A := ⟨A.toBipartiteRibbonGraph, ⟨A.toBipartiteRibbonGraphEdgeIso⟩⟩
 
-private noncomputable def reconstructionFunctor :
+/-- The reconstruction functor takes the cycles of the two generators as vertices and
+sends an equivariant map to the graph morphism it determines on edges. -/
+noncomputable def _root_.Action.toBipartiteRibbonGraphFunctor :
     Action FintypeCat.{u} (FreeGroup (Fin 2)) ⥤ BipartiteRibbonGraph.{u} where
   obj A := A.toBipartiteRibbonGraph
   map {A B} f := fullyFaithfulEdgeFunctor.preimage
@@ -294,24 +297,61 @@ private noncomputable def reconstructionFunctor :
     rw [← Functor.FullyFaithful.preimage_comp]
     simp only [Category.assoc, Iso.inv_hom_id_assoc]
 
+/-- The reconstruction functor takes the ribbon graph of the two generator permutations. -/
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphFunctor_obj
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    Action.toBipartiteRibbonGraphFunctor.obj A = A.toBipartiteRibbonGraph := (rfl)
+
+/-- The edges of the image under the reconstruction functor are the points of the action. -/
+noncomputable def _root_.Action.toBipartiteRibbonGraphFunctorEdgeEquiv
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    (Action.toBipartiteRibbonGraphFunctor.obj A).E ≃ A.V :=
+  A.toBipartiteRibbonGraphEdgeEquiv
+
+/-- An edge of the functor's image corresponds to the same point as in the reconstructed graph. -/
+theorem _root_.Action.toBipartiteRibbonGraphFunctorEdgeEquiv_eq
+    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
+    A.toBipartiteRibbonGraphFunctorEdgeEquiv =
+      (Equiv.cast (congrArg BipartiteRibbonGraph.E A.toBipartiteRibbonGraphFunctor_obj)).trans
+        A.toBipartiteRibbonGraphEdgeEquiv := (rfl)
+
+/-- On edges, the reconstruction functor transports the underlying map of the action morphism
+through the identifications of the reconstructed edge sets with the action carriers. -/
+@[simp] theorem _root_.Action.toBipartiteRibbonGraphFunctor_map_edge_apply
+    {A B : Action FintypeCat.{u} (FreeGroup (Fin 2))} (f : A ⟶ B)
+    (x : (Action.toBipartiteRibbonGraphFunctor.obj A).E) :
+    (Action.toBipartiteRibbonGraphFunctor.map f).edge x =
+      B.toBipartiteRibbonGraphFunctorEdgeEquiv.symm
+        (f.hom (A.toBipartiteRibbonGraphFunctorEdgeEquiv x)) := by
+  -- The functor's object projection identifies its edge type with the reconstructed edge type.
+  let y : A.toBipartiteRibbonGraph.E := x
+  have h : (fullyFaithfulEdgeFunctor.preimage
+        (A.toBipartiteRibbonGraphEdgeIso.hom ≫
+          f ≫ B.toBipartiteRibbonGraphEdgeIso.inv)).edge y =
+      B.toBipartiteRibbonGraphEdgeEquiv.symm (f.hom (A.toBipartiteRibbonGraphEdgeEquiv y)) := by
+    simp only [fullyFaithfulEdgeFunctor_preimage_edge_apply, Action.comp_hom, FintypeCat.comp_apply,
+      Action.toBipartiteRibbonGraphEdgeIso_hom_apply,
+      Action.toBipartiteRibbonGraphEdgeIso_inv_apply, Equiv.apply_symm_apply]
+  exact h
+
 /-- Bipartite ribbon graphs are equivalent to finite actions of the free group on two generators.
 The inverse reconstructs the graph from the cycles of the two generators. -/
 noncomputable def edgeEquivalence :
     BipartiteRibbonGraph.{u} ≌ Action FintypeCat.{u} (FreeGroup (Fin 2)) where
   functor := edgeFunctor
-  inverse := reconstructionFunctor
+  inverse := Action.toBipartiteRibbonGraphFunctor
   unitIso := NatIso.ofComponents
     (fun Γ ↦ fullyFaithfulEdgeFunctor.preimageIso
       (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso.symm) (by
     intro Γ Δ f
     apply fullyFaithfulEdgeFunctor.map_injective
     -- The two projected maps of the reconstruction functor are fully faithful preimages.
-    dsimp only [Functor.id_map, Functor.comp_map, reconstructionFunctor]
+    dsimp only [Functor.id_map, Functor.comp_map, Action.toBipartiteRibbonGraphFunctor]
     simp only [Functor.map_comp, Functor.FullyFaithful.preimageIso_hom, Iso.symm_hom,
       Functor.FullyFaithful.map_preimage, Iso.inv_hom_id_assoc])
   counitIso := NatIso.ofComponents Action.toBipartiteRibbonGraphEdgeIso (by
     intro A B f
-    dsimp only [Functor.comp_map, Functor.id_map, reconstructionFunctor]
+    dsimp only [Functor.comp_map, Functor.id_map, Action.toBipartiteRibbonGraphFunctor]
     simp only [Functor.FullyFaithful.map_preimage, Category.assoc, Iso.inv_hom_id,
       Category.comp_id])
   functor_unitIso_comp Γ := by
@@ -327,37 +367,17 @@ noncomputable def edgeEquivalence :
 /-- The forward functor of the equivalence is the edge functor. -/
 @[simp] theorem edgeEquivalence_functor : edgeEquivalence.{u}.functor = edgeFunctor := (rfl)
 
-/-- The inverse functor reconstructs the graph of the two generator permutations. -/
-@[simp] theorem _root_.Action.edgeEquivalence_inverse_obj
-    (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
-    edgeEquivalence.inverse.obj A = A.toBipartiteRibbonGraph := (rfl)
-
-/-- On edges, the inverse equivalence acts by the underlying map of the action morphism,
-transported along the identifications with the reconstructed graphs. -/
-@[simp] theorem _root_.Action.edgeEquivalence_inverse_map_edge_apply
-    {A B : Action FintypeCat.{u} (FreeGroup (Fin 2))} (f : A ⟶ B)
-    (x : (edgeEquivalence.inverse.obj A).E) :
-    (edgeEquivalence.inverse.map f).edge x =
-      cast (congrArg BipartiteRibbonGraph.E B.edgeEquivalence_inverse_obj.symm)
-        (B.toBipartiteRibbonGraphEdgeEquiv.symm (f.hom (A.toBipartiteRibbonGraphEdgeEquiv
-          (cast (congrArg BipartiteRibbonGraph.E A.edgeEquivalence_inverse_obj) x)))) := by
-  -- The object equalities in the casts are reflexive by the definition of the inverse.
-  let y : A.toBipartiteRibbonGraph.E := x
-  have h : (fullyFaithfulEdgeFunctor.preimage
-        (A.toBipartiteRibbonGraphEdgeIso.hom ≫
-          f ≫ B.toBipartiteRibbonGraphEdgeIso.inv)).edge y =
-      B.toBipartiteRibbonGraphEdgeEquiv.symm (f.hom (A.toBipartiteRibbonGraphEdgeEquiv y)) := by
-    simp only [fullyFaithfulEdgeFunctor_preimage_edge_apply, Action.comp_hom, FintypeCat.comp_apply,
-      Action.toBipartiteRibbonGraphEdgeIso_hom_apply,
-      Action.toBipartiteRibbonGraphEdgeIso_inv_apply, Equiv.apply_symm_apply]
-  exact h
+/-- The inverse functor of the equivalence is the reconstruction functor. -/
+@[simp] theorem edgeEquivalence_inverse :
+    edgeEquivalence.{u}.inverse = Action.toBipartiteRibbonGraphFunctor := (rfl)
 
 /-- The counit compares the edge action of the reconstructed graph with the input action. -/
 @[simp] theorem _root_.Action.edgeEquivalence_counitIso_app
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
     edgeEquivalence.counitIso.app A =
       eqToIso (by
-        rw [Functor.comp_obj, edgeEquivalence_functor, Action.edgeEquivalence_inverse_obj]) ≪≫
+        rw [Functor.comp_obj, edgeEquivalence_functor, edgeEquivalence_inverse,
+          Action.toBipartiteRibbonGraphFunctor_obj]) ≪≫
         A.toBipartiteRibbonGraphEdgeIso := (rfl)
 
 /-- The unit lifts the inverse of the action comparison to an isomorphism of graphs. -/
@@ -365,7 +385,8 @@ transported along the identifications with the reconstructed graphs. -/
     edgeEquivalence.unitIso.app Γ =
       fullyFaithfulEdgeFunctor.preimageIso (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso.symm ≪≫
         eqToIso (by
-          rw [Functor.comp_obj, edgeEquivalence_functor, Action.edgeEquivalence_inverse_obj]) := by
+          rw [Functor.comp_obj, edgeEquivalence_functor, edgeEquivalence_inverse,
+            Action.toBipartiteRibbonGraphFunctor_obj]) := by
   -- The target object of the unit is definitionally the reconstruction of the edge action.
   have h := CategoryTheory.Iso.trans_refl
     (fullyFaithfulEdgeFunctor.preimageIso (edgeFunctor.obj Γ).toBipartiteRibbonGraphEdgeIso.symm)
