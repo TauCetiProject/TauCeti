@@ -105,8 +105,9 @@ theorem prod_apply_sumElim (μ : Density V (finrank ℝ V)) (ν : Density W (fin
   have hvalue : μ.prod ν (Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm) =
       |(finBasis ℝ V).det v| * |(finBasis ℝ W).det w| *
         (μ (finBasis ℝ V) * ν (finBasis ℝ W)) := by
-    rw [himage, comp_apply, hperm, apply_comp_perm _ prodFinBasis, prod,
-      Basis.density_apply_self, LinearMap.det_prodMap, Basis.det_constr, Basis.det_constr, abs_mul]
+    -- Reorder to `prodFinBasis`, then evaluate the determinant of the product map.
+    rw [himage, comp_apply, hperm, apply_comp_perm _ prodFinBasis]
+    simp [prod, Basis.det_self, LinearMap.det_prodMap, Basis.det_constr, abs_mul]
   -- These factors are the values of `μ` on `v` and of `ν` on `w`.
   rw [hvalue, apply_eq_abs_det_mul μ (finBasis ℝ V) v, apply_eq_abs_det_mul ν (finBasis ℝ W) w]
   ring

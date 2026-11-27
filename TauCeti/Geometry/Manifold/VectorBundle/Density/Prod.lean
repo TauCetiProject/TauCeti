@@ -219,8 +219,8 @@ theorem prod_apply_trivializationAt_symm {p q : M × N}
       (finBasis ℝ (E × F) i)
     rw [Trivialization.symmL_apply _ (by simpa only [TangentBundle.trivializationAt_baseSet]
       using hq), Trivialization.symmL_apply _ h₁, Trivialization.symmL_apply _ h₂] at h
-    rw [Function.comp_apply, Function.comp_apply, LinearEquiv.prodCongr_apply, hA, hB, ← h,
-      ContinuousLinearEquiv.symm_apply_apply]
+    simp only [Function.comp_apply, LinearEquiv.prodCongr_apply, hA, hB]
+    rw [← h, ContinuousLinearEquiv.symm_apply_apply]
   have hA' : (A : E → TangentSpace I q.1) ∘ finBasis ℝ E =
       fun i ↦ (trivializationAt E (TangentSpace I) p.1).symm q.1 (finBasis ℝ E i) :=
     funext fun i ↦ hA _
