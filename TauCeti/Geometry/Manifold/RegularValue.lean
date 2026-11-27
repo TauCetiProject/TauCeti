@@ -43,6 +43,8 @@ to manifolds, including manifolds with boundary or corners.
   of the set of non-regular points.
 * `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
   values.
+* `TauCeti.isRegularValue_restrict_of_forall_isRegularPoint`: every value of the restriction of a
+  map to an open set of regular points is a regular value.
 * `TauCeti.IsRegularValue.comp`: precomposing with a map regular on the fibre preserves regular
   values.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
@@ -386,6 +388,11 @@ theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y) (U : Topological
   rw [isRegularValue_iff]
   intro x hx
   exact (hreg.isRegularPoint hx).comp (isRegularPoint_subtype_val x)
+
+/-- Every value of the restriction of a map to an open set of regular points is a regular value. -/
+theorem isRegularValue_restrict_of_forall_isRegularPoint {U : TopologicalSpace.Opens M}
+    (hU : ∀ x : U, IsRegularPoint I J f x) (y : N) : IsRegularValue I J (fun x : U ↦ f x) y :=
+  isRegularValue_iff.2 fun x _ ↦ (hU x).comp (isRegularPoint_subtype_val x)
 
 section Level
 

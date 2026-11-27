@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.RingTheory.Polynomial.Vieta
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
@@ -49,7 +49,7 @@ are separate later steps.
   distinct roots is the monic polynomial of the unordered tuple of those roots.
 * `Sym.toMonic_coeffEquiv_symm`: the inverse chart, read as a polynomial rather than as a
   root multiset, is `TauCeti.Polynomial.monicOfCoeff`, the monic polynomial with prescribed lower
-  coefficients of `TauCeti/RingTheory/Polynomial/Monic/OfCoeff.lean`.
+  coefficients of `TauCeti/RingTheory/Polynomial/Monic/OfCoeff/Basic.lean`.
 * `Sym.monicEquiv`: over an algebraically closed field, taking roots with multiplicity
   inverts `toMonic`, so `Sym K n` is equivalent to the monic polynomials of degree `n`.
 * `Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with
@@ -62,6 +62,8 @@ are separate later steps.
   elementary symmetric functions (`Sym.esymm_ofEsymm`, `Sym.esymm_ofEsymm_of_mem`), which they
   determine (`Sym.eq_ofEsymm_iff`, `Sym.ofEsymm_esymm`); `Sym.coeffEquiv_ofEsymm` gives its chart
   coordinates.
+* `Sym.coeffEquiv_symm_translateCoeff`: translating the lower coefficients by
+  `TauCeti.Polynomial.translateCoeff a` moves every point of the tuple by `-a`.
 * `Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
   divisor is characterized by an affine equation in the chart.
 * `Sym.coeffEquiv_one_apply` and `Sym.coeffEquiv_two_apply`: the chart in degrees
@@ -374,6 +376,18 @@ theorem exists_esymm_eq (c : ℕ → K) :
   rw [coeffEquiv_apply] at hi
   simp only [Nat.sub_sub_self hjn] at hi
   exact mul_left_cancel₀ (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)) hi
+
+/-- In the elementary symmetric chart, translating the coefficients translates the tuple: the
+roots of `P_c(· + a)` are those of `P_c` moved by `-a`. -/
+theorem coeffEquiv_symm_translateCoeff (a : K) (c : Fin n → K) :
+    (coeffEquiv K n).symm (TauCeti.Polynomial.translateCoeff a c) =
+      ((coeffEquiv K n).symm c).map (· - a) := by
+  apply Sym.coe_injective
+  have h := roots_comp_C_mul_X_add_C (TauCeti.Polynomial.monicOfCoeff c) 1 a isUnit_one
+  rw [C_1, one_mul] at h
+  rw [coeffEquiv_symm_apply, Sym.coe_map, coeffEquiv_symm_apply,
+    TauCeti.Polynomial.monicOfCoeff_translateCoeff, taylor_apply, h]
+  simp
 
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
 point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the

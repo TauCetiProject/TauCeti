@@ -408,6 +408,12 @@ theorem coe_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
     ⇑(t.chartTestCLM c hc hct φ) = (t.chartTestSection (n := ⊤) c hc hct φ).val :=
   (rfl)
 
+/-- The compactly supported section underlying an extended test is the extended section. -/
+theorem val_symm_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
+    ((BundleTest.ofCompactlySupported I F V).symm (t.chartTestCLM c hc hct φ)).val =
+      (t.chartTestSection (n := ⊤) c hc hct φ).val :=
+  ContMDiffSection.ext fun x ↦ congrFun (t.coe_chartTestCLM c hc hct φ) x
+
 /-- On the chart source, the extended test is the inverse frame applied to the value of the test
 function in coordinates. -/
 theorem chartTestCLM_apply_of_mem (φ : 𝓓(⟨c.target, c.open_target⟩, F)) {x : M}

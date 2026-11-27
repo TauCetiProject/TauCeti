@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.Basic.Real.Sign
@@ -15,6 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
@@ -60,6 +62,9 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_inv_linear_mul_eq_log_sub`:
+  `∫ t in a₀..b₀, (z₀ + t * d)⁻¹ * d = log (u * (z₀ + b₀ * d)) - log (u * (z₀ + a₀ * d))`
+  when `u * (z₀ + t * d) ∈ Complex.slitPlane` on `uIcc a₀ b₀`.
 * `TauCeti.integral_log_div_self`: `∫ x in a..b, log x / x = ((log b)² - (log a)²) / 2` on an
   interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
@@ -82,6 +87,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   normalized Poisson kernel on an oriented interval, with half weight at each endpoint.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
+* `TauCeti.integral_sub_inv`: `∫ t in a..b, (t - c)⁻¹ = log |b - c| - log |a - c|` for
+  `c ∉ uIcc a b`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
 * `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
@@ -610,6 +617,30 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
 
+/-- Fundamental theorem of calculus for `t ↦ (z₀ + t * d)⁻¹ * d` along a real segment mapped into
+`Complex.slitPlane` after rotation by a constant `u`. -/
+theorem integral_inv_linear_mul_eq_log_sub {u z₀ d : ℂ} {a₀ b₀ : ℝ}
+    (hslit : ∀ t ∈ Set.uIcc a₀ b₀, u * (z₀ + (t : ℂ) * d) ∈ Complex.slitPlane) :
+    ∫ t in a₀..b₀, (z₀ + (t : ℂ) * d)⁻¹ * d =
+      Complex.log (u * (z₀ + (b₀ : ℂ) * d)) - Complex.log (u * (z₀ + (a₀ : ℂ) * d)) := by
+  have hu : u ≠ 0 :=
+    (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit a₀ Set.left_mem_uIcc))).1
+  have heq : (fun t : ℝ => (u * d) / (u * (z₀ + (t : ℂ) * d))) =
+      fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d :=
+    funext fun t => by rw [mul_div_mul_left _ _ hu, div_eq_inv_mul]
+  have hint : IntervalIntegrable (fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d)
+      MeasureTheory.volume a₀ b₀ :=
+    ContinuousOn.intervalIntegrable fun t ht =>
+      (((continuous_const.add (Complex.continuous_ofReal.mul continuous_const)).continuousAt.inv₀
+        (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit t ht))).2).mul
+          continuousAt_const).continuousWithinAt
+  simpa only [heq] using TauCeti.Contour.integral_deriv_div_eq_log_sub_log
+    (f := fun t : ℝ => u * (z₀ + (t : ℂ) * d)) (f' := fun _ => u * d) (P := ∅)
+    Set.countable_empty (by fun_prop)
+    (fun t _ => by
+      simpa using (((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const d).const_add z₀).const_mul u)
+    hslit (heq.symm ▸ hint)
+
 open MeasureTheory Set in
 /-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. At `T = 0` the
 integrand is not integrable and both sides are `0`. -/
@@ -658,6 +689,18 @@ theorem integral_inv_add_abs {σ T : ℝ} (hσ : 0 < σ) (hT : 0 ≤ T) :
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hc.intervalIntegrable _ _)
     (hc.intervalIntegrable _ _), hneg, hpos]
   ring
+
+open Real Set in
+/-- The integral of `(t - c)⁻¹` over any interval avoiding `c` is `log |b - c| - log |a - c|`. -/
+theorem integral_sub_inv {a b c : ℝ} (hc : c ∉ uIcc a b) :
+    ∫ t in a..b, (t - c)⁻¹ = log |b - c| - log |a - c| := by
+  have h0 : (0 : ℝ) ∉ uIcc (a - c) (b - c) := fun h ↦ hc <| by
+    rcases mem_uIcc.mp h with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact mem_uIcc.mpr (Or.inl ⟨by linarith, by linarith⟩)
+    · exact mem_uIcc.mpr (Or.inr ⟨by linarith, by linarith⟩)
+  rw [intervalIntegral.integral_comp_sub_right (fun u : ℝ ↦ u⁻¹) c, integral_inv h0,
+    log_div (fun h ↦ h0 (h ▸ right_mem_uIcc)) (fun h ↦ h0 (h ▸ left_mem_uIcc)),
+    log_abs, log_abs]
 
 end TauCeti
 
