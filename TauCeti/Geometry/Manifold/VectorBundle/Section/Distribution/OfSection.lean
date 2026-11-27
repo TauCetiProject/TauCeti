@@ -49,8 +49,8 @@ the integrals in charts are Mathlib's `TestFunction.integralAgainstBilinCLM`, th
 
 * `TauCeti.LocallyIntegrableSection`: local integrability of a section, with
   `TauCeti.locallyIntegrableSection_def`, `TauCeti.LocallyIntegrableSection.locallyIntegrableOn`,
-  `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add` and
-  `TauCeti.LocallyIntegrableSection.smul`.
+  `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add`,
+  `TauCeti.LocallyIntegrableSection.smul` and `Continuous.locallyIntegrableSection`.
 * `TauCeti.BundleDistribution.ofSection`: the distributional section of a section, zero unless
   the section is locally integrable, with `TauCeti.BundleDistribution.ofSection_apply`,
   `TauCeti.BundleDistribution.ofSection_zero`, `TauCeti.BundleDistribution.ofSection_add` and
@@ -190,6 +190,22 @@ theorem LocallyIntegrableSection.zero : LocallyIntegrableSection I G fun x ↦ (
     ((ae_restrict_iff' (measurableSet_inter_preimage_baseSet α)).2 (ae_of_all _ fun y hy ↦ by
       simp only [FirstJetBundle.localRep_apply,
         Trivialization.apply_eq_prod_continuousLinearEquivAt ℝ _ _ hy.2, map_zero]))
+
+omit [IsManifold I ∞ M] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [VectorBundle ℝ G W] in
+variable (I) in
+/-- A continuous section is locally integrable: its readings are continuous where they are
+defined. -/
+theorem _root_.Continuous.locallyIntegrableSection {u : (x : M) → W x}
+    (hu : Continuous fun x ↦ TotalSpace.mk' G x (u x)) : LocallyIntegrableSection I G u := by
+  refine locallyIntegrableSection_def.2 fun α ↦ ContinuousOn.locallyIntegrableOn ?_
+    (measurableSet_inter_preimage_baseSet α)
+  have hs : ContinuousOn (fun x ↦ (trivializationAt G W α ⟨x, u x⟩).2)
+      (trivializationAt G W α).baseSet :=
+    continuous_snd.comp_continuousOn ((trivializationAt G W α).continuousOn.comp
+      hu.continuousOn fun _ hy ↦ (trivializationAt G W α).mem_source.2 hy)
+  exact (hs.comp ((continuousOn_extChartAt_symm α).mono inter_subset_left)
+    fun _ hy ↦ hy.2).congr fun z _ ↦ FirstJetBundle.localRep_apply I G u α z
 
 variable [ContMDiffVectorBundle ∞ G W I] [T2Space M]
   {u : (x : M) → W x} {α : M}

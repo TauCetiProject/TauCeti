@@ -92,7 +92,8 @@ notions of microlocal regularity on bundles (`TauCeti.BundleTest.isMicrolocallyA
   (`TauCeti.BundleTest.notMem_singularSupport_iff`), and it is closed
   (`TauCeti.BundleTest.isClosed_singularSupport`).
 * `TauCeti.BundleTest.proj_image_waveFrontSet`: on a manifold without boundary, the projection of
-  the wave front set to `M` is the singular support.
+  the wave front set to `M` is the singular support, which lies in the support
+  (`TauCeti.BundleTest.singularSupport_subset_dsupport`).
 * `TauCeti.BundleTest.waveFrontSet_delta`: the point mass `δ_x ℓ` with `ℓ ≠ 0` has wave front set
   the nonzero covectors at `x`, so its singular support is `{x}` in positive dimension
   (`TauCeti.BundleTest.singularSupport_delta`).
@@ -401,6 +402,12 @@ empty wave front set. -/
 theorem singularSupport_eq_empty_iff_waveFrontSet_eq_empty [I.Boundaryless]
     {T : BundleTest I F V →L_c[ℝ] ℝ} : singularSupport I T = ∅ ↔ waveFrontSet I T = ∅ := by
   rw [← proj_image_waveFrontSet, image_eq_empty]
+
+/-- On a manifold without boundary, the singular support lies in the support. -/
+theorem singularSupport_subset_dsupport [I.Boundaryless] (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    singularSupport I T ⊆ dsupport T := by
+  rw [← proj_image_waveFrontSet, image_subset_iff]
+  exact waveFrontSet_subset_dsupport T
 
 /-- The singular support is closed. -/
 theorem isClosed_singularSupport (T : BundleTest I F V →L_c[ℝ] ℝ) :
