@@ -115,6 +115,10 @@ theorem isNondegenerate_of_isLimit [IsIdempotented H] {J : Type} [SmallCategory 
 
 namespace NondegMod
 
+/-- The underlying module of an object of `NondegMod A H` is nondegenerate. -/
+theorem isNondegenerate (M : NondegMod.{v} A H) : IsNondegenerate A H M.obj :=
+  M.property
+
 instance : (nondegenerateModuleProperty.{v} A H).ContainsZero :=
   ⟨⟨ModuleCat.of _ PUnit, ModuleCat.isZero_of_subsingleton _,
     isNondegenerate_iff_nondegeneratePart_eq_top.2 (Subsingleton.elim _ _)⟩⟩
