@@ -23,13 +23,14 @@ Let `M` be a compact manifold modelled on `ℝⁿ`. Its complex test functions a
 complex-valued smooth functions on `M` (`TauCeti.BundleTest.contMDiffMapEquiv`), now with the test
 topology. This file shows that a classical pseudodifferential operator `P` of order `m` on `M`
 (`TauCeti.classicalPseudodifferentialOperators`) acts **continuously** on the test functions
-(`TauCeti.BundleTest.pseudodifferentialCLM`). Hence its transpose `T ↦ T ∘ P` acts continuously on
-the continuous linear functionals on test functions, the distribution densities on `M`
-(`TauCeti.BundleTest.pseudodifferentialDualCLM`): this is how a pseudodifferential operator acts,
-by transposition, on distributions on a manifold. It is the counterpart for pseudodifferential
-operators of the action of differential operators (`TauCeti.BundleTest.localOperatorCLM`,
-`TauCeti.BundleTest.localOperatorDualCLM`), which are local and hence continuous by Peetre's
-theorem.
+(`TauCeti.BundleTest.pseudodifferentialCLM`). Hence the transpose map `T ↦ T ∘ P` acts
+continuously on the continuous linear maps from test functions to a topological module `G`,
+distribution densities on `M` among them (`TauCeti.BundleTest.pseudodifferentialDualCLM`). On
+distribution densities this map is the action of the transpose `ᵗP`; extending `P` itself to
+distributions also needs `ᵗP` to be pseudodifferential, which is not proved here. This file is
+the counterpart for pseudodifferential operators of the action of differential operators
+(`TauCeti.BundleTest.localOperatorCLM`, `TauCeti.BundleTest.localOperatorDualCLM`), which are
+local and hence continuous by Peetre's theorem.
 
 ## The argument
 
