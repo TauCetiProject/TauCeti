@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 
 /-!
 # The linearized Floer operator on the Sobolev space of a conformal metric
@@ -48,7 +49,9 @@ of Peetre's argument
 The coefficient field is continuous where the data are regular along `u`
 (`continuousOn_floerConformalJetCoeff`), and for a family of data `(J_μ, K_{s,μ}, K_{t,μ})` that is
 regular jointly in the parameter it is continuous jointly in the parameter and the domain point
-(`continuousAt_floerConformalJetCoeff_family`); this is how the operators of a family of data are
+(`continuousAt_floerConformalJetCoeff_family`). When the family only changes over a compact set, its
+coefficient fields are therefore continuous in the parameter in `L^∞`
+(`tendsto_eLpNorm_floerConformalJetCoeff_family`); this is how the operators of a family of data are
 compared in operator norm.
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
@@ -188,6 +191,40 @@ theorem continuousAt_floerConformalJetCoeff_family {P : Type*} [NormedAddCommGro
   simp only [floerConformalJetCoeff_def]
   exact continuousAt_firstOrderJetCoeff hJu
     (hρq.smul (ω.continuousAt_floerLinearizationCoeff_family hJ hKs hKt hu))
+
+/-- **The coefficient fields of a family of data converge in `L^∞`.** Let
+`(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data with parameter `μ` in a real normed space `P`
+which, for `μ` near `lam`, agrees on `U` off a compact set `K` with the data at `lam`. Suppose that
+at every point `z` of `K` the family is `C¹` (with `C²` Hamiltonians) jointly in the parameter, the
+domain point and the target point at `((lam, z), u z)`, `u` is `C¹` at `z`, and the weight is
+continuous and positive at `z`. If the coefficient fields on conformal jets along `u` are almost
+everywhere strongly measurable on `U` for `μ` near `lam`, then they converge in `L^∞(U)` to the
+coefficient field at `lam` as `μ → lam`. -/
+theorem tendsto_eLpNorm_floerConformalJetCoeff_family {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] (ω : SymplecticForm V) {U K : Set (ℝ × ℝ)} (hU : MeasurableSet U)
+    (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ} {J : P × (ℝ × ℝ) → V → V →L[ℝ] V}
+    {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V} {lam : P}
+    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1 (uncurry J) ((lam, z), u z))
+    (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) ((lam, z), u z))
+    (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) ((lam, z), u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hρ : ∀ z ∈ K, ContinuousAt ρ z)
+    (hρp : ∀ z ∈ K, 0 < ρ z)
+    (heq : ∀ᶠ μ in nhds lam, ∀ z ∈ U, z ∉ K →
+      J (μ, z) = J (lam, z) ∧ Ks (μ, z) = Ks (lam, z) ∧ Kt (μ, z) = Kt (lam, z))
+    (hmeas : ∀ᶠ μ in nhds lam, AEStronglyMeasurable (ω.floerConformalJetCoeff ρ
+      (fun z ↦ J (μ, z)) (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u) (volume.restrict U)) :
+    Filter.Tendsto (fun μ ↦ eLpNorm (ω.floerConformalJetCoeff ρ (fun z ↦ J (μ, z))
+      (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u - ω.floerConformalJetCoeff ρ (fun z ↦ J (lam, z))
+        (fun z ↦ Ks (lam, z)) (fun z ↦ Kt (lam, z)) u) ∞ (volume.restrict U)) (nhds lam)
+      (nhds 0) :=
+  tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
+    (M := fun μ ↦ ω.floerConformalJetCoeff ρ (fun z ↦ J (μ, z)) (fun z ↦ Ks (μ, z))
+      (fun z ↦ Kt (μ, z)) u) hU hK hmeas
+    (fun z hz ↦ ω.continuousAt_floerConformalJetCoeff_family (p := (lam, z)) (hJ z hz) (hKs z hz)
+      (hKt z hz) (hu z hz) (hρ z hz) (hρp z hz))
+    (heq.mono fun _ hμ z hzU hzK ↦ by
+      obtain ⟨hJz, hsz, htz⟩ := hμ z hzU hzK
+      exact ω.floerConformalJetCoeff_congr_data ρ u hJz hsz htz)
 
 /-- The coefficient field on conformal jets is continuous on `U` when the weight is a conformal
 weight on `U`, the data are `C¹` (and the Hamiltonians `C²`) along the graph of `u` over `U`, and
