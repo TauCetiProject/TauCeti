@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.GNS.Unitization.Basic
 public import TauCeti.Analysis.CStarAlgebra.GNS.VonNeumannAlgebra
 public import TauCeti.Analysis.VonNeumannAlgebra.Cyclic
-import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 
 /-!
 # GNS von Neumann algebras under unitization
@@ -34,26 +33,13 @@ unitization. -/
 theorem mapLinearIsometryEquiv_gnsEquivUnitization :
     VonNeumannAlgebra.mapLinearIsometryEquiv τ.gnsEquivUnitization τ.gnsVonNeumannAlgebra =
       τ.unitization.gnsVonNeumannAlgebra := by
-  let π := τ.unitization.gnsStarAlgHom
-  have hrestrict : ⇑(Unitization.starLift.symm π) =
-      fun a : A => τ.unitization.gnsNonUnitalStarAlgHom (a : Unitization ℂ A) := by
-    funext a
-    simp [π, PositiveLinearMap.gnsStarAlgHom_apply]
-  have hπ := congrArg StarAlgHom.range (Unitization.starLift.apply_symm_apply π).symm
-  rw [Unitization.starLift_range] at hπ
-  have hcoe : (π.range : Set _) = Set.range π := by
-    rw [StarAlgHom.range_eq_map_top]
-    simp
-  have hrange : Set.range τ.unitization.gnsStarAlgHom =
-      (StarAlgebra.adjoin ℂ (Set.range fun a : A => τ.unitization.gnsNonUnitalStarAlgHom
-        (a : Unitization ℂ A)) : Set _) := by
-    simpa only [hcoe, NonUnitalStarAlgHom.coe_range, hrestrict] using
-      congrArg SetLike.coe hπ
   rw [PositiveLinearMap.gnsVonNeumannAlgebra_def τ.toPositiveLinearMap,
-    VonNeumannAlgebra.mapLinearIsometryEquiv_adjoin, ← Set.range_comp,
-    PositiveLinearMap.gnsVonNeumannAlgebra_eq_adjoin_range_gnsStarAlgHom, hrange,
-    VonNeumannAlgebra.adjoin_starAlgebraAdjoin]
+    VonNeumannAlgebra.mapLinearIsometryEquiv_adjoin, ← Set.range_comp]
   simp only [Function.comp_def, gnsEquivUnitization_conjStarAlgEquiv]
+  rw [PositiveLinearMap.gnsVonNeumannAlgebra_eq_adjoin_range_gnsStarAlgHom,
+    VonNeumannAlgebra.adjoin_range_unitization]
+  exact congrArg (fun f : A → _ => VonNeumannAlgebra.adjoin (Set.range f))
+    (funext fun a => (PositiveLinearMap.gnsStarAlgHom_apply _ (a : Unitization ℂ A)).symm)
 
 /-- The canonical vector of a tracial positive functional is separating for its generated
 von Neumann algebra. -/
