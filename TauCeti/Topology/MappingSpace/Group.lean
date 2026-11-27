@@ -101,8 +101,10 @@ def mappingSpaceGroupHomotopyEquiv (x : X) [ContractibleSpace {f : C(X, G) // f 
       (HomotopyEquiv.prodContractible G {f : C(X, G) // f x = 1})
     have he : e.toFun = ⟨fun f ↦ f x, continuous_eval_const x⟩ := by
       ext f
-      change HomotopyEquiv.prodContractible G _ ((mappingSpaceGroupHomeomorph x).symm f) = f x
-      rw [HomotopyEquiv.coe_prodContractible, mappingSpaceGroupHomeomorph_symm_fst]
+      -- unfold the composite through the `trans` and `toHomotopyEquiv` coercion lemmas
+      simp only [e, HomotopyEquiv.trans_apply, HomotopyEquiv.prodContractible_toFun,
+        ContinuousMap.fst_apply, Homeomorph.coe_toHomotopyEquiv,
+        mappingSpaceGroupHomeomorph_symm_fst, ContinuousMap.coe_mk]
     refine Homotopic.comp_homotopic_id_of_comp_homotopic_id ?_ (he ▸ e.left_inv)
     convert Homotopic.refl (ContinuousMap.id G) using 1
     ext g
