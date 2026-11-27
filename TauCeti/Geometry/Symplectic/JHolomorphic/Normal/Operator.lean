@@ -82,6 +82,9 @@ class of `L (du · a)` is `TauCeti.normalCauchyRiemannLinearization_add_fderiv_a
 * `TauCeti.SmoothEmbedding.isRealCauchyRiemannOperator_normalCauchyRiemannOperator`: the normal
   Cauchy–Riemann operator of a `C²` pseudoholomorphic embedding is a real Cauchy–Riemann operator
   on its complex normal bundle.
+* `TauCeti.IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt`: at a point where a
+  map is pseudoholomorphic, its coordinate expression solves the Cauchy–Riemann equation at the
+  chart centre.
 
 ## References
 
@@ -98,6 +101,34 @@ noncomputable section
 
 open Bundle Set Module Filter
 open scoped Manifold ContDiff Topology
+
+namespace TauCeti
+
+/-! ### Pseudoholomorphic maps in charts -/
+
+variable {E V H H' M X : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [TopologicalSpace H] [TopologicalSpace H']
+  {I : ModelWithCorners ℝ E H} {I' : ModelWithCorners ℝ V H'}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [I.Boundaryless]
+  [TopologicalSpace X] [ChartedSpace H' X] [IsManifold I' ∞ X]
+  {j : SmoothAlmostComplexStructure I M} {J : SmoothAlmostComplexStructure I' X}
+  {u : M → X} {x : M}
+
+/-- At a point where `u` is pseudoholomorphic, its coordinate expression in the charts at `x` and
+at `u x` solves the Cauchy–Riemann equation at the chart centre, with the source structure frozen
+at its value at the chart centre. -/
+theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt
+    (hu : IsPseudoholomorphicAt j J u x) :
+    cauchyRiemannOperator (j.inChart x (extChartAt I x x)) (J.inChart (u x))
+      (writtenInExtChartAt I I' x u) (extChartAt I x x) = 0 := by
+  ext v
+  rw [cauchyRiemannOperator_apply, zero_apply, hu.mdifferentiableAt.fderiv_writtenInExtChartAt,
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x), J.inChart_extChartAt_self,
+    j.inChart_extChartAt_self]
+  exact sub_eq_zero.2 (hu.mfderiv_apply_commute v)
+
+end TauCeti
 
 namespace TauCeti.SmoothEmbedding
 
@@ -230,46 +261,12 @@ theorem fiberEquiv_normalCauchyRiemannOperator_apply
       (2⁻¹ : ℝ) • f.normalComplexStructureAt hn J x (hJ x) (f.isImmersion.normalClass x hn
         (f.normalChartLinearization hn j J
           (fun y ↦ (f.normalComplexStructure hn J hdim hJ).fiberEquiv y (ν y)) x v)) := by
-  rw [normalCauchyRiemannOperator]
-  dsimp only
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, normalComplexStructure_apply,
+  simp [normalCauchyRiemannOperator, normalComplexStructure_apply,
     Manifold.IsImmersion.normalClassL_apply]
 
 section Boundaryless
 
 variable [I.Boundaryless] [I'.Boundaryless]
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] [FiniteDimensional ℝ P] [IsManifold I' ∞ X]
-  [IsManifold I ∞ M] [RiemannianBundle (fun y : X ↦ TangentSpace I' y)] [I'.Boundaryless] in
-/-- The derivative at the chart centre of the coordinate expression of `f` is `df_x`. -/
-private theorem fderiv_writtenInExtChartAt {x : M} (hfx : MDifferentiableAt I I' f x) :
-    fderiv ℝ (writtenInExtChartAt I I' x f) (extChartAt I x x) = mfderiv I I' f x := by
-  rw [hfx.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
-  -- The casts between the tangent spaces and the model spaces are identities.
-  rfl
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] [FiniteDimensional ℝ P] [IsManifold I' ∞ X]
-  [IsManifold I ∞ M] [RiemannianBundle (fun y : X ↦ TangentSpace I' y)] [I.Boundaryless]
-  [I'.Boundaryless] in
-/-- The coordinate expression of `f` at the chart centre: the point `f x` in its own chart. -/
-private theorem writtenInExtChartAt_extChartAt (x : M) :
-    writtenInExtChartAt I I' x f (extChartAt I x x) = extChartAt I' (f x) (f x) := by
-  rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, extChartAt_to_inv]
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] [FiniteDimensional ℝ P]
-  [RiemannianBundle (fun y : X ↦ TangentSpace I' y)] [I'.Boundaryless] in
-/-- At a point where `f` is pseudoholomorphic, its coordinate expression solves the
-Cauchy–Riemann equation at the chart centre. -/
-private theorem cauchyRiemannOperator_writtenInExtChartAt {x : M}
-    (hfx : IsPseudoholomorphicAt j J f x) :
-    cauchyRiemannOperator (j.inChart x (extChartAt I x x)) (J.inChart (f x))
-      (writtenInExtChartAt I I' x f) (extChartAt I x x) = 0 := by
-  ext v
-  rw [cauchyRiemannOperator_apply, zero_apply, fderiv_writtenInExtChartAt hfx.mdifferentiableAt,
-    writtenInExtChartAt_extChartAt, J.inChart_extChartAt_self, j.inChart_extChartAt_self]
-  exact sub_eq_zero.2 (hfx.mfderiv_apply_commute v)
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] [FiniteDimensional ℝ P] [IsManifold I ∞ M]
   [RiemannianBundle (fun y : X ↦ TangentSpace I' y)] [I.Boundaryless] in
@@ -277,7 +274,7 @@ omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
 private theorem eventually_inChart_inChart (x : M) :
     ∀ᶠ y in 𝓝 (writtenInExtChartAt I I' x f (extChartAt I x x)),
       ∀ v, J.inChart (f x) y (J.inChart (f x) y v) = -v := by
-  rw [writtenInExtChartAt_extChartAt]
+  rw [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)]
   filter_upwards [extChartAt_target_mem_nhds (I := I') (f x)] with y hy v
   exact J.inChart_inChart (f x) hy v
 
@@ -290,8 +287,8 @@ theorem isComplexAntilinear_normalChartLinearization {x : M}
       (f.normalChartLinearization hn j J ν x).toLinearMap := by
   have h := isComplexAntilinear_cauchyRiemannLinearization (f.normalChartLift hn ν x)
     (fun v ↦ by rw [j.inChart_extChartAt_self]; exact j.apply_apply x v)
-    (eventually_inChart_inChart x) (cauchyRiemannOperator_writtenInExtChartAt hfx)
-  rw [writtenInExtChartAt_extChartAt] at h
+    (eventually_inChart_inChart x) hfx.cauchyRiemannOperator_writtenInExtChartAt
+  rw [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)] at h
   -- Read `j x` and `J (f x)` as the structures in the charts at their own centres.
   rw [← j.inChart_extChartAt_self, ← J.inChart_extChartAt_self]
   exact h
@@ -324,7 +321,8 @@ theorem normalChartLinearization_smul_apply {x : M} {g : M → ℝ}
     (writtenInExtChartAt I I' x f) (f.normalChartLift hn ν x) (g ∘ (extChartAt I x).symm)
     (extChartAt I x x) v hg.differentiableAt_comp_extChartAt_symm hν
   rw [Function.comp_apply, extChartAt_to_inv, ← mvfderiv_eq_fderiv_comp_extChartAt_symm,
-    normalChartLift_extChartAt, writtenInExtChartAt_extChartAt] at h
+    normalChartLift_extChartAt, writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)]
+    at h
   -- Read `j x` and `J (f x)` as the structures in the charts at their own centres.
   beta_reduce
   rw [← j.inChart_extChartAt_self, ← J.inChart_extChartAt_self]
@@ -390,10 +388,11 @@ theorem isRealCauchyRiemannOperator_normalCauchyRiemannOperator (h2 : 2 ≤ n)
     rw [map_neg, JN.fiberEquiv_I_smul, fiberEquiv_normalCauchyRiemannOperator_apply,
       fiberEquiv_normalCauchyRiemannOperator_apply]
     beta_reduce
-    rw [hL,
-      map_neg, ← normalComplexStructureAt_normalClass (hJ x), normalComplexStructure_apply,
-      map_smul, map_neg, normalComplexStructureAt_normalComplexStructureAt, smul_neg, smul_neg,
-      neg_neg]
+    rw [hL, normalComplexStructure_apply]
+    -- Unfolding `JN` identifies the lift on the left with the lift in `hL`.
+    simp only [JN, map_neg, map_smul, smul_neg, neg_neg,
+      ← normalComplexStructureAt_normalClass (hJ x),
+      normalComplexStructureAt_normalComplexStructureAt]
   · have hsum : (fun y ↦ JN.fiberEquiv y ((ν + ν') y)) =
         (fun y ↦ JN.fiberEquiv y (ν y)) + fun y ↦ JN.fiberEquiv y (ν' y) :=
       funext fun y ↦ map_add _ _ _
@@ -401,8 +400,8 @@ theorem isRealCauchyRiemannOperator_normalCauchyRiemannOperator (h2 : 2 ≤ n)
     rw [add_apply, map_add, fiberEquiv_normalCauchyRiemannOperator_apply,
       fiberEquiv_normalCauchyRiemannOperator_apply, fiberEquiv_normalCauchyRiemannOperator_apply,
       hsum, normalChartLinearization_add (differentiableAt_normalChartLift_fiberEquiv h2 hdim hJ hν)
-        (differentiableAt_normalChartLift_fiberEquiv h2 hdim hJ hν'),
-      add_apply, map_add, map_add, smul_add]
+        (differentiableAt_normalChartLift_fiberEquiv h2 hdim hJ hν')]
+    simp only [add_apply, map_add, smul_add]
   · -- Both sides are `(1 / 2) J_N` applied to `g [L ξ] + dg (j v) [w] - dg v J_N [w]`.
     have hsmul : (fun y ↦ JN.fiberEquiv y ((g • ν) y)) = g • fun y ↦ JN.fiberEquiv y (ν y) :=
       funext fun y ↦ by rw [Pi.smul_apply', Pi.smul_apply', map_smul]

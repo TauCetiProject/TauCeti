@@ -65,7 +65,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * **Boundaryless manifolds**:
   - `ContMDiffAt.contDiffAt_writtenInExtChartAt`,
     `MDifferentiableAt.differentiableAt_writtenInExtChartAt`,
-    `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`, and
+    `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`,
+    `MDifferentiableAt.fderiv_writtenInExtChartAt`, and
     `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: regularity and derivative formulas
     for maps between manifolds in preferred extended charts, with product-chart forms
     `ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm` and
@@ -436,6 +437,14 @@ theorem MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj {g : M → M'} {x : 
   rw [hg.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
   -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
   rfl
+
+/-- On a boundaryless manifold, the Fréchet derivative at the chart centre of the coordinate
+expression of `g` in the extended charts at `x` and at `g x` is the manifold derivative of `g`
+at `x`. -/
+theorem MDifferentiableAt.fderiv_writtenInExtChartAt {g : M → M'} {x : M}
+    (hg : MDifferentiableAt I I' g x) :
+    fderiv 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x) = mfderiv I I' g x :=
+  (hg.mfderiv_eq_fderiv_extChartAt_conj rfl).symm
 
 /-- On a boundaryless source, the manifold derivative, transported to the model spaces by the
 canonical tangent casts, is the Fréchet derivative of the preferred coordinate expression. -/

@@ -82,6 +82,6 @@ theorem mdifferentiableAt_totalSpace_fiberEquiv (J : ContinuousComplexStructure 
   rw [← (trivializationAt G J.Fiber b₀).symm_apply_apply_mk hb' (σ b),
     J.trivializationAt_symm_apply G hb,
     (trivializationAt F V b₀).apply_mk_symm (J.unitSet_subset b₀ hb)]
-  rfl
+  simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe]
 
 end TauCeti.Bundle.ContinuousComplexStructure
