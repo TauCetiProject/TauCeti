@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Coinduced
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.OfMulAction
 public import TauCeti.GroupTheory.GroupAction.PiTransport
@@ -36,7 +37,10 @@ identifies the units of a semi-local algebra `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w
 coinduced from a decomposition group.
 
 Mathlib's coinduced action is evaluated by `Representation.coind_apply_coe_apply`:
-`(h • f) h₁ = f (h₁ * h)`.
+`(h • f) h₁ = f (h₁ * h)`. Coinduction along an open map whose image has finite index preserves
+representations with open kernel (`Representation.isOpen_ker_coind`): the kernel of the
+coinduced action contains the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of
+coset representatives.
 
 ## References
 
@@ -101,6 +105,43 @@ theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : c
   rfl
 
 end Apply
+
+section OpenKernel
+
+variable {k G H V : Type*} [Semiring k] [Group G] [Group H] [AddCommMonoid V] [Module k V]
+  [TopologicalSpace G] [TopologicalSpace H] [ContinuousMul H]
+
+/-- **The coinduced action has open kernel.** If `φ : G →* H` is an open map whose image has
+finite index and `ρ` has open kernel, the coinduced representation has open kernel: it contains
+the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of coset representatives. -/
+theorem isOpen_ker_coind {φ : G →* H} (hφ : IsOpenMap φ) [φ.range.FiniteIndex]
+    (ρ : Representation k G V) (hρ : IsOpen (ρ.ker : Set G)) :
+    IsOpen ((coind φ ρ).ker : Set H) := by
+  have : Finite (H ⧸ φ.range) := Subgroup.finite_quotient_of_finiteIndex
+  let t : H ⧸ φ.range → H := fun c ↦ (Quotient.out c)⁻¹
+  let S : Set H := ⋂ c, (fun x ↦ t c * x * (t c)⁻¹) ⁻¹' (φ '' (ρ.ker : Set G))
+  have hS : IsOpen S := isOpen_iInter_of_finite fun c ↦ (hφ _ hρ).preimage (by fun_prop)
+  have h1 : (1 : H) ∈ S := Set.mem_iInter.mpr fun c ↦ ⟨1, ρ.ker.one_mem, by simp⟩
+  have hSK : S ⊆ (coind φ ρ).ker := by
+    intro x hx
+    rw [SetLike.mem_coe, MonoidHom.mem_ker]
+    refine LinearMap.ext fun F ↦ Subtype.ext (funext fun y ↦ ?_)
+    obtain ⟨⟨_, g, rfl⟩, hmk⟩ := QuotientGroup.mk_out_eq_mul φ.range y⁻¹
+    set c : H ⧸ φ.range := QuotientGroup.mk y⁻¹
+    have hy : y = φ g * t c := by
+      simp only [t, c, hmk, mul_inv_rev, inv_inv, mul_inv_cancel_left]
+    obtain ⟨g', hg', hg'x⟩ := Set.mem_iInter.mp hx c
+    have hyx : y * x = φ (g * g') * t c := by
+      rw [map_mul, hg'x, hy]
+      group
+    have hg'1 : ρ g' = 1 := MonoidHom.mem_ker.mp hg'
+    calc F.val (y * x) = F.val (φ (g * g') * t c) := by rw [hyx]
+      _ = ρ (g * g') (F.val (t c)) := F.property _ _
+      _ = ρ g (F.val (t c)) := by rw [map_mul, hg'1, mul_one]
+      _ = F.val y := by rw [← F.property, ← hy]
+  exact Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hS.mem_nhds h1) hSK)
+
+end OpenKernel
 
 open scoped MonoidAlgebra
 

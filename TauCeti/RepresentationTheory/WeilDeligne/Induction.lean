@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.WeilDeligne.Restriction
 
 /-!
@@ -18,17 +18,18 @@ local fields, with `f` the residue degree. For a raw Weil–Deligne parameter `(
 parameter on Mathlib's coinduced representation `Representation.coind ι r'`, the space of
 functions `F : W → V'` with `F (ι g * w) = r'(g) (F w)`, on which `W` acts by right translation.
 Its monodromy is `(N F)(w) = q ^ deg w • N' (F w)`, which is again `W'`-equivariant because
-`N' r'(g) = (q ^ f) ^ (-deg' g) • r'(g) N'`, is nilpotent, and satisfies the conjugation relation
-for `q`. When `ι` is an open map whose image has finite index, the kernel of the action is open:
-it contains the open set of `x` with `t x t⁻¹ ∈ ι(ker r')` for `t` in a finite set of coset
-representatives (`TauCeti.WeilDeligneParameter.isOpen_ker_coind`). For an image of finite index
-the coinduced representation is the induced one; this file works with the function model and
-does not compare it with the tensor-product model `W ⊗_{W'} V'` in left-coset notation.
+`N' r'(g) = (q ^ f) ^ (-deg' g) • r'(g) N'` (`TauCeti.WeilDeligneParameter.N_apply_r_apply`), is
+nilpotent, and satisfies the conjugation relation for `q`. When `ι` is an open map whose image has
+finite index, the kernel of the action is open (`Representation.isOpen_ker_coind`). For an image of
+finite index the coinduced representation is the induced one; this file works with the function
+model and does not compare it with the tensor-product model `W ⊗_{W'} V'` in left-coset notation.
 
 Induction is right adjoint to restriction: morphisms from the restriction of a parameter `D` for
 `W` to `D'` correspond to morphisms from `D` to the induced parameter
 (`TauCeti.WeilDeligneParameter.restrictIndHomEquiv`, Frobenius reciprocity), by
-`φ ↦ (v ↦ (w ↦ φ (r(w) v)))` with inverse evaluation at `1`.
+`φ ↦ (v ↦ (w ↦ φ (r(w) v)))` with inverse evaluation at `1`. These maps adapt Mathlib's
+`Rep.resCoindToHom` and `Rep.resCoindHomEquiv` (the hom-equivalence of `Rep.resCoindAdjunction`)
+to parameters with monodromy.
 
 ## Main definitions
 
@@ -40,8 +41,6 @@ Induction is right adjoint to restriction: morphisms from the restriction of a p
 
 ## Main results
 
-* `TauCeti.WeilDeligneParameter.N_r_apply`: `N (r(w) v) = q ^ (-deg w) • r(w) (N v)`.
-* `TauCeti.WeilDeligneParameter.isOpen_ker_coind`: the coinduced action has open kernel.
 * `TauCeti.WeilDeligneParameter.coind_mul_indN`: the conjugation relation for the induced
   monodromy.
 
@@ -65,13 +64,6 @@ variable {E W W' V V' : Type*} [Field E] [Group W] [Group W']
   [TopologicalSpace W'] [AddCommGroup V] [Module E V] [AddCommGroup V'] [Module E V']
   {deg : W →* Multiplicative ℤ} {deg' : W' →* Multiplicative ℤ} {q : ℕ}
 
-/-- The conjugation relation in the form `N (r(w) v) = q ^ (-deg w) • r(w) (N v)`. -/
-theorem N_r_apply [TopologicalSpace W] (D : WeilDeligneParameter E W V deg q) (w : W) (v : V) :
-    D.N (D.r w v) = (q : E) ^ (-(deg w).toAdd) • D.r w (D.N v) := by
-  have h := D.r_apply_N_apply w⁻¹ (D.r w v)
-  rw [inv_self_apply, map_inv deg w, toAdd_inv] at h
-  rw [← self_inv_apply D.r w (D.N (D.r w v)), h, map_smul]
-
 variable (ι : W' →* W) (f : ℕ) (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd)
   (hq : (q : E) ≠ 0)
 
@@ -81,11 +73,12 @@ theorem indN_mem (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) {F : W → V'}
     (hF : F ∈ coindV ι D'.r) :
     (fun w ↦ (q : E) ^ (deg w).toAdd • D'.N (F w)) ∈ coindV ι D'.r := by
   intro g w
-  beta_reduce
-  rw [hF g w, N_r_apply, map_smul, smul_smul, map_mul, toAdd_mul, hf, Nat.cast_pow,
-    ← zpow_natCast, ← zpow_mul, ← zpow_add₀ hq]
-  congr 2
-  ring
+  -- The exponent identity `deg (ι g * w) - f deg' g = deg w`.
+  have hexp : (q : E) ^ (deg (ι g * w)).toAdd * ((q ^ f : ℕ) : E) ^ (-(deg' g).toAdd) =
+      (q : E) ^ (deg w).toAdd := by
+    rw [Nat.cast_pow, ← zpow_natCast, ← zpow_mul, ← zpow_add₀ hq, map_mul, toAdd_mul, hf]
+    ring_nf
+  simp only [hF g w, N_apply_r_apply, map_smul, smul_smul, hexp]
 
 /-- The **monodromy of the induced parameter**: `(N F)(w) = q ^ deg w • N' (F w)` on the
 coinduced representation. -/
@@ -103,12 +96,6 @@ variable {ι f hf hq}
 @[simp]
 theorem indN_apply (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (F : coindV ι D'.r)
     (w : W) : (indN ι f hf hq D' F).val w = (q : E) ^ (deg w).toAdd • D'.N (F.val w) :=
-  (rfl)
-
-omit [TopologicalSpace W'] in
-/-- The coinduced action is right translation. -/
-theorem coind_apply_val (ρ : _root_.Representation E W' V') (x : W) (F : coindV ι ρ) (w : W) :
-    (coind ι ρ x F).val w = F.val (w * x) :=
   (rfl)
 
 /-- Powers of the induced monodromy: `(N ^ k F)(w) = q ^ (k deg w) • N' ^ k (F w)`. -/
@@ -134,45 +121,16 @@ theorem coind_mul_indN (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (x : W) 
     coind ι D'.r x * indN ι f hf hq D' * coind ι D'.r x⁻¹ =
       (q : E) ^ (deg x).toAdd • indN ι f hf hq D' := by
   refine LinearMap.ext fun F ↦ Subtype.ext (funext fun w ↦ ?_)
-  have h : ((coind ι D'.r x * indN ι f hf hq D' * coind ι D'.r x⁻¹) F).val w =
-      (q : E) ^ (deg (w * x)).toAdd • D'.N (F.val (w * x * x⁻¹)) :=
-    rfl
-  rw [h, mul_inv_cancel_right, map_mul, toAdd_mul, zpow_add₀ hq, LinearMap.smul_apply,
-    Submodule.coe_smul, Pi.smul_apply, indN_apply, smul_smul, mul_comm]
+  -- The exponent identity `deg (w * x) = deg w + deg x`.
+  have hexp :
+      (q : E) ^ (deg (w * x)).toAdd = (q : E) ^ (deg x).toAdd * (q : E) ^ (deg w).toAdd := by
+    rw [map_mul, toAdd_mul, zpow_add₀ hq, mul_comm]
+  simp only [mul_apply_eq_comp, coind_apply_coe_apply, indN_apply, mul_inv_cancel_right, hexp]
+  simp [smul_smul]
 
 section Topology
 
 variable [TopologicalSpace W] [ContinuousMul W]
-
-/-- **The coinduced action has open kernel.** If `ι : W' →* W` is an open map whose image has
-finite index and `ρ` has open kernel, the coinduced representation has open kernel: it contains
-the open set of `x` with `t x t⁻¹ ∈ ι(ker ρ)` for `t` in a finite set of coset representatives. -/
-theorem isOpen_ker_coind (hι : IsOpenMap ι) [ι.range.FiniteIndex]
-    (ρ : _root_.Representation E W' V') (hρ : IsOpen (ρ.ker : Set W')) :
-    IsOpen ((coind ι ρ).ker : Set W) := by
-  have : Finite (W ⧸ ι.range) := Subgroup.finite_quotient_of_finiteIndex
-  let t : W ⧸ ι.range → W := fun c ↦ (Quotient.out c)⁻¹
-  let S : Set W := ⋂ c, (fun x ↦ t c * x * (t c)⁻¹) ⁻¹' (ι '' (ρ.ker : Set W'))
-  have hS : IsOpen S := isOpen_iInter_of_finite fun c ↦ (hι _ hρ).preimage (by fun_prop)
-  have h1 : (1 : W) ∈ S := Set.mem_iInter.mpr fun c ↦ ⟨1, ρ.ker.one_mem, by simp⟩
-  have hSK : S ⊆ (coind ι ρ).ker := by
-    intro x hx
-    rw [SetLike.mem_coe, MonoidHom.mem_ker]
-    refine LinearMap.ext fun F ↦ Subtype.ext (funext fun y ↦ ?_)
-    obtain ⟨⟨_, h, rfl⟩, hmk⟩ := QuotientGroup.mk_out_eq_mul ι.range y⁻¹
-    set c : W ⧸ ι.range := QuotientGroup.mk y⁻¹
-    have hy : y = ι h * t c := by
-      simp only [t, c, hmk, mul_inv_rev, inv_inv, mul_inv_cancel_left]
-    obtain ⟨k, hk, hkx⟩ := Set.mem_iInter.mp hx c
-    have hyx : y * x = ι (h * k) * t c := by
-      rw [map_mul, hkx, hy]
-      group
-    have hk1 : ρ k = 1 := MonoidHom.mem_ker.mp hk
-    calc F.val (y * x) = F.val (ι (h * k) * t c) := by rw [hyx]
-      _ = ρ (h * k) (F.val (t c)) := F.property _ _
-      _ = ρ h (F.val (t c)) := by rw [map_mul, hk1, mul_one]
-      _ = F.val y := by rw [← F.property, ← hy]
-  exact Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hS.mem_nhds h1) hSK)
 
 /-- The **induced parameter** of a raw Weil–Deligne parameter `(V', r', N')` for `W'` and
 `q ^ f` along `ι : W' →* W` with `deg (ι w) = f · deg' w`, for `ι` an open map with image of
@@ -207,18 +165,20 @@ variable (hι) (hιc : Continuous ι)
 def Hom.toInd {D : WeilDeligneParameter E W V deg q}
     {D' : WeilDeligneParameter E W' V' deg' (q ^ f)}
     (φ : Hom (D.restrict ι hιc f hf) D') : Hom D (ind ι f hf hq hι D') where
-  toLinearMap := LinearMap.codRestrict (coindV ι D'.r)
-    (LinearMap.pi fun w ↦ φ.toLinearMap ∘ₗ D.r w) fun v g w ↦ by
-      simpa [map_mul] using φ.map_r_apply g (D.r w v)
+  toLinearMap :=
+    { toFun v := ⟨fun w ↦ φ (D.r w v), fun g w ↦ by
+        simpa [map_mul] using φ.map_r_apply g (D.r w v)⟩
+      map_add' v v' := by ext; simp
+      map_smul' a v := by ext; simp }
   isIntertwining' x := by
     refine LinearMap.ext fun v ↦ Subtype.ext (funext fun w ↦ ?_)
-    change φ (D.r w (D.r x v)) = φ (D.r (w * x) v)
-    rw [map_mul, mul_apply_eq_comp]
+    simp only [LinearMap.comp_apply, ind_r, coind_apply_coe_apply]
+    simp [map_mul]
   comp_N := by
     refine LinearMap.ext fun v ↦ Subtype.ext (funext fun w ↦ ?_)
-    change φ (D.r w (D.N v)) = (q : E) ^ (deg w).toAdd • D'.N (φ (D.r w v))
-    rw [r_apply_N_apply, map_smul]
-    exact congrArg _ (by simpa using φ.map_N_apply (D.r w v))
+    have h := φ.map_N_apply (D.r w v)
+    rw [restrict_N] at h
+    simp [r_apply_N_apply, h]
 
 @[simp]
 theorem Hom.toInd_apply_val {D : WeilDeligneParameter E W V deg q}
@@ -234,14 +194,20 @@ def Hom.ofInd {D : WeilDeligneParameter E W V deg q}
   toLinearMap := (LinearMap.proj 1 ∘ₗ (coindV ι D'.r).subtype) ∘ₗ Ψ.toLinearMap
   isIntertwining' g := by
     refine LinearMap.ext fun v ↦ ?_
-    simp only [LinearMap.comp_apply, restrict_r_apply]
-    change (Ψ (D.r (ι g) v)).val 1 = D'.r g ((Ψ v).val 1)
-    rw [Ψ.map_r_apply, ind_r, coind_apply_val, one_mul]
+    simp only [LinearMap.comp_apply, LinearMap.proj_apply, Submodule.subtype_apply,
+      restrict_r_apply, IntertwiningMap.toLinearMap_apply, Hom.coe_toIntertwiningMap]
+    rw [Ψ.map_r_apply, ind_r, coind_apply_coe_apply, one_mul]
     simpa using (Ψ v).property g 1
   comp_N := by
     refine LinearMap.ext fun v ↦ ?_
     have h := congrArg (fun F : coindV ι D'.r ↦ F.val 1) (Ψ.map_N_apply v)
     simpa using h
+
+@[simp]
+theorem Hom.ofInd_apply {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W' V' deg' (q ^ f)} (Ψ : Hom D (ind ι f hf hq hι D')) (v : V) :
+    Ψ.ofInd hι hιc v = (Ψ v).val 1 :=
+  (rfl)
 
 /-- **Frobenius reciprocity for Weil–Deligne parameters**: morphisms from the restriction of `D`
 to `D'` correspond to morphisms from `D` to the induced parameter of `D'`. -/
@@ -252,12 +218,24 @@ def restrictIndHomEquiv (D : WeilDeligneParameter E W V deg q)
   invFun Ψ := Ψ.ofInd hι hιc
   left_inv φ := by
     ext v
-    change φ (D.r 1 v) = φ v
-    rw [map_one, one_apply_eq_self]
+    simp
   right_inv Ψ := by
     ext v w
-    change (Ψ (D.r w v)).val 1 = (Ψ v).val w
-    rw [Ψ.map_r_apply, ind_r, coind_apply_val, one_mul]
+    simp only [IntertwiningMap.toLinearMap_apply, Hom.coe_toIntertwiningMap]
+    rw [Hom.toInd_apply_val, Hom.ofInd_apply, Ψ.map_r_apply, ind_r, coind_apply_coe_apply,
+      one_mul]
+
+@[simp]
+theorem restrictIndHomEquiv_apply (D : WeilDeligneParameter E W V deg q)
+    (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (φ : Hom (D.restrict ι hιc f hf) D') :
+    restrictIndHomEquiv hι hιc D D' φ = (φ.toInd hι hιc : Hom D (ind ι f hf hq hι D')) :=
+  (rfl)
+
+@[simp]
+theorem restrictIndHomEquiv_symm_apply (D : WeilDeligneParameter E W V deg q)
+    (D' : WeilDeligneParameter E W' V' deg' (q ^ f)) (Ψ : Hom D (ind ι f hf hq hι D')) :
+    (restrictIndHomEquiv hι hιc D D').symm Ψ = Ψ.ofInd hι hιc :=
+  (rfl)
 
 end Topology
 
