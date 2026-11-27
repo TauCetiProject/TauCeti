@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.CategoryTheory.Abelian.RightDerived
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.HigherDirectImage
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
@@ -215,8 +216,10 @@ end
 lemma lerayEdge_one_δ_cokernelSequence [pf.Additive] [PreservesFiniteLimits pf]
     {S : ShortComplex (Sheaf K AddCommGrpCat.{w})} (hS : S.ShortExact)
     (v : H (cokernel (pf.map S.f)) 0) :
-    lerayEdge adj c S.X₁ 1 (H.δ (pf.shortExact_cokernelSequence_map_f hS) 0 1 rfl v) =
+    lerayEdge adj c S.X₁ 1
+        (H.δ (have := hS.mono_f; TauCeti.cokernelSequence_shortExact (pf.map S.f)) 0 1 rfl v) =
       H.δ hS 0 1 rfl (lerayEdge adj c S.X₃ 0 (H.map (pf.cokernelMapFToMapX₃ S) 0 v)) := by
+  have := hS.mono_f
   let φ : (ShortComplex.mk (pf.map S.f) (cokernel.π (pf.map S.f))
       (cokernel.condition _)).map pb ⟶ S :=
     { τ₁ := adj.counit.app S.X₁
@@ -227,8 +230,9 @@ lemma lerayEdge_one_δ_cokernelSequence [pf.Additive] [PreservesFiniteLimits pf]
         dsimp only [ShortComplex.map_g]
         rw [← pb.map_comp_assoc, Functor.π_cokernelMapFToMapX₃]
         exact (adj.counit.naturality S.g).symm }
-  rw [lerayEdge_apply, lerayEdge_apply, pullback_naturality, ← H.map_comp_apply]
-  exact map_pullback_δ pb c (pf.shortExact_cokernelSequence_map_f hS) hS φ 0 1 rfl v
+  -- The edge map in degree one is `H.map (counit) ∘ pullback` by definition.
+  rw [lerayEdge_apply adj c (F := S.X₃), pullback_naturality, ← H.map_comp_apply]
+  exact map_pullback_δ pb c (TauCeti.cokernelSequence_shortExact (pf.map S.f)) hS φ 0 1 rfl v
 
 /-- When the comparison `c` of constant sheaves is an isomorphism, the edge map is injective in
 degree one: `H¹(C, f_* F) ⟶ H¹(D, F)` is the first map of the five-term exact sequence of the
@@ -239,17 +243,15 @@ lemma lerayEdge_one_injective [IsIso c] [EnoughInjectives (Sheaf K AddCommGrpCat
   have := adj.right_adjoint_additive
   let ι := Injective.ι F
   let S := ShortComplex.mk ι (cokernel.π ι) (cokernel.condition ι)
-  have hS : S.ShortExact :=
-    { exact := ShortComplex.cokernelSequence_exact ι
-      mono_f := inferInstanceAs (Mono ι) }
-  have hT := pf.shortExact_cokernelSequence_map_f hS
+  have hS : S.ShortExact := TauCeti.cokernelSequence_shortExact ι
+  have hT := TauCeti.cokernelSequence_shortExact (pf.map S.f)
   have : Mono (pf.cokernelMapFToMapX₃ S) := (pf.shortExact_cokernelMapFToMapX₃ hS).mono_f
   -- Since `f_* I` is injective, every degree-one class is `δ v` for a section `v` of
   -- `f_* I / f_* F`.
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   have := subsingleton_H_succ_obj_of_injective adj (Injective.under F) 0
   obtain ⟨v, rfl⟩ := δ_surjective hT 0 1 rfl this x
-  rw [lerayEdge_one_δ_cokernelSequence adj c hS] at hx
+  rw [lerayEdge_one_δ_cokernelSequence adj c hS v] at hx
   -- The image of `v` in `H⁰(D, Q)` lifts to `H⁰(D, I) ≅ H⁰(C, f_* I)`, so `v` comes from `f_* I`.
   obtain ⟨z, hz⟩ := (exact_map_δ hS 0 1 rfl _).1 hx
   obtain ⟨z, rfl⟩ := (lerayEdge_zero_bijective adj c _).2 z

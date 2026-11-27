@@ -46,12 +46,6 @@ right derived functors by one degree:
   and `0 ⟶ G X ⟶ G I ⟶ G Q ⟶ 0` is short exact if and only if `R¹ G (X)` vanishes
   (`CategoryTheory.Functor.shortExact_map_iff_isZero_rightDerived_one`).
 
-For a left exact `G` and any short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0`, the sequences
-`0 ⟶ G X ⟶ G I ⟶ coker (G X ⟶ G I) ⟶ 0` and
-`0 ⟶ coker (G X ⟶ G I) ⟶ G Q ⟶ coker (G I ⟶ G Q) ⟶ 0` are short exact
-(`CategoryTheory.Functor.shortExact_cokernelSequence_map_f`,
-`CategoryTheory.Functor.shortExact_cokernelMapFToMapX₃`).
-
 These are the dimension-shifting steps of inductive arguments on vanishing derived functors,
 such as Leray's acyclicity theorem.
 
@@ -236,7 +230,8 @@ noncomputable def rightDerivedOneIsoCokernel [PreservesFiniteLimits G] :
       ((Category.id_comp _).trans (Category.comp_id _).symm)
   (R.ofShortExact hS).isoRightDerivedObj G 1 ≪≫
     HomologicalComplex.homologyIsoSc' _ 0 1 2 (by simp) (by simp) ≪≫
-    ShortComplex.homologyMapIso e ≪≫ T'.homologyIsoCokernelLift ≪≫
+    ShortComplex.homologyMapIso e ≪≫
+    (ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel T').homologyIso ≪≫
     cokernelIsoOfEq (show kernel.lift T'.g T'.f T'.zero = G.map S.g ≫ kernel.lift T.g T.f T.zero by
       ext; simp [T, T']) ≪≫
     cokernelCompIsIso _ _
@@ -254,18 +249,17 @@ lemma π_rightDerivedOneIsoCokernel_inv [PreservesFiniteLimits G] :
           rw [← G.map_comp]; simp) ≫
       HomologicalComplex.homologyπ _ 1 ≫
       (((injectiveResolution S.X₃).ofShortExact hS).isoRightDerivedObj G 1).inv := by
-  have h := (ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel
-    (ShortComplex.mk (G.map (S.g ≫ (injectiveResolution S.X₃).ι₀))
-      (G.map ((injectiveResolution S.X₃).cocomplex.d 0 1))
-      (by rw [← G.map_comp]; simp))).π_comp_homologyIso_inv
   simp only [rightDerivedOneIsoCokernel, HomologicalComplex.homologyFunctor_obj,
     HomologicalComplex.shortComplexFunctor'_obj_X₁, mapHomologicalComplex_obj_X,
     HomologicalComplex.shortComplexFunctor'_obj_X₂, HomologicalComplex.shortComplexFunctor'_obj_X₃,
     Iso.trans_inv, cokernelCompIsIso_inv, Category.assoc, ShortComplex.homologyMapIso_inv,
     cokernel.π_desc_assoc, π_comp_cokernelIsoOfEq_inv_assoc]
-  -- `homologyIsoCokernelLift` is the homology isomorphism of the left homology data of `T'` given
-  -- by `kernel T'.g` and its cokernel, up to unfolding.
-  erw [reassoc_of% h]
+  have h := (ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel
+    (ShortComplex.mk (G.map (S.g ≫ (injectiveResolution S.X₃).ι₀))
+      (G.map ((injectiveResolution S.X₃).cocomplex.d 0 1))
+      (by rw [← G.map_comp]; simp))).π_comp_homologyIso_inv
+  rw [ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel_π] at h
+  rw [reassoc_of% h]
   simp only [ShortComplex.LeftHomologyData.ofHasKernelOfHasCokernel_K,
     ShortComplex.homologyπ_naturality_assoc, HomologicalComplex.π_homologyIsoSc'_inv_assoc]
   simp only [← Category.assoc]
@@ -299,61 +293,6 @@ theorem shortExact_map_iff_isZero_rightDerived_one [PreservesFiniteLimits G] :
     { exact := hS.exact.map_of_mono_of_preservesKernel G hS.mono_f inferInstance
       mono_f := have := hS.mono_f; inferInstanceAs (Mono (G.map S.f))
       epi_g := (G.epi_map_g_iff_isZero_rightDerived_one hS).2 h }⟩
-
-section CokernelComparison
-
-variable {C' : Type*} [Category* C'] [Abelian C'] (G' : C' ⥤ D) [G'.Additive]
-  [PreservesFiniteLimits G'] {S' : ShortComplex C'} (hS' : S'.ShortExact)
-
-variable (S') in
-/-- For a short complex `X ⟶ I ⟶ Q`, the morphism `coker (G X ⟶ G I) ⟶ G Q` induced by
-`G I ⟶ G Q`. -/
-noncomputable def cokernelMapFToMapX₃ : cokernel (G'.map S'.f) ⟶ G'.obj S'.X₃ :=
-  cokernel.desc _ (G'.map S'.g) (by rw [← G'.map_comp, S'.zero, G'.map_zero])
-
-omit [PreservesFiniteLimits G'] in
-/-- `coker (G X ⟶ G I) ⟶ G Q` restricts to `G I ⟶ G Q` along the projection. -/
-@[reassoc (attr := simp)]
-lemma π_cokernelMapFToMapX₃ :
-    cokernel.π (G'.map S'.f) ≫ G'.cokernelMapFToMapX₃ S' = G'.map S'.g :=
-  cokernel.π_desc _ _ _
-
-variable (S') in
-omit [PreservesFiniteLimits G'] in
-/-- `coker (G X ⟶ G I) ⟶ G Q ⟶ coker (G I ⟶ G Q)` is zero. -/
-@[reassoc (attr := simp)]
-lemma cokernelMapFToMapX₃_comp_π :
-    G'.cokernelMapFToMapX₃ S' ≫ cokernel.π (G'.map S'.g) = 0 := by
-  rw [← cancel_epi (cokernel.π (G'.map S'.f)), π_cokernelMapFToMapX₃_assoc]
-  simp
-
-include hS'
-
-omit [G'.Additive] in
-/-- For a left exact functor `G` and a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0`, the sequence
-`0 ⟶ G X ⟶ G I ⟶ coker (G X ⟶ G I) ⟶ 0` is short exact. -/
-lemma shortExact_cokernelSequence_map_f :
-    (ShortComplex.mk (G'.map S'.f) (cokernel.π (G'.map S'.f)) (cokernel.condition _)).ShortExact :=
-  have := hS'.mono_f
-  { exact := ShortComplex.cokernelSequence_exact _
-    mono_f := inferInstanceAs (Mono (G'.map S'.f)) }
-
-/-- For a left exact functor `G` and a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0`, the sequence
-`0 ⟶ coker (G X ⟶ G I) ⟶ G Q ⟶ coker (G I ⟶ G Q) ⟶ 0` is short exact. -/
-lemma shortExact_cokernelMapFToMapX₃ :
-    (ShortComplex.mk (G'.cokernelMapFToMapX₃ S') (cokernel.π (G'.map S'.g))
-      (G'.cokernelMapFToMapX₃_comp_π S')).ShortExact := by
-  refine { exact := ?_, mono_f := ?_, epi_g := inferInstanceAs (Epi (cokernel.π _)) }
-  · -- It has the same image as `G I ⟶ G Q`, through the epimorphism `G I ⟶ coker (G X ⟶ G I)`.
-    let φ : ShortComplex.mk (G'.map S'.g) (cokernel.π (G'.map S'.g)) (cokernel.condition _) ⟶
-        ShortComplex.mk (G'.cokernelMapFToMapX₃ S') (cokernel.π (G'.map S'.g))
-          (G'.cokernelMapFToMapX₃_comp_π S') :=
-      { τ₁ := cokernel.π (G'.map S'.f), τ₂ := 𝟙 _, τ₃ := 𝟙 _ }
-    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1
-      (ShortComplex.cokernelSequence_exact _)
-  · exact (hS'.exact.map_of_mono_of_preservesKernel G' hS'.mono_f inferInstance).mono_cokernelDesc
-
-end CokernelComparison
 
 end Functor
 

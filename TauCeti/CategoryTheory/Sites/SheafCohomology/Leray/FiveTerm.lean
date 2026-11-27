@@ -124,19 +124,21 @@ lemma lerayFiveTermCokernelMap_δ (y : H S.X₃ 0) :
 /-- **Exactness of `H¹(C, f_* F) ⟶ H¹(D, F) ⟶ H⁰(C, coker (f_* I ⟶ f_* Q))` at `H¹(D, F)`.** -/
 theorem exact_lerayEdge_one_lerayFiveTermCokernelMap :
     Function.Exact (lerayEdge adj c S.X₁ 1) (lerayFiveTermCokernelMap adj c hS) := by
+  have := hS.mono_f
   intro x
   constructor
   · intro hx
     obtain ⟨y, rfl⟩ := δ_surjective hS 0 1 rfl inferInstance x
     rw [lerayFiveTermCokernelMap_δ, lerayFiveTermAux, AddMonoidHom.comp_apply] at hx
     obtain ⟨v, hv⟩ := (exact_map_map (pf.shortExact_cokernelMapFToMapX₃ hS) 0 _).1 hx
-    refine ⟨H.δ (pf.shortExact_cokernelSequence_map_f hS) 0 1 rfl v, ?_⟩
+    refine ⟨H.δ (TauCeti.cokernelSequence_shortExact (pf.map S.f)) 0 1 rfl v, ?_⟩
     rw [lerayEdge_one_δ_cokernelSequence adj c hS, hv, AddEquiv.coe_toAddMonoidHom,
       lerayEdge_lerayEdgeZeroEquiv_symm]
   · rintro ⟨x, rfl⟩
     have := subsingleton_H_succ_obj_of_injective adj S.X₂ 0
-    obtain ⟨v, rfl⟩ := δ_surjective (pf.shortExact_cokernelSequence_map_f hS) 0 1 rfl this x
-    rw [lerayEdge_one_δ_cokernelSequence adj c hS, lerayFiveTermCokernelMap_δ,
+    obtain ⟨v, rfl⟩ :=
+      δ_surjective (TauCeti.cokernelSequence_shortExact (pf.map S.f)) 0 1 rfl this x
+    rw [lerayEdge_one_δ_cokernelSequence adj c hS v, lerayFiveTermCokernelMap_δ,
       lerayFiveTermAux_lerayEdge]
     exact (exact_map_map (pf.shortExact_cokernelMapFToMapX₃ hS) 0).apply_apply_eq_zero v
 
