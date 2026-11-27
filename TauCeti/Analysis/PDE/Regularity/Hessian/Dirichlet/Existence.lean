@@ -188,10 +188,8 @@ private theorem exists_firstOrder_mem_w1p0Submodule_and_trace_iteratedGradient_a
       (fun y hy => exists_affineIsometryEquiv_of_mem_frontier_preimage g hbdry hy)
       (Lp.compMeasurePreserving g.symm hg' f)
   -- Transport `w` back to `Ω` along `g`.
-  refine ⟨compLinearIsometryEquiv hg hΩΩ' 2 w, ?_, ?_⟩
-  · have h := compLinearIsometryEquiv_mem_wkp0Submodule hg hΩΩ' 1
-      (show lowerOrder 1 w ∈ wkp0Submodule volume Ω' 2 1 by rwa [wkp0Submodule_one])
-    rwa [wkp0Submodule_one, ← lowerOrder_compLinearIsometryEquiv, ← firstOrder_one] at h
+  refine ⟨compLinearIsometryEquiv hg hΩΩ' 2 w,
+    firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule hg hΩΩ' (by rwa [firstOrder_one]), ?_⟩
   have hgr : MeasurePreserving g (volume.restrict (Omega : Set (WithLp 2 (ℝ × E))))
       (volume.restrict (Ω' : Set (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))))) := by
     rw [hΩΩ']

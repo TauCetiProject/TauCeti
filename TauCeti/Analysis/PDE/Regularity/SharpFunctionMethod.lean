@@ -8,17 +8,18 @@ module
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Average.Jensen
 import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
 
 /-!
 # Krylov's sharp function method
 
-Let `1 ≤ γ < p < ∞`, and let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F` lie in `Lᵖ`. Suppose that
-the mean oscillation of `g` in `L^γ` on every ball `B_ρ = ball c ρ` is controlled by averages
-over the dilated ball `B_{κρ}`, for every `κ ≥ 1`:
+Let `0 < γ < p < ∞` with `1 < p`, and let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F` lie in `Lᵖ`.
+Suppose that the `L¹` mean oscillation of `g` on every ball `B_ρ = ball c ρ` is controlled by
+averages over the dilated ball `B_{κρ}`, for every `κ ≥ 1`:
 
-`⨍_{B_ρ} ‖g - g_{B_ρ}‖^γ ≤ c₁ κ^(-γ) ⨍_{B_{κρ}} ‖g‖^γ + c₂ κ^(n + 1) ⨍_{B_{κρ}} ‖G‖^γ`
+`(⨍_{B_ρ} ‖g - g_{B_ρ}‖)^γ ≤ c₁ κ^(-γ) ⨍_{B_{κρ}} ‖g‖^γ + c₂ κ^(n + 1) ⨍_{B_{κρ}} ‖G‖^γ`
 `  + c₃ κ^(n + 1) (L^(γq' - 1) δ)^(1/q') (⨍_{B_{κρ}} ‖g‖^(γq))^(1/q)`
 
 for every pair of Hölder conjugate exponents `q, q'` with `γq ≤ p`. This is the form of Krylov's
@@ -30,19 +31,22 @@ coefficients, the deviation being bounded by `L`. If `δ` is small enough, depen
 `‖g‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`
 
 with `C` depending on the same quantities
+(`TauCeti.PDE.exists_eLpNorm_le_of_forall_rpow_setAverage_norm_sub_le`). For `γ ≥ 1` the left
+side is at most the mean oscillation in `L^γ`, `⨍_{B_ρ} ‖g - g_{B_ρ}‖^γ`, by Jensen's inequality,
+so the estimate also holds under that hypothesis
 (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`).
 
-The estimate holds for every exponent `p` above the exponent `γ` of the mean oscillation. Mean
-oscillation estimates in `L²` (`γ = 2`), which come from the `L²` theory of the frozen equation,
-give the range `2 < p < ∞`; estimates in `L^γ` for `γ` close to `1` give every `p > γ`, and so
-reach the range `1 < p ≤ 2`.
+The estimate holds for every exponent `p` above the exponent `γ` of the averages. Mean oscillation
+estimates in `L²` (`γ = 2`), which come from the `L²` theory of the frozen equation, give the range
+`2 < p < ∞`; estimates with `γ` close to `1`, which come from the `L^γ` theory of the frozen
+equation, give every `p > 1`.
 
 ## The argument
 
 * **The sharp function.** Every average over `B_{κρ} ∋ x` is at most `2^(n + 1)` times the centred
   maximal function at `x` (`TauCeti.ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction`).
-  With Jensen's inequality and the supremum over the balls containing `x`, the `γ`-th power of the
-  sharp maximal function of `g` is bounded pointwise by
+  Taking the supremum over the balls containing `x`, the `γ`-th power of the sharp maximal
+  function of `g`, which is the supremum of the `L¹` mean oscillations, is bounded pointwise by
   `κ^(-γ) M(‖g‖^γ) + κ^(n + 1) M(‖G‖^γ) + κ^(n + 1) δ^(1/q') M(‖g‖^(γq))^(1/q)`, up to constants.
 * **Absorption.** The Fefferman–Stein inequality for Euclidean balls
   (`TauCeti.exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow`) and the strong
@@ -53,8 +57,10 @@ reach the range `1 < p ≤ 2`.
 
 ## Main declarations
 
-* `TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`: the `Lᵖ` estimate from
-  mean oscillation estimates on all balls.
+* `TauCeti.PDE.exists_eLpNorm_le_of_forall_rpow_setAverage_norm_sub_le`: the `Lᵖ` estimate from
+  mean oscillation estimates in `L¹` on all balls.
+* `TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`: the same from mean
+  oscillation estimates in `L^γ`, `γ ≥ 1`.
 
 ## References
 
@@ -103,16 +109,16 @@ private theorem ofReal_setAverage_norm_rpow_le {H : Type*} [NormedAddCommGroup H
     ENNReal.ofReal_ofNat] using
     ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction volume hk hx
 
-/-- **The mean oscillation estimate on one ball.** If the mean oscillation of `g` in `L^γ` on
-`B_ρ = ball c ρ` is bounded by the averages over `B_{κρ}` of `‖g‖^γ`, of `‖G‖^γ` and of
-`‖g‖^(γq)`, then for `x ∈ B_ρ` the `γ`-th power of the mean oscillation of `g` on `B_ρ` is bounded
-by the maximal functions at `x` of the same quantities. -/
+/-- **The mean oscillation estimate on one ball.** If the `γ`-th power of the mean oscillation of
+`g` on `B_ρ = ball c ρ` is bounded by the averages over `B_{κρ}` of `‖g‖^γ`, of `‖G‖^γ` and of
+`‖g‖^(γq)`, then for `x ∈ B_ρ` it is bounded by the maximal functions at `x` of the same
+quantities. -/
 private theorem rpow_setLAverage_enorm_sub_le {g : EuclideanSpace ℝ (Fin (n + 1)) → E}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → F} {γ : ℝ} (hγ : 1 ≤ γ) {p : ℝ≥0∞}
-    (hγp : ENNReal.ofReal γ ≤ p) (hgp : MemLp g p volume) {c₁ c₂ c₃ L q q' : ℝ}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → F} {γ : ℝ} (hγ : 0 ≤ γ) {p : ℝ≥0∞}
+    (hp : 1 ≤ p) (hgp : MemLp g p volume) {c₁ c₂ c₃ L q q' : ℝ}
     (hq : q.HolderConjugate q') {c x : EuclideanSpace ℝ (Fin (n + 1))} {ρ κ δ : ℝ} (hρ : 0 < ρ)
     (hκ : 1 ≤ κ) (hx : x ∈ ball c ρ)
-    (h1 : ⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ γ ≤
+    (h1 : (⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖) ^ γ ≤
       c₁ / κ ^ γ * (⨍ y in ball c (κ * ρ), ‖g y‖ ^ γ) +
         c₂ * κ ^ (n + 1) * (⨍ y in ball c (κ * ρ), ‖G y‖ ^ γ) +
         c₃ * κ ^ (n + 1) * (L ^ (γ * q' - 1) * δ) ^ q'⁻¹ *
@@ -123,28 +129,31 @@ private theorem rpow_setLAverage_enorm_sub_le {g : EuclideanSpace ℝ (Fin (n + 
         deviationCoeff n c₃ L γ κ q q' δ *
           maximalFunction volume (fun y => ‖g y‖ₑ ^ (γ * q)) x ^ q⁻¹ := by
   set r := κ * ρ
-  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
   have hxr : x ∈ ball c r := ball_subset_ball (le_mul_of_one_le_left hρ.le hκ) hx
   have hq1 : 0 ≤ q⁻¹ := inv_nonneg.2 hq.pos.le
-  have hE1 := ofReal_setAverage_norm_rpow_le g hγ0 hxr
-  have hE2 := ofReal_setAverage_norm_rpow_le G hγ0 hxr
+  have hE1 := ofReal_setAverage_norm_rpow_le g hγ hxr
+  have hE2 := ofReal_setAverage_norm_rpow_le G hγ hxr
   have hE3 : ENNReal.ofReal ((⨍ y in ball c r, ‖g y‖ ^ (γ * q)) ^ q⁻¹) ≤
       ENNReal.ofReal ((2 ^ (n + 1)) ^ q⁻¹) *
         maximalFunction volume (fun y => ‖g y‖ₑ ^ (γ * q)) x ^ q⁻¹ := by
     rw [← ENNReal.ofReal_rpow_of_nonneg (average_nonneg fun y => by positivity) hq1,
       ← ENNReal.ofReal_rpow_of_nonneg (by positivity) hq1, ← ENNReal.mul_rpow_of_nonneg _ _ hq1]
     gcongr
-    exact ofReal_setAverage_norm_rpow_le g (mul_nonneg hγ0 hq.pos.le) hxr
-  -- Jensen's inequality on `B_ρ`, where `g` minus its mean lies in `L^γ`.
+    exact ofReal_setAverage_norm_rpow_le g (mul_nonneg hγ hq.pos.le) hxr
+  -- On `B_ρ`, where `g` minus its mean is integrable, the mean oscillation passes to `ℝ≥0∞`.
   have : IsFiniteMeasure (volume.restrict (ball c ρ)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hjensen : (⨍⁻ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ₑ) ^ γ ≤
-      ENNReal.ofReal (⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ γ) := by
-    have hi := (((hgp.restrict (ball c ρ)).mono_exponent hγp).sub
-      (memLp_const (⨍ z in ball c ρ, g z))).integrable_norm_rpow'
-    simp only [ENNReal.toReal_ofReal hγ0, Pi.sub_apply] at hi
-    rw [ofReal_setAverage_norm_rpow hγ0 hi]
-    exact rpow_laverage_le_laverage_rpow hγ
+  have hosc : (⨍⁻ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ₑ) ^ γ =
+      ENNReal.ofReal ((⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖) ^ γ) := by
+    have hi : IntegrableOn (fun y => ‖g y - ⨍ z in ball c ρ, g z‖ ^ (1 : ℝ)) (ball c ρ) := by
+      have h := ((((hgp.restrict (ball c ρ)).mono_exponent hp).sub
+        (memLp_const (⨍ z in ball c ρ, g z))).integrable le_rfl).norm
+      simp only [Pi.sub_apply] at h
+      simp only [Real.rpow_one]
+      exact h
+    have h := ofReal_setAverage_norm_rpow zero_le_one hi
+    simp only [Real.rpow_one, ENNReal.rpow_one] at h
+    rw [← ENNReal.ofReal_rpow_of_nonneg (average_nonneg fun y => norm_nonneg _) hγ, h]
   -- Each term of the real bound `h1`, multiplied by its coefficient, passes to `ℝ≥0∞`; a negative
   -- coefficient makes the term vanish.
   have hmul : ∀ {e K I : ℝ} {M : ℝ≥0∞}, 0 ≤ I → ENNReal.ofReal I ≤ ENNReal.ofReal K * M →
@@ -155,21 +164,22 @@ private theorem rpow_setLAverage_enorm_sub_le {g : EuclideanSpace ℝ (Fin (n + 
     · rw [ENNReal.ofReal_of_nonpos (by nlinarith)]
       positivity
   unfold decayCoeff forcingCoeff deviationCoeff
-  refine hjensen.trans ((ENNReal.ofReal_le_ofReal h1).trans
+  rw [hosc]
+  refine (ENNReal.ofReal_le_ofReal h1).trans
     (ENNReal.ofReal_add_le.trans (add_le_add (ENNReal.ofReal_add_le.trans
       (add_le_add (hmul (average_nonneg fun y => by positivity) hE1)
         (hmul (average_nonneg fun y => by positivity) hE2)))
-      (hmul (Real.rpow_nonneg (average_nonneg fun y => by positivity) _) hE3))))
+      (hmul (Real.rpow_nonneg (average_nonneg fun y => by positivity) _) hE3)))
 
 /-- **The pointwise estimate for the sharp maximal function.** If the mean oscillation estimate
 holds on every ball for a fixed `κ ≥ 1`, then the `γ`-th power of the sharp maximal function of `g`
 is bounded pointwise by the maximal functions of `‖g‖^γ`, of `‖G‖^γ` and of `‖g‖^(γq)`. -/
 private theorem rpow_sharpMaximalFunction_le {g : EuclideanSpace ℝ (Fin (n + 1)) → E}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → F} {γ : ℝ} (hγ : 1 ≤ γ) {p : ℝ≥0∞}
-    (hγp : ENNReal.ofReal γ ≤ p) (hgp : MemLp g p volume) {c₁ c₂ c₃ L q q' : ℝ}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → F} {γ : ℝ} (hγ : 0 < γ) {p : ℝ≥0∞}
+    (hp : 1 ≤ p) (hgp : MemLp g p volume) {c₁ c₂ c₃ L q q' : ℝ}
     (hq : q.HolderConjugate q') {κ δ : ℝ} (hκ : 1 ≤ κ)
     (hosc : ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (ρ : ℝ), 0 < ρ →
-      ⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ γ ≤
+      (⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖) ^ γ ≤
         c₁ / κ ^ γ * (⨍ y in ball c (κ * ρ), ‖g y‖ ^ γ) +
           c₂ * κ ^ (n + 1) * (⨍ y in ball c (κ * ρ), ‖G y‖ ^ γ) +
           c₃ * κ ^ (n + 1) * (L ^ (γ * q' - 1) * δ) ^ q'⁻¹ *
@@ -180,12 +190,11 @@ private theorem rpow_sharpMaximalFunction_le {g : EuclideanSpace ℝ (Fin (n + 1
         forcingCoeff n c₂ κ * maximalFunction volume (fun y => ‖G y‖ₑ ^ γ) x +
         deviationCoeff n c₃ L γ κ q q' δ *
           maximalFunction volume (fun y => ‖g y‖ₑ ^ (γ * q)) x ^ q⁻¹ := by
-  have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
-  rw [← ENNReal.le_rpow_inv_iff hγ0]
+  rw [← ENNReal.le_rpow_inv_iff hγ]
   refine sharpMaximalFunction_le fun c ρ hx => ?_
   have hρ : 0 < ρ := dist_nonneg.trans_lt (mem_ball.1 hx)
-  rw [ENNReal.le_rpow_inv_iff hγ0]
-  exact rpow_setLAverage_enorm_sub_le hγ hγp hgp hq hρ hκ hx (hosc c ρ hρ)
+  rw [ENNReal.le_rpow_inv_iff hγ]
+  exact rpow_setLAverage_enorm_sub_le hγ.le hp hgp hq hρ hκ hx (hosc c ρ hρ)
 
 /-- The estimate before absorption: `∫ ‖g‖^s` is bounded by the Fefferman–Stein constant times
 the integrated pointwise bound for the sharp maximal function, in which `∫ ‖g‖^s` reappears with
@@ -303,11 +312,81 @@ private theorem eLpNorm_le_of_le_quarter {g : EuclideanSpace ℝ (Fin (n + 1)) �
     _ = _ := by
         rw [add_right_comm, ← add_mul, ENNReal.add_halves, add_comm, ENNReal.div_eq_inv_mul]
 
-/-- **Krylov's sharp function method.** Let `1 ≤ γ < p < ∞` and let `c₁, c₂, c₃, L` be real
-constants. There are constants `C` and `δ > 0`, depending only on `n`, `γ`, `p`, `c₁`, `c₂`, `c₃`
-and `L`, with the following property. Let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F` lie in `Lᵖ`, and
-suppose that for every pair of Hölder conjugate exponents `q, q'` with `γq ≤ p`, every ball
-`B_ρ = ball c ρ` and every `κ ≥ 1`
+/-- **Krylov's sharp function method.** Let `0 < γ < p < ∞` with `1 < p`, and let `c₁, c₂, c₃, L`
+be real constants. There are constants `C` and `δ > 0`, depending only on `n`, `γ`, `p`, `c₁`,
+`c₂`, `c₃` and `L`, with the following property. Let `g : ℝ^{n+1} → E` and `G : ℝ^{n+1} → F` lie
+in `Lᵖ`, and suppose that for every pair of Hölder conjugate exponents `q, q'` with `γq ≤ p`, every
+ball `B_ρ = ball c ρ` and every `κ ≥ 1`
+
+`(⨍_{B_ρ} ‖g - g_{B_ρ}‖)^γ ≤ c₁ κ^(-γ) ⨍_{B_{κρ}} ‖g‖^γ + c₂ κ^(n + 1) ⨍_{B_{κρ}} ‖G‖^γ`
+`  + c₃ κ^(n + 1) (L^(γq' - 1) δ)^(1/q') (⨍_{B_{κρ}} ‖g‖^(γq))^(1/q)`.
+
+Then `‖g‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`. The left-hand side is the `γ`-th power of the mean oscillation in
+`L¹`; by Jensen's inequality it is at most the mean oscillation in `L^γ` when `γ ≥ 1`, which is the
+form of `TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`. -/
+theorem exists_eLpNorm_le_of_forall_rpow_setAverage_norm_sub_le [CompleteSpace E] {γ : ℝ}
+    (hγ : 0 < γ) {p : ℝ≥0∞} (hp : 1 < p) (hγp : ENNReal.ofReal γ < p) (hp_top : p ≠ ∞)
+    (c₁ c₂ c₃ L : ℝ) :
+    ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
+      ∀ {g : EuclideanSpace ℝ (Fin (n + 1)) → E} {G : EuclideanSpace ℝ (Fin (n + 1)) → F},
+        MemLp g p volume → MemLp G p volume →
+        (∀ q q' : ℝ, q.HolderConjugate q' → ENNReal.ofReal (γ * q) ≤ p →
+          ∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (ρ κ : ℝ), 0 < ρ → 1 ≤ κ →
+            (⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖) ^ γ ≤
+              c₁ / κ ^ γ * (⨍ y in ball c (κ * ρ), ‖g y‖ ^ γ) +
+                c₂ * κ ^ (n + 1) * (⨍ y in ball c (κ * ρ), ‖G y‖ ^ γ) +
+                c₃ * κ ^ (n + 1) * (L ^ (γ * q' - 1) * δ) ^ q'⁻¹ *
+                  (⨍ y in ball c (κ * ρ), ‖g y‖ ^ (γ * q)) ^ q⁻¹) →
+        eLpNorm g p volume ≤ C * eLpNorm G p volume := by
+  obtain ⟨s, hs_def⟩ : ∃ s : ℝ, s = p.toReal := ⟨_, rfl⟩
+  have hs : γ < s := by
+    rw [hs_def, ← ENNReal.toReal_ofReal hγ.le]
+    exact (ENNReal.toReal_lt_toReal ENNReal.ofReal_ne_top hp_top).2 hγp
+  have hs1 : 1 < s := by
+    rw [hs_def, ← ENNReal.toReal_one]
+    exact (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
+  have hsγ : 1 < s / γ := (one_lt_div hγ).2 hs
+  obtain ⟨q, hq, hqs'⟩ := exists_between hsγ
+  have hqs : γ * q < s := (lt_div_iff₀' hγ).1 hqs'
+  obtain ⟨q', hqq⟩ : ∃ q' : ℝ, q.HolderConjugate q' :=
+    ⟨_, Real.HolderConjugate.conjExponent hq⟩
+  have hqp : ENNReal.ofReal (γ * q) ≤ p := by
+    rw [← ENNReal.ofReal_toReal hp_top, ← hs_def]
+    exact ENNReal.ofReal_le_ofReal hqs.le
+  obtain ⟨CFS, hFS⟩ := exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow
+    (ι := Fin (n + 1)) hs1
+  have hcM := maximalFunctionConst_ne_top (n + 1)
+  have h2 : (2 : ℝ≥0∞) ^ (s / γ - 1) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofNat_ne_top
+  obtain ⟨κ, hκ, hκ1, δ, hδ, hδ1⟩ := exists_one_le_and_pos_of_ne_top (n := n) c₁ c₃ L (q := q)
+    hγ hqq.symm.pos (by linarith : 0 < s)
+    (K₁ := (CFS : ℝ≥0∞) * 2 ^ (s / γ - 1) * 2 ^ (s / γ - 1) * maximalFunctionConst (n + 1) (s / γ))
+    (K₃ := (CFS : ℝ≥0∞) * 2 ^ (s / γ - 1) * maximalFunctionConst (n + 1) (s / γ / q))
+    (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) h2)
+      (hcM _))
+    (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) (hcM _))
+  set C : ℝ≥0∞ := ((CFS : ℝ≥0∞) * 2 ^ (s / γ - 1) * 2 ^ (s / γ - 1) *
+    forcingCoeff n c₂ κ ^ (s / γ) * maximalFunctionConst (n + 1) (s / γ) * 2) ^ (1 / s)
+  have hK₂ : C ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg (one_div_nonneg.2 (by linarith)) (ENNReal.mul_ne_top
+      (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top
+        (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) h2)
+        (ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofReal_ne_top)) (hcM _))
+      ENNReal.ofNat_ne_top)
+  refine ⟨C.toNNReal, δ, hδ, fun {g G} hgp hGp hosc => ?_⟩
+  rw [ENNReal.coe_toNNReal hK₂]
+  -- The Fefferman–Stein inequality applies to `g ∈ Lᵖ` itself, with `p₀ = p`.
+  exact eLpNorm_le_of_le_quarter (zero_lt_one.trans hp).ne' hp_top hgp hGp hs_def hγ hq hqs
+    (hFS hgp hp.le (by rw [hs_def, ENNReal.ofReal_toReal hp_top]))
+    (rpow_sharpMaximalFunction_le hγ hp.le hgp hqq hκ fun c ρ hρ =>
+      hosc q q' hqq hqp c ρ κ hρ hκ)
+    hκ1 hδ1
+
+/-- **Krylov's sharp function method, with mean oscillation in `L^γ`.** Let `1 ≤ γ < p < ∞` and let
+`c₁, c₂, c₃, L` be real constants. There are constants `C` and `δ > 0`, depending only on `n`,
+`γ`, `p`, `c₁`, `c₂`, `c₃` and `L`, with the following property. Let `g : ℝ^{n+1} → E` and
+`G : ℝ^{n+1} → F` lie in `Lᵖ`, and suppose that for every pair of Hölder conjugate exponents
+`q, q'` with `γq ≤ p`, every ball `B_ρ = ball c ρ` and every `κ ≥ 1`
 
 `⨍_{B_ρ} ‖g - g_{B_ρ}‖^γ ≤ c₁ κ^(-γ) ⨍_{B_{κρ}} ‖g‖^γ + c₂ κ^(n + 1) ⨍_{B_{κρ}} ‖G‖^γ`
 `  + c₃ κ^(n + 1) (L^(γq' - 1) δ)^(1/q') (⨍_{B_{κρ}} ‖g‖^(γq))^(1/q)`.
@@ -327,47 +406,21 @@ theorem exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le [CompleteSpace E
                   (⨍ y in ball c (κ * ρ), ‖g y‖ ^ (γ * q)) ^ q⁻¹) →
         eLpNorm g p volume ≤ C * eLpNorm G p volume := by
   have hγ0 : 0 < γ := zero_lt_one.trans_le hγ
-  obtain ⟨s, hs_def⟩ : ∃ s : ℝ, s = p.toReal := ⟨_, rfl⟩
-  have hs : γ < s := by
-    rw [hs_def, ← ENNReal.toReal_ofReal hγ0.le]
-    exact (ENNReal.toReal_lt_toReal ENNReal.ofReal_ne_top hp_top).2 hγp
-  have hsγ : 1 < s / γ := (one_lt_div hγ0).2 hs
-  obtain ⟨q, hq, hqs'⟩ := exists_between hsγ
-  have hqs : γ * q < s := (lt_div_iff₀' hγ0).1 hqs'
-  obtain ⟨q', hqq⟩ : ∃ q' : ℝ, q.HolderConjugate q' :=
-    ⟨_, Real.HolderConjugate.conjExponent hq⟩
-  have hqp : ENNReal.ofReal (γ * q) ≤ p := by
-    rw [← ENNReal.ofReal_toReal hp_top, ← hs_def]
-    exact ENNReal.ofReal_le_ofReal hqs.le
-  obtain ⟨CFS, hFS⟩ := exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow
-    (ι := Fin (n + 1)) (show 1 < s by linarith)
-  have hcM := maximalFunctionConst_ne_top (n + 1)
-  have h2 : (2 : ℝ≥0∞) ^ (s / γ - 1) ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofNat_ne_top
-  obtain ⟨κ, hκ, hκ1, δ, hδ, hδ1⟩ := exists_one_le_and_pos_of_ne_top (n := n) c₁ c₃ L (q := q)
-    hγ0 hqq.symm.pos (by linarith : 0 < s)
-    (K₁ := (CFS : ℝ≥0∞) * 2 ^ (s / γ - 1) * 2 ^ (s / γ - 1) * maximalFunctionConst (n + 1) (s / γ))
-    (K₃ := (CFS : ℝ≥0∞) * 2 ^ (s / γ - 1) * maximalFunctionConst (n + 1) (s / γ / q))
-    (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) h2)
-      (hcM _))
-    (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) (hcM _))
-  set C : ℝ≥0∞ := ((CFS : ℝ≥0∞) * 2 ^ (s / γ - 1) * 2 ^ (s / γ - 1) *
-    forcingCoeff n c₂ κ ^ (s / γ) * maximalFunctionConst (n + 1) (s / γ) * 2) ^ (1 / s)
-  have hK₂ : C ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg (one_div_nonneg.2 (by linarith)) (ENNReal.mul_ne_top
-      (ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top
-        (ENNReal.mul_ne_top ENNReal.coe_ne_top h2) h2)
-        (ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofReal_ne_top)) (hcM _))
-      ENNReal.ofNat_ne_top)
-  have hp1 : 1 ≤ p := (ENNReal.one_le_ofReal.2 hγ).trans hγp.le
-  refine ⟨C.toNNReal, δ, hδ, fun {g G} hgp hGp hosc => ?_⟩
-  rw [ENNReal.coe_toNNReal hK₂]
-  -- The Fefferman–Stein inequality applies to `g ∈ Lᵖ` itself, with `p₀ = p`.
-  exact eLpNorm_le_of_le_quarter (zero_lt_one.trans_le hp1).ne' hp_top hgp hGp hs_def hγ0 hq hqs
-    (hFS hgp hp1 (by rw [hs_def, ENNReal.ofReal_toReal hp_top]))
-    (rpow_sharpMaximalFunction_le hγ hγp.le hgp hqq hκ fun c ρ hρ =>
-      hosc q q' hqq hqp c ρ κ hρ hκ)
-    hκ1 hδ1
+  have hp : 1 < p := (ENNReal.one_le_ofReal.2 hγ).trans_lt hγp
+  obtain ⟨C, δ, hδ, h⟩ :=
+    exists_eLpNorm_le_of_forall_rpow_setAverage_norm_sub_le (n := n) (E := E) (F := F) hγ0 hp hγp
+      hp_top c₁ c₂ c₃ L
+  refine ⟨C, δ, hδ, fun {g G} hgp hGp hosc => h hgp hGp fun q q' hq hqp c ρ κ hρ hκ =>
+    (le_trans ?_ (hosc q q' hq hqp c ρ κ hρ hκ))⟩
+  -- Jensen's inequality for the convex power `t ↦ t^γ` on `[0, ∞)`.
+  have : IsFiniteMeasure (volume.restrict (ball c ρ)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hi : IntegrableOn (fun y => ‖g y - ⨍ z in ball c ρ, g z‖ ^ γ) (ball c ρ) := by
+    have h := (((hgp.restrict (ball c ρ)).mono_exponent hγp.le).sub
+      (memLp_const (⨍ z in ball c ρ, g z))).integrable_norm_rpow'
+    simp only [ENNReal.toReal_ofReal hγ0.le] at h
+    exact h
+  exact rpow_setAverage_norm_le_setAverage_norm_rpow hγ hi
 
 end PDE
 

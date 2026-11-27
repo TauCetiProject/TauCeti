@@ -47,8 +47,11 @@ norm, and the transport along `e⁻¹` inverts it.
 * `TauCeti.Wkp.compLinearIsometryEquiv`: precomposition with `e` on `W^{k,p}`.
 * `TauCeti.Wkp.value_compLinearIsometryEquiv_ae`,
   `TauCeti.Wkp.iteratedGradient_compLinearIsometryEquiv_ae`: its value and highest derivative.
+* `TauCeti.Wkp.norm_iteratedGradient_compLinearIsometryEquiv`: the `Lᵖ` norm of the highest
+  derivative is preserved.
 * `TauCeti.Wkp.compLinearIsometryEquiv_mem_wkp0Submodule_iff`: zero boundary values are preserved
-  and reflected.
+  and reflected; at order two, `TauCeti.Wkp.firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule`
+  states this for the first-order part, as in the Dirichlet problem in `W^{2,p} ∩ W^{1,p}_0`.
 -/
 
 public section
@@ -325,6 +328,28 @@ theorem compLinearIsometryEquiv_mem_wkp0Submodule_iff (he : MeasurePreserving e 
   have hWU : (W : Set E') = e.symm ⁻¹' U := hUW ▸ (e.toEquiv.symm_preimage_preimage W).symm
   simpa [← compLinearIsometryEquiv_symm he hUW he' hWU] using
     compLinearIsometryEquiv_mem_wkp0Submodule he' hWU k hu
+
+/-- The transport along `e` preserves the `Lᵖ` norm of the highest derivative. -/
+theorem norm_iteratedGradient_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
+    ‖iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u)‖ = ‖iteratedGradient k u‖ := by
+  have hes : MeasurePreserving e (μ.restrict U) (ν.restrict W) := by
+    rw [hUW]
+    exact he.restrict_preimage W.isOpen.measurableSet
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+    ((Lp.aestronglyMeasurable (iteratedGradient k u)).comp_measurePreserving hes)
+    ((iteratedGradient_compLinearIsometryEquiv_ae he hUW k u).mono fun x hx => by
+      rw [hx, LinearIsometryEquiv.norm_map, Function.comp_apply]),
+    eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hes]
+
+/-- At order two, the transport along `e` preserves zero boundary values of the first-order
+part. -/
+theorem firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) {u : Wkp ν W p 2} (hu : firstOrder 1 u ∈ w1p0Submodule ν W p) :
+    firstOrder 1 (compLinearIsometryEquiv he hUW 2 u) ∈ w1p0Submodule μ U p := by
+  have h := compLinearIsometryEquiv_mem_wkp0Submodule he hUW 1
+    (show lowerOrder 1 u ∈ wkp0Submodule ν W p 1 by rwa [wkp0Submodule_one, ← firstOrder_one])
+  rwa [wkp0Submodule_one, ← lowerOrder_compLinearIsometryEquiv, ← firstOrder_one] at h
 
 end Wkp
 

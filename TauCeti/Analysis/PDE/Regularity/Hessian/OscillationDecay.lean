@@ -8,15 +8,21 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.Analysis.PDE.Ellipticity.Basic
+import Mathlib.Analysis.MeanInequalities
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
-import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Ball
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Average.Ball
+import TauCeti.MeasureTheory.Integral.Average.Jensen
+import TauCeti.MeasureTheory.Integral.Average.Oscillation
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -47,6 +53,19 @@ vanishing mean oscillation in the range `1 < q < 2`, where the solutions need no
 integrable second derivatives and the `L²` decay
 (`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq`)
 does not apply.
+
+With forcing, for `1 < p < ∞` and a strong solution `u ∈ W^{2,p}(Ω)` of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = F` on
+`B_r`, comparison with the solution `w ∈ W^{2,p}(B_r) ∩ W^{1,p}_0(B_r)` of the same equation gives,
+with `γ = p`,
+
+`(⨍_{B_ρ} ‖D²u - (D²u)_ρ‖)^γ ≤ K₁ (ρ / r)^γ ⨍_{B_r} ‖D²u‖^γ + K₂ (r / ρ)^(n + 1) ⨍_{B_r} |F|^γ`
+
+with constants depending only on `n`, `p`, `λ` and `Λ`
+(`TauCeti.PDE.exists_rpow_setAverage_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq`).
+The difference `u - w` solves the homogeneous equation, so its `L¹` mean oscillation decays, and
+`D²w` is bounded in `Lᵖ(B_r)` by `F` with a constant uniform over the balls and the matrices
+(`TauCeti.exists_firstOrder_mem_w1p0Submodule_and_contraction_iteratedGradient_eq_and_norm_le`).
+This is the one-ball estimate of the sharp function method in `L¹`.
 
 ## The argument
 
@@ -292,6 +311,230 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner
         simp only [div_pow]
         field_simp
         ring
+
+/-! ### Constant coefficients with forcing, in `Lᵖ` -/
+
+section Forcing
+
+variable {n : ℕ}
+
+/-- The bookkeeping of the comparison argument: if the `L¹` mean oscillation `O` on `B_ρ` is at most
+`K t (X + Y) + 2 Z`, where `X, Y` are `L¹` averages on `B_r` and `Z` one on `B_ρ`, and the
+`γ`-th powers of `X, Y, Z` are controlled by `L^γ` averages, then `O^γ` is bounded by the averages
+of `‖D²u‖^γ` and of `‖F‖^γ`. -/
+private theorem rpow_le_of_le_mul_add_add {O X Y Z Hγ Wr Wρ Fγ K C R t γ : ℝ} (hγ : 1 ≤ γ)
+    (hO : 0 ≤ O) (hX : 0 ≤ X) (hY : 0 ≤ Y) (hZ : 0 ≤ Z) (hWr : 0 ≤ Wr) (hK : 0 ≤ K)
+    (ht : 0 ≤ t) (ht1 : t ≤ 1) (hR : 1 ≤ R) (hOle : O ≤ K * t * (X + Y) + 2 * Z)
+    (hXγ : X ^ γ ≤ Hγ) (hYγ : Y ^ γ ≤ Wr) (hZγ : Z ^ γ ≤ Wρ) (hWρ : Wρ ≤ R * Wr)
+    (hWF : Wr ≤ C ^ γ * Fγ) :
+    O ^ γ ≤ 3 ^ (γ - 1) * K ^ γ * t ^ γ * Hγ + 3 ^ (γ - 1) * (K ^ γ + 2 ^ γ) * C ^ γ * R * Fγ := by
+  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
+  have hKt : 0 ≤ K * t := mul_nonneg hK ht
+  have htγ : t ^ γ ≤ 1 := Real.rpow_le_one ht ht1 hγ0
+  -- `(a + b + c)^γ ≤ 3^(γ - 1) (a^γ + b^γ + c^γ)` for `a, b, c ≥ 0`.
+  have h3 : (K * t * X + K * t * Y + 2 * Z) ^ γ ≤
+      3 ^ (γ - 1) * ((K * t * X) ^ γ + (K * t * Y) ^ γ + (2 * Z) ^ γ) := by
+    have h := Real.rpow_sum_le_const_mul_sum_rpow_of_nonneg (s := Finset.univ)
+      (f := ![K * t * X, K * t * Y, 2 * Z]) hγ (fun i _ => by
+        fin_cases i <;> simp [mul_nonneg hKt hX, mul_nonneg hKt hY, hZ])
+    simpa [Fin.sum_univ_three] using h
+  have hpow := (Real.rpow_le_rpow hO (hOle.trans_eq (by ring)) hγ0).trans h3
+  rw [Real.mul_rpow hKt hX, Real.mul_rpow hKt hY, Real.mul_rpow zero_le_two hZ,
+    Real.mul_rpow hK ht] at hpow
+  have hKγ : 0 ≤ K ^ γ := Real.rpow_nonneg hK γ
+  have htγ0 : 0 ≤ t ^ γ := Real.rpow_nonneg ht γ
+  -- Each of the three terms is bounded separately.
+  have e1 : K ^ γ * t ^ γ * X ^ γ ≤ K ^ γ * t ^ γ * Hγ :=
+    mul_le_mul_of_nonneg_left hXγ (mul_nonneg hKγ htγ0)
+  have e2 : K ^ γ * t ^ γ * Y ^ γ ≤ K ^ γ * R * C ^ γ * Fγ := by
+    calc K ^ γ * t ^ γ * Y ^ γ ≤ K ^ γ * 1 * (R * Wr) := by
+          gcongr
+          exact hYγ.trans (le_mul_of_one_le_left hWr hR)
+      _ ≤ K ^ γ * 1 * (R * (C ^ γ * Fγ)) := by gcongr
+      _ = _ := by ring
+  have e3 : 2 ^ γ * Z ^ γ ≤ 2 ^ γ * R * C ^ γ * Fγ := by
+    calc 2 ^ γ * Z ^ γ ≤ 2 ^ γ * (R * (C ^ γ * Fγ)) := by
+          gcongr
+          exact hZγ.trans (hWρ.trans (mul_le_mul_of_nonneg_left hWF (zero_le_one.trans hR)))
+      _ = _ := by ring
+  calc O ^ γ ≤ 3 ^ (γ - 1) * (K ^ γ * t ^ γ * X ^ γ + K ^ γ * t ^ γ * Y ^ γ + 2 ^ γ * Z ^ γ) :=
+        hpow
+    _ ≤ 3 ^ (γ - 1) * (K ^ γ * t ^ γ * Hγ + K ^ γ * R * C ^ γ * Fγ + 2 ^ γ * R * C ^ γ * Fγ) := by
+        gcongr
+    _ = _ := by ring
+
+/-- The comparison step: if `H = V + W` almost everywhere on `B_r`, all three integrable there, and
+the mean oscillation of `V` decays like `⨍_{B_ρ} ‖V - V_ρ‖ ≤ K t ⨍_{B_r} ‖V‖`, then
+`⨍_{B_ρ} ‖H - H_ρ‖ ≤ K t (⨍_{B_r} ‖H‖ + ⨍_{B_r} ‖W‖) + 2 ⨍_{B_ρ} ‖W‖`. -/
+private theorem setAverage_norm_sub_setAverage_le_of_ae_eq_sub {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] {H V W : EuclideanSpace ℝ (Fin (n + 1)) → G}
+    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r K t : ℝ} (hρr : ρ ≤ r) (hKt : 0 ≤ K * t)
+    (hH : IntegrableOn H (ball x₀ r)) (hW : IntegrableOn W (ball x₀ r))
+    (hV : V =ᵐ[volume.restrict (ball x₀ r)] fun x => H x - W x)
+    (hdec : ⨍ x in ball x₀ ρ, ‖V x - ⨍ y in ball x₀ ρ, V y‖ ≤ K * t * ⨍ x in ball x₀ r, ‖V x‖) :
+    ⨍ x in ball x₀ ρ, ‖H x - ⨍ y in ball x₀ ρ, H y‖ ≤
+      K * t * ((⨍ x in ball x₀ r, ‖H x‖) + ⨍ x in ball x₀ r, ‖W x‖) +
+        2 * ⨍ x in ball x₀ ρ, ‖W x‖ := by
+  have hsub : ball x₀ ρ ⊆ ball x₀ r := ball_subset_ball hρr
+  have hVi : IntegrableOn V (ball x₀ r) := (hH.sub hW).congr hV.symm
+  have hHρ : H =ᵐ[volume.restrict (ball x₀ ρ)] fun x => V x + W x :=
+    ae_restrict_of_ae_restrict_of_subset hsub (hV.mono fun x hx => by
+      dsimp only at hx ⊢
+      rw [hx, sub_add_cancel])
+  -- The oscillation of `H = V + W` on `B_ρ`.
+  have hosc : ⨍ x in ball x₀ ρ, ‖H x - ⨍ y in ball x₀ ρ, H y‖ ≤
+      (⨍ x in ball x₀ ρ, ‖V x - ⨍ y in ball x₀ ρ, V y‖) + 2 * ⨍ x in ball x₀ ρ, ‖W x‖ := by
+    have e1 : ⨍ y in ball x₀ ρ, H y = ⨍ y in ball x₀ ρ, (V y + W y) := average_congr hHρ
+    have e2 : ⨍ x in ball x₀ ρ, ‖H x - ⨍ y in ball x₀ ρ, H y‖ =
+        ⨍ x in ball x₀ ρ, ‖V x + W x - ⨍ y in ball x₀ ρ, (V y + W y)‖ := by
+      rw [e1]
+      exact average_congr (hHρ.mono fun x hx => by
+        dsimp only at hx ⊢
+        rw [hx])
+    rw [e2]
+    exact setAverage_norm_add_sub_setAverage_le (hVi.mono_set hsub) (hW.mono_set hsub)
+  -- The size of `V = H - W` on `B_r`.
+  have hVr : ⨍ x in ball x₀ r, ‖V x‖ ≤ (⨍ x in ball x₀ r, ‖H x‖) + ⨍ x in ball x₀ r, ‖W x‖ := by
+    have e : ⨍ x in ball x₀ r, ‖V x‖ = ⨍ x in ball x₀ r, ‖H x - W x‖ :=
+      average_congr (hV.mono fun x hx => by simp only [hx])
+    rw [e, ← average_add hH.norm hW.norm]
+    exact average_mono_ae (hH.sub hW).norm (hH.norm.add hW.norm)
+      (ae_of_all _ fun x => norm_sub_le (H x) (W x))
+  exact hosc.trans (add_le_add_left (hdec.trans (mul_le_mul_of_nonneg_left hVr hKt)) _)
+
+/-- **Comparison with the frozen problem.** Let `A` be elliptic with constants `λ, Λ`, let
+`u ∈ W^{2,p}(Ω)` with `B_r = ball x₀ r ⊆ Ω`, and let `w ∈ W^{2,p}(B_r)` satisfy
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼw = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` almost everywhere on `B_r`. Then `u - w` solves the homogeneous
+equation, so for `0 < ρ ≤ r`
+`⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ D (ρ / r) (⨍_{B_r} ‖D²u‖ + ⨍_{B_r} ‖D²w‖) + 2 ⨍_{B_ρ} ‖D²w‖`, with
+`D = 2^(3(n + 1) + 5) (n + 2) (Λ / λ)^((n + 2) / 2)` the constant of the `L¹` decay. -/
+private theorem setAverage_norm_iteratedGradient_sub_setAverage_le_of_contraction_eq
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hlam : 0 < lam)
+    (hAq : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2)
+    {U : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) U p 2)
+    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r : ℝ}
+    (w : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⟨ball x₀ r, isOpen_ball⟩ p 2)
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) (hball : ball x₀ r ⊆ U)
+    (hw : ∀ᵐ x ∂volume.restrict (ball x₀ r), Matrix.contraction A (Wkp.iteratedGradient 1 w x) =
+      Matrix.contraction A (Wkp.iteratedGradient 1 u x)) :
+    ⨍ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ≤
+      2 ^ (3 * Fintype.card (Fin (n + 1)) + 5) * (Fintype.card (Fin (n + 1)) + 1) *
+          √(Lam / lam) ^ (Fintype.card (Fin (n + 1)) + 1) * (ρ / r) *
+        ((⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 u x‖) +
+          ⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 w x‖) +
+      2 * ⨍ x in ball x₀ ρ, ‖Wkp.iteratedGradient 1 w x‖ := by
+  have : IsFiniteMeasure (volume.restrict (ball x₀ r)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  set uB := Wkp.restrictL (show (⟨ball x₀ r, isOpen_ball⟩ : Opens _) ≤ U from hball) 2 u
+  have huB : Wkp.iteratedGradient 1 uB =ᵐ[volume.restrict (ball x₀ r)]
+      Wkp.iteratedGradient 1 u := Wkp.iteratedGradient_restrictL_ae _ 1 u
+  -- `v = u - w` solves the homogeneous equation on `B_r`, so its mean oscillation decays.
+  have hv : ⇑(Wkp.iteratedGradient 1 (uB - w)) =ᵐ[volume.restrict (ball x₀ r)]
+      fun x => Wkp.iteratedGradient 1 u x - Wkp.iteratedGradient 1 w x := by
+    rw [Wkp.iteratedGradient_sub]
+    filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 uB) (Wkp.iteratedGradient 1 w), huB]
+      with x h1 h2
+    rw [h1, Pi.sub_apply, h2]
+  have heq0 : ∀ᵐ x ∂volume.restrict (ball x₀ r), ∑ i, ∑ j, A i j *
+      ⟪Wkp.iteratedGradient 1 (uB - w) x (EuclideanSpace.single i 1),
+        EuclideanSpace.single j 1⟫_ℝ = 0 := by
+    filter_upwards [hv, hw] with x h1 h2
+    rw [← Matrix.contraction_apply, h1, map_sub, h2, sub_self]
+  have hdec := setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq_zero
+    hlam hAq hA' (uB - w) subset_rfl heq0 0 hρ.le hρr
+  simp only [sub_zero] at hdec
+  exact setAverage_norm_sub_setAverage_le_of_ae_eq_sub hρr
+    (mul_nonneg (by positivity) (div_nonneg hρ.le (hρ.le.trans hρr)))
+    (((Lp.memLp (Wkp.iteratedGradient 1 uB)).ae_eq huB).integrable Fact.out)
+    ((Lp.memLp (Wkp.iteratedGradient 1 w)).integrable Fact.out) hv hdec
+
+/-- **Mean oscillation of the Hessian in `L¹` for constant coefficients with forcing.** Let
+`1 < p < ∞` and write `γ = p`. There are constants `K₁, K₂`, depending only on `n`, `p`, `λ` and
+`Λ`, with the following property. Let `A` be a constant matrix, uniformly elliptic with constants
+`λ, Λ` on a ball `B_r = ball x₀ r ⊆ Ω ⊆ ℝ^{n+1}`, and let `u ∈ W^{2,p}(Ω)` solve
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = F` almost everywhere on `B_r`. Then for `0 < ρ ≤ r`
+
+`(⨍_{B_ρ} ‖D²u - (D²u)_ρ‖)^γ ≤ K₁ (ρ / r)^γ ⨍_{B_r} ‖D²u‖^γ + K₂ (r / ρ)^(n + 1) ⨍_{B_r} |F|^γ`.
+
+The left side is the `γ`-th power of the mean oscillation in `L¹`, which is the form Krylov's sharp
+function method consumes (`TauCeti.PDE.exists_eLpNorm_le_of_forall_rpow_setAverage_norm_sub_le`);
+for `γ < 2` the solution need not have square integrable second derivatives. -/
+theorem exists_rpow_setAverage_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner_eq
+    (hp : 1 < p) (hp_top : p ≠ ⊤) (lam Lam : ℝ) :
+    ∃ K₁ K₂ : ℝ, ∀ {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+      {U : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+      (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) U p 2)
+      {F : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r : ℝ},
+      UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam → ball x₀ r ⊆ U →
+      (∀ᵐ x ∂volume.restrict (ball x₀ r), ∑ i, ∑ j, A i j *
+        ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+          F x) →
+      0 < ρ → ρ ≤ r →
+      (⨍ x in ball x₀ ρ,
+          ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖) ^
+            p.toReal ≤
+        K₁ * (ρ / r) ^ p.toReal * (⨍ x in ball x₀ r, ‖Wkp.iteratedGradient 1 u x‖ ^ p.toReal) +
+          K₂ * (r / ρ) ^ (n + 1) * ⨍ x in ball x₀ r, ‖F x‖ ^ p.toReal := by
+  have hγ : 1 < p.toReal := by
+    rw [← ENNReal.toReal_one]
+    exact (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
+  rcases le_or_gt lam 0 with hlam | hlam
+  · exact ⟨0, 0, fun {_ _} _ {_ _ _ _} hA => absurd hA.pos (not_lt.2 hlam)⟩
+  obtain ⟨CD, hCD⟩ :=
+    exists_firstOrder_mem_w1p0Submodule_and_contraction_iteratedGradient_eq_and_norm_le (n := n)
+      hp hp_top hlam Lam
+  set C := max CD 0
+  set Kd : ℝ := 2 ^ (3 * Fintype.card (Fin (n + 1)) + 5) * (Fintype.card (Fin (n + 1)) + 1) *
+    √(Lam / lam) ^ (Fintype.card (Fin (n + 1)) + 1)
+  refine ⟨3 ^ (p.toReal - 1) * Kd ^ p.toReal, 3 ^ (p.toReal - 1) * (Kd ^ p.toReal + 2 ^ p.toReal) *
+    C ^ p.toReal, fun {A U} u {F x₀ ρ r} hA hball heq hρ hρr => ?_⟩
+  have hr : 0 < r := hρ.trans_le hρr
+  have hAq : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ :=
+    ((uniformlyEllipticOn_iff.1 hA).2.2 (mem_ball_self hr)).1
+  have hAΛ : ‖matrixBilinearForm A‖ ≤ Lam := hA.opNorm_matrixBilinearForm_le (mem_ball_self hr)
+  have : IsFiniteMeasure (volume.restrict (ball x₀ r)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  set H := ⇑(Wkp.iteratedGradient 1 u)
+  have hHp : MemLp H p (volume.restrict (ball x₀ r)) :=
+    (Lp.memLp (Wkp.iteratedGradient 1 u)).mono_measure (Measure.restrict_mono hball le_rfl)
+  -- The frozen problem: `w ∈ W^{2,p}(B_r)` with `∑ Aᵢⱼ ∂ᵢ∂ⱼw = ∑ Aᵢⱼ ∂ᵢ∂ⱼu`, and `‖D²w‖ ≤ C ‖F‖`.
+  have hFp : MemLp (fun x => Matrix.contraction A (H x)) p (volume.restrict (ball x₀ r)) :=
+    (Matrix.contraction A).comp_memLp' hHp
+  obtain ⟨w, -, hw, hwn⟩ := hCD A hAq hAΛ x₀ r hr ⟨ball x₀ r, isOpen_ball⟩ rfl (hFp.toLp _)
+  set W := ⇑(Wkp.iteratedGradient 1 w)
+  have hA' : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
+    fun ξ => (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A ξ).trans (by gcongr)
+  have hcomp := setAverage_norm_iteratedGradient_sub_setAverage_le_of_contraction_eq hlam hAq
+    hA' u w hρ hρr hball (by filter_upwards [hw, hFp.coeFn_toLp] with x h1 h2; rw [h1, h2])
+  have hWγ : IntegrableOn (fun x => ‖W x‖ ^ p.toReal) (ball x₀ r) :=
+    (Lp.memLp (Wkp.iteratedGradient 1 w)).integrable_norm_rpow'
+  have hWF : ⨍ x in ball x₀ r, ‖W x‖ ^ p.toReal ≤
+      C ^ p.toReal * ⨍ x in ball x₀ r, ‖F x‖ ^ p.toReal := by
+    refine (Lp.average_norm_rpow_le_of_norm_le (le_max_right CD 0) (hwn.trans
+      (mul_le_mul_of_nonneg_right (le_max_left CD 0) (norm_nonneg _)))).trans_eq ?_
+    congr 1
+    refine average_congr ?_
+    filter_upwards [hFp.coeFn_toLp, heq] with x h1 h2
+    rw [h1, Matrix.contraction_apply, h2]
+  have hWρ : ⨍ x in ball x₀ ρ, ‖W x‖ ^ p.toReal ≤
+      (r / ρ) ^ (n + 1) * ⨍ x in ball x₀ r, ‖W x‖ ^ p.toReal := by
+    simpa only [finrank_euclideanSpace_fin] using setAverage_ball_le_div_pow_mul_setAverage_ball
+      volume hρ hρr (ae_of_all _ fun x => by positivity) hWγ
+  refine (rpow_le_of_le_mul_add_add hγ.le (average_nonneg fun x => norm_nonneg _)
+    (average_nonneg fun x => norm_nonneg _) (average_nonneg fun x => norm_nonneg _)
+    (average_nonneg fun x => norm_nonneg _) (average_nonneg fun x => by positivity)
+    (by positivity) (by positivity) (div_le_one hr |>.2 hρr)
+    (one_le_pow₀ ((one_le_div hρ).2 hρr)) hcomp
+    (rpow_setAverage_norm_le_setAverage_norm_rpow hγ.le hHp.integrable_norm_rpow')
+    (rpow_setAverage_norm_le_setAverage_norm_rpow hγ.le hWγ)
+    (rpow_setAverage_norm_le_setAverage_norm_rpow hγ.le (hWγ.mono_set (ball_subset_ball hρr)))
+    hWρ hWF).trans_eq ?_
+  ring
+
+end Forcing
 
 end PDE
 
