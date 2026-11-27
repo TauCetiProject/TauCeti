@@ -8,23 +8,31 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.Order.UpperLower.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.LowDimTopology.Heegaard.Knot.Differential
+public import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
-# The doubly filtered knot complex `CFK^∞`
+# The doubly filtered infinity knot complex and `CFK^∞`
 
-Let `(Σ, α, β, w, z)` be a doubly pointed Heegaard diagram. In the notation of Ozsváth and Szabó,
-the knot Floer complex `CFK^∞` is the `𝔽₂`-vector space with basis the triples `[x, i, j]` of a
-generator `x` and integers `i` and `j`, with differential
+Let `(Σ, α, β, w, z)` be a doubly pointed Heegaard diagram and `A` an Alexander grading of its
+generators. In the notation of Ozsváth and Szabó, the knot Floer complex `CFK^∞` is the
+`𝔽₂`-vector space with basis the triples `[x, i, j]` of a generator `x` and integers `i` and `j`
+with `j - i = A(x)`, with differential
 
 `∂ [x, i, j] = ∑_y ∑_φ [y, i - n_w(φ), j - n_z(φ)]`,
 
-the sum over the Whitney disks `φ` of Maslov index one from `x` to `y`. This file builds it from
+the sum over the Whitney disks `φ` of Maslov index one from `x` to `y`. This file builds the same
+differential on the **full infinity knot complex**, with basis all triples `[x, i, j]`, and cuts
+`CFK^∞` out of it by the condition `j - i = A(x)`. The full complex is the knot complex of Zemke
+over `𝔽₂[U, U⁻¹, V, V⁻¹]`, the triple `[x, i, j]` being the chain `U ^ (-i) V ^ (-j) x`; it is the
+direct sum of one copy of `CFK^∞` for each value of `j - i - A(x)`. The differential is built from
 the knot coefficients `TauCeti.HeegaardRegionSystem.knotCoefficient`, which count nonnegative
 domains in place of holomorphic disks.
 
-* The **cells** are the triples `[x, i, j]`, elements of `H.Generator × ℤ × ℤ`, and the chains are
-  the finitely supported functions `H.Generator × ℤ × ℤ →₀ ZMod 2`.
+* The **cells** are the triples `[x, i, j]`, elements of `H.Generator × ℤ × ℤ`, and the chains of
+  the full infinity knot complex are the finitely supported functions
+  `H.Generator × ℤ × ℤ →₀ ZMod 2`.
 * Placing the chain `U ^ a V ^ b x` of the full knot complex over `𝔽₂[U, V]` at the cell
   `[x, i - a, j - b]` defines, for every pair `(i, j)`, an injective linear map
   `TauCeti.HeegaardRegionSystem.knotInfinityLift` from the free `𝔽₂[U, V]`-module on the
@@ -34,17 +42,22 @@ domains in place of holomorphic disks.
   differential (`knotInfinityDifferential_knotInfinityLift`), so it squares to zero exactly when
   the knot differential does (`knotInfinityDifferential_comp_self_eq_zero_iff`).
 * The shifts `[x, i, j] ↦ [x, i - a, j - b]` (`TauCeti.HeegaardRegionSystem.knotInfinityShift`)
-  commute with the differential (`knotInfinityDifferential_knotInfinityShift`). The shift by
-  `(1, 1)` is the action of `U` of Ozsváth and Szabó; the shifts by `(1, 0)` and `(0, 1)` are the
-  actions of the two variables `U` and `V` of Zemke's complex over `𝔽₂[U, U⁻¹, V, V⁻¹]`.
+  form an action of `ℤ × ℤ` (`knotInfinityShift_zero`, `knotInfinityShift_add`) and commute with
+  the differential (`knotInfinityDifferential_knotInfinityShift`). The shifts by `(1, 0)` and
+  `(0, 1)` are the actions of the two variables `U` and `V` of Zemke's complex. The shifts by
+  `(a, a)` preserve `CFK^∞` (`knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff`), and the
+  shift by `(1, 1)` is the action of `U` on `CFK^∞` of Ozsváth and Szabó.
 
 **Filtrations.** The terms of the differential have `n_w(φ), n_z(φ) ≥ 0`, so the differential
-does not increase either index. For every lower set `S` of `ℤ × ℤ`, the chains supported on the
-cells `[x, i, j]` with `(i, j) ∈ S` (`TauCeti.HeegaardRegionSystem.knotInfinityFiltration`) form a
-subcomplex (`knotInfinityFiltration_le_comap_knotInfinityDifferential`), and the differential
-descends to the quotient (`TauCeti.HeegaardRegionSystem.knotInfinityQuotientDifferential`). For
-instance `S = {(i, j) | i < 0}` gives the subcomplex `C{i < 0}` and the quotient `C{i ≥ 0}`, and
-these are the complexes from which the minus and plus flavors are cut out.
+does not increase either index. For every lower set `S` of `ℤ × ℤ`, the chains of the full complex
+supported on the cells `[x, i, j]` with `(i, j) ∈ S`
+(`TauCeti.HeegaardRegionSystem.knotInfinityFiltration`) form a subcomplex
+(`knotInfinityFiltration_le_comap_knotInfinityDifferential`), and the differential descends to the
+quotient (`TauCeti.HeegaardRegionSystem.knotInfinityQuotientDifferential`). The shift by `(a, b)`
+moves the filtration by `(a, b)` (`knotInfinityShift_mem_knotInfinityFiltration_iff`). Intersected
+with `CFK^∞`, the set `S = {(i, j) | i < 0}` gives the subcomplex `C{i < 0}` and the quotient
+`C{i ≥ 0}` of Ozsváth and Szabó, from which the minus and plus flavors are cut out; that
+intersection is not formed here.
 
 **The Alexander grading and the ambient complex.** For an Alexander grading `A` of the generators,
 `A(x) - A(y) = n_z(D) - n_w(D)` for every domain `D` from `x` to `y`
@@ -55,9 +68,11 @@ complex `CFK^∞` of Ozsváth and Szabó. Forgetting `j`, the map
 `[x, i, j] ↦ U ^ (-i) x` (`TauCeti.HeegaardRegionSystem.knotInfinityForget`) to the chains of
 `CF^∞` of the diagram pointed at `w` alone intertwines the infinity knot differential with the
 infinity differential `TauCeti.HeegaardRegionSystem.infinityDifferential` of that diagram
-(`knotInfinityForget_knotInfinityDifferential`), and on `CFK^∞` it is a linear isomorphism
+(`knotInfinityForget_knotInfinityDifferential`) and the shift by `(a, b)` with multiplication by
+`U ^ a` (`knotInfinityForget_knotInfinityShift`), and on `CFK^∞` it is a linear isomorphism
 (`TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv`). So `CFK^∞` is `CF^∞` of the ambient
-manifold, with the second filtration by `j` recording the multiplicities at `z`.
+manifold, as a module over `𝔽₂[U, U⁻¹]`, with the second filtration by `j` recording the
+multiplicities at `z`.
 
 As for the knot differential, these are counts of domains rather than of holomorphic disks, and
 `∂ ∘ ∂ = 0` is not proved here; it is equivalent to the same statement for the knot differential.
@@ -66,12 +81,14 @@ As for the knot differential, these are counts of domains rather than of holomor
 
 * `TauCeti.HeegaardRegionSystem.knotInfinityLift`: the chain `U ^ a V ^ b x` placed at
   `[x, i - a, j - b]`.
-* `TauCeti.HeegaardRegionSystem.knotInfinityDifferential`: the differential of `CFK^∞`.
+* `TauCeti.HeegaardRegionSystem.knotInfinityDifferential`: the differential of the full infinity
+  knot complex; its restriction to the Alexander subcomplex is the differential of `CFK^∞`.
 * `TauCeti.HeegaardRegionSystem.knotInfinityShift`: the shifts of both indices.
 * `TauCeti.HeegaardRegionSystem.knotInfinityFiltration`: the chains over a set of filtration
   levels, and `TauCeti.HeegaardRegionSystem.knotInfinityQuotientDifferential` the differential of
   the quotient by a lower set.
-* `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderSubmodule`: the chains with `j - i = A(x)`.
+* `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderSubmodule`: the chains with `j - i = A(x)`,
+  those of `CFK^∞`.
 * `TauCeti.HeegaardRegionSystem.knotInfinityForget`: forgetting the index `j`.
 * `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv`: `CFK^∞` is linearly isomorphic to
   `CF^∞` of the ambient manifold.
@@ -88,8 +105,11 @@ As for the knot differential, these are counts of domains rather than of holomor
 * `HeegaardRegionSystem.knotInfinityAlexanderSubmodule_le_comap_knotInfinityDifferential`: the
   Alexander grading cuts out a subcomplex.
 * `TauCeti.HeegaardRegionSystem.knotInfinityForget_knotInfinityDifferential` and
-  `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv_restrict`: forgetting `j` is a chain
-  map, and an isomorphism of complexes from `CFK^∞` onto `CF^∞` of the diagram pointed at `w`.
+  `HeegaardRegionSystem.knotInfinityAlexanderEquiv_restrict_knotInfinityDifferential`: forgetting
+  `j` is a chain map, and an isomorphism of complexes from `CFK^∞` onto `CF^∞` of the diagram
+  pointed at `w`.
+* `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv_knotInfinityShift`: this isomorphism
+  turns the action of `U` on `CFK^∞` into multiplication by `U` on `CF^∞`.
 
 ## References
 
@@ -148,7 +168,9 @@ theorem exists_coeff_ne_zero_of_mem_support_knotInfinityLift
     ∃ m : Fin 2 →₀ ℕ, (c g.1).coeff m ≠ 0 ∧ g = (g.1, i - m 0, j - m 1) := by
   classical
   obtain ⟨⟨y, m⟩, hs, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support hg)
-  exact ⟨m, fun h0 => Finsupp.mem_support_iff.mp hs h0, rfl⟩
+  have hrepr := (Finsupp.basis_repr (fun _ => basisMonomials (Fin 2) (ZMod 2)) c ⟨y, m⟩).trans
+    (basisMonomials_repr_apply (c y) m)
+  exact ⟨m, hrepr.symm.trans_ne (Finsupp.mem_support_iff.mp hs), rfl⟩
 
 /-- Placing chains at a level is injective. -/
 theorem knotInfinityLift_injective : Function.Injective (H.knotInfinityLift i j) := by
@@ -194,11 +216,13 @@ section Differential
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
 variable (H) in
-/-- The differential of the knot complex `CFK^∞` of a doubly pointed Heegaard diagram, with region
+/-- The infinity knot differential of a doubly pointed Heegaard diagram, with region
 Euler characteristics `χ` and basepoints `w` and `z`: the `𝔽₂`-linear endomorphism of the chains
 on the cells `[x, i, j]` sending `[x, i, j]` to the sum of `[y, i - n_w(D), j - n_z(D)]` over the
 nonnegative domains `D` of Maslov index one from `x` to `y`, that is, to the knot differential of
-`x` placed at the level `(i, j)`. -/
+`x` placed at the level `(i, j)`. This is the differential of the full infinity knot complex; its
+restriction to `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderSubmodule` for an Alexander
+grading is the differential of `CFK^∞`. -/
 noncomputable def knotInfinityDifferential (χ : Region → ℤ) (w z : Basepoint) :
     (H.Generator × ℤ × ℤ →₀ ZMod 2) →ₗ[ZMod 2] H.Generator × ℤ × ℤ →₀ ZMod 2 :=
   Finsupp.linearCombination (ZMod 2) fun g =>
@@ -208,6 +232,7 @@ variable {χ : Region → ℤ} {w z : Basepoint}
 
 /-- The infinity knot differential of a cell `[x, i, j]` is the knot differential of `x` placed at
 the level `(i, j)`. -/
+@[simp]
 theorem knotInfinityDifferential_single (x : H.Generator) (i j : ℤ) (a : ZMod 2) :
     H.knotInfinityDifferential χ w z (Finsupp.single (x, i, j) a) =
       a • H.knotInfinityLift i j (H.knotDifferential χ w z (Finsupp.single x 1)) :=
@@ -229,14 +254,13 @@ theorem knotInfinityDifferential_knotInfinityLift (i j : ℤ)
     | monomial m a =>
       have h : Finsupp.single x (monomial m a) =
           a • monomial m (1 : ZMod 2) • Finsupp.single x (1 : MvPolynomial (Fin 2) (ZMod 2)) := by
-        rw [Finsupp.smul_single, Finsupp.smul_single, smul_eq_mul, mul_one, smul_monomial,
-          smul_eq_mul, mul_one]
+        simp [Finsupp.smul_single, smul_monomial]
       rw [knotInfinityLift_single_monomial, knotInfinityDifferential_single, h,
         LinearMap.map_smul_of_tower, map_smul, map_smul, knotInfinityLift_monomial_smul]
     | add p q hp hq => rw [Finsupp.single_add, map_add, map_add, hp, hq, map_add, map_add]
 
-/-- **`∂ ∘ ∂ = 0` for `CFK^∞`.** The infinity knot differential squares to zero exactly when the
-knot differential over `𝔽₂[U, V]` does. -/
+/-- **Reduction of `∂ ∘ ∂ = 0` to the knot differential.** The infinity knot differential squares
+to zero exactly when the knot differential over `𝔽₂[U, V]` does. -/
 theorem knotInfinityDifferential_comp_self_eq_zero_iff :
     H.knotInfinityDifferential χ w z ∘ₗ H.knotInfinityDifferential χ w z = 0 ↔
       H.knotDifferential χ w z ∘ₗ H.knotDifferential χ w z = 0 := by
@@ -270,6 +294,25 @@ noncomputable def knotInfinityShift (a b : ℤ) :
 theorem knotInfinityShift_single (a b : ℤ) (x : H.Generator) (i j : ℤ) (c : ZMod 2) :
     H.knotInfinityShift a b (Finsupp.single (x, i, j) c) = Finsupp.single (x, i - a, j - b) c :=
   Finsupp.domLCongr_single _ _ _
+
+/-- The shift by `(0, 0)` is the identity. -/
+@[simp]
+theorem knotInfinityShift_zero : H.knotInfinityShift 0 0 = LinearEquiv.refl (ZMod 2) _ :=
+  LinearEquiv.toLinearMap_injective <| Finsupp.lhom_ext fun ⟨x, i, j⟩ c => by simp
+
+/-- Shifting by `(a, b)` and then by `(a', b')` is shifting by `(a + a', b + b')`. -/
+theorem knotInfinityShift_add (a b a' b' : ℤ) :
+    H.knotInfinityShift (a + a') (b + b') =
+      (H.knotInfinityShift a b).trans (H.knotInfinityShift a' b') :=
+  LinearEquiv.toLinearMap_injective <| Finsupp.lhom_ext fun ⟨x, i, j⟩ c => by
+    simp [sub_add_eq_sub_sub]
+
+/-- The inverse of the shift by `(a, b)` is the shift by `(-a, -b)`. -/
+@[simp]
+theorem knotInfinityShift_symm (a b : ℤ) :
+    (H.knotInfinityShift a b).symm = H.knotInfinityShift (-a) (-b) :=
+  LinearEquiv.toLinearMap_injective <| Finsupp.lhom_ext fun ⟨x, i, j⟩ c => by
+    simp [LinearEquiv.symm_apply_eq]
 
 /-- Shifting a chain placed at the level `(i, j)` by `(a, b)` places it at the level
 `(i - a, j - b)`. -/
@@ -311,8 +354,8 @@ end Shift
 section Filtration
 
 variable (H) in
-/-- The chains of `CFK^∞` supported on the cells `[x, i, j]` whose filtration level `(i, j)` lies
-in the set `S`. -/
+/-- The chains of the full infinity knot complex supported on the cells `[x, i, j]` whose filtration
+level `(i, j)` lies in the set `S`. -/
 def knotInfinityFiltration (S : Set (ℤ × ℤ)) :
     Submodule (ZMod 2) (H.Generator × ℤ × ℤ →₀ ZMod 2) :=
   Finsupp.supported (ZMod 2) (ZMod 2) (Prod.snd ⁻¹' S)
@@ -322,6 +365,29 @@ support has `(i, j) ∈ S`. -/
 theorem mem_knotInfinityFiltration_iff {S : Set (ℤ × ℤ)} {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
     c ∈ H.knotInfinityFiltration S ↔ ∀ g ∈ c.support, g.2 ∈ S :=
   Iff.rfl
+
+/-- The shift by `(a, b)` moves the filtration by `(a, b)`: a shifted chain lies over the levels
+`p` with `p + (a, b) ∈ S` exactly when the chain lies over `S`. -/
+theorem knotInfinityShift_mem_knotInfinityFiltration_iff {a b : ℤ} {S : Set (ℤ × ℤ)}
+    {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
+    H.knotInfinityShift a b c ∈ H.knotInfinityFiltration ((· + (a, b)) ⁻¹' S) ↔
+      c ∈ H.knotInfinityFiltration S := by
+  simp only [mem_knotInfinityFiltration_iff, knotInfinityShift, Finsupp.domLCongr_apply,
+    Finsupp.domCongr_apply, Finsupp.mem_support_iff, Finsupp.equivMapDomain_apply,
+    Equiv.prodCongr_symm, Equiv.refl_symm, Equiv.prodCongr_apply, Equiv.coe_refl, ne_eq,
+    Set.mem_preimage, Prod.forall, Prod.map_apply, id_eq, Equiv.subRight_symm_apply, Prod.mk_add_mk]
+  refine ⟨fun h x i j hc => ?_, fun h x i j hc => h x _ _ hc⟩
+  simpa using h x (i - a) (j - b) (by simpa using hc)
+
+/-- For a lower set `S` and `a, b ≥ 0`, the shift by `(a, b)` preserves the chains over `S`. In
+particular the actions of `U` and `V` preserve the double filtration. -/
+theorem knotInfinityShift_mem_knotInfinityFiltration {a b : ℤ} {S : Set (ℤ × ℤ)}
+    (hS : IsLowerSet S) (ha : 0 ≤ a) (hb : 0 ≤ b) {c : H.Generator × ℤ × ℤ →₀ ZMod 2}
+    (hc : c ∈ H.knotInfinityFiltration S) :
+    H.knotInfinityShift a b c ∈ H.knotInfinityFiltration S := by
+  have h := (knotInfinityShift_mem_knotInfinityFiltration_iff (a := a) (b := b)).mpr hc
+  rw [mem_knotInfinityFiltration_iff] at h ⊢
+  exact fun g hg => hS (by simp [Prod.le_def, ha, hb]) (h g hg)
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
@@ -340,9 +406,10 @@ theorem knotInfinityFiltration_le_comap_knotInfinityDifferential {S : Set (ℤ �
   exact hS hg' (hc (Finsupp.mem_support_iff.mpr hg))
 
 variable (H) in
-/-- The differential of the quotient of `CFK^∞` by the subcomplex over a lower set `S` of filtration
-levels, induced by the infinity knot differential. For `S = {(i, j) | i < 0}` this is the complex
-`C{i ≥ 0}`. -/
+/-- The differential of the quotient of the full infinity knot complex by the subcomplex over a
+lower set `S` of filtration levels, induced by the infinity knot differential. For
+`S = {(i, j) | i < 0}`, intersecting with `CFK^∞` would give the complex `C{i ≥ 0}` of Ozsváth and
+Szabó; that intersection is not formed here. -/
 noncomputable def knotInfinityQuotientDifferential (χ : Region → ℤ) (w z : Basepoint)
     {S : Set (ℤ × ℤ)} (hS : IsLowerSet S) :
     ((H.Generator × ℤ × ℤ →₀ ZMod 2) ⧸ H.knotInfinityFiltration S) →ₗ[ZMod 2]
@@ -377,19 +444,22 @@ theorem mem_knotInfinityAlexanderSubmodule_iff {A : H.Generator → ℤ}
     c ∈ H.knotInfinityAlexanderSubmodule A ↔ ∀ g ∈ c.support, g.2.2 - g.2.1 = A g.1 :=
   Iff.rfl
 
+/-- The shifts by `(a, a)`, in particular the action of `U` of Ozsváth and Szabó, preserve
+`CFK^∞`. -/
+theorem knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff {a : ℤ} {A : H.Generator → ℤ}
+    {c : H.Generator × ℤ × ℤ →₀ ZMod 2} :
+    H.knotInfinityShift a a c ∈ H.knotInfinityAlexanderSubmodule A ↔
+      c ∈ H.knotInfinityAlexanderSubmodule A := by
+  simp only [mem_knotInfinityAlexanderSubmodule_iff, knotInfinityShift, Finsupp.domLCongr_apply,
+    Finsupp.domCongr_apply, Finsupp.mem_support_iff, Finsupp.equivMapDomain_apply,
+    Equiv.prodCongr_symm, Equiv.refl_symm, Equiv.prodCongr_apply, Equiv.coe_refl, ne_eq,
+    Prod.forall, Prod.map_apply, id_eq, Equiv.subRight_symm_apply]
+  refine ⟨fun h x i j hc => ?_, fun h x i j hc => by simpa using h x _ _ hc⟩
+  simpa using h x (i - a) (j - a) (by simpa using hc)
+
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
 variable {χ : Region → ℤ} {w z : Basepoint} {A : H.Generator → ℤ}
-
-/-- A nonzero coefficient of `U ^ m 0 V ^ m 1` in the knot coefficient from `x` to `y` has
-`A(x) - A(y) = m 1 - m 0` for every Alexander grading `A`. -/
-theorem sub_eq_of_coeff_knotCoefficient_ne_zero
-    (hA : ∀ {x y : H.Generator} {D : Region → ℤ}, H.IsDomainBetween x y D →
-      A x - A y = D (H.basepoint z) - D (H.basepoint w))
-    {x y : H.Generator} {m : Fin 2 →₀ ℕ} (h : (H.knotCoefficient χ w z x y).coeff m ≠ 0) :
-    A x - A y = m 1 - m 0 := by
-  obtain ⟨D, hD, hw, hz⟩ := exists_mem_minusDomains_of_coeff_knotCoefficient_ne_zero h
-  rw [hA (mem_minusDomains_iff.mp hD).1, hw, hz]
 
 /-- **The Alexander grading cuts out a subcomplex.** For an Alexander grading `A` of the
 generators, with `A(x) - A(y) = n_z(D) - n_w(D)` for every domain `D` from `x` to `y`, the infinity
@@ -441,17 +511,26 @@ theorem knotInfinityForget_knotInfinityLift (i j : ℤ)
   | single x p =>
     induction p using MvPolynomial.induction_on' with
     | monomial m a =>
-      rw [knotInfinityLift_single_monomial, knotInfinityForget_single, Finsupp.mapRange_single,
-        Finsupp.smul_single, Finsupp.smul_single, aeval_monomial, Finsupp.prod_fintype _ _
-          (by simp), Fin.prod_univ_two]
+      simp only [knotInfinityLift_single_monomial, knotInfinityForget_single,
+        Finsupp.mapRange_single, Finsupp.smul_single, aeval_monomial_fin_two]
       congr 1
-      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, one_pow, mul_one,
-        Polynomial.algebraMap_eq, map_mul, Polynomial.toLaurent_C, Polynomial.toLaurent_X_pow,
-        LaurentPolynomial.smul_eq_C_mul, smul_eq_mul]
-      rw [mul_left_comm, ← T_add, neg_sub, sub_eq_neg_add]
+      simp [LaurentPolynomial.smul_eq_C_mul, sub_eq_add_neg]
     | add p q hp hq =>
       rw [Finsupp.single_add, map_add, map_add, hp, hq, ← smul_add,
         ← Finsupp.mapRange_add (by simp)]
+
+/-- Forgetting the second index turns the shift by `(a, b)` into multiplication by `U ^ a`. -/
+theorem knotInfinityForget_knotInfinityShift (a b : ℤ) (c : H.Generator × ℤ × ℤ →₀ ZMod 2) :
+    H.knotInfinityForget (H.knotInfinityShift a b c) =
+      (T a : (ZMod 2)[T;T⁻¹]) • H.knotInfinityForget c := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd => rw [map_add, map_add, hc, hd, map_add, smul_add]
+  | single g e =>
+    obtain ⟨x, i, j⟩ := g
+    rw [knotInfinityShift_single, knotInfinityForget_single, knotInfinityForget_single, smul_comm]
+    congr 1
+    rw [Finsupp.smul_single, smul_eq_mul, ← T_add, neg_sub, sub_eq_add_neg]
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
@@ -497,8 +576,8 @@ theorem knotInfinityAlexanderLift_single_C_mul_T (x : H.Generator) (k : ℤ) (a 
       Finsupp.single (x, -k, A x - k) a := by
   rw [← single_eq_C_mul_T]
   simp only [knotInfinityAlexanderLift, Finsupp.lsum_single, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, Finsupp.lmapDomain_apply]
-  exact Finsupp.mapDomain_single
+    LinearEquiv.coe_coe, AddMonoidAlgebra.coeffLinearEquiv_apply, AddMonoidAlgebra.coeff_single,
+    Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
 
 /-- The inverse of forgetting the second index takes its values in `CFK^∞`. -/
 theorem knotInfinityAlexanderLift_mem (c : H.Generator →₀ (ZMod 2)[T;T⁻¹]) :
@@ -569,6 +648,16 @@ theorem coe_knotInfinityAlexanderEquiv_symm_apply (c : H.Generator →₀ (ZMod 
       H.knotInfinityAlexanderLift A c :=
   (rfl)
 
+/-- **The action of `U`.** The isomorphism `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv`
+turns the shift by `(a, a)` of `CFK^∞` into multiplication by `U ^ a` on `CF^∞`. -/
+theorem knotInfinityAlexanderEquiv_knotInfinityShift (a : ℤ)
+    (c : H.knotInfinityAlexanderSubmodule A) :
+    H.knotInfinityAlexanderEquiv A ⟨H.knotInfinityShift a a c,
+      knotInfinityShift_mem_knotInfinityAlexanderSubmodule_iff.mpr c.property⟩ =
+      (T a : (ZMod 2)[T;T⁻¹]) • H.knotInfinityAlexanderEquiv A c := by
+  rw [knotInfinityAlexanderEquiv_apply, knotInfinityAlexanderEquiv_apply,
+    knotInfinityForget_knotInfinityShift]
+
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
 variable {χ : Region → ℤ} {w z : Basepoint}
@@ -578,7 +667,7 @@ variable {χ : Region → ℤ} {w z : Basepoint}
 `TauCeti.HeegaardRegionSystem.knotInfinityAlexanderEquiv` intertwines the infinity knot
 differential restricted to `CFK^∞` with the infinity differential of the diagram pointed at `w`
 alone. -/
-theorem knotInfinityAlexanderEquiv_restrict
+theorem knotInfinityAlexanderEquiv_restrict_knotInfinityDifferential
     (hA : ∀ {x y : H.Generator} {D : Region → ℤ}, H.IsDomainBetween x y D →
       A x - A y = D (H.basepoint z) - D (H.basepoint w))
     (c : H.knotInfinityAlexanderSubmodule A) :
