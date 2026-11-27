@@ -44,7 +44,8 @@ map sends `τ` to `ζ - 1`, where `ζ` is the sharp of `ε^(1/p)`; this is nonze
 * `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero`: `θ(φ^(-1)(μ)) ≠ 0` when the sharp `ζ`
   of `ε^(1/p)` is not `1`, since `θ(φ^(-1)(μ)) = ζ - 1` by `PreTilt.fontaineThetaShifted_mu`.
 * `PreTilt.ker_fontaineTheta_eq_span_xi`: `ξ` generates Fontaine's kernel on the valuation ring
-  of a complete perfectoid field.
+  of a complete perfectoid field, and `PreTilt.ker_fontaineTheta_eq_span_iff_associated_xi`: the
+  generators of that kernel are the unit multiples of `ξ`.
 
 ## Provenance
 
@@ -365,6 +366,15 @@ theorem ker_fontaineTheta_eq_span_xi (ε : PreTilt (𝒪[C]) p)
     RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} :=
   ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements
     (Huber.isRingOfIntegralElements_integer C) ε hε
+
+/-- On the valuation ring of a complete perfectoid nonarchimedean field, an element of `W(O_C♭)`
+generates the Fontaine kernel exactly when it is a unit multiple of `ξ`. -/
+theorem ker_fontaineTheta_eq_span_iff_associated_xi (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {y : WittVector p (PreTilt (𝒪[C]) p)} :
+    RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {y} ↔ Associated y (xi p ε) := by
+  rw [ker_fontaineTheta_eq_span_xi ε hε, eq_comm, Ideal.span_singleton_eq_span_singleton]
 
 /-- On the valuation ring of a complete perfectoid nonarchimedean field,
 `xiTilde` generates the shifted Fontaine kernel. -/
