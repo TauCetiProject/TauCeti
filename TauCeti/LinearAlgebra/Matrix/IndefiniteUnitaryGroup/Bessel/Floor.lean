@@ -589,11 +589,9 @@ theorem frameMinor_splitWeylElement {l : ℕ} (hl : l ≤ ϱ) (p : Fin ϱ → R�
     have hb := b.isLt
     rw [submatrix_apply, frameGram_apply, coe_splitWeylElement,
       besselFrame_eq_inl (b := Fin.castLE j.is_le a) (by simp; omega),
-      besselFrame_eq_inl (b := Fin.castLE j.is_le b) (by simp; omega), splitGram_mul_apply_inl,
-      splitWeylMatrix_eStar_inl, diagonal_apply, diagonal_apply]
-    simp only [Fin.val_castLE, Fin.mk.injEq, Fin.val_inj, show (a : ℕ) < l by omega, ↓reduceIte]
-    exact if_congr Iff.rfl
-      (congrArg (fun c ↦ ((p c : Rˣ) : R)) (Fin.ext (Fin.val_castLE _ a).symm)) rfl
+      besselFrame_eq_inl (b := Fin.castLE j.is_le b) (by simp; omega)]
+    simp [splitGram_mul_apply_inl, splitWeylMatrix_eStar_inl, diagonal_apply, Fin.ext_iff,
+      Fin.castLE, show (a : ℕ) < l by omega]
   rw [frameMinor_def, h_block, det_diagonal]
 
 /-- **A Weyl element commutes with the fixer of its floors.** The Weyl element of the first `l`
@@ -626,18 +624,26 @@ theorem commute_splitWeylElement {l : ℕ} (p : Fin ϱ → Rˣ) {s : unitaryGrou
       splitWeylMatrix_mul_apply_eStar, mul_splitWeylMatrix_apply_inl,
       mul_splitWeylMatrix_apply_middle, mul_splitWeylMatrix_apply_eStar]
   -- In each block, split on whether the pairs involved are exchanged.
-  · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
-      rcases eq_or_ne a b with rfl | hab <;> simp [*]
-  · by_cases ha : (a : ℕ) < l <;> simp [*]
-  · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
-      rcases eq_or_ne a b with rfl | hab <;> simp [*]
-  · by_cases hb : (b : ℕ) < l <;> simp [*]
-  · by_cases hb : (b : ℕ) < l <;> simp [*]
-  · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
-      rcases eq_or_ne a b with rfl | hab <;> simp [*]
-  · by_cases ha : (a : ℕ) < l <;> simp [*]
-  · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
-      rcases eq_or_ne a b with rfl | hab <;> simp [*]
+  · rcases eq_or_ne a b with rfl | hab
+    · by_cases ha : (a : ℕ) < l <;> simp [hrow₁, hrow₂, ha]
+    · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
+        simp [hrow₁, hrow₂, hcol₁, hcol₂, ha, hb, hab]
+  · by_cases ha : (a : ℕ) < l <;> simp [hrow₁, hrow₂, ha]
+  · rcases eq_or_ne a b with rfl | hab
+    · by_cases ha : (a : ℕ) < l <;> simp [hrow₁, hrow₂, ha]
+    · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
+        simp [hrow₁, hrow₂, hcol₁, hcol₂, ha, hb, hab]
+  · by_cases hb : (b : ℕ) < l <;> simp [hcol₁, hcol₂, hb]
+  · by_cases hb : (b : ℕ) < l <;> simp [hcol₁, hcol₂, hb]
+  · rcases eq_or_ne a b with rfl | hab
+    · by_cases ha : (a : ℕ) < l <;> simp [hrow₁, hrow₂, ha]
+    · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
+        simp [hrow₁, hrow₂, hcol₁, hcol₂, ha, hb, hab]
+  · by_cases ha : (a : ℕ) < l <;> simp [hrow₁, hrow₂, ha]
+  · rcases eq_or_ne a b with rfl | hab
+    · by_cases ha : (a : ℕ) < l <;> simp [hrow₁, hrow₂, ha]
+    · by_cases ha : (a : ℕ) < l <;> by_cases hb : (b : ℕ) < l <;>
+        simp [hrow₁, hrow₂, hcol₁, hcol₂, ha, hb, hab]
 
 end WeylFloor
 

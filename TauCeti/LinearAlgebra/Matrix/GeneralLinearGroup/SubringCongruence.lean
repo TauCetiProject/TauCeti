@@ -73,7 +73,8 @@ def subringCongruenceSubgroup (g : Rˣ) : Subgroup (GL n R) where
 theorem mem_subringCongruenceSubgroup {g : Rˣ} {γ : GL n R} :
     γ ∈ subringCongruenceSubgroup n 𝒪 g ↔ (γ : Matrix n n R) ∈ 𝒪.matrix ∧
       ((γ⁻¹ : GL n R) : Matrix n n R) ∈ 𝒪.matrix ∧
-      ((g⁻¹ : Rˣ) : R) • ((γ : Matrix n n R) - 1) ∈ 𝒪.matrix :=
-  and_assoc
+      ((g⁻¹ : Rˣ) : R) • ((γ : Matrix n n R) - 1) ∈ 𝒪.matrix := by
+  simp only [subringCongruenceSubgroup, Subgroup.mem_mk, Submonoid.mem_mk, Subsemigroup.mem_mk,
+    Set.mem_ofPred_eq, Submonoid.mem_units_iff, Subring.mem_toSubmonoid, and_assoc]
 
 end TauCeti
