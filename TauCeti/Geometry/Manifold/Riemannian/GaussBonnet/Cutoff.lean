@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cutoff
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
@@ -140,38 +139,6 @@ theorem mextDeriv_connectionForm_eq_neg_smul_riemannianVolumeForm
     sectionalCurvature_eq_scalarCurvature_div_two o hs hcov hx, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul, hvol, mul_comm]
 
-/-- The Leibniz rule and the structure equation: `dφ ∧ ω = d(φ ω) + φ K vol` on the whole surface,
-for a `C¹` function `φ` supported in the frame domain. -/
-private theorem mextDeriv_ofFunction_wedge_connectionForm_eq (o : Manifold.Orientation I M (Fin 2))
-    (hs : IsLocalFrameOn I E ∞ s u) (hu : IsOpen u) (ho : ∀ y ∈ u, Orthonormal ℝ (fun i ↦ s i y))
-    (hor : ∀ y ∈ u, riemannianVolumeForm o y ![s 0 y, s 1 y] = 1)
-    (hcov : IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov) {φ : M → ℝ}
-    (hφ : ContMDiff I 𝓘(ℝ) 1 φ) (hφu : tsupport φ ⊆ u) :
-    (mextDeriv (RoughForm.ofFunction I φ)).wedge (hs.connectionForm cov 0 1) =
-      mextDeriv (fun y ↦ φ y • hs.connectionForm cov 0 1 y) +
-        fun x ↦ (φ x * (cov.scalarCurvature x / 2)) • riemannianVolumeForm o x := by
-  funext x
-  ext v
-  by_cases hx : x ∈ tsupport φ
-  · have hd := mextDeriv_fun_smul (hφ.mdifferentiableAt one_ne_zero)
-      ((contMDiffAt_connectionForm_zero_one (cov := cov) hs hu (hφu hx)).mdifferentiableAt
-        one_ne_zero) v
-    simp only [Function.comp_def, Fin.cast_eq_self] at hd
-    rw [Pi.add_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
-      smul_eq_mul, hd, hs.mextDeriv_connectionForm_eq_neg_smul_riemannianVolumeForm o hu ho hor
-        hcov (hφu hx), ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-    ring
-  · -- Off `tsupport φ`, both sides vanish near `x`.
-    have hφx : ∀ᶠ y in 𝓝 x, φ y = 0 := notMem_tsupport_iff_eventuallyEq.mp hx
-    have hdφ : mextDeriv (RoughForm.ofFunction I φ) x = 0 := by
-      rw [mextDeriv_congr_of_eventuallyEq (η := 0) (hφx.mono fun y hy ↦
-        ContinuousAlternatingMap.ext fun w ↦ by simp [hy]), mextDeriv_zero, Pi.zero_apply]
-    have hdη : mextDeriv (fun y ↦ φ y • hs.connectionForm cov 0 1 y) x = 0 := by
-      rw [mextDeriv_congr_of_eventuallyEq (η := 0) (hφx.mono fun y hy ↦ by simp [hy]),
-        mextDeriv_zero, Pi.zero_apply]
-    rw [RoughForm.wedge_apply, hdφ]
-    simp [hdη, image_eq_zero_of_notMem_tsupport hx]
-
 variable [SigmaCompactSpace M] [BoundarylessManifold I M] [MeasurableSpace M] [BorelSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
@@ -191,28 +158,31 @@ theorem integralTopForm_mextDeriv_ofFunction_wedge_connectionForm
     integralTopForm o
         ((mextDeriv (RoughForm.ofFunction I φ)).wedge (hs.connectionForm cov 0 1)) =
       ∫ x, φ x * (cov.scalarCurvature x / 2) ∂riemannianVolume I M := by
-  set α := hs.connectionForm cov 0 1
-  -- The one-form `η = φ ω` is a compactly supported `C¹` form on the whole surface.
-  set η : RoughForm I M ℝ 1 := fun y ↦ φ y • α y
-  have hη : IsSmoothForm I 1 η := by
-    rw [isSmoothForm_def]
-    exact hφ.contMDiffOn.smul_section_of_tsupport hu hφu fun x hx ↦
-      (contMDiffAt_connectionForm_zero_one (cov := cov) hs hu hx).contMDiffWithinAt
-  have hηc : IsCompact (_root_.tsupport (α := E [⋀^Fin 1]→L[ℝ] ℝ) η) :=
-    hφc.isCompact.of_isClosed_subset (isClosed_tsupport _)
-      (tsupport_smul_subset_left φ (show M → E [⋀^Fin 1]→L[ℝ] ℝ from α))
-  -- Stokes's theorem kills `∫ dη`, and `∫ (φ K) vol = ∫ φ K dV`.
   let bE : Module.Basis (Fin 2) ℝ E :=
     Module.finBasisOfFinrankEq ℝ E (by simpa using o.card_eq.symm)
   have hKc := continuous_mul_scalarCurvature_div_two o hs hu hcov hφ.continuous hφu
   have hKs : HasCompactSupport fun x ↦ φ x * (cov.scalarCurvature x / 2) := hφc.mul_right
-  rw [mextDeriv_ofFunction_wedge_connectionForm_eq o hs hu ho hor hcov hφ hφu,
-    integralTopForm_add_of_integrable o
-      (hη.continuous_mextDeriv.integrableTopForm (η.isCompact_tsupport_mextDeriv hηc) bE)
-      ((isSmoothForm_smul_riemannianVolumeForm o hKc).integrableTopForm
-        (hKs.isCompact.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _
-          (show M → E [⋀^Fin 2]→L[ℝ] ℝ from riemannianVolumeForm o))) bE),
-    integralTopForm_mextDeriv_eq_zero o hη hηc, zero_add,
-    integralTopForm_smul_riemannianVolumeForm o hKc hKs]
+  have hi := (isSmoothForm_smul_riemannianVolumeForm o hKc).integrableTopForm
+    (hKs.isCompact.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _
+      (show M → E [⋀^Fin 2]→L[ℝ] ℝ from riemannianVolumeForm o))) bE
+  -- Only this identification of `φ dω` uses the surface structure equation.
+  have heq : (fun x ↦ φ x • mextDeriv (hs.connectionForm cov 0 1) x) =
+      -(fun x ↦ (φ x * (cov.scalarCurvature x / 2)) • riemannianVolumeForm o x) := by
+    funext x
+    by_cases hx : x ∈ tsupport φ
+    · rw [hs.mextDeriv_connectionForm_eq_neg_smul_riemannianVolumeForm o hu ho hor hcov
+        (hφu hx), smul_smul]
+      simp
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  calc
+    _ = -integralTopForm o (fun x ↦ φ x • mextDeriv (hs.connectionForm cov 0 1) x) :=
+      TauCeti.integralTopForm_mextDeriv_ofFunction_wedge_eq_neg o
+        (fun _ hx ↦ contMDiffAt_connectionForm_zero_one (cov := cov) hs hu (hφu hx))
+        hφ hφc (by rw [heq]; exact hi.neg)
+    _ = _ := by
+      rw [heq, ← neg_one_smul ℝ (fun x ↦
+        (φ x * (cov.scalarCurvature x / 2)) • riemannianVolumeForm o x),
+        integralTopForm_smul, neg_one_mul, neg_neg,
+        integralTopForm_smul_riemannianVolumeForm o hKc hKs]
 
 end IsLocalFrameOn
