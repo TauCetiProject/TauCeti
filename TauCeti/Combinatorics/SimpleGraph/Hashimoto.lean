@@ -32,6 +32,8 @@ the determinant formula `ζ(u) = det(1 - u B)⁻¹`.
 
 ## Main results
 
+* `SimpleGraph.hashimotoMatrix_map`: the Hashimoto matrix is preserved by maps of the entries that
+  send `0` to `0` and `1` to `1`.
 * `SimpleGraph.sum_row_hashimotoMatrix`, `SimpleGraph.sum_col_hashimotoMatrix`: the row of a dart
   `a` sums to `deg a.snd - 1` and the column of a dart `b` sums to `deg b.fst - 1`.
 * `SimpleGraph.hashimotoMatrix_pow_apply`: the entry `(Bᵏ) a b` is the number of sequences of darts
@@ -108,6 +110,15 @@ theorem hashimotoMatrix_apply_symm_symm [Zero R] [One R] (a b : G.Dart) :
     G.hashimotoMatrix R b.symm a.symm = G.hashimotoMatrix R a b := by
   simp only [hashimotoMatrix_apply, Dart.symm_toProd, Prod.snd_swap, Dart.symm_symm]
   grind [Dart.symm_symm, Dart.fst_symm]
+
+/-- The Hashimoto matrix is preserved by every map of the entries sending `0` to `0` and `1`
+to `1`, such as a ring homomorphism. -/
+@[simp]
+theorem hashimotoMatrix_map [Zero R] [One R] {S : Type*} [Zero S] [One S] (f : R → S)
+    (h₀ : f 0 = 0) (h₁ : f 1 = 1) : (G.hashimotoMatrix R).map f = G.hashimotoMatrix S := by
+  ext a b
+  simp only [map_apply, hashimotoMatrix_apply]
+  split_ifs <;> assumption
 
 variable [Fintype V] [DecidableRel G.Adj]
 

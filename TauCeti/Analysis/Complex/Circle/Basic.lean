@@ -24,6 +24,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.RingTheory.IntegralDomain
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -42,7 +43,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 
 * `Circle.homeomorphSphere`: `Circle ≃ₜ sphere (0 : ℂ) 1`, the identity on underlying complex
   numbers, with `Circle.coe_homeomorphSphere_exp_re` and `Circle.coe_homeomorphSphere_exp_im`
-  computing the real and imaginary parts of `exp (i x)` on the sphere.
+  computing the real and imaginary parts of `exp (i x)` on the sphere, and
+  `Circle.pathConnectedSpace_sphere`: the unit sphere of `ℂ` is path-connected.
 * `Circle.expContinuousMonoidHom`: `t ↦ exp (i t)` as a continuous homomorphism
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
@@ -58,6 +60,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.coe_mul_conj_self` and `Circle.conj_coe_mul_self`: `z * conj z = 1` and `conj z * z = 1`
   on the circle, `Circle.add_mul_coe_eq_coe_mul_conj_mul_add`: `p + t u = u (conj u · p + t)`, and
   `Circle.im_conj_mul_ne_zero_iff`: the line `t ↦ p + t u` avoids `0` iff `conj u · p` is not real.
+* `Circle.im_conj_mul_add_smul` and `Circle.im_conj_mul_smul_I_mul`: `Im (conj e · z)` is constant
+  along the direction `e`, and equals `r` at the point `r i e`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -84,6 +88,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.sq_mul_inv_ne_one`: `(d e⁻¹)² ≠ 1` for unit directions `d` and `e` that are not
   parallel.
 * `Circle.isCyclic_of_finite`: every finite subgroup of the circle is cyclic.
+* `Circle.mem_iff_pow_natCard_eq_one`: a finite subgroup of the circle with `N` elements is the
+  group of `N`-th roots of unity.
 * `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
@@ -117,6 +123,10 @@ theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z
 theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
+
+/-- The unit sphere `sphere (0 : ℂ) 1` is path-connected, being homeomorphic to `Circle`. -/
+instance pathConnectedSpace_sphere : PathConnectedSpace (sphere (0 : ℂ) 1) :=
+  homeomorphSphere.surjective.pathConnectedSpace homeomorphSphere.continuous
 
 /-- The real part of `exp (i x)`, read on the unit sphere of `ℂ`, is `cos x`. -/
 theorem coe_homeomorphSphere_exp_re (x : ℝ) : (homeomorphSphere (exp x) : ℂ).re = Real.cos x := by
@@ -312,6 +322,16 @@ theorem im_conj_mul_ne_zero_iff (u : Circle) (p : ℂ) :
   · intro h him
     apply h (-(conj (u : ℂ) * p).re)
     apply Complex.ext <;> simp [him]
+
+/-- Moving along the direction `e` does not change `Im (conj e · z)`. -/
+theorem im_conj_mul_add_smul (e : Circle) (z : ℂ) (t : ℝ) :
+    (conj (e : ℂ) * (z + t • (e : ℂ))).im = (conj (e : ℂ) * z).im := by
+  simp [Complex.real_smul, mul_add, mul_left_comm, conj_coe_mul_self]
+
+/-- The point `r i e` satisfies `Im (conj e · r i e) = r`. -/
+theorem im_conj_mul_smul_I_mul (e : Circle) (r : ℝ) :
+    (conj (e : ℂ) * (r • (Complex.I * e))).im = r := by
+  simp [Complex.real_smul, mul_left_comm, conj_coe_mul_self]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
@@ -513,6 +533,16 @@ theorem sq_mul_inv_ne_one {d e : Circle} (hde : d ≠ e) (hde' : d ≠ -e) : (d 
 /-- Every finite subgroup of the circle is cyclic: it is a finite group of units of `ℂ`. -/
 instance isCyclic_of_finite (H : Subgroup Circle) [Finite H] : IsCyclic H :=
   isCyclic_of_injective_ringHom (coeHom.comp H.subtype) fun _ _ h => Subtype.ext (coe_injective h)
+
+/-- **A finite subgroup of the circle consists of roots of unity.** For a finite subgroup `H` of
+`Circle` with `N` elements, `x ∈ H` exactly when `x ^ N = 1`: `H` is the group of `N`-th roots of
+unity. This is `Subgroup.eq_rootsOfUnity_natCard` for the image of `H` in `ℂˣ`. -/
+theorem mem_iff_pow_natCard_eq_one (H : Subgroup Circle) [Finite H] {x : Circle} :
+    x ∈ H ↔ x ^ Nat.card H = 1 := by
+  have hinj : Function.Injective toUnits := unitSphereToUnits_injective
+  have : Finite (H.map toUnits) := .of_equiv H (H.equivMapOfInjective _ hinj)
+  rw [← Subgroup.mem_map_iff_mem hinj, (H.map toUnits).eq_rootsOfUnity_natCard,
+    Subgroup.card_map_of_injective hinj, mem_rootsOfUnity, ← map_pow, map_eq_one_iff _ hinj]
 
 end Circle
 

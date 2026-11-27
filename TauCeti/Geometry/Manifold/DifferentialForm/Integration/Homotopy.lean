@@ -46,9 +46,12 @@ vanishes (`TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_
 integral over a cylinder is invariant under homotopies through cylinders whose boundary loops are
 each either fixed or constant (`TauCeti.rectangleIntegral_eq_of_homotopy`). This covers homotopies
 of cylinders relative to their boundary loops, homotopies of caps relative to the capped loop, and
-homotopies of spheres presented as cylinders between constant loops. It is the analytic input for
-showing that the Hamiltonian action of a loop does not depend on the choice of cylinder or cap
-within a homotopy class.
+homotopies of spheres presented as cylinders between constant loops. More generally, the edge
+`t = b.2` may be the image of the edge `t = a.2` under a map `f` with `f^* φ = φ`, so that each
+`t ↦ Φ((s, t), c)` is an `f`-seamed path: the two side faces swept out by these edges then have the
+same integral (`TauCeti.rectangleIntegral_eq_of_seamedHomotopy`). It is the analytic input for
+showing that the Hamiltonian action of a loop, or of a path seamed by a symplectomorphism, does
+not depend on the choice of cylinder or cap within a homotopy class.
 
 This is the two-dimensional analogue of the line integral `TauCeti.pathIntegral`: it integrates
 along an arbitrary map of the plane, without the integrability conditions of the integral of a top
@@ -88,6 +91,8 @@ contracts with `∂ₜ` first.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
+* `TauCeti.rectangleIntegral_comp_real`: the integral over a map factoring through a
+  differentiable real function vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate,
   and `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` change of parameter.
@@ -95,6 +100,9 @@ contracts with `∂ₜ` first.
   terms of line integrals along the edges.
 * `TauCeti.rectangleIntegral_sub_rectangleIntegral_eq_sides`: Stokes' formula for a homotopy of
   maps of a rectangle, for a closed form.
+* `TauCeti.rectangleIntegral_eq_of_seamedHomotopy`: homotopy invariance of the integral of a
+  closed form `φ` over a map whose edge `t = b.2` is the image of its edge `t = a.2` under a map
+  preserving `φ`, with boundary paths that stay fixed or constant.
 * `TauCeti.rectangleIntegral_eq_of_homotopy`: homotopy invariance of the integral of a closed form
   over a cylinder whose boundary loops stay fixed or constant.
 * `TauCeti.pathIntegral_homotopyOperator`: the line integral of the homotopy operator along a
@@ -295,6 +303,21 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
 theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × ℝ) :
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
+
+/-- The integral of a two-form over a map `γ ∘ Θ` that factors through a differentiable function
+`Θ : ℝ × ℝ → ℝ` and a differentiable curve `γ` vanishes: both partial derivatives of `γ ∘ Θ` are
+multiples of the velocity of `γ`. For instance a homotopy of loops running inside a circle has
+zero area. -/
+theorem rectangleIntegral_comp_real (φ : RoughForm I M F 2) {γ : ℝ → M} {Θ : ℝ × ℝ → ℝ}
+    (hγ : MDifferentiable 𝓘(ℝ) I γ) (hΘ : Differentiable ℝ Θ) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (γ ∘ Θ) a b = 0 := by
+  -- The pullback factors through `fderiv ℝ Θ z`, and a two-form on the line `ℝ` vanishes.
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Θ) φ z ![(1, 0), (0, 1)] = 0 := by
+    rw [mpullback_comp_apply_of_hasFDerivAt (hΘ z).hasFDerivAt (hγ _),
+      ContinuousAlternatingMap.eq_zero_of_finrank_lt (mpullback 𝓘(ℝ) I γ φ (Θ z)) (by simp)]
+    -- The tangent spaces of `ℝ` are `ℝ` itself, so the zero form pulled back is zero.
+    rfl
+  simp [rectangleIntegral_def, h]
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
@@ -519,6 +542,41 @@ theorem rectangleIntegral_sub_rectangleIntegral_eq_sides {φ : RoughForm I M F 2
   exact integral2_slice_sub_eq_sides hψ hdψ a b
 
 omit [CompleteSpace F] in
+/-- **Homotopy invariance of the integral over a seamed cylinder.** Let `φ` be a closed `C¹`
+two-form, `f : M → M` a differentiable map preserving it, `f^* φ = φ`, and
+`Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy through maps `Φ(·, c)` of the rectangle `[a, b]` whose edge
+`t = b.2` is the image under `f` of its edge `t = a.2`, so that `t ↦ Φ((s, t), c)` is an
+`f`-seamed path on `[a.2, b.2]` for every `s`. Suppose that each of the two boundary paths
+`s = a.1` and `s = b.1` either stays fixed or remains a constant path during the homotopy. These
+conditions are only imposed on the rectangle and for `c ∈ [0, 1]`. Then the integrals of `φ` over
+`Φ(·, 0)` and `Φ(·, 1)` agree. For `f = id` the maps are cylinders, and this is
+`TauCeti.rectangleIntegral_eq_of_homotopy`. -/
+theorem rectangleIntegral_eq_of_seamedHomotopy {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ)
+    (hdφ : mextDeriv φ = 0) {f : M → M} (hf : MDifferentiable I I f)
+    (hfφ : mpullback I I f φ = φ) {Φ : (ℝ × ℝ) × ℝ → M}
+    (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ) {a b : ℝ × ℝ}
+    (ha : (∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((a.1, t), c) = Φ ((a.1, t), 0)) ∨
+      ∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((a.1, t), c) = Φ ((a.1, a.2), c))
+    (hb : (∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((b.1, t), c) = Φ ((b.1, t), 0)) ∨
+      ∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((b.1, t), c) = Φ ((b.1, b.2), c))
+    (hseam : ∀ s ∈ [[a.1, b.1]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, b.2), c) = f (Φ ((s, a.2), c))) :
+    rectangleIntegral φ (fun z ↦ Φ (z, 1)) a b = rectangleIntegral φ (fun z ↦ Φ (z, 0)) a b := by
+  have h := rectangleIntegral_sub_rectangleIntegral_eq_sides hφ hdφ hΦ a b
+  -- The edge `t = b.2` sweeps out the image under `f` of the side face swept out by the edge
+  -- `t = a.2`, which has the same integral since `f` preserves `φ`.
+  have hface : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 fun p : ℝ × ℝ ↦ Φ ((p.1, a.2), p.2) :=
+    hΦ.comp (((contDiff_fst.prodMk contDiff_const).prodMk contDiff_snd).contMDiff)
+  have hseam' : rectangleIntegral φ (fun p ↦ Φ ((p.1, b.2), p.2)) (a.1, 0) (b.1, 1) =
+      rectangleIntegral φ (fun p ↦ Φ ((p.1, a.2), p.2)) (a.1, 0) (b.1, 1) := by
+    rw [rectangleIntegral_congr (a := (a.1, 0)) (b := (b.1, 1))
+        (v := f ∘ fun p ↦ Φ ((p.1, a.2), p.2))
+        fun p hp ↦ hseam p.1 hp.1 p.2 ((uIcc_of_le zero_le_one).subset hp.2),
+      ← rectangleIntegral_mpullback φ (fun _ _ ↦ hf _)
+        (fun z _ ↦ hface.mdifferentiableAt two_ne_zero), hfφ]
+  rw [rectangleIntegral_side_eq_zero φ ha, rectangleIntegral_side_eq_zero φ hb, hseam'] at h
+  simpa [sub_eq_zero] using h
+
+omit [CompleteSpace F] in
 /-- **Homotopy invariance of the integral over a cylinder.** Let `φ` be a closed `C¹` two-form and
 `Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy through cylinders `Φ(·, c)` on the rectangle `[a, b]`: the
 edges `t = a.2` and `t = b.2` of each rectangle are mapped alike, so that `t ↦ Φ((s, t), c)` is a
@@ -534,14 +592,8 @@ theorem rectangleIntegral_eq_of_homotopy {φ : RoughForm I M F 2} (hφ : IsSmoot
     (hb : (∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((b.1, t), c) = Φ ((b.1, t), 0)) ∨
       ∀ t ∈ [[a.2, b.2]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((b.1, t), c) = Φ ((b.1, b.2), c))
     (hper : ∀ s ∈ [[a.1, b.1]], ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, b.2), c) = Φ ((s, a.2), c)) :
-    rectangleIntegral φ (fun z ↦ Φ (z, 1)) a b = rectangleIntegral φ (fun z ↦ Φ (z, 0)) a b := by
-  have h := rectangleIntegral_sub_rectangleIntegral_eq_sides hφ hdφ hΦ a b
-  -- The two edges `t = a.2` and `t = b.2` sweep out the same side face.
-  have hper' : rectangleIntegral φ (fun p ↦ Φ ((p.1, b.2), p.2)) (a.1, 0) (b.1, 1) =
-      rectangleIntegral φ (fun p ↦ Φ ((p.1, a.2), p.2)) (a.1, 0) (b.1, 1) :=
-    rectangleIntegral_congr fun p hp ↦ hper p.1 hp.1 p.2 ((uIcc_of_le zero_le_one).subset hp.2)
-  rw [rectangleIntegral_side_eq_zero φ ha, rectangleIntegral_side_eq_zero φ hb, hper'] at h
-  simpa [sub_eq_zero] using h
+    rectangleIntegral φ (fun z ↦ Φ (z, 1)) a b = rectangleIntegral φ (fun z ↦ Φ (z, 0)) a b :=
+  rectangleIntegral_eq_of_seamedHomotopy hφ hdφ mdifferentiable_id (mpullback_id φ) hΦ ha hb hper
 
 omit [CompleteSpace F] in
 /-- **Stokes' formula for the integral over a map of a rectangle.** For a `C¹` one-form `α` and a

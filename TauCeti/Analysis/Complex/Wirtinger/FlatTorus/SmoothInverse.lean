@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
+import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -116,7 +117,8 @@ private theorem mFourierCoeff_torusOp (hω : (conj ω₁ * ω₂).im ≠ 0)
   simp only [torusOp, mFourierCoeff_smul,
     mFourierCoeff_add (((hint _).smul _).add ((hint _).smul _))
       ((integrable_of_mem_smoothFunctions hg).smul _),
-    mFourierCoeff_add ((hint _).smul _) ((hint _).smul _), mFourierCoeff_lineDeriv hg,
+    mFourierCoeff_add ((hint _).smul _) ((hint _).smul _),
+    mFourierCoeff_lineDeriv ((mem_smoothFunctions.1 hg).of_le (by simp)),
     Fin.sum_univ_two, Pi.single_eq_same, Pi.single_eq_of_ne, ne_eq, one_ne_zero, zero_ne_one,
     not_false_eq_true, ofReal_one, ofReal_zero, mul_one, mul_zero, zero_add, add_zero, smul_eq_mul,
     torusMultiplier]
@@ -183,7 +185,7 @@ private theorem eq_zero_of_torusOp_eq_zero (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     {g : UnitAddTorus (Fin 2) → ℂ} (hg : g ∈ smoothFunctions (Fin 2))
     (h : torusOp ω₁ ω₂ θ₁ θ₂ g = 0) : g = 0 := by
-  refine eq_of_mFourierCoeff_eq hg (Submodule.zero_mem _) fun n ↦ ?_
+  refine (continuous_of_mem_smoothFunctions hg).eq_of_mFourierCoeff_eq continuous_zero fun n ↦ ?_
   have hm := mFourierCoeff_torusOp (θ₁ := θ₁) (θ₂ := θ₂) hω hg n
   rw [h, mFourierCoeff_zero, eq_comm, mul_eq_zero] at hm
   rw [mFourierCoeff_zero]
@@ -204,7 +206,8 @@ private theorem exists_torusOp_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     exact hle n
   have hmem := tsum_smul_mFourier_mem_smoothFunctions_of_norm_le hg hcle
   refine ⟨fun z ↦ ∑' n, c n • mFourier n z, hmem, ?_⟩
-  refine eq_of_mFourierCoeff_eq (torusOp_mem hmem) hg fun n ↦ ?_
+  refine (continuous_of_mem_smoothFunctions (torusOp_mem hmem)).eq_of_mFourierCoeff_eq
+    (continuous_of_mem_smoothFunctions hg) fun n ↦ ?_
   rw [mFourierCoeff_torusOp hω hmem, mFourierCoeff_tsum_smul_mFourier_of_norm_le hg hcle]
   exact mul_div_cancel₀ _ (torusMultiplier_ne_zero hω hθ n)
 

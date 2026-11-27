@@ -86,6 +86,8 @@ Its descent to raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer
 * `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq`,
   `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`: the index of a
   smooth cap in any such frame, and its recapping law.
+* `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_const`: along the constant cap of a loop that
+  stays at its base point `x`, the index is the index of `Φ` on the single tangent space `T_x M`.
 * `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`: the index along a
   nondegenerate orbit is an integer.
 * `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`: its parity
@@ -330,33 +332,13 @@ private theorem frameConleyZehnderIndex_eq_of_eq_on_edges_aux
     -- are cancelled by explicit terms rather than `rw`.
     exact ((χ _).apply_symm_apply _).trans
       ((hχ₀ _ _ s.property t.property hst _).trans ((χ (1, 0)).apply_symm_apply _)).symm
-  have hper := trans_symm_zero_eq_trans_symm_one (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ hφχ)
-    (apply_zero_eq_apply_one_of_eq_on_edges hχ₀' hφχ')
-  rw [frameConleyZehnderIndex_eq_add_maslovIndex hφ hφ' hper]
-  suffices hm : ω₀.maslovIndex (transitionLoop hφ.continuous hφ'.continuous hper)
-      (apply_transitionLoop_apply hφ hφ' hper) = 0 by
-    rw [hm, Int.cast_zero, mul_zero, add_zero]
-  -- The change of frame over the square is a homotopy through loops from the change of frame
-  -- along `γ` to the constant loop at the corner `(1, 0)`.
-  let F : C(unitInterval × unitInterval, W →L[ℝ] W) :=
-    ⟨fun p ↦ ((χ' ((p.1 : ℝ), (p.2 : ℝ))).trans (χ ((p.1 : ℝ), (p.2 : ℝ))).symm : W ≃L[ℝ] W),
-      (continuous_trans_symm_of_continuous_frame hχ'.continuous hχ.continuous).comp
-        ((continuous_subtypeVal.comp continuous_fst).prodMk
-          (continuous_subtypeVal.comp continuous_snd))⟩
-  have hF (p : unitInterval × unitInterval) (v w : W) : ω₀ (F p v) (F p w) = ω₀ v w :=
-    hχ'.apply_trans_symm_apply hχ _ v w
-  -- Along the edge `s = 0` it is the change of frame from `φ` to `φ'`.
-  have hF₀ (t : unitInterval) : F (0, t) = transitionLoop hφ.continuous hφ'.continuous hper t := by
-    ext v
-    rw [transitionLoop_apply, hφχ']
-    apply (φ t).injective
-    exact ((hφχ t _).trans ((χ (0, t)).apply_symm_apply _)).trans ((φ t).apply_symm_apply _).symm
-  exact (ω₀.maslovIndex_eq_of_homotopy _
-    (Path.refl (((χ' (1, 0)).trans (χ (1, 0)).symm : W ≃L[ℝ] W) : W →L[ℝ] W)) F hF hF₀
-    (fun t ↦ congrArg (fun e : W ≃L[ℝ] W ↦ (e : W →L[ℝ] W)) (hedge 1 t (Or.inl rfl)))
-    (fun s ↦ congrArg (fun e : W ≃L[ℝ] W ↦ (e : W →L[ℝ] W))
-      ((hedge s 0 (Or.inr (Or.inl rfl))).trans (hedge s 1 (Or.inr (Or.inr rfl))).symm))).trans
-    (ω₀.maslovIndex_refl _ _)
+  -- The change of frame over the square is a loop on every segment `s = const` and is constant
+  -- along the edge `s = 1`.
+  have hsq : Continuous fun p : unitInterval × unitInterval ↦ ((p.1 : ℝ), (p.2 : ℝ)) := by
+    fun_prop
+  exact frameConleyZehnderIndex_eq_of_square hφ hφ' (hχ.comp hsq) (hχ'.comp hsq) hφχ hφχ'
+    (fun s ↦ (hedge s 0 (Or.inr (Or.inl rfl))).trans (hedge s 1 (Or.inr (Or.inr rfl))).symm)
+    (fun t ↦ (hedge 1 t (Or.inl rfl)).trans (hedge 1 0 (Or.inl rfl)).symm) hΦ hΦσ
 
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- **The index over a cap does not depend on the frame.** Let `χ` and `χ'` be symplectic frames
@@ -446,6 +428,35 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq (h : σ.IsNondegenerate)
   have hχ' := (hu.exists_isSymplecticFrame_eq_on_edges
     (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h).choose_spec
   hu.frameConleyZehnderIndex_loop_eq hχ hχ'.1 hχ₀ hχ'.2 hΦ hΦσ
+
+/-- **The index of a constant cap.** Let `u` be the constant cap of a loop `γ` that stays at its
+base point `x`, such as the loop of a constant periodic orbit. Along it the tangent bundle is framed
+by the identity of `T_x M`, so the Conley–Zehnder index of `Φ` along `(γ, u)` is the
+Conley–Zehnder index of the path `t ↦ Φ(t)` of linear symplectic maps of the single symplectic
+vector space `(T_x M, σ_x)`, read on the model space `E` of `T_x M` as any path `Ψ` with
+`Ψ(t) = Φ(t)`. -/
+theorem IsSmoothBasedCap.conleyZehnderIndex_const (h : σ.IsNondegenerate)
+    (hu : IsSmoothBasedCap I γ fun _ ↦ x)
+    {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) {A B : E →L[ℝ] E}
+    (Ψ : Path A B)
+    (hΨ : ∀ t v w, h.symplecticFormAt x (Ψ t v) (Ψ t w) = h.symplecticFormAt x v w)
+    (hΨΦ : ∀ t v, Ψ t v = Φ t v) :
+    hu.conleyZehnderIndex h hΦ hΦσ =
+      SymplecticForm.conleyZehnderIndex (V := E) (h.symplecticFormAt x) Ψ hΨ := by
+  -- The identity of `T_x M` is a symplectic frame along the constant cap, constant on its edges.
+  have hχ : IsSymplecticFrame σ (W := E) (h.symplecticFormAt x) (fun _ : ℝ × ℝ ↦ x)
+      fun _ ↦ ContinuousLinearEquiv.refl ℝ E :=
+    ⟨(FiberBundle.continuous_totalSpaceMk E (TangentSpace I) x).comp continuous_snd,
+      fun _ v w ↦ (h.symplecticFormAt_apply x v w).symm⟩
+  -- Read in the identity frame, the path is `Φ` itself. The model `E` and `T_x M` are the same
+  -- type only up to unfolding `TangentSpace`, so the steps are composed as terms.
+  exact (hu.conleyZehnderIndex_eq h hχ (fun _ _ _ _ _ _ ↦ rfl) hΦ hΦσ).trans
+    ((frameConleyZehnderIndex_def _ _ _).trans
+      (SymplecticForm.conleyZehnderIndex_congr _ _ _ _ fun t ↦
+        ContinuousLinearMap.ext fun v ↦ (framePath_apply _ _ t v).trans (hΨΦ t v).symm))
 
 /-- **The recapping law for smooth caps.** For two smooth based caps `u` and `u'` of a loop `γ`,
 the Conley–Zehnder index of `Φ` along `(γ, u')` is its index along `(γ, u)` minus twice the first
