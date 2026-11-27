@@ -68,6 +68,12 @@ The statements and organization adapt the `[m]`-torsion and local-Selmer analogu
   integral over `𝒪[K_v]` with unit discriminant and `deg φ ∉ v` for all `v ∉ S`; when all residue
   fields are finite and `(φ.degree : K) ≠ 0`, any prescribed finite set `S` can be enlarged to a
   finite set `T ⊇ S` satisfying these hypotheses outside `T`.
+* `mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes_mem_localCondition`
+  (in `TauCeti.Isogeny`): over a Dedekind domain `R` whose height-one primes outside `S` have
+  finite residue fields, if both displayed base-changed equations `W₁⁄K_v` and `W₂⁄K_v` are
+  integral over `𝒪[K_v]` with unit discriminant (elliptic integral models) and `deg φ ∉ v` for
+  all `v ∉ S`, then `Sel_φ` consists precisely of the classes unramified outside `S` that satisfy
+  the local condition at each `v ∈ S`.
 * `TauCeti.Isogeny.eventually_localCondition_selmerStructure_eq_unramifiedKerCohomology`: over a
   Dedekind domain with finite residue fields, whenever `(φ.degree : K) ≠ 0`, the local condition
   of `φ.selmerStructure τ` equals `(φ.baseChange K_v).unramifiedKerCohomology` for all but

@@ -47,9 +47,8 @@ file does not treat degree two.
   prime-order coefficients in degrees at least two over local fields containing roots of unity.
 * `TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`: `Hⁱ(G_F, A)` is finite for
   `i ≤ 1` and every finite smooth discrete `A : GalRep n F`, `n` invertible in `F`.
-* `TauCeti.ClassFieldTheory.finite_H1_of_nsmul_eq_zero` and `TauCeti.ClassFieldTheory.finite_H1`:
-  explicit `H¹(G_F, M)` is finite for every finite discrete `G_F`-module `M` whose exponent
-  (respectively cardinality) is nonzero in `F`.
+* `TauCeti.ClassFieldTheory.finite_H1_of_nsmul_eq_zero`: explicit `H¹(G_F, M)` is finite for
+  every finite discrete `G_F`-module `M` whose exponent is nonzero in `F`.
 
 ## References
 
@@ -188,14 +187,5 @@ theorem finite_H1_of_nsmul_eq_zero (hn : (n : F) ≠ 0)
   have : Finite (continuousCohomology 1 A) :=
     finite_continuousCohomology_of_le_one hn A (isSmoothDiscrete_galRepOfZModModule n F M) le_rfl
   exact Finite.of_equiv _ (galRepOfZModModuleH1Equiv n F M).symm.toEquiv
-
-/-- **Finiteness of explicit `H¹` (by order).** Let `F` be a nonarchimedean local field and `M` a
-finite discrete `G_F`-module whose order is nonzero in `F`. Then `H¹(G_F, M)` is finite. -/
-theorem finite_H1 (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction (AbsoluteGaloisGroup F) M] [ContinuousSMul (AbsoluteGaloisGroup F) M]
-    [Finite M] (hM : (Nat.card M : F) ≠ 0) :
-    Finite (H1 (AbsoluteGaloisGroup F) M) :=
-  finite_H1_of_nsmul_eq_zero hM M fun x ↦
-    addOrderOf_dvd_iff_nsmul_eq_zero.mp (addOrderOf_dvd_natCard x)
 
 end TauCeti.ClassFieldTheory
