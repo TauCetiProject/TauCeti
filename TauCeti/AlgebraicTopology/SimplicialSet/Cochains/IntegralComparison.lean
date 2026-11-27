@@ -18,7 +18,10 @@ noncommutative rings, without flatness or projectivity. We use `TauCeti.cochainV
 to identify the two complexes rather than choosing chain representatives.
 
 Simplicial sets and modules are small, so the regular integral coefficient object can be
-used without lifting. The scalar ring of the two cochain complexes is `ℤ`.
+used without lifting. The scalar ring of the two cochain complexes is `ℤ`. For cochains with
+values in a `k`-module `V`, transporting simplex values from `ModuleCat.of k V` to
+`ModuleCat.of ℤ V` commutes with the coboundary
+(`TauCeti.cochainValuesEquiv_symm_cochainValuesEquiv_d_comp`).
 
 ## References
 
@@ -147,5 +150,32 @@ lemma simplicialCochainComplexIntegralIso_hom_naturality {L : SSet.{0}} (f : K �
     SSet.cochainComplexMap_f_apply, SSet.cochainComplexMap_f_apply,
     simplicialCochainComplexIntegralIso_hom_f_apply]
   exact comm n φ
+
+section Values
+
+variable (V : Type) [AddCommGroup V] [Module k V]
+
+/-- Transporting simplex values from cochains over `k` to integral cochains commutes with the
+coboundary: the integral cochain with the values of `φ ∘ d` is `d` followed by the integral cochain
+with the values of `φ`. Unlike the components of `TauCeti.simplicialCochainComplexIntegralIso`,
+this is stated for morphisms into `ModuleCat.of k V` and `ModuleCat.of ℤ V`, the coefficient
+objects of cochains with values in a module `V` over `k` and over `ℤ`. -/
+lemma cochainValuesEquiv_symm_cochainValuesEquiv_d_comp (i j : ℕ)
+    (φ : (K.chainComplex (ModuleCat.of k k)).X j ⟶ ModuleCat.of k V) :
+    (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K i).symm
+        (cochainValuesEquiv k (ModuleCat.of k V) K i
+          ((K.chainComplex (ModuleCat.of k k)).d i j ≫ φ)) =
+      (K.chainComplex (ModuleCat.of ℤ ℤ)).d i j ≫
+        (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K j).symm
+          (cochainValuesEquiv k (ModuleCat.of k V) K j φ) := by
+  by_cases hij : (ComplexShape.down ℕ).Rel i j
+  · obtain rfl : i = j + 1 := hij.symm
+    apply (cochainValuesEquiv ℤ (ModuleCat.of ℤ V) K (j + 1)).injective
+    funext σ
+    simp only [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply]
+  · rw [(K.chainComplex _).shape i j hij, (K.chainComplex _).shape i j hij, zero_comp, zero_comp,
+      map_zero, map_zero]
+
+end Values
 
 end TauCeti
