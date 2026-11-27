@@ -176,6 +176,24 @@ theorem algHom_ext {f g : CircleRing k →ₐ[k] S} (hx : f x = g x) (hy : f y =
     fin_cases i
     exacts [hx, hy]
 
+/-- Two ring homomorphisms out of `CircleRing k` agree as soon as they agree on scalars, `x`,
+and `y`. -/
+theorem ringHom_ext {R : Type*} [Semiring R] {f g : CircleRing k →+* R}
+    (ha : ∀ a, f (algebraMap k (CircleRing k) a) = g (algebraMap k (CircleRing k) a))
+    (hx : f x = g x) (hy : f y = g y) : f = g := by
+  refine Ideal.Quotient.ringHom_ext <| MvPolynomial.ringHom_ext (fun a => ?_) fun i => ?_
+  · exact ha a
+  · fin_cases i
+    exacts [hx, hy]
+
+/-- Two ring homomorphisms out of `CircleRing k` agree as soon as their restrictions to scalars
+agree and they agree on `x` and `y`. See note [partially-applied ext lemmas]. -/
+@[ext high]
+theorem ringHom_ext' {R : Type*} [Semiring R] {f g : CircleRing k →+* R}
+    (ha : f.comp (algebraMap k (CircleRing k)) = g.comp (algebraMap k (CircleRing k)))
+    (hx : f x = g x) (hy : f y = g y) : f = g :=
+  ringHom_ext (RingHom.congr_fun ha) hx hy
+
 section Map
 
 variable {k' S' : Type*} [CommRing k'] [CommRing S']
@@ -202,6 +220,30 @@ theorem map_y (f : k' →+* S') : map f (y : CircleRing k') = y :=
 theorem map_algebraMap (f : k' →+* S') (a : k') :
     map f (algebraMap k' (CircleRing k') a) = algebraMap S' (CircleRing S') (f a) :=
   (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
+
+/-- Base change on `CircleRing` intertwines the canonical scalar maps. -/
+@[simp]
+theorem map_comp_algebraMap (f : k' →+* S') :
+    (map f).comp (algebraMap k' (CircleRing k')) = (algebraMap S' (CircleRing S')).comp f := by
+  ext a
+  simp
+
+/-- Base change along the identity ring homomorphism is the identity on `CircleRing`. -/
+@[simp]
+theorem map_id : map (RingHom.id k') = RingHom.id (CircleRing k') := by
+  ext a <;> simp
+
+/-- Base change on `CircleRing` is functorial in ring homomorphisms. -/
+@[simp]
+theorem map_comp {T' : Type*} [CommRing T'] (g : S' →+* T') (f : k' →+* S') :
+    (map g).comp (map f) = map (g.comp f) := by
+  ext a <;> simp
+
+/-- Applying base change along `f` and then `g` is base change along `g.comp f`. -/
+@[simp]
+theorem map_map {T' : Type*} [CommRing T'] (g : S' →+* T') (f : k' →+* S')
+    (a : CircleRing k') : map g (map f a) = map (g.comp f) a := by
+  rw [← RingHom.comp_apply, map_comp]
 
 end Map
 
