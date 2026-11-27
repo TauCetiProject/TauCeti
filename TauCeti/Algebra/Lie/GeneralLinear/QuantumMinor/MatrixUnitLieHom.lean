@@ -51,7 +51,7 @@ noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K �
         LinearMap.toSpanSingleton_apply, one_smul]
       by_cases hli : l = i <;>
         simpa only [hli, ite_true, ite_false] using
-          ((hasMatrixUnitLieRelations_iff E).mp hE i j k l).symm
+          (hasMatrixUnitLieRelations_iff.mp hE i j k l).symm
     simpa only [bracket₁, bracket₂, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
       LieHom.coe_toLinearMap, LieAlgebra.ad_apply, LinearMap.toFun_eq_coe, f] using
       DFunLike.congr_fun (DFunLike.congr_fun h x) y

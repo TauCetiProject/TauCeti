@@ -50,7 +50,8 @@ of the quarter-wave sines of `(a 0, b 0)`, which vanish at `a 0` and have zero d
   outside the list would be orthogonal to every mode, hence zero
   (`TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_of_complete`).
 
-The least eigenvalue is `(π / (2 L₀))²`, of `sin (π (x 0 - a 0) / (2 L₀))`. On the unit square it
+The least eigenvalue is `(π / (2 L₀))²`, and it is simple: its eigenfunctions are the multiples
+of `sin (π (x 0 - a 0) / (2 L₀))`. On the unit square it
 is `π² / 4`, and the next one is `5 π² / 4 = (π / 2)² + π²`, not `9 π² / 4 = (3 π / 2)²`.
 
 ## Main declarations
@@ -63,6 +64,8 @@ is `π² / 4`, and the next one is `5 π² / 4 = (π / 2)² + π²`, not `9 π²
   eigenvalues are exactly the numbers `((2k + 1) π / (2 L₀))² + (l π / L₁)²`.
 * `TauCeti.PDE.isLeast_exists_ne_zero_forall_inner_gradient_eq_boxDomain_left`: the least one is
   `(π / (2 L₀))²`.
+* `TauCeti.PDE.exists_value_ae_eq_mul_sin_of_forall_inner_gradient_eq_boxDomain_left`: the least
+  one is simple, with eigenfunctions the multiples of `sin (π (x 0 - a 0) / (2 L₀))`.
 * `TauCeti.PDE.isLeast_exists_ne_zero_forall_inner_gradient_eq_boxDomain_zero_one_left`: on the
   unit square the two least eigenvalues are `π² / 4` and `5 π² / 4`.
 
@@ -162,19 +165,6 @@ private theorem setIntegral_boxDomain_eq (a b : Fin 2 → ℝ) (F : EuclideanSpa
     |>.setIntegral_preimage_emb euclideanPlaneEquivProd.symm.measurableEmbedding,
     preimage_euclideanPlaneEquivProd_symm_boxDomain, ← Icc_prod_Icc, Measure.volume_eq_prod]
   exact setIntegral_congr_set (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc)
-
-/-- In the coordinates of `ℝ × ℝ`, the restriction of the Lebesgue measure to the rectangle is the
-product of its restrictions to `(a 0, b 0]` and `(a 1, b 1]`. -/
-private theorem measurePreserving_euclideanPlaneEquivProd_symm_restrict (a b : Fin 2 → ℝ) :
-    MeasurePreserving euclideanPlaneEquivProd.symm
-      ((volume.restrict (Ioc (a 0) (b 0))).prod (volume.restrict (Ioc (a 1) (b 1))))
-      (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) := by
-  have h := measurePreserving_euclideanPlaneEquivProd.symm.restrict_preimage
-    (boxDomain a b).isOpen.measurableSet
-  rw [preimage_euclideanPlaneEquivProd_symm_boxDomain, Measure.volume_eq_prod,
-    Measure.restrict_congr_set (Measure.set_prod_ae_eq Ioo_ae_eq_Ioc Ioo_ae_eq_Ioc),
-    ← Measure.prod_restrict] at h
-  exact h
 
 /-- The gradient pairing of a separated function `g₀ (x 0) g₁ (x 1)` with a `C¹` function `φ`, in
 the coordinates of `ℝ × ℝ`. -/
@@ -409,49 +399,54 @@ rectangle `boxDomain a b` orthogonal to every
 
 `x ↦ sin ((2k + 1) π (x 0 - a 0) / (2 (b 0 - a 0))) cos (l π (x 1 - a 1) / (b 1 - a 1))`,
 
-`k l : ℕ`, is zero. -/
+`k l : ℕ`, is zero: its coefficients in the first variable are orthogonal to every cosine, so they
+vanish, and then its slices are orthogonal to every quarter-wave sine. No relation between `a` and
+`b` is assumed: an empty side makes the rectangle empty. -/
 theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain {a b : Fin 2 → ℝ}
-    (hab : ∀ i, a i < b i)
     (f : Lp ℝ 2 (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))))
     (h : ∀ k l : ℕ, ∫ x in boxDomain a b, f x *
       (Real.sin ((2 * k + 1) * π * (x 0 - a 0) / (2 * (b 0 - a 0))) *
         Real.cos (l * π * (x 1 - a 1) / (b 1 - a 1))) = 0) :
     f = 0 := by
-  set μ₀ := volume.restrict (Ioc (a 0) (b 0))
-  set μ₁ := volume.restrict (Ioc (a 1) (b 1))
-  set e := euclideanPlaneEquivProd.symm
-  have hmp := measurePreserving_euclideanPlaneEquivProd_symm_restrict a b
+  set S : ℕ → ℝ → ℝ := fun k t => Real.sin ((2 * k + 1) * π * (t - a 0) / (2 * (b 0 - a 0)))
+  set C : ℕ → ℝ → ℝ := fun l t => Real.cos (l * π * (t - a 1) / (b 1 - a 1))
+  set μ : Measure ℝ := volume.restrict (Ioo (a 0) (b 0))
+  set ν : Measure ℝ := volume.restrict (Ioo (a 1) (b 1))
   have : IsFiniteMeasure (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) :=
     isFiniteMeasure_restrict.2 (isBounded_boxDomain a b).measure_lt_top.ne
-  set s : ℕ → ℝ → ℝ := fun k t => Real.sin ((2 * k + 1) * π * (t - a 0) / (2 * (b 0 - a 0)))
-  set c : ℕ → ℝ → ℝ := fun l t => Real.cos (l * π * (t - a 1) / (b 1 - a 1))
-  set F : ℝ × ℝ → ℝ := (f : EuclideanSpace ℝ (Fin 2) → ℝ) ∘ e
-  have hF : Integrable F (μ₀.prod μ₁) :=
-    (hmp.integrable_comp_emb e.measurableEmbedding).2 ((Lp.memLp f).integrable one_le_two)
-  have hFs (k : ℕ) : Integrable (fun p : ℝ × ℝ => F p * s k p.1) (μ₀.prod μ₁) :=
-    hF.mul_bdd (by fun_prop) (ae_of_all _ fun p => by simpa using Real.abs_sin_le_one _)
-  -- For each `k` the coefficient in the first variable is orthogonal to every cosine, so it
-  -- vanishes; then every slice is orthogonal to every quarter-wave sine.
-  have hH (k : ℕ) : (fun y => ∫ t, F (t, y) * s k t ∂μ₀) =ᵐ[μ₁] 0 := by
-    refine ae_eq_zero_of_forall_integral_mul_cos_eq_zero (hFs k).integral_prod_right fun l => ?_
-    have hint : Integrable (fun p : ℝ × ℝ => F p * s k p.1 * c l p.2) (μ₀.prod μ₁) :=
-      (hFs k).mul_bdd (by fun_prop) (ae_of_all _ fun p => by simpa using Real.abs_cos_le_one _)
-    rw [intervalIntegral.integral_of_le (hab 1).le]
+  have hfi : Integrable f (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) :=
+    (Lp.memLp f).integrable one_le_two
+  -- Read `f` on `ℝ × ℝ`, with the product of the restricted Lebesgue measures.
+  have hE : MeasurePreserving euclideanPlaneEquivProd
+      (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) (μ.prod ν) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod,
+      ← preimage_euclideanPlaneEquivProd_Ioo_prod_Ioo]
+    exact measurePreserving_euclideanPlaneEquivProd.restrict_preimage
+      (measurableSet_Ioo.prod measurableSet_Ioo)
+  have hE' := hE.symm euclideanPlaneEquivProd
+  set G : ℝ × ℝ → ℝ := fun p => f (euclideanPlaneEquivProd.symm p)
+  have hG : Integrable G (μ.prod ν) :=
+    (hE'.integrable_comp_emb euclideanPlaneEquivProd.symm.measurableEmbedding).2 hfi
+  have hGS (k : ℕ) : Integrable (fun p : ℝ × ℝ => G p * S k p.1) (μ.prod ν) :=
+    hG.mul_bdd (by fun_prop) (ae_of_all _ fun p => by simpa using Real.abs_sin_le_one _)
+  -- The coefficients of `G` against the quarter-wave sines are orthogonal to every cosine.
+  have hcoef (k : ℕ) : (fun y => ∫ t, G (t, y) * S k t ∂μ) =ᵐ[ν] 0 := by
+    refine ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero (hGS k).integral_prod_right
+      fun l => ?_
+    have hint : Integrable (fun p : ℝ × ℝ => G p * S k p.1 * C l p.2) (μ.prod ν) :=
+      (hGS k).mul_bdd (by fun_prop) (ae_of_all _ fun p => by simpa using Real.abs_cos_le_one _)
     simp_rw [← integral_mul_const]
-    rw [← integral_prod_symm _ hint, ← h k l, ← hmp.integral_comp e.measurableEmbedding]
+    rw [← integral_prod_symm _ hint, ← h k l, ← hE'.integral_comp']
     refine integral_congr_ae (ae_of_all _ fun p => ?_)
-    simp only [F, s, c, Function.comp_apply]
-    simp [e, mul_assoc]
-  have hF0 : F =ᵐ[μ₀.prod μ₁] 0 :=
-    ae_eq_zero_prod_of_forall_integral_mul_eq_zero (fun g hg hgs =>
-      ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg fun k => by
-        rw [intervalIntegral.integral_of_le (hab 0).le]
-        exact hgs k) hF hH
-  have hfe : F ∘ e.symm = f := funext fun x => by simp [F]
-  refine Lp.ext (?_ : (f : EuclideanSpace ℝ (Fin 2) → ℝ) =ᵐ[_] _)
-  rw [← hfe]
-  exact ((hmp.symm e).quasiMeasurePreserving.ae_eq_comp hF0).trans
-    (Lp.coeFn_zero ℝ 2 _).symm
+    simp [G, S, C, mul_assoc]
+  have hG0 : G =ᵐ[μ.prod ν] 0 := ae_eq_zero_prod_of_forall_integral_mul_eq_zero
+    (fun g hg h0 => ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hg h0) hG
+    hcoef
+  refine Lp.ext ?_
+  have hGE : G ∘ euclideanPlaneEquivProd = f := funext fun x => by
+    simp only [G, Function.comp_apply, MeasurableEquiv.symm_apply_apply]
+  rw [← hGE]
+  exact (hE.quasiMeasurePreserving.ae_eq_comp hG0).trans (Lp.coeFn_zero _ _ _).symm
 
 /-- Each separated mixed mode is nonzero somewhere in the rectangle: near the corner `a`, where the
 sine factor is `sin (π / 4)` and the argument of the cosine factor lies in `[0, π / 4)`. -/
@@ -486,6 +481,25 @@ private theorem exists_mem_boxDomain_sin_mul_cos_ne_zero {a b : Fin 2 → ℝ} (
     · nlinarith [Real.pi_pos]
     · nlinarith [Real.pi_pos]
 
+/-- The value of a separated mixed mode is nonzero: the mode is continuous and nonzero somewhere in
+the open rectangle. -/
+private theorem value_ne_zero_of_value_ae_eq_sin_mul_cos {a b : Fin 2 → ℝ} (hab : ∀ i, a i < b i)
+    (k l : ℕ) {u : W1p volume (boxDomain a b) 2}
+    (hu : W1p.value u =ᵐ[volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))]
+      fun x => Real.sin ((2 * k + 1) * π * (x 0 - a 0) / (2 * (b 0 - a 0))) *
+        Real.cos (l * π * (x 1 - a 1) / (b 1 - a 1))) :
+    W1p.value u ≠ 0 := by
+  intro hval
+  obtain ⟨x, hx, hne⟩ := exists_mem_boxDomain_sin_mul_cos_ne_zero hab k l
+  have hc : Continuous fun y : EuclideanSpace ℝ (Fin 2) =>
+      Real.sin ((2 * k + 1) * π * (y 0 - a 0) / (2 * (b 0 - a 0))) *
+        Real.cos (l * π * (y 1 - a 1) / (b 1 - a 1)) := by fun_prop
+  refine hne (Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (boxDomain a b).isOpen
+    hc.continuousOn continuousOn_const hx)
+  filter_upwards [hu, Lp.coeFn_zero ℝ 2
+    (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))))] with y h1 h2
+  rw [← h1, hval, h2, Pi.zero_apply]
+
 attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
 
 /-- **The weak mixed eigenvalues of `-Δ` on a rectangle with one Dirichlet side.** On the rectangle
@@ -512,19 +526,11 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_boxDomain_left {a b : Fin 2 
     (fun (kl : ℕ × ℕ) (x : EuclideanSpace ℝ (Fin 2)) =>
       Real.sin ((2 * kl.1 + 1) * π * (x 0 - a 0) / (2 * (b 0 - a 0))) *
       Real.cos (kl.2 * π * (x 1 - a 1) / (b 1 - a 1)))
-    (fun kl => w kl.1 kl.2) (fun kl => hwv kl.1 kl.2) (fun kl hval => ?_) (fun kl => hw kl.1 kl.2)
-    fun f hf => eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain hab f
+    (fun kl => w kl.1 kl.2) (fun kl => hwv kl.1 kl.2)
+    (fun kl => value_ne_zero_of_value_ae_eq_sin_mul_cos hab kl.1 kl.2 (hwv kl.1 kl.2))
+    (fun kl => hw kl.1 kl.2)
+    fun f hf => eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain f
       fun k l => hf (k, l)).trans Prod.exists
-  -- The mode is continuous and nonzero somewhere in the open rectangle, so its value is nonzero.
-  obtain ⟨x, hx, hne⟩ := exists_mem_boxDomain_sin_mul_cos_ne_zero hab kl.1 kl.2
-  have hc : Continuous fun y : EuclideanSpace ℝ (Fin 2) =>
-      Real.sin ((2 * kl.1 + 1) * π * (y 0 - a 0) / (2 * (b 0 - a 0))) *
-        Real.cos (kl.2 * π * (y 1 - a 1) / (b 1 - a 1)) := by fun_prop
-  refine hne (Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (boxDomain a b).isOpen
-    hc.continuousOn continuousOn_const hx)
-  filter_upwards [hwv kl.1 kl.2, Lp.coeFn_zero ℝ 2
-    (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))))] with y h1 h2
-  rw [← h1, hval, h2, Pi.zero_apply]
 
 /-- **The first mixed eigenvalue of a rectangle with one Dirichlet side** is
 `(π / (2 (b 0 - a 0)))²`, the case `k = l = 0`, with eigenfunction
@@ -550,6 +556,74 @@ theorem isLeast_exists_ne_zero_forall_inner_gradient_eq_boxDomain_left {a b : Fi
     nlinarith [Real.pi_pos, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
   have := pow_le_pow_left₀ (by positivity) hk 2
   nlinarith [sq_nonneg (l * π / (b 1 - a 1))]
+
+/-- **The least mixed eigenvalue of the rectangle is simple.** With the Dirichlet part
+`Γ = {a 0} × (a 1, b 1)`, every weak mixed eigenfunction `u ∈ H¹_Γ` with the eigenvalue
+`(π / (2 (b 0 - a 0)))²` is a multiple of `sin (π (x 0 - a 0) / (2 (b 0 - a 0)))`. Every other
+separated mode has a larger eigenvalue, so `u` minus its projection on the first mode is orthogonal
+to all of them. -/
+theorem exists_value_ae_eq_mul_sin_of_forall_inner_gradient_eq_boxDomain_left {a b : Fin 2 → ℝ}
+    (hab : ∀ i, a i < b i)
+    {u : W1pVanishingOn volume (boxDomain a b) 2
+      {x : EuclideanSpace ℝ (Fin 2) | x 0 = a 0 ∧ x 1 ∈ Ioo (a 1) (b 1)}}
+    (hu : ∀ v : W1pVanishingOn volume (boxDomain a b) 2
+        {x : EuclideanSpace ℝ (Fin 2) | x 0 = a 0 ∧ x 1 ∈ Ioo (a 1) (b 1)},
+      ⟪W1p.gradient (u : W1p volume (boxDomain a b) 2),
+          W1p.gradient (v : W1p volume (boxDomain a b) 2)⟫_ℝ =
+        (π / (2 * (b 0 - a 0))) ^ 2 * ⟪W1p.value (u : W1p volume (boxDomain a b) 2),
+          W1p.value (v : W1p volume (boxDomain a b) 2)⟫_ℝ) :
+    ∃ r : ℝ, W1p.value (u : W1p volume (boxDomain a b) 2)
+        =ᵐ[volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))]
+      fun x => r * Real.sin (π * (x 0 - a 0) / (2 * (b 0 - a 0))) := by
+  choose w hwv hw using exists_value_ae_eq_sin_mul_cos_and_inner_gradient_eq_boxDomain hab
+  set e := W1p.value (w 0 0 : W1p volume (boxDomain a b) 2)
+  set f := W1p.value (u : W1p volume (boxDomain a b) 2)
+  have he : e ≠ 0 := value_ne_zero_of_value_ae_eq_sin_mul_cos hab 0 0 (hwv 0 0)
+  have hκ0 : ((2 * ((0 : ℕ) : ℝ) + 1) * π / (2 * (b 0 - a 0))) ^ 2 +
+      ((0 : ℕ) * π / (b 1 - a 1)) ^ 2 = (π / (2 * (b 0 - a 0))) ^ 2 := by
+    push_cast
+    ring
+  -- Every other mode has a larger eigenvalue.
+  have hne (k l : ℕ) (hkl : (k, l) ≠ (0, 0)) : (π / (2 * (b 0 - a 0))) ^ 2 ≠
+      ((2 * k + 1) * π / (2 * (b 0 - a 0))) ^ 2 + (l * π / (b 1 - a 1)) ^ 2 := by
+    set c := π / (2 * (b 0 - a 0)) with hc_def
+    have hc : 0 < c := div_pos Real.pi_pos (by linarith [hab 0])
+    rw [show (2 * (k : ℝ) + 1) * π / (2 * (b 0 - a 0)) = (2 * k + 1) * c by rw [hc_def]; ring,
+      mul_pow]
+    have : 0 ≤ (l * π / (b 1 - a 1)) ^ 2 := sq_nonneg _
+    rcases Nat.eq_zero_or_pos k with rfl | hk0
+    · have hl : l ≠ 0 := fun h => hkl (by rw [h])
+      have : 0 < (l * π / (b 1 - a 1)) ^ 2 := by
+        have : (0 : ℝ) < l := by exact_mod_cast Nat.pos_of_ne_zero hl
+        have := div_pos (mul_pos this Real.pi_pos) (sub_pos.2 (hab 1))
+        positivity
+      push_cast
+      intro h
+      linarith
+    · have hk1 : (3 : ℝ) ≤ 2 * k + 1 := by
+        have : (1 : ℝ) ≤ k := by exact_mod_cast hk0
+        linarith
+      have h9 : 9 ≤ (2 * (k : ℝ) + 1) ^ 2 := by nlinarith
+      intro h
+      nlinarith [mul_pos hc hc]
+  set r := ⟪f, e⟫_ℝ / ⟪e, e⟫_ℝ
+  refine ⟨r, ?_⟩
+  have hfe : f - r • e = 0 := by
+    refine eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain _ fun k l => ?_
+    rw [W1p.setIntegral_mul_eq_inner_value_of_ae_eq (hwv k l), inner_sub_left,
+      real_inner_smul_left]
+    by_cases hkl : (k, l) = (0, 0)
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hkl
+      rw [div_mul_cancel₀ _ (inner_self_ne_zero.2 he), sub_self]
+    · have h1 := inner_value_eq_zero_of_forall_inner_gradient_eq (hne k l hkl) hu (hw k l)
+      have h2 := inner_value_eq_zero_of_forall_inner_gradient_eq
+        (hκ0 ▸ hne k l hkl) (hw 0 0) (hw k l)
+      simp only [f, e] at h1 h2 ⊢
+      rw [h1, h2, mul_zero, sub_zero]
+  rw [sub_eq_zero.1 hfe]
+  filter_upwards [Lp.coeFn_smul r e, hwv 0 0] with x h1 h2
+  rw [h1, Pi.smul_apply, h2, smul_eq_mul]
+  simp
 
 /-- **The mixed eigenvalues of the unit square with one Dirichlet side.** On `(0, 1)²` with a
 Dirichlet condition on the side `{0} × (0, 1)` and a Neumann condition on the other three sides, the

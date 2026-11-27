@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.QuantumMinor.Basic
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.GroupTheory.Perm.Sign
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Matrix.Basis
 
 /-!
 # Column alternation of quantum minors
@@ -42,11 +43,10 @@ def HasMatrixUnitLieRelations (E : Matrix ι ι A) : Prop :=
   ∀ a b c d, E a b * E c d - E c d * E a b =
     (if b = c then E a d else 0) - (if d = a then E c b else 0)
 
-/-- The matrix-unit relations expressed by entrywise commutators. -/
-theorem hasMatrixUnitLieRelations_iff (E : Matrix ι ι A) :
-    E.HasMatrixUnitLieRelations ↔
-      ∀ a b c d, E a b * E c d - E c d * E a b =
-        (if b = c then E a d else 0) - (if d = a then E c b else 0) :=
+/-- The entrywise characterization of the matrix-unit relations. -/
+theorem hasMatrixUnitLieRelations_iff {E : Matrix ι ι A} : E.HasMatrixUnitLieRelations ↔
+    ∀ a b c d, E a b * E c d - E c d * E a b =
+      (if b = c then E a d else 0) - (if d = a then E c b else 0) :=
   (Iff.rfl)
 
 /-- A family multiplying like matrix units, `E i j * E k l = δ_{jk} E i l`, satisfies the
@@ -61,11 +61,7 @@ theorem HasMatrixUnitLieRelations.of_mul_eq_ite {E : Matrix ι ι A}
 theorem hasMatrixUnitLieRelations_single [Fintype ι] (R : Type*) [Ring R] :
     HasMatrixUnitLieRelations (of fun i j ↦ (single i j 1 : Matrix ι ι R)) := by
   refine .of_mul_eq_ite fun a b c d ↦ ?_
-  simp only [of_apply]
-  split_ifs with h
-  · subst h
-    simp
-  · exact single_mul_single_of_ne (h := h) ..
+  simpa only [of_apply, mul_one] using single_mul_single_eq_ite a b c d (1 : R) 1
 
 /-- The matrix-unit relations pass to the image under any additive map carrying ring commutators
 to ring commutators, such as the map of `𝔤𝔩ₙ` into its universal enveloping algebra. -/
