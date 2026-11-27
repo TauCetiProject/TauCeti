@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Splitting
 public import TauCeti.NumberTheory.NumberField.CMType.RealTensor
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # The Deligne homomorphism of a CM type on points
@@ -67,10 +68,11 @@ theorem delignePoints_mapValue (g : R →ₐ[ℝ] R') (f : WithConv (DeligneToru
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp [hx, hy]
   | tmul z r =>
-    have hcomp := map_comp g (Algebra.ofId ℝ R) (AlgHom.id ℚ E) (AlgHom.id ℚ E)
+    have hcomp : rTensor (R := ℚ) E (Algebra.ofId ℝ R') =
+        (rTensor E g).comp (rTensor E (Algebra.ofId ℝ R)) := by
+      simp [← map_comp (R := ℚ)]
     simp only [map_tmul, AlgHom.id_apply, deligneScalarHom_tmul, map_mul]
     congr 1
-    rw [Algebra.comp_ofId, AlgHom.id_comp] at hcomp
     exact DFunLike.congr_fun hcomp (Φ.complexScalarHom z)
 
 variable [Algebra ℂ R] [IsScalarTower ℝ ℂ R]
@@ -88,18 +90,16 @@ theorem liftEquiv_delignePoints (φ : E →+* ℂ) [Decidable (φ ∈ Φ)]
   simp only [DeligneTorus.coe_complexSplitting_fst, DeligneTorus.coe_complexSplitting_snd]
   generalize (DeligneTorus.pointsMulEquiv R f).val = x
   have : IsScalarTower ℚ ℝ R := IsScalarTower.of_algebraMap_eq' (RingHom.ext_rat _ _)
-  -- Evaluating a real tensor after extension to R gives its original complex value in R.
-  have he (b : ℝ ⊗[ℚ] E) :
-      AlgHom.liftEquiv ℚ R E R ((IsScalarTower.toAlgHom ℚ ℂ R).comp φ.toRatAlgHom)
-          (rTensor E (Algebra.ofId ℝ R) b) =
-      algebraMap ℂ R (AlgHom.liftEquiv ℚ ℝ E ℂ φ.toRatAlgHom b) := by
-    induction b using TensorProduct.inductionOn with
-    | add b c hb hc => simp [hb, hc]
-    | tmul r a => simp [Algebra.smul_def, IsScalarTower.algebraMap_apply ℝ ℂ R]
+  have hq : (IsScalarTower.toAlgHom ℝ ℂ R).restrictScalars ℚ =
+      IsScalarTower.toAlgHom ℚ ℂ R := by
+    ext z
+    simp only [AlgHom.restrictScalars_apply, IsScalarTower.toAlgHom_apply]
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => split_ifs at * <;> simp [hx, hy]
   | tmul z r =>
-    simp only [deligneScalarHom_tmul, map_mul, he, liftEquiv_complexScalarHom,
+    simp only [deligneScalarHom_tmul, map_mul, ← hq,
+      φ.toRatAlgHom.liftEquiv_rTensor_ofId_apply (IsScalarTower.toAlgHom ℝ ℂ R),
+      IsScalarTower.toAlgHom_apply, liftEquiv_complexScalarHom,
       AlgHom.liftEquiv_tmul, complexTensorProductEquivProd_tmul]
     split_ifs <;> simp [Algebra.smul_def]
 
