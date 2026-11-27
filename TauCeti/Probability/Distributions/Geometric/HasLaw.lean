@@ -10,14 +10,17 @@ public import TauCeti.Probability.Distributions.Geometric.Basic
 /-!
 # Observable formulas for the geometric distribution
 
-This file transfers the elementary generating-function and transform theory of the geometric
-measure to random variables carrying that law. It keeps the native natural-valued law for the
-probability-generating function and uses the real cast for exponential moments and characteristic
-functions. The totalized zero-success parameter is handled separately: Mathlib's geometric law is
-then the Dirac mass at zero.
+This file collects the mean and variance formulas for geometric random variables and transfers the
+elementary generating-function and transform theory of the geometric measure to random variables
+carrying that law. It keeps the native natural-valued law for the probability-generating function
+and uses the real cast for exponential moments and characteristic functions. The totalized
+zero-success parameter is handled separately: Mathlib's geometric law is then the Dirac mass at
+zero.
 
 ## Main results
 
+* `TauCeti.Probability.integral_of_hasLaw_map_cast_geometricMeasure` and
+  `TauCeti.Probability.variance_of_hasLaw_map_cast_geometricMeasure` give the mean and variance;
 * `ProbabilityTheory.HasLaw.integrable_pow_geometricMeasure_iff` gives the sharp native
   power-integrability domain;
 * `ProbabilityTheory.HasLaw.pgf_geometricMeasure` gives the probability-generating function on its
