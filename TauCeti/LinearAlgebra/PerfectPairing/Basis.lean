@@ -46,7 +46,7 @@ finite-dimensional vector space; here the scalars form any commutative semiring.
   `LinearMap.apply_leftDualBasis`, `LinearMap.eq_leftDualBasis_iff`, the left dual of a pairing
   given by a bijection of the index sets `LinearMap.coe_leftDualBasis_eq_comp_symm` and its
   anti-diagonal case `LinearMap.coe_leftDualBasis_eq_comp_rev`, the biduality
-  `LinearMap.flip_leftDualBasis_leftDualBasis`, the coordinates
+  `LinearMap.leftDualBasis_flip_leftDualBasis`, the coordinates
   `LinearMap.apply_leftDualBasis_eq_repr` of `N` in `e`, the reconstruction
   `LinearMap.sum_apply_smul_leftDualBasis`, and over a commutative ring the left dual basis through
   the inverse Gram matrix, `LinearMap.leftDualBasis_apply_eq_sum_inv_toMatrix₂_smul`.
@@ -169,7 +169,7 @@ theorem coe_leftDualBasis_eq_comp_rev {n : ℕ} (e : Basis (Fin (n + 1)) R N)
 /-- **Biduality of the left dual basis.** The left dual basis of `e^i` for the flipped pairing is
 `e` again. -/
 @[simp]
-theorem flip_leftDualBasis_leftDualBasis (e : Basis ι R N) :
+theorem leftDualBasis_flip_leftDualBasis (e : Basis ι R N) :
     p.flip.leftDualBasis (p.leftDualBasis e) = e :=
   Basis.eq_of_apply_eq fun i ↦ (congr_fun ((p.flip.eq_leftDualBasis_iff _).2 fun i j ↦ by
     rw [flip_apply, apply_leftDualBasis]
