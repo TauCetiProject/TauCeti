@@ -163,6 +163,7 @@ instance instIsFiniteMeasureRestrictIntervalDomain :
   isFiniteMeasure_restrict.2 isBounded_intervalDomain.measure_lt_top.ne
 
 /-- The interval domain `(a, b)` has volume `b - a`. -/
+@[simp]
 theorem volume_intervalDomain :
     volume (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = ENNReal.ofReal (b - a) := by
   rw [coe_intervalDomain_eq_preimage,
