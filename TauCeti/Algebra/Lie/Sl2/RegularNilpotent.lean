@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Borel
 public import TauCeti.Algebra.Lie.Sl2.Principal
 import Mathlib.Algebra.CharZero.Infinite
-import TauCeti.Algebra.Lie.Sl2.Spectrum
-import TauCeti.Algebra.Lie.Weights.Eigenvector
 
 /-!
 # Density of the regular nilpotent elements
@@ -23,7 +21,8 @@ vanishes at every nilpotent element (`TauCeti.lift_eval_eq_zero_of_forall_isCent
 In other words, the nilpotent cone is the Zariski closure of its regular elements.
 
 The argument runs inside the positive nilradical `n⁺` of a splitting Cartan subalgebra `H` and a
-base `b` of its root system.
+base `b` of its root system. The first two facts below are proved in
+`TauCeti.Algebra.Lie.Sl2.Principal`.
 
 * **`n⁺` consists of nilpotent elements.** The principal grading of `L` by the eigenvalues of
   `ad (2ρ^∨)`, where `2ρ^∨` is the sum of the positive coroots, puts the root space of a positive
@@ -34,7 +33,7 @@ base `b` of its root system.
   (`TauCeti.isNilpotent_toEnd_of_mem_positiveNilradical`).
 * **`n⁺` contains a regular element.** A sum of nonzero simple root vectors is the nilpositive
   element of a principal `sl₂` triple, hence regular
-  (`TauCeti.exists_isCentralizerRegular_mem_positiveNilradical`).
+  (`TauCeti.exists_mem_positiveNilradical_isCentralizerRegular`).
 * **Density in `n⁺`.** Regularity is the nonvanishing of some minor of `ad x`, a polynomial
   condition on the vector space `n⁺`; as it holds somewhere, the regular elements of `n⁺` are
   Zariski dense in `n⁺` (`LieAlgebra.lift_eval_eq_zero_of_forall_isCentralizerRegular_of_mem`,
@@ -46,9 +45,6 @@ nilpotent cone. No conjugation by the adjoint group and no irreducibility of the
 
 ## Main results
 
-* `TauCeti.isNilpotent_toEnd_of_mem_positiveNilradical`: every element of `n⁺` acts nilpotently on
-  every finite-dimensional module.
-* `TauCeti.exists_isCentralizerRegular_mem_positiveNilradical`: `n⁺` contains a regular element.
 * `TauCeti.lift_eval_eq_zero_of_forall_isCentralizerRegular_of_mem_positiveNilradical`: the
   regular elements of `n⁺` are Zariski dense in `n⁺`.
 * `TauCeti.lift_eval_eq_zero_of_forall_isCentralizerRegular`: over an algebraically closed field,
@@ -77,66 +73,6 @@ section Split
 variable {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   (b : (rootSystem H).Base)
 
-/-- **The positive nilradical has positive principal degree.** Every element of `n⁺` is a sum of
-eigenvectors of `ad (2ρ^∨)` with positive integer eigenvalues: a positive root `α` takes the value
-`2 ht(α)` at `2ρ^∨`. -/
-theorem positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip :
-    (positiveNilradical H b).toSubmodule ≤ ⨆ (j : ℤ) (_ : 0 < j),
-      (ad K L ((twoWeylVector (rootSystem H).flip b.flip : H) : L)).eigenspace (j : K) := by
-  intro x hx
-  rw [LieSubalgebra.mem_toSubmodule, mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
-  refine LieSubmodule.iSup_induction _ (motive := (· ∈ _)) hx (fun α y hy ↦ ?_) (zero_mem _)
-    fun _ _ ↦ add_mem
-  have hα : 0 < b.height (α : H.root) :=
-    b.isPos_iff.mp ((mem_posRoots _ b _).mp α.property)
-  refine Submodule.mem_iSup_of_mem (2 * b.height (α : H.root))
-    (Submodule.mem_iSup_of_mem (by omega) ?_)
-  rw [Module.End.mem_eigenspace_iff, ad_apply, ← LieSubalgebra.coe_bracket_of_module,
-    lie_eq_smul_of_mem_rootSpace hy, Weight.toLinear_apply,
-    root_apply_twoWeylVector_flip_eq_two_mul_height]
-  simp
-
-variable {b} in
-/-- **The positive nilradical acts nilpotently.** Every element of the positive nilradical `n⁺` of
-a splitting Cartan subalgebra acts nilpotently on every finite-dimensional module; in particular
-its elements are `ad`-nilpotent. -/
-theorem isNilpotent_toEnd_of_mem_positiveNilradical {M : Type*} [AddCommGroup M] [Module K M]
-    [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M] {x : L}
-    (hx : x ∈ positiveNilradical H b) : IsNilpotent (toEnd K L M x) := by
-  rcases isEmpty_or_nonempty H.root with hroot | hroot
-  · -- without roots `n⁺` is zero
-    have hx0 : x = 0 := by
-      rw [mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
-      exact LieSubmodule.iSup_induction _ (motive := (· = 0)) hx
-        (fun α ↦ isEmptyElim (α : H.root)) rfl fun _ _ h₁ h₂ ↦ by rw [h₁, h₂, add_zero]
-    rw [hx0, map_zero]
-    exact IsNilpotent.zero
-  · -- `2ρ^∨` is the neutral element of a triple, so it acts with integer eigenvalues on `M`
-    obtain ⟨e, f, t⟩ := exists_isSl2Triple_twoWeylVector_flip b
-    exact isNilpotent_toEnd_of_mem_iSup_eigenspace_ad (iSup_eigenspace_toEnd_intCast_eq_top t)
-      (positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip b hx)
-
-/-- **The positive nilradical contains a regular element.** A sum of nonzero simple root vectors is
-a principal nilpotent element, whose centralizer has the least possible dimension. When there are
-no roots, `L` is abelian and `0` is regular. -/
-theorem exists_isCentralizerRegular_mem_positiveNilradical :
-    ∃ e ∈ positiveNilradical H b, IsCentralizerRegular K e := by
-  rcases isEmpty_or_nonempty H.root with hroot | hroot
-  · -- without roots `L` is its Cartan subalgebra, which is abelian
-    have hnz (α : Weight K H L) : ¬α.IsNonZero := fun hα ↦
-      IsEmpty.false (⟨α, by simpa [LieSubalgebra.root] using hα⟩ : H.root)
-    have htop : H.toLieSubmodule = ⊤ := by
-      simpa [hnz] using cartan_sup_iSup_rootSpace_eq_top (H := H)
-    have hmem (y : L) : y ∈ H := by
-      rw [← LieSubalgebra.mem_toLieSubmodule, htop]
-      exact LieSubmodule.mem_top y
-    refine ⟨0, zero_mem _, isCentralizerRegular_zero_iff.mpr ⟨fun y z ↦ ?_⟩⟩
-    simpa using congrArg Subtype.val (trivial_lie_zero H H ⟨y, hmem y⟩ ⟨z, hmem z⟩)
-  · choose e he he0 using fun i : b.support ↦ ((i : H.root) : Weight K H L).exists_ne_zero
-    obtain ⟨f, -, t⟩ := exists_mem_negativeNilradical_isSl2Triple_twoWeylVector_flip b he he0
-    exact ⟨_, sum_mem fun i _ ↦ mem_positiveNilradical_of_mem_rootSpace H b
-      (support_subset_posRoots _ b i.property) (he i), t.isCentralizerRegular_e⟩
-
 /-- **The regular elements of `n⁺` are Zariski dense in `n⁺`.** A polynomial function on `L`
 vanishing at every regular element of the positive nilradical `n⁺` of a splitting Cartan
 subalgebra vanishes on all of `n⁺`. -/
@@ -147,7 +83,7 @@ theorem lift_eval_eq_zero_of_forall_isCentralizerRegular_of_mem_positiveNilradic
     {x : L} (hx : x ∈ positiveNilradical H b) : SymmetricAlgebra.lift (Dual.eval K L x) p = 0 :=
   lift_eval_eq_zero_of_forall_isCentralizerRegular_of_mem
     (V := (positiveNilradical H b).toSubmodule)
-    (exists_isCentralizerRegular_mem_positiveNilradical b) hp hx
+    (exists_mem_positiveNilradical_isCentralizerRegular b) hp hx
 
 end Split
 
