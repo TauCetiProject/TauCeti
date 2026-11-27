@@ -10,13 +10,13 @@ public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import TauCeti.Algebra.Algebra.PPowerCommutator.Split
 public import TauCeti.GroupTheory.OrderOfElement.PPart.Section
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basic
-import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Group.ConjFinite
 import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.RingTheory.Artinian.Ring
 import TauCeti.Algebra.Group.Conj
+import TauCeti.Algebra.MonoidAlgebra.NotReduced
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
@@ -109,10 +109,6 @@ subspace of `k[G]`: their difference is nilpotent. -/
 theorem single_sub_single_pFreePart_mem_pPowerCommutatorSubmodule (g : G) (r : k) :
     single g r - single (pFreePart p g) r ∈
       pPowerCommutatorSubmodule p k (MonoidAlgebra k G) := by
-  have : CharP (MonoidAlgebra k G) p :=
-    charP_of_injective_algebraMap (R := k) (A := MonoidAlgebra k G) (by
-      rw [coe_algebraMap, Algebra.algebraMap_self, RingHom.coe_id, Function.comp_id]
-      exact single_right_injective) p
   set s := pFreePart p g
   set q := pPart p g
   have hsq : Commute q s := (commute_pFreePart_pPart p g).symm
@@ -120,10 +116,9 @@ theorem single_sub_single_pFreePart_mem_pPowerCommutatorSubmodule (g : G) (r : k
     rw [sub_mul, single_mul_single, one_mul, one_mul, pPart_mul_pFreePart]
   have hcomm : Commute (single q (1 : k) - 1) (single s r) :=
     (single_commute_single hsq (Commute.one_left r)).sub_left (Commute.one_left _)
-  have hnil : IsNilpotent (single q (1 : k) - 1) := by
-    refine ⟨p ^ (orderOf g).factorization p, ?_⟩
-    rw [sub_pow_char_pow_of_commute p _ (Commute.one_right _), one_pow, single_pow, one_pow,
-      ← orderOf_pPart, pow_orderOf_eq_one, ← one_def, sub_self]
+  have hnil : IsNilpotent (single q (1 : k) - 1) :=
+    isNilpotent_single_sub_one p (n := (orderOf g).factorization p) <| by
+      rw [← orderOf_pPart, pow_orderOf_eq_one]
   rw [hdiff]
   exact mem_pPowerCommutatorSubmodule_of_isNilpotent p k (hcomm.isNilpotent_mul_right hnil)
 
@@ -134,7 +129,7 @@ theorem single_sub_single_out_mem_pPowerCommutatorSubmodule (g : G) (r : k) :
     single g r - single (ConjClasses.mk (pFreePart p g)).out r ∈
       pPowerCommutatorSubmodule p k (MonoidAlgebra k G) := by
   have h := single_sub_single_mem_commutatorSubmodule_of_isConj k
-    (ConjClasses.mk_eq_mk_iff_isConj.1 (Quotient.out_eq (ConjClasses.mk (pFreePart p g)))) r
+    (ConjClasses.mk_eq_mk_iff_isConj.1 (ConjClasses.mk_out (ConjClasses.mk (pFreePart p g)))) r
   rw [← sub_add_sub_cancel _ (single (pFreePart p g) r)]
   exact add_mem (single_sub_single_pFreePart_mem_pPowerCommutatorSubmodule p k g r)
     (commutatorSubmodule_le_pPowerCommutatorSubmodule p k h)
