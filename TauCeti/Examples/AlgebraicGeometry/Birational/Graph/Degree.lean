@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Birational.Graph.Degree
 public import TauCeti.Examples.AlgebraicGeometry.Birational.TopologicalDegree
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
-import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Regression examples: the degrees of the projections of the graph of `z ↦ z²`
@@ -36,10 +35,6 @@ namespace TauCeti.GraphDegreeExamples
 open TauCeti.TopologicalDegreeExamples
 
 variable (K : Type u) [Field K]
-
-/-- `z ↦ z²` is dominant: `MvPolynomial.expand 2` is injective. -/
-instance isDominant_squareMap : IsDominant (squareMap K) :=
-  ⟨RingHom.denseRange_comap_of_injective _ <| MvPolynomial.expand_injective two_pos⟩
 
 /-- The first projection of the graph of `z ↦ z²` has topological degree `1`. -/
 theorem topologicalDegree_graphFst_squareMap :
