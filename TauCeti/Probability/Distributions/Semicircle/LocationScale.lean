@@ -231,11 +231,9 @@ theorem ae_pos_semicircleReal {a : ℝ} {v : ℝ≥0} (h : 2 * Real.sqrt v ≤ a
     ∀ᵐ x ∂semicircleReal a v, 0 < x := by
   rcases eq_zero_or_pos v with rfl | hv
   · simpa [ae_dirac_eq] using ha
-  have hac : semicircleReal a v ≪ volume := by
-    rw [semicircleReal_eq_withDensity _ hv]
-    exact withDensity_absolutelyContinuous _ _
   filter_upwards [ae_mem_Icc_semicircleReal a v,
-    measure_eq_zero_iff_ae_notMem.1 (hac (measure_singleton 0))] with x hx hx0
+    measure_eq_zero_iff_ae_notMem.1 ((semicircleReal_absolutelyContinuous a hv)
+      (measure_singleton 0))] with x hx hx0
   exact lt_of_le_of_ne (by linarith [hx.1]) (Ne.symm hx0)
 
 end TauCeti.Probability

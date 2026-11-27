@@ -33,7 +33,8 @@ measure.
 
 For real measures embedded in the plane, the potential is the integral of the real-line
 kernel. Compactly supported finite real measures have integrable off-axis kernels and a
-complex logarithmic kernel integral whose derivative is minus the resolvent transform.
+complex logarithmic kernel integral whose derivative in the upper half-plane is minus the
+resolvent transform.
 Bounded real probability measures admit affine transport and normalization at imaginary
 infinity; at non-atomic points their vertical boundary values converge when the real kernel
 is integrable.
@@ -133,18 +134,11 @@ integrable logarithmic kernel at every real point. -/
 theorem integrable_log_abs_sub_of_le_smul_volume_restrict (μ : Measure ℝ) (x l u : ℝ)
     (c : ℝ≥0∞) (hc : c ≠ ∞) (hμ : μ ≤ c • volume.restrict (Icc l u)) :
     Integrable (fun y : ℝ ↦ Real.log |x - y|) μ := by
-  by_cases hlu : l ≤ u
-  · have hlog : IntervalIntegrable (fun y : ℝ ↦ Real.log (x - y)) volume l u := by
-      have h := (intervalIntegral.intervalIntegrable_log' (a := x - l) (b := x - u)).comp_sub_left x
-      simpa using h
-    have hint : IntegrableOn (fun y : ℝ ↦ Real.log |x - y|) (Icc l u) volume := by
-      simp only [Real.log_abs]
-      exact (intervalIntegrable_iff_integrableOn_Icc_of_le hlu).1 hlog
-    exact (hint.smul_measure hc).mono_measure hμ
-  · have hμzero : μ = 0 := by
-      apply le_antisymm ?_ (Measure.zero_le μ)
-      simpa [Icc_eq_empty hlu] using hμ
-    simp [hμzero]
+  have hint : IntegrableOn (fun y : ℝ ↦ Real.log |x - y|) (Icc l u) volume := by
+    simpa only [Real.norm_eq_abs] using
+      (TauCeti.locallyIntegrable_log_norm_sub (E := ℝ) (μ := volume) x).integrableOn_isCompact
+        isCompact_Icc
+  exact (hint.smul_measure hc).mono_measure hμ
 
 /-- For a finite real measure of bounded support, vertical logarithmic kernels converge to the
 real-axis kernel at a non-atomic point where the latter is integrable. -/

@@ -110,14 +110,11 @@ private theorem restrict_standardSemicircleReal :
     (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
   simpa using restrict_Icc_semicircleReal 0 1
 
-private theorem hasDerivAt_m (hz : 0 < z.im) : ∃ d, HasDerivAt m d z := by
-  exact ⟨_, hasDerivAt_resolventTransform (μ := semicircleReal 0 1) z
-    (Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')⟩
-
 private theorem mem_slitPlane_neg_m (hz : 0 < z.im) : -(m z) ∈ Complex.slitPlane := by
   rw [Complex.mem_slitPlane_iff]
   right
-  have hm := (im_resolventTransform_semicircleReal_zero_one_pos hz).ne'
+  have hm := (im_resolventTransform_pos (μ := semicircleReal 0 1)
+    (IsProbabilityMeasure.ne_zero _) hz).ne'
   simpa using neg_ne_zero.mpr hm
 
 private theorem m_ne_zero (hz : 0 < z.im) : m z ≠ 0 := by
@@ -148,7 +145,8 @@ private theorem deriv_m_quad (hz : 0 < z.im) {d : ℂ} (hdm : HasDerivAt m d z) 
 
 private theorem hasDerivAt_primitive (hz : 0 < z.im) :
     HasDerivAt primitive (-m z) z := by
-  obtain ⟨d, hdm⟩ := hasDerivAt_m hz
+  obtain ⟨d, hdm⟩ : ∃ d, HasDerivAt m d z :=
+    ⟨_, hasDerivAt_resolventTransform_of_im_ne_zero (μ := semicircleReal 0 1) hz.ne'⟩
   have hq0 := deriv_m_quad hz hdm
   have hm0 := m_ne_zero hz
   have hlog := HasDerivAt.clog (hdm.neg) (mem_slitPlane_neg_m hz)

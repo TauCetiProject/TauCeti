@@ -45,8 +45,6 @@ is written as `v * (m * m) + (z - a) * m + 1`, the shape used by Mathlib's `disc
   equation off the support.
 * `TauCeti.Probability.resolventTransform_semicircleReal_zero_one_quadratic_eq_zero`: the
   standard-law quadratic equation at every nonreal point.
-* `TauCeti.Probability.im_resolventTransform_semicircleReal_zero_one_pos`: positivity of the
-  standard-law resolvent's imaginary part in the upper half-plane.
 * `TauCeti.Probability.eq_resolventTransform_semicircleReal_iff`: in the upper half-plane, `m(z)`
   is the only root of the quadratic with positive imaginary part.
 * `TauCeti.Probability.deriv_resolventTransform_semicircleReal`: the derivative
@@ -193,11 +191,6 @@ theorem resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (hz : z.im 
   have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z)
     (Complex.notMem_image_ofReal_of_im_ne_zero hz)
   simpa using h
-
-/-- The standard semicircle resolvent has positive imaginary part in the upper half-plane. -/
-theorem im_resolventTransform_semicircleReal_zero_one_pos (hz : 0 < z.im) :
-    0 < (resolventTransform (semicircleReal 0 1) z).im :=
-  im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _) hz
 
 /-- In the upper half-plane, the resolvent transform of `semicircleReal a v` is the unique root of
 `v * (w * w) + (z - a) * w + 1 = 0` with positive imaginary part. -/
@@ -417,7 +410,8 @@ private def standardSemicircleResolventAt (x ε : ℝ) : ℂ :=
 
 private theorem standardSemicircleResolventAt_im_pos {x ε : ℝ} (hε : 0 < ε) :
     0 < (standardSemicircleResolventAt x ε).im :=
-  im_resolventTransform_semicircleReal_zero_one_pos (by simpa using hε)
+  im_resolventTransform_pos (μ := semicircleReal 0 1) (IsProbabilityMeasure.ne_zero _)
+    (by simpa using hε)
 
 private def standardSemicircleResolventNormSq (x ε : ℝ) : ℝ :=
   Complex.normSq (standardSemicircleResolventAt x ε)
