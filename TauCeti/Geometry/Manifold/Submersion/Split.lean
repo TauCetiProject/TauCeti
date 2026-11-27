@@ -28,7 +28,8 @@ For maps between finite-dimensional real or complex manifolds with boundaryless 
 differential and smoothness on a neighbourhood give Mathlib's submersion normal form. The complement
 can be chosen uniformly as `Fin (dim E - dim F) → 𝕜`, even when the source is empty. Consequently
 a smooth map is a submersion exactly when its differentials split, and a smooth map whose composite
-with a smooth surjection is a submersion is itself one. No separation or countability
+with a smooth surjection is a submersion is itself one; in particular, a submersion precomposed with
+a diffeomorphism is a submersion. No separation or countability
 hypothesis on either manifold is needed. These comparisons allow constructions using submersion
 charts to be applied to maps specified by their differentials. In particular, a map between
 finite-dimensional normed spaces that is `C¹` with surjective Fréchet derivative at a point has the
@@ -351,6 +352,15 @@ theorem _root_.Manifold.IsSubmersion.of_comp {E' H' M' : Type*} [NormedAddCommGr
   rw [mfderiv_comp x (hf.mdifferentiableAt hn0) (hπ.mdifferentiableAt hn0),
     ContinuousLinearMap.coe_comp] at hs
   exact hs.of_comp
+
+/-- A submersion precomposed with a diffeomorphism is a submersion. The two manifolds related by
+the diffeomorphism may have different models. -/
+theorem _root_.Manifold.IsSubmersion.comp_diffeomorph {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {q : M' → N} (hq : IsSubmersion I' J n q) (φ : M ≃ₘ^n⟮I, I'⟯ M')
+    (hn : 1 ≤ n) : IsSubmersion I J n (q ∘ φ) :=
+  IsSubmersion.of_comp (π := φ.symm) (by simpa only [comp_def, φ.apply_symm_apply] using hq)
+    φ.symm.contMDiff φ.symm.surjective (hq.contMDiff.comp φ.contMDiff) hn
 
 end NormalForm
 
