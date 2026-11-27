@@ -499,7 +499,7 @@ variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGro
 `B.toBilinForm.compl₁₂ f g` of the bilinear form of `B`. -/
 theorem toBilinForm_bilinearComp (B : V →L[𝕜] V →L[𝕜] 𝕜) (f g : W →L[𝕜] V) :
     (B.bilinearComp f g).toBilinForm = B.toBilinForm.compl₁₂ (f : W →ₗ[𝕜] V) (g : W →ₗ[𝕜] V) :=
-  toLinearMap₁₂_bilinearComp B f g
+  LinearMap.ext₂ fun _ _ ↦ by simp
 
 end ToBilinFormBilinearComp
 
