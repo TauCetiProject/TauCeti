@@ -38,7 +38,8 @@ of an i.i.d. sample of size `n` is a function of `x : Fin n → ℝ`, and the se
 ## Main definitions
 
 * `TauCeti.empiricalCdf` — the empirical distribution function of a finite sample;
-* `TauCeti.sampleQuantile` — the sample quantile, the left inverse of `TauCeti.empiricalCdf`.
+* `TauCeti.sampleQuantile` — the sample quantile, the left generalized inverse of
+  `TauCeti.empiricalCdf`.
 
 ## Main statements
 
@@ -120,6 +121,7 @@ theorem monotone_empiricalCdf (x : κ → ℝ) : Monotone (empiricalCdf x) := by
   gcongr
 
 /-- The empirical distribution function vanishes exactly below every observation. -/
+@[simp]
 theorem empiricalCdf_eq_zero_iff {x : κ → ℝ} {t : ℝ} :
     empiricalCdf x t = 0 ↔ ∀ i, t < x i := by
   rcases isEmpty_or_nonempty κ with hκ | hκ
@@ -128,6 +130,7 @@ theorem empiricalCdf_eq_zero_iff {x : κ → ℝ} {t : ℝ} :
 
 /-- The empirical distribution function of a nonempty sample is `1` exactly above every
 observation. -/
+@[simp]
 theorem empiricalCdf_eq_one_iff [Nonempty κ] {x : κ → ℝ} {t : ℝ} :
     empiricalCdf x t = 1 ↔ ∀ i, x i ≤ t := by
   rw [empiricalCdf_def, div_eq_one_iff_eq (by exact_mod_cast Fintype.card_ne_zero), Nat.cast_inj,
@@ -211,8 +214,8 @@ theorem measurable_empiricalCdf (t : ℝ) : Measurable fun x : κ → ℝ ↦ em
 /-- The **sample quantile** of a finite real sample `x : κ → ℝ` at level `p`: the least point at
 which the empirical distribution function reaches `p`.
 
-For a nonempty sample it is the quantile function of the empirical distribution
-(`TauCeti.sampleQuantile_eq_quantile`), and at levels `p ∈ (0, 1]` it is a sample point
+It is the quantile function of the empirical distribution (`TauCeti.sampleQuantile_eq_quantile`),
+and for a nonempty sample at levels `p ∈ (0, 1]` it is a sample point
 (`TauCeti.sampleQuantile_mem_range`). At levels `p ≤ 0` and `1 < p`, and for an empty sample, the
 defining infimum ranges over all of `ℝ` or over the empty set, and the value is the junk
 value `0`. -/
@@ -248,11 +251,13 @@ theorem sampleQuantile_of_isEmpty [IsEmpty κ] (x : κ → ℝ) (p : ℝ) : samp
       fun t (ht : p ≤ empiricalCdf x t) ↦ (hp.trans_le (by simpa using ht)).false
     rw [sampleQuantile_def, h, Real.sInf_empty]
 
-/-- The sample quantile of a nonempty sample is the quantile function of its empirical
-distribution. -/
-theorem sampleQuantile_eq_quantile [Nonempty κ] (x : κ → ℝ) (p : ℝ) :
+/-- The sample quantile is the quantile function of the empirical distribution. For an empty
+sample both sides are the junk value `0`. -/
+theorem sampleQuantile_eq_quantile (x : κ → ℝ) (p : ℝ) :
     sampleQuantile x p = (empiricalFiniteMeasure x : Measure ℝ).quantile p := by
-  simp only [sampleQuantile_def, Measure.quantile_def, cdf_empiricalFiniteMeasure]
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · simp
+  · simp only [sampleQuantile_def, Measure.quantile_def, cdf_empiricalFiniteMeasure]
 
 /-- The sample quantile is invariant under reindexing the sample. -/
 @[simp]
@@ -293,6 +298,7 @@ private theorem exists_setOf_le_empiricalCdf_eq_Ici [Nonempty κ] (x : κ → �
 `p`-quantile is at most `t` exactly when the empirical distribution function reaches `p` at `t`.
 Unlike `MeasureTheory.Measure.quantile_le_iff` for an arbitrary law, this includes the endpoint
 level `p = 1`. -/
+@[simp]
 theorem sampleQuantile_le_iff [Nonempty κ] (x : κ → ℝ) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1)
     {t : ℝ} : sampleQuantile x p ≤ t ↔ p ≤ empiricalCdf x t := by
   obtain ⟨i, hi⟩ := exists_setOf_le_empiricalCdf_eq_Ici x hp0 hp1
@@ -306,6 +312,7 @@ theorem setOf_le_empiricalCdf_eq_Ici [Nonempty κ] (x : κ → ℝ) {p : ℝ} (h
   Set.ext fun _ ↦ (sampleQuantile_le_iff x hp0 hp1).symm
 
 /-- The negation of the Galois inequality `TauCeti.sampleQuantile_le_iff`. -/
+@[simp]
 theorem lt_sampleQuantile_iff [Nonempty κ] (x : κ → ℝ) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1)
     {t : ℝ} : t < sampleQuantile x p ↔ empiricalCdf x t < p := by
   simpa only [not_le] using (sampleQuantile_le_iff x hp0 hp1 (t := t)).not
