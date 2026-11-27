@@ -103,6 +103,10 @@ noncomputable def bigPresheafPullbackIso :
     (fun T ↦ ModuleCat.restrictScalarsId'App _ rfl _ ≪≫
       (bigSectionsPullbackEquiv g F T.unop).toModuleIso)
     (fun _ _ f ↦ by
+      -- `pushforward (bigRingCatSheafPullback g).hom` only typechecks after unfolding
+      -- `sheafPushforwardContinuous` to `(Over.map g).op ⋙ _`, so `simp` and `rw` cannot match in
+      -- this goal. It is closed up to the `rfl` lemmas `restrictScalarsId'App_hom_apply`,
+      -- `pushforward_obj_map_apply` and `bigPresheaf_map_apply`.
       ext s
       exact bigSectionsPullbackEquiv_bigSectionsRestrict g F f.unop s)
 
@@ -126,6 +130,10 @@ lemma bigPresheafPullbackIso_hom_naturality {F G : S.Modules} (φ : F ⟶ G) :
     (PresheafOfModules.pushforward (bigRingCatSheafPullback g).hom).map
         ((bigPresheafFunctor S).map φ) ≫ (bigPresheafPullbackIso g G).hom =
       (bigPresheafPullbackIso g F).hom ≫ (bigPresheafFunctor S').map ((pullback g).map φ) := by
+  -- As in `bigPresheafPullbackIso`, `simp` and `rw` cannot match in this goal, so the
+  -- components are rewritten by `Eq.trans`. The composites and the pushforward of
+  -- `(bigPresheafFunctor S).map φ` are then unfolded by the `rfl` lemmas
+  -- `PresheafOfModules.comp_app` and `pushforward_map_app_apply`.
   ext T s
   refine (bigPresheafPullbackIso_hom_app_apply g G T.unop _).trans ?_
   refine Eq.trans ?_ (congrArg (((pullback T.unop.hom).map ((pullback g).map φ)).app ⊤)
