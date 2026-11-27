@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.AffineChart
 public import TauCeti.AlgebraicGeometry.NormalCone.NormalBundle
-public import TauCeti.AlgebraicGeometry.NormalCone.Regular
+public import TauCeti.AlgebraicGeometry.NormalCone.Regular.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
@@ -78,17 +78,18 @@ variable {X Y : Scheme.{u}} (i : X ⟶ Y) [IsImmersion i]
 
 /-- Over an affine open `U` of `i.coborderRange`, with `J = I(U)`, the pullback of `Symⁿ (I/I²)`
 to the affine chart `Spec (Γ(U) ⧸ J)` of `X` is the sheaf associated with `Symⁿ (J/J²)`. -/
-noncomputable def pullbackAffineChartSymmetricPowerConormalIso (n : ℕ)
+noncomputable def pullbackSymmetricPowerConormalAffineChartIsoTilde (n : ℕ)
     (U : (i.coborderRange : Scheme.{u}).affineOpens) :
     (Scheme.Modules.pullback (i.liftCoborder.affineChart U)).obj
       (((gradedSymmetricAlgebra X).obj i.conormal).obj.X n) ≅
       tilde ((ModuleCat.of _ (i.liftCoborder.ker.ideal U).Cotangent).symmetricPower n) :=
   have : i.conormal.obj.IsQuasicoherent := i.conormal.property
+  -- Instance search does not find the comparison isomorphism over the chart, so it is named here.
+  have := isIso_pullbackSymmetricPowerComparison_app (i.liftCoborder.affineChart U) n i.conormal.obj
   (Scheme.Modules.pullback (i.liftCoborder.affineChart U)).mapIso
       (eqToIso (gradedSymmetricAlgebra_obj_obj_X _ n)) ≪≫
-    @asIso _ _ _ _ ((Scheme.Modules.pullbackSymmetricPowerComparison
-      (i.liftCoborder.affineChart U) n).app i.conormal.obj)
-      (isIso_pullbackSymmetricPowerComparison_app _ n _) ≪≫
+    asIso ((Scheme.Modules.pullbackSymmetricPowerComparison
+      (i.liftCoborder.affineChart U) n).app i.conormal.obj) ≪≫
     (SheafOfModules.symmetricPower
         (Spec (.of (Γ(i.coborderRange, U) ⧸ i.liftCoborder.ker.ideal U))).sheaf n).mapIso
       ((Scheme.Modules.pullback (i.liftCoborder.affineChart U)).mapIso
@@ -99,7 +100,7 @@ noncomputable def pullbackAffineChartSymmetricPowerConormalIso (n : ℕ)
 /-- Over an affine open `U` of `i.coborderRange`, with `J = I(U)`, the pullback of `Iⁿ/Iⁿ⁺¹` to the
 affine chart `Spec (Γ(U) ⧸ J)` of `X` is the sheaf associated with the extension of scalars
 `(Γ(U) ⧸ J) ⊗ Jⁿ` of `Jⁿ`. -/
-noncomputable def pullbackAffineChartNormalConeAlgebraIso (n : ℕ)
+noncomputable def pullbackNormalConeAlgebraAffineChartIsoTilde (n : ℕ)
     (U : (i.coborderRange : Scheme.{u}).affineOpens) :
     (Scheme.Modules.pullback (i.liftCoborder.affineChart U)).obj
       (i.normalConeAlgebra.obj.X n) ≅
@@ -128,7 +129,7 @@ theorem isIso_pullback_affineChart_map_symmetricAlgebraToNormalConeAlgebra (n : 
       (i.normalConeAlgebra.obj.X n)).IsQuasicoherent := inferInstance
   have hepi := @Functor.map_epi _ _ _ _ (Scheme.Modules.pullback (i.liftCoborder.affineChart U)) _
     _ _ _ (i.epi_symmetricAlgebraToNormalConeAlgebra_hom n)
-  let eT := i.pullbackAffineChartNormalConeAlgebraIso n U
+  let eT := i.pullbackNormalConeAlgebraAffineChartIsoTilde n U
   -- The target has finitely generated global sections, `(Γ(U) ⧸ J) ⊗ Jⁿ = Jⁿ ⧸ J • Jⁿ`.
   have : Module.Finite (Γ(i.coborderRange, U) ⧸ i.liftCoborder.ker.ideal U)
       (moduleSpecΓFunctor.obj ((Scheme.Modules.pullback (i.liftCoborder.affineChart U)).obj
@@ -146,7 +147,7 @@ theorem isIso_pullback_affineChart_map_symmetricAlgebraToNormalConeAlgebra (n : 
       (tilde.toTildeΓNatIso.app _ ≪≫ moduleSpecΓFunctor.mapIso eT.symm).toLinearEquiv)
   -- For a regular sequence `Symⁿ (J/J²) ≅ (Γ(U) ⧸ J) ⊗ Jⁿ`, so source and target are isomorphic.
   exact @Scheme.Modules.isIso_of_epi_of_iso _ _ _ hS hT _ hepi
-    (i.pullbackAffineChartSymmetricPowerConormalIso n U ≪≫ (tilde.functor _).mapIso
+    (i.pullbackSymmetricPowerConormalAffineChartIsoTilde n U ≪≫ (tilde.functor _).mapIso
       (hrs.extendScalarsPowEquivSymmetricPower hI n).toModuleIso.symm ≪≫ eT.symm) this
 
 namespace IsRegularImmersion

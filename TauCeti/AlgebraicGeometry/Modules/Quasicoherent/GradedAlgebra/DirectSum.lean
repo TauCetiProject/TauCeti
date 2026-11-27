@@ -406,7 +406,7 @@ theorem toQuasicoherentAlgebra_map_πTotal {A B : GradedQuasicoherentAlgebra X} 
 an isomorphism. -/
 theorem isIso_of_isIso_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B)
     (hf : ∀ n, IsIso (f.hom.hom.hom n)) : IsIso f := by
-  have : IsIso f.hom.hom.hom := @GradedObject.isIso_of_isIso_apply _ _ _ _ _ _ hf
+  have : IsIso f.hom.hom.hom := GradedObject.isIso_of_isIso_apply _ (hf := hf)
   -- The forgetful functor to graded modules sends `f` to its underlying morphism
   -- `f.hom.hom.hom` (`Functor.comp_map`, `ObjectProperty.ι_map`, `CommMon.forget₂Mon_map_hom`,
   -- `Mon.forget_map`), and it reflects isomorphisms.

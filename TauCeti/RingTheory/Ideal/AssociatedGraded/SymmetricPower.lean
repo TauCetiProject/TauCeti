@@ -67,6 +67,7 @@ noncomputable def symmetricPowerToGradedPiece (n : ℕ) :
 variable {I}
 
 /-- `symmetricPowerToGradedPiece` is the degree-`n` component of `symmetricAlgebraHom`. -/
+@[simp]
 theorem symmetricPowerToGradedPiece_apply {n : ℕ} (p : homogeneousSubmodule (R ⧸ I) I.Cotangent n) :
     symmetricPowerToGradedPiece I n p = symmetricAlgebraHom I p n :=
   (rfl)
@@ -134,5 +135,21 @@ noncomputable def extendScalarsPowEquivSymmetricPower (h : IsWeaklyRegular R rs)
       (LinearEquiv.ofBijective _ (symmetricPowerToGradedPiece_bijective
         (symmetricAlgebraHom_bijective h hI) n)).symm).extendScalarsOfSurjective
       Ideal.Quotient.mk_surjective
+
+/-- `extendScalarsPowEquivSymmetricPower` sends `Ideal.Quotient.mk I r ⊗ₜ x`, for `x ∈ Iⁿ`, to the
+homogeneous element of degree `n` that `symmetricPowerToGradedPiece` maps to the class of `r • x`
+in `Iⁿ ⧸ Iⁿ⁺¹`. -/
+theorem symmetricPowerToGradedPiece_extendScalarsPowEquivSymmetricPower_mk_tmul
+    (h : IsWeaklyRegular R rs) (hI : ofList rs = I) (n : ℕ) (r : R) (x : ↥(I ^ n)) :
+    symmetricPowerToGradedPiece I n (h.extendScalarsPowEquivSymmetricPower hI n
+        (Ideal.Quotient.mk I r ⊗ₜ[R] x :
+          (ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj (ModuleCat.of R ↥(I ^ n)))) =
+      Submodule.Quotient.mk (r • x) :=
+  -- The first two factors send `r ⊗ₜ x` to the class of `r • x`, which the inverse of
+  -- `symmetricPowerToGradedPiece` then sends to a preimage.
+  ((LinearEquiv.ofBijective _ (symmetricPowerToGradedPiece_bijective
+    (symmetricAlgebraHom_bijective h hI) n)).apply_symm_apply _).trans
+    ((congrArg (Submodule.quotEquivOfEq _ _ _)
+      (extendScalarsMkEquivQuotSMul_mk_tmul I _ r x)).trans (Submodule.quotEquivOfEq_mk _ _ _ _))
 
 end RingTheory.Sequence.IsWeaklyRegular

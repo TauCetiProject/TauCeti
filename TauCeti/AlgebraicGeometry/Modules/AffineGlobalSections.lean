@@ -390,17 +390,14 @@ sections are an equivalence on quasicoherent modules. Only the existence of an i
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_epi_of_iso
     [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) [Epi φ] (e : M ≅ N)
     [Module.Finite R (moduleSpecΓFunctor.obj N)] : IsIso φ := by
-  have hsurj := moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent φ
-  -- Precomposed with the inverse of `e`, it is a surjective endomorphism of a finitely generated
-  -- module, hence injective.
-  have hinj : Function.Injective (moduleSpecΓFunctor.map φ) := by
-    have h := OrzechProperty.injective_of_surjective_endomorphism
-      ((moduleSpecΓFunctor.mapIso e).inv ≫ moduleSpecΓFunctor.map φ).hom
-      (hsurj.comp (moduleSpecΓFunctor.mapIso e).symm.toLinearEquiv.surjective)
-    exact (Function.Injective.of_comp_iff' _
-      (moduleSpecΓFunctor.mapIso e).symm.toLinearEquiv.bijective).mp h
+  -- On global sections `φ` is a surjection onto a finitely generated module from a module
+  -- that injects into it, through `e`, hence bijective by the Orzech property.
   have : IsIso (moduleSpecΓFunctor.map φ) :=
-    (ConcreteCategory.isIso_iff_bijective _).mpr ⟨hinj, hsurj⟩
+    (ConcreteCategory.isIso_iff_bijective _).mpr
+      (OrzechProperty.bijective_of_surjective_of_injective
+        (moduleSpecΓFunctor.mapIso e).toLinearEquiv.toLinearMap (moduleSpecΓFunctor.map φ).hom
+        (moduleSpecΓFunctor.mapIso e).toLinearEquiv.injective
+        (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent φ))
   -- Global sections are the inverse of the tilde equivalence, which reflects isomorphisms. As in
   -- `isIso_of_bijective_sectionsFunctor_map_top`, two definitional equalities are used:
   -- `tildeEquiv.inverse.map ψ` is `moduleSpecΓFunctor.map φ`, and `P.ι.map ψ` is `φ`.
