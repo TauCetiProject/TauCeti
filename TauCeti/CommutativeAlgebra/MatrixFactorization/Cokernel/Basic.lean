@@ -68,7 +68,7 @@ def cokernelFunctor : MatrixFactorization S w ⥤ FGModuleCat.{u} S := by
       map_id X := by ext <;> simp
       map_comp g h := by ext <;> simp }
   exact (ModuleCat.isFG S).lift (G ⋙ coker (ModuleCat.{u} S))
-    fun X ↦ ModuleCat.finite_cokernel X.obj.d₀.hom
+    fun X ↦ inferInstanceAs (Module.Finite S (cokernel X.obj.d₀.hom : ModuleCat.{u} S))
 
 /-- The underlying module of the finite cokernel functor is the categorical cokernel of the
 even differential. This isomorphism permits use of Mathlib's cokernel API without

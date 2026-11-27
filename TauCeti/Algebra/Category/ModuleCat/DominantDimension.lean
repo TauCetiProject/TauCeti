@@ -70,7 +70,6 @@ theorem ModuleCat.natCast_le_dominantDimension_iff_of_finite {Γ : Type u} [Ring
     have : Projective E := r.projective
     have := ((isInjectiveEnvelope_iff_injective_and_isEssentialMono ι).2
       ⟨hE, hι⟩).finite_of_projective
-    have := ModuleCat.finite_cokernel ι
     exact ObjectProperty.isSyzygy_succ_iff_exists_mono.2 ⟨E, ι, hι.mono,
       ⟨inferInstance, inferInstance, hE⟩, ih _
       ((hasProjectiveInjectiveCoresolution_iff_isSyzygy.2 h').of_retract r')⟩

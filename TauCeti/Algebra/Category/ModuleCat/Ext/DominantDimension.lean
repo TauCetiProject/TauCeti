@@ -99,13 +99,11 @@ theorem natCast_le_dominantDimension_iff_forall_subsingleton_ext [IsArtinianRing
     · rintro ⟨I, f, hf, ⟨hfin, hP, hI⟩, hc⟩ T hfinT hT (i | i) hi
       · have := subsingleton_ext_of_projective_of_injective (I := I) hT 0
         exact ⟨fun x y ↦ Ext.postcomp_mk₀_injective_of_mono T f (Subsingleton.elim _ _)⟩
-      · have := ModuleCat.finite_cokernel f
-        exact (subsingleton_ext_cokernel_iff f hT i).mp
+      · exact (subsingleton_ext_cokernel_iff f hT i).mp
           ((ih _).mp hc T hT i (Nat.lt_of_succ_lt_succ hi))
     · intro h
       obtain ⟨I, f, hf, hfin, hP, hI⟩ := exists_mono_projective_injective_of_hom hA M
         fun T _ hT ↦ Ext.addEquiv₀.subsingleton_congr.mp (h T hT 0 (Nat.zero_lt_succ n))
-      have := ModuleCat.finite_cokernel f
       exact ⟨I, f, hf, ⟨hfin, hP, hI⟩, (ih _).mpr fun T _ hT i hi ↦
         (subsingleton_ext_cokernel_iff f hT i).mpr (h T hT (i + 1) (Nat.succ_lt_succ hi))⟩
 

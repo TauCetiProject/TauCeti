@@ -33,7 +33,7 @@ public section
 open CategoryTheory.Limits
 
 /-- The cokernel of a module morphism with finitely generated target is finitely generated. -/
-theorem ModuleCat.finite_cokernel {R : Type*} [Ring R] {M N : ModuleCat.{v} R}
+instance ModuleCat.finite_cokernel {R : Type*} [Ring R] {M N : ModuleCat.{v} R}
     [Module.Finite R N] (f : M ⟶ N) : Module.Finite R (cokernel f : ModuleCat.{v} R) :=
   Module.Finite.of_surjective (cokernel.π f).hom ((ModuleCat.epi_iff_surjective _).mp inferInstance)
 
