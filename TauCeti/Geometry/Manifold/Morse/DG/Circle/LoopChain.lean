@@ -109,15 +109,6 @@ variable {X : (x : AddCircle (2 * π)) → TangentSpace 𝓘(ℝ) x}
 
 section Differential
 
-/-- The entry of the Barraud–Cornea cocycle of the cosine from the maximum to the minimum is a
-cycle. -/
-theorem cubicalChainDifferential_barraudCorneaCocycle_m_circleCos :
-    cubicalChainDifferential (MooreLoopSpace Y y₀) R
-      ((hX.barraudCorneaCocycle isMorse_circleCos hdense hθ hc S).m circleCosMaxCrit
-        circleCosMinCrit) = 0 :=
-  (hX.barraudCorneaCocycle isMorse_circleCos hdense hθ hc S).d_m_eq_zero_of_forall_eq_or_eq
-    eq_circleCosMaxCrit_or_eq_circleCosMinCrit
-
 /-- **The DG Morse differential of the cosine at the minimum.** With coefficients in the loop chain
 algebra, the coefficient of the minimum `π` in `D f` is `d (f π) + κ (f 0) x`, where `κ` is the
 Koszul sign of the degree and `x` is the entry of the Barraud–Cornea cocycle from the maximum to
