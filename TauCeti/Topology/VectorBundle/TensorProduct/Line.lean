@@ -14,13 +14,14 @@ public import TauCeti.Topology.VectorBundle.Trivialization
 Let `L` be a line bundle, with model fibre of dimension one, and let `s` be a section of `L` that
 vanishes nowhere. Then `v ↦ v ⊗ s b` is a fibrewise linear isomorphism `E b ≃ E b ⊗ L b`
 (`TauCeti.tensorEquivOfNeZero`): its inverse divides by `s b`, through the coordinate
-`TauCeti.VectorBundle.lineCoordOfFinrankEqOne` of the line `L b` along `s b`. When `s` is
+`TauCeti.VectorBundle.lineCoord` of the line `L b` along `s b`. When `s` is
 continuous, so is this isomorphism on total spaces (`TauCeti.continuous_tensorEquivOfNeZero`).
 So tensoring with a trivializable line changes nothing.
 
 ## Main declarations
 
-* `TauCeti.tensorEquivOfNeZero`: `E b ≃ E b ⊗ L b`, `v ↦ v ⊗ s b`.
+* `TauCeti.tensorEquivOfNeZero`: `E b ≃ E b ⊗ L b`, `v ↦ v ⊗ s b`, with inverse
+  `v ⊗ w ↦ c • v` for `w = c • s b` (`TauCeti.tensorEquivOfNeZero_symm_apply_tmul`).
 * `TauCeti.continuous_tensorEquivOfNeZero`: it is continuous on total spaces.
 
 ## References
@@ -43,7 +44,7 @@ variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [T
   {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
   [VectorBundle 𝕜 F E]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {L : B → Type*} [∀ x, AddCommGroup (L x)] [∀ x, Module 𝕜 (L x)]
   [∀ x, TopologicalSpace (L x)] [TopologicalSpace (TotalSpace G L)] [FiberBundle G L]
   [VectorBundle 𝕜 G L]
@@ -63,7 +64,7 @@ def tensorEquivOfNeZero (x : B) : E x ≃L[𝕜] E x ⊗[𝕜] L x :=
   LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
     ((_root_.TensorProduct.rid 𝕜 (E x)).symm.trans
       (_root_.TensorProduct.congr (LinearEquiv.refl 𝕜 _)
-        (VectorBundle.lineCoordOfFinrankEqOne 𝕜 G hG (hs x)).symm.toLinearEquiv))
+        (VectorBundle.lineCoord hG (hs x)).symm.toLinearEquiv))
 
 /-- The isomorphism `E b ≃ E b ⊗ L b` of a nowhere-zero section `s` of a line bundle `L` is
 `v ↦ v ⊗ s b`. -/
@@ -72,6 +73,15 @@ theorem tensorEquivOfNeZero_apply (x : B) (v : E x) :
     tensorEquivOfNeZero F hG hs x v = v ⊗ₜ[𝕜] s x := by
   simp [tensorEquivOfNeZero]
 
+/-- The inverse of `E b ≃ E b ⊗ L b` divides by `s b`: it sends `v ⊗ w` to `c • v`, where
+`w = c • s b`. -/
+@[simp]
+theorem tensorEquivOfNeZero_symm_apply_tmul (x : B) (v : E x) (w : L x) :
+    (tensorEquivOfNeZero F hG hs x).symm (v ⊗ₜ[𝕜] w) = VectorBundle.lineCoord hG (hs x) w • v := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, tensorEquivOfNeZero_apply, TensorProduct.smul_tmul,
+    VectorBundle.lineCoord_smul_self]
+
+variable [FiniteDimensional 𝕜 G] in
 /-- For a continuous nowhere-zero section `s` of a line bundle `L`, the isomorphism
 `E ≃ E ⊗ L`, `v ↦ v ⊗ s b`, is continuous on total spaces. -/
 theorem continuous_tensorEquivOfNeZero (hsc : Continuous fun x ↦ TotalSpace.mk' G x (s x)) :
