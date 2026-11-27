@@ -171,19 +171,6 @@ private lemma eq_one_of_sheafι_comp_eq {D : SchemeWeilDivisor X} (hD : IsLocall
   rw [Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app] at this
   exact mul_right_cancel₀ hne (by rw [this, one_mul])
 
-/-- If the inclusion of `𝒪_X(D)` into `𝒦_X` factors through `𝒪_X(E)` after multiplication by `c`,
-then multiplication by `c` carries the sections of `𝒪_X(D)` into those of `𝒪_X(E)`. -/
-private lemma mem_sections_of_factor {D E : SchemeWeilDivisor X} {c : X.functionField}
-    {χ : sheaf D ⟶ sheaf E}
-    (hχ : χ ≫ sheafι E = sheafι D ≫ Scheme.rationalFunctionsMul X c)
-    (U : X.Opens) {t : Γ(Scheme.rationalFunctions X, U)} (ht : t ∈ sections D U) :
-    Scheme.Modules.Hom.app (Scheme.rationalFunctionsMul X c) U t ∈ sections E U := by
-  obtain ⟨s, rfl⟩ := (range_sheafι_app D U).ge ht
-  have key := ConcreteCategory.congr_hom (congrArg (fun η ↦ Scheme.Modules.Hom.app η U) hχ) s
-  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at key
-  rw [← key]
-  exact sheafι_app_mem E U _
-
 /-- **Isomorphic divisor sheaves come from linearly equivalent divisors.** This is the converse of
 `SchemeWeilDivisor.nonempty_iso_sheaf_of_linearlyEquivalent`. -/
 theorem linearlyEquivalent_of_nonempty_iso_sheaf {D E : SchemeWeilDivisor X}
@@ -219,12 +206,13 @@ theorem linearlyEquivalent_of_nonempty_iso_sheaf {D E : SchemeWeilDivisor X}
   have hsec : ∀ U : X.Opens, sections F U = sections E U := by
     intro U
     refine le_antisymm (fun t ht ↦ ?_) (fun t ht ↦ ?_)
-    · have h1 := mem_sections_of_factor
+    · have h1 := rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq
         ((sheafMulIso_inv_ι γ D).trans (by rw [hγneg])) U ht
-      have h2 := mem_sections_of_factor hg U h1
+      have h2 := rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq hg U h1
       rwa [hcancel] at h2
-    · have h1 := mem_sections_of_factor hg' U ht
-      have h2 := mem_sections_of_factor ((sheafMul_ι γ D).trans (by rw [hγ])) U h1
+    · have h1 := rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq hg' U ht
+      have h2 := rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq
+        ((sheafMul_ι γ D).trans (by rw [hγ])) U h1
       rwa [hcancel] at h2
   -- comparing local equations at a codimension-one point turns that into equal coefficients
   have hFlp : IsLocallyPrincipal F := hD.sub (isLocallyPrincipal_principalDivisor γ)
