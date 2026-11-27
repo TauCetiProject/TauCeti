@@ -176,13 +176,13 @@ theorem residueFieldEquiv_symm_reduction (n : ℕ)
 theorem residueFieldEquiv_unique (n : ℕ)
     (f : ResidueField (integralClosure ℤ_[p] (padicCyclotomicField p Ω n)) →+* ZMod p) :
     f = (residueFieldEquiv p Ω n).toRingHom :=
-  f.ext_to_zmod_of_isLocalRing _
+  Subsingleton.elim _ _
 
 /-- Every ring homomorphism from the integral cyclotomic level to `ZMod p` is reduction. -/
 theorem reduction_unique (n : ℕ)
     (f : integralClosure ℤ_[p] (padicCyclotomicField p Ω n) →+* ZMod p) :
     f = reduction p Ω n :=
-  f.ext_to_zmod_of_isLocalRing _
+  Subsingleton.elim _ _
 
 /-- A cyclotomic integer is a unit exactly when its reduction is nonzero. -/
 theorem isUnit_iff_reduction_ne_zero (n : ℕ)
