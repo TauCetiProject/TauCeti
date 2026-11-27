@@ -23,16 +23,19 @@ level `8 * f` and their three Legendre twists. Thus it suffices to check the gap
 twists; the untwisted characters have a common gap fixed before choosing the primes or
 the height `k` of the tower.
 
-The family of twists checked here is that of Levent Alpöge's `UpperTheory.Top.RealBox`
-(`Development/AutomorphicArithmetic/CharacterBoxes/PairGood.lean`).
+The family of twists checked here is that of `UpperTheory.Top.RealBox`
+(`src/Development/AutomorphicArithmetic/CharacterBoxes/PairGood.lean`) in Levent Alpöge's
+formalization of the Riemann hypothesis for Dirichlet L-functions,
+https://github.com/leanprover-community/riemann-hypothesis (rev. `40e56ba`).
 -/
 
 public section
 
 open Set
 open scoped ComplexOrder
+open DirichletCharacter
 
-namespace DirichletCharacter
+namespace TauCeti.DirichletCharacter
 
 /-- For quadratic characters with conductor dividing `2 ^ k * (f * q * d)`, a zero gap
 of width `c` for the three Legendre twists of every quadratic character modulo `8 * f`
@@ -50,7 +53,7 @@ theorem exists_pos_real_zero_gap_of_legendreTwists (f : ℕ) [NeZero f] :
       χ.conductor ∣ 2 ^ k * (f * q * d) → χ.IsQuadratic →
       ∀ β ∈ Ioo (1 - min δ c) 1, χ.LFunction β ≠ 0 := by
   let B := 8 * f
-  obtain ⟨r, hr, hbase⟩ := TauCeti.DirichletCharacter.exists_pos_real_zero_gap B
+  obtain ⟨r, hr, hbase⟩ := exists_pos_real_zero_gap B
   let δ := min r (1 / 2)
   have hδ : δ ∈ Ioc (0 : ℝ) (1 / 2) := ⟨lt_min hr (by norm_num), min_le_right ..⟩
   refine ⟨δ, hδ, ?_⟩
@@ -83,4 +86,4 @@ theorem exists_pos_real_zero_gap_of_legendreTwists (f : ℕ) [NeZero f] :
   · exact (htwist ψ hψ β hβc).2.1 ((hlift _ _).mp hz')
   · exact (htwist ψ hψ β hβc).2.2 hz'
 
-end DirichletCharacter
+end TauCeti.DirichletCharacter
