@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Extending a uniformly elliptic field to the whole space
@@ -330,46 +329,6 @@ theorem UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn [DecidableEq ι]
       exact h.upper_bound hx η ξ
     · rw [piecewise_eq_of_notMem _ _ _ hx]
       exact hI.upper_bound (mem_univ x) η ξ
-
-section CompactPerturbation
-open scoped BigOperators
-variable {K : Set (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
-local notation "E" => EuclideanSpace ℝ ι
-
-/-- A `C^n` matrix field constant off a compact set has a common bound for its derivatives
-of orders one through `n`. -/
-theorem exists_coefficient_derivative_bound {n : ℕ}
-    (hK : IsCompact K) (hconst : EqOn a (fun _ ↦ A) Kᶜ)
-    (hsm : ∀ i j, ContDiff ℝ n (fun x ↦ a x i j)) :
-    ∃ C : ℝ, ∀ i j, ∀ r, 1 ≤ r → r ≤ n → ∀ x,
-      ‖iteratedFDeriv ℝ r (fun y ↦ a y i j) x‖ ≤ C := by
-  classical
-  choose C hC using fun (i j : ι) (r : Fin n) ↦
-    ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl (i := r.val + 1)
-      ((hsm i j).of_le (by exact_mod_cast Nat.succ_le_of_lt r.isLt) :
-        ContDiff ℝ (r.val + 1) (fun x ↦ a x i j))
-      (by omega) hK (b := A i j) (L := 0) (fun x hx ↦ by
-        simpa using congrArg (fun B ↦ B i j) (hconst hx))
-  refine ⟨∑ i, ∑ j, ∑ s : Fin n, |C i j s|, fun i j r hr hrk x ↦ ?_⟩
-  have hs : r - 1 < n := by omega
-  have h := hC i j ⟨r - 1, hs⟩ x
-  -- Expose the finite index in the chosen bound so the natural-number rewrite applies.
-  change ‖iteratedFDeriv ℝ (r - 1 + 1) (fun y ↦ a y i j) x‖ ≤ C i j ⟨r - 1, hs⟩ at h
-  rw [Nat.sub_add_cancel (by omega : 1 ≤ r)] at h
-  apply (h.trans (le_abs_self _)).trans
-  calc
-    |C i j ⟨r - 1, hs⟩| ≤ ∑ s : Fin n, |C i j s| :=
-      Finset.single_le_sum (f := fun s : Fin n ↦ |C i j s|)
-        (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ (⟨r - 1, hs⟩ : Fin n))
-    _ ≤ ∑ t : ι, ∑ s : Fin n, |C i t s| :=
-      Finset.single_le_sum (f := fun t : ι ↦ ∑ s : Fin n, |C i t s|)
-        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _) (Finset.mem_univ j)
-    _ ≤ ∑ t : ι, ∑ v : ι, ∑ s : Fin n, |C t v s| :=
-      Finset.single_le_sum (f := fun t : ι ↦ ∑ v : ι, ∑ s : Fin n, |C t v s|)
-        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _)
-        (Finset.mem_univ i)
-
-end CompactPerturbation
 
 end PDE
 

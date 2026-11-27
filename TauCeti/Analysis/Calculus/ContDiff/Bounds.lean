@@ -79,6 +79,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
 * `ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl`: a `C^i` map, `1 ≤ i`, which is affine
   outside a compact set has a bounded `i`-th derivative.
+* `ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl_of_le`: one constant bounds all derivatives
+  of orders one through `n` of a `C^n` map affine outside a compact set.
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm`: the
   order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of the
   Japanese bracket.
@@ -387,6 +389,22 @@ theorem ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl [ProperSpace E] {f : 
   rcases j with _ | j
   · simp
   · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
+
+/-- A `C^n` map which is affine outside a compact set has a common bound for its derivatives
+of orders one through `n`. -/
+theorem ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl_of_le [ProperSpace E]
+    {f : E → F} {n : ℕ} (hf : ContDiff 𝕜 n f) {K : Set E} (hK : IsCompact K)
+    {b : F} {L : E →L[𝕜] F} (hfK : EqOn f (fun x ↦ b + L x) Kᶜ) :
+    ∃ C, ∀ i, 1 ≤ i → i ≤ n → ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C := by
+  induction n with
+  | zero => exact ⟨0, by omega⟩
+  | succ n ih =>
+    obtain ⟨C, hC⟩ := ih (hf.of_le (by exact_mod_cast n.le_succ))
+    obtain ⟨D, hD⟩ := hf.exists_bound_iteratedFDeriv_of_eqOn_compl (by omega) hK hfK
+    refine ⟨max C D, fun i hi hin x ↦ ?_⟩
+    rcases Nat.lt_or_eq_of_le hin with hin | rfl
+    · exact (hC i hi (by omega) x).trans (le_max_left _ _)
+    · exact (hD x).trans (le_max_right _ _)
 
 /-- The order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of
 the Japanese bracket: `‖D^n f(x)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r / 2)`. -/

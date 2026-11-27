@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace.HigherOrder
 import TauCeti.Analysis.PDE.Ellipticity.PosDef
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.Sobolev.W1p.Localization
@@ -33,8 +34,9 @@ for `H^k` forcing and coefficients with bounded derivatives. The finite-order lo
 accepts `H^k` forcing on the chart patch; the smooth-forcing theorem gives every Sobolev
 order on a fixed patch.
 
-The cutoff localization adapts the proofs in `Regularity/FlatBoundary.lean` and reuses
-the global regularity theorem from `Regularity/HalfSpace/HigherOrder.lean`.
+The cutoff localization uses `exists_isWeakSolutionDirichlet_value_ae_eq_indicator` from
+`Regularity/Interior/Localization.lean` and the global regularity theorem from
+`Regularity/HalfSpace/HigherOrder.lean`.
 
 ## Main results
 
@@ -63,10 +65,20 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 local notation "E" => EuclideanSpace ℝ ι
 
-omit [Fintype ι] [DecidableEq ι] in
-private theorem mem_iff_mem_of_inter_eq (hΩU : (Omega : Set E) ∩ U = (H : Set E) ∩ U)
-    {x : E} (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H := by
-  simpa only [← SetLike.mem_coe, mem_inter_iff, hx, and_true] using Set.ext_iff.1 hΩU x
+omit [DecidableEq ι] in
+private theorem energyFormH1_restrictL_eq_setIntegral_value {D : Opens E}
+    {a' : E → Matrix ι ι ℝ} (hD : D ≤ Omega ⊓ U) (haa' : EqOn a' a D) {k : ℕ} {F : Wkp mu D 2 k}
+    (hF : Wkp.value k F =ᵐ[mu.restrict D] f)
+    (hu : ∀ v : W1p0 mu (Omega ⊓ U) 2,
+      energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ U) 2) =
+        ∫ x in Omega ⊓ U, f x * W1p.value (v : W1p mu (Omega ⊓ U) 2) x ∂mu)
+    (v : W1p0 mu D 2) :
+    energyFormH1 a' 0 0 (W1p.restrictL (hD.trans inf_le_left) u) (v : W1p mu D 2) =
+      ∫ x in D, Wkp.value k F x * W1p.value (v : W1p mu D 2) x ∂mu := by
+  rw [← W1p.restrictL_restrictL inf_le_left hD,
+    energyFormH1_restrictL_eq_setIntegral_of_eqOn hD haa' hu]
+  exact integral_congr_ae (hF.mono fun x hx ↦
+    congrArg (· * W1p.value (v : W1p mu D 2) x) hx.symm)
 
 private theorem exists_value_eq_value_restrictL_of_mapsTo_of_order
     (hν : ν ≠ 0) (hHc : Convex ℝ (H : Set E))
@@ -92,23 +104,20 @@ private theorem exists_value_eq_value_restrictL_of_mapsTo_of_order
     ha.exists_contDiff_eqOn_inter hsmooth hHU hW hWU
   have hagree : EqOn a' a (closure (W : Set E)) := fun x hx ↦ hagree' (hWW' hx)
   let D := Omega ⊓ W
-  have hD : D ≤ Omega := inf_le_left
   have hWsub : (W : Set E) ⊆ U := subset_closure.trans hWU
-  have hΩH (x : E) (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H :=
-    mem_iff_mem_of_inter_eq hΩU hx
+  have hΩH (x : E) (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H := by
+    simpa only [← SetLike.mem_coe, mem_inter_iff, hx, and_true] using Set.ext_iff.1 hΩU x
   have hDU : D ≤ Omega ⊓ U := fun _ hx ↦ ⟨hx.1, hWsub hx.2⟩
   have hDH : D ≤ H := fun x hx ↦ (hΩH x (hWsub hx.2)).1 hx.1
-  have hz₁ : Wkp.firstOrder k Z = W1p.restrictL hD u :=
+  have hz₁ : Wkp.firstOrder k Z = W1p.restrictL (inf_le_left : D ≤ Omega) u :=
     W1p.ext_value ((Wkp.value_firstOrder k Z).trans hZ)
   let FD := Wkp.restrictL hDU k F
   have huD (v : W1p0 mu D 2) :
       energyFormH1 a' 0 0 (Wkp.firstOrder k Z) (v : W1p mu D 2) =
         ∫ x in D, Wkp.value k FD x * W1p.value (v : W1p mu D 2) x ∂mu := by
-    rw [hz₁, ← W1p.restrictL_restrictL inf_le_left hDU,
-      energyFormH1_restrictL_eq_setIntegral_of_eqOn hDU
-      (fun x hx ↦ hagree (subset_closure hx.2)) hu]
-    exact integral_congr_ae ((Wkp.value_restrictL_ae hDU k F).mono fun x hx ↦
-      congrArg (· * W1p.value (v : W1p mu D 2) x) hx.symm)
+    rw [hz₁]
+    exact energyFormH1_restrictL_eq_setIntegral_value hDU
+      (fun x hx ↦ hagree (subset_closure hx.2)) (Wkp.value_restrictL_ae hDU k F) hu v
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds W.isOpen hVW
   obtain ⟨d, hd⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL hWsub hu0 hψ hψc hψs
@@ -122,17 +131,20 @@ private theorem exists_value_eq_value_restrictL_of_mapsTo_of_order
     ⟨(hΩH x (hWsub (hψs hx.1))).2 hx.2, hψs hx.1⟩
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator
     hM hL hsm' hDH k FD Z huD hψ hψc hts hN _ _ (hψu ▸ d.property)
-  obtain ⟨C, hC⟩ := exists_coefficient_derivative_bound (n := k + 1) hK hconst
-    (fun i j ↦ (hsm' i j).of_le (by simp))
+  choose C hC using fun p : ι × ι ↦ ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl_of_le
+      ((hsm' p.1 p.2).of_le (by simp) : ContDiff ℝ (k + 1) _) hK (b := _) (L := 0)
+        (fun x hx ↦ by simpa using congrArg (fun B ↦ B p.1 p.2) (hconst hx))
   obtain ⟨Q, hQ⟩ := ha'.exists_value_eq_value_of_mapsTo_of_contDiffOn
     hν hHc hH hL.lipschitzOnWith k (fun i j ↦ (hsm' i j).contDiffOn.of_le (by simp))
-    (fun i j r hr hrk x _ ↦ hC i j r (by omega) hrk x) hw
+    (C := ∑ p, |C p|) (fun i j r hr hrk x _ ↦ (hC (i, j) r (by omega) hrk x).trans
+      ((le_abs_self _).trans (Finset.single_le_sum (f := fun p ↦ |C p|) (fun _ _ ↦ abs_nonneg _)
+        (Finset.mem_univ (i, j))))) hw
   have hVD : Omega ⊓ V ≤ D := fun _ hx ↦ ⟨hx.1, hVW (subset_closure hx.2)⟩
   have hVH : Omega ⊓ V ≤ H := hVD.trans hDH
   refine ⟨Wkp.restrictL hVH (k + 2) Q, Lp.ext ?_⟩
   filter_upwards [Wkp.value_restrictL_ae hVH (k + 2) Q,
     ae_restrict_of_ae_restrict_of_subset hVH hwv,
-    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
+    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae (inf_le_left : D ≤ Omega) u),
     W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h₁ h₂ h₃ h₄ hx
   have hψx : ψ x = 1 := interior_subset (hψ1 (subset_closure hx.2))
@@ -194,21 +206,13 @@ private theorem exists_value_eq_value_restrictL_allOrders_of_ne_zero
   let W : Opens E := ⟨W₀, hWo⟩
   have hWsub : (W : Set E) ⊆ U := subset_closure.trans hWU
   have hDU : Omega ⊓ W ≤ Omega ⊓ U := fun _ hx ↦ ⟨hx.1, hWsub hx.2⟩
-  have hΩW : (Omega : Set E) ∩ W = (H : Set E) ∩ W := by
-    ext x
-    simp only [mem_inter_iff]
-    exact and_congr_left fun hx ↦ mem_iff_mem_of_inter_eq hΩU (hWsub hx)
+  have hΩW : (Omega : Set E) ∩ W = (H : Set E) ∩ W :=
+    inter_eq_inter_mono_right hΩU hWsub
   intro k
   obtain ⟨F, hF⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact
     (mu := mu) (Omega := Omega ⊓ W) (p := 2) k U.isOpen (hf.of_le (by simp)) hW
     (fun x hx ↦ subset_closure hx.2) hWU
-  have huD (v : W1p0 mu (Omega ⊓ W) 2) :
-      energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ W) 2) =
-        ∫ x in Omega ⊓ W, Wkp.value k F x * W1p.value (v : W1p mu (Omega ⊓ W) 2) x ∂mu := by
-    rw [← W1p.restrictL_restrictL inf_le_left hDU,
-      energyFormH1_restrictL_eq_setIntegral hDU hu]
-    exact integral_congr_ae (hF.mono fun x hx ↦
-      congrArg (· * W1p.value (v : W1p mu (Omega ⊓ W) 2) x) hx.symm)
+  have huD := energyFormH1_restrictL_eq_setIntegral_value hDU (fun _ _ ↦ rfl) hF hu
   obtain ⟨Q, hQ⟩ := (ha.mono_set hDU).exists_value_succ_succ_eq_value_restrictL_of_mapsTo
     hν (TauCeti.convex_of_halfSpace hH)
     (fun _ hτ ↦ TauCeti.mapsTo_add_smul_of_halfSpace hH hτ) hΩW
@@ -231,20 +235,13 @@ private theorem exists_value_eq_value_restrictL_allOrders_of_interior
   let W : Opens E := ⟨W₀, hWo⟩
   have hWsub : (W : Set E) ⊆ U := subset_closure.trans hWU
   have hWΩU : W ≤ Omega ⊓ U := fun _ hx ↦ ⟨hUΩ (hWsub hx), hWsub hx⟩
-  have hWΩ : W ≤ Omega := hWΩU.trans inf_le_left
   have haW : UniformlyEllipticOn (W : Set E) a lam Lam := ha.mono_set hWΩU
   have hY : closure ((Omega ⊓ V : Opens E) : Set E) ⊆ closure (V : Set E) :=
     closure_mono inter_subset_right
   intro k
   obtain ⟨F, hF⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (Omega := W)
     (p := 2) k U.isOpen (hf.of_le (by simp)) hW subset_closure hWU
-  have huW (v : W1p0 mu W 2) :
-      energyFormH1 a 0 0 (W1p.restrictL hWΩ u) (v : W1p mu W 2) =
-        ∫ x in W, Wkp.value k F x * W1p.value (v : W1p mu W 2) x ∂mu := by
-    rw [← W1p.restrictL_restrictL inf_le_left hWΩU,
-      energyFormH1_restrictL_eq_setIntegral hWΩU hu]
-    exact integral_congr_ae (hF.mono fun x hx ↦
-      congrArg (· * W1p.value (v : W1p mu W 2) x) hx.symm)
+  have huW := energyFormH1_restrictL_eq_setIntegral_value hWΩU (fun _ _ ↦ rfl) hF hu
   obtain ⟨Q, hQ⟩ := haW.exists_value_eq_value_restrictL_of_contDiffOn k
     (fun i j ↦ ((hsmooth i j).mono hWsub).of_le (by simp))
     (b := 0) (c := 0) contDiffOn_const contDiffOn_const huW
@@ -270,8 +267,8 @@ private theorem exists_value_eq_value_restrictL_allOrders_of_uniformlyElliptic
       Wkp.value k Q = W1p.value (W1p.restrictL inf_le_left u) := by
   by_cases hν : ν = 0
   · have hH₀ (x : E) : x ∈ H ↔ c₀ < 0 := by simpa [hν] using hH x
-    have hΩH (x : E) (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H :=
-      mem_iff_mem_of_inter_eq hΩU hx
+    have hΩH (x : E) (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H := by
+      simpa only [← SetLike.mem_coe, mem_inter_iff, hx, and_true] using Set.ext_iff.1 hΩU x
     by_cases hc : c₀ < 0
     · exact exists_value_eq_value_restrictL_allOrders_of_interior
         (fun x hx ↦ (hΩH x hx).2 ((hH₀ x).2 hc)) ha hsmooth hf hu hV hVU
@@ -313,14 +310,13 @@ theorem exists_value_eq_value_restrictL_allOrders_of_halfSpace
   let W : Opens E := ⟨W₀, hWo⟩
   have hWsub : (W : Set E) ⊆ U := subset_closure.trans hWU
   have hWΩU : Omega ⊓ W ≤ Omega ⊓ U := fun _ hx ↦ ⟨hx.1, hWsub hx.2⟩
-  have hΩW : (Omega : Set E) ∩ W = (H : Set E) ∩ W := by
-    ext x
-    simp only [mem_inter_iff]
-    exact and_congr_left fun hx ↦ mem_iff_mem_of_inter_eq hΩU (hWsub hx)
+  have hΩW : (Omega : Set E) ∩ W = (H : Set E) ∩ W :=
+    inter_eq_inter_mono_right hΩU hWsub
+  have hcont : ContinuousOn a U :=
+    continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ (hsmooth i j).continuousOn
   obtain ⟨_, haK⟩ := exists_uniformlyEllipticOn_inter_of_isCompact hW hlam
     (fun x hx ↦ ha x ⟨hx.1, hWU hx.2⟩)
-    ((continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦
-      (hsmooth i j).continuousOn).mono hWU)
+    (hcont.mono hWU)
   have haW := haK.mono_set (inter_subset_inter_right _ subset_closure)
   have huW (v : W1p0 mu (Omega ⊓ W) 2) :
       energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ W) 2) =
@@ -330,8 +326,7 @@ theorem exists_value_eq_value_restrictL_allOrders_of_halfSpace
       closure_mono inter_subset_right
     have hcoeff := memLp_energyIntegrand_of_continuousOn (mu := mu) (b := 0) (c := 0)
       (hW.of_isClosed_subset isClosed_closure hcl)
-      ((continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦
-        (hsmooth i j).continuousOn).mono (hcl.trans hWU))
+      (hcont.mono (hcl.trans hWU))
       continuousOn_const continuousOn_const (Omega := Omega ⊓ W)
     obtain ⟨F, hF⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact
       (mu := mu) (Omega := Omega ⊓ W) (p := 2) 0 U.isOpen (hf.of_le (by simp))
