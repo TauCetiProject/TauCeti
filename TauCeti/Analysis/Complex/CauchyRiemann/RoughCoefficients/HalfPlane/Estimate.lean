@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Estimate
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HalfPlane.Reflection
 import TauCeti.Data.ENNReal.Holder
+import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!

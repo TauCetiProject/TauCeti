@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+import TauCeti.Topology.UniformSpace.Pi
 
 /-!
 # Comparisons of finite product norms and distances
@@ -46,7 +47,9 @@ coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
 Without any finiteness assumption on `ι`, the product topology on `PiLp p β` inherits topological
 additive-group and continuous-constant-scalar-multiplication instances from the fibres.
-Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
+Maps into `PiLp p β` converge uniformly exactly when each coordinate does. A product
+`PiLp p E` of nonempty uniform spaces is complete if and only if every factor `E i` is
+(`PiLp.completeSpace_iff`).
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
 continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
@@ -636,3 +639,20 @@ theorem coe_submodulePiLp_symm_single [DecidableEq ι] (j : ι) (h : ↥(N j)) :
 end SubmodulePiLp
 
 end LinearIsometryEquiv
+
+namespace PiLp
+
+variable {ι : Type*} {E : ι → Type*} (p : ℝ≥0∞) [∀ i, UniformSpace (E i)] [∀ i, Nonempty (E i)]
+
+/-- Each factor of a complete `L^p` product of nonempty uniform spaces is complete. -/
+theorem completeSpace_of_completeSpace [CompleteSpace (PiLp p E)] (i : ι) :
+    CompleteSpace (E i) :=
+  have := (uniformEquiv p E).completeSpace_iff.1 ‹_›
+  .of_pi i
+
+/-- An `L^p` product of nonempty uniform spaces is complete if and only if every factor is
+complete. -/
+theorem completeSpace_iff : CompleteSpace (PiLp p E) ↔ ∀ i, CompleteSpace (E i) :=
+  (uniformEquiv p E).completeSpace_iff.trans completeSpace_pi_iff
+
+end PiLp
