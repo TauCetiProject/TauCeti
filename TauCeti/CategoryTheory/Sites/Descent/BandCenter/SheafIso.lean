@@ -33,14 +33,12 @@ This is the fixed-band comparison in the varying-base step of the Stacks Project
 In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 
 * `centerFromBandingPresheaf`: the natural transformation `A ⟶ (U ↦ Additive ZF(U))` with
-  components `c_b(U)` (the roadmap's `bandCenterFromBandingPresheaf`).
-* `centerFromBandingPresheafIso`: the natural isomorphism extending it (the roadmap's
-  `IntrinsicBandSections.fromBandingPresheafIso`).
+  components `c_b(U)`.
+* `centerFromBandingPresheafIso`: the natural isomorphism extending it.
 * `centerFromBandingSheafIso S h`: for a sheaf `S` with `h : S.obj = (U ↦ Additive ZF(U))`, the
-  isomorphism of sheaves `A ≅ S` lifting it (the roadmap's
-  `IntrinsicBandSections.fromBandingSheafIso`).
-* `bandCenterIso`: the isomorphism `A ≅ IntrinsicBandSections.sheaf F J` (the roadmap's
-  `bandCenterBandUnique`, with uniqueness `bandCenterIso_unique`).
+  isomorphism of sheaves `A ≅ S` lifting it.
+* `bandCenterIso`: the isomorphism `A ≅ IntrinsicBandSections.sheaf F J`, with uniqueness
+  `bandCenterIso_unique`.
 
 ## Main results
 
@@ -80,7 +78,6 @@ variable [∀ U : C, IsGroupoid (F.obj (.mk (op U)))]
 
 /-- The **coefficient transformation** of a banding: the natural transformation from the
 coefficient presheaf `A` to `U ↦ Additive ZF(U)` whose component at `U` is `c_b(U)`. -/
-@[expose]
 noncomputable def centerFromBandingPresheaf : A.obj ⟶ IntrinsicBandSections.presheaf F where
   app U := AddCommGrpCat.ofHom (b.centerFromBanding U.unop).toAdditiveRight
   naturality _ _ f := AddCommGrpCat.ext fun a ↦
@@ -100,27 +97,22 @@ variable [F.IsGerbe J]
 /-! ### The presheaf isomorphism -/
 
 /-- The **presheaf comparison** of a banding: the natural isomorphism from the coefficient presheaf
-`A` to `U ↦ Additive ZF(U)` whose forward map is `centerFromBandingPresheaf`, with inverse
-component at `U` the inverse of `centerFromBandingEquiv U`. -/
-@[expose]
-noncomputable def centerFromBandingPresheafIso : A.obj ≅ IntrinsicBandSections.presheaf F where
-  hom := b.centerFromBandingPresheaf
-  inv :=
-    { app U := AddCommGrpCat.ofHom
-        (MonoidHom.toAdditiveLeft (b.centerFromBandingEquiv U.unop).symm.toMonoidHom)
-      naturality _ _ f := AddCommGrpCat.ext fun z ↦
-        congrArg Multiplicative.toAdd (b.centerFromBandingEquiv_symm_restrict f.unop z.toMul) }
-  hom_inv_id := NatTrans.ext (funext fun U ↦ AddCommGrpCat.ext fun a ↦
-    congrArg Multiplicative.toAdd
-      (b.centerFromBandingEquiv_symm_centerFromBanding U.unop (.ofAdd a)))
-  inv_hom_id := NatTrans.ext (funext fun U ↦ AddCommGrpCat.ext fun z ↦
-    congrArg Additive.ofMul (b.centerFromBanding_centerFromBandingEquiv_symm U.unop z.toMul))
+`A` to `U ↦ Additive ZF(U)` whose component at `U` is `centerFromBandingEquiv U`, so whose forward
+map is `centerFromBandingPresheaf`. -/
+noncomputable def centerFromBandingPresheafIso : A.obj ≅ IntrinsicBandSections.presheaf F :=
+  NatIso.ofComponents
+    (fun U ↦ (MulEquiv.toAdditiveRight (b.centerFromBandingEquiv U.unop)).toAddCommGrpIso)
+    (fun f ↦ AddCommGrpCat.ext fun a ↦ congrArg Additive.ofMul <|
+      (b.centerFromBandingEquiv_apply _ _).trans <|
+        (b.restrict_centerFromBanding f.unop (.ofAdd a)).symm.trans <|
+          congrArg _ (b.centerFromBandingEquiv_apply _ _).symm)
 
 /-- The forward map of `centerFromBandingPresheafIso` is `centerFromBandingPresheaf`. -/
 @[simp]
 theorem centerFromBandingPresheafIso_hom :
     b.centerFromBandingPresheafIso.hom = b.centerFromBandingPresheaf :=
-  (rfl)
+  NatTrans.ext (funext fun U ↦ AddCommGrpCat.ext fun a ↦
+    congrArg Additive.ofMul (b.centerFromBandingEquiv_apply U.unop (.ofAdd a)))
 
 /-- The inverse component of `centerFromBandingPresheafIso` at `U` sends `z` to the coefficient
 `(centerFromBandingEquiv U)⁻¹ z`. -/
@@ -130,14 +122,6 @@ theorem centerFromBandingPresheafIso_inv_app_apply (U : Cᵒᵖ)
     b.centerFromBandingPresheafIso.inv.app U z =
       Multiplicative.toAdd ((b.centerFromBandingEquiv U.unop).symm (Additive.toMul z)) :=
   (rfl)
-
-/-- **The inverse commutes with restriction**: the inverse coefficient of the restriction of `z`
-along `f` is the restriction of the inverse coefficient of `z`. -/
-theorem map_centerFromBandingPresheafIso_inv_app {U V : Cᵒᵖ} (f : U ⟶ V)
-    (z : (IntrinsicBandSections.presheaf F).obj U) :
-    A.obj.map f (b.centerFromBandingPresheafIso.inv.app U z) =
-      b.centerFromBandingPresheafIso.inv.app V ((IntrinsicBandSections.presheaf F).map f z) :=
-  (ConcreteCategory.congr_hom (b.centerFromBandingPresheafIso.inv.naturality f) z).symm
 
 /-! ### The sheaf isomorphism -/
 
@@ -154,8 +138,9 @@ variable (S : Sheaf J AddCommGrpCat.{max u v u' v'}) (h : S.obj = IntrinsicBandS
 /-- The underlying presheaf map of `centerFromBandingSheafIso S h` is `centerFromBandingPresheaf`
 followed by the carrier identification. -/
 theorem centerFromBandingSheafIso_hom :
-    (b.centerFromBandingSheafIso S h).hom.hom = b.centerFromBandingPresheaf ≫ eqToHom h.symm :=
-  (fullyFaithfulSheafToPresheaf J _).map_preimage _
+    (b.centerFromBandingSheafIso S h).hom.hom = b.centerFromBandingPresheaf ≫ eqToHom h.symm := by
+  rw [← centerFromBandingPresheafIso_hom]
+  exact (fullyFaithfulSheafToPresheaf J _).map_preimage _
 
 /-- The underlying presheaf map of the inverse of `centerFromBandingSheafIso S h` is the carrier
 identification followed by the inverse of `centerFromBandingPresheafIso`. -/
@@ -170,8 +155,7 @@ back to `U ↦ Additive ZF(U)` gives `centerFromBandingPresheaf`. -/
 @[simp]
 theorem centerFromBandingSheafIso_hom_transport :
     (b.centerFromBandingSheafIso S h).hom.hom ≫ eqToHom h = b.centerFromBandingPresheaf := by
-  rw [centerFromBandingSheafIso_hom, Category.assoc, eqToHom_trans, eqToHom_refl,
-    Category.comp_id]
+  simp [centerFromBandingSheafIso_hom]
 
 /-- **Transport of the inverse**: transporting the source of the inverse of
 `centerFromBandingSheafIso S h` to `U ↦ Additive ZF(U)` gives the inverse of
@@ -180,8 +164,7 @@ theorem centerFromBandingSheafIso_hom_transport :
 theorem centerFromBandingSheafIso_inv_transport :
     eqToHom h.symm ≫ (b.centerFromBandingSheafIso S h).inv.hom =
       b.centerFromBandingPresheafIso.inv := by
-  rw [centerFromBandingSheafIso_inv, ← Category.assoc, eqToHom_trans, eqToHom_refl,
-    Category.id_comp]
+  simp [centerFromBandingSheafIso_inv]
 
 /-- **Uniqueness of the sheaf comparison.** A sheaf isomorphism `e : A ≅ S` whose value at every
 coefficient `a ∈ A(U)`, read in `U ↦ Additive ZF(U)` through `h`, evaluates at every `f : V ⟶ U`
@@ -193,11 +176,10 @@ theorem centerFromBandingSheafIso_unique (e : A ≅ S)
         b.mulEquiv V x (.ofAdd (A.obj.map f.op a))) :
     e = b.centerFromBandingSheafIso S h := by
   refine Iso.ext (Sheaf.hom_ext ?_)
-  rw [centerFromBandingSheafIso_hom, ← cancel_mono (eqToHom h), Category.assoc, eqToHom_trans,
-    eqToHom_refl, Category.comp_id]
+  rw [← cancel_mono (eqToHom h), centerFromBandingSheafIso_hom_transport]
   refine NatTrans.ext (funext fun U ↦ AddCommGrpCat.ext fun a ↦ ?_)
-  refine congrArg Additive.ofMul (b.eq_centerFromBanding (.ofAdd a) _ fun V f x ↦ ?_)
-  exact he U.unop V f x a
+  rw [centerFromBandingPresheaf_app_apply]
+  exact congrArg Additive.ofMul (b.eq_centerFromBanding (.ofAdd a) _ fun V f x ↦ he U.unop V f x a)
 
 /-! ### The intrinsic central-section sheaf -/
 

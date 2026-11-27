@@ -54,7 +54,7 @@ example {V : C} (f : V ⟶ U.unop) (z : (IntrinsicBandSections.presheaf F).obj U
     A.obj.map f.op (b.centerFromBandingPresheafIso.inv.app U z) =
       b.centerFromBandingPresheafIso.inv.app (op V)
         (Additive.ofMul (restrict f (Additive.toMul z))) :=
-  b.map_centerFromBandingPresheafIso_inv_app f.op z
+  (NatTrans.naturality_apply b.centerFromBandingPresheafIso.inv f.op z).symm
 
 /-- A nonzero coefficient has a nonzero image: the comparison is not the zero transformation. -/
 example (a : A.obj.obj U) (ha : a ≠ 0) : b.centerFromBandingPresheafIso.hom.app U a ≠ 0 := by
@@ -95,8 +95,10 @@ example (b' : F.AbelianBanding J A) {U : C} {x : F.obj (.mk (op U))}
     {a : Multiplicative (A.obj.obj (op U))} (hne : b.mulEquiv U x a ≠ b'.mulEquiv U x a) :
     b.bandCenterIso ≠ b'.bandCenterIso := by
   intro e
-  have := congrArg (fun i : A ≅ IntrinsicBandSections.sheaf F J ↦ i.hom.hom.app (op U) a.toAdd) e
-  simp only [bandCenterIso_hom] at this
+  have he : b.centerFromBandingPresheaf = b'.centerFromBandingPresheaf := by
+    rw [← b.bandCenterIso_hom, ← b'.bandCenterIso_hom, e]
+  have := congrArg (fun φ ↦ φ.app (op U) a.toAdd) he
+  simp only [centerFromBandingPresheaf_app_apply] at this
   exact b.centerFromBanding_ne hne (congrArg Additive.toMul this)
 
 end TauCeti.Examples.BandCenterSheafIso
