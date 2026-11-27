@@ -103,27 +103,32 @@ theorem star_matrix_mul_matrix :
   ext i j
   fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two, star_apply]
 
+/-- The square root of a diagonal matrix with nonnegative entries is computed entry by entry. -/
+private theorem sqrt_diagonal {n : Type*} [Fintype n] [DecidableEq n] {d : n → ℝ} (hd : 0 ≤ d) :
+    CFC.sqrt (diagonal d) = diagonal fun i ↦ √(d i) := by
+  refine CFC.sqrt_unique ?_ (PosSemidef.diagonal fun i ↦ Real.sqrt_nonneg (d i)).nonneg
+  rw [diagonal_mul_diagonal]
+  congr 1
+  ext i
+  exact Real.mul_self_sqrt (hd i)
+
 /-- The left positive factor is `P = √(A Aᵀ) = diag(2, 1/2)`. -/
 theorem sqrt_matrix_mul_star :
     CFC.sqrt ((matrix : Matrix (Fin 2) (Fin 2) ℝ) * star (matrix : Matrix (Fin 2) (Fin 2) ℝ)) =
       diagonal ![2, 1 / 2] := by
-  rw [matrix_mul_star]
-  refine CFC.sqrt_unique ?_ (PosSemidef.diagonal fun i ↦ by fin_cases i <;> norm_num).nonneg
-  rw [diagonal_mul_diagonal]
+  rw [matrix_mul_star, sqrt_diagonal fun i ↦ by fin_cases i <;> norm_num]
   congr 1
   ext i
-  fin_cases i <;> norm_num
+  fin_cases i <;> norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos, inv_eq_iff_eq_inv]
 
 /-- The right positive factor is `√(Aᵀ A) = diag(1/2, 2)`. -/
 theorem sqrt_star_matrix_mul_matrix :
     CFC.sqrt (star (matrix : Matrix (Fin 2) (Fin 2) ℝ) * (matrix : Matrix (Fin 2) (Fin 2) ℝ)) =
       diagonal ![1 / 2, 2] := by
-  rw [star_matrix_mul_matrix]
-  refine CFC.sqrt_unique ?_ (PosSemidef.diagonal fun i ↦ by fin_cases i <;> norm_num).nonneg
-  rw [diagonal_mul_diagonal]
+  rw [star_matrix_mul_matrix, sqrt_diagonal fun i ↦ by fin_cases i <;> norm_num]
   congr 1
   ext i
-  fin_cases i <;> norm_num
+  fin_cases i <;> norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos, inv_eq_iff_eq_inv]
 
 /-- The left polar decomposition `A = P U`, with `P = diag(2, 1/2)` and `U` the rotation. -/
 theorem diagonal_mul_rotation :
@@ -231,13 +236,11 @@ theorem coe_polarDeformation_toGL_matrix_one_half :
         diagonal ![√2, 1 / √2] * (rotation : Matrix (Fin 2) (Fin 2) ℝ) := by
   rw [GeneralLinearGroup.coe_polarDeformation, coe_polarUnitary_toGL_matrix,
     SpecialLinearGroup.coe_GL_coe_matrix, sqrt_matrix_mul_star,
-    show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num, ← CFC.sqrt_eq_rpow]
-  congr 1
-  refine CFC.sqrt_unique ?_ (PosSemidef.diagonal fun i ↦ by fin_cases i <;> norm_num).nonneg
-  rw [diagonal_mul_diagonal]
-  congr 1
+    show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num, ← CFC.sqrt_eq_rpow,
+    sqrt_diagonal fun i ↦ by fin_cases i <;> norm_num]
+  congr 2
   ext i
-  fin_cases i <;> norm_num [← mul_inv]
+  fin_cases i <;> norm_num
 
 /-- At time `1` the polar deformation of `A` is the rotation `U`. -/
 theorem coe_polarDeformation_toGL_matrix_one :
