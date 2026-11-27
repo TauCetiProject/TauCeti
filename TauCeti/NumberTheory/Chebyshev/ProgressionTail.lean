@@ -121,7 +121,7 @@ private theorem sum_log_div_cube_le_sign_classes {s : Finset ℕ} {t : ℕ}
 
 /-- The sum of `log p / p³` over a finite set in the sign classes modulo `4t` is bounded
 by `log t / t³`, with no upper cutoff or primality assumption. -/
-theorem sum_log_div_cube_le_of_mod_eq_sign {s : Finset ℕ} {t : ℕ} (ht : 2 ≤ t)
+theorem sum_log_div_cube_le_of_natCast_eq_one_or_eq_neg_one {s : Finset ℕ} {t : ℕ} (ht : 2 ≤ t)
     (hs : ∀ p ∈ s, (p : ZMod (4 * t)) = 1 ∨ (p : ZMod (4 * t)) = -1) :
     ∑ p ∈ s, Real.log p / (p : ℝ) ^ 3 ≤ Real.log t / (t : ℝ) ^ 3 := by
   have ht' : (2 : ℝ) ≤ t := by exact_mod_cast ht
@@ -138,7 +138,7 @@ theorem sum_log_div_cube_le_of_mod_eq_sign {s : Finset ℕ} {t : ℕ} (ht : 2 �
       (by norm_num)
 
 /-- A multiplier at most `t^(5/2)` is absorbed by the decay of the sign-class sum. -/
-theorem mul_sum_log_div_cube_le_of_mod_eq_sign {s : Finset ℕ} {t : ℕ} {k : ℝ}
+theorem mul_sum_log_div_cube_le_of_natCast_eq_one_or_eq_neg_one {s : Finset ℕ} {t : ℕ} {k : ℝ}
     (hs : ∀ p ∈ s, (p : ZMod (4 * t)) = 1 ∨ (p : ZMod (4 * t)) = -1)
     (hk : k ≤ (t : ℝ) ^ (5 / 2 : ℝ)) : k * (∑ p ∈ s, Real.log p / (p : ℝ) ^ 3) ≤ 2 := by
   by_cases hsmall : t < 2
@@ -155,7 +155,7 @@ theorem mul_sum_log_div_cube_le_of_mod_eq_sign {s : Finset ℕ} {t : ℕ} {k : �
     _ ≤ (t : ℝ) ^ (5 / 2 : ℝ) * (∑ p ∈ s, Real.log p / (p : ℝ) ^ 3) := by gcongr
     _ ≤ (t : ℝ) ^ (5 / 2 : ℝ) * (Real.log t / (t : ℝ) ^ 3) := by
       gcongr
-      exact sum_log_div_cube_le_of_mod_eq_sign ht hs
+      exact sum_log_div_cube_le_of_natCast_eq_one_or_eq_neg_one ht hs
     _ = ((t : ℝ) ^ (5 / 2 : ℝ) * Real.log t) / (t : ℝ) ^ 3 := by ring
     _ ≤ 2 := by
       rw [div_le_iff₀ (pow_pos ht0 3)]
