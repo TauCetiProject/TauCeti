@@ -857,13 +857,16 @@ theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm_of_mem_source [I.Bou
   -- chart at `x` to itself is the identity at `x`.
   have hd : fderiv 𝕜 (f ∘ (extChartAt I a).symm) (extChartAt I a x) =
       fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) ∘L tangentCoordChange I a x x := by
+    have hid : tangentCoordChange I x x x = ContinuousLinearMap.id 𝕜 E :=
+      ContinuousLinearMap.ext fun v ↦ tangentCoordChange_self (mem_extChartAt_source x)
     simp only [← fderivWithin_univ, ← ModelWithCorners.Boundaryless.range_eq_univ (I := I),
       fderivWithin_comp_extChartAt_symm a hx,
       fderivWithin_comp_extChartAt_symm x (mem_extChartAt_source x)]
-    ext v
-    change mfderiv I 𝓘(𝕜, F) f x (tangentCoordChange I a x x v) =
-      mfderiv I 𝓘(𝕜, F) f x (tangentCoordChange I x x x (tangentCoordChange I a x x v))
-    rw [tangentCoordChange_self (mem_extChartAt_source x)]
+    rw [hid]
+    -- `rw [ContinuousLinearMap.comp_id]` fails: the goal composes maps on `TangentSpace` with
+    -- maps on `E`, so `comp_id` is applied as a term instead.
+    exact congrArg (ContinuousLinearMap.comp · (tangentCoordChange I a x x))
+      (ContinuousLinearMap.comp_id (mfderiv I 𝓘(𝕜, F) f x)).symm
   -- The tangent coordinate change from the chart at `a` to the chart at `x` is onto, with right
   -- inverse the change in the other direction.
   have hT : (tangentCoordChange I a x x : E →ₗ[𝕜] E).range = ⊤ :=
