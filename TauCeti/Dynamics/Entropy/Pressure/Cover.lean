@@ -232,14 +232,8 @@ theorem pressureNetSum_le_pressureCoverSum_add_const (hVU : V ⊆ U) {δ : ℝ}
     simp only [birkhoffSum]
     refine Finset.sum_le_sum fun k hk ↦ ?_
     exact hφ _ _ (mem_dynEntourage.1 (hxf x hx) k (Finset.mem_range.1 hk))
-  calc ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T φ n x))
-      ≤ ∑ x ∈ s, ENNReal.ofReal (Real.exp (birkhoffSum T (fun x ↦ φ x + δ) n (f x))) :=
-        Finset.sum_le_sum fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 (hbirk x hx))
-    _ = ∑ y ∈ s.image f, ENNReal.ofReal (Real.exp (birkhoffSum T (fun x ↦ φ x + δ) n y)) :=
-        (Finset.sum_image (f := fun y ↦
-          ENNReal.ofReal (Real.exp (birkhoffSum T (fun x ↦ φ x + δ) n y))) hinj).symm
-    _ ≤ ∑ y ∈ t, ENNReal.ofReal (Real.exp (birkhoffSum T (fun x ↦ φ x + δ) n y)) :=
-        Finset.sum_le_sum_of_subset (Finset.image_subset_iff.2 hft)
+  exact Finset.sum_le_sum_of_injOn f hinj (Finset.image_subset_iff.2 hft)
+    (fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 (hbirk x hx))) fun _ _ _ ↦ zero_le
 
 variable [UniformSpace X]
 
