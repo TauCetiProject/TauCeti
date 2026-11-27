@@ -228,9 +228,11 @@ private theorem bjMulRes_apply_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : Hi
   have hs2c : (s : ℂ) ^ 2 = ((1 + r : ℝ) : ℂ) := by exact_mod_cast hs2
   have hprod : (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ)) =
       ((1 + r + lam k ^ 2 : ℝ) : ℂ) := by
-    rw [show (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ)) =
-      (lam k : ℂ) ^ 2 - Complex.I ^ 2 * (s : ℂ) ^ 2 by ring, Complex.I_sq, hs2c]
-    push_cast; ring
+    calc
+      (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ))
+          = (lam k : ℂ) ^ 2 - Complex.I ^ 2 * (s : ℂ) ^ 2 := by ring
+      _ = (lam k : ℂ) ^ 2 - (-1) * ((1 + r : ℝ) : ℂ) := by rw [Complex.I_sq, hs2c]
+      _ = ((1 + r + lam k ^ 2 : ℝ) : ℂ) := by push_cast; ring
   rw [inv_add_inv hpos1 hpos2, hprod]
   push_cast
   have _ : (1 : ℝ) + r + lam k ^ 2 ≠ 0 := by positivity
@@ -249,11 +251,9 @@ private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRe
     A.analyticOnNhd_resolvent.continuousOn.comp_continuous
       (continuous_const.mul (Complex.continuous_ofReal.comp continuous_bjShift))
       (mem_resolventSet_I_bjShift hA)
-  have hcont_neg : Continuous fun r ↦ A.resolvent (-Complex.I * bjShift r) := by
-    rw [show (fun r ↦ A.resolvent (-Complex.I * bjShift r)) =
-        fun r ↦ ContinuousLinearMap.adjoint (A.resolvent (Complex.I * bjShift r)) from
-      funext fun r ↦ (adjoint_resolvent_I_bjShift hA r).symm]
-    exact ContinuousLinearMap.adjoint.continuous.comp hcont_pos
+  have hcont_neg : Continuous fun r ↦ A.resolvent (-Complex.I * bjShift r) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hcont_pos).congr
+      (adjoint_resolvent_I_bjShift hA)
   exact (continuous_const (y := -(2 : ℂ)⁻¹)).smul (hcont_pos.add hcont_neg)
 
 private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
@@ -342,9 +342,8 @@ private theorem integrableOn_bjKernel (μ : ℝ) : IntegrableOn (bjKernel μ) (I
 
 private theorem integral_bjKernel (μ : ℝ) :
     ∫ r in Ioi (0 : ℝ), bjKernel μ r = ((μ / Real.sqrt (1 + μ ^ 2) : ℝ) : ℂ) := by
-  rw [show (∫ r in Ioi (0 : ℝ), bjKernel μ r) =
-      Complex.ofRealCLM (∫ r in Ioi (0 : ℝ), bjKernelReal μ r) from
-      Complex.ofRealCLM.integral_comp_comm (integrableOn_bjKernelReal μ),
+  simp only [bjKernel]
+  rw [Complex.ofRealCLM.integral_comp_comm (integrableOn_bjKernelReal μ),
     Complex.ofRealCLM_apply]
   congr 1
   simp only [bjKernelReal, integral_const_mul,
