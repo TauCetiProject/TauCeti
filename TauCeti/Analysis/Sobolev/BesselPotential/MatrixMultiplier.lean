@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
@@ -190,14 +191,16 @@ growth, `g f` is the junk value `0`. -/
 theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (hp_top : p ≠ ∞)
     {s : ℝ} {g : E → ℂ}
     (hbd : ∀ n ≤ ⌈|s|⌉₊, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
-    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F g f) :=
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) :
+    MemSobolev s p (TemperedDistribution.smulLeftCLM F g f) :=
   hf.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
     hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top fun n hn ↦ hbd n (hn.trans hk)
 
 /-- **Schwartz multipliers preserve `H^{s,p}`, for every real `s`.** For `1 < p < ∞`,
 multiplication by a Schwartz function maps `H^{s,p}` into itself. -/
 theorem MemSobolev.smulLeftCLM_schwartzMap (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} (ψ : 𝓢(E, ℂ))
-    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F ψ f) :=
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) :
+    MemSobolev s p (TemperedDistribution.smulLeftCLM F ψ f) :=
   hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top
     fun n _ ↦ ⟨_, ψ.norm_iteratedFDeriv_le_seminorm ℝ n⟩
 
@@ -228,7 +231,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- **Multiplication by a Schwartz function** as a bounded operator on `H^{s,p}(E, F)`, for every
 real `s` and `1 < p < ∞` (`TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`, with the
 closed graph theorem). For `p = 2` the same operator, with an explicit norm bound, is
-`BesselPotentialSpace.smulLeftCLM`. -/
+`BesselPotentialSpace.smulLeftCLM`
+(`BesselPotentialSpace.smulLeftCLMOfOneLt_two_eq_smulLeftCLM`). -/
 def smulLeftCLMOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (φ : 𝓢(E, ℂ)) :
     H^{s, p}(E, F) →L[ℂ] H^{s, p}(E, F) :=
   mapCLM (TemperedDistribution.smulLeftCLM F (φ : E → ℂ)) fun u ↦
@@ -240,5 +244,12 @@ theorem toDistr_smulLeftCLMOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (φ : 𝓢(
     (smulLeftCLMOfOneLt hp hp_top φ u).toDistr =
       TemperedDistribution.smulLeftCLM F (φ : E → ℂ) u.toDistr :=
   toDistr_mapCLM _ _ u
+
+/-- For `p = 2`, `BesselPotentialSpace.smulLeftCLMOfOneLt` is `BesselPotentialSpace.smulLeftCLM`:
+both multiply the underlying tempered distribution by `φ`. -/
+theorem smulLeftCLMOfOneLt_two_eq_smulLeftCLM (φ : 𝓢(E, ℂ)) :
+    (smulLeftCLMOfOneLt ENNReal.one_lt_two ENNReal.ofNat_ne_top φ :
+      H^{s, 2}(E, F) →L[ℂ] H^{s, 2}(E, F)) = smulLeftCLM s φ :=
+  ContinuousLinearMap.ext fun _ ↦ ext (by simp)
 
 end BesselPotentialSpace

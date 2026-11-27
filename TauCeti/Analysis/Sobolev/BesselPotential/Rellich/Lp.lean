@@ -269,15 +269,6 @@ end Steps
 
 /-! ### The Rellich theorem -/
 
-/-- For `p = 2`, `BesselPotentialSpace.smulLeftCLMOfOneLt` is `BesselPotentialSpace.smulLeftCLM`:
-both multiply the underlying tempered distribution by `φ`. So the Rellich theorems below
-specialise at `p = 2` to `BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM` and
-`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`. -/
-theorem smulLeftCLMOfOneLt_two_eq_smulLeftCLM [CompleteSpace F] {s : ℝ} (φ : 𝓢(E, ℂ)) :
-    (smulLeftCLMOfOneLt ENNReal.one_lt_two ENNReal.ofNat_ne_top φ :
-      H^{s, 2}(E, F) →L[ℂ] H^{s, 2}(E, F)) = smulLeftCLM s φ :=
-  ContinuousLinearMap.ext fun _ ↦ ext (by simp)
-
 section Rellich
 
 variable [CompleteSpace F] [FiniteDimensional ℂ F]
