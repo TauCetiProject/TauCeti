@@ -556,10 +556,10 @@ theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
     (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
   ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
 
-/-- In a linear order with the order topology and no maximum element, closed intervals
+/-- In a linear order with closed upper rays and no maximum element, closed intervals
 `[f n, g n]` form a locally finite family whenever `f n → +∞`. -/
 theorem locallyFinite_Icc_of_tendsto {K : Type*} [LinearOrder K] [TopologicalSpace K]
-    [OrderTopology K] [NoMaxOrder K] {f g : ℕ → K} (hf : Tendsto f atTop atTop) :
+    [ClosedIciTopology K] [NoMaxOrder K] {f g : ℕ → K} (hf : Tendsto f atTop atTop) :
     LocallyFinite fun n : ℕ ↦ Icc (f n) (g n) := by
   intro t
   obtain ⟨u, hu⟩ := exists_gt t
@@ -569,11 +569,10 @@ theorem locallyFinite_Icc_of_tendsto {K : Type*} [LinearOrder K] [TopologicalSpa
   by_contra! hNn
   exact not_le_of_gt (hxu.trans_le (hN n hNn).le) hx.1
 
-/-- For `τ > 0` in an Archimedean linearly ordered cancellative additive monoid with the order
-topology, the closed grid intervals `[n • τ, (n + 1) • τ]` (`n : ℕ`) form a locally finite
-family. -/
+/-- For `τ > 0` in an Archimedean linearly ordered cancellative additive monoid with closed upper
+rays, the closed grid intervals `[n • τ, (n + 1) • τ]` (`n : ℕ`) form a locally finite family. -/
 theorem locallyFinite_Icc_nsmul {K : Type*} [AddCommMonoid K] [LinearOrder K]
-    [IsOrderedCancelAddMonoid K] [TopologicalSpace K] [OrderTopology K] [Archimedean K]
+    [IsOrderedCancelAddMonoid K] [TopologicalSpace K] [ClosedIciTopology K] [Archimedean K]
     {τ : K} (hτ : 0 < τ) :
     LocallyFinite fun n : ℕ ↦ Icc (n • τ) ((n + 1) • τ) := by
   have : NoMaxOrder K := ⟨fun x ↦ ⟨x + τ, lt_add_of_pos_right x hτ⟩⟩
@@ -581,10 +580,10 @@ theorem locallyFinite_Icc_nsmul {K : Type*} [AddCommMonoid K] [LinearOrder K]
   obtain ⟨n, hn⟩ := Archimedean.arch b hτ
   exact ⟨n, fun m hm ↦ hn.trans (nsmul_le_nsmul_left hτ.le hm)⟩
 
-/-- For `τ > 0` in an Archimedean ordered semiring with the order topology, the closed grid
+/-- For `τ > 0` in an Archimedean ordered semiring with closed upper rays, the closed grid
 intervals `[n τ, (n + 1) τ]` (`n : ℕ`) form a locally finite family. -/
 theorem locallyFinite_Icc_natCast_mul {K : Type*} [Semiring K] [LinearOrder K]
-    [IsStrictOrderedRing K] [TopologicalSpace K] [OrderTopology K] [Archimedean K]
+    [IsStrictOrderedRing K] [TopologicalSpace K] [ClosedIciTopology K] [Archimedean K]
     {τ : K} (hτ : 0 < τ) :
     LocallyFinite fun n : ℕ ↦ Icc ((n : K) * τ) (((n : K) + 1) * τ) := by
   simpa only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one] using locallyFinite_Icc_nsmul hτ

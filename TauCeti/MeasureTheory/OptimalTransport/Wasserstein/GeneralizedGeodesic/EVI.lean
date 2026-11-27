@@ -83,18 +83,19 @@ private lemma exists_moreauYosida_ne_bot_and_penalizedConvex
 `φ : WassersteinSpace 2 E → EReal` be lower semicontinuous, `lam`-convex along generalized
 geodesics based at every law of `P₂(E)`, and never equal to `⊥`. Then for every
 `μ₀ ∈ closure {μ | φ μ ≠ ⊤}`, there starts from `μ₀` an `EVI_λ` flow `u` (`u 0 = μ₀`) such that
-for all positive step sizes `τ j → 0` and all JKO sequences `J j` whose initial laws converge to
-`μ₀` in `W₂`, the piecewise constant interpolants `t ↦ J j ⌈t / τ j⌉₊` converge uniformly to `u`
-on `[0, T]` for every `T : ℝ` (without requiring bounded initial energy). -/
+for any family `(τ, J)` indexed along a filter `l` with eventually positive step sizes `τ j → 0`
+and eventually JKO sequences `J j` whose initial laws converge to `μ₀` in `W₂`, the piecewise
+constant interpolants `t ↦ J j ⌈t / τ j⌉₊` converge uniformly to `u` on `[0, T]` for every `T : ℝ`
+(without requiring bounded initial energy). -/
 theorem exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent
     (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
     (hbot : ∀ ν, φ ν ≠ ⊥) {μ₀ : WassersteinSpace 2 E} (hμ₀ : μ₀ ∈ closure {μ | φ μ ≠ ⊤}) :
     ∃ u : ℝ → WassersteinSpace 2 E, u 0 = μ₀ ∧ IsEVISolution lam φ u ∧
-      ∀ (τ : ℕ → ℝ≥0) (J : ℕ → ℕ → WassersteinSpace 2 E), (∀ᶠ j in atTop, 0 < τ j) →
-        Tendsto τ atTop (𝓝 0) → Tendsto (fun j ↦ J j 0) atTop (𝓝 μ₀) →
-        (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
+      ∀ {ι : Type*} {l : Filter ι} (τ : ι → ℝ≥0) (J : ι → ℕ → WassersteinSpace 2 E),
+        (∀ᶠ j in l, 0 < τ j) → Tendsto τ l (𝓝 0) → Tendsto (fun j ↦ J j 0) l (𝓝 μ₀) →
+        (∀ᶠ j in l, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
         ∀ T : ℝ, TendstoUniformlyOn
-          (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
+          (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u l (Icc 0 T) := by
   obtain ⟨μ₁, hμ₁, -⟩ := Metric.mem_closure_iff.1 hμ₀ 1 one_pos
   obtain ⟨τ₀, hτ₀, h₀, hpen⟩ :=
     exists_moreauYosida_ne_bot_and_penalizedConvex hφ hconv hμ₁ (hbot μ₁)
@@ -108,8 +109,9 @@ theorem eviDomain_eq_closure_of_generalizedGeodesicallyConvex
     (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
     (hbot : ∀ ν, φ ν ≠ ⊥) : eviDomain lam φ = closure {μ | φ μ ≠ ⊤} :=
   eviDomain_eq_closure_of_subset hφ fun _ hμ ↦
-    let ⟨u, hu0, hu, _⟩ := exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent hφ hconv
-      hbot (subset_closure hμ)
+    let ⟨u, hu0, hu, _⟩ :=
+      exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent.{_, 0} hφ hconv hbot
+        (subset_closure hμ)
     mem_eviDomain.2 ⟨u, hu, hu0⟩
 
 /-- **Existence of Wasserstein `EVI_λ` flows on `closure {μ | φ μ ≠ ⊤}`**

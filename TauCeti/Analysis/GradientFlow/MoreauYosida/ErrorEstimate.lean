@@ -143,7 +143,8 @@ private def halfDistSq {X : Type*} [PseudoMetricSpace X] (U V : ℕ → X) (n k 
   dist (U n) (V k) ^ 2 / 2
 
 /-- Pointwise differential inequality for the diagonal bilinear interpolant of `d(U n, V k)² / 2`
-along two minimizing movement sequences. -/
+along two minimizing movement sequences, returning the right-hand derivative witness together with
+its bound. -/
 private theorem bilin_deriv_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X] {m : ℝ}
     {τ η : ℝ≥0} {φ : X → EReal} (hτc : PenalizedConvex m τ φ) (hηc : PenalizedConvex m η φ)
     (hτ : 0 < τ) (hη : 0 < η) (hmτ : (-m) * τ ≤ 1 / 2) (hmη : (-m) * η ≤ 1 / 2)
@@ -151,17 +152,9 @@ private theorem bilin_deriv_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace
     (hV : ∀ k, V (k + 1) ∈ moreauYosidaResolvent φ η (V k))
     {eU eV : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) (heV : ∀ k, φ (V k) = eV k)
     {t : ℝ} (ht : 0 ≤ t) :
-    (stepWeight η ⌊t / η⌋₊ t / τ) •
-        (halfDistSq U V (⌊t / τ⌋₊ + 1) ⌊t / η⌋₊ - halfDistSq U V ⌊t / τ⌋₊ ⌊t / η⌋₊) +
-      ((1 - stepWeight η ⌊t / η⌋₊ t) / τ) •
-        (halfDistSq U V (⌊t / τ⌋₊ + 1) (⌊t / η⌋₊ + 1) -
-          halfDistSq U V ⌊t / τ⌋₊ (⌊t / η⌋₊ + 1)) +
-      (stepWeight τ ⌊t / τ⌋₊ t / η) •
-        (halfDistSq U V ⌊t / τ⌋₊ (⌊t / η⌋₊ + 1) - halfDistSq U V ⌊t / τ⌋₊ ⌊t / η⌋₊) +
-      ((1 - stepWeight τ ⌊t / τ⌋₊ t) / η) •
-        (halfDistSq U V (⌊t / τ⌋₊ + 1) (⌊t / η⌋₊ + 1) -
-          halfDistSq U V (⌊t / τ⌋₊ + 1) ⌊t / η⌋₊) ≤
-      twoStepRate m τ η * gridBilinearInterpolant τ η (halfDistSq U V) t t +
+    ∃ dB : ℝ, HasDerivWithinAt (fun r ↦ gridBilinearInterpolant τ η (halfDistSq U V) r r)
+      dB (Ici t) t ∧
+      dB ≤ twoStepRate m τ η * gridBilinearInterpolant τ η (halfDistSq U V) t t +
         stepWeight τ ⌊t / τ⌋₊ t * (eU ⌊t / τ⌋₊ - eU (⌊t / τ⌋₊ + 1)) +
         stepWeight η ⌊t / η⌋₊ t * (eV ⌊t / η⌋₊ - eV (⌊t / η⌋₊ + 1)) := by
   set n := ⌊t / (τ : ℝ)⌋₊; set k := ⌊t / (η : ℝ)⌋₊
@@ -171,6 +164,8 @@ private theorem bilin_deriv_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace
   have hs3 := mul_half_dist_sq_sub_le (V k) (V (k + 1)) (U n) hη hmη hβ
   have hs4 := mul_half_dist_sq_sub_le (V k) (V (k + 1)) (U (n + 1)) hη hmη hβ
   simp only [dist_comm (V _) (U _)] at hVn hVn1 hs3 hs4
+  refine ⟨_, hasDerivWithinAt_gridBilinearInterpolant_diag (NNReal.coe_pos.2 hτ)
+    (NNReal.coe_pos.2 hη) (halfDistSq U V) ht, ?_⟩
   rw [gridBilinearInterpolant_apply]; simp only [smul_eq_mul, div_mul_eq_mul_div]
   dsimp only [twoStepRate, halfDistSq]
   exact bilin_deriv_algebraic_le (by positivity) (by positivity) (by positivity) (by positivity)
@@ -197,10 +192,9 @@ private theorem exists_hasDerivWithinAt_exp_bilinInterp_sub {X : Type*} [PseudoM
   set K := twoStepRate m τ η; have hK0 : 0 ≤ K := le_max_left _ _
   have hexp : HasDerivWithinAt (fun r ↦ exp (-K * r)) (-K * exp (-K * s)) (Ici s) s :=
     (((hasDerivAt_id' s).const_mul (-K)).exp).hasDerivWithinAt.congr_deriv (by ring)
-  refine ⟨_, ?_, ((hexp.mul (hasDerivWithinAt_gridBilinearInterpolant_diag hτ hη
-    (halfDistSq U V) hs)).sub (hasDerivWithinAt_stepWeightDiffPrimitive hτ eU hs)).sub
+  obtain ⟨dB, hdB, hbd⟩ := bilin_deriv_le_of_penalizedConvex hτc hηc hτ hη hmτ hmη hU hV heU heV hs
+  refine ⟨_, ?_, ((hexp.mul hdB).sub (hasDerivWithinAt_stepWeightDiffPrimitive hτ eU hs)).sub
     (hasDerivWithinAt_stepWeightDiffPrimitive hη eV hs)⟩
-  have hbd := bilin_deriv_le_of_penalizedConvex hτc hηc hτ hη hmτ hmη hU hV heU heV hs
   have hpU : 0 ≤ stepWeight τ ⌊s / τ⌋₊ s * (eU ⌊s / τ⌋₊ - eU (⌊s / τ⌋₊ + 1)) :=
     mul_nonneg (stepWeight_floor_mem_Icc hτ hs).1 (sub_nonneg.2 (hantiU (Nat.le_succ _)))
   have hpV : 0 ≤ stepWeight η ⌊s / η⌋₊ s * (eV ⌊s / η⌋₊ - eV (⌊s / η⌋₊ + 1)) :=
@@ -255,6 +249,15 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
         dist (U 0) (V 0) ^ 2 / 2 + ((τ : ℝ) / 2) * (eU 0 - eU (⌊t / τ⌋₊ + 1)) +
           ((η : ℝ) / 2) * (eV 0 - eV (⌊t / η⌋₊ + 1))) (by positivity : 0 ≤ 2 * exp (K * t))
   rw [← mul_assoc, mul_assoc 2, hcan, mul_one] at hmul; exact hmul.trans_eq (by ring)
+
+/-- For any `x` in a floor semiring and `i ∈ {⌊x⌋₊, ⌊x⌋₊ + 1}`, the distance between `W ⌈x⌉₊`
+and `W i` is at most the step distance `dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1))`. -/
+private theorem dist_ceil_le_dist_floor_add_one {X R : Type*} [PseudoMetricSpace X] [Semiring R]
+    [LinearOrder R] [FloorSemiring R] (W : ℕ → X) (x : R) {i : ℕ}
+    (hi : i = ⌊x⌋₊ ∨ i = ⌊x⌋₊ + 1) :
+    dist (W ⌈x⌉₊) (W i) ≤ dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1)) := by
+  rcases ceil_eq_floor_or_add_one x with hc | hc <;>
+    rcases hi with rfl | rfl <;> simp [hc, dist_comm]
 
 /-- **Quantitative two-step error bound for minimizing movements.** Under
 `TauCeti.PenalizedConvex m τ φ` and `TauCeti.PenalizedConvex m η φ` with `(-m) * τ ≤ 1 / 2` and

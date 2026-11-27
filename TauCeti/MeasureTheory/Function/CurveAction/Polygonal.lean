@@ -46,8 +46,8 @@ measures.
 * `TauCeti.polygonalInterpolation_eq_of_mem_Icc`: the affine formula on each cell.
 * `TauCeti.polygonalInterpolation_apply_grid`: the interpolation passes through `x k` at time
   `a + k * h`.
-* `TauCeti.polygonalInterpolation_zero_eq_gridLinearInterpolant`: agreement with
-  `TauCeti.gridLinearInterpolant` on `[0, N * h]`.
+* `TauCeti.polygonalInterpolation_eq_gridLinearInterpolant`: agreement with
+  `TauCeti.gridLinearInterpolant` on `[a, a + N * h]`.
 * `TauCeti.continuous_polygonalInterpolation`: joint continuity in the points and the time.
 * `TauCeti.exists_continuousMap_IccExtend_eqOn_polygonalInterpolation`: the polygonal paths
   through sequences are the values of a continuous map into `C(Icc a b, E)`.
@@ -153,21 +153,26 @@ theorem polygonalInterpolation_apply_grid (x : ℕ → E) (hh : 0 < h) (hk : k �
       _ ≤ |(k : ℝ) - j| * h := mul_le_mul_of_nonneg_right hkj hh.le
       _ = |a + k * h - (a + j * h)| := by rw [hdiff, abs_mul, abs_of_pos hh]
 
-/-- **Agreement with `gridLinearInterpolant`.** On `[0, N * h]` with `0 < h`, the polygonal
-interpolation from `0` coincides with `TauCeti.gridLinearInterpolant h x`. -/
-theorem polygonalInterpolation_zero_eq_gridLinearInterpolant (x : ℕ → E) (hh : 0 < h)
-    (ht : t ∈ Icc 0 ((N : ℝ) * h)) :
-    polygonalInterpolation 0 h N x t = gridLinearInterpolant h x t := by
-  rcases ht.2.eq_or_lt with rfl | hlt
-  · rw [← zero_add ((N : ℝ) * h), polygonalInterpolation_apply_grid x hh le_rfl,
+/-- **Agreement with `gridLinearInterpolant`.** On `[a, a + N * h]` with `0 < h`, the polygonal
+interpolation from `a` coincides with `t ↦ TauCeti.gridLinearInterpolant h x (t - a)`. -/
+theorem polygonalInterpolation_eq_gridLinearInterpolant (x : ℕ → E) (hh : 0 < h)
+    (ht : t ∈ Icc a (a + (N : ℝ) * h)) :
+    polygonalInterpolation a h N x t = gridLinearInterpolant h x (t - a) := by
+  have hshift : polygonalInterpolation a h N x t = polygonalInterpolation 0 h N x (t - a) := by
+    simp [polygonalInterpolation_def, sub_add_eq_sub_sub]
+  rw [hshift]
+  have ht0 : t - a ∈ Icc 0 ((N : ℝ) * h) := ⟨sub_nonneg.2 ht.1, sub_le_iff_le_add'.2 ht.2⟩
+  rcases ht0.2.eq_or_lt with h_eq | hlt
+  · rw [h_eq, ← zero_add ((N : ℝ) * h), polygonalInterpolation_apply_grid x hh le_rfl,
       zero_add, gridLinearInterpolant_natCast_mul hh.ne']
-  · have hN : N ≠ 0 := by rintro rfl; simp only [Nat.cast_zero, zero_mul] at hlt; linarith [ht.1]
-    have hk : ⌊t / h⌋₊ < N := (Nat.floor_lt' hN).2 ((div_lt_iff₀ hh).2 hlt)
-    have hmem : t ∈ Icc ((⌊t / h⌋₊ : ℝ) * h) (((⌊t / h⌋₊ : ℝ) + 1) * h) :=
-      Ico_subset_Icc_self (mem_Ico_floor_div_mul hh ht.1)
+  · have hN : N ≠ 0 := by rintro rfl; simp only [Nat.cast_zero, zero_mul] at hlt; linarith [ht0.1]
+    have hk : ⌊(t - a) / h⌋₊ < N := (Nat.floor_lt' hN).2 ((div_lt_iff₀ hh).2 hlt)
+    have hmem : t - a ∈ Icc ((⌊(t - a) / h⌋₊ : ℝ) * h) (((⌊(t - a) / h⌋₊ : ℝ) + 1) * h) :=
+      Ico_subset_Icc_self (mem_Ico_floor_div_mul hh ht0.1)
     rw [polygonalInterpolation_eq_of_mem_Icc x hh hk (by simpa only [zero_add] using hmem),
-      gridLinearInterpolant_eq_of_mem_Icc hh x ⌊t / h⌋₊ hmem, zero_add, stepWeight_def]
-    have hw : (((⌊t / h⌋₊ : ℝ) + 1) * h - t) / h = 1 - (t - (⌊t / h⌋₊ : ℝ) * h) / h := by
+      gridLinearInterpolant_eq_of_mem_Icc hh x ⌊(t - a) / h⌋₊ hmem, zero_add, stepWeight_def]
+    have hw : (((⌊(t - a) / h⌋₊ : ℝ) + 1) * h - (t - a)) / h =
+        1 - (t - a - (⌊(t - a) / h⌋₊ : ℝ) * h) / h := by
       have : h ≠ 0 := hh.ne'
       field_simp
       ring

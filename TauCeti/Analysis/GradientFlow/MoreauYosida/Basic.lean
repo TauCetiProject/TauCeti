@@ -39,6 +39,8 @@ take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, 
 
 ## Main results
 
+* `TauCeti.moreauYosida_ne_top_of_ne_top`: `φ_τ(x) ≠ ⊤` whenever `τ > 0` and `φ y ≠ ⊤` at some
+  point `y` at finite distance from `x`.
 * `TauCeti.moreauYosida_eq_top_of_forall_eq_top` and
   `TauCeti.self_mem_moreauYosidaResolvent_of_eq_top`: when `φ = ⊤` at finite distance from `x`,
   `φ_τ(x) = ⊤` and `x ∈ J_τ x`.
@@ -103,6 +105,14 @@ theorem moreauYosida_le (φ : X → EReal) (τ : ℝ≥0) {x y : X} (h : edist x
 at finite distance from `x`: a coercive energy never takes the value `⊥` there. -/
 theorem apply_ne_bot_of_moreauYosida_ne_bot (h : edist x y ≠ ⊤) (h₀ : moreauYosida φ τ x ≠ ⊥) :
     φ y ≠ ⊥ := fun hy ↦ h₀ (le_bot_iff.1 (by simpa [hy] using moreauYosida_le φ τ h))
+
+/-- If `φ y ≠ ⊤` at some point `y` at finite distance from `x` and `τ > 0`, then `φ_τ(x) ≠ ⊤`. -/
+theorem moreauYosida_ne_top_of_ne_top (hτ : 0 < τ) (h : edist x y ≠ ⊤) (hy : φ y ≠ ⊤) :
+    moreauYosida φ τ x ≠ ⊤ :=
+  ne_top_of_le_ne_top
+    (EReal.add_ne_top hy (EReal.coe_ennreal_eq_top_iff.not.2
+      (ENNReal.div_ne_top (ENNReal.pow_ne_top h) (by simp [hτ.ne']))))
+    (moreauYosida_le φ τ h)
 
 /-- A lower bound for the Moreau–Yosida approximation is a lower bound for the penalized energy
 at every point at finite distance from `x`. -/

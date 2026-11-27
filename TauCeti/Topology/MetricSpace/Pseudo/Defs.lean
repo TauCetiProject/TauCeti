@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
-import TauCeti.Algebra.Order.Floor.Semifield
 
 /-!
 # Spheres and balls in pseudo-metric spaces
@@ -34,9 +32,7 @@ On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
 (`Real.edist_eq_ofReal_sub_of_le`).
 
 The squared distance `dist · z ^ 2` satisfies the one-sided perturbation bound
-`TauCeti.dist_sq_sub_le` and two-sided bound `TauCeti.abs_dist_sq_sub_le`, and indexing a
-sequence at `⌈x⌉₊` stays within one step `dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1))` of its floor or next
-index (`TauCeti.dist_ceil_le_dist_floor_add_one`).
+`TauCeti.dist_sq_sub_le` and two-sided bound `TauCeti.abs_dist_sq_sub_le`.
 
 In a Hausdorff pseudometric space, if `f → a` and `g → b` along a nontrivial filter `l` with
 `dist (g z) (f z) ≤ dist (f z) a` eventually, then `a = b`
@@ -131,15 +127,6 @@ theorem abs_dist_sq_sub_le {X : Type*} [PseudoMetricSpace X] (x y z : X) :
     _ ≤ dist x y * (2 * dist x z + dist x y) :=
         mul_le_mul h1 h2 (add_nonneg dist_nonneg dist_nonneg) dist_nonneg
     _ = 2 * dist x z * dist x y + dist x y ^ 2 := by ring
-
-/-- For any `x` in a floor semiring and `i ∈ {⌊x⌋₊, ⌊x⌋₊ + 1}`, the distance between `W ⌈x⌉₊`
-and `W i` is at most the step distance `dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1))`. -/
-theorem dist_ceil_le_dist_floor_add_one {X R : Type*} [PseudoMetricSpace X] [Semiring R]
-    [LinearOrder R] [FloorSemiring R] (W : ℕ → X) (x : R) {i : ℕ}
-    (hi : i = ⌊x⌋₊ ∨ i = ⌊x⌋₊ + 1) :
-    dist (W ⌈x⌉₊) (W i) ≤ dist (W ⌊x⌋₊) (W (⌊x⌋₊ + 1)) := by
-  rcases ceil_eq_floor_or_add_one x with hc | hc <;>
-    rcases hi with rfl | rfl <;> simp [hc, dist_comm]
 
 end TauCeti
 

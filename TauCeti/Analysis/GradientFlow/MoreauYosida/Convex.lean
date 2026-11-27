@@ -197,22 +197,27 @@ theorem ConvexWithDistSq.mono (h : ConvexWithDistSq m φ) (hm : m' ≤ m) :
     ConvexWithDistSq m' φ := fun w _ _ h₀ h₁ ↦
   (h w h₀ h₁).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.1, hγ.2.2.1.mono hm, hγ.2.2.2⟩
 
+/-- Scaling `2`-convexity of `z ↦ d(z, w)²` by `1 / (2τ)` gives `τ⁻¹`-convexity of the
+Moreau–Yosida penalty `z ↦ d(w, z)² / (2τ)`. -/
+private lemma convexAlong_dist_sq_div {w : X} {τ : ℝ≥0} {γ : ℝ → X}
+    (hdγ : ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ) :
+    ConvexAlong (τ : ℝ)⁻¹ (fun z ↦ ((dist w z ^ 2 / (2 * τ) : ℝ) : EReal)) γ := by
+  have hscaled := hdγ.const_mul (c := 1 / (2 * (τ : ℝ))) (by positivity)
+  have hm : (1 / (2 * (τ : ℝ))) * 2 = (τ : ℝ)⁻¹ := by
+    rw [one_div, mul_inv_rev, mul_assoc, inv_mul_cancel₀ two_ne_zero, mul_one]
+  have hf : (fun z ↦ (((1 / (2 * (τ : ℝ))) : ℝ) : EReal) * ((dist z w ^ 2 : ℝ) : EReal)) =
+      (fun z ↦ ((dist w z ^ 2 / (2 * τ) : ℝ) : EReal)) := by
+    funext z; rw [← EReal.coe_mul, dist_comm]; congr 1; ring
+  rwa [hm, hf] at hscaled
+
 /-- **Penalized convexity from joint pointwise convexity of the energy and squared distance**
 (Ambrosio–Gigli, Assumption 3.24). An energy satisfying `ConvexWithDistSq m φ` (no continuity of
 the interpolating maps is required) is penalized convex with parameter `m` for every time step
 `τ`. -/
 theorem ConvexWithDistSq.penalizedConvex (h : ConvexWithDistSq m φ) :
-    PenalizedConvex m τ φ := by
-  intro w v₀ v₁ h₀ h₁
-  obtain ⟨γ, hγ0, hγ1, hφγ, hdγ⟩ := h w h₀ h₁
-  refine ⟨γ, hγ0, hγ1, ?_⟩
-  have hd := hdγ.const_mul (c := 1 / (2 * τ)) (by positivity)
-  convert hφγ.add hd using 1
-  · ring
-  · funext z
-    rw [Pi.add_apply, ← EReal.coe_mul, dist_comm]
-    congr 2
-    ring
+    PenalizedConvex m τ φ := fun w _ _ h₀ h₁ ↦
+  let ⟨γ, hγ0, hγ1, hφγ, hdγ⟩ := h w h₀ h₁
+  ⟨γ, hγ0, hγ1, hφγ.add (convexAlong_dist_sq_div hdγ)⟩
 
 /-- On a CAT(0) space, an `m`-geodesically convex energy satisfies `ConvexWithDistSq m φ` along
 its witnessing geodesics: the squared distance from any base point is `2`-convex along every
@@ -593,20 +598,13 @@ private lemma moreauYosida_ne_bot_of_convexAlong_dist_sq_at {z₀ : X}
     (hmτ : 0 < 1 + m * τ) (x : X) :
     moreauYosida φ τ x ≠ ⊥ := by
   refine moreauYosida_ne_bot_of_lowerSemicontinuousAt (x₁ := z₀) hz₀ hz₀top hz₀bot hmτ
-    (fun {σ} hσ _ z hz ↦ ?_) x
+    (fun {σ} _ _ z hz ↦ ?_) x
   obtain ⟨γ, h0, h1, hφγ, hdγ⟩ := hconv hz
   have hd_mul : ∀ t ∈ Icc (0 : ℝ) 1, dist z₀ (γ t) ≤ t * dist z₀ z := fun t ht ↦ by
     have hd0 : ConvexAlong 2 (fun z ↦ ((dist z (γ 0) ^ 2 : ℝ) : EReal)) γ := by
       simpa only [h0] using hdγ
     simpa only [h0, h1] using hd0.dist_le_mul ht
-  have hd : ConvexAlong (σ : ℝ)⁻¹ (fun y ↦ ((dist z₀ y ^ 2 / (2 * σ) : ℝ) : EReal)) γ := by
-    have hscaled := hdγ.const_mul (c := 1 / (2 * (σ : ℝ))) (by positivity)
-    have hm : (1 / (2 * (σ : ℝ))) * 2 = (σ : ℝ)⁻¹ := by field_simp
-    have hf : (fun x ↦ (((1 / (2 * (σ : ℝ))) : ℝ) : EReal) * ((dist x z₀ ^ 2 : ℝ) : EReal)) =
-        (fun y ↦ ((dist z₀ y ^ 2 / (2 * σ) : ℝ) : EReal)) := by
-      funext y; rw [← EReal.coe_mul, dist_comm]; congr 1; ring
-    rwa [hm, hf] at hscaled
-  have hΨ := convexAlong_def.1 (hφγ.add hd)
+  have hΨ := convexAlong_def.1 (hφγ.add (convexAlong_dist_sq_div (τ := σ) hdγ))
   refine ⟨dist z₀ z, fun t ht ↦ ⟨γ t, ⟨hd_mul t ht, ?_⟩⟩⟩
   simpa only [h0, h1, Pi.add_apply] using hΨ t ht
 
