@@ -153,8 +153,8 @@ theorem toLp_insertNth_mem_coordinateBox_iff {a b : Fin (n + 1) → ℝ} (i : Fi
     (t : ℝ) (y : Fin n → ℝ) :
     (WithLp.toLp 2 (i.insertNth t y) : EuclideanSpace ℝ (Fin (n + 1))) ∈ coordinateBox a b ↔
       t ∈ Icc (a i) (b i) ∧ y ∈ Icc (fun k ↦ a (i.succAbove k)) (fun k ↦ b (i.succAbove k)) := by
-  rw [coordinateBox_eq_preimage_Icc, mem_preimage, ← Fin.insertNth_mem_Icc]
-  rfl
+  rw [coordinateBox_eq_preimage_Icc, mem_preimage, PiLp.coe_continuousLinearEquiv,
+    WithLp.ofLp_toLp, Fin.insertNth_mem_Icc]
 
 /-- A closed coordinate box is compact. -/
 theorem isCompact_coordinateBox (a b : Fin n → ℝ) : IsCompact (coordinateBox a b) := by
