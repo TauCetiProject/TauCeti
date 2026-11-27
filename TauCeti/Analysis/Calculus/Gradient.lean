@@ -52,8 +52,8 @@ chain rule for the gradient of a real profile composed with a real function.
   the gradient.
 * `TauCeti.hasGradientAt_inner_const_left` and `TauCeti.gradient_inner_const_left`: the functional
   `y ↦ ⟪v, y⟫_𝕜` has gradient `v`.
-* `TauCeti.gradient_euclideanSpace_apply`: on `EuclideanSpace 𝕜 ι`, the coordinate `y ↦ y i` has
-  gradient `eᵢ`.
+* `TauCeti.hasGradientAt_euclideanSpace_apply` and `TauCeti.gradient_euclideanSpace_apply`: on
+  `EuclideanSpace 𝕜 ι`, the coordinate `y ↦ y i` has gradient `eᵢ`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
@@ -165,14 +165,23 @@ theorem gradient_inner_const_left (v x : F) :
 
 /-- On `EuclideanSpace 𝕜 ι`, the coordinate function `y ↦ y i` has gradient `eᵢ` at every point
 `x`. -/
-theorem gradient_euclideanSpace_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
+theorem hasGradientAt_euclideanSpace_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
     (x : EuclideanSpace 𝕜 ι) :
-    ∇ (fun y : EuclideanSpace 𝕜 ι => y i) x = EuclideanSpace.single i 1 := by
+    HasGradientAt (fun y : EuclideanSpace 𝕜 ι => y i) (EuclideanSpace.single i 1) x := by
   have hcoord : (fun y : EuclideanSpace 𝕜 ι => y i) =
       fun y => inner 𝕜 (EuclideanSpace.single i (1 : 𝕜)) y := by
     funext y
     simp [EuclideanSpace.inner_single_left]
-  rw [hcoord, gradient_inner_const_left]
+  rw [hcoord]
+  exact hasGradientAt_inner_const_left _ x
+
+/-- On `EuclideanSpace 𝕜 ι`, the coordinate function `y ↦ y i` has gradient `eᵢ` at every point
+`x`. -/
+@[simp]
+theorem gradient_euclideanSpace_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
+    (x : EuclideanSpace 𝕜 ι) :
+    ∇ (fun y : EuclideanSpace 𝕜 ι => y i) x = EuclideanSpace.single i 1 :=
+  (hasGradientAt_euclideanSpace_apply i x).gradient
 
 /-- The gradient is conjugate-homogeneous: `toDual` is conjugate-linear, so scaling the function
 by `c` scales the gradient by `conj c`. Over `ℝ` the conjugation is the identity. -/
