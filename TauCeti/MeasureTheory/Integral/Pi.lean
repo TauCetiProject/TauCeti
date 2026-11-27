@@ -58,7 +58,7 @@ summing these bounds controls the difference of the product integrals.
   integral of `∏ i, g (x i)` over the half-space `∑ i, x i ≤ s`, by the `card ι`-th power of the
   one-dimensional integral of `exp (-(l * x)) * g x`.
 * `TauCeti.norm_integral_pi_sub_integral_pi_le_of_eq_off` and
-  `TauCeti.norm_integral_pi_sub_integral_pi_le_of_splitAt`: bounds for replacing one coordinate
+  `TauCeti.norm_integral_pi_sub_integral_pi_le_of_ae_slice_le`: bounds for replacing one coordinate
   or all coordinates of a product measure.
 * `TauCeti.integral_pi_comp_perm`: a function invariant under a permutation of the coordinates
   has the same integral under the product measure and under the product of the permuted factors.
@@ -348,17 +348,18 @@ variable {ι E : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)] [NormedAddCommGroup E] [NormedSpace ℝ E] {f : (∀ i, α i) → E}
 
 /-- When two finite product laws differ only in one coordinate and their common background
-is a probability measure, an almost-everywhere bound on the difference of the two slice
-integrals bounds the difference of the product integrals. -/
+has finite mass, an almost-everywhere bound on the difference of the two slice integrals,
+multiplied by the background mass, bounds the difference of the product integrals. -/
 theorem norm_integral_pi_sub_integral_pi_le_of_eq_off
     (μ ν : ∀ j, Measure (α j)) [∀ j, SigmaFinite (μ j)] [∀ j, SigmaFinite (ν j)]
-    (i : ι) [IsProbabilityMeasure (Measure.pi fun j : {j // j ≠ i} ↦ μ j)]
+    (i : ι) [IsFiniteMeasure (Measure.pi fun j : {j // j ≠ i} ↦ μ j)]
     (heq : ∀ j ≠ i, μ j = ν j)
     (hμ : Integrable f (Measure.pi μ)) (hν : Integrable f (Measure.pi ν)) {C : ℝ}
     (hC : ∀ᵐ x ∂Measure.pi (fun j : {j // j ≠ i} ↦ μ j),
       ‖(∫ t, f ((MeasurableEquiv.piSplitAt i α).symm (t, x)) ∂μ i) -
       ∫ t, f ((MeasurableEquiv.piSplitAt i α).symm (t, x)) ∂ν i‖ ≤ C) :
-    ‖(∫ x, f x ∂Measure.pi μ) - ∫ x, f x ∂Measure.pi ν‖ ≤ C := by
+    ‖(∫ x, f x ∂Measure.pi μ) - ∫ x, f x ∂Measure.pi ν‖ ≤
+      C * (Measure.pi fun j : {j // j ≠ i} ↦ μ j).real Set.univ := by
   let e := MeasurableEquiv.piSplitAt i α
   have hr : (fun j : {j // j ≠ i} ↦ ν j) = (fun j : {j // j ≠ i} ↦ μ j) :=
     funext fun j ↦ (heq j j.property).symm
@@ -381,7 +382,7 @@ theorem norm_integral_pi_sub_integral_pi_le_of_eq_off
 one-coordinate integrals bounds the change of the product integral. Each bound need only hold
 almost everywhere under the corresponding product of the other coordinates. The integrand must
 be integrable under all intermediate product laws. -/
-theorem norm_integral_pi_sub_integral_pi_le_of_splitAt
+theorem norm_integral_pi_sub_integral_pi_le_of_ae_slice_le
     (μ ν : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
     [∀ i, IsProbabilityMeasure (ν i)]
     (hf : ∀ s : Finset ι, Integrable f (Measure.pi fun i ↦ if i ∈ s then ν i else μ i))
@@ -397,9 +398,10 @@ theorem norm_integral_pi_sub_integral_pi_le_of_splitAt
     split <;> infer_instance
   let F (s : Finset ι) := ∫ x, f x ∂Measure.pi (ρ s)
   have hstep (s : Finset ι) (i : ι) (hi : i ∉ s) : ‖F s - F (insert i s)‖ ≤ C i := by
-    apply norm_integral_pi_sub_integral_pi_le_of_eq_off (ρ s) (ρ (insert i s)) i
-      (fun j hj ↦ by simp [ρ, hj]) (hf s) (hf (insert i s))
-    simpa only [ρ, hi, mem_insert_self, ite_true, ite_false] using hC s i hi
+    have hstep := norm_integral_pi_sub_integral_pi_le_of_eq_off (ρ s) (ρ (insert i s)) i
+      (fun j hj ↦ by simp [ρ, hj]) (hf s) (hf (insert i s)) (C := C i) (by
+        simpa only [ρ, hi, mem_insert_self, ite_true, ite_false] using hC s i hi)
+    simpa only [probReal_univ, mul_one, F] using hstep
   have h (s : Finset ι) : ‖F ∅ - F s‖ ≤ ∑ i ∈ s, C i := by
     induction s using Finset.induction_on with
     | empty => simp

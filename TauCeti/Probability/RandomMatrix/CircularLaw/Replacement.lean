@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Probability.RandomMatrix.ResolventReplacement
 
-import Mathlib.LinearAlgebra.Matrix.Rank
-import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Data.Matrix.Basis
 import TauCeti.MeasureTheory.Integral.TruncatedMoment
 
@@ -16,7 +14,8 @@ import TauCeti.MeasureTheory.Integral.TruncatedMoment
 # Finite-variance replacement for Hermitian block resolvents
 
 Replacing independent complex entries with entries having the same first and second moments
-preserves the asymptotic expected normalized resolvent trace of a shifted Hermitian dilation.
+preserves the asymptotic expected normalized resolvent trace of a shifted Hermitian dilation
+at a fixed nonreal spectral parameter.
 The entries are scaled by the reciprocal square root of the matrix dimension. Each entry and
 its conjugate are replaced together, so its real and imaginary parts may be dependent. The
 moment hypotheses match the complex mean, the complex second moment, and the second absolute
@@ -45,7 +44,7 @@ private theorem fromBlocks_add_sum_complexPerturbation_single
           conj (x i) • (single (Sum.inl i.1) (Sum.inr i.2) (a : ℂ))ᴴ) =
       fromBlocks 0 (D + a • Matrix.of (fun i j ↦ x (i, j)))
         (D + a • Matrix.of (fun i j ↦ x (i, j)))ᴴ 0 := by
-  have h := (fromBlocks_zero_conjTranspose_zero_eq_sum_single
+  have h := (fromBlocks_zero_conjTranspose_zero_eq_sum_single_add_conjTranspose
     (a • Matrix.of (fun i j ↦ x (i, j)))).symm
   simp only [Matrix.smul_apply, of_apply, Complex.real_smul] at h
   simp_rw [starRingEnd_apply, ← conjTranspose_smul, smul_single, smul_eq_mul, mul_comm _ (a : ℂ)]
@@ -64,10 +63,17 @@ private theorem normalized_rank_factor (k : ℕ) (b : ℝ) :
   field_simp
   ring
 
+end Matrix
+
+namespace MeasureTheory.Measure
+
+open Matrix
+
 /-- A finite-size bound on the difference of expected normalized resolvent traces for shifted
-Hermitian dilations under two i.i.d. entry laws with matching mixed moments through degree two.
+Hermitian dilations at a fixed nonreal spectral parameter under two i.i.d. entry laws with
+matching mixed moments through degree two.
 The bound uses only truncated squared moments of the entries. -/
-theorem _root_.MeasureTheory.Measure.norm_integral_normalized_trace_inv_fromBlocks_sub_integral_le
+theorem norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_le
     (μ ν : Measure ℂ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) μ)
     (hν : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) ν)
@@ -135,17 +141,12 @@ theorem _root_.MeasureTheory.Measure.norm_integral_normalized_trace_inv_fromBloc
     _ = (‖((2 : ℂ) * (k + 1))⁻¹‖ * ((k + 1 : ℝ) ^ 2 * 2) * b ^ 3 * (2 * a) ^ 2) * E := by ring
     _ = _ := by rw [normalized_rank_factor k b]
 
-end Matrix
-
-namespace MeasureTheory.Measure
-
-open Matrix
-
 /-- For two i.i.d. complex entry product laws of finite second moment whose mixed moments
 match through degree two, the expected normalized resolvent traces of their Hermitian
-dilations have vanishing difference. The matrices are scaled by the reciprocal square root
-of their dimension before adding the same arbitrary deterministic matrix. -/
-theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral
+dilations at a fixed nonreal spectral parameter have vanishing difference. The matrices are
+scaled by the reciprocal square root of their dimension before adding the same deterministic
+matrix. -/
+theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral
     (μ ν : Measure ℂ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (hμ : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) μ)
     (hν : Integrable (fun w : ℂ ↦ ‖w‖ ^ 2) ν)
@@ -161,7 +162,7 @@ theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral
       ∫ x, f k x ∂Measure.pi (fun _ ↦ ν)) atTop (𝓝 0) := by
   apply tendsto_zero_iff_norm_tendsto_zero.mpr
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦
-    μ.norm_integral_normalized_trace_inv_fromBlocks_sub_integral_le ν hμ hν
+    μ.norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_le ν hμ hν
       hmean hsq habs k (D k) hz) ?_
   have hc : Tendsto (fun k : ℕ ↦ (Real.sqrt ((k : ℝ) + 1))⁻¹) atTop (𝓝 0) :=
     tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp
@@ -183,9 +184,10 @@ namespace TauCeti
 open Matrix ProbabilityTheory
 
 /-- Finite-variance replacement for the expected normalized resolvent traces of shifted
-Hermitian dilations on arbitrary sample spaces. The joint product laws encode independence
-of the entries within each matrix, with no restriction on coupling across dimensions. -/
-theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral_of_hasLaw
+Hermitian dilations at a fixed nonreal spectral parameter on arbitrary sample spaces. The
+entry laws match in complex mean, complex second moment, and second absolute moment. The joint
+product laws encode independence within each matrix, with arbitrary coupling across dimensions. -/
+theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_of_hasLaw
     {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
     {μ ν : Measure ℂ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     {X : (k : ℕ) → Ω → (Fin (k + 1) × Fin (k + 1) → ℂ)}
@@ -218,6 +220,7 @@ theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral_of_hasLaw
   have hy (k) := (hY k).integral_comp (hc k).aestronglyMeasurable
   simp only [Function.comp_def] at hx hy
   simp_rw [hx, hy]
-  exact μ.tendsto_integral_normalized_trace_inv_fromBlocks_sub_integral ν hμ hν hmean hsq habs D hz
+  exact μ.tendsto_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral
+    ν hμ hν hmean hsq habs D hz
 
 end TauCeti

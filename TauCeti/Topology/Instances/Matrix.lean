@@ -281,6 +281,7 @@ theorem ContinuousAt.matrix_inv (hA : ContinuousAt A x) (hdet : (A x).det ≠ 0)
 
 /-- The inverse of a continuous matrix-valued function with everywhere nonzero determinant
 is continuous. -/
+@[fun_prop]
 theorem Continuous.matrix_inv (hA : Continuous A) (hdet : ∀ x, (A x).det ≠ 0) :
     Continuous (fun x ↦ (A x)⁻¹) :=
   continuous_iff_continuousAt.2 fun x ↦ hA.continuousAt.matrix_inv (hdet x)

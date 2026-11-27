@@ -26,8 +26,8 @@ expands a linear map on matrices along the matrix units, and
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
 associativity.
 
-`Matrix.fromBlocks_zero_conjTranspose_zero_eq_sum_single` expands the off-diagonal blocks
-of a matrix in pairs of conjugate-transposed matrix units.
+`Matrix.fromBlocks_zero_conjTranspose_zero_eq_sum_single_add_conjTranspose`
+expands the off-diagonal blocks of a matrix in pairs of conjugate-transposed matrix units.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
@@ -106,7 +106,7 @@ namespace Matrix
 
 /-- A matrix with off-diagonal blocks `A` and `Aᴴ` and zero diagonal blocks is a sum of
 pairs of conjugate-transposed matrix units. The block `A` may be rectangular. -/
-theorem fromBlocks_zero_conjTranspose_zero_eq_sum_single {m n R : Type*}
+theorem fromBlocks_zero_conjTranspose_zero_eq_sum_single_add_conjTranspose {m n R : Type*}
     [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
     [AddCommMonoid R] [StarAddMonoid R] (A : Matrix m n R) :
     fromBlocks 0 A Aᴴ 0 = ∑ i : m × n,

@@ -33,8 +33,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   estimate an integral against two independently conditioned coordinates when the integrand is
   controlled only on the pair of sets being conditioned on.
 * `TauCeti.norm_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
-  differ by at most `C` for almost every point of a probability first factor, the integrals over
-  the product measures differ by at most `C`.
+  differ by at most `C` almost everywhere, the product integrals differ by at most `C` times the
+  mass of the common finite first factor.
 * `TauCeti.integrable_prod_restrict_of_continuous`: a continuous function on `α × β` vanishing on
   `(α \ K) × D` for compact `K` and `D` is integrable for `μ × ν|_D`, the integrability needed to
   apply Fubini's theorem to a compactly supported integrand over a compact parameter set.
@@ -276,17 +276,16 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
-/-- If two integrals over the second factor of a product measure with a probability first factor
-differ by at most `C` for almost every point of the first factor, then the two integrals over the
-product measures differ by at most `C`. -/
-theorem norm_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbabilityMeasure ρ]
+/-- If two integrals over the second factor differ by at most `C` almost everywhere under the
+finite first-factor measure, then the product integrals differ by at most `C` times its mass. -/
+theorem norm_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsFiniteMeasure ρ]
     {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → E} {C : ℝ}
     (h₁ : Integrable F (ρ.prod κ₁)) (h₂ : Integrable F (ρ.prod κ₂))
     (h : ∀ᵐ t ∂ρ, ‖(∫ w, F (t, w) ∂κ₁) - ∫ w, F (t, w) ∂κ₂‖ ≤ C) :
-    ‖(∫ p, F p ∂(ρ.prod κ₁)) - ∫ p, F p ∂(ρ.prod κ₂)‖ ≤ C := by
+    ‖(∫ p, F p ∂(ρ.prod κ₁)) - ∫ p, F p ∂(ρ.prod κ₂)‖ ≤ C * ρ.real Set.univ := by
   rw [integral_prod _ h₁, integral_prod _ h₂,
     ← integral_sub h₁.integral_prod_left h₂.integral_prod_left]
-  exact (norm_integral_le_of_norm_le_const h).trans (by simp)
+  exact norm_integral_le_of_norm_le_const h
 
 omit [NormedSpace ℝ E] in
 /-- A continuous function on `α × β` that vanishes on `(α \ K) × D`, for compact sets `K` and

@@ -26,7 +26,8 @@ finite measures.
 * `TauCeti.Probability.abs_integral_prod_sub_integral_prod_le`: the one-coordinate replacement
   bound with an arbitrary background measure.
 * `TauCeti.Probability.abs_integral_pi_sub_integral_pi_le`: the replacement inequality for product
-  measures on `Fin n → ℝ`, assuming integrability under the hybrid product measures.
+  measures on a finite product of copies of `ℝ`, assuming integrability under the hybrid
+  product measures.
 * `TauCeti.Probability.abs_integral_pi_sub_integral_pi_le_of_bounded`: the bounded-continuous
   specialization.
 
@@ -142,9 +143,10 @@ theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
     |∫ p, g p ∂(μ.prod κ) - ∫ p, g p ∂(ν.prod κ)| ≤
       M / (r + 1)! * (∫ t, |t| ^ (r + 1) ∂μ + ∫ t, |t| ^ (r + 1) ∂ν) := by
   rw [← Real.norm_eq_abs, ← integral_prod_swap (μ := μ) g, ← integral_prod_swap (μ := ν) g]
-  refine norm_integral_prod_sub_integral_prod_le_of_ae hμg.swap hνg.swap (ae_of_all _ fun w ↦ ?_)
-  rw [Real.norm_eq_abs]
-  exact abs_integral_sub_integral_le (hsm w) (hM w) hμ hν hmom
+  have hslice := ae_of_all κ fun w ↦
+    (Real.norm_eq_abs _).trans_le (abs_integral_sub_integral_le (hsm w) (hM w) hμ hν hmom)
+  simpa only [probReal_univ, mul_one, Function.comp_apply] using
+    norm_integral_prod_sub_integral_prod_le_of_ae hμg.swap hνg.swap hslice
 
 /-- **Lindeberg replacement.** Let `μ i` and `ν i` be probability measures on `ℝ` with finite
 absolute moments of order `r + 1` and the same moments up to order `r`. If `f` is integrable under
@@ -154,46 +156,46 @@ replacing `Measure.pi μ` by `Measure.pi ν` changes the expectation of `f` by a
 `∑ i, M i / (r + 1)! * (∫ |t| ^ (r + 1) ∂μ i + ∫ |t| ^ (r + 1) ∂ν i)`.
 
 This is the finite-dimensional Lindeberg swapping argument; see the references above. -/
-theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measure ℝ)
+theorem abs_integral_pi_sub_integral_pi_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {r : ℕ} (μ ν : ι → Measure ℝ)
     [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
     (hμ : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (μ i))
     (hν : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (ν i))
     (hmom : ∀ i, ∀ k ≤ r, ∫ t, t ^ k ∂μ i = ∫ t, t ^ k ∂ν i)
-    {f : (Fin n → ℝ) → ℝ}
-    (hfi : ∀ s : Fin n → Bool,
-      Integrable f (Measure.pi fun i ↦ if s i then ν i else μ i))
-    {M : Fin n → ℝ}
+    {f : (ι → ℝ) → ℝ}
+    (hfi : ∀ s : Finset ι,
+      Integrable f (Measure.pi fun i ↦ if i ∈ s then ν i else μ i))
+    {M : ι → ℝ}
     (hsm : ∀ z i, ContDiff ℝ (r + 1) fun t ↦ f (Function.update z i t))
     (hM : ∀ z i t, |iteratedDeriv (r + 1) (fun s ↦ f (Function.update z i s)) t| ≤ M i) :
     |∫ z, f z ∂Measure.pi μ - ∫ z, f z ∂Measure.pi ν| ≤
       ∑ i, M i / (r + 1)! * (∫ t, |t| ^ (r + 1) ∂μ i + ∫ t, |t| ^ (r + 1) ∂ν i) := by
   rw [← Real.norm_eq_abs]
-  refine norm_integral_pi_sub_integral_pi_le_of_splitAt (α := fun _ ↦ ℝ) μ ν
-    (fun s ↦ ?_) _ (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
-  · simpa only [decide_eq_true_eq] using hfi (fun i ↦ decide (i ∈ s))
-  let e := MeasurableEquiv.piSplitAt i (fun _ : Fin n ↦ ℝ)
-  let w := e.symm (0, x)
-  have hslice (t : ℝ) : e.symm (t, x) = Function.update w i t := by
+  refine norm_integral_pi_sub_integral_pi_le_of_ae_slice_le (α := fun _ ↦ ℝ) μ ν
+    hfi _ (fun _ i _ ↦ ae_of_all _ fun x ↦ ?_)
+  let w := (MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℝ)).symm (0, x)
+  have hslice (t : ℝ) :
+      (MeasurableEquiv.piSplitAt i (fun _ : ι ↦ ℝ)).symm (t, x) = Function.update w i t := by
     funext j
     by_cases hj : j = i
     · subst j
-      simp [e]
+      simp
     · rw [Function.update_of_ne hj]
-      simp only [e, w, MeasurableEquiv.piSplitAt_symm_apply_ne i _ j hj]
-  change ‖(∫ t, f (e.symm (t, x)) ∂μ i) - ∫ t, f (e.symm (t, x)) ∂ν i‖ ≤ _
+      simp only [w, MeasurableEquiv.piSplitAt_symm_apply_ne i _ j hj]
   simp only [hslice]
   simpa only [← Real.norm_eq_abs] using
     abs_integral_sub_integral_le (hsm w i) (hM w i) (hμ i) (hν i) (hmom i)
 
 /-- The Lindeberg replacement inequality for bounded continuous test functions. Boundedness and
 continuity imply the integrability hypothesis of `abs_integral_pi_sub_integral_pi_le`. -/
-theorem abs_integral_pi_sub_integral_pi_le_of_bounded {r n : ℕ} (μ ν : Fin n → Measure ℝ)
+theorem abs_integral_pi_sub_integral_pi_le_of_bounded {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {r : ℕ} (μ ν : ι → Measure ℝ)
     [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
     (hμ : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (μ i))
     (hν : ∀ i, Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) (ν i))
     (hmom : ∀ i, ∀ k ≤ r, ∫ t, t ^ k ∂μ i = ∫ t, t ^ k ∂ν i)
-    {f : (Fin n → ℝ) → ℝ} (hf : Continuous f) {C : ℝ} (hfb : ∀ z, |f z| ≤ C)
-    {M : Fin n → ℝ}
+    {f : (ι → ℝ) → ℝ} (hf : Continuous f) {C : ℝ} (hfb : ∀ z, |f z| ≤ C)
+    {M : ι → ℝ}
     (hsm : ∀ z i, ContDiff ℝ (r + 1) fun t ↦ f (Function.update z i t))
     (hM : ∀ z i t, |iteratedDeriv (r + 1) (fun s ↦ f (Function.update z i s)) t| ≤ M i) :
     |∫ z, f z ∂Measure.pi μ - ∫ z, f z ∂Measure.pi ν| ≤

@@ -102,6 +102,31 @@ theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq
   simpa [Matrix.mul_smul, Matrix.smul_mul] using
     (inv_sub_smul_one_sub_inv_sub_smul_one (A := A) (B := A) (z := z) (w := w) h)
 
+/-- The error of the quadratic resolvent expansion factors through the resolvent difference.
+The two shifted matrices must be simultaneously invertible or simultaneously singular. -/
+theorem inv_add_sub_smul_one_sub_quadratic {K : Type*} [CommRing K] (A B : Matrix n n K)
+    (z : K) (h : IsUnit (A - z • 1) ↔ IsUnit (A + B - z • 1)) :
+    let R := (A - z • 1)⁻¹
+    let S := (A + B - z • 1)⁻¹
+    S - (R - R * B * R + R * B * R * B * R) = R * B * R * B * (S - R) := by
+  intro R S
+  have hd : S - R = -(R * B * S) := by
+    have hfirst := inv_sub_smul_one_sub_inv_sub_smul_one (z := z) (w := z) h
+    rw [sub_self, zero_smul, add_zero, add_sub_cancel_left] at hfirst
+    simpa only [neg_sub] using congrArg Neg.neg hfirst
+  have hlinear : S - R + R * B * R = -(R * B * (S - R)) := by
+    calc
+      _ = -(R * B * S) + R * B * R := congrArg (· + R * B * R) hd
+      _ = _ := by noncomm_ring
+  calc
+    _ = (S - R + R * B * R) - R * B * R * B * R := by noncomm_ring
+    _ = -(R * B * (S - R)) - R * B * R * B * R := by rw [hlinear]
+    _ = R * B * R * B * S - R * B * R * B * R := by
+      congr 1
+      rw [hd]
+      noncomm_ring
+    _ = R * B * R * B * (S - R) := (mul_sub _ _ _).symm
+
 end Matrix
 
 namespace Matrix.IsHermitian
