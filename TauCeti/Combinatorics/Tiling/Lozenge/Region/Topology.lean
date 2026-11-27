@@ -18,9 +18,9 @@ The union `regionUnion R` of the faces of a region is the union of the closed tr
 `TriFace.triangle f ⊆ ℝ²` of its faces, the convex hulls of their three vertices under
 `ℤ² ⊆ ℝ²`.
 
-Every triangle lies in the slab `m ≤ x ≤ m + 1`, `n ≤ y ≤ n + 1`, `k ≤ x − y ≤ k + 1`, where
+Every triangle is the slab `m ≤ x ≤ m + 1`, `n ≤ y ≤ n + 1`, `k ≤ x − y ≤ k + 1`, where
 `(m, n)` is the base vertex of the face and `k`, its `TauCeti.TriFace.diagIndex`, is `m − n` for
-a white face and `m − n − 1` for a black one (`TauCeti.TriFace.triangle_subset_slab`); as the
+a white face and `m − n − 1` for a black one (`TauCeti.TriFace.mem_triangle_iff`); as the
 integer data of two faces whose triangles meet differ by at most one in each of `m`, `n`, `k`,
 two such faces share a vertex (`TauCeti.TriFace.exists_mem_vertices_of_triangle_inter_nonempty`).
 The triangles are compact and form a locally finite family (`TauCeti.TriFace.isCompact_triangle`,
@@ -43,33 +43,66 @@ namespace TauCeti
 
 namespace TriFace
 
-/-- The triangle of a face lies in the slab `m ≤ x ≤ m + 1`, `n ≤ y ≤ n + 1`,
-`k ≤ x − y ≤ k + 1` of its base vertex `(m, n)` and its `diagIndex` `k`. -/
-theorem triangle_subset_slab (f : TriFace) :
-    f.triangle ⊆ {p : ℝ × ℝ | (f.v.1 : ℝ) ≤ p.1 ∧ p.1 ≤ f.v.1 + 1 ∧ (f.v.2 : ℝ) ≤ p.2 ∧
-      p.2 ≤ f.v.2 + 1 ∧ (f.diagIndex : ℝ) ≤ p.1 - p.2 ∧ p.1 - p.2 ≤ f.diagIndex + 1} := by
-  rw [triangle_def]
-  refine convexHull_min ?_ ?_
-  · rintro _ ⟨u, hu, rfl⟩
+/-- **The triangle of a face is its slab.** A point lies in the triangle of a face with base vertex
+`(m, n)` and `diagIndex` `k` if and only if `m ≤ x ≤ m + 1`, `n ≤ y ≤ n + 1` and
+`k ≤ x − y ≤ k + 1`. -/
+theorem mem_triangle_iff {f : TriFace} {p : ℝ × ℝ} :
+    p ∈ f.triangle ↔ (f.v.1 : ℝ) ≤ p.1 ∧ p.1 ≤ f.v.1 + 1 ∧ (f.v.2 : ℝ) ≤ p.2 ∧
+      p.2 ≤ f.v.2 + 1 ∧ (f.diagIndex : ℝ) ≤ p.1 - p.2 ∧ p.1 - p.2 ≤ f.diagIndex + 1 := by
+  refine ⟨fun hp => ?_, fun h => ?_⟩
+  · rw [triangle_def] at hp
+    refine convexHull_min (t := {p : ℝ × ℝ | (f.v.1 : ℝ) ≤ p.1 ∧ p.1 ≤ f.v.1 + 1 ∧
+      (f.v.2 : ℝ) ≤ p.2 ∧ p.2 ≤ f.v.2 + 1 ∧ (f.diagIndex : ℝ) ≤ p.1 - p.2 ∧
+      p.1 - p.2 ≤ f.diagIndex + 1}) ?_ ?_ hp
+    · rintro _ ⟨u, hu, rfl⟩
+      obtain ⟨⟨a, b⟩, c⟩ := f
+      cases c <;> simp only [vertices_mk_true, vertices_mk_false, Finset.coe_insert,
+        Finset.coe_singleton, mem_insert_iff, mem_singleton_iff] at hu <;>
+        rcases hu with rfl | rfl | rfl <;>
+        refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp <;> linarith
+    · have h1 := (LinearMap.fst ℝ ℝ ℝ).isLinear
+      have h2 := (LinearMap.snd ℝ ℝ ℝ).isLinear
+      have h3 := (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ).isLinear
+      exact (convex_halfSpace_ge h1 _).inter <| (convex_halfSpace_le h1 _).inter <|
+        (convex_halfSpace_ge h2 _).inter <| (convex_halfSpace_le h2 _).inter <|
+        (convex_halfSpace_ge h3 _).inter (convex_halfSpace_le h3 _)
+  · -- `p` is an explicit convex combination of the three vertices
     obtain ⟨⟨a, b⟩, c⟩ := f
-    cases c <;> simp only [vertices_mk_true, vertices_mk_false, Finset.coe_insert,
-      Finset.coe_singleton, mem_insert_iff, mem_singleton_iff] at hu <;>
-      rcases hu with rfl | rfl | rfl <;>
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp <;> linarith
-  · have h1 := (LinearMap.fst ℝ ℝ ℝ).isLinear
-    have h2 := (LinearMap.snd ℝ ℝ ℝ).isLinear
-    have h3 := (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ).isLinear
-    exact (convex_halfSpace_ge h1 _).inter <| (convex_halfSpace_le h1 _).inter <|
-      (convex_halfSpace_ge h2 _).inter <| (convex_halfSpace_le h2 _).inter <|
-      (convex_halfSpace_ge h3 _).inter (convex_halfSpace_le h3 _)
+    obtain ⟨x, y⟩ := p
+    obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+    cases c
+    · simp only [diagIndex_mk_false, Int.cast_sub, Int.cast_one] at h1 h2 h3 h4 h5 h6
+      have := (convex_triangle ⟨(a, b), false⟩).sum_mem (t := Finset.univ)
+        (w := ![1 - (y - b), (y - b) - (x - a), x - a])
+        (z := ![latticeToReal (a, b), latticeToReal ((a, b) + (0, 1)),
+          latticeToReal ((a, b) + (1, 1))])
+        (fun i _ => by fin_cases i <;> simp <;> linarith)
+        (by simp [Fin.sum_univ_three])
+        (by simp only [Finset.mem_univ, forall_const, Fin.forall_fin_succ]
+            refine ⟨?_, ?_, ?_, fun i => i.elim0⟩ <;>
+            exact latticeToReal_mem_triangle (by simp))
+      convert this using 1
+      ext <;> simp [Fin.sum_univ_three] <;> ring
+    · simp only [diagIndex_mk_true, Int.cast_sub] at h1 h2 h3 h4 h5 h6
+      have := (convex_triangle ⟨(a, b), true⟩).sum_mem (t := Finset.univ)
+        (w := ![1 - (x - a), (x - a) - (y - b), y - b])
+        (z := ![latticeToReal (a, b), latticeToReal ((a, b) + (1, 0)),
+          latticeToReal ((a, b) + (1, 1))])
+        (fun i _ => by fin_cases i <;> simp <;> linarith)
+        (by simp [Fin.sum_univ_three])
+        (by simp only [Finset.mem_univ, forall_const, Fin.forall_fin_succ]
+            refine ⟨?_, ?_, ?_, fun i => i.elim0⟩ <;>
+            exact latticeToReal_mem_triangle (by simp))
+      convert this using 1
+      ext <;> simp [Fin.sum_univ_three] <;> ring
 
 /-- **Meeting triangles share a vertex.** If the triangles of two faces meet, the faces have a
 common vertex. -/
 theorem exists_mem_vertices_of_triangle_inter_nonempty {f g : TriFace}
     (h : (f.triangle ∩ g.triangle).Nonempty) : ∃ u, u ∈ f.vertices ∧ u ∈ g.vertices := by
   obtain ⟨p, hpf, hpg⟩ := h
-  obtain ⟨hf1, hf2, hf3, hf4, hf5, hf6⟩ := triangle_subset_slab f hpf
-  obtain ⟨hg1, hg2, hg3, hg4, hg5, hg6⟩ := triangle_subset_slab g hpg
+  obtain ⟨hf1, hf2, hf3, hf4, hf5, hf6⟩ := mem_triangle_iff.1 hpf
+  obtain ⟨hg1, hg2, hg3, hg4, hg5, hg6⟩ := mem_triangle_iff.1 hpg
   -- the integer data of the two faces differ by at most one
   have h1 : f.v.1 ≤ g.v.1 + 1 := by exact_mod_cast hf1.trans hg2
   have h2 : g.v.1 ≤ f.v.1 + 1 := by exact_mod_cast hg1.trans hf2
@@ -107,7 +140,7 @@ theorem locallyFinite_triangle : LocallyFinite fun f : TriFace => f.triangle := 
   refine ((A ×ˢ B ×ˢ (Finset.univ : Finset Bool)).finite_toSet.image
     fun t => (⟨(t.1, t.2.1), t.2.2⟩ : TriFace)).subset ?_
   rintro ⟨⟨a, b⟩, c⟩ ⟨p, hpf, hpx⟩
-  obtain ⟨h1, h2, h3, h4, -, -⟩ := triangle_subset_slab _ hpf
+  obtain ⟨h1, h2, h3, h4, -, -⟩ := mem_triangle_iff.1 hpf
   rw [Metric.mem_closedBall, Prod.dist_eq, sup_le_iff, Real.dist_eq, Real.dist_eq] at hpx
   obtain ⟨hx1, hx2⟩ := hpx
   rw [abs_le] at hx1 hx2
