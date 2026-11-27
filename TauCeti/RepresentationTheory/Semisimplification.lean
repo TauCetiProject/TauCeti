@@ -33,6 +33,13 @@ and determinant on `V^ss` as on `V`.
   `Representation.trace_semisimplification_apply`, `Representation.char_semisimplification`,
   `Representation.det_semisimplification_apply`: `V^ss` and `V` have the same characteristic
   polynomials, traces, characters and determinants.
+* `Representation.nonempty_equiv_semisimplification_semisimplification`: `(V^ss)^ss ≅ V^ss`.
+* `Representation.nonempty_equiv_semisimplification_of_equiv`: equivalent representations have
+  equivalent semisimplifications.
+* `Representation.nonempty_equiv_semisimplification_prod_of_exact`: for a short exact sequence
+  `0 → U → V → X → 0` of representations, `V^ss ≅ U^ss ⊕ X^ss`.
+* `Subrepresentation.nonempty_equiv_semisimplification_prod_quotient`: for a subrepresentation
+  `W` of `V`, `V^ss ≅ W^ss ⊕ (V/W)^ss`.
 -/
 
 public section
@@ -132,4 +139,65 @@ theorem det_semisimplification_apply (g : G) :
     LinearMap.det (ρ.semisimplification g) = LinearMap.det (ρ g) :=
   LinearMap.det_eq_of_charpoly_eq (ρ.charpoly_semisimplification_apply g)
 
+/-- **The semisimplification is idempotent**: `(V^ss)^ss ≅ V^ss`. -/
+theorem nonempty_equiv_semisimplification_semisimplification :
+    Nonempty (ρ.semisimplification.semisimplification.Equiv ρ.semisimplification) :=
+  ρ.semisimplification.nonempty_equiv_semisimplification_iff.mpr inferInstance
+
+variable {ρ}
+
+/-- An irreducible representation is equivalent to its semisimplification. -/
+theorem nonempty_equiv_semisimplification_of_isIrreducible [ρ.IsIrreducible] :
+    Nonempty (ρ.semisimplification.Equiv ρ) :=
+  ρ.nonempty_equiv_semisimplification_iff.mpr inferInstance
+
+section Exact
+
+variable {U X : Type*} [AddCommGroup U] [Module k U] [FiniteDimensional k U]
+  [AddCommGroup X] [Module k X] [FiniteDimensional k X]
+  {σ : Representation k G U} {τ : Representation k G X}
+
+/-- **Equivalent representations have equivalent semisimplifications.** -/
+theorem nonempty_equiv_semisimplification_of_equiv (e : ρ.Equiv σ) :
+    Nonempty (ρ.semisimplification.Equiv σ.semisimplification) :=
+  let ⟨f⟩ := TauCeti.nonempty_linearEquiv_semisimplification_of_linearEquiv
+    (TauCeti.Representation.asModuleLinearEquivOfEquiv e)
+  ⟨TauCeti.Representation.equivOfAsModuleLinearEquiv
+    (ρ.semisimplificationAsModuleEquiv ≪≫ₗ f ≪≫ₗ σ.semisimplificationAsModuleEquiv.symm)⟩
+
+/-- **Semisimplification is additive in short exact sequences of representations**: for
+intertwining maps `f : U → V` injective and `g : V → X` surjective with `range f = ker g`,
+`V^ss ≅ U^ss ⊕ X^ss`. -/
+theorem nonempty_equiv_semisimplification_prod_of_exact (f : IntertwiningMap σ ρ)
+    (g : IntertwiningMap ρ τ) (hf : Function.Injective f) (hg : Function.Surjective g)
+    (hfg : Function.Exact f g) :
+    Nonempty (ρ.semisimplification.Equiv (σ.semisimplification.prod τ.semisimplification)) :=
+  let ⟨e⟩ := TauCeti.nonempty_linearEquiv_semisimplification_prod_of_exact
+    (IntertwiningMap.equivLinearMapAsModule σ ρ f) (IntertwiningMap.equivLinearMapAsModule ρ τ g)
+    hf hg hfg
+  ⟨TauCeti.Representation.equivOfAsModuleLinearEquiv
+    (ρ.semisimplificationAsModuleEquiv ≪≫ₗ e ≪≫ₗ
+      (LinearEquiv.prodCongr σ.semisimplificationAsModuleEquiv.symm
+        τ.semisimplificationAsModuleEquiv.symm ≪≫ₗ
+        (σ.semisimplification.prodAsModuleEquiv τ.semisimplification).symm))⟩
+
+end Exact
+
 end Representation
+
+namespace Subrepresentation
+
+open Representation
+
+variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  {ρ : Representation k G V}
+
+/-- **`V^ss ≅ W^ss ⊕ (V/W)^ss`** for a subrepresentation `W` of `V`. -/
+theorem nonempty_equiv_semisimplification_prod_quotient (W : Subrepresentation ρ) :
+    Nonempty (ρ.semisimplification.Equiv
+      (W.toRepresentation.semisimplification.prod W.quotient.semisimplification)) :=
+  nonempty_equiv_semisimplification_prod_of_exact W.subtype
+    ⟨W.toSubmodule.mkQ, fun g ↦ by ext; rfl⟩ W.subtype_injective W.toSubmodule.mkQ_surjective
+    (by rw [coe_subtype]; exact LinearMap.exact_subtype_mkQ W.toSubmodule)
+
+end Subrepresentation
