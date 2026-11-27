@@ -33,7 +33,8 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
   multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
-* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables, and
+  `MvPolynomial.esymm_eq_zero_of_card_lt`: `e_k(X₁, …, X_n)` vanishes for `k > n`.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
@@ -250,6 +251,12 @@ theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemir
     MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
   rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
+/-- The elementary symmetric polynomial `e_k` vanishes when `k` exceeds the number of variables. -/
+theorem MvPolynomial.esymm_eq_zero_of_card_lt {σ : Type*} [Fintype σ] {R : Type*}
+    [CommSemiring R] {k : ℕ} (h : Fintype.card σ < k) : MvPolynomial.esymm σ R k = 0 := by
+  rw [MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
 namespace TauCeti
 
 section esymmInt
@@ -320,8 +327,8 @@ exceeds the number of variables. -/
 theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
     symmetricEsymm σ R k = 0 := by
   ext1
-  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
-  exact Multiset.esymm_of_card_lt (by simpa using h)
+  rw [coe_symmetricEsymm, ZeroMemClass.coe_zero]
+  exact MvPolynomial.esymm_eq_zero_of_card_lt h
 
 end symmetricEsymm
 
