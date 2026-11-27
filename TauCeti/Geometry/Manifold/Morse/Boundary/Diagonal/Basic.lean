@@ -75,7 +75,8 @@ compactification and gluing, and is not proved here.
 * `TauCeti.morseCupProduct`: the cup product of linear forms on the Morse chains, with
   `TauCeti.morseCupProduct_apply_single` computing it on a critical point.
 * `TauCeti.morseRootBrokenDiagonalSet`, `TauCeti.morseFirstLeafBrokenDiagonalSet`,
-  `TauCeti.morseSecondLeafBrokenDiagonalSet`: the broken Y-flow lines.
+  `TauCeti.morseSecondLeafBrokenDiagonalSet`: the broken Y-flow lines, with
+  `TauCeti.morseFirstLeafBrokenDiagonalSet_swap` exchanging the two leaves.
 * `TauCeti.morseDiagonalMap_comp_morseBoundary_eq_iff`: the diagonal is a chain map exactly when the
   broken Y-flow lines are evenly many.
 * `TauCeti.morseCupProduct_comp_morseBoundary_eq_iff`: the cup product satisfies the Leibniz rule
@@ -347,6 +348,15 @@ theorem mem_morseSecondLeafBrokenDiagonalSet {p q r : M}
         manifoldMorseIndex 𝓘(ℝ, E) f₂ x.1 = manifoldMorseIndex 𝓘(ℝ, E) f₂ r + 1 ∧
           x.2.1 ∈ S p q x.1 ∧ x.2.2 ∈ hX₂.morseTrajectorySlice x.1 r :=
   Iff.rfl
+
+/-- **Exchanging the leaves.** The Y-flow lines broken at the first leaf, for the Y-slices with
+their two leaves exchanged, are those broken at the second leaf. -/
+theorem morseFirstLeafBrokenDiagonalSet_swap (p q r : M) :
+    morseFirstLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₂ hX₁) hX₂ p r q =
+      morseSecondLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₁ hX₂) hX₂ p q r := by
+  ext x
+  rw [mem_morseFirstLeafBrokenDiagonalSet, mem_morseSecondLeafBrokenDiagonalSet,
+    IsAdaptedPseudoGradient.morseYSlice_comm, add_comm (manifoldMorseIndex 𝓘(ℝ, E) f₂ x.1)]
 
 end BrokenSets
 

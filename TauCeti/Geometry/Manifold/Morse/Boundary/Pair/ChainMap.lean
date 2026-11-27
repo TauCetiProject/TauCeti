@@ -395,12 +395,8 @@ private theorem exists_homeomorph_Ico_of_mem_sourceBrokenRecords {w : M × M × 
       ((hcont₀.comp continuous_snd).tendsto (a₁, y)).eventually (gt_mem_nhds hyc)
     filter_upwards [nhdsWithin_le_nhds hev, self_mem_nhdsWithin] with v hv hvR
     obtain ⟨hvS, hv₁, t, ht⟩ := hvR.1.resolve_left hvR.2
-    obtain ⟨a', hpa'', hva'⟩ := hX₀.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet
-      hvS.1 (ne_of_apply_ne f₀ (hv.trans hc₀).ne)
-    have hup : hX₀.upperLevelPoint c₀ v.2 = v.1 := by
-      rw [hX₀.upperLevelPoint_of_lt hv, hX₀.levelPoint_eq hpa'' hva' (t := -t)
-        (by rw [← ht, Flow.map_neg_apply_map, hv₁, ha₁c]), ← ht, Flow.map_neg_apply_map]
-    exact ⟨v.2, hvS, by rw [pairRecord_apply, hup]⟩
+    exact ⟨v.2, hvS, by
+      rw [pairRecord_apply, hX₀.upperLevelPoint_eq_of_flow_eq hvS.1 hc₀ hv (hv₁.trans ha₁c) ht]⟩
   · -- Near the broken record, the records lie below the level `c₀` and come from the chart.
     have hev : ∀ᶠ q in 𝓝 (a₁, y, hX₁.lowerLevelPoint c₁ y), f₀ q.2.1 < c₀ :=
       (((hcont₀.comp continuous_fst).comp continuous_snd).tendsto _).eventually (gt_mem_nhds hyc)

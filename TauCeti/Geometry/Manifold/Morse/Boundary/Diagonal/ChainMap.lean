@@ -166,25 +166,12 @@ private theorem exists_isSliceChart_unstableSet_inter_stableSet
   -- Exchanging the leaves, `U ⊔ S₂ = ⊤` and `(U ⊓ S₂) ⊔ S₁ = ⊤`.
   obtain ⟨hU₂, hU₂₁⟩ := h.swap.span_mtangentConeAt_sup_eq_top_and_inf_sup_eq_top
     (by rwa [morseYSlice_comm] : y ∈ hX₀.morseYSlice hX₂ hX₁ p r b)
-  obtain ⟨L₀, φ₀, -, hy₀, hφ₀, hs₀⟩ :=
-    hX₀.exists_isSliceChart_unstableSet hf₀ (hX₀.mfderiv_eq_zero_of_mem_unstableSet hyp) hyp
-  obtain ⟨L₂, φ₂, -, hy₂, hφ₂, hs₂⟩ :=
-    hX₂.exists_isSliceChart_stableSet (hX₂.mfderiv_eq_zero_of_mem_stableSet hyr) hyr
-  have hc (L : Submodule ℝ E) : L.ClosedComplemented :=
-    Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _)
-  obtain ⟨φ, hyφ, hφ, hZ⟩ := exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp)
-    hφ₀ hφ₂ hs₀ hs₂ hy₀ hy₂ hU₂ (hc _) (hc _) (hc _)
-  have hT := span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hφ₀ hφ₂ hs₀ hs₂
-    hy₀ hy₂ hU₂ (hc _) (hc _) (hc _)
-  refine ⟨_, φ, hyφ, hφ, hZ, ?_, by rw [hT, hU₂₁]⟩
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet p) y))
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet r) y))
-  rw [hU₂, finrank_top] at hdim
-  have := hX₀.finrank_span_mtangentConeAt_unstableSet hf₀ hyp
-  have := hX₂.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hyr
-  omega
+  obtain ⟨φ, hyφ, hφ, hZ⟩ := hX₀.exists_unstableSet_inter_stableSet_chart hX₂ hf₀ ⟨hyp, hyr⟩ hU₂
+  have hT := hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₂ hf₀ ⟨hyp, hyr⟩ hU₂
+  have hdim := hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex
+    hX₂ hf₀ ⟨hyp, hyr⟩ hU₂
+  rw [hT] at hdim
+  exact ⟨_, φ, hyφ, hφ, hZ, by omega, by rw [hT, hU₂₁]⟩
 
 /-- **Gluing at the root.** The trajectory of `X₀` from `p` to `a` glues into
 `W^s_{X₁}(q) ∩ W^s_{X₂}(r)`. Record a point `x` of the Y-slice from `p` to `q` and `r` by the pair
@@ -428,15 +415,6 @@ private theorem injOn_firstLeafBrokenRecords (hc₁ : f₁ q < c₁)
     ⟨⟨hz.1, hz.2.1⟩, hz.2.2⟩ ⟨⟨hz'.1, hz'.2.1⟩, hz'.2.2⟩ heq
   rw [Subtype.ext hb]
 
-/-- The Y-flow lines broken at the first leaf of the triple with its leaves exchanged are those
-broken at the second leaf. -/
-private theorem morseFirstLeafBrokenDiagonalSet_swap (p q r : M) :
-    morseFirstLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₂ hX₁) hX₂ p r q =
-      morseSecondLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₁ hX₂) hX₂ p q r := by
-  ext x
-  rw [mem_morseFirstLeafBrokenDiagonalSet, mem_morseSecondLeafBrokenDiagonalSet,
-    morseYSlice_comm, add_comm (manifoldMorseIndex 𝓘(ℝ, E) f₂ x.1)]
-
 end Records
 
 namespace IsMorseSmaleTriple
@@ -526,7 +504,7 @@ private theorem finite_brokenRecords :
   rw [hX₀.rootBrokenRecords_eq_image hX₁ hX₂ hc₀ hgap₀,
     hX₀.firstLeafBrokenRecords_eq_image hX₁ hX₂ hc₁ hgap₁, secondLeafBrokenRecords,
     hX₀.firstLeafBrokenRecords_eq_image hX₂ hX₁ hc₂ hgap₂,
-    hX₀.morseFirstLeafBrokenDiagonalSet_swap hX₁ hX₂ p q r]
+    morseFirstLeafBrokenDiagonalSet_swap hX₀ hX₁ hX₂ p q r]
   exact (((finite_morseRootBrokenDiagonalSet h₀ hf₀ p q r fun _ ↦ hS).image _).union
     ((finite_morseFirstLeafBrokenDiagonalSet h₁ hf₁ p q r fun _ ↦ hS).image _)).union
     (((finite_morseSecondLeafBrokenDiagonalSet h₂ hf₂ p q r fun _ ↦ hS).image _).preimage
@@ -556,7 +534,7 @@ private theorem ncard_brokenRecords :
       fun w _ ↦ ⟨(w.1, w.2.1, w.2.2.2, w.2.2.1), rfl⟩,
     hX₀.firstLeafBrokenRecords_eq_image hX₂ hX₁ hc₂ hgap₂,
     (hX₀.injOn_firstLeafBrokenRecords hX₂ hX₁ hc₂ hgap₂).ncard_image,
-    hX₀.morseFirstLeafBrokenDiagonalSet_swap hX₁ hX₂ p q r]
+    morseFirstLeafBrokenDiagonalSet_swap hX₀ hX₁ hX₂ p q r]
 
 /-- The compactified Y-slice adds finitely many records to those of its points. -/
 private theorem finite_closure_diff_yRecords :
@@ -747,19 +725,15 @@ private theorem exists_homeomorph_Ico_of_mem_secondLeafBrokenRecords {w : M × M
       hc₀ hgap₀ hc₂ hgap₂ hc₁ hgap₁ hw
   -- Exchanging the last two components carries the records of `(X₀, X₂, X₁)` to those of
   -- `(X₀, X₁, X₂)`, hence the closure of the former onto that of the latter.
-  let σ : (M × M × M × M) ≃ₜ (M × M × M × M) :=
-    { toFun u := (u.1, u.2.1, u.2.2.2, u.2.2.1)
-      invFun u := (u.1, u.2.1, u.2.2.2, u.2.2.1)
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
+  let σ := (Homeomorph.refl M).prodCongr ((Homeomorph.refl M).prodCongr (Homeomorph.prodComm M M))
   have hσ (u : M × M × M × M) : σ u = (u.1, u.2.1, u.2.2.2, u.2.2.1) := rfl
+  have hσy : (fun x ↦ σ (hX₀.yRecord hX₂ hX₁ c₀ c₂ c₁ x)) = hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ := by
+    funext x
+    simp only [hσ, yRecord_apply]
   have hcl (u : M × M × M × M) :
       u ∈ closure (hX₀.yRecord hX₂ hX₁ c₀ c₂ c₁ '' hX₀.morseYSlice hX₂ hX₁ p r q) ↔
         σ u ∈ closure (hX₀.yRecord hX₁ hX₂ c₀ c₁ c₂ '' hX₀.morseYSlice hX₁ hX₂ p q r) := by
-    rw [← σ.injective.mem_set_image, σ.image_closure, image_image, morseYSlice_comm]
-    rfl
+    rw [← σ.injective.mem_set_image, σ.image_closure, image_image, hσy, morseYSlice_comm]
   -- Transport the half-open chart along the induced homeomorphism of the closures.
   let Φ := σ.subtype hcl
   have hΦ : Φ ⟨_, hb'⟩ = ⟨w, (hcl _).1 hb'⟩ :=
@@ -816,19 +790,20 @@ theorem even_ncard_root_add_ncard_firstLeaf_add_ncard_secondLeaf (p : criticalPo
     manifoldMorseIndex 𝓘(ℝ, E) f₁ q + manifoldMorseIndex 𝓘(ℝ, E) f₂ r + 1
   swap
   · -- Without an index drop by one, no Y-flow line breaks.
-    have h₁ : morseRootBrokenDiagonalSet f₁ f₂ (hX₀.morseYSlice hX₁ hX₂) hX₀ p q r = ∅ :=
+    have hroot : morseRootBrokenDiagonalSet f₁ f₂ (hX₀.morseYSlice hX₁ hX₂) hX₀ p q r = ∅ :=
       eq_empty_of_forall_notMem fun x hx ↦ by
-        obtain ⟨h₁, h₂, -⟩ := (mem_morseRootBrokenDiagonalSet hX₀).1 hx
+        obtain ⟨hp, hq, -⟩ := (mem_morseRootBrokenDiagonalSet hX₀).1 hx
         omega
-    have h₂ : morseFirstLeafBrokenDiagonalSet f₀ f₂ (hX₀.morseYSlice hX₁ hX₂) hX₁ p q r = ∅ :=
+    have hfirst : morseFirstLeafBrokenDiagonalSet f₀ f₂ (hX₀.morseYSlice hX₁ hX₂) hX₁ p q r = ∅ :=
       eq_empty_of_forall_notMem fun x hx ↦ by
-        obtain ⟨h₁, h₂, -⟩ := (mem_morseFirstLeafBrokenDiagonalSet hX₁).1 hx
+        obtain ⟨hp, hq, -⟩ := (mem_morseFirstLeafBrokenDiagonalSet hX₁).1 hx
         omega
-    have h₃ : morseSecondLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₁ hX₂) hX₂ p q r = ∅ :=
+    have hsecond :
+        morseSecondLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₁ hX₂) hX₂ p q r = ∅ :=
       eq_empty_of_forall_notMem fun x hx ↦ by
-        obtain ⟨h₁, h₂, -⟩ := (mem_morseSecondLeafBrokenDiagonalSet hX₂).1 hx
+        obtain ⟨hp, hq, -⟩ := (mem_morseSecondLeafBrokenDiagonalSet hX₂).1 hx
         omega
-    simp [h₁, h₂, h₃]
+    simp [hroot, hfirst, hsecond]
   -- Record the points of the Y-slice on levels `c₀` below `p`, `c₁` above `q` and `c₂` above `r`.
   obtain ⟨c₀, hc₀, hgap₀⟩ := hf₀.exists_lt_forall_lt (f₀ p)
   obtain ⟨c₁, hc₁, hgap₁⟩ := hf₁.exists_gt_forall_gt (f₁ q)
