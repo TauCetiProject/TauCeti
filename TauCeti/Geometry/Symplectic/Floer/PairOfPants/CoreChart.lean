@@ -10,11 +10,13 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
-import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Geometry.Manifold.ContMDiff.Fract
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -55,7 +57,10 @@ concatenation of the end loops of the inputs `0` and `1` at height `0`, both sta
 circle `‖w‖ = 2` on the same rays from `1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_one`,
 `TauCeti.Floer.norm_symm_pairOfPantsCoreChart_mk_one`). It thus runs once clockwise around that
 circle, like the end loop of the output at height `0`, but at the speed of the angle about `1/2`
-rather than about `0`; this file does not compare the two loops.
+rather than about `0`. The smooth lift `TauCeti.Floer.pairOfPantsOutputLift` reads it in the
+angular coordinate of the output end (`TauCeti.Floer.endChart_inf_pairOfPantsOutputLift`), and
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Annulus` joins the two loops by a cylinder of
+zero area on the output circle.
 
 For a map `u` of the pair of pants into a manifold `M`:
 
@@ -81,9 +86,9 @@ The area formula is proved in polar coordinates about `1/2`: by Fubini's theorem
 outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is an iterated
 integral over the angle and over the segment of radii of `S₀` on each ray, and rescaling the radius
 and the angle of each half to `[0, 1]` turns it into the integral over the core chart
-(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The module-valued
-basis-determinant identity `AlternatingMap.eq_basis_det_smulRight`, at the standard basis of
-`ℝ × ℝ`, reads the pulled-back form along the chart as its Jacobian times the area density of `u`.
+(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The Jacobian rule
+`TauCeti.mpullback_comp_apply_eq_det_smul` reads the pulled-back form along the chart as its
+Jacobian times the area density of `u`.
 
 ## References
 
@@ -145,6 +150,15 @@ private theorem norm_sq_circleMap_half_sub_one (ρ θ : ℝ) :
   rw [Complex.sq_norm, Complex.normSq_apply]
   simp [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   nlinarith [Real.sin_sq_add_cos_sq θ]
+
+/-- The point at the distance `R θ` from `1/2` along the ray at the angle `θ` lies on the output
+circle `‖w‖ = 2`. -/
+private theorem norm_circleMap_half_coreOuterRadius (θ : ℝ) :
+    ‖circleMap (1 / 2 : ℂ) (coreOuterRadius θ) θ‖ = 2 := by
+  have h := norm_sq_circleMap_half (coreOuterRadius θ) θ
+  have h' := coreOuterRadius_sq_add θ
+  have hn := norm_nonneg (circleMap (1 / 2 : ℂ) (coreOuterRadius θ) θ)
+  nlinarith
 
 private theorem mem_truncation_zero_iff {w : ℂ} :
     w ∈ truncation 0 ↔ 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ ∧ ‖w‖ ≤ 2 := by
@@ -280,6 +294,10 @@ private theorem coreAngularIntegrand_add_two_pi (f : ℂ → F) (θ : ℝ) :
 /-- The clockwise angle about `1/2` of the ray through the lobe of the input end `0` (for
 `a = 1/4`) or of the input end `1` (for `a = 3/4`), at the parameter `r ∈ [0, 1]`. -/
 private def lobeAngle (a r : ℝ) : ℝ := -(2 * π * (a + r / 2))
+
+private theorem contDiff_lobeAngle {n : ℕ∞} (a : ℝ) : ContDiff ℝ n (lobeAngle a) := by
+  unfold lobeAngle
+  exact (contDiff_const.mul (contDiff_const.add (contDiff_id.div_const 2))).neg
 
 /-- The radius along the ray of a lobe, from `sin (π r) = |cos θ|` at `σ = 0` to the output
 circle at `σ = 1`. -/
@@ -428,9 +446,8 @@ private theorem contDiff_lobeRadius {n : ℕ∞} (a : ℝ) :
 
 private theorem contDiff_lobePoint {n : ℕ∞} (a : ℝ) :
     ContDiff ℝ n fun p : ℝ × ℝ ↦ lobePoint a p.1 p.2 := by
-  have hθ : ContDiff ℝ n fun p : ℝ × ℝ ↦ lobeAngle a p.2 := by
-    unfold lobeAngle
-    exact (contDiff_const.mul (contDiff_const.add (contDiff_snd.div_const 2))).neg
+  have hθ : ContDiff ℝ n fun p : ℝ × ℝ ↦ lobeAngle a p.2 :=
+    (contDiff_lobeAngle a).comp contDiff_snd
   have h := ContDiff.comp (g := fun p : ℝ × ℝ ↦ (1 / 2 : ℂ) + Complex.polarCoord.symm p)
     (f := fun p : ℝ × ℝ ↦ (lobeRadius a p.1 p.2, lobeAngle a p.2))
     (TauCeti.contDiff_add_polarCoord_symm _) ((contDiff_lobeRadius a).prodMk hθ)
@@ -570,15 +587,18 @@ private theorem coreLobe_three_quarters_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
     Complex.exp_sub, Complex.exp_sub, Complex.exp_pi_mul_I, Complex.exp_two_pi_mul_I]
   ring
 
+/-- At `s = 1` a lobe of the core reaches the output circle, on the ray from `1/2` at the angle
+`lobeAngle a r`. -/
+private theorem coreLobe_mk_one_of_mem {a r : ℝ} (hr : r ∈ Icc 0 1) :
+    coreLobe a (1, r) = Complex.equivRealProdCLM
+      (circleMap (1 / 2) (coreOuterRadius (lobeAngle a r)) (lobeAngle a r)) := by
+  rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+    add_sub_cancel]
+
 private theorem norm_symm_coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
     ‖Complex.equivRealProdCLM.symm (coreLobe a (1, r))‖ = 2 := by
-  rw [coreLobe_of_mem hr, lobeChart, ContinuousLinearEquiv.symm_apply_apply,
-    smoothTransition.one, lobePoint, lobeRadius, one_mul, add_sub_cancel]
-  have h := norm_sq_circleMap_half (coreOuterRadius (lobeAngle a r)) (lobeAngle a r)
-  have h' := coreOuterRadius_sq_add (lobeAngle a r)
-  have hn := norm_nonneg
-    (circleMap (1 / 2 : ℂ) (coreOuterRadius (lobeAngle a r)) (lobeAngle a r))
-  nlinarith
+  rw [coreLobe_mk_one_of_mem hr, ContinuousLinearEquiv.symm_apply_apply]
+  exact norm_circleMap_half_coreOuterRadius _
 
 /-- The core chart is `1`-periodic in its second variable. -/
 @[simp]
@@ -643,12 +663,202 @@ theorem pairOfPantsCoreChart_mk_one (t : ℝ) :
         ((-Real.sin (π * z.2) + √(Real.sin (π * z.2) ^ 2 + 15)) / 2) (-(3 * π / 2) - π * z.2)))
       (1, t) := by
   refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
-    rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-      add_sub_cancel, coreOuterRadius]
+    rw [coreLobe_mk_one_of_mem hr, coreOuterRadius]
   · rw [cos_lobeAngle_quarter, neg_neg, neg_sq,
       show lobeAngle (1 / 4) r = -(π / 2) - π * r by rw [lobeAngle]; ring]
   · rw [cos_lobeAngle_three_quarters,
       show lobeAngle (3 / 4) r = -(3 * π / 2) - π * r by rw [lobeAngle]; ring]
+
+/-! ### The output loop in the angular coordinate of the output end
+
+The output loop of the core chart runs around the output circle `‖w‖ = 2` at the speed of the
+angle about `1/2`, while the end chart of the output end runs around the same circle, its circle
+at height `0`, at the speed of the angle about `0`. The lift `TauCeti.Floer.pairOfPantsOutputLift`
+reads the first loop in the angular coordinate of the end chart. On the ray from `1/2` at the angle
+`θ` the point of the output circle is `e^{iθ} (R θ + e^{-iθ}/2)`, and the second factor lies in the
+half-plane `re w > 0`, so its argument is a smooth function of `θ`. -/
+
+/-- The factor `R θ + exp (-i θ) / 2`: the point `circleMap (1/2) (R θ) θ` of the output circle is
+`exp (i θ)` times it. -/
+private def coreOutputFactor (θ : ℝ) : ℂ :=
+  coreOuterRadius θ + Complex.exp (↑(-θ) * Complex.I) / 2
+
+/-- The angular coordinate of the output end at the point of the output circle on the ray from
+`1/2` at the angle `θ`. -/
+private def coreOutputLift (θ : ℝ) : ℝ :=
+  -(θ + Complex.arg (coreOutputFactor θ)) / (2 * π)
+
+private theorem re_coreOutputFactor_pos (θ : ℝ) : 0 < (coreOutputFactor θ).re := by
+  have h := Complex.exp_ofReal_mul_I_re (-θ)
+  rw [Real.cos_neg] at h
+  rw [coreOutputFactor, Complex.add_re, Complex.ofReal_re, Complex.div_ofNat_re, h]
+  linarith [one_lt_coreOuterRadius θ, Real.neg_one_le_cos θ]
+
+private theorem circleMap_half_coreOuterRadius_eq (θ : ℝ) :
+    circleMap (1 / 2) (coreOuterRadius θ) θ =
+      Complex.exp (↑θ * Complex.I) * coreOutputFactor θ := by
+  rw [circleMap, coreOutputFactor, mul_add, ← mul_div_assoc, ← Complex.exp_add]
+  push_cast
+  rw [show (θ : ℂ) * Complex.I + -(θ : ℂ) * Complex.I = 0 by ring, Complex.exp_zero]
+  ring
+
+/-- The factor has norm `2`, since the point lies on the output circle. -/
+private theorem norm_coreOutputFactor (θ : ℝ) : ‖coreOutputFactor θ‖ = 2 := by
+  have h := norm_circleMap_half_coreOuterRadius θ
+  rwa [circleMap_half_coreOuterRadius_eq, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul] at h
+
+/-- The end chart of the output end at height `0` and angle `coreOutputLift θ` is the point of the
+output circle on the ray from `1/2` at the angle `θ`. -/
+private theorem endChart_inf_coreOutputLift (θ : ℝ) :
+    endChart .inf (0, coreOutputLift θ) =
+      Complex.equivRealProdCLM (circleMap (1 / 2) (coreOuterRadius θ) θ) := by
+  have hπ : (π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 Real.pi_ne_zero
+  have hψ : -(2 * (π : ℂ)) * (((0 : ℝ) : ℂ) + (coreOutputLift θ : ℂ) * Complex.I) =
+      (θ : ℂ) * Complex.I + (Complex.arg (coreOutputFactor θ) : ℂ) * Complex.I := by
+    simp only [coreOutputLift]
+    push_cast
+    field_simp
+    ring
+  rw [endChart_mk, Puncture.cylindricalEndLift_inf]
+  beta_reduce
+  congr 1
+  rw [hψ, Complex.exp_add, circleMap_half_coreOuterRadius_eq]
+  conv_rhs => rw [← Complex.norm_mul_exp_arg_mul_I (coreOutputFactor θ), norm_coreOutputFactor]
+  push_cast
+  ring
+
+private theorem coreOuterRadius_add_neg_two_pi (θ : ℝ) :
+    coreOuterRadius (θ + -(2 * π)) = coreOuterRadius θ := by
+  rw [← coreOuterRadius_add_two_pi, neg_add_cancel_right]
+
+private theorem coreOutputLift_add_neg_two_pi (θ : ℝ) :
+    coreOutputLift (θ + -(2 * π)) = coreOutputLift θ + 1 := by
+  have hθ : (↑(-(θ + -(2 * π))) : ℂ) * Complex.I = ↑(-θ) * Complex.I + 2 * π * Complex.I := by
+    push_cast
+    ring
+  have hw : coreOutputFactor (θ + -(2 * π)) = coreOutputFactor θ := by
+    rw [coreOutputFactor, coreOutputFactor, coreOuterRadius_add_neg_two_pi, hθ, Complex.exp_add,
+      Complex.exp_two_pi_mul_I, mul_one]
+  rw [coreOutputLift, coreOutputLift, hw]
+  field_simp
+  ring
+
+private theorem contDiff_coreOutputLift {n : ℕ∞} : ContDiff ℝ n coreOutputLift := by
+  have hw : ContDiff ℝ n coreOutputFactor :=
+    (Complex.ofRealCLM.contDiff.comp contDiff_coreOuterRadius).add
+      ((Complex.contDiff_exp.comp
+        ((Complex.ofRealCLM.contDiff.comp contDiff_id.neg).mul contDiff_const)).div_const 2)
+  -- On the half-plane `re w > 0` the argument is the imaginary part of the principal logarithm.
+  have harg : ContDiff ℝ n fun θ ↦ Complex.arg (coreOutputFactor θ) := by
+    refine contDiff_iff_contDiffAt.2 fun θ ↦ ?_
+    have hlog : ContDiffAt ℝ n Complex.log (coreOutputFactor θ) :=
+      (Complex.contDiffAt_log (Or.inl (re_coreOutputFactor_pos θ))).restrict_scalars ℝ
+    simpa only [Function.comp_def, Complex.imCLM_apply, Complex.log_im] using
+      Complex.imCLM.contDiff.contDiffAt.comp θ (hlog.comp θ hw.contDiffAt)
+  exact ((contDiff_id.add harg).neg).div_const _
+
+/-- The correction of the parameter of the output loop of the core: on `[0, 1]` it runs from `0`
+to `0`; it is `-2x` near `0` and `2 - 2x` near `1`, so its periodization is smooth. -/
+private def coreStairCorrection (x : ℝ) : ℝ :=
+  smoothTransition (6 * x - 1) + smoothTransition (6 * x - 4) - 2 * x
+
+/-- The parameter of the output loop of the core: the output loop of the core at the time `t` lies
+on the ray from `1/2` at the angle `lobeAngle (1/4) (coreStair t)`. It increases by `2` over each
+period. -/
+private def coreStair (t : ℝ) : ℝ :=
+  2 * t + coreStairCorrection (Int.fract t)
+
+private theorem coreStair_add_one (t : ℝ) : coreStair (t + 1) = coreStair t + 2 := by
+  rw [coreStair, coreStair, Int.fract_add_one]
+  ring
+
+private theorem contDiff_coreStair {n : ℕ∞} : ContDiff ℝ n coreStair := by
+  have hc : ContDiff ℝ n coreStairCorrection :=
+    ((smoothTransition.contDiff.comp (contDiff_const.mul contDiff_id |>.sub contDiff_const)).add
+      (smoothTransition.contDiff.comp (contDiff_const.mul contDiff_id |>.sub contDiff_const))).sub
+      (contDiff_const.mul contDiff_id)
+  -- The correction is periodic near `0`, so its periodization is smooth.
+  have hper : ContDiff ℝ n fun w : ℝ × ℝ ↦ coreStairCorrection (Int.fract w.2) := by
+    rw [← contMDiff_iff_contDiff, ← contMDiff_prod_modelWithCornersSelf_iff]
+    refine (contMDiff_prod_modelWithCornersSelf_iff.2
+      (hc.comp contDiff_snd).contMDiff).comp_fract_snd
+      (G := fun w : ℝ × ℝ ↦ coreStairCorrection w.2) (ε := 1 / 6) (by norm_num)
+      fun _ t ht₀ ht₁ ↦ ?_
+    simp only [coreStairCorrection]
+    rw [smoothTransition.one_of_one_le (x := 6 * (t + 1) - 1) (by linarith),
+      smoothTransition.one_of_one_le (x := 6 * (t + 1) - 4) (by linarith),
+      smoothTransition.zero_of_nonpos (x := 6 * t - 1) (by linarith),
+      smoothTransition.zero_of_nonpos (x := 6 * t - 4) (by linarith)]
+    ring
+  exact (contDiff_const.mul contDiff_id).add
+    (hper.comp ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id))
+
+/-- The loopwise concatenation of the two halves of a function `Q` of period `2` is `Q` composed
+with `coreStair`. -/
+private theorem loopwiseTrans_eq_comp_coreStair {α : Type*} {Q : ℝ → α} (hQ : Periodic Q 2)
+    (s t : ℝ) :
+    loopwiseTrans (fun z ↦ Q z.2) (fun z ↦ Q (z.2 + 1)) (s, t) = Q (coreStair t) := by
+  have hper : Periodic (fun t ↦ loopwiseTrans (fun z ↦ Q z.2) (fun z ↦ Q (z.2 + 1)) (s, t)) 1 :=
+    fun t ↦ loopwiseTrans_apply_add_one _ _ s t
+  have hstair : coreStair t = coreStair (Int.fract t) + ⌊t⌋ * 2 := by
+    rw [coreStair, coreStair, Int.fract_fract, ← Int.self_sub_floor]
+    ring
+  rw [← hper.sub_int_mul_eq ⌊t⌋, mul_one, Int.self_sub_floor, hstair, hQ.int_mul ⌊t⌋]
+  have hf₀ := Int.fract_nonneg t
+  have hf₁ := Int.fract_lt_one t
+  rcases le_or_gt (Int.fract t) (1 / 2) with h | h
+  · rw [loopwiseTrans_of_le _ _ hf₀ h, coreStair, Int.fract_fract, coreStairCorrection,
+      smoothTransition.zero_of_nonpos (x := 6 * Int.fract t - 4) (by linarith)]
+    congr 1
+    ring
+  · rw [loopwiseTrans_of_lt _ _ h hf₁, coreStair, Int.fract_fract, coreStairCorrection,
+      smoothTransition.one_of_one_le (x := 6 * Int.fract t - 1) (by linarith)]
+    congr 1
+    ring
+
+private theorem lobeAngle_quarter_add_two (x : ℝ) :
+    lobeAngle (1 / 4) (x + 2) = lobeAngle (1 / 4) x + -(2 * π) := by
+  rw [lobeAngle, lobeAngle]
+  ring
+
+/-- The output loop of the core runs through the output circle on the ray from `1/2` at the angle
+`lobeAngle (1/4) (coreStair t)`. -/
+private theorem pairOfPantsCoreChart_mk_one_eq (t : ℝ) :
+    pairOfPantsCoreChart (1, t) = Complex.equivRealProdCLM (circleMap (1 / 2)
+      (coreOuterRadius (lobeAngle (1 / 4) (coreStair t))) (lobeAngle (1 / 4) (coreStair t))) := by
+  have hQ : Periodic (fun x ↦ Complex.equivRealProdCLM (circleMap (1 / 2)
+      (coreOuterRadius (lobeAngle (1 / 4) x)) (lobeAngle (1 / 4) x))) 2 := fun x ↦ by
+    simp only [lobeAngle_quarter_add_two, coreOuterRadius_add_neg_two_pi]
+    rw [← periodic_circleMap (1 / 2 : ℂ), neg_add_cancel_right]
+  refine (loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_)).trans
+    (loopwiseTrans_eq_comp_coreStair hQ 1 t)
+  · rw [coreLobe_mk_one_of_mem hr]
+  · rw [coreLobe_mk_one_of_mem hr,
+      show lobeAngle (3 / 4) r = lobeAngle (1 / 4) (r + 1) by rw [lobeAngle, lobeAngle]; ring]
+
+/-- The **lift of the output loop of the core chart** to the angular coordinate of the output end:
+the end chart of the output end `∞` at height `0` and angle `pairOfPantsOutputLift t` is the output
+loop `pairOfPantsCoreChart (1, t)` of the core chart
+(`TauCeti.Floer.endChart_inf_pairOfPantsOutputLift`). It is smooth and increases by `1` over each
+period, as both loops run once around the output circle `‖w‖ = 2`. -/
+def pairOfPantsOutputLift (t : ℝ) : ℝ :=
+  coreOutputLift (lobeAngle (1 / 4) (coreStair t))
+
+/-- The end chart of the output end at height `0` along the lift `pairOfPantsOutputLift` runs
+through the output loop of the core chart. -/
+theorem endChart_inf_pairOfPantsOutputLift (t : ℝ) :
+    endChart .inf (0, pairOfPantsOutputLift t) = pairOfPantsCoreChart (1, t) := by
+  rw [pairOfPantsOutputLift, endChart_inf_coreOutputLift, pairOfPantsCoreChart_mk_one_eq]
+
+/-- The lift of the output loop of the core increases by `1` over each period. -/
+theorem pairOfPantsOutputLift_add_one (t : ℝ) :
+    pairOfPantsOutputLift (t + 1) = pairOfPantsOutputLift t + 1 := by
+  rw [pairOfPantsOutputLift, pairOfPantsOutputLift, coreStair_add_one, lobeAngle_quarter_add_two,
+    coreOutputLift_add_neg_two_pi]
+
+/-- The lift of the output loop of the core is smooth. -/
+theorem contDiff_pairOfPantsOutputLift {n : ℕ∞} : ContDiff ℝ n pairOfPantsOutputLift := by
+  exact contDiff_coreOutputLift.comp ((contDiff_lobeAngle _).comp contDiff_coreStair)
 
 /-! ### The Jacobian of a lobe -/
 
@@ -727,22 +937,9 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
           lobeRadius a (smoothTransition z.1) z.2)) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z) ![(1, 0), (0, 1)] := by
   have hL := ((contDiff_lobeChart (n := 1) a).differentiable one_ne_zero z).hasFDerivAt
-  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
-  -- Read the pullback along `u` as a form on the plane, whose tangent spaces are `ℝ × ℝ`.
-  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z)
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
-  have hv : (fderiv ℝ (lobeChart a) z ∘ ![((1 : ℝ), (0 : ℝ)), (0, 1)]) =
-      ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  -- An alternating map of two vectors of `ℝ × ℝ` is their determinant times its value on the
-  -- standard basis vectors.
-  have hdet := congrArg (· ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)])
-    (ψ.toAlternatingMap.eq_basis_det_smulRight (Module.Basis.finTwoProd ℝ))
-  rw [AlternatingMap.smulRight_apply, Module.Basis.det_finTwoProd_apply,
-    Module.Basis.coe_finTwoProd] at hdet
-  refine (congrArg ψ hv).trans (hdet.trans ?_)
-  refine congrArg (· • ψ ![(1, 0), (0, 1)]) ?_
+  rw [mpullback_comp_apply_eq_det_smul φ hL hu, LinearMap.det_finTwoProd]
+  refine congrArg (· • _) ?_
+  simp only [ContinuousLinearMap.coe_coe]
   rw [fderiv_lobeChart_apply_one_zero, fderiv_lobeChart_apply_zero_one]
   set e := Complex.exp (lobeAngle a z.2 * Complex.I)
   have he : e.re ^ 2 + e.im ^ 2 = 1 := by
