@@ -312,10 +312,8 @@ theorem cauchyRiemannLinearization_apply_mem_range_of_eventually_mem_range
     ext w
     exact LinearMap.congr_fun hΛ w
   have hunit : ∀ᶠ y in 𝓝 x, IsUnit (Λ'.comp (fderiv ℝ u y)) :=
-    hA.continuousAt.eventually (Units.isOpen.mem_nhds (by
-      change IsUnit (Λ'.comp (fderiv ℝ u x))
-      rw [hAx]
-      exact isUnit_one))
+    hA.continuousAt.eventually
+      (Units.isOpen.mem_nhds (by simpa only [Set.mem_ofPred_eq, hAx] using isUnit_one))
   let a : U → U := fun y ↦ Ring.inverse (Λ'.comp (fderiv ℝ u y)) (Λ' (ξ y))
   have ha : DifferentiableAt ℝ a x :=
     (hA.inverse (by rw [hAx]; exact isUnit_one)).clm_apply
