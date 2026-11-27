@@ -18,10 +18,12 @@ This file develops the elementary functorial API for Mathlib's
 `x : X`, this is the degree `[κ(x) : κ(f(x))]`, with value zero when the field extension is
 infinite.
 
-The main result is the tower law `residueDegree_comp`. It identifies the residue degree of a
-composite with the product of the two successive residue degrees. We also characterize when a
+The main result is the tower law `residueDegree_comp`, built on the scalar tower
+`isScalarTower_residueField` of residue fields along a composite. It identifies the residue degree
+of a composite with the product of the two successive residue degrees. We also characterize when a
 residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
-as a closed immersion, has residue degree one everywhere. The comparison
+as a closed immersion, has residue degree one everywhere, and that a morphism has residue degree
+one over any open of its target over which it is an isomorphism. The comparison
 `finrank_residueField_stalk` computes this degree from the residue field of the local ring with
 any compatible base-field algebra structure, and `residueDegree_eq_finrank_residueField` computes
 it through any local ring isomorphic to the source stalk compatibly with the stalk map. These facts
@@ -42,6 +44,24 @@ universe u
 
 variable {X Y Z : Scheme.{u}}
 
+/-- The residue-field maps of a composite form a scalar tower `κ(g(f(x))) → κ(f(x)) → κ(x)`, for
+the algebra structures given by the residue-field maps of `g`, `f` and `f ≫ g`. -/
+theorem isScalarTower_residueField (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) :
+    letI := (g.residueFieldMap (f x)).hom.toAlgebra
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    letI : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
+      ((f ≫ g).residueFieldMap x).hom.toAlgebra
+    IsScalarTower (Z.residueField (g (f x))) (Y.residueField (f x)) (X.residueField x) := by
+  let : Algebra (Z.residueField (g (f x))) (Y.residueField (f x)) :=
+    (g.residueFieldMap (f x)).hom.toAlgebra
+  let : Algebra (Y.residueField (f x)) (X.residueField x) :=
+    (f.residueFieldMap x).hom.toAlgebra
+  let : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
+    ((f ≫ g).residueFieldMap x).hom.toAlgebra
+  exact .of_algebraMap_eq' <|
+    (congrArg CommRingCat.Hom.hom (Scheme.residueFieldMap_comp f g x)).trans
+      (CommRingCat.hom_comp _ _)
+
 /-- The residue degree of a composite is the product of the successive residue degrees:
 `[κ(x) : κ(g(f(x)))] = [κ(f(x)) : κ(g(f(x)))] [κ(x) : κ(f(x))]`. -/
 @[simp]
@@ -53,11 +73,7 @@ theorem residueDegree_comp (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) :
     (f.residueFieldMap x).hom.toAlgebra
   let : Algebra (Z.residueField (g (f x))) (X.residueField x) :=
     ((f ≫ g).residueFieldMap x).hom.toAlgebra
-  let : IsScalarTower (Z.residueField (g (f x))) (Y.residueField (f x))
-      (X.residueField x) :=
-    IsScalarTower.of_algebraMap_eq' <| by
-      rw [RingHom.algebraMap_toAlgebra]
-      exact congrArg CommRingCat.Hom.hom (Scheme.residueFieldMap_comp f g x)
+  have := isScalarTower_residueField f g x
   rw [residueDegree]
   exact (Module.finrank_mul_finrank (Z.residueField (g (f x)))
     (Y.residueField (f x)) (X.residueField x)).symm
@@ -118,6 +134,16 @@ theorem residueDegree_eq_finrank_residueField (f : X ⟶ Y) (x : X) {T : Type u}
     (e.symm : _ →+* T) (IsLocalRing.ResidueField.map (f.stalkMap x).hom (IsLocalRing.residue _ a))
   rw [IsLocalRing.ResidueField.map_residue, IsLocalRing.ResidueField.map_residue, ← he]
   simp
+
+/-- A morphism which is an isomorphism over an open `U` of its target has residue degree one at
+every point lying over `U`. -/
+theorem residueDegree_eq_one_of_isIso_morphismRestrict (f : X ⟶ Y) {U : Y.Opens}
+    [IsIso (f ∣_ U)] {x : X} (hx : f x ∈ U) : f.residueDegree x = 1 := by
+  obtain ⟨x, rfl⟩ : ∃ x' : (f ⁻¹ᵁ U).toScheme, (f ⁻¹ᵁ U).ι x' = x := ⟨⟨x, hx⟩, rfl⟩
+  have h := residueDegree_comp (f ⁻¹ᵁ U).ι f x
+  rw [← morphismRestrict_ι, residueDegree_comp] at h
+  simp only [residueDegree_eq_one_of_surjectiveOnStalks, mul_one] at h
+  exact h.symm
 
 /-- For a morphism to the spectrum of a field, the residue degree at a point is the
 base-field dimension of the residue field of its local ring, with the compatible algebra
