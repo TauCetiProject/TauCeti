@@ -51,6 +51,10 @@ level `d` with `d • A_L = 0`; it contains `-1` exactly when `A_L` is `2`-eleme
   isometry `L ≅ M` maps `Õ(L)` onto `Õ(M)`.
 * `TauCeti.IntegralLattice.Isometry.ker_discriminantOrthogonalHom`: the kernel of
   `O(L) →* O(q_L)` is `Õ(L)`.
+* `TauCeti.IntegralLattice.Isometry.discriminantOrthogonalHom_conjMulEquiv` and
+  `TauCeti.IntegralLattice.Isometry.discriminantOrthogonalHom_surjective_iff`: an isometry
+  `L ≅ M` intertwines `O(L) →* O(q_L)` and `O(M) →* O(q_M)`, so one is surjective exactly when
+  the other is.
 
 ## References
 
@@ -278,6 +282,35 @@ theorem discriminantOrthogonalHom_neg [L.IsNondegenerate] (hL : L.IsEven) :
 theorem ker_discriminantOrthogonalHom [L.IsNondegenerate] (hL : L.IsEven) :
     (discriminantOrthogonalHom L hL).ker = discriminantKernel L :=
   MonoidHom.ker_codRestrict _ _ _
+
+/-- Conjugation by an isometry `e : L ≅ M` corresponds, in the orthogonal groups of the
+discriminant forms, to conjugation by the induced isometry `q_L ≅ q_M`. -/
+theorem discriminantOrthogonalHom_conjMulEquiv [L.IsNondegenerate] [M.IsNondegenerate]
+    (hL : L.IsEven) (hM : M.IsEven) (e : Isometry L M) (g : Isometry L L) :
+    discriminantOrthogonalHom M hM (e.conjMulEquiv g) =
+      (e.discriminantQuadraticIsometry hL).orthogonalGroupCongr
+        (discriminantOrthogonalHom L hL g) :=
+  Subtype.ext <| LinearEquiv.ext fun a ↦ by
+    obtain ⟨b, rfl⟩ := EquivLike.surjective (e.discriminantQuadraticIsometry hL) a
+    rw [QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply,
+      QuadraticMap.IsometryEquiv.symm_apply_apply, coe_discriminantOrthogonalHom,
+      coe_discriminantOrthogonalHom, discriminantGroupHom_apply, discriminantGroupHom_apply]
+    -- Rewrite the discriminant-group statement into the quadratic-module one: the goal's carrier
+    -- is that of the discriminant quadratic module, where `rw` cannot reach the arguments.
+    have h := discriminantGroupEquiv_conjMulEquiv_apply e g b
+    rwa [← discriminantQuadraticIsometry_apply e hL,
+      ← discriminantQuadraticIsometry_apply e hL b] at h
+
+/-- The surjectivity of `O(L) → O(q_L)` is invariant under isometries of lattices. -/
+theorem discriminantOrthogonalHom_surjective_iff [L.IsNondegenerate] [M.IsNondegenerate]
+    (hL : L.IsEven) (hM : M.IsEven) (e : Isometry L M) :
+    Function.Surjective (discriminantOrthogonalHom L hL) ↔
+      Function.Surjective (discriminantOrthogonalHom M hM) := by
+  have h : ⇑(discriminantOrthogonalHom M hM) ∘ e.conjMulEquiv =
+      (e.discriminantQuadraticIsometry hL).orthogonalGroupCongr ∘
+        discriminantOrthogonalHom L hL :=
+    funext (discriminantOrthogonalHom_conjMulEquiv hL hM e)
+  rw [← e.conjMulEquiv.surjective.of_comp_iff, h, EquivLike.comp_surjective]
 
 end Isometry
 

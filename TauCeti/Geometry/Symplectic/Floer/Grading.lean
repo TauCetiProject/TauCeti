@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.InjectiveGrading
 public import TauCeti.RingTheory.NovikovModule.DiscretePeriod
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Cochain degrees of supported Floer products
@@ -61,6 +62,18 @@ each energy level must then come from compactness.
 Otherwise the kernel's grading and support hypotheses remain explicit: establishing them for
 geometric counts requires the index and compactness theorems of the chosen Floer problem. No
 complex, orientation line, differential or geometric count is constructed here.
+
+The cochain regrading is the only affine regrading `k = c + σ μ` of the raw grading in which
+the product has degree zero and the differential has degree `+1`. A product kernel of
+raw degree `-n` with a nonzero coefficient has degree zero exactly when `c = -σ n`
+(`TauCeti.Floer.forall_kernelProduct_mem_gradeBy_affine_iff`), and a differential of raw degree
+`-1` with a nonzero coefficient raises the degree by one exactly when `σ = -1`
+(`TauCeti.Floer.forall_kernelMap_mem_gradeBy_affine_iff`); so both hold exactly for `k = n - μ`
+(`TauCeti.Floer.forall_kernelProduct_mem_gradeBy_and_forall_kernelMap_mem_gradeBy_affine_iff`).
+The regrading `C^k = CF_(n+k)`, for instance, also gives a product of degree zero, but its
+differential lowers degrees. Both directions concern the actual completed maps, read off on
+generators (`TauCeti.NovikovModule.forall_kernelProduct_mem_gradeBy_iff`,
+`TauCeti.NovikovModule.forall_kernelMap_mem_gradeBy_iff`).
 
 The product is `TauCeti.NovikovModule.kernelProduct`, and its homogeneity follows from
 `TauCeti.NovikovModule.kernelProduct_mem_gradeBy`.
@@ -118,6 +131,93 @@ theorem kernelProduct_mem_cochain_gradeBy {i j : ℤ} {a : NovikovModule R F₁}
   kernelProduct_mem_map_cochain_gradeBy hκ hfin hμ (AddMonoidHom.id ℤ) ha hb
 
 end Product
+
+section Regrading
+
+variable {R S S₁ S₂ S₀ : Type*}
+  {F : S → ℝ} {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ}
+  {μ : S → ℤ} {μ₁ : S₁ → ℤ} {μ₂ : S₂ → ℤ} {μ₀ : S₀ → ℤ} {n σ c : ℤ}
+
+section Product
+
+variable [CommSemiring R] {C : ℝ} {κ : S₁ → S₂ → S₀ → R}
+  (hκ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C)
+  (hfin : ∀ p₁ p₂, κ p₁ p₂ ∈ NovikovModule R F₀)
+  (hμ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n)
+
+include hμ in
+/-- Regrade the raw Floer grading `μ` affinely, by `k = c + σ μ`. A supported product kernel of
+raw degree `-n` with a nonzero coefficient has degree zero in this grading exactly when
+`c = -σ n`. For `σ = -1` this is the cochain regrading `C^k = CF_(n-k)`, and for `σ = 1` it is
+`C^k = CF_(n+k)`: the product has degree zero in both. -/
+theorem forall_kernelProduct_mem_gradeBy_affine_iff {p₁ : S₁} {p₂ : S₂} {p₀ : S₀}
+    (hp : κ p₁ p₂ p₀ ≠ 0) :
+    (∀ i j (a : NovikovModule R F₁) (b : NovikovModule R F₂),
+      a ∈ gradeBy R F₁ (fun p => c + σ * μ₁ p) i →
+      b ∈ gradeBy R F₂ (fun p => c + σ * μ₂ p) j →
+      kernelProduct hκ hfin a b ∈ gradeBy R F₀ (fun p => c + σ * μ₀ p) (i + j)) ↔
+      c = -(σ * n) := by
+  have key := forall_kernelProduct_mem_gradeBy_iff hκ hfin (d₁ := fun p => c + σ * μ₁ p)
+    (d₂ := fun p => c + σ * μ₂ p) (d₀ := fun p => c + σ * μ₀ p) (ε := 0)
+  simp only [add_zero] at key
+  refine key.trans ⟨fun h => ?_, fun h p₁ p₂ p₀ hp => ?_⟩
+  · linear_combination σ * hμ p₁ p₂ p₀ hp - h p₁ p₂ p₀ hp
+  · linear_combination σ * hμ p₁ p₂ p₀ hp - h
+
+end Product
+
+section Differential
+
+variable [Semiring R] {C : ℝ} {δ : S → S → R}
+  (hδ : ∀ p q, δ p q ≠ 0 → F q ≤ F p + C) (hδfin : ∀ p, δ p ∈ NovikovModule R F)
+  (hδμ : ∀ p q, δ p q ≠ 0 → μ q = μ p - 1)
+
+include hδμ in
+/-- Regrade the raw Floer grading `μ` affinely, by `k = c + σ μ`. A supported differential of raw
+degree `-1` with a nonzero coefficient raises this grading by one exactly when `σ = -1`, as for
+the cochain regrading `C^k = CF_(c-k)`. For `σ = 1`, the regrading `C^k = CF_(k-c)`, it lowers
+the grading by one instead (`TauCeti.NovikovModule.kernelMap_mem_gradeBy`). -/
+theorem forall_kernelMap_mem_gradeBy_affine_iff {p q : S} (hp : δ p q ≠ 0) :
+    (∀ k (a : NovikovModule R F), a ∈ gradeBy R F (fun p => c + σ * μ p) k →
+      kernelMap hδ hδfin a ∈ gradeBy R F (fun p => c + σ * μ p) (k + 1)) ↔ σ = -1 := by
+  refine (forall_kernelMap_mem_gradeBy_iff hδ hδfin).trans ⟨fun h => ?_, fun h p q hp => ?_⟩
+  · linear_combination σ * hδμ p q hp - h p q hp
+  · linear_combination σ * hδμ p q hp - h
+
+end Differential
+
+variable [CommSemiring R] {C C' : ℝ} {κ : S₁ → S₂ → S₀ → R}
+  (hκ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C)
+  (hfin : ∀ p₁ p₂, κ p₁ p₂ ∈ NovikovModule R F₀)
+  (hμ : ∀ p₁ p₂ p₀, κ p₁ p₂ p₀ ≠ 0 → μ₀ p₀ = μ₁ p₁ + μ₂ p₂ - n)
+  {δ : S₀ → S₀ → R} (hδ : ∀ p q, δ p q ≠ 0 → F₀ q ≤ F₀ p + C')
+  (hδfin : ∀ p, δ p ∈ NovikovModule R F₀) (hδμ : ∀ p q, δ p q ≠ 0 → μ₀ q = μ₀ p - 1)
+
+include hμ hδμ in
+/-- The cochain regrading `k = n - μ` is the only affine regrading `k = c + σ μ` of the raw Floer
+grading in which both a supported product kernel of raw degree `-n` has degree zero and a
+supported differential of raw degree `-1` on its output has degree `+1`, provided each has a
+nonzero coefficient. For `σ = 1`, the regrading `C^k = CF_(k-c)`, the product has degree zero
+only for `c = -n`, that is for `C^k = CF_(n+k)`, whose differential has degree `-1`; for
+`σ = -1`, the regrading `C^k = CF_(c-k)`, it needs `c = n`. -/
+theorem forall_kernelProduct_mem_gradeBy_and_forall_kernelMap_mem_gradeBy_affine_iff
+    {p₁ : S₁} {p₂ : S₂} {p₀ : S₀} (hp : κ p₁ p₂ p₀ ≠ 0) {q q₀ : S₀} (hq : δ q q₀ ≠ 0) :
+    ((∀ i j (a : NovikovModule R F₁) (b : NovikovModule R F₂),
+      a ∈ gradeBy R F₁ (fun p => c + σ * μ₁ p) i →
+      b ∈ gradeBy R F₂ (fun p => c + σ * μ₂ p) j →
+      kernelProduct hκ hfin a b ∈ gradeBy R F₀ (fun p => c + σ * μ₀ p) (i + j)) ∧
+      ∀ k (a : NovikovModule R F₀), a ∈ gradeBy R F₀ (fun p => c + σ * μ₀ p) k →
+        kernelMap hδ hδfin a ∈ gradeBy R F₀ (fun p => c + σ * μ₀ p) (k + 1)) ↔
+      σ = -1 ∧ c = n := by
+  rw [forall_kernelProduct_mem_gradeBy_affine_iff hκ hfin hμ hp,
+    forall_kernelMap_mem_gradeBy_affine_iff hδ hδfin hδμ hq]
+  constructor
+  · rintro ⟨hc, rfl⟩
+    exact ⟨rfl, by linear_combination hc⟩
+  · rintro ⟨rfl, rfl⟩
+    exact ⟨by ring, rfl⟩
+
+end Regrading
 
 section Residue
 

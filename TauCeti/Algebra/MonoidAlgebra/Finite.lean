@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Submonoid.Finiteness
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs

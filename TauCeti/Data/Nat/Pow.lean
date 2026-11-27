@@ -112,4 +112,13 @@ theorem mul_pow_le_pow_mul {b : ℕ} (n : ℕ) {p : ℕ} (hb : 2 ≤ b) (hp : 0 
       _ = b ^ (n * p) := by
         rw [← pow_add, ← add_one_mul, Nat.sub_add_cancel hn]
 
+/-- If `1 < p` and either `D < e` or `D < j`, then `D < (p ^ e + 1) * p ^ j`. -/
+theorem lt_add_one_mul_pow_of_lt {p D e j : ℕ} (hp : 1 < p) (h : D < e ∨ D < j) :
+    D < (p ^ e + 1) * p ^ j := by
+  rcases h with he | hj
+  · exact lt_of_lt_of_le (he.trans ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
+      (Nat.le_mul_of_pos_right _ (Nat.pow_pos (zero_lt_one.trans hp)))
+  · exact lt_of_lt_of_le (hj.trans (Nat.lt_pow_self hp))
+      (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
+
 end Nat

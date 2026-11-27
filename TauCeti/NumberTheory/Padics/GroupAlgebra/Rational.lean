@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Algebra.Module.Projective.LinearMap
-import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.Algebra.Module.Projective.Reduction.Basic
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective

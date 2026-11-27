@@ -17,8 +17,9 @@ public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Algebra.Lie.SkewAdjoint.Star
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.LinearAlgebra.Complex.Module
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.LinearAlgebra.Matrix.PosDef
-import TauCeti.LinearAlgebra.Complex.Conjugation
+import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
@@ -148,10 +149,29 @@ variable (ι) in
 dimension is the complex dimension `n²` of all `n × n` matrices. -/
 theorem finrank_unitaryLieAlgebra :
     finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
-  rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq, finrank_selfAdjoint_submodule,
+  rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq,
+    finrank_selfAdjoint_submodule_eq ℝ _ Complex.mem_range_algebraMap_of_isSelfAdjoint
+      Complex.val_mk0_I_mem_skewAdjoint,
     finrank_matrix, finrank_self, mul_one]
 
 /-! ### The adjoint and coadjoint representations -/
+
+variable (ι) in
+/-- Unitary conjugation on the ambient real matrix Lie algebra. -/
+def unitaryConjugation (U : unitaryGroup ι ℂ) :
+    Matrix ι ι ℂ →ₗ⁅ℝ⁆ Matrix ι ι ℂ :=
+  (Unitary.conjStarAlgAut ℝ (Matrix ι ι ℂ) U).toAlgEquiv.toAlgHom.toLieHom
+
+/-- The ambient unitary conjugation sends `X` to `U X Uᴴ`. -/
+@[simp]
+theorem unitaryConjugation_apply (U : unitaryGroup ι ℂ) (X : Matrix ι ι ℂ) :
+    unitaryConjugation ι U X = U * X * star (U : Matrix ι ι ℂ) := (rfl)
+
+/-- Unitary conjugation preserves the trace of a complex matrix. -/
+theorem trace_unitaryConjugation (U : unitaryGroup ι ℂ) (X : Matrix ι ι ℂ) :
+    Matrix.trace (unitaryConjugation ι U X) = Matrix.trace X := by
+  have hU := Unitary.star_mul_self_of_mem U.property
+  rw [unitaryConjugation_apply, Matrix.trace_mul_cycle, hU, Matrix.one_mul]
 
 variable (ι) in
 /-- The **adjoint representation** of `U(n)` on `𝔲(n)`, by conjugation `Ad_U X = U X Uᴴ`. -/

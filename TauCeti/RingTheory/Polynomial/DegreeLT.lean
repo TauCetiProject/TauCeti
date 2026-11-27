@@ -47,6 +47,10 @@ evaluating polynomials of degree `< n`.
   remainder reads off `g * v + u`.
 * `Polynomial.map_mem_degreeLT`: a change of coefficients preserves membership in `R[X]_n`.
 * `Polynomial.finrank_degreeLT`: `R[X]_n` has rank `n`.
+* `Polynomial.finite_setOf_monic_natDegree_eq`, `Polynomial.ncard_setOf_monic_natDegree_eq`:
+  over a finite coefficient ring there are finitely many monic polynomials of degree `d`, and over
+  a nontrivial one there are `#R ^ d` of them, since `Polynomial.monicEquivDegreeLT` matches them
+  with `R[X]_d`.
 * `Polynomial.Monic.sub_mem_degreeLT`: the difference of two monic polynomials of the same degree
   `n` has degree `< n`.
 * `Polynomial.Monic.mul_add_mul_eq_iff`: given a Bézout relation `u * g + v * h = 1`, the
@@ -121,6 +125,24 @@ theorem map_mem_degreeLT {S : Type*} [Semiring S] (φ : R →+* S) {n : ℕ} {f 
 @[simp]
 theorem finrank_degreeLT [StrongRankCondition R] (n : ℕ) : Module.finrank R (degreeLT R n) = n := by
   rw [Module.finrank_eq_card_basis (degreeLT.basis R n), Fintype.card_fin]
+
+variable (R)
+
+/-- Over a finite semiring there are finitely many monic polynomials of each degree: such a
+polynomial is determined by its lower coefficients. -/
+theorem finite_setOf_monic_natDegree_eq [Finite R] (d : ℕ) :
+    {g : R[X] | g.Monic ∧ g.natDegree = d}.Finite := by
+  nontriviality R
+  have : Finite (degreeLT R d) := .of_equiv _ (degreeLTEquiv R d).toEquiv.symm
+  exact Set.finite_coe_iff.mp (.of_equiv _ (monicEquivDegreeLT d).symm)
+
+/-- Over a nontrivial semiring `R` there are `#R ^ d` monic polynomials of degree `d`, one for each
+choice of the `d` lower coefficients. For infinite `R` (and `d ≥ 1`) both sides are `0`. -/
+theorem ncard_setOf_monic_natDegree_eq [Nontrivial R] (d : ℕ) :
+    {g : R[X] | g.Monic ∧ g.natDegree = d}.ncard = Nat.card R ^ d := by
+  rw [← Nat.card_coe_set_eq, Set.coe_ofPred,
+    Nat.card_congr ((monicEquivDegreeLT d).trans (degreeLTEquiv R d).toEquiv), Nat.card_fun,
+    Nat.card_fin]
 
 end Semiring
 

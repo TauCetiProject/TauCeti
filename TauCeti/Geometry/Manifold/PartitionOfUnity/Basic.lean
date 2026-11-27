@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Topology.PartitionOfUnity.Basic
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # Pointwise sums over the finite support of a smooth partition of unity
@@ -24,6 +25,7 @@ derived from their counterparts for the underlying `PartitionOfUnity` in
 public section
 
 open Set
+open scoped ContDiff Manifold
 
 namespace SmoothPartitionOfUnity
 
@@ -44,3 +46,18 @@ theorem sum_finsupport_smul_eq_of_forall_eq {A : Type*} [AddCommMonoid A] [Modul
   ρ.toPartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq hx hw
 
 end SmoothPartitionOfUnity
+
+namespace BumpCovering
+
+variable {ι E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {s : Set M}
+
+/-- A `BumpCovering` whose functions are `C^k` generates a `C^k` partition of unity. -/
+theorem contMDiff_toPartitionOfUnity_of_contMDiff {k : ℕ∞ω} (f : BumpCovering ι M s)
+    (hf : ∀ i, ContMDiff I 𝓘(ℝ) k (f i)) (i : ι) :
+    ContMDiff I 𝓘(ℝ) k (f.toPartitionOfUnity i) :=
+  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
+    simp only [Function.mulSupport_one_sub]
+    exact f.locallyFinite
+
+end BumpCovering

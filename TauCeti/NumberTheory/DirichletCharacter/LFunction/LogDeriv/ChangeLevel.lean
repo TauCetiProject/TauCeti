@@ -83,7 +83,7 @@ theorem norm_logDeriv_LFunction_changeLevel_sub_le {M N : ℕ} [NeZero M] [NeZer
     exact Real.log_nonneg (Nat.one_le_cast.mpr NeZero.one_le)
   have h : s ≠ 1 ∨ ψ ≠ 1 := not_and_or.mp h1
   have hPs : (∏ p ∈ N.primeFactors, (1 - ψ p * (p : ℂ) ^ (-s))) ≠ 0 :=
-    prod_one_sub_mul_prime_cpow_ne_zero (N := N) ψ (zero_lt_one.trans_le hs)
+    prod_one_sub_mul_prime_cpow_ne_zero (N := N) ψ (zero_lt_one.trans_le hs).ne'
   rw [logDeriv_LFunction_changeLevel_sub ψ hMN h hPs (LFunction_ne_zero_of_one_le_re ψ h.symm hs)]
   refine (norm_sum_le _ _).trans ((sum_le_sum fun p hp ↦ ?_).trans (Nat.sum_primeFactors_log_le N))
   simpa using Complex.norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le (q := p)

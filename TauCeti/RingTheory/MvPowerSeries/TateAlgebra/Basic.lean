@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
 public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
@@ -51,6 +52,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound against a
   restricted series preserves restrictedness and gives the same Gauss-norm bound, even across
   different coefficient rings.
+* `MvPowerSeries.IsRestricted.of_X_mul`: dividing a restricted series by a variable of nonzero
+  radius keeps it restricted.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -143,6 +146,20 @@ theorem IsRestricted.of_norm_coeff_le {S : Type*} [NormedRing S] {c : σ → ℝ
   rw [← mul_assoc]
   exact mul_le_mul_of_nonneg_right (h t) (prod_abs_pow_nonneg t)
 
+/-- Dividing a restricted series by a variable whose radius is nonzero keeps it restricted: the
+weighted coefficients of `f` are those of `Xᵢ f`, shifted by `Xᵢ` and divided by `c i`. -/
+theorem IsRestricted.of_X_mul {c : σ → ℝ} {i : σ} (hc : c i ≠ 0) {f : MvPowerSeries σ R}
+    (h : IsRestricted c (X i * f)) : IsRestricted c f := by
+  have h' := (h.comp (add_right_injective (Finsupp.single i 1)).tendsto_cofinite).const_mul
+    (c i)⁻¹
+  rw [mul_zero] at h'
+  refine h'.congr fun t ↦ ?_
+  simp only [Function.comp_apply, X, coeff_add_monomial_mul, one_mul,
+    Finsupp.prod_add_index' (h := fun j n ↦ c j ^ n) (fun _ ↦ pow_zero _)
+      fun _ _ _ ↦ pow_add _ _ _,
+    pow_zero, Finsupp.prod_single_index, pow_one]
+  field_simp
+
 /-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
 `(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
 theorem _root_.Finsupp.prod_pow_le_prod_pow_mul {K : Type*} [Field K] [LinearOrder K]
@@ -233,12 +250,6 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
       exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
     _ = ε := add_halves ε
-
-omit hc in
-/-- The weights of exponents are multiplicative. -/
-theorem prod_pow_add (s t : σ →₀ ℕ) :
-    (s + t).prod (c · ^ ·) = s.prod (c · ^ ·) * t.prod (c · ^ ·) :=
-  Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _
 
 /-- At positive polyradii the restricted-series subring carries its Gauss norm. -/
 noncomputable instance instNormedRingIsRestrictedSubring :

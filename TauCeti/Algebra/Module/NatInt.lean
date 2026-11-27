@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.NatInt
 public import Mathlib.Algebra.Group.Action.Units
+public import Mathlib.Algebra.GroupWithZero.Units.Basic
 import Mathlib.Algebra.Ring.Int.Units
 
 /-!
@@ -18,6 +19,9 @@ actions.
 
 Without any compatibility between the scalar action and a product, the scalars `±1` still commute
 with multiplication, because `(-1) • a` is the additive inverse of `a`.
+
+When a natural number `n` is a unit of the scalar ring, `Ring.inverse_natCast_smul_nsmul` divides
+`n • v` by `n`.
 -/
 
 public section
@@ -41,3 +45,8 @@ theorem intUnits_smul_mul_smul {R A : Type*} [Ring R] [NonUnitalNonAssocSemiring
     simp
 
 end TauCeti
+
+/-- Dividing `n • v` by a natural number `n` that is a unit of the scalar ring gives back `v`. -/
+theorem Ring.inverse_natCast_smul_nsmul {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    {n : ℕ} (hn : IsUnit (n : R)) (v : V) : Ring.inverse (n : R) • n • v = v := by
+  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, Ring.inverse_mul_cancel _ hn, one_smul]

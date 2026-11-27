@@ -13,6 +13,11 @@ import TauCeti.RingTheory.KrullDimension.Module
 /-!
 # Krull dimension of a principal quotient
 
+In any commutative ring, quotienting by an element outside every minimal prime lowers the Krull
+dimension by at least one: `dim (R ⧸ (x)) + 1 ≤ dim R`. This is the ring form of Mathlib's
+`Module.supportDim_quotSMulTop_succ_le_of_notMem_minimalPrimes`, and it drives inductions on the
+Krull dimension, such as Bass's bound on the stable range of a noetherian ring.
+
 For a Noetherian ring, quotienting by an element in the Jacobson radical that lies outside every
 minimal prime gives `dim (R ⧸ (x)) + 1 = dim R`. This is the ring form of Mathlib's
 `Module.supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson`. Applied to a
@@ -45,6 +50,23 @@ namespace TauCeti
 
 open Ideal Pointwise _root_.IsLocalRing
 
+/-- The quotient ring `R ⧸ (x)` has the Krull dimension of the support of the `R`-module
+`R ⧸ xR`. -/
+theorem ringKrullDim_quotient_span_singleton_eq_supportDim {R : Type*} [CommRing R] (x : R) :
+    ringKrullDim (R ⧸ span {x}) = Module.supportDim R (QuotSMulTop x R) := by
+  have h : span {x} = x • (⊤ : Ideal R) := by simp [← Submodule.ideal_span_singleton_smul]
+  rw [ringKrullDim_eq_of_ringEquiv (quotientEquivAlgOfEq R h).toRingEquiv,
+    ← Module.supportDim_quotient_eq_ringKrullDim]
+
+/-- In a commutative ring, quotienting by an element `x` outside every minimal prime lowers the
+Krull dimension by at least one: `dim R ⧸ (x) + 1 ≤ dim R`. -/
+theorem ringKrullDim_quotient_span_singleton_succ_le_of_notMem_minimalPrimes {R : Type*}
+    [CommRing R] {x : R} (hmin : ∀ p ∈ minimalPrimes R, x ∉ p) :
+    ringKrullDim (R ⧸ span {x}) + 1 ≤ ringKrullDim R := by
+  rw [ringKrullDim_quotient_span_singleton_eq_supportDim, ← Module.supportDim_self_eq_ringKrullDim]
+  exact Module.supportDim_quotSMulTop_succ_le_of_notMem_minimalPrimes
+    (by rwa [Module.annihilator_eq_bot.mpr inferInstance])
+
 /-- In a Noetherian ring, for `x` in the Jacobson radical outside every minimal prime,
 `dim R ⧸ (x) + 1 = dim R`. -/
 @[stacks 0B52 "the equality case"]
@@ -53,13 +75,10 @@ theorem
     {R : Type*} [CommRing R] [IsNoetherianRing R] {x : R}
     (hmin : ∀ p ∈ minimalPrimes R, x ∉ p) (hx : x ∈ Ring.jacobson R) :
     ringKrullDim (R ⧸ span {x}) + 1 = ringKrullDim R := by
-  have h : span {x} = x • (⊤ : Ideal R) := by simp [← Submodule.ideal_span_singleton_smul]
-  have hann : Module.annihilator R R = ⊥ :=
-    Module.annihilator_eq_bot.mpr ((faithfulSMul_iff_algebraMap_injective R R).mpr fun _ _ h ↦ h)
-  rw [ringKrullDim_eq_of_ringEquiv (quotientEquivAlgOfEq R h).toRingEquiv,
-    ← Module.supportDim_quotient_eq_ringKrullDim, ← Module.supportDim_self_eq_ringKrullDim]
+  rw [ringKrullDim_quotient_span_singleton_eq_supportDim, ← Module.supportDim_self_eq_ringKrullDim]
   exact Module.supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson
-    (by rwa [hann]) ((Module.annihilator R R).ringJacobson_le_jacobson hx)
+    (by rwa [Module.annihilator_eq_bot.mpr inferInstance])
+    ((Module.annihilator R R).ringJacobson_le_jacobson hx)
 
 /-- **A general hyperplane section of a two-dimensional local ring is a curve of dimension one.**
 In a Noetherian local ring `(R, 𝔪)` of Krull dimension two, the quotient by an element

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Transverse
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Codisc
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.EulerField
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
+import TauCeti.Geometry.Contact.Pullback
 
 /-!
 # The unit cosphere bundle is of restricted contact type
@@ -115,9 +116,9 @@ form. -/
 theorem isContactForm_mpullback_liouvilleForm_cosphereBundle :
     (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
       (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
-      (liouvilleForm I M)).IsContactForm := by
-  rw [← SmoothForm.isContactForm_neg_iff, ← map_neg]
-  exact isContactForm_mpullback_neg_liouvilleForm_cosphereBundle
+      (liouvilleForm I M)).IsContactForm :=
+  (SmoothForm.isContactForm_mpullback_neg_iff _ (liouvilleForm I M)).1
+    isContactForm_mpullback_neg_liouvilleForm_cosphereBundle
 
 end CotangentBundle
 

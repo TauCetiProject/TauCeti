@@ -36,6 +36,8 @@ induced morphism of affine group schemes (`TauCeti.CommHopfAlgCat.kernelHopfIdea
   pullback along a surjective bialgebra morphism.
 * `TauCeti.HopfIdeal.counitBialgEquivOfAugmentationEqBot`: a Hopf algebra with zero
   augmentation ideal is bialgebra-equivalent to its base ring via the counit.
+* `TauCeti.HopfIdeal.augmentation_quotient_eq_bot_iff`: the quotient by a Hopf ideal has zero
+  augmentation ideal exactly when the Hopf ideal is the augmentation ideal.
 
 ## References
 
@@ -250,6 +252,16 @@ theorem counitBialgEquivOfAugmentationEqBot_symm_apply
     r = Bialgebra.counitBialgHom S K (algebraMap S K r) := by simp
     _ = e (algebraMap S K r) :=
       (counitBialgEquivOfAugmentationEqBot_apply h (algebraMap S K r)).symm
+
+/-- The coordinate Hopf algebra `H ⧸ I` of the closed subgroup cut out by a Hopf ideal `I` has
+zero augmentation ideal, so that the subgroup is trivial, exactly when `I` is the augmentation
+ideal of `H`. -/
+theorem augmentation_quotient_eq_bot_iff {k : Type u} {H : Type v} [CommRing k] [CommRing H]
+    [HopfAlgebra k H] (I : HopfIdeal k H) :
+    augmentation k (H ⧸ I.toIdeal) = ⊥ ↔ I = augmentation k H := by
+  rw [← comapOfSurjective_eq_comapOfSurjective_iff (Bialgebra.Quotient.mkBialgHom I.toIdeal)
+    (Bialgebra.Quotient.mkBialgHom_surjective _), comapOfSurjective_augmentation,
+    comapOfSurjective_bot, kerOfSurjective_mkBialgHom, eq_comm]
 
 end HopfIdeal
 

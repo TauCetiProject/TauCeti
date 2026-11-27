@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Topology.Algebra.Group.NoSmallSubgroups
 
 import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.Topology.Algebra.Group.Units
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Group homomorphisms induced by continuous representations
@@ -57,7 +57,7 @@ variable {𝕜 G V : Type*} [NormedField 𝕜] [Group G] [AddCommGroup V] [Topol
 theorem continuous_toHomUnits [TopologicalSpace G] [ContinuousInv G]
     {π : ContRepresentation 𝕜 G V} (hπ : Continuous π) :
     Continuous π.toMonoidHom.toHomUnits :=
-  Units.continuous_iff.mpr ⟨hπ, hπ.comp continuous_inv⟩
+  (MonoidHom.continuous_iff_continuous_val _).2 hπ
 
 /-- A continuous group representation on a topological vector space over a normed field, bundled as
 a continuous group homomorphism into `(V →L[𝕜] V)ˣ`. -/

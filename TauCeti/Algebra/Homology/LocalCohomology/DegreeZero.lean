@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.LocalCohomology
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.CategoryTheory.Abelian.Ext
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
 
 /-!
@@ -41,6 +42,13 @@ annihilators.
 * `localCohomology.range_degreeZeroToModule` and `localCohomology.range_hom_degreeZeroToModule`:
   its image is the `J`-primary component `⨆ n, torsionBySet R M (Jⁿ)`, the union of the
   annihilators of the powers of `J`.
+* `localCohomology.isZero_obj_zero_iff`: `H⁰_J(M) = 0` exactly when no nonzero element of `M`
+  is killed by a power of `J`.
+* `localCohomology.isZero_obj_zero_of_isSMulRegular`: `H⁰_J(M) = 0` when `J` contains an
+  `M`-regular element.
+* `localCohomology.isZero_obj_zero_of_ne_bot`: over a domain, `H⁰_J(M) = 0` for a nonzero ideal
+  `J` and a torsion-free module `M`, for instance `H⁰_𝔪(R) = 0` for a discrete valuation
+  ring `R`.
 
 ## References
 
@@ -237,5 +245,33 @@ component of `M`. -/
 theorem range_hom_degreeZeroToModule :
     LinearMap.range (degreeZeroToModule J M).hom = Ideal.primaryComponent M J :=
   SetLike.coe_injective ((LinearMap.coe_range _).trans (range_degreeZeroToModule J M))
+
+/-- **Vanishing of local cohomology in degree zero.** `H⁰_J(M)` vanishes exactly when no nonzero
+element of `M` is killed by a power of `J`, that is, when the `J`-primary component of `M` is
+zero. -/
+theorem isZero_obj_zero_iff :
+    IsZero ((localCohomology J 0).obj M) ↔ Ideal.primaryComponent M J = ⊥ := by
+  rw [ModuleCat.isZero_iff_subsingleton, ← range_hom_degreeZeroToModule, LinearMap.range_eq_bot]
+  constructor
+  · intro _
+    ext x
+    exact (congrArg _ (Subsingleton.elim x 0)).trans (map_zero _)
+  · intro h
+    exact ⟨fun x y ↦ degreeZeroToModule_injective J M
+      ((LinearMap.congr_fun h x).trans (LinearMap.congr_fun h y).symm)⟩
+
+/-- Local cohomology in degree zero vanishes when `J` contains an `M`-regular element `a`: then
+`aⁿ ∈ Jⁿ` kills no nonzero element of `M`. -/
+theorem isZero_obj_zero_of_isSMulRegular {a : R} (ha : a ∈ J) (hreg : IsSMulRegular M a) :
+    IsZero ((localCohomology J 0).obj M) :=
+  (isZero_obj_zero_iff J M).mpr (Ideal.primaryComponent_eq_bot_of_isSMulRegular ha hreg)
+
+/-- Over a ring with cancellative multiplication by nonzero elements (for instance a domain), local
+cohomology in degree zero along a nonzero ideal vanishes for a torsion-free module: a nonzero
+element of `J` is `M`-regular. For instance `H⁰_𝔪(R) = 0` for a discrete valuation ring `R` with
+maximal ideal `𝔪`. -/
+theorem isZero_obj_zero_of_ne_bot [IsCancelMulZero R] [Module.IsTorsionFree R M] (hJ : J ≠ ⊥) :
+    IsZero ((localCohomology J 0).obj M) :=
+  (isZero_obj_zero_iff J M).mpr (Ideal.primaryComponent_eq_bot_of_ne_bot hJ)
 
 end localCohomology
