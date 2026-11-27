@@ -8,10 +8,10 @@ module
 public import TauCeti.NumberTheory.GaloisRepresentation.Purity
 public import TauCeti.NumberTheory.WeilNumber.Pure
 import Mathlib.NumberTheory.Real.Irrational
-import Mathlib.RepresentationTheory.Rep.Basic
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
+import TauCeti.RepresentationTheory.Rep.Subrepresentation
 
 /-!
 # Purity of representations under subquotients, extensions, direct sums and duals
@@ -145,7 +145,9 @@ theorem isPureOutside_iff_subrepresentation_quotient (U : Submodule E V)
       (ρ.subrepresentation U hU).IsPureOutside I F q T w ∧
       (ρ.quotient U hU).IsPureOutside I F q T w :=
   isPureOutside_iff_of_exact (Rep.subtype (Rep.of ρ) U hU).hom (Rep.mkQ (Rep.of ρ) U hU).hom
-    U.injective_subtype U.mkQ_surjective (LinearMap.exact_subtype_mkQ U)
+    (by rw [Rep.coe_subtype_hom]; exact U.injective_subtype)
+    (by rw [Rep.coe_mkQ_hom]; exact U.mkQ_surjective)
+    (by rw [Rep.coe_subtype_hom, Rep.coe_mkQ_hom]; exact LinearMap.exact_subtype_mkQ U)
 
 /-- A direct sum is pure of weight `w` outside `T` exactly when both summands are. -/
 @[simp]
@@ -216,7 +218,9 @@ theorem isIotaPureOutside_iff_subrepresentation_quotient (U : Submodule E V)
       (ρ.subrepresentation U hU).IsIotaPureOutside ι I F q T r ∧
       (ρ.quotient U hU).IsIotaPureOutside ι I F q T r :=
   isIotaPureOutside_iff_of_exact (Rep.subtype (Rep.of ρ) U hU).hom (Rep.mkQ (Rep.of ρ) U hU).hom
-    U.injective_subtype U.mkQ_surjective (LinearMap.exact_subtype_mkQ U)
+    (by rw [Rep.coe_subtype_hom]; exact U.injective_subtype)
+    (by rw [Rep.coe_mkQ_hom]; exact U.mkQ_surjective)
+    (by rw [Rep.coe_subtype_hom, Rep.coe_mkQ_hom]; exact LinearMap.exact_subtype_mkQ U)
 
 /-- A direct sum is `ι`-pure of weight `r` outside `T` exactly when both summands are. -/
 @[simp]
@@ -266,9 +270,10 @@ theorem HasIntegralCharpolyOutside.prod {R W₁ W₂ : Type*} [CommRing R] [AddC
 
 /-! ### Examples
 
-With one place, trivial inertia and Frobenius the generator of `Multiplicative ℤ`, the lines on
-which Frobenius acts by `√2` and by `-√2` have the integral sum `X² - 2` of characteristic
-polynomials, while the first line alone has characteristic polynomial `X - √2`. -/
+With one place, trivial inertia and Frobenius the generator of `Multiplicative ℤ`, the direct sum
+of the lines on which Frobenius acts by `√2` and by `-√2` has integral characteristic polynomial
+`X² - 2`, the product of `X - √2` and `X + √2`, while the first line alone has characteristic
+polynomial `X - √2`. -/
 
 /-- The character of `Multiplicative ℤ` sending the generator to `a`. -/
 private noncomputable abbrev zpowChar (a : ℝ) (ha : a ≠ 0) : Multiplicative ℤ →* ℝˣ :=
