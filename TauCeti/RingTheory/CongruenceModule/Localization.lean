@@ -47,7 +47,8 @@ variable {M N : Type*} [AddCommGroup M] [Module O M] [Module A M] [IsScalarTower
 submodule killed by `ker ψ`, provided `ker φ` is finitely generated. -/
 noncomputable def torsionByKerLocalizationEquiv (hfin : (RingHom.ker φ).FG) :
     torsionBySet A M (RingHom.ker φ) ≃ₗ[O] torsionBySet B N (RingHom.ker ψ) :=
-  letI := φ.isLocalizedModule_id_of_isTorsionBySet_ker S ψ hψ
+  letI := φ.isLocalizedModule_id_of_isTorsionBySet_ker S
+    (fun s ↦ by rw [← hψ]; exact IsLocalization.isUnit_comp S ψ.toRingHom s)
     (torsionBySet_isTorsionBySet (R := A) (M := M) (RingHom.ker φ))
   ((IsLocalizedModule.linearEquiv S LinearMap.id
       ((torsionBySet A M (RingHom.ker φ)).toLocalized' B S f)).restrictScalars O).trans
@@ -61,7 +62,8 @@ localization map. -/
 theorem coe_torsionByKerLocalizationEquiv_apply (hfin : (RingHom.ker φ).FG)
     (x : torsionBySet A M (RingHom.ker φ)) :
     ↑(φ.torsionByKerLocalizationEquiv S ψ hψ f hfin x) = f (x : M) := by
-  let := φ.isLocalizedModule_id_of_isTorsionBySet_ker S ψ hψ
+  let := φ.isLocalizedModule_id_of_isTorsionBySet_ker S
+    (fun s ↦ by rw [← hψ]; exact IsLocalization.isUnit_comp S ψ.toRingHom s)
     (torsionBySet_isTorsionBySet (R := A) (M := M) (RingHom.ker φ))
   have hx := IsLocalizedModule.linearEquiv_apply S LinearMap.id
     ((torsionBySet A M (RingHom.ker φ)).toLocalized' B S f) x
@@ -72,7 +74,8 @@ kernels acting on the two modules. -/
 noncomputable def quotientKerSMulLocalizationEquiv :
     (M ⧸ (RingHom.ker φ • ⊤ : Submodule A M)) ≃ₗ[O]
       (N ⧸ (RingHom.ker ψ • ⊤ : Submodule B N)) :=
-  letI := φ.isLocalizedModule_id_of_isTorsionBySet_ker S ψ hψ
+  letI := φ.isLocalizedModule_id_of_isTorsionBySet_ker S
+    (fun s ↦ by rw [← hψ]; exact IsLocalization.isUnit_comp S ψ.toRingHom s)
     (Module.isTorsionBySet_quotient_ideal_smul M (RingHom.ker φ))
   ((IsLocalizedModule.linearEquiv S LinearMap.id
       ((RingHom.ker φ • ⊤ : Submodule A M).toLocalizedQuotient' B S f)).restrictScalars O).trans
@@ -86,7 +89,8 @@ noncomputable def quotientKerSMulLocalizationEquiv :
 theorem quotientKerSMulLocalizationEquiv_mk (x : M) :
     φ.quotientKerSMulLocalizationEquiv S ψ hψ f (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (f x) := by
-  let := φ.isLocalizedModule_id_of_isTorsionBySet_ker S ψ hψ
+  let := φ.isLocalizedModule_id_of_isTorsionBySet_ker S
+    (fun s ↦ by rw [← hψ]; exact IsLocalization.isUnit_comp S ψ.toRingHom s)
     (Module.isTorsionBySet_quotient_ideal_smul M (RingHom.ker φ))
   have hx := IsLocalizedModule.linearEquiv_apply S LinearMap.id
     ((RingHom.ker φ • ⊤ : Submodule A M).toLocalizedQuotient' B S f) (Submodule.Quotient.mk x)
