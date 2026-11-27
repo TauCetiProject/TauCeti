@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.AlgebraicTopology.DoldKan.HomotopyEquivalence
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Elementwise Dold–Kan facts for simplicial modules
@@ -23,6 +24,11 @@ Moore complex `N(G)` and `C(G)` as an `R`-linear isomorphism on homology.
 * `CategoryTheory.SimplicialObject.δ_succ_PInfty_f_apply`,
   `CategoryTheory.SimplicialObject.PInfty_f_apply_of_δ_succ_eq_zero`: the values of `PInfty` have
   vanishing faces `δᵢ` for `i ≥ 1`, and `PInfty` fixes such elements.
+* `CategoryTheory.SimplicialObject.δ_PInfty_f_apply_of_d_eq_zero`,
+  `CategoryTheory.SimplicialObject.exists_d_add_eq_PInfty_f_apply`: on a cycle `z` of `C(G)`, every
+  face of `PInfty z` vanishes, and `PInfty z - z` is a boundary.
+* `CategoryTheory.SimplicialObject.alternatingFaceMapComplex_exactAt_succ_iff`: `C(G)` is exact in
+  degree `n + 1` exactly when every `(n + 1)`-simplex with all faces zero is a boundary.
 * `CategoryTheory.SimplicialObject.toNormalizedMooreComplexHomology`: the isomorphism
   `H_k(C(G)) ≃ₗ[R] H_k(N(G))`, with its naturality
   (`CategoryTheory.SimplicialObject.toNormalizedMooreComplexHomology_homologyMap`).
@@ -32,7 +38,7 @@ public noncomputable section
 
 universe u
 
-open CategoryTheory Simplicial AlgebraicTopology AlgebraicTopology.DoldKan
+open CategoryTheory Simplicial AlgebraicTopology AlgebraicTopology.DoldKan DoldKan
 
 namespace CategoryTheory.SimplicialObject
 
@@ -71,6 +77,63 @@ lemma PInfty_f_apply_of_δ_succ_eq_zero {z : G _⦋n + 1⦌}
   have := hv.comp_P_eq_self
   rw [Category.comp_id, ← PInfty_f] at this
   exact congr($this ⟨z, (Submodule.mem_iInf _).2 hz⟩)
+
+/-- On a cycle of the alternating face map complex, every face of the value of the projector
+`PInfty` vanishes, including `δ₀`. -/
+lemma δ_PInfty_f_apply_of_d_eq_zero {z : G _⦋n + 1⦌} (hz : K[G].d (n + 1) n z = 0)
+    (i : Fin (n + 2)) :
+    G.δ i ((PInfty.f (n + 1) : G _⦋n + 1⦌ ⟶ G _⦋n + 1⦌) z) = 0 := by
+  cases i using Fin.cases with
+  | zero =>
+    rw [← alternatingFaceMapComplex_d_apply_of_δ_succ_eq_zero G (δ_succ_PInfty_f_apply G z),
+      HomologicalComplex.Hom.comm_apply, hz, map_zero]
+  | succ i => exact δ_succ_PInfty_f_apply G z i
+
+/-- A cycle `z` of the alternating face map complex differs from its image under the projector
+`PInfty` by a boundary, given by the homotopy `homotopyPInftyToId` from `PInfty` to the
+identity. -/
+lemma exists_d_add_eq_PInfty_f_apply {z : K[G].X (n + 1)} (hz : K[G].d (n + 1) n z = 0) :
+    ∃ y : G _⦋n + 2⦌, K[G].d (n + 2) (n + 1) y + z = (PInfty (X := G)).f (n + 1) z := by
+  let H := homotopyPInftyToId G
+  refine ⟨H.hom (n + 1) (n + 2) z, ?_⟩
+  have h := congr(($(H.comm (n + 1))).hom z)
+  rw [dNext_eq _ (by simp : (ComplexShape.down ℕ).Rel (n + 1) n),
+    prevD_eq _ (by simp : (ComplexShape.down ℕ).Rel (n + 2) (n + 1))] at h
+  simpa only [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
+    HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply, hz, map_zero, zero_add]
+    using h.symm
+
+/-- **Exactness of the alternating face map complex from normalized cycles.** The alternating face
+map complex of a simplicial module is exact in degree `n + 1` exactly when every
+`(n + 1)`-simplex all of whose faces vanish is a boundary. -/
+theorem alternatingFaceMapComplex_exactAt_succ_iff :
+    ((alternatingFaceMapComplex (ModuleCat R)).obj G).ExactAt (n + 1) ↔
+      ∀ z : G _⦋n + 1⦌, (∀ i : Fin (n + 2), G.δ i z = 0) →
+        ∃ y : G _⦋n + 2⦌,
+          ((alternatingFaceMapComplex (ModuleCat R)).obj G).d (n + 2) (n + 1) y = z := by
+  rw [HomologicalComplex.exactAt_iff_range_eq_ker _
+    ((ComplexShape.down ℕ).prev_eq' (by simp : (ComplexShape.down ℕ).Rel (n + 2) (n + 1)))
+    (ChainComplex.next_nat_succ n)]
+  constructor
+  · intro h z hz
+    have hz₀ : z ∈ LinearMap.ker
+        (((alternatingFaceMapComplex (ModuleCat R)).obj G).d (n + 1) n).hom := by
+      rw [LinearMap.mem_ker, alternatingFaceMapComplex_d_apply]
+      simp [hz]
+    rw [← h] at hz₀
+    exact hz₀
+  · intro h
+    refine le_antisymm (LinearMap.range_le_ker_iff.2 ?_) fun z hz ↦ ?_
+    · exact congr($(((alternatingFaceMapComplex (ModuleCat R)).obj G).d_comp_d
+        (n + 2) (n + 1) n).hom)
+    · -- `PInfty` is a chain map on `K[G]`, which is by definition the alternating face map
+      -- complex.
+      have hz' : K[G].d (n + 1) n z = 0 := hz
+      obtain ⟨y, hy⟩ := h _ (δ_PInfty_f_apply_of_d_eq_zero G hz')
+      obtain ⟨y', hy'⟩ := exists_d_add_eq_PInfty_f_apply G hz'
+      refine ⟨y - y', ?_⟩
+      rw [map_sub, hy]
+      exact sub_eq_of_eq_add' hy'.symm
 
 /-! ### The comparison with the homology of the normalized Moore complex -/
 
