@@ -829,24 +829,6 @@ private theorem setIntegral_sobolevDensity_covectorPullback_movingEndChart_le_of
   exact (mul_le_mul_of_nonneg_right (le_max_left _ _) hD₀).trans
     (mul_le_mul_of_nonneg_left hD (le_max_right _ _))
 
-omit [Fintype ι] [FiniteDimensional ℝ V] in
-/-- A weight that is continuous and positive on the sphere is bounded above and below on the
-truncation `Σ_T`: there is `Λ ≥ 0` with `w ≤ Λ` and `1 ≤ Λ w` there. -/
-private theorem exists_forall_le_and_one_le_mul_of_movingEnds (ha : ∀ i, a i ≠ 0)
-    {w : ℝ × ℝ → ℝ} (hwc : ContinuousOn w (movingEndsDomain c))
-    (hwU : ∀ z ∈ movingEndsDomain c, 0 < w z) (T : ℝ) :
-    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ movingEndsTruncation c a T, w z ≤ Λ ∧ 1 ≤ Λ * w z := by
-  have hKU := movingEndsTruncation_subset (c := c) ha T
-  obtain ⟨Λ, hΛ⟩ := (isCompact_movingEndsTruncation c a T).exists_bound_of_continuousOn
-    ((hwc.add (hwc.inv₀ fun z hz ↦ (hwU z hz).ne')).mono hKU)
-  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  have hw := hwU z (hKU hz)
-  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
-    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
-  refine ⟨by linarith [inv_pos.2 hw], ?_⟩
-  rw [← inv_mul_cancel₀ hw.ne']
-  exact mul_le_mul_of_nonneg_right (by linarith) hw.le
-
 /-- **Patching the adjoint at one height.** If the formal adjoint `D_u^*` controls the energy of
 the pulled-back form on every end `e` in its chart, against a weight `w` that is continuous and
 positive on the sphere, for covector fields supported beyond the height `R e`, then for every
@@ -892,7 +874,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
   obtain ⟨M, hMe, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun e z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e (hKU hz))
     fun z hz ↦ fderiv_movingCoreCutoff ha (by linarith) (hKU hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_one_le_mul_of_movingEnds ha hwc hwU (R₀ + 1)
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_one_le_mul_of_continuousOn hK hKU hwc hwU
   -- The estimate on the compact core `K`.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
@@ -1223,24 +1205,6 @@ theorem
   rw [Fintype.sum_option] at h
   simp only [movingEndChart, movingEndsTruncation] at h
   linarith
-
-/-- Comparing weights in a weighted norm of the formal adjoint: if `0 ≤ g ≤ w` on the support of
-`η` and `w ‖D^* η‖²` is integrable, then `C ∫ g ‖D^* η‖² ≤ max C 0 ∫ w ‖D^* η‖²`. -/
-private theorem mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le
-    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
-    {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {g w : ℝ × ℝ → ℝ} (hg : ∀ z, 0 ≤ g z)
-    (hgw : ∀ z ∈ tsupport η, g z ≤ w z)
-    (hwi : Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) (C : ℝ) :
-    C * ∫ z, g z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 ≤
-      max C 0 * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
-  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
-    (integral_nonneg fun z ↦ mul_nonneg (hg z) (sq_nonneg _))).trans
-    (mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
-      (.of_forall fun z ↦ mul_nonneg (hg z) (sq_nonneg _)) hwi (.of_forall fun z ↦ ?_))
-      (le_max_right _ _))
-  by_cases hz : z ∈ tsupport η
-  · exact mul_le_mul_of_nonneg_right (hgw z hz) (sq_nonneg _)
-  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
 
 /-- **The semi-Fredholm estimate of the formal adjoint on a sphere with moving input ends.** Let
 the discs `‖w - c i‖ < ‖a i‖ / 2` of the input ends be pairwise disjoint and lie in the disc

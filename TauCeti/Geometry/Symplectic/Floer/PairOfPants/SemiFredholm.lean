@@ -660,22 +660,6 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff (ω 
       (fun z hz ↦ mem_preimage_truncation_of_fderiv_endCutoff_ne_zero hR₀ hz) hM hB hw hwc hΛ₀
       hΛ hη hηc hηS)
 
-/-- A weight `w ≥ 0` that is continuous and positive on `S` is bounded above and below on the
-truncation `S_{R₀ + 1}`: both `w` and `w⁻¹` are at most some `Λ` there. -/
-private theorem exists_forall_le_and_inv_le {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z)
-    (hwc : ContinuousOn w thricePuncturedSphereReal)
-    (hwS : ∀ z ∈ thricePuncturedSphereReal, 0 < w z) (R₀ : ℝ) :
-    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
-      w z ≤ Λ ∧ (w z)⁻¹ ≤ Λ := by
-  have hKS := preimage_truncation_subset_thricePuncturedSphereReal (R₀ + 1)
-  obtain ⟨Λ, hΛ⟩ := (isCompact_preimage_truncation (R₀ + 1)).exists_bound_of_continuousOn
-    ((hwc.add (hwc.inv₀ fun z hz ↦ (hwS z hz).ne')).mono hKS)
-  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
-  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
-    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
-  have h₀ := hw z
-  exact ⟨by linarith [inv_nonneg.2 h₀], by linarith⟩
-
 /-- **Patching the adjoint at one height.** Under the hypotheses of
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`,
 for every height `R₀ ≥ 1` above the heights `R q` of the end estimates, the energy of a covector
@@ -718,7 +702,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
       (hu z (hKS hz)).continuousAt).continuousWithinAt
   obtain ⟨M, hMq, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun q z hz ↦ contDiffAt_endCutoff R₀ q (hKS hz)) fun z hz ↦ fderiv_coreCutoff R₀ (hKS hz)
-  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hw hwc hwS R₀
+  obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_one_le_mul_of_continuousOn hK hKS hwc hwS
   -- The estimate on the compact core `K`.
   obtain ⟨C₀, hC₀, hint⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK
@@ -735,11 +719,6 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
   have hends (q : Puncture) := ω.setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff
     (J := J') hJ hKs hKt hu hw hwc (by linarith) (hR q) (hend q) (hMq q) hB hΛ₀
     (fun z hz ↦ (hΛ z hz).1) hη hηc hηS
-  -- On `K`, where `w⁻¹ ≤ Λ`, we have `1 ≤ Λ w`.
-  have hΛK (z : ℝ × ℝ) (hz : z ∈ K) : 1 ≤ Λ * w z := by
-    have hρ := hwS z (hKS hz)
-    rw [← inv_mul_cancel₀ hρ.ne']
-    exact mul_le_mul_of_nonneg_right (hΛ z hz).2 hρ.le
   have hcore : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
       C₀ * (Λ * (2 * X + 2 * c ^ 2 * Λ * Y) + Y) :=
     (ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add
@@ -747,7 +726,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
       (isCompact_preimage_truncation R₀).measurableSet hK
       (preimage_mono (truncation_mono (by linarith))) hKS
       (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) (fun z _ ↦ abs_coreCutoff_le_one (by linarith) z)
-      (fun z hz ↦ coreCutoff_eq_one_and_fderiv_eq_zero hz) hw hwc hΛ₀ hΛK hC₀ hint hη hηS
+      (fun z hz ↦ coreCutoff_eq_one_and_fderiv_eq_zero hz) hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).2) hC₀
+      hint hη hηS
       (by simpa only [K] using tsupport_coreCutoff_smul_subset (by linarith) hηS)).trans (by
       gcongr
       exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
@@ -885,27 +865,16 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     continuousOn_inv_cylindricalWeight (fun z hz ↦ inv_pos.2 (isWeight_cylindricalWeight.pos z hz))
     (C := fun q ↦ max (C q) 0 * 5) (R := fun q ↦ max (R q) 0) fun q η hη hηc hηR ↦ ?_
   have hηS : tsupport η ⊆ thricePuncturedSphereReal := fun z hz ↦ (hηR hz).1
-  refine (hend q hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩).trans ?_
-  rw [mul_assoc]
-  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
-    (integral_nonneg fun z ↦ by positivity)).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _))
-  rw [← integral_const_mul]
-  refine integral_mono_of_nonneg (.of_forall fun z ↦ by positivity)
-    ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
-      (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-      continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul 5)
-    (.of_forall fun z ↦ ?_)
-  beta_reduce
-  by_cases hz : z ∈ tsupport η
+  refine (hend q hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩).trans <|
+    (ω.mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le (fun _ ↦ sq_nonneg _)
+      (w := fun z ↦ 5 * (cylindricalWeight z)⁻¹) (fun z hz ↦ ?_) ?_ _).trans_eq ?_
   · obtain ⟨hzS, hzR⟩ := hηR hz
-    have hρ := isWeight_cylindricalWeight.pos z hzS
-    have h : ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤
-        5 * (cylindricalWeight z)⁻¹ := by
-      rw [← div_eq_mul_inv, le_div_iff₀ hρ]
-      exact norm_sub_endCenter_sq_mul_cylindricalWeight_le q hzS
-        ((le_max_right _ _).trans hzR.le)
-    rw [← mul_assoc]
-    gcongr
-  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
+    rw [← div_eq_mul_inv, le_div_iff₀ (isWeight_cylindricalWeight.pos z hzS)]
+    exact norm_sub_endCenter_sq_mul_cylindricalWeight_le q hzS ((le_max_right _ _).trans hzR.le)
+  · simpa only [mul_assoc] using
+      (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
+        (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
+        continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul 5
+  · simp only [mul_assoc, integral_const_mul]
 
 end TauCeti.SymplecticForm

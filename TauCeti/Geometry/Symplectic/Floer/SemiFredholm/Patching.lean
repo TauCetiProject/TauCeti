@@ -47,6 +47,11 @@ that is positive on `S`.
 * `TauCeti.SymplecticForm.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le`: with `f`,
   `K`, `M` and `B` as above and `w ≤ Λ` on `K`, a `C²` covector field `η` with compact support in
   `S` satisfies `∫ w ‖D_u^* (f η)‖² ≤ 2 ∫ w ‖D_u^* η‖² + 2 (M (1 + B))² Λ ∫_K ‖η‖²`.
+* `TauCeti.SymplecticForm.mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le`: if
+  `0 ≤ g ≤ w` on the support of `η`, then `C ∫ g ‖D_u^* η‖² ≤ max C 0 ∫ w ‖D_u^* η‖²`; this
+  replaces the weights of the end estimates by `w`.
+* `TauCeti.Floer.exists_forall_le_and_one_le_mul_of_continuousOn`: a weight `w` that is continuous
+  and positive on `S` satisfies `w ≤ Λ` and `1 ≤ Λ w` on a compact `K ⊆ S`, for some `Λ ≥ 0`.
 * `setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add`, in the
   namespace `TauCeti.SymplecticForm`: the core estimate of the adjoint. If `D_u^*` satisfies an
   `L²` estimate on covector fields supported in `K`, `1 ≤ Λ w` on `K`, and the cutoff `f` is `1` to
@@ -117,6 +122,23 @@ theorem continuous_sobolevDensity_covectorPullback {V : Type*} [NormedAddCommGro
     filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage hφ.continuous).mem_nhds hζ]
       with ζ' hζ'
     exact covectorPullback_eq_zero_of_apply_eq_zero φ J u (image_eq_zero_of_notMem_tsupport hζ')
+
+/-- **Bounding the weight on the core.** A weight `w` that is continuous and positive on a set `S`
+is bounded above and below on a compact set `K ⊆ S`: there is `Λ ≥ 0` with `w ≤ Λ` and
+`1 ≤ Λ w` on `K`. -/
+theorem exists_forall_le_and_one_le_mul_of_continuousOn {X : Type*} [TopologicalSpace X]
+    {w : X → ℝ} {S K : Set X} (hK : IsCompact K) (hKS : K ⊆ S) (hwc : ContinuousOn w S)
+    (hwS : ∀ z ∈ S, 0 < w z) :
+    ∃ Λ, 0 ≤ Λ ∧ ∀ z ∈ K, w z ≤ Λ ∧ 1 ≤ Λ * w z := by
+  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn
+    ((hwc.add (hwc.inv₀ fun z hz ↦ (hwS z hz).ne')).mono hKS)
+  refine ⟨max Λ 0, le_max_right _ _, fun z hz ↦ ?_⟩
+  have hw := hwS z (hKS hz)
+  have h : w z + (w z)⁻¹ ≤ max Λ 0 :=
+    (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left Λ 0))
+  refine ⟨by linarith [inv_pos.2 hw], ?_⟩
+  rw [← inv_mul_cancel₀ hw.ne']
+  exact mul_le_mul_of_nonneg_right (by linarith) hw.le
 
 end TauCeti.Floer
 
@@ -257,6 +279,24 @@ theorem integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le (ω : Symplec
     ((hf z hzS).differentiableAt two_ne_zero) (hη.differentiable two_ne_zero z)
     (((hJ z hzS).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
       (differentiableAt_id.prodMk ((hu z hzS).differentiableAt one_ne_zero))) (hf₁ z hzS) hM' hB'
+
+/-- **Comparing weights in a weighted norm of the formal adjoint.** If `0 ≤ g ≤ w` on the support
+of `η` and `w ‖D^* η‖²` is integrable, then `C ∫ g ‖D^* η‖² ≤ max C 0 ∫ w ‖D^* η‖²`. -/
+theorem mul_integral_mul_norm_floerLinearizationAdjoint_sq_le_of_le
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {g w : ℝ × ℝ → ℝ} (hg : ∀ z, 0 ≤ g z)
+    (hgw : ∀ z ∈ tsupport η, g z ≤ w z)
+    (hwi : Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) (C : ℝ) :
+    C * ∫ z, g z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 ≤
+      max C 0 * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  refine (mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (integral_nonneg fun z ↦ mul_nonneg (hg z) (sq_nonneg _))).trans
+    (mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
+      (.of_forall fun z ↦ mul_nonneg (hg z) (sq_nonneg _)) hwi (.of_forall fun z ↦ ?_))
+      (le_max_right _ _))
+  by_cases hz : z ∈ tsupport η
+  · exact mul_le_mul_of_nonneg_right (hgw z hz) (sq_nonneg _)
+  · simp [floerLinearizationAdjoint_of_notMem_tsupport hz]
 
 /-- **The core estimate of the adjoint.** Let `f` be `C²` on an open set `S`, `1` to first order
 on a measurable set `K₀`, and `|f| ≤ 1` on a compact set `K ⊆ S` containing `K₀`, and let the
