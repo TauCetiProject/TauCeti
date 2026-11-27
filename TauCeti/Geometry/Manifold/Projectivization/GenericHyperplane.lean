@@ -95,6 +95,9 @@ private theorem differentiable_vecMul_jacobiMatrixAt_insertNth [Fintype ι]
     (p : ι → MvPolynomial (Fin (n + 1)) ℂ) (i : Fin (n + 1)) :
     Differentiable ℂ fun x : (Fin n → ℂ) × (ι → ℂ) ↦
       x.2 ᵥ* jacobiMatrixAt p (i.insertNth 1 x.1) := by
+  -- Keep the gradient entries `G` opaque: `fun_prop` then treats `G x.1` as an atom with the
+  -- holomorphy `hG`, instead of looking through `eval` and `dehomogenize`, which it has no
+  -- rules for.
   obtain ⟨G, hGdef⟩ : ∃ G : (Fin n → ℂ) → ι × Fin (n + 1) → ℂ,
       G = fun a mj ↦ eval a (dehomogenize i (pderiv mj.2 (p mj.1))) := ⟨_, rfl⟩
   have hG : Differentiable ℂ G :=
@@ -284,7 +287,8 @@ theorem ae_forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_insertNth [Finite
         forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_smul_iff ht] using ha
     · ext j <;> simp [h, mul_div_cancel_left₀ _ (show t ≠ 0 from ht)]
   have hdim : Module.finrank ℝ (Fin (n + 1) → ℂ) ≤ Module.finrank ℝ (ℂ × (Fin n → ℂ)) := by
-    simp [Module.finrank_prod, Module.finrank_pi_fintype, Complex.finrank_real_complex]
+    simp only [Module.finrank_prod, Module.finrank_pi_fintype, Complex.finrank_real_complex,
+      Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul]
     omega
   have : (volume.prod volume : Measure (ℂ × (Fin n → ℂ))).IsAddHaarMeasure :=
     Measure.prod.instIsAddHaarMeasure _ _
