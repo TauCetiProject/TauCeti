@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 
 /-!
@@ -74,6 +76,9 @@ sense.
   `TauCeti.IsContMDiffDistribution.contMDiffAt_totalSpace_mk`: on a `C^(n+1)` manifold, the
   total-space inclusion of a `C^n` distribution is `C^n` and `C^n` maps into the tangent bundle
   with values in `D` factor as `C^n` maps into `D`.
+* `TauCeti.IsContMDiffDistribution.contMDiffAt_pullback_mk`: a section of the pullback of a `C^n`
+  distribution along a map is `C^n` where it agrees with a `C^n` section of the pulled-back tangent
+  bundle.
 * `TauCeti.IsDistributionFrameOn.exists_mdifferentiableAt_coeff`: a vector field tangent to `D`
   and differentiable at `x` is, near `x`, a combination of a `C¹` local frame with coefficients
   differentiable at `x`.
@@ -228,6 +233,25 @@ theorem contMDiffAt_totalSpace_mk [IsManifold I (n + 1) M] {EM HM N : Type*}
       (fun y ↦ (⟨b y, ⟨w y, hmem y⟩⟩ : TotalSpace (Fin k → 𝕜) fun x ↦ D x)) y₀ :=
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
   hD.hasLocalContMDiffSubbundleFrames.contMDiffAt_totalSpace_mk le_rfl hw hmem
+
+/-- On a `C^(n+1)` manifold, a section `w` of the pullback `f^* D` of a `C^n` distribution `D` of
+rank `k` along a map `f` that is `C^n` at `y₀` is `C^n` at `y₀` as soon as it agrees near `y₀`
+with a section `X` of `f^* TM` that is `C^n` at `y₀`. -/
+theorem contMDiffAt_pullback_mk [IsManifold I (n + 1) M] {EN HN N : Type*}
+    [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN}
+    [TopologicalSpace N] [ChartedSpace HN N] {K : Type*} [FunLike K N M]
+    [ContinuousMapClass K N M] (hD : IsContMDiffDistribution I n k D) {f : K} {y₀ : N}
+    (hf : ContMDiffAt J I n f y₀) {X : Π y, TangentSpace I (f y)} {w : Π y, D (f y)}
+    (hX : ContMDiffAt J (J.prod 𝓘(𝕜, E)) n
+      (fun y ↦ TotalSpace.mk' E (E := (f : N → M) *ᵖ (TangentSpace I)) y (X y)) y₀)
+    (hwX : ∀ᶠ y in 𝓝 y₀, (w y : TangentSpace I (f y)) = X y) :
+    letI := hD.fiberBundle
+    ContMDiffAt J (J.prod 𝓘(𝕜, Fin k → 𝕜)) n
+      (fun y ↦ TotalSpace.mk' (Fin k → 𝕜) (E := (f : N → M) *ᵖ fun x ↦ D x) y (w y)) y₀ :=
+  letI := hD.fiberBundle
+  (Bundle.Pullback.contMDiffAt_iff f hf).2 ⟨contMDiffAt_id, hD.contMDiffAt_totalSpace_mk
+    (((Bundle.Pullback.contMDiffAt_iff f hf).1 hX).2.congr_of_eventuallyEq
+      (hwX.mono fun _ hy ↦ congrArg (TotalSpace.mk _) hy)) fun y ↦ (w y).property⟩
 
 section Sections
 variable [IsManifold I (n + 1) M] (hD : IsContMDiffDistribution I n k D)

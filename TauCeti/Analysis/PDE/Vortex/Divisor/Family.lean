@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 public import TauCeti.Analysis.PDE.Vortex.Existence
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.Fredholm
 import TauCeti.Analysis.PDE.Vortex.Reduced.Continuity

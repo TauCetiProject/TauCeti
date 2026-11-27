@@ -273,6 +273,14 @@ theorem smul_apply {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (m 
     (r • f) m = r • f m :=
   rfl
 
+/-- A finite sum of morphisms acts by the pointwise sum. -/
+@[simp]
+theorem sum_apply {ι : Type*} {M N : FGComoduleCat.{u, v, w} R C} (s : Finset ι)
+    (f : ι → (M ⟶ N)) (m : M) : (∑ i ∈ s, f i) m = ∑ i ∈ s, f i m :=
+  -- Evaluation at `m` is additive in the morphism, by `zero_apply` and `add_apply`.
+  map_sum ({ toFun g := g m, map_zero' := zero_apply m, map_add' g g' := add_apply g g' m } :
+    (M ⟶ N) →+ N) f s
+
 /-- Build an isomorphism of finitely generated comodules from a linear equivalence of the
 underlying modules whose *forward* map respects the coactions.
 

@@ -34,6 +34,9 @@ of the stackification (`TauCeti.Stack.stackificationUniversal`).
 
 * `CategoryTheory.Pseudofunctor.StrongTrans.IsLocallyEssSurj`: local essential surjectivity
   of a strong transformation for a Grothendieck topology.
+* `CategoryTheory.Pseudofunctor.StrongTrans.localImageSieve`: the sieve of arrows along which an
+  object of `G` lifts along `η` up to isomorphism; `η` is locally essentially surjective exactly
+  when these sieves are covering (`isLocallyEssSurj_iff_localImageSieve_mem`).
 * `CategoryTheory.Pseudofunctor.StrongTrans.faithful_precomp`,
   `CategoryTheory.Pseudofunctor.StrongTrans.full_precomp`: precomposition with a locally
   essentially surjective strong transformation, respectively one whose components are also full,
@@ -65,6 +68,71 @@ class IsLocallyEssSurj (η : StrongTrans F G) (J : GrothendieckTopology C) : Pro
   exists_covering_lift {U : C} (y : G.obj (.mk (op U))) :
     ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f → ∃ x : F.obj (.mk (op V)),
       Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj y)
+
+section LocalImageSieve
+
+variable {J : GrothendieckTopology C} (η : StrongTrans F G)
+
+/-- An isomorphism `e : G(g)(η_V x) ≅ G(g)(G(f) z)` between the restrictions along `g : W ⟶ V`
+of `η_V x` and `G(f) z` gives an isomorphism `η_W (F(g) x) ≅ G(g ≫ f) z`, through `c_g(x)` and
+the composition isomorphism of `G`. -/
+noncomputable def restrictImageIso {U V W : C} {z : G.obj (.mk (op U))} {f : V ⟶ U}
+    {x : F.obj (.mk (op V))} (g : W ⟶ V)
+    (e : (G.map g.op.toLoc).toFunctor.obj ((η.app (.mk (op V))).toFunctor.obj x) ≅
+      (G.map g.op.toLoc).toFunctor.obj ((G.map f.op.toLoc).toFunctor.obj z)) :
+    (η.app (.mk (op W))).toFunctor.obj ((F.map g.op.toLoc).toFunctor.obj x) ≅
+      (G.map (g ≫ f).op.toLoc).toFunctor.obj z :=
+  η.naturalityObjIso g.op.toLoc x ≪≫ e ≪≫
+    ((Cat.Hom.toNatIso (G.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc)).app z).symm
+
+/-- The forward arrow of `restrictImageIso`, as the composite of its three factors. -/
+theorem restrictImageIso_hom {U V W : C} {z : G.obj (.mk (op U))} {f : V ⟶ U}
+    {x : F.obj (.mk (op V))} (g : W ⟶ V)
+    (e : (G.map g.op.toLoc).toFunctor.obj ((η.app (.mk (op V))).toFunctor.obj x) ≅
+      (G.map g.op.toLoc).toFunctor.obj ((G.map f.op.toLoc).toFunctor.obj z)) :
+    (η.restrictImageIso g e).hom =
+      (η.naturalityObjIso g.op.toLoc x).hom ≫ e.hom ≫
+        (G.mapComp' f.op.toLoc g.op.toLoc (g ≫ f).op.toLoc).inv.toNatTrans.app z := by
+  simp [restrictImageIso]
+
+/-- The **local-image sieve** of `z` over `U`: the arrows `f : V ⟶ U` such that `G(f) z` is
+isomorphic to the image `η_V x` of some object `x` over `V`, that is, lies in the essential image
+of `η_V`. -/
+def localImageSieve {U : C} (z : G.obj (.mk (op U))) : Sieve U where
+  arrows V f := (η.app (.mk (op V))).toFunctor.essImage ((G.map f.op.toLoc).toFunctor.obj z)
+  downward_closed := fun ⟨_, ⟨e⟩⟩ g ↦
+    ⟨_, ⟨η.restrictImageIso g ((G.map g.op.toLoc).toFunctor.mapIso e)⟩⟩
+
+theorem mem_localImageSieve_iff {U V : C} (z : G.obj (.mk (op U))) (f : V ⟶ U) :
+    η.localImageSieve z f ↔ ∃ x : F.obj (.mk (op V)),
+      Nonempty ((η.app (.mk (op V))).toFunctor.obj x ≅ (G.map f.op.toLoc).toFunctor.obj z) :=
+  Iff.rfl
+
+/-- The identity of `U` lies in the local-image sieve of `z` exactly when `z` is isomorphic to
+`η_U y` for some `y` over `U`. -/
+theorem id_mem_localImageSieve_iff {U : C} (z : G.obj (.mk (op U))) :
+    η.localImageSieve z (𝟙 U) ↔
+      ∃ y : F.obj (.mk (op U)), Nonempty ((η.app (.mk (op U))).toFunctor.obj y ≅ z) := by
+  let d := (Cat.Hom.toNatIso (G.mapId' (𝟙 U).op.toLoc (by simp))).app z
+  exact ⟨fun ⟨y, ⟨e⟩⟩ ↦ ⟨y, ⟨e ≪≫ d⟩⟩, fun ⟨y, ⟨e⟩⟩ ↦ ⟨y, ⟨e ≪≫ d.symm⟩⟩⟩
+
+/-- A strong transformation is locally essentially surjective exactly when the local-image sieve
+of every object of `G` is covering. -/
+theorem isLocallyEssSurj_iff_localImageSieve_mem :
+    η.IsLocallyEssSurj J ↔ ∀ {U : C} (z : G.obj (.mk (op U))), η.localImageSieve z ∈ J U :=
+  ⟨fun _ _ z ↦
+    have ⟨_, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) z
+    J.superset_covering (fun _ f hf ↦ h f hf) hR,
+    fun h ↦ ⟨fun z ↦ ⟨_, h z, fun _ _ hf ↦ hf⟩⟩⟩
+
+variable (J) in
+/-- **The local-image sieve is covering** when `η` is locally essentially surjective, in
+particular when `F` and `G` are gerbes (`StrongTrans.isLocallyEssSurj_of_isGerbe`). -/
+theorem localImageSieve_mem [η.IsLocallyEssSurj J] {U : C} (z : G.obj (.mk (op U))) :
+    η.localImageSieve z ∈ J U :=
+  (η.isLocallyEssSurj_iff_localImageSieve_mem.1 inferInstance) z
+
+end LocalImageSieve
 
 variable {P : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {η : F ⟶ P} {Φ Φ' : P ⟶ G} (Γ : η ≫ Φ ⟶ η ≫ Φ')
@@ -159,37 +227,21 @@ section Prestack
 
 open LocallyDiscreteOpToCat
 
-variable (η) in
-/-- The sieve of the arrows `g : T ⟶ U` along which the pullback of `A` is in the essential
-image of `η`. -/
-private abbrev essImageSieve {U : C} (A : P.obj (.mk (op U))) : Sieve U where
-  arrows _ g := (η.app _).toFunctor.essImage ((P.map g.op.toLoc).toFunctor.obj A)
-  downward_closed {_ _} g hg h :=
-    Functor.essImage.ofIso (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).symm
-      (map_obj_mem_essImage η h.op.toLoc hg)
-
-variable (η) in
-/-- For a locally essentially surjective `η`, the sieve `essImageSieve η A` is covering. -/
-private lemma essImageSieve_mem (J : GrothendieckTopology C) [η.IsLocallyEssSurj J] {U : C}
-    (A : P.obj (.mk (op U))) : essImageSieve η A ∈ J U := by
-  obtain ⟨R, hR, h⟩ := IsLocallyEssSurj.exists_covering_lift (η := η) (J := J) A
-  exact J.superset_covering (fun _ g hg ↦ h g hg) hR
-
 section Glue
 
 variable [∀ a, (η.app a).toFunctor.Full]
 
-/-- The local values `localApp` along the arrows of `essImageSieve η A` are compatible. -/
+/-- The local values `localApp` along the arrows of `η.localImageSieve A` are compatible. -/
 private lemma pullHom_localApp {U T T' : C} (A : P.obj (.mk (op U))) (g : T ⟶ U)
-    (hg : essImageSieve η A g) (h : T' ⟶ T) :
+    (hg : η.localImageSieve A g) (h : T' ⟶ T) :
     pullHom ((Φ.naturalityObjIso g.op.toLoc A).inv ≫ localApp Γ hg ≫
         (Φ'.naturalityObjIso g.op.toLoc A).hom) h (h ≫ g) (h ≫ g) =
       (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv ≫
-        localApp Γ ((essImageSieve η A).downward_closed hg h) ≫
+        localApp Γ ((η.localImageSieve A).downward_closed hg h) ≫
           (Φ'.naturalityObjIso (h ≫ g).op.toLoc A).hom := by
-  rw [pullHom_naturalityObjIso, map_localApp]
+  rw [pullHom_naturalityObjIso, map_localApp Γ h.op.toLoc hg]
   simp only [Category.assoc, Iso.hom_inv_id_assoc]
-  rw [reassoc_of% (localApp_naturality Γ ((essImageSieve η A).downward_closed hg h)
+  rw [reassoc_of% (localApp_naturality Γ ((η.localImageSieve A).downward_closed hg h)
     (map_obj_mem_essImage η h.op.toLoc hg) (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom),
     ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id, Category.id_comp]
 
@@ -199,10 +251,10 @@ the local values `localApp`. -/
 private lemma exists_glueApp (J : GrothendieckTopology C) [η.IsLocallyEssSurj J] [G.IsPrestack J]
     {U : C} (A : P.obj (.mk (op U))) :
     ∃ φ : (Φ.app _).toFunctor.obj A ⟶ (Φ'.app _).toFunctor.obj A,
-      ∀ ⦃T : C⦄ (g : T ⟶ U) (hg : essImageSieve η A g),
+      ∀ ⦃T : C⦄ (g : T ⟶ U) (hg : η.localImageSieve A g),
         (G.map g.op.toLoc).toFunctor.map φ = (Φ.naturalityObjIso g.op.toLoc A).inv ≫
           localApp Γ hg ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom :=
-  IsPrestack.exists_map_eq (essImageSieve_mem η J A)
+  IsPrestack.exists_map_eq (η.localImageSieve_mem J A)
     (fun _ g hg ↦ (Φ.naturalityObjIso g.op.toLoc A).inv ≫ localApp Γ hg ≫
       (Φ'.naturalityObjIso g.op.toLoc A).hom)
     (fun _ g hg _ h _ _ e ↦ by
@@ -218,7 +270,7 @@ private def glueApp {U : C} (A : P.obj (.mk (op U))) :
 
 /-- The pullbacks of the glued component are the local values `localApp`. -/
 private lemma map_glueApp {U T : C} (A : P.obj (.mk (op U))) (g : T ⟶ U)
-    (hg : essImageSieve η A g) :
+    (hg : η.localImageSieve A g) :
     (G.map g.op.toLoc).toFunctor.map (glueApp Γ J A) = (Φ.naturalityObjIso g.op.toLoc A).inv ≫
       localApp Γ hg ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom :=
   (exists_glueApp η Γ J A).choose_spec g hg
@@ -226,13 +278,14 @@ private lemma map_glueApp {U T : C} (A : P.obj (.mk (op U))) (g : T ⟶ U)
 /-- At an object in the essential image of `η`, the glued component is `localApp`. -/
 private lemma glueApp_eq_localApp {U : C} {A : P.obj (.mk (op U))}
     (hA : (η.app _).toFunctor.essImage A) : glueApp Γ J A = localApp Γ hA :=
-  IsPrestack.hom_ext (essImageSieve_mem η J A) fun _ g hg ↦
+  IsPrestack.hom_ext (η.localImageSieve_mem J A) fun _ g hg ↦
     (map_glueApp Γ J A g hg).trans (map_localApp Γ g.op.toLoc hA).symm
 
 /-- The glued components are natural. -/
 private lemma glueApp_naturality {U : C} {A A' : P.obj (.mk (op U))} (x : A ⟶ A') :
     (Φ.app _).toFunctor.map x ≫ glueApp Γ J A' = glueApp Γ J A ≫ (Φ'.app _).toFunctor.map x :=
-  IsPrestack.hom_ext (J.intersection_covering (essImageSieve_mem η J A) (essImageSieve_mem η J A'))
+  IsPrestack.hom_ext
+    (J.intersection_covering (η.localImageSieve_mem J A) (η.localImageSieve_mem J A'))
     fun _ g ⟨hg, hg'⟩ ↦ by
       rw [Functor.map_comp, Functor.map_comp, map_glueApp Γ J A g hg, map_glueApp Γ J A' g hg',
         naturalityObjIso_inv_naturality_assoc, reassoc_of% (localApp_naturality Γ hg hg'),
@@ -244,9 +297,9 @@ private lemma glueApp_comp_naturalityObjIso_hom {U V : C} (q : V ⟶ U) (A : P.o
       (Φ.naturalityObjIso q.op.toLoc A).hom ≫
         (G.map q.op.toLoc).toFunctor.map (glueApp Γ J A) := by
   rw [← Iso.eq_comp_inv]
-  refine IsPrestack.hom_ext (essImageSieve_mem η J ((P.map q.op.toLoc).toFunctor.obj A))
+  refine IsPrestack.hom_ext (η.localImageSieve_mem J ((P.map q.op.toLoc).toFunctor.obj A))
     fun W r hr ↦ ?_
-  have hrq : essImageSieve η A (r ≫ q) :=
+  have hrq : η.localImageSieve A (r ≫ q) :=
     Functor.essImage.ofIso (P.compIso q.op r.op (r ≫ q).op op_comp.symm A).symm hr
   have h₁ := pullHom_naturalityObjIso Φ Φ' q r A ((Φ.naturalityObjIso q.op.toLoc A).hom ≫
     (G.map q.op.toLoc).toFunctor.map (glueApp Γ J A) ≫ (Φ'.naturalityObjIso q.op.toLoc A).inv)
@@ -326,7 +379,7 @@ theorem faithful_precomp (J : GrothendieckTopology C) [η.IsLocallyEssSurj J] [G
   map_injective {Φ Φ'} Δ Δ' h := by
     ext ⟨⟨U⟩⟩ : 2
     refine NatTrans.ext (funext fun A ↦ ?_)
-    refine IsPrestack.hom_ext (essImageSieve_mem η J (U := U) A) fun T g hg ↦ ?_
+    refine IsPrestack.hom_ext (η.localImageSieve_mem J A) fun T g hg ↦ ?_
     have hM : (Δ.as.app _).toNatTrans.app ((η.app _).toFunctor.obj hg.witness) =
         (Δ'.as.app _).toNatTrans.app ((η.app _).toFunctor.obj hg.witness) := by
       have h' := congrArg (fun t ↦ (t.as.app (.mk (op T))).toNatTrans.app hg.witness) h

@@ -9,7 +9,10 @@ public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Disc
 public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 public import TauCeti.Geometry.Symplectic.Manifold.PositiveCohomologyAssignment
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Topology.Homotopy.Contractible
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
+import TauCeti.Analysis.Complex.UnitDisc.Basic
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.Conformal.LocalIndex
 
@@ -28,7 +31,10 @@ winding numbers along circles enclosing the zeros
 the winding number of `f ∘ σ` along any circle in `𝔻` enclosing its zeros
 (`ContinuousMap.zeroCharge_eq_degree_toBasedLoop`), and when `f` is the framing section of a
 trivialized line it is the framed charge of `σ`. It only depends on `σ` near the zeros of `f ∘ σ`
-(`ContinuousMap.zeroCharge_congr`).
+(`ContinuousMap.zeroCharge_congr`), and it does not change when `f` is multiplied by a function
+vanishing nowhere along `σ` (`ContinuousMap.zeroCharge_mul_left`), since on the contractible disc
+such a function is homotopic to `1` through nonvanishing functions. So the framed charge does not
+depend on the trivialization of the line.
 
 When `σ⁻¹(Z)` is compact, the zero charge obeys the laws of a positive cohomology assignment
 (`TauCeti.PositiveCohomologyAssignment`) other than positivity, for every continuous `f`:
@@ -73,6 +79,7 @@ hypothesis that `σ` is nonconstant is needed.
   `ContinuousMap.zeroCharge_eq_sum`: the degree, homotopy and additivity laws.
 * `ContinuousMap.zeroCharge_congr`: discs agreeing near the zeros of both have the same zero
   charge.
+* `ContinuousMap.zeroCharge_mul_left`: gauge invariance under nonvanishing multipliers.
 * `ContinuousMap.zeroCharge_eq_degree_toBasedLoop`: the zero charge is the winding number along a
   circle enclosing the zeros.
 * `TauCeti.finite_preimage_preimage_zero`: if `f ∘ σ` extends holomorphically, a compact
@@ -203,6 +210,53 @@ theorem zeroCharge_congr {f : C(Y, ℂ)} {σ σ' : C(𝔻, Y)} {W : Set 𝔻} (h
   · simp [hσσ' z hz]
   · simp only [Set.mem_preimage, ContinuousMap.comp_apply, Set.mem_singleton_iff] at hz ⊢
     rwa [hσσ' z (hσ' z hz)]
+
+/-- The zero charge of `σ` for `f` is the zero charge of the disc `f ∘ σ` in `ℂ` for the
+identity of `ℂ`. -/
+@[simp]
+theorem id_zeroCharge_comp (f : C(Y, ℂ)) (σ : C(𝔻, Y)) :
+    (ContinuousMap.id ℂ).zeroCharge (f.comp σ) = f.zeroCharge σ := by
+  rw [zeroCharge, zeroCharge, ContinuousMap.id_comp]
+
+/-- **Gauge invariance.** Multiplying `f` by a function `u` that vanishes nowhere along `σ` does
+not change the zero charge of `σ`. In particular the framed charge of a disc does not depend on the
+trivialization of the line in which the framing section is read. -/
+theorem zeroCharge_mul_left {u : C(Y, ℂ)} (f : C(Y, ℂ)) {σ : C(𝔻, Y)} (hu : ∀ z, u (σ z) ≠ 0) :
+    zeroCharge (u * f) σ = zeroCharge f σ := by
+  -- On the contractible disc, `u ∘ σ` is homotopic to the constant `1` through nonvanishing
+  -- functions, and multiplying `f ∘ σ` by such a homotopy does not move its zeros.
+  have hfib : σ ⁻¹' ((u * f) ⁻¹' {0}) = σ ⁻¹' (f ⁻¹' {0}) := by
+    ext z
+    simp [hu z]
+  by_cases hc : IsCompact (σ ⁻¹' (f ⁻¹' {0}))
+  swap
+  · rw [zeroCharge_of_not_isCompact hc, zeroCharge_of_not_isCompact (hfib ▸ hc)]
+  -- The unit `u ∘ σ` is null-homotopic, since `𝔻` is contractible and `ℂˣ` is path connected.
+  let v : C(𝔻, ℂˣ) := ⟨fun z ↦ Units.mk0 (u (σ z)) (hu z),
+    Units.isEmbedding_val₀.continuous_iff.2 <| by
+      simpa [Function.comp_def] using (u.comp σ).continuous⟩
+  obtain ⟨w, hw⟩ := (id_nullhomotopic 𝔻).comp_right v
+  obtain ⟨G⟩ := hw.trans (ContinuousMap.homotopic_const_iff.2 (PathConnectedSpace.joined w 1))
+  -- Multiplying `f ∘ σ` by `G` moves `(u * f) ∘ σ` to `f ∘ σ` and keeps the zeros in place.
+  let H : ((u * f).comp σ).Homotopy (f.comp σ) :=
+    { toFun := fun p ↦ (G p : ℂ) * f (σ p.2)
+      continuous_toFun := by fun_prop
+      map_zero_left := fun z ↦ by simp [v]
+      map_one_left := fun z ↦ by simp }
+  have hHp (p : unitInterval × 𝔻) : H p = (G p : ℂ) * f (σ p.2) := rfl
+  have hH : (H : unitInterval × 𝔻 → ℂ) ⁻¹' {0} = univ ×ˢ (σ ⁻¹' (f ⁻¹' {0})) := by
+    ext p
+    simp [hHp]
+  exact HomologicalOrientation.localDegree_eq_of_homotopy_of_isCompact _ _ _
+    Complex.finrank_real_complex H (hH ▸ isCompact_univ.prod hc)
+
+/-- **Gauge invariance for discs in `ℂ`.** Multiplying a disc `c : 𝔻 → ℂ` by a function `u` that
+vanishes nowhere does not change its zero charge for the identity of `ℂ`. -/
+theorem id_zeroCharge_mul_left {u : C(𝔻, ℂ)} (c : C(𝔻, ℂ)) (hu : ∀ z, u z ≠ 0) :
+    (ContinuousMap.id ℂ).zeroCharge (u * c) = (ContinuousMap.id ℂ).zeroCharge c := by
+  have h := zeroCharge_mul_left c (σ := ContinuousMap.id 𝔻) hu
+  rwa [← id_zeroCharge_comp (u * c) (ContinuousMap.id 𝔻), ← id_zeroCharge_comp c,
+    ContinuousMap.comp_id, ContinuousMap.comp_id] at h
 
 /-- **The zero charge is a winding number.** If every zero of `f ∘ σ` lies in the open disc of
 radius `r > 0` about `z₀`, whose closure lies in `𝔻`, then the zero charge of `σ` is the degree

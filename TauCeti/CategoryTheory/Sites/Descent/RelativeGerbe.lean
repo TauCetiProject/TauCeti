@@ -61,6 +61,8 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
 * `CategoryTheory.Pseudofunctor.StrongTrans.IsRelativeGerbe`: relative gerbes, extending
   `StrongTrans.IsLocallyEssSurj` from `Descent/LocallyEssSurj.lean` with the local lifting statement
   `exists_covering_liftIso`.
+* `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_of_isGerbe`: every transformation
+  between gerbes is locally essentially surjective.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_id`: transformations whose components
   are equivalences, and identities, are relative gerbes.
@@ -124,6 +126,18 @@ theorem isLocallyEssSurj_of_essSurj (hη : ∀ U : C, (η.app (.mk (op U))).toFu
     have := hη V
     ⟨(η.app (.mk (op V))).toFunctor.objPreimage ((G.map f.op.toLoc).toFunctor.obj y),
       ⟨(η.app (.mk (op V))).toFunctor.objObjPreimageIso _⟩⟩⟩
+
+/-- A strong transformation between gerbes is locally essentially surjective: `F` has objects
+locally, and their images become isomorphic to the restrictions of any object of `G` locally. -/
+instance isLocallyEssSurj_of_isGerbe [F.IsGerbe J] [G.IsGerbe J] : η.IsLocallyEssSurj J where
+  exists_covering_lift {U} z := by
+    obtain ⟨R, hR, hne⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
+    choose S hS hiso using fun ⦃V⦄ ⦃f : V ⟶ U⦄ (hf : R f) ↦ IsGerbe.exists_covering_iso (J := J)
+      ((η.app (.mk (op V))).toFunctor.obj (hne f hf).some) ((G.map f.op.toLoc).toFunctor.obj z)
+    refine ⟨Sieve.bind R S, J.bind_covering hR hS, ?_⟩
+    rintro W _ ⟨V, g, f, hf, hg, rfl⟩
+    obtain ⟨e⟩ := hiso hf g hg
+    exact ⟨_, ⟨η.restrictImageIso g e⟩⟩
 
 /-- A strong transformation whose components are equivalences of categories is a relative gerbe,
 for every topology. -/
