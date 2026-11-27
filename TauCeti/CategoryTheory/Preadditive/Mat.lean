@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Preadditive.Mat
 
 /-!
-# Monomial isomorphisms in the matrix category
+# Monomial isomorphisms and additive functors on the matrix category
 
 An object of `Mat_ C` is a finite family `M.X : M.ι → C` of objects of a preadditive category
 `C`, and a morphism is a matrix of morphisms of `C`. Given an equivalence `e : M.ι ≃ N.ι` of index
@@ -25,6 +25,10 @@ Composing a matrix with a monomial isomorphism on the side where the equivalence
 permutes and rescales its entries: `Mat_.isoOfEquiv_hom_comp_apply` and
 `Mat_.comp_isoOfEquiv_inv_apply` compute these composites without any `eqToHom`.
 
+An additive functor into a category with finite biproducts extends to matrices by taking
+biproducts of the images of the entries of each finite family. The source and target may have
+independent object and morphism universes.
+
 ## Main declarations
 
 * `CategoryTheory.Mat_.isoOfEquiv e φ`: the monomial isomorphism `M ≅ N` determined by
@@ -32,12 +36,17 @@ permutes and rescales its entries: `Mat_.isoOfEquiv_hom_comp_apply` and
 * `CategoryTheory.Mat_.isoOfEquiv_refl`, `CategoryTheory.Mat_.isoOfEquiv_trans`,
   `CategoryTheory.Mat_.isoOfEquiv_symm`: monomial isomorphisms over the identity, a composite and
   an inverse equivalence.
+* `CategoryTheory.Mat_.liftToBiproducts`: the extension of an additive functor to matrices.
+* `CategoryTheory.Mat_.embeddingLiftToBiproductsIso`: the restriction of the extension to
+  one-term families recovers the original functor.
+* `CategoryTheory.Mat_.fullyFaithfulLiftToBiproducts`: the extension of a fully faithful
+  additive functor is fully faithful.
 
 The file also records the entries of the zero matrix (`Mat_.zero_apply`) and of the one-by-one
 matrices `(Mat_.embedding C).map f` (`Mat_.embedding_map_apply`), with the indices typed as those of
 the one-term families `(Mat_.embedding C).obj X`, whose index types are singletons.
 
-Finally, `CategoryTheory.Mat_.ext_hom_app` gives the components of the isomorphism `Mat_.ext α` of
+`CategoryTheory.Mat_.ext_hom_app` gives the components of the isomorphism `Mat_.ext α` of
 additive functors out of `Mat_ C`.
 -/
 
@@ -209,28 +218,52 @@ theorem liftToBiproducts_map (F : C ⥤ E) [F.Additive] {X Y : Mat_ C} (f : X �
       biproduct.matrix (fun i j ↦ F.map (f i j)) := (rfl)
 
 instance (F : C ⥤ E) [F.Additive] : (liftToBiproducts F).Additive where
-  map_add := by
-    intros
-    dsimp only [liftToBiproducts]
-    simp only [Mat_.add_apply, Functor.map_add]
-    apply biproduct.hom_ext
-    intro j
-    -- The matrix entries here use the semireducible description of morphisms in `Mat_ C`.
-    erw [Preadditive.add_comp]
-    simp only [biproduct.matrix_π]
-    apply biproduct.hom_ext'
-    intro i
-    erw [Preadditive.comp_add]
-    simp
+  map_add {_ _ f g} := by
+    have h :
+        biproduct.matrix (fun i j ↦ F.map (f i j) + F.map (g i j)) =
+          biproduct.matrix (fun i j ↦ F.map (f i j)) +
+            biproduct.matrix (fun i j ↦ F.map (g i j)) := by
+      ext i j : 2
+      simp [Preadditive.add_comp, Preadditive.comp_add]
+    simpa only [liftToBiproducts_map, Mat_.add_apply, Functor.map_add] using! h
+
+/-- Restricting the biproduct extension along the embedding as one-term families recovers
+the original additive functor. -/
+def embeddingLiftToBiproductsIso (F : C ⥤ E) [F.Additive] :
+    embedding C ⋙ liftToBiproducts F ≅ F :=
+  NatIso.ofComponents
+    (fun X ↦ biproductUniqueIso (fun _ : PUnit ↦ F.obj X))
+    (fun {X Y} f ↦ by
+      rw [Functor.comp_map, liftToBiproducts_map]
+      let A : PUnit → E := fun _ ↦ F.obj X
+      let B : PUnit → E := fun _ ↦ F.obj Y
+      -- The embedding uses the constant family on `PUnit`.
+      change biproduct.matrix (f := A) (g := B) (fun _ _ ↦ F.map f) ≫ (biproductUniqueIso B).hom =
+        (biproductUniqueIso A).hom ≫ F.map f
+      apply biproduct.hom_ext'
+      intro i
+      simp [A, B, biproductUniqueIso_hom, limitBiconeOfUnique, biproduct.lift_desc])
+
+@[simp]
+theorem embeddingLiftToBiproductsIso_hom_app (F : C ⥤ E) [F.Additive] (X : C) :
+    (embeddingLiftToBiproductsIso F).hom.app X =
+      (biproductUniqueIso (fun _ : PUnit ↦ F.obj X)).hom := (rfl)
+
+@[simp]
+theorem embeddingLiftToBiproductsIso_inv_app (F : C ⥤ E) [F.Additive] (X : C) :
+    (embeddingLiftToBiproductsIso F).inv.app X =
+      (biproductUniqueIso (fun _ : PUnit ↦ F.obj X)).inv := (rfl)
 
 /-- The extension of a fully faithful additive functor to the category of matrices is fully
 faithful. The inverse on morphisms takes the preimage of each matrix component. -/
 def fullyFaithfulLiftToBiproducts {F : C ⥤ E} [F.Additive] (hF : F.FullyFaithful) :
     (liftToBiproducts F).FullyFaithful where
   preimage f i j := hF.preimage (biproduct.components f i j)
-  map_preimage f := by
-    dsimp only [liftToBiproducts] at f ⊢
-    simpa only [hF.map_preimage] using biproduct.components_matrix f
+  map_preimage {X Y} f := by
+    -- Give `biproduct.components` the biproduct families in the type of `f`.
+    change (⨁ fun i ↦ F.obj (X.X i)) ⟶ (⨁ fun j ↦ F.obj (Y.X j)) at f
+    refine (liftToBiproducts_map F (fun i j ↦ hF.preimage (biproduct.components f i j))).trans ?_
+    simpa only [hF.map_preimage] using! biproduct.components_matrix f
   preimage_map f := by
     funext i j
     simp only [liftToBiproducts_map, biproduct.matrix_components, hF.preimage_map]
