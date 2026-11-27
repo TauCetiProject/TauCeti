@@ -75,6 +75,8 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.HasSubst.sub_one`: `f - 1` can be substituted when `constantCoeff f = 1`.
 * `PowerSeries.constantCoeff_subst_of_constantCoeff_zero'`: univariate `PowerSeries.constantCoeff`
   form of `constantCoeff_subst_of_constantCoeff_zero`.
+* `PowerSeries.subst_map_algebraMap`: substituting the image of a series over `R` into a series
+  over `R` can be computed over `R`.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
@@ -310,6 +312,13 @@ instead of `MvPowerSeries.constantCoeff`. -/
 theorem constantCoeff_subst_of_constantCoeff_zero' {a : S⟦X⟧} (ha : constantCoeff a = 0)
     (f : R⟦X⟧) : constantCoeff (f.subst a) = algebraMap R S (constantCoeff f) := by
   rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero (by rwa [← constantCoeff_eq])]
+
+/-- Substituting the image in `S` of a series `a` over `R` into `f` is the image of `f (a)`: the
+substitution can be computed over `R`. -/
+theorem subst_map_algebraMap {a : R⟦X⟧} (ha : HasSubst a) (f : R⟦X⟧) :
+    f.subst (map (algebraMap R S) a) = map (algebraMap R S) (f.subst a) := by
+  rw [map_algebraMap_eq_subst_X a, ← subst_comp_subst_apply ha HasSubst.X',
+    map_algebraMap_eq_subst_X]
 
 /-- The linear coefficient of `f (a)`, for `a` of zero constant coefficient, is the product of
 the linear coefficients of `f` and `a`. -/
