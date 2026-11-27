@@ -28,6 +28,8 @@ null sets have empty interior.
 
 ## Main results
 
+* `TauCeti.IsSmoothTriangulation.maximal_iff_card_eq`: the maximal simplices of a smooth
+  triangulation are exactly the faces with `dim E + 1` vertices.
 * `TauCeti.IsSmoothTriangulation.isPure`: a smooth triangulation is pure of dimension `dim E`.
 * `TauCeti.IsSmoothTriangulation.dimension_eq`: a smooth triangulation of a nonempty manifold has
   dimension `dim E`.
@@ -47,7 +49,7 @@ variable {ι : Type*}
 
 /-- In a smooth triangulation of a manifold modelled on `E`, a maximal simplex has at least
 `dim E + 1` vertices: otherwise the image of its open simplex would be a nonempty open null set. -/
-private theorem IsSmoothTriangulation.finrank_lt_card_of_maximal
+theorem IsSmoothTriangulation.finrank_lt_card_of_maximal
     (h : IsSmoothTriangulation I n κ) {τ : Finset ι} (hτ : Maximal (· ∈ K) τ) :
     finrank ℝ E < τ.card := by
   borelize E
@@ -64,6 +66,13 @@ private theorem IsSmoothTriangulation.finrank_lt_card_of_maximal
     interior_maximal (image_mono hsub) (κ.isOpenMap O (K.isOpen_biInter_openStarRealization τ))
   rw [(h.isNullSet_image_range_faceInclusion ⟨τ, hτ.prop⟩ hle).interior_eq_empty] at hint
   exact hint (mem_image_of_mem κ hxO)
+
+/-- In a smooth triangulation of a manifold modelled on `E`, the maximal simplices are exactly
+the faces with `dim E + 1` vertices. -/
+theorem IsSmoothTriangulation.maximal_iff_card_eq (h : IsSmoothTriangulation I n κ)
+    {σ : Finset ι} : Maximal (· ∈ K) σ ↔ σ ∈ K ∧ σ.card = finrank ℝ E + 1 :=
+  ⟨fun hσ ↦ ⟨hσ.prop, (h.card_le hσ.prop).antisymm (h.finrank_lt_card_of_maximal hσ)⟩,
+    fun hσ ↦ h.maximal_of_card_eq hσ.1 hσ.2⟩
 
 /-- **Smooth triangulations are pure.** In a smooth triangulation of a manifold modelled on a
 finite-dimensional space `E`, every simplex is a face of a simplex with `dim E + 1` vertices. -/

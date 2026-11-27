@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 public import Mathlib.Data.Nat.Factorization.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.DiscreteMoments
-import TauCeti.Data.Nat.Factorization.Basic
+import TauCeti.Data.Nat.Factorization.Square
 import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 
@@ -40,21 +40,16 @@ open Real Nat Finset
 
 namespace TauCeti
 
-private theorem norm_gaussianMonomial_pnat_le (j : Fin 2) (n : ℕ+) {u : ℝ} (hu : 0 < u) :
-    ‖gaussianMonomial j (n * u)‖ ≤ 3 * exp (-(n * u)) := by
-  have hnu : 0 ≤ (n : ℝ) * u := by positivity
-  refine (norm_gaussianMonomial_le j _).trans ?_
-  rw [abs_of_nonneg hnu]
-  gcongr
-  rw [pow_two]
-  exact mul_le_of_le_one_right (exp_nonneg _) (exp_le_one_iff.mpr (neg_nonpos.mpr hnu))
-
-private theorem summable_norm_gaussianMonomial_pnat (j : Fin 2) {u : ℝ} (hu : 0 < u) :
-    Summable fun n : ℕ+ ↦ ‖gaussianMonomial j (n * u)‖ := by
-  obtain ⟨_, _, h⟩ := exists_summable_and_tsum_rpow_mul_exp_neg_le (a := 0) le_rfl
-  have hs : Summable (fun n : ℕ+ ↦ exp (-(n * u))) := by simpa using (h u hu).1
-  exact Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦
-    norm_gaussianMonomial_pnat_le j n hu) (hs.mul_left 3)
+private theorem norm_gaussianMonomial_le_exp (j : Fin 2) (x : ℝ) :
+    ‖gaussianMonomial j x‖ ≤ 3 * exp (-x) := by
+  calc
+    _ ≤ 3 * exp (-|x|) ^ 2 := norm_gaussianMonomial_le j x
+    _ ≤ 3 * exp (-|x|) := by
+      gcongr
+      rw [pow_two]
+      exact mul_le_of_le_one_right (exp_nonneg _)
+        (exp_le_one_iff.mpr (neg_nonpos.mpr (abs_nonneg x)))
+    _ ≤ 3 * exp (-x) := by gcongr; exact le_abs_self x
 
 private theorem sum_gaussianMonomial_divisorsAntidiagonal_le (j : Fin 2) {u : ℝ}
     (hu : 0 < u) (m : ℕ+) :
@@ -72,12 +67,10 @@ private theorem sum_gaussianMonomial_divisorsAntidiagonal_le (j : Fin 2) {u : �
         rw [← hm']
         exact (Real.sqrt_le_iff).2 ⟨by positivity, by
           nlinarith [sq_nonneg (p.1 : ℝ), sq_nonneg (p.2 : ℝ)]⟩
-      let n₁ : ℕ+ := ⟨p.1, Nat.pos_of_ne_zero (left_ne_zero_of_mem_divisorsAntidiagonal hp)⟩
-      let n₂ : ℕ+ := ⟨p.2, Nat.pos_of_ne_zero (right_ne_zero_of_mem_divisorsAntidiagonal hp)⟩
       calc
         _ ≤ (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) :=
-          mul_le_mul (norm_gaussianMonomial_pnat_le j n₁ hu)
-            (norm_gaussianMonomial_pnat_le j n₂ hu) (norm_nonneg _) (by positivity)
+          mul_le_mul (norm_gaussianMonomial_le_exp j _) (norm_gaussianMonomial_le_exp j _)
+            (norm_nonneg _) (by positivity)
         _ = 9 * exp (-(((p.1 : ℝ) + p.2) * u)) := by
           rw [mul_mul_mul_comm, ← exp_add]
           ring_nf
@@ -99,17 +92,12 @@ private def gaussianPairWeight (j : Fin 2) (u : ℝ) (S : Set ℕ) (a b : ℕ) :
 private theorem summable_gaussianPairWeight (j : Fin 2) {u : ℝ} (hu : 0 < u) (S : Set ℕ) :
     Summable (fun p : ℕ+ × ℕ+ ↦ gaussianPairWeight j u S p.1 p.2) := by
   classical
-  have hs := summable_norm_gaussianMonomial_pnat j hu
+  have hs : Summable (fun n : ℕ+ ↦ ‖gaussianMonomial j (n * u)‖) := by
+    simpa only [one_mul, Complex.norm_real] using
+      (summable_gaussianTheta (j := j) (c := fun _ ↦ 1) (fun _ ↦ norm_one.le) hu).norm
   have hs₂ := hs.mul_of_nonneg hs (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _)
-  apply Summable.of_nonneg_of_le _ _ hs₂
-  · intro p
-    simp only [gaussianPairWeight, Set.indicator_apply]
-    split_ifs <;> positivity
-  · intro p
-    simp only [gaussianPairWeight, Set.indicator_apply]
-    split_ifs
-    · exact le_rfl
-    · positivity
+  refine (hs₂.indicator {p : ℕ+ × ℕ+ | (p.1 : ℕ) * p.2 ∈ S}).congr fun p ↦ ?_
+  simp only [gaussianPairWeight, Set.indicator_apply, Set.mem_ofPred_eq]
 
 private theorem sum_gaussianPairWeight (j : Fin 2) (u : ℝ) (S : Set ℕ) (m : ℕ+) :
     (∑ p ∈ (m : ℕ).divisorsAntidiagonal, gaussianPairWeight j u S p.1 p.2) =
@@ -152,9 +140,24 @@ private theorem gaussianPairFiber_le_of_eq_pow_mul_sq {δ D : ℝ} (hδ : 0 ≤ 
       exact (hdiv _).trans (by gcongr)
     _ = _ := by ring
 
+private theorem exists_eq_two_pow_mul_sq_of_isSquare_ordCompl {m : ℕ+}
+    (h : IsSquare (ordCompl[2] (m : ℕ))) :
+    ∃ d : Fin 2, ∃ k : ℕ+, (m : ℕ) = (2 : ℕ) ^ d.val * (k : ℕ) ^ 2 := by
+  rcases (Nat.isSquare_ordCompl_iff Nat.prime_two).mp h with ⟨r, hr⟩ | ⟨r, hr⟩
+  · have hr₀ : r ≠ 0 := fun he ↦ by simp [he] at hr
+    exact ⟨0, ⟨r, Nat.pos_of_ne_zero hr₀⟩, by simpa [pow_two] using hr⟩
+  · have hd : 2 ∣ r := (Nat.prime_two.dvd_mul.mp ⟨(m : ℕ), hr.symm⟩).elim id id
+    obtain ⟨k, rfl⟩ := hd
+    have hm : (m : ℕ) = 2 * k ^ 2 := by
+      apply Nat.eq_of_mul_eq_mul_left (by decide : 0 < 2)
+      rw [hr]
+      ring
+    have hk₀ : k ≠ 0 := fun he ↦ by simp [he] at hm
+    exact ⟨1, ⟨k, Nat.pos_of_ne_zero hk₀⟩, by simpa using hm⟩
+
 /-- The Gaussian pair sum over products with square odd part, multiplied by the square
 of the theta normalization, converges with bound `C u⁻²ᵟ` for every positive scale. -/
-theorem exists_mul_tsum_gaussianMonomial_sq_ordCompl_le {δ : ℝ} (hδ : 0 < δ) :
+theorem exists_summable_and_mul_tsum_gaussianMonomial_isSquare_ordCompl_le {δ : ℝ} (hδ : 0 < δ) :
     ∃ C > 0, ∀ (j : Fin 2) (u : ℝ), 0 < u →
       let g : ℕ+ × ℕ+ → ℝ := fun p ↦ if IsSquare (ordCompl[2] ((p.1 : ℕ) * p.2)) then
         ‖gaussianMonomial j (p.1 * u)‖ * ‖gaussianMonomial j (p.2 * u)‖ else 0
@@ -171,11 +174,7 @@ theorem exists_mul_tsum_gaussianMonomial_sq_ordCompl_le {δ : ℝ} (hδ : 0 < δ
     simp only [gaussianPairWeight, S₀, Set.indicator_apply, Set.mem_ofPred_eq]
   have hsum := hasSum_gaussianPairFiber j hu S₀
   have hFs := summable_subtype_iff_indicator.mpr hsum.summable
-  have hrepr (m : S) : ∃ d : Fin 2, ∃ k : ℕ+, (m.val : ℕ) = (2 : ℕ) ^ d.val * (k : ℕ) ^ 2 := by
-    obtain ⟨d, k, hk⟩ := Nat.exists_eq_pow_mul_sq_of_isSquare_ordCompl m.property
-    have hk₀ : 0 < k := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hk
-    exact ⟨d, ⟨k, hk₀⟩, hk⟩
-  choose d k hdk using hrepr
+  choose d k hdk using fun m : S ↦ exists_eq_two_pow_mul_sq_of_isSquare_ordCompl m.property
   let b : ℕ+ → ℝ := fun n ↦ (9 * D * 2 ^ δ) * ((n : ℝ) ^ (2 * δ) * exp (-(n * u)))
   have hb := (hmoment u hu).1.mul_left (9 * D * 2 ^ δ)
   have hb₂ : Summable (fun p : Fin 2 × ℕ+ ↦ b p.2) := by
@@ -207,7 +206,7 @@ theorem exists_mul_tsum_gaussianMonomial_sq_ordCompl_le {δ : ℝ} (hδ : 0 < δ
       rw [neg_add, rpow_add hu, rpow_neg_one]; field_simp
 
 private theorem gaussianPair_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) (j : Fin 2)
-    {u : ℝ} (hu : 0 < u) (p : ℕ+ × ℕ+) :
+    (u : ℝ) (p : ℕ+ × ℕ+) :
     ‖gaussianMonomial j (p.1 * u)‖ * ‖gaussianMonomial j (p.2 * u)‖ *
       (√((p.1 : ℝ) * p.2) * (1 + log ((p.1 : ℝ) * p.2))) ≤
       (1 + δ⁻¹) * ((3 * ((p.1 : ℝ) ^ (1 / 2 + δ) * exp (-(p.1 * u)))) *
@@ -224,8 +223,8 @@ private theorem gaussianPair_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) (j : Fin 
   calc
     _ ≤ (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) *
         (√m * ((1 + δ⁻¹) * m ^ δ)) := by
-      exact mul_le_mul (mul_le_mul (norm_gaussianMonomial_pnat_le j p.1 hu)
-        (norm_gaussianMonomial_pnat_le j p.2 hu) (norm_nonneg _) (by positivity))
+      exact mul_le_mul (mul_le_mul (norm_gaussianMonomial_le_exp j _)
+        (norm_gaussianMonomial_le_exp j _) (norm_nonneg _) (by positivity))
         (mul_le_mul_of_nonneg_left hlog (sqrt_nonneg _)) (by positivity [log_nonneg hm])
         (by positivity)
     _ = (3 * exp (-(p.1 * u))) * (3 * exp (-(p.2 * u))) * ((1 + δ⁻¹) * m ^ a) := by
@@ -240,7 +239,7 @@ private theorem gaussianPair_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) (j : Fin 
 /-- The square-root and logarithm weight from the nonsquare character sums can be
 summed even without restricting to the nonsquare products. The bound includes the square
 of the theta normalization. -/
-theorem exists_mul_tsum_gaussianMonomial_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) :
+theorem exists_summable_and_mul_tsum_gaussianMonomial_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < δ) :
     ∃ C > 0, ∀ (j : Fin 2) (u : ℝ), 0 < u →
       let g : ℕ+ × ℕ+ → ℝ := fun p ↦ ‖gaussianMonomial j (p.1 * u)‖ *
         ‖gaussianMonomial j (p.2 * u)‖ * (√((p.1 : ℝ) * p.2) * (1 + log ((p.1 : ℝ) * p.2)))
@@ -262,7 +261,7 @@ theorem exists_mul_tsum_gaussianMonomial_sqrt_mul_log_le {δ : ℝ} (hδ : 0 < �
     dsimp only [g]
     positivity [log_nonneg hm]
   have hg (p : ℕ+ × ℕ+) : g p ≤ (1 + δ⁻¹) * (f p.1 * f p.2) :=
-    gaussianPair_sqrt_mul_log_le hδ j hu p
+    gaussianPair_sqrt_mul_log_le hδ j u p
   have hgs := Summable.of_nonneg_of_le hg₀ hg h₂
   refine ⟨hgs, ?_⟩
   have hsum := hgs.tsum_le_tsum hg h₂

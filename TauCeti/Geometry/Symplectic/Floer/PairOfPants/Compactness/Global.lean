@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.End
 import TauCeti.Data.ENNReal.NatCastDiv
+import TauCeti.Geometry.Symplectic.Floer.Compactness.EndWindow
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.BubblingSet
@@ -84,11 +85,17 @@ so it does not change along the family. The diagonal argument runs with the read
 whose energy on a window of an end is the energy of `uₖ` on its image
 (`TauCeti.SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq`), and the
 limit is read back in `M` through `e` (`IsCompact.exists_tendsto_of_tendsto_comp`): the solutions
-converge locally uniformly after applying `e`, and pointwise in `M`.
+converge locally uniformly after applying `e`, and pointwise in `M`. The windows also give bounds
+on the energy densities near every point off their bubbling points; read on `S` through the
+Jacobian of the end chart
+(`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_positiveEndChart`), they pass through the diagonal
+argument (`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`), so the energy
+densities are eventually bounded near every point of `S \ Z`. For smooth solutions of the
+pair-of-pants theorem, these bounds make the limit a `C¹` Floer solution on `S \ Z`, in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Regularity`.
 
 Energy that escapes along the ends is not seen by the limit: this is the breaking of Floer
-cylinders off the ends, which is not treated here, nor are the regularity of the limit and the
-bubbles at the points of `Z`.
+cylinders off the ends, which is not treated here, nor are the bubbles at the points of `Z`.
 
 ## References
 
@@ -157,6 +164,69 @@ private theorem eventually_ofReal_le_withDensity_image_positiveEndChart_add
   exact (ENNReal.ofReal_le_ofReal hn).trans
     TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
 
+/-- **Bounds on the energy densities on a window of an end, read on `S`.** Let `Kₖ` be
+perturbations equal to `H_q(t) dt` beyond `T₀` on the end `q`, let `g(y) = φ'_q(y + (m, 0))` be the
+translated positive end chart of the end `q`, and let `Ω` be an open window whose translate by
+`(m, 0)` lies beyond `max T 0`, for `T ≥ T₀`, in a band of angular width one. If along `φ` the
+energy densities of the end readings `uₖ ∘ g` are uniformly bounded on every compact subset of
+`Ω \ Z`, then the energy densities of the `uₖ` are uniformly bounded near every point of
+`g(Ω) \ g(Z)`, since the energy density of `uₖ ∘ g` is that of `uₖ` times the Jacobian of `g`. -/
+private theorem exists_mem_nhds_forall_floerEnergyDensity_le_image_positiveEndChart_add
+    {K : ℕ → ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
+    (hKH : ∀ k q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K k w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℕ → ℝ × ℝ → M} (hu : ∀ k, MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I (u k) thricePuncturedSphereReal)
+    {q : Puncture} {m : ℕ} {T t₀ : ℝ} (hT : T₀ ≤ T) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    (hΩT : ∀ z ∈ Ω, z + ((m : ℝ), 0) ∈ Ioi (max T 0) ×ˢ Ioo t₀ (t₀ + 1)) {φ : ℕ → ℕ}
+    {Z : Finset (ℝ × ℝ)}
+    (hbd : ∀ C, IsCompact C → C ⊆ Ω \ ↑Z → ∃ A, ∀ n, ∀ y ∈ C, ω.floerEnergyDensity
+      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+      (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y ≤ A) :
+    ∀ y ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' Ω \
+        (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z, ∃ N ∈ 𝓝 y, ∃ A,
+      ∀ᶠ n in atTop, ∀ x ∈ N, ω.floerEnergyDensity
+        (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) x ≤ A := by
+  set g : ℝ × ℝ → ℝ × ℝ := fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))
+  have hgo : IsOpenMap g := (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight _).isOpenMap
+  rintro _ ⟨⟨ζ, hζ, rfl⟩, hζZ⟩
+  -- A compact neighbourhood of `ζ` off the bubbling points, on which the end readings are bounded.
+  obtain ⟨L, hL, hLΩ, hLc⟩ := local_compact_nhds
+    ((hΩ.sdiff Z.finite_toSet.isClosed).mem_nhds ⟨hζ, fun h ↦ hζZ ⟨ζ, h, rfl⟩⟩)
+  obtain ⟨A, hA⟩ := hbd L hLc hLΩ
+  -- The Jacobian of the translated end chart is bounded below on it by some `c > 0`.
+  have hdet : Continuous fun y : ℝ × ℝ ↦ (fderiv ℝ (positiveEndChart q) (y + ((m : ℝ), 0))).det :=
+    ContinuousLinearMap.continuous_det.comp
+      (((contDiff_positiveEndChart q 1).continuous_fderiv one_ne_zero).comp
+        (continuous_id.add continuous_const))
+  obtain ⟨c, hc, hcL⟩ : ∃ c > 0, ∀ y ∈ L,
+      c ≤ (fderiv ℝ (positiveEndChart q) (y + ((m : ℝ), 0))).det := by
+    obtain ⟨y₀, -, hmin⟩ := hLc.exists_isMinOn ⟨ζ, mem_of_mem_nhds hL⟩ hdet.continuousOn
+    exact ⟨_, det_fderiv_positiveEndChart_pos q _, fun y hy ↦ hmin hy⟩
+  refine ⟨g '' L, mem_of_superset ((hgo _ isOpen_interior).mem_nhds
+    (mem_image_of_mem g (mem_interior_iff_mem_nhds.2 hL))) (image_mono interior_subset),
+    max A 0 / c, .of_forall fun n ↦ ?_⟩
+  rintro _ ⟨y, hy, rfl⟩
+  have hyΩ := hΩT y (hLΩ hy).1
+  have hyS : g y ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hyΩ.1)
+  -- The energy density of the end reading is the Jacobian times that of `u`.
+  have h := SmoothTwoForm.floerEnergyDensity_comp_positiveEndChart (ω := ω) (T₀ := T)
+    (fun w x hw ↦ hKH (φ n) q w x (hT.trans hw)) (hH q) (hHd q) (u := u (φ n))
+    ((le_max_left _ _).trans hyΩ.1.le)
+    ((hu _ _ hyS).mdifferentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hyS))
+  rw [← ω.floerEnergyDensity_cylindrical_comp_add_right] at h
+  have hAy : (fderiv ℝ (positiveEndChart q) (y + ((m : ℝ), 0))).det * ω.floerEnergyDensity
+      (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) (g y) ≤ max A 0 :=
+    h ▸ (hA n y hy).trans (le_max_left _ _)
+  rcases lt_or_ge (ω.floerEnergyDensity (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) (g y)) 0 with h0 | h0
+  · exact h0.le.trans (div_nonneg (le_max_right _ _) hc.le)
+  · rw [le_div_iff₀ hc, mul_comm]
+    exact (mul_le_mul_of_nonneg_right (hcL y hy) h0).trans hAy
+
 end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SymplecticForm
@@ -172,25 +242,6 @@ private theorem isOpen_setOf_forall_fst_positiveEndCoord_lt (c : ℝ) :
   exact (continuousAt_fst_positiveEndCoord q (Puncture.ne_endCenter
     (mem_thricePuncturedSphereReal_iff.1 hzS) q)).eventually_lt continuousAt_const (hz q)
 
-/-- The end windows `(T + 1, T + 3) × (c - 2/5, c + 2/5)` of a positive end chart, with `c = 0`
-for `b = false` and `c = 1/2` for `b = true`. -/
-private noncomputable def endWindow (T : ℝ) (b : Bool) : Set (ℝ × ℝ) :=
-  Ioo (T + 1) (T + 3) ×ˢ
-    Ioo ((bif b then 1 / 2 else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)
-
-/-- The translates by `(m, 0)`, `m ≥ 0`, of the closed end windows lie beyond `T ≥ 0` in a band of
-angular width one. -/
-private theorem add_mem_Ioi_prod_Ioo {T : ℝ} (hT : 0 ≤ T) {m : ℝ} (hm : 0 ≤ m) {b : Bool}
-    {y : ℝ × ℝ} (hy : y ∈ Icc (T + 1) (T + 3) ×ˢ
-      Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)) :
-    y + (m, 0) ∈ Ioi (max T 0) ×ˢ
-      Ioo ((bif b then 1 / 2 else 0) - 1 / 2) ((bif b then 1 / 2 else 0) - 1 / 2 + 1) := by
-  obtain ⟨⟨hs, -⟩, ht₁, ht₂⟩ := hy
-  refine ⟨?_, ?_, ?_⟩
-  · rw [Prod.fst_add, mem_Ioi, max_eq_left hT]; linarith
-  · rw [Prod.snd_add, add_zero]; linarith
-  · rw [Prod.snd_add, add_zero]; linarith
-
 /-- A point at least `T + 2` out along the end `q` lies in the image of an end window under
 `y ↦ φ'_q(y + (m, 0))` for some `m ∈ ℕ`. -/
 private theorem exists_mem_image_positiveEndChart_add {q : Puncture} {z : ℝ × ℝ}
@@ -201,28 +252,10 @@ private theorem exists_mem_image_positiveEndChart_add {q : Puncture} {z : ℝ ×
   set s := (positiveEndCoord q z).1
   set t := (positiveEndCoord q z).2
   have hzc : positiveEndChart q (s, t) = z := positiveEndChart_positiveEndCoord q hz
-  -- Translate by the integer part of `s - (T + 2)`.
-  set m := ⌊s - (T + 2)⌋₊
-  have hm₁ : (m : ℝ) ≤ s - (T + 2) := Nat.floor_le (by linarith)
-  have hm₂ : s - (T + 2) < m + 1 := Nat.lt_floor_add_one _
-  -- Shift the angular coordinate by an integer into one of the two windows.
+  -- Translate `(s, t)` into an end window, using that `φ'_q` has period one in `t`.
+  obtain ⟨m, k, b, hy⟩ := exists_sub_mem_endWindow (by linarith : T + 1 < s) t
   have hper : Periodic (fun t ↦ positiveEndChart q (s, t)) 1 := positiveEndChart_add_one q s
-  have hk (k : ℤ) : positiveEndChart q (s, t - k) = z := by
-    simpa [hzc] using hper.sub_int_mul_eq k (x := t)
-  have hy (b : Bool) (k : ℤ) (h₁ : (bif b then 1 / 2 else 0) - 2 / 5 < t - k)
-      (h₂ : t - k < (bif b then 1 / 2 else 0) + 2 / 5) : ∃ (m : ℕ) (b : Bool),
-        z ∈ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' endWindow T b :=
-    ⟨m, b, (s - m, t - k), ⟨⟨by linarith, by linarith⟩, h₁, h₂⟩, by simpa using hk k⟩
-  have hf₀ : 0 ≤ t - ⌊t⌋ := Int.self_sub_floor t ▸ Int.fract_nonneg t
-  have hf₁ : t - ⌊t⌋ < 1 := Int.self_sub_floor t ▸ Int.fract_lt_one t
-  by_cases h₁ : t - ⌊t⌋ < 2 / 5
-  · exact hy false ⌊t⌋ (by simp only [Bool.cond_false]; linarith)
-      (by simp only [Bool.cond_false]; linarith)
-  by_cases h₂ : t - ⌊t⌋ < 9 / 10
-  · exact hy true ⌊t⌋ (by simp only [Bool.cond_true]; linarith)
-      (by simp only [Bool.cond_true]; linarith)
-  · exact hy false (⌊t⌋ + 1) (by push_cast; simp only [Bool.cond_false]; linarith)
-      (by push_cast; simp only [Bool.cond_false]; linarith)
+  exact ⟨m, b, (s - m, t - k), hy, by simpa [hzc] using hper.sub_int_mul_eq k (x := t)⟩
 
 /-- The windows covering `S`: the core, where the signed longitudinal coordinate of every end is
 below `T + 2`, and on each end `q` the images of the end windows under `y ↦ φ'_q(y + (m, 0))`,
@@ -235,9 +268,8 @@ private noncomputable def window (T : ℝ) : Option (Puncture × ℕ × Bool) �
 private theorem positiveEndChart_add_mem {T : ℝ} (hT : 0 ≤ T) (q : Puncture) (m : ℕ) {b : Bool}
     {y : ℝ × ℝ} (hy : y ∈ endWindow T b) :
     positiveEndChart q (y + ((m : ℝ), 0)) ∈ thricePuncturedSphereReal :=
-  positiveEndChart_mem_thricePuncturedSphereReal <| (le_max_right _ _).trans_lt
-    (add_mem_Ioi_prod_Ioo hT (Nat.cast_nonneg m)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)).1
+  positiveEndChart_mem_thricePuncturedSphereReal <| hT.trans_lt
+    (endWindow_add_mem_Ioi_prod_Ioo le_rfl (Nat.cast_nonneg m) hy).1
 
 /-- The windows are open, since the positive end charts are open maps. -/
 private theorem isOpen_window (T : ℝ) (i : Option (Puncture × ℕ × Bool)) :
@@ -245,7 +277,7 @@ private theorem isOpen_window (T : ℝ) (i : Option (Puncture × ℕ × Bool)) :
   rcases i with _ | ⟨q, m, b⟩
   · exact isOpen_setOf_forall_fst_positiveEndCoord_lt _
   · exact (isOpenMap_positiveEndChart q).comp (Homeomorph.addRight ((m : ℝ), (0 : ℝ))).isOpenMap
-      _ (isOpen_Ioo.prod isOpen_Ioo)
+      _ (isOpen_endWindow T b)
 
 /-- The core window lies in the compact truncation `S_{T + 2}`. -/
 private theorem window_none_subset (T : ℝ) :
@@ -404,9 +436,9 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
       (hHs q) (hJqt q) (hJq q) (fun s t x hs ↦ hJe q s t x ((le_max_left _ _).trans hs))
       (D := Icc (max T₀ 2 + 1) (max T₀ 2 + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (m := 0) (by linarith) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero] at h) hK
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2)
+      (endWindow_closed_subset_Ioi_prod_Ioo (max_le le_rfl (by linarith)) b)
+      hK
   obtain ⟨δc, hδc, hconvc⟩ :=
     exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsPerturbation ω hH
       hHs hB hJ hJt (isCompact_preimage_truncation (max T₀ 2 + 2))
@@ -423,17 +455,18 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
         (isOpen_window _ none).measurableSet (fun y hy ↦ hy.1)
         fun ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ (min_le_left _ _).trans hn, v, hv⟩
   · obtain ⟨φ, Z, v, hφ, hZΩ, -, hc, -, -, -, hv⟩ := hconve q b (Ω := endWindow (max T₀ 2) b)
-      (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_Ioo.prod isOpen_Ioo)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self) (fun _ ↦ Nat.cast_nonneg m)
+      (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_endWindow _ b)
+      (endWindow_subset_Icc_prod_Icc _ b) (fun _ ↦ Nat.cast_nonneg m)
       (fun k ↦ hu _) (fun k ↦ hfl _)
       (nonneg_and_lintegral_floerEnergyDensity_le ω hH hHs hB hJt (hu 0) (hfl 0) (ha 0) (hA 0)).1
       (fun k ↦ (nonneg_and_lintegral_floerEnergyDensity_le ω hH hHs hB hJt (hu _) (hfl _) (ha _)
         (hA _)).2) (fun k y hy ↦ huK _ (positiveEndChart_add_mem (by linarith) q m hy))
     obtain ⟨hc', v', hv'⟩ :=
       concentration_and_tendstoLocallyUniformlyOn_image_positiveEndChart_add ω hH hHd
-        (fun k ↦ (hu (ψ k)).differentiableOn (by norm_num)) hT (isOpen_Ioo.prod isOpen_Ioo)
-        (fun y hy ↦ add_mem_Ioi_prod_Ioo (by linarith) (Nat.cast_nonneg m)
-          (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)) hZΩ
+        (fun k ↦ (hu (ψ k)).differentiableOn (by norm_num)) hT (isOpen_endWindow _ b)
+        (fun y hy ↦
+          endWindow_add_mem_Ioi_prod_Ioo (max_le le_rfl (by linarith)) (Nat.cast_nonneg m) hy)
+        hZΩ
         (fun z hz ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ ((min_le_right _ _).trans
           (Finset.inf'_le (fun p : Puncture × Bool ↦ δe p.1 p.2) (Finset.mem_univ (q, b)))).trans
             hn) hv
@@ -609,9 +642,11 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] [CompactSpace M] [NormedSpace �
 beyond `T₀` on the end `q`, let `g(y) = φ'_q(y + (m, 0))` be the translated positive end chart and
 `T ≥ max T₀ 0`. If along `φ` the end readings `uₖ ∘ g`, read through `e`, converge locally
 uniformly on the end window off a finite set `Z`, at each point of which the energy `δ` of the end
-readings concentrates, then the solutions read through `e` converge locally uniformly on the
-window `g(endWindow)` of `S` off `g(Z)`, and every neighbourhood of a point of `g(Z)` eventually
-carries energy at least `δ` for the energy measure of `uₖ` on `S`. -/
+readings concentrates, and their energy densities are uniformly bounded on every compact subset of
+the end window off `Z`, then the solutions read through `e` converge locally uniformly on the
+window `g(endWindow)` of `S` off `g(Z)`, every neighbourhood of a point of `g(Z)` eventually
+carries energy at least `δ` for the energy measure of `uₖ` on `S`, and the energy densities of the
+`uₖ` are uniformly bounded near every point of the window off `g(Z)`. -/
 private theorem concentration_and_tendstoLocallyUniformlyOn_window_some
     {K : ℕ → ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
     (hKH : ∀ k q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
@@ -624,6 +659,9 @@ private theorem concentration_and_tendstoLocallyUniformlyOn_window_some
     (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ endWindow T b,
       ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y)
+    (hbd : ∀ C, IsCompact C → C ⊆ endWindow T b \ ↑Z → ∃ A, ∀ n, ∀ y ∈ C, ω.floerEnergyDensity
+      (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+      (fun z ↦ u (φ n) (positiveEndChart q (z + ((m : ℝ), 0)))) y ≤ A)
     {v : ℝ × ℝ → F}
     (hv : TendstoLocallyUniformlyOn
       (fun n z ↦ e (u (φ n) (positiveEndChart q (z + ((m : ℝ), 0))))) v atTop
@@ -633,22 +671,29 @@ private theorem concentration_and_tendstoLocallyUniformlyOn_window_some
         (fun y ↦ ENNReal.ofReal (ω.floerEnergyDensity
           (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) y)) N) ∧
+      (∀ y ∈ window T (some (q, m, b)) \ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z,
+        ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, ω.floerEnergyDensity
+          (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (φ n) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) x ≤ A) ∧
       ∃ v' : ℝ × ℝ → F, TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) v' atTop
         (window T (some (q, m, b)) \ (fun y ↦ positiveEndChart q (y + ((m : ℝ), 0))) '' ↑Z) := by
   have hΩT (y : ℝ × ℝ) (hy : y ∈ endWindow T b) :=
-    add_mem_Ioi_prod_Ioo hT (Nat.cast_nonneg m)
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self hy)
-  exact ⟨eventually_ofReal_le_withDensity_image_positiveEndChart_add hKH hH
-    (fun q t ↦ ((hHs q).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero)
-    hu hT₀ (isOpen_Ioo.prod isOpen_Ioo) hΩT hconc,
-    exists_tendstoLocallyUniformlyOn_image_positiveEndChart_add (isOpen_Ioo.prod isOpen_Ioo)
+    endWindow_add_mem_Ioi_prod_Ioo (max_le le_rfl hT) (Nat.cast_nonneg m) hy
+  have hHd (q : Puncture) (t : ℝ) : MDifferentiable I 𝓘(ℝ) (H q t) :=
+    ((hHs q).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
+  exact ⟨eventually_ofReal_le_withDensity_image_positiveEndChart_add hKH hH hHd hu hT₀
+    (isOpen_endWindow T b) hΩT hconc,
+    exists_mem_nhds_forall_floerEnergyDensity_le_image_positiveEndChart_add hKH hH hHd hu hT₀
+      (isOpen_endWindow T b) hΩT hbd,
+    exists_tendstoLocallyUniformlyOn_image_positiveEndChart_add (isOpen_endWindow T b)
       hΩT hZ (f := fun n ↦ e ∘ u (φ n)) hv⟩
 
 /-- **The windows of a family, with one threshold.** Under the hypotheses of the main theorem
 below, for a parameter `p₀ ∈ C`, there is a threshold `δ > 0` such that on every window, every
 subsequence of a sequence of solutions for parameters in `C`, with energy at most `E` over `S`, has
 a further subsequence along which the solutions read through `e` converge off a set at each point
-of which the energy measure of every neighbourhood is eventually at least `δ`. -/
+of which the energy measure of every neighbourhood is eventually at least `δ`, and near every other
+point of the window the energy densities are eventually bounded. -/
 private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
     {K : P → ℂ → M → ℂ →L[ℝ] ℝ}
     {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
@@ -699,6 +744,10 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
             (ω.floerEnergyDensity (fun z x ↦ K (p (ψ (φ n))) (equivRealProdCLM.symm z) x 1)
               (fun z x ↦ K (p (ψ (φ n))) (equivRealProdCLM.symm z) x Complex.I)
               (u (ψ (φ n))) y)) N) ∧
+        (∀ y ∈ window (max T₀ 2) i \ Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N,
+          ω.floerEnergyDensity (fun z x ↦ K (p (ψ (φ n))) (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ K (p (ψ (φ n))) (equivRealProdCLM.symm z) x Complex.I) (u (ψ (φ n))) x ≤
+              A) ∧
         ∃ v : ℝ × ℝ → F, TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (ψ (φ n))) v atTop
           (window (max T₀ 2) i \ Z) := by
   set T := max T₀ 2
@@ -715,9 +764,8 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
       (hq q).2.2.2.choose_spec
       (D := Icc (T + 1) (T + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (m := 0) (by linarith) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero] at h)
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2)
+      (endWindow_closed_subset_Ioi_prod_Ioo (max_le le_rfl (by linarith)) b)
   obtain ⟨δc, hδc, hconvc⟩ :=
     hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset hed he_inj hW hC
       (isCompact_preimage_truncation (T + 2)) ((prod_mono subset_rfl hDS).trans hCW) hJ hXs hXt
@@ -728,25 +776,29 @@ private theorem exists_pos_forall_family_window (hω : ω.IsNondegenerate)
       hδe p.1 p.2), fun p u E hpC hu hfl hint hE0 hEl hEc i ψ _ ↦ ?_⟩
   rcases i with _ | ⟨q, m, b⟩
   · have hΩS : window T none ⊆ thricePuncturedSphereReal := fun y hy ↦ hy.1
-    obtain ⟨φ, hφ, -, -, -, Z, -, -, hc, -, v, -, hv, -⟩ := hconvc (p := p ∘ ψ) (u := u ∘ ψ)
+    obtain ⟨φ, hφ, -, -, -, Z, -, -, hc, hbd, v, -, hv, -⟩ := hconvc (p := p ∘ ψ) (u := u ∘ ψ)
       (isOpen_window _ none) (window_none_subset _) (fun k ↦ hpC _) (fun k ↦ (hu _).mono hΩS)
       (fun k z hz ↦ hfl _ z (hΩS hz)) (fun k ↦ (hint _).mono_set hΩS) fun k ↦ hEc _
     exact ⟨φ, hφ, ↑Z, fun z hz ↦
       eventually_ofReal_le_withDensity_of_forall_eventually_le_setIntegral_ball
         (isOpen_window _ none).measurableSet hΩS
-        fun ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ (min_le_left _ _).trans hn, e ∘ v, hv⟩
-  · obtain ⟨φ, hφ, Z, hZΩ, -, hc, -, v, -, hv, -⟩ := hconve q b
+        fun ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ (min_le_left _ _).trans hn,
+      -- A compact neighbourhood of a point off the bubbling points carries a bound.
+      fun y hy ↦ (local_compact_nhds (((isOpen_window _ none).sdiff
+        Z.finite_toSet.isClosed).mem_nhds hy)).elim fun L ⟨hL, hLΩ, hLc⟩ ↦
+          ⟨L, hL, (hbd L hLc hLΩ).imp fun _ hA ↦ .of_forall hA⟩, e ∘ v, hv⟩
+  · obtain ⟨φ, hφ, Z, hZΩ, -, hc, hbd, v, -, hv, -⟩ := hconve q b
       (K := fun k ↦ K (p (ψ k))) (J := fun k ↦ J (p (ψ k))) (Ω := endWindow T b) (u := u ∘ ψ)
       (R := fun _ ↦ (m : ℝ)) (fun k w x hw ↦ hKH _ (hpC _) q w x ((le_max_left _ _).trans hw))
       (fun k s t x hs ↦ hJe _ (hpC _) q s t x ((le_max_left _ _).trans hs))
-      (isOpen_Ioo.prod isOpen_Ioo) (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self)
+      (isOpen_endWindow _ b) (endWindow_subset_Icc_prod_Icc _ b)
       (fun _ ↦ Nat.cast_nonneg m) (fun k ↦ hu _) (fun k ↦ hfl _) hE0 fun k ↦ hEl _
     exact ⟨φ, hφ, _, concentration_and_tendstoLocallyUniformlyOn_window_some
       (K := fun k ↦ K (p (ψ k))) (fun k ↦ hKH _ (hpC _)) hH (fun q ↦ (hHs q).of_le (by norm_num))
       (fun k ↦ (hu (ψ k)).mdifferentiableOn (by norm_num)) (le_max_left _ _) (by positivity)
       q m b hZΩ (fun z hz ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ ((min_le_right _ _).trans
         (Finset.inf'_le (fun p : Puncture × Bool ↦ δe p.1 p.2) (Finset.mem_univ (q, b)))).trans
-          hn) hv⟩
+          hn) hbd hv⟩
 
 /-- **Families of Floer pairs of pants in a closed manifold converge off finitely many bubbling
 points on the whole domain.** Let `ω` be a nondegenerate two-form on a closed manifold `M`, such as
@@ -766,8 +818,9 @@ fields of `K_p` be bounded. There is a threshold `δ > 0` with the following pro
 integrable energy density and Floer energy at most `E` over `S`. Then there are a
 subsequence `φ`, a limit `p₀ ∈ C` of the parameters `p_{φ n}`, a finite set `Z ⊆ S` with
 `#Z * δ ≤ E` and a map `v : S \ Z → M`, continuous, such that along `φ` every disc about a point of
-`Z` eventually carries energy at least `δ`, and the solutions converge to `v` on `S \ Z`, locally
-uniformly after applying `e` and pointwise in `M`. -/
+`Z` eventually carries energy at least `δ`, the energy densities are eventually bounded near every
+point of `S \ Z`, and the solutions converge to `v` on `S \ Z`, locally uniformly after applying
+`e` and pointwise in `M`. -/
 theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_of_cylindrical
     (hω : ω.IsNondegenerate) {K : P → ℂ → M → ℂ →L[ℝ] ℝ}
     {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
@@ -814,6 +867,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
         (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ thricePuncturedSphereReal,
           ω.floerEnergyDensity (fun z x ↦ K (p (φ n)) (equivRealProdCLM.symm z) x 1)
             (fun z x ↦ K (p (φ n)) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) y) ∧
+        (∀ y ∈ thricePuncturedSphereReal \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ w ∈ N,
+          ω.floerEnergyDensity (fun z x ↦ K (p (φ n)) (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ K (p (φ n)) (equivRealProdCLM.symm z) x Complex.I) (u (φ n)) w ≤ A) ∧
         ContinuousOn v (thricePuncturedSphereReal \ ↑Z) ∧
         TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop
           (thricePuncturedSphereReal \ ↑Z) ∧
@@ -837,9 +893,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   -- First make the parameters converge.
   obtain ⟨p₀, hp₀, ψ, hψ, hpψ⟩ := hC.tendsto_subseq hpC
   -- Assemble the windows by the diagonal argument, for the energy measures of the `uₖ` on `S`.
-  obtain ⟨φ, Z, g, hφ, hZ, hcard, hconc, hconv⟩ :=
-    exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion (isOpen_window (max T₀ 2))
-      (F := fun k ↦ e ∘ u (ψ k)) (ENNReal.ofReal_pos.2 hδ).ne' ENNReal.ofReal_ne_top
+  obtain ⟨φ, Z, g, hφ, hZ, hcard, hconc, hbd, hconv⟩ :=
+    exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le (isOpen_window (max T₀ 2))
+      (F := fun k ↦ e ∘ u (ψ k)) (G := fun k ↦ ω.floerEnergyDensity
+        (fun z x ↦ K (p (ψ k)) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (p (ψ k)) (equivRealProdCLM.symm z) x Complex.I) (u (ψ k)))
+      (ENNReal.ofReal_pos.2 hδ).ne' ENNReal.ofReal_ne_top
       (fun k ↦ (measure_mono (subset_univ _)).trans (by
         rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
         exact hEl (ψ k)))
@@ -849,7 +908,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
           (ae_restrict_of_forall_mem hS (h0 _))
           (ae_of_all _ fun _ hy ↦ hy.1)).trans
             (hE _))
-  rw [iUnion_window (by positivity)] at hZ hconv
+  rw [iUnion_window (by positivity)] at hZ hbd hconv
   -- The limit is continuous, and it is read back in `M` through the embedding `e`.
   have hg : ContinuousOn g (thricePuncturedSphereReal \ ↑Z) :=
     hconv.continuousOn (Eventually.of_forall fun n ↦
@@ -858,7 +917,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
     he.continuous.continuousOn he_inj.injOn (fun _ _ ↦ .of_forall fun _ ↦ mem_univ _) hg
     fun z hz ↦ hconv.tendsto_at hz
   refine ⟨ψ ∘ φ, hψ.comp hφ, p₀, hp₀, hpψ.comp hφ.tendsto_atTop, Z, v, hZ,
-    (ENNReal.natCast_mul_ofReal_le_ofReal_iff hE0).1 hcard, fun z hz ε hε ↦ ?_, hv,
+    (ENNReal.natCast_mul_ofReal_le_ofReal_iff hE0).1 hcard, fun z hz ε hε ↦ ?_, hbd, hv,
     hconv.congr_right hev.symm, hpt⟩
   -- The energy measure of a disc is the energy over its part in `S`.
   filter_upwards [hconc z hz _ (ball_mem_nhds z hε)] with n hn
@@ -878,8 +937,9 @@ threshold `δ > 0` with the following property. Let `uₖ` be `C³` solutions of
 pointwise to loops `xₖ(q)` as `R → ∞`, with integrable energy and area densities and topological
 energy `∫_S uₖ^*ω + ∑ q, ±∫₀¹ H_q(t, xₖ(q)(t)) dt ≤ A`. Then there are a subsequence `φ`, a finite
 set `Z ⊆ S` with `#Z * δ ≤ A + B_0 + B_1 + B_∞` and a map `v : S \ Z → M`, continuous, such that
-along `φ` every disc about a point of `Z` eventually carries energy at least `δ`, and the
-solutions converge to `v` on `S \ Z`, locally uniformly after applying `e` and pointwise in `M`.
+along `φ` every disc about a point of `Z` eventually carries energy at least `δ`, the energy
+densities are eventually bounded near every point of `S \ Z`, and the solutions converge to `v`
+on `S \ Z`, locally uniformly after applying `e` and pointwise in `M`.
 This is the case of a one-point parameter space in
 `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_of_cylindrical`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_thricePuncturedSphereReal
@@ -921,6 +981,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_thric
             (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
             (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
             (u (φ n)) y) ∧
+        (∀ y ∈ thricePuncturedSphereReal \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A', ∀ᶠ n in atTop, ∀ w ∈ N,
+          ω.floerEnergyDensity
+            (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
+            (u (φ n)) w ≤ A') ∧
         ContinuousOn v (thricePuncturedSphereReal \ ↑Z) ∧
         TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop
           (thricePuncturedSphereReal \ ↑Z) ∧
@@ -966,9 +1031,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_thric
   have hEb (k : ℕ) := hω.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le hH
     (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu k).of_le (by norm_num)) (hx k) (hE k) (hA k)
     (J := fun z ↦ J z (u k z)) (fun z hz ↦ hJt z hz _) (hfl k) subset_rfl
-  obtain ⟨φ, hφ, -, -, -, Z, v, hZ, hcard, hconc, hv, hlim, hpt⟩ :=
+  obtain ⟨φ, hφ, -, -, -, Z, v, hZ, hcard, hconc, hbd, hv, hlim, hpt⟩ :=
     hconv (p := fun _ ↦ ()) (E := A + ∑ q, B q) (fun _ ↦ mem_univ _) hu hfl hE
       fun k ↦ by linarith [htop k, hEb k]
-  exact ⟨φ, Z, v, hφ, hZ, hcard, hconc, hv, hlim, hpt⟩
+  exact ⟨φ, Z, v, hφ, hZ, hcard, hconc, hbd, hv, hlim, hpt⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

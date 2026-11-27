@@ -55,6 +55,8 @@ a positive finite multiple of a supremum is bounded termwise.
   `ofReal s ≤ d`;
 * `EReal.coe_mul_add_coe_mul_eq_top` — a combination `s a + t b` with positive real weights is `⊤`
   when neither `a` nor `b` is `⊥` and one of them is `⊤`;
+* `EReal.coe_mul_add_coe_mul_eq_top_of_ne_or_ne` — the same conclusion when one of `a` and `b`
+  is `⊤` and the indeterminate sum `⊤ + ⊥` is excluded;
 * `EReal.coe_mul_add_coe_mul_sub_coe_ne_top` — a combination `s a + t b - r` with nonnegative
   real weights and a real subtrahend is `≠ ⊤` when `a` and `b` are;
 * `EReal.coe_mul_add_coe_mul_sub_le_of_le` — such weighted combinations are monotone in their
@@ -243,6 +245,17 @@ theorem coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : 
     exact top_add_of_ne_bot (by simp [mul_ne_bot, hb, ht.le])
   · rw [coe_mul_top_of_pos ht]
     exact add_top_of_ne_bot (by simp [mul_ne_bot, ha, hs.le])
+
+/-- A combination `s a + t b` with positive real weights `s`, `t` is `⊤` when one of `a` and `b`
+is `⊤` and the indeterminate sum `⊤ + ⊥` is excluded. -/
+theorem coe_mul_add_coe_mul_eq_top_of_ne_or_ne {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : EReal}
+    (h : a ≠ ⊤ ∨ b ≠ ⊥) (h' : a ≠ ⊥ ∨ b ≠ ⊤) (hT : a = ⊤ ∨ b = ⊤) :
+    (s : EReal) * a + (t : EReal) * b = ⊤ := by
+  rcases hT with rfl | rfl
+  · exact coe_mul_add_coe_mul_eq_top hs ht top_ne_bot (h.resolve_left (not_not_intro rfl))
+      (.inl rfl)
+  · exact coe_mul_add_coe_mul_eq_top hs ht (h'.resolve_right (not_not_intro rfl)) top_ne_bot
+      (.inr rfl)
 
 /-- A combination `s a + t b - r` with nonnegative real weights `s`, `t` and a real subtrahend
 `r` is `≠ ⊤` when `a` and `b` are. -/

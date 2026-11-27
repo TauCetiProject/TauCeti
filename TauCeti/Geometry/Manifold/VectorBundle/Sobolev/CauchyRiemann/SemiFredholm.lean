@@ -124,16 +124,17 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 include hD hDs in
 /-- The elliptic estimate for a smooth real Cauchy–Riemann operator, with its `L^p` error term
-written as a compact operator, the Rellich inclusion `W^{1,p} → L^p` rescaled by the constant. -/
+written as a compact operator, the Rellich inclusion `W^{1,p} → L^p` rescaled by a constant. -/
 private theorem exists_compact_estimate_sobolevL (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ (C : ℝ) (K : SobolevSection A volume p 1 →L[ℝ] SobolevSection A volume p 0),
       IsCompactOperator K ∧ ∀ w, ‖w‖ ≤ C * ‖hD.sobolevL A hDs volume p w‖ + ‖K w‖ := by
   obtain ⟨C, hC⟩ := hD.exists_norm_le_norm_sobolevL_add_norm A hDs hp hp_top
-  have hK : IsCompactOperator (A.sectionChartData.lowerOrderL volume p 0) :=
-    SobolevSection.isCompactOperator_lowerOrderL (E := ℂ) (M := M) (F := F) (V := V) A volume p 0
-  refine ⟨|C|, |C| • A.sectionChartData.lowerOrderL volume p 0, hK.smul |C|, fun w ↦ ?_⟩
-  simp only [smul_apply, norm_smul, Real.norm_eq_abs, abs_abs, ← mul_add]
-  exact (hC w).trans (by gcongr; exact le_abs_self C)
+  exact ContinuousLinearMap.exists_compact_estimate_of_norm_le_mul_add_norm (𝕜 := ℝ)
+    (E := SobolevSection A volume p 1) (F := zeroOneSobolevSections A volume p 0)
+    (G := SobolevSection A volume p 0) (C := C) (T := hD.sobolevL A hDs volume p)
+    (K := A.sectionChartData.lowerOrderL volume p 0)
+    (SobolevSection.isCompactOperator_lowerOrderL (E := ℂ) (M := M) (F := F) (V := V) A volume p 0)
+    hC
 
 include hD hDs in
 /-- **Finite-dimensional kernel.** On a closed surface, a smooth real Cauchy–Riemann operator

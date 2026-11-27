@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Adjoint
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 

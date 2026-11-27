@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
+public import Mathlib.Topology.VectorBundle.Hom
 
 /-!
 # Fibres and linear charts of pullback bundles
@@ -30,9 +31,13 @@ as the original one does (`Bundle.Trivialization.symm_pullback`,
 `Bundle.Trivialization.pullback_symmL_apply`). Restricting a chart whose source lies in the base
 set of a trivialization to an open subset gives a chart whose source lies in the base set of the
 trivialization pulled back along the inclusion
-(`Bundle.Trivialization.subtypeRestr_source_subset_pullback_baseSet`). Hom coordinates between
-pullbacks by two different base maps agree with the original source and target coordinates
-(`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
+(`Bundle.Trivialization.subtypeRestr_source_subset_pullback_baseSet`). The pullbacks of
+trivializations along the two projections of a product have the product of their base sets as
+the intersection of their base sets (`Bundle.Trivialization.prod_baseSet_eq_inter_pullback`).
+Hom coordinates between pullbacks by two different base maps agree with the original source and
+target coordinates (`ContinuousLinearMap.inCoordinates_pullback_of_mem`), and so do the
+coordinates of a bilinear form on the fibres of two pullbacks along the same map
+(`ContinuousLinearMap.inCoordinates_pullback_of_mem₂`).
 -/
 
 public section
@@ -200,6 +205,18 @@ theorem subtypeRestr_source_subset_pullback_baseSet {E M F : Type*} [Topological
   rw [OpenPartialHomeomorph.subtypeRestr_source, pullback_baseSet]
   exact Set.preimage_mono hct
 
+/-- The product of the base sets of trivializations `t` over `B` and `t'` over `B'` is the
+intersection of the base sets of their pullbacks along the two projections of `B × B'`. -/
+theorem prod_baseSet_eq_inter_pullback {B B' F F' : Type*} [TopologicalSpace B]
+    [TopologicalSpace B'] [TopologicalSpace F] [TopologicalSpace F'] {V : B → Type*}
+    [∀ x, Nonempty (V x)] [TopologicalSpace (TotalSpace F V)] {W : B' → Type*}
+    [∀ y, Nonempty (W y)] [TopologicalSpace (TotalSpace F' W)] (t : Trivialization F (π F V))
+    (t' : Trivialization F' (π F' W)) :
+    t.baseSet ×ˢ t'.baseSet = (t.pullback (ContinuousMap.fst : C(B × B', B))).baseSet ∩
+      (t'.pullback (ContinuousMap.snd : C(B × B', B'))).baseSet := by
+  rw [pullback_baseSet, pullback_baseSet, ContinuousMap.fst_apply, ContinuousMap.snd_apply,
+    Set.prod_eq]
+
 end Bundle.Trivialization
 
 namespace ContinuousLinearMap
@@ -229,6 +246,46 @@ theorem inCoordinates_pullback_of_mem (f : K) (g : L) (x₀ x : X)
   erw [inCoordinates_eq hV' hW', inCoordinates_eq hV hW]
   simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
     Trivialization.continuousLinearEquivAt_pullback]
+  rfl
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 B X F G K : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace B] [TopologicalSpace X]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V : B → Type*} {W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [FunLike K X B] [ContinuousMapClass K X B]
+
+/-- The coordinates of a bilinear form on the fibres of two pullbacks along `f` are its
+coordinates as a bilinear form on the fibres of the original bundles at the image points, on the
+common chart domain. -/
+theorem inCoordinates_pullback_of_mem₂ (f : K) (x₀ x : X) (A : V (f x) →L[𝕜] W (f x) →L[𝕜] 𝕜)
+    (hV : f x ∈ (trivializationAt F V (f x₀)).baseSet)
+    (hW : f x ∈ (trivializationAt G W (f x₀)).baseSet) :
+    inCoordinates F ((f : X → B) *ᵖ V) (G →L[𝕜] 𝕜) (fun x ↦ ((f : X → B) *ᵖ W) x →L[𝕜] 𝕜)
+        x₀ x x₀ x A =
+      inCoordinates F V (G →L[𝕜] 𝕜) (fun b ↦ W b →L[𝕜] 𝕜) (f x₀) (f x) (f x₀) (f x) A := by
+  -- The chart of a pullback at `x₀` is the pullback of the chart at `f x₀`, whose base set is the
+  -- preimage of the original base set.
+  have hV' : x ∈ (trivializationAt F ((f : X → B) *ᵖ V) x₀).baseSet := hV
+  have hW' : x ∈ (trivializationAt G ((f : X → B) *ᵖ W) x₀).baseSet := hW
+  ext v w
+  rw [inCoordinates_apply_eq₂ hV hW (by simp)]
+  -- The pullback fibres inherit the original module instances; `erw` resolves these synonyms.
+  erw [inCoordinates_apply_eq₂ (E₁ := (f : X → B) *ᵖ V) (E₂ := (f : X → B) *ᵖ W)
+    (E₃ := fun _ : X ↦ 𝕜) hV' hW' (by simp)]
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt']
+  rw [Trivialization.symm_pullback _ f hV, Trivialization.symm_pullback _ f hW]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
+  -- Unfolding `trivializationAt` left `FiberBundle.trivializationAt'` on one side only; it is
+  -- `trivializationAt` by definition.
   rfl
 
 end ContinuousLinearMap

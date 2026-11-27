@@ -69,22 +69,6 @@ theorem primeFactors_ordCompl (n p : ℕ) :
   rw [← support_factorization, factorization_ordCompl, Finsupp.support_erase,
     support_factorization]
 
-/-- If `ordCompl[p] n` is a square, then `n` is a square times `p^d`, where `d` is zero or one. -/
-theorem exists_eq_pow_mul_sq_of_isSquare_ordCompl {n p : ℕ} (h : IsSquare (ordCompl[p] n)) :
-    ∃ d : Fin 2, ∃ k : ℕ, n = p ^ d.val * k ^ 2 := by
-  obtain ⟨r, hr⟩ := h
-  let a := n.factorization p
-  have ha : 2 * (a / 2) + a % 2 = a := Nat.div_add_mod _ _
-  refine ⟨⟨a % 2, Nat.mod_lt _ (by decide)⟩, p ^ (a / 2) * r, ?_⟩
-  calc
-    n = p ^ a * (r * r) := by
-      rw [← hr]
-      exact (ordProj_mul_ordCompl_eq_self n p).symm
-    _ = p ^ (a % 2) * (p ^ (a / 2) * r) ^ 2 := by
-      conv_lhs => rw [← ha, pow_add, mul_comm 2 (a / 2), pow_mul]
-      rw [mul_pow, pow_two r]
-      ac_rfl
-
 /-- For a divisor `n ∣ m`, the cofactor `m / n` times the `p`-free part of `n` is the `p`-free
 part of `m` times the power of `p` by which the `p`-parts of `m` and `n` differ. -/
 theorem div_mul_ordCompl_of_dvd {m n : ℕ} (p : ℕ) (h : n ∣ m) :
