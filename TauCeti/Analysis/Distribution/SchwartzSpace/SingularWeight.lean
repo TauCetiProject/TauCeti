@@ -15,19 +15,18 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 Let `E` be a finite-dimensional real normed space of dimension `d ≥ 1` with an additive Haar
 measure `μ`. The weight `‖x‖ ^ t` is locally integrable exactly when `-d < t`; it may be singular
 at `0`, and it grows polynomially at infinity. A Schwartz function absorbs the growth, so for every
-real `t > -d` the function `‖x‖ ^ t ‖f x‖` is integrable, and its integral is bounded by a finite
-supremum of Schwartz seminorms of `f`. Consequently integration against such a weight is a
-continuous functional on the Schwartz space.
+real `t > -d` the function `‖x‖ ^ t ‖f x‖` is integrable, and its integral is bounded by a constant
+times a finite supremum of Schwartz seminorms of `f`.
 
 The case `t ≥ 0`, for every measure of temperate growth, is
 `SchwartzMap.integrable_norm_rpow_mul_norm`. The negative exponents are those of the archimedean
 local zeta integrals: `∫ f(x) |x| ^ (s - 1) dx` over `ℝ` and `∫ f(z) |z| ^ (2 s - 2) dz` over `ℂ`
-converge for every Schwartz `f` exactly on `0 < re s`.
+converge absolutely for every Schwartz `f` when `0 < re s`.
 
 ## Main results
 
-* `integrable_norm_rpow_mul_one_add_norm_rpow_neg`: `‖x‖ ^ t (1 + ‖x‖) ^ (-r)` is integrable for
-  `-d < t` and `|t| + d < r`.
+* `TauCeti.integrable_norm_rpow_mul_one_add_norm_rpow_neg`: `‖x‖ ^ t (1 + ‖x‖) ^ (-r)` is
+  integrable for `-d < t` and `t + d < r`.
 * `SchwartzMap.integrable_norm_rpow_mul_norm_of_neg_finrank_lt`: `‖x‖ ^ t ‖f x‖` is integrable for
   every Schwartz `f` and `-d < t`.
 * `SchwartzMap.exists_integral_norm_rpow_mul_norm_le`: `∫ ‖x‖ ^ t ‖f x‖ dμ` is bounded by a
@@ -41,14 +40,15 @@ open MeasureTheory Metric Module Set
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
+namespace TauCeti
+
 /-- On a finite-dimensional real normed space of dimension `d ≥ 1`, the weight
 `‖x‖ ^ t (1 + ‖x‖) ^ (-r)` is integrable for every Haar measure when `-d < t` (integrability at
-`0`) and `|t| + d < r` (integrability at infinity). -/
+`0`) and `t + d < r` (integrability at infinity). -/
 theorem integrable_norm_rpow_mul_one_add_norm_rpow_neg {t r : ℝ}
-    (ht : -(finrank ℝ E : ℝ) < t) (hr : |t| + finrank ℝ E < r) :
+    (ht : -(finrank ℝ E : ℝ) < t) (hr : t + finrank ℝ E < r) :
     Integrable (fun x : E ↦ ‖x‖ ^ t * (1 + ‖x‖) ^ (-r)) μ := by
   have hd : 1 ≤ finrank ℝ E := Nat.one_le_iff_ne_zero.2 (finrank_pos (R := ℝ) (M := E)).ne'
-  have hr0 : 0 ≤ r := by linarith [abs_nonneg t, (Nat.cast_nonneg (finrank ℝ E) : (0 : ℝ) ≤ _)]
   have hmeas : AEStronglyMeasurable (fun x : E ↦ ‖x‖ ^ t * (1 + ‖x‖) ^ (-r)) μ :=
     ((measurable_norm.pow_const t).mul
       ((measurable_const.add measurable_norm).pow_const (-r))).aestronglyMeasurable
@@ -61,20 +61,29 @@ theorem integrable_norm_rpow_mul_one_add_norm_rpow_neg {t r : ℝ}
     rw [Real.norm_of_nonneg (hφ x), neg_neg, one_mul]
     exact mul_le_of_le_one_right (by positivity)
       (Real.rpow_le_one_of_one_le_of_nonpos (by linarith [norm_nonneg x]) (by linarith))
-  · -- Away from `0`, `‖x‖ ^ t ≤ (1 + ‖x‖) ^ |t|`.
-    refine ((integrable_one_add_norm (μ := μ) (r := r - |t|) (by linarith)).integrableOn).mono'
-      hmeas.restrict ((ae_restrict_mem measurableSet_ball.compl).mono fun x hx ↦ ?_)
+  · -- Away from `0`, `(1 + ‖x‖) / 2 ≤ ‖x‖ ≤ 1 + ‖x‖`, so `‖x‖ ^ t ≤ 2 ^ |t| (1 + ‖x‖) ^ t`.
+    refine (((integrable_one_add_norm (μ := μ) (r := r - t) (by linarith)).const_mul
+      (2 ^ |t|)).integrableOn).mono' hmeas.restrict
+      ((ae_restrict_mem measurableSet_ball.compl).mono fun x hx ↦ ?_)
     have hx1 : 1 ≤ ‖x‖ := by simpa using hx
     have hpos : 0 < 1 + ‖x‖ := by positivity
-    have key : ‖x‖ ^ t ≤ (1 + ‖x‖) ^ |t| := by
+    have key : ‖x‖ ^ t ≤ 2 ^ |t| * (1 + ‖x‖) ^ t := by
       rcases le_total 0 t with h | h
       · rw [abs_of_nonneg h]
-        exact Real.rpow_le_rpow (norm_nonneg x) (by linarith) h
-      · exact (Real.rpow_le_one_of_one_le_of_nonpos hx1 h).trans
-          (Real.one_le_rpow (x := 1 + ‖x‖) (by linarith) (abs_nonneg t))
+        exact (Real.rpow_le_rpow (norm_nonneg x) (by linarith) h).trans
+          (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow one_le_two h))
+      · calc ‖x‖ ^ t ≤ ((1 + ‖x‖) / 2) ^ t :=
+              Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) h
+          _ = 2 ^ |t| * (1 + ‖x‖) ^ t := by
+              rw [Real.div_rpow hpos.le zero_le_two, abs_of_nonpos h, Real.rpow_neg zero_le_two,
+                div_eq_mul_inv, mul_comm]
     calc ‖‖x‖ ^ t * (1 + ‖x‖) ^ (-r)‖ = ‖x‖ ^ t * (1 + ‖x‖) ^ (-r) := Real.norm_of_nonneg (hφ x)
-      _ ≤ (1 + ‖x‖) ^ |t| * (1 + ‖x‖) ^ (-r) := mul_le_mul_of_nonneg_right key (by positivity)
-      _ = (1 + ‖x‖) ^ (-(r - |t|)) := by rw [← Real.rpow_add hpos]; ring_nf
+      _ ≤ 2 ^ |t| * (1 + ‖x‖) ^ t * (1 + ‖x‖) ^ (-r) :=
+          mul_le_mul_of_nonneg_right key (by positivity)
+      _ = 2 ^ |t| * (1 + ‖x‖) ^ (-(r - t)) := by
+          rw [mul_assoc, ← Real.rpow_add hpos, neg_sub, sub_eq_add_neg]
+
+end TauCeti
 
 namespace SchwartzMap
 
@@ -105,23 +114,23 @@ finite-dimensional real normed space of dimension `d ≥ 1` and a real `t > -d`,
 theorem integrable_norm_rpow_mul_norm_of_neg_finrank_lt (f : 𝓢(E, F)) {t : ℝ}
     (ht : -(finrank ℝ E : ℝ) < t) :
     Integrable (fun x ↦ ‖x‖ ^ t * ‖f x‖) μ := by
-  obtain ⟨m, hm⟩ := exists_nat_gt (|t| + finrank ℝ E)
-  refine ((integrable_norm_rpow_mul_one_add_norm_rpow_neg μ ht hm).const_mul
+  obtain ⟨m, hm⟩ := exists_nat_gt (t + finrank ℝ E)
+  refine ((TauCeti.integrable_norm_rpow_mul_one_add_norm_rpow_neg μ ht hm).const_mul
     (2 ^ m * (Finset.Iic (m, 0)).sup (schwartzSeminormFamily ℝ E F) f)).mono'
     ((measurable_norm.pow_const t).aestronglyMeasurable.mul
       f.continuous.norm.aestronglyMeasurable) (ae_of_all _ fun x ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
   exact norm_rpow_mul_norm_le ℝ f t m x
 
-/-- **The singular power weight is a continuous functional.** For a real `t > -d`, the integral
+/-- **Seminorm bound for the singular power weight.** For a real `t > -d`, the integral
 `∫ ‖x‖ ^ t ‖f x‖ dμ` is bounded by a constant times a finite supremum of Schwartz seminorms of
 `f`. -/
 theorem exists_integral_norm_rpow_mul_norm_le (𝕜 : Type*) [RCLike 𝕜] [NormedSpace 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] {t : ℝ} (ht : -(finrank ℝ E : ℝ) < t) :
     ∃ (s : Finset (ℕ × ℕ)) (C : ℝ), 0 ≤ C ∧ ∀ f : 𝓢(E, F),
       ∫ x, ‖x‖ ^ t * ‖f x‖ ∂μ ≤ C * s.sup (schwartzSeminormFamily 𝕜 E F) f := by
-  obtain ⟨m, hm⟩ := exists_nat_gt (|t| + finrank ℝ E)
-  have hint := integrable_norm_rpow_mul_one_add_norm_rpow_neg μ ht hm
+  obtain ⟨m, hm⟩ := exists_nat_gt (t + finrank ℝ E)
+  have hint := TauCeti.integrable_norm_rpow_mul_one_add_norm_rpow_neg μ ht hm
   refine ⟨Finset.Iic (m, 0), 2 ^ m * ∫ x, ‖x‖ ^ t * (1 + ‖x‖) ^ (-(m : ℝ)) ∂μ,
     mul_nonneg (by positivity) (integral_nonneg fun x ↦ by positivity), fun f ↦ ?_⟩
   calc ∫ x, ‖x‖ ^ t * ‖f x‖ ∂μ

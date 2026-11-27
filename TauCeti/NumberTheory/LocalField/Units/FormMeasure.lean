@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.ConvergenceFactor
 public import TauCeti.NumberTheory.LocalField.Units.Haar
+import TauCeti.MeasureTheory.Group.Units
 import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
@@ -69,20 +70,9 @@ theorem map_val_unitsFormMeasure :
     (withDensity_absolutelyContinuous μ _ (measure_singleton 0))] with x hx
   exact ⟨Units.mk0 x hx, rfl⟩
 
-instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant := by
-  refine ⟨fun u ↦ Measure.ext fun s hs ↦ ?_⟩
-  have himage : Units.val '' ((u * ·) ⁻¹' s) = ((u : K) • ·) ⁻¹' (Units.val '' s) := by
-    ext x
-    constructor
-    · rintro ⟨v, hv, rfl⟩
-      exact ⟨u * v, hv, rfl⟩
-    · rintro ⟨w, hw, hwx⟩
-      refine ⟨u⁻¹ * w, by simpa using hw, ?_⟩
-      simp [hwx]
-  rw [map_apply (measurable_const_mul u) hs, unitsFormMeasure_apply, unitsFormMeasure_apply,
-    himage, ← map_apply (measurable_const_smul _)
-      (Units.measurableEmbedding_val₀.measurableSet_image' hs),
-    map_smul_withDensity_inv_normalizedAbsoluteValue μ u.ne_zero]
+instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant :=
+  Units.isMulLeftInvariant_comap_val fun u ↦
+    map_smul_withDensity_inv_normalizedAbsoluteValue μ u.ne_zero
 
 instance sigmaFinite_unitsFormMeasure : SigmaFinite (unitsFormMeasure K μ) := by
   have : SigmaFinite (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) := by

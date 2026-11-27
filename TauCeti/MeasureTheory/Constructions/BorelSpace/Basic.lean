@@ -42,6 +42,7 @@ In a monoid with zero whose units form an open subspace with continuous inversio
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
 * `Units.borelSpace₀`
+* `Units.range_val_eq_compl_zero`
 * `Units.measurableEmbedding_val₀`
 * `IsLocalHomeomorph.measurableSet_image`
 * `IsLocalHomeomorph.measurable_comp_iff`
@@ -87,6 +88,12 @@ instance Units.borelSpace₀ {G₀ : Type*} [GroupWithZero G₀] [TopologicalSpa
     [ContinuousInv₀ G₀] [MeasurableSpace G₀] [BorelSpace G₀] : BorelSpace G₀ˣ :=
   ⟨by rw [← Units.isEmbedding_val₀.isInducing.comap_borel, ← BorelSpace.measurable_eq]; rfl⟩
 
+/-- The units of a group with zero are exactly its nonzero elements. -/
+theorem Units.range_val_eq_compl_zero {G₀ : Type*} [GroupWithZero G₀] :
+    Set.range (Units.val : G₀ˣ → G₀) = {0}ᶜ := by
+  ext x
+  exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
+
 /-- The inclusion `Units.val : G₀ˣ → G₀` of the units of a group with zero is a measurable
 embedding, for the measurable structure on `G₀ˣ` pulled back along it: its range is the
 complement of `0`. -/
@@ -96,13 +103,8 @@ theorem Units.measurableEmbedding_val₀ {G₀ : Type*} [GroupWithZero G₀] [Me
   measurable := Measurable.of_comap_le le_rfl
   measurableSet_image' := by
     rintro _ ⟨t, ht, rfl⟩
-    rw [Set.image_preimage_eq_inter_range]
-    refine ht.inter ?_
-    have : Set.range (Units.val : G₀ˣ → G₀) = {0}ᶜ := by
-      ext x
-      exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
-    rw [this]
-    exact (measurableSet_singleton 0).compl
+    rw [Set.image_preimage_eq_inter_range, Units.range_val_eq_compl_zero]
+    exact ht.inter (measurableSet_singleton 0).compl
 
 /-- A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets. -/
 theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace α]
