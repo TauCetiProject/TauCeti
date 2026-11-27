@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Sobolev.W1p.Interval.Basic
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.Analysis.Sobolev.Wkp.Nonseparable
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -41,10 +42,10 @@ embedding `W^{2,1} ⊆ C¹`, used to turn bounds on `u''` into bounds on the cla
 
 For all `a, b : ℝ`, every `1 ≤ p ≤ ∞`, and every order `k`, integrating from `a` (or using that
 `W^{k,p}(∅)` is zero when `b ≤ a`) shows that weak differentiation
-`lineDerivL 1 k : W^{k+1,p}(a, b) →L[ℝ] W^{k,p}(a, b)` is surjective. At `p = ∞`,
-a jump at the midpoint has distance at least `1` in `L^∞(a, b)` from every continuous function, so
-iterating `lineDerivL 1 k` shows that smooth representatives fail to be dense in `W^{k,∞}(a, b)` at
-every order `k` whenever `a < b`.
+`lineDerivL 1 k : W^{k+1,p}(a, b) →L[ℝ] W^{k,p}(a, b)` is surjective. At `p = ∞`, smooth
+representatives fail to be dense in `W^{k,∞}(a, b)` at every order `k` whenever `a < b`, as a
+special case of the failure on every nonempty open set
+(`TauCeti.Wkp.not_dense_contDiffOn_representatives_top`).
 
 ## Main declarations
 
@@ -410,75 +411,16 @@ theorem lineDerivL_one_surjective_Ioo (k : ℕ) :
     rw [map_zero]
     exact (ext k (Lp.ext (by simp [EventuallyEq, Ioo_eq_empty_of_le hba]))).symm
 
-/-- At order zero and `p = ∞`, a jump at the midpoint of `(a, b)` separates `L^∞(a, b)` from
-elements represented by smooth functions on `ℝ`. -/
-private theorem not_dense_contDiff_representatives_Ioo_top_zero (hab : a < b) :
-    ¬ Dense {u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ 0 |
-      ∃ f : ℝ → ℝ, ContDiff ℝ ∞ f ∧ (value 0 u : ℝ → ℝ) =ᵐ[volume.restrict (Ioo a b)] f} := by
-  intro hd
-  set μ := volume.restrict (Ioo a b)
-  let m := (a + b) / 2
-  have hm : a < m ∧ m < b := ⟨by simp only [m]; linarith, by simp only [m]; linarith⟩
-  let g : ℝ → ℝ := fun x => if m < x then 1 else -1
-  have hgm : Measurable g :=
-    Measurable.ite (measurableSet_lt measurable_const measurable_id)
-      measurable_const measurable_const
-  have hg : MemLp g ⊤ μ := memLp_top_of_bound hgm.aestronglyMeasurable 1
-    (.of_forall fun x => by by_cases h : m < x <;> simp [g, h])
-  let u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ 0 := hg.toLp g
-  obtain ⟨w, hwu, f, hf, hwf⟩ := Metric.dense_iff.1 hd u (1 / 2) (by positivity)
-  set r := ‖u - w‖ with hr_def
-  have hr : r < 1 / 2 := by
-    rwa [Metric.mem_ball, dist_comm, dist_eq_norm] at hwu
-  have hae : ∀ᵐ t ∂μ, |(if m < t then 1 else -1) - f t| ≤ r := by
-    filter_upwards [ae_le_eLpNormEssSup (f := u - w) (μ := μ), Lp.coeFn_sub u w,
-      hg.coeFn_toLp, hwf] with t ht hsub hut hwt
-    simp only [value_zero] at hwt
-    rw [hsub, Pi.sub_apply, hut, hwt] at ht
-    have htop := eLpNorm_exponent_top (Lp.aestronglyMeasurable (u - w))
-    rw [← Real.norm_eq_abs, ← toReal_eNorm, hr_def, Lp.norm_def, htop]
-    exact ENNReal.toReal_mono (htop ▸ Lp.eLpNorm_ne_top (u - w)) ht
-  obtain ⟨δ, hδ, hcont⟩ := Metric.continuousAt_iff.1 (hf.continuous.continuousAt (x := m))
-    (1 / 2) (by positivity)
-  have hex : ∀ l r₀, l < r₀ → Ioo l r₀ ⊆ Ioo a b →
-      ∃ t ∈ Ioo l r₀, |(if m < t then 1 else -1) - f t| ≤ r := fun l r₀ hlr hsub => by
-    have : (ae (volume.restrict (Ioo l r₀))).NeBot := ae_restrict_neBot.2 (by simp [hlr])
-    obtain ⟨t, ht, hPt⟩ := ((ae_restrict_mem (measurableSet_Ioo (a := l) (b := r₀))).and
-      (ae_restrict_of_ae ((ae_restrict_iff' measurableSet_Ioo).1 hae))).exists
-    exact ⟨t, ht, hPt (hsub ht)⟩
-  obtain ⟨t₁, ht₁, h₁⟩ := hex m (min (m + δ) b) (lt_min (by linarith) hm.2)
-    (Ioo_subset_Ioo hm.1.le (min_le_right _ _))
-  obtain ⟨t₂, ht₂, h₂⟩ := hex (max (m - δ) a) m (max_lt (by linarith) hm.1)
-    (Ioo_subset_Ioo (le_max_right _ _) hm.2.le)
-  have hc₁ := hcont (x := t₁) (by
-    rw [Real.dist_eq, abs_of_pos (by linarith [ht₁.1])]
-    linarith [min_le_left (m + δ) b, ht₁.2])
-  have hc₂ := hcont (x := t₂) (by
-    rw [Real.dist_eq, abs_of_neg (by linarith [ht₂.2])]
-    linarith [le_max_left (m - δ) a, ht₂.1])
-  simp only [ht₁.1, ↓reduceIte] at h₁
-  simp only [ht₂.2.not_gt, ↓reduceIte] at h₂
-  rw [Real.dist_eq] at hc₁ hc₂
-  linarith [(abs_le.1 h₁).2, (abs_le.1 h₂).1, (abs_lt.1 hc₁).2, (abs_lt.1 hc₂).1]
-
 /-- Smooth representatives fail to be dense in `W^{k,∞}(a, b)` for every natural order `k`
-whenever `a < b`. -/
+whenever `a < b`: a special case of `TauCeti.Wkp.not_dense_contDiffOn_representatives_top`. -/
 theorem not_dense_contDiff_representatives_Ioo_top (hab : a < b) :
     ∀ k : ℕ, ¬ Dense {u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ ⊤ k |
-      ∃ f : ℝ → ℝ, ContDiff ℝ ∞ f ∧ (value k u : ℝ → ℝ) =ᵐ[volume.restrict (Ioo a b)] f}
-  | 0 => not_dense_contDiff_representatives_Ioo_top_zero hab
-  | k + 1 => fun hd => not_dense_contDiff_representatives_Ioo_top hab k <| by
-      refine (((lineDerivL_one_surjective_Ioo (a := a) (b := b) (p := ⊤) k).denseRange).dense_image
-        (lineDerivL 1 k).continuous hd).mono ?_
-      rintro _ ⟨u, ⟨f, hf, huf⟩, rfl⟩
-      obtain ⟨hfd, hf'⟩ := contDiff_infty_iff_deriv.1 hf
-      refine ⟨deriv f, hf', ?_⟩
-      have hderiv := (hasWeakLineDerivOn_lineDerivL 1 k u).ae_hasDerivAt
-        hf.continuous.continuousOn huf hab.le
-      rw [EventuallyEq, ae_restrict_iff' measurableSet_Ioo]
-      filter_upwards [hderiv] with t ht htIoo
-      exact (ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htIoo)).unique
-        hfd.differentiableAt.hasDerivAt
+      ∃ f : ℝ → ℝ, ContDiff ℝ ∞ f ∧ (value k u : ℝ → ℝ) =ᵐ[volume.restrict (Ioo a b)] f} :=
+  fun k hd => not_dense_contDiffOn_representatives_top (Omega := ⟨Ioo a b, isOpen_Ioo⟩)
+    (nonempty_Ioo.2 hab) k
+    (hd.mono fun _ hu => by
+      obtain ⟨f, hf, huf⟩ := hu
+      exact ⟨f, (hf.of_le (mod_cast le_top)).contDiffOn, huf⟩)
 
 /-- Smooth representatives are dense in `W^{k,∞}(a, b)` if and only if `b ≤ a`. -/
 theorem dense_contDiff_representatives_Ioo_top_iff (k : ℕ) :
