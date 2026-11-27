@@ -170,7 +170,8 @@ private theorem ideleCongruenceToClassHom_ker_le (k : ℤ) :
   simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
     TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, hyu, Units.ext_iff,
     coe_angularIdeleArchChar_apply, InfinitePlace.ideleComplexCoord_unitEmbedding, Units.val_one]
-  rw [show -(4 * k) = ((4 : ℕ) : ℤ) * -k by ring]
+  have hexp : -(4 * k) = ((4 : ℕ) : ℤ) * -k := by ring
+  rw [hexp]
   simpa using Complex.div_norm_zpow_mul_eq_one_of_pow_eq_one
     (TauCeti.map_coe_unit_pow_four_eq_one_four (complexPlaceFour F).val.embedding u) (-k)
 
@@ -533,7 +534,8 @@ theorem toHeckeCharacter_angularGrossencharacter_add (F : Type*) [Field F] [Numb
   simp only [ContinuousMonoidHom.mul_apply, toHeckeCharacter_angularGrossencharacter_def,
     angularHeckeCharacter_ideleCongruenceToClassHom, angularIdeleArchChar,
     ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.zpow_apply]
-  rw [show -(4 * (j + k)) = -(4 * j) + -(4 * k) by ring, zpow_add]
+  have hexp : -(4 * (j + k)) = -(4 * j) + -(4 * k) := by ring
+  rw [hexp, zpow_add]
 
 /-- Adding angular indices multiplies the unitary ideal weights. -/
 theorem unitaryWeight_angularGrossencharacter_add (F : Type*) [Field F] [NumberField F]

@@ -38,6 +38,9 @@ roots of unity of absolute value `√2`.
 * `Complex.div_norm_zpow_mul_eq_one_of_pow_eq_one`: multiple-of-`n` integer powers of a unit-norm
   normalized complex `n`-th root of unity equal `1`.
 * `Complex.isPrimitiveRoot_four_iff`: the complex primitive fourth roots of unity are `± I`.
+* `Complex.im_three_add_four_I_div_five_zpow_ne_zero`: no nonzero integer power of `(3 + 4i) / 5`
+  is real (in particular, `(3 + 4i) / 5` is not a root of unity).
+* `Complex.two_add_I_div_two_sub_I`: in `ℂ`, `(2 + i) / (2 - i) = (3 + 4i) / 5`.
 
 ## References
 
@@ -148,5 +151,55 @@ theorem isPrimitiveRoot_four_iff {ζ : ℂ} :
   · rintro (rfl | rfl)
     · exact isPrimitiveRoot_I
     · exact isPrimitiveRoot_neg_I
+
+/-- **No nonzero integer power of `(3 + 4i) / 5` is real**: every nonzero integer power has
+nonzero imaginary part, since every positive power of `3 + 4i` has Gaussian integer coordinates
+congruent to `(3, 4)` modulo `5`. -/
+theorem im_three_add_four_I_div_five_zpow_ne_zero {m : ℤ} (hm : m ≠ 0) :
+    ((((3 : ℂ) + 4 * I) / 5) ^ m).im ≠ 0 := by
+  have hcongr : ∀ {n : ℕ}, n ≠ 0 → ∃ a b : ℤ,
+      ((3 : ℂ) + 4 * I) ^ n = (a : ℂ) + (b : ℂ) * I ∧ a % 5 = 3 ∧ b % 5 = 4 := by
+    intro n hn
+    induction n with
+    | zero => exact absurd rfl hn
+    | succ k ih =>
+      rcases eq_or_ne k 0 with rfl | hk
+      · exact ⟨3, 4, by simp, by decide, by decide⟩
+      · obtain ⟨a, b, hpow, ha, hb⟩ := ih hk
+        refine ⟨3 * a - 4 * b, 4 * a + 3 * b, ?_, by omega, by omega⟩
+        rw [pow_succ, hpow]
+        push_cast
+        linear_combination (4 * (b : ℂ)) * I_sq
+  have hnat {n : ℕ} (hn : n ≠ 0) : ((((3 : ℂ) + 4 * I) / 5) ^ n).im ≠ 0 := by
+    obtain ⟨a, b, hpow, -, hb⟩ := hcongr hn
+    have hb_ne : b ≠ 0 := by omega
+    have hb0 : (b : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hb_ne
+    have h5 : (5 : ℝ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
+    have hrew : (((3 : ℂ) + 4 * I) / 5) ^ n =
+        ((a : ℝ) / (5 : ℝ) ^ n : ℝ) + (((b : ℝ) / (5 : ℝ) ^ n : ℝ) : ℂ) * I := by
+      rw [div_pow, hpow]
+      push_cast
+      ring
+    have him : ((((3 : ℂ) + 4 * I) / 5) ^ n).im = (b : ℝ) / (5 : ℝ) ^ n := by
+      rw [hrew, add_im, ofReal_im, mul_I_im, ofReal_re, zero_add]
+    rw [him]
+    exact div_ne_zero hb0 h5
+  rcases Int.eq_nat_or_neg m with ⟨n, rfl | rfl⟩
+  · have hn : n ≠ 0 := by omega
+    simpa only [zpow_natCast] using hnat hn
+  · have hn : n ≠ 0 := by omega
+    rw [zpow_neg, zpow_natCast, inv_im]
+    intro him
+    rcases div_eq_zero_iff.mp him with hneg | hnsq
+    · exact hnat hn (neg_eq_zero.mp hneg)
+    · have hz0 : (((3 : ℂ) + 4 * I) / 5) ^ n = 0 := normSq_eq_zero.mp hnsq
+      exact hnat hn (by simp [hz0])
+
+/-- In `ℂ`, `(2 + i) / (2 - i) = (3 + 4i) / 5`. -/
+theorem two_add_I_div_two_sub_I :
+    ((2 : ℂ) + I) / (2 - I) = ((3 : ℂ) + 4 * I) / 5 := by
+  have hne : (2 : ℂ) - I ≠ 0 := fun h ↦ by simpa using congrArg im h
+  rw [div_eq_div_iff hne (by norm_num)]
+  linear_combination 4 * I_sq
 
 end Complex
