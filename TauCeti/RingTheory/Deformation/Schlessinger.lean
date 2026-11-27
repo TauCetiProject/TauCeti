@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Deformation.Lift
 public import TauCeti.RingTheory.Deformation.PredeformationFunctor
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Pullback
 
 /-!
@@ -47,9 +46,11 @@ local notation "p₂" => pullbackSnd f g hg
 /-- Two lifts over a coefficient fibre product agree if their projections agree. -/
 theorem Lift.eq_of_map_pullback_eq {ρ σ : Lift ρbar P}
     (h₁ : ρ.map p₁ = σ.map p₁) (h₂ : ρ.map p₂ = σ.map p₂) : ρ = σ := by
-  refine Lift.ext fun x ↦ GeneralLinearGroup.ext fun i j ↦ Subtype.ext (Prod.ext ?_ ?_)
-  · simpa using congrArg (fun t : Lift ρbar A₁ ↦ (t x) i j) h₁
-  · simpa using congrArg (fun t : Lift ρbar A₂ ↦ (t x) i j) h₂
+  refine Lift.ext fun x ↦ GeneralLinearGroup.ext fun i j ↦ ArtinLocalAlg.pullback_ext f g hg ?_ ?_
+  · simpa only [Lift.map_apply, GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom] using
+      congrArg (fun t : Lift ρbar A₁ ↦ (t x) i j) h₁
+  · simpa only [Lift.map_apply, GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom] using
+      congrArg (fun t : Lift ρbar A₂ ↦ (t x) i j) h₂
 
 -- The coefficient pullback uses the same carrier as the ring pullback. These abbreviations
 -- let the matrix equivalence compute before passing to the bundled coefficient projections.
@@ -117,25 +118,12 @@ theorem ArtinLocalAlg.exists_strictKernelMap_pullback {a₁ : A₁.strictKernel 
   let pair : compatibleGL (n := n) f g := ⟨(a₁.val, a₂.val), hab⟩
   let b : GL n (P).obj.left := (pullbackGL f g hg).symm pair
   have hb₁ := map_fst_pullbackGL_symm f g hg pair
-  have hb : b ∈ (P).strictKernel n := by
-    rw [mem_strictKernel_iff, ← map_augmentation_map p₁ b, hb₁]
-    exact mem_strictKernel_iff.mp a₁.property
+  have hb : b ∈ (P).strictKernel n :=
+    (mem_strictKernel_iff_map_mem p₁).mpr (hb₁.symm ▸ a₁.property)
   exact ⟨⟨b, hb⟩, Subtype.ext ((coe_strictKernelMap_apply p₁ _).trans hb₁),
     Subtype.ext ((coe_strictKernelMap_apply p₂ _).trans (map_snd_pullbackGL_symm f g hg pair))⟩
 
 end Pullback
-
-/-- A surjection of coefficient rings induces a surjection on the strict kernels. -/
-theorem ArtinLocalAlg.strictKernelMap_surjective {A B : ArtinLocalAlg Λ k}
-    (f : A ⟶ B) (hf : Function.Surjective f.hom.left.hom) :
-    Function.Surjective (strictKernelMap n f) := by
-  intro a
-  obtain ⟨b, hb⟩ :=
-    GeneralLinearGroup.map_surjective (f.hom.left.hom : A.obj.left →+* B.obj.left) hf a.val
-  have hb' : b ∈ A.strictKernel n := by
-    rw [mem_strictKernel_iff, ← map_augmentation_map f b, hb]
-    exact mem_strictKernel_iff.mp a.property
-  exact ⟨⟨b, hb'⟩, Subtype.ext (by simpa using hb)⟩
 
 variable (Λ ρbar)
 
@@ -166,17 +154,14 @@ instance (hρ : IsLocallyConstant ρbar) :
     (liftPredeformationFunctor Λ ρbar hρ).IsDeformationFunctor where
   bijective_fiberProductMap := by
     intro A₁ A₂ B f g hg
-    refine ⟨fun x y h ↦ Lift.eq_of_map_pullback_eq _ _ hg
-      (by simpa only [PredeformationFunctor.fiberProductMap_fst] using!
-        congrArg (fun t ↦ t.val.1) h)
-      (by simpa only [PredeformationFunctor.fiberProductMap_snd] using!
-        congrArg (fun t ↦ t.val.2) h), ?_⟩
+    let F := liftPredeformationFunctor Λ ρbar hρ
+    refine ⟨?_, ?_⟩
+    · intro x y h
+      obtain ⟨h₁, h₂⟩ := (F.fiberProductMap_eq_iff f g hg x y).mp h
+      exact Lift.eq_of_map_pullback_eq _ _ hg h₁ h₂
     rintro ⟨⟨x, y⟩, h⟩
     obtain ⟨z, ⟨hz₁, hz₂⟩, -⟩ := Lift.existsUnique_map_pullback _ _ hg h
-    let F := liftPredeformationFunctor Λ ρbar hρ
-    exact ⟨z, Subtype.ext (Prod.ext
-      ((F.fiberProductMap_fst f g hg z).trans hz₁)
-      ((F.fiberProductMap_snd f g hg z).trans hz₂))⟩
+    exact ⟨z, (F.fiberProductMap_eq_mk_iff f g hg z x y h).mpr ⟨hz₁, hz₂⟩⟩
 
 section StrictClass
 
@@ -247,9 +232,7 @@ theorem strictClassPredeformationFunctor_surjective_fiberProductMap (hρ : IsLoc
   rintro ⟨⟨x, y⟩, h⟩
   obtain ⟨z, hz₁, hz₂⟩ := StrictClass.exists_map_pullback f g hg h
   let F := strictClassPredeformationFunctor Λ ρbar hρ
-  exact ⟨z, Subtype.ext (Prod.ext
-    ((F.fiberProductMap_fst f g hg z).trans hz₁)
-    ((F.fiberProductMap_snd f g hg z).trans hz₂))⟩
+  exact ⟨z, (F.fiberProductMap_eq_mk_iff f g hg z x y h).mpr ⟨hz₁, hz₂⟩⟩
 
 /-- Strict classes of lifts satisfy Schlessinger's condition (H1). -/
 instance (hρ : IsLocallyConstant ρbar) :
@@ -260,14 +243,13 @@ instance (hρ : IsLocallyConstant ρbar) :
 /-- Strict classes of lifts satisfy Schlessinger's condition (H2). -/
 instance (hρ : IsLocallyConstant ρbar) :
     (strictClassPredeformationFunctor Λ ρbar hρ).SatisfiesH2 where
-  bijective_fiberProductMap A :=
-    ⟨fun x y h ↦ StrictClass.eq_of_map_pullback_eq _ _ _
-      (fun _ a _ ↦ ⟨1, Subsingleton.elim _ a, one_smul _ _⟩)
-      (by simpa only [PredeformationFunctor.fiberProductMap_fst] using!
-        congrArg (fun t ↦ t.val.1) h)
-      (by simpa only [PredeformationFunctor.fiberProductMap_snd] using!
-        congrArg (fun t ↦ t.val.2) h),
-      strictClassPredeformationFunctor_surjective_fiberProductMap hρ
-        (toResidue A) _ (toResidue_surjective _)⟩
+  bijective_fiberProductMap A := by
+    let F := strictClassPredeformationFunctor Λ ρbar hρ
+    refine ⟨?_, strictClassPredeformationFunctor_surjective_fiberProductMap hρ
+      (toResidue A) _ (toResidue_surjective _)⟩
+    intro x y h
+    obtain ⟨h₁, h₂⟩ := (F.fiberProductMap_eq_iff _ _ _ x y).mp h
+    exact StrictClass.eq_of_map_pullback_eq _ _ _
+      (fun _ a _ ↦ ⟨1, Subsingleton.elim _ a, one_smul _ _⟩) h₁ h₂
 
 end TauCeti.Deformation

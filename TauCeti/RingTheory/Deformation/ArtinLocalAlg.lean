@@ -448,6 +448,14 @@ theorem pullbackSnd_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
     (pullbackSnd f g hg).hom.left.hom x = x.val.2 :=
   (rfl)
 
+/-- Elements of the coefficient fibre product agree if their two projections agree. -/
+theorem pullback_ext {x y : (pullback f g hg).obj.left}
+    (h₁ : (pullbackFst f g hg).hom.left.hom x = (pullbackFst f g hg).hom.left.hom y)
+    (h₂ : (pullbackSnd f g hg).hom.left.hom x = (pullbackSnd f g hg).hom.left.hom y) : x = y := by
+  apply Subtype.ext
+  exact Prod.ext (by simpa only [pullbackFst_hom_left_hom_apply] using h₁)
+    (by simpa only [pullbackSnd_hom_left_hom_apply] using h₂)
+
 /-- The fibre product square commutes. -/
 theorem pullback_condition : pullbackFst f g hg ≫ f = pullbackSnd f g hg ≫ g := by
   ext x

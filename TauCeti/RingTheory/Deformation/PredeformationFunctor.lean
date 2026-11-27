@@ -123,6 +123,20 @@ theorem fiberProductMap_snd (x : F.obj.obj (pullback f g hg)) :
     (F.fiberProductMap f g hg x).val.2 = F.obj.map (pullbackSnd f g hg) x :=
   (rfl)
 
+/-- A comparison-map value is a given compatible pair exactly when both projections agree. -/
+theorem fiberProductMap_eq_mk_iff (z : F.obj.obj (pullback f g hg))
+    (x : F.obj.obj A') (y : F.obj.obj A'') (h : F.obj.map f x = F.obj.map g y) :
+    F.fiberProductMap f g hg z = ⟨(x, y), h⟩ ↔
+      F.obj.map (pullbackFst f g hg) z = x ∧ F.obj.map (pullbackSnd f g hg) z = y := by
+  simp only [Subtype.ext_iff, Prod.ext_iff, fiberProductMap_fst, fiberProductMap_snd]
+
+/-- Comparison-map values agree exactly when their two projected values agree. -/
+theorem fiberProductMap_eq_iff (x y : F.obj.obj (pullback f g hg)) :
+    F.fiberProductMap f g hg x = F.fiberProductMap f g hg y ↔
+      F.obj.map (pullbackFst f g hg) x = F.obj.map (pullbackFst f g hg) y ∧
+        F.obj.map (pullbackSnd f g hg) x = F.obj.map (pullbackSnd f g hg) y := by
+  simp only [Subtype.ext_iff, Prod.ext_iff, fiberProductMap_fst, fiberProductMap_snd]
+
 /-- The comparison map `θ` is bijective exactly when `F` takes the fibre product square of `f`
 and `g` to a pullback square of types. -/
 theorem bijective_fiberProductMap_iff :
