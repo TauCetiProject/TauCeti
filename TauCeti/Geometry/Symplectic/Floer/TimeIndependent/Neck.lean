@@ -42,8 +42,9 @@ kernel against a cokernel that the linear gluing of Cauchy–Riemann operators h
   second along a neck of length `2R` gives `∂s + i ∂t - a_R(s)` with
   `a_R(s) = 1 - tanh (s + R) + tanh (s - R)` (`TauCeti.neckCoeff`). It is bijective, so its index
   `0 = 2 dim_ℂ F + (-2 dim_ℂ F)` is the sum of the indices of the pieces while its kernel and
-  cokernel are not the sums of theirs. Its inverse is not uniformly bounded: every bound
-  `‖x‖ ≤ C ‖(∂s + i ∂t - a_R) x‖` has `C ≥ exp (2 R) / 2`. For `R ≥ 0` one has `|a_R| ≤ 1`, so the
+  cokernel are not the sums of theirs. Its inverse is not uniformly bounded, not even on values:
+  every bound `‖x‖_{L²} ≤ C ‖(∂s + i ∂t - a_R) x‖` has `C ≥ exp (2 R) / 2`, and so does every bound
+  `‖x‖ ≤ C ‖(∂s + i ∂t - a_R) x‖`. For `R ≥ 0` one has `|a_R| ≤ 1`, so the
   gap on the nonzero Fourier modes is uniform in `R` and this growth is carried by the zero mode
   alone.
 
@@ -62,6 +63,8 @@ kernel against a cokernel that the linear gluing of Cauchy–Riemann operators h
 * `TauCeti.CylinderSobolev.bijective_scalarCauchyRiemannOperator_neckCoeff` and
   `TauCeti.CylinderSobolev.index_scalarCauchyRiemannOperator_neckCoeff_eq_add`: the glued
   operator is invertible, and the index is additive.
+* `exp_div_two_le_of_forall_norm_valueL_le_mul_norm_scalarCauchyRiemannOperator_neckCoeff`:
+  the values of its inverse are not bounded uniformly in `R`.
 
 ## References
 
@@ -146,6 +149,14 @@ theorem coeFn_scalarCauchyRiemannOperator {c : ℝ → ℝ} (hc : Continuous c) 
     hz, firstOrderJetCoeff_apply]
   simp [AlmostComplexStructure.ofComplexModule_apply, sub_eq_add_neg]
 
+omit [FiniteDimensional ℂ F] in
+/-- The metric `Im ⟪·, i ·⟫` of the symplectic form `Im ⟪·, ·⟫` and the complex structure `i` is the
+real inner product `Re ⟪·, ·⟫`. -/
+private theorem imInnerSymplecticForm_apply_ofComplexModule (v w : F) :
+    imInnerSymplecticForm F v (AlmostComplexStructure.ofComplexModule F w) =
+      @inner ℝ F InnerProductSpace.complexToReal.toInner v w :=
+  (imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply v w
+
 /-- The linearized Hamiltonian vector field of the quadratic Hamiltonian `y ↦ (c / 2) ‖y‖²` for
 `Im ⟪·, ·⟫`, composed with `-i`, is `-c`. -/
 private theorem neg_comp_fderiv_hamiltonianVectorField_div_two_mul_norm_sq (c : ℝ) (y : F) :
@@ -154,8 +165,7 @@ private theorem neg_comp_fderiv_hamiltonianVectorField_div_two_mul_norm_sq (c : 
       -c • ContinuousLinearMap.id ℝ F := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq
-    ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) c,
-    ContinuousLinearMap.fderiv]
+    imInnerSymplecticForm_apply_ofComplexModule c, ContinuousLinearMap.fderiv]
   ext v
   simp [AlmostComplexStructure.ofComplexModule_apply, smul_smul]
 
@@ -198,21 +208,15 @@ private theorem ae_eq_neg_comp_fderiv_hamiltonianVectorField {c : ℝ → ℝ}
   filter_upwards [hAL] with s hs
   rw [hs, neg_comp_fderiv_hamiltonianVectorField_div_two_mul_norm_sq]
 
-/-- A continuous bounded coefficient `c` has an `L∞` class of `s ↦ -c(s) • id`. -/
-private theorem exists_ae_eq_neg_smul_id {c : ℝ → ℝ} (hc : Continuous c) {a : ℝ}
-    (hca : ∀ s, |c s| ≤ a) :
-    ∃ AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
-      AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-        fun s ↦ -c s • ContinuousLinearMap.id ℝ F := by
-  have hm : AEStronglyMeasurable (fun s ↦ -c s • ContinuousLinearMap.id ℝ F)
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-    (hc.neg.smul continuous_const).aestronglyMeasurable
-  have hL : MemLp (fun s ↦ -c s • ContinuousLinearMap.id ℝ F) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-    memLp_top_of_bound (E := F →L[ℝ] F) hm a (.of_forall fun s ↦ by
-      rw [norm_smul, norm_neg, Real.norm_eq_abs]
-      exact (mul_le_of_le_one_right (abs_nonneg _) norm_id_le).trans (hca s))
-  exact ⟨hL.toLp _, hL.coeFn_toLp⟩
+/-- If `|c(s)| ≤ a`, the linearized Hamiltonian vector fields of the quadratic Hamiltonians
+`H_s(y) = (c(s) / 2) ‖y‖²` for `Im ⟪·, ·⟫` have norm at most `a`. -/
+private theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le {c : ℝ → ℝ}
+    {a : ℝ} (hca : ∀ s, |c s| ≤ a) (s : ℝ) (y : F) :
+    ‖fderiv ℝ ((imInnerSymplecticForm F).hamiltonianVectorField fun y ↦ c s / 2 * ‖y‖ ^ 2) y‖ ≤
+      a := by
+  let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  exact (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
+    imInnerSymplecticForm_apply_ofComplexModule _ _).trans (hca s)
 
 variable {c : ℝ → ℝ} {a : ℝ}
   {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -232,11 +236,9 @@ theorem ker_scalarCauchyRiemannOperator_eq_map_zeroModeL (hc : ContDiff ℝ 2 c)
   rw [← floerSobolevOperator_div_two_mul_norm_sq c fun _ ↦ 0]
   exact SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0)
-    ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply)
+    imInnerSymplecticForm_apply_ofComplexModule
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
-    (fun s ↦ (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-      ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) _
-        _).trans (hca s))
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _)
     (ae_eq_neg_comp_fderiv_hamiltonianVectorField hAL)
 
 /-- **`∂s + i ∂t - c(s)` on the zero mode is `d/ds - c(s)`.** Let `c` be `C²` and bounded, and
@@ -253,9 +255,7 @@ theorem scalarCauchyRiemannOperator_zeroModeL (hc : ContDiff ℝ 2 c) (hca : ∀
   rw [← floerSobolevOperator_div_two_mul_norm_sq c fun _ ↦ 0]
   exact floerSobolevOperator_zeroModeL (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0)
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const
-    (fun s ↦ (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-      ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) _
-        _).trans (hca s))
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _)
     (ae_eq_neg_comp_fderiv_hamiltonianVectorField hAL) u
 
 /-- **Surjectivity of `∂s + i ∂t - c(s)` is that of `d/ds - c(s)`.** Let `c` be `C²` with
@@ -273,9 +273,7 @@ theorem surjective_scalarCauchyRiemannOperator_iff_surjective_trajectoryOperator
   exact surjective_floerSobolevOperator_iff_surjective_trajectoryOperator
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0) imInnerSymplecticForm_apply
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
-    (fun s ↦ (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-      ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) _
-        _).trans (hca s))
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _)
     (ae_eq_neg_comp_fderiv_hamiltonianVectorField hAL)
 
 /-- **`∂s + i ∂t - c(s)` is Fredholm exactly when `d/ds - c(s)` is.** Let `c` be `C²` with
@@ -292,9 +290,7 @@ theorem isFredholm_scalarCauchyRiemannOperator_iff_isFredholm_trajectoryOperator
   exact SymplecticForm.isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0) imInnerSymplecticForm_apply
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
-    (fun s ↦ (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-      ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) _
-        _).trans (hca s))
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _)
     (ae_eq_neg_comp_fderiv_hamiltonianVectorField hAL)
 
 /-- **The index of `∂s + i ∂t - c(s)` is that of `d/ds - c(s)`.** Let `c` be `C²` with
@@ -311,9 +307,7 @@ theorem index_scalarCauchyRiemannOperator_eq_index_trajectoryOperator
   exact SymplecticForm.index_floerSobolevOperator_eq_index_trajectoryOperator
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0) imInnerSymplecticForm_apply
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
-    (fun s ↦ (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-      ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) _
-        _).trans (hca s))
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _)
     (ae_eq_neg_comp_fderiv_hamiltonianVectorField hAL)
 
 /-- **The nonzero Fourier modes are bounded below.** Let `c` be `C²` with `|c(s)| ≤ a ≤ 2π`.
@@ -330,25 +324,28 @@ theorem mul_sq_norm_le_mul_sq_norm_scalarCauchyRiemannOperator_of_sliceAverageL_
   rw [← floerSobolevOperator_div_two_mul_norm_sq c fun _ ↦ 0]
   exact SymplecticForm.mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero
     (H := fun s y ↦ c s / 2 * ‖y‖ ^ 2) (γ := fun _ ↦ 0)
-    ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply)
+    imInnerSymplecticForm_apply_ofComplexModule
     (contDiff_uncurry_div_two_mul_norm_sq hc) continuous_const ha
-    (fun s ↦ (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le
-      ((imInnerSymplecticForm F).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply) _
-        _).trans (hca s)) hx
+    (norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le_of_abs_le hca · _) hx
 
 /-! ### The tanh pieces -/
 
 /-- `1 < 2π`, the spectral gap bound used for coefficients bounded by `1`. -/
 private theorem one_lt_two_mul_pi : (1 : ℝ) < 2 * π := by linarith [two_le_pi]
 
+/-- The coefficient `tanh` is bounded by `1`. -/
+private theorem abs_tanh_le_one (s : ℝ) : |tanh s| ≤ 1 :=
+  (abs_tanh_lt_one s).le
+
 /-- The coefficient `-tanh` is bounded by `1`. -/
 private theorem abs_neg_tanh_le_one (s : ℝ) : |-tanh s| ≤ 1 := by
   rw [abs_neg]
-  exact (abs_tanh_lt_one s).le
+  exact abs_tanh_le_one s
 
 /-- `3 < 2π`, the spectral gap bound used for coefficients bounded by `3`. -/
 private theorem three_lt_two_mul_pi : (3 : ℝ) < 2 * π := by linarith [two_le_pi]
 
+omit [FiniteDimensional ℂ F] in
 /-- The coefficient `-tanh` of `∂s + i ∂t + tanh s` has an `L∞` class of `s ↦ tanh(s) • id`, which
 is also the class of `s ↦ -(-tanh s) • id`. -/
 private theorem exists_ae_eq_tanh_smul_id :
@@ -362,6 +359,14 @@ private theorem exists_ae_eq_tanh_smul_id :
   refine ⟨AL, hAL, ?_⟩
   filter_upwards [hAL] with s hs
   rw [hs, neg_neg]
+
+omit [FiniteDimensional ℂ F] in
+/-- The coefficient `tanh` of `∂s + i ∂t - tanh s` has an `L∞` class of `s ↦ -tanh(s) • id`. -/
+private theorem exists_ae_eq_neg_tanh_smul_id :
+    ∃ AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+      AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+        fun s ↦ -tanh s • ContinuousLinearMap.id ℝ F :=
+  exists_ae_eq_neg_smul_id continuous_tanh abs_tanh_le_one
 
 /-- **The kernel of `∂s + i ∂t + tanh s`.** The cylinder operator `∂s + i ∂t + tanh s` has a
 kernel of real dimension `2 dim_ℂ F`: it consists of the zero modes of the kernel of `d/ds + tanh s`
@@ -407,30 +412,27 @@ theorem index_scalarCauchyRiemannOperator_neg_tanh :
 theorem ker_scalarCauchyRiemannOperator_tanh :
     (scalarCauchyRiemannOperator F tanh).ker = ⊥ := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_smul_id (F := F) (c := tanh) continuous_tanh
-    fun s ↦ (abs_tanh_lt_one s).le
+  obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_tanh_smul_id (F := F)
   rw [ker_scalarCauchyRiemannOperator_eq_map_zeroModeL contDiff_tanh one_lt_two_mul_pi
-    (fun s ↦ (abs_tanh_lt_one s).le) hAL,
+    abs_tanh_le_one hAL,
     WeakDerivStep.ker_trajectoryOperator_neg_tanh_smul_id hAL, Submodule.map_bot]
 
 /-- **`∂s + i ∂t - tanh s` is Fredholm.** -/
 theorem isFredholm_scalarCauchyRiemannOperator_tanh :
     (scalarCauchyRiemannOperator F tanh).IsFredholm := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_smul_id (F := F) (c := tanh) continuous_tanh
-    fun s ↦ (abs_tanh_lt_one s).le
+  obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_tanh_smul_id (F := F)
   exact (isFredholm_scalarCauchyRiemannOperator_iff_isFredholm_trajectoryOperator contDiff_tanh
-    one_lt_two_mul_pi (fun s ↦ (abs_tanh_lt_one s).le) hAL).2
+    one_lt_two_mul_pi abs_tanh_le_one hAL).2
     (WeakDerivStep.isFredholm_trajectoryOperator_neg_tanh_smul_id hAL)
 
 /-- **The index of `∂s + i ∂t - tanh s` is `-2 dim_ℂ F`.** For `F = ℂ` it is `-2`. -/
 theorem index_scalarCauchyRiemannOperator_tanh :
     (scalarCauchyRiemannOperator F tanh).index = -(2 * Module.finrank ℂ F : ℤ) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_smul_id (F := F) (c := tanh) continuous_tanh
-    fun s ↦ (abs_tanh_lt_one s).le
+  obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_tanh_smul_id (F := F)
   rw [index_scalarCauchyRiemannOperator_eq_index_trajectoryOperator contDiff_tanh
-    one_lt_two_mul_pi (fun s ↦ (abs_tanh_lt_one s).le) hAL,
+    one_lt_two_mul_pi abs_tanh_le_one hAL,
     WeakDerivStep.index_trajectoryOperator_neg_tanh_smul_id hAL, finrank_real_of_complex]
   norm_cast
 
@@ -477,20 +479,32 @@ theorem index_scalarCauchyRiemannOperator_neckCoeff_eq_add (R : ℝ) :
     index_scalarCauchyRiemannOperator_neg_tanh, index_scalarCauchyRiemannOperator_tanh,
     add_neg_cancel]
 
-/-- **The inverse of the glued cylinder operator is not uniformly bounded.** If
-`‖x‖ ≤ C ‖(∂s + i ∂t - a_R(s)) x‖` for every `x ∈ W^{1,2}(ℝ × S¹, F)`, with `F ≠ 0`, then
-`C ≥ exp (2 R) / 2`. The test element is the zero mode of the path `sech (s + R) • e`, the kernel
-element of the first piece moved to the left end of the neck. -/
-theorem exp_div_two_le_of_forall_norm_le_mul_norm_scalarCauchyRiemannOperator_neckCoeff
+/-- **The values of the inverse of the glued cylinder operator are not uniformly bounded.** If
+`‖x‖_{L²} ≤ C ‖(∂s + i ∂t - a_R(s)) x‖` for the value `x ↦ ξ` of every
+`x ∈ W^{1,2}(ℝ × S¹, F)`, with `F ≠ 0`, then `C ≥ exp (2 R) / 2`. The test element is the zero mode
+of the path `sech (s + R) • e`, the kernel element of the first piece moved to the left end of the
+neck. -/
+theorem exp_div_two_le_of_forall_norm_valueL_le_mul_norm_scalarCauchyRiemannOperator_neckCoeff
     [Nontrivial F] (R : ℝ) {C : ℝ}
-    (hC : ∀ x, ‖x‖ ≤ C * ‖scalarCauchyRiemannOperator F (neckCoeff R) x‖) :
+    (hC : ∀ x, ‖valueL 2 x‖ ≤ C * ‖scalarCauchyRiemannOperator F (neckCoeff R) x‖) :
     exp (2 * R) / 2 ≤ C := by
   obtain ⟨AL, hAL⟩ := exists_ae_eq_neg_smul_id (F := F) (continuous_neckCoeff R)
     (abs_neckCoeff_le_three R)
   refine WeakDerivStep.exp_div_two_le_of_forall_norm_prev_le_mul_norm_trajectoryOperator_neckCoeff
     R AL hAL fun u ↦ ?_
-  rw [← LinearIsometry.norm_map (zeroModeLp F) (WeakDerivStep.trajectoryOperator AL u),
+  rw [← LinearIsometry.norm_map (zeroModeLp F) (prev _ u), ← valueL_zeroModeL,
+    ← LinearIsometry.norm_map (zeroModeLp F) (WeakDerivStep.trajectoryOperator AL u),
     ← scalarCauchyRiemannOperator_zeroModeL (contDiff_neckCoeff R) (abs_neckCoeff_le_three R) hAL]
-  exact (norm_prev_le_norm_zeroModeL u).trans (hC _)
+  exact hC _
+
+/-- **The inverse of the glued cylinder operator is not uniformly bounded.** If
+`‖x‖ ≤ C ‖(∂s + i ∂t - a_R(s)) x‖` for every `x ∈ W^{1,2}(ℝ × S¹, F)`, with `F ≠ 0`, then
+`C ≥ exp (2 R) / 2`. -/
+theorem exp_div_two_le_of_forall_norm_le_mul_norm_scalarCauchyRiemannOperator_neckCoeff
+    [Nontrivial F] (R : ℝ) {C : ℝ}
+    (hC : ∀ x, ‖x‖ ≤ C * ‖scalarCauchyRiemannOperator F (neckCoeff R) x‖) :
+    exp (2 * R) / 2 ≤ C :=
+  exp_div_two_le_of_forall_norm_valueL_le_mul_norm_scalarCauchyRiemannOperator_neckCoeff R
+    fun x ↦ (norm_valueL_le x).trans (hC x)
 
 end TauCeti.CylinderSobolev
