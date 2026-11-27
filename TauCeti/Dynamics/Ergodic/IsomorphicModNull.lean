@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.Set.Restrict
 public import TauCeti.Dynamics.Ergodic.Factor
+public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.MeasureTheory.Measure.Subtype
 public import Mathlib.MeasureTheory.Measure.Count
 
@@ -50,6 +51,13 @@ isomorphic mod 0 in the sense of `IsIsomorphicModNull`.
   forward and inverse maps of an isomorphism mod 0 are factor maps.
 * `TauCeti.IsIsomorphicModNull.ergodic_iff`: for measurable `T` and `S`, ergodicity is invariant
   under isomorphism mod 0.
+* `TauCeti.exists_isomorphismModNull_of_ae`, `TauCeti.isIsomorphicModNull_iff_exists_ae`: for
+  measurable quasi-measure-preserving `T` and `S`, isomorphism mod 0 is the existence of a
+  `TauCeti.Mod0MeasureIso` (measure-preserving maps inverse almost everywhere) conjugating the
+  systems almost everywhere. The conull sets are built from
+  `MeasureTheory.exists_measurableSet_mapsTo_of_ae`: an invariant conull `X₁` where `g ∘ f = id`
+  and `f ∘ T = S ∘ f`, an invariant conull `Y₀` where `f ∘ g = id` and `g` lands in `X₁`, and
+  `X₁ ∩ f ⁻¹' Y₀` (`MeasureTheory.QuasiMeasurePreserving.exists_measurableSet_invOn`).
 * `TauCeti.not_isIsomorphicModNull_id_not`: on two points of equal mass the identity and the
   swap are not isomorphic mod 0 (the swap is ergodic, the identity is not), although both preserve
   the measure.
@@ -188,16 +196,12 @@ protected def trans (e : IsomorphismModNull T μ S ν) (f : IsomorphismModNull S
     e.measurableSet_source.inter (e.measurePreserving_toFun.measurable f.measurableSet_source)
   measurableSet_target :=
     f.measurableSet_target.inter (f.measurePreserving_invFun.measurable e.measurableSet_target)
-  measure_compl_source := by
-    rw [compl_inter, ← preimage_compl]
-    refine measure_union_null e.measure_compl_source ?_
-    rw [e.measurePreserving_toFun.measure_preimage f.measurableSet_source.compl.nullMeasurableSet]
-    exact f.measure_compl_source
-  measure_compl_target := by
-    rw [compl_inter, ← preimage_compl]
-    refine measure_union_null f.measure_compl_target ?_
-    rw [f.measurePreserving_invFun.measure_preimage e.measurableSet_target.compl.nullMeasurableSet]
-    exact e.measure_compl_target
+  measure_compl_source :=
+    e.measurePreserving_toFun.quasiMeasurePreserving.measure_compl_inter_preimage_eq_zero
+      e.measure_compl_source f.measure_compl_source
+  measure_compl_target :=
+    f.measurePreserving_invFun.quasiMeasurePreserving.measure_compl_inter_preimage_eq_zero
+      f.measure_compl_target e.measure_compl_target
   mapsTo_source x hx :=
     ⟨e.mapsTo_source hx.1, by
       rw [mem_preimage, e.toFun_comp _ hx.1]
@@ -378,6 +382,73 @@ end IsomorphismModNull
 theorem isIsomorphicModNull_iff_nonempty :
     IsIsomorphicModNull T μ S ν ↔ Nonempty (IsomorphismModNull T μ S ν) :=
   Iff.rfl
+
+namespace IsomorphismModNull
+
+/-- The inverse map of an isomorphism mod 0 is a left inverse almost everywhere. -/
+theorem invFun_comp_toFun_ae_eq (e : IsomorphismModNull T μ S ν) :
+    e.invFun ∘ e.toFun =ᵐ[μ] id := by
+  filter_upwards [mem_ae_iff.mpr e.measure_compl_source] with x hx using e.invFun_toFun x hx
+
+/-- The inverse map of an isomorphism mod 0 is a right inverse almost everywhere. -/
+theorem toFun_comp_invFun_ae_eq (e : IsomorphismModNull T μ S ν) :
+    e.toFun ∘ e.invFun =ᵐ[ν] id :=
+  e.symm.invFun_comp_toFun_ae_eq
+
+end IsomorphismModNull
+
+/-- **Conull realization of an almost-everywhere isomorphism.** For measurable
+quasi-measure-preserving systems `T` and `S`, the maps of a measure-preserving isomorphism `e`
+modulo null sets with `e.toFun ∘ T = S ∘ e.toFun` almost everywhere are the maps of an
+isomorphism mod 0 of the systems. -/
+theorem exists_isomorphismModNull_of_ae (hTm : Measurable T) (hT : QuasiMeasurePreserving T μ μ)
+    (hSm : Measurable S) (hS : QuasiMeasurePreserving S ν ν) (e : Mod0MeasureIso X Y μ ν)
+    (he : e.toFun ∘ T =ᵐ[μ] S ∘ e.toFun) :
+    ∃ e' : IsomorphismModNull T μ S ν, e'.toFun = e.toFun ∧ e'.invFun = e.invFun := by
+  obtain ⟨X₁, hX₁m, hX₁0, hX₁T, hX₁⟩ := exists_measurableSet_mapsTo_of_ae hTm hT
+    (p := fun x ↦ e.invFun (e.toFun x) = x ∧ ∀ _ : Unit, e.toFun (T x) = S (e.toFun x))
+    (by filter_upwards [e.left_inv_ae, he] with x h₁ h₂ using ⟨h₁, fun _ ↦ h₂⟩)
+  have hY : ∀ᵐ y ∂ν, e.toFun (e.invFun y) = y ∧ e.invFun y ∈ X₁ := by
+    filter_upwards [e.right_inv_ae,
+      e.measurePreserving_invFun.quasiMeasurePreserving.ae (mem_ae_iff.mpr hX₁0)] with y h₁ h₂
+      using ⟨h₁, h₂⟩
+  obtain ⟨Y₀, hY₀m, hY₀0, hY₀S, hY₀⟩ := exists_measurableSet_mapsTo_of_ae hSm hS hY
+  obtain ⟨X₀, hX₀₁, hX₀m, hX₀0, hX₀T, hf, hg, hinv⟩ :=
+    e.measurePreserving.quasiMeasurePreserving.exists_measurableSet_invOn (φ := fun _ ↦ T)
+      (ψ := fun _ ↦ S) e.measurable_toFun hX₁m hX₁0 (fun _ ↦ hX₁T) hX₁ hY₀m hY₀0
+      (fun _ ↦ hY₀S) hY₀
+  exact ⟨
+    { toFun := e.toFun
+      invFun := e.invFun
+      source := X₀
+      target := Y₀
+      measurableSet_source := hX₀m
+      measurableSet_target := hY₀m
+      measure_compl_source := hX₀0
+      measure_compl_target := hY₀0
+      mapsTo_source := hX₀T ()
+      mapsTo_target := hY₀S
+      mapsTo_toFun := hf
+      mapsTo_invFun := hg
+      invFun_toFun := fun _ hx ↦ hinv.1 hx
+      toFun_invFun := fun _ hy ↦ hinv.2 hy
+      measurePreserving_toFun := e.measurePreserving
+      measurePreserving_invFun := e.measurePreserving_invFun
+      toFun_comp := fun x hx ↦ (hX₁ x (hX₀₁ hx)).2 () }, rfl, rfl⟩
+
+/-- For measurable quasi-measure-preserving systems, isomorphism mod 0 is the existence of a
+measure-preserving isomorphism modulo null sets that conjugates the systems almost everywhere. -/
+theorem isIsomorphicModNull_iff_exists_ae (hTm : Measurable T)
+    (hT : QuasiMeasurePreserving T μ μ) (hSm : Measurable S) (hS : QuasiMeasurePreserving S ν ν) :
+    IsIsomorphicModNull T μ S ν ↔
+      ∃ e : Mod0MeasureIso X Y μ ν, e.toFun ∘ T =ᵐ[μ] S ∘ e.toFun := by
+  refine ⟨fun h ↦ (isIsomorphicModNull_iff_nonempty.mp h).elim fun e ↦
+    ⟨⟨e.toFun, e.invFun, e.measurable_toFun, e.measurable_invFun,
+      e.measurePreserving_toFun.map_eq, e.measurePreserving_invFun.map_eq,
+      e.invFun_comp_toFun_ae_eq, e.toFun_comp_invFun_ae_eq⟩, e.isFactorMap.comp_ae_eq⟩,
+    fun ⟨e, he⟩ ↦ ?_⟩
+  obtain ⟨e', -, -⟩ := exists_isomorphismModNull_of_ae hTm hT hSm hS e he
+  exact e'.isIsomorphicModNull
 
 namespace IsIsomorphicModNull
 
