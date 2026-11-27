@@ -65,7 +65,7 @@ variable {K : Type w} [Field K] [Algebra F K]
 
 /-- The cofiltered diagram of Lang fibers `{g_i | g_i⁻¹ * F^n(g_i) = a_i}` associated to a
 compatible family `a` on a diagram `D` of finite-type commutative Hopf algebras. -/
-private noncomputable def langFiberFunctor
+private noncomputable abbrev langFiberFunctor
     {ι : Type r} [Category* ι]
     (D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F) (n : ℕ)
     (a : ∀ i, WithConv (D.obj i →ₐ[F] K))
@@ -73,7 +73,7 @@ private noncomputable def langFiberFunctor
       BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i) :
     ιᵒᵖ ⥤ Type (max v w) where
   obj i :=
-    {g : WithConv (D.obj i.unop →ₐ[F] K) |
+    {g : WithConv (D.obj i.unop →ₐ[F] K) //
       g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop}
   map {i j} f := TypeCat.ofHom fun g =>
     ⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.val, by
@@ -81,7 +81,7 @@ private noncomputable def langFiberFunctor
       have hcomm : FiniteField.frobeniusPoints F n (BialgHom.mapDomain φ g.val) =
           BialgHom.mapDomain φ (FiniteField.frobeniusPoints F n g.val) :=
         (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ n) g.val).symm
-      rw [Set.mem_ofPred_eq, hcomm, ← map_inv, ← map_mul, g.property]
+      rw [hcomm, ← map_inv, ← map_mul, g.property]
       exact ha f.unop⟩
   map_id i := by
     refine ConcreteCategory.hom_ext _ _ fun g => Subtype.ext ?_
@@ -92,66 +92,6 @@ private noncomputable def langFiberFunctor
     simp only [TypeCat.ofHom_apply, unop_comp, D.map_comp,
       FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
       types_comp_apply]
-
-/-- Object computation lemma for `langFiberFunctor`. -/
-private theorem langFiberFunctor_obj
-    {ι : Type r} [Category* ι]
-    (D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F) (n : ℕ)
-    (a : ∀ i, WithConv (D.obj i →ₐ[F] K))
-    (ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i)
-    (i : ιᵒᵖ) :
-    (langFiberFunctor D n a ha).obj i =
-      {g : WithConv (D.obj i.unop →ₐ[F] K) |
-        g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop} :=
-  rfl
-
-/-- Underlying `K`-point of an element in a fiber of `langFiberFunctor`. Because
-`(langFiberFunctor D n a ha).obj i` is not syntactically a `Subtype` until `langFiberFunctor` is
-unfolded, this projection and `langFiberFunctorVal_eq` isolate that definitional unfolding from
-downstream proofs. -/
-private noncomputable def langFiberFunctorVal
-    {ι : Type r} [Category* ι]
-    {D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F} {n : ℕ}
-    {a : ∀ i, WithConv (D.obj i →ₐ[F] K)}
-    {ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i}
-    {i : ιᵒᵖ} (g : (langFiberFunctor D n a ha).obj i) :
-    WithConv (D.obj i.unop →ₐ[F] K) :=
-  g.val
-
-/-- Every element in a fiber of `langFiberFunctor` satisfies the Lang fiber equation. -/
-private theorem langFiberFunctorVal_eq
-    {ι : Type r} [Category* ι]
-    {D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F} {n : ℕ}
-    {a : ∀ i, WithConv (D.obj i →ₐ[F] K)}
-    {ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i}
-    {i : ιᵒᵖ} (g : (langFiberFunctor D n a ha).obj i) :
-    (langFiberFunctorVal g)⁻¹ * FiniteField.frobeniusPoints F n (langFiberFunctorVal g) =
-      a i.unop :=
-  g.property
-
-/-- Underlying `K`-point of a transition map in `langFiberFunctor`. -/
-private theorem langFiberFunctor_map_val
-    {ι : Type r} [Category* ι]
-    (D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F) (n : ℕ)
-    (a : ∀ i, WithConv (D.obj i →ₐ[F] K))
-    (ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i)
-    {i j : ιᵒᵖ} (f : i ⟶ j) (g : (langFiberFunctor D n a ha).obj i) :
-    langFiberFunctorVal ((langFiberFunctor D n a ha).map f g) =
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop))
-        (langFiberFunctorVal g) := by
-  -- `langFiberFunctor.map f` is `TypeCat.ofHom` on `langFiberFunctor.obj`, which is not
-  -- syntactically a `Subtype`; `change` exposes `TypeCat.ofHom` at the `obj` types so
-  -- `TypeCat.ofHom_apply` applies.
-  change ((TypeCat.ofHom fun g' : (langFiberFunctor D n a ha).obj i =>
-      (⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop))
-          (langFiberFunctorVal g'),
-        ((langFiberFunctor D n a ha).map f g').property⟩ :
-        (langFiberFunctor D n a ha).obj j)) g).val = _
-  rw [TypeCat.ofHom_apply]
 
 variable [IsAlgClosed K]
 
@@ -173,22 +113,20 @@ theorem lang_proAlgebraic_functor_surjective
       ∀ i, (g i)⁻¹ * FiniteField.frobeniusPoints F n (g i) = a i := by
   let S := langFiberFunctor D n a ha
   have : ∀ i : ιᵒᵖ, Finite (S.obj i) := fun i => by
-    rw [langFiberFunctor_obj]
     have : Finite (fixedSubgroup
         (FiniteField.frobeniusPoints F n (H := D.obj i.unop) (A := K))) :=
       FiniteField.finite_fixedSubgroup_frobeniusPoints hn
     exact MonoidHom.finite_setOf_inv_mul_eq _ (a i.unop)
   have : ∀ i : ιᵒᵖ, Nonempty (S.obj i) := fun i => by
-    rw [langFiberFunctor_obj]
     obtain ⟨g, hg⟩ := surjective_inv_mul_frobeniusPoints (F := F) (K := K) (H := D.obj i.unop)
       hn (hconn i.unop) (a i.unop)
     exact ⟨⟨g, hg⟩⟩
   obtain ⟨s, hs⟩ := nonempty_sections_of_finite_cofiltered_system S
-  refine ⟨fun i => langFiberFunctorVal (s (Opposite.op i)), ?_,
-    fun i => langFiberFunctorVal_eq (s (Opposite.op i))⟩
+  refine ⟨fun i => (s (Opposite.op i)).val, ?_, fun i => (s (Opposite.op i)).property⟩
   intro i j u
-  have hval := congrArg langFiberFunctorVal (hs u.op)
-  rw [langFiberFunctor_map_val, Quiver.Hom.unop_op] at hval
+  have hval := congrArg Subtype.val (hs u.op)
+  dsimp only [S, langFiberFunctor] at hval
+  rw [TypeCat.ofHom_apply, Subtype.coe_mk, Quiver.Hom.unop_op] at hval
   exact hval
 
 /-- **Lang's theorem for pro-algebraic groups**: for a directed inverse system of geometrically

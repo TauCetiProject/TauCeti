@@ -23,8 +23,8 @@ identically zero differential on counit-valued derivations.
 * `TauCeti.derivationComp_frobeniusBialgHom_eq_zero`: the Frobenius endomorphism
   `TauCeti.frobeniusBialgHom F H` has zero differential.
 * `TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom_eq_zero` and
-  `TauCeti.FiniteField.derivationComp_iterateGeometricFrobeniusBialgHom_eq_zero`: the geometric
-  Frobenius `id ⊗ Frob` on a base change `K ⊗[F] H` and all its positive iterates have zero
+  `TauCeti.FiniteField.derivationComp_geometricFrobeniusBialgHom_pow_eq_zero`: the geometric
+  Frobenius `id ⊗ Frob` on a base change `K ⊗[F] H` and all its positive powers have zero
   differential.
 -/
 
@@ -73,16 +73,20 @@ theorem derivationComp_geometricFrobeniusBialgHom_eq_zero
         one_pow, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
     rw [htmul, Derivation.map_smul, d.pow_eq_zero hcardK, smul_zero]
 
-/-- Every positive iterate of the geometric Frobenius `id ⊗ Frob` on a base change `K ⊗[F] H`
+/-- Every positive power of the geometric Frobenius `id ⊗ Frob` on a base change `K ⊗[F] H`
 has zero differential. -/
-theorem derivationComp_iterateGeometricFrobeniusBialgHom_eq_zero
+theorem derivationComp_geometricFrobeniusBialgHom_pow_eq_zero
     (F : Type u) [Field F] [Fintype F]
     (K : Type w) [CommSemiring K] [Algebra F K]
     (H : Type v) [CommSemiring H] [_root_.Bialgebra F H]
     {B : Type*} [Semiring B] [Algebra K B] {n : ℕ} (hn : n ≠ 0) :
-    TauCeti.derivationComp (B := B) (iterateGeometricFrobeniusBialgHom F K H n) = 0 := by
+    TauCeti.derivationComp (B := B) ((geometricFrobeniusBialgHom F K H) ^ n) = 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  rw [iterateGeometricFrobeniusBialgHom_succ, TauCeti.derivationComp_comp,
+  have hmul :
+      geometricFrobeniusBialgHom F K H * geometricFrobeniusBialgHom F K H ^ m =
+        (geometricFrobeniusBialgHom F K H).comp (geometricFrobeniusBialgHom F K H ^ m) :=
+    BialgHom.ext fun _ => BialgHom.mul_apply _ _ _
+  rw [pow_succ', hmul, TauCeti.derivationComp_comp,
     derivationComp_geometricFrobeniusBialgHom_eq_zero, LinearMap.comp_zero]
 
 end FiniteField

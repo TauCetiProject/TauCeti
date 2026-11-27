@@ -445,11 +445,11 @@ theorem surjective_inv_mul_frobeniusPoints {H : Type v} [CommRing H] [_root_.Hop
     (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_baseChange F K
       (_root_.CommHopfAlgCat.of F H)).mp hconn
   have hsurj := surjective_inv_mul_mapDomain
-    (FiniteField.iterateGeometricFrobeniusBialgHom F K H n)
-    (FiniteField.derivationComp_iterateGeometricFrobeniusBialgHom_eq_zero F K H hn)
+    ((FiniteField.geometricFrobeniusBialgHom F K H) ^ n)
+    (FiniteField.derivationComp_geometricFrobeniusBialgHom_pow_eq_zero F K H hn)
   exact (AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)).symm
     |>.surjective_inv_mul_of_semiconj (fun g' => DFunLike.congr_fun
-      (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_iterateGeometricFrobeniusBialgHom
+      (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom_pow
         (K := F) (k := K) (H := H) (R := K) n) g') hsurj
 
 /-- Commutator-map (`g ↦ g / F^n(g)`) form of Lang's theorem over a finite field. -/
