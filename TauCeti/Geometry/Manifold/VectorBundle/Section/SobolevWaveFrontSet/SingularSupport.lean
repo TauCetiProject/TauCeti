@@ -296,7 +296,7 @@ theorem sobolevWaveFrontSet_delta_eq_empty (hs : (Module.finrank ℝ E : ℝ) < 
     sobolevSingularSupport_delta_eq_empty hs]
 
 /-- **The `H^s` wave front set of a point mass.** On a manifold without boundary of dimension `d`,
-the point mass `δ_x ℓ : s ↦ ℓ (s x)` with a nonzero covector `ℓ` on the fibre `V x` has `H^s` wave
+the point mass `δ_x ℓ : σ ↦ ℓ (σ x)` with a nonzero covector `ℓ` on the fibre `V x` has `H^s` wave
 front set the nonzero covectors of `M` at `x`, for `s ≥ -d / 2`. -/
 theorem sobolevWaveFrontSet_delta (hs : -2 * s ≤ Module.finrank ℝ E) {x : M} {ℓ : V x →L[ℝ] ℝ}
     (hℓ : ℓ ≠ 0) :
