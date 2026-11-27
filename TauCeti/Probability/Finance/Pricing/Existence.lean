@@ -102,6 +102,16 @@ def weightedLogSpotTerminalDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t�
     (ha.elim fun lam h ↦
       ⟨lam, h.1, fun p ↦ (weightedLogSpotSecondOrderCoeff_apply_mul a p).symm ▸ h.2 p⟩)
 
+/-- `weightedLogSpotTerminalDataCLE` is `realTerminalDataCLE` at the weighted log-spot
+coefficient fields. -/
+private theorem weightedLogSpotTerminalDataCLE_eq {hα₀ : 0 < α} {hα₁ : α < 1} {ht : t₀ < t₁}
+    {a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} {δ : ℝ} (hδ : 0 < δ) (ha : ∀ p, δ ≤ a p) :
+    weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨δ, hδ, ha⟩ =
+      realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff a)
+        (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
+        ⟨δ, hδ, fun p ↦ (weightedLogSpotSecondOrderCoeff_apply_mul a p).symm ▸ ha p⟩ :=
+  rfl
+
 section TerminalDataEval
 
 variable {hα₀ : 0 < α} {hα₁ : α < 1} {a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
@@ -192,9 +202,10 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le {α : ℝ≥0} (hα�
   obtain ⟨C, hC, hest⟩ := exists_norm_realTerminalDataCLE_symm_le (α := α) hα₀ hα₁ hδ (6 * K) T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ a r ha hak hrk ↦ ?_⟩
   obtain ⟨h2, h1, h0⟩ := norm_weightedCoeffs_le hα₁.le hak hrk
+  rw [weightedLogSpotTerminalDataCLE_eq hδ ha]
   exact hest ht hTT₀ (weightedLogSpotSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
-    (fun p ↦ by simp [ha p]) h2 h1 h0
+    (fun p ↦ (weightedLogSpotSecondOrderCoeff_apply_mul a p).symm ▸ ha p) h2 h1 h0
 
 /-- **Lipschitz dependence of the weighted log-spot solution operator on `(a, r)`.** Under the
 bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the solution operators for `(a, r)`
@@ -218,7 +229,9 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
     (weightedLogSpotSecondOrderCoeff a) (weightedLogSpotSecondOrderCoeff a')
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotFirstOrderCoeff hα₁.le a' r')
     (weightedLogSpotZerothOrderCoeff hα₁.le r) (weightedLogSpotZerothOrderCoeff hα₁.le r')
-    (fun p ↦ by simp [ha p]) (fun p ↦ by simp [ha' p]) h2 h1 h0 h2' h1' h0'
+    (fun p ↦ (weightedLogSpotSecondOrderCoeff_apply_mul a p).symm ▸ ha p)
+    (fun p ↦ (weightedLogSpotSecondOrderCoeff_apply_mul a' p).symm ▸ ha' p)
+    h2 h1 h0 h2' h1' h0'
   have hd2 : ‖weightedLogSpotSecondOrderCoeff a - weightedLogSpotSecondOrderCoeff a'‖ ≤
       ‖a - a'‖ := by
     rw [← weightedLogSpotSecondOrderCoeff_sub]
@@ -239,12 +252,7 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
             weightedLogSpotZerothOrderCoeff hα₁.le r'‖ ≤
         6 * (‖a - a'‖ + ‖r - r'‖) := by
     linarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
-  have heq (x y : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (hx : ∀ p, δ ≤ x p) :
-      (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht x y ⟨δ, hδ, hx⟩).symm.toContinuousLinearMap =
-      (realTerminalDataCLE hα₀ hα₁ ht (weightedLogSpotSecondOrderCoeff x)
-        (weightedLogSpotFirstOrderCoeff hα₁.le x y) (weightedLogSpotZerothOrderCoeff hα₁.le y)
-        ⟨δ, hδ, fun p ↦ by simp [hx p]⟩).symm.toContinuousLinearMap := rfl
-  rw [heq a r ha, heq a' r' ha']
+  rw [weightedLogSpotTerminalDataCLE_eq hδ ha, weightedLogSpotTerminalDataCLE_eq hδ ha']
   -- Bridge the instance diamond on `HolderSpace α (slab t₀ t₁) ℝ` between `Line`
   -- (`HolderSpace.instNormedAddCommGroup` / `HolderSpace.instNormedSpace`) and `Existence`
   -- (`HolderSpace.instNormedCommRing.toSeminormedAddCommGroup` / `instNormedSpaceReal`), which

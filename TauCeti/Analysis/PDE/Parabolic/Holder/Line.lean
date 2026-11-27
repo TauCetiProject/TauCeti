@@ -159,15 +159,7 @@ private theorem euclideanParabolicOperatorL_compSpatialL_coord (hα : α ≤ 1)
   rw [hA, hB, hC]
   ring
 
-/-- Data transport `(f, g) ↦ (f ∘ (x₀ × id), g ∘ x₀)` from `ℝ` to `ℝ¹`. -/
-private def dataCoordBridgeCLE (a b : ℝ) :
-    (HolderSpace α (slab (E := ℝ) a b) ℝ × CkHolderSpace 2 α ℝ ℝ) ≃L[ℝ]
-      (HolderSpace α (slab (E := EuclideanSpace ℝ (Fin 1)) a b) ℝ ×
-        CkHolderSpace 2 α (EuclideanSpace ℝ (Fin 1)) ℝ) :=
-  (HolderSpace.slabSpaceIsometryEquivLIE
-      coordLIE.toIsometryEquiv).toContinuousLinearEquiv.prodCongr
-    (CkHolderSpace.compLinearCLE coordLIE.toContinuousLinearEquiv)
-
+/-- Data transport `(f, g) ↦ (f ∘ (x₀ × id), g ∘ x₀)` from `ℝ` to `ℝ¹`, as a linear isometry. -/
 private def dataCoordBridgeLIE (a b : ℝ) :
     (HolderSpace α (slab (E := ℝ) a b) ℝ × CkHolderSpace 2 α ℝ ℝ) ≃ₗᵢ[ℝ]
       (HolderSpace α (slab (E := EuclideanSpace ℝ (Fin 1)) a b) ℝ ×
@@ -194,10 +186,10 @@ def realInitialDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
     (hA : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
     ParabolicC2HolderSpace α ℝ ℝ hT ≃L[ℝ]
       HolderSpace α (slab (E := ℝ) 0 T) ℝ × CkHolderSpace 2 α ℝ ℝ :=
-  (compSpatialCLE α ℝ hT coordLIE.toContinuousLinearEquiv).trans <|
+  (compSpatialLIE α ℝ hT coordLIE).toContinuousLinearEquiv.trans <|
     (euclideanInitialDataCLE hα₀ hα₁ hT (evalA A) (evalB B) (evalCoord C 1)
       (hA.elim fun lam h ↦ ⟨lam, h.1, ellipticity_evalCoord h.2⟩)).trans
-      (dataCoordBridgeCLE 0 T).symm
+      (dataCoordBridgeLIE 0 T).toContinuousLinearEquiv.symm
 
 section InitialDataEval
 
@@ -212,10 +204,16 @@ variable {hα₀ : 0 < α} {hα₁ : α < 1} {hT : (0 : ℝ) < T}
     realInitialDataCLE hα₀ hα₁ hT A B C hA u =
       (parabolicOperatorL hα₁.le A B C u,
         u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩) := by
-  apply (dataCoordBridgeCLE 0 T).injective
+  apply (dataCoordBridgeLIE 0 T).toContinuousLinearEquiv.injective
   rw [realInitialDataCLE, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
     ContinuousLinearEquiv.apply_symm_apply]
-  simp [dataCoordBridgeCLE, euclideanParabolicOperatorL_compSpatialL_coord]
+  refine Prod.ext ?_ ?_
+  · have hcoord : coordLIE.toLinearIsometry.toContinuousLinearMap =
+        (coordLIE.toContinuousLinearEquiv : EuclideanSpace ℝ (Fin 1) →L[ℝ] ℝ) := by
+      ext x; rfl
+    simpa [dataCoordBridgeLIE, hcoord] using
+      euclideanParabolicOperatorL_compSpatialL_coord hα₁.le A B C u
+  · simp [dataCoordBridgeLIE, spatialTrace_compSpatialL]
 
 /-- The inverse of `realInitialDataCLE` satisfies the forward PDE with forcing `d.1`. -/
 @[simp] theorem parabolicOperatorL_realInitialDataCLE_symm_apply
@@ -256,22 +254,14 @@ private theorem realInitialDataCLE_symm_eq {T : ℝ≥0} (hα₀ : 0 < α) (hα�
     (A : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
     (B : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
     (C : HolderSpace α (slab (E := ℝ) 0 T) (ℝ →L[ℝ] ℝ))
-    (hA : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
-    (realInitialDataCLE hα₀ hα₁ hT A B C hA).symm.toContinuousLinearMap =
+    {lam : ℝ} (hlam : 0 < lam) (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
+    (realInitialDataCLE hα₀ hα₁ hT A B C ⟨lam, hlam, hA⟩).symm.toContinuousLinearMap =
       ((compSpatialLIE α ℝ hT coordLIE).symm : _ →L[ℝ] _) ∘L
         (euclideanInitialDataCLE hα₀ hα₁ hT (evalA A) (evalB B) (evalCoord C 1)
-          (hA.elim fun lam h ↦ ⟨lam, h.1, ellipticity_evalCoord h.2⟩)).symm.toContinuousLinearMap ∘L
+          ⟨lam, hlam, ellipticity_evalCoord hA⟩).symm.toContinuousLinearMap ∘L
         (dataCoordBridgeLIE (α := α) 0 T : _ →L[ℝ] _) :=
   ContinuousLinearMap.ext fun d ↦ by
-    simp only [realInitialDataCLE, dataCoordBridgeCLE, dataCoordBridgeLIE,
-      ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
-      ContinuousLinearEquiv.prodCongr_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      LinearIsometryEquiv.prodCongr_apply, compSpatialCLE_symm_apply, compSpatialLIE_symm,
-      compSpatialLIE_apply, CkHolderSpace.compLinearCLE_apply, CkHolderSpace.compLinearLIE_apply]
-    rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
-      ← coordLIE.symm.toContinuousLinearMap_toLinearIsometry,
-      ← coordLIE.toContinuousLinearMap_toLinearIsometry]
+    simp [realInitialDataCLE]
 
 /-- **Uniform Schauder estimate for the initial-value problem on the line.** For `0 < α < 1`, an
 ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀`
@@ -290,7 +280,7 @@ theorem exists_norm_realInitialDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α < 
   obtain ⟨C, hC, hest⟩ :=
     exists_norm_euclideanInitialDataCLE_symm_le (ι := Fin 1) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun T hT hTT₀ A B C₀ hA hAk hBk hCk ↦ ?_⟩
-  rw [realInitialDataCLE_symm_eq,
+  rw [realInitialDataCLE_symm_eq hα₀ hα₁ hT A B C₀ hlam hA,
     ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   exact hest T hT hTT₀ _ _ _ (ellipticity_evalCoord hA)
@@ -326,16 +316,8 @@ theorem exists_norm_realInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : �
     (fun _ ↦ (norm_evalCoord_le B' ContinuousLinearMap.norm_id_le).trans hBk')
     ((norm_evalCoord_le C₀' norm_one.le).trans hCk')
   simp only [Finset.univ_unique, Finset.sum_singleton, evalCoord_sub] at hmid
-  have heq (X : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
-      (Y : HolderSpace α (slab (E := ℝ) 0 T) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
-      (Z : HolderSpace α (slab (E := ℝ) 0 T) (ℝ →L[ℝ] ℝ))
-      (hX : ∀ p, lam ≤ X p (ContinuousLinearMap.mul ℝ ℝ)) :
-      (euclideanInitialDataCLE hα₀ hα₁ hT (evalA X) (evalB Y) (evalCoord Z 1)
-        ((⟨lam, hlam, hX⟩ : ∃ l, 0 < l ∧ ∀ p, l ≤ X p (ContinuousLinearMap.mul ℝ ℝ)).elim
-          fun l h ↦ ⟨l, h.1, ellipticity_evalCoord h.2⟩)).symm.toContinuousLinearMap =
-      (euclideanInitialDataCLE hα₀ hα₁ hT (evalA X) (evalB Y) (evalCoord Z 1)
-        ⟨lam, hlam, ellipticity_evalCoord hX⟩).symm.toContinuousLinearMap := rfl
-  rw [realInitialDataCLE_symm_eq, realInitialDataCLE_symm_eq, heq A B C₀ hA, heq A' B' C₀' hA',
+  rw [realInitialDataCLE_symm_eq hα₀ hα₁ hT A B C₀ hlam hA,
+    realInitialDataCLE_symm_eq hα₀ hα₁ hT A' B' C₀' hlam hA',
     ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
     ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
@@ -348,7 +330,9 @@ theorem exists_norm_realInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : �
   -- Bridge the product-space topology/norm instance diamond on
   -- `HolderSpace α (slab 0 T) ℝ × CkHolderSpace 2 α (EuclideanSpace ℝ (Fin 1)) ℝ` between
   -- `Solvability` (`instTopologicalSpaceProd`) and `opNorm_comp_linearIsometryEquiv`
-  -- (uniform product topology), as in `exists_norm_euclideanTerminalDataCLE_symm_sub_le`.
+  -- (uniform product topology), as in
+  -- `TauCeti.ParabolicC2HolderSpace.exists_norm_euclideanTerminalDataCLE_symm_sub_le`
+  -- (`TauCeti/Analysis/PDE/Parabolic/Holder/Solvability.lean`).
   convert hmid.trans (mul_le_mul_of_nonneg_left hδ hC) using 1
 
 end InitialData
@@ -371,12 +355,8 @@ private abbrev revC2LIE (ht : t₀ < t₁) :
   timeReverseLIE (hab := ht) (a' := 0) (b' := (slabDuration ht : ℝ)) t₁ (sub_self t₁).symm
     (coe_slabDuration ht)
 
-private def terminalDataBridgeCLE (ht : t₀ < t₁) :
-    (HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) ≃L[ℝ]
-      (HolderSpace α (slab (E := ℝ) 0 (slabDuration ht)) ℝ × CkHolderSpace 2 α ℝ ℝ) :=
-  ((revHolderLIE (α := α) ht).toContinuousLinearEquiv.trans
-    (ContinuousLinearEquiv.neg ℝ)).prodCongr (ContinuousLinearEquiv.refl ℝ _)
-
+/-- Terminal-data transport `(f, g) ↦ (-f ∘ timeReverse, g)` from `[t₀, t₁]` to `[0, t₁ - t₀]`, as a
+linear isometry. -/
 private def terminalDataBridgeLIE (ht : t₀ < t₁) :
     (HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) ≃ₗᵢ[ℝ]
       (HolderSpace α (slab (E := ℝ) 0 (slabDuration ht)) ℝ × CkHolderSpace 2 α ℝ ℝ) :=
@@ -406,7 +386,7 @@ def realTerminalDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
     (realInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
       (revHolderLIE ht A) (revHolderLIE ht B) (revHolderLIE ht C)
       (hA.elim fun lam h ↦ ⟨lam, h.1, ellipticity_revHolder ht h.2⟩)).trans
-      (terminalDataBridgeCLE ht).symm
+      (terminalDataBridgeLIE ht).toContinuousLinearEquiv.symm
 
 section TerminalDataEval
 
@@ -421,16 +401,19 @@ variable {hα₀ : 0 < α} {hα₁ : α < 1} {ht : t₀ < t₁}
     realTerminalDataCLE hα₀ hα₁ ht A B C hA u =
       (backwardParabolicOperatorL hα₁.le A B C u,
         u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
-  apply (terminalDataBridgeCLE ht).injective
-  simp only [realTerminalDataCLE, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.apply_symm_apply, realInitialDataCLE_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, spatialTrace_timeReverseLIE_left,
-    terminalDataBridgeCLE, ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.neg_apply,
-    ContinuousLinearEquiv.refl_apply]
-  congr 1
-  simpa only [revHolderLIE, HolderSpace.slabTimeReverseLIE_eq_compLipschitzL] using
-    parabolicOperatorL_timeReverseLIE (T := t₁) (ha := (sub_self t₁).symm)
-      (hb := coe_slabDuration ht) hα₁.le u
+  apply (terminalDataBridgeLIE ht).toContinuousLinearEquiv.injective
+  rw [realTerminalDataCLE, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.apply_symm_apply]
+  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, realInitialDataCLE_apply,
+    terminalDataBridgeLIE, LinearIsometryEquiv.prodCongr_apply, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.coe_neg, LinearIsometryEquiv.coe_refl, id_eq, Prod.mk.injEq]
+  refine ⟨?_, ?_⟩
+  · simpa only [revHolderLIE, HolderSpace.slabTimeReverseLIE_eq_compLipschitzL] using
+      parabolicOperatorL_timeReverseLIE (T := t₁) (ha := (sub_self t₁).symm)
+        (hb := coe_slabDuration ht) hα₁.le u
+  · simpa only using
+      spatialTrace_timeReverseLIE_left (T := t₁) (ha := (sub_self t₁).symm)
+        (hb := coe_slabDuration ht) u
 
 /-- The underlying continuous linear map of `realTerminalDataCLE` is the product of the backward
 parabolic operator on the line and the terminal spatial trace. -/
@@ -485,17 +468,16 @@ private theorem realTerminalDataCLE_symm_eq (hα₀ : 0 < α) (hα₁ : α < 1) 
     (A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
     (B : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
     (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))
-    (hA : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
-    (realTerminalDataCLE hα₀ hα₁ ht A B C hA).symm.toContinuousLinearMap =
+    {lam : ℝ} (hlam : 0 < lam) (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
+    (realTerminalDataCLE hα₀ hα₁ ht A B C ⟨lam, hlam, hA⟩).symm.toContinuousLinearMap =
       ((revC2LIE (α := α) ht).symm :
           ParabolicC2HolderSpace α ℝ ℝ (slabDuration_pos ht) →L[ℝ] _) ∘L
         (realInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
           (revHolderLIE ht A) (revHolderLIE ht B) (revHolderLIE ht C)
-          (hA.elim fun lam h ↦
-            ⟨lam, h.1, ellipticity_revHolder ht h.2⟩)).symm.toContinuousLinearMap ∘L
+          ⟨lam, hlam, ellipticity_revHolder ht hA⟩).symm.toContinuousLinearMap ∘L
         (terminalDataBridgeLIE (α := α) ht : _ →L[ℝ] _) :=
   ContinuousLinearMap.ext fun d ↦ by
-    simp [realTerminalDataCLE, terminalDataBridgeCLE, terminalDataBridgeLIE]
+    simp [realTerminalDataCLE]
 
 /-- **Uniform Schauder estimate for the terminal-value problem on the line.** For `0 < α < 1`,
 an ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound
@@ -513,7 +495,7 @@ theorem exists_norm_realTerminalDataCLE_symm_le (hα₀ : 0 < α) (hα₁ : α <
           C := by
   obtain ⟨C, hC, hest⟩ := exists_norm_realInitialDataCLE_symm_le (α := α) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun {t₀ t₁} ht hTT₀ A B C₀ hA hAk hBk hCk ↦ ?_⟩
-  rw [realTerminalDataCLE_symm_eq,
+  rw [realTerminalDataCLE_symm_eq hα₀ hα₁ ht A B C₀ hlam hA,
     ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
   exact hest (slabDuration ht) (slabDuration_pos ht) (by exact_mod_cast hTT₀)
@@ -550,18 +532,8 @@ theorem exists_norm_realTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : 
     (((revHolderLIE ht).norm_map B').le.trans hBk')
     (((revHolderLIE ht).norm_map C₀').le.trans hCk')
   simp only [← map_sub, (revHolderLIE ht).norm_map] at hmid
-  have heq (X : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
-      (Y : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
-      (Z : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))
-      (hX : ∀ p, lam ≤ X p (ContinuousLinearMap.mul ℝ ℝ)) :
-      (realInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
-        (revHolderLIE ht X) (revHolderLIE ht Y) (revHolderLIE ht Z)
-        ((⟨lam, hlam, hX⟩ : ∃ l, 0 < l ∧ ∀ p, l ≤ X p (ContinuousLinearMap.mul ℝ ℝ)).elim
-          fun l h ↦ ⟨l, h.1, ellipticity_revHolder ht h.2⟩)).symm.toContinuousLinearMap =
-      (realInitialDataCLE hα₀ hα₁ (slabDuration_pos ht)
-        (revHolderLIE ht X) (revHolderLIE ht Y) (revHolderLIE ht Z)
-        ⟨lam, hlam, ellipticity_revHolder ht hX⟩).symm.toContinuousLinearMap := rfl
-  rw [realTerminalDataCLE_symm_eq, realTerminalDataCLE_symm_eq, heq A B C₀ hA, heq A' B' C₀' hA',
+  rw [realTerminalDataCLE_symm_eq hα₀ hα₁ ht A B C₀ hlam hA,
+    realTerminalDataCLE_symm_eq hα₀ hα₁ ht A' B' C₀' hlam hA',
     ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp,
     ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
