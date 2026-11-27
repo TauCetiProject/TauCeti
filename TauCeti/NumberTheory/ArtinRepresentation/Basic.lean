@@ -9,12 +9,13 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.RepresentationTheory.Continuous.Character
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.RepresentationTheory.Continuous.Character
 import TauCeti.RepresentationTheory.Continuous.Hom
+import TauCeti.RepresentationTheory.Continuous.Intertwining
 
 /-!
 # Artin representations of a field
@@ -37,10 +38,13 @@ On a finite-dimensional space continuity of the operators `g ↦ ρ g` is the sa
 continuity of the action `G_F × V → V`, so Artin representations are the same as Tau Ceti's
 jointly continuous representations `TauCeti.ContinuousRep G_F ℂ V`
 (`TauCeti.ArtinRep.toContinuousRep`, `TauCeti.ArtinRep.ofContinuousRep`). The character of an
-Artin representation is a continuous class function, constant on the cosets of the kernel.
+Artin representation is the continuous character `ContRepresentation.character` of the underlying
+continuous representation, so the class-function identities `ContRepresentation.character_one`,
+`ContRepresentation.character_mul_comm` and `ContRepresentation.character_conj` apply to it
+directly; it is moreover constant on the cosets of the kernel.
 Isomorphisms of Artin representations are Mathlib's `Representation.Equiv` of the underlying
 representations; in finite dimension their linear equivalences are automatically continuous
-(`TauCeti.ArtinRep.contEquivOfEquiv`), and they preserve characters
+(`ContRepresentation.equivOfEquiv`), and they preserve characters
 (`TauCeti.ArtinRep.character_eq_of_equiv`).
 
 ## Main definitions
@@ -53,15 +57,16 @@ representations; in finite dimension their linear equivalences are automatically
   the one-dimensional representation of a continuous linear character `G_F →ₜ* ℂˣ`.
 * `TauCeti.ArtinRep.toContinuousRep`, `TauCeti.ArtinRep.ofContinuousRep`: the comparison with
   jointly continuous representations.
-* `TauCeti.ArtinRep.character`: the character of an Artin representation.
+* `TauCeti.ArtinRep.character`: the character of an Artin representation, a continuous function
+  on `G_F`.
 
 ## Main results
 
 * `TauCeti.ArtinRep.isOpen_ker`: the kernel of an Artin representation is open, hence closed
   (`TauCeti.ArtinRep.isClosed_ker`) and of finite index.
 * `TauCeti.ArtinRep.finite_range`: an Artin representation has finitely many distinct operators.
-* `TauCeti.ArtinRep.continuous_character`, `TauCeti.ArtinRep.character_mul_of_mem_ker`: the
-  character is continuous and constant on the cosets of the kernel.
+* `TauCeti.ArtinRep.character_mul_of_mem_ker`: the character is constant on the cosets of the
+  kernel.
 
 ## References
 
@@ -308,83 +313,50 @@ theorem ker_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) :
     (ofLinearCharacter χ).ker = χ.ker := by
   rw [← ker_toRepresentation, toRepresentation_ofLinearCharacter,
     Representation.ker_ofLinearCharacter]
-  rfl
+  ext g
+  simp
 
 /-! ### The character -/
 
-/-- The character of an Artin representation: `g ↦ trace (ρ g)`. -/
-abbrev character (ρ : ArtinRep F V) : Field.absoluteGaloisGroup F → ℂ :=
-  ρ.toRepresentation.character
+/-- The character of an Artin representation: the continuous function `g ↦ trace (ρ g)` on the
+absolute Galois group, which is `ContRepresentation.character` of the underlying continuous
+representation. The lemmas `ContRepresentation.character_one`,
+`ContRepresentation.character_mul_comm` and `ContRepresentation.character_conj` apply to it
+directly. -/
+abbrev character (ρ : ArtinRep F V) : C(Field.absoluteGaloisGroup F, ℂ) :=
+  ρ.toContRepresentation.character ρ.continuous
 
 theorem character_apply (ρ : ArtinRep F V) (g : Field.absoluteGaloisGroup F) :
     ρ.character g = LinearMap.trace ℂ V (ρ g : V →ₗ[ℂ] V) :=
-  (rfl)
-
-/-- The character of an Artin representation at the identity is the dimension. -/
-theorem character_one (ρ : ArtinRep F V) : ρ.character 1 = Module.finrank ℂ V :=
-  Representation.char_one _
-
-/-- The character of an Artin representation is unchanged by transposing a product. -/
-theorem character_mul_comm (ρ : ArtinRep F V) (g h : Field.absoluteGaloisGroup F) :
-    ρ.character (h * g) = ρ.character (g * h) :=
-  Representation.char_mul_comm _ g h
-
-/-- The character of an Artin representation is a class function. -/
-theorem character_conj (ρ : ArtinRep F V) (g h : Field.absoluteGaloisGroup F) :
-    ρ.character (h * g * h⁻¹) = ρ.character g :=
-  Representation.char_conj _ g h
-
-/-- The character of an Artin representation is continuous for the Krull topology. -/
-theorem continuous_character (ρ : ArtinRep F V) : Continuous ρ.character := by
-  have := (ContRepresentation.character ρ.toContRepresentation ρ.continuous).continuous
-  rwa [ContRepresentation.coe_character] at this
+  ContRepresentation.character_apply _ _ g
 
 /-- The character of an Artin representation is constant on the cosets of its kernel. -/
 theorem character_mul_of_mem_ker (ρ : ArtinRep F V) (g : Field.absoluteGaloisGroup F)
     {k : Field.absoluteGaloisGroup F} (hk : k ∈ ρ.ker) : ρ.character (g * k) = ρ.character g := by
-  rw [← ker_toRepresentation, MonoidHom.mem_ker] at hk
-  simp only [Representation.character, map_mul, hk, mul_one]
+  rw [character_apply, character_apply, map_mul, mem_ker.mp hk, mul_one]
 
 /-- The character of an Artin representation on a zero space vanishes. -/
 theorem character_eq_zero_of_subsingleton [Subsingleton V] (ρ : ArtinRep F V) :
     ρ.character = 0 := by
   ext g
-  simp [character_apply, Subsingleton.elim (ρ g : V →ₗ[ℂ] V) 0]
+  simp [Subsingleton.elim (ρ g : V →ₗ[ℂ] V) 0]
 
-@[simp]
+/-- The character of the one-dimensional Artin representation of a linear character `χ` is `χ`.
+This is not a `simp` lemma: `simp` already unfolds the character to a trace with
+`ContRepresentation.character_apply`. -/
 theorem character_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
     (g : Field.absoluteGaloisGroup F) : (ofLinearCharacter χ).character g = χ g := by
-  rw [character, toRepresentation_ofLinearCharacter, Representation.char_ofLinearCharacter]
-  rfl
+  rw [character, ContRepresentation.coe_character, ← toRepresentation,
+    toRepresentation_ofLinearCharacter, Representation.char_ofLinearCharacter,
+    MonoidHom.coe_ofClass]
 
-/-! ### Isomorphisms -/
-
-section Equiv
-
-variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
-
-/-- An isomorphism of the underlying linear representations of two Artin representations is an
-isomorphism of continuous representations: in finite dimension the linear equivalence is
-automatically continuous. This is the explicit equivalence behind
-`ContRepresentation.nonempty_equiv_iff`. -/
-def contEquivOfEquiv {ρ : ArtinRep F V} {σ : ArtinRep F W}
-    (e : ρ.toRepresentation.Equiv σ.toRepresentation) :
-    ρ.toContRepresentation.Equiv σ.toContRepresentation :=
-  .mk e.toLinearEquiv.toContinuousLinearEquiv fun g ↦ ContinuousLinearMap.ext fun v ↦
-    Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g v
-
-@[simp]
-theorem contEquivOfEquiv_apply {ρ : ArtinRep F V} {σ : ArtinRep F W}
-    (e : ρ.toRepresentation.Equiv σ.toRepresentation) (v : V) :
-    contEquivOfEquiv e v = e v := by
-  simp [contEquivOfEquiv]
-
-/-- Isomorphic Artin representations have the same character. -/
-theorem character_eq_of_equiv {ρ : ArtinRep F V} {σ : ArtinRep F W}
+/-- Isomorphic Artin representations have the same character. The underlying continuous
+equivalence is `ContRepresentation.equivOfEquiv`. -/
+theorem character_eq_of_equiv {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    [FiniteDimensional ℂ W] {ρ : ArtinRep F V} {σ : ArtinRep F W}
     (e : ρ.toRepresentation.Equiv σ.toRepresentation) : ρ.character = σ.character :=
-  Representation.char_iso e
-
-end Equiv
+  ContinuousMap.coe_injective <| by
+    simpa only [ContRepresentation.coe_character] using Representation.char_iso e
 
 end ArtinRep
 

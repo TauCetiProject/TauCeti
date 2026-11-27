@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.Group.NoSmallSubgroups
 
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import TauCeti.Analysis.Normed.Algebra.NoSmallSubgroups
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Algebra.Group.Units
 
@@ -90,14 +91,6 @@ section NormedSpace
 
 variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Group G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-/-- The operator norm on `V →L[𝕜] V` is homogeneous for integer multiples, since `𝕜` is a normed
-`ℝ`-algebra. -/
-private theorem normSMulClass_int : NormSMulClass ℤ (V →L[𝕜] V) :=
-  let _ : NormedSpace ℝ (V →L[𝕜] V) := NormedSpace.restrictScalars ℝ 𝕜 (V →L[𝕜] V)
-  ⟨fun n a ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n a⟩
-
-attribute [local instance] normSMulClass_int
 
 /-- **Any group admitting an injective representation on a normed space, continuous at `1`, over a
 nontrivially normed field that is a normed `ℝ`-algebra has no small subgroups.** Neither continuity

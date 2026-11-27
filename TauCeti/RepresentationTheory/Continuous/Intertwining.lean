@@ -25,6 +25,8 @@ one.
   continuous one has the same values.
 * `ContRepresentation.intertwiningMapEquiv`: continuous intertwiners are linearly equivalent to
   algebraic intertwiners.
+* `ContRepresentation.equivOfEquiv`: an equivalence of the underlying algebraic representations of
+  finite-dimensional continuous representations is a continuous equivalence.
 * `ContRepresentation.nonempty_equiv_iff`: continuous and algebraic representation equivalence
   agree.
 * `Representation.toContRepresentation`: a representation on a finite-dimensional space as a
@@ -172,6 +174,19 @@ variable {𝕜 G V W : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜
   [ContinuousSMul 𝕜 W] [T2Space W]
   {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
 
+/-- An equivalence of the underlying algebraic representations of two continuous representations
+is a continuous equivalence: on a finite-dimensional Hausdorff space over a complete field the
+linear equivalence is automatically continuous. -/
+noncomputable def equivOfEquiv (φ : Representation.Equiv π.toRepresentation ρ.toRepresentation) :
+    _root_.ContRepresentation.Equiv π ρ :=
+  .mk φ.toLinearEquiv.toContinuousLinearEquiv fun g ↦
+    ContinuousLinearMap.ext (φ.toIntertwiningMap.isIntertwining _ _ g)
+
+@[simp]
+theorem equivOfEquiv_apply (φ : Representation.Equiv π.toRepresentation ρ.toRepresentation)
+    (v : V) : equivOfEquiv φ v = φ v :=
+  (rfl)
+
 /-- Two finite-dimensional Hausdorff continuous representations over a complete field are
 continuously equivalent exactly when their underlying algebraic representations are equivalent. -/
 theorem nonempty_equiv_iff :
@@ -179,8 +194,7 @@ theorem nonempty_equiv_iff :
       Nonempty (Representation.Equiv π.toRepresentation ρ.toRepresentation) :=
   ⟨fun ⟨φ⟩ ↦ ⟨.mk φ.toContinuousLinearEquiv.toLinearEquiv fun g ↦
       LinearMap.ext (φ.toContIntertwiningMap.isIntertwining g)⟩,
-    fun ⟨φ⟩ ↦ ⟨.mk φ.toLinearEquiv.toContinuousLinearEquiv fun g ↦
-      ContinuousLinearMap.ext (φ.toIntertwiningMap.isIntertwining _ _ g)⟩⟩
+    fun ⟨φ⟩ ↦ ⟨equivOfEquiv φ⟩⟩
 
 end Equivalence
 
