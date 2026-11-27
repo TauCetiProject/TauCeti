@@ -20,6 +20,8 @@ Checks for `TauCeti.lpKoopman`, the representation `π(g) f = f ∘ (g⁻¹ • 
 
 * the identity element fixes every class, and `π(g⁻¹) (π(g) f) = f`, including for the zero
   measure;
+* for the trivial action `g • x = x` of any group on any measure space, every `π(g)` is the
+  identity;
 * on `Fin 3` with counting measure, the cycle `0 → 1 → 2 → 0` (`finRotate 3`) sends the
   observable `(0, 1, 2)` to `(2, 0, 1)`; with the transposition `τ = (0 1)`,
   `π(c τ) f = π(c) (π(τ) f) = (2, 1, 0)`, while composing the other way round gives `(0, 2, 1)`,
@@ -55,6 +57,20 @@ example (g : G) (f : Lp ℂ p μ) : lpKoopman ℂ ℂ p μ hμ g⁻¹ (lpKoopman
   simpa using (lpKoopman ℂ ℂ p μ hμ).apply_inv_apply (g := g⁻¹) (v := f)
 
 end General
+
+section Trivial
+
+variable {G X : Type*} [Group G] [MeasurableSpace X] (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure X)
+
+/-- **Check.** For the trivial action of a group `G` on `X`, `g • x = x`, every `π(g)` is the
+identity of `Lᵖ(X, μ)`. -/
+theorem lpKoopman_trivial (g : G) :
+    letI : MulAction G X := MulAction.compHom X (1 : G →* Function.End X)
+    lpKoopman ℂ ℂ p μ (fun _ ↦ MeasurePreserving.id μ) g = 1 :=
+  letI : MulAction G X := MulAction.compHom X (1 : G →* Function.End X)
+  lpKoopman_eq_one_of_forall_smul_eq (fun _ _ ↦ by simp [MulAction.compHom_smul_def]) g
+
+end Trivial
 
 section FinThree
 

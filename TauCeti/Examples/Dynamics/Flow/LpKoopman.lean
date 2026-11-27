@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Flow.LpKoopman
-public import TauCeti.Topology.Instances.AddCircle.Flow
+public import TauCeti.MeasureTheory.Measure.AddCircle
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Checks: the `Lᵖ` pullback representation of the circle translations
@@ -18,9 +17,6 @@ For `ℝ` acting on `UnitAddCircle` by the unit-speed flow `t +ᵥ x = x + t`
 
 * `‖π(t) f - f‖_p → 0` as `t → 0` for every `1 ≤ p < ∞`, in particular for `p = 2`;
 * `‖π(t) f - f‖_∞ = 1` for `0 < |t| < 1/2`, so the orbit is not continuous in `L^∞`.
-
-For a trivial action, `π(g) = 1` for every `g` (`TauCeti.lpKoopman_eq_one_of_forall_smul_eq`); this
-is checked on the trivial action of any group on any measure space.
 -/
 
 public section
@@ -30,31 +26,7 @@ open scoped ENNReal symmDiff
 
 namespace TauCeti.Examples.FlowLpKoopman
 
-/-! ### The trivial action -/
-
-section Trivial
-
-variable {G X : Type*} [Group G] [MeasurableSpace X] (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : Measure X)
-
-/-- **Check.** For the trivial action of a group `G` on `X`, `g • x = x`, every `π(g)` is the
-identity of `Lᵖ(X, μ)`. -/
-theorem lpKoopman_trivial (g : G) :
-    letI : MulAction G X := MulAction.compHom X (1 : G →* Function.End X)
-    lpKoopman ℂ ℂ p μ (fun _ ↦ MeasurePreserving.id μ) g = 1 :=
-  letI : MulAction G X := MulAction.compHom X (1 : G →* Function.End X)
-  lpKoopman_eq_one_of_forall_smul_eq (fun _ _ ↦ rfl) g
-
-end Trivial
-
 /-! ### The circle translations -/
-
-/-- The unit-speed flow on the circle preserves the Haar measure. -/
-theorem measurePreserving_translationFlow (t : ℝ) :
-    MeasurePreserving (AddCircle.translationFlow (1 : ℝ) t) volume volume := by
-  have h : AddCircle.translationFlow (1 : ℝ) t = (· + (t : UnitAddCircle)) :=
-    funext fun x ↦ AddCircle.translationFlow_apply 1 t x
-  rw [h]
-  exact measurePreserving_add_right volume _
 
 /-- The arc `[0, 1/2)` of the circle. -/
 noncomputable def halfArc : Set UnitAddCircle := ((↑) : ℝ → UnitAddCircle) '' Ico 0 (1 / 2)
@@ -79,7 +51,8 @@ noncomputable abbrev halfArcLp (p : ℝ≥0∞) :
 /-- The pullback representation of the unit-speed flow on `Lᵖ(UnitAddCircle)`. -/
 noncomputable abbrev circleKoopman (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     ContRepresentation ℂ (Multiplicative ℝ) (Lp ℂ p (volume : Measure UnitAddCircle)) :=
-  Flow.lpKoopman ℂ ℂ p volume (AddCircle.translationFlow 1) measurePreserving_translationFlow
+  Flow.lpKoopman ℂ ℂ p volume (AddCircle.translationFlow 1)
+    (AddCircle.measurePreserving_translationFlow (volume : Measure UnitAddCircle))
 
 /-- **Check.** For `1 ≤ p < ∞`, in particular `p = 2`, `‖π(t) 1_[0,1/2) - 1_[0,1/2)‖_p → 0` as
 `t → 0`. -/
@@ -87,7 +60,8 @@ theorem tendsto_circleKoopman_halfArc (p : ℝ≥0∞) [Fact (1 ≤ p)] (hp : p 
     Tendsto (fun t : ℝ ↦ ‖circleKoopman p (Multiplicative.ofAdd t) (halfArcLp p) - halfArcLp p‖)
       (𝓝 0) (𝓝 0) := by
   have h := (Flow.continuous_lpKoopman_apply hp (halfArcLp p)
-    (ϕ := AddCircle.translationFlow 1) (hϕ := measurePreserving_translationFlow)
+    (ϕ := AddCircle.translationFlow 1)
+    (hϕ := AddCircle.measurePreserving_translationFlow (volume : Measure UnitAddCircle))
     (𝕜 := ℂ)).tendsto 0
   rw [ofAdd_zero, map_one, one_apply_eq_self] at h
   simpa using (tendsto_iff_norm_sub_tendsto_zero.1 h)
@@ -123,7 +97,8 @@ theorem norm_circleKoopman_halfArc_sub_top_of_abs_lt {t : ℝ} (ht₀ : t ≠ 0)
     have hinv : U (Multiplicative.ofAdd (-t)) (U (Multiplicative.ofAdd t) f) = f := by
       rw [← mul_apply_eq_comp, ← Flow.lpKoopman_add, neg_add_cancel, Flow.lpKoopman_zero,
         one_apply_eq_self]
-    rw [← Flow.norm_lpKoopman_apply (𝕜 := ℂ) (hϕ := measurePreserving_translationFlow)
+    rw [← Flow.norm_lpKoopman_apply (𝕜 := ℂ)
+      (hϕ := AddCircle.measurePreserving_translationFlow (volume : Measure UnitAddCircle))
       (Multiplicative.ofAdd (-t)), map_sub, hinv, norm_sub_rev]
     exact norm_circleKoopman_halfArc_sub_top (by linarith)
       (by rw [abs_of_neg h] at ht; linarith)
