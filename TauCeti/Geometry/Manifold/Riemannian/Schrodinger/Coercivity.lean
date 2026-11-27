@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 

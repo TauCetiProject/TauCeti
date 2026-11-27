@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.Differen
 public import TauCeti.Analysis.Complex.EquivRealProd
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.StdComplexLine
 import TauCeti.Topology.Codiscrete
 
 /-!
@@ -451,14 +452,12 @@ theorem eqOn_of_floerOperator_eq_zero_of_eqOn (hΩ : IsOpen Ω) (hΩc : IsPrecon
     (hv : ContDiffOn ℝ 1 v Ω) (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
     (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn u v U) : EqOn u v Ω := by
-  obtain ⟨hΩ', hΩc', hJ', hξ', hb⟩ :=
-    floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
-  set e := Complex.equivRealProdCLM
-  obtain ⟨z₁, hz₁⟩ := hUne
   have h : EqOn (u - v) 0 Ω :=
-    (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw) hξ' hb
-      (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
-      fun w hw ↦ sub_eq_zero.2 (h₀ hw)).cancel_right e.surjective.surjOn_preimage
+    eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_fderiv_le hΩ hΩc (contDiffOn_comp_graph hJ hu)
+      hJJ (hu.sub hv)
+      (fun z hz h ↦ exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hz (hJ z hz) (hKs z hz)
+        (hKt z hz) hu hv hFu hFv (sub_eq_zero.1 h)) hU hUne hUΩ
+      fun z hz ↦ sub_eq_zero.2 (h₀ hz)
   exact fun z hz ↦ sub_eq_zero.1 (h hz)
 
 /-- **Unique continuation from a coincidence of infinite order for Floer solutions.** Let `J` be
@@ -496,15 +495,12 @@ theorem setOf_ne_mem_codiscreteWithin_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
     (hv : ContDiffOn ℝ 1 v Ω) (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
     (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) (hne : ∃ z ∈ Ω, u z ≠ v z) :
     {z | u z ≠ v z} ∈ codiscreteWithin Ω := by
-  obtain ⟨hΩ', hΩc', hJ', hξ', hb⟩ :=
-    floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
-  set e := Complex.equivRealProdCLM
-  obtain ⟨z₁, hz₁, hne₁⟩ := hne
-  have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_le hΩ' hΩc' hJ'
-    (fun w hw ↦ hJJ (e w) hw) hξ' hb
-    ⟨e.symm z₁, by simpa using hz₁, by simpa [sub_eq_zero] using hne₁⟩
   simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using
-    (e.toHomeomorph.preimage_mem_codiscreteWithin (s := {z | (u - v) z ≠ 0})).1 h
+    setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_fderiv_le hΩ hΩc
+      (contDiffOn_comp_graph hJ hu) hJJ (hu.sub hv)
+      (fun z hz h ↦ exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hz (hJ z hz) (hKs z hz)
+        (hKt z hz) hu hv hFu hFv (sub_eq_zero.1 h))
+      (by simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using hne)
 
 end Solutions
 

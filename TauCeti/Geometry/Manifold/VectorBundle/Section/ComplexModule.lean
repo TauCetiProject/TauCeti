@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.LinearAlgebra.Complex.Module
+public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import Mathlib.Geometry.Manifold.BumpFunction
 
 /-!
@@ -33,8 +34,11 @@ real bundle `E`, the real and imaginary parts of `(u + i v) • σ` are `u Re σ
 (`ContMDiffSection.smul_function_oneTmulLinearMap_of_normedAlgebra`). The identification of
 `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` intertwines the real function actions.
 
-An operator between sections of complex bundles which is `A_ℂ`-linear is local: `P s` vanishes
-near every point near which `s` vanishes (`TauCeti.apply_eq_zero_of_map_smul`).
+A complex differential operator between sections of complex bundles, of finite order in
+Grothendieck's sense for commutators with multiplication by elements of `A_ℂ`, is local: `P s`
+vanishes near every point near which `s` vanishes
+(`TauCeti.complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq`). In particular an
+`A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`).
 
 ## References
 
@@ -190,10 +194,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 open scoped Topology
 
-/-- An operator between sections of complex bundles which is linear over the complex-valued smooth
-functions is local: `P s` vanishes at every point near which `s` vanishes. -/
-theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
-    (hP : ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s)
+/-- **Complex differential operators between sections are local.** A complex-linear operator
+`P : Γ(V) → Γ(W)` between sections of complex bundles which is a differential operator of order at
+most `m` in Grothendieck's sense, for commutators with multiplication by complex-valued smooth
+functions, is local: `P s` vanishes at every point near which `s` vanishes. -/
+theorem complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq {m : ℕ}
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
     {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
     P s x = 0 := by
   -- A bump function `ρ` at `x` supported where `s = 0` has `ρ s = 0` and `ρ(x) = 1`.
@@ -206,7 +213,26 @@ theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^�
     by_cases hy : ρ y = 0
     · simp [hg, hy]
     · simp [show s y = 0 from hρ hy]
-  have hx := congrArg (· x) (hP g s)
-  simpa [hgs, hg, ρ.eq_one] using hx.symm
+  -- `0 = P (g s) = [P, g] s + g P s`, and the commutator `[P, g]` has lower order, so it vanishes
+  -- at `x` by induction, while `g x = 1`.
+  induction m generalizing P with
+  | zero =>
+    have hx := congrArg (· x) (mem_differentialOperators_zero_iff.1 hP g s)
+    simpa [hgs, hg, ρ.eq_one] using hx.symm
+  | succ m ih =>
+    have hx := congrArg (· x) (apply_smul_eq_smulCommutator_add g P s)
+    simp only [hgs, map_zero, ContMDiffSection.coe_add, Pi.add_apply,
+      ContMDiffSection.smul_apply_of_normedAlgebra, hg, ρ.eq_one,
+      ih (smulCommutator_mem_differentialOperators hP g)] at hx
+    simpa using hx.symm
+
+/-- An operator between sections of complex bundles which is linear over the complex-valued smooth
+functions is local: `P s` vanishes at every point near which `s` vanishes. -/
+theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^∞⟮I; F', W⟯}
+    (hP : ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s)
+    {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
+    P s x = 0 :=
+  complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq (m := 0)
+    (mem_differentialOperators_zero_iff.2 hP) hs
 
 end TauCeti

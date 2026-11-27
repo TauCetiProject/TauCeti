@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Maps.Strict.Basic
 public import TauCeti.RingTheory.Ideal.ArtinRees
 public import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
+import TauCeti.Topology.Discrete
 
 /-!
 # Adic topologies on modules
@@ -17,6 +18,10 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 For an ideal `I` of a commutative ring, every linear map is continuous for the `I`-adic
 module topologies, and every surjective linear map is an open quotient map. These assertions
 need neither finite generation nor completeness.
+
+The topology is also the initial topology of the discrete reductions `M / I^n M`, and the
+reduction maps are open quotient maps. Thus continuity into an adic module can be checked on
+its discrete reductions, and continuous actions can be descended to those reductions.
 
 Whenever a submodule `P` of a module `M` satisfies an Artin–Rees bound
 `∃ k, ∀ n, P ⊓ (I ^ (n + k) • ⊤) ≤ I ^ n • P` — for instance when `R` is noetherian and `M` is
@@ -49,6 +54,53 @@ theorem hasBasis_nhds_zero_adicModule (I : Ideal R) :
       (fun n ↦ (↑(I ^ n • (⊤ : Submodule R M)) : Set M)) := by
   let := I.adicTopology
   exact (I.ringFilterBasis.submodulesBasisIsBasis (I.adic_module_basis M)).hasBasis_nhds_zero
+
+/-- The cosets `x + I^n M` form a neighbourhood basis at `x` for the adic module topology. -/
+theorem hasBasis_nhds_adicModule (I : Ideal R) (x : M) :
+    (@nhds M (I.adicModuleTopology M) x).HasBasis (fun _ : ℕ ↦ True)
+      (fun n ↦ (fun y ↦ x + y) '' ((I ^ n • ⊤ : Submodule R M) : Set M)) := by
+  let := I.adicTopology
+  let := I.adicModuleTopology M
+  have h := (I.hasBasis_nhds_zero_adicModule (M := M)).map (fun y ↦ x + y)
+  rwa [map_add_left_nhds_zero x] at h
+
+/-- The adic module topology is the initial topology of the reductions modulo `I^n M`,
+each given the discrete topology. No completeness or finiteness assumption is needed. -/
+theorem adicModuleTopology_eq_iInf_induced (I : Ideal R) :
+    I.adicModuleTopology M = ⨅ n : ℕ,
+      TopologicalSpace.induced (I ^ n • (⊤ : Submodule R M)).mkQ ⊥ := by
+  have hfiber (n : ℕ) (x : M) :
+      (I ^ n • (⊤ : Submodule R M)).mkQ ⁻¹'
+          {(I ^ n • (⊤ : Submodule R M)).mkQ x} =
+        (fun y ↦ x + y) '' ((I ^ n • ⊤ : Submodule R M) : Set M) := by
+    ext y
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Submodule.mkQ_apply,
+      Submodule.Quotient.eq, Set.mem_image, SetLike.mem_coe]
+    refine ⟨fun h ↦ ⟨y - x, h, by simp⟩, ?_⟩
+    rintro ⟨z, hz, rfl⟩
+    simpa using hz
+  refine TopologicalSpace.ext_nhds fun x ↦ ?_
+  rw [nhds_iInf]
+  simp only [TauCeti.nhds_induced_bot, hfiber]
+  refine le_antisymm (le_iInf fun n ↦ le_principal_iff.mpr
+    ((I.hasBasis_nhds_adicModule x).mem_of_mem (i := n) trivial)) ?_
+  exact (I.hasBasis_nhds_adicModule x).ge_iff.mpr fun n _ ↦
+    mem_iInf_of_mem n (mem_principal.mpr Set.Subset.rfl)
+
+/-- Reduction modulo `I^n M` is an open quotient map from the adic module to the discrete
+quotient. This also applies when the module is not complete or separated. -/
+theorem isOpenQuotientMap_mkQ_pow_smul_top (I : Ideal R) (n : ℕ) :
+    @IsOpenQuotientMap M (M ⧸ (I ^ n • (⊤ : Submodule R M)))
+      (I.adicModuleTopology M) ⊥ (I ^ n • (⊤ : Submodule R M)).mkQ := by
+  let := I.adicTopology
+  let := I.adicModuleTopology M
+  have hopen : IsOpen ((I ^ n • ⊤ : Submodule R M) : Set M) :=
+    AddSubgroup.isOpen_of_mem_nhds (I ^ n • (⊤ : Submodule R M)).toAddSubgroup
+      ((I.hasBasis_nhds_zero_adicModule (M := M)).mem_of_mem (i := n) trivial)
+  have : DiscreteTopology (M ⧸ (I ^ n • (⊤ : Submodule R M))) :=
+    QuotientAddGroup.discreteTopology_iff.mpr hopen
+  exact DiscreteTopology.eq_bot (α := M ⧸ (I ^ n • (⊤ : Submodule R M))) ▸
+    (I ^ n • (⊤ : Submodule R M)).isOpenQuotientMap_mkQ
 
 end Ideal
 

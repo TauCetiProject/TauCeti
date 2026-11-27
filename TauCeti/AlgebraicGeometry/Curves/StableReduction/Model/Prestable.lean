@@ -30,6 +30,8 @@ exactly when it is proper and `C` and the special fibre are prestable curves.
   when its generic curve and its special fibre are.
 * `TauCeti.Model.prestableFamily_toBase_iff`: a model is prestable exactly when it is proper and
   its generic curve and its special fibre are prestable.
+* `TauCeti.Model.prestableFamily_toBase_iff_atWorstNodal`: a proper model of a prestable curve is
+  prestable exactly when its special fibre is geometrically connected and at worst nodal.
 
 ## References
 
@@ -74,6 +76,22 @@ theorem prestableFamily_toBase_iff (M : Model R K C toK) :
     MorphismProperty.over_iso_iff @AlgebraicGeometry.PrestableFamily M.genericFiberIso]
   exact ⟨fun h ↦ ⟨h.1, h.2.2.2⟩,
     fun h ↦ ⟨h.1, M.flat, M.locallyOfFinitePresentation, h.2⟩⟩
+
+/-- A proper model of a prestable curve over a discrete valuation ring is a prestable model
+exactly when its special fibre is geometrically connected and at worst nodal of relative
+dimension one. -/
+theorem prestableFamily_toBase_iff_atWorstNodal (M : Model R K C toK) [M.IsProper]
+    [AlgebraicGeometry.PrestableFamily toK] :
+    AlgebraicGeometry.PrestableFamily M.toBase ↔
+      GeometricallyConnected (specialFiber R M.toBase).hom ∧
+        AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom := by
+  rw [M.prestableFamily_toBase_iff]
+  refine ⟨fun ⟨_, _, h⟩ ↦ ⟨inferInstance, h.atWorstNodalOfRelativeDimensionOne⟩,
+    fun ⟨_, h⟩ ↦ ⟨‹_›, ‹_›, ?_⟩⟩
+  have : AlgebraicGeometry.IsProper (specialFiber R M.toBase).hom :=
+    MorphismProperty.of_isPullback (P := @AlgebraicGeometry.IsProper)
+      (isPullback_specialFiber R M.toBase) inferInstance
+  exact { atWorstNodalOfRelativeDimensionOne := h }
 
 end Model
 

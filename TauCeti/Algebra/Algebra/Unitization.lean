@@ -39,6 +39,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.mul_inr`, `Unitization.inr_mul_eq_inr`: `A` is a two-sided ideal of
   `Unitization R A`.
 * `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
+* `Unitization.instModuleMulOpposite`: `A` is a right `Unitization R A`-module, by
+  `a • x = x.fst • a + a * x.snd` (`Unitization.inr_op_smul`).
 * `Unitization.conjStar`: the element `u * x * star u` of `A`, for `u` in the unitization and
   `x : A`, with `Unitization.inr_conjStar`, `Unitization.conjStar_mul`,
   `Unitization.conjStar_smul`, `Unitization.star_conjStar`, `IsSelfAdjoint.conjStar` and
@@ -95,6 +97,36 @@ theorem inr_mul_eq_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring
 theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :
     (inr w.snd : Unitization R A) = w :=
   Unitization.ext (by simp [h]) rfl
+
+section RightModule
+
+variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+
+/-- The right action of the unitization on `A`, `a • x = x.fst • a + a * x.snd`: right
+multiplication on the right ideal `A` of `Unitization R A`. -/
+instance instSMulMulOpposite : SMul (Unitization R A)ᵐᵒᵖ A where
+  smul x a := x.unop.fst • a + a * x.unop.snd
+
+theorem op_smul_eq (x : Unitization R A) (a : A) :
+    MulOpposite.op x • a = x.fst • a + a * x.snd :=
+  rfl
+
+/-- The right action of `x` on `A` is right multiplication by `x` in the unitization. -/
+theorem inr_op_smul (x : Unitization R A) (a : A) :
+    (inr (MulOpposite.op x • a) : Unitization R A) = inr a * x :=
+  (inr_mul_eq_inr a x).symm
+
+@[simp]
+theorem op_inr_smul (a b : A) : MulOpposite.op (inr b : Unitization R A) • a = a * b := by
+  simp [op_smul_eq]
+
+variable [IsScalarTower R A A] [SMulCommClass R A A]
+
+/-- A nonunital algebra `A` is a right module over its unitization. -/
+instance instModuleMulOpposite : Module (Unitization R A)ᵐᵒᵖ A :=
+  inr_injective.module _ (inrHom R R A).toAddMonoidHom fun x a ↦ inr_op_smul x.unop a
+
+end RightModule
 
 section ConjStar
 

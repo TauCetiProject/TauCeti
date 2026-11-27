@@ -65,6 +65,11 @@ theorem holderOnWith_iteratedFDeriv_zero_iff {f : E → F} {s : Set E} {H α : �
   simp only [holderOnWith_iff_dist_le, iteratedFDeriv_zero_eq_comp,
     Function.comp_apply, LinearIsometryEquiv.dist_map]
 
+/-- The first derivative field has the same Hölder constant as the derivative. -/
+theorem holderOnWith_iteratedFDeriv_one_iff {f : E → F} {s : Set E} {H α : ℝ≥0} :
+    HolderOnWith H α (iteratedFDeriv ℝ 1 f) s ↔ HolderOnWith H α (fderiv ℝ f) s :=
+  holderOnWith_iteratedFDeriv_succ_iff.trans holderOnWith_iteratedFDeriv_zero_iff
+
 /-- On a convex open set, a derivative field below the top order whose next derivative is
 bounded by `L` is `L`-Lipschitz. -/
 theorem _root_.ContDiffOn.lipschitzOnWith_iteratedFDeriv {k j : ℕ} {s : Set E} {f : E → F}

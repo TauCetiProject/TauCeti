@@ -62,8 +62,8 @@ coefficients are `ULift ℤ`, as for the Euler class.
 The determinant line `TauCeti.DetBundle ℂ F E` has model fibre `ℂ : Type`, while Euler classes ask
 for the base, the fibres and the model fibre to lie in a common universe. So
 `TauCeti.firstChernClass` is stated for bases and fibres in `Type`; the model fibre `F` of `E` is
-arbitrary. Its naturality under bundle maps compares bundles with the same model fibre, as
-`TauCeti.DetBundle.congrHomeomorph` does.
+arbitrary. Its naturality under bundle maps compares bundles with arbitrary model fibres, through
+the determinant transport `TauCeti.DetBundle.congrModelHomeomorph`.
 
 ## Main definitions
 
@@ -146,35 +146,36 @@ variable {F E}
 section BaseMap
 
 variable {B' : Type} [TopologicalSpace B']
-  {E' : B' → Type} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommGroup (E' b)]
-  [∀ b, Module ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℂ F E']
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [FiniteDimensional ℂ F']
+  {E' : B' → Type} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommGroup (E' b)]
+  [∀ b, Module ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℂ F' E']
 
 /-- **Naturality of the first Chern class under complex-linear bundle maps.** For a fibrewise
 complex-linear isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over a continuous map `g : B' → B`,
-continuous on total spaces, between complex vector bundles with the same model fibre,
+continuous on total spaces, between complex vector bundles with model fibres `F'` and `F`,
 `c₁(E') = g^* c₁(E)`. -/
 theorem firstChernClass_eq_singularCohomologyMap_of_fiberwise {g : C(B', B)}
     {φ : ∀ b', E' b' ≃L[ℂ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
-    firstChernClass F E' =
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
+    firstChernClass F' E' =
       TopCat.singularCohomologyMap (TopCat.ofHom g) 2 (firstChernClass F E) := by
   rw [firstChernClass_def, firstChernClass_def, lineFirstChernClass_def, lineFirstChernClass_def]
   -- `φ` is a fibrewise isomorphism `E' ≃ g^* E` over `B'`, continuous on total spaces.
   let φ' : ∀ b', E' b' ≃L[ℂ] ((⇑g) *ᵖ E) b' := φ
-  have hφ' : Continuous fun v : TotalSpace F E' ↦
+  have hφ' : Continuous fun v : TotalSpace F' E' ↦
       (⟨v.proj, φ' v.proj v.snd⟩ : TotalSpace F ((⇑g) *ᵖ E)) :=
     (inducing_pullbackTotalSpaceEmbedding F E g).continuous_iff.2
-      ((FiberBundle.continuous_proj F E').prodMk hφ)
+      ((FiberBundle.continuous_proj F' E').prodMk hφ)
   -- On determinant lines it induces `det E' ≃ det (g^* E) ≃ g^* det E`, followed by the
   -- projection of the pullback to `det E`.
   refine complexEulerClass_eq_singularCohomologyMap_of_fiberwise (finrank_self ℂ)
-    (finrank_self ℂ) (φ := fun b' ↦ (DetBundle.congrEquiv (F := F) φ' b').trans
+    (finrank_self ℂ) (φ := fun b' ↦ (DetBundle.congrModelEquiv (F₁ := F') (F' := F) φ' b').trans
       (DetBundle.pullbackEquiv (⇑g) b').symm) ?_
   refine ((Pullback.continuous_lift ℂ (DetBundle ℂ F E) (⇑g)).comp
     ((DetBundle.pullbackHomeomorph (F := F) (E := E) g).symm.continuous.comp
-      (DetBundle.congrHomeomorph φ' hφ').continuous)).congr fun v ↦ ?_
+      (DetBundle.congrModelHomeomorph φ' hφ').continuous)).congr fun v ↦ ?_
   rw [Function.comp_apply, Function.comp_apply, DetBundle.pullbackHomeomorph_symm_apply,
-    DetBundle.congrHomeomorph_apply]
+    DetBundle.congrModelHomeomorph_apply]
   -- Pullback fibres are aliases: `(g^* det E)_{b'}` is `det E_{g b'}`, and `Pullback.lift` is the
   -- identity on them, which the pullback rewriting lemmas cannot state at the alias type.
   rfl
@@ -191,13 +192,14 @@ end BaseMap
 
 /-- **Isomorphic complex vector bundles have the same first Chern class.** For a fibrewise
 complex-linear isomorphism `φ b : E'_b ≃ E_b`, continuous on total spaces, between complex vector
-bundles with the same model fibre, `c₁(E') = c₁(E)`. -/
+bundles with model fibres `F'` and `F`, `c₁(E') = c₁(E)`. -/
 theorem firstChernClass_eq_of_fiberwise
-    {E' : B → Type} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommGroup (E' b)]
-    [∀ b, Module ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] [VectorBundle ℂ F E']
-    {φ : ∀ b, E' b ≃L[ℂ] E b}
-    (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd)) :
-    firstChernClass F E' = firstChernClass F E :=
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [FiniteDimensional ℂ F']
+    {E' : B → Type} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommGroup (E' b)]
+    [∀ b, Module ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E']
+    [VectorBundle ℂ F' E'] {φ : ∀ b, E' b ≃L[ℂ] E b}
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd)) :
+    firstChernClass F' E' = firstChernClass F E :=
   (firstChernClass_eq_singularCohomologyMap_of_fiberwise (g := ContinuousMap.id B) hφ).trans
     (CategoryTheory.ConcreteCategory.congr_hom (TopCat.singularCohomologyMap_id _ _) _)
 
