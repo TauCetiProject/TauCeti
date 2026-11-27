@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+public import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.SpecificLimits.ZPow
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 
 /-!
 # The homogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -73,6 +77,8 @@ inequalities on annuli apply.
   block lies in its dyadic annulus.
 * `TemperedDistribution.homogeneousLittlewoodPaleyBlock_eq_of_isVanishingOn_fourier_sub`: the
   blocks see a distribution only modulo distributions with spectrum at the origin.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_comm`: the blocks of two bump functions
+  commute.
 * `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero`: almost
   orthogonality, also between the blocks of two bump functions, and
   `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico`: the blocks of a second
@@ -83,6 +89,16 @@ inequalities on annuli apply.
   inequality `‖Pⱼ u‖_r ≤ C 2^{jn(1/p - 1/r)} ‖Pⱼ u‖_p` for `p ≤ r`, and
   `TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le_mul_rpow`: the
   truncation at scale `R` of an `Lᵖ` function is `O(R ^ (n / p))` in `L^∞`.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range`: a block
+  `Pⱼ` with `2^j φ.rOut ≤ 2^N φ.rIn` only sees the inhomogeneous blocks `Δₖ`, `k ≤ N`, and
+  `TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos`: if the
+  inhomogeneous blocks of `u` are `Lᵖ` functions, its blocks `Pⱼ u`, `j ≤ 0`, are bounded in `Lᵖ`.
+* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution`: on `L²` the block
+  `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`.
+* `TemperedDistribution.exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock`:
+  almost orthogonality on `L²`, an `L²` function `Pⱼ v` has no block `Pₖ` with `|k - j| ≥ L`.
+* `exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock`: the same in
+  mixed norms, with the bound `‖Pₖ x‖_{L^p_α L^r} ≤ K ‖x‖_{L^p_α L^r}` on every block.
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_two_zpow_atTop`: `Sᵦ u → u` as `b → ∞`.
 * `TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_iff`: the homogeneous
   reconstruction holds exactly when `Sₐ u → 0` as `a → -∞`, and
@@ -106,7 +122,7 @@ public section
 
 open Filter Topology MeasureTheory
 open FourierTransform Distribution
-open scoped SchwartzMap LineDeriv ENNReal
+open scoped SchwartzMap LineDeriv ENNReal NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -226,6 +242,17 @@ theorem homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock
   funext ξ
   simp [mul_comm]
 
+/-- **The homogeneous blocks commute.** For two bump functions `φ` and `φ'`, `Pⱼ P'ₖ u = P'ₖ Pⱼ u`,
+where `P` and `P'` are the homogeneous blocks built from `φ` and `φ'`. -/
+theorem homogeneousLittlewoodPaleyBlock_comm (φ' : ContDiffBump (0 : E)) (j k : ℤ)
+    (u : 𝓢'(E, F)) :
+    homogeneousLittlewoodPaleyBlock F φ j (homogeneousLittlewoodPaleyBlock F φ' k u) =
+      homogeneousLittlewoodPaleyBlock F φ' k (homogeneousLittlewoodPaleyBlock F φ j u) := by
+  have h : homogeneousLittlewoodPaleyBlock F φ j ∘L homogeneousLittlewoodPaleyBlock F φ' k =
+      homogeneousLittlewoodPaleyBlock F φ' k ∘L homogeneousLittlewoodPaleyBlock F φ j := by
+    simp_rw [homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock, mul_comm]
+  exact congr($h u)
+
 /-- **Almost orthogonality of the homogeneous blocks.** For two bump functions `φ` and `φ'`,
 there is `L` such that `Pⱼ P'ₖ = P'ₖ Pⱼ = 0` whenever `j + L ≤ k`, where `P` and `P'` are the
 homogeneous blocks built from `φ` and `φ'`. -/
@@ -240,6 +267,26 @@ theorem exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump
   · simp_rw [homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock,
       mul_comm _ (φ.littlewoodPaley j _), hL j k hjk, Complex.ofReal_zero,
       fourierMultiplierCLM_const, zero_smul]
+
+/-- **The low-frequency blocks see only the low frequencies.** If the cutoff `ψⱼ` is carried by
+the ball where `φ (2^{-N} ·) = 1`, which is guaranteed by `2^j φ.rOut ≤ 2^N φ.rIn`, then `Pⱼ` does
+not see the inhomogeneous blocks `Δₖ`, `k > N`: `Pⱼ (∑_{k ≤ N} Δₖ u) = Pⱼ u`. -/
+theorem homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range {j : ℤ} {N : ℕ}
+    (hjN : 2 ^ j * φ.rOut ≤ 2 ^ N * φ.rIn) (u : 𝓢'(E, F)) :
+    homogeneousLittlewoodPaleyBlock F φ j
+        (∑ k ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ k u) =
+      homogeneousLittlewoodPaleyBlock F φ j u := by
+  have hN : (0 : ℝ) < 2 ^ N := by positivity
+  rw [← _root_.sum_apply, ← littlewoodPaleyLowPass_def,
+    littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, homogeneousLittlewoodPaleyBlock_apply,
+    homogeneousLittlewoodPaleyBlock_apply,
+    ← φ.coe_lowPassSchwartz hN.ne', fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (φ.lowPassSchwartz hN.ne').hasTemperateGrowth (φ.hasTemperateGrowth_ofReal_littlewoodPaley j),
+    mul_comm, φ.mul_lowPassSchwartz_of_support_subset hN]
+  -- On the support of `ψⱼ`, `‖ξ‖ ≤ 2^j φ.rOut ≤ 2^N φ.rIn`.
+  refine (subset_tsupport _).trans <| (tsupport_comp_subset Complex.ofReal_zero _).trans
+    fun ξ hξ ↦ mem_closedBall_zero_iff.2 ?_
+  exact (φ.tsupport_littlewoodPaley_subset j hξ).2.trans hjN
 
 /-! ### Reconstruction -/
 
@@ -341,11 +388,8 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0
   set w := homogeneousLittlewoodPaleyBlock F φ' j u
   -- The blocks commute: `P'ⱼ Pₖ u = Pₖ P'ⱼ u`.
   have hcomm (k : ℤ) : homogeneousLittlewoodPaleyBlock F φ' j
-      (homogeneousLittlewoodPaleyBlock F φ k u) = homogeneousLittlewoodPaleyBlock F φ k w := by
-    have h : homogeneousLittlewoodPaleyBlock F φ' j ∘L homogeneousLittlewoodPaleyBlock F φ k =
-        homogeneousLittlewoodPaleyBlock F φ k ∘L homogeneousLittlewoodPaleyBlock F φ' j := by
-      simp_rw [homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock, mul_comm]
-    exact congr($h u)
+      (homogeneousLittlewoodPaleyBlock F φ k u) = homogeneousLittlewoodPaleyBlock F φ k w :=
+    homogeneousLittlewoodPaleyBlock_comm φ' φ j k u
   -- The low-pass truncations of `w` vanish once their spectrum misses the annulus carrying `w`.
   have hlow : Tendsto (fun a : ℤ ↦ fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ a)⁻¹ • ξ) : ℂ))
       w) atBot (𝓝 0) := by
@@ -426,6 +470,29 @@ theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_le {p r : ℝ�
   rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_intCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
+
+variable {φ} in
+/-- **The low-frequency homogeneous blocks are bounded in `Lᵖ`.** If the inhomogeneous blocks
+`Δₖ u` are `Lᵖ` functions `fₖ`, then there are `B` and `Lᵖ` functions `G j` with `Pⱼ u = G j`
+and `‖G j‖_p ≤ B` for every `j ≤ 0`. They are blocks of the `Lᵖ` function `∑_{k ≤ N} Δₖ u`, for `N`
+with `φ.rOut ≤ 2^N φ.rIn`. -/
+theorem exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le_of_nonpos
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Measure E)}
+    (hf : ∀ k, littlewoodPaleyBlock F φ k u = f k) :
+    ∃ B : ℝ, ∃ G : ℤ → Lp F p (volume : Measure E), ∀ j ≤ 0,
+      homogeneousLittlewoodPaleyBlock F φ j u = G j ∧ ‖G j‖ ≤ B := by
+  obtain ⟨C, hC⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  set S : Lp F p (volume : Measure E) := ∑ k ∈ Finset.range (N + 1), f k
+  choose G hG hGC using fun j : ℤ ↦ hC (p := p) j S
+  refine ⟨C * ‖S‖, G, fun j hj ↦ ⟨?_, hGC j⟩⟩
+  have hjN : (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ N * φ.rIn :=
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 1 * φ.rOut :=
+          mul_le_mul_of_nonneg_right (zpow_le_one_of_nonpos₀ (one_le_two (α := ℝ)) hj)
+            φ.rOut_pos.le
+      _ ≤ 2 ^ N * φ.rIn := by rw [one_mul]; exact hN.le
+  rw [← homogeneousLittlewoodPaleyBlock_sum_littlewoodPaleyBlock_range φ hjN, ← hG j,
+    Lp.toTemperedDistribution_sum, Finset.sum_congr rfl fun k _ ↦ hf k]
 
 /-- **Low-pass truncations of `Lᵖ` functions are small in `L^∞`.** There is `C`, depending only on
 `φ` and `p`, such that for every `R > 0` and every `f ∈ Lᵖ`, the truncation
@@ -540,5 +607,78 @@ theorem exists_tendsto_sum_homogeneousLittlewoodPaleyBlock_of_summable {u : 𝓢
   exact ⟨_, hlim, isVanishingOn_fourier_sub_of_tendsto_sum_homogeneousLittlewoodPaleyBlock φ hlim⟩
 
 end Lp
+
+/-! ### The blocks of `L²` functions -/
+
+section L2
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+
+/-- **The homogeneous blocks of `L²` functions.** On `f ∈ L²`, the homogeneous block `Pⱼ` is the
+`L²` Fourier multiplier with symbol `ψⱼ`, given by any element of `L^∞` almost everywhere equal to
+`ψⱼ`. -/
+theorem homogeneousLittlewoodPaleyBlock_toTemperedDistribution {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure E)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    (f : Lp G 2 (volume : Measure E)) :
+    homogeneousLittlewoodPaleyBlock G φ j (f : 𝓢'(E, G)) =
+      (Lp.fourierMultiplierCLM G m f : 𝓢'(E, G)) := by
+  have hmem : MemLp (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) ∞ (volume : Measure E) :=
+    (Lp.memLp m).ae_eq hm
+  rw [show m = hmem.toLp _ from Lp.ext (hm.trans hmem.coeFn_toLp.symm),
+    homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
+  exact Lp.fourierMultiplierCLM_toTemperedDistribution_eq f
+    (φ.hasTemperateGrowth_ofReal_littlewoodPaley j) hmem
+
+/-- **Almost orthogonality of the blocks on `L²`.** There is `L` such that an `L²` function `f`
+that is the `j`-th block `Pⱼ v` of a tempered distribution `v` has no block `Pₖ` with
+`|k - j| ≥ L`: the `L²` Fourier multiplier with symbol `ψₖ` vanishes on `f`. -/
+theorem exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock :
+    ∃ L : ℕ, ∀ j k : ℤ, k ∉ Finset.Ioo (j - L) (j + L) → ∀ {m : Lp ℂ ∞ (volume : Measure E)},
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
+      ∀ (f : Lp G 2 (volume : Measure E)) (v : 𝓢'(E, G)),
+        (f : 𝓢'(E, G)) = homogeneousLittlewoodPaleyBlock G φ j v →
+          Lp.fourierMultiplierCLM G m f = 0 := by
+  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (F := G) φ φ
+  refine ⟨L, fun j k hk m hm f v hf ↦ Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ hm, hf,
+    Lp.toTemperedDistribution_zero]
+  rw [Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hk
+  rcases hk with hk | hk
+  · exact congr($((hL k j (by omega)).1) v)
+  · exact congr($((hL j k (by omega)).2) v)
+
+/-- **Almost orthogonality of the blocks in mixed norms.** There are `L` and `K`, depending only on
+`φ`, such that for every family `x : α → L²` whose values are almost everywhere `j`-th blocks
+`Pⱼ v` of tempered distributions, every block `Pₖ`, acting on `L²` as the Fourier multiplier with
+any symbol almost everywhere equal to `ψₖ`, satisfies, for `1 ≤ r`,
+
+`‖Pₖ x‖_{L^p_α L^r} = 0` for `|k - j| ≥ L`, and `‖Pₖ x‖_{L^p_α L^r} ≤ K ‖x‖_{L^p_α L^r}`.
+
+Over a one-point measure space this bounds the blocks of a single `L²` function. -/
+theorem exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock :
+    ∃ (L : ℕ) (K : ℝ≥0), ∀ {α : Type*} {mα : MeasurableSpace α} {ρ : Measure α} {p r : ℝ≥0∞},
+      1 ≤ r → ∀ {j : ℤ} {x : α → Lp G 2 (volume : Measure E)}, AEStronglyMeasurable x ρ →
+      (∀ᵐ a ∂ρ, ∃ v : 𝓢'(E, G), (x a : 𝓢'(E, G)) = homogeneousLittlewoodPaleyBlock G φ j v) →
+      ∀ {k : ℤ} {m : Lp ℂ ∞ (volume : Measure E)},
+        m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
+        (k ∉ Finset.Ioo (j - L) (j + L) →
+          eLpNorm (fun a ↦ eLpNorm (Lp.fourierMultiplierCLM G m (x a)) r volume) p ρ = 0) ∧
+        eLpNorm (fun a ↦ eLpNorm (Lp.fourierMultiplierCLM G m (x a)) r volume) p ρ ≤
+          K * eLpNorm (fun a ↦ eLpNorm (x a) r volume) p ρ := by
+  obtain ⟨L, hL⟩ := exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock
+    (G := G) φ
+  refine ⟨L, (eLpNorm (𝓕⁻ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ))) 1 volume).toNNReal,
+    fun {_ _ _ _ r} hr {j x} hx hblock {k m} hm ↦ ⟨fun hk ↦ ?_, ?_⟩⟩
+  · have h0 : (fun a ↦ eLpNorm (Lp.fourierMultiplierCLM G m (x a)) r volume) =ᵐ[_] 0 :=
+      hblock.mono fun a ⟨v, hv⟩ ↦ by
+        dsimp only [Pi.zero_apply]
+        rw [hL j k hk hm (x a) v hv, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
+    rw [eLpNorm_congr_ae h0, eLpNorm_zero]
+  · rw [ENNReal.coe_toNNReal (φ.memLp_fourierInv_littlewoodPaley 0 1).eLpNorm_ne_top]
+    exact eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM G m).continuous
+      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hx
+
+end L2
 
 end TemperedDistribution

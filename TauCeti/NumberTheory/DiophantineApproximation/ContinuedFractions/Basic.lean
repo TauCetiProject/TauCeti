@@ -40,6 +40,8 @@ large denominator are convergents `pₖ / qₖ`, and the lower bound then forces
 * `Real.fib_succ_le_den_convergent`, `Real.monotone_den_convergent`,
   `Real.tendsto_den_convergent`: growth of the denominators `qₙ`.
 * `Real.abs_sub_convergent_le`, `Real.one_div_lt_abs_sub_convergent`: the two error bounds.
+* `Real.neg_one_pow_mul_sub_convergent_pos`: before termination, the error `ξ - pₙ / qₙ` has
+  sign `(-1) ^ n`.
 * `TauCeti.irrationalityExponent_eq_one_add_limsup`: the formula for `μ(ξ)`.
 
 ## References
@@ -81,10 +83,7 @@ private theorem isCoprime_of_nums_dens (ξ : ℝ) (n : ℕ) {a b : ℤ} (ha : (o
     · rw [nums_stable_of_terminated k.le_succ ht] at ha
       rw [dens_stable_of_terminated k.le_succ ht] at hb
       exact ih ha hb
-    -- `SimpContFract.of ξ` is `of ξ` bundled with its simplicity proof, so its determinant
-    -- formula applies to `of ξ`.
-    have hdet : (of ξ).nums k * (of ξ).dens (k + 1) - (of ξ).dens k * (of ξ).nums (k + 1) =
-        (-1) ^ (k + 1) := (SimpContFract.of ξ).determinant ht
+    have hdet := of_nums_mul_dens_succ_sub ht
     rw [hA₀, hB₀, ha, hb] at hdet
     have hdetZ : a₀ * b - b₀ * a = (-1) ^ (k + 1) := by exact_mod_cast hdet
     set u : ℤ := (-1) ^ (k + 1)
@@ -163,6 +162,15 @@ theorem one_div_lt_abs_sub_convergent (hξ : Irrational ξ) (n : ℕ) :
       |ξ - ξ.convergent n| := by
   rw [den_convergent, den_convergent, ← convs_eq_convergent]
   exact one_div_lt_abs_sub_convs (hξ.not_of_terminatedAt n)
+
+/-- Before the continued fraction of `ξ` terminates, the error `ξ - pₙ / qₙ` of its `n`-th
+convergent has sign `(-1) ^ n`. -/
+theorem neg_one_pow_mul_sub_convergent_pos (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
+    0 < (-1) ^ n * (ξ - ξ.convergent n) := by
+  obtain ⟨D, hD, -, herr⟩ := exists_sub_convs_eq_neg_one_pow_div hn
+  have hsq : (-1 : ℝ) ^ n * (-1) ^ n = 1 := by rw [← mul_pow]; norm_num
+  rw [← Real.convs_eq_convergent, herr, ← mul_div_assoc, hsq]
+  positivity
 
 end Real
 

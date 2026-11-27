@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # The right regular representation on vector-valued `Lᵖ`

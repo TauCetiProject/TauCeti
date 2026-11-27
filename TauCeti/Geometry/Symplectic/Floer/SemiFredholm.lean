@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
 import TauCeti.Topology.Constructions.SumProd
 
@@ -172,6 +173,48 @@ theorem IsCylindricalNearEnds.eq_projIcc (hcyl : IsCylindricalNearEnds J Ks Kt J
       (hcyl.hamiltonianT_eq_of_le (s, t) h₁).trans (hcyl.hamiltonianT_eq_of_le (|R|, t) hR).symm⟩
   · rw [projIcc_of_mem _ ⟨hs.le, hs'.le⟩]
     exact ⟨rfl, rfl, rfl⟩
+
+/-- Floer data cylindrical near the ends with radius `R` are cylindrical near the ends with every
+larger radius. -/
+theorem IsCylindricalNearEnds.mono (hcyl : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    {R' : ℝ} (hR : R ≤ R') : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R' u :=
+  { hcyl with
+    almostComplex_eq_of_le_neg := fun z hz ↦ hcyl.almostComplex_eq_of_le_neg z (by linarith)
+    almostComplex_eq_of_le := fun z hz ↦ hcyl.almostComplex_eq_of_le z (hR.trans hz)
+    hamiltonianS_eq_zero := fun z hz ↦ hcyl.hamiltonianS_eq_zero z fun h ↦
+      hz ⟨by linarith [h.1], by linarith [h.2]⟩
+    hamiltonianT_eq_of_le_neg := fun z hz ↦ hcyl.hamiltonianT_eq_of_le_neg z (by linarith)
+    hamiltonianT_eq_of_le := fun z hz ↦ hcyl.hamiltonianT_eq_of_le z (hR.trans hz) }
+
+/-- The data `(J₋, H₋)` of the negative end of Floer data cylindrical near the ends are the slices
+of `(J, K_t)` at `s = -R`; so they are `Cⁿ` (with `Cᵐ` Hamiltonian) when `J` is `Cⁿ` and `K_t` is
+`Cᵐ` on the whole cylinder. -/
+theorem IsCylindricalNearEnds.contDiff_endData_neg {n m : WithTop ℕ∞}
+    (hcyl : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKt : ContDiff ℝ m (uncurry Kt)) :
+    (ContDiff ℝ n fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
+      ContDiff ℝ m (uncurry Hm) := by
+  obtain rfl : Jm = fun t ↦ J (-R, t) :=
+    funext fun t ↦ (hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl).symm
+  obtain rfl : Hm = fun t ↦ Kt (-R, t) :=
+    funext fun t ↦ (hcyl.hamiltonianT_eq_of_le_neg (-R, t) le_rfl).symm
+  exact ⟨contDiff_comp_prodMap_prodMk_right hJ (-R), contDiff_comp_prodMap_prodMk_right hKt (-R)⟩
+
+/-- The data `(J₊, H₊)` of the positive end of Floer data cylindrical near the ends are the slices
+of `(J, K_t)` at `s = R`; so they are `Cⁿ` (with `Cᵐ` Hamiltonian) when `J` is `Cⁿ` and `K_t` is
+`Cᵐ` on the whole cylinder. -/
+theorem IsCylindricalNearEnds.contDiff_endData_pos {n m : WithTop ℕ∞}
+    (hcyl : IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKt : ContDiff ℝ m (uncurry Kt)) :
+    (ContDiff ℝ n fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap) ∧
+      ContDiff ℝ m (uncurry Hp) := by
+  obtain rfl : Jp = fun t ↦ J (R, t) :=
+    funext fun t ↦ (hcyl.almostComplex_eq_of_le (R, t) le_rfl).symm
+  obtain rfl : Hp = fun t ↦ Kt (R, t) :=
+    funext fun t ↦ (hcyl.hamiltonianT_eq_of_le (R, t) le_rfl).symm
+  exact ⟨contDiff_comp_prodMap_prodMk_right hJ R, contDiff_comp_prodMap_prodMk_right hKt R⟩
 
 end TauCeti.Floer
 

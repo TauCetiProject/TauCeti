@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Com
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.Full
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.One
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
-public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!

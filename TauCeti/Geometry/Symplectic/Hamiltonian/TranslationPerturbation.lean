@@ -11,6 +11,7 @@ public import TauCeti.Dynamics.PeriodicPts.FixedPointIndex
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 import Mathlib.Topology.MetricSpace.Thickening
 
@@ -32,8 +33,11 @@ The perturbation is a localized translation. For a compact `K ⊆ W` and a vecto
 Hamiltonian `H(w) = ω(c, χ(w) w)` with a smooth cutoff `χ`, equal to `1` near a neighbourhood of
 `K` and supported in `W`, has Hamiltonian vector field `c` where `χ = 1`. So for small `c` its
 time-one map `ψ` agrees near `K` with the translation `w ↦ w + c`, it is the identity near every
-point outside `W`, and it moves no point by more than a constant times `‖c‖`
-(`TauCeti.SymplecticForm.exists_hamiltonianFlow_eventuallyEq_add`). Since `ψ` is a Hamiltonian
+point outside `W`, and it moves no point by more than a constant `C` times `‖c‖`
+(`TauCeti.SymplecticForm.exists_hamiltonianFlow_eventuallyEq_add`). It is also `C¹`-close to the
+identity: the vector field of `H` depends linearly on `c` and is Lipschitz with constant at most
+`C ‖c‖`, so the derivative of `ψ` is within `exp (C ‖c‖) - 1` of the identity
+(`TauCeti.SymplecticForm.norm_fderiv_hamiltonianFlow_sub_id_le`). Since `ψ` is a Hamiltonian
 time map it preserves `ω` (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianFlow`), so `φ ∘ ψ` is
 symplectic whenever `φ` is.
 
@@ -47,11 +51,13 @@ arbitrarily small regular values `c` exist, and for them every such `x` is nonde
 
 This is meant as the transversality step for making all periodic points of an area-preserving
 surface map of period at most a cutoff nondegenerate. The orbit condition holds near a point of
-least period `k` once `W` is a small enough ball. Combined with the stability of nondegeneracy
-under small `C¹` perturbations, which is not proved here, finitely many such steps would make the
-points of period `k` away from the points of smaller period nondegenerate, and the localized
-twists of `TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` would then make the
-resulting finitely many orbits nondegenerate in all iterates.
+least period `k` once `W` is a small enough ball. The perturbations are arbitrarily small in
+`C¹`, not only in `C⁰`, so they can be combined with the stability of nondegeneracy under small
+`C¹` perturbations (`IsCompact.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate`). An
+induction over the periods would then use finitely many such steps to make the points of period
+`k` away from the points of smaller period nondegenerate, and the localized twists of
+`TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation` to make the resulting finitely
+many orbits nondegenerate in all iterates.
 
 The perturbation also counts degenerate periodic points. If the points of period `k` of `φ` in an
 open set `U ⊆ W` form a compact set, possibly degenerate, then near that set the perturbed map has
@@ -112,6 +118,32 @@ private theorem hamiltonianFlow_eventuallyEq_add_of_forall {H : V → ℝ} {L : 
     abs_of_nonneg hτ.1]
   exact (mul_le_of_le_one_left (norm_nonneg c) hτ.2).trans_lt hc
 
+/-- The Hamiltonian `w ↦ ω(c, F(w))` has vector field `B⁻¹ (ω(c, ·) ∘ dF)`, where `B` is `ω` seen
+as a continuous map from `V` to its dual. -/
+private theorem hamiltonianVectorField_comp_apply {F : V → V} {z : V}
+    (hF : DifferentiableAt ℝ F z) (c : V) :
+    ω.hamiltonianVectorField (fun w ↦ ω.toBilinForm.toContinuousBilinearMap c (F w)) z =
+      ω.toBilinForm.toContinuousBilinearMap.inverse
+        ((ω.toBilinForm.toContinuousBilinearMap c).comp (fderiv ℝ F z)) := by
+  set B := ω.toBilinForm.toContinuousBilinearMap
+  have hd : HasFDerivAt (fun w ↦ B c (F w)) ((B c).comp (fderiv ℝ F z)) z :=
+    (B c).hasFDerivAt.comp z hF.hasFDerivAt
+  rw [hamiltonianVectorField_def, hd.fderiv]
+
+/-- The operator-norm estimate for the vector field of `hamiltonianVectorField_comp_apply`, with an
+arbitrary operator `T` in place of `dF`. -/
+private theorem norm_inverse_comp_le (c : V) (T : V →L[ℝ] V) :
+    ‖ω.toBilinForm.toContinuousBilinearMap.inverse
+        ((ω.toBilinForm.toContinuousBilinearMap c).comp T)‖ ≤
+      ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ * ‖ω.toBilinForm.toContinuousBilinearMap‖ *
+        (‖c‖ * ‖T‖) := by
+  set B := ω.toBilinForm.toContinuousBilinearMap
+  rw [mul_assoc]
+  refine (B.inverse.le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+  calc ‖(B c).comp T‖ ≤ ‖B c‖ * ‖T‖ := (B c).opNorm_comp_le _
+    _ ≤ ‖B‖ * ‖c‖ * ‖T‖ := by gcongr; exact B.le_opNorm c
+    _ = ‖B‖ * (‖c‖ * ‖T‖) := mul_assoc _ _ _
+
 /-- The Hamiltonian `w ↦ ω(c, F(w))` has vector field bounded by a constant, depending only on
 `ω`, times `‖c‖ ‖dF‖`. -/
 private theorem norm_hamiltonianVectorField_comp_le {F : V → V} {z : V}
@@ -119,21 +151,33 @@ private theorem norm_hamiltonianVectorField_comp_le {F : V → V} {z : V}
     ‖ω.hamiltonianVectorField (fun w ↦ ω.toBilinForm.toContinuousBilinearMap c (F w)) z‖ ≤
       ‖ω.toBilinForm.toContinuousBilinearMap.inverse‖ * ‖ω.toBilinForm.toContinuousBilinearMap‖ *
         (‖c‖ * ‖fderiv ℝ F z‖) := by
-  set B := ω.toBilinForm.toContinuousBilinearMap
-  have hd : HasFDerivAt (fun w ↦ B c (F w)) ((B c).comp (fderiv ℝ F z)) z :=
-    (B c).hasFDerivAt.comp z hF.hasFDerivAt
-  rw [hamiltonianVectorField_def, hd.fderiv, mul_assoc]
-  refine (B.inverse.le_opNorm _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  calc ‖(B c).comp (fderiv ℝ F z)‖ ≤ ‖B c‖ * ‖fderiv ℝ F z‖ := (B c).opNorm_comp_le _
-    _ ≤ ‖B‖ * ‖c‖ * ‖fderiv ℝ F z‖ := by gcongr; exact B.le_opNorm c
-    _ = ‖B‖ * (‖c‖ * ‖fderiv ℝ F z‖) := mul_assoc _ _ _
+  rw [hamiltonianVectorField_comp_apply ω hF]
+  exact norm_inverse_comp_le ω c _
+
+/-- The Hamiltonian `w ↦ ω(c, F(w))` has a Lipschitz vector field, with constant a constant
+depending only on `ω`, times `‖c‖` and a Lipschitz constant of `dF`. -/
+private theorem lipschitzWith_hamiltonianVectorField_comp {F : V → V} (hF : Differentiable ℝ F)
+    {M : ℝ≥0} (hM : LipschitzWith M (fderiv ℝ F)) (c : V) :
+    LipschitzWith (‖ω.toBilinForm.toContinuousBilinearMap.inverse‖₊ *
+        ‖ω.toBilinForm.toContinuousBilinearMap‖₊ * ‖c‖₊ * M)
+      (ω.hamiltonianVectorField fun w ↦ ω.toBilinForm.toContinuousBilinearMap c (F w)) := by
+  refine LipschitzWith.of_dist_le_mul fun z z' ↦ ?_
+  rw [hamiltonianVectorField_comp_apply ω (hF z), hamiltonianVectorField_comp_apply ω (hF z'),
+    dist_eq_norm, ← map_sub, ← ContinuousLinearMap.comp_sub]
+  refine (norm_inverse_comp_le ω c _).trans ?_
+  rw [← dist_eq_norm]
+  grw [hM.dist_le_mul z z']
+  push_cast
+  exact le_of_eq (by ring)
 
 /-- **Localized Hamiltonian translations.** Let `K` be a compact subset of an open set `W` of a
 finite-dimensional symplectic vector space. There are `δ > 0` and `C` such that every vector `c`
 gives a smooth Hamiltonian `H`, with compact support inside `W`, whose time-one map `ψ` agrees
 near every point of `K` with the translation `w ↦ w + c` when `‖c‖ < δ`, is the identity near
-every point outside `W`, and moves no point by more than `C ‖c‖`. The conclusions hold for every
-Lipschitz constant of the Hamiltonian vector field, one of which exists.
+every point outside `W`, moves no point by more than `C ‖c‖`, and has derivative within
+`exp (C ‖c‖) - 1` of the identity everywhere. So `ψ` tends to the identity in `C¹` as `c → 0`. The
+conclusions hold for every Lipschitz constant of the Hamiltonian vector field, one of which
+exists.
 
 The Hamiltonian is `H(w) = ω(c, χ(w) w)` for a smooth cutoff `χ` equal to `1` near `K`, so that
 `H = ω(c, ·)` and the Hamiltonian vector field is `c` where `χ = 1`. -/
@@ -144,7 +188,9 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
       ∀ {L : ℝ≥0} (hX : LipschitzWith L (ω.hamiltonianVectorField H)),
         (‖c‖ < δ → ∀ x ∈ K, ω.hamiltonianFlow H hX 1 =ᶠ[𝓝 x] fun w ↦ w + c) ∧
         (∀ w ∉ W, ω.hamiltonianFlow H hX 1 =ᶠ[𝓝 w] id) ∧
-        ∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ C * ‖c‖ := by
+        (∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ C * ‖c‖) ∧
+        ∀ w, ‖fderiv ℝ (ω.hamiltonianFlow H hX 1) w - ContinuousLinearMap.id ℝ V‖ ≤
+          Real.exp (C * ‖c‖) - 1 := by
   obtain ⟨ρ, hρ, hρW⟩ := hK.exists_cthickening_subset_open hW hKW
   -- A smooth cutoff `χ`, equal to `1` on the `2ρ/3`-neighbourhood of `K` and supported in `W`.
   obtain ⟨χ, hχ, -, hχ1, hχc, hχW⟩ := (hK.cthickening (r := ρ / 3 + ρ / 3)).exists_contDiff_cutoff
@@ -154,8 +200,11 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
   have hF : ContDiff ℝ (⊤ : ℕ∞) F := hχ.smul contDiff_id
   obtain ⟨M, hM⟩ := (hF.continuous_fderiv (by simp)).bounded_above_of_compact_support
     (hχc.smul_right.fderiv (𝕜 := ℝ))
+  -- `dF` is Lipschitz, being smooth with compact support.
+  obtain ⟨M₂, hM₂⟩ := ContDiff.lipschitzWith_of_hasCompactSupport (f := fderiv ℝ F)
+    (hχc.smul_right.fderiv (𝕜 := ℝ)) (hF.fderiv_right (m := 1) (by simp)) one_ne_zero
   set B := ω.toBilinForm.toContinuousBilinearMap
-  refine ⟨ρ / 3, by positivity, ‖B.inverse‖ * ‖B‖ * M, fun c ↦ ?_⟩
+  refine ⟨ρ / 3, by positivity, ‖B.inverse‖ * ‖B‖ * max M M₂, fun c ↦ ?_⟩
   set H : V → ℝ := fun w ↦ B c (F w)
   have hH : ContDiff ℝ (⊤ : ℕ∞) H := (B c).contDiff.comp hF
   have hHχ : support H ⊆ support χ := fun w hw h ↦ hw (by simp [H, F, h])
@@ -164,7 +213,7 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
   refine ⟨H, hH, hHc, hHW, ω.exists_lipschitzWith_hamiltonianVectorField (hH.of_le (by simp)) hHc,
     fun hX ↦ ⟨fun hc x hx ↦ ω.hamiltonianFlow_eventuallyEq_add_of_forall hX (fun z hz ↦ ?_) hc hx,
       fun w hw ↦ ω.hamiltonianFlow_eventuallyEq_id_of_notMem_tsupport H hX (fun h ↦ hw (hHW h)) 1,
-      fun w ↦ ?_⟩⟩
+      fun w ↦ ?_, fun w ↦ ?_⟩⟩
   · -- Near `K` the Hamiltonian is the linear function `ω(c, ·)`, whose field is `c`.
     have hev : H =ᶠ[𝓝 z] fun y ↦ ω c y := by
       filter_upwards [isOpen_thickening.mem_nhds hz] with y hy
@@ -172,10 +221,20 @@ theorem exists_hamiltonianFlow_eventuallyEq_add {K W : Set V} (hK : IsCompact K)
       simp [H, F, B, this]
     rw [ω.hamiltonianVectorField_congr_of_eventuallyEq hev, hamiltonianVectorField_apply_left]
   · -- The field is bounded by `‖B⁻¹‖ ‖B‖ M ‖c‖`, which bounds the displacement at time one.
-    have hbound (z : V) : ‖ω.hamiltonianVectorField H z‖ ≤ ‖B.inverse‖ * ‖B‖ * M * ‖c‖ :=
+    have hbound (z : V) : ‖ω.hamiltonianVectorField H z‖ ≤ ‖B.inverse‖ * ‖B‖ * max M M₂ * ‖c‖ :=
       (ω.norm_hamiltonianVectorField_comp_le (hF.differentiable (by simp) z) c).trans
-        (by rw [mul_comm ‖c‖, ← mul_assoc]; gcongr; exact hM z)
+        (by rw [mul_comm ‖c‖, ← mul_assoc]; gcongr; exact (hM z).trans (le_max_left _ _))
     simpa using ω.norm_hamiltonianFlow_sub_le H hX hbound 1 w
+  · -- The field is `‖B⁻¹‖ ‖B‖ M₂ ‖c‖`-Lipschitz, which bounds the derivative of the time-one map.
+    have hXc := ω.lipschitzWith_hamiltonianVectorField_comp (hF.differentiable (by simp)) hM₂ c
+    rw [ω.hamiltonianFlow_congr H hX hXc]
+    refine (ω.norm_fderiv_hamiltonianFlow_sub_id_le H hXc (hH.of_le (by simp)) 1 w).trans
+      (sub_le_sub_right (Real.exp_le_exp.2 ?_) 1)
+    rw [abs_one, mul_one]
+    push_cast
+    rw [mul_right_comm]
+    gcongr
+    exact le_max_right _ _
 
 /-- **Hamiltonian translations make the periodic points through a compact set nondegenerate.**
 Let `K` be a compact subset of an open set `W` of a finite-dimensional symplectic vector space,
@@ -183,7 +242,8 @@ let `k > 0`, and let `φ` be a self-map that is differentiable along the first `
 orbit of every point of `W`, and whose orbits starting in `W` leave `W` until time `k`:
 `φ^[j] y ∉ W` for `y ∈ W` and `0 < j < k`. For every `ε > 0` there is a smooth Hamiltonian `H`
 with compact support inside `W` whose time-one map `ψ` maps `K` into `W`, is the identity near
-every point outside `W`, moves no point by more than `ε`, and makes every point `x ∈ K` with
+every point outside `W`, moves no point by more than `ε`, has derivative within `ε` of the identity
+everywhere, and makes every point `x ∈ K` with
 `(φ ∘ ψ)^[k] x = x` a nondegenerate fixed point of `(φ ∘ ψ)^[k]`. The conclusions hold for every
 Lipschitz constant of the Hamiltonian vector field, one of which exists. -/
 theorem exists_hamiltonianFlow_isNondegenerateFixedPt_iterate {φ : V → V} {k : ℕ} (hk : 0 < k)
@@ -196,6 +256,7 @@ theorem exists_hamiltonianFlow_isNondegenerateFixedPt_iterate {φ : V → V} {k 
         MapsTo (ω.hamiltonianFlow H hX 1) K W ∧
         (∀ w ∉ W, ω.hamiltonianFlow H hX 1 =ᶠ[𝓝 w] id) ∧
         (∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
+        (∀ w, ‖fderiv ℝ (ω.hamiltonianFlow H hX 1) w - ContinuousLinearMap.id ℝ V‖ ≤ ε) ∧
         ∀ x ∈ K, (φ ∘ ω.hamiltonianFlow H hX 1)^[k] x = x →
           IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ω.hamiltonianFlow H hX 1)^[k] x := by
   obtain ⟨δ, hδ, C, htr⟩ := ω.exists_hamiltonianFlow_eventuallyEq_add hK hW hKW
@@ -205,26 +266,26 @@ theorem exists_hamiltonianFlow_isNondegenerateFixedPt_iterate {φ : V → V} {k 
   have hg (y : V) (hy : y ∈ W) : HasFDerivAt g (ContinuousLinearMap.id ℝ V - fderiv ℝ φ^[k] y) y :=
     (hasFDerivAt_id y).sub (differentiableAt_iterate (hφ y hy)).hasFDerivAt
   borelize V
-  have hr : 0 < min (min δ ρ) (ε / (|C| + 1)) := by positivity
+  -- Translations by vectors of norm below `η` make the displacement and derivative bounds
+  -- smaller than `ε`.
+  obtain ⟨η, hη, hηε⟩ :=
+    Metric.eventually_nhds_iff.1 (Real.eventually_mul_lt_and_exp_mul_sub_one_lt C C hε)
+  have hr : 0 < min (min δ ρ) η := by positivity
   obtain ⟨c, hcS, hc⟩ := (dense_setOf_forall_surjective_fderiv
     (fun y hy ↦ (hg y hy).differentiableAt) rfl).exists_mem_open isOpen_ball ⟨0, mem_ball_self hr⟩
-  rw [mem_ball_zero_iff] at hc
-  obtain ⟨⟨hcδ, hcρ⟩, hcε⟩ : (‖c‖ < δ ∧ ‖c‖ < ρ) ∧ ‖c‖ < ε / (|C| + 1) := by
-    simpa only [lt_min_iff] using hc
+  obtain ⟨⟨hcδ, hcρ⟩, hcη⟩ : (‖c‖ < δ ∧ ‖c‖ < ρ) ∧ ‖c‖ < η := by
+    simpa only [mem_ball_zero_iff, lt_min_iff] using hc
+  obtain ⟨hcε, hcε'⟩ := hηε (y := ‖c‖) (by simpa using hcη)
   obtain ⟨H, hH, hHc, hHW, hHX, hψ⟩ := htr c
   refine ⟨H, hH, hHc, hHW, hHX, fun hX ↦ ?_⟩
-  obtain ⟨hadd, hid, hdisp⟩ := hψ hX
+  obtain ⟨hadd, hid, hdisp, hderiv⟩ := hψ hX
   set ψ := ω.hamiltonianFlow H hX 1
   -- `ψ` translates each point of `K` by `c`, into `W`.
   have hψK (x : V) (hx : x ∈ K) : ψ x = x + c := (hadd hcδ x hx).eq_of_nhds
   have hKc (x : V) (hx : x ∈ K) : x + c ∈ W :=
     hρW (mem_cthickening_of_dist_le _ x ρ K hx (by simpa using hcρ.le))
-  refine ⟨fun x hx ↦ (hψK x hx).symm ▸ hKc x hx, hid, fun w ↦ (hdisp w).trans ?_,
-    fun x hx hfix ↦ ?_⟩
-  · -- The displacement bound `C ‖c‖ ≤ ε`.
-    calc C * ‖c‖ ≤ (|C| + 1) * (ε / (|C| + 1)) :=
-          mul_le_mul ((le_abs_self C).trans (by linarith)) hcε.le (norm_nonneg _) (by positivity)
-      _ = ε := by field_simp
+  refine ⟨fun x hx ↦ (hψK x hx).symm ▸ hKc x hx, hid, fun w ↦ (hdisp w).trans hcε.le,
+    fun w ↦ (hderiv w).trans hcε'.le, fun x hx hfix ↦ ?_⟩
   set y := x + c
   have hy : y ∈ W := hKc x hx
   -- Near `x`, the `k`-th iterate of `φ ∘ ψ` is `w ↦ φ^[k] (w + c)`.
@@ -250,9 +311,10 @@ theorem exists_hamiltonianFlow_isNondegenerateFixedPt_iterate {φ : V → V} {k 
 a compact subset of an open set `W` of a finite-dimensional symplectic vector space, and let `φ`
 be a self-map that is differentiable on `W`. For every `ε > 0` there is a smooth Hamiltonian `H`
 with compact support inside `W` whose time-one map `ψ` is the identity near every point outside
-`W`, moves no point by more than `ε`, and makes every fixed point of `φ ∘ ψ` in `K`
-nondegenerate. In particular `φ ∘ ψ` has only finitely many fixed points in `K`. The conclusions
-hold for every Lipschitz constant of the Hamiltonian vector field, one of which exists. -/
+`W`, moves no point by more than `ε`, has derivative within `ε` of the identity everywhere, and
+makes every fixed point of `φ ∘ ψ` in `K` nondegenerate. In particular `φ ∘ ψ` has only finitely
+many fixed points in `K`. The conclusions hold for every Lipschitz constant of the Hamiltonian
+vector field, one of which exists. -/
 theorem exists_hamiltonianFlow_finite_fixedPoints {φ : V → V} {K W : Set V} (hK : IsCompact K)
     (hW : IsOpen W) (hKW : K ⊆ W) (hφ : ∀ y ∈ W, DifferentiableAt ℝ φ y) {ε : ℝ} (hε : 0 < ε) :
     ∃ H : V → ℝ, ContDiff ℝ (⊤ : ℕ∞) H ∧ HasCompactSupport H ∧ tsupport H ⊆ W ∧
@@ -260,6 +322,7 @@ theorem exists_hamiltonianFlow_finite_fixedPoints {φ : V → V} {K W : Set V} (
       ∀ {L : ℝ≥0} (hX : LipschitzWith L (ω.hamiltonianVectorField H)),
         (∀ w ∉ W, ω.hamiltonianFlow H hX 1 =ᶠ[𝓝 w] id) ∧
         (∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
+        (∀ w, ‖fderiv ℝ (ω.hamiltonianFlow H hX 1) w - ContinuousLinearMap.id ℝ V‖ ≤ ε) ∧
         (∀ x ∈ K, IsFixedPt (φ ∘ ω.hamiltonianFlow H hX 1) x →
           IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ω.hamiltonianFlow H hX 1) x) ∧
         (K ∩ fixedPoints (φ ∘ ω.hamiltonianFlow H hX 1)).Finite := by
@@ -267,12 +330,12 @@ theorem exists_hamiltonianFlow_finite_fixedPoints {φ : V → V} {K W : Set V} (
     one_pos hK hW hKW (fun y hy j hj ↦ by simpa [Nat.lt_one_iff.1 hj] using hφ y hy)
     (fun _ _ j hj hj1 ↦ absurd hj1 (by omega)) hε
   refine ⟨H, hH, hHc, hHW, hHX, fun hX ↦ ?_⟩
-  obtain ⟨hmaps, hid, hdisp, hnd⟩ := hψ hX
+  obtain ⟨hmaps, hid, hdisp, hderiv, hnd⟩ := hψ hX
   set ψ := ω.hamiltonianFlow H hX 1
   have hnd' (x : V) (hx : x ∈ K) (hfix : IsFixedPt (φ ∘ ψ) x) :
       IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ψ) x := by
     simpa using hnd x hx hfix
-  refine ⟨hid, hdisp, hnd', ?_⟩
+  refine ⟨hid, hdisp, hderiv, hnd', ?_⟩
   -- The fixed points in `K` form a compact set, since `φ ∘ ψ` is continuous on `K`.
   have hcont : ContinuousOn (fun x ↦ (φ ∘ ψ) x - x) K := by
     intro x hx
@@ -307,10 +370,10 @@ starting in `W` leaves `W` until time `k > 0`, with `φ` differentiable along th
 `f : U → V` be `φ^[k]` on an open set `U ⊆ W`, with compact, possibly degenerate, fixed set. There
 is an open neighbourhood `U' ⊆ U` of this fixed set such that, for every `ε > 0`, some smooth
 Hamiltonian `H` with compact support inside `W` has a time-one map `ψ` moving no point by more
-than `ε`, for which the fixed points of `(φ ∘ ψ)^[k]` in `U'` are nondegenerate, finitely many,
-and have signed count `∑ sign det (1 - d((φ ∘ ψ)^[k])_x)` equal to the fixed-point index of
-`f`. The conclusions hold for every Lipschitz constant of the Hamiltonian vector field, one of
-which exists.
+than `ε` and with derivative within `ε` of the identity everywhere, for which the fixed points of
+`(φ ∘ ψ)^[k]` in `U'` are nondegenerate, finitely many, and have signed count
+`∑ sign det (1 - d((φ ∘ ψ)^[k])_x)` equal to the fixed-point index of `f`. The conclusions hold
+for every Lipschitz constant of the Hamiltonian vector field, one of which exists.
 
 The signed count is the same for every small perturbation with nondegenerate periodic points in
 `U'` (`TauCeti.exists_pos_forall_sum_sign_det_iterate_comp_eq_fixedPointIndex`); this theorem
@@ -324,6 +387,7 @@ theorem exists_hamiltonianFlow_sum_sign_det_eq_fixedPointIndex {φ : V → V} {k
         (∃ L, LipschitzWith L (ω.hamiltonianVectorField H)) ∧
         ∀ {L : ℝ≥0} (hX : LipschitzWith L (ω.hamiltonianVectorField H)),
           (∀ w, ‖ω.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
+          (∀ w, ‖fderiv ℝ (ω.hamiltonianFlow H hX 1) w - ContinuousLinearMap.id ℝ V‖ ≤ ε) ∧
           (∀ z : U', (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z = z →
             IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z) ∧
           ∃ hfin : {z : U' | (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z = z}.Finite,
@@ -338,11 +402,12 @@ theorem exists_hamiltonianFlow_sum_sign_det_eq_fixedPointIndex {φ : V → V} {k
   obtain ⟨H, hH, hHc, hHW, hHX, hψ⟩ := ω.exists_hamiltonianFlow_isNondegenerateFixedPt_iterate hk
     hU'c hW (hU'cU.trans hUW) hφ hret (lt_min hε (half_pos hδ))
   refine ⟨H, hH, hHc, hHW, hHX, fun hX ↦ ?_⟩
-  obtain ⟨-, hid, hdisp, hnd⟩ := hψ hX
+  obtain ⟨-, hid, hdisp, hderiv, hnd⟩ := hψ hX
   have hnd' (z : U') (hz : (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z = z) :
       IsNondegenerateFixedPt 𝓘(ℝ, V) (φ ∘ ω.hamiltonianFlow H hX 1)^[k] z :=
     hnd z (subset_closure z.property) hz
-  refine ⟨fun w ↦ (hdisp w).trans (min_le_left _ _), hnd', hcount _
+  refine ⟨fun w ↦ (hdisp w).trans (min_le_left _ _), fun w ↦ (hderiv w).trans (min_le_left _ _),
+    hnd', hcount _
     (ω.contDiff_hamiltonianFlow_apply H 0 hX (hH.of_le (by simp)) 1).continuous.continuousOn
     (fun w _ ↦ (hdisp w).trans_lt ((min_le_right _ _).trans_lt (half_lt_self hδ)))
     (fun w hw ↦ (hid w hw).eq_of_nhds) hnd'⟩

@@ -49,14 +49,16 @@ are in `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Transvection.le
   `τ_{v,a}` is Mathlib's `LinearMap.transvection` (`Matrix.toLin'_unitaryTransvection`).
 * `Matrix.unitaryTransvection_mul_unitaryTransvection`: `τ_{v,a} τ_{v,b} = τ_{v,a+b}` for
   isotropic `v`.
-* `Matrix.det_unitaryTransvection`: an isotropic transvection has determinant one.
+* `Matrix.det_unitaryTransvection_eq` and `Matrix.det_unitaryTransvection`: the determinant
+  `1 + a B(v, v)`, which is `1` when `v` is isotropic.
 * `Matrix.unitaryTransvection_smul`: rescaling the vector, `τ_{c v,a} = τ_{v, a c σ(c)}`.
 * `Matrix.mul_unitaryTransvection`: the conjugation law `g τ_{v,a} = τ_{g v,a} g` for `g`
   preserving `B`.
 * `Matrix.transpose_map_unitaryTransvection_mul_mul`: the isometry defect
-  `σ(τ_{v,a})ᵀ Q τ_{v,a} - Q = (a + ε σ(a)) (Q v) (σ(v)ᵀ Q)` of an isotropic transvection for the
-  `ε`-Hermitian form `B`, so that `τ_{v,a}` preserves `B` when `a + ε σ(a) = 0`
-  (`Matrix.transpose_map_unitaryTransvection_mul_mul_self`).
+  `σ(τ_{v,a})ᵀ Q τ_{v,a} - Q = (a + ε σ(a) + ε a σ(a) B(v, v)) (Q v) (σ(v)ᵀ Q)` for the
+  `ε`-Hermitian form `B`, giving isometries when the coefficient vanishes
+  (`Matrix.transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero`,
+  `Matrix.transpose_map_unitaryTransvection_mul_mul_self`).
 * `Matrix.exists_eq_unitaryTransvection_smul_iff`: over a field, the transvections along a nonzero
   multiple of `v` are those along `v`.
 
@@ -136,45 +138,57 @@ theorem mul_unitaryTransvection {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g =
     Matrix.mul_one, Matrix.one_mul, mul_smul_comm, smul_mul_assoc, mul_vecMulVec, vecMulVec_mul,
     comp_mulVec_vecMul_vecMul hg]
 
-/-- **The isometry defect of a unitary transvection.** Let `σ` be an involution, let the Gram
-matrix satisfy `σ(Q)ᵀ = ε Q`, so that `σ(B(x, y)) = ε B(y, x)`, and let `v` be isotropic. Then
-`σ(τ_{v,a})ᵀ Q τ_{v,a} = Q + (a + ε σ(a)) (Q v) (σ(v)ᵀ Q)`. -/
+/-- **The isometry defect of a unitary transvection or quasi-reflection.** Let `σ` be an involution
+and let the Gram matrix satisfy `σ(Q)ᵀ = ε Q`. Then
+`σ(τ_{v,a})ᵀ Q τ_{v,a} = Q + (a + ε σ(a) + ε a σ(a) B(v, v)) (Q v) (σ(v)ᵀ Q)`. -/
 theorem transpose_map_unitaryTransvection_mul_mul (hσ : Function.Involutive σ) {ε : R}
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : R) :
+    (hQ : (Q.map σ)ᵀ = ε • Q) (a : R) :
     ((Q.unitaryTransvection σ v a).map σ)ᵀ * Q * Q.unitaryTransvection σ v a =
-      Q + (a + ε * σ a) • vecMulVec (Q *ᵥ v) ((σ ∘ v) ᵥ* Q) := by
+      Q + (a + ε * σ a + ε * a * σ a * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))) •
+        vecMulVec (Q *ᵥ v) ((σ ∘ v) ᵥ* Q) := by
   set w := (σ ∘ v) ᵥ* Q with hw
   have hτ : (Q.unitaryTransvection σ v a).map σ = 1 + σ a • (vecMulVec v w).map σ := by
-    ext i j
-    by_cases hij : i = j <;> simp [unitaryTransvection_def, hw, hij]
+    ext i j; by_cases hij : i = j <;> simp [unitaryTransvection_def, hw, hij]
   have h₁ : vecMulVec (Q *ᵥ v) (σ ∘ v) * Q = vecMulVec (Q *ᵥ v) w := vecMulVec_mul _ _ _
   have h₂ : Q * vecMulVec v w = vecMulVec (Q *ᵥ v) w := mul_vecMulVec _ _ _
-  have h₃ : vecMulVec (Q *ᵥ v) w * vecMulVec v w = 0 := by
-    rw [vecMulVec_mul_vecMulVec, hw, ← dotProduct_mulVec, hv, zero_smul, vecMulVec_zero]
+  have h₃ : vecMulVec (Q *ᵥ v) w * vecMulVec v w = ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) • vecMulVec (Q *ᵥ v) w :=
+    by rw [vecMulVec_mul_vecMulVec, hw, ← dotProduct_mulVec, vecMulVec_smul]
   rw [hτ, transpose_add, transpose_one, transpose_smul, transpose_map_vecMulVec_vecMul hσ hQ v v,
     unitaryTransvection_def, ← hw]
   simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, smul_mul_assoc,
-    mul_smul_comm, h₁, h₂, h₃, smul_zero, add_zero, smul_smul]
-  rw [add_assoc, ← add_smul, mul_comm (σ a), add_comm (ε * σ a)]
+    mul_smul_comm, h₁, h₂, h₃, smul_add, smul_smul]
+  rw [add_assoc, ← add_smul, ← add_smul]; congr 2; ring
+
+/-- **Unitary quasi-reflections are isometries.** If `σ` is an involution, `σ(Q)ᵀ = ε Q`, and
+`a + ε σ(a) + ε a σ(a) B(v, v) = 0`, then `τ_{v,a}` preserves the form. -/
+theorem transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero (hσ : Function.Involutive σ)
+    {ε : R} (hQ : (Q.map σ)ᵀ = ε • Q) {a : R}
+    (ha : a + ε * σ a + ε * a * σ a * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) = 0) :
+    ((Q.unitaryTransvection σ v a).map σ)ᵀ * Q * Q.unitaryTransvection σ v a = Q := by
+  rw [transpose_map_unitaryTransvection_mul_mul hσ hQ, ha, zero_smul, add_zero]
 
 /-- **Unitary transvections are isometries.** Let `σ` be an involution, let the Gram matrix
 satisfy `σ(Q)ᵀ = ε Q`, so that `σ(B(x, y)) = ε B(y, x)`, and let `v` be isotropic. If
 `a + ε σ(a) = 0`, then `τ_{v,a}` preserves the form: `σ(τ_{v,a})ᵀ Q τ_{v,a} = Q`. -/
 theorem transpose_map_unitaryTransvection_mul_mul_self (hσ : Function.Involutive σ) {ε : R}
     (hQ : (Q.map σ)ᵀ = ε • Q) (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : R} (ha : a + ε * σ a = 0) :
-    ((Q.unitaryTransvection σ v a).map σ)ᵀ * Q * Q.unitaryTransvection σ v a = Q := by
-  rw [transpose_map_unitaryTransvection_mul_mul hσ hQ hv, ha, zero_smul, add_zero]
+    ((Q.unitaryTransvection σ v a).map σ)ᵀ * Q * Q.unitaryTransvection σ v a = Q :=
+  transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero hσ hQ (by simp [hv, ha])
 
 section CommRing
 
 variable {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R} {v : n → R}
 
+/-- **Determinant of a unitary transvection or quasi-reflection**:
+`det(τ_{v,a}) = 1 + a B(v, v)`. -/
+theorem det_unitaryTransvection_eq (a : R) :
+    (Q.unitaryTransvection σ v a).det = 1 + a * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
+  rw [unitaryTransvection_def, TauCeti.det_one_add_smul_vecMulVec, ← dotProduct_mulVec]
+
 /-- **An isotropic transvection has determinant one.** -/
 theorem det_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : R) :
     (Q.unitaryTransvection σ v a).det = 1 := by
-  rw [unitaryTransvection_def, ← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec,
-    TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, hv, smul_zero,
-    sub_zero]
+  rw [det_unitaryTransvection_eq, hv, mul_zero, add_zero]
 
 end CommRing
 

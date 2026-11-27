@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.BaseChange
 public import TauCeti.Geometry.Hodge.Decomposition
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 
@@ -56,9 +56,14 @@ weight `n`.
   representation has finitely many nonzero `V^{p,q}`.
 * `TauCeti.DeligneTorus.conj_mem_hodgeComponent`, `TauCeti.DeligneTorus.map_conj_hodgeComponent`:
   complex conjugation carries `V^{p,q}` onto `V^{q,p}`.
+* `TauCeti.DeligneTorus.isInternal_hodgeComponent_of_pure`: for a representation pure of weight
+  `n`, `ℂ ⊗[ℝ] V` is the internal direct sum of the `V^{p, n - p}`.
 * `TauCeti.DeligneTorus.isHodgeDecomposition_hodgeComponent`: for a finite-dimensional
   representation pure of weight `n`, the family `p ↦ V^{p, n - p}` is a Hodge decomposition of
   weight `n`.
+* `Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent`: a real subspace
+  `N` is a subrepresentation exactly when `ℂ ⊗[ℝ] N` is the sum of its intersections with the
+  `V^{p,q}`.
 
 ## References
 
@@ -294,6 +299,21 @@ theorem map_conj_hodgeComponent (p q : ℤ) :
 
 /-! ### Representations pure of one weight -/
 
+/-- **The Hodge components of a pure representation form a direct sum.** If every nonzero Hodge
+component `V^{p,q}` has `p + q = n`, then `ℂ ⊗[ℝ] V` is the internal direct sum of the components
+`p ↦ V^{p, n - p}`. No finiteness of `V` is needed. -/
+theorem isInternal_hodgeComponent_of_pure {n : ℤ}
+    (hV : ∀ p q, p + q ≠ n → hodgeComponent V p q = ⊥) :
+    DirectSum.IsInternal fun p ↦ hodgeComponent V p (n - p) := by
+  have h := isInternal_hodgeComponent V
+  rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at h ⊢
+  refine ⟨h.1.comp (f := fun p : ℤ ↦ (p, n - p)) fun p p' hp ↦ congrArg Prod.fst hp,
+    eq_top_iff.2 (h.2 ▸ iSup_le fun pq ↦ ?_)⟩
+  by_cases hpq : pq.1 + pq.2 = n
+  · exact le_iSup_of_le pq.1 (by rw [show pq.2 = n - pq.1 by omega])
+  · rw [hV _ _ hpq]
+    exact bot_le
+
 /-- **A pure representation of `S` is a real Hodge structure.** If `V` is finite-dimensional and
 every nonzero Hodge component `V^{p,q}` has `p + q = n`, then the components `p ↦ V^{p, n - p}`
 form a Hodge decomposition of weight `n` of `ℂ ⊗[ℝ] V`. The corresponding pure Hodge structure is
@@ -302,18 +322,38 @@ theorem isHodgeDecomposition_hodgeComponent [Module.Finite ℝ V] {n : ℤ}
     (hV : ∀ p q, p + q ≠ n → hodgeComponent V p q = ⊥) :
     Hodge.IsHodgeDecomposition (Hodge.complexificationConjugation V) n
       fun p ↦ hodgeComponent V p (n - p) where
-  isInternal := by
-    have h := isInternal_hodgeComponent V
-    rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at h ⊢
-    refine ⟨h.1.comp (f := fun p : ℤ ↦ (p, n - p)) fun p p' hp ↦ congrArg Prod.fst hp,
-      eq_top_iff.2 (h.2 ▸ iSup_le fun pq ↦ ?_)⟩
-    by_cases hpq : pq.1 + pq.2 = n
-    · exact le_iSup_of_le pq.1 (by rw [show pq.2 = n - pq.1 by omega])
-    · rw [hV _ _ hpq]
-      exact bot_le
+  isInternal := isInternal_hodgeComponent_of_pure hV
   map_conj p := by rw [map_conj_hodgeComponent, sub_sub_cancel]
   exists_forall_lt_eq_bot := by
     obtain ⟨a, ha⟩ := ((finite_setOf_hodgeComponent_ne_bot V).image Prod.fst).bddBelow
     exact ⟨a, fun p hp ↦ by_contra fun h ↦ (ha ⟨(p, n - p), h, rfl⟩).not_gt hp⟩
+
+/-! ### Subrepresentations -/
+
+/-- **The subrepresentations of `S` are the subspaces compatible with the Hodge decomposition.**
+A real subspace `N` of a representation `V` of the Deligne torus is a subrepresentation, its
+stabilizer being all of `S`, exactly when its complexification is the sum of its intersections
+with the Hodge components: `ℂ ⊗[ℝ] N = ⊕ (ℂ ⊗[ℝ] N ∩ V^{p,q})`. -/
+theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_inf_hodgeComponent
+    (N : Submodule ℝ V) :
+    N.stabilizerHopfIdeal S = ⊥ ↔
+      N.baseChange ℂ = ⨆ pq : ℤ × ℤ, N.baseChange ℂ ⊓ hodgeComponent V pq.1 pq.2 := by
+  let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+  -- the complexified representation, as a comodule over `ℂ[ℤ²]` through the splitting
+  let _ := Comodule.Corestrict (R := ℂ) (M := ℂ ⊗[ℝ] V) (C := ℂ ⊗[ℝ] S)
+    (D := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+    ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  have h := (N.baseChange ℂ).stabilizerHopfIdeal_corestrict_eq_bot_iff (H₁ := ℂ ⊗[ℝ] S)
+    (H₂ := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) splittingBialgEquiv
+  rw [BialgHom.toCoalgHom_eq_ofClass, HopfIdeal.toIdeal_le_ker_iff_of_injective
+    (f := ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
+      ℂ ⊗[ℝ] S →ₐ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))))
+    splittingBialgEquiv.injective] at h
+  have hV (pq : ℤ × ℤ) := congrFun (hodgeComponent_eq_comp (V := V)) pq
+  rw [← Submodule.stabilizerHopfIdeal_baseChange_eq_bot_iff (K := ℂ), ← h,
+    Submodule.stabilizerHopfIdeal_eq_bot_iff, Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace,
+    ← hodgeIndexEquiv.iSup_comp]
+  simp only [hV, Function.comp_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace]
 
 end TauCeti.DeligneTorus

@@ -874,11 +874,7 @@ theorem wedge_self_apply (hk : Even k) (α : RoughForm I M ℝ k) (x : M)
       (alternatingFormInner (TangentSpace I x) k (selfDualPart o α x) (selfDualPart o α x) -
         alternatingFormInner (TangentSpace I x) k (antiSelfDualPart o α x)
           (antiSelfDualPart o α x)) * riemannianVolumeForm o x v := by
-  -- Write the second factor as `⋆(⋆α)`, so that `α ∧ ⋆(⋆α) = ⟨α, ⋆α⟩ vol`.
-  have hw : α.wedge α x v = (α x).wedge (hodgeStar o rfl (hodgeStar o rfl α) x) v := by
-    rw [hodgeStar_hodgeStar_of_even o hk, wedge_def, wedgeWith_apply',
-      ContinuousAlternatingMap.wedge_def]
-  rw [hw, wedge_hodgeStar_apply, finCongr_refl, Equiv.coe_refl, Function.comp_id]
+  rw [wedge_self_apply_eq_alternatingFormInner_hodgeStar o hk]
   congr 1
   -- Then `⟨α⁺ + α⁻, α⁺ - α⁻⟩ = |α⁺|² - |α⁻|²` by orthogonality.
   have h := alternatingFormInner_selfDualPart_antiSelfDualPart o hk α α x
@@ -965,11 +961,25 @@ theorem coe_selfDualPart (α : SmoothForm I M ℝ k) :
     (selfDualPart o α : RoughForm I M ℝ k) = RoughForm.selfDualPart o α :=
   (rfl)
 
+/-- The self-dual part of a smooth form is `(α + ⋆α) / 2`. -/
+theorem selfDualPart_apply (α : SmoothForm I M ℝ k) :
+    selfDualPart o α = (2⁻¹ : ℝ) • (α + hodgeStar o rfl α) := by
+  apply Subtype.ext
+  simp only [coe_selfDualPart, Submodule.coe_smul, Submodule.coe_add, coe_hodgeStar,
+    RoughForm.selfDualPart_apply]
+
 /-- The anti-self-dual part of a smooth form is that of the underlying rough form. -/
 @[simp]
 theorem coe_antiSelfDualPart (α : SmoothForm I M ℝ k) :
     (antiSelfDualPart o α : RoughForm I M ℝ k) = RoughForm.antiSelfDualPart o α :=
   (rfl)
+
+/-- The anti-self-dual part of a smooth form is `(α - ⋆α) / 2`. -/
+theorem antiSelfDualPart_apply (α : SmoothForm I M ℝ k) :
+    antiSelfDualPart o α = (2⁻¹ : ℝ) • (α - hodgeStar o rfl α) := by
+  apply Subtype.ext
+  simp only [coe_antiSelfDualPart, Submodule.coe_smul, Submodule.coe_sub, coe_hodgeStar,
+    RoughForm.antiSelfDualPart_apply]
 
 /-- A smooth middle-degree form is the sum of its self-dual and anti-self-dual parts. -/
 @[simp]

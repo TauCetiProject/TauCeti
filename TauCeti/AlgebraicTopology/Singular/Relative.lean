@@ -252,6 +252,17 @@ lemma singularChainComplexFunctor_obj_map :
   rw [singularChainComplexFunctor.eq_def, Functor.comp_obj,
     Functor.whiskeringLeft_obj_obj, Functor.comp_map, singularChainComplexMap.eq_def]
 
+variable {P P'} in
+/-- Read in the relative singular chain complexes, the relative singular chain functor sends a map
+of pairs to its chain map `TopPair.singularChainComplexMap`. -/
+@[reassoc]
+lemma singularChainComplexFunctor_obj_map_comp_eqToHom :
+    ((singularChainComplexFunctor C).obj R).map f ≫
+        eqToHom (singularChainComplexFunctor_obj_obj (C := C) P' R) =
+      eqToHom (singularChainComplexFunctor_obj_obj (C := C) P R) ≫
+        singularChainComplexMap f R := by
+  simp [singularChainComplexFunctor_obj_map]
+
 /-- The quotient map from ambient singular chains to relative singular chains. -/
 noncomputable abbrev singularChainComplexπ :
     (toSSetPair.obj P).right.chainComplex R ⟶ P.singularChainComplex R :=
@@ -719,6 +730,13 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.mono_homologyMap_map_of_isZero R h₁
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
+
+/-- If `Hₙ(A)` and `Hₙ(X, A)` vanish, so does `Hₙ(X)`. -/
+lemma isZero_singularHomology_fst_of_isZero {n : ℕ}
+    (hA : IsZero ((toSSetPair.obj P).left.homology R n))
+    (hXA : IsZero (P.singularHomology R n)) :
+    IsZero ((toSSetPair.obj P).right.homology R n) :=
+  (P.singularHomology_exact_space R n).isZero_X₂ (hA.eq_of_src _ _) (hXA.eq_of_tgt _ _)
 
 /-- If the inclusion of the subspace induces an epimorphism `Hₙ(A) ⟶ Hₙ(X)` and a monomorphism
 `Hₘ(A) ⟶ Hₘ(X)`, where `m + 1 = n`, then `Hₙ(X, A)` vanishes. -/

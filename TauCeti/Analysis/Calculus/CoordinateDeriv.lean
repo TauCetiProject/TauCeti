@@ -12,8 +12,9 @@ public import TauCeti.Data.List.Sublists
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.ParametricFDeriv
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -63,7 +64,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
-  derivatives.
+  derivatives; `TauCeti.norm_iteratedFDeriv_coordinateDeriv_le`: conversely, a Fréchet
+  derivative of a first partial derivative is bounded by the next Fréchet derivative.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
@@ -123,6 +125,11 @@ theorem coordinateDeriv_cons (j : Fin n) (js : List (Fin n)) (f : CoordinateSpac
     (x : CoordinateSpace n) :
     coordinateDeriv (j :: js) f x =
       fderiv ℝ (coordinateDeriv js f) x (EuclideanSpace.single j 1) := (rfl)
+
+/-- The coordinate derivative along a single index is the derivative in that coordinate direction:
+`∂ⱼ f x = Df(x) eⱼ`. -/
+theorem coordinateDeriv_singleton (j : Fin n) (f : CoordinateSpace n → A) (x : CoordinateSpace n) :
+    coordinateDeriv [j] f x = fderiv ℝ f x (EuclideanSpace.single j 1) := (rfl)
 
 /-- Differentiating along a concatenated word differentiates along the second word first. -/
 theorem coordinateDeriv_append (α β : List (Fin n)) (f : CoordinateSpace n → A) :
@@ -287,6 +294,15 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
   refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
   exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
 
+/-- The `k`-th Fréchet derivative of a first partial derivative of a `C^(k+1)` function is bounded
+by the `(k + 1)`-st Fréchet derivative of the function: `‖D^k (∂ⱼ f) x‖ ≤ ‖D^(k+1) f x‖`. -/
+theorem norm_iteratedFDeriv_coordinateDeriv_le {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (j : Fin n) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ ≤ ‖iteratedFDeriv ℝ (k + 1) f x‖ := by
+  rw [funext (coordinateDeriv_singleton j f)]
+  simpa using hf.norm_iteratedFDeriv_fderiv_apply_le (i := k)
+    (by simp [minSmoothness_of_isRCLikeNormedField]) (EuclideanSpace.single j 1) x
+
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
     coordinateDeriv α (f + g) = coordinateDeriv α f + coordinateDeriv α g := by
@@ -362,6 +378,13 @@ theorem _root_.Filter.EventuallyEq.coordinateDeriv {f g : CoordinateSpace n → 
   | cons j js ih =>
     filter_upwards [ih.eventuallyEq_nhds] with y hy
     rw [coordinateDeriv_cons, coordinateDeriv_cons, hy.fderiv_eq]
+
+/-- Coordinate derivatives do not enlarge the topological support. -/
+theorem tsupport_coordinateDeriv_subset (α : List (Fin n)) (f : CoordinateSpace n → A) :
+    tsupport (coordinateDeriv α f) ⊆ tsupport f := by
+  induction α with
+  | nil => exact subset_rfl
+  | cons j js ih => exact (tsupport_fderiv_apply_subset ℝ _).trans ih
 
 /-- Every nonempty coordinate derivative of a constant function vanishes. -/
 theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
@@ -832,6 +855,22 @@ theorem mixedDeriv_comp_add_smul {a : CoordinateSpace n × CoordinateSpace n →
   simp only [ContinuousLinearMap.coe_id', id_eq, map_zero, Prod.mk_zero_zero, add_zero] at hv ⊢
   rw [hv, ContinuousMultilinearMap.map_smul_univ, hprod]
 
+/-- **Undoing a frequency dilation.** Up to the factor `t ^ |β|`, the mixed derivative
+`∂_x^α ∂_ξ^β a` at `(x, ξ)` is the mixed derivative at `(0, 0)` of the dilation
+`(y, v) ↦ a(x + y, ξ + t v)`, so for `t ≥ 0` it is bounded by the Fréchet derivative of order
+`|α| + |β|` of the dilation there. -/
+theorem pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_comp_add_smul
+    {a : CoordinateSpace n × CoordinateSpace n → A} {α β : List (Fin n)}
+    (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n) {t : ℝ} (ht : 0 ≤ t) :
+    t ^ β.length * ‖mixedDeriv α β a x ξ‖ ≤
+      ‖iteratedFDeriv ℝ (α.length + β.length)
+        (fun q : CoordinateSpace n × CoordinateSpace n => a (x + q.1, ξ + t • q.2)) 0‖ := by
+  have h := norm_mixedDeriv_le α β (ha.comp (((contDiff_const (c := x)).add contDiff_fst).prodMk
+    ((contDiff_const (c := ξ)).add (contDiff_snd.const_smul t)))) 0 0
+  simp only [Function.comp_def] at h
+  rwa [mixedDeriv_comp_add_smul ha, norm_smul, Real.norm_eq_abs, abs_pow, abs_of_nonneg ht,
+    Prod.mk_zero_zero] at h
+
 /-- A position-independent function has no position derivatives. -/
 theorem mixedDeriv_comp_snd (f : CoordinateSpace n → A) {α : List (Fin n)} (hα : α ≠ [])
     (β : List (Fin n)) (x ξ : CoordinateSpace n) :
@@ -1022,6 +1061,15 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
     mixedDeriv α β a x ξ = 0 :=
   (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
+
+/-- Away from the support of a position cutoff `ψ`, every mixed derivative of `ψ(x) a(x, ξ)`
+vanishes. -/
+theorem mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport {ψ : CoordinateSpace n → ℝ}
+    {x : CoordinateSpace n} (hx : x ∉ tsupport ψ) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => ψ p.1 • a p) x ξ = 0 := by
+  refine mixedDeriv_eq_zero_of_eventually ?_ α β ξ
+  filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy η
+  simp [hy]
 
 /-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
 at positions of `U`. -/

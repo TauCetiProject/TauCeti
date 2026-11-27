@@ -33,6 +33,9 @@ whose homology is `H_p(B; H_q(F))`.
 
 * `TauCeti.twistedHomologyMap_characteristicCellPairMap_comp_twistedCellularDifferential_zero`:
   the cellular differential of a `1`-cell with local coefficients.
+* `TauCeti.map_characteristicCellMap_eq_cellPath`: the characteristic map of a `1`-cell carries
+  every path class in `D¹` from `-e₀` to `e₀` to the class of the path `TauCeti.cellPath` of the
+  cell, along which the transports are taken.
 
 ## References
 
@@ -124,6 +127,30 @@ theorem twistedHomologyMap_characteristicCellPairMap_comp_twistedCellularDiffere
   all_goals exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·)
       (ιTwistedHomology₀_skeletonPair_subspaceSystem_comp_twistedHomologyπ C L _))))
+
+/-- **Through the characteristic map of a `1`-cell, a path class in `D¹` between the poles is the
+class of the path of the cell.** Since `D¹` is simply connected, every class from `-e₀` to `e₀` is
+the class of the straight path `TauCeti.diskSegment`, which the characteristic map carries to
+`TauCeti.cellPath`. -/
+lemma map_characteristicCellMap_eq_cellPath (j : cell C 1)
+    (δ : FundamentalGroupoid.mk ((diskBoundaryPair.{w} 1).map sphereMinus) ⟶
+      FundamentalGroupoid.mk ((diskBoundaryPair.{w} 1).map spherePlus)) :
+    (FundamentalGroupoid.map (characteristicCellMap C j)).map δ =
+      eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_sphereMinus C j)) ≫
+        (Path.Homotopic.Quotient.mk (cellPath C j) :
+          FundamentalGroupoid.mk (map 1 j fun _ ↦ -1) ⟶
+            FundamentalGroupoid.mk (map 1 j fun _ ↦ 1)) ≫
+        eqToHom (congrArg FundamentalGroupoid.mk (characteristicCellMap_spherePlus C j).symm) := by
+  obtain rfl : δ = Path.Homotopic.Quotient.mk diskSegment :=
+    Subsingleton.elim (α := Path.Homotopic.Quotient _ _) _ _
+  have hpath : diskSegment.map (characteristicCellMap C j).continuous =
+      (cellPath C j).cast (characteristicCellMap_sphereMinus C j)
+        (characteristicCellMap_spherePlus C j) := by
+    ext t
+    exact (characteristicCellMap_one_apply C j _).trans
+      ((congrArg (fun a ↦ map 1 j fun _ ↦ a) (diskSegment_coord t)).trans (cellPath_apply j t).symm)
+  exact (congrArg Path.Homotopic.Quotient.mk hpath).trans
+    (FundamentalGroupoid.conj_eqToHom (p := Path.Homotopic.Quotient.mk (cellPath C j)) _ _).symm
 
 end Cellular
 

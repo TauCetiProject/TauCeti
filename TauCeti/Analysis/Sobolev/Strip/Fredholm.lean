@@ -16,7 +16,7 @@ fibre `V` over the strip `ℝ × [0, 1]` whose boundary values lie in two subspa
 `V`, the tangent spaces of the Lagrangians in a trivialization along the strip. Such an operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)`, with an essentially bounded coefficient field
 `M : ℝ × ℝ → (V × V × V →L[ℝ] W)`, acts on `L²` jets of the strip by
-`TauCeti.jetOperator stripMeasure M`. That operator only involves the strip measure, so it
+`TauCeti.jetOperator 2 stripMeasure M`. That operator only involves the strip measure, so it
 serves the cylinder and the strip alike, and its restriction to the Sobolev space
 `TauCeti.StripSobolev.H1 F₀ F₁` is the realization `W^{1,2}_F(ℝ × [0, 1], V) → L²(ℝ × [0, 1], W)`
 of `D`.
@@ -117,9 +117,9 @@ theorem hasSemiFredholmEstimate_iff {M : ℝ × ℝ → V × V × V →L[ℝ] W}
 test sections. -/
 private theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     {C T : ℝ} (hest : HasSemiFredholmEstimate F₀ F₁ M C T) (ξ : testSection F₀ F₁) :
-    ‖jetLp (testSection F₀ F₁) ξ‖ ≤
-      √(max C 0) * (‖jetOperator stripMeasure M (jetLp (testSection F₀ F₁) ξ)‖ +
-        ‖restrictValue T (jetLp (testSection F₀ F₁) ξ)‖) := by
+    ‖jetLp 2 (testSection F₀ F₁) ξ‖ ≤
+      √(max C 0) * (‖jetOperator 2 stripMeasure M (jetLp 2 (testSection F₀ F₁) ξ)‖ +
+        ‖restrictValue T (jetLp 2 (testSection F₀ F₁) ξ)‖) := by
   obtain ⟨hξ, hξ₀, hξ₁, R, hR⟩ := mem_testSection_iff.1 ξ.property
   have hR₀ : ∀ s t, max R 0 ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
     hR s t ((le_max_left R 0).trans hs)
@@ -140,7 +140,7 @@ finite-dimensional kernel. -/
 theorem finiteDimensional_ker_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
     (hest : HasSemiFredholmEstimate F₀ F₁ M C T) :
-    FiniteDimensional ℝ ((jetOperator stripMeasure M).comp (H1 F₀ F₁).subtypeL).ker :=
+    FiniteDimensional ℝ ((jetOperator 2 stripMeasure M).comp (H1 F₀ F₁).subtypeL).ker :=
   finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     (isCompactOperator_restrictValue_comp_subtypeL F₀ F₁ T) (norm_jetLp_le hM hest)
 
@@ -150,7 +150,7 @@ theorem finiteDimensional_ker_jetOperator_comp_subtypeL [FiniteDimensional ℝ V
 theorem isClosed_range_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
     (hest : HasSemiFredholmEstimate F₀ F₁ M C T) :
-    IsClosed (((jetOperator stripMeasure M).comp (H1 F₀ F₁).subtypeL).range :
+    IsClosed (((jetOperator 2 stripMeasure M).comp (H1 F₀ F₁).subtypeL).range :
       Set (Lp W 2 stripMeasure)) :=
   isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     (isCompactOperator_restrictValue_comp_subtypeL F₀ F₁ T) (norm_jetLp_le hM hest)
@@ -168,10 +168,10 @@ theorem isFredholm_and_index_eq_of_hasSemiFredholmEstimate [FiniteDimensional �
     (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0))
     (hest : ∀ x ∈ s, ∃ C T, HasSemiFredholmEstimate F₀ F₁ (M x) C T) {x₀ x : X}
     (hx₀ : x₀ ∈ s) (hx : x ∈ s)
-    (h₀ : ((jetOperator stripMeasure (M x₀)).comp (H1 F₀ F₁).subtypeL).IsFredholm) :
-    ((jetOperator stripMeasure (M x)).comp (H1 F₀ F₁).subtypeL).IsFredholm ∧
-      ((jetOperator stripMeasure (M x)).comp (H1 F₀ F₁).subtypeL).index =
-        ((jetOperator stripMeasure (M x₀)).comp (H1 F₀ F₁).subtypeL).index :=
+    (h₀ : ((jetOperator 2 stripMeasure (M x₀)).comp (H1 F₀ F₁).subtypeL).IsFredholm) :
+    ((jetOperator 2 stripMeasure (M x)).comp (H1 F₀ F₁).subtypeL).IsFredholm ∧
+      ((jetOperator 2 stripMeasure (M x)).comp (H1 F₀ F₁).subtypeL).index =
+        ((jetOperator 2 stripMeasure (M x₀)).comp (H1 F₀ F₁).subtypeL).index :=
   isFredholm_and_index_eq_of_isPreconnected hs hM hcont
     (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
       finiteDimensional_ker_jetOperator_comp_subtypeL (hM z hz) h)
@@ -191,7 +191,7 @@ theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
     (hL2 : ∀ ξ : testSection F₀ F₁, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
     ∃ K : ℝ≥0, ∀ x : H1 F₀ F₁,
-      ‖x‖ ≤ K * ‖(jetOperator stripMeasure M).comp (H1 F₀ F₁).subtypeL x‖ :=
+      ‖x‖ ≤ K * ‖(jetOperator 2 stripMeasure M).comp (H1 F₀ F₁).subtypeL x‖ :=
   ⟨⟨√(max C 0) * (1 + √(max C' 0)), by positivity⟩,
     norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le (Real.sqrt_nonneg _)
       (norm_jetLp_le hM hest) fun ξ ↦
@@ -206,7 +206,7 @@ theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →
     (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ} (hest : HasSemiFredholmEstimate F₀ F₁ M C T)
     (hL2 : ∀ ξ : testSection F₀ F₁, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
-    ((jetOperator stripMeasure M).comp (H1 F₀ F₁).subtypeL).ker = ⊥ := by
+    ((jetOperator 2 stripMeasure M).comp (H1 F₀ F₁).subtypeL).ker = ⊥ := by
   obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
   exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
 

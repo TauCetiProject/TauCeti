@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
@@ -39,6 +41,10 @@ A continuous linear map itself has vanishing iterated derivatives of every order
 norm at most its own norm (`ContinuousLinearMap.norm_iteratedFDeriv_le_norm`). In particular the
 projections of a product have iterated derivatives of positive order of norm at most one
 (`TauCeti.norm_iteratedFDeriv_fst_le_one`, `TauCeti.norm_iteratedFDeriv_snd_le_one`).
+
+The `k`-th derivative of a finite sum `x ↦ ∑ l ∈ u, A l (g l x)` of postcompositions with
+continuous linear maps is bounded pointwise by `∑ l ∈ u, ‖A l‖ ‖Dᵏ g l x‖`
+(`TauCeti.norm_iteratedFDeriv_sum_comp_left_le`).
 -/
 
 public section
@@ -206,5 +212,18 @@ theorem norm_iteratedFDeriv_snd_le_one {k : ℕ} (hk : 1 ≤ k) (p : E × G) :
   have h := (ContinuousLinearMap.snd 𝕜 E G).norm_iteratedFDeriv_le_norm hk p
   rw [ContinuousLinearMap.coe_snd'] at h
   exact h.trans (ContinuousLinearMap.norm_snd_le 𝕜 E G)
+
+/-- The `k`-th derivative of a finite sum `x ↦ ∑ l ∈ u, A l (g l x)` of postcompositions with
+continuous linear maps is bounded at `x` by `∑ l ∈ u, ‖A l‖ ‖Dᵏ g l x‖`, when each `g l` is `Cᵏ`
+at `x`. -/
+theorem norm_iteratedFDeriv_sum_comp_left_le {ι : Type*} (u : Finset ι) (A : ι → F →L[𝕜] G)
+    {g : ι → E → F} {x : E} {k : ℕ} (hg : ∀ l ∈ u, ContDiffAt 𝕜 k (g l) x) :
+    ‖iteratedFDeriv 𝕜 k (fun x ↦ ∑ l ∈ u, A l (g l x)) x‖ ≤
+      ∑ l ∈ u, ‖A l‖ * ‖iteratedFDeriv 𝕜 k (g l) x‖ := by
+  have hc (l : ι) (hl : l ∈ u) : ContDiffAt 𝕜 k (fun x ↦ A l (g l x)) x :=
+    (A l).contDiff.contDiffAt.comp x (hg l hl)
+  rw [iteratedFDeriv_fun_sum_apply hc]
+  exact (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun l hl ↦ (A l).norm_iteratedFDeriv_comp_left (hg l hl) le_rfl)
 
 end TauCeti

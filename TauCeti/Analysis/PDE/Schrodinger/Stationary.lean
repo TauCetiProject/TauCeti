@@ -201,7 +201,7 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     exact integral_congr_ae (ae_of_all _ fun z ↦ mul_comm _ _)
   set S := schrodingerToLp hP
   set ι :=
-    (TestFunction.ambientToLp 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
+    (TestFunction.ambientToLp ℝ 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
   have hSφ (φ : TestFn E) : S φ =
       (memLp_neg_laplacian_add_mul hP φ.contDiff φ.hasCompactSupport).toLp _ := rfl
   have hιφ (φ : TestFn E) : ι φ =
@@ -233,7 +233,7 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
         _ = _ := by
             -- Green's identity `∫ φ (-Δφ) = ∫ ‖Dφ‖²`.
             have hG := integral_inner_gradient_eq_neg_integral_mul_laplacian (μ := volume)
-              φ.contDiff (φ.contDiff.of_le (by norm_num)) φ.hasCompactSupport
+              (fun _ _ ↦ φ.contDiff.contDiffAt) (φ.contDiff.of_le (by norm_num)) φ.hasCompactSupport
             simp only [real_inner_self_eq_norm_sq, norm_gradient_eq_norm_fderiv] at hG
             rw [integral_add hΔφ hPφ]
             simp only [mul_neg, integral_neg, hG]
@@ -280,7 +280,7 @@ theorem neg_laplacian_add_eq_of_integral_mul_neg_laplacian_add_mul_eq {P h g : E
     convert (Δ φ).memLp 2 (μ := volume) using 1
     exact funext fun z ↦ (SchwartzMap.laplacian_apply φ z).symm
   -- Both sides as real integrals against `h`, `g` and `P h`.
-  rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, laplacian_postcompCLM,
+  rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, SchwartzMap.laplacian_postcompCLM,
     Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
     Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
     Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, one_smul]

@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.Set.Card
+public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Data.Multiset.MapFold
+import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.SetTheory.Cardinal.NatCard
+import TauCeti.Data.Multiset.Fintype
 
 /-!
 # The multiset of orbit sizes
@@ -18,11 +21,14 @@ import Mathlib.SetTheory.Cardinal.NatCard
 For a group `G` acting on a finite type `X`, the multiset of the sizes of the orbits of `G` on
 `X` is a basic invariant of the action. This file records two ways in which it is preserved: by a
 change of the acting group that does not change the orbits, and by an equivariant bijection of
-the underlying types. It also bounds the length of a list of group elements with distinct images of
+the underlying types. It also computes the natural cardinality of a cyclic orbit in terms of
+`Function.minimalPeriod` and bounds the length of a list of group elements with distinct images of
 a point by the size of the orbit of that point.
 
 ## Main results
 
+* `MulAction.natCard_orbit_zpowers`: the `Subgroup.zpowers a`-orbit of `b` has natural cardinality
+  `Function.minimalPeriod (a • ·) b` (with both sides `0` for an infinite orbit).
 * `MulAction.orbitRel.Quotient.card_orbit_ne_zero`: an orbit in a finite action has nonzero
   natural cardinality.
 * `MulAction.orbitRel.Quotient.card_filter_quotient_mk`: the fiber of the orbit quotient
@@ -41,6 +47,18 @@ a point by the size of the orbit of that point.
 public section
 
 open MulAction
+
+namespace MulAction
+
+/-- The `Subgroup.zpowers a`-orbit of `b` has `Function.minimalPeriod (a • ·) b` points. If the
+orbit is infinite, then both sides are `0`. -/
+@[to_additive /-- The `AddSubgroup.zmultiples a`-orbit of `b` has
+`Function.minimalPeriod (a +ᵥ ·) b` points. If the orbit is infinite, then both sides are `0`. -/]
+theorem natCard_orbit_zpowers {G β : Type*} [Group G] [MulAction G β] (a : G) (b : β) :
+    Nat.card (orbit (Subgroup.zpowers a) b) = Function.minimalPeriod (a • ·) b :=
+  (Nat.card_congr (orbitZPowersEquiv a b)).trans (Nat.card_zmod _)
+
+end MulAction
 
 namespace MulAction.orbitRel.Quotient
 
@@ -79,17 +97,10 @@ theorem map_card_orbit_eq_of_image_orbit_eq {G G' X Y : Type*} [Group G] [Group 
     rw [orbitRel_apply, orbitRel_apply, ← h, e.injective.mem_set_image]
   -- `e` induces an equivalence of the orbit quotients preserving orbit sizes.
   let e' : orbitRel.Quotient G X ≃ orbitRel.Quotient G' Y := Quotient.congr e key
-  have hcard : ∀ ω : orbitRel.Quotient G X, Nat.card ω.orbit = Nat.card (e' ω).orbit := by
-    intro ω
-    refine Quotient.inductionOn' ω fun x => ?_
-    rw [orbitRel.Quotient.orbit_mk, Quotient.mk''_eq_mk, Quotient.congr_mk, ← Quotient.mk''_eq_mk,
-      orbitRel.Quotient.orbit_mk, ← h, Nat.card_image_of_injective e.injective]
-  calc (Finset.univ : Finset (orbitRel.Quotient G X)).val.map (fun ω => Nat.card ω.orbit)
-      = Finset.univ.val.map (fun ω => Nat.card (e' ω).orbit) :=
-        Multiset.map_congr rfl fun ω _ => hcard ω
-    _ = (Finset.univ.val.map e').map (fun ω => Nat.card ω.orbit) := by
-        rw [Multiset.map_map, Function.comp_def]
-    _ = _ := by rw [Multiset.map_univ_val_equiv]
+  refine Multiset.map_univ_val_eq_of_equiv e' fun ω => ?_
+  refine Quotient.inductionOn' ω fun x => ?_
+  rw [orbitRel.Quotient.orbit_mk, Quotient.mk''_eq_mk, Quotient.congr_mk, ← Quotient.mk''_eq_mk,
+    orbitRel.Quotient.orbit_mk, ← h, Nat.card_image_of_injective e.injective]
 
 open scoped Classical in
 /-- **Equivariant bijections preserve orbit sizes.** If `e : X ≃ Y` is a bijection between finite

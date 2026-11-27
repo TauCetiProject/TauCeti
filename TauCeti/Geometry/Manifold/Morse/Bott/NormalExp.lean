@@ -76,9 +76,9 @@ variable [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 normal slice on the orthogonal normal space precomposed with the orthogonal-representative
 equivalence. -/
 private theorem comp_normalExp_mk_eq_comp (s : S) :
-    (fun v : i.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) =
-      (fun w : (i.tangentRange s hn)ᗮ ↦
-        f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn w⟩)) ∘
+    (fun v : i.isImmersion.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) =
+      (fun w : (i.isImmersion.tangentRange s hn)ᗮ ↦
+        f (i.normalExp (P := P) hn ⟨s, i.isImmersion.normalClass s hn w⟩)) ∘
         i.normalSpaceOrthogonalComplementEquiv s hn := by
   ext v
   rw [comp_apply, ← normalSpaceOrthogonalComplementEquiv_symm_apply,
@@ -99,43 +99,52 @@ include h
 /-- The normal slice `v ↦ f (exp_{i s} v)` of a critical submanifold is `C²` at `0`. -/
 theorem contDiffAt_comp_normalExp_fiber_zero (s : S) :
     ContDiffAt ℝ 2
-      (fun v : (i.tangentRange s hn)ᗮ ↦ f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩))
+      (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ f
+          (i.normalExp (P := P) hn ⟨s, i.isImmersion.normalClass s hn v⟩))
       0 := by
   have hf : ContMDiffAt I 𝓘(ℝ) 2 f
-      (i.normalExp (P := P) hn ⟨s, i.normalClass s hn ((0 : (i.tangentRange s hn)ᗮ) :
+      (i.normalExp (P := P) hn
+          ⟨s, i.isImmersion.normalClass s hn ((0 : (i.isImmersion.tangentRange s hn)ᗮ) :
         TangentSpace I (i s))⟩) := by
     rw [i.normalExp_fiber_zero (P := P) hn s]
     exact h.contMDiffAt s
-  exact (hf.comp (0 : (i.tangentRange s hn)ᗮ)
+  exact (hf.comp (0 : (i.isImmersion.tangentRange s hn)ᗮ)
     ((i.contMDiffAt_normalExp_fiber_zero (P := P) hn s).of_le (by norm_cast))).contDiffAt
 
 omit h in
 /-- The normal exponential on the orthogonal normal space is `C²` at `0`. -/
 private theorem contMDiffAt_two_normalExp_fiber_zero (s : S) :
-    ContMDiffAt 𝓘(ℝ, (i.tangentRange s hn)ᗮ) I 2
-      (fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩) 0 :=
+    ContMDiffAt 𝓘(ℝ, (i.isImmersion.tangentRange s hn)ᗮ) I 2
+      (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+          ⟨s, i.isImmersion.normalClass s hn v⟩) 0 :=
   (i.contMDiffAt_normalExp_fiber_zero (P := P) hn s).of_le (by norm_cast)
 
 /-- The normal slice `v ↦ f (exp_{i s} v)` of a critical submanifold has a critical point at `0`.
 -/
 theorem fderiv_comp_normalExp_fiber_zero (s : S) :
     fderiv ℝ
-      (fun v : (i.tangentRange s hn)ᗮ ↦ f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩))
+      (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ f
+          (i.normalExp (P := P) hn ⟨s, i.isImmersion.normalClass s hn v⟩))
       0 = 0 :=
   h.fderiv_comp_eq_zero
-    (φ := fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)
+    (φ := fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+        ⟨s, i.isImmersion.normalClass s hn v⟩)
     (y := 0) (i.normalExp_fiber_zero hn s)
     ((i.contMDiffAt_normalExp_fiber_zero (P := P) hn s).mdifferentiableAt (by simp))
 
 /-- **The Hessian of a normal slice is the normal Hessian.** For a critical submanifold `i` of `f`
 and `s : S`, the Hessian at `0` of the normal slice `v ↦ f (exp_{i s} v)` on the orthogonal normal
 space is the normal Hessian at `s` evaluated on the normal classes of its arguments. -/
-theorem fderiv_fderiv_comp_normalExp_fiber_zero_apply (s : S) (u w : (i.tangentRange s hn)ᗮ) :
+theorem fderiv_fderiv_comp_normalExp_fiber_zero_apply (s : S)
+    (u w : (i.isImmersion.tangentRange s hn)ᗮ) :
     fderiv ℝ (fderiv ℝ
-      (fun v : (i.tangentRange s hn)ᗮ ↦ f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)))
-      0 u w = h.normalHessian hn s (i.normalClass s hn u) (i.normalClass s hn w) := by
+      (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ f
+          (i.normalExp (P := P) hn ⟨s, i.isImmersion.normalClass s hn v⟩)))
+      0 u w = h.normalHessian hn s (i.isImmersion.normalClass s hn u)
+          (i.isImmersion.normalClass s hn w) := by
   refine (h.fderiv_fderiv_comp_apply hn
-      (φ := fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)
+      (φ := fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+          ⟨s, i.isImmersion.normalClass s hn v⟩)
       (y := 0) (i.normalExp_fiber_zero hn s)
     (contMDiffAt_two_normalExp_fiber_zero hn s) u w).trans ?_
   -- The vertical derivative of the normal exponential at `0` is the inclusion of the
@@ -150,9 +159,10 @@ omit h in
 `0` followed by the projection to the normal space is the identification of the orthogonal normal
 space with the normal space. -/
 private theorem bijective_normalClass_mfderiv_normalExp_fiber_zero (s : S) :
-    Bijective fun v : (i.tangentRange s hn)ᗮ ↦ i.normalClass s hn
-      (mfderiv 𝓘(ℝ, (i.tangentRange s hn)ᗮ) I
-        (fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩) 0
+    Bijective fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.isImmersion.normalClass s hn
+      (mfderiv 𝓘(ℝ, (i.isImmersion.tangentRange s hn)ᗮ) I
+        (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+            ⟨s, i.isImmersion.normalClass s hn v⟩) 0
         v) := by
   convert (i.normalSpaceOrthogonalComplementEquiv s hn).symm.bijective using 2 with v
   rw [mfderiv_normalExp_fiber_zero_apply (P := P) i hn s v,
@@ -165,19 +175,22 @@ when, at every `s : S`, the normal slice `v ↦ f (exp_{i s} v)` on the orthogon
 a nondegenerate critical point at `0`. -/
 theorem isNondegenerateCriticalSubmanifold_iff_forall_isNondegenerateCriticalPoint :
     i.IsNondegenerateCriticalSubmanifold f ↔ ∀ s, IsNondegenerateCriticalPoint
-      (fun v : (i.tangentRange s hn)ᗮ ↦ f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩))
+      (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ f
+          (i.normalExp (P := P) hn ⟨s, i.isImmersion.normalClass s hn v⟩))
       0 := by
   have hφ (s : S) := contMDiffAt_two_normalExp_fiber_zero (P := P) (i := i) hn s
   constructor
   · intro hB s
     exact hB.isNondegenerateCriticalPoint_comp hn
-      (φ := fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)
+      (φ := fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+          ⟨s, i.isImmersion.normalClass s hn v⟩)
       (y := 0) (i.normalExp_fiber_zero hn s) (hφ s)
       (bijective_normalClass_mfderiv_normalExp_fiber_zero hn s)
   · intro hN
     exact ⟨h, fun s ↦ (h.ker_normalHessian_eq_bot_iff hn s).mp
       (h.ker_normalHessian_eq_bot_of_isNondegenerateCriticalPoint_comp hn
-        (φ := fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)
+        (φ := fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+            ⟨s, i.isImmersion.normalClass s hn v⟩)
         (y := 0) (i.normalExp_fiber_zero hn s) (hφ s)
         (bijective_normalClass_mfderiv_normalExp_fiber_zero hn s).2 (hN s))⟩
 
@@ -186,10 +199,12 @@ index at `0` of the normal slice `v ↦ f (exp_{i s} v)` on the orthogonal norma
 index of `f` at `i s`. -/
 theorem morseIndex_comp_normalExp_fiber_zero (s : S) :
     morseIndex
-      (fun v : (i.tangentRange s hn)ᗮ ↦ f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩))
+      (fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ f
+          (i.normalExp (P := P) hn ⟨s, i.isImmersion.normalClass s hn v⟩))
       0 = manifoldMorseIndex I f (i s) :=
   h.morseIndex_comp hn
-    (φ := fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)
+    (φ := fun v : (i.isImmersion.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn
+        ⟨s, i.isImmersion.normalClass s hn v⟩)
     (y := 0) (i.normalExp_fiber_zero hn s)
     (contMDiffAt_two_normalExp_fiber_zero hn s)
     (bijective_normalClass_mfderiv_normalExp_fiber_zero hn s)
@@ -199,7 +214,8 @@ theorem morseIndex_comp_normalExp_fiber_zero (s : S) :
 theorem fderiv_comp_normalExp_mk_zero (s : S) :
     letI := i.normalSpaceNormedAddCommGroup s hn
     letI := i.normalSpaceNormedSpace s hn
-    fderiv ℝ (fun v : i.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) 0 = 0 := by
+    fderiv ℝ (fun v : i.isImmersion.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) 0 =
+        0 := by
   let := i.normalSpaceNormedAddCommGroup s hn
   let := i.normalSpaceNormedSpace s hn
   rw [comp_normalExp_mk_eq_comp, ContinuousLinearEquiv.comp_right_fderiv, map_zero,
@@ -207,10 +223,12 @@ theorem fderiv_comp_normalExp_mk_zero (s : S) :
 
 /-- The Hessian at `0` of the normal slice read on the intrinsic normal space over `s`, with its
 quotient norm, is the normal Hessian. -/
-theorem fderiv_fderiv_comp_normalExp_mk_zero_apply (s : S) (u w : i.NormalSpace s hn) :
+theorem fderiv_fderiv_comp_normalExp_mk_zero_apply (s : S) (u w : i.isImmersion.NormalSpace s hn) :
     letI := i.normalSpaceNormedAddCommGroup s hn
     letI := i.normalSpaceNormedSpace s hn
-    fderiv ℝ (fderiv ℝ fun v : i.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) 0 u w =
+    fderiv ℝ
+        (fderiv ℝ fun v : i.isImmersion.NormalSpace s hn ↦ f
+            (i.normalExp (P := P) hn ⟨s, v⟩)) 0 u w =
       h.normalHessian hn s u w := by
   let := i.normalSpaceNormedAddCommGroup s hn
   let := i.normalSpaceNormedSpace s hn
@@ -232,11 +250,11 @@ intrinsic normal space over `s`, with its quotient norm, is invertible. -/
 theorem isInvertible_fderiv_fderiv_comp_normalExp_mk_zero (s : S) :
     letI := i.normalSpaceNormedAddCommGroup s hn
     letI := i.normalSpaceNormedSpace s hn
-    (fderiv ℝ (fderiv ℝ fun v : i.NormalSpace s hn ↦
+    (fderiv ℝ (fderiv ℝ fun v : i.isImmersion.NormalSpace s hn ↦
       f (i.normalExp (P := P) hn ⟨s, v⟩)) 0).IsInvertible := by
   let := i.normalSpaceNormedAddCommGroup s hn
   let := i.normalSpaceNormedSpace s hn
-  exact ContinuousLinearMap.isInvertible_of_injective (𝕜 := ℝ) (E := i.NormalSpace s hn)
+  exact ContinuousLinearMap.isInvertible_of_injective (𝕜 := ℝ) (E := i.isImmersion.NormalSpace s hn)
     (h.injective_of_normalHessian_eq hn (LinearEquiv.refl ℝ _) fun u w ↦
       (h.toIsCriticalSubmanifold.fderiv_fderiv_comp_normalExp_mk_zero_apply (P := P) hn s u
         w).symm)

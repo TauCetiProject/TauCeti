@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
+public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -33,6 +35,10 @@ fixed-support coefficient map `Bundle.Trivialization.chartTestCoeff`
 chart recovers `ψ • s` when `tsupport ψ ⊆ c.source`
 (`Bundle.Trivialization.chartTestSection_chartLocalization`).
 
+For chart cutoffs (`TauCeti.ChartCutoffs`) every section supported in a compact set `K` is the sum
+of these pieces over the cutoffs meeting `K`
+(`TauCeti.ChartCutoffs.sum_chartTestSection_chartLocalization`).
+
 ## Main declarations
 
 * `Bundle.Trivialization.chartLocalization`: the chart localization of sections, a linear map into
@@ -44,9 +50,26 @@ chart recovers `ψ • s` when `tsupport ψ ⊆ c.source`
   fixed-support chart coefficients for the frame topology.
 * `Bundle.Trivialization.chartTestSection_chartLocalization`: extending the localization through
   the chart recovers `ψ • s`.
+* `TauCeti.ChartCutoffs.sum_chartTestSection_chartLocalization`: a section supported in a compact
+  set is the sum of the chart extensions of its localizations along chart cutoffs.
+* `TauCeti.baseSetChart`: the chart at a point restricted to the base set of the trivialization
+  there and read in the model space, with `TauCeti.coe_baseSetChart`.
 * `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
   smooth chart into the model space with smooth inverse, inside the base set of the trivialization
   at that point.
+* `TauCeti.ChartCutoffs.exists_source_subset_baseSet`: on a boundaryless Hausdorff `σ`-compact
+  manifold, chart cutoffs whose charts lie inside the base sets of the trivializations.
+* `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
+  inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
+
+The fixed-support part rests on
+`ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`: on a fixed compact support, the
+topology of test functions is the weak Whitney topology.
+
+## References
+
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, 2nd ed., §6.3, for test
+  functions and distributions on manifolds through partitions of unity subordinate to charts.
 -/
 
 public noncomputable section
@@ -198,7 +221,10 @@ theorem continuous_chartCoeffLinearMap (hcover : ∀ x : M, ∃ i, x ∈ U i)
 frame system to the topology of test functions supported in `L`. -/
 theorem continuous_chartLocalization
     (ψ : C^n⟮I, M; ℝ⟯) (L : Compacts E) (hL : (L : Set E) ⊆ c.target)
-    (hψ : MapsTo c (tsupport ψ) L) (hcover : ∀ x : M, ∃ i, x ∈ U i) :
+    (hψ : MapsTo c (tsupport ψ) L)
+    {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+    (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartLocalization c hc hct ψ L hL hψ) := by
   let := frameTopology (I := I) (n := n) e U hU
@@ -225,13 +251,113 @@ theorem continuous_chartTestCoeff [IsManifold I n M] [LocallyCompactSpace E]
 
 end Bundle.Trivialization
 
-section TestChart
+namespace TauCeti.ChartCutoffs
+
+open ContMDiffSection
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {n : ℕ∞} [ContMDiffVectorBundle n F V I] {ι : Type*}
+
+/-- **Decomposition along chart cutoffs.** A section `s` supported in a compact set `K` is the
+sum, over the cutoffs `ρᵢ` meeting `K`, of the chart extensions of its chart localizations along
+`ρᵢ`, read in trivializations `tᵢ` of the atlas over the chart sources. -/
+theorem sum_chartTestSection_chartLocalization (A : ChartCutoffs I M n ι)
+    (t : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (t i)]
+    (ht : ∀ i, (A.chart i).source ⊆ (t i).baseSet) {K : Set M} (hK : IsCompact K)
+    (s : Cₛ^n⟮I; F, V⟯) (hs : s.tsupport ⊆ K) :
+    ∑ i ∈ A.meeting K hK, ((t i).chartTestSection (A.chart i) (A.contMDiffOn_chart i) (ht i)
+      (TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
+        ((t i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i)
+          (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo_chartSupport i)
+            s))).val = s := by
+  simp only [Bundle.Trivialization.chartTestSection_chartLocalization _ _ _ _ _ _ _ _
+    (A.contMDiffOn_chart _) (A.tsupport_subset _), ← Finset.sum_smul]
+  ext y
+  rw [ContMDiffSection.smul_apply]
+  by_cases hy : y ∈ K
+  · rw [ContMDiffMap.coe_sum]
+    simp [A.sum_meeting_eq_one hK hy]
+  · rw [s.eq_zero_of_notMem_tsupport fun h ↦ hy (hs h), smul_zero]
+
+end TauCeti.ChartCutoffs
+
+namespace TauCeti
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace F]
   (V : M → Type*) [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V]
+
+section BaseSetChart
+
+variable [I.Boundaryless]
+
+variable (I F) in
+/-- The chart at `x`, restricted to the base set of the trivialization at `x` and read in the model
+space: an open partial homeomorphism onto an open subset of `E` since the model is boundaryless. -/
+def baseSetChart (x : M) : OpenPartialHomeomorph M E :=
+  ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E)
+
+/-- The source of `baseSetChart F I V x` is the part of the chart source over the base set. -/
+theorem baseSetChart_source (x : M) :
+    (baseSetChart F I V x).source = (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
+  rw [baseSetChart, OpenPartialHomeomorph.extendTrans_source,
+    OpenPartialHomeomorph.restr_source' _ _ (trivializationAt F V x).open_baseSet]
+
+/-- As a function, `baseSetChart F I V x` is the extended chart at `x`. -/
+theorem coe_baseSetChart (x : M) : ⇑(baseSetChart F I V x) = extChartAt I x := by
+  rw [baseSetChart, OpenPartialHomeomorph.coe_extendTrans_refl, OpenPartialHomeomorph.extend_coe,
+    extChartAt_coe, OpenPartialHomeomorph.restr_apply]
+
+/-- The point `x` lies in the source of `baseSetChart F I V x`. -/
+theorem mem_baseSetChart_source (x : M) : x ∈ (baseSetChart F I V x).source := by
+  rw [baseSetChart_source]
+  exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+
+/-- The source of `baseSetChart F I V x` lies in the base set of the trivialization at `x`. -/
+theorem baseSetChart_source_subset (x : M) :
+    (baseSetChart F I V x).source ⊆ (trivializationAt F V x).baseSet := by
+  rw [baseSetChart_source]
+  exact inter_subset_right
+
+omit [I.Boundaryless] in
+private theorem restr_chartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    (chartAt H x).restr (trivializationAt F V x).baseSet ∈ IsManifold.maximalAtlas I n M :=
+  restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
+    (trivializationAt F V x).open_baseSet
+
+/-- `baseSetChart F I V x` is smooth on its source. -/
+theorem contMDiffOn_baseSetChart {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ContMDiffOn I 𝓘(ℝ, E) n (baseSetChart F I V x) (baseSetChart F I V x).source :=
+  OpenPartialHomeomorph.contMDiffOn_extendTrans _ (restr_chartAt_mem_maximalAtlas V x) contDiff_id
+
+/-- The inverse of `baseSetChart F I V x` is smooth on its target. -/
+theorem contMDiffOn_baseSetChart_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ContMDiffOn 𝓘(ℝ, E) I n (baseSetChart F I V x).symm (baseSetChart F I V x).target :=
+  OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (restr_chartAt_mem_maximalAtlas V x)
+    contDiff_id
+
+variable (I F) in
+/-- On a boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, there are chart
+cutoffs whose chart at each point `x` has its source in the base set of the trivialization at
+`x`. -/
+theorem ChartCutoffs.exists_source_subset_baseSet {n : ℕ∞} [FiniteDimensional ℝ E]
+    [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] :
+    ∃ A : ChartCutoffs I M n M,
+      ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet :=
+  ChartCutoffs.exists_source_subset (fun x ↦ (trivializationAt F V x).open_baseSet)
+    (FiberBundle.mem_baseSet_trivializationAt' ·)
+
+end BaseSetChart
+
+section TestChart
 
 variable (I F) in
 /-- The extended chart at `x`, restricted to the base set of the trivialization at `x`: an open
@@ -267,7 +393,7 @@ private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x 
 variable (I F) in
 /-- On a boundaryless manifold, every point `x` lies in the source of a smooth chart into the
 model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
-theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M]
+theorem exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M]
     [BoundarylessManifold I M] (x : M) :
     ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
       ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
@@ -276,3 +402,54 @@ theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I 
     testChart_source_subset V x, mem_testChart_source V x⟩
 
 end TestChart
+
+end TauCeti
+
+namespace ContMDiffSection
+
+open Bundle.Trivialization
+
+section ChartTestData
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  [TopologicalSpace M] [ChartedSpace H M]
+  (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (V : M → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] (n : ℕ∞)
+
+/-- The data of a chart extension of native test functions: a trivialization of the atlas
+together with a chart that is `C^n` on its source and whose source lies in the base set. -/
+structure ChartTestData where
+  /-- The trivialization giving the bundle frame. -/
+  trivialization : Trivialization F (π F V)
+  /-- The trivialization belongs to the atlas of the fiber bundle. -/
+  [memTrivializationAtlas : MemTrivializationAtlas trivialization]
+  /-- The coordinate chart. -/
+  chart : OpenPartialHomeomorph M E
+  /-- The chart is `C^n` on its source. -/
+  contMDiffOn_chart : ContMDiffOn I 𝓘(ℝ, E) n chart chart.source
+  /-- The chart source lies in the base set of the trivialization. -/
+  source_subset : chart.source ⊆ trivialization.baseSet
+
+variable {I F V n} [T2Space M] [ContMDiffVectorBundle n F V I]
+
+/-- The chart extension of native test functions given by chart data. -/
+def ChartTestData.chartTestSection (p : ChartTestData I F V n) :
+    𝓓^{n}(⟨p.chart.target, p.chart.open_target⟩, F) →ₗ[ℝ] compactlySupported I F n V :=
+  letI := p.memTrivializationAtlas
+  p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset
+
+/-- The chart extension indexed by chart data is the chart extension of its trivialization and
+chart. -/
+@[simp]
+theorem ChartTestData.chartTestSection_def (p : ChartTestData I F V n) :
+    letI := p.memTrivializationAtlas
+    p.chartTestSection =
+      p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset :=
+  (rfl)
+
+end ChartTestData
+
+end ContMDiffSection
