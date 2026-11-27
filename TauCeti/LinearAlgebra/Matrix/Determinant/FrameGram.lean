@@ -100,14 +100,8 @@ theorem det_conjTranspose_fromCols_mul_mul_fromCols_of_frame (hA : A.IsHermitian
       (-1) ^ (n + 1) * ((Fᴴ * A * F').det * star (Fᴴ * A * F').det - T * T' *
         (((Fᴴ * A * F').submatrix castSucc castSucc).det *
           star ((Fᴴ * A * F').submatrix castSucc castSucc).det)) := by
-  have h_adj : F'ᴴ * A * F = (Fᴴ * A * F')ᴴ := by
-    simp only [conjTranspose_mul, conjTranspose_conjTranspose, hA.eq, Matrix.mul_assoc]
-  have h_gram : (fromCols F F')ᴴ * A * fromCols F F' =
-      fromBlocks (single (last n) (last n) (-T)) (Fᴴ * A * F') (Fᴴ * A * F')ᴴ
-        (single (last n) (last n) (-T')) := by
-    rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul, fromRows_mul_fromCols, hF,
-      hF', h_adj]
-  rw [h_gram, det_fromBlocks_single₁₁_single₂₂, det_conjTranspose, ← conjTranspose_submatrix,
+  rw [hA.conjTranspose_fromCols_mul_mul_fromCols F F', hF, hF',
+    det_fromBlocks_single₁₁_single₂₂, det_conjTranspose, ← conjTranspose_submatrix,
     det_conjTranspose, neg_mul_neg]
 
 /-- **The Gram determinant of a frame and the image of a frame.** For an isometry `x` of the

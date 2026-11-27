@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 import TauCeti.Data.Matrix.Mul
 
 /-!
@@ -13,6 +15,8 @@ import TauCeti.Data.Matrix.Mul
 
 The four blocks extracted from a matrix on sum index types are its submatrices along the
 corresponding sum injections. These identities connect the block and submatrix APIs.
+For a Hermitian form, the Gram matrix of two concatenated column families has the two
+individual Gram matrices on the diagonal and the cross pairings off the diagonal.
 
 The determinant of a block-diagonal matrix `Matrix.blockDiagonal' M` whose blocks may have
 different index types is the product of the determinants of its blocks. This is the dependent
@@ -121,6 +125,16 @@ public theorem eq_fromBlocks_of_toBlocks₁₂_eq_zero_of_toBlocks₂₁_eq_zero
     [Zero α] {X : Matrix (m ⊕ n) (p ⊕ q) α} (h₁₂ : X.toBlocks₁₂ = 0) (h₂₁ : X.toBlocks₂₁ = 0) :
     X = fromBlocks X.toBlocks₁₁ 0 0 X.toBlocks₂₂ := by
   rw [← h₁₂, ← h₂₁, fromBlocks_toBlocks]
+
+/-- The Gram matrix of concatenated columns for a Hermitian form `G` has the two individual
+Gram matrices as diagonal blocks and conjugate-transpose cross blocks. -/
+public theorem IsHermitian.conjTranspose_fromCols_mul_mul_fromCols {m n p R : Type*}
+    [Fintype m] [Semiring R] [StarRing R] {G : Matrix m m R} (hG : G.IsHermitian)
+    (A : Matrix m n R) (B : Matrix m p R) :
+    (fromCols A B)ᴴ * G * fromCols A B =
+      Matrix.fromBlocks (Aᴴ * G * A) (Aᴴ * G * B) (Aᴴ * G * B)ᴴ (Bᴴ * G * B) := by
+  rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul, fromRows_mul_fromCols]
+  simp only [conjTranspose_mul, conjTranspose_conjTranspose, hG.eq, Matrix.mul_assoc]
 
 /-- The determinant of a block-diagonal matrix with blocks of possibly different sizes is the
 product of the determinants of the blocks. This is the dependent version of
