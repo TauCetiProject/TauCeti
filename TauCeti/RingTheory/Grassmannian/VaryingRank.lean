@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Localization.Away.Lemmas
 public import TauCeti.RingTheory.Grassmannian.StableLocus
 public import TauCeti.RingTheory.Spectrum.Prime.LocallyConstant
 public import TauCeti.RingTheory.Spectrum.Prime.Rank.Surjective
@@ -54,6 +55,13 @@ noncomputable abbrev quotientRankIdempotent (r : ℕ) : A :=
 /-- The coefficient ring of the clopen locus where the quotient by `N` has rank `r`. -/
 noncomputable abbrev quotientRankRing (r : ℕ) : Type w :=
   A ⧸ Ideal.span {(1 - quotientRankIdempotent N r)}
+
+/-- The rank-factor ring is the localization at its fibre idempotent. -/
+noncomputable instance (r : ℕ) :
+    IsLocalization.Away (quotientRankIdempotent N r) (quotientRankRing N r) :=
+  IsLocalization.Away.quotient_of_isIdempotentElem
+    (isIdempotentElem_fiberIdempotent
+      (Module.isLocallyConstant_rankAtStalk (R := A) (M := P ⧸ N)) r)
 
 /-- Scalar extension of the quotient to its rank-`r` factor has constant stalk rank `r`. -/
 @[simp]

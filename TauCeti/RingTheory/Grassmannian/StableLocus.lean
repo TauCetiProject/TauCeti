@@ -11,9 +11,6 @@ public import TauCeti.RingTheory.Grassmannian.Basic
 
 import TauCeti.LinearAlgebra.TensorProduct.Tower
 
--- Proof-only: identify the native quotient map with the tensor-tower equivalence.
-import all Mathlib.RingTheory.Grassmannian
-
 /-!
 # The locus of submodules stable under an endomorphism
 
@@ -83,8 +80,7 @@ theorem invtSubmodule_ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B]
     {N : Submodule A (A ⊗[R] M)} {t : Module.End R M}
     (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) :
     (baseChangeMkQ B N).ker ∈ Module.End.invtSubmodule (t.baseChange B) := by
-  rw [baseChangeMkQ, LinearMap.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+  rw [ker_baseChangeMkQ_eq_map]
   have he : (AlgebraTensorModule.cancelBaseChange R A B B M).conj
       ((t.baseChange A).baseChange B) = t.baseChange B := by
     apply LinearMap.ext

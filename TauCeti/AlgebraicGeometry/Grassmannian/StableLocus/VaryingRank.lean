@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.StableLocus
 public import TauCeti.RingTheory.Grassmannian.VaryingRank
-import Mathlib.AlgebraicGeometry.Limits
+import TauCeti.AlgebraicGeometry.Limits.Coproduct
 
 /-!
 # Classifying stable quotients of varying rank
@@ -67,7 +67,7 @@ theorem ι_schemeStableLocusCoproductToSpec (r : Fin (d + 1)) :
 
 section RankCover
 
-variable {P : Type u} [AddCommGroup P] [Module A P]
+variable {P : Type*} [AddCommGroup P] [Module A P]
   (N : Submodule A P) [Module.Finite A (P ⧸ N)] [Module.Projective A (P ⧸ N)]
   (hd : ∀ p : PrimeSpectrum A, Module.rankAtStalk (P ⧸ N) p ≤ d)
 
@@ -154,6 +154,33 @@ theorem specMap_comp_stableQuotientToScheme
   rw [← ι_stableQuotientRankCover d N r]
   simp only [stableQuotientToScheme, Category.assoc, IsIso.hom_inv_id_assoc,
     Sigma.ι_comp_desc]
+
+/-- The inverse image of the rank-`r` summand is exactly the quotient-rank-`r` fibre. -/
+@[simp]
+theorem stableQuotientToScheme_preimage_range_ι
+    (hN : N ∈ Module.End.invtSubmodule (t.baseChange A)) (r : Fin (d + 1)) :
+    stableQuotientToScheme d t N hd hN ⁻¹'
+        Set.range (Sigma.ι (fun r : Fin (d + 1) ↦
+          (schemeStableLocus (r : ℕ) t).subscheme) r) =
+      {p | Module.rankAtStalk ((A ⊗[R] M) ⧸ N) p = r} := by
+  have := isIso_stableQuotientRankCover d N hd
+  ext p
+  obtain ⟨x, rfl⟩ := (stableQuotientRankCover d N).surjective p
+  obtain ⟨s, x, rfl⟩ : ∃ (s : Fin (d + 1))
+      (y : Spec (.of (quotientRankRing N s))),
+        Sigma.ι (fun s : Fin (d + 1) ↦ Spec (.of (quotientRankRing N s))) s y = x :=
+    (sigmaOpenCover fun s : Fin (d + 1) ↦ Spec (.of (quotientRankRing N s))).exists_eq x
+  rw [← Scheme.Hom.comp_apply, ι_stableQuotientRankCover]
+  have hmap := congrArg (fun f ↦ f x)
+    (specMap_comp_stableQuotientToScheme d t N hd hN s)
+  simp only [Scheme.Hom.comp_apply] at hmap
+  rw [Set.mem_preimage, hmap, TauCeti.AlgebraicGeometry.sigmaι_apply_mem_range_sigmaι_iff]
+  have hrank : Module.rankAtStalk ((A ⊗[R] M) ⧸ N)
+      (Spec.map (CommRingCat.ofHom (algebraMap A (quotientRankRing N s))) x) = s := by
+    rw [Spec.map_apply, CommRingCat.hom_ofHom]
+    exact (Module.rankAtStalk_baseChange (M := (A ⊗[R] M) ⧸ N) x).symm.trans
+      (rankAtStalk_quotientRankRing_tensor_quotient N s x)
+  exact Fin.ext_iff.trans (congrArg (· = (r : ℕ)) hrank).symm.to_iff
 
 /-- The varying-rank classifying morphism lies over the ground ring. -/
 @[reassoc (attr := simp)]

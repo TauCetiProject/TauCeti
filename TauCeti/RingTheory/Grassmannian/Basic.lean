@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Grassmannian
+public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.RingTheory.Flat.LocallyFree
@@ -265,23 +266,28 @@ theorem baseChangeMkQ_rTensor [Algebra A B] [IsScalarTower R A B] (N : Submodule
       TensorProduct.smul_tmul']
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, tmul_add]
 
+/-- The native base-change kernel is transported from the scalar-extended quotient kernel
+by the tensor-tower equivalence. -/
+theorem ker_baseChangeMkQ_eq_map [Algebra A B] [IsScalarTower R A B]
+    (N : Submodule A (A ⊗[R] M)) :
+    (baseChangeMkQ B N).ker = (N.mkQ.baseChange B).ker.map
+      (AlgebraTensorModule.cancelBaseChange R A B B M).toLinearMap := by
+  rw [baseChangeMkQ, LinearMap.ker_comp,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+
 /-- By right exactness of the tensor product, the kernel of `baseChangeMkQ B N` is spanned over `B`
 by the image of `N`. -/
 theorem ker_baseChangeMkQ [Algebra A B] [IsScalarTower R A B] (N : Submodule A (A ⊗[R] M)) :
     LinearMap.ker (baseChangeMkQ B N) =
       Submodule.span B ((IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M '' N) := by
-  have hker : LinearMap.ker (N.mkQ.baseChange B) = N.baseChange B := by
-    ext x
-    rw [LinearMap.mem_ker, LinearMap.baseChange_eq_lTensor, ← LinearMap.mem_ker, lTensor_mkQ,
-      Submodule.baseChange, LinearMap.mem_range, LinearMap.mem_range]
-    simp only [LinearMap.baseChange_eq_lTensor]
   have hcancel (x : A ⊗[R] M) : AlgebraTensorModule.cancelBaseChange R A B B M ((1 : B) ⊗ₜ x) =
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
     induction x using TensorProduct.inductionOn with
     | tmul a m => simp [Algebra.algebraMap_eq_smul_one]
     | add x y hx hy => simp [tmul_add, hx, hy]
-  rw [baseChangeMkQ, LinearMap.ker_comp, hker, Submodule.comap_equiv_eq_map_symm,
-    LinearEquiv.symm_symm, Submodule.baseChange_eq_span, Submodule.map_span, Submodule.map_coe,
+  rw [ker_baseChangeMkQ_eq_map,
+    LinearMap.ker_baseChange_of_surjective B _ N.mkQ_surjective, Submodule.ker_mkQ,
+    Submodule.baseChange_eq_span, Submodule.map_span, Submodule.map_coe,
     ← Set.image_comp]
   exact congrArg _ (Set.image_congr fun x _ ↦ hcancel x)
 
