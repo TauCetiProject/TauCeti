@@ -129,7 +129,8 @@ theorem nonempty_iso_rescale [FiniteDimensional E V] (D : WeilDeligneParameter E
     (D.r_mul_N (Φ ^ d)) ha
   refine ⟨⟨.mk (LinearMap.GeneralLinearGroup.toLinearEquiv g) fun w ↦ ?_, ?_⟩⟩
   · rw [rescale_r]
-    exact (hgT _ (hFr w)).eq
+    ext v
+    simpa using LinearMap.congr_fun (hgT _ (hFr w)).eq v
   · rw [rescale_N]
     ext v
     simpa using LinearMap.congr_fun hgN v
