@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Block
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Adjunction
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.Algebra.BigOperators.Finset.Average
 
 /-!
 # Frobenius reciprocity for the Hall algebra
@@ -273,11 +274,6 @@ section Frobenius
 
 variable {k : Type*} [Field k] [Fintype k] [DecidableEq k] {ι : Type*} [LinearOrder ι]
 
-/-- A mean over a product is an iterated mean. -/
-private theorem expect_prod_eq {α β : Type*} [Fintype α] [Fintype β] (f : α × β → ℂ) :
-    𝔼 p, f p = 𝔼 a, 𝔼 b, f (a, b) := by
-  rw [← Finset.univ_product_univ, Finset.expect_product]
-
 /-- Frobenius reciprocity with no levels: then `n` is empty. -/
 private theorem rankInner_prod_rankPart_empty (F : ι → HallAlgebra k) {n : Type*} [Fintype n]
     [DecidableEq n] (b : n → ι) (hs : ∀ i, b i ∈ (∅ : Finset ι))
@@ -326,7 +322,7 @@ private theorem rankInner_prod_rankPart_insert (F : ι → HallAlgebra k) {m : �
     rankInner_mul_eq_rankInner_mulAdjoint _ (fun c hc ↦ by simp [hc]), ih _ hs']
   refine Eq.trans ?_ (Fintype.expect_bijective (assemble hb) (assemble_bijective hb) _ _
     fun _ ↦ rfl)
-  simp only [expect_prod_eq]
+  simp only [Fintype.expect_prod_type]
   refine Finset.expect_congr rfl fun h _ ↦ ?_
   rw [toClassFunction_apply, mulAdjoint_toLin', Finset.mul_expect]
   refine Finset.expect_congr rfl fun c _ ↦ ?_

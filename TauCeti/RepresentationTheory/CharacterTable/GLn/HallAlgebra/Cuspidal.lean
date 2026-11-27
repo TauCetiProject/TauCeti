@@ -11,7 +11,8 @@ import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.FieldTheory.Finite.ArootsOrbit
-import TauCeti.LinearAlgebra.Charpoly.AevalComp
+import TauCeti.FieldTheory.Minpoly.Dvd
+import TauCeti.LinearAlgebra.Charpoly.Aeval.Comp
 import TauCeti.LinearAlgebra.Charpoly.Degree
 import TauCeti.Order.ModularLattice.Crapo
 
@@ -26,10 +27,7 @@ the pointwise product.
 
 Evaluated at `g`, the relation `μ ∗ 𝟙 = 1` says that `U ↦ μ(g|_U)` is the Möbius function
 `U ↦ μ(⊥, U)` of the lattice of `g`-invariant subspaces. This lattice is modular, so by Crapo's
-complementation theorem it is complemented, that is `g` is semisimple, when `μ(g) ≠ 0` (roadmap
-§4.3 (a), proved here only as a private auxiliary: the public statement
-`TauCeti.HallAlgebra.isSemisimple_of_moebius_ne_zero` is in
-https://github.com/TauCetiProject/TauCeti/pull/47127). Block
+complementation theorem it is complemented, that is `g` is semisimple, when `μ(g) ≠ 0`. Block
 averages of `B · μ` only see the block diagonal class, and from this and Mackey's formula `C_η` is
 cuspidal. A cuspidal function vanishes off the classes whose characteristic polynomial is a power
 of an irreducible polynomial: for an irreducible factor `P` of the minimal polynomial, all block
@@ -87,10 +85,7 @@ section Moebius
 variable [Finite k]
 
 /-- At the class of `g`, the sum of `μ` at the classes of `g` on the `g`-invariant subspaces is the
-value of the unit `1`. This is kept private: the variant `∑_{U ≤ W} μ(g|_U) = [W = 0]` is
-`TauCeti.HallAlgebra.sum_moebius_ofEnd_invtRestrict` in
-https://github.com/TauCetiProject/TauCeti/pull/47127, and this copy is to be deduplicated against
-it once that lands. -/
+value of the unit `1`. -/
 private theorem sum_moebius_invtRestrict_eq_one_apply (g : Module.End k V)
     [Fintype g.invtSubmodule] :
     ∑ U : g.invtSubmodule, moebius (ofEnd (g.invtRestrict U.prop)) =
@@ -109,10 +104,7 @@ theorem moebius_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius
     eq_of_dim_eq_zero (c := ofEnd (o.rep.invtRestrict (⊥ : o.rep.invtSubmodule).prop)) (by simp)
       h] at key
 
-/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. This is
-roadmap §4.3 (a), which is `TauCeti.HallAlgebra.isSemisimple_of_moebius_ne_zero` in
-https://github.com/TauCetiProject/TauCeti/pull/47127; this private copy, needed for
-`blockAverage_mul_moebius`, is to be deduplicated against it once that lands. -/
+/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. -/
 private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
     (h : moebius (ofEnd g) ≠ 0) : g.IsSemisimple := by
   classical
@@ -261,7 +253,7 @@ private theorem ofEnd_blockTriangular_eq_of_sylvester (hgT : Commute g T)
     {x y : (V ⧸ C) →ₗ[k] C} (hxy : g.invtRestrict hC ∘ₗ y - y ∘ₗ g.invtQuot hC = x) :
     ofEnd (blockTriangular (g.invtRestrict hC) (g.invtQuot hC) x) = ofEnd g := by
   let ι : (V ⧸ C) →ₗ[k] V := C.liftQ T hCT.ge
-  have hι (v : V) : ι (Submodule.Quotient.mk v) = T v := rfl
+  have hι (v : V) : ι (Submodule.Quotient.mk v) = T v := Submodule.liftQ_apply _ _ _
   have hι_inj : Function.Injective ι := by
     rw [← LinearMap.ker_eq_bot, Submodule.ker_liftQ_eq_bot' _ _ hCT.symm]
   have hTg (v : V) : T (g v) = g (T v) := by

@@ -25,8 +25,6 @@ multiplicative. As a consequence, an endomorphism `f` of a finite-dimensional ve
   characteristic polynomial of `Y` divides `(q(Y)).charpoly.comp q`.
 * `LinearMap.exists_charpoly_eq_pow_of_isNilpotent_aeval`: if `P(f)` is nilpotent, with `P`
   monic and irreducible, the characteristic polynomial of `f` is a power of `P`.
-* `minpoly.not_isUnit_aeval_of_dvd`: a factor `P` of positive degree of the minimal polynomial of
-  `x` is not invertible at `x`.
 
 ## References
 
@@ -96,25 +94,3 @@ theorem exists_charpoly_eq_pow_of_isNilpotent_aeval {K V : Type*} [Field K] [Add
   exact ⟨j, eq_of_monic_of_associated f.charpoly_monic (hP_monic.pow j) hj⟩
 
 end LinearMap
-
-namespace minpoly
-
-/-- If a polynomial `P` of positive degree divides the minimal polynomial of `x`, then `P(x)` is
-not invertible. -/
-theorem not_isUnit_aeval_of_dvd {k A : Type*} [Field k] [Ring A] [Algebra k A] {x : A}
-    (hx : IsIntegral k x) {P : k[X]} (hP : 0 < P.natDegree) (h : P ∣ minpoly k x) :
-    ¬IsUnit (Polynomial.aeval x P) := by
-  intro hu
-  obtain ⟨Q, hQ⟩ := h
-  -- Then `Q(x) = 0`, although `Q` has smaller degree than the minimal polynomial.
-  have hQ_zero : Polynomial.aeval x Q = 0 := by
-    have h_min := minpoly.aeval k x
-    rwa [hQ, map_mul, hu.mul_right_eq_zero] at h_min
-  have hQ_ne : Q ≠ 0 := by
-    rintro rfl
-    exact minpoly.ne_zero hx (by simpa using hQ)
-  have h_deg := natDegree_le_of_dvd (minpoly.dvd k x hQ_zero) hQ_ne
-  rw [hQ, natDegree_mul (ne_zero_of_natDegree_gt hP) hQ_ne] at h_deg
-  omega
-
-end minpoly

@@ -343,7 +343,8 @@ theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.E
   -- The second coordinate is an isomorphism from `C` onto `W`.
   have h_inj : Function.Injective (LinearMap.snd k V W ∘ₗ C.subtype) := by
     refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-    have : (c : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊓ C := ⟨hc, c.prop⟩
+    have : (c : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊓ C :=
+      ⟨LinearMap.mem_ker.2 (by simpa using hc), c.prop⟩
     simpa [hKC.inf_eq_bot] using this
   have h_surj : Function.Surjective (LinearMap.snd k V W ∘ₗ C.subtype) := by
     intro w
@@ -351,7 +352,7 @@ theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.E
       ((0, w) : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊔ C)
     refine ⟨⟨c, hc⟩, ?_⟩
     have h₂ : u.2 + c.2 = w := congrArg Prod.snd huc
-    have hu₂ : u.2 = 0 := hu
+    have hu₂ : u.2 = 0 := by simpa using LinearMap.mem_ker.1 hu
     simp [← h₂, hu₂]
   let eC := LinearEquiv.ofBijective _ ⟨h_inj, h_surj⟩
   -- `(v, w) ↦ (v, 0) + c(w)`, with `c(w) ∈ C` the element of second coordinate `w`, conjugates
