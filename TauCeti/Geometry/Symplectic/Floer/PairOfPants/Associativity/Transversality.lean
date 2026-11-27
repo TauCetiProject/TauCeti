@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Associativity.SemiFredholm
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Associativity
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.Transversality
 
 /-!
@@ -147,23 +147,17 @@ theorem topologicalClosure_range_sup_span_hamiltonianVariationsOn_associativityP
         {z | ∀ i, Complex.equivRealProdCLM.symm z ≠
           associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i} u W)).topologicalClosure =
       ⊤ := by
-  have hexp : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  obtain ⟨ha, hsep, hout⟩ :=
+    associativityScale_ne_zero_and_pairwise_add_le_norm_sub_and_norm_add_le (L := L) (by linarith) τ
   -- Far out on the ends the family is the datum of the moving input ends; on the core only its
   -- smoothness off the centers is used.
   exact topologicalClosure_range_sup_span_hamiltonianVariationsOn_eq_top_of_movingEnds ω hH
     (fun i ↦ (hHs i).of_le (by norm_num)) hHout (hHouts.of_le (by norm_num))
-    (associativityScale_ne_zero (by positivity) τ)
-    (pairwise_add_le_norm_associativityCenter_sub (by positivity) (by linarith) τ)
-    (norm_associativityCenter_add_le (by positivity) (by linarith) τ) hx hJe hxout hJout hJeq
-    hJoutq
-    (fun i ζ hζ ↦ by
-      rw [associativityPerturbation_realChart_eq (G := G) (G' := G') (L := L) (by linarith) hH i
-        (by linarith)]
-      exact ⟨rfl, rfl⟩)
-    (fun ζ hζ ↦ by
-      rw [associativityPerturbation_positiveEndChart_inf_eq (H := H) (G := G) (G' := G') (L := L)
-        (by linarith) hHout (by linarith)]
-      exact ⟨rfl, rfl⟩) hJ
+    ha hsep hout hx hJe hxout hJout hJeq hJoutq
+    (fun i ζ hζ ↦ associativityPerturbation_realChart_apply_one_eq_and_apply_I_eq (by linarith) hH
+      i (by linarith))
+    (fun ζ hζ ↦ associativityPerturbation_positiveEndChart_inf_apply_one_eq_and_apply_I_eq
+      (by linarith) hHout (by linarith)) hJ
     (fun z hz ↦ contDiffAt_uncurry_associativityPerturbation hH hHs hHout hHouts hG hGs hG' hG's
       hL hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_associativityPerturbation hH hHs hHout hHouts hG hGs hG' hG's
