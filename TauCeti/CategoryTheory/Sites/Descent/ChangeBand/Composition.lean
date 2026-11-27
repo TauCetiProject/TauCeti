@@ -58,14 +58,6 @@ private abbrev coefficient (T : (Over U)ᵒᵖ) :=
   ((abelianSheafToGrpSheaf (J.over U)).obj
     ((J.overPullback AddCommGrpCat U).obj B)).obj.obj T
 
-omit [HasWeakSheafify (J.over U) (Type v')]
-  [(J.over U).WEqualsLocallyBijective (Type v')] in
-private lemma coefficient_mul_mul_mul_comm {T : (Over U)ᵒᵖ}
-    (a c d e : coefficient (B := B) T) : (a * c) * (d * e) = (a * d) * (c * e) := by
-  apply (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B) T).symm.injective
-  simp only [map_mul]
-  exact mul_mul_mul_comm _ _ _ _
-
 private def chart {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p : (F.presheafHom x y).obj T) :
     coefficient (B := B) T ≃ (b.extendedTorsor φ x y).sheaf.obj.obj T :=
@@ -142,7 +134,7 @@ private lemma chartComp_change {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
   erw [hp, hq, chart_action, chart_action, chartComp_chart]
   congr 1
   rw [map_mul]
-  exact coefficient_mul_mul_mul_comm _ _ _ _
+  exact mul_mul_mul_comm _ _ _ _
 
 private lemma chartComp_map {x y z : F.obj (.mk (op U))} {T T' : (Over U)ᵒᵖ}
     (f : T ⟶ T') (p : (F.presheafHom x y).obj T) (q : (F.presheafHom y z).obj T)
@@ -479,7 +471,7 @@ private lemma compSection_smul_charts {x y z : F.obj (.mk (op U))} {T : (Over U)
       (a * c) • b.compSection φ (b.chart φ p d) (b.chart φ q e) := by
   rw [chart_mul, chart_mul, compSection_mk, compSection_mk, chart_mul]
   apply congrArg (b.chart φ (p ≫ q))
-  exact coefficient_mul_mul_mul_comm _ _ _ _
+  exact mul_mul_mul_comm _ _ _ _
 
 private lemma compSection_smul {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (s : (b.extendedTorsor φ x y).sheaf.obj.obj T)
@@ -648,6 +640,22 @@ lemma changeBandComp_smul (x y z : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ)
   intro P ψ s t
   exact b.compSection_smul φ s t a c
 
+/-- Inversion negates the coefficient translation on the extended isomorphism sheaves. -/
+lemma changeBandInv_smul (x y : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ)
+    (a : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat U).obj B)).obj.obj T) :
+    let P := fun x y ↦ b.sheafHomTorsor x y (IsGerbe.exists_covering_iso (J := J) x y)
+    let ψ := (abelianSheafToGrpSheaf (J.over U)).map
+      ((J.overPullback AddCommGrpCat U).map φ)
+    ∀ s : (P x y |>.map ψ).sheaf.obj.obj T,
+      (b.changeBandInv φ x y).hom.app T (a • s) =
+        a⁻¹ • (b.changeBandInv φ x y).hom.app T s := by
+  intro P ψ s
+  apply b.inverse_unique φ (a • s)
+  · exact b.comp_invSection φ _
+  · rw [compSection_smul, inv_mul_cancel, one_smul]
+    exact b.changeBandInv_comp φ x y T s
+
 /-- The objects of the changed-band fibre over `U`. Morphisms are the sections over the
 terminal slice object of the extended isomorphism torsors. -/
 @[ext]
@@ -759,6 +767,16 @@ lemma changeBandFiber_smul_comp_smul {x y z : b.ChangeBandFiber φ U}
   exact (b.changeBandComp_smul φ x.obj y.obj z.obj (op (Over.mk (𝟙 U)))
     (abelianSheafToGrpSheafObjEquiv _ _ a) (abelianSheafToGrpSheafObjEquiv _ _ c) s t).trans
       (congrArg (fun d ↦ d • (s ≫ t)) (map_mul _ a c).symm)
+
+/-- Inversion negates translations in the changed-band fibre. -/
+lemma ChangeBandFiber.inv_smul {x y : b.ChangeBandFiber φ U}
+    (a : Multiplicative (B.obj.obj (op U))) (s : x ⟶ y) :
+    inv (a • s) = a⁻¹ • inv s := by
+  rw [ChangeBandFiber.inv_def, ChangeBandFiber.smul_def, b.changeBandInv_smul φ,
+    ChangeBandFiber.smul_def, ChangeBandFiber.inv_def]
+  exact congrArg (fun d ↦ d • (b.changeBandInv φ x.obj y.obj).hom.app _ s)
+    (map_inv (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B)
+      (op (Over.mk (𝟙 U)))) a).symm
 
 /-- The comparison functor keeps the original fibre object. -/
 @[simp]

@@ -242,7 +242,8 @@ lemma sheafHomTorsor_smul_comp_smul {z : F.obj (.mk (op U))}
   -- This rewrite crosses that same identification and the multiplicative coefficient tag.
   erw [b.comp_homAct, b.homAct_comp_hom p (asIso q'), ← b.homAct_mul]
   congr 1
-  exact (mul_comm _ _).trans (map_mul _ _ _).symm
+  exact (map_mul (abelianSheafToGrpSheafObjEquiv _ T).symm h g).symm.trans
+    (congrArg (abelianSheafToGrpSheafObjEquiv _ T).symm (mul_comm h g))
 
 /-- The torsor `Isom(x, y)` is trivial, that is has a global section, if and only if `x` and `y`
 are isomorphic over `U`. -/
