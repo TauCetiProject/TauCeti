@@ -262,7 +262,10 @@ private theorem exists_toQuadraticMap_criticalHessian_eq
     smul_apply, SymplecticForm.hamiltonianEndEquiv_symm_apply_apply,
     SymplecticForm.linearMomentMap_apply, hσ.symplecticFormAt_apply, smul_eq_mul,
     mul_div_cancel₀ _ two_ne_zero]
-  rfl
+  -- The element of `sp(T_p M, σ_p)` is `A_ξ` coerced to a linear map; `coe_coe` drops the
+  -- coercion.
+  exact congrArg (σ.eval₂ p · v)
+    (congrFun (ContinuousLinearMap.coe_coe (isotropyLinearization I' p ⟨ξ, hξ⟩)) v).symm
 
 /-- **Moment map components have even Morse index.** For a compact Lie group acting smoothly by
 symplectomorphisms of a σ-compact manifold, with moment map `μ`, the Morse index of the component

@@ -209,7 +209,9 @@ theorem isotropy_eq_bot_of_mem_interior_convexHull_range
   -- `ξ : GroupLieAlgebra I G` is a tangent vector at `1`, a vector of `E` by definition, and
   -- evaluation at it is a linear functional on `𝔤*` that `μ(x)` minimizes on the moment image.
   set φ : StrongDual ℝ E →L[ℝ] ℝ := ContinuousLinearMap.apply ℝ ℝ (show E from ξ)
-  have hφ (y : M) : φ (f y) = μ y ξ := rfl
+  have hφ (y : M) : φ (f y) = μ y ξ :=
+    (ContinuousLinearMap.apply_apply _ _).trans
+      (congrFun (LinearMap.coe_toContinuousLinearMap' (μ y)) ξ)
   have hhull : convexHull ℝ (range f) ⊆ {ν | φ (f x) ≤ φ ν} :=
     convexHull_min (range_subset_iff.2 fun y ↦ by
       simpa only [mem_ofPred_eq, hφ] using isMinOn_univ_iff.1 hmin y)
