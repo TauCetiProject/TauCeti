@@ -16,10 +16,10 @@ Let `φ : E → ℝ` be a smooth bump function on a finite-dimensional real inne
 `s : ℝ`, and let `p, p'` and `q, q'` be pairs of Hölder conjugate exponents in `[1, ∞]`. This file
 identifies the dual of the Besov space `B^s_{p,q}` with `B^{-s}_{p',q'}`:
 
-`(B^s_{p,q})^* ≃ B^{-s}_{p',q'}` for `1 < p < ∞` and `1 ≤ q < ∞`,
+`(B^s_{p,q})^* ≃ B^{-s}_{p',q'}` for `1 ≤ p < ∞` and `1 ≤ q < ∞`,
 
-through the pairing `⟨v, f⟩` of tempered distributions with Schwartz functions, which for
-functions is the bilinear `L²` pairing `∫ v f`.
+including the endpoint `(B^s_{1,q})^* ≃ B^{-s}_{∞,q'}`, through the pairing `⟨v, f⟩` of tempered
+distributions with Schwartz functions, which for functions is the bilinear `L²` pairing `∫ v f`.
 
 For `p, q < ∞` the Schwartz functions are dense in `B^s_{p,q}`
 (`SchwartzMap.denseRange_toBesovSpaceCLM`), and `|⟨v, f⟩| ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`
@@ -29,7 +29,7 @@ map `TauCeti.BesovSpace.toStrongDualCLM` from `B^{-s}_{p',q'}` to the dual of `B
 is injective because an element of a Besov space is determined by its tempered distribution. Here
 `v` may take values in any complex Banach space `F`, and the functionals are then `F`-valued.
 
-For scalar `v` and `1 < p < ∞` the map is also onto: every continuous linear functional `Λ` on
+For scalar `v` and `1 ≤ p < ∞` the map is also onto: every continuous linear functional `Λ` on
 `B^s_{p,q}` agrees on the Schwartz functions with the pairing against some `v ∈ B^{-s}_{p',q'}`
 with `‖v‖ ≤ C ‖Λ‖` (`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`,
 Bahouri–Chemin–Danchin, Proposition 2.76), and the two functionals then agree everywhere by
@@ -47,7 +47,7 @@ on `φ` and `s`, not on the exponents.
   `TauCeti.BesovSpace.exists_norm_toStrongDualCLM_le`: it is injective and bounded uniformly in the
   exponents.
 * `TauCeti.BesovSpace.strongDualEquiv`: **the duality `(B^s_{p,q})^* ≃ B^{-s}_{p',q'}`** for
-  `1 < p < ∞` and `1 ≤ q < ∞`. Its inverse is a two-sided inverse of the pairing
+  `1 ≤ p < ∞` and `1 ≤ q < ∞`. Its inverse is a two-sided inverse of the pairing
   (`TauCeti.BesovSpace.toStrongDualCLM_strongDualEquiv_symm_apply` and
   `TauCeti.BesovSpace.strongDualEquiv_symm_toStrongDualCLM`), is characterized on the
   Schwartz functions by `TauCeti.BesovSpace.toDistr_strongDualEquiv_symm_apply` and is bounded
@@ -150,77 +150,77 @@ theorem exists_norm_toStrongDualCLM_le :
   obtain ⟨C, hC0, hC⟩ := exists_norm_toDistr_apply_le (F := F) φ s
   exact ⟨C, hC0, fun {p p' q q'} _ _ _ _ _ _ hp hq v ↦ norm_pairing_le φ s hp hq hC0 hC v⟩
 
-/-- Every continuous linear functional `Λ` on `B^s_{p,q}`, `1 < p < ∞`, `q < ∞`, is the pairing
+/-- Every continuous linear functional `Λ` on `B^s_{p,q}`, `p, q < ∞`, is the pairing
 with some `v ∈ B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`, with `C` depending only on `φ` and `s`. -/
 private theorem exists_toStrongDualCLM_eq_and_norm_le :
     ∃ C : ℝ, ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
-      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q'], 1 < p →
-      ∀ (hp : p ≠ ∞) (hq : q ≠ ∞) (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)),
+      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q'] (hp : p ≠ ∞) (hq : q ≠ ∞)
+      (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)),
       ∃ v : BesovSpace ℂ φ (-s) p' q', toStrongDualCLM φ s hp hq v = Λ ∧ ‖v‖ ≤ C * ‖Λ‖ := by
   obtain ⟨C, hC⟩ := exists_toDistr_apply_eq_and_norm_le φ s
-  refine ⟨C, fun {p p' q q'} _ _ _ _ _ _ hp1 hp hq Λ ↦ ?_⟩
-  obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp1 hp Λ
+  refine ⟨C, fun {p p' q q'} _ _ _ _ _ _ hp hq Λ ↦ ?_⟩
+  obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp Λ
   exact ⟨v, toStrongDualCLM_eq_of_forall_apply_eq φ s hp hq fun f ↦ (hv f).symm, hvn⟩
 
 /-- **The duality `(B^s_{p,q})^* ≃ B^{-s}_{p',q'}`** (Bahouri–Chemin–Danchin, Proposition 2.76;
-Triebel, Section 2.11.2). For `1 < p < ∞` and `1 ≤ q < ∞`, with Hölder conjugate exponents `p'`
+Triebel, Section 2.11.2). For `1 ≤ p < ∞` and `1 ≤ q < ∞`, with Hölder conjugate exponents `p'`
 and `q'`, the pairing `toStrongDualCLM` is an isomorphism of Banach spaces from `B^{-s}_{p',q'}`
 onto the dual of `B^s_{p,q}`. -/
-def strongDualEquiv (hp1 : 1 < p) (hp : p ≠ ∞) (hq : q ≠ ∞) :
+def strongDualEquiv (hp : p ≠ ∞) (hq : q ≠ ∞) :
     BesovSpace ℂ φ (-s) p' q' ≃L[ℂ] StrongDual ℂ (BesovSpace ℂ φ s p q) :=
   ContinuousLinearEquiv.ofBijective (toStrongDualCLM φ s hp hq)
     (LinearMap.ker_eq_bot.2 (toStrongDualCLM_injective φ s hp hq))
     (LinearMap.range_eq_top.2 fun Λ ↦ by
       obtain ⟨C, hC⟩ := exists_toStrongDualCLM_eq_and_norm_le φ s
-      obtain ⟨v, hv, -⟩ := hC (p' := p') (q' := q') hp1 hp hq Λ
+      obtain ⟨v, hv, -⟩ := hC (p' := p') (q' := q') hp hq Λ
       exact ⟨v, hv⟩)
 
 /-- The duality `strongDualEquiv` is the pairing `toStrongDualCLM`. -/
 @[simp]
-theorem strongDualEquiv_apply (hp1 : 1 < p) (hp : p ≠ ∞) (hq : q ≠ ∞)
+theorem strongDualEquiv_apply (hp : p ≠ ∞) (hq : q ≠ ∞)
     (v : BesovSpace ℂ φ (-s) p' q') :
-    strongDualEquiv φ s hp1 hp hq v = toStrongDualCLM φ s hp hq v :=
+    strongDualEquiv φ s hp hq v = toStrongDualCLM φ s hp hq v :=
   (rfl)
 
 /-- The pairing with the element of `B^{-s}_{p',q'}` representing a continuous linear functional
 `Λ` on `B^s_{p,q}` is `Λ`. -/
 @[simp]
-theorem toStrongDualCLM_strongDualEquiv_symm_apply (hp1 : 1 < p) (hp : p ≠ ∞) (hq : q ≠ ∞)
+theorem toStrongDualCLM_strongDualEquiv_symm_apply (hp : p ≠ ∞) (hq : q ≠ ∞)
     (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)) :
-    toStrongDualCLM φ s hp hq ((strongDualEquiv (p' := p') (q' := q') φ s hp1 hp hq).symm Λ) =
+    toStrongDualCLM φ s hp hq ((strongDualEquiv (p' := p') (q' := q') φ s hp hq).symm Λ) =
       Λ := by
-  rw [← strongDualEquiv_apply φ s hp1, ContinuousLinearEquiv.apply_symm_apply]
+  rw [← strongDualEquiv_apply φ s hp, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The element of `B^{-s}_{p',q'}` representing the pairing with `v` is `v`. -/
 @[simp]
-theorem strongDualEquiv_symm_toStrongDualCLM (hp1 : 1 < p) (hp : p ≠ ∞) (hq : q ≠ ∞)
+theorem strongDualEquiv_symm_toStrongDualCLM (hp : p ≠ ∞) (hq : q ≠ ∞)
     (v : BesovSpace ℂ φ (-s) p' q') :
-    (strongDualEquiv (p' := p') (q' := q') φ s hp1 hp hq).symm (toStrongDualCLM φ s hp hq v) =
+    (strongDualEquiv (p' := p') (q' := q') φ s hp hq).symm (toStrongDualCLM φ s hp hq v) =
       v := by
-  rw [← strongDualEquiv_apply φ s hp1, ContinuousLinearEquiv.symm_apply_apply]
+  rw [← strongDualEquiv_apply φ s hp, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- The element of `B^{-s}_{p',q'}` representing a continuous linear functional `Λ` on
 `B^s_{p,q}` pairs with every Schwartz function `f` to `Λ f`. -/
 @[simp]
-theorem toDistr_strongDualEquiv_symm_apply (hp1 : 1 < p) (hp : p ≠ ∞) (hq : q ≠ ∞)
+theorem toDistr_strongDualEquiv_symm_apply (hp : p ≠ ∞) (hq : q ≠ ∞)
     (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)) (f : 𝓢(E, ℂ)) :
-    ((strongDualEquiv (p' := p') (q' := q') φ s hp1 hp hq).symm Λ).toDistr f =
+    ((strongDualEquiv (p' := p') (q' := q') φ s hp hq).symm Λ).toDistr f =
       Λ (SchwartzMap.toBesovSpaceCLM ℂ φ s p q f) := by
-  rw [← toStrongDualCLM_apply_toBesovSpaceCLM φ s hp hq, ← strongDualEquiv_apply φ s hp1,
+  rw [← toStrongDualCLM_apply_toBesovSpaceCLM φ s hp hq, ← strongDualEquiv_apply φ s hp,
     ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **The inverse of the duality is bounded uniformly in the exponents.** There is `C`, depending
-only on `φ` and `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` with `1 < p < ∞`
+only on `φ` and `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` with `p < ∞`
 and `q < ∞`, the element of `B^{-s}_{p',q'}` representing a continuous linear functional `Λ` on
 `B^s_{p,q}` has norm at most `C ‖Λ‖`. -/
 theorem exists_norm_strongDualEquiv_symm_apply_le :
     ∃ C : ℝ, ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
-      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q'] (hp1 : 1 < p)
+      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q']
       (hp : p ≠ ∞) (hq : q ≠ ∞) (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)),
-      ‖(strongDualEquiv (p' := p') (q' := q') φ s hp1 hp hq).symm Λ‖ ≤ C * ‖Λ‖ := by
+      ‖(strongDualEquiv (p' := p') (q' := q') φ s hp hq).symm Λ‖ ≤ C * ‖Λ‖ := by
   obtain ⟨C, hC⟩ := exists_toStrongDualCLM_eq_and_norm_le φ s
-  refine ⟨C, fun {p p' q q'} _ _ _ _ _ _ hp1 hp hq Λ ↦ ?_⟩
-  obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp1 hp hq Λ
+  refine ⟨C, fun {p p' q q'} _ _ _ _ _ _ hp hq Λ ↦ ?_⟩
+  obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp hq Λ
   rwa [(ContinuousLinearEquiv.symm_apply_eq _).2 (by rw [strongDualEquiv_apply, hv])]
 
 end TauCeti.BesovSpace
