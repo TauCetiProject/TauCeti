@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
 public import TauCeti.Analysis.Normed.Algebra.Arens.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
-import TauCeti.Analysis.Normed.Module.Dual.Bidual.Approximation
 import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
+import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 
 /-!
 # Virtual diagonals of Banach algebras

@@ -8,8 +8,8 @@ module
 public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Algebra.Amenable.Basic
 import TauCeti.Analysis.Normed.Algebra.Amenable.Bidual
-import TauCeti.Analysis.Normed.Module.Dual.Bidual.Approximation
 import TauCeti.Analysis.Normed.Module.Dual.Bilinear
+import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!

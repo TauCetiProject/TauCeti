@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Algebra.Amenable.Basic
 import Mathlib.Analysis.Normed.Module.Completion
-import TauCeti.Analysis.Normed.Module.Dual.Bidual.Basic
+import TauCeti.Analysis.Normed.Module.Dual.Bidual
 import TauCeti.Analysis.Normed.Module.Dual.Bilinear
 
 /-!
