@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.AlgebraTower
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.FieldRange
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 
@@ -334,9 +335,8 @@ theorem _root_.IntermediateField.finrank_adjoin_simple_eq_finrank_mul_finrank_ad
     {y : E} (hy' : Transcendental k' y) :
     Module.finrank k⟮y⟯ E = Module.finrank k k' * Module.finrank k'⟮y⟯ E := by
   set f := IsScalarTower.toAlgHom k k' E
-  have hsup : (k'⟮y⟯).restrictScalars k = f.fieldRange ⊔ k⟮y⟯ := by
-    rw [IntermediateField.restrictScalars_adjoin_of_algEquiv f.equivFieldRange
-      (by ext; simp [f]), IntermediateField.restrictScalars_adjoin_eq_sup]
+  have hsup : (k'⟮y⟯).restrictScalars k = f.fieldRange ⊔ k⟮y⟯ :=
+    IntermediateField.restrictScalars_adjoin_eq_fieldRange_sup {y}
   calc Module.finrank k⟮y⟯ E
       = IntermediateField.relfinrank k⟮y⟯ (f.fieldRange ⊔ k⟮y⟯) *
           Module.finrank (f.fieldRange ⊔ k⟮y⟯ : IntermediateField k E) E :=
