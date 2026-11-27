@@ -22,7 +22,7 @@ big-site module `F^a : (T, h) ↦ Γ(T, h^* F)` of `S` along `Over.map g` is the
 identified by the composition isomorphism of pullbacks of modules
 (`AlgebraicGeometry.Scheme.Modules.bigSectionsPullbackEquiv`), and these identifications commute
 with the restriction maps of the two big sites
-(`AlgebraicGeometry.Scheme.Modules.bigSectionsRestrict_bigSectionsPullbackEquiv`), by the
+(`AlgebraicGeometry.Scheme.Modules.bigSectionsPullbackEquiv_bigSectionsRestrict`), by the
 associativity of the pullback pseudofunctor.
 
 ## Main declarations
@@ -84,7 +84,7 @@ lemma bigSectionsPullbackEquiv_symm_apply (T : Over S')
 /-- The identifications `bigSectionsPullbackEquiv` commute with the restriction maps of the big
 sites of `S` and `S'`: restricting along `f : T ⟶ T'` over `S'`, regarded as a morphism over `S`
 through `Over.map g`, corresponds to restricting along `f` itself. -/
-lemma bigSectionsRestrict_bigSectionsPullbackEquiv {T T' : Over S'} (f : T ⟶ T')
+lemma bigSectionsPullbackEquiv_bigSectionsRestrict {T T' : Over S'} (f : T ⟶ T')
     (s : Γ((pullback ((Over.map g).obj T').hom).obj F, ⊤)) :
     bigSectionsPullbackEquiv g F T (bigSectionsRestrict F ((Over.map g).map f) s) =
       bigSectionsRestrict ((pullback g).obj F) f (bigSectionsPullbackEquiv g F T' s) := by
@@ -104,7 +104,7 @@ noncomputable def bigPresheafPullbackIso :
       (bigSectionsPullbackEquiv g F T.unop).toModuleIso)
     (fun _ _ f ↦ by
       ext s
-      exact bigSectionsRestrict_bigSectionsPullbackEquiv g F f.unop s)
+      exact bigSectionsPullbackEquiv_bigSectionsRestrict g F f.unop s)
 
 @[simp]
 lemma bigPresheafPullbackIso_hom_app_apply (T : Over S')
