@@ -347,8 +347,9 @@ ideal equals `I`. -/
 theorem comapMkRelIso_val_eq_iff_eq_bot (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
     (comapMkRelIso I J).val = I ↔ J = ⊥ := by
   have hbot : (comapMkRelIso I ⊥).val = I := by
-    rw [map_bot]
-    rfl
+    rw [comapMkRelIso_apply]
+    ext a
+    simp [TwoSidedIdeal.mem_comap]
   refine ⟨fun h => (comapMkRelIso I).injective (Subtype.ext (h.trans hbot.symm)),
     fun h => h ▸ hbot⟩
 
@@ -357,8 +358,9 @@ ideal equals `⊤`. -/
 theorem comapMkRelIso_val_eq_top_iff (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
     (comapMkRelIso I J).val = ⊤ ↔ J = ⊤ := by
   have htop : (comapMkRelIso I ⊤).val = ⊤ := by
-    rw [map_top]
-    rfl
+    rw [comapMkRelIso_apply]
+    ext a
+    simp [TwoSidedIdeal.mem_comap]
   refine ⟨fun h => (comapMkRelIso I).injective (Subtype.ext (h.trans htop.symm)),
     fun h => h ▸ htop⟩
 

@@ -131,9 +131,9 @@ theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (Calk
 Hilbert space, `CalkinAlgebra ℂ H` is algebraically simple: it is nontrivial and has no proper
 nonzero two-sided ideals (closed or not). -/
 theorem isSimpleRing [SeparableSpace H] (hH : ¬ FiniteDimensional ℂ H) :
-    IsSimpleRing (CalkinAlgebra ℂ H) := by
-  have : Nontrivial (CalkinAlgebra ℂ H) := nontrivial hH
-  exact IsSimpleRing.of_forall_isClosed_eq_bot_or_eq_top eq_bot_or_eq_top_of_isClosed
+    IsSimpleRing (CalkinAlgebra ℂ H) :=
+  (isSimpleRing_iff_forall_isClosed_eq_bot_or_eq_top (CalkinAlgebra ℂ H)).mpr
+    ⟨nontrivial hH, eq_bot_or_eq_top_of_isClosed⟩
 
 /-- The Calkin algebra `CalkinAlgebra ℂ H` is a simple ring if and only if `H` is separable and
 infinite-dimensional. -/
@@ -145,16 +145,17 @@ theorem isSimpleRing_iff :
   let e := TwoSidedIdeal.Quotient.comapMkRelIso (compactOperatorIdeal ℂ H)
   let K : Set.Ici (compactOperatorIdeal ℂ H) :=
     ⟨ContinuousLinearMap.separableRangeIdeal ℂ H, compactOperatorIdeal_le_separableRangeIdeal⟩
-  have hlt_bot : compactOperatorIdeal ℂ H < (e (e.symm K)).val := by
-    rw [e.apply_symm_apply]
-    exact compactOperatorIdeal_lt_separableRangeIdeal hsep
-  have hlt_top : (e (e.symm K)).val < ⊤ := by
-    rw [e.apply_symm_apply]
-    exact ContinuousLinearMap.separableRangeIdeal_lt_top hsep
-  rcases IsSimpleOrder.eq_bot_or_eq_top (e.symm K) with h0 | h1
-  · rw [(TwoSidedIdeal.Quotient.comapMkRelIso_val_eq_iff_eq_bot _ (e.symm K)).mpr h0] at hlt_bot
+  let J := e.symm K
+  have hJ : (e J).val = ContinuousLinearMap.separableRangeIdeal ℂ H :=
+    congrArg Subtype.val (e.apply_symm_apply K)
+  have hlt_bot : compactOperatorIdeal ℂ H < (e J).val :=
+    hJ ▸ compactOperatorIdeal_lt_separableRangeIdeal hsep
+  have hlt_top : (e J).val < ⊤ :=
+    hJ ▸ ContinuousLinearMap.separableRangeIdeal_lt_top hsep
+  rcases IsSimpleOrder.eq_bot_or_eq_top J with h0 | h1
+  · rw [(TwoSidedIdeal.Quotient.comapMkRelIso_val_eq_iff_eq_bot _ J).mpr h0] at hlt_bot
     exact hlt_bot.false
-  · rw [(TwoSidedIdeal.Quotient.comapMkRelIso_val_eq_top_iff _ (e.symm K)).mpr h1] at hlt_top
+  · rw [(TwoSidedIdeal.Quotient.comapMkRelIso_val_eq_top_iff _ J).mpr h1] at hlt_top
     exact hlt_top.false
 
 /-- For any infinite index type `ι`, `CalkinAlgebra ℂ ℓ²(ι, ℂ)` is nontrivial. -/

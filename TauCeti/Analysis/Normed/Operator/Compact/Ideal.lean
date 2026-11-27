@@ -24,10 +24,10 @@ two-sided ideal `ContinuousLinearMap.separableRangeIdeal R M`, with `separableRa
 and only if `M` is separable. On a seminormed space `E` over a nontrivially normed field `𝕜`,
 membership in `separableRangeIdeal 𝕜 E` is equivalent to intrinsic separability
 `SeparableSpace (Set.range f)` of the range subtype
-(`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`), `separableRangeIdeal 𝕜 E` is
-closed in the operator-norm topology, and `separableRangeIdeal 𝕜 E` contains the compact-operator
-ideal `TauCeti.compactOperatorIdeal 𝕜 E`. Over a locally compact nontrivially normed field `𝕜`, a
-normed space `E` satisfies `compactOperatorIdeal 𝕜 E = ⊤` if and only if `E` is
+(`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`), and `separableRangeIdeal 𝕜 E`
+is closed in the operator-norm topology; on a normed space `E`, `separableRangeIdeal 𝕜 E` contains
+the compact-operator ideal `TauCeti.compactOperatorIdeal 𝕜 E`. Over a locally compact nontrivially
+normed field `𝕜`, a normed space `E` satisfies `compactOperatorIdeal 𝕜 E = ⊤` if and only if `E` is
 finite-dimensional, and over `ℝ` or `ℂ` it satisfies `compactOperatorIdeal 𝕜 E = ⊥` if and only if
 `E` is a subsingleton.
 
@@ -47,10 +47,10 @@ extraction with the norm-convergent singular value expansion of compact operator
 
 * `ContinuousLinearMap.separableRangeIdeal`: the two-sided ideal of continuous linear endomorphisms
   of `M` whose range lies in the closure of a countable subset of `M`, characterized by
-  `SeparableSpace (Set.range f)` (`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`),
-  closed (`ContinuousLinearMap.isClosed_separableRangeIdeal`), and containing
-  `TauCeti.compactOperatorIdeal` (`TauCeti.compactOperatorIdeal_le_separableRangeIdeal`) on
-  seminormed spaces over a nontrivially normed field.
+  `SeparableSpace (Set.range f)` (`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`)
+  and closed (`ContinuousLinearMap.isClosed_separableRangeIdeal`) on seminormed spaces over a
+  nontrivially normed field, and containing `TauCeti.compactOperatorIdeal`
+  (`TauCeti.compactOperatorIdeal_le_separableRangeIdeal`) on normed spaces.
 * `TauCeti.compactOperatorIdeal_eq_top_iff_finiteDimensional` and
   `TauCeti.compactOperatorIdeal_eq_bot_iff`: characterizations of when
   `TauCeti.compactOperatorIdeal 𝕜 E` is `⊤` or `⊥`.

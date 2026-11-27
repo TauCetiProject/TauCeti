@@ -52,15 +52,30 @@ namespace ContinuousLinearMap
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 omit [CompleteSpace H] in
+/-- The closed spectral tail `{z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}`. -/
+private abbrev spectralCutoffSet (a : H →L[ℂ] H) (ε : ℝ) : Set (spectrum ℂ a) :=
+  {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}
+
+omit [CompleteSpace H] in
 /-- Measurability of the closed spectral tail `{z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}`. -/
 private theorem measurableSet_spectralCutoffSet (a : H →L[ℂ] H) (ε : ℝ) :
-    MeasurableSet {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖} :=
+    MeasurableSet (spectralCutoffSet a ε) :=
   (isClosed_le continuous_const (continuous_norm.comp continuous_subtypeVal)).measurableSet
+
+omit [CompleteSpace H] in
+/-- The identity function on `spectrum ℂ a` as a `BoundedBorelFunction`. -/
+private def idBoundedBorel (a : H →L[ℂ] H) : BoundedBorelFunction (spectrum ℂ a) :=
+  BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
+
+/-- Applying `a.borelCalculus` to `idBoundedBorel a` recovers `a`. -/
+private theorem borelCalculus_idBoundedBorel (a : H →L[ℂ] H) [IsStarNormal a] :
+    a.borelCalculus (idBoundedBorel a) = a :=
+  a.borelCalculus_restrict_id
 
 /-- For a normal operator `a : H →L[ℂ] H` and `ε : ℝ`, `a.spectralCutoff ε` is the spectral
 projection of `a` onto `{z ∈ spectrum ℂ a | ε ≤ ‖z‖}`. -/
 def spectralCutoff (a : H →L[ℂ] H) [IsStarNormal a] (ε : ℝ) : H →L[ℂ] H :=
-  a.spectralPVM.proj {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖} (measurableSet_spectralCutoffSet a ε)
+  a.spectralPVM.proj (spectralCutoffSet a ε) (measurableSet_spectralCutoffSet a ε)
 
 /-- Defining formula for `spectralCutoff` in terms of `spectralPVM.proj`. -/
 theorem spectralCutoff_eq_spectralPVM_proj (a : H →L[ℂ] H) [IsStarNormal a] (ε : ℝ)
@@ -81,7 +96,7 @@ theorem commute_spectralCutoff (a : H →L[ℂ] H) [IsStarNormal a] (ε : ℝ) :
 /-- For `ε ≤ 0`, the spectral cutoff `a.spectralCutoff ε` is the identity operator. -/
 theorem spectralCutoff_of_nonpos (a : H →L[ℂ] H) [IsStarNormal a] {ε : ℝ} (hε : ε ≤ 0) :
     a.spectralCutoff ε = 1 := by
-  have huniv : {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖} = Set.univ :=
+  have huniv : spectralCutoffSet a ε = Set.univ :=
     Set.eq_univ_of_forall fun z ↦ hε.trans (norm_nonneg _)
   rw [spectralCutoff_eq_spectralPVM_proj a ε (measurableSet_spectralCutoffSet a ε),
     a.spectralPVM.proj_congr huniv _ MeasurableSet.univ, a.spectralPVM.proj_univ, ← one_def]
@@ -97,19 +112,17 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
     {I : TwoSidedIdeal (H →L[ℂ] H)} (ha : a ∈ I) {ε : ℝ} (hε : 0 < ε) :
     a.spectralCutoff ε ∈ I := by
   -- Truncating `z ↦ z⁻¹` at `ε⁻¹` retains `z⁻¹` on `ε ≤ ‖z‖` and vanishes on `0 < ‖z‖ < ε`.
-  let B : Set (spectrum ℂ a) := {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}
-  have hB : MeasurableSet B := measurableSet_spectralCutoffSet a ε
+  have hB : MeasurableSet (spectralCutoffSet a ε) := measurableSet_spectralCutoffSet a ε
   let g : BoundedBorelFunction (spectrum ℂ a) :=
     BoundedBorelFunction.truncate (fun z : spectrum ℂ a ↦ (z : ℂ)⁻¹)
       continuous_subtypeVal.measurable.inv ε⁻¹
-  let idSym : BoundedBorelFunction (spectrum ℂ a) :=
-    BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
-  have hprod : idSym * g = BoundedBorelFunction.indicator B hB 1 := by
+  have hprod : idBoundedBorel a * g =
+      BoundedBorelFunction.indicator (spectralCutoffSet a ε) hB 1 := by
     ext z
-    simp only [idSym, g, _root_.mul_apply, BoundedBorelFunction.indicator_apply,
+    simp only [idBoundedBorel, g, _root_.mul_apply, BoundedBorelFunction.indicator_apply,
       BoundedBorelFunction.truncate_apply, BoundedBorelFunction.ofContinuousMap_apply,
       ContinuousMap.restrict_apply, ContinuousMap.id_apply]
-    by_cases hz : z ∈ B
+    by_cases hz : z ∈ spectralCutoffSet a ε
     · have hnorm_pos : 0 < ‖(z : ℂ)‖ := hε.trans_le hz
       have hle : z ∈ {y : spectrum ℂ a | ‖(y : ℂ)⁻¹‖ ≤ ε⁻¹} := by
         rw [Set.mem_ofPred_eq, norm_inv]
@@ -126,7 +139,7 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
         rw [Set.indicator_of_notMem hgt, mul_zero]
   have heq : a.spectralCutoff ε = a * a.borelCalculus g := by
     rw [spectralCutoff_eq_spectralPVM_proj a ε hB, ← a.borelCalculus_indicator hB, ← hprod, map_mul,
-      a.borelCalculus_restrict_id]
+      borelCalculus_idBoundedBorel]
   rw [heq]
   exact I.mul_mem_right a _ ha
 
@@ -134,20 +147,18 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
 `ε` in operator norm. -/
 theorem norm_sub_mul_spectralCutoff_le (a : H →L[ℂ] H) [IsStarNormal a] {ε : ℝ} (hε : 0 ≤ ε) :
     ‖a - a * a.spectralCutoff ε‖ ≤ ε := by
-  let B : Set (spectrum ℂ a) := {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}
-  have hB : MeasurableSet B := measurableSet_spectralCutoffSet a ε
-  let idSym : BoundedBorelFunction (spectrum ℂ a) :=
-    BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
-  have heq : a - a * a.spectralCutoff ε =
-      a.borelCalculus (idSym - idSym * BoundedBorelFunction.indicator B hB 1) := by
-    rw [spectralCutoff_eq_spectralPVM_proj a ε hB, map_sub, map_mul, a.borelCalculus_restrict_id,
+  have hB : MeasurableSet (spectralCutoffSet a ε) := measurableSet_spectralCutoffSet a ε
+  have heq : a - a * a.spectralCutoff ε = a.borelCalculus
+      (idBoundedBorel a -
+        idBoundedBorel a * BoundedBorelFunction.indicator (spectralCutoffSet a ε) hB 1) := by
+    rw [spectralCutoff_eq_spectralPVM_proj a ε hB, map_sub, map_mul, borelCalculus_idBoundedBorel,
       a.borelCalculus_indicator hB]
   rw [heq]
   refine a.norm_borelCalculus_le hε fun z ↦ ?_
-  by_cases hz : z ∈ B
+  by_cases hz : z ∈ spectralCutoffSet a ε
   · simpa [hz] using hε
   · have hlt : ‖(z : ℂ)‖ < ε := not_le.mp hz
-    simpa [idSym, hz] using hlt.le
+    simpa [idBoundedBorel, hz] using hlt.le
 
 /-- As `ε → 0⁺`, `a * a.spectralCutoff ε` converges to `a` in operator norm. -/
 theorem tendsto_mul_spectralCutoff (a : H →L[ℂ] H) [IsStarNormal a] :
