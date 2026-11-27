@@ -52,6 +52,18 @@ fixes the actions and translates the angles by `νᵢ vᵢ`
 (`TauCeti.oscillatorRotation_apply_of_eq_oscillatorActionAngle`), so the energies act on each
 invariant torus by translations of the angle torus `(ℝ / 2πℤ)^ι`.
 
+The transpose in `2π (D_I f)^(-T) ℤ^ι` matters as soon as the integrals are not diagonal in the
+actions. For two oscillators of unit mass and frequency, whose actions are their energies
+`E = (E₀, E₁)`, take the recombination `G = (2E₀ + E₁, E₁) = A E`. The vector `w` acts through `G`
+as `w A = (2w₀, w₀ + w₁)` acts through `E`, so the period lattice of `G` is
+`{π (a, 2b - a) | a, b ∈ ℤ}`
+(`TauCeti.mem_hamiltonianFlowStabilizer_iff_of_eq_mulVec_oscillatorEnergies`), which is
+`2π Bᵀ ℤ²` for `B = A⁻¹ = (D_I G)⁻¹`
+(`TauCeti.hamiltonianFlowStabilizer_eq_transposeLattice_of_eq_mulVec_oscillatorEnergies`). The
+vector `π (1, 0) = 2π B (1, 0)` is not a period
+(`TauCeti.notMem_hamiltonianFlowStabilizer_of_eq_mulVec_oscillatorEnergies`), so `2π B ℤ²`, the
+lattice without the transpose, is not the period lattice.
+
 ## Main definitions
 
 * `TauCeti.oscillatorEnergies m ν`: the energies of uncoupled oscillators on `V × V`.
@@ -69,6 +81,11 @@ invariant torus by translations of the angle torus `(ℝ / 2πℤ)^ι`.
 * `TauCeti.hamiltonianFlowStabilizer_oscillatorEnergies`,
   `TauCeti.hamiltonianFlowStabilizer_oscillatorEnergies_eq_transposeLattice`: the period lattice
   is `⊕ᵢ (2π / νᵢ) ℤ = 2π (D_I f)^(-T) ℤ^ι`.
+* `TauCeti.mem_hamiltonianFlowStabilizer_iff_of_eq_mulVec_oscillatorEnergies`,
+  `TauCeti.hamiltonianFlowStabilizer_eq_transposeLattice_of_eq_mulVec_oscillatorEnergies` and
+  `TauCeti.notMem_hamiltonianFlowStabilizer_of_eq_mulVec_oscillatorEnergies`: the period lattice
+  of the recombination `(2E₀ + E₁, E₁)` of two oscillators is `2π (D_I G)^(-T) ℤ²`, and not
+  `2π (D_I G)^(-1) ℤ²`.
 * `TauCeti.oscillatorRotation_apply_of_eq_oscillatorActionAngle`: in action–angle coordinates the
   action of `v` translates the angles by `νᵢ vᵢ`.
 
@@ -83,7 +100,7 @@ public section
 noncomputable section
 
 open Set Real
-open scoped Manifold ContDiff InnerProductSpace
+open scoped Manifold ContDiff InnerProductSpace Matrix
 
 namespace TauCeti
 
@@ -521,5 +538,113 @@ theorem oscillatorRotation_apply_of_eq_oscillatorActionAngle {i : ι} (hmν : 0 
   · field_simp
   · field_simp
     ring
+
+
+/-! ### A recombination of the energies of two oscillators -/
+
+section Recombination
+
+local notation "𝕍₂" => EuclideanSpace ℝ (Fin 2)
+
+variable {G : 𝕍₂ × 𝕍₂ → Fin 2 → ℝ} (hG : ContMDiff 𝓘(ℝ, 𝕍₂ × 𝕍₂) 𝓘(ℝ, Fin 2 → ℝ) ∞ G)
+  (hcommG : ∀ i j x,
+    (stdSymplecticForm (V := 𝕍₂)).constSmooth.poissonBracket (G · i) (G · j) x = 0)
+  (hcG : ∀ i, IsCompleteVectorField
+    ((stdSymplecticForm (V := 𝕍₂)).constSmooth.hamiltonianVectorField (G · i)))
+  (hGE : ∀ x, G x = !![2, 1; 0, 1] *ᵥ oscillatorEnergies 1 1 x)
+include hGE
+
+/-- **The period lattice of a recombination of two oscillators as a preimage.** For the
+recombination `G = A E = (2E₀ + E₁, E₁)` of the energies `E` of two oscillators of unit mass and
+frequency, the stabilizer of `x` for `G` is the preimage of the stabilizer of `x` for `E` under
+`w ↦ w A`. -/
+theorem hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec_oscillatorEnergies (x : 𝕍₂ × 𝕍₂) :
+    (SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        hG hcommG hcG x =
+      ((SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        (contDiff_oscillatorEnergies 1 1).contMDiff (poissonBracket_oscillatorEnergies_eq_zero 1 1)
+        (fun _ ↦ isCompleteVectorField_hamiltonianVectorField_oscillatorEnergies (m := 1) (ν := 1)
+          one_ne_zero one_ne_zero) x).comap !![2, 1; 0, 1].vecMulLinear.toAddMonoidHom :=
+  SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec _ _ _ _ hG hcommG hcG
+    _ hGE x
+
+/-- **The period lattice of a recombination of two oscillators.** Let `G = (2E₀ + E₁, E₁)` be the
+recombination of the energies `E = (E₀, E₁)` of two oscillators of unit mass and frequency, whose
+actions are the energies themselves; its components Poisson-commute and have complete Hamiltonian
+vector fields (`TauCeti.SmoothTwoForm.poissonBracket_dotProduct_eq_zero`,
+`TauCeti.SmoothTwoForm.IsSymplectic.isCompleteVectorField_hamiltonianVectorField_dotProduct`). At a
+point at which neither phase plane coordinate pair vanishes, the vector `w` acts through `G` by
+turning the two phase planes through the angles `2w₀` and `w₀ + w₁`, so the period lattice of `G`
+is `{π (a, 2b - a) | a, b ∈ ℤ}`, spanned by `π (1, -1)` and `2π (0, 1)`. -/
+theorem mem_hamiltonianFlowStabilizer_iff_of_eq_mulVec_oscillatorEnergies {x : 𝕍₂ × 𝕍₂}
+    (hx : ∀ i, (x.1 i, x.2 i) ≠ 0) {w : Fin 2 → ℝ} :
+    w ∈ (SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        hG hcommG hcG x ↔
+      ∃ a b : ℤ, w = ![π * a, π * (2 * b - a)] := by
+  have hwA : w ᵥ* !![2, 1; 0, 1] = ![2 * w 0, w 0 + w 1] := by
+    ext i
+    fin_cases i <;> simp [Matrix.vecMul, dotProduct, Fin.sum_univ_two, mul_comm]
+  rw [hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec_oscillatorEnergies hG hcommG hcG hGE,
+    hamiltonianFlowStabilizer_oscillatorEnergies (m := 1) (ν := 1) (fun _ ↦ one_ne_zero)
+      (fun _ ↦ one_ne_zero) hx, AddSubgroup.mem_comap, LinearMap.toAddMonoidHom_coe,
+    Matrix.vecMulLinear_apply, hwA]
+  simp only [AddSubgroup.mem_pi, mem_univ, true_imp_iff, Fin.forall_fin_two,
+    AddSubgroup.mem_zmultiples_iff, zsmul_eq_mul, Pi.one_apply, div_one, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  constructor
+  · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
+    refine ⟨a, b, funext fun i ↦ ?_⟩
+    fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one] <;> linarith
+  · rintro ⟨a, b, rfl⟩
+    exact ⟨⟨a, by simp only [Matrix.cons_val_zero]; ring⟩,
+      ⟨b, by simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]; ring⟩⟩
+
+/-- **The period lattice of a recombination of two oscillators in action normalization.** For the
+recombination `G = (2E₀ + E₁, E₁)` of the energies of two oscillators of unit mass and frequency,
+the actions are `I = B G` with `B` the inverse of the matrix with rows `(2, 1)` and `(0, 1)`. At
+a point at which neither phase plane coordinate pair vanishes, the period lattice of `G` is the
+transpose lattice `2π Bᵀ ℤ² = 2π (D_I G)^(-T) ℤ²`. -/
+theorem hamiltonianFlowStabilizer_eq_transposeLattice_of_eq_mulVec_oscillatorEnergies
+    {x : 𝕍₂ × 𝕍₂} (hx : ∀ i, (x.1 i, x.2 i) ≠ 0) :
+    (SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        hG hcommG hcG x =
+      ((2 * π) •
+        (Matrix.toLin' !![1 / 2, -1 / 2; 0, 1]).toContinuousLinearMap).transposeLattice := by
+  rw [hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec_oscillatorEnergies hG hcommG hcG hGE,
+    hamiltonianFlowStabilizer_oscillatorEnergies_eq_transposeLattice (m := 1) (ν := 1)
+      (fun _ ↦ one_ne_zero) (fun _ ↦ one_ne_zero) hx]
+  -- The actions of the energies are the energies themselves.
+  have hd : fderiv ℝ (fun c : Fin 2 → ℝ ↦ fun i ↦ c i / (1 : Fin 2 → ℝ) i)
+      (oscillatorEnergies 1 1 x) = ContinuousLinearMap.id ℝ (Fin 2 → ℝ) := by
+    simp only [Pi.one_apply, div_one]
+    exact fderiv_fun_id
+  have hAB : !![(2 : ℝ), 1; 0, 1] * !![1 / 2, -1 / 2; 0, 1] = 1 := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [hd, ← ContinuousLinearMap.transposeLattice_comp_toLin' _ hAB,
+    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp]
+
+/-- **The transpose is needed.** For the recombination `G = (2E₀ + E₁, E₁)` of the energies of two
+oscillators of unit mass and frequency, the vector `π (1, 0)` is not a period of `G`: it turns the
+two phase planes through the angles `2π` and `π`. Since `π (1, 0) = 2π B (1, 0)` for
+`B = (D_I G)⁻¹`, the lattice `2π B ℤ²`, formed without the transpose, is not the period lattice. -/
+theorem notMem_hamiltonianFlowStabilizer_of_eq_mulVec_oscillatorEnergies {x : 𝕍₂ × 𝕍₂}
+    (hx : ∀ i, (x.1 i, x.2 i) ≠ 0) :
+    ![π, 0] ∉ (SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        hG hcommG hcG x := by
+  rw [mem_hamiltonianFlowStabilizer_iff_of_eq_mulVec_oscillatorEnergies hG hcommG hcG hGE hx]
+  rintro ⟨a, b, h⟩
+  have h₀ := congrFun h 0
+  have h₁ := congrFun h 1
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h₀ h₁
+  -- `π = π a` forces `a = 1`, and then `0 = π (2b - 1)` forces `2b = 1`.
+  have ha : (a : ℝ) = 1 := mul_left_cancel₀ pi_ne_zero (by linarith)
+  have hb : (2 * b - a : ℝ) = 0 := (mul_eq_zero.1 h₁.symm).resolve_left pi_ne_zero
+  have ha' : a = 1 := by exact_mod_cast ha
+  have hb' : 2 * b - a = 0 := by exact_mod_cast hb
+  omega
+
+end Recombination
 
 end TauCeti
