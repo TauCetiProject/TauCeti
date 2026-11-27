@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
 
 /-!
 # Calderón–Zygmund operators
@@ -36,6 +37,16 @@ basic theorems about this class.
   Calderón–Zygmund theorems under Hörmander's condition on `V`
   (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`, `TauCeti.exists_eLpNorm_le_of_hormander`),
   whose hypotheses on the adjoint the adjoint theorem supplies.
+* **The kernel and the operator.** The kernel is determined by the operator off the diagonal
+  (`TauCeti.HasStandardKernel.unique`), but the operator is not determined by the kernel: adding a
+  multiplication operator by an `L∞` function does not change the kernel
+  (`TauCeti.HasStandardKernel.add_multiplicationOperator`), and on scalar functions two
+  Calderón–Zygmund operators with the same kernel differ by such a multiplication operator
+  (`TauCeti.HasStandardKernel.exists_sub_eq_multiplicationOperator`), since their difference does
+  not enlarge compact supports (`MeasureTheory.Lp.exists_eq_multiplicationOperator_of_isCompact`).
+  So the operator, not the kernel, is the primitive datum, and the operators with the kernel of
+  one Calderón–Zygmund operator `T` are the `T + M_a`
+  (`TauCeti.HasStandardKernel.hasStandardKernel_iff_exists_eq_add`).
 * **Examples.** The identity has the kernel `0` (`TauCeti.hasStandardKernel_id`), and the Riesz
   transforms are Calderón–Zygmund operators (`TauCeti.hasStandardKernel_rieszTransform`). A
   difference kernel `(x, y) ↦ k (x - y)` satisfies the smoothness estimate in both variables once
@@ -432,5 +443,155 @@ theorem hasStandardKernel_id (C : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
   ae_apply_eq_integral f s _ hf := by
     filter_upwards [hf] with x hx hxs
     simp [hx hxs]
+
+/-! ### The kernel determines the operator up to a multiplication operator -/
+
+/-- A function continuous on `closedBall y₀ r` whose integrals over the balls `closedBall y₀ ρₖ`
+vanish, for radii `0 < ρₖ ≤ r` tending to `0`, vanishes at `y₀`. -/
+private theorem eq_zero_of_forall_setIntegral_closedBall_eq_zero {g : V → ℂ} {y₀ : V} {r : ℝ}
+    (hg : ContinuousOn g (closedBall y₀ r)) {ρ : ℕ → ℝ} (hρ : ∀ k, 0 < ρ k) (hρr : ∀ k, ρ k ≤ r)
+    (hρ₀ : Tendsto ρ atTop (𝓝 0)) (hint : ∀ k, ∫ y in closedBall y₀ (ρ k), g y = 0) :
+    g y₀ = 0 := by
+  by_contra hne
+  have hpos : 0 < ‖g y₀‖ := norm_pos_iff.2 hne
+  -- near `y₀`, `g` stays within `‖g y₀‖ / 2` of `g y₀`, so its integral over a small ball cannot
+  -- vanish
+  obtain ⟨η, hη, hgη⟩ := Metric.continuousWithinAt_iff.1
+    (hg y₀ (mem_closedBall_self ((hρ 0).le.trans (hρr 0)))) (‖g y₀‖ / 2) (half_pos hpos)
+  obtain ⟨k, hk⟩ := (hρ₀.eventually (gt_mem_nhds hη)).exists
+  have hBr : closedBall y₀ (ρ k) ⊆ closedBall y₀ r := closedBall_subset_closedBall (hρr k)
+  have hμB : volume (closedBall y₀ (ρ k)) < ∞ := measure_closedBall_lt_top
+  have hμB₀ : 0 < volume.real (closedBall y₀ (ρ k)) :=
+    ENNReal.toReal_pos (measure_closedBall_pos volume y₀ (hρ k)).ne' hμB.ne
+  have hle : ‖∫ y in closedBall y₀ (ρ k), (g y - g y₀)‖ ≤
+      ‖g y₀‖ / 2 * volume.real (closedBall y₀ (ρ k)) := by
+    refine norm_setIntegral_le_of_norm_le_const hμB fun y hy ↦ ?_
+    rw [← dist_eq_norm]
+    exact (hgη (hBr hy) ((mem_closedBall.1 hy).trans_lt hk)).le
+  rw [integral_sub ((hg.mono hBr).integrableOn_compact (isCompact_closedBall _ _))
+    (integrableOn_const (μ := volume) hμB.ne), hint k, setIntegral_const, zero_sub, norm_neg,
+    norm_smul, Real.norm_of_nonneg measureReal_nonneg] at hle
+  nlinarith
+
+namespace HasStandardKernel
+
+variable {T : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V)} {K K' : V → V → ℂ}
+  {C C' : ℝ≥0} {δ δ' : ℝ}
+
+/-- Off a closed ball `B`, a Calderón–Zygmund operator maps `1_B v` to `(∫_B K x y dy) • v`. -/
+private theorem ae_apply_indicatorConstLp_closedBall_eq [CompleteSpace F]
+    (h : HasStandardKernel T K C δ) (y₀ : V) (ρ : ℝ) (v : F) :
+    ∀ᵐ x, x ∉ closedBall y₀ ρ →
+      T (indicatorConstLp 2 (measurableSet_closedBall (x := y₀) (ε := ρ))
+        measure_closedBall_lt_top.ne v) x = (∫ y in closedBall y₀ ρ, K x y) • v := by
+  have hf := indicatorConstLp_coeFn (p := 2) (μ := (volume : Measure V))
+    (hs := measurableSet_closedBall (x := y₀) (ε := ρ)) (hμs := measure_closedBall_lt_top.ne)
+    (c := v)
+  have hvan : ∀ᵐ x, x ∉ closedBall y₀ ρ →
+      (indicatorConstLp 2 (measurableSet_closedBall (x := y₀) (ε := ρ))
+        measure_closedBall_lt_top.ne v : Lp F 2 (volume : Measure V)) x = 0 := by
+    filter_upwards [hf] with x hx hxt
+    rw [hx, indicator_of_notMem hxt]
+  filter_upwards [h.ae_apply_eq_integral _ _ (isCompact_closedBall y₀ ρ) hvan] with x hx hxt
+  rw [hx hxt, ← integral_smul_const, ← integral_indicator measurableSet_closedBall]
+  refine integral_congr_ae ?_
+  filter_upwards [hf] with y hy
+  rw [hy]
+  by_cases hyt : y ∈ closedBall y₀ ρ <;> simp [hyt]
+
+/-- **The kernel is determined by the operator off the diagonal.** If `T` has the standard kernels
+`K` and `K'`, then `K x y = K' x y` for `x ≠ y`. On the diagonal the definition asks nothing of a
+standard kernel, so nothing can be said there. -/
+theorem unique [CompleteSpace F] [Nontrivial F] (h : HasStandardKernel T K C δ)
+    (h' : HasStandardKernel T K' C' δ') {x₀ y₀ : V} (hxy : x₀ ≠ y₀) : K x₀ y₀ = K' x₀ y₀ := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  set r := dist x₀ y₀ / 2 with hr_def
+  have hr : 0 < r := half_pos (dist_pos.2 hxy)
+  have hcont : ContinuousOn (fun q : V × V ↦ K q.1 q.2 - K' q.1 q.2) {q | q.1 ≠ q.2} :=
+    h.continuousOn_uncurry.sub h'.continuousOn_uncurry
+  have hsep : ∀ x ∈ ball x₀ r, ∀ y ∈ closedBall y₀ r, x ≠ y := by
+    rintro x hx y hy rfl
+    have := dist_triangle_left x₀ y₀ x
+    rw [mem_ball] at hx
+    rw [mem_closedBall] at hy
+    linarith
+  set ρ : ℕ → ℝ := fun k ↦ r / (k + 1)
+  have hρ : ∀ k, 0 < ρ k := fun k ↦ div_pos hr (by positivity)
+  have hρr : ∀ k, ρ k ≤ r := fun k ↦ div_le_self hr.le (le_add_of_nonneg_left k.cast_nonneg)
+  have hρ₀ : Tendsto ρ atTop (𝓝 0) := by
+    simpa [ρ, Function.comp_def] using
+      (tendsto_const_div_atTop_nhds_zero_nat r).comp (tendsto_add_atTop_nat 1)
+  -- off each ball `closedBall y₀ ρₖ`, the integrals of `K x` and `K' x` over it agree
+  have hint : ∀ᵐ x, ∀ k, x ∉ closedBall y₀ (ρ k) →
+      ∫ y in closedBall y₀ (ρ k), K x y = ∫ y in closedBall y₀ (ρ k), K' x y := by
+    refine ae_all_iff.2 fun k ↦ ?_
+    filter_upwards [h.ae_apply_indicatorConstLp_closedBall_eq y₀ (ρ k) v,
+      h'.ae_apply_indicatorConstLp_closedBall_eq y₀ (ρ k) v] with x h₁ h₂ hx
+    exact smul_left_injective ℂ hv ((h₁ hx).symm.trans (h₂ hx))
+  -- so `K x y₀ = K' x y₀` for almost every `x` near `x₀`
+  have hae : (fun x ↦ K x y₀ - K' x y₀) =ᵐ[volume.restrict (ball x₀ r)] fun _ ↦ 0 := by
+    refine (ae_restrict_iff' measurableSet_ball).2 ?_
+    filter_upwards [hint] with x hx hxb
+    have hK : ContinuousOn (fun y ↦ K x y) (closedBall y₀ r) :=
+      h.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
+        fun y hy ↦ hsep x hxb y hy
+    have hK' : ContinuousOn (fun y ↦ K' x y) (closedBall y₀ r) :=
+      h'.continuousOn_uncurry.comp (Continuous.prodMk_right x).continuousOn
+        fun y hy ↦ hsep x hxb y hy
+    refine eq_zero_of_forall_setIntegral_closedBall_eq_zero (g := fun y ↦ K x y - K' x y)
+      (hK.sub hK') hρ hρr hρ₀ fun k ↦ ?_
+    have hBr := closedBall_subset_closedBall (x := y₀) (hρr k)
+    rw [integral_sub ((hK.mono hBr).integrableOn_compact (isCompact_closedBall _ _))
+      ((hK'.mono hBr).integrableOn_compact (isCompact_closedBall _ _)),
+      hx k fun hx' ↦ hsep x hxb x (hBr hx') rfl, sub_self]
+  -- and by continuity at `x₀`
+  have hg : ContinuousOn (fun x ↦ K x y₀ - K' x y₀) (ball x₀ r) :=
+    hcont.comp (Continuous.prodMk_left y₀).continuousOn
+      fun x hx ↦ hsep x hx y₀ (mem_closedBall_self hr.le)
+  exact sub_eq_zero.1 (Measure.eqOn_open_of_ae_eq hae isOpen_ball hg continuousOn_const
+    (mem_ball_self hr))
+
+/-- **Adding a multiplication operator does not change the kernel.** If `T` has the standard kernel
+`K`, then so has `T + M_a` for every `a ∈ L∞`, with the same constants: multiplication by `a` does
+not move supports. The identity, with the kernel `0`, is the case `T = 0`, `a = 1`. -/
+theorem add_multiplicationOperator (h : HasStandardKernel T K C δ)
+    (a : Lp ℂ ∞ (volume : Measure V)) :
+    HasStandardKernel (T + Lp.multiplicationOperator a) K C δ where
+  exponent_pos := h.exponent_pos
+  norm_le := h.norm_le
+  norm_sub_add_norm_sub_le := h.norm_sub_add_norm_sub_le
+  ae_apply_eq_integral f s hs hf := by
+    filter_upwards [h.ae_apply_eq_integral f s hs hf, hf,
+      Lp.coeFn_add (T f) (Lp.multiplicationOperator a f), Lp.multiplicationOperator_ae a f]
+      with x hT hfx hadd hmul hxs
+    rw [add_apply, hadd, Pi.add_apply, hmul, hfx hxs, smul_zero, add_zero,
+      hT hxs]
+
+/-- **Two Calderón–Zygmund operators with the same kernel differ by a multiplication operator** by
+some `a ∈ L∞`, whose norm is then `‖T₁ - T₂‖` (`MeasureTheory.Lp.norm_multiplicationOperator`).
+The kernel does not determine the operator, so the operator, not the kernel, is the primitive
+datum. -/
+theorem exists_sub_eq_multiplicationOperator
+    {T₁ T₂ : Lp ℂ 2 (volume : Measure V) →L[ℂ] Lp ℂ 2 (volume : Measure V)}
+    (h₁ : HasStandardKernel T₁ K C δ) (h₂ : HasStandardKernel T₂ K C' δ') :
+    ∃ a : Lp ℂ ∞ (volume : Measure V), T₁ - T₂ = Lp.multiplicationOperator a :=
+  Lp.exists_eq_multiplicationOperator_of_isCompact ENNReal.ofNat_ne_top fun f s hs hf ↦ by
+    filter_upwards [h₁.ae_apply_eq_integral f s hs hf, h₂.ae_apply_eq_integral f s hs hf,
+      Lp.coeFn_sub (T₁ f) (T₂ f)] with x h₁x h₂x hsub hxs
+    rw [sub_apply, hsub, Pi.sub_apply, h₁x hxs, h₂x hxs, sub_self]
+
+/-- **The Calderón–Zygmund operators with a given kernel.** If `T₁` is a Calderón–Zygmund operator
+with the standard kernel `K`, then the bounded operators with the standard kernel `K`, for the same
+constants, are exactly the operators `T₁ + M_a` with `a ∈ L∞`. -/
+theorem hasStandardKernel_iff_exists_eq_add
+    {T₁ T₂ : Lp ℂ 2 (volume : Measure V) →L[ℂ] Lp ℂ 2 (volume : Measure V)}
+    (h₁ : HasStandardKernel T₁ K C δ) :
+    HasStandardKernel T₂ K C δ ↔
+      ∃ a : Lp ℂ ∞ (volume : Measure V), T₂ = T₁ + Lp.multiplicationOperator a := by
+  refine ⟨fun h₂ ↦ ?_, fun ⟨a, ha⟩ ↦ ha ▸ h₁.add_multiplicationOperator a⟩
+  obtain ⟨a, ha⟩ := h₂.exists_sub_eq_multiplicationOperator h₁
+  exact ⟨a, by rw [← ha, add_sub_cancel]⟩
+
+end HasStandardKernel
 
 end TauCeti
