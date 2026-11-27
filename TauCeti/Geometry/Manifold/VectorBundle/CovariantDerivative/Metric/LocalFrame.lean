@@ -26,6 +26,12 @@ with vanishing diagonal (`IsLocalFrameOn.connectionForm_self_eq_zero`).
 For an orthonormal frame `(e₁, e₂)` of a surface they reduce to a single one-form `ω` with
 `∇e₁ = ω ⊗ e₂` and `∇e₂ = -ω ⊗ e₁`.
 
+The same skew-symmetry, read at a single point `x`, says that a metric-compatible connection
+differentiates a frame `(eₖ)` whose inner products are constant near `x` by a skew-adjoint
+endomorphism: if `e` takes the values of a basis `(bₖ)` at `x`, then the endomorphism
+`A` of the fibre with `A bₖ = ∇_v eₖ` satisfies `⟪A p, q⟫ = -⟪p, A q⟫`
+(`CovariantDerivative.IsMetricCompatible.inner_apply_eq_neg_inner_apply_of_eventuallyEq_const`).
+
 ## Main results
 
 * `IsLocalFrameOn.coeff_covariantDerivative_add_eq_zero`: the connection matrix of a metric
@@ -34,6 +40,9 @@ For an orthonormal frame `(e₁, e₂)` of a surface they reduce to a single one
 * `IsLocalFrameOn.connectionForm_add_connectionForm_swap`: the connection one-forms of such a
   frame are skew-symmetric.
 * `IsLocalFrameOn.connectionForm_self_eq_zero`: the diagonal connection one-forms vanish.
+* `CovariantDerivative.IsMetricCompatible.inner_apply_eq_neg_inner_apply_of_eventuallyEq_const`:
+  a metric-compatible connection differentiates a frame with constant inner products by a
+  skew-adjoint endomorphism.
 
 ## References
 
@@ -123,3 +132,38 @@ theorem connectionForm_self_eq_zero [FiniteDimensional ℝ E] (i : ι) :
   simpa using hs.coeff_covariantDerivative_self_eq_zero hn hu ho hcov x i (v 0)
 
 end IsLocalFrameOn
+
+namespace CovariantDerivative
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V]
+  {cov : CovariantDerivative I F V}
+
+/-- **A metric-compatible connection differentiates a frame with constant inner products by a
+skew-adjoint endomorphism.** Let `(eₖ)` be sections differentiable at `x` whose inner products are
+constant near `x` and whose values at `x` form a basis `(bₖ)` of the fibre. Then an
+endomorphism `A` of the fibre with `A bₖ = ∇_v eₖ` satisfies `⟪A p, q⟫ = -⟪p, A q⟫`. -/
+theorem IsMetricCompatible.inner_apply_eq_neg_inner_apply_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {x : M} {ι : Type*}
+    (b : Module.Basis ι ℝ (V x)) {e : ι → Π y : M, V y} (he : ∀ i, MDiffAt (T% (e i)) x)
+    (hb : ∀ i, e i x = b i)
+    (hon : ∀ i j, (fun y ↦ inner ℝ (e i y) (e j y)) =ᶠ[𝓝 x] fun _ ↦ inner ℝ (b i) (b j))
+    (v : TangentSpace I x) {A : V x →ₗ[ℝ] V x} (hA : ∀ k, A (b k) = cov (e k) x v)
+    (p q : V x) : inner ℝ (A p) q = -inner ℝ p (A q) := by
+  have hB : innerₗ (V x) ∘ₗ A = -(innerₗ (V x)).compl₂ A :=
+    LinearMap.ext_basis b b fun k l ↦ by
+      have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const (he k) (he l)
+        (hon k l) v
+      simp only [LinearMap.coe_comp, Function.comp_apply,
+        innerₗ_apply_apply, LinearMap.neg_apply, LinearMap.compl₂_apply, hA]
+      rw [← hb k, ← hb l]
+      linarith
+  simpa using LinearMap.congr_fun₂ hB p q
+
+end CovariantDerivative
