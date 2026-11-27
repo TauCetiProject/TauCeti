@@ -249,7 +249,8 @@ private theorem g2_short_pair_in_triple {α β γ δ ε ζ : ι}
 
 /-- Collection for two short roots with short sum, from the three local root equations.
 The correction roots are `α + β`, `2α + β` and `α + 2β`. Every coefficient is an integer
-with the signs of the supplied Chevalley table. Other components and the full lattice remain. -/
+with the signs of the supplied Chevalley table. The ambient root pairing may have other
+components, and the Chevalley algebra uses the full cocharacter lattice. -/
 theorem dividedPower_root_mul_of_g2_short_pair {α β γ δ ε : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ)
