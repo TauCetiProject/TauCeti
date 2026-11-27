@@ -37,15 +37,14 @@ theorem norm_rieszSum_sub_add_mul_logDeriv_le_of_box_bound {N : ℕ} [NeZero N]
     (hz : 1 ≤ z) (hη : 0 ≤ η) (hη₁ : η ≤ 1) (hσ : 0 < σ) (hσ₁ : σ < 1) (hT : 1 ≤ T)
     (hzero : ∀ s ∈ Icc σ 2 ×ℂ Icc (-T) T, χ.LFunction s ≠ 0)
     (hA : ∀ s ∈ Icc σ 2 ×ℂ Icc (-T) T, ‖logDeriv χ.LFunction s‖ ≤ A) :
-    let a := fun n : ℕ ↦ χ n * (Λ n : ℂ)
-    ‖rieszSum a (z * (1 + η)) - rieszSum a z + (z * η : ℝ) * logDeriv χ.LFunction 1‖ ≤
+    ‖rieszSum (fun n ↦ χ n * Λ n) (z * (1 + η)) - rieszSum (fun n ↦ χ n * Λ n) z +
+        (z * η : ℝ) * logDeriv χ.LFunction 1‖ ≤
       (4 * A * η * z ^ σ * Real.log (1 + T / (1 - σ)) +
         (20 * A - 10 * (logDeriv riemannZeta 2).re) * z ^ 2 / T) / (2 * π) := by
-  intro a
   have hhol (s : ℂ) (hs : s ∈ Icc σ 2 ×ℂ Icc (-T) T) :
       AnalyticAt ℂ (fun w ↦ -logDeriv χ.LFunction w) s :=
     (((differentiable_LFunction hχ).analyticAt s).logDeriv (hzero s hs)).neg
-  have h := norm_rieszSum_sub_sub_mul_le_of_box_bound (a := a)
+  have h := norm_rieszSum_sub_sub_mul_le_of_box_bound (a := fun n ↦ χ n * Λ n)
     (F := fun s ↦ -logDeriv χ.LFunction s) (B := -(logDeriv riemannZeta 2).re)
     hz hη hη₁ hσ hσ₁ hT (LSeriesSummable_twist_vonMangoldt χ (by norm_num))
     (fun s hs ↦ (hhol s hs).continuousAt.continuousWithinAt)
@@ -53,7 +52,7 @@ theorem norm_rieszSum_sub_add_mul_logDeriv_le_of_box_bound {N : ℕ} [NeZero N]
       |>.differentiableWithinAt)
     (fun t ↦ by
       rw [χ.logDeriv_LFunction_eq_neg_LSeries (by simp), neg_neg]
-      simp only [a, Pi.mul_def])
+      simp only [Pi.mul_def])
     (fun s hs ↦ by simpa only [norm_neg] using hA s hs)
     (fun t _ ↦ by simpa only [norm_neg, ofReal_ofNat] using
       χ.norm_logDeriv_LFunction_le_of_le_re (σ := 2) (s := 2 + t * I) (by norm_num) (by simp))

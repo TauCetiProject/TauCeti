@@ -7,18 +7,23 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Inversion
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Complex.Coordinates
+import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.Contour.Residue.SimplePole
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Finite-height contour shift for first Riesz sums
 
 The Perron–Riesz kernel has a simple pole at one. Moving the finite part of the line of
-integration to the left of one yields the main term and three integrals, without imposing
-any growth condition outside the rectangle on the continued Dirichlet series.
+integration to the left of one yields the main term `y F(1)` plus the tail, shifted-edge and two
+horizontal-edge integrals, without imposing any growth condition outside the rectangle on the
+continued Dirichlet series (`TauCeti.rieszSum_eq_residue_add_contour`).
+
+The file also bounds the Riesz increment `rieszSum a (z(1+η)) - rieszSum a z - zη F(1)` from a
+bound on the continuation in the rectangle and a bound on the tails of the line `Re s = 2`,
+keeping the factor `η` on the shifted edge
+(`TauCeti.norm_rieszSum_sub_sub_mul_le_of_box_bound`).
 
 See Montgomery and Vaughan, *Multiplicative Number Theory I*, Chapter 5, for the use of
 Perron inversion and contour shifts.
@@ -31,15 +36,16 @@ open scoped Real Interval
 
 namespace TauCeti
 
+private lemma analyticAt_ofReal_cpow {y : ℝ} (hy : 0 < y) (s : ℂ) :
+    AnalyticAt ℂ (fun w : ℂ ↦ (y : ℂ) ^ w) s :=
+  analyticAt_const.cpow analyticAt_id (ofReal_mem_slitPlane.mpr hy)
+
 private lemma perronRiesz_integrand_residue {F : ℂ → ℂ} {y : ℝ} (hy : 0 < y)
     (hF : AnalyticAt ℂ F 1) :
     let f := fun s : ℂ ↦ F s * ((y : ℂ) ^ s / (s * (s - 1)))
     MeromorphicAt f 1 ∧ Contour.residue f 1 = F 1 * y := by
   let g := fun s : ℂ ↦ F s * ((y : ℂ) ^ s / s)
-  have hp : AnalyticAt ℂ (fun s : ℂ ↦ (y : ℂ) ^ s) 1 :=
-    Differentiable.analyticAt (fun _ ↦ differentiableAt_id.const_cpow
-      (.inl (ofReal_ne_zero.mpr hy.ne'))) _
-  have hg : AnalyticAt ℂ g 1 := hF.mul (hp.div analyticAt_id one_ne_zero)
+  have hg : AnalyticAt ℂ g 1 := hF.mul ((analyticAt_ofReal_cpow hy 1).div analyticAt_id one_ne_zero)
   have heq (s : ℂ) : F s * ((y : ℂ) ^ s / (s * (s - 1))) = g s / (s - 1) := by
     simp [g, div_mul_eq_div_div, mul_div_assoc]
   refine ⟨?_, ?_⟩
@@ -56,10 +62,11 @@ theorem rieszSum_eq_residue_add_contour {a : ℕ → ℂ} {F : ℂ → ℂ} {y �
     (ha : LSeriesSummable a c) (hFc : ContinuousOn F (Icc σ c ×ℂ Icc (-T) T))
     (hFd : DifferentiableOn ℂ F (Ioo σ c ×ℂ Ioo (-T) T))
     (hline : ∀ t : ℝ, LSeries a (c + t * I) = F (c + t * I)) :
-    let v := fun x t : ℝ ↦ F (x + t * I) * perronRieszKernel y x t
     rieszSum a y = F 1 * y + ((2 * π : ℝ) : ℂ)⁻¹ *
-      ((∫ t in {t : ℝ | T < |t|}, v c t) + (∫ t in (-T)..T, v σ t) +
-        ((∫ x in σ..c, v x T) - (∫ x in σ..c, v x (-T))) / I) := by
+      ((∫ t in {t : ℝ | T < |t|}, F (c + t * I) * perronRieszKernel y c t) +
+        (∫ t in (-T)..T, F (σ + t * I) * perronRieszKernel y σ t) +
+        ((∫ x in σ..c, F (x + T * I) * perronRieszKernel y x T) -
+          (∫ x in σ..c, F (x - T * I) * perronRieszKernel y x (-T))) / I) := by
   rcases hy.eq_or_lt with rfl | hy
   · simp [rieszSum_eq_zero_of_le_one]
   let f := fun s : ℂ ↦ F s * ((y : ℂ) ^ s / (s * (s - 1)))
@@ -68,10 +75,7 @@ theorem rieszSum_eq_residue_add_contour {a : ℕ → ℂ} {F : ℂ → ℂ} {y �
   have hkernel (s : ℂ) (hs : σ ≤ s.re) (hs₁ : s ≠ 1) :
       AnalyticAt ℂ (fun w : ℂ ↦ (y : ℂ) ^ w / (w * (w - 1))) s := by
     have hs₀ : s ≠ 0 := fun h ↦ by simp [h, hσ.not_ge] at hs
-    have hp : AnalyticAt ℂ (fun w : ℂ ↦ (y : ℂ) ^ w) s :=
-      Differentiable.analyticAt (fun _ ↦ differentiableAt_id.const_cpow
-        (.inl (ofReal_ne_zero.mpr hy.ne'))) _
-    exact hp.div (analyticAt_id.mul (analyticAt_id.sub analyticAt_const))
+    exact (analyticAt_ofReal_cpow hy s).div (analyticAt_id.mul (analyticAt_id.sub analyticAt_const))
       (mul_ne_zero hs₀ (sub_ne_zero.mpr hs₁))
   have hfc : ContinuousOn f (Icc σ c ×ℂ Icc (-T) T \ {1}) := fun s hs ↦
     ((hFc s hs.1).mono sdiff_subset).mul
@@ -100,37 +104,6 @@ theorem rieszSum_eq_residue_add_contour {a : ℕ → ℂ} {F : ℂ → ℂ} {y �
   rw [← hsum, hshift, hmain]
   simp only [f, perronRieszKernel_def, ofReal_neg, neg_mul, ← sub_eq_add_neg]
 
-private lemma norm_perronRieszKernel_sub_le_slope {z η σ : ℝ} (hz : 0 < z) (hη : 0 ≤ η)
-    (hσ : 0 < σ) (hσ₁ : σ < 1) (t : ℝ) :
-    ‖perronRieszKernel (z * (1 + η)) σ t - perronRieszKernel z σ t‖ ≤
-      η * z ^ σ / ‖(σ : ℂ) + t * I - 1‖ := by
-  rcases hη.eq_or_lt with rfl | hη
-  · simp
-  let s : ℂ := σ + t * I
-  have hs : s.re = σ := by simp [s]
-  have hs₀ : s ≠ 0 := Complex.ofReal_add_mul_I_ne_zero hσ.ne' t
-  have hbase : 0 < z * η := mul_pos hz hη
-  have hM := norm_ofReal_add_one_cpow_neg_sub_le (w := -s)
-    (y := η⁻¹) (by simp [hs]; linarith) (inv_pos.mpr hη)
-  have hscale : ((z * (1 + η) : ℝ) : ℂ) ^ s - (z : ℂ) ^ s =
-      ((z * η : ℝ) : ℂ) ^ s * (((η⁻¹ : ℝ) : ℂ) + 1) ^ s -
-        ((z * η : ℝ) : ℂ) ^ s * ((η⁻¹ : ℝ) : ℂ) ^ s := by
-    have h₁ : z * η * (η⁻¹ + 1) = z * (1 + η) := by field_simp
-    have h₂ : z * η * η⁻¹ = z := by simp [hη.ne']
-    congr 1
-    · rw [← h₁, ofReal_mul, ofReal_mul_cpow hbase.le, ofReal_add, ofReal_one]
-    · conv_lhs => rw [← h₂, ofReal_mul, ofReal_mul_cpow hbase.le]
-  rw [perronRieszKernel_def, perronRieszKernel_def, ← sub_div, hscale, ← mul_sub,
-    norm_div, norm_mul, norm_mul, norm_cpow_eq_rpow_re_of_pos hbase, hs]
-  have hM' : ‖(((η⁻¹ : ℝ) : ℂ) + 1) ^ s - ((η⁻¹ : ℝ) : ℂ) ^ s‖ ≤
-      ‖s‖ * (η⁻¹) ^ (σ - 1) := by simpa only [neg_neg, norm_neg, neg_re, hs] using hM
-  refine (div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_left hM' (by positivity))
-    (by positivity)).trans_eq ?_
-  rw [Real.mul_rpow hz.le hη.le, Real.inv_rpow hη.le, mul_comm ‖s‖, ← mul_assoc,
-    mul_assoc (z ^ σ) (η ^ σ), ← div_eq_mul_inv, ← Real.rpow_sub hη,
-    sub_sub_cancel, Real.rpow_one, mul_comm (z ^ σ), mul_comm ‖(σ : ℂ) + t * I‖]
-  exact mul_div_mul_right _ _ (norm_ne_zero_iff.mpr hs₀)
-
 private lemma norm_perronRieszKernel_sub_le_sq {z η c t : ℝ} (hz : 1 ≤ z)
     (hη : 0 ≤ η) (hη₁ : η ≤ 1) (hc : c ≤ 2) (ht : t ≠ 0) :
     ‖perronRieszKernel (z * (1 + η)) c t - perronRieszKernel z c t‖ ≤ 5 * z ^ 2 / t ^ 2 := by
@@ -157,25 +130,22 @@ private lemma norm_integral_perronRiesz_sub_tail_le {F : ℂ → ℂ} {z η T B 
     (hF : ∀ t : ℝ, T < |t| → ‖F (2 + t * I)‖ ≤ B) :
     ‖∫ t in {t : ℝ | T < |t|}, F (2 + t * I) *
       (perronRieszKernel (z * (1 + η)) 2 t - perronRieszKernel z 2 t)‖ ≤ 10 * B * z ^ 2 / T := by
-  let S := (Metric.closedBall (0 : ℝ) T)ᶜ
-  have hS : {t : ℝ | T < |t|} = S := by ext t; simp [S]
-  have hInt : IntegrableOn (fun t : ℝ ↦ ‖t‖ ^ (-2 : ℝ)) S :=
-    (integrableOn_norm_rpow_compl_closedBall_iff (mu := volume) (E := ℝ) hT).2 (by simp)
   have hB : 0 ≤ B := (norm_nonneg _).trans (hF (T + 1) (by rw [abs_of_pos (by linarith)]; linarith))
-  rw [hS]
-  refine (norm_integral_le_of_norm_le (hInt.const_mul (5 * B * z ^ 2)) ?_).trans_eq ?_
-  · have hmeas : MeasurableSet S := Metric.isClosed_closedBall.measurableSet.compl
-    filter_upwards [ae_restrict_mem hmeas] with t ht
-    have ht' : T < |t| := by simpa [← hS] using ht
-    have ht₀ : t ≠ 0 := fun h ↦ by simp [h, hT.not_gt] at ht'
+  have hS : MeasurableSet {t : ℝ | T < |t|} :=
+    measurableSet_lt measurable_const continuous_abs.measurable
+  have hint : IntegrableOn (fun t : ℝ ↦ (t ^ 2)⁻¹) {t : ℝ | T < |t|} :=
+    Integrable.of_integral_ne_zero <| by
+      rw [integral_lt_abs_inv_sq hT.le]
+      exact div_ne_zero two_ne_zero hT.ne'
+  refine (norm_integral_le_of_norm_le (hint.const_mul (5 * B * z ^ 2))
+    (ae_restrict_of_forall_mem hS fun t (ht : T < |t|) ↦ ?_)).trans_eq ?_
+  · have ht₀ : t ≠ 0 := fun h ↦ by simp [h, hT.not_gt] at ht
     rw [norm_mul]
     calc
-      _ ≤ B * (5 * z ^ 2 / t ^ 2) := mul_le_mul (hF t ht')
+      _ ≤ B * (5 * z ^ 2 / t ^ 2) := mul_le_mul (hF t ht)
         (norm_perronRieszKernel_sub_le_sq hz hη hη₁ le_rfl ht₀) (norm_nonneg _) hB
-      _ = _ := by rw [Real.norm_eq_abs, Real.rpow_neg (abs_nonneg _), Real.rpow_two, sq_abs]; ring
-  · rw [integral_const_mul, integral_norm_rpow_compl_closedBall
-      (E := ℝ) (mu := volume) (s := -2) (by simp) hT]
-    norm_num [Real.ball_eq_Ioo, measureReal_def, Real.volume_Ioo, Real.rpow_neg_one]
+      _ = _ := by ring
+  · rw [integral_const_mul, integral_lt_abs_inv_sq hT.le]
     ring
 
 private lemma norm_intervalIntegral_perronRiesz_sub_vertical_le {F : ℂ → ℂ}
@@ -190,26 +160,6 @@ private lemma norm_intervalIntegral_perronRiesz_sub_vertical_le {F : ℂ → ℂ
   have hC : Continuous (fun t : ℝ ↦ (d + |t|)⁻¹) := by
     apply (continuous_const.add continuous_abs).inv₀
     exact fun t ↦ (add_pos_of_pos_of_nonneg hd (abs_nonneg t)).ne'
-  have hwt : (∫ t in (-T)..T, (d + |t|)⁻¹) = 2 * Real.log (1 + T / d) := by
-    have hreflect : (∫ t in (-T)..0, (d + |t|)⁻¹) = ∫ t in 0..T, (d + |t|)⁻¹ := by
-      simpa only [neg_zero, abs_neg] using
-        (intervalIntegral.integral_comp_neg (a := 0) (b := T) (fun t : ℝ ↦ (d + |t|)⁻¹)).symm
-    rw [← intervalIntegral.integral_add_adjacent_intervals
-      (hC.intervalIntegrable (-T) 0) (hC.intervalIntegrable 0 T), hreflect]
-    have heq : (∫ t in 0..T, (d + |t|)⁻¹) = Real.log (1 + T / d) := by
-      calc
-        _ = ∫ t in 0..T, (t + d)⁻¹ :=
-          intervalIntegral.integral_congr fun t ht ↦ by
-            rw [uIcc_of_le hT] at ht
-            rw [abs_of_nonneg ht.1, add_comm]
-        _ = _ := by
-          rw [intervalIntegral.integral_comp_add_right (fun x : ℝ ↦ x⁻¹), zero_add,
-            integral_inv_of_pos hd (by linarith)]
-          congr 1
-          field_simp
-          ring
-    rw [heq]
-    ring
   rw [intervalIntegral.integral_of_le (by linarith : -T ≤ T)]
   have hInt := (hC.const_mul (2 * A * η * z ^ σ)).intervalIntegrable (μ := volume) (-T) T
   refine (norm_integral_le_of_norm_le hInt.1 ?_).trans_eq ?_
@@ -224,13 +174,14 @@ private lemma norm_intervalIntegral_perronRiesz_sub_vertical_le {F : ℂ → ℂ
     rw [norm_mul]
     calc
       _ ≤ A * (η * z ^ σ / ‖(σ : ℂ) + t * I - 1‖) := mul_le_mul
-        (hA t (Ioc_subset_Icc_self ht)) (norm_perronRieszKernel_sub_le_slope hz hη hσ hσ₁ t)
+        (hA t (Ioc_subset_Icc_self ht)) (norm_perronRieszKernel_mul_one_add_sub_le hz hη hσ hσ₁ t)
         (norm_nonneg _) hA₀
       _ ≤ A * (η * z ^ σ / ((d + |t|) / 2)) :=
         mul_le_mul_of_nonneg_left (div_le_div_of_nonneg_left (by positivity)
           (half_pos (add_pos_of_pos_of_nonneg hd (abs_nonneg t))) hden) hA₀
       _ = (2 * A * η * z ^ σ) * (d + |t|)⁻¹ := by rw [div_div_eq_mul_div]; ring
-  · rw [integral_const_mul, ← intervalIntegral.integral_of_le (by linarith : -T ≤ T), hwt]
+  · rw [integral_const_mul, ← intervalIntegral.integral_of_le (by linarith : -T ≤ T),
+      integral_inv_add_abs hd hT]
     ring
 
 private lemma norm_intervalIntegral_perronRiesz_sub_horizontal_le {F : ℂ → ℂ} {z η σ t A : ℝ}
@@ -255,15 +206,17 @@ private lemma rieszSum_sub_sub_mul_eq_contour {a : ℕ → ℂ} {F : ℂ → ℂ
     (ha : LSeriesSummable a 2) (hFc : ContinuousOn F (Icc σ 2 ×ℂ Icc (-T) T))
     (hFd : DifferentiableOn ℂ F (Ioo σ 2 ×ℂ Ioo (-T) T))
     (hline : ∀ t : ℝ, LSeries a (2 + t * I) = F (2 + t * I)) :
-    let v := fun c t : ℝ ↦ F (c + t * I) * (perronRieszKernel w c t - perronRieszKernel z c t)
     rieszSum a w - rieszSum a z - F 1 * ((w : ℂ) - z) = ((2 * π : ℝ) : ℂ)⁻¹ *
-      ((∫ t in {t : ℝ | T < |t|}, v 2 t) + (∫ t in (-T)..T, v σ t) +
-        ((∫ x in σ..2, v x T) - (∫ x in σ..2, v x (-T))) / I) := by
-  dsimp only
+      ((∫ t in {t : ℝ | T < |t|},
+          F (2 + t * I) * (perronRieszKernel w 2 t - perronRieszKernel z 2 t)) +
+        (∫ t in (-T)..T, F (σ + t * I) * (perronRieszKernel w σ t - perronRieszKernel z σ t)) +
+        ((∫ x in σ..2, F (x + T * I) * (perronRieszKernel w x T - perronRieszKernel z x T)) -
+          (∫ x in σ..2,
+            F (x - T * I) * (perronRieszKernel w x (-T) - perronRieszKernel z x (-T)))) / I) := by
   have hσ₂ : σ ≤ 2 := by linarith
   have hR (y : ℝ) (hy : 0 < y) : Integrable
-      (fun t : ℝ ↦ F (((2 : ℝ) : ℂ) + t * I) * perronRieszKernel y 2 t) := by
-    simp_rw [ofReal_ofNat, ← hline]
+      (fun t : ℝ ↦ F (2 + t * I) * perronRieszKernel y 2 t) := by
+    simp_rw [← hline]
     exact integrable_LSeries_mul_perronRieszKernel a hy.le (by norm_num) (by norm_num)
   have hV (y : ℝ) : IntervalIntegrable
       (fun t : ℝ ↦ F (σ + t * I) * perronRieszKernel y σ t) volume (-T) T := by
@@ -283,16 +236,17 @@ private lemma rieszSum_sub_sub_mul_eq_contour {a : ℕ → ℂ} {F : ℂ → ℂ
     have hp : Continuous fun x : ℝ ↦ (y : ℂ) ^ ((x : ℂ) + t * I) := by fun_prop
     exact hp.continuousOn.div (by fun_prop) (fun x _ ↦ mul_ne_zero (by simpa using hne x 0)
         (sub_ne_zero.mpr (by simpa using hne x 1)))
+  have hH' (y : ℝ) (hy : 0 < y) :
+      IntervalIntegrable (fun x : ℝ ↦ F (x - T * I) * perronRieszKernel y x (-T)) volume σ 2 := by
+    simpa only [ofReal_neg, neg_mul, ← sub_eq_add_neg] using
+      hH y hy (-T) ⟨le_rfl, by linarith⟩ (neg_ne_zero.mpr hT.ne')
   have hpos : T ∈ Icc (-T) T := ⟨by linarith, le_rfl⟩
-  have hneg : -T ∈ Icc (-T) T := ⟨le_rfl, by linarith⟩
   have hc : 1 < (2 : ℝ) := by norm_num
   rw [rieszSum_eq_residue_add_contour hw.le hσ hσ₁ hc hT ha hFc hFd hline,
     rieszSum_eq_residue_add_contour hz.le hσ hσ₁ hc hT ha hFc hFd hline]
-  dsimp only
-  simp only [mul_sub, intervalIntegral.integral_sub (hV w) (hV z),
+  simp only [ofReal_ofNat, mul_sub, intervalIntegral.integral_sub (hV w) (hV z),
     intervalIntegral.integral_sub (hH w hw T hpos hT.ne') (hH z hz T hpos hT.ne'),
-    intervalIntegral.integral_sub (hH w hw (-T) hneg (neg_ne_zero.mpr hT.ne'))
-      (hH z hz (-T) hneg (neg_ne_zero.mpr hT.ne'))]
+    intervalIntegral.integral_sub (hH' w hw) (hH' z hz)]
   rw [integral_sub ((hR w hw).integrableOn (s := {t | T < |t|})) (hR z hz).integrableOn]
   ring
 
@@ -317,7 +271,6 @@ theorem norm_rieszSum_sub_sub_mul_le_of_box_bound {a : ℕ → ℂ} {F : ℂ →
   have hinc : ((z * (1 + η) : ℝ) : ℂ) - z = (z * η : ℝ) := by push_cast; ring
   rw [← hinc, rieszSum_sub_sub_mul_eq_contour (mul_pos hz₀ (by linarith)) hz₀ hσ hσ₁ hT₀
     ha hFc hFd hline]
-  dsimp only
   rw [norm_mul, norm_inv, norm_real, Real.norm_of_nonneg (by positivity), ← div_eq_inv_mul]
   apply div_le_div_of_nonneg_right _ (by positivity)
   have hv := norm_intervalIntegral_perronRiesz_sub_vertical_le hz₀ hη hσ hσ₁ hT₀.le
@@ -327,6 +280,7 @@ theorem norm_rieszSum_sub_sub_mul_le_of_box_bound {a : ℕ → ℂ} {F : ℂ →
       (fun x hx ↦ hA (x + t * I) (by simpa [mem_reProdIm, ← abs_le, ht] using hx))
   have hp := hh T (abs_of_pos hT₀) hT₀.ne'
   have hm := hh (-T) (by simp [abs_of_pos hT₀]) (neg_ne_zero.mpr hT₀.ne')
+  simp only [ofReal_neg, neg_mul, ← sub_eq_add_neg] at hm
   have htail := norm_integral_perronRiesz_sub_tail_le hz hη hη₁ hT₀ hB
   have hA₀ := (norm_nonneg _).trans (hA (σ : ℂ) (by simp [mem_reProdIm, hσ₂, hT₀.le]))
   have herr : 5 * A * z ^ 2 / T ^ 2 * (2 - σ) ≤ 10 * A * z ^ 2 / T := by
