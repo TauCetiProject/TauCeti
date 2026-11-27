@@ -216,9 +216,9 @@ projection. -/
 lemma baseChangeProdIso_hom_fst (f : T ⟶ S) (A B : AbelianScheme S) :
     (baseChangeProdIso f A B).hom ≫ prod.fst _ _ = (baseChangeFunctor f).map (prod.fst A B) :=
   toOverHom_injective (by
-    rw [toOverHom_comp, toOverHom_baseChangeProdIso_hom, prod.toOverHom_fst]
-    exact (CartesianMonoidalCategory.prodComparison_fst _ _ _).trans
-      ((congrArg _ (prod.toOverHom_fst A B).symm).trans (toOverHom_baseChangeFunctor_map f _).symm))
+    refine Eq.trans ?_ (toOverHom_baseChangeFunctor_map f _).symm
+    simp only [toOverHom_comp, toOverHom_baseChangeProdIso_hom, prod.toOverHom_fst]
+    exact CartesianMonoidalCategory.prodComparison_fst (Over.pullback f) A.toOver B.toOver)
 
 /-- The second component of the base-change comparison is the base change of the second
 projection. -/
@@ -226,9 +226,9 @@ projection. -/
 lemma baseChangeProdIso_hom_snd (f : T ⟶ S) (A B : AbelianScheme S) :
     (baseChangeProdIso f A B).hom ≫ prod.snd _ _ = (baseChangeFunctor f).map (prod.snd A B) :=
   toOverHom_injective (by
-    rw [toOverHom_comp, toOverHom_baseChangeProdIso_hom, prod.toOverHom_snd]
-    exact (CartesianMonoidalCategory.prodComparison_snd _ _ _).trans
-      ((congrArg _ (prod.toOverHom_snd A B).symm).trans (toOverHom_baseChangeFunctor_map f _).symm))
+    refine Eq.trans ?_ (toOverHom_baseChangeFunctor_map f _).symm
+    simp only [toOverHom_comp, toOverHom_baseChangeProdIso_hom, prod.toOverHom_snd]
+    exact CartesianMonoidalCategory.prodComparison_snd (Over.pullback f) A.toOver B.toOver)
 
 /-! ### Relative dimension -/
 
@@ -253,49 +253,49 @@ theorem relativeDimension_prod (A B : AbelianScheme S) (s : S) :
 /-! ### Products with the identity abelian scheme -/
 
 /-- The product of `A` with the identity abelian scheme is canonically `A`, through the first
-projection. -/
+projection, since the identity abelian scheme is terminal (`identityIsTerminal`). -/
 def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A :=
-  @isoMk _ _ _ (ρ_ A.toOver) (inferInstance : IsMonHom (ρ_ A.toOver).hom)
-
-lemma toOverHom_prodIdentityIso_hom (A : AbelianScheme S) :
-    toOverHom (prodIdentityIso A).hom = (ρ_ A.toOver).hom :=
-  @toOverHom_isoMk_hom _ _ _ _ (inferInstance : IsMonHom (ρ_ A.toOver).hom)
+  BinaryFan.rightUnitor identityIsTerminal (prod.isLimit A (identity S))
 
 /-- The isomorphism `A ×_S S ≅ A` is the first projection. -/
 @[simp]
 lemma prodIdentityIso_hom (A : AbelianScheme S) :
     (prodIdentityIso A).hom = prod.fst A (identity S) :=
-  -- The unit of `Over S` is `(identity S).toOver` (`identity_toOver`).
-  toOverHom_injective (by
-    rw [toOverHom_prodIdentityIso_hom, prod.toOverHom_fst]
-    exact rightUnitor_hom A.toOver)
+  (rfl)
+
+/-- On underlying schemes over `S`, the isomorphism `A ×_S S ≅ A` is the right unitor of
+`Over S`, whose unit is `(identity S).toOver` (`identity_toOver`). -/
+lemma toOverHom_prodIdentityIso_hom (A : AbelianScheme S) :
+    toOverHom (prodIdentityIso A).hom = (ρ_ A.toOver).hom := by
+  rw [rightUnitor_hom]
+  exact prod.toOverHom_fst A (identity S)
 
 /-- The inverse of `A ×_S S ≅ A` is the section of the first projection. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma prodIdentityIso_inv_fst (A : AbelianScheme S) :
     (prodIdentityIso A).inv ≫ prod.fst A (identity S) = 𝟙 A := by
   rw [← prodIdentityIso_hom, Iso.inv_hom_id]
 
 /-- The product of the identity abelian scheme with `A` is canonically `A`, through the second
-projection. -/
+projection, since the identity abelian scheme is terminal (`identityIsTerminal`). -/
 def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
-  @isoMk _ _ _ (λ_ A.toOver) (inferInstance : IsMonHom (λ_ A.toOver).hom)
-
-lemma toOverHom_identityProdIso_hom (A : AbelianScheme S) :
-    toOverHom (identityProdIso A).hom = (λ_ A.toOver).hom :=
-  @toOverHom_isoMk_hom _ _ _ _ (inferInstance : IsMonHom (λ_ A.toOver).hom)
+  BinaryFan.leftUnitor identityIsTerminal (prod.isLimit (identity S) A)
 
 /-- The isomorphism `S ×_S A ≅ A` is the second projection. -/
 @[simp]
 lemma identityProdIso_hom (A : AbelianScheme S) :
     (identityProdIso A).hom = prod.snd (identity S) A :=
-  -- The unit of `Over S` is `(identity S).toOver` (`identity_toOver`).
-  toOverHom_injective (by
-    rw [toOverHom_identityProdIso_hom, prod.toOverHom_snd]
-    exact leftUnitor_hom A.toOver)
+  (rfl)
+
+/-- On underlying schemes over `S`, the isomorphism `S ×_S A ≅ A` is the left unitor of
+`Over S`, whose unit is `(identity S).toOver` (`identity_toOver`). -/
+lemma toOverHom_identityProdIso_hom (A : AbelianScheme S) :
+    toOverHom (identityProdIso A).hom = (λ_ A.toOver).hom := by
+  rw [leftUnitor_hom]
+  exact prod.toOverHom_snd (identity S) A
 
 /-- The inverse of `S ×_S A ≅ A` is the section of the second projection. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma identityProdIso_inv_snd (A : AbelianScheme S) :
     (identityProdIso A).inv ≫ prod.snd (identity S) A = 𝟙 A := by
   rw [← identityProdIso_hom, Iso.inv_hom_id]

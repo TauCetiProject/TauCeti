@@ -180,8 +180,9 @@ noncomputable def isoIdentity (A : AbelianScheme S) (h : ∀ s, A.relativeDimens
     have : IsIso ((Over.forget S).map (toUnit A.toOver)) := by
       rwa [Over.forget_map, Over.toUnit_left]
     isIso_of_reflects_iso _ (Over.forget S)
-  @isoMk _ _ _ (@asIso _ _ _ _ (toUnit A.toOver) this)
-    (inferInstance : IsMonHom (toUnit A.toOver))
+  -- `toUnit` preserves the group laws because morphisms into the unit
+  -- `(identity S).toOver = 𝟙_ (Over S)` (`identity_toOver`) are unique.
+  @isoMk _ _ _ (@asIso _ _ _ _ (toUnit A.toOver) this) ⟨toUnit_unique _ _, toUnit_unique _ _⟩
 
 @[simp]
 lemma toOverHom_isoIdentity_hom (A : AbelianScheme S) (h : ∀ s, A.relativeDimension s = 0) :
