@@ -21,7 +21,9 @@ property characterizes `ι_K`, and that `ι_K` is natural in the presentation:
 
 * it is compatible with the model equivalences: on the model `ℚ(√d)` presented by `ω` it is the
   distinguished embedding, and its composite with the model equivalence `ℚ(√d) ≃ₐ[ℚ] K` is the
-  distinguished embedding of the model;
+  distinguished embedding of the model. Hence for presentations `θ` of `K` and `η` of `L` by
+  square roots of the same `d`, the generator-preserving isomorphism
+  `e_(K,L) = TauCeti.QuadraticOrder.sqrtAlgEquiv` satisfies `ι_L ∘ e_(K,L) = ι_K`;
 * along a `ℚ`-isomorphism `σ : K ≃ₐ[ℚ] L` it is transported to the embedding of `L` presented by
   `σ θ`. If `L` is presented by `η` with `η² = d`, then `σ θ = ±η`, and `ι_L ∘ σ` is `ι_K` when
   `σ θ = η` and the complex conjugate of `ι_K` when `σ θ = -η`;
@@ -50,6 +52,7 @@ further choices.
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_omega`: compatibility with the model
   equivalences, whose composites with `ℚ`-isomorphisms are described by
   `TauCeti.QuadraticOrder.algEquivOfSqrt_trans`.
+* `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_sqrtAlgEquiv_apply`: `ι_L ∘ e_(K,L) = ι_K`.
 * `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_algEquiv_apply`,
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq`,
   `TauCeti.QuadraticOrder.complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq_neg`: naturality
@@ -271,6 +274,19 @@ theorem complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq_neg (σ : K ≃ₐ[ℚ
   subst hη'
   rw [complexEmbeddingOfSqrt_neg_apply (sq_map_of_sq_eq_intCast σ hθ) hL hd,
     complexEmbeddingOfSqrt_algEquiv_apply hθ hK hd σ x]
+
+variable [Fact (¬ IsSquare d)]
+
+/-- **Naturality for the isomorphisms between presentations.** For presentations `θ` of `K` and
+`η` of `L` by square roots of the same negative integer `d`, the isomorphism
+`sqrtAlgEquiv d θ hθ hK η hη hL : K ≃ₐ[ℚ] L` between them carries the distinguished embedding of
+`L` to that of `K`: `ι_L ∘ e_(K,L) = ι_K`. -/
+@[simp]
+theorem complexEmbeddingOfSqrt_sqrtAlgEquiv_apply (x : K) :
+    complexEmbeddingOfSqrt d hd η hη hL (sqrtAlgEquiv d θ hθ hK η hη hL x) =
+      complexEmbeddingOfSqrt d hd θ hθ hK x :=
+  complexEmbeddingOfSqrt_apply_algEquiv_of_apply_eq hθ hK hd hη hL _
+    (sqrtAlgEquiv_apply_sqrt d θ hθ hK η hη hL) x
 
 end Naturality
 

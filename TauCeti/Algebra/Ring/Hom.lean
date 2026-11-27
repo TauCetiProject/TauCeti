@@ -43,6 +43,8 @@ along field and completion isomorphisms.
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `TauCeti.sq_map_of_sq_eq_intCast`: the image of a square root of an integer `D` is a square
   root of `D`.
+* `TauCeti.map_eq_or_map_eq_neg_of_sq_eq_intCast`: in a commutative target without zero divisors,
+  that image is `ε` or `-ε` for any square root `ε` of `D`.
 * `TauCeti.mul_self_map_of_mul_self_eq_neg_one`: the image of a square root of `-1` is a square
   root of `-1`.
 * `TauCeti.one_sub_map_one_mul_apply` and `TauCeti.apply_mul_one_sub_map_one`: `1 - f 1`
@@ -72,6 +74,13 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
 theorem sq_map_of_sq_eq_intCast {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
     [RingHomClass F R S] (f : F) {D : ℤ} {δ : R} (hδ : δ ^ 2 = (D : R)) : f δ ^ 2 = (D : S) := by
   rw [← map_pow, hδ, map_intCast]
+
+/-- A ring homomorphism into a commutative ring without zero divisors sends a square root `δ` of an
+integer `D` to one of the two square roots `ε`, `-ε` of `D` in the target. -/
+theorem map_eq_or_map_eq_neg_of_sq_eq_intCast {R S F : Type*} [Ring R] [CommRing S]
+    [NoZeroDivisors S] [FunLike F R S] [RingHomClass F R S] (f : F) {D : ℤ} {δ : R} {ε : S}
+    (hδ : δ ^ 2 = (D : R)) (hε : ε ^ 2 = (D : S)) : f δ = ε ∨ f δ = -ε :=
+  sq_eq_sq_iff_eq_or_eq_neg.mp ((sq_map_of_sq_eq_intCast f hδ).trans hε.symm)
 
 /-- A ring homomorphism sends a square root of `-1` to a square root of `-1`. -/
 theorem mul_self_map_of_mul_self_eq_neg_one {R S F : Type*} [NonAssocRing R] [NonAssocRing S]
