@@ -54,7 +54,9 @@ In the language of `TauCeti.LowDimTopology.Heegaard.Grading` and
   diagram pointed at the `X`-markings (`TauCeti.GridDiagram.isMaslovGrading_maslovO`,
   `TauCeti.GridDiagram.isMaslovGrading_maslovX`), so the hat, minus, infinity and plus
   differentials of these diagrams lower them by one, and every Maslov grading of these diagrams is
-  `M_O`, respectively `M_X`, up to a constant (`TauCeti.HeegaardRegionSystem.IsMaslovGrading`);
+  `M_O`, respectively `M_X`, up to a constant
+  (`TauCeti.GridDiagram.isMaslovGrading_withBasepoints_inl_iff`,
+  `TauCeti.GridDiagram.isMaslovGrading_withBasepoints_inr_iff`);
 * for a diagram with an odd number of link components, in particular a knot, the integer
   Alexander grading is an Alexander function for the `O`-markings
   (`TauCeti.OddComponentGridDiagram.isAlexanderFunction_alexanderℤ`), so it filters the hat
@@ -72,6 +74,9 @@ In the language of `TauCeti.LowDimTopology.Heegaard.Grading` and
 * `TauCeti.GridDiagram.isMaslovGrading_maslovO`, `TauCeti.GridDiagram.isMaslovGrading_maslovX`,
   `TauCeti.OddComponentGridDiagram.isAlexanderFunction_alexanderℤ`: the grid gradings are Maslov
   gradings and an Alexander function of the multi-pointed Heegaard diagram.
+* `TauCeti.GridDiagram.isMaslovGrading_withBasepoints_inl_iff`,
+  `TauCeti.GridDiagram.isMaslovGrading_withBasepoints_inr_iff`: they are the only Maslov
+  gradings of these diagrams, up to a constant.
 
 ## References
 
@@ -316,6 +321,30 @@ theorem isMaslovGrading_maslovX :
     rw [isDomainBetween_withBasepoints] at hD
     simp only [Equiv.symm_apply_apply, maslovIndex_withBasepoints]
     exact (G.maslovIndex_sub_two_mul_sum_basepoint_inr_of_isDomainBetween hD).symm
+
+/-- **The Maslov gradings pointed at the `O`-markings are the shifts of `M_O`.** The Maslov
+gradings of the Heegaard diagram of a grid diagram pointed at its `O`-markings are exactly the
+shifts of the `O`-Maslov grading of grid homology. -/
+theorem isMaslovGrading_withBasepoints_inl_iff {gr : G.heegaardRegionSystem.Generator → ℚ} :
+    (G.heegaardRegionSystem.withBasepoints fun c =>
+        G.heegaardRegionSystem.basepoint (Sum.inl c)).IsMaslovGrading 1 gr ↔
+      ∃ q : ℚ, gr = fun g => G.maslovO (G.gridStateEquivGenerator.symm g) + q :=
+  ⟨fun h => G.isMaslovGrading_maslovO.exists_eq_add h fun x y =>
+      let ⟨D, hD⟩ := G.exists_isDomainBetween x y
+      ⟨D, (isDomainBetween_withBasepoints _).1 hD⟩,
+    fun ⟨q, hq⟩ => hq ▸ G.isMaslovGrading_maslovO.add_const q⟩
+
+/-- **The Maslov gradings pointed at the `X`-markings are the shifts of `M_X`.** The Maslov
+gradings of the Heegaard diagram of a grid diagram pointed at its `X`-markings are exactly the
+shifts of the `X`-Maslov grading of grid homology. -/
+theorem isMaslovGrading_withBasepoints_inr_iff {gr : G.heegaardRegionSystem.Generator → ℚ} :
+    (G.heegaardRegionSystem.withBasepoints fun c =>
+        G.heegaardRegionSystem.basepoint (Sum.inr c)).IsMaslovGrading 1 gr ↔
+      ∃ q : ℚ, gr = fun g => G.maslovX (G.gridStateEquivGenerator.symm g) + q :=
+  ⟨fun h => G.isMaslovGrading_maslovX.exists_eq_add h fun x y =>
+      let ⟨D, hD⟩ := G.exists_isDomainBetween x y
+      ⟨D, (isDomainBetween_withBasepoints _).1 hD⟩,
+    fun ⟨q, hq⟩ => hq ▸ G.isMaslovGrading_maslovX.add_const q⟩
 
 end AllDomains
 
