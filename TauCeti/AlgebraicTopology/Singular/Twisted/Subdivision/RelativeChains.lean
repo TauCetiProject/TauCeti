@@ -134,13 +134,14 @@ lemma homologyMap_twistedSubdivisionChainMap (n : ℕ) :
     HomologicalComplex.homologyMap (P.twistedSubdivisionChainMap L) n = 𝟙 _ := by
   rw [← (P.twistedSubdivisionHomotopy L).homologyMap_eq n, HomologicalComplex.homologyMap_id]
 
-/-- Subdivision commutes with the connecting morphism of the pair. -/
+/-- Subdivision commutes with the connecting morphism of the pair from degree `n` to degree `m`,
+where `m + 1 = n`. -/
 @[reassoc]
-lemma twistedHomologyδ_naturality_subdivision (m : ℕ) :
-    P.twistedHomologyδ L (m + 1) m ≫
+lemma twistedHomologyδ_naturality_subdivision (n m : ℕ) (h : m + 1 = n := by lia) :
+    P.twistedHomologyδ L n m h ≫
         HomologicalComplex.homologyMap (P.subspaceSystem L).twistedSubdivisionChainMap m =
-      HomologicalComplex.homologyMap (P.twistedSubdivisionChainMap L) (m + 1) ≫
-        P.twistedHomologyδ L (m + 1) m := by
+      HomologicalComplex.homologyMap (P.twistedSubdivisionChainMap L) n ≫
+        P.twistedHomologyδ L n m h := by
   let S := P.twistedChainComplexShortComplex L
   let sd : S ⟶ S :=
     ShortComplex.homMk (P.subspaceSystem L).twistedSubdivisionChainMap
@@ -149,7 +150,7 @@ lemma twistedHomologyδ_naturality_subdivision (m : ℕ) :
       (P.twistedChainComplexπ_comp_twistedSubdivisionChainMap L).symm
   exact HomologicalComplex.HomologySequence.δ_naturality sd
     (P.shortExact_twistedChainComplexShortComplex L)
-    (P.shortExact_twistedChainComplexShortComplex L) (m + 1) m (by simp)
+    (P.shortExact_twistedChainComplexShortComplex L) n m (by simpa using h)
 
 variable {P} {Q : TopPair.{v}} (f : P ⟶ Q)
   (K : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
