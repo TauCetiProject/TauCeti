@@ -119,10 +119,6 @@ lemma serreCohomologySpectralSequenceProj_def :
 
 end Proj
 
-/-- The fibre of the identity of `B` over a point is a point. -/
-private abbrev uniqueFiberId (b : B) : Unique ((𝟙 B : B ⟶ B).fiber b) :=
-  ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.property⟩
-
 /-! ### The row `t = 0` of the first and second pages -/
 
 section Row
@@ -152,7 +148,6 @@ theorem isIso_serreCohomologySpectralSequenceProj_hom_one_f (hp : serreFibration
       (M := M) (p.preimageMap (Category.comp_id p) {map n j 0}) 0) :=
     have := hconn _ (closedCell_subset_complex n j ⟨0, Metric.mem_closedBall_self zero_le_one,
       rfl⟩)
-    have := uniqueFiberId (map n j 0)
     TopCat.isIso_singularCohomologyMap_zero_of_pathConnectedSpace _ k
   infer_instance
 
@@ -202,7 +197,6 @@ theorem isZero_serreCohomologySpectralSequence_id_page_one_X {C D : Set B} [RelC
   refine IsZero.of_iso ?_ (serreCohomologySpectralSequenceFirstPageXIsoPi C
     (MorphismProperty.id_mem _ B) R k M n q n q rfl (by push_cast; ring))
   refine (IsZero.iff_id_eq_zero _).2 (Pi.hom_ext _ _ fun j ↦ ?_)
-  have := uniqueFiberId (map n j 0)
   exact (isZero_singularCohomology_point _ k M _ (by lia)).eq_of_tgt _ _
 
 /-- From the second page on, the differentials at a position on the row `t = 0` of the spectral
