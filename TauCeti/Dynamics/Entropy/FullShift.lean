@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
+public import TauCeti.Dynamics.SymbolicDynamics.Basic
 public import TauCeti.Dynamics.SymbolicDynamics.Shift
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 import Mathlib.Analysis.Asymptotics.ExpGrowth
@@ -29,6 +30,11 @@ agreeing on `0, …, n - 1`, which needs at least `card α ^ n` points. Both bou
 
 ## Main results
 
+* `TauCeti.dynEntourage_shift_agreeOn`: agreement on `S` (`TauCeti.agreeOn`, whose relations for
+  finite `S` form a basis of the product uniformity by
+  `Pi.hasBasis_uniformity_of_discreteUniformity`) for `n` steps of the shift, with the window and
+  coordinate-`0` cases `TauCeti.agreeOn_window_subset_dynEntourage_shift` and
+  `TauCeti.dynEntourage_shift_agreeOn_singleton_zero`.
 * `TauCeti.coverEntropy_shift_nat`, `TauCeti.coverEntropyInf_shift_nat`: the one-sided full shift
   has entropy `log (card α)`.
 * `TauCeti.coverEntropy_shift_int`, `TauCeti.coverEntropyInf_shift_int`: the two-sided full shift
@@ -43,25 +49,6 @@ open Dynamics Set Filter ExpGrowth SymbolicDynamics.FullShift
 open scoped Uniformity ENNReal
 
 variable {α G : Type*}
-
-/-- Configurations agreeing on the coordinates of `S`. -/
-private def agreeOn (S : Set G) : SetRel (G → α) (G → α) := {p | ∀ i ∈ S, p.1 i = p.2 i}
-
-private lemma agreeOn_anti {S S' : Set G} (h : S ⊆ S') :
-    (agreeOn S' : SetRel (G → α) (G → α)) ⊆ agreeOn S :=
-  fun _ hp i hi ↦ hp i (h hi)
-
-private lemma hasBasis_agreeOn [UniformSpace α] [DiscreteUniformity α] :
-    (𝓤 (G → α)).HasBasis Set.Finite (agreeOn : Set G → SetRel (G → α) (G → α)) :=
-  Pi.hasBasis_uniformity_of_discreteUniformity
-
-/-- Extend a word on `S` to a configuration, by an arbitrary symbol off `S`. -/
-private noncomputable def extendWord [Nonempty α] (S : Finset G) (w : S → α) : G → α :=
-  open Classical in fun i ↦ if h : i ∈ S then w ⟨i, h⟩ else Classical.arbitrary α
-
-private lemma extendWord_of_mem [Nonempty α] {S : Finset G} (w : S → α) {i : G} (hi : i ∈ S) :
-    extendWord S w i = w ⟨i, hi⟩ := by
-  simp [extendWord, hi]
 
 section Counting
 
@@ -101,7 +88,7 @@ section Shift
 variable [AddMonoidWithOne G]
 
 /-- Agreeing on `S` for `n` steps of the shift is agreeing on the translates `k + S`, `k < n`. -/
-private lemma dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
+theorem dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
     dynEntourage (shift (1 : G)) (agreeOn S : SetRel (G → α) (G → α)) n =
       agreeOn (⋃ k < n, (fun i ↦ (k : G) + i) '' S) := by
   ext ⟨x, y⟩
@@ -112,6 +99,28 @@ private lemma dynEntourage_shift_agreeOn (S : Set G) (n : ℕ) :
     exact h k hk i hi
   · intro h k hk i hi
     exact h _ ⟨k, hk, i, hi, rfl⟩
+
+/-- If `S` lies in the window `{j + a | j < c}`, agreeing on the window `{j + a | j < n + c}`
+implies agreeing on `S` for `n` steps of the shift. -/
+theorem agreeOn_window_subset_dynEntourage_shift {S : Set G} {a : G} {c : ℕ}
+    (hS : S ⊆ (fun j : ℕ ↦ (j : G) + a) '' Iio c) (n : ℕ) :
+    (agreeOn ((fun j : ℕ ↦ (j : G) + a) '' Iio (n + c)) : SetRel (G → α) (G → α)) ⊆
+      dynEntourage (shift (1 : G)) (agreeOn S) n := by
+  rw [dynEntourage_shift_agreeOn]
+  refine agreeOn_anti (iUnion₂_subset fun k hk ↦ image_subset_iff.2 fun i hi ↦ ?_)
+  obtain ⟨j, hj, rfl⟩ := hS hi
+  simp only [mem_preimage, mem_image, mem_Iio] at hj ⊢
+  exact ⟨k + j, by omega, by push_cast; rw [add_assoc]⟩
+
+/-- Agreeing at the coordinate `0` for `n` steps of the shift is agreeing on the coordinates
+`0, …, n - 1`. -/
+theorem dynEntourage_shift_agreeOn_singleton_zero (n : ℕ) :
+    dynEntourage (shift (1 : G)) (agreeOn {0} : SetRel (G → α) (G → α)) n =
+      agreeOn ((Nat.cast : ℕ → G) '' Iio n) := by
+  rw [dynEntourage_shift_agreeOn]
+  congr 1
+  ext g
+  simp [eq_comm]
 
 variable [Fintype α] [Nonempty α]
 
@@ -127,13 +136,8 @@ private lemma coverMincard_shift_le {S : Set G} {a : G} {c : ℕ}
   have hcov : IsDynCoverOf (shift (1 : G)) univ (agreeOn S) n (s : Set (G → α)) := by
     intro x _
     obtain ⟨y, hy, hxy⟩ := hs x
-    refine ⟨y, hy, ?_⟩
-    rw [dynEntourage_shift_agreeOn]
-    refine agreeOn_anti ?_ hxy
-    rintro _ ⟨_, ⟨k, rfl⟩, _, ⟨hk, rfl⟩, i, hi, rfl⟩
-    obtain ⟨j, hj, rfl⟩ := hS hi
-    simp only [W, Finset.coe_image, Finset.coe_range, mem_image, mem_Iio]
-    exact ⟨k + j, by simp only [mem_Iio] at hj; omega, by push_cast; rw [add_assoc]⟩
+    refine ⟨y, hy, agreeOn_window_subset_dynEntourage_shift hS n ?_⟩
+    simpa only [W, Finset.coe_image, Finset.coe_range] using hxy
   have hone : 1 ≤ Fintype.card α := Fintype.card_pos
   calc (coverMincard (shift (1 : G)) univ (agreeOn S) n : ℝ≥0∞) ≤ (s.card : ℝ≥0∞) :=
         ENat.toENNReal_le.2 hcov.coverMincard_le_card
@@ -149,8 +153,8 @@ private lemma pow_le_coverMincard_shift (hG : Function.Injective (Nat.cast : ℕ
       (coverMincard (shift (1 : G)) univ (agreeOn {0} : SetRel (G → α) (G → α)) n : ℝ≥0∞) := by
   classical
   let W : Finset G := (Finset.range n).image fun k : ℕ ↦ (k : G)
-  have hW : (W : Set G) = ⋃ k < n, (fun i ↦ (k : G) + i) '' {0} := by
-    ext g; simp [W, eq_comm]
+  have hW : (W : Set G) = (Nat.cast : ℕ → G) '' Iio n := by
+    simp [W]
   have hWcard : W.card = n := by
     rw [Finset.card_image_of_injective _ hG, Finset.card_range]
   have : ((Fintype.card α ^ n : ℕ) : ℕ∞) ≤
@@ -159,7 +163,7 @@ private lemma pow_le_coverMincard_shift (hG : Function.Injective (Nat.cast : ℕ
     rw [← hWcard]
     exact_mod_cast card_le_of_agreeOn W s fun x ↦ by
       obtain ⟨y, hy, hxy⟩ := hs (mem_univ x)
-      exact ⟨y, hy, by rw [hW, ← dynEntourage_shift_agreeOn]; exact hxy⟩
+      exact ⟨y, hy, by rw [hW, ← dynEntourage_shift_agreeOn_singleton_zero]; exact hxy⟩
   calc (Fintype.card α : ℝ≥0∞) ^ n = (((Fintype.card α ^ n : ℕ) : ℕ∞) : ℝ≥0∞) := by simp
     _ ≤ _ := ENat.toENNReal_le.2 this
 
@@ -181,7 +185,7 @@ private lemma coverEntropy_shift_of_window [UniformSpace α] [DiscreteUniformity
       (univ : Set (G → α)) (agreeOn {0}) := by
     rw [← expGrowthInf_pow]
     exact expGrowthInf_monotone fun n ↦ pow_le_coverMincard_shift hG n
-  rw [coverEntropy_eq_iSup_basis hasBasis_agreeOn]
+  rw [coverEntropy_eq_iSup_basis Pi.hasBasis_uniformity_of_discreteUniformity]
   exact (iSup₂_le hupper).antisymm <| hlower.trans <|
     (coverEntropyInfEntourage_le_coverEntropyEntourage _ _ _).trans <|
       le_iSup₂_of_le {0} (finite_singleton 0) le_rfl

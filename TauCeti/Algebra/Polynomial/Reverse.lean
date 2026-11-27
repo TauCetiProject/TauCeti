@@ -43,9 +43,10 @@ degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
 factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
-finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
-polynomials term by term. The reverse of a scalar multiple of a product of linear factors with
-nonzero roots is again such a product in the reciprocal roots
+finite products (`Polynomial.reflect_prod`) and, over a semiring without zero divisors, so is
+reversal (`Polynomial.reverse_prod_of_domain`); these compute the reflection or reversal of a
+determinant of polynomials term by term. The reverse of a scalar multiple of a product of linear
+factors with nonzero roots is again such a product in the reciprocal roots
 (`Polynomial.reverse_C_mul_prod_X_sub_C`), unit-scalar multiplication preserves the leading-
 coefficient-normalised reversal (`Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul`), and
 evaluating a unit-rescaled reversal in an algebra scales the evaluation
@@ -406,6 +407,15 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
     rw [Multiset.prod_cons, Multiset.map_cons, Multiset.prod_cons,
       reverse_mul (by rw [hp.leadingCoeff, hprod.leadingCoeff, one_mul]; exact one_ne_zero),
       ih hs']
+
+/-- Over a semiring without zero divisors, the reverse of a finite product is the product of the
+reverses. -/
+@[simp]
+theorem reverse_prod_of_domain [CommSemiring R] [NoZeroDivisors R] {ι : Type*} (s : Finset ι)
+    (f : ι → R[X]) : (∏ i ∈ s, f i).reverse = ∏ i ∈ s, (f i).reverse := by
+  induction s using Finset.cons_induction with
+  | empty => exact reverse_one
+  | cons i s hi ih => rw [Finset.prod_cons, Finset.prod_cons, reverse_mul_of_domain, ih]
 
 /-- The reverse of `(X - C a) ^ n` is `(1 - C a * X) ^ n`. -/
 @[simp]

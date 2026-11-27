@@ -90,6 +90,8 @@ with no continuity assumed) and computes their principal symbols:
   cutoffs in preferred charts whose pullbacks sum to `1` everywhere, inside open sets of the chart
   targets whose chart preimages form a locally finite family, so that cutoffs equal to `1` near
   their supports can be chosen with locally finite supports too.
+* `TauCeti.exists_sum_complexCutoffPullback_eq_one`: on a compact manifold, prescribed charts
+  around every point carry finitely many cutoffs whose pullbacks add up to `1`.
 * `TauCeti.exists_forall_apply_eq_sum_complexCutoffPullback_mul_apply_mul`: on a compact manifold,
   every complex-linear operator `P` is a finite sum `∑ᵢⱼ φᵢⱼ P ψᵢⱼ` of compressions by cutoffs in
   charts of the maximal atlas, the same charts and cutoffs serving for every `P`.
@@ -283,6 +285,22 @@ theorem exists_tsupport_subset_eq_one [FiniteDimensional ℝ E]
   have hyt : y ∈ e.target := ψ.tsupport_subset hy
   rw [cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
   exact hχ.self_of_nhdsSet y hy
+
+omit he [ChartedSpace E M] [T2Space M] in
+/-- The cutoffs `φ ψ` are supported in the chart target, so they can only be jointly nonzero
+there. -/
+theorem mem_target_of_mul_ne_zero {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {y : E}
+    (h : φ y * ψ y ≠ 0) : y ∈ e.target :=
+  φ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul h))
+
+omit he [ChartedSpace E M] [T2Space M] in
+/-- The points where the cutoffs `φ ψ` do not vanish and which the inverse chart maps into an open
+set `s` of `M` form an open set. -/
+theorem isOpen_setOf_mul_ne_zero_and_symm_mem (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    {s : Set M} (hs : IsOpen s) : IsOpen {y | φ y * ψ y ≠ 0 ∧ e.symm y ∈ s} :=
+  isOpen_iff_mem_nhds.2 fun _ ⟨hyφψ, hys⟩ ↦
+    ((φ.contDiff.continuous.mul ψ.contDiff.continuous).continuousAt.eventually_ne hyφψ).and
+      ((e.continuousAt_symm (mem_target_of_mul_ne_zero hyφψ)).eventually (hs.mem_nhds hys))
 
 /-! ### Chart compressions -/
 
@@ -535,6 +553,16 @@ theorem complexCutoffPullback_one_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
   · simp [complexCutoffPullback_apply_of_mem he _ _ hx, cutoffPullback_apply_of_mem he _ _ hx]
   · simp [complexCutoffPullback_apply_of_notMem he _ _ hx, cutoffPullback_apply_of_notMem he _ _ hx]
 
+/-- A cutoff `χ` equal to `1` on the support of `ψ` absorbs `ψ`, both read on `M` through the
+chart: the complex counterpart of `cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset`. -/
+theorem complexCutoffPullback_one_mul_complexCutoffPullback_one_of_tsupport_subset
+    {ψ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : tsupport ψ ⊆ χ ⁻¹' {1}) :
+    e.complexCutoffPullback he ψ 1 * e.complexCutoffPullback he χ 1 =
+      e.complexCutoffPullback he ψ 1 := by
+  ext x
+  simp only [ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_one_apply,
+    ← Complex.ofReal_mul, cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset he hχ]
+
 /-- The complex pullback `(ψ f) ∘ e` is supported in the image under the inverse of the chart of
 the common support of `ψ` and `f`, a compact subset of the chart target. -/
 theorem tsupport_complexCutoffPullback_subset_inter (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
@@ -613,6 +641,22 @@ theorem complexChartCompression_apply (φ ψ : 𝓓(⟨e.target, e.open_target�
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) (y : E) :
     e.complexChartCompression he φ ψ D f y = φ y • D (e.complexCutoffPullback he ψ f) (e.symm y) :=
   e.complexCutoffPushforward_apply he φ _ y
+
+/-- Multiplying an operator `D` on the left by a cutoff `θ` read on `M` does not change its chart
+compression by `φ` and `ψ` when `θ = 1` on the support of `φ`. -/
+theorem complexChartCompression_mulLeft_comp_of_eq_one {φ ψ θ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hθ : ∀ y ∈ tsupport φ, θ y = 1)
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ
+        (LinearMap.mulLeft ℂ (e.complexCutoffPullback he θ 1) ∘ₗ D) =
+      e.complexChartCompression he φ ψ D := by
+  refine LinearMap.ext fun f ↦ ContMDiffMap.ext fun y ↦ ?_
+  rw [complexChartCompression_apply, complexChartCompression_apply]
+  by_cases hy : φ y = 0
+  · simp [hy]
+  have hyt : y ∈ e.target := φ.tsupport_subset (subset_tsupport _ hy)
+  simp [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hyt), e.right_inv hyt,
+    hθ y (subset_tsupport _ hy)]
 
 /-- The chart compression of the complexification of a real-linear operator `D` on the
 real-valued smooth functions on `M` is the complexification of the chart compression of `D`. -/
@@ -843,6 +887,29 @@ theorem compactSpace_of_forall_sum_cutoffPullback_eq_one {ι : Type*} [Fintype �
   exact mem_iUnion.2 ⟨i, OpenPartialHomeomorph.tsupport_cutoffPullback_subset (he i) (ψ i) 1
     (subset_tsupport _ hi)⟩
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- Complex pullbacks of chart cutoffs add up to the sum of the real pullbacks, read as a complex
+number. The sums are `finsum`s, so no finiteness of the family is needed. -/
+theorem finsum_complexCutoffPullback_one_apply {ι : Type*} {e : ι → OpenPartialHomeomorph M E}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)) (x : M) :
+    ∑ᶠ i, (e i).complexCutoffPullback (he i) (ψ i) 1 x =
+      ((∑ᶠ i, (e i).cutoffPullback (he i) (ψ i) 1 x : ℝ) : ℂ) := by
+  simp only [OpenPartialHomeomorph.complexCutoffPullback_one_apply]
+  exact (Complex.ofRealHom.toAddMonoidHom.map_finsum_of_injective Complex.ofReal_injective _).symm
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- If finitely many chart cutoffs `ψᵢ`, read on `M` as `ψᵢ ∘ eᵢ` extended by `0`, add up to `1`
+at every point, then so do their complex pullbacks: `∑ᵢ ψᵢ ∘ eᵢ = 1` as complex-valued smooth
+functions on `M`. -/
+theorem sum_complexCutoffPullback_one_eq_one {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M E} (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) :
+    ∑ i, (e i).complexCutoffPullback (he i) (ψ i) 1 = 1 := by
+  ext x
+  simp [OpenPartialHomeomorph.complexCutoffPullback_one_apply, ← Complex.ofReal_sum, hψ x]
+
 /-- **Chart cutoffs whose squares sum to one.** A Hausdorff σ-compact manifold modelled on a
 finite-dimensional space has points `cᵢ` and cutoffs `χᵢ` with compact supports in the targets of
 the preferred charts at the `cᵢ`, such that the chart preimages `(chartAt cᵢ)⁻¹(supp χᵢ)` form a
@@ -916,6 +983,33 @@ theorem exists_locallyFinite_finsum_cutoffPullback_eq_one [SigmaCompactSpace M] 
   · exact (image_mono (hfs i)).trans (chartAt E (fs.c i)).image_source_eq_target.subset
   · simp_rw [hρ]
     exact f.sum_eq_one (mem_univ y)
+
+/-- **Cutoffs in prescribed charts summing to one on a compact manifold.** If `M` is compact and
+each point `x` lies in the source of a chart `eₓ` of the maximal atlas, there are finitely many
+points `x` and cutoffs `ρₓ` with compact supports in the targets of the `eₓ` whose pullbacks
+`ρₓ ∘ eₓ`, extended by `0` off the chart sources
+(`OpenPartialHomeomorph.complexCutoffPullback`), add up to `1`. Unlike
+`IsCompact.exists_sum_cutoffPullback_eq_one`, the charts are given, for instance the preferred
+charts restricted to the base sets of trivializations of vector bundles. -/
+theorem exists_sum_complexCutoffPullback_eq_one [CompactSpace M]
+    (e : M → OpenPartialHomeomorph M E) (he : ∀ x, e x ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (hmem : ∀ x, x ∈ (e x).source) :
+    ∃ (s : Finset M) (ρ : ∀ x, 𝓓(⟨(e x).target, (e x).open_target⟩, ℝ)),
+      ∑ x ∈ s, (e x).complexCutoffPullback (he x) (ρ x) 1 = 1 := by
+  -- A smooth partition of unity `f` subordinate to the chart sources; on the compact space `M`
+  -- only the finitely many `x ∈ s` have `f x ≠ 0`, and each `f x` is the pullback of a cutoff.
+  obtain ⟨f, hf⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, E) isClosed_univ
+    (fun x ↦ (e x).source) (fun x ↦ (e x).open_source) fun x _ ↦ mem_iUnion.2 ⟨x, hmem x⟩
+  have hs := f.locallyFinite.finite_nonempty_of_compact
+  choose ρ hρ using fun x ↦ (e x).exists_cutoffPullback_one_eq (he x)
+    (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _)) (hf x)
+  refine ⟨hs.toFinset, ρ, ?_⟩
+  ext p
+  have hsum : ∑ x ∈ hs.toFinset, f x p = 1 :=
+    f.sum_finsupport' p (mem_univ p) fun x hx ↦ hs.mem_toFinset.2 ⟨p, (f.mem_finsupport p).1 hx⟩
+  simp only [ContMDiffMap.coe_sum, Finset.sum_apply,
+    OpenPartialHomeomorph.complexCutoffPullback_one_apply, hρ, ContMDiffMap.coe_one, Pi.one_apply]
+  exact_mod_cast hsum
 
 end TauCeti
 
