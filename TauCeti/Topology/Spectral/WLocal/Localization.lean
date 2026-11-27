@@ -63,7 +63,7 @@ def toBase (q : WLocalization X) : X := q.val.2
 def componentLabel (q : WLocalization X) : WithConstructibleTopology X := q.val.1
 
 /-- The endpoints of a specialization pair have the indicated specialization relation. -/
-theorem specializes_label (q : WLocalization X) :
+theorem toBase_specializes_componentLabel (q : WLocalization X) :
     toBase q ⤳ WithTopology.ofTopology (componentLabel q) := q.property
 
 /-- A pair is determined by its two endpoints. -/
@@ -86,7 +86,7 @@ theorem toBase_ofSpecializes (x : WithConstructibleTopology X) (y : X)
 /-- Reconstructing a pair from its endpoints gives the original pair. -/
 @[simp]
 theorem ofSpecializes_componentLabel_toBase (q : WLocalization X) :
-    ofSpecializes (componentLabel q) (toBase q) q.specializes_label = q := (rfl)
+    ofSpecializes (componentLabel q) (toBase q) q.toBase_specializes_componentLabel = q := (rfl)
 
 /-- The diagonal pair labelled by a constructible point. -/
 def diagonal (x : WithConstructibleTopology X) : WLocalization X :=
@@ -102,7 +102,7 @@ theorem toBase_diagonal (x : WithConstructibleTopology X) :
 
 /-- Every pair specializes to the diagonal point in its component. -/
 theorem specializes_diagonal (q : WLocalization X) : q ⤳ diagonal (componentLabel q) :=
-  (subtype_specializes_iff q _).2 (specializes_rfl.prod q.specializes_label)
+  (subtype_specializes_iff q _).2 (specializes_rfl.prod q.toBase_specializes_componentLabel)
 
 /-- The component label is continuous. -/
 theorem continuous_componentLabel : Continuous (componentLabel : WLocalization X → _) :=
@@ -197,7 +197,7 @@ theorem isClosed_singleton_diagonal (x : WithConstructibleTopology X) :
   intro q hq
   have h := specializes_iff.1 (specializes_iff_mem_closure.2 hq)
   have heq : toBase q = WithTopology.ofTopology x :=
-    (q.specializes_label.trans
+    (q.toBase_specializes_componentLabel.trans
       (specializes_of_eq (congrArg WithTopology.ofTopology h.1.symm))).antisymm h.2 |>.eq
   exact mem_singleton_iff.2 (ext h.1.symm heq)
 
@@ -235,7 +235,7 @@ section Spectral
 variable [SpectralSpace X]
 
 /-- W-localization has split open covers and a closed locus of closed points. -/
-theorem isWLocal : IsWLocalSpace (WLocalization X) := by
+theorem isWLocalSpace : IsWLocalSpace (WLocalization X) := by
   rw [isWLocalSpace_def]
   refine ⟨inferInstance, (openCoversSplit_iff _).2 fun q ↦ ?_, ?_⟩
   · refine ⟨diagonal (componentLabel q),
@@ -257,7 +257,7 @@ theorem isWLocal : IsWLocalSpace (WLocalization X) := by
         have hs : WithTopology.ofTopology (componentLabel q) ⤳ toBase q :=
           PrespectralSpace.specializes_iff_forall_isOpen_isCompact.2 fun U hUo hUc hU ↦
             (h ⟨U, hUo, hUc⟩).resolve_left (not_not_intro hU)
-        exact q.specializes_label.antisymm hs |>.eq
+        exact q.toBase_specializes_componentLabel.antisymm hs |>.eq
     rw [heq]
     exact isClosed_iInter fun U ↦
       (U.property.1.preimage continuous_toBase).isClosed_compl.union
@@ -267,9 +267,9 @@ theorem isWLocal : IsWLocalSpace (WLocalization X) := by
 end Spectral
 
 /-- A fibre of the component label is the space of generalizations of that label. -/
-def componentFibre (x : WithConstructibleTopology X) :
+def componentFiber (x : WithConstructibleTopology X) :
     {q : WLocalization X // componentLabel q = x} ≃ₜ {y : X // y ⤳ WithTopology.ofTopology x} where
-  toFun q := ⟨toBase q.val, q.val.specializes_label.trans
+  toFun q := ⟨toBase q.val, q.val.toBase_specializes_componentLabel.trans
     (specializes_of_eq (congrArg WithTopology.ofTopology q.property))⟩
   invFun y := ⟨ofSpecializes x y.val y.property, rfl⟩
   left_inv q := Subtype.ext (ext q.property.symm rfl)
@@ -280,15 +280,15 @@ def componentFibre (x : WithConstructibleTopology X) :
 
 /-- The fibre comparison keeps the generalizing endpoint. -/
 @[simp]
-theorem componentFibre_apply (x : WithConstructibleTopology X)
+theorem componentFiber_apply (x : WithConstructibleTopology X)
     (q : {q : WLocalization X // componentLabel q = x}) :
-    (componentFibre x q).val = toBase q.val := (rfl)
+    (componentFiber x q).val = toBase q.val := (rfl)
 
 /-- The inverse fibre comparison constructs the pair with the specified label and endpoint. -/
 @[simp]
-theorem componentFibre_symm_apply (x : WithConstructibleTopology X)
+theorem componentFiber_symm_apply (x : WithConstructibleTopology X)
     (y : {y : X // y ⤳ WithTopology.ofTopology x}) :
-    ((componentFibre x).symm y).val = ofSpecializes x y.val y.property := (rfl)
+    ((componentFiber x).symm y).val = ofSpecializes x y.val y.property := (rfl)
 
 private theorem bijective_componentLabel_connectedComponentsLift
     [PrespectralSpace X] [T0Space X] :
@@ -338,6 +338,9 @@ theorem isSpectralMap_iff {f : Y → WLocalization X} :
     refine isSpectralMap_of_isTopologicalBasis hb
       (continuous_iff.2 ⟨h₁.continuous, h₂.continuous⟩) ?_
     rintro _ ⟨_, ⟨U, hU, V, hV, rfl⟩, rfl⟩
+    -- The basis uses the raw subtype carrier, which rewriting does not identify with
+    -- WLocalization. Unfold the endpoint projections to express its preimage as an intersection.
+    change IsCompact ((componentLabel ∘ f) ⁻¹' U ∩ (toBase ∘ f) ⁻¹' V)
     exact (h₂.isCompact_preimage_of_isOpen hV.1 hV.2).inter_left
       (hU.2.isClosed.preimage h₁.continuous)
 
@@ -348,7 +351,7 @@ end Components
 /-- A continuous map acts on both endpoints of a specialization pair. -/
 def map (f : X → Y) (hf : Continuous f) (q : WLocalization X) : WLocalization Y :=
   ⟨(WithTopology.toTopology _ (f (WithTopology.ofTopology (componentLabel q))), f (toBase q)),
-    q.specializes_label.map hf⟩
+    q.toBase_specializes_componentLabel.map hf⟩
 
 @[simp]
 theorem toBase_map {f : X → Y} (hf : Continuous f) (q : WLocalization X) :
@@ -442,7 +445,8 @@ theorem lift_unique [PrespectralSpace X] [T0Space X] (hY : IsWLocalSpace Y)
         congrArg WithTopology.ofTopology hlabel
       _ = toBase (g (hY.closedPoint y)) := hdiag.symm
       _ = f (hY.closedPoint y) := congrFun hgf _
-      _ = WithTopology.ofTopology (componentLabel (lift hY f hf y)) := rfl
+      _ = WithTopology.ofTopology (componentLabel (lift hY f hf y)) := by
+        rw [componentLabel_lift, WithTopology.ofTopology_toTopology]
   · exact congrFun hgf y
 
 /-- W-localization has a unique w-local lift of every spectral map from a w-local space.

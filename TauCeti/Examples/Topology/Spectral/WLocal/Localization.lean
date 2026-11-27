@@ -47,7 +47,7 @@ example (q : WLocalization Prop) :
       apply WLocalization.ext
       · simpa [mixed] using (WithTopology.ofTopology_injective _).eq_iff.1 (eq_false hx)
       · simpa [mixed] using eq_true hy
-  · have hx := q.specializes_label.mem_closed isClosed_singleton_false (eq_false hy)
+  · have hx := q.toBase_specializes_componentLabel.mem_closed isClosed_singleton_false (eq_false hy)
     left
     apply WLocalization.ext
     · simpa using (WithTopology.ofTopology_injective _).eq_iff.1 hx
@@ -81,7 +81,7 @@ example : pi0 (ConnectedComponents.mk mixed) = WithTopology.toTopology _ False :
 
 /-- The component fibre map retains the generalizing coordinate of the mixed pair. -/
 example :
-    (componentFibre (WithTopology.toTopology _ False) ⟨mixed, by simp [mixed]⟩).val = True := by
+    (componentFiber (WithTopology.toTopology _ False) ⟨mixed, by simp [mixed]⟩).val = True := by
   simp [mixed]
 
 /-- Swapping discrete Boolean points swaps both endpoints and hence the counit image. -/
