@@ -102,6 +102,12 @@ theorem mem_verticalPrime_iff {f : O⟦X⟧} :
     f ∈ (verticalPrime O).asIdeal ↔ ∀ n, coeff n f ∈ maximalIdeal O :=
   mem_map_C_iff_of_fg (IsNoetherian.noetherian _)
 
+/-- The vertical prime is the kernel of reduction modulo the maximal ideal of `O`: a power series
+reduces to zero iff it lies in the vertical prime. -/
+theorem map_mk_eq_zero_iff_mem_verticalPrime {f : O⟦X⟧} :
+    map (Ideal.Quotient.mk (maximalIdeal O)) f = 0 ↔ f ∈ (verticalPrime O).asIdeal := by
+  simp [mem_verticalPrime_iff, PowerSeries.ext_iff, coeff_map, Ideal.Quotient.eq_zero_iff_mem]
+
 /-- A monic polynomial does not lie in the vertical prime: its leading coefficient is `1`. -/
 theorem coe_notMem_verticalPrime_of_monic {F : O[X]} (hF : F.Monic) :
     (F : O⟦X⟧) ∉ (verticalPrime O).asIdeal := fun h ↦ by

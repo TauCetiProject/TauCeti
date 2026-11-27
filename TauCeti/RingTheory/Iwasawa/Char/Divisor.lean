@@ -316,11 +316,8 @@ theorem charDivisor_prod [IsNoetherianRing A] [Module.Finite A M] [Module.Finite
 
 /-- The characteristic divisor of the torsion submodule is invariant under linear equivalence. -/
 theorem _root_.LinearEquiv.charDivisor_torsion_eq (e : M ≃ₗ[A] N) :
-    charDivisor A (Submodule.torsion A M) = charDivisor A (Submodule.torsion A N) := by
-  have h : (Submodule.torsion A M).map (e : M →ₗ[A] N) = Submodule.torsion A N :=
-    le_antisymm (Submodule.map_le_iff_le_comap.mpr e.toLinearMap.le_comap_torsion) fun x hx ↦
-      ⟨e.symm x, e.symm.toLinearMap.le_comap_torsion hx, e.apply_symm_apply x⟩
-  exact (e.ofSubmodules _ _ h).charDivisor_eq
+    charDivisor A (Submodule.torsion A M) = charDivisor A (Submodule.torsion A N) :=
+  (e.ofSubmodules _ _ e.map_torsion).charDivisor_eq
 
 /-- The characteristic divisor of the torsion submodule of a product of two finitely generated
 modules over a noetherian ring is the sum of those of the torsion submodules of the factors. -/

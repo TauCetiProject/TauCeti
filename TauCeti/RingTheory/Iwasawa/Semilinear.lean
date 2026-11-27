@@ -62,6 +62,12 @@ namespace TauCeti.Iwasawa
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
 
+omit [IsDomain O] [IsDiscreteValuationRing O] in
+/-- Pulling back an ideal along a ring automorphism `σ` is pushing it forward along `σ⁻¹`. -/
+private theorem comap_eq_map_of_ringHomInvPair {σ σ' : O⟦X⟧ →+* O⟦X⟧} [RingHomInvPair σ σ']
+    (I : Ideal O⟦X⟧) : I.comap σ = I.map σ' :=
+  Ideal.comap_symm (RingHomInvPair.toRingEquiv σ σ').symm
+
 /-- **An automorphism fixing the constants fixes the vertical prime.** If a ring automorphism `σ` of
 `O⟦X⟧` fixes the constant series, it maps the vertical prime `(ϖ)` onto itself. This applies to the
 coordinate changes `X ↦ (1 + X) ^ u - 1` of a change of topological generator. -/
@@ -73,23 +79,16 @@ theorem comap_verticalPrime_of_comp_C
     have h := congrArg σ' (RingHom.congr_fun hσ a)
     rw [RingHom.comp_apply, RingHomInvPair.comp_apply_eq] at h
     rw [RingHom.comp_apply, ← h]
-  have hc (I : Ideal O⟦X⟧) : I.comap σ = I.map σ' :=
-    Ideal.comap_symm (RingHomInvPair.toRingEquiv σ σ').symm
   ext1
-  rw [PrimeSpectrum.comap_asIdeal, verticalPrime_asIdeal, hc, Ideal.map_map, hσ']
+  rw [PrimeSpectrum.comap_asIdeal, verticalPrime_asIdeal, comap_eq_map_of_ringHomInvPair,
+    Ideal.map_map, hσ']
 
 /-- The vertical prime is fixed by `σ⁻¹` once it is fixed by `σ`. -/
 private theorem comap_verticalPrime_symm {σ σ' : O⟦X⟧ →+* O⟦X⟧} [RingHomInvPair σ σ']
     (hσ : PrimeSpectrum.comap σ (verticalPrime O) = verticalPrime O) :
     PrimeSpectrum.comap σ' (verticalPrime O) = verticalPrime O := by
-  conv_lhs => rw [← hσ, ← PrimeSpectrum.comap_comp_apply, RingHomInvPair.comp_eq₂]
-  rfl
-
-/-- A power series reduces to zero modulo the maximal ideal of `O` iff it lies in the vertical
-prime. -/
-private theorem map_mk_eq_zero_iff {f : O⟦X⟧} :
-    map (Ideal.Quotient.mk (maximalIdeal O)) f = 0 ↔ f ∈ (verticalPrime O).asIdeal := by
-  simp [mem_verticalPrime_iff, PowerSeries.ext_iff, coeff_map, Ideal.Quotient.eq_zero_iff_mem]
+  conv_lhs => rw [← hσ, ← PrimeSpectrum.comap_comp_apply, RingHomInvPair.comp_eq₂,
+    PrimeSpectrum.comap_id]
 
 /-- An automorphism of `O⟦X⟧` fixing the vertical prime does not lower the order of the reduction of
 a power series modulo the maximal ideal of `O`. -/
@@ -99,7 +98,7 @@ private theorem order_map_mk_le_order_map_mk_apply
     (map (Ideal.Quotient.mk (maximalIdeal O)) f).order ≤
       (map (Ideal.Quotient.mk (maximalIdeal O)) (σ f)).order := by
   refine order_map_le_order_map_apply Ideal.Quotient.mk_surjective (fun g hg ↦ ?_) ?_ f
-  · rw [map_mk_eq_zero_iff] at hg ⊢
+  · rw [map_mk_eq_zero_iff_mem_verticalPrime] at hg ⊢
     rwa [← hσ] at hg
   · -- `σ X` is not a unit, since `X` is not, so its constant coefficient lies in `maximalIdeal O`.
     refine Ideal.Quotient.eq_zero_iff_mem.mpr ((mem_maximalIdeal _).mpr fun hu ↦ ?_)
@@ -130,7 +129,8 @@ theorem _root_.LinearEquiv.muInvariant_eq_of_comap_verticalPrime
     {σ σ' : O⟦X⟧ →+* O⟦X⟧} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
     (hσ : PrimeSpectrum.comap σ (verticalPrime O) = verticalPrime O) (e : N ≃ₛₗ[σ] M) :
     muInvariant O N = muInvariant O M := by
-  rw [muInvariant_def, muInvariant_def, ← e.torsionCongr.charDivisor_apply_comap, hσ]
+  rw [muInvariant_def, muInvariant_def,
+    ← (e.ofSubmodules _ _ e.map_torsion).charDivisor_apply_comap, hσ]
 
 /-- **The characteristic polynomial under a change of variable.** Let `O` be a complete discrete
 valuation ring, `σ` a ring automorphism of `O⟦X⟧` fixing the vertical prime `(ϖ)`, and `e : N ≃ M`
@@ -144,23 +144,19 @@ theorem _root_.LinearEquiv.span_charPoly_eq_comap [IsAdicComplete (maximalIdeal 
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   -- Compare the characteristic ideals `(ϖ ^ μ F)` of the torsion submodules, then cancel the
   -- common factor `(ϖ) ^ μ`, which `σ` fixes.
-  have h := e.torsionCongr.charIdeal_eq_comap
+  have h := (e.ofSubmodules _ _ e.map_torsion).charIdeal_eq_comap
   have hV : (verticalPrime O).asIdeal.comap σ = (verticalPrime O).asIdeal :=
     congrArg PrimeSpectrum.asIdeal hσ
   rw [charIdeal_eq_span_C_pow_mul_charPoly (M := torsion O⟦X⟧ N) hϖ torsion_isTorsion,
     charIdeal_eq_span_C_pow_mul_charPoly (M := torsion O⟦X⟧ M) hϖ torsion_isTorsion] at h
   rw [charPoly_torsion, charPoly_torsion, muInvariant_torsion, muInvariant_torsion,
     e.muInvariant_eq_of_comap_verticalPrime hσ] at h
-  have hc (I : Ideal O⟦X⟧) : I.comap σ = I.map σ' :=
-    Ideal.comap_symm (RingHomInvPair.toRingEquiv σ σ').symm
-  have hmul (I J : Ideal O⟦X⟧) : (I * J).comap σ = I.comap σ * J.comap σ := by
-    simp only [hc, Ideal.map_mul]
-  have hpow (I : Ideal O⟦X⟧) (n : ℕ) : (I ^ n).comap σ = I.comap σ ^ n := by
-    simp only [hc, Ideal.map_pow]
   have ha : Ideal.span {C ϖ ^ muInvariant O M} = (verticalPrime O).asIdeal ^ muInvariant O M := by
     rw [verticalPrime_asIdeal_eq_span hϖ, Ideal.span_singleton_pow]
   rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_mul_span_singleton, map_pow,
-    ha, hmul, hpow, hV, ← ha] at h
+    ha, comap_eq_map_of_ringHomInvPair, Ideal.map_mul, Ideal.map_pow,
+    ← comap_eq_map_of_ringHomInvPair (σ := σ), ← comap_eq_map_of_ringHomInvPair (σ := σ), hV,
+    ← ha] at h
   exact (Ideal.span_singleton_mul_right_inj (pow_ne_zero _ (prime_C_iff.mpr hϖ.prime).ne_zero)).mp h
 
 /-- **Invariance of `λ` under a change of variable.** Let `O` be a complete discrete valuation ring,
@@ -173,9 +169,8 @@ theorem _root_.LinearEquiv.lambdaInvariant_eq_of_comap_verticalPrime
     (hσ : PrimeSpectrum.comap σ (verticalPrime O) = verticalPrime O) (e : N ≃ₛₗ[σ] M) :
     lambdaInvariant O N = lambdaInvariant O M := by
   have h := e.span_charPoly_eq_comap hσ
-  have hc (I : Ideal O⟦X⟧) : I.comap σ = I.map σ' :=
-    Ideal.comap_symm (RingHomInvPair.toRingEquiv σ σ').symm
-  rw [hc, Ideal.map_span, Set.image_singleton, Ideal.span_singleton_eq_span_singleton] at h
+  rw [comap_eq_map_of_ringHomInvPair, Ideal.map_span, Set.image_singleton,
+    Ideal.span_singleton_eq_span_singleton] at h
   obtain ⟨u, hu⟩ := h
   -- Both degrees are orders of reductions modulo `maximalIdeal O`, and `σ⁻¹` preserves these.
   have hN := isDistinguishedAt_charPoly.coe_natDegree_eq_order_map _ _
