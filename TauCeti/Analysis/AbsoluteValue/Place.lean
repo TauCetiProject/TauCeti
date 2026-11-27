@@ -36,17 +36,15 @@ Two equivalent places are equal (`AbsoluteValue.Place.eq_of_isEquiv`), so each a
 absolute value `w` whose restriction to `ℚ` is nontrivial is equivalent to exactly one place
 (`AbsoluteValue.Place.existsUnique_isEquiv_of_isNontrivial_under`), its `ℚ`-normalised
 representative `AbsoluteValue.toPlace`. By Ostrowski's theorem `w.under ℚ` is the `c`-th root of the
-real or of a `p`-adic absolute value for some `c > 0`, and `x ↦ w x ^ c` is the place: in the
-`p`-adic case `w` is nonarchimedean and every positive power of it is an absolute value
-(`AbsoluteValue.nonarchRpow`), and in the real case `x ↦ w x ^ c` agrees with the real absolute
-value on the natural numbers, which is enough for the triangle inequality
-(`AbsoluteValue.rpowOfNatCast`). When `L` is algebraic over `ℚ`, the restriction to `ℚ` of a
-nontrivial absolute value is nontrivial (`AbsoluteValue.isNontrivial_iff_of_liesOver`), so every
-nontrivial absolute value of `L` is equivalent to exactly one place
-(`AbsoluteValue.Place.existsUnique_isEquiv`), and the places are the places of `L` in the classical
-sense. For a field that is not algebraic over `ℚ` the places are only the `ℚ`-normalised absolute
-values: on `ℚ(t)` the `t`-adic absolute value is nontrivial and trivial on `ℚ`, so it is equivalent
-to no place.
+real or of a `p`-adic absolute value for some `c > 0`, and `x ↦ w x ^ c` is the place: in both
+cases it is at most the real absolute value on the natural numbers, which is enough for the
+triangle inequality (`AbsoluteValue.rpowOfNatCast`). When `L` is algebraic over `ℚ`, the
+restriction to `ℚ` of a nontrivial absolute value is nontrivial
+(`AbsoluteValue.isNontrivial_iff_of_liesOver`), so every nontrivial absolute value of `L` is
+equivalent to exactly one place (`AbsoluteValue.Place.existsUnique_isEquiv`), and the places are
+the places of `L` in the classical sense. For a field that is not algebraic over `ℚ` the places are
+only the `ℚ`-normalised absolute values: on `ℚ(t)` the `t`-adic absolute value is nontrivial and
+trivial on `ℚ`, so it is equivalent to no place.
 
 The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.FinitePlace` are in
 `TauCeti.NumberTheory.NumberField.PlacesOver.Place`.
@@ -274,25 +272,25 @@ variable {w : AbsoluteValue L ℝ}
 `ℚ` is nontrivial is equivalent to a place. -/
 theorem exists_isEquiv_of_isNontrivial_under (hw : (w.under ℚ).IsNontrivial) :
     ∃ v : Place L, w.IsEquiv v.val := by
-  rcases Rat.AbsoluteValue.equiv_real_or_padic _ hw with h | ⟨p, ⟨_, h⟩, -⟩
-  · obtain ⟨c, hc, hcw⟩ := isEquiv_iff_exists_rpow_eq.mp h
-    have hn (n : ℕ) : w n ^ c = n := by simpa [under_apply] using congrFun hcw n
-    refine ⟨⟨w.rpowOfNatCast hc hn, ?_⟩, isEquiv_iff_exists_rpow_eq.mpr
-      ⟨c, hc, funext fun x ↦ (rpowOfNatCast_apply w hc hn x).symm⟩⟩
-    convert Rat.AbsoluteValue.IsStandard.real using 1
-    ext q
-    simpa [under_apply] using congrFun hcw q
-  · obtain ⟨c, hc, hcw⟩ := isEquiv_iff_exists_rpow_eq.mp h
-    have hna : IsNonarchimedean w := isNonarchimedean_iff_forall_natCast_le_one.mpr fun n ↦ by
-      have h1 : w n ^ c ≤ 1 := by
-        simpa [under_apply] using (congrFun hcw n).trans_le (Rat.AbsoluteValue.padic_le_one p n)
-      by_contra! h2
-      exact (Real.one_lt_rpow h2 hc).not_ge h1
-    refine ⟨⟨w.nonarchRpow hna hc, ?_⟩, isEquiv_iff_exists_rpow_eq.mpr
-      ⟨c, hc, funext fun x ↦ (nonarchRpow_apply w hna hc x).symm⟩⟩
-    convert Rat.AbsoluteValue.IsStandard.padic p using 1
-    ext q
-    simpa [under_apply] using congrFun hcw q
+  -- By Ostrowski's theorem `w.under ℚ` is equivalent to a standard absolute value `u`, which is
+  -- at most the real absolute value on the natural numbers.
+  obtain ⟨u, hu, hun, h⟩ : ∃ u : AbsoluteValue ℚ ℝ, Rat.AbsoluteValue.IsStandard u ∧
+      (∀ n : ℕ, u n ≤ n) ∧ (w.under ℚ).IsEquiv u := by
+    rcases Rat.AbsoluteValue.equiv_real_or_padic _ hw with h | ⟨p, ⟨_, h⟩, -⟩
+    · exact ⟨_, .real, fun n ↦ by simp, h⟩
+    · refine ⟨_, .padic p, fun n ↦ ?_, h⟩
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp
+      · exact (Rat.AbsoluteValue.padic_le_one p n).trans
+          (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn)
+  obtain ⟨c, hc, hcw⟩ := isEquiv_iff_exists_rpow_eq.mp h
+  have hn (n : ℕ) : w n ^ c ≤ n := by
+    simpa [under_apply] using (congrFun hcw n).trans_le (hun n)
+  refine ⟨⟨w.rpowOfNatCast hc hn, ?_⟩, isEquiv_iff_exists_rpow_eq.mpr
+    ⟨c, hc, funext fun x ↦ (rpowOfNatCast_apply w hc hn x).symm⟩⟩
+  convert hu using 1
+  ext q
+  simpa [under_apply] using congrFun hcw q
 
 /-- An absolute value of `L` whose restriction to `ℚ` is nontrivial is equivalent to exactly one
 place. -/
