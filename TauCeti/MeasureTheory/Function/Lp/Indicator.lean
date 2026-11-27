@@ -63,6 +63,8 @@ constant indicator classes it intersects the supporting sets.
   sends the indicator class of `c` to that of its image.
 * `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton`: a continuous linear map out of
   counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on singleton-supported vectors is zero.
+* `ContinuousLinearMap.ext_indicatorConstLp`: continuous linear maps out of `Lᵖ`, `p ≠ ∞`, that
+  agree on all indicator classes of measurable sets of finite measure are equal.
 * `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
   values at the classes `linftyIndicator μ s hs`.
 * `PositiveLinearMap.ext_linftyIndicator`: the same for positive linear functionals on real `L∞`,
@@ -433,6 +435,21 @@ theorem eq_zero_of_apply_indicatorConstLp_singleton
     exact hfin c t
   · intro f g hf hg _ hTf hTg
     rw [map_add, hTf, hTg, add_zero]
+
+/-- Two continuous semilinear maps out of `Lᵖ`, `1 ≤ p < ∞`, that agree on the indicator classes
+`indicatorConstLp p hs hμs c` of all measurable sets of finite measure are equal, since the simple
+functions are dense in `Lᵖ`. -/
+theorem ext_indicatorConstLp {α 𝕜 R E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedRing 𝕜] [Semiring R] {σ : 𝕜 →+* R} [NormedAddCommGroup E] [Module 𝕜 E]
+    [IsBoundedSMul 𝕜 E] [AddCommMonoid F] [Module R F] [TopologicalSpace F] [T2Space F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) {S T : Lp E p μ →SL[σ] F}
+    (h : ∀ (s : Set α) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : E),
+      S (indicatorConstLp p hs hμs c) = T (indicatorConstLp p hs hμs c)) : S = T := by
+  refine ContinuousLinearMap.ext fun f ↦ ?_
+  refine Lp.induction hp (fun f ↦ S f = T f) (fun c s hs hμs ↦ h s hs hμs.ne c) ?_
+    (isClosed_eq S.continuous T.continuous) f
+  intro f g _ _ _ hf hg
+  rw [map_add, map_add, hf, hg]
 
 end ContinuousLinearMap
 
