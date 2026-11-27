@@ -40,6 +40,8 @@ omitted until something asks for them.
   is left invariant for the multiplication of `Multiplicative α`.
 * `TauCeti.instIsHaarMeasureMultiplicative`: an additive Haar measure on `α` is a Haar measure on
   `Multiplicative α`.
+* `TauCeti.instMeasurableSMul₂Multiplicative`: a jointly measurable additive action of `α` is a
+  jointly measurable action of `Multiplicative α`.
 * `TauCeti.measurePreserving_multiplicative_smul`: `Multiplicative α`, acting on `β` through the
   additive action of `α`, preserves every measure invariant under that additive action; for
   instance translations of `ℝ`, as the action of `Multiplicative ℝ`, preserve Lebesgue measure.
@@ -94,6 +96,12 @@ instances above; only the assembly into `IsHaarMeasure` is new, because a struct
 found from its fields by typeclass search. -/
 instance instIsHaarMeasureMultiplicative [TopologicalSpace α] [AddGroup α] [MeasurableSpace α]
     (μ : Measure α) [μ.IsAddHaarMeasure] : Measure.IsHaarMeasure (G := Multiplicative α) μ where
+
+/-- A jointly measurable additive action of `α` on `β` is a jointly measurable action of
+`Multiplicative α`: `ofAdd a • x = a +ᵥ x`. -/
+instance instMeasurableSMul₂Multiplicative {β : Type*} [VAdd α β] [MeasurableSpace α]
+    [MeasurableSpace β] [h : MeasurableVAdd₂ α β] : MeasurableSMul₂ (Multiplicative α) β :=
+  ⟨h.measurable_vadd⟩
 
 /-- The action of `Multiplicative α` on `β`, `ofAdd a • x = a +ᵥ x`, preserves every measure
 invariant under the additive action of `α`. With `β = α` this says that translations of an

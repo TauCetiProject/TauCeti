@@ -16,11 +16,12 @@ public import TauCeti.CategoryTheory.Filtration.Basic
 A family `F : I → Submodule R M` of submodules, indexed by a category `I` and with `F i ≤ F j`
 for every morphism `i ⟶ j`, is a filtered object of `ModuleCat R` indexed by `I`
 (`CategoryTheory.FilteredObject.ofSubmodules`), whose step `F_i` is the subobject of `F i`
-(`step_ofSubmodules`). An antitone family `ℤ → Submodule R M`, read at `ℤᵒᵖ`, is a decreasing
-filtration, and a monotone family on a preorder an increasing one. Mathlib's order isomorphism
-`ModuleCat.subobjectModule` between subobjects and submodules carries the steps to the submodules
-`F i` (`subobjectModule_step_ofSubmodules`), so the lattice conditions on the steps read in the
-lattice of submodules.
+(`step_ofSubmodules`), and whose inclusions of steps are the inclusions of submodules
+(`hom_stepMap_ofSubmodules`). An antitone family `ℤ → Submodule R M`, read at `ℤᵒᵖ`, is a
+decreasing filtration (`ofAntitone`), and a monotone family on a preorder an increasing one.
+Mathlib's order isomorphism `ModuleCat.subobjectModule` between subobjects and submodules carries
+the steps to the submodules `F i` (`subobjectModule_step_ofSubmodules`), so the lattice conditions
+on the steps read in the lattice of submodules.
 
 ## Main results
 
@@ -29,9 +30,10 @@ lattice of submodules.
   when every element lies in some `F i`.
 * `isSeparated_ofSubmodules_iff_iInf`, `isSeparated_ofSubmodules_iff_forall_mem`: the filtration
   is separated exactly when `⨅ i, F i = ⊥`, that is, when only `0` lies in every `F i`.
-* `comp_cokernel_π_stepι_ofSubmodules_eq_iff`: through `ModuleCat.cokernelIsoRangeQuotient`,
-  two maps `f g : A ⟶ M` agree in the quotient `M / F_i` exactly when `f a - g a ∈ F i` for all
-  `a`.
+* `cokernel_π_stepι_ofSubmodules_apply_eq_iff`: through `ModuleCat.cokernelIsoRangeQuotient`,
+  two elements of `M` agree in the quotient `M / F_i` exactly when their difference lies in `F i`.
+* `comp_cokernel_π_stepι_ofSubmodules_eq_iff`: two maps `f g : A ⟶ M` agree in the quotient
+  `M / F_i` exactly when `f a - g a ∈ F i` for all `a`.
 -/
 
 public section
@@ -55,6 +57,11 @@ noncomputable abbrev ofSubmodules (F : I → Submodule R M) (hF : ∀ ⦃i j⦄,
         (ModuleCat.ofHom (F i).subtype)
       map f := MonoOver.homMk (ModuleCat.ofHom (Submodule.inclusion (hF f))) rfl }
 
+/-- The decreasingly filtered module with steps `F^p = F p`, for an antitone family `F`. -/
+noncomputable abbrev ofAntitone (F : ℤ → Submodule R M) (hF : Antitone F) :
+    FilteredObject (ModuleCat.{v} R) ℤᵒᵖ :=
+  ofSubmodules (fun p : ℤᵒᵖ ↦ F p.unop) fun _ _ f ↦ hF (leOfHom f.unop)
+
 variable (F : I → Submodule R M) (hF : ∀ ⦃i j⦄, (i ⟶ j) → F i ≤ F j)
 
 /-- The inclusion of the step `F_i` of `ofSubmodules F hF` is the inclusion of `F i`. -/
@@ -69,6 +76,17 @@ theorem hom_stepι_ofSubmodules (i : I) : ((ofSubmodules F hF).stepι i).hom = (
   rw [stepι_ofSubmodules]
   -- The rewritten `ModuleCat.Hom.hom` still carries the step and `X` of `ofSubmodules F hF` as its
   -- implicit objects, which are `ModuleCat.of R (F i)` and `ModuleCat.of R M` only up to
+  -- unfolding, so `ModuleCat.hom_ofHom` is applied by `exact` rather than by `rw`.
+  exact ModuleCat.hom_ofHom _
+
+/-- The linear map underlying the inclusion of steps `F_i ⟶ F_j` of `ofSubmodules F hF` along a
+morphism `f : i ⟶ j` is the inclusion of `F i` in `F j`. -/
+theorem hom_stepMap_ofSubmodules {i j : I} (f : i ⟶ j) :
+    ((ofSubmodules F hF).stepMap f).hom = Submodule.inclusion (hF f) := by
+  rw [← filtrationDiagram_map]
+  -- `filtrationDiagram_map` turns the step map into the image of `f` under the underlying
+  -- diagram of `ofSubmodules F hF`, which is `ModuleCat.ofHom (Submodule.inclusion (hF f))` by
+  -- the definition of `ofSubmodules`; its objects agree with `ModuleCat.of R (F i)` only up to
   -- unfolding, so `ModuleCat.hom_ofHom` is applied by `exact` rather than by `rw`.
   exact ModuleCat.hom_ofHom _
 
@@ -125,6 +143,21 @@ theorem isSeparated_ofSubmodules_iff_forall_mem :
     (ofSubmodules F hF).IsSeparated ↔ ∀ x, (∀ i, x ∈ F i) → x = 0 := by
   simp_rw [isSeparated_ofSubmodules_iff_iInf, Submodule.eq_bot_iff, Submodule.mem_iInf]
 
+/-- Two elements of `M` have the same image in the quotient `M / F_i`, the cokernel of the
+inclusion of the step `F_i`, exactly when their difference lies in `F i`. -/
+theorem cokernel_π_stepι_ofSubmodules_apply_eq_iff (i : I) (x y : M) :
+    (Limits.cokernel.π ((ofSubmodules F hF).stepι i)).hom x =
+      (Limits.cokernel.π ((ofSubmodules F hF).stepι i)).hom y ↔ x - y ∈ F i := by
+  -- Mathlib identifies the cokernel projection with `M ⟶ M ⧸ F i`.
+  let e := ModuleCat.cokernelIsoRangeQuotient ((ofSubmodules F hF).stepι i)
+  have h (z : M) : e.hom.hom ((Limits.cokernel.π ((ofSubmodules F hF).stepι i)).hom z) =
+      (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ z := by
+    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+      ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom, ModuleCat.hom_ofHom]
+  rw [← (ModuleCat.mono_iff_injective e.hom).1 inferInstance |>.eq_iff, h, h,
+    Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hom_stepι_ofSubmodules]
+  exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
+
 /-- Two maps into the underlying module of `ofSubmodules F hF` agree in its quotient `M / F_i`,
 the cokernel of the inclusion of the step `F_i` (the leg `quotientCone_π_app` of its cone of
 quotients), exactly when their difference lands in `F i`. -/
@@ -132,14 +165,7 @@ theorem comp_cokernel_π_stepι_ofSubmodules_eq_iff (i : I) {A : ModuleCat.{v} R
     (f g : A ⟶ (ofSubmodules F hF).X) :
     f ≫ Limits.cokernel.π ((ofSubmodules F hF).stepι i) =
       g ≫ Limits.cokernel.π ((ofSubmodules F hF).stepι i) ↔ ∀ a, f.hom a - g.hom a ∈ F i := by
-  -- Mathlib identifies the cokernel projection with `M ⟶ M ⧸ F i`.
-  let e := ModuleCat.cokernelIsoRangeQuotient ((ofSubmodules F hF).stepι i)
-  have key (x y : M) : (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ x =
-      (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ y ↔ x - y ∈ F i := by
-    rw [Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hom_stepι_ofSubmodules]
-    exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
-  rw [← cancel_mono e.hom, Category.assoc, Category.assoc,
-    ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom, ModuleCat.hom_ext_iff, LinearMap.ext_iff]
-  exact forall_congr' fun a ↦ key (f.hom a) (g.hom a)
+  simp only [ModuleCat.hom_ext_iff, LinearMap.ext_iff, ModuleCat.hom_comp, LinearMap.comp_apply]
+  exact forall_congr' fun a ↦ cokernel_π_stepι_ofSubmodules_apply_eq_iff F hF i (f.hom a) (g.hom a)
 
 end CategoryTheory.FilteredObject

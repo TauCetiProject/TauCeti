@@ -49,7 +49,9 @@ finite-dimensional subspace `p` under a map `f` with finite-dimensional kernel h
 rank less than `ℵ₀` has finite-dimensional `K`-span over any division ring `K` receiving `R`
 faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`). Two finite-dimensional subspaces
 of equal dimension are exchanged by a linear automorphism of the ambient space
-(`Submodule.exists_linearEquiv_mem_iff`), which need not itself be finite-dimensional.
+(`Submodule.exists_linearEquiv_mem_iff`), which need not itself be finite-dimensional. The
+dimensions of the subspaces of a finite-dimensional space `E` are exactly `0, …, dim E`
+(`Submodule.range_finrank`, with `Finset` form `Submodule.image_finrank_eq_range`).
 
 The span `⨆ i ∈ t, M i` of finitely many finite-dimensional subspaces is finite-dimensional
 (`Submodule.finiteDimensional_biSup`, an instance) of dimension at most `∑ i ∈ t, dim M i`
@@ -312,6 +314,25 @@ theorem exists_linearEquiv_mem_iff (V L : Submodule 𝕜 E) [FiniteDimensional �
   · set w := f.symm ⟨g z, hz⟩
     have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
     exact g.injective hw ▸ w.property
+
+variable [FiniteDimensional 𝕜 E] in
+/-- The dimensions of the subspaces of `E` are `0, 1, …, dim E`. -/
+theorem range_finrank :
+    Set.range (fun U : Submodule 𝕜 E ↦ finrank 𝕜 U) = Set.Iic (finrank 𝕜 E) := by
+  refine Set.Subset.antisymm ?_ fun p hp ↦ ?_
+  · rintro _ ⟨U, rfl⟩
+    exact Submodule.finrank_le U
+  · obtain ⟨f, hf⟩ : ∃ f : (Fin p → 𝕜) →ₗ[𝕜] E, Function.Injective f :=
+      finrank_le_iff_exists_linearMap.1 (by simpa using hp)
+    exact ⟨_, (LinearMap.finrank_range_of_inj hf).trans (Module.finrank_fin_fun 𝕜)⟩
+
+variable [FiniteDimensional 𝕜 E] in
+/-- `range_finrank` for finitely many subspaces: the image of `Finset.univ` under the dimension is
+`{0, 1, …, dim E}`. -/
+theorem image_finrank_eq_range [Fintype (Submodule 𝕜 E)] :
+    Finset.univ.image (fun U : Submodule 𝕜 E ↦ finrank 𝕜 U) = Finset.range (finrank 𝕜 E + 1) := by
+  ext p
+  simpa [Nat.lt_succ_iff] using Set.ext_iff.1 (range_finrank (𝕜 := 𝕜) (E := E)) p
 
 /-- The span of finitely many finite-dimensional subspaces is finite-dimensional. -/
 instance finiteDimensional_biSup {ι : Type*} (M : ι → Submodule 𝕜 E)

@@ -206,6 +206,14 @@ theorem constantCoeff_coe_reverse_charpoly (f : Module.End R M) :
     constantCoeff (f.charpoly.reverse : R⟦X⟧) = 1 := by
   rw [charpoly_def, Matrix.reverse_charpoly, Matrix.constantCoeff_coe_charpolyRev]
 
+/-- A finite product of power series `det (1 - X fᵢ)` has constant coefficient one. -/
+theorem constantCoeff_prod_coe_reverse_charpoly {ι : Type*} (s : Finset ι) {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module R (V i)] [∀ i, Module.Free R (V i)]
+    [∀ i, Module.Finite R (V i)] (f : ∀ i, Module.End R (V i)) :
+    constantCoeff (∏ i ∈ s, ((f i).charpoly.reverse : R⟦X⟧)) = 1 := by
+  rw [map_prod]
+  exact Finset.prod_eq_one fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i)
+
 variable [Algebra ℚ R]
 
 /-- **The logarithm of `det (1 - X f)`** for an endomorphism `f` of a finite free module is
@@ -252,9 +260,7 @@ theorem subst_exp_mul_prod_even_eq_prod_odd (s : Finset ℕ) {V : ℕ → Type*}
     PowerSeries.mk fun k ↦ (k : ℚ)⁻¹ • ∑ i ∈ s, (-1) ^ i * trace R (V i) (f i ^ k)
   have hL : constantCoeff L = 0 := by
     simp [L]
-  have hc (t : Finset ℕ) : constantCoeff (∏ i ∈ t, ((f i).charpoly.reverse : R⟦X⟧)) = 1 := by
-    rw [map_prod]
-    exact Finset.prod_eq_one fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i)
+  have hc (t : Finset ℕ) := constantCoeff_prod_coe_reverse_charpoly t f
   rw [← logOf_inj (by rw [map_mul, constantCoeff_subst_exp hL, hc, one_mul]) (hc _),
     logOf_mul (constantCoeff_subst_exp hL) (hc _), logOf_subst_exp hL,
     logOf_prod fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i),
@@ -286,7 +292,7 @@ theorem subst_exp_eq_prod_odd_mul_inv {K : Type*} [Field K] [Algebra ℚ K] (s :
       (∏ i ∈ s with Odd i, ((f i).charpoly.reverse : K⟦X⟧)) *
         (∏ i ∈ s with Even i, ((f i).charpoly.reverse : K⟦X⟧))⁻¹ := by
   have hc : constantCoeff (∏ i ∈ s with Even i, ((f i).charpoly.reverse : K⟦X⟧)) ≠ 0 := by
-    rw [map_prod, Finset.prod_eq_one fun i _ ↦ constantCoeff_coe_reverse_charpoly (f i)]
+    rw [constantCoeff_prod_coe_reverse_charpoly]
     exact one_ne_zero
   rw [← subst_exp_mul_prod_even_eq_prod_odd, mul_assoc, PowerSeries.mul_inv_cancel _ hc, mul_one]
 
