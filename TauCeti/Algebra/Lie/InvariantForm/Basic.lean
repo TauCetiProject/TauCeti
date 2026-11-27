@@ -20,7 +20,11 @@ irreducible module over an algebraically closed field there is at most one invar
 scalars.
 
 For a right-separating invariant form on a Lie algebra, the orthogonal complement of its
-derived ideal is its centre. This criterion needs no positivity or finite-dimensionality.
+derived ideal is its centre. This criterion needs no positivity or finite-dimensionality. For every
+invariant form, commuting ideals `I`, `J` have `⁅I, I⁆` orthogonal to `J`, since
+`B Z ⁅X, Y⁆ = -B ⁅X, Z⁆ Y`; a non-abelian atom of the ideals is its own bracket `⁅I, I⁆`, so it is
+orthogonal to every ideal meeting it trivially, and distinct simple ideals of a semisimple Lie
+algebra are orthogonal.
 
 The irreducible-module uniqueness result follows from Schur's lemma. Invariance of `Φ` says
 exactly that `Φ`, read as a linear map
@@ -41,6 +45,11 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 * `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: for a right-separating invariant
   form, the orthogonal complement of the derived ideal is the centre.
+* `LinearMap.BilinForm.lie_le_orthogonal_of_lie_eq_bot`: if `⁅I, J⁆ = 0` then `⁅I, I⁆ ⊥ J`.
+* `LinearMap.BilinForm.le_orthogonal_of_isAtom`: a non-abelian atom of the ideals is orthogonal to
+  every ideal meeting it trivially.
+* `LinearMap.BilinForm.le_orthogonal_of_isAtom_of_ne`: distinct atoms of the ideals of a semisimple
+  Lie algebra are orthogonal.
 * `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
   invariance.
 * `LinearMap.BilinMap.compl₁₂_lieInvariant`: the same for bilinear maps with values in a module.
@@ -182,6 +191,36 @@ theorem orthogonal_derivedSeries_one_eq_center (B : LinearMap.BilinForm K L)
       rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
         map_zero, neg_zero]
     simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+
+/-- If the ideals `I` and `J` commute, `⁅I, J⁆ = 0`, then `⁅I, I⁆` is orthogonal to `J` for every
+invariant form: `B Z ⁅X, Y⁆ = -B ⁅X, Z⁆ Y = 0` for `X, Y ∈ I` and `Z ∈ J`. -/
+theorem lie_le_orthogonal_of_lie_eq_bot (B : LinearMap.BilinForm K L) (hinv : B.lieInvariant L)
+    {I J : LieIdeal K L} (hIJ : ⁅I, J⁆ = ⊥) :
+    ⁅I, I⁆ ≤ LieAlgebra.InvariantForm.orthogonal B hinv J := by
+  rw [LieSubmodule.lie_le_iff]
+  intro x hx y _
+  rw [LieAlgebra.InvariantForm.mem_orthogonal]
+  intro z hz
+  rw [← neg_eq_zero, ← hinv x z y, (LieSubmodule.lie_eq_bot_iff _ _).mp hIJ x hx z hz,
+    map_zero, LinearMap.zero_apply]
+
+/-- A non-abelian atom `I` of the ideals is orthogonal, for every invariant form, to each ideal
+`J` meeting it trivially. In particular distinct simple ideals of a Lie algebra are orthogonal for
+every invariant form. -/
+theorem le_orthogonal_of_isAtom (B : LinearMap.BilinForm K L) (hinv : B.lieInvariant L)
+    {I J : LieIdeal K L} (hI : IsAtom I) (hIab : ¬IsLieAbelian I) (hIJ : Disjoint I J) :
+    I ≤ LieAlgebra.InvariantForm.orthogonal B hinv J := by
+  rw [← lie_eq_self_of_isAtom_of_nonabelian I hI hIab]
+  exact lie_le_orthogonal_of_lie_eq_bot B hinv
+    (le_bot_iff.mp ((LieSubmodule.lie_le_inf I J).trans hIJ.le_bot))
+
+/-- In a semisimple Lie algebra distinct atoms of the ideals, the simple ideals, are orthogonal
+for every invariant form. -/
+theorem le_orthogonal_of_isAtom_of_ne [LieAlgebra.IsSemisimple K L] (B : LinearMap.BilinForm K L)
+    (hinv : B.lieInvariant L) {I J : LieIdeal K L} (hI : IsAtom I) (hJ : IsAtom J) (hIJ : I ≠ J) :
+    I ≤ LieAlgebra.InvariantForm.orthogonal B hinv J :=
+  le_orthogonal_of_isAtom B hinv hI (LieAlgebra.IsSemisimple.non_abelian_of_isAtom I hI)
+    (hI.disjoint_of_ne hJ hIJ)
 
 end LinearMap.BilinForm
 
