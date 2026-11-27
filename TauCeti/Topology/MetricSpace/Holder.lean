@@ -73,7 +73,9 @@ seminorm of `g`.
 
 A family of maps that are Hölder near each point of a set, with a common constant and a common
 positive exponent, is equicontinuous on that set
-(`TauCeti.equicontinuousOn_of_forall_holderOnWith`).
+(`TauCeti.equicontinuousOn_of_forall_holderOnWith`). A map that is Hölder of positive exponent on
+every compact subset of an open subset of a locally compact space is continuous on that open set
+(`TauCeti.continuousOn_of_forall_isCompact_holderOnWith`).
 
 ## Main declarations
 
@@ -992,5 +994,15 @@ theorem equicontinuousOn_of_forall_holderOnWith {ι X Y : Type*} [PseudoMetricSp
     simpa [Real.zero_rpow (NNReal.coe_pos.2 hr).ne'] using hcont.tendsto x
   · filter_upwards [ht] with y hy i
     exact (hC i).dist_le (mem_of_mem_nhds ht) hy
+
+/-- **Local Hölder bounds give continuity.** A map that is Hölder of a positive exponent `r` on
+every compact subset of an open set `U` of a locally compact space is continuous on `U`. -/
+theorem continuousOn_of_forall_isCompact_holderOnWith {X Y : Type*} [PseudoEMetricSpace X]
+    [LocallyCompactSpace X] [PseudoEMetricSpace Y] {U : Set X} (hU : IsOpen U) {f : X → Y}
+    {r : ℝ≥0} (hr : 0 < r) (hf : ∀ K ⊆ U, IsCompact K → ∃ C, HolderOnWith C r f K) :
+    ContinuousOn f U := fun x hx ↦ by
+  obtain ⟨K, hKx, hKU, hK⟩ := local_compact_nhds (hU.mem_nhds hx)
+  obtain ⟨C, hC⟩ := hf K hKU hK
+  exact ((hC.continuousOn hr).continuousAt hKx).continuousWithinAt
 
 end TauCeti

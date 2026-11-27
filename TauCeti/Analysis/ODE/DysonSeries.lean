@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Analysis.ODE.Caratheodory
@@ -79,6 +80,15 @@ one-parameter automorphism groups of C⋆-algebras.
   `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
+* `TauCeti.dysonSeriesLeft_add`: `Γ (a + t) = Γₐ t * Γ a` for the left series `Γₐ` of the
+  translated path `s ↦ p (a + s)`.
+* `TauCeti.dysonSeriesLeft_comp_const_add`: `Γₐ t = Γ (a + t) * Γ(a)⁻¹`, with the inverse given
+  by the Dyson series of `-p`.
+* `TauCeti.star_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mem_unitary`: the adjoint of the left
+  series of `p` is the series of `s ↦ star (p s)`, and the left series of a skew-adjoint path is
+  unitary.
+* `TauCeti.norm_dysonSeriesLeft_sub_le`: in a C⋆-ring, the left series of two skew-adjoint paths
+  differ at time `t` by at most `|∫₀ᵗ ‖p - q‖|`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
 * `TauCeti.commute_dysonSeries`, `TauCeti.commute_dysonSeriesLeft`: an element commuting with
@@ -407,13 +417,21 @@ theorem dysonSeriesLeft_const (a : B) (t : ℝ) :
   simpa using (eq_dysonSeriesLeft_mul continuous_const
     (fun t ↦ hasDerivAt_exp_smul_const' (𝕂 := ℝ) a t) t).symm
 
+/-- The left Dyson series over `[0, a + t]` factors through the left Dyson series of the
+translated path `s ↦ p (a + s)`: `Γ (a + t) = Γₐ t * Γ a`. -/
+theorem dysonSeriesLeft_add (hp : Continuous p) (a t : ℝ) :
+    dysonSeriesLeft p (a + t) = dysonSeriesLeft (fun s => p (a + s)) t * dysonSeriesLeft p a := by
+  simpa using eq_dysonSeriesLeft_mul (p := fun s => p (a + s)) (hp.comp (continuous_const_add a))
+    (f := fun t => dysonSeriesLeft p (a + t))
+    (fun t => (hasDerivAt_dysonSeriesLeft hp (a + t)).comp_const_add a t) t
+
 /-- For a periodic path, the left Dyson series over a translated period factors through the
 left Dyson series over one period: `Γ (t + d) = Γ t * Γ d`. -/
 theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
     (hper : Function.Periodic p d) (t : ℝ) :
     dysonSeriesLeft p (t + d) = dysonSeriesLeft p t * dysonSeriesLeft p d := by
-  simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
-    (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
+  rw [add_comm, dysonSeriesLeft_add hp]
+  simp_rw [add_comm d, hper.funext]
 
 /-- For a periodic path, the left Dyson series over `n` periods is the `n`-th power of the left
 Dyson series over one period: `Γ (n d) = Γ d ^ n`. For a propagator this says that the return
@@ -461,6 +479,68 @@ series of `-p`. -/
 theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeriesLeft p t) :=
   ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
     rfl⟩
+
+/-- The left Dyson series of the translated path `s ↦ p (a + s)` is `Γ (a + t) * Γ(a)⁻¹`, where
+the inverse `Γ(a)⁻¹` is the Dyson series of `-p` at time `a`. -/
+theorem dysonSeriesLeft_comp_const_add (hp : Continuous p) (a t : ℝ) :
+    dysonSeriesLeft (fun s => p (a + s)) t = dysonSeriesLeft p (a + t) * dysonSeries (-p) a := by
+  rw [dysonSeriesLeft_add hp, mul_assoc, dysonSeriesLeft_mul_dysonSeries_neg hp, mul_one]
+
+section Star
+
+variable [StarRing B] [ContinuousStar B]
+
+/-- The adjoint of the left Dyson series of `p` is the Dyson series of the adjoint path
+`s ↦ star (p s)`. -/
+theorem star_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
+    star (dysonSeriesLeft p t) = dysonSeries (fun s => star (p s)) t := by
+  -- Continuity of `star` makes it commute with real scalars.
+  have : StarModule ℝ B := ContinuousStar.starModule_real
+  -- `star Γ` solves `X' = X (star p)` with `X 0 = 1`.
+  simpa using eq_mul_dysonSeries (p := fun s => star (p s)) hp.star
+    (f := fun s => star (dysonSeriesLeft p s))
+    (fun s => (hasDerivAt_dysonSeriesLeft hp s).star.congr_deriv (by simp [star_mul])) t
+
+/-- The left Dyson series of a skew-adjoint path is unitary. -/
+theorem dysonSeriesLeft_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t)
+    (t : ℝ) : dysonSeriesLeft p t ∈ unitary B := by
+  -- For a skew-adjoint path the adjoint path is `-p`, whose series inverts the left series.
+  rw [Unitary.mem_iff, star_dysonSeriesLeft hp, show (fun s => star (p s)) = -p from funext hskew]
+  exact ⟨dysonSeries_neg_mul_dysonSeriesLeft hp t, dysonSeriesLeft_mul_dysonSeries_neg hp t⟩
+
+/-- **Comparison of unitary propagators.** In a C⋆-ring, the left Dyson series of two continuous
+skew-adjoint paths `p` and `q` differ at time `t` by at most `|∫₀ᵗ ‖p - q‖|`. -/
+theorem norm_dysonSeriesLeft_sub_le [CStarRing B] {q : ℝ → B} (hp : Continuous p)
+    (hq : Continuous q) (hpskew : ∀ t, star (p t) = -p t) (hqskew : ∀ t, star (q t) = -q t)
+    (t : ℝ) :
+    ‖dysonSeriesLeft p t - dysonSeriesLeft q t‖ ≤ |∫ s in 0..t, ‖p s - q s‖| := by
+  have : StarModule ℝ B := ContinuousStar.starModule_real
+  have hpu := dysonSeriesLeft_mem_unitary hp hpskew
+  have hqu := dysonSeriesLeft_mem_unitary hq hqskew
+  -- `W = Γ_p⋆ Γ_q` has derivative `Γ_p⋆ (q - p) Γ_q`, whose norm is `‖p - q‖`, and `W 0 = 1`.
+  have hW (s : ℝ) : HasDerivAt (fun s => star (dysonSeriesLeft p s) * dysonSeriesLeft q s)
+      (star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s) s :=
+    ((hasDerivAt_dysonSeriesLeft hp s).star.mul (hasDerivAt_dysonSeriesLeft hq s)).congr_deriv
+      (by simp only [star_mul, hpskew]; noncomm_ring)
+  have hnorm (s : ℝ) :
+      ‖star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s‖ = ‖p s - q s‖ := by
+    rw [CStarRing.norm_mul_mem_unitary _ (hqu s),
+      CStarRing.norm_mem_unitary_mul _ (Unitary.star_mem (hpu s)), norm_sub_rev]
+  have hint := integral_eq_sub_of_hasDerivAt (fun s _ => hW s)
+    ((((continuous_dysonSeriesLeft hp).star.mul (hq.sub hp)).mul
+      (continuous_dysonSeriesLeft hq)).intervalIntegrable 0 t)
+  -- `‖Γ_p - Γ_q‖ = ‖Γ_p⋆ (Γ_p - Γ_q)‖ = ‖W - 1‖`.
+  calc ‖dysonSeriesLeft p t - dysonSeriesLeft q t‖
+      = ‖star (dysonSeriesLeft p t) * dysonSeriesLeft q t - 1‖ := by
+        rw [norm_sub_rev, ← CStarRing.norm_mem_unitary_mul _ (Unitary.star_mem (hpu t)), mul_sub,
+          Unitary.star_mul_self_of_mem (hpu t)]
+    _ = ‖∫ s in 0..t, star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s‖ := by
+        rw [hint, dysonSeriesLeft_zero, dysonSeriesLeft_zero, star_one, one_mul]
+    _ ≤ |∫ s in 0..t, ‖star (dysonSeriesLeft p s) * (q s - p s) * dysonSeriesLeft q s‖| :=
+        norm_integral_le_abs_integral_norm
+    _ = |∫ s in 0..t, ‖p s - q s‖| := by simp_rw [hnorm]
+
+end Star
 
 /-- An element commuting with every value of a continuous path `p` commutes with its left Dyson
 series. This is `TauCeti.commute_dysonSeries` in the opposite algebra. -/

@@ -12,8 +12,8 @@ import TauCeti.Data.ZMod.PrincipalUnits
 /-!
 # Fibers of unit reduction with unchanged prime factors
 
-Passing from `ℤ/(nk)` to `ℤ/n` gives exactly `k` unit lifts of each unit provided `k`
-introduces no new prime factors. The fibers are cosets of the kernel, whose cardinality
+Passing from `ℤ/(nk)` to `ℤ/n` gives exactly `k` unit lifts of each unit provided `n * k ≠ 0`
+and `k` introduces no new prime factors. The fibers are cosets of the kernel, whose cardinality
 is the ratio of the two totients.
 -/
 
@@ -21,7 +21,7 @@ public section
 
 namespace ZMod
 
-/-- If `n ∣ m` and `m` and `n` have the same prime factors, each unit modulo `n`
+/-- If `m ≠ 0`, `n ∣ m`, and `m` and `n` have the same prime factors, each unit modulo `n`
 has exactly `m / n` unit lifts modulo `m`. -/
 theorem card_unitsMap_fiber_of_primeFactors_subset {m n : ℕ} [NeZero m] (hmn : n ∣ m)
     (hs : m.primeFactors ⊆ n.primeFactors) (u : (ZMod n)ˣ) :

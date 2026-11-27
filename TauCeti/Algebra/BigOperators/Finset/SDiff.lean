@@ -22,11 +22,22 @@ cancel on the right.
   subfinsets with equal products (sums) from both sides of `a * ∏ = b * ∏` (`a + ∑ = b + ∑`).
 * `Finset.prod_eq_prod_iff_sdiff`, `Finset.sum_eq_sum_iff_sdiff`: the case without the extra
   factor (summand).
+* `Finset.prod_sdiff_mul_prod_sdiff`, `Finset.sum_sdiff_add_sum_sdiff`: for `u ⊆ t ⊆ s`, the
+  products (sums) over `s \ t` and `t \ u` combine to the product (sum) over `s \ u`.
 -/
 
 public section
 
 namespace Finset
+
+/-- For `u ⊆ t ⊆ s`, the products over the chained set differences `s \ t` and `t \ u` multiply
+to the product over `s \ u`, since `s \ u` is their disjoint union. -/
+@[to_additive /-- For `u ⊆ t ⊆ s`, the sums over the chained set differences `s \ t` and `t \ u`
+add up to the sum over `s \ u`, since `s \ u` is their disjoint union. -/]
+theorem prod_sdiff_mul_prod_sdiff {α M : Type*} [DecidableEq α] [CommMonoid M] {s t u : Finset α}
+    {f : α → M} (hts : t ⊆ s) (hut : u ⊆ t) :
+    (∏ x ∈ s \ t, f x) * ∏ x ∈ t \ u, f x = ∏ x ∈ s \ u, f x := by
+  rw [← prod_union (sdiff_disjoint.mono_right sdiff_subset), sdiff_union_sdiff_cancel hts hut]
 
 variable {α β M : Type*} [DecidableEq α] [DecidableEq β] [CommMonoid M] [IsRightCancelMul M]
   {A S : Finset α} {B T : Finset β} {f : α → M} {g : β → M}
