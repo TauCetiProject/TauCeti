@@ -21,6 +21,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # Mean value estimates
@@ -735,7 +736,6 @@ theorem is_const_of_fderivWithin_inter_eq_zero (hs : Convex ℝ s) (hΩ : IsOpen
     (hc : IsPreconnected (Ω ∩ s)) (hf : DifferentiableOn 𝕜 f (Ω ∩ s))
     (hf' : ∀ z ∈ Ω ∩ s, fderivWithin 𝕜 f (Ω ∩ s) z = 0) (hx : x ∈ Ω ∩ s) (hy : y ∈ Ω ∩ s) :
     f x = f y := by
-  classical
   -- `f` is locally constant on `Ω ∩ s`, which agrees near each of its points with a convex set
   have hloc : ∀ z ∈ Ω ∩ s, ∀ᶠ w in 𝓝[Ω ∩ s] z, f w = f z := by
     intro z hz
@@ -751,12 +751,7 @@ theorem is_const_of_fderivWithin_inter_eq_zero (hs : Convex ℝ s) (hΩ : IsOpen
     exact Filter.mem_of_superset (inter_mem_nhdsWithin _ (ball_mem_nhds z hr))
       fun w hw ↦ (hconst w ⟨hw.2, hw.1.2⟩).symm
   -- a locally constant map on a preconnected set is constant
-  have hcont : ContinuousOn (fun w ↦ decide (f w = f x)) (Ω ∩ s) := fun z hz ↦
-    continuousWithinAt_const.congr_of_eventuallyEq
-      ((hloc z hz).mono fun w hw ↦ by simp only [hw]) rfl
-  have h := hc.constant hcont hx hy
-  simp only [decide_true, Bool.true_eq, decide_eq_true_eq] at h
-  exact h.symm
+  exact hc.apply_eq_of_eventually_eq hloc hx hy
 
 end Convex
 

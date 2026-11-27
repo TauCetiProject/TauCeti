@@ -393,6 +393,11 @@ theorem finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_
 
 /-! ### Critical points up to a totally real boundary -/
 
+/-- The closed upper part `Ω ∩ {0 ≤ im}` of an open set is a set of unique differentiability. -/
+private theorem uniqueDiffOn_inter_setOf_im_nonneg (hΩ : IsOpen Ω) :
+    UniqueDiffOn ℝ (Ω ∩ {z | 0 ≤ z.im}) := by
+  simpa only [inter_comm] using (uniqueDiffOn_setOfPred_le_im 0).inter hΩ
+
 omit [FiniteDimensional ℝ E] in
 /-- A map of class `C¹` up to the real axis on `Ω ∩ {0 ≤ im}`, solving `∂ₜu = A ∂ₛu` off the axis,
 whose derivative `∂ₛu` within the closed upper half-plane vanishes on a preconnected
@@ -402,8 +407,7 @@ private theorem eqOn_const_of_cauchyRiemann_of_eqOn_zero_inter_im_nonneg (hΩ : 
     (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (h₀ : EqOn (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) 0 (Ω ∩ {z | 0 ≤ z.im}))
     (hz₀ : z₀ ∈ Ω ∩ {z | 0 ≤ z.im}) : EqOn u (fun _ ↦ u z₀) (Ω ∩ {z | 0 ≤ z.im}) := by
-  have hS : UniqueDiffOn ℝ (Ω ∩ {z | 0 ≤ z.im}) := by
-    simpa only [inter_comm] using (uniqueDiffOn_setOfPred_le_im 0).inter hΩ
+  have hS := uniqueDiffOn_inter_setOf_im_nonneg hΩ
   -- off the axis the derivative within `Ω ∩ {0 ≤ im}` is the classical one, and vanishes
   have hint : EqOn (fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im})) 0 (Ω ∩ {z | 0 < z.im}) := by
     intro z hz
@@ -476,8 +480,7 @@ private theorem linearized_inter_im_nonneg {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω)
       ∀ x : ℝ, (x : ℂ) ∈ Ω →
         R (fderivWithin ℝ u {z | 0 ≤ z.im} x 1) = fderivWithin ℝ u {z | 0 ≤ z.im} x 1 := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have hS : UniqueDiffOn ℝ (Ω ∩ {z | 0 ≤ z.im}) := by
-    simpa only [inter_comm] using (uniqueDiffOn_setOfPred_le_im 0).inter hΩ
+  have hS := uniqueDiffOn_inter_setOf_im_nonneg hΩ
   -- derivatives within `Ω ∩ {0 ≤ im}` are derivatives within the half-plane
   have hDSu {z : ℂ} (hz : z ∈ Ω) :
       fderivWithin ℝ u (Ω ∩ {z | 0 ≤ z.im}) z = fderivWithin ℝ u {z | 0 ≤ z.im} z := by
@@ -507,6 +510,38 @@ private theorem linearized_inter_im_nonneg {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω)
     rw [← hDSu hx]
     exact hR.unique hd
 
+/-- **Reduction to a conjugation-invariant domain.** Under the hypotheses of the boundary
+critical-point theorems there is a conjugation-invariant open set `Ω'` with the same closed upper
+part `Ω' ∩ {0 ≤ im} = Ω ∩ {0 ≤ im}`, on which `u` still solves `∂ₜu = A ∂ₛu` off the axis, `R`
+still anticommutes with `A` on the axis, and `ξ = ∂ₛu` satisfies the hypotheses of the boundary
+similarity principle given by `linearized_inter_im_nonneg`. -/
+private theorem exists_mapsTo_conj_linearized_inter_im_nonneg {R : E ≃L[ℝ] E} (hΩ : IsOpen Ω)
+    (hA : ContDiffOn ℝ 1 A (Ω ∩ {z | 0 ≤ z.im}))
+    (hAA : ∀ z ∈ Ω ∩ {z | 0 ≤ z.im}, A z ∘L A z = -ContinuousLinearMap.id ℝ E)
+    (hAR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (A x v) = -A x (R v))
+    (hu : ContDiffOn ℝ 2 u (Ω ∩ {z | 0 ≤ z.im}))
+    (hCR : ∀ z ∈ Ω, 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1))
+    (hbd : ∀ x : ℝ, (x : ℂ) ∈ Ω → R (u x) = u x) :
+    ∃ Ω' : Set ℂ, IsOpen Ω' ∧ MapsTo (starRingEnd ℂ) Ω' Ω' ∧
+      Ω' ∩ {z | 0 ≤ z.im} = Ω ∩ {z | 0 ≤ z.im} ∧
+      (∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1)) ∧
+      (∀ x : ℝ, (x : ℂ) ∈ Ω' → ∀ v, R (A x v) = -A x (R v)) ∧
+      MemWkpLoc 3 (Ω' ∩ {z | 0 ≤ z.im}) 1 A ∧
+      MemLpLoc 3 (Ω' ∩ {z | 0 ≤ z.im})
+        (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1)) ∧
+      IsWeakLinearCauchyRiemannOn 3 (Ω' ∩ {z | 0 ≤ z.im}) A
+        (fun z ↦ -(A z ∘L fderivWithin ℝ A {z | 0 ≤ z.im} z 1))
+        (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z 1) ∧
+      ∀ x : ℝ, (x : ℂ) ∈ Ω' →
+        R (fderivWithin ℝ u {z | 0 ≤ z.im} x 1) = fderivWithin ℝ u {z | 0 ≤ z.im} x 1 := by
+  obtain ⟨Ω', hΩ', hΩs, heq⟩ := exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq hΩ
+  have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω := (heq.subset ⟨hz, h⟩).1
+  have hCR' : ∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1) :=
+    fun z hz h ↦ hCR z (hsub hz h.le) h
+  rw [← heq] at hA hAA hu
+  exact ⟨Ω', hΩ', hΩs, heq, hCR', fun x hx ↦ hAR x (hsub hx (by simp)),
+    linearized_inter_im_nonneg hΩ' hA hAA hu hCR' fun x hx ↦ hbd x (hsub hx (by simp))⟩
+
 /-- **Isolated critical points up to a totally real boundary.** Let `R` be a real-linear
 automorphism of a finite-dimensional real normed space `E`, such as complex conjugation on `ℂⁿ`.
 Let `Ω` be open with `Ω ∩ {0 ≤ im}` preconnected, and `u` a map of class `C²` up to the real
@@ -526,13 +561,9 @@ theorem setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_i
     (hne : ∃ z ∈ Ω ∩ {z | 0 ≤ z.im}, ∃ w ∈ Ω ∩ {z | 0 ≤ z.im}, u z ≠ u w) :
     {z | fderivWithin ℝ u {z | 0 ≤ z.im} z ≠ 0} ∈ codiscreteWithin (Ω ∩ {z | 0 ≤ z.im}) := by
   -- pass to a conjugation-invariant open set with the same closed upper part
-  obtain ⟨Ω', hΩ', hΩs, heq⟩ := exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq hΩ
-  have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω := (heq.subset ⟨hz, h⟩).1
-  have hCR' : ∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1) :=
-    fun z hz h ↦ hCR z (hsub hz h.le) h
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hAR', hAw, hC, hξ, hξR⟩ :=
+    exists_mapsTo_conj_linearized_inter_im_nonneg hΩ hA hAA hAR hu hCR hbd
   rw [← heq] at hΩc hA hAA hu hne ⊢
-  obtain ⟨hAw, hC, hξ, hξR⟩ :=
-    linearized_inter_im_nonneg hΩ' hA hAA hu hCR' fun x hx ↦ hbd x (hsub hx (by simp))
   -- `∂ₛu` does not vanish identically, since `u` is not constant
   have hξne : ∃ z ∈ Ω' ∩ {z | 0 ≤ z.im}, fderivWithin ℝ u {z | 0 ≤ z.im} z 1 ≠ 0 := by
     by_contra! h
@@ -542,8 +573,8 @@ theorem setOf_fderivWithin_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_inter_i
     exact hzw (hc hw).symm
   refine Filter.mem_of_superset
     (setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg
-      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hAw hA.continuousOn hAA
-      (fun x hx ↦ hAR x (hsub hx (by simp))) hC hξ hξR hξne) fun z hz h₀ ↦ hz (by simp [h₀])
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hAw hA.continuousOn hAA hAR' hC hξ hξR hξne)
+    fun z hz h₀ ↦ hz (by simp [h₀])
 
 /-- **Unique continuation for critical points of infinite order, up to a totally real
 boundary.** Let `Ω`, `u`, `A` and `R` be as in
@@ -562,17 +593,12 @@ theorem eqOn_const_of_cauchyRiemann_inter_im_nonneg_of_forall_fderivWithin_isBig
     (h₀ : ∀ n : ℕ, (fun z ↦ fderivWithin ℝ u {z | 0 ≤ z.im} z) =O[𝓝[{z | 0 ≤ z.im}] z₀]
       fun z ↦ (z - z₀) ^ n) :
     EqOn u (fun _ ↦ u z₀) (Ω ∩ {z | 0 ≤ z.im}) := by
-  obtain ⟨Ω', hΩ', hΩs, heq⟩ := exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq hΩ
-  have hsub {z : ℂ} (hz : z ∈ Ω') (h : 0 ≤ z.im) : z ∈ Ω := (heq.subset ⟨hz, h⟩).1
-  have hCR' : ∀ z ∈ Ω', 0 < z.im → fderiv ℝ u z I = A z (fderiv ℝ u z 1) :=
-    fun z hz h ↦ hCR z (hsub hz h.le) h
+  obtain ⟨Ω', hΩ', hΩs, heq, hCR', hAR', hAw, hC, hξ, hξR⟩ :=
+    exists_mapsTo_conj_linearized_inter_im_nonneg hΩ hA hAA hAR hu hCR hbd
   rw [← heq] at hΩc hA hAA hu hz₀ ⊢
-  obtain ⟨hAw, hC, hξ, hξR⟩ :=
-    linearized_inter_im_nonneg hΩ' hA hAA hu hCR' fun x hx ↦ hbd x (hsub hx (by simp))
   exact eqOn_const_of_cauchyRiemann_of_eqOn_zero_inter_im_nonneg hΩ' hΩc (hu.of_le one_le_two)
     hCR' (eqOn_zero_of_isWeakLinearCauchyRiemannOn_inter_im_nonneg_of_forall_isBigO
-      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hAw hA.continuousOn hAA
-      (fun x hx ↦ hAR x (hsub hx (by simp))) hC hξ hξR hz₀
+      (Ω := ⟨Ω', hΩ'⟩) (by norm_num) hΩs hΩc hAw hA.continuousOn hAA hAR' hC hξ hξR hz₀
       fun n ↦ ((ContinuousLinearMap.apply ℝ E (1 : ℂ)).isBigO_comp _ _).trans (h₀ n)) hz₀
 
 /-- **Unique continuation for critical points up to a totally real boundary.** Let `Ω`, `u`,

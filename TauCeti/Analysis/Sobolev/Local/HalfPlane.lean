@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Sobolev.Local.Locality
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
 
 /-!
@@ -16,10 +16,11 @@ import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
 
 For an open `Ω ⊆ ℂ`, a map that is `Cᵏ` on the relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the
 closed upper half-plane is in the local Sobolev class `TauCeti.MemWkpLoc p (Ω ∩ {z | 0 ≤ z.im}) k`
-for every exponent, with `Lᵖ` bounds on compact sets reaching the real axis. Near a point of the
-real axis the map extends to a `Cᵏ` map across the axis, by
+for every exponent, with `Lᵖ` bounds on compact sets reaching the real axis, since
+`Ω ∩ {z | 0 ≤ z.im}` is a set of unique differentiability. Near a point of the real axis such a
+map also extends to a `Cᵏ` map across the axis, by
 `TauCeti.HalfSpaceExtension.exists_local_contDiff_extension_halfSpace` read in the coordinates
-`(im z, re z)`, and the pieces are glued by `TauCeti.memWkpLoc_iff_locally`.
+`(im z, re z)`.
 
 ## Main declarations
 
@@ -30,7 +31,8 @@ real axis the map extends to a `Cᵏ` map across the axis, by
   (for instance, for finite-dimensional `E`).
 * `IsOpen.measurableSet_inter_setOf_im_nonneg`: such relatively open sets are measurable.
 * `ContDiffOn.memWkpLoc_inter_setOf_im_nonneg`: `Cᵏ` maps on `Ω ∩ {z | 0 ≤ z.im}` are in the
-  local Sobolev class of order `k` there.
+  local Sobolev class of order `k` there, as maps that are `Cᵏ` on any set of unique
+  differentiability are (`ContDiffOn.memWkpLoc_of_uniqueDiffOn`).
 -/
 
 public section
@@ -125,16 +127,13 @@ theorem _root_.IsOpen.measurableSet_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : 
 
 /-- A map that is `Cᵏ` on a relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the closed upper
 half-plane, for an open `Ω`, is in the local Sobolev class of order `k` there, for every
-exponent. The `Lᵖ` bounds reach the real axis: near a boundary point the map extends to a `Cᵏ`
-map across the axis. -/
+exponent, with `Lᵖ` bounds reaching the real axis. This is the case of
+`ContDiffOn.memWkpLoc_of_uniqueDiffOn` for the set `Ω ∩ {z | 0 ≤ z.im}` of unique
+differentiability. -/
 theorem _root_.ContDiffOn.memWkpLoc_inter_setOf_im_nonneg [CompleteSpace F] {f : ℂ → F}
     {Ω : Set ℂ} (hf : ContDiffOn ℝ k f (Ω ∩ {z | 0 ≤ z.im})) (hΩ : IsOpen Ω) :
-    MemWkpLoc p (Ω ∩ {z | 0 ≤ z.im}) k f := by
-  refine memWkpLoc_iff_locally.2 fun x hx ↦ ?_
-  obtain ⟨W, hWo, hxW, g, hg, hgf⟩ := exists_contDiffOn_eqOn_inter_setOf_im_nonneg hΩ hf hx
-  refine ⟨_ ∩ W, inter_mem_nhdsWithin _ (hWo.mem_nhds hxW), ?_⟩
-  exact (hg.memWkpLoc (Ω := ⟨W, hWo⟩) (p := p) inter_subset_right).congr_ae
-    ((ae_restrict_iff' (hΩ.measurableSet_inter_setOf_im_nonneg.inter hWo.measurableSet)).2
-      (Eventually.of_forall hgf))
+    MemWkpLoc p (Ω ∩ {z | 0 ≤ z.im}) k f :=
+  hf.memWkpLoc_of_uniqueDiffOn (by simpa only [inter_comm] using
+    (uniqueDiffOn_setOfPred_le_im 0).inter hΩ)
 
 end TauCeti
