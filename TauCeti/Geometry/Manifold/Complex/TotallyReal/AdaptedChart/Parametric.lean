@@ -186,7 +186,6 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
   set χ := extChartAt I (ι x₀)
   set φ := extChartAt I' x₀
   set γ := writtenInExtChartAt I' I x₀ ι
-  set Jχ : P × E → E →L[ℝ] E := fun q ↦ (J q.1).inChart (ι x₀) q.2
   obtain ⟨hU, hx₀U, hγ, hγΩ⟩ := isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt hι x₀
   -- The parametric adapted extension inverts near `((s₀, φ x₀), 0)`.
   obtain ⟨e, he, he₀, heU, -, hec, hesc⟩ :=
@@ -195,13 +194,10 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
       ((J s₀).inChart_inChart (ι x₀) (hγΩ hx₀U))
       (h.isMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective h.two_mul_finrank hιd)
       (h.isMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt hιd)
-  have hγx₀ : γ (φ x₀) = χ (ι x₀) :=
-    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x₀)
   have he₀t : e ((s₀, φ x₀), 0) = (s₀, χ (ι x₀)) := by
     rw [he, parametricAdaptedNormalExtension_apply, adaptedNormalExtension_zero]
-    exact Prod.ext rfl hγx₀
-  -- One product neighbourhood of `(s₀, (φ x₀, 0))` in the source, and of `(s₀, χ (ι x₀))` in
-  -- the target.
+    exact Prod.ext rfl (writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x₀))
+  -- Product neighbourhoods of `(s₀, (φ x₀, 0))` in the source and `(s₀, χ (ι x₀))` in the target.
   obtain ⟨S₁, V₁, hS₁, hV₁, hs₀S₁, h₀V₁, hSV₁⟩ := isOpen_prod_iff.1
     (e.open_source.preimage (by fun_prop : Continuous fun q : P × (F × F) ↦ ((q.1, q.2.1), q.2.2)))
     s₀ (φ x₀, 0) he₀
@@ -211,17 +207,11 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
   obtain ⟨O₁, hO₁, hx₀O₁, hO₁e⟩ :=
     h.isSmoothEmbedding.isEmbedding.isInducing.exists_isOpen_extChartAt_zero_mem hV₁ h₀V₁
   set S' := S ∩ S₁ ∩ S₂
-  have hS' : IsOpen S' := (hS.inter hS₁).inter hS₂
-  have hs₀S' : s₀ ∈ S' := ⟨⟨hs₀, hs₀S₁⟩, hs₀S₂⟩
   -- For each parameter in `S'`, the slice of `e` gives an adapted chart.
-  have key : ∀ s ∈ S', ∃ ψ : OpenPartialHomeomorph M (F × F),
-      IsAdaptedChart (J s) (range ι) ψ ∧
-      (∀ x, ψ x = ((e.symm (s, χ x)).1.2, (e.symm (s, χ x)).2)) ∧
-      (∀ x, x ∈ ψ.source ↔ x ∈ χ.source ∧ (s, χ x) ∈ e.target ∧ x ∈ O₁) ∧
-      ∀ p ∈ ψ.target, ((s, p.1), p.2) ∈ e.source ∧ ψ.symm p = χ.symm (e ((s, p.1), p.2)).2 :=
-    fun s hs ↦ exists_isAdaptedChart_slice h.isSmoothEmbedding.contMDiff hℓ hk he hesc
-      (fun p hp ↦ (heU hp).1.2) hO₁ hx₀O₁ fun z hz ↦
-        ⟨(hO₁e z hz).1, hSV₁ (mk_mem_prod hs.1.2 (hO₁e z hz).2)⟩
+  have key := fun s (hs : s ∈ S') ↦ exists_isAdaptedChart_slice (J := J)
+    h.isSmoothEmbedding.contMDiff hℓ hk he hesc (fun p hp ↦ (heU hp).1.2) hO₁ hx₀O₁ fun z hz ↦
+      ⟨(hO₁e z hz).1, hSV₁ (mk_mem_prod hs.1.2 (hO₁e z hz).2)⟩
+  have hs₀S' : s₀ ∈ S' := ⟨⟨hs₀, hs₀S₁⟩, hs₀S₂⟩
   have : Nonempty (OpenPartialHomeomorph M (F × F)) := ⟨(key s₀ hs₀S').choose⟩
   choose! ψ hψ hψcoe hψsrc hψtgt using key
   -- The common part of the sources.
@@ -229,7 +219,7 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_parametric [CompleteSpace P]
   have hO : IsOpen O :=
     ((continuousOn_extChartAt (ι x₀)).isOpen_inter_preimage (isOpen_extChartAt_source _) hT).inter
       hO₁
-  refine ⟨S', O, e, ψ, hS', hs₀S', fun s hs ↦ hs.1.1, hO,
+  refine ⟨S', O, e, ψ, (hS.inter hS₁).inter hS₂, hs₀S', fun s hs ↦ hs.1.1, hO,
     ⟨⟨mem_extChartAt_source _, hT₀⟩, hx₀O₁⟩, he, hec, hesc, fun s hs ↦
       ⟨hψ s hs, fun x hx ↦ (hψsrc s hs x).2 ⟨hx.1.1, hST ⟨hs.2, hx.1.2⟩, hx.2⟩, hψcoe s hs,
         hψtgt s hs⟩⟩
