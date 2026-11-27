@@ -611,6 +611,17 @@ theorem lof_mem_summand (i : ι) (m : M i) : lof R ι M i m ∈ summand R M i :=
 theorem of_mem_summand (i : ι) (m : M i) : of M i m ∈ summand R M i :=
   mem_summand.mpr ⟨m, rfl⟩
 
+/-- An element `z` in the `c`-th summand of `⨁ i, 𝒜 i` whose image under
+`DirectSum.coeLinearMap 𝒜` equals `(x : A)` is `DirectSum.of (fun i => 𝒜 i) c x`. -/
+theorem eq_of_mem_summand_of_coeLinearMap_eq {A : Type*} [AddCommMonoid A] [Module R A]
+    (𝒜 : ι → Submodule R A) {c : ι} {z : ⨁ i, 𝒜 i}
+    (hz : z ∈ summand R (fun i => ↥(𝒜 i)) c) {x : 𝒜 c}
+    (hx : coeLinearMap 𝒜 z = (x : A)) :
+    z = of (fun i => 𝒜 i) c x := by
+  obtain ⟨y, rfl⟩ := mem_summand.mp hz
+  congr 1
+  exact Subtype.ext (by simpa only [coeLinearMap_of] using hx)
+
 /-- The summands of the external direct sum form an internal direct sum: they are the ranges of
 the inclusions `DirectSum.lof R ι M i`. -/
 theorem isInternal_summand : IsInternal (summand R M) :=

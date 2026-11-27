@@ -170,10 +170,10 @@ theorem algHom_apply_of_mem_wordSpan {F : Type*} [DecidableEq Γ]
     (hf : ∀ s, f (e s) ∈ DirectSum.summand R (fun n => ↥(wordSpan R e deg n)) (deg s))
     {c : Γ} {x : A} (hx : x ∈ wordSpan R e deg c) :
     f x = DirectSum.of (fun n => ↥(wordSpan R e deg n)) c ⟨x, hx⟩ :=
-  DirectSum.eq_of_mem_summand_of_coeLinearMap_eq (wordSpan R e deg)
+  DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (wordSpan R e deg)
     (map_mem_of_mem_wordSpan (ℬ := DirectSum.summand R fun n => ↥(wordSpan R e deg n))
       f (AddMonoidHom.id Γ) hf hx)
-    ((DirectSum.coeLinearMap_eq_coeAlgHom (wordSpan R e deg) (f x)).trans (hcoe x))
+    (hcoe x)
 
 end WordSpan
 

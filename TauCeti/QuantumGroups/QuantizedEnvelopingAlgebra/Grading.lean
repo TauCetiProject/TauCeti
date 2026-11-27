@@ -308,12 +308,10 @@ theorem serreSum_of {A Γ : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ]
       DirectSum.of (fun c' => 𝒜 c') (D.serreLength i j • c i + c j)
         ⟨serreSum D q (fun l => (x l : A)) i j,
           serreSum_mem_graded D q (x i).property (x j).property⟩ :=
-  DirectSum.eq_of_mem_summand_of_coeLinearMap_eq 𝒜
+  DirectSum.eq_of_mem_summand_of_coeAlgHom_eq 𝒜
     (serreSum_mem_graded (𝒜 := DirectSum.summand K fun c' => 𝒜 c') D q
       (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
-    (by
-      rw [DirectSum.coeLinearMap_eq_coeAlgHom]
-      simp only [map_serreSum, DirectSum.coeAlgHom_of])
+    (by simp only [map_serreSum, DirectSum.coeAlgHom_of])
 
 variable [DecidableEq ι] {D : CartanDatum ι X Y} {q : K}
 
@@ -337,10 +335,9 @@ private theorem decompose_conjugate (y : Y) {c : ι →₀ ℤ} (g : gradedPiece
       of (fun d => gradedPiece D q d) 0 ⟨k D q (-y), k_mem_gradedPiece (-y)⟩ =
       r • of (fun d => gradedPiece D q d) c g := by
   rw [← of_smul]
-  refine DirectSum.eq_of_mem_summand_of_coeLinearMap_eq (gradedPiece D q)
+  refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
     (mul_mem_summand (add_zero c) (of_mul_mem_summand (zero_add c) _ _)
       (DirectSum.of_mem_summand (R := K) _ _)) ?_
-  rw [DirectSum.coeLinearMap_eq_coeAlgHom]
   simp [DirectSum.coeAlgHom_of, hg]
 
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
@@ -349,29 +346,23 @@ private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     { e i := of (fun c => gradedPiece D q c) (Finsupp.single i 1) ⟨e D q i, e_mem_gradedPiece i⟩
       f i := of (fun c => gradedPiece D q c) (-Finsupp.single i 1) ⟨f D q i, f_mem_gradedPiece i⟩
       k y := of (fun c => gradedPiece D q c) 0 ⟨k D q y, k_mem_gradedPiece y⟩
-      k_zero := (DirectSum.eq_of_mem_summand_of_coeLinearMap_eq (gradedPiece D q)
-        (SetLike.one_mem_graded _) (by
-          rw [DirectSum.coeLinearMap_eq_coeAlgHom]
-          simp [k_zero])).symm
-      k_mul_k y z := DirectSum.eq_of_mem_summand_of_coeLinearMap_eq (gradedPiece D q)
-        (of_mul_mem_summand (zero_add 0) _ _) (by
-          rw [DirectSum.coeLinearMap_eq_coeAlgHom]
-          simp [DirectSum.coeAlgHom_of, k_mul_k])
+      k_zero := (DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+        (SetLike.one_mem_graded _) (by simp [k_zero])).symm
+      k_mul_k y z := DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+        (of_mul_mem_summand (zero_add 0) _ _) (by simp [DirectSum.coeAlgHom_of, k_mul_k])
       conjugate_e y i := decompose_conjugate y _ _ (k_mul_e_mul_k_neg D q y i)
       conjugate_f y i := decompose_conjugate y _ _ (k_mul_f_mul_k_neg D q y i)
       commutator_self i := by
         rw [← map_sub (of (fun c => gradedPiece D q c) 0), ← of_smul]
-        refine DirectSum.eq_of_mem_summand_of_coeLinearMap_eq (gradedPiece D q)
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
           (Decomposition.sub_mem (of_mul_mem_summand (add_neg_cancel _) _ _)
             (of_mul_mem_summand (neg_add_cancel _) _ _)) ?_
-        rw [DirectSum.coeLinearMap_eq_coeAlgHom]
         simp [DirectSum.coeAlgHom_of, ← simpleK_def, ← simpleKInv_def, e_mul_f_sub_f_mul_e_self]
       commutator_ne {i j} hij := by
         rw [← map_zero (of (fun c => gradedPiece D q c) (Finsupp.single i 1 + -Finsupp.single j 1))]
-        refine DirectSum.eq_of_mem_summand_of_coeLinearMap_eq (gradedPiece D q)
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
           (Decomposition.sub_mem (of_mul_mem_summand rfl _ _)
             (of_mul_mem_summand (add_comm _ _) _ _)) ?_
-        rw [DirectSum.coeLinearMap_eq_coeAlgHom]
         simp [DirectSum.coeAlgHom_of, (commute_e_f D q hij).eq]
       serre_e {i j} hij := by
         rw [serreSum_of, show (⟨serreSum D q (fun l => e D q l) i j, _⟩ :
