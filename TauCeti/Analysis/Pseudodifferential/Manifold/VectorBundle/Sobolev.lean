@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.ChartPatching
+public import TauCeti.Analysis.Pseudodifferential.UniformSobolev
+import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 
 /-!
 # Sobolev estimates for pseudodifferential operators between vector bundles
@@ -45,21 +46,14 @@ between bundles on a compact manifold. It is the bundle form of the scalar estim
 
 ## The argument
 
-The operator `P` is pseudodifferential when its matrix entries in cut-off frames
-`f ↦ χ · ℓ(t' (P (f · ρ t⁻¹ v)))` (`TauCeti.sectionEntry`) are scalar classical
-pseudodifferential operators of order `m`. If `Ψ = ψ ∘ e'` and `ρ = 1` on the support of `Ψ`,
-then
-
-`Ψ u = ∑ₖ (Ψ · ρ b_k*(t u)) · ρ t⁻¹ b_k`
-
-(`Bundle.Trivialization.smul_eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`),
-
-so the frame coefficient `χ ℓ(t' (P (Ψ u)))` is the sum over `k` of the entries
-`f ↦ χ ℓ(t' (P (f · ρ t⁻¹ b_k)))` applied to `Ψ · ρ b_k*(t u)`. The scalar estimate between two
-charts (`TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le`)
-bounds the reading of each term through `φ` in `e` in `H^{s - m}` by the reading
-`ψ · (ρ b_k*(t u) ∘ e'⁻¹)` in `H^s`. The estimate for a partition then follows by writing
-`u = ∑ᵢ Ψᵢ u`.
+The estimates are instances of the patching theorems of
+`TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.ChartPatching` for the source norm
+`H^s` and the target norm `H^{s - m}`. Their hypotheses hold because the inclusion of Schwartz
+functions in `H^s` is injective (`SchwartzMap.toBesselPotentialSpaceCLM_injective`), localized
+changes of variables are bounded on `H^s`
+(`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`), and
+`Op(a)` is bounded `H^s → H^{s - m}` for every uniform symbol `a` of order `m`
+(`TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`).
 
 ## Main results
 
@@ -132,32 +126,15 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
       ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 (e.cutoffPushforwardSchwartz he φ
           (t'.cutoffFrameCoeff χ hχ ℓ (P (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1) • u))))‖ ≤
         C * ∑ k, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e'.cutoffPushforwardSchwartz he' ψ
-          (t.cutoffFrameCoeff ρ hρ (b.coord k).toContinuousLinearMap u))‖ := by
-  -- The scalar estimate for each matrix entry `f ↦ χ ℓ(t' (P (f · ρ t⁻¹ b_k)))`.
-  choose C hC using fun k ↦
-    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le
-      ((mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 t ρ hρ (b k) t' χ hχ ℓ) he he'
-      φ ψ s
-  refine ⟨∑ k, |C k|, fun u ↦ ?_⟩
-  -- `ρ = 1` wherever `Ψ = ψ ∘ e'` does not vanish.
-  have hΨρ (x : M) (hx : e'.cutoffPullback he' ψ 1 x ≠ 0) : ρ x = 1 := by
-    obtain ⟨y, hy, rfl⟩ := e'.tsupport_cutoffPullback_subset he' ψ 1 (subset_tsupport _ hx)
-    exact hρψ y hy
-  rw [t.smul_eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection ρ hρ _ hΨρ b u, map_sum, map_sum,
-    map_sum, map_sum, Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
-  -- Each term is the `k`-th matrix entry applied to `Ψ · ρ b_k*(t u)`.
-  have hentry : t'.cutoffFrameCoeff χ hχ ℓ (P (LinearMap.mulLeft ℂ
-      (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1))
-      (t.cutoffFrameCoeff ρ hρ (b.coord k).toContinuousLinearMap u) •
-        t.cutoffFrameSection ρ hρ (b k))) = sectionEntry t ρ hρ (b k) t' χ hχ ℓ P
-      (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1))
-        (t.cutoffFrameCoeff ρ hρ (b.coord k).toContinuousLinearMap u)) := by
-    ext x
-    simp
-  rw [hentry]
-  refine (hC k _).trans (mul_le_mul_of_nonneg_right ((le_abs_self _).trans ?_) (norm_nonneg _))
-  exact Finset.single_le_sum (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_univ k)
+          (t.cutoffFrameCoeff ρ hρ (b.coord k).toContinuousLinearMap u))‖ :=
+  exists_norm_cutoffPushforwardSchwartz_cutoffFrameCoeff_smul_le hP
+    (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2)
+    (fun hκ hκ' _ hθ hθc hθs ↦
+      BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
+        hθc hθs s)
+    _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
+      (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
+    he he' φ t' χ hχ ℓ ψ t ρ hρ hρψ b
 
 /-- **The Sobolev estimate in one chart.** Let `P` be a classical pseudodifferential operator of
 order `m` between bundles, and let `ψᵢ` be finitely many cutoffs in charts `e'ᵢ` whose readings
@@ -188,22 +165,15 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFr
           (e.cutoffPushforwardSchwartz he φ (t'.cutoffFrameCoeff χ hχ ℓ (P u)))‖ ≤
         C * ∑ i, ∑ k, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
           ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
-            ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ := by
-  choose C hC using fun i ↦
-    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_smul_le hP
-      he (he' i) φ t' χ hχ ℓ (ψ i) (t i) (ρ i) (hρ i) (hρψ i) b s
-  refine ⟨∑ i, |C i|, fun u ↦ ?_⟩
-  -- `u = ∑ᵢ Ψᵢ u`, and each piece is estimated in the chart `e'ᵢ`.
-  have hu : u = ∑ i, ContMDiffMap.ofReal ((e' i).cutoffPullback (he' i) (ψ i) 1) • u := by
-    ext x
-    simp [ContMDiffSection.smul_apply_of_normedAlgebra, ← Finset.sum_smul, ← Complex.ofReal_sum,
-      hψ x]
-  conv_lhs => rw [hu, map_sum, map_sum, map_sum, map_sum]
-  rw [Finset.mul_sum]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hC i u).trans ?_)
-  exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans (Finset.single_le_sum
-    (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_univ i)))
-    (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+            ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ :=
+  exists_norm_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum hP
+    (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2)
+    (fun hκ hκ' _ hθ hθc hθs ↦
+      BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
+        hθc hθs s)
+    _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
+      (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
+    he φ t' χ hχ ℓ he' ψ hψ t ρ hρ hρψ b
 
 /-- **Sobolev estimate for classical pseudodifferential operators between bundles.** Let `P` be a
 classical pseudodifferential operator of order `m` between bundles, and let `ψᵢ` be finitely many
@@ -238,12 +208,14 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cuto
             ((t' j).cutoffFrameCoeff (χ j) (hχ j) (ℓ l) (P u)))‖ ≤
         C * ∑ i, ∑ k, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
           ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i)
-            ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ := by
-  choose C hC using fun (j : ν) (l : μ) ↦
-    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum hP
-      (he j) (φ j) (t' j) (χ j) (hχ j) (ℓ l) he' ψ hψ t ρ hρ hρψ b s
-  refine ⟨∑ j, ∑ l, C j l, fun u ↦ ?_⟩
-  simp only [Finset.sum_mul]
-  exact Finset.sum_le_sum fun j _ ↦ Finset.sum_le_sum fun l _ ↦ hC j l u
+            ((t i).cutoffFrameCoeff (ρ i) (hρ i) (b.coord k).toContinuousLinearMap u))‖ :=
+  exists_sum_norm_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum hP
+    (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2)
+    (fun hκ hκ' _ hθ hθc hθs ↦
+      BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
+        hθc hθs s)
+    _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
+      (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
+    he φ t' χ hχ ℓ he' ψ hψ t ρ hρ hρψ b
 
 end TauCeti

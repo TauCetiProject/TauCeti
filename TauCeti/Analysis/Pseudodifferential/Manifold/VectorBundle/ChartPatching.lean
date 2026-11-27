@@ -41,7 +41,9 @@ If finitely many cutoffs `ψᵢ` in charts `e'ᵢ`, with trivializations `tᵢ` 
 for every smooth section `u` of `E`
 (`TauCeti.exists_sum_norm_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`). For
 `Ls = B^s_{p,∞}` and `Lt = B^{s - m}_{p,∞}` this gives the Besov and Hölder–Zygmund estimates of
-`TauCeti.exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`.
+`TauCeti.exists_sum_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum`, and
+for `Ls = H^s` and `Lt = H^{s - m}` the Sobolev estimates of
+`TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Sobolev`.
 
 ## The argument
 
