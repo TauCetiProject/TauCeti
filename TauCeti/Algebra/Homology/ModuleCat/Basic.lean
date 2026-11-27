@@ -91,7 +91,10 @@ that is locally nilpotent on the degree-`n` term is locally nilpotent on the deg
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
 
-For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes of modules, the connecting map
+For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes of modules, the maps are degreewise
+injective, exact and surjective (`CategoryTheory.ShortComplex.ShortExact.moduleCat_injective_f_f`,
+`CategoryTheory.ShortComplex.ShortExact.moduleCat_exact_f_f`,
+`CategoryTheory.ShortComplex.ShortExact.moduleCat_surjective_g_f`), and the connecting map
 sends the class of a cycle of `X₃` with lift `x₂` to the class of the cycle of `X₁` mapping to
 `d x₂` (`CategoryTheory.ShortComplex.ShortExact.moduleCat_δ_homologyπ`). Conversely, if a cycle
 `z₁` of `X₁` represents the image of a class `x₃` under the connecting map, then `x₃` is
@@ -895,6 +898,25 @@ namespace CategoryTheory.ShortComplex.ShortExact
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   {S : ShortComplex (HomologicalComplex (ModuleCat R) c)} (hS : S.ShortExact)
+
+include hS in
+/-- In a short exact sequence of complexes of modules, the first map is injective in each
+degree. -/
+theorem moduleCat_injective_f_f (i : ι) : Function.Injective (S.f.f i).hom :=
+  ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i).moduleCat_injective_f
+
+include hS in
+/-- In a short exact sequence of complexes of modules, the two maps form an exact pair of linear
+maps in each degree. -/
+theorem moduleCat_exact_f_f (i : ι) : Function.Exact (S.f.f i).hom (S.g.f i).hom :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
+    ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i).exact
+
+include hS in
+/-- In a short exact sequence of complexes of modules, the second map is surjective in each
+degree. -/
+theorem moduleCat_surjective_g_f (i : ι) : Function.Surjective (S.g.f i).hom :=
+  ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS i).moduleCat_surjective_g
 
 /-- **The connecting map of a short exact sequence of complexes of modules, on classes.** Let `z₃`
 be a cycle of `S.X₃` in degree `i`, `x₂` an element of `S.X₂` in degree `i` lifting it, and `z₁` a
