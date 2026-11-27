@@ -335,10 +335,11 @@ section Product
 
 variable (k : Type w) [CommRing k]
 
-/-- The concatenation of coordinates as a linear homeomorphism: Mathlib's
-`EuclideanSpace.sumEquivProd`, reindexed along
+/-- The concatenation of coordinates `ℝᵖ × ℝ^q ≃ ℝᵖ⁺q` of the Euclidean spaces
+`EuclideanSpace ℝ (ULift (Fin p))`, the coordinates of the first factor first, as a linear
+homeomorphism: Mathlib's `EuclideanSpace.sumEquivProd`, reindexed along
 `ULift (Fin p) ⊕ ULift (Fin q) ≃ ULift (Fin (p + q))`. -/
-private def euclideanULiftAppendEquiv (p q : ℕ) :
+def euclideanULiftAppendEquiv (p q : ℕ) :
     (EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q))) ≃L[ℝ]
       EuclideanSpace ℝ (ULift.{w} (Fin (p + q))) :=
   EuclideanSpace.sumEquivProd.symm.trans
@@ -346,23 +347,29 @@ private def euclideanULiftAppendEquiv (p q : ℕ) :
       ((Equiv.sumCongr Equiv.ulift.{w} Equiv.ulift.{w}).trans
         (finSumFinEquiv.trans Equiv.ulift.{w}.symm))).toContinuousLinearEquiv
 
-/-- The concatenation of coordinates `ℝᵖ × ℝ^q → ℝᵖ⁺q` of the Euclidean spaces
-`EuclideanSpace ℝ (ULift (Fin p))`, the coordinates of the first factor first. -/
+/-- The coordinates of `TauCeti.euclideanULiftAppendEquiv`: those of the first factor, then those
+of the second. -/
+@[simp]
+lemma euclideanULiftAppendEquiv_apply_ofLp (p q : ℕ)
+    (x : EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q)))
+    (i : ULift.{w} (Fin (p + q))) :
+    (euclideanULiftAppendEquiv p q x).ofLp i =
+      Fin.append (fun j ↦ x.1 (ULift.up j)) (fun j ↦ x.2 (ULift.up j)) i.down := by
+  obtain ⟨i⟩ := i
+  induction i using Fin.addCases <;> simp [euclideanULiftAppendEquiv]
+
+/-- The concatenation of coordinates `TauCeti.euclideanULiftAppendEquiv` as a continuous map. -/
 def euclideanULiftAppend (p q : ℕ) :
     C(EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q)),
       EuclideanSpace ℝ (ULift.{w} (Fin (p + q)))) :=
   ⟨euclideanULiftAppendEquiv p q, (euclideanULiftAppendEquiv p q).continuous⟩
 
-/-- The coordinates of `TauCeti.euclideanULiftAppend`: those of the first factor, then those of the
-second. -/
+/-- `TauCeti.euclideanULiftAppend` is the underlying function of
+`TauCeti.euclideanULiftAppendEquiv`. -/
 @[simp]
-lemma euclideanULiftAppend_apply_ofLp (p q : ℕ)
-    (x : EuclideanSpace ℝ (ULift.{w} (Fin p)) × EuclideanSpace ℝ (ULift.{w} (Fin q)))
-    (i : ULift.{w} (Fin (p + q))) :
-    (euclideanULiftAppend p q x).ofLp i =
-      Fin.append (fun j ↦ x.1 (ULift.up j)) (fun j ↦ x.2 (ULift.up j)) i.down := by
-  obtain ⟨i⟩ := i
-  induction i using Fin.addCases <;> simp [euclideanULiftAppend, euclideanULiftAppendEquiv]
+lemma coe_euclideanULiftAppend (p q : ℕ) :
+    ⇑(euclideanULiftAppend.{w} p q) = euclideanULiftAppendEquiv p q :=
+  funext fun _ ↦ rfl
 
 /-- The concatenation of coordinates vanishes only at the origin, so it is a map of pairs
 `(ℝᵖ × ℝ^q, (ℝᵖ ∖ {0}) × ℝ^q ∪ ℝᵖ × (ℝ^q ∖ {0})) ⟶ (ℝᵖ⁺q, ℝᵖ⁺q ∖ {0})`. -/
