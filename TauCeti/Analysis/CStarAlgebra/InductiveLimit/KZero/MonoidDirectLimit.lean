@@ -72,9 +72,8 @@ variable [DirectedSystem A (f · · ·)]
 instance directedSystem_projectionMonoidSystem :
     DirectedSystem (fun i ↦ ProjectionMonoid (A i)) (projectionMonoidSystem A f · · ·) where
   map_self i y := by
-    have h : ofClass (f i i le_rfl) = NonUnitalStarRingHom.id (A i) :=
-      NonUnitalStarRingHom.ext fun a ↦ DirectedSystem.map_self (f := (f · · ·)) a
-    rw [projectionMonoidSystem_apply, h, ProjectionMonoid.map_id, AddMonoidHom.id_apply]
+    rw [projectionMonoidSystem_apply, ofClass_f_self, ProjectionMonoid.map_id,
+      AddMonoidHom.id_apply]
   map_map {i j k} hij hjk y := by
     rw [projectionMonoidSystem_apply, projectionMonoidSystem_apply, projectionMonoidSystem_apply,
       projectionMonoid_map_f_map_f]
