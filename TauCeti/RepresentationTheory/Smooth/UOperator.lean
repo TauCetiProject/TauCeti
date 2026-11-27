@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.HeckeOperator
 public import TauCeti.RepresentationTheory.Smooth.Averaging
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.GroupTheory.DoubleCoset.Basic
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 
 /-!
@@ -250,7 +251,8 @@ theorem uOperator_apply_eq_inverse_relIndex_smul_finsum (hC_open : IsOpen (C : S
   have hstab : (ConjAct.toConjAct t • C).subgroupOf C ≤ stabilizer (ρ.comp C.subtype) (ρ t v) :=
     fun c hc ↦ by
       rw [mem_stabilizer, MonoidHom.comp_apply, Subgroup.coe_subtype]
-      exact ρ.apply_apply_eq_of_inv_mul_mul_mem (Subgroup.mem_conjAct_smul_subgroupOf_iff.1 hc) hv
+      exact ρ.apply_apply_eq_of_inv_mul_mul_mem
+        (Subgroup.mem_conjAct_smul_iff.1 (Subgroup.mem_subgroupOf.1 hc)) hv
   rw [uOperator_apply, smoothAverage_apply_of_le _ hC (C.isOpen_conjAct_smul_subgroupOf hC_open t)
     hstab, Subgroup.relIndex]
   simp [← mul_apply_eq_comp, ← map_mul]
@@ -271,7 +273,8 @@ theorem doubleCosetOperator_apply_eq_finsum (t : G)
   -- distinct `q` give distinct cosets `q t C`
   have hinj : Set.InjOn (fun q : C ⧸ H ↦ (((q.out : G) * t : G) : G ⧸ C))
       ↑(Finset.univ : Finset (C ⧸ H)) := fun q _ q' _ hqq' ↦ by
-    rw [← q.out_eq, ← q'.out_eq, QuotientGroup.eq, Subgroup.mem_conjAct_smul_subgroupOf_iff]
+    rw [← q.out_eq, ← q'.out_eq, QuotientGroup.eq, Subgroup.mem_subgroupOf,
+      Subgroup.mem_conjAct_smul_iff]
     simpa [mul_assoc] using QuotientGroup.eq.1 hqq'
   -- every coset in `C t C` is some `q t C`
   have hcov (g : G) (hg : (DoubleCoset.doubleCoset t C C).indicator (1 : G → A) g ≠ 0) :
