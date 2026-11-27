@@ -24,9 +24,8 @@ differential `d¹ : E¹_{1,q} ⟶ E¹_{0,q}`.
 
 This file identifies that cokernel through path transport. A `1`-cell `j` is a path
 `TauCeti.cellPath` from `χⱼ(-1)` to `χⱼ(1)` in the `0`-skeleton, along which the fibre
-homology has its transport `τⱼ` (`CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath`,
-the monodromy of the local system
-of fibre homology `TauCeti.TopCat.serreFiberLocalSystem`). The image of `d¹` is
+homology has its transport `τⱼ` (`TauCeti.TopCat.fiberHomologyTransport`, the monodromy of the
+local system of fibre homology `TauCeti.TopCat.serreFiberLocalSystem`). The image of `d¹` is
 spanned by the classes `a - τⱼ a`, for `a` over the end point `χⱼ(-1)`
 (`TauCeti.TopCat.oneCellTransportDifference`), so
 
@@ -151,17 +150,16 @@ variable (C) in
 /-- **The transport differences along the `1`-cells.** The map
 `⨁ⱼ Hq(p⁻¹(χⱼ(-1)); R) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` which sends a class `a` over the end point
 `χⱼ(-1)` of the `1`-cell `j` to `a - τⱼ a`, where `τⱼ` is the transport of fibre homology
-(`CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath`) along the path `TauCeti.cellPath` of
-`j` to its other end point `χⱼ(1)`, both classes being read in the homology of `p⁻¹(X⁰)` relative
-to `p⁻¹(X⁻¹)`. -/
+(`TauCeti.TopCat.fiberHomologyTransport`) along the path `TauCeti.cellPath` of `j` to its
+other end point `χⱼ(1)`, both classes being read in the homology of `p⁻¹(X⁰)` relative to
+`p⁻¹(X⁻¹)`. -/
 def oneCellTransportDifference (q : ℕ) :
     (∐ fun j : cell C 1 ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).obj (p.fiber (map 1 j fun _ ↦ -1))) ⟶
       (preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q :=
   Sigma.desc fun j ↦
     fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) -
-      ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
-          hp (cellPath C j)).hom ≫
+      fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
         fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num))
 
 /-- On the summand of a `1`-cell `j`, the transport differences send `a` to `a - τⱼ a`. -/
@@ -169,8 +167,7 @@ def oneCellTransportDifference (q : ℕ) :
 lemma ι_oneCellTransportDifference (q : ℕ) (j : cell C 1) :
     Sigma.ι _ j ≫ oneCellTransportDifference C R hp q =
       fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) -
-        ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
-            hp (cellPath C j)).hom ≫
+        fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
           fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) :=
   Sigma.ι_comp_desc _ _
 
@@ -309,22 +306,18 @@ omit [T2Space B] in
 /-- Transport of fibre homology along the path of a `1`-cell is transport over the closed unit
 ball of `ℝ¹`, along the characteristic map, from `-1` to `1`. -/
 private lemma fiberHomologyTransport_cellPath (q : ℕ) (j : cell C 1) :
-    ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
-        hp (cellPath C j)).hom =
-      ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R)
-        q).pullbackFiberIso hp (cellULiftMap C 1 j)
+    fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) =
+      pullbackFiberTransport hp (ModuleCat.of R R) q (cellULiftMap C 1 j)
         (cellULiftMap_ballPoint j (-1) (by norm_num))
-        (cellULiftMap_ballPoint j 1 (by norm_num))).hom := by
-  rw [MorphismProperty.IsInvertedBy.fiberIsoOfPath_eq_pullbackFiberIso]
+        (cellULiftMap_ballPoint j 1 (by norm_num)) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   -- The interval `I` maps to the ball by `t ↦ 2t - 1`, over `B`.
   let φ : _root_.TopCat.I.{u} ⟶ _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1) :=
     _root_.TopCat.ofHom ⟨fun t ↦ ballPoint (2 * (_root_.TopCat.I.homeomorph t : ℝ) - 1)
       (unitInterval.abs_two_mul_sub_one_le_one _), by
       unfold ballPoint
       fun_prop⟩
-  refine congrArg Iso.hom
-    (MorphismProperty.IsInvertedBy.pullbackFiberIso_comp_left _ hp _ _ φ ?_ (k₀ := 0) (k₁ := 1)
-      ?_ ?_ _ _ _ _)
+  refine pullbackFiberTransport_comp_left hp _ q _ _ φ ?_ (k₀ := 0) (k₁ := 1) ?_ ?_ _ _ _ _
   · ext t
     simp only [ConcreteCategory.comp_apply]
     rw [TopCat.pathEquiv_symm_hom_apply, cellPath_apply]
@@ -479,13 +472,11 @@ transport along its path. -/
 private lemma map_pullbackFiberι_neg (q : ℕ) (j : cell C 1) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
         (p.pullbackFiberι (cellULiftMap C 1 j) (cellULiftMap_ballPoint j (-1) (by norm_num))) =
-      ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
-          hp (cellPath C j)).hom ≫
+      fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
           (ModuleCat.of R R)).map
             (p.pullbackFiberι (cellULiftMap C 1 j) (cellULiftMap_ballPoint j 1 (by norm_num))) := by
-  rw [fiberHomologyTransport_cellPath,
-    MorphismProperty.IsInvertedBy.pullbackFiberIso_hom_comp_map_pullbackFiberι]
+  rw [fiberHomologyTransport_cellPath, pullbackFiberTransport_comp_map_pullbackFiberι]
 
 omit [T2Space B] in
 /-- The isomorphism `Hq(p⁻¹(χⱼ(1))) ≅ Hq(Pⱼ)` induced by the inclusion of the fibre over the end
@@ -499,8 +490,7 @@ private def pullbackFiberιIso (q : ℕ) (j : cell C 1) :
       (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 abs_one ≫
         (cellDiskPullbackPair p C 1 j).map)) := by
     rw [cellBoundaryFiberι_comp_map]
-    exact (weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R)
-      q).isIso_map_pullbackFiberι hp (cellULiftMap C 1 j) _
+    exact isIso_singularHomologyMap_pullbackFiberι hp (ModuleCat.of R R) q (cellULiftMap C 1 j) _
   asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
     (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 abs_one ≫ (cellDiskPullbackPair p C 1 j).map))
 
@@ -588,8 +578,7 @@ private lemma map_cellBoundaryFiberι_neg_one_comp_cellBoundaryIncl (q : ℕ) (j
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).map (cellBoundaryFiberι p j (-1) (by norm_num)) ≫
       cellBoundaryIncl p R q j =
-      ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
-          hp (cellPath C j)).hom ≫
+      fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
           (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫
         cellBoundaryIncl p R q j := by
