@@ -12,10 +12,11 @@ public import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Three
 # Level-three unipotent multiplication-matrix reciprocity over the Hilbert class field
 
 For a number field `K` and a ring isomorphism `e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b` with
-`discr a b < -4` and `(a : ZMod 3) = (b : ZMod 3) = 0` — as holds for a shifted period
-presentation whenever `3` ramifies (`3 ∣ D` and
-`D < -4`, for example `D ≡ 0 (mod 12)` or `D ≡ 9, 21 (mod 24)`) — the three lower-triangular
-unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`) identify `Multiplicative (ZMod 3)` with
+`discr a b < -4` and `(a : ZMod 3) = (b : ZMod 3) = 0` — supplied by
+`TauCeti.NumberField.exists_ringOfIntegers_algEquiv_of_odd_dvd_discr` (with `m = 3`) whenever `3`
+ramifies (`3 ∣ D` and `D < -4`, for example `D ≡ 0 (mod 12)` or `D ≡ 9, 21 (mod 24)`) — the three
+lower-triangular unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`) identify
+`Multiplicative (ZMod 3)` with
 `Gal(rayClassField (Modulus.spanNat K 3) / hilbertClassField K)`:
 
 * `TauCeti.ClassFieldTheory.unipotentLevelThreeArtinEquiv`: group isomorphism
@@ -42,10 +43,10 @@ namespace TauCeti.ClassFieldTheory
 
 variable {K : Type} [Field K] [NumberField K]
 
-/-- **Level-`3` unipotent reciprocity when `3` divides `a` and `b` and `discr a b < -4`** (as holds
-for the period presentation whenever `3` ramifies, i.e. `3 ∣ D` and `D < -4`, for example
-`D ≡ 0 (mod 12)` or `D ≡ 9, 21 (mod 24)`): the three unipotent matrices `!![1, 0; s, 1]`
-(`s : ZMod 3`) identify `Multiplicative (ZMod 3)` with
+/-- **Level-`3` unipotent reciprocity when `3` divides `a` and `b` and `discr a b < -4`** (supplied
+by `TauCeti.NumberField.exists_ringOfIntegers_algEquiv_of_odd_dvd_discr` with `m = 3` whenever `3`
+ramifies, i.e. `3 ∣ D` and `D < -4`, for example `D ≡ 0 (mod 12)` or `D ≡ 9, 21 (mod 24)`): the
+three unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`) identify `Multiplicative (ZMod 3)` with
 `Gal(rayClassField (Modulus.spanNat K 3) / hilbertClassField K)`. -/
 def unipotentLevelThreeArtinEquiv {a b : ℤ} (e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b)
     (hd : QuadraticAlgebra.discr a b < -4) (ha : (a : ZMod 3) = 0) (hb : (b : ZMod 3) = 0)

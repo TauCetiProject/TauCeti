@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
-import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import TauCeti.NumberTheory.QuadraticOrder.Embedding
 
@@ -37,8 +35,6 @@ consumes.
 * `TauCeti.Multiquadratic.discr_eq_fundamentalDiscriminant`.
 * `TauCeti.Multiquadratic.isFundamentalDiscr_discr`: the discriminant of any quadratic field is a
   fundamental discriminant.
-* `TauCeti.Multiquadratic.discr_lt_neg_four_iff`: for an imaginary quadratic field,
-  `NumberField.discr K < -4` iff `NumberField.discr K ≠ -4 ∧ NumberField.discr K ≠ -3`.
 * `TauCeti.Multiquadratic.exists_sq_eq_discr`: a quadratic field contains a square root of its
   discriminant.
 * `TauCeti.Multiquadratic.not_isSquare_discr`: the discriminant of a quadratic field is not a
@@ -78,14 +74,6 @@ theorem isFundamentalDiscr_discr (hK : Module.finrank ℚ K = 2) :
   obtain ⟨θ, d, hmin, hgen, hsf⟩ := NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
   rw [discr_eq_fundamentalDiscriminant hmin hgen hsf]
   exact isFundamentalDiscr_fundamentalDiscriminant hsf
-
-/-- For an imaginary quadratic field, `NumberField.discr K < -4` holds precisely away from `-4`
-and `-3`. -/
-theorem discr_lt_neg_four_iff [NumberField.IsTotallyComplex K] (hK : Module.finrank ℚ K = 2) :
-    NumberField.discr K < -4 ↔ NumberField.discr K ≠ -4 ∧ NumberField.discr K ≠ -3 := by
-  have hlt := NumberField.IsTotallyComplex.discr_lt_zero hK
-  have h4 := (isFundamentalDiscr_discr hK).emod_four_eq_zero_or_one
-  omega
 
 /-- **A quadratic field contains a square root of its discriminant.** For `K = ℚ(√d)` with `d`
 squarefree, the discriminant is `d` or `4 d`, with square root `√d` or `2 √d`. -/

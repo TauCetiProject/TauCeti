@@ -132,16 +132,6 @@ theorem finrank_hilbertClassField_rayClassField_two (hK : finrank ℚ K = 2)
   · simp [hD, hc2] at hrel ⊢; omega
   · simp [h4, h3] at hrel ⊢; omega
 
-/-- Specialization of `finrank_hilbertClassField_rayClassField_two` to `discr K < -4`. -/
-theorem finrank_hilbertClassField_rayClassField_two_of_discr_lt_neg_four (hK : finrank ℚ K = 2)
-    (hd : discr K < -4)
-    [Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K 2))]
-    [IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 2))] :
-    Module.finrank (hilbertClassField K) (rayClassField (Modulus.spanNat K 2)) =
-      (2 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 2).toNat := by
-  have hnot : ¬(discr K = -4 ∨ discr K = -3) := by omega
-  simp [finrank_hilbertClassField_rayClassField_two hK, hnot]
-
 /-- **Degree of `K_(3)` over the Hilbert class field**: `2` at `D = -4`, `1` at `D = -3`, and
 `(3 - χ_D(3)).toNat` (`2`, `3`, or `4` according as `3` splits, ramifies, or is inert) for
 `D < -4`. -/
@@ -157,16 +147,6 @@ theorem finrank_hilbertClassField_rayClassField_three (hK : finrank ℚ K = 2)
   · simp [hD, hc3] at hrel ⊢; omega
   · simp [hD, hc3] at hrel ⊢; omega
   · simp [h4, h3] at hrel ⊢; omega
-
-/-- Specialization of `finrank_hilbertClassField_rayClassField_three` to `discr K < -4`. -/
-theorem finrank_hilbertClassField_rayClassField_three_of_discr_lt_neg_four (hK : finrank ℚ K = 2)
-    (hd : discr K < -4)
-    [Algebra (hilbertClassField K) (rayClassField (Modulus.spanNat K 3))]
-    [IsScalarTower K (hilbertClassField K) (rayClassField (Modulus.spanNat K 3))] :
-    Module.finrank (hilbertClassField K) (rayClassField (Modulus.spanNat K 3)) =
-      (3 - fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) 3).toNat := by
-  simp [finrank_hilbertClassField_rayClassField_three hK, show discr K ≠ -4 by omega,
-    show discr K ≠ -3 by omega]
 
 /-- **Degree of `K_(6)` over the Hilbert class field** for all imaginary quadratic fields. -/
 theorem finrank_hilbertClassField_rayClassField_six (hK : finrank ℚ K = 2)
