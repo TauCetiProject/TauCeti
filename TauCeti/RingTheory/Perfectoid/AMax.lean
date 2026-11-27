@@ -13,7 +13,7 @@ import Mathlib.RingTheory.AdicCompletion.LocalRing
 import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Algebra
-import TauCeti.RingTheory.AdicCompletion.Regular
+import TauCeti.RingTheory.AdicCompletion.Regular.Basic
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Perfectoid.Cyclotomic.Regular
 import TauCeti.RingTheory.WittVector.Frobenius
