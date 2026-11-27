@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
+public import Mathlib.GroupTheory.Coset.Basic
 
 /-!
-# Products and sums over subtypes and over disjoint indicators
+# Products and sums over subtypes, cosets and disjoint indicators
 
 Mathlib's `tprod_subtype` rewrites a product over a subtype `{b // p b}` as a product over the
 whole type of the multiplicative indicator. Two products over different subtypes therefore agree
@@ -24,6 +25,8 @@ the defining predicates.
   of sets, at a point of the `i`-th set, the product of the multiplicative indicators (the sum of
   the indicators) reduces to the `i`-th factor (summand). This evaluates countably-valued
   functions written as `∑ₙ 𝟙_{Aₙ} cₙ` with disjoint `Aₙ`.
+* `hasProd_union_leftCoset`, `hasSum_union_leftAddCoset`: a product (sum) over the union of a
+  subgroup `s` and a left coset `g • s` (`g +ᵥ s`) with `g ∉ s`, computed coset by coset.
 -/
 
 public section
@@ -59,5 +62,21 @@ theorem tprod_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [Topo
     [T2Space α] {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
     (hx : x ∈ s i) : ∏' j, (s j).mulIndicator (f j) x = f i x :=
   (hasProd_mulIndicator_apply_of_mem hs f hx).tprod_eq
+
+open scoped Pointwise in
+/-- A product over the union of a subgroup `s` and its left coset `g • s`, for `g ∉ s`, is the
+product over `s` times the product over the coset, the latter indexed by `s` through `x ↦ g * x`. -/
+@[to_additive hasSum_union_leftAddCoset /-- A sum over the union of an additive subgroup `s` and
+its left coset `g +ᵥ s`, for `g ∉ s`, is the sum over `s` plus the sum over the coset, the latter
+indexed by `s` through `x ↦ g + x`. -/]
+theorem hasProd_union_leftCoset {α G : Type*} [CommMonoid α] [TopologicalSpace α]
+    [ContinuousMul α] [Group G] {s : Subgroup G} {g : G} (hg : g ∉ s) {f : G → α} {a b : α}
+    (ha : HasProd (fun x : s ↦ f x) a) (hb : HasProd (fun x : s ↦ f (g * x)) b) :
+    HasProd (fun x : ↥((s : Set G) ∪ g • (s : Set G)) ↦ f x) (a * b) := by
+  have hdisj : Disjoint (s : Set G) (g • (s : Set G)) :=
+    Set.disjoint_left.mpr fun x hx hgx ↦
+      hg (by simpa using s.mul_mem hx (s.inv_mem ((mem_leftCoset_iff g).mp hgx)))
+  -- the inverse of `Subgroup.leftCosetEquivSubgroup g` is by definition `x ↦ g * x`
+  exact ha.mul_disjoint hdisj ((Subgroup.leftCosetEquivSubgroup g).symm.hasProd_iff.mp hb)
 
 end TauCeti

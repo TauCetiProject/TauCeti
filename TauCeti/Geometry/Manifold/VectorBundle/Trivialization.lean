@@ -76,6 +76,8 @@ section.
   in a normed space are `C^n` in the parameter and the chart coordinate.
 * `TauCeti.continuousAt_comp_symmL_of_contMDiffOn`: covectors `ℓ y` on the fibres along a
   continuous map that are `C^n` in the frames are continuous in the frames.
+* `TauCeti.exists_mem_maximalAtlas_source_subset_baseSet`: a chart of the maximal atlas at a
+  point over which two fibre bundles are trivial.
 -/
 
 public noncomputable section
@@ -464,6 +466,33 @@ theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
     ContDiffOn 𝕜 n (fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2) (φ.target ∩ φ.symm ⁻¹' e.baseSet) :=
   (e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
+
+end TauCeti
+
+namespace TauCeti
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) (n : WithTop ℕ∞) [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I n M]
+  (F₁ : Type*) [TopologicalSpace F₁] (E₁ : M → Type*) [TopologicalSpace (TotalSpace F₁ E₁)]
+  [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
+  (F₂ : Type*) [TopologicalSpace F₂] (E₂ : M → Type*) [TopologicalSpace (TotalSpace F₂ E₂)]
+  [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
+
+/-- **A chart over which two bundles are trivial.** At every point `x` of `M` there is a chart of
+the maximal `C^n` atlas whose source contains `x` and lies in the base sets of the preferred
+trivializations at `x` of two fibre bundles over `M`: restrict the preferred chart at `x` to the
+intersection of these base sets. -/
+theorem exists_mem_maximalAtlas_source_subset_baseSet (x : M) :
+    ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧
+      e.source ⊆ (trivializationAt F₁ E₁ x).baseSet ∧
+        e.source ⊆ (trivializationAt F₂ E₂ x).baseSet := by
+  have hopen :=
+    (trivializationAt F₁ E₁ x).open_baseSet.inter (trivializationAt F₂ E₂ x).open_baseSet
+  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
+  rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
+  exact ⟨⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x,
+    FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
 
 end TauCeti
 
