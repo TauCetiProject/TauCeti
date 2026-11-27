@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Foliation.Flow
 public import TauCeti.Geometry.Manifold.TwoForm.Kernel
 public import TauCeti.Geometry.Symplectic.LinearReduction
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
-import TauCeti.Geometry.Manifold.Flow.Inverse
 
 /-!
 # Kernel fields of a closed two-form and their flows
@@ -70,22 +69,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The contraction `ι_V σ` of a two-form with a vector field vanishes exactly when `V` is a
 kernel field of `σ`: `V x` lies in the kernel of `σ_x` at every point. -/
 theorem interior_eq_zero_iff_forall_mem_ker :
-    RoughForm.interior V σ.val = 0 ↔ ∀ x, V x ∈ LinearMap.ker (σ.bilinFormAt x) := by
-  have hpair (x : M) (u : Fin 1 → TangentSpace I x) :
-      RoughForm.interior V σ.val x u = σ.bilinFormAt x (V x) (u 0) := by
-    rw [RoughForm.interior_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  constructor
-  · intro h x
-    rw [LinearMap.mem_ker]
-    ext w
-    simpa [hpair] using congr($h x ![w])
-  · intro h
-    funext x
-    ext u
-    simp [hpair, LinearMap.mem_ker.mp (h x)]
+    RoughForm.interior V σ.val = 0 ↔ ∀ x, V x ∈ LinearMap.ker (σ.bilinFormAt x) :=
+  RoughForm.interior_eq_zero_iff.trans <| forall_congr' fun x ↦ by
+    simp [LinearMap.ext_iff, bilinFormAt_apply, SmoothBundleForm.eval₂_apply]
+
+/-- The exterior derivative of the contraction `ι_V σ` vanishes for a kernel field `V` of `σ`,
+since the contraction itself vanishes. -/
+theorem mextDeriv_interior_eq_zero_of_mem_ker
+    (hVσ : ∀ x, V x ∈ LinearMap.ker (σ.bilinFormAt x)) :
+    mextDeriv (RoughForm.interior V σ.val) = 0 := by
+  rw [interior_eq_zero_iff_forall_mem_ker.mpr hVσ, mextDeriv_zero]
 
 /-- **A closed two-form is invariant along its kernel fields.** For a closed two-form `σ` and a
 differentiable vector field `V` with `V x ∈ ker σ_x` at every point, `L_V σ = 0`: by Cartan's
@@ -94,8 +87,7 @@ theorem mlieDerivForm_eq_zero_of_mem_ker (hσ : σ.IsClosed)
     (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
     (hVσ : ∀ x, V x ∈ LinearMap.ker (σ.bilinFormAt x)) :
     mlieDerivForm V σ.val = 0 := by
-  rw [mlieDerivForm_eq_mextDeriv_interior hV hσ, interior_eq_zero_iff_forall_mem_ker.mpr hVσ,
-    mextDeriv_zero]
+  rw [mlieDerivForm_eq_mextDeriv_interior hV hσ, mextDeriv_interior_eq_zero_of_mem_ker hVσ]
 
 /-! ### Flows of kernel fields -/
 
@@ -110,9 +102,9 @@ include hσ hV hVσ
 a closed two-form `σ`, the time-`t` map of its maximal flow `φ` satisfies `(φₜ^* σ)ₓ = σₓ`
 wherever `φₜ x` is defined. The field need not be complete. -/
 theorem mpullback_flowOf_apply_of_mem_ker (ht : (t, x) ∈ flowDomain V) :
-    TauCeti.mpullback I I (flowOf V t) σ.val x = σ.val x := by
-  refine mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hV hσ ?_ ht
-  rw [interior_eq_zero_iff_forall_mem_ker.mpr hVσ, mextDeriv_zero]
+    TauCeti.mpullback I I (flowOf V t) σ.val x = σ.val x :=
+  mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hV hσ
+    (mextDeriv_interior_eq_zero_of_mem_ker hVσ) ht
 
 /-- The local flow `φ` of a `C¹` kernel field of a closed two-form `σ` preserves `σ` on tangent
 vectors: `σ (dφₜ v, dφₜ w) = σ (v, w)` wherever `φₜ x` is defined. -/
@@ -169,6 +161,19 @@ theorem quotKerFlowEquiv_mk (ht : (t, x) ∈ flowDomain V) (v : TangentSpace I x
       Submodule.Quotient.mk (mfderiv I I (flowOf V t) x v) :=
   (rfl)
 
+/-- The inverse of `quotKerFlowEquiv` sends the class of `u` to the class of `dφ₋ₜ u`. -/
+@[simp]
+theorem quotKerFlowEquiv_symm_mk (ht : (t, x) ∈ flowDomain V)
+    (u : TangentSpace I (flowOf V t x)) :
+    -- `dφ₋ₜ u` is a tangent vector at `flowOf V (-t) (flowOf V t x)`, which equals `x` but not
+    -- definitionally; all tangent spaces are the model space, so its class is taken at `x`.
+    (quotKerFlowEquiv hσ hV hVσ ht).symm (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk (p := LinearMap.ker (σ.bilinFormAt x))
+        (mfderiv I I (flowOf V (-t)) (flowOf V t x) u) :=
+  -- The right side of `LinearEquiv.symm_apply_eq` is `quotKerFlowEquiv_mk` by definition.
+  (LinearEquiv.symm_apply_eq _).2 <|
+    congrArg Submodule.Quotient.mk (mfderiv_flowOf_mfderiv_flowOf_neg_apply hV ht u).symm
+
 /-- **Kernel flows are symplectic on the reduced tangent spaces.** The isomorphism
 `T_x M ⧸ ker σ_x ≃ T_(φₜ x) M ⧸ ker σ_(φₜ x)` induced by the local flow `φ` of a `C¹` kernel
 field of a closed two-form `σ` is a linear symplectomorphism for the symplectic forms that `σ`
@@ -198,9 +203,9 @@ theorem flowOf_mem_leaf_characteristicFoliation {n : ℕ∞ω} [ENat.LEInfty n]
 /-- **Flows of complete kernel fields preserve a closed two-form.** If `V` is a complete `C¹`
 kernel field of a closed two-form `σ`, its flow `ψ` satisfies `ψₜ^* σ = σ` at every time `t`. -/
 theorem mpullback_globalFlow_of_mem_ker (hc : IsCompleteVectorField V) (t : ℝ) :
-    TauCeti.mpullback I I (globalFlow V hV hc t) σ.val = σ.val := by
-  refine mpullback_globalFlow_of_mextDeriv_interior_eq_zero hc hV hσ ?_ t
-  rw [interior_eq_zero_iff_forall_mem_ker.mpr hVσ, mextDeriv_zero]
+    TauCeti.mpullback I I (globalFlow V hV hc t) σ.val = σ.val :=
+  mpullback_globalFlow_of_mextDeriv_interior_eq_zero hc hV hσ
+    (mextDeriv_interior_eq_zero_of_mem_ker hVσ) t
 
 end Flow
 
