@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.FiberedCategory.Cocartesian
-public import TauCeti.AlgebraicTopology.Quasicategory.EquivalenceCartesian
+public import TauCeti.AlgebraicTopology.Quasicategory.Cartesian.HornCriterion
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coskeletal
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal

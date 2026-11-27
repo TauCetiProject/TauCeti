@@ -65,6 +65,8 @@ projections are right and left fibrations.
   `Λ[n + m + 1, i]`, for `n ≠ 0`.
 * `SSet.join.preimage_unionJoin_boundary_horn`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` corresponds to
   `Λ[n + m + 1, n + 1 + j]`, for `m ≠ 0`.
+* `SSet.join.unionJoinBoundaryHornOneOneIso`: the pushout-join `(∂Δ[n] ⋆ Δ[1]) ∪ (Δ[n] ⋆ Λ[1, 1])`
+  is the horn `Λ[n + 2, n + 2]`, with the edge `Δ[1]` as the final edge of the horn.
 * `SSet.join.preimage_unionJoin_boundary_boundary`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])`
   corresponds to `∂Δ[n + m + 1]`.
 * `SSet.join.innerAnodyneExtensions_unionJoin_horn_boundary`,
@@ -1021,6 +1023,49 @@ theorem innerAnodyneExtensions_unionJoin_boundary_horn {j : Fin (m + 1)} (hj : j
   exact innerAnodyneExtensions.horn_ι
     (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_zero]; omega))
     (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_last]; omega))
+
+variable (n) in
+/-- The isomorphism of the pushout-join `(∂Δ[n] ⋆ Δ[1]) ∪ (Δ[n] ⋆ Λ[1, 1])` with the horn
+`Λ[n + 2, n + 2]` induced by `Δ[n] ⋆ Δ[1] ≅ Δ[n + 2]`: the case `m = 1`, `j = 1` of
+`SSet.join.preimage_unionJoin_boundary_horn`. -/
+noncomputable def unionJoinBoundaryHornOneOneIso :
+    (Subcomplex.unionJoin ∂Δ[n] Λ[1, 1] : SSet.{u}) ≅ Λ[n + 2, Fin.last (n + 2)] :=
+  -- The horn vertex `Fin.cast _ (Fin.natAdd (n + 1) 1)` of `Δ[n + 1 + 1]` is `Fin.last (n + 2)`
+  -- by definition, `n + 1 + 1` and `n + 2` being definitionally equal.
+  Subcomplex.isoOfPreimageEq (stdSimplexIso n 1) (preimage_unionJoin_boundary_horn n one_ne_zero 1)
+
+variable (n) in
+/-- Read in `Δ[n] ⋆ Δ[1]` and `Δ[n + 2]`, `SSet.join.unionJoinBoundaryHornOneOneIso` is
+`SSet.join.stdSimplexIso`. -/
+@[reassoc]
+lemma unionJoinBoundaryHornOneOneIso_hom_ι :
+    (unionJoinBoundaryHornOneOneIso.{u} n).hom ≫ Λ[n + 2, Fin.last (n + 2)].ι =
+      (Subcomplex.unionJoin ∂Δ[n] Λ[1, 1]).ι ≫ (stdSimplexIso n 1).hom :=
+  Subcomplex.isoOfPreimageEq_hom_ι _ _
+
+variable (n) in
+/-- Read in `Δ[n + 2]` and `Δ[n] ⋆ Δ[1]`, the inverse of
+`SSet.join.unionJoinBoundaryHornOneOneIso` is the inverse of `SSet.join.stdSimplexIso`. -/
+@[reassoc]
+lemma unionJoinBoundaryHornOneOneIso_inv_ι :
+    (unionJoinBoundaryHornOneOneIso.{u} n).inv ≫ (Subcomplex.unionJoin ∂Δ[n] Λ[1, 1]).ι =
+      Λ[n + 2, Fin.last (n + 2)].ι ≫ (stdSimplexIso n 1).inv :=
+  Subcomplex.isoOfPreimageEq_inv_ι _ _
+
+variable (n) in
+/-- Under `SSet.join.unionJoinBoundaryHornOneOneIso`, the edge `Δ[1]` of the pushout-join is the
+final edge of `Λ[n + 2, n + 2]`, from `n + 1` to `n + 2`. -/
+lemma yonedaEquiv_inr_comp_unionJoinBoundaryHornOneOneIso_hom :
+    yonedaEquiv (join.inr (∂Δ[n] : SSet.{u}) Δ[1] ≫
+        Subcomplex.unionJoin.ι₁ ∂Δ[n] Λ[1, 1] ≫ (unionJoinBoundaryHornOneOneIso n).hom) =
+      horn.edge (n + 2) (Fin.last (n + 2)) (Fin.last (n + 1)).castSucc (Fin.last (n + 2))
+        (Fin.le_last _) (by simp) := by
+  refine injective_of_mono (Subcomplex.ι.{u} Λ[n + 2, Fin.last (n + 2)] |>.app _) ?_
+  rw [← yonedaEquiv_comp, Category.assoc, Category.assoc, unionJoinBoundaryHornOneOneIso_hom_ι,
+    Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc, Category.id_comp]
+  refine stdSimplex.ext _ _ fun j ↦ ?_
+  rw [yonedaEquiv_inr_comp_stdSimplexIso_hom]
+  fin_cases j <;> rfl
 
 end join
 

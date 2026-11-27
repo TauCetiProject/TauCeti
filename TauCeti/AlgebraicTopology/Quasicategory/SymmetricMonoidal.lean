@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.CategoricalEquivalence
-public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad
+public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad.Basic
 public import TauCeti.AlgebraicTopology.Quasicategory.Product
 
 /-!

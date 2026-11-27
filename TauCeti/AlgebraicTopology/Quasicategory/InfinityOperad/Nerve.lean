@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Nerve
-public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad
-public import TauCeti.CategoryTheory.CategoryOfOperators.LM
+public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad.Basic
 import Mathlib.CategoryTheory.Limits.FunctorCategory.Shapes.Products
 import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 import TauCeti.CategoryTheory.ComposableArrows.Basic
@@ -18,10 +17,10 @@ import TauCeti.CategoryTheory.FiberedCategory.HomLift
 
 A functor `F : E ⥤ Fin_*` to the category `TauCeti.FinPointed` of finite pointed sets gives a map
 of nerves `nerveMap F : N(E) ⟶ N(Fin_*)`. This file gives conditions on `F` under which this map is
-an `∞`-operad (`SSet.InfinityOperad.of_nerveMap`), and applies them to the categories of operators
-of the associative operad (`TauCeti.Assoc.infinityOperad`) and of the operad `LM` of left modules
-(`TauCeti.LM.infinityOperad`): their nerves are the associative `∞`-operad and the `∞`-operad of
-left modules, over which monoidal and left-tensored quasicategories are fibred.
+an `∞`-operad (`SSet.InfinityOperad.of_nerveMap`). They apply to the categories of operators of the
+associative operad and of the operad `LM` of left modules
+(`TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad.Assoc` and
+`TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad.LM`).
 
 The conditions on `F` are the ordinary counterparts of the axioms of an `∞`-operad:
 
@@ -38,21 +37,19 @@ discrete simplicial sets, and they are isomorphisms as soon as they are bijectiv
 which is condition 3. Strongly coCartesian morphisms give coCartesian edges of the nerve
 (`CategoryTheory.nerve.isCoCartesian_edgeMk_of_isStronglyCocartesian`), which gives the lifts.
 Condition 3 is asked for all morphisms over the projections, not only for the strongly
-coCartesian ones: in the categories of operators of operads with sets of operations, such as
-`Assoc^⊗` and `LM^⊗`, a morphism over an inert map is determined by its source and target.
+coCartesian ones: in `Assoc^⊗` and `LM^⊗`, whose only unary operations are identities, a morphism
+over a given inert map is determined by its source and target, so the morphisms over the
+projections are the strongly coCartesian lifts.
 
 ## Main results
 
 * `SSet.InfinityOperad.of_nerveMap`: a functor to `Fin_*` satisfying the three conditions above
   has an `∞`-operad as its nerve.
-* `TauCeti.Assoc.infinityOperad`: the nerve of `Assoc^⊗ ⥤ Fin_*` is an `∞`-operad.
-* `TauCeti.LM.infinityOperad`: the nerve of `LM^⊗ ⥤ Fin_*` is an `∞`-operad.
 
 ## References
 
 * J. Lurie, *Higher Algebra*, §2.1.1 (the nerve of the category of operators of a colored operad
-  is an `∞`-operad), Definition 4.1.1.3 (the associative `∞`-operad) and Definition 4.2.1.7 (the
-  `∞`-operad `LM`).
+  is an `∞`-operad).
 -/
 
 public section
@@ -227,80 +224,3 @@ theorem of_nerveMap
 end InfinityOperad
 
 end SSet
-
-/-! ### The associative `∞`-operad and the `∞`-operad of left modules -/
-
-namespace TauCeti
-
-namespace Assoc
-
-/-- **The associative `∞`-operad**: the nerve of the functor `Assoc^⊗ ⥤ Fin_*` from the category
-of operators of the associative operad is an `∞`-operad. Its only color is `⟨1⟩`, and its
-multi-operations from `n` copies of it to it are the linear orders on `n` elements. -/
-instance infinityOperad : SSet.InfinityOperad.{u} (nerveMap toFinPointed.{u}) :=
-  SSet.InfinityOperad.of_nerveMap _
-    (fun {x n} g hg ↦ by
-      -- `g` is a map `⟨x.len⟩ ⟶ ⟨n.len⟩`, lifted by `Assoc.Hom.ofBase`.
-      let g' : FinPointed.mk x.len ⟶ FinPointed.mk n.len := g
-      have := isStronglyCocartesian_of_isInert (Hom.ofBase (X := x) (Y := mk n.len) g')
-        (by rw [Hom.ofBase_base]; exact hg)
-      rw [Hom.ofBase_base] at this
-      exact ⟨mk n.len, Hom.ofBase g', this⟩)
-    (fun n c hc ↦ by
-      -- The objects over `⟨1⟩` are `⟨1⟩`.
-      obtain rfl : c = fun _ ↦ mk 1 := funext fun i ↦ Assoc.ext (congrArg FinPointed.len (hc i))
-      exact ⟨mk n.len, fun i ↦ ρ (Y := mk n.len) i, rfl, fun i ↦ by
-        simpa using isStronglyCocartesian_of_isInert (ρ (Y := mk n.len) i)
-          (by simpa using FinPointed.isInert_ρ i)⟩)
-    (fun {x y c} φ hφ e ↦ by
-      -- The morphisms over the inert projections are the projections `Assoc.ρ`, so the
-      -- postcomposition is the decomposition `Assoc.homLiftEquiv` into single-output lifts.
-      obtain rfl : c = fun _ ↦ mk 1 := funext fun i ↦ Assoc.ext
-        (congrArg FinPointed.len (IsHomLift.codomain_eq toFinPointed (FinPointed.ρ i) (φ i)))
-      obtain rfl : φ = fun i ↦ ρ (Y := y) i := funext fun i ↦ Hom.ext_of_isInert
-        ((isHomLift_iff.1 (hφ i)).trans (ρ_base (Y := y) i).symm)
-        (by rw [isHomLift_iff.1 (hφ i)]; exact FinPointed.isInert_ρ (n := FinPointed.mk y.len) i)
-      exact ⟨homLiftEquiv e, homLiftEquiv_apply_val e⟩)
-
-end Assoc
-
-namespace LM
-
-/-- A family of objects of `LM^⊗` of length one is determined by their colors. -/
-private lemma exists_eq_mk_one {ι : Type*} {c : ι → LM.{u}} (h : ∀ i, (c i).len = 1) :
-    ∃ col : ι → Color, c = fun i ↦ ⟨1, fun _ ↦ col i⟩ :=
-  ⟨fun i ↦ (c i).color (Fin.cast (h i).symm 0), funext fun i ↦ LM.ext (h i) fun j ↦
-    congrArg (c i).color (Fin.ext (by have := j.isLt; have := h i; simp; omega))⟩
-
-/-- **The `∞`-operad of left modules**: the nerve of the functor `LM^⊗ ⥤ Fin_*` from the category
-of operators of the operad `LM` is an `∞`-operad. Its colors are the algebra color `a` and the
-module color `m`. -/
-instance infinityOperad : SSet.InfinityOperad.{u} (nerveMap toFinPointed.{u}) :=
-  SSet.InfinityOperad.of_nerveMap _
-    (fun {x n} g hg ↦ ⟨⟨n.len, x.pushforwardColor g⟩, Hom.ofInert x g hg,
-      isStronglyCocartesian_ofInert x g hg⟩)
-    (fun n c hc ↦ by
-      -- The objects over `⟨1⟩` are the words of one color.
-      obtain ⟨col, rfl⟩ := exists_eq_mk_one fun i ↦ congrArg FinPointed.len (hc i)
-      exact ⟨⟨n.len, col⟩, fun i ↦ ρ (Y := ⟨n.len, col⟩) i, rfl, fun i ↦ by
-        simpa using isStronglyCocartesian_of_isInert (ρ (Y := ⟨n.len, col⟩) i)
-          (by simpa using FinPointed.isInert_ρ i)⟩)
-    (fun {x y c} φ hφ e ↦ by
-      -- The morphisms over the inert projections are the projections `LM.ρ`, so the
-      -- postcomposition is the decomposition `LM.homLiftEquiv` into colored single-output lifts.
-      obtain ⟨col, rfl⟩ := exists_eq_mk_one fun i ↦
-        congrArg FinPointed.len (IsHomLift.codomain_eq toFinPointed (FinPointed.ρ i) (φ i))
-      have hφ' (i : Fin y.len) : (φ i).toAssoc = Assoc.ρ (Y := y.toAssocObj) i :=
-        Assoc.Hom.ext_of_isInert
-          ((isHomLift_iff.1 (hφ i)).trans (Assoc.ρ_base (Y := y.toAssocObj) i).symm)
-          (by rw [isHomLift_iff.1 (hφ i)]; exact FinPointed.isInert_ρ (n := FinPointed.mk y.len) i)
-      -- The color of the target of `φ i` is the color of `i`.
-      obtain rfl : col = y.color := funext fun i : Fin y.len ↦
-        (φ i).color_eq_of_word_eq_singleton (j := 0) (by rw [hφ' i, Assoc.ρ_word])
-      obtain rfl : φ = fun i ↦ ρ (Y := y) i := funext fun i : Fin y.len ↦
-        hom_ext ((hφ' i).trans (ρ_toAssoc i).symm)
-      exact ⟨homLiftEquiv e, homLiftEquiv_apply_val e⟩)
-
-end LM
-
-end TauCeti
