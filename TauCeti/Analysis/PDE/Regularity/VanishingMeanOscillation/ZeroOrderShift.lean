@@ -143,7 +143,7 @@ private theorem exists_field_forall_energyFormH1_restrictL_eq
   rw [integral_add (integrable_inner_gradient_testFunction hG φ)
     (integrable_inner_gradient_testFunction hH1 φ)]
   -- The scalar datum is replaced by the pairing with `H`.
-  rw [← hHφ φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport φ.tsupport_subset]
+  rw [← hHφ φ (φ.contDiff.of_le (by simp)) φ.tsupport_subset]
 
 /-- **The interior `W^{1,p}` estimate with a scalar datum, for coefficients of small mean
 oscillation.** Let `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only
@@ -252,6 +252,13 @@ section Shift
 
 variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞} {κ : ℝ}
 
+/-- For `0 ≤ c`, the `Lᵖ` norm of `c |f|` is `c ‖f‖`. -/
+private theorem eLpNorm_const_mul_norm {F : Type*} [NormedAddCommGroup F] {c : ℝ} (hc : 0 ≤ c)
+    {f : α → F} (hf : AEStronglyMeasurable f μ) :
+    eLpNorm (fun x => c * ‖f x‖) p μ = ENNReal.ofReal c * eLpNorm f p μ := by
+  have hcf : (fun x => c * ‖f x‖) = c • fun x => ‖f x‖ := funext fun _ => (smul_eq_mul _ _).symm
+  rw [hcf, eLpNorm_const_smul, eLpNorm_norm f hf, Real.eNorm_of_nonneg hc]
+
 /-- `R ‖f - κ v‖ + R⁻¹ ‖v‖ ≤ 2 ‖g‖` for `R = κ^{-1/2}` and `g = R |f| + 2 √κ |v|`, so the three
 terms of the interior estimate with the shifted datum combine into one function. -/
 private theorem mul_add_le_of_sub_mul (hp1 : 1 ≤ p) (hκ0 : 0 < κ) (C : ℝ≥0)
@@ -264,23 +271,22 @@ private theorem mul_add_le_of_sub_mul (hp1 : 1 ≤ p) (hκ0 : 0 < κ) (C : ℝ�
   have hsκ : 0 < √κ := Real.sqrt_pos.2 hκ0
   set R := (√κ)⁻¹ with hR_def
   have hR : 0 < R := inv_pos.2 hsκ
-  set g := fun x => R * ‖f x‖ + 2 * √κ * ‖v x‖ with hg_def
+  set g := fun x => R * ‖f x‖ + 2 * √κ * ‖v x‖
   have hRκ : R * κ = √κ := by
     have hκs : κ = √κ * √κ := (Real.mul_self_sqrt hκ0.le).symm
     calc R * κ = (√κ)⁻¹ * √κ * √κ := by rw [hR_def, mul_assoc, ← hκs]
       _ = √κ := by rw [inv_mul_cancel₀ hsκ.ne', one_mul]
   -- Each of `R ‖f‖` and `2 √κ ‖v‖` is at most `‖g‖`.
   have hfg : ENNReal.ofReal R * eLpNorm f p μ ≤ eLpNorm g p μ := by
-    rw [← Real.eNorm_of_nonneg hR.le, ← eLpNorm_const_smul]
-    refine eLpNorm_mono_real (hf.const_smul R) fun x => ?_
-    simp only [Pi.smul_apply, smul_eq_mul, norm_mul, Real.norm_of_nonneg hR.le, hg_def]
+    rw [← eLpNorm_const_mul_norm hR.le hf]
+    refine eLpNorm_mono_real (hf.norm.const_mul R) fun x => ?_
+    rw [Real.norm_of_nonneg (by positivity)]
     exact le_add_of_nonneg_right (by positivity)
   have hvg : 2 * (ENNReal.ofReal √κ * eLpNorm v p μ) ≤ eLpNorm g p μ := by
     rw [← mul_assoc, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two,
-      ← Real.eNorm_of_nonneg (by positivity), ← eLpNorm_const_smul]
-    refine eLpNorm_mono_real (hv.const_smul _) fun x => ?_
-    simp only [Pi.smul_apply, smul_eq_mul, norm_mul,
-      Real.norm_of_nonneg (by positivity : 0 ≤ 2 * √κ), hg_def]
+      ← eLpNorm_const_mul_norm (by positivity) hv]
+    refine eLpNorm_mono_real (hv.norm.const_mul _) fun x => ?_
+    rw [Real.norm_of_nonneg (by positivity)]
     exact le_add_of_nonneg_left (by positivity)
   have hsub : eLpNorm (fun x => f x - κ * v x) p μ ≤
       eLpNorm f p μ + ENNReal.ofReal κ * eLpNorm v p μ := by
@@ -310,17 +316,8 @@ private theorem eLpNorm_mul_norm_add_mul_norm_le (hp1 : 1 ≤ p) {R c : ℝ} (hR
     (hv : AEStronglyMeasurable v μ) :
     eLpNorm (fun x => R * ‖f x‖ + c * ‖v x‖) p μ ≤
       ENNReal.ofReal R * eLpNorm f p μ + ENNReal.ofReal c * eLpNorm v p μ := by
-  refine (eLpNorm_add_le hp1).trans (add_le_add ?_ ?_)
-  · calc eLpNorm (fun x => R * ‖f x‖) p μ ≤ eLpNorm (R • f) p μ :=
-          eLpNorm_mono (hf.norm.const_mul R) fun x => by
-            simp only [Pi.smul_apply, smul_eq_mul, norm_mul, norm_norm, le_refl]
-      _ = ENNReal.ofReal R * eLpNorm f p μ := by
-          rw [eLpNorm_const_smul, Real.eNorm_of_nonneg hR]
-  · calc eLpNorm (fun x => c * ‖v x‖) p μ ≤ eLpNorm (c • v) p μ :=
-          eLpNorm_mono (hv.norm.const_mul c) fun x => by
-            simp only [Pi.smul_apply, smul_eq_mul, norm_mul, norm_norm, le_refl]
-      _ = ENNReal.ofReal c * eLpNorm v p μ := by
-          rw [eLpNorm_const_smul, Real.eNorm_of_nonneg hc]
+  refine (eLpNorm_add_le hp1).trans_eq ?_
+  rw [eLpNorm_const_mul_norm hR hf, eLpNorm_const_mul_norm hc hv]
 
 /-- The final bookkeeping: from `X ≤ A G + 2 A g`, `g ≤ F + 2 U` and `U ≤ F + K G`, the sum
 `X + U` is at most a constant times `G + F`. -/

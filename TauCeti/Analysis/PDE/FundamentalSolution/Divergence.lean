@@ -768,7 +768,7 @@ theorem exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq [Finit
     ∃ H : E → E, AEStronglyMeasurable H μ ∧
       (∀ {p : ℝ≥0∞}, 1 ≤ p → eLpNorm H p (μ.restrict (ball x₀ r)) ≤
         ENNReal.ofReal (finrank ℝ E * (2 * r)) * eLpNorm f p (μ.restrict (ball x₀ r))) ∧
-      ∀ φ : E → ℝ, ContDiff ℝ 1 φ → HasCompactSupport φ → tsupport φ ⊆ ball x₀ r →
+      ∀ φ : E → ℝ, ContDiff ℝ 1 φ → tsupport φ ⊆ ball x₀ r →
         ∫ x in ball x₀ r, ⟪H x, ∇ φ x⟫_ℝ ∂μ = ∫ x in ball x₀ r, f x * φ x ∂μ := by
   -- The datum cut off outside the ball is integrable with compact support.
   have hhi : Integrable ((ball x₀ r).indicator f) μ :=
@@ -777,7 +777,7 @@ theorem exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq [Finit
     HasCompactSupport.intro (isCompact_closedBall x₀ r) fun x hx =>
       indicator_of_notMem (fun hxB => hx (ball_subset_closedBall hxB)) f
   obtain ⟨H, hHm, hHle, hHeq⟩ := exists_eLpNorm_restrict_le_and_integral_inner_gradient_eq μ hhi hhc
-  refine ⟨H, hHm, fun {p} hp => ?_, fun φ hφ1 hφc hφs => ?_⟩
+  refine ⟨H, hHm, fun {p} hp => ?_, fun φ hφ1 hφs => ?_⟩
   · refine (hHle isBounded_ball (fun x hx => indicator_of_notMem hx f) hp).trans ?_
     rw [eLpNorm_congr_ae (indicator_ae_eq_restrict measurableSet_ball.nullMeasurableSet)]
     gcongr
@@ -787,7 +787,9 @@ theorem exists_eLpNorm_restrict_ball_le_and_setIntegral_inner_gradient_eq [Finit
         setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
           rw [gradient, fderiv_of_notMem_tsupport ℝ fun h => hx (hφs h), map_zero,
             inner_zero_right]
-    _ = ∫ x, (ball x₀ r).indicator f x * φ x ∂μ := hHeq φ hφ1 hφc
+    _ = ∫ x, (ball x₀ r).indicator f x * φ x ∂μ :=
+        hHeq φ hφ1 <| (isCompact_closedBall x₀ r).of_isClosed_subset (isClosed_tsupport φ)
+          (hφs.trans ball_subset_closedBall)
     _ = ∫ x in ball x₀ r, f x * φ x ∂μ := by
         rw [← integral_indicator measurableSet_ball]
         exact integral_congr_ae (ae_of_all _ fun x => (indicator_mul_left _ _ _).symm)
