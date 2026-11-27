@@ -281,17 +281,22 @@ theorem exp_yosidaApproximation_uniformCauchySeqOn_compact_of_mem {A : X →ₗ.
     UniformCauchySeqOn
       (fun lambda t : ℝ => exp (t • yosidaApproximation A lambda) (x : X))
       Filter.atTop (Set.Icc 0 T) := by
-  refine uniformCauchySeqOn_exp_smul_apply_of_tendsto
-    (M := M) (R := max T 0) ?_
-    (tendsto_yosidaApproximation_apply_atTop hres hbound hdense x) ?_ ?_
-  · filter_upwards [(Filter.eventually_gt_atTop (0 : ℝ)).prod_mk
-      (Filter.eventually_gt_atTop (0 : ℝ))] with p hp
-    exact LinearPMap.yosidaApproximation_comm (hres p.1 hp.1) (hres p.2 hp.2)
-  · filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with lambda hlambda t ht s hs
-    exact hexp lambda hlambda (s * t) (mul_nonneg hs.1 ht.1)
-  · intro t ht
-    rw [abs_of_nonneg ht.1]
-    exact ht.2.trans (le_max_left T 0)
+  simpa only [RCLike.ofReal_real_eq_id, id_eq] using
+    uniformCauchySeqOn_exp_smul_apply_of_tendsto
+      (𝕜 := ℝ) (S := Set.Icc 0 T) (M := M) (R := max T 0)
+      (by
+        filter_upwards [(Filter.eventually_gt_atTop (0 : ℝ)).prod_mk
+            (Filter.eventually_gt_atTop (0 : ℝ))] with p hp
+        exact LinearPMap.yosidaApproximation_comm (hres p.1 hp.1) (hres p.2 hp.2))
+      (tendsto_yosidaApproximation_apply_atTop hres hbound hdense x)
+      (by
+        filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with lambda hlambda t ht s hs
+        simpa only [RCLike.ofReal_real_eq_id, id_eq] using
+          hexp lambda hlambda (s * t) (mul_nonneg hs.1 ht.1))
+      (by
+        intro t ht
+        rw [abs_of_nonneg ht.1]
+        exact ht.2.trans (le_max_left T 0))
 
 /-- The bounded Yosida semigroups are Cauchy uniformly on every compact time interval, on every
 vector of the Banach space.

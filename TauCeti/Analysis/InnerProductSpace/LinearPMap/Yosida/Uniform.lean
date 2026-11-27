@@ -76,11 +76,14 @@ theorem _root_.IsSelfAdjoint.uniformCauchySeqOn_exp_smul_I_smul_symmetricYosidaA
   refine ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense
     (C := 1) hA.dense_domain (.of_forall fun r t _ => hnorm r t) ?_ x
   intro y hy
-  exact Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto
-    (G := fun r => I • A.symmetricYosidaApproximation r)
-    (.of_forall fun p =>
-      ((hA.commute_symmetricYosidaApproximation p.1 p.2).smul_left I).smul_right I)
-    ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).const_smul I)
-    (.of_forall fun r t _ s _ => hnorm r (s * t)) hS
+  simpa only [RCLike.ofReal_eq_complex_ofReal] using
+    Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto
+      (𝕜 := ℂ) (G := fun r => I • A.symmetricYosidaApproximation r)
+      (.of_forall fun p =>
+        ((hA.commute_symmetricYosidaApproximation p.1 p.2).smul_left I).smul_right I)
+      ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).const_smul I)
+      (.of_forall fun r t _ s _ => by
+        simpa only [RCLike.ofReal_eq_complex_ofReal] using hnorm r (s * t))
+      hS
 
 end TauCeti

@@ -52,8 +52,9 @@ theorem uniformCauchySeqOn_of_dist_le {u : ι × ι → ℝ} (hu : Tendsto u (l 
   rw [Real.dist_eq, sub_zero] at hpu
   exact hεV ((hp x hx).trans_lt ((le_abs_self _).trans_lt hpu))
 
-/-- A family whose pairwise distances are controlled by a constant times those of a
-convergent family is uniformly Cauchy. -/
+/-- Suppose `a` converges along `l`. If, eventually along `l ×ˢ l`, the bound
+`dist (F p.1 x) (F p.2 x) ≤ C * dist (a p.1) (a p.2)` holds simultaneously for every
+`x ∈ s` with a fixed constant `C`, then `F` is uniformly Cauchy on `s`. -/
 theorem uniformCauchySeqOn_of_dist_le_mul_dist {γ : Type*} [PseudoMetricSpace γ]
     {a : ι → γ} {z : γ} (ha : Tendsto a l (𝓝 z)) (C : ℝ)
     (h : ∀ᶠ p in l ×ˢ l, ∀ x ∈ s,
