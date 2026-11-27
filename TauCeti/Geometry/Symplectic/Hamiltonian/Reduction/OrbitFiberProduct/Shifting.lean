@@ -293,6 +293,24 @@ theorem coe_levelDiffeomorphShiftingLevel
   exact (h.coe_orbitFiberProductDiffeomorphShiftingLevel hreg b _).trans
     (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ b p)
 
+omit [ProperSMul G M]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
+/-- The inverse identification of `TauCeti.ShiftingLevel` with the zero level of the shifting
+moment map is the identity of points. -/
+@[simp]
+theorem coe_levelDiffeomorphShiftingLevel_symm (q : ShiftingLevel μ c b) :
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := h.shiftingLevelChartedSpace c hreg b
+    ((h.levelDiffeomorphShiftingLevel hreg hn₀ b).symm q :
+        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = q.val := by
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  let _ := h.shiftingLevelChartedSpace c hreg b
+  exact (h.coe_levelDiffeomorphOrbitFiberProduct_symm hreg hn₀ b _).trans
+    (h.coe_orbitFiberProductDiffeomorphShiftingLevel_symm hreg b q)
+
 /-- The map `Ψ⁻¹(0) → μ⁻¹(c) ⧸ G_c`, `(x, g G_c) ↦ [g⁻¹ • x]`, is a smooth submersion: it is the
 orbit projection of the orbit fibre product read through the identification of points. -/
 private theorem isSubmersion_orbitFiberProductProj_comp_levelDiffeomorph :
