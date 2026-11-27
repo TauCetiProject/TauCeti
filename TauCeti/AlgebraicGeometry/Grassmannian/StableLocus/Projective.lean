@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.StableLocus.Basic
-public import TauCeti.AlgebraicGeometry.Grassmannian.Plucker
-public import TauCeti.AlgebraicGeometry.Grassmannian.RankOne
+public import TauCeti.AlgebraicGeometry.Grassmannian.Projective
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Coproduct
 
 /-!
-# Projectivity of finite unions of stable Grassmannians
+# Projectivity of finite coproducts of stable Grassmannians
 
 For a finite module over a commutative ring, the closed locus of submodules preserved by an
 endomorphism is projective over the coefficient ring. So is the scheme coproduct for any finite
@@ -38,32 +37,20 @@ open CategoryTheory Limits AlgebraicGeometry TauCeti.SymmetricAlgebra
 namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {M : Type u} [AddCommGroup M] [Module R M]
-  [Module.Finite R M]
 
-/-- The stable locus in the quotient Grassmannian is projective over the coefficient ring.
-Finiteness of the ambient module suffices; it need not be free or projective. -/
-theorem isProjectiveOver_schemeStableLocus (r : ℕ) (t : Module.End R M) :
-    letI : (schemeStableLocus r t).subscheme.Over (Spec (.of R)) :=
-      ⟨(schemeStableLocus r t).subschemeι ≫ toSpec R M r⟩
-    (schemeStableLocus r t).subscheme.IsProjectiveOver R := by
-  let : (schemeStableLocus r t).subscheme.Over (Spec (.of R)) :=
-    ⟨(schemeStableLocus r t).subschemeι ≫ toSpec R M r⟩
-  refine ⟨⟨⋀[R]^r M, inferInstance, inferInstance, inferInstance,
-    (schemeStableLocus r t).subschemeι ≫ pluckerHom R M r ≫ (toProjIso R).hom,
-    inferInstance, ⟨?_⟩⟩⟩
-  simp only [over_eq_projToSpec, Category.assoc, toProjIso_hom_projToSpec,
-    pluckerHom_toSpec]
-  rfl
+/-- The stable locus in the quotient Grassmannian is projective over the coefficient ring
+when its Plücker coordinate module is finite. Finiteness of the ambient module suffices. -/
+theorem isProjectiveOver_schemeStableLocus (r : ℕ) (t : Module.End R M)
+    [Module.Finite R (⋀[R]^r M)] :
+    (schemeStableLocus r t).subscheme.IsProjectiveOver R :=
+  Scheme.IsProjectiveOver.of_isClosedImmersion R (schemeStableLocus r t).subschemeι
 
 /-- A finite scheme coproduct of stable Grassmannians is projective over `Spec R`, for any
-finite family of quotient ranks. Its structure map is induced by the native structure maps. -/
+finite family of quotient ranks with finite Plücker coordinate modules. Its structure map
+is induced by the native structure maps. Repeated ranks retain separate summands. -/
 theorem isProjectiveOver_sigma_schemeStableLocus {ι : Type v} [Finite ι]
-    (r : ι → ℕ) (t : Module.End R M) :
-    letI : (∐ fun i ↦ (schemeStableLocus (r i) t).subscheme).Over (Spec (.of R)) :=
-      ⟨Sigma.desc fun i ↦ (schemeStableLocus (r i) t).subschemeι ≫ toSpec R M (r i)⟩
+    (r : ι → ℕ) (t : Module.End R M) [∀ i, Module.Finite R (⋀[R]^(r i) M)] :
     (∐ fun i ↦ (schemeStableLocus (r i) t).subscheme).IsProjectiveOver R := by
-  let : ∀ i, (schemeStableLocus (r i) t).subscheme.Over (Spec (.of R)) :=
-    fun i ↦ ⟨(schemeStableLocus (r i) t).subschemeι ≫ toSpec R M (r i)⟩
   have : ∀ i, (schemeStableLocus (r i) t).subscheme.IsProjectiveOver R :=
     fun i ↦ isProjectiveOver_schemeStableLocus (r i) t
   exact Scheme.IsProjectiveOver.sigma R _

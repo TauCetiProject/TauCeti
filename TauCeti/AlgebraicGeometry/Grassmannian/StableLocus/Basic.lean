@@ -112,6 +112,22 @@ noncomputable def schemeStableLocus (t : Module.End R M) : (scheme R M k).IdealS
   schemeIdealLocus (R := R) (M := M) (k := k) (fun N ↦ N.stableLocus t)
     fun f N ↦ stableLocus_map f N t
 
+/-- The native stable locus is over the coefficient ring through its closed inclusion. -/
+noncomputable instance instOverSchemeStableLocus (t : Module.End R M) :
+    (schemeStableLocus k t).subscheme.Over (Spec (.of R)) :=
+  ⟨(schemeStableLocus k t).subschemeι ≫ toSpec R M k⟩
+
+/-- The stable-locus structure map is its inclusion followed by the Grassmannian structure map. -/
+@[simp]
+theorem over_schemeStableLocus (t : Module.End R M) :
+    (schemeStableLocus k t).subscheme ↘ Spec (.of R) =
+      (schemeStableLocus k t).subschemeι ≫ toSpec R M k := (rfl)
+
+/-- The stable-locus inclusion preserves the specified structure morphisms. -/
+instance instIsOverSubschemeιSchemeStableLocus (t : Module.End R M) :
+    (schemeStableLocus k t).subschemeι.IsOver (Spec (.of R)) :=
+  ⟨by rw [over_scheme, over_schemeStableLocus]⟩
+
 /-- **The inverse image of the closed subscheme of stable submodules along a point.** For an
 `R`-algebra `A` and a point `N` of `G(k, A ⊗[R] M; A)`, the inverse image of the closed subscheme
 of `t`-stable submodules along the morphism `Spec A ⟶ G(k, M)` classifying `N` is the zero scheme

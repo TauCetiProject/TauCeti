@@ -186,6 +186,13 @@ noncomputable def toSpec : scheme R M k ⟶ Spec (.of R) :=
         simp [← IsScalarTower.algebraMap_apply]
       exact h
 
+/-- The Grassmannian is over the coefficient ring through its native structure morphism. -/
+noncomputable instance instOverScheme : (scheme R M k).Over (Spec (.of R)) :=
+  ⟨toSpec R M k⟩
+
+/-- The specified structure morphism of the Grassmannian is `toSpec`. -/
+theorem over_scheme : scheme R M k ↘ Spec (.of R) = toSpec R M k := (rfl)
+
 variable {M k} in
 /-- The **chart at `x`** of the Grassmannian: the open immersion
 `Spec (ChartAlgebra R x) ⟶ G(k, M)` of the standard chart at `x`, that is, the morphism
