@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Transition
 public import TauCeti.Geometry.Manifold.Morse.Boundary.DigonHomotopy
+public import TauCeti.Geometry.Manifold.Morse.Stable.ParametrizedPair
 
 /-!
 # Digon trajectories through the transition maps of the slab
@@ -60,6 +61,18 @@ This criterion is a statement about a one-parameter family of diffeomorphisms of
 and unstable manifolds of two pseudo-gradients, in which the trajectory spaces of the slab no
 longer appear.
 
+**Transversality and finiteness.** The intersections through the transition maps are the
+parametrized intersections of the family `λ ↦ φ^λ_{a, b}`
+(`TauCeti.morseDigonTransitionSlice_eq_parametrizedPairSlice`). The family of continuation fields
+is **transverse** (`TauCeti.IsTransverseContinuationFamily`) when, for all sufficiently negative `a`
+and sufficiently positive `b`, this family of transition maps is a Morse–Smale family of pairs
+(`TauCeti.IsAdaptedPseudoGradient.IsParametrizedMorseSmalePair`). This is a condition on the
+whole family, not on each continuation `V λ` separately. For a transverse family whose transition
+maps are continuous jointly in the parameter and the point, and differentiable at the digon
+trajectories, the digon trajectories between critical points whose indices rise by at least one
+are finitely many (`TauCeti.IsContinuationFamily.finite_morseDigonSlice`), which is the finiteness
+hypothesis of the digon identity above.
+
 ## Main declarations
 
 * `TauCeti.IsContinuationFamily`: families of continuation fields with uniform end windows.
@@ -71,6 +84,10 @@ longer appear.
   correspond to the points of these intersections.
 * `eventually_morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_iff`, in the namespace
   `TauCeti.IsContinuationFamily`: the digon identity in terms of these intersections.
+* `TauCeti.IsTransverseContinuationFamily`: the transversality condition for a family of
+  continuation fields.
+* `TauCeti.IsContinuationFamily.finite_morseDigonSlice`: for a transverse family, the rigid digon
+  trajectories are finitely many.
 
 ## References
 
@@ -219,6 +236,40 @@ theorem mem_morseDigonTransitionSlice {hX₀ : IsAdaptedPseudoGradient f₀ X₀
         timeDependentFlowOf (continuationSpaceField C (V y.1)) a b y.2 ∈ hX₁.flow.stableSet q :=
   Iff.rfl
 
+/-- The digon trajectories through the transition maps from time `a` to time `b` are the
+parametrized intersections of the family of transition maps `λ ↦ φ^λ_{a, b}`. -/
+theorem morseDigonTransitionSlice_eq_parametrizedPairSlice {hX₀ : IsAdaptedPseudoGradient f₀ X₀}
+    {hX₁ : IsAdaptedPseudoGradient f₁ X₁} {a b : ℝ} {p q : M} :
+    morseDigonTransitionSlice C V hX₀ hX₁ a b p q =
+      hX₀.parametrizedPairSlice hX₁
+        (fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b) p q := by
+  ext
+  rw [mem_morseDigonTransitionSlice, IsAdaptedPseudoGradient.mem_parametrizedPairSlice]
+
+variable (C V) in
+/-- **The transversality condition for a family of continuation fields** `V λ`, `λ ∈ [0, 1]`, from
+the pseudo-gradient `X₀` to the pseudo-gradient `X₁`. Let `φ^λ_{s, t}` be the time-dependent flow
+of the space component of `V λ` along the base trajectory `TauCeti.intervalBaseOrbit C`
+(`TauCeti.continuationSpaceField`). The family is transverse when, for all sufficiently negative
+times `a` and sufficiently positive times `b`, the family of transition maps `λ ↦ φ^λ_{a, b}` is a
+Morse–Smale family of pairs (`TauCeti.IsAdaptedPseudoGradient.IsParametrizedMorseSmalePair`): at
+every digon trajectory `(λ, y)` through the transition maps from `p` to `q`, the derivative of
+`(λ, y) ↦ φ^λ_{a, b} y` carries `ℝ × T_y W^u_{X₀}(p)` onto a subspace which, together with the
+tangent space of `W^s_{X₁}(q)`, spans the tangent space of `M`. Each single continuation `V λ` need
+not be transverse. -/
+def IsTransverseContinuationFamily (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+    (hX₁ : IsAdaptedPseudoGradient f₁ X₁) : Prop :=
+  ∀ᶠ a in atBot, ∀ᶠ b in atTop, hX₀.IsParametrizedMorseSmalePair hX₁
+    fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b
+
+/-- The unfolding of `TauCeti.IsTransverseContinuationFamily`. -/
+theorem isTransverseContinuationFamily_iff {hX₀ : IsAdaptedPseudoGradient f₀ X₀}
+    {hX₁ : IsAdaptedPseudoGradient f₁ X₁} :
+    IsTransverseContinuationFamily C V hX₀ hX₁ ↔ ∀ᶠ a in atBot, ∀ᶠ b in atTop,
+      hX₀.IsParametrizedMorseSmalePair hX₁
+        fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b :=
+  Iff.rfl
+
 namespace IsContinuationFamily
 
 variable (hV : IsContinuationFamily X₀ X₁ C V) (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
@@ -352,6 +403,35 @@ theorem eventually_morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_i
   rw [morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_iff h₀ hf₀ h₁ hf₁ hfin]
   simp only [← ncard_morseSourceBrokenDegreeOneSet_congr hX₀ hg,
     ← ncard_morseTargetBrokenDegreeOneSet_congr hX₁ hg, h₀', h₁']
+
+include hV hC hVs h₀ hf₀ h₁ hf₁ in
+/-- **Rigid digon trajectories are finitely many.** Let `V` be a family of `C¹` continuation fields
+from `X₀` to `X₁` at rate `C > 0`, between Morse–Smale pseudo-gradients adapted to Morse functions
+`f₀` and `f₁`. Suppose that the family is transverse, and that for all sufficiently negative `a`
+and sufficiently positive `b` the transition maps `(λ, y) ↦ φ^λ_{a, b} y` are continuous jointly
+in `λ` and the point, and differentiable at the digon trajectories through them from `p` to `q`.
+Then between critical points `p` of `f₀` and `q` of `f₁` with
+`ind q ≥ ind p + 1` there are finitely many digon trajectories. These are the finiteness
+hypotheses of `eventually_morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_iff`, so the
+coefficients of the mod-two digon homotopy count finite sets. -/
+theorem finite_morseDigonSlice (htr : IsTransverseContinuationFamily C V hX₀ hX₁) {p q : M}
+    (hΦ : ∀ᶠ a in atBot, ∀ᶠ b in atTop, Continuous
+        (Function.uncurry fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b) ∧
+        ∀ z ∈ morseDigonTransitionSlice C V hX₀ hX₁ a b p q,
+          MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E)
+            (Function.uncurry fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b) z)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 ≤ manifoldMorseIndex 𝓘(ℝ, E) f₁ q) :
+    (morseDigonSlice V p q).Finite := by
+  obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
+  -- Choose times `a` and `b` at which the digon trajectories are the parametrized intersections of
+  -- a transverse and differentiable family of transition maps.
+  obtain ⟨a, ha⟩ :=
+    ((hV.eventually_bijOn_morseDigonSlice hX₀ hX₁ hC hVs hσ).and (htr.and hΦ)).exists
+  obtain ⟨b, hbij, htrb, hΦb⟩ := (ha.1.and (ha.2.1.and ha.2.2)).exists
+  refine Finite.of_finite_image ?_ (hbij p q).injOn
+  rw [(hbij p q).image_eq, morseDigonTransitionSlice_eq_parametrizedPairSlice]
+  exact htrb.finite_parametrizedPairSlice h₀ h₁ hf₀ hf₁ hΦb.1
+    (fun z hz ↦ hΦb.2 z (by rwa [morseDigonTransitionSlice_eq_parametrizedPairSlice])) hind
 
 end IsContinuationFamily
 
