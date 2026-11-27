@@ -77,7 +77,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
     (hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
       (C := C) fun q s hs ↦ ?_) ENNReal.ofReal_lt_top
   have hmem (t : ℝ) : endChart q (s, t) ∈ thricePuncturedSphereReal :=
-    endChart_mem_thricePuncturedSphereReal (lt_of_lt_of_le two_pos ((le_max_left 2 T₀).trans hs))
+    endChart_mem_thricePuncturedSphereReal (lt_of_lt_of_le two_pos ((le_max_left 2 T₀).trans hs)).le
   simpa only [Real.norm_eq_abs, uncurry_apply_pair, sub_zero, abs_one, mul_one] using
     intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦
       hC q (t, u (endChart q (s, t)))

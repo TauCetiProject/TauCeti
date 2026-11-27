@@ -58,6 +58,8 @@ rather than restricting scalars, so that no algebra diamond arises.
   For `C ≥ 0`, the inequality `∑ᵢ |∑ⱼ Aᵢⱼ aⱼ|² ≤ C ∑ⱼ |aⱼ|²` for all `a` holds exactly when
   `∑ⱼ |∑ᵢ conj(Aᵢⱼ) bᵢ|² ≤ C ∑ᵢ |bᵢ|²` holds for all `b`, and exactly when the same holds without
   the conjugation.
+* `ContinuousLinearMap.l2_opNorm_toMatrix`: the matrix of an operator in orthonormal bases has the
+  operator norm of the operator.
 -/
 
 public section
@@ -412,3 +414,34 @@ theorem l2_opNorm_single {m n 𝕜 : Type*} [Fintype m] [Fintype n]
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by simpa [pow_two] using hs)
 
 end Matrix
+
+namespace ContinuousLinearMap
+
+variable {m n 𝕜 E F : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+open Matrix
+open scoped Matrix.Norms.L2Operator
+
+/-- **The matrix of an operator in orthonormal bases has the operator norm of the operator.** For
+orthonormal bases `b` of `E` and `c` of `F`, the `ℓ²` operator norm of the matrix of
+`f : E →L[𝕜] F` in `b` and `c` is the operator norm of `f`: as an operator between Euclidean
+spaces, the matrix is `f` composed with the linear isometries `b.repr⁻¹` and `c.repr`. -/
+@[simp]
+theorem l2_opNorm_toMatrix (f : E →L[𝕜] F) (b : OrthonormalBasis n 𝕜 E)
+    (c : OrthonormalBasis m 𝕜 F) :
+    ‖LinearMap.toMatrix b.toBasis c.toBasis (f : E →ₗ[𝕜] F)‖ = ‖f‖ := by
+  have h : (toEuclideanLin.trans LinearMap.toContinuousLinearMap)
+      (LinearMap.toMatrix b.toBasis c.toBasis (f : E →ₗ[𝕜] F)) =
+      (c.repr.toLinearIsometry.toContinuousLinearMap.comp f).comp
+        b.repr.symm.toContinuousLinearEquiv.toContinuousLinearMap := by
+    ext1 x
+    obtain ⟨x, rfl⟩ := b.repr.surjective x
+    ext i
+    have h := congrFun (LinearMap.toMatrix_mulVec_repr b.toBasis c.toBasis (f : E →ₗ[𝕜] F) x) i
+    rw [show ⇑(b.toBasis.repr x) = (b.repr x).ofLp from funext (b.coe_toBasis_repr_apply x)] at h
+    simpa using h
+  rw [l2_opNorm_def, h, opNorm_comp_linearIsometryEquiv,
+    LinearIsometry.norm_toContinuousLinearMap_comp]
+
+end ContinuousLinearMap

@@ -651,7 +651,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
       (smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
     have hu' : ContinuousOn (fun w ↦ u (endChart q w)) C :=
       hu.comp (contDiff_endChart q 0).continuous.continuousOn
-        fun _ hw ↦ endChart_mem_thricePuncturedSphereReal (hCpos hw)
+        fun _ hw ↦ endChart_mem_thricePuncturedSphereReal (hCpos hw).le
     have hK (K : ℝ → M → ℝ) (hK : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry K)) :
         ContinuousOn (fun w : ℝ × ℝ ↦ K w.2 (u (endChart q w))) C :=
       hK.continuous.comp_continuousOn (continuousOn_snd.prodMk hu')

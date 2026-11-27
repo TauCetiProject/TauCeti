@@ -172,8 +172,7 @@ theorem mem_ker_restrict_iff {u : U} :
 theorem map_subtype_ker_restrict :
     (LinearMap.ker (ω.toBilinForm.restrict U)).map U.subtype = U ⊓ ω.orthogonal U := by
   ext v
-  simp only [Submodule.mem_map, Submodule.mem_inf, mem_ker_restrict_iff, Submodule.subtype_apply]
-  exact ⟨fun ⟨u, hu, hv⟩ => hv ▸ ⟨u.property, hu⟩, fun ⟨hv, hv'⟩ => ⟨⟨v, hv⟩, hv', rfl⟩⟩
+  rw [LinearMap.BilinForm.mem_map_subtype_ker_restrict_iff, Submodule.mem_inf, mem_orthogonal_iff']
 
 /-- The **reduced space** `U ⧸ (U ∩ U^ω)` of a subspace `U` of a symplectic vector space: the
 quotient of `U` by the kernel of the restriction of `ω`. -/

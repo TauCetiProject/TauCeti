@@ -44,8 +44,7 @@ apply to all three ends.
 * `TauCeti.Floer.thricePuncturedSphereReal`: the pair of pants `S` in the real coordinates
   `ℝ × ℝ ≃ ℂ`.
 * `TauCeti.Floer.endChart q`: the end lift of `q` in the real coordinates `ℝ × ℝ ≃ ℂ`.
-* `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
-  `q`.
+* `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end `q`.
 * `TauCeti.Floer.positiveEndChart q`: the end chart of `q` read as a positive end.
 * `TauCeti.Floer.positiveEndCoord q`: the coordinates of a point in the positive end chart of `q`.
 * `TauCeti.Floer.positiveEndHamiltonian H q`: the end Hamiltonian in the positive end chart.
@@ -59,9 +58,7 @@ apply to all three ends.
 * `TauCeti.Floer.lt_fst_positiveEndCoord_inf_iff`: away from `0`, the output end lies beyond `r`
   exactly off the disc `‖w‖ ≤ 2 exp (2πr)`; so beyond the height `1` it lies off the disc
   `‖w‖ ≤ 8` (`TauCeti.Floer.eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf`), and off the disc
-  `‖w‖ ≤ 2` it lies in `S` (`TauCeti.Floer.mem_thricePuncturedSphereReal_of_two_le_norm`) and in
-  the image of the band `(0, ∞) × [0, 1)` under its positive end chart
-  (`TauCeti.Floer.mem_image_positiveEndChart_inf_of_two_lt_norm`).
+  `‖w‖ ≤ 2` it lies in `S` (`TauCeti.Floer.mem_thricePuncturedSphereReal_of_two_le_norm`).
 * `TauCeti.Floer.isCompact_preimage_truncation`,
   `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
   `TauCeti.Floer.exists_lt_fst_positiveEndCoord_of_notMem_truncation`: in real coordinates the
@@ -85,7 +82,7 @@ apply to all three ends.
   manifold, the components of the perturbation are differentiable at points of `S` in the domain
   and in the target point separately.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
-  the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
+  the end chart sends the part `±s ≥ 0` of the end into `S` and preserves the longitudinal
   coordinate.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
@@ -124,11 +121,11 @@ apply to all three ends.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_positiveEndChart`,
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
-  preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`.
+  preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`, so loops read
+  far out in it have period one (`TauCeti.Floer.periodic_apply_of_forall_positiveEndChart_add_eq`).
 * `TauCeti.Floer.positiveEndChart_endSign_mul_endCoord`,
-  `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
-  `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
-  coordinate.
+  `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates `(±Re ζ_q, ±Im ζ_q)`
+  invert the positive end chart, up to an integer shift of the angular coordinate.
 * `TauCeti.Floer.positiveEndChart_positiveEndCoord`,
   `TauCeti.Floer.exists_positiveEndCoord_positiveEndChart`,
   `TauCeti.Floer.fst_positiveEndCoord_positiveEndChart`: the positive end coordinates invert
@@ -143,8 +140,6 @@ apply to all three ends.
   at `ζ` is a rotation followed by multiplication by the conformal scale `2π |φ'_q(ζ) - c_q|`,
   whose square is the Jacobian; in particular it vanishes nowhere
   (`TauCeti.Floer.fderiv_positiveEndChart_ne_zero`).
-* `TauCeti.Floer.norm_equivRealProdCLM_symm_positiveEndChart_inf`: the output end, read in the
-  positive end chart, lies at the norm `2 exp (2πs)`.
 * `TauCeti.Floer.fderiv_positiveEndChart_add_fst`, `TauCeti.Floer.positiveEndChartScale_add_fst`,
   `TauCeti.Floer.positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq`: translating
   `ζ` by `L` along the end multiplies both `dφ'_q(ζ)` and the conformal scale by `e^{-2π (±L)}`, so
@@ -157,12 +152,10 @@ apply to all three ends.
 * `TauCeti.Floer.contDiffAt_fst_positiveEndCoord`,
   `TauCeti.Floer.contDiffAt_fst_positiveEndCoord_of_mem`,
   `TauCeti.Floer.fst_positiveEndCoord_nonpos_of_ne`: the longitudinal positive end coordinate is
-  smooth away from the center of the end, in particular on `S`, and is positive on at most one
-  end.
+  smooth away from the center of the end, in particular on `S`, and is positive on at most one end.
 * `TauCeti.Floer.mem_preimage_truncation_iff`, `TauCeti.Floer.mem_preimage_truncationAt_iff`: a
   point lies in the truncation `S_T`, or in the truncation at heights `R`, exactly when it lies in
-  `S` and its longitudinal positive end coordinate on each end `q` is at most `T`, or at most
-  `R q`.
+  `S` and its longitudinal positive end coordinate on each end `q` is at most `T`, or at most `R q`.
 * `TauCeti.Floer.comp_positiveEndChart_eventuallyEq_zero_of_le`,
   `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function vanishes in the
   positive end chart beyond a bound of the height on its support, so beyond some height when its
@@ -608,12 +601,16 @@ theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
   rw [equivRealProdCLM_symm_endChart, re_endCoord_cylindricalEndLift]
   simp [Complex.equivRealProdCLM_symm_apply]
 
-/-- The end chart sends the part `±s > 0` of the end into `S`. -/
+/-- The end chart sends the part `±s ≥ 0` of the end into `S`. -/
 theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
-    (hz : 0 < q.endSign * z.1) :
-    endChart q z ∈ thricePuncturedSphereReal := by
+    (hz : 0 ≤ q.endSign * z.1) : endChart q z ∈ thricePuncturedSphereReal := by
   rw [mem_thricePuncturedSphereReal_iff, equivRealProdCLM_symm_endChart]
-  exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
+  obtain hz | hz := hz.lt_or_eq
+  · exact cylindricalEndLift_ne_zero_and_ne_one q (by simpa using hz)
+  have hd := q.norm_cylindricalEndLift_sub_endCenter (Complex.equivRealProdCLM.symm z)
+  have h0 := (mul_eq_zero.1 hz.symm).resolve_left q.endSign_ne_zero
+  rw [Complex.equivRealProdCLM_symm_apply_re, h0, mul_zero, neg_zero, Real.exp_zero, mul_one] at hd
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> rw [h] at hd <;> cases q <;> norm_num at hd
 
 /-- The part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates. It
 contains the support of the curvature of the end, and the end lift is injective on it. -/
@@ -800,7 +797,7 @@ theorem image_endChart_prod_Ico {q : Puncture} {P : Set ℝ} (hP : ∀ s ∈ P, 
   ext z
   constructor
   · rintro ⟨ζ, ⟨hζ, -⟩, rfl⟩
-    exact ⟨endChart_mem_thricePuncturedSphereReal (hP _ hζ), by rwa [re_endCoord_endChart]⟩
+    exact ⟨endChart_mem_thricePuncturedSphereReal (hP _ hζ).le, by rwa [re_endCoord_endChart]⟩
   · rintro ⟨hz, hzP⟩
     exact ⟨_, ⟨hzP, Int.fract_nonneg _, Int.fract_lt_one _⟩,
       endChart_re_endCoord_fract_im_endCoord
@@ -979,6 +976,17 @@ theorem forall_positiveEndChart_of_mem_Ioi_prod_Icc {P : ℝ × ℝ → Prop} {q
     (positiveEndChart_add_one q z.1) zero_lt_one z.2
   exact h ▸ hP (z.1, t') ⟨hz, Ico_subset_Icc_self ht'⟩
 
+/-- A loop `J_t` of structures which far out on the end `q` are the values of `J` in the positive
+end chart translated by `v`, `J(φ'_q(s, t) + v) = J_t` for `s ≥ R`, has period one, and so has the
+loop `J_t(x(t))` along a loop `x` of period one. -/
+theorem periodic_apply_of_forall_positiveEndChart_add_eq {α β : Type*} {J : ℝ × ℝ → α → β}
+    {Je : ℝ → α → β} (q : Puncture) (v : ℝ × ℝ) {R : ℝ}
+    (hJ : ∀ ζ : ℝ × ℝ, R ≤ ζ.1 → J (positiveEndChart q ζ + v) = Je ζ.2) {x : ℝ → α}
+    (hx : Periodic x 1) : Periodic (fun t ↦ Je t (x t)) 1 := fun t ↦ by
+  have h := hJ (R, t + 1) le_rfl
+  rw [positiveEndChart_add_one, hJ (R, t) le_rfl] at h
+  simp only [hx t, ← h]
+
 /-- The derivative of the positive end chart is the derivative of the end chart at the reflected
 point, composed with the reflection `v ↦ ±v`. -/
 theorem hasFDerivAt_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
@@ -1046,14 +1054,6 @@ theorem det_fderiv_positiveEndChart_pos (q : Puncture) (z : ℝ × ℝ) :
 theorem equivRealProdCLM_symm_positiveEndChart_ne_endCenter (q : Puncture) (ζ : ℝ × ℝ) :
     Complex.equivRealProdCLM.symm (positiveEndChart q ζ) ≠ q.endCenter := by
   rw [positiveEndChart_apply]; exact equivRealProdCLM_symm_endChart_ne_endCenter q _
-
-/-- The output end, read in the positive end chart `φ'_∞`, lies at the norm `2 exp (2πs)`. -/
-theorem norm_equivRealProdCLM_symm_positiveEndChart_inf (s t : ℝ) :
-    ‖Complex.equivRealProdCLM.symm (positiveEndChart inf (s, t))‖ = 2 * exp (2 * π * s) := by
-  have h := norm_cylindricalEndLift_sub_endCenter inf
-    (Complex.equivRealProdCLM.symm (inf.endSign • (s, t)))
-  rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart]
-  simpa using h
 
 /-- The **conformal scale** `2π |φ'_q(ζ) - c_q|` of the positive end chart `φ'_q` at `ζ`, where
 `c_q` is the center of the end: the derivative of `φ'_q` at `ζ` is a rotation followed by
@@ -1162,7 +1162,7 @@ theorem positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq (q :
 /-- The positive end chart sends the part `s > 0` of the end into `S`. -/
 theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
     (hz : 0 < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal :=
-  endChart_mem_thricePuncturedSphereReal (by simpa [← mul_assoc] using hz)
+  endChart_mem_thricePuncturedSphereReal (by simpa [← mul_assoc] using hz.le)
 
 /-- The positive end chart inverts the signed end coordinates `(±Re ζ_q, ±Im ζ_q)` at every point
 `z` other than the center of the end `q`. -/
@@ -1312,18 +1312,6 @@ theorem image_positiveEndChart_univ_prod_Ico (q : Puncture) :
   constructor
   · rintro ⟨ζ, -, rfl⟩; exact equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ
   · intro hz; exact ⟨_, endBandCoord_mem q z, positiveEndChart_endBandCoord q hz⟩
-
-/-- A point at distance more than `2` from `0` lies in the image of the band `(0, ∞) × [0, 1)`
-under the positive end chart of the output end. -/
-theorem mem_image_positiveEndChart_inf_of_two_lt_norm {v : ℝ × ℝ}
-    (hv : 2 < ‖Complex.equivRealProdCLM.symm v‖) :
-    v ∈ positiveEndChart inf '' (Ioi 0 ×ˢ Ico 0 1) := by
-  have hv0 : Complex.equivRealProdCLM.symm v ≠ 0 := norm_pos_iff.1 (by linarith)
-  refine ⟨endBandCoord inf v, ⟨?_, (endBandCoord_mem inf v).2⟩,
-    positiveEndChart_endBandCoord inf (by rwa [endCenter_inf])⟩
-  rw [endBandCoord_apply, mem_Ioi, lt_fst_positiveEndCoord_inf_iff hv0, mul_zero, exp_zero,
-    mul_one]
-  exact hv
 
 /-- Every point of `S` lies in the truncation `S_T` or, for some end `q`, in the image under the
 positive end chart `φ'_q` of the band `(T, ∞) × [0, 1)`. -/

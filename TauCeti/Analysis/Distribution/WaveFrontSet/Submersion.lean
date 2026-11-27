@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
+import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
@@ -71,6 +72,10 @@ translates `supp χ` into a set meeting it. This is the Fourier series of the fi
 `A_♯ (φ e_ξ)` in the modulations of `χ`: by the defining identity of fibre integration, its Fourier
 coefficients are `𝓕 φ (ξ + Aᵀ m)`.
 
+The cone `Aᵀ Γ` is the pullback `TauCeti.covectorPullback` of `Γ` along `A` over all of `E`. Since
+`Aᵀ` is injective and has a continuous left inverse, `Aᵀ Γ` is again a cone of nonzero covectors,
+closed in `Ω × (E \ {0})` when `Γ` is closed in `Ω' × (E' \ {0})`.
+
 ## Main results
 
 * `Distribution.isMicrolocallySmoothAt_compCLMOfSubmersion_iff`: `f^* T` is microlocally smooth at
@@ -78,6 +83,9 @@ coefficients are `𝓕 φ (ξ + Aᵀ m)`.
   `Df(x)ᵀ η = ξ`.
 * `Distribution.waveFrontSet_compCLMOfSubmersion`: the wave front set of `f^* T`.
 * `TauCeti.pullbackLinearCone`: the cone `Aᵀ Γ`.
+* `TauCeti.smul_mem_pullbackLinearCone`, `TauCeti.ne_zero_of_mem_pullbackLinearCone`,
+  `TauCeti.isOpen_diff_pullbackLinearCone`: for surjective `A`, `Aᵀ Γ` is a cone of nonzero
+  covectors, closed in `Ω × (E \ {0})`, whenever `Γ` is one over `Ω'`.
 * `Distribution.waveFrontSet_compCLMOfSubmersion_linear_subset`: `WF(T) ⊆ Γ` implies
   `WF(A^* T) ⊆ Aᵀ Γ`.
 * `Distribution.localFourier_compCLMOfSubmersion_linear_eq_tsum`: the lattice series of the
@@ -454,6 +462,46 @@ theorem mem_pullbackLinearCone {A : E →L[ℝ] E'} {Γ : Set (E' × E')} {p : E
 theorem pullbackLinearCone_mono {A : E →L[ℝ] E'} {Γ Γ' : Set (E' × E')} (h : Γ ⊆ Γ') :
     pullbackLinearCone A Γ ⊆ pullbackLinearCone A Γ' :=
   fun _ ⟨η, hη, hη'⟩ ↦ ⟨η, h hη, hη'⟩
+
+/-- `Aᵀ Γ` is the pullback `A^* Γ` of `Γ` along `A` over all of `E`. -/
+theorem pullbackLinearCone_eq_covectorPullback (A : E →L[ℝ] E') (Γ : Set (E' × E')) :
+    pullbackLinearCone A Γ = covectorPullback A univ Γ := by
+  ext
+  simp [ContinuousLinearMap.fderiv]
+
+/-- The pullback `Aᵀ Γ` of a cone along a linear map is a cone. -/
+theorem smul_mem_pullbackLinearCone {A : E →L[ℝ] E'} {Γ : Set (E' × E')}
+    (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) {p : E × E}
+    (hp : p ∈ pullbackLinearCone A Γ) {t : ℝ} (ht : 0 < t) :
+    (p.1, t • p.2) ∈ pullbackLinearCone A Γ := by
+  rw [pullbackLinearCone_eq_covectorPullback] at hp ⊢
+  exact smul_mem_covectorPullback hcone hp ht
+
+/-- Along a surjective linear map `A`, the transpose `Aᵀ` is injective, so `Aᵀ Γ` contains no
+zero covector when `Γ` contains none. -/
+theorem ne_zero_of_mem_pullbackLinearCone {A : E →L[ℝ] E'} {Γ : Set (E' × E')}
+    (hA : Function.Surjective A) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {p : E × E}
+    (hp : p ∈ pullbackLinearCone A Γ) : p.2 ≠ 0 := by
+  rw [pullbackLinearCone_eq_covectorPullback] at hp
+  refine ne_zero_of_mem_covectorPullback (fun _ _ ↦ ?_) hΓ0 hp
+  rw [ContinuousLinearMap.fderiv]
+  exact ContinuousLinearMap.adjoint_injective_iff_denseRange.2 hA.denseRange
+
+/-- **The cone `Aᵀ Γ` is closed.** Let `A` be surjective, mapping `Ω` into `Ω'`, and let `Γ` be
+closed in `Ω' × (E' \ {0})`. Then `Aᵀ Γ = {(x, Aᵀ η) | (A x, η) ∈ Γ}` is closed in
+`Ω × (E \ {0})`, since `Aᵀ` has a continuous left inverse. -/
+theorem isOpen_diff_pullbackLinearCone {A : E →L[ℝ] E'} {Γ : Set (E' × E')} {Ω : Set E}
+    {Ω' : Set E'} (hΩ : IsOpen Ω) (hAΩ : MapsTo A Ω Ω') (hA : Function.Surjective A)
+    (hΓ : IsOpen ((Ω' ×ˢ {0}ᶜ) \ Γ)) :
+    IsOpen ((Ω ×ˢ {0}ᶜ) \ pullbackLinearCone A Γ) := by
+  obtain ⟨L, hL⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional
+    (ContinuousLinearMap.adjoint_injective_iff_denseRange.2 hA.denseRange)
+  have h := isOpen_diff_covectorPullback_of_leftInverse hΩ hAΩ A.continuous.continuousOn
+    (continuousOn_const.congr fun _ _ ↦ A.fderiv) (fun _ ↦ L) continuousOn_const
+    (fun _ _ η ↦ by rw [A.fderiv]; exact hL η) hΓ
+  convert h using 1
+  ext ⟨x, ζ⟩
+  simp +contextual [pullbackLinearCone_eq_covectorPullback]
 
 end TauCeti
 

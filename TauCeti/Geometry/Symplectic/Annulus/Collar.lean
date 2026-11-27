@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Annulus.PoincareBirkhoffLift
-import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.ContDiff.Periodization
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem.DomRestrict
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Seeley
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Collars of diffeomorphisms of the closed strip
@@ -97,22 +98,23 @@ private theorem Ioo_neg_min_one_subset_Icc (ε : ℝ) :
     Ioo (-min ε 1) (1 + min ε 1) ⊆ Icc (-1 : ℝ) 2 := fun _ hy ↦
   ⟨by linarith [hy.1, min_le_right ε 1], by linarith [hy.2, min_le_right ε 1]⟩
 
+/-- A point of `(-δ, 1 + δ)` lies in the `δ`-thickening of `[0, 1]`. -/
+private theorem mem_thickening_Icc_zero_one {δ y : ℝ} (hδ : 0 < δ) (hy : y ∈ Ioo (-δ) (1 + δ)) :
+    y ∈ Metric.thickening δ (Icc (0 : ℝ) 1) := by
+  refine Metric.mem_thickening_iff.2 ⟨max 0 (min y 1),
+    ⟨le_max_left _ _, max_le zero_le_one (min_le_right _ _)⟩, ?_⟩
+  rw [Real.dist_eq]
+  refine abs_sub_lt_iff.2 ⟨?_, ?_⟩ <;> simp only [max_def, min_def] <;> split_ifs <;>
+    linarith [hy.1, hy.2, hδ]
+
 /-- A point of `[a, b] × (-δ, 1 + δ)` lies in the `δ`-thickening of `[a, b] × [0, 1]`. -/
 private theorem mem_thickening_Icc_prod_Icc {a b δ : ℝ} (hδ : 0 < δ) {q : ℝ × ℝ}
     (hq₁ : q.1 ∈ Icc a b) (hq₂ : q.2 ∈ Ioo (-δ) (1 + δ)) :
     q ∈ Metric.thickening δ (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
-  refine Metric.mem_thickening_iff.2 ⟨(q.1, max 0 (min q.2 1)),
-    ⟨hq₁, le_max_left _ _, max_le zero_le_one (min_le_right _ _)⟩, ?_⟩
-  simp only [Prod.dist_eq, dist_self, Real.dist_eq]
-  refine max_lt hδ (abs_sub_lt_iff.2 ⟨?_, ?_⟩) <;> simp only [max_def, min_def] <;> split_ifs <;>
-    linarith [hq₂.1, hq₂.2]
-
-/-- Translating `p` by `-⌊p.1⌋` in `x` moves its first coordinate into `[0, 1]`. -/
-private theorem fst_add_neg_floor_mem (p : ℝ × ℝ) :
-    (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1 ∈ Icc (0 : ℝ) 1 := by
-  refine ⟨?_, ?_⟩
-  · simp [← sub_eq_add_neg]
-  · simpa [← sub_eq_add_neg] using (Int.fract_lt_one p.1).le
+  obtain ⟨z, hz, hqz⟩ := Metric.mem_thickening_iff.1 (mem_thickening_Icc_zero_one hδ hq₂)
+  refine Metric.mem_thickening_iff.2 ⟨(q.1, z), ⟨hq₁, hz⟩, ?_⟩
+  rw [Prod.dist_eq, dist_self]
+  exact max_lt hδ hqz
 
 /-- Translating `p` by `-⌊p.1⌋` in `x` moves it into `[0, 1] × [-1, 2]` when `p.2 ∈ [-1, 2]`. -/
 private theorem add_neg_floor_mem {p : ℝ × ℝ} (hp : p.2 ∈ Icc (-1 : ℝ) 2) :
@@ -158,14 +160,12 @@ private theorem exists_band_isInvertible_fderiv (hΦ : ContDiff ℝ 1 Φ)
     (hper : ∀ (p : ℝ × ℝ) (k : ℤ), Φ (p + ((k : ℝ), 0)) = Φ p + ((k : ℝ), 0))
     (hinv : ∀ p ∈ univ ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ Φ p).IsInvertible) :
     ∃ ε > 0, ∀ p : ℝ × ℝ, p.2 ∈ Ioo (-ε) (1 + ε) → (fderiv ℝ Φ p).IsInvertible := by
-  obtain ⟨δ, hδ, hsub⟩ := (isCompact_Icc.prod isCompact_Icc :
-      IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)).exists_thickening_subset_open
+  obtain ⟨δ, hδ, hsub⟩ := isCompact_Icc.exists_univ_prod_thickening_subset_open
     (ContinuousLinearMap.isOpen_setOfPred_isInvertible.preimage
-      (hΦ.continuous_fderiv one_ne_zero)) fun p hp ↦ hinv p ⟨mem_univ _, hp.2⟩
-  refine ⟨δ, hδ, fun p hp ↦ ?_⟩
-  have h : (fderiv ℝ Φ (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0))).IsInvertible :=
-    hsub (mem_thickening_Icc_prod_Icc hδ (fst_add_neg_floor_mem p) (by simpa using hp))
-  rwa [periodic_fderiv_of_apply_add_eq_add (fun q ↦ hper q _) p] at h
+      (hΦ.continuous_fderiv one_ne_zero)) (fun x y k h ↦ by
+        rwa [mem_preimage, fderiv_add_fst_of_apply_add_eq_add (fun q ↦ hper q k)])
+    hinv
+  exact ⟨δ, hδ, fun p hp ↦ hsub ⟨mem_univ _, mem_thickening_Icc_zero_one hδ hp⟩⟩
 
 /-- A continuous map commuting with the deck translation moves the points of the band
 `ℝ × [-1, 2]` a bounded distance. -/
