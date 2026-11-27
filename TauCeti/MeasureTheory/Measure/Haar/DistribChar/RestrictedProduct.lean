@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
-public import TauCeti.Topology.Algebra.RestrictedProduct.Box
-public import TauCeti.Topology.Algebra.RestrictedProduct.Pi
+public import TauCeti.Topology.Algebra.RestrictedProduct.Matrix
 public import TauCeti.Topology.Instances.Matrix
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
@@ -26,7 +24,7 @@ instance the finite adele ring of a Dedekind domain. The group `GL ι 𝔸` acts
 
 where `g_v` is the image of `g` in `GL ι (R v)` under the evaluation `𝔸 →+* R v`. The product is
 finitary because `g_v` has entries, and inverse entries, in `O v` at all but finitely many `v`,
-and then it preserves `O vᶥ` (`RestrictedProduct.eventually_map_evalRingHom_smul_univ_pi`).
+and then it preserves `O vᶥ` (`Matrix.GeneralLinearGroup.eventually_map_evalRingHom_smul_univ_pi`).
 
 The proof identifies `ι → 𝔸` with the restricted product `Πʳ v, [ι → R v, O vᶥ]`
 (`TauCeti.addPiRestrictedProductContinuousAddEquiv`), on which the restricted product of the local
@@ -36,12 +34,6 @@ identification the translate of the integral vectors `Ôᶥ` by `g` is the coord
 
 ## Main results
 
-* `RestrictedProduct.eventually_map_evalRingHom_smul_univ_pi`: an invertible matrix over a
-  restricted product preserves the integral vectors at almost every factor.
-* `RestrictedProduct.generalLinearGroup_smul_apply_apply`: the action of an invertible matrix over
-  a restricted product is computed factorwise.
-* `RestrictedProduct.preimage_addPiRestrictedProduct_symm_smul`: under the swap of coordinates,
-  the translate of the integral vectors by `g` is the box with factors `g_v • O vᶥ`.
 * `MeasureTheory.distribHaarChar_pi_restrictedProduct`: the Haar character of `GL ι 𝔸` on
   `ι → 𝔸` is the finitary product of the Haar characters of its factors.
 
@@ -60,58 +52,6 @@ open scoped NNReal ENNReal Pointwise RestrictedProduct
 variable {P ι : Type*} {R : P → Type*} {S : P → Type*} [∀ v, CommRing (R v)]
   [∀ v, SetLike (S v) (R v)] [∀ v, SubringClass (S v) (R v)] {O : ∀ v, S v}
   [Fintype ι] [DecidableEq ι]
-
-namespace RestrictedProduct
-
-/-- **Almost every factor of an invertible matrix is integral.** An invertible matrix `g` over a
-restricted product `Πʳ v, [R v, O v]_[𝓕]` has, at `𝓕`-almost every factor `v`, entries and inverse
-entries in `O v`, so its image under the evaluation at `v` maps the integral vectors `O vᶥ` onto
-themselves. -/
-theorem eventually_map_evalRingHom_smul_univ_pi {𝓕 : Filter P}
-    (g : GL ι (Πʳ v, [R v, O v]_[𝓕])) :
-    ∀ᶠ v in 𝓕, GeneralLinearGroup.map (evalRingHom R v) g •
-        univ.pi (fun _ : ι ↦ (O v : Set (R v))) = univ.pi fun _ : ι ↦ (O v : Set (R v)) := by
-  -- At almost every factor, the entries of `g` and of `g⁻¹` are integral.
-  have hint : ∀ᶠ v in 𝓕, ∀ i j, g.val i j v ∈ O v ∧ g⁻¹.val i j v ∈ O v :=
-    eventually_all.2 fun i ↦ eventually_all.2 fun j ↦
-      (g.val i j).property.and (g⁻¹.val i j).property
-  filter_upwards [hint] with v hv
-  -- An invertible matrix with integral entries maps integral vectors to integral vectors.
-  have hmaps (h : GL ι (Πʳ v, [R v, O v]_[𝓕])) (hh : ∀ i j, h.val i j v ∈ O v)
-      (x : ι → R v) (hx : x ∈ univ.pi fun _ : ι ↦ (O v : Set (R v))) :
-      GeneralLinearGroup.map (evalRingHom R v) h • x ∈ univ.pi fun _ : ι ↦ (O v : Set (R v)) :=
-    fun i _ ↦ sum_mem fun j _ ↦ mul_mem (hh i j) (hx j (mem_univ j))
-  refine Subset.antisymm ?_ fun x hx ↦ ?_
-  · rintro _ ⟨x, hx, rfl⟩
-    exact hmaps g (fun i j ↦ (hv i j).1) x hx
-  · rw [mem_smul_set_iff_inv_smul_mem, ← map_inv]
-    exact hmaps g⁻¹ (fun i j ↦ (hv i j).2) x hx
-
-/-- The coordinate at `v` of the action of an invertible matrix `g` over a restricted product is
-the action of its image `g_v` under the evaluation at `v` on the coordinates at `v`. -/
-theorem generalLinearGroup_smul_apply_apply {𝓕 : Filter P} (g : GL ι (Πʳ v, [R v, O v]_[𝓕]))
-    (x : ι → Πʳ v, [R v, O v]_[𝓕]) (j : ι) (v : P) :
-    (g • x) j v = (GeneralLinearGroup.map (evalRingHom R v) g • fun j ↦ x j v) j := by
-  rw [Units.smul_def, smul_eq_mulVec, Units.smul_def, smul_eq_mulVec]
-  exact RingHom.map_mulVec (evalRingHom R v) _ x j
-
-/-- Under the swap of coordinates `TauCeti.addPiRestrictedProduct`, the translate by an invertible
-matrix `g` of the integral vectors `(box O)ᶥ` is the coordinate box with factors `g_v • O vᶥ`. -/
-theorem preimage_addPiRestrictedProduct_symm_smul {𝓕 : Filter P}
-    (g : GL ι (Πʳ v, [R v, O v]_[𝓕])) :
-    (addPiRestrictedProduct (n := ι) (𝓕 := 𝓕) O).symm ⁻¹'
-        (g • univ.pi fun _ : ι ↦ (box fun v ↦ (O v : Set (R v)) : Set (Πʳ v, [R v, O v]_[𝓕]))) =
-      box fun v ↦ GeneralLinearGroup.map (evalRingHom R v) g •
-        univ.pi fun _ : ι ↦ (O v : Set (R v)) := by
-  ext y
-  have hy (v : P) : (fun j ↦ (addPiRestrictedProduct O).symm y j v) = y v :=
-    funext fun j ↦ addPiRestrictedProduct_symm_apply O y j v
-  rw [mem_preimage, mem_smul_set_iff_inv_smul_mem, mem_box]
-  simp_rw [mem_smul_set_iff_inv_smul_mem, ← map_inv]
-  simp only [mem_univ_pi, mem_box, generalLinearGroup_smul_apply_apply, hy]
-  exact forall_comm
-
-end RestrictedProduct
 
 namespace MeasureTheory
 
@@ -162,9 +102,9 @@ theorem distribHaarChar_pi_restrictedProduct (g : GL ι (Πʳ v, [R v, O v])) :
   have hmeas (h : GL ι (Πʳ v, [R v, O v])) :
       μ (h • s) = (∏ᶠ v, distribHaarChar (ι → R v) (GeneralLinearGroup.map (evalRingHom R v) h)
         : ℝ≥0) := by
-    rw [MeasurableEquiv.map_apply, he, preimage_addPiRestrictedProduct_symm_smul,
+    rw [MeasurableEquiv.map_apply, he, h.preimage_addPiRestrictedProduct_symm_smul,
       restrictedAddHaar_box_eq_finprod _ _ _
-        ((eventually_map_evalRingHom_smul_univ_pi h).mono fun v hv ↦ by rw [hB, hv]),
+        (h.eventually_map_evalRingHom_smul_univ_pi.mono fun v hv ↦ by rw [hB, hv]),
       finprod_congr (hloc h)]
     exact (ENNReal.ofNNRealHom.map_finprod_of_injective ENNReal.coe_injective _).symm
   have hs : μ s = 1 := by

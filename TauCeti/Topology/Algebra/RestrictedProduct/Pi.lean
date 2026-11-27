@@ -91,15 +91,13 @@ theorem continuous_piRestrictedProduct_symm [Finite n] :
     (A₂ := fun i ↦ (U i : Set (G i))) _ G id tendsto_id (fun i (y : n → G i) ↦ y j)
     (.of_forall fun _ _ hy ↦ hy j (mem_univ j)) fun _ ↦ continuous_apply j
 
-/-- For the cofinite filter and open reference sets, the swap is continuous: by Mathlib's
-universal property of a finite product of restricted products, it suffices to check this on the
-principal stages, where the topology is induced from the full product. -/
+/-- For the cofinite filter and open reference sets, the swap is continuous. -/
 @[to_additive continuous_addPiRestrictedProduct /-- For the cofinite filter and open reference
-sets, the additive swap is continuous: by Mathlib's universal property of a finite product of
-restricted products, it suffices to check this on the principal stages, where the topology is
-induced from the full product. -/]
+sets, the additive swap is continuous. -/]
 theorem continuous_piRestrictedProduct [Finite n] (hU : ∀ i, IsOpen (U i : Set (G i))) :
     Continuous (piRestrictedProduct (G := G) (n := n) (𝓕 := cofinite) U) := by
+  -- The universal property reduces continuity to the principal stages, whose topology is
+  -- induced from the full product.
   refine (RestrictedProduct.continuous_dom_pi fun _ ↦ hU).mpr fun T hT ↦ ?_
   -- On the stage `T`, the swap factors through the swap of the principal restricted products.
   let swapT : (n → Πʳ i, [G i, (U i : Set (G i))]_[𝓟 T]) →

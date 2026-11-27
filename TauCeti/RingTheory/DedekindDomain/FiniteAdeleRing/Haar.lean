@@ -67,8 +67,8 @@ place, `μ_f` is not finite: multiplication by a uniformizer at one place scales
   character (`IsDedekindDomain.FiniteAdeleRing.distribHaarChar_unitsOfAdicCompletion`).
 * `IsDedekindDomain.FiniteAdeleRing.map_mul_left_eq_inv_finprod_smul`: multiplication by a finite
   idele `a` pushes an additive Haar measure `μ` forward to `(∏ᶠ v, |a_v|_v)⁻¹ • μ`.
-* `IsDedekindDomain.FiniteAdeleRing.distribHaarChar_pi_eq_distribHaarChar_det`,
-  `IsDedekindDomain.FiniteAdeleRing.addHaar_smul_eq_finprod_mul`: an invertible matrix `g` over
+* `Matrix.GeneralLinearGroup.distribHaarChar_pi_finiteAdeleRing_eq_distribHaarChar_det`,
+  `MeasureTheory.Measure.addHaar_smul_finiteAdeleRing_eq_finprod_mul`: an invertible matrix `g` over
   the finite adeles scales additive Haar measure on `(𝔸ᶠ)ⁿ` as multiplication by `det g` scales
   it on `𝔸ᶠ`, that is, by `∏ᶠ v, |(det g)_v|_v`.
 * `IsDedekindDomain.FiniteAdeleRing.natCard_mul_measure_image_completedIdeal`,
@@ -277,7 +277,8 @@ finite adele ring scales additive Haar measure on the column vectors `ι → �
 which multiplication by its determinant scales additive Haar measure on `𝔸ᶠ`, that is, by
 `∏ᶠ v, |(det g)_v|_v` (`IsDedekindDomain.FiniteAdeleRing.distribHaarChar_eq_finprod`). -/
 @[simp]
-theorem distribHaarChar_pi_eq_distribHaarChar_det (g : GL ι (FiniteAdeleRing R K)) :
+theorem _root_.Matrix.GeneralLinearGroup.distribHaarChar_pi_finiteAdeleRing_eq_distribHaarChar_det
+    (g : GL ι (FiniteAdeleRing R K)) :
     distribHaarChar (ι → FiniteAdeleRing R K) g =
       distribHaarChar (FiniteAdeleRing R K) (Matrix.GeneralLinearGroup.det g) := by
   -- Compute both sides factorwise; at each place, use the local formula for `GL_n`.
@@ -297,11 +298,12 @@ theorem distribHaarChar_pi_eq_distribHaarChar_det (g : GL ι (FiniteAdeleRing R 
 `μ` on the column vectors `ι → 𝔸ᶠ`, every invertible matrix `g` over the finite adele ring and
 every set `s`, `μ (g • s) = |det g|_f * μ s`, where `|a|_f = ∏ᶠ v, |a_v|_v` is the module of the
 finite idele `a`. -/
-theorem addHaar_smul_eq_finprod_mul (μ : Measure (ι → FiniteAdeleRing R K)) [μ.IsAddHaarMeasure]
+theorem _root_.MeasureTheory.Measure.addHaar_smul_finiteAdeleRing_eq_finprod_mul
+    (μ : Measure (ι → FiniteAdeleRing R K)) [μ.IsAddHaarMeasure]
     (g : GL ι (FiniteAdeleRing R K)) (s : Set (ι → FiniteAdeleRing R K)) :
     μ (g • s) = (∏ᶠ v : HeightOneSpectrum R, (normalizedAbsoluteValue (v.adicCompletion K)
       ((g : Matrix ι ι (FiniteAdeleRing R K)).det v) : ℝ≥0)) * μ s := by
-  rw [← distribHaarChar_mul, distribHaarChar_pi_eq_distribHaarChar_det,
+  rw [← distribHaarChar_mul, g.distribHaarChar_pi_finiteAdeleRing_eq_distribHaarChar_det,
     distribHaarChar_eq_finprod]
   simp_rw [Matrix.GeneralLinearGroup.val_det_apply]
 
