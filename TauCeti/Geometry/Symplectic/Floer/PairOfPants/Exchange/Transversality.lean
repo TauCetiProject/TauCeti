@@ -49,7 +49,8 @@ data with a recentred output end
 input-exchange family
 (`exists_surjective_floerConformalSobolevOperator_coprod_exchangePerturbation`). If `yᵢ` is the
 class of `-X_{δKᵢ}(u)`, this operator is the linearization at `(u, 0)` of the Floer operator of the
-perturbations `K_s + ∑ aᵢ δKᵢ`.
+perturbations `K + ∑ aᵢ δKᵢ` of the datum `K`, which is `K_c` along the input-exchange
+family.
 
 All four theorems are in the namespace `TauCeti.SymplecticForm`.
 

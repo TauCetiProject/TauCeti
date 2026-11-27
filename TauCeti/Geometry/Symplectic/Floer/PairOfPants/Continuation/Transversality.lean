@@ -43,7 +43,8 @@ of finite codimension turns density into surjectivity. Finitely many Hamiltonian
 the namespace `TauCeti.SymplecticForm`), an instance of the same statement for the pair of pants
 (`TauCeti.SymplecticForm.exists_surjective_floerConformalSobolevOperator_coprod_pairOfPants`). If
 `yᵢ` is the class of `-X_{δKᵢ}(u)`, this operator is the linearization at `(u, 0)` of the Floer
-operator of the perturbations `K_s + ∑ aᵢ δKᵢ`.
+operator of the perturbations `K + ∑ aᵢ δKᵢ` of the datum
+`K = TauCeti.Floer.pairOfPantsContinuationPerturbation G H L`.
 
 ## References
 
