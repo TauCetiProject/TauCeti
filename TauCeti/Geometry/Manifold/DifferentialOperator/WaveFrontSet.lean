@@ -425,9 +425,8 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM {r
         ext i k
         rw [Matrix.of_apply, smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_eq
           hP he hV hW hx ξ (hB1 _ hyB) b i (v k), hσ k,
-          tW.continuousLinearMapAt_symmL (R := ℝ) (hW hx), b.coord_apply, b.repr_self,
-          Matrix.one_apply, Finsupp.single_apply]
-        simp [eq_comm]
+          tW.continuousLinearMapAt_symmL (R := ℝ) (hW hx)]
+        simp [b, Matrix.one_apply, Finsupp.single_apply, eq_comm]
       rw [hmat, Matrix.det_one]
       exact one_ne_zero
   rw [chartComponent_eq_sum tW c hc hW b T w]

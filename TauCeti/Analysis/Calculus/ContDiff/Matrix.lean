@@ -130,9 +130,7 @@ theorem norm_iteratedFDeriv_adjugate_apply_le {M : E → Matrix ι ι 𝔸}
     by_cases h : a = j
     · simp only [h, Matrix.updateRow_self, ↓reduceIte]
       rcases Nat.eq_zero_or_pos l with rfl | hl0
-      · by_cases hb : b = i
-        · simp [hb]
-        · simp [hb]
+      · by_cases hb : b = i <;> simp [hb]
       · simp [iteratedFDeriv_const_of_ne hl0.ne']
     · simpa [h] using hX a b l hl
   simp_rw [Matrix.adjugate_apply]
@@ -143,9 +141,8 @@ theorem norm_iteratedFDeriv_adjugate_apply_le {M : E → Matrix ι ι 𝔸}
   -- Exactly one factor of each Leibniz term comes from the constant row.
   have hprod (σ : Equiv.Perm ι) :
       ∏ a, (if σ a = j then (1 : ℝ) else X) = X ^ (Fintype.card ι - 1) := by
-    rw [Equiv.prod_comp σ (fun a ↦ if a = j then (1 : ℝ) else X), Finset.prod_ite,
-      Finset.prod_const_one, one_mul, Finset.prod_const, Finset.filter_ne',
-      Finset.card_erase_of_mem (Finset.mem_univ j), Finset.card_univ]
+    rw [Equiv.prod_comp σ (fun a ↦ if a = j then (1 : ℝ) else X)]
+    simp [Finset.prod_ite, Finset.filter_ne', Finset.card_erase_of_mem]
   simp only [hprod, Finset.sum_const, Finset.card_univ, Fintype.card_perm, nsmul_eq_mul]
   ring
 

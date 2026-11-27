@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Norm
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
@@ -117,6 +118,9 @@ eventually lies in the cone. This is how lower bounds on wave front sets are pro
   `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
   multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
   closed under multiplication by positive reals.
+* `TauCeti.exists_nhds_cone_le_norm_of_continuous_of_homogeneous`: a continuous function
+  `f (y, η)`, positively homogeneous of degree `N` in `η` and nonzero at `(x, ξ)`, is bounded
+  below by `c₀ ‖η‖ ^ N` for `y` near `x` and `η` in an open cone around `ξ`.
 
 ## References
 
@@ -882,6 +886,55 @@ theorem forall_smul_mem_insert_zero [Module ℝ E] {Γ : Set E}
   rintro t ht ξ (rfl | hξ)
   · simp
   · exact Set.mem_insert_of_mem _ (hc t ht ξ hξ)
+
+section NormedSpace
+
+variable [NormedSpace ℝ E]
+
+open Topology in
+/-- **An elliptic cone for a homogeneous function, uniformly near a point.** Let `f (y, η)` be
+continuous and positively homogeneous of degree `N` in `η`. If `f (x, ξ) ≠ 0`, then there are a
+neighbourhood `U` of `x`, an open cone `Γ` around `ξ` and `c₀ > 0` such that
+`c₀ ‖η‖ ^ N ≤ ‖f (y, η)‖` for every `y ∈ U` and `η ∈ Γ`. -/
+theorem exists_nhds_cone_le_norm_of_continuous_of_homogeneous {f : E × E → ℂ}
+    (hf : Continuous f) {N : ℕ}
+    (hhom : ∀ y η : E, ∀ t : ℝ, 0 < t → f (y, t • η) = (t : ℂ) ^ N * f (y, η)) {x ξ : E}
+    (hξ : f (x, ξ) ≠ 0) :
+    ∃ U ∈ 𝓝 x, ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ y ∈ U, ∀ η ∈ Γ, c₀ * ‖η‖ ^ N ≤ ‖f (y, η)‖ := by
+  -- `‖ξ‖ ^ N ≠ 0`: otherwise `ξ = 0` and `N ≠ 0`, and homogeneity forces `f (x, 0) = 0`.
+  have hξN : 0 < ‖ξ‖ ^ N := by
+    rcases eq_or_ne ξ 0 with rfl | hξ0
+    · rcases Nat.eq_zero_or_pos N with rfl | hN
+      · simp
+      · have h2 := congrArg norm (hhom x 0 2 two_pos)
+        rw [smul_zero, norm_mul, norm_pow, Complex.norm_real, Real.norm_two] at h2
+        have h2N : (2 : ℝ) ≤ 2 ^ N := le_self_pow₀ one_le_two hN.ne'
+        exact absurd (norm_eq_zero.1 (by nlinarith [norm_nonneg (f (x, 0))])) hξ
+    · exact pow_pos (norm_pos_iff.2 hξ0) N
+  set c₀ : ℝ := ‖f (x, ξ)‖ / (2 * ‖ξ‖ ^ N)
+  have hc₀ : 0 < c₀ := div_pos (norm_pos_iff.2 hξ) (by positivity)
+  -- A product neighbourhood `U × V` of `(x, ξ)` on which `c₀ ‖η‖ ^ N < ‖f (y, η)‖`.
+  have hO : IsOpen {p : E × E | c₀ * ‖p.2‖ ^ N < ‖f p‖} :=
+    isOpen_lt (by fun_prop) hf.norm
+  have hxξ : (x, ξ) ∈ {p : E × E | c₀ * ‖p.2‖ ^ N < ‖f p‖} := by
+    simp only [mem_ofPred_eq, c₀]
+    rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξN.ne']
+    linarith [norm_pos_iff.2 hξ]
+  obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 (hO.mem_nhds hxξ)
+  -- The cone over `interior V`.
+  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
+    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hV)
+  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun y hy η hη ↦ ?_⟩
+  obtain ⟨t, ht, hη⟩ := hmem η hη
+  have h : c₀ * ‖t • η‖ ^ N < ‖f (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
+  rw [hhom y η t ht] at h
+  simp only [norm_mul, norm_pow, Complex.norm_real, norm_smul, Real.norm_of_nonneg ht.le,
+    mul_pow] at h
+  refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht N).le).le
+  linarith
+
+end NormedSpace
 
 end TauCeti
 
