@@ -54,6 +54,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
+* `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_profile`: a sharper bound for the factorial-
+  normalized kernel, expressed in the rescaled coordinate `t = a u / k`.
 * `TauCeti.one_add_pow_mul_exp_neg_mul_le`, `TauCeti.one_add_pow_mul_exp_neg_add_mul_le`:
   `(1 + t) ^ n exp (-a t) ≤ n! exp a / a ^ n` and
   `(1 + t) ^ n exp (-(a + b) t) ≤ (n! exp a / a ^ n) exp (-b t)` for `0 < a`, `-1 ≤ t`.
@@ -70,6 +72,8 @@ is bounded on `x ≥ 0`.
   `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
+* `TauCeti.exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le`: `exp (c u) ≤ exp (|c| A) exp (c v)`
+  for `|u - v| ≤ A`, with its squared form `TauCeti.sq_exp_mul_le_of_abs_sub_le`.
 -/
 
 public section
@@ -297,6 +301,37 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
     le_div_iff₀ (pow_pos ha m)]
   linarith
 
+/-- The Gamma kernel, in the coordinate `t = a u / k`, is bounded by
+`a⁻ᵏ (t exp (1 - t))^k`. For `k = 0` the bound is `1`. -/
+theorem pow_mul_exp_neg_mul_div_factorial_le_profile {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u)
+    (k : ℕ) :
+    u ^ k * exp (-(a * u)) / (k ! : ℝ) ≤
+      (a ^ k)⁻¹ * (a * u / k * exp (1 - a * u / k)) ^ k := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simpa using exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg ha.le hu))
+  have hkR : (0 : ℝ) < k := Nat.cast_pos.mpr hk
+  let t : ℝ := a * u / k
+  have ht : t * k = a * u := div_mul_cancel₀ _ hkR.ne'
+  have hexp : exp (1 - t) ^ k * exp (-(k : ℝ)) = exp (-(a * u)) := by
+    rw [← exp_natCast_mul, ← exp_add]
+    congr 1
+    linear_combination -ht
+  have hpow : t ^ k * (k : ℝ) ^ k = a ^ k * u ^ k := by
+    rw [← mul_pow, ht, mul_pow]
+  -- Separate the value at the mode from the factor that depends on the rescaled coordinate.
+  have hmode : (k : ℝ) ^ k * exp (-(k : ℝ)) / (k ! : ℝ) ≤ 1 := by
+    rw [div_le_one (by positivity)]
+    simpa using pow_mul_exp_neg_mul_le (a := 1) one_pos hkR.le k
+  calc
+    _ = (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k * ((k : ℝ) ^ k * exp (-(k : ℝ)) / (k ! : ℝ)) := by
+      symm
+      rw [mul_pow]
+      calc
+        _ = (a ^ k)⁻¹ * (t ^ k * (k : ℝ) ^ k) * (exp (1 - t) ^ k * exp (-(k : ℝ))) /
+            (k ! : ℝ) := by ring
+        _ = _ := by rw [hpow, hexp, ← mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ ha.ne'), one_mul]
+    _ ≤ (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k := mul_le_of_le_one_right (by positivity) hmode
+
 /-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
 theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
@@ -428,5 +463,22 @@ theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤
   calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
     _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
     _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
+
+/-- Changing the exponent of an exponential weight by at most `A` changes it by at most the factor
+`exp (|c| A)`: `exp (c u) ≤ exp (|c| A) exp (c v)` for `|u - v| ≤ A`. -/
+theorem exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le {c u v A : ℝ} (h : |u - v| ≤ A) :
+    Real.exp (c * u) ≤ Real.exp (|c| * A) * Real.exp (c * v) := by
+  rw [← Real.exp_add, Real.exp_le_exp]
+  have := le_abs_self (c * (u - v))
+  rw [abs_mul] at this
+  nlinarith [abs_nonneg c]
+
+/-- The squared form of `exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le`, comparing the squared
+weights that enter weighted `L²` norms: `exp (c u)² ≤ exp (|c| A)² exp (c v)²` for
+`|u - v| ≤ A`. -/
+theorem sq_exp_mul_le_of_abs_sub_le {c u v A : ℝ} (h : |u - v| ≤ A) :
+    Real.exp (c * u) ^ 2 ≤ Real.exp (|c| * A) ^ 2 * Real.exp (c * v) ^ 2 := by
+  rw [← mul_pow]
+  exact pow_le_pow_left₀ (Real.exp_pos _).le (exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le h) 2
 
 end TauCeti

@@ -16,6 +16,8 @@ At a point `x ∈ t i`, a finite product `∏ j ∈ s, (t j).mulIndicator (f j) 
 sets `t j` reduces to its `i`-th factor `f i x`, since every other factor is `1`
 (`Finset.prod_mulIndicator_apply_of_mem`). Additively, a sum of indicators of pairwise disjoint
 sets takes at `x ∈ t i` the value of its `i`-th summand (`Finset.sum_indicator_apply_of_mem`).
+For the fibres of a map `a` into a finite type, the sum over all labels takes at `x` the value of
+the summand labelled `a x` (`Finset.sum_indicator_preimage_singleton_apply`).
 This is how step functions `∑ i, 1_{t i} • c i` on a finite partition are evaluated.
 For pairwise disjoint sets, a product of multiplicative indicators is one plus the sum of
 the corresponding indicators of `f i - 1` (`Finset.prod_mulIndicator_eq_one_add_sum_indicator`).
@@ -44,6 +46,14 @@ theorem prod_mulIndicator_apply_of_mem {s : Finset ι} {t : ι → Set κ}
     (f : ι → κ → β) : ∏ j ∈ s, (t j).mulIndicator (f j) x = f i x := by
   rw [prod_eq_single_of_mem i hi fun j hj hji ↦ mulIndicator_of_notMem
     (Set.disjoint_left.1 (hs hi hj hji.symm) hx) _, mulIndicator_of_mem hx]
+
+/-- A product over all labels `i` of the multiplicative indicators of the fibres `a ⁻¹' {i}`, each
+carrying its own function, takes at `x` the value of the function of the fibre containing `x`. -/
+@[to_additive /-- A sum over all labels `i` of the indicators of the fibres `a ⁻¹' {i}`, each
+carrying its own function, takes at `x` the value of the function of the fibre containing `x`. -/]
+theorem prod_mulIndicator_preimage_singleton_apply [Fintype ι] (a : κ → ι) (f : ι → κ → β)
+    (x : κ) : ∏ i, (a ⁻¹' {i}).mulIndicator (f i) x = f (a x) x :=
+  prod_mulIndicator_apply_of_mem (pairwiseDisjoint_fiber a _) (mem_univ _) rfl f
 
 /-- A product of multiplicative indicators of pairwise disjoint sets is one plus the sum
 of the indicators of each factor minus one. -/

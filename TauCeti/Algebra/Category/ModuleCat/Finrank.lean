@@ -28,9 +28,10 @@ additive on biproducts of finite free modules
 Over a ring satisfying the strong rank condition (`StrongRankCondition`) and the rank--nullity
 theorem (`HasRankNullity`), such as a division ring or a commutative domain, finrank is moreover
 additive on every short exact sequence whose middle term is finitely generated
-(`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`). Without needing either
-finite generation or the strong rank condition, rank--nullity alone makes `finrank` additive on
-binary biproducts (`ModuleCat.finrank_biprod_of_hasRankNullity`), finite biproducts
+(`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`) and on every finitely generated
+module isomorphic to a finite coproduct (`ModuleCat.finrank_eq_sum_of_iso_sigma`). Without needing
+either finite generation or the strong rank condition, rank--nullity alone makes `finrank` additive
+on binary biproducts (`ModuleCat.finrank_biprod_of_hasRankNullity`), finite biproducts
 (`ModuleCat.finrank_biproduct`), and finite coproducts (`ModuleCat.finrank_sigma`) of modules
 of finite rank (`Module.rank R _ < Cardinal.aleph0`). Unlike Mathlib's
 `ModuleCat.free_shortExact_finrank_add` and `Module.finrank_directSum`, no freeness is assumed, so
@@ -139,5 +140,16 @@ theorem finrank_sigma {ι : Type w} [Fintype ι] (f : ι → ModuleCat.{v} R)
     [HasCoproduct f] (hf : ∀ i, Module.rank R (f i) < Cardinal.aleph0) :
     Module.finrank R ↑(∐ f) = ∑ i, Module.finrank R (f i) :=
   ((biproduct.isoCoproduct f).symm.toLinearEquiv.finrank_eq).trans (finrank_biproduct f hf)
+
+/-- Over a ring satisfying the strong rank condition and the rank-nullity property
+(`HasRankNullity`), such as a division ring or a commutative domain, a finitely generated module
+isomorphic to a finite coproduct `∐ W` has finrank the sum of the finranks of the `W i`. -/
+theorem finrank_eq_sum_of_iso_sigma {ι : Type*} [Fintype ι] {X : ModuleCat.{v} R}
+    [StrongRankCondition R] [Module.Finite R X] {W : ι → ModuleCat.{v} R} (e : X ≅ ∐ W) :
+    Module.finrank R X = ∑ i, Module.finrank R (W i) := by
+  let e' := e ≪≫ (biproduct.isoCoproduct W).symm
+  have := Module.Finite.equiv e'.toLinearEquiv
+  have := finite_of_finite_biproduct W
+  rw [e'.toLinearEquiv.finrank_eq, finrank_biproduct _ fun _ ↦ Module.rank_lt_aleph0 _ _]
 
 end ModuleCat

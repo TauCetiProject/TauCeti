@@ -17,7 +17,7 @@ import Mathlib.RingTheory.Finiteness.Prod
 # Dimensions of products of modules
 
 Mathlib's `Module.finrank_prod` and `Module.finrank_pi_fintype` compute the `finrank` of binary
-and finite dependent products of finite free modules. This file records five results:
+and finite dependent products of finite free modules. This file records six results:
 
 * For the square `M × M` of a free module over a semiring with the strong rank condition, no
   finiteness is needed: if `M` is not finite then neither is `M × M`, and both dimensions are `0`
@@ -26,6 +26,8 @@ and finite dependent products of finite free modules. This file records five res
   `m + 1` and `n + 1` add without a separate finiteness hypothesis
   (`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
   `(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations.
+* Dimensions cancel: a finite module `M` isomorphic to `M × M'` forces `finrank M' = 0`
+  (`LinearEquiv.finrank_eq_zero_of_self_prod`).
 * Without freeness, rank is still additive on products over any ring with the rank-nullity
   property, for instance any commutative domain: the first projection `M × N → M` is onto with
   kernel `N` (`Module.rank_prod_of_hasRankNullity`). For modules of finite rank this gives the same
@@ -68,6 +70,16 @@ theorem finrank_prod_eq_succ (hM : finrank R M = m + 1) (hM' : finrank R M' = n 
   have := finite_of_finrank_eq_succ hM
   have := finite_of_finrank_eq_succ hM'
   rw [Module.finrank_prod, hM, hM', hd]
+
+/-- If a finite module `M` is isomorphic to `M × M'`, then `M'` has dimension `0`. -/
+theorem _root_.LinearEquiv.finrank_eq_zero_of_self_prod [Module.Finite R M] (e : M ≃ₗ[R] M × M') :
+    finrank R M' = 0 := by
+  have : Module.Finite R M' :=
+    .of_surjective ((LinearMap.snd R M M').comp e.toLinearMap)
+      (Prod.snd_surjective.comp e.surjective)
+  have h := e.finrank_eq
+  rw [Module.finrank_prod] at h
+  omega
 
 end Free
 

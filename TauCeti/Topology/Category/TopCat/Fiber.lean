@@ -65,6 +65,10 @@ lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b :=
   ext x
   exact x.property
 
+/-- The fibre of the identity of `B` over a point is a point. -/
+instance uniqueFiberId (b : B) : Unique ((𝟙 B : B ⟶ B).fiber b) :=
+  ⟨⟨⟨b, rfl⟩⟩, fun x ↦ Subtype.ext x.property⟩
+
 /-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
 into the part of `E'` over it. -/
 lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}

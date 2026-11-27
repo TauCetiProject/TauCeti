@@ -54,6 +54,9 @@ classes along the parts.
 * `TauCeti.HomologicalOrientation.singularHomologyToLocalHomology_mapFundamentalClass`: for compact
   `M`, the image of `f_*[M]` in the local homology at `y` is the local degree at `y` times the
   local orientation, with no connectedness of `N`.
+* `TauCeti.HomologicalOrientation.fundamentalClass_eq_sum_mapFundamentalClass_comap`: if `M` is
+  compact and the union of the disjoint ranges of finitely many open embeddings of compact spaces,
+  its fundamental class is the sum of the images of the fundamental classes of the pieces.
 * `TauCeti.HomologicalOrientation.localDegree_comap_comp`: excision, the local degree at `y` is
   unchanged on restricting to an open subset containing the fibre over `y`.
 * `TauCeti.HomologicalOrientation.isLocallyConstant_localDegree`: the local degree of a proper
@@ -87,6 +90,8 @@ classes along the parts.
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
   `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
+* `TauCeti.HomologicalOrientation.map_fundamentalClassOver_eq_degree_smul`: the same over a
+  commutative ring `k`, `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`.
 * `TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul`: a self-map of a compact
   connected oriented manifold acts on top homology by multiplication by its degree.
 * `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: for compact connected `M`
@@ -323,6 +328,36 @@ theorem localDegree_id (y : M) : o.localDegree o hE (ContinuousMap.id M) y = 1 :
 @[simp]
 theorem degree_id [Nonempty M] : o.degree o hE (ContinuousMap.id M) = 1 := by
   rw [degree_eq_localDegree_some o o hE _ ‹_›, localDegree_id]
+
+/-- **The fundamental class of a decomposition into open pieces.** Let a compact oriented manifold
+`M` be the union of the pairwise disjoint ranges of finitely many open embeddings `j i : N i → M`
+of compact spaces. Then the fundamental class of `M` is the sum of the images of the fundamental
+classes of the `N i`, oriented by pulling back `o`. For instance, the fundamental class of a finite
+disjoint union is the sum of the images of the fundamental classes of its components. -/
+theorem fundamentalClass_eq_sum_mapFundamentalClass_comap [CompactSpace M] {ι : Type*}
+    [Fintype ι] {N : ι → Type} [∀ i, TopologicalSpace (N i)] [∀ i, T2Space (N i)]
+    [∀ i, ChartedSpace E (N i)] [∀ i, CompactSpace (N i)] {j : ∀ i, C(N i, M)}
+    (hj : ∀ i, IsOpenEmbedding (j i))
+    (hdisj : Pairwise fun i k ↦ Disjoint (range (j i)) (range (j k)))
+    (hcover : ∀ y, ∃ i, y ∈ range (j i)) :
+    o.fundamentalClass hE = ∑ i, (o.comap (hj i)).mapFundamentalClass hE (j i) := by
+  refine (o.eq_fundamentalClass hE fun y ↦ ?_).symm
+  obtain ⟨k, hk⟩ := hcover y
+  -- At `y`, only the piece `k` whose range contains `y` contributes, with local degree `1`. The
+  -- sum is read in `SSet.homology`, the domain of the map to local homology.
+  refine (map_sum (singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) y n)
+    (fun i ↦ ((o.comap (hj i)).mapFundamentalClass hE (j i) :
+      ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+        ModuleCat.{0} ℤ))) _).trans ?_
+  rw [Finset.sum_eq_single k (fun i _ hik ↦ ?_) (by simp)]
+  · have h := o.localDegree_comap_comp o hE hE (hj k) (ContinuousMap.id M) (y := y)
+      (by simpa using hk)
+    rw [ContinuousMap.id_comp, localDegree_id] at h
+    refine (singularHomologyToLocalHomology_mapFundamentalClass _ o hE (j k) y).trans ?_
+    rw [h, one_smul]
+  · refine (singularHomologyToLocalHomology_mapFundamentalClass _ o hE (j i) y).trans ?_
+    rw [localDegree_eq_zero_of_notMem_range _ o hE hE _ fun hy ↦
+      disjoint_left.1 (hdisj hik) hy hk, zero_smul]
 
 /-- Reversing the orientation of the source negates the local degree. -/
 @[simp]
@@ -594,6 +629,25 @@ theorem singularHomologyMap_eq_degree_smul [ConnectedSpace M] (f : C(M, M))
   have h := o.mapFundamentalClass_eq_degree_smul o hE hE f
   rw [mapFundamentalClass_def] at h
   exact (map_zsmul _ d _).trans ((congrArg (d • ·) h).trans (zsmul_comm _ _ _))
+
+open MonoidalCategory in
+/-- **The degree computes the image of the fundamental class over a ring**: for a map
+`f : M → N` between compact oriented `n`-manifolds with `N` preconnected and a commutative ring
+`k`, `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`. -/
+theorem map_fundamentalClassOver_eq_degree_smul (k : Type) [CommRing k] (f : C(M, N)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) n).obj (𝟙_ (ModuleCat k))).map
+      (TopCat.ofHom f)).hom (o.fundamentalClassOver hE k) =
+      o.degree o' hE f • o'.fundamentalClassOver hF k := by
+  -- Change of coefficients `ℤ → k` is natural, so `f_*[M]_k` is the image of `f_*[M]`.
+  have hf := o.mapFundamentalClass_eq_degree_smul o' hE hF f
+  rw [mapFundamentalClass_def] at hf
+  rw [fundamentalClassOver_def, fundamentalClassOver_def]
+  refine (ConcreteCategory.congr_hom ((TopCat.of M).restrictScalarsHomologyMap_naturality
+    (Int.castRingHom k) (ModuleCat.uliftUnitToRestrictScalars _) (TopCat.ofHom f) n)
+    (o.fundamentalClass hE)).symm.trans ?_
+  -- `G Hₙ(N; k)` has the additive group of `Hₙ(N; k)`, so its `ℤ`-multiples are those there.
+  exact (congrArg ((TopCat.of N).restrictScalarsHomologyMap (Int.castRingHom k)
+    (ModuleCat.uliftUnitToRestrictScalars _) n).hom hf).trans (map_zsmul _ _ _)
 
 end CompactSpace
 

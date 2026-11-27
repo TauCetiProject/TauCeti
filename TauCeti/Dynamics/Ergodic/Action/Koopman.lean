@@ -9,12 +9,11 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Group.Action
 public import TauCeti.Analysis.Semigroups.Group.Unitary
-import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Topology.EMetricSpace.Lipschitz
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Continuous
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Group.Integral
 
@@ -27,9 +26,9 @@ itself (`MeasureTheory.Lp.compMeasurePreserving`). For `1 ≤ p < ∞` the orbit
 `t ↦ f ∘ (t +ᵥ ·)` of every `f ∈ Lᵖ(μ)` is continuous. No topology on `X` and no separability
 are assumed.
 
-The density argument reducing to indicators of measurable sets follows the proof of Mathlib's
-`MeasureTheory.Lp.compMeasurePreserving_continuous`. For a measurable set `A` of finite measure it
-remains to show `μ (((t +ᵥ ·) ⁻¹' A) ∆ A) → 0` as `t → 0`. For `g = 1_A` the orbit averages
+By `MeasureTheory.Lp.continuous_compMeasurePreserving_of_tendsto_measure_symmDiff` (density of
+simple functions), for a measurable set `A` of finite measure it remains to show
+`μ (((t +ᵥ ·) ⁻¹' A) ∆ A) → 0` as `t → 0`. For `g = 1_A` the orbit averages
 `A_h g x = h⁻¹ ∫₀ʰ g (r +ᵥ x) dr` satisfy `∫ |A_h g (t +ᵥ x) - A_h g x| dμ ≤ 2 |t| μ(A) / h` by
 invariance of `μ` and Fubini, and `∫ |A_h g - g| dμ → 0` as `h → 0⁺`: by invariance and Fubini this
 integral is the integral over `x` of `∫₀¹ |A_h g (s +ᵥ x) - g (s +ᵥ x)| ds`, which tends to `0` for
@@ -44,7 +43,9 @@ and is dominated by `2 ∫₀² g (u +ᵥ x) du`.
   from `ℝ` to `Lᵖ(μ)` for `p ≠ ∞`;
 * `TauCeti.koopmanGroup`: the Koopman operators as a strongly continuous group on `Lᵖ(μ)`;
   `TauCeti.koopmanGroup_isUnitary`: on `L²(μ)` with values in a complex inner product space,
-  such as complex `L²(μ)`, it is unitary.
+  such as complex `L²(μ)`, it is unitary;
+* `TauCeti.koopmanGroup_indicatorConstLp`: the Koopman operator at time `t` sends the indicator
+  of `A` to the indicator of `(t +ᵥ ·)⁻¹' A`.
 
 The s-finiteness of `μ` cannot be dropped: for the action of `ℝ` on itself by translation with
 counting measure, which is not s-finite, `‖1_{{-t}} - 1_{{0}}‖₂ = √2` for every `t ≠ 0`. Joint
@@ -359,31 +360,19 @@ variable {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- **Strong continuity of the Koopman representation.** For a jointly measurable action of `ℝ`
 preserving an s-finite measure `μ` and `p ≠ ∞`, the orbit `t ↦ f ∘ (t +ᵥ ·)` of every
-`f ∈ Lᵖ(μ)` is continuous from `ℝ` to `Lᵖ(μ)`. The density argument follows the proof of Mathlib's
-`MeasureTheory.Lp.compMeasurePreserving_continuous`. -/
+`f ∈ Lᵖ(μ)` is continuous from `ℝ` to `Lᵖ(μ)`. -/
 theorem continuous_compMeasurePreserving_vadd (hp : p ≠ ∞) (f : Lp E p μ) :
     Continuous fun t : ℝ => compMeasurePreserving (t +ᵥ ·) (measurePreserving_vadd t μ) f := by
-  have hp₀ : p ≠ 0 := (one_pos.trans_le Fact.out).ne'
-  have H : Continuous fun ft : Lp E p μ × ℝ =>
-      compMeasurePreserving (ft.2 +ᵥ ·) (measurePreserving_vadd ft.2 μ) ft.1 := by
-    refine continuous_prod_of_dense_continuous_lipschitzWith _ 1 (simpleFunc.dense hp) ?_
-      fun t => (isometry_compMeasurePreserving (measurePreserving_vadd t μ)).lipschitzWith
-    intro f hf
-    lift f to simpleFunc E p μ using hf
-    induction f using simpleFunc.induction hp₀ hp with
-    | add hfp hgp _ ihf ihg => exact ihf.add ihg
-    | @indicatorConst c s hs hμs =>
-      dsimp only [simpleFunc.coe_indicatorConst, indicatorConstLp_compMeasurePreserving]
-      refine continuous_indicatorConstLp_set hp fun t₀ => ?_
-      have hpre (t : ℝ) : ((t +ᵥ ·) ⁻¹' s) ∆ ((t₀ +ᵥ ·) ⁻¹' s) =
-          (t₀ +ᵥ ·) ⁻¹' ((((t - t₀) +ᵥ ·) ⁻¹' s) ∆ s) := by
-        ext x
-        simp [Set.mem_symmDiff, vadd_vadd]
-      simp_rw [hpre, (measurePreserving_vadd t₀ μ).measure_preimage
-        ((measurable_const_vadd _ hs).symmDiff hs).nullMeasurableSet]
-      exact (tendsto_measure_preimage_vadd_symmDiff hs hμs.ne).comp
-        (tendsto_sub_nhds_zero_iff.2 tendsto_id)
-  exact H.comp (continuous_const.prodMk continuous_id)
+  refine continuous_compMeasurePreserving_of_tendsto_measure_symmDiff
+    (fun t => measurePreserving_vadd t μ) hp (fun s hs hμs t₀ => ?_) f
+  have hpre (t : ℝ) : ((t +ᵥ ·) ⁻¹' s) ∆ ((t₀ +ᵥ ·) ⁻¹' s) =
+      (t₀ +ᵥ ·) ⁻¹' ((((t - t₀) +ᵥ ·) ⁻¹' s) ∆ s) := by
+    ext x
+    simp [Set.mem_symmDiff, vadd_vadd]
+  simp_rw [hpre, (measurePreserving_vadd t₀ μ).measure_preimage
+    ((measurable_const_vadd _ hs).symmDiff hs).nullMeasurableSet]
+  exact (tendsto_measure_preimage_vadd_symmDiff hs hμs).comp
+    (tendsto_sub_nhds_zero_iff.2 tendsto_id)
 
 end Lp
 
@@ -423,6 +412,15 @@ def koopmanGroup (hp : p ≠ ∞) : Semigroups.StronglyContinuousGroup (Lp E p �
 theorem koopmanGroup_apply (hp : p ≠ ∞) (t : ℝ) (f : Lp E p μ) :
     koopmanGroup μ E p hp t f = Lp.compMeasurePreserving (t +ᵥ ·) (measurePreserving_vadd t μ) f :=
   (rfl)
+
+/-- The Koopman operator at time `t` sends the indicator of `A` to the indicator of
+`(t +ᵥ ·)⁻¹' A`. -/
+theorem koopmanGroup_indicatorConstLp (hp : p ≠ ∞) {A : Set X} (hA : MeasurableSet A)
+    (hμA : μ A ≠ ∞) (c : E) (t : ℝ) :
+    koopmanGroup μ E p hp t (indicatorConstLp p hA hμA c) =
+      indicatorConstLp p (hA.preimage (measurable_const_vadd t))
+        (by rwa [(measurePreserving_vadd t μ).measure_preimage hA.nullMeasurableSet]) c :=
+  Lp.indicatorConstLp_compMeasurePreserving hA hμA c (measurePreserving_vadd t μ)
 
 /-- On `L²(μ)` with values in a complex inner product space, such as complex `L²(μ)`, the Koopman
 group is unitary. -/

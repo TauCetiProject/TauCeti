@@ -225,9 +225,7 @@ theorem whittakerM_zero_half (z : ℂ) : whittakerM 0 (1 / 2) z = 2 * sinh (z / 
   have hp : (1 / 2 + 1 / 2 : ℂ) = 1 := by norm_num
   -- `z 𝐌(1, 2, z) = 𝐌(1, 1, z) - 1 = e^z - 1`.
   have h11 : regularizedHGFun {1} {1} z = exp z := by
-    rw [regularizedHGFun_singleton_eq_exp_mul, sub_self,
-      regularizedHGFun_of_zero_mem (Multiset.mem_singleton_self 0)]
-    simp
+    rw [regularizedHGFun_singleton_self, Gamma_one, div_one]
   have h12 := regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul 1 z
   rw [h11, Gamma_one, inv_one] at h12
   have hexp : exp (z / 2) = exp (-(z / 2)) * exp z := by

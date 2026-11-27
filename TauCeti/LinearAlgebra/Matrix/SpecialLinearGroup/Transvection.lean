@@ -58,6 +58,8 @@ determinant-one counterparts over an arbitrary commutative ring.
 * `Matrix.SpecialLinearGroup.exists_eq_mul_transvection_of_col_zero_eq`: two determinant-one
   `2 × 2` matrices with the same first column differ by right multiplication by an upper
   transvection.
+* `Matrix.SpecialLinearGroup.exists_eq_transvection_mul_of_row_zero_eq`: two determinant-one
+  `2 × 2` matrices with the same first row differ by left multiplication by a lower transvection.
 * `Matrix.SpecialLinearGroup.antidiagonal_mul_transvection` and `diagonal_mul_transvection`:
   conjugating a transvection of `SL₂` by an antidiagonal element, and one of `SL_n` by a diagonal
   element, and
@@ -887,12 +889,13 @@ end Matrix.SpecialLinearGroup
 
 namespace Matrix.SpecialLinearGroup
 
-/-! ### Matrices with the same first column
+/-! ### Matrices with the same first column or row
 
 Two `2 × 2` matrices of determinant one with the same first column differ by right
 multiplication by an upper transvection. Together with Mathlib's `IsCoprime.exists_SL2_col`, this
 identifies `SL₂` modulo its upper unipotent subgroup with the punctured plane through the first
-column. -/
+column. Dually, two such matrices with the same first row differ by left multiplication by a
+lower transvection. -/
 
 section Column
 
@@ -915,6 +918,25 @@ theorem exists_eq_mul_transvection_of_col_zero_eq {M N : SpecialLinearGroup (Fin
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, transvection_coe, Matrix.one_apply, h0, h1]
   · linear_combination (-(N : Matrix (Fin 2) (Fin 2) A) 0 1) * hM + (M 0 1) * hN
+  · linear_combination (-(N : Matrix (Fin 2) (Fin 2) A) 1 1) * hM + (M 1 1) * hN
+
+/-- Two `2 × 2` determinant-one matrices with the same first row differ by left multiplication
+by a lower transvection. -/
+theorem exists_eq_transvection_mul_of_row_zero_eq {M N : SpecialLinearGroup (Fin 2) A}
+    (h : (M : Matrix (Fin 2) (Fin 2) A).row 0 = (N : Matrix (Fin 2) (Fin 2) A).row 0) :
+    ∃ t : A, N = transvection (one_ne_zero : (1 : Fin 2) ≠ 0) t * M := by
+  have h0 := congrFun h 0
+  have h1 := congrFun h 1
+  simp only [Matrix.row_apply] at h0 h1
+  have hM := M.det_coe
+  have hN := N.det_coe
+  rw [Matrix.det_fin_two, h0, h1] at hM
+  rw [Matrix.det_fin_two] at hN
+  refine ⟨(N : Matrix (Fin 2) (Fin 2) A) 1 0 * M 1 1 - N 1 1 * M 1 0, ?_⟩
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, transvection_coe, Matrix.one_apply, h0, h1]
+  · linear_combination (-(N : Matrix (Fin 2) (Fin 2) A) 1 0) * hM + (M 1 0) * hN
   · linear_combination (-(N : Matrix (Fin 2) (Fin 2) A) 1 1) * hM + (M 1 1) * hN
 
 end Column

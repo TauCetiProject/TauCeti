@@ -57,6 +57,9 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_smul_sq_rpow_le`: the same for the scalar multiple `c • x`,
   `⟨c • x⟩ ^ s ≤ c ^ |s| ⟨x⟩ ^ s`.
+* `TauCeti.one_add_norm_sq_rpow_le_mul_of_norm_le_mul`: if only `‖x‖ ≤ c ‖y‖`, then
+  `⟨x⟩ ^ s ≤ (1 + c ^ 2) ^ (s / 2) ⟨y⟩ ^ s` for `s ≥ 0`; this compares `⟨A y⟩` with `⟨y⟩` for a
+  continuous linear map `A`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`: rescaling by any `c ≠ 0` changes
   `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor.
 * `TauCeti.one_add_norm_add_smul_sq_rpow_le`: Peetre's inequality for the shift `ξ + c • θ`
@@ -258,6 +261,16 @@ theorem one_add_norm_sq_rpow_le_of_norm_eq_mul [SeminormedAddGroup E] {F : Type*
   one_add_norm_sq_rpow_le_of_norm_le_mul hc s h.le <| by
     rw [h]
     nlinarith [norm_nonneg y, mul_self_le_mul_self zero_le_one hc]
+
+/-- A one-sided norm comparison bounds the nonnegative bracket powers on one side: if
+`‖x‖ ≤ c ‖y‖`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + c ^ 2) ^ (s / 2) (1 + ‖y‖ ^ 2) ^ (s / 2)` for
+`s ≥ 0`. This applies to `x = A y` for a continuous linear map `A` with `c = ‖A‖`. -/
+theorem one_add_norm_sq_rpow_le_mul_of_norm_le_mul {F : Type*} [SeminormedAddGroup F] {c s : ℝ}
+    (hs : 0 ≤ s) {x : E} {y : F} (h : ‖x‖ ≤ c * ‖y‖) :
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + c ^ 2) ^ (s / 2) * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
+  rw [← Real.mul_rpow (by positivity) (by positivity)]
+  gcongr
+  nlinarith [mul_self_le_mul_self (norm_nonneg x) h, sq_nonneg c, sq_nonneg ‖y‖]
 
 omit [SeminormedAddGroup E] in
 /-- Scaling by `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`:

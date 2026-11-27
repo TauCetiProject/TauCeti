@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
+import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -164,7 +165,8 @@ theorem mFourierCoeff_conjWirtingerDeriv {f : UnitAddTorus (Fin 2) → ℂ}
   have hint (w : Fin 2 → ℝ) : MeasureTheory.Integrable (lineDeriv f w) :=
     integrable_of_mem_smoothFunctions (lineDeriv_mem_smoothFunctions hf w)
   rw [conjWirtingerDeriv, mFourierCoeff_smul, mFourierCoeff_add (hint _) ((hint _).smul I),
-    mFourierCoeff_smul, mFourierCoeff_lineDeriv hf, mFourierCoeff_lineDeriv hf]
+    mFourierCoeff_smul, mFourierCoeff_lineDeriv ((mem_smoothFunctions.1 hf).of_le (by simp)),
+    mFourierCoeff_lineDeriv ((mem_smoothFunctions.1 hf).of_le (by simp))]
   simp only [Fin.sum_univ_two, Pi.single_apply, smul_eq_mul]
   simp only [Fin.isValue, ↓reduceIte, one_ne_zero, zero_ne_one, ofReal_one, ofReal_zero, mul_one,
     mul_zero, zero_add]
@@ -184,17 +186,15 @@ theorem conjWirtingerDeriv_eq_zero_iff {f : UnitAddTorus (Fin 2) → ℂ}
       funext z
       simp [mFourier_zero]
     rw [hc]
-    refine eq_of_mFourierCoeff_eq hf
-      (Submodule.smul_mem _ _ (mFourier_mem_smoothFunctions 0)) fun n ↦ ?_
+    refine (continuous_of_mem_smoothFunctions hf).eq_of_mFourierCoeff_eq
+      (continuous_of_mem_smoothFunctions (Submodule.smul_mem _ _ (mFourier_mem_smoothFunctions 0)))
+      fun n ↦ ?_
     rw [mFourierCoeff_smul, mFourierCoeff_mFourier, smul_eq_mul]
     by_cases hn : n = 0
     · subst hn
       simp
     · have h' := mFourierCoeff_conjWirtingerDeriv hf n
-      rw [h] at h'
-      have h0 : mFourierCoeff (0 : UnitAddTorus (Fin 2) → ℂ) n = 0 := by
-        simpa using mFourierCoeff_smul (0 : ℂ) (0 : UnitAddTorus (Fin 2) → ℂ) n
-      rw [h0, eq_comm, mul_eq_zero] at h'
+      rw [h, mFourierCoeff_zero, eq_comm, mul_eq_zero] at h'
       simp [hn, h'.resolve_left (conjWirtingerMultiplier_ne_zero hn)]
   · rintro ⟨c, rfl⟩
     funext z
@@ -211,25 +211,19 @@ theorem exists_conjWirtingerDeriv_eq_iff {g : UnitAddTorus (Fin 2) → ℂ}
   · intro hg0
     -- Divide the coefficients of `g` by the multiplier; at `n = 0` this gives `0`.
     set c : (Fin 2 → ℤ) → ℂ := fun n ↦ mFourierCoeff g n / (π * I * (n 0 + I * n 1))
-    have hcle (n : Fin 2 → ℤ) : ‖c n‖ ≤ ‖mFourierCoeff g n‖ := by
+    have hcle (n : Fin 2 → ℤ) : ‖c n‖ ≤ 1 * ‖mFourierCoeff g n‖ := by
+      rw [one_mul]
       by_cases hn : n = 0
       · subst hn
         simp [c]
       · rw [norm_div]
         exact div_le_self (norm_nonneg _) (one_le_norm_conjWirtingerMultiplier hn)
-    have hc (k : ℕ) : Summable fun n ↦ ‖c n‖ * ‖n‖ ^ k := by
-      refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-        (summable_norm_mFourierCoeff_mul_pow hg zero_le_one k)
-      rw [one_mul]
-      exact mul_le_mul (hcle n) (pow_le_pow_left₀ (norm_nonneg _) (by linarith) k)
-        (by positivity) (norm_nonneg _)
-    have hc1 : Summable fun n ↦ ‖c n‖ := by simpa using hc 0
-    refine ⟨fun z ↦ ∑' n, c n • mFourier n z, tsum_smul_mFourier_mem_smoothFunctions hc, ?_⟩
-    refine eq_of_mFourierCoeff_eq
-      (conjWirtingerDeriv_mem_smoothFunctions (tsum_smul_mFourier_mem_smoothFunctions hc)) hg
-      fun n ↦ ?_
-    rw [mFourierCoeff_conjWirtingerDeriv (tsum_smul_mFourier_mem_smoothFunctions hc),
-      mFourierCoeff_tsum_smul_mFourier hc1]
+    have hmem := tsum_smul_mFourier_mem_smoothFunctions_of_norm_le hg hcle
+    refine ⟨fun z ↦ ∑' n, c n • mFourier n z, hmem, ?_⟩
+    refine Continuous.eq_of_mFourierCoeff_eq
+      (continuous_of_mem_smoothFunctions (conjWirtingerDeriv_mem_smoothFunctions hmem))
+      (continuous_of_mem_smoothFunctions hg) fun n ↦ ?_
+    rw [mFourierCoeff_conjWirtingerDeriv hmem, mFourierCoeff_tsum_smul_mFourier_of_norm_le hg hcle]
     by_cases hn : n = 0
     · subst hn
       simp [hg0]
@@ -242,9 +236,11 @@ theorem conjWirtingerDeriv_add {f g : UnitAddTorus (Fin 2) → ℂ} (hf : f ∈ 
   have hfg := Submodule.add_mem _ hf hg
   have hint {h : UnitAddTorus (Fin 2) → ℂ} (hh : h ∈ smoothFunctions (Fin 2)) :=
     integrable_of_mem_smoothFunctions (conjWirtingerDeriv_mem_smoothFunctions hh)
-  refine eq_of_mFourierCoeff_eq (conjWirtingerDeriv_mem_smoothFunctions hfg)
-    (Submodule.add_mem _ (conjWirtingerDeriv_mem_smoothFunctions hf)
-      (conjWirtingerDeriv_mem_smoothFunctions hg)) fun n ↦ ?_
+  refine Continuous.eq_of_mFourierCoeff_eq
+    (continuous_of_mem_smoothFunctions (conjWirtingerDeriv_mem_smoothFunctions hfg))
+    (continuous_of_mem_smoothFunctions (Submodule.add_mem _
+      (conjWirtingerDeriv_mem_smoothFunctions hf) (conjWirtingerDeriv_mem_smoothFunctions hg)))
+    fun n ↦ ?_
   rw [mFourierCoeff_conjWirtingerDeriv hfg, mFourierCoeff_add (hint hf) (hint hg),
     mFourierCoeff_conjWirtingerDeriv hf, mFourierCoeff_conjWirtingerDeriv hg,
     mFourierCoeff_add (integrable_of_mem_smoothFunctions hf)
@@ -254,8 +250,10 @@ theorem conjWirtingerDeriv_add {f g : UnitAddTorus (Fin 2) → ℂ} (hf : f ∈ 
 theorem conjWirtingerDeriv_smul {f : UnitAddTorus (Fin 2) → ℂ} (hf : f ∈ smoothFunctions (Fin 2))
     (c : ℂ) : conjWirtingerDeriv (c • f) = c • conjWirtingerDeriv f := by
   have hcf := Submodule.smul_mem _ c hf
-  refine eq_of_mFourierCoeff_eq (conjWirtingerDeriv_mem_smoothFunctions hcf)
-    (Submodule.smul_mem _ c (conjWirtingerDeriv_mem_smoothFunctions hf)) fun n ↦ ?_
+  refine Continuous.eq_of_mFourierCoeff_eq
+    (continuous_of_mem_smoothFunctions (conjWirtingerDeriv_mem_smoothFunctions hcf))
+    (continuous_of_mem_smoothFunctions
+      (Submodule.smul_mem _ c (conjWirtingerDeriv_mem_smoothFunctions hf))) fun n ↦ ?_
   rw [mFourierCoeff_conjWirtingerDeriv hcf, mFourierCoeff_smul, mFourierCoeff_smul,
     mFourierCoeff_conjWirtingerDeriv hf, smul_eq_mul, smul_eq_mul]
   ring
