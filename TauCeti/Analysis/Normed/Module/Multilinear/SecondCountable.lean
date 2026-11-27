@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 
@@ -18,6 +19,8 @@ countable. For continuous linear maps this is the Mathlib instance in
 follows by currying one variable at a time, since `E [×(m + 1)]→L[𝕜] F` is isometric to
 `E →L[𝕜] (E [×m]→L[𝕜] F)`. A general family reduces to copies of the product `∀ j, E j`, of which
 it is a retract by precomposition with the projections and the inclusions of the factors.
+Continuous alternating maps inherit second countability via their isometric embedding into
+continuous multilinear maps.
 
 These are the spaces in which the iterated derivatives of a map `E → F` take their values, so
 this is what makes spaces of continuous derivative fields on second countable locally compact
@@ -27,6 +30,8 @@ sets second countable.
 
 * `ContinuousMultilinearMap.secondCountableTopology`: the instance for finitely many
   finite-dimensional spaces over a complete field.
+* `ContinuousAlternatingMap.secondCountableTopology`: the corresponding instance for continuous
+  alternating maps.
 -/
 
 public section
@@ -79,3 +84,18 @@ instance secondCountableTopology {ι : Type*} [Finite ι] {E : ι → Type*}
   exact (IsEmbedding.of_leftInverse hsp s.continuous p.continuous).secondCountableTopology
 
 end ContinuousMultilinearMap
+
+namespace ContinuousAlternatingMap
+
+/-- The continuous alternating maps on finitely many copies of a finite-dimensional space over a
+complete field, with values in a second countable space, form a second countable space. -/
+instance secondCountableTopology {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [SecondCountableTopology F] [Finite ι] :
+    SecondCountableTopology (E [⋀^ι]→L[𝕜] F) := by
+  classical
+  have := Fintype.ofFinite ι
+  exact (toContinuousMultilinearMapLI (𝕜 := 𝕜) (E := E) (F := F)
+    (ι := ι)).isometry.isEmbedding.secondCountableTopology
+
+end ContinuousAlternatingMap

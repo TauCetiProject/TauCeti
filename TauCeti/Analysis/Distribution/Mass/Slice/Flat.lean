@@ -39,7 +39,7 @@ open scoped BoundedContinuousFunction ENNReal NNReal Distributions Topology Cont
 
 namespace Distribution
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {k : ℕ} {K : ℝ≥0} {u v : E → ℝ}
 
 /-- **Normal flat continuity of slices with respect to the slicing function.**
@@ -50,7 +50,6 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
     (hu : LipschitzOnWith K₁ u Ω) (hv : LipschitzOnWith K₂ v Ω) :
     ∫⁻ t : ℝ, (slice T v t - slice T u t).normalFlatMass ≤
       ∫⁻ x : Ω, edist (v x) (u x) ∂(massMeasure T + massMeasure (T ∘L extDerivCLM)) := by
-  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
   have hv_meas : Measurable fun x : Ω => v x := hv.continuousOn.domRestrict.measurable
   let Au (t : ℝ) : Set Ω := {x : Ω | u x < t}
@@ -144,7 +143,7 @@ theorem lintegral_normalFlatMass_slice_le
 
 section InnerProductSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {u : E → ℝ}
 
 /-- **Sharp flat-mass slicing inequality on an inner product space** (Federer 4.3.2(2)):

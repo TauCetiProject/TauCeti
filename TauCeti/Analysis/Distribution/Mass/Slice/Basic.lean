@@ -25,9 +25,10 @@ sublevel set `{u < t}` to commute with the boundary. It depends only on the valu
 vanishes when `u` is constant, is linear in `T` on locally normal currents, commutes with open
 restrictions and proper smooth pushforwards, satisfies `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`, and has
 `spt ⟨T, u, t⟩ ∩ Ω ⊆ spt T ∩ u⁻¹{t}` when `u` is continuous on `Ω`. For each test form `φ`, the
-level-set pairing `t ↦ ⟨T, u, t⟩ φ` is Borel measurable, bounded, and compactly supported when `u`
-is continuous on `Ω`; when the codomain `F` is second countable, `t ↦ localMass ⟨T, u, t⟩ U` and
-`t ↦ mass ⟨T, u, t⟩` are also Borel measurable.
+level-set pairing `t ↦ ⟨T, u, t⟩ φ` is Borel measurable for every `T`, and for locally normal `T`
+and `u` continuous on `Ω` it is bounded, compactly supported, and integrable; when the codomain
+`F` is second countable, `t ↦ localMass ⟨T, u, t⟩ U` and `t ↦ mass ⟨T, u, t⟩` are also Borel
+measurable.
 
 For a smooth `u`, the slice is the weak limit of `-T ⌞ dfₘ` for smooth functions `fₘ` of `u`
 increasing to the indicator of `{u < t}`; this follows from the Leibniz rule
@@ -37,15 +38,15 @@ inequality**
 
 `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) ∫ ‖du‖ d‖T‖`,
 
-and on a real inner product space the sharp bound
+where the mass is taken with respect to the operator norm on alternating forms (`Distribution.mass`)
+and the factor `k + 1` comes from the unnormalized alternatization defining the wedge `du ∧ φ`.
+In particular, for a normal current `T` and a smooth `u` with bounded derivative on `Ω`, almost
+every slice is a normal current. On a real inner product space, `‖du ∧ φ‖ ≤ ‖du‖ * ‖φ‖` in the
+operator (comass) norm, yielding the sharp bound
 
-`∫ M(⟨T, u, t⟩) dt ≤ ∫ ‖du‖ d‖T‖`,
+`∫ M(⟨T, u, t⟩) dt ≤ ∫ ‖du‖ d‖T‖`
 
-free of the `(k + 1)` factor because `‖du ∧ φ‖ ≤ ‖du‖ * ‖φ‖` in the operator (comass) norm, so for
-a normal current `T` and a smooth `u` with bounded derivative almost every slice is a normal
-current. The mass here is taken with respect to the operator norm on alternating forms
-(`Distribution.mass`); the factor `k + 1` comes from the unnormalized alternatization defining the
-wedge `du ∧ φ`. Slices by Lipschitz functions are treated in
+free of the `(k + 1)` factor. Slices by Lipschitz functions are treated in
 `TauCeti.Analysis.Distribution.Mass.Slice.Lipschitz`. If `E` is infinite-dimensional, every test
 form is zero, so every current and every slice is zero.
 
@@ -365,10 +366,7 @@ theorem measurable_localMass_slice [SecondCountableTopology F]
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) (u : E → ℝ) (U : Set E) :
     Measurable fun t : ℝ => localMass (slice T u t) U := by
   by_cases hE : FiniteDimensional ℝ E
-  · have : SecondCountableTopology (E [⋀^Fin k]→L[ℝ] F) :=
-      (ContinuousAlternatingMap.toContinuousMultilinearMapLI (𝕜 := ℝ) (E := E) (F := F)
-        (ι := Fin k)).isometry.isEmbedding.secondCountableTopology
-    exact measurable_localMass (fun t => (slice T u t).continuous)
+  · exact measurable_localMass (fun t => (slice T u t).continuous)
       (measurable_slice_apply T u) U
   · have h0 (t : ℝ) : localMass (slice T u t) U = 0 :=
       le_antisymm (localMass_le_iff.2 fun φ _ _ => by

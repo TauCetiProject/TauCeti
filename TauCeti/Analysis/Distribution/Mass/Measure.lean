@@ -47,8 +47,8 @@ them by open sets of almost the same measure.
 * `Distribution.localMass_union_of_disjoint`: the local mass is additive on disjoint open sets.
 * `Distribution.massMeasure`: the mass measure `‖T‖`.
 * `Distribution.massMeasure_congr`: it depends only on the underlying function of `T`.
-* `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
-  sets and its total mass.
+* `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_eq_localMass_image`,
+  `Distribution.massMeasure_univ`: its values on open sets and its total mass.
 * `Distribution.massMeasure_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space
   the mass measure is zero.
 * The mass measure is regular and σ-finite (instances).
@@ -278,6 +278,14 @@ theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU :
   exact le_iSup₂_of_le K (preimage_mono hφU)
     (le_opensInf fun V hφV _ => enorm_le_localMass (hK.symm.subset.trans hφV) hφ)
 
+/-- **The mass measure on open subsets of `Ω`.** For an open set `W` of `Ω`, the mass measure of
+`W` is the local mass of `T` on its image `(↑) '' W` in `E`. -/
+theorem massMeasure_eq_localMass_image (hT : HasLocallyFiniteMass T) {W : Set Ω} (hW : IsOpen W) :
+    massMeasure T W = localMass T ((↑) '' W) := by
+  have hW' : IsOpen ((↑) '' W : Set E) := Ω.isOpen.isOpenMap_subtypeVal _ hW
+  conv_lhs => rw [← Subtype.val_injective.preimage_image W]
+  exact massMeasure_preimage_coe hT hW'
+
 /-- The total mass of the mass measure is the mass. -/
 @[simp]
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
@@ -448,20 +456,20 @@ theorem aemeasurable_massMeasure_apply {α : Type*} [MeasurableSpace α] {ν : M
       rw [massMeasure_eq_zero_of_not_finiteDimensional hE]; simp
     simp_rw [h0]
     exact aemeasurable_const
+  -- Exhaust `Ω` by relatively compact open sets `U m`, prove a.e. measurability of
+  -- `t ↦ ‖S t‖ (B ∩ U m)` by Dynkin induction from open sets (where `‖S t‖ W = localMass (S t) W`
+  -- is finite on `U m`, allowing `measure_sdiff` on complements), and pass to `A = ⋃ m, A ∩ U m`.
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   let Kex := CompactExhaustion.choice Ω
   let U (m : ℕ) : Set Ω := interior (Kex (m + 1))
   have hUo (m : ℕ) : IsOpen (U m) := isOpen_interior
   have hopen : ∀ W : Set Ω, IsOpen W → AEMeasurable (fun t => massMeasure (S t) W) ν := by
     intro W hW
-    let W' : Set E := (↑) '' W
-    have hW' : IsOpen W' := Ω.isOpen.isOpenMap_subtypeVal _ hW
-    have hm : Measurable fun t => localMass (S t) W' :=
-      measurable_localMass (fun t => map_continuous (S t)) hSm W'
+    have hm : Measurable fun t => localMass (S t) ((↑) '' W) :=
+      measurable_localMass (fun t => map_continuous (S t)) hSm _
     refine hm.aemeasurable.congr ?_
     filter_upwards [hSfin] with t ht
-    have hpre : ((↑) ⁻¹' W' : Set Ω) = W := Subtype.val_injective.preimage_image W
-    rw [← hpre, massMeasure_preimage_coe ht hW']
+    exact (massMeasure_eq_localMass_image ht hW).symm
   have hUm : ∀ m : ℕ, ∀ B : Set Ω, MeasurableSet B →
       AEMeasurable (fun t => massMeasure (S t) (B ∩ U m)) ν := by
     intro m
@@ -474,15 +482,8 @@ theorem aemeasurable_massMeasure_apply {α : Type*} [MeasurableSpace α] {ν : M
         have hK_cpt : IsCompact ((↑) '' Kex (m + 1) : Set E) :=
           (Kex.isCompact (m + 1)).image continuous_subtypeVal
         have hK_sub : ((↑) '' Kex (m + 1) : Set E) ⊆ Ω := Subtype.coe_image_subset _ _
-        let Um' : Set E := (↑) '' U m
-        have hUm' : IsOpen Um' := Ω.isOpen.isOpenMap_subtypeVal _ (hUo m)
-        have hUm_pre : ((↑) ⁻¹' Um' : Set Ω) = U m :=
-          Subtype.val_injective.preimage_image (U m)
-        have hUm_eq : massMeasure (S t) (U m) = localMass (S t) Um' := by
-          rw [← hUm_pre]
-          exact massMeasure_preimage_coe ht hUm'
         have hUm_lt : massMeasure (S t) (U m) ≠ ⊤ := by
-          rw [hUm_eq]
+          rw [massMeasure_eq_localMass_image ht (hUo m)]
           exact ne_top_of_le_ne_top
             ((hasLocallyFiniteMass_iff_localMass_ne_top (S t)).1 ht _ hK_cpt hK_sub)
             (localMass_mono (image_mono interior_subset))
