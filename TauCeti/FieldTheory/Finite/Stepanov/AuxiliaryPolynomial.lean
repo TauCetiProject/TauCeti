@@ -68,6 +68,7 @@ namespace Polynomial
 
 variable {F : Type*} [Field F] [Finite F]
 
+omit [Finite F] in
 /-- Modulo `(X - a) ^ q`, the sum `∑ᵢ f ^ (i c) · Aᵢ(X, X ^ q)` is `P(f ^ c)` for
 `P = ∑ᵢ Aᵢ(X, a) Tⁱ`. -/
 private theorem dvd_eval_sub_sum {e : ℕ} (a : F) (f : F[X]) (c : ℕ) (A : Fin e → F[X][X]) :

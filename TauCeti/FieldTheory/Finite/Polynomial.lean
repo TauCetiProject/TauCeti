@@ -80,12 +80,18 @@ theorem X_sub_C_pow_natCard (a : K) : (X - C a) ^ Nat.card K = X ^ Nat.card K - 
   have := Fintype.ofFinite K
   rw [Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, map_sub, expand_X, expand_C]
 
+omit [Finite K] in
 /-- Over a finite field with `q` elements, `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for every
-`A ∈ K[X][Y]`. -/
+`A ∈ K[X][Y]`. Over an infinite field `Nat.card K = 0`, and the statement is `1 ∣ _`. -/
 theorem X_sub_C_pow_natCard_dvd_eval_sub_eval (a : K) (A : K[X][X]) :
     (X - C a) ^ Nat.card K ∣ A.eval (X ^ Nat.card K) - A.eval (C a) := by
-  rw [X_sub_C_pow_natCard]
-  exact sub_dvd_eval_sub _ _ _
+  cases finite_or_infinite K with
+  | inl _ =>
+    rw [X_sub_C_pow_natCard]
+    exact sub_dvd_eval_sub _ _ _
+  | inr _ =>
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact one_dvd _
 
 /-- If `f ≠ 0` in `K[X]` and `A ≠ 0` in `K[X][X]` have degrees with sum less than `#K`, some
 `a ∈ K` has `f a ≠ 0` and `A (C a) ≠ 0`. -/
