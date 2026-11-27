@@ -113,17 +113,6 @@ theorem latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup :
     P.latticeFundamentalAlcoveStabilizer b Y hQ hP ≤ P.latticeAffineWeylGroup Y hQ hP :=
   inf_le_right
 
-variable [P.IsCrystallographic] in
-omit [CharZero R] [Preorder R] [Finite ι] [Nonempty ι] in
-/-- Inclusion through an intermediate lattice agrees with direct inclusion of an affine element. -/
-@[simp]
-theorem inclusion_inclusion_affineWeylGroup (w : P.affineWeylGroup) :
-    Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP)
-        (Subgroup.inclusion (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP) w) =
-      Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup w := by
-  apply Subtype.ext
-  simp
-
 /-- The inclusions of lattice alcove stabilizers commute with the ambient group inclusions. -/
 @[simp]
 theorem inclusion_inclusion_latticeFundamentalAlcoveStabilizer
