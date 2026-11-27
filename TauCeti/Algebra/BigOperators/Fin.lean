@@ -10,6 +10,8 @@ public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Logic.Equiv.Fin.Basic
 public import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+import Mathlib.Algebra.Module.NatInt
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.List.OfFn
@@ -21,6 +23,8 @@ import TauCeti.Data.Fin.Basic
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+The alternating sum over the faces of a simplex of the products of values on its front and back
+faces splits as in the Leibniz rule for cup products (`Fin.sum_neg_one_pow_zsmul_mul_succAbove`).
 Summing a tuple on `Fin (k + 1)` with one index left out, over all choices of the omitted
 index, counts every entry `k` times (`Fin.sum_sum_succAbove`, multiplicatively
 `Fin.prod_prod_succAbove`).
@@ -98,6 +102,51 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
+
+/-- The **Leibniz rule for front and back faces**. Let `α` and `β` assign values in a ring to the
+maps of vertices `Fin (p + 1) → Fin (p + q + 2)` and `Fin (q + 1) → Fin (p + q + 2)`. The
+alternating sum over the faces `j` of the products of `α` on the front `p`-face and `β` on the back
+`q`-face of `j` is the alternating sum of the faces of `α` on the front `(p + 1)`-face times `β` on
+the back `q`-face, plus `(-1) ^ p` times `α` on the front `p`-face times the alternating sum of the
+faces of `β` on the back `(q + 1)`-face. The faces `j ≤ p` give the first sum, the faces `j ≥ p + 1`
+the second, and the last face in the first sum cancels the first face in the second. This is the
+combinatorial core of the Leibniz rule for cup products of simplicial cochains. -/
+theorem sum_neg_one_pow_zsmul_mul_succAbove {A : Type*} [Ring A] {p q : ℕ}
+    (α : (Fin (p + 1) → Fin (p + q + 2)) → A) (β : (Fin (q + 1) → Fin (p + q + 2)) → A) :
+    ∑ j : Fin (p + q + 2), (-1 : ℤ) ^ (j : ℕ) •
+        (α (j.succAbove ∘ castLE (by omega)) *
+          β (j.succAbove ∘ fun i ↦ Fin.cast (by omega) (natAdd p i))) =
+      (∑ i : Fin (p + 2), (-1 : ℤ) ^ (i : ℕ) • α (castLE (by omega) ∘ i.succAbove)) *
+          β (fun i ↦ Fin.cast (by omega) (natAdd (p + 1) i)) +
+        (-1 : ℤ) ^ p • (α (castLE (by omega)) *
+          ∑ i : Fin (q + 2), (-1 : ℤ) ^ (i : ℕ) •
+            β ((fun i ↦ Fin.cast (by omega) (natAdd p i)) ∘ i.succAbove)) := by
+  have hα {σ σ' : Fin (p + 1) → Fin (p + q + 2)} (h : ∀ i, (σ i : ℕ) = σ' i) : α σ = α σ' :=
+    congrArg α (funext fun i ↦ Fin.ext (h i))
+  have hβ {σ σ' : Fin (q + 1) → Fin (p + q + 2)} (h : ∀ i, (σ i : ℕ) = σ' i) : β σ = β σ' :=
+    congrArg β (funext fun i ↦ Fin.ext (h i))
+  rw [← sum_congr' _ (show p + 1 + (q + 1) = p + q + 2 by omega), sum_univ_add,
+    sum_univ_castSucc (n := p + 1), sum_univ_succ (n := q + 1)]
+  simp only [add_mul, mul_add, smul_add, Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
+  have key {P₁ P₂ Q₁ Q₂ S T : A} (h₁ : P₁ = Q₁) (h₂ : P₂ = Q₂) (h : S + T = 0) :
+      P₁ + P₂ = Q₁ + S + (T + Q₂) := by
+    rw [h₁, h₂, add_assoc Q₁, ← add_assoc S, h, zero_add]
+  refine key (Finset.sum_congr rfl fun x _ ↦ ?_) (Finset.sum_congr rfl fun x _ ↦ ?_) ?_
+  · rw [smul_mul_assoc]
+    congr 2
+    · exact hα fun i ↦ by grind [val_succAbove]
+    · exact hβ fun i ↦ by grind [val_succAbove]
+  · rw [mul_smul_comm, smul_smul, ← pow_add]
+    congr 2
+    · simp only [val_cast, val_natAdd, val_succ]
+      omega
+    · exact hα fun i ↦ by grind [val_succAbove]
+    · exact hβ fun i ↦ by grind [val_succAbove]
+  · simp only [val_last, val_zero, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul, neg_mul,
+      smul_mul_assoc, neg_add_eq_zero]
+    congr 2
+    · exact hα fun i ↦ by grind [val_succAbove]
+    · exact hβ fun i ↦ by grind [val_succAbove]
 
 /-- Multiplying the products of a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
 choices of the omitted index, takes every entry `k` times. -/
