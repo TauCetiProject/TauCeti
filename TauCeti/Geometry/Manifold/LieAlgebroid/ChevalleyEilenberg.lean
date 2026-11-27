@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Lie.Cohomology.LieRinehart
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Section
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
 import TauCeti.Algebra.Ring.Parity
@@ -44,10 +44,10 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
   formula on sections and `d_A ∘ d_A = 0`.
 * `TauCeti.LieAlgebroid.curryLeft_extDeriv_succ`, `lieDeriv_wedge`, `extDeriv_wedge`: Cartan's
   homotopy formula and graded Leibniz rules for `ContMDiffSection.wedge`.
-* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `contMDiffSectionEquiv_symm_tangent_extDeriv`,
-  `contMDiffSectionEquiv_symm_wedge`: comparison of `(tangent I M).extDeriv` and
-  `ContMDiffSection.wedge` with `mextDeriv` and `SmoothForm.wedge` via
-  `TauCeti.SmoothForm.contMDiffSectionEquiv`.
+* `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `contMDiffSectionEquiv_symm_tangent_extDeriv`:
+  comparison of `(tangent I M).extDeriv` with `mextDeriv` via
+  `TauCeti.SmoothForm.contMDiffSectionEquiv` (with `SmoothForm.contMDiffSectionEquiv_symm_wedge`
+  for `ContMDiffSection.wedge` and `SmoothForm.wedge`).
 
 ## References
 
@@ -431,7 +431,8 @@ theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k
   simp only [sub_mul, mul_sub, Finset.sum_mul, Finset.mul_sum]
   ring
 
-private theorem extDeriv_cast_cochain {m m' : ℕ} (h : m = m') (η : A.Cochain m) :
+/-- `A.extDeriv` commutes with degree casts `LinearEquiv.cast (M := A.Cochain)`. -/
+theorem extDeriv_cast_cochain {m m' : ℕ} (h : m = m') (η : A.Cochain m) :
     A.extDeriv m' (LinearEquiv.cast (R := ℝ) (M := A.Cochain) h η) =
       LinearEquiv.cast (R := ℝ) (M := A.Cochain) (congrArg (· + 1) h) (A.extDeriv m η) := by
   subst h; rfl
@@ -582,19 +583,6 @@ section Tangent
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- `SmoothForm.contMDiffSectionEquiv.symm` intertwines `ContMDiffSection.wedge` with
-`SmoothForm.wedge`. -/
-@[simp] theorem contMDiffSectionEquiv_symm_wedge {k l : ℕ}
-    (φ : (tangent I M).Cochain k) (ψ : (tangent I M).Cochain l) :
-    SmoothForm.contMDiffSectionEquiv.symm (φ.wedge ψ) =
-      SmoothForm.wedge (SmoothForm.contMDiffSectionEquiv.symm φ)
-        (SmoothForm.contMDiffSectionEquiv.symm ψ) := by
-  refine SmoothForm.toContMDiffSection_injective ?_
-  ext x v
-  simp only [SmoothForm.toContMDiffSection_apply, SmoothForm.contMDiffSectionEquiv_symm_apply,
-    ContMDiffSection.wedge_apply, SmoothForm.coe_wedge, RoughForm.wedge_def,
-    RoughForm.wedgeWith_apply']
 
 private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochain (m + 1))
     (s : Fin (m + 2) → Cₛ^∞⟮I; E, TangentSpace I⟯) (i : Fin (m + 2)) :
