@@ -96,8 +96,9 @@ instance : (toProEt X).Faithful :=
 after the fully faithful forgetful functor of the pro-étale site, it is the forgetful functor of
 the étale site, which preserves them. -/
 instance preservesFiniteLimits_toProEt : PreservesFiniteLimits (toProEt X) :=
-  have : PreservesFiniteLimits (toProEt X ⋙ ProEt.forget X) :=
-    inferInstanceAs (PreservesFiniteLimits (Etale.forget X))
+  have : PreservesFiniteLimits (toProEt X ⋙ ProEt.forget X) := by
+    rw [toProEt_comp_forget]
+    infer_instance
   preservesFiniteLimits_of_reflects_of_preserves (toProEt X) (ProEt.forget X)
 
 instance : RepresentablyFlat (toProEt X) :=
@@ -122,6 +123,7 @@ lemma coverPreserving_toProEt :
     have : RepresentablyFlat (Etale.forget X) := flat_of_preservesFiniteLimits _
     have h := ((Functor.isContinuous_iff_coverPreserving (F := Etale.forget X)
       (J := smallEtaleTopology X) (K := etaleTopology.over X)).mp inferInstance).cover_preserve hR
+    rw [← toProEt_comp_forget] at h
     rw [ProEt.topology_eq_restrictedTopology]
     refine Functor.mem_restrictedTopology_of_functorPushforward_mem ?_
     rw [← Sieve.functorPushforward_comp]
