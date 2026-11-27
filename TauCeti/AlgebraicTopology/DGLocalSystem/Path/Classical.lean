@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Homotopic
-import TauCeti.Topology.PathSpace.Moore.Comparison.Between
 
 /-!
 # Changing the basepoint of a classical local system is parallel transport
@@ -35,13 +34,9 @@ It is a quasi-isomorphism as soon as `a` and `b` are joined by a path, say by a 
 (`TauCeti.tensorPathChainTransport_isQuasiIso`). The tensor product is a homotopy retract of
 `L_a`, through `m ⊗ c ↦ m · ρ_δ(c)` and `m ↦ m ⊗ [δ]` (the general change of basepoint,
 `TauCeti.tensorPathChainPoint_tensorPathChainAct`), and under this retraction the comparison is
-transport along `δ`, an isomorphism `L_a ≅ L_b`. So for a DG local system concentrated in degree
-zero, a module over `R[π₁(X, a)]`, changing the basepoint along a path is the identity on the
-underlying module, read through transport along the path, with the monodromy conjugated by the
-path: transport along `δ` carries the action of a loop `γ` at `a` to that of `δ⁻¹ ⋆ γ ⋆ δ` at
-`b`. For the circle, with abelian fundamental group, the conjugation does not change the
-monodromy. For `b = a`, the comparison is the isomorphism `L_a ⊗ C_*(P_{a→a} X) ≅ L_a` of the
-unit law of basepoint change (`TauCeti.tensorPathChainTransport_eq_tensorPathChainAct_one`).
+transport along `δ`, an isomorphism `L_a ≅ L_b`. For `b = a`, the comparison is the isomorphism
+`L_a ⊗ C_*(P_{a→a} X) ≅ L_a` of the unit law of basepoint change
+(`TauCeti.tensorPathChainTransport_eq_tensorPathChainAct_one`).
 
 ## Main definitions
 
@@ -54,7 +49,9 @@ unit law of basepoint change (`TauCeti.tensorPathChainTransport_eq_tensorPathCha
 
 * `TauCeti.pathChainTransport_cubicalChainModuleDifferential`: transport vanishes on boundaries.
 * `TauCeti.pathChainTransport_smul`, `TauCeti.pathChainTransport_op_smul`: transport is
-  compatible with the actions of the Moore loops at both ends.
+  compatible with the actions of the Moore loops at both ends, reduced to point chains by
+  `TauCeti.pathChainTransport_pathChainPoint_leftAct` and
+  `TauCeti.pathChainTransport_pathChainPoint_rightAct`.
 * `TauCeti.tensorPathChainTransport_isQuasiIso`: within a path component, changing the basepoint
   of a classical local system is transport, up to quasi-isomorphism.
 * `TauCeti.transport_comp_tensorPathChainAct`: under the retraction of the change of basepoint
@@ -152,15 +149,7 @@ private theorem pathChainTransportZero_boundary_ofCube
   have h : Path.Homotopic.Quotient.mk (c fun _ ↦ 0).toPath =
       Path.Homotopic.Quotient.mk (c fun _ ↦ 1).toPath :=
     Quotient.sound (MoorePathBetween.homotopic_toPath_of_joined hjoined)
-  have h₀ : SingularCube.face 0 0 c = SingularCube.point (c fun _ ↦ 0) :=
-    ContinuousMap.ext fun x ↦ by
-      rw [SingularCube.face_apply, SingularCube.point_apply]
-      exact congrArg c (funext fun i ↦ by fin_cases i; rfl)
-  have h₁ : SingularCube.face 0 1 c = SingularCube.point (c fun _ ↦ 1) :=
-    ContinuousMap.ext fun x ↦ by
-      rw [SingularCube.face_apply, SingularCube.point_apply]
-      exact congrArg c (funext fun i ↦ by fin_cases i; rfl)
-  simp [pathChainTransportZero, h₀, h₁, h]
+  simp [pathChainTransportZero, SingularCube.face_eq_point, h]
 
 /-- **Transport vanishes on boundaries**: the two ends of a path in the space of Moore paths from
 `a` to `b` are homotopic paths, so they transport alike. -/
@@ -184,20 +173,29 @@ theorem pathChainTransport_cubicalChainModuleDifferential
             pathChainTransportZero_boundary_ofCube L c
       · exact pathChainTransport_lof_succ L j _
 
-/-- The point chain of a Moore loop acts on the fiber of a classical local system by transport
-along its class. -/
-private theorem classicalAction_lof_point (ω : MooreLoopSpace X a) :
-    classicalAction L (op (cubicalChainLof (MooreLoopSpace X a) R 0
-        (ofCube (MooreLoopSpace X a) R (SingularCube.point ω)))) =
-      (LocalCoefficientSystem.transport L (Path.Homotopic.Quotient.mk ω.toPath)).toLinearMap := by
-  ext m
-  simp [classicalAction_lof_ofCube, FundamentalGroup.fromPath]
+/-- The `0`-chain of a Moore loop `ω` at `a` followed by a Moore path `γ` transports along `γ`
+after transport along `ω`. -/
+theorem pathChainTransport_pathChainPoint_leftAct (ω : MooreLoopSpace X a)
+    (γ : MoorePathBetween X a b) :
+    pathChainTransport L (pathChainPoint R (MoorePathBetween.leftAct ω γ)) =
+      pathChainTransport L (pathChainPoint R γ) ∘ₗ
+        (LocalCoefficientSystem.transport L (Path.Homotopic.Quotient.mk ω.toPath)).toLinearMap := by
+  rw [pathChainTransport_pathChainPoint, pathChainTransport_pathChainPoint,
+    Path.Homotopic.Quotient.eq.2 (MoorePathBetween.homotopic_toPath_leftAct ω γ),
+    Path.Homotopic.Quotient.mk_trans, LocalCoefficientSystem.transport_trans,
+    LinearEquiv.coe_trans]
 
-/-- Chains of positive dimension act by zero on the fiber of a classical local system. -/
-private theorem classicalAction_lof_succ (k : ℕ)
-    (y : NormalizedCubicalChain (MooreLoopSpace X a) R (k + 1)) :
-    classicalAction L (op (cubicalChainLof (MooreLoopSpace X a) R (k + 1) y)) = 0 :=
-  classicalAction_eq_zero L (loopChainToGroupAlgebra_lof_succ k y)
+/-- The `0`-chain of a Moore path `γ` followed by a Moore loop `ω` at `b` transports along `ω`
+after transport along `γ`. -/
+theorem pathChainTransport_pathChainPoint_rightAct (γ : MoorePathBetween X a b)
+    (ω : MooreLoopSpace X b) :
+    pathChainTransport L (pathChainPoint R (MoorePathBetween.rightAct γ ω)) =
+      (LocalCoefficientSystem.transport L (Path.Homotopic.Quotient.mk ω.toPath)).toLinearMap ∘ₗ
+        pathChainTransport L (pathChainPoint R γ) := by
+  rw [pathChainTransport_pathChainPoint, pathChainTransport_pathChainPoint,
+    Path.Homotopic.Quotient.eq.2 (MoorePathBetween.homotopic_toPath_rightAct γ ω),
+    Path.Homotopic.Quotient.mk_trans, LocalCoefficientSystem.transport_trans,
+    LinearEquiv.coe_trans]
 
 /-- **Transport is compatible with the loops at `a`**: a chain of Moore loops at `a` acting in
 front of a chain of paths acts, after transport, on the fiber `L_a` before it, by monodromy. -/
@@ -229,12 +227,9 @@ theorem pathChainTransport_smul (α : loopChainAlgebra X a R)
               simp only [map_smul, LinearMap.smul_comp, hc]
             | ofCube σ =>
               rw [SingularCube.eq_point ω, SingularCube.eq_point σ, leftAct_ofCube_point,
-                classicalAction_lof_point, pathChainTransport_lof_zero_ofCube,
-                pathChainTransport_lof_zero_ofCube, SingularCube.point_apply,
-                SingularCube.point_apply, MoorePathBetween.smul_eq_leftAct,
-                Path.Homotopic.Quotient.eq.2 (MoorePathBetween.homotopic_toPath_leftAct _ _),
-                Path.Homotopic.Quotient.mk_trans, LocalCoefficientSystem.transport_trans,
-                LinearEquiv.coe_trans]
+                classicalAction_lof_point, MoorePathBetween.smul_eq_leftAct,
+                ← pathChainPoint_def, ← pathChainPoint_def,
+                pathChainTransport_pathChainPoint_leftAct]
         · rw [pathChainTransport_eq_zero_of_mem L (by omega) (cubicalChainModuleLof_mem _),
             pathChainTransport_lof_succ, LinearMap.zero_comp]
       · rw [pathChainTransport_eq_zero_of_mem L (by omega) (cubicalChainModuleLof_mem _),
@@ -271,12 +266,9 @@ theorem pathChainTransport_op_smul (β : loopChainAlgebra X b R)
               simp only [map_smul, LinearMap.smul_apply, LinearMap.comp_smul, hc]
             | ofCube σ =>
               rw [SingularCube.eq_point ω, SingularCube.eq_point σ, act_ofCube_point,
-                classicalAction_lof_point, pathChainTransport_lof_zero_ofCube,
-                pathChainTransport_lof_zero_ofCube, SingularCube.point_apply,
-                SingularCube.point_apply, MoorePathBetween.op_smul_eq_rightAct,
-                Path.Homotopic.Quotient.eq.2 (MoorePathBetween.homotopic_toPath_rightAct _ _),
-                Path.Homotopic.Quotient.mk_trans, LocalCoefficientSystem.transport_trans,
-                LinearEquiv.coe_trans]
+                classicalAction_lof_point, MoorePathBetween.op_smul_eq_rightAct,
+                ← pathChainPoint_def, ← pathChainPoint_def,
+                pathChainTransport_pathChainPoint_rightAct]
         · rw [pathChainTransport_eq_zero_of_mem L (by omega) (cubicalChainModuleLof_mem _),
             pathChainTransport_lof_succ, LinearMap.comp_zero]
       · rw [pathChainTransport_eq_zero_of_mem L (by omega) (cubicalChainModuleLof_mem _),
@@ -349,8 +341,8 @@ private theorem tensorPathChainTransportLinearMap_differential
     (fun (m : classicalDGLocalSystem a L) c ↦ ?_)
     (fun z z' hz hz' ↦ by rw [map_add, map_add, hz, hz', add_zero])
   rw [tensorBimoduleObj_differential_tmul (M := classicalDGLocalSystem a L) (p := 0) (m := m)
-    (by rw [classicalDGLocalSystem_grading, trivialGrading_zero]; trivial)]
-  erw [map_add, map_zsmul, tensorPathChainTransportLinearMap_tmul,
+    (by rw [classicalDGLocalSystem_grading, trivialGrading_zero]; trivial),
+    map_add, Units.smul_def, map_zsmul, tensorPathChainTransportLinearMap_tmul,
     tensorPathChainTransportLinearMap_tmul, pathChainTransport_cubicalChainModuleDifferential]
   -- The differential of the classical DG local system is zero
   -- (`classicalDGLocalSystem_differential`); restate the goal on the fiber of `L`, which `rw`
@@ -393,7 +385,10 @@ def tensorPathChainTransport :
         rcases (mem_trivialGrading_iff R (L.obj (FundamentalGroupoid.mk a))).1 hm with rfl | rfl
         · by_cases hq : q = 0
           · exact Or.inl (by omega)
-          · exact Or.inr (by rw [pathChainTransport_eq_zero_of_mem L hq hc]; rfl)
+          · exact Or.inr (by
+              rw [pathChainTransport_eq_zero_of_mem L hq hc]
+              -- `m` is an element of the carrier of `L_a`, the fiber of `L`.
+              exact LinearMap.zero_apply (m : L.obj (FundamentalGroupoid.mk a)))
         · exact Or.inr (map_zero _)) hz
     rw [add_zero] at h
     exact h
@@ -434,20 +429,24 @@ private theorem transport_comp_classicalAction_pathChainToLoopChain (δ : MooreP
         rw [map_smul, map_smul, MulOpposite.op_smul, map_smul, LinearMap.comp_smul, hc, map_smul,
           map_smul]
       | ofCube σ =>
+        -- The loop `ρ_δ(σ)` is `σ ⋆ δ⁻¹`, so its class followed by that of `δ` is that of `σ`.
         have hσ : MoorePathBetween.loopHomeomorph a
             ((MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun
               (σ fun i ↦ i.elim0)) = (σ fun i ↦ i.elim0).trans δ.symm :=
           MoorePathBetween.ext
             (by simp [MoorePathBetween.toMoorePath_loopAppendHomotopyEquiv_symm])
         have hpath := MoorePathBetween.homotopic_toPath_trans (σ fun i ↦ i.elim0) δ.symm
-        rw [← hσ, MoorePathBetween.toPath_loopHomeomorph,
-          MoorePathBetween.toPath_symm] at hpath
+        rw [← hσ, MoorePathBetween.toPath_loopHomeomorph] at hpath
+        have hclass : (Path.Homotopic.Quotient.mk
+              ((MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun
+                (σ fun i ↦ i.elim0)).toPath).trans (Path.Homotopic.Quotient.mk δ.toPath) =
+            Path.Homotopic.Quotient.mk (σ fun i ↦ i.elim0).toPath := by
+          rw [Path.Homotopic.Quotient.eq.2 hpath]
+          simp [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
+            Path.Homotopic.Quotient.trans_assoc]
         rw [SingularCube.eq_point σ, map_ofCube, SingularCube.comp_point,
           classicalAction_lof_point, pathChainTransport_lof_zero_ofCube, SingularCube.point_apply,
-          ← LinearEquiv.coe_trans, ← LocalCoefficientSystem.transport_trans,
-          Path.Homotopic.Quotient.eq.2 hpath, Path.Homotopic.Quotient.mk_trans,
-          Path.Homotopic.Quotient.mk_symm, Path.Homotopic.Quotient.trans_assoc,
-          Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.trans_refl]
+          ← LinearEquiv.coe_trans, ← LocalCoefficientSystem.transport_trans, hclass]
     · rw [classicalAction_lof_succ, pathChainTransport_lof_succ, LinearMap.comp_zero]
 
 /-- **The comparison is transport along a path, after the retraction of the change of
@@ -507,13 +506,16 @@ theorem tensorPathChainTransport_isQuasiIso (h : Joined a b) :
       exact hxy
     refine ⟨e.symm y, 0, ?_, ?_⟩
     · -- The differential of `L_a` is zero.
-      rw [e.injective hx]
-      rfl
+      rw [e.injective hx, classicalDGLocalSystem_differential]
+      -- `e.symm y` is an element of the fiber `L_a`, the carrier of the DG local system.
+      exact LinearMap.zero_apply (e.symm y)
     · -- The target differential is zero.
       change e (e.symm y) + 0 = y
       rw [LinearEquiv.apply_symm_apply, add_zero]
-  · rw [tensorPathChainPoint_apply, tensorPathChainTransport_tmul_pathChainPoint]
-    rfl
+  · rw [tensorPathChainPoint_apply, tensorPathChainTransport_tmul_pathChainPoint,
+      LinearMap.id_apply]
+    -- `m` is an element of the carrier of `L_a`, the fiber of `L`, on which `e` acts.
+    exact (congrFun (LinearEquiv.coe_coe e) (m : L.obj (FundamentalGroupoid.mk a))).symm
 
 end Tensor
 

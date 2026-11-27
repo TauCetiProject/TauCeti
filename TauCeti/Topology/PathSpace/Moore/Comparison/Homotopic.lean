@@ -6,21 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-public import TauCeti.Topology.PathSpace.Moore.Between.Basic
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Between
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Trans
 
 /-!
-# Moore paths between two points as paths on the unit interval
+# Homotopy classes of reparametrized Moore paths between two points
 
 A Moore path from `a` to `b` is reparametrized to a path on the unit interval from `a` to `b`
-(`TauCeti.MoorePathBetween.toPath`), continuously in the Moore path. This file records how the
-homotopy class of the reparametrized path depends on the Moore path, which is what the
-fundamental groupoid sees of the Moore paths:
+(`TauCeti.MoorePathBetween.toPath`, in `TauCeti.Topology.PathSpace.Moore.Comparison.Between`),
+continuously in the Moore path. This file records how the homotopy class of the reparametrized
+path depends on the Moore path, which is what the fundamental groupoid sees of the Moore paths:
 
-* reparametrization commutes with reversal (`TauCeti.MoorePathBetween.toPath_symm`), and with
-  concatenation up to homotopy (`TauCeti.MoorePathBetween.homotopic_toPath_trans`), hence also
-  with the actions of the Moore loops at both ends by concatenation
-  (`TauCeti.MoorePathBetween.homotopic_toPath_leftAct`,
+* reparametrization commutes with concatenation up to homotopy
+  (`TauCeti.MoorePathBetween.homotopic_toPath_trans`), hence also with the actions of the Moore
+  loops at both ends by concatenation (`TauCeti.MoorePathBetween.homotopic_toPath_leftAct`,
   `TauCeti.MoorePathBetween.homotopic_toPath_rightAct`);
 * Moore paths joined by a path in the space of Moore paths from `a` to `b` have homotopic
   reparametrizations (`TauCeti.MoorePathBetween.homotopic_toPath_of_joined`). Closing both up with
@@ -40,36 +39,6 @@ open unitInterval
 namespace TauCeti.MoorePathBetween
 
 variable {X : Type*} [TopologicalSpace X] {a b c : X}
-
-/-- A Moore path from `a` to `b`, reparametrized to a path on the unit interval from `a` to `b`. -/
-def toPath (γ : MoorePathBetween X a b) : Path a b :=
-  γ.toMoorePath.toPath.cast γ.source.symm γ.target.symm
-
-/-- The value of `toPath γ` at `s` is `γ (γ.length * s)`. -/
-@[simp]
-theorem toPath_apply (γ : MoorePathBetween X a b) (s : I) :
-    γ.toPath s = γ.toMoorePath (γ.toMoorePath.length * toNNReal s) := by
-  simp [toPath]
-
-/-- `MoorePathBetween.toPath` is continuous. -/
-@[fun_prop]
-theorem continuous_toPath : Continuous (toPath : MoorePathBetween X a b → Path a b) :=
-  continuous_induced_rng.2 <| (MoorePath.continuous_toUnitPath.comp continuous_toMoorePath).congr
-    fun γ ↦ ContinuousMap.ext fun s ↦ by simp [MoorePath.toUnitPath_apply]
-
-/-- A Moore loop read as a Moore path from its basepoint to itself has the same reparametrization
-as the loop. -/
-@[simp]
-theorem toPath_loopHomeomorph (ω : MooreLoopSpace X a) :
-    (loopHomeomorph a ω).toPath = ω.toPath := by
-  ext s
-  simp
-
-/-- Reparametrization commutes with reversal. -/
-@[simp]
-theorem toPath_symm (γ : MoorePathBetween X a b) : γ.symm.toPath = γ.toPath.symm := by
-  ext s
-  simp [unitInterval.toNNReal_symm, mul_tsub]
 
 /-- **Reparametrization commutes with concatenation up to homotopy**: the reparametrization of
 `γ.trans δ` is homotopic to the concatenation on the unit interval of those of `γ` and `δ`. The
