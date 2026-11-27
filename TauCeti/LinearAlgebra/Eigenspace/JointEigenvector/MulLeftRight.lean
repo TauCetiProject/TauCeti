@@ -23,6 +23,8 @@ distinct characters, as for the translations in a Heisenberg group.
 
 public section
 
+namespace TauCeti
+
 open Module
 
 variable {K M : Type*} [Field K] [AddCommGroup M] [Module K M]
@@ -38,4 +40,6 @@ theorem linearIndependent_of_forall_mul_mul_eq_smul {ι Y : Type*} {A : ι → E
     simp only [Submodule.mem_iInf, End.mem_eigenspace_iff]
     intro y
     rw [LinearMap.mulLeftRight_apply, h]
-  exact ((TauCeti.iSupIndep_iInf_eigenspace cj).comp he).linearIndependent _ eigen hA
+  exact ((iSupIndep_iInf_eigenspace cj).comp he).linearIndependent _ eigen hA
+
+end TauCeti
