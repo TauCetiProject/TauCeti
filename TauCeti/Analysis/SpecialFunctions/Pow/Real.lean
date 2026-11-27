@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Real.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
 # Real powers
@@ -55,6 +56,7 @@ For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` 
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
 For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`: a weight of
 nonpositive regularity at a larger index absorbs the inverse weight at a smaller one.
+For `0 < b` the weights cancel exactly: `b ^ (-s x) b ^ (s x) = 1`.
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
@@ -151,6 +153,10 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
+* `Real.eq_zero_of_forall_zpow_rpow_le`: `e = 0` when `(b ^ k) ^ e ≤ K` for all `k ∈ ℤ` and some
+  `b > 1`.
+* `Real.rpow_sub_le_div_of_ofReal_rpow_mul_le`: `x ^ (a - b) ≤ C B / Φ` in `ℝ` from
+  `x ^ a Φ ≤ C (x ^ b B)` in `ℝ≥0∞`, for `x > 0`, `Φ ≠ 0` and `B < ∞`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
@@ -171,6 +177,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
   `M * R' ^ p < ε`.
 * `Real.rpow_sub_mul_mul_rpow_mul`: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for `0 < x`.
+* `Real.rpow_sub_pow_mul_rpow_mul_natCast`: `(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for
+  `0 < x`.
 * `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
   `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
@@ -180,6 +188,9 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
+* `Real.exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow`: power decay `E r ≤ A * r ^ (2 * β)`
+  of an energy, with a small-energy bound `d ^ 2 * x ^ 2 ≤ K * E (2 * d)`, gives
+  `x ≤ √B * d ^ (β - 1)` for small `d`.
 * `Real.le_rpow_inv_mul_of_rpow_le`: `x ≤ r ^ r⁻¹ n` when `x ^ r ≤ (r - 1) y ^ r + z ^ r` with
   `1 ≤ r` and `0 ≤ y, z ≤ n`, the step turning an `Lʳ` trace inequality into a linear bound.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
@@ -334,6 +345,16 @@ theorem rpow_mul_mul_rpow_neg_mul_le_one {b : ℝ} (hb : 1 ≤ b) {s : ℝ} (hs 
   refine rpow_le_one_of_one_le_of_nonpos hb ?_
   nlinarith
 
+/-- For `0 < b`, the dyadic weights `b ^ (-s x)` and `b ^ (s x)` cancel. -/
+theorem rpow_neg_mul_mul_rpow_mul {b : ℝ} (hb : 0 < b) (s x : ℝ) :
+    b ^ (-s * x) * b ^ (s * x) = 1 := by
+  rw [← rpow_add hb, neg_mul, neg_add_cancel, rpow_zero]
+
+/-- For `0 < b`, the dyadic weights `b ^ (s x)` and `b ^ (-s x)` cancel. -/
+theorem rpow_mul_mul_rpow_neg_mul {b : ℝ} (hb : 0 < b) (s x : ℝ) :
+    b ^ (s * x) * b ^ (-s * x) = 1 := by
+  rw [mul_comm, rpow_neg_mul_mul_rpow_mul hb]
+
 /-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
 back into `b ^ (s k)`. -/
 theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (d k : ℕ) :
@@ -422,6 +443,50 @@ theorem eq_zero_of_forall_rpow_le {e K : ℝ} (h : ∀ c : ℝ, 0 < c → c ^ e 
   have := h ((K + 1) ^ e⁻¹) (rpow_pos_of_pos hK _)
   rw [← rpow_mul hK.le, inv_mul_cancel₀ he, rpow_one] at this
   linarith
+
+/-- If `(b ^ k) ^ e` is bounded over all integers `k` for some `b > 1`, then `e = 0`:
+`(b ^ k) ^ e = (b ^ e) ^ k` is unbounded as `k → ∞` when `e > 0` and as `k → -∞` when `e < 0`.
+This pins an exponent by a scaling argument that only has the dilations by the powers of `b`, such
+as the dyadic dilations. -/
+theorem eq_zero_of_forall_zpow_rpow_le {b e K : ℝ} (hb : 1 < b) (h : ∀ k : ℤ, (b ^ k) ^ e ≤ K) :
+    e = 0 := by
+  have hb0 : 0 ≤ b := zero_le_one.trans hb.le
+  have hk : ∀ k : ℤ, (b ^ k) ^ e = (b ^ e) ^ k := fun k ↦ by
+    rw [← rpow_intCast, ← rpow_intCast, ← rpow_mul hb0, ← rpow_mul hb0, mul_comm]
+  by_contra he
+  rcases lt_or_gt_of_ne he with he | he
+  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt K (one_lt_inv_iff₀.2
+      ⟨rpow_pos_of_pos (zero_lt_one.trans hb) e, rpow_lt_one_of_one_lt_of_neg hb he⟩)
+    have := h (-n)
+    rw [hk, zpow_neg, zpow_natCast, ← inv_pow] at this
+    linarith
+  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt K (one_lt_rpow hb he)
+    have := h n
+    rw [hk, zpow_natCast] at this
+    linarith
+
+open scoped ENNReal NNReal in
+/-- **A scaling estimate in real terms.** If `x ^ a Φ ≤ C (x ^ b B)` in `ℝ≥0∞` for some `x > 0`,
+with `Φ ≠ 0` and `B < ∞`, then `Φ` is finite and `x ^ (a - b) ≤ C B / Φ` in `ℝ`. Applied to every
+scale `x`, this turns a scaling estimate, whose two sides are powers of the scale times fixed
+quantities, into a bound on `x ^ (a - b)` that pins the exponent `a - b`
+(`Real.eq_zero_of_forall_rpow_le`, `Real.eq_zero_of_forall_zpow_rpow_le`). -/
+theorem rpow_sub_le_div_of_ofReal_rpow_mul_le {x a b : ℝ} (hx : 0 < x) {Φ B : ℝ≥0∞} {C : ℝ≥0}
+    (hΦ : Φ ≠ 0) (hB : B ≠ ∞) (h : ENNReal.ofReal (x ^ a) * Φ ≤ C * (ENNReal.ofReal (x ^ b) * B)) :
+    x ^ (a - b) ≤ C * B.toReal / Φ.toReal := by
+  have hR : (C : ℝ≥0∞) * (ENNReal.ofReal (x ^ b) * B) ≠ ∞ :=
+    ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB)
+  have hΦt : Φ ≠ ∞ := fun hΦt ↦ hR <| top_le_iff.1 <| h.trans_eq' <| by
+    rw [hΦt, ENNReal.mul_top (ENNReal.ofReal_pos.2 (rpow_pos_of_pos hx a)).ne']
+  have hreal := ENNReal.toReal_mono hR h
+  simp only [ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.toReal_ofReal (rpow_nonneg hx.le _)]
+    at hreal
+  rw [le_div_iff₀ (ENNReal.toReal_pos hΦ hΦt)]
+  refine le_of_mul_le_mul_left ?_ (rpow_pos_of_pos hx b)
+  calc x ^ b * (x ^ (a - b) * Φ.toReal) = x ^ a * Φ.toReal := by
+        rw [← mul_assoc, ← rpow_add hx, add_sub_cancel]
+    _ ≤ C * (x ^ b * B.toReal) := hreal
+    _ = x ^ b * (C * B.toReal) := mul_left_comm _ _ _
 
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
@@ -546,6 +611,12 @@ theorem rpow_sub_mul_mul_rpow_mul {x : ℝ} (hx : 0 < x) (s a t : ℝ) :
     x ^ ((s - a) * t) * x ^ (a * t) = x ^ (s * t) := by
   rw [← rpow_add hx, ← add_mul, sub_add_cancel]
 
+/-- Trading `a` orders in a natural-number scaled exponent:
+`(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for `0 < x`. -/
+theorem rpow_sub_pow_mul_rpow_mul_natCast {x : ℝ} (hx : 0 < x) (s a : ℝ) (n : ℕ) :
+    (x ^ (s - a)) ^ n * x ^ (a * n) = x ^ (s * n) := by
+  rw [← rpow_mul_natCast hx.le, rpow_sub_mul_mul_rpow_mul hx]
+
 /-- For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`. -/
 theorem pow_div_pow_pow_eq_rpow_of_le {x : ℝ} (hx : 0 < x) {a b : ℕ} (hab : a ≤ b) (M : ℕ) :
     (x ^ a / x ^ b) ^ M = x ^ (-(M * |(b : ℝ) - a|)) := by
@@ -602,6 +673,34 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
   have h' : d * x ≤ sqrt B * d ^ β := (le_sqrt_of_sq_le hsq).trans_eq
     (by rw [sqrt_mul_sq, abs_of_nonneg (rpow_nonneg hd.le β)])
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
+  linarith
+
+/-- **Power decay of a quantity from power decay of an energy.** Suppose `E r ≤ A * r ^ (2 * β)`
+for `0 < r < R / 2`, with `β > 0`. Then for every threshold `δ > 0` there are `0 < ε < R / 2`
+and `B` such that for `0 < d < ε` the energy `E (2 * d)` is below `δ`, and every `x` with
+`d ^ 2 * x ^ 2 ≤ K * E (2 * d)` satisfies `x ≤ √B * d ^ (β - 1)`. This turns energy decay and a
+small-energy mean-value inequality on the disc of radius `2 * d` into a pointwise power bound. -/
+theorem exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow {E : ℝ → ℝ} {R A K δ β : ℝ}
+    (hR : 0 < R) (hK : 0 ≤ K) (hβ : 0 < β) (hδ : 0 < δ)
+    (hpower : ∀ r ∈ Set.Ioo 0 (R / 2), E r ≤ A * r ^ (2 * β)) :
+    ∃ ε > 0, ε < R / 2 ∧ ∃ B, ∀ d ∈ Set.Ioo 0 ε, E (2 * d) < δ ∧
+      ∀ x, d ^ 2 * x ^ 2 ≤ K * E (2 * d) → x ≤ √B * d ^ (β - 1) := by
+  -- Choose a radius on which the energy bound at the doubled radius is below `δ`.
+  have ht : Tendsto (fun r : ℝ ↦ 2 * r) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul 2
+  have hlim : Tendsto (fun r : ℝ ↦ A * (2 * r) ^ (2 * β)) (𝓝 0) (𝓝 0) := by
+    simpa [zero_rpow (by positivity : 2 * β ≠ 0)] using
+      (ht.rpow_const_nhds_zero (by positivity : 0 < 2 * β)).const_mul A
+  obtain ⟨η, hη, hηbound⟩ := Metric.eventually_nhds_iff.mp (hlim.eventually (gt_mem_nhds hδ))
+  refine ⟨min η (R / 4), lt_min hη (by positivity), (min_le_right _ _).trans_lt (by linarith),
+    K * A * 2 ^ (2 * β), fun d hd ↦ ?_⟩
+  have hpow := hpower (2 * d) ⟨by linarith [hd.1], by linarith [hd.2.trans_le (min_le_right _ _)]⟩
+  have hsmall : A * (2 * d) ^ (2 * β) < δ := hηbound (by
+    rw [dist_eq, sub_zero, abs_of_pos hd.1]
+    exact hd.2.trans_le (min_le_left _ _))
+  refine ⟨hpow.trans_lt hsmall, fun x hx ↦ le_sqrt_mul_rpow_sub_one_of_sq_le hd.1 ?_⟩
+  have h := hx.trans (mul_le_mul_of_nonneg_left hpow hK)
+  rw [mul_rpow (by norm_num) hd.1.le] at h
   linarith
 
 /-- If `x ^ r ≤ (r - 1) y ^ r + z ^ r` for `1 ≤ r` and nonnegative `y`, `z`, both at most `n`,

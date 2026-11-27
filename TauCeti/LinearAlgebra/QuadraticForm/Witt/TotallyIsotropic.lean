@@ -160,17 +160,10 @@ private theorem finrank_eq_wittIndex_of_maximal_aux [Invertible (2 : K)] (n : �
   obtain ⟨f, hfQ, hwf⟩ :=
     exists_isotropic_polar_eq_one_of_radical_eq_bot hQ.radical_eq_bot hw0 hwQ
   set U := LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f})
-  have hequiv := Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hwQ hfQ hwf
   have hU := hQ.nondegenerate_restrict_orthogonal_span_pair hwQ hfQ hwf
-  have hindex : RegularFormClass.wittIndex (formClass Q hQ) =
-      RegularFormClass.wittIndex (formClass (Q.restrict U) hU) + 1 := by
-    have hclass : formClass Q hQ = 1 • hyperbolicClass K + formClass (Q.restrict U) hU := by
-      rw [one_nsmul, ← formClass_hyperbolicPlane, ← formClass_prod, formClass_eq_iff]
-      exact hequiv
-    rw [hclass, RegularFormClass.wittIndex_nsmul_hyperbolicClass_add, add_comm]
-  have hdim : finrank K V = finrank K U + 2 := by
-    obtain ⟨e⟩ := hequiv
-    rw [e.toLinearEquiv.finrank_eq, Module.finrank_prod, Module.finrank_fin_fun, add_comm]
+  have hindex := (Q.wittIndex_formClass_restrict_orthogonal_span_pair_add_one hQ hwQ hfQ hwf).symm
+  have hdim : finrank K V = finrank K U + 2 :=
+    (Q.finrank_orthogonal_span_pair_add_two hwQ hfQ hwf).symm
   rw [← finrank_comap_orthogonal_span_pair_add_one hW.prop hwW hwf, hindex,
     ih (finrank K U) (by omega) (Q.restrict U) hU rfl
       (maximal_comap_orthogonal_span_pair hW hwW hwf)]

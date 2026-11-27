@@ -221,6 +221,13 @@ noncomputable def rep :
   TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
     ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)
 
+/-- The standard enveloping-algebra representation is induced by the Lie action on coordinate
+vectors. -/
+theorem rep_def :
+    rep n = TauCeti.UniversalEnvelopingAlgebra.representation ℚ (sp (Fin (n + 1)) ℚ)
+      ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
+  (rfl)
+
 theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =

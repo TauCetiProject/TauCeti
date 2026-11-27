@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 
 /-!

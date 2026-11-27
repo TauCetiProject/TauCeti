@@ -11,7 +11,8 @@ public import Mathlib.Data.Set.Image
 # Images of sets under compositions
 
 This file contains elementary lemmas about images of sets under composed functions, including
-`Function.Injective.image_preimage_eq_preimage_image` for Cartesian-like squares of functions.
+`Function.Injective.image_preimage_eq_preimage_image` for Cartesian-like squares of functions, and
+about preimages under an injective function of the range of a composition or of a single value.
 -/
 
 public section
@@ -50,3 +51,17 @@ theorem _root_.Function.Injective.image_preimage_eq_preimage_image {U V X Y : Ty
     (hpre.symm ▸ Set.preimage_mono (Set.image_subset_range j s))
 
 end TauCeti
+
+namespace Function.Injective
+
+variable {α β γ : Type*} {f : β → γ}
+
+/-- An injective function `f` pulls the range of `f ∘ g` back to the range of `g`. -/
+theorem preimage_range_comp (hf : Injective f) (g : α → β) : f ⁻¹' range (f ∘ g) = range g := by
+  rw [range_comp, hf.preimage_image]
+
+/-- The fibre of an injective function `f` over `f a` is `{a}`. -/
+theorem preimage_singleton (hf : Injective f) (a : β) : f ⁻¹' {f a} = {a} := by
+  rw [← image_singleton, hf.preimage_image]
+
+end Function.Injective

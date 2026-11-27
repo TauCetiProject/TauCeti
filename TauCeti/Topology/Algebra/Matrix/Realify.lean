@@ -35,12 +35,15 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
 * `Matrix.isClosedEmbedding_realify`: realification of matrices is a closed embedding.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify`: realification of invertible matrices is a
   closed embedding.
+* `Matrix.GeneralLinearGroup.isClosed_range_realify`: its image is a closed subgroup.
 * `Matrix.GeneralLinearGroup.realifyEquivRange`: realification is an isomorphism of topological
   groups from `GL n 𝕜` onto its image in `GL (n ⊕ n) ℝ`.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify_comp_toUnits`: realification of unitary
   matrices is a closed embedding into `GL (n ⊕ n) ℝ`.
 * `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`: the realification isomorphism of topological
-  groups from `U(n)` onto the orthogonal symplectic matrices.
+  groups from `U(n)` onto the orthogonal symplectic matrices, and
+  `Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`, the same isomorphism on the unitary
+  subgroup of `GL n ℂ`.
 * `Matrix.GeneralLinearGroup.realifyUnitaryHomeomorph`: realification is a homeomorphism from
   `U(n)` onto the orthogonal matrices of any subgroup of `GL (n ⊕ n) ℝ` whose orthogonal elements
   are the realified unitary matrices, such as the symplectic group and the realified `GL(n, ℂ)`.
@@ -79,6 +82,12 @@ theorem isClosedEmbedding_realify : IsClosedEmbedding (realify n 𝕜) := by
   refine IsClosedEmbedding.units_map ?_
   convert Matrix.isClosedEmbedding_realify (m := n) (n := n) (𝕜 := 𝕜)
   exact funext realifyAlgHom_apply
+
+variable (n 𝕜) in
+/-- The realified `GL n 𝕜` is a closed subgroup of `GL (n ⊕ n) ℝ`. -/
+theorem isClosed_range_realify : IsClosed ((realify n 𝕜).range : Set (GL (n ⊕ n) ℝ)) := by
+  rw [MonoidHom.coe_range]
+  exact (isClosedEmbedding_realify n 𝕜).isClosed_range
 
 variable (n 𝕜) in
 /-- **`GL(n, 𝕜)` is isomorphic to its realification**: realification is an isomorphism of
@@ -141,6 +150,30 @@ theorem realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply
     GeneralLinearGroup.realify n ℂ
       (Unitary.toUnits (unitaryGroupEquivSymplecticInfOrthogonal.symm M)) = M := by
   rw [← unitaryGroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
+
+/-- **`U(n) ≃ₜ* Sp(2n, ℝ) ∩ O(2n)` on the unitary subgroup of `GL n ℂ`**: realification is an
+isomorphism of topological groups from the unitary subgroup of `GL n ℂ` onto the orthogonal
+elements of the real symplectic group. It is `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`
+read through `TauCeti.unitarySubgroupUnitsContinuousMulEquiv`. -/
+noncomputable def unitarySubgroupEquivSymplecticInfOrthogonal :
+    unitarySubgroup (GL n ℂ) ≃ₜ* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
+  (unitarySubgroupUnitsContinuousMulEquiv (Matrix n n ℂ)).trans
+    unitaryGroupEquivSymplecticInfOrthogonal
+
+@[simp]
+theorem unitarySubgroupEquivSymplecticInfOrthogonal_apply (U : unitarySubgroup (GL n ℂ)) :
+    (unitarySubgroupEquivSymplecticInfOrthogonal U : GL (n ⊕ n) ℝ) =
+      GeneralLinearGroup.realify n ℂ U := by
+  rw [unitarySubgroupEquivSymplecticInfOrthogonal, ContinuousMulEquiv.trans_apply,
+    unitaryGroupEquivSymplecticInfOrthogonal_apply, unitarySubgroupUnitsContinuousMulEquiv_apply]
+  congr 1
+  exact Units.ext (by rw [Unitary.val_toUnits_apply, unitarySubgroupUnitsEquiv_apply_coe])
+
+@[simp]
+theorem realify_unitarySubgroupEquivSymplecticInfOrthogonal_symm_apply
+    (M : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))) :
+    GeneralLinearGroup.realify n ℂ (unitarySubgroupEquivSymplecticInfOrthogonal.symm M) = M := by
+  rw [← unitarySubgroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
 
 namespace GeneralLinearGroup
 
