@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
+import TauCeti.RingTheory.GradedAlgebra.TensorProduct
 
 /-!
 # Arrow-weight gradings of the standard bimodule resolution
@@ -113,6 +114,16 @@ theorem tmul_mem_vertexTensorGrading {p q : ℤ} {x y : A}
   exact (Γ).tmul_mem_tensorProduct (Γ).opposite hx'
     (((Γ).op_mem_opposite_piece_iff _ _).2 hy')
 
+/-- The generator `∑ᵥ eᵥ ⊗ eᵥ` of the vertex term has degree zero. -/
+theorem spanSingletonGenerator_mem_vertexTensorGrading_zero :
+    (spanSingletonGenerator (vertexTensorIdempotent k Q) : vertexTensorBimodule k Q) ∈
+      (vertexTensorGrading k Q wt).piece 0 := by
+  rw [mem_vertexTensorGrading_piece_iff, coe_spanSingletonGenerator, vertexTensorIdempotent_def]
+  refine Submodule.sum_mem _ fun v _ ↦ ?_
+  have hv := vertexIdempotent_mem_gradeBy_zero (k := k) wt v
+  simpa only [add_zero] using (Γ).tmul_mem_tensorProduct (Γ).opposite hv
+    (((Γ).op_mem_opposite_piece_iff _ _).2 hv)
+
 omit [Fintype Q] in
 private theorem isHomogeneous_envelope_action_one [Finite Q] :
     LinearMap.IsHomogeneous
@@ -203,6 +214,15 @@ theorem lof_tmul_mem_arrowTensorGrading (b : Σ i j : Q, i ⟶ j) {p q : ℤ} {x
   have hright := (Γ).tmul_mem_tensorProduct (Γ).opposite hx'
     (((Γ).op_mem_opposite_piece_iff _ _).2 hby)
   exact Submodule.sub_mem _ hleft (by simpa only [add_assoc] using hright)
+
+/-- The action of the enveloping algebra on the arrow term adds degrees, for the total-weight
+grading of the enveloping algebra. -/
+theorem smul_mem_arrowTensorGrading {p q : ℤ} {u : E} (hu : u ∈ (Ξ).piece p)
+    {z : arrowTensorBimodule k Q} (hz : z ∈ (arrowTensorGrading k Q wt).piece q) :
+    u • z ∈ (arrowTensorGrading k Q wt).piece (p + q) := by
+  rw [mem_arrowTensorGrading_piece_iff] at hz ⊢
+  rw [map_smul, Submodule.coe_smul, smul_eq_mul]
+  exact SetLike.mul_mem_graded hu hz
 
 /-- The universal derivation relative to the vertex subalgebra preserves arrow weight. -/
 theorem isHomogeneous_arrowTensorDerivation :

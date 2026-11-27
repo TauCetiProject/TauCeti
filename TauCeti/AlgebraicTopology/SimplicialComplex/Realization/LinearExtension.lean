@@ -31,6 +31,9 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
 
 * `AbstractSimplicialComplex.linearExtension_vertex`: the extension takes the value `p v` at the
   vertex `v`.
+* `AbstractSimplicialComplex.injOn_linearCombination_space`,
+  `AbstractSimplicialComplex.injective_of_injective_linearExtension`: injectivity of the extension
+  passes to the linear combination of `p` on the standard geometric complex and to `p` itself.
 * `AbstractSimplicialComplex.linearExtension_faceInclusion`: on a closed simplex the extension is
   the combination of the values of `p` at its vertices.
 * `AbstractSimplicialComplex.range_linearExtension_comp_faceInclusion`: the image of a closed
@@ -43,6 +46,8 @@ geometric complex to its ambient space, where `p` is the inclusion of the vertic
   every closed simplex, with the same vertex values as `f`, is the secant map of `f`.
 * `AbstractSimplicialComplex.secantMap_eq_self_iff`: a map is its own secant map exactly when it is
   linear in barycentric coordinates on every closed simplex.
+* `AbstractSimplicialComplex.lineMap_secantMap_faceInclusion_eq_sum`: interpolating a map with its
+  secant map by a cut-off gives a map linear on every closed simplex on which the cut-off is one.
 
 Naturality under simplicial maps is proved in
 `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map`.
@@ -80,6 +85,18 @@ theorem linearExtension_apply (p : ι → E) (x : Realization K) :
 @[simp]
 theorem linearExtension_vertex (p : ι → E) (v : ι) : K.linearExtension p (vertex K v) = p v := by
   simp [linearExtension_apply]
+
+/-- If the linear extension of `p` over `|K|` is injective, then so is the linear combination
+of `p` on the underlying space of the standard geometric complex of `K`. -/
+theorem injOn_linearCombination_space {p : ι → E} (hp : Injective (K.linearExtension p)) :
+    InjOn (Finsupp.linearCombination ℝ p) K.standardGeometricComplex.space :=
+  fun x hx y hy hxy => congrArg Subtype.val (hp (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩) <| by
+    rwa [linearExtension_apply, linearExtension_apply])
+
+/-- If the linear extension of `p` over `|K|` is injective, then so is `p`. -/
+theorem injective_of_injective_linearExtension {p : ι → E}
+    (hp : Injective (K.linearExtension p)) : Injective p := fun v w hvw =>
+  K.vertex_injective <| hp <| by rw [linearExtension_vertex, linearExtension_vertex, hvw]
 
 /-- If the barycentric support of a point lies in a finite vertex set `σ`, the linear extension
 at that point is the combination of the values of `p` at the vertices of `σ`. -/
@@ -192,5 +209,19 @@ theorem secantMap_eq_self_iff {g : Realization K → E} :
     conv_lhs => rw [← h]
     exact secantMap_faceInclusion g σ x,
    fun hg => (eq_secantMap hg fun _ => rfl).symm⟩
+
+/-- Interpolating a map `f` with its secant map by a function `φ`, as
+`AffineMap.lineMap (f x) (K.secantMap f x) (φ x)`, gives a map which is linear in barycentric
+coordinates on every closed simplex on which `φ = 1`: there it is the secant map. -/
+theorem lineMap_secantMap_faceInclusion_eq_sum {E : Type*} [AddCommGroup E] [Module ℝ E]
+    {f : Realization K → E} {φ : Realization K → ℝ} (σ : Face K)
+    (hφ : ∀ y ∈ range (faceInclusion K σ), φ y = 1) (x : StandardSimplex σ.val) :
+    AffineMap.lineMap (f (faceInclusion K σ x)) (K.secantMap f (faceInclusion K σ x))
+        (φ (faceInclusion K σ x)) =
+      ∑ a : σ.val, x.val a •
+        AffineMap.lineMap (f (vertex K a)) (K.secantMap f (vertex K a)) (φ (vertex K a)) := by
+  have hv (a : σ.val) : φ (vertex K a) = 1 :=
+    hφ _ ((mem_range_faceInclusion_iff K σ _).mpr (by simp))
+  simp [hφ _ (mem_range_self x), hv, secantMap_faceInclusion]
 
 end AbstractSimplicialComplex

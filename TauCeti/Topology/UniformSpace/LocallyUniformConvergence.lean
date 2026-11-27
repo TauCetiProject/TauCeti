@@ -30,12 +30,17 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+Families converging locally uniformly converge jointly, as families of tuples
+(`TauCeti.tendstoLocallyUniformlyOn_pi`).
+
 Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
 to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
 `TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`); along an image
 filter `map g q` locally uniform convergence is convergence of the reindexed family along `q`
-(`TauCeti.tendstoLocallyUniformlyOn_map_iff`). A family that does not depend on its index
-converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformlyOn_map_iff`). On an open subset of a locally compact space, a
+sequence converges locally uniformly when every subsequence has a further subsequence converging
+to the same limit (`TauCeti.tendstoLocallyUniformlyOn_of_forall_exists_subseq`). A family that
+does not depend on its index converges locally uniformly to its constant value
 (`TauCeti.tendstoLocallyUniformly_const`).
 Locally uniform convergence on the whole space gives pointwise convergence
 (`TendstoLocallyUniformly.tendsto_at`).
@@ -63,7 +68,8 @@ A family `Φ : α → δ → γ` that is jointly continuous at every point of `�
 uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
 on `α` or `δ`. For a flow, this gives locally uniform convergence of orbits from convergent
-initial points.
+initial points. In particular, a jointly continuous family converges locally uniformly along any
+parameter family tending to a point (`Continuous.tendstoLocallyUniformly_of_tendsto`).
 -/
 
 public section
@@ -192,6 +198,17 @@ theorem not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop {E : Type*}
   exact not_tendsto_nhds_of_tendsto_atTop (hF.comp hφ.tendsto_atTop) ‖g z‖
     ((h.tendsto_at hz).norm)
 
+/-- Families converging locally uniformly on `s` converge jointly: the tuples `x ↦ (F k x i)ᵢ`
+converge locally uniformly on `s` to `x ↦ (f x i)ᵢ`, for the product uniformity. -/
+theorem tendstoLocallyUniformlyOn_pi {κ : Type*} {γ : κ → Type*} [∀ i, UniformSpace (γ i)]
+    {F : ι → α → ∀ i, γ i} {f : α → ∀ i, γ i}
+    (h : ∀ i, TendstoLocallyUniformlyOn (fun k x ↦ F k x i) (fun x ↦ f x i) l s) :
+    TendstoLocallyUniformlyOn F f l s := by
+  simp_rw [tendstoLocallyUniformlyOn_iff_filter, tendstoUniformlyOnFilter_iff_tendsto] at h ⊢
+  intro x hx
+  rw [Pi.uniformity, tendsto_iInf]
+  exact fun i ↦ tendsto_comap_iff.2 (h i x hx)
+
 /-- Locally uniform convergence along the image `map g q` of a filter is locally uniform
 convergence of the reindexed family `F ∘ g` along `q`. -/
 theorem tendstoLocallyUniformlyOn_map_iff {ι' γ : Type*} [UniformSpace γ] {F : ι → α → γ}
@@ -199,6 +216,21 @@ theorem tendstoLocallyUniformlyOn_map_iff {ι' γ : Type*} [UniformSpace γ] {F 
     TendstoLocallyUniformlyOn F f (map g q) s ↔ TendstoLocallyUniformlyOn (F ∘ g) f q s :=
   ⟨fun h ↦ h.comp_tendsto tendsto_map, fun h u hu x hx ↦
     (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, eventually_map.2 hev⟩⟩
+
+/-- **Subsequence principle for locally uniform convergence.** On an open subset of a locally
+compact space, a sequence converges locally uniformly to `f` when every subsequence has a further
+subsequence that does. -/
+theorem tendstoLocallyUniformlyOn_of_forall_exists_subseq [LocallyCompactSpace α]
+    {γ : Type*} [UniformSpace γ] {F : ℕ → α → γ} {f : α → γ} (hs : IsOpen s)
+    (h : ∀ ψ : ℕ → ℕ, StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧
+      TendstoLocallyUniformlyOn (fun n ↦ F (ψ (ψ' n))) f atTop s) :
+    TendstoLocallyUniformlyOn F f atTop s := by
+  refine (tendstoLocallyUniformlyOn_iff_forall_isCompact hs).2 fun K hKs hK u hu ↦ ?_
+  by_contra hne
+  obtain ⟨ψ, hψ, hψu⟩ := extraction_of_frequently_atTop (not_eventually.1 hne)
+  obtain ⟨ψ', -, hψ'⟩ := h ψ hψ
+  obtain ⟨n, hn⟩ := ((tendstoLocallyUniformlyOn_iff_forall_isCompact hs).1 hψ' K hKs hK u hu).exists
+  exact hψu (ψ' n) hn
 
 /-- A family that does not depend on its index converges locally uniformly to its constant
 value. -/
@@ -272,3 +304,11 @@ theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff {γ κ : Type*} [UniformSp
   exact ⟨v, hv⟩
 
 end TauCeti
+
+/-- A jointly continuous family `Φ` converges locally uniformly to `Φ q` along any parameter
+family `p` tending to `q`. -/
+theorem Continuous.tendstoLocallyUniformly_of_tendsto {δ γ : Type*} [TopologicalSpace δ]
+    [UniformSpace γ] {Φ : δ → α → γ} (hΦ : Continuous (Function.uncurry Φ)) {p : ι → δ} {q : δ}
+    (hp : Tendsto p l (𝓝 q)) : TendstoLocallyUniformly (fun i ↦ Φ (p i)) (Φ q) l :=
+  TauCeti.tendstoLocallyUniformly_of_forall_continuousAt (Φ := fun x d ↦ Φ d x)
+    (fun _ ↦ (hΦ.comp continuous_swap).continuousAt) hp

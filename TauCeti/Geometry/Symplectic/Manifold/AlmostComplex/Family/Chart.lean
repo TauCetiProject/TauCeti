@@ -356,15 +356,16 @@ theorem chartField_apply (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
     J.chartField φ ψ z v = (J.freeze (φ.symm z)).chartPushforward ψ v :=
   (rfl)
 
-/-- **Changing the chart of the target.** For two charts `ψ₁` and `ψ₂` of `M` with values in a
-normed space and a point `w` of the source of the transition `Θ = ψ₂ ∘ ψ₁⁻¹`, the derivative of
+/-- **Changing the chart of the target.** For two charts `ψ₁` and `ψ₂` of `M` with values in
+normed spaces and a point `w` of the source of the transition `Θ = ψ₂ ∘ ψ₁⁻¹`, the derivative of
 `Θ` at `w` intertwines the structure read in `φ` and `ψ₁` at `(z, w)` with the structure read in
 `φ` and `ψ₂` at `(z, Θ w)`, provided `ψ₁` is differentiable at `ψ₁⁻¹ w`, `ψ₂⁻¹` at `Θ w` and `Θ`
 at `w`. -/
 theorem chartField_symm_trans_comp_fderiv (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
-    (φ : OpenPartialHomeomorph P D) (z : D) {ψ₁ ψ₂ : OpenPartialHomeomorph M G} {w : G}
+    (φ : OpenPartialHomeomorph P D) (z : D) {G' : Type*} [NormedAddCommGroup G']
+    [NormedSpace ℝ G'] {ψ₁ : OpenPartialHomeomorph M G} {ψ₂ : OpenPartialHomeomorph M G'} {w : G}
     (hw : w ∈ (ψ₁.symm.trans ψ₂).source) (hψ₁ : MDifferentiableAt I 𝓘(ℝ, G) ψ₁ (ψ₁.symm w))
-    (hψ₂s : MDifferentiableAt 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
+    (hψ₂s : MDifferentiableAt 𝓘(ℝ, G') I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
     (hΘ : DifferentiableAt ℝ (ψ₁.symm.trans ψ₂) w) :
     (J.chartField φ ψ₂ z (ψ₁.symm.trans ψ₂ w)).comp (fderiv ℝ (ψ₁.symm.trans ψ₂) w) =
       (fderiv ℝ (ψ₁.symm.trans ψ₂) w).comp (J.chartField φ ψ₁ z w) := by

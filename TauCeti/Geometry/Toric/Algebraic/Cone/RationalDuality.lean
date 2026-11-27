@@ -178,4 +178,19 @@ theorem IsIntegralLattice.isLatticeRational_iff_exists_dual_image (h : IsIntegra
   · rintro ⟨s, rfl⟩
     exact h.isLatticeRational_dual_image s
 
+/-- The preimage of a lattice-rational cone under a real-linear map compatible with a map of
+integral lattices is lattice rational: it is cut out by the pullbacks of the integral characters
+cutting out the cone. Unlike images, this needs both lattices to be integral. -/
+theorem IsLatticeRational.comap {N' V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} {τ : PointedCone ℝ V'} (hτ : IsLatticeRational i' τ) (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') {f : N →+ N'} {g : V →ₗ[ℝ] V'} (hfg : ∀ n, g (i n) = i' (f n)) :
+    IsLatticeRational i (τ.comap g) := by
+  classical
+  obtain ⟨s, rfl⟩ := h'.isLatticeRational_iff_exists_dual_image.1 hτ
+  have key (m : N' →+ ℤ) : h.realCharacter (m.comp f) = h'.realCharacter m ∘ₗ g :=
+    (h.eq_realCharacter fun n ↦ by simp [hfg]).symm
+  refine h.isLatticeRational_iff_exists_dual_image.2 ⟨s.image fun m ↦ m.comp f, ?_⟩
+  ext x
+  simp [key]
+
 end TauCeti.Toric

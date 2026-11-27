@@ -66,6 +66,8 @@ prescribed boundary vanishes for degree reasons.
   twisting, continuation or parametrized chain system representing the classes `μ` exists.
 * `TauCeti.TwistingChainSystem.exists_isRepresenting_of_sub_le_one`: when all index differences
   are at most one, every family of classes is represented.
+* `TauCeti.TwistingChainSystem.IsRepresenting.map`: the push-forward of a representing chain
+  system along maps of pairs represents the images of the classes.
 
 ## References
 
@@ -166,6 +168,28 @@ theorem TwistingChainSystem.exists_isRepresenting_of_sub_le_one
   TwistingChainSystem.exists_isRepresenting fun _ x y m hm ↦ by
     have := hind x y
     omega
+
+/-- **Push-forward of a representing chain system.** If `S` represents the classes `μ` of the
+pairs `(M x y, A x y)`, and the maps `g x y : M x y → M' x y`, compatible with the composition
+maps, carry `A x y` into `A' x y`, then the push-forward of `S` along `g`
+(`TauCeti.TwistingChainSystem.map`) represents the images of the classes `μ` in the relative
+homology of the pairs `(M' x y, A' x y)`. -/
+theorem TwistingChainSystem.IsRepresenting.map {M' : P → P → TopCat.{u}}
+    {ι' : ∀ x y z, C(M' x y × M' y z, M' x z)} {A' : ∀ x y, Set (M' x y)}
+    {g : ∀ x y, C(M x y, M' x y)}
+    (hg : ∀ x z y (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v))
+    (hgA : ∀ x y, Set.MapsTo (g x y) (A x y) (A' x y)) {S : TwistingChainSystem ind ι k}
+    (hS : S.IsRepresenting A μ) :
+    (S.map g hg).IsRepresenting A' fun x y ↦ (HomologicalComplex.homologyMap
+      (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap (TopCat.ofHom (g x y)) (hgA x y)))
+        (ind x - ind y - 1).toNat).hom (μ x y) := by
+  intro x y hxy
+  obtain ⟨c, hc, hrep⟩ := (isRepresentingChain_iff _ _).1 (hS x y hxy)
+  refine (isRepresentingChain_iff _ _).2 ⟨_, ?_,
+    hrep.map (TopPair.ofSubsetMap (TopCat.ofHom (g x y)) (hgA x y))⟩
+  rw [map_chain, ← hc, cubicalChainSumMap_lof, TopPair.ofSubsetMap_fst]
+  -- The map of ambient spaces is `g x y`, read as a morphism of `TopCat` between `TopCat.of`s.
+  rfl
 
 end Twisting
 

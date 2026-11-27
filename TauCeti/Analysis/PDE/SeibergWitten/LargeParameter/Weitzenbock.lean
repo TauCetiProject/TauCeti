@@ -209,6 +209,7 @@ theorem inv_two_smul_cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_add
     cliffordRestriction_quadraticTwoForm_sqrt_smul_sub_smul_apply o hQ hkl hρ h₂ hφ hβ hr]
   module
 
+omit h₂ in
 /-- **The remainder of the Ginzburg–Landau form is bounded below.** For `χ = φ + β` with
 `P_α φ = φ` and `P_α β = 0`, `r ≥ 0` and any two-form `μ`, the remainder
 `τ = (r / 2) β + (1 / 2) C(iμ) χ` satisfies `Re ⟪χ, τ⟫ ≥ -(√2 / 2) ‖μ‖ ‖χ‖²`. The bound does not
@@ -226,7 +227,7 @@ theorem neg_le_re_inner_smul_add_inv_two_smul_cliffordRestriction_apply
     simp [← Complex.ofReal_pow]
   -- The `μ` term pairs to `2 ⟪q(χ), μ⟫`, at least `-(√2 / 2) ‖μ‖ ‖χ‖²`.
   have hμ := neg_le_of_abs_le
-    (abs_re_inner_cliffordRestriction_apply_self_le o hQ hρ h₂ μ (φ + β))
+    (abs_re_inner_cliffordRestriction_apply_self_le o hQ hρ μ (φ + β))
   simp only [inner_add_right, inner_smul_right_eq_smul, Complex.add_re, Complex.smul_re,
     smul_eq_mul, hββ]
   have hβ0 : 0 ≤ r / 2 * ‖β‖ ^ 2 := by positivity
