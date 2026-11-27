@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Orthogonal
+public import Mathlib.Analysis.InnerProductSpace.Orthonormal
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Variational.BoundedSublevels
@@ -16,6 +17,7 @@ import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
+import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 import TauCeti.Analysis.Variational.MinimizingSequence
 import TauCeti.Analysis.Variational.QuadraticEnergy
@@ -72,6 +74,7 @@ of that form (`ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add`).
 public section
 
 open Bornology Filter Metric RCLike Set
+open scoped InnerProductSpace
 
 namespace TauCeti
 
@@ -204,6 +207,25 @@ theorem unitConstraint_top_nonempty_iff : (P.unitConstraint ⊤).Nonempty ↔ No
     obtain ⟨x, hx⟩ := exists_ne (0 : H)
     exact hx (huniv (mem_univ x))
 
+/-- A proper finite span of form-domain images leaves a nonempty orthogonal unit constraint. -/
+theorem unitConstraint_orthogonal_span_nonempty (P : CompactFormPair 𝕜 V H) {s : Set V}
+    (hs : s.Finite) (hne : Submodule.span 𝕜 (P.inclusion '' s) ≠ ⊤) :
+    (P.unitConstraint (Submodule.span 𝕜 (P.inclusion '' s))ᗮ).Nonempty := by
+  let W := Submodule.span 𝕜 (P.inclusion '' s)
+  let : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (hs.image P.inclusion)
+  have hr : ¬ range P.inclusion ⊆ W := fun h ↦ hne <| top_unique fun x _ ↦
+    closure_minimal h W.isClosed_of_finiteDimensional (P.denseRange x)
+  obtain ⟨v, hv⟩ : ∃ v, P.inclusion v ∉ W := by simpa [range_subset_iff] using hr
+  have hp := W.starProjection_apply_mem (P.inclusion v)
+  have hW : W ≤ P.inclusion.toLinearMap.range := Submodule.span_le.2 (image_subset_range _ _)
+  obtain ⟨w, hw⟩ : ∃ w, P.inclusion w = W.starProjection (P.inclusion v) :=
+    LinearMap.mem_range.1 (hW hp)
+  refine unitConstraint_nonempty_iff.2 ⟨v - w, ?_, ?_⟩
+  · rw [map_sub, hw]
+    exact W.sub_starProjection_mem_orthogonal _
+  · rw [map_sub, hw, sub_ne_zero]
+    exact fun h ↦ hv (h.symm ▸ hp)
+
 /-! ### Bounds on constrained spheres -/
 
 /-- On a constrained sphere a shifted coercivity bound `c ‖v‖² ≤ q(v) + ω ‖j v‖²` reads
@@ -239,6 +261,30 @@ theorem hasBoundedSublevelsOn_energy_unitConstraint :
     rw [le_div_iff₀ hc]
     linarith
   nlinarith [sq_nonneg (‖u‖ - 1)]
+
+/-- In an orthonormal family of form-domain images, only finitely many members can have
+energy at most a given bound. -/
+theorem finite_setOf_energy_le_of_orthonormal {ι : Type*} {u : ι → V}
+    (hon : Orthonormal 𝕜 (P.inclusion ∘ u)) (M : ℝ) :
+    {i | P.energy (u i) ≤ M}.Finite := by
+  let s := {i | P.energy (u i) ≤ M}
+  obtain ⟨C, hC⟩ :=
+    ((P.hasBoundedSublevelsOn_energy_unitConstraint ⊤).isBounded_sublevel M).exists_norm_le
+  have hb (i : s) : ‖u i‖ ≤ C :=
+    hC _ ⟨mem_unitConstraint.2 ⟨Submodule.mem_top, hon.1 i⟩, i.property⟩
+  have hfin := IsCompactOperator.finite_setOf_le_norm_of_apply_eq_smul
+    (T := P.inclusion.toLinearMap) P.isCompactOperator hb
+    (hon.comp Subtype.val Subtype.val_injective) (μ := fun _ ↦ 1) (fun _ ↦ by simp) one_pos
+  simp only [norm_one, le_refl, Set.ofPred_true] at hfin
+  exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1 hfin)
+
+/-- The energies of any orthonormal family of form-domain images tend to infinity along the
+cofinite filter. -/
+theorem tendsto_cofinite_energy_of_orthonormal {ι : Type*} {u : ι → V}
+    (hon : Orthonormal 𝕜 (P.inclusion ∘ u)) :
+    Tendsto (P.energy ∘ u) cofinite atTop :=
+  tendsto_atTop.2 fun M ↦ eventually_cofinite.2
+    ((P.finite_setOf_energy_le_of_orthonormal hon M).subset fun _ h ↦ (not_le.1 h).le)
 
 /-! ### Weak topology -/
 

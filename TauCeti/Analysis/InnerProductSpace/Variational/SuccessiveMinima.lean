@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
+import Mathlib.Order.Interval.Set.Fin
 import Mathlib.Order.Interval.Set.Nat
 import TauCeti.Analysis.InnerProductSpace.Variational.Shift
-import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
-import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
 # Successive Rayleigh minima of a compact form pair
@@ -20,9 +18,8 @@ Hilbert space, to the images of the eigenvectors already chosen. A finite span o
 images admits an orthogonal projection, and that projection takes values in the form-domain
 image. This allows one to split the weak eigen-equation into the equation on the
 orthogonal complement and the equation on the previous span.
-The complement equation uses the affine minimum principle
-`ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add` on the form shifted by the
-negative of the current Rayleigh minimum.
+The complement equation uses the constrained Euler–Lagrange theorem
+`TauCeti.CompactFormPair.form_apply_eq_mul_inner_of_isMinOn`.
 
 Compactness forces the energies of the resulting orthonormal family to diverge in infinite
 dimension. In the shifted coercive energy space, any vector orthogonal to every minimizer
@@ -49,38 +46,6 @@ section FiniteSpan
 
 variable {s : Set V}
 
-private theorem exists_mem_span_sub_inclusion_mem_orthogonal (hs : s.Finite) (v : V) :
-    ∃ w ∈ span 𝕜 s, P.inclusion (v - w) ∈ (span 𝕜 (P.inclusion '' s))ᗮ := by
-  let W := span 𝕜 (P.inclusion '' s)
-  let : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (hs.image P.inclusion)
-  have hm : W = (span 𝕜 s).map P.inclusion.toLinearMap :=
-    (Submodule.map_span _ _).symm
-  have hp : W.starProjection (P.inclusion v) ∈ W := (W.orthogonalProjectionOnto _).property
-  have hp' : W.starProjection (P.inclusion v) ∈ (span 𝕜 s).map P.inclusion.toLinearMap := by
-    rwa [← hm]
-  obtain ⟨w, hw, heq⟩ := Submodule.mem_map.mp hp'
-  refine ⟨w, hw, ?_⟩
-  have heq' : P.inclusion w = W.starProjection (P.inclusion v) := heq
-  rw [map_sub, heq']
-  exact W.sub_starProjection_mem_orthogonal _
-
-/-- A proper finite span of form-domain images leaves a nonempty orthogonal unit constraint. -/
-theorem unitConstraint_orthogonal_span_nonempty (hs : s.Finite)
-    (hne : span 𝕜 (P.inclusion '' s) ≠ ⊤) :
-    (P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ).Nonempty := by
-  let W := span 𝕜 (P.inclusion '' s)
-  let : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (hs.image P.inclusion)
-  have hr : ¬ range P.inclusion ⊆ W := fun h ↦ hne <| top_unique fun x _ ↦
-    closure_minimal h W.isClosed_of_finiteDimensional (P.denseRange x)
-  obtain ⟨v, hv⟩ : ∃ v, P.inclusion v ∉ W := by simpa [range_subset_iff] using hr
-  obtain ⟨w, hw, horth⟩ := P.exists_mem_span_sub_inclusion_mem_orthogonal hs v
-  refine (unitConstraint_nonempty_iff (P := P)).2 ⟨v - w, horth, fun hzero ↦ hv ?_⟩
-  have hw' : P.inclusion w ∈ W := by
-    simpa only [Submodule.map_span, coe_coe] using
-      (Submodule.mem_map_of_mem (f := P.inclusion.toLinearMap) hw)
-  rw [map_sub, sub_eq_zero] at hzero
-  exact hzero ▸ hw'
-
 private theorem shiftedForm_apply_eq_zero_of_mem_span {u : V} {lam : ℝ}
     (hu : P.inclusion u ∈ (span 𝕜 (P.inclusion '' s))ᗮ)
     (heig : ∀ w ∈ s, ∃ μ, w ∈ P.formEigenspace μ) {v : V} (hv : v ∈ span 𝕜 s) :
@@ -104,23 +69,19 @@ theorem mem_formEigenspace_energy_of_isMinOn_orthogonal_span (hs : s.Finite)
     (hu : u ∈ P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ)
     (hmin : IsMinOn P.energy (P.unitConstraint (span 𝕜 (P.inclusion '' s))ᗮ) u) :
     u ∈ P.formEigenspace (P.energy u) := by
-  let W := (span 𝕜 (P.inclusion '' s))ᗮ.comap P.inclusion.toLinearMap
-  let a := shiftedForm P.inclusion P.form (-P.energy u)
-  have huW : u ∈ W := (mem_unitConstraint.1 hu).1
-  have ha (w : V) : a.quadraticEnergy 0 w = P.energy w - P.energy u * ‖P.inclusion w‖ ^ 2 := by
-    rw [quadraticEnergy_zero, re_shiftedForm_self, ← P.energy_def w, neg_mul, ← sub_eq_add_neg]
-  have hmin' (w : V) (hw : w ∈ W) : a.quadraticEnergy 0 u ≤ a.quadraticEnergy 0 (u + w) := by
-    rw [ha, ha, (mem_unitConstraint.1 hu).2, one_pow, mul_one, sub_self]
-    exact sub_nonneg.2 (mul_norm_sq_le_energy_of_isMinOn hmin (W.add_mem huW hw))
-  have hzero (w : V) (hw : w ∈ W) : a u w = 0 := by
-    simpa only [zero_apply] using a.apply_eq_of_forall_le_quadraticEnergy_add 0
-      (shiftedForm_eq_star P.inclusion P.hermitian _) hmin' hw
+  let W := span 𝕜 (P.inclusion '' s)
+  let : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (hs.image P.inclusion)
   refine mem_formEigenspace.2 fun v ↦ ?_
-  obtain ⟨w, hw, hsub⟩ := P.exists_mem_span_sub_inclusion_mem_orthogonal hs v
-  have h := hzero (v - w) hsub
-  rw [map_sub, P.shiftedForm_apply_eq_zero_of_mem_span huW heig hw, sub_zero,
-    shiftedForm_apply, ofReal_neg, neg_mul, ← sub_eq_add_neg] at h
-  exact sub_eq_zero.1 h
+  obtain ⟨y, hy, z, hz, hv⟩ := W.exists_add_mem_mem_orthogonal (P.inclusion v)
+  have hy' : y ∈ (span 𝕜 s).map P.inclusion.toLinearMap := by
+    simpa only [Submodule.map_span, coe_coe] using hy
+  obtain ⟨w, hw, hjw⟩ : ∃ w ∈ span 𝕜 s, P.inclusion w = y := Submodule.mem_map.1 hy'
+  have hjsub : P.inclusion (v - w) = z := by rw [map_sub, hjw, hv, add_sub_cancel_left]
+  have hsub := form_apply_eq_mul_inner_of_isMinOn hu hmin (hjsub.symm ▸ hz)
+  have hspan := P.shiftedForm_apply_eq_zero_of_mem_span (lam := P.energy u)
+    (mem_unitConstraint.1 hu).1 heig hw
+  rw [shiftedForm_apply, ofReal_neg, neg_mul, ← sub_eq_add_neg, sub_eq_zero] at hspan
+  simpa only [map_sub, inner_sub_right, mul_sub, hspan, sub_left_inj] using hsub
 
 end FiniteSpan
 
@@ -229,12 +190,9 @@ theorem exists_ordered_orthonormalBasis [FiniteDimensional 𝕜 H] :
     (Module.finrank_eq_rank 𝕜 H ▸ (Nat.cast_lt (α := Cardinal)).2 i.isLt)
   have hspan (i : Fin (Module.finrank 𝕜 H)) :
       (P.inclusion ∘ u) '' Iio i = (P.inclusion ∘ P.successiveMinimizer) '' Iio (i : ℕ) := by
-    ext x
-    constructor
-    · rintro ⟨k, hk, rfl⟩
-      exact ⟨k, hk, rfl⟩
-    · rintro ⟨k, hk, rfl⟩
-      exact ⟨⟨k, hk.trans i.isLt⟩, hk, rfl⟩
+    calc
+      _ = ((P.inclusion ∘ P.successiveMinimizer) ∘ Fin.val) '' Iio i := rfl
+      _ = _ := by rw [Set.image_comp, Fin.image_val_Iio]
   have hmin (i : Fin (Module.finrank 𝕜 H)) :
       u i ∈ P.unitConstraint (span 𝕜 ((P.inclusion ∘ u) '' Iio i))ᗮ ∧
         IsMinOn P.energy (P.unitConstraint (span 𝕜 ((P.inclusion ∘ u) '' Iio i))ᗮ) (u i) := by
@@ -248,30 +206,6 @@ theorem exists_ordered_orthonormalBasis [FiniteDimensional 𝕜 H] :
 end Construction
 
 section Completeness
-
-/-- In an orthonormal family of form-domain images, only finitely many members can have
-energy at most a given bound. -/
-theorem finite_setOf_energy_le_of_orthonormal {ι : Type*} {u : ι → V}
-    (hon : Orthonormal 𝕜 (P.inclusion ∘ u)) (M : ℝ) :
-    {i | P.energy (u i) ≤ M}.Finite := by
-  let s := {i | P.energy (u i) ≤ M}
-  obtain ⟨C, hC⟩ :=
-    ((P.hasBoundedSublevelsOn_energy_unitConstraint ⊤).isBounded_sublevel M).exists_norm_le
-  have hb (i : s) : ‖u i‖ ≤ C :=
-    hC _ ⟨mem_unitConstraint.2 ⟨Submodule.mem_top, hon.1 i⟩, i.property⟩
-  have hfin := IsCompactOperator.finite_setOf_le_norm_of_apply_eq_smul
-    (T := P.inclusion.toLinearMap) P.isCompactOperator hb
-    (hon.comp Subtype.val Subtype.val_injective) (μ := fun _ ↦ 1) (fun _ ↦ by simp) one_pos
-  simp only [norm_one, le_refl, Set.ofPred_true] at hfin
-  exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1 hfin)
-
-/-- The energies of any orthonormal family of form-domain images tend to infinity along the
-cofinite filter. -/
-theorem tendsto_cofinite_energy_of_orthonormal {ι : Type*} {u : ι → V}
-    (hon : Orthonormal 𝕜 (P.inclusion ∘ u)) :
-    Tendsto (P.energy ∘ u) cofinite atTop :=
-  tendsto_atTop.2 fun M ↦ eventually_cofinite.2
-    ((P.finite_setOf_energy_le_of_orthonormal hon M).subset fun _ h ↦ (not_le.1 h).le)
 
 variable [CompleteSpace V]
 
@@ -342,32 +276,5 @@ theorem exists_ordered_eigenbasis [CompleteSpace H] (hH : ¬ FiniteDimensional �
   exact ⟨u, HilbertBasis.mk hon htop, HilbertBasis.coe_mk hon htop, hmono, hdiv, heig, hmin⟩
 
 end Completeness
-
-/-- Each variational eigenspace is spanned by the form-domain representatives of the Hilbert
-basis vectors at that eigenvalue. This also applies to finite Hilbert bases. -/
-theorem formEigenspace_eq_span_of_hilbertBasis {ι : Type*}
-    (b : HilbertBasis ι 𝕜 H) {u : ι → V} (hb : ⇑b = P.inclusion ∘ u)
-    (heig : ∀ i, u i ∈ P.formEigenspace (P.energy (u i))) (lam : ℝ) :
-    P.formEigenspace lam = span 𝕜 (u '' {i | P.energy (u i) = lam}) := by
-  classical
-  let t := {i | P.energy (u i) = lam}
-  have hfinite : t.Finite :=
-    (P.finite_setOf_energy_le_of_orthonormal (hb ▸ b.orthonormal) lam).subset fun _ hi ↦ hi.le
-  refine le_antisymm (fun v hv ↦ ?_) (span_le.2 ?_)
-  · have hz (i : ι) (hi : i ∉ t) : b.repr (P.inclusion v) i = 0 := by
-      rw [b.repr_apply_apply, congrFun hb i]
-      exact inner_inclusion_eq_zero_of_mem_formEigenspace hi (heig i) hv
-    have hsum := (b.hasSum_repr (P.inclusion v)).tsum_eq
-    rw [tsum_eq_sum (s := hfinite.toFinset) (fun i hi ↦
-      by rw [hz i (fun ht ↦ hi (hfinite.mem_toFinset.2 ht)), zero_smul])] at hsum
-    have hv' : (∑ i ∈ hfinite.toFinset, b.repr (P.inclusion v) i • u i) = v := by
-      apply P.injective
-      simpa only [map_sum, map_smul, ← Function.comp_apply (f := ⇑P.inclusion) (g := u), ← hb]
-        using hsum
-    rw [← hv']
-    exact sum_mem fun i hi ↦
-      smul_mem _ _ (subset_span (mem_image_of_mem u (hfinite.mem_toFinset.1 hi)))
-  · rintro _ ⟨i, hi, rfl⟩
-    exact hi ▸ heig i
 
 end TauCeti.CompactFormPair

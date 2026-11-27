@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
@@ -42,7 +43,7 @@ the properties of these spaces that need no successive minimization:
 
 public section
 
-open RCLike
+open RCLike Set Submodule
 
 namespace TauCeti
 
@@ -158,6 +159,34 @@ theorem finite_setOf_formEigenspace_ne_bot_le (M : ℝ) :
     (fun l ↦ by simp) one_pos
   simp only [norm_one, le_refl, Set.ofPred_true] at hfin
   exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1 hfin)
+
+variable (P) in
+/-- Each variational eigenspace is spanned by the form-domain representatives of the Hilbert
+basis vectors at that eigenvalue. This also applies to finite Hilbert bases. -/
+theorem formEigenspace_eq_span_of_hilbertBasis {ι : Type*}
+    (b : HilbertBasis ι 𝕜 H) {u : ι → V} (hb : ⇑b = P.inclusion ∘ u)
+    (heig : ∀ i, u i ∈ P.formEigenspace (P.energy (u i))) (lam : ℝ) :
+    P.formEigenspace lam = span 𝕜 (u '' {i | P.energy (u i) = lam}) := by
+  classical
+  let t := {i | P.energy (u i) = lam}
+  have hfinite : t.Finite :=
+    (P.finite_setOf_energy_le_of_orthonormal (hb ▸ b.orthonormal) lam).subset fun _ hi ↦ hi.le
+  refine le_antisymm (fun v hv ↦ ?_) (span_le.2 ?_)
+  · have hz (i : ι) (hi : i ∉ t) : b.repr (P.inclusion v) i = 0 := by
+      rw [b.repr_apply_apply, congrFun hb i]
+      exact inner_inclusion_eq_zero_of_mem_formEigenspace hi (heig i) hv
+    have hsum := (b.hasSum_repr (P.inclusion v)).tsum_eq
+    rw [tsum_eq_sum (s := hfinite.toFinset) (fun i hi ↦
+      by rw [hz i (fun ht ↦ hi (hfinite.mem_toFinset.2 ht)), zero_smul])] at hsum
+    have hv' : (∑ i ∈ hfinite.toFinset, b.repr (P.inclusion v) i • u i) = v := by
+      apply P.injective
+      simpa only [map_sum, map_smul, ← Function.comp_apply (f := ⇑P.inclusion) (g := u), ← hb]
+        using hsum
+    rw [← hv']
+    exact sum_mem fun i hi ↦
+      smul_mem _ _ (subset_span (mem_image_of_mem u (hfinite.mem_toFinset.1 hi)))
+  · rintro _ ⟨i, hi, rfl⟩
+    exact hi ▸ heig i
 
 end CompactFormPair
 
