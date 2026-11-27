@@ -84,7 +84,8 @@ theorem tensorBasisMk_inj {c : ι} {ab : ι × ι} {x x' : X.basis ab.1} {y y' :
   · rintro ⟨rfl, rfl, rfl⟩
     rfl
 
-private theorem tensorBasisMk_ne_of_ne {c : ι} {ab ab' : ι × ι}
+/-- Tensor basis vectors with different pairs of input grades are distinct. -/
+theorem tensorBasisMk_ne_of_ne {c : ι} {ab ab' : ι × ι}
     {x : X.basis ab.1} {x' : X.basis ab'.1} {y : Y.basis ab.2} {y' : Y.basis ab'.2}
     {i : Fin (N.N ab.1 ab.2 c)} {j : Fin (N.N ab'.1 ab'.2 c)} (h : ab ≠ ab') :
     tensorBasisMk ab x y i ≠ tensorBasisMk (X := X) (Y := Y) ab' x' y' j :=
@@ -202,6 +203,7 @@ theorem tensorBasisCongr_trans (e : ∀ a, X.basis a ≃ X'.basis a)
   (rfl)
 
 /-- Tensoring permutation matrices gives the permutation matrix of the tensor basis bijection. -/
+@[simp]
 theorem tensorHom_isoOfEquiv_hom (e : ∀ a, X.basis a ≃ X'.basis a)
     (e' : ∀ b, Y.basis b ≃ Y'.basis b) :
     tensorHom (isoOfEquiv e).hom (isoOfEquiv e').hom =
@@ -374,6 +376,26 @@ def rightAssocBasisEquiv (X Y Z : Model P) (d : ι) :
   left_inv := by rintro ⟨⟨a, f⟩, ⟨x, ⟨⟨b, c⟩, ⟨y, z⟩, k⟩⟩, l⟩; rfl
   right_inv := by rintro ⟨⟨a, b, c⟩, ⟨x, y, z⟩, ⟨f, k, l⟩⟩; rfl
 
+/-- Group a left-associated basis vector by its three input grades, basis vectors and fusion
+indices. -/
+@[simp]
+theorem leftAssocBasisEquiv_apply (X Y Z : Model P) (a b c d e : ι)
+    (x : X.basis a) (y : Y.basis b) (z : Z.basis c)
+    (i : Fin (N.N a b e)) (j : Fin (N.N e c d)) :
+    leftAssocBasisEquiv X Y Z d (tensorBasisMk (e, c) (tensorBasisMk (a, b) x y i) z j) =
+      ⟨(a, b, c), (x, y, z), ⟨e, i, j⟩⟩ :=
+  (rfl)
+
+/-- Group a right-associated basis vector by its three input grades, basis vectors and fusion
+indices. -/
+@[simp]
+theorem rightAssocBasisEquiv_apply (X Y Z : Model P) (a b c d e : ι)
+    (x : X.basis a) (y : Y.basis b) (z : Z.basis c)
+    (i : Fin (N.N b c e)) (j : Fin (N.N a e d)) :
+    rightAssocBasisEquiv X Y Z d (tensorBasisMk (a, e) x (tensorBasisMk (b, c) y z i) j) =
+      ⟨(a, b, c), (x, y, z), ⟨e, i, j⟩⟩ :=
+  (rfl)
+
 /-- In the left-associated tensor product, the two fusion indices form the left index of
 an F-matrix. -/
 @[simp]
@@ -429,15 +451,14 @@ def associator (X Y Z : Model P) :
         (rightAssocBasisEquiv X Y Z d) (leftAssocBasisEquiv X Y Z d)
       hom_inv_id := ?_
       inv_hom_id := ?_ }
-  all_goals
-    ext1 d
+  · ext1 d
     simp only [comp_apply, id_apply, submatrix_mul_equiv, ← blockDiagonal'_mul,
-      assocHomBlock_mul_assocInvBlock, assocInvBlock_mul_assocHomBlock]
-    first
-    | refine Eq.trans ?_ (submatrix_one_equiv (leftAssocBasisEquiv X Y Z d))
-    | refine Eq.trans ?_ (submatrix_one_equiv (rightAssocBasisEquiv X Y Z d))
-    congr 1
-    exact blockDiagonal'_one
+      assocHomBlock_mul_assocInvBlock]
+    rw [← Pi.one_def, blockDiagonal'_one, submatrix_one_equiv]
+  · ext1 d
+    simp only [comp_apply, id_apply, submatrix_mul_equiv, ← blockDiagonal'_mul,
+      assocInvBlock_mul_assocHomBlock]
+    rw [← Pi.one_def, blockDiagonal'_one, submatrix_one_equiv]
 
 /-- In grouped coordinates the associator is block diagonal in the three input grades, with
 the transpose of the inverse F-matrix acting on the fusion indices in each block. -/
@@ -463,52 +484,69 @@ theorem associator_inv_submatrix (X Y Z : Model P) (d : ι) :
   ext i j
   simp only [associator, Matrix.submatrix_apply, Equiv.apply_symm_apply]
 
-private abbrev tripleTensorBlock (f : X ⟶ X') (g : Y ⟶ Y') (h : Z ⟶ Z') (abc : ι × ι × ι) :=
-  f abc.1 ⊗ₖ (g abc.2.1 ⊗ₖ h abc.2.2)
-
-private theorem tensorHom_assoc_submatrices
+/-- In grouped left-associated coordinates, the tensor of three maps is block diagonal in the
+input grades and acts by the identity on the fusion indices. -/
+theorem tensorHom_leftAssoc_submatrix
     (f : X ⟶ X') (g : Y ⟶ Y') (h : Z ⟶ Z') (d : ι) :
-    ((tensorHom (tensorHom f g) h d).submatrix (leftAssocBasisEquiv X Y Z d).symm
+    (tensorHom (tensorHom f g) h d).submatrix (leftAssocBasisEquiv X Y Z d).symm
         (leftAssocBasisEquiv X' Y' Z' d).symm =
       blockDiagonal' (fun (abc : ι × ι × ι) ↦
-        tripleTensorBlock f g h abc ⊗ₖ (1 : Matrix (N.Left abc.1 abc.2.1 abc.2.2 d) _ R))) ∧
-    ((tensorHom f (tensorHom g h) d).submatrix (rightAssocBasisEquiv X Y Z d).symm
+        (f abc.1 ⊗ₖ (g abc.2.1 ⊗ₖ h abc.2.2)) ⊗ₖ
+          (1 : Matrix (N.Left abc.1 abc.2.1 abc.2.2 d) _ R)) := by
+  apply Matrix.ext
+  rintro ⟨⟨a, b, c⟩, ⟨x, y, z⟩, ⟨e, i, j⟩⟩ ⟨⟨a', b', c'⟩, ⟨x', y', z'⟩, ⟨e', i', j'⟩⟩
+  simp only [Matrix.submatrix_apply, leftAssocBasisEquiv_symm_apply]
+  by_cases habc : (a, b, c) = (a', b', c')
+  · obtain ⟨rfl, hbc⟩ := Prod.mk.inj habc
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj hbc
+    rw [blockDiagonal'_apply_eq, kronecker_apply]
+    by_cases he : e = e'
+    · subst e'
+      rw [tensorHom_apply, tensorHom_apply]
+      simp [Matrix.one_apply, mul_assoc, ite_and]
+      split_ifs <;> rfl
+    · have hFusion : (⟨e, i, j⟩ : N.Left a b c d) ≠ ⟨e', i', j'⟩ :=
+        fun hEq ↦ he (congrArg Sigma.fst hEq)
+      rw [tensorHom_apply_of_ne _ _ (by simp [he]), Matrix.one_apply,
+        ite_eq_right hFusion, mul_zero]
+  · rw [blockDiagonal'_apply_ne _ _ _ habc]
+    by_cases hec : (e, c) = (e', c')
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hec
+      have hab : (a, b) ≠ (a', b') := by simpa using habc
+      rw [tensorHom_apply, tensorHom_apply_of_ne _ _ hab, zero_mul, zero_mul]
+    · exact tensorHom_apply_of_ne _ _ hec _ _ _ _ _ _ _
+
+/-- In grouped right-associated coordinates, the tensor of three maps is block diagonal in the
+input grades and acts by the identity on the fusion indices. -/
+theorem tensorHom_rightAssoc_submatrix
+    (f : X ⟶ X') (g : Y ⟶ Y') (h : Z ⟶ Z') (d : ι) :
+    (tensorHom f (tensorHom g h) d).submatrix (rightAssocBasisEquiv X Y Z d).symm
         (rightAssocBasisEquiv X' Y' Z' d).symm =
       blockDiagonal' (fun (abc : ι × ι × ι) ↦
-        tripleTensorBlock f g h abc ⊗ₖ (1 : Matrix (N.Right abc.1 abc.2.1 abc.2.2 d) _ R))) := by
-  constructor <;> apply Matrix.ext <;>
-    rintro ⟨⟨a, b, c⟩, ⟨x, y, z⟩, ⟨e, i, j⟩⟩ ⟨⟨a', b', c'⟩, ⟨x', y', z'⟩, ⟨e', i', j'⟩⟩
-  all_goals
-    simp only [Matrix.submatrix_apply, leftAssocBasisEquiv_symm_apply,
-      rightAssocBasisEquiv_symm_apply]
-    by_cases habc : (a, b, c) = (a', b', c')
-    · obtain ⟨rfl, hbc⟩ := Prod.mk.inj habc
-      obtain ⟨rfl, rfl⟩ := Prod.mk.inj hbc
-      rw [blockDiagonal'_apply_eq, kronecker_apply]
-      -- In this block only the two fusion indices can make the identity factor vanish.
-      by_cases he : e = e'
-      · subst e'
-        rw [tensorHom_apply, tensorHom_apply]
-        simp only [tripleTensorBlock, kronecker_apply, Matrix.one_apply]
-        by_cases hi : i = i' <;> by_cases hj : j = j' <;>
-          simp [hi, hj, mul_assoc]
-      · rw [tensorHom_apply_of_ne _ _ (by simp [he]), Matrix.one_apply]
-        split_ifs with hEq
-        · exact (he (congrArg Sigma.fst hEq)).elim
-        · rw [mul_zero]
-    · rw [blockDiagonal'_apply_ne _ _ _ habc]
-      -- If the outer input grades agree, the inner pair of input grades must differ.
-      first
-      | by_cases hec : (e, c) = (e', c')
-        · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hec
-          have hab : (a, b) ≠ (a', b') := by simpa using habc
-          rw [tensorHom_apply, tensorHom_apply_of_ne _ _ hab, zero_mul, zero_mul]
-        · exact tensorHom_apply_of_ne _ _ hec _ _ _ _ _ _ _
-      | by_cases hae : (a, e) = (a', e')
-        · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hae
-          have hbc : (b, c) ≠ (b', c') := by simpa using habc
-          rw [tensorHom_apply, tensorHom_apply_of_ne _ _ hbc, mul_zero, zero_mul]
-        · exact tensorHom_apply_of_ne _ _ hae _ _ _ _ _ _ _
+        (f abc.1 ⊗ₖ (g abc.2.1 ⊗ₖ h abc.2.2)) ⊗ₖ
+          (1 : Matrix (N.Right abc.1 abc.2.1 abc.2.2 d) _ R)) := by
+  apply Matrix.ext
+  rintro ⟨⟨a, b, c⟩, ⟨x, y, z⟩, ⟨e, i, j⟩⟩ ⟨⟨a', b', c'⟩, ⟨x', y', z'⟩, ⟨e', i', j'⟩⟩
+  simp only [Matrix.submatrix_apply, rightAssocBasisEquiv_symm_apply]
+  by_cases habc : (a, b, c) = (a', b', c')
+  · obtain ⟨rfl, hbc⟩ := Prod.mk.inj habc
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj hbc
+    rw [blockDiagonal'_apply_eq, kronecker_apply]
+    by_cases he : e = e'
+    · subst e'
+      rw [tensorHom_apply, tensorHom_apply]
+      simp [Matrix.one_apply, ite_and]
+      split_ifs <;> rfl
+    · have hFusion : (⟨e, i, j⟩ : N.Right a b c d) ≠ ⟨e', i', j'⟩ :=
+        fun hEq ↦ he (congrArg Sigma.fst hEq)
+      rw [tensorHom_apply_of_ne _ _ (by simp [he]), Matrix.one_apply,
+        ite_eq_right hFusion, mul_zero]
+  · rw [blockDiagonal'_apply_ne _ _ _ habc]
+    by_cases hae : (a, e) = (a', e')
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hae
+      have hbc : (b, c) ≠ (b', c') := by simpa using habc
+      rw [tensorHom_apply, tensorHom_apply_of_ne _ _ hbc, mul_zero, zero_mul]
+    · exact tensorHom_apply_of_ne _ _ hae _ _ _ _ _ _ _
 
 /-- The associator commutes with tensoring a triple of maps. -/
 @[reassoc]
@@ -520,10 +558,9 @@ theorem associator_naturality (f : X ⟶ X') (g : Y ⟶ Y') (h : Z ⟶ Z') :
   apply Matrix.submatrix_injective (leftAssocBasisEquiv X Y Z d).symm.surjective
     (rightAssocBasisEquiv X' Y' Z' d).symm.surjective
   dsimp only
-  obtain ⟨hLeft, hRight⟩ := tensorHom_assoc_submatrices f g h d
   rw [← submatrix_mul_equiv _ _ _ (leftAssocBasisEquiv X' Y' Z' d).symm,
     ← submatrix_mul_equiv _ _ _ (rightAssocBasisEquiv X Y Z d).symm,
-    hLeft, hRight,
+    tensorHom_leftAssoc_submatrix, tensorHom_rightAssoc_submatrix,
     associator_hom_submatrix, associator_hom_submatrix,
     ← blockDiagonal'_mul, ← blockDiagonal'_mul]
   refine congrArg blockDiagonal' (funext fun abc ↦ ?_)
@@ -583,9 +620,9 @@ private theorem associator_unit_inv :
 private theorem triangle_inv :
     tensorHom (𝟙 X) (leftUnitor Y).inv ≫ (associator X (simple P N.unit) Y).inv =
       tensorHom (rightUnitor X).inv (𝟙 Y) := by
-  rw [associator_unit_inv, leftUnitor, rightUnitor, ← Iso.symm_hom, ← Iso.symm_hom,
-    isoOfEquiv_symm, isoOfEquiv_symm, ← isoOfEquiv_refl_hom X, ← isoOfEquiv_refl_hom Y,
-    tensorHom_isoOfEquiv_hom, tensorHom_isoOfEquiv_hom, ← Iso.trans_hom, isoOfEquiv_trans]
+  simp only [associator_unit_inv, leftUnitor, rightUnitor, isoOfEquiv_inv,
+    ← isoOfEquiv_refl_hom X, ← isoOfEquiv_refl_hom Y, tensorHom_isoOfEquiv_hom]
+  rw [← Iso.trans_hom, isoOfEquiv_trans]
   simp only [triangleBasis, tensorBasisCongr_trans, Equiv.refl_trans, Equiv.trans_refl,
     Equiv.symm_trans_self]
 

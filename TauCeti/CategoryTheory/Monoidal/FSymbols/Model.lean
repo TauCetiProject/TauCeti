@@ -167,6 +167,13 @@ theorem isoOfEquiv_symm (e : ∀ a, X.basis a ≃ Y.basis a) :
   ext1 a
   simp
 
+/-- The inverse morphism induced by basis bijections is the forward morphism of the inverse
+bijections. -/
+@[simp]
+theorem isoOfEquiv_inv (e : ∀ a, X.basis a ≃ Y.basis a) :
+    (isoOfEquiv e).inv = (isoOfEquiv (fun a ↦ (e a).symm)).hom :=
+  congrArg Iso.hom (isoOfEquiv_symm e)
+
 /-- The composite of the isomorphisms induced by basis bijections is induced by
 their grade-wise composite. -/
 @[simp]
