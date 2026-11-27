@@ -191,6 +191,12 @@ theorem disjoint_interiorEdges_boundaryEdges : Disjoint (interiorEdges R) (bound
 theorem edges_subset_regionEdges (hf : f ∈ R) : (f.edges : Set TriEdge) ⊆ regionEdges R :=
   fun _ he => ⟨f, hf, he⟩
 
+/-- The edges at `u` are edges of `R` when the six faces round `u` lie in `R`. -/
+theorem mem_regionEdges_of_vertexFaces_subset (hR : (vertexFaces u : Set TriFace) ⊆ R)
+    (he : u ∈ e.endpoints) : e ∈ regionEdges R :=
+  edges_subset_regionEdges (hR (mem_vertexFaces.2
+    (TriFace.mem_vertices_of_mem_endpoints e.mem_whiteFace_edges he))) e.mem_whiteFace_edges
+
 theorem regionEdges_mono (h : R ⊆ S) : regionEdges R ⊆ regionEdges S :=
   fun _ ⟨f, hf, he⟩ => ⟨f, h hf, he⟩
 

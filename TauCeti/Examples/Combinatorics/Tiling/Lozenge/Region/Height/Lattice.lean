@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region.HeightLattice
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Height.Lattice
 
 /-!
 # Checks: the lattice of height functions and flips of heights
@@ -29,23 +29,21 @@ open TauCeti
 /-- The unit hexagon: the six faces round `0`. -/
 abbrev hexagon : Set TriFace := vertexFaces (0, 0)
 
-theorem hexagon_subset : (vertexFaces (0, 0) : Set TriFace) ⊆ hexagon := subset_rfl
-
 /-- A height function on the hexagon with free tiling `T_a` has `H(e_k) = H(0)` and
 `H(−e_k) = H(0) − 1`. -/
 example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn hexagon H)
     (hT : tilingOfHeightOn hexagon H = highFlipEdges (0, 0)) :
     H (1, 0) = H (0, 0) ∧ H (0, 1) = H (0, 0) ∧ H (1, 1) = H (0, 0) ∧
       H (-1, 0) = H (0, 0) - 1 ∧ H (0, -1) = H (0, 0) - 1 ∧ H (-1, -1) = H (0, 0) - 1 := by
-  simpa using hH.eq_of_highFlipEdges_subset hexagon_subset hT.symm.subset
+  simpa using (hH.highFlipEdges_subset_tilingOfHeightOn_iff subset_rfl).1 hT.symm.subset
 
 /-- Lowering at `0` a height function with free tiling `T_a` gives a height function with free
 tiling `T_b`. -/
-theorem flipDown_hexagon {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn hexagon H)
+theorem update_sub_one_hexagon {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn hexagon H)
     (hT : tilingOfHeightOn hexagon H = highFlipEdges (0, 0)) :
     IsHeightFunctionOn hexagon (Function.update H (0, 0) (H (0, 0) - 1)) ∧
       tilingOfHeightOn hexagon (Function.update H (0, 0) (H (0, 0) - 1)) = lowFlipEdges (0, 0) := by
-  obtain ⟨h₁, h₂⟩ := hH.flipDown hexagon_subset hT.symm.subset
+  obtain ⟨h₁, h₂⟩ := hH.update_sub_one subset_rfl hT.symm.subset
   refine ⟨h₁, ?_⟩
   rw [h₂, hT, Set.sdiff_self, Set.empty_union]
 
@@ -56,7 +54,7 @@ example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn hexagon H)
     IsHeightFunctionOn hexagon (Function.update H (0, 0) (H (0, 0) + 1)) ∧
       tilingOfHeightOn hexagon (Function.update H (0, 0) (H (0, 0) + 1)) =
         highFlipEdges (0, 0) := by
-  obtain ⟨h₁, h₂⟩ := hH.flipUp hexagon_subset hT.symm.subset
+  obtain ⟨h₁, h₂⟩ := hH.update_add_one subset_rfl hT.symm.subset
   refine ⟨h₁, ?_⟩
   rw [h₂, hT, Set.sdiff_self, Set.empty_union]
 
@@ -74,7 +72,7 @@ example {H : ℤ × ℤ → ℤ} (hH : IsHeightFunctionOn hexagon H)
     · simp [Function.update_of_ne hu]
   refine ⟨?_, ?_, by simp⟩
   · rw [inf_eq_right.2 hle]
-    exact (flipDown_hexagon hH hT).2
+    exact (update_sub_one_hexagon hH hT).2
   · rw [sup_eq_left.2 hle, hT]
 
 end TauCeti.Examples.LozengeHeightLatticeChecks
