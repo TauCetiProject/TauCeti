@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.RestrictedProduct
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Topology
@@ -36,6 +37,12 @@ multiplication by `a` pushes every additive Haar measure `μ` on `𝔸ᶠ` forwa
 `(∏ᶠ v, |a_v|_v)⁻¹ • μ`. At a finite place of a number field, `|·|_v` is the usual norm
 `(N v) ^ (-v(·))` (`IsDedekindDomain.HeightOneSpectrum.coe_normalizedAbsoluteValue_adicCompletion`).
 
+The same computation, factor by factor, handles column vectors. An invertible matrix `g` over
+`𝔸ᶠ` lies in `GL_n(𝒪_v)` at almost every place, and at each place it scales Haar measure on
+`K_vⁿ` by `|det g_v|_v` (`MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`). So it
+scales every additive Haar measure on `(𝔸ᶠ)ⁿ` by the module `∏ᶠ v, |(det g)_v|_v` of its
+determinant (`MeasureTheory.distribHaarChar_pi_restrictedProduct`).
+
 Two consequences fix the normalization. For a nonzero ideal `N` of `R` with `R ⧸ N` finite, the
 completion `NÔ` of `N` in `Ô` has index `#(R ⧸ N)` in `Ô`, so it has measure `#(R ⧸ N)⁻¹`; for the
 ring of integers of a number field `#(R ⧸ N)` is the absolute norm of `N`. And when `R` has a
@@ -60,6 +67,10 @@ place, `μ_f` is not finite: multiplication by a uniformizer at one place scales
   character (`IsDedekindDomain.FiniteAdeleRing.distribHaarChar_unitsOfAdicCompletion`).
 * `IsDedekindDomain.FiniteAdeleRing.map_mul_left_eq_inv_finprod_smul`: multiplication by a finite
   idele `a` pushes an additive Haar measure `μ` forward to `(∏ᶠ v, |a_v|_v)⁻¹ • μ`.
+* `IsDedekindDomain.FiniteAdeleRing.distribHaarChar_pi_eq_distribHaarChar_det`,
+  `IsDedekindDomain.FiniteAdeleRing.addHaar_smul_eq_finprod_mul`: an invertible matrix `g` over
+  the finite adeles scales additive Haar measure on `(𝔸ᶠ)ⁿ` as multiplication by `det g` scales
+  it on `𝔸ᶠ`, that is, by `∏ᶠ v, |(det g)_v|_v`.
 * `IsDedekindDomain.FiniteAdeleRing.natCard_mul_measure_image_completedIdeal`,
   `IsDedekindDomain.FiniteAdeleRing.addHaarMeasure_image_completedIdeal`: the completion `NÔ` of a
   nonzero ideal `N` has `#(R ⧸ N)⁻¹` times the measure of `Ô`, hence mass `#(R ⧸ N)⁻¹`.
@@ -245,6 +256,50 @@ theorem addHaar_univ_eq_top [Nonempty (HeightOneSpectrum R)] (μ : Measure (Fini
   exact hchar (by exact_mod_cast (ENNReal.mul_eq_right h0 htop).1 h)
 
 end Restricted
+
+/-! ### The Haar character of the general linear group -/
+
+section GeneralLinearGroup
+
+variable [Countable (HeightOneSpectrum R)] [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
+  {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+variable {R K}
+
+/-- **The Haar character of `GL_n` over the finite adeles.** An invertible matrix `g` over the
+finite adele ring scales additive Haar measure on the column vectors `ι → 𝔸ᶠ` by the factor by
+which multiplication by its determinant scales additive Haar measure on `𝔸ᶠ`, that is, by
+`∏ᶠ v, |(det g)_v|_v` (`IsDedekindDomain.FiniteAdeleRing.distribHaarChar_eq_finprod`). -/
+@[simp]
+theorem distribHaarChar_pi_eq_distribHaarChar_det (g : GL ι (FiniteAdeleRing R K)) :
+    distribHaarChar (ι → FiniteAdeleRing R K) g =
+      distribHaarChar (FiniteAdeleRing R K) (Matrix.GeneralLinearGroup.det g) := by
+  -- Compute both sides factorwise; at each place, use the local formula for `GL_n`.
+  rw [distribHaarChar_eq_finprod]
+  refine (distribHaarChar_pi_restrictedProduct
+    (R := fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
+    (O := fun v ↦ v.adicCompletionIntegers K) g).trans (finprod_congr fun v ↦ ?_)
+  -- The determinant commutes with the evaluation at `v`, which reads off the coordinate at `v`
+  -- of a finite adele.
+  rw [distribHaarChar_eq_normalizedAbsoluteValue_det, Matrix.GeneralLinearGroup.val_det_apply]
+  exact congrArg (fun x ↦ (normalizedAbsoluteValue (v.adicCompletion K) x : ℝ≥0))
+    (RingHom.map_det (evalRingHom (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
+      (B := fun v ↦ v.adicCompletionIntegers K) (𝓕 := Filter.cofinite) v)
+      (g : Matrix ι ι (FiniteAdeleRing R K))).symm
+
+/-- **Scaling of Haar measure on finite adelic vectors by `GL_n`.** For every additive Haar measure
+`μ` on the column vectors `ι → 𝔸ᶠ`, every invertible matrix `g` over the finite adele ring and
+every set `s`, `μ (g • s) = |det g|_f * μ s`, where `|a|_f = ∏ᶠ v, |a_v|_v` is the module of the
+finite idele `a`. -/
+theorem addHaar_smul_eq_finprod_mul (μ : Measure (ι → FiniteAdeleRing R K)) [μ.IsAddHaarMeasure]
+    (g : GL ι (FiniteAdeleRing R K)) (s : Set (ι → FiniteAdeleRing R K)) :
+    μ (g • s) = (∏ᶠ v : HeightOneSpectrum R, (normalizedAbsoluteValue (v.adicCompletion K)
+      ((g : Matrix ι ι (FiniteAdeleRing R K)).det v) : ℝ≥0)) * μ s := by
+  rw [← distribHaarChar_mul, distribHaarChar_pi_eq_distribHaarChar_det,
+    distribHaarChar_eq_finprod]
+  simp_rw [Matrix.GeneralLinearGroup.val_det_apply]
+
+end GeneralLinearGroup
 
 /-! ### The normalization on completed ideals -/
 
