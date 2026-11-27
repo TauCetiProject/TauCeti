@@ -153,6 +153,7 @@ theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →
 
 /-- The kernel of the projection of a semidirect product to the acting group, which is the image of
 the normal factor, has index the order of the acting group. -/
+@[simp]
 theorem index_ker_rightHom {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
     (rightHom : N ⋊[φ] Q →* Q).ker.index = Nat.card Q := by
   rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr rightHom_surjective, Subgroup.card_top]

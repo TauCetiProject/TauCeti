@@ -6,18 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.Order.Ring.Defs
 
 /-!
 # Comparing finite sums and products after removing one index
 
 Two functions on a finite type that agree away from one index and have the same sum (or product)
 agree everywhere. The result applies to any cancellative commutative monoid. Separately, dividing
-the product with one factor removed by the full product leaves the inverse of that factor.
+the product with one factor removed by the full product leaves the inverse of that factor. In a
+linearly ordered ring, a sum of squares that is at most one of its terms has every other term
+zero, as all the other squares are nonnegative; this is how a vector of integers of norm `1` is
+seen to be `±` a basis vector.
 
 ## Main results
 
 * `TauCeti.eq_of_prod_eq_of_forall_ne`, `TauCeti.eq_of_sum_eq_of_forall_ne`: equality of functions
   from equality of their products (sums) and equality away from one index.
+* `TauCeti.eq_zero_of_sum_mul_self_le`: if `∑ᵢ cᵢ² ≤ c_{i₀}²`, then `cⱼ = 0` for every `j ≠ i₀`.
 * `Finset.sum_erase_merge`, `Finset.sum_erase_merge_mul`: after removing the index `t` and adding
   the value at `t` to the value at another index `t'`, the sum is unchanged, and so is the sum of
   the products with a second function once `f t` is replaced by `f t'`.
@@ -37,6 +43,18 @@ theorem eq_of_prod_eq_of_forall_ne {ι M : Type*} [Fintype ι] [CommMonoid M] [I
   obtain rfl | hR := eq_or_ne R P
   · exact (Finset.prod_eq_prod_iff_single (Finset.mem_univ R) fun j _ ↦ h j).mp hprod
   · exact h R hR
+
+/-- **A sum of squares at most one of its terms.** In a linearly ordered ring, if
+`∑ᵢ cᵢ² ≤ c_{i₀}²`, then `cⱼ = 0` for every `j ≠ i₀`: the squares are nonnegative, so those other
+than `c_{i₀}²` sum to at most `0`, hence all vanish. -/
+theorem eq_zero_of_sum_mul_self_le {ι R : Type*} [Fintype ι] [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {c : ι → R} {i₀ : ι} (h : ∑ i, c i * c i ≤ c i₀ * c i₀) {j : ι}
+    (hj : j ≠ i₀) : c j = 0 := by
+  classical
+  have hnn : ∀ i ∈ Finset.univ.erase i₀, 0 ≤ c i * c i := fun i _ ↦ mul_self_nonneg _
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i₀), add_le_iff_nonpos_right] at h
+  exact mul_self_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg hnn).mp
+    (le_antisymm h (Finset.sum_nonneg hnn)) j (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩))
 
 end TauCeti
 

@@ -44,7 +44,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.irreducibleCharacters`: the set of irreducible characters of `G` over `k`.
 * `TauCeti.irreducibleCharacter`: the `i`-th irreducible character, for an enumeration of that set
   by `Fin (Nat.card (ConjClasses G))`, together with `TauCeti.irreducibleRepresentation`, an
-  irreducible representation affording it, and `TauCeti.characterDegree`, its degree.
+  irreducible representation affording it (whose class function is that character,
+  `TauCeti.coe_ofCharacter_irreducibleRepresentation`), and `TauCeti.characterDegree`, its degree.
 * `TauCeti.irreducibleCharactersOver`: the irreducible characters `Irr(G | θ)` of `G` lying over a
   function `θ` on a subgroup `N`.
 * `TauCeti.characterTable`: the character table of `G`.
@@ -304,6 +305,15 @@ instance (i : Fin (Nat.card (ConjClasses G))) :
 theorem character_irreducibleRepresentation (i : Fin (Nat.card (ConjClasses G))) :
     (irreducibleRepresentation k i).character = irreducibleCharacter k i :=
   (irreducibleCharacter_mem k i).choose_spec.choose_spec.2
+
+/-- The class function of the `i`-th irreducible representation, read as a function on `G`, is the
+`i`-th irreducible character: the bridge between the bundled characters
+`ClassFunction.ofCharacter (irreducibleRepresentation k i)` and the rows of the table. -/
+@[simp]
+theorem coe_ofCharacter_irreducibleRepresentation (i : Fin (Nat.card (ConjClasses G))) :
+    ((ClassFunction.ofCharacter (irreducibleRepresentation k i) : ClassFunction k G) : G → k) =
+      irreducibleCharacter k i :=
+  funext fun g => by rw [ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]
 
 /-- The representations affording the rows of the character table are pairwise inequivalent, their
 characters being distinct. -/

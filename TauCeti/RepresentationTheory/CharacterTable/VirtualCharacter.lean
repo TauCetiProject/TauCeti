@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Span.IntegralDescent
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RepresentationTheory.FDRep.Basic
 import Mathlib.RepresentationTheory.Maschke
+import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.SetTheory.Cardinal.Finite
@@ -447,10 +448,7 @@ private theorem eq_sum_smul_ofCharacter {f : ClassFunction k G}
   refine Subtype.ext ?_
   rw [hc, Submodule.coe_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [SetLike.val_smul]
-  congr 1
-  funext y
-  rw [ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]
+  rw [SetLike.val_smul, coe_ofCharacter_irreducibleRepresentation]
 
 end Lattice
 
@@ -543,17 +541,6 @@ section Norm
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k] [CharZero k]
   [Invertible (Nat.card G : k)]
 
-/-- If a sum of squares of integers is at most one of its terms, every other term vanishes. -/
-private theorem eq_zero_of_sum_mul_self_le {ι : Type*} [Fintype ι] {c : ι → ℤ} {i₀ : ι}
-    (h : ∑ i, c i * c i ≤ c i₀ * c i₀) {j : ι} (hj : j ≠ i₀) : c j = 0 := by
-  classical
-  have hnn : ∀ i ∈ Finset.univ.erase i₀, 0 ≤ c i * c i := fun i _ => mul_self_nonneg _
-  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i₀)] at h
-  have hS : ∑ i ∈ Finset.univ.erase i₀, c i * c i = 0 :=
-    le_antisymm (by linarith) (Finset.sum_nonneg hnn)
-  exact mul_self_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg hnn).mp hS j
-    (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩))
-
 /-- **A virtual character of norm `1` is `±` an irreducible character.** Writing the virtual
 character as `∑ᵢ cᵢ χᵢ` with integer coefficients, its norm is `∑ᵢ cᵢ²`; a sum of squares of
 integers is `1` only when a single coefficient is `±1` and the rest vanish.
@@ -645,8 +632,8 @@ theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
       ∑ i, (z i : k) • irreducibleCharacter k i := by
     conv_lhs => rw [← hexp]
     rw [smul_sum, Submodule.coe_sum]
-    refine sum_congr rfl fun i _ => funext fun g => ?_
-    simp [← hz, a, ofCharacter_apply, character_irreducibleRepresentation, mul_assoc]
+    refine sum_congr rfl fun i _ => ?_
+    rw [smul_smul, SetLike.val_smul, coe_ofCharacter_irreducibleRepresentation, hz]
   have hsq : ∑ i, z i * z i = n * n := by
     have h := characterPairing_eq_intCast_sum hnf hnf
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hnorm, mul_one] at h

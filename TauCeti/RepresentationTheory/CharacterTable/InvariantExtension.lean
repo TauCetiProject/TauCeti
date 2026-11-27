@@ -137,7 +137,7 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     hFN ▸ funext (comap_subtype_apply_conjNormal F g)
   set c := fun i : Fin (Nat.card (ConjClasses G)) => ofCharacter (irreducibleRepresentation k i)
   have hc (i) : (c i : G → k) = irreducibleCharacter k i :=
-    funext fun g => by simp [c, character_irreducibleRepresentation]
+    coe_ofCharacter_irreducibleRepresentation k i
   -- pairing the restriction of the expansion of `F` with `Y` gives `⟨Y, Y⟩ = 1`
   obtain ⟨i, ha, hY₀⟩ :
       ∃ i, characterPairing (c i) F ≠ 0 ∧ characterPairing Y (comap N.subtype (c i)) ≠ 0 := by
