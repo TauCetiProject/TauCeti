@@ -39,7 +39,7 @@ subfamily, each coefficient `c` satisfies `χ(σ) ^ (-u) σ(c) = χ(σ) ^ (-k i)
 the independent family stays independent on finitely many points
 (`LinearIndependent.exists_finset_linearIndependent_restrict`), at which a single neighbourhood
 of `1` serves. Tate's theorem near `1`
-(`PadicComplex.eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq`) kills `c` when
+(`PadicComplex.eq_zero_of_eventually_twist_mul_smul_eq`) kills `c` when
 `k i ≠ u`, and the Ax–Sen–Tate theorem (`PadicComplex.mem_range_coe_iff_eventually_smul_eq`) makes
 `c` algebraic when `k i = u`. Consequently a `ℂ_p`-basis of the semilinear maps consisting of
 Hodge–Tate maps of weights `k i` computes the jumps: they form the multiset of the `k i`.
@@ -122,7 +122,7 @@ theorem hasHodgeTateJumps_iff (J : Multiset ℤ) :
 variable {j ρ γ}
 
 /-- The multiset of Hodge–Tate jumps at `γ` is unique when it exists. -/
-theorem HasHodgeTateJumps.eq {J J' : Multiset ℤ} (h : HasHodgeTateJumps j ρ γ J)
+theorem HasHodgeTateJumps.unique {J J' : Multiset ℤ} (h : HasHodgeTateJumps j ρ γ J)
     (h' : HasHodgeTateJumps j ρ γ J') : J = J' :=
   Multiset.ext.2 fun u ↦ (h u).symm.trans (h' u)
 
@@ -172,9 +172,9 @@ private theorem weight_eq_and_mem_range_of_linearIndependent (hj : Set.range j �
   · refine ⟨hki, mem_range_coe_iff_eventually_smul_eq.2 ?_⟩
     filter_upwards [hkey'] with σ hσ
     rw [hki] at hσ
-    exact mul_left_cancel₀ (by simp [twist_def]) hσ
-  · exact absurd (eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq
-      (fun h ↦ hki (neg_inj.1 h).symm) (by simpa only [twist_def] using hkey')) hci
+    exact mul_left_cancel₀ (twist_ne_zero _ _) hσ
+  · exact absurd (eq_zero_of_eventually_twist_mul_smul_eq
+      (fun h ↦ hki (neg_inj.1 h).symm) hkey') hci
 
 /-- Let the image of `j` be a neighbourhood of `1`. If a Hodge–Tate map `φ` of weight `u` lies in
 the `ℂ_p`-span of Hodge–Tate maps `f i` of weights `k i`, then it lies in the `PadicAlgCl p`-span of

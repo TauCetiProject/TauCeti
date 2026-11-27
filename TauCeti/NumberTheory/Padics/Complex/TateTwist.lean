@@ -68,7 +68,8 @@ then `x = 0`.
   no nonzero `G_{ℚ_p}`-invariants for `i ≠ 0`.
 * `PadicComplex.eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq`: `ℂ_p(i)` has no nonzero
   `G_K`-invariants for `i ≠ 0` and `K` finite over `ℚ_p`.
-* `PadicComplex.eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq`: no nonzero `x ∈ ℂ_p`
+* `PadicComplex.eq_zero_of_eventually_twist_mul_smul_eq` and
+  `PadicComplex.eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq`: no nonzero `x ∈ ℂ_p`
   has `χ(σ) ^ u σ(x) = χ(σ) ^ v x` for all `σ` near `1` when `u ≠ v`.
 * `PadicComplex.forall_cyclotomicCharacter_zpow_mul_smul_eq_iff`: the `G_K`-invariants of
   `ℂ_p(i)` are `K` for `i = 0` and `0` otherwise: Tate's computation of `H⁰(G_K, ℂ_p(i))`.
@@ -108,21 +109,27 @@ theorem twist_def (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
         ℚ_[p]) :=
   (rfl)
 
-private theorem twist_mul (i : ℤ) (σ τ : PadicAlgCl p ≃+* PadicAlgCl p) :
+@[simp]
+theorem twist_zero (σ : PadicAlgCl p ≃+* PadicAlgCl p) : twist 0 σ = 1 := by
+  simp [twist]
+
+theorem twist_mul (i : ℤ) (σ τ : PadicAlgCl p ≃+* PadicAlgCl p) :
     twist i (σ * τ) = twist i σ * twist i τ := by
   simp [twist, mul_zpow]
 
 /-- `twist_mul` for automorphisms over a subfield: the product of algebra automorphisms has the
 product of the underlying ring automorphisms as its underlying ring automorphism. -/
-private theorem twist_algEquiv_mul {K : Type*} [Field K] [Algebra K (PadicAlgCl p)] (i : ℤ)
+theorem twist_algEquiv_mul {K : Type*} [Field K] [Algebra K (PadicAlgCl p)] (i : ℤ)
     (σ τ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) :
     twist i (σ * τ).toRingEquiv = twist i σ.toRingEquiv * twist i τ.toRingEquiv :=
   twist_mul i σ.toRingEquiv τ.toRingEquiv
 
-private theorem twist_ne_zero (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : twist i σ ≠ 0 := by
+@[simp]
+theorem twist_ne_zero (i : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) : twist i σ ≠ 0 := by
   simp [twist]
 
-private theorem smul_twist {K : Type*} [Field K] [Algebra ℚ_[p] K] [Algebra K (PadicAlgCl p)]
+/-- The twist scalars lie in `ℚ_p`, so they are fixed by every automorphism over a subfield. -/
+theorem smul_twist {K : Type*} [Field K] [Algebra ℚ_[p] K] [Algebra K (PadicAlgCl p)]
     [IsScalarTower ℚ_[p] K (PadicAlgCl p)] (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (i : ℤ)
     (τ : PadicAlgCl p ≃+* PadicAlgCl p) : σ • twist i τ = twist i τ := by
   rw [twist, ← algEquiv_restrictScalars_smul (R := ℚ_[p]), smul_algebraMap]
@@ -343,7 +350,7 @@ theorem eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq [FiniteDimensiona
 
 end Descent
 
-private theorem twist_add (i j : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
+theorem twist_add (i j : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
     twist (i + j) σ = twist i σ * twist j σ := by
   simp [twist, zpow_add]
 
@@ -356,15 +363,9 @@ private theorem twist_mul_eq_twist_mul_iff (u v : ℤ) (σ : PadicAlgCl p ≃+* 
 /-- **Tate's theorem near `1`.** If `u ≠ v` are integers and `x ∈ ℂ_p` satisfies
 `χ(σ) ^ u σ(x) = χ(σ) ^ v x` for every `σ` in some neighbourhood of `1` in
 `Gal(PadicAlgCl p / ℚ_p)`, for instance for every `σ` in an open subgroup, then `x = 0`. -/
-theorem eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq {u v : ℤ} (huv : u ≠ v)
-    {x : ℂ_[p]} (hx : ∀ᶠ σ in 𝓝 (1 : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p),
-      algebraMap ℚ_[p] ℂ_[p]
-          (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ u : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
-        σ • x =
-      algebraMap ℚ_[p] ℂ_[p]
-          (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ v : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
-        x) : x = 0 := by
-  simp only [← twist_def] at hx
+theorem eq_zero_of_eventually_twist_mul_smul_eq {u v : ℤ} (huv : u ≠ v) {x : ℂ_[p]}
+    (hx : ∀ᶠ σ in 𝓝 (1 : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p),
+      twist u σ.toRingEquiv * σ • x = twist v σ.toRingEquiv * x) : x = 0 := by
   -- The relation holds on `Gal(PadicAlgCl p / E)` for some finite extension `E` of `ℚ_p`.
   obtain ⟨E, _, hE⟩ := (krullTopology_mem_nhds_one_iff ℚ_[p] (PadicAlgCl p) _).mp hx
   refine eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq (K := E) (sub_ne_zero.mpr huv)
@@ -373,6 +374,18 @@ theorem eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq {u v : ℤ} (
     fun a ha ↦ σ.commutes ⟨a, ha⟩)
   rw [← twist_def, ← twist_mul_eq_twist_mul_iff, ← algEquiv_restrictScalars_smul (R := ℚ_[p])]
   exact h
+
+/-- **Tate's theorem near `1`**, with the twist scalars `χ(σ) ^ u`, `χ(σ) ^ v` written out: see
+`eq_zero_of_eventually_twist_mul_smul_eq`. -/
+theorem eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq {u v : ℤ} (huv : u ≠ v)
+    {x : ℂ_[p]} (hx : ∀ᶠ σ in 𝓝 (1 : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p),
+      algebraMap ℚ_[p] ℂ_[p]
+          (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ u : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
+        σ • x =
+      algebraMap ℚ_[p] ℂ_[p]
+          (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ v : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
+        x) : x = 0 :=
+  eq_zero_of_eventually_twist_mul_smul_eq huv (by simpa only [← twist_def] using hx)
 
 /-- **Tate's calculation of `H⁰(G_K, ℂ_p(i))`.** Let `K` be a finite extension of `ℚ_p` inside
 `PadicAlgCl p`. The elements of `ℂ_p` with `χ(σ) ^ i σ(x) = x` for every
