@@ -118,12 +118,8 @@ theorem apply_eq_zero_of_mem_newtonFormFiltration (hω : ω ∈ newtonFormFiltra
 /-- The form `f dlog x_J` lies in `F^c` exactly when `f` lies in `F_{#J - c}`. -/
 theorem pi_single_mem_newtonFormFiltration_iff [DecidableEq K] {J : Finset K}
     {f : LaurentRing R K} :
-    Pi.single J f ∈ newtonFormFiltration φ c ↔ f ∈ newtonFiltration φ (#J - c) := by
-  refine ⟨fun h ↦ by simpa using mem_newtonFormFiltration_iff.1 h J, fun h ↦ ?_⟩
-  refine mem_newtonFormFiltration_iff.2 fun I ↦ ?_
-  rcases eq_or_ne I J with rfl | hI
-  · simpa using h
-  · simp [hI]
+    Pi.single J f ∈ newtonFormFiltration φ c ↔ f ∈ newtonFiltration φ (#J - c) :=
+  (Set.update_mem_pi_iff_of_mem (zero_mem (newtonFormFiltration φ c))).trans (by simp)
 
 /-- The monomial form `r x^m dlog x_J` with `r ≠ 0` lies in `F^c` exactly when `c ≤ #J`, the
 exponent `m` lies in the cone over the Newton polytope, and its Newton height is at most
