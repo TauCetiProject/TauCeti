@@ -134,6 +134,7 @@ theorem eq_restrict_iff {o : Orientation I M ι} {U : Opens M} {o' : Orientation
 
 /-- A map preserves orientation at a point of an open subset `U` of its source, from the
 restricted orientation, exactly when it preserves orientation there on all of its source. -/
+@[simp]
 theorem isOrientationPreservingAt_restrict_comp_subtype_val_iff (o : Orientation I M ι)
     {U : Opens M} (o' : Orientation I' M' ι) (f : M → M') (x : U) :
     IsOrientationPreservingAt (o.restrict U) o' (f ∘ Subtype.val) x ↔
@@ -224,6 +225,7 @@ theorem isOrientationPreservingAt_prod_restrict_of_comp_eq {m n : ℕ} {U : Open
 
 /-- The restriction to an open subset `U` of the orientation of a nowhere-vanishing top form `φ`
 is the orientation of the restriction of `φ` to `U`. -/
+@[simp]
 theorem restrict_ofTopForm {k : ℕ} (hk : Module.finrank ℝ E = k) (φ : RoughForm I M ℝ k)
     (hφ : IsSmoothForm I 0 φ) (h0 : ∀ x, φ x ≠ 0) (U : Opens M) :
     (ofTopForm hk φ hφ h0).restrict U =
@@ -237,6 +239,7 @@ theorem restrict_ofTopForm {k : ℕ} (hk : Module.finrank ℝ E = k) (φ : Rough
 so do those of an open subset `U`, whose charts are the restrictions of the charts of `M`. For
 every model orientation, the restriction to `U` of the orientation of the atlas of `M` is then the
 orientation of the atlas of `U`. -/
+@[simp]
 theorem restrict_isOrientedAtlas_orientation {n : ℕ∞ω} [NeZero n] [IsManifold I n M]
     [HasGroupoid M (orientationPreservingGroupoid I)] (U : Opens M)
     (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :

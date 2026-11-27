@@ -498,6 +498,18 @@ theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : Smo
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
+/-- **Restricted smooth pullback laws.** Let `f : U → V` be the restriction of a smooth map
+`A : M → M'` to open subsets, that is `Subtype.val ∘ f = A ∘ Subtype.val`. If `A` pulls the smooth
+form `φ` back to `ψ`, then `f` pulls the restriction of `φ` to `V` back to the restriction of `ψ`
+to `U`. -/
+theorem mpullback_mpullback_subtype_val_of_comp_eq {U : TopologicalSpace.Opens M}
+    {V : TopologicalSpace.Opens M'} {f : U → V} {A : M → M'} {hA : ContMDiff I I' ∞ A}
+    (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) {φ : SmoothForm I' M' F k}
+    {ψ : SmoothForm I M F k} (h : mpullback A hA φ = ψ) :
+    TauCeti.mpullback (F := F) I I' f (TauCeti.mpullback I' I' (Subtype.val : V → M') φ.val) =
+      TauCeti.mpullback (F := F) I I (Subtype.val : U → M) ψ.val := by
+  rw [TauCeti.mpullback_mpullback_subtype_val_of_comp_eq hcomp, ← h, coe_mpullback]
+
 /-- Smooth vector-valued zero-forms on an open partition glue to a global smooth zero-form whose
 restriction to each piece is the prescribed form. -/
 theorem exists_zeroForm_mpullback_eq_of_partition {U : M → TopologicalSpace.Opens M}
