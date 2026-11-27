@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus
+public import TauCeti.LinearAlgebra.Projection
 
 /-!
 # The suspension vector field of a smooth mapping torus
@@ -47,8 +48,11 @@ form: `ι_T σ_v = 0` for every form `σ` on `M` preserved by `φ`.
   integral curves of `T`.
 * `TauCeti.SmoothMappingTorus.timeForm_timeVectorField`,
   `TauCeti.SmoothMappingTorus.mfderiv_proj_timeVectorField`: `dt(T) = 1` and `dp(T) = 1`.
+* `TauCeti.SmoothMappingTorus.timeVectorField_ne_zero`: `T` vanishes nowhere.
 * `TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`: the splitting
   `T Y_φ = ℝ T ⊕ ker dp`.
+* `TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj_apply`: the projection onto `ker dp`
+  along `T` is `w ↦ w - dt(w) T`.
 * `TauCeti.SmoothMappingTorus.mfderiv_map_timeVectorField`: the map `[t, x] ↦ [t, g x]` induced
   by a smooth map `g` intertwining `φ` and `ψ` sends the field `T` of `Y_φ` to that of `Y_ψ`.
 * `TauCeti.SmoothMappingTorus.interior_timeVectorField_fiberForm`,
@@ -195,6 +199,14 @@ theorem mfderiv_proj_timeVectorField (y : SmoothMappingTorus φ) :
   -- `![T y] 0` is `T y`.
   exact h.symm
 
+/-- The field `T` vanishes nowhere, since `dp(T) = 1`. -/
+theorem timeVectorField_ne_zero (y : SmoothMappingTorus φ) : timeVectorField φ y ≠ 0 := by
+  intro hT
+  refine one_ne_zero (α := ℝ) ?_
+  rw [← mfderiv_proj_timeVectorField φ y, hT, map_zero]
+  -- The zero of the tangent line `TangentSpace 𝓘(ℝ) _` is the real number `0`.
+  rfl
+
 /-- The splitting `T Y_φ = ℝ T ⊕ V` of the tangent space of the mapping torus into the line
 spanned by the field `T` and the vertical tangent space `V = ker dp`. -/
 theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ) :
@@ -212,6 +224,22 @@ theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ
     rw [hw', zero_smul]
   · exact LinearMap.span_singleton_sup_ker_eq_top f.toLinearMap
       (by rw [f.coe_coe, hT]; exact one_ne_zero)
+
+/-- The projection of a tangent vector `w` of the mapping torus onto the vertical space `V = ker dp`
+along the suspension vector field `T` is `w - dt(w) T`. -/
+@[simp]
+theorem projection_ker_mfderiv_proj_apply (y : SmoothMappingTorus φ)
+    (w : TangentSpace (𝓘(ℝ).prod I) y) :
+    (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker.projection (ℝ ∙ timeVectorField φ y)
+        (isCompl_span_timeVectorField_ker_mfderiv_proj φ y).symm w =
+      w - (timeForm φ).val y ![w] • timeVectorField φ y := by
+  -- The differential of the projection, read as a real linear form: tangent vectors of the
+  -- circle are real numbers. Its kernel is `ker dp`, and `f T = dp(T) = 1`, so this is the
+  -- general formula for the projection onto the kernel of a linear form.
+  let f : TangentSpace (𝓘(ℝ).prod I) y →L[ℝ] ℝ := mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y
+  rw [timeForm_apply]
+  exact Submodule.projection_ker_span_singleton_apply (f := f.toLinearMap)
+    (mfderiv_proj_timeVectorField φ y) _ w
 
 /-! ### Maps of mapping tori -/
 

@@ -357,7 +357,8 @@ restriction along the inverse isomorphism.  This is the `Rep` analogue of Mathli
 `Action.resEquiv`, which does not apply because `Rep` is a structure rather than an `Action`.
 
 Its two functors are identified with restriction by `MulEquiv.resFunctorEquiv_functor` and
-`MulEquiv.resFunctorEquiv_inverse`. -/
+`MulEquiv.resFunctorEquiv_inverse`, and its counit is the identity by
+`MulEquiv.resFunctorEquiv_counitIso`. -/
 def _root_.MulEquiv.resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
   -- Mathlib's `MulEquiv.toMonoidHom_comp_toMonoidHom_symm` and its mirror, restated for
   -- `MulEquiv.toMonoidHom`: the coercion in those lemmas is `toMonoidHom` definitionally but not
@@ -380,6 +381,15 @@ theorem _root_.MulEquiv.resFunctorEquiv_functor (e : H ≃* K) :
 @[simp]
 theorem _root_.MulEquiv.resFunctorEquiv_inverse (e : H ≃* K) :
     (MulEquiv.resFunctorEquiv (k := k) e).inverse = Rep.resFunctor e.symm.toMonoidHom :=
+  (rfl)
+
+/-- The counit of the restriction equivalence is the identity: the two restrictions compose to
+restriction along the identity, which is the identity functor. -/
+theorem _root_.MulEquiv.resFunctorEquiv_counitIso (e : H ≃* K) :
+    (MulEquiv.resFunctorEquiv (k := k) e).counitIso = eqToIso (by
+      rw [MulEquiv.resFunctorEquiv_functor, MulEquiv.resFunctorEquiv_inverse,
+        ← MonoidHom.resFunctor_comp]
+      exact congrArg Rep.resFunctor (MulEquiv.toMonoidHom_symm_comp_toMonoidHom e)) :=
   (rfl)
 
 end Functor

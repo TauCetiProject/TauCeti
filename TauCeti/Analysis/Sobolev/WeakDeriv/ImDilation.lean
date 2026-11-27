@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 public import TauCeti.Analysis.Complex.ImDilation
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 
 /-!
 # The weak chain rule for dilations of the imaginary part
@@ -49,16 +50,7 @@ theorem HasWeakFDerivOn.comp_imDilation {c : ℝ} (hc : c ≠ 0) {U V : Opens �
   have hatop : a ≠ ∞ := ENNReal.ofReal_ne_top
   have : (a • (volume : Measure ℂ)).IsAddHaarMeasure := Measure.IsAddHaarMeasure.smul _ ha0 hatop
   -- Scaling the measure by a finite constant preserves weak derivatives.
-  have hga : HasWeakFDerivOn (a • volume) V g Dg := by
-    refine hasWeakFDerivOn_iff.2 fun v => ?_
-    obtain ⟨hcs, hgi, hDi, hint⟩ :=
-      hasWeakLineDerivOn_iff_testFunction.1 (hasWeakFDerivOn_iff.1 hg v)
-    have hsmul {h : ℂ → F} (hh : LocallyIntegrableOn h V volume) :
-        LocallyIntegrableOn h V (a • volume) := fun x hx => by
-      obtain ⟨t, ht, hti⟩ := hh x hx
-      exact ⟨t, ht, by simpa [IntegrableOn] using hti.smul_measure hatop⟩
-    refine hasWeakLineDerivOn_iff_testFunction.2 ⟨hcs, hsmul hgi, hsmul hDi, fun φ => ?_⟩
-    rw [integral_smul_measure, integral_smul_measure, hint φ, smul_neg]
+  have hga : HasWeakFDerivOn (a • volume) V g Dg := hg.smul_measure hatop
   have hΦ : MeasurePreserving (imDilation c) volume (a • volume) :=
     ⟨(imDilation c).continuous.measurable, map_imDilation_volume hc⟩
   have h := hga.comp_measurePreserving hΦ

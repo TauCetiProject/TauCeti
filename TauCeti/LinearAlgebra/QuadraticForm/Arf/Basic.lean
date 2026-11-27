@@ -7,16 +7,14 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Data.Fintype.Pi
+public import TauCeti.LinearAlgebra.QuadraticForm.Arf.Trace
 public import TauCeti.LinearAlgebra.QuadraticForm.CharTwo
 import Mathlib.Algebra.CharP.Two
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.Data.ZMod.Two
-import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
@@ -36,12 +34,19 @@ Following Brown and Browder, we establish basis independence through the integer
 
 1. `Q.gaussSum` is manifestly independent of coordinates, invariant under isometry, and
    multiplicative under `QuadraticMap.prod` and `QuadraticMap.pi`.
-2. On a binary quadratic form `TauCeti.binaryQuadraticForm (ZMod 2) a b`, direct evaluation over the
-   four vectors of `Fin 2 → ZMod 2` gives `(-1) ^ (a * b).val * 2`.
+2. On a binary quadratic form `TauCeti.binaryQuadraticForm (ZMod 2) a b`, it evaluates to
+   `(-1) ^ (a * b).val * 2`.
 3. Decomposing `(V, Q)` along any symplectic basis `b : Module.Basis (ι ⊕ ι) (ZMod 2) V` via
    `QuadraticMap.isometryEquivPiBinaryQuadraticForm` therefore evaluates `Q.gaussSum` to
    `(-1) ^ (∑ i, Q (b (Sum.inl i)) * Q (b (Sum.inr i))).val * 2 ^ Fintype.card ι`. Since
    `2 ^ Fintype.card ι ≠ 0` in `ℤ`, the symplectic-basis sum depends only on `Q`.
+
+These steps are the case `k = ZMod 2` of the absolute-trace Gauss sum `QuadraticMap.traceGaussSum`
+and Arf invariant `QuadraticMap.traceArf` over a finite field `k` of characteristic two
+(`TauCeti.LinearAlgebra.QuadraticForm.Arf.Trace`): the absolute trace of `ZMod 2` over itself is the
+identity, so `Q.traceGaussSum = Q.gaussSum` (`QuadraticMap.traceGaussSum_eq_gaussSum`) and
+`Q.traceArf = Q.arf` (`QuadraticMap.traceArf_eq_arf`), and the results above are specializations
+of their trace versions.
 
 From the Gauss-sum identity we deduce isometry invariance and orthogonal-sum additivity of
 `QuadraticMap.arf`, the exact cardinality formulas for `{v : V // Q v = 0}` and
@@ -58,22 +63,27 @@ criteria across submodules of `Q.radical` and `Q.polarBilin.ker`.
 
 ## Main results
 
+* `QuadraticMap.traceGaussSum_eq_gaussSum`, `QuadraticMap.traceArf_eq_arf`: over `ZMod 2` the
+  absolute-trace Gauss sum and Arf invariant are `Q.gaussSum` and `Q.arf`.
 * `QuadraticMap.gaussSum_eq_of_toMatrix_polarBilin_eq_J`: evaluation of `Q.gaussSum` in any
   symplectic basis.
 * `QuadraticMap.sum_mul_eq_of_toMatrix_polarBilin_eq_J`: independence of
   `∑ i, Q (b (Sum.inl i)) * Q (b (Sum.inr i))` from the choice of symplectic basis `b`.
 * `QuadraticMap.arf_eq_sum_of_toMatrix_polarBilin_eq_J`: `Q.arf` equals the symplectic-basis sum in
   every symplectic basis of `Q.polarBilin`.
-* `QuadraticMap.gaussSum_eq_of_finrank_eq`, `QuadraticMap.arf_eq_of_gaussSum_eq`,
+* `QuadraticMap.gaussSum_eq_of_finrank_eq`,
+  `QuadraticMap.gaussSum_eq_neg_one_pow_val_arf_mul_two_pow`,
+  `QuadraticMap.arf_eq_of_gaussSum_eq`,
   `QuadraticMap.gaussSum_ne_zero_of_nondegenerate_polarBilin`:
-  `Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ m` when `Module.finrank (ZMod 2) V = 2 * m`, determining
-  `Q.arf` and showing `Q.gaussSum ≠ 0`.
+  `Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ m` when `Module.finrank (ZMod 2) V = 2 * m` (equivalently
+  `2 ^ (Module.finrank (ZMod 2) V / 2)`), determining `Q.arf` and showing `Q.gaussSum ≠ 0`.
 * `QuadraticMap.IsometryEquiv.arf_eq`, `QuadraticMap.Equivalent.arf_eq`, `QuadraticMap.arf_prod`,
   `QuadraticMap.arf_pi`, `QuadraticMap.arf_of_isCompl_orthogonal`: isometry invariance and
   orthogonal-sum additivity of `Q.arf`.
-* `QuadraticMap.arf_eq_mul_of_polar_eq_one`, `QuadraticMap.arf_linMulLin_fst_snd`,
-  `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: the Arf invariant of a
-  binary form on `ZMod 2 × ZMod 2`, and of the hyperbolic plane `x * y` and the anisotropic plane
+* `TauCeti.anisotropic_binaryQuadraticForm_iff`, `QuadraticMap.arf_eq_mul_of_polar_eq_one`,
+  `QuadraticMap.arf_linMulLin_fst_snd`,
+  `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: anisotropy of `[a, b]` over
+  `ZMod 2` and the Arf invariant of binary forms on `ZMod 2 × ZMod 2`, including `x * y` and
   `x ^ 2 + x * y + y ^ 2`.
 * `QuadraticMap.two_mul_card_subtype_apply_eq_zero_of_finrank_eq`,
   `QuadraticMap.card_subtype_apply_eq_zero_of_pos_of_finrank_eq`,
@@ -120,6 +130,13 @@ theorem gaussSum_def [Fintype V] (Q : QuadraticForm (ZMod 2) V) :
     Q.gaussSum = ∑ v : V, (-1 : ℤ) ^ (Q v).val :=
   (rfl)
 
+/-- Over `ZMod 2` the trace Gauss sum `QuadraticMap.traceGaussSum` is the Gauss sum
+`QuadraticMap.gaussSum`, the absolute trace of `ZMod 2` over itself being the identity. -/
+@[simp]
+theorem traceGaussSum_eq_gaussSum [Fintype V] (Q : QuadraticForm (ZMod 2) V) :
+    Q.traceGaussSum = Q.gaussSum := by
+  simp [traceGaussSum_def, gaussSum_def]
+
 /-- The Gauss sum is independent of the `Fintype` instance on `V`. -/
 @[congr]
 theorem gaussSum_congr (Q : QuadraticForm (ZMod 2) V)
@@ -131,38 +148,31 @@ theorem gaussSum_congr (Q : QuadraticForm (ZMod 2) V)
 theorem IsometryEquiv.gaussSum_eq [Fintype V₁] [Fintype V₂]
     {Q₁ : QuadraticForm (ZMod 2) V₁} {Q₂ : QuadraticForm (ZMod 2) V₂}
     (e : Q₁.IsometryEquiv Q₂) : Q₁.gaussSum = Q₂.gaussSum := by
-  rw [gaussSum_def, gaussSum_def]
-  exact Fintype.sum_equiv e.toEquiv _ _ fun v ↦
-    congrArg (fun a : ZMod 2 ↦ (-1 : ℤ) ^ a.val) (e.map_app v).symm
+  simpa only [traceGaussSum_eq_gaussSum] using e.traceGaussSum_eq
 
 /-- Equivalent quadratic forms over `ZMod 2` have equal Gauss sums. -/
 theorem Equivalent.gaussSum_eq [Fintype V₁] [Fintype V₂]
     {Q₁ : QuadraticForm (ZMod 2) V₁} {Q₂ : QuadraticForm (ZMod 2) V₂}
     (h : Q₁.Equivalent Q₂) : Q₁.gaussSum = Q₂.gaussSum := by
-  obtain ⟨e⟩ := h
-  exact e.gaussSum_eq
+  simpa only [traceGaussSum_eq_gaussSum] using h.traceGaussSum_eq
 
 /-- The Gauss sum of the zero quadratic form on `V` is `Fintype.card V`. -/
 @[simp]
 theorem gaussSum_zero [Fintype V] : (0 : QuadraticForm (ZMod 2) V).gaussSum = Fintype.card V := by
-  simp [gaussSum_def]
+  simpa only [traceGaussSum_eq_gaussSum] using traceGaussSum_zero (k := ZMod 2) (V := V)
 
 /-- On a subsingleton `ZMod 2`-space, every quadratic form has Gauss sum `1`. -/
 @[simp]
 theorem gaussSum_subsingleton [Fintype V] [Subsingleton V] (Q : QuadraticForm (ZMod 2) V) :
     Q.gaussSum = 1 := by
-  rw [gaussSum_def, Fintype.sum_subsingleton _ (0 : V), map_zero, ZMod.val_zero, pow_zero]
+  simpa only [traceGaussSum_eq_gaussSum] using Q.traceGaussSum_subsingleton
 
 /-- The Gauss sum is multiplicative on orthogonal products. -/
 @[simp]
 theorem gaussSum_prod [Fintype V₁] [Fintype V₂]
     (Q₁ : QuadraticForm (ZMod 2) V₁) (Q₂ : QuadraticForm (ZMod 2) V₂) :
     (Q₁.prod Q₂).gaussSum = Q₁.gaussSum * Q₂.gaussSum := by
-  simp only [gaussSum_def, Fintype.sum_prod_type, QuadraticMap.prod_apply, ← coe_hilbertSign,
-    hilbertSign_add, Units.val_mul]
-  rw [Finset.sum_mul]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  rw [Finset.mul_sum]
+  simpa only [traceGaussSum_eq_gaussSum] using traceGaussSum_prod Q₁ Q₂
 
 /-- The Gauss sum is multiplicative on finite orthogonal sums `QuadraticMap.pi`. -/
 @[simp]
@@ -170,8 +180,7 @@ theorem gaussSum_pi {ι : Type*} [Fintype ι] [DecidableEq ι] {M : ι → Type*
     [∀ i, AddCommGroup (M i)] [∀ i, Module (ZMod 2) (M i)] [∀ i, Fintype (M i)]
     (Q : ∀ i, QuadraticForm (ZMod 2) (M i)) :
     (QuadraticMap.pi Q).gaussSum = ∏ i, (Q i).gaussSum := by
-  simp_rw [gaussSum_def, pi_apply, ← coe_hilbertSign, hilbertSign_sum, Units.coe_prod]
-  exact (Fintype.prod_sum fun i v ↦ (hilbertSign (Q i v) : ℤ)).symm
+  simpa only [traceGaussSum_eq_gaussSum] using traceGaussSum_pi Q
 
 end GaussSum
 
@@ -179,26 +188,33 @@ end QuadraticMap
 
 namespace TauCeti
 
+/-- Over `ZMod 2`, `binaryQuadraticForm (ZMod 2) a b` is anisotropic if and only if `a = 1` and
+`b = 1`. -/
+@[simp]
+theorem anisotropic_binaryQuadraticForm_iff {a b : ZMod 2} :
+    (binaryQuadraticForm (ZMod 2) a b).Anisotropic ↔ a = 1 ∧ b = 1 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have ha : a ≠ 0 := fun ha0 ↦
+      one_ne_zero (α := ZMod 2) (by simpa using congrFun (h ![1, 0] (by simp [ha0])) 0)
+    have hb : b ≠ 0 := fun hb0 ↦
+      one_ne_zero (α := ZMod 2) (by simpa using congrFun (h ![0, 1] (by simp [hb0])) 1)
+    exact ⟨ZMod.ne_zero_iff_eq_one.mp ha, ZMod.ne_zero_iff_eq_one.mp hb⟩
+  · rintro ⟨rfl, rfl⟩
+    rw [anisotropic_binaryQuadraticForm_one_iff]
+    intro t
+    rcases t.eq_zero_or_eq_one with rfl | rfl <;> decide
+
 /-- Over `ZMod 2`, the binary quadratic form `binaryQuadraticForm (ZMod 2) 1 1`
 (`x 0 ^ 2 + x 0 * x 1 + x 1 ^ 2`) is anisotropic. -/
-theorem anisotropic_binaryQuadraticForm_one : (binaryQuadraticForm (ZMod 2) 1 1).Anisotropic := by
-  rw [anisotropic_binaryQuadraticForm_one_iff]
-  intro t
-  rcases t.eq_zero_or_eq_one with rfl | rfl <;> decide
+theorem anisotropic_binaryQuadraticForm_one : (binaryQuadraticForm (ZMod 2) 1 1).Anisotropic :=
+  anisotropic_binaryQuadraticForm_iff.mpr ⟨rfl, rfl⟩
 
 /-- On `binaryQuadraticForm (ZMod 2) a b`, the Gauss sum equals `(-1) ^ (a * b).val * 2`. -/
 @[simp]
 theorem gaussSum_binaryQuadraticForm (a b : ZMod 2) :
     (binaryQuadraticForm (ZMod 2) a b).gaussSum = (-1 : ℤ) ^ (a * b).val * 2 := by
-  let e : (Fin 2 → ZMod 2) ≃ ZMod 2 × ZMod 2 := (LinearEquiv.finTwoArrow (ZMod 2) (ZMod 2)).toEquiv
-  rw [QuadraticMap.gaussSum_def,
-    Fintype.sum_equiv e _ (fun p : ZMod 2 × ZMod 2 ↦
-      (-1 : ℤ) ^ (a * p.1 ^ 2 + p.1 * p.2 + b * p.2 ^ 2).val) (fun x ↦ by
-        simp [e, binaryQuadraticForm_apply]),
-    Fintype.sum_prod_type, ZMod.sum_univ_two]
-  simp only [ZMod.sum_univ_two]
-  rcases a.eq_zero_or_eq_one with rfl | rfl <;>
-    rcases b.eq_zero_or_eq_one with rfl | rfl <;> decide
+  simpa only [QuadraticMap.traceGaussSum_eq_gaussSum, Algebra.trace_self_apply, ZMod.card,
+    Nat.cast_ofNat] using traceGaussSum_binaryQuadraticForm a b
 
 end TauCeti
 
@@ -217,9 +233,8 @@ theorem gaussSum_eq_of_toMatrix_polarBilin_eq_J [Fintype V]
     (hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J ι (ZMod 2)) :
     Q.gaussSum =
       (-1 : ℤ) ^ (∑ i : ι, Q (b (Sum.inl i)) * Q (b (Sum.inr i))).val * 2 ^ Fintype.card ι := by
-  rw [(Q.isometryEquivPiBinaryQuadraticForm b hb).gaussSum_eq, gaussSum_pi]
-  simp only [gaussSum_binaryQuadraticForm, Finset.prod_mul_distrib, Finset.prod_const,
-    Finset.card_univ, ← coe_hilbertSign, ← Units.coe_prod, hilbertSign_sum]
+  simpa only [traceGaussSum_eq_gaussSum, Algebra.trace_self_apply, ZMod.card, Nat.cast_ofNat] using
+    Q.traceGaussSum_eq_of_toMatrix_polarBilin_eq_J hb
 
 /-- **Basis independence of the symplectic-basis Arf sum.** Any two symplectic bases of
 `Q.polarBilin` yield the same sum `∑ i, Q (b (Sum.inl i)) * Q (b (Sum.inr i))` in `ZMod 2`. -/
@@ -231,16 +246,7 @@ theorem sum_mul_eq_of_toMatrix_polarBilin_eq_J
     (hc : LinearMap.BilinForm.toMatrix c Q.polarBilin = Matrix.J κ (ZMod 2)) :
     ∑ i : ι, Q (b (Sum.inl i)) * Q (b (Sum.inr i)) =
       ∑ j : κ, Q (c (Sum.inl j)) * Q (c (Sum.inr j)) := by
-  let _ : Fintype V := Fintype.ofEquiv _ b.equivFun.toEquiv.symm
-  have hcard : Fintype.card ι = Fintype.card κ := by
-    have hbdim := Module.finrank_eq_two_mul_card_of_basis_sum b
-    have hcdim := Module.finrank_eq_two_mul_card_of_basis_sum c
-    omega
-  refine eq_of_neg_one_pow_val_mul_eq
-    (pow_ne_zero (Fintype.card κ) (by decide : (2 : ℤ) ≠ 0)) ?_
-  conv_lhs => rw [← hcard]
-  rw [← Q.gaussSum_eq_of_toMatrix_polarBilin_eq_J hb,
-    Q.gaussSum_eq_of_toMatrix_polarBilin_eq_J hc]
+  simpa only [Algebra.trace_self_apply] using Q.trace_sum_mul_eq_of_toMatrix_polarBilin_eq_J hb hc
 
 end SymplecticGaussSum
 
@@ -266,17 +272,29 @@ noncomputable def arf (Q : QuadraticForm (ZMod 2) V) : ZMod 2 :=
     ∑ i : Fin spec.choose, Q (b (Sum.inl i)) * Q (b (Sum.inr i))
   else 0
 
+/-- Over `ZMod 2` the absolute-trace Arf invariant `QuadraticMap.traceArf` is the Arf invariant
+`QuadraticMap.arf`, the absolute trace of `ZMod 2` over itself being the identity. -/
+@[simp]
+theorem traceArf_eq_arf (Q : QuadraticForm (ZMod 2) V) : Q.traceArf = Q.arf := by
+  by_cases h : FiniteDimensional (ZMod 2) V ∧ Q.polarBilin.Nondegenerate
+  · obtain ⟨hfd, hnd⟩ := h
+    simp only [arf, hfd, hnd, and_self, ↓reduceDIte]
+    rw [Q.traceArf_eq_trace_sum_of_toMatrix_polarBilin_eq_J
+      (Q.exists_basis_toMatrix_polarBilin_eq_J hnd).choose_spec.choose_spec,
+      Algebra.trace_self_apply]
+  · rcases not_and_or.mp h with h | h <;> simp [arf, h]
+
 /-- Outside finite dimension, `Q.arf` takes the default value `0`. -/
 @[simp]
 theorem arf_of_not_finiteDimensional (Q : QuadraticForm (ZMod 2) V)
     (h : ¬FiniteDimensional (ZMod 2) V) : Q.arf = 0 := by
-  simp [arf, h]
+  simpa only [traceArf_eq_arf] using Q.traceArf_of_not_finiteDimensional h
 
 /-- When `Q.polarBilin` is degenerate, `Q.arf` takes the default value `0`. -/
 @[simp]
 theorem arf_of_not_nondegenerate_polarBilin (Q : QuadraticForm (ZMod 2) V)
     (h : ¬Q.polarBilin.Nondegenerate) : Q.arf = 0 := by
-  simp [arf, h]
+  simpa only [traceArf_eq_arf] using Q.traceArf_of_not_nondegenerate_polarBilin h
 
 /-- If `Q.arf ≠ 0`, then the ambient space `V` is finite-dimensional. -/
 theorem finiteDimensional_of_arf_ne_zero {Q : QuadraticForm (ZMod 2) V} (h : Q.arf ≠ 0) :
@@ -297,20 +315,26 @@ theorem arf_eq_sum_of_toMatrix_polarBilin_eq_J {ι : Type*} [Fintype ι] [Decida
     (Q : QuadraticForm (ZMod 2) V) {b : Module.Basis (ι ⊕ ι) (ZMod 2) V}
     (hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J ι (ZMod 2)) :
     Q.arf = ∑ i : ι, Q (b (Sum.inl i)) * Q (b (Sum.inr i)) := by
-  have hfd : FiniteDimensional (ZMod 2) V := Module.Finite.of_basis b
-  have hnd : Q.polarBilin.Nondegenerate := LinearMap.BilinForm.nondegenerate_of_toMatrix_eq_J hb
-  simp only [arf, hfd, hnd, and_self, ↓reduceDIte]
-  exact Q.sum_mul_eq_of_toMatrix_polarBilin_eq_J
-    (Q.exists_basis_toMatrix_polarBilin_eq_J hnd).choose_spec.choose_spec hb
+  simpa only [traceArf_eq_arf, Algebra.trace_self_apply] using
+    Q.traceArf_eq_trace_sum_of_toMatrix_polarBilin_eq_J hb
 
 /-- **Gauss-sum formula for the Arf invariant.** For a quadratic form `Q` on a finite `ZMod 2`-space
 `V` of dimension `2 * m` with nondegenerate polar form, `Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ m`. -/
 theorem gaussSum_eq_of_finrank_eq [Fintype V] {Q : QuadraticForm (ZMod 2) V}
     (hQ : Q.polarBilin.Nondegenerate) {m : ℕ} (hdim : Module.finrank (ZMod 2) V = 2 * m) :
     Q.gaussSum = (-1 : ℤ) ^ Q.arf.val * 2 ^ m := by
-  obtain ⟨b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq hQ hdim
-  rw [Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, Q.gaussSum_eq_of_toMatrix_polarBilin_eq_J hb,
-    Fintype.card_fin]
+  simpa only [traceGaussSum_eq_gaussSum, traceArf_eq_arf, ZMod.card, Nat.cast_ofNat] using
+    Q.traceGaussSum_eq_of_finrank_eq hQ hdim
+
+/-- Dimension-free form of `QuadraticMap.gaussSum_eq_of_finrank_eq`: on any finite `ZMod 2`-space
+with nondegenerate polar form,
+`Q.gaussSum = (-1) ^ Q.arf.val * 2 ^ (Module.finrank (ZMod 2) V / 2)`. -/
+theorem gaussSum_eq_neg_one_pow_val_arf_mul_two_pow [Fintype V] {Q : QuadraticForm (ZMod 2) V}
+    (hQ : Q.polarBilin.Nondegenerate) :
+    Q.gaussSum = (-1 : ℤ) ^ Q.arf.val * 2 ^ (Module.finrank (ZMod 2) V / 2) := by
+  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
+  have hdiv : Module.finrank (ZMod 2) V / 2 = m := by omega
+  rw [hdiv, Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
 
 /-- **Extracting the Arf invariant from a Gauss sum.** For a quadratic form `Q` on a finite
 `ZMod 2`-space `V` of dimension `2 * m` with nondegenerate polar form, if
@@ -319,56 +343,28 @@ theorem arf_eq_of_gaussSum_eq [Fintype V] {Q : QuadraticForm (ZMod 2) V}
     (hQ : Q.polarBilin.Nondegenerate) {m : ℕ} (hdim : Module.finrank (ZMod 2) V = 2 * m)
     {a : ZMod 2} (hg : Q.gaussSum = (-1 : ℤ) ^ a.val * 2 ^ m) :
     Q.arf = a := by
-  rw [Q.gaussSum_eq_of_finrank_eq hQ hdim] at hg
-  exact eq_of_neg_one_pow_val_mul_eq (pow_ne_zero m (by decide : (2 : ℤ) ≠ 0)) hg
+  simpa only [traceArf_eq_arf] using Q.traceArf_eq_of_traceGaussSum_eq hQ hdim
+    (by simpa only [traceGaussSum_eq_gaussSum, ZMod.card, Nat.cast_ofNat] using hg)
 
 /-- On a subsingleton `ZMod 2`-space, `Q.arf = 0`. -/
 @[simp]
 theorem arf_subsingleton [Subsingleton V] (Q : QuadraticForm (ZMod 2) V) : Q.arf = 0 := by
-  let b : Module.Basis (Fin 0 ⊕ Fin 0) (ZMod 2) V := Module.Basis.empty V
-  have hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin 0) (ZMod 2) := by
-    ext x
-    exact x.elim isEmptyElim isEmptyElim
-  rw [Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb]
-  simp
+  simpa only [traceArf_eq_arf] using Q.traceArf_subsingleton
 
 /-- The Arf invariant of the zero quadratic form vanishes. -/
 @[simp]
 theorem arf_zero : (0 : QuadraticForm (ZMod 2) V).arf = 0 := by
-  rcases subsingleton_or_nontrivial V with _ | _
-  · exact (0 : QuadraticForm (ZMod 2) V).arf_subsingleton
-  · refine (0 : QuadraticForm (ZMod 2) V).arf_of_not_nondegenerate_polarBilin fun h ↦ ?_
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    exact hv (h.1 v fun w ↦ by simp [polarBilin_apply_apply, polar])
+  simpa only [traceArf_eq_arf] using traceArf_zero (k := ZMod 2) (V := V)
 
 /-- Isometric quadratic forms over `ZMod 2` have the same Arf invariant. -/
 theorem IsometryEquiv.arf_eq {Q₁ : QuadraticForm (ZMod 2) V₁} {Q₂ : QuadraticForm (ZMod 2) V₂}
     (e : Q₁.IsometryEquiv Q₂) : Q₁.arf = Q₂.arf := by
-  by_cases h₁ : FiniteDimensional (ZMod 2) V₁ ∧ Q₁.polarBilin.Nondegenerate
-  · obtain ⟨_, hnd₁⟩ := h₁
-    have : FiniteDimensional (ZMod 2) V₂ := Module.Finite.equiv e.toLinearEquiv
-    have hnd₂ : Q₂.polarBilin.Nondegenerate := e.nondegenerate_polarBilin_iff.mp hnd₁
-    have : Finite V₁ := Module.finite_of_finite (ZMod 2)
-    have : Finite V₂ := Module.finite_of_finite (ZMod 2)
-    let _ : Fintype V₁ := Fintype.ofFinite V₁
-    let _ : Fintype V₂ := Fintype.ofFinite V₂
-    obtain ⟨m, hm⟩ := Q₁.even_finrank_of_nondegenerate_polarBilin hnd₁
-    have hdim₁ : Module.finrank (ZMod 2) V₁ = 2 * m := by omega
-    have hdim₂ : Module.finrank (ZMod 2) V₂ = 2 * m :=
-      e.toLinearEquiv.finrank_eq.symm.trans hdim₁
-    exact Q₁.arf_eq_of_gaussSum_eq hnd₁ hdim₁
-      (e.gaussSum_eq.trans (Q₂.gaussSum_eq_of_finrank_eq hnd₂ hdim₂))
-  · have h₂ : ¬(FiniteDimensional (ZMod 2) V₂ ∧ Q₂.polarBilin.Nondegenerate) := by
-      rintro ⟨_, hnd₂⟩
-      exact h₁ ⟨Module.Finite.equiv e.symm.toLinearEquiv,
-        e.nondegenerate_polarBilin_iff.mpr hnd₂⟩
-    simp only [arf, h₁, h₂, ↓reduceDIte]
+  simpa only [traceArf_eq_arf] using e.traceArf_eq
 
 /-- Equivalent quadratic forms over `ZMod 2` have the same Arf invariant. -/
 theorem Equivalent.arf_eq {Q₁ : QuadraticForm (ZMod 2) V₁} {Q₂ : QuadraticForm (ZMod 2) V₂}
     (h : Q₁.Equivalent Q₂) : Q₁.arf = Q₂.arf := by
-  obtain ⟨e⟩ := h
-  exact e.arf_eq
+  simpa only [traceArf_eq_arf] using h.traceArf_eq
 
 /-- **Additivity of the Arf invariant on orthogonal products.** -/
 @[simp]
@@ -376,33 +372,12 @@ theorem arf_prod [FiniteDimensional (ZMod 2) V₁] [FiniteDimensional (ZMod 2) V
     {Q₁ : QuadraticForm (ZMod 2) V₁} {Q₂ : QuadraticForm (ZMod 2) V₂}
     (hQ₁ : Q₁.polarBilin.Nondegenerate) (hQ₂ : Q₂.polarBilin.Nondegenerate) :
     (Q₁.prod Q₂).arf = Q₁.arf + Q₂.arf := by
-  have : Finite V₁ := Module.finite_of_finite (ZMod 2)
-  have : Finite V₂ := Module.finite_of_finite (ZMod 2)
-  let _ : Fintype V₁ := Fintype.ofFinite V₁
-  let _ : Fintype V₂ := Fintype.ofFinite V₂
-  obtain ⟨m₁, hm₁⟩ := Q₁.even_finrank_of_nondegenerate_polarBilin hQ₁
-  obtain ⟨m₂, hm₂⟩ := Q₂.even_finrank_of_nondegenerate_polarBilin hQ₂
-  have hdim₁ : Module.finrank (ZMod 2) V₁ = 2 * m₁ := by omega
-  have hdim₂ : Module.finrank (ZMod 2) V₂ = 2 * m₂ := by omega
-  refine (Q₁.prod Q₂).arf_eq_of_gaussSum_eq
-    (nondegenerate_polarBilin_prod_iff.mpr ⟨hQ₁, hQ₂⟩)
-    (by rw [Module.finrank_prod, hdim₁, hdim₂, mul_add]) ?_
-  rw [gaussSum_prod, Q₁.gaussSum_eq_of_finrank_eq hQ₁ hdim₁,
-    Q₂.gaussSum_eq_of_finrank_eq hQ₂ hdim₂]
-  simp only [← coe_hilbertSign, hilbertSign_add, Units.val_mul, pow_add]
-  ring
+  simpa only [traceArf_eq_arf] using traceArf_prod hQ₁ hQ₂
 
 /-- The Arf invariant of `Q.prod Q` vanishes for every quadratic form `Q` over `ZMod 2`. -/
 @[simp]
 theorem arf_prod_self (Q : QuadraticForm (ZMod 2) V) : (Q.prod Q).arf = 0 := by
-  by_cases h : FiniteDimensional (ZMod 2) V ∧ Q.polarBilin.Nondegenerate
-  · obtain ⟨_, hQ⟩ := h
-    rw [arf_prod hQ hQ, CharTwo.add_self_eq_zero]
-  · have hprod : ¬(FiniteDimensional (ZMod 2) (V × V) ∧ (Q.prod Q).polarBilin.Nondegenerate) := by
-      rintro ⟨_, hnd⟩
-      exact h ⟨Module.Finite.of_surjective (LinearMap.fst (ZMod 2) V V) Prod.fst_surjective,
-        (nondegenerate_polarBilin_prod_iff.mp hnd).1⟩
-    simp only [arf, hprod, ↓reduceDIte]
+  simpa only [traceArf_eq_arf] using Q.traceArf_prod_self
 
 /-- **Additivity of the Arf invariant on finite orthogonal sums.** -/
 @[simp]
@@ -411,25 +386,7 @@ theorem arf_pi {ι : Type*} [Fintype ι] {M : ι → Type*}
     [∀ i, FiniteDimensional (ZMod 2) (M i)]
     {Q : ∀ i, QuadraticForm (ZMod 2) (M i)} (hQ : ∀ i, (Q i).polarBilin.Nondegenerate) :
     (QuadraticMap.pi Q).arf = ∑ i, (Q i).arf := by
-  classical
-  have : ∀ i, Finite (M i) := fun i ↦ Module.finite_of_finite (ZMod 2)
-  let _ : ∀ i, Fintype (M i) := fun i ↦ Fintype.ofFinite (M i)
-  have heven (i : ι) : ∃ m : ℕ, Module.finrank (ZMod 2) (M i) = 2 * m := by
-    obtain ⟨m, hm⟩ := (Q i).even_finrank_of_nondegenerate_polarBilin (hQ i)
-    exact ⟨m, by omega⟩
-  choose m hdim_i using heven
-  refine (QuadraticMap.pi Q).arf_eq_of_gaussSum_eq (nondegenerate_polarBilin_pi_iff.mpr hQ)
-    (by
-      rw [Module.finrank_pi_fintype, Finset.mul_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ hdim_i i) ?_
-  rw [gaussSum_pi]
-  calc
-    ∏ i, (Q i).gaussSum = ∏ i, ((-1 : ℤ) ^ ((Q i).arf).val * 2 ^ m i) :=
-      Finset.prod_congr rfl fun i _ ↦ (Q i).gaussSum_eq_of_finrank_eq (hQ i) (hdim_i i)
-    _ = (∏ i, (-1 : ℤ) ^ ((Q i).arf).val) * ∏ i, (2 : ℤ) ^ m i := Finset.prod_mul_distrib
-    _ = (-1 : ℤ) ^ (∑ i, (Q i).arf).val * 2 ^ ∑ i, m i := by
-      simp only [← coe_hilbertSign, ← Units.coe_prod, hilbertSign_sum,
-        Finset.prod_pow_eq_pow_sum]
+  simpa only [traceArf_eq_arf] using traceArf_pi hQ
 
 /-- **Additivity of the Arf invariant across an internal polar-orthogonal decomposition.** -/
 theorem arf_of_isCompl_orthogonal [FiniteDimensional (ZMod 2) V]
@@ -455,9 +412,9 @@ namespace TauCeti
 /-- The Arf invariant of `binaryQuadraticForm (ZMod 2) a b` is `a * b`. -/
 @[simp]
 theorem arf_binaryQuadraticForm (a b : ZMod 2) :
-    (binaryQuadraticForm (ZMod 2) a b).arf = a * b :=
-  (binaryQuadraticForm (ZMod 2) a b).arf_eq_of_gaussSum_eq
-    (nondegenerate_polarBilin_binaryQuadraticForm a b) (m := 1) (by simp) (by simp)
+    (binaryQuadraticForm (ZMod 2) a b).arf = a * b := by
+  simpa only [QuadraticMap.traceArf_eq_arf, Algebra.trace_self_apply] using
+    traceArf_binaryQuadraticForm a b
 
 end TauCeti
 
@@ -474,12 +431,10 @@ theorem arf_eq_mul_of_polar_eq_one {Q : QuadraticForm (ZMod 2) (ZMod 2 × ZMod 2
   have hb₁ : b (.inl 0) = (1, 0) := by simp [b]
   have hb₂ : b (.inr 0) = (0, 1) := by simp [b]
   have hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin 1) (ZMod 2) := by
-    ext x y
-    rw [LinearMap.BilinForm.toMatrix_apply]
-    rcases x with x | x <;> rcases y with y | y <;> obtain rfl := Subsingleton.elim x 0 <;>
-      obtain rfl := Subsingleton.elim y 0 <;>
-      simp [hb₁, hb₂, polar_self, polar_comm Q (0, 1), hQ, Matrix.J,
-        (by decide : (2 : ZMod 2) = 0)]
+    rw [Q.toMatrix_polarBilin_eq_J_iff]
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
+      obtain rfl := Subsingleton.elim i 0 <;> obtain rfl := Subsingleton.elim j 0 <;>
+      simp only [hb₁, hb₂, polar_self_eq_zero_of_charTwo, hQ, ↓reduceIte]
   rw [Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, Fin.sum_univ_one, hb₁, hb₂]
 
 /-- The **hyperbolic plane** `Q (x, y) = x * y` over `ZMod 2` has Arf invariant `0`. -/
@@ -624,8 +579,7 @@ theorem card_subtype_apply_eq_one_of_pos_of_finrank_eq {Q : QuadraticForm (ZMod 
 /-- A quadratic form over `ZMod 2` with nondegenerate polar form has nonzero Gauss sum. -/
 theorem gaussSum_ne_zero_of_nondegenerate_polarBilin {Q : QuadraticForm (ZMod 2) V}
     (hQ : Q.polarBilin.Nondegenerate) : Q.gaussSum ≠ 0 := by
-  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
-  rw [Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
+  rw [Q.gaussSum_eq_neg_one_pow_val_arf_mul_two_pow hQ]
   exact mul_ne_zero (pow_ne_zero _ (by decide)) (pow_ne_zero _ (by decide))
 
 /-- For `Q` with nondegenerate polar form on a finite `ZMod 2`-space, `Q.arf = 0` if and only if
@@ -633,9 +587,8 @@ theorem gaussSum_ne_zero_of_nondegenerate_polarBilin {Q : QuadraticForm (ZMod 2)
 theorem arf_eq_zero_iff_gaussSum_pos {Q : QuadraticForm (ZMod 2) V}
     (hQ : Q.polarBilin.Nondegenerate) :
     Q.arf = 0 ↔ 0 < Q.gaussSum := by
-  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
-  rw [Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
-  have hpow : (0 : ℤ) < 2 ^ m := pow_pos (by decide : (0 : ℤ) < 2) m
+  rw [Q.gaussSum_eq_neg_one_pow_val_arf_mul_two_pow hQ]
+  have hpow : (0 : ℤ) < 2 ^ (Module.finrank (ZMod 2) V / 2) := pow_pos (by decide : (0 : ℤ) < 2) _
   rcases Q.arf.eq_zero_or_eq_one with h0 | h1
   · rw [h0, ZMod.val_zero, pow_zero, one_mul]
     exact ⟨fun _ ↦ hpow, fun _ ↦ rfl⟩

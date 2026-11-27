@@ -29,7 +29,7 @@ Over a subfield `K` of a field `Ω`, the fields of the tower are the intermediat
 `K(ζ_m)` lies in `K(ζ_n)`, and the inclusion `K(ζ_m) → K(ζ_n)` is the unique `K`-embedding sending
 `ζ_m` to `ζ_n ^ (n / m)`. Since the fields are intermediate fields of one `Ω`, these inclusions
 compose (`IntermediateField.inclusion_inclusion`). The relative norms and Galois groups between
-levels are those of the algebras `(IntermediateField.inclusion (T.field_le K h)).toAlgebra`; along
+levels are those of the algebras `T.fieldAlgebra K h` given by these inclusions; along
 them, restricting an automorphism of `K(ζ_n)` to `K(ζ_m)` reduces its exponent on the roots modulo
 `m`.
 
@@ -42,6 +42,8 @@ them, restricting an automorphism of `K(ζ_n)` to `K(ζ_m)` reduces its exponent
 * `TauCeti.CompatibleCyclotomicTower.field`: the field `K(ζ_m)` as an intermediate field of
   `Ω / K`.
 * `TauCeti.CompatibleCyclotomicTower.zeta`: the generator `ζ_m` as an element of `K(ζ_m)`.
+* `TauCeti.CompatibleCyclotomicTower.fieldAlgebra`: `K(ζ_n)` as a `K(ζ_m)`-algebra through the
+  inclusion, for `m ∣ n`.
 
 ## Main results
 
@@ -54,6 +56,10 @@ them, restricting an automorphism of `K(ζ_n)` to `K(ζ_m)` reduces its exponent
 * `TauCeti.CompatibleCyclotomicTower.inclusion_zeta` and
   `TauCeti.CompatibleCyclotomicTower.eq_inclusion_of_apply_zeta`: the inclusion `K(ζ_m) → K(ζ_n)`
   sends `ζ_m` to `ζ_n ^ (n / m)`, and is the only `K`-algebra map doing so.
+* `TauCeti.CompatibleCyclotomicTower.algebraMap_zeta`: the same along the algebra
+  `TauCeti.CompatibleCyclotomicTower.fieldAlgebra`, which forms a scalar tower over `K`
+  (`TauCeti.CompatibleCyclotomicTower.isScalarTower_fieldAlgebra`) and is finite
+  (`TauCeti.CompatibleCyclotomicTower.finite_fieldAlgebra`).
 * `TauCeti.CompatibleCyclotomicTower.autToPow_restrictNormal`: if `σ ∈ Gal(K(ζ_n) / K)` sends `ζ_n`
   to `ζ_n ^ a`, its restriction to `K(ζ_m)` sends `ζ_m` to `ζ_m ^ (a mod m)`.
 
@@ -235,6 +241,33 @@ theorem inclusion_zeta {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
     inclusion (T.field_le K h) (T.zeta K m) = T.zeta K n ^ (n / m) :=
   Subtype.ext (by simp [T.root_pow_div h])
 
+/-- For `m ∣ n`, `K(ζ_n)` as a `K(ζ_m)`-algebra through the inclusion of fields of the tower. It
+is not an instance, since the divisibility `m ∣ n` cannot be inferred. -/
+abbrev fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
+    Algebra (T.field K m) (T.field K n) :=
+  (inclusion (T.field_le K h)).toAlgebra
+
+theorem isScalarTower_fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
+    letI := T.fieldAlgebra K h
+    IsScalarTower K (T.field K m) (T.field K n) :=
+  letI := T.fieldAlgebra K h
+  IsScalarTower.of_algebraMap_eq' rfl
+
+theorem finite_fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
+    letI := T.fieldAlgebra K h
+    Module.Finite (T.field K m) (T.field K n) :=
+  letI := T.fieldAlgebra K h
+  haveI := T.isScalarTower_fieldAlgebra K h
+  Module.Finite.of_restrictScalars_finite K _ _
+
+/-- Along the inclusion algebra `K(ζ_m) → K(ζ_n)`, for `m ∣ n`, the image of `ζ_m` is
+`ζ_n ^ (n / m)`. -/
+@[simp]
+theorem algebraMap_zeta {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
+    letI := T.fieldAlgebra K h
+    algebraMap (T.field K m) (T.field K n) (T.zeta K m) = T.zeta K n ^ (n / m) :=
+  T.inclusion_zeta K h
+
 /-- **The inclusion is specified by the compatibility of the roots**: a `K`-algebra map
 `K(ζ_m) → K(ζ_n)` sending `ζ_m` to `ζ_n ^ (n / m)` is the inclusion. -/
 theorem eq_inclusion_of_apply_zeta {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n)
@@ -249,12 +282,12 @@ theorem eq_inclusion_of_apply_zeta {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ 
 power `a` modulo `m`; here `K(ζ_n)` is a `K(ζ_m)`-algebra through the inclusion. -/
 theorem autToPow_restrictNormal {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n)
     (σ : T.field K n ≃ₐ[K] T.field K n) :
-    letI := (inclusion (T.field_le K h)).toAlgebra
-    haveI : IsScalarTower K (T.field K m) (T.field K n) := IsScalarTower.of_algebraMap_eq' rfl
+    letI := T.fieldAlgebra K h
+    haveI := T.isScalarTower_fieldAlgebra K h
     (T.isPrimitiveRoot_zeta K m).autToPow K (σ.restrictNormal (T.field K m)) =
       ZMod.unitsMap h ((T.isPrimitiveRoot_zeta K n).autToPow K σ) :=
-  letI := (inclusion (T.field_le K h)).toAlgebra
-  haveI : IsScalarTower K (T.field K m) (T.field K n) := IsScalarTower.of_algebraMap_eq' rfl
+  letI := T.fieldAlgebra K h
+  haveI := T.isScalarTower_fieldAlgebra K h
   (T.isPrimitiveRoot_zeta K n).autToPow_restrictNormal h (T.isPrimitiveRoot_zeta K m)
     (T.inclusion_zeta K h) σ
 

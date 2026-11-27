@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.RingTheory.PowerSeries.CoeffProd
 
 /-!
 # Estimates for the Gauss norm of restricted series
 
-Elementary bounds on the Gauss norm of power series over a (semi)normed ring: the ultrametric
-bound for a difference, the coefficientwise bound for a product with a linear factor `X - a`, and
-the bound on the Gauss norm of a truncation of a restricted series.
+Elementary bounds on the Gauss norm and weighted coefficients of power series over a (semi)normed
+ring: the ultrametric bound for a difference, the coefficientwise bound for a product with a linear
+factor `X - a`, the bound on the Gauss norm of a truncation of a restricted series, and
+single-degree weighted bounds on truncations and truncated scaled geometric series.
 
 ## Main results
 
@@ -23,6 +25,10 @@ the bound on the Gauss norm of a truncation of a restricted series.
   coefficient of `(X - a) * q` is at most `c` times the Gauss norm of `q` when `‖a‖ ≤ c`.
 * `TauCeti.PowerSeries.gaussNorm_trunc_le`: a truncation of a series with Gauss norm has Gauss norm
   at most that of the series.
+* `PowerSeries.norm_coeff_trunc_mul_pow_le`: truncating a power series below degree `N` preserves a
+  nonnegative single-degree weighted bound below `N`.
+* `PowerSeries.norm_coeff_trunc_C_mul_mk_pow_mul_pow_le`: if `0 ≤ c` and `‖b‖ * c ≤ 1`, every
+  `c`-weighted coefficient of `trunc N (C a * ∑ k, b ^ k * X ^ k)` is bounded by `‖a‖`.
 -/
 
 public section
@@ -90,3 +96,38 @@ theorem gaussNorm_trunc_le (hf : f.HasGaussNorm norm c) (N : ℕ) :
 end Trunc
 
 end TauCeti.PowerSeries
+
+namespace PowerSeries
+
+section WeightedCoeff
+
+variable {R : Type*} [SeminormedRing R]
+
+/-- Truncating a power series below degree `N` bounds its `n`-th weighted coefficient by any
+`B ≥ 0` that bounds `‖coeff n φ‖ * c ^ n` when `n < N`. -/
+theorem norm_coeff_trunc_mul_pow_le {φ : PowerSeries R} {c B : ℝ} (hB : 0 ≤ B) {N n : ℕ}
+    (hφ : n < N → ‖coeff n φ‖ * c ^ n ≤ B) :
+    ‖(trunc N φ).coeff n‖ * c ^ n ≤ B := by
+  rw [coeff_trunc]
+  split_ifs with hn
+  · exact hφ hn
+  · simpa using hB
+
+/-- If `0 ≤ c` and `‖b‖ * c ≤ 1`, every `c`-weighted coefficient of a truncated scaled geometric
+series `trunc N (C a * ∑ k, b ^ k * X ^ k)` is bounded by `‖a‖`. -/
+theorem norm_coeff_trunc_C_mul_mk_pow_mul_pow_le (a : R) {b : R} {c : ℝ} (hc : 0 ≤ c)
+    (hb : ‖b‖ * c ≤ 1) (N n : ℕ) :
+    ‖(trunc N (C a * mk fun k ↦ b ^ k)).coeff n‖ * c ^ n ≤ ‖a‖ := by
+  refine norm_coeff_trunc_mul_pow_le (norm_nonneg a) fun _ ↦ ?_
+  rw [coeff_C_mul, coeff_mk]
+  calc ‖a * b ^ n‖ * c ^ n
+      ≤ ‖a‖ * ‖b‖ ^ n * c ^ n :=
+        mul_le_mul_of_nonneg_right (TauCeti.norm_mul_pow_le a b n) (pow_nonneg hc n)
+    _ = ‖a‖ * (‖b‖ * c) ^ n := by rw [mul_assoc, ← mul_pow]
+    _ ≤ ‖a‖ * 1 :=
+        mul_le_mul_of_nonneg_left (pow_le_one₀ (mul_nonneg (norm_nonneg b) hc) hb) (norm_nonneg a)
+    _ = ‖a‖ := mul_one _
+
+end WeightedCoeff
+
+end PowerSeries
