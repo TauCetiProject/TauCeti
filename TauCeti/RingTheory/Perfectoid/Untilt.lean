@@ -36,6 +36,7 @@ same holds without the nonzerodivisor hypothesis, and the sharp map induces
 * `PreTilt.untilt_equivPerfection_symm`, `PreTilt.teichmuller₀_equivPerfection`,
   `PreTilt.untilt_zero`: compatibility of `PreTilt.untilt` and `Perfection.teichmuller₀` across
   `PreTilt.equivPerfection`, and `(0 : PreTilt A p).untilt = 0`.
+* `PreTilt.untilt_surjective`: the untilt is onto when every element of `A` has a `p`-th root.
 * `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
   the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
   `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
@@ -110,6 +111,18 @@ theorem teichmuller₀_equivPerfection (x : PreTilt A p) :
 @[simp]
 theorem untilt_zero : (0 : PreTilt A p).untilt = 0 := by
   rw [← teichmuller₀_equivPerfection, map_zero, map_zero]
+
+/-- **The untilt is onto when every element has a `p`-th root.** If `x ↦ x ^ p` is surjective on
+`A`, for instance if `A` is absolutely integrally closed, then every `a ∈ A` is the untilt `x♯` of
+some `x : PreTilt A p`: reducing a compatible system of `p`-power roots of `a` modulo `p` gives `x`.
+-/
+theorem untilt_surjective (h : Function.Surjective fun x : A ↦ x ^ p) :
+    Function.Surjective (untilt : PreTilt A p → A) := by
+  intro a
+  obtain ⟨f, rfl⟩ := Perfection.coeffMonoidHom_surjective h 0 a
+  refine ⟨equivPerfection.symm
+    (Perfection.mapMonoidHom p (Ideal.Quotient.mk (span {(p : A)}) : A →* ModP A p) f), ?_⟩
+  rw [untilt_equivPerfection_symm, Perfection.teichmuller₀_mapMonoidHom_idealQuotientMk]
 
 /-- **Nonzerodivisors lift along `untilt`.** If `ϖ.untilt` is a nonzerodivisor of `A`, then `ϖ`
 is a nonzerodivisor of `PreTilt A p` (the converse can fail when `A` has nilpotent elements killed
