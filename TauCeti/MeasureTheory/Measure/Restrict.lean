@@ -42,7 +42,9 @@ into the first factor as `(s ∩ t) ∩ u` (`MeasureTheory.Measure.restrict_inte
 
 Summing the measures of the cells `S ∩ a ⁻¹' {i}` of a set `S` cut out by a measurable label
 `a` into a countable type gives the measure of `S`
-(`MeasureTheory.tsum_measure_inter_preimage_singleton`).
+(`MeasureTheory.tsum_measure_inter_preimage_singleton`); for `S = univ`, summing the measures of
+the atoms `a ⁻¹' {i}` gives the total mass
+(`MeasureTheory.tsum_measure_preimage_singleton_eq_measure_univ`).
 
 For a map `f` into a Lindelöf space, a measure is determined by its restrictions to the preimages
 of the sets of an open cover (`MeasureTheory.Measure.ext_of_restrict_preimage`).
@@ -153,6 +155,13 @@ theorem tsum_measure_inter_preimage_singleton {α ι : Type*} [MeasurableSpace �
     fun i _ ↦ ha (measurableSet_singleton i)
   rw [tsum_univ (f := fun i ↦ μ.restrict S (a ⁻¹' {i}))] at this
   simpa [Measure.restrict_apply (ha (measurableSet_singleton _)), Set.inter_comm] using this
+
+/-- Summing the measures of the atoms `a ⁻¹' {i}` of a measurable label `a` into a countable type
+gives the total mass `μ univ`. -/
+theorem tsum_measure_preimage_singleton_eq_measure_univ {α ι : Type*} [MeasurableSpace α]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι] {μ : Measure α} {a : α → ι}
+    (ha : Measurable a) : ∑' i, μ (a ⁻¹' {i}) = μ univ := by
+  simpa using tsum_measure_inter_preimage_singleton (μ := μ) ha univ
 
 end MeasureTheory
 
