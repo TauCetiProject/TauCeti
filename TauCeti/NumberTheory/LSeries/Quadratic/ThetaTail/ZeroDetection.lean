@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail.Basic
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Analysis.MellinTransform.Folding
+import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.GaussianTheta
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Mollifier
 import TauCeti.NumberTheory.LSeries.ThetaInversion
