@@ -10,7 +10,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecificLimits.RegularizedInverse
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Distributions.Gaussian.Density
 import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Multivariate
 import TauCeti.Probability.Distributions.Gaussian.Isotropic

@@ -13,7 +13,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fourier.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The adjoint of a quantization

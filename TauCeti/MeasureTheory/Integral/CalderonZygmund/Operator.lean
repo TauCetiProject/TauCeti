@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
-public import TauCeti.MeasureTheory.Function.L2Space.Basic
+public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 
 /-!

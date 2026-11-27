@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.D1p0.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!

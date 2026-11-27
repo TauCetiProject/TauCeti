@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.Predictable.Measure
-public import TauCeti.MeasureTheory.Function.L2Space.Basic
+public import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Density of elementary predictable integrands

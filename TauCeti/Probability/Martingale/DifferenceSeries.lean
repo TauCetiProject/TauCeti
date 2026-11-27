@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Probability.Martingale.Convergence
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Series of square-integrable martingale differences

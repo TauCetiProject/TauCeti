@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Analysis.Normed.Lp.Basic
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Finite families of operators into sequence-valued `Lᵖ`

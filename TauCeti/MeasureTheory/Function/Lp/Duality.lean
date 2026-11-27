@@ -23,7 +23,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import TauCeti.MeasureTheory.Function.Holder
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Topology.Order.CountableSup
 
 /-!

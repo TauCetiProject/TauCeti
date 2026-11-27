@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.StandardKernel
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 import TauCeti.MeasureTheory.Measure.LocallyNull

@@ -12,7 +12,7 @@ import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Measure.Restrict

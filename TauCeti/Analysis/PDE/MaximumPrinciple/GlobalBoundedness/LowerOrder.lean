@@ -11,7 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Global boundedness of weak subsolutions with a drift

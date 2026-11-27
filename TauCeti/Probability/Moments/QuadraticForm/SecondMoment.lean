@@ -12,7 +12,7 @@ import TauCeti.Probability.Moments.WeightedTruncation
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Matrix.DotProduct
 
 /-!

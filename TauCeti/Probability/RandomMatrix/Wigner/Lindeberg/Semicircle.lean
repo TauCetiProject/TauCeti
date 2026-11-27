@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner.Lindeberg.Basic
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Moments.QuadraticForm.SecondMoment
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.Resolvent.Semicircle

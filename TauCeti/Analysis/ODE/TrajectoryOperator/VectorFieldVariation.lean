@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Path
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.LinearAlgebra.Submodule.Quotient
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Vertical variations of a lifted vector field make the linearized equation onto

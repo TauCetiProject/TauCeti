@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The Sobolev space `H¹` under Riemannian isometries

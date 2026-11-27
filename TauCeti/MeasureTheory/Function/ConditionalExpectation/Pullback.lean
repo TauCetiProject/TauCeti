@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import TauCeti.MeasureTheory.Function.L2Space.MeanZero
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.Analysis.InnerProductSpace.RangeProjection
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
@@ -322,20 +323,13 @@ theorem pullbackL2_condExpOperator_eq_condExpL2 (η : Measure Y) (𝕜 : Type*) 
     (m : Y → X) (hm : Measurable m) (b : Lp E 2 η) :
     pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b) =
       (condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η) := by
-  set d : Lp E 2 η :=
-    pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b) - (condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η)
-  have hd_mem : d ∈ lpMeas E 𝕜 (MeasurableSpace.comap m inferInstance) 2 η := by
-    refine Submodule.sub_mem _ ?_ (SetLike.coe_mem _)
-    rw [← range_pullbackL2]
-    exact LinearMap.mem_range_self _ _
-  obtain ⟨g, hg⟩ : d ∈ (pullbackL2 η 𝕜 m hm).range := (range_pullbackL2 η 𝕜 E m hm).symm ▸ hd_mem
-  have h1 : ⟪pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b), d⟫_𝕜 = ⟪b, d⟫_𝕜 := by
-    rw [← hg, ContinuousLinearMap.coe_coe, inner_pullbackL2, inner_condExpOperator_left]
-  have h2 : ⟪(condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η), d⟫_𝕜 = ⟪b, d⟫_𝕜 :=
-    inner_condExpL2_eq_inner_fun hm.comap_le b d (mem_lpMeas_iff_aestronglyMeasurable.mp hd_mem)
-  have hd_zero : ⟪d, d⟫_𝕜 = 0 := by
-    rw [inner_sub_left, h1, h2, sub_self]
-  exact sub_eq_zero.mp (inner_self_eq_zero.mp hd_zero)
+  have : Fact (MeasurableSpace.comap m inferInstance ≤ _) := ⟨hm.comap_le⟩
+  have hproj := ContinuousLinearMap.comp_adjoint_eq_starProjection_range
+    (isometry_pullbackL2 η 𝕜 (E := E) m hm)
+  have hb := congr($hproj b)
+  rw [ContinuousLinearMap.comp_apply, ← condExpOperator_def] at hb
+  rw [hb, condExpL2, ← Submodule.starProjection_apply]
+  simp only [range_pullbackL2]
 
 /-- For an integrable `L²` function `b` and a σ-finite conditioning measure `η.trim hm.comap_le`,
 applying `pullbackL2` to `condExpOperator η 𝕜 m hm b` yields the conditional expectation

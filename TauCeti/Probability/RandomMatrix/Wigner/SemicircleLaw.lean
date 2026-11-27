@@ -11,7 +11,7 @@ import TauCeti.Probability.RandomMatrix.Wigner.Centering.SpectralMeasure
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 

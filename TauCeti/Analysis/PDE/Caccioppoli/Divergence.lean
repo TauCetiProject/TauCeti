@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 

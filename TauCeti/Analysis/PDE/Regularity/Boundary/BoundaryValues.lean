@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.MeasureDensity
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.PDE.Regularity.Boundary.Divergence
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!

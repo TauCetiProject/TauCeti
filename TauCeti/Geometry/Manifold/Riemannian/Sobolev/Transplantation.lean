@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Eigenbasis
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Resolvent
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Intertwining
-import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Transplantation of eigenfunctions, resolvents and spectral projections along finite coverings
