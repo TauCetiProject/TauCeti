@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm
+import TauCeti.Algebra.Algebra.Tower
 import TauCeti.RingTheory.TensorProduct.Finite
 import TauCeti.RingTheory.Unramified.TraceRepresentation
 
@@ -66,45 +67,22 @@ section TensorProduct
 
 variable (E : Type*) [Field E] [Algebra ℚ E] (k : Type*) [Field k] [Algebra ℚ k]
 
-/-- `E` acts on `k ⊗_ℚ E` through the right factor. -/
-noncomputable abbrev tensorModule : Module E (k ⊗[ℚ] E) :=
-  Module.compHom (k ⊗[ℚ] E) (Algebra.TensorProduct.includeRight : E →ₐ[ℚ] k ⊗[ℚ] E).toRingHom
+-- `E` acts on `k ⊗_ℚ E` through the right factor, commuting with the action of `k`.
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
 
-attribute [local instance] tensorModule
-
-/-- The actions of `E` and of `k` on `k ⊗_ℚ E` commute. -/
-theorem smulCommClass_tensorModule : SMulCommClass E k (k ⊗[ℚ] E) :=
-  ⟨fun c a y ↦ mul_smul_comm a (1 ⊗ₜ[ℚ] c : k ⊗[ℚ] E) y⟩
-
-attribute [local instance] smulCommClass_tensorModule
-
-theorem tensorModule_smul (c : E) (y : k ⊗[ℚ] E) :
-    c • y = (1 ⊗ₜ[ℚ] c : k ⊗[ℚ] E) * y :=
-  rfl
-
-/-- The swap `k ⊗_ℚ E ≃ E ⊗_ℚ k`, linear over `E` acting on the right of `k ⊗_ℚ E` and on the
-left of `E ⊗_ℚ k`. -/
-noncomputable def tensorCommLinearEquiv : k ⊗[ℚ] E ≃ₗ[E] E ⊗[ℚ] k where
-  __ := (Algebra.TensorProduct.comm ℚ k E).toAddEquiv
-  map_smul' c y := by
-    change Algebra.TensorProduct.comm ℚ k E ((1 ⊗ₜ[ℚ] c) * y) = _
-    rw [map_mul, Algebra.TensorProduct.comm_tmul, RingHom.id_apply, Algebra.smul_def,
-      Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-    rfl
-
-/-- **The determinant over `E` of the action of `k` on `k ⊗_ℚ E` is the norm.** If `k` has
-infinite degree, both sides are the junk value `1`. -/
+/-- **The determinant over `E` of the action of `k` on `k ⊗_ℚ E` is the norm.** Here `E` acts
+through the right factor (`Algebra.TensorProduct.rightAlgebra`). If `k` has infinite degree, both
+sides are the junk value `1`. -/
 theorem smulDet_tensorProduct (a : k) :
     smulDet E k (k ⊗[ℚ] E) a = algebraMap ℚ E (Algebra.norm ℚ a) := by
-  have : SMulCommClass k E (k ⊗[ℚ] E) := .symm E k _
   by_cases hfin : Module.Finite ℚ k
   swap
   · rw [smulDet_apply, Algebra.norm_eq_one_of_not_module_finite hfin, map_one,
       LinearMap.det_eq_one_of_not_module_finite]
     exact fun h ↦ hfin (Module.Finite.of_baseChange (S := E)
-      (Module.Finite.equiv (tensorCommLinearEquiv E k)))
+      (Module.Finite.equiv (Algebra.TensorProduct.commRight ℚ E k).symm.toLinearEquiv))
   rw [smulDet_apply, Algebra.norm_apply, ← LinearMap.det_baseChange,
-    ← LinearMap.det_conj _ (tensorCommLinearEquiv E k)]
+    ← LinearMap.det_conj _ (Algebra.TensorProduct.commRight ℚ E k).symm.toLinearEquiv]
   congr 1
   refine LinearMap.ext fun z ↦ ?_
   induction z using TensorProduct.inductionOn with
@@ -118,8 +96,8 @@ section Field
 variable {E : Type*} [Field E] [NumberField E] {k : IntermediateField ℚ ℂ}
 
 -- A number field is formally unramified over `ℚ`, so its reflex norm is defined.
-attribute [local instance] Algebra.FormallyUnramified.of_isSeparable tensorModule
-  smulCommClass_tensorModule
+attribute [local instance] Algebra.FormallyUnramified.of_isSeparable
+  Algebra.TensorProduct.rightAlgebra
 
 /-- If `k` has infinite degree, the reflex norm is the junk value `1`: the representation with
 the type trace is nonzero, so it is not finitely generated over `E`. -/
@@ -129,15 +107,11 @@ private theorem reflexNorm_eq_one (hfin : ¬FiniteDimensional ℚ k) (Φ : CMTyp
   let V := Fin n → k
   let := Module.compHom V ρ
   have := SMul.comp.smulCommClass (α := V) (β := k) ρ
-  have hV (c : E) : (LinearMap.trace k V (DistribSMul.toLinearMap k V c) : ℂ) = Φ.typeTrace c := by
-    rw [DistribSMul.toLinearMap_compHom]
-    exact hρ c
   have : SMulCommClass k E V := .symm E k V
-  rw [reflexNorm_eq_smulDet Φ hk V hV, smulDet_apply, LinearMap.det_eq_one_of_not_module_finite]
+  -- `c ∈ E` acts on `V` as `ρ c` by definition, so `hρ` says that `V` has the type trace.
+  rw [reflexNorm_eq_smulDet Φ hk V hρ, smulDet_apply, LinearMap.det_eq_one_of_not_module_finite]
   intro hE
-  have : IsScalarTower ℚ E V := IsScalarTower.of_algebraMap_smul fun q v ↦ by
-    change ρ (algebraMap ℚ E q) v = q • v
-    rw [← RingHom.toRatAlgHom_apply, AlgHom.commutes, Module.algebraMap_end_apply]
+  have : IsScalarTower ℚ E V := ρ.toRatAlgHom.isScalarTower_compHom
   have : Module.Finite ℚ V := Module.Finite.trans E V
   -- `V ≠ 0`: the type traces of `Φ` and `ιΦ` at `1` add up to `[E : ℚ] ≠ 0`.
   obtain ⟨i⟩ : Nonempty (Fin n) := by
@@ -171,13 +145,6 @@ theorem reflexNorm_mul_reflexNorm_star (Φ : CMType E) (hk : Φ.reflexField ≤ 
   have := SMul.comp.smulCommClass (α := V) (β := k) ρ
   let := Module.compHom V' ρ'
   have := SMul.comp.smulCommClass (α := V') (β := k) ρ'
-  have hV (c : E) : (LinearMap.trace k V (DistribSMul.toLinearMap k V c) : ℂ) = Φ.typeTrace c := by
-    rw [DistribSMul.toLinearMap_compHom]
-    exact hρ c
-  have hV' (c : E) : (LinearMap.trace k V' (DistribSMul.toLinearMap k V' c) : ℂ) =
-      (star Φ).typeTrace c := by
-    rw [DistribSMul.toLinearMap_compHom]
-    exact hρ' c
   -- `V ⊕ V'` and `k ⊗_ℚ E` have the same trace `Tr_{E/ℚ}`, so they are isomorphic.
   have htr (c : E) : LinearMap.trace k (V × V') (DistribSMul.toLinearMap k (V × V') c) =
       LinearMap.trace k (k ⊗[ℚ] E) (DistribSMul.toLinearMap k (k ⊗[ℚ] E) c) := by
@@ -188,10 +155,11 @@ theorem reflexNorm_mul_reflexNorm_star (Φ : CMType E) (hk : Φ.reflexField ≤ 
       refine LinearMap.ext fun z ↦ ?_
       induction z using TensorProduct.inductionOn with
       | add x y hx hy => rw [map_add, map_add, hx, hy]
-      | tmul x e => simp [tensorModule_smul]
+      | tmul x e => exact (Algebra.TensorProduct.tmul_mul_tmul (1 : k) x c e).trans (by simp)
     apply Subtype.ext
     rw [h1, h2, LinearMap.trace_prodMap', LinearMap.trace_baseChange, IntermediateField.coe_add,
-      hV, hV', typeTrace_add_typeTrace_star_eq_trace, IntermediateField.coe_algebraMap_apply]
+      DistribSMul.toLinearMap_compHom, DistribSMul.toLinearMap_compHom, hρ, hρ',
+      typeTrace_add_typeTrace_star_eq_trace, IntermediateField.coe_algebraMap_apply]
     rfl
   obtain ⟨e, he⟩ := exists_linearEquiv_of_trace_eq (R := ℚ) (V := V × V') (W := k ⊗[ℚ] E)
     (Module.toModuleEnd k (S := E) (V × V')).toRatAlgHom
@@ -201,18 +169,14 @@ theorem reflexNorm_mul_reflexNorm_star (Φ : CMType E) (hk : Φ.reflexField ≤ 
   -- Compare determinants: the product of the reflex norms on `V ⊕ V'`, the norm on `k ⊗_ℚ E`.
   have : Module.Finite ℚ V := Module.Finite.trans k V
   have : Module.Finite ℚ V' := Module.Finite.trans k V'
-  have : IsScalarTower ℚ E V := IsScalarTower.of_algebraMap_smul fun q v ↦ by
-    change ρ (algebraMap ℚ E q) v = q • v
-    rw [← RingHom.toRatAlgHom_apply, AlgHom.commutes, Module.algebraMap_end_apply]
-  have : IsScalarTower ℚ E V' := IsScalarTower.of_algebraMap_smul fun q v ↦ by
-    change ρ' (algebraMap ℚ E q) v = q • v
-    rw [← RingHom.toRatAlgHom_apply, AlgHom.commutes, Module.algebraMap_end_apply]
+  have : IsScalarTower ℚ E V := ρ.toRatAlgHom.isScalarTower_compHom
+  have : IsScalarTower ℚ E V' := ρ'.toRatAlgHom.isScalarTower_compHom
   have : Module.Finite E V := Module.Finite.of_restrictScalars_finite ℚ E V
   have : Module.Finite E V' := Module.Finite.of_restrictScalars_finite ℚ E V'
   have he' (c : E) (v : V × V') : e (c • v) = c • e v := by
     simpa only [RingHom.toRatAlgHom_apply, Module.toModuleEnd_apply,
       DistribSMul.toLinearMap_apply] using he c v
-  rw [reflexNorm_eq_smulDet Φ hk V hV, reflexNorm_eq_smulDet (star Φ) _ V' hV', ← smulDet_prod,
+  rw [reflexNorm_eq_smulDet Φ hk V hρ, reflexNorm_eq_smulDet (star Φ) _ V' hρ', ← smulDet_prod,
     smulDet_congr e he', smulDet_tensorProduct]
 
 end Field
