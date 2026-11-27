@@ -22,8 +22,9 @@ the `p`-adic completion of `Λ` (`LinearMap.orbitRelQuotientTateModuleδEquiv`),
 generated `Λ` with `ℤ^_p ⊗ Λ`, `ℤ^_p` the `p`-adic completion of `ℤ`
 (`LinearMap.orbitRelQuotientTateModuleδEquivTensor`).
 
-Both identifications are additive equivalences. Their targets are Mathlib's `AdicCompletion` for
-the ideal `(p)` of `ℤ`, not modules over the `p`-adic integers `ℤ_[p]`.
+Both identifications are additive equivalences, with targets Mathlib's `AdicCompletion` for the
+ideal `(p)` of `ℤ`. For prime `p` and finitely generated `Λ`, the Tate module is `ℤ_[p] ⊗ Λ` as a
+`ℤ_[p]`-module (`LinearMap.orbitRelQuotientTateModuleδPadicEquiv`).
 
 ## Main definitions
 
@@ -32,6 +33,8 @@ the ideal `(p)` of `ℤ`, not modules over the `p`-adic integers `ℤ_[p]`.
   when multiplication by `p` is bijective on `E`.
 * `LinearMap.orbitRelQuotientTateModuleδEquivTensor`: `T_p T ≃ ℤ^_p ⊗ Λ` for finitely generated
   `Λ`, when multiplication by `p` is bijective on `E`.
+* `LinearMap.orbitRelQuotientTateModuleδPadicEquiv`: `T_p T ≃ₗ[ℤ_[p]] ℤ_[p] ⊗ Λ` for prime `p`
+  and finitely generated `Λ`, when multiplication by `p` is bijective on `E`.
 
 ## Main statements
 
@@ -158,6 +161,37 @@ theorem ofTensorProduct_orbitRelQuotientTateModuleδEquivTensor
         (f.orbitRelQuotientTateModuleδEquivTensor hf p hp x) =
       f.orbitRelQuotientTateModuleδEquiv hf p hp x :=
   ofTensorProduct_tateModuleδEquivTensor p _ hf _ hp x
+
+variable [Fact p.Prime]
+
+/-- **The Tate module of a torus as `ℤ_[p] ⊗ Λ`, `ℤ_[p]`-linearly.** For prime `p`, finitely
+generated `Λ` and injective `f`, when multiplication by `p` is bijective on `E`, the `p`-adic Tate
+module of `T = E / f(Λ)` is `ℤ_[p] ⊗ Λ` as a `ℤ_[p]`-module: `TauCeti.tateModuleδPadicEquiv` for
+the exact sequence `0 → Λ → E → T → 0`. -/
+def orbitRelQuotientTateModuleδPadicEquiv (hp : Bijective fun v : E ↦ (p : ℤ) • v) :
+    TateModule p (AddAction.orbitRel.Quotient (range f) E) ≃ₗ[ℤ_[p]] ℤ_[p] ⊗[ℤ] Λ :=
+  tateModuleδPadicEquiv p (g := (range f).orbitRelQuotientMkHom.toIntLinearMap)
+    (exact_orbitRelQuotientMkHom_range f) hf
+    (range f).orbitRelQuotientMkHom_surjective hp
+
+/-- `PadicInt.tensorAdicCompletionEquiv` turns the `ℤ_[p] ⊗ Λ` form into the `p`-adic completion
+form of the equivalence. -/
+@[simp]
+theorem tensorAdicCompletionEquiv_orbitRelQuotientTateModuleδPadicEquiv
+    (hp : Bijective fun v : E ↦ (p : ℤ) • v)
+    (x : TateModule p (AddAction.orbitRel.Quotient (range f) E)) :
+    PadicInt.tensorAdicCompletionEquiv p Λ (f.orbitRelQuotientTateModuleδPadicEquiv hf p hp x) =
+      f.orbitRelQuotientTateModuleδEquiv hf p hp x :=
+  tensorAdicCompletionEquiv_tateModuleδPadicEquiv p _ hf _ hp x
+
+/-- The inverse equivalence is `PadicInt.tensorAdicCompletionEquiv` followed by the inverse of
+`LinearMap.orbitRelQuotientTateModuleδEquiv`. -/
+theorem orbitRelQuotientTateModuleδPadicEquiv_symm_apply (hp : Bijective fun v : E ↦ (p : ℤ) • v)
+    (t : ℤ_[p] ⊗[ℤ] Λ) :
+    (f.orbitRelQuotientTateModuleδPadicEquiv hf p hp).symm t =
+      (f.orbitRelQuotientTateModuleδEquiv hf p hp).symm
+        (PadicInt.tensorAdicCompletionEquiv p Λ t) :=
+  tateModuleδPadicEquiv_symm_apply p _ hf _ hp t
 
 end Finite
 

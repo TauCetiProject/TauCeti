@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.TestFunction.BoxCurrent
 import Mathlib.Algebra.Group.Subgroup.Finsupp
+import TauCeti.Algebra.Ring.NegOnePow
 import Mathlib.Analysis.Calculus.FDeriv.Affine
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
@@ -59,15 +60,18 @@ file supplies their boundary formula, supports and mass bounds.
 * `TauCeti.coordBoxCurrent I x r Ω`: the oriented current `[[x; I, r]]` of a coordinate box.
 * `TauCeti.coordBoxCurrent_apply`: its value as an integral over `[0, r]`.
 * `TauCeti.coordBoxCurrent_comp_extDerivCLM`: the cubical boundary formula.
-* `TauCeti.dsupport_coordBoxCurrent_subset`, `TauCeti.mass_coordBoxCurrent_le`,
-  `TauCeti.isNormal_coordBoxCurrent`: support, mass and normality.
+* `TauCeti.dsupport_coordBoxCurrent_subset`, `TauCeti.isCompact_dsupport_coordBoxCurrent`,
+  `TauCeti.mass_coordBoxCurrent_le`, `TauCeti.isNormal_coordBoxCurrent`: support, mass and
+  normality.
 * `TauCeti.gridCubeCurrent ε I z Ω`: the oriented grid cube with corner `εz`, `z ∈ ℤⁿ`.
 * `TauCeti.gridCubeCurrent_comp_extDerivCLM`: the boundary of a grid cube is an alternating sum of
   grid cubes.
 * `TauCeti.cubicalGridChains ε Ω k`: the integral cubical grid `k`-chains of side `ε`, with the
   explicit description `TauCeti.mem_cubicalGridChains_iff`.
 * `TauCeti.comp_extDerivCLM_mem_cubicalGridChains`: grid chains are closed under the boundary.
-* `TauCeti.isNormal_of_mem_cubicalGridChains`: grid chains are normal currents.
+* `TauCeti.isNormal_of_mem_cubicalGridChains`,
+  `TauCeti.isCompact_dsupport_of_mem_cubicalGridChains`: grid chains are normal currents with
+  compact support.
 
 ## References
 
@@ -106,6 +110,12 @@ theorem coordPlaneMap_apply (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n
 theorem contLinear_coordPlaneMap (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
     (coordPlaneMap I x).contLinear =
       (LinearIsometry.piLpExtendByZero 2 ℝ ℝ I).toContinuousLinearMap := by
+  simp [coordPlaneMap]
+
+/-- `coordPlaneMap I x s` differs from the base point `x` by the linear part applied to `s`. -/
+theorem coordPlaneMap_sub_self (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (s : EuclideanSpace ℝ (Fin k)) :
+    coordPlaneMap I x s - x = (coordPlaneMap I x).contLinear s := by
   simp [coordPlaneMap]
 
 /-- The linear part of `coordPlaneMap I x` sends the `j`-th axis to the `I j`-th axis. -/
@@ -393,17 +403,28 @@ theorem coordBoxCurrent_comp_extDerivCLM (I : Fin (k + 1) ↪ Fin n)
       ((0 : Fin (k + 1) → ℝ) j)      (by simp)]
   simp only [ContinuousLinearMap.comp_apply]
 
+/-- The coordinate box `{x + ∑ⱼ sⱼ e_{I j} | 0 ≤ sⱼ ≤ rⱼ}` is compact. -/
+theorem isCompact_coordPlaneMap_image_Icc (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (r : Fin k → ℝ) : IsCompact (coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r)) :=
+  ((PiLp.homeomorph 2 _).isCompact_preimage.2 isCompact_Icc).image (coordPlaneMap I x).continuous
+
 /-- The support of `[[x; I, r]]` lies in the box `{x + ∑ⱼ sⱼ e_{I j} | 0 ≤ sⱼ ≤ rⱼ}`. -/
 theorem dsupport_coordBoxCurrent_subset (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
     (r : Fin k → ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
     dsupport (coordBoxCurrent I x r Ω : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) → ℝ) ⊆
       coordPlaneMap I x '' (ofLp ⁻¹' Icc 0 r) := by
-  have hbox : IsCompact (ofLp ⁻¹' Icc 0 r : Set (EuclideanSpace ℝ (Fin k))) :=
-    (PiLp.homeomorph 2 _).isCompact_preimage.2 isCompact_Icc
   rw [coordBoxCurrent, ContinuousLinearMap.coe_comp]
   refine (dsupport_comp_pullbackCLM_subset _).trans ?_
-  rw [(hbox.image (coordPlaneMap I x).continuous).isClosed.closure_subset_iff]
+  rw [(isCompact_coordPlaneMap_image_Icc I x r).isClosed.closure_subset_iff]
   exact image_mono (inter_subset_right.trans (dsupport_boxCurrent_subset 0 r ⊤))
+
+/-- The support of `[[x; I, r]]` is compact. -/
+theorem isCompact_dsupport_coordBoxCurrent (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (r : Fin k → ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
+    IsCompact
+      (dsupport (coordBoxCurrent I x r Ω : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) → ℝ)) :=
+  (isCompact_coordPlaneMap_image_Icc I x r).of_isClosed_subset isClosed_dsupport
+    (dsupport_coordBoxCurrent_subset I x r Ω)
 
 /-- **The mass of a coordinate box**: `M([[x; I, r]]) ≤ ∏ⱼ rⱼ`, the `k`-volume of the box. -/
 theorem mass_coordBoxCurrent_le (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
@@ -527,10 +548,7 @@ theorem comp_extDerivCLM_mem_cubicalGridChains {ε : ℝ}
   have hsub := AddSubgroup.sub_mem _
     (gridCubeCurrent_mem_cubicalGridChains ε (j.succAboveEmb.trans I) (z + Pi.single (I j) 1) Ω)
     (gridCubeCurrent_mem_cubicalGridChains ε (j.succAboveEmb.trans I) z Ω)
-  rcases neg_one_pow_eq_or ℝ (j : ℕ) with h | h <;> rw [h]
-  · rwa [one_smul]
-  · have h' := AddSubgroup.zsmul_mem _ hsub (-1)
-    rwa [← Int.cast_smul_eq_zsmul ℝ, Int.cast_neg, Int.cast_one] at h'
+  exact neg_one_pow_smul_mem hsub _
 
 /-- **Grid chains are normal currents.** -/
 theorem isNormal_of_mem_cubicalGridChains {ε : ℝ} {Ω : Opens (EuclideanSpace ℝ (Fin n))}
@@ -542,6 +560,24 @@ theorem isNormal_of_mem_cubicalGridChains {ε : ℝ} {Ω : Opens (EuclideanSpace
       rintro _ ⟨⟨I, z⟩, rfl⟩
       exact mem_normalCurrentSubmodule.2 (isNormal_gridCubeCurrent ε I z Ω)
   exact mem_normalCurrentSubmodule.1 ((Submodule.mem_toAddSubgroup _).1 (h hT))
+
+/-- **Grid chains have compact support**: the support of a grid chain lies in the union of the
+finitely many cubes it is made of. -/
+theorem isCompact_dsupport_of_mem_cubicalGridChains {ε : ℝ}
+    {Ω : Opens (EuclideanSpace ℝ (Fin n))}
+    {T : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    (hT : T ∈ cubicalGridChains ε Ω k) : IsCompact (dsupport (T : _ → ℝ)) := by
+  induction hT using AddSubgroup.closure_induction with
+  | mem _ h =>
+    obtain ⟨⟨I, z⟩, rfl⟩ := h
+    dsimp only
+    rw [gridCubeCurrent_def]
+    exact isCompact_dsupport_coordBoxCurrent _ _ _ Ω
+  | zero => simp [dsupport_zero]
+  | add S T _ _ hS hT =>
+    rw [FunLike.coe_add]
+    exact (hS.union hT).of_isClosed_subset isClosed_dsupport (dsupport_add_subset _ _)
+  | neg T _ hT => rwa [FunLike.coe_neg, dsupport_neg]
 
 /-- **The mass of a grid chain**: `M(∑_c a_c • Q_c) ≤ (∑_c |a_c|) εᵏ`. -/
 theorem mass_finsuppSum_gridCubeCurrent_le (ε : ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n)))

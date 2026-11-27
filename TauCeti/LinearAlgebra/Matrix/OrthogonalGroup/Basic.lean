@@ -36,6 +36,7 @@ are the orthogonal matrices.
 * `TauCeti.det_eq_one_or_neg_one_of_mem_orthogonalGroup`: the determinant of an orthogonal matrix
   is `1` or `-1`.
 * `TauCeti.det_orthogonalDiagonalReflection`: the diagonal reflection has determinant `-1`.
+* `TauCeti.orthogonalDiagonalReflection_mul_self`: the diagonal reflection is an involution.
 * `Matrix.permMatrix_mem_orthogonalGroup`: a permutation matrix is orthogonal.
 * `Matrix.mem_orthogonalGroup_iff_dotProduct_mulVec`: a matrix is orthogonal exactly when it
   preserves the dot product.
@@ -98,6 +99,17 @@ theorem det_orthogonalDiagonalReflection (i : n) :
   rw [coe_orthogonalDiagonalReflection, Matrix.det_diagonal,
     Finset.prod_update_of_mem (Finset.mem_univ i)]
   simp
+
+/-- The diagonal reflection negating one coordinate is an involution. -/
+@[simp]
+theorem orthogonalDiagonalReflection_mul_self (i : n) :
+    orthogonalDiagonalReflection R i * orthogonalDiagonalReflection R i = 1 := by
+  refine Subtype.ext ?_
+  rw [Submonoid.coe_mul, coe_orthogonalDiagonalReflection, Matrix.diagonal_mul_diagonal,
+    Submonoid.coe_one, ← Matrix.diagonal_one]
+  congr 1
+  funext j
+  by_cases hj : j = i <;> simp [hj]
 
 end DiagonalReflection
 

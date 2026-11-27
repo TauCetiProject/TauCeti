@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.Cylinder.Slice.ZeroMode
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.NonzeroModes
+import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -16,14 +17,15 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 # The Sobolev realization of the linearized operator along a time-independent cylinder
 
 Let `(V, ω)` be a finite-dimensional symplectic vector space whose inner product is the metric
-`ω(·, J ·)` of a constant compatible almost complex structure `J`, let `H : V → ℝ` be a `C²`
-autonomous Hamiltonian and `γ` a continuous curve, and let
+`ω(·, J ·)` of a constant compatible almost complex structure `J`, let `H = H_s : V → ℝ` be jointly
+`C²` Hamiltonians depending on `s ∈ ℝ` alone, such as an autonomous Hamiltonian or continuation
+data `K = H_s dt`, and `γ` a continuous curve, and let
 
-`D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)`
+`D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)`, with `dX_H(γ(s))` standing for `dX_{H_s}(γ(s))`,
 
-be the linearized Floer operator along the time-independent cylinder `(s, t) ↦ γ(s)`
-(`TauCeti.SymplecticForm.floerLinearization_const_eq`), realized on the Sobolev space as
-`TauCeti.SymplecticForm.floerSobolevOperator : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`. Its
+be the linearized Floer operator of `K = H_s dt` along the time-independent cylinder
+`(s, t) ↦ γ(s)` (`TauCeti.SymplecticForm.floerLinearization_const_eq`), realized on the Sobolev
+space as `TauCeti.SymplecticForm.floerSobolevOperator : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`. Its
 coefficients do not depend on `t`. This file shows that, when `‖dX_H(γ(s))‖ ≤ a < 2π` for every
 `s`, the realization commutes with the projection onto the zero Fourier mode, that the other
 modes carry no kernel, and that on the zero mode it is the Morse operator
@@ -90,32 +92,32 @@ namespace TauCeti.SymplecticForm
 section Coefficients
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : ℝ → V → ℝ} {γ : ℝ → V}
 
 /-- Along a time-independent cylinder `(s, t) ↦ γ(s)` the coefficient field of the linearized
 operator does not depend on `t`. -/
 theorem floerJetCoeff_const_comp_fst_mk (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (γ : ℝ → V) (s t : ℝ) :
-    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+    (H : ℝ → V → ℝ) (γ : ℝ → V) (s t : ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) (s, t) =
-      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+      ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) (s, 0) := by
   rw [floerJetCoeff_const_eq, floerJetCoeff_const_eq]
 
-/-- Along a continuous curve `γ` on which `dX_H` is bounded, the coefficient field of the
-linearized operator of a `C²` autonomous Hamiltonian is essentially bounded on the cylinder. -/
-theorem memLp_floerJetCoeff_const_comp_fst (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) :
+/-- Along a continuous curve `γ` on which `dX_{H_s}` is bounded, the coefficient field of the
+linearized operator of jointly `C²` Hamiltonians `H_s` is essentially bounded on the cylinder. -/
+theorem memLp_floerJetCoeff_const_comp_fst (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ) {a : ℝ} (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a) :
     MemLp (ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-      (fun _ ↦ H) (fun z ↦ γ z.1)) ∞ stripMeasure := by
+      (fun z ↦ H z.1) (fun z ↦ γ z.1)) ∞ stripMeasure := by
   set Jc : V →L[ℝ] V := J.toLinearMap.toContinuousLinearMap
-  have hX : Continuous (fderiv ℝ (ω.hamiltonianVectorField H)) :=
-    (ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero
-  have hC : Continuous fun z : ℝ × ℝ ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1))) :=
-    (continuous_const.clm_comp (hX.comp (hγ.comp continuous_fst))).neg
-  have hcont : Continuous (ω.floerJetCoeff (fun _ _ ↦ Jc) (fun _ _ ↦ 0) (fun _ ↦ H)
+  have hX := ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ
+  have hC : Continuous fun z : ℝ × ℝ ↦
+      -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField (H z.1)) (γ z.1))) :=
+    (continuous_const.clm_comp (hX.comp continuous_fst)).neg
+  have hcont : Continuous (ω.floerJetCoeff (fun _ _ ↦ Jc) (fun _ _ ↦ 0) (fun z ↦ H z.1)
       (fun z ↦ γ z.1)) := by
-    rw [funext (floerJetCoeff_const_eq ω J H (fun z ↦ γ z.1))]
+    rw [funext (floerJetCoeff_const_eq ω J (fun z ↦ H z.1) (fun z ↦ γ z.1))]
     exact continuous_iff_continuousAt.2 fun z ↦
       continuousAt_firstOrderJetCoeff continuousAt_const hC.continuousAt
   refine memLp_top_of_bound hcont.aestronglyMeasurable (1 + ‖Jc‖ + ‖Jc‖ * a)
@@ -127,35 +129,35 @@ theorem memLp_floerJetCoeff_const_comp_fst (hH : ContDiff ℝ 2 H) (hγ : Contin
   exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (haγ z.1) (norm_nonneg _))
 
 /-- **The linearized operator commutes with the slice average.** Along a time-independent cylinder
-`(s, t) ↦ γ(s)`, the Sobolev realization of the linearized operator of an autonomous Hamiltonian for
-a constant `J` commutes with the projection onto the zero Fourier mode. -/
+`(s, t) ↦ γ(s)`, the Sobolev realization of the linearized operator of Hamiltonians `H_s` depending
+on `s` for a constant `J` commutes with the projection onto the zero Fourier mode. -/
 theorem floerSobolevOperator_sliceAverageL (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (γ : ℝ → V) (x : H1 V) :
-    ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) (sliceAverageL x) =
-      sliceAverageLp (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) x) := by
+    (H : ℝ → V → ℝ) (γ : ℝ → V) (x : H1 V) :
+    ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.1) (fun z ↦ γ z.1) (sliceAverageL x) =
+      sliceAverageLp (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) x) := by
   rw [floerSobolevOperator_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     Submodule.subtypeL_apply, Submodule.subtypeL_apply, coe_sliceAverageL,
     sliceAverageLp_jetOperator (floerJetCoeff_const_comp_fst_mk ω J H γ)]
 
-/-- **The zero mode of the linearized operator is the Morse operator.** Let `H` be a `C²`
-autonomous Hamiltonian and `γ` a continuous curve along which `dX_H` is bounded, and let `A` be the
-`L∞` class of `s ↦ -J dX_H(γ(s))`. The Sobolev realization of the linearized operator along the
-time-independent cylinder `(s, t) ↦ γ(s)` maps the zero mode of a path `ζ ∈ W^{1,2}(ℝ, V)` to the
-zero mode of `M ζ = ζ' - J dX_H(γ) ζ`, the trajectory operator
+/-- **The zero mode of the linearized operator is the Morse operator.** Let `H_s` be jointly `C²`
+Hamiltonians depending on `s` and `γ` a continuous curve along which `dX_{H_s}` is bounded, and let
+`A` be the `L∞` class of `s ↦ -J dX_{H_s}(γ(s))`. The Sobolev realization of the linearized operator
+along the time-independent cylinder `(s, t) ↦ γ(s)` maps the zero mode of a path `ζ ∈ W^{1,2}(ℝ, V)`
+to the zero mode of `M ζ = ζ' - J dX_{H_s}(γ) ζ`, the trajectory operator
 `TauCeti.WeakDerivStep.trajectoryOperator A`. -/
 theorem floerSobolevOperator_zeroModeL
     {A : Lp (V →L[ℝ] V) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ}
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s))))
+        (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s))))
     (u : WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ
       (Lp V 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))))) :
-    ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) (zeroModeL V u) =
+    ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.1) (fun z ↦ γ z.1) (zeroModeL V u) =
       zeroModeLp V (WeakDerivStep.trajectoryOperator A u) := by
   have hpull := measurePreserving_fst_stripMeasure.quasiMeasurePreserving
   refine Lp.ext ?_
@@ -171,22 +173,23 @@ end Coefficients
 section Gap
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : ℝ → V → ℝ} {γ : ℝ → V}
 
 /-- On the jet of a test section `η` vanishing for `|s| ≥ R`, the squared norm of the Sobolev
 realization of `D` is the integral of `‖D η‖²` over the rectangle `[-R, R] × [0, 1]`. -/
-private theorem sq_norm_floerSobolevOperator_jetLp_eq_setIntegral (hH : ContDiff ℝ 2 H)
-    (hγ : Continuous γ) {a : ℝ} (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+private theorem sq_norm_floerSobolevOperator_jetLp_eq_setIntegral
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ}
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (η : testSection V) {R : ℝ} (hR : ∀ s t, R ≤ |s| → (η : ℝ × ℝ → V) (s, t) = 0) :
-    ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) ⟨jetLp (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 =
+    ‖ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.1) (fun z ↦ γ z.1) ⟨jetLp 2 (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 =
       ∫ z in Icc (-R) R ×ˢ Icc 0 1, ‖ω.floerLinearization
-        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) η z‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae (g := fun z ↦ ‖ω.floerLinearization
-      (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+      (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
       (fun z ↦ γ z.1) η z‖ ^ 2) (by
-    filter_upwards [floerSobolevOperator_jetLp_ae_eq ω
+    filter_upwards [floerSobolevOperator_jetLp_ae_eq ω (p := 2)
       (memLp_floerJetCoeff_const_comp_fst hH hγ haγ) η] with z hz
     rw [hz])]
   refine integral_strip_eq_setIntegral_of_jet_eq_zero hR fun z hz ↦ ?_
@@ -195,13 +198,14 @@ private theorem sq_norm_floerSobolevOperator_jetLp_eq_setIntegral (hH : ContDiff
 
 /-- The gap on the nonzero modes for the jet of a test section whose slices have mean zero. -/
 private theorem mul_sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
-    (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ)
+    {a : ℝ} (ha : a ≤ 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (η : testSection V) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, (η : ℝ × ℝ → V) (s, t) = 0) :
-    (2 * π - a) ^ 2 * ‖jetLp (testSection V) η‖ ^ 2 ≤
-      ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)
-        ⟨jetLp (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 := by
+    (2 * π - a) ^ 2 * ‖jetLp 2 (testSection V) η‖ ^ 2 ≤
+      ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)
+        ⟨jetLp 2 (testSection V) η, jetLp_mem_jetClosure η⟩‖ ^ 2 := by
   obtain ⟨hη2, hηp, R, hR⟩ := mem_testSection_iff.1 η.property
   have hη1 : ContDiff ℝ 1 (η : ℝ × ℝ → V) := hη2.of_le one_le_two
   set R₀ := max R 0
@@ -232,31 +236,31 @@ private theorem mul_sq_norm_jetLp_le_of_forall_intervalIntegral_eq_zero
   nlinarith [mul_le_mul_of_nonneg_left hJ hpos]
 
 /-- **The gap on the nonzero modes on `W^{1,2}`.** Let the inner product of `V` be the metric
-`ω(·, J ·)`, let `H` be a `C²` autonomous Hamiltonian and `γ` a continuous curve with
-`‖dX_H(γ(s))‖ ≤ a ≤ 2π` for every `s`. Then the Sobolev realization `D` of the linearized operator
-along `(s, t) ↦ γ(s)` satisfies `(2π - a)² ‖x - P x‖² ≤ ((2π)² + 1) ‖D (x - P x)‖²` for every
-`x ∈ W^{1,2}(ℝ × S¹, V)`, where `P x` is the slice average of `x`. -/
+`ω(·, J ·)`, let `H_s` be jointly `C²` Hamiltonians depending on `s` and `γ` a continuous curve with
+`‖dX_{H_s}(γ(s))‖ ≤ a ≤ 2π` for every `s`. Then the Sobolev realization `D` of the linearized
+operator along `(s, t) ↦ γ(s)` satisfies `(2π - a)² ‖x - P x‖² ≤ ((2π)² + 1) ‖D (x - P x)‖²` for
+every `x ∈ W^{1,2}(ℝ × S¹, V)`, where `P x` is the slice average of `x`. -/
 theorem mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
-    (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) (x : H1 V) :
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ)
+    {a : ℝ} (ha : a ≤ 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a) (x : H1 V) :
     (2 * π - a) ^ 2 * ‖x - sliceAverageL x‖ ^ 2 ≤
-      ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (x - sliceAverageL x)‖ ^ 2 := by
-  set D := ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-    (fun _ ↦ H) (fun z ↦ γ z.1)
+      ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) (x - sliceAverageL x)‖ ^ 2 := by
+  set D := ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+    (fun z ↦ H z.1) (fun z ↦ γ z.1)
   have hcl : IsClosed {y : H1 V | (2 * π - a) ^ 2 * ‖y - sliceAverageL y‖ ^ 2 ≤
       ((2 * π) ^ 2 + 1) * ‖D (y - sliceAverageL y)‖ ^ 2} :=
     isClosed_le (continuous_const.mul ((continuous_id.sub sliceAverageL.continuous).norm.pow 2))
       (continuous_const.mul ((D.continuous.comp
         (continuous_id.sub sliceAverageL.continuous)).norm.pow 2))
-  refine (denseRange_codRestrict_jetLp (testSection V)).induction_on x hcl fun ξ ↦ ?_
+  refine jetClosure_induction hcl (fun ξ ↦ ?_) x
   -- On the jet of a test section `ξ`, `x - P x` is the jet of the test section `ξ - ξbar`.
   set η : testSection V := ξ - ⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩
-  have hx : (jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ -
-      sliceAverageL ((jetLp (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ) =
-        ⟨jetLp (testSection V) η, jetLp_mem_jetClosure η⟩ := by
+  have hx : toJetClosure 2 (testSection V) ξ - sliceAverageL (toJetClosure 2 (testSection V) ξ) =
+      ⟨jetLp 2 (testSection V) η, jetLp_mem_jetClosure η⟩ := by
     refine Subtype.ext ?_
-    rw [Submodule.coe_sub, coe_sliceAverageL, LinearMap.codRestrict_apply, sliceAverageLp_jetLp]
+    rw [Submodule.coe_sub, coe_sliceAverageL, coe_toJetClosure, sliceAverageLp_jetLp]
     simp [η, map_sub]
   have hmean : ∀ s, ∫ t in (0 : ℝ)..1, (η : ℝ × ℝ → V) (s, t) = 0 := fun s ↦ by
     have hint : IntervalIntegrable (fun t ↦ (ξ : ℝ × ℝ → V) (s, t)) volume 0 1 :=
@@ -273,28 +277,29 @@ theorem mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator
 element `x` of `W^{1,2}(ℝ × S¹, V)` whose slice average vanishes satisfies
 `(2π - a)² ‖x‖² ≤ ((2π)² + 1) ‖D x‖²`. -/
 theorem mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
-    (ha : a ≤ 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) {x : H1 V}
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ)
+    {a : ℝ} (ha : a ≤ 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a) {x : H1 V}
     (hx : sliceAverageL x = 0) :
     (2 * π - a) ^ 2 * ‖x‖ ^ 2 ≤
-      ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) x‖ ^ 2 := by
+      ((2 * π) ^ 2 + 1) * ‖ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) x‖ ^ 2 := by
   simpa [hx] using
     mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator hg hH hγ ha haγ x
 
 /-- **The kernel lies in the zero mode.** Let the inner product of `V` be the metric `ω(·, J ·)`,
-let `H` be a `C²` autonomous Hamiltonian and `γ` a continuous curve with
-`‖dX_H(γ(s))‖ ≤ a < 2π` for every `s`. Every element `x` of `W^{1,2}(ℝ × S¹, V)` in the kernel of
-the Sobolev realization of the linearized operator along `(s, t) ↦ γ(s)` is its own slice average:
-it does not depend on `t`. -/
+let `H_s` be jointly `C²` Hamiltonians depending on `s` and `γ` a continuous curve with
+`‖dX_{H_s}(γ(s))‖ ≤ a < 2π` for every `s`. Every element `x` of `W^{1,2}(ℝ × S¹, V)` in the kernel
+of the Sobolev realization of the linearized operator along `(s, t) ↦ γ(s)` is its own slice
+average: it does not depend on `t`. -/
 theorem sliceAverageL_eq_self_of_floerSobolevOperator_eq_zero (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) {x : H1 V}
-    (hx : ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-      (fun _ ↦ H) (fun z ↦ γ z.1) x = 0) :
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a) {x : H1 V}
+    (hx : ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+      (fun z ↦ H z.1) (fun z ↦ γ z.1) x = 0) :
     sliceAverageL x = x := by
-  have hD : ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-      (fun _ ↦ H) (fun z ↦ γ z.1) (x - sliceAverageL x) = 0 := by
+  have hD : ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+      (fun z ↦ H z.1) (fun z ↦ γ z.1) (x - sliceAverageL x) = 0 := by
     rw [map_sub, floerSobolevOperator_sliceAverageL, hx, map_zero, sub_zero]
   have h := mul_sq_norm_sub_sliceAverageL_le_mul_sq_norm_floerSobolevOperator hg hH hγ ha.le haγ x
   rw [hD, norm_zero] at h
@@ -308,23 +313,23 @@ end Gap
 section ZeroMode
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : V → ℝ} {γ : ℝ → V}
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {H : ℝ → V → ℝ} {γ : ℝ → V}
   {A : Lp (V →L[ℝ] V) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
 
 /-- **The kernel of the linearized operator is the kernel of the Morse operator.** Let the inner
-product of `V` be the metric `ω(·, J ·)`, let `H` be a `C²` autonomous Hamiltonian and `γ` a
-continuous curve with `‖dX_H(γ(s))‖ ≤ a < 2π` for every `s`, and let `A` be the `L∞` class of
-`s ↦ -J dX_H(γ(s))`. The kernel of the Sobolev realization of the linearized operator along the
-time-independent cylinder `(s, t) ↦ γ(s)` on `W^{1,2}(ℝ × S¹, V)` is the image under the zero mode
-of the kernel of the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` on `W^{1,2}(ℝ, V)`. -/
+product of `V` be the metric `ω(·, J ·)`, let `H_s` be jointly `C²` Hamiltonians depending on `s`
+and `γ` a continuous curve with `‖dX_{H_s}(γ(s))‖ ≤ a < 2π` for every `s`, and let `A` be the `L∞`
+class of `s ↦ -J dX_{H_s}(γ(s))`. The kernel of the Sobolev realization of the linearized operator
+along the time-independent cylinder `(s, t) ↦ γ(s)` on `W^{1,2}(ℝ × S¹, V)` is the image under the
+zero mode of the kernel of the Morse operator `ζ ↦ ζ' - J dX_{H_s}(γ) ζ` on `W^{1,2}(ℝ, V)`. -/
 theorem ker_floerSobolevOperator_eq_map_zeroModeL (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1)).ker =
+        (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
+    (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.1) (fun z ↦ γ z.1)).ker =
       (WeakDerivStep.trajectoryOperator (p := 2) A).ker.map (zeroModeL V).toLinearMap := by
   ext x
   simp only [LinearMap.mem_ker, Submodule.mem_map, ContinuousLinearMap.coe_coe]
@@ -339,17 +344,17 @@ theorem ker_floerSobolevOperator_eq_map_zeroModeL (hg : ∀ v w, ω v (J w) = �
 
 /-- Under the hypotheses of
 `TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL`, the kernels of the linearized
-operator along `(s, t) ↦ γ(s)` and of the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` have the same
+operator along `(s, t) ↦ γ(s)` and of the Morse operator `ζ ↦ ζ' - J dX_{H_s}(γ) ζ` have the same
 dimension. -/
 theorem finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    Module.finrank ℝ (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)).ker =
+        (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
+    Module.finrank ℝ (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).ker =
       Module.finrank ℝ (WeakDerivStep.trajectoryOperator (p := 2) A).ker := by
   rw [ker_floerSobolevOperator_eq_map_zeroModeL hg hH hγ ha haγ hA]
   exact (Submodule.equivMapOfInjective _ zeroModeL_injective _).finrank_eq.symm
@@ -357,16 +362,16 @@ theorem finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator
 /-- Under the hypotheses of
 `TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_map_zeroModeL`, the linearized operator along
 `(s, t) ↦ γ(s)` is injective on `W^{1,2}(ℝ × S¹, V)` exactly when the Morse operator
-`ζ ↦ ζ' - J dX_H(γ) ζ` is injective on `W^{1,2}(ℝ, V)`. -/
+`ζ ↦ ζ' - J dX_{H_s}(γ) ζ` is injective on `W^{1,2}(ℝ, V)`. -/
 theorem injective_floerSobolevOperator_iff_injective_trajectoryOperator
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
-    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
+    (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
-        (fderiv ℝ (ω.hamiltonianVectorField H) (γ s)))) :
-    Function.Injective (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
+        (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
+    Function.Injective (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)) ↔
       Function.Injective (WeakDerivStep.trajectoryOperator (p := 2) A) := by
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot,
     ker_floerSobolevOperator_eq_map_zeroModeL hg hH hγ ha haγ hA,

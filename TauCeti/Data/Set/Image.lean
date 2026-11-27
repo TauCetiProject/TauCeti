@@ -10,7 +10,8 @@ public import Mathlib.Data.Set.Image
 /-!
 # Images of sets under compositions
 
-This file contains elementary lemmas about images and ranges of functions and sets.
+This file contains elementary lemmas about images and ranges of functions and sets, and about
+preimages under an injective function of the range of a composition or of a single value.
 -/
 
 public section
@@ -51,3 +52,17 @@ lemma range_eq_union_three {α γ₁ γ₂ γ₃ : Sort*} {β : Type*} (f : α �
   · exact Or.inr h
 
 end TauCeti
+
+namespace Function.Injective
+
+variable {α β γ : Type*} {f : β → γ}
+
+/-- An injective function `f` pulls the range of `f ∘ g` back to the range of `g`. -/
+theorem preimage_range_comp (hf : Injective f) (g : α → β) : f ⁻¹' range (f ∘ g) = range g := by
+  rw [range_comp, hf.preimage_image]
+
+/-- The fibre of an injective function `f` over `f a` is `{a}`. -/
+theorem preimage_singleton (hf : Injective f) (a : β) : f ⁻¹' {f a} = {a} := by
+  rw [← image_singleton, hf.preimage_image]
+
+end Function.Injective

@@ -50,6 +50,8 @@ This file supplies general constructions for Lie modules that are missing from M
 
 * `TauCeti.LieModuleHom.instModuleFinite`: the morphism space is finitely generated when its
   source is finitely generated and its target is Noetherian over the base ring.
+* `TauCeti.instIsTrivialLieSubalgebra`: a trivial Lie module is trivial over every Lie
+  subalgebra.
 * `TauCeti.lieSpan_le_lieAnnihilator`: a vector annihilated by a generating set is annihilated by
   the Lie subalgebra it generates.
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
@@ -357,6 +359,11 @@ theorem _root_.LieSubmodule.lie_iSup {ι : Type*} (I : LieIdeal R L)
   · exact LieSubmodule.mem_iSup_of_mem i (LieSubmodule.lie_mem_lie hx hy)
   · rw [lie_add]
     exact add_mem hy hz
+
+/-- A trivial Lie module is trivial over every Lie subalgebra, which acts through `L`. -/
+instance instIsTrivialLieSubalgebra [LieModule.IsTrivial L M] (H : LieSubalgebra R L) :
+    LieModule.IsTrivial H M where
+  trivial x m := by rw [LieSubalgebra.coe_bracket_of_module, trivial_lie_zero]
 
 variable [LieModule R L M]
 

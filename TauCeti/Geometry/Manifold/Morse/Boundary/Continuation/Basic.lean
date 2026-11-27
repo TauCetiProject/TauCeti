@@ -40,8 +40,10 @@ equal index for smooth continuation fields between Morse–Smale pseudo-gradient
 transversality condition for continuations
 (`TauCeti.IsTransverseContinuation.finite_morseContinuationSlice`). On an infinite slice the count
 is a junk value, since `Set.ncard` is `0` on infinite sets.
-That the continuation map is a chain map, which needs the compactification and gluing of the
-one-dimensional continuation trajectory spaces, is not proved here.
+That the continuation map of a transverse continuation is a chain map, which needs the
+compactification and gluing of the one-dimensional continuation trajectory spaces, is proved in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.ChainMap`
+(`TauCeti.IsTransverseContinuation.morseBoundary_comp_morseContinuationMap`).
 
 **Continuation fields.** The fields of interest are the positive parameter fields of a
 continuation from `X₀` to `X₁` (`TauCeti.IsContinuationField X₀ X₁ C V`): in the open slab their
@@ -507,13 +509,13 @@ theorem tendsto_atTop_iff {q : M} :
   exact (Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn hb).2 hmem
 
 include hV hX₀ hC hγ h₀ in
-/-- **A trajectory through the slab comes from a critical point of `f₀`.** For `C > 0` and a Morse
-function `f₀`, an integral curve of a continuation field from a pseudo-gradient `X₀` adapted to
-`f₀` which meets the open slab tends at `-∞` to `(p, 0)` for a critical point `p` of `f₀`. -/
-theorem exists_tendsto_atBot (hf₀ : IsMorse 𝓘(ℝ, E) f₀) :
+/-- **A trajectory through the slab comes from a critical point of `f₀`.** For `C > 0`, an integral
+curve of a continuation field from a pseudo-gradient `X₀` adapted to `f₀` which meets the open slab
+tends at `-∞` to `(p, 0)` for a critical point `p` of `f₀`. -/
+theorem exists_tendsto_atBot :
     ∃ p ∈ criticalPoints 𝓘(ℝ, E) f₀, Tendsto γ atBot (𝓝 (p, 0)) := by
   obtain ⟨a, ha⟩ := (hV.eventually_atBot_eqOn_flow hX₀ hC hγ h₀).exists
-  obtain ⟨p, hp, hlim⟩ := hX₀.exists_tendsto_atBot hf₀ (γ a).1
+  obtain ⟨p, hp, hlim⟩ := hX₀.exists_tendsto_atBot (γ a).1
   refine ⟨p, mem_criticalPoints_iff_mfderiv_eq_zero.2 hp,
     (hV.tendsto_atBot_iff hX₀ hC hγ h₀).2 ?_⟩
   -- Up to time `a`, the space component runs along the orbit of `(γ a).1`, which lies in `W^u(p)`.
@@ -523,13 +525,13 @@ theorem exists_tendsto_atBot (hf₀ : IsMorse 𝓘(ℝ, E) f₀) :
   exact Flow.mem_unstableSet.2 hlim
 
 include hV hX₁ hC hγ h₀ in
-/-- **A trajectory through the slab goes to a critical point of `f₁`.** For `C > 0` and a Morse
-function `f₁`, an integral curve of a continuation field to a pseudo-gradient `X₁` adapted to `f₁`
-which meets the open slab tends at `+∞` to `(q, 1)` for a critical point `q` of `f₁`. -/
-theorem exists_tendsto_atTop (hf₁ : IsMorse 𝓘(ℝ, E) f₁) :
+/-- **A trajectory through the slab goes to a critical point of `f₁`.** For `C > 0`, an
+integral curve of a continuation field to a pseudo-gradient `X₁` adapted to `f₁` which meets the
+open slab tends at `+∞` to `(q, 1)` for a critical point `q` of `f₁`. -/
+theorem exists_tendsto_atTop :
     ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atTop (𝓝 (q, 1)) := by
   obtain ⟨b, hb⟩ := (hV.eventually_atTop_eqOn_flow hX₁ hC hγ h₀).exists
-  obtain ⟨q, hq, hlim⟩ := hX₁.exists_tendsto_atTop hf₁ (γ b).1
+  obtain ⟨q, hq, hlim⟩ := hX₁.exists_tendsto_atTop (γ b).1
   refine ⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq,
     (hV.tendsto_atTop_iff hX₁ hC hγ h₀).2 ?_⟩
   -- From time `b` on, the space component runs along the orbit of `(γ b).1`, which lies in
@@ -560,11 +562,11 @@ theorem mem_morseContinuationSlice_iff {x : M} :
   have h₀ : (γ 0).2 ∈ Ioo 0 1 := by rw [hγ0]; norm_num
   rw [hV.tendsto_atBot_iff hX₀ hC hγ h₀, hV.tendsto_atTop_iff hX₁ hC hγ h₀]
 
-/-- **The middle level is covered by the slices.** For `C > 0` and Morse functions `f₀` and `f₁`,
-the points `x` with an integral curve of a continuation field through `(x, 1 / 2)` are exactly the
-points of the slices `TauCeti.morseContinuationSlice V p q` of the pairs of critical points `p` of
-`f₀` and `q` of `f₁`: every trajectory through the slab runs between such critical points. -/
-theorem iUnion_morseContinuationSlice (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁) :
+/-- **The middle level is covered by the slices.** For `C > 0`, the points `x`
+with an integral curve of a continuation field through `(x, 1 / 2)` are exactly the points of the
+slices `TauCeti.morseContinuationSlice V p q` of the pairs of critical points `p` of `f₀` and `q` of
+`f₁`: every trajectory through the slab runs between such critical points. -/
+theorem iUnion_morseContinuationSlice :
     ⋃ p ∈ criticalPoints 𝓘(ℝ, E) f₀, ⋃ q ∈ criticalPoints 𝓘(ℝ, E) f₁,
         morseContinuationSlice V p q =
       {x | ∃ γ : ℝ → M × ℝ, IsMIntegralCurve γ V ∧ γ 0 = (x, 1 / 2)} := by
@@ -575,8 +577,8 @@ theorem iUnion_morseContinuationSlice (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁
     exact ⟨γ, hγ, hγ0⟩
   · rintro ⟨γ, hγ, hγ0⟩
     have h₀ : (γ 0).2 ∈ Ioo 0 1 := by rw [hγ0]; norm_num
-    obtain ⟨p, hp, hpγ⟩ := hV.exists_tendsto_atBot hX₀ hC hγ h₀ hf₀
-    obtain ⟨q, hq, hqγ⟩ := hV.exists_tendsto_atTop hX₁ hC hγ h₀ hf₁
+    obtain ⟨p, hp, hpγ⟩ := hV.exists_tendsto_atBot hX₀ hC hγ h₀
+    obtain ⟨q, hq, hqγ⟩ := hV.exists_tendsto_atTop hX₁ hC hγ h₀
     exact ⟨p, hp, q, hq, γ, hγ, hγ0, hpγ, hqγ⟩
 
 end Slice

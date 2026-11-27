@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Duhamel
-public import TauCeti.Analysis.PDE.Spectrum.Operator
+public import TauCeti.Analysis.PDE.Spectrum.Operator.Basic
 
 /-!
 # The Dirichlet semigroup of a divergence-form operator
@@ -38,7 +38,7 @@ Gelfand triple with separable `V` is the continuous representative of a weak sol
 `TauCeti.Analysis.PDE.Parabolic.Autonomous`).
 
 The generator is `-TauCeti.PDE.dirichletOperator` (`TauCeti.PDE.dirichletSemigroup_generator`),
-so the description of the Dirichlet realization in `TauCeti.Analysis.PDE.Spectrum.Operator`
+so the description of the Dirichlet realization in `TauCeti.Analysis.PDE.Spectrum.Operator.Basic`
 applies to it: an element `x ∈ L²(Ω)` lies in the domain exactly when it is the value of a weak
 solution `u ∈ H¹₀(Ω)` of a Dirichlet problem `L u = f` with `f ∈ L²(Ω)`
 (`TauCeti.PDE.mem_domain_dirichletOperator_iff`), and the generator sends such an `x` to `-f`

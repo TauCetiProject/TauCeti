@@ -10,8 +10,8 @@ public import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
-import Mathlib.Analysis.Normed.Module.Normalize
-import Mathlib.Analysis.SpecialFunctions.Artanh
+public import Mathlib.Analysis.Normed.Module.Normalize
+public import Mathlib.Analysis.SpecialFunctions.Artanh
 
 /-!
 # The conformal maps of Hersch's balancing lemma
@@ -92,6 +92,12 @@ theorem herschMap_tanh_smul {u : E} (hu : ‖u‖ = 1) (t : ℝ) (x : E) :
   congr 1
   linear_combination -⟪u, x⟫ * Real.cosh_sq t
 
+/-- An interior Hersch map with nonzero parameter is a boost toward the normalized parameter. -/
+theorem herschMap_eq_sphereBoost_normalize {a : E} (ha : ‖a‖ < 1) (ha0 : a ≠ 0) (x : E) :
+    herschMap a x = sphereBoost (NormedSpace.normalize a) (Real.artanh ‖a‖) x := by
+  rw [← herschMap_tanh_smul (NormedSpace.norm_normalize ha0),
+    Real.tanh_artanh ⟨by linarith [norm_nonneg a], ha⟩, NormedSpace.norm_smul_normalize]
+
 /-- At a point `v` of the unit sphere, `T_v(x) = v` whenever `⟪v, x⟫ ≠ -1`. -/
 theorem herschMap_of_norm_eq_one {v x : E} (hv : ‖v‖ = 1) (h : ⟪v, x⟫ ≠ -1) :
     herschMap v x = v := by
@@ -106,11 +112,8 @@ theorem norm_herschMap {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) (h : �
   rcases ha.lt_or_eq with ha | ha
   · by_cases ha0 : a = 0
     · simpa [ha0] using hx
-    · have ht : Real.tanh (Real.artanh ‖a‖) = ‖a‖ :=
-        Real.tanh_artanh ⟨by linarith [norm_nonneg a], ha⟩
-      have := norm_sphereBoost (NormedSpace.norm_normalize ha0) hx (Real.artanh ‖a‖)
-      rwa [← herschMap_tanh_smul (NormedSpace.norm_normalize ha0), ht,
-        NormedSpace.norm_smul_normalize] at this
+    · rw [herschMap_eq_sphereBoost_normalize ha ha0]
+      exact norm_sphereBoost (NormedSpace.norm_normalize ha0) hx (Real.artanh ‖a‖)
   · rw [herschMap_of_norm_eq_one ha h, ha]
 
 /-- For `x ⊥ a`, `T_a(x) = √(1 - ‖a‖²) x + a`. -/
@@ -242,11 +245,51 @@ theorem coe_herschHomeomorph {a : E} (ha : ‖a‖ < 1) (x : sphere (0 : E) 1) :
     (herschHomeomorph ha x : E) = herschMap a x :=
   (rfl)
 
-/-- The inverse of Hersch's sphere homeomorphism is induced by `T_(-a)`. -/
+/-- The zero-parameter Hersch homeomorphism is the identity. -/
 @[simp]
-theorem coe_herschHomeomorph_symm {a : E} (ha : ‖a‖ < 1) (x : sphere (0 : E) 1) :
-    ((herschHomeomorph ha).symm x : E) = herschMap (-a) x :=
-  (rfl)
+theorem herschHomeomorph_zero (ha : ‖(0 : E)‖ < 1) :
+    herschHomeomorph ha = Homeomorph.refl (sphere (0 : E) 1) := by
+  apply Homeomorph.ext
+  intro x
+  apply Subtype.ext
+  exact herschMap_zero (x : E)
+
+/-- The inverse Hersch homeomorphism has the opposite parameter. -/
+@[simp]
+theorem herschHomeomorph_symm {a : E} (ha : ‖a‖ < 1) :
+    (herschHomeomorph ha).symm = herschHomeomorph (a := -a) (by simpa using ha) := by
+  apply Homeomorph.ext
+  intro x
+  apply Subtype.ext
+  -- Both forward maps are defined by the same ambient Hersch map at the negative parameter.
+  rfl
+
+/-- `T_(ρu)` fixes `u`. -/
+theorem herschMap_smul_self {u : E} {ρ : ℝ} (hu : ‖u‖ = 1) (hρ0 : -1 < ρ) (hρ1 : ρ ≤ 1) :
+    herschMap (ρ • u) u = u := by
+  rcases hρ1.lt_or_eq with hρ1 | rfl
+  · rw [← Real.tanh_artanh ⟨hρ0, hρ1⟩, herschMap_tanh_smul hu, sphereBoost_self hu]
+  · simpa only [one_smul] using herschMap_of_norm_eq_one hu
+      (x := u) (by rw [real_inner_self_eq_norm_sq, hu]; norm_num)
+
+/-- In a one-dimensional ambient space, every Hersch homeomorphism fixes the whole unit sphere. -/
+@[simp]
+theorem herschHomeomorph_eq_id_of_finrank_eq_one (hE : Module.finrank ℝ E = 1)
+    {a : E} (ha : ‖a‖ < 1) : (herschHomeomorph ha : sphere (0 : E) 1 → sphere (0 : E) 1) = id := by
+  funext x
+  apply Subtype.ext
+  rw [coe_herschHomeomorph, id_eq]
+  have hx : ‖(x : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.property
+  have hx₀ : (x : E) ≠ 0 := norm_ne_zero_iff.mp (by simp [hx])
+  obtain ⟨s, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' (x : E) hx₀).mp hE a
+  have hs : |s| < 1 := by simpa only [norm_smul, hx, mul_one, Real.norm_eq_abs] using ha
+  exact herschMap_smul_self hx (abs_lt.mp hs).1 (abs_lt.mp hs).2.le
+
+/-- `T_(ρu)` fixes `-u`, for `ρ < 1`. -/
+theorem herschMap_smul_neg_self {u : E} {ρ : ℝ} (hu : ‖u‖ = 1) (hρ0 : -1 ≤ ρ) (hρ1 : ρ < 1) :
+    herschMap (ρ • u) (-u) = -u := by
+  simpa using herschMap_smul_self (u := -u) (ρ := -ρ) (by rwa [norm_neg])
+    (by linarith) (by linarith)
 
 @[fun_prop]
 theorem measurable_herschMap [MeasurableSpace E] [BorelSpace E]

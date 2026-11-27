@@ -95,13 +95,7 @@ private theorem writtenInExtChartAt_eventuallyEq [T2Space α] (x : Fin n → Add
   let := symChartedSpace (K := ℂ) (α := α) (n := n)
   filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x]
     with u hu
-  -- The inverse of each angle chart sends a point of its target to its class.
-  have hsymm : (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x).symm u =
-      fun i => (u i : AddCircle p) := by
-    rw [extChartAt_pi] at hu ⊢
-    rw [PartialEquiv.pi_symm_apply]
-    exact funext fun i => AddCircle.extChartAt_symm_apply (x i) (hu i (mem_univ i))
-  simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
+  simp only [writtenInExtChartAt, Function.comp_apply, AddCircle.extChartAt_pi_symm_apply x hu]
   simp
 
 omit [TopologicalSpace α] [ChartedSpace ℂ α] in

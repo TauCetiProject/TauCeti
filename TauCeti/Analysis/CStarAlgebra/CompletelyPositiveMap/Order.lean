@@ -168,6 +168,21 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
 @[simp] theorem toLinearMap_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
     (ψ.comp φ).toLinearMap = ψ.toLinearMap.comp φ.toLinearMap := (rfl)
 
+@[simp] theorem comp_id (φ : A₁ →CP A₂) : φ.comp (CompletelyPositiveMap.id A₁) = φ :=
+  ext fun _ ↦ rfl
+
+@[simp] theorem id_comp (φ : A₁ →CP A₂) : (CompletelyPositiveMap.id A₂).comp φ = φ :=
+  ext fun _ ↦ rfl
+
+/-- Converting a composite of non-unital star algebra homomorphisms to a completely positive map
+composes the converted maps. -/
+@[simp] theorem _root_.CompletelyPositiveMapClass.toCompletelyPositiveLinearMap_comp
+    (ψ : A₂ →⋆ₙₐ[ℂ] A₃) (φ : A₁ →⋆ₙₐ[ℂ] A₂) :
+    CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (ψ.comp φ) =
+      (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap ψ).comp
+        (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap φ) :=
+  ext fun _ ↦ rfl
+
 /-- Composition is compatible with `ℝ≥0`-scaling on the left factor. -/
 @[simp] theorem smul_comp (c : ℝ≥0) (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
     (c • ψ).comp φ = c • ψ.comp φ :=

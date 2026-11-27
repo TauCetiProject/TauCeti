@@ -49,6 +49,16 @@ structure is installed.
   the mate of the inverse of the component at the object.
 * `FreeRigid.natTrans_ext`: monoidal natural transformations between strong monoidal functors out
   of `S.FreeRigid` are determined by their components at the generating objects.
+* `FreeRigid.wordIso_app`: a monoidal natural isomorphism between such functors is the
+  isomorphism `FreeRigid.wordIso` induced by its components at the generating objects.
+* `FreeRigid.mapWordIso F X`: the comparison between the image of a formal rigid object `X` under a
+  strong monoidal functor `F` into a rigid monoidal category and the evaluation of `X` at the
+  images of the generating objects; at a dual it is built from `F.mapRightDualIso` or
+  `F.mapLeftDualIso`, and it is the identity for `FreeRigid.lift` (`FreeRigid.mapWordIso_lift`).
+* `FreeRigid.wordIso_eq_mapWordIso`: the isomorphisms `FreeRigid.wordIso` are the comparisons
+  `FreeRigid.mapWordIso` composed with the extension `RigidObject.evalIso` of the given
+  isomorphisms to formal rigid objects. These comparisons give the groupoid form of the universal
+  property in `TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Interpretation`.
 
 The formal-morphism syntax and the monoidal instance follow `TauCeti.TensorSignature.FreeMonoidal`,
 itself adapted from Mathlib's `Mathlib/CategoryTheory/Monoidal/Free/Basic.lean` (Markus Himmel),
@@ -962,7 +972,342 @@ instance isMonoidal_monoidalNatIso_hom : NatTrans.IsMonoidal (monoidalNatIso he)
     rw [monoidalNatIso_hom_app, wordIso_tensor_hom, Functor.Monoidal.μ_δ_assoc,
       monoidalNatIso_hom_app, monoidalNatIso_hom_app]
 
+/-- A monoidal natural isomorphism between strong monoidal functors out of the free rigid monoidal
+category is the `wordIso` of its components at the generating objects. -/
+theorem wordIso_app {F G : S.FreeRigid ⥤ D} [F.Monoidal] [G.Monoidal] (α : F ≅ G)
+    [NatTrans.IsMonoidal α.hom] (X : RigidObject S.Obj) :
+    wordIso F G (fun a ↦ α.app (of a)) X = α.app ⟨X⟩ := by
+  ext
+  induction X with
+  | of a => exact congrArg Iso.hom (wordIso_of F G _ a)
+  | unit =>
+    refine (wordIso_tensorUnit_hom F G _).trans ?_
+    rw [← NatTrans.IsMonoidal.unit (τ := α.hom), Functor.Monoidal.η_ε_assoc, Iso.app_hom]
+    -- `𝟙_ S.FreeRigid` is `⟨.unit⟩` by definition.
+    rfl
+  | tensor X Y hX hY =>
+    refine (wordIso_tensor_hom F G _ ⟨X⟩ ⟨Y⟩).trans ?_
+    dsimp only
+    rw [hX, hY, Iso.app_hom, Iso.app_hom, ← NatTrans.IsMonoidal.tensor,
+      Functor.Monoidal.δ_μ_assoc, Iso.app_hom]
+    -- `⟨X⟩ ⊗ ⟨Y⟩` is `⟨X.tensor Y⟩` by definition.
+    rfl
+  | rightDual X hX =>
+    refine (wordIso_rightDual_hom F G _ ⟨X⟩).trans ?_
+    -- The mate of `α⁻¹` at `X` is inverse to `α⁻¹` at `Xᘁ`, by monoidality of `α⁻¹`.
+    have h := NatTrans.rightMate_app_comp_app α.inv ⟨X⟩ (⟨X⟩ : S.FreeRigid)ᘁ
+    have hinv : (wordIso F G (fun a ↦ α.app (of a)) X).inv = α.inv.app ⟨X⟩ :=
+      ((Iso.inv_eq_inv _ _).mpr hX).trans (Iso.app_inv α ⟨X⟩)
+    rw [hinv, Iso.app_hom]
+    exact (Iso.comp_inv_eq_id (α.app ⟨X⟩ᘁ)).mp h
+  | leftDual X hX =>
+    refine (wordIso_leftDual_hom F G _ ⟨X⟩).trans ?_
+    -- The left mate of `α⁻¹` at `X` is inverse to `α⁻¹` at `ᘁX`, by monoidality of `α⁻¹`.
+    have h := NatTrans.leftMate_app_comp_app α.inv (ᘁ(⟨X⟩ : S.FreeRigid)) ⟨X⟩
+    have hinv : (wordIso F G (fun a ↦ α.app (of a)) X).inv = α.inv.app ⟨X⟩ :=
+      ((Iso.inv_eq_inv _ _).mpr hX).trans (Iso.app_inv α ⟨X⟩)
+    rw [hinv, Iso.app_hom]
+    exact (Iso.comp_inv_eq_id (α.app (ᘁ(⟨X⟩ : S.FreeRigid)))).mp h
+
 end Uniqueness
+
+section WordIso
+
+open Functor.LaxMonoidal Functor.OplaxMonoidal
+
+variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [RigidCategory D]
+
+/-- The comparison between the image of a formal rigid object under a strong monoidal functor `F`
+out of the free rigid monoidal category and the evaluation of that object at the images of the
+generating objects. It is built from the tensorators and unit comparison of `F`; at a dual it is
+the comparison `F.mapRightDualIso` (or `F.mapLeftDualIso`) between the image of the chosen dual and
+the chosen dual of the image, followed by the adjoint mate of the inverse comparison at the
+object. -/
+noncomputable def mapWordIso (F : S.FreeRigid ⥤ D) [F.Monoidal] :
+    ∀ X : RigidObject S.Obj, F.obj ⟨X⟩ ≅ RigidObject.eval (fun a ↦ F.obj (of a)) X
+  | .of _ => Iso.refl _
+  | .unit => (Functor.Monoidal.εIso F).symm
+  | .tensor X Y => (Functor.Monoidal.μIso F ⟨X⟩ ⟨Y⟩).symm ≪≫ (mapWordIso F X ⊗ᵢ mapWordIso F Y)
+  | .rightDual X => F.mapRightDualIso ⟨X⟩ ≪≫ (mapWordIso F X).symm.rightAdjointMate
+  | .leftDual X => F.mapLeftDualIso ⟨X⟩ ≪≫ (mapWordIso F X).symm.leftAdjointMate
+
+section Computation
+
+variable (F : S.FreeRigid ⥤ D) [F.Monoidal]
+
+@[simp]
+theorem mapWordIso_of (a : S.Obj) : mapWordIso F (.of a) = Iso.refl (F.obj (of a)) :=
+  (rfl)
+
+@[simp]
+theorem mapWordIso_unit_hom : (mapWordIso F .unit).hom = η F :=
+  (rfl)
+
+@[simp]
+theorem mapWordIso_unit_inv : (mapWordIso F .unit).inv = ε F :=
+  (rfl)
+
+@[simp]
+theorem mapWordIso_tensor_hom (X Y : RigidObject S.Obj) :
+    (mapWordIso F (X.tensor Y)).hom =
+      δ F ⟨X⟩ ⟨Y⟩ ≫ ((mapWordIso F X).hom ⊗ₘ (mapWordIso F Y).hom) :=
+  (rfl)
+
+@[simp]
+theorem mapWordIso_tensor_inv (X Y : RigidObject S.Obj) :
+    (mapWordIso F (X.tensor Y)).inv =
+      ((mapWordIso F X).inv ⊗ₘ (mapWordIso F Y).inv) ≫ μ F ⟨X⟩ ⟨Y⟩ :=
+  (rfl)
+
+@[simp]
+theorem mapWordIso_rightDual_hom (X : RigidObject S.Obj) :
+    (mapWordIso F X.rightDual).hom =
+      (F.mapRightDualIso (⟨X⟩ : S.FreeRigid)).hom ≫ ((mapWordIso F X).inv)ᘁ :=
+  (Iso.trans_hom _ _).trans (congrArg (_ ≫ ·) (Iso.rightAdjointMate_hom _))
+
+@[simp]
+theorem mapWordIso_rightDual_inv (X : RigidObject S.Obj) :
+    (mapWordIso F X.rightDual).inv =
+      ((mapWordIso F X).hom)ᘁ ≫ (F.mapRightDualIso (⟨X⟩ : S.FreeRigid)).inv :=
+  (Iso.trans_inv _ _).trans (congrArg (· ≫ _) (Iso.rightAdjointMate_inv _))
+
+@[simp]
+theorem mapWordIso_leftDual_hom (X : RigidObject S.Obj) :
+    (mapWordIso F X.leftDual).hom =
+      (F.mapLeftDualIso (⟨X⟩ : S.FreeRigid)).hom ≫ (ᘁ(mapWordIso F X).inv) :=
+  (Iso.trans_hom _ _).trans (congrArg (_ ≫ ·) (Iso.leftAdjointMate_hom _))
+
+@[simp]
+theorem mapWordIso_leftDual_inv (X : RigidObject S.Obj) :
+    (mapWordIso F X.leftDual).inv =
+      (ᘁ(mapWordIso F X).hom) ≫ (F.mapLeftDualIso (⟨X⟩ : S.FreeRigid)).inv :=
+  (Iso.trans_inv _ _).trans (congrArg (· ≫ _) (Iso.leftAdjointMate_inv _))
+
+/-- At a right dual, the comparison `mapWordIso` is the mate of the inverse comparison at the
+object, with respect to the image pairing of `F` and the chosen pairing of the evaluation. -/
+theorem mapWordIso_rightDual_hom_eq_rightMate (X : RigidObject S.Obj) :
+    (mapWordIso F X.rightDual).hom =
+      ExactPairing.rightMate HasRightDual.exact (F.mapExactPairing ⟨X⟩ (⟨X⟩ : S.FreeRigid)ᘁ)
+        (mapWordIso F X).inv := by
+  simp only [mapWordIso_rightDual_hom, Functor.mapRightDualIso_hom_eq_rightMate,
+    rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate, Category.comp_id]
+  -- The two sides differ only in the implicit duals of the mate, `⟨X⟩ᘁ` against
+  -- `⟨X.rightDual⟩`, which agree by definition of the duals of `S.FreeRigid`.
+  rfl
+
+/-- At a right dual, the inverse of `mapWordIso` is the mate of the comparison at the object. -/
+theorem mapWordIso_rightDual_inv_eq_rightMate (X : RigidObject S.Obj) :
+    (mapWordIso F X.rightDual).inv =
+      ExactPairing.rightMate (F.mapExactPairing ⟨X⟩ (⟨X⟩ : S.FreeRigid)ᘁ) HasRightDual.exact
+        (mapWordIso F X).hom := by
+  simp only [mapWordIso_rightDual_inv, Functor.mapRightDualIso_inv_eq_rightMate,
+    rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate, Category.id_comp]
+  -- The two sides differ only in the implicit duals of the mate, `⟨X⟩ᘁ` against
+  -- `⟨X.rightDual⟩`, which agree by definition of the duals of `S.FreeRigid`.
+  rfl
+
+/-- At a left dual, the comparison `mapWordIso` is the left mate of the inverse comparison at the
+object, with respect to the image pairing of `F` and the chosen pairing of the evaluation. -/
+theorem mapWordIso_leftDual_hom_eq_leftMate (X : RigidObject S.Obj) :
+    (mapWordIso F X.leftDual).hom =
+      ExactPairing.leftMate HasLeftDual.exact (F.mapExactPairing (ᘁ(⟨X⟩ : S.FreeRigid)) ⟨X⟩)
+        (mapWordIso F X).inv := by
+  simp only [mapWordIso_leftDual_hom, Functor.mapLeftDualIso_hom_eq_leftMate,
+    leftAdjointMate_eq_leftMate, ← ExactPairing.comp_leftMate, Category.comp_id]
+  -- The two sides differ only in the implicit duals of the mate, `ᘁ⟨X⟩` against
+  -- `⟨X.leftDual⟩`, which agree by definition of the duals of `S.FreeRigid`.
+  rfl
+
+/-- At a left dual, the inverse of `mapWordIso` is the left mate of the comparison at the
+object. -/
+theorem mapWordIso_leftDual_inv_eq_leftMate (X : RigidObject S.Obj) :
+    (mapWordIso F X.leftDual).inv =
+      ExactPairing.leftMate (F.mapExactPairing (ᘁ(⟨X⟩ : S.FreeRigid)) ⟨X⟩) HasLeftDual.exact
+        (mapWordIso F X).hom := by
+  simp only [mapWordIso_leftDual_inv, Functor.mapLeftDualIso_inv_eq_leftMate,
+    leftAdjointMate_eq_leftMate, ← ExactPairing.comp_leftMate, Category.id_comp]
+  -- The two sides differ only in the implicit duals of the mate, `ᘁ⟨X⟩` against
+  -- `⟨X.leftDual⟩`, which agree by definition of the duals of `S.FreeRigid`.
+  rfl
+
+end Computation
+
+/-- For the strong monoidal functor `lift fo fc`, whose tensorators and unit comparison are
+identities and which preserves chosen duals on the nose, the comparison `mapWordIso` is the
+identity. -/
+@[simp]
+theorem mapWordIso_lift (fo : S.Obj → D)
+    (fc : ∀ g : S.Coupon, RigidObject.eval fo (S.src g) ⟶ RigidObject.eval fo (S.tgt g))
+    (X : RigidObject S.Obj) : mapWordIso (lift fo fc) X = Iso.refl (RigidObject.eval fo X) := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y hX hY =>
+    ext
+    refine (mapWordIso_tensor_hom (lift fo fc) X Y).trans ?_
+    rw [hX, hY, Iso.refl_hom, Iso.refl_hom]
+    -- The tensorator of `lift fo fc` is the identity (`lift_δ`), but its source and target are
+    -- only definitionally equal to the tensor product of the evaluations, so `rw` cannot use it.
+    exact (Category.id_comp _).trans (id_tensorHom_id _ _)
+  | rightDual X hX =>
+    ext
+    refine (mapWordIso_rightDual_hom (lift fo fc) X).trans ?_
+    rw [hX, lift_mapRightDualIso, Iso.refl_inv, Iso.refl_hom]
+    -- The identities are typed at `(lift fo fc).obj ⟨X⟩ᘁ`, which is the right dual of
+    -- `RigidObject.eval fo X` only after unfolding `lift`, so `rw` cannot use
+    -- `rightAdjointMate_id`.
+    exact (Category.id_comp _).trans rightAdjointMate_id
+  | leftDual X hX =>
+    ext
+    refine (mapWordIso_leftDual_hom (lift fo fc) X).trans ?_
+    rw [hX, lift_mapLeftDualIso, Iso.refl_inv, Iso.refl_hom]
+    -- As in the right dual case, the identities are only definitionally typed at the left dual
+    -- of `RigidObject.eval fo X`.
+    exact (Category.id_comp _).trans leftAdjointMate_id
+
+/- The inductive steps of `wordIso_eq_mapWordIso` at a right and at a left dual: both sides are
+mates with respect to the image pairings of `F` and `G`, and the mate of the composite splits at
+the chosen pairings of the two evaluations. -/
+
+private theorem wordIso_rightDual_hom_eq_mapWordIso (F G : S.FreeRigid ⥤ D) [F.Monoidal]
+    [G.Monoidal] (e : ∀ a, F.obj (of a) ≅ G.obj (of a)) (X : RigidObject S.Obj)
+    (hX : wordIso F G e X = mapWordIso F X ≪≫ RigidObject.evalIso e X ≪≫ (mapWordIso G X).symm) :
+    (wordIso F G e X.rightDual).hom = (mapWordIso F X.rightDual ≪≫
+      RigidObject.evalIso e X.rightDual ≪≫ (mapWordIso G X.rightDual).symm).hom := by
+  have hinv := congrArg Iso.inv hX
+  rw [Iso.trans_inv, Iso.trans_inv, Iso.symm_inv] at hinv
+  rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, mapWordIso_rightDual_hom_eq_rightMate,
+    mapWordIso_rightDual_inv_eq_rightMate, RigidObject.evalIso_rightDual,
+    Iso.rightAdjointMate_hom, Iso.symm_hom, rightAdjointMate_eq_rightMate]
+  refine (wordIso_rightDual_hom F G e ⟨X⟩).trans ?_
+  -- `⟨X⟩.as` is `X` by definition.
+  dsimp only
+  -- Both sides are mates with respect to the image pairings of `F` and `G`; split the mate of
+  -- the composite at the chosen pairings of the two evaluations.
+  rw [hinv, ExactPairing.comp_rightMate _
+      (HasRightDual.exact (X := RigidObject.eval (fun a ↦ F.obj (of a)) X)),
+    ExactPairing.comp_rightMate _
+      (HasRightDual.exact (X := RigidObject.eval (fun a ↦ G.obj (of a)) X))]
+  -- The two sides now agree up to the implicit duals of the mates, `⟨X⟩ᘁ` against
+  -- `⟨X.rightDual⟩`, which agree by definition of the duals of `S.FreeRigid`.
+  rfl
+
+private theorem wordIso_leftDual_hom_eq_mapWordIso (F G : S.FreeRigid ⥤ D) [F.Monoidal]
+    [G.Monoidal] (e : ∀ a, F.obj (of a) ≅ G.obj (of a)) (X : RigidObject S.Obj)
+    (hX : wordIso F G e X = mapWordIso F X ≪≫ RigidObject.evalIso e X ≪≫ (mapWordIso G X).symm) :
+    (wordIso F G e X.leftDual).hom = (mapWordIso F X.leftDual ≪≫
+      RigidObject.evalIso e X.leftDual ≪≫ (mapWordIso G X.leftDual).symm).hom := by
+  have hinv := congrArg Iso.inv hX
+  rw [Iso.trans_inv, Iso.trans_inv, Iso.symm_inv] at hinv
+  rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, mapWordIso_leftDual_hom_eq_leftMate,
+    mapWordIso_leftDual_inv_eq_leftMate, RigidObject.evalIso_leftDual,
+    Iso.leftAdjointMate_hom, Iso.symm_hom, leftAdjointMate_eq_leftMate]
+  refine (wordIso_leftDual_hom F G e ⟨X⟩).trans ?_
+  -- `⟨X⟩.as` is `X` by definition.
+  dsimp only
+  -- As in the right dual case, split the left mate of the composite at the chosen pairings.
+  rw [hinv, ExactPairing.comp_leftMate _
+      (HasLeftDual.exact (Y := RigidObject.eval (fun a ↦ F.obj (of a)) X)),
+    ExactPairing.comp_leftMate _
+      (HasLeftDual.exact (Y := RigidObject.eval (fun a ↦ G.obj (of a)) X))]
+  -- As in the right dual case, the two sides agree up to the implicit left duals of the mates.
+  rfl
+
+/-- The isomorphisms `wordIso F G e` between two strong monoidal functors out of the free rigid
+monoidal category are the comparisons `mapWordIso` composed with the extension
+`RigidObject.evalIso e` of `e` to formal rigid objects. -/
+theorem wordIso_eq_mapWordIso (F G : S.FreeRigid ⥤ D) [F.Monoidal] [G.Monoidal]
+    (e : ∀ a, F.obj (of a) ≅ G.obj (of a)) (X : RigidObject S.Obj) :
+    wordIso F G e X = mapWordIso F X ≪≫ RigidObject.evalIso e X ≪≫ (mapWordIso G X).symm := by
+  induction X with
+  | of a =>
+    ext
+    rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, mapWordIso_of, mapWordIso_of,
+      RigidObject.evalIso_of, Iso.refl_hom, Iso.refl_inv]
+    -- The identities are typed at `F.obj ⟨.of a⟩`, which is `F.obj (of a)` only after unfolding
+    -- `of`, so `simp` cannot cancel them.
+    exact (congrArg Iso.hom (wordIso_of F G e a)).trans
+      ((Category.id_comp _).trans (Category.comp_id _)).symm
+  | unit =>
+    ext
+    rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, mapWordIso_unit_hom, mapWordIso_unit_inv,
+      RigidObject.evalIso_unit, Iso.refl_hom]
+    -- The identity is typed at `RigidObject.eval _ .unit`, which is `𝟙_ D` only after unfolding
+    -- `RigidObject.eval`, so `simp` cannot cancel it.
+    exact (wordIso_tensorUnit_hom F G e).trans (congrArg (η F ≫ ·) (Category.id_comp _).symm)
+  | tensor X Y hX hY =>
+    ext
+    have hX' := congrArg Iso.hom hX
+    have hY' := congrArg Iso.hom hY
+    rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom] at hX' hY' ⊢
+    rw [mapWordIso_tensor_hom, mapWordIso_tensor_inv, RigidObject.evalIso_tensor, tensorIso_hom]
+    refine (wordIso_tensor_hom F G e ⟨X⟩ ⟨Y⟩).trans ?_
+    -- `⟨X⟩.as` is `X` by definition.
+    dsimp only
+    -- The tensor products on the right meet at `RigidObject.eval _ (X.tensor Y)`, which is a
+    -- tensor product only after unfolding `RigidObject.eval`, so `simp` cannot merge them; the
+    -- tensors of composites on the left are split instead.
+    rw [hX', hY', ← MonoidalCategory.tensorHom_comp_tensorHom,
+      ← MonoidalCategory.tensorHom_comp_tensorHom]
+    conv_lhs => simp only [Category.assoc]
+    exact (Category.assoc (δ F ⟨X⟩ ⟨Y⟩) _ _).symm
+  | rightDual X hX =>
+    ext
+    exact wordIso_rightDual_hom_eq_mapWordIso F G e X hX
+  | leftDual X hX =>
+    ext
+    exact wordIso_leftDual_hom_eq_mapWordIso F G e X hX
+
+/-- From a lift to a strong monoidal functor `G`, `wordIso` is the extension of the isomorphisms of
+generators to formal rigid objects followed by the inverse of the comparison `mapWordIso G`. -/
+theorem wordIso_lift_left {fo : S.Obj → D}
+    (fc : ∀ g : S.Coupon, RigidObject.eval fo (S.src g) ⟶ RigidObject.eval fo (S.tgt g))
+    (G : S.FreeRigid ⥤ D) [G.Monoidal] (e : ∀ a, fo a ≅ G.obj (of a))
+    (X : RigidObject S.Obj) :
+    wordIso (lift fo fc) G e X = RigidObject.evalIso e X ≪≫ (mapWordIso G X).symm := by
+  refine (wordIso_eq_mapWordIso (lift fo fc) G e X).trans ?_
+  rw [mapWordIso_lift]
+  -- The identity is typed at `RigidObject.eval fo X`, which is the source of `evalIso e X` only
+  -- after unfolding `lift`, so `rw` cannot use `Iso.refl_trans`.
+  exact Iso.refl_trans _
+
+/-- Between two lifts, `wordIso` is the extension of the isomorphisms of generators to formal rigid
+objects. -/
+@[simp]
+theorem wordIso_lift_lift {fo fo' : S.Obj → D}
+    (fc : ∀ g : S.Coupon, RigidObject.eval fo (S.src g) ⟶ RigidObject.eval fo (S.tgt g))
+    (fc' : ∀ g : S.Coupon, RigidObject.eval fo' (S.src g) ⟶ RigidObject.eval fo' (S.tgt g))
+    (e : ∀ a, fo a ≅ fo' a) (X : RigidObject S.Obj) :
+    wordIso (lift fo fc) (lift fo' fc') e X = RigidObject.evalIso e X := by
+  refine (wordIso_lift_left fc (lift fo' fc') e X).trans ?_
+  rw [mapWordIso_lift]
+  -- As in `wordIso_lift_left`, the identity is only definitionally typed at the target of
+  -- `evalIso e X`.
+  exact (congrArg (RigidObject.evalIso e X ≪≫ ·) (Iso.refl_symm _)).trans (Iso.trans_refl _)
+
+/-- From the lift of the generator images of `F` to `F`, `wordIso` of the identities is the
+inverse of the comparison `mapWordIso F`. -/
+theorem wordIso_lift_refl (F : S.FreeRigid ⥤ D) [F.Monoidal]
+    (fc : ∀ g : S.Coupon, RigidObject.eval (fun a ↦ F.obj (of a)) (S.src g) ⟶
+      RigidObject.eval (fun a ↦ F.obj (of a)) (S.tgt g)) (X : RigidObject S.Obj) :
+    wordIso (lift (fun a ↦ F.obj (of a)) fc) F (fun a ↦ Iso.refl (F.obj (of a))) X =
+      (mapWordIso F X).symm := by
+  refine (wordIso_lift_left fc F _ X).trans ?_
+  rw [RigidObject.evalIso_refl]
+  exact Iso.refl_trans _
+
+/-- The extension to formal rigid objects of the components of a monoidal natural isomorphism at
+the generating objects is its component at the object, conjugated by the comparisons
+`mapWordIso`. -/
+theorem evalIso_app {F G : S.FreeRigid ⥤ D} [F.Monoidal] [G.Monoidal] (α : F ≅ G)
+    [NatTrans.IsMonoidal α.hom] (X : RigidObject S.Obj) :
+    RigidObject.evalIso (fun a ↦ α.app (of a)) X =
+      (mapWordIso F X).symm ≪≫ α.app ⟨X⟩ ≪≫ mapWordIso G X := by
+  rw [← wordIso_app α X, wordIso_eq_mapWordIso]
+  ext
+  simp
+
+end WordIso
 
 end FreeRigid
 

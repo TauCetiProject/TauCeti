@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
+import TauCeti.MeasureTheory.Function.L2Space.Pairing
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -95,27 +96,13 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam : ℝ}
 
-/-- The pairing `v ↦ ∫ f · T v` of a space `W` with a datum `f ∈ L²(ν)`, through a continuous
-linear map `T : W → L²(ν)`. Both the interior datum (with `T` the value map) and the boundary datum
-(with `T` the trace) of the Neumann problem are of this form. -/
-private def pairingL {X W : Type*} [MeasurableSpace X] {ν : Measure X} [SeminormedAddCommGroup W]
-    [NormedSpace ℝ W] (f : Lp ℝ 2 ν) (T : W →L[ℝ] Lp ℝ 2 ν) : StrongDual ℝ W :=
-  (innerSL ℝ f).comp T
-
-private theorem pairingL_apply {X W : Type*} [MeasurableSpace X] {ν : Measure X}
-    [SeminormedAddCommGroup W] [NormedSpace ℝ W] (f : Lp ℝ 2 ν) (T : W →L[ℝ] Lp ℝ 2 ν) (v : W) :
-    pairingL f T v = ∫ x, f x * T v x ∂ν := by
-  simp only [pairingL, ContinuousLinearMap.comp_apply, innerSL_apply_apply, L2.inner_def,
-    RCLike.inner_apply, conj_trivial]
-  exact integral_congr_ae (ae_of_all _ fun _ => mul_comm _ _)
-
 section FiniteMeasure
 
 variable [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
 
 private theorem pairingL_valueL_const_one (f : Lp ℝ 2 (mu.restrict Omega)) :
-    pairingL f W1p.valueL (W1p.const 1) = ∫ x in Omega, f x ∂mu := by
-  rw [pairingL_apply, W1p.valueL_apply]
+    Lp.pairingL f W1p.valueL (W1p.const 1) = ∫ x in Omega, f x ∂mu := by
+  rw [Lp.pairingL_apply, W1p.valueL_apply]
   refine integral_congr_ae ?_
   filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1] with x hx
   rw [hx, mul_one]
@@ -269,9 +256,9 @@ theorem exists_forall_energyFormH1_eq_setIntegral_iff
     (∃ u : W1p mu Omega 2, ∀ v : W1p mu Omega 2,
         energyFormH1 a 0 0 u v = ∫ x in Omega, f x * W1p.value v x ∂mu) ↔
       ∫ x in Omega, f x ∂mu = 0 := by
-  have key := exists_forall_energyFormH1_eq_iff hK hconn hcoeff hlam ha (pairingL f W1p.valueL)
+  have key := exists_forall_energyFormH1_eq_iff hK hconn hcoeff hlam ha (Lp.pairingL f W1p.valueL)
   rw [pairingL_valueL_const_one] at key
-  simpa only [pairingL_apply, W1p.valueL_apply] using key
+  simpa only [Lp.pairingL_apply, W1p.valueL_apply] using key
 
 end FiniteMeasure
 
@@ -351,14 +338,14 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
   have := isFiniteMeasure_volume_restrict_of_eq_symm_preimage hVb e hVΩ
   have hK := W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
     (p := 2) hV hVb e hVΩ
-  let ℓ : StrongDual ℝ (W1p volume Ω 2) := pairingL f W1p.valueL +
-    pairingL h ((W1p.frontierTrace (p := 2) ENNReal.ofNat_ne_top hV hVb).comp
+  let ℓ : StrongDual ℝ (W1p volume Ω 2) := Lp.pairingL f W1p.valueL +
+    Lp.pairingL h ((W1p.frontierTrace (p := 2) ENNReal.ofNat_ne_top hV hVb).comp
       (W1p.compAffineIsometryEquivL e.symm hVΩ))
   have hℓ (v : W1p volume Ω 2) : ℓ v = (∫ x in Ω, f x * W1p.value v x) +
       ∫ y in frontier (V : Set (WithLp 2 (ℝ × E))), h y *
         W1p.frontierTrace ENNReal.ofNat_ne_top hV hVb
           (W1p.compAffineIsometryEquivL e.symm hVΩ v) y ∂μHE[finrank ℝ E] := by
-    simp only [ℓ, add_apply, pairingL_apply, W1p.valueL_apply, ContinuousLinearMap.comp_apply]
+    simp only [ℓ, add_apply, Lp.pairingL_apply, W1p.valueL_apply, ContinuousLinearMap.comp_apply]
   -- The constant `1` has value `1` on `V` after the change of coordinates, hence trace `1`.
   have hv1 : W1p.value (W1p.compAffineIsometryEquivL e.symm hVΩ (W1p.const 1 : W1p volume Ω 2))
       =ᵐ[volume.restrict (V : Set (WithLp 2 (ℝ × E)))] fun _ => (1 : ℝ) := by
@@ -373,7 +360,7 @@ theorem exists_forall_energyFormH1_eq_setIntegral_add_frontierTrace_iff
     continuousOn_const hv1
   have h1 : ℓ (W1p.const 1) = (∫ x in Ω, f x) +
       ∫ y in frontier (V : Set (WithLp 2 (ℝ × E))), h y ∂μHE[finrank ℝ E] := by
-    rw [add_apply, pairingL_valueL_const_one, pairingL_apply]
+    rw [add_apply, pairingL_valueL_const_one, Lp.pairingL_apply]
     exact congrArg _ (integral_congr_ae (hT1.mono fun y hy => by
       simp only [ContinuousLinearMap.comp_apply, hy, mul_one]))
   have key := exists_forall_energyFormH1_eq_iff hK hconn hcoeff hlam ha ℓ
