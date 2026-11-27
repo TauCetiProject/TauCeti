@@ -324,6 +324,12 @@ theorem mem_waveFrontSet_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
     (x, ξ) ∈ T.waveFrontSet ↔ x ∈ Ω ∧ ξ ≠ 0 ∧ ¬ T.IsMicrolocallySmoothAt x ξ :=
   Iff.rfl
 
+/-- A distribution is microlocally smooth at every point `(x, ξ)` of `Ω × (E \ {0})` outside its
+wave front set. -/
+theorem isMicrolocallySmoothAt_of_notMem_waveFrontSet {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hx : x ∈ Ω)
+    (hξ : ξ ≠ 0) (h : (x, ξ) ∉ T.waveFrontSet) : T.IsMicrolocallySmoothAt x ξ :=
+  not_not.1 fun hs => h ⟨hx, hξ, hs⟩
+
 /-- The wave front set lies in `Ω × (E \ {0})`. -/
 theorem waveFrontSet_subset (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ (Ω : Set E) ×ˢ {0}ᶜ :=

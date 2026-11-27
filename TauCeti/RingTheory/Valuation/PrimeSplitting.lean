@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-public import TauCeti.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # The prime-splitting square of a valuation ring

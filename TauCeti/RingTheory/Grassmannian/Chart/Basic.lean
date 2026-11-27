@@ -62,6 +62,9 @@ in `TauCeti.RingTheory.Grassmannian.Chart.Transition`.
 
 * `Module.Grassmannian.mem_chart_iff_sup_eq_top`: `N` lies in the chart at `x` exactly when the
   images of the `x i` generate `M ⧸ N`.
+* `Module.Grassmannian.grassmannianCongr_mem_chart` and
+  `Module.Grassmannian.chartEquiv_grassmannianCongr_apply`: transport of charts and of their linear
+  forms along a linear equivalence.
 * `Module.Grassmannian.map_ofSurjective_liftBaseChange`: base change along `A → B` sends the
   kernel of a surjection `A ⊗[R] M → A^k` to the kernel of its base change `B ⊗[R] M → B^k`.
 * `Module.Grassmannian.toSubmodule_chartBasisEquiv_symm`: the point of a basis chart with matrix
@@ -173,6 +176,45 @@ theorem chartQuotEquiv_chartEquiv_apply (x : Fin k → M) (N : chart R x) (m : M
 theorem ker_chartEquiv_apply (x : Fin k → M) (N : chart R x) :
     LinearMap.ker (chartEquiv R x N).val = N.val.toSubmodule := by
   rw [← toSubmodule_chartEquiv_symm_apply, Equiv.symm_apply_apply]
+
+variable {M' : Type*} [AddCommGroup M'] [Module R M']
+
+/-- **Charts are transported along linear equivalences.** If `N` lies in the chart at `x`, then its
+image under a linear equivalence `e` lies in the chart at `e ∘ x`. -/
+theorem grassmannianCongr_mem_chart (e : M ≃ₗ[R] M') {x : Fin k → M} {N : G(k, M; R)}
+    (hN : N ∈ chart R x) : e.grassmannianCongr N ∈ chart R (e ∘ x) := by
+  rw [mem_chart_iff_sup_eq_top] at hN ⊢
+  have h : (e.grassmannianCongr N).toSubmodule ⊔ Submodule.span R (Set.range (e ∘ x)) =
+      (N.toSubmodule ⊔ Submodule.span R (Set.range x)).map (e : M →ₗ[R] M') := by
+    rw [Submodule.map_sup, Submodule.map_span, ← Set.range_comp,
+      LinearEquiv.toSubmodule_grassmannianCongr_apply, LinearEquiv.coe_coe]
+  rw [h, hN, Submodule.map_top, LinearEquiv.range]
+
+/-- **Transport of the linear form of a chart.** The linear map `M' → R^k` of the chart at `e ∘ x`
+attached to the image of `N` under a linear equivalence `e` is that of `N`, composed with
+`e⁻¹`. -/
+theorem chartEquiv_grassmannianCongr_apply (e : M ≃ₗ[R] M') {x : Fin k → M} (N : chart R x)
+    (m : M) :
+    (chartEquiv R (e ∘ x) ⟨e.grassmannianCongr N.val, grassmannianCongr_mem_chart e N.property⟩).val
+      (e m) = (chartEquiv R x N).val m := by
+  have h : (⟨e.grassmannianCongr N.val, grassmannianCongr_mem_chart e N.property⟩ :
+      chart R (e ∘ x)) = (chartEquiv R (e ∘ x)).symm
+        ⟨(chartEquiv R x N).val ∘ₗ e.symm.toLinearMap, fun i ↦ by simp⟩ := by
+    refine Subtype.ext (Grassmannian.ext ?_)
+    rw [toSubmodule_chartEquiv_symm_apply, LinearEquiv.toSubmodule_grassmannianCongr_apply,
+      LinearMap.ker_comp, ker_chartEquiv_apply, Submodule.comap_equiv_eq_map_symm,
+      LinearEquiv.symm_symm]
+  rw [h, Equiv.apply_symm_apply]
+  simp
+
+/-- `Module.Grassmannian.chartEquiv_grassmannianCongr_apply` with the transported chart and point
+given by equations. -/
+theorem chartEquiv_apply_eq_of_grassmannianCongr (e : M ≃ₗ[R] M') {x : Fin k → M}
+    {y : Fin k → M'} (hxy : e ∘ x = y) {N : G(k, M; R)} {N' : G(k, M'; R)}
+    (hNN' : e.grassmannianCongr N = N') (hN : N ∈ chart R x) (hN' : N' ∈ chart R y) (m : M) :
+    (chartEquiv R y ⟨N', hN'⟩).val (e m) = (chartEquiv R x ⟨N, hN⟩).val m := by
+  subst hxy hNN'
+  exact chartEquiv_grassmannianCongr_apply e ⟨N, hN⟩ m
 
 end Chart
 

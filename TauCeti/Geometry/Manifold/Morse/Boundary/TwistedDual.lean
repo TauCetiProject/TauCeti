@@ -40,8 +40,11 @@ to sign. This is the local-coefficient form, on an oriented manifold, of the com
 Morse complex of `-f` with the dual complex that underlies Poincaré duality, of which the integral
 coefficient identity `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_dual`
 is the constant-coefficient counterpart. On a nonorientable
-manifold the dual system has to be twisted further by the orientation local system of `M`, which
-is not treated here.
+manifold the dual system has to be twisted further by the orientation local system `o(TM)` of `M`:
+the boundary of `-f` with coefficients in `L^∨ ⊗ o(TM)` is the signed transpose of the boundary of
+`f` with coefficients in `L` with no orientation of `M`
+(`IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg_dual`, in
+`TauCeti.Geometry.Manifold.Morse.Boundary.OrientationSystem`).
 
 ## Main results
 

@@ -9,6 +9,7 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Basic
 import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Topology.SeparatedMap
+import TauCeti.Data.Set.Prod
 
 /-!
 # Quotients by setoids, fibre products, and subtypes of topological spaces
@@ -37,6 +38,12 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
+* `ContinuousMap.mapPullbackFst`: the map `X₁ ×_Y Z → X₂ ×_Y Z`, `(x, z) ↦ (g x, z)`, induced
+  by a map `g` of first factors over `Y`, the first-factor counterpart of
+  `ContinuousMap.mapPullbackSnd`.
+* `ContinuousMap.range_mapPullbackFst`, `ContinuousMap.isOpenEmbedding_mapPullbackFst`: its image
+  is the part over the image of `g`, and it is an open embedding when `g` is one, as for the
+  pullback over an open part of the parameters into the pullback over all of them.
 * `ContinuousAt.tendsto_comap_val`, `Continuous.tendsto_comap_val`: a continuous function on a
   subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.val)`.
 * `Topology.IsQuotientMap.of_comp_eq_comp`: quotient maps are stable under pullback along a
@@ -280,6 +287,61 @@ def ContinuousMap.mapPullbackSnd : C(f.Pullback p, f.Pullback q) :=
   ext : 1; rfl
 
 end MapPullbackSnd
+
+section MapPullbackFst
+
+variable {X₁ X₂ Y Z : Type*} [TopologicalSpace X₁] [TopologicalSpace X₂] [TopologicalSpace Z]
+  {p : X₁ → Y} {q : X₂ → Y} (g : C(X₁, X₂)) (hg : q ∘ ⇑g = p) (f : Z → Y)
+
+/-- Bundled continuous map `p.Pullback f → q.Pullback f` over `Z` induced by a map
+`g : C(X₁, X₂)` over `Y` (`q ∘ g = p`): `(x, z) ↦ (g x, z)`. -/
+def ContinuousMap.mapPullbackFst : C(p.Pullback f, q.Pullback f) :=
+  ContinuousMap.mapPullback (g₁ := f) (g₂ := f) g id (.id Z) hg rfl
+
+@[simp] theorem ContinuousMap.coe_mapPullbackFst_apply (x : p.Pullback f) :
+    (ContinuousMap.mapPullbackFst g hg f x).val = (g x.val.1, x.val.2) :=
+  ContinuousMap.coe_mapPullback_apply _ _ _ _ _ x
+
+@[simp] theorem ContinuousMap.fst_mapPullbackFst (x : p.Pullback f) :
+    (ContinuousMap.mapPullbackFst g hg f x).fst = g x.fst :=
+  congrArg Prod.fst (ContinuousMap.coe_mapPullbackFst_apply g hg f x)
+
+@[simp] theorem ContinuousMap.snd_mapPullbackFst (x : p.Pullback f) :
+    (ContinuousMap.mapPullbackFst g hg f x).snd = x.snd :=
+  congrArg Prod.snd (ContinuousMap.coe_mapPullbackFst_apply g hg f x)
+
+@[simp] theorem ContinuousMap.pullbackFst_comp_mapPullbackFst :
+    (ContinuousMap.pullbackFst q f).comp (ContinuousMap.mapPullbackFst g hg f) =
+      g.comp (ContinuousMap.pullbackFst p f) := by
+  ext : 1; simp
+
+@[simp] theorem ContinuousMap.pullbackSnd_comp_mapPullbackFst :
+    (ContinuousMap.pullbackSnd q f).comp (ContinuousMap.mapPullbackFst g hg f) =
+      ContinuousMap.pullbackSnd p f := by
+  ext : 1; simp
+
+/-- The points of `q.Pullback f` over the image of `g` are exactly the image of the map induced
+by `g`. -/
+theorem ContinuousMap.range_mapPullbackFst :
+    range (ContinuousMap.mapPullbackFst g hg f) = Function.Pullback.fst ⁻¹' range g := by
+  refine Subset.antisymm ?_ fun y ⟨x, hx⟩ ↦
+    ⟨⟨(x, y.snd), (congrFun hg x).symm.trans ((congrArg q hx).trans y.property)⟩,
+      Function.Pullback.ext ((fst_mapPullbackFst g hg f _).trans hx) (snd_mapPullbackFst g hg f _)⟩
+  rintro _ ⟨x, rfl⟩
+  exact ⟨x.fst, (fst_mapPullbackFst g hg f x).symm⟩
+
+/-- The map induced by an open embedding of first factors is an open embedding. -/
+theorem ContinuousMap.isOpenEmbedding_mapPullbackFst (hg' : IsOpenEmbedding g) :
+    IsOpenEmbedding (ContinuousMap.mapPullbackFst g hg f) := by
+  have h : Subtype.val ∘ ⇑(ContinuousMap.mapPullbackFst g hg f) = Prod.map g id ∘ Subtype.val :=
+    funext (ContinuousMap.coe_mapPullbackFst_apply g hg f)
+  refine ⟨(IsEmbedding.subtypeVal (p := fun z : X₂ × Z ↦ q z.1 = f z.2)).of_comp_iff.1 ?_, ?_⟩
+  · rw [h]
+    exact (hg'.isEmbedding.prodMap IsEmbedding.id).comp IsEmbedding.subtypeVal
+  · rw [range_mapPullbackFst]
+    exact hg'.isOpen_range.preimage Function.Pullback.continuous_fst
+
+end MapPullbackFst
 
 end Pullback
 
