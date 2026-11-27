@@ -90,6 +90,17 @@ theorem energy_symm (γ : ℝ → M) (a b : ℝ) : energy I γ b a = -energy I �
 theorem energy_nonneg (γ : ℝ → M) {a b : ℝ} (hab : a ≤ b) : 0 ≤ energy I γ a b :=
   div_nonneg (intervalIntegral.integral_nonneg hab fun _ _ ↦ sq_nonneg _) two_pos.le
 
+/-- The energy on an ordered subinterval is bounded by the energy on the whole interval. -/
+theorem energy_mono_interval (γ : ℝ → M) {a b s t : ℝ}
+    (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b)
+    (hγ : IntervalIntegrable (fun r ↦ ‖curveVelocity I γ r‖ ^ 2) MeasureTheory.volume a b) :
+    energy I γ s t ≤ energy I γ a b := by
+  rw [energy_def, energy_def]
+  exact div_le_div_of_nonneg_right
+    (intervalIntegral.integral_mono_interval has hst htb
+      (MeasureTheory.ae_of_all _ fun _ ↦ sq_nonneg _) hγ)
+    two_pos.le
+
 /-- The energy is additive over adjacent parameter intervals, provided the squared speed is
 integrable on both. -/
 theorem energy_add_adjacent (γ : ℝ → M) {a b c : ℝ}
