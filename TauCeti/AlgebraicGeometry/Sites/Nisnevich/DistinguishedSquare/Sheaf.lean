@@ -63,13 +63,18 @@ noncomputable abbrev diagonalArrows : ∀ b : Bool,
       Q.V b : AlgebraicGeometry.Scheme.{u}) ⟶ Limits.pullback Q.p Q.p)
     (Limits.pullback.fst _ _) (Limits.pullback.diagonal Q.p)
 
+/-- Both morphisms covering `V ×_X V` are open immersions: the diagonal because `p` is étale,
+and the base change of the open immersion `j`. -/
+instance isOpenImmersion_diagonalArrows (c : Bool) : IsOpenImmersion (Q.diagonalArrows c) := by
+  cases c <;> dsimp <;> infer_instance
+
 /-- **The diagonal of `p` and the part of `V ×_X V` over `U` cover `V ×_X V`**: both are open
 immersions, and every point of `V ×_X V` over the reduced closed complement of `U` lies in the
 diagonal, since the base change of `p` to that complement is an isomorphism. -/
 theorem isNisnevichCovering_diagonal : IsNisnevichCovering Q.diagonalArrows := by
   apply isNisnevichCovering_of_zariski
   rw [AlgebraicGeometry.Scheme.ofArrows_mem_precoverage_iff]
-  refine ⟨fun w ↦ ?_, fun b ↦ by cases b <;> dsimp <;> infer_instance⟩
+  refine ⟨fun w ↦ ?_, inferInstance⟩
   set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl
   by_cases hw : (Limits.pullback.fst Q.p Q.p ≫ Q.p) w ∈ Set.range Q.j
   · obtain ⟨u, hu⟩ := hw

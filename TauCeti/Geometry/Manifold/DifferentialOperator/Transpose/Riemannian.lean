@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Existence
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -53,6 +54,11 @@ Euclidean metric, where `dV = dx` and `div ∂ₓ = 0`, taking `φ = sin` gives 
 * `LinearMap.isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators`,
   `LinearMap.formalTranspose_riemannianVolume_mem_differentialOperators`: a differential operator
   of order at most `m` has a formal transpose with respect to `dV`, again of order at most `m`.
+* `LinearMap.formalTranspose_formalTranspose_riemannianVolume`,
+  `LinearMap.formalTranspose_riemannianVolume_add`,
+  `LinearMap.formalTranspose_riemannianVolume_sub`,
+  `LinearMap.formalTranspose_riemannianVolume_comp`: on differential operators, transposition with
+  respect to `dV` is an additive involution that reverses composition, `(D₁ ∘ D₂)ᵗ = D₂ᵗ ∘ D₁ᵗ`.
 * `LinearMap.isFormalTranspose_smoothLaplaceBeltrami`,
   `LinearMap.formalTranspose_smoothLaplaceBeltrami`: the Laplace–Beltrami operator is formally
   self-transpose.
@@ -184,6 +190,64 @@ theorem formalTranspose_riemannianVolume_mem_differentialOperators {m : ℕ}
     exists_isFormalTranspose_vectorFieldDerivation hD
   rwa [h.formalTranspose_eq]
 
+/-! ### The algebra of transposes -/
+
+/-- With respect to the Riemannian volume, transposing a differential operator twice gives it
+back. -/
+theorem formalTranspose_formalTranspose_riemannianVolume {m : ℕ}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
+    (D.formalTranspose (riemannianVolume I M)).formalTranspose (riemannianVolume I M) = D :=
+  (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators
+    hD).formalTranspose_formalTranspose
+
+variable {D₁ D₂ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} {m k : ℕ}
+
+/-- With respect to the Riemannian volume, the formal transpose of a sum of differential operators
+is the sum of their formal transposes. -/
+theorem formalTranspose_riemannianVolume_add
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k) :
+    (D₁ + D₂).formalTranspose (riemannianVolume I M) =
+      D₁.formalTranspose (riemannianVolume I M) + D₂.formalTranspose (riemannianVolume I M) :=
+  ((isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₁).add
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₂)
+    (tsupport_differentialOperators_apply_subset hD₁)
+    (tsupport_differentialOperators_apply_subset hD₂)
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₁))
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₂))).formalTranspose_eq
+
+/-- With respect to the Riemannian volume, the formal transpose of a difference of differential
+operators is the difference of their formal transposes. -/
+theorem formalTranspose_riemannianVolume_sub
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k) :
+    (D₁ - D₂).formalTranspose (riemannianVolume I M) =
+      D₁.formalTranspose (riemannianVolume I M) - D₂.formalTranspose (riemannianVolume I M) :=
+  ((isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₁).sub
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₂)
+    (tsupport_differentialOperators_apply_subset hD₁)
+    (tsupport_differentialOperators_apply_subset hD₂)
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₁))
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₂))).formalTranspose_eq
+
+/-- **Transposition reverses composition.** With respect to the Riemannian volume, the formal
+transpose of a composition of differential operators is the composition of their formal transposes
+in the reverse order. -/
+theorem formalTranspose_riemannianVolume_comp
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k) :
+    (D₁ ∘ₗ D₂).formalTranspose (riemannianVolume I M) =
+      D₂.formalTranspose (riemannianVolume I M) ∘ₗ D₁.formalTranspose (riemannianVolume I M) :=
+  ((isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₁).comp
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₂)
+    (tsupport_differentialOperators_apply_subset hD₂)
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₁))).formalTranspose_eq
+
 /-! ### The Laplace–Beltrami operator -/
 
 /-- **Green's second identity** as a transpose: the Laplace–Beltrami operator is its own formal
@@ -220,16 +284,17 @@ theorem isFormalTranspose_vectorFieldDerivation_withDensity_exp
       (-(vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) -
         mulLeft ℝ (smoothDivergence I M X + vectorFieldDerivation X φ))
       ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) := by
-  let ρ : C^∞⟮I, M; ℝ⟯ := ⟨Real.exp ∘ φ, ContDiff.comp_contMDiff Real.contDiff_exp φ.contMDiff⟩
+  -- The weight `e^φ`; `Real.exp ∘ φ` is by definition `fun y ↦ Real.exp (φ y)`.
+  let ρ : C^∞⟮I, M; ℝ⟯ :=
+    ⟨fun y ↦ Real.exp (φ y), Real.contDiff_exp.comp_contMDiff φ.contMDiff⟩
+  have hρ : ⇑ρ = fun y ↦ Real.exp (φ y) := ContMDiffMap.coeFn_mk _ _
   -- The chain rule `X (e^φ) = e^φ X φ`.
   have hXρ : vectorFieldDerivation X ρ = ρ * vectorFieldDerivation X φ := by
     ext x
     have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
     simp only [ContMDiffSection.vectorFieldDerivation_apply_apply, ContMDiffMap.coe_mul,
       Pi.mul_apply]
-    rw [show (ρ : M → ℝ) = Real.exp ∘ φ from ContMDiffMap.coeFn_mk _ _,
-      mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt, Real.deriv_exp,
-      _root_.smul_apply, smul_eq_mul, Function.comp_apply]
+    rw [hρ, mvfderiv_exp hφ, _root_.smul_apply, smul_eq_mul]
   refine (isFormalTranspose_vectorFieldDerivation X).withDensity (ρ := ρ)
     (fun x ↦ (Real.exp_pos _).le) fun g ↦ ?_
   ext x

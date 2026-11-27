@@ -8,6 +8,8 @@ module
 public import TauCeti.QuantumGroups.QuantumInteger.Binomial
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 public import Mathlib.Algebra.Algebra.Opposite
+public import Mathlib.Algebra.GradedMonoid
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.RingTheory.TensorProduct.Basic
 
@@ -272,6 +274,31 @@ theorem quantumDividedPower_def (q : K) (x : A) (n : ℕ) :
 @[simp] theorem unop_quantumDividedPower (q : K) (x : Aᵐᵒᵖ) (n : ℕ) :
     MulOpposite.unop (quantumDividedPower q x n) =
       quantumDividedPower q (MulOpposite.unop x) n := by simp [quantumDividedPower_def]
+
+/-- For any `K`-scalar-closed `SetLike.GradedMonoid` family `𝒜 : ι → S` (`[SMulMemClass S K A]`,
+without requiring an internal direct-sum decomposition), the `n`-th quantum divided power of an
+element in `𝒜 c` lies in `𝒜 (n • c)` for any parameter `u : K`, even when `[n]_u! = 0` (where
+the divided power vanishes). -/
+theorem quantumDividedPower_mem_graded {ι S : Type*} [AddMonoid ι]
+    [SetLike S A] [SMulMemClass S K A] {𝒜 : ι → S} [SetLike.GradedMonoid 𝒜]
+    (u : K) {c : ι} {x : A} (hx : x ∈ 𝒜 c) (n : ℕ) :
+    quantumDividedPower u x n ∈ 𝒜 (n • c) := by
+  rw [quantumDividedPower_def]
+  exact SMulMemClass.smul_mem _ (SetLike.pow_mem_graded n hx)
+
+/-- The `n`-th quantum divided power of a homogeneous direct-sum injection
+`DirectSum.of (fun c => 𝒜 c) c x` equals the direct-sum injection of the underlying divided power
+`quantumDividedPower u (x : A) n` into degree `n • c`. -/
+@[simp]
+theorem quantumDividedPower_of {Γ : Type*} [AddMonoid Γ] [DecidableEq Γ]
+    {𝒜 : Γ → Submodule K A} [SetLike.GradedMonoid 𝒜]
+    (u : K) (c : Γ) (x : 𝒜 c) (n : ℕ) :
+    quantumDividedPower u (DirectSum.of (fun c => 𝒜 c) c x) n =
+      DirectSum.of (fun c => 𝒜 c) (n • c)
+        ⟨quantumDividedPower u (x : A) n, quantumDividedPower_mem_graded u x.property n⟩ := by
+  simp only [quantumDividedPower_def, DirectSum.ofPow, ← DirectSum.of_smul]
+  exact congrArg (DirectSum.of (fun c => ↥(𝒜 c)) (n • c))
+    (Subtype.ext (by simp only [SetLike.val_smul, SetLike.coe_gnpow]))
 
 open scoped TensorProduct in
 /-- The quantum divided power of a pure tensor `u ⊗ₜ[K] v` in `A ⊗[K] B`, placing the divided

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -79,6 +80,8 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   unitary frame, the complex coordinates `OrthonormalBasis.complexCoords` turn `J` into
   multiplication by `i`, and they are the coordinates of the complex basis `(e₀, e₂)` of `(V, J)`,
   hence a `ℂ`-linear equivalence from the complex vector space `(V, J)` to `ℂ²`.
+  `OrthonormalBasis.complexCoords_two_unitary_apply` is the first statement for an orthogonal
+  complex structure `J₀ : unitary (V →L[ℝ] V)`.
 * `TauCeti.AlmostComplexStructure.unitaryGroupFrameEquiv`: for such a unitary frame and the form
   `Q v = -‖v‖²`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary matrix to the rotation acting
   as that matrix in the complex coordinates (`complexCoords_unitaryGroupFrameEquiv_apply`,
@@ -996,17 +999,29 @@ private theorem complexCoordsMatrix_eq {A : V →L[ℝ] V} {U : Matrix (Fin 2) (
   rw [complexCoordsMatrix, Matrix.of_apply, hU, LinearEquiv.apply_symm_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- `J₀` as an almost complex structure on `V`. -/
+private noncomputable def almostComplexStructureOfUnitary : TauCeti.AlmostComplexStructure V :=
+  ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
+
+include hJ₀ h₀ h₂ in
+/-- In the complex coordinates `OrthonormalBasis.complexCoords` of a unitary frame `e` of an
+orthogonal complex structure `J₀`, `J₀ e₀ = e₁` and `J₀ e₂ = e₃`, the complex structure `J₀` is
+multiplication by `i`. -/
+theorem complexCoords_two_unitary_apply (v : V) :
+    e.complexCoords 2 ((J₀ : V →L[ℝ] V) v) = Complex.I • e.complexCoords 2 v :=
+  complexCoords_two_almostComplexStructure_apply (J := almostComplexStructureOfUnitary hJ₀) h₀ h₂
+    v
+
 include hJ₀ h₀ h₂ in
 /-- An orthogonal transformation commuting with `J₀` acts as a unitary matrix in the complex
 coordinates of a unitary frame `e`. -/
 private theorem exists_complexCoords_apply_eq_mulVec (g : Subgroup.centralizer {J₀}) :
     ∃ U : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2 (((g : unitary (V →L[ℝ] V)) :
       V →L[ℝ] V) v) = (U : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
-  let J : TauCeti.AlmostComplexStructure V :=
-    ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
   have hg := Subgroup.mem_centralizer_singleton_iff.1 g.property
-  exact TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map (J := J)
-    h₀ h₂ ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V).toLinearMap (Unitary.norm_map _)
+  exact TauCeti.AlmostComplexStructure.exists_complexCoords_apply_eq_mulVec_of_norm_map
+    (J := almostComplexStructureOfUnitary hJ₀) h₀ h₂
+    ((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V).toLinearMap (Unitary.norm_map _)
     fun v ↦ congrArg (fun A : unitary (V →L[ℝ] V) ↦ (A : V →L[ℝ] V) v) hg
 
 include hJ₀ h₀ h₂ in
@@ -1080,6 +1095,19 @@ theorem continuous_centralizerToUnitaryGroup :
     ((e.complexCoords 2).toLinearMap.continuous_of_finiteDimensional.comp
       ((continuous_subtypeVal.comp continuous_subtypeVal).clm_apply continuous_const))).congr
     fun g ↦ (e.coe_centralizerToUnitaryGroup_apply hJ₀ h₀ h₂ g i j).symm
+
+/-- `OrthonormalBasis.centralizerToUnitaryGroup`, the unitary matrices of the orthogonal
+transformations commuting with `J₀` in the complex coordinates of `e`, as a continuous
+homomorphism. -/
+noncomputable def centralizerToUnitaryGroupContinuousMonoidHom :
+    Subgroup.centralizer {J₀} →ₜ* Matrix.unitaryGroup (Fin 2) ℂ :=
+  ⟨e.centralizerToUnitaryGroup hJ₀ h₀ h₂, e.continuous_centralizerToUnitaryGroup hJ₀ h₀ h₂⟩
+
+@[simp]
+theorem centralizerToUnitaryGroupContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
+    e.centralizerToUnitaryGroupContinuousMonoidHom hJ₀ h₀ h₂ g =
+      e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g :=
+  (rfl)
 
 end CentralizerUnitaryGroup
 

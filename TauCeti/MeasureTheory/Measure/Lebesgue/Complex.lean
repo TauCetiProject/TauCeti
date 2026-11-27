@@ -30,7 +30,9 @@ Coordinate lines and continuous graphs over compact intervals have zero planar L
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
 (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
 the open upper half-plane of the function plus its composition with conjugation
-(`Complex.integral_eq_setIntegral_add_comp_conj`).
+(`Complex.integral_eq_setIntegral_add_comp_conj`), and an almost-everywhere property on the upper
+part of a set containing the conjugates of its lower points holds at the conjugate points of its
+lower part (`TauCeti.ae_restrict_im_neg_of_ae_restrict_im_pos`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides
 (`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
@@ -42,9 +44,10 @@ Splitting complex vectors into real and imaginary blocks preserves product volum
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
 The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
-(`Complex.measurePreserving_equivRealProdCLM_symm`). Since the disc `|w| ≤ r`, read in the real
-coordinates, lies in the square `‖z‖ ≤ r`, the integral of a nonnegative function over the disc is
-at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
+(`Complex.measurePreserving_equivRealProdCLM_symm`), so integrals over preimages under them are
+integrals over the plane (`Complex.setIntegral_preimage_equivRealProdCLM_symm`). Since the disc
+`|w| ≤ r`, read in the real coordinates, lies in the square `‖z‖ ≤ r`, the integral of a
+nonnegative function over the disc is at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
 (`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
@@ -198,6 +201,15 @@ theorem measurePreserving_equivRealProdCLM_symm :
   rw [heq]
   exact volume_preserving_equiv_real_prod.symm
 
+/-- An integral over the preimage of a set `s` of the plane under the real coordinates
+`(x, y) ↦ x + y i` is the integral over `s` itself, read through `Complex.equivRealProdCLM`. -/
+theorem setIntegral_preimage_equivRealProdCLM_symm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℝ × ℝ → E) (s : Set ℂ) :
+    ∫ z in equivRealProdCLM.symm ⁻¹' s, f z = ∫ w in s, f (equivRealProdCLM w) := by
+  simpa only [ContinuousLinearEquiv.apply_symm_apply] using
+    measurePreserving_equivRealProdCLM_symm.setIntegral_preimage_emb
+      equivRealProdCLM.symm.toHomeomorph.measurableEmbedding (fun w ↦ f (equivRealProdCLM w)) s
+
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
 theorem setLIntegral_reProdIm_comp_re (s t : Set ℝ) {F : ℝ → ℝ≥0∞} (hF : Measurable F) :
@@ -266,6 +278,18 @@ theorem ae_restrict_interior_inter_setOf_im_nonneg_im_pos (Ω : Opens ℂ) :
   refine (ae_restrict_iff' (Opens.interior _).isOpen.measurableSet).2 (.of_forall fun z hz => ?_)
   rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
   exact hz.2
+
+/-- An almost-everywhere property on the upper part `Ω ∩ {0 < im}` of a set containing the
+conjugates of its lower points, read at the conjugate point, holds almost everywhere on the lower
+part `Ω ∩ {im < 0}`: conjugation preserves the measure and exchanges the two parts. -/
+theorem ae_restrict_im_neg_of_ae_restrict_im_pos {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → starRingEnd ℂ z ∈ Ω) {P : ℂ → Prop}
+    (h : ∀ᵐ z ∂volume.restrict (Ω ∩ {z | 0 < z.im}), P z) :
+    ∀ᵐ z ∂volume.restrict (Ω ∩ {z | z.im < 0}), P (starRingEnd ℂ z) := by
+  have hconj := (Complex.conjLIE.measurePreserving.restrict_preimage_emb
+    Complex.conjLIE.toHomeomorph.measurableEmbedding (Ω ∩ {z | 0 < z.im})).quasiMeasurePreserving
+  refine ae_restrict_of_ae_restrict_of_subset (fun z hz ↦ ?_) (by simpa using hconj.ae h)
+  exact ⟨hΩ z hz.1 hz.2, by simpa using hz.2⟩
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/

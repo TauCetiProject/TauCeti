@@ -57,6 +57,11 @@ the precomplex. -/
 theorem mem_faces : σ ∈ K.faces ↔ σ ∈ K :=
   Iff.rfl
 
+/-- The void precomplex has no faces. -/
+@[simp]
+theorem notMem_bot : σ ∉ (⊥ : PreAbstractSimplicialComplex ι) :=
+  id
+
 /-- A face belongs to the image complex exactly when it is the image of a face of the source
 complex. -/
 theorem mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ}
