@@ -42,6 +42,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
   subgroup.
 * `TauCeti.neg_one_pow_mul_succ_div_two_succ`: the signs of successive triangular numbers, as
   natural-number powers of `-1`.
+* `TauCeti.neg_one_pow_mul_succ_div_two_mul_neg_one_pow_mul_succ_div_two`: the signs of the
+  triangular numbers of `a`, `b` and `a + 1 + b` combine to `(-1) ^ ((a + 1) (b + 1))`.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
   `Int.negOnePow_mul_negOnePow_sub`, `Int.negOnePow_add_one_sub`,
@@ -210,6 +212,26 @@ theorem neg_one_pow_mul_succ_div_two_succ {M : Type uM} [Monoid M] [HasDistribNe
     (-1 : M) ^ ((n + 1) * (n + 1 + 1) / 2) = (-1) ^ (n + 1) * (-1) ^ (n * (n + 1) / 2) := by
   have h : (n + 1) * (n + 1 + 1) = n * (n + 1) + (n + 1) * 2 := by ring
   rw [h, Nat.add_mul_div_right _ _ two_pos, pow_add, pow_mul_comm]
+
+/-- The signs `(-1) ^ T(n)` of the triangular numbers `T(n) = n (n + 1) / 2` satisfy
+`(-1) ^ T(a) * (-1) ^ T(b) = (-1) ^ ((a + 1) (b + 1)) * (-1) ^ T(a + 1 + b)`, since
+`T(a + 1 + b) = T(a) + T(b) + (a + 1) (b + 1)`. -/
+theorem neg_one_pow_mul_succ_div_two_mul_neg_one_pow_mul_succ_div_two {M : Type uM} [Monoid M]
+    [HasDistribNeg M] (a b : ℕ) :
+    (-1 : M) ^ (a * (a + 1) / 2) * (-1) ^ (b * (b + 1) / 2) =
+      (-1) ^ ((a + 1) * (b + 1)) * (-1) ^ ((a + 1 + b) * (a + 1 + b + 1) / 2) := by
+  obtain ⟨x, hx⟩ := Nat.even_mul_succ_self a
+  obtain ⟨y, hy⟩ := Nat.even_mul_succ_self b
+  have h : (a + 1 + b) * (a + 1 + b + 1) / 2 = x + y + (a + 1) * (b + 1) := by
+    rw [show (a + 1 + b) * (a + 1 + b + 1) = a * (a + 1) + b * (b + 1) + 2 * ((a + 1) * (b + 1))
+      by ring, hx, hy]
+    omega
+  -- `(-1) ^ ((a + 1) * (b + 1))` is central, since `-1` is, and squares to one.
+  have hc : Commute ((-1 : M) ^ ((a + 1) * (b + 1))) ((-1) ^ (x + y)) :=
+    (Commute.neg_one_left _).pow_left _
+  rw [show a * (a + 1) / 2 = x by omega, show b * (b + 1) / 2 = y by omega, h, pow_add,
+    hc.left_comm, ← pow_add _ ((a + 1) * (b + 1)), Even.neg_one_pow ⟨_, rfl⟩, mul_one,
+    pow_add]
 
 /-- The product of an integer and one minus that integer is even, so its sign is one. -/
 @[simp]

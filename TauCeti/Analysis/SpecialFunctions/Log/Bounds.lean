@@ -37,6 +37,13 @@ at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²
 logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
 in explicit prime-counting estimates.
 
+In the other direction, a small logarithm bounds a power from above: if `log z ≤ L` and
+`n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε` for every real `z`
+(`TauCeti.pow_le_one_add_two_mul_of_log_le`), since `z^n ≤ |z^n| ≤ exp (n log z)`
+(`Real.abs_rpow_le_exp_log_mul`) and `exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`. This bounds the powers
+`ζ(s)^n` of a zeta function whose logarithm is bounded by an exponentially decaying function of
+`s`.
+
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
@@ -48,6 +55,8 @@ in explicit prime-counting estimates.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
+  `0 ≤ ε ≤ 1 / 2`.
 -/
 
 public section
@@ -147,3 +156,23 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
       (log_natCast_nonneg N)
 
 end Real
+
+namespace TauCeti
+
+open Real
+
+/-- **A power with a small logarithm is at most `1 + 2 ε`.** For every real `z`, if `log z ≤ L`
+and `n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε`. -/
+theorem pow_le_one_add_two_mul_of_log_le {z L ε : ℝ} {n : ℕ} (hzL : log z ≤ L) (hL : n * L ≤ ε)
+    (hε0 : 0 ≤ ε) (hε : ε ≤ 1 / 2) : z ^ n ≤ 1 + 2 * ε := by
+  have h := abs_rpow_le_exp_log_mul z n
+  rw [rpow_natCast, mul_comm] at h
+  -- `z ^ n ≤ |z ^ n| ≤ exp (n log z) ≤ exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`.
+  calc z ^ n ≤ exp (n * log z) := (le_abs_self _).trans h
+    _ ≤ exp ε := exp_le_exp.2 ((mul_le_mul_of_nonneg_left hzL (Nat.cast_nonneg n)).trans hL)
+    _ ≤ 1 / (1 - ε) := exp_bound_div_one_sub_of_interval hε0 (by linarith)
+    _ ≤ 1 + 2 * ε := by
+      rw [div_le_iff₀ (by linarith)]
+      nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ 1 - 2 * ε)]
+
+end TauCeti
