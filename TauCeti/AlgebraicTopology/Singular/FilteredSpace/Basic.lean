@@ -255,6 +255,17 @@ lemma filteredSpaceSpectralSequenceFirstPageXIso_hom (pq : ℤ × ℤ) (a b : �
       (Category.assoc _ _ _)).trans <|
       congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _)
 
+/-- The identification of the first page of the spectral sequence of a filtered space with
+relative singular homology only depends on the value of the total degree `m`, not on the equation
+`hm` that presents it. -/
+lemma filteredSpaceSpectralSequenceFirstPageXIso_congr (pq : ℤ × ℤ) (a b : ℤ) (ha : a = pq.2)
+    (hb : b = pq.2 + 1) (m m' : ℤ) (hm : m = pq.1 + pq.2) (hm' : m' = pq.1 + pq.2) (n : ℕ)
+    (hn : m = -n) (hn' : m' = -n) :
+    filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m hm n hn =
+      filteredSpaceSpectralSequenceFirstPageXIso R hX pq a b ha hb m' hm' n hn' := by
+  subst hm hm'
+  rfl
+
 /-- The first page of the spectral sequence of a filtered space vanishes in positive total
 degree `p + q`, since singular chains are concentrated in nonpositive cohomological degrees. -/
 lemma isZero_filteredSpaceSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 < pq.1 + pq.2) :
@@ -905,6 +916,37 @@ lemma filteredSpaceSpectralSequenceCoefficientMap_comp :
     filteredSpaceSpectralSequenceCoefficientMap_def,
     filteredSpaceSpectralSequenceCoefficientMap_def, filteredSpaceCoefficientFiltrationMap_comp,
     CochainComplex.spectralObjectMap_comp, Abelian.SpectralObject.spectralSequenceMap_comp]
+
+/-- **The isomorphism of spectral sequences induced by an isomorphism of coefficients.** An
+isomorphism `e : R ≅ R'` induces an isomorphism from the spectral sequence of the filtration of `Y`
+by the `X q` with coefficients in `R` to the one with coefficients in `R'`, with the morphisms
+`TauCeti.filteredSpaceSpectralSequenceCoefficientMap` of `e` and of its inverse. -/
+def filteredSpaceSpectralSequenceCoefficientIso (e : R ≅ R') :
+    filteredSpaceSpectralSequence R hX ≅ filteredSpaceSpectralSequence R' hX where
+  hom := filteredSpaceSpectralSequenceCoefficientMap hX e.hom
+  inv := filteredSpaceSpectralSequenceCoefficientMap hX e.inv
+  hom_inv_id := by
+    rw [← filteredSpaceSpectralSequenceCoefficientMap_comp, e.hom_inv_id,
+      filteredSpaceSpectralSequenceCoefficientMap_id]
+  inv_hom_id := by
+    rw [← filteredSpaceSpectralSequenceCoefficientMap_comp, e.inv_hom_id,
+      filteredSpaceSpectralSequenceCoefficientMap_id]
+
+/-- The morphism of the isomorphism of spectral sequences induced by an isomorphism of coefficients
+is the morphism induced by the forward map. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceCoefficientIso_hom (e : R ≅ R') :
+    (filteredSpaceSpectralSequenceCoefficientIso hX e).hom =
+      filteredSpaceSpectralSequenceCoefficientMap hX e.hom :=
+  (rfl)
+
+/-- The inverse of the isomorphism of spectral sequences induced by an isomorphism of coefficients
+is the morphism induced by the inverse map. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceCoefficientIso_inv (e : R ≅ R') :
+    (filteredSpaceSpectralSequenceCoefficientIso hX e).inv =
+      filteredSpaceSpectralSequenceCoefficientMap hX e.inv :=
+  (rfl)
 
 /-- On the stage `F_b`, identified with the singular chains of `X b`, the morphism of filtrations
 induced by `φ` is the chain map induced by `φ` on the singular chains of `X b`. -/

@@ -823,12 +823,6 @@ namespace HomologicalComplex
 variable {S : Type*} [Ring S] {K L : HomologicalComplex (ModuleCat S) (ComplexShape.refl Unit)}
 
 variable (K) in
-/-- The unique differential of a complex of shape `ComplexShape.refl Unit` squares to zero, as a
-linear map. -/
-theorem hom_d_comp_hom_d : (K.d () ()).hom ∘ₗ (K.d () ()).hom = 0 := by
-  rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
-
-variable (K) in
 /-- The homology of a one-object complex of modules is the kernel of its differential modulo
 its image, with the module structures selected by the complex. -/
 noncomputable def moduleCatHomologyIso :
