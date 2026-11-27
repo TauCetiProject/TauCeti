@@ -75,6 +75,16 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
         = (fun z => (n : ℂ) * (z - z₀)⁻¹) + logDeriv g from rfl,
     residue_add hA hB, residue_const_mul_sub_inv, residue_eq_zero_of_analyticAt hlogg_an, add_zero]
 
+/-- An analytic weight multiplies the residue of a logarithmic derivative by its value at the
+point, since the logarithmic derivative has at most a simple pole there. -/
+theorem residue_logDeriv_mul_eq_meromorphicOrderAt {f g : ℂ → ℂ} {z : ℂ} {n : ℤ}
+    (hf : MeromorphicAt f z) (hn : meromorphicOrderAt f z = n) (hg : AnalyticAt ℂ g z) :
+    residue (fun s ↦ logDeriv f s * g s) z = (n : ℂ) * g z := by
+  obtain ⟨u, hu, hne, heq⟩ := logDeriv_eventuallyEq_principalPart hf hn
+  rw [residue_congr_nhdsNE (heq.fun_mul (Filter.EventuallyEq.refl _ g))]
+  simpa only [div_eq_mul_inv, add_comm] using
+    residue_add_div_sub_mul_of_analyticAt (r := (n : ℂ)) (hu.logDeriv hne) hg
+
 end TauCeti.Contour
 
 open TauCeti.Contour in

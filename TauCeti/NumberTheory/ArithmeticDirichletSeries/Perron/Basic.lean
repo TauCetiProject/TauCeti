@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Perron.Interval
 import TauCeti.Topology.Order.OrderClosed
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -469,27 +470,14 @@ origin as `dslope`, so Cauchy's theorem applies to it verbatim, and the second i
 closed form, its four sides contributing the four arctangents that add up to `2 π i`.
 -/
 
-/-- The Perron integrand with its pole removed: `s ↦ (x ^ s - 1) / s`, given the value `log x` at
-the origin.  Off the origin it is the difference of the integrands at `x` and at `1`. -/
-private noncomputable def perronDslope (x : ℝ) : ℂ → ℂ := dslope (fun s : ℂ => (x : ℂ) ^ s) 0
-
-private theorem perronDslope_eq_sub {s : ℂ} (hs : s ≠ 0) :
-    perronDslope x s = perronFn x s - perronFn 1 s := by
-  rw [perronDslope, dslope_of_ne _ hs, slope_def_field, perronFn_one, perronFn, Complex.cpow_zero,
-    sub_zero, sub_div, one_div]
-
-private theorem differentiable_perronDslope (hx : x ≠ 0) : Differentiable ℂ (perronDslope x) := by
-  rw [perronDslope, ← differentiableOn_univ]
-  exact (Complex.differentiableOn_dslope Filter.univ_mem).2
-    (differentiable_ofReal_cpow hx).differentiableOn
-
-private theorem integral_perronDslope_comp (hx : 0 < x) {g : ℝ → ℂ} (hg : Continuous g)
+private theorem integral_perronIntervalKernel_one_comp (hx : 0 < x) {g : ℝ → ℂ} (hg : Continuous g)
     (hg0 : ∀ t, g t ≠ 0) (u v : ℝ) :
-    (∫ t in u..v, perronDslope x (g t))
+    (∫ t in u..v, perronIntervalKernel 1 x (g t))
       = (∫ t in u..v, perronFn x (g t)) - ∫ t in u..v, perronFn 1 (g t) := by
   rw [← intervalIntegral.integral_sub (intervalIntegrable_perronFn_comp hx.ne' hg hg0 u v)
     (intervalIntegrable_perronFn_comp one_ne_zero hg hg0 u v)]
-  exact intervalIntegral.integral_congr fun t _ => perronDslope_eq_sub (hg0 t)
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  simp [perronIntervalKernel_eq_div (hg0 t), perronFn, sub_div]
 
 /-- A vertical side contributes `2 arctan (T / c)` to the integral of `1 / s`. -/
 private theorem integral_perronFn_one_vertical (hc : c ≠ 0) (T : ℝ) :
@@ -568,16 +556,18 @@ private theorem norm_integral_perronFn_sub_two_pi_le_of_le (hx1 : 1 < x) (hc : 0
   have hx : 0 < x := lt_trans zero_lt_one hx1
   have hB0 : 0 < B := lt_of_lt_of_le hc hcB
   have hab : (-B : ℝ) ≤ c := by linarith
-  have hcauchy := integral_perronRectangle_eq_zero (perronDslope x) (-B) c T
-    (differentiable_perronDslope hx.ne').differentiableOn
+  have hd : Differentiable ℂ (perronIntervalKernel 1 x) := fun z =>
+    (analyticAt_perronIntervalKernel one_ne_zero hx.ne' z).differentiableAt
+  have hcauchy := integral_perronRectangle_eq_zero (perronIntervalKernel 1 x) (-B) c T
+    hd.differentiableOn
   -- Split the entire integrand into the integrand at `x` and the integrand at `1`.
-  rw [integral_perronDslope_comp hx (continuous_horizontalLine (-T))
+  rw [integral_perronIntervalKernel_one_comp hx (continuous_horizontalLine (-T))
       (ofReal_add_mul_I_ne_zero_of_im (neg_ne_zero.2 hT.ne')),
-    integral_perronDslope_comp hx (continuous_horizontalLine T)
+    integral_perronIntervalKernel_one_comp hx (continuous_horizontalLine T)
       (ofReal_add_mul_I_ne_zero_of_im hT.ne'),
-    integral_perronDslope_comp hx (continuous_verticalLine c)
+    integral_perronIntervalKernel_one_comp hx (continuous_verticalLine c)
       (Complex.ofReal_add_mul_I_ne_zero hc.ne'),
-    integral_perronDslope_comp hx (continuous_verticalLine (-B))
+    integral_perronIntervalKernel_one_comp hx (continuous_verticalLine (-B))
       (Complex.ofReal_add_mul_I_ne_zero (neg_ne_zero.2 hB0.ne'))] at hcauchy
   -- The four sides of the integrand at `1` contribute the residue `2 π i`.
   have e₁ := integral_perronFn_one_horizontal_diff hT.ne' (-B) c
