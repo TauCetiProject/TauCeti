@@ -8,11 +8,13 @@ module
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 
 /-!
-# Isomorphisms of spectral sequences
+# Morphisms and isomorphisms of spectral sequences
 
 The components of an isomorphism `e : E ≅ E'` of spectral sequences at each position of each page
 are inverse to each other (`CategoryTheory.SpectralSequence.hom_inv_id_hom_f`,
-`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`).
+`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`). A morphism of spectral sequences also commutes
+with the inverses of the isomorphisms between the homology of a page and the next page
+(`CategoryTheory.SpectralSequence.Hom.hom_f_comp_iso_inv`).
 -/
 
 public section
@@ -37,5 +39,14 @@ lemma inv_hom_id_hom_f (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     (e.inv.hom r hr).f pq ≫ (e.hom.hom r hr).f pq = 𝟙 _ := by
   rw [← HomologicalComplex.comp_f, ← comp_hom _ _ r hr, e.inv_hom_id, id_hom,
     HomologicalComplex.id_f]
+
+/-- A morphism of spectral sequences commutes with the inverses of the isomorphisms between the
+homology of a page and the next page: this is the inverse form of `Hom.comm`. -/
+@[reassoc]
+lemma Hom.hom_f_comp_iso_inv (f : E ⟶ E') (r r' : ℤ) (pq : κ) (hrr' : r + 1 = r' := by lia)
+    (hr : r₀ ≤ r := by lia) :
+    (f.hom r').f pq ≫ (E'.iso r r' pq hrr' hr).inv =
+      (E.iso r r' pq hrr' hr).inv ≫ HomologicalComplex.homologyMap (f.hom r hr) pq := by
+  rw [Iso.comp_inv_eq, Category.assoc, f.comm r r' pq hrr' hr, Iso.inv_hom_id_assoc]
 
 end CategoryTheory.SpectralSequence

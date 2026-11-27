@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Continuation
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.E2
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
+import TauCeti.Algebra.Homology.SpectralSequence.Basic
+
 /-!
 # Continuation maps on the second page of the index spectral sequence
 
@@ -427,20 +429,6 @@ private theorem indexSecondPageShortComplexIso_hom_naturality (a b : ℤ) :
       (indexSpectralSequenceMap_hom_two_f_comp hM hν _ (a + 2, b - 1) (b - 1) b rfl
         (by dsimp only; ring) (by dsimp only; ring))
 
-omit [DecidableEq P] [DecidableEq Q] in
-/-- On the second page, the morphism of index spectral sequences is the map induced on the
-homology of the first page. The proofs of the inequalities on the page numbers are arguments, so
-that rewriting with this lemma reuses those of the goal. -/
-@[reassoc]
-private theorem indexSpectralSequenceMap_hom_three_f_comp_iso_inv (pq : ℤ × ℤ)
-    (h₁ : (2 : ℤ) + 1 = 3) (h₂ : (2 : ℤ) ≤ 2) :
-    ((ν.indexSpectralSequenceMap hM hν).hom 3).f pq ≫
-        ((mQ.indexSpectralSequence dM hM).iso 2 3 pq h₁ h₂).inv =
-      ((mP.indexSpectralSequence dM hM).iso 2 3 pq h₁ h₂).inv ≫
-        HomologicalComplex.homologyMap ((ν.indexSpectralSequenceMap hM hν).hom 2) pq := by
-  rw [Iso.comp_inv_eq, Category.assoc, (ν.indexSpectralSequenceMap hM hν).comm 2 3 pq h₁ h₂,
-    Iso.inv_hom_id_assoc]
-
 /-- The map induced on the homology of the first page at `(a, b)` is that of the classical
 continuation map, under the identifications of `indexSpectralSequenceSecondPageXIso`. -/
 private theorem homologyMap_indexSpectralSequenceMap_hom_two_comp (a b : ℤ) :
@@ -480,7 +468,8 @@ theorem indexSpectralSequenceMap_hom_three_f_comp_secondPageXIso_hom (a b : ℤ)
   rw [TwistingCocycle.indexSpectralSequenceSecondPageXIso_eq,
     TwistingCocycle.indexSpectralSequenceSecondPageXIso_eq]
   simp only [Iso.trans_hom, Iso.symm_hom, ShortComplex.homologyMapIso_hom, Category.assoc]
-  rw [indexSpectralSequenceMap_hom_three_f_comp_iso_inv_assoc,
+  -- The placeholders make the rewrite reuse the goal's proofs of the page-number conditions.
+  rw [SpectralSequence.Hom.hom_f_comp_iso_inv_assoc _ _ _ _ _ _,
     homologyMap_indexSpectralSequenceMap_hom_two_comp]
 
 end ContinuationCocycle
