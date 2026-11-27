@@ -114,11 +114,12 @@ theorem inv_mul_mul_mem_unitaryGroupOf {B : Matrix n n R} {x : GL n R}
   set y : Matrix n n R := ((x⁻¹ : GL n R) : Matrix n n R)
   -- `x⁻¹` pulls the form `B` back to the form `A`: this is the Gram identity for `F = x⁻¹`.
   have h : star y * B * y = A := by
-    have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx y
+    have h := conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx y y
     rw [Units.mul_inv, conjTranspose_one, Matrix.one_mul, Matrix.mul_one] at h
     rw [star_eq_conjTranspose, ← h]
   -- `(x⁻¹ (g x))ᴴ B (x⁻¹ (g x)) = (g x)ᴴ A (g x) = xᴴ A x = B`
-  have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h ((g * x : GL n R) : Matrix n n R)
+  have h' := conjTranspose_mul_mul_mul_of_star_mul_mul_eq h
+    ((g * x : GL n R) : Matrix n n R) ((g * x : GL n R) : Matrix n n R)
   rw [Units.val_mul, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hg,
     ← star_eq_conjTranspose (x : Matrix n n R), hx] at h'
   simpa only [y, Units.val_mul, Matrix.mul_assoc, star_eq_conjTranspose] using h'
