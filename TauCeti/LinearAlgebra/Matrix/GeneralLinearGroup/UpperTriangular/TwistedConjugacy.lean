@@ -48,7 +48,8 @@ proceeds by successive approximation:
 
 * Starting from `g = k₀ * diag(t) * k₁` with `k₀, k₁ ∈ I₁`, we have `X k₀ ∈ H 0`.
 * Using the Iwahori factorization `I₁ = U₁ · L₁` from
-  `TauCeti.exists_upperTriangular_mul_conj_mem_map_iwahoriOne`, upper-triangular elements of `I₁`
+  `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular`, upper-triangular
+  elements of `I₁`
   stay in `H j` for all `j ≥ 0` while lower-triangular elements of `I₁` are contracted into
   `H (-1)` by `diag(t)⁻¹ (·) diag(t)`. This widens the range `[0, b]` to `[0, b + 1]`.
 * Multiplying `k` on the right by `diag(t) * X k * diag(t)⁻¹ ∈ I₁` shifts the range `[-a, b + 1]`
@@ -133,8 +134,16 @@ private lemma widen_twistedConj {t : m → Kˣ}
     {g : GL m K} (b : ℕ) (k : I1 K m)
     (hk : ∀ j : ℤ, 0 ≤ j → j ≤ b → twistedConj t g σ k ∈ conjI1 t j) :
     ∃ k' : I1 K m, ∀ j : ℤ, 0 ≤ j → j ≤ b + 1 → twistedConj t g σ k' ∈ conjI1 t j := by
-  obtain ⟨u, hu, hutri, hu_conj⟩ :=
-    exists_upperTriangular_mul_conj_mem_map_iwahoriOne (valSubring K) htA (hk 0 le_rfl (by omega))
+  have hx0 : twistedConj t g σ k ∈ I1 K m := by simpa using hk 0 le_rfl (by omega)
+  obtain ⟨u, hu_ut, -, -, -, -, -, hI1⟩ :=
+    exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular (valSubring K)
+      (twistedConj t g σ k)
+  obtain ⟨hu, hl_lt⟩ := hI1 hx0
+  have hutri : (u : Matrix m m K).IsUpperTriangular :=
+    (UpperUnitriangularGroup.mem_iff.mp hu_ut).isUpperTriangular
+  have hu_conj : (diagGL t)⁻¹ * (u⁻¹ * twistedConj t g σ k) * diagGL t ∈ I1 K m :=
+    diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular (valSubring K) htA
+      ((I1 K m).mul_mem ((I1 K m).inv_mem hu) hx0) hl_lt
   obtain ⟨z, hz⟩ := hσ_surj (u⁻¹ * twistedConj t g σ k)
   have hu_mem (j : ℕ) : u ∈ conjI1 t j := by
     have htpow : Monotone fun i : m ↦ (valSubring K).valuation ((t ^ j) i : K) := fun _ _ hle ↦ by

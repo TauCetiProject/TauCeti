@@ -189,34 +189,6 @@ theorem diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → K�
   · rw [diagGL_mul_mul_inv_apply]
     simpa [Pi.inv_apply, Units.val_inv_eq_inv_val, mul_comm, mul_assoc] using hdiag i
 
-/-- Every element `x ∈ I₁` factors as `x = u * l` with `u ∈ I₁` upper triangular and
-`diag(t)⁻¹ * l * diag(t) ∈ I₁` whenever `t` is dominant. -/
-theorem exists_upperTriangular_mul_conj_mem_map_iwahoriOne {t : m → Kˣ}
-    (ht : Monotone fun i ↦ A.valuation (t i : K)) {x : GL m K}
-    (hx : x ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) :
-    ∃ u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)),
-      (u : Matrix m m K).IsUpperTriangular ∧
-      (diagGL t)⁻¹ * (u⁻¹ * x) * diagGL t ∈
-        (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) := by
-  rcases Subgroup.mem_map.mp hx with ⟨xA, hxA, rfl⟩
-  obtain ⟨uA, huA_ut, hlA_lt⟩ :=
-    exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul (m := m)
-      (IsLocalRing.ringJacobson_eq_maximalIdeal A).ge
-      ((iwahoriOne_le_iwahori : iwahoriOne m A ≤ iwahori m A) hxA)
-  have huA_tri := UpperUnitriangularGroup.mem_iff.mp huA_ut
-  let f := GeneralLinearGroup.map (n := m) (algebraMap A K)
-  have huA_I1 : uA ∈ iwahoriOne m A :=
-    upperUnitriangularCongruenceSubgroup_mono bot_le
-      (by rwa [upperUnitriangularCongruenceSubgroup_bot])
-  refine ⟨f uA, Subgroup.mem_map_of_mem f huA_I1, fun i j hji ↦ ?_, ?_⟩
-  · simp [f, huA_tri.isUpperTriangular hji]
-  · have hl_mem : (f uA)⁻¹ * f xA ∈ (iwahoriOne m A).map f := by
-      rw [← map_inv, ← map_mul]
-      exact Subgroup.mem_map_of_mem f (Subgroup.mul_mem _ (Subgroup.inv_mem _ huA_I1) hxA)
-    refine diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular A ht hl_mem fun i j hij ↦ ?_
-    rw [← map_inv, ← map_mul, GeneralLinearGroup.map_apply]
-    simp [hlA_lt hij]
-
 /-! ### Pivots -/
 
 /-- `p` is the *pivot* of `x`: the entry `x p` is nonzero, and `p` is the first index at which
