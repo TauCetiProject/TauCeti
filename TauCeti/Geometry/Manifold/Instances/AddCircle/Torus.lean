@@ -50,7 +50,8 @@ For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every tran
 
 * `AddCircle.instDistribMulActionGeneralLinearGroup`: the action of `GL(ι, ℤ)` on
   `ι → AddCircle p` by additive maps.
-* `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
+* `AddCircle.instContinuousConstSMulGeneralLinearGroup`,
+  `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by continuous and by smooth maps.
 * `AddCircle.contMDiff_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` is smooth.
 * `AddCircle.hasMFDerivAt_coe_pi`, `AddCircle.mfderiv_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has
   derivative the identity.
@@ -203,6 +204,13 @@ instance instDistribMulActionGeneralLinearGroup : DistribMulAction (GL ι ℤ) (
 theorem generalLinearGroup_smul_eq_smulVecHom (A : GL ι ℤ) (x : ι → AddCircle p) :
     A • x = (A : Matrix ι ι ℤ).smulVecHom (AddCircle p) x :=
   funext fun i ↦ by rw [generalLinearGroup_smul_apply, smulVecHom_apply]
+
+/-- Invertible integer matrices act on the torus `ι → AddCircle p` by continuous maps, the maps
+`Matrix.smulVecHom A (AddCircle p)`. -/
+instance instContinuousConstSMulGeneralLinearGroup :
+    ContinuousConstSMul (GL ι ℤ) (ι → AddCircle p) where
+  continuous_const_smul A := ((A : Matrix ι ι ℤ).smulVecHom (AddCircle p)).continuous.congr
+    fun x ↦ (generalLinearGroup_smul_eq_smulVecHom p A x).symm
 
 /-- The covering map `(ι → ℝ) → (ι → AddCircle p)` intertwines the action of an integer matrix `A`
 on the torus with the multiplication of real vectors by `A`. -/

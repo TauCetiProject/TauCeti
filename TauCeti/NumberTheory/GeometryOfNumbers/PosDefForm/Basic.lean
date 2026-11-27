@@ -257,6 +257,11 @@ theorem similar_equivalence : Equivalence (Similar (n := n)) :=
 def IsIntegralForm (A : PosDefForm n) : Prop :=
   ∃ M : Matrix (Fin n) (Fin n) ℤ, M.map ((↑) : ℤ → ℝ) = A.val
 
+/-- An integral form is the real cast of an integer matrix. -/
+theorem isIntegralForm_iff_exists_matrix {A : PosDefForm n} :
+    A.IsIntegralForm ↔ ∃ M : Matrix (Fin n) (Fin n) ℤ, M.map (Int.cast : ℤ → ℝ) = A.val :=
+  Iff.rfl
+
 /-- A form is *primitive* when it is integral and its entries have gcd `1`. In rank zero the gcd
 of the empty family of entries is `0`, so no form of rank zero is primitive. -/
 def IsPrimitiveForm (A : PosDefForm n) : Prop :=

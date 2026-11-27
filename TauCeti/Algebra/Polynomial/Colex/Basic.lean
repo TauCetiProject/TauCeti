@@ -49,6 +49,8 @@ which `t` exceeds every integer; it is not Archimedean. It is moreover an ordere
   positive polynomial is strictly monotone when multiplication by a positive element of `R` is.
 * `Polynomial.Colex.isOrderedRing`, `Polynomial.Colex.isStrictOrderedRing`: the order is
   compatible with multiplication.
+* `Polynomial.leadingCoeff_add_pos`, `Polynomial.leadingCoeff_sum_pos`: positive leading
+  coefficients do not cancel in sums, since they are the positive elements of `Colex R[X]`.
 
 ## Implementation notes
 
@@ -382,5 +384,28 @@ noncomputable instance predSubOrder [PredSubOrder R] : PredSubOrder (Colex R[X])
 end Ring
 
 end Colex
+
+section LeadingCoeff
+
+variable {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedCancelAddMonoid R]
+
+/-- Positive leading coefficients cannot cancel: the sum of two polynomials with positive leading
+coefficients has positive leading coefficient. -/
+theorem leadingCoeff_add_pos {p q : R[X]} (hp : 0 < p.leadingCoeff) (hq : 0 < q.leadingCoeff) :
+    0 < (p + q).leadingCoeff := by
+  simpa using Colex.pos_iff.1 (add_pos (Colex.pos_iff.2 hp) (Colex.pos_iff.2 hq) :
+    0 < toColex p + toColex q)
+
+/-- A nonempty finite sum of polynomials with positive leading coefficients has positive leading
+coefficient. -/
+theorem leadingCoeff_sum_pos {ι : Type*} {s : Finset ι} {f : ι → R[X]} (hs : s.Nonempty)
+    (hf : ∀ i ∈ s, 0 < (f i).leadingCoeff) : 0 < (∑ i ∈ s, f i).leadingCoeff := by
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton i => simpa using hf i (by simp)
+  | cons i s hi _ ih =>
+    rw [Finset.sum_cons]
+    exact leadingCoeff_add_pos (hf i (by simp)) (ih fun j hj ↦ hf j (by simp [hj]))
+
+end LeadingCoeff
 
 end Polynomial

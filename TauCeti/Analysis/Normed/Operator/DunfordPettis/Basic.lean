@@ -15,7 +15,7 @@ import TauCeti.Analysis.Normed.Lp.Schur
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.Analysis.Normed.Operator.WeaklyCompact.ZeroAtInfty
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!

@@ -36,8 +36,10 @@ class whose image under a map `Sⁿ ⟶ Y` computes local degrees.
 * `TauCeti.isFundamentalClass_singularHomologyTopCatSphereGenerator`: consequently the standard
   generator of `Hₙ(Sⁿ; k)`, `n ≥ 1`, is a fundamental class of `Sⁿ` in the sense of
   `TauCeti.IsFundamentalClass`, for every ring `k`.
+* `TauCeti.exists_isFundamentalClass_sphere`: so the unit sphere of every real normed space of
+  finite dimension at least `2` has a fundamental class.
 
-Coefficients are an object `R` of an abelian category with coproducts, except in the last three
+Coefficients are an object `R` of an abelian category with coproducts, except in the last four
 results, which are about modules.
 -/
 
@@ -192,5 +194,16 @@ theorem isFundamentalClass_singularHomologyTopCatSphereGenerator (k : Type w) [R
   -- `asIso` explicitly rather than found by instance search.
   exact (@asIso _ _ _ _ _ h).toLinearEquiv.span_singleton_apply_eq_top_iff.2
     Ideal.span_singleton_one
+
+/-- **The unit sphere of a finite-dimensional real normed space has a fundamental class.** For a
+real normed space `E` of dimension `d + 2`, the image of the standard generator of `Hd₊₁(Sᵈ⁺¹; k)`
+under a homeomorphism from the standard sphere is a fundamental class of the unit sphere of `E`,
+for every ring `k`. -/
+theorem exists_isFundamentalClass_sphere {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {d : ℕ} (hd : Module.finrank ℝ E = d + 2) (k : Type w) [Ring k] :
+    ∃ μ : ((TopCat.toSSet.obj (TopCat.of (sphere (0 : E) 1))).homology (ModuleCat.of k k)
+      (d + 1) : ModuleCat.{w} k), IsFundamentalClass μ :=
+  ⟨_, (isFundamentalClass_singularHomologyTopCatSphereGenerator k d).map_homeomorph
+    (Homeomorph.ulift.trans (sphereHomeomorphOfFinrankEq (by rw [finrank_euclideanSpace_fin, hd])))⟩
 
 end TauCeti

@@ -64,6 +64,8 @@ characterises the generators of `ker θ` as its distinguished elements
 * `WittVector.coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta`: the zeroth Witt coordinate of an
   element of `ker θ` lies in the Jacobson radical of `A♭`.
 * `WittVector.natCast_dvd_fontaineTheta_sub_untilt`: `θ x ≡ (x₀)♯` modulo `p`.
+* `WittVector.associated_untilt_coeff_zero_of_isDistinguished`: for a distinguished `ξ ∈ ker θ`,
+  `(ξ₀)♯` is a unit multiple of `p`.
 
 ## References
 
@@ -209,6 +211,20 @@ theorem coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta {ξ : WittVector p (Pre
 theorem natCast_dvd_fontaineTheta_sub_untilt (x : WittVector p (PreTilt A p)) :
     (p : A) ∣ fontaineTheta A p x - (x.coeff 0).untilt := by
   rw [← mem_span_singleton, ← Ideal.Quotient.eq, mk_fontaineTheta, PreTilt.mk_untilt_eq_coeff_zero]
+
+/-- **The sharp of the zeroth Witt coordinate of a distinguished element of `ker θ` is a unit
+multiple of `p`.** Writing a distinguished `ξ` as `[ξ₀] + p u` with `u` a unit,
+`0 = θ(ξ) = (ξ₀)♯ + p θ(u)`. -/
+theorem associated_untilt_coeff_zero_of_isDistinguished {ξ : WittVector p (PreTilt A p)}
+    (hξ : ξ ∈ RingHom.ker (fontaineTheta A p)) (hd : ξ.IsDistinguished) :
+    Associated (ξ.coeff 0).untilt (p : A) := by
+  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp hd
+  have h := RingHom.mem_ker.mp hξ
+  rw [hu, map_add, map_mul, map_natCast, fontaineTheta_teichmuller] at h
+  have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
+  refine Associated.symm ⟨-hθu.unit, ?_⟩
+  rw [Units.val_neg, hθu.unit_spec]
+  linear_combination -h
 
 end Kernel
 

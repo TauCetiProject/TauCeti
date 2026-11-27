@@ -104,6 +104,21 @@ lemma curry_evalAt {Y Z : SSet.{u}} (x : K _⦋0⦌) (f : K ⊗ Y ⟶ Z) :
     curry f ≫ evalAt x Z = lift (const x) (𝟙 Y) ≫ f := by
   simpa [evalAt, comp_lift_assoc] using lift_curry_ihom_ev_app (const x) (𝟙 Y) f
 
+variable {K} in
+/-- Restricting the uncurried form `K ⊗ Y ⟶ Z` of `f : Y ⟶ Fun(K, Z)` to a vertex `v` of `K` is
+evaluation of `f` at `v`. -/
+@[reassoc]
+lemma yonedaEquiv_symm_whiskerRight_uncurry {Y Z : SSet.{u}} (v : K _⦋0⦌)
+    (f : Y ⟶ (ihom K).obj Z) :
+    (yonedaEquiv.symm v : Δ[0] ⟶ K) ▷ Y ≫ uncurry f = snd _ _ ≫ f ≫ evalAt v Z := by
+  have h := curry_evalAt v (uncurry f)
+  rw [curry_uncurry] at h
+  rw [h, comp_lift_assoc]
+  congr 1
+  ext : 1
+  · simp [yonedaEquiv_symm_zero]
+  · simp
+
 /-- Evaluating a constant map at a vertex returns its value. -/
 @[reassoc (attr := simp)]
 lemma constMaps_evalAt (x : K _⦋0⦌) (Z : SSet.{u}) : constMaps K Z ≫ evalAt x Z = 𝟙 Z := by

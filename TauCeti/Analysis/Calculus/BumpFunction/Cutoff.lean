@@ -49,8 +49,10 @@ agrees, at positions near a compact subset of `U`, with a function `C^k` on the 
 which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
-(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
+(`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`), and a `C¹` cutoff supported in `P`
+multiplies a map dominated with its derivative by a jet `J` into a map whose derivative is bounded
+in `Lᵖ` by `J` on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`). Locally finite sums
+of smooth functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`). In particular the
 integer translates `(x, t) ↦ f (x, t + n)` of a compactly supported map are locally finite
 (`TauCeti.exists_finset_eventually_eq_zero_add_intCast`), so its periodization `Σₙ f (x, t + n)`
 is `C^k` when `f` is (`TauCeti.contDiff_tsum_add_intCast`); it has period one in `t`
@@ -368,6 +370,42 @@ theorem eLpNorm_fderiv_restrict_le_of_subset_interior [NormedSpace ℝ E] [Measu
     simp [hy1]
   rw [MeasureTheory.eLpNorm_congr_ae heq]
   exact MeasureTheory.eLpNorm_mono_measure _ MeasureTheory.Measure.restrict_le_self
+
+open MeasureTheory in
+/-- **The derivative of a cut-off map in `Lᵖ`.** Let `χ` be a `C¹` cutoff with `|χ| ≤ 1` and
+`‖Dχ‖ ≤ C` whose topological support lies in a measurable set `P`, and let `u` be a `C¹` map
+dominated by a jet `J`, in the sense that `‖u‖ ≤ ‖J‖` and `‖Du‖ ≤ c ‖J‖`. Then the derivative of
+`χ u` is bounded in `Lᵖ(μ)` by `C + c` times the `Lᵖ(P)` norm of `J`. -/
+theorem eLpNorm_fderiv_smul_le_of_tsupport_subset [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] {μ : Measure E} {χ : E → ℝ} {C c : ℝ}
+    (hχ : ContDiff ℝ 1 χ) (hχ1 : ∀ x, |χ x| ≤ 1) (hC : ∀ x, ‖fderiv ℝ χ x‖ ≤ C) {P : Set E}
+    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) {u : E → F} (hu : ContDiff ℝ 1 u) {J : E → G}
+    (hJ : ∀ x, ‖u x‖ ≤ ‖J x‖) (hdJ : ∀ x, ‖fderiv ℝ u x‖ ≤ c * ‖J x‖) (p : ENNReal) :
+    eLpNorm (fderiv ℝ fun x ↦ χ x • u x) p μ ≤
+      ENNReal.ofReal (C + c) * eLpNorm J p (μ.restrict P) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  have hpt : ∀ x, ‖fderiv ℝ (fun x ↦ χ x • u x) x‖ ≤ (C + c) * ‖P.indicator J x‖ := by
+    intro x
+    by_cases hx : x ∈ P
+    · rw [indicator_of_mem hx,
+        fderiv_fun_smul (hχ.differentiable one_ne_zero x) (hu.differentiable one_ne_zero x)]
+      calc _ ≤ ‖χ x‖ * ‖fderiv ℝ u x‖ + ‖fderiv ℝ χ x‖ * ‖u x‖ := by
+            refine (norm_add_le _ _).trans ?_
+            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
+        _ ≤ 1 * (c * ‖J x‖) + C * ‖J x‖ := by
+            gcongr
+            exacts [(Real.norm_eq_abs _).trans_le (hχ1 x), hdJ x, hC x, hJ x]
+        _ = (C + c) * ‖J x‖ := by ring
+    · have h0 : (fun x ↦ χ x • u x) =ᶠ[𝓝 x] 0 := by
+        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hx (hχP h)] with y hy
+        simp [hy]
+      rw [h0.fderiv_eq, indicator_of_notMem hx]
+      simp
+  rw [← eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
+  exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+    ((hχ.smul hu).continuous_fderiv one_ne_zero).aestronglyMeasurable
+    (Filter.Eventually.of_forall hpt) p
 
 /-- A compactly supported `C¹` function is bounded, and Hölder continuous with every exponent
 `α ≤ 1`, with one constant `C` for both: it is Lipschitz and of bounded oscillation. -/
@@ -850,6 +888,25 @@ theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E]
     calc π / 2 * ‖fderiv ℝ ψ z‖ ≤ π / 2 * (C / K) := by gcongr
       _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
       _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
+
+open Real in
+/-- An angle cutoff `θ₀` with gradient at most `ε` that equals `π / 2` near every `t` with
+`R₂ < |t|`, composed with `Φ - s₀` for a differentiable `Φ` with gradient at most one, has
+gradient at most `ε` and equals `π / 2` near every `z` with `R₂ < Φ z - s₀`. -/
+theorem norm_fderiv_comp_sub_le_and_eventuallyEq [NormedSpace ℝ E] {θ₀ : ℝ → ℝ} {Φ : E → ℝ}
+    {ε R₂ : ℝ} (s₀ : ℝ) (hθ₀ : Differentiable ℝ θ₀) (hΦ : Differentiable ℝ Φ)
+    (hθ₀out : ∀ t, R₂ < ‖t‖ → θ₀ =ᶠ[𝓝 t] fun _ ↦ π / 2)
+    (hθ₀d : ∀ t, ‖fderiv ℝ θ₀ t‖ ≤ ε) (hΦd : ∀ z, ‖fderiv ℝ Φ z‖ ≤ 1) :
+    (∀ z, ‖fderiv ℝ (fun t ↦ θ₀ (Φ t - s₀)) z‖ ≤ ε) ∧
+      ∀ z, R₂ < Φ z - s₀ → (fun t ↦ θ₀ (Φ t - s₀)) =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
+  refine ⟨fun z ↦ ?_, fun z hz ↦ ?_⟩
+  · have hd : HasFDerivAt (fun t ↦ θ₀ (Φ t - s₀))
+        ((fderiv ℝ θ₀ (Φ z - s₀)).comp (fderiv ℝ Φ z)) z :=
+      (hθ₀ _).hasFDerivAt.comp z ((hΦ z).hasFDerivAt.sub_const s₀)
+    rw [hd.fderiv]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    simpa using mul_le_mul (hθ₀d _) (hΦd z) (norm_nonneg _) ((norm_nonneg _).trans (hθ₀d 0))
+  · exact ((hΦ z).sub_const s₀).continuousAt.eventually (hθ₀out _ (hz.trans_le (le_abs_self _)))
 
 /-- **A smooth cutoff of the identity on the line.** For `r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
