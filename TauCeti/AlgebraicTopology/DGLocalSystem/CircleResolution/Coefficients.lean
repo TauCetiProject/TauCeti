@@ -254,6 +254,12 @@ private theorem d_eq_zero_iff {j : ℤ} (hj : -1 + 1 = j)
   obtain rfl : j = 0 := by omega
   rw [← (xZeroEquiv h𝓕 γ).map_eq_zero_iff, xZeroEquiv_d h𝓕 γ (by norm_num), xNegOneEquiv_apply]
 
+/-- `T - 1` sends `α` to `[γ] α - α`, where `T` is the action of the point chain of `γ`. -/
+private theorem representation_inv_sub_one_apply (α : 𝓕) :
+    (h𝓕.representation (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ - 1) α =
+      op (cubicalChainPoint (MooreLoopSpace B b) R γ) • α - α := by
+  rw [LinearMap.sub_apply, h𝓕.representation_fundamentalGroupHom_inv_apply, one_apply_eq_self]
+
 /-- The image of the differential into degree `0`, read on `𝓕`, is the range of `T - 1`, where `T`
 is the action of the point chain of `γ`. -/
 private theorem map_range_d {i : ℤ} (hi : i + 1 = 0) :
@@ -267,14 +273,12 @@ private theorem map_range_d {i : ℤ} (hi : i + 1 = 0) :
   · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
     refine ⟨((loopCellCocycle R γ).coefficientCochainComplexXEquiv 𝓕.isDGRightModule i x :
       Unit ⊕ Unit →₀ 𝓕) (Sum.inr ()), ?_⟩
-    rw [LinearMap.sub_apply, h𝓕.representation_fundamentalGroupHom_inv_apply,
-      one_apply_eq_self, xZeroEquiv_d h𝓕 γ hi]
+    rw [representation_inv_sub_one_apply, xZeroEquiv_d h𝓕 γ hi]
   · rintro ⟨β, rfl⟩
     obtain rfl : i = -1 := by omega
     refine ⟨_, ⟨(xNegOneEquiv h𝓕 γ).symm β, rfl⟩, ?_⟩
-    rw [xZeroEquiv_d h𝓕 γ hi, LinearMap.sub_apply,
-      h𝓕.representation_fundamentalGroupHom_inv_apply, one_apply_eq_self,
-      ← xNegOneEquiv_apply h𝓕, LinearEquiv.apply_symm_apply]
+    rw [xZeroEquiv_d h𝓕 γ hi, representation_inv_sub_one_apply, ← xNegOneEquiv_apply h𝓕,
+      LinearEquiv.apply_symm_apply]
 
 /-- The cycles of degree `-1`, read on `𝓕`, are the kernel of `T - 1`, where `T` is the action of
 the point chain of `γ`. -/
@@ -285,8 +289,7 @@ private theorem map_ker_d {j : ℤ} (hj : -1 + 1 = j) :
       LinearMap.ker (h𝓕.representation (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ - 1) := by
   ext α
   rw [Submodule.mem_map_equiv, LinearMap.mem_ker, d_eq_zero_iff h𝓕 γ hj,
-    LinearEquiv.apply_symm_apply, LinearMap.mem_ker, LinearMap.sub_apply,
-    h𝓕.representation_fundamentalGroupHom_inv_apply, one_apply_eq_self]
+    LinearEquiv.apply_symm_apply, LinearMap.mem_ker, representation_inv_sub_one_apply]
 
 end Terms
 
@@ -397,8 +400,7 @@ theorem nonempty_loopCellCocycle_homology_iso_of_forall_op_smul_eq
         ModuleCat.of R 𝓕) := by
   have hT : h𝓕.representation (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ - 1 = 0 :=
     LinearMap.ext fun α ↦ by
-      rw [LinearMap.sub_apply, h𝓕.representation_fundamentalGroupHom_inv_apply, h,
-        one_apply_eq_self, sub_self, LinearMap.zero_apply]
+      rw [representation_inv_sub_one_apply, h, sub_self, LinearMap.zero_apply]
   refine ⟨⟨loopCellCocycleHomologyZeroIso h𝓕 γ ≪≫
     (Submodule.quotEquivOfEqBot _ (by rw [hT, LinearMap.range_zero])).toModuleIso⟩,
     ⟨loopCellCocycleHomologyNegOneIso h𝓕 γ ≪≫
@@ -527,13 +529,15 @@ variable {R : Type} [CommRing R]
   {γ : MooreLoopSpace (AddCircle (1 : ℝ)) ((0 : ℝ) : AddCircle (1 : ℝ))}
 
 /-- **The twisted homology of the circle with coefficients in its double cover is the homology of
-the circle.** Let `γ` be a Moore loop at `0` whose class generates the fundamental group of
-`ℝ ⧸ ℤ`, so that `TauCeti.loopCellCocycle R γ` is Brown's resolution over the chains on the loops.
-With coefficients in the DG local system of the double cover `x ↦ 2 • x`, which is `R²` with the
-generator swapping the two coordinates, the twisted complex has homology `R` in degrees `0` and
-`-1`: the coinvariants and the invariants of the swap. Through the grading bridge `C^{-q} = C_q`
-this is the homology of the total space `S¹` of the cover, and not `R²`, the homology of `S¹ ⊔ S¹`
-that the trivial action would give
+the circle.** Let `γ` be a Moore loop at `0` whose class is the generator `[t ↦ t]` of the
+fundamental group of `ℝ ⧸ ℤ`, the class of `AddCircle.zsmulLoop 1 0 1`. (This is the loop for
+which `TauCeti.loopCellCocycle R γ` is expected to be Brown's resolution over the chains on the
+loops; that is motivation only, proved for the complex unit circle and `Circle.expLoop`, and not
+used here.) With coefficients in the DG local system of the double cover `x ↦ 2 • x`, which is
+`R²` with the generator swapping the two coordinates, the twisted complex has homology `R` in
+degrees `0` and `-1`: the coinvariants and the invariants of the swap. Through the grading bridge
+`C^{-q} = C_q` this is the homology of the total space `S¹` of the cover, and not `R²`, the
+homology of `S¹ ⊔ S¹` that the trivial action would give
 (`TauCeti.nonempty_loopCellCocycle_homology_iso_of_forall_op_smul_eq`). The homology in all other
 degrees vanishes (`TauCeti.isZero_loopCellCocycle_coefficientCochainComplex_homology`). -/
 theorem nonempty_loopCellCocycle_homology_iso_addCircleDoubleCover
@@ -554,20 +558,20 @@ theorem nonempty_loopCellCocycle_homology_iso_addCircleDoubleCover
     (B := TopCat.of (AddCircle (1 : ℝ))) ((0 : ℝ) : AddCircle (1 : ℝ))
   set e := isCoveringMap_addCircleDoubleCover.liftingLocalSystemEquiv R Φ
     (B := TopCat.of (AddCircle (1 : ℝ))) ((0 : ℝ) : AddCircle (1 : ℝ))
-  set T := h𝓕.representation (MooreLoopSpace.fundamentalGroupHom _ γ)⁻¹
+  set T := h𝓕.representation (MooreLoopSpace.fundamentalGroupHom _ γ)⁻¹ with hT_def
   set g := FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (AddCircle.zsmulLoop 1 0 1))
   -- The point chain of `γ` acts as the inverse of the generator `g`, which swaps the two sheets.
   have hswap := representation_liftingLocalSystemEquiv_addCircleDoubleCover (R := R) Φ
+  have hinv (x) : T (h𝓕.representation g x) = x := by
+    rw [hT_def, hγ, Representation.inv_self_apply]
   have hT₀ (r : R) : T (e (Finsupp.single fibZero r)) = e (Finsupp.single fibHalf r) := by
     have h : h𝓕.representation g (e (Finsupp.single fibHalf r)) =
         e (Finsupp.single fibZero r) := (hswap r).2
-    rw [← h]
-    exact hγ ▸ h𝓕.representation.inv_self_apply _ _
+    rw [← h, hinv]
   have hT₁ (r : R) : T (e (Finsupp.single fibHalf r)) = e (Finsupp.single fibZero r) := by
     have h : h𝓕.representation g (e (Finsupp.single fibZero r)) =
         e (Finsupp.single fibHalf r) := (hswap r).1
-    rw [← h]
-    exact hγ ▸ h𝓕.representation.inv_self_apply _ _
+    rw [← h, hinv]
   have hT (w : Fib →₀ R) : T (e w) =
       e (Finsupp.single fibHalf (w fibZero) + Finsupp.single fibZero (w fibHalf)) := by
     conv_lhs => rw [eq_single_fibZero_add_single_fibHalf w]

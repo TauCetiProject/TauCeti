@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.Algebra.AddCircle
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # The double cover of the circle
@@ -93,11 +94,8 @@ theorem addCircleDoubleCover_half :
 theorem addCircleDoubleCover_zero_ne_half :
     (⟨_, addCircleDoubleCover_zero⟩ :
         {x // addCircleDoubleCover x = ((0 : ℝ) : AddCircle (1 : ℝ))}) ≠
-      ⟨_, addCircleDoubleCover_half⟩ := fun h ↦ by
-  have h' : ((1 / 2 : ℝ) : AddCircle (1 : ℝ)) = 0 := (congrArg Subtype.val h).symm
-  have h'' := (AddCircle.coe_eq_zero_iff_of_mem_Ico (p := (1 : ℝ)) (a := 1 / 2)
-    ⟨by norm_num, by norm_num⟩).1 h'
-  norm_num at h''
+      ⟨_, addCircleDoubleCover_half⟩ := fun h ↦
+  AddCircle.coe_half_period_ne_zero one_ne_zero (congrArg Subtype.val h).symm
 
 /-- **Every point of the fibre of the double cover over `0` is `0` or `1 / 2`.** -/
 theorem addCircleDoubleCover_fiber_eq_zero_or_eq_half
