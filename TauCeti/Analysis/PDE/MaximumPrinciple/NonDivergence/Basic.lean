@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.InnerProductSpace.Calculus
@@ -84,6 +85,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
   symmetric part of the coefficient matrix.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_mul`: the principal part of a product.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_log`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied
+  to a logarithm.
 * `TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq`: conjugation of
   `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_b + c` by a weight `exp ∘ ℓ`, for functions that are `C²` at a point.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
@@ -336,6 +339,38 @@ theorem sum_mul_fderiv_fderiv_mul (A : Matrix ι ι ℝ) {η u : EuclideanSpace 
             fderiv ℝ η x (EuclideanSpace.single j 1)) := by
   simp only [fderiv_fderiv_mul_apply hη hu, Finset.mul_sum, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
+/-- **The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to a logarithm.** For a function `f` that is `C²`
+at `x` with `f x ≠ 0`, with `L = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`,
+
+`L (log f) = L f / f - ∑ᵢⱼ Aᵢⱼ ∂ᵢf ∂ⱼf / f²`
+
+at `x`. For `A = 1` and `v = 0` this is `ContDiffAt.laplacian_log`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_log (A : Matrix ι ι ℝ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hfx : f x ≠ 0) (v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ Real.log (f y)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (fun y ↦ Real.log (f y)) x v =
+      (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ f x v) / f x -
+        (∑ i, ∑ j, A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
+          fderiv ℝ f x (EuclideanSpace.single j 1))) / f x ^ 2 := by
+  have hlog : ContDiffAt ℝ 2 Real.log (f x) := Real.contDiffAt_log.mpr hfx
+  have hcomp : (fun y ↦ Real.log (f y)) = Real.log ∘ f := rfl
+  have hD1 : fderiv ℝ (Real.log ∘ f) x v = fderiv ℝ f x v / f x := by
+    rw [((hlog.differentiableAt two_ne_zero).hasDerivAt.comp_hasFDerivAt x
+      (hf.differentiableAt two_ne_zero).hasFDerivAt).fderiv]
+    simp [Real.deriv_log', div_eq_inv_mul]
+  have hd2 : iteratedDeriv 2 Real.log (f x) = -(f x ^ 2)⁻¹ := by
+    simp [iteratedDeriv_succ, Real.deriv_log', deriv_inv]
+  simp only [hcomp, hD1, fderiv_fderiv_scalar_comp_apply hlog hf, hd2, smul_eq_mul,
+    Real.deriv_log]
+  calc _ = ∑ i, ∑ j, (A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) / f x - A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
+            fderiv ℝ f x (EuclideanSpace.single j 1)) / f x ^ 2) + fderiv ℝ f x v / f x :=
+        congrArg (· + _) <| Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+    _ = _ := by
+      simp only [Finset.sum_sub_distrib, add_div, Finset.sum_div]
+      ring
 
 omit [DecidableEq ι] in
 /-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `c` for the
