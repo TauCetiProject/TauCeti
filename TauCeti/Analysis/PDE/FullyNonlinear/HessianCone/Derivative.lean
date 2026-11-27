@@ -41,20 +41,6 @@ namespace TauCeti
 
 variable {n k : ℕ}
 
-/-- An affine function `t ↦ (a + t) c + d` positive on the half-line `t ≥ 0` has nonnegative
-slope `c`. -/
-private theorem nonneg_of_forall_pos {a c d : ℝ} (h : ∀ t : ℝ, 0 ≤ t → 0 < (a + t) * c + d) :
-    0 ≤ c := by
-  by_contra! hc
-  have hc' : 0 < -c := by linarith
-  have := h (|a| + |d| / -c + 1) (by positivity)
-  have h1 : (a + (|a| + |d| / -c + 1)) * c ≤ (|d| / -c + 1) * c :=
-    mul_le_mul_of_nonpos_right (by linarith [neg_abs_le a]) hc.le
-  have h2 : (|d| / -c + 1) * c = -|d| + c := by
-    have := hc.ne
-    field_simp
-  linarith [le_abs_self d]
-
 /-- **`σ_{k;i} > 0` on `Γ_{k+1}`.** For `λ` in the Hessian cone `Γ_{k+1}`, the `k`-th elementary
 symmetric function of the entries of `λ` other than `λᵢ` is positive. -/
 theorem eval_update_zero_esymm_pos_of_mem_hessianCone {μ : Fin n → ℝ}
@@ -71,8 +57,15 @@ theorem eval_update_zero_esymm_pos_of_mem_hessianCone {μ : Fin n → ℝ}
     rw [← hline]
     exact mem_hessianCone.1 (add_mem_hessianCone_of_nonneg hμ (hsingle t ht)) (k + 1)
       (mem_Icc.2 ⟨by omega, le_rfl⟩)
-  -- So the slope `c` is nonnegative.
-  have hc : 0 ≤ c := nonneg_of_forall_pos hpos
+  -- So the slope `c` is nonnegative: for `c < 0` the value would tend to `-∞`.
+  have hc : 0 ≤ c := by
+    by_contra! hc
+    have hlim : Filter.Tendsto (fun t : ℝ ↦ (μ i + t) * c + d) Filter.atTop Filter.atBot :=
+      Filter.tendsto_atBot_add_const_right _ d
+        ((Filter.tendsto_atTop_add_const_left _ (μ i) Filter.tendsto_id).atTop_mul_const_of_neg hc)
+    obtain ⟨t, ht, hneg⟩ :=
+      ((Filter.eventually_ge_atTop 0).and (hlim.eventually_lt_atBot 0)).exists
+    exact (hpos t ht).not_gt hneg
   refine hc.lt_of_ne fun hc0 ↦ ?_
   -- If `c = 0`, the whole line lies in `Γ_{k+1}`, since `σ_{k+1}` is a positive constant on it.
   have hkn : k + 1 ≤ n := le_of_mem_hessianCone hμ

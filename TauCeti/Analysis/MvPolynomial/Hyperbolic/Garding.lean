@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
+import Mathlib.Analysis.Convex.Topology
 import TauCeti.Analysis.Polynomial.RootLocation
 
 /-!
@@ -37,6 +38,7 @@ fully nonlinear elliptic equations such as the complex Hessian equations require
 * `MvPolynomial.IsHyperbolic.gardingCone_eq_of_mem`: `Γ(p, b) = Γ(p, a)` for `b ∈ Γ(p, a)`.
 * `MvPolynomial.IsHyperbolic.convex_gardingCone`, `MvPolynomial.IsHyperbolic.add_mem_gardingCone`:
   `Γ` is a convex cone.
+* `MvPolynomial.IsHyperbolic.add_mem_gardingCone_of_mem_closure`: `Γ + closure Γ ⊆ Γ`.
 * `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos`: `D_b p > 0` on `Γ` for `b ∈ Γ`, `m ≥ 1`.
 
 ## Implementation notes
@@ -357,6 +359,20 @@ theorem add_mem_gardingCone (hp : IsHyperbolic p m a) {y : σ → ℝ} (hx : x �
       (by norm_num)) two_pos
   rwa [smul_add, smul_smul, smul_smul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, one_smul,
     one_smul] at h
+
+/-- The Gårding cone of a hyperbolic polynomial absorbs its closure under addition:
+`Γ(p, a) + closure Γ(p, a) ⊆ Γ(p, a)`, since `Γ(p, a)` is an open convex cone. -/
+theorem add_mem_gardingCone_of_mem_closure (hp : IsHyperbolic p m a) {y : σ → ℝ}
+    (hx : x ∈ gardingCone p a) (hy : y ∈ closure (gardingCone p a)) :
+    x + y ∈ gardingCone p a := by
+  have hopen := isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne'
+  -- `x / 2 + y / 2` is a combination of an interior point and a point of the closure.
+  have h := hp.convex_gardingCone.combo_interior_closure_mem_interior
+    (hopen.interior_eq.symm ▸ hx) hy (by norm_num : (0 : ℝ) < 1 / 2)
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  rw [hopen.interior_eq] at h
+  convert smul_mem_gardingCone hp.isHomogeneous h two_pos using 1
+  module
 
 /-- **Gårding's theorem, positivity of the derivatives.** For `p` hyperbolic of degree `m ≥ 1` in
 the direction `a` and `b ∈ Γ(p, a)`, the directional derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive
