@@ -34,7 +34,9 @@ to parameters with monodromy. Induction is functorial (`TauCeti.WeilDeligneParam
 morphisms; and `TauCeti.WeilDeligneParameter.Iso.ind`), and Frobenius reciprocity is natural in
 both parameters
 (`TauCeti.WeilDeligneParameter.Hom.toInd_comp`,
-`TauCeti.WeilDeligneParameter.Hom.toInd_comp_restrict`).
+`TauCeti.WeilDeligneParameter.Hom.toInd_comp_restrict`, and for the inverse direction
+`TauCeti.WeilDeligneParameter.Hom.ofInd_comp`,
+`TauCeti.WeilDeligneParameter.Hom.ofInd_comp_restrict`).
 
 ## Main definitions
 
@@ -355,6 +357,27 @@ theorem Hom.toInd_comp_restrict {V₀ : Type*} [AddCommGroup V₀] [Module E V�
       (φ.toInd hι hιc).comp g := by
   ext v w
   simp [g.map_r_apply]
+
+/-- Naturality of the inverse of Frobenius reciprocity in the parameter for `W'`: composing with
+the induction of `ψ : D₁' → D₂'` corresponds to composing with `ψ`. -/
+theorem Hom.ofInd_comp {D : WeilDeligneParameter E W V deg q}
+    {D₁' : WeilDeligneParameter E W' V' deg' (q ^ f)}
+    {D₂' : WeilDeligneParameter E W' V'' deg' (q ^ f)} (ψ : Hom D₁' D₂')
+    (Ψ : Hom D (D₁'.ind ι f hf hq hι)) :
+    ((ψ.ind hι).comp Ψ).ofInd hι hιc = ψ.comp (Ψ.ofInd hι hιc) := by
+  ext v
+  simp
+
+/-- Naturality of the inverse of Frobenius reciprocity in the parameter for `W`: precomposing
+with `g : D₀ → D` corresponds to precomposing with the restriction of `g`. -/
+theorem Hom.ofInd_comp_restrict {V₀ : Type*} [AddCommGroup V₀] [Module E V₀]
+    {D₀ : WeilDeligneParameter E W V₀ deg q} {D : WeilDeligneParameter E W V deg q}
+    {D' : WeilDeligneParameter E W' V' deg' (q ^ f)} (Ψ : Hom D (D'.ind ι f hf hq hι))
+    (g : Hom D₀ D) :
+    (Ψ.comp g).ofInd hι hιc =
+      (Ψ.ofInd hι hιc).comp (g.restrict : Hom (D₀.restrict ι hιc f hf) _) := by
+  ext v
+  simp
 
 end Functoriality
 
