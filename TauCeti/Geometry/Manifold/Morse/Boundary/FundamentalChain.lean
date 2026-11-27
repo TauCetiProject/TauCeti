@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import TauCeti.Geometry.Manifold.Morse.Boundary.OneDimensional
-import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
+import TauCeti.Geometry.Manifold.Morse.Stable.Orientation.Basic
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.LinearAlgebra.Determinant.Prod
 
