@@ -30,8 +30,9 @@ orientation `o` of `V` back to one orientation of `E x`, the fibre orientation o
 model orientation `o` read through `b`
 (`TauCeti.SpinCStructure.fiberOrientation_map_repr`), and `⋀² κ_p` intertwines the Hodge star of
 this orientation with that of `o` (`TauCeti.SpinCStructure.map_vectorFrame_hodgeStar`). The
-self-dual forms `Λ⁺_x` are the `1`-eigenspace of this Hodge star on `⋀² (E x)`. Hence, on the
-fibres, `C_x(⋆α) = C_x(α)`, anti-self-dual forms act by zero, and the trace pairing is
+self-dual forms `Λ⁺_x` are the `1`-eigenspace of this Hodge star on `⋀² (E x)`
+(`TauCeti.SpinCStructure.selfDualForms`). Hence, on the fibres, `C_x(⋆α) = C_x(α)`, anti-self-dual
+forms act by zero, and the trace pairing is
 `tr (C_x(α) C_x(β)) = (⟪α, β⟫ + ⟪⋆α, β⟫) dim W⁺_x`.
 
 **The adjoint and the isomorphism.** The adjoint `τ_x : End_ℂ (W⁺_x) → Λ⁺_x` is the model `τ` in a
@@ -50,6 +51,7 @@ The smoothness of these fibre maps along smooth sections is not treated here.
 
 ## Main definitions
 
+* `TauCeti.SpinCStructure.selfDualForms`: the self-dual two-forms `Λ⁺_x` of a fibre.
 * `TauCeti.SpinCStructure.cliffordRestrictionAdjoint`: the adjoint `τ_x` of the Clifford map.
 * `TauCeti.SpinCStructure.cliffordRestrictionEquiv`: the Clifford isomorphism
   `Λ⁺_x ≃ {T | T* = T, tr T = 0}` on a fibre.
@@ -143,10 +145,24 @@ local notation "⋆[" s ", " x "]" =>
   Orientation.hodgeStar (OrthonormalFrameLift.fiberOrientation (s : SpinCStructure F E 4)
     (Orientation.map (Fin 4) b.repr.toLinearEquiv o) x) (hklE x)
 
-/-- The self-dual two-forms `Λ⁺_x` on the fibre `E x`. -/
-local notation "Λ⁺[" s ", " x "]" =>
+omit [Fact (finrank ℝ V = 4)] in
+variable (o b) in
+/-- The self-dual two-forms `Λ⁺_x` on the fibre `E x`: the `1`-eigenspace of the Hodge star of the
+fibre orientation induced by `s` from the model orientation `o` of `V`, read through `b`. They are
+characterized by `⋆α = α` (`TauCeti.SpinCStructure.mem_selfDualForms_iff`). -/
+def selfDualForms (s : SpinCStructure F E 4) (x : X) : Submodule ℝ (⋀[ℝ]^2 (E x)) :=
   Module.End.eigenspace ((⋆[s, x] : ⋀[ℝ]^2 (E x) ≃ₗ[ℝ] ⋀[ℝ]^2 (E x)) :
     Module.End ℝ (⋀[ℝ]^2 (E x))) 1
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- A two-form on `E x` is self-dual if and only if `⋆α = α`. -/
+@[simp]
+theorem mem_selfDualForms_iff (s : SpinCStructure F E 4) {x : X} {α : ⋀[ℝ]^2 (E x)} :
+    α ∈ s.selfDualForms o b x ↔ ⋆[s, x] α = α := by
+  rw [selfDualForms, mem_eigenspace_iff, one_smul, LinearEquiv.coe_coe]
+
+/-- The self-dual two-forms `Λ⁺_x` on the fibre `E x`. -/
+local notation "Λ⁺[" s ", " x "]" => SpinCStructure.selfDualForms o b s x
 
 /-- The self-dual two-forms `Λ⁺` of the model space `V`. -/
 local notation "Λ⁺V" =>
@@ -176,15 +192,16 @@ theorem inner_map_vectorFrame_map_vectorFrame (s : SpinCStructure F E 4) {x : X}
 theorem map_vectorFrame_mem_eigenspace_hodgeStar (s : SpinCStructure F E 4) {x : X}
     (p : s.P x) {α : ⋀[ℝ]^2 (E x)} (hα : α ∈ Λ⁺[s, x]) :
     exteriorPower.map 2 (s.vectorFrame b p).toLinearMap α ∈ Λ⁺V := by
-  rw [mem_eigenspace_iff, one_smul, LinearEquiv.coe_coe] at hα ⊢
-  rw [← map_vectorFrame_hodgeStar, hα]
+  rw [mem_selfDualForms_iff] at hα
+  rw [mem_eigenspace_iff, one_smul, LinearEquiv.coe_coe, ← map_vectorFrame_hodgeStar, hα]
 
 /-- `⋀² κ_p⁻¹` maps the self-dual forms of `V` to those of `E x`. -/
-theorem map_vectorFrame_symm_mem_eigenspace_hodgeStar (s : SpinCStructure F E 4) {x : X}
+theorem map_vectorFrame_symm_mem_selfDualForms (s : SpinCStructure F E 4) {x : X}
     (p : s.P x) {α : ⋀[ℝ]^2 V} (hα : α ∈ Λ⁺V) :
     exteriorPower.map 2 (s.vectorFrame b p).symm.toLinearMap α ∈ Λ⁺[s, x] := by
   set κ := s.vectorFrame b p
-  rw [mem_eigenspace_iff, one_smul, LinearEquiv.coe_coe] at hα ⊢
+  rw [mem_eigenspace_iff, one_smul, LinearEquiv.coe_coe] at hα
+  rw [mem_selfDualForms_iff]
   apply exteriorPower.map_injective_field κ.injective
   rw [map_vectorFrame_hodgeStar, LinearIsometryEquiv.toLinearEquiv_symm, exteriorPower.map_map_symm,
     hα]
@@ -264,7 +281,7 @@ private theorem map_vectorFrame_symm_cliffordRestrictionAdjoint_mem (s : SpinCSt
         (SeibergWitten.cliffordRestrictionAdjoint o ρ hkl
           ((ContinuousLinearEquiv.conjContinuousAlgEquiv
             (frm p).toContinuousLinearEquiv).symm T)) ∈ Λ⁺[s, x] :=
-  map_vectorFrame_symm_mem_eigenspace_hodgeStar s p (Submodule.coe_mem _)
+  map_vectorFrame_symm_mem_selfDualForms s p (Submodule.coe_mem _)
 
 /-- The frame formula for the adjoint satisfies the defining property of the adjoint, in every
 frame `p`. -/
@@ -443,8 +460,8 @@ private theorem bijective_cliffordSelfDual (h₂ : finrank ℂ (positiveHalfSpin
   have h₃ := Orientation.two_mul_finrank_eigenspace_hodgeStar_one
     (s.fiberOrientation (Orientation.map (Fin 4) b.repr.toLinearEquiv o) x) even_two two_pos
     (hklE x)
-  rw [finrank_traceFreeSelfAdjoint, finrank_halfSpinorBundle, ← positiveHalfSpinors_eq_eigenspace,
-    h₂]
+  rw [selfDualForms, finrank_traceFreeSelfAdjoint, finrank_halfSpinorBundle,
+    ← positiveHalfSpinors_eq_eigenspace, h₂]
   norm_num [Nat.choose] at h₃ ⊢
   omega
 
