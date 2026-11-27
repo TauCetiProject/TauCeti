@@ -241,7 +241,7 @@ theorem _root_.ContinuousMonoidHom.inv_apply {A E : Type*} [Monoid A] [Topologic
 
 /-- The pointwise inverse of a continuous homomorphism into a commutative topological group has
 the same kernel. -/
-@[to_additive (attr := simp) /-- The pointwise negation of a continuous additive homomorphism
+@[to_additive /-- The pointwise negation of a continuous additive homomorphism
 into a commutative additive topological group has the same kernel. -/]
 theorem _root_.ContinuousMonoidHom.ker_inv {A E : Type*} [Group A] [TopologicalSpace A]
     [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) :
