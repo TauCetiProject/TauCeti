@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Curve integrals of continuous `1`-forms along segments
@@ -207,11 +208,6 @@ section NormedAlgebra
 variable {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℝ A] [IsScalarTower ℝ A A]
   [SMulCommClass ℝ A A] [CompleteSpace A] {n : ℕ}
 
-/-- The increments `g (finRotate n k) - g k` around a cycle sum to zero. -/
-private theorem sum_finRotate_sub {M : Type*} [AddCommGroup M] (g : Fin n → M) :
-    ∑ k, (g (finRotate n k) - g k) = 0 := by
-  rw [Finset.sum_sub_distrib, Equiv.sum_comp, sub_self]
-
 /-- The integral of `(a + b x) dx` around the closed polygon with vertices `p 0, …, p (n - 1)` is
 `b / 2` times the sum of the commutators `p k * p (k + 1) - p (k + 1) * p k` of consecutive
 vertices. It vanishes when `A` is commutative, but not in general. -/
@@ -219,7 +215,7 @@ theorem sum_curveIntegral_segment_mul_const_add_mul (p : Fin n → A) (a b : A) 
     ∑ k, ∫ᶜ x in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ A (a + b * x) =
       (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
   let g : A →ᵃ[ℝ] A := AffineMap.const ℝ A a + (LinearMap.mulLeft ℝ b).toAffineMap
-  have hg (x : A) : g x = a + b * x := rfl
+  have hg (x : A) : g x = a + b * x := by simp [g]
   simp_rw [← hg, AffineMap.curveIntegral_segment_mul, hg, midpoint_eq_smul_add]
   have hk (k : Fin n) :
       (a + b * ((⅟2 : ℝ) • (p k + p (finRotate n k)))) * (p (finRotate n k) - p k) =
@@ -230,7 +226,7 @@ theorem sum_curveIntegral_segment_mul_const_add_mul (p : Fin n → A) (a b : A) 
       mul_assoc, smul_add, smul_sub]
     abel
   simp_rw [hk, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.smul_sum, ← Finset.mul_sum,
-    sum_finRotate_sub (fun k ↦ p k * p k), sum_finRotate_sub p]
+    Fin.sum_univ_finRotate_sub (fun k ↦ p k * p k), Fin.sum_univ_finRotate_sub p]
   simp
 
 /-- The integral of `dx (a + x b)` around the closed polygon with vertices `p 0, …, p (n - 1)` is
@@ -241,7 +237,7 @@ theorem sum_curveIntegral_segment_mul_flip_add_mul_const (p : Fin n → A) (a b 
         (ContinuousLinearMap.mul ℝ A).flip (a + x * b) =
       (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
   let g : A →ᵃ[ℝ] A := AffineMap.const ℝ A a + (LinearMap.mulRight ℝ b).toAffineMap
-  have hg (x : A) : g x = a + x * b := rfl
+  have hg (x : A) : g x = a + x * b := by simp [g]
   simp_rw [← hg, AffineMap.curveIntegral_segment_mul_flip, hg, midpoint_eq_smul_add]
   have hk (k : Fin n) :
       (p (finRotate n k) - p k) * (a + ((⅟2 : ℝ) • (p k + p (finRotate n k))) * b) =
@@ -252,7 +248,7 @@ theorem sum_curveIntegral_segment_mul_flip_add_mul_const (p : Fin n → A) (a b 
       mul_assoc, smul_add, smul_sub]
     abel
   simp_rw [hk, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.smul_sum, ← Finset.sum_mul,
-    sum_finRotate_sub (fun k ↦ p k * p k), sum_finRotate_sub p]
+    Fin.sum_univ_finRotate_sub (fun k ↦ p k * p k), Fin.sum_univ_finRotate_sub p]
   simp
 
 end NormedAlgebra

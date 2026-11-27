@@ -25,7 +25,8 @@ quotient derivative satisfy no loop theorem for `dq`. On a connected open set su
 affine by quotient rigidity, and its loop integrals are given by commutators of consecutive
 vertices (`TauCeti.LeftQuotientDifferentiableOn.sum_curveIntegral_segment_mul_flip`,
 `TauCeti.RightQuotientDifferentiableOn.sum_curveIntegral_segment_mul`). Around the positively
-oriented square `0 → i → i + j → j → 0` the identity, which has both slopes `1`, gives
+oriented square `0 → i → i + j → j → 0` (`TauCeti.Quaternion.ijSquare 0 1`) the identity, which
+has both slopes `1`, gives
 `∮ q dq = 2k` and `∮ dq q = -2k` (`TauCeti.sum_curveIntegral_segment_square_mul`,
 `TauCeti.sum_curveIntegral_segment_square_mul_flip`). Consequently every closed polygon in the
 set has vanishing integral of `dq f` for a left quotient differentiable `f`, or of `f dq` for a
@@ -49,20 +50,29 @@ namespace TauCeti
 
 variable {f : ℍ → ℍ} {s : Set ℍ} {n : ℕ}
 
+namespace Quaternion
+
+/-- The vertices `q₀, q₀ + δ i, q₀ + δ (i + j), q₀ + δ j` of the square with corner `q₀` and side
+`δ` in the `(x, y)`-directions, positively oriented from `i` to `j` when `δ > 0`. -/
+noncomputable def ijSquare (q₀ : ℍ) (δ : ℝ) : Fin 4 → ℍ :=
+  ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
+
+end Quaternion
+
 /-- The commutators of consecutive vertices of the square with corner `q₀` and side `δ` in the
 `(x, y)`-directions, oriented from `i` to `j`, sum to `4 δ² k`. -/
 private theorem sum_mul_sub_mul_square (q₀ : ℍ) (δ : ℝ) :
-    let p : Fin 4 → ℍ := ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
+    let p := Quaternion.ijSquare q₀ δ
     ∑ k, (p k * p (finRotate 4 k) - p (finRotate 4 k) * p k) = ⟨0, 0, 0, 4 * δ ^ 2⟩ := by
   intro p
-  simp only [Fin.sum_univ_four, p, Fin.isValue, Matrix.cons_val_zero, finRotate_apply, zero_add,
-    Matrix.cons_val_one, Fin.reduceAdd, Matrix.cons_val]
+  simp only [Fin.sum_univ_four, p, Quaternion.ijSquare, Fin.isValue, Matrix.cons_val_zero,
+    finRotate_apply, zero_add, Matrix.cons_val_one, Fin.reduceAdd, Matrix.cons_val]
   ext <;> simp <;> ring
 
 /-- The commutators of consecutive vertices of the square with corner `q₀` and side `δ`, taken in
 the reverse order, sum to `-4 δ² k`. -/
 private theorem sum_mul_sub_mul_square_rev (q₀ : ℍ) (δ : ℝ) :
-    let p : Fin 4 → ℍ := ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
+    let p := Quaternion.ijSquare q₀ δ
     ∑ k, (p (finRotate 4 k) * p k - p k * p (finRotate 4 k)) = ⟨0, 0, 0, -4 * δ ^ 2⟩ := by
   intro p
   rw [← neg_inj, ← Finset.sum_neg_distrib]
@@ -74,29 +84,27 @@ private theorem sum_mul_sub_mul_square_rev (q₀ : ℍ) (δ : ℝ) :
 in the `(x, y)`-directions is `2 δ² k`. For `q₀ = 0` and `δ = 1` this is `∮ q dq = 2k` around
 `0 → i → i + j → j → 0`. -/
 theorem sum_curveIntegral_segment_square_mul (q₀ : ℍ) (δ : ℝ) :
-    let p : Fin 4 → ℍ := ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
+    let p := Quaternion.ijSquare q₀ δ
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate 4 k)), ContinuousLinearMap.mul ℝ ℍ q =
       ⟨0, 0, 0, 2 * δ ^ 2⟩ := by
   intro p
   have h := sum_curveIntegral_segment_mul_const_add_mul p 0 1
   simp only [zero_add, one_mul] at h
   rw [h, sum_mul_sub_mul_square]
-  ext <;> simp
-  ring
+  ext <;> norm_num [← mul_assoc]
 
 /-- The integral of `dq q` around the positively oriented square with corner `q₀` and side `δ`
 in the `(x, y)`-directions is `-2 δ² k`. For `q₀ = 0` and `δ = 1` this is `∮ dq q = -2k` around
 `0 → i → i + j → j → 0`. -/
 theorem sum_curveIntegral_segment_square_mul_flip (q₀ : ℍ) (δ : ℝ) :
-    let p : Fin 4 → ℍ := ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
+    let p := Quaternion.ijSquare q₀ δ
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate 4 k)), (ContinuousLinearMap.mul ℝ ℍ).flip q =
       ⟨0, 0, 0, -2 * δ ^ 2⟩ := by
   intro p
   have h := sum_curveIntegral_segment_mul_flip_add_mul_const p 0 1
   simp only [zero_add, mul_one] at h
   rw [h, sum_mul_sub_mul_square_rev]
-  ext <;> simp
-  ring
+  ext <;> norm_num [← mul_assoc]
 
 /-- Around a closed polygon whose edges lie in `s`, the integral of `dq f` for `f` agreeing on `s`
 with `q ↦ a + q * b` is the commutator sum of the vertices times `b / 2`. -/
@@ -135,8 +143,7 @@ theorem LeftQuotientDifferentiableOn.sum_curveIntegral_segment_mul_flip
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate n k)), (ContinuousLinearMap.mul ℝ ℍ).flip (f q) =
       (2 : ℝ)⁻¹ • ((∑ k, (p (finRotate n k) * p k - p k * p (finRotate n k))) * b) := by
   obtain ⟨a, c, hac⟩ := (leftQuotient_rigidity hs hc).mp hf
-  have hcb : c = b := (((hasLeftQuotientFDerivAt_mul_const c q₀).const_add a).congr_of_eventuallyEq
-    (Filter.eventually_of_mem (hs.mem_nhds hq₀) hac)).unique hb
+  have hcb : c = b := (hasLeftQuotientFDerivAt_of_eqOn_add_mul hs hq₀ hac).unique hb
   exact hcb ▸ sum_curveIntegral_segment_mul_flip_of_eqOn hac p hp
 
 /-- **Loop integrals of right quotient differentiable functions.** Let `f` have a right quotient
@@ -150,25 +157,42 @@ theorem RightQuotientDifferentiableOn.sum_curveIntegral_segment_mul
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate n k)), ContinuousLinearMap.mul ℝ ℍ (f q) =
       (2 : ℝ)⁻¹ • (b * ∑ k, (p k * p (finRotate n k) - p (finRotate n k) * p k)) := by
   obtain ⟨a, c, hac⟩ := (rightQuotient_rigidity hs hc).mp hf
-  have hcb : c = b := (((hasRightQuotientFDerivAt_const_mul c q₀).const_add a).congr_of_eventuallyEq
-    (Filter.eventually_of_mem (hs.mem_nhds hq₀) hac)).unique hb
+  have hcb : c = b := (hasRightQuotientFDerivAt_of_eqOn_add_mul hs hq₀ hac).unique hb
   exact hcb ▸ sum_curveIntegral_segment_mul_of_eqOn hac p hp
 
 /-- Every neighbourhood of `q₀` contains a square with corner `q₀` and positive side in the
 `(x, y)`-directions, edges included. -/
 private theorem exists_square_segment_subset {q₀ : ℍ} (hs : s ∈ nhds q₀) :
     ∃ δ : ℝ, δ ≠ 0 ∧
-      let p : Fin 4 → ℍ := ![q₀, q₀ + ⟨0, δ, 0, 0⟩, q₀ + ⟨0, δ, δ, 0⟩, q₀ + ⟨0, 0, δ, 0⟩]
+      let p := Quaternion.ijSquare q₀ δ
       ∀ k, segment ℝ (p k) (p (finRotate 4 k)) ⊆ s := by
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hs
   refine ⟨ε / 2, by positivity, fun k ↦ ?_⟩
-  have hmem : ∀ k, (![q₀, q₀ + ⟨0, ε / 2, 0, 0⟩, q₀ + ⟨0, ε / 2, ε / 2, 0⟩,
-      q₀ + ⟨0, 0, ε / 2, 0⟩] : Fin 4 → ℍ) k ∈ Metric.ball q₀ ε := by
+  have hmem : ∀ k, Quaternion.ijSquare q₀ (ε / 2) k ∈ Metric.ball q₀ ε := by
     intro k
     rw [mem_ball_iff_norm, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hε.le two_ne_zero, sq,
       ← normSq_eq_norm_mul_self, normSq_def']
-    fin_cases k <;> simp <;> nlinarith
+    fin_cases k <;> simp [Quaternion.ijSquare] <;> nlinarith
   exact ((convex_ball q₀ ε).segment_subset (hmem _) (hmem _)).trans hball
+
+/-- A quaternion `c k` with `c ≠ 0` is nonzero. -/
+private theorem mk_zero_zero_zero_ne_zero {c : ℝ} (hc : c ≠ 0) : (⟨0, 0, 0, c⟩ : ℍ) ≠ 0 := by
+  intro h0
+  have hk := congrArg QuaternionAlgebra.imK h0
+  rw [Quaternion.imK_zero] at hk
+  exact hc hk
+
+/-- If `(c k * b) / 2 = 0` with `c ≠ 0`, then `b = 0`. -/
+private theorem eq_zero_of_smul_mk_mul_eq_zero {b : ℍ} {c : ℝ} (hc : c ≠ 0)
+    (h : (2 : ℝ)⁻¹ • ((⟨0, 0, 0, c⟩ : ℍ) * b) = 0) : b = 0 :=
+  (mul_eq_zero.mp ((smul_eq_zero.mp h).resolve_left (inv_ne_zero two_ne_zero))).resolve_left
+    (mk_zero_zero_zero_ne_zero hc)
+
+/-- If `(b * c k) / 2 = 0` with `c ≠ 0`, then `b = 0`. -/
+private theorem eq_zero_of_smul_mul_mk_eq_zero {b : ℍ} {c : ℝ} (hc : c ≠ 0)
+    (h : (2 : ℝ)⁻¹ • (b * (⟨0, 0, 0, c⟩ : ℍ)) = 0) : b = 0 :=
+  (mul_eq_zero.mp ((smul_eq_zero.mp h).resolve_left (inv_ne_zero two_ne_zero))).resolve_right
+    (mk_zero_zero_zero_ne_zero hc)
 
 /-- **No loop theorem for left quotient differentiable functions.** Let `f` have a left quotient
 derivative at every point of a connected open set `s`. Then the integral of `dq f` vanishes
@@ -187,9 +211,8 @@ theorem LeftQuotientDifferentiableOn.forall_sum_curveIntegral_segment_mul_flip_e
     obtain ⟨δ, hδ, hp⟩ := exists_square_segment_subset (hs.mem_nhds hq₀)
     have hsq := sum_curveIntegral_segment_mul_flip_of_eqOn hab _ hp
     rw [h 4 _ hp, sum_mul_sub_mul_square_rev] at hsq
-    have hb : b = 0 := by
-      refine (by simpa using hsq.symm : _ ∨ b = 0).resolve_left fun h0 ↦ hδ ?_
-      simpa using congrArg QuaternionAlgebra.imK h0
+    have hb : b = 0 := eq_zero_of_smul_mk_mul_eq_zero
+      (mul_ne_zero (neg_ne_zero.mpr four_ne_zero) (pow_ne_zero 2 hδ)) hsq.symm
     exact ⟨a, fun q hq ↦ by rw [hab q hq, hb, mul_zero, add_zero]⟩
   · rintro ⟨c, hfc⟩ n p hp
     have hc' : ∀ q ∈ s, f q = c + q * 0 := fun q hq ↦ by rw [hfc q hq, mul_zero, add_zero]
@@ -212,9 +235,8 @@ theorem RightQuotientDifferentiableOn.forall_sum_curveIntegral_segment_mul_eq_ze
     obtain ⟨δ, hδ, hp⟩ := exists_square_segment_subset (hs.mem_nhds hq₀)
     have hsq := sum_curveIntegral_segment_mul_of_eqOn hab _ hp
     rw [h 4 _ hp, sum_mul_sub_mul_square] at hsq
-    have hb : b = 0 := by
-      refine (by simpa using hsq.symm : b = 0 ∨ _).resolve_right fun h0 ↦ hδ ?_
-      simpa using congrArg QuaternionAlgebra.imK h0
+    have hb : b = 0 := eq_zero_of_smul_mul_mk_eq_zero
+      (mul_ne_zero four_ne_zero (pow_ne_zero 2 hδ)) hsq.symm
     exact ⟨a, fun q hq ↦ by rw [hab q hq, hb, zero_mul, add_zero]⟩
   · rintro ⟨c, hfc⟩ n p hp
     have hc' : ∀ q ∈ s, f q = c + 0 * q := fun q hq ↦ by rw [hfc q hq, zero_mul, add_zero]
