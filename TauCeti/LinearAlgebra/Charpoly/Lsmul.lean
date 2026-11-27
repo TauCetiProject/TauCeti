@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
+public import Mathlib.Algebra.Polynomial.Module.AEval
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 
 /-!
@@ -22,6 +23,8 @@ equivalences and products of modules.
   polynomials over `k`.
 * `Algebra.charpoly_lsmul_prod`: the characteristic polynomial of `a` on `M × N` is the product of
   those on `M` and on `N`.
+* `LinearMap.charpoly_lsmul_X_aeval`: multiplication by `X` on `Module.AEval' f` has the same
+  characteristic polynomial as `f`, by `LinearEquiv.charpoly_conj`.
 -/
 
 public section
@@ -56,3 +59,16 @@ theorem charpoly_lsmul_prod (a : A) :
   rw [this, LinearMap.charpoly_prodMap]
 
 end Algebra
+
+open Module Polynomial in
+/-- The characteristic polynomial of multiplication by `X` on the polynomial module of `f`
+is the characteristic polynomial of `f`. -/
+@[simp]
+theorem LinearMap.charpoly_lsmul_X_aeval {K V : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] (f : V →ₗ[K] V) :
+    (Algebra.lsmul K K (AEval' f) (X : K[X])).charpoly = f.charpoly := by
+  have hconj : (AEval'.of f).symm.conj (Algebra.lsmul K K (AEval' f) (X : K[X])) = f := by
+    ext x
+    simp only [LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm, Algebra.lsmul_apply,
+      AEval'.X_smul_of, LinearEquiv.symm_apply_apply]
+  rw [← (AEval'.of f).symm.charpoly_conj, hconj]

@@ -8,26 +8,22 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.Charpoly.SemisimpleConjugacy
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+
 /-!
 # Conjugacy of semisimple elements in the general linear group
 
 `Matrix.GeneralLinearGroup.isConj_iff_charpoly_eq_of_isSemisimple` transports the classification
 of semisimple endomorphisms by characteristic polynomial to `GLₙ` via
-`Matrix.GeneralLinearGroup.toLin`. The theorem
+`Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`. The theorem
 `Matrix.GeneralLinearGroup.isConj_map_iff_charpoly_eq_of_isSemisimple` gives the same criterion for
-conjugacy over any extension field. This includes geometric conjugacy over an algebraic closure.
+conjugacy over any nontrivial commutative algebra over the base field, including an algebraic
+closure.
 -/
 
 public section
 
 open Matrix
-
-/-- Conjugate invertible matrices have equal characteristic polynomials over a commutative ring. -/
-theorem IsConj.charpoly_eq {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-    {g h : GL n R} (hgh : IsConj g h) :
-    (g : Matrix n n R).charpoly = (h : Matrix n n R).charpoly := by
-  obtain ⟨c, rfl⟩ := isConj_iff.mp hgh
-  rw [Units.val_mul, Units.val_mul, Matrix.GeneralLinearGroup.coe_inv, Matrix.charpoly_units_conj]
 
 namespace Matrix.GeneralLinearGroup
 
@@ -43,14 +39,11 @@ theorem isConj_iff_charpoly_eq_of_isSemisimple {g h : GL n K}
   refine ⟨IsConj.charpoly_eq, fun hpoly ↦ ?_⟩
   have hlin : (g : Matrix n n K).toLin'.charpoly = (h : Matrix n n K).toLin'.charpoly := by
     simpa only [Matrix.charpoly_toLin'] using hpoly
-  obtain ⟨e, he⟩ := hg.exists_linearEquiv_conj_eq_of_charpoly_eq hh hlin
-  let u := LinearMap.GeneralLinearGroup.ofLinearEquiv e
-  have hu : u * toLin g * u⁻¹ = toLin h := by
-    apply Units.ext
-    simp only [Units.val_mul, coe_toLin, Module.End.mul_eq_comp, ← Matrix.toLin'_apply']
-    exact he
-  refine isConj_iff.mpr ⟨toLin.symm u, toLin.injective ?_⟩
-  rw [map_mul, map_mul, map_inv, MulEquiv.apply_symm_apply, hu]
+  have horbit := Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj.mpr
+    (hg.exists_linearEquiv_conj_eq_of_charpoly_eq hh hlin)
+  obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp horbit
+  refine isConj_iff.mpr ⟨ConjAct.ofConjAct c, Units.ext ?_⟩
+  simpa only [ConjAct.units_smul_def, Units.val_mul] using hc
 
 /-- After mapping to a nontrivial commutative `K`-algebra, two semisimple elements of `GLₙ(K)`
 are conjugate exactly when their characteristic polynomials over `K` agree. -/

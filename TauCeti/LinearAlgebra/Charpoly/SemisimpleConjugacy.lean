@@ -30,8 +30,7 @@ public section
 open Module Polynomial TauCeti
 
 /-- On a finite-dimensional simple `K[X]`-module, multiplication by `X` has irreducible
-characteristic polynomial `p`, and each nonzero cyclic generator gives an isomorphism with
-`K[X]/(p)`. -/
+characteristic polynomial `p`, and the module is isomorphic to `K[X]/(p)`. -/
 theorem IsSimpleModule.exists_linearEquiv_quot_of_charpoly_lsmul_X {K V : Type*} [Field K]
     [AddCommGroup V] [Module K V] [Module K[X] V] [IsScalarTower K K[X] V] [FiniteDimensional K V]
     [IsSimpleModule K[X] V] :
@@ -51,18 +50,6 @@ theorem IsSimpleModule.exists_linearEquiv_quot_of_charpoly_lsmul_X {K V : Type*}
   have hroot : (Algebra.lsmul K K (K[X] ⧸ Ideal.span {p}) (X : K[X])).charpoly = p :=
     AdjoinRoot.charpoly_lmul_root hp
   rw [e'.charpoly_lsmul_eq (X : K[X]), hroot]
-
-/-- The characteristic polynomial of multiplication by `X` on the polynomial module of `f`
-is the characteristic polynomial of `f`. -/
-@[simp]
-theorem LinearMap.charpoly_lsmul_X_aeval {K V : Type*} [Field K]
-    [AddCommGroup V] [Module K V] [FiniteDimensional K V] (f : V →ₗ[K] V) :
-    (Algebra.lsmul K K (AEval' f) (X : K[X])).charpoly = f.charpoly := by
-  have hconj : (AEval'.of f).symm.conj (Algebra.lsmul K K (AEval' f) (X : K[X])) = f := by
-    ext x
-    simp only [LinearEquiv.conj_apply_apply, LinearEquiv.symm_symm, Algebra.lsmul_apply,
-      AEval'.X_smul_of, LinearEquiv.symm_apply_apply]
-  rw [← (AEval'.of f).symm.charpoly_conj, hconj]
 
 /-- Two finite-dimensional semisimple `K[X]`-modules are isomorphic if multiplication by `X`
 has the same characteristic polynomial on both modules. -/

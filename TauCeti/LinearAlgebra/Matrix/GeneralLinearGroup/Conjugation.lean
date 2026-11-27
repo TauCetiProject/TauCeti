@@ -8,6 +8,7 @@ module
 -- `GL`, its coercion to matrices, the scalar embedding, and the determinant occur in the
 -- statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 -- The conjugation action `ConjAct (GL n R)` on matrices occurs in a statement below.
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 -- Non-public: `Matrix.GeneralLinearGroup.center_eq_range_scalar`, that the centre of `GL n R`
@@ -31,6 +32,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
 
 * `Matrix.GeneralLinearGroup.det_sub_algebraMap_conj`: shifting a matrix by a scalar and taking its
   determinant is invariant under conjugation by `GL n R`.
+* `IsConj.charpoly_eq`: conjugate elements of `GL n R` have equal characteristic polynomials, by
+  `Matrix.charpoly_units_conj`.
 * `Matrix.GeneralLinearGroup.forall_conj_eq_iff_exists_scalar_mul_eq`: two elements of `GL n R`
   induce the same conjugation of `GL n R` exactly when they differ by a unit scalar.
 * `Matrix.GeneralLinearGroup.inv_mulVec_mulVec_of_eq_mul_mul_inv`: if `A = g * B * g⁻¹` then
@@ -130,3 +133,11 @@ theorem mem_orbit_conjAct_iff_exists_linearEquiv_conj {A B : Matrix n n R} :
     ConjAct.ofConjAct_toConjAct, ψ.surjective.exists, key, toLin'.injective.eq_iff]
 
 end Matrix
+
+open Matrix in
+/-- Conjugate invertible matrices have equal characteristic polynomials over a commutative ring. -/
+theorem IsConj.charpoly_eq {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {g h : GL n R} (hgh : IsConj g h) :
+    (g : Matrix n n R).charpoly = (h : Matrix n n R).charpoly := by
+  obtain ⟨c, rfl⟩ := isConj_iff.mp hgh
+  rw [Units.val_mul, Units.val_mul, Matrix.GeneralLinearGroup.coe_inv, Matrix.charpoly_units_conj]
