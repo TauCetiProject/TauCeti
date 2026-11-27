@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Intermediate
 import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 
 /-!
@@ -135,20 +136,8 @@ theorem exists_subgroup_eq [NeZero n]
     ∃ c : MarkedIsoClass n, c.subgroup = H := by
   let p := UniversalCover.subgroupCover basePt H
   let e := UniversalCover.subgroupCoverBasepointFiber basePt H
-  have hquot : Nat.card (UniversalCover.subgroupQuotientProj basePt H ⁻¹' {basePt}) = n := by
-    calc
-      _ = (mapOfEq
-          ⟨UniversalCover.subgroupQuotientProj basePt H,
-            UniversalCover.continuous_subgroupQuotientProj basePt H⟩
-          (UniversalCover.subgroupQuotientProj_basepoint basePt H)).range.index :=
-        (UniversalCover.isCoveringMap_subgroupQuotientProj basePt H).card_fiber_eq_index
-          ⟨UniversalCover.SubgroupQuotient.basepoint basePt H,
-            UniversalCover.subgroupQuotientProj_basepoint basePt H⟩
-      _ = H.index := congrArg Subgroup.index
-        (UniversalCover.range_mapOfEq_subgroupQuotientProj basePt H)
-      _ = n := hH
-  have hcard : Nat.card (⇑p.proj ⁻¹' {basePt}) = n :=
-    (Nat.card_congr (UniversalCover.subgroupCoverFiberEquivSubgroupQuotient basePt H)).trans hquot
+  have hcard : Nat.card (⇑p.proj ⁻¹' {basePt}) = n := by
+    rw [p.isCoveringMap_proj.card_fiber_eq_index e, UniversalCover.range_mapOfEq_subgroupCover, hH]
   have := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
   let := Fintype.ofFinite (⇑p.proj ⁻¹' {basePt})
   let ν : ⇑p.proj ⁻¹' {basePt} ≃ Fin n :=
@@ -156,17 +145,7 @@ theorem exists_subgroup_eq [NeZero n]
   let d : ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n := ⟨p, ν⟩
   refine ⟨mk d.connectedTriple (ν e), ?_⟩
   rw [ConnectedFiberNumberedCover.subgroup_mk_connectedTriple, ν.symm_apply_apply]
-  apply (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq p.isCoveringMap_proj
-    (UniversalCover.isCoveringMap_subgroupQuotientProj basePt H) e.property
-    (UniversalCover.subgroupQuotientProj_basepoint basePt H)).1
-    ⟨UniversalCover.subgroupCoverTotalSpaceHomeomorph basePt H, ?_, ?_⟩ |>.trans
-      (UniversalCover.range_mapOfEq_subgroupQuotientProj basePt H)
-  · have he := congrArg Subtype.val
-      (UniversalCover.subgroupCoverFiberEquivSubgroupQuotient_apply_basepoint basePt H)
-    rw [UniversalCover.subgroupCoverFiberEquivSubgroupQuotient_apply_coe,
-      UniversalCover.SubgroupQuotient.basepointFiber_coe] at he
-    exact he
-  · exact funext (UniversalCover.subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph basePt H)
+  exact UniversalCover.range_mapOfEq_subgroupCover basePt H
 
 /-- The subgroup map is a bijection onto the subgroups of index equal to the nonzero degree. -/
 theorem subgroup_bijective [NeZero n] :

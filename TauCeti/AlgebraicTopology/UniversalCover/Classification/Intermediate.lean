@@ -40,6 +40,8 @@ the comparison map, and the upgrade above makes that map a covering map.
   nonempty covering space of `X` after choosing points in a common fibre.**
 * `TauCeti.UniversalCover.exists_isCoveringMap_subgroupQuotientProj_comp_eq_iff_le`: **the cover
   attached to `H` covers the cover attached to `K` exactly when `H ≤ K`.**
+* `TauCeti.UniversalCover.range_mapOfEq_subgroupCover`: the cover attached to `H`, pointed at the
+  class of the constant path, recovers `H`.
 
 ## References
 
@@ -113,6 +115,23 @@ theorem exists_isCoveringMap_subgroupQuotientProj_comp_eq_iff_le (x₀ : X)
     (isCoveringMap_subgroupQuotientProj x₀ H) (isCoveringMap_subgroupQuotientProj x₀ K)
     (subgroupQuotientProj_basepoint x₀ H) (subgroupQuotientProj_basepoint x₀ K),
     range_mapOfEq_subgroupQuotientProj, range_mapOfEq_subgroupQuotientProj]
+
+/-- The cover attached to `H ≤ π₁(X, x₀)`, pointed at the class of the constant path, recovers
+`H`. -/
+theorem range_mapOfEq_subgroupCover (x₀ : X) (H : Subgroup (FundamentalGroup X x₀)) :
+    (FundamentalGroup.mapOfEq ⟨(subgroupCover x₀ H).proj,
+      (subgroupCover x₀ H).isCoveringMap_proj.continuous⟩
+        (subgroupCoverBasepointFiber x₀ H).property).range = H := by
+  refine ((IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
+    (subgroupCover x₀ H).isCoveringMap_proj (isCoveringMap_subgroupQuotientProj x₀ H)
+    (subgroupCoverBasepointFiber x₀ H).property (subgroupQuotientProj_basepoint x₀ H)).1
+    ⟨subgroupCoverTotalSpaceHomeomorph x₀ H, ?_, ?_⟩).trans
+      (range_mapOfEq_subgroupQuotientProj x₀ H)
+  · have he := congrArg Subtype.val (subgroupCoverFiberEquivSubgroupQuotient_apply_basepoint x₀ H)
+    rw [subgroupCoverFiberEquivSubgroupQuotient_apply_coe, SubgroupQuotient.basepointFiber_coe]
+      at he
+    exact he
+  · exact funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)
 
 end UniversalCover
 

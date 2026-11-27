@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.RecoveredSubgroup
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Intermediate
 public import Mathlib.CategoryTheory.Elements
 public import Mathlib.CategoryTheory.Category.Preorder
 
@@ -85,6 +85,12 @@ variable {x₀}
 def subgroup (c : PointedConnectedCover x₀) : Subgroup (FundamentalGroup X x₀) :=
   (FundamentalGroup.mapOfEq ⟨c.obj.proj, c.obj.isCoveringMap_proj.continuous⟩ c.val.property).range
 
+theorem subgroup_def (c : PointedConnectedCover x₀) :
+    c.subgroup =
+      (FundamentalGroup.mapOfEq ⟨c.obj.proj, c.obj.isCoveringMap_proj.continuous⟩
+        c.val.property).range :=
+  (rfl)
+
 /-- A map of connected covers acts on the fibre over `x₀` by restriction. -/
 private theorem map_val_val {c : PointedConnectedCover x₀} {d : ConnectedCoveringSpace X}
     (f : c.obj ⟶ d) :
@@ -95,6 +101,7 @@ private theorem map_val_val {c : PointedConnectedCover x₀} {d : ConnectedCover
   exact Function.fiberMap_apply_coe _ _ x₀ c.val
 
 /-- A map of pointed connected covers carries the chosen point to the chosen point. -/
+@[simp]
 theorem hom_left_apply {c d : PointedConnectedCover x₀} (f : c ⟶ d) :
     f.hom.hom.left c.val.val = d.val.val :=
   (map_val_val f.hom).symm.trans (congrArg Subtype.val f.map_val)
@@ -113,27 +120,28 @@ instance instIsThin : Quiver.IsThin (PointedConnectedCover x₀) := fun c d ↦ 
   ext : 2
   exact Over.OverMorphism.ext (ConcreteCategory.hom_ext _ _ (congrFun h))⟩
 
-/-- A map of pointed connected covers exists only when the recovered subgroups are nested. -/
-theorem subgroup_le_of_hom [LocallyPathConnectedSpace X] {c d : PointedConnectedCover x₀}
-    (f : c ⟶ d) : c.subgroup ≤ d.subgroup :=
-  (IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le d.obj.isCoveringMap_proj
-    c.obj.isCoveringMap_proj.continuous c.val.property d.val.property).mp
-      ⟨f.hom.hom.left.hom, hom_left_apply f, proj_comp_hom_left f⟩
+/-- A map of pointed connected covers exists only when the recovered subgroups are nested: this is
+functoriality of `π₁`. -/
+theorem subgroup_le_of_hom {c d : PointedConnectedCover x₀} (f : c ⟶ d) :
+    c.subgroup ≤ d.subgroup :=
+  IsCoveringMap.range_le_of_continuousMap_comp_eq c.obj.isCoveringMap_proj.continuous
+    d.obj.isCoveringMap_proj.continuous c.val.property d.val.property (hom_left_apply f)
+      (proj_comp_hom_left f)
 
 variable (x₀) in
 /-- The recovered subgroup, as a functor from pointed connected covers to the poset of subgroups
 of `π₁(X, x₀)`. -/
-def subgroupFunctor [LocallyPathConnectedSpace X] :
+def subgroupFunctor :
     PointedConnectedCover x₀ ⥤ Subgroup (FundamentalGroup X x₀) where
   obj := subgroup
   map f := homOfLE (subgroup_le_of_hom f)
 
 @[simp]
-theorem subgroupFunctor_obj [LocallyPathConnectedSpace X] (c : PointedConnectedCover x₀) :
+theorem subgroupFunctor_obj (c : PointedConnectedCover x₀) :
     (subgroupFunctor x₀).obj c = c.subgroup :=
   (rfl)
 
-instance [LocallyPathConnectedSpace X] : (subgroupFunctor x₀).Faithful where
+instance : (subgroupFunctor x₀).Faithful where
   map_injective _ := Subsingleton.elim _ _
 
 /-- The lifting criterion: nested recovered subgroups give a map of pointed covers. -/
@@ -150,34 +158,27 @@ instance [LocallyPathConnectedSpace X] : (subgroupFunctor x₀).Full where
 
 end PointedConnectedCover
 
-/-- The cover attached to `H ≤ π₁(X, x₀)`, pointed at the class of the constant path, recovers
-`H`. -/
-theorem UniversalCover.range_mapOfEq_subgroupCover {X : Type u} [TopologicalSpace X]
-    [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x₀ : X)
-    (H : Subgroup (FundamentalGroup X x₀)) :
-    (FundamentalGroup.mapOfEq ⟨(subgroupCover x₀ H).proj,
-      (subgroupCover x₀ H).isCoveringMap_proj.continuous⟩
-        (subgroupCoverBasepointFiber x₀ H).property).range = H := by
-  refine ((IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
-    (subgroupCover x₀ H).isCoveringMap_proj (isCoveringMap_subgroupQuotientProj x₀ H)
-    (subgroupCoverBasepointFiber x₀ H).property (subgroupQuotientProj_basepoint x₀ H)).1
-    ⟨subgroupCoverTotalSpaceHomeomorph x₀ H, ?_, ?_⟩).trans
-      (range_mapOfEq_subgroupQuotientProj x₀ H)
-  · have he := congrArg Subtype.val (subgroupCoverFiberEquivSubgroupQuotient_apply_basepoint x₀ H)
-    rw [subgroupCoverFiberEquivSubgroupQuotient_apply_coe, SubgroupQuotient.basepointFiber_coe]
-      at he
-    exact he
-  · exact funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)
-
 namespace PointedConnectedCover
 
 variable {x₀}
 
 /-- The cover attached to a subgroup, pointed at the class of the constant path. -/
-def ofSubgroup [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+@[expose] def ofSubgroup [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (H : Subgroup (FundamentalGroup X x₀)) : PointedConnectedCover x₀ :=
   Functor.elementsMk _ (UniversalCover.subgroupCover x₀ H)
     (UniversalCover.subgroupCoverBasepointFiber x₀ H)
+
+@[simp]
+theorem ofSubgroup_obj [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    (H : Subgroup (FundamentalGroup X x₀)) :
+    (ofSubgroup H).obj = UniversalCover.subgroupCover x₀ H :=
+  (rfl)
+
+@[simp]
+theorem ofSubgroup_val [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    (H : Subgroup (FundamentalGroup X x₀)) :
+    (ofSubgroup H).val = UniversalCover.subgroupCoverBasepointFiber x₀ H :=
+  (rfl)
 
 /-- The pointed cover attached to a subgroup recovers it. -/
 @[simp]
@@ -214,15 +215,26 @@ variable {x₀} {n : ℕ}
 
 /-- A pointed connected cover of degree `n`, as an object of the category of pointed connected
 covers. -/
-def toPointed (c : ConnectedPointedCover x₀ n) : PointedConnectedCover x₀ :=
+@[expose] def toPointed (c : ConnectedPointedCover x₀ n) : PointedConnectedCover x₀ :=
   Functor.elementsMk _ c.cover c.e
 
-/-- The subgroup of `π₁(X, x₀)` recovered by a pointed connected cover of degree `n`. -/
-def subgroup (c : ConnectedPointedCover x₀ n) : Subgroup (FundamentalGroup X x₀) :=
-  (FundamentalGroup.mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩
-    c.e.property).range
+@[simp]
+theorem toPointed_obj (c : ConnectedPointedCover x₀ n) : c.toPointed.obj = c.cover :=
+  (rfl)
 
-theorem subgroup_toPointed (c : ConnectedPointedCover x₀ n) : c.toPointed.subgroup = c.subgroup :=
+@[simp]
+theorem toPointed_val (c : ConnectedPointedCover x₀ n) : c.toPointed.val = c.e :=
+  (rfl)
+
+/-- The subgroup of `π₁(X, x₀)` recovered by a pointed connected cover of degree `n`, that of the
+underlying pointed connected cover. -/
+def subgroup (c : ConnectedPointedCover x₀ n) : Subgroup (FundamentalGroup X x₀) :=
+  c.toPointed.subgroup
+
+theorem subgroup_def (c : ConnectedPointedCover x₀ n) :
+    c.subgroup =
+      (FundamentalGroup.mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩
+        c.e.property).range :=
   (rfl)
 
 /-- The subgroup recovered by a pointed connected cover of degree `n` has index `n`. -/
@@ -237,14 +249,12 @@ private def homOfIso {c c' : ConnectedPointedCover x₀ n} (f : c.cover ≅ c'.c
   ⟨f.hom, Subtype.ext ((PointedConnectedCover.map_val_val (c := c.toPointed) f.hom).trans hf)⟩
 
 /-- Pointed isomorphic covers recover the same subgroup. -/
-theorem subgroup_eq_of_iso [LocallyPathConnectedSpace X] {c c' : ConnectedPointedCover x₀ n}
+theorem subgroup_eq_of_iso {c c' : ConnectedPointedCover x₀ n}
     (h : ConnectedPointedCoverIso c c') : c.subgroup = c'.subgroup := by
   obtain ⟨f, hf⟩ := connectedPointedCoverIso_def.mp h
   obtain ⟨f', hf'⟩ := connectedPointedCoverIso_def.mp h.symm
-  have hle := PointedConnectedCover.subgroup_le_of_hom (homOfIso f hf)
-  have hge := PointedConnectedCover.subgroup_le_of_hom (homOfIso f' hf')
-  rw [subgroup_toPointed, subgroup_toPointed] at hle hge
-  exact le_antisymm hle hge
+  exact le_antisymm (PointedConnectedCover.subgroup_le_of_hom (homOfIso f hf))
+    (PointedConnectedCover.subgroup_le_of_hom (homOfIso f' hf'))
 
 end ConnectedPointedCover
 

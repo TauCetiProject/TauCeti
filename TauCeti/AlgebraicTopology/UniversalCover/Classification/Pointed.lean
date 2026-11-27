@@ -47,6 +47,8 @@ locally path-connected space.)
 
 * `IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le`: a unique map of pointed
   covers over `X` exists as soon as the recovered subgroups are nested.
+* `IsCoveringMap.range_le_of_continuousMap_comp_eq`: a map of pointed covers nests the recovered
+  subgroups, with no hypothesis on the spaces.
 * `IsCoveringMap.exists_continuousMap_comp_eq_iff_range_le`: such a map exists *exactly*
   when the recovered subgroups are nested.
 * `IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq` and
@@ -94,6 +96,19 @@ theorem existsUnique_continuousMap_comp_eq_of_range_le
   rw [FundamentalGroup.mapOfEq_rfl] at hle
   exact hq.existsUnique_continuousMap_lifts_of_range_le (f := ⟨p, hp⟩) hqf hle
 
+/-- A map `g` over `X` carrying `e₀` to `f₀` nests the recovered subgroups: this is functoriality of
+`π₁`, and needs no hypothesis beyond continuity. -/
+theorem range_le_of_continuousMap_comp_eq (hp : Continuous p) (hq : Continuous q)
+    (hpe : p e₀ = x) (hqf : q f₀ = x) {g : C(E, F)} (hg : g e₀ = f₀) (hcomp : q ∘ g = p) :
+    (mapOfEq ⟨p, hp⟩ hpe).range ≤ (mapOfEq ⟨q, hq⟩ hqf).range := by
+  have hfg : (⟨q, hq⟩ : C(F, X)).comp g = ⟨p, hp⟩ := by
+    ext e
+    exact congrFun hcomp e
+  rintro _ ⟨γ, rfl⟩
+  refine ⟨mapOfEq g hg γ, ?_⟩
+  rw [FundamentalGroup.mapOfEq_comp ⟨q, hq⟩ g hg hqf]
+  exact FundamentalGroup.mapOfEq_congr hfg _ _ γ
+
 /-- A map of pointed covers over `X` exists exactly when the subgroup recovered by the source is
 contained in the subgroup recovered by the target.
 
@@ -104,17 +119,9 @@ theorem exists_continuousMap_comp_eq_iff_range_le
     (hq : _root_.IsCoveringMap q) (hp : Continuous p) (hpe : p e₀ = x) (hqf : q f₀ = x) :
     (∃ g : C(E, F), g e₀ = f₀ ∧ q ∘ g = p) ↔
       (mapOfEq ⟨p, hp⟩ hpe).range ≤ (mapOfEq ⟨q, hq.continuous⟩ hqf).range := by
-  constructor
-  · rintro ⟨g, hg, hcomp⟩
-    have hfg : (⟨q, hq.continuous⟩ : C(F, X)).comp g = ⟨p, hp⟩ := by
-      ext e
-      exact congrFun hcomp e
-    rintro _ ⟨γ, rfl⟩
-    refine ⟨mapOfEq g hg γ, ?_⟩
-    rw [FundamentalGroup.mapOfEq_comp ⟨q, hq.continuous⟩ g hg hqf]
-    exact FundamentalGroup.mapOfEq_congr hfg _ _ γ
-  · intro hle
-    exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp hpe hqf hle).exists
+  refine ⟨fun ⟨g, hg, hcomp⟩ ↦ range_le_of_continuousMap_comp_eq hp hq.continuous hpe hqf hg hcomp,
+    fun hle ↦ ?_⟩
+  exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp hpe hqf hle).exists
 
 /-- Two pointed covers of `(X, x)` with path-connected, locally path-connected total spaces which
 recover the *same* subgroup of `π₁(X, x)` are isomorphic over `X`, by a homeomorphism matching the
