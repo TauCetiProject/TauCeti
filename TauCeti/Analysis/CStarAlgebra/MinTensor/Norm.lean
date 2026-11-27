@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Norm
-import TauCeti.Analysis.CStarAlgebra.SpatialNorm.Independence
+import TauCeti.Analysis.CStarAlgebra.SpatialNorm.Map
 
 /-!
 # The minimal C*-norm on an algebraic tensor product of abstract C*-algebras
@@ -184,21 +184,6 @@ theorem minTensorNorm_eq_norm_spatialTensorHom {E F : Type*} [NormedAddCommGroup
   rw [NonUnitalStarAlgHom.spatialTensorHom_apply, NonUnitalStarAlgHom.spatialTensorHom_apply]
   exact norm_spatialTensorLinearMap_map_le p.left p.right π ρ hπ hρ x
 
-/-- The spatial tensor homomorphism of composites is that of the factors composed with
-`φ ⊗ ψ`. -/
-theorem spatialTensorHom_comp_mapNonUnitalStarAlgHom {A' B' E F : Type*}
-    [NonUnitalCStarAlgebra A'] [NonUnitalCStarAlgebra B'] [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-    [CompleteSpace F] (π : A' →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B' →⋆ₙₐ[ℂ] (F →L[ℂ] F))
-    (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B') (x : A ⊗[ℂ] B) :
-    (π.comp φ).spatialTensorHom (ρ.comp ψ) x =
-      π.spatialTensorHom ρ (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    rw [Algebra.TensorProduct.coe_mapNonUnitalStarAlgHom] at hx hy ⊢
-    rw [map_add, map_add, map_add, hx, hy]
-  | tmul a b => simp
-
 /-- **Functoriality of the minimal norm**: star homomorphisms `φ : A → A'` and `ψ : B → B'` give
 `‖(φ ⊗ ψ) x‖_min ≤ ‖x‖_min`. -/
 theorem minTensorNorm_mapNonUnitalStarAlgHom_le {A' B' : Type*} [NonUnitalCStarAlgebra A']
@@ -208,7 +193,7 @@ theorem minTensorNorm_mapNonUnitalStarAlgHom_le {A' B' : Type*} [NonUnitalCStarA
   obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A'
   obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B'
   rw [minTensorNorm_eq_norm_spatialTensorHom hπ hρ,
-    ← spatialTensorHom_comp_mapNonUnitalStarAlgHom]
+    NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom]
   exact norm_spatialTensorHom_le_minTensorNorm _ _ x
 
 /-- **Injective star homomorphisms are isometric for the minimal norm**: for injective
@@ -222,7 +207,7 @@ theorem minTensorNorm_mapNonUnitalStarAlgHom {A' B' : Type*} [NonUnitalCStarAlge
   obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B'
   rw [minTensorNorm_eq_norm_spatialTensorHom hπ hρ,
     minTensorNorm_eq_norm_spatialTensorHom (π := π.comp φ) (ρ := ρ.comp ψ) (hπ.comp hφ)
-      (hρ.comp hψ), spatialTensorHom_comp_mapNonUnitalStarAlgHom]
+      (hρ.comp hψ), NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom]
 
 /-- **Flip invariance of the minimal norm**: `‖τ(x)‖_min = ‖x‖_min` for the flip
 `τ : A ⊗[ℂ] B ≃ B ⊗[ℂ] A`. -/
