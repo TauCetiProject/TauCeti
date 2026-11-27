@@ -158,6 +158,11 @@ instance : Category (InWindow w d) where
 
 variable {P Q : InWindow w d}
 
+/-- A morphism of window pairs is determined by its underlying linear map. -/
+@[ext (iff := false)]
+theorem hom_ext {f g : P ⟶ Q} (h : f.toLinearMap = g.toLinearMap) : f = g :=
+  Hom.ext h
+
 @[simp]
 theorem toLinearMap_id (P : InWindow w d) : ((𝟙 P) : Hom P P).toLinearMap = LinearMap.id :=
   (rfl)
@@ -532,6 +537,12 @@ def ofRep (d : StepDirection) (M : FiniteRep w) : InWindow w d where
           (by simpa using hv)) }
   degree_mem k := d.windowDegree_mem w ((coordinateIndex M).symm k).1
 
+/-- Assemble a family of vertex vectors into a vector in the carrier of the assembled pair. -/
+def ofRepCarrierEquiv (d : StepDirection) (M : FiniteRep w) :
+    (∀ i, QuiverRep.vertexSpace ℂ (WindowVertex w) M.obj i) ≃ₗ[ℂ]
+      (ofRep d M).space.Carrier :=
+  coordinateEquiv d M
+
 private theorem ofRep_operator (M : FiniteRep w) (x : ∀ i, vertexSpace M i) :
     (ofRep d M).pair.operator (coordinateEquiv d M x) =
       coordinateEquiv d M (repOperator M x) := by
@@ -574,10 +585,20 @@ def ofRepGradeEquiv (d : StepDirection) (M : FiniteRep w) (i : WindowVertex w) :
     simp only [Submodule.coe_smul, Pi.single_smul, map_smul, RingHom.id_apply]
     rfl
 
-private theorem coe_ofRepGradeEquiv (M : FiniteRep w) (i : WindowVertex w)
+-- Simplify carrier formulas to grade maps so the arrow and morphism rules still match.
+/-- The grade inclusion assembles a family supported at the given vertex. -/
+@[simp ←]
+theorem coe_ofRepGradeEquiv_apply (M : FiniteRep w) (i : WindowVertex w)
     (x : M.obj.obj (i : Paths (WindowVertex w))) :
-    (ofRepGradeEquiv d M i x).val = coordinateEquiv d M (Pi.single i x) :=
-  rfl
+    (ofRepGradeEquiv d M i x).val = ofRepCarrierEquiv d M (Pi.single i x) :=
+  (rfl)
+
+/-- The inverse grade equivalence reads the corresponding component of the carrier vector. -/
+@[simp ←]
+theorem ofRepGradeEquiv_symm_apply (M : FiniteRep w) (i : WindowVertex w)
+    (y : (ofRep d M).space.grade (d.windowDegree w i)) :
+    (ofRepGradeEquiv d M i).symm y = (ofRepCarrierEquiv d M).symm y.val i :=
+  (rfl)
 
 private theorem repOperator_single (M : FiniteRep w) {i j : WindowVertex w}
     (e : i ⟶ j) (x : vertexSpace M i) :
@@ -600,13 +621,15 @@ private theorem repOperator_single (M : FiniteRep w) {i j : WindowVertex w}
 
 /-- The comparison with the assembled pair intertwines each arrow with the operator on its
 source grade. -/
+@[simp]
 theorem ofRepGradeEquiv_arrow (M : FiniteRep w) {i j : WindowVertex w}
     (e : i ⟶ j) (x : M.obj.obj (i : Paths (WindowVertex w))) :
     (ofRep d M).arrowMap e (ofRepGradeEquiv d M i x) =
       ofRepGradeEquiv d M j ((M.obj.map e.toPath).hom x) := by
   apply Subtype.ext
-  rw [coe_arrowMap, coe_ofRepGradeEquiv, ofRep_operator, repOperator_single M e,
-    coe_ofRepGradeEquiv]
+  rw [coe_arrowMap]
+  exact (ofRep_operator (d := d) M (Pi.single i x)).trans
+    (congrArg (coordinateEquiv d M) (repOperator_single M e x))
 
 /-- Restricting the assembled graded pair recovers the original representation, by the
 equivalences on its vertex spaces. -/
