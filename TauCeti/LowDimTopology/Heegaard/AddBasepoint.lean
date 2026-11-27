@@ -415,7 +415,7 @@ theorem addBasepointChainProdEquiv_symm_apply_one (m n : H.Generator →₀ R) (
     (H.addBasepointChainProdEquiv r₀).symm (m, n) (H.addBasepointGenerator r₀ x 1) = n x := by
   simp [addBasepointChainProdEquiv]
 
-/-- The splitting of the basis chain at `(x, 0)` is `(x, 0)`. -/
+/-- The splitting of the basis chain `single (x, 0) a` is `(single x a, 0)`. -/
 @[simp]
 theorem addBasepointChainProdEquiv_single_zero (x : H.Generator) (a : R) :
     H.addBasepointChainProdEquiv r₀ (Finsupp.single (H.addBasepointGenerator r₀ x 0) a) =
@@ -426,7 +426,7 @@ theorem addBasepointChainProdEquiv_single_zero (x : H.Generator) (a : R) :
     simp [addBasepointGenerator_inj]
   · simp
 
-/-- The splitting of the basis chain at `(x, 1)` is `(0, x)`. -/
+/-- The splitting of the basis chain `single (x, 1) a` is `(0, single x a)`. -/
 @[simp]
 theorem addBasepointChainProdEquiv_single_one (x : H.Generator) (a : R) :
     H.addBasepointChainProdEquiv r₀ (Finsupp.single (H.addBasepointGenerator r₀ x 1) a) =
