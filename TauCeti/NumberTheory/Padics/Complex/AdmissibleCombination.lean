@@ -28,14 +28,14 @@ allows one statement to bound sizes in some cases while still controlling denomi
 
 This file develops their closure properties. Admissible combinations are stable under
 substitution: if each `v x` is itself an admissible combination of vectors `v' y`, then so is `z`,
-with the product of the denominators and of the sizes. They are carried to admissible combinations
-by linear maps, by bilinear maps (with the product of the denominators and of the sizes), by
-multilinear maps and in particular to pure tensors of `PiTensorProduct`; they are stable under sums
-and under multiplication by scalars integral away from `q` whose conjugates have absolute value at
-most `1`, such as roots of unity, and the vectors `v x` may be replaced by root of unity multiples
-of other vectors. Finally `d • z` lies in every module over a subring containing the elements
-integral away from `q`, for instance over the ring `ι⁻¹(𝓞_ℂ_[ℓ])` for a prime `ℓ ∤ q` and
-`ι : ℂ →+* ℂ_[ℓ]`, that contains the `v x`.
+with the product of the denominators and size `B * |B'|`. They are carried to admissible
+combinations by linear maps, by bilinear maps (with the product of the denominators and size
+`B * |B'|`), by multilinear maps and in particular to pure tensors of `PiTensorProduct`; they are
+stable under sums and under multiplication by scalars integral away from `q` whose conjugates have
+absolute value at most `1`, such as roots of unity, and the vectors `v x` may be replaced by root
+of unity multiples of other vectors. Finally `d • z` lies in every module over a subring containing
+the elements integral away from `q`, for instance over the ring `ι⁻¹(𝓞_ℂ_[ℓ])` for a prime
+`ℓ ∤ q` and `ι : ℂ →+* ℂ_[ℓ]`, that contains the `v x`.
 
 ## Main definitions
 
