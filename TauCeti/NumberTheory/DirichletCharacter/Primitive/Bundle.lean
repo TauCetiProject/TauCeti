@@ -104,6 +104,12 @@ noncomputable def of [NeZero N] (χ : DirichletCharacter ℂ N) : PrimitiveDiric
 theorem level_of [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) = χ.conductor :=
   (rfl)
 
+/-- Evaluation of the bundled character on a natural number agrees with evaluation of the
+primitive character inducing the input character. -/
+@[simp] theorem character_of_apply_natCast [NeZero N] (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    (of χ).character n = χ.primitiveCharacter (n : ZMod χ.conductor) :=
+  (rfl)
+
 /-- The level of the bundle of a character divides the level at which the character is
 presented. -/
 theorem level_of_dvd [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) ∣ N :=
