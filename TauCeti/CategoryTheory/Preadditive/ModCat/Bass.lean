@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import TauCeti.CategoryTheory.Functor.Factorizable
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 
 import Mathlib.Algebra.Category.Grp.FilteredColimits
@@ -42,25 +43,6 @@ universe w v u
 open CategoryTheory Category DirectSum Limits Opposite
 open CoproductsFromFiniteFiltered
 
-namespace CategoryTheory.Functor
-
-/-- A sequence is factorizable if, from each stage, some transition factors through every
-subsequent transition out of that stage. -/
-def IsFactorizable {C : Type u} [Category.{v} C] (F : ℕ ⥤ C) : Prop :=
-  ∀ i : ℕ, ∃ (j : ℕ) (hij : i ≤ j), ∀ (k : ℕ) (hjk : j ≤ k),
-    ∃ t : F.obj k ⟶ F.obj j,
-      F.map (homOfLE (hij.trans hjk)) ≫ t = F.map (homOfLE hij)
-
-/-- A factorizable sequence has an eventual factorization at each stage. -/
-theorem isFactorizable_iff {C : Type u} [Category.{v} C] (F : ℕ ⥤ C) :
-    F.IsFactorizable ↔
-      ∀ i : ℕ, ∃ (j : ℕ) (hij : i ≤ j), ∀ (k : ℕ) (hjk : j ≤ k),
-        ∃ t : F.obj k ⟶ F.obj j,
-          F.map (homOfLE (hij.trans hjk)) ≫ t = F.map (homOfLE hij) :=
-  Iff.rfl
-
-end CategoryTheory.Functor
-
 namespace TauCeti.ModCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
@@ -70,24 +52,13 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 abbrev bassDiagram : ℕ ⥤ ModCat.{v} C :=
   Functor.ofSequence f ⋙ yoneda C
 
-/-- The module at a stage of the Bass diagram is represented by the object at that stage. -/
-@[simp]
-theorem bassDiagram_obj (i : ℕ) :
-    (bassDiagram c f).obj i = (yoneda C).obj (c i) := (rfl)
-
-/-- The transition in the Bass diagram is postcomposition with the original transition. -/
-@[simp]
-theorem bassDiagram_map {i j : ℕ} (g : i ⟶ j) :
-    (bassDiagram c f).map g = (yoneda C).map ((Functor.ofSequence f).map g) := (rfl)
-
 /-- The Bass module of a sequence is the colimit of its sequence of representable modules. -/
 noncomputable abbrev bassModule : ModCat.{v} C :=
   colimit (bassDiagram c f)
 
 /-- The telescope of the Bass diagram. Its first map subtracts the successor transition
-from each summand inclusion, and its second map is induced by the colimit legs. The objects
-are definitionally the two coproducts and the Bass module. -/
-noncomputable abbrev bassTelescope : ShortComplex (ModCat.{v} C) :=
+from each summand inclusion, and its second map is induced by the colimit legs. -/
+noncomputable def bassTelescope : ShortComplex (ModCat.{v} C) :=
   let F := bassDiagram c f
   ShortComplex.mk (X₃ := bassModule c f)
     (Sigma.desc fun i ↦ Sigma.ι F.obj i -
@@ -96,6 +67,63 @@ noncomputable abbrev bassTelescope : ShortComplex (ModCat.{v} C) :=
       apply Sigma.hom_ext
       intro i
       simp [Preadditive.sub_comp])
+
+/-- The source of the telescope is the coproduct of the stages. -/
+@[simp]
+theorem bassTelescope_X₁ : (bassTelescope c f).X₁ = ∐ (bassDiagram c f).obj := (rfl)
+
+/-- The middle object of the telescope is the coproduct of the stages. -/
+@[simp]
+theorem bassTelescope_X₂ : (bassTelescope c f).X₂ = ∐ (bassDiagram c f).obj := (rfl)
+
+/-- The target of the telescope is the Bass module. -/
+@[simp]
+theorem bassTelescope_X₃ : (bassTelescope c f).X₃ = bassModule c f := (rfl)
+
+/-- On each summand, the first telescope map subtracts the transition to its successor. -/
+@[simp]
+theorem ι_bassTelescope_f (i : ℕ) :
+    Sigma.ι (bassDiagram c f).obj i ≫ eqToHom (bassTelescope_X₁ c f).symm ≫
+      (bassTelescope c f).f ≫ eqToHom (bassTelescope_X₂ c f) =
+      Sigma.ι (bassDiagram c f).obj i -
+        (bassDiagram c f).map (homOfLE (i.le_add_right 1)) ≫
+          Sigma.ι (bassDiagram c f).obj (i + 1) := by
+  simp [bassTelescope]
+
+/-- On each summand, the second telescope map is the corresponding colimit leg. -/
+@[simp]
+theorem ι_bassTelescope_g (i : ℕ) :
+    Sigma.ι (bassDiagram c f).obj i ≫ eqToHom (bassTelescope_X₂ c f).symm ≫
+      (bassTelescope c f).g ≫ eqToHom (bassTelescope_X₃ c f) = colimit.ι (bassDiagram c f) i := by
+  simp [bassTelescope]
+
+private theorem bassTelescope_map_g {R : Type w} [Ring R]
+    (E : ModCat.{v} C ⥤ ModuleCat.{v} R)
+    (e : ModuleCat.of R (⨁ i, E.obj ((bassDiagram c f).obj i)) ≅
+      E.obj (∐ (bassDiagram c f).obj))
+    (hι : ∀ i : ℕ, ModuleCat.ofHom (lof R ℕ (fun j ↦ E.obj ((bassDiagram c f).obj j)) i) ≫
+      e.hom = E.map (Sigma.ι (bassDiagram c f).obj i)) :
+    let t := E.mapCocone (colimit.cocone (bassDiagram c f))
+    e.hom ≫ E.map (eqToHom (bassTelescope_X₂ c f).symm ≫
+      (bassTelescope c f).g ≫ eqToHom (bassTelescope_X₃ c f)) =
+      ModuleCat.ofHom (toModule R ℕ t.pt (fun j ↦ (t.ι.app j).hom)) := by
+  intro t
+  let F := bassDiagram c f
+  let ag := eqToHom (bassTelescope_X₂ c f).symm ≫ (bassTelescope c f).g ≫
+    eqToHom (bassTelescope_X₃ c f)
+  apply Cofan.IsColimit.hom_ext (ModuleCat.coproductCoconeIsColimit fun i ↦ E.obj (F.obj i))
+  intro i
+  -- Display the concrete direct sum inclusions to apply `DirectSum.toModule_lof`.
+  change ModuleCat.ofHom (lof R ℕ (fun j ↦ E.obj (F.obj j)) i) ≫ e.hom ≫ E.map ag =
+    ModuleCat.ofHom (lof R ℕ (fun j ↦ E.obj (F.obj j)) i) ≫
+      ModuleCat.ofHom (toModule R ℕ t.pt (fun j ↦ (t.ι.app j).hom))
+  rw [← assoc, hι, ← E.map_comp]
+  dsimp only [ag]
+  rw [ι_bassTelescope_g]
+  refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
+    DirectSum.toModule_lof]
+  simp only [t, Functor.mapCocone_ι_app, colimit.cocone_ι]
 
 private theorem shortExact_map_bassTelescope {R : Type w} [Ring R]
     (E : ModCat.{v} C ⥤ ModuleCat.{v} R) [E.Additive] [PreservesColimitsOfShape ℕ E]
@@ -116,41 +144,40 @@ private theorem shortExact_map_bassTelescope {R : Type w} [Ring R]
       e.hom.hom (DirectSum.lof R ℕ (fun j ↦ H.obj j) i x) =
         (E.map (Sigma.ι F.obj i)).hom x :=
     congrArg (fun m : H.obj i ⟶ E.obj (∐ F.obj) ↦ m.hom x) (hι i)
-  have hf : e.hom ≫ E.map S.f = ModuleCat.ofHom (ModuleCat.telescopeDiff H) ≫ e.hom := by
+  let af := eqToHom (bassTelescope_X₁ c f).symm ≫ S.f ≫ eqToHom (bassTelescope_X₂ c f)
+  let ag := eqToHom (bassTelescope_X₂ c f).symm ≫ S.g ≫ eqToHom (bassTelescope_X₃ c f)
+  have hf : e.hom ≫ E.map af = ModuleCat.ofHom (ModuleCat.telescopeDiff H) ≫ e.hom := by
     apply Cofan.IsColimit.hom_ext P
     intro i
     -- Display the concrete direct sum inclusions in the comparison square.
-    change ModuleCat.ofHom (DirectSum.lof R ℕ (fun i ↦ H.obj i) i) ≫ e.hom ≫ E.map S.f =
-      ModuleCat.ofHom (DirectSum.lof R ℕ (fun i ↦ H.obj i) i) ≫
+    change ModuleCat.ofHom (lof R ℕ (fun i ↦ H.obj i) i) ≫ e.hom ≫ E.map af =
+      ModuleCat.ofHom (lof R ℕ (fun i ↦ H.obj i) i) ≫
         ModuleCat.ofHom (ModuleCat.telescopeDiff H) ≫ e.hom
     rw [← assoc, hι, ← E.map_comp]
-    simp only [S, bassTelescope, Sigma.ι_comp_desc, E.map_sub, E.map_comp]
+    dsimp only [F, af, S]
+    rw [ι_bassTelescope_f, E.map_sub, E.map_comp]
     refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
     simp only [ModuleCat.hom_sub, LinearMap.sub_apply, ModuleCat.hom_comp, LinearMap.coe_comp,
       Function.comp_apply, ModuleCat.hom_ofHom, ModuleCat.telescopeDiff_lof, map_sub, hι_apply]
-    rfl
-  have hg : e.hom ≫ E.map S.g =
-      ModuleCat.ofHom (DirectSum.toModule R ℕ t.pt (fun j ↦ (t.ι.app j).hom)) := by
-    apply Cofan.IsColimit.hom_ext P
-    intro i
-    -- The comparison agrees with the second map on each concrete direct sum inclusion.
-    change ModuleCat.ofHom (DirectSum.lof R ℕ (fun i ↦ H.obj i) i) ≫ e.hom ≫ E.map S.g =
-      ModuleCat.ofHom (DirectSum.lof R ℕ (fun i ↦ H.obj i) i) ≫
-        ModuleCat.ofHom (DirectSum.toModule R ℕ t.pt (fun j ↦ (t.ι.app j).hom))
-    rw [← assoc, hι, ← E.map_comp]
-    simp only [S, bassTelescope, Sigma.ι_comp_desc]
-    refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
-    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
-      DirectSum.toModule_lof]
-    rfl
-  refine (ShortComplex.shortExact_iff_of_iso
+    simp only [H, F, Functor.comp_map]
+  have hg : e.hom ≫ E.map ag =
+      ModuleCat.ofHom (toModule R ℕ t.pt (fun j ↦ (t.ι.app j).hom)) :=
+    bassTelescope_map_g c f E e hι
+  refine ShortComplex.shortExact_of_iso
     (ShortComplex.isoMk (S₁ := ModuleCat.telescopeShortComplex H t) (S₂ := S.map E)
-      (eqToIso (ModuleCat.telescopeShortComplex_X₁ H t) ≪≫ e)
-      (eqToIso (ModuleCat.telescopeShortComplex_X₂ H t) ≪≫ e)
-      (eqToIso (ModuleCat.telescopeShortComplex_X₃ H t)) ?_ ?_)).1
+      (eqToIso (ModuleCat.telescopeShortComplex_X₁ H t) ≪≫ e ≪≫
+        eqToIso (congrArg E.obj (bassTelescope_X₁ c f).symm))
+      (eqToIso (ModuleCat.telescopeShortComplex_X₂ H t) ≪≫ e ≪≫
+        eqToIso (congrArg E.obj (bassTelescope_X₂ c f).symm))
+      (eqToIso (ModuleCat.telescopeShortComplex_X₃ H t) ≪≫
+        eqToIso (congrArg E.obj (bassTelescope_X₃ c f).symm)) ?_ ?_)
     (ModuleCat.shortExact_telescopeShortComplex H (isColimitOfPreserves E (colimit.isColimit F)))
-  · simp [ModuleCat.telescopeShortComplex_f, hf]
-  · simp [ModuleCat.telescopeShortComplex_g, hg]
+  · rw [← cancel_mono (eqToHom (congrArg E.obj (bassTelescope_X₂ c f)))]
+    simpa [ModuleCat.telescopeShortComplex_f, af, S, Functor.map_comp, eqToHom_map]
+      using congrArg (eqToHom (ModuleCat.telescopeShortComplex_X₁ H t) ≫ ·) hf
+  · rw [← cancel_mono (eqToHom (congrArg E.obj (bassTelescope_X₃ c f)))]
+    simpa [ModuleCat.telescopeShortComplex_g, ag, S, Functor.map_comp, eqToHom_map]
+      using congrArg (eqToHom (ModuleCat.telescopeShortComplex_X₂ H t) ≫ ·) hg
 
 /-- The telescope is a short exact presentation of the Bass module by coproducts of
 representables. -/
@@ -173,6 +200,11 @@ private abbrev forgetEval (X : C) : ModCat.{v} C ⥤ Type v :=
   ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ⋙ (evaluation _ _).obj (op X)) ⋙
     forget AddCommGrpCat
 
+@[simp]
+private theorem forgetEval_map_apply (X : C) {M N : ModCat.{v} C}
+    (m : M ⟶ N) (x : (forgetEval X).obj M) :
+    (forgetEval X).map m x = m.hom.app (op X) x := rfl
+
 private instance (X : C) {J : Type} [SmallCategory J] [IsFiltered J] :
     PreservesColimitsOfShape J (forgetEval X) := by
   have : PreservesFilteredColimitsOfSize.{0, 0} (forget AddCommGrpCat.{v}) :=
@@ -193,7 +225,7 @@ private theorem bassDiagram_eventually_eq {X : C} {j : ℕ}
   have he : E.map (a ≫ F.map g) (𝟙 X) = E.map (b ≫ F.map g) (𝟙 X) := by
     simp only [Functor.map_comp]
     exact hg
-  exact he
+  exact (forgetEval_map_apply X _ _).symm.trans (he.trans (forgetEval_map_apply X _ _))
 
 /-- A colimit leg of the Bass diagram vanishes exactly when some transition out of its stage
 vanishes in the original sequence. -/
@@ -208,10 +240,9 @@ theorem bassDiagram_ι_eq_zero_iff (i : ℕ) :
     refine ⟨j, leOfHom g, (yoneda C).map_injective ?_⟩
     have hg' : F.map g = 0 := by simpa only [id_comp, zero_comp] using hg
     rw [Subsingleton.elim (homOfLE (leOfHom g)) g]
-    rw [Functor.map_zero, ← bassDiagram_map]
-    exact hg'
+    simpa only [F, Functor.comp_map, Functor.map_zero] using hg'
   · rintro ⟨j, hij, hj⟩
-    rw [← colimit.w F (homOfLE hij), bassDiagram_map, hj, Functor.map_zero, zero_comp]
+    rw [← colimit.w F (homOfLE hij), Functor.comp_map, hj, Functor.map_zero, zero_comp]
 
 /-- The Bass module vanishes if and only if, for each stage, the composite to some later
 stage is zero. -/
@@ -254,26 +285,33 @@ private theorem bassDiagram_factors_at_stage {i : ℕ}
     have hh := congrArg (fun m => E.map m y) hp
     simp only [Functor.map_comp] at hh ⊢
     exact hh
-  have hy' : E.map d y = E.map a x := hy
-  rw [hy'] at h
-  have h' : E.map (a ≫ p ≫ colimit.ι F j) x = E.map (a ≫ q) x := by
+  rw [Functor.mapCocone_ι_app] at hy
+  -- Identify the mapped cocone leg as the image of the finite coproduct inclusion `d`.
+  rw [show E.map d y = E.map a x from hy] at h
+  have he : E.map (a ≫ p ≫ colimit.ι F j) x = E.map (a ≫ q) x := by
     simp only [Functor.map_comp]
     exact h
-  exact h'
+  exact (forgetEval_map_apply (c i) _ _).symm.trans (he.trans (forgetEval_map_apply (c i) _ _))
 
 /-- If the Bass module is projective then the original sequence is factorizable. -/
 theorem isFactorizable_of_projective_bassModule [Projective (bassModule c f)] :
     (Functor.ofSequence f).IsFactorizable := by
   let F := bassDiagram c f
-  let q := Sigma.desc (colimit.ι F)
-  have : Epi q := (shortExact_bassTelescope c f).epi_g
+  let q := eqToHom (bassTelescope_X₂ c f).symm ≫ (bassTelescope c f).g ≫
+    eqToHom (bassTelescope_X₃ c f)
+  have := (shortExact_bassTelescope c f).epi_g
+  have : Epi q := by dsimp only [q]; infer_instance
   have : Projective (colimit F) := ‹Projective (bassModule c f)›
   let s := Projective.factorThru (𝟙 (colimit F)) q
   have hs : s ≫ q = 𝟙 (colimit F) := Projective.factorThru_comp _ _
+  unfold Functor.IsFactorizable
   intro i
   -- Bound the finite support of the split leg and then compare the two maps at that stage.
   obtain ⟨j, hij, p, hp⟩ := bassDiagram_factors_at_stage c f (i := i) s
-  have hq : Sigma.desc (colimit.ι (bassDiagram c f)) = q := rfl
+  have hq : Sigma.desc (colimit.ι (bassDiagram c f)) = q := by
+    apply Sigma.hom_ext
+    intro n
+    simp only [q, Sigma.ι_comp_desc, ι_bassTelescope_g]
   rw [hq, hs, comp_id] at hp
   have he : (colimit.ι F i ≫ s ≫ p) ≫ colimit.ι F j =
       F.map (homOfLE hij) ≫ colimit.ι F j := by
