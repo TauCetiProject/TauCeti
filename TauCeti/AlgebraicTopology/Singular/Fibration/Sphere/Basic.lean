@@ -192,28 +192,28 @@ end Skeleton
 
 section Filtration
 
-variable {E : _root_.TopCat.{u}} (p : E ⟶ _root_.TopCat.of (sphere (0 : EuclideanSpace ℝ ι) 1))
+variable {E : Type*} (f : E → sphere (0 : EuclideanSpace ℝ ι) 1)
 
 /-- The stages `E_b`, `0 ≤ b < n`, of the skeletal filtration of a map to `Sⁿ` are the fibre over
 the pole. -/
 lemma preimageSkeleton_sphereRelCWComplex_of_lt {b : ℤ} (hb : 0 ≤ b) (hbn : b < n) :
     letI := sphereRelCWComplex h
-    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) p b =
-      p ⁻¹' {spherePolePoint h} := by
+    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) f b =
+      f ⁻¹' {spherePolePoint h} := by
   let _ := sphereRelCWComplex h
   rw [preimageSkeleton_def, skeletonLT_sphereRelCWComplex h (by lia) (by lia)]
 
 /-- The stages `E_b`, `b ≥ n`, of the skeletal filtration of a map to `Sⁿ` are the whole space. -/
 lemma preimageSkeleton_sphereRelCWComplex_of_le {b : ℤ} (hb : n ≤ b) :
     letI := sphereRelCWComplex h
-    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) p b = univ := by
+    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) f b = univ := by
   let _ := sphereRelCWComplex h
   rw [preimageSkeleton_def, skeletonLT_sphereRelCWComplex_of_lt h (by lia), preimage_univ]
 
 /-- The stages `E_b`, `b < 0`, of the skeletal filtration of a map to `Sⁿ` are empty. -/
 lemma preimageSkeleton_sphereRelCWComplex_of_neg {b : ℤ} (hb : b < 0) :
     letI := sphereRelCWComplex h
-    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) p b = ∅ := by
+    preimageSkeleton (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) f b = ∅ := by
   let _ := sphereRelCWComplex h
   rw [preimageSkeleton_def, show (b + 1).toNat = 0 by lia, Nat.cast_zero,
     skeletonLT_zero_sphereRelCWComplex h, preimage_empty]

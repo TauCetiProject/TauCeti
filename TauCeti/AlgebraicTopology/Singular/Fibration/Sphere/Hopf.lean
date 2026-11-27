@@ -14,7 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 # The Serre spectral sequence of the Hopf fibration
 
 The Hopf map `S³ → S²` (`TauCeti.hopfSphere2Hom`) is a Serre fibration with fibre the circle
-(`TauCeti.hopfSphere2Hom_mem_serreFibrations`, `TauCeti.hopfSphere2HomFiberHomeomorph`). Its Serre
+(`TauCeti.hopfSphere2Hom_mem_serreFibrations`, `TauCeti.hopfSphere2FiberHomeomorph`). Its Serre
 spectral sequence (`TauCeti.TopCat.hopfSerreSpectralSequence`), over the CW structure of `S²` with
 one `0`-cell and one `2`-cell, is computed here from the general shape of the spectral sequence of a
 fibration over a sphere (`TauCeti.AlgebraicTopology.Singular.Fibration.Sphere.SpectralSequence`).
@@ -98,7 +98,9 @@ def hopfSerreSpectralSequenceSecondPageXIsoPole (v : sphere (0 : EuclideanSpace 
       (by norm_num) q pq hb ha ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
       (ModuleCat.of R R)).mapIso
-        (_root_.TopCat.isoOfHomeo (hopfSphere2HomFiberHomeomorph v hv).symm)
+        -- `hopfSphere2Hom ⁻¹' {x}` is `hopfSphere2 ⁻¹' {x}` by definition, since `hopfSphere2Hom`
+        -- is the abbreviation `TopCat.ofHom hopfSphere2`.
+        (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph v hv).symm)
 
 /-- **The column `2` of the second page of the Serre spectral sequence of the Hopf fibration** is
 the homology of the circle: `E²_{2,q} ≅ Hq(S¹; R)`, through the fibre over the centre of the
@@ -116,7 +118,9 @@ def hopfSerreSpectralSequenceSecondPageXIsoTopCell (v : sphere (0 : EuclideanSpa
       hopfSphere2Hom_mem_serreFibrations (by norm_num) q pq hb ha ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
       (ModuleCat.of R R)).mapIso
-        (_root_.TopCat.isoOfHomeo (hopfSphere2HomFiberHomeomorph v hv).symm)
+        -- `hopfSphere2Hom ⁻¹' {x}` is `hopfSphere2 ⁻¹' {x}` by definition, since `hopfSphere2Hom`
+        -- is the abbreviation `TopCat.ofHom hopfSphere2`.
+        (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph v hv).symm)
 
 end TopCat
 
