@@ -127,4 +127,19 @@ theorem finsuppScalarRight_symm_apply (f : P →₀ M) :
   simp only [finsuppScalarRight_tmul_single, op_one, one_smul]
   exact (Finsupp.sum_single f).symm
 
+variable {M} {M' : Type*} [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M']
+  [SMulCommClass R Aᵐᵒᵖ M'] [IsScalarTower R Aᵐᵒᵖ M']
+
+/-- The free left module tensor equivalence commutes with maps of right modules. -/
+theorem finsuppScalarRight_map (f : M →ₗ[R] M')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m) :
+    (finsuppScalarRight R A M' P).toLinearMap.comp
+        (map f LinearMap.id hf (fun _ _ ↦ rfl)) =
+      (Finsupp.mapRange.linearMap f).comp (finsuppScalarRight R A M P).toLinearMap := by
+  apply hom_ext
+  intro m g
+  ext i
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, map_tmul, LinearMap.id_apply,
+    Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply, finsuppScalarRight_tmul_apply, hf]
+
 end TauCeti.BalancedTensorProduct
