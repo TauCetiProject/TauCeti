@@ -8,10 +8,6 @@ module
 public import TauCeti.RingTheory.WittVector.Big.Frobenius
 public import TauCeti.RingTheory.WittVector.Big.Verschiebung
 
-import Mathlib.Algebra.Module.Torsion.Free
-import Mathlib.Algebra.MvPolynomial.Counit
-import Mathlib.RingTheory.MvPolynomial.Basic
-
 /-!
 # Teichmüller representatives of big Witt vectors
 
@@ -73,8 +69,7 @@ private theorem teichmullerFun_mul (r s : R) :
   obtain ⟨r, rfl⟩ := counit_surjective R r
   obtain ⟨s, rfl⟩ := counit_surjective R s
   rw [← map_mul, ← map_teichmullerFun, ← map_teichmullerFun, ← map_teichmullerFun, ← map_mul]
-  congr 1
-  apply ghostMap_injective fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)
+  apply map_counit_eq_of_ghostMap_eq
   funext n
   simp [ghostMap_teichmullerFun, mul_pow]
 
@@ -142,16 +137,14 @@ theorem frobenius_teichmuller (n : ℕ) (r : R) :
     frobenius n (teichmuller S r) = teichmuller (S / n) (r ^ n) := by
   obtain ⟨r, rfl⟩ := counit_surjective R r
   rw [← map_teichmuller, frobenius_map, ← map_pow, ← map_teichmuller]
-  congr 1
-  apply ghostMap_injective fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)
+  apply map_counit_eq_of_ghostMap_eq
   funext k
   simpa only [ghostMap_frobenius, ghostMap_teichmuller] using pow_mul r n (k : ℕ)
 
-private theorem sum_verschiebung_teichmuller_of_ghostMap_injective
-    (hinj : Function.Injective (ghostMap : BigWittVector T R →+* (T → R)))
+private theorem ghostMap_sum_verschiebung_teichmuller
     (h : T ≤ S) (s : Finset ℕ) (hs : ∀ n ∈ T, n ∈ s) (x : BigWittVector S R) :
-    (∑ d ∈ s, verschiebung d (teichmuller (T / d) (x.coeff d))) = restrict h x := by
-  apply hinj
+    ghostMap (∑ d ∈ s, verschiebung d (teichmuller (T / d) (x.coeff d))) =
+      ghostMap (restrict h x) := by
   funext n
   let g := (Pi.evalRingHom (fun _ : T ↦ R) n).comp (ghostMap (S := T) (R := R))
   calc
@@ -181,15 +174,11 @@ theorem sum_verschiebung_teichmuller_eq_restrict (h : T ≤ S) (s : Finset ℕ)
     (hs : ∀ n ∈ T, n ∈ s) (x : BigWittVector S R) :
     (∑ d ∈ s, verschiebung d (teichmuller (T / d) (x.coeff d))) = restrict h x := by
   obtain ⟨x, rfl⟩ := map_surjective (counit R) (counit_surjective R) x
-  have hx := sum_verschiebung_teichmuller_of_ghostMap_injective
-    (fun _ _ e ↦ ghostMap_injective (fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)) e)
-    h s hs x
   simpa only [map_sum, ← verschiebung_map, map_teichmuller, coeff_map, map_restrict] using
-    congrArg (map (counit R)) hx
+    map_counit_eq_of_ghostMap_eq (ghostMap_sum_verschiebung_teichmuller h s hs x)
 
 /-- The partial Teichmüller sum agrees with the original vector upon restriction to any truncation
-set whose indices already occur in the sum. This gives convergence in the finite-restriction
-topology. -/
+set whose indices already occur in the sum. -/
 theorem restrict_sum_verschiebung_teichmuller (h : T ≤ S) (s : Finset ℕ)
     (hs : ∀ n ∈ T, n ∈ s) (x : BigWittVector S R) :
     restrict h (∑ d ∈ s, verschiebung d (teichmuller (S / d) (x.coeff d))) = restrict h x := by

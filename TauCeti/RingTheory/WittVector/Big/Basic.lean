@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Counit
 public import Mathlib.Algebra.Ring.Pi
 public import TauCeti.RingTheory.WittVector.Big.StructurePolynomial
 
 public import Mathlib.Data.Fin.VecNotation
 
 import Mathlib.Algebra.Module.Torsion.Free
-import Mathlib.Algebra.MvPolynomial.Counit
 import Mathlib.Algebra.Ring.InjSurj
 import Mathlib.RingTheory.MvPolynomial.Basic
 
@@ -527,6 +527,13 @@ theorem ghostMap_map (f : R →+* R') (x : BigWittVector S R) (n : S) :
     ghostMap (map f x) n = f (ghostMap x n) := by
   rw [ghostMap_apply, ghostMap_apply, map_ghostPolynomial]
   exact ghostPolynomial_congr fun d _ ↦ coeff_map f x d
+
+/-- Big Witt vectors over the integral polynomial ring with equal ghost components remain equal
+after specializing the variables by the polynomial counit. -/
+theorem map_counit_eq_of_ghostMap_eq {x y : BigWittVector S (MvPolynomial R ℤ)}
+    (h : ghostMap x = ghostMap y) : map (counit R) x = map (counit R) y :=
+  congrArg (map (counit R))
+    (ghostMap_injective (fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)) h)
 
 /-! ### Restriction to a smaller truncation set -/
 

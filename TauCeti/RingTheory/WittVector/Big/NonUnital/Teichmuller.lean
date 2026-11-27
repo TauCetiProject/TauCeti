@@ -9,6 +9,9 @@ public import TauCeti.RingTheory.WittVector.Big.NonUnital.Frobenius
 public import TauCeti.RingTheory.WittVector.Big.NonUnital.Verschiebung
 public import TauCeti.RingTheory.WittVector.Big.Teichmuller
 
+-- The comparison proof uses the kernel inclusion's definition as the subring subtype map.
+import all TauCeti.RingTheory.WittVector.Big.NonUnital
+
 /-!
 # Teichmüller representatives over nonunital rings
 
@@ -55,8 +58,10 @@ coefficient in the unitization. -/
 theorem toBigWitt_teichmuller (r : R) :
     toBigWitt (teichmuller S r) =
       BigWittVector.teichmuller S (Unitization.inr r : Unitization ℤ R) := by
-  rw [toBigWitt_apply]
-  rfl
+  simp only [toBigWitt, NonUnitalSubringClass.subtype_apply, teichmuller,
+    MulHom.codRestrict_apply_coe, MulHom.comp_apply, NonUnitalAlgHom.toMulHom_eq_coe,
+    NonUnitalAlgHom.coe_to_mulHom, Unitization.inrNonUnitalAlgHom_toFun]
+  rw [← MulHom.toFun_eq_coe, MonoidHom.toMulHom_coe]
 
 /-- The coordinates of the Teichmüller representative over a nonunital ring. -/
 theorem coeff_teichmuller (r : R) (n : S) :
