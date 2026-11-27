@@ -40,6 +40,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 
 * `TauCeti.integerPositiveCompacts`: the ring of integers as a compact set with nonempty
   interior, the normalizing set of Mathlib's `MeasureTheory.Measure.addHaarMeasure`.
+  Its indicator `1_𝒪` is continuous with compact support (`TauCeti.continuous_indicator_integer`,
+  `TauCeti.hasCompactSupport_indicator_integer`).
 
 ## Main results
 
@@ -99,6 +101,17 @@ noncomputable def integerPositiveCompacts : PositiveCompacts K where
 @[simp]
 theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪[K] :=
   (rfl)
+
+/-- The indicator `1_𝒪` of the ring of integers is continuous: `𝒪[K]` is clopen. -/
+theorem continuous_indicator_integer {M : Type*} [TopologicalSpace M] [Zero M] [One M] :
+    Continuous ((𝒪[K] : Set K).indicator (1 : K → M)) :=
+  (Valuation.isClopen_integer (v := valuation K)).continuous_indicator continuous_const
+
+/-- The indicator `1_𝒪` of the ring of integers has compact support. -/
+theorem hasCompactSupport_indicator_integer {M : Type*} [TopologicalSpace M] [Zero M] [One M] :
+    HasCompactSupport ((𝒪[K] : Set K).indicator (1 : K → M)) :=
+  HasCompactSupport.intro (integerPositiveCompacts K).isCompact
+    fun _ hx ↦ Set.indicator_of_notMem hx _
 
 /-- In a ring with a valuative topology, the elements of valuation one form a measurable set: they
 are the sphere of radius one, which is closed (`Valuation.isClosed_sphere`). In a local field these

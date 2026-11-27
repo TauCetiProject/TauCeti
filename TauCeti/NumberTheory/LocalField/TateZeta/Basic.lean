@@ -30,7 +30,8 @@ integrand:
   `z(s, χ; f(b ·)) = χ(b)⁻¹ a(b)^(-s) z(s, χ; f)`.
 
 The last identity says that `f ↦ z(s, χ; f)` is an eigendistribution for the scalar action of
-`Fˣ` with eigencharacter `χ a^s`. The convergence and the explicit values over a nonarchimedean
+`Fˣ` with eigencharacter `χ a^s`; in particular it vanishes on test functions invariant under
+some `b` with `(χ a^s)(b) ≠ 1`. The convergence and the explicit values over a nonarchimedean
 local field are in `TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean`.
 
 ## Main definitions
@@ -45,6 +46,8 @@ local field are in `TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean`.
 * `TauCeti.TateZeta.localZetaIntegral_of_twist`: `z(s, χ a^t; f) = z(s + t, χ; f)`.
 * `TauCeti.TateZeta.localZetaIntegral_comp_mul_left`:
   `z(s, χ; f(b ·)) = χ(b)⁻¹ a(b)^(-s) z(s, χ; f)`.
+* `TauCeti.TateZeta.localZetaIntegral_eq_zero_of_comp_mul_left`: if `f(b ·) = f` and
+  `χ(b) a(b) ^ s ≠ 1`, then `z(s, χ; f) = 0`.
 
 ## References
 
@@ -71,11 +74,14 @@ function `f`, a quasi-character `χ` and an exponent `s`, for a measure `ν` on 
 absolute value `a`. It is Mathlib's totalized Bochner integral: its value is `0` when the
 integrand is not integrable. With `ν` the multiplicative Haar measure and `a` the normalized
 absolute value of a local field, it is Tate's local zeta integral `ζ(f, χ |·|^s)`. -/
-@[expose]
 def localZetaIntegral (ν : Measure Fˣ) (a : F → ℝ) (χ : Fˣ →ₜ* ℂˣ) (f : F → ℂ) (s : ℂ) : ℂ :=
   ∫ x : Fˣ, f x * (χ x : ℂ) * (a x : ℂ) ^ s ∂ν
 
 variable (ν : Measure Fˣ) (a : F → ℝ) (χ : Fˣ →ₜ* ℂˣ)
+
+theorem localZetaIntegral_def (f : F → ℂ) (s : ℂ) :
+    localZetaIntegral ν a χ f s = ∫ x : Fˣ, f x * (χ x : ℂ) * (a x : ℂ) ^ s ∂ν :=
+  (rfl)
 
 /-- The local zeta integral is additive in the test function, for integrable integrands. -/
 theorem localZetaIntegral_add {f g : F → ℂ} {s : ℂ}
@@ -83,7 +89,7 @@ theorem localZetaIntegral_add {f g : F → ℂ} {s : ℂ}
     (hg : Integrable (fun x : Fˣ ↦ g x * (χ x : ℂ) * (a x : ℂ) ^ s) ν) :
     localZetaIntegral ν a χ (f + g) s =
       localZetaIntegral ν a χ f s + localZetaIntegral ν a χ g s := by
-  rw [localZetaIntegral, localZetaIntegral, localZetaIntegral, ← integral_add hf hg]
+  rw [localZetaIntegral_def, localZetaIntegral_def, localZetaIntegral_def, ← integral_add hf hg]
   congr 1
   ext x
   simp only [Pi.add_apply]
@@ -92,19 +98,20 @@ theorem localZetaIntegral_add {f g : F → ℂ} {s : ℂ}
 /-- The local zeta integral is homogeneous in the test function. -/
 theorem localZetaIntegral_const_mul (c : ℂ) (f : F → ℂ) (s : ℂ) :
     localZetaIntegral ν a χ (fun x ↦ c * f x) s = c * localZetaIntegral ν a χ f s := by
-  rw [localZetaIntegral, localZetaIntegral, ← integral_const_mul]
+  rw [localZetaIntegral_def, localZetaIntegral_def, ← integral_const_mul]
   simp only [mul_assoc]
 
 /-- Rescaling the multiplicative measure by `c` rescales the local zeta integral by `c`. -/
 theorem localZetaIntegral_smul_measure (c : ENNReal) (f : F → ℂ) (s : ℂ) :
-    localZetaIntegral (c • ν) a χ f s = c.toReal • localZetaIntegral ν a χ f s :=
-  integral_smul_measure _ c
+    localZetaIntegral (c • ν) a χ f s = c.toReal • localZetaIntegral ν a χ f s := by
+  rw [localZetaIntegral_def, localZetaIntegral_def, integral_smul_measure]
 
 /-- **Twisting by a norm power translates the exponent**: if `χ' = χ a ^ t` on `Fˣ`, then
 `z(s, χ'; f) = z(s + t, χ; f)`. -/
 theorem localZetaIntegral_of_twist {χ' : Fˣ →ₜ* ℂˣ} {t : ℂ}
     (hχ' : ∀ x : Fˣ, (χ' x : ℂ) = χ x * (a x : ℂ) ^ t) (f : F → ℂ) (s : ℂ) :
     localZetaIntegral ν a χ' f s = localZetaIntegral ν a χ f (s + t) := by
+  rw [localZetaIntegral_def, localZetaIntegral_def]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   dsimp only
   rcases eq_or_ne t 0 with rfl | ht
@@ -132,7 +139,7 @@ theorem localZetaIntegral_comp_mul_left [MeasurableMul Fˣ] [ν.IsMulLeftInvaria
   have key := integral_mul_left_eq_self (μ := ν)
     (fun y : Fˣ ↦ f y * (χ (b⁻¹ * y) : ℂ) * (a ((b⁻¹ * y : Fˣ) : F) : ℂ) ^ s) b
   simp only [inv_mul_cancel_left, Units.val_mul] at key
-  rw [localZetaIntegral, localZetaIntegral, key, ← integral_const_mul]
+  rw [localZetaIntegral_def, localZetaIntegral_def, key, ← integral_const_mul]
   refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
   dsimp only
   rw [map_mul, Units.val_mul, map_inv, Units.val_inv_eq_inv_val, ← Units.val_mul, hmul,
@@ -142,5 +149,21 @@ theorem localZetaIntegral_comp_mul_left [MeasurableMul Fˣ] [ν.IsMulLeftInvaria
   · ring
   · rw [Complex.arg_ofReal_of_nonneg (ha b).le]
     exact Real.pi_ne_zero.symm
+
+/-- **Vanishing by an invariance**: for a left-invariant measure and a positive multiplicative
+`a`, if the test function is invariant under `b ∈ Fˣ` and `(χ a ^ s)(b) ≠ 1`, then
+`z(s, χ; f) = 0`. -/
+theorem localZetaIntegral_eq_zero_of_comp_mul_left [MeasurableMul Fˣ] [ν.IsMulLeftInvariant]
+    (ha : ∀ x : Fˣ, 0 < a x) (hmul : ∀ x y : Fˣ, a ((x * y : Fˣ) : F) = a x * a y)
+    {f : F → ℂ} {b : Fˣ} (hb : ∀ x, f (b * x) = f x) {s : ℂ}
+    (hχ : (χ b : ℂ) * (a b : ℂ) ^ s ≠ 1) :
+    localZetaIntegral ν a χ f s = 0 := by
+  have h := localZetaIntegral_comp_mul_left ν a χ ha hmul f b s
+  simp only [hb] at h
+  rw [cpow_neg, ← mul_inv] at h
+  have hc : ((χ b : ℂ) * (a b : ℂ) ^ s)⁻¹ ≠ 1 := fun h' ↦ hχ (inv_eq_one.1 h')
+  have h0 : (1 - ((χ b : ℂ) * (a b : ℂ) ^ s)⁻¹) * localZetaIntegral ν a χ f s = 0 := by
+    linear_combination h
+  exact (mul_eq_zero.1 h0).resolve_left (sub_ne_zero.2 hc.symm)
 
 end TauCeti.TateZeta
