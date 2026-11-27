@@ -281,12 +281,7 @@ theorem regularNormBodyVolume_ne_top [Fintype ι] (b : Basis ι ℚ D) :
       simpa [Algebra.smul_def, u] using hz
     rw [hz']
     simp only [c, Basis.unitsSMul_apply, Basis.repr_unitsSMul, Units.smul_def, smul_mul_assoc,
-      mul_smul_comm, map_smul, Finsupp.smul_apply, smul_eq_mul]
-    have hu : (u : ℚ) * (↑u⁻¹ : ℚ) = 1 := by
-      rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-    have hcancel (q : ℚ) : (u : ℚ) * ((↑u⁻¹ : ℚ) * q) = q := by
-      rw [← mul_assoc, hu, one_mul]
-    simp only [hcancel]
+      mul_smul_comm, map_smul, Finsupp.smul_apply, smul_eq_mul, Units.mul_inv_cancel_left]
   rw [b.regularNormBodyVolume_eq_det_mul c]
   exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ne_top_of_le_ne_top (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)
