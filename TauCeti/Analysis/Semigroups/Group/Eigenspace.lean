@@ -104,11 +104,8 @@ theorem fixedSubmodule_restrictScalars (U : StronglyContinuousGroup X)
 theorem isClosed_fixedSubmodule (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) :
     IsClosed (U.fixedSubmodule hU : Set X) := by
-  have hcar : (U.fixedSubmodule hU : Set X) = ⋂ t : ℝ, {x : X | U t x = x} := by
-    ext x
-    simp
-  rw [hcar]
-  exact isClosed_iInter fun t ↦ isClosed_eq (U t).continuous continuous_id
+  rw [← Submodule.coe_restrictScalars ℝ, fixedSubmodule_restrictScalars]
+  exact U.isClosed_fixedSpace
 
 /-- The common eigenspace at angular frequency `ω : ℝ` of a complex-linear C₀-group: the complex
 submodule of vectors satisfying `U t x = exp (ω * t * I) • x` for every `t : ℝ`. -/
