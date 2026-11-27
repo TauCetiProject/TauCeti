@@ -44,7 +44,8 @@ integral then gives finiteness of the return time almost everywhere on `A`.
 * `TauCeti.lt_positiveReturnTime_iff`: `k < positiveReturnTime T A x` iff `T^[i] x ∉ A` for
   `1 ≤ i ≤ k`.
 * `TauCeti.measurable_positiveReturnTime`.
-* `TauCeti.ae_mem_imp_positiveReturnTime_ne_top`: Poincaré recurrence for return times.
+* `MeasureTheory.Conservative.ae_mem_imp_positiveReturnTime_ne_top`: Poincaré recurrence for
+  return times.
 * `TauCeti.lintegral_positiveReturnTime_eq_tsum`: the layer-cake formula for the return time.
 * `TauCeti.lt_positiveReturnTime_inter_eq_preimage`: for `g ∘ f = id`, the set of points of `A`
   with return time under `f` greater than `k` is the preimage under `f^[k]` of the set of last
@@ -186,14 +187,6 @@ theorem measurableSet_lt_positiveReturnTime {T : X → X} (hT : Measurable T) {A
 
 variable {μ : Measure X}
 
-/-- **Poincaré recurrence for return times.** For a conservative map, almost every point of a
-null-measurable set `A` returns to `A`. -/
-theorem ae_mem_imp_positiveReturnTime_ne_top {T : X → X} (hT : Conservative T μ) {A : Set X}
-    (hA : NullMeasurableSet A μ) : ∀ᵐ x ∂μ, x ∈ A → positiveReturnTime T A x ≠ ⊤ := by
-  filter_upwards [hT.ae_mem_imp_frequently_image_mem hA] with x hx hxA
-  obtain ⟨n, hn, hnA⟩ := (Filter.frequently_atTop.1 (hx hxA)) 1
-  exact positiveReturnTime_ne_top_iff.2 ⟨n, hn, hnA⟩
-
 /-- **Layer-cake formula.** For measurable `T` and `A`, the extended integral of the return time
 over `A` is `∑ k, μ ({k < positiveReturnTime T A} ∩ A)`. -/
 theorem lintegral_positiveReturnTime_eq_tsum {T : X → X} (hT : Measurable T) {A : Set X}
@@ -263,3 +256,19 @@ theorem kac_return_time_integral [IsProbabilityMeasure μ] {T : X ≃ᵐ X} (hT 
   rw [integral_toReal hm.aemeasurable hfin, hint, ENNReal.toReal_one]
 
 end TauCeti
+
+namespace MeasureTheory.Conservative
+
+open TauCeti
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- **Poincaré recurrence for return times.** For a conservative map, almost every point of a
+null-measurable set `A` returns to `A`. -/
+theorem ae_mem_imp_positiveReturnTime_ne_top {T : X → X} (hT : Conservative T μ) {A : Set X}
+    (hA : NullMeasurableSet A μ) : ∀ᵐ x ∂μ, x ∈ A → positiveReturnTime T A x ≠ ⊤ := by
+  filter_upwards [hT.ae_mem_imp_frequently_image_mem hA] with x hx hxA
+  obtain ⟨n, hn, hnA⟩ := (Filter.frequently_atTop.1 (hx hxA)) 1
+  exact positiveReturnTime_ne_top_iff.2 ⟨n, hn, hnA⟩
+
+end MeasureTheory.Conservative

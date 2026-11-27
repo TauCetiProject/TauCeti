@@ -19,8 +19,8 @@ preserves the restriction `μ.restrict A` (`TauCeti.measurePreserving_inducedMap
 normalized restriction `(μ A)⁻¹ • μ.restrict A`
 (`TauCeti.measurePreserving_inducedMap_smul`). No invertibility is needed: the return time is
 finite almost everywhere on `A` by Poincaré recurrence
-(`TauCeti.ae_mem_imp_positiveReturnTime_ne_top`). For measurable `B ⊆ A`, splitting
-`μ B = μ (T⁻¹ B)` according to whether `x ∈ A` gives
+(`MeasureTheory.Conservative.ae_mem_imp_positiveReturnTime_ne_top`). For measurable `B ⊆ A`,
+splitting `μ B = μ (T⁻¹ B)` according to whether `x ∈ A` gives
 
 `μ B = ∑_{1 ≤ k ≤ n} μ (A ∩ {τ = k} ∩ T^[k]⁻¹ B) + μ D_n`,
 
@@ -235,7 +235,7 @@ theorem measure_inter_inducedMap_preimage [IsFiniteMeasure μ] (hT : MeasurePres
   rw [measure_eq_tsum_returnSet hT hA hB hBA, ← measure_iUnion pairwise_disjoint_returnSet
     (measurableSet_returnSet hT.measurable hA hB)]
   refine measure_congr (eventuallyEqSet_iff.2 ?_)
-  filter_upwards [ae_mem_imp_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet]
+  filter_upwards [hT.conservative.ae_mem_imp_positiveReturnTime_ne_top hA.nullMeasurableSet]
     with x hx
   simp only [mem_iUnion, mem_returnSet_iff, mem_inter_iff, mem_preimage]
   constructor
@@ -265,7 +265,7 @@ theorem measurePreserving_inducedMap [IsFiniteMeasure μ] {T : X → X}
       Measure.restrict_apply hS, ← measure_inter_inducedMap_preimage hT hA (hS.inter hA)
         inter_subset_right]
     refine measure_congr (eventuallyEqSet_iff.2 ?_)
-    filter_upwards [ae_mem_imp_positiveReturnTime_ne_top hT.conservative hA.nullMeasurableSet]
+    filter_upwards [hT.conservative.ae_mem_imp_positiveReturnTime_ne_top hA.nullMeasurableSet]
       with x hx
     simp only [mem_inter_iff, mem_preimage]
     exact ⟨fun h ↦ ⟨h.2, h.1, inducedMap_mem (hx h.2)⟩, fun h ↦ ⟨h.2.1, h.1⟩⟩
