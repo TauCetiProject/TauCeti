@@ -36,7 +36,7 @@ a valuation `Valuation.gauss v r` on `R[X]`.
 * `Polynomial.gaussValuation_mul`, `Polynomial.gaussValuation_pow`,
   `Polynomial.gaussValuation_comp_le`: multiplicativity, power formula, and substitution bound.
 * `Valuation.gauss_comap_C`, `Valuation.gauss_comap_mapRingHom`, `Valuation.gauss_map`,
-  `Valuation.gauss_zero`, `Valuation.supp_gauss`, `Valuation.le_gauss_iff`: restriction to
+  `Valuation.gauss_at_zero`, `Valuation.supp_gauss`, `Valuation.le_gauss_iff`: restriction to
   constants, coefficient pullback, value-monoid change, radius-zero pullback, support ideal at
   nonzero radius, and pointwise maximality characterization.
 
@@ -300,7 +300,7 @@ theorem gauss_map {Γ'₀ : Type*} [LinearOrderedCommMonoidWithZero Γ'₀] (v :
 
 /-- At radius `0`, `v.gauss 0` is the pullback of `v` along `Polynomial.constantCoeff`. -/
 @[simp]
-theorem gauss_zero (v : Valuation R Γ₀) :
+theorem gauss_at_zero (v : Valuation R Γ₀) :
     v.gauss 0 = v.comap Polynomial.constantCoeff := by
   ext p
   simp
