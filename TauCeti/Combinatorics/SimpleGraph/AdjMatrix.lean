@@ -30,7 +30,8 @@ spectra under adding edges rest on this decomposition.
 * `SimpleGraph.adjMatrix_sq_apply`: the `(v, w)` entry of `A²` is the number of common neighbours
   of `v` and `w`.
 * `SimpleGraph.IsRegularOfDegree.adjMatrix_mul_of_one`: for a `d`-regular graph, `A J = d J`,
-  where `J` is the all-ones matrix.
+  where `J` is the all-ones matrix; equivalently `(A - d I) J = 0`
+  (`SimpleGraph.IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one`).
 * `SimpleGraph.adjMatrix_sup_of_disjoint`, `SimpleGraph.degMatrix_sup_of_disjoint`,
   `SimpleGraph.lapMatrix_sup_of_disjoint`: the matrices of the union of two edge-disjoint graphs
   are the sums of their matrices.
@@ -77,6 +78,13 @@ theorem IsRegularOfDegree.adjMatrix_mul_of_one [Fintype V] [NonAssocSemiring R] 
     G.adjMatrix R * Matrix.of (fun _ _ ↦ (1 : R)) = (d : R) • Matrix.of (fun _ _ ↦ (1 : R)) := by
   ext v w
   simp [adjMatrix_mul_apply, hd v]
+
+/-- For a graph that is regular of degree `d`, `(A - d I) J = 0`, where `J` is the all-ones
+matrix. -/
+theorem IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one [Fintype V] [DecidableEq V] [Ring R]
+    {d : ℕ} (hd : G.IsRegularOfDegree d) :
+    (G.adjMatrix R - (d : R) • 1) * Matrix.of (fun _ _ ↦ (1 : R)) = 0 := by
+  simp [sub_mul, hd.adjMatrix_mul_of_one]
 
 /-! ### Edge-disjoint unions -/
 

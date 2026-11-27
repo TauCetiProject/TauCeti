@@ -29,16 +29,17 @@ feasibility conditions on the parameters are read off from this spectrum.
 
 ## Main definitions
 
-* `SimpleGraph.srgDiscriminant k ℓ μ`: the discriminant `(ℓ - μ)² + 4 (k - μ)`.
-* `SimpleGraph.srgEigenvalueR k ℓ μ`, `SimpleGraph.srgEigenvalueS k ℓ μ`: the larger and the
+* `TauCeti.srgDiscriminant k ℓ μ`: the discriminant `(ℓ - μ)² + 4 (k - μ)`.
+* `TauCeti.srgEigenvalueR k ℓ μ`, `TauCeti.srgEigenvalueS k ℓ μ`: the larger and the
   smaller root of `x² - (ℓ - μ) x - (k - μ)`.
 
 ## Main results
 
-* `SimpleGraph.sq_eq_iff_eq_srgEigenvalueR_or_eq_srgEigenvalueS`: for a nonnegative
+* `TauCeti.sq_eq_iff_eq_srgEigenvalueR_or_eq_srgEigenvalueS`: for a nonnegative
   discriminant, `r` and `s` are exactly the roots of `x² - (ℓ - μ) x - (k - μ)`.
 * `SimpleGraph.IsSRGWith.adjMatrix_sub_srgEigenvalueR_mul_sub_srgEigenvalueS`:
   `(A - r I)(A - s I) = μ J`.
+* `SimpleGraph.IsSRGWith.adjMatrix_sub_mul_sub_mul_sub_eq_zero`: `(A - k I)(A - r I)(A - s I) = 0`.
 * `SimpleGraph.IsSRGWith.spectrum_adjMatrix`: a strongly regular graph that is neither complete
   nor edgeless has spectrum exactly `{k, r, s}`.
 * `SimpleGraph.IsSRGWith.srgEigenvalueS_lt_srgEigenvalueR`,
@@ -55,7 +56,7 @@ public section
 
 open Matrix Polynomial
 
-namespace SimpleGraph
+namespace TauCeti
 
 /-! ### The two restricted eigenvalues -/
 
@@ -143,9 +144,15 @@ theorem srgEigenvalueS_lt_srgEigenvalueR (hμk : μ ≤ k) (hℓk : ℓ < k) :
   rw [srgEigenvalueR_def, srgEigenvalueS_def]
   linarith
 
+end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti
+
 /-! ### The spectrum -/
 
-variable {V : Type*} [Fintype V] {G : SimpleGraph V} [DecidableRel G.Adj] {n : ℕ}
+variable {k ℓ μ : ℕ} {V : Type*} [Fintype V] {G : SimpleGraph V} [DecidableRel G.Adj] {n : ℕ}
 
 /-- A strongly regular graph with `0 < μ` that is not complete has an edge. -/
 theorem IsSRGWith.ne_bot (h : G.IsSRGWith n k ℓ μ) (hμ : 0 < μ) (htop : G ≠ ⊤) : G ≠ ⊥ := by
@@ -159,7 +166,7 @@ theorem IsSRGWith.ne_bot (h : G.IsSRGWith n k ℓ μ) (hμ : 0 < μ) (htop : G �
 eigenvalue `s` is less than the larger one `r`. -/
 theorem IsSRGWith.srgEigenvalueS_lt_srgEigenvalueR (h : G.IsSRGWith n k ℓ μ) (htop : G ≠ ⊤)
     (hbot : G ≠ ⊥) : srgEigenvalueS k ℓ μ < srgEigenvalueR k ℓ μ :=
-  SimpleGraph.srgEigenvalueS_lt_srgEigenvalueR (h.le_of_ne_top htop) (h.lt_of_ne_bot hbot)
+  TauCeti.srgEigenvalueS_lt_srgEigenvalueR (h.le_of_ne_top htop) (h.lt_of_ne_bot hbot)
 
 /-- In a strongly regular graph with an edge and `0 < μ`, the larger restricted eigenvalue `r` is
 less than the degree `k`. -/
@@ -196,6 +203,16 @@ theorem IsSRGWith.adjMatrix_sub_srgEigenvalueR_mul_sub_srgEigenvalueS (h : G.IsS
   simp only [sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm, mul_one, one_mul, hsq, hs]
   linear_combination (norm := module) hrs • (1 : Matrix V V ℝ)
 
+/-- If `G` is strongly regular with parameters `(n, k, ℓ, μ)` and the discriminant is nonnegative,
+then `(A - k I)(A - r I)(A - s I) = 0`, where `A` is the real adjacency matrix. -/
+theorem IsSRGWith.adjMatrix_sub_mul_sub_mul_sub_eq_zero (h : G.IsSRGWith n k ℓ μ)
+    (hΔ : 0 ≤ srgDiscriminant k ℓ μ) :
+    (G.adjMatrix ℝ - (k : ℝ) • 1) *
+      ((G.adjMatrix ℝ - srgEigenvalueR k ℓ μ • 1) * (G.adjMatrix ℝ - srgEigenvalueS k ℓ μ • 1)) =
+      0 := by
+  rw [h.adjMatrix_sub_srgEigenvalueR_mul_sub_srgEigenvalueS hΔ, mul_smul_comm,
+    h.regular.adjMatrix_sub_smul_one_mul_of_one, smul_zero]
+
 /-- If `G` is regular of degree `k` and neither complete nor edgeless, and `c ≠ k` is such that
 `(A - c I)(A - d I)` is a multiple of the all-ones matrix `J`, then `c` is an eigenvalue of `A`. -/
 private theorem mem_spectrum_adjMatrix_of_mul_eq_smul (hreg : G.IsRegularOfDegree k)
@@ -217,7 +234,7 @@ private theorem mem_spectrum_adjMatrix_of_mul_eq_smul (hreg : G.IsRegularOfDegre
     simp only [sub_mul, smul_mul_assoc, one_mul]
     module
   have hkill : (A - c • 1) * ((A - (k : ℝ) • 1) * (A - d • 1)) = 0 := by
-    rw [hQ, mul_add, mul_smul_comm, mul_smul_comm, hcd, sub_mul, hAJ, smul_mul_assoc, one_mul]
+    simp only [hQ, mul_add, mul_smul_comm, hcd, sub_mul, smul_mul_assoc, one_mul, hAJ]
     module
   rw [hu.mul_right_eq_zero, hQ] at hkill
   obtain ⟨v, w, hne, hvw⟩ := ne_top_iff_exists_not_adj.1 htop
@@ -251,9 +268,8 @@ theorem IsSRGWith.spectrum_adjMatrix (h : G.IsSRGWith n k ℓ μ) (htop : G ≠ 
     let p : ℝ[X] :=
       (X - C (k : ℝ)) * ((X - C (srgEigenvalueR k ℓ μ)) * (X - C (srgEigenvalueS k ℓ μ)))
     have hp : aeval (G.adjMatrix ℝ) p = 0 := by
-      simp only [p, map_mul, map_sub, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one]
-      rw [hrs, mul_smul_comm, sub_mul, h.regular.adjMatrix_mul_of_one, smul_mul_assoc, one_mul,
-        sub_self, smul_zero]
+      simpa only [p, map_mul, map_sub, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one] using
+        h.adjMatrix_sub_mul_sub_mul_sub_eq_zero hΔ
     have := spectrum.subset_polynomial_aeval (G.adjMatrix ℝ) p ⟨θ, hθ, rfl⟩
     rw [hp, spectrum.zero_eq, Set.mem_singleton_iff] at this
     simp only [p, eval_mul, eval_sub, eval_X, eval_C, mul_eq_zero, sub_eq_zero] at this
