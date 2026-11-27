@@ -38,15 +38,17 @@ Mathlib's `NormedAlgebra.norm_eq_spectralNorm`), giving `‖x‖ ^ d = ‖a₀�
   is transcendental over `K` is zero.
 * `RingHom.spectralValue_map_of_norm_eq`: mapping a polynomial along a norm-preserving ring
   homomorphism out of a normed ring preserves `spectralValue`.
-* `Polynomial.spectralValue_C` and `Polynomial.spectralValue_one`: constant polynomials over any
-  seminormed ring have spectral value `0`.
+* `Polynomial.spectralValue_C`, `Polynomial.spectralValue_one`, and
+  `Polynomial.spectralValue_eq_iSup_fin`: constant polynomials over any seminormed ring have
+  spectral value `0`, and `spectralValue p` equals the finite supremum over `Fin p.natDegree`.
 * `Polynomial.Monic.spectralValue_eq_iSup_roots` and
-  `Polynomial.Monic.spectralValue_le_of_forall_aeval_eq_zero`: over an ultrametric normed field, the
-  spectral value of a monic polynomial is the supremum of `spectralNorm` over its roots in
-  `AlgebraicClosure K`.
-* `Polynomial.Monic.spectralValue_mul`, `Polynomial.Monic.spectralValue_le_of_dvd`, and
-  `Polynomial.Monic.spectralValue_prod_le`: over an ultrametric normed field, `spectralValue` takes
-  products of monic polynomials to maxima, so monic divisors have smaller `spectralValue`.
+  `Polynomial.Monic.spectralValue_le_of_forall_root_spectralNorm_le`: over an ultrametric normed
+  field, the spectral value of a monic polynomial is the supremum of `spectralNorm` over its roots
+  in `AlgebraicClosure K`.
+* `Polynomial.Monic.spectralValue_mul`, `Polynomial.Monic.spectralValue_pow`,
+  `Polynomial.Monic.spectralValue_le_of_dvd`, and `Polynomial.Monic.spectralValue_prod_le`: over
+  an ultrametric normed field, `spectralValue` takes products of monic polynomials to maxima, so
+  positive powers preserve `spectralValue` and monic divisors have smaller `spectralValue`.
 * `Polynomial.spectralValue_expand`: expanding a polynomial by a positive factor `q` raises its
   `spectralValue` to `1 / q`.
 * `Polynomial.spectralValue_map_iterateFrobenius_le`: mapping a polynomial over a reduced
@@ -110,6 +112,27 @@ theorem spectralValue_one {R : Type*} [SeminormedRing R] :
     spectralValue (1 : R[X]) = 0 := by
   rw [← map_one C, spectralValue_C]
 
+/-- The spectral value of a polynomial `p : R[X]` over a seminormed ring equals the finite
+supremum over `i : Fin p.natDegree` of `‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ))`. -/
+theorem spectralValue_eq_iSup_fin {R : Type*} [SeminormedRing R] (p : R[X]) :
+    spectralValue p = ⨆ i : Fin p.natDegree, ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)) := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
+  · have hterms : spectralValueTerms p = fun _ ↦ 0 :=
+      _root_.funext fun n ↦ spectralValueTerms_of_natDegree_le p (h0 ▸ Nat.zero_le n)
+    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
+    rw [spectralValue, hterms, ciSup_const, Real.iSup_of_isEmpty]
+  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
+    refine le_antisymm ?_ (Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p))
+    · refine ciSup_le fun n ↦ ?_
+      by_cases hn : n < p.natDegree
+      · rw [spectralValueTerms_of_lt_natDegree p hn]
+        exact le_ciSup (f := fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))
+          (Finite.bddAbove_range _) ⟨n, hn⟩
+      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
+        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
+    · rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
+      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
+
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K]
@@ -135,7 +158,7 @@ theorem Monic.spectralValue_eq_iSup_roots {p : K[X]} (hp : p.Monic) :
 
 /-- Over an ultrametric normed field, a nonnegative bound `r` on `spectralNorm` at every root of a
 monic polynomial `p : K[X]` in `AlgebraicClosure K` bounds `spectralValue p`. -/
-theorem Monic.spectralValue_le_of_forall_aeval_eq_zero {p : K[X]} (hp : p.Monic) {r : ℝ}
+theorem Monic.spectralValue_le_of_forall_root_spectralNorm_le {p : K[X]} (hp : p.Monic) {r : ℝ}
     (hr : 0 ≤ r)
     (h : ∀ x : AlgebraicClosure K, aeval x p = 0 → spectralNorm K (AlgebraicClosure K) x ≤ r) :
     spectralValue p ≤ r := by
@@ -158,16 +181,27 @@ theorem Monic.spectralValue_mul {p q : K[X]} (hp : p.Monic) (hq : q.Monic) :
     rw [← spectralAlgNorm_def]
     exact norm_root_le_spectralValue spectralAlgNorm_isPowMul isNonarchimedean_spectralNorm hr hx
   refine le_antisymm ?_ (max_le ?_ ?_)
-  · refine (hp.mul hq).spectralValue_le_of_forall_aeval_eq_zero
+  · refine (hp.mul hq).spectralValue_le_of_forall_root_spectralNorm_le
       (le_max_of_le_left (spectralValue_nonneg p)) fun x hx ↦ ?_
     rw [map_mul, mul_eq_zero] at hx
     rcases hx with hxp | hxq
     · exact (hroot hp hxp).trans (le_max_left _ _)
     · exact (hroot hq hxq).trans (le_max_right _ _)
-  · refine hp.spectralValue_le_of_forall_aeval_eq_zero (spectralValue_nonneg _) fun x hx ↦
+  · refine hp.spectralValue_le_of_forall_root_spectralNorm_le (spectralValue_nonneg _) fun x hx ↦
       hroot (hp.mul hq) (by rw [map_mul, hx, zero_mul])
-  · refine hq.spectralValue_le_of_forall_aeval_eq_zero (spectralValue_nonneg _) fun x hx ↦
+  · refine hq.spectralValue_le_of_forall_root_spectralNorm_le (spectralValue_nonneg _) fun x hx ↦
       hroot (hp.mul hq) (by rw [map_mul, hx, mul_zero])
+
+/-- Over an ultrametric normed field, raising a monic polynomial to a positive power preserves its
+spectral value. -/
+theorem Monic.spectralValue_pow {p : K[X]} (hp : p.Monic) {k : ℕ} (hk : k ≠ 0) :
+    spectralValue (p ^ k) = spectralValue p := by
+  rcases k with _ | k
+  · exact (hk rfl).elim
+  · induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [pow_succ, (hp.pow (k + 1)).spectralValue_mul hp, ih (Nat.succ_ne_zero k), max_self]
 
 /-- Over an ultrametric normed field, if a monic polynomial `p` divides a monic polynomial `q`,
 then `spectralValue p ≤ spectralValue q`. -/

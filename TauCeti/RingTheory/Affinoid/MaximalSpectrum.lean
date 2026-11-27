@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Jacobson
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Spectrum.Maximal.Integral
 import TauCeti.RingTheory.Spectrum.Maximal.Topology
 
 /-!
@@ -113,17 +113,12 @@ spectra. -/
 theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : f.toRingHom.IsIntegral) (hfi : Function.Injective f) :
     Function.Surjective (hB.maximalSpectrumComap f) := by
-  algebraize [f.toRingHom]
-  let _ : Algebra.IsIntegral A B := ⟨hf⟩
   intro x
-  obtain ⟨m, hm, hmcomap⟩ :=
-    Ideal.exists_ideal_over_maximal_of_isIntegral (R := A) (S := B) x.asIdeal (by
-    have hinj : Function.Injective (algebraMap A B) := hfi
-    rw [(RingHom.injective_iff_ker_eq_bot _).mp hinj]
-    exact bot_le)
-  refine ⟨⟨m, hm⟩, ?_⟩
-  apply MaximalSpectrum.ext
-  exact hmcomap
+  obtain ⟨y, hy⟩ := MaximalSpectrum.comapOfIsIntegral_surjective f.toRingHom hf
+    (((RingHom.injective_iff_ker_eq_bot _).mp hfi).trans_le bot_le) x
+  exact ⟨y, MaximalSpectrum.ext <| by
+    rw [hB.maximalSpectrumComap_asIdeal, ← hy, MaximalSpectrum.comapOfIsIntegral_asIdeal]
+    exact Ideal.ext fun _ ↦ by simp⟩
 
 /-- The residue field of a maximal ideal of `A` is finite over the ground field when `A` maps
 integrally and injectively into an affinoid algebra, since the ideal lies under a maximal ideal

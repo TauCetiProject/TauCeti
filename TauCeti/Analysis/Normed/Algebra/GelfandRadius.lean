@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 
 import TauCeti.Analysis.Normed.Unbundled.RootBound
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
 /-!
 # The Gelfand radius: idempotents, nonunital elements, power series, and ultrametric rings
@@ -317,16 +318,13 @@ theorem gelfandRadius_le_spectralValue_of_aeval_eq_zero {B A : Type*} [Seminorme
     (x := a) (by rw [eval_map_algebraMap, ha])
   have hdeg : (p.map (algebraMap B A)).natDegree = p.natDegree :=
     hp.natDegree_map (algebraMap B A)
-  rw [← gelfandRadiusRingSeminorm_apply]
-  refine hroot.trans (Real.iSup_le (fun ⟨j, hj⟩ ↦ ?_) (spectralValue_nonneg p))
+  rw [← gelfandRadiusRingSeminorm_apply, spectralValue_eq_iSup_fin]
+  refine hroot.trans (Real.iSup_le (fun ⟨j, hj⟩ ↦ ?_)
+    (Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _))
   have hjd : j < p.natDegree := hdeg ▸ hj
   rw [Fin.val_mk, gelfandRadiusRingSeminorm_apply, coeff_map, hdeg]
-  calc
-    gelfandRadius (algebraMap B A (p.coeff j)) ^ (1 / ((p.natDegree : ℝ) - (j : ℝ)))
-        ≤ ‖p.coeff j‖ ^ (1 / ((p.natDegree : ℝ) - (j : ℝ))) := by
-      refine Real.rpow_le_rpow (gelfandRadius_nonneg _) (hBA _) ?_
-      exact one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hjd.le))
-    _ = spectralValueTerms p j := (spectralValueTerms_of_lt_natDegree p hjd).symm
-    _ ≤ spectralValue p := le_ciSup (spectralValueTerms_bddAbove p) j
+  refine le_trans ?_ (le_ciSup (Finite.bddAbove_range _) ⟨j, hjd⟩)
+  exact Real.rpow_le_rpow (gelfandRadius_nonneg _) (hBA _)
+    (one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hjd.le)))
 
 end TauCeti

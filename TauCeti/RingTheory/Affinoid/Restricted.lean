@@ -20,8 +20,8 @@ import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 Let `A` be an affinoid algebra over a complete nonarchimedean field `K`, carrying a complete
 ultrametric algebra norm, and let `A⟨X₁, …, Xₘ⟩` be the Gauss-normed ring of unit-radius
 restricted series over `A`. This file proves that `A⟨X₁, …, Xₘ⟩` is again affinoid, and that
-`K`-algebra maps from it to a completely normed affinoid algebra `B` correspond to `K`-algebra
-maps `A → B` together with power-bounded images of the variables.
+`K`-algebra maps from it to an affinoid algebra `B` with a complete ultrametric algebra norm
+correspond to `K`-algebra maps `A → B` together with power-bounded images of the variables.
 
 For a Tate presentation `π : K⟨Y₁, …, Yₙ⟩ → A`, automatic continuity makes `π` bounded and the
 open mapping theorem gives lifts of controlled norm. Applying `π` to coefficients is then a
@@ -128,9 +128,9 @@ theorem continuous_algHom_quotient {L : Ideal (IsRestricted.subring (R := A) (fu
 
 include hB in
 /-- **`K`-algebra maps out of a quotient of `A⟨X₁, …, Xₖ⟩` send the variables to power-bounded
-elements.** Let `A` be a completely normed ultrametric `K`-algebra and `B` a completely normed
-affinoid `K`-algebra. Every `K`-algebra map `A⟨X₁, …, Xₖ⟩ ⧸ L → B` sends the image of each `Xᵢ` to
-a power-bounded element. -/
+elements.** Let `A` be a completely normed ultrametric `K`-algebra and `B` an affinoid `K`-algebra
+with a complete ultrametric algebra norm. Every `K`-algebra map `A⟨X₁, …, Xₖ⟩ ⧸ L → B` sends the
+image of each `Xᵢ` to a power-bounded element. -/
 theorem isPowerBounded_map_quotient_X
     {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
     (ψ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ L →ₐ[K] B) (i : Fin k) :

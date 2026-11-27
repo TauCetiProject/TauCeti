@@ -12,10 +12,9 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Noetherian.Defs
 
-import TauCeti.Analysis.Normed.Operator.Embedding
+import TauCeti.Analysis.Normed.Module.Finite.Basic
 import TauCeti.FieldTheory.Minpoly.TorsionFree
 import TauCeti.RingTheory.Huber.Normed
-import TauCeti.RingTheory.Huber.StrictMorphism
 
 /-!
 # Coefficient bounds for remainders modulo minimal polynomials
@@ -23,16 +22,15 @@ import TauCeti.RingTheory.Huber.StrictMorphism
 Let `B` be a Noetherian integrally closed ultrametric Banach domain over a nontrivially normed
 field `K`, and let `A` be a finite torsion-free Banach `B`-algebra with continuous structure map
 `B → A`. For any `a : A` with minimal polynomial `p = minpoly B a` of degree `d`, the truncated
-evaluation map `(Fin d → B) →ₗ[B] A` is injective and strict
-(`LinearMap.isStrictMap_of_module_finite`), hence bounded below
-(`LinearMap.exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective`). Consequently there is a
+evaluation map `(Fin d → B) →ₗ[B] A` is injective into a Noetherian Banach `B`-module, hence
+bounded below (`LinearMap.antilipschitz_of_injective_of_isNoetherian`). Consequently there is a
 constant `C > 0` such that for every polynomial `q : B[X]`, every coefficient of the remainder
 `q %ₘ minpoly B a` has norm at most `C * ‖aeval a q‖`.
 
 ## Main results
 
-* `TauCeti.exists_pos_norm_coeff_modByMonic_le`: linear coefficient bound for remainders
-  `q %ₘ minpoly B a` in terms of `‖aeval a q‖`.
+* `TauCeti.exists_pos_norm_coeff_modByMonic_le_mul_norm_aeval`: linear coefficient bound for
+  remainders `q %ₘ minpoly B a` in terms of `‖aeval a q‖`.
 -/
 
 public section
@@ -45,7 +43,7 @@ namespace TauCeti
 closed ultrametric Banach domain `B` (over a nontrivially normed field `K`), there is a constant
 `C > 0` such that every coefficient of `q %ₘ minpoly B a` satisfies
 `‖(q %ₘ minpoly B a).coeff i‖ ≤ C * ‖aeval a q‖` for all `q : B[X]` and `i : ℕ`. -/
-theorem exists_pos_norm_coeff_modByMonic_le (K : Type*) [NontriviallyNormedField K]
+theorem exists_pos_norm_coeff_modByMonic_le_mul_norm_aeval (K : Type*) [NontriviallyNormedField K]
     {B A : Type*} [NormedCommRing B] [IsDomain B] [IsUltrametricDist B] [CompleteSpace B]
     [NormedAlgebra K B] [IsNoetherianRing B] [IsIntegrallyClosed B]
     [NormedRing A] [CompleteSpace A] [NormedAlgebra K A]
@@ -87,28 +85,27 @@ theorem exists_pos_norm_coeff_modByMonic_le (K : Type*) [NontriviallyNormedField
     have hci : q.coeff (i : ℕ) = c i := by
       simp [q, coeff_C_mul, coeff_X_pow, Fin.val_inj]
     rw [Pi.zero_apply, ← hci, hq0, coeff_zero]
-  obtain ⟨C, hC, hΦ_bound⟩ :=
-    (Φ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective
-      Φ.isStrictMap_of_module_finite hΦ_inj
-  refine ⟨C, hC, fun q i ↦ ?_⟩
-  set r : B[X] := q %ₘ p with hr
+  obtain ⟨C, hC⟩ := Φ.antilipschitz_of_injective_of_isNoetherian K hΦ_inj
+  refine ⟨(C : ℝ) + 1, by positivity, fun q i ↦ ?_⟩
+  set r : B[X] := q %ₘ p
   have hr_deg : r.natDegree < d := natDegree_modByMonic_lt q hp_monic hp_ne_one
   by_cases hi : i < d
   · let c : Fin d → B := fun j ↦ r.coeff j
     have hΦ_c : Φ c = aeval a q := by
-      have haeval : aeval a r = aeval a q := by
-        have hap : aeval a p = 0 := minpoly.aeval B a
-        have h := congrArg (aeval a) (modByMonic_add_div q p)
-        simpa only [← hr, map_add, map_mul, hap, zero_mul, add_zero] using h
+      have haeval : aeval a r = aeval a q := minpoly.aeval_modByMonic_minpoly q a
       rw [← haeval, aeval_eq_sum_range' hr_deg, ← Fin.sum_univ_eq_sum_range]
       simp [Φ, c, Algebra.smul_def]
-    exact (norm_le_pi_norm c ⟨i, hi⟩).trans
-      ((hΦ_bound c).trans_eq (by rw [LinearMap.restrictScalars_apply, hΦ_c]))
+    calc
+      ‖r.coeff i‖ ≤ ‖c‖ := norm_le_pi_norm c ⟨i, hi⟩
+      _ ≤ (C : ℝ) * ‖Φ c‖ := hC.le_mul_norm (map_zero Φ) c
+      _ ≤ ((C : ℝ) + 1) * ‖aeval a q‖ := by
+        rw [hΦ_c]
+        exact mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
   · have hcoeff0 : r.coeff i = 0 := by
       by_cases hr0 : r = 0
       · simp [hr0]
       · exact coeff_eq_zero_of_natDegree_lt (hr_deg.trans_le (not_lt.mp hi))
     rw [hcoeff0, norm_zero]
-    exact mul_nonneg hC.le (norm_nonneg _)
+    positivity
 
 end TauCeti

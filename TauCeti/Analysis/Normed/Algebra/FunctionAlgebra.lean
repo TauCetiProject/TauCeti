@@ -19,11 +19,10 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Algebra.Module.LocalizedModule.Lift
 import TauCeti.Analysis.Normed.Algebra.MinpolyRemainder
-import TauCeti.Analysis.Normed.Operator.Embedding
+import TauCeti.Analysis.Normed.Module.Finite.Basic
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import TauCeti.FieldTheory.Minpoly.TorsionFree
 import TauCeti.RingTheory.Huber.Normed
-import TauCeti.RingTheory.Huber.StrictMorphism
 import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
@@ -126,9 +125,9 @@ theorem gelfandRadius_eq_spectralValue_minpoly
     rw [← map_pow]
     exact gK.le_opNorm (b ^ n)
   · -- Lower bound: evaluate `X ^ n %ₘ p` at each root `x` of `p` in `AlgebraicClosure F`.
-    obtain ⟨C, _, hcoeff⟩ := exists_pos_norm_coeff_modByMonic_le K hBA a
+    obtain ⟨C, _, hcoeff⟩ := exists_pos_norm_coeff_modByMonic_le_mul_norm_aeval K hBA a
     rw [← (algebraMap B F).spectralValue_map_of_norm_eq hBF p]
-    refine (hp_monic.map (algebraMap B F)).spectralValue_le_of_forall_aeval_eq_zero
+    refine (hp_monic.map (algebraMap B F)).spectralValue_le_of_forall_root_spectralNorm_le
       (gelfandRadius_nonneg a) fun x hxp ↦ ?_
     set f : AlgebraNorm F (AlgebraicClosure F) := spectralAlgNorm F (AlgebraicClosure F)
     rw [← spectralAlgNorm_def]
@@ -137,12 +136,11 @@ theorem gelfandRadius_eq_spectralValue_minpoly
     have hrnF_deg : (rn.map (algebraMap B F)).natDegree < p.natDegree :=
       natDegree_map_le.trans_lt (natDegree_modByMonic_lt (X ^ n) hp_monic hp_ne_one)
     have hx_pow : x ^ n = ∑ i : Fin p.natDegree, algebraMap B F (rn.coeff i) • x ^ (i : ℕ) := by
-      have hdiv := congrArg (Polynomial.map (algebraMap B F))
-        (modByMonic_add_div ((X : B[X]) ^ n) p)
       have haevalx : aeval x (rn.map (algebraMap B F)) = x ^ n := by
-        have h := congrArg (aeval x) hdiv
-        simpa only [rn, Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow,
-          Polynomial.map_X, map_add, map_mul, hxp, zero_mul, add_zero, map_pow, aeval_X] using h
+        dsimp only [rn]
+        rw [Polynomial.map_modByMonic (algebraMap B F) hp_monic,
+          aeval_modByMonic_eq_self_of_root hxp, Polynomial.map_pow, Polynomial.map_X,
+          map_pow, aeval_X]
       rw [← haevalx, aeval_eq_sum_range' hrnF_deg, ← Fin.sum_univ_eq_sum_range]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       rw [coeff_map]
@@ -209,11 +207,9 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
   have : 0 < ‖(d₀ : B)‖ := norm_pos_iff.mpr hd₀_ne
   have : Huber.IsTateRing B := Huber.IsTateRing.of_normedAlgebra K B
   have : ContinuousSMul B A := continuousSMul_of_algebraMap B A hBA
-  have hΨ_strict : IsStrictMap Ψ := Ψ.isStrictMap_of_module_finite
-  obtain ⟨C₁, hC₁, hΨ_bound⟩ :=
-    (Ψ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective hΨ_strict hΨ_inj
+  obtain ⟨C₁, hC₁⟩ := Ψ.antilipschitz_of_injective_of_isNoetherian K hΨ_inj
   obtain ⟨C₂, _, hC₂, _, hb_comp⟩ := hF.exists_basis_reducedSpectralAlgNorm_comparison b
-  refine ⟨C₁ * ‖(d₀ : B)‖ * C₂, by positivity,
+  refine ⟨((C₁ : ℝ) + 1) * ‖(d₀ : B)‖ * C₂, by positivity,
     fun a ↦ ⟨smoothingFun_le_self (normRingSeminorm A) a, ?_⟩⟩
   have hΨ_norm : ‖Ψ a‖ ≤ ‖(d₀ : B)‖ * b.norm (φ a) := by
     refine (pi_norm_le_iff_of_nonneg (mul_nonneg (norm_nonneg _) (b.norm_nonneg _))).mpr fun i ↦ ?_
@@ -222,11 +218,14 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
     rw [hΨ₀_spec a i, AlgHom.toLinearMap_apply, norm_mul, hBF]
     exact mul_le_mul_of_nonneg_left (b.norm_repr_le_norm i) (norm_nonneg _)
   calc
-    ‖a‖ ≤ C₁ * ‖Ψ a‖ := hΨ_bound a
-    _ ≤ C₁ * (‖(d₀ : B)‖ * b.norm (φ a)) := mul_le_mul_of_nonneg_left hΨ_norm hC₁.le
-    _ ≤ C₁ * (‖(d₀ : B)‖ * (C₂ * reducedSpectralAlgNorm F E (φ a))) :=
-      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (hb_comp (φ a)).1 (norm_nonneg _)) hC₁.le
-    _ = C₁ * ‖(d₀ : B)‖ * C₂ * smoothingFun (normRingSeminorm A) a := by
+    ‖a‖ ≤ (C₁ : ℝ) * ‖Ψ a‖ := hC₁.le_mul_norm (map_zero Ψ) a
+    _ ≤ ((C₁ : ℝ) + 1) * ‖Ψ a‖ := mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
+    _ ≤ ((C₁ : ℝ) + 1) * (‖(d₀ : B)‖ * b.norm (φ a)) :=
+      mul_le_mul_of_nonneg_left hΨ_norm (by positivity)
+    _ ≤ ((C₁ : ℝ) + 1) * (‖(d₀ : B)‖ * (C₂ * reducedSpectralAlgNorm F E (φ a))) :=
+      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (hb_comp (φ a)).1 (norm_nonneg _))
+        (by positivity)
+    _ = ((C₁ : ℝ) + 1) * ‖(d₀ : B)‖ * C₂ * smoothingFun (normRingSeminorm A) a := by
       rw [smoothingFun_eq_reducedSpectralAlgNorm K hBF hBA a]
       dsimp only [E, φ]
       rw [Algebra.TensorProduct.includeRight_apply]

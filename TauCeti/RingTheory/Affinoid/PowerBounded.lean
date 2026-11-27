@@ -60,7 +60,8 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
 * `TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inverse_iff`: `c` is a unit with
   power-bounded inverse if and only if `|c(x)| ≥ 1` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.isPowerBounded_map`: every `K`-algebra homomorphism from an arbitrary
-  Banach `K`-algebra into a completely normed affinoid `K`-algebra preserves power-bounded elements.
+  normed `K`-algebra with summable geometric series into an affinoid `K`-algebra with a complete
+  ultrametric algebra norm preserves power-bounded elements.
 
 ## References
 
@@ -285,8 +286,9 @@ theorem isUnit_and_isPowerBounded_inverse_iff (hA : IsAffinoidAlgebra K A) {c : 
 
 /-- Over a complete nontrivially normed ultrametric field `K`, every `K`-algebra homomorphism from
 an arbitrary normed `K`-algebra `B` with summable geometric series (not assumed complete,
-commutative, ultrametric, Noetherian, or unital-norm-normalized) into a completely normed affinoid
-`K`-algebra `A` (not necessarily reduced) maps power-bounded elements to power-bounded elements. -/
+commutative, ultrametric, Noetherian, or unital-norm-normalized) into an affinoid `K`-algebra `A`
+(not necessarily reduced) with a complete ultrametric algebra norm maps power-bounded elements to
+power-bounded elements. -/
 theorem isPowerBounded_map {B : Type*} [NormedRing B] [NormedAlgebra K B]
     [HasSummableGeomSeries B] (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) {b : B}
     (hb : Huber.IsPowerBounded b) : Huber.IsPowerBounded (φ b) :=

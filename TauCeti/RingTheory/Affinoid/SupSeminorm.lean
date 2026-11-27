@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import TauCeti.Analysis.Normed.Unbundled.RootBound
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
-import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Analysis.Normed.Algebra.AutomaticContinuity.Algebraic
+import TauCeti.RingTheory.Spectrum.Maximal.Integral
 
 /-!
 # Point norms and the supremum seminorm of an affinoid algebra
@@ -29,7 +29,8 @@ zero for the zero algebra.
 For an affinoid algebra the point norms are multiplicative, ultrametric and compatible with
 scalars, and they are bounded by every complete algebra norm on `A`. In particular
 `|f|sup` is a finite, power-multiplicative ring seminorm, its kernel is the nilradical, algebra
-homomorphisms of affinoid algebras do not increase it, and integral injective ones preserve it.
+homomorphisms of affinoid algebras do not increase it, and integral ones with kernel contained in
+the Jacobson radical preserve it.
 It is unchanged by passing to the reduction `A ⧸ nilradical A`, it is the maximum of its values on
 the quotients by the finitely many minimal primes of `A`, and a monic equation
 `f ^ d + ∑_{i < d} aᵢ f ^ i = 0` bounds it by `max_{i < d} |aᵢ|sup ^ (1 / (d - i))`.
@@ -49,7 +50,7 @@ on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
 
 ## Main results
 
-* `TauCeti.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`: `|f(x)| ≤ ‖f‖` and
+* `MaximalSpectrum.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`: `|f(x)| ≤ ‖f‖` and
   `|f|sup ≤ ‖f‖` for every algebra norm with summable geometric series.
 * `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
   `|f(x)| ≠ 0` at every classical point `x`.
@@ -68,8 +69,8 @@ on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
 * `TauCeti.IsAffinoidAlgebra.pointNorm_le_supSeminorm_map` and
   `AlgHom.pointNorm_le_supSeminorm_map_of_bddAbove`: surjective pointwise lower bound by `|·|sup`
   on the target.
-* `AlgHom.supSeminorm_map_of_isIntegral`: integral injective algebra homomorphisms preserve
-  `|·|sup`.
+* `AlgHom.supSeminorm_map_of_isIntegral`: integral algebra homomorphisms whose kernel lies in the
+  Jacobson radical preserve `|·|sup`.
 * `TauCeti.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minimalPrimes`: `|f|sup` is the supremum of the
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
@@ -231,7 +232,7 @@ theorem _root_.AlgHom.pointNorm_apply_le_gelfandRadius [IsUltrametricDist K] [Co
 /-- **Point norms are bounded by algebra norms with summable geometric series.** On a commutative
 algebra with an algebra norm having summable geometric series over a complete ultrametric field
 `K`, `|f(x)| ≤ ‖f‖` at every classical point `x`. -/
-theorem pointNorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
+theorem _root_.MaximalSpectrum.pointNorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A]
     (x : MaximalSpectrum A) (f : A) : pointNorm K x f ≤ ‖f‖ :=
   ((AlgHom.id K A).pointNorm_apply_le_gelfandRadius x f).trans (gelfandRadius_le_norm f)
@@ -427,26 +428,25 @@ theorem _root_.AlgEquiv.supSeminorm_eq {B : Type*} [CommRing B] [Algebra K B] (e
   supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
     ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
 
-/-- An integral injective `K`-algebra homomorphism between commutative `K`-algebras preserves
-supremum seminorms, since every classical point of the source lifts to the target. -/
+/-- An integral `K`-algebra homomorphism between commutative `K`-algebras whose kernel is contained
+in the Jacobson radical `Ideal.jacobson (⊥ : Ideal A)` preserves supremum seminorms, since every
+classical point of the source lifts to the target. -/
 theorem _root_.AlgHom.supSeminorm_map_of_isIntegral {B : Type*} [CommRing B] [Algebra K B]
-    (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral) (hφi : Function.Injective φ) (a : A) :
+    (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral)
+    (hker : RingHom.ker φ ≤ Ideal.jacobson (⊥ : Ideal A)) (a : A) :
     supSeminorm K (φ a) = supSeminorm K a := by
-  have hmax (y : MaximalSpectrum B) : (y.asIdeal.comap φ).IsMaximal :=
-    Ideal.isMaximal_comap_of_isIntegral_of_isMaximal φ.toRingHom hφ y.asIdeal
-  let g : MaximalSpectrum B → MaximalSpectrum A := fun y ↦ ⟨y.asIdeal.comap φ, hmax y⟩
-  have hg : Function.Surjective g := fun x ↦ by
-    algebraize [φ.toRingHom]
-    let _ : Algebra.IsIntegral A B := ⟨hφ⟩
-    obtain ⟨m, hm, hmcomap⟩ :=
-      Ideal.exists_ideal_over_maximal_of_isIntegral (R := A) (S := B) x.asIdeal (by
-        have hinj : Function.Injective (algebraMap A B) := hφi
-        rw [(RingHom.injective_iff_ker_eq_bot _).mp hinj]
-        exact bot_le)
-    exact ⟨⟨m, hm⟩, MaximalSpectrum.ext hmcomap⟩
+  have hg := MaximalSpectrum.comapOfIsIntegral_surjective φ.toRingHom hφ hker
   simp only [supSeminorm]
   rw [← hg.iSup_comp]
-  exact iSup_congr fun y ↦ (pointNorm_comap φ y (hmax y) a).symm
+  refine iSup_congr fun y ↦ ?_
+  have hid : (MaximalSpectrum.comapOfIsIntegral φ.toRingHom hφ y).asIdeal =
+      Ideal.comap φ y.asIdeal := by
+    rw [MaximalSpectrum.comapOfIsIntegral_asIdeal]
+    exact Ideal.ext fun _ ↦ by simp
+  have hmax : (Ideal.comap φ y.asIdeal).IsMaximal :=
+    hid ▸ (MaximalSpectrum.comapOfIsIntegral φ.toRingHom hφ y).isMaximal
+  rw [← pointNorm_comap φ y hmax a]
+  exact congrArg (pointNorm K · a) (MaximalSpectrum.ext hid.symm)
 
 /-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
 reduction `A ⧸ nilradical A`. -/
@@ -498,7 +498,7 @@ theorem bddAbove_range_pointNorm (hA : IsAffinoidAlgebra K A) (f : A) :
   rintro _ ⟨x, rfl⟩
   dsimp only
   rw [← hA.pointNorm_maximalSpectrumComap π x t]
-  exact pointNorm_le_norm _ t
+  exact MaximalSpectrum.pointNorm_le_norm _ t
 
 /-- Each absolute value `|f(x)|` is bounded by the supremum seminorm `|f|sup`. -/
 theorem pointNorm_le_supSeminorm (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) :

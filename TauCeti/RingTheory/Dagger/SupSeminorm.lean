@@ -71,7 +71,7 @@ norm. -/
 theorem pointNorm_le_norm (x : MaximalSpectrum (W σ)) (f : W σ) : pointNorm K x f ≤ ‖f‖ := by
   obtain ⟨y, rfl⟩ := (maximalSpectrumComap_toTate_bijective (σ := σ) (K := K)).surjective x
   rw [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap, ← norm_toTate]
-  exact TauCeti.pointNorm_le_norm y _
+  exact MaximalSpectrum.pointNorm_le_norm y _
 
 /-- **Maximum modulus principle for overconvergent series.** Every `f ∈ K⟨X₁, …, Xₙ⟩†` attains
 its Gauss norm at a classical point: `|f(x)| = ‖f‖` for some maximal ideal `x`. -/

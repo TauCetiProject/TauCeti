@@ -432,16 +432,23 @@ instance IsTateRing.of_nontriviallyNormedField (K : Type*) [NontriviallyNormedFi
   obtain ⟨ϖ, h0, h1⟩ := NormedField.exists_norm_lt_one K
   exact IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)) h1
 
+/-- Every seminormed algebra over a nontrivially normed field admits a pseudouniformiser (the
+image of any `ϖ : K` with `0 < ‖ϖ‖ < 1`). -/
+theorem IsPseudoUniformizer.exists_of_normedAlgebra (K : Type*) [NontriviallyNormedField K]
+    (R : Type*) [SeminormedRing R] [NormedAlgebra K R] :
+    ∃ ϖ : R, IsPseudoUniformizer ϖ := by
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  exact ⟨algebraMap K R ϖ, (IsPseudoUniformizer.of_norm_lt_one
+    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K R)⟩
+
 /-- An ultrametric seminormed algebra over a nontrivially normed field is a Tate ring.
 No normalisation of the algebra norm at one is required. -/
 theorem IsTateRing.of_normedAlgebra (K : Type*) [NontriviallyNormedField K]
     (A : Type*) [SeminormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] : IsTateRing A := by
   obtain ⟨A₀, hopen, hb⟩ := exists_isOpen_isBounded_subring A
-  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
-  have hϖ := IsPseudoUniformizer.of_norm_lt_one
-    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1
-  exact IsTateRing.of_isOpen_isBounded A₀ hopen hb (hϖ.map (continuous_algebraMap K A))
+  obtain ⟨_, hϖ⟩ := IsPseudoUniformizer.exists_of_normedAlgebra K A
+  exact IsTateRing.of_isOpen_isBounded A₀ hopen hb hϖ
 
 /-- In a seminormed ring with a pseudouniformiser, every power-bounded element has Gelfand radius
 at most `1`. -/
@@ -457,9 +464,7 @@ Gelfand radius at most `1`. -/
 theorem gelfandRadius_le_one_of_isPowerBounded (K : Type*) [NontriviallyNormedField K]
     {R : Type*} [SeminormedRing R] [NormedAlgebra K R] {x : R} (hx : IsPowerBounded x) :
     gelfandRadius x ≤ 1 := by
-  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
-  have hϖ := (IsPseudoUniformizer.of_norm_lt_one
-    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K R)
+  obtain ⟨_, hϖ⟩ := IsPseudoUniformizer.exists_of_normedAlgebra K R
   exact hϖ.gelfandRadius_le_one_of_isPowerBounded hx
 
 /-- A seminormed ring with a pseudouniformiser whose norm is bounded by a constant multiple of
@@ -485,9 +490,7 @@ theorem IsUniform.of_norm_le_mul_gelfandRadius (K : Type*) [NontriviallyNormedFi
     {R : Type*} [SeminormedRing R] [NormedAlgebra K R]
     (h : ∃ C : ℝ, ∀ x : R, ‖x‖ ≤ C * gelfandRadius x) :
     IsUniform R := by
-  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
-  have hϖ := (IsPseudoUniformizer.of_norm_lt_one
-    (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1).map (continuous_algebraMap K R)
+  obtain ⟨_, hϖ⟩ := IsPseudoUniformizer.exists_of_normedAlgebra K R
   exact hϖ.isUniform_of_norm_le_mul_gelfandRadius h
 
 /-- **Finitely many power-bounded elements lie in a norm-bounded open subring.** In an ultrametric

@@ -52,8 +52,8 @@ value of the reduction of the minimal polynomial at `x` is the value of `f` at a
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_sub_algebraMap_constantCoeff_le`: a Tate series of
   Gauss norm at most one, mapped by a homomorphism sending the variables to elements with
   `|·|sup ≤ ε ≤ 1`, differs from its constant coefficient by an element with `|·|sup ≤ ε`.
-* `TauCeti.supSeminorm_eq_spectralValue_minpoly`: on a finite torsion-free algebra over a Tate
-  algebra `T`, `supSeminorm K f = spectralValue (minpoly T f)`.
+* `TauCeti.supSeminorm_eq_spectralValue_minpoly_tate`: on a finite torsion-free algebra over a
+  Tate algebra `T`, `supSeminorm K f = spectralValue (minpoly T f)`.
 
 ## References
 
@@ -255,7 +255,7 @@ Over a complete nontrivially normed ultrametric field `K`, let `A` be a commutat
 (with no choice of norm or reducedness assumption) that is finite and torsion-free over a
 finite-variable Tate algebra `T = K⟨X₁, …, X_d⟩`. Then for every `f : A`,
 `supSeminorm K f = spectralValue (minpoly T f)`. -/
-theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
+theorem supSeminorm_eq_spectralValue_minpoly_tate {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] [Algebra (Tate σ) A] [IsScalarTower K (Tate σ) A]
     [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A] (f : A) :
     supSeminorm K f = spectralValue (minpoly (Tate σ) f) := by

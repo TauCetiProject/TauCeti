@@ -190,7 +190,9 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
   have := hp.faithfulSMul_of_dvd hpos hdvd
   have hcoeff (a : A) : supSeminorm K (algebraMap A B a) = supSeminorm K a :=
     (IsScalarTower.toAlgHom K A B).supSeminorm_map_of_isIntegral
-      (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B) a
+      (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b)
+      (((RingHom.injective_iff_ker_eq_bot _).mp
+        (FaithfulSMul.algebraMap_injective A B)).trans_le bot_le) a
   refine le_antisymm ?_ (Real.iSup_le (fun i ↦ ?_) (supSeminorm_nonneg f))
   · have h := hB.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hp.map (algebraMap A B))
       (f := f) (by rwa [eval_map_algebraMap])
@@ -229,26 +231,8 @@ theorem supSeminorm_eq_spectralValue_minpoly
     [Algebra B A] [IsScalarTower K B A] [Module.IsTorsionFree B A] [Algebra.IsIntegral B A]
     (hB : ∀ b : B, supSeminorm K b = ‖b‖) (f : A) :
     supSeminorm K f = spectralValue (minpoly B f) := by
-  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := B) f]
+  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := B) f, spectralValue_eq_iSup_fin]
   simp_rw [hB]
-  set p := minpoly B f
-  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
-  · have hp1 : p = 1 :=
-      (minpoly.monic (Algebra.IsIntegral.isIntegral (R := B) f)).natDegree_eq_zero.mp h0
-    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
-    rw [Real.iSup_of_isEmpty, hp1, Polynomial.spectralValue_one]
-  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
-    refine le_antisymm ?_ ?_
-    · refine Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p)
-      rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
-      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
-    · refine ciSup_le fun n ↦ ?_
-      by_cases hn : n < p.natDegree
-      · rw [spectralValueTerms_of_lt_natDegree p hn]
-        exact le_ciSup (Finite.bddAbove_range
-          (fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))) ⟨n, hn⟩
-      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
-        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
 
 section
 
