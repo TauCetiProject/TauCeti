@@ -71,8 +71,10 @@ the blowup raises the total Betti number by `n - 1`
 
 The homology here is singular homology with coefficients in a division ring. The individual even
 Betti numbers, counted at each vertex by the edges along which a generic linear function
-decreases, are computed in `TauCeti.Geometry.Toric.Delzant.Quotient.Betti`; the freeness and ring
-structure of the integral cohomology are not proved here.
+decreases, are computed in `TauCeti.Geometry.Toric.Delzant.Quotient.Betti`. The integral homology
+and cohomology of `M_Δ` are free, vanish in odd degrees and have the same ranks as the Betti
+numbers (`TauCeti.Geometry.Toric.Delzant.Quotient.Integral`); the ring structure of the
+cohomology is not proved.
 
 ## Main results
 
