@@ -20,10 +20,8 @@ of the polar form is the nondegeneracy hypothesis needed for the determinant to 
 to one; no reflection in `U` is assumed. Only the index-two criterion excludes
 characteristic two, where the two determinant signs coincide.
 
-Under the same hypotheses every orthogonal determinant is `1` or `-1`
-(`TauCeti.QuadraticMap.orthogonalDet_eq_one_or_eq_neg_one`). Consequently, if `U` contains an
-isometry of determinant minus one, every isometry becomes proper after right multiplication by an
-element of `U` (`Subgroup.exists_mem_mul_mem_specialOrthogonalWithin`).
+If `U` contains an isometry of determinant minus one, every isometry becomes proper after right
+multiplication by an element of `U` (`Subgroup.exists_mem_mul_mem_specialOrthogonalWithin`).
 
 ## References
 
@@ -37,17 +35,6 @@ open TauCeti.QuadraticMap QuadraticMap
 variable {R M : Type*} [CommRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
   {Q : QuadraticForm R M}
-
-namespace TauCeti.QuadraticMap
-
-/-- **The determinant of an isometry is `1` or `-1`** when the polar form is left-separating,
-since it squares to one (`TauCeti.QuadraticMap.orthogonalDet_sq`). -/
-theorem orthogonalDet_eq_one_or_eq_neg_one (hQ : Q.polarBilin.SeparatingLeft)
-    (g : orthogonalGroup Q) : orthogonalDet Q g = 1 ∨ orthogonalDet Q g = -1 := by
-  simpa only [Units.ext_iff, Units.val_one, Units.val_neg] using
-    sq_eq_one_iff.mp (congrArg (fun u : Rˣ ↦ (u : R)) (orthogonalDet_sq hQ g))
-
-end TauCeti.QuadraticMap
 
 namespace Subgroup
 
