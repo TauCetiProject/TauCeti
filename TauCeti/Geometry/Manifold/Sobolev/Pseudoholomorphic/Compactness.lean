@@ -351,13 +351,14 @@ private theorem tendstoLocallyUniformlyOn_chartAt_of_tendsto (hp : 2 < p) (hℓ 
     ((hw.eventuallyEq_of_mem (isOpen_ball.mem_nhds hy)).iteratedFDeriv ℝ k).eq_of_nhds⟩
 
 /-- **Compactness for weak pseudoholomorphic maps from a Riemann surface** (McDuff–Salamon,
-Theorem B.4.2 with Remark B.4.3, interior case, and Theorem 4.1.1, for data converging in `C^ℓ`, a
-fixed complex structure on the domain and maps into a vector space). Let `X` be a second countable
-Riemann surface, `V` a finite-dimensional real normed space, `1 ≤ ℓ ≤ ∞`, `J n` domain-dependent
-almost complex structures on `V` of class `C^ℓ`, `ν n` inhomogeneous terms of class `C^ℓ` and
-`p > 2`, possibly `p = ∞`. Suppose that in every preferred chart `chartAt ℂ x`, read with the
-identity chart of `V`, every derivative of order `k ≤ ℓ` of `J n` and of `ν n` converges locally
-uniformly on `(chartAt ℂ x).target ×ˢ univ` to that of `J₀` and of `ν₀`. Let every compact subset
+Theorem B.4.2 with Remark B.4.3, interior case, for data converging in `C^ℓ`, a fixed complex
+structure on the domain and maps into a vector space; for `ℓ = ∞`, in the form of Theorem 4.1.1).
+Let `X` be a second countable Riemann surface, `V` a finite-dimensional real normed space,
+`1 ≤ ℓ ≤ ∞`, `J n` domain-dependent almost complex structures on `V` of class `C^ℓ`, `ν n`
+inhomogeneous terms of class `C^ℓ` and `p > 2`, possibly `p = ∞`. Suppose that in every preferred
+chart `chartAt ℂ x`, read with the identity chart of `V`, every derivative of order `k ≤ ℓ` of `J n`
+and of `ν n` converges locally uniformly on `(chartAt ℂ x).target ×ˢ univ` to that of `J₀` and of
+`ν₀`. Let every compact subset
 of `X` lie in `U n` for all large `n`, and let `u n` be weakly pseudoholomorphic for `(J n, ν n)` on
 `U n`. Suppose that for every compact `Q ⊆ X` the images `u n (Q)` lie in one compact set for all
 large `n`, and that on every open `W` with compact closure in the target of a preferred chart
