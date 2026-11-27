@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Remainder
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Conductor
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 
 /-!
@@ -41,34 +42,6 @@ private theorem quadraticTwist_modOne :
   rw [quadraticTwist_def, changeLevel_one, jacobiChar_eq_ringHomComp_quadraticChar]
   exact one_mul _
 
-private theorem conductor_jacobiChar (hd : d ≠ 2) : (jacobiChar ℂ d).conductor = d := by
-  rw [jacobiChar_eq_ringHomComp_quadraticChar, ← changeLevel_self
-    ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ))]
-  exact conductor_changeLevel_quadraticChar (by simp [ringChar.eq_zero]) hd (dvd_refl d)
-
-private theorem LFunction_character_of_jacobiChar (hd : d ≠ 2) :
-    (PrimitiveDirichletCharacter.of (jacobiChar ℂ d)).character.LFunction =
-      (jacobiChar ℂ d).LFunction := by
-  let ψ := PrimitiveDirichletCharacter.of (jacobiChar ℂ d)
-  have hlevel : (ψ.level : ℕ) = d := by
-    simpa only [ψ, PrimitiveDirichletCharacter.level_of] using conductor_jacobiChar d hd
-  have hne : ψ.character ≠ 1 := by
-    intro h
-    have : (ψ.level : ℕ) = 1 := ψ.conductor_character ▸ (eq_one_iff_conductor_eq_one.mp h)
-    exact (Fact.out : d.Prime).ne_one (hlevel ▸ this)
-  funext s
-  have h := LFunction_changeLevel (PrimitiveDirichletCharacter.level_of_dvd (jacobiChar ℂ d))
-    ψ.character (s := s) (.inl hne)
-  rw [PrimitiveDirichletCharacter.changeLevel_character_of] at h
-  rw [h, Finset.prod_eq_one, mul_one]
-  intro p hp
-  have hp' : p = d := by simpa [(Fact.out : d.Prime).primeFactors] using hp
-  have hpLevel : p = (ψ.level : ℕ) := hp'.trans hlevel.symm
-  have hp0 : (p : ZMod ψ.level) = 0 := by rw [hpLevel, ZMod.natCast_self]
-  have : Nontrivial (ZMod (ψ.level : ℕ)) := ZMod.nontrivial_iff.mpr
-    (hlevel.trans_ne (Fact.out : d.Prime).ne_one)
-  rw [hp0, MulChar.map_zero, zero_mul, sub_zero]
-
 /-- In the progression of modulus one, the logarithmic derivative mean at `1` is
 `L′(1, χ_d)/L(1, χ_d) - γ - 1`, where `χ_d` is the Legendre character of the odd prime `d`. -/
 theorem logDerivMean_modOne_at_one (hd : d ≠ 2) :
@@ -76,8 +49,8 @@ theorem logDerivMean_modOne_at_one (hd : d ≠ 2) :
       (Real.eulerMascheroniConstant : ℂ) - 1 := by
   have : NeZero (1 * d) := ⟨by simp [(Fact.out : d.Prime).ne_zero]⟩
   have hχ : jacobiChar ℂ d ≠ 1 := by
-    rw [ne_eq, eq_one_iff_conductor_eq_one, conductor_jacobiChar d hd]
-    exact (Fact.out : d.Prime).ne_one
+    rw [jacobiChar_eq_ringHomComp_quadraticChar]
+    exact quadraticChar_ringHomComp_ne_one (by simp [ringChar.eq_zero]) hd
   have hdiv : d ∣ 1 * d := dvd_mul_left d 1
   have hL : (changeLevel hdiv (jacobiChar ℂ d)).LFunction = (jacobiChar ℂ d).LFunction := by
     funext s
@@ -109,24 +82,18 @@ theorem mul_primeRemainder_one_eq_rieszRemainder_sub (hd : d ≠ 2) (y : ℝ) :
     ((y * primeRemainder d 1 y : ℝ) : ℂ) =
       (1 : PrimitiveDirichletCharacter).rieszRemainder y -
         (PrimitiveDirichletCharacter.of (jacobiChar ℂ d)).rieszRemainder y := by
-  let ψ := PrimitiveDirichletCharacter.of (jacobiChar ℂ d)
-  have hlevel : (ψ.level : ℕ) = d := by simp [ψ, conductor_jacobiChar d hd]
+  have hp : d.Prime := Fact.out
+  have hprim : (jacobiChar ℂ d).IsPrimitive :=
+    isPrimitive_jacobiChar_of_odd_squarefree (by norm_num) (hp.odd_of_ne_two hd) hp.squarefree
+  -- Bundle the primitive character at its original level, so its projections compute directly.
+  let ψ : PrimitiveDirichletCharacter := ⟨⟨d, hp.pos⟩, jacobiChar ℂ d, hprim⟩
+  have hof : PrimitiveDirichletCharacter.of (jacobiChar ℂ d) = ψ :=
+    PrimitiveDirichletCharacter.of_character ψ
   have hψ : ψ ≠ 1 := by
     intro h
-    exact (Fact.out : d.Prime).ne_one (by simpa [h] using hlevel.symm)
-  -- The primitive bundle has the original prime level, so lifting it changes no coefficients.
-  have hcoeff (n : ℕ) : ψ.character n = jacobiChar ℂ d n := by
-    have h := DFunLike.congr_fun
-      (PrimitiveDirichletCharacter.changeLevel_character_of (jacobiChar ℂ d)) (n : ZMod d)
-    by_cases hn : n.Coprime d
-    · have hn' : IsCoprime (n : ℤ) (d : ℤ) := hn.isCoprime
-      have hv := changeLevel_eq_cast_of_dvd' ψ.character
-        (PrimitiveDirichletCharacter.level_of_dvd (jacobiChar ℂ d)) hn'
-      exact (by simpa only [Int.cast_natCast] using hv.symm :
-        ψ.character n = (changeLevel (PrimitiveDirichletCharacter.level_of_dvd
-          (jacobiChar ℂ d)) ψ.character) n).trans h
-    · rw [MulChar.map_nonunit, MulChar.map_nonunit] <;>
-        simpa only [ZMod.isUnit_iff_coprime, hlevel] using hn
+    exact hp.ne_one (by simpa [ψ] using congrArg (fun χ ↦ (χ.level : ℕ)) h)
+  have hcoeff (n : ℕ) : ψ.character n = jacobiChar ℂ d n := rfl
+  have hL : ψ.character.LFunction = (jacobiChar ℂ d).LFunction := rfl
   have hlog : ((logDeriv (jacobiChar ℂ d).LFunction 1).re : ℂ) =
       logDeriv (jacobiChar ℂ d).LFunction 1 := by
     have h := (jacobiChar ℂ d).logDeriv_LFunction_inv_conj 1
@@ -141,8 +108,8 @@ theorem mul_primeRemainder_one_eq_rieszRemainder_sub (hd : d ≠ 2) (y : ℝ) :
       refine Finset.sum_congr rfl fun n hn ↦ ?_
       have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by have := (Finset.mem_Icc.mp hn).1; omega)
       field_simp [Complex.ofReal_ne_zero.mpr hy.ne']
-  rw [PrimitiveDirichletCharacter.rieszRemainder_one,
-    PrimitiveDirichletCharacter.rieszRemainder_of_ne_one hψ, LFunction_character_of_jacobiChar d hd,
+  rw [hof, PrimitiveDirichletCharacter.rieszRemainder_one,
+    PrimitiveDirichletCharacter.rieszRemainder_of_ne_one hψ, hL,
     primeRemainder_def, logDerivMean_modOne_at_one d hd]
   simp only [hcoeff, Nat.totient_one, Nat.cast_one, div_one, Complex.ofReal_mul, Complex.ofReal_sub,
     Complex.ofReal_sum, Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_natCast,
@@ -161,8 +128,14 @@ theorem hasLaplace_exp_mul_primeRemainder_one (hd : d ≠ 2) {s : ℂ} (hs : 1 <
   have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
     rw [PrimitiveDirichletCharacter.character_one]
     exact LFunction_modOne_eq
-  rw [hzeta, LFunction_character_of_jacobiChar d hd] at h
-  exact h.congr_ae (Filter.Eventually.of_forall fun u ↦
+  have hp : d.Prime := Fact.out
+  have hprim : (jacobiChar ℂ d).IsPrimitive :=
+    isPrimitive_jacobiChar_of_odd_squarefree (by norm_num) (hp.odd_of_ne_two hd) hp.squarefree
+  let ψ : PrimitiveDirichletCharacter := ⟨⟨d, hp.pos⟩, jacobiChar ℂ d, hprim⟩
+  have hof : PrimitiveDirichletCharacter.of (jacobiChar ℂ d) = ψ :=
+    PrimitiveDirichletCharacter.of_character ψ
+  have h := h.congr_ae (Filter.Eventually.of_forall fun u ↦
     (mul_primeRemainder_one_eq_rieszRemainder_sub d hd (Real.exp u)).symm)
+  rwa [hzeta, hof] at h
 
 end TauCeti.OneSidedBound
