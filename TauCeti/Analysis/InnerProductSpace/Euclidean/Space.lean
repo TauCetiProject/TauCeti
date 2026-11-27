@@ -32,7 +32,9 @@ The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
 closed disks in which characteristic maps of CW complexes are defined onto complex Euclidean
 disks. The real inner product of `ℂⁱ`, the one for which its unit sphere is a manifold, is the real
-part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`).
+part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`). Reindexing the
+coordinates of a real Euclidean vector along an equivalence keeps the sum of their squares, the
+squared norm (`EuclideanSpace.sum_sq_apply_equiv`).
 -/
 
 public section
@@ -44,6 +46,12 @@ coordinates, is the real part of the complex inner product. -/
 theorem EuclideanSpace.real_inner_eq_re_inner {ι : Type*} [Fintype ι]
     (x y : EuclideanSpace ℂ ι) : ⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re := by
   simp [PiLp.inner_apply, Complex.inner, Complex.re_sum]
+
+/-- Reindexing the coordinates of a real Euclidean vector `v` along an equivalence `e` keeps the
+sum of their squares, `‖v‖²`. -/
+theorem EuclideanSpace.sum_sq_apply_equiv {ι κ : Type*} [Fintype ι] [Fintype κ] (e : κ ≃ ι)
+    (v : EuclideanSpace ℝ ι) : ∑ k, v (e k) ^ 2 = ‖v‖ ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, e.sum_comp (fun i ↦ v i ^ 2)]
 
 namespace TauCeti
 
