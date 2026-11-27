@@ -35,6 +35,10 @@ orientation local system, the orientation-twisted chains of the base are the coi
 chains of the cover tensored with the sign representation; this is in
 `TauCeti.Topology.VectorBundle.Orientation.Cover.SignRepresentation`.
 
+The spaces may lie in any universe `u`. Associated local systems need the acting group in that
+universe, so the sign representation is one of the copy `ULift ℤˣ` of `ℤˣ`, acting on `E` and on
+`k` through `ULift.down` (`IsQuotientCoveringMap.ulift`).
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.associatedLocalSystemSignIso`: the local system associated to the sign
@@ -52,10 +56,12 @@ noncomputable section
 
 open CategoryTheory TauCeti
 
+universe u
+
 namespace IsQuotientCoveringMap
 
-variable {E B : TopCat.{0}} {p : E ⟶ B} [MulAction ℤˣ E] (hG : IsQuotientCoveringMap p ℤˣ)
-  (k : Type) [CommRing k] {σ : C(E, E)} (hσ : ∀ e, σ e = (-1 : ℤˣ) • e)
+variable {E B : TopCat.{u}} {p : E ⟶ B} [MulAction ℤˣ E] (hG : IsQuotientCoveringMap p ℤˣ)
+  (k : Type u) [CommRing k] {σ : C(E, E)} (hσ : ∀ e, σ e = (-1 : ℤˣ) • e)
 
 include hG hσ
 
@@ -77,7 +83,7 @@ theorem apply_smul_of_mem_signFiber {x : FundamentalGroupoid B} (u : ℤˣ) (e :
 /-- The sheet coordinates of the sign local system: evaluation at the sheet. -/
 private abbrev signCoordinates {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as}) :
     (hG.isCoveringMap.signLocalSystem k σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ)).obj x ≅
-      ModuleCat.of k (Rep.ofDistribMulAction k ℤˣ k) :=
+      ModuleCat.of k (Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k) :=
   (hG.isCoveringMap.signLocalSystemObjEquiv σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ) x ≪≫ₗ
     signFiberEquiv (hG.ne_self_of_forall_eq_neg_one_smul hσ)
       (hG.eq_or_eq_of_forall_eq_neg_one_smul hσ) e).toModuleIso
@@ -90,16 +96,18 @@ private lemma signCoordinates_hom_apply {x : FundamentalGroupoid B} (e : p ⁻¹
   signFiberEquiv_apply (R := k) _ _ e _
 
 /-- Moving the sheet from `e` to `u • e` multiplies the evaluation by the sign `u`. -/
-private lemma signCoordinates_smul {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as}) (u : ℤˣ) :
-    letI := hG.mulActionFiber x.as
+private lemma signCoordinates_smul {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as})
+    (u : ULift.{u} ℤˣ) :
+    letI := hG.ulift.mulActionFiber x.as
     (hG.signCoordinates k hσ (u • e)).hom =
       (hG.signCoordinates k hσ e).hom ≫
-        ModuleCat.ofHom ((Rep.ofDistribMulAction k ℤˣ k).ρ u) := by
+        ModuleCat.ofHom ((Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k).ρ u) := by
   let := hG.mulActionFiber x.as
   refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ ?_)
   rw [ModuleCat.hom_comp, LinearMap.comp_apply, signCoordinates_hom_apply, ModuleCat.hom_ofHom,
     signCoordinates_hom_apply, Rep.ofDistribMulAction_ρ_apply_apply]
-  exact hG.apply_smul_of_mem_signFiber k hσ u e
+  -- `ULift ℤˣ` acts on the fibre and on `k` through `ULift.down`.
+  exact hG.apply_smul_of_mem_signFiber k hσ u.down e
     (hG.isCoveringMap.signLocalSystemObjEquiv σ _ x f).property
 
 /-- Transport in the sign local system is the identity in the coordinates given by a sheet and by
@@ -119,9 +127,9 @@ of `ℤˣ` on `k` is the sign local system of `σ`: the class of `a ⊗ r[e]` go
 changing sign under `σ` whose value at `e` is `r * a`
 (`associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk`). -/
 def associatedLocalSystemSignIso :
-    hG.associatedLocalSystem k (Rep.ofDistribMulAction k ℤˣ k) ≅
+    hG.ulift.associatedLocalSystem k (Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k) ≅
       hG.isCoveringMap.signLocalSystem k σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ) :=
-  hG.associatedLocalSystemIsoOfSheetCoordinates k (hG.signCoordinates k hσ)
+  hG.ulift.associatedLocalSystemIsoOfSheetCoordinates k (hG.signCoordinates k hσ)
     (hG.signCoordinates_smul k hσ) (hG.signCoordinates_map k hσ)
 
 /-- The identification of the local system of the sign representation with the sign local system
@@ -131,11 +139,12 @@ lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk {x : Fundamental
     (e : p ⁻¹' {x.as}) (a r : k) :
     (hG.isCoveringMap.signLocalSystemObjEquiv σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ) x
         (((hG.associatedLocalSystemSignIso k hσ).hom.app x).hom
-          (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
-            (Rep.of (hG.fiberRepresentation k x.as)) a (Finsupp.single e r))) : p ⁻¹' {x.as} → k)
+          (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k)
+            (Rep.of (hG.ulift.fiberRepresentation k x.as)) a (Finsupp.single e r))) :
+          p ⁻¹' {x.as} → k)
         e =
       r * a := by
-  have h := hG.associatedLocalSystemIsoOfSheetCoordinates_hom_app_coinvariantsTensorMk k
+  have h := hG.ulift.associatedLocalSystemIsoOfSheetCoordinates_hom_app_coinvariantsTensorMk k
     (hG.signCoordinates k hσ) (hG.signCoordinates_smul k hσ) (hG.signCoordinates_map k hσ) e a r
   -- Evaluating at `e` the function with coordinate `r • a` at `e` gives `r • a`.
   rw [← hG.signCoordinates_hom_apply k hσ e, associatedLocalSystemSignIso, h,
@@ -150,8 +159,8 @@ antisymmetrization `e ↦ f e - f (σ e)` of `f` (`IsCoveringMap.permutationLoca
 lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk_eq_smul
     {x : FundamentalGroupoid B} (a : k) (f : p ⁻¹' {x.as} →₀ k) :
     ((hG.associatedLocalSystemSignIso k hσ).hom.app x).hom
-        (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
-          (Rep.of (hG.fiberRepresentation k x.as)) a f) =
+        (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k)
+          (Rep.of (hG.ulift.fiberRepresentation k x.as)) a f) =
       a • hG.isCoveringMap.permutationLocalSystemToSignApp k
         (hG.comp_eq_of_forall_eq_neg_one_smul hσ) (involutive_of_forall_eq_neg_one_smul hσ) x
           f := by
@@ -183,13 +192,14 @@ lemma associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid B}
     (e : p ⁻¹' {x.as})
     (f : (hG.isCoveringMap.signLocalSystem k σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ)).obj x) :
     ((hG.associatedLocalSystemSignIso k hσ).inv.app x).hom f =
-      Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
-        (Rep.of (hG.fiberRepresentation k x.as))
+      Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k)
+        (Rep.of (hG.ulift.fiberRepresentation k x.as))
         ((hG.isCoveringMap.signLocalSystemObjEquiv σ _ x f : p ⁻¹' {x.as} → k) e)
         (Finsupp.single e 1) := by
   -- Read `f` through its coordinate in the sheet `e`, where the inverse is the inverse fibre
   -- identification of the associated local system.
-  have h := hG.associatedLocalSystemIsoOfSheetCoordinates_comp_inv_app k (hG.signCoordinates k hσ)
+  have h := hG.ulift.associatedLocalSystemIsoOfSheetCoordinates_comp_inv_app k
+    (hG.signCoordinates k hσ)
     (hG.signCoordinates_smul k hσ) (hG.signCoordinates_map k hσ) e
   calc ((hG.associatedLocalSystemSignIso k hσ).inv.app x).hom f
       = ((hG.signCoordinates k hσ e).inv ≫ (hG.associatedLocalSystemSignIso k hσ).inv.app x).hom
@@ -198,6 +208,7 @@ lemma associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid B}
           Iso.hom_inv_id, ModuleCat.id_apply]
     _ = _ := by
         rw [associatedLocalSystemSignIso, h, signCoordinates_hom_apply]
-        exact hG.associatedLocalSystemFiberIso_inv_apply k (Rep.ofDistribMulAction k ℤˣ k) e _
+        exact hG.ulift.associatedLocalSystemFiberIso_inv_apply k
+          (Rep.ofDistribMulAction k (ULift.{u} ℤˣ) k) e _
 
 end IsQuotientCoveringMap

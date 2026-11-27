@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.MeasureTheory.Integral.ContinuousMap

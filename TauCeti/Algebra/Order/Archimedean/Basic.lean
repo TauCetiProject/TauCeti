@@ -10,7 +10,7 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
 /-!
-# Choosing step counts in Archimedean ordered semifields
+# Choosing multiples and step counts in Archimedean ordered structures
 
 This file chooses a positive number of steps `n` with `L * n⁻¹ < c`, which splits a segment into `n`
 steps of length `n⁻¹` with an error of at most `c`.
@@ -25,15 +25,24 @@ Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ,
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
 a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
 
+Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
+multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
+of the strip `ℝ × Y` commuting with the translation by a period `ℓ`, it gives a multiple of the
+period exceeding any prescribed distance. This shows that such maps are onto along horizontal
+lines, and that the inverse of a positive twist lift twists negatively.
+
 ## Main results
 
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
+* `TauCeti.exists_div_pow_lt`: for `1 < r` and `0 < ε` there is `m` with `w / r ^ m < ε`.
 * `TauCeti.exists_div_pow_lt_and_forall_mul_pow_lt_one`: for `1 < r`, `s < r` and `0 < p`
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
+* `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
+  multiples of a nonzero element are unbounded above.
 -/
 
 public section
@@ -56,6 +65,15 @@ theorem exists_div_pow_lt_and_forall_mul_pow_lt_one [ExistsAddOfLE K] {r s p : K
     calc s * r ^ k < r * r ^ k := by gcongr
       _ = r ^ (k + 1) := (pow_succ' r k).symm
       _ ≤ r ^ (m + 1) := pow_le_pow_right₀ hr.le hk
+
+/-- For `r > 1` and `ε > 0`, dividing any `w` by a large enough power of `r` brings it below
+`ε`. -/
+theorem exists_div_pow_lt [ExistsAddOfLE K] (w : K) {r ε : K} (hr : 1 < r) (hε : 0 < ε) :
+    ∃ m : ℕ, w / r ^ m < ε := by
+  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (w / ε) hr
+  refine ⟨m, ?_⟩
+  rw [div_lt_iff₀ (pow_pos (zero_lt_one.trans hr) m), ← div_lt_iff₀' hε]
+  exact hm
 
 /-- For any `L` and `c > 0` there is a positive integer `n` with `L * n⁻¹ < c`. -/
 theorem exists_pos_nat_mul_inv_lt (L : K) {c : K} (hc : 0 < c) :
@@ -90,5 +108,15 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
   exact ⟨k, by linarith, by linarith⟩
 
 end Field
+
+/-- In an Archimedean linearly ordered additive group, some integer multiple of a nonzero element
+`ℓ` exceeds any given `r`, whatever the sign of `ℓ`. -/
+theorem exists_lt_zsmul {M : Type*} [AddCommGroup M] [LinearOrder M] [IsOrderedAddMonoid M]
+    [Archimedean M] {ℓ : M} (hℓ : ℓ ≠ 0) (r : M) : ∃ k : ℤ, r < k • ℓ := by
+  rcases hℓ.lt_or_gt with h | h
+  · obtain ⟨n, hn⟩ := exists_lt_nsmul (neg_pos.2 h) r
+    exact ⟨-n, by rwa [neg_zsmul, natCast_zsmul, ← neg_nsmul]⟩
+  · obtain ⟨n, hn⟩ := exists_lt_nsmul h r
+    exact ⟨n, by rwa [natCast_zsmul]⟩
 
 end TauCeti

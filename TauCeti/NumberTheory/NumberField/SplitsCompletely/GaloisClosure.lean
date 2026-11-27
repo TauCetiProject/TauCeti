@@ -260,12 +260,13 @@ theorem isUnramifiedIn_iSup_iff (p : Ideal (𝓞 K)) {ι : Sort*} (E : ι → In
   exact ⟨fun h i Q hQ ↦ h Q hQ i, fun h Q hQ i ↦ h i Q hQ⟩
 
 omit [NumberField K] [NumberField M] [IsGalois K M] in
-/-- **Unramifiedness in a conjugate field.** An ideal `p` of `𝓞 K` is unramified in `σ E` exactly
-when it is unramified in `E`. -/
-theorem isUnramifiedIn_map_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) (σ : M ≃ₐ[K] M) :
-    Algebra.IsUnramifiedIn (𝓞 ↥(E.map (σ : M →ₐ[K] M))) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p :=
-  ((NumberField.RingOfIntegers.mapAlgEquiv (k := K)
-    (E.equivMap (σ : M →ₐ[K] M))).isUnramifiedIn_iff p).symm
+/-- **Unramifiedness in an image field.** For a `K`-embedding `f : M →ₐ[K] M'`, in particular a
+conjugation `σ : M ≃ₐ[K] M`, an ideal `p` of `𝓞 K` is unramified in `f E` exactly when it is
+unramified in `E`. -/
+theorem isUnramifiedIn_map_iff {M' : Type*} [Field M'] [Algebra K M'] (p : Ideal (𝓞 K))
+    (E : IntermediateField K M) (f : M →ₐ[K] M') :
+    Algebra.IsUnramifiedIn (𝓞 ↥(E.map f)) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p :=
+  ((NumberField.RingOfIntegers.mapAlgEquiv (k := K) (E.equivMap f)).isUnramifiedIn_iff p).symm
 
 /-! ### Normal closures in a normal extension -/
 

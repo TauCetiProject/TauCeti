@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
@@ -29,7 +30,9 @@ Coordinate lines and continuous graphs over compact intervals have zero planar L
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
 (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
 the open upper half-plane of the function plus its composition with conjugation
-(`Complex.integral_eq_setIntegral_add_comp_conj`).
+(`Complex.integral_eq_setIntegral_add_comp_conj`), and an almost-everywhere property on the upper
+part of a set containing the conjugates of its lower points holds at the conjugate points of its
+lower part (`TauCeti.ae_restrict_im_neg_of_ae_restrict_im_pos`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides
 (`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
@@ -41,7 +44,10 @@ Splitting complex vectors into real and imaginary blocks preserves product volum
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
 The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
-(`Complex.measurePreserving_equivRealProdCLM_symm`).
+(`Complex.measurePreserving_equivRealProdCLM_symm`). Since the disc `|w| ≤ r`, read in the real
+coordinates, lies in the square `‖z‖ ≤ r`, the integral of a nonnegative function over the disc is
+at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
+(`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
@@ -234,6 +240,17 @@ namespace TauCeti
 
 open TopologicalSpace
 
+/-- The integral of a nonnegative function over the disc `|w| ≤ r`, read in the real coordinates,
+is at most its integral over the square `‖z‖ ≤ s` of any side `s ≥ r`. -/
+theorem setIntegral_setOf_norm_equivRealProdCLM_symm_le_le {μ : Measure (ℝ × ℝ)}
+    {f : ℝ × ℝ → ℝ} {r s : ℝ} (hf : IntegrableOn f (Metric.closedBall 0 s) μ)
+    (hf0 : 0 ≤ᵐ[μ.restrict (Metric.closedBall 0 s)] f) (hrs : r ≤ s) :
+    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r}, f z ∂μ ≤
+      ∫ z in Metric.closedBall 0 s, f z ∂μ :=
+  setIntegral_mono_set hf hf0 (Filter.Eventually.of_forall fun _ hz ↦
+    Metric.closedBall_subset_closedBall hrs
+      (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r hz))
+
 /-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
 differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
 Lebesgue measure. -/
@@ -242,6 +259,27 @@ theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
       (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ) := by
   rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
   exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
+
+/-- Almost every point, indeed every point, of the interior `Ω ∩ {0 < im}` of the half-disc
+`Ω ∩ {0 ≤ im}` lies in the open upper half-plane. -/
+theorem ae_restrict_interior_inter_setOf_im_nonneg_im_pos (Ω : Opens ℂ) :
+    ∀ᵐ z ∂volume.restrict (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ),
+      0 < z.im := by
+  refine (ae_restrict_iff' (Opens.interior _).isOpen.measurableSet).2 (.of_forall fun z hz => ?_)
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
+  exact hz.2
+
+/-- An almost-everywhere property on the upper part `Ω ∩ {0 < im}` of a set containing the
+conjugates of its lower points, read at the conjugate point, holds almost everywhere on the lower
+part `Ω ∩ {im < 0}`: conjugation preserves the measure and exchanges the two parts. -/
+theorem ae_restrict_im_neg_of_ae_restrict_im_pos {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → starRingEnd ℂ z ∈ Ω) {P : ℂ → Prop}
+    (h : ∀ᵐ z ∂volume.restrict (Ω ∩ {z | 0 < z.im}), P z) :
+    ∀ᵐ z ∂volume.restrict (Ω ∩ {z | z.im < 0}), P (starRingEnd ℂ z) := by
+  have hconj := (Complex.conjLIE.measurePreserving.restrict_preimage_emb
+    Complex.conjLIE.toHomeomorph.measurableEmbedding (Ω ∩ {z | 0 < z.im})).quasiMeasurePreserving
+  refine ae_restrict_of_ae_restrict_of_subset (fun z hz ↦ ?_) (by simpa using hconj.ae h)
+  exact ⟨hΩ z hz.1 hz.2, by simpa using hz.2⟩
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/

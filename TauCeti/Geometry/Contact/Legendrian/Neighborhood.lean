@@ -223,15 +223,15 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
     (ι : SmoothEmbedding I J ∞ Λ M) (hn : (∞ : ℕ∞ω) ≠ 0)
     (hdim : finrank ℝ ((E →L[ℝ] ℝ) × ℝ) = finrank ℝ F - finrank ℝ E)
     {Ψ : CotangentBundle I Λ × ℝ → M} {q : Λ} (p : TangentSpace I q →L[ℝ] ℝ) (c : ℝ)
-    (v : ι.NormalSpace q hn)
+    (v : ι.isImmersion.NormalSpace q hn)
     (hΨ : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q))
     (hE : letI := ι.normalSpaceFiberBundle hn hdim
       MDifferentiableAt (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn)
-        (zeroSection ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn) q))
+        (zeroSection ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.isImmersion.NormalSpace x hn) q))
     (hline : letI := ι.normalSpaceFiberBundle hn hdim
       (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) =
         ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
-          (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) :
+          (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.isImmersion.NormalSpace x hn))) :
     mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) J Ψ (jetZero I q)
       (((0 : E), (p : E →L[ℝ] ℝ)), c) = ι.normalRepresentative q hn v := by
   let := ι.normalSpaceFiberBundle hn hdim
@@ -240,12 +240,14 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
   have hγ0 : ((⟨q, (0 : ℝ) • p⟩ : CotangentBundle I Λ), (0 : ℝ) * c) = jetZero I q := by
     simp [zeroSection]
   have hℓ : MDifferentiableAt 𝓘(ℝ) (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ))
-      (fun t : ℝ ↦ (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 :=
+      (fun t : ℝ ↦ (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
+        (fun x ↦ ι.isImmersion.NormalSpace x hn))) 0 :=
     (TotalSpace.hasMFDerivAt_smul_curve (IB := I)
-      (⟨q, v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))
+      (⟨q, v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.isImmersion.NormalSpace x hn))
       (hasDerivAt_id (0 : ℝ))).mdifferentiableAt
   have hℓ0 : (⟨q, (0 : ℝ) • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
-      (fun x ↦ ι.NormalSpace x hn)) = zeroSection _ (fun x ↦ ι.NormalSpace x hn) q := by
+      (fun x ↦ ι.isImmersion.NormalSpace x hn)) =
+        zeroSection _ (fun x ↦ ι.isImmersion.NormalSpace x hn) q := by
     simp [zeroSection]
   have hγ1 : mfderiv 𝓘(ℝ) ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
       (fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0 (1 : ℝ) =
@@ -269,13 +271,15 @@ private theorem mfderiv_jetLine_eq_normalRepresentative
   -- `d(Ψ ∘ γ)(1) = d(exp ∘ ℓ)(1)`:
   have hγℓ : mfderiv 𝓘(ℝ) J (Ψ ∘ fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0
       (1 : ℝ) = mfderiv 𝓘(ℝ) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
-        (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 (1 : ℝ) := by
+        (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
+          (fun x ↦ ι.isImmersion.NormalSpace x hn))) 0 (1 : ℝ) := by
     rw [hline]
   -- `d(exp ∘ ℓ)(1) = d exp (0, v)`:
   have hℓexp : mfderiv 𝓘(ℝ) J (ι.normalExp (P := (E →L[ℝ] ℝ) × ℝ) hn ∘ fun t : ℝ ↦
-      (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ) (fun x ↦ ι.NormalSpace x hn))) 0 (1 : ℝ) =
+      (⟨q, t • v⟩ : TotalSpace ((E →L[ℝ] ℝ) × ℝ)
+        (fun x ↦ ι.isImmersion.NormalSpace x hn))) 0 (1 : ℝ) =
         mfderiv (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) J (ι.normalExp hn)
-          (zeroSection _ (fun x ↦ ι.NormalSpace x hn) q)
+          (zeroSection _ (fun x ↦ ι.isImmersion.NormalSpace x hn) q)
           ((Bundle.zeroSectionTangentEquiv (I := I) q).symm (0, v)) := by
     rw [Bundle.zeroSectionTangentEquiv_symm_inr]
     exact mfderiv_comp_apply_of_eq (hg := hE) (hf := hℓ) (hy := hℓ0) (v := (1 : ℝ))
@@ -345,7 +349,8 @@ private theorem exists_partialDiffeomorph_jet [Nonempty Λ] (ι : SmoothEmbeddin
     (by norm_cast) hdim isOpen_univ (subset_univ _)
   -- `Ψ` is the normal exponential, read through `J¹Λ ≃ T^* Λ × ℝ ≃ ν(ι)`.
   set D := ι.normalBundleDiffeomorphOfIsLegendrianImmersion hι hn hm hm hdim with hD
-  have hD0 (q : Λ) : D.symm (jetZero I q) = zeroSection _ (fun x ↦ ι.NormalSpace x hn) q := by
+  have hD0 (q : Λ) :
+      D.symm (jetZero I q) = zeroSection _ (fun x ↦ ι.isImmersion.NormalSpace x hn) q := by
     rw [hD, normalBundleDiffeomorphOfIsLegendrianImmersion_symm_apply]
     exact congrArg (TotalSpace.mk' _ q) (map_zero _)
   set Ψ := D.symm.toPartialDiffeomorph.trans Φ with hΨ

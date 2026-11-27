@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem.AlgebraicSet
-public import TauCeti.GroupTheory.FreeGroup.GenEq.CancellationFamily
+public import TauCeti.GroupTheory.FreeGroup.GenEq.CancellationFamily.Basic
 
 /-!
 # The homomorphism from the coordinate group of a system to that of a generalised equation
