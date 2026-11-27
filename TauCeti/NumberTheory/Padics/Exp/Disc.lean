@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Algebra.Logarithm.Basic
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
+import TauCeti.NumberTheory.Padics.Exp.Basic
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.UltrametricSubst
@@ -68,8 +69,6 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 ## Main results
 
 * `TauCeti.norm_inv_factorial_smul_pow_le`: `‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`.
-* `TauCeti.ofReal_amiceRadius_zero_le_radius_expSeries`: the exponential series converges on
-  the disc of radius `r₀`.
 * `TauCeti.expSeries_hasSum_exp_of_norm_lt`: on that disc, `exp x = ∑ xⁿ / n!`.
 * `TauCeti.exp_add_of_commute_of_norm_lt`, `TauCeti.exp_sum_of_commute_of_norm_lt`: the
   functional equation for commuting elements, with the commutative forms
@@ -107,28 +106,6 @@ open scoped Nat
 namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
-
-/-- **The exponential series converges on the disc of radius `r₀ = p ^ (-1 / (p - 1))`** in
-every normed algebra over `ℚ_[p]`. -/
-theorem ofReal_amiceRadius_zero_le_radius_expSeries {L : Type*} [NormedRing L]
-    [NormedAlgebra ℚ_[p] L] :
-    ENNReal.ofReal (amiceRadius p 0) ≤ (expSeries ℚ_[p] L).radius := by
-  have hr := amiceRadius_pos (p := p) 0
-  rw [ENNReal.ofReal_eq_coe_nnreal hr.le]
-  refine FormalMultilinearSeries.le_radius_of_bound _
-    (max ‖expSeries ℚ_[p] L 0‖ (amiceRadius p 0)) fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  refine le_max_of_le_right ?_
-  rw [expSeries_eq_ofScalars, NNReal.coe_mk]
-  refine (mul_le_mul_of_nonneg_right (FormalMultilinearSeries.ofScalars_norm_le _ _ _
-    (Nat.pos_of_ne_zero hn)) (by positivity)).trans ?_
-  -- `‖n!⁻¹‖ r₀ⁿ ≤ r₀ⁿ / r₀ ^ (n - 1) = r₀`
-  have hf := amiceRadius_zero_pow_sub_one_le_norm_factorial (p := p) (L := ℚ_[p]) hn
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at hf
-  rw [norm_inv, inv_mul_le_iff₀ ((pow_pos hr m).trans_le hf), _root_.pow_succ]
-  exact mul_le_mul_of_nonneg_right hf hr.le
 
 /-- The coefficients of the formal series `exp - 1` over `ℚ_[p]` satisfy
 `‖cₙ‖ r₀ ^ (n - 1) ≤ 1`. -/
@@ -182,13 +159,6 @@ theorem norm_neg_one_pow_div_natCast_smul_pow_le (z : A) {n : ℕ} (hn : n ≠ 0
   rw [PowerSeries.coeff_log_eq_neg_one_pow_div] at hc
   exact norm_smul_pow_le_of_norm_mul_le z hn hc
 
-/-- A point of the disc `‖x‖ < r₀` lies in the ball of convergence of the exponential series. -/
-private theorem mem_eball_radius_expSeries {x : A} (hx : ‖x‖ < amiceRadius p 0) :
-    x ∈ Metric.eball (0 : A) (expSeries ℚ_[p] A).radius := by
-  refine lt_of_lt_of_le ?_ ofReal_amiceRadius_zero_le_radius_expSeries
-  rw [edist_zero_right, ← ofReal_norm]
-  exact (ENNReal.ofReal_lt_ofReal_iff (amiceRadius_pos 0)).mpr hx
-
 /-- For `‖x‖ < r₀` and every natural number `n`, `‖n • x‖ < r₀`. -/
 private theorem norm_nsmul_lt_amiceRadius {x : A} (hx : ‖x‖ < amiceRadius p 0) (n : ℕ) :
     ‖n • x‖ < amiceRadius p 0 := by
@@ -201,14 +171,15 @@ variable [CompleteSpace A]
 /-- **The exponential as a series on its disc.** For `‖x‖ < r₀`, `exp x = ∑ xⁿ / n!`. -/
 theorem expSeries_hasSum_exp_of_norm_lt {x : A} (hx : ‖x‖ < amiceRadius p 0) :
     HasSum (fun n ↦ (n ! : ℚ_[p])⁻¹ • x ^ n) (exp x) :=
-  expSeries_hasSum_exp_of_mem_ball' x (mem_eball_radius_expSeries hx)
+  expSeries_hasSum_exp_of_mem_ball' x (PadicExp.mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
 
 /-- **The functional equation of the `p`-adic exponential for commuting elements.** If `x` and `y`
 commute and `‖x‖, ‖y‖ < r₀`, then `exp (x + y) = exp x * exp y`. -/
 theorem exp_add_of_commute_of_norm_lt {x y : A} (hxy : Commute x y)
     (hx : ‖x‖ < amiceRadius p 0) (hy : ‖y‖ < amiceRadius p 0) : exp (x + y) = exp x * exp y :=
-  exp_add_of_commute_of_mem_ball (𝕂 := ℚ_[p]) hxy (mem_eball_radius_expSeries hx)
-    (mem_eball_radius_expSeries hy)
+  exp_add_of_commute_of_mem_ball (𝕂 := ℚ_[p]) hxy
+    (PadicExp.mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
+    (PadicExp.mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hy)
 
 /-- The series of `exp x - 1` on the disc, with the coefficients of the formal series `exp - 1`. -/
 private theorem hasSum_exp_sub_one {x : A} (hx : ‖x‖ < amiceRadius p 0) :
@@ -393,7 +364,7 @@ theorem addChar_of_value_at_one_eq_exp_smul_log [Algebra ℤ_[p] A] [IsBoundedSM
   have hcont : Continuous fun x : ℤ_[p] ↦ exp ((x : ℚ_[p]) • log (1 + t)) :=
     (continuousOn_exp (𝕂 := ℚ_[p])).comp_continuous
       (continuous_subtypeVal.smul continuous_const) fun x ↦
-      mem_eball_radius_expSeries (norm_coe_smul_log_one_add_lt ht x)
+      PadicExp.mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) (norm_coe_smul_log_one_add_lt ht x)
   refine congrFun (PadicInt.denseRange_natCast.equalizer
     (PadicInt.continuous_addChar_of_value_at_one _) hcont (funext fun n ↦ ?_)) x
   simp only [Function.comp_apply, PadicInt.coe_natCast, Nat.cast_smul_eq_nsmul]
@@ -447,7 +418,7 @@ theorem exp_zsmul_of_norm_lt {L : Type*} [NormedDivisionRing L] [NormedAlgebra �
   obtain ⟨n, rfl | rfl⟩ := n.eq_nat_or_neg
   · simpa using exp_nsmul_of_norm_lt n hx
   · rw [neg_smul, natCast_zsmul, exp_neg_of_mem_ball ℚ_[p]
-      (mem_eball_radius_expSeries (norm_nsmul_lt_amiceRadius hx n)),
+      (PadicExp.mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) (norm_nsmul_lt_amiceRadius hx n)),
       exp_nsmul_of_norm_lt n hx, zpow_neg, zpow_natCast]
 
 /-- **Integer combinations of logarithms of units near `1`.** If `‖αⱼ - 1‖ < r₀` for every

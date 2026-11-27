@@ -331,13 +331,8 @@ theorem norm_inv_factorial_le_rpow_sub_one_div {n : ℕ} (hn : n ≠ 0) :
 base-`p` digit sum `1`, `‖((p ^ k)!)⁻¹‖ = p ^ ((p ^ k - 1) / (p - 1))`. -/
 theorem norm_inv_factorial_pow_prime (k : ℕ) :
     ‖(((p ^ k)! : ℕ) : D)⁻¹‖ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  have hpow1 : 1 ≤ p ^ k := Nat.one_le_pow k p hp.out.pos
   have hdiv : (padicValNat p (p ^ k)! : ℝ) = (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) := by
-    rw [eq_div_iff (sub_pos.mpr hp1).ne']
-    have hcast : (((p - 1) * padicValNat p (p ^ k)! : ℕ) : ℝ) = ((p ^ k - 1 : ℕ) : ℝ) := by
-      exact_mod_cast TauCeti.sub_one_mul_padicValNat_factorial_pow p k
-    simpa [Nat.cast_sub hp.out.one_le, Nat.cast_sub hpow1, mul_comm] using hcast
+    simpa only [Nat.padicValNat_def, Nat.cast_pow] using cast_multiplicity_factorial_pow p k
   rw [norm_inv, TauCeti.norm_natCast_eq_norm_padic (p := p),
     Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _)]
   simp [← Real.rpow_natCast, hdiv]
