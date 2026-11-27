@@ -32,7 +32,8 @@ The proof combines two identities about integral operators proved in earlier fil
 Writing `T_{K₁} = (T_{K₁⋆})†`, the trace `Tr (T_{K₁} T_{K₂})` is the Hilbert–Schmidt pairing
 `⟪K₁⋆, K₂⟫`, which is the displayed double integral after the measure-preserving swap
 `μ ⊗ ν ≃ ν ⊗ μ`. Fubini applies because `K₁ (x, y) K₂ (y, x)` is absolutely integrable
-(`MeasureTheory.Lp.integrable_mul_comp_swap`).
+(`MeasureTheory.Lp.integrable_mul_comp_swap`, in
+`TauCeti.MeasureTheory.Function.Lp.Product`).
 
 A class in `L²(μ ⊗ μ)` has no well-defined values on the diagonal, which is a null set in
 general. The diagonal form of the trace formula therefore takes a function `K` on `α × α`,
@@ -42,7 +43,6 @@ supplied by the user, whose diagonal values are almost everywhere the integrals
 
 ## Main declarations
 
-* `MeasureTheory.Lp.integrable_mul_comp_swap`: `(x, y) ↦ K₁ (x, y) K₂ (y, x)` is integrable.
 * `TauCeti.trace_adjoint_integralOperatorL2_comp`: `Tr (T_K† T_L) = ⟪K, L⟫`.
 * `TauCeti.trace_integralOperatorL2_comp`:
   `Tr (T_{K₁} T_{K₂}) = ∫ K₁ (x, y) K₂ (y, x) d(μ ⊗ ν)`.
@@ -70,19 +70,6 @@ open scoped ENNReal InnerProductSpace ComplexConjugate
 
 variable {α β 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
   {μ : Measure α} {ν : Measure β}
-
-namespace MeasureTheory.Lp
-
-variable [SFinite μ] [SFinite ν]
-
-/-- For `K₁ ∈ L²(μ ⊗ ν)` and `K₂ ∈ L²(ν ⊗ μ)`, the function `(x, y) ↦ K₁ (x, y) * K₂ (y, x)` is
-integrable on `μ ⊗ ν`. -/
-theorem integrable_mul_comp_swap (K₁ : Lp 𝕜 2 (μ.prod ν)) (K₂ : Lp 𝕜 2 (ν.prod μ)) :
-    Integrable (fun p ↦ K₁ p * K₂ p.swap) (μ.prod ν) :=
-  (Lp.memLp K₁).integrable_mul
-    ((Lp.memLp K₂).comp_measurePreserving Measure.measurePreserving_swap)
-
-end MeasureTheory.Lp
 
 namespace TauCeti
 

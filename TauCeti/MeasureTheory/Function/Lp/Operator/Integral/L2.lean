@@ -45,7 +45,9 @@ The Hilbert–Schmidt norm of `T_K` is computed in
 * `TauCeti.integralOperatorL2_prodMul_star`: the kernel `w ⊗ star u` gives the rank-one operator
   `InnerProductSpace.rankOne 𝕜 w u = ⟪u, ·⟫ • w`.
 * `TauCeti.adjointKernel`, `TauCeti.adjoint_integralOperatorL2`: the conjugate transpose kernel
-  `K⋆ (x, y) = conj (K (y, x))` and `T_K† = T_{K⋆}`.
+  `K⋆ (x, y) = conj (K (y, x))` and `T_K† = T_{K⋆}`. The conjugate transpose is a conjugate linear
+  involution (`TauCeti.adjointKernel_add`, `TauCeti.adjointKernel_smul`) preserving norms and
+  conjugating inner products (`TauCeti.inner_adjointKernel`).
 
 ## References
 
@@ -255,6 +257,48 @@ theorem adjointKernel_adjointKernel (K : Lp 𝕜 2 (ν.prod μ)) :
       (coeFn_adjointKernel (μ := μ) K)] with q hq hK
   simp only [Function.comp_apply] at hK
   rw [hq, hK, Prod.swap_swap, RCLike.conj_conj]
+
+/-- The conjugate transpose of the zero kernel is zero. -/
+@[simp]
+theorem adjointKernel_zero : adjointKernel (0 : Lp 𝕜 2 (ν.prod μ)) = 0 := by
+  rw [adjointKernel, map_zero, star_zero]
+
+/-- The conjugate transpose is additive. -/
+@[simp]
+theorem adjointKernel_add (K L : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (K + L) = adjointKernel K + adjointKernel L := by
+  rw [adjointKernel, map_add, star_add, adjointKernel, adjointKernel]
+
+/-- The conjugate transpose commutes with negation. -/
+@[simp]
+theorem adjointKernel_neg (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (-K) = -adjointKernel K := by
+  rw [adjointKernel, map_neg, star_neg, adjointKernel]
+
+/-- The conjugate transpose commutes with subtraction. -/
+@[simp]
+theorem adjointKernel_sub (K L : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (K - L) = adjointKernel K - adjointKernel L := by
+  rw [adjointKernel, map_sub, star_sub, adjointKernel, adjointKernel]
+
+/-- The conjugate transpose is conjugate linear: `(c • K)⋆ = conj c • K⋆`. -/
+@[simp]
+theorem adjointKernel_smul (c : 𝕜) (K : Lp 𝕜 2 (ν.prod μ)) :
+    adjointKernel (c • K) = conj c • adjointKernel K := by
+  have h := map_smul (compMeasurePreservingₗ 𝕜 Prod.swap
+    (Measure.measurePreserving_swap (μ := μ) (ν := ν))) c K
+  rw [adjointKernel, adjointKernel, ← RCLike.star_def, ← star_smul]
+  exact congrArg star h
+
+/-- The conjugate transpose preserves the `L²` pairing up to conjugation:
+`⟪K⋆, L⋆⟫ = conj ⟪K, L⟫ = ⟪L, K⟫`. -/
+@[simp]
+theorem inner_adjointKernel (K L : Lp 𝕜 2 (ν.prod μ)) :
+    ⟪adjointKernel K, adjointKernel L⟫_𝕜 = ⟪L, K⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_prod_swap (μ := ν) (ν := μ)]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_adjointKernel K, coeFn_adjointKernel L] with p hK hL
+  rw [hK, hL, RCLike.inner_apply, RCLike.inner_apply, RCLike.conj_conj, mul_comm]
 
 /-- **The kernel of the adjoint.** The adjoint of the integral operator of `K ∈ L²(ν ⊗ μ)` is the
 integral operator of the conjugate transpose kernel `(x, y) ↦ conj (K (y, x))`. -/
