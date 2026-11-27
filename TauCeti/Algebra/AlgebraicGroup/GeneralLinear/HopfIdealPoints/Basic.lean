@@ -23,6 +23,8 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
   in the general-linear coordinate ring.
 * `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff`: membership is characterized by
   vanishing on the Hopf ideal, with
+  `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff_generalLinearToPoint` stating it through
+  matrix evaluation and
   `TauCeti.GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker`
   reading it as a kernel containment for an algebra-valued point.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_le_of_le`: larger Hopf ideals cut out smaller
@@ -73,6 +75,15 @@ theorem mem_hopfIdealPointsSubgroup_iff
       ∀ x ∈ I, ((pointsMulEquiv (R := R) n).symm g).ofConv x = 0 := by
   unfold hopfIdealPointsSubgroup
   rw [Subgroup.mem_map_equiv, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+
+/-- Membership in the general-linear point subgroup cut out by a Hopf ideal is vanishing on that
+ideal of the point `generalLinearToPoint n g` given by matrix evaluation. -/
+theorem mem_hopfIdealPointsSubgroup_iff_generalLinearToPoint
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (A : Type w)
+    [CommRing A] [Algebra R A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    g ∈ hopfIdealPointsSubgroup n I A ↔
+      ∀ x ∈ I, (generalLinearToPoint (R := R) n g).ofConv x = 0 := by
+  rw [mem_hopfIdealPointsSubgroup_iff, pointsMulEquiv_symm_apply]
 
 /-- A general-linear point lying in the subgroup cut out by a Hopf ideal remains in that
 subgroup after transport to its matrix representation. -/
