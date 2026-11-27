@@ -21,6 +21,12 @@ The direct sum is densely defined exactly when both summands are, and closed exa
 summands are. Both statements hold over arbitrary topological modules, since `WithLp p (E × F)`
 carries the product topology for every `p`.
 
+Two partial linear maps `f : E →ₗ.[R] E'` and `g : E →ₗ.[R] F'` on the same space also give the
+partial linear map `x ↦ (f x, g x)` into `WithLp p (E' × F')`, on the intersection of their
+domains, the partial analogue of `LinearMap.prod`. It is closed when `f` and `g` are. For a
+Hilbert complex `d₀`, `d₁`, the map `u ↦ (d₀† u, d₁ u)` of this form is the operator whose
+`T†T` is the Laplacian.
+
 ## Main declarations
 
 * `LinearPMap.withLpProdMap p f g`: the direct sum of `f` and `g` on `WithLp p (E × F)`.
@@ -31,6 +37,9 @@ carries the product topology for every `p`.
 * `LinearPMap.dense_withLpProdMap_domain_iff`: `f ⊕ g` is densely defined if and only if `f` and
   `g` are.
 * `LinearPMap.isClosed_withLpProdMap_iff`: `f ⊕ g` is closed if and only if `f` and `g` are.
+* `LinearPMap.withLpProd p f g`: the partial linear map `x ↦ (f x, g x)` on `dom f ∩ dom g`.
+* `LinearPMap.mem_graph_withLpProd_iff` and `LinearPMap.IsClosed.withLpProd`: its graph is cut out
+  by the graphs of `f` and `g`, so it is closed when `f` and `g` are.
 
 ## References
 
@@ -184,5 +193,98 @@ theorem IsClosed.withLpProdMap (hf : f.IsClosed) (hg : g.IsClosed) :
   isClosed_withLpProdMap_iff.mpr ⟨hf, hg⟩
 
 end Closed
+
+section Pair
+
+variable [Ring R] [AddCommGroup E] [Module R E] [AddCommGroup E'] [Module R E']
+  [AddCommGroup F'] [Module R F']
+
+/-- The partial linear map `x ↦ (f x, g x)` into the `L^p` product `WithLp p (E' × F')`, on the
+intersection of the domains of `f` and `g`. -/
+noncomputable def withLpProd (f : E →ₗ.[R] E') (g : E →ₗ.[R] F') :
+    E →ₗ.[R] WithLp p (E' × F') where
+  domain := f.domain ⊓ g.domain
+  toFun := (WithLp.linearEquiv p R (E' × F')).symm.toLinearMap.comp
+    ((f.toFun.comp (Submodule.inclusion inf_le_left)).prod
+      (g.toFun.comp (Submodule.inclusion inf_le_right)))
+
+variable {p} {f : E →ₗ.[R] E'} {g : E →ₗ.[R] F'}
+
+/-- The domain of `x ↦ (f x, g x)` is the intersection of the domains of `f` and `g`. -/
+theorem withLpProd_domain (f : E →ₗ.[R] E') (g : E →ₗ.[R] F') :
+    (f.withLpProd p g).domain = f.domain ⊓ g.domain :=
+  (rfl)
+
+/-- A vector lies in the domain of `x ↦ (f x, g x)` exactly when it lies in the domains of `f`
+and of `g`. -/
+@[simp]
+theorem mem_withLpProd_domain {x : E} :
+    x ∈ (f.withLpProd p g).domain ↔ x ∈ f.domain ∧ x ∈ g.domain :=
+  Submodule.mem_inf
+
+/-- The domain of `x ↦ (f x, g x)` is contained in the domain of `f`. -/
+theorem withLpProd_domain_le_left : (f.withLpProd p g).domain ≤ f.domain :=
+  inf_le_left
+
+/-- The domain of `x ↦ (f x, g x)` is contained in the domain of `g`. -/
+theorem withLpProd_domain_le_right : (f.withLpProd p g).domain ≤ g.domain :=
+  inf_le_right
+
+/-- The first coordinate of `x ↦ (f x, g x)` is `f x`. -/
+@[simp]
+theorem withLpProd_apply_fst (x : (f.withLpProd p g).domain) :
+    (f.withLpProd p g x).fst = f ⟨x, withLpProd_domain_le_left x.property⟩ :=
+  (rfl)
+
+/-- The second coordinate of `x ↦ (f x, g x)` is `g x`. -/
+@[simp]
+theorem withLpProd_apply_snd (x : (f.withLpProd p g).domain) :
+    (f.withLpProd p g x).snd = g ⟨x, withLpProd_domain_le_right x.property⟩ :=
+  (rfl)
+
+/-- On the common domain, `x ↦ (f x, g x)`. -/
+theorem withLpProd_apply (x : (f.withLpProd p g).domain) :
+    f.withLpProd p g x = toLp p (f ⟨x, withLpProd_domain_le_left x.property⟩,
+      g ⟨x, withLpProd_domain_le_right x.property⟩) :=
+  (rfl)
+
+/-- The graph of `x ↦ (f x, g x)`: `(x, v)` lies on it exactly when `(x, v.fst)` lies on the graph
+of `f` and `(x, v.snd)` on the graph of `g`. -/
+theorem mem_graph_withLpProd_iff {z : E × WithLp p (E' × F')} :
+    z ∈ (f.withLpProd p g).graph ↔ (z.1, z.2.fst) ∈ f.graph ∧ (z.1, z.2.snd) ∈ g.graph := by
+  obtain ⟨u, v⟩ := z
+  simp only [mem_graph_iff]
+  constructor
+  · rintro ⟨x, rfl, rfl⟩
+    exact ⟨⟨_, rfl, (withLpProd_apply_fst x).symm⟩, ⟨_, rfl, (withLpProd_apply_snd x).symm⟩⟩
+  · rintro ⟨⟨x, hx, hfx⟩, ⟨y, hy, hgy⟩⟩
+    refine ⟨⟨u, mem_withLpProd_domain.mpr ⟨hx ▸ x.property, hy ▸ y.property⟩⟩, rfl, ?_⟩
+    refine ofLp_injective p (Prod.ext ?_ ?_) <;> simp only [ofLp_fst, ofLp_snd]
+    · rw [withLpProd_apply_fst, ← hfx]
+      exact congrArg f (Subtype.ext hx.symm)
+    · rw [withLpProd_apply_snd, ← hgy]
+      exact congrArg g (Subtype.ext hy.symm)
+
+end Pair
+
+section ClosedPair
+
+variable {p} [CommRing R] [AddCommGroup E] [Module R E] [AddCommGroup E'] [Module R E']
+  [AddCommGroup F'] [Module R F'] [TopologicalSpace E] [TopologicalSpace E'] [TopologicalSpace F']
+  {f : E →ₗ.[R] E'} {g : E →ₗ.[R] F'}
+
+/-- The partial linear map `x ↦ (f x, g x)` is closed when `f` and `g` are closed. -/
+theorem IsClosed.withLpProd (hf : f.IsClosed) (hg : g.IsClosed) :
+    (f.withLpProd p g).IsClosed := by
+  have hgraph : ((f.withLpProd p g).graph : Set (E × WithLp p (E' × F'))) =
+      (fun z ↦ ((z.1, z.2.fst), (z.1, z.2.snd))) ⁻¹'
+        ((f.graph : Set (E × E')) ×ˢ (g.graph : Set (E × F'))) := by
+    ext z
+    rw [SetLike.mem_coe, mem_graph_withLpProd_iff, mem_preimage, mem_prod, SetLike.mem_coe,
+      SetLike.mem_coe]
+  rw [LinearPMap.IsClosed, hgraph]
+  exact (IsClosed.prod hf hg).preimage (by fun_prop)
+
+end ClosedPair
 
 end LinearPMap

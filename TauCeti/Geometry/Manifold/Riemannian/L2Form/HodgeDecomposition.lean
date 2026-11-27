@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.HilbertComplex
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.HilbertComplex.Basic
 public import TauCeti.Geometry.Manifold.DeRham.Harmonic
 public import TauCeti.Geometry.Manifold.Riemannian.L2Form.Weak
 
