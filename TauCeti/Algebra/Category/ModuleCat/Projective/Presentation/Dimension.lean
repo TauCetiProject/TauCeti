@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation.Basic
 public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 

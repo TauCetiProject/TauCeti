@@ -68,6 +68,7 @@ noncomputable def matlisDualRegularExtAction :
     intro x
     have h : matlisDualOpMap R E (𝟙 (ModuleCat.of.{max u v} Aᵐᵒᵖ A)) = 𝟙 _ :=
       (matlisDualOp R E).map_id (Opposite.op (ModuleCat.of.{max u v} Aᵐᵒᵖ A))
+    -- The identity additive endomorphism evaluates to its argument.
     change _ = x
     simp [h]
   map_mul' a b := by
@@ -83,6 +84,7 @@ noncomputable def matlisDualRegularExtAction :
     have h : matlisDualOpMap R E
         (0 : ModuleCat.of.{max u v} Aᵐᵒᵖ A ⟶ ModuleCat.of.{max u v} Aᵐᵒᵖ A) = 0 :=
       (matlisDualOp R E).map_zero _ _
+    -- The zero additive endomorphism evaluates to zero.
     change _ = 0
     simp [h]
   map_add' a b := by
@@ -111,6 +113,62 @@ theorem ExtFromMatlisDualRegular.toExt_smul {M : ModuleCat.{max u v} A} {n : ℕ
   change (Ext.mk₀ (matlisDualOpMap R E (regularEnd.{max u v} a).asHom)).comp
     (toExt R E x) (zero_add n) = _
   rw [regularEnd_asHom]
+
+/-- An additive Ext comparison compatible with pullback by dual left multiplications is
+an equivalence of left `A`-modules. -/
+private noncomputable def ExtFromMatlisDualRegular.linearEquivOfCompat
+    {V : Type*} [AddCommGroup V] [Module A V] {M : ModuleCat.{max u v} A} {n : ℕ}
+    (e : V ≃+ Ext (matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A)) M n)
+    (he : ∀ (a : A) (x : V), e (a • x) =
+      (Ext.mk₀ (matlisDualOpMap R E (ofHom (LinearMap.mulLeft Aᵐᵒᵖ a)))).comp (e x)
+        (zero_add n)) :
+    V ≃ₗ[A] ExtFromMatlisDualRegular R E M n where
+  toAddEquiv := e.trans (toExt R E).symm
+  map_smul' a x := (toExt R E).injective (by
+    -- The additive comparison is followed by the inverse forgetful equivalence.
+    change toExt R E ((toExt R E).symm (e (a • x))) =
+      toExt R E (a • (toExt R E).symm (e x))
+    rw [AddEquiv.apply_symm_apply, toExt_smul, AddEquiv.apply_symm_apply]
+    exact he a x)
+
+/-- Forgetting the action after constructing the compatible linear equivalence recovers
+the original additive comparison. -/
+@[simp]
+private theorem ExtFromMatlisDualRegular.linearEquivOfCompat_toExt
+    {V : Type*} [AddCommGroup V] [Module A V] {M : ModuleCat.{max u v} A} {n : ℕ}
+    (e : V ≃+ Ext (matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A)) M n)
+    (he : ∀ (a : A) (x : V), e (a • x) =
+      (Ext.mk₀ (matlisDualOpMap R E (ofHom (LinearMap.mulLeft Aᵐᵒᵖ a)))).comp (e x)
+        (zero_add n)) (x : V) :
+    toExt R E (linearEquivOfCompat R E e he x) = e x :=
+  (toExt R E).apply_symm_apply _
+
+/-- An isomorphism of targets preserves the left action on Ext from the dual regular module. -/
+noncomputable def ExtFromMatlisDualRegular.linearEquivOfIso
+    {M M' : ModuleCat.{max u v} A} (e : M ≅ M') (n : ℕ) :
+    ExtFromMatlisDualRegular R E M n ≃ₗ[A] ExtFromMatlisDualRegular R E M' n := by
+  let eExt := TauCeti.extAddEquivOfIso
+    (Iso.refl (matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A))) e n
+  -- Changing the target commutes with precomposition in the source.
+  have hpre (f : matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A) ⟶
+      matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A))
+      (x : Ext (matlisDualOpObj R E (ModuleCat.of.{max u v} Aᵐᵒᵖ A)) M n) :
+      eExt ((Ext.mk₀ f).comp x (zero_add n)) =
+        (Ext.mk₀ f).comp (eExt x) (zero_add n) := by
+    simp only [eExt, TauCeti.extAddEquivOfIso_apply, Iso.refl_inv, Ext.mk₀_id_comp,
+      Ext.comp_assoc_of_third_deg_zero]
+  refine linearEquivOfCompat R E ((toExt R E).trans eExt) ?_
+  intro a x
+  simp only [AddEquiv.trans_apply, toExt_smul, hpre]
+
+/-- The target-isomorphism comparison acts on ordinary Ext by transport along that isomorphism. -/
+@[simp]
+theorem ExtFromMatlisDualRegular.linearEquivOfIso_toExt
+    {M M' : ModuleCat.{max u v} A} (e : M ≅ M') (n : ℕ)
+    (x : ExtFromMatlisDualRegular R E M n) :
+    toExt R E (linearEquivOfIso R E e n x) =
+      TauCeti.extAddEquivOfIso (Iso.refl _) e n (toExt R E x) := by
+  exact (toExt R E).apply_symm_apply _
 
 end ModuleCat
 
@@ -152,10 +210,11 @@ theorem rightTransposeEquivExtDual_mk (hp : Function.Injective Q.p) (g : Q.P₁ 
       (Ext.mk₀ (ModuleCat.matlisDualOpMap R E (ModuleCat.ofHom g))).comp
         ((Q.shortExact_shortComplex hp).matlisDualOp R E).extClass (zero_add 1) := by
   rw [rightTransposeEquivExtDual, LinearEquiv.trans_apply, rightTransposeHomCokernelEquiv_mk]
-  -- The mapped complex has the bundled Matlis-dual maps as its components.
-  erw [LinearEquiv.trans_apply, ModuleCat.matlisDualOpHomCokernelEquiv_mk,
-    covariantHomCokernelEquivExt_mk]
-  rfl
+  let hS := (Q.shortExact_shortComplex hp).matlisDualOp R E
+  -- Mapping the opposite complex gives dual maps in the reversed order.
+  exact (congrArg (covariantHomCokernelEquivExt R hS (D (ModuleCat.of.{max u v} Aᵐᵒᵖ A)))
+    (ModuleCat.matlisDualOpHomCokernelEquiv_mk hE hB Q.shortComplex.f (ModuleCat.ofHom g))).trans
+      (covariantHomCokernelEquivExt_mk R hS _ (ModuleCat.matlisDualOpMap R E (ModuleCat.ofHom g)))
 
 /-- The left action on the transpose corresponds to pulling back along the dual of left
 multiplication on the right regular module. -/
@@ -199,16 +258,10 @@ theorem rightTransposeEquivExtDual_comp {N' : ModuleCat.{max u v} Aᵐᵒᵖ}
 
 /-- The dual Ext computation as an equivalence of left `A`-modules. -/
 noncomputable def rightTransposeLinearEquivExtDual (hp : Function.Injective Q.p) :
-    Q.rightTranspose ≃ₗ[A] ModuleCat.ExtFromMatlisDualRegular R E (D N) 1 where
-  toAddEquiv := (Q.rightTransposeEquivExtDual R E hE hB hp).toAddEquiv.trans
-    (ModuleCat.ExtFromMatlisDualRegular.toExt R E).symm
-  map_smul' a x := (ModuleCat.ExtFromMatlisDualRegular.toExt R E).injective (by
-    let e := ModuleCat.ExtFromMatlisDualRegular.toExt R E (M := D N) (n := 1)
-    let f := Q.rightTransposeEquivExtDual R E hE hB hp
-    -- Compute in ordinary Ext after applying the forgetful equivalence.
-    change e (e.symm (f (a • x))) = e (a • e.symm (f x))
-    rw [e.apply_symm_apply, ModuleCat.ExtFromMatlisDualRegular.toExt_smul, e.apply_symm_apply]
-    exact Q.rightTransposeEquivExtDual_smul R E hE hB hp a x)
+    Q.rightTranspose ≃ₗ[A] ModuleCat.ExtFromMatlisDualRegular R E (D N) 1 :=
+  ModuleCat.ExtFromMatlisDualRegular.linearEquivOfCompat R E
+    (Q.rightTransposeEquivExtDual R E hE hB hp).toAddEquiv
+    (Q.rightTransposeEquivExtDual_smul R E hE hB hp)
 
 /-- Forgetting the left action gives the same dual Ext class as the scalar comparison. -/
 @[simp]
@@ -217,6 +270,6 @@ theorem rightTransposeLinearEquivExtDual_toExt (hp : Function.Injective Q.p)
     ModuleCat.ExtFromMatlisDualRegular.toExt R E
         (Q.rightTransposeLinearEquivExtDual R E hE hB hp x) =
       Q.rightTransposeEquivExtDual R E hE hB hp x := by
-  exact (ModuleCat.ExtFromMatlisDualRegular.toExt R E).apply_symm_apply _
+  exact ModuleCat.ExtFromMatlisDualRegular.linearEquivOfCompat_toExt R E _ _ x
 
 end TauCeti.FiniteProjectivePresentation

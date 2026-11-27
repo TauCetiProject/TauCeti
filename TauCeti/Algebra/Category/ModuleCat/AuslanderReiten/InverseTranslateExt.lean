@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Translate
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.DualTransposeExt
-public import TauCeti.Algebra.Category.ModuleCat.Projective.PresentationDimension
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation.Dimension
 
 /-!
 # Computing the inverse Auslander–Reiten translate by Ext¹
@@ -66,19 +66,7 @@ theorem exists_arInverseTranslateEquivExt (M : ModuleCat.{max u w} A) [Module.Fi
   let eDD : M ≅ matlisDualOpObj R E N :=
     matlisDualEvalIso hE M (isFiniteLength_of_finite_trans R A M) ≪≫
       (matlisDualOp R E).mapIso eN.symm.op
-  let eExt := extLinearEquivOfIso R (Iso.refl (matlisDualOpObj R E B)) eDD.symm 1
-  let eFrom := ExtFromMatlisDualRegular.toExt.{u, w, w} R E (M := matlisDualOpObj R E N) (n := 1)
-  let eTo := ExtFromMatlisDualRegular.toExt.{u, w, w} R E (M := M) (n := 1)
-  let e : ExtFromMatlisDualRegular.{u, w, w} R E (matlisDualOpObj R E N) 1 ≃ₗ[A]
-      ExtFromMatlisDualRegular.{u, w, w} R E M 1 :=
-    { toAddEquiv := eFrom.trans (eExt.toAddEquiv.trans eTo.symm)
-      map_smul' := fun a x ↦ eTo.injective (by
-        -- The scalar action is precomposition and the biduality comparison postcomposes.
-        change eTo (eTo.symm (eExt (eFrom (a • x)))) =
-          eTo (a • eTo.symm (eExt (eFrom x)))
-        rw [eTo.apply_symm_apply, ExtFromMatlisDualRegular.toExt_smul,
-          ExtFromMatlisDualRegular.toExt_smul]
-        simp [eTo, eFrom, eExt, extLinearEquivOfIso_apply]) }
+  let e := ExtFromMatlisDualRegular.linearEquivOfIso R E eDD.symm 1
   exact ⟨eP.toLinearEquiv.trans
     ((P.rightTransposeLinearEquivExtDual.{u, w, w} R E hE hB hp).trans e)⟩
 

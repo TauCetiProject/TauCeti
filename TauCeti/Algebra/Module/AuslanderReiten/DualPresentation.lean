@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation.Basic
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.LinearAlgebra.Dual.Opposite
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
@@ -93,8 +93,7 @@ theorem rightTransposeMap_mk (Q : FiniteProjectivePresentation N)
     (g : P.P₁ →ₗ[Aᵐᵒᵖ] A) :
     Q.rightTransposeMap P φ (Submodule.Quotient.mk g) =
       Submodule.Quotient.mk (g ∘ₗ φ.τ₁.hom) := by
-  simp only [rightTransposeMap, Submodule.mapQ_apply]
-  rfl
+  simp only [rightTransposeMap, Submodule.mapQ_apply, LinearMap.lcomp_apply']
 
 /-- The finite projective presentation of a right transpose obtained by dualizing its
 right presentation. The abbreviation keeps the dual modules and their maps definitionally
