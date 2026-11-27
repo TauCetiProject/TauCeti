@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Flux.Moment
 public import TauCeti.Analysis.PDE.Vortex.ModulusBound
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Normed.Ring.Multiset
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Exp.Decay
@@ -90,14 +91,9 @@ private theorem norm_prod_smul_sub_le {D : Multiset ℂ} {R ε : ℝ} (hε₀ : 
     rw [hfac]
     nlinarith [hR a ha, hR a₀ ha₀, norm_nonneg (w - a₀), norm_nonneg (w - a)]
   have hB : 0 ≤ ‖w - a₀‖ + 2 * R := by positivity
-  have hprod (s : Multiset ℂ) (hs : ∀ a ∈ s, ‖(ε : ℂ) * w - ε * a‖ ≤ ‖w - a₀‖ + 2 * R) :
-      ‖(s.map fun a ↦ (ε : ℂ) * w - ε * a).prod‖ ≤ (‖w - a₀‖ + 2 * R) ^ Multiset.card s := by
-    rw [Multiset.norm_prod, Multiset.map_map]
-    refine (Multiset.prod_map_le_prod_map₀ _ (fun _ ↦ ‖w - a₀‖ + 2 * R)
-      (fun _ _ ↦ norm_nonneg _) hs).trans_eq ?_
-    rw [Multiset.map_const', Multiset.prod_replicate]
   obtain ⟨D', rfl⟩ := Multiset.exists_cons_of_mem ha₀
-  have hrest := hprod D' fun a ha ↦ hle a (Multiset.mem_cons_of_mem ha)
+  have hrest := D'.norm_prod_map_le_pow_card (fun a ↦ (ε : ℂ) * w - ε * a) fun a ha ↦
+    hle a (Multiset.mem_cons_of_mem ha)
   rw [Multiset.map_cons, Multiset.prod_cons, norm_mul, hfac, Multiset.card_cons, pow_succ',
     mul_assoc]
   have hd : ‖w - a₀‖ ≤ ‖w - a₀‖ + 2 * R := by linarith
