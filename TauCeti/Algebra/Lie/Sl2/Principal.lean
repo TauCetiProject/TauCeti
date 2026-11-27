@@ -161,10 +161,8 @@ theorem positiveNilradical_le_iSup_eigenspace_ad_twoWeylVector_flip :
     b.isPos_iff.mp ((mem_posRoots _ b _).mp α.property)
   refine Submodule.mem_iSup_of_mem (2 * b.height (α : H.root))
     (Submodule.mem_iSup_of_mem (by omega) ?_)
-  rw [Module.End.mem_eigenspace_iff, ad_apply, ← LieSubalgebra.coe_bracket_of_module,
-    lie_eq_smul_of_mem_rootSpace hy, Weight.toLinear_apply,
-    root_apply_twoWeylVector_flip_eq_two_mul_height]
-  simp
+  have h := lie_eq_smul_of_mem_rootSpace hy (twoWeylVector (rootSystem H).flip b.flip)
+  simpa [Module.End.mem_eigenspace_iff, root_apply_twoWeylVector_flip_eq_two_mul_height] using h
 
 /-- **No root vanishes at `2ρ^∨`.** -/
 theorem root_apply_twoWeylVector_flip_ne_zero (i : H.root) :

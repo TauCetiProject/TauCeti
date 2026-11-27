@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.Killing
+import TauCeti.LinearAlgebra.Graded.Nilpotent
 
 /-!
 # Simultaneous eigenvectors of a subalgebra
@@ -255,45 +256,18 @@ theorem isNilpotent_toEnd_of_mem_iSup_eigenspace_ad {h x : L}
     (hx : x ∈ ⨆ (j : ℤ) (_ : 0 < j), (ad K L h).eigenspace (j : K)) :
     IsNilpotent (toEnd K L M x) := by
   set E : ℤ → Submodule K M := fun j ↦ (toEnd K L M h).eigenspace (j : K)
-  -- `F n` is the sum of the eigenspaces of `h` at the integers `j ≥ n`
-  set F : ℤ → Submodule K M := fun n ↦ ⨆ (j : ℤ) (_ : n ≤ j), E j
-  have hFmono {m n : ℤ} (hmn : m ≤ n) : F n ≤ F m :=
-    iSup₂_le fun j hj ↦ le_iSup₂_of_le j (hmn.trans hj) le_rfl
-  -- `x` raises the degree: the bracket adds eigenvalues of `h`
-  have hstep (n : ℤ) : F n ≤ (F (n + 1)).comap (toEnd K L M x) := by
-    refine iSup₂_le fun j hj v hv ↦ ?_
-    have hle : ⨆ (k : ℤ) (_ : 0 < k), (ad K L h).eigenspace (k : K) ≤
-        (F (n + 1)).comap ((toEnd K L M : L →ₗ[K] Module.End K M).flip v) := by
-      refine iSup₂_le fun k hk y hy ↦ ?_
-      have hy' : ⁅y, v⁆ ∈ E (k + j) := by simpa [E] using lie_mem_eigenspace_toEnd_add hy hv
-      exact le_iSup₂_of_le (f := fun (i : ℤ) (_ : n + 1 ≤ i) ↦ E i) (k + j) (by omega) le_rfl
-        (by simpa using hy')
-    simpa using hle hx
-  have hpow (k : ℕ) (n : ℤ) : F n ≤ (F (n + k)).comap ((toEnd K L M x) ^ k) := by
-    induction k with
-    | zero => intro v hv; simpa using hv
-    | succ k ih =>
-      intro v hv
-      rw [Submodule.mem_comap, pow_succ', mul_apply_eq_comp, Nat.cast_succ, ← add_assoc]
-      exact hstep _ (ih hv)
   -- only finitely many eigenspaces of `h` at the integers are nonzero
   have hfin : {j : ℤ | E j ≠ ⊥}.Finite := WellFoundedGT.finite_ne_bot_of_iSupIndep
     ((toEnd K L M h).eigenspaces_iSupIndep.comp Int.cast_injective)
-  obtain ⟨a, ha⟩ := hfin.bddAbove
-  obtain ⟨c, hc⟩ := hfin.bddBelow
-  have hbot {j : ℤ} (hj : j ∉ {j : ℤ | E j ≠ ⊥}) : E j = ⊥ := by simpa using hj
-  have htop : F c = ⊤ := by
-    refine eq_top_iff.mpr (hM ▸ iSup_le fun j ↦ ?_)
-    by_cases hcj : c ≤ j
-    · exact le_iSup₂_of_le j hcj le_rfl
-    · exact (hbot fun hj ↦ hcj (hc hj)).le.trans bot_le
-  have hFbot : F (c + (a + 1 - c).toNat) = ⊥ := by
-    refine eq_bot_iff.mpr ((hFmono (by omega : a + 1 ≤ c + (a + 1 - c).toNat)).trans ?_)
-    exact iSup₂_le fun j hj ↦ (hbot fun h' ↦ by have := ha h'; omega).le
-  refine ⟨(a + 1 - c).toNat, LinearMap.ext fun v ↦ ?_⟩
-  have hv := hpow (a + 1 - c).toNat c (htop.symm ▸ Submodule.mem_top : v ∈ F c)
-  rw [Submodule.mem_comap, hFbot, Submodule.mem_bot] at hv
-  simpa using hv
+  -- `x` raises the degree: the bracket adds eigenvalues of `h`
+  refine LinearMap.isNilpotent_of_le_comap_iSup_lt hM hfin fun j v hv ↦ ?_
+  have hle : ⨆ (k : ℤ) (_ : 0 < k), (ad K L h).eigenspace (k : K) ≤
+      (⨆ (q : ℤ) (_ : j < q), E q).comap ((toEnd K L M : L →ₗ[K] Module.End K M).flip v) := by
+    refine iSup₂_le fun k hk y hy ↦ ?_
+    have hy' : ⁅y, v⁆ ∈ E (k + j) := by simpa [E] using lie_mem_eigenspace_toEnd_add hy hv
+    exact le_iSup₂_of_le (f := fun (q : ℤ) (_ : j < q) ↦ E q) (k + j) (by omega) le_rfl
+      (by simpa using hy')
+  simpa using hle hx
 
 end PositiveDegree
 
