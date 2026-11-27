@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.NormalQuotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Stages.Residual
 
 import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # The first stage of reduction by a closed normal subgroup
