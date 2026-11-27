@@ -81,6 +81,7 @@ theorem exists_contMDiffAt_localGeodesicFlow (z : TangentBundle I M) :
   obtain ⟨U, hU, s, hs, hsopen, Φ, hΦsmooth, hΦ⟩ :=
     exists_contMDiffAt_localFlow (I := I.tangent) (V := univ)
       (v := geodesicSpray I M) z contMDiff_infty_geodesicSpray.contMDiffOn univ_mem
+      BoundarylessManifold.isInteriorPoint
   refine ⟨U, hU, s, hs, hsopen, Φ, hΦsmooth, ?_⟩
   intro w hw
   obtain ⟨hΦ0, hΦcurve, hΦadd⟩ := hΦ w hw

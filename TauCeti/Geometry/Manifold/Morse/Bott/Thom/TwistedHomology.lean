@@ -42,18 +42,28 @@ Morse–Bott function with the twisted homology of its critical submanifolds
 `TauCeti.IsMorseBottFamily`, in `TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
 The statements hold in every universe `u` containing the manifolds, their model spaces and the
-ring. The twisted Thom isomorphism needs the base, the model fibre of `ν⁻ j` and the ring in one
-universe, so the negative normal bundle is given its model fibre `κ j → ℝ` from local frames indexed
-by a finite type `κ j` in that universe, and its rank is `r j = |κ j|`. Frames indexed by
-`Fin (r j)`, which exist when `r j` is the index
+ring. In the family statements the negative normal bundle is given its model fibre `κ j → ℝ`
+from local frames indexed by a finite type `κ j` in that universe, and its rank is `r j = |κ j|`.
+Frames indexed by `Fin (r j)`, which exist when `r j` is the index
 (`IsNondegenerateCriticalSubmanifold.hasLocalSubbundleFrames_negativeNormalSpace`, in the namespace
 `TauCeti.SmoothEmbedding`), give frames indexed by `ULift (Fin (r j))`
 (`TauCeti.HasLocalSubbundleFrames.of_equiv`). The Thom pairs of the attachment theorem carry the
 model fibres `Fin (r j) → ℝ`; relabelling the model fibre of the same subspaces
 (`TauCeti.subbundleTotalSpaceModelHomeomorph`) identifies them with the Thom pairs used here.
 
+For a single critical submanifold `i : S → M` of index `r`, with frames indexed by `Fin r`, the
+same identification reads `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K) ≅ Hₚ(S; o(ν⁻) ⊗ K)` in every degree `p`, and
+needs neither compactness nor nonemptiness of `S` as a hypothesis (in the namespace
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`,
+`nonempty_singularHomology_sublevelPair_iso_twistedHomology`). Its cohomology form is
+`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`, in
+`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Cohomology`.
+
 ## Main results
 
+* `nonempty_singularHomology_sublevelPair_iso_twistedHomology`, in the namespace
+  `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: the relative homology across the
+  level of a single Morse–Bott submanifold of index `r` is its twisted homology shifted by `r`.
 * `TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology`: at a
   compact band whose critical points lie on finitely many compact Morse–Bott submanifolds on one
   level, the relative homology across the level is the direct sum of the twisted homologies of the
@@ -316,5 +326,81 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
       fun j ↦ twistedHomology (signLocalSystem (κ j → ℝ) (V j) K
         ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
         (n - Fintype.card (κ j))⟩
+
+
+/-! ### A single critical submanifold -/
+
+section Single
+
+variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SecondCountableTopology M] {E' H' P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
+  [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
+  (hn : (∞ : ℕ∞ω) ≠ 0)
+
+namespace SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+/-- **The relative homology across the level of a Morse–Bott submanifold, with
+orientation-twisted coefficients.** Let `i : S → M` be a nondegenerate critical submanifold of a
+smooth function `f` on a Hausdorff, second-countable, finite-dimensional, boundaryless manifold,
+with `f = c` along `i`, and let `g` be a smooth fibre metric on its normal bundle. Let
+`a < c < b` be such that the band `f⁻¹[a, b]` is compact and all its critical points lie on `i`.
+Suppose that the negative normal spaces relative to `g` have continuous local frames of size `r`,
+so that they form the negative normal bundle `ν⁻` of rank `r`; the Morse index of `f` along `i`
+is then `r`, and conversely such frames exist when the Morse index is `r` at every point of `i`
+(`IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`). Then
+`Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K) ≅ Hₚ(S; o(ν⁻) ⊗ K)` in every degree `p`, for every commutative ring
+`K`, for instance `ℤ`, where `o(ν⁻)` is the orientation local system of `ν⁻`. No orientation of
+`ν⁻` is assumed. The manifolds and the ring lie in any one universe. -/
+theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
+    (hV : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric))
+    (K : Type u) [CommRing K] {p m : ℕ} (hm : r + p = m) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) m ≅
+      twistedHomology (signLocalSystem (Fin r → ℝ)
+        (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K
+        ((Fintype.card_fin r).trans (finrank_fin_fun ℝ).symm)) p) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := hV.fiberBundle
+  have := hV.vectorBundle
+  cases isEmpty_or_nonempty S with
+  | inl _ =>
+    -- Over an empty critical submanifold the band has no critical points, and both groups vanish.
+    have : IsEmpty (TopCat.of S) := inferInstanceAs (IsEmpty S)
+    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
+      _ _).iso (isZero_twistedHomology_of_isEmpty _ p)⟩
+  | inr _ =>
+    -- The band has the homology of the Thom pair of `ν⁻`, whose rank is the index, and the twisted
+    -- Thom isomorphism computes it.
+    obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
+      hcrit hdim g (h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV) (ModuleCat.of K K) m
+    obtain ⟨e'⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem
+      (F := Fin r → ℝ) (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
+      ((Fintype.card_fin r).trans (finrank_fin_fun ℝ).symm) K p
+    have hpm : p + finrank ℝ (Fin r → ℝ) = m := by rw [finrank_fin_fun]; omega
+    rw [hpm] at e'
+    exact ⟨e ≪≫ e'⟩
+
+end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
+
+end Single
 
 end TauCeti

@@ -31,6 +31,12 @@ an additive Haar measure, every null measurable set contains a σ-compact subset
 (`MeasureTheory.NullMeasurableSet.exists_isSigmaCompact_subset_ae_eq`). This reduces statements
 about measurable sets to statements about compact sets, up to a null set.
 
+For a weakly regular finite measure, the atoms of a measurable label with finitely many values
+contain closed sets whose union has complement of arbitrarily small measure
+(`Measurable.exists_isClosed_measure_compl_iUnion_le`). This is the closed approximation of a
+finite partition used in the proof of Goodwyn's inequality between measure-theoretic and
+topological entropy.
+
 A finite measure `ν` absolutely continuous with respect to a finite measure `μ` inherits the
 regularity of `μ`. By the `ε`–`δ` form of absolute continuity
 (`MeasureTheory.Measure.AbsolutelyContinuous.exists_pos_measure_lt_of_measure_lt`), a set `K ⊆ U`
@@ -66,6 +72,9 @@ measures given only through a domination bound, such as the variation of a sum o
   with its Borel σ-algebra it is therefore regular.
 * `MeasureTheory.Measure.lintegral_lintegral_le_of_isOpen`: passage from open-set domination
   against an outer regular measure to Borel-weight domination.
+* `Measurable.exists_isClosed_measure_compl_iUnion_le`: for a weakly regular finite measure, every
+  atom `a ⁻¹' {i}` of a measurable label `a` into a finite type contains a closed set `F i`, with
+  `μ (⋃ i, F i)ᶜ` arbitrarily small.
 
 ## Provenance
 
@@ -78,6 +87,7 @@ generalized from compact sets to any property of sets stable under binary unions
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw-Hill (1987), §2.18 and Theorem 6.11.
 * G. B. Folland, *Real Analysis: Modern Techniques and Their Applications*, 2nd ed., Wiley
   (1999), Theorem 3.5 and §7.1.
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, §4.6.3, pp. 122–123.
 -/
 
 public section
@@ -462,3 +472,34 @@ theorem NullMeasurableSet.exists_isSigmaCompact_subset_ae_eq [OpensMeasurableSpa
   exact (ae_eq_set.2 ⟨by simp [sdiff_eq_empty.2 htu], hnull⟩).trans hsu
 
 end MeasureTheory
+
+namespace Measurable
+
+variable {X ι : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
+
+/-- **Closed approximation of a finite partition.** For a weakly regular finite measure on a
+topological space with measurable open sets and a measurable label `a` into a finite type, every
+`δ > 0` admits closed sets `F i ⊆ a ⁻¹' {i}` whose union misses a set of measure at most `δ`. -/
+theorem exists_isClosed_measure_compl_iUnion_le [OpensMeasurableSpace X] [IsFiniteMeasure μ]
+    [μ.WeaklyRegular] [Finite ι] [MeasurableSpace ι] [MeasurableSingletonClass ι] {a : X → ι}
+    (ha : Measurable a) {δ : ℝ≥0∞} (hδ : δ ≠ 0) :
+    ∃ F : ι → Set X, (∀ i, IsClosed (F i)) ∧ (∀ i, F i ⊆ a ⁻¹' {i}) ∧
+      μ (⋃ i, F i)ᶜ ≤ δ := by
+  have := Fintype.ofFinite ι
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · refine ⟨fun _ ↦ ∅, fun _ ↦ isClosed_empty, fun _ ↦ empty_subset _, ?_⟩
+    have : IsEmpty X := ⟨fun x ↦ hι.false (a x)⟩
+    simp [Set.univ_eq_empty_iff.2 this]
+  have hcard : (Fintype.card ι : ℝ≥0∞) ≠ 0 := by simp
+  have hε : δ / Fintype.card ι ≠ 0 := ENNReal.div_ne_zero.2 ⟨hδ, by simp⟩
+  choose F hFsub hFc hF using fun i : ι ↦
+    (ha (measurableSet_singleton i)).exists_isClosed_sdiff_lt (measure_ne_top μ _) hε
+  refine ⟨F, hFc, hFsub, ?_⟩
+  have hcover : (⋃ i, F i)ᶜ ⊆ ⋃ i, a ⁻¹' {i} \ F i := fun x hx ↦
+    mem_iUnion.2 ⟨a x, rfl, fun h ↦ hx (mem_iUnion.2 ⟨a x, h⟩)⟩
+  calc μ (⋃ i, F i)ᶜ ≤ ∑ i, μ (a ⁻¹' {i} \ F i) :=
+        (measure_mono hcover).trans (measure_iUnion_fintype_le μ _)
+    _ ≤ ∑ _i : ι, δ / Fintype.card ι := Finset.sum_le_sum fun i _ ↦ (hF i).le
+    _ = δ := by simp [ENNReal.mul_div_cancel hcard (ENNReal.natCast_ne_top _)]
+
+end Measurable

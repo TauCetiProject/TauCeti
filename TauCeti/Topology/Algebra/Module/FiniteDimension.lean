@@ -235,6 +235,45 @@ theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
   have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
   exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
 
+/-- A continuous linear map from a finite-dimensional topological vector space into a
+finite-dimensional Hausdorff topological vector space of the same `finrank` is invertible exactly
+when it is surjective. -/
+theorem isInvertible_iff_surjective_of_finrank_eq [FiniteDimensional 𝕜 U] {A : U →L[𝕜] G}
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) :
+    A.IsInvertible ↔ Function.Surjective A :=
+  (isInvertible_iff_injective_of_finrank_eq hdim).trans
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := (A : U →ₗ[𝕜] G)) hdim)
+
+/-- **Completing a surjection to an isomorphism.** A surjective continuous linear map
+`A : U → G` out of a finite-dimensional Hausdorff topological vector space extends, for every
+finite-dimensional Hausdorff `F` with `dim F + dim G = dim U`, to an invertible map
+`(c, A) : U → F × G`. The map `c` is a projection onto the kernel of `A` followed by an
+isomorphism of that kernel with `F`. -/
+theorem exists_isInvertible_prod_of_surjective {F : Type*} [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+    [T2Space U] [FiniteDimensional 𝕜 U] {A : U →L[𝕜] G} (hA : Function.Surjective A)
+    (hdim : Module.finrank 𝕜 F + Module.finrank 𝕜 G = Module.finrank 𝕜 U) :
+    ∃ c : U →L[𝕜] F, (c.prod A).IsInvertible := by
+  -- By rank–nullity the kernel `K` of `A` has the dimension of `F`.
+  have h := LinearMap.finrank_range_add_finrank_ker (A : U →ₗ[𝕜] G)
+  rw [LinearMap.range_eq_top_of_surjective _ hA, finrank_top] at h
+  set K := LinearMap.ker (A : U →ₗ[𝕜] G)
+  have hK : Module.finrank 𝕜 K = Module.finrank 𝕜 F := by omega
+  -- A projection of `U` onto the kernel, followed by an isomorphism of the kernel with `F`.
+  obtain ⟨π, hπ⟩ := LinearMap.exists_leftInverse_of_injective K.subtype K.ker_subtype
+  set e : K ≃ₗ[𝕜] F := LinearEquiv.ofFinrankEq K F hK
+  refine ⟨LinearMap.toContinuousLinearMap (e.toLinearMap ∘ₗ π),
+    (isInvertible_iff_injective_of_finrank_eq (by rw [Module.finrank_prod, hdim])).2 ?_⟩
+  rw [injective_iff_map_eq_zero]
+  intro z hz
+  rw [prod_apply, Prod.mk_eq_zero] at hz
+  -- `z` lies in the kernel of `A`, on which the projection is the identity.
+  have hzK : z ∈ K := LinearMap.mem_ker.2 hz.2
+  have hπz : π z = ⟨z, hzK⟩ := by simpa using LinearMap.congr_fun hπ ⟨z, hzK⟩
+  have h0 : e (π z) = 0 := by simpa using hz.1
+  rw [hπz, LinearEquiv.map_eq_zero_iff] at h0
+  exact congrArg Subtype.val h0
+
 end ContinuousLinearMap
 
 namespace ContinuousLinearMap

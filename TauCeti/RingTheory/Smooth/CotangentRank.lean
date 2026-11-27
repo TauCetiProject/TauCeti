@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Localization.Algebra
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Smoothness from the rank of the differentials
@@ -64,9 +65,7 @@ theorem formallySmooth_of_finrank_kaehlerDifferential_add_le
   have hg : Function.Surjective g :=
     LinearMap.lTensor_surjective (ResidueField S) P.toKaehler_surjective
   have hsource : finrank (ResidueField S) (ResidueField S ⊗[S] P.Cotangent) ≤ Fintype.card σ := by
-    apply finrank_le_of_span_eq_top (v := fun i ↦ (1 : ResidueField S) ⊗ₜ[S] v i)
-    simpa only [Submodule.baseChange_span, ← Set.range_comp, Function.comp_def, mk_apply,
-      Submodule.baseChange_top] using congrArg (Submodule.baseChange (ResidueField S)) hv
+    exact finrank_le_of_span_eq_top (TauCeti.span_one_tmul_eq_top hv)
   have hmiddle : finrank (ResidueField S) (ResidueField S ⊗[S] P.CotangentSpace) =
       Fintype.card ι := by
     exact finrank_eq_card_basis
