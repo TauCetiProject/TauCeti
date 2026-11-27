@@ -166,17 +166,17 @@ theorem LFunction_primitiveCharacter_eq_zero_iff {N : ℕ} [NeZero N] (χ : Diri
   conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
   exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs.ne' h).symm
 
-/-- Raising the level preserves the meromorphic order of the continued L-function at every point of
-the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
+/-- Raising the level preserves the meromorphic order of the continued L-function off the
+imaginary axis, including at `s = 1` for principal characters. -/
 @[simp] theorem meromorphicOrderAt_LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero N]
-    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re) :
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : s.re ≠ 0) :
     meromorphicOrderAt (changeLevel hMN χ).LFunction s = meromorphicOrderAt χ.LFunction s := by
   have hPdiff : Differentiable ℂ
       (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) :=
     Differentiable.finsetProd fun _ hp ↦ Complex.differentiable_one_sub_mul_cpow_neg
       (mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero) _
   have hPs : (∏ p ∈ N.primeFactors, fun z : ℂ ↦ 1 - χ p * (p : ℂ) ^ (-z)) s ≠ 0 := by
-    simpa [Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne'
+    simpa [Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs
   rw [meromorphicOrderAt_congr (LFunction_changeLevel_eventuallyEq_nhdsNE χ hMN s),
     meromorphicOrderAt_mul_of_ne_zero (hPdiff.analyticAt s) hPs]
 
@@ -208,10 +208,10 @@ namespace TauCeti
 
 open DirichletCharacter
 
-/-- On the open right half-plane `Re(s) > 0`, the principal Dirichlet `L`-function modulo `N` has
-the same meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/
+/-- Off the imaginary axis, the principal Dirichlet `L`-function modulo `N` has the same
+meromorphic order as `riemannZeta` (including `-1` at `s = 1`). -/
 theorem meromorphicOrderAt_LFunctionTrivChar_eq_meromorphicOrderAt_riemannZeta
-    {N : ℕ} [NeZero N] {s : ℂ} (hs : 0 < s.re) :
+    {N : ℕ} [NeZero N] {s : ℂ} (hs : s.re ≠ 0) :
     meromorphicOrderAt (LFunctionTrivChar N) s = meromorphicOrderAt riemannZeta s := by
   have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
   have h := meromorphicOrderAt_LFunction_changeLevel (1 : DirichletCharacter ℂ 1) (one_dvd N) hs

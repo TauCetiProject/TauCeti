@@ -88,6 +88,21 @@ theorem LFunction_eq_zero_iff_of_re_neg {N : ℕ} [NeZero N] (χ : DirichletChar
     gammaFactor_primitiveCharacter]
   simp [hs0]
 
+/-- Every zero of a Dirichlet L-function in the open left half-plane is a strictly negative
+integer, including for imprimitive characters. -/
+theorem exists_eq_neg_natCast_of_LFunction_eq_zero_of_re_neg {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : s.re < 0) (hz : χ.LFunction s = 0) :
+    ∃ j : ℕ, 0 < j ∧ s = -(j : ℂ) := by
+  have hΓ := (χ.LFunction_eq_zero_iff_of_re_neg hs).mp hz
+  rcases χ.even_or_odd with he | ho
+  · obtain ⟨n, hn⟩ := (gammaFactor_eq_zero_iff_of_even he).mp hΓ
+    have hn0 : n ≠ 0 := by rintro rfl; simp [hn] at hs
+    exact ⟨2 * n, by omega, by simpa using hn⟩
+  · obtain ⟨n, hn⟩ := (gammaFactor_eq_zero_iff_of_odd ho).mp hΓ
+    refine ⟨2 * n + 1, by omega, ?_⟩
+    push_cast
+    linear_combination hn
+
 /-- **Trivial zeros at the negative integers.** For every Dirichlet character `χ`, primitive or
 not, and `k ≥ 1`, `L(χ, -k) = 0` exactly when `χ(-1) = (-1)ᵏ`. -/
 theorem LFunction_neg_natCast_eq_zero_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
