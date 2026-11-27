@@ -31,11 +31,13 @@ complete formal-group height stratification at every prime `p` (including `p = 2
 Silverman V.3.1):
 
 * `W` is ordinary at `p` if and only if `Ê` has height `1`, equivalently if and only if the
-  coefficient of `T ^ (p - 1)` in the invariant differential of `Ê` is nonzero;
+  coefficient of `T ^ (p - 1)` in the invariant differential of `Ê` is nonzero (with the
+  invariant-differential equivalence holding in characteristic `p = 0` as well);
 * `W` is supersingular at `p` if and only if `Ê` has height `2`, equivalently if and only if its
   height exceeds `1`, equivalently if and only if the coefficient of `T ^ (p - 1)` in the invariant
-  differential vanishes;
-* the formal group of an elliptic curve in characteristic `p` always has height `1` or `2`
+  differential vanishes (with the height-`2` and invariant-differential equivalences holding in
+  characteristic `p = 0` as well);
+* the formal group of an elliptic curve in prime characteristic `p` always has height `1` or `2`
   (never `⊤` and never `≥ 3`).
 
 Because every isogeny `φ : W₁ → W₂` induces a nonzero formal-group homomorphism
@@ -57,7 +59,8 @@ family-level truncation of Landweber height ideals over arbitrary commutative ri
   over a nontrivial commutative ring.
 * `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one` and
   `WeierstrassCurve.isSupersingular_iff_height_formalGroup_eq_two`: an elliptic curve in prime
-  characteristic `p` is ordinary iff `height p Ê = 1` and supersingular iff `height p Ê = 2`.
+  characteristic `p` is ordinary iff `height p Ê = 1`, and in any characteristic `p` is
+  supersingular iff `height p Ê = 2`.
 * `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two` and
   `WeierstrassCurve.height_formalGroup_le_two`: the formal group of an elliptic curve in prime
   characteristic `p` has height `1` or `2`.
@@ -139,11 +142,11 @@ theorem height_formalGroup_ne_top {p : ℕ} (hp : p ≠ 0) : (formalGroup W).hei
 
 section CharP
 
-variable {p : ℕ} [hp : Fact p.Prime] [CharP K p]
+variable {p : ℕ} [CharP K p]
 
 /-- **An elliptic curve in prime characteristic `p` is ordinary if and only if its formal group has
 height `1`** (Silverman V.3.1). -/
-theorem isOrdinary_iff_height_formalGroup_eq_one :
+theorem isOrdinary_iff_height_formalGroup_eq_one [hp : Fact p.Prime] :
     W.IsOrdinary p ↔ (formalGroup W).height p = 1 := by
   have : ExpChar K p := .prime hp.out
   set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast hp.out.ne_zero)
@@ -160,33 +163,37 @@ theorem isOrdinary_iff_height_formalGroup_eq_one :
   · rw [h, sq] at hdeg
     exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hp0) hdeg
 
-/-- **An elliptic curve in prime characteristic `p` is supersingular if and only if its formal group
-has height `2`** (Silverman V.3.1). -/
+/-- **An elliptic curve in characteristic `p` is supersingular at `p` if and only if its formal
+group has height `2`** (Silverman V.3.1). -/
 theorem isSupersingular_iff_height_formalGroup_eq_two :
     W.IsSupersingular p ↔ (formalGroup W).height p = 2 := by
-  have : ExpChar K p := .prime hp.out
-  set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast hp.out.ne_zero)
-  have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-    rw [φ.separableDegree_mul_inseparableDegree, degree_mulByIntIsogenyOfNeZero,
-      Int.natAbs_natCast]
-  rw [W.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p,
-    ← Nat.cast_ofNat (R := ℕ∞), FormalGroup.height_eq_natCast_iff,
-    W.order_nsmulSeries_formalGroup_of_ne_zero hp.out.ne_zero, Nat.cast_inj (R := ℕ∞)]
-  have hp2 : 0 < p ^ 2 := pow_pos hp.out.pos 2
-  constructor <;> intro h
-  · rwa [h, one_mul] at hdeg
-  · rw [h] at hdeg
-    exact (Nat.mul_eq_right hp2.ne').mp hdeg
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    have : ExpChar K p := .prime hp
+    set φ := mulByIntIsogenyOfNeZero W.toAffine (n := p) (mod_cast hp.ne_zero)
+    have hdeg : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
+      rw [φ.separableDegree_mul_inseparableDegree, degree_mulByIntIsogenyOfNeZero,
+        Int.natAbs_natCast]
+    rw [W.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p,
+      ← Nat.cast_ofNat (R := ℕ∞), FormalGroup.height_eq_natCast_iff,
+      W.order_nsmulSeries_formalGroup_of_ne_zero hp.ne_zero, Nat.cast_inj (R := ℕ∞)]
+    have hp2 : 0 < p ^ 2 := pow_pos hp.pos 2
+    constructor <;> intro h
+    · rwa [h, one_mul] at hdeg
+    · rw [h] at hdeg
+      exact (Nat.mul_eq_right hp2.ne').mp hdeg
+  · rw [(formalGroup W).height_eq_top_iff.mpr (by simp)]
+    exact iff_of_false W.not_isSupersingular_zero (ENat.top_ne_natCast 2)
 
 /-- **The formal group of an elliptic curve in prime characteristic `p` has height `1` or `2`.** -/
-theorem height_formalGroup_eq_one_or_eq_two :
+theorem height_formalGroup_eq_one_or_eq_two [Fact p.Prime] :
     (formalGroup W).height p = 1 ∨ (formalGroup W).height p = 2 := by
   by_cases h : W.IsSupersingular p
   · exact Or.inr (W.isSupersingular_iff_height_formalGroup_eq_two.mp h)
   · exact Or.inl (W.isOrdinary_iff_height_formalGroup_eq_one.mp (W.not_isSupersingular.mp h))
 
 /-- **The formal group of an elliptic curve in prime characteristic `p` has height at most `2`.** -/
-theorem height_formalGroup_le_two : (formalGroup W).height p ≤ 2 := by
+theorem height_formalGroup_le_two [Fact p.Prime] : (formalGroup W).height p ≤ 2 := by
   rcases W.height_formalGroup_eq_one_or_eq_two (p := p) with h | h
   · rw [h]
     exact one_le_two
@@ -194,19 +201,22 @@ theorem height_formalGroup_le_two : (formalGroup W).height p ≤ 2 := by
 
 /-- **An elliptic curve in prime characteristic `p` is supersingular if and only if its formal group
 has height strictly greater than `1`.** -/
-theorem isSupersingular_iff_one_lt_height_formalGroup :
+theorem isSupersingular_iff_one_lt_height_formalGroup [Fact p.Prime] :
     W.IsSupersingular p ↔ 1 < (formalGroup W).height p := by
   rw [← not_isOrdinary, isOrdinary_iff_height_formalGroup_eq_one,
     (formalGroup W).one_le_height.lt_iff_ne', Ne]
 
-/-- **An elliptic curve in prime characteristic `p` is ordinary if and only if the coefficient of
+/-- **An elliptic curve in characteristic `p` is ordinary at `p` if and only if the coefficient of
 `T ^ (p - 1)` in the invariant differential of its formal group is nonzero** (Hasse invariant
 criterion; Katz–Mazur §12.4, Silverman IV.4, IV.7 and V.3.1). -/
 theorem isOrdinary_iff_coeff_invariantDifferential_formalGroup_ne_zero :
     W.IsOrdinary p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential ≠ 0 := by
-  rw [isOrdinary_iff_height_formalGroup_eq_one, height_formalGroup_eq_one_iff]
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    rw [isOrdinary_iff_height_formalGroup_eq_one, height_formalGroup_eq_one_iff]
+  · exact iff_of_true W.isOrdinary_zero (by simp)
 
-/-- **An elliptic curve in prime characteristic `p` is supersingular if and only if the coefficient
+/-- **An elliptic curve in characteristic `p` is supersingular at `p` if and only if the coefficient
 of `T ^ (p - 1)` in the invariant differential of its formal group vanishes.** -/
 theorem isSupersingular_iff_coeff_invariantDifferential_formalGroup_eq_zero :
     W.IsSupersingular p ↔ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by

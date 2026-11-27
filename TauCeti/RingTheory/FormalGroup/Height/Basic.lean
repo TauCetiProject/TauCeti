@@ -63,8 +63,9 @@ degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the sam
   homomorphism has order a power of `p`.
 * `FormalGroup.exists_order_nsmulSeries_eq_pow`: if `p = 0` in `R`, then `[p]_F` is zero or has
   order `p ^ h` with `h ≥ 1`.
-* `FormalGroup.height_eq_top_iff` and `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤`
-  exactly when `[p]_F = 0`, and height `h` exactly when `[p]_F` has order `p ^ h`.
+* `FormalGroup.height_eq_top_iff`, `FormalGroup.height_eq_zero_of_natCast_ne_zero`, and
+  `FormalGroup.height_eq_natCast_iff`: `F` has height `⊤` exactly when `[p]_F = 0`, height `0` when
+  `p ≠ 0` in `K`, and height `h` in characteristic `p` exactly when `[p]_F` has order `p ^ h`.
 * `FormalGroup.one_le_height`: the height is at least one.
 * `FormalGroup.ne_zero_of_height_eq_natCast`: a finite height is nonzero.
 * `FormalGroup.height_eq_one_iff`: `F` has height one exactly when the coefficient of `Tᵖ` in
@@ -213,6 +214,17 @@ noncomputable def height (p : ℕ) : ℕ∞ :=
 theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
   unfold height
   split_ifs with h <;> simp [h]
+
+/-- When `p ≠ 0` in `K`, the `p`-series has nonvanishing linear coefficient `p`, so `F` has
+`p`-height `0`. -/
+theorem height_eq_zero_of_natCast_ne_zero (hp : (p : K) ≠ 0) : F.height p = 0 := by
+  have hord : (F.nsmulSeries p).order = 1 := by
+    rw [← Nat.cast_one, PowerSeries.order_eq_nat]
+    refine ⟨by rwa [F.coeff_one_nsmulSeries], fun i hi ↦ ?_⟩
+    obtain rfl : i = 0 := Nat.lt_one_iff.mp hi
+    simp
+  have h0 : F.nsmulSeries p ≠ 0 := fun h ↦ by simp [h] at hord
+  simp [height, h0, hord]
 
 /-- A commutative formal group law over a field of characteristic `p` has height `h` exactly when
 the first nonzero term of `[p]_F(T)` has degree `p ^ h`. -/
