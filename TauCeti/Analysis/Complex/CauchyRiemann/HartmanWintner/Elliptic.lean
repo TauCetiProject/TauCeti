@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Complex.Beltrami.Isothermal
 import TauCeti.Analysis.Holder.FaaDiBruno
 import TauCeti.Analysis.Holder.Jet.Bounds
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # The Hartman–Wintner expansion for a variable elliptic principal part
@@ -152,14 +153,14 @@ private theorem elliptic_trace_eq (B : ℂ →L[ℝ] ℂ →L[ℝ] X) (hB : ∀ 
     {a b c s : ℝ} {p q : ℂ} (h₁ : b • p + c • q = s • (I * p))
     (h₂ : a • p + b • q = -(s • (I * q))) :
     a • B p p + (2 * b) • B p q + c • B q q =
-      (s * (p.re * q.im - p.im * q.re)) • (B 1 1 + B I I) := by
+      (s * (p.re * q.im - q.re * p.im)) • (B 1 1 + B I I) := by
   calc a • B p p + (2 * b) • B p q + c • B q q = B p (a • p + b • q) + B q (b • p + c • q) := by
         simp only [map_add, map_smul, hB q p]
         module
     _ = s • (B q (I * p) - B p (I * q)) := by
         rw [h₁, h₂, map_neg, map_smul, map_smul, smul_sub]
         abel
-    _ = (s * (p.re * q.im - p.im * q.re)) • (B 1 1 + B I I) := by
+    _ = (s * (p.re * q.im - q.re * p.im)) • (B 1 1 + B I I) := by
         obtain ⟨x, y, rfl⟩ : ∃ x y : ℝ, p = x • (1 : ℂ) + y • I := ⟨p.re, p.im, by simp⟩
         obtain ⟨x', y', rfl⟩ : ∃ x y : ℝ, q = x • (1 : ℂ) + y • I := ⟨q.re, q.im, by simp⟩
         have hI (x y : ℝ) : I * (x • (1 : ℂ) + y • I) = (-y) • (1 : ℂ) + x • I := by
@@ -170,13 +171,6 @@ private theorem elliptic_trace_eq (B : ℂ →L[ℝ] ℂ →L[ℝ] X) (hB : ∀ 
           Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.one_re, Complex.one_im,
           Complex.I_re, Complex.I_im]
         module
-
-/-- The determinant of a real-linear endomorphism `f` of the plane, in the basis `1, i`. -/
-private theorem det_eq_re_mul_im_sub_im_mul_re (f : ℂ →L[ℝ] ℂ) :
-    LinearMap.det (f : ℂ →ₗ[ℝ] ℂ) = (f 1).re * (f I).im - (f 1).im * (f I).re := by
-  rw [← LinearMap.det_toMatrix basisOneI, Matrix.det_fin_two]
-  simp [LinearMap.toMatrix_apply]
-  ring
 
 /-- **The principal part in isothermal coordinates.** If `e` is `C²` at `z` and its derivative
 intertwines the complex structure of the principal part `a ∂ₛ² + 2 b ∂ₛ∂ₜ + c ∂ₜ²` with
@@ -191,7 +185,7 @@ theorem elliptic_comp_eq_smul_laplacian_add {v : ℂ → X} {e : ℂ → ℂ} {z
       (√(a * c - b ^ 2) * LinearMap.det (fderiv ℝ e z : ℂ →ₗ[ℝ] ℂ)) • Δ v (e z) +
         fderiv ℝ v (e z) (a • fderiv ℝ (fderiv ℝ e) z 1 1 +
           (2 * b) • fderiv ℝ (fderiv ℝ e) z 1 I + c • fderiv ℝ (fderiv ℝ e) z I I) := by
-  rw [det_eq_re_mul_im_sub_im_mul_re]
+  rw [LinearMap.det_complex, ContinuousLinearMap.coe_coe]
   set P := fderiv ℝ e z
   set B := fderiv ℝ (fderiv ℝ v) (e z)
   have hs : √(a * c - b ^ 2) ≠ 0 := (Real.sqrt_pos.mpr hD).ne'
