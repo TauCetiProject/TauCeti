@@ -16,6 +16,9 @@ This file collects basic constructions and lemmas for normed algebras:
 * `TauCeti.normedAlgebraRatOfReal`: much of Mathlib's API for `NormedSpace.exp` (for example
   `NormedSpace.exp_continuous`) assumes a normed `ℚ`-algebra; this names the restriction of scalars
   that makes every real normed algebra a normed `ℚ`-algebra so files can enable it locally.
+* `TauCeti.norm_algebraMap_le_of_norm_one_le_one`: in a seminormed `R`-algebra `A` with a
+  contractive scalar action and `‖(1 : A)‖ ≤ 1`, the structure map satisfies
+  `‖algebraMap R A a‖ ≤ ‖a‖`.
 * `AlgEquiv.norm_map` and `AlgEquiv.isometry`: every `𝕜`-algebra equivalence `F ≃ₐ[𝕜] 𝕜` from a
   seminormed `𝕜`-algebra with `‖1‖ = 1` to its base normed field preserves the norm and is an
   isometry.
@@ -24,6 +27,14 @@ This file collects basic constructions and lemmas for normed algebras:
 public section
 
 namespace TauCeti
+
+/-- In a seminormed `R`-algebra `A` with a contractive scalar action and `‖(1 : A)‖ ≤ 1`, the
+structure map is contractive: `‖algebraMap R A a‖ ≤ ‖a‖`. -/
+theorem norm_algebraMap_le_of_norm_one_le_one {R A : Type*} [SeminormedCommRing R]
+    [SeminormedRing A] [Algebra R A] [IsBoundedSMul R A] (h1 : ‖(1 : A)‖ ≤ 1) (a : R) :
+    ‖algebraMap R A a‖ ≤ ‖a‖ := by
+  rw [Algebra.algebraMap_eq_smul_one]
+  exact (norm_smul_le a (1 : A)).trans (mul_le_of_le_one_right (norm_nonneg a) h1)
 
 variable {R : Type*} [SeminormedRing R] [NormedAlgebra ℝ R]
 
