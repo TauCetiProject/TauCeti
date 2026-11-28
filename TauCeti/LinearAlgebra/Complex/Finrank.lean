@@ -28,6 +28,8 @@ map has real dimension twice its complex dimension
 map along real isomorphisms (`LinearMap.finrank_range_eq_two_mul_of_comp_eq`), and its cokernel
 has even real dimension (`LinearMap.even_finrank_quotient_range_restrictScalars`). It also records
 `Complex.one_lt_rank_real_complex : 1 < Module.rank ℝ ℂ`.
+A complex module real-linearly isomorphic to `ι → ℂ` has `Module.finrank ℂ` equal to `Nat.card ι`
+(`LinearEquiv.finrank_complex_eq_nat_card`), both `0` for infinite `ι`.
 -/
 
 public section
@@ -90,6 +92,19 @@ theorem LinearEquiv.finrank_eq_two_mul_of_basis {V W : Type*} [AddCommGroup V] [
     (b : Module.Basis (Fin k) ℂ V) : Module.finrank ℝ W = 2 * k := by
   rw [← e.finrank_eq, TauCeti.finrank_real_eq_two_mul_finrank_complex,
     Module.finrank_eq_card_basis b, Fintype.card_fin]
+
+/-- A complex module real-linearly isomorphic to `ι → ℂ` has complex `Module.finrank` equal to
+`Nat.card ι`. For infinite `ι` both sides take the value `0` of their conventions. -/
+theorem LinearEquiv.finrank_complex_eq_nat_card {ι V : Type*} [AddCommGroup V] [Module ℝ V]
+    [Module ℂ V] [IsScalarTower ℝ ℂ V] (g : (ι → ℂ) ≃ₗ[ℝ] V) :
+    Module.finrank ℂ V = Nat.card ι := by
+  classical
+  rw [← g.finrank_complex_eq]
+  rcases finite_or_infinite ι with _ | _
+  · have := Fintype.ofFinite ι
+    rw [Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
+  · rw [(Pi.linearIndependent_single_one ι ℂ).finrank_eq_zero_of_infinite,
+      Nat.card_eq_zero_of_infinite]
 
 namespace LinearMap
 
