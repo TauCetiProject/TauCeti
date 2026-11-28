@@ -35,6 +35,10 @@ kernel of `toPSL` onto `PSU(n)` is a homeomorphism
   `Matrix.specialUnitaryGroup.isClosed_range_toPSL`: `PSU(n)` is compact and closed in `PSL(n, 𝕜)`.
 * `Matrix.specialUnitaryGroup.quotientKerToPSLContinuousMulEquiv`: the isomorphism of topological
   groups `SU(n) ⧸ ker toPSL ≃ₜ* PSU(n)`.
+* `Matrix.specialUnitaryGroup.isOpenQuotientMap_toPSL_rangeRestrict`: `toPSL.rangeRestrict` is an
+  open quotient map from `SU(n)` onto `PSU(n)`.
+* `Matrix.specialUnitaryGroup.instContinuousSMulRangeToPSL`: the projective conjugation action of
+  `PSU(n)` on `SU(n)` is jointly continuous.
 -/
 
 public section
@@ -77,6 +81,11 @@ theorem isCompact_range_toPSL :
   rw [MonoidHom.coe_range]
   exact isCompact_range continuous_toPSL
 
+/-- Over `ℝ` or `ℂ`, the projective special unitary group `PSU(n)` is a compact space. -/
+instance :
+    CompactSpace (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range :=
+  isCompact_iff_compactSpace.mp isCompact_range_toPSL
+
 /-- Over `ℝ` or `ℂ`, the projective special unitary group `PSU(n)` is closed in the Hausdorff
 group `PSL(n, 𝕜)`. -/
 theorem isClosed_range_toPSL :
@@ -100,6 +109,34 @@ theorem coe_quotientKerToPSLContinuousMulEquiv_mk (A : specialUnitaryGroup n �
     (quotientKerToPSLContinuousMulEquiv (A : specialUnitaryGroup n 𝕜 ⧸ _) :
       ProjectiveSpecialLinearGroup n 𝕜) = toPSL A := by
   rfl
+
+/-- Over `ℝ` or `ℂ`, the surjection `toPSL.rangeRestrict : SU(n) → PSU(n)` is an open quotient
+map. -/
+theorem isOpenQuotientMap_toPSL_rangeRestrict :
+    IsOpenQuotientMap
+      ((toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).rangeRestrict :
+        specialUnitaryGroup n 𝕜 → _) := by
+  have heq : ((toPSL : specialUnitaryGroup n 𝕜 →*
+        ProjectiveSpecialLinearGroup n 𝕜).rangeRestrict :
+        specialUnitaryGroup n 𝕜 → _) =
+      fun u => quotientKerToPSLContinuousMulEquiv (QuotientGroup.mk u) := by
+    ext1 u
+    exact Subtype.ext (coe_quotientKerToPSLContinuousMulEquiv_mk u).symm
+  rw [heq]
+  exact quotientKerToPSLContinuousMulEquiv.toHomeomorph.isOpenQuotientMap.comp
+    QuotientGroup.isOpenQuotientMap_mk
+
+/-- Over `ℝ` or `ℂ`, the projective conjugation action of `PSU(n)` on `SU(n)` is jointly
+continuous. -/
+instance instContinuousSMulRangeToPSL :
+    ContinuousSMul
+      (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range
+      (specialUnitaryGroup n 𝕜) where
+  continuous_smul := by
+    rw [← (isOpenQuotientMap_toPSL_rangeRestrict.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
+    refine ((continuous_fst.mul continuous_snd).mul continuous_fst.inv).congr ?_
+    rintro ⟨u, A⟩
+    simp [toPSL_rangeRestrict_smul, ConjAct.toConjAct_smul]
 
 end RCLike
 
