@@ -19,7 +19,8 @@ Schwarz–Christoffel turns. The sine exceeds `1/2` on `(π/6, 5π/6)`. The sine
 on `[π, 2π]` and negative on `(π, 2π)`. For real `a < 1` the quantity `1 - a sin² θ` is
 positive, a bound `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
-`[0, π / 2]`. Cosine is positive strictly between two
+`[0, π / 2]`, and `(sin x)⁻¹ ≤ (1 + x ^ 2 / 5) / x` on `(0, 1]`
+(`TauCeti.inv_sin_le_of_pos_of_le_one`). Cosine is positive strictly between two
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
 `(-π / 2, π / 2)` the square of the sine is less than `1`, so `sin (x / 2) ^ 2 < 1` for `|x| < π`.
 If `cos (2πr) < cos (2πx)` with `r ≥ 0`, then `x` lies within `r` of an integer
@@ -245,6 +246,19 @@ theorem exists_abs_sub_int_lt_of_cos_lt {x r : ℝ} (hr₀ : 0 ≤ r)
 theorem le_pi_div_two_mul_sin {θ : ℝ} (h0 : 0 ≤ θ) (h1 : θ ≤ π / 2) : θ ≤ π / 2 * sin θ := by
   calc θ = π / 2 * (2 / π * θ) := by field_simp
     _ ≤ π / 2 * sin θ := by gcongr; exact mul_le_sin h0 h1
+
+/-- For `0 < x ≤ 1`, `(sin x)⁻¹ ≤ (1 + x ^ 2 / 5) / x`. -/
+theorem inv_sin_le_of_pos_of_le_one {x : ℝ} (hx₀ : 0 < x) (hx₁ : x ≤ 1) :
+    (sin x)⁻¹ ≤ (1 + x ^ 2 / 5) / x := by
+  have hsin_pos : 0 < sin x := sin_pos_of_pos_of_lt_pi hx₀ (hx₁.trans_lt (by linarith [two_le_pi]))
+  have hxsq : x ^ 2 ≤ 1 := by nlinarith
+  have hnonneg : 0 ≤ x ^ 3 * (1 - x ^ 2) / 30 := by positivity
+  have hdiff : (1 + x ^ 2 / 5) * (x - x ^ 3 / 6) - x = x ^ 3 * (1 - x ^ 2) / 30 := by ring
+  have hpoly : x ≤ (1 + x ^ 2 / 5) * (x - x ^ 3 / 6) := by linarith [hdiff]
+  have hmul : x < (1 + x ^ 2 / 5) * sin x :=
+    hpoly.trans_lt (mul_lt_mul_of_pos_left (sin_gt_sub_cube hx₀) (by positivity))
+  rw [inv_eq_one_div, div_le_div_iff₀ hsin_pos hx₀]
+  linarith
 
 /-- **The parameters of the hyperbolic law of cosines.** Positive angles `α, β` and `γ ≥ 0` with
 `α + β + γ < π` determine `K` with `K sin α sin β = cos α cos β + cos γ` and `t > 1` with

@@ -45,6 +45,7 @@ of the representatives sum to the harmonic number `H_{n-1}`.
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_val_eq_sum_Ico_one`: summing a function vanishing at `0` over `Ico 1 n`.
 * `ZMod.sum_val_sub_eq_sum_range`: the same for the representatives of a shift `x - c`.
 * `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
   fibre of the reduction `ZMod (k * m) → ZMod m`.
@@ -102,6 +103,13 @@ theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ �
     ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
   rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
   simp
+
+/-- **Summing over the nonzero representatives.** If `f 0 = 0`, summing `f x.val` over `x : ZMod n`
+equals the sum of `f i` over `i ∈ Ico 1 n`. -/
+theorem sum_val_eq_sum_Ico_one {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M)
+    (hf0 : f 0 = 0) : ∑ x : ZMod n, f x.val = ∑ i ∈ Ico 1 n, f i := by
+  rw [sum_val_eq_sum_range, ← Nat.Ico_zero_eq_range,
+    sum_eq_sum_Ico_succ_bot (NeZero.pos n), hf0, zero_add]
 
 /-- **Summing over shifted representatives.** A function of the representative of `x - c`
 summed over the residues modulo `n` is its sum over `range n`. -/

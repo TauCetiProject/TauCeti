@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Convex.Integral
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Cosecant sums and convexity of the cosecant
@@ -109,7 +110,8 @@ theorem hasDerivAt_log_tan_div_two {x : ℝ} (hx₀ : 0 < x) (hxπ : x < π) :
   convert hlog_d using 1
   · rfl
   · simp only [Function.comp_apply, tan_eq_sin_div_cos]
-    rw [show x = 2 * (x / 2) by ring, sin_two_mul]
+    have hx_eq : x = 2 * (x / 2) := by ring
+    rw [hx_eq, sin_two_mul]
     field_simp [hsin.ne', hcos.ne']
 
 /-- For `a, b ∈ (0, π)`, `∫ x in a..b, (sin x)⁻¹ = log (tan (b / 2)) - log (tan (a / 2))`. -/
@@ -128,24 +130,12 @@ theorem integral_inv_sin {a b : ℝ} (ha₀ : 0 < a) (haπ : a < π) (hb₀ : 0 
 /-- Integral of `(sin x)⁻¹` over `[a, π - a]` for `a ∈ (0, π)`. -/
 theorem integral_inv_sin_pi_sub {a : ℝ} (ha₀ : 0 < a) (haπ : a < π) :
     ∫ x in a..(π - a), (sin x)⁻¹ = 2 * log (tan (a / 2))⁻¹ := by
-  rw [integral_inv_sin ha₀ haπ (sub_pos.mpr haπ) (sub_lt_self π ha₀),
-    show (π - a) / 2 = π / 2 - a / 2 by ring, tan_pi_div_two_sub, log_inv]
+  have hhalf : (π - a) / 2 = π / 2 - a / 2 := by ring
+  rw [integral_inv_sin ha₀ haπ (sub_pos.mpr haπ) (sub_lt_self π ha₀), hhalf, tan_pi_div_two_sub,
+    log_inv]
   ring
 
 /-! ### Numeric and trigonometric inequalities -/
-
-/-- For `0 < x ≤ 1`, `(sin x)⁻¹ ≤ (1 + x ^ 2 / 5) / x`. -/
-private lemma inv_sin_le_of_pos_of_le_one {x : ℝ} (hx₀ : 0 < x) (hx₁ : x ≤ 1) :
-    (sin x)⁻¹ ≤ (1 + x ^ 2 / 5) / x := by
-  have hsin_pos : 0 < sin x := sin_pos_of_pos_of_lt_pi hx₀ (hx₁.trans_lt (by linarith [pi_gt_d4]))
-  have hxsq : x ^ 2 ≤ 1 := by nlinarith
-  have hnonneg : 0 ≤ x ^ 3 * (1 - x ^ 2) / 30 := by positivity
-  have hpoly : x ≤ (1 + x ^ 2 / 5) * (x - x ^ 3 / 6) := by
-    linarith [show (1 + x ^ 2 / 5) * (x - x ^ 3 / 6) - x = x ^ 3 * (1 - x ^ 2) / 30 by ring]
-  have hmul : x < (1 + x ^ 2 / 5) * sin x :=
-    hpoly.trans_lt (mul_lt_mul_of_pos_left (sin_gt_sub_cube hx₀) (by positivity))
-  rw [inv_eq_one_div, div_le_div_iff₀ hsin_pos hx₀]
-  linarith
 
 /-- Lower bound `1 - π / 4 ≤ log (4 / π)`. -/
 private lemma one_sub_pi_div_four_le_log_four_div_pi : 1 - π / 4 ≤ log (4 / π) := by
@@ -219,8 +209,9 @@ private lemma sum_Ico_inv_sin_split {q : ℕ} (hq : 4 ≤ q) :
     omega
   rw [h1, sum_insert (by simp), h2, sum_insert (by simp)]
   have hsin_end : sin (π * ↑(q - 1) / q) = sin (π / q) := by
-    rw [Nat.cast_sub (by omega : 1 ≤ q), Nat.cast_one,
-      show π * ((q : ℝ) - 1) / q = π - π / q by field_simp, sin_pi_sub]
+    have hq0 : (q : ℝ) ≠ 0 := by positivity
+    have harg : π * ((q : ℝ) - 1) / q = π - π / q := by field_simp [hq0]
+    rw [Nat.cast_sub (by omega : 1 ≤ q), Nat.cast_one, harg, sin_pi_sub]
   rw [Nat.cast_one, mul_one, hsin_end]
   ring
 
@@ -230,15 +221,16 @@ private lemma log_tan_three_pi_div_four_mul_lt {q : ℕ} (hq : 4 ≤ q) :
   have hqpos : (0 : ℝ) < q := by positivity
   have ht_pos : 0 < 3 * π / (4 * q) := by positivity
   have ht_lt : 3 * π / (4 * q) < π / 2 := by
+    have hq4 : (4 : ℝ) ≤ q := by exact_mod_cast hq
     rw [div_lt_div_iff₀ (by positivity) (by norm_num)]
-    nlinarith [pi_pos, show (4 : ℝ) ≤ q by exact_mod_cast hq]
+    nlinarith [pi_pos]
   have htan_gt : 3 * π / (4 * q) < tan (3 * π / (4 * q)) := lt_tan ht_pos ht_lt
   have hinv_lt : (tan (3 * π / (4 * q)))⁻¹ < 4 * q / (3 * π) := by
     rw [inv_eq_one_div, div_lt_div_iff₀ (ht_pos.trans htan_gt) (by positivity)]
     linarith [(div_lt_iff₀ (by positivity : (0 : ℝ) < 4 * q)).mp htan_gt]
   have heq : log (4 * q / (3 * π)) = log q + log (4 / π) - log 3 := by
-    rw [show 4 * (q : ℝ) / (3 * π) = (q : ℝ) * (4 / π) / 3 by ring,
-      log_div (by positivity) (by norm_num), log_mul hqpos.ne' (by positivity)]
+    have harg : 4 * (q : ℝ) / (3 * π) = (q : ℝ) * (4 / π) / 3 := by ring
+    rw [harg, log_div (by positivity) (by norm_num), log_mul hqpos.ne' (by positivity)]
   exact (log_lt_log (inv_pos.mpr (ht_pos.trans htan_gt)) hinv_lt).trans_eq heq
 
 /-- Bound on the interior cosecant sum `∑_{b=2}^{q-2} (sin (π b / q))⁻¹` for `q ≥ 4`. -/
@@ -266,9 +258,9 @@ private lemma sum_Ico_mid_inv_sin_le {q : ℕ} (hq : 4 ≤ q) :
   have ha_top : a (q - 1) = π - a 2 := by
     dsimp only [a]; rw [Nat.cast_sub (by omega : 1 ≤ q), Nat.cast_one]; field_simp; ring
   have hint_eq : ∫ x in a 2..a (q - 1), (sin x)⁻¹ = 2 * log (tan (3 * π / (4 * q)))⁻¹ := by
+    have ha2_half : a 2 / 2 = 3 * π / (4 * q) := by rw [ha2]; ring
     rw [ha_top, integral_inv_sin_pi_sub (by rw [ha2]; positivity)
-      (by rw [ha2, div_lt_iff₀ (by positivity)]; nlinarith [pi_pos]),
-      show a 2 / 2 = 3 * π / (4 * q) by rw [ha2]; ring]
+      (by rw [ha2, div_lt_iff₀ (by positivity)]; nlinarith [pi_pos]), ha2_half]
   calc
     ∑ b ∈ Ico 2 (q - 1), (sin (π * b / q))⁻¹
       ≤ (q / π) * (2 * log (tan (3 * π / (4 * q)))⁻¹) := hint_eq ▸ hmid_le
@@ -337,16 +329,18 @@ private lemma sum_Ico_inv_sin_pi_mul_div_lt_three :
   have hpi_lt : π < 3.15 := pi_lt_d4.trans (by norm_num)
   have hI : Ico 1 3 = {1, 2} := by decide
   rw [hI, sum_pair (by decide)]
-  have hsin2 : sin (π * (2 : ℕ) / (3 : ℕ)) = sin (π / 3) := by
-    rw [show π * ((2 : ℕ) : ℝ) / ((3 : ℕ) : ℝ) = π - π / 3 by push_cast; ring, sin_pi_sub]
+  have hsin2 : sin (π * (2 : ℕ) / (3 : ℕ)) = √3 / 2 := by
+    have harg : π * ((2 : ℕ) : ℝ) / ((3 : ℕ) : ℝ) = π - π / 3 := by push_cast; ring
+    rw [harg, sin_pi_sub, sin_pi_div_three]
   have hsin1 : sin (π * ((1 : ℕ) : ℝ) / ((3 : ℕ) : ℝ)) = √3 / 2 := by simp [sin_pi_div_three]
-  rw [hsin2, show π / 3 = π * ((1 : ℕ) : ℝ) / ((3 : ℕ) : ℝ) by push_cast; ring, hsin1]
+  rw [hsin2, hsin1]
   have hlhs : (√3 / 2)⁻¹ + (√3 / 2)⁻¹ < 2.32 := by
     have hsq : (16 : ℝ) < (2.32 * √3) ^ 2 := by
       rw [mul_pow, sq_sqrt (by norm_num)]; norm_num
     have hpos : 0 < 2.32 * √3 := by positivity
     have hlt : 4 < 2.32 * √3 := by nlinarith
-    rw [show (√3 / 2)⁻¹ + (√3 / 2)⁻¹ = 4 / √3 by ring]
+    have hlhs_eq : (√3 / 2)⁻¹ + (√3 / 2)⁻¹ = 4 / √3 := by ring
+    rw [hlhs_eq]
     exact (div_lt_iff₀ (by positivity)).mpr hlt
   have hinner : 1.39 < log 3 + log (4 / π) + π ^ 2 / (12 * (3 : ℝ) ^ 2) := by
     nlinarith [sq_nonneg (π - 3.14), one_sub_pi_div_four_le_log_four_div_pi,
@@ -409,11 +403,12 @@ theorem sum_Ico_inv_sin_pi_mul_div_lt_mul_log {q : ℕ} (hq : 2 ≤ q) :
   · have h1 := sum_Ico_inv_sin_pi_mul_div_lt (Nat.le_of_succ_le hq)
     have h2 := two_div_pi_mul_log_add_le_log (x := q) (by exact_mod_cast hq3)
     have hqnn : (0 : ℝ) ≤ q := Nat.cast_nonneg q
+    have hfac : 2 * (q : ℝ) / π * (log q + log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2)) =
+        (q : ℝ) * (2 / π * (log q + log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2))) := by ring
     calc
       ∑ b ∈ Ico 1 q, (sin (π * b / q))⁻¹
         < q * (2 / π * (log q + log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2))) := by
-          simpa only [show 2 * (q : ℝ) / π * (log q + log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2)) =
-            (q : ℝ) * (2 / π * (log q + log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2))) by ring] using h1
+          simpa only [hfac] using h1
       _ ≤ q * log q := mul_le_mul_of_nonneg_left h2 hqnn
   · have hq2 : q = 2 := by omega
     subst hq2

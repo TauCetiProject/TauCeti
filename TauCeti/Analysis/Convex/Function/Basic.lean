@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Basic.Real.Basic
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # Convex functions: affine maps, affine pullback, level sets and increments
@@ -22,7 +25,8 @@ inequality.
 A strictly convex function of one variable takes each value at most twice
 (`StrictConvexOn.eq_or_eq_of_apply_eq`), since its slopes on adjacent intervals strictly increase.
 The increments of a convex function of one variable over a fixed width `c ≥ 0` increase
-(`ConvexOn.sub_le_sub_of_le`).
+(`ConvexOn.sub_le_sub_of_le`). A real-valued function convex on `[a, b]` is bounded in norm on
+`(a, b)` (`ConvexOn.norm_le_on_Ioo`).
 
 `StrictConvexOn.comp_affineMap_of_injective` is extracted from the tangent argument adapted
 from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
@@ -98,3 +102,26 @@ theorem ConvexOn.sub_le_sub_of_le {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
     _ = slope f t (t + c) := slope_comm f (t + c) t
   simp only [slope_def_field, add_sub_cancel_left] at key
   exact (div_le_div_iff_of_pos_right hc).1 key
+
+/-- A real-valued function convex on `[a, b]` is bounded in norm on `(a, b)`. -/
+theorem ConvexOn.norm_le_on_Ioo {g : ℝ → ℝ} {a b : ℝ} (hg : ConvexOn ℝ (Icc a b) g) :
+    ∃ C : ℝ, ∀ x ∈ Ioo a b, ‖g x‖ ≤ C := by
+  rcases le_or_gt b a with hba | hab
+  · exact ⟨0, fun _ hx ↦ False.elim (not_lt.mpr hba (hx.1.trans hx.2))⟩
+  let M : ℝ := max (g a) (g b)
+  refine ⟨max |M| |2 * g ((a + b) / 2) - M|, fun x hx ↦ ?_⟩
+  have hupper (y : ℝ) (hy : y ∈ Ioo a b) : g y ≤ M :=
+    hg.le_on_segment (left_mem_Icc.mpr hab.le) (right_mem_Icc.mpr hab.le)
+      (by rw [segment_eq_Icc hab.le]; exact Ioo_subset_Icc_self hy)
+  have hy' : a + b - x ∈ Ioo a b := ⟨by linarith [hx.2], by linarith [hx.1]⟩
+  have hmid := hg.2 (Ioo_subset_Icc_self hx) (Ioo_subset_Icc_self hy')
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  have hmid_pt : (1 / 2 : ℝ) * x + (1 / 2 : ℝ) * (a + b - x) = (a + b) / 2 := by ring
+  rw [smul_eq_mul, smul_eq_mul, hmid_pt, smul_eq_mul, smul_eq_mul] at hmid
+  have hgx_le : g x ≤ M := hupper x hx
+  have hgx_ge : 2 * g ((a + b) / 2) - M ≤ g x := by linarith [hupper (a + b - x) hy']
+  rw [Real.norm_eq_abs, abs_le]
+  exact ⟨by
+      linarith [neg_abs_le (2 * g ((a + b) / 2) - M),
+        le_max_right |M| |2 * g ((a + b) / 2) - M|],
+    by linarith [le_abs_self M, le_max_left |M| |2 * g ((a + b) / 2) - M|]⟩

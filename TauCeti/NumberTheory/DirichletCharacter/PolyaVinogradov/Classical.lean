@@ -14,7 +14,6 @@ public import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
 
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosecantSum
-import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.GaussSum
@@ -24,20 +23,18 @@ import TauCeti.NumberTheory.DirichletCharacter.TrigonometricSum
 /-!
 # The classical explicit Pólya–Vinogradov inequality
 
-This file proves the Gauss-sum expansion of character interval sums and the classical explicit
-Pólya–Vinogradov inequality for primitive, nonprincipal, and prime-level complex Dirichlet
-characters.
+This file proves the classical explicit Pólya–Vinogradov inequality for primitive, nonprincipal,
+and prime-level complex Dirichlet characters.
 
 For a primitive character `χ : DirichletCharacter ℂ q` (`q ≥ 2`) and integers `M : ℤ`, `N : ℕ`,
-applying the Gauss-sum expansion `DirichletCharacter.mul_gaussSum_inv_stdAddChar_eq_sum` gives
+the Gauss-sum expansion `DirichletCharacter.intervalSum_eq_inv_gaussSum_mul_sum` gives
 
   `S_χ(M, N) = τ(χ⁻¹)⁻¹ * ∑_{1 ≤ b < q} χ⁻¹ b * ∑_{M < n ≤ M + N} e(b * n / q)`,
 
 where `|τ(χ⁻¹)| = √q` and the inner geometric sum has modulus
 `|sin (π * b * N / q)| / sin (π * b / q) ≤ min N (sin (π * b / q))⁻¹`
-(`TauCeti.norm_sum_Ioc_expTwoPiI_mul_div_le`). For even `χ` only the cosine parts survive and for
-odd `χ` only the sine parts survive. Bounding each inner sum by `(sin (π * b / q))⁻¹` and applying
-Pomerance's cosecant-sum inequality `TauCeti.sum_Ico_inv_sin_pi_mul_div_lt` yields
+(`TauCeti.norm_sum_Ioc_expTwoPiI_mul_div_le`). Bounding each inner sum by `(sin (π * b / q))⁻¹`
+and applying Pomerance's cosecant-sum inequality `TauCeti.sum_Ico_inv_sin_pi_mul_div_lt` yields
 
   `‖S_χ(M, N)‖ < (2 / π) * √q * (log q + log (4 / π) + π ^ 2 / (12 * q ^ 2))`,
 
@@ -51,10 +48,6 @@ for any nonprincipal character modulo a prime `p`), `TauCeti.two_div_pi_mul_log_
 
 ## Main statements
 
-* `DirichletCharacter.intervalSum_eq_inv_gaussSum_mul_sum`,
-  `DirichletCharacter.Even.intervalSum_eq_inv_gaussSum_mul_sum_cos`,
-  `DirichletCharacter.Odd.intervalSum_eq_inv_gaussSum_mul_sum_sin`: Gauss-sum expansions of
-  `S_χ(M, N)` and their parity forms.
 * `DirichletCharacter.norm_intervalSum_le_inv_sqrt_mul_sum_min`:
   `‖S_χ(M, N)‖ ≤ (√q)⁻¹ * ∑_{1 ≤ b < q} min N (sin (π * b / q))⁻¹`.
 * `DirichletCharacter.norm_intervalSum_lt_of_isPrimitive`,
@@ -84,97 +77,7 @@ open scoped ArithmeticFunction.omega Real
 
 namespace DirichletCharacter
 
-/-! ### Gauss-sum expansion of character interval sums -/
-
-private lemma sum_zmod_eq_sum_Ico_one {q : ℕ} [NeZero q] (hq : 2 ≤ q)
-    (g : ℕ → ℂ) (hg0 : g 0 = 0) :
-    ∑ b : ZMod q, g b.val = ∑ b ∈ Ico 1 q, g b := by
-  rw [ZMod.sum_val_eq_sum_range, ← Nat.Ico_zero_eq_range,
-    sum_eq_sum_Ico_succ_bot (by omega : 0 < q), hg0, zero_add]
-
-/-- **Gauss-sum expansion of a character interval sum:** for `χ` primitive modulo `q ≥ 2`, `M : ℤ`,
-and `N : ℕ`, `S_χ(M, N) = τ(χ⁻¹)⁻¹ * ∑_{1 ≤ b < q} χ⁻¹ b * ∑_{M < n ≤ M + N} e(b * n / q)`. -/
-theorem intervalSum_eq_inv_gaussSum_mul_sum {q : ℕ} [NeZero q] {χ : DirichletCharacter ℂ q}
-    (hχ : χ.IsPrimitive) (hq : 2 ≤ q) (M : ℤ) (N : ℕ) :
-    χ.intervalSum M N = (gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ *
-      ∑ b ∈ Ico 1 q, χ⁻¹ b * ∑ n ∈ Ioc M (M + N), TauCeti.expTwoPiI ((b : ℝ) * n / q) := by
-  have htau : gaussSum χ⁻¹ ZMod.stdAddChar ≠ 0 :=
-    gaussSum_inv_ne_zero_of_isPrimitive hχ (ZMod.isPrimitive_stdAddChar q)
-  have hterm (n : ℤ) : χ n = (gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ *
-      ∑ b ∈ Ico 1 q, χ⁻¹ b * TauCeti.expTwoPiI ((b : ℝ) * n / q) := by
-    have hsum : (∑ b : ZMod q, χ⁻¹ b * TauCeti.expTwoPiI ((b.val : ℝ) * n / q)) =
-        ∑ b ∈ Ico 1 q, χ⁻¹ b * TauCeti.expTwoPiI ((b : ℝ) * n / q) := by
-      simpa only [ZMod.natCast_zmod_val] using
-        sum_zmod_eq_sum_Ico_one hq
-          (fun b ↦ χ⁻¹ (b : ZMod q) * TauCeti.expTwoPiI ((b : ℝ) * n / q))
-          (by simp [χ⁻¹.map_zero' (by omega)])
-    rw [eq_inv_mul_iff_mul_eq₀ htau, mul_comm, ← hsum]
-    exact mul_gaussSum_inv_stdAddChar_eq_sum hχ n
-  rw [intervalSum_def, sum_congr rfl fun n _ ↦ hterm n, ← mul_sum, sum_comm]
-  congr 1
-  exact sum_congr rfl fun b _ ↦ (mul_sum _ _ _).symm
-
-/-- For an even primitive character `χ` modulo `q ≥ 2`, only the cosine terms survive in the
-Gauss-sum expansion of `S_χ(M, N)`. -/
-theorem Even.intervalSum_eq_inv_gaussSum_mul_sum_cos {q : ℕ} [NeZero q]
-    {χ : DirichletCharacter ℂ q} (hχe : χ.Even) (hχ : χ.IsPrimitive) (hq : 2 ≤ q)
-    (M : ℤ) (N : ℕ) :
-    χ.intervalSum M N = (gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ *
-      ∑ b ∈ Ico 1 q, χ⁻¹ b * ∑ n ∈ Ioc M (M + N), (Real.cos (2 * π * b * n / q) : ℂ) := by
-  have htau : gaussSum χ⁻¹ ZMod.stdAddChar ≠ 0 :=
-    gaussSum_inv_ne_zero_of_isPrimitive hχ (ZMod.isPrimitive_stdAddChar q)
-  have hre := hχe.intervalSum_mul_gaussSum_eq_sum_re hχ ZMod.stdAddChar M N
-  simp only [Complex.ofReal_sum] at hre
-  have hterm (b : ℕ) (n : ℤ) :
-      (ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).re = Real.cos (2 * π * b * n / q) := by
-    rw [← Int.cast_natCast b, ← Int.cast_mul, TauCeti.stdAddChar_intCast_eq_expTwoPiI,
-      TauCeti.re_expTwoPiI]
-    congr 1
-    push_cast
-    ring
-  have hsum : (∑ b : ZMod q, χ⁻¹ b *
-        ∑ n ∈ Ioc M (M + N), ((ZMod.stdAddChar ((n : ZMod q) * b)).re : ℂ)) =
-      ∑ b ∈ Ico 1 q, χ⁻¹ b * ∑ n ∈ Ioc M (M + N), (Real.cos (2 * π * b * n / q) : ℂ) := by
-    simpa only [ZMod.natCast_zmod_val, hterm] using
-      sum_zmod_eq_sum_Ico_one hq
-        (fun b ↦ χ⁻¹ (b : ZMod q) *
-          ∑ n ∈ Ioc M (M + N), ((ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).re : ℂ))
-        (by simp [χ⁻¹.map_zero' (by omega)])
-  rw [eq_inv_mul_iff_mul_eq₀ htau, mul_comm, hre, hsum]
-
-/-- For an odd primitive character `χ` modulo `q`, only the sine terms survive in the Gauss-sum
-expansion of `S_χ(M, N)`. -/
-theorem Odd.intervalSum_eq_inv_gaussSum_mul_sum_sin {q : ℕ} [NeZero q]
-    {χ : DirichletCharacter ℂ q} (hχo : χ.Odd) (hχ : χ.IsPrimitive) (M : ℤ) (N : ℕ) :
-    χ.intervalSum M N = (gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * Complex.I *
-      ∑ b ∈ Ico 1 q, χ⁻¹ b * ∑ n ∈ Ioc M (M + N), (Real.sin (2 * π * b * n / q) : ℂ) := by
-  have hχ1 : χ ≠ 1 := fun h ↦ by
-    have hneg : (1 : DirichletCharacter ℂ q) (-1) = -1 := h ▸ hχo
-    rw [MulChar.one_apply isUnit_one.neg] at hneg
-    norm_num at hneg
-  have hq : 2 ≤ q := by
-    have := χ.three_le_level_of_ne_one hχ1
-    omega
-  have htau : gaussSum χ⁻¹ ZMod.stdAddChar ≠ 0 :=
-    gaussSum_inv_ne_zero_of_isPrimitive hχ (ZMod.isPrimitive_stdAddChar q)
-  have him := hχo.intervalSum_mul_gaussSum_eq_I_mul_sum_im hχ ZMod.stdAddChar M N
-  simp only [Complex.ofReal_sum] at him
-  have hterm (b : ℕ) (n : ℤ) :
-      (ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).im = Real.sin (2 * π * b * n / q) := by
-    rw [← Int.cast_natCast b, ← Int.cast_mul, TauCeti.stdAddChar_intCast_eq_expTwoPiI,
-      TauCeti.im_expTwoPiI]
-    congr 1
-    push_cast
-    ring
-  have hsum : (∑ b : ZMod q, χ⁻¹ b *
-        ∑ n ∈ Ioc M (M + N), ((ZMod.stdAddChar ((n : ZMod q) * b)).im : ℂ)) =
-      ∑ b ∈ Ico 1 q, χ⁻¹ b * ∑ n ∈ Ioc M (M + N), (Real.sin (2 * π * b * n / q) : ℂ) := by
-    simpa only [ZMod.natCast_zmod_val, hterm] using
-      sum_zmod_eq_sum_Ico_one hq
-        (fun b ↦ χ⁻¹ (b : ZMod q) *
-          ∑ n ∈ Ioc M (M + N), ((ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).im : ℂ))
-        (by simp [χ⁻¹.map_zero' (by omega)])
-  rw [mul_assoc, eq_inv_mul_iff_mul_eq₀ htau, mul_comm, him, hsum]
+/-! ### Pointwise bound from the Gauss-sum expansion -/
 
 /-- Bounding every character interval sum of a primitive character modulo `q ≥ 2` by the
 normalized sum of `min N (sin (π * b / q))⁻¹`. -/

@@ -11,6 +11,8 @@ public import Mathlib.Topology.Semicontinuity.Basic
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalAverage
+import TauCeti.Analysis.Convex.Function.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Jensen's inequality for semicontinuous functions and closed convex hulls
@@ -202,104 +204,19 @@ private lemma ConvexOn.sub_mul_le_intervalIntegral_of_continuousOn {g : ℝ → 
   have hsub : Set.uIoc a b ⊆ Set.Icc a b := by
     rw [Set.uIoc_of_le hab]
     exact Set.Ioc_subset_Icc_self
-  have hfs : ∀ᵐ x ∂volume.restrict (Set.uIoc a b), (id x : ℝ) ∈ Set.Icc a b :=
+  have hfs : ∀ᵐ x ∂volume.restrict (Set.uIoc a b), (fun x : ℝ ↦ x) x ∈ Set.Icc a b :=
     (ae_restrict_mem measurableSet_uIoc).mono fun _ hx ↦ hsub hx
-  have hid_int : IntegrableOn id (Set.uIoc a b) :=
-    continuous_id.continuousOn.integrableOn_Icc.mono_set hsub
-  have hg_int : IntegrableOn (g ∘ id) (Set.uIoc a b) :=
+  have hid_int : IntegrableOn (fun x : ℝ ↦ x) (Set.uIoc a b) :=
+    continuousOn_id.integrableOn_Icc.mono_set hsub
+  have hg_int : IntegrableOn (fun x : ℝ ↦ g x) (Set.uIoc a b) :=
     hgc.integrableOn_Icc.mono_set hsub
   have hj := hg.map_set_average_le hgc isClosed_Icc h0 htop hfs hid_int hg_int
-  have havg_id : ⨍ x in Set.uIoc a b, id x = (a + b) / 2 := by
-    rw [interval_average_eq id a b, smul_eq_mul, show (∫ x in a..b, id x) = ∫ x in a..b, x from rfl,
-      integral_id]
+  have havg_id : ⨍ x in a..b, x = (a + b) / 2 := by
+    rw [interval_average_eq (fun x ↦ x) a b, smul_eq_mul, integral_id]
     field_simp [hpos.ne']
     ring
-  rw [havg_id, show (⨍ x in Set.uIoc a b, g (id x)) = ⨍ x in a..b, g x from rfl,
-    interval_average_eq g a b, smul_eq_mul] at hj
+  rw [havg_id, interval_average_eq g a b, smul_eq_mul] at hj
   exact (le_inv_mul_iff₀ hpos).mp hj
-
-private lemma ConvexOn.norm_le_on_Ioo {g : ℝ → ℝ} {a b : ℝ} (hg : ConvexOn ℝ (Set.Icc a b) g)
-    (hab : a < b) :
-    ∃ C : ℝ, ∀ x ∈ Set.Ioo a b, ‖g x‖ ≤ C := by
-  let M : ℝ := max (g a) (g b)
-  refine ⟨max |M| |2 * g ((a + b) / 2) - M|, fun x hx ↦ ?_⟩
-  have hupper (y : ℝ) (hy : y ∈ Set.Ioo a b) : g y ≤ M := by
-    have hba : 0 < b - a := sub_pos.mpr hab
-    have h1 : 0 ≤ (b - y) / (b - a) := div_nonneg (sub_nonneg.mpr hy.2.le) hba.le
-    have h2 : 0 ≤ (y - a) / (b - a) := div_nonneg (sub_nonneg.mpr hy.1.le) hba.le
-    have hsum : (b - y) / (b - a) + (y - a) / (b - a) = 1 := by field_simp [hba.ne']; ring
-    have hcomb : ((b - y) / (b - a)) • a + ((y - a) / (b - a)) • b = y := by
-      rw [smul_eq_mul, smul_eq_mul]; field_simp [hba.ne']; ring
-    have hconv := hg.2 (Set.left_mem_Icc.mpr hab.le) (Set.right_mem_Icc.mpr hab.le) h1 h2 hsum
-    rw [hcomb, smul_eq_mul, smul_eq_mul] at hconv
-    calc
-      g y ≤ (b - y) / (b - a) * g a + (y - a) / (b - a) * g b := hconv
-      _ ≤ (b - y) / (b - a) * M + (y - a) / (b - a) * M := by
-          gcongr <;> [exact le_max_left _ _; exact le_max_right _ _]
-      _ = ((b - y) / (b - a) + (y - a) / (b - a)) * M := by ring
-      _ = M := by rw [hsum, one_mul]
-  have hy' : a + b - x ∈ Set.Ioo a b := ⟨by linarith [hx.2], by linarith [hx.1]⟩
-  have hmid := hg.2 (Set.Ioo_subset_Icc_self hx) (Set.Ioo_subset_Icc_self hy')
-    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
-  rw [smul_eq_mul, smul_eq_mul, show (1 / 2 : ℝ) * x + (1 / 2 : ℝ) * (a + b - x) =
-    (a + b) / 2 by ring, smul_eq_mul, smul_eq_mul] at hmid
-  have hgx_le : g x ≤ M := hupper x hx
-  have hgx_ge : 2 * g ((a + b) / 2) - M ≤ g x := by linarith [hupper (a + b - x) hy']
-  rw [Real.norm_eq_abs, abs_le]
-  exact ⟨by
-      linarith [neg_abs_le (2 * g ((a + b) / 2) - M),
-        le_max_right |M| |2 * g ((a + b) / 2) - M|],
-    by linarith [le_abs_self M, le_max_left |M| |2 * g ((a + b) / 2) - M|]⟩
-
-private lemma tendsto_integral_shrink {g : ℝ → ℝ} {a b C : ℝ} (hab : a < b)
-    (hcont : ContinuousOn g (Set.Ioo a b)) (hC : ∀ x ∈ Set.Ioo a b, ‖g x‖ ≤ C) :
-    Filter.Tendsto
-      (fun n : ℕ ↦ ∫ x in (a + (b - a) / (n + 3))..(b - (b - a) / (n + 3)), g x)
-      Filter.atTop (nhds (∫ x in a..b, g x)) := by
-  let d : ℕ → ℝ := fun n ↦ (b - a) / (n + 3)
-  let u : ℕ → ℝ := fun n ↦ a + d n
-  let v : ℕ → ℝ := fun n ↦ b - d n
-  have hd_pos (n : ℕ) : 0 < d n := div_pos (sub_pos.mpr hab) (by positivity)
-  have huv_le (n : ℕ) : u n ≤ v n := by
-    have : 2 * d n ≤ b - a := by
-      dsimp only [d]; rw [mul_div_assoc', div_le_iff₀ (by positivity)]; nlinarith [hab]
-    dsimp only [u, v]; linarith
-  have hsub (n : ℕ) : Set.Ioc (u n) (v n) ⊆ Set.Ioo a b := fun _ hx ↦
-    ⟨lt_trans (by linarith [hd_pos n]) hx.1, lt_of_le_of_lt hx.2 (by linarith [hd_pos n])⟩
-  have hint_eq (n : ℕ) :
-      ∫ x in u n..v n, g x = ∫ x, (Set.Ioc (u n) (v n)).indicator g x := by
-    rw [intervalIntegral.integral_of_le (huv_le n),
-      MeasureTheory.integral_indicator measurableSet_Ioc]
-  have h0 : Filter.Tendsto d Filter.atTop (nhds 0) :=
-    tendsto_const_nhds.div_atTop
-      (Filter.tendsto_atTop_add_const_right _ 3 tendsto_natCast_atTop_atTop)
-  change Filter.Tendsto (fun n : ℕ ↦ ∫ x in u n..v n, g x) Filter.atTop (nhds (∫ x in a..b, g x))
-  simp_rw [hint_eq]
-  rw [intervalIntegral.integral_of_le hab.le, MeasureTheory.integral_Ioc_eq_integral_Ioo,
-    ← MeasureTheory.integral_indicator measurableSet_Ioo]
-  refine MeasureTheory.tendsto_integral_of_dominated_convergence
-    (bound := (Set.Ioo a b).indicator (fun _ ↦ C)) ?_ ?_ ?_ ?_
-  · exact fun n ↦ (aestronglyMeasurable_indicator_iff measurableSet_Ioc).mpr
-      ((hcont.mono (hsub n)).aestronglyMeasurable measurableSet_Ioc)
-  · exact integrableOn_const (by simp [Real.volume_Ioo]) |>.integrable_indicator measurableSet_Ioo
-  · refine fun n ↦ Filter.Eventually.of_forall fun x ↦ ?_
-    by_cases hx : x ∈ Set.Ioc (u n) (v n)
-    · simpa [hx, hsub n hx] using hC x (hsub n hx)
-    · have hC0 : 0 ≤ C := (norm_nonneg (g ((a + b) / 2))).trans
-        (hC ((a + b) / 2) ⟨by linarith, by linarith⟩)
-      by_cases hx' : x ∈ Set.Ioo a b <;> simp [hx, hx', hC0]
-  · refine Filter.Eventually.of_forall fun x ↦ ?_
-    by_cases hx : x ∈ Set.Ioo a b
-    · have hu_lim : Filter.Tendsto u Filter.atTop (nhds a) := by
-        simpa [u] using tendsto_const_nhds.add h0
-      have hv_lim : Filter.Tendsto v Filter.atTop (nhds b) := by
-        simpa [v] using tendsto_const_nhds.sub h0
-      have hev : ∀ᶠ n : ℕ in Filter.atTop, x ∈ Set.Ioc (u n) (v n) :=
-        (hu_lim.eventually_lt_const hx.1).and (hv_lim (Ici_mem_nhds hx.2))
-      simp only [Set.indicator_of_mem hx]
-      exact tendsto_const_nhds.congr' (hev.mono fun n hn ↦ by simp [hn])
-    · refine tendsto_const_nhds.congr fun n ↦ ?_
-      rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem fun h ↦ hx (hsub n h)]
 
 /-- **Midpoint Jensen's inequality** (left Hermite–Hadamard inequality) on `[a, b]`: for `a ≤ b`
 and a function `g : ℝ → ℝ` convex on `[a, b]`,
@@ -309,37 +226,48 @@ theorem ConvexOn.sub_mul_le_intervalIntegral {g : ℝ → ℝ} {a b : ℝ}
     (b - a) * g ((a + b) / 2) ≤ ∫ x in a..b, g x := by
   rcases hab.eq_or_lt with rfl | hlt
   · simp
-  let u : ℕ → ℝ := fun n ↦ a + (b - a) / (n + 3)
-  let v : ℕ → ℝ := fun n ↦ b - (b - a) / (n + 3)
-  have hu_gt (n : ℕ) : a < u n := by
-    have : 0 < (b - a) / ((n : ℝ) + 3) := div_pos (sub_pos.mpr hlt) (by positivity)
-    dsimp only [u]; linarith
-  have hv_lt (n : ℕ) : v n < b := by
-    have : 0 < (b - a) / ((n : ℝ) + 3) := div_pos (sub_pos.mpr hlt) (by positivity)
-    dsimp only [v]; linarith
+  let d : ℕ → ℝ := fun n ↦ (b - a) / (n + 3)
+  let u : ℕ → ℝ := fun n ↦ a + d n
+  let v : ℕ → ℝ := fun n ↦ b - d n
+  have hd_pos (n : ℕ) : 0 < d n := div_pos (sub_pos.mpr hlt) (by positivity)
   have huv_le (n : ℕ) : u n ≤ v n := by
-    have hstep : 2 * ((b - a) / ((n : ℝ) + 3)) ≤ b - a := by
-      rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-      nlinarith [sub_pos.mpr hlt]
+    have hstep : 2 * d n ≤ b - a := by
+      dsimp only [d]; rw [mul_div_assoc', div_le_iff₀ (by positivity)]; nlinarith [hlt]
     dsimp only [u, v]; linarith
   have hcont_Ioo : ContinuousOn g (Set.Ioo a b) := by
     simpa only [interior_Icc] using ConvexOn.continuousOn_interior hg
   have hstep (n : ℕ) : (v n - u n) * g ((a + b) / 2) ≤ ∫ x in u n..v n, g x := by
     have hmid : (u n + v n) / 2 = (a + b) / 2 := by dsimp only [u, v]; ring
     have hsub : Set.Icc (u n) (v n) ⊆ Set.Ioo a b :=
-      fun _ hx ↦ ⟨(hu_gt n).trans_le hx.1, hx.2.trans_lt (hv_lt n)⟩
+      fun _ hx ↦ ⟨(by linarith [hd_pos n, hx.1]), (by linarith [hd_pos n, hx.2])⟩
     rw [← hmid]
-    exact (hg.subset (Set.Icc_subset_Icc (hu_gt n).le (hv_lt n).le)
+    exact (hg.subset (Set.Icc_subset_Icc (by linarith [hd_pos n]) (by linarith [hd_pos n]))
       (convex_Icc _ _)).sub_mul_le_intervalIntegral_of_continuousOn
         (hcont_Ioo.mono hsub) (huv_le n)
-  obtain ⟨C, hC⟩ := hg.norm_le_on_Ioo hlt
-  have h0 : Filter.Tendsto (fun n : ℕ ↦ (b - a) / ((n : ℝ) + 3)) Filter.atTop (nhds 0) :=
+  obtain ⟨C, hC⟩ := hg.norm_le_on_Ioo
+  have hg_int : IntervalIntegrable g volume a b :=
+    (intervalIntegrable_iff_integrableOn_Icc_of_le hlt.le).2 <|
+      (integrableOn_Icc_iff_integrableOn_Ioo).2 <|
+        IntegrableOn.of_bound measure_Ioo_lt_top
+          (hcont_Ioo.aestronglyMeasurable measurableSet_Ioo) C
+          (ae_restrict_of_forall_mem measurableSet_Ioo hC)
+  have h0 : Filter.Tendsto d Filter.atTop (nhds 0) :=
     tendsto_const_nhds.div_atTop
       (Filter.tendsto_atTop_add_const_right _ 3 tendsto_natCast_atTop_atTop)
-  have heq (n : ℕ) : v n - u n = (b - a) - 2 * ((b - a) / ((n : ℝ) + 3)) := by
-    dsimp only [u, v]; ring
+  have hu_lim : Filter.Tendsto u Filter.atTop (nhds a) := by
+    simpa [u] using tendsto_const_nhds.add h0
+  have hv_lim : Filter.Tendsto v Filter.atTop (nhds b) := by
+    simpa [v] using tendsto_const_nhds.sub h0
+  have hlim_rhs : Filter.Tendsto (fun n : ℕ ↦ ∫ x in u n..v n, g x) Filter.atTop
+      (nhds (∫ x in a..b, g x)) :=
+    TauCeti.intervalIntegral.tendsto_integral_of_mem_uIcc hg_int hu_lim hv_lim
+      (Filter.Eventually.of_forall fun n ↦ by
+        rw [Set.uIcc_of_le hlt.le]
+        exact ⟨by linarith [hd_pos n], by linarith [huv_le n, hd_pos n]⟩)
+      (Filter.Eventually.of_forall fun n ↦ by
+        rw [Set.uIcc_of_le hlt.le]
+        exact ⟨by linarith [huv_le n, hd_pos n], by linarith [hd_pos n]⟩)
   have hlim_lhs : Filter.Tendsto (fun n : ℕ ↦ (v n - u n) * g ((a + b) / 2)) Filter.atTop
       (nhds ((b - a) * g ((a + b) / 2))) :=
-    (by simpa [heq] using tendsto_const_nhds.sub (h0.const_mul 2) :
-      Filter.Tendsto (fun n : ℕ ↦ v n - u n) Filter.atTop (nhds (b - a))).mul_const _
-  exact le_of_tendsto_of_tendsto' hlim_lhs (tendsto_integral_shrink hlt hcont_Ioo hC) hstep
+    (hv_lim.sub hu_lim).mul_const _
+  exact le_of_tendsto_of_tendsto' hlim_lhs hlim_rhs hstep

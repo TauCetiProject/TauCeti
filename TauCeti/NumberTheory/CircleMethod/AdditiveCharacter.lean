@@ -157,8 +157,8 @@ theorem norm_expTwoPiI_sub_one (α : ℝ) : ‖expTwoPiI α - 1‖ = 2 * |Real.s
 /-- Euler's formula for `e(α)`: `e(α) = cos (2πα) + sin (2πα) * I`. -/
 theorem expTwoPiI_eq_cos_add_sin_mul_I (α : ℝ) :
     expTwoPiI α = (Real.cos (2 * π * α) : ℂ) + (Real.sin (2 * π * α) : ℂ) * I := by
-  rw [expTwoPiI_def, show 2 * (π : ℂ) * I * α = ((2 * π * α : ℝ) : ℂ) * I by push_cast; ring,
-    Complex.exp_mul_I]
+  have harg : (2 * (π : ℂ) * I * α : ℂ) = ((2 * π * α : ℝ) : ℂ) * I := by push_cast; ring
+  rw [expTwoPiI_def, harg, Complex.exp_mul_I]
   norm_cast
 
 @[simp]
@@ -419,17 +419,20 @@ theorem norm_sum_Ioc_expTwoPiI_mul_div_eq {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b
     have : (0 : ℤ) < m := Int.cast_pos.mp hm₀
     have : m < 1 := Int.cast_lt.mp (by exact_mod_cast hm₁)
     omega
+  have hlt : π * (b : ℝ) / q < π := by
+    have hbq' : (b : ℝ) < q := by exact_mod_cast hbq
+    rw [div_lt_iff₀ hqpos]
+    nlinarith [Real.pi_pos]
   have hsin_pos : 0 < Real.sin (π * b / q) :=
-    Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos)
-      (by rw [div_lt_iff₀ hqpos]; nlinarith [Real.pi_pos, show (b : ℝ) < q by exact_mod_cast hbq])
+    Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos) hlt
   have heq : ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI ((b : ℝ) * n / q) =
       ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI (n * ((b : ℝ) / q)) := by
     refine Finset.sum_congr rfl fun n _ ↦ ?_
     congr 2
     ring
-  rw [heq, norm_sum_Ioc_expTwoPiI_eq M N hdist,
-    show π * (N : ℝ) * ((b : ℝ) / q) = π * b * N / q by ring,
-    show π * ((b : ℝ) / q) = π * b / q by ring, abs_of_pos hsin_pos]
+  have hargN : π * (N : ℝ) * ((b : ℝ) / q) = π * b * N / q := by ring
+  have harg1 : π * ((b : ℝ) / q) = π * b / q := by ring
+  rw [heq, norm_sum_Ioc_expTwoPiI_eq M N hdist, hargN, harg1, abs_of_pos hsin_pos]
 
 /-- Upper bound for a character-expansion geometric sum: for `1 ≤ b < q`, `M : ℤ`, and `N : ℕ`,
 `‖∑ n ∈ Ioc M (M + N), e(b * n / q)‖ ≤ min N (sin (π * b / q))⁻¹`. -/
@@ -445,9 +448,12 @@ theorem norm_sum_Ioc_expTwoPiI_mul_div_le {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b
   · rw [norm_sum_Ioc_expTwoPiI_mul_div_eq hb₀ hbq, inv_eq_one_div]
     have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
     have hbpos : (0 : ℝ) < b := by exact_mod_cast (by omega : 0 < b)
+    have hlt : π * (b : ℝ) / q < π := by
+      have hbq' : (b : ℝ) < q := by exact_mod_cast hbq
+      rw [div_lt_iff₀ hqpos]
+      nlinarith [Real.pi_pos]
     have hsin_pos : 0 < Real.sin (π * b / q) :=
-      Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos)
-        (by rw [div_lt_iff₀ hqpos]; nlinarith [Real.pi_pos, show (b : ℝ) < q by exact_mod_cast hbq])
+      Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos) hlt
     exact div_le_div_of_nonneg_right (Real.abs_sin_le_one _) hsin_pos.le
 
 /-! ### Checks -/
