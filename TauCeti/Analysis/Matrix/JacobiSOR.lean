@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.Analysis.Matrix.StationaryIteration
+public import TauCeti.LinearAlgebra.Matrix.Triangular.StrictPart
 
 /-!
 # The Jacobi and the successive over-relaxation iterations
 
 Write a square matrix `A` as `A = D + L + U`, with `D = diagonal A.diag` its diagonal part, `L`
-its strictly lower triangular part and `U` its strictly upper triangular part. The classical
-iterative methods for the linear system `A *ᵥ x = b` are stationary iterations
-`x (k + 1) = G *ᵥ x k + c` (see `Matrix.stationaryIterate`) for the following iteration matrices:
+its strictly lower triangular part and `U` its strictly upper triangular part (see
+`Matrix.strictLowerPart` and `Matrix.strictUpperPart`). The classical iterative methods for the
+linear system `A *ᵥ x = b` are stationary iterations `x (k + 1) = G *ᵥ x k + c` (see
+`Matrix.stationaryIterate`) for the following iteration matrices:
 
 * the Jacobi iteration, with `G = 1 - D⁻¹ * A` and `c = D⁻¹ *ᵥ b`;
 * the successive over-relaxation (SOR) iteration with relaxation parameter `ω`, with
@@ -32,12 +33,10 @@ that need an inverse assume that the diagonal entries of `A` are units.
 
 ## Main declarations
 
-* `Matrix.strictLowerPart A`, `Matrix.strictUpperPart A`: the strictly lower and upper triangular
-  parts of `A`.
-* `Matrix.diagonal_diag_add_strictLowerPart_add_strictUpperPart`: `D + L + U = A`.
 * `Matrix.jacobiMatrix A`, `Matrix.jacobiIterate A b x₀`: the Jacobi iteration matrix and the
   Jacobi iterates.
-* `Matrix.jacobiMatrix_apply`: the entries `1 i j - (A i i)⁻¹ * A i j` of `jacobiMatrix A`.
+* `Matrix.jacobiMatrix_apply`: the entries `1 i j - Ring.inverse (A i i) * A i j` of
+  `jacobiMatrix A`.
 * `Matrix.isFixedPt_jacobiMatrix_iff`: the fixed points of the Jacobi map are the solutions of
   `A *ᵥ x = b`.
 * `Matrix.sorMatrix A ω`, `Matrix.sorIterate A ω b x₀`: the SOR iteration matrix and the SOR
@@ -61,88 +60,7 @@ open Finset
 
 namespace Matrix
 
-variable {ι R : Type*}
-
-section Parts
-
-variable [Zero R] [LT ι] [DecidableLT ι]
-
-/-- The strictly lower triangular part of a square matrix: the entries `A i j` with `j < i`, and
-`0` elsewhere. -/
-def strictLowerPart (A : Matrix ι ι R) : Matrix ι ι R :=
-  of fun i j ↦ if j < i then A i j else 0
-
-/-- The strictly upper triangular part of a square matrix: the entries `A i j` with `i < j`, and
-`0` elsewhere. -/
-def strictUpperPart (A : Matrix ι ι R) : Matrix ι ι R :=
-  of fun i j ↦ if i < j then A i j else 0
-
-/-- The entries of the strictly lower triangular part. -/
-@[simp]
-theorem strictLowerPart_apply (A : Matrix ι ι R) (i j : ι) :
-    strictLowerPart A i j = if j < i then A i j else 0 :=
-  (rfl)
-
-/-- The entries of the strictly upper triangular part. -/
-@[simp]
-theorem strictUpperPart_apply (A : Matrix ι ι R) (i j : ι) :
-    strictUpperPart A i j = if i < j then A i j else 0 :=
-  (rfl)
-
-end Parts
-
-section Triangular
-
-variable [Preorder ι] [DecidableLT ι] [DecidableEq ι] [Ring R]
-
-/-- `D + ω • L` is lower triangular, where `D` and `L` are the diagonal and the strictly lower
-triangular parts of `A`. -/
-theorem isLowerTriangular_diagonal_add_smul_strictLowerPart (A : Matrix ι ι R) (ω : R) :
-    (diagonal A.diag + ω • strictLowerPart A).IsLowerTriangular := fun i j hij ↦ by
-  have hij : i < j := OrderDual.toDual_lt_toDual.mp hij
-  simp [diagonal_apply_ne _ hij.ne, hij.not_gt]
-
-/-- `(1 - ω) • D - ω • U` is upper triangular, where `D` and `U` are the diagonal and the strictly
-upper triangular parts of `A`. -/
-theorem isUpperTriangular_smul_diagonal_sub_smul_strictUpperPart (A : Matrix ι ι R) (ω : R) :
-    ((1 - ω) • diagonal A.diag - ω • strictUpperPart A).IsUpperTriangular := fun i j hij ↦ by
-  have hij : j < i := hij
-  simp [diagonal_apply_ne _ hij.ne', hij.not_gt]
-
-end Triangular
-
-section LinearOrder
-
-variable [LinearOrder ι]
-
-/-- A square matrix is the sum of its diagonal part, its strictly lower triangular part and its
-strictly upper triangular part. -/
-theorem diagonal_diag_add_strictLowerPart_add_strictUpperPart [AddZeroClass R]
-    (A : Matrix ι ι R) :
-    diagonal A.diag + strictLowerPart A + strictUpperPart A = A := by
-  ext i j
-  rcases lt_trichotomy i j with h | rfl | h
-  · simp [diagonal_apply_ne _ h.ne, h, h.not_gt]
-  · simp
-  · simp [diagonal_apply_ne _ h.ne', h, h.not_gt]
-
-variable [Ring R]
-
-/-- The two parts of the SOR splitting differ by `ω • A`:
-`D + ω • L = ((1 - ω) • D - ω • U) + ω • A`. -/
-theorem diagonal_add_smul_strictLowerPart_eq (A : Matrix ι ι R) (ω : R) :
-    diagonal A.diag + ω • strictLowerPart A =
-      (1 - ω) • diagonal A.diag - ω • strictUpperPart A + ω • A := by
-  calc diagonal A.diag + ω • strictLowerPart A
-      = (1 - ω) • diagonal A.diag - ω • strictUpperPart A +
-          ω • (diagonal A.diag + strictLowerPart A + strictUpperPart A) := by
-        simp only [smul_add, sub_smul, one_smul]
-        abel
-    _ = _ := by rw [diagonal_diag_add_strictLowerPart_add_strictUpperPart]
-
-end LinearOrder
-
-variable [Fintype ι] [CommRing R]
+variable {ι R : Type*} [Fintype ι] [CommRing R]
 
 section Jacobi
 
@@ -179,17 +97,14 @@ theorem jacobiIterate_succ (A : Matrix ι ι R) (b x₀ : ι → R) (k : ℕ) :
       jacobiMatrix A *ᵥ jacobiIterate A b x₀ k + (diagonal A.diag)⁻¹ *ᵥ b :=
   stationaryIterate_succ _ _ _ _
 
-private theorem isUnit_det_diagonal_diag {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i)) :
-    IsUnit (diagonal A.diag).det := by
-  rw [det_diagonal, IsUnit.prod_univ_iff]
-  exact hA
-
 /-- The entries of the Jacobi iteration matrix, when the diagonal entries of `A` are units:
-`jacobiMatrix A i j = 1 i j - (A i i)⁻¹ * A i j`. In particular its diagonal entries are `0`. -/
+`jacobiMatrix A i j = 1 i j - Ring.inverse (A i i) * A i j`. In particular its diagonal entries
+are `0`. -/
 theorem jacobiMatrix_apply {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i)) (i j : ι) :
     jacobiMatrix A i j = (1 : Matrix ι ι R) i j - Ring.inverse (A i i) * A i j := by
+  have hD : IsUnit (diagonal A.diag) := isUnit_diagonal.mpr (Pi.isUnit_iff.mpr hA)
   have h : diagonal A.diag * ((diagonal A.diag)⁻¹ * A) = A := by
-    rw [← Matrix.mul_assoc, mul_nonsing_inv _ (isUnit_det_diagonal_diag hA), Matrix.one_mul]
+    rw [← Matrix.mul_assoc, mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hD), Matrix.one_mul]
   have hij := congrFun₂ h i j
   rw [diagonal_mul, diag_apply] at hij
   rw [jacobiMatrix, Matrix.sub_apply, ← hij, Ring.inverse_mul_cancel_left _ _ (hA i)]
@@ -198,18 +113,19 @@ theorem jacobiMatrix_apply {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i)) (i 
 diagonal entries of `A` are units. -/
 theorem diagonal_diag_mul_jacobiMatrix {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i)) :
     diagonal A.diag * jacobiMatrix A = diagonal A.diag - A := by
+  have hD : IsUnit (diagonal A.diag) := isUnit_diagonal.mpr (Pi.isUnit_iff.mpr hA)
   rw [jacobiMatrix, Matrix.mul_sub, Matrix.mul_one, ← Matrix.mul_assoc,
-    mul_nonsing_inv _ (isUnit_det_diagonal_diag hA), Matrix.one_mul]
+    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hD), Matrix.one_mul]
 
 /-- If the diagonal entries of `A` are units, the fixed points of the Jacobi map
 `x ↦ jacobiMatrix A *ᵥ x + D⁻¹ *ᵥ b` are exactly the solutions of `A *ᵥ x = b`. -/
 theorem isFixedPt_jacobiMatrix_iff {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i))
     (b x : ι → R) :
     Function.IsFixedPt (jacobiMatrix A *ᵥ · + (diagonal A.diag)⁻¹ *ᵥ b) x ↔ A *ᵥ x = b := by
-  have hD := isUnit_det_diagonal_diag hA
-  rw [Function.IsFixedPt, ← (mulVec_injective_of_isUnit
-    ((isUnit_iff_isUnit_det _).mpr hD)).eq_iff, mulVec_add, mulVec_mulVec, mulVec_mulVec,
-    diagonal_diag_mul_jacobiMatrix hA, mul_nonsing_inv _ hD, one_mulVec, sub_mulVec,
+  have hD : IsUnit (diagonal A.diag) := isUnit_diagonal.mpr (Pi.isUnit_iff.mpr hA)
+  rw [Function.IsFixedPt, ← (mulVec_injective_of_isUnit hD).eq_iff, mulVec_add, mulVec_mulVec,
+    mulVec_mulVec, diagonal_diag_mul_jacobiMatrix hA,
+    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hD), one_mulVec, sub_mulVec,
     sub_add_eq_add_sub, sub_eq_iff_eq_add, add_right_inj, eq_comm]
 
 end Jacobi
@@ -294,8 +210,9 @@ theorem det_sorMatrix {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i)) (ω : R)
 /-- With relaxation parameter `ω = 0` the SOR matrix is the identity, when the diagonal entries of
 `A` are units. Then the SOR map leaves every vector fixed. -/
 theorem sorMatrix_zero {A : Matrix ι ι R} (hA : ∀ i, IsUnit (A i i)) : sorMatrix A 0 = 1 := by
+  have hD : IsUnit (diagonal A.diag) := isUnit_diagonal.mpr (Pi.isUnit_iff.mpr hA)
   rw [sorMatrix]
-  simpa using nonsing_inv_mul _ (isUnit_det_diagonal_diag hA)
+  simpa using nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).mp hD)
 
 /-- If the diagonal entries of `A` are units and `ω` is a non-zero-divisor, the fixed points of
 the SOR map `x ↦ sorMatrix A ω *ᵥ x + ω • ((D + ω • L)⁻¹ *ᵥ b)` are exactly the solutions of
