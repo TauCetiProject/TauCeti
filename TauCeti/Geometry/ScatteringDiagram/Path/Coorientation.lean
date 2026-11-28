@@ -11,10 +11,10 @@ import TauCeti.Algebra.Group.Pow
 /-!
 # Changes of coorientation for wall transport
 
-Positive rescaling of the representative normal preserves transport. Independent nonzero signed
-rescalings preserve transport when every normal's kernel lies in its wall's affine-span direction
-and the labels are inverted at the negatively rescaled indices. This includes several coincident
-walls at one crossing.
+Positive rescaling of the normals preserves event, segment, and path transport.
+Independent nonzero signed rescalings preserve transport when every normal's kernel
+lies in its wall's affine-span direction and the labels are inverted at the negatively
+rescaled indices. This includes several coincident walls at one crossing.
 -/
 
 public section
@@ -44,6 +44,27 @@ theorem commute_coorientationLabels (r : ι → ℝ) (i j : ι)
 variable [Finite ι]
 
 variable {x y : WallComplement W}
+
+/-- Positive rescalings of the normals preserve the simultaneous event product. -/
+@[simp]
+theorem crossingEventProduct_smul_pos (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+    (e : x ⟶ y) (t : ℝ) :
+    crossingEventProduct (fun i => r i • ν i) label hcomm e t =
+      crossingEventProduct ν label hcomm e t := by
+  rw [crossingEventProduct_eq_noncommProd _ _ _ e t
+    (signedCrossingEvent_pairwise (fun i => r i • ν i) label hcomm e t),
+    crossingEventProduct_eq_noncommProd ν label hcomm e t
+      (signedCrossingEvent_pairwise ν label hcomm e t)]
+  exact Finset.noncommProd_congr (signedCrossingEvent_smul ν r hr x y t) (fun _ _ => rfl) _
+
+/-- Positive rescalings of the normals preserve segment transport. -/
+@[simp]
+theorem segmentPathProduct_smul_pos (r : ι → ℝ) (hr : ∀ i, 0 < r i) (e : x ⟶ y) :
+    segmentPathProduct (fun i => r i • ν i) label hcomm e =
+      segmentPathProduct ν label hcomm e := by
+  simp only [segmentPathProduct_def]
+  congr 1
+  exact List.map_congr_left fun t _ => crossingEventProduct_smul_pos ν label hcomm r hr e t
 
 /-- Independent nonzero rescalings preserve a simultaneous crossing product when the labels of
 negatively rescaled walls are inverted and each normal's kernel lies in its wall's affine-span
