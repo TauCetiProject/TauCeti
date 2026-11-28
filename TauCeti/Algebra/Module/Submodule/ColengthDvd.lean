@@ -170,6 +170,26 @@ theorem ColengthDvd.comap (h : M.ColengthDvd N z) {M' N' : Submodule O U} (f : U
   refine ⟨m, hdet, fun i => hN ⟨sum_mem fun k _ => M'.smul_mem _ (hΦ k), ?_⟩⟩
   simpa [mem_comap, map_sum, map_smul] using hm i
 
+/-- Imposing two colength conditions on the same source multiplies their bounds. -/
+theorem ColengthDvd.inf (h₁ : M.ColengthDvd N z) (h₂ : M.ColengthDvd P a) :
+    M.ColengthDvd (N ⊓ P) (z * a) := by
+  let f : V →ₗ[O] V := LinearMap.id
+  have h : M.ColengthDvd (M ⊓ N) z := h₁.comap f (by simp [f]) (by simp [f])
+  exact h.trans (h₂.comap f (by simp [f])
+    (by simpa [f] using inf_le_inf_right P (inf_le_right : M ⊓ N ≤ N)))
+
+/-- Imposing a finite family of colength conditions on the same source costs the product of
+its individual bounds. -/
+theorem colengthDvd_iInf_finset {ι : Type*} (s : Finset ι) (N : ι → Submodule O V) (a : ι → O)
+    (h : ∀ i ∈ s, M.ColengthDvd (N i) (a i)) :
+    M.ColengthDvd (⨅ i ∈ s, N i) (∏ i ∈ s, a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.iInf_insert]
+    exact (h i (Finset.mem_insert_self _ _)).inf (ih fun j hj => h j (Finset.mem_insert_of_mem hj))
+
 /-- **Push-forward.** Let `f : V → U` be linear and `M', N'` submodules of `U` with
 `M' ⊆ f(M) + N'` and `f(N) ⊆ N'`. Then `M ⊸_z N` gives `M' ⊸_z N'`. -/
 theorem ColengthDvd.map (h : M.ColengthDvd N z) {M' N' : Submodule O U} (f : V →ₗ[O] U)
