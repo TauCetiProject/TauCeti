@@ -20,7 +20,7 @@ polynomial of left multiplication by `u` on `L` is a power of the minimal polyno
 
 ## Main results
 
-* `TauCeti.FiniteField.aroots_charpoly_mulLeft`: the roots in `K` of
+* `AlgHom.aroots_charpoly_mulLeft`: the roots in `K` of
   `(LinearMap.mulLeft k u).charpoly` are
   `(Multiset.range (Module.finrank k L)).map (fun i ↦ φ u ^ Nat.card k ^ i)`.
 
@@ -34,15 +34,14 @@ Apache 2.0, Copyright 2026 Anthropic, PBC), file
 
 public section
 
-open Polynomial
-
-namespace TauCeti.FiniteField
+open Polynomial TauCeti.FiniteField
 
 /-- Let `L` be a finite extension of a finite field `k` and `φ : L →ₐ[k] K` a `k`-algebra
 homomorphism into a commutative domain `K`. The roots in `K` of the characteristic polynomial of
 left multiplication by `u : L` on `L`, counted with multiplicity, are the Frobenius conjugates
 `φ u ^ |k| ^ i` for `i < [L : k]`. -/
-theorem aroots_charpoly_mulLeft {k L K : Type*} [Field k] [Finite k] [Field L] [Algebra k L]
+theorem AlgHom.aroots_charpoly_mulLeft {k L K : Type*} [Field k] [_root_.Finite k] [Field L]
+    [Algebra k L]
     [FiniteDimensional k L] [CommRing K] [IsDomain K] [Algebra k K] (φ : L →ₐ[k] K) (u : L) :
     (LinearMap.mulLeft k u).charpoly.aroots K =
       (Multiset.range (Module.finrank k L)).map fun i : ℕ ↦ φ u ^ Nat.card k ^ i := by
@@ -61,4 +60,3 @@ theorem aroots_charpoly_mulLeft {k L K : Type*} [Field k] [Finite k] [Field L] [
   rw [hpow, aroots_pow_eq_map_pow_card_pow (minpoly.irreducible hint) hroot, hdeg]
   simp only [Nat.card_eq_fintype_card]
 
-end TauCeti.FiniteField
