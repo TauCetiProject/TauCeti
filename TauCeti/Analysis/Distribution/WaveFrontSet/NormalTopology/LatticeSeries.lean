@@ -17,6 +17,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
 # Lattice series of localized Fourier transforms in the normal topology
@@ -250,11 +251,6 @@ theorem exists_cutoff_eqOn_one_forall_notMem (B : F →L[ℝ] E)
 
 /-! ### Splitting the lattice series -/
 
-/-- The cutoff `χ` as a smooth function supported in its own support. -/
-private def cutoffK (χ : 𝓓(W, ℂ)) :
-    𝓓_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩}(F, ℂ) :=
-  ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
-
 section Measurable
 
 variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
@@ -371,24 +367,25 @@ private theorem tsum_eq_add (B : F →L[ℝ] E) (T : 𝓓'(W, ℂ)) {V : Set E} 
     [IsZLattice ℝ L]
     (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ ∈ bigCone B V ε, (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C)
     {f : E → ℂ} (hf : ∃ C, ∀ η, (1 + ‖η‖) ^ 0 * ‖f η‖ ≤ C) (ξ : E)
-    (hbad : Summable fun m ↦ badCoeff B L (bigCone B V ε) f ξ m • (cutoffK χ).modulate (m : F)) :
+    (hbad : Summable fun m ↦
+      badCoeff B L (bigCone B V ε) f ξ m • χ.toSupportedInTSupport.modulate (m : F)) :
     ∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
         (f (ξ + B m) * T.localFourier χ (-m)) =
       (∑' m, goodTerm B L (bigCone B V ε) f (T.localFourier χ) ξ m) +
       T.complexPairing (ofSupportedIn χ.tsupport_subset (∑' m, badCoeff B L (bigCone B V ε)
-        f ξ m • (cutoffK χ).modulate (m : F))) := by
+        f ξ m • χ.toSupportedInTSupport.modulate (m : F))) := by
   set A := bigCone B V ε
   -- The terms with `-m ∉ A` sum to the pairing of `T` with the series of modulated cutoffs.
   have hb : HasSum (fun m : ZLattice.dual L ↦ badCoeff B L A f ξ m * T.localFourier χ (-m))
       (T.complexPairing (ofSupportedIn χ.tsupport_subset
-        (∑' m, badCoeff B L A f ξ m • (cutoffK χ).modulate (m : F)))) := by
+        (∑' m, badCoeff B L A f ξ m • χ.toSupportedInTSupport.modulate (m : F)))) := by
     have hfun : (fun m : ZLattice.dual L ↦ badCoeff B L A f ξ m * T.localFourier χ (-m)) =
         (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)) ∘
-          fun m ↦ badCoeff B L A f ξ m • (cutoffK χ).modulate (m : F) := by
+          fun m ↦ badCoeff B L A f ξ m • χ.toSupportedInTSupport.modulate (m : F) := by
       ext m
       rw [Function.comp_apply, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply,
         coe_ofSupportedInCLM, localFourier_eq_complexPairing_modulate T χ.tsupport_subset
-          (f := cutoffK χ) (ContDiffMapSupportedIn.coe_of_support_subset _ _), neg_neg]
+          (f := χ.toSupportedInTSupport) (congrFun (coe_toSupportedInTSupport χ)), neg_neg]
     rw [hfun]
     exact (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)).hasSum hbad.hasSum
   -- The terms with `-m ∈ A` are summable, by the decay of `T` on `A`.
@@ -460,7 +457,7 @@ private theorem exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le (B
     ∃ b : ℕ → ZLattice.dual L → ℝ, (∀ k, Summable (b k)) ∧ (∀ k m, 0 ≤ b k m) ∧
       ∀ f ∈ S, ∀ ξ ∈ V, ∀ k m, (1 + ‖ξ‖) ^ N * ‖badCoeff B L (bigCone B V ε) f ξ m‖ *
         N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-          ((cutoffK χ).modulate (m : F)) ≤ b k m := by
+          (χ.toSupportedInTSupport.modulate (m : F)) ≤ b k m := by
   have ha (M : ℕ) : ∃ C, ∀ (p : {p : (E → ℂ) × E // p.1 ∈ S ∧ p.2 ∈ V}) (m : ZLattice.dual L),
       (1 + ‖p.val.2‖ + ‖(m : F)‖) ^ M * ‖badCoeff B L (bigCone B V ε) p.val.1 p.val.2 m‖ ≤ C := by
     obtain ⟨C, hC⟩ := hS M
@@ -469,7 +466,7 @@ private theorem exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le (B
   obtain ⟨b, hb, hb0, hbound⟩ :=
     ContDiffMapSupportedIn.exists_summable_one_add_pow_mul_norm_mul_seminorm_modulate_le
       (ZLattice.dual L) (w := fun p : {p : (E → ℂ) × E // p.1 ∈ S ∧ p.2 ∈ V} ↦ ‖p.val.2‖)
-      (fun _ ↦ norm_nonneg _) ha (cutoffK χ) N
+      (fun _ ↦ norm_nonneg _) ha χ.toSupportedInTSupport N
   exact ⟨b, hb, hb0, fun f hf ξ hξ ↦ hbound ⟨(f, ξ), hf, hξ⟩⟩
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -477,7 +474,8 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem summable_badCoeff_smul_modulate (B : F →L[ℝ] E) (L : Submodule ℤ F)
     [DiscreteTopology L] [IsZLattice ℝ L] {V : Set E} {ε : ℝ} (hε : 0 < ε) (χ : 𝓓(W, ℂ))
     {f : E → ℂ} (hf : ∀ M : ℕ, ∃ C, ∀ η, (1 + ‖η‖) ^ M * ‖f η‖ ≤ C) {ξ : E} (hξ : ξ ∈ V) :
-    Summable fun m ↦ badCoeff B L (bigCone B V ε) f ξ m • (cutoffK χ).modulate (m : F) := by
+    Summable fun m ↦
+      badCoeff B L (bigCone B V ε) f ξ m • χ.toSupportedInTSupport.modulate (m : F) := by
   obtain ⟨b, hb, -, hbound⟩ := exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le
     (V := V) B L hε χ 0 (S := {f}) fun M ↦ (hf M).imp fun C hC g hg ↦ by
       rw [mem_singleton_iff.1 hg]
@@ -495,7 +493,7 @@ private theorem isCompact_insert_range_tsum (B : F →L[ℝ] E) (L : Submodule �
     (χ : 𝓓(W, ℂ)) (φ : 𝓓(U, ℂ)) (N : ℕ) :
     IsCompact (insert 0 (range fun ξ : V ↦ ∑' m : ZLattice.dual L,
       ((((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff B L (bigCone B V ε) (𝓕 (φ : E → ℂ)) ξ m) •
-        (cutoffK χ).modulate (m : F))) :=
+        χ.toSupportedInTSupport.modulate (m : F))) :=
   ContDiffMapSupportedIn.isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate
     (ZLattice.dual L) (w := fun ξ : V ↦ ‖(ξ : E)‖)
     (a := fun ξ m ↦ badCoeff B L (bigCone B V ε) (𝓕 (φ : E → ℂ)) ξ m) (fun _ ↦ norm_nonneg _)
@@ -506,7 +504,7 @@ private theorem isCompact_insert_range_tsum (B : F →L[ℝ] E) (L : Submodule �
     (fun M ↦ by
       obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport M
       exact ⟨_, fun ξ m ↦ one_add_add_pow_mul_norm_badCoeff_le B L hε hC ξ.property m⟩)
-    (cutoffK χ) N
+    χ.toSupportedInTSupport N
 
 /-- **The Fourier series off `A` for a compact set of cutoffs.** At `ξ = 0`, the series of the
 modulated cutoffs with the coefficients off `A` depends continuously on the cutoff `ψ`, so over a
@@ -515,7 +513,7 @@ private theorem isCompact_range_tsum (B : F →L[ℝ] E) (L : Submodule ℤ F) [
     [IsZLattice ℝ L] {ε : ℝ} (hε : 0 < ε) (χ : 𝓓(W, ℂ)) {Q : Set 𝓓(U, ℂ)} (hQ : IsCompact Q) :
     IsCompact (range fun ψ : Q ↦ ∑' m : ZLattice.dual L,
       badCoeff B L (bigCone B {0} ε) (𝓕 ((ψ : 𝓓(U, ℂ)) : E → ℂ)) 0 m •
-        (cutoffK χ).modulate (m : F)) := by
+        χ.toSupportedInTSupport.modulate (m : F)) := by
   have : CompactSpace Q := isCompact_iff_compactSpace.1 hQ
   obtain ⟨b, hb, -, hbound'⟩ := exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le
     (V := {0}) B L hε χ 0 (S := (fun ψ : 𝓓(U, ℂ) ↦ 𝓕 (ψ : E → ℂ)) '' Q) fun M ↦
@@ -525,22 +523,13 @@ private theorem isCompact_range_tsum (B : F →L[ℝ] E) (L : Submodule ℤ F) [
   have hbound (ψ : Q) (k : ℕ) (m : ZLattice.dual L) :
       ‖badCoeff B L (bigCone B {0} ε) (𝓕 ((ψ : 𝓓(U, ℂ)) : E → ℂ)) 0 m‖ *
         N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-          ((cutoffK χ).modulate (m : F)) ≤ b k m := by
+          (χ.toSupportedInTSupport.modulate (m : F)) ≤ b k m := by
     simpa using hbound' _ ⟨ψ, ψ.property, rfl⟩ 0 (mem_singleton 0) k m
   -- Each coefficient is continuous in `ψ`.
   have hcont (m : ZLattice.dual L) : Continuous fun ψ : Q ↦
       badCoeff B L (bigCone B {0} ε) (𝓕 ((ψ : 𝓓(U, ℂ)) : E → ℂ)) 0 m :=
     continuous_badCoeff B L ((continuous_fourier_apply (Ω := U) _).comp continuous_subtypeVal)
   exact isCompact_range (ContDiffMapSupportedIn.continuous_tsum_smul_of_dominated hb hbound hcont)
-
-/-- Combining the bounds on the terms in `A` and off `A`. -/
-private theorem mul_norm_add_le_seminorm {X : Type*} [AddCommGroup X] [Module ℂ X]
-    (p₁ p₂ : Seminorm ℂ X) (u : X) {w K₀ : ℝ} (hw : 0 ≤ w) (hK₀ : 0 ≤ K₀) {g c : ℂ}
-    (hg : w * ‖g‖ ≤ K₀ * p₁ u) (hc : w * ‖c‖ ≤ p₂ u) :
-    w * ‖g + c‖ ≤ (K₀.toNNReal • p₁ + p₂) u :=
-  calc w * ‖g + c‖ ≤ w * ‖g‖ + w * ‖c‖ := by rw [← mul_add]; gcongr; exact norm_add_le _ _
-    _ ≤ K₀ * p₁ u + p₂ u := add_le_add hg hc
-    _ = (K₀.toNNReal • p₁ + p₂) u := by simp [NNReal.smul_def, Real.coe_toNNReal _ hK₀]
 
 /-- **The estimate behind both seminorm bounds.** Let `φ x`, `x ∈ X`, be cutoffs whose Fourier
 transforms decay to order `N` with a common constant, and let `ξ x` lie in a cone `V` containing
@@ -553,7 +542,7 @@ private theorem exists_seminorm_tsum_le_of_isCompact (B : F →L[ℝ] E) {χ : �
     {C : ℝ} (hC : ∀ x η, (1 + ‖η‖) ^ N * ‖𝓕 (φ x : E → ℂ) η‖ ≤ C)
     (hS : IsCompact (insert 0 (range fun x : X ↦ ∑' m : ZLattice.dual L,
       ((((1 + ‖ξ x‖) ^ N : ℝ) : ℂ) * badCoeff B L (bigCone B V ε) (𝓕 (φ x : E → ℂ)) (ξ x) m) •
-        (cutoffK χ).modulate (m : F)))) :
+        χ.toSupportedInTSupport.modulate (m : F)))) :
     ∃ p : Seminorm ℂ (WaveFrontSpace W Γ), Continuous p ∧ ∀ u : WaveFrontSpace W Γ, ∀ x : X,
       (1 + ‖ξ x‖) ^ N * ‖∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
         (𝓕 (φ x : E → ℂ) (ξ x + B m) * u.toDistribution.localFourier χ (-m))‖ ≤ p u := by
@@ -583,10 +572,10 @@ private theorem exists_seminorm_tsum_le_of_isCompact (B : F →L[ℝ] E) {χ : �
   -- The terms off `A`: the weighted series lies in the compact set `hS`.
   have hbadle := hp'le u (ofSupportedIn χ.tsupport_subset (∑' m : ZLattice.dual L,
       ((((1 + ‖ξ x‖) ^ N : ℝ) : ℂ) * badCoeff B L (bigCone B V ε) (𝓕 (φ x : E → ℂ)) (ξ x) m) •
-        (cutoffK χ).modulate (m : F)))
+        χ.toSupportedInTSupport.modulate (m : F)))
     (mem_image_of_mem _ (mem_insert_of_mem _ ⟨x, rfl⟩))
   rw [← mul_norm_complexPairing_tsum_smul T χ.tsupport_subset (by positivity) hbad] at hbadle
-  exact mul_norm_add_le_seminorm _ _ u (by positivity) hK₀
+  exact Seminorm.mul_norm_add_le_smul_add_apply _ _ u (by positivity) hK₀
     (hgood.trans_eq (by simp only [K₀]; ring)) hbadle
 
 /-! ### The seminorm estimates -/

@@ -189,7 +189,7 @@ private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : Cont
   set S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   set μ := riemannianVolume I M
   have hS : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature
   set eu : M → ℝ := fun x ↦ a * ‖mgradient I u x‖ ^ 2 + S x * u x ^ 2
   set b : M → ℝ := fun x ↦ a * inner ℝ (mgradient I v x) (mgradient I u x) + S x * (v x * u x)
   set ev : M → ℝ := fun x ↦ a * ‖mgradient I v x‖ ^ 2 + S x * v x ^ 2

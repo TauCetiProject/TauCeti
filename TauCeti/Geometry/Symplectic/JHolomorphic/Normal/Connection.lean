@@ -287,6 +287,10 @@ a real function `φ` on the base. -/
 noncomputable def normalModelGauge (φ : E → ℝ) (p : E × ℂ) : E × ℂ :=
   (p.1, exp (φ p.1 * I) * p.2)
 
+theorem normalModelGauge_def (φ : E → ℝ) (p : E × ℂ) :
+    normalModelGauge φ p = (p.1, exp (φ p.1 * I) * p.2) :=
+  (rfl)
+
 @[simp]
 theorem normalModelGauge_fst (φ : E → ℝ) (p : E × ℂ) : (normalModelGauge φ p).1 = p.1 :=
   (rfl)
@@ -340,6 +344,12 @@ theorem differentiableAt_normalModelGauge (hφ : DifferentiableAt ℝ φ p.1) :
     DifferentiableAt ℝ (normalModelGauge φ) p :=
   differentiableAt_fst.prodMk
     ((hasFDerivAt_exp_ofReal_mul_I hφ).differentiableAt.mul differentiableAt_snd)
+
+/-- The gauge transformation of a `Cⁿ` function is `Cⁿ`. -/
+theorem contDiff_normalModelGauge {n : WithTop ℕ∞} (hφ : ContDiff ℝ n φ) :
+    ContDiff ℝ n (normalModelGauge φ) :=
+  contDiff_fst.prodMk (((ofRealCLM.contDiff.comp (hφ.comp contDiff_fst)).mul
+    contDiff_const).cexp.mul contDiff_snd)
 
 /-- The derivative of the gauge transformation:
 `D(z, w)(ξ, η) = (ξ, exp (i φ(z)) (η + i dφ(z)(ξ) w))`. -/

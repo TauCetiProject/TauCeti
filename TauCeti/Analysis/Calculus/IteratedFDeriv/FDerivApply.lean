@@ -12,7 +12,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
-import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
+import TauCeti.Analysis.Calculus.ContDiff.FDeriv.Apply
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Topology.MetricSpace.Holder

@@ -37,7 +37,9 @@ isomorphism of groups, and under translation:
 * `QuotientGroup.apply_out_mk`: a function invariant under right multiplication by `H` takes the
   same value at `g` and at the chosen representative of `g H`, and
   `QuotientGroup.finite_support_comp_inv_mul`: a left translate of such a function supported on
-  finitely many cosets is again supported on finitely many cosets.
+  finitely many cosets is again supported on finitely many cosets;
+  `QuotientGroup.sum_ite_out_inv_mul_mem`: a function vanishing off finitely many cosets is the sum
+  of its restrictions to them.
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.inv_smul_of_mk_eq`
   and `QuotientGroup.out_inv_smul`: the inverse of a representative of `q`, for instance
@@ -64,8 +66,10 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
 read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
 `Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
-and an index bound from a surjection from a finite type; and `Subgroup.quotientEquivFin` constructs
-a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when `n ≠ 0`.
+and an index bound from a surjection from a finite type; `Subgroup.quotientEquivFin` constructs
+a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when `n ≠ 0`; and
+`Subgroup.sum_twisted_eq_card_nsmul` reindexes a sum of `g ↦ f ((σ g)⁻¹ * g)` over the right
+cosets of a subgroup fixed pointwise by `σ`.
 -/
 
 public section
@@ -228,6 +232,28 @@ theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} 
   simp only [key, Finset.sum_const, Finset.card_univ, Finset.sum_nsmul, relIndex, index_eq_card,
     Nat.card_eq_fintype_card]
 
+/-- **Reindexing a `σ`-twisted sum over right cosets.** For a group endomorphism `σ : G →* G` and
+a subgroup `H ≤ G` fixed pointwise by `σ`, the function `g ↦ f ((σ g)⁻¹ * g)` is constant on
+right cosets of `H`, so summing over `G` gives `Nat.card H` copies of the sum over `G ⧸ H`
+evaluated at the right-coset representatives `q.out⁻¹`. -/
+theorem sum_twisted_eq_card_nsmul {G : Type*} [Group G] [Fintype G] (H : Subgroup G)
+    [Fintype (G ⧸ H)] (σ : G →* G) (hH : ∀ h ∈ H, σ h = h) {M : Type*} [AddCommMonoid M]
+    (f : G → M) :
+    ∑ g : G, f ((σ g)⁻¹ * g) =
+      Nat.card H • ∑ q : G ⧸ H, f ((σ q.out⁻¹)⁻¹ * q.out⁻¹) := by
+  classical
+  let _ : Fintype H := Fintype.ofFinite H
+  let eCoset : (G ⧸ H) × H ≃ G :=
+    (Equiv.prodCongr (Equiv.refl _) (Equiv.inv H)).trans
+      (groupEquivQuotientProdSubgroup.symm.trans (Equiv.inv G))
+  have hinv (q : G ⧸ H) (z : H) :
+      (σ (eCoset (q, z)))⁻¹ * eCoset (q, z) = (σ q.out⁻¹)⁻¹ * q.out⁻¹ := by
+    have he : eCoset (q, z) = (z : G) * q.out⁻¹ := by
+      simp [eCoset, groupEquivQuotientProdSubgroup_symm_apply]
+    rw [he, map_mul, hH _ z.property, mul_inv_rev, mul_assoc, inv_mul_cancel_left]
+  rw [← eCoset.sum_comp, Fintype.sum_prod_type_right]
+  simp only [hinv, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card]
+
 /-- **An isomorphism carries a transversal to a transversal.** If `e : G ≃* G'` carries `H`
 onto `H'`, then the images under `e` of the chosen representatives of the cosets of `H` represent
 each coset of `H'` exactly once. Neither subgroup need be normal. -/
@@ -363,6 +389,23 @@ theorem finite_support_comp_inv_mul {A : Type*} [Zero A] {K : Subgroup G} {f : G
     rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, QuotientGroup.apply_out_mk hf]
   refine (hf_fin.preimage (MulAction.injective x⁻¹).injOn).subset fun q hq ↦ ?_
   simpa [h_value] using hq
+
+open scoped Classical in
+/-- If `f` vanishes off the cosets in a finite set `T`, then `f` is the sum over `q ∈ T` of its
+restrictions to the cosets `q`, each written through the representative `q.out`. -/
+@[to_additive /-- If `f` vanishes off the cosets in a finite set `T`, then `f` is the sum over
+`q ∈ T` of its restrictions to the cosets `q`, each written through the representative
+`q.out`. -/]
+theorem sum_ite_out_inv_mul_mem {M : Type*} [AddCommMonoid M] {T : Finset (G ⧸ H)} {f : G → M}
+    (hT : ∀ a, f a ≠ 0 → (a : G ⧸ H) ∈ T) (a : G) :
+    ∑ q ∈ T, (if q.out⁻¹ * a ∈ H then f a else 0) = f a := by
+  have hq (q : G ⧸ H) : q.out⁻¹ * a ∈ H ↔ (a : G ⧸ H) = q := by
+    rw [← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
+  simp_rw [hq, Finset.sum_ite_eq]
+  split_ifs with h
+  · rfl
+  · by_contra hne
+    exact h (hT a (Ne.symm hne))
 
 /-- The chosen representative of the translate `g • q` of a left coset `q` lies in the same coset
 as `g` times the chosen representative of `q`. -/
