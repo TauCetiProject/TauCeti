@@ -41,6 +41,9 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 * `SSet.fiber.app_coe_obj₀`: a vertex of the fiber over `y` lies over `y`.
 * `SSet.range_le_fiber_iff`: a map lands in the fiber of `q` over `y` exactly when its composite
   with `q` is constant at `y`.
+* `SSet.fiber.isPullback_map`: a map induced on fibres is a base change of the original map.
+* `SSet.fiber.isPullback_map_const`: a fibre of the original map is a fibre of the induced
+  map over a further base.
 * `SSet.fiber.isTerminalOfIsIso`: the fibers of an isomorphism are terminal.
 * `SSet.fiber.quasicategory`, `SSet.fiber.kanComplex`: the fibers of inner fibrations are
   quasicategories, and those of Kan fibrations are Kan complexes.
@@ -226,6 +229,31 @@ lemma fiber.lift_ι {Z : SSet.{u}} (g : Z ⟶ X) (q : X ⟶ Y) (y : Y _⦋0⦌) 
     fiber.lift g q y hg ≫ (fiber q y).ι = g :=
   Subcomplex.lift_ι _ _
 
+/-- The fibre over a vertex is the pullback along the corresponding map from `Δ[0]`. -/
+lemma fiber.isPullback (q : X ⟶ Y) (y : Y _⦋0⦌) :
+    IsPullback (fiber q y).ι (stdSimplex.isTerminalObj₀.from (fiber q y : SSet.{u}))
+      q (const y : Δ[0] ⟶ Y) := by
+  have w : (fiber q y).ι ≫ q =
+      stdSimplex.isTerminalObj₀.from (fiber q y : SSet.{u}) ≫ (const y : Δ[0] ⟶ Y) := by
+    simp
+  have hl (s : PullbackCone q (const y : Δ[0] ⟶ Y)) : s.fst ≫ q = const y := by
+    simpa using s.condition
+  refine IsPullback.of_isLimit (PullbackCone.IsLimit.mk w
+    (fun s ↦ fiber.lift s.fst q y (hl s)) (fun s ↦ fiber.lift_ι _ _ _ _)
+    (fun _ ↦ stdSimplex.isTerminalObj₀.hom_ext _ _)
+    (fun s m hm _ ↦ (cancel_mono (fiber q y).ι).1 (by
+      simpa only [fiber.lift_ι] using hm)))
+
+/-- Restricting a map over `Y` to the fibres over a vertex is a base change. -/
+lemma fiber.isPullback_map {X' : SSet.{u}} {q : X ⟶ Y} {q' : X' ⟶ Y}
+    (g : X ⟶ X') (hg : g ≫ q' = q) (y : Y _⦋0⦌) :
+    IsPullback (fiber q y).ι (fiber.map g hg y) g (fiber q' y).ι := by
+  have outer : IsPullback (fiber q y).ι
+      (fiber.map g hg y ≫ stdSimplex.isTerminalObj₀.from (fiber q' y : SSet.{u}))
+      (g ≫ q') (const y : Δ[0] ⟶ Y) := by
+    simpa only [hg, IsTerminal.comp_from] using fiber.isPullback q y
+  exact outer.of_bot (fiber.map_ι g hg y).symm (fiber.isPullback q' y)
+
 /-- A vertex `x` of `X` over `y`, as a vertex of the fiber of `q` over `y`. -/
 def fiber.basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
     (fiber q y : SSet) _⦋0⦌ :=
@@ -239,6 +267,27 @@ lemma fiber.coe_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : 
 lemma fiber.ι_app_basePoint (q : X ⟶ Y) {y : Y _⦋0⦌} {x : X _⦋0⦌} (hx : q.app _ x = y) :
     (fiber q y).ι.app _ (fiber.basePoint q hx) = x :=
   (rfl)
+
+/-- The fibre of `f` over `y` is also the fibre of its induced map over a further base,
+taken over the vertex of `fiber p (p.app _ y)` represented by `y`. -/
+lemma fiber.isPullback_map_const {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
+    {q : X ⟶ S} (hq : f ≫ p = q) (y : Y _⦋0⦌) :
+    IsPullback
+      (fiber.lift (fiber f y).ι q (p.app _ y) (by simp [← hq]))
+      (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))
+      (fiber.map f hq (p.app _ y))
+      (const (fiber.basePoint p rfl) : Δ[0] ⟶ (fiber p (p.app _ y) : SSet.{u})) := by
+  subst q
+  have outer : IsPullback
+      (fiber.lift (fiber f y).ι (f ≫ p) (p.app _ y) (by simp) ≫
+        (fiber (f ≫ p) (p.app _ y)).ι)
+      (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u})) f
+      ((const (fiber.basePoint p rfl) : Δ[0] ⟶ (fiber p (p.app _ y) : SSet.{u})) ≫
+        (fiber p (p.app _ y)).ι) := by
+    simpa using fiber.isPullback f y
+  refine outer.of_right ?_ (fiber.isPullback_map f (q := f ≫ p) rfl (p.app _ y))
+  apply (cancel_mono (fiber p (p.app _ y)).ι).1
+  simp
 
 /-- A terminal simplicial set is a quasicategory. -/
 lemma quasicategory_of_isTerminal (h : IsTerminal X) : Quasicategory X :=

@@ -90,6 +90,31 @@ theorem rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
              homotopy := .mk' H.h (by rw [H.h₀, comp_const]) H.h₁
              homotopy_h_comp := hT.hom_ext _ _ }⟩
 
+/-- If the map induced by `f` on the fibre over `p y` is a trivial fibration,
+then the fibre of `f` over `y` is weakly contractible. No fibration hypothesis on `f` is needed. -/
+theorem fiber.isWeaklyContractible_of_rlp_monomorphisms_map {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S)
+    {q : X ⟶ S} (hq : f ≫ p = q) (y : Y _⦋0⦌)
+    (h : (monomorphisms SSet.{u}).rlp (fiber.map f hq (p.app _ y))) :
+    IsWeaklyContractible (fiber f y : SSet.{u}) := by
+  apply ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
+    stdSimplex.isTerminalObj₀
+      (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))).1 ?_).2
+  exact (monomorphisms SSet.{u}).rlp.of_isPullback (fiber.isPullback_map_const f p hq y) h
+
+/-- If weakly contractible fibres imply that `f` is a trivial fibration, then `f` is a
+trivial fibration exactly when its induced maps on the fibres over any further base are trivial
+fibrations. The further map `p` need not be a fibration. -/
+theorem
+    rlp_monomorphisms_iff_forall_rlp_monomorphisms_fiber_map_of_isWeaklyContractible_fiber
+    {S : SSet.{u}} (f : X ⟶ Y) (p : Y ⟶ S) {q : X ⟶ S} (hq : f ≫ p = q)
+    (hf : (∀ y : Y _⦋0⦌, IsWeaklyContractible (fiber f y : SSet.{u})) →
+      (monomorphisms SSet.{u}).rlp f) :
+    (monomorphisms SSet.{u}).rlp f ↔
+      ∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f hq s) := by
+  refine ⟨fun h s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
+    (fiber.isPullback_map f hq s) h, fun h ↦ hf ?_⟩
+  exact fun y ↦ fiber.isWeaklyContractible_of_rlp_monomorphisms_map f p hq y (h (p.app _ y))
+
 /-- A Kan fibration whose fibres over all vertices of the base are weakly contractible has the
 right lifting property with respect to all monomorphisms: it is a trivial fibration. -/
 theorem rlp_monomorphisms_of_isWeaklyContractible_fiber (p : X ⟶ Y) [Fibration p]
