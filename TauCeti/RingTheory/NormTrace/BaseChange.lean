@@ -184,21 +184,17 @@ theorem _root_.Module.Basis.one_le_abs_norm_baseChange_intCast {ι D : Type*} [F
   classical
   let := Fintype.ofFinite ι
   let x := b.equivFun.symm (fun i => (z i : ℚ))
+  have hcoord (i : ι) : b.repr x i = (z i : ℚ) :=
+    congrFun (b.equivFun.apply_symm_apply _) i
   have hx : x ≠ 0 := by
     intro hx
     apply hz
-    have he : b.equivFun x = 0 := by rw [hx, map_zero]
     funext i
-    simpa only [x, LinearEquiv.apply_symm_apply, Pi.zero_apply, Int.cast_eq_zero]
-      using congrFun he i
+    simpa [hx, eq_comm] using hcoord i
   have hreal : (b.baseChange ℝ).equivFun.symm (fun i => (z i : ℝ)) = 1 ⊗ₜ[ℚ] x := by
-    apply (b.baseChange ℝ).equivFun.injective
-    rw [LinearEquiv.apply_symm_apply]
+    rw [LinearEquiv.symm_apply_eq]
     funext i
-    rw [Module.Basis.equivFun_apply, Module.Basis.baseChange_repr_tmul,
-      ← Module.Basis.equivFun_apply, Rat.smul_one_eq_cast]
-    dsimp only [x]
-    rw [LinearEquiv.apply_symm_apply, Rat.cast_intCast]
+    simp [hcoord, Rat.smul_one_eq_cast]
   let m : Matrix ι ι ℤ := Matrix.of fun i j => ∑ k, z k * (h i j k).choose
   have hm : m.map (fun n => (n : ℝ)) =
       Matrix.of (fun i j => ∑ k, (z k : ℝ) * (b.repr (b k * b j) i : ℝ)) := by

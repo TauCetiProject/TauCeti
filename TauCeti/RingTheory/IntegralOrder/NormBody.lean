@@ -145,33 +145,35 @@ theorem regularNormBodyVolume_eq_det_mul [DecidableEq ι] (b c : Basis ι ℚ D)
   have hd : ((b.toMatrix c).det : ℝ) * ((c.toMatrix b).det : ℝ) = 1 := by
     exact_mod_cast (by rw [← Matrix.det_mul, Basis.toMatrix_mul_toMatrix, Basis.toMatrix_self,
       Matrix.det_one] : (b.toMatrix c).det * (c.toMatrix b).det = 1)
+  have hscale : ENNReal.ofReal |((b.toMatrix c).det : ℝ)| *
+      ENNReal.ofReal |((c.toMatrix b).det : ℝ)| = 1 := by
+    simpa only [abs_mul, ENNReal.ofReal_mul (abs_nonneg _), abs_one, ENNReal.ofReal_one] using
+      congrArg (fun d : ℝ => ENNReal.ofReal |d|) hd
   have h : ENNReal.ofReal |((b.toMatrix c).det : ℝ)| *
       (ENNReal.ofReal |((c.toMatrix b).det : ℝ)| * b.regularNormBodyVolume) ≤
       ENNReal.ofReal |((b.toMatrix c).det : ℝ)| * c.regularNormBodyVolume := by
     gcongr
     exact det_mul_regularNormBodyVolume_le c b
-  rwa [← mul_assoc, ← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, hd, abs_one,
-    ENNReal.ofReal_one, one_mul] at h
+  simpa only [← mul_assoc, hscale, one_mul] using h
 
 private theorem regularNormBodyVolume_le_reindex {κ : Type*} [Fintype κ]
     (b : Basis ι ℚ D) (σ : ι ≃ κ) :
     b.regularNormBodyVolume ≤ (b.reindex σ).regularNormBodyVolume := by
   let e := ContinuousLinearEquiv.piCongrLeft (R := ℝ) (fun _ : κ => ℝ) σ
-  have he (x : ι → ℝ) (i : ι) : e x (σ i) = x i := by
-    simp [e, ContinuousLinearEquiv.piCongrLeft]
   have hvol := volume_measurePreserving_piCongrLeft (fun _ : κ => ℝ) σ
   rw [← one_mul b.regularNormBodyVolume]
   refine b.mul_regularNormBodyVolume_le_of_image (b.reindex σ) e 1 ?_ ?_
   · intro x hx
     have hcoord : ((b.reindex σ).baseChange ℝ).equivFun.symm (e x) =
         (b.baseChange ℝ).equivFun.symm x := by
-      rw [Basis.baseChange_reindex]
-      apply ((b.baseChange ℝ).reindex σ).equivFun.injective
-      rw [LinearEquiv.apply_symm_apply]
+      rw [Basis.baseChange_reindex, LinearEquiv.symm_apply_eq]
       funext j
-      obtain ⟨i, rfl⟩ := σ.surjective j
-      rw [he, Basis.equivFun_apply, Basis.repr_reindex_apply,
-        Equiv.symm_apply_apply, ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+      calc
+        e x j = x (σ.symm j) := by
+          simp [e, ContinuousLinearEquiv.piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
+        _ = _ := by
+          rw [Basis.equivFun_apply, Basis.repr_reindex_apply]
+          exact (congrFun ((b.baseChange ℝ).equivFun.apply_symm_apply x) (σ.symm j)).symm
     simpa only [mem_regularNormRegion, hcoord] using hx
   · intro s
     rw [one_mul]
@@ -200,10 +202,11 @@ theorem sqrt_regularDiscr_mul_regularNormBodyVolume_eq [DecidableEq ι] (b c : B
   have hd : (Algebra.regularDiscr ℚ c : ℝ) =
       ((b.toMatrix c).det : ℝ) ^ 2 * (Algebra.regularDiscr ℚ b : ℝ) := by
     exact_mod_cast Algebra.regularDiscr_eq_det_toMatrix_sq_mul b c
-  rw [regularNormBodyVolume_eq_det_mul b c, hd, abs_mul, abs_pow,
-    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (abs_nonneg _), ← mul_assoc,
-    ← ENNReal.ofReal_mul (Real.sqrt_nonneg _),
-    mul_comm (Real.sqrt _)]
+  have hsqrt : Real.sqrt |(Algebra.regularDiscr ℚ c : ℝ)| =
+      |((b.toMatrix c).det : ℝ)| * Real.sqrt |(Algebra.regularDiscr ℚ b : ℝ)| := by
+    simp only [hd, abs_mul, abs_sq, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs]
+  rw [regularNormBodyVolume_eq_det_mul b c, hsqrt, ENNReal.ofReal_mul (abs_nonneg _),
+    mul_left_comm, mul_assoc]
 
 /-- Transporting the basis by an algebra equivalence preserves its norm region. -/
 @[simp]
@@ -221,12 +224,8 @@ theorem regularNormRegion_map {E : Type*} [Ring E] [Algebra ℚ E]
 theorem regularNormBodyVolume_map {E : Type*} [Ring E] [Algebra ℚ E]
     (b : Basis ι ℚ D) (e : D ≃ₐ[ℚ] E) :
     (b.map e.toLinearEquiv).regularNormBodyVolume = b.regularNormBodyVolume := by
-  apply le_antisymm
-  · refine ((b.map e.toLinearEquiv).regularNormBodyVolume_le_iff).2 fun s hb hc hi hs hn => ?_
-    exact b.volume_le_regularNormBodyVolume hb hc hi hs (by rwa [regularNormRegion_map] at hn)
-  · refine b.regularNormBodyVolume_le_iff.2 fun s hb hc hi hs hn => ?_
-    exact (b.map e.toLinearEquiv).volume_le_regularNormBodyVolume hb hc hi hs
-      (by rwa [regularNormRegion_map])
+  unfold regularNormBodyVolume
+  rw [regularNormRegion_map]
 
 end Module.Basis
 
