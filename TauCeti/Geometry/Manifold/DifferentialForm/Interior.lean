@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -419,18 +420,13 @@ theorem RoughForm.contMDiffAt_interior {F : Type*} [NormedAddCommGroup F]
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) y (ω y)) x) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (ω.interior X y)) x := by
-  refine contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_
-  -- In the chart at `x`, the interior product is `curryLeft` of the two coordinate expressions.
-  have hω' := ω.contDiffWithinAt_range_inChartAt_of_contMDiffAt hω
-  have hX' := (hX.contMDiffWithinAt (s := Set.univ)
-    ).contDiffWithinAt_mpullbackWithin_extChartAt_symm
-  simp only [Set.preimage_univ, Set.univ_inter] at hX'
-  refine (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)
-    ).toContinuousLinearMap.contDiff.comp_contDiffWithinAt hω').clm_apply
-      hX').congr_of_eventuallyEq ?_ ?_
-  · filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    exact RoughForm.inChartAt_interior X ω hz
-  · exact RoughForm.inChartAt_interior X ω (mem_extChartAt_target x)
+  have heq : (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (ω.interior X y)) =
+      fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
+        (E := fun z ↦ TangentSpace I z [⋀^Fin k]→L[ℝ] F) y
+        ((ω y).curryLeftTopological (X y)) :=
+    funext fun y ↦ by rw [RoughForm.interior_def, bundleInterior_apply_eq_curryLeftTopological]
+  rw [heq]
+  exact hω.curryLeftTopological_bundle hX
 
 /-- The interior product of a `C^n` vector field and a `C^n` fixed-coefficient form is a `C^n`
 form. -/

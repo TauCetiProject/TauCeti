@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Topology.VectorBundle.Hom
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 
 /-!
 # Composition in alternating-bundle coordinates
@@ -25,7 +26,10 @@ bundle of fibrewise linear maps.
 When the codomain is a fixed space, a fibre alternating map read in the trivialization at `x₀`
 is precomposed with the inverse, at its base point, of the trivialization of the domain bundle at
 `x₀` (`FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd`). This holds everywhere,
-with no base-set hypothesis.
+with no base-set hypothesis, and yields the corresponding chart compatibility laws for
+empty-index maps (`FiberBundle.constOfIsEmptyLIE_symm_trivializationAt_snd`,
+`FiberBundle.trivializationAt_constOfIsEmpty_snd`) and paired wedges
+(`FiberBundle.trivializationAt_pairedWedge_snd`).
 
 The coordinate maps are Mathlib's `ContinuousAlternatingMap.inCoordinates` and
 `ContinuousLinearMap.inCoordinates`.
@@ -93,5 +97,48 @@ theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
       ω.compContinuousLinearMap ((trivializationAt F₁ V x₀).symmL 𝕜 x) := by
   ext v
   simp [trivializationAt_continuousAlternatingMap_apply, ContinuousAlternatingMap.inCoordinates]
+
+/-- Reading an empty-index alternating fibre map in the trivialization at `x₀` and unwrapping it
+with `(ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F₁ F ι).symm` recovers its value at `0`. -/
+theorem constOfIsEmptyLIE_symm_trivializationAt_snd [IsEmpty ι] (x₀ x : B)
+    (φx : V x [⋀^ι]→L[𝕜] F) :
+    (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F₁ F ι).symm
+      (trivializationAt (F₁ [⋀^ι]→L[𝕜] F) (fun y ↦ V y [⋀^ι]→L[𝕜] F) x₀ ⟨x, φx⟩).2 =
+      φx 0 := by
+  rw [ContinuousAlternatingMap.constOfIsEmptyLIE_symm_apply,
+    trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  exact congrArg φx (Subsingleton.elim _ _)
+
+/-- Reading a constant empty-index alternating fibre map in the trivialization at `x₀` yields the
+model constant map `ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F₁ F ι g`. -/
+theorem trivializationAt_constOfIsEmpty_snd [IsEmpty ι] (x₀ x : B) (g : F) :
+    (trivializationAt (F₁ [⋀^ι]→L[𝕜] F) (fun y ↦ V y [⋀^ι]→L[𝕜] F) x₀
+      ⟨x, ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι g⟩).2 =
+      ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F₁ F ι g := by
+  ext v
+  simp [trivializationAt_continuousAlternatingMap_apply_snd]
+
+/-- Reading the paired wedge of two alternating fibre maps in the trivialization at `x₀` is the
+model-fibre `pairedWedgeCLM` applied to their trivialization coordinates. -/
+theorem trivializationAt_pairedWedge_snd {F' G₁ G₂ G₃ : Type*}
+    [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    [NormedAddCommGroup G₁] [NormedSpace ℝ G₁]
+    [NormedAddCommGroup G₂] [NormedSpace ℝ G₂]
+    [NormedAddCommGroup G₃] [NormedSpace ℝ G₃]
+    {V' : B → Type*} [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)]
+    [∀ x, TopologicalSpace (V' x)] [TopologicalSpace (TotalSpace F' V')]
+    [FiberBundle F' V'] [VectorBundle ℝ F' V']
+    {k l : ℕ} (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃) (x₀ x : B)
+    (α : V' x [⋀^Fin k]→L[ℝ] G₁) (β : V' x [⋀^Fin l]→L[ℝ] G₂) :
+    (trivializationAt (F' [⋀^Fin (k + l)]→L[ℝ] G₃)
+      (fun y ↦ V' y [⋀^Fin (k + l)]→L[ℝ] G₃) x₀
+      ⟨x, ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ α β⟩).2 =
+      ContinuousAlternatingMap.pairedWedgeCLM μ
+        (trivializationAt (F' [⋀^Fin k]→L[ℝ] G₁) (fun y ↦ V' y [⋀^Fin k]→L[ℝ] G₁) x₀ ⟨x, α⟩).2
+        (trivializationAt (F' [⋀^Fin l]→L[ℝ] G₂) (fun y ↦ V' y [⋀^Fin l]→L[ℝ] G₂) x₀ ⟨x, β⟩).2 := by
+  ext v
+  simp [trivializationAt_continuousAlternatingMap_apply_snd,
+    ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap]
 
 end FiberBundle

@@ -14,7 +14,9 @@ public import TauCeti.LinearAlgebra.Alternating.RestrictScalars
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import Mathlib.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.LinearAlgebra.Alternating.Curry
+import TauCeti.LinearAlgebra.Multilinear.Quotient
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -99,22 +101,6 @@ section IsEmpty
 
 variable {ι : Type*} [Fintype ι] [IsEmpty ι]
 
-private theorem constOfIsEmptyLIE_symm_trivializationAt_snd (x₀ x : M)
-    (φx : V x [⋀^ι]→L[𝕜] G) :
-    (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G ι).symm
-      (trivializationAt (F [⋀^ι]→L[𝕜] G) (fun y ↦ V y [⋀^ι]→L[𝕜] G) x₀ ⟨x, φx⟩).2 = φx 0 := by
-  rw [ContinuousAlternatingMap.constOfIsEmptyLIE_symm_apply,
-    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  exact congrArg φx (Subsingleton.elim _ _)
-
-private theorem trivializationAt_constOfIsEmpty_snd (x₀ x : M) (g : G) :
-    (trivializationAt (F [⋀^ι]→L[𝕜] G) (fun y ↦ V y [⋀^ι]→L[𝕜] G) x₀
-      ⟨x, ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι g⟩).2 =
-      ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G ι g := by
-  ext v
-  simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd]
-
 variable (I F G n V ι) in
 /-- When the index type `ι` is empty (for instance `ι = Fin 0`), sections of
 `fun x ↦ V x [⋀^ι]→L[𝕜] G` identify `𝕜`-linearly with `C^n` maps `M → G`. -/
@@ -126,12 +112,12 @@ def alternatingIsEmptyLinearEquiv :
       have hcomp := (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
         ι).symm.toLinearIsometry.toContinuousLinearMap)).clm_apply hφ
       exact hcomp.congr_of_eventuallyEq (Eventually.of_forall fun x ↦
-        (constOfIsEmptyLIE_symm_trivializationAt_snd x₀ x (φ x)).symm)⟩
+        (FiberBundle.constOfIsEmptyLIE_symm_trivializationAt_snd x₀ x (φ x)).symm)⟩
   invFun f :=
     { toFun x := ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V x) ι (f x)
       contMDiff_toFun x₀ := by
         rw [contMDiffAt_section_iff]
-        simp_rw [trivializationAt_constOfIsEmpty_snd]
+        simp_rw [FiberBundle.trivializationAt_constOfIsEmpty_snd]
         exact (contMDiffAt_const (c := (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F G
           ι).toLinearIsometry.toContinuousLinearMap)).clm_apply (f.contMDiff x₀) }
   left_inv φ := by ext x v; exact congrArg (φ x) (Subsingleton.elim (0 : ι → V x) v)
@@ -255,28 +241,7 @@ variable {k : ℕ} (c : 𝕜) (f : C^n⟮I, M; 𝕜⟯)
 section `a` of `V`, defined fibrewise via `ContinuousAlternatingMap.curryLeftTopological`. -/
 def curryLeft : Cₛ^n⟮I; F [⋀^Fin k]→L[𝕜] G, fun x ↦ V x [⋀^Fin k]→L[𝕜] G⟯ where
   toFun x := (φ x).curryLeftTopological (a x)
-  contMDiff_toFun x₀ := by
-    rw [contMDiffAt_section_iff]
-    let e := trivializationAt F V x₀
-    let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := 𝕜) (E := F) (F := G)
-      (n := k)).toContinuousLinearMap
-    have hmodel := ((contMDiffAt_const (c := L)).clm_apply
-      ((contMDiffAt_section_iff x₀).1 (φ.contMDiff x₀))).clm_apply
-      ((contMDiffAt_section_iff x₀).1 (a.contMDiff x₀))
-    refine hmodel.congr_of_eventuallyEq ?_
-    filter_upwards [e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀)] with x hx
-    ext v
-    simp only [L, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-      ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      ContinuousAlternatingMap.curryLeftTopological_apply_apply,
-      LinearIsometry.coe_toContinuousLinearMap, ContinuousAlternatingMap.curryLeftLI_apply,
-      ContinuousAlternatingMap.curryLeft_apply_apply]
-    refine congrArg (φ x) (funext fun i ↦ ?_)
-    cases i using Fin.cases with
-    | zero =>
-      simp only [Matrix.cons_val_zero, Function.comp_apply]
-      rw [(trivializationAt F V x₀).symmL_apply hx, e.symm_apply_apply_mk hx]
-    | succ j => rfl
+  contMDiff_toFun x₀ := (φ.contMDiff x₀).curryLeftTopological_bundle (a.contMDiff x₀)
 
 @[simp] theorem curryLeft_apply (x : M) :
     φ.curryLeft a x = (φ x).curryLeftTopological (a x) := (rfl)
@@ -422,19 +387,22 @@ map on smooth sections of a finite-rank bundle depends only on the values of its
 theorem alternatingMap_apply_eq_of_eval_eq {ι : Type*} [Finite ι]
     (Φ : Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
     {s t : ι → Cₛ^∞⟮I; F, V⟯} {x : M} (hst : ∀ i, s i x = t i x) : Φ s x = Φ t x := by
-  classical
-  cases nonempty_fintype ι
-  have hadd : Φ s x = ∑ q : Finset ι, Φ (q.piecewise (s - t) t) x := by
-    have h := congrArg (· x) (Φ.map_add_univ (s - t) t)
-    simpa only [sub_add_cancel, ContMDiffMap.coe_sum, Finset.sum_apply] using h
-  rw [hadd, Finset.sum_eq_single_of_mem ∅ (Finset.mem_univ ∅)]
-  · simp
-  · intro q _ hq
-    obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.1 hq
-    have hupd : q.piecewise (s - t) t = Function.update (q.piecewise (s - t) t) i (s i - t i) := by
-      rw [eq_comm, Function.update_eq_self_iff, Finset.piecewise_eq_of_mem _ _ _ hi, Pi.sub_apply]
-    rw [hupd]
-    exact alternatingMap_update_apply_eq_zero_of_apply_eq_zero Φ _ i (by simp [hst i])
+  have h :=
+    ((ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ).toLinearMap.compMultilinearMap
+        (Φ.restrictScalars ℝ).toMultilinearMap).apply_eq_of_mkQ_eq
+      (fun _ ↦ LinearMap.ker (evalLinearMap I F ∞ V x))
+      (fun m i u hu ↦ by
+        simpa only [LinearMap.compMultilinearMap_apply, AlgHom.toLinearMap_apply,
+          ContMDiffMap.evalAlgHom_apply, MultilinearMap.toFun_eq_coe,
+          AlternatingMap.coe_multilinearMap, AlternatingMap.restrictScalars_apply] using
+          alternatingMap_update_apply_eq_zero_of_apply_eq_zero Φ m i
+            (by simpa only [LinearMap.mem_ker, evalLinearMap_apply] using hu))
+      (fun i ↦ (Submodule.Quotient.eq _).2 (by
+        simpa only [LinearMap.mem_ker, evalLinearMap_apply, coe_sub, Pi.sub_apply, sub_eq_zero]
+          using hst i))
+  simpa only [LinearMap.compMultilinearMap_apply, AlgHom.toLinearMap_apply,
+    ContMDiffMap.evalAlgHom_apply, MultilinearMap.toFun_eq_coe,
+    AlternatingMap.coe_multilinearMap, AlternatingMap.restrictScalars_apply] using h
 
 private def contMDiffExtendSection (x : M) : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ where
   toFun v :=

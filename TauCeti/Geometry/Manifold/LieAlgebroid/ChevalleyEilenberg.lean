@@ -11,10 +11,14 @@ public import TauCeti.Algebra.Lie.Cohomology.LieRinehart
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Section
+public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle
+public import TauCeti.Geometry.Manifold.LieAlgebroid.Restrict
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Wedge
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The Chevalley–Eilenberg complex of a Lie algebroid
@@ -27,10 +31,14 @@ Over a finite-dimensional Hausdorff base `M` and finite-rank smooth vector bundl
 `A.Sections [⋀^Fin k]→ₗ[C^∞(M)] C^∞(M)`. Transporting `TauCeti.LieRinehartAlgebra` across this
 equivalence yields the Lie derivative `A.lieDeriv` and Chevalley–Eilenberg differential
 `A.extDeriv`, satisfying the invariant Chevalley–Eilenberg formula, `d_A ∘ d_A = 0`, Cartan
-calculus with `ContMDiffSection.curryLeft`, and graded Leibniz rules for `ContMDiffSection.wedge`.
-For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior derivative
-`mextDeriv`, `ContMDiffSection.wedge` agrees with `SmoothForm.wedge`, and
-`tangentCochainComplexIso` identifies `(tangent I M).cochainComplex` with `deRhamComplex I M`.
+calculus with `ContMDiffSection.curryLeft`, graded Leibniz rules for `ContMDiffSection.wedge`,
+locality (`extDeriv_apply_eq_of_eventuallyEq`), and naturality under restriction to open subsets
+(`restrictCochain`, `restrictCochain_extDeriv`). For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees
+with the de Rham exterior derivative `mextDeriv`, `ContMDiffSection.wedge` agrees with
+`SmoothForm.wedge`, and `tangentCochainComplexIso` identifies `(tangent I M).cochainComplex` with
+`deRhamComplex I M`. For `LieAlgebroid.trivialLieAlgebra I M 𝔤` over a one-point manifold,
+`trivialLieAlgebraCochainComplexIso` identifies `(trivialLieAlgebra I M 𝔤).cochainComplex` with the
+ordinary Lie algebra Chevalley–Eilenberg complex `TauCeti.LieModule.Cohomology.cochainComplex`.
 
 ## Main definitions
 
@@ -39,8 +47,14 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
 * `TauCeti.LieAlgebroid.lieDeriv`, `extDeriv`, `cochainComplex`, `cochainComplexXIso`,
   `cohomology`: Lie derivative, Chevalley–Eilenberg differential, cochain complex in `ModuleCat ℝ`,
   canonical degreewise carrier isomorphism, and cohomology `H^k(A)`.
+* `TauCeti.LieAlgebroid.restrictCochain`: restriction of `k`-cochains to an open subset
+  `U : Opens M`.
 * `TauCeti.LieAlgebroid.tangentCochainComplexIso`: cochain-complex isomorphism identifying
   `(tangent I M).cochainComplex` with `TauCeti.deRhamComplex I M`.
+* `TauCeti.LieAlgebroid.trivialLieAlgebraEvalCochain`, `trivialLieAlgebraConstCochain`,
+  `trivialLieAlgebraEvalCochainEquiv`, `trivialLieAlgebraCochainComplexIso`: comparison between
+  the Lie algebroid cochain complex of `trivialLieAlgebra I M 𝔤` and the Lie algebra
+  Chevalley–Eilenberg complex of `𝔤`.
 
 ## Main results
 
@@ -48,11 +62,16 @@ For `LieAlgebroid.tangent I M`, `A.extDeriv` agrees with the de Rham exterior de
   formula on sections and `d_A ∘ d_A = 0`.
 * `TauCeti.LieAlgebroid.curryLeft_extDeriv_succ`, `lieDeriv_wedge`, `extDeriv_wedge`: Cartan's
   homotopy formula and graded Leibniz rules for `ContMDiffSection.wedge`.
+* `TauCeti.LieAlgebroid.extDeriv_apply_eq_of_eventuallyEq`, `restrictCochain_extDeriv`: germ
+  locality of `extDeriv` and commutation with restriction to open subsets.
 * `TauCeti.LieAlgebroid.tangent_extDeriv_apply`, `contMDiffSectionEquiv_symm_tangent_extDeriv`,
   `tangentCochainComplexIso_hom_f`: comparison of `(tangent I M).extDeriv` and
   `(tangent I M).cochainComplex` with `mextDeriv` and `TauCeti.deRhamComplex` via
   `TauCeti.SmoothForm.contMDiffSectionEquiv` (with `SmoothForm.contMDiffSectionEquiv_symm_wedge`
   for `ContMDiffSection.wedge` and `SmoothForm.wedge`).
+* `TauCeti.LieAlgebroid.trivialLieAlgebraEvalCochain_extDeriv`,
+  `trivialLieAlgebraCochainComplexIso_hom_f`: intertwining of differentials and degreewise
+  isomorphism for `trivialLieAlgebra`.
 
 ## References
 
@@ -69,7 +88,9 @@ public section
 noncomputable section
 
 open Bundle CategoryTheory Fin Manifold VectorField
-open scoped ContDiff
+open scoped ContDiff Topology
+
+universe u
 
 namespace TauCeti.LieAlgebroid
 
@@ -417,15 +438,10 @@ theorem lieDeriv_lieDeriv_sub {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Co
 theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.lieDeriv a (φ.wedge ψ) = (A.lieDeriv a φ).wedge ψ + φ.wedge (A.lieDeriv a ψ) := by
   refine ContMDiffSection.ext_evalSection fun s ↦ ?_
-  let D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
-    { toFun := A.anchorDeriv a
-      map_add' := A.anchorDeriv_add_right a
-      map_smul' := A.anchorDeriv_const_smul_right a }
-  have hD : ∀ f, A.anchorDeriv a f = D f := fun _ ↦ rfl
   simp only [A.evalSection_lieDeriv, ContMDiffSection.evalSection_add,
-    ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right, hD, map_sum,
-    Units.smul_def, map_zsmul]
-  simp only [← hD, A.anchorDeriv_mul_right, ← Finset.smul_sum]
+    ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right,
+    A.anchorDeriv_sum_right, Units.smul_def, A.anchorDeriv_zsmul_right,
+    A.anchorDeriv_mul_right, ← Finset.smul_sum]
   rw [Finset.sum_comm]
   simp_rw [← Finset.smul_sum, A.sum_update_evalSection_wedge]
   simp only [← smul_sub, ← smul_add, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
@@ -574,6 +590,176 @@ theorem extDeriv_wedge_apply {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l)
     ContMDiffSection.alternating_smul_apply] using
     DFunLike.congr_fun (congrArg (· x) (A.extDeriv_wedge φ ψ)) v
 
+/-! ### Locality and restriction to open subsets -/
+
+/-- The Chevalley–Eilenberg differential is local: if two cochains agree on a neighbourhood of
+`x`, then their differentials agree at `x`. -/
+theorem extDeriv_apply_eq_of_eventuallyEq {k : ℕ} {φ₁ φ₂ : A.Cochain k} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, φ₁ y = φ₂ y) : A.extDeriv k φ₁ x = A.extDeriv k φ₂ x := by
+  have hsub : A.extDeriv k φ₁ x - A.extDeriv k φ₂ x = A.extDeriv k (φ₁ - φ₂) x := by
+    ext v
+    rw [ContinuousAlternatingMap.sub_apply, map_sub, ContMDiffSection.alternating_sub_apply]
+  rw [← sub_eq_zero, hsub]
+  ext v
+  simp only [ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  obtain ⟨s, hs⟩ := ContMDiffSection.exists_fun_apply_eq (I := I) (F := F) (V := V) ∞ x v
+  rw [← hs, ← ContMDiffSection.evalSection_apply]
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) h).mem_iff.1 h
+  let f : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
+  have hzero : f • (φ₁ - φ₂) = 0 := by
+    ext y w
+    rw [ContMDiffSection.smul_apply, ContinuousAlternatingMap.smul_apply]
+    by_cases hy : ρ y = 0
+    · simp [f, hy]
+    · simp [sub_eq_zero.2 (hρ hy)]
+  have hx := congrArg (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ)
+    (A.evalSection_extDeriv_smul f (φ₁ - φ₂) s)
+  rw [hzero, map_zero, ContMDiffSection.evalSection_zero, map_zero, map_add, map_mul, map_sum]
+    at hx
+  have hsum : ∑ i : Fin (k + 1), (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ)
+      ((-1 : ℤ) ^ (i : ℕ) • (A.anchorDeriv (s i) f * (φ₁ - φ₂).evalSection (i.removeNth s))) =
+      0 := by
+    refine Finset.sum_eq_zero fun i _ ↦ ?_
+    rw [map_zsmul, map_mul, ContMDiffMap.evalAlgHom_apply, ContMDiffMap.evalAlgHom_apply,
+      ContMDiffSection.evalSection_apply, ContMDiffSection.alternating_sub_apply, h.self_of_nhds,
+      sub_self, mul_zero, smul_zero]
+  have hfx : (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) f = 1 := by
+    rw [ContMDiffMap.evalAlgHom_apply]
+    exact ρ.eq_one
+  rw [hsum, add_zero, hfx, one_mul, ContMDiffMap.evalAlgHom_apply] at hx
+  exact hx.symm
+
+/-- Restriction of a `k`-cochain of `A` to an open subset `U : Opens M`, as an `ℝ`-linear map into
+cochains of `A.restrict U`. -/
+def restrictCochain (U : TopologicalSpace.Opens M) (k : ℕ) :
+    A.Cochain k →ₗ[ℝ] (A.restrict U).Cochain k where
+  toFun φ :=
+    { toFun := fun x ↦ φ (x : M)
+      contMDiff_toFun := fun x₀ ↦ by
+        let ιU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+        let f : ∀ x : U, (ιU *ᵖ V) x [⋀^Fin k]→L[ℝ] ℝ := fun x ↦ φ (x : M)
+        change ContMDiffAt I (I.prod 𝓘(ℝ, F [⋀^Fin k]→L[ℝ] ℝ)) ∞
+          (fun x : U ↦ TotalSpace.mk' (F [⋀^Fin k]→L[ℝ] ℝ) x (f x)) x₀
+        rw [contMDiffAt_section_iff]
+        let e := trivializationAt F V (x₀ : M)
+        have hcomp : ContMDiffAt I 𝓘(ℝ, F [⋀^Fin k]→L[ℝ] ℝ) ∞
+            (fun y : U ↦ (trivializationAt (F [⋀^Fin k]→L[ℝ] ℝ)
+              (fun z ↦ V z [⋀^Fin k]→L[ℝ] ℝ) (x₀ : M) ⟨(y : M), φ (y : M)⟩).2) x₀ :=
+          ((contMDiffAt_section_iff (x₀ : M)).1 (φ.contMDiff (x₀ : M))).comp x₀
+            contMDiff_subtypeVal.contMDiffAt
+        refine hcomp.congr_of_eventuallyEq ?_
+        filter_upwards [continuousAt_subtypeVal.preimage_mem_nhds
+          (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V (x₀ : M)))] with y hy
+        rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd (F₁ := F),
+          FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd (F₁ := F)]
+        ext v
+        rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
+          ContinuousAlternatingMap.compContinuousLinearMap_apply]
+        dsimp only [f]
+        refine congrArg (φ (y : M)) (funext fun i ↦ ?_)
+        dsimp only [Function.comp_apply]
+        have hyU : y ∈ (trivializationAt F (ιU *ᵖ V) x₀).baseSet := hy
+        rw [(trivializationAt F (ιU *ᵖ V) x₀).symmL_apply hyU,
+          (trivializationAt F V (x₀ : M)).symmL_apply hy]
+        simp only [trivializationAt, FiberBundle.pullback_trivializationAt']
+        exact (trivializationAt F V (x₀ : M)).symm_pullback ιU hy (v i) }
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp] theorem restrictCochain_apply (U : TopologicalSpace.Opens M) (k : ℕ) (φ : A.Cochain k)
+    (x : U) : A.restrictCochain U k φ x = φ (x : M) := (rfl)
+
+section
+
+local instance (U : TopologicalSpace.Opens M) :
+    ContMDiffVectorBundle ∞ F
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) I :=
+  Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := F) (E := V)
+    (f := (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))) (contMDiff_subtypeVal (I := I))
+
+/-- Restricting cochains to an open subset `U` commutes with the Chevalley–Eilenberg differential
+`extDeriv`. -/
+theorem restrictCochain_extDeriv (U : TopologicalSpace.Opens M) (k : ℕ) (φ : A.Cochain k) :
+    A.restrictCochain U (k + 1) (A.extDeriv k φ) =
+      (A.restrict U).extDeriv k (A.restrictCochain U k φ) := by
+  ext x v
+  obtain ⟨s, hs⟩ := ContMDiffSection.exists_fun_apply_eq (I := I) (F := F)
+    (V := ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) ∞ x v
+  choose t ht using fun i ↦ ContMDiffSection.exists_eventually_eq_of_opens (s i) x
+  have htx (i : Fin (k + 1)) : t i (x : M) = v i := (ht i).self_of_nhds.trans (congrFun hs i)
+  have ht_eq : (t · (x : M)) = v := funext htx
+  have hs_eq : (s · x) = v := hs
+  have hlhs : A.restrictCochain U (k + 1) (A.extDeriv k φ) x v =
+      (A.extDeriv k φ).evalSection t (x : M) := by
+    rw [ContMDiffSection.evalSection_apply, ht_eq]
+    rfl
+  have hrhs : (A.restrict U).extDeriv k (A.restrictCochain U k φ) x v =
+      ((A.restrict U).extDeriv k (A.restrictCochain U k φ)).evalSection s x := by
+    rw [ContMDiffSection.evalSection_apply, hs_eq]
+  rw [hlhs, hrhs]
+  cases k with
+  | zero =>
+    rw [A.evalSection_extDeriv_zero, (A.restrict U).evalSection_extDeriv_zero,
+      anchorDeriv_apply, anchorDeriv_apply]
+    have hfn : ⇑((A.restrict U).cochainZeroEquiv (A.restrictCochain U 0 φ)) =
+        (fun z : M ↦ φ z 0) ∘ (Subtype.val : U → M) :=
+      funext fun y ↦ (A.restrict U).cochainZeroEquiv_apply _ y
+    have hfn0 : ⇑(A.cochainZeroEquiv φ) = fun z : M ↦ φ z 0 :=
+      funext fun y ↦ A.cochainZeroEquiv_apply φ y
+    have hanc : (A.restrict U).anchor x (s 0 x) = A.anchor (x : M) (t 0 (x : M)) :=
+      (A.restrict_anchor_apply U x (s 0 x)).trans <|
+        (Manifold.tangentSpaceOpenEquiv_symm_apply x _).trans <|
+          congrArg (A.anchor (x : M)) (ht 0).self_of_nhds.symm
+    rw [hfn, hfn0, hanc]
+    exact ((mvfderiv_apply_eq_mfderiv_apply (I := I) (fun z : M ↦ φ z 0) (x : M) _).trans
+      ((Manifold.mfderiv_comp_subtype_val_apply (f := fun z : M ↦ φ z 0) (x := x) _).symm.trans
+        (mvfderiv_apply_eq_mfderiv_apply (I := I)
+          ((fun z : M ↦ φ z 0) ∘ (Subtype.val : U → M)) x _).symm))
+  | succ m =>
+    rw [A.evalSection_extDeriv_succ, (A.restrict U).evalSection_extDeriv_succ,
+      ← ContMDiffMap.evalAlgHom_apply ℝ (x : M), ← ContMDiffMap.evalAlgHom_apply ℝ x,
+      map_add, map_add]
+    congr 1
+    · rw [map_sum, map_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [map_zsmul, map_zsmul]
+      congr 1
+      simp only [ContMDiffMap.evalAlgHom_apply, anchorDeriv_apply]
+      have hev : ⇑((A.restrictCochain U (m + 1) φ).evalSection (i.removeNth s)) =ᶠ[𝓝 x]
+          ⇑(φ.evalSection (i.removeNth t)) ∘ (Subtype.val : U → M) := by
+        filter_upwards [Filter.eventually_all.2 ht] with y hy
+        simp only [ContMDiffSection.evalSection_apply, restrictCochain_apply, Function.comp_apply]
+        refine congrArg (φ (y : M)) (funext fun j ↦ ?_)
+        exact (hy (i.succAbove j)).symm
+      have hanc : (A.restrict U).anchor x (s i x) = A.anchor (x : M) (t i (x : M)) :=
+        (A.restrict_anchor_apply U x (s i x)).trans <|
+          (Manifold.tangentSpaceOpenEquiv_symm_apply x _).trans <|
+            congrArg (A.anchor (x : M)) (ht i).self_of_nhds.symm
+      rw [hev.mvfderiv_eq, hanc]
+      exact ((mvfderiv_apply_eq_mfderiv_apply (I := I)
+          (⇑(φ.evalSection (i.removeNth t))) (x : M) _).trans
+        ((Manifold.mfderiv_comp_subtype_val_apply
+          (f := ⇑(φ.evalSection (i.removeNth t))) (x := x) _).symm.trans
+          (mvfderiv_apply_eq_mfderiv_apply (I := I)
+            (⇑(φ.evalSection (i.removeNth t)) ∘ (Subtype.val : U → M)) x _).symm))
+    · rw [map_sum, map_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [map_sum, map_sum]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      rw [map_zsmul, map_zsmul]
+      congr 1
+      simp only [ContMDiffMap.evalAlgHom_apply, ContMDiffSection.evalSection_apply,
+        restrictCochain_apply]
+      refine congrArg (φ (x : M)) (funext fun r ↦ ?_)
+      cases r using Fin.cases with
+      | zero =>
+        exact (A.restrict_bracket_apply_eq_of_eventuallyEq U (ht i.castSucc) (ht j.succ)).symm
+      | succ r =>
+        simp only [Matrix.cons_val_succ, Fin.removeNth]
+        exact (ht _).self_of_nhds
+
+end
+
 end Complex
 
 end Basic
@@ -593,13 +779,6 @@ private theorem evalSection_removeNth_coeFn {m : ℕ} (φ : (tangent I M).Cochai
     rw [ContMDiffSection.evalSection_apply]
     exact congrArg (φ y)
       (Fin.removeNth_comp (fun z : Cₛ^∞⟮I; E, TangentSpace I⟯ ↦ z y) i s).symm
-
-private theorem cochainZeroEquiv_coeFn (φ : (tangent I M).Cochain 0)
-    (v : ∀ y : M, Fin 0 → TangentSpace I y) :
-    ⇑((tangent I M).cochainZeroEquiv φ) = fun y ↦ φ y (v y) :=
-  funext fun y ↦ by
-    rw [cochainZeroEquiv_apply]
-    exact congrArg (φ y) (Subsingleton.elim _ _)
 
 section T2
 
@@ -639,20 +818,20 @@ theorem tangent_extDeriv_apply (k : ℕ) (φ : (tangent I M).Cochain k) (x : M) 
   ext w
   obtain ⟨s, hw⟩ := ContMDiffSection.exists_fun_apply_eq (I := I) (F := E)
     (V := (TangentSpace I : M → Type _)) ∞ x w
-  have hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ) y (φ y)) x :=
-    (φ.contMDiff x).mdifferentiableAt (by simp)
-  have hs_diff : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (s i y : TangentBundle I M)) x :=
-    fun i ↦ ((s i).contMDiff x).mdifferentiableAt (by simp)
   rw [← hw, ← ContMDiffSection.evalSection_apply]
   cases k with
   | zero =>
-    rw [(tangent I M).evalSection_extDeriv_zero, anchorDeriv_apply, tangent_anchor_apply,
-      mextDeriv_apply_vectorField_of_mlieBracket_eq_zero hφ hs_diff]
-    · rw [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero, val_zero, pow_zero, one_smul,
-        cochainZeroEquiv_coeFn φ (fun y ↦ removeNth 0 (s · y))]
-    · intro i j; obtain rfl : i = j := (by omega); simp
+    rw [(tangent I M).evalSection_extDeriv_zero, anchorDeriv_apply, tangent_anchor_apply]
+    conv_rhs => rw [RoughForm.eq_ofFunction (I := I) (fun y ↦ φ y), mextDeriv_ofFunction]
+    rw [ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+      show ⇑((tangent I M).cochainZeroEquiv φ) = fun y ↦ φ y 0 from
+        funext ((tangent I M).cochainZeroEquiv_apply φ)]
   | succ m =>
+    have hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin (m + 1)]→L[ℝ] ℝ))
+        (fun y ↦ TotalSpace.mk' (E [⋀^Fin (m + 1)]→L[ℝ] ℝ) y (φ y)) x :=
+      (φ.contMDiff x).mdifferentiableAt (by simp)
+    have hs_diff : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (s i y : TangentBundle I M)) x :=
+      fun i ↦ ((s i).contMDiff x).mdifferentiableAt (by simp)
     rw [tangent_extDeriv_succ_evalSection_apply, mextDeriv_apply_vectorField hφ hs_diff]
 
 /-- `SmoothForm.contMDiffSectionEquiv.symm` intertwines the Chevalley–Eilenberg differential of
@@ -717,5 +896,251 @@ theorem tangentCochainComplexIso_inv_f (k : ℕ) :
 end T2
 
 end Tangent
+
+/-! ### Comparison with the Lie algebra Chevalley–Eilenberg complex on `trivialLieAlgebra` -/
+
+section TrivialLieAlgebra
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M]
+  {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤]
+  [ContinuousSMul ℝ 𝔤] [T2Space 𝔤] [FiniteDimensional ℝ 𝔤]
+
+variable (I M 𝔤) in
+/-- Evaluating a `k`-cochain of `trivialLieAlgebra I M 𝔤` at a point `x : M` produces an ordinary
+Lie algebra Chevalley–Eilenberg `k`-cochain of `𝔤` with trivial coefficients `ℝ`. -/
+def trivialLieAlgebraEvalCochain (x : M) (k : ℕ) :
+    (trivialLieAlgebra I M 𝔤).Cochain k →ₗ[ℝ]
+      (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) where
+  toFun φ := (TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight.symm (φ x).toAlternatingMap
+  map_add' φ₁ φ₂ := by
+    ext v
+    simp
+  map_smul' c φ := by
+    ext v
+    simp
+
+@[simp] theorem trivialLieAlgebraEvalCochain_apply (x : M) (k : ℕ)
+    (φ : (trivialLieAlgebra I M 𝔤).Cochain k) (v : Fin k → 𝔤) :
+    TrivialLieModule.equiv ℝ 𝔤 ℝ (trivialLieAlgebraEvalCochain I M 𝔤 x k φ v) = φ x v := by
+  simp [trivialLieAlgebraEvalCochain, LinearEquiv.alternatingMapCongrRight_symm_apply_apply]
+
+variable (I M 𝔤) in
+/-- Extending an alternating `k`-form on `𝔤` as a constant section yields a smooth `k`-cochain
+of `trivialLieAlgebra I M 𝔤`. -/
+def trivialLieAlgebraConstCochain (k : ℕ) :
+    (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) →ₗ[ℝ]
+      (trivialLieAlgebra I M 𝔤).Cochain k where
+  toFun η :=
+    { toFun := fun _ ↦ AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight η)
+      contMDiff_toFun := fun x₀ ↦ by
+        rw [contMDiffAt_section_iff]
+        let c : 𝔤 [⋀^Fin k]→L[ℝ] ℝ := AlternatingMap.toContinuousAlternatingMap
+          ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight η)
+        change ContMDiffAt I 𝓘(ℝ, (TrivialModel ℝ 𝔤) [⋀^Fin k]→L[ℝ] ℝ) ∞
+          (fun y : M ↦ (trivializationAt ((TrivialModel ℝ 𝔤) [⋀^Fin k]→L[ℝ] ℝ)
+            (fun z ↦ Bundle.Trivial M 𝔤 z [⋀^Fin k]→L[ℝ] ℝ) x₀ ⟨y, c⟩).2) x₀
+        have hconst : ∀ y : M,
+            (trivializationAt ((TrivialModel ℝ 𝔤) [⋀^Fin k]→L[ℝ] ℝ)
+              (fun z ↦ Bundle.Trivial M 𝔤 z [⋀^Fin k]→L[ℝ] ℝ) x₀ ⟨y, c⟩).2 =
+              c.compContinuousLinearMap
+                (TrivialModel.equiv ℝ 𝔤).symm.toContinuousLinearMap := by
+          intro y
+          ext v
+          rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+            ContinuousAlternatingMap.compContinuousLinearMap_apply,
+            ContinuousAlternatingMap.compContinuousLinearMap_apply]
+          refine congrArg c (funext fun i ↦ ?_)
+          dsimp only [Function.comp_apply]
+          simp only [TrivialModel.trivializationAt_eq]
+          rw [(TrivialModel.trivialization ℝ M 𝔤).symmL_apply (by simp),
+            TrivialModel.trivialization_symm_apply]
+          rfl
+        simp_rw [hconst]
+        exact contMDiffAt_const }
+  map_add' η₁ η₂ := by
+    ext x v
+    change (AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight (η₁ + η₂))) v =
+      (AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight η₁)) v +
+      (AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight η₂)) v
+    simp [AlternatingMap.coe_toContinuousAlternatingMap]
+  map_smul' c η := by
+    ext x v
+    change (AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight (c • η))) v =
+      c • (AlternatingMap.toContinuousAlternatingMap
+        ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight η)) v
+    simp [AlternatingMap.coe_toContinuousAlternatingMap]
+
+@[simp] theorem trivialLieAlgebraConstCochain_apply (k : ℕ)
+    (η : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) (x : M) (v : Fin k → 𝔤) :
+    trivialLieAlgebraConstCochain I M 𝔤 k η x v = TrivialLieModule.equiv ℝ 𝔤 ℝ (η v) := by
+  change (AlternatingMap.toContinuousAlternatingMap
+    ((TrivialLieModule.equiv ℝ 𝔤 ℝ).alternatingMapCongrRight η)) v = _
+  rw [AlternatingMap.coe_toContinuousAlternatingMap,
+    LinearEquiv.alternatingMapCongrRight_apply_apply]
+
+@[simp] theorem trivialLieAlgebraEvalCochain_constCochain (x : M) (k : ℕ)
+    (η : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) :
+    trivialLieAlgebraEvalCochain I M 𝔤 x k (trivialLieAlgebraConstCochain I M 𝔤 k η) = η := by
+  ext v
+  apply (TrivialLieModule.equiv ℝ 𝔤 ℝ).injective
+  simp
+
+/-- Evaluating at `x : M` intertwines the Chevalley–Eilenberg differential of
+`trivialLieAlgebra I M 𝔤` with the ordinary Lie algebra Chevalley–Eilenberg differential
+`TauCeti.LieModule.Cohomology.d` on `𝔤`. -/
+theorem trivialLieAlgebraEvalCochain_extDeriv [FiniteDimensional ℝ E] [T2Space M] (x : M) (k : ℕ)
+    (φ : (trivialLieAlgebra I M 𝔤).Cochain k) :
+    trivialLieAlgebraEvalCochain I M 𝔤 x (k + 1) ((trivialLieAlgebra I M 𝔤).extDeriv k φ) =
+      TauCeti.LieModule.Cohomology.d ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k
+        (trivialLieAlgebraEvalCochain I M 𝔤 x k φ) := by
+  ext v
+  apply (TrivialLieModule.equiv ℝ 𝔤 ℝ).injective
+  rw [trivialLieAlgebraEvalCochain_apply]
+  let s : Fin (k + 1) →
+      Cₛ^∞⟮I; TrivialModel ℝ 𝔤, Bundle.Trivial M 𝔤⟯ :=
+    fun i ↦ ContMDiffSection.modelConst I M ∞ (v i)
+  have hsx : (s · x) = v := funext fun i ↦ ContMDiffSection.modelConst_apply (v i) x
+  conv_lhs => rw [← hsx, ← ContMDiffSection.evalSection_apply]
+  cases k with
+  | zero =>
+    rw [(trivialLieAlgebra I M 𝔤).evalSection_extDeriv_zero, trivialLieAlgebra_anchorDeriv,
+      LieModule.Cohomology.d_zero_apply, trivial_lie_zero, map_zero]
+    rfl
+  | succ m =>
+    rw [(trivialLieAlgebra I M 𝔤).evalSection_extDeriv_succ,
+      LieModule.Cohomology.d_succ_apply, map_add, map_sum,
+      ← ContMDiffMap.evalAlgHom_apply ℝ x, map_add, map_sum]
+    have hzero₁ : ∑ i : Fin (m + 2),
+        (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ)
+          ((-1 : ℤ) ^ (i : ℕ) • (trivialLieAlgebra I M 𝔤).anchorDeriv (s i)
+            (φ.evalSection (i.removeNth s))) = 0 := by
+      refine Finset.sum_eq_zero fun i _ ↦ ?_
+      rw [trivialLieAlgebra_anchorDeriv, smul_zero, map_zero]
+    have hzero₂ : ∑ i : Fin (m + 2), TrivialLieModule.equiv ℝ 𝔤 ℝ
+        ((-1 : ℤ) ^ (i : ℕ) •
+          ⁅v i, trivialLieAlgebraEvalCochain I M 𝔤 x (m + 1) φ (i.removeNth v)⁆) = 0 := by
+      refine Finset.sum_eq_zero fun i _ ↦ ?_
+      rw [trivial_lie_zero, smul_zero, map_zero]
+    rw [hzero₁, hzero₂, zero_add, zero_add, map_sum, map_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [map_sum, map_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [map_zsmul, map_zsmul]
+    simp only [ContMDiffMap.evalAlgHom_apply, ContMDiffSection.evalSection_apply,
+      trivialLieAlgebraEvalCochain_apply]
+    refine congrArg ((-1 : ℤ) ^ (i + j + 1 : ℕ) • ·) (congrArg (φ x) (funext fun r ↦ ?_))
+    cases r using Fin.cases with
+    | zero =>
+      simp only [Matrix.cons_val_zero, s, trivialLieAlgebra_bracket_modelConst,
+        ContMDiffSection.modelConst_apply]
+    | succ r =>
+      simp only [Matrix.cons_val_succ, Fin.removeNth, s, ContMDiffSection.modelConst_apply]
+
+section Subsingleton
+
+variable [Subsingleton M]
+
+variable (I M 𝔤) in
+/-- Over a one-point manifold `M`, `k`-cochains of `trivialLieAlgebra I M 𝔤` are `ℝ`-linearly
+equivalent to ordinary Lie algebra Chevalley–Eilenberg `k`-cochains of `𝔤`. -/
+def trivialLieAlgebraEvalCochainEquiv (x : M) (k : ℕ) :
+    (trivialLieAlgebra I M 𝔤).Cochain k ≃ₗ[ℝ]
+      (𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) where
+  toLinearMap := trivialLieAlgebraEvalCochain I M 𝔤 x k
+  invFun := trivialLieAlgebraConstCochain I M 𝔤 k
+  left_inv φ := by
+    ext y v
+    obtain rfl : y = x := Subsingleton.elim y x
+    simp
+  right_inv η := trivialLieAlgebraEvalCochain_constCochain x k η
+
+@[simp] theorem trivialLieAlgebraEvalCochainEquiv_apply (x : M) (k : ℕ)
+    (φ : (trivialLieAlgebra I M 𝔤).Cochain k) :
+    trivialLieAlgebraEvalCochainEquiv I M 𝔤 x k φ =
+      trivialLieAlgebraEvalCochain I M 𝔤 x k φ := (rfl)
+
+@[simp] theorem trivialLieAlgebraEvalCochainEquiv_symm_apply (x : M) (k : ℕ)
+    (η : 𝔤 [⋀^Fin k]→ₗ[ℝ] TrivialLieModule ℝ 𝔤 ℝ) :
+    (trivialLieAlgebraEvalCochainEquiv I M 𝔤 x k).symm η =
+      trivialLieAlgebraConstCochain I M 𝔤 k η := (rfl)
+
+end Subsingleton
+
+end TrivialLieAlgebra
+
+section TrivialLieAlgebraIso
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [Subsingleton M]
+  {𝔤 : Type u} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [TopologicalSpace 𝔤] [IsTopologicalAddGroup 𝔤]
+  [ContinuousSMul ℝ 𝔤] [T2Space 𝔤] [FiniteDimensional ℝ 𝔤]
+
+variable (I M 𝔤) in
+/-- Over a one-point manifold `M` in the same universe as `𝔤`, `trivialLieAlgebraEvalCochainEquiv`
+assembles into an isomorphism of cochain complexes identifying
+`(trivialLieAlgebra I M 𝔤).cochainComplex` with
+`TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ)`. -/
+def trivialLieAlgebraCochainComplexIso (x : M) :
+    (trivialLieAlgebra I M 𝔤).cochainComplex ≅
+      TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun k ↦ (trivialLieAlgebra I M 𝔤).cochainComplexXIso k ≪≫
+      (trivialLieAlgebraEvalCochainEquiv I M 𝔤 x k).toModuleIso ≪≫
+      eqToIso (TauCeti.LieModule.Cohomology.cochainComplex_X
+        ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k).symm) <| by
+    rintro k _ rfl
+    have hcomm :
+        (trivialLieAlgebraEvalCochainEquiv I M 𝔤 x k).toModuleIso.hom ≫
+            ModuleCat.ofHom (TauCeti.LieModule.Cohomology.d ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k) =
+          ModuleCat.ofHom ((trivialLieAlgebra I M 𝔤).extDeriv k) ≫
+            (trivialLieAlgebraEvalCochainEquiv I M 𝔤 x (k + 1)).toModuleIso.hom := by
+      ext φ : 2
+      exact (trivialLieAlgebraEvalCochain_extDeriv x k φ).symm
+    have hd :
+        (eqToIso (TauCeti.LieModule.Cohomology.cochainComplex_X
+            ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k).symm).hom ≫
+          (TauCeti.LieModule.Cohomology.cochainComplex ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ)).d k
+            (k + 1) =
+          ModuleCat.ofHom (TauCeti.LieModule.Cohomology.d ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k) ≫
+            (eqToIso (TauCeti.LieModule.Cohomology.cochainComplex_X
+              ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) (k + 1)).symm).hom := by
+      rw [TauCeti.LieModule.Cohomology.cochainComplex_d_succ]
+      change eqToHom (rfl : ModuleCat.of ℝ _ = ModuleCat.of ℝ _) ≫ _ =
+        _ ≫ eqToHom (rfl : ModuleCat.of ℝ _ = ModuleCat.of ℝ _)
+      simp
+    rw [(Iso.eq_comp_inv _).mpr ((trivialLieAlgebra I M 𝔤).cochainComplex_d k)]
+    simp only [Iso.trans_hom, Category.assoc, Iso.inv_hom_id_assoc, hd, reassoc_of% hcomm]
+
+@[reassoc]
+theorem trivialLieAlgebraCochainComplexIso_hom_f (x : M) (k : ℕ) :
+    (trivialLieAlgebraCochainComplexIso I M 𝔤 x).hom.f k ≫
+        eqToHom (TauCeti.LieModule.Cohomology.cochainComplex_X ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k) =
+      ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom ≫
+        ModuleCat.ofHom (trivialLieAlgebraEvalCochain I M 𝔤 x k) := by
+  simp only [trivialLieAlgebraCochainComplexIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
+    Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id,
+    LinearEquiv.toModuleIso_hom]
+  rfl
+
+@[reassoc]
+theorem trivialLieAlgebraCochainComplexIso_inv_f (x : M) (k : ℕ) :
+    (trivialLieAlgebraCochainComplexIso I M 𝔤 x).inv.f k ≫
+        ((trivialLieAlgebra I M 𝔤).cochainComplexXIso k).hom =
+      eqToHom (TauCeti.LieModule.Cohomology.cochainComplex_X ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) k) ≫
+        ModuleCat.ofHom (trivialLieAlgebraConstCochain I M 𝔤 k) := by
+  simp only [trivialLieAlgebraCochainComplexIso, HomologicalComplex.Hom.isoOfComponents_inv_f,
+    Iso.trans_inv, eqToIso.inv, Category.assoc, Iso.inv_hom_id, Category.comp_id,
+    LinearEquiv.toModuleIso_inv]
+  rfl
+
+end TrivialLieAlgebraIso
 
 end TauCeti.LieAlgebroid

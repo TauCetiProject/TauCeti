@@ -197,6 +197,21 @@ theorem anchorDeriv_const_smul_right (a : Cₛ^∞⟮I; F, V⟯) (c : ℝ) (f : 
   simp only [anchorDeriv_apply, ContMDiffMap.coe_smul, Pi.smul_apply,
     mvfderiv_const_smul_field, _root_.smul_apply]
 
+/-- The derivative along the anchor respects integer scalar multiplication in the function. -/
+theorem anchorDeriv_zsmul_right (a : Cₛ^∞⟮I; F, V⟯) (z : ℤ) (f : C^∞⟮I, M; ℝ⟯) :
+    A.anchorDeriv a (z • f) = z • A.anchorDeriv a f := by
+  rw [← Int.cast_smul_eq_zsmul ℝ z f, ← Int.cast_smul_eq_zsmul ℝ z (A.anchorDeriv a f),
+    A.anchorDeriv_const_smul_right]
+
+/-- The derivative along the anchor distributes over finite sums of functions. -/
+@[simp]
+theorem anchorDeriv_sum_right {ι : Type*} (a : Cₛ^∞⟮I; F, V⟯) (s : Finset ι)
+    (f : ι → C^∞⟮I, M; ℝ⟯) :
+    A.anchorDeriv a (∑ i ∈ s, f i) = ∑ i ∈ s, A.anchorDeriv a (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih => simp [ih]
+
 /-- The product rule `ρ(a) (f * g) = f * ρ(a) g + ρ(a) f * g`. -/
 @[simp]
 theorem anchorDeriv_mul_right (a : Cₛ^∞⟮I; F, V⟯) (f g : C^∞⟮I, M; ℝ⟯) :

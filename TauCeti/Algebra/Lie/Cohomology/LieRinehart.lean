@@ -13,15 +13,18 @@ import TauCeti.Algebra.LieRinehartAlgebra.Basic
 /-!
 # Lie–Rinehart multilinearity of the Chevalley–Eilenberg operators
 
-Let `(A, L)` be a Lie–Rinehart algebra over a commutative ring `R`. Forgetting the `A`-module
-structure on `L` makes `A` a Lie module over `L`, so the Lie derivative `⁅x, ·⁆` and
+Let `(A, L)` be a Lie–Rinehart algebra over a commutative ring `R`. Using the underlying
+`R`-Lie algebra `L` and its given action `[LieRingModule L A]` on `A` (which makes `A` an
+`R`-Lie module over `L`), the Lie derivative `⁅x, ·⁆` and
 `TauCeti.LieModule.Cohomology.d R L A n` act on `L [⋀^Fin n]→ₗ[R] A`.
 
 The Leibniz rules of `LieRinehartRing` cancel the non-tensorial derivative terms whenever the input
 cochain `ω : L [⋀^Fin n]→ₗ[A] A` is `A`-multilinear, yielding `R`-linear operators `lieDeriv`
 and `extDeriv` that preserve `A`-multilinearity in the cochain slots. Because scalar restriction is
-injective and intertwines `curryLeft`, `lieDeriv`, and `extDeriv`, Cartan's homotopy formula, the
-commutator identities, commutation with Lie derivatives, and `d ∘ d = 0` transfer directly from
+injective and intertwines `curryLeft`, `lieDeriv`, and `extDeriv`, the commutator identities
+`curryLeft_lieDeriv` and `lieDeriv_lieDeriv_sub` transfer directly from the `L`-action on
+alternating maps (`AlternatingMap.curryLeft_lie` and `LieRingModule.leibniz_lie`), while
+Cartan's homotopy formula, commutation with Lie derivatives, and `d ∘ d = 0` transfer directly from
 `TauCeti.LieModule.Cohomology`.
 
 ## Main definitions
@@ -131,6 +134,8 @@ variable {R A L} {ι : Type*} [Fintype ι] [DecidableEq ι]
     (lieDeriv R A L x ω).restrictScalars R = ⁅x, ω.restrictScalars R⁆ :=
   restrictScalars_mkOfUpdateSMul _ _
 
+/-- Evaluation formula for the Lie derivative on `A`-multilinear cochains:
+`(L_x ω)(v) = ⁅x, ω v⁆ - ∑ i, ω (Function.update v i ⁅x, v i⁆)`. -/
 theorem lieDeriv_apply (x : L) (ω : L [⋀^ι]→ₗ[A] A) (v : ι → L) :
     lieDeriv R A L x ω v = ⁅x, ω v⁆ - ∑ i, ω (Function.update v i ⁅x, v i⁆) := by
   rw [← restrictScalars_apply R, restrictScalars_lieDeriv, AlternatingMap.lie_apply]
