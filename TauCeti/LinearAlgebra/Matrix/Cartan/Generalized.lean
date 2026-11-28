@@ -15,13 +15,16 @@ integral square matrix `M` on an index type `I` has diagonal entries `2`, nonpos
 entries, and vanishing entries in symmetric positions: `M i j = 0 ↔ M j i = 0`. No finiteness
 assumption on `I` and no symmetrizability assumption on `M` is imposed.
 
-These three axioms are the exact matrix hypotheses needed for the triangular decomposition of the
-Serre-presented Kac–Moody algebra of a realization (`TauCeti.KacMoody.PresentedLieAlgebra`) and for
-the injectivity of its Cartan map, whereas constructing an invariant bilinear form additionally uses
-a symmetrizer (`TauCeti.SymmetrizableDatum`).
+Unlike the unconditional triangular decomposition of `TauCeti.KacMoody.PresentedLieAlgebra` into
+its internal subalgebras, these three axioms are sufficient for Cartan injectivity, the one-sided
+Serre quotient identifications, and the injectivity of the Serre-subalgebra embedding, whereas
+constructing an invariant bilinear form additionally uses a symmetrizer
+(`TauCeti.SymmetrizableDatum`).
 
 ## Main results
 
+* `Matrix.isGeneralizedCartan_of_isEmpty`: every matrix on an empty index type is generalized
+  Cartan.
 * `Matrix.isGeneralizedCartan_transpose`: transposition preserves generalized Cartan matrices.
 * `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.isGeneralizedCartan_submatrix_equiv`,
   `Matrix.IsGeneralizedCartan.fromBlocks`: closure under principal submatrices along an embedding,
@@ -46,15 +49,16 @@ instance instDecidablePredIsGeneralizedCartan {ι : Type*} [Fintype ι] [Decidab
       ((∀ i, M i i = 2) ∧ (∀ i j, i ≠ j → M i j ≤ 0) ∧ ∀ i j, M i j = 0 ↔ M j i = 0)
       ⟨fun ⟨a, b, c⟩ => ⟨a, b, c⟩, fun h => ⟨h.diag, h.offDiag_nonpos, h.zero_comm⟩⟩
 
-namespace IsGeneralizedCartan
-
-variable {I J : Type*} {M : Matrix I I ℤ} {N : Matrix J J ℤ}
-
 /-- On an empty index type, every matrix is vacuously a generalized Cartan matrix. -/
-theorem of_isEmpty [IsEmpty I] (M : Matrix I I ℤ) : M.IsGeneralizedCartan where
+theorem isGeneralizedCartan_of_isEmpty {I : Type*} [IsEmpty I] (M : Matrix I I ℤ) :
+    M.IsGeneralizedCartan where
   diag := isEmptyElim
   offDiag_nonpos := isEmptyElim
   zero_comm := isEmptyElim
+
+namespace IsGeneralizedCartan
+
+variable {I J : Type*} {M : Matrix I I ℤ} {N : Matrix J J ℤ}
 
 /-- The transpose of a generalized Cartan matrix is a generalized Cartan matrix. -/
 protected theorem transpose (hM : M.IsGeneralizedCartan) : Mᵀ.IsGeneralizedCartan where

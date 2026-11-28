@@ -22,17 +22,20 @@ import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 
 Let `A` be a square matrix of integers and `R` a realization of `A` over a field `K`, with
 presented Lie algebra `TauCeti.KacMoody.PresentedLieAlgebra R`. Over an arbitrary field `K` and for
-an arbitrary integer matrix `A`, this file defines the positive, negative, and Cartan Lie
-subalgebras `n⁺`, `n⁻`, and `𝔥`, shows that `TauCeti.KacMoody.chevalleyInvolution` exchanges
-`n⁺` and `n⁻` and preserves `𝔥`, proves local nilpotence of `ad eᵢ` and `ad fᵢ`, and establishes
-the direct-sum triangular decomposition `𝔤 = n⁻ ⊕ 𝔥 ⊕ n⁺` together with the intersection formula
-`⁅𝔤, 𝔤⁆ ∩ 𝔥 = cartanElement '' R.corootSpan` via the principal `ℤ`-grading into
-`LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)`.
+an arbitrary integer matrix `A`, this file defines the Cartan Lie subalgebra
+`TauCeti.KacMoody.cartanSubalgebra` (`𝔥`), using the positive and negative Lie subalgebras
+`TauCeti.KacMoody.positiveSubalgebra` (`n⁺`) and `TauCeti.KacMoody.negativeSubalgebra` (`n⁻`) from
+`TauCeti/Algebra/Lie/KacMoody/Basic.lean`, shows that `TauCeti.KacMoody.chevalleyInvolution`
+exchanges `n⁺` and `n⁻` and preserves `𝔥`, proves local nilpotence of `ad eᵢ` and `ad fᵢ`, and
+establishes the direct-sum triangular decomposition `𝔤 = n⁻ ⊕ 𝔥 ⊕ n⁺` together with the
+intersection formula `⁅𝔤, 𝔤⁆ ∩ 𝔥 = cartanElement '' R.corootSpan` via the principal `ℤ`-grading
+into `LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)`.
 
 When `A` is a generalized Cartan matrix (`Matrix.IsGeneralizedCartan A`), combining
-`TauCeti.KacMoody.quotientTriangular_eq_zero` from `TauCeti/Algebra/Lie/KacMoody/Auxiliary.lean`
-additionally identifies both `n⁺` and `n⁻` with `FreeLieAlgebra K I ⧸ serreIdeal K A`, proves
-linear independence of the raising and lowering generators `eᵢ` and `fᵢ`, and shows that
+`TauCeti.KacMoody.eq_zero_of_quotientTriangular_sum_eq_zero` from
+`TauCeti/Algebra/Lie/KacMoody/Auxiliary.lean` additionally identifies both `n⁺` and `n⁻` with
+`FreeLieAlgebra K I ⧸ serreIdeal K A`, proves linear independence of the raising and lowering
+generators `eᵢ` and `fᵢ`, and shows that
 `TauCeti.KacMoody.serreHom R : Matrix.ToLieAlgebra K A →ₗ⁅K⁆ PresentedLieAlgebra R` is injective.
 
 The Chevalley involution compatibility with `serreHom` closely follows `serreChevalleyInvolution`
@@ -620,13 +623,13 @@ section SerreQuotient
 theorem positiveQuotientHom_injective (hA : A.IsGeneralizedCartan) :
     Function.Injective (positiveQuotientHom R) :=
   (injective_iff_map_eq_zero _).mpr fun _ hb =>
-    (quotientTriangular_eq_zero R hA (a := 0) (x := 0) (by simpa using hb)).2.2
+    (eq_zero_of_quotientTriangular_sum_eq_zero R hA (a := 0) (x := 0) (by simpa using hb)).2.2
 
 /-- For a generalized Cartan matrix `A`, `TauCeti.KacMoody.negativeQuotientHom R` is injective. -/
 theorem negativeQuotientHom_injective (hA : A.IsGeneralizedCartan) :
     Function.Injective (negativeQuotientHom R) :=
   (injective_iff_map_eq_zero _).mpr fun _ ha =>
-    (quotientTriangular_eq_zero R hA (x := 0) (b := 0) (by simpa using ha)).1
+    (eq_zero_of_quotientTriangular_sum_eq_zero R hA (x := 0) (b := 0) (by simpa using ha)).1
 
 /-- The Lie algebra isomorphism between `FreeLieAlgebra K I ⧸ serreIdeal K A` and the raising
 subalgebra `n⁺` of `PresentedLieAlgebra R`. -/
@@ -668,10 +671,12 @@ theorem linearIndependent_negativeGenerator (hA : A.IsGeneralizedCartan) :
     (LinearMap.ker_eq_bot.mpr (negativeQuotientHom_injective R hA))
   simpa [Function.comp_def] using h
 
+/-- For a generalized Cartan matrix `A`, the raising generator map `i ↦ eᵢ` is injective. -/
 theorem positiveGenerator_injective (hA : A.IsGeneralizedCartan) :
     Function.Injective (positiveGenerator R) :=
   (linearIndependent_positiveGenerator R hA).injective
 
+/-- For a generalized Cartan matrix `A`, the lowering generator map `i ↦ fᵢ` is injective. -/
 theorem negativeGenerator_injective (hA : A.IsGeneralizedCartan) :
     Function.Injective (negativeGenerator R) :=
   (linearIndependent_negativeGenerator R hA).injective
@@ -733,7 +738,7 @@ theorem serreHom_injective (hA : A.IsGeneralizedCartan) :
   refine (injective_iff_map_eq_zero _).mpr fun z hz => ?_
   obtain ⟨a, b, c, rfl, htri⟩ := exists_serreHom_eq_triangular R z
   rw [htri] at hz
-  obtain ⟨rfl, hc, rfl⟩ := quotientTriangular_eq_zero R hA hz
+  obtain ⟨rfl, hc, rfl⟩ := eq_zero_of_quotientTriangular_sum_eq_zero R hA hz
   have hc0 : c = 0 := R.coroot_linearIndependent.finsuppLinearCombination_injective
     (hc.trans (map_zero _).symm)
   simp [hc0]

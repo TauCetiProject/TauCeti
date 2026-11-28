@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.Presentation.Serre.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
+import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Basic
-
-import TauCeti.Data.Set.Image
+import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!
 # The Kac–Moody algebra of a realization, by generators and relations
@@ -75,13 +75,17 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 * `TauCeti.KacMoody.range_serreHom_sup_range_cartanElement`: `𝔤 = 𝔤' + H`, where `𝔤'` is the
   image of `Matrix.ToLieAlgebra K A`.
 * `TauCeti.KacMoody.range_serreHom_eq_derivedSeries`: that image is the derived algebra `⁅𝔤, 𝔤⁆`.
+* `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`: for a generalized Cartan matrix, the lowering
+  generators kill the raising Serre elements in any Lie algebra where the Chevalley
+  generator-bracket identities hold (Kac, §3.3).
 
 ## References
 
 * V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, §1.2 (the auxiliary algebra on
-  a realization), §1.3 (the algebra `𝔤(A)`, its derived algebra and `𝔤(A) = 𝔤'(A) + 𝔥`) and
-  Theorem 9.11 (the presentation of `𝔤(A)` by Serre's relations in the symmetrizable case, stated
-  over the complex numbers and used here only in characteristic zero).
+  a realization), §1.3 (the algebra `𝔤(A)`, its derived algebra and `𝔤(A) = 𝔤'(A) + 𝔥`), §3.3
+  (Serre elements commute with opposite generators), and Theorem 9.11 (the presentation of `𝔤(A)`
+  by Serre's relations in the symmetrizable case, stated over the complex numbers and used here
+  only in characteristic zero).
 -/
 
 public section
@@ -102,22 +106,22 @@ inductive Generator (I H : Type*)
   /-- The lowering generator `fᵢ`. -/
   | negative : I → Generator I H
 
-/-- The range of a map out of `TauCeti.KacMoody.Generator I H` splits into the union of its
-values on the Cartan, raising, and lowering constructors. -/
-theorem range_generator {I H α : Type*} (f : Generator I H → α)
-    {c : H → α} {p n : I → α}
-    (hc : ∀ x, f (.cartan x) = c x)
-    (hp : ∀ i, f (.positive i) = p i)
-    (hn : ∀ i, f (.negative i) = n i) :
-    Set.range f = Set.range c ∪ Set.range p ∪ Set.range n :=
-  TauCeti.range_eq_union_three f c p n
-    (fun
-      | .cartan x => Or.inl ⟨x, (hc x).symm⟩
-      | .positive i => Or.inr (Or.inl ⟨i, (hp i).symm⟩)
-      | .negative i => Or.inr (Or.inr ⟨i, (hn i).symm⟩))
-    (fun x => ⟨.cartan x, hc x⟩)
-    (fun i => ⟨.positive i, hp i⟩)
-    (fun i => ⟨.negative i, hn i⟩)
+/-- The range of a map out of `TauCeti.KacMoody.Generator I H` splits into the union of the ranges
+of its restrictions to the Cartan, raising, and lowering constructors. -/
+theorem range_generator {I H α : Type*} (f : Generator I H → α) :
+    Set.range f = Set.range (fun x => f (.cartan x)) ∪
+      Set.range (fun i => f (.positive i)) ∪ Set.range (fun i => f (.negative i)) := by
+  ext y
+  simp only [Set.mem_union, Set.mem_range]
+  constructor
+  · rintro ⟨x | i | i, rfl⟩
+    · exact Or.inl (Or.inl ⟨x, rfl⟩)
+    · exact Or.inl (Or.inr ⟨i, rfl⟩)
+    · exact Or.inr ⟨i, rfl⟩
+  · rintro ((⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨i, rfl⟩)
+    · exact ⟨.cartan x, rfl⟩
+    · exact ⟨.positive i, rfl⟩
+    · exact ⟨.negative i, rfl⟩
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
   (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
@@ -263,7 +267,7 @@ section QuotientIdeal
 variable {J : LieIdeal K (FreeLieAlgebra K (Generator I H))}
 
 /-- An auxiliary relator vanishes in any quotient by an ideal containing `auxIdeal R`. -/
-theorem quotientMk_eq_zero_of_isAuxRelator (hJ : auxIdeal R ≤ J)
+theorem mkQ_eq_zero_of_isAuxRelator (hJ : auxIdeal R ≤ J)
     {x : FreeLieAlgebra K (Generator I H)} (hx : IsAuxRelator R x) : J.mkQ x = 0 :=
   (LieIdeal.mkQ_eq_zero J).mpr (hJ (LieSubmodule.subset_lieSpan hx))
 
@@ -273,10 +277,10 @@ noncomputable def quotientCartanElement (hJ : auxIdeal R ≤ J) :
     H →ₗ[K] FreeLieAlgebra K (Generator I H) ⧸ J where
   toFun x := J.mkQ (FreeLieAlgebra.of K (Generator.cartan x))
   map_add' x y := by
-    have h := quotientMk_eq_zero_of_isAuxRelator R hJ (.cartan_add x y)
+    have h := mkQ_eq_zero_of_isAuxRelator R hJ (.cartan_add x y)
     rwa [map_sub, map_sub, sub_sub, sub_eq_zero] at h
   map_smul' c x := by
-    have h := quotientMk_eq_zero_of_isAuxRelator R hJ (.cartan_smul c x)
+    have h := mkQ_eq_zero_of_isAuxRelator R hJ (.cartan_smul c x)
     rwa [map_sub, map_smul, sub_eq_zero] at h
 
 /-- `TauCeti.KacMoody.quotientCartanElement` sends `x` to the quotient class of the Cartan
@@ -294,18 +298,18 @@ theorem satisfiesAuxRelations_quotient (hJ : auxIdeal R ≤ J) :
       (fun i => J.mkQ (FreeLieAlgebra.of K (Generator.negative i))) where
   lie_cartan_cartan x y := by
     simpa [quotientCartanElement] using
-      quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_cartan x y)
+      mkQ_eq_zero_of_isAuxRelator R hJ (.lie_cartan_cartan x y)
   lie_cartan_positive x j := by
     simpa [quotientCartanElement, sub_eq_zero] using
-      quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_positive x j)
+      mkQ_eq_zero_of_isAuxRelator R hJ (.lie_cartan_positive x j)
   lie_cartan_negative x j := by
     simpa [quotientCartanElement, add_eq_zero_iff_eq_neg] using
-      quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_cartan_negative x j)
+      mkQ_eq_zero_of_isAuxRelator R hJ (.lie_cartan_negative x j)
   lie_positive_negative_self i := by
     simpa [quotientCartanElement, sub_eq_zero] using
-      quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_positive_negative_self i)
+      mkQ_eq_zero_of_isAuxRelator R hJ (.lie_positive_negative_self i)
   lie_positive_negative_of_ne i j hij := by
-    simpa using quotientMk_eq_zero_of_isAuxRelator R hJ (.lie_positive_negative_of_ne i j hij)
+    simpa using mkQ_eq_zero_of_isAuxRelator R hJ (.lie_positive_negative_of_ne i j hij)
 
 /-- The Cartan elements commute in any quotient by an ideal containing `auxIdeal R`. -/
 theorem lie_quotientCartanElement_quotientCartanElement (hJ : auxIdeal R ≤ J) (x y : H) :
@@ -365,31 +369,7 @@ theorem lie_mk_negative_mk_positive_of_ne (hJ : auxIdeal R ≤ J) {i j : I} (hij
 
 section Universal
 
-variable {R} {L : Type*} [LieRing L] [LieAlgebra K L] {φ : H →ₗ[K] L} {E F : I → L}
-
-/-- The homomorphism out of a quotient of `FreeLieAlgebra K (Generator I H)` by `J`, determined
-by data whose lift kills `J`. -/
-noncomputable def quotientLift
-    (hker : J ≤ (FreeLieAlgebra.lift K (generatorMap φ E F)).ker) :
-    FreeLieAlgebra K (Generator I H) ⧸ J →ₗ⁅K⁆ L :=
-  J.liftQ (FreeLieAlgebra.lift K (generatorMap φ E F)) hker
-
-/-- Composing `TauCeti.KacMoody.quotientLift` with the quotient map recovers the lift on the free
-Lie algebra. -/
-@[simp]
-theorem quotientLift_comp_mkQ
-    (hker : J ≤ (FreeLieAlgebra.lift K (generatorMap φ E F)).ker) :
-    (quotientLift hker).comp J.mkQ = FreeLieAlgebra.lift K (generatorMap φ E F) :=
-  J.liftQ_mkQ _ hker
-
-/-- `TauCeti.KacMoody.quotientLift` evaluates on generator classes via
-`TauCeti.KacMoody.generatorMap`. -/
-@[simp]
-theorem quotientLift_mk_of
-    (hker : J ≤ (FreeLieAlgebra.lift K (generatorMap φ E F)).ker) (g : Generator I H) :
-    quotientLift hker (LieSubmodule.Quotient.mk (FreeLieAlgebra.of K g) :
-        FreeLieAlgebra K (Generator I H) ⧸ J) = generatorMap φ E F g :=
-  (LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)
+variable {R} {L : Type*} [LieRing L] [LieAlgebra K L]
 
 variable (R) in
 /-- Two homomorphisms out of `FreeLieAlgebra K (Generator I H) ⧸ J` agreeing on the generator
@@ -415,7 +395,9 @@ noncomputable def quotientChevalleyInvolution (hJ : auxIdeal R ≤ J)
       (-fun i => J.mkQ (FreeLieAlgebra.of K (Generator.negative i)))
       (-fun i => J.mkQ (FreeLieAlgebra.of K (Generator.positive i))))).ker) :
     (FreeLieAlgebra K (Generator I H) ⧸ J) ≃ₗ⁅K⁆ (FreeLieAlgebra K (Generator I H) ⧸ J) :=
-  let f := quotientLift hker
+  let f := J.liftQ (FreeLieAlgebra.lift K (generatorMap (-quotientCartanElement R hJ)
+    (-fun i => J.mkQ (FreeLieAlgebra.of K (Generator.negative i)))
+    (-fun i => J.mkQ (FreeLieAlgebra.of K (Generator.positive i))))) hker
   have hf : f.comp f = LieHom.id :=
     quotient_hom_ext R hJ
       (fun x => by simp [f])
@@ -522,6 +504,7 @@ theorem presentationMk_of_negative (i : I) :
 noncomputable def positiveSubalgebra : LieSubalgebra K (PresentedLieAlgebra R) :=
   LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (positiveGenerator R))
 
+/-- The defining `lieSpan` description of `TauCeti.KacMoody.positiveSubalgebra`. -/
 theorem positiveSubalgebra_def :
     positiveSubalgebra R =
       LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (positiveGenerator R)) :=
@@ -531,16 +514,19 @@ theorem positiveSubalgebra_def :
 noncomputable def negativeSubalgebra : LieSubalgebra K (PresentedLieAlgebra R) :=
   LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (negativeGenerator R))
 
+/-- The defining `lieSpan` description of `TauCeti.KacMoody.negativeSubalgebra`. -/
 theorem negativeSubalgebra_def :
     negativeSubalgebra R =
       LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (negativeGenerator R)) :=
   (rfl)
 
+/-- Each raising generator `eᵢ` belongs to `TauCeti.KacMoody.positiveSubalgebra`. -/
 @[simp]
 theorem positiveGenerator_mem_positiveSubalgebra (i : I) :
     positiveGenerator R i ∈ positiveSubalgebra R :=
   LieSubalgebra.subset_lieSpan (Set.mem_range_self i)
 
+/-- Each lowering generator `fᵢ` belongs to `TauCeti.KacMoody.negativeSubalgebra`. -/
 @[simp]
 theorem negativeGenerator_mem_negativeSubalgebra (i : I) :
     negativeGenerator R i ∈ negativeSubalgebra R :=
@@ -713,25 +699,26 @@ theorem presentationIdeal_le_ker (h : SatisfiesRelations R φ E F) :
 /-- The homomorphism out of the presented algebra determined by data satisfying its relations:
 the universal property of the presentation. -/
 noncomputable def lift (h : SatisfiesRelations R φ E F) : PresentedLieAlgebra R →ₗ⁅K⁆ L :=
-  quotientLift (presentationIdeal_le_ker h)
+  (presentationIdeal R).liftQ (FreeLieAlgebra.lift K (generatorMap φ E F))
+    (presentationIdeal_le_ker h)
 
 /-- The lift sends the Cartan elements along `φ`. -/
 @[simp]
 theorem lift_cartanElement (h : SatisfiesRelations R φ E F) (x : H) :
     lift h (cartanElement R x) = φ x :=
-  quotientLift_mk_of (presentationIdeal_le_ker h) (.cartan x)
+  (LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)
 
 /-- The lift sends `eᵢ` to `E i`. -/
 @[simp]
 theorem lift_positiveGenerator (h : SatisfiesRelations R φ E F) (i : I) :
     lift h (positiveGenerator R i) = E i :=
-  quotientLift_mk_of (presentationIdeal_le_ker h) (.positive i)
+  (LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)
 
 /-- The lift sends `fᵢ` to `F i`. -/
 @[simp]
 theorem lift_negativeGenerator (h : SatisfiesRelations R φ E F) (i : I) :
     lift h (negativeGenerator R i) = F i :=
-  quotientLift_mk_of (presentationIdeal_le_ker h) (.negative i)
+  (LieIdeal.liftQ_apply _ _ _ _).trans (FreeLieAlgebra.lift_of_apply _ _)
 
 /-- Two homomorphisms out of the presented algebra agreeing on the generators are equal. -/
 @[ext]
@@ -842,8 +829,11 @@ as a Lie algebra. -/
 theorem lieSpan_generators_eq_top :
     LieSubalgebra.lieSpan K (PresentedLieAlgebra R) (Set.range (cartanElement R) ∪
       Set.range (positiveGenerator R) ∪ Set.range (negativeGenerator R)) = ⊤ := by
-  rw [← range_generator (fun g => presentationMk R (FreeLieAlgebra.of K g))
-    (presentationMk_of_cartan R) (presentationMk_of_positive R) (presentationMk_of_negative R)]
+  have hrange : Set.range (fun g => presentationMk R (FreeLieAlgebra.of K g)) =
+      Set.range (cartanElement R) ∪ Set.range (positiveGenerator R) ∪
+        Set.range (negativeGenerator R) := by
+    rw [range_generator]; rfl
+  rw [← hrange]
   exact LieIdeal.lieSpan_range_mkQ_of_eq_top (presentationIdeal R)
 
 /-- A Cartan vector annihilated by every simple root is central in the presented algebra. -/
@@ -1086,6 +1076,55 @@ theorem range_serreHom_eq_derivedSeries :
     exact lie_mem_range_serreHom R (hsup ▸ Submodule.mem_top) (hsup ▸ Submodule.mem_top)
 
 end Serre
+
+section SerreCommutator
+
+variable {R} {L : Type*} [LieRing L] [LieAlgebra K L] {φ : H →ₗ[K] L} {E F : I → L}
+
+/-- For a generalized Cartan matrix, every `F k` commutes with each raising Serre element
+`(ad (E i)) ^ (-Aᵢⱼ) ⁅E i, E j⁆`, as soon as `φ`, `E` and `F` satisfy the Chevalley
+generator-bracket identities (Kac, §3.3). Neither Serre relation nor `[φ x, φ y] = 0` is used. -/
+theorem lie_ad_pow_lie_eq_zero (hA : A.IsGeneralizedCartan)
+    (hφE : ∀ x j, ⁅φ x, E j⁆ = R.root j x • E j)
+    (hφF : ∀ x j, ⁅φ x, F j⁆ = -(R.root j x • F j))
+    (hself : ∀ i, ⁅E i, F i⁆ = φ (R.coroot i))
+    (hne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0) (i j k : I) :
+    ⁅F k, (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆⁆ = 0 := by
+  obtain rfl | hij := eq_or_ne i j
+  · simp
+  have hFE (a b : I) (hab : a ≠ b) : ⁅F b, E a⁆ = 0 := by
+    rw [← lie_skew, hne a b hab, neg_zero]
+  have hroot (a b : I) : R.root b (R.coroot a) = (A a b : K) := by simp
+  rw [← ad_pow_succ_apply]
+  obtain rfl | hki := eq_or_ne k i
+  · by_cases h0 : φ (R.coroot k) = 0
+    · rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero
+          (by rw [← lie_skew, hself, h0, neg_zero]),
+        hFE j k hij.symm, map_zero]
+    have t : IsSl2Triple (φ (R.coroot k)) (E k) (F k) :=
+      { h_ne_zero := h0
+        lie_e_f := hself k
+        lie_h_e_nsmul := by rw [hφE, hroot, hA.diag]; simp [two_smul]
+        lie_h_f_nsmul := by rw [hφF, hroot, hA.diag]; simp [two_smul] }
+    have hstring := t.lie_f_pow_succ_toEnd_e (y := E j) (μ := (A k j : K))
+      (by rw [hφE, hroot]) (hFE j k hij.symm) (-A k j).toNat
+    rw [← ad_eq_toEnd] at hstring
+    rw [hstring]
+    have hn : (((-A k j).toNat : ℕ) : K) = -(A k j : K) := by
+      rw [← Int.cast_natCast, Int.toNat_of_nonneg (by linarith [hA.offDiag_nonpos k j hij]),
+        Int.cast_neg]
+    rw [hn, sub_neg_eq_add, neg_add_cancel, mul_zero, zero_smul]
+  rw [TauCeti.LieAlgebra.lie_ad_pow_of_lie_eq_zero (hFE i k hki.symm)]
+  obtain rfl | hkj := eq_or_ne k j
+  · rw [← lie_skew, hself, pow_succ, mul_apply_eq_comp, map_neg, ad_apply,
+      lie_skew, hφE, hroot]
+    rcases h_neg : (-A i k).toNat with _ | n
+    · have hik : A i k = 0 := le_antisymm (hA.offDiag_nonpos i k hij) (by omega)
+      simp [(hA.zero_comm i k).mp hik]
+    · rw [map_smul, pow_succ, mul_apply_eq_comp, ad_apply, lie_self, map_zero, smul_zero]
+  · rw [hFE j k hkj.symm, map_zero]
+
+end SerreCommutator
 
 end KacMoody
 

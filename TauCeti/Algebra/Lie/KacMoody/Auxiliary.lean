@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.KacMoody.Basic
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Lie.Hom
-import TauCeti.Algebra.Lie.KacMoody.CartanInjective
 import TauCeti.Algebra.Lie.KacMoody.WordRep
 import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
@@ -20,24 +19,26 @@ import TauCeti.Algebra.Lie.Weights.Eigenvector
 
 Let `R` be a realization of an integral matrix `A` over a field `K`. To establish the triangular
 directness of `TauCeti.KacMoody.PresentedLieAlgebra R` when `A` is a generalized Cartan matrix
-(`Matrix.IsGeneralizedCartan A`), we work with Kac's auxiliary presentation without Serre relations
-(`TauCeti.KacMoody.auxIdeal`), lift Kac's word representation on `K[FreeMonoid I]` from
-`TauCeti/Algebra/Lie/KacMoody/WordRep.lean` to prove triangular directness of the auxiliary
-algebra using `FreeAlgebra.equivMonoidAlgebraFreeMonoid` and the PBW embedding of
-`FreeLieAlgebra K I`, and verify `ad fₖ`-invariance of the Serre ideal in the auxiliary algebra
-via `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero` (`TauCeti/Algebra/Lie/KacMoody/CartanInjective.lean`).
+(`Matrix.IsGeneralizedCartan A`), we work with Kac's auxiliary Lie algebra
+`FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R` (without Serre relations), lift Kac's word
+representation on `K[FreeMonoid I]` from `TauCeti/Algebra/Lie/KacMoody/WordRep.lean` to prove
+triangular directness of the auxiliary algebra using `FreeAlgebra.equivMonoidAlgebraFreeMonoid`
+and the PBW embedding of `FreeLieAlgebra K I`, and verify `ad fₖ`-invariance of the Serre ideal
+in the auxiliary algebra via `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`
+(`TauCeti/Algebra/Lie/KacMoody/Basic.lean`).
 
-Passing to the quotient yields `TauCeti.KacMoody.quotientTriangular_eq_zero`, from which
-`TauCeti/Algebra/Lie/KacMoody/Triangular.lean` deduces the triangular equivalence, generator
-independence, and the embedding of `Matrix.ToLieAlgebra K A`.
+Passing to the quotient yields `TauCeti.KacMoody.eq_zero_of_quotientTriangular_sum_eq_zero`, from
+which `TauCeti/Algebra/Lie/KacMoody/Triangular.lean` deduces the one-sided Serre quotient
+identifications, generator independence, and the embedding of `Matrix.ToLieAlgebra K A`, and
+`TauCeti/Algebra/Lie/KacMoody/CartanInjective.lean` deduces Cartan injectivity.
 
 All results hold over an arbitrary field `K`, with no characteristic or finiteness assumption.
 
 ## Main results
 
-* `TauCeti.KacMoody.quotientTriangular_eq_zero`: for a generalized Cartan matrix `A`, a sum
-  `negativeQuotientHom R a + cartanElement R x + positiveQuotientHom R b` vanishes only when
-  `a = 0`, `x = 0`, and `b = 0`.
+* `TauCeti.KacMoody.eq_zero_of_quotientTriangular_sum_eq_zero`: for a generalized Cartan matrix
+  `A`, a sum `negativeQuotientHom R a + cartanElement R x + positiveQuotientHom R b` vanishes only
+  when `a = 0`, `x = 0`, and `b = 0`.
 
 ## References
 
@@ -80,8 +81,10 @@ private theorem satisfiesAuxRelations_aux :
 private theorem lieSpan_auxGenerators_eq_top :
     LieSubalgebra.lieSpan K (AuxLieAlgebra R)
       (Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R)) = ⊤ := by
-  rw [← range_generator (fun g => (auxIdeal R).mkQ (FreeLieAlgebra.of K g))
-    (fun x => (quotientCartanElement_apply R le_rfl x).symm) (fun _ => rfl) (fun _ => rfl)]
+  have hrange : Set.range (fun g => (auxIdeal R).mkQ (FreeLieAlgebra.of K g)) =
+      Set.range (auxCartan R) ∪ Set.range (auxPos R) ∪ Set.range (auxNeg R) := by
+    rw [range_generator, ← funext (quotientCartanElement_apply R le_rfl)]
+  rw [← hrange]
   exact LieIdeal.lieSpan_range_mkQ_of_eq_top (auxIdeal R)
 
 private noncomputable abbrev auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlgebra R :=
@@ -109,7 +112,10 @@ private theorem auxChevalley_auxNegHom (b : FreeLieAlgebra K I) :
       (auxPosHom R).comp (TauCeti.FreeLieAlgebra.freeNeg K I).toLieHom) b
 
 private noncomputable def auxToPresented : AuxLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R :=
-  quotientLift (auxIdeal_le_ker (satisfiesRelations_generators R).toSatisfiesAuxRelations)
+  (auxIdeal R).liftQ
+    (FreeLieAlgebra.lift K
+      (generatorMap (cartanElement R) (positiveGenerator R) (negativeGenerator R)))
+    (auxIdeal_le_ker (satisfiesRelations_generators R).toSatisfiesAuxRelations)
 
 /-! ### Kac's Verma-type representation on formal words -/
 
@@ -122,7 +128,10 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 open scoped Classical in
 private noncomputable def auxRep (lam : Module.Dual K H) :
     AuxLieAlgebra R →ₗ⁅K⁆ Module.End K K[FreeMonoid I] :=
-  quotientLift (auxIdeal_le_ker (satisfiesAuxRelations_wordRep R lam))
+  (auxIdeal R).liftQ
+    (FreeLieAlgebra.lift K
+      (generatorMap (cartanAction R lam) (raising R lam) (lowering (K := K))))
+    (auxIdeal_le_ker (satisfiesAuxRelations_wordRep R lam))
 
 open scoped Classical in
 private theorem auxRep_auxPosHom_one (lam : Module.Dual K H) (b : FreeLieAlgebra K I) :
@@ -141,7 +150,8 @@ private theorem auxRep_auxPosHom_one (lam : Module.Dual K H) (b : FreeLieAlgebra
     simp [mul_apply_eq_comp, hx, hy]
 
 open scoped Classical in
-private theorem auxRep_auxNegHom_apply_one (lam : Module.Dual K H) (a : FreeLieAlgebra K I) :
+private theorem auxRep_auxNegHom_apply_one_coeff_one_eq_zero (lam : Module.Dual K H)
+    (a : FreeLieAlgebra K I) :
     (auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I])).coeff 1 = 0 := by
   suffices ∀ v : K[FreeMonoid I], (auxRep R lam (auxNegHom R a) v).coeff 1 = 0 from this _
   have ha : a ∈ LieSubalgebra.lieSpan K _ (Set.range (FreeLieAlgebra.of K)) := by
@@ -151,7 +161,7 @@ private theorem auxRep_auxNegHom_apply_one (lam : Module.Dual K H) (a : FreeLieA
     rcases hx with ⟨i, rfl⟩
     intro v
     simp only [auxNegHom, FreeLieAlgebra.lift_of_apply, auxRep, LieIdeal.mkQ_apply,
-      quotientLift_mk_of, generatorMap_negative]
+      LieIdeal.liftQ_apply, generatorMap_negative]
     induction v using MonoidAlgebra.induction_on with
     | of w =>
       rw [MonoidAlgebra.of_apply, lowering_single]
@@ -169,7 +179,7 @@ private theorem auxRep_auxNegHom_apply_one (lam : Module.Dual K H) (a : FreeLieA
     simp [mul_apply_eq_comp, hx, hy]
 
 open scoped Classical in
-private theorem auxRep_auxNegHom_injective (lam : Module.Dual K H) :
+private theorem auxRep_auxNegHom_apply_one_injective (lam : Module.Dual K H) :
     Function.Injective fun a : FreeLieAlgebra K I =>
       auxRep R lam (auxNegHom R a) (1 : K[FreeMonoid I]) := by
   let emb : FreeLieAlgebra K I →ₗ⁅K⁆ K[FreeMonoid I] :=
@@ -195,7 +205,7 @@ private theorem auxRep_auxNegHom_injective (lam : Module.Dual K H) :
     funext hpt
   exact hfn ▸ hemb_inj
 
-private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
+private theorem eq_zero_of_auxTriangular_sum_eq_zero {a b : FreeLieAlgebra K I} {x : H}
     (h : auxNegHom R a + auxCartan R x + auxPosHom R b = 0) :
     a = 0 ∧ x = 0 ∧ b = 0 := by
   classical
@@ -204,7 +214,7 @@ private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
     have h0 := congrArg (fun z => (auxRep R lam z (1 : K[FreeMonoid I])).coeff 1) h
     simp only [map_add, LinearMap.add_apply, coeff_add, Finsupp.add_apply, map_zero,
       LinearMap.zero_apply, coeff_zero, Finsupp.coe_zero, Pi.zero_apply,
-      auxRep_auxNegHom_apply_one, auxRep_auxPosHom_one, add_zero, zero_add] at h0
+      auxRep_auxNegHom_apply_one_coeff_one_eq_zero, auxRep_auxPosHom_one, add_zero, zero_add] at h0
     have hcart : auxRep R lam (auxCartan R x) (1 : K[FreeMonoid I]) =
         lam x • (1 : K[FreeMonoid I]) := by
       simp [auxRep, MonoidAlgebra.one_def, cartanAction_single, rootSum_one]
@@ -212,7 +222,7 @@ private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
     simpa [MonoidAlgebra.one_def] using h0
   subst hx
   simp only [map_zero, add_zero] at h
-  have ha : a = 0 := auxRep_auxNegHom_injective R 0 <| by
+  have ha : a = 0 := auxRep_auxNegHom_apply_one_injective R 0 <| by
     simpa [map_add, auxRep_auxPosHom_one] using
       congrArg (fun z => auxRep R 0 z (1 : K[FreeMonoid I])) h
   subst ha
@@ -220,7 +230,7 @@ private theorem auxTriangular_eq_zero {a b : FreeLieAlgebra K I} {x : H}
   have hb : b = 0 := by
     apply (TauCeti.FreeLieAlgebra.freeNeg K I).injective
     rw [map_zero]
-    apply auxRep_auxNegHom_injective R 0
+    apply auxRep_auxNegHom_apply_one_injective R 0
     have hchev := congrArg (auxChevalley R) h
     rw [map_zero, auxChevalley_auxPosHom] at hchev
     simp [hchev]
@@ -302,7 +312,10 @@ private theorem lie_auxNeg_auxSerrePosSubmodule (hA : A.IsGeneralizedCartan) (k 
   simp only [LieHom.coe_toLinearMap]
   induction hb using serreIdeal_induction with
   | relator i j =>
-    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA (satisfiesAuxRelations_aux R) i j k]
+    have haux := satisfiesAuxRelations_aux R
+    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA haux.lie_cartan_positive
+      haux.lie_cartan_negative haux.lie_positive_negative_self
+      (fun _ _ h => haux.lie_positive_negative_of_ne _ _ h) i j k]
     exact zero_mem _
   | zero => simp
   | add _ _ _ _ hu hv => simpa [map_add, lie_add] using add_mem hu hv
@@ -405,7 +418,7 @@ private theorem ker_auxToPresented_eq (hA : A.IsGeneralizedCartan) :
 /-- **Directness of the triangular sum.** For a generalized Cartan matrix `A`, a sum
 `negativeQuotientHom R a + cartanElement R x + positiveQuotientHom R b` vanishes in
 `PresentedLieAlgebra R` only when `a = 0`, `x = 0`, and `b = 0`. -/
-theorem quotientTriangular_eq_zero (hA : A.IsGeneralizedCartan)
+theorem eq_zero_of_quotientTriangular_sum_eq_zero (hA : A.IsGeneralizedCartan)
     {a b : FreeLieAlgebra K I ⧸ serreIdeal K A} {x : H}
     (h : negativeQuotientHom R a + cartanElement R x + positiveQuotientHom R b = 0) :
     a = 0 ∧ x = 0 ∧ b = 0 := by
@@ -429,7 +442,7 @@ theorem quotientTriangular_eq_zero (hA : A.IsGeneralizedCartan)
       _ = (auxNegHom R a₀ + auxCartan R x + auxPosHom R b₀) -
             (auxNegHom R a' + auxPosHom R b') := by simp only [map_sub]; abel
       _ = 0 := sub_eq_zero.mpr heq.symm
-  obtain ⟨ha₀, rfl, hb₀⟩ := auxTriangular_eq_zero R hsub
+  obtain ⟨ha₀, rfl, hb₀⟩ := eq_zero_of_auxTriangular_sum_eq_zero R hsub
   refine ⟨?_, rfl, ?_⟩
   · rw [← LieHom.mem_ker, LieIdeal.mkQ_ker]; rwa [sub_eq_zero.mp ha₀]
   · rw [← LieHom.mem_ker, LieIdeal.mkQ_ker]; rwa [sub_eq_zero.mp hb₀]

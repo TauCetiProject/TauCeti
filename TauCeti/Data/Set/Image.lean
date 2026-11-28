@@ -10,7 +10,7 @@ public import Mathlib.Data.Set.Image
 /-!
 # Images of sets under compositions
 
-This file contains elementary lemmas about images and ranges of functions and sets, about
+This file contains elementary lemmas about images of sets under composed functions, about
 preimages under an injective function of the range of a composition or of a single value, and
 about the smallest set stable under an involution containing a given set.
 -/
@@ -36,21 +36,6 @@ lemma image_image_inter_eq_inter_image {α β γ δ : Type*} {A s : Set α} {B :
     (hAB : MapsTo f (s ∩ A) B) (hU : ∀ z ∈ s, f z ∈ B → (g' (f z) ∈ U ↔ z ∈ A)) :
     ι '' (g '' (s ∩ A)) = U ∩ g' '' (f '' s ∩ B) := by
   grind [MapsTo]
-
-/-- If every value of `f` lies in the union of the ranges of `g₁`, `g₂`, and `g₃`, and each `gᵢ`
-takes values in `Set.range f`, then `Set.range f = Set.range g₁ ∪ Set.range g₂ ∪ Set.range g₃`. -/
-lemma range_eq_union_three {α γ₁ γ₂ γ₃ : Sort*} {β : Type*} (f : α → β)
-    (g₁ : γ₁ → β) (g₂ : γ₂ → β) (g₃ : γ₃ → β)
-    (hf : ∀ a, f a ∈ range g₁ ∨ f a ∈ range g₂ ∨ f a ∈ range g₃)
-    (h₁ : ∀ x, g₁ x ∈ range f) (h₂ : ∀ y, g₂ y ∈ range f) (h₃ : ∀ z, g₃ z ∈ range f) :
-    range f = range g₁ ∪ range g₂ ∪ range g₃ := by
-  refine subset_antisymm (range_subset_iff.mpr fun a => ?_)
-    (union_subset (union_subset (range_subset_iff.mpr h₁) (range_subset_iff.mpr h₂))
-      (range_subset_iff.mpr h₃))
-  rcases hf a with h | h | h
-  · exact Or.inl (Or.inl h)
-  · exact Or.inl (Or.inr h)
-  · exact Or.inr h
 
 end TauCeti
 
