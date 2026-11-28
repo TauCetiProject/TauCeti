@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Function.Lp.Duality
 In `Lᵖ`, the solenoidal fields form the intersection of the kernels of the
 continuous pairings with scalar test gradients. At `p = 2`, these pairings are Hilbert space inner
 products, so the closed subspace is the orthogonal complement of the closed span of the test
-gradients, given by `TauCeti.wassersteinTangentSpace`.
+gradients, given by `TauCeti.wassersteinTangentSpace`, and its orthogonal complement is that closed
+span (`TauCeti.orthogonal_solenoidalLp_two`).
 -/
 
 public section
@@ -81,5 +82,12 @@ theorem solenoidalLp_two_eq_orthogonal_wassersteinTangentSpace [FiniteDimensiona
     simpa [inner_gradient_right, ψ] using h ψ
   · intro h φ
     simpa [inner_gradient_right] using h φ φ.contDiff φ.hasCompactSupport
+
+/-- **Helmholtz–Weyl, abstract form.** The orthogonal complement of the solenoidal fields in
+`L²(μ; E)` is the closure of the gradients of smooth compactly supported functions. -/
+theorem orthogonal_solenoidalLp_two [FiniteDimensional ℝ E] (μ : Measure E)
+    [IsFiniteMeasureOnCompacts μ] :
+    (solenoidalLp E 2 μ).toSubmoduleᗮ = wassersteinTangentSpace μ := by
+  rw [solenoidalLp_two_eq_orthogonal_wassersteinTangentSpace, Submodule.orthogonal_orthogonal]
 
 end TauCeti

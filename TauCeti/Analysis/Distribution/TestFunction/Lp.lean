@@ -378,6 +378,13 @@ theorem integrable_smul_of_memLp {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
     (φ : 𝓓^{n}(Ω, ℝ)) {f : E → F} (hf : MemLp f p ν) : Integrable (fun x ↦ φ x • f x) ν :=
   φ.integrable_bilin_of_memLp (ContinuousLinearMap.lsmul ℝ ℝ) hf
 
+/-- A test function multiplied by a component `⟪c, f⟫` of an `Lᵖ` field `f`, `1 ≤ p`, is
+integrable. -/
+theorem integrable_mul_inner_of_memLp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓^{n}(Ω, ℝ)) {f : E → G}
+    (hf : MemLp f p ν) (c : G) : Integrable (fun x ↦ φ x * ⟪c, f x⟫_ℝ) ν :=
+  φ.integrable_smul_of_memLp (hf.const_inner c)
+
 /-- **An `Lᵖ` function is determined by its pairings with test functions.** If `1 ≤ p` and
 `∫ φ • g = 0` for every test function `φ` on a finite-dimensional space, then `g = 0` in `Lᵖ`. -/
 theorem _root_.MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero
