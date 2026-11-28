@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Contact.Symplectization.Basic
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.Flow.NormedSpace
-import TauCeti.Geometry.Symplectic.Liouville.Collar
+import TauCeti.Geometry.Symplectic.Liouville.Collar.Basic
 
 /-!
 # The symplectization of the contact sphere is the punctured symplectic vector space

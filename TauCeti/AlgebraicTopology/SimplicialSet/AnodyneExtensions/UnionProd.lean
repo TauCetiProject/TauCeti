@@ -14,13 +14,16 @@ Mathlib's `SSet.prodStdSimplex.pairingCore` is Moss's regular pairing for the in
 `(Λ[m + 1, k.castSucc] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n]) ⟶ Δ[m + 1] ⊗ Δ[n]`. Its type (I) simplices
 contain a vertical edge `(k.castSucc, t) ⟶ (k.succ, t)` of the prism, and the paired type (II)
 simplex is the face omitting the vertex `(k.castSucc, t)`. This file records where this vertical
-edge sits in a type (I) simplex.
+edge sits in a type (I) simplex, and bounds the dimension of the type (I) simplices from below.
 
 ## Main results
 
 * `SSet.prodStdSimplex.pairingCore.Type₁.map_edge_of_index_eq_zero`: for the pairing of
   `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])`, a type (I) simplex whose type (II) face is its first
   face starts with the vertical edge `(0, 0) ⟶ (1, 0)`.
+* `SSet.prodStdSimplex.pairingCore.Type₁.exists_dim_eq_add_one`: for the same pairing, when this
+  vertical edge lies in `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])`, every type (I) simplex has
+  dimension at least `2`.
 
 ## References
 
@@ -58,5 +61,24 @@ lemma map_edge_of_index_eq_zero {m n : ℕ} (s : Type₁.{u} (0 : Fin (m + 1)) n
   · exact congrArg Fin.val h₁
   · exact congrArg Fin.val h0
   · exact congrArg Fin.val (h₂.trans h0)
+
+/-- When the vertical edge `(0, 0) ⟶ (1, 0)` lies in `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])`,
+every type (I) simplex of Moss's pairing has dimension at least `2`. The type (II) face of a
+`1`-simplex is its first face, so a type (I) `1`-simplex would be this edge
+(`map_edge_of_index_eq_zero`), whereas type (I) simplices do not lie in the subcomplex. -/
+lemma exists_dim_eq_add_one {m n : ℕ} (s : Type₁.{u} (0 : Fin (m + 1)) n)
+    (hmem : (stdSimplex.edge (m + 1) 0 1 (Fin.zero_le _), stdSimplex.const n 0 _) ∈
+      (Subcomplex.unionProd Λ[m + 1, 0] ∂Δ[n]).obj (Opposite.op ⦋1⦌)) :
+    ∃ d, s.d = d + 1 := by
+  obtain ⟨x, _ | d, hd, index, isIndex⟩ := s
+  · refine absurd ?_ (x.cast hd).notMem
+    have h := map_edge_of_index_eq_zero ⟨x, 0, hd, index, isIndex⟩
+      (Subsingleton.elim (α := Fin 1) _ _)
+    -- The edge `0 ⟶ 1` of `Δ[1]` is its identity simplex.
+    rw [show stdSimplex.edge (0 + 1) 0 1 (Fin.zero_le _) = yonedaEquiv (𝟙 _) from
+      (stdSimplex.objEquiv.symm_apply_eq.2 (by ext i; fin_cases i <;> rfl)),
+      yonedaEquiv_symm_app_id] at h
+    exact h ▸ hmem
+  · exact ⟨d, rfl⟩
 
 end SSet.prodStdSimplex.pairingCore.Type₁

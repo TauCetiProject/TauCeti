@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Young.RobinsonSchensted
 import TauCeti.Combinatorics.Young.StandardTableau.Order
-public import TauCeti.Combinatorics.Young.StandardTableau.Corner
+public import TauCeti.Combinatorics.Young.StandardTableau.Corner.Basic
 import TauCeti.Combinatorics.Young.StandardTableau.Reading
 
 /-!

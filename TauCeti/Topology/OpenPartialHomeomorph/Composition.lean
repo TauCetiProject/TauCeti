@@ -23,6 +23,8 @@ This file supplements `Mathlib.Topology.OpenPartialHomeomorph.Composition`:
   source of a chart transition `e.symm.trans e'` lies in the target of `e`, and `e.symm` sends it
   into the source of `e'`; the open-partial-homeomorphism form of
   `PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source`.
+* `OpenPartialHomeomorph.eventuallyEq_comp_symm_comp`: near a point of the source of `e`, a map
+  `f` agrees with `(f ∘ e.symm) ∘ e`, its reading in the chart composed with the chart.
 * `Homeomorph.refl_transOpenPartialHomeomorph`: precomposing an open partial homeomorphism with
   `Homeomorph.refl` changes nothing; together with `Homeomorph.trans_transOpenPartialHomeomorph`
   this makes `Homeomorph.transOpenPartialHomeomorph` an action of homeomorphisms.
@@ -84,6 +86,12 @@ theorem mem_target_and_mem_source_of_mem_symm_trans_source {e : OpenPartialHomeo
     {e' : OpenPartialHomeomorph X Z} {y : Y} (hy : y ∈ (e.symm.trans e').source) :
     y ∈ e.target ∧ e.symm y ∈ e'.source :=
   PartialEquiv.mem_target_and_mem_source_of_mem_symm_trans_source hy
+
+/-- Near a point `x` of the source of `e`, a map `f` is recovered from its reading `f ∘ e.symm` in
+the chart by composing with `e`. -/
+theorem eventuallyEq_comp_symm_comp {α : Type*} (e : OpenPartialHomeomorph X Y) {f : X → α}
+    {x : X} (hx : x ∈ e.source) : f =ᶠ[𝓝 x] (f ∘ e.symm) ∘ e :=
+  (e.eventually_left_inverse hx).mono fun _ hy ↦ by simp [hy]
 
 end OpenPartialHomeomorph
 

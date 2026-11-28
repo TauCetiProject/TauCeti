@@ -22,7 +22,9 @@ uniform convergence on compact sets: this is the usual meaning of "`f i → f₀
 
 The continuous form composes well. Through the Faà di Bruno formula, `C^n` convergence is
 preserved by composition of two converging families (`TauCeti.TendstoContDiffAt.comp`), and it
-holds componentwise for pairs (`TauCeti.TendstoContDiffAt.prodMk`).
+holds componentwise for pairs (`TauCeti.TendstoContDiffAt.prodMk`). In locally uniform form,
+composing with a fixed `C^n` map preserves `C^n` convergence on open sets
+(`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_comp`).
 
 ## Main declarations
 
@@ -34,6 +36,8 @@ holds componentwise for pairs (`TauCeti.TendstoContDiffAt.prodMk`).
 * `ContDiffAt.tendstoContDiffAt_const`: a constant family converges to its value.
 * `TauCeti.TendstoContDiffAt.comp`, `TauCeti.TendstoContDiffAt.prodMk`: stability under
   composition and pairing.
+* `TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_comp`: composing a family converging in `C^n`
+  on an open set with a fixed `C^n` map.
 * `TauCeti.tendstoContDiffAt_iff_tendstoLocallyUniformlyOn`: the comparison with locally uniform
   convergence of the derivatives.
 -/
@@ -209,5 +213,28 @@ theorem tendstoContDiffAt_iff_tendstoLocallyUniformlyOn {f : ι → E → F} {f�
       fun x hx ↦ h x hx k hk
   · exact (hs.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn (hf₀ k hk)).1
       (h k hk) x hx
+
+/-- **Composing a `C^n`-convergent family with a fixed map.** Let `f i → f₀` in `C^n` on an open
+set `s`, in the sense that each derivative of order at most `n` converges locally uniformly on `s`,
+with `f₀` and eventually every `f i` of class `C^n` on `s`. If `g` is `C^n` on an open set `t` and
+maps `t` into `s`, then `f i ∘ g → f₀ ∘ g` in `C^n` on `t`. -/
+theorem tendstoLocallyUniformlyOn_iteratedFDeriv_comp {f : ι → F → G} {f₀ : F → G} {g : E → F}
+    {s : Set F} {t : Set E} (hs : IsOpen s) (ht : IsOpen t) (hgst : MapsTo g t s)
+    (hf : ∀ᶠ i in l, ContDiffOn 𝕜 n (f i) s) (hf₀ : ContDiffOn 𝕜 n f₀ s) (hg : ContDiffOn 𝕜 n g t)
+    (hconv : ∀ k : ℕ, (k : ℕ∞) ≤ n → TendstoLocallyUniformlyOn (fun i ↦ iteratedFDeriv 𝕜 k (f i))
+      (iteratedFDeriv 𝕜 k f₀) l s) (k : ℕ) (hk : (k : ℕ∞) ≤ n) :
+    TendstoLocallyUniformlyOn (fun i ↦ iteratedFDeriv 𝕜 k (f i ∘ g))
+      (iteratedFDeriv 𝕜 k (f₀ ∘ g)) l t := by
+  have hconv' := (tendstoContDiffAt_iff_tendstoLocallyUniformlyOn hs
+    fun k hk ↦ ContinuousOn.continuousOn_iteratedFDeriv hf₀ hs (by exact_mod_cast hk)).2 hconv
+  refine (tendstoContDiffAt_iff_tendstoLocallyUniformlyOn ht fun k hk ↦
+    ContinuousOn.continuousOn_iteratedFDeriv (hf₀.comp hg hgst) ht (by exact_mod_cast hk)).1
+    (fun x hx ↦ ?_) k hk
+  have hnx : ∀ᶠ y in 𝓝 x, y ∈ t := ht.mem_nhds hx
+  refine (hconv' (g x) (hgst hx)).comp (hg.contDiffAt (ht.mem_nhds hx)).tendstoContDiffAt_const
+    ?_ ?_ (hf₀.contDiffAt (hs.mem_nhds (hgst hx))) (hg.contDiffAt (ht.mem_nhds hx))
+  · filter_upwards [tendsto_fst.eventually hf, tendsto_snd.eventually hnx] with p hp hpt
+    exact hp.contDiffAt (hs.mem_nhds (hgst hpt))
+  · filter_upwards [tendsto_snd.eventually hnx] with p hpt using hg.contDiffAt (ht.mem_nhds hpt)
 
 end TauCeti

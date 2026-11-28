@@ -11,6 +11,7 @@ public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.PreferredChartReading
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Analysis.Calculus.ContDiff.Indicator
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -86,6 +87,8 @@ closed upper half-plane are read in `ℂ` in
   for a `C¹` manifold.
 * `TauCeti.FiniteBundleAtlas.exists_bound_comp_chart_symm`: a `C¹` function read in a chart is
   bounded, with bounded derivative, on the chart image.
+* `TauCeti.FiniteBundleAtlas.exists_contDiff_eqOn_comp_chart_symm`: a `Cⁿ` function supported in
+  a chart domain, read in the chart and extended by zero, is `Cⁿ` on the model space.
 * `TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection`: a `Cⁿ` cutoff supported in a chart
   domain times a section that is `Cⁿ` in that chart is a `Cⁿ` section.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
@@ -366,6 +369,13 @@ theorem isCompact_chart_image_closure_dom (i : Fin A.n) :
   (A.isCompact_closure_dom i).image_of_continuousOn
     ((A.chart i).continuousOn.mono (A.closure_dom_subset_source i))
 
+/-- The image under chart `i` of a closed subset of its domain is a compact set. -/
+theorem isCompact_chart_image_of_isClosed {i : Fin A.n} {L : Set M} (hL : IsClosed L)
+    (hLi : L ⊆ A.dom i) : IsCompact (A.chart i '' L) :=
+  ((A.isCompact_closure_dom i).of_isClosed_subset hL
+    (hLi.trans subset_closure)).image_of_continuousOn
+      ((A.chart i).continuousOn.mono (hLi.trans (A.dom_subset_chart_source i)))
+
 /-- The image of chart `i` lies in the image of the closure of the chart domain. -/
 theorem image_subset_chart_image_closure_dom (i : Fin A.n) :
     (A.image i : Set E) ⊆ A.chart i '' closure (A.dom i) := fun _ hy ↦
@@ -387,6 +397,11 @@ set of the bundle chart. -/
 theorem image_subset_target_inter_preimage_baseSet (i : Fin A.n) :
     (A.image i : Set E) ⊆ (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet :=
   (A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)
+
+/-- Every point of the domain of chart `i` is read in chart `i` inside the chart image. -/
+theorem dom_subset_dom_inter_preimage_image (i : Fin A.n) :
+    A.dom i ⊆ A.dom i ∩ A.chart i ⁻¹' A.image i :=
+  fun x hx ↦ ⟨hx, A.mem_image.2 ⟨x, hx, rfl⟩⟩
 
 /-- The points of the domain of chart `i` read in chart `i` inside an open set form an open set. -/
 theorem isOpen_dom_inter_preimage (i : Fin A.n) {W : Set E} (hW : IsOpen W) :
@@ -456,13 +471,29 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   funext y
   rfl
 
-/-- The charts of `A.ofBaseSet h`, taken back as an atlas of the original bundle, are `A`. -/
+/-- The charts of `A` taken as an atlas of the same bundle are `A`. -/
 @[simp]
-theorem ofBaseSet_ofBaseSet
-    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
-      (trivializationAt F V ((A.ofBaseSet h).center i)).baseSet) :
-    (A.ofBaseSet h).ofBaseSet h' = A :=
+theorem ofBaseSet_self
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F V (A.center i)).baseSet) :
+    A.ofBaseSet h = A :=
   (rfl)
+
+/-- The charts of `A.ofBaseSet h`, taken as an atlas of a third bundle `V''`, are the charts of
+`A` taken as an atlas of `V''`. -/
+@[simp]
+theorem ofBaseSet_ofBaseSet {F'' : Type*} [TopologicalSpace F''] {V'' : M → Type*}
+    [TopologicalSpace (TotalSpace F'' V'')] [∀ x, TopologicalSpace (V'' x)] [FiberBundle F'' V'']
+    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
+      (trivializationAt F'' V'' ((A.ofBaseSet h).center i)).baseSet) :
+    (A.ofBaseSet h).ofBaseSet h' = A.ofBaseSet h' :=
+  (rfl)
+
+variable (A) in
+/-- The chart domains of a finite bundle atlas lie in the base sets of the trivial bundle with any
+fibre, so its charts are also an atlas of that bundle (`TauCeti.FiniteBundleAtlas.ofBaseSet`). -/
+theorem closure_dom_subset_baseSet_trivial (G : Type*) [TopologicalSpace G] (i : Fin A.n) :
+    closure (A.dom i) ⊆ (trivializationAt G (Bundle.Trivial M G) (A.center i)).baseSet := by
+  simp [Bundle.Trivial.fiberBundle_trivializationAt']
 
 end OfBaseSet
 
@@ -727,6 +758,28 @@ theorem exists_bound_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedS
     ⟨(hB z (subset_closure hz)).trans (Real.le_coe_toNNReal _),
       (hL z (subset_closure hz)).trans (Real.le_coe_toNNReal _)⟩⟩
 
+/-- **Chart cutoffs.** A `Cⁿ` function `ρ` on `M` whose support lies in the domain of chart `i`,
+read in chart `i` and extended by zero, is a `Cⁿ` function on `E` vanishing off the chart image of
+the support of `ρ`. -/
+theorem exists_contDiff_eqOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] {ρ : M → G}
+    (hρ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, G) n ρ) {i : Fin A.n} (hρi : tsupport ρ ⊆ A.dom i) :
+    ∃ χ : E → G, ContDiff ℝ n χ ∧ (∀ y ∉ A.chart i '' tsupport ρ, χ y = 0) ∧
+      EqOn χ (fun y ↦ ρ ((A.chart i).symm y)) (A.image i) := by
+  set K := A.chart i '' tsupport ρ
+  have hKt : K ⊆ (A.chart i).target :=
+    image_subset_iff.2 fun x hx ↦ (A.chart i).map_source (A.dom_subset_chart_source i (hρi hx))
+  have hχK (y : E) (hy : y ∉ K) :
+      (A.chart i).target.indicator (fun y ↦ ρ ((A.chart i).symm y)) y = 0 := by
+    by_cases hyt : y ∈ (A.chart i).target
+    · rw [indicator_of_mem hyt]
+      exact image_eq_zero_of_notMem_tsupport fun h ↦ hy ⟨_, h, (A.chart i).right_inv hyt⟩
+    · exact indicator_of_notMem hyt _
+  refine ⟨_, (A.contDiffOn_comp_chart_symm hρ i).contDiff_indicator_of_isClosed
+    (A.chart i).open_target (A.isCompact_chart_image_of_isClosed (isClosed_tsupport ρ) hρi).isClosed
+    hKt fun y ⟨hyt, hy⟩ ↦ ⟨_, subset_tsupport ρ hy, (A.chart i).right_inv hyt⟩, hχK,
+    fun y hy ↦ indicator_of_mem ((A.image_subset_target_inter_preimage_baseSet i hy).1) _⟩
+
 end FiniteBundleAtlas
 
 end Coordinates
@@ -761,6 +814,36 @@ theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ 
 
 theorem coord_zero (i : Fin A.n) {y : E} (hy : y ∈ A.image i) : A.coord i (0 : ∀ x, V x) y = 0 := by
   simpa using A.coord_smul i 0 0 hy
+
+/-- At a point of the base set of bundle chart `i`, a section is recovered from its reading in
+chart `i` by the inverse of the trivialization. -/
+theorem symmL_coord {i : Fin A.n} {y : E} (hb : (A.chart i).symm y ∈ (A.triv i).baseSet)
+    (s : ∀ x, V x) :
+    (A.triv i).symmL ℝ ((A.chart i).symm y) (A.coord i s y) = s ((A.chart i).symm y) := by
+  rw [coord_def, Trivialization.symmL_apply _ hb, Trivialization.symm_apply_apply_mk _ hb]
+
+/-- At a point of the chart source and the base set of bundle chart `i`, a section is recovered
+from its reading at the chart point by the inverse of the trivialization. -/
+theorem symmL_coord_chart {i : Fin A.n} {x : M} (hx : x ∈ (A.chart i).source)
+    (hb : x ∈ (A.triv i).baseSet) (s : ∀ x, V x) :
+    (A.triv i).symmL ℝ x (A.coord i s (A.chart i x)) = s x := by
+  have hxy : (A.chart i).symm (A.chart i x) = x := (A.chart i).left_inv hx
+  have h := A.symmL_coord (i := i) (hxy.symm ▸ hb) s
+  rwa [hxy] at h
+
+/-- At the points read from the base set of bundle chart `i`, the reading of a section is the
+trivialization at the point applied to its value. -/
+theorem coord_eq_continuousLinearMapAt {i : Fin A.n} {y : E}
+    (hb : (A.chart i).symm y ∈ (A.triv i).baseSet) (s : ∀ x, V x) :
+    A.coord i s y = (A.triv i).continuousLinearMapAt ℝ ((A.chart i).symm y)
+      (s ((A.chart i).symm y)) := by
+  rw [coord_def, (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) hb]
+
+/-- At the points read from the base set of bundle chart `i`, the section given by a constant
+vector in the trivialization reads as that vector. -/
+theorem coord_symmL {i : Fin A.n} {y : E} (hb : (A.chart i).symm y ∈ (A.triv i).baseSet)
+    (v : F) : A.coord i (fun x ↦ (A.triv i).symmL ℝ x v) y = v := by
+  rw [coord_def, Trivialization.symmL_apply _ hb, Trivialization.apply_mk_symm _ hb]
 
 /-- At a point over the domain of chart `i` of `A` and the base set of bundle chart `i'` of another
 atlas `A'`, the reading of a section in chart `i'` of `A'` is the coordinate change of the bundle
@@ -946,17 +1029,21 @@ namespace FiniteBundleAtlas
 
 variable {A : FiniteBundleAtlas E M F V}
 
-/-- The product of a `Cⁿ` function `ψ` supported in the domain of chart `i` with the section
-equal in chart `i` to a function `G` that is `Cⁿ` on the chart image is a `Cⁿ` section. -/
+/-- **Cut-off chart sections.** The product of a `Cⁿ` function `ψ` with the section equal in
+chart `i` to a function `G` is a `Cⁿ` section, if `G` is `Cⁿ` on an open set `W` and the support of
+`ψ` consists of points of the domain of chart `i` read in chart `i` inside `W`, for instance
+`W = A.image i` and `ψ` supported in the domain of chart `i`. -/
 theorem contMDiff_smul_chartSection {i : Fin A.n} {ψ : M → ℝ}
-    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n ψ) (hψi : tsupport ψ ⊆ A.dom i) {G : E → F}
-    (hG : ContDiffOn ℝ n G (A.image i)) :
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n ψ) {W : Set E} (hW : IsOpen W)
+    (hψi : tsupport ψ ⊆ A.dom i ∩ A.chart i ⁻¹' W) {G : E → F} (hG : ContDiffOn ℝ n G W) :
     ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) n
       fun x ↦ TotalSpace.mk' F x (ψ x • A.chartSection i G x) :=
-  hψ.contMDiffOn.smul_section_of_tsupport (A.isOpen_dom i) hψi <|
-    ((A.triv i).contMDiffOn_section_iff (A.isOpen_dom i) (A.dom_subset_baseSet i)).2 <|
-      (hG.contMDiffOn.comp (contMDiffOn_chart.mono (A.dom_subset_chart_source i))
-        fun x hx ↦ A.mem_image.2 ⟨x, hx, rfl⟩).congr fun _ hx ↦ triv_chartSection G hx
+  hψ.contMDiffOn.smul_section_of_tsupport (A.isOpen_dom_inter_preimage i hW) hψi <|
+    ((A.triv i).contMDiffOn_section_iff (A.isOpen_dom_inter_preimage i hW)
+      (inter_subset_left.trans (A.dom_subset_baseSet i))).2 <|
+      (hG.contMDiffOn.comp (contMDiffOn_chart.mono
+        (inter_subset_left.trans (A.dom_subset_chart_source i))) fun _ hx ↦ hx.2).congr
+          fun _ hx ↦ triv_chartSection G hx.1
 
 /-- **A section with `Cⁿ` chart expressions is `Cⁿ`.** If the chart expression `A.coord i s` of a
 section `s` is `Cⁿ` on the chart image `A.image i` for every chart `i`, then `s` is a `Cⁿ` section.

@@ -47,6 +47,10 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   `TriEdge → Bool` (the last one Mathlib's `arrowAddAction`).
 * `TauCeti.latticeRot`, `TauCeti.TriEdge.rot`, `TauCeti.TriFace.rot`: the rotation `ρ` on vertices,
   edges and faces.
+* `TauCeti.edgesOfDir k`: the set of all edges of direction `k`; `ρ` maps it onto
+  `edgesOfDir (k + 1)` (`TauCeti.image_rot_edgesOfDir`).
+* `TauCeti.TriFace.diagIndex`: the diagonal index `k` of a face, with `k ≤ x − y ≤ k + 1` on its
+  vertices (`TauCeti.TriFace.mem_vertices_iff`).
 
 ## Main statements
 
@@ -629,6 +633,20 @@ theorem orderOf_rot : orderOf rot = 3 := by
 
 end TriEdge
 
+/-- The set of all edges of direction `k`. -/
+def edgesOfDir (k : Fin 3) : Set TriEdge :=
+  {e | e.k = k}
+
+@[simp] theorem mem_edgesOfDir {k : Fin 3} {e : TriEdge} : e ∈ edgesOfDir k ↔ e.k = k :=
+  Iff.rfl
+
+/-- `ρ` maps the edges of direction `k` onto the edges of direction `k + 1`. -/
+@[simp] theorem image_rot_edgesOfDir (k : Fin 3) :
+    TriEdge.rot '' edgesOfDir k = edgesOfDir (k + 1) := by
+  ext e
+  obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e
+  simp
+
 namespace TriFace
 
 /-- The rotation `ρ` on faces: `ρ W(v) = W(ρ v - e₁)` and `ρ B(v) = B(ρ v - e₃)`. -/
@@ -788,6 +806,28 @@ theorem mem_vertices_iff_of_ne {f : TriFace} {i j : Fin 3} (hij : i ≠ j) {u : 
     (mem_vertices_of_mem_endpoints (f.edge_mem_edges j))⟩
   obtain ⟨⟨x, y⟩, _ | _⟩ := f <;> fin_cases i <;> fin_cases j <;>
     simp_all [Prod.ext_iff] <;> omega
+
+/-- The diagonal index `k` of a face: `x − y` lies between `k` and `k + 1` on its vertices. -/
+def diagIndex (f : TriFace) : ℤ :=
+  if f.isWhite then f.v.1 - f.v.2 else f.v.1 - f.v.2 - 1
+
+@[simp] theorem diagIndex_mk_true (v : ℤ × ℤ) : (⟨v, true⟩ : TriFace).diagIndex = v.1 - v.2 :=
+  (rfl)
+
+@[simp] theorem diagIndex_mk_false (v : ℤ × ℤ) :
+    (⟨v, false⟩ : TriFace).diagIndex = v.1 - v.2 - 1 :=
+  (rfl)
+
+/-- The vertices of a face with base vertex `(m, n)` and diagonal index `k` are the lattice
+points `(x, y)` with `m ≤ x ≤ m + 1`, `n ≤ y ≤ n + 1` and `k ≤ x − y ≤ k + 1`. -/
+theorem mem_vertices_iff (f : TriFace) (u : ℤ × ℤ) :
+    u ∈ f.vertices ↔ (f.v.1 ≤ u.1 ∧ u.1 ≤ f.v.1 + 1) ∧ (f.v.2 ≤ u.2 ∧ u.2 ≤ f.v.2 + 1) ∧
+      (f.diagIndex ≤ u.1 - u.2 ∧ u.1 - u.2 ≤ f.diagIndex + 1) := by
+  obtain ⟨⟨a, b⟩, c⟩ := f
+  obtain ⟨x, y⟩ := u
+  cases c <;> simp only [vertices_mk_true, vertices_mk_false, diagIndex_mk_true,
+    diagIndex_mk_false, Finset.mem_insert, Finset.mem_singleton, Prod.ext_iff,
+    Prod.mk_add_mk, add_zero] <;> omega
 
 /-- A face has only one vertex off each of its edges. -/
 theorem eq_of_notMem_endpoints {f : TriFace} {i : Fin 3} {u u' : ℤ × ℤ}

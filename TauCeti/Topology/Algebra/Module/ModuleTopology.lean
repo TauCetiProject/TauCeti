@@ -27,7 +27,8 @@ coordinate topology through that basis. This identifies the canonical topology u
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
 module topology of a finite-dimensional space is Hausdorff and locally compact; every subspace of
-a module with the module topology is closed; over σ-compact scalars it is σ-compact. No norm or
+a module with the module topology is closed; over σ-compact (respectively second-countable) scalars
+it is σ-compact (respectively second countable). No norm or
 completeness hypothesis on the scalars is needed.
 
 Separation of the scalars cannot be dropped from the Hausdorff and closed-subspace statements:
@@ -54,6 +55,10 @@ In a finite module with the module topology, the multiples `I • M` of an open 
 scalars form an open submodule (`IsModuleTopology.isOpen_smul_top`).
 Over finite index types, matrices with entries in a module with the module topology carry the
 module topology (`IsModuleTopology.instMatrix`).
+
+Every `R`-linear endomorphism and automorphism acts continuously on a module carrying its
+`R`-module topology (`TauCeti.instContinuousConstSMulLinearMapOfIsModuleTopology`,
+`TauCeti.instContinuousConstSMulLinearEquivOfIsModuleTopology`).
 
 A family `f : X → (M →ₗ[R] N)` of linear maps out of a finite module `M` with its module topology,
 into a topological module `N`, is jointly continuous on `X × M` exactly when each orbit map
@@ -430,6 +435,12 @@ theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K]
     SigmaCompactSpace V :=
   (equivFunHomeomorph b).isClosedEmbedding.sigmaCompactSpace
 
+/-- The module topology is second countable when the scalars are second countable and the module
+has a finite basis. -/
+theorem secondCountableTopology (b : _root_.Module.Basis ι K V) [SecondCountableTopology K] :
+    SecondCountableTopology V :=
+  (equivFunHomeomorph b).isEmbedding.secondCountableTopology
+
 section Repr
 
 variable {R M N X ι κ : Type*} [Semiring R] [TopologicalSpace R] [IsTopologicalSemiring R]
@@ -559,6 +570,27 @@ instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
     [TopologicalSpace (TensorProduct 𝕜 M N)] [IsModuleTopology 𝕜 (TensorProduct 𝕜 M N)] :
     IsTopologicalAddGroup (TensorProduct 𝕜 M N) :=
   IsModuleTopology.isTopologicalAddGroup 𝕜 (TensorProduct 𝕜 M N)
+
+section ContinuousConstSMul
+
+variable {R V : Type*} [Semiring R] [TopologicalSpace R]
+  [AddCommMonoid V] [Module R V] [TopologicalSpace V] [IsModuleTopology R V]
+
+/-- Every `R`-linear endomorphism acts continuously on a module carrying its `R`-module topology;
+via `Units.continuousConstSMul`, this also equips `LinearMap.GeneralLinearGroup R V` with a
+`ContinuousConstSMul` instance on `V`. -/
+instance instContinuousConstSMulLinearMapOfIsModuleTopology :
+    ContinuousConstSMul (V →ₗ[R] V) V :=
+  have := IsModuleTopology.toContinuousAdd R V
+  ⟨fun f ↦ IsModuleTopology.continuous_of_linearMap f⟩
+
+/-- Every `R`-linear automorphism acts continuously on a module carrying its `R`-module topology. -/
+instance instContinuousConstSMulLinearEquivOfIsModuleTopology :
+    ContinuousConstSMul (V ≃ₗ[R] V) V :=
+  have := IsModuleTopology.toContinuousAdd R V
+  ⟨fun T ↦ IsModuleTopology.continuous_of_linearMap (T : V →ₗ[R] V)⟩
+
+end ContinuousConstSMul
 
 end TauCeti
 

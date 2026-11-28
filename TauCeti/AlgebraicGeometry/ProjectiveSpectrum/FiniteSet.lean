@@ -37,7 +37,8 @@ group orbits in projective and quasi-projective quotients.
   section avoiding every point in a finite set.
 * `ProjectiveSpectrum.exists_basicOpen_superset_le` and
   `AlgebraicGeometry.Proj.exists_homogeneous_basicOpen_superset_le`: a positive-degree homogeneous
-  basic open around a finite set inside a prescribed open.
+  basic open around a finite set inside a prescribed open. The singleton case gives
+  `AlgebraicGeometry.Proj.isBasis_basicOpen_pos` via Mathlib's `Opens.isBasis_iff_nbhd`.
 * `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom_proj` and
   `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion_proj`: common affine
   neighbourhoods inside prescribed source opens for affine morphisms and immersions into `Proj`.
@@ -180,6 +181,17 @@ theorem AlgebraicGeometry.Proj.exists_homogeneous_basicOpen_superset_le
     {s : Set (Proj 𝒜)} {W : (Proj 𝒜).Opens} (hs : s.Finite) (hsW : s ⊆ W) :
     ∃ n > 0, ∃ a ∈ 𝒜 n, s ⊆ Proj.basicOpen 𝒜 a ∧ Proj.basicOpen 𝒜 a ≤ W :=
   ProjectiveSpectrum.exists_basicOpen_superset_le hs hsW
+
+/-- The standard opens of positive-degree homogeneous elements form a basis for `Proj 𝒜`
+([Stacks, Section 10.57](https://stacks.math.columbia.edu/tag/00JM)). -/
+theorem AlgebraicGeometry.Proj.isBasis_basicOpen_pos (𝒜 : ℕ → σ) [GradedRing 𝒜] :
+    TopologicalSpace.Opens.IsBasis (Set.range fun i : Σ k : ℕ+, 𝒜 k ↦ Proj.basicOpen 𝒜 i.2) := by
+  rw [TopologicalSpace.Opens.isBasis_iff_nbhd]
+  intro U x hx
+  obtain ⟨n, hn, a, ha, hxa, haU⟩ :=
+    Proj.exists_homogeneous_basicOpen_superset_le (Set.finite_singleton x)
+      (Set.singleton_subset_iff.mpr hx)
+  exact ⟨_, ⟨⟨⟨n, hn⟩, ⟨a, ha⟩⟩, rfl⟩, hxa (Set.mem_singleton x), haU⟩
 
 /-- A finite set in the source of an affine morphism to a projective spectrum lies in a
 common affine open inside any prescribed open containing it. The graded ring is arbitrary. -/
