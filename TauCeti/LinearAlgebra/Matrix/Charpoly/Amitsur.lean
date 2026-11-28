@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Data.Matrix.Composition
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.Algebra.Polynomial.Inductions
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.Data.Matrix.Basis
@@ -36,6 +38,9 @@ lifting `det (ρ w) • 1` into `ρ(Λ)`:
   `ρ w` has characteristic polynomial with coefficients in `(algebraMap B A).range`, then so has
   the block matrix `Matrix.comp N N n n A (P.map ρ)`, with blocks `ρ (P i j)`, of every square
   matrix `P` over `Λ`.
+* `TauCeti.charpoly_coeff_lift_mem` (**Amitsur's theorem for a monoid algebra**): if the
+  characteristic polynomial of every `U g` has coefficients in an `O`-subalgebra `S` of `A`, for a
+  monoid hom `U : G →* Matrix n n A`, then so has that of the image of every element of `O[G]`.
 
 The proof of Amitsur's theorem works modulo `X ^ e` in `AdjoinRoot (X ^ e : A[X])` over the image
 `R` of `B[X]` in `AdjoinRoot (X ^ e : A[X])` and shows by descending induction on `j ≤ e` that
@@ -233,3 +238,26 @@ theorem charpoly_comp_map_coeff_mem_range {N : Type*} [Fintype N] [DecidableEq N
   · exact zero_mem _
 
 end AlgHom
+
+namespace TauCeti
+
+variable {O A G σ : Type*} [CommRing O] [CommRing A] [Algebra O A] [Monoid G] [Fintype σ]
+  [DecidableEq σ]
+
+/-- **Amitsur's theorem for the image of a group algebra.** If the characteristic polynomial of
+every `U g` has its coefficients in the subalgebra `S`, then so has the characteristic polynomial
+of the image of every element of the monoid algebra `O[G]`. -/
+theorem charpoly_coeff_lift_mem {S : Subalgebra O A} {U : G →* Matrix σ σ A}
+    (hU : ∀ g n, (U g).charpoly.coeff n ∈ S) (w : MonoidAlgebra O G) (n : ℕ) :
+    (MonoidAlgebra.lift O (Matrix σ σ A) G U w).charpoly.coeff n ∈ S := by
+  have hspan : Submodule.span S (Set.range fun g : G ↦ MonoidAlgebra.single g (1 : S)) = ⊤ := by
+    rw [← funext (MonoidAlgebra.basis_apply (R := G) S)]
+    exact (MonoidAlgebra.basis G S).span_eq
+  obtain ⟨s, hs⟩ := AlgHom.charpoly_coeff_mem_range_of_span
+    (MonoidAlgebra.lift S (Matrix σ σ A) G U) hspan
+    (by rintro _ ⟨g, rfl⟩ k; simpa using hU g k)
+    (MonoidAlgebra.mapRingHom G (algebraMap O S) w) n
+  rw [MonoidAlgebra.lift_mapRingHom_algebraMap] at hs
+  exact hs ▸ s.property
+
+end TauCeti
