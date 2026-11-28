@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Data.Set.Countable
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 
 /-!
@@ -18,7 +19,8 @@ A real combination `a cos x + b sin x` is a single shifted cosine: with `z = a +
 
 (`Real.mul_cos_add_mul_sin_eq_norm_mul_cos_sub_arg`), the harmonic addition formula. Each level
 set of `cos` is a union of two cosets of `2πℤ`, so it is countable (`Real.countable_setOf_cos_eq`),
-and hence so is each level set of `a cos x + b sin x` unless `a = b = 0`
+hence a Lebesgue null set (`Real.volume_setOf_cos_eq`), and each level set of
+`a cos x + b sin x` is countable unless `a = b = 0`
 (`Real.countable_setOf_mul_cos_add_mul_sin_eq`). Since an interval of positive length is
 uncountable, the complement of such a level set, or of a countable union of them, is dense.
 
@@ -55,6 +57,10 @@ theorem countable_setOf_cos_eq (c : ℝ) : {x : ℝ | cos x = c}.Countable := by
   obtain ⟨k, hk | hk⟩ := cos_eq_cos_iff.1 hc
   · exact .inl ⟨k, hk.symm⟩
   · exact .inr ⟨k, hk.symm⟩
+
+/-- **The level sets of `cos` are null sets**, being countable. -/
+theorem volume_setOf_cos_eq (c : ℝ) : MeasureTheory.volume {x : ℝ | cos x = c} = 0 :=
+  (countable_setOf_cos_eq c).measure_zero _
 
 /-- **The level sets of `a cos x + b sin x` are countable** unless `a = b = 0`. -/
 theorem countable_setOf_mul_cos_add_mul_sin_eq {a b : ℝ} (hab : a ≠ 0 ∨ b ≠ 0) (c : ℝ) :

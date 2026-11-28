@@ -52,8 +52,10 @@ compares the homology sequences of these short exact sequences.
   columns `p + 1` vanish, augmented by an isomorphism.
 * `HomologicalComplex₂.rowZeroShortComplex`: the degreewise split short exact sequence
   `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`, where `HomologicalComplex₂.rowsSucc K` is the bicomplex
-  of the rows `≥ 1` of `K`; the projection `HomologicalComplex₂.dropRowZero` is natural
-  (`HomologicalComplex₂.dropRowZero_naturality`) along the morphisms
+  of the rows `≥ 1` of `K`, a functor of `K` (`HomologicalComplex₂.rowsSuccFunctor`); the
+  inclusion `HomologicalComplex₂.rowZeroι` and the projection `HomologicalComplex₂.dropRowZero`
+  are natural (`HomologicalComplex₂.rowZeroι_naturality`,
+  `HomologicalComplex₂.dropRowZero_naturality`) along the morphisms
   `HomologicalComplex₂.rowsSuccMap` of the bicomplexes of rows `≥ 1`.
 * `HomologicalComplex₂.total_map_flip_totalFlipIso_hom`: naturality of the signed isomorphism
   between the total complexes of a bicomplex and of its flip, for any total complex shape with a
@@ -543,6 +545,27 @@ omit [HasFiniteCoproducts C] in
 lemma rowsSuccMap_comp {M : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)}
     (ψ : L ⟶ M) : rowsSuccMap (φ ≫ ψ) = rowsSuccMap φ ≫ rowsSuccMap ψ := (rfl)
 
+omit [HasFiniteCoproducts C] in
+variable (C) in
+/-- The bicomplex of the rows `≥ 1` of a first-quadrant bicomplex, reindexed so that row `q + 1`
+becomes row `q`, as a functor of the bicomplex. -/
+-- The body is exposed so that its values and maps are reducibly `rowsSucc` and `rowsSuccMap`,
+-- whose terms are those of the bicomplex one row up.
+@[expose, simps! obj map]
+def rowsSuccFunctor :
+    HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ) ⥤
+      HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ) where
+  obj := rowsSucc
+  map := rowsSuccMap
+
+/-- The inclusion of the row `0` in the total complex is natural. -/
+@[reassoc]
+lemma rowZeroι_naturality :
+    ((eval C (ComplexShape.down ℕ) 0).mapHomologicalComplex _).map φ ≫ rowZeroι L =
+      rowZeroι K ≫ total.map φ (ComplexShape.down ℕ) := by
+  ext n
+  simp
+
 @[reassoc]
 private lemma dropRowZeroX_naturality (n : ℕ) :
     dropRowZeroX K n ≫ (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)).f n =
@@ -560,9 +583,7 @@ private noncomputable def rowZeroShortComplexMap :
   τ₁ := ((eval C (ComplexShape.down ℕ) 0).mapHomologicalComplex _).map φ
   τ₂ := total.map φ (ComplexShape.down ℕ)
   τ₃ := extendMap (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)) (embeddingDownNatAdd 1)
-  comm₁₂ := by
-    ext n
-    simp
+  comm₁₂ := rowZeroι_naturality φ
   comm₂₃ := by
     refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
     rcases n with _ | n

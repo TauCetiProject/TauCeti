@@ -146,7 +146,8 @@ theorem apply_eq_zero_of_eventually_flowOf_mem (h : IsLiouvilleDomain ω α W)
   -- The trajectory starts at `x`, so its velocity there is `Z x`.
   have hZx : Z x ∈ mtangentConeAt I L x := by
     have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
-    have hcone := (isMIntegralCurveAt_flowOf hZs (mem_flowDomain_zero hZs x)).mem_mtangentConeAt hL
+    have hcone :=
+      (isMIntegralCurveAt_flowOf hZs (mem_flowDomain_zero (hZs x))).mem_mtangentConeAt hL
     generalize hy : flowOf Z 0 x = y at hcone
     rw [flowOf_zero] at hy
     exact hy ▸ hcone
@@ -181,7 +182,7 @@ theorem apply_eq_zero_of_mem_mtangentConeAt (h : IsLiouvilleCompletion ω α W)
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   have hcont : ContinuousAt (fun t ↦ liouvilleRadialCoordinate Z W (flowOf Z t x)) 0 :=
     (h.continuous_liouvilleRadialCoordinate hZ).continuousAt.comp
-      (mdifferentiableAt_flowOf hZs (mem_flowDomain_zero hZs x)).continuousAt
+      (mdifferentiableAt_flowOf hZs (mem_flowDomain_zero (hZs x))).continuousAt
   have hev : ∀ᶠ t in 𝓝 (0 : ℝ), R < liouvilleRadialCoordinate Z W (flowOf Z t x) :=
     hcont.eventually (lt_mem_nhds (by simpa only [flowOf_zero] using hx))
   exact h.toIsLiouvilleDomain.apply_eq_zero_of_eventually_flowOf_mem hZ
