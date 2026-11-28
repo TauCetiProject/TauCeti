@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Evaluation
 public import TauCeti.Topology.Algebra.Monoid
+import TauCeti.RepresentationTheory.Continuous.Intertwining
 
 /-!
 # The complex of continuous inhomogeneous cochains
@@ -240,19 +241,6 @@ variable {Y Z : TopRep.{max v w} k G}
   {hY : Continuous fun p : G × Y.V ↦ Y.ρ p.1 p.2}
   {hZ : Continuous fun p : G × Z.V ↦ Z.ρ p.1 p.2}
 
--- Evaluate the same postcomposition map in the differential square and in each cochain degree.
-private theorem compLeftContinuous_apply_cochain {H : Type v} [Monoid H] [TopologicalSpace H]
-    {U V : TopRep.{max v w} k H} (f : U ⟶ V) {n : ℕ}
-    (a : C(Fin n → H, U.V)) (x : Fin n → H) :
-    ((f.hom.toContinuousLinearMap.compLeftContinuous k (Fin n → H)).toLinearMap a) x =
-      f.hom (a x) := by
-  let l := f.hom.toContinuousLinearMap
-  have h₁ := ContinuousLinearMap.compLeftContinuous_apply k (Fin n → H) l a
-  have h₂ := AddMonoidHom.compLeftContinuous_apply (Fin n → H) l.toLinearMap.toAddMonoidHom
-    l.continuous a
-  have h₃ := congrArg (fun c : C(Fin n → H, V.V) ↦ c x) (h₁.trans h₂)
-  exact h₃.trans (ContIntertwiningMap.toContinuousLinearMap_apply _ _)
-
 -- The bundled cochain map exposes this square via `HomologicalComplex.Hom.comm`.
 private theorem compLeftContinuous_comm_continuousInhomogeneousCochains_d (f : X ⟶ Y) (n : ℕ) :
     ModuleCat.ofHom (f.hom.toContinuousLinearMap.compLeftContinuous k (Fin n → G)).toLinearMap ≫
@@ -262,8 +250,8 @@ private theorem compLeftContinuous_comm_continuousInhomogeneousCochains_d (f : X
           (f.hom.toContinuousLinearMap.compLeftContinuous k (Fin (n + 1) → G)).toLinearMap := by
   ext a x : 3
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, CochainComplex.of_d, ModuleCat.hom_ofHom]
-  simp only [compLeftContinuous_apply_cochain f, continuousInhomogeneousCochainsD_apply, map_add,
-    map_sum, map_zsmul, hom_comm_apply]
+  simp only [ContIntertwiningMap.compLeftContinuous_apply_apply,
+    continuousInhomogeneousCochainsD_apply, map_add, map_sum, map_zsmul, hom_comm_apply]
 
 /-- The map on continuous inhomogeneous cochains induced by a continuous equivariant linear map
 between representations with jointly continuous actions. It postcomposes each cochain with
@@ -287,7 +275,7 @@ theorem continuousInhomogeneousCochainsMap_f_apply (f : X ⟶ Y) (n : ℕ)
     ((continuousInhomogeneousCochainsMap (hX := hX) (hY := hY) f).f n).hom a x =
       f.hom (a x) := by
   rw [continuousInhomogeneousCochainsMap_f, ModuleCat.hom_ofHom]
-  exact compLeftContinuous_apply_cochain f a x
+  exact f.hom.compLeftContinuous_apply_apply a x
 
 /-- The identity on coefficients induces the identity on continuous inhomogeneous cochains. -/
 @[simp]

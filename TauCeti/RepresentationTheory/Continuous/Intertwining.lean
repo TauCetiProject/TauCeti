@@ -23,6 +23,8 @@ one.
 
 * `ContIntertwiningMap.toIntertwiningMap_apply`: the algebraic intertwiner underlying a
   continuous one has the same values.
+* `ContIntertwiningMap.compLeftContinuous_apply_apply`: evaluation of postcomposition by a
+  continuous intertwiner, using Mathlib's `ContinuousLinearMap.compLeftContinuous`.
 * `ContRepresentation.intertwiningMapEquiv`: continuous intertwiners are linearly equivalent to
   algebraic intertwiners.
 * `ContRepresentation.equivOfEquiv`: an equivalence of the underlying algebraic representations of
@@ -57,6 +59,19 @@ continuity does not change the map. -/
 theorem toIntertwiningMap_apply (f : ContIntertwiningMap π ρ) (v : V) :
     f.toIntertwiningMap v = f v :=
   (rfl)
+
+/-- Postcomposing a continuous function with a continuous intertwiner applies the intertwiner
+to the value at each point. -/
+theorem compLeftContinuous_apply_apply {A : Type*} [TopologicalSpace A]
+    [ContinuousConstSMul R V] [ContinuousConstSMul R W]
+    (f : ContIntertwiningMap π ρ) (a : C(A, V)) (x : A) :
+    (f.toContinuousLinearMap.compLeftContinuous R A).toLinearMap a x = f (a x) := by
+  let l := f.toContinuousLinearMap
+  have h : l.compLeftContinuous R A a =
+      (⟨l, l.continuous⟩ : C(V, W)).comp a :=
+    (ContinuousLinearMap.compLeftContinuous_apply R A l a).trans
+      (AddMonoidHom.compLeftContinuous_apply A l.toLinearMap.toAddMonoidHom l.continuous a)
+  exact (congrArg (fun c : C(A, W) ↦ c x) h).trans (toContinuousLinearMap_apply f (a x))
 
 end ContIntertwiningMap
 

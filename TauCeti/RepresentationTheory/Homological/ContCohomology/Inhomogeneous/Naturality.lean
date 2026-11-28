@@ -58,8 +58,9 @@ theorem continuousInhomogeneousCochainsIso_inv_naturality [LocallyCompactSpace G
       Subtype.val (((ContinuousCohomology.cochainsMap (ContinuousMonoidHom.id G) f).f n).hom a) =
         (ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom a.val :=
     TauCeti.ContinuousCohomology.coe_cochainsMap_f_apply (ContinuousMonoidHom.id G) f n a
-  exact (congrArg (fun b ↦ resolutionEval Y (n + 1) b (Fin.partialProd x)) hval).trans
-    (resolutionEval_resolutionMap_apply X (ContinuousMonoidHom.id G) f (n + 1)
-      a.val (Fin.partialProd x))
+  have happly := resolutionEval_resolutionMap_apply X (ContinuousMonoidHom.id G) f (n + 1)
+    a.val (Fin.partialProd x)
+  rw [ContinuousMonoidHom.coe_id, Function.id_comp] at happly
+  exact (congrArg (fun b ↦ resolutionEval Y (n + 1) b (Fin.partialProd x)) hval).trans happly
 
 end TopRep
