@@ -83,7 +83,7 @@ theorem ker_smulRight_of_apply_eq_one {φ : M →ₗ[R] R} {w : M} (hw : φ w = 
 
 end LinearMap
 
-namespace TauCeti
+namespace Finset
 
 /-- The kernels of finitely many nonzero semilinear maps are finitely many proper submodules
 covering every point at which one of the maps vanishes. -/
@@ -98,4 +98,4 @@ theorem exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
     Finset.forall_mem_image.mpr fun p hp ↦ LinearMap.ker_eq_top.not.mpr (hf p hp),
     fun x p hp hx ↦ ⟨_, Finset.mem_image_of_mem _ hp, LinearMap.mem_ker.mpr hx⟩⟩
 
-end TauCeti
+end Finset

@@ -19,7 +19,7 @@ The instances allow callers to use `Northcott.finite_le` and `Northcott.exists_m
 Over a number field the scalar hypothesis follows from Mathlib's number-field instance.
 
 As a consequence, the nonzero tuples of bounded height lie on finitely many lines
-(`TauCeti.exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le`). This is how points of
+(`Real.exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le`). This is how points of
 small height are disposed of in finiteness statements about subspaces, such as the Subspace
 Theorem.
 
@@ -76,7 +76,7 @@ instance instNorthcottLogHeight [Northcott (mulHeight (K := K) (ι := ι))] :
 
 end Projectivization
 
-namespace TauCeti
+namespace Real
 
 open Height
 
@@ -101,4 +101,4 @@ theorem exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le
   · exact ⟨Projectivization.mk K x hx, by rwa [Set.mem_ofPred_eq, Projectivization.mulHeight_mk],
       Projectivization.submodule_mk x hx⟩
 
-end TauCeti
+end Real

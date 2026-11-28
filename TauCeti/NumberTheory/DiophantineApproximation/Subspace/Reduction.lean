@@ -185,17 +185,18 @@ theorem exists_finset_submodule_forall_mem_or_smul_mem_approxDomain [Nontrivial 
     by_cases hv' : v ∈ Sfin
     · exact hfin v hv' ▸ hLFin v hv'
     · exact (funext (hfin' v hv hv')).symm ▸ Module.Dual.linearIndependent_proj K ι
-  obtain ⟨UInf, hUInf, hcovInf⟩ := exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+  obtain ⟨UInf, hUInf, hcovInf⟩ := Finset.exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
     (univ : Finset (InfinitePlace K × ι)) (fun p ↦ L' p.1.val p.2)
     fun p _ ↦ (hindInf p.1).ne_zero p.2
-  obtain ⟨UFin, hUFin, hcovFin⟩ := exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+  obtain ⟨UFin, hUFin, hcovFin⟩ := Finset.exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
     (S₀ ×ˢ univ) (fun p : FinitePlace K × ι ↦ L' p.1.val p.2)
     fun p hp ↦ (hindFin p.1 (mem_product.mp hp).1).ne_zero p.2
   refine ⟨S₀, L', T, hindInf, hindFin, hT, fun Q₀ ↦ ?_⟩
   -- the lines through the points of height at most `max Q₀ Q₁`, and the kernels of the forms at
   -- the infinite places and the places of `S₀`
   obtain ⟨T₁, hT₁, hlines⟩ :=
-    exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le (K := K) (ι := ι) (max Q₀ Q₁)
+    Real.exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le
+      (K := K) (ι := ι) (max Q₀ Q₁)
   have hLinesProper : ∀ W ∈ T₁, W ≠ ⊤ := by
     intro W hW
     refine (Submodule.lt_top_of_finrank_lt_finrank ?_).ne
