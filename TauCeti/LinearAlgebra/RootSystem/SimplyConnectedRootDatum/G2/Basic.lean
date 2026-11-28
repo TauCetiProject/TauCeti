@@ -163,6 +163,11 @@ theorem g2Coeff_nonpos (k : Fin 12) (hk : 6 ≤ (k : ℕ)) (i : Fin 2) : g2Coeff
 @[simp] theorem g2Coeff_add_six (k : Fin 12) : g2Coeff (k + 6) = -g2Coeff k := by
   decide +revert
 
+/-- The last six roots are the negatives of the first six. -/
+@[simp] theorem g2Root_add_six (k : Fin 12) : g2Root (k + 6) = -g2Root k := by
+  simp only [g2Root_apply]
+  decide +revert
+
 /-- The permutation table for reflection in each of the twelve `G2` roots. -/
 private def g2ReflectionIndex : Fin 12 → Fin 12 → Fin 12 := ![
   ![6, 4, 3, 2, 1, 5, 0, 10, 9, 8, 7, 11],
@@ -234,6 +239,13 @@ fundamental-weight and simple-coroot bases being dual to one another. -/
 tabulated root and coroot coordinates. -/
 @[simp] lemma g2SimplyConnectedRootDatum_pairing (i j : Fin 12) :
     g2SimplyConnectedRootDatum.pairing i j = g2Root i ⬝ᵥ g2Coroot j := (rfl)
+
+/-- Reflecting a `G₂` root in itself shifts its index by `6`. -/
+@[simp] theorem g2SimplyConnectedRootDatum_reflectionPerm_self (α : Fin 12) :
+    g2SimplyConnectedRootDatum.reflectionPerm α α = α + 6 :=
+  g2SimplyConnectedRootDatum.root.injective <| by
+    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
+    simp
 
 /-- The pinned simply connected root datum of type `G₂` is reduced. -/
 instance instIsReducedG2SimplyConnectedRootDatum : g2SimplyConnectedRootDatum.IsReduced := by

@@ -141,6 +141,37 @@ theorem g2_root_add_iff {ht : G2.Valid} (i j k : Fin G2.numRoots) :
   simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
     rank, numRoots]
 
+/-- The root map of the assembled `G₂` datum is `TauCeti.DynkinType.g2Root`. -/
+theorem root_simplyConnectedRootDatum_G2 {ht : G2.Valid} :
+    ⇑(G2.simplyConnectedRootDatum ht).root = ⇑g2Root := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots]
+
+/-- The coroot map of the assembled `G₂` datum is `TauCeti.DynkinType.g2Coroot`. -/
+theorem coroot_simplyConnectedRootDatum_G2 {ht : G2.Valid} :
+    ⇑(G2.simplyConnectedRootDatum ht).coroot = ⇑g2Coroot := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_coroot,
+    rank, numRoots]
+
+/-- Membership of a root sum in the root set of the assembled `G₂` datum is equivalent to
+membership in `Set.range g2Root`. -/
+theorem g2_add_mem_range_iff {ht : G2.Valid} (i j : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j ∈
+        Set.range (G2.simplyConnectedRootDatum ht).root ↔
+      g2Root i + g2Root j ∈ Set.range g2Root := by
+  rw [root_simplyConnectedRootDatum_G2]; rfl
+
+/-- Vanishing of a root sum in the assembled `G₂` datum is equivalent to vanishing in `g2Root`. -/
+theorem g2_add_eq_zero_iff {ht : G2.Valid} (i j : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j = 0 ↔
+      g2Root i + g2Root j = 0 := by
+  rw [root_simplyConnectedRootDatum_G2]; rfl
+
+/-- Reflecting a root of the assembled `G₂` datum in itself shifts its index by `6`. -/
+theorem reflectionPerm_self_G2 (ht : G2.Valid) (α : Fin 12) :
+    (G2.simplyConnectedRootDatum ht).reflectionPerm α α = (α + 6 : Fin 12) :=
+  simplyConnectedRootDatum_G2 ht ▸ g2SimplyConnectedRootDatum_reflectionPerm_self α
+
 -- A base is indexed by its datum, so each base equation explicitly transports along the
 -- corresponding datum equation instead of exposing either dispatcher's implementation.
 @[simp] theorem simplyConnectedBase_A (n : ℕ) (ht : (A n).Valid) :
