@@ -7,19 +7,15 @@ module
 
 public import Mathlib.Data.Nat.Totient
 public import TauCeti.NumberTheory.Mertens.Basic
-import TauCeti.Analysis.SpecialFunctions.Log.Bounds
-import TauCeti.Data.Nat.Totient
-import TauCeti.NumberTheory.PrimeFactors.Bounds
+import TauCeti.Data.Nat.Totient.LowerBound
 
 /-!
 # The minimal order of the totient
 
-Euler's product formula gives `n / φ(n) = ∏_{p ∣ n} (1 - p⁻¹)⁻¹`. This file bounds the product by
-splitting the prime divisors of `n` at a real `y > 1`. The primes `p ≤ y` contribute at most the
-full Euler product `∏_{p ≤ y} (1 - p⁻¹)⁻¹`, which Mertens's third theorem evaluates as
-`e^γ log y + O(1)`. There are at most `log n / log y` prime divisors `p > y`, and each has
-`(1 - p⁻¹)⁻¹ ≤ exp (2 / y)`, so they contribute at most `exp (2 log n / (y log y))`. The choice
-`y = log n` gives
+Euler's product formula gives `n / φ(n) = ∏_{p ∣ n} (1 - p⁻¹)⁻¹`. Splitting the prime divisors of
+`n` at a real `y > 1` bounds this by `∏_{p ≤ y} (1 - p⁻¹)⁻¹ * exp (2 log n / (y log y))`
+(`Nat.div_totient_le_prod_primesLE_mul_exp`), and Mertens's third theorem evaluates the Euler
+product as `e^γ log y + O(1)`. The choice `y = log n` gives
 
 `n / φ(n) ≤ (e^γ log log n + C) exp (2 / log log n)`
 
@@ -29,13 +25,6 @@ with an absolute constant `C`. Hence `n / φ(n) ≤ C' log log n` for all `n ≥
 
 ## Main results
 
-* `Nat.card_primeFactors_filter_gt_mul_log_le`: `n` has at most `log n / log y` prime divisors
-  `p > y`.
-* `Nat.prod_primeFactors_filter_le_one_sub_inv_inv_le`,
-  `Nat.prod_primeFactors_filter_gt_one_sub_inv_inv_le`: the bounds for the prime divisors
-  `p ≤ y` and `p > y` of `n`.
-* `Nat.div_totient_le_prod_primesLE_mul_exp`: `n / φ(n) ≤ ∏_{p ≤ y} (1 - p⁻¹)⁻¹ *
-  exp (2 log n / (y log y))` for `y > 1`.
 * `TauCeti.exists_div_totient_le_add_mul_exp`: `n / φ(n) ≤ (e^γ log log n + C) *
   exp (2 / log log n)` with an absolute constant `C`.
 * `TauCeti.exists_div_totient_le_mul_log_log`, `TauCeti.exists_one_div_totient_le_mul_log_log_div`:
@@ -55,92 +44,6 @@ public section
 
 open Filter Finset
 open scoped Nat Topology
-
-namespace Nat
-
-variable {y : ℝ}
-
-/-- A natural number `n` has at most `log n / log y` prime divisors `p > y`, for every real
-`y ≥ 0`: the product of these primes is at most `n`. -/
-theorem card_primeFactors_filter_gt_mul_log_le (n : ℕ) (hy : 0 ≤ y) :
-    (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * Real.log y ≤ Real.log n := by
-  rcases hy.eq_or_lt with rfl | hy
-  · simpa using Real.log_natCast_nonneg n
-  calc (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * Real.log y
-      = ∑ _p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), Real.log y := by
-        rw [sum_const, nsmul_eq_mul]
-    _ ≤ ∑ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), Real.log p :=
-        sum_le_sum fun p hp ↦ Real.log_le_log hy (mem_filter.1 hp).2.le
-    _ ≤ ∑ p ∈ n.primeFactors, Real.log p :=
-        sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun p _ _ ↦ Real.log_natCast_nonneg p
-    _ ≤ Real.log n := sum_primeFactors_log_le n
-
-/-- The Euler factors of the prime divisors `p ≤ y` of `n` are bounded by the full Euler product
-over the primes `p ≤ y`. -/
-theorem prod_primeFactors_filter_le_one_sub_inv_inv_le (n : ℕ) (y : ℝ) :
-    ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ (p : ℝ) ≤ y), (1 - (p : ℝ)⁻¹)⁻¹ ≤
-      ∏ p ∈ primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ := by
-  have hpos : ∀ p : ℕ, p.Prime → 0 < 1 - (p : ℝ)⁻¹ := fun p hp ↦
-    sub_pos.2 (inv_lt_one_of_one_lt₀ (mod_cast hp.one_lt))
-  refine prod_le_prod_of_subset_of_one_le₀ (fun p hp ↦ ?_) (fun p hp ↦ ?_) fun p hp _ ↦ ?_
-  · obtain ⟨hp, hpy⟩ := mem_filter.1 hp
-    exact mem_primesLE.2 ⟨le_floor hpy, prime_of_mem_primeFactors hp⟩
-  · exact (inv_pos.2 (hpos p (prime_of_mem_primeFactors (mem_filter.1 hp).1))).le
-  · exact (one_le_inv₀ (hpos p (prime_of_mem_primesLE hp))).2 (sub_le_self 1 (by positivity))
-
-/-- The Euler factors of the prime divisors `p > y` of `n` multiply to at most
-`exp (2 log n / (y log y))`, for every real `y > 1`. -/
-theorem prod_primeFactors_filter_gt_one_sub_inv_inv_le (n : ℕ) (hy : 1 < y) :
-    ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), (1 - (p : ℝ)⁻¹)⁻¹ ≤
-      Real.exp (2 * Real.log n / (y * Real.log y)) := by
-  have hy0 : 0 < y := zero_lt_one.trans hy
-  have hlogy : 0 < Real.log y := Real.log_pos hy
-  have hfactor : ∀ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p),
-      (1 - (p : ℝ)⁻¹)⁻¹ ≤ Real.exp (2 / y) := by
-    intro p hp
-    obtain ⟨hp, hyp⟩ := mem_filter.1 hp
-    have hp2 : (2 : ℝ) ≤ p := mod_cast (prime_of_mem_primeFactors hp).two_le
-    have hinv : (p : ℝ)⁻¹ ≤ 1 / 2 := by
-      rw [one_div]
-      exact inv_anti₀ two_pos hp2
-    have hlog := Real.abs_log_le_two_mul_one_sub (x := 1 - (p : ℝ)⁻¹) (by linarith)
-      (sub_le_self 1 (inv_nonneg.2 (zero_le_two.trans hp2)))
-    rw [sub_sub_cancel] at hlog
-    have hpy : (p : ℝ)⁻¹ ≤ y⁻¹ := inv_anti₀ hy0 hyp.le
-    rw [← Real.exp_log (inv_pos.2 (by linarith : 0 < 1 - (p : ℝ)⁻¹)), Real.log_inv]
-    refine Real.exp_le_exp.2 ?_
-    rw [div_eq_mul_inv]
-    linarith [neg_le_abs (Real.log (1 - (p : ℝ)⁻¹))]
-  have hcard : (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * (2 / y) ≤
-      2 * Real.log n / (y * Real.log y) := by
-    rw [le_div_iff₀ (mul_pos hy0 hlogy)]
-    calc (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * (2 / y) * (y * Real.log y)
-        = 2 * ((#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * Real.log y) := by field_simp
-      _ ≤ 2 * Real.log n := by gcongr; exact card_primeFactors_filter_gt_mul_log_le n hy0.le
-  calc ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), (1 - (p : ℝ)⁻¹)⁻¹
-      ≤ ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), Real.exp (2 / y) :=
-        prod_le_prod₀ (fun p _ ↦ inv_nonneg.2 (sub_nonneg.2 (cast_inv_le_one p))) hfactor
-    _ = Real.exp ((#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * (2 / y)) := by
-        rw [prod_const, ← Real.exp_natCast_mul]
-    _ ≤ Real.exp (2 * Real.log n / (y * Real.log y)) := Real.exp_le_exp.2 hcard
-
-/-- **The totient and the Euler product at a cutoff.** For every `n` and every real `y > 1`,
-`n / φ(n) ≤ ∏_{p ≤ y} (1 - p⁻¹)⁻¹ * exp (2 log n / (y log y))`. For `n = 0` the left side is
-`0`. -/
-theorem div_totient_le_prod_primesLE_mul_exp (n : ℕ) (hy : 1 < y) :
-    (n : ℝ) / φ n ≤ (∏ p ∈ primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) *
-      Real.exp (2 * Real.log n / (y * Real.log y)) := by
-  have hnonneg : ∀ s : Finset ℕ, 0 ≤ ∏ p ∈ s, (1 - (p : ℝ)⁻¹)⁻¹ := fun s ↦
-    prod_nonneg fun p _ ↦ inv_nonneg.2 (sub_nonneg.2 (cast_inv_le_one p))
-  rcases eq_or_ne n 0 with rfl | hn
-  · simpa using hnonneg _
-  rw [← TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient hn,
-    ← prod_filter_mul_prod_filter_not n.primeFactors (fun p : ℕ ↦ (p : ℝ) ≤ y)]
-  simp only [not_le]
-  exact mul_le_mul (prod_primeFactors_filter_le_one_sub_inv_inv_le n y)
-    (prod_primeFactors_filter_gt_one_sub_inv_inv_le n hy) (hnonneg _) (hnonneg _)
-
-end Nat
 
 namespace TauCeti
 
