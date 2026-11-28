@@ -59,10 +59,18 @@ corresponding pointed map `Sⁿ → X`. It becomes null-homotopic in `Y`
 * `TopCat.RelativeCWComplex.surjective_homotopyGroupMap`,
   `TopCat.RelativeCWComplex.bijective_homotopyGroupMap`: a relative CW complex without cells of
   dimension at most `n` is surjective on `π_k` for `k ≤ n` and bijective for `k < n`.
+* `TopCat.RelativeCWComplex.pathConnectedSpace`: a relative CW complex without `0`-cells
+  preserves path connectedness.
+* `TopCat.RelativeCWComplex.fundamentalGroupMulEquiv`: a relative CW complex without cells of
+  dimension at most `2` induces an isomorphism of fundamental groups.
 * `HomotopicalAlgebra.AttachCells.surjective_homotopyGroupMap`: attaching `(n + 1)`-cells is
   surjective on `π_k` for `k ≤ n`.
 * `HomotopicalAlgebra.AttachCells.bijective_homotopyGroupMap`: attaching `(n + 1)`-cells is
   bijective on `π_k` for `k < n`.
+* `TauCeti.pathConnectedSpace_cellAttachment`: attaching cells to a path-connected space gives a
+  path-connected space.
+* `TauCeti.cellAttachmentFundamentalGroupMulEquiv`: attaching cells of dimension at least `3`
+  does not change the fundamental group.
 * `TauCeti.mk_mem_range_homotopyGroupMap_of_cellAttachmentCell_comp`: a cell attached along a
   constant map realizes the class of the generalized loop it is sent onto.
 * `TauCeti.subsingleton_homotopyGroup_cellAttachment`: attaching `(n + 1)`-cells along
@@ -130,6 +138,33 @@ theorem bijective_homotopyGroupMap (hc : ∀ m ≤ n, IsEmpty (c.attachCells m (
   exact (Equiv.injective _).comp ((injective_homotopyGroupMap_skeletonLT hN hA
     (subset_univ _) _).comp (Equiv.injective _))
 
+/-- **A relative CW complex without `0`-cells preserves path connectedness.** If `f : X ⟶ Y` is a
+relative CW complex on a Hausdorff, path-connected space `X` that attaches no `0`-cells, then `Y`
+is path connected: `f` is surjective on `π₀`. -/
+theorem pathConnectedSpace [PathConnectedSpace X]
+    (hc : IsEmpty (c.attachCells 0 (not_isMax 0)).ι) : PathConnectedSpace Y := by
+  obtain ⟨x⟩ := PathConnectedSpace.nonempty (X := X)
+  have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
+  exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (f x)).2
+    (c.surjective_homotopyGroupMap (n := 0) (N := Fin 0)
+      (fun m hm ↦ by obtain rfl := Nat.le_zero.1 hm; exact hc) (by simp) x).subsingleton
+
+/-- **A relative CW complex without cells of dimension at most `2` is an isomorphism on `π₁`.**
+If `f : X ⟶ Y` is a relative CW complex on a Hausdorff space `X` all of whose cells have dimension
+at least `3`, then `f` induces an isomorphism of fundamental groups `π₁(X, x) ≃* π₁(Y, f x)`. -/
+def fundamentalGroupMulEquiv (hc : ∀ m ≤ 2, IsEmpty (c.attachCells m (not_isMax m)).ι) (x : X) :
+    FundamentalGroup X x ≃* FundamentalGroup Y (f x) :=
+  MulEquiv.ofBijective (FundamentalGroup.mapOfEq f.hom rfl)
+    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq _ rfl).1
+      (c.bijective_homotopyGroupMap hc (N := Fin 1) (by simp) x))
+
+/-- The isomorphism of fundamental groups is the map induced by `f`. -/
+@[simp]
+lemma fundamentalGroupMulEquiv_apply (hc : ∀ m ≤ 2, IsEmpty (c.attachCells m (not_isMax m)).ι)
+    (x : X) (g : FundamentalGroup X x) :
+    c.fundamentalGroupMulEquiv hc x g = FundamentalGroup.mapOfEq f.hom rfl g :=
+  (rfl)
+
 end TopCat.RelativeCWComplex
 
 namespace HomotopicalAlgebra.AttachCells
@@ -172,6 +207,29 @@ a bijection `π_k(X, x) → π_k(X ∪ eⁿ⁺¹, x)` for `k = Nat.card N < n`. 
 theorem bijective_homotopyGroupMap_cellAttachmentIncl (hN : Nat.card N < n) (x : X) :
     Function.Bijective (HomotopyGroup.map (N := N) (x := x) (cellAttachmentIncl φ).hom rfl) :=
   (cellAttachmentAttachCells φ).bijective_homotopyGroupMap hN x
+
+/-- Attaching `(n + 1)`-cells to a Hausdorff, path-connected space `X` along any family of maps
+`Sⁿ → X` gives a path-connected space. -/
+theorem pathConnectedSpace_cellAttachment [PathConnectedSpace X] :
+    PathConnectedSpace (cellAttachment φ) :=
+  (cellAttachmentAttachCells φ).toRelativeCWComplex.pathConnectedSpace
+    ((cellAttachmentAttachCells φ).isEmpty_toRelativeCWComplex_attachCells_ι (by omega) _)
+
+/-- For `n ≥ 2`, attaching `(n + 1)`-cells to a Hausdorff space `X` along any family of maps
+`Sⁿ → X` induces an isomorphism of fundamental groups `π₁(X, x) ≃* π₁(X ∪ eⁿ⁺¹, x)`. -/
+def cellAttachmentFundamentalGroupMulEquiv (hn : 1 < n) (x : X) :
+    FundamentalGroup X x ≃* FundamentalGroup (cellAttachment φ) (cellAttachmentIncl φ x) :=
+  (cellAttachmentAttachCells φ).toRelativeCWComplex.fundamentalGroupMulEquiv
+    (fun _ hm ↦ (cellAttachmentAttachCells φ).isEmpty_toRelativeCWComplex_attachCells_ι
+      (by omega) _) x
+
+/-- The isomorphism of fundamental groups is the map induced by the inclusion of `X`. -/
+@[simp]
+lemma cellAttachmentFundamentalGroupMulEquiv_apply (hn : 1 < n) (x : X)
+    (g : FundamentalGroup X x) :
+    cellAttachmentFundamentalGroupMulEquiv φ hn x g =
+      FundamentalGroup.mapOfEq (cellAttachmentIncl φ).hom rfl g :=
+  (rfl)
 
 end TauCeti
 

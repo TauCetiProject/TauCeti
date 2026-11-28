@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LocalRing.Herbrand
+public import TauCeti.RingTheory.LocalRing.Herbrand.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.ResidueDegree
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.GroupTheory.Index.Basic

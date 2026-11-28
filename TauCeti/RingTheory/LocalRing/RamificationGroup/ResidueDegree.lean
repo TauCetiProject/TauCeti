@@ -7,8 +7,9 @@ module
 
 public import Mathlib.FieldTheory.SeparableDegree
 public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.LocalRing.FixedPoints.Basic
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
-public import TauCeti.RingTheory.LocalRing.RingHom
+public import TauCeti.RingTheory.LocalRing.RingHom.Subalgebra
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 

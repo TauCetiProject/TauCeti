@@ -54,6 +54,8 @@ the full faithfulness of `f`.
   three.
 * `SSet.QCat.IsCategoricalEquivalence.pre_app`: precomposition `Fun(Y, E) ⟶ Fun(X, E)` with a
   categorical equivalence `X ⟶ Y` is a categorical equivalence.
+* `SSet.QCat.IsCategoricalEquivalence.of_rlp_monomorphisms`: a trivial fibration between
+  quasicategories is a categorical equivalence.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
 * `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
@@ -64,6 +66,11 @@ the full faithfulness of `f`.
 * `SSet.QCat.homEquiv_eq_mk`, `SSet.QCat.exists_isEquivalence_of_iso`: the objects of the
   hom-categories are the vertices of `Fun(X, Y)`, and their isomorphisms are classes of
   equivalences of `Fun(X, Y)`.
+* `SSet.QCat.nonempty_iso_of_isEquivalence`: conversely, an equivalence of `Fun(X, Y)` between the
+  vertices corresponding to `f` and `g` gives an invertible `2`-morphism `f ≅ g`.
+* `SSet.QCat.IsCategoricalEquivalence.of_iso`,
+  `SSet.QCat.IsCategoricalEquivalence.of_isEquivalence`: categorical equivalences are invariant
+  under invertible `2`-morphisms, that is under equivalences of `Fun(X, Y)`.
 * `SSet.QCat.isFullyFaithful_iff_of_iso`: isomorphic `1`-morphisms are fully faithful together.
 * `SSet.QCat.IsCategoricalEquivalence.isFullyFaithful`: **a categorical equivalence is fully
   faithful.**
@@ -75,8 +82,9 @@ the full faithfulness of `f`.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.10.
-* J. Lurie, *Kerodon*, §4.6.2 (fully faithful and essentially surjective functors).
+* J. Lurie, *Higher Topos Theory*, §1.2.10 and §2.4.6.
+* J. Lurie, *Kerodon*, §4.5 (equivalences of ∞-categories) and §4.6.2 (fully faithful and
+  essentially surjective functors).
 * E. Riehl and D. Verity, *The 2-category theory of quasi-categories*, Adv. Math. 280 (2015).
 -/
 
@@ -151,6 +159,17 @@ lemma exists_isEquivalence_of_iso {f g : X ⟶ Y} (e : f ≅ g) :
       eqToIso (homEquiv_eq_mk g)
   exact HomotopyCategory.nonempty_iso_mk_iff.1 ⟨φ⟩
 
+/-- An equivalence of `Fun(X, Y)` between the vertices corresponding to `f` and `g` gives an
+invertible `2`-morphism `f ≅ g` of the bicategory of quasicategories. -/
+lemma nonempty_iso_of_isEquivalence {f g : X ⟶ Y}
+    {α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ((ihomObj₀Equiv X.obj Y.obj).symm g.hom)}
+    (hα : α.IsEquivalence) : Nonempty (f ≅ g) := by
+  have := Y.property
+  obtain ⟨φ⟩ := HomotopyCategory.nonempty_iso_mk_iff.2 ⟨α, hα⟩
+  let ψ : CatEnrichedOrdinary.homEquiv f ≅ CatEnrichedOrdinary.homEquiv g :=
+    eqToIso (homEquiv_eq_mk f) ≪≫ φ ≪≫ eqToIso (homEquiv_eq_mk g).symm
+  exact ⟨CatEnrichedOrdinary.isoEquiv.symm ψ⟩
+
 /-- Isomorphic `1`-morphisms of the bicategory of quasicategories induce weak homotopy
 equivalences of right mapping spaces together. -/
 private lemma isWeakHomotopyEquivalence_map_of_iso {f g : X ⟶ Y} (e : f ≅ g) (x y : X.obj _⦋0⦌)
@@ -223,6 +242,39 @@ lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
 lemma of_isIso (f : X ⟶ Y) [IsIso f] : IsCategoricalEquivalence f :=
   ⟨inv f, ⟨eqToIso (IsIso.hom_inv_id f).symm⟩, ⟨eqToIso (IsIso.inv_hom_id f)⟩⟩
 
+open MorphismProperty Limits in
+/-- **A trivial fibration between quasicategories is a categorical equivalence.** -/
+theorem of_rlp_monomorphisms {p : X ⟶ Y}
+    (hp : (monomorphisms SSet.{u}).rlp p.hom) : IsCategoricalEquivalence p := by
+  -- A section `s` of `p` is a quasi-inverse: `s ≫ p` is the identity, and a homotopy over `Y` from
+  -- the identity of `X` to `p ≫ s` is an equivalence of `Fun(X, X)`, since its components lie over
+  -- identities.
+  have := X.property
+  have := (rlp_monomorphisms_iff.1 hp).1
+  have := isSplitEpi_of_rlp_monomorphisms hp
+  have hs : section_ p.hom ≫ p.hom = 𝟙 _ := IsSplitEpi.id p.hom
+  let s : Y ⟶ X := ObjectProperty.homMk (section_ p.hom)
+  obtain ⟨H, hH⟩ := exists_homotopy_of_rlp_monomorphisms hp (𝟙 X.obj) (p.hom ≫ section_ p.hom)
+    (by simp [hs])
+  -- The component of `H` at `x` lies over the degenerate edge at `p x`, so it is an equivalence.
+  have hα : ((ihomEdgeEquiv _ _).symm H).IsEquivalence := by
+    refine (Edge.isEquivalence_iff_forall_isEquivalence_map_evalAt _).2 fun x ↦ ?_
+    rw [← Edge.isEquivalence_map_iff_of_rightFibration p.hom]
+    refine (Edge.isEquivalence_iff_of_edge_eq ?_).1 (Edge.isEquivalence_id (p.hom.app _ x))
+    rw [Edge.id_edge, σ_zero_eq_yonedaEquiv_const]
+    simp [← yonedaEquiv_comp, hH]
+  -- The identities and composites of `1`-morphisms in the bicategory of quasicategories are those
+  -- of the full subcategory `QCat` of `SSet` only up to unfolding, so `simp` does not see them:
+  -- the maps underlying `𝟙 X` and `p ≫ s` are `𝟙 X.obj` and `p.hom ≫ section_ p.hom` by `rfl`.
+  obtain ⟨η⟩ := nonempty_iso_of_isEquivalence (f := 𝟙 X) (g := p ≫ s)
+    ((Edge.isEquivalence_ofEq_iff (e := (ihomEdgeEquiv _ _).symm H) rfl rfl).2 hα)
+  have hε : s ≫ p = 𝟙 Y := by
+    -- As above, the map underlying `s ≫ p` is `section_ p.hom ≫ p.hom` by definition.
+    ext : 1
+    exact hs
+  exact (isCategoricalEquivalence_iff_exists_equivalence p).2
+    ⟨.mkOfAdjointifyCounit η (eqToIso hε), rfl⟩
+
 /-- Categorical equivalences are invariant under invertible `2`-morphisms. -/
 lemma of_iso {f f' : X ⟶ Y} (i : f ≅ f') (hf : IsCategoricalEquivalence f) :
     IsCategoricalEquivalence f' := by
@@ -266,6 +318,13 @@ lemma pre_app {g : X ⟶ Y} (hg : IsCategoricalEquivalence g) (E : SSet.{u}) [Qu
   · exact NatTrans.congr_app (pre_map e.inv.hom e.hom.hom) E
   · exact (NatTrans.congr_app (pre_map e.hom.hom e.inv.hom) E).symm
   · exact NatTrans.congr_app (pre_id X.obj) E
+
+/-- A map of quasicategories joined to a categorical equivalence by an equivalence of the functor
+quasicategory `Fun(X, Y)` is a categorical equivalence. -/
+lemma of_isEquivalence {f g : X ⟶ Y} (hf : IsCategoricalEquivalence f)
+    (α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ((ihomObj₀Equiv X.obj Y.obj).symm g.hom))
+    (hα : α.IsEquivalence) : IsCategoricalEquivalence g :=
+  of_iso (nonempty_iso_of_isEquivalence hα).some hf
 
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/
