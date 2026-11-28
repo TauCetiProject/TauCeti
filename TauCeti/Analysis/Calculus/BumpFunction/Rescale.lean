@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
+import TauCeti.Analysis.Calculus.ContDiff.FDeriv.Apply
 import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
