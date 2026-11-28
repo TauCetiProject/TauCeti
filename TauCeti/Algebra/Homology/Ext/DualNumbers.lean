@@ -403,9 +403,8 @@ theorem fst_homDualNumberResidue_eq_zero
   simpa using congrArg TrivSqZeroExt.snd h
 
 /-- `Hom_A(S, A)` is isomorphic to `k` as a `k`-module: a map is read off from the coefficient
-of `ε` in the image of the residue class of `1`. The body is exposed because consumers compare
-its scalar action with the categorical one by unfolding. -/
-@[expose] noncomputable def homDualNumberResidueToFreeEquiv :
+of `ε` in the image of the residue class of `1`. -/
+noncomputable def homDualNumberResidueToFreeEquiv :
     (dualNumberResidue k ⟶ dualNumberFree k) ≃ₗ[k] k :=
   LinearEquiv.ofBijective
     { toFun := fun f ↦ (f.hom ((dualNumberProj k).hom 1) : DualNumber k).snd

@@ -59,7 +59,12 @@ noncomputable def endDualNumberBiprodResidueEquiv :
         · change regularEval _ = c • regularEval f.1
           rw [regularEval_apply, regularEval_apply]
           exact (Algebra.smul_def c (f.1.hom 1 : B)).symm
-        · change (algebraMap k B c * (f.2.hom s₁ : B)).snd = c * (f.2.hom s₁ : B).snd
+        · -- The second coordinate of the product equivalence is the residue-to-free equivalence.
+          have hsnd (g : (P ⟶ P) × (S ⟶ P)) : (regularEval.prodCongr residueToFree g).2 =
+              homDualNumberResidueToFreeEquiv k g.2 := rfl
+          simp only [AddEquiv.toFun_eq_coe, Prod.smul_snd, RingHom.id_apply, hsnd,
+            homDualNumberResidueToFreeEquiv_apply]
+          change (algebraMap k B c * (f.2.hom s₁ : B)).snd = c * (f.2.hom s₁ : B).snd
           rw [← Algebra.smul_def]
           rfl }
   exact End.linearEquiv ≪≫ₗ homToBiprodLinearEquiv k (P ⊞ S) P S ≪≫ₗ
