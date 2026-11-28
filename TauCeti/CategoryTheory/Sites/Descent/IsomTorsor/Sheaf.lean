@@ -224,6 +224,17 @@ lemma sheafHomTorsor_smul
     a • p = b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a) :=
   (rfl)
 
+/-- An additive band coefficient acts on the Isom torsor by `homAct`. -/
+lemma sheafHomTorsor_smul_ofAdd
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    {T : (Over U)ᵒᵖ} (a : A.obj.obj (op T.unop.left))
+    (p : (b.sheafHomTorsor x y h).sheaf.obj.obj T) :
+    abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat.{v'} U).obj A) T
+      (.ofAdd a) • p = b.homAct p (.ofAdd a) := by
+  exact (b.sheafHomTorsor_smul h _ p).trans
+    (congrArg (b.homAct p) ((abelianSheafToGrpSheafObjEquiv _ T).symm_apply_apply _))
+
 /-- Local morphisms as sections of the isomorphism torsor. Restriction and the band action
 are respected by `sheafHomTorsorEquiv_map` and `sheafHomTorsorEquiv_smul`. -/
 def sheafHomTorsorEquiv

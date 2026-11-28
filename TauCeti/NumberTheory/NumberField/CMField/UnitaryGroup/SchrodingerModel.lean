@@ -15,10 +15,11 @@ import TauCeti.NumberTheory.NumberField.CMField.AddChar
 
 Let `E` be a CM field with Weil data `W`, `𝔸_f` its finite adeles with complex conjugation
 `a ↦ conj a`, `Ô` the integral finite adeles, and `ψ₀` the self-dual character of `𝔸_f`
-(`TauCeti.WeilData.selfDualAddChar`). Let `e` be an idempotent of `𝔸_f`: the indicator `e_S` of
-a set `S` of finite places, so that `conj e` is the indicator of the conjugate set `conj S`. The
-set `S` is disjoint from `conj S` exactly when `e · conj e = 0`, and then `e + conj e` is the
-indicator of `S ∪ conj S`.
+(`TauCeti.WeilData.selfDualAddChar`). Let `e` be an idempotent of `𝔸_f`, such as the place
+idempotent `e_S` of a set `S` of finite places
+(`IsDedekindDomain.FiniteAdeleRing.placeIdempotent S`), so that `conj e` is the indicator of the
+conjugate set `conj S`. The set `S` is disjoint from `conj S` exactly when `e · conj e = 0`, and
+then `e + conj e` is the indicator of `S ∪ conj S`.
 
 For `y ∈ 𝔸_f^n`, the **Schrödinger operator** of `y` above `e`
 (`TauCeti.WeilData.schrodingerAct`) acts on functions on `𝔸_f^n` by
@@ -35,13 +36,13 @@ of the Heisenberg group of `𝔸_f^n` in the polarisation given by the component
 * corrected by the semicharacter `semi` of `e' y`, the operator of `y` is
   `Ψ ↦ (x ↦ ψ₀(y* e (x + c₀ y)) · Ψ(x + y))`, with `c₀ = (1 − j⁻¹)/2`
   (`TauCeti.WeilData.semichar_smul_schrodingerAct`), so the corrected operators of the vectors
-  integral at `S ∪ conj S` fix the indicator of the box `B_e = {x : e x ∈ Ô^n}`
+  integral at `S ∪ conj S` fix the indicator of the box `B_S = {x : e_S x ∈ Ô^n}`
   (`TauCeti.WeilData.semichar_smul_schrodingerAct_indicator_integralBox`);
-* on a function `Ψ` that is Schwartz–Bruhat above `e`, a vector `e y` at `S` acts by translation,
-  `ρ(e y) Ψ = Ψ(· + y)`, and a vector `conj e · y` at `conj S` by the character
+* for `e = e_S`, on a function `Ψ` that is Schwartz–Bruhat above `S`, a vector `e y` at `S` acts
+  by translation, `ρ(e y) Ψ = Ψ(· + y)`, and a vector `conj e · y` at `conj S` by the character
   `x ↦ ψ₀(y* e x)` (`TauCeti.WeilData.schrodingerAct_smul`,
   `TauCeti.WeilData.schrodingerAct_star_smul`);
-* the operators keep the functions that are Schwartz–Bruhat above `e`
+* the operators above `e_S` keep the functions that are Schwartz–Bruhat above `S`
   (`TauCeti.WeilData.isSchwartzBruhatAbove_schrodingerAct`).
 
 The box indicator is the vacuum of this model; these laws are the computations behind the vectors
@@ -60,8 +61,9 @@ The operators and their laws correspond to `New.schrodingerAct`,
 `New.IsSchwartzBruhat.schrodingerAct_star_idem_smul` in grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/Lib/Weil/MixedModel/SchwartzBruhat.lean`, which works with the indicator of a set of places
-disjoint from its conjugate. Here the set of places is replaced by an idempotent `e` with
-`e · conj e = 0`; the proofs follow grh-lean's, reducing each law to a scalar identity in `e`,
+disjoint from its conjugate. Here the two composition laws are stated for any idempotent `e`
+with `e · conj e = 0`, and the others for the place idempotent of a set of places; the proofs
+follow grh-lean's, reducing each law to a scalar identity in `e`,
 `conj e`, `½` and `c₀` and to the triviality of `ψ₀` on `Ô` and on the elements `z + conj z`.
 
 ## References
@@ -188,23 +190,35 @@ theorem semichar_smul_schrodingerAct (he : IsIdempotentElem e) (hc : e * star e 
     semichar_apply, ← AddChar.map_add_eq_mul, hk, hsum, key, AddChar.map_add_eq_mul,
     W.selfDualAddChar_add_star, mul_one]
 
-/-- **The box indicator is the vacuum.** For an idempotent `e` with `e · conj e = 0` and a vector
-`y` integral at `e' = e + conj e`, the Schrödinger operator of `y`, corrected by the
-semicharacter of `e' y`, fixes the indicator of the box `B_e`. -/
-theorem semichar_smul_schrodingerAct_indicator_integralBox (he : IsIdempotentElem e)
-    (hc : e * star e = 0) {y : n → FiniteAdeleRing (𝓞 E) E}
-    (hy : y ∈ integralBox n (e + star e)) :
-    (W.semichar ((e + star e) • y) : ℂ) • W.schrodingerAct e y
-        ((integralBox n e : Set (n → FiniteAdeleRing (𝓞 E) E)).indicator 1) =
-      (integralBox n e : Set (n → FiniteAdeleRing (𝓞 E) E)).indicator 1 := by
+/-- **The box indicator is the vacuum.** Let `e` be the place idempotent of a set `S` of places
+with `e · conj e = 0`, and `y` a vector with `(e + conj e) y` integral. The Schrödinger operator
+of `y`, corrected by the semicharacter of `(e + conj e) y`, fixes the indicator of the box
+`B_S = {x : e x ∈ Ô^n}`. -/
+theorem semichar_smul_schrodingerAct_indicator_integralBox {S : Set (HeightOneSpectrum (𝓞 E))}
+    (hc : placeIdempotent (K := E) S * star (placeIdempotent (K := E) S) = 0)
+    {y : n → FiniteAdeleRing (𝓞 E) E}
+    (hy : ∀ i, (placeIdempotent (K := E) S + star (placeIdempotent (K := E) S)) * y i ∈
+      integralAdeles (𝓞 E) E) :
+    (W.semichar ((placeIdempotent (K := E) S + star (placeIdempotent (K := E) S)) • y) : ℂ) •
+        W.schrodingerAct (placeIdempotent S) y
+          (((integralBox (K := E) (ι := n) S).toAddSubgroup :
+            Set (n → FiniteAdeleRing (𝓞 E) E)).indicator fun _ ↦ 1) =
+      ((integralBox (K := E) (ι := n) S).toAddSubgroup :
+        Set (n → FiniteAdeleRing (𝓞 E) E)).indicator fun _ ↦ 1 := by
   classical
-  -- `y` is integral at `e`, as `e = e (e + conj e)`.
-  have hyS : y ∈ integralBox n e := by
-    have h := integralBox_le_integralBox_mul (n := n) he.mem_integralAdeles hy
-    rwa [mul_add, he.eq, hc, add_zero] at h
+  set e := placeIdempotent (K := E) S
+  have he : IsIdempotentElem e := isIdempotentElem_placeIdempotent S
+  have hmem (z : n → FiniteAdeleRing (𝓞 E) E) :
+      z ∈ (integralBox (K := E) (ι := n) S).toAddSubgroup ↔ ∀ i, e * z i ∈ integralAdeles (𝓞 E) E :=
+    (mem_integralBox_iff S z).trans <| by
+      simp only [projectPlaces_eq_smul, Pi.smul_apply, smul_eq_mul, e]
+  -- `y` is integral at `S`, as `e = e (e + conj e)`.
+  have hyS : y ∈ (integralBox (K := E) (ι := n) S).toAddSubgroup := (hmem y).2 fun i ↦ by
+    have h := mul_mem (placeIdempotent_mem_integralAdeles (K := E) S) (hy i)
+    rwa [← mul_assoc, mul_add, he.eq, hc, add_zero] at h
   rw [W.semichar_smul_schrodingerAct he hc]
   refine funext fun x ↦ ?_
-  simp only [Set.indicator_apply, SetLike.mem_coe, add_mem_cancel_right hyS, Pi.one_apply]
+  simp only [Set.indicator_apply, SetLike.mem_coe, add_mem_cancel_right hyS]
   split_ifs with hx
   swap
   · rw [mul_zero]
@@ -220,35 +234,48 @@ theorem semichar_smul_schrodingerAct_indicator_integralBox (he : IsIdempotentEle
     rw [hpair]
     refine Subalgebra.sum_mem _ fun i _ ↦ mul_mem ?_ ?_
     · rw [Pi.star_apply, NumberField.IsCMField.star_mem_integralAdeles_iff]
-      exact mem_integralBox.1 hy i
+      exact hy i
     · rw [Pi.smul_apply, Pi.add_apply, smul_eq_mul, mul_add, Pi.smul_apply, smul_eq_mul,
         mul_left_comm]
-      exact add_mem (mem_integralBox.1 hx i) (mul_mem hcint (mem_integralBox.1 hyS i))
+      exact add_mem ((hmem x).1 hx i) (mul_mem hcint ((hmem y).1 hyS i))
   -- `ψ₀` is trivial on `Ô`, which is self-dual for it.
   rw [(by simpa using (W.forall_selfDualAddChar_mul_eq_one_iff _).2 hint 1 (one_mem _) :
     W.selfDualAddChar _ = 1), Circle.coe_one, mul_one]
 
-/-- On a function that is Schwartz–Bruhat above an idempotent `e` with `e · conj e = 0`, a vector
-`e y` at the places of `e` acts by **translation**: `ρ(e y) Ψ = Ψ(· + y)`. -/
-theorem schrodingerAct_smul (he : IsIdempotentElem e) (hc : e * star e = 0)
-    {Ψ : (n → FiniteAdeleRing (𝓞 E) E) → ℂ} (hΨ : IsSchwartzBruhatAbove e Ψ)
+/-- Let `e` be the place idempotent of a set `S` of places with `e · conj e = 0`. On a function
+that is Schwartz–Bruhat above `S`, a vector `e y` at the places of `S` acts by **translation**:
+`ρ(e y) Ψ = Ψ(· + y)`. -/
+theorem schrodingerAct_smul {S : Set (HeightOneSpectrum (𝓞 E))}
+    (hc : placeIdempotent (K := E) S * star (placeIdempotent (K := E) S) = 0)
+    {Ψ : (n → FiniteAdeleRing (𝓞 E) E) → ℂ} (hΨ : IsSchwartzBruhatAbove S Ψ)
     (y : n → FiniteAdeleRing (𝓞 E) E) :
-    W.schrodingerAct e (e • y) Ψ = fun x ↦ Ψ (x + y) := by
+    W.schrodingerAct (placeIdempotent S) (placeIdempotent (K := E) S • y) Ψ =
+      fun x ↦ Ψ (x + y) := by
+  set e := placeIdempotent (K := E) S
+  have he : IsIdempotentElem e := isIdempotentElem_placeIdempotent S
+  have hΨe (x : n → FiniteAdeleRing (𝓞 E) E) : Ψ (e • x) = Ψ x := by
+    rw [← projectPlaces_eq_smul, hΨ.project_eq]
   refine funext fun x ↦ ?_
   have hphase : algebraMap E (FiniteAdeleRing (𝓞 E) E) 2⁻¹ * e *
       (star (e • y) ⬝ᵥ (2 • x + e • y)) = 0 := by
     rw [star_smul, smul_dotProduct, smul_eq_mul, ← mul_assoc, mul_assoc _ e, hc, mul_zero,
       zero_mul]
   rw [schrodingerAct_apply, hphase, AddChar.map_zero_eq_one, Circle.coe_one, one_mul,
-    ← hΨ.apply_smul, smul_add, smul_smul, he.eq, ← smul_add, hΨ.apply_smul]
+    ← hΨe, smul_add, smul_smul, he.eq, ← smul_add, hΨe]
 
-/-- On a function that is Schwartz–Bruhat above an idempotent `e` with `e · conj e = 0`, a vector
-`conj e · y` at the conjugate places acts by **multiplication by a character**:
-`(ρ(conj e · y) Ψ)(x) = ψ₀(y* e x) · Ψ(x)`. -/
-theorem schrodingerAct_star_smul (he : IsIdempotentElem e) (hc : e * star e = 0)
-    {Ψ : (n → FiniteAdeleRing (𝓞 E) E) → ℂ} (hΨ : IsSchwartzBruhatAbove e Ψ)
+/-- Let `e` be the place idempotent of a set `S` of places with `e · conj e = 0`. On a function
+that is Schwartz–Bruhat above `S`, a vector `conj e · y` at the conjugate places acts by
+**multiplication by a character**: `(ρ(conj e · y) Ψ)(x) = ψ₀(y* e x) · Ψ(x)`. -/
+theorem schrodingerAct_star_smul {S : Set (HeightOneSpectrum (𝓞 E))}
+    (hc : placeIdempotent (K := E) S * star (placeIdempotent (K := E) S) = 0)
+    {Ψ : (n → FiniteAdeleRing (𝓞 E) E) → ℂ} (hΨ : IsSchwartzBruhatAbove S Ψ)
     (y : n → FiniteAdeleRing (𝓞 E) E) :
-    W.schrodingerAct e (star e • y) Ψ = fun x ↦ W.selfDualAddChar (star y ⬝ᵥ (e • x)) * Ψ x := by
+    W.schrodingerAct (placeIdempotent S) (star (placeIdempotent (K := E) S) • y) Ψ =
+      fun x ↦ W.selfDualAddChar (star y ⬝ᵥ (placeIdempotent (K := E) S • x)) * Ψ x := by
+  set e := placeIdempotent (K := E) S
+  have he : IsIdempotentElem e := isIdempotentElem_placeIdempotent S
+  have hΨe (x : n → FiniteAdeleRing (𝓞 E) E) : Ψ (e • x) = Ψ x := by
+    rw [← projectPlaces_eq_smul, hΨ.project_eq]
   refine funext fun x ↦ ?_
   set h := algebraMap E (FiniteAdeleRing (𝓞 E) E) 2⁻¹
   have h2 : 2 * h = 1 := ofNat_mul_algebraMap_inv two_ne_zero
@@ -258,15 +285,17 @@ theorem schrodingerAct_star_smul (he : IsIdempotentElem e) (hc : e * star e = 0)
     linear_combination (2 * h * (star y ⬝ᵥ x)) * he.eq + (e * (star y ⬝ᵥ x)) * h2 +
       (h * e * (star y ⬝ᵥ y)) * hc
   have hpart : Ψ (x + star e • y) = Ψ x := by
-    rw [← hΨ.apply_smul, smul_add, smul_smul, hc, zero_smul, add_zero, hΨ.apply_smul]
+    rw [← hΨe, smul_add, smul_smul, hc, zero_smul, add_zero, hΨe]
   rw [schrodingerAct_apply, hphase, hpart]
 
-/-- The Schrödinger operators above an idempotent `e` keep the functions that are Schwartz–Bruhat
-above `e`. -/
-theorem isSchwartzBruhatAbove_schrodingerAct (he : IsIdempotentElem e)
-    {Ψ : (n → FiniteAdeleRing (𝓞 E) E) → ℂ} (hΨ : IsSchwartzBruhatAbove e Ψ)
+/-- The Schrödinger operators above the place idempotent of a set `S` of places keep the
+functions that are Schwartz–Bruhat above `S`. -/
+theorem isSchwartzBruhatAbove_schrodingerAct {S : Set (HeightOneSpectrum (𝓞 E))}
+    {Ψ : (n → FiniteAdeleRing (𝓞 E) E) → ℂ} (hΨ : IsSchwartzBruhatAbove S Ψ)
     (y : n → FiniteAdeleRing (𝓞 E) E) :
-    IsSchwartzBruhatAbove e (W.schrodingerAct e y Ψ) := by
+    IsSchwartzBruhatAbove S (W.schrodingerAct (placeIdempotent S) y Ψ) := by
+  set e := placeIdempotent (K := E) S
+  have he : IsIdempotentElem e := isIdempotentElem_placeIdempotent S
   set h := algebraMap E (FiniteAdeleRing (𝓞 E) E) 2⁻¹
   -- `ρ(y) Ψ` is a translate of `Ψ` times a locally constant phase that only sees `e x`.
   have hφ : IsLocallyConstant fun x : n → FiniteAdeleRing (𝓞 E) E ↦
@@ -276,15 +305,15 @@ theorem isSchwartzBruhatAbove_schrodingerAct (he : IsIdempotentElem e)
       (f := fun x ↦ (W.scaleIdele : FiniteAdeleRing (𝓞 E) E) * (h * e * (star y ⬝ᵥ (2 • x + y))))
       (by fun_prop)).comp _
   have hφe (x : n → FiniteAdeleRing (𝓞 E) E) :
-      (W.selfDualAddChar (h * e * (star y ⬝ᵥ (2 • (e • x) + y))) : ℂ) =
+      (W.selfDualAddChar (h * e * (star y ⬝ᵥ (2 • projectPlaces S x + y))) : ℂ) =
         W.selfDualAddChar (h * e * (star y ⬝ᵥ (2 • x + y))) := by
     congr 2
-    simp only [dotProduct_add, dotProduct_smul, two_nsmul, smul_eq_mul]
+    simp only [projectPlaces_eq_smul, dotProduct_add, dotProduct_smul, two_nsmul, smul_eq_mul]
     linear_combination (2 * h * (star y ⬝ᵥ x)) * he.eq
   have hfun : W.schrodingerAct e y Ψ = fun x ↦
       (W.selfDualAddChar (h * e * (star y ⬝ᵥ (2 • x + y))) : ℂ) * Ψ (x + y) :=
     funext (W.schrodingerAct_apply e y Ψ)
   rw [hfun]
-  exact (hΨ.comp_add he y).mul_left hφ hφe
+  exact (hΨ.comp_add y).mul_left hφ hφe
 
 end TauCeti.WeilData

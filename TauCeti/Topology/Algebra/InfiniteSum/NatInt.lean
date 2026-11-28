@@ -11,6 +11,7 @@ public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # Reindexing infinite sums between the integers and natural numbers
@@ -35,6 +36,7 @@ the two-sided partial sums `∑_{a < j ≤ b} f j`.
   in any topological monoid.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
+* `Summable.tsum_int_eq_sum_zmod_tsum`: the same split indexed by `ZMod M` via `ZMod.finEquiv`.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
   `qM + r`, `r < M`.
 * `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
@@ -99,6 +101,17 @@ theorem tsum_int_eq_sum_fin_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
   rw [h]
   refine Summable.tsum_finsetSum fun r _ ↦ hf.comp_injective fun a b h ↦ ?_
   simpa [NeZero.ne M] using h
+
+/-- A summable integer-indexed series splits into sums over the classes of `ZMod M`, sampled
+at `q * M + r.val` for each residue `r`. -/
+theorem _root_.Summable.tsum_int_eq_sum_zmod_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
+    [IsUniformAddGroup E] [CompleteSpace E] [T0Space E] {f : ℤ → E} (hf : Summable f) (M : ℕ)
+    [NeZero M] :
+    ∑' n, f n = ∑ r : ZMod M, ∑' q : ℤ, f (q * M + r.val) := by
+  rw [tsum_int_eq_sum_fin_tsum hf M, ← (ZMod.finEquiv M).toEquiv.sum_comp]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_
+  have hr : (ZMod.finEquiv M).toEquiv r = (r.val : ZMod M) := ZMod.finEquiv_apply r
+  simp only [hr, ZMod.val_natCast_of_lt r.isLt]
 
 /-- A sum over the natural numbers greater than `n` is the sum of the family shifted by
 `n + 1`. -/

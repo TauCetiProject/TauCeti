@@ -37,6 +37,9 @@ particular the module of `ℝ` is the usual absolute value and the module of `�
 `|a| ^ 2 = a * conj a`. The module of a nonarchimedean local field is
 `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue`.
 
+Intertwining additive homeomorphisms preserve the character, and pulling an action back
+through a group homomorphism evaluates the original character at the image element.
+
 ## Main results
 
 * `MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`: pushing a Haar measure forward
@@ -59,10 +62,69 @@ particular the module of `ℝ` is the usual absolute value and the module of `�
 
 public section
 
-open Module Set
+open Module Set MeasureTheory Measure
 open scoped NNReal ENNReal Pointwise
 
+namespace ContinuousAddEquiv
+
+/-- Intertwining additive homeomorphisms preserve the Haar scaling factor. The acting
+groups may differ; only the two specified automorphisms must intertwine. -/
+theorem distribHaarChar_eq {A B G H : Type*}
+    [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A] [LocallyCompactSpace A]
+    [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B] [LocallyCompactSpace B]
+    [Group G] [DistribMulAction G A] [ContinuousConstSMul G A]
+    [Group H] [DistribMulAction H B] [ContinuousConstSMul H B]
+    (e : A ≃ₜ+ B) (g : G) (h : H) (he : ∀ x, e (g • x) = h • e x) :
+    distribHaarChar A g = distribHaarChar B h := by
+  borelize A B
+  let ν : Measure B := Measure.addHaar
+  let μ : Measure A := ν.map e.symm
+  have : μ.IsAddHaarMeasure := e.symm.isAddHaarMeasure_map ν
+  have : μ.Regular := Measure.Regular.map e.symm.toHomeomorph
+  obtain ⟨K⟩ : Nonempty (TopologicalSpace.PositiveCompacts B) := inferInstance
+  have hpre : e.symm ⁻¹' (g • (e ⁻¹' (K : Set B))) = h • (K : Set B) := by
+    ext y
+    rw [mem_preimage, mem_smul_set_iff_inv_smul_mem, mem_preimage,
+      mem_smul_set_iff_inv_smul_mem]
+    have hinv : e (g⁻¹ • e.symm y) = h⁻¹ • y := by
+      apply (MulAction.toPerm h).injective
+      simp only [MulAction.toPerm_apply]
+      rw [← he, smul_inv_smul, e.apply_symm_apply, smul_inv_smul]
+    rw [hinv]
+  have hmap (s : Set A) : μ s = ν (e.symm ⁻¹' s) :=
+    e.symm.toHomeomorph.measurableEmbedding.map_apply ν s
+  have hμ : μ (e ⁻¹' (K : Set B)) = ν K :=
+    (hmap _).trans (congrArg ν (Set.ext fun x ↦ by
+      simp only [Set.mem_preimage]
+      rw [e.apply_symm_apply]))
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ)
+    (s := e ⁻¹' (K : Set B)) ?_ ?_ ?_
+  · rw [hμ]
+    exact (Measure.measure_pos_of_nonempty_interior ν K.interior_nonempty).ne'
+  · rw [hμ]
+    exact K.isCompact.measure_ne_top
+  · rw [hμ]
+    rw [hmap, hpre]
+    exact (distribHaarChar_mul ν h K).symm
+
+end ContinuousAddEquiv
+
 namespace MeasureTheory
+
+/-- Pulling a distributive action back through a group homomorphism evaluates its Haar
+character at the image element. -/
+@[simp]
+theorem distribHaarChar_compHom {A G H : Type*}
+    [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A] [LocallyCompactSpace A]
+    [Group G] [Group H] [DistribMulAction H A] [ContinuousConstSMul H A]
+    (f : G →* H) (g : G) :
+    let : DistribMulAction G A := DistribMulAction.compHom A f
+    let : ContinuousConstSMul G A := ⟨fun h ↦ continuous_const_smul (f h)⟩
+    distribHaarChar A g = distribHaarChar A (f g) := by
+  let : DistribMulAction G A := DistribMulAction.compHom A f
+  let : ContinuousConstSMul G A := ⟨fun h ↦ continuous_const_smul (f h)⟩
+  exact (ContinuousAddEquiv.refl A).distribHaarChar_eq g (f g)
+    (fun x ↦ MulAction.compHom_smul_def f g x)
 
 variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] [TopologicalSpace A]
   [IsTopologicalAddGroup A] [LocallyCompactSpace A] [ContinuousConstSMul G A]

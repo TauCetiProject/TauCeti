@@ -100,6 +100,13 @@ theorem hasCompactSupport_iff_isCompact_support {f : LocallyConstant X M} :
     HasCompactSupport f ↔ IsCompact (support f) := by
   rw [HasCompactSupport, tsupport_eq_support]
 
+/-- The projection to the first factor of the support of a compactly supported locally constant
+function on a product is compact. -/
+theorem isCompact_image_fst_support {Y : Type*} [TopologicalSpace Y]
+    {f : LocallyConstant (X × Y) M} (hf : HasCompactSupport f) :
+    IsCompact (Prod.fst '' support f) :=
+  (hasCompactSupport_iff_isCompact_support.1 hf).image continuous_fst
+
 /-- A locally constant function with compact support takes only finitely many values. -/
 theorem finite_range_of_hasCompactSupport {f : LocallyConstant X M} (hf : HasCompactSupport f) :
     (range f).Finite := by
@@ -268,6 +275,15 @@ compact support. -/
 theorem indicator_mem_compactlySupported (f : LocallyConstant X M) {K : Set X} (hK : IsClopen K)
     (hKc : IsCompact K) : f.indicator hK ∈ compactlySupported R X M :=
   HasCompactSupport.intro' hKc hK.isClosed fun _ hx => indicator_of_notMem f hK hx
+
+/-- Cutting a test function off along any clopen set `K`, compact or not, gives a test
+function. -/
+theorem indicator_mem_compactlySupported_of_mem {f : LocallyConstant X M}
+    (hf : f ∈ compactlySupported R X M) {K : Set X} (hK : IsClopen K) :
+    f.indicator hK ∈ compactlySupported R X M :=
+  (mem_compactlySupported.1 hf).mono fun x hx => by
+    rw [mem_support, indicator_apply] at hx
+    exact (Set.indicator_apply_ne_zero.1 hx).2
 
 /-- The indicator `1_K • m` of a compact open set has compact support. -/
 theorem compactOpenIndicator_mem_compactlySupported [T2Space X] (K : CompactOpens X) (m : M) :

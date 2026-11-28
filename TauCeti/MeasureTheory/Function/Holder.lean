@@ -63,6 +63,8 @@ integration-by-parts arguments:
   map packaging, and joint continuity of heterogeneous `Lp` scalar multiplication.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
   `f • g`; `MeasureTheory.Lp.one_smul`: the constant one of `L^∞` acts trivially.
+* `MeasureTheory.Lp.smul_eq_smul_of_ae_eq`: products of almost everywhere equal factors agree,
+  even across different Hölder triples with the same target exponent.
 -/
 
 public section
@@ -344,6 +346,16 @@ theorem _root_.MeasureTheory.MemLp.toLp_smul_toLp {f : α → 𝕜} {g : α → 
   MemLp.toLp_congr _ _ <| by
     filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x h₁ h₂
     rw [Pi.smul_apply', h₁, h₂, Pi.smul_apply']
+
+/-- Heterogeneous `Lp` products of almost everywhere equal factors agree, even when the two
+products are taken in different Hölder triples `(p, q, r)` and `(p', q', r)`. -/
+theorem smul_eq_smul_of_ae_eq {p' q' : ℝ≥0∞} [p'.HolderTriple q' r] {f : Lp 𝕜 p μ}
+    {g : Lp E q μ} {f' : Lp 𝕜 p' μ} {g' : Lp E q' μ} (hf : f =ᵐ[μ] f') (hg : g =ᵐ[μ] g') :
+    (f • g : Lp E r μ) = f' • g' :=
+  Lp.ext <| by
+    filter_upwards [coeFn_lpSMul (r := r) f g, coeFn_lpSMul (r := r) f' g', hf, hg]
+      with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', h₃, h₄]
 
 omit [p.HolderTriple q r] in
 /-- The constant one of `L^∞` acts trivially on every `L^q` function. -/

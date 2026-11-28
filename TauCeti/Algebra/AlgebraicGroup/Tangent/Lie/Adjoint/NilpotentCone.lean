@@ -58,7 +58,10 @@ two rings of invariants coincide (`TauCeti.adjointInvariantPolynomials_eq_lieInv
 the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of positive degree cut out the
 `ad`-nilpotent elements (`TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`). Hence the
 `k`-points of the nilpotent cone are exactly the `ad`-nilpotent elements of `𝔤`
-(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`). Each inclusion holds under weaker hypotheses:
+(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`), and for a connected Killing group the
+rational orbits of these `k`-points are precisely the nilpotent `G`-orbits
+(`TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`). Each inclusion holds
+under weaker hypotheses:
 `ad`-nilpotent elements lie on the cone for every group with nondegenerate Killing form in
 characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
 algebraically closed field of characteristic zero.
@@ -94,6 +97,10 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
 * `TauCeti.adjointInvariantPolynomials_le_lieInvariants` and
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
   connected `G` over an algebraically closed field of characteristic zero they are all of them.
+* `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials` and
+  `TauCeti.lift_eval_basePointsRepresentation_of_mem_lieInvariants`: invariant polynomial
+  functions (and, for connected `G`, Lie-invariant polynomial functions) are constant on rational
+  adjoint orbits.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
 * `TauCeti.mem_adjointInvariantPolynomials_iff_mem_coinvariants` and
   `TauCeti.nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal`: the invariants and the ideal of
@@ -120,8 +127,10 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
   `O`.
 * `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`: its `k`-points are the `ad`-nilpotent
   elements, with the two inclusions `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent`
-  and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`. More generally, points of
-  the cone act nilpotently on every finite-dimensional module
+  and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`, and for a connected Killing
+  group their rational orbits are the nilpotent `G`-orbits
+  (`TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`). More generally,
+  points of the cone act nilpotently on every finite-dimensional module
   (`TauCeti.isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval`).
 * `TauCeti.ι_mem_nilpotentConeIdeal`: for a connected group, the linear functions vanishing on
   `⁅𝔤, 𝔤⁆` lie in the ideal of the cone, so the cone lies in the derived ideal `⁅𝔤, 𝔤⁆`, and so do
@@ -683,6 +692,27 @@ end GenericActionMatrix
 
 end Connected
 
+section ConnectedUnbundled
+
+variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+  {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+  [ConnectedSpace (PrimeSpectrum H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- **Lie-invariant polynomial functions are constant on rational adjoint orbits of a connected
+group.** -/
+theorem lift_eval_basePointsRepresentation_of_mem_lieInvariants
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)}
+    (hp : p ∈ SymmetricAlgebra.lieInvariants k 𝔤 (Module.Dual k 𝔤))
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p :=
+  lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials g x
+    (by rwa [adjointInvariantPolynomials_eq_lieInvariants (H := FiniteTypeCommHopfAlgCat.of k H)])
+
+end ConnectedUnbundled
+
 namespace Comodule.VectorOrbit
 
 section Predicate
@@ -774,5 +804,31 @@ theorem setOf_mk_le_eq_union_biUnion_of_isNilpotentAd {O : VectorOrbit k H 𝔤}
 end Closure
 
 end Comodule.VectorOrbit
+
+section NilpotentCone
+
+variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+  (H : Type u) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+  [ConnectedSpace (PrimeSpectrum H)]
+  [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
+
+/-- **Rational `G`-orbits on the nilpotent cone.** For a connected Killing group, the rational
+orbits of `k`-points of the nilpotent cone are the nilpotent `G`-orbits. -/
+theorem image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval :
+    Comodule.VectorOrbit.mk (k := k) (H := H) ''
+        {x : Module.Dual k (Bialgebra.CotangentSpace k H) |
+          nilpotentConeIdeal k H ≤
+            RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k _ x))} =
+      {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) |
+        O.IsNilpotentAd} := by
+  rw [← Set.image_preimage_eq
+    {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) | O.IsNilpotentAd}
+    Comodule.VectorOrbit.mk_surjective]
+  congr 1
+  ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
+  exact nilpotentConeIdeal_le_ker_lift_eval_iff (H := FiniteTypeCommHopfAlgCat.of k H)
+
+end NilpotentCone
 
 end TauCeti

@@ -5,276 +5,265 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+public import Mathlib.Basic.Complex.Basic
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.CosetDecomposition
+public import TauCeti.Topology.LocallyConstant.CompactSupport
 
 /-!
-# Schwartz–Bruhat functions above an idempotent of the finite adeles
+# Schwartz–Bruhat functions above a set of finite places
 
-Let `𝔸_f` be the finite adele ring of a Dedekind domain `R` with fraction field `K`, and
-`Ô = ∏_v 𝒪_v` its integral finite adeles. An idempotent `e` of `𝔸_f` cuts out the components at a
-set `S` of finite places: `e` has component `1` at the places of `S` and `0` elsewhere, so that
-`e x` is the part of `x` at `S`. Every idempotent of `𝔸_f` is of this form, so stating things for
-an idempotent `e` is the same as stating them for a set of places.
+For any set `S` of finite places, `projectPlaces S` keeps the coordinates at `S` and sets all
+others to zero. A function on a finite power of the finite adeles is Schwartz–Bruhat above `S`
+if it is locally constant, depends only on this projection, and has compact projected support.
+Its support in the whole adele space need not be compact. When the local integer rings are
+compact, the indicator of the integral box above `S` is such a function, including when `S` is
+infinite or empty.
 
-A function `Ψ` on `𝔸_f^n` is **Schwartz–Bruhat above `e`**
-(`IsDedekindDomain.FiniteAdeleRing.IsSchwartzBruhatAbove e Ψ`) if it only sees the part at `S`
-(`Ψ (e x) = Ψ x`), is locally constant, and the parts `e x` of the points of its support lie in a
-compact set. The model example is the indicator of the **box** `B_e = {x : e x ∈ Ô^n}`
-(`IsDedekindDomain.FiniteAdeleRing.integralBox n e`), the vectors that are integral at the places
-of `S`.
+`IsSchwartzBruhatAbove.exists_eq_sum_cosetIndicator` expresses such a function as a finite sum
+of indicators of cosets of any open subgroup on whose cosets it is constant and which contains
+the kernel of the projection. The coefficients are values at distinct representatives in its
+support. Taking the subgroup to be a scaled integral box gives the box-coset expansion.
+Translates, and products with locally constant functions depending only on the projection, are
+again Schwartz–Bruhat above `S` (`IsSchwartzBruhatAbove.comp_add`,
+`IsSchwartzBruhatAbove.mul_left`).
 
-Such a function is a finite combination of indicators of cosets of `t B_e`, for any finite idele
-`t` such that `Ψ` is constant on the cosets of `t B_e` through its support, with coefficients its
-values (`IsDedekindDomain.FiniteAdeleRing.IsSchwartzBruhatAbove.exists_eq_sum_indicator`). These
-functions are the Schrödinger model of the Heisenberg group of `𝔸_f^n` above a set of places
-disjoint from its conjugate, developed over a CM field in
-`TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.SchrodingerModel`.
-
-## Main definitions
-
-* `IsDedekindDomain.FiniteAdeleRing.integralBox n e`: the box `B_e = {x : e x ∈ Ô^n}`.
-* `IsDedekindDomain.FiniteAdeleRing.IsSchwartzBruhatAbove e Ψ`: `Ψ` is Schwartz–Bruhat above
-  `e`.
-
-## Main results
-
-* `IsDedekindDomain.FiniteAdeleRing.isSchwartzBruhatAbove_indicator_integralBox`: the indicator
-  of the box is Schwartz–Bruhat above an idempotent `e`.
-* `IsDedekindDomain.FiniteAdeleRing.IsSchwartzBruhatAbove.comp_add` and
-  `IsDedekindDomain.FiniteAdeleRing.IsSchwartzBruhatAbove.mul_left`: translates, and products with
-  a locally constant function that only sees the part at `S`, are again Schwartz–Bruhat.
-* `IsDedekindDomain.FiniteAdeleRing.IsSchwartzBruhatAbove.exists_eq_sum_indicator`: the
-  decomposition into coset indicators.
-
-## Provenance
-
-The definitions and the coset decomposition correspond to `New.integralBox`,
-`New.IsSchwartzBruhat` and `New.IsSchwartzBruhat.eq_sum_cosetIndicator` in grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
-`src/Lib/Weil/MixedModel/SchwartzBruhat.lean`, which works with the indicator of a set of places
-of a CM field. Here the set of places is replaced by an idempotent, the base by any Dedekind
-domain, and the values by any additive commutative monoid; the proof of the decomposition follows
-grh-lean's: the function factors through the discrete quotient by the open subgroup `t B_e`, where
-its support is finite.
-
-## References
-
-* F. Bruhat, *Distributions sur un groupe localement compact et applications à l'étude des
-  représentations des groupes p-adiques*, Bull. Soc. Math. France 89 (1961), 43–75.
-* A. Weil, *Sur certains groupes d'opérateurs unitaires*, Acta Math. 111 (1964), 143–211.
+The definitions and expansion follow `New.IsSchwartzBruhat`, `New.integralBox`, and
+`New.IsSchwartzBruhat.eq_sum_cosetIndicator` in [ShortProof], grh-lean
+(https://github.com/lsernau/grh-lean), commit `72fead102f663d5c7a407964a13dc0cf9d977207`,
+`src/Lib/Weil/MixedModel/SchwartzBruhat.lean` (Apache 2.0). No source code is copied.
 -/
 
 public section
-
 noncomputable section
 
-open Set
+open Function Set Topology
 
 namespace IsDedekindDomain.FiniteAdeleRing
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {n : Type*}
+variable {R K : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
+  [IsFractionRing R K] {ι : Type*}
 
-/-- An idempotent finite adele is integral: each of its components is `0` or `1`. -/
-theorem _root_.IsIdempotentElem.mem_integralAdeles {e : FiniteAdeleRing R K}
-    (he : IsIdempotentElem e) : e ∈ integralAdeles R K := by
-  refine FiniteAdeleRing.mem_integralAdeles.2 fun v ↦ ?_
-  have hv : IsIdempotentElem (e v) := by
-    rw [IsIdempotentElem, ← mul_apply, he.eq]
-  rcases IsIdempotentElem.iff_eq_zero_or_one.1 hv with h | h <;> rw [h]
-  exacts [zero_mem _, one_mem _]
+section Box
 
-/-! ### The box -/
+variable [Finite ι]
 
-variable (n) in
-/-- The **box** `B_e = {x : e x ∈ Ô^n}` of an element `e` of the finite adeles: the vectors of
-`𝔸_f^n` whose coordinates times `e` are integral. For the idempotent `e` of a set `S` of places,
-these are the vectors that are integral at every place of `S`. -/
-def integralBox (e : FiniteAdeleRing R K) : AddSubgroup (n → FiniteAdeleRing R K) where
-  carrier := {x | ∀ i, e * x i ∈ integralAdeles R K}
-  add_mem' {x y} hx hy i := by
-    rw [Pi.add_apply, mul_add]
-    exact add_mem (hx i) (hy i)
-  zero_mem' i := by
-    rw [Pi.zero_apply, mul_zero]
-    exact zero_mem _
-  neg_mem' {x} hx i := by
-    rw [Pi.neg_apply, mul_neg]
-    exact neg_mem (hx i)
+/-- The open additive subgroup of vectors integral at every place in `S`. -/
+def integralBox (S : Set (HeightOneSpectrum R)) : OpenAddSubgroup (ι → FiniteAdeleRing R K) where
+  carrier := {x | ∀ i, projectPlaces S x i ∈ integralAdeles R K}
+  zero_mem' := by simp
+  add_mem' hx hy := by
+    intro i
+    rw [projectPlaces_add, Pi.add_apply]
+    exact (integralAdeles R K).add_mem (hx i) (hy i)
+  neg_mem' hx i := by
+    rw [neg_eq_zero_sub, projectPlaces_sub, projectPlaces_zero, zero_sub, Pi.neg_apply]
+    exact (integralAdeles R K).neg_mem (hx i)
+  isOpen' := by
+    simpa only [ofPred_forall, preimage, Function.comp_apply, SetLike.mem_coe] using
+      isOpen_iInter_of_finite fun i ↦
+        (isOpen_integralAdeles (R := R) (K := K)).preimage
+          ((continuous_apply i).comp (continuous_projectPlaces S))
 
-/-- A vector lies in the box of `e` exactly when its coordinates times `e` are integral. -/
+/-- Membership in the integral box can be read after projection. -/
+theorem mem_integralBox_iff (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K) :
+    x ∈ integralBox S ↔ ∀ i, projectPlaces S x i ∈ integralAdeles R K := (Iff.rfl)
+
+/-- Projecting does not change membership in the integral box. -/
 @[simp]
-theorem mem_integralBox {e : FiniteAdeleRing R K} {x : n → FiniteAdeleRing R K} :
-    x ∈ integralBox n e ↔ ∀ i, e * x i ∈ integralAdeles R K :=
-  Iff.rfl
+theorem projectPlaces_mem_integralBox (S : Set (HeightOneSpectrum R))
+    (x : ι → FiniteAdeleRing R K) : projectPlaces S x ∈ integralBox S ↔ x ∈ integralBox S := by
+  simp only [mem_integralBox_iff, projectPlaces_projectPlaces]
 
-/-- For an idempotent `e`, a vector lies in the box exactly when its part `e x` does. -/
-theorem smul_mem_integralBox_iff {e : FiniteAdeleRing R K} (he : IsIdempotentElem e)
-    {x : n → FiniteAdeleRing R K} : e • x ∈ integralBox n e ↔ x ∈ integralBox n e := by
-  simp only [mem_integralBox, Pi.smul_apply, smul_eq_mul, ← mul_assoc, he.eq]
+/-- The kernel of the projection is contained in the integral box. -/
+theorem mem_integralBox_of_projectPlaces_eq_zero {S : Set (HeightOneSpectrum R)}
+    {x : ι → FiniteAdeleRing R K} (hx : projectPlaces S x = 0) : x ∈ integralBox S := by
+  simp [mem_integralBox_iff, hx]
 
-/-- The box of `a` lies in the box of `b a` for every integral `b`. -/
-theorem integralBox_le_integralBox_mul {a b : FiniteAdeleRing R K}
-    (hb : b ∈ integralAdeles R K) : integralBox n a ≤ integralBox n (b * a) := fun x hx ↦
-  mem_integralBox.2 fun i ↦ by
-    rw [mul_assoc]
-    exact mul_mem hb (mem_integralBox.1 hx i)
+/-- The box scaled by a finite idele `t`, namely the vectors `x` with `t⁻¹ x` integral
+at every place in `S`. -/
+def scaledIntegralBox (S : Set (HeightOneSpectrum R)) (t : (FiniteAdeleRing R K)ˣ) :
+    OpenAddSubgroup (ι → FiniteAdeleRing R K) :=
+  (integralBox S).comap (DistribMulAction.toAddMonoidEnd _ _ t⁻¹) (continuous_const_smul _)
 
-/-- The box of `e` is open in `𝔸_f^n`. -/
-theorem isOpen_integralBox [Finite n] (e : FiniteAdeleRing R K) :
-    IsOpen (integralBox n e : Set (n → FiniteAdeleRing R K)) := by
-  have h : (integralBox n e : Set (n → FiniteAdeleRing R K)) =
-      ⋂ i, (fun x : n → FiniteAdeleRing R K ↦ e * x i) ⁻¹' integralAdeles R K := by
-    ext x
-    simp
-  rw [h]
-  exact isOpen_iInter_of_finite fun i ↦ (isOpen_integralAdeles R K).preimage (by fun_prop)
+/-- Membership in the scaled box is integrality after multiplication by `t⁻¹`. -/
+@[simp]
+theorem mem_scaledIntegralBox (S : Set (HeightOneSpectrum R)) (t : (FiniteAdeleRing R K)ˣ)
+    (x : ι → FiniteAdeleRing R K) : x ∈ scaledIntegralBox S t ↔ t⁻¹ • x ∈ integralBox S :=
+  (Iff.rfl)
 
-/-! ### Schwartz–Bruhat functions -/
+/-- Scaling the box by one recovers the integral box. -/
+@[simp]
+theorem scaledIntegralBox_one (S : Set (HeightOneSpectrum R)) :
+    scaledIntegralBox (K := K) (ι := ι) S 1 = integralBox S := by
+  ext x
+  simp
 
-/-- A function `Ψ` on `𝔸_f^n` is **Schwartz–Bruhat above `e`** if it only sees the part `e x` of
-its argument, is locally constant, and the parts `e x` of the points of its support lie in a
-compact set. For the idempotent `e` of a set `S` of places, `Ψ` depends only on the components at
-`S`, and is a Schwartz–Bruhat function of these components. -/
-structure IsSchwartzBruhatAbove {M : Type*} [Zero M] (e : FiniteAdeleRing R K)
-    (Ψ : (n → FiniteAdeleRing R K) → M) : Prop where
-  /-- `Ψ` only sees the part `e x` of its argument. -/
-  apply_smul (x : n → FiniteAdeleRing R K) : Ψ (e • x) = Ψ x
-  /-- `Ψ` is locally constant. -/
-  isLocallyConstant : IsLocallyConstant Ψ
-  /-- The parts `e x` of the points of the support of `Ψ` lie in a compact set. -/
-  exists_isCompact :
-    ∃ C : Set (n → FiniteAdeleRing R K), IsCompact C ∧ ∀ x, Ψ x ≠ 0 → e • x ∈ C
+end Box
 
-/-- **The indicator of the box is Schwartz–Bruhat** above an idempotent `e`, when the local
-integer rings are compact. -/
-theorem isSchwartzBruhatAbove_indicator_integralBox [Finite n] {M : Type*} [One M] [Zero M]
-    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)]
-    {e : FiniteAdeleRing R K} (he : IsIdempotentElem e) :
-    IsSchwartzBruhatAbove e ((integralBox n e : Set (n → FiniteAdeleRing R K)).indicator
-      (1 : (n → FiniteAdeleRing R K) → M)) := by
-  classical
-  refine ⟨fun x ↦ ?_, ?_, ?_⟩
-  · simp only [indicator_apply, SetLike.mem_coe, smul_mem_integralBox_iff he, Pi.one_apply]
-  · -- The box is an open subgroup, hence clopen.
-    have hU : IsClopen (integralBox n e : Set (n → FiniteAdeleRing R K)) :=
-      ⟨AddSubgroup.isClosed_of_isOpen _ (isOpen_integralBox e), isOpen_integralBox e⟩
-    exact (LocallyConstant.indicator (LocallyConstant.const _ (1 : M)) hU).isLocallyConstant
-  · refine ⟨univ.pi fun _ ↦ (integralAdeles R K : Set (FiniteAdeleRing R K)),
-      isCompact_univ_pi fun _ ↦ isCompact_integralAdeles, fun x hx i _ ↦ ?_⟩
-    have hx' : x ∈ integralBox n e := by
-      by_contra h
-      exact hx (indicator_of_notMem h _)
-    exact hx' i
+/-- A locally constant function depending only on `S`, with compact support after projection
+onto `S`. This does not require compact support in the ambient finite adelic space. -/
+structure IsSchwartzBruhatAbove (S : Set (HeightOneSpectrum R))
+    (f : (ι → FiniteAdeleRing R K) → ℂ) : Prop where
+  isLocallyConstant : IsLocallyConstant f
+  project_eq : ∀ x, f (projectPlaces S x) = f x
+  isCompact_image_support : IsCompact (projectPlaces S '' support f)
+
+variable {S : Set (HeightOneSpectrum R)} {f g : (ι → FiniteAdeleRing R K) → ℂ}
+
+/-- The projected support is the intersection of the support with the fixed points of the
+projection, for any function that depends only on the selected places. -/
+theorem image_support_projectPlaces_eq {f : (ι → FiniteAdeleRing R K) → ℂ}
+    (hp : ∀ x, f (projectPlaces S x) = f x) :
+    projectPlaces S '' support f = support f ∩ {x | projectPlaces S x = x} := by
+  ext x
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨by simpa only [mem_support, hp] using hy, projectPlaces_projectPlaces S y⟩
+  · rintro ⟨hx, heq⟩
+    exact ⟨x, hx, heq⟩
+
+/-- Local constancy makes the projected support closed when the function depends only on `S`.
+In particular, containment in a compact set suffices for compact projected support. -/
+theorem isClosed_image_support_projectPlaces {f : (ι → FiniteAdeleRing R K) → ℂ}
+    (hl : IsLocallyConstant f) (hp : ∀ x, f (projectPlaces S x) = f x) :
+    IsClosed (projectPlaces S '' support f) := by
+  rw [image_support_projectPlaces_eq hp]
+  exact (⟨f, hl⟩ : LocallyConstant _ ℂ).isClopen_support.isClosed.inter
+    (isClosed_eq (continuous_projectPlaces S) continuous_id)
+
+/-- Schwartz–Bruhat above `S` means local constancy, dependence on the projection, and
+containment of the projected support in a compact set. -/
+theorem isSchwartzBruhatAbove_iff : IsSchwartzBruhatAbove S f ↔
+    IsLocallyConstant f ∧ (∀ x, f (projectPlaces S x) = f x) ∧
+      ∃ C, IsCompact C ∧ projectPlaces S '' support f ⊆ C := by
+  constructor
+  · intro hf
+    exact ⟨hf.isLocallyConstant, hf.project_eq,
+      _, hf.isCompact_image_support, Subset.rfl⟩
+  · rintro ⟨hl, hp, C, hc, hC⟩
+    exact ⟨hl, hp, hc.of_isClosed_subset (isClosed_image_support_projectPlaces hl hp) hC⟩
 
 namespace IsSchwartzBruhatAbove
 
-variable {M : Type*} {e : FiniteAdeleRing R K}
+/-- The zero function is Schwartz–Bruhat above every set of places. -/
+@[simp]
+theorem zero : IsSchwartzBruhatAbove (K := K) (ι := ι) S 0 :=
+  ⟨IsLocallyConstant.const _, fun _ ↦ rfl, by simp⟩
 
-/-- A **translate** of a Schwartz–Bruhat function above `e` is Schwartz–Bruhat above `e`. -/
-theorem comp_add [Zero M] {Ψ : (n → FiniteAdeleRing R K) → M} (he : IsIdempotentElem e)
-    (hΨ : IsSchwartzBruhatAbove e Ψ) (y : n → FiniteAdeleRing R K) :
-    IsSchwartzBruhatAbove e fun x ↦ Ψ (x + y) := by
-  obtain ⟨C, hC, hCΨ⟩ := hΨ.exists_isCompact
-  refine ⟨fun x ↦ ?_, hΨ.isLocallyConstant.comp_continuous (continuous_id.add continuous_const),
-    (· - e • y) '' C, hC.image (continuous_sub_right _), fun x hx ↦ ⟨_, hCΨ _ hx, ?_⟩⟩
-  · rw [← hΨ.apply_smul (e • x + y), ← hΨ.apply_smul (x + y), smul_add, smul_add, smul_smul,
-      he.eq]
-  · simp only [smul_add, add_sub_cancel_right]
+/-- Addition preserves Schwartz–Bruhat functions above `S`. -/
+theorem add (hf : IsSchwartzBruhatAbove S f) (hg : IsSchwartzBruhatAbove S g) :
+    IsSchwartzBruhatAbove S (f + g) := by
+  have hp : ∀ x, (f + g) (projectPlaces S x) = (f + g) x := by
+    intro x
+    simp only [Pi.add_apply, hf.project_eq, hg.project_eq]
+  have hl := hf.isLocallyConstant.add hg.isLocallyConstant
+  have hs := isClosed_image_support_projectPlaces hl hp
+  refine ⟨hl, hp, (hf.isCompact_image_support.union hg.isCompact_image_support).of_isClosed_subset
+    hs ?_⟩
+  exact (image_mono (support_add f g)).trans (by rw [image_union])
 
-/-- The product of a Schwartz–Bruhat function above `e` with a locally constant function `φ` that
-only sees the part `e x` of its argument is Schwartz–Bruhat above `e`. -/
-theorem mul_left [MulZeroClass M] {Ψ : (n → FiniteAdeleRing R K) → M}
-    (hΨ : IsSchwartzBruhatAbove e Ψ) {φ : (n → FiniteAdeleRing R K) → M}
-    (hφ : IsLocallyConstant φ) (hφe : ∀ x, φ (e • x) = φ x) :
-    IsSchwartzBruhatAbove e fun x ↦ φ x * Ψ x := by
-  obtain ⟨C, hC, hCΨ⟩ := hΨ.exists_isCompact
-  exact ⟨fun x ↦ by rw [hφe, hΨ.apply_smul], hφ.mul hΨ.isLocallyConstant,
-    C, hC, fun x hx ↦ hCΨ x (right_ne_zero_of_mul hx)⟩
+/-- Scalar multiplication preserves Schwartz–Bruhat functions above `S`. -/
+theorem smul (hf : IsSchwartzBruhatAbove S f) (c : ℂ) : IsSchwartzBruhatAbove S (c • f) := by
+  by_cases hc : c = 0
+  · simp [hc]
+  · refine ⟨hf.isLocallyConstant.comp (fun z ↦ c • z), fun x ↦ by simp [hf.project_eq], ?_⟩
+    simpa only [support_const_smul_of_ne_zero c f hc] using hf.isCompact_image_support
 
-/-- The classes modulo `t B_e` on which a Schwartz–Bruhat function above `e` does not vanish are
-finitely many: sending the class of `x` to the class of `e x` modulo the open subgroup `t Ô^n` is
-injective, and the classes of the parts `e x` of the points of the support lie in the image of a
-compact set, which is finite in the discrete quotient. -/
-private theorem finite_support_out [Finite n] [Zero M] {Ψ : (n → FiniteAdeleRing R K) → M}
-    (hΨ : IsSchwartzBruhatAbove e Ψ) (t : (FiniteAdeleRing R K)ˣ) :
-    (Function.support fun q : (n → FiniteAdeleRing R K) ⧸
-      (integralBox n e).comap (DistribSMul.toAddMonoidHom _ (↑t⁻¹ : FiniteAdeleRing R K)) ↦
-        Ψ q.out).Finite := by
-  let H' : AddSubgroup (n → FiniteAdeleRing R K) :=
-    (integralBox n 1).comap (DistribSMul.toAddMonoidHom _ (↑t⁻¹ : FiniteAdeleRing R K))
-  have hH' : IsOpen (H' : Set (n → FiniteAdeleRing R K)) := by
-    rw [AddSubgroup.coe_comap]
-    exact (isOpen_integralBox 1).preimage (continuous_const_smul _)
-  have : DiscreteTopology ((n → FiniteAdeleRing R K) ⧸ H') :=
-    QuotientAddGroup.discreteTopology hH'
-  have hHH' (x : n → FiniteAdeleRing R K) :
-      x ∈ (integralBox n e).comap (DistribSMul.toAddMonoidHom _ (↑t⁻¹ : FiniteAdeleRing R K)) ↔
-        e • x ∈ H' := by
-    simp only [H', AddSubgroup.mem_comap, DistribSMul.toAddMonoidHom_apply, mem_integralBox,
-      Pi.smul_apply, smul_eq_mul, one_mul, mul_left_comm]
-  obtain ⟨C, hC, hCΨ⟩ := hΨ.exists_isCompact
-  refine Set.Finite.of_finite_image (f := fun q ↦
-    ((e • q.out : n → FiniteAdeleRing R K) : (n → FiniteAdeleRing R K) ⧸ H')) ?_ ?_
-  · refine (hC.image QuotientAddGroup.continuous_mk).finite_of_discrete.subset ?_
-    rintro _ ⟨q, hq, rfl⟩
-    exact ⟨_, hCΨ _ hq, rfl⟩
-  · intro q _ q' _ hqq'
-    rw [← QuotientAddGroup.out_eq' q, ← QuotientAddGroup.out_eq' q']
-    refine QuotientAddGroup.eq_iff_sub_mem.2 ((hHH' _).2 ?_)
-    rw [smul_sub]
-    exact QuotientAddGroup.eq_iff_sub_mem.1 hqq'
+/-- A translate of a Schwartz–Bruhat function above `S` is Schwartz–Bruhat above `S`. -/
+theorem comp_add (hf : IsSchwartzBruhatAbove S f) (y : ι → FiniteAdeleRing R K) :
+    IsSchwartzBruhatAbove S fun x ↦ f (x + y) := by
+  refine isSchwartzBruhatAbove_iff.2 ⟨hf.isLocallyConstant.comp_continuous
+    (continuous_id.add continuous_const), fun x ↦ ?_, (· - projectPlaces S y) '' (projectPlaces S ''
+    support f), hf.isCompact_image_support.image (continuous_sub_right _), ?_⟩
+  · rw [← hf.project_eq (projectPlaces S x + y), ← hf.project_eq (x + y)]
+    simp only [projectPlaces_add, projectPlaces_projectPlaces]
+  · rintro _ ⟨x, hx, rfl⟩
+    exact ⟨projectPlaces S (x + y), ⟨x + y, hx, rfl⟩, by simp⟩
 
-/-- **Coset decomposition.** Let `Ψ` be Schwartz–Bruhat above `e` and `t` a finite
-idele such that `Ψ` is constant on the coset `x + t B_e` of every point `x` of its support. Then
-`Ψ` is a finite sum of indicators of such cosets, with coefficients its values: there is a finite
-set `A` of points of the support of `Ψ` with `Ψ = ∑_{q ∈ A} Ψ(q) · 1_{q + t B_e}`. -/
-theorem exists_eq_sum_indicator [Finite n] [AddCommMonoid M] {Ψ : (n → FiniteAdeleRing R K) → M}
-    (hΨ : IsSchwartzBruhatAbove e Ψ) (t : (FiniteAdeleRing R K)ˣ)
-    (hper : ∀ x, Ψ x ≠ 0 → ∀ y, (↑t⁻¹ : FiniteAdeleRing R K) • (y - x) ∈ integralBox n e →
-      Ψ y = Ψ x) :
-    ∃ A : Finset (n → FiniteAdeleRing R K), (∀ q ∈ A, Ψ q ≠ 0) ∧
-      Ψ = ∑ q ∈ A, {x | (↑t⁻¹ : FiniteAdeleRing R K) • (x - q) ∈ integralBox n e}.indicator
-        fun _ ↦ Ψ q := by
-  classical
-  -- The open subgroup `H = t B_e`; `Ψ` is invariant under it and factors through the discrete
-  -- quotient by it.
-  let H : AddSubgroup (n → FiniteAdeleRing R K) :=
-    (integralBox n e).comap (DistribSMul.toAddMonoidHom _ (↑t⁻¹ : FiniteAdeleRing R K))
-  have hH : IsOpen (H : Set (n → FiniteAdeleRing R K)) := by
-    rw [AddSubgroup.coe_comap]
-    exact (isOpen_integralBox e).preimage (continuous_const_smul _)
-  have : DiscreteTopology ((n → FiniteAdeleRing R K) ⧸ H) := QuotientAddGroup.discreteTopology hH
-  have hmk {x y : n → FiniteAdeleRing R K} :
-      (↑t⁻¹ : FiniteAdeleRing R K) • (y - x) ∈ integralBox n e ↔
-        (y : (n → FiniteAdeleRing R K) ⧸ H) = x := by
-    rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_comap, DistribSMul.toAddMonoidHom_apply]
-  -- `Ψ` is constant on every coset of `H`, not only on those through its support.
-  have hinv {x y : n → FiniteAdeleRing R K} (hxy : (y : (n → FiniteAdeleRing R K) ⧸ H) = x) :
-      Ψ y = Ψ x := by
-    by_cases hx : Ψ x = 0
-    · rw [hx]
-      by_contra hy
-      exact hy ((hper y hy x (hmk.2 hxy.symm)).symm.trans hx)
-    · exact hper x hx y (hmk.2 hxy)
-  have hfin := hΨ.finite_support_out t
-  refine ⟨hfin.toFinset.image Quotient.out, by simp, funext fun x ↦ ?_⟩
-  rw [Finset.sum_apply, Finset.sum_image fun _ _ _ _ h ↦ Quotient.out_injective h]
-  -- Only the class of `x` can contribute, through its representative.
-  have hx : x ∈ {y | (↑t⁻¹ : FiniteAdeleRing R K) •
-      (y - (x : (n → FiniteAdeleRing R K) ⧸ H).out) ∈ integralBox n e} :=
-    hmk.2 (QuotientAddGroup.out_eq' _).symm
-  refine Eq.symm <| (Finset.sum_eq_single (x : (n → FiniteAdeleRing R K) ⧸ H) ?_ ?_).trans ?_
-  · intro q _ hq
-    refine indicator_of_notMem (fun h ↦ hq ?_) _
-    exact (QuotientAddGroup.out_eq' q).symm.trans (hmk.1 h).symm
-  · intro hxA
-    rw [indicator_of_mem hx]
-    simpa using hxA
-  · rw [indicator_of_mem hx]
-    exact hinv (QuotientAddGroup.out_eq' _)
+/-- The product of a Schwartz–Bruhat function above `S` with a locally constant function that
+depends only on the projection onto `S` is Schwartz–Bruhat above `S`. -/
+theorem mul_left (hf : IsSchwartzBruhatAbove S f) {φ : (ι → FiniteAdeleRing R K) → ℂ}
+    (hφ : IsLocallyConstant φ) (hφS : ∀ x, φ (projectPlaces S x) = φ x) :
+    IsSchwartzBruhatAbove S fun x ↦ φ x * f x :=
+  isSchwartzBruhatAbove_iff.2 ⟨hφ.mul hf.isLocallyConstant,
+    fun x ↦ by simp only [hφS, hf.project_eq], _, hf.isCompact_image_support,
+    image_mono fun _ hx ↦ right_ne_zero_of_mul hx⟩
+
+open Classical in
+/-- A Schwartz–Bruhat function above `S` has a finite expansion in cosets of any open additive
+subgroup containing the kernel of the projection and fixing the function on its support.
+Representatives lie in its support, are distinct modulo the subgroup, and the coefficients
+are the values of the function at those representatives. -/
+theorem exists_eq_sum_cosetIndicator (hf : IsSchwartzBruhatAbove S f)
+    (H : OpenAddSubgroup (ι → FiniteAdeleRing R K))
+    (hH : ∀ x, projectPlaces S x = 0 → x ∈ H)
+    (hinv : ∀ x ∈ support f, ∀ u ∈ H, f (x + u) = f x) :
+    ∃ s : Finset (ι → FiniteAdeleRing R K), (∀ y ∈ s, f y ≠ 0) ∧
+      (∀ y ∈ s, ∀ z ∈ s, y - z ∈ H → y = z) ∧
+      ∀ x, f x = ∑ y ∈ s, if x - y ∈ H then f y else 0 := by
+  apply H.exists_eq_sum_indicator_sub_mem hinv ⟨projectPlaces S, continuous_projectPlaces S⟩
+    _ hf.isCompact_image_support
+  intro x
+  apply hH
+  simp
+
+open Classical in
+/-- The box-coset expansion: a Schwartz–Bruhat function above `S` constant on cosets of
+`t B_S` is a finite sum of indicators of those cosets, with coefficients its values. -/
+theorem exists_eq_sum_scaledIntegralBox [Finite ι] (hf : IsSchwartzBruhatAbove S f)
+    (t : (FiniteAdeleRing R K)ˣ)
+    (hinv : ∀ x ∈ support f, ∀ u ∈ scaledIntegralBox S t, f (x + u) = f x) :
+    ∃ s : Finset (ι → FiniteAdeleRing R K), (∀ y ∈ s, f y ≠ 0) ∧
+      (∀ y ∈ s, ∀ z ∈ s, y - z ∈ scaledIntegralBox S t → y = z) ∧
+      ∀ x, f x = ∑ y ∈ s, if x - y ∈ scaledIntegralBox S t then f y else 0 := by
+  apply hf.exists_eq_sum_cosetIndicator (scaledIntegralBox S t) _ hinv
+  intro x hx
+  rw [mem_scaledIntegralBox]
+  apply mem_integralBox_of_projectPlaces_eq_zero
+  simp [hx]
 
 end IsSchwartzBruhatAbove
 
+/-- The indicator of the integral box is Schwartz–Bruhat above `S`, provided the local integer
+rings are compact. It is nonzero even when `S` is empty. -/
+theorem isSchwartzBruhatAbove_integralBox [Finite ι]
+    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)]
+    (S : Set (HeightOneSpectrum R)) :
+    IsSchwartzBruhatAbove S
+      (((integralBox (K := K) (ι := ι) S).toAddSubgroup :
+        Set (ι → FiniteAdeleRing R K)).indicator (fun _ ↦ (1 : ℂ))) := by
+  classical
+  let f : (ι → FiniteAdeleRing R K) → ℂ :=
+    ((integralBox (K := K) (ι := ι) S).toAddSubgroup :
+      Set (ι → FiniteAdeleRing R K)).indicator (fun _ ↦ 1)
+  have hl : IsLocallyConstant f :=
+    (LocallyConstant.charFn ℂ (integralBox S).isClopen).isLocallyConstant
+  have hp (x : ι → FiniteAdeleRing R K) : f (projectPlaces S x) = f x := by
+    simp only [f, indicator_apply]
+    congr 1
+    exact propext (projectPlaces_mem_integralBox S x)
+  have heq : projectPlaces S '' support f =
+      projectPlaces S '' (Set.univ.pi fun _ : ι ↦ (integralAdeles R K : Set _)) := by
+    ext x
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      have hy' : y ∈ integralBox S := by simpa [f, mem_support] using hy
+      exact ⟨projectPlaces S y, fun i _ ↦ hy' i, projectPlaces_projectPlaces S y⟩
+    · rintro ⟨y, hy, rfl⟩
+      refine ⟨y, ?_, rfl⟩
+      have hy' : y ∈ integralBox S := by
+        intro i
+        rw [mem_integralAdeles]
+        intro v
+        by_cases hv : v ∈ S
+        · simpa [hv] using (mem_integralAdeles.1 (hy i (mem_univ i))) v
+        · simp [hv]
+      simp [f, hy']
+  refine ⟨hl, hp, ?_⟩
+  rw [heq]
+  exact (isCompact_univ_pi fun _ : ι ↦ isCompact_integralAdeles (R := R) (K := K)).image
+    (continuous_projectPlaces S)
+
 end IsDedekindDomain.FiniteAdeleRing
+

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Conj
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 
 /-!
@@ -41,8 +42,12 @@ finite-dimensional: the resolvent `R(lambda)` acts on it as multiplication by `l
 * `LinearPMap.hasCompactResolvent_iff_isCompactOperator_resolvent`: compact resolvent can be
   tested at any single point of the resolvent set.
 * `LinearPMap.hasCompactResolvent_neg_iff`: `-A` has compact resolvent exactly when `A` does.
+* `LinearPMap.hasCompactResolvent_conj_iff`: conjugation by a continuous linear equivalence
+  preserves compact resolvent.
 * `LinearPMap.HasCompactResolvent.finiteDimensional_ker`: an operator with compact resolvent has a
   finite-dimensional kernel.
+* `LinearPMap.finiteDimensional_of_hasCompactResolvent_toPMap_top`: a bounded linear operator
+  defined on the entire space has compact resolvent only in finite dimensions.
 
 ## References
 
@@ -148,6 +153,29 @@ theorem hasCompactResolvent_neg_iff : (-A).HasCompactResolvent ↔ A.HasCompactR
 
 end Neg
 
+section Conj
+
+variable {𝕜 E F : Type*} [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] {A : E →ₗ.[𝕜] E}
+
+private theorem hasCompactResolvent_conj (e : E ≃L[𝕜] F) (h : A.HasCompactResolvent) :
+    (A.conj (e : E ≃ₗ[𝕜] F)).HasCompactResolvent := by
+  obtain ⟨z, hz, hc⟩ := hasCompactResolvent_def.1 h
+  refine hasCompactResolvent_def.2 ⟨z, (resolventSet_conj e A).symm ▸ hz, ?_⟩
+  rw [resolvent_conj e hz, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
+  exact (hc.comp_clm _).clm_comp _
+
+/-- Conjugation by a continuous linear equivalence preserves compact resolvent. -/
+@[simp]
+theorem hasCompactResolvent_conj_iff (e : E ≃L[𝕜] F) :
+    (A.conj (e : E ≃ₗ[𝕜] F)).HasCompactResolvent ↔ A.HasCompactResolvent :=
+  ⟨fun h ↦ by
+    have h' := hasCompactResolvent_conj e.symm h
+    rwa [ContinuousLinearEquiv.toLinearEquiv_symm, conj_conj_symm] at h',
+    hasCompactResolvent_conj e⟩
+
+end Conj
+
 section FiniteDimensional
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup X]
@@ -173,6 +201,19 @@ theorem HasCompactResolvent.finiteDimensional_ker (h : A.HasCompactResolvent) :
     have hR := resolvent_apply_of_apply_eq_smul hl y (c := 0) (by rw [hy, zero_smul])
     rw [sub_zero] at hR
     exact Module.End.mem_eigenspace_iff.2 hR
+
+/-- A bounded linear operator defined on the entire space has compact resolvent only if the space
+is finite-dimensional. -/
+theorem finiteDimensional_of_hasCompactResolvent_toPMap_top {T : X →L[𝕜] X}
+    (h : ((T : X →ₗ[𝕜] X).toPMap ⊤).HasCompactResolvent) :
+    FiniteDimensional 𝕜 X := by
+  obtain ⟨z, hz, hcomp⟩ := hasCompactResolvent_def.1 h
+  have hres := isResolventAt_resolvent hz
+  have hid : ((z • ContinuousLinearMap.id 𝕜 X - T) ∘L
+      ((T : X →ₗ[𝕜] X).toPMap ⊤).resolvent z : X → X) = id := funext fun y ↦ by
+    simpa using hres.smul_sub_apply y
+  exact FiniteDimensional.of_isCompactOperator_id
+    (hid ▸ hcomp.clm_comp (z • ContinuousLinearMap.id 𝕜 X - T))
 
 end FiniteDimensional
 
