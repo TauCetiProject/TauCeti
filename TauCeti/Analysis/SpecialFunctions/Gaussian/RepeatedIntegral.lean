@@ -9,7 +9,6 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
-import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
@@ -78,8 +77,8 @@ not proved here: this file develops `Hh_n` itself, from the defining integral al
 
 ## Implementation notes
 
-In the Laplace form, the derivative comes from the half-line Gaussian–Laplace integrals of
-`TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral`. Both recurrences come from
+In the Laplace form, the derivative comes from the half-line power-decay Laplace integrals of
+`TauCeti.MeasureTheory.Integral.Exp.PowerDecay`. Both recurrences come from
 integrating the derivative of `t ↦ w(t) e^{-(z+t)²/2}` over `(0, ∞)` for the weight
 `w(t) = tᵏ/k!`, which gives minus its value at `t = 0`. Differentiating the Gaussian factor
 contributes `-(z Hh_k(z) + (k + 1) Hh_{k+1}(z))` in either case; the weight contributes `0` for
