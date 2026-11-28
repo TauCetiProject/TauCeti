@@ -32,11 +32,19 @@ functions on the torus are the same as continuous `ℤ^d`-periodic functions on 
 * `TauCeti.UnitAddTorus.periodic_comp_coe`: the lift of a function on the torus is `ℤ^d`-periodic.
 * `TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq`: a continuous `ℤ^d`-periodic function on
   `d → ℝ` descends to a continuous function on the torus.
+* `TauCeti.UnitAddTorus.pairing`, `TauCeti.UnitAddTorus.continuous_pairing`: the biadditive
+  integer pairing `(k, α) ↦ ∑ i, k i • α i` and its continuity in `α`.
+* `TauCeti.UnitAddTorus.exists_addOrderOf_eq_zero_of_forall_pairing`: non-annihilation of a finite
+  family of torus points implies existence of an infinite-order pairing for every nonzero frequency.
+* `TauCeti.TorusIrrational`: irrationality on `UnitAddTorus d` via non-annihilation by nonzero
+  integer frequency vectors, with singleton, empty-type, and nonzero-scaling characterizations.
 -/
 
 public section
 
-namespace TauCeti.UnitAddTorus
+namespace TauCeti
+
+namespace UnitAddTorus
 
 variable {d : Type*}
 
@@ -99,4 +107,95 @@ theorem exists_continuous_comp_coe_eq {X : Type*} [TopologicalSpace X] {G : (d �
     fun x ↦ ?_⟩
   exact DFunLike.congr_fun (hq.lift_comp (f := ⟨_, hq.continuous⟩) ⟨G, hG⟩ hfac) x
 
-end TauCeti.UnitAddTorus
+section Pairing
+
+variable [Fintype d]
+
+/-- The integer pairing `(k, α) ↦ ∑ i, k i • α i` between frequency vectors `k : d → ℤ` and
+torus points `α : UnitAddTorus d`, packaged as a biadditive map. -/
+def pairing : (d → ℤ) →+ UnitAddTorus d →+ UnitAddCircle where
+  toFun k :=
+    { toFun := fun α ↦ ∑ i, k i • α i
+      map_zero' := by simp
+      map_add' := fun α β ↦ by simp [smul_add, Finset.sum_add_distrib] }
+  map_zero' := by ext α; simp
+  map_add' k l := by ext α; simp [add_zsmul, Finset.sum_add_distrib]
+
+/-- Evaluating the biadditive integer pairing `pairing k α` gives `∑ i, k i • α i`. -/
+@[simp] theorem pairing_apply (k : d → ℤ) (α : UnitAddTorus d) :
+    pairing k α = ∑ i, k i • α i := (rfl)
+
+/-- For each fixed integer frequency vector `k`, the pairing `α ↦ pairing k α` is continuous on
+`UnitAddTorus d`. -/
+@[continuity, fun_prop] theorem continuous_pairing (k : d → ℤ) : Continuous (pairing k) := by
+  have h : (pairing k : UnitAddTorus d → UnitAddCircle) = fun α ↦ ∑ i, k i • α i :=
+    funext (pairing_apply k)
+  rw [h]; fun_prop
+
+/-- If no nonzero integer frequency annihilates all points of a finite family `α` over `S`, then
+every nonzero frequency produces an infinite-order pairing at some `j ∈ S`. -/
+theorem exists_addOrderOf_eq_zero_of_forall_pairing {ι : Type*} (S : Finset ι)
+    (α : ι → UnitAddTorus d) (h : ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ S, ∑ i, k i • α j i ≠ 0) :
+    ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ S, addOrderOf (∑ i, k i • α j i) = 0 := by
+  intro k hk; by_contra hfin; push Not at hfin
+  have hpi : IsOfFinAddOrder (fun j : S ↦ ∑ i, k i • α j.val i) :=
+    IsOfFinAddOrder.pi fun j ↦ addOrderOf_pos_iff.mp (Nat.pos_of_ne_zero (hfin j.val j.property))
+  obtain ⟨M, hMpos, hM⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.mp hpi
+  obtain ⟨j, hj, hne⟩ := h ((M : ℤ) • k) (smul_ne_zero (Int.natCast_ne_zero.mpr hMpos.ne') hk)
+  refine hne ?_
+  rw [← pairing_apply, map_zsmul, AddMonoidHom.zsmul_apply, pairing_apply, natCast_zsmul]
+  exact congrFun hM ⟨j, hj⟩
+
+end Pairing
+
+end UnitAddTorus
+
+section TorusIrrational
+
+variable {d : Type*} [Fintype d]
+
+/-- A point `α : UnitAddTorus d` is irrational if no nonzero integer frequency vector annihilates
+it under the pairing `k ↦ ∑ i, k i • α i`. -/
+def TorusIrrational (α : UnitAddTorus d) : Prop := ∀ k : d → ℤ, k ≠ 0 → ∑ i, k i • α i ≠ 0
+
+/-- Unfolding characterization of `TorusIrrational`. -/
+theorem torusIrrational_def {α : UnitAddTorus d} :
+    TorusIrrational α ↔ ∀ k : d → ℤ, k ≠ 0 → ∑ i, k i • α i ≠ 0 := Iff.rfl
+
+/-- On a one-dimensional torus, `TorusIrrational` coincides with having infinite additive order. -/
+theorem torusIrrational_unique_iff [Unique d] {α : UnitAddTorus d} :
+    TorusIrrational α ↔ addOrderOf (α default) = 0 := by
+  rw [torusIrrational_def, addOrderOf_eq_zero_iff, isOfFinAddOrder_iff_zsmul_eq_zero]
+  simp only [Fintype.sum_unique, not_exists, not_and]
+  refine ⟨fun h n hn ↦ h (fun _ ↦ n) (fun hk ↦ hn (congrFun hk default)),
+    fun h k hk ↦ h (k default) (fun h0 ↦ hk (funext fun i ↦ Unique.eq_default i ▸ h0))⟩
+
+/-- On an empty coordinate type, every torus point is vacuously irrational. -/
+theorem torusIrrational_of_isEmpty [IsEmpty d] (α : UnitAddTorus d) : TorusIrrational α :=
+  fun k hk ↦ (hk (Subsingleton.elim k 0)).elim
+
+/-- Scaling a torus point by a nonzero integer preserves and reflects irrationality. -/
+@[simp] theorem torusIrrational_zsmul_iff {α : UnitAddTorus d} {m : ℤ} (hm : m ≠ 0) :
+    TorusIrrational (m • α) ↔ TorusIrrational α := by
+  refine ⟨fun h k hk hsum ↦ h k hk ?_, fun h k hk hsum ↦ h (m • k) (smul_ne_zero hm hk) ?_⟩
+  · rw [← UnitAddTorus.pairing_apply, map_zsmul, UnitAddTorus.pairing_apply, hsum, smul_zero]
+  · rw [← UnitAddTorus.pairing_apply, map_zsmul, AddMonoidHom.zsmul_apply, ← map_zsmul,
+      UnitAddTorus.pairing_apply]; exact hsum
+
+/-- A nonzero integer multiple of an irrational torus point is irrational. -/
+theorem TorusIrrational.zsmul {α : UnitAddTorus d} (hα : TorusIrrational α) {m : ℤ} (hm : m ≠ 0) :
+    TorusIrrational (m • α) := (torusIrrational_zsmul_iff hm).mpr hα
+
+/-- Scaling a torus point by a nonzero natural number preserves and reflects irrationality. -/
+@[simp] theorem torusIrrational_nsmul_iff {α : UnitAddTorus d} {m : ℕ} (hm : m ≠ 0) :
+    TorusIrrational (m • α) ↔ TorusIrrational α := by
+  simpa [natCast_zsmul] using
+    torusIrrational_zsmul_iff (α := α) (m := (m : ℤ)) (Int.natCast_ne_zero.mpr hm)
+
+/-- A nonzero natural-number multiple of an irrational torus point is irrational. -/
+theorem TorusIrrational.nsmul {α : UnitAddTorus d} (hα : TorusIrrational α) {m : ℕ} (hm : m ≠ 0) :
+    TorusIrrational (m • α) := (torusIrrational_nsmul_iff hm).mpr hα
+
+end TorusIrrational
+
+end TauCeti

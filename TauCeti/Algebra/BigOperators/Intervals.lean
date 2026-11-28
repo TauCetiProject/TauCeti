@@ -13,6 +13,7 @@ public import Mathlib.Data.Nat.Dist
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Order.SuccPred.Int
 import Mathlib.Tactic.Abel
@@ -90,6 +91,10 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
   `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n) = ∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`.
 * `Finset.sum_Ioc_dist_le`: `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 ≤ k ≤ H} w(k)` for
   `0 < n ≤ H` and nonnegative `w`.
+* `Finset.sum_range_sum_Ico_sub`: reindex pairs `0 ≤ h₁ < h₂ < H` by lag `h = h₂ - h₁` with
+  multiplicity `H - h`.
+* `Finset.sum_range_sum_range_eq_diag_add_Ico`: split a square sum over `range H × range H` into
+  its diagonal and upper triangle.
 -/
 
 public section
@@ -478,5 +483,39 @@ theorem sum_Ioc_dist_le {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing
       simp only [mem_insert, mem_singleton]
       omega
   simpa using Nat.mono_cast (α := R) (hcard.trans card_le_two)
+
+/-- Counting pairs `0 ≤ h₁ < h₂ < H` by their lag `h = h₂ - h₁` gives multiplicity `H - h`. -/
+theorem sum_range_sum_Ico_sub {M : Type*} [AddCommMonoid M] (H : ℕ) (φ : ℕ → M) :
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, φ (h₂ - h₁) = ∑ h ∈ Ico 1 H, (H - h) • φ h := by
+  cases H with
+  | zero => simp
+  | succ n =>
+    simp_rw [← Nat.Ico_zero_eq_range]; rw [sum_Ico_Ico_comm']
+    simp_rw [Nat.Ico_zero_eq_range]; rw [sum_range_succ', range_zero, sum_empty, add_zero]
+    have hrefl (m : ℕ) : ∑ h₁ ∈ range (m + 1), φ (m + 1 - h₁) = ∑ k ∈ range (m + 1), φ (k + 1) := by
+      rw [← sum_range_reflect (fun k ↦ φ (k + 1)) (m + 1)]
+      exact sum_congr rfl fun k hk ↦ by have hk' := mem_range.mp hk; congr 1; omega
+    simp_rw [hrefl]; rw [sum_range_diag_flip n (fun i _ ↦ φ (i + 1)), sum_Ico_eq_sum_range,
+      add_tsub_cancel_right]
+    exact sum_congr rfl fun m _ ↦ by rw [sum_const, card_range, add_comm 1 m, Nat.succ_sub_succ]
+
+/-- Splitting a square sum over `range H × range H` into its diagonal and upper triangle. -/
+theorem sum_range_sum_range_eq_diag_add_Ico {M : Type*} [AddCommMonoid M] (H : ℕ)
+    (S : ℕ → ℕ → M) :
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ range H, S h₁ h₂ =
+      (∑ h₁ ∈ range H, S h₁ h₁) +
+        ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + S h₂ h₁) := by
+  simp_rw [← Fin.sum_univ_eq_sum_range]
+  have hsplit : ∑ i : Fin H, ∑ j : Fin H, S i j =
+      (∑ i : Fin H, S i i) + ∑ i : Fin H, ∑ j ∈ {i}ᶜ, S i j := by
+    simp_rw [fun i : Fin H ↦ Fintype.sum_eq_add_sum_compl i (S i ·), sum_add_distrib]
+  rw [hsplit, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : Fin H ↦ S i j)]
+  congr 1
+  refine sum_congr rfl fun i _ ↦ ?_
+  refine sum_bij' (fun (j : Fin H) _ ↦ (j : ℕ))
+    (fun j hj ↦ ⟨j, (mem_Ico.mp hj).2⟩) (fun j hj ↦ ?_) (fun j hj ↦ ?_)
+    (fun _ _ ↦ Fin.eta _ _) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+  · rw [mem_Ioi] at hj; exact mem_Ico.mpr ⟨hj, j.isLt⟩
+  · rw [mem_Ico] at hj; exact mem_Ioi.mpr hj.1
 
 end Finset

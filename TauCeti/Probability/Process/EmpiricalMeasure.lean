@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Probability.UniformOn
+import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.MeasureTheory.Group.LIntegral
 
 /-!
@@ -26,7 +27,9 @@ matches the shape used in limit theorems.
 There is one construction, not three: the probability measures are *defined* from the finite
 measure, and the sequence form as a specialization, so they can never drift apart.
 
-The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
+The API covers evaluation (including visit frequencies via `empiricalMeasure_real_eq_frequency`),
+integration (including strongly measurable `𝕜`-valued test functions via
+`integral_empiricalMeasure_rclike`), pushforward, continuity, measurability and finite support.
 Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
 so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
 empirical measures of its pieces weighted by their sizes. On a commutative additive group with
@@ -423,6 +426,14 @@ theorem empiricalMeasure_toMeasure (x : ℕ → α) (n : ℕ) : (empiricalMeasur
   exact Fin.sum_univ_eq_sum_range
     (fun i => ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ • Measure.dirac (x i)) (n + 1)
 
+/-- Pushing an empirical measure forward along a measurable map gives the empirical measure of the
+image sequence. -/
+@[simp]
+theorem map_empiricalMeasure {β : Type*} [MeasurableSpace β] {f : α → β}
+    (hf : Measurable f) (x : ℕ → α) (n : ℕ) :
+    (empiricalMeasure x n).map f = empiricalMeasure (f ∘ x) n :=
+  map_empiricalMeasureOfFintype hf _
+
 /-- An empirical measure is concentrated on a finite set. -/
 theorem exists_finset_ae_mem_empiricalMeasure [MeasurableSingletonClass α]
     (x : ℕ → α) (n : ℕ) :
@@ -449,6 +460,16 @@ theorem empiricalMeasure_apply_toReal {x : ℕ → α} {n : ℕ} {s : Set α} (h
     · intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
 
+/-- The empirical frequency of a measurable set equals the real-valued mass assigned to it by the
+empirical probability measure. -/
+theorem empiricalMeasure_real_eq_frequency {x : ℕ → α} {E : Set α}
+    [DecidablePred (· ∈ E)] (hE : MeasurableSet E) (n : ℕ) :
+    ((empiricalMeasure x n : Measure α) E).toReal =
+      (((Finset.range (n + 1)).filter (fun i ↦ x i ∈ E)).card : ℝ) / ((n + 1 : ℕ) : ℝ) := by
+  rw [empiricalMeasure_apply_toReal hE, div_eq_inv_mul]
+  congr 1
+  simp [Set.indicator_apply]
+
 omit [MeasurableSpace Ω] in
 /-- Evaluation of a path's empirical measure, written as indicators on the sample space. -/
 theorem empiricalMeasure_process_apply_toReal {X : ℕ → Ω → α} {ω : Ω} {n : ℕ}
@@ -468,6 +489,16 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
       ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ Finset.range (n + 1), f (x i) := by
   rw [empiricalMeasure, integral_empiricalMeasureOfFintype hf, Fintype.card_fin,
     Fin.sum_univ_eq_sum_range (fun i => f (x i))]
+
+/-- Integrating a strongly measurable `𝕜`-valued function (`[RCLike 𝕜]`) against the empirical
+probability measure produces its successor-indexed Cesàro average. -/
+theorem integral_empiricalMeasure_rclike {𝕜 : Type*} [RCLike 𝕜] {x : ℕ → α} {f : α → 𝕜}
+    (hf : StronglyMeasurable f) (n : ℕ) :
+    ∫ y, f y ∂(empiricalMeasure x n : Measure α) =
+      ((n + 1 : ℕ) : 𝕜)⁻¹ * ∑ i ∈ Finset.range (n + 1), f (x i) := by
+  have := FiniteDimensional.proper ℝ 𝕜
+  rw [integral_empiricalMeasure hf, RCLike.real_smul_eq_coe_mul,
+    RCLike.ofReal_inv, RCLike.ofReal_natCast]
 
 /-- Integrating against the uniform probability measure on `{1, …, m + 1}` is averaging the values
 at `1, …, m + 1`. -/

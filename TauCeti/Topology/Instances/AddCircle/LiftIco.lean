@@ -5,25 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Instances.AddCircle.Defs
+public import Mathlib.Topology.Instances.AddCircle.Real
 
 /-!
 # Functions on the additive circle lifted from a fundamental interval
 
-For a function `f : 𝕜 → B`, Mathlib's `AddCircle.liftIco p a f` is the function on
-`AddCircle p` which agrees with `f` on the fundamental interval `[a, a + p)`. This file records
-its range, its injectivity, and its values on the closed interval `[a, a + p]` when
-`f a = f (a + p)`. Together with `AddCircle.liftIco_continuous`, a closed curve `γ`, continuous
-on `[a, b]` with `γ a = γ b`, thus factors through the circle `AddCircle (b - a)` as a continuous
-map with the same trace, injective exactly when `γ` is injective on `[a, b)`.
-
-## Main results
+Records range, injectivity, boundary agreement, and frontier bounds for `AddCircle.liftIco p a f`
+and `AddCircle.equivIco T c` on half-open arcs `[a, b) ⊆ [c, c + T)`:
 
 * `AddCircle.liftIco_coe_apply_of_mem_Icc`: if `f a = f (a + p)`, the lift agrees with `f` on
   `[a, a + p]`.
-* `AddCircle.range_liftIco`: the range of the lift is the image of `[a, a + p)` under `f`.
-* `AddCircle.injective_liftIco_iff`: the lift is injective exactly when `f` is injective on
-  `[a, a + p)`.
+* `AddCircle.range_liftIco`: the range of the lift is `f '' Ico a (a + p)`.
+* `AddCircle.injective_liftIco_iff`: the lift is injective iff `f` is injective on `[a, a + p)`.
+* `AddCircle.frontier_preimage_equivIco_Ico_subset`: `frontier (equivIco ⁻¹' Ico a b) ⊆ {a, b}`.
 -/
 
 public section
@@ -53,5 +47,31 @@ theorem liftIco_coe_apply_of_mem_Icc (hf : f a = f (a + p)) {x : 𝕜} (hx : x �
 fundamental interval `[a, a + p)`. -/
 @[simp] theorem injective_liftIco_iff : Injective (liftIco p a f) ↔ InjOn f (Ico a (a + p)) := by
   exact ((equivIco p a).injective_comp _).trans Set.injOn_iff_injective.symm
+
+/-- For `c ≤ a` and `b ≤ c + T`, the frontier of the preimage of `[a, b)` under `equivIco T c`
+is contained in `{(a : AddCircle T), (b : AddCircle T)}`. -/
+theorem frontier_preimage_equivIco_Ico_subset {T c a b : ℝ} [Fact (0 < T)] (hc : c ≤ a)
+    (hb : b ≤ c + T) : frontier ((fun θ : AddCircle T ↦ (equivIco T c θ : ℝ)) ⁻¹' Ico a b) ⊆
+      {(a : AddCircle T), (b : AddCircle T)} := by
+  set E : Set (AddCircle T) := (fun θ : AddCircle T ↦ (equivIco T c θ : ℝ)) ⁻¹' Ico a b
+  have hE : E = ((↑) : ℝ → AddCircle T) '' Ico a b := by
+    ext x; refine ⟨fun hx ↦ ⟨equivIco T c x, hx, by simp⟩, ?_⟩
+    rintro ⟨y, hy, rfl⟩; simpa [E, equivIco_coe_of_mem ⟨hc.trans hy.1, hy.2.trans_le hb⟩] using hy
+  have hcl : closure E ⊆ ((↑) : ℝ → AddCircle T) '' Icc a b := by
+    -- `AddCircle T` is `ℝ ⧸ AddSubgroup.zmultiples T`; `zmultiples T` is discrete hence closed,
+    -- which gives `T3Space (AddCircle T)` (and thus `T2Space`) via `QuotientAddGroup.instT3Space`.
+    have : IsClosed ((AddSubgroup.zmultiples T : AddSubgroup ℝ) : Set ℝ) :=
+      (AddSubgroup.zmultiples T).isClosed_of_discreteTopology
+    have : T3Space (AddCircle T) := inferInstanceAs (T3Space (ℝ ⧸ AddSubgroup.zmultiples T))
+    rw [hE]; exact closure_minimal (image_mono Ico_subset_Icc_self)
+      (isCompact_Icc.image continuous_quotient_mk').isClosed
+  have hint : ((↑) : ℝ → AddCircle T) '' Ioo a b ⊆ interior E := by
+    rw [hE]; exact interior_maximal (image_mono Ioo_subset_Ico_self)
+      (QuotientAddGroup.isOpenMap_coe _ isOpen_Ioo)
+  intro x hx; obtain ⟨y, hy, rfl⟩ := hcl hx.1
+  have hy_not : y ∉ Ioo a b := fun hyo ↦ hx.2 (hint ⟨y, hyo, rfl⟩)
+  rcases eq_or_lt_of_le hy.1 with rfl | hlt
+  · simp
+  · simp [le_antisymm hy.2 (not_lt.mp fun h ↦ hy_not ⟨hlt, h⟩)]
 
 end AddCircle

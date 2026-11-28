@@ -85,6 +85,13 @@ theorem integral_fourier_haarAddCircle (n : ℤ) :
   simpa [fourierCoeff, fourier_zero, Pi.single_apply, eq_comm] using
     congrFun (fourierCoeff_fourier (T := T) n) 0
 
+/-- Pushing Lebesgue measure restricted to `[a, a + T)` forward to `AddCircle T` gives circle
+volume. -/
+theorem map_coe_restrict_Ico_volume (a : ℝ) :
+    (volume.restrict (Ico a (a + T))).map ((↑) : ℝ → AddCircle T) = volume := by
+  rw [Measure.restrict_congr_set Ico_ae_eq_Ioc]
+  exact (AddCircle.measurePreserving_mk T a).map_eq
+
 /-- Reading a circle point in `[a, a + T)` sends circle volume to Lebesgue measure
 restricted to that interval. -/
 theorem map_coe_equivIco_volume (a : ℝ) :
@@ -92,10 +99,7 @@ theorem map_coe_equivIco_volume (a : ℝ) :
       volume.restrict (Ico a (a + T)) := by
   have hm : Measurable fun θ ↦ (equivIco T a θ : ℝ) :=
     measurable_subtypeVal.comp (measurableEquivIco T a).measurable
-  have hproj : (volume.restrict (Ico a (a + T))).map ((↑) : ℝ → AddCircle T) = volume := by
-    rw [Measure.restrict_congr_set Ico_ae_eq_Ioc]
-    exact (AddCircle.measurePreserving_mk T a).map_eq
-  rw [← hproj, Measure.map_map hm AddCircle.measurable_mk']
+  rw [← map_coe_restrict_Ico_volume a, Measure.map_map hm AddCircle.measurable_mk']
   convert (Measure.map_id (μ := volume.restrict (Ico a (a + T)))) using 1
   apply Measure.map_congr
   filter_upwards [ae_restrict_mem measurableSet_Ico] with x hx
