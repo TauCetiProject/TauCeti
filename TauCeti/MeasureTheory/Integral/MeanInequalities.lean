@@ -12,11 +12,14 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Average
+import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Variants of Hölder's inequality
@@ -55,6 +58,10 @@ For a product of `k` functions, the norm of its integral is at most the average 
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
 expected products without any independence assumption.
 
+On a probability space, Jensen's inequality for `Real.exp` yields the geometric–power mean bound
+`exp (α ∫ log g) ≤ (∫ g ^ p) ^ (α / p)` and its `ε`-regularized `Lᵖ` counterpart for
+`log (max g ε)`, together with integrability of `log (max g ε)` on any finite measure space.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
@@ -71,6 +78,9 @@ expected products without any independence assumption.
   and `TauCeti.setAverage_rpow_mul_norm_rpow_le_of_ae_le` the form for averages.
 * `TauCeti.setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq`: the averaged form of a decay
   estimate whose error is controlled by Hölder's inequality with a bounded weight.
+* `TauCeti.integrable_log_max_of_integrable_rpow`: integrability of `log (max g ε)` from `g ^ p`.
+* `TauCeti.exp_mul_integral_log_le_rpow_integral_rpow` and
+  `TauCeti.exp_mul_integral_log_max_le_rpow_integral_rpow_add`: geometric–`Lᵖ` mean inequalities.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -377,6 +387,59 @@ theorem setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq {E : Type*} [NormedAd
   rw [inv_pow]
   field_simp
   ring
+
+/-- On a finite measure space, `x ↦ Real.log (max (g x) ε)` is integrable whenever `0 < p`,
+`0 < ε`, `g ≥ 0` almost everywhere, and `g ^ p` is integrable. -/
+theorem integrable_log_max_of_integrable_rpow [IsFiniteMeasure ν] {g : β → ℝ} {p ε : ℝ}
+    (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x) (hgp : Integrable (fun x ↦ g x ^ p) ν) :
+    Integrable (fun x ↦ Real.log (max (g x) ε)) ν := by
+  have hmax := integrable_max_rpow hp.le hε.le h0 hgp
+  refine ((integrable_const |Real.log ε|).add (hmax.const_mul p⁻¹)).mono'
+    (((Real.measurable_log.comp_aemeasurable hmax.aemeasurable).const_mul p⁻¹).congr
+      (.of_forall fun _ ↦ by
+        simp [Real.log_rpow (lt_max_of_lt_right hε), hp.ne'])).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
+  have hpos : 0 < max (g x) ε := lt_max_of_lt_right hε
+  have hhi : Real.log (max (g x) ε) ≤ p⁻¹ * (max (g x) ε) ^ p := by
+    rw [mul_comm, ← div_eq_mul_inv]
+    exact Real.log_le_rpow_div hpos.le hp
+  have hnonneg : 0 ≤ p⁻¹ * (max (g x) ε) ^ p := by positivity
+  simp only [Pi.add_apply, Real.norm_eq_abs, abs_le]
+  exact ⟨by linarith [Real.log_le_log hε (le_max_right (g x) ε), neg_abs_le (Real.log ε)],
+    by linarith [abs_nonneg (Real.log ε)]⟩
+
+/-- **Geometric–power mean inequality (Jensen's inequality for `Real.exp`).** On a probability
+space, for `0 ≤ α`, `0 < p`, and an almost everywhere positive `g` with `log ∘ g` and `g ^ p`
+integrable, `exp (α * ∫ log g dν) ≤ (∫ g ^ p dν) ^ (α / p)`. -/
+theorem exp_mul_integral_log_le_rpow_integral_rpow [IsProbabilityMeasure ν] {g : β → ℝ} {α p : ℝ}
+    (hα : 0 ≤ α) (hp : 0 < p) (hg : ∀ᵐ x ∂ν, 0 < g x)
+    (hlog : Integrable (fun x ↦ Real.log (g x)) ν) (hgp : Integrable (fun x ↦ g x ^ p) ν) :
+    Real.exp (α * ∫ x, Real.log (g x) ∂ν) ≤ (∫ x, g x ^ p ∂ν) ^ (α / p) := by
+  have hexp : (fun x ↦ Real.exp (p * Real.log (g x))) =ᵐ[ν] fun x ↦ g x ^ p :=
+    hg.mono fun _ hx ↦ by dsimp only; rw [Real.rpow_def_of_pos hx, mul_comm p]
+  have h := Real.rpow_le_rpow (Real.exp_nonneg _)
+    ((convexOn_exp.map_integral_le Real.continuous_exp.continuousOn isClosed_univ
+      (.of_forall fun _ ↦ Set.mem_univ _) (hlog.const_mul p) (hgp.congr hexp.symm)).trans_eq
+      (integral_congr_ae hexp)) (div_nonneg hα hp.le)
+  rwa [← Real.exp_mul, integral_const_mul, mul_comm, ← mul_assoc, div_mul_cancel₀ _ hp.ne'] at h
+
+/-- Regularized geometric–`Lᵖ` mean inequality on a probability space: for `0 ≤ α`, `0 < p`,
+`0 < ε`, and `g ≥ 0` almost everywhere with `g ^ p` integrable,
+`exp (α * ∫ log (max (g x) ε) dν) ≤ ((∫ g ^ p dν) + ε ^ p) ^ (α / p)`. -/
+theorem exp_mul_integral_log_max_le_rpow_integral_rpow_add [IsProbabilityMeasure ν] {g : β → ℝ}
+    {α p ε : ℝ} (hα : 0 ≤ α) (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x)
+    (hgp : Integrable (fun x ↦ g x ^ p) ν) :
+    Real.exp (α * ∫ x, Real.log (max (g x) ε) ∂ν) ≤ ((∫ x, g x ^ p ∂ν) + ε ^ p) ^ (α / p) := by
+  have hmax := integrable_max_rpow hp.le hε.le h0 hgp
+  refine (exp_mul_integral_log_le_rpow_integral_rpow hα hp
+    (.of_forall fun _ ↦ lt_max_of_lt_right hε)
+    (integrable_log_max_of_integrable_rpow hp hε h0 hgp) hmax).trans ?_
+  refine Real.rpow_le_rpow (integral_nonneg fun _ ↦ Real.rpow_nonneg (lt_max_of_lt_right hε).le p)
+    ((integral_mono_ae hmax (hgp.add (integrable_const (ε ^ p))) <| h0.mono fun _ hx ↦ by
+      simp only [Pi.add_apply, Real.rpow_max hx hε.le hp.le, max_le_iff, le_add_iff_nonneg_right,
+        le_add_iff_nonneg_left]
+      exact ⟨by positivity, by positivity⟩).trans_eq ?_) (div_nonneg hα hp.le)
+  rw [Pi.add_def, integral_add hgp (integrable_const _), integral_const, probReal_univ, one_smul]
 end TauCeti
 
 namespace MeasureTheory

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.OfNorm
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Group.Indicator
@@ -20,7 +21,10 @@ evaluations of a vector family with the vector family's `Lᵖ` norm. For constan
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under reindexing. For
 `p ≥ 1`, a linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has
-norm at most `‖s‖ * ∑ i, ‖v i‖`. For `p ≥ 1`, a real family with a positive coordinate has
+norm at most `‖s‖ * ∑ i, ‖v i‖`. For `0 < p < ∞`, `‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal`
+(`PiLp.norm_rpow_eq_sum`), and for `0 < p ≤ ∞`, weighted coordinate bounds
+`‖x i‖ ≤ B * w i ^ (p⁻¹).toReal` give `‖x‖ ≤ B * (∑ i, w i) ^ (p⁻¹).toReal`
+(`PiLp.norm_le_mul_sum_rpow_inv`). For `p ≥ 1`, a real family with a positive coordinate has
 positive `Lᵖ` norm (`PiLp.norm_toLp_pos`), and for `1 ≤ q < ∞` rescaling a positive family `c` to
 `(‖c‖_q (c i / ‖c‖_q) ^ (q / p))_i` moves it from `ℓ^q` to `ℓ^p` without changing its norm
 (`PiLp.norm_toLp_mul_div_rpow`).
@@ -56,8 +60,9 @@ We also record `PiLp.univ_sum_single`, the norm congruence `PiLp.norm_eq_of_fora
 `PiLp.norm_le_mul_of_forall_norm_le_mul`, the coordinatewise mask `PiLp.coordIndicator`, the
 coordinate isometry `PiLp.singleLI` (and the continuous coordinate inclusion `PiLp.singleCLM`),
 the power identity `PiLp.norm_rpow_eq_sum`, coordinatewise decomposition
-`ContinuousLinearMap.sum_comp_piLpSingleCLM`, and coordinatewise submodule restriction
-`LinearIsometryEquiv.submodulePiLp`.
+`ContinuousLinearMap.sum_comp_piLpSingleCLM`, the two-point sum-and-difference operator
+`PiLp.clarksonPairCLM` with its `(1, ∞)` and `(2, 2)` norm bounds, and coordinatewise submodule
+restriction `LinearIsometryEquiv.submodulePiLp`.
 
 For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
 `PiLp.piMap p T : PiLp p E →L[𝕜] PiLp p F` acts coordinatewise; it is
@@ -138,6 +143,28 @@ theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (
     ‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal := by
   rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
     one_div_mul_cancel hp.ne', Real.rpow_one]
+
+/-- If `p ≠ 0`, `0 ≤ B`, and nonnegative weights `w : ι → ℝ` satisfy
+`‖x i‖ ≤ B * w i ^ (p⁻¹).toReal` for every coordinate `i`, then
+`‖x‖ ≤ B * (∑ i, w i) ^ (p⁻¹).toReal`. Covers `0 < p < ∞` and `p = ∞` uniformly. -/
+theorem norm_le_mul_sum_rpow_inv [∀ i, SeminormedAddGroup (E i)]
+    (hp : p ≠ 0) {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) {B : ℝ} (hB : 0 ≤ B)
+    {x : PiLp p E} (hx : ∀ i, ‖x i‖ ≤ B * w i ^ (p⁻¹).toReal) :
+    ‖x‖ ≤ B * (∑ i, w i) ^ (p⁻¹).toReal := by
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · simpa [norm_eq_ciSup] using Real.iSup_le (by simpa using hx) hB
+  have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp hptop
+  have hsum : ∑ i, ‖x i‖ ^ p.toReal ≤ B ^ p.toReal * ∑ i, w i := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_le_sum fun i _ ↦
+      (Real.rpow_le_rpow (norm_nonneg _) (hx i) hp_pos.le).trans_eq ?_
+    rw [ENNReal.toReal_inv, Real.mul_rpow hB (Real.rpow_nonneg (hw i) _),
+      ← Real.rpow_mul (hw i), inv_mul_cancel₀ hp_pos.ne', Real.rpow_one]
+  rw [norm_eq_sum hp_pos, ENNReal.toReal_inv, one_div]
+  exact (Real.rpow_le_rpow (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _)
+    hsum (inv_nonneg.2 hp_pos.le)).trans_eq <| by
+      rw [Real.mul_rpow (Real.rpow_nonneg hB _) (Finset.sum_nonneg fun i _ ↦ hw i),
+        ← Real.rpow_mul hB, mul_inv_cancel₀ hp_pos.ne', Real.rpow_one]
 
 /-- For `0 < p < ∞`, bounds `‖x i‖ ^ p * F ≤ G i` on the coordinate shares of `‖x‖ ^ p * F` add
 up to `‖x‖ ^ p * F ≤ ∑ i, G i`. -/
@@ -454,6 +481,56 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
   exact (singleLI (𝕜 := 𝕜) p β i).norm_toContinuousLinearMap_le
 
 end Single
+
+section ClarksonPair
+
+/-- The two-point sum-and-difference operator `(x₀, x₁) ↦ (x₀ + x₁, x₀ - x₁)` from `ℓ^p_2(X)` to
+`ℓ^q_2(X)` as a continuous `𝕜`-linear map. -/
+def clarksonPairCLM (p q : ℝ≥0∞) (𝕜 X : Type*) [Ring 𝕜] [TopologicalSpace X] [AddCommGroup X]
+    [IsTopologicalAddGroup X] [Module 𝕜 X] :
+    PiLp p (fun _ : Fin 2 ↦ X) →L[𝕜] PiLp q (fun _ : Fin 2 ↦ X) :=
+  let pr := fun i : Fin 2 ↦
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin 2 ↦ X) i).comp
+      (continuousLinearEquiv p 𝕜 (fun _ : Fin 2 ↦ X)).toContinuousLinearMap
+  (continuousLinearEquiv q 𝕜 (fun _ : Fin 2 ↦ X)).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi fun i : Fin 2 ↦ if i = 0 then pr 0 + pr 1 else pr 0 - pr 1)
+
+/-- Coordinate evaluation of `PiLp.clarksonPairCLM`. -/
+@[simp]
+theorem clarksonPairCLM_apply (p q : ℝ≥0∞) (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+    [TopologicalSpace X] [AddCommGroup X] [IsTopologicalAddGroup X] [Module 𝕜 X]
+    (x : PiLp p (fun _ : Fin 2 ↦ X)) (i : Fin 2) :
+    clarksonPairCLM p q 𝕜 X x i = if i = 0 then x 0 + x 1 else x 0 - x 1 := by
+  split_ifs with hi <;> simp [clarksonPairCLM, hi]
+
+/-- As an operator `ℓ¹_2(X) → ℓ^∞_2(X)`, `PiLp.clarksonPairCLM` has norm at most `1`. -/
+theorem norm_clarksonPairCLM_one_top_le (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+    [SeminormedAddCommGroup X] [Module 𝕜 X] (x : PiLp 1 (fun _ : Fin 2 ↦ X)) :
+    ‖clarksonPairCLM 1 ∞ 𝕜 X x‖ ≤ ‖x‖ := by
+  have hx : ‖x‖ = ‖x 0‖ + ‖x 1‖ := by
+    simp [norm_eq_sum (p := 1) (by simp), Fin.sum_univ_two]
+  rw [norm_eq_ciSup, hx]
+  refine ciSup_le fun i ↦ ?_
+  fin_cases i
+  · simpa using norm_add_le (x 0) (x 1)
+  · simpa using norm_sub_le (x 0) (x 1)
+
+/-- When `X` satisfies `InnerProductSpaceable`, `PiLp.clarksonPairCLM` from `ℓ²_2(X)` to
+`ℓ²_2(X)` scales norms by `√2`. -/
+theorem norm_clarksonPairCLM_two_two (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+    [NormedAddCommGroup X] [Module 𝕜 X] [InnerProductSpaceable X]
+    (x : PiLp 2 (fun _ : Fin 2 ↦ X)) :
+    ‖clarksonPairCLM 2 2 𝕜 X x‖ = Real.sqrt 2 * ‖x‖ := by
+  have hpar : ‖x 0 + x 1‖ ^ (2 : ℝ) + ‖x 0 - x 1‖ ^ (2 : ℝ) =
+      2 * (‖x 0‖ ^ (2 : ℝ) + ‖x 1‖ ^ (2 : ℝ)) := by
+    simp only [Real.rpow_two, sq]
+    exact InnerProductSpaceable.parallelogram_identity (x 0) (x 1)
+  rw [norm_eq_sum (p := 2) (by simp), norm_eq_sum (p := 2) (by simp)]
+  simp only [ENNReal.toReal_ofNat, Fin.sum_univ_two, clarksonPairCLM_apply, Fin.isValue,
+    ↓reduceIte, one_ne_zero, hpar, Real.sqrt_eq_rpow]
+  exact Real.mul_rpow zero_le_two (by positivity)
+
+end ClarksonPair
 
 section coordIndicator
 

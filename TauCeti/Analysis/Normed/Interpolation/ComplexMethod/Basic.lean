@@ -1224,13 +1224,11 @@ def map : C.ComplexMethodSpace θ →L[ℂ] D.ComplexMethodSpace θ :=
 /-- The map induced by a constant analytic family is `ComplexMethodSpace.map`. -/
 @[simp]
 theorem analyticFamilyMap_const :
-    analyticFamilyMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h) = map θ T₀ T₁ h :=
-  (rfl)
+    analyticFamilyMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h) = map θ T₀ T₁ h := (rfl)
 
 @[simp]
 theorem map_mk (g : C.stripTraces) :
-    map θ T₀ T₁ h (mk θ g) = mk θ (stripTracesMap T₀ T₁ h g) :=
-  (rfl)
+    map θ T₀ T₁ h (mk θ g) = mk θ (stripTracesMap T₀ T₁ h g) := (rfl)
 
 /-- The induced map lies over the map `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` of sum spaces. -/
 @[simp]
@@ -1238,6 +1236,15 @@ theorem toSum_map (u : C.ComplexMethodSpace θ) :
     toSum (map θ T₀ T₁ h u) = C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
   rw [map_mk, toSum_mk, toSum_mk, stripEval_stripTracesMap]
+
+/-- If `toSum u` decomposes as `x₀ + x₁` in `C.SumSpace`, then `map θ T₀ T₁ h u` decomposes as
+`T₀ x₀ + T₁ x₁` in `D.SumSpace`. -/
+theorem toSum_map_of_eq_add {u : C.ComplexMethodSpace θ} {x₀ : X₀} {x₁ : X₁}
+    (hx : C.fstToSum x₀ + C.sndToSum x₁ = toSum u) :
+    toSum (map θ T₀ T₁ h u) = D.fstToSum (T₀ x₀) + D.sndToSum (T₁ x₁) :=
+  (toSum_map T₀ T₁ h u).trans <| (congrArg (C.sumLift _ _ h) hx.symm).trans <|
+    (map_add _ _ _).trans <| congr_arg₂ (· + ·)
+      (C.sumLift_fstToSum _ _ h x₀) (C.sumLift_sndToSum _ _ h x₁)
 
 @[simp] theorem toFst_map (u : C.ComplexMethodSpace 0) : toFst (map 0 T₀ T₁ h u) = T₀ (toFst u) :=
   toFst_analyticFamilyMap (IsBoundedAnalyticFamily.const T₀ T₁ h) u
@@ -1457,26 +1464,18 @@ def mapEquiv : C.ComplexMethodSpace θ ≃L[ℂ] D.ComplexMethodSpace θ :=
         e₁.symm_apply_apply x)
 
 theorem mapEquiv_apply (u : C.ComplexMethodSpace θ) :
-    mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u :=
-  (rfl)
-
+    mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u := (rfl)
 theorem mapEquiv_symm_apply (v : D.ComplexMethodSpace θ) :
-    (mapEquiv θ e₀ e₁ h hsymm).symm v = map θ e₀.symm e₁.symm hsymm v :=
-  (rfl)
+    (mapEquiv θ e₀ e₁ h hsymm).symm v = map θ e₀.symm e₁.symm hsymm v := (rfl)
 
-@[simp]
-theorem toSum_mapEquiv (u : C.ComplexMethodSpace θ) :
+@[simp] theorem toSum_mapEquiv (u : C.ComplexMethodSpace θ) :
     toSum (mapEquiv θ e₀ e₁ h hsymm u) =
-      C.sumLift (D.fstToSum.comp (e₀ : X₀ →L[ℂ] Y₀)) (D.sndToSum.comp (e₁ : X₁ →L[ℂ] Y₁)) h
-        (toSum u) :=
-  toSum_map _ _ h u
-
-@[simp]
-theorem toSum_mapEquiv_symm (v : D.ComplexMethodSpace θ) :
+      C.sumLift (D.fstToSum.comp (e₀ : X₀ →L[ℂ] Y₀))
+        (D.sndToSum.comp (e₁ : X₁ →L[ℂ] Y₁)) h (toSum u) := toSum_map _ _ h u
+@[simp] theorem toSum_mapEquiv_symm (v : D.ComplexMethodSpace θ) :
     toSum ((mapEquiv θ e₀ e₁ h hsymm).symm v) =
       D.sumLift (C.fstToSum.comp (e₀.symm : Y₀ →L[ℂ] X₀))
-        (C.sndToSum.comp (e₁.symm : Y₁ →L[ℂ] X₁)) hsymm (toSum v) :=
-  toSum_map _ _ hsymm v
+        (C.sndToSum.comp (e₁.symm : Y₁ →L[ℂ] X₁)) hsymm (toSum v) := toSum_map _ _ hsymm v
 
 /-- If the endpoint isomorphisms `e₀` and `e₁` preserve norms, then so does the induced
 isomorphism of complex interpolation spaces. -/
