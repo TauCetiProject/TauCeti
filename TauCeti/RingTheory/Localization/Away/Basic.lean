@@ -76,8 +76,6 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   through compatible algebra towers.
 * `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
   `Localization.awayMap` is compatible with the maps from `A`.
-* `IsLocalization.Away.map_invSelf_mul_map`: a multiplicative homomorphism out of an away
-  localization sends `invSelf r` and `algebraMap R A r` to elements with product `1`.
 
 ## Provenance
 
@@ -554,14 +552,6 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
-
-/-- A multiplicative homomorphism out of an away localization sends `invSelf r` and
-`algebraMap R A r` to elements with product `1`. -/
-theorem map_invSelf_mul_map {R A B F : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
-    {r : R} [IsLocalization.Away r A] [MulOneClass B] [FunLike F A B] [MonoidHomClass F A B]
-    (f : F) :
-    f (invSelf r) * f (algebraMap R A r) = 1 := by
-  rw [← map_mul, mul_comm, mul_invSelf, map_one]
 
 end IsLocalization.Away
 

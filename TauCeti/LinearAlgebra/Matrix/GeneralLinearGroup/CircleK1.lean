@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
 public import TauCeti.RingTheory.DedekindDomain.Circle
 
+import Mathlib.RingTheory.Complex
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.RotationLoop
 import TauCeti.Topology.Circle.CoordinateRing
 
@@ -39,10 +41,7 @@ propagates nonvanishing from `ℝ` to `k`.
 ## Main results
 
 * `TauCeti.circleRotation_mul_transpose`: `circleRotation k` is algebraically orthogonal.
-* `TauCeti.circleRotation_mk_mem_specialAlgebraicK1`: the class of `circleRotation k` lies in
-  `SK₁(CircleRing k)`.
-* `TauCeti.map_circleRotation`, `TauCeti.map_toGL_circleRotation`: base change on `CircleRing`
-  preserves `circleRotation`.
+* `TauCeti.map_circleRotation`: base change on `CircleRing` preserves `circleRotation`.
 * `TauCeti.circleRotation_notMem_elementarySubgroup`: no stabilization of `circleRotation k` is
   elementary when `k` admits `k →+* ℝ`.
 * `TauCeti.circle_rotation_not_stably_elementary`: the class of `circleRotation k` in
@@ -75,8 +74,7 @@ variable (k : Type*) [CommRing k]
 algebraic circle over `k`. -/
 def circleRotation : Matrix.SpecialLinearGroup (Fin 2) (CircleRing k) :=
   ⟨!![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x], by
-    simp only [Matrix.det_fin_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    rw [Matrix.det_fin_two_of]
     linear_combination CircleRing.x_sq_add_y_sq (k := k)⟩
 
 variable {k}
@@ -109,21 +107,14 @@ theorem circleRotation_apply_one_one :
 theorem circleRotation_mul_transpose :
     (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k)) *
       (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k))ᵀ = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
-  · linear_combination CircleRing.x_sq_add_y_sq (k := k)
-  · ring
-  · ring
-  · linear_combination CircleRing.x_sq_add_y_sq (k := k)
-
-/-- The class of `circleRotation k` in algebraic `K₁` lies in `SK₁(CircleRing k)`. -/
-theorem circleRotation_mk_mem_specialAlgebraicK1 (k : Type*) [CommRing k] :
-    AlgebraicK1.mk (CircleRing k) 2 (SpecialLinearGroup.toGL (circleRotation k)) ∈
-      specialAlgebraicK1 (CircleRing k) := by
-  rw [AlgebraicK1.mk_mem_specialAlgebraicK1_iff]
-  ext
-  simp
+  have hT : (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k))ᵀ =
+      adjugate (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k)) := by
+    change !![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x]ᵀ =
+      adjugate !![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x]
+    rw [Matrix.adjugate_fin_two_of, neg_neg]
+    ext i j
+    fin_cases i <;> fin_cases j <;> rfl
+  rw [hT, Matrix.mul_adjugate, (circleRotation k).prop, one_smul]
 
 end CircleRotation
 
@@ -132,12 +123,20 @@ end CircleRotation
 private theorem evalGL_stabilizeGL_circleRotation (N : ℕ) (hN : 2 ≤ N) :
     CircleRing.evalGL (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) =
       circleRotationLoop hN := by
-  ext z i j
-  rw [CircleRing.coe_evalGL_apply, coe_circleRotationLoop_apply, coe_stabilizeGL_apply]
-  split_ifs with hij
-  · rcases i with ⟨_ | _ | i, hi⟩ <;> rcases j with ⟨_ | _ | j, hj⟩ <;>
-      first | (exfalso; dsimp at hij; omega) | simp
-  · by_cases h : i = j <;> simp [Matrix.one_apply, h]
+  ext1 z
+  let φ : CircleRing ℝ →+* ℝ :=
+    ((ContinuousMap.evalAlgHom ℝ ℝ z).comp CircleRing.evalCircle).toRingHom
+  have heval : CircleRing.evalGL
+        (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) z =
+      Units.map φ.mapMatrix.toMonoidHom
+        (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) := by
+    ext i j
+    simp [φ]
+  rw [heval, ← stabilizeGL_map, circleRotationLoop_apply]
+  congr 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [φ, coe_unitsLeftMulMatrix, Algebra.leftMulMatrix_complex]
 
 private theorem circleRotation_notMem_elementarySubgroup_real (N : ℕ) (hN : 2 ≤ N) :
     stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ)) ∉
@@ -163,15 +162,6 @@ theorem map_circleRotation {k S : Type*} [CommRing k] [CommRing S] (f : k →+* 
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
-/-- Base change along `f : k →+* S` carries `toGL (circleRotation k)` to
-`toGL (circleRotation S)`. -/
-theorem map_toGL_circleRotation {k S : Type*} [CommRing k] [CommRing S] (f : k →+* S) :
-    Units.map ((CircleRing.map f).mapMatrix (m := Fin 2)).toMonoidHom
-        (SpecialLinearGroup.toGL (circleRotation k)) =
-      SpecialLinearGroup.toGL (circleRotation S) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
 /-- **The circle rotation has nontrivial class in algebraic `K₁`**: for any commutative ring
 `k` admitting a ring homomorphism `k →+* ℝ` (such as `ℤ`, `ℚ`, or `ℝ`), `circleRotation k`
 represents a nontrivial class in `SK₁(CircleRing k)`. -/
@@ -180,8 +170,11 @@ theorem circle_rotation_not_stably_elementary {k : Type*} [CommRing k] (f : k �
   intro h
   apply circle_rotation_not_stably_elementary_real
   have hmap := congrArg (AlgebraicK1.map (CircleRing.map f)) h
-  rw [AlgebraicK1.map_mk, map_one, map_toGL_circleRotation f] at hmap
-  exact hmap
+  rw [AlgebraicK1.map_mk, map_one] at hmap
+  change AlgebraicK1.mk (CircleRing ℝ) 2
+      (GeneralLinearGroup.map (CircleRing.map f) (SpecialLinearGroup.toGL (circleRotation k))) = 1
+    at hmap
+  rwa [← SpecialLinearGroup.toGL_map, map_circleRotation f] at hmap
 
 /-- **No identity stabilization of `circleRotation k` is elementary** when `k` admits a ring
 homomorphism `k →+* ℝ`. -/
@@ -197,17 +190,19 @@ for a Dedekind domain such as `CircleRing ℚ` or `CircleRing ℝ`, `SK₁` need
 theorem specialAlgebraicK1_circleRing_ne_bot {k : Type*} [CommRing k] (f : k →+* ℝ) :
     specialAlgebraicK1 (CircleRing k) ≠ ⊥ := by
   intro hbot
-  have hmem := circleRotation_mk_mem_specialAlgebraicK1 k
+  have hmem : AlgebraicK1.mk (CircleRing k) 2 (SpecialLinearGroup.toGL (circleRotation k)) ∈
+      specialAlgebraicK1 (CircleRing k) :=
+    AlgebraicK1.mk_mem_specialAlgebraicK1_iff.2 (SpecialLinearGroup.coeToGL_det _)
   rw [hbot, Subgroup.mem_bot] at hmem
   exact circle_rotation_not_stably_elementary f hmem
 
 /-- The determinant homomorphism `K₁(CircleRing k) →* (CircleRing k)ˣ` is not injective
 whenever `k` admits a ring homomorphism `k →+* ℝ`. -/
 theorem not_det_circleRing_injective {k : Type*} [CommRing k] (f : k →+* ℝ) :
-    ¬ Function.Injective (AlgebraicK1.det (CircleRing k)) :=
-  fun h ↦ circle_rotation_not_stably_elementary f <| h <| by
-    rw [map_one, ← mem_specialAlgebraicK1_iff]
-    exact circleRotation_mk_mem_specialAlgebraicK1 k
+    ¬ Function.Injective (AlgebraicK1.det (CircleRing k)) := fun h ↦
+  specialAlgebraicK1_circleRing_ne_bot f <|
+    (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦
+      h (by rw [mem_specialAlgebraicK1_iff.1 hx, map_one])
 
 end
 
