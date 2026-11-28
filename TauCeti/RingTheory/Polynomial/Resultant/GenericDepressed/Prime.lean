@@ -134,7 +134,7 @@ private theorem depressedDiscr_eq_single_of_support_subset (hm : 3 ≤ m)
   have hdi₀ : d i₀ = m := by
     have : (d i₀ : ℤ) = (m : ℤ) := mul_right_cancel₀ (by omega) hwt
     omega
-  exact depressedDiscr_eq_single_of_le hm hd hdi₀.ge
+  rwa [hdi₀] at hsingle
 
 /-- Evaluating `depressedDiscr R m` at `Pi.single i₀ 1` extracts the coefficient of `aₘ₋₁ ^ m`:
 every other monomial in the support involves some `j ≠ i₀`. -/

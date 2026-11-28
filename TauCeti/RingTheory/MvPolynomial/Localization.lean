@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Localization
+import TauCeti.RingTheory.MvPolynomial.Quotient
+import TauCeti.RingTheory.MvPolynomial.RegularSequence
+import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Regular.Pair
 
 /-!
 # Divisibility in multivariate polynomial rings over away localizations
@@ -17,9 +21,9 @@ polynomials over `S` descends to `MvPolynomial σ R` after multiplying by a powe
 (`MvPolynomial.exists_C_pow_mul_eq_mul_of_map_localization_away`).
 
 When `r` is regular in `R` and the reduction of `p` modulo `(r)` is regular in
-`MvPolynomial σ (R ⧸ Ideal.span {r})`, the factor `C (r ^ k)` can be cancelled one power of `r` at
-a time (`MvPolynomial.dvd_of_C_pow_mul_eq_mul`), so divisibility in `MvPolynomial σ S` descends
-to divisibility in `MvPolynomial σ R` (`MvPolynomial.dvd_of_map_localization_away`).
+`MvPolynomial σ (R ⧸ Ideal.span {r})`, the pair `[C r, p]` is weakly regular, so `C (r ^ k)` can
+be cancelled (`MvPolynomial.dvd_of_C_pow_mul_eq_mul`) and divisibility in `MvPolynomial σ S`
+descends to divisibility in `MvPolynomial σ R` (`MvPolynomial.dvd_of_map_localization_away`).
 
 ## Main results
 
@@ -53,37 +57,38 @@ theorem exists_C_pow_mul_eq_mul_of_map_localization_away
 
 /-- **Divisibility descent by cancelling powers of a regular scalar.** If `r : R` is regular and
 `p : MvPolynomial σ R` is regular modulo `(r)`, then `C (r ^ k) * x = p * q` implies `p ∣ x`:
-each step cancels `p` modulo `(r)` to extract a factor of `C r` from `q`, then cancels `C r`. -/
+`[C r, p]` is a weakly regular pair, so `C (r ^ k)` remains regular modulo `p`. -/
 theorem dvd_of_C_pow_mul_eq_mul {σ R : Type*} [CommRing R] {r : R} (hr : IsLeftRegular r)
     {p : MvPolynomial σ R}
     (hp : IsLeftRegular (map (Ideal.Quotient.mk (Ideal.span {r})) p))
     {x q : MvPolynomial σ R} {k : ℕ} (h : C (r ^ k) * x = p * q) : p ∣ x := by
-  induction k generalizing q with
-  | zero =>
-    rw [pow_zero, map_one, one_mul] at h
-    exact ⟨q, h⟩
-  | succ k ih =>
-    let I : Ideal R := Ideal.span {r}
-    let π : R →+* R ⧸ I := Ideal.Quotient.mk I
-    have hπr : π r = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span rfl)
-    have hq0 : map π p * map π q = 0 := by
-      have hmap := congrArg (map π) h
-      have hpow : π (r ^ (k + 1)) = 0 := by rw [map_pow, hπr, zero_pow (Nat.succ_ne_zero k)]
-      rw [map_mul, map_C, hpow, map_zero, zero_mul, map_mul] at hmap
-      exact hmap.symm
-    have hmapq : map π q = 0 := hp (hq0.trans (mul_zero _).symm)
-    have hker : ∀ r' : R, π r' = 0 ↔ r ∣ r' := fun r' ↦
-      (Ideal.Quotient.eq_zero_iff_mem (I := I)).trans Ideal.mem_span_singleton
-    obtain ⟨q', hq_eq⟩ := (C_dvd_iff_map_hom_eq_zero π r hker q).mpr hmapq
-    have hCr : IsLeftRegular (C (σ := σ) r) := by
-      simpa only [MvPolynomial.C_apply] using
-        (isLeftRegular_iff_isRegular.mp hr).monomial (m := 0) |>.left
-    have hnext : C (r ^ k) * x = p * q' := hCr <| by
-      calc C r * (C (r ^ k) * x)
-          = C (r ^ (k + 1)) * x := by rw [pow_succ', map_mul, mul_assoc]
-        _ = p * q := h
-        _ = C r * (p * q') := by rw [hq_eq]; ring
-    exact ih hnext
+  let I : Ideal R := Ideal.span {r}
+  have hI : Ideal.span {C (σ := σ) r} = I.map C := by
+    rw [Ideal.map_span, Set.image_singleton]
+  let φ : MvPolynomial σ (R ⧸ I) ≃+* MvPolynomial σ R ⧸ Ideal.span {C (σ := σ) r} :=
+    (quotientEquivQuotientMvPolynomial I).toRingEquiv.trans (Ideal.quotEquivOfEq hI).symm
+  have hφp : φ (map (Ideal.Quotient.mk I) p) = Ideal.Quotient.mk (Ideal.span {C (σ := σ) r}) p := by
+    simp [φ, quotientEquivQuotientMvPolynomial_map_mk, Ideal.quotEquivOfEq_symm]
+  have hp_quot : IsSMulRegular (QuotSMulTop (C (σ := σ) r) (MvPolynomial σ R)) p := by
+    refine isSMulRegular_iff_right_eq_zero_of_smul.2 fun z hz ↦ ?_
+    let e := QuotSMulTop.equivQuotSpanSingleton (C (σ := σ) r)
+    have hez : e (p • z) = 0 := by rw [hz, map_zero]
+    rw [map_smul, Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← hφp,
+      ← φ.apply_symm_apply (e z), ← map_mul] at hez
+    have hz0 : φ.symm (e z) = 0 :=
+      hp.isSMulRegular.right_eq_zero_of_smul (φ.injective (hez.trans (map_zero φ).symm))
+    exact e.injective
+      ((φ.symm.injective (hz0.trans (map_zero φ.symm).symm)).trans (map_zero e).symm)
+  have hpair : RingTheory.Sequence.IsWeaklyRegular (MvPolynomial σ R) [C r, p] := by
+    rw [RingTheory.Sequence.isWeaklyRegular_cons_iff,
+      RingTheory.Sequence.isWeaklyRegular_singleton_iff]
+    exact ⟨isSMulRegular_C_iff.mpr hr.isSMulRegular, hp_quot⟩
+  have hreg : IsSMulRegular (QuotSMulTop p (MvPolynomial σ R)) (C (σ := σ) (r ^ k)) := by
+    have h1 := hpair.isSMulRegular_quotSMulTop_pow_swap 1 k
+    rwa [pow_one, ← map_pow] at h1
+  obtain ⟨y, -, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1
+    (TauCeti.isSMulRegular_quotSMulTop_iff.1 hreg x q h.symm)
+  exact ⟨y, hy.symm⟩
 
 attribute [local instance] algebraMvPolynomial in
 /-- **Divisibility descent from an away localization.** If `r : R` is regular and
