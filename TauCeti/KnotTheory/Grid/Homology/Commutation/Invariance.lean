@@ -111,6 +111,31 @@ theorem unblockedHomologyCommutationEquiv_apply (y : G.unblockedHomology R) :
     G.unblockedHomologyCommutationEquiv C R y = G.unblockedHomologyCommutationMap R C y :=
   LinearEquiv.ofBijective_apply _ y
 
+/-- The inverse of `unblockedHomologyCommutationEquiv` acts by the pentagon map of `C.reverse`,
+transported across `swapColumns_swapColumns`. -/
+theorem unblockedHomologyCommutationEquiv_symm_apply (y : (G').unblockedHomology R) :
+    (G.unblockedHomologyCommutationEquiv C R).symm y =
+      _root_.cast (congrArg (fun D : GridDiagram n => ↥(D.unblockedHomology R))
+          (by rw [C.reverse_column, swapColumns_swapColumns]))
+        ((G').unblockedHomologyCommutationMap R C.reverse y) := by
+  symm
+  rw [LinearEquiv.eq_symm_apply, unblockedHomologyCommutationEquiv_apply]
+  obtain ⟨z, rfl⟩ := (G').unblockedHomologyClass_surjective R y
+  rw [unblockedHomologyCommutationMap_unblockedHomologyClass]
+  have hcast : ∀ {D : GridDiagram n} (h : D = G) (w : GridChainMinus R n)
+      (hw : w ∈ LinearMap.ker (D.unblockedDifferential R)),
+      _root_.cast (congrArg (fun H : GridDiagram n => ↥(H.unblockedHomology R)) h)
+          (D.unblockedHomologyClass R ⟨w, hw⟩) =
+        G.unblockedHomologyClass R ⟨w, h ▸ hw⟩ := by
+    rintro _ rfl w hw
+    rfl
+  rw [hcast (by rw [C.reverse_column, swapColumns_swapColumns]),
+    unblockedHomologyCommutationMap_unblockedHomologyClass, ← sub_eq_zero, ← map_sub,
+    unblockedHomologyClass_eq_zero_iff]
+  refine ⟨(G').commutationHomotopy R C.reverse z, ?_⟩
+  simp only [AddSubgroupClass.coe_sub,
+    G.commutationMap_commutationMap_reverse_of_mem_ker C R z.property, add_sub_cancel_left]
+
 end GridDiagram
 
 end TauCeti

@@ -35,6 +35,8 @@ ground-ring basis of `GC⁻` and finite generation of pieces supported on finite
   monomial generators `V^e · x`.
 * `TauCeti.GridChainMinus.monomialDegreeSupported`: the chains of `GC⁻` all of whose monomials
   have degree in a prescribed set.
+* `TauCeti.GridChainMinus.monomialDegreeSupportedBasis`: the ground-semiring basis of
+  `monomialDegreeSupported`.
 * `TauCeti.GridChainMinus.monomialDegreePiece`: the chains of `GC⁻` all of whose monomials have a
   prescribed degree.
 * `TauCeti.GridChainMinus.monomialDegreeGrading`: the internal grading of `GC⁻` formed by these
@@ -78,9 +80,10 @@ theorem monomialChainBasis_apply (ix : Σ _ : GridState n, Fin n →₀ ℕ) :
     monomialChainBasis (n := n) R ix = Finsupp.single ix.fst (monomial ix.snd 1) := by
   simp [monomialChainBasis, Finsupp.coe_basis]
 
-/-- The chains of `GC⁻` all of whose monomials `V^e · x` have degree `deg x e` in the set `S`.
-Only singletons and complements of singletons are used: the first are the homogeneous pieces, and
-comparing against the second makes the pieces independent. -/
+/-- The chains of `GC⁻` all of whose monomials `V^e · x` have degree `deg x e` in an arbitrary set
+`S`. For example, taking `S` to be a singleton gives the homogeneous piece `monomialDegreePiece`,
+taking its complement is used to prove independence of the pieces, and taking degree sets with
+finitely many basis monomials gives finitely generated submodules. -/
 noncomputable def monomialDegreeSupported (deg : GridState n → (Fin n →₀ ℕ) → ι)
     (S : Set ι) : Submodule R (GridChainMinus R n) :=
   ⨅ x, (restrictSupport R {e | deg x e ∈ S}).comap (Finsupp.lapply x)
@@ -124,6 +127,31 @@ theorem monomialDegreeSupported_eq_span (R : Type*) [CommSemiring R]
       rw [Finsupp.mem_support_iff, Finsupp.basis_repr]
       exact MvPolynomial.mem_support_iff.mp he
     exact hc hmem
+
+/-- The `R`-basis of `monomialDegreeSupported R deg S` given by the monomial generators whose
+degrees lie in `S`. -/
+noncomputable def monomialDegreeSupportedBasis (R : Type*) [CommSemiring R]
+    (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
+    Module.Basis
+      {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}
+      R (monomialDegreeSupported R deg S) :=
+  (Module.Basis.span
+    ((monomialChainBasis (n := n) R).linearIndependent.comp
+      Subtype.val Subtype.val_injective)).map
+    (LinearEquiv.ofEq _ _ <| by
+      rw [monomialDegreeSupported_eq_span R deg S, Set.image_eq_range]
+      rfl)
+
+/-- Coercing a basis element of `monomialDegreeSupported` into `GC⁻` gives the corresponding
+monomial basis element of `GC⁻`. -/
+@[simp]
+theorem coe_monomialDegreeSupportedBasis_apply (R : Type*) [CommSemiring R]
+    (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}) :
+    ((monomialDegreeSupportedBasis R deg S i :
+        monomialDegreeSupported R deg S) : GridChainMinus R n) =
+      monomialChainBasis (n := n) R i.val := by
+  simp [monomialDegreeSupportedBasis]
 
 /-- When only finitely many monomial generators have degree in `S`, the supported submodule is
 finitely generated over `R`. -/

@@ -170,6 +170,7 @@ theorem coe_restrictScalarsOfCommutes_symm (e : M ≃ₛₗ[φ] N)
 
 /-- The underlying `R`-linear map of `LinearEquiv.restrictScalarsOfCommutes` is
 `LinearMap.restrictScalarsOfCommutes`. -/
+@[simp]
 theorem restrictScalarsOfCommutes_toLinearMap (e : M ≃ₛₗ[φ] N)
     (hφ : ∀ r, φ (algebraMap R A r) = algebraMap R B r) :
     (e.restrictScalarsOfCommutes R hφ).toLinearMap =

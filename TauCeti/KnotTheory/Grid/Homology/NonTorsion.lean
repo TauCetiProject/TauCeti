@@ -182,8 +182,8 @@ theorem eq_zero_of_monomial_smul_XMarkingClass_eq_zero
   simpa [eval_monomial] using hev
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
-the `R`-linear span map from `R` onto `monomial e 1 • G.XMarkingClass R` inside any
-`R`-submodule of `GH⁻` is injective. -/
+the `R`-linear map `R →ₗ[R] P` sending `r` to `r • (monomial e 1 • G.XMarkingClass R)` is
+injective whenever `P` is an `R`-submodule of `GH⁻` containing that class. -/
 theorem injective_toSpanSingleton_monomial_smul_XMarkingClass
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ)
     {P : Submodule R (G.unblockedHomology R)}
