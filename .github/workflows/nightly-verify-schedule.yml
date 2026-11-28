@@ -57,3 +57,6 @@ jobs:
     secrets:
       ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
       ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
+      # Upload key for the trusted cache channel (docs/cache-infrastructure.md). Only the called
+      # workflow's isolated publish-trusted-cache job receives it; merge-group and main CI never do.
+      LAKE_CACHE_TRUSTED_KEY: ${{ secrets.LAKE_CACHE_TRUSTED_KEY }}

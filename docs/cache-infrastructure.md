@@ -150,6 +150,36 @@ already public, and no workflow or queue step may wait for it. A Mathlib or tool
 directly can exceed the hosted runner's 6h limit and stay unpublished; staging then waits for that
 base, and the queue alerts, until the map is published, by hand if necessary.
 
+## Trusted channel
+
+The bucket also holds a second, separate channel under the `trusted/` prefix. Only the nightly
+clean build writes it: TauCetiTools' `nightly-verify.yml` builds `main` from source with no cached
+TauCeti output restored, stages that build's own archives, and its `publish-trusted-cache` job
+uploads them through the same isolated publisher with `trusted: true`. Merge-group builds run
+unmerged PR code while producing their outputs, and main CI restores from the shared channel, so
+neither may write here; the publisher refuses the trusted channel for anything but a scheduled or
+manual run on `main`, and an unset trusted variable never falls back to the shared endpoints.
+
+A trusted map exists for one `main` revision a day, the head when the nightly run starts. Its
+entries are keyed by Lake input hash like every other map, so a consumer can restore unchanged
+modules for nearby revisions from it and build the rest. Palomar reads only this channel when it
+verifies submissions that depend on TauCeti.
+
+| Purpose | Value |
+|---|---|
+| `LAKE_CACHE_TRUSTED_ARTIFACT_ENDPOINT_PUBLIC` | `https://cache.taucetiproject.org/trusted/artifacts` |
+| `LAKE_CACHE_TRUSTED_REVISION_ENDPOINT_PUBLIC` | `https://cache.taucetiproject.org/trusted/revisions` |
+| `LAKE_CACHE_TRUSTED_ARTIFACT_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/trusted/artifacts` |
+| `LAKE_CACHE_TRUSTED_REVISION_ENDPOINT` | `https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/trusted/revisions` |
+| `LAKE_CACHE_TRUSTED_KEY` (secret) | `<ACCESS_KEY_ID>:<SECRET>`, passed only to `publish-trusted-cache` |
+
+The channel is dormant until those four variables and the secret are set. The prefix is enforced
+by the publisher's workflow code, not by the credential: a token scoped to the `tauceti-cache`
+bucket can write either prefix. A separate bucket with its own token would make the boundary a
+credential one; until then, `LAKE_CACHE_TRUSTED_KEY` may hold the same pair as `LAKE_CACHE_KEY`.
+The [edge cache](#edge-cache) rule matches `/artifacts/` only, so trusted artifact reads go to R2
+unless the rule also matches `/trusted/artifacts/`.
+
 ## Why the upload is its own job
 
 `ci.yml` publishes in two jobs, both defined in TauCetiTools' reusable `ci.yml` and shown as
