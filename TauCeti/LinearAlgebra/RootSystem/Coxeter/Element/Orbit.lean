@@ -205,9 +205,8 @@ private theorem eq_zero_of_mem_span_root_of_wordProd_smul_eq_self
     (hy : y ∈ Submodule.span ℤ (Set.range P.root)) (hfix : wordProd P b l • y = y) :
     y = 0 := by
   classical
-  rw [← b.span_int_root_support,
-    show P.root '' (b.support : Set ι) = Set.range fun i : b.support ↦ P.root i by ext; simp] at hy
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp hy
+  rw [← b.span_int_root_support, Submodule.mem_span_image_finset_iff_exists_fun] at hy
+  obtain ⟨c, hc⟩ := hy
   have hcor : ∀ k : b.support, P.coroot' (k : ι) y = 0 := fun k ↦
     (wordProd_smul_eq_self_iff_forall_coroot'_eq_zero b hnd hall).mp hfix k
   have hker : (b.cartanMatrix.map (Int.castRingHom ℚ))ᵀ *ᵥ (fun i ↦ (c i : ℚ)) = 0 := by

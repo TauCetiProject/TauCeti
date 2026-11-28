@@ -339,6 +339,12 @@ private theorem exists_eigenvector_subsingleton [Nonempty ι] (b : P.Base) [Subs
             Complex.ofRealHom.map_mulVec (G.map (Int.castRingHom ℝ)) (fun _ ↦ 1) i
         exact h1.trans (congrFun hGv i)⟩
 
+/-- Scalar extension along `ℝ → ℂ` turns the real matrix of an integer matrix into its complex
+matrix. -/
+private theorem map_intCast_ofReal {m n : Type*} (A : Matrix m n ℤ) :
+    (A.map (Int.castRingHom ℝ)).map ((↑) : ℝ → ℂ) = A.map (Int.castRingHom ℂ) := by
+  ext i j; simp
+
 private theorem exists_eigenvector_bipartite_of_isFiniteType [DecidableEq ι] (b : P.Base)
     [Nontrivial b.support] (hft : IsFiniteType b.cartanMatrix)
     (hconn : (diagramGraph b.cartanMatrix).Preconnected)
@@ -354,10 +360,7 @@ private theorem exists_eigenvector_bipartite_of_isFiniteType [DecidableEq ι] (b
       ↑(2 * Real.pi / (orderOf c₀ : ℝ)) * Complex.I := by push_cast; ring
   refine ⟨(fun i ↦ (e₁ i : ℂ)) + Complex.I • (fun i ↦ (e₂ i : ℂ)), fun hv0 ↦
       hli.ne_zero (0 : Fin 2) (funext fun i ↦ by simpa using congrArg Complex.re (congrFun hv0 i)),
-    by rw [show (b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℂ) =
-           ((b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℝ)).map ((↑) : ℝ → ℂ) by
-             rw [Matrix.map_map]; rfl, harg]
-       exact map_ofReal_mulVec_of_rotation hWe₁ hWe₂,
+    by rw [← map_intCast_ofReal, harg]; exact map_ofReal_mulVec_of_rotation hWe₁ hWe₂,
     fun j hj0 ↦
       have hre : b.corootEval ℝ j e₁ = 0 := by
         simpa [corootEval_apply] using congrArg Complex.re hj0

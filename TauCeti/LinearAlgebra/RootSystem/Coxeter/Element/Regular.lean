@@ -310,7 +310,7 @@ eigenvalue is a primitive root of unity of order exactly the order of `c`. -/
 theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot
     {ι K M N : Type*} [Field K] [CharZero K] [Algebra ℝ K] [IsAlgClosed K]
     [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
-    (P : RootPairing ι K M N) (b : P.Base) [Finite ι] [Nonempty ι]
+    (P : RootPairing ι K M N) (b : P.Base) [Finite ι]
     [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
     (c : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
     ∃ (x : M) (μ : K), P.IsRegularWeight x ∧
@@ -320,8 +320,7 @@ theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveR
     (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
   rw [weylCoxeterSystem_wordProd] at hw
   obtain ⟨x, μ, -, hx_eig, hμ, hx_reg, -⟩ :=
-    b.exists_isRegularWeight_eigenvector_wordProd_of_isFiniteType (isFiniteType_cartanMatrix b)
-      (preconnected_diagramGraph_cartanMatrix b) hnd hall
+    b.exists_isRegularWeight_eigenvector_wordProd hnd hall
   exact ⟨x, μ, hx_reg, hw ▸ hx_eig, hw ▸ hμ⟩
 
 end RootPairing
