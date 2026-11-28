@@ -9,6 +9,8 @@ public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.Combinatorics.Matroid.Minor.Rank
 import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Tactic.Ring
+import TauCeti.Combinatorics.Matroid.Minor.Finite
+import TauCeti.Combinatorics.Matroid.Rank.ENat
 
 /-!
 # The Tutte polynomial of a finite matroid
@@ -69,43 +71,12 @@ private lemma tuttePolynomial_eq_sum_term {s : Finset α} (hs : M.ground_finite.
   subst hs
   rfl
 
-/-- The ground set of `M ＼ {e}`, as a finset. -/
-private lemma toFinset_ground_deleteElem [DecidableEq α] :
-    (M ＼ {e}).ground_finite.toFinset = M.ground_finite.toFinset.erase e := by
-  ext
-  simp [and_comm]
-
-/-- The ground set of `M ／ {e}`, as a finset. -/
-private lemma toFinset_ground_contractElem [DecidableEq α] :
-    (M ／ {e}).ground_finite.toFinset = M.ground_finite.toFinset.erase e := by
-  ext
-  simp [and_comm]
-
 /-- Split the sum defining the Tutte polynomial according to whether a set contains `e`. -/
 private lemma tuttePolynomial_eq_sum_add_sum [DecidableEq α] (he : e ∈ M.E) :
     M.tuttePolynomial = ∑ A ∈ (M.ground_finite.toFinset.erase e).powerset, term M A +
       ∑ A ∈ (M.ground_finite.toFinset.erase e).powerset, term M (insert e A) := by
   rw [← sum_powerset_insert (notMem_erase e _), insert_erase (by simpa)]
   rfl
-
-omit [M.Finite] in
-private lemma toNat_eRk_le_card (A : Finset α) : (M.eRk A).toNat ≤ #A := by
-  have h := M.eRk_le_encard A
-  rw [Set.encard_coe_eq_coe_finsetCard] at h
-  simpa using ENat.toNat_le_toNat h (ENat.natCast_ne_top _)
-
-private lemma toNat_eRk_le_toNat_eRank (X : Set α) : (M.eRk X).toNat ≤ M.eRank.toNat :=
-  ENat.toNat_le_toNat (M.eRk_le_eRank X) (M.eRank_ne_top_iff.2 inferInstance)
-
-private lemma IsNonloop.toNat_eRk_insert (he : M.IsNonloop e) (X : Set α) :
-    (M.eRk (insert e X)).toNat = ((M ／ {e}).eRk X).toNat + 1 := by
-  rw [← he.eRk_contractElem_add_one,
-    ENat.toNat_add ((M ／ {e}).isRkFinite_set X).eRk_lt_top.ne ENat.one_ne_top, ENat.toNat_one]
-
-private lemma IsNonloop.toNat_eRank (he : M.IsNonloop e) :
-    M.eRank.toNat = (M ／ {e}).eRank.toNat + 1 := by
-  rw [← he.eRank_contractElem_add_one, ENat.toNat_add _ ENat.one_ne_top, ENat.toNat_one]
-  exact (M ／ {e}).eRank_ne_top_iff.2 inferInstance
 
 omit [M.Finite] in
 /-- Away from a non-coloop `e`, the summands for `M` and `M ＼ {e}` agree. -/
@@ -117,7 +88,7 @@ private lemma term_deleteElem (he : ¬ M.IsColoop e) {A : Finset α} (heA : e �
 /-- For a nonloop `e`, the summand for `M` at `insert e A` is the summand for `M ／ {e}` at `A`. -/
 private lemma term_insert_of_isNonloop [DecidableEq α] (he : M.IsNonloop e) {A : Finset α}
     (heA : e ∉ A) : term M (insert e A) = term (M ／ {e}) A := by
-  rw [term, term, coe_insert, IsNonloop.toNat_eRk_insert M he, IsNonloop.toNat_eRank M he,
+  rw [term, term, coe_insert, he.toNat_eRk_insert, he.toNat_eRank,
     card_insert_of_notMem heA, Nat.add_sub_add_right, Nat.add_sub_add_right]
 
 omit [M.Finite] in
@@ -137,7 +108,7 @@ private lemma term_of_isColoop (he : M.IsColoop e) {A : Finset α} (heA : e ∉ 
   have hr : (M ／ {e}).eRk A = M.eRk A := by
     rw [contract_eq_delete_of_subset_coloops (Set.singleton_subset_iff.2 he), delete_eRk_eq,
       Set.sdiff_singleton_eq_self (by simpa)]
-  rw [term, term, IsNonloop.toNat_eRank M he.isNonloop, hr, ← hr,
+  rw [term, term, he.isNonloop.toNat_eRank, hr, ← hr,
     Nat.sub_add_comm (toNat_eRk_le_toNat_eRank _ _), pow_succ]
   ring
 
