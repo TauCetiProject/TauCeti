@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.Analysis.Normed.Operator.Banach
@@ -47,11 +48,15 @@ canonical `V = (T₀.ker)ᗮ` stability for closed-range operators.
   TVS generality.
 * `ContinuousLinearMap.restrictMapEquiv`: canonical equivalence `V ≃L[𝕜] V.map T` induced by an
   invertible `(T ∘L V.subtypeL).coprod W.subtypeL`.
-* `ContinuousLinearMap.finrank_ker_le_of_isInvertible_comp_subtypeL_coprod`,
+* `ContinuousLinearMap.index_eq_of_disjoint_ker_of_isCompl_map`,
+  `ContinuousLinearMap.index_eq_of_disjoint_ker_of_isTopCompl_map`,
+  `ContinuousLinearMap.finrank_ker_sub_eq_finrank_coker_sub_of_disjoint_ker_of_isCompl_map`,
+  `ContinuousLinearMap.finrank_ker_le_of_isInvertible_comp_subtypeL_coprod`,
   `ContinuousLinearMap.finrank_coker_le_of_isInvertible_comp_subtypeL_coprod`,
   `ContinuousLinearMap.index_eq_of_isInvertible_comp_subtypeL_coprod`, and
   `ContinuousLinearMap.isFredholm_of_isInvertible_comp_subtypeL_coprod`: dimension bounds,
-  index formula `codim V - dim W`, and Fredholmness over topological vector spaces.
+  index formula `codim V - dim W` (from algebraic/topological complementation or invertible
+  coproduct), and Fredholmness over topological vector spaces.
 * `ContinuousLinearMap.isInvertible_comp_subtypeL_coprod_of_disjoint_ker_of_isCompl`,
   `ContinuousLinearMap.eventually_nhds_isInvertible_comp_subtypeL_coprod_of_isInvertible`, and
   `ContinuousLinearMap.eventually_nhds_isInvertible_comp_subtypeL_coprod`: invertibility and
@@ -60,10 +65,9 @@ canonical `V = (T₀.ker)ᗮ` stability for closed-range operators.
   `V × W` exactly when `V` meets `ker T` trivially and `W` is a topological complement of `T(V)`.
 * `ContinuousLinearMap.eventually_disjoint_ker_and_isTopCompl_map`: the transverse-subspace lemma;
   both conditions persist in an operator-norm neighbourhood of `T₀`.
-* `ContinuousLinearMap.isFredholm_of_disjoint_ker_of_isTopCompl_map` and
-  `ContinuousLinearMap.index_eq_of_disjoint_ker_of_isTopCompl_map`: under both conditions, with
-  `V` closed of finite codimension and `W` finite-dimensional, `T` is Fredholm of index
-  `codim V - dim W`.
+* `ContinuousLinearMap.isFredholm_of_disjoint_ker_of_isTopCompl_map`: under `Disjoint V T.ker` and
+  `IsTopCompl (V.map T) W`, with `V` closed of finite codimension and `W` finite-dimensional, `T` is
+  Fredholm.
 * `ContinuousLinearMap.eventually_isFredholm_and_index_eq_of_isTopCompl_map`: near `T₀`, every
   operator is Fredholm with `dim ker T ≤ codim V`, `dim coker T ≤ dim W`, and index
   `codim V - dim W`.
@@ -139,19 +143,15 @@ equivalence `V ≃L[𝕜] V.map T`. -/
 noncomputable def restrictMapEquiv {T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F}
     (hΦ : ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible) :
     V ≃L[𝕜] V.map (T : E →ₗ[𝕜] F) :=
-  ContinuousLinearEquiv.ofContinuousLinearMap
-    (T.restrict (q := V.map (T : E →ₗ[𝕜] F)) fun _ ↦ Submodule.mem_map_of_mem)
-    (W.subtypeL.quotientRangeCoordinate (T ∘L V.subtypeL) ∘L
-      (V.map (T : E →ₗ[𝕜] F)).subtypeL)
-    (ContinuousLinearMap.ext fun y ↦ by
-      obtain ⟨v, hv, hTv⟩ := y.property
-      have hq : W.subtypeL.quotientRangeCoordinate (T ∘L V.subtypeL) (y : F) = ⟨v, hv⟩ := by
-        simpa [← hTv] using quotientRangeCoordinate_apply_comp_subtypeL hΦ ⟨v, hv⟩
-      rw [← Subtype.coe_inj]
-      simp only [comp_apply, coe_subtypeL, subtype_apply, coe_restrict_apply, id_apply, hq]
-      exact hTv)
-    (ContinuousLinearMap.ext fun u ↦ by
-      simp [quotientRangeCoordinate_apply_comp_subtypeL hΦ u])
+  ({ __ := LinearEquiv.ofLeftInverse
+        (f := ((T ∘L V.subtypeL : V →L[𝕜] F) : V →ₗ[𝕜] F))
+        (quotientRangeCoordinate_apply_comp_subtypeL hΦ)
+     continuous_toFun := (T ∘L V.subtypeL).continuous.subtype_mk _
+     continuous_invFun :=
+       (W.subtypeL.quotientRangeCoordinate (T ∘L V.subtypeL)).continuous.comp
+         continuous_subtypeVal } :
+    V ≃L[𝕜] LinearMap.range ((T ∘L V.subtypeL : V →L[𝕜] F) : V →ₗ[𝕜] F)).trans
+    (ContinuousLinearEquiv.ofEq _ _ (by simp [LinearMap.range_comp]))
 
 /-- As a continuous linear map, `restrictMapEquiv` is the restriction of `T` to `V`. -/
 theorem toContinuousLinearMap_restrictMapEquiv {T : E →L[𝕜] F} {V : Submodule 𝕜 E}
@@ -193,7 +193,68 @@ section DivisionRing
 
 variable {𝕜 E F : Type*} [DivisionRing 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- **Index formula from an algebraic complement of `V.map T`.** If `V ≤ E` has finite
+codimension, `W ≤ F` is finite-dimensional, `Disjoint V T.ker`, and `IsCompl (V.map T) W`,
+then `T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W`. -/
+theorem index_eq_of_disjoint_ker_of_isCompl_map {T : E →L[𝕜] F} {V : Submodule 𝕜 E}
+    {W : Submodule 𝕜 F} [V.CoFG] [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
+    (hW : IsCompl (V.map (T : E →ₗ[𝕜] F)) W) :
+    T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W := by
+  have hinj : Injective ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype) :=
+    LinearMap.injective_domRestrict_iff.mpr hker
+  have : FiniteDimensional 𝕜 (T : E →ₗ[𝕜] F).ker :=
+    Module.Finite.of_injective (V.mkQ.domRestrict (T : E →ₗ[𝕜] F).ker)
+      (LinearMap.injective_domRestrict_iff.mpr (V.ker_mkQ.symm ▸ hker.symm))
+  have : FiniteDimensional 𝕜 V.subtype.ker := by
+    rw [Submodule.ker_subtype]
+    infer_instance
+  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := by
+    rw [Submodule.range_subtype]
+    infer_instance
+  let e : (F ⧸ ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype).range) ≃ₗ[𝕜] W :=
+    (Submodule.quotEquivOfEq _ (V.map (T : E →ₗ[𝕜] F))
+      (by simp [LinearMap.range_comp])).trans
+      ((V.map (T : E →ₗ[𝕜] F)).quotientEquivOfIsCompl W hW)
+  have : FiniteDimensional 𝕜 (F ⧸ ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype).range) :=
+    e.symm.finiteDimensional
+  have : FiniteDimensional 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) :=
+    Module.Finite.of_surjective
+      (Submodule.factor (LinearMap.range_comp_le_range V.subtype (T : E →ₗ[𝕜] F)))
+      (Submodule.factor_surjective _)
+  have hcomp_idx := LinearMap.index_comp (T : E →ₗ[𝕜] F) V.subtype
+  rw [LinearMap.index_of_injective hinj, e.finrank_eq, LinearMap.index_subtype,
+    ← T.index_def] at hcomp_idx
+  omega
+
+/-- If `T` is injective on a finite-codimensional subspace `V` and `T(V)` has a
+finite-dimensional topological complement `W`, then the index of `T` is `codim V - dim W`. -/
+theorem index_eq_of_disjoint_ker_of_isTopCompl_map {T : E →L[𝕜] F} {V : Submodule 𝕜 E}
+    {W : Submodule 𝕜 F} [V.CoFG] [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
+    (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
+    T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W :=
+  index_eq_of_disjoint_ker_of_isCompl_map hker hW.isCompl
+
+/-- Whenever `V ≤ E` has finite codimension, `W ≤ F` is finite-dimensional, `V` meets both
+`T₀.ker` and `T.ker` trivially, and `W` complements both `V.map T₀` and `V.map T`, the signed
+dimension changes `(finrank 𝕜 T₀.ker : ℤ) - finrank 𝕜 T.ker` and
+`(finrank 𝕜 (F ⧸ T₀.range) : ℤ) - finrank 𝕜 (F ⧸ T.range)` between `T₀` and `T` are equal. -/
+theorem finrank_ker_sub_eq_finrank_coker_sub_of_disjoint_ker_of_isCompl_map
+    {T₀ T : E →L[𝕜] F} {V : Submodule 𝕜 E} {W : Submodule 𝕜 F} [V.CoFG] [FiniteDimensional 𝕜 W]
+    (hker₀ : Disjoint V T₀.ker) (hW₀ : IsCompl (V.map (T₀ : E →ₗ[𝕜] F)) W)
+    (hker : Disjoint V T.ker) (hW : IsCompl (V.map (T : E →ₗ[𝕜] F)) W) :
+    (finrank 𝕜 T₀.ker : ℤ) - finrank 𝕜 T.ker =
+      (finrank 𝕜 (F ⧸ T₀.range) : ℤ) - finrank 𝕜 (F ⧸ T.range) := by
+  have hidx₀ := index_eq_of_disjoint_ker_of_isCompl_map hker₀ hW₀
+  have hidx := index_eq_of_disjoint_ker_of_isCompl_map hker hW
+  rw [T₀.index_eq_finrank_sub] at hidx₀
+  rw [T.index_eq_finrank_sub] at hidx
+  omega
+
+section
+
+variable [ContinuousAdd F]
 
 /-- Kernel dimension bound when `(T ∘L V.subtypeL).coprod W.subtypeL` is invertible and `V` has
 finite codimension. -/
@@ -224,38 +285,10 @@ invertible, then the index of `T` equals `finrank 𝕜 (E ⧸ V) - finrank 𝕜 
 theorem index_eq_of_isInvertible_comp_subtypeL_coprod {T : E →L[𝕜] F} {V : Submodule 𝕜 E}
     {W : Submodule 𝕜 F} [V.CoFG] [FiniteDimensional 𝕜 W]
     (hΦ : ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible) :
-    T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W := by
-  let A := T ∘L V.subtypeL
-  have hdisj : Disjoint V T.ker := disjoint_ker_of_isInvertible_comp_subtypeL_coprod hΦ
-  have hinj : Injective (A : V →ₗ[𝕜] F) := by
-    rw [toLinearMap_comp, Submodule.toLinearMap_subtypeL]
-    exact LinearMap.injective_domRestrict_iff.mpr hdisj
-  have : FiniteDimensional 𝕜 (T : E →ₗ[𝕜] F).ker := by
-    refine Module.Finite.of_injective (V.mkQ.comp (T : E →ₗ[𝕜] F).ker.subtype) fun x y hxy ↦ ?_
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply,
-      Submodule.Quotient.eq] at hxy
-    exact Subtype.ext (sub_eq_zero.mp
-      (Submodule.disjoint_def.mp hdisj _ hxy (sub_mem x.property y.property)))
-  have : FiniteDimensional 𝕜 V.subtype.ker := by
-    rw [Submodule.ker_subtype]
-    infer_instance
-  have : FiniteDimensional 𝕜 (E ⧸ V.subtype.range) := by
-    rw [Submodule.range_subtype]
-    infer_instance
-  have hAr : ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype).range = (A : V →ₗ[𝕜] F).range := rfl
-  have : FiniteDimensional 𝕜 (F ⧸ ((T : E →ₗ[𝕜] F) ∘ₗ V.subtype).range) :=
-    hAr ▸ (A.quotientRangeEquiv W.subtypeL hΦ).toLinearEquiv.symm.finiteDimensional
-  have : FiniteDimensional 𝕜 (F ⧸ (T : E →ₗ[𝕜] F).range) :=
-    Module.Finite.of_surjective
-      (Submodule.factor (LinearMap.range_comp_le_range V.subtype (T : E →ₗ[𝕜] F)))
-      (Submodule.factor_surjective _)
-  have hcomp_idx := LinearMap.index_comp (T : E →ₗ[𝕜] F) V.subtype
-  have hcoker : finrank 𝕜 (F ⧸ (A : V →ₗ[𝕜] F).range) = finrank 𝕜 W :=
-    (A.quotientRangeEquiv W.subtypeL hΦ).toLinearEquiv.finrank_eq
-  rw [show (T : E →ₗ[𝕜] F) ∘ₗ V.subtype = (A : V →ₗ[𝕜] F) from rfl,
-    LinearMap.index_of_injective hinj, hcoker, LinearMap.index_subtype,
-    ← T.index_def] at hcomp_idx
-  omega
+    T.index = (finrank 𝕜 (E ⧸ V) : ℤ) - finrank 𝕜 W :=
+  index_eq_of_disjoint_ker_of_isTopCompl_map
+    (disjoint_ker_of_isInvertible_comp_subtypeL_coprod hΦ)
+    (isTopCompl_map_of_isInvertible_comp_subtypeL_coprod hΦ)
 
 /-- Whenever both `(T₀ ∘L V.subtypeL).coprod W.subtypeL` and `(T ∘L V.subtypeL).coprod W.subtypeL`
 are invertible, the signed changes `(finrank 𝕜 T₀.ker : ℤ) - finrank 𝕜 T.ker` and
@@ -265,12 +298,14 @@ theorem finrank_ker_sub_eq_finrank_coker_sub_of_isInvertible_comp_subtypeL_copro
     (hΦ₀ : ((T₀ ∘L V.subtypeL).coprod W.subtypeL).IsInvertible)
     (hΦ : ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible) :
     (finrank 𝕜 T₀.ker : ℤ) - finrank 𝕜 T.ker =
-      (finrank 𝕜 (F ⧸ T₀.range) : ℤ) - finrank 𝕜 (F ⧸ T.range) := by
-  have hidx₀ := index_eq_of_isInvertible_comp_subtypeL_coprod hΦ₀
-  have hidx := index_eq_of_isInvertible_comp_subtypeL_coprod hΦ
-  rw [T₀.index_eq_finrank_sub] at hidx₀
-  rw [T.index_eq_finrank_sub] at hidx
-  omega
+      (finrank 𝕜 (F ⧸ T₀.range) : ℤ) - finrank 𝕜 (F ⧸ T.range) :=
+  finrank_ker_sub_eq_finrank_coker_sub_of_disjoint_ker_of_isCompl_map
+    (disjoint_ker_of_isInvertible_comp_subtypeL_coprod hΦ₀)
+    (isTopCompl_map_of_isInvertible_comp_subtypeL_coprod hΦ₀).isCompl
+    (disjoint_ker_of_isInvertible_comp_subtypeL_coprod hΦ)
+    (isTopCompl_map_of_isInvertible_comp_subtypeL_coprod hΦ).isCompl
+
+end
 
 end DivisionRing
 
@@ -378,16 +413,6 @@ theorem isFredholm_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E))
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
     T.IsFredholm :=
   isFredholm_of_isInvertible_comp_subtypeL_coprod hV
-    ((isInvertible_comp_subtypeL_coprod_iff hV).mpr ⟨hker, hW⟩)
-
-omit [CompleteSpace 𝕜] in
-/-- If `T` is injective on a closed finite-codimensional subspace `V` and `T(V)` has a
-finite-dimensional topological complement `W`, then the index of `T` is `codim V - dim W`. -/
-theorem index_eq_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E)) [V.CoFG]
-    [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
-    (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
-    T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W :=
-  index_eq_of_isInvertible_comp_subtypeL_coprod
     ((isInvertible_comp_subtypeL_coprod_iff hV).mpr ⟨hker, hW⟩)
 
 /-- **The transverse-subspace lemma, Fredholm form.** Let `V` be a closed finite-codimensional

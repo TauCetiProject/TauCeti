@@ -300,10 +300,7 @@ theorem _root_.ContinuousLinearMap.projectionOntoL_range_ker_adjoint_eq_orthogon
     (LinearMap.range (T : E →ₗ[𝕜] F)).projectionOntoL (LinearMap.ker (T† : F →ₗ[𝕜] E))
         (T.isTopCompl_range_ker_adjoint hT) =
       (LinearMap.range (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto := by
-  refine Submodule.projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho
-    (T.isTopCompl_range_ker_adjoint hT) ?_
-  rw [← T.orthogonal_range]
-  exact (LinearMap.range (T : E →ₗ[𝕜] F)).isOrtho_orthogonal_right
+  simp only [Submodule.orthogonalProjectionOnto, ← T.orthogonal_range]
 
 /-- For a closed-range operator between Hilbert spaces, the topological projection onto `ker T†`
 along `range T` agrees with the orthogonal projection onto `ker T†`. -/
@@ -312,10 +309,9 @@ theorem _root_.ContinuousLinearMap.projectionOntoL_ker_adjoint_range_eq_orthogon
     (LinearMap.ker (T† : F →ₗ[𝕜] E)).projectionOntoL (LinearMap.range (T : E →ₗ[𝕜] F))
         (T.isTopCompl_range_ker_adjoint hT).symm =
       (LinearMap.ker (T† : F →ₗ[𝕜] E)).orthogonalProjectionOnto := by
-  refine Submodule.projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho
-    (T.isTopCompl_range_ker_adjoint hT).symm ?_
-  rw [← T.orthogonal_range]
-  exact (LinearMap.range (T : E →ₗ[𝕜] F)).isOrtho_orthogonal_left
+  have : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) := hT.completeSpace_coe
+  simp only [Submodule.orthogonalProjectionOnto,
+    ← T.range_eq_orthogonal_ker_adjoint_of_isClosed_range hT]
 
 /-- An operator of rank at most `n` has an adjoint of rank at most `n`: its range is closed, so
 the range of `T†` is `(ker T)ᗮ`, which `T` maps isomorphically onto the range of `T`. -/

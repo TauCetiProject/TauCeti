@@ -95,6 +95,66 @@ theorem schurComplement_apply (x : E₂) :
     A.schurComplement B C D x = D x - C (A.inverse (B x)) :=
   (rfl)
 
+/-- The lower unitriangular shear equivalence `(y₁, y₂) ↦ (y₁, y₂ + C (A.inverse y₁))` used in
+block row-elimination for the Schur complement. -/
+noncomputable def schurLowerEquiv (A : E₁ →L[R] F₁) (C : E₁ →L[R] F₂) :
+    (F₁ × F₂) ≃L[R] (F₁ × F₂) :=
+  (ContinuousLinearEquiv.refl R F₁).skewProd (.refl R F₂) (C ∘L A.inverse)
+
+/-- Pointwise formula for `ContinuousLinearMap.schurLowerEquiv`. -/
+@[simp]
+theorem schurLowerEquiv_apply (A : E₁ →L[R] F₁) (C : E₁ →L[R] F₂) (y : F₁ × F₂) :
+    A.schurLowerEquiv C y = (y.1, y.2 + C (A.inverse y.1)) :=
+  (rfl)
+
+/-- Pointwise formula for `(ContinuousLinearMap.schurLowerEquiv).symm`. -/
+@[simp]
+theorem schurLowerEquiv_symm_apply (A : E₁ →L[R] F₁) (C : E₁ →L[R] F₂) (y : F₁ × F₂) :
+    (A.schurLowerEquiv C).symm y = (y.1, y.2 - C (A.inverse y.1)) :=
+  (rfl)
+
+/-- When the bottom-left block vanishes, `schurLowerEquiv` is the identity equivalence. -/
+@[simp]
+theorem schurLowerEquiv_zero_right (A : E₁ →L[R] F₁) :
+    A.schurLowerEquiv (0 : E₁ →L[R] F₂) = .refl R (F₁ × F₂) := by
+  ext y <;> simp
+
+section UpperShear
+
+variable [IsTopologicalAddGroup E₁]
+
+omit [IsTopologicalAddGroup F₂] in
+/-- The upper unitriangular shear equivalence `(x₁, x₂) ↦ (x₁ + A.inverse (B x₂), x₂)` used in
+block column-elimination for the Schur complement. -/
+noncomputable def schurUpperEquiv (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) :
+    (E₁ × E₂) ≃L[R] (E₁ × E₂) :=
+  ((ContinuousLinearEquiv.prodComm R E₁ E₂).trans
+    ((ContinuousLinearEquiv.refl R E₂).skewProd (.refl R E₁) (A.inverse ∘L B))).trans
+    (.prodComm R E₂ E₁)
+
+omit [IsTopologicalAddGroup F₂] in
+/-- Pointwise formula for `ContinuousLinearMap.schurUpperEquiv`. -/
+@[simp]
+theorem schurUpperEquiv_apply (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (x : E₁ × E₂) :
+    A.schurUpperEquiv B x = (x.1 + A.inverse (B x.2), x.2) :=
+  (rfl)
+
+omit [IsTopologicalAddGroup F₂] in
+/-- Pointwise formula for `(ContinuousLinearMap.schurUpperEquiv).symm`. -/
+@[simp]
+theorem schurUpperEquiv_symm_apply (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (x : E₁ × E₂) :
+    (A.schurUpperEquiv B).symm x = (x.1 - A.inverse (B x.2), x.2) :=
+  (rfl)
+
+omit [IsTopologicalAddGroup F₂] in
+/-- When the top-right block vanishes, `schurUpperEquiv` is the identity equivalence. -/
+@[simp]
+theorem schurUpperEquiv_zero_right (A : E₁ →L[R] F₁) :
+    A.schurUpperEquiv (0 : E₂ →L[R] F₁) = .refl R (E₁ × E₂) := by
+  ext x <;> simp
+
+end UpperShear
+
 end SchurComplement
 
 end ContinuousLinearMap
@@ -182,11 +242,9 @@ theorem surjective_coprod_prod_coprod_iff :
 
 section Factorization
 
-variable [ContinuousAdd E₂]
-
 section ContinuousAdd
 
-variable [ContinuousAdd E₁]
+variable [ContinuousAdd E₁] [ContinuousAdd E₂]
 
 /-- **LDU factorization** of a block operator whose upper left block `A` is invertible: it is
 the composite of a lower unitriangular operator, the block-diagonal operator `A ⊕ S` with the
@@ -204,24 +262,27 @@ end ContinuousAdd
 
 variable [IsTopologicalAddGroup E₁]
 
+/-- Explicit LDU factorization of a block operator with invertible upper left block `A` using
+the named unitriangular shear equivalences `ContinuousLinearMap.schurLowerEquiv` and
+`ContinuousLinearMap.schurUpperEquiv`. -/
+theorem coprod_prod_coprod_eq_schurLowerEquiv_comp_prodMap_comp_schurUpperEquiv :
+    ((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D) =
+      ((A : E₁ →L[R] F₁).schurLowerEquiv C : (F₁ × F₂) →L[R] F₁ × F₂) ∘L
+        ((A : E₁ →L[R] F₁).prodMap ((A : E₁ →L[R] F₁).schurComplement B C D)) ∘L
+          ((A : E₁ →L[R] F₁).schurUpperEquiv B : (E₁ × E₂) →L[R] E₁ × E₂) := by
+  ext x <;> simp [inverse_equiv, add_comm]
+
 /-- A block operator with invertible upper left block `A` is the block-diagonal operator `A ⊕ S`,
 with the Schur complement `S = D - C A⁻¹ B`, up to continuous linear equivalences of its domain
 and codomain. The equivalences are the unitriangular factors of
-`ContinuousLinearEquiv.coprod_prod_coprod_eq_comp`. -/
+`ContinuousLinearEquiv.coprod_prod_coprod_eq_schurLowerEquiv_comp_prodMap_comp_schurUpperEquiv`. -/
 theorem exists_coprod_prod_coprod_eq_comp_prodMap_comp :
     ∃ (L : (F₁ × F₂) ≃L[R] F₁ × F₂) (U : (E₁ × E₂) ≃L[R] E₁ × E₂),
       ((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D) =
         (L : F₁ × F₂ →L[R] F₁ × F₂) ∘L
           ((A : E₁ →L[R] F₁).prodMap ((A : E₁ →L[R] F₁).schurComplement B C D)) ∘L
-            (U : E₁ × E₂ →L[R] E₁ × E₂) := by
-  let T : E₂ →L[R] E₁ := (A.symm : F₁ →L[R] E₁) ∘L B
-  refine ⟨(ContinuousLinearEquiv.refl R F₁).skewProd (.refl R F₂) (C ∘L (A.symm : F₁ →L[R] E₁)),
-    .ofContinuousLinearMap (((ContinuousLinearMap.id R E₁).coprod T).prod (snd R E₁ E₂))
-      (((ContinuousLinearMap.id R E₁).coprod (-T)).prod (snd R E₁ E₂)) ?_ ?_, ?_⟩
-  · ext x <;> simp
-  · ext x <;> simp
-  · rw [coprod_prod_coprod_eq_comp]
-    ext x <;> simp [T, add_comm, inverse_equiv]
+            (U : E₁ × E₂ →L[R] E₁ × E₂) :=
+  ⟨_, _, coprod_prod_coprod_eq_schurLowerEquiv_comp_prodMap_comp_schurUpperEquiv A B C D⟩
 
 /-- A block operator with invertible upper left block `A` is invertible exactly when its Schur
 complement `D - C A⁻¹ B` is. -/
