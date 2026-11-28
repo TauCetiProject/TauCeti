@@ -57,11 +57,9 @@ noncomputable abbrev mapCocone (K : HomologicalComplex C c) {G : T ⥤ C ⥤ D}
     { app t := (NatTrans.mapHomologicalComplex (F := G.obj t) (G := s.pt) (s.ι.app t) c).app K
       -- each naturality square is `s.w` applied termwise to `K`
       naturality t₁ t₂ w := by
-        change (NatTrans.mapHomologicalComplex (G.map w) c).app K ≫
-            (NatTrans.mapHomologicalComplex (F := G.obj t₂) (G := s.pt) (s.ι.app t₂) c).app K =
-          (NatTrans.mapHomologicalComplex (F := G.obj t₁) (G := s.pt) (s.ι.app t₁) c).app K ≫ 𝟙 _
-        rw [Category.comp_id, ← NatTrans.comp_app, ← NatTrans.mapHomologicalComplex_comp,
-          s.w w] }
+        dsimp only
+        simp only [Functor.const_obj_map, Functor.const_obj_obj, Category.comp_id,
+          ← NatTrans.comp_app, ← NatTrans.mapHomologicalComplex_comp, s.w w] }
 
 /-- If `s` is a colimit cocone on `G : T ⥤ C ⥤ D` and evaluation at each `K.X m` preserves
 colimits of `G`, then `K.mapCocone s` is a colimit cocone on `K.mapDiagram G`. -/

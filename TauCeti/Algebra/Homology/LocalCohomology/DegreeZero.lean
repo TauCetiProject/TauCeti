@@ -365,24 +365,17 @@ lemma ι_app_colimitLinearCoyonedaIsoPrimaryComponentFunctor_hom (t : ℕᵒᵖ�
       (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).inv ≫
         (colimit.ι (diagram (idealPowersDiagram J) 0) t).app M ≫
         (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := by
+  -- `colimitLinearCoyonedaIsoPrimaryComponentFunctor` composes `(HasColimit.isoOfNatIso _).symm`
+  -- (target `colimit (diagram _ 0)`) with `degreeZeroIsoPrimaryComponentFunctor J` (source
+  -- `localCohomology J 0`); `congrArg`/`trans` bridge the semireducible `localCohomology` def.
   have e : (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M =
       (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).inv.app M ≫
         (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := rfl
   have hι := congrArg (fun η ↦ η.app M)
     (HasColimit.ι_isoOfNatIso_inv (diagramZeroIsoLinearCoyoneda J) t)
-  simp only [NatTrans.comp_app] at hι
-  calc
-    (colimit.ι ((ringModIdeals (idealPowersDiagram J)).op ⋙
-          linearCoyoneda R (ModuleCat.{u} R)) t).app M ≫
-        (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M
-      = ((colimit.ι ((ringModIdeals (idealPowersDiagram J)).op ⋙
-            linearCoyoneda R (ModuleCat.{u} R)) t).app M ≫
-          (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).inv.app M) ≫
-          (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := by
-        rw [e]
-        exact (Category.assoc _ _ _).symm
-    _ = _ := by
-        rw [hι, diagramZeroIsoLinearCoyoneda_inv_app_app]
-        exact Category.assoc _ _ _
+  simp only [NatTrans.comp_app, diagramZeroIsoLinearCoyoneda_inv_app_app] at hι
+  exact (congrArg (_ ≫ ·) e).trans ((Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ (degreeZeroIsoPrimaryComponentFunctor J).hom.app M) hι).trans
+      (Category.assoc _ _ _)))
 
 end localCohomology

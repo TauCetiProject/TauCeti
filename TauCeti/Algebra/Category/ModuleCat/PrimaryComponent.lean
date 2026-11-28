@@ -86,6 +86,13 @@ def primaryComponentFunctorι : J.primaryComponentFunctor ⟶ 𝟭 (ModuleCat.{v
     ext x
     rfl
 
+/-- Applying `J.primaryComponentFunctorι.app M` to `(J.primaryComponentFunctorObjIso M).inv x`
+recovers the underlying element `(x : M)`. -/
+lemma primaryComponentFunctorι_app_objIso_inv_apply (M : ModuleCat.{v} R)
+    (x : J.primaryComponent M) :
+    J.primaryComponentFunctorι.app M ((J.primaryComponentFunctorObjIso M).inv x) = (x : M) :=
+  (rfl)
+
 /-- `primaryComponentFunctorObjIso` followed by the submodule inclusion `subtype` is
 `primaryComponentFunctorι`. -/
 @[reassoc (attr := simp)]

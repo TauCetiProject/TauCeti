@@ -347,6 +347,12 @@ instance {W : C} (I : InjectiveResolution W) (H : C ⥤ D) [H.Additive] [H.Prese
   dsimp only [mapι]
   infer_instance
 
+/-- In degree zero, `I.mapι H` is `H` applied to the augmentation `I.ι.f 0`. -/
+@[simp]
+lemma mapι_f_zero {W : C} (I : InjectiveResolution W) (H : C ⥤ D) [H.Additive] :
+    (I.mapι H).f 0 = H.map (I.ι.f 0) := by
+  simp [mapι]
+
 /-- `InjectiveResolution.mapι` commutes with chain maps lifting a morphism `f : W ⟶ W'`. -/
 @[reassoc]
 lemma mapι_naturality {W W' : C} (f : W ⟶ W') (I : InjectiveResolution W)

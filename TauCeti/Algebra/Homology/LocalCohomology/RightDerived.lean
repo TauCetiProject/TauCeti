@@ -164,6 +164,66 @@ lemma linearEquivRightDerivedPrimaryComponent_naturality {M N : ModuleCat.{u} R}
 instance additive (q : ℕ) : (localCohomology J q).Additive :=
   Functor.additive_of_iso (isoRightDerivedPrimaryComponent J q).symm
 
+/-- In degree zero, `isoRightDerivedPrimaryComponent` identifies the degree-zero isomorphism
+`localCohomology J 0 ≅ Γ_J` with the canonical comparison `Γ_J ⟶ R⁰Γ_J`. -/
+@[reassoc]
+lemma degreeZeroIsoPrimaryComponentFunctor_hom_comp_toRightDerivedZero :
+    (degreeZeroIsoPrimaryComponentFunctor J).hom ≫
+        J.primaryComponentFunctor.{u}.toRightDerivedZero =
+      (isoRightDerivedPrimaryComponent J 0).hom := by
+  let : AB5OfSize.{0, 0} (ModuleCat.{u} R) := AB5OfSize_of_univLE.{0, 0, u, u} (ModuleCat.{u} R)
+  let := Functor.additive_comp_obj (ringModIdeals (idealPowersDiagram J)).op
+    (linearCoyoneda R (ModuleCat.{u} R))
+  let G := (ringModIdeals (idealPowersDiagram J)).op ⋙ linearCoyoneda R (ModuleCat.{u} R)
+  let α : colimit (diagram (idealPowersDiagram J) 0) ⟶ J.primaryComponentFunctor :=
+    (degreeZeroIsoPrimaryComponentFunctor J).hom
+  change α ≫ J.primaryComponentFunctor.{u}.toRightDerivedZero =
+    (HasColimit.isoOfNatIso (diagramIsoRightDerivedLinearCoyoneda (idealPowersDiagram J) 0)).hom ≫
+      (colimitRightDerivedIso G 0).hom ≫
+      (NatIso.rightDerived (colimitLinearCoyonedaIsoPrimaryComponentFunctor J) 0).hom
+  refine (colimit.hom_ext fun t ↦ ?_).symm
+  rw [HasColimit.ι_isoOfNatIso_hom_assoc,
+    colimitRightDerivedIso_hom, ι_colimitRightDerivedComparison_assoc, NatIso.rightDerived_hom,
+    ← NatTrans.rightDerived_comp]
+  apply NatTrans.ext
+  funext M
+  simp only [NatTrans.comp_app, diagramIsoRightDerivedLinearCoyoneda_hom_app]
+  have h0 : (extObjIsoRightDerivedLinearCoyoneda R
+        ((ringModIdeals (idealPowersDiagram J)).obj t.unop) 0).hom.app M =
+      (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).hom ≫
+        (G.obj t).toRightDerivedZero.app M := by
+    erw [← extZeroIso_inv_comp_extObjIsoRightDerivedLinearCoyoneda_hom_app, Iso.hom_inv_id_assoc]
+  erw [h0, Category.assoc]
+  have hnat := NatTrans.congr_app (NatTrans.toRightDerivedZero_comp_rightDerived_zero
+    (colimit.ι G t ≫ (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom)) M
+  simp only [NatTrans.comp_app] at hnat
+  erw [hnat]
+  have hcomp : (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).hom ≫
+      (colimit.ι G t).app M ≫ (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M =
+      (colimit.ι (diagram (idealPowersDiagram J) 0) t).app M ≫ α.app M := by
+    erw [ι_app_colimitLinearCoyonedaIsoPrimaryComponentFunctor_hom, Iso.hom_inv_id_assoc]
+  erw [← Category.assoc, hcomp, Category.assoc]
+
+/-- In degree zero, `isoRightDerivedPrimaryComponent` is compatible with
+`Functor.rightDerivedZeroIsoSelf` and `degreeZeroIsoPrimaryComponentFunctor`. -/
+@[reassoc]
+lemma isoRightDerivedPrimaryComponent_hom_comp_rightDerivedZeroIsoSelf :
+    (isoRightDerivedPrimaryComponent J 0).hom ≫
+        J.primaryComponentFunctor.{u}.rightDerivedZeroIsoSelf.hom =
+      (degreeZeroIsoPrimaryComponentFunctor J).hom := by
+  rw [← degreeZeroIsoPrimaryComponentFunctor_hom_comp_toRightDerivedZero, Category.assoc,
+    Functor.rightDerivedZeroIsoSelf_inv_hom_id, Category.comp_id]
+
+/-- Objectwise in degree zero, `isoRightDerivedPrimaryComponent` followed by
+`Functor.rightDerivedZeroIsoSelf` agrees with `degreeZeroIsoPrimaryComponentFunctor`. -/
+@[reassoc]
+lemma isoRightDerivedPrimaryComponent_hom_app_comp_rightDerivedZeroIsoSelf_hom_app
+    (M : ModuleCat.{u} R) :
+    (isoRightDerivedPrimaryComponent J 0).hom.app M ≫
+        J.primaryComponentFunctor.{u}.rightDerivedZeroIsoSelf.hom.app M =
+      (degreeZeroIsoPrimaryComponentFunctor J).hom.app M :=
+  NatTrans.congr_app (isoRightDerivedPrimaryComponent_hom_comp_rightDerivedZeroIsoSelf J) M
+
 end Comparison
 
 end localCohomology

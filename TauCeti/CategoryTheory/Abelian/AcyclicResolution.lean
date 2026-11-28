@@ -518,4 +518,31 @@ lemma compRightDerivedIsoOfResolution_hom_app_comp_isoRightDerivedObj
   rw [Functor.map_id, Functor.map_id, Functor.map_id, Category.id_comp, Category.id_comp] at h
   rw [compRightDerivedIsoOfResolution_hom_app, Category.assoc, Category.assoc, ← h]
 
+/-- In degree zero, `compRightDerivedIsoOfResolution` is compatible with the canonical morphisms
+`F.toRightDerivedZero` and `G.toRightDerivedZero` along `e : H ⋙ F ≅ G`. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_compRightDerivedIsoOfResolution_hom (W : C₀) :
+    F.toRightDerivedZero.app (H.obj W) ≫
+        (F.compRightDerivedIsoOfResolution P hinj hP hF H G e hHP 0).hom.app W =
+      e.hom.app W ≫ G.toRightDerivedZero.app W := by
+  let I := injectiveResolution W
+  rw [← cancel_mono (I.isoRightDerivedObj G 0).hom, Category.assoc,
+    F.compRightDerivedIsoOfResolution_hom_app_comp_isoRightDerivedObj P hinj hP hF H G e hHP 0 I,
+    ← Category.assoc,
+    F.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom P hinj hP hF (I.mapι H)
+      (fun m ↦ hHP _ (I.injective m)),
+    Category.assoc, Category.assoc, I.toRightDerivedZero_eq G]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  -- `erw` identifies `(CochainComplex.isoHomologyπ₀ _).hom` with `homologyπ 0`.
+  erw [HomologicalComplex.homologyπ_naturality]
+  rw [← Category.assoc, ← Category.assoc]
+  refine congrArg (· ≫ ((G.mapHomologicalComplex _).obj I.cocomplex).homologyπ 0) ?_
+  rw [← cancel_mono (HomologicalComplex.iCycles _ 0)]
+  have hval : (fromSingle₀Equiv ((H.mapHomologicalComplex _).obj I.cocomplex) (H.obj W)
+      (I.mapι H)).val = H.map (I.ι.f 0) := by
+    simp [fromSingle₀Equiv]
+  simp only [liftCycles_comp_cyclesMap, liftCycles_i, Category.assoc,
+    InjectiveResolution.toRightDerivedZero'_comp_iCycles, hval]
+  exact e.hom.naturality (I.ι.f 0)
+
 end CategoryTheory.Functor

@@ -103,7 +103,7 @@ private def rightDerivedEvaluationIso (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Addi
     dsimp
     rw [I.rightDerived_app_eq (G.map w) q, Category.assoc, Category.assoc, Iso.inv_hom_id,
       Category.comp_id]
-    rfl
+    simp only [HomologicalComplex.homologyFunctor_map]
 
 variable [HasExactColimitsOfShape T D]
 
@@ -139,7 +139,7 @@ instance isIso_colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj 
       rw [hleg, ι_app_colimitRightDerivedComparison_app_assoc,
         I.rightDerived_app_eq (colimit.ι G t) q, Category.assoc, Category.assoc, Iso.inv_hom_id,
         Category.comp_id, rightDerivedEvaluationIso_hom_app]
-      rfl
+      simp only [HomologicalComplex.homologyFunctor_map]
     have : IsIso ((colimitRightDerivedComparison G q).app X ≫
         (I.isoRightDerivedObj (colimit G) q).hom) :=
       heq.symm ▸ inferInstanceAs (IsIso (hc₁.coconePointUniqueUpToIso hc₂').hom)

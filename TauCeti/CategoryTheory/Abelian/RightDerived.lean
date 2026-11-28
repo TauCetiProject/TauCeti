@@ -133,6 +133,27 @@ lemma NatIso.rightDerived_inv {F G : C ⥤ D} [F.Additive] [G.Additive]
     (e : F ≅ G) (n : ℕ) : (NatIso.rightDerived e n).inv = e.inv.rightDerived n :=
   (rfl)
 
+/-- The comparison `F ⟶ R⁰F` is natural in the additive functor `F`: it intertwines `α : F ⟶ G`
+with the natural transformation `R⁰F ⟶ R⁰G` induced by `α`. -/
+@[reassoc]
+theorem NatTrans.toRightDerivedZero_comp_rightDerived_zero {F G : C ⥤ D} [F.Additive]
+    [G.Additive] (α : F ⟶ G) :
+    F.toRightDerivedZero ≫ NatTrans.rightDerived α 0 = α ≫ G.toRightDerivedZero := by
+  ext X
+  let I := injectiveResolution X
+  -- On cycles in degree zero, both sides are induced by `α` on `F(X) ⟶ F(I⁰) ⟶ G(I⁰)`.
+  have h : I.toRightDerivedZero' F ≫
+      HomologicalComplex.cyclesMap ((NatTrans.mapHomologicalComplex α _).app I.cocomplex) 0 =
+      α.app X ≫ I.toRightDerivedZero' G := by
+    rw [← cancel_mono (HomologicalComplex.iCycles _ 0), Category.assoc, Category.assoc,
+      HomologicalComplex.cyclesMap_i, I.toRightDerivedZero'_comp_iCycles]
+    simp [I.toRightDerivedZero'_comp_iCycles_assoc]
+  simp only [NatTrans.comp_app, I.toRightDerivedZero_eq, I.rightDerived_app_eq, Category.assoc,
+    Iso.inv_hom_id_assoc]
+  -- `erw`: the homology of `G(I)` appears both as `homologyFunctor.obj` and as `homology 0`.
+  erw [HomologicalComplex.homologyπ_naturality_assoc, reassoc_of% h]
+  rfl
+
 /-- An exact additive functor has no positive right derived functors. -/
 theorem Functor.isZero_rightDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]
     (X : C) (q : ℕ) : Limits.IsZero ((F.rightDerived (q + 1)).obj X) := by

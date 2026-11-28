@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+public import TauCeti.CategoryTheory.Abelian.Ext
 
 /-!
 # Comparing the left derived and derived-category `Ext` functors
@@ -105,6 +106,43 @@ theorem subsingleton_ext_iff_exactAt (n : ℕ) :
   | zero => rw [subsingleton_ext_zero_iff P, ChainComplex.exactAt_linearYonedaObj_zero_iff]
   | succ n => rw [subsingleton_ext_succ_iff P, ChainComplex.exactAt_linearYonedaObj_succ_iff]
 
+open CochainComplex HomComplex in
+/-- In degree zero, the augmentation morphism `P₀ ⟶ X` of a projective resolution represents
+the identity class `Ext.mk₀ (𝟙 X)` in `Ext⁰(X, X)`. -/
+lemma extMk_π_f_zero (P : ProjectiveResolution X) :
+    P.extMk (P.π.f 0) 1 rfl (by simp) = Ext.mk₀ (𝟙 X) := by
+  have := HasDerivedCategory.standard C
+  have hc : Cocycle.equivHomShift.symm
+      (Cocycle.toSingleMk ((P.cochainComplexXIso (-((0 : ℕ) : ℤ)) 0 rfl).hom ≫ P.π.f 0)
+        (by simp) (-((1 : ℕ) : ℤ)) (by lia) (by
+          rw [P.cochainComplex_d (-((1 : ℕ) : ℤ)) (-((0 : ℕ) : ℤ)) 1 0 (by simp) rfl]
+          simp)) =
+      ShiftedHom.mk₀ ((0 : ℕ) : ℤ) (by simp) P.π' := by
+    refine Cocycle.equivHomShift.injective ?_
+    rw [AddEquiv.apply_symm_apply]
+    refine Cocycle.ext (Cochain.ext _ _ fun p q hpq ↦ ?_)
+    by_cases hp : p = 0
+    · subst hp
+      obtain rfl : q = 0 := by simpa using hpq.symm
+      simp [Cocycle.equivHomShift_apply, ShiftedHom.mk₀, shiftFunctorZero',
+        Cochain.rightUnshift_v _ 0 _ _ _ _ _ rfl, ProjectiveResolution.π'_f_zero,
+        CochainComplex.shiftFunctorZero_inv_app_f]
+    · obtain rfl : p = q := by simpa using hpq
+      rw [Cocycle.toSingleMk_coe, Cochain.toSingleMk_v_eq_zero _ _ p p hpq (by simpa using hp)]
+      exact ((HomologicalComplex.isZero_single_obj_X _ 0 X p hp).eq_of_tgt _ _).symm
+  ext
+  rw [P.extMk_hom, hc, ShiftedHom.map_mk₀, ShiftedHom.mk₀_comp_mk₀,
+    ShiftedHom.mk₀_comp_mk₀, Category.assoc, IsIso.inv_hom_id_assoc]
+  erw [Iso.hom_inv_id_app]
+  simp [Ext.mk₀_hom]
+
+/-- In degree zero, the cocycle `P.π.f 0 ≫ f` of a projective resolution represents
+`Ext.mk₀ f`. -/
+lemma extMk_π_f_zero_comp (P : ProjectiveResolution X) (f : X ⟶ Y) :
+    P.extMk (P.π.f 0 ≫ f) 1 rfl (by simp) = Ext.mk₀ f := by
+  rw [← P.extMk_comp_mk₀ (P.π.f 0) 1 rfl (by simp) f, P.extMk_π_f_zero, Ext.mk₀_comp_mk₀,
+    Category.id_comp]
+
 end HasExt
 
 /-- The left derived functor `Ext k C n` vanishes on `(X, Y)` exactly when the complex
@@ -200,11 +238,117 @@ lemma extIsoLinearExtFunctor_hom_app (n : ℕ) (X : Cᵒᵖ) :
     (extIsoLinearExtFunctor k n).hom.app X = (extObjIsoLinearExtFunctor k X.unop n).hom :=
   (rfl)
 
-/-- The inverse component of `extIsoLinearExtFunctor` at `X` is the inverse of
+/-- The inverse of `extObjIsoLinearExtFunctor` at `X` is the inverse of
 `extObjIsoLinearExtFunctor`. -/
 @[simp]
 lemma extIsoLinearExtFunctor_inv_app (n : ℕ) (X : Cᵒᵖ) :
     (extIsoLinearExtFunctor k n).inv.app X = (extObjIsoLinearExtFunctor k X.unop n).inv :=
   (rfl)
+
+private lemma shortComplex_op_homologyπ_comp_homologyOpIso_hom {V : Type*} [Category* V]
+    [HasZeroMorphisms V] (S : ShortComplex V) [S.HasHomology] :
+    S.op.homologyπ ≫ S.homologyOpIso.hom = S.cyclesOpIso.hom ≫ S.homologyι.op := by
+  dsimp only [ShortComplex.homologyOpIso, Iso.trans_hom, Iso.symm_hom, Iso.op]
+  rw [ShortComplex.homologyπ_comp_leftHomologyIso_inv_assoc]
+  erw [ShortComplex.LeftHomologyData.leftHomologyπ_comp_leftHomologyIso_hom_assoc
+    S.rightHomologyData.op]
+  change S.cyclesOpIso.hom ≫ S.rightHomologyι.op ≫ S.rightHomologyIso.inv.op = _
+  rw [← op_comp]
+  rfl
+
+private lemma shortComplex_homologyOpIso_inv_comp_op_homologyι_comp_opcyclesOpIso_hom
+    {V : Type*} [Category* V] [HasZeroMorphisms V] (S : ShortComplex V) [S.HasHomology] :
+    S.homologyOpIso.inv ≫ S.op.homologyι ≫ S.opcyclesOpIso.hom = S.homologyπ.op := by
+  rw [← cancel_epi (S.op.homologyπ ≫ S.homologyOpIso.hom)]
+  calc
+    (S.op.homologyπ ≫ S.homologyOpIso.hom) ≫
+        S.homologyOpIso.inv ≫ S.op.homologyι ≫ S.opcyclesOpIso.hom
+      = S.op.homologyπ ≫ S.op.homologyι ≫ S.opcyclesOpIso.hom := by
+          simp only [Category.assoc, Iso.hom_inv_id_assoc]
+    _ = S.op.iCycles ≫ S.op.pOpcycles ≫ S.opcyclesOpIso.hom := by
+          rw [ShortComplex.homology_π_ι_assoc]
+    _ = S.op.iCycles ≫ S.iCycles.op := by
+          rw [ShortComplex.op_pOpcycles_opcyclesOpIso_hom]
+    _ = S.cyclesOpIso.hom ≫ S.pOpcycles.op ≫ S.iCycles.op := by
+          rw [← ShortComplex.cyclesOpIso_inv_op_iCycles, ← Category.assoc,
+            Iso.hom_inv_id_assoc]
+    _ = (S.op.homologyπ ≫ S.homologyOpIso.hom) ≫ S.homologyπ.op := by
+          rw [← op_comp, ← ShortComplex.homology_π_ι, op_comp, ← Category.assoc,
+            ← shortComplex_op_homologyπ_comp_homologyOpIso_hom, Category.assoc]
+
+/-- In degree zero, `extObjIsoLinearExtFunctor` identifies `extZeroIso.inv : Hom(X, Y) ⟶ Ext⁰(X, Y)`
+with the inverse of `Abelian.Ext.linearEquiv₀`. -/
+@[reassoc]
+lemma extZeroIso_inv_comp_extObjIsoLinearExtFunctor_hom_app (X Y : C) :
+    (extZeroIso (k := k) X Y).inv ≫ (extObjIsoLinearExtFunctor k X 0).hom.app Y =
+      ModuleCat.ofHom (Abelian.Ext.linearEquiv₀ (R := k)).symm.toLinearMap := by
+  let P := projectiveResolution X
+  let F := ((linearYoneda k C).obj Y).rightOp
+  let L := (F.mapHomologicalComplex (ComplexShape.down ℕ)).obj P.complex
+  let K := P.complex.linearYonedaObj k Y
+  let S := K.sc 0
+  have hL : (extZeroIso (k := k) X Y).inv ≫ (P.isoExt 0 Y).hom =
+      (P.fromLeftDerivedZero' F).unop ≫ (S.opcyclesOpIso.inv).unop ≫ K.homologyπ 0 := by
+    have hfrom := congrArg Quiver.Hom.unop (P.fromLeftDerivedZero_eq F)
+    have hcomp : S.op.homologyι.unop ≫ S.homologyOpIso.inv.unop =
+        S.opcyclesOpIso.inv.unop ≫ S.homologyπ := by
+      have h := congrArg Quiver.Hom.unop
+        (shortComplex_homologyOpIso_inv_comp_op_homologyι_comp_opcyclesOpIso_hom S)
+      have h' : S.opcyclesOpIso.hom.unop ≫
+          (S.op.homologyι.unop ≫ S.homologyOpIso.inv.unop) = S.homologyπ := by
+        simpa only [unop_comp, Category.assoc, Quiver.Hom.unop_op] using h
+      have hinv : S.opcyclesOpIso.inv.unop ≫ S.opcyclesOpIso.hom.unop = 𝟙 _ := by
+        rw [← unop_comp, Iso.hom_inv_id, unop_id]
+      rw [← h', ← Category.assoc, hinv, Category.id_comp]
+    rw [extZeroIso_inv]
+    dsimp only [ProjectiveResolution.isoExt, Iso.trans_hom, Iso.symm_hom]
+    have h1 : (((linearYoneda k C).obj Y).rightOp.fromLeftDerivedZero.app X).unop =
+        (P.fromLeftDerivedZero' F).unop ≫ (ChainComplex.isoHomologyι₀ L).hom.unop ≫
+          (P.isoLeftDerivedObj F 0).hom.unop := by
+      simpa only [unop_comp, Category.assoc] using hfrom
+    have hcancel : (P.isoLeftDerivedObj F 0).hom.unop ≫
+        (P.isoLeftDerivedObj F 0).inv.unop = 𝟙 _ := by
+      rw [← unop_comp, Iso.inv_hom_id, unop_id]
+    erw [h1, Category.assoc, Category.assoc, reassoc_of% hcancel]
+    exact congrArg ((P.fromLeftDerivedZero' F).unop ≫ ·) hcomp
+  rw [extObjIsoLinearExtFunctor_hom_app, ← Category.assoc, hL]
+  ext f
+  let f₀ : X ⟶ Y := f
+  let y : K.cycles 0 := (S.opcyclesOpIso.inv).unop ((P.fromLeftDerivedZero' F).unop f)
+  have hy_val : (K.moduleCatCyclesToKer 0 1 y).val = P.π.f 0 ≫ f₀ := by
+    rw [HomologicalComplex.coe_moduleCatCyclesToKer]
+    have h1 : (S.opcyclesOpIso.inv).unop ≫ K.iCycles 0 = (L.pOpcycles 0).unop := by
+      have h := congrArg Quiver.Hom.unop (ShortComplex.op_pOpcycles_opcyclesOpIso_hom S)
+      have h' : (S.opcyclesOpIso.inv).unop ≫ K.iCycles 0 =
+          ((S.opcyclesOpIso.inv).unop ≫ (S.opcyclesOpIso.hom).unop) ≫
+            (S.op.pOpcycles).unop := by
+        change (S.opcyclesOpIso.inv).unop ≫ S.iCycles = _
+        rw [Category.assoc, ← unop_comp]
+        exact congrArg (S.opcyclesOpIso.inv.unop ≫ ·) h.symm
+      have hcancel : S.opcyclesOpIso.inv.unop ≫ S.opcyclesOpIso.hom.unop = 𝟙 _ := by
+        rw [← unop_comp, Iso.hom_inv_id, unop_id]
+      rw [h']
+      erw [hcancel, Category.id_comp]
+      rfl
+    have h2 : (P.fromLeftDerivedZero' F).unop ≫ (L.pOpcycles 0).unop =
+        (F.map (P.π.f 0)).unop := by
+      rw [← unop_comp, P.pOpcycles_comp_fromLeftDerivedZero' F]
+    have h3 : (K.iCycles 0) y = ((F.map (P.π.f 0)).unop) f := by
+      change ((P.fromLeftDerivedZero' F).unop ≫ (S.opcyclesOpIso.inv).unop ≫ K.iCycles 0) f = _
+      erw [h1, h2]
+      rfl
+    exact h3
+  have hker : ((K.d 0 1).hom) (P.π.f 0 ≫ f₀) = 0 := by
+    change P.complex.d 1 0 ≫ P.π.f 0 ≫ f₀ = 0
+    simp
+  have hz : K.homologyπ 0 y =
+      K.moduleCatKerHomologyClass (n := 0) (m := 1) (by simp) ⟨P.π.f 0 ≫ f₀, hker⟩ := by
+    rw [← K.moduleCatKerHomologyClass_moduleCatCyclesToKer (m := 1) (by simp) y]
+    exact congrArg _ (Subtype.ext hy_val)
+  erw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply,
+    ProjectiveResolution.homologyLinearYonedaIso_hom_apply]
+  refine (congrArg (P.homologyLinearYonedaEquiv (k := k) (Y := Y) 0) hz).trans ?_
+  rw [ProjectiveResolution.homologyLinearYonedaEquiv_moduleCatKerHomologyClass]
+  exact P.extMk_π_f_zero_comp f₀
 
 end CategoryTheory

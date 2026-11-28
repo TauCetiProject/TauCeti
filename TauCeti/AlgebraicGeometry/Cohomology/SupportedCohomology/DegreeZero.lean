@@ -199,25 +199,21 @@ def tildeCompSupportedSubmoduleSectionsTopIso {I : Ideal R} (hI : I.FG) :
     refine (cancel_mono
       ((((tildeSheafFunctor R).obj N).supportedSubmoduleι
         (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤))).1 ?_
+    have hcomm : I.primaryComponentFunctor.map f ≫ I.primaryComponentFunctorι.app N ≫
+        tilde.toOpen N ⊤ =
+      I.primaryComponentFunctorι.app M ≫ tilde.toOpen M ⊤ ≫
+        (modulesSpecToSheaf.map (tilde.map f)).hom.app (op ⊤) := by
+      rw [← Category.assoc, I.primaryComponentFunctorι.naturality, Functor.id_map,
+        Category.assoc]
+      exact (congrArg (I.primaryComponentFunctorι.app M ≫ ·)
+        (tilde.toOpen_map_app f ⊤).symm).trans (Category.assoc _ _ _).symm
     simp only [Category.assoc]
     rw [Functor.comp_map, supportedSubmoduleSectionsFunctor_map_ι_hom_app,
       ← Category.assoc (primaryComponentIsoSupportedSubmoduleTop hI M).hom,
       primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI M,
       primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI N,
       tildeSheafFunctor_map]
-    calc
-      I.primaryComponentFunctor.map f ≫ I.primaryComponentFunctorι.app N ≫ tilde.toOpen N ⊤
-        = (I.primaryComponentFunctor.map f ≫ I.primaryComponentFunctorι.app N) ≫
-            tilde.toOpen N ⊤ := (Category.assoc _ _ _).symm
-      _ = (I.primaryComponentFunctorι.app M ≫ (𝟭 (ModuleCat.{u} R)).map f) ≫
-            tilde.toOpen N ⊤ := by
-          rw [I.primaryComponentFunctorι.naturality]
-      _ = I.primaryComponentFunctorι.app M ≫ f ≫ tilde.toOpen N ⊤ :=
-          Category.assoc _ _ _
-      _ = I.primaryComponentFunctorι.app M ≫ tilde.toOpen M ⊤ ≫
-            (modulesSpecToSheaf.map (tilde.map f)).hom.app (op ⊤) :=
-          congrArg _ (tilde.toOpen_map_app f ⊤).symm
-      _ = _ := (Category.assoc _ _ _).symm).symm
+    exact hcomm).symm
 
 /-- Under the inverse of `tildeCompSupportedSubmoduleSectionsTopIso`, the inclusion of supported
 global sections of `M~` agrees with `I.primaryComponentFunctorι` followed by `tilde.toOpen`. -/

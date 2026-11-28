@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import Mathlib.CategoryTheory.Abelian.Injective.Ext
 public import Mathlib.CategoryTheory.Linear.Yoneda
 public import Mathlib.CategoryTheory.Abelian.RightDerived
@@ -167,6 +168,39 @@ lemma homologyLinearCoyonedaEquiv_naturality_left {X' : C} (g : X' ⟶ X) (n : �
     homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass]
   exact (R.mk₀_comp_extMk z.val (n + 1) rfl z.property g).symm
 
+/-- In degree zero, the augmentation morphism `Y ⟶ I⁰` of an injective resolution represents
+the identity class `Ext.mk₀ (𝟙 Y)` in `Ext⁰(Y, Y)`. -/
+lemma extMk_ι_f_zero :
+    R.extMk (R.ι.f 0) 1 rfl (by simp) = Ext.mk₀ (𝟙 Y) := by
+  have := HasDerivedCategory.standard C
+  have hc : Cocycle.equivHomShift.symm
+      (Cocycle.fromSingleMk (R.ι.f 0 ≫ (R.cochainComplexXIso (0 : ℕ) 0 rfl).inv)
+        (zero_add ((0 : ℕ) : ℤ)) ((1 : ℕ) : ℤ) (by lia)
+        (by simp [R.cochainComplex_d 0 1 0 1 rfl rfl])) =
+      ShiftedHom.mk₀ ((0 : ℕ) : ℤ) (by simp) R.ι' := by
+    refine Cocycle.equivHomShift.injective ?_
+    rw [AddEquiv.apply_symm_apply]
+    refine Cocycle.ext (Cochain.ext _ _ fun p q hpq ↦ ?_)
+    by_cases hp : p = 0
+    · subst hp
+      obtain rfl : q = 0 := by simpa using hpq.symm
+      simp [Cocycle.equivHomShift_apply, ShiftedHom.mk₀, shiftFunctorZero',
+        Cochain.rightUnshift_v _ 0 _ _ _ _ _ rfl, InjectiveResolution.ι'_f_zero,
+        CochainComplex.shiftFunctorZero_inv_app_f]
+    · rw [Cocycle.fromSingleMk_coe, Cochain.fromSingleMk_v_eq_zero _ _ _ _ _ hp]
+      exact ((HomologicalComplex.isZero_single_obj_X _ 0 Y p hp).eq_of_src _ _).symm
+  ext
+  rw [R.extMk_hom, hc, ShiftedHom.map_mk₀, ShiftedHom.mk₀_comp_mk₀,
+    IsIso.hom_inv_id_assoc, ShiftedHom.mk₀_comp_mk₀]
+  erw [Iso.hom_inv_id_app]
+  simp [Ext.mk₀_hom]
+
+/-- In degree zero, the cocycle `f ≫ I.ι.f 0` of an injective resolution represents `Ext.mk₀ f`. -/
+lemma extMk_comp_ι_f_zero (f : X ⟶ Y) :
+    R.extMk (f ≫ R.ι.f 0) 1 rfl (by simp) = Ext.mk₀ f := by
+  rw [← R.mk₀_comp_extMk _ 1 rfl (by simp) f, R.extMk_ι_f_zero, Ext.mk₀_comp_mk₀,
+    Category.comp_id]
+
 end CategoryTheory.InjectiveResolution
 
 namespace CategoryTheory
@@ -220,6 +254,51 @@ lemma rightDerivedLinearCoyonedaIsoExt_hom_app (n : ℕ) (Y : C) :
         ModuleCat.ofHom ((injectiveResolution Y).homologyLinearCoyonedaEquiv
           (k := k) (X := X) n).toLinearMap :=
   (rfl)
+
+/-- In degree zero, `rightDerivedLinearCoyonedaIsoExt` identifies the canonical map
+`Hom(X, Y) ⟶ R⁰Hom(X, -)(Y)` with the inverse of `Ext.linearEquiv₀`. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_rightDerivedLinearCoyonedaIsoExt_hom_app (Y : C) :
+    ((linearCoyoneda k C).obj (Opposite.op X)).toRightDerivedZero.app Y ≫
+        (rightDerivedLinearCoyonedaIsoExt k X 0).hom.app Y =
+      ModuleCat.ofHom (Ext.linearEquiv₀ (R := k)).symm.toLinearMap := by
+  rw [rightDerivedLinearCoyonedaIsoExt_hom_app,
+    (injectiveResolution Y).toRightDerivedZero_eq ((linearCoyoneda k C).obj (Opposite.op X))]
+  ext f
+  let f₀ : X ⟶ Y := f
+  let e := (injectiveResolution Y).isoRightDerivedObj
+    ((linearCoyoneda k C).obj (Opposite.op X)) 0
+  change (injectiveResolution Y).homologyLinearCoyonedaEquiv (k := k) (X := X) 0
+      (e.hom (e.inv (((injectiveResolution Y).toRightDerivedZero'
+        ((linearCoyoneda k C).obj (Opposite.op X)) ≫
+        (CochainComplex.isoHomologyπ₀ _).hom) f))) = _
+  -- `erw` identifies `homologyFunctor.obj` with native homology in the domain of `e.hom`.
+  erw [Iso.inv_hom_id_apply]
+  have hcyc : (((injectiveResolution Y).linearCoyonedaComplex k X).moduleCatCyclesToKer 0 1
+      ((injectiveResolution Y).toRightDerivedZero' ((linearCoyoneda k C).obj (Opposite.op X))
+        f)).val =
+      f₀ ≫ (injectiveResolution Y).ι.f 0 := by
+    rw [HomologicalComplex.coe_moduleCatCyclesToKer]
+    erw [← ModuleCat.comp_apply, InjectiveResolution.toRightDerivedZero'_comp_iCycles]
+    rfl
+  have hker : ((((injectiveResolution Y).linearCoyonedaComplex k X).d 0 1).hom)
+      (f₀ ≫ (injectiveResolution Y).ι.f 0) = 0 := by
+    change (f₀ ≫ (injectiveResolution Y).ι.f 0) ≫ (injectiveResolution Y).cocomplex.d 0 1 = 0
+    rw [Category.assoc, (injectiveResolution Y).ι.comm 0 1]
+    simp
+  have hz : ((injectiveResolution Y).toRightDerivedZero'
+        ((linearCoyoneda k C).obj (Opposite.op X)) ≫
+      (CochainComplex.isoHomologyπ₀ _).hom) f =
+      ((injectiveResolution Y).linearCoyonedaComplex k X).moduleCatKerHomologyClass
+        (n := 0) (m := 1) (by simp) ⟨f₀ ≫ (injectiveResolution Y).ι.f 0, hker⟩ := by
+    let K := (injectiveResolution Y).linearCoyonedaComplex k X
+    erw [ModuleCat.comp_apply,
+      ← K.moduleCatKerHomologyClass_moduleCatCyclesToKer (m := 1) (by simp)]
+    exact congrArg _ (Subtype.ext hcyc)
+  refine (congrArg ((injectiveResolution Y).homologyLinearCoyonedaEquiv (k := k) (X := X) 0)
+    hz).trans ?_
+  rw [InjectiveResolution.homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass]
+  exact (injectiveResolution Y).extMk_comp_ι_f_zero f₀
 
 /-- The derived Hom-to-Ext comparison is natural in the contravariant Hom argument. -/
 @[reassoc]
