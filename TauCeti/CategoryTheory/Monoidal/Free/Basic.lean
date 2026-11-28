@@ -23,9 +23,10 @@ words for letters when the target is another free monoidal category).
 * `CategoryTheory.FreeMonoidalCategory.tensor_injective` and
   `CategoryTheory.FreeMonoidalCategory.tensorObj_inj`: formal tensor product of words is injective
   in both factors.
-* `CategoryTheory.FreeMonoidalCategory.projectObj_tensorUnit` and
-  `CategoryTheory.FreeMonoidalCategory.projectObj_tensorObj`: `@[simp]` evaluation rules on the
-  monoidal unit and tensor products.
+* `CategoryTheory.FreeMonoidalCategory.projectObj_apply_of`,
+  `CategoryTheory.FreeMonoidalCategory.projectObj_tensorUnit`, and
+  `CategoryTheory.FreeMonoidalCategory.projectObj_tensorObj`: `@[simp]` evaluation rules on
+  generators, the monoidal unit, and tensor products.
 * `CategoryTheory.FreeMonoidalCategory.projectObj_congr`: pointwise equal generator maps evaluate
   identically on every tensor word.
 * `CategoryTheory.FreeMonoidalCategory.projectObj_of`: interpreting a word by its own letters
@@ -74,6 +75,11 @@ end Injectivity
 section ProjectObj
 
 variable {C : Type u} {C' : Type u'} {D : Type u''} [Category.{v''} D] [MonoidalCategory D]
+
+@[simp]
+theorem projectObj_apply_of (f : C → D) (a : C) :
+    projectObj f (of a) = f a :=
+  rfl
 
 @[simp]
 theorem projectObj_tensorUnit (f : C → D) : projectObj f (𝟙_ (FreeMonoidalCategory C)) = 𝟙_ D :=

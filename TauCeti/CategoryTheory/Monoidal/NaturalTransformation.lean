@@ -31,16 +31,18 @@ follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
 
 Bundled strong monoidal functors `TauCeti.MonoidalFunctor C D`, with the monoidal natural
 transformations as morphisms, embed fully faithfully into `LaxMonoidalFunctor C D`
-(`TauCeti.MonoidalFunctor.fullyFaithfulForget`). Their isomorphisms are the monoidal natural
-isomorphisms, so the core of this category is the groupoid of strong monoidal functors in which
-universal properties of free monoidal categories are stated. The category structure, induced
-from `LaxMonoidalFunctor C D`, and its forgetful-functor API follow Mathlib's bundled lax braided
-functors `CategoryTheory.LaxBraidedFunctor` (`Mathlib/CategoryTheory/Monoidal/Braided/Basic.lean`).
+(`TauCeti.MonoidalFunctor.fullyFaithfulForget`), and admit precomposition by any strong monoidal
+functor (`TauCeti.MonoidalFunctor.precomp` with computation rules `precomp_obj` and
+`precomp_map_hom_hom`). Their isomorphisms are the monoidal natural isomorphisms, so the core of
+this category is the groupoid of strong monoidal functors in which universal properties of free
+monoidal categories are stated. The category structure, induced from `LaxMonoidalFunctor C D`,
+and its forgetful-functor API follow Mathlib's bundled lax braided functors
+`CategoryTheory.LaxBraidedFunctor` (`Mathlib/CategoryTheory/Monoidal/Braided/Basic.lean`).
 -/
 
 public section
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace CategoryTheory.LaxMonoidalFunctor
 
@@ -233,6 +235,41 @@ def toFunctorIso {F G : MonoidalFunctor C D} (e : F ≅ G) : F.toFunctor ≅ G.t
 
 instance {F G : MonoidalFunctor C D} (e : F ≅ G) : NatTrans.IsMonoidal (toFunctorIso e).hom :=
   e.hom.hom.isMonoidal
+
+section Precomp
+
+variable {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E]
+
+/-- Precomposition by a strong monoidal functor, on bundled strong monoidal functors and monoidal
+natural transformations. -/
+@[expose] def precomp (F : C ⥤ D) [F.Monoidal] : MonoidalFunctor D E ⥤ MonoidalFunctor C E where
+  obj G := .of (F ⋙ G.toFunctor)
+  map α :=
+    have : NatTrans.IsMonoidal α.hom.hom := α.hom.isMonoidal
+    ⟨⟨Functor.whiskerLeft F α.hom.hom, NatTrans.IsMonoidal.whiskerLeft α.hom.hom⟩⟩
+  map_id _ := hom_ext (by ext; rfl)
+  map_comp _ _ := hom_ext (by ext; rfl)
+
+/-- Precomposition sends a bundled strong monoidal functor `G` to
+`MonoidalFunctor.of (F ⋙ G.toFunctor)`. -/
+@[simp]
+theorem precomp_obj (F : C ⥤ D) [F.Monoidal] (G : MonoidalFunctor D E) :
+    (precomp F).obj G = .of (F ⋙ G.toFunctor) :=
+  (rfl)
+
+/-- Precomposition leaves the underlying functor equal to the ordinary composite. -/
+theorem precomp_obj_toFunctor (F : C ⥤ D) [F.Monoidal] (G : MonoidalFunctor D E) :
+    ((precomp F).obj G).toFunctor = F ⋙ G.toFunctor :=
+  (rfl)
+
+/-- Precomposition acts on a monoidal natural transformation by ordinary left whiskering on its
+underlying natural transformation. -/
+@[simp]
+theorem precomp_map_hom_hom (F : C ⥤ D) [F.Monoidal] {G H : MonoidalFunctor D E} (α : G ⟶ H) :
+    ((precomp F).map α).hom.hom = Functor.whiskerLeft F α.hom.hom :=
+  (rfl)
+
+end Precomp
 
 end MonoidalFunctor
 

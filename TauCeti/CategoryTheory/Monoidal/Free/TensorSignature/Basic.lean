@@ -253,24 +253,6 @@ theorem tensorUnit_as : (𝟙_ S.FreeMonoidal).as = 𝟙_ (FreeMonoidalCategory 
 theorem tensorObj_as (X Y : S.FreeMonoidal) : (X ⊗ Y).as = X.as ⊗ Y.as :=
   rfl
 
-@[simp]
-theorem projectObj_as_of {D : Type*} [Category* D] [MonoidalCategory D]
-    (f : S.Obj → D) (a : S.Obj) :
-    projectObj f (of a : S.FreeMonoidal).as = f a :=
-  rfl
-
-@[simp]
-theorem projectObj_as_tensorUnit {D : Type*} [Category* D] [MonoidalCategory D]
-    (f : S.Obj → D) :
-    projectObj f (𝟙_ S.FreeMonoidal).as = 𝟙_ D :=
-  rfl
-
-@[simp]
-theorem projectObj_as_tensorObj {D : Type*} [Category* D] [MonoidalCategory D]
-    (f : S.Obj → D) (X Y : S.FreeMonoidal) :
-    projectObj f (X ⊗ Y).as = projectObj f X.as ⊗ projectObj f Y.as :=
-  rfl
-
 /-- The word underlying the interpretation of a tensor word by objects `h` of the free monoidal
 category on a signature is its interpretation by the words underlying those objects. -/
 theorem as_projectObj {A : Type*} (h : A → S.FreeMonoidal) (X : FreeMonoidalCategory A) :

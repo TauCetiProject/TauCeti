@@ -53,7 +53,8 @@ interpretation isomorphisms (`mapSubstCompLiftIso_natural`).
   images `fo` of the generating objects and `fc` of the coupons satisfying the equations, with
   computation rules `TauCeti.TensorSignature.Presented.lift_obj` and
   `TauCeti.TensorSignature.Presented.lift_map`, functoriality in interpretation morphisms
-  `TauCeti.TensorSignature.Presented.liftIso`, the factorization
+  `TauCeti.TensorSignature.Presented.liftIso`, satisfaction invariance
+  `TauCeti.TensorSignature.Presented.satisfies_iff_of_iso`, the factorization
   `TauCeti.TensorSignature.Presented.quotientFunctor_comp_lift`, and the exact `↔` descent
   characterizations `TauCeti.TensorSignature.Presented.exists_lift_iff` and
   `TauCeti.TensorSignature.Presented.exists_iso_lift_iff`.
@@ -120,6 +121,13 @@ abbrev Satisfies {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
         FreeMonoidalCategory.projectObj fo (S.tgt g)) : Prop :=
   ∀ ⦃X Y : S.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
     (FreeMonoidal.lift fo fc).map f = (FreeMonoidal.lift fo fc).map g
+
+/-- Isomorphic interpretations satisfy the same presentation equations. -/
+theorem satisfies_iff_of_iso {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
+    {I J : Interpretation S D} (α : I ⟶ J) :
+    Satisfies R I.obj I.coupon ↔ Satisfies R J.obj J.coupon :=
+  forall₄_congr fun _ _ _ _ ↦ imp_congr_right fun _ ↦
+    NatIso.map_eq_iff (MonoidalFunctor.toFunctorIso ((Interpretation.extension S D).map α).iso)
 
 /-- A substitution `σ : Substitution S T` respects presentations `(S, R)` and `(T, R')` if
 `σ.toFunctor` sends every defining equation of `R` to an equality in `T.Presented R'`. -/
@@ -403,30 +411,30 @@ theorem quotientFunctor_comp_mapSubst :
       (quotientFunctor R').map (σ.toFunctor.map f) := rfl
 
 @[simp] theorem mapSubst_ε : Functor.LaxMonoidal.ε (mapSubst σ hσ) = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_ε _ _).trans (by
+  (CategoryTheory.Quotient.lift_ε _ _).trans <| by
     simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_ε, Substitution.toFunctor_ε,
       CategoryTheory.Quotient.functor_ε, Category.id_comp]
-    exact (quotientFunctor R').map_id _)
+    exact (quotientFunctor R').map_id _
 
 @[simp] theorem mapSubst_η : Functor.OplaxMonoidal.η (mapSubst σ hσ) = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_η _ _).trans (by
+  (CategoryTheory.Quotient.lift_η _ _).trans <| by
     simp only [Functor.comp_obj, Functor.OplaxMonoidal.comp_η, Substitution.toFunctor_η,
       CategoryTheory.Quotient.functor_η, Category.comp_id]
-    exact (quotientFunctor R').map_id _)
+    exact (quotientFunctor R').map_id _
 
 @[simp] theorem mapSubst_μ (X Y : S.Presented R) :
     Functor.LaxMonoidal.μ (mapSubst σ hσ) X Y = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_μ _ _ X.as Y.as).trans (by
+  (CategoryTheory.Quotient.lift_μ _ _ X.as Y.as).trans <| by
     simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_μ, Substitution.toFunctor_μ,
       CategoryTheory.Quotient.functor_μ, Category.id_comp]
-    exact (quotientFunctor R').map_id _)
+    exact (quotientFunctor R').map_id _
 
 @[simp] theorem mapSubst_δ (X Y : S.Presented R) :
     Functor.OplaxMonoidal.δ (mapSubst σ hσ) X Y = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_δ _ _ X.as Y.as).trans (by
+  (CategoryTheory.Quotient.lift_δ _ _ X.as Y.as).trans <| by
     simp only [Functor.comp_obj, Functor.OplaxMonoidal.comp_δ, Substitution.toFunctor_δ,
       CategoryTheory.Quotient.functor_δ, Category.comp_id]
-    exact (quotientFunctor R').map_id _)
+    exact (quotientFunctor R').map_id _
 
 end Basic
 
@@ -615,12 +623,9 @@ theorem mapSubstCompIso_id_left
         Functor.isoWhiskerRight (mapSubstIdIso R) (mapSubst σ hσ) ≪≫
         Functor.leftUnitor (mapSubst σ hσ) =
       eqToIso (mapSubst_congr (Substitution.id_comp σ) _ hσ) :=
-  CategoryTheory.Quotient.natIso_ext fun X ↦ by
-  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
-    Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
-    mapSubstCompIso_hom_app, mapSubstIdIso_hom_app, mapSubst_obj, eqToIso.hom, eqToHom_app,
-    eqToHom_map, Category.comp_id]
-  exact TauCeti.eqToHom_comp_eqToHom _ _ _
+  NatIso.whiskerRight_leftUnitor_eq_eqToIso_of_hom_app_eqToHom _ _ _
+    (fun X ↦ ⟨_, mapSubstCompIso_hom_app _ _ X.as⟩)
+    (fun X ↦ ⟨_, mapSubstIdIso_hom_app _ X.as⟩)
 
 /-- Right unit coherence for `mapSubst`: composing `mapSubstCompIso` with `mapSubstIdIso R'`
 agrees with `Substitution.comp_id`. -/
@@ -632,11 +637,9 @@ theorem mapSubstCompIso_id_right
         Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstIdIso R') ≪≫
         Functor.rightUnitor (mapSubst σ hσ) =
       eqToIso (mapSubst_congr (Substitution.comp_id σ) _ hσ) :=
-  CategoryTheory.Quotient.natIso_ext fun X ↦ by
-  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-    Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
-    mapSubstCompIso_hom_app, mapSubst_obj, mapSubstIdIso_hom_app, eqToHom_trans,
-    Category.comp_id, eqToIso.hom, eqToHom_app]
+  NatIso.whiskerLeft_rightUnitor_eq_eqToIso_of_hom_app_eqToHom _ _ _
+    (fun X ↦ ⟨_, mapSubstCompIso_hom_app _ _ X.as⟩)
+    (fun X ↦ ⟨_, mapSubstIdIso_hom_app _ X.as⟩)
 
 /-- Associativity coherence (pentagon) for `mapSubstCompIso`. -/
 theorem mapSubstCompIso_assoc
@@ -653,12 +656,11 @@ theorem mapSubstCompIso_assoc
       eqToIso (mapSubst_congr (Substitution.comp_assoc σ τ ρ) _ _) ≪≫
         mapSubstCompIso hσ (mapSubst_comp_respects hτ hρ) ≪≫
         Functor.isoWhiskerLeft (mapSubst σ hσ) (mapSubstCompIso hτ hρ) :=
-  CategoryTheory.Quotient.natIso_ext fun X ↦ by
-  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
-    Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
-    Functor.whiskerLeft_app, Functor.comp_obj, mapSubstCompIso_hom_app, mapSubst_obj,
-    eqToHom_map, eqToHom_trans, Category.comp_id, eqToIso.hom, eqToHom_app]
-  exact TauCeti.eqToHom_comp_eqToHom_eq _ _ _ _
+  NatIso.whiskerRight_associator_eq_whiskerLeft_of_hom_app_eqToHom _ _ _ _ _
+    (fun X ↦ ⟨_, mapSubstCompIso_hom_app _ _ X.as⟩)
+    (fun X ↦ ⟨_, mapSubstCompIso_hom_app _ _ X.as⟩)
+    (fun X ↦ ⟨_, mapSubstCompIso_hom_app _ _ X.as⟩)
+    (fun X ↦ ⟨_, mapSubstCompIso_hom_app _ _ X.as⟩)
 
 end Functoriality
 
