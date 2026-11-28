@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Sobolev.W1p.Density
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
@@ -30,8 +32,6 @@ classical statement carries the constant `2`, which the inequality above improve
 
 ## Main results
 
-* `HasCompactSupport.eNorm_sq_le_lintegral_eNorm_mul_eNorm_deriv`: on the line,
-  `‖v s‖² ≤ ∫ ‖v‖ ‖v'‖` for a compactly supported `C¹` function `v`.
 * `OrthonormalBasis.lintegral_eNorm_pow_four_le`: the product form
   `∫ ‖u‖⁴ ≤ (∫ ‖u‖ ‖∂₁u‖) (∫ ‖u‖ ‖∂₂u‖)` for the partial derivatives along an orthonormal
   basis, for a compactly supported `C¹` map `u` with values in a real inner product space.
@@ -44,12 +44,15 @@ classical statement carries the constant `2`, which the inequality above improve
 
 ## Proof
 
-By the one-dimensional bound, applied on the horizontal and the vertical line through a point of
-the coordinate plane, `‖u (s, t)‖² ≤ A t` and `‖u (s, t)‖² ≤ B s`, where `A t` and `B s` integrate
-`‖u‖ ‖∂₁u‖` and `‖u‖ ‖∂₂u‖` along these lines. Multiplying and integrating by Tonelli's theorem
-gives the product form, which transfers to `E` through an orthonormal basis. Hölder's inequality
-`∫ ‖u‖ ‖∇u‖ ≤ ‖u‖₂ ‖∇u‖₂` bounds each factor. On `W^{1,2}(E)` the inequality follows from the
-density of test functions and Fatou's lemma along an almost everywhere convergent subsequence.
+By the one-dimensional bound `‖v s‖² ≤ ∫ ‖v‖ ‖v'‖`
+(`HasCompactSupport.eNorm_sq_le_lintegral_eNorm_mul_eNorm_deriv`), applied on the horizontal and
+the vertical line through a point of the coordinate plane, `‖u (s, t)‖² ≤ A t` and
+`‖u (s, t)‖² ≤ B s`, where `A t` and `B s` integrate `‖u‖ ‖∂₁u‖` and `‖u‖ ‖∂₂u‖` along these
+lines. Multiplying and integrating by Tonelli's theorem gives the product form, which transfers to
+`E` through an orthonormal basis. Hölder's inequality `∫ ‖u‖ ‖∇u‖ ≤ ‖u‖₂ ‖∇u‖₂`
+(`TauCeti.lintegral_enorm_mul_enorm_le`) bounds each factor. On `W^{1,2}(E)` the inequality
+follows from the density of test functions and Fatou's lemma along an almost everywhere convergent
+subsequence.
 
 ## References
 
@@ -65,29 +68,6 @@ open scoped ENNReal Distributions
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- A compactly supported `C¹` function `v : ℝ → F` with values in a real inner product space
-satisfies `‖v s‖² ≤ ∫ ‖v‖ ‖v'‖` at every point. -/
-theorem _root_.HasCompactSupport.eNorm_sq_le_lintegral_eNorm_mul_eNorm_deriv {v : ℝ → F}
-    (hc : HasCompactSupport v) (hv : ContDiff ℝ 1 v) (s : ℝ) :
-    ‖v s‖ₑ ^ 2 ≤ ∫⁻ r, ‖v r‖ₑ * ‖deriv v r‖ₑ := by
-  have hd (r : ℝ) : HasDerivAt (fun r ↦ ‖v r‖ ^ 2) (2 * inner ℝ (v r) (deriv v r)) r :=
-    ((hv.differentiable one_ne_zero r).hasDerivAt).norm_sq
-  have hle (r : ℝ) : ‖deriv (fun r ↦ ‖v r‖ ^ 2) r‖ₑ ≤ 2 * (‖v r‖ₑ * ‖deriv v r‖ₑ) := by
-    rw [(hd r).deriv, ← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul
-      (norm_nonneg _), ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
-    refine ENNReal.ofReal_le_ofReal ?_
-    rw [norm_mul, Real.norm_ofNat]
-    gcongr
-    exact abs_real_inner_le_norm _ _
-  have hc' : HasCompactSupport fun r ↦ ‖v r‖ ^ 2 :=
-    hc.comp_left (g := fun y : F ↦ ‖y‖ ^ 2) (by simp)
-  have hv' : ContDiff ℝ 1 fun r ↦ ‖v r‖ ^ 2 := hv.norm_sq ℝ
-  have h := hc'.two_mul_eNorm_le_lintegral_eNorm_deriv hv' s
-  rw [eNorm_pow, eNorm_norm] at h
-  refine (ENNReal.mul_le_mul_iff_right two_ne_zero ENNReal.ofNat_ne_top).1 (h.trans ?_)
-  rw [← lintegral_const_mul' _ _ ENNReal.ofNat_ne_top]
-  exact lintegral_mono hle
 
 /-- Ladyzhenskaya's inequality on the coordinate plane `ℝ × ℝ`, in product form. -/
 private theorem lintegral_eNorm_pow_four_le_prod {w : ℝ × ℝ → F} (hc : HasCompactSupport w)
@@ -124,7 +104,7 @@ private theorem lintegral_eNorm_pow_four_le_prod {w : ℝ × ℝ → F} (hc : Ha
       (hw.comp (contDiff_const.prodMk contDiff_id)) t
   calc ∫⁻ p, ‖w p‖ₑ ^ 4 ≤ ∫⁻ p, (∫⁻ r, g (p.1, r)) * ∫⁻ r, f (r, p.2) :=
         lintegral_mono fun p ↦ by
-          rw [show 4 = 2 + 2 from rfl, pow_add]
+          rw [show 4 = 2 + 2 by norm_num, pow_add]
           exact mul_le_mul' (hB p.1 p.2) (hA p.1 p.2)
     _ = (∫⁻ s, ∫⁻ r, g (s, r)) * ∫⁻ t, ∫⁻ r, f (r, t) := by
         rw [Measure.volume_eq_prod]
@@ -172,17 +152,6 @@ theorem _root_.OrthonormalBasis.lintegral_eNorm_pow_four_le (b : OrthonormalBasi
     he.lintegral_comp (f := fun x ↦ ‖u x‖ₑ * ‖fderiv ℝ u x (b 1)‖ₑ)
       (hu'.mul (continuous_eNorm.comp (hcu.clm_apply continuous_const)).measurable)] at key
 
-/-- Hölder's inequality `∫ ‖u‖ ‖∇u‖ ≤ ‖u‖₂ ‖∇u‖₂`. -/
-private theorem lintegral_eNorm_mul_eNorm_fderiv_le {u : E → F} (hu : ContDiff ℝ 1 u) :
-    ∫⁻ x, ‖u x‖ₑ * ‖fderiv ℝ u x‖ₑ ≤ eLpNorm u 2 volume * eLpNorm (fderiv ℝ u) 2 volume := by
-  have hu_m : AEStronglyMeasurable u volume := hu.continuous.aestronglyMeasurable
-  have hDu_m : AEStronglyMeasurable (fderiv ℝ u) volume :=
-    (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable
-  have h := eLpNorm_smul_le_mul_eLpNorm (p := 2) (q := 2) (r := 1) hu_m.norm hDu_m.norm
-  rw [eLpNorm_norm _ hu_m, eLpNorm_norm _ hDu_m,
-    eLpNorm_one_eq_lintegral_eNorm (hu_m.norm.smul hDu_m.norm)] at h
-  simpa only [Pi.smul_apply, Pi.mul_apply, smul_eq_mul, eNorm_mul, eNorm_norm] using h
-
 /-- **Ladyzhenskaya's inequality.** On a two-dimensional real inner product space, a compactly
 supported `C¹` map `u` with values in a real inner product space satisfies
 `‖u‖₄² ≤ ‖u‖₂ ‖∇u‖₂`, where `∇u = fderiv ℝ u` carries the operator norm. -/
@@ -198,20 +167,13 @@ theorem eLpNorm_four_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) {u : E →
   have h4 : eLpNorm u 4 volume ^ 4 = ∫⁻ x, ‖u x‖ₑ ^ 4 := by
     simpa using eLpNorm_nnreal_pow_eq_lintegral (p := 4) (by norm_num)
       hu.continuous.aestronglyMeasurable
+  have hholder : ∫⁻ x, ‖u x‖ₑ * ‖fderiv ℝ u x‖ₑ ≤
+      eLpNorm u 2 volume * eLpNorm (fderiv ℝ u) 2 volume :=
+    lintegral_enorm_mul_enorm_le hu.continuous.aestronglyMeasurable
+      (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable
   rw [← ENNReal.pow_le_pow_left_iff two_ne_zero, ← pow_mul, h4, sq]
   exact (b.lintegral_eNorm_pow_four_le hc hu).trans
-    (mul_le_mul' ((hfac 0).trans (lintegral_eNorm_mul_eNorm_fderiv_le hu))
-      ((hfac 1).trans (lintegral_eNorm_mul_eNorm_fderiv_le hu)))
-
-/-- `∫ ‖g‖ⁿ` as the `n`-th power of the `Lⁿ` seminorm. -/
-private theorem integral_norm_pow_eq_toReal_eLpNorm_pow {G : Type*} [NormedAddCommGroup G]
-    {g : E → G} (hg : AEStronglyMeasurable g volume) {n : ℕ} (hn : n ≠ 0) :
-    ∫ x, ‖g x‖ ^ n = (eLpNorm g n volume ^ n).toReal := by
-  rw [integral_eq_lintegral_of_nonneg_ae (f := fun x ↦ ‖g x‖ ^ n)
-    (Eventually.of_forall fun _ ↦ by positivity) (hg.norm.pow n)]
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := n) (by exact_mod_cast hn) hg
-  simp only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] at h
-  simp only [h, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    (mul_le_mul' ((hfac 0).trans hholder) ((hfac 1).trans hholder))
 
 /-- **Ladyzhenskaya's inequality**, integral form: on a two-dimensional real inner product space,
 a compactly supported `C¹` map `u` with values in a real inner product space satisfies
@@ -221,10 +183,14 @@ theorem integral_norm_pow_four_le_of_finrank_eq_two (hE : finrank ℝ E = 2) {u 
     ∫ x, ‖u x‖ ^ 4 ≤ (∫ x, ‖u x‖ ^ 2) * ∫ x, ‖fderiv ℝ u x‖ ^ 2 := by
   have hu_m := hu.continuous.aestronglyMeasurable (μ := volume)
   have hDu := hu.continuous_fderiv one_ne_zero
-  rw [integral_norm_pow_eq_toReal_eLpNorm_pow hu_m four_ne_zero,
-    integral_norm_pow_eq_toReal_eLpNorm_pow hu_m two_ne_zero,
-    integral_norm_pow_eq_toReal_eLpNorm_pow hDu.aestronglyMeasurable two_ne_zero,
-    ← ENNReal.toReal_mul, ← mul_pow, show 4 = 2 * 2 from rfl, pow_mul]
+  have h4 := lpNorm_natCast_pow_eq_integral_norm_pow hu_m four_ne_zero
+  have h2 := lpNorm_natCast_pow_eq_integral_norm_pow hu_m two_ne_zero
+  have h2' := lpNorm_natCast_pow_eq_integral_norm_pow (μ := volume) hDu.aestronglyMeasurable
+    two_ne_zero
+  simp only [Nat.cast_ofNat] at h4 h2 h2'
+  rw [← h4, ← h2, ← h2', ← toReal_eLpNorm, ← toReal_eLpNorm, ← toReal_eLpNorm,
+    ← ENNReal.toReal_pow, ← ENNReal.toReal_pow, ← ENNReal.toReal_pow, ← ENNReal.toReal_mul,
+    ← mul_pow, show 4 = 2 * 2 by norm_num, pow_mul]
   refine ENNReal.toReal_mono (ENNReal.pow_ne_top (ENNReal.mul_ne_top ?_ ?_)) ?_
   · exact (hu.continuous.memLp_of_hasCompactSupport hc).eLpNorm_ne_top
   · exact (hDu.memLp_of_hasCompactSupport (hc.fderiv (𝕜 := ℝ))).eLpNorm_ne_top

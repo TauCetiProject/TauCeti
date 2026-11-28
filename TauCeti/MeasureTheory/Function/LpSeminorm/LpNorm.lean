@@ -35,7 +35,9 @@ they can be moved to the right-hand side of an equation
 
 For `p = 2`, the squared `L²` norm of an almost everywhere strongly measurable function is the
 integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral_norm_sq`), the
-`p = 2` analogue of Mathlib's `MeasureTheory.lpNorm_one_eq_integral_norm`.
+`p = 2` analogue of Mathlib's `MeasureTheory.lpNorm_one_eq_integral_norm`. More generally, for a
+natural exponent `n ≠ 0` the `n`-th power of the `Lⁿ` norm is the integral of `‖f‖ⁿ`
+(`MeasureTheory.lpNorm_natCast_pow_eq_integral_norm_pow`).
 
 For a right-invariant measure on an additive group, translation does not change the `Lᵖ` norm
 (`MeasureTheory.lpNorm_comp_sub_right`).
@@ -174,6 +176,17 @@ theorem lpNorm_two_sq_eq_integral_norm_sq {f : α → F} (hf : AEStronglyMeasura
     ENNReal.toReal_ofNat, ← Real.rpow_natCast,
     ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
   norm_num
+
+/-- **The `n`-th power of the `Lⁿ` norm as an integral.** For a natural exponent `n ≠ 0`, the
+`n`-th power of the `Lⁿ` norm of an almost everywhere strongly measurable function is the integral
+of the `n`-th power of its pointwise norm. -/
+theorem lpNorm_natCast_pow_eq_integral_norm_pow {f : α → F} (hf : AEStronglyMeasurable f μ)
+    {n : ℕ} (hn : n ≠ 0) : lpNorm f n μ ^ n = ∫ x, ‖f x‖ ^ n ∂μ := by
+  rw [lpNorm_eq_integral_norm_rpow_toReal (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n) hf,
+    ENNReal.toReal_natCast, ← Real.rpow_natCast,
+    ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity),
+    inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), Real.rpow_one]
+  simp only [Real.rpow_natCast]
 
 /-- **Translation invariance of `lpNorm`.** For a right-invariant measure on an additive group,
 translating a function does not change its `Lᵖ` norm: `‖u (· - c)‖_p = ‖u‖_p`. -/

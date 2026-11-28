@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -45,9 +47,11 @@ For a compactly supported `C¹` map `u` on a real normed space, integrating its 
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For a compactly
 supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable
 (`HasCompactSupport.integrable_id_mul_deriv`) and integration by parts gives `∫ x ψ' x = -∫ ψ`
-(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). Such a `ψ`, with values in a Banach
+(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). Such a `ψ`, with values in a normed
 space, satisfies `2 ‖ψ x‖ ≤ ∫ ‖ψ'‖` (`HasCompactSupport.two_mul_eNorm_le_lintegral_eNorm_deriv`),
-since the integrals of `ψ'` over `(-∞, x]` and `(x, ∞)` are `ψ x` and `-ψ x`. For general
+by Mathlib's bound `‖ψ x‖ ≤ ∫_{(-∞, x]} ‖ψ'‖` applied to `ψ` and to `t ↦ ψ (-t)`. With values in
+a real inner product space, applying this to `‖ψ‖²` gives `‖ψ x‖² ≤ ∫ ‖ψ‖ ‖ψ'‖`
+(`HasCompactSupport.eNorm_sq_le_lintegral_eNorm_mul_eNorm_deriv`). For general
 Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
 change of variables `y = c + b * x` (`0 < b`) on `Ioi a`. Splitting `(c, ∞)` at two points bounds
 the norm of an integral over it by the integrals of majorants of its integrand on the three pieces
@@ -317,22 +321,55 @@ section TwoSided
 
 open MeasureTheory
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- A compactly supported `C¹` function on `ℝ` is bounded by half the integral of the norm of
 its derivative: `2 ‖f x‖ ≤ ∫ ‖f'‖`. -/
 theorem HasCompactSupport.two_mul_eNorm_le_lintegral_eNorm_deriv {f : ℝ → F}
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (x : ℝ) :
     2 * ‖f x‖ₑ ≤ ∫⁻ y, ‖deriv f y‖ₑ := by
-  have hIic : ‖f x‖ₑ ≤ ∫⁻ y in Iic x, ‖deriv f y‖ₑ := by
-    rw [← hc.integral_Iic_deriv_eq hf x]
-    exact eNorm_integral_le_lintegral_eNorm _
-  have hIoi : ‖f x‖ₑ ≤ ∫⁻ y in Ioi x, ‖deriv f y‖ₑ := by
-    rw [← eNorm_neg, ← hc.integral_Ioi_deriv_eq hf x]
-    exact eNorm_integral_le_lintegral_eNorm _
+  have hIio : ‖f x‖ₑ ≤ ∫⁻ y in Iio x, ‖deriv f y‖ₑ := by
+    rw [setLIntegral_congr Iio_ae_eq_Iic]
+    exact hc.eNorm_le_lintegral_Ici_deriv hf x
+  -- Apply the bound on `(-∞, -x]` to the reflection `t ↦ f (-t)`.
+  have hIci : ‖f x‖ₑ ≤ ∫⁻ y in Ici x, ‖deriv f y‖ₑ := by
+    have h := (hc.comp_homeomorph (Homeomorph.neg ℝ)).eNorm_le_lintegral_Ici_deriv
+      (hf.comp contDiff_neg) (-x)
+    simp only [Function.comp_def, neg_neg, deriv_comp_neg, eNorm_neg] at h
+    refine h.trans_eq ?_
+    rw [← lintegral_indicator measurableSet_Iic, ← lintegral_indicator measurableSet_Ici,
+      ← lintegral_neg_eq_self]
+    congr 1
+    funext y
+    simp [indicator]
   calc 2 * ‖f x‖ₑ = ‖f x‖ₑ + ‖f x‖ₑ := two_mul _
-    _ ≤ (∫⁻ y in Iic x, ‖deriv f y‖ₑ) + ∫⁻ y in Ioi x, ‖deriv f y‖ₑ := add_le_add hIic hIoi
-    _ = ∫⁻ y, ‖deriv f y‖ₑ := by rw [← compl_Iic, lintegral_add_compl _ measurableSet_Iic]
+    _ ≤ (∫⁻ y in Iio x, ‖deriv f y‖ₑ) + ∫⁻ y in Ici x, ‖deriv f y‖ₑ := add_le_add hIio hIci
+    _ = ∫⁻ y, ‖deriv f y‖ₑ := by
+      rw [← compl_Ici, add_comm, lintegral_add_compl _ measurableSet_Ici]
+
+/-- A compactly supported `C¹` function `v : ℝ → F` with values in a real inner product space
+satisfies `‖v s‖² ≤ ∫ ‖v‖ ‖v'‖` at every point. -/
+theorem HasCompactSupport.eNorm_sq_le_lintegral_eNorm_mul_eNorm_deriv {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {v : ℝ → F}
+    (hc : HasCompactSupport v) (hv : ContDiff ℝ 1 v) (s : ℝ) :
+    ‖v s‖ₑ ^ 2 ≤ ∫⁻ r, ‖v r‖ₑ * ‖deriv v r‖ₑ := by
+  have hd (r : ℝ) : HasDerivAt (fun r ↦ ‖v r‖ ^ 2) (2 * inner ℝ (v r) (deriv v r)) r :=
+    ((hv.differentiable one_ne_zero r).hasDerivAt).norm_sq
+  have hle (r : ℝ) : ‖deriv (fun r ↦ ‖v r‖ ^ 2) r‖ₑ ≤ 2 * (‖v r‖ₑ * ‖deriv v r‖ₑ) := by
+    rw [(hd r).deriv, ← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul
+      (norm_nonneg _), ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [norm_mul, Real.norm_ofNat]
+    gcongr
+    exact abs_real_inner_le_norm _ _
+  have hc' : HasCompactSupport fun r ↦ ‖v r‖ ^ 2 :=
+    hc.comp_left (g := fun y : F ↦ ‖y‖ ^ 2) (by simp)
+  have hv' : ContDiff ℝ 1 fun r ↦ ‖v r‖ ^ 2 := hv.norm_sq ℝ
+  have h := hc'.two_mul_eNorm_le_lintegral_eNorm_deriv hv' s
+  rw [eNorm_pow, eNorm_norm] at h
+  refine (ENNReal.mul_le_mul_iff_right two_ne_zero ENNReal.ofNat_ne_top).1 (h.trans ?_)
+  rw [← lintegral_const_mul' _ _ ENNReal.ofNat_ne_top]
+  exact lintegral_mono hle
 
 end TwoSided
 
