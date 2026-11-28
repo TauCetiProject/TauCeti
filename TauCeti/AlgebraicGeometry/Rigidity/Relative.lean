@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.AlgebraicGeometry.Rigidity.Basic
+import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 import TauCeti.AlgebraicGeometry.Descent.GeometricFibers
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
 import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
@@ -17,8 +18,8 @@ import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
 Let `S` be an arbitrary scheme and let `X`, `Y`, `Z` be schemes over `S` such that:
 * `X ⟶ S` is proper and geometrically integral, and satisfies `X.hom_* 𝒪_X = 𝒪_S` (it suffices to
   require `Γ(S, V) ≅ Γ(X, X.hom⁻¹ V)` on affine opens `V` of `S`);
-* `Y ⟶ S` is flat, locally of finite type, and geometrically integral;
-* `Z ⟶ S` is separated and locally of finite type.
+* `Y ⟶ S` is flat and geometrically integral;
+* `Z ⟶ S` is separated.
 
 Suppose `f : X ×_S Y ⟶ Z` is a morphism over `S` whose restriction to one slice `X ×_S {y₀}` along
 a section `y₀` of `Y ⟶ S` is a constant section `z₀` of `Z ⟶ S`. The **relative rigidity lemma**
@@ -30,7 +31,7 @@ reducedness of `S`, and no Noetherian hypothesis are required. When `X ⟶ S` al
 
 The proof combines contraction descent (`AlgebraicGeometry.Scheme.Hom.descOfIsQuotientMap`) with
 the rigidity lemma over algebraically closed fields
-(`TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp_of_isAlgClosed`):
+(`TauCeti.AlgebraicGeometry.eq_snd_comp_lift_comp_of_isIntegral`):
 1. Because `X ⟶ S` is proper and surjective (`GeometricallyIntegral` implies `Surjective`) and
    `Y ⟶ S` is flat, flat base change for `X.hom_* 𝒪_X = 𝒪_S`
    (`TauCeti.AlgebraicGeometry.isIso_app_pullback_snd_of_flat`) shows that the second projection
@@ -43,7 +44,7 @@ the rigidity lemma over algebraically closed fields
 3. Base-changing `X`, `Y`, `Z`, and `f` to `Spec K` along `y ≫ Y.hom` produces a proper
    geometrically integral scheme `X_K` over the algebraically closed field `K` (which has a
    `K`-rational point by Hilbert's Nullstellensatz) and an integral product `X_K ×_K Y_K`. Applying
-   `eq_snd_comp_lift_comp_of_isAlgClosed` over `Spec K` shows that `f_K` factors through `Y_K`, so
+   `eq_snd_comp_lift_comp_of_isIntegral` over `Spec K` shows that `f_K` factors through `Y_K`, so
    its restriction to the fibre over `y` factors through the one-point scheme `Spec K`.
 
 Over a field `K`, flatness of `Y` and `X.hom_* 𝒪_X = 𝒪_{Spec K}` hold automatically, yielding the
@@ -88,16 +89,13 @@ section Relative
 
 variable {S : Scheme.{u}}
 
-/-- Let `X`, `Y`, `Z` be schemes over `S`, with `X` proper and geometrically integral over `S`, `Y`
-locally of finite type and geometrically integral over `S`, and `Z` separated and locally of finite
-type over `S`. If `f : X ×_S Y ⟶ Z` collapses the slice `X ×_S {y₀}` along a section `y₀` of `Y`
-to a section `z₀` of `Z`, then the underlying continuous map of `f` is constant on the fibres of the
-second projection `X ×_S Y ⟶ Y`. Neither flatness of `Y ⟶ S` nor `X.hom_* 𝒪_X = 𝒪_S` is needed for
-this set-theoretic factorization. -/
+/-- Let `X`, `Y`, `Z` be schemes over `S`, with `X` proper and geometrically integral over `S`,
+`Y` geometrically integral over `S`, and `Z` separated over `S`. If `f : X ×_S Y ⟶ Z` collapses
+the slice over a section `y₀` of `Y` to a section `z₀` of `Z`, the underlying map of `f` is
+constant on the fibres of the second projection. This uses only the geometric fibres over `S`. -/
 theorem factorsThrough_snd_left_of_isProper {X Y Z : Over S}
     [IsProper X.hom] [GeometricallyIntegral X.hom]
-    [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    [GeometricallyIntegral Y.hom] [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (y₀ : 𝟙_ (Over S) ⟶ Y) (z₀ : 𝟙_ (Over S) ⟶ Z)
     (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
     Function.FactorsThrough f.left (snd X Y).left := by
@@ -110,22 +108,25 @@ theorem factorsThrough_snd_left_of_isProper {X Y Z : Over S}
     GeometricallyIntegral.isIntegral_of_subsingleton (F.obj X).hom
   have : LocallyOfFiniteType (F.obj X).hom := by dsimp [F]; infer_instance
   have : JacobsonSpace (F.obj X).left := LocallyOfFiniteType.jacobsonSpace (F.obj X).hom
-  have : LocallyOfFiniteType (F.obj Y).hom := by dsimp [F]; infer_instance
   have : GeometricallyIntegral (F.obj Y).hom := by dsimp [F]; infer_instance
   have : IsIntegral (F.obj Y).left :=
     GeometricallyIntegral.isIntegral_of_subsingleton (F.obj Y).hom
-  have : IsLocallyNoetherian (F.obj Y).left := by dsimp [F]; infer_instance
-  have : IsIntegral (F.obj X ⊗ F.obj Y).left :=
-    GeometricallyIntegral.isIntegral_of_isLocallyNoetherian
-      (pullback.snd (F.obj X).hom (F.obj Y).hom)
+  have : Finite (irreducibleComponents (F.obj Y).left) := by
+    rw [irreducibleComponents_eq_singleton]
+    infer_instance
+  -- The single irreducible component of the base lets us test reducedness on the generic fibre.
+  have : IsIntegral (F.obj X ⊗ F.obj Y).left := by
+    let p := pullback.snd (F.obj X).hom (F.obj Y).hom
+    exact (isIntegral_iff_irreducibleSpace_and_isReduced _).mpr
+      ⟨GeometricallyIrreducible.irreducibleSpace p p.isOpenMap,
+        GeometricallyReduced.isReduced_of_flat_of_finite_irreducibleComponents p⟩
   have : IsSeparated (F.obj Z).hom := by dsimp [F]; infer_instance
-  have : LocallyOfFiniteType (F.obj Z).hom := by dsimp [F]; infer_instance
   obtain ⟨pt, -, hpt⟩ := nonempty_inter_closedPoints (X := (F.obj X).left) Set.univ_nonempty
     isOpen_univ.isLocallyClosed
   let x₀ : 𝟙_ (Over (Spec (.of K))) ⟶ F.obj X :=
     Over.homMk (pointOfClosedPoint (F.obj X).hom pt hpt)
       (by dsimp; exact pointOfClosedPoint_comp (F.obj X).hom pt hpt)
-  have H := eq_snd_comp_lift_comp_of_isAlgClosed
+  have H := eq_snd_comp_lift_comp_of_isIntegral
     (Functor.LaxMonoidal.μ F X Y ≫ F.map f) x₀
     (Functor.LaxMonoidal.ε F ≫ F.map y₀) (Functor.LaxMonoidal.ε F ≫ F.map z₀) (by
       rw [← Category.assoc, ← F.map_id, Functor.Monoidal.toUnit_ε_assoc, ← F.map_comp,
@@ -140,15 +141,13 @@ theorem factorsThrough_snd_left_of_isProper {X Y Z : Over S}
 
 /-- **The relative rigidity lemma.** Let `X`, `Y`, `Z` be schemes over an arbitrary base scheme `S`,
 with `X` proper and geometrically integral over `S` satisfying `X.hom_* 𝒪_X = 𝒪_S`, `Y` flat,
-locally of finite type and geometrically integral over `S`, and `Z` separated and locally of finite
-type over `S`. If `f : X ×_S Y ⟶ Z` collapses the slice `X ×_S {y₀}` along a section `y₀` of `Y`
-to a section `z₀` of `Z`, then `f` factors uniquely through the second projection `X ×_S Y ⟶ Y` in
-`Over S`. No section of `X ⟶ S` is required. -/
+geometrically integral over `S`, and `Z` separated over `S`. If `f : X ×_S Y ⟶ Z` collapses the
+slice `X ×_S {y₀}` along a section `y₀` of `Y` to a section `z₀` of `Z`, then `f` factors uniquely
+through the second projection `X ×_S Y ⟶ Y` in `Over S`. No section of `X ⟶ S` is required. -/
 theorem existsUnique_snd_comp_eq_of_flat {X Y Z : Over S}
     [IsProper X.hom] [GeometricallyIntegral X.hom]
     (hX : ∀ V : S.affineOpens, IsIso (X.hom.app V))
-    [Flat Y.hom] [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    [Flat Y.hom] [GeometricallyIntegral Y.hom] [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (y₀ : 𝟙_ (Over S) ⟶ Y) (z₀ : 𝟙_ (Over S) ⟶ Z)
     (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
     ∃! g : Y ⟶ Z, snd X Y ≫ g = f := by
@@ -173,8 +172,7 @@ theorem existsUnique_snd_comp_eq_of_flat {X Y Z : Over S}
 theorem eq_snd_comp_lift_comp_of_flat {X Y Z : Over S}
     [IsProper X.hom] [GeometricallyIntegral X.hom]
     (hX : ∀ V : S.affineOpens, IsIso (X.hom.app V))
-    [Flat Y.hom] [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    [Flat Y.hom] [GeometricallyIntegral Y.hom] [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (x₀ : 𝟙_ (Over S) ⟶ X) (y₀ : 𝟙_ (Over S) ⟶ Y) (z₀ : 𝟙_ (Over S) ⟶ Z)
     (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
     f = snd X Y ≫ lift (toUnit Y ≫ x₀) (𝟙 Y) ≫ f := by
@@ -185,14 +183,13 @@ theorem eq_snd_comp_lift_comp_of_flat {X Y Z : Over S}
 
 /-- **The relative rigidity lemma, first projection.** Symmetric form of
 `existsUnique_snd_comp_eq_of_flat`: if `Y` is proper and geometrically integral over `S` with
-`Y.hom_* 𝒪_Y = 𝒪_S`, `X` is flat, locally of finite type and geometrically integral over `S`, `Z`
-is separated and locally of finite type over `S`, and `f : X ×_S Y ⟶ Z` collapses `{x₀} ×_S Y` to
+`Y.hom_* 𝒪_Y = 𝒪_S`, `X` is flat and geometrically integral over `S`, `Z`
+is separated over `S`, and `f : X ×_S Y ⟶ Z` collapses `{x₀} ×_S Y` to
 `z₀`, then `f` factors uniquely through `fst X Y`. -/
 theorem existsUnique_fst_comp_eq_of_flat {X Y Z : Over S}
-    [Flat X.hom] [LocallyOfFiniteType X.hom] [GeometricallyIntegral X.hom]
+    [Flat X.hom] [GeometricallyIntegral X.hom]
     [IsProper Y.hom] [GeometricallyIntegral Y.hom]
-    (hY : ∀ V : S.affineOpens, IsIso (Y.hom.app V))
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    (hY : ∀ V : S.affineOpens, IsIso (Y.hom.app V)) [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (x₀ : 𝟙_ (Over S) ⟶ X) (z₀ : 𝟙_ (Over S) ⟶ Z)
     (hf : lift (toUnit Y ≫ x₀) (𝟙 Y) ≫ f = toUnit Y ≫ z₀) :
     ∃! g : X ⟶ Z, fst X Y ≫ g = f := by
@@ -209,10 +206,9 @@ theorem existsUnique_fst_comp_eq_of_flat {X Y Z : Over S}
 /-- **The relative rigidity lemma with a section, first projection.** Symmetric form of
 `eq_snd_comp_lift_comp_of_flat`. -/
 theorem eq_fst_comp_lift_comp_of_flat {X Y Z : Over S}
-    [Flat X.hom] [LocallyOfFiniteType X.hom] [GeometricallyIntegral X.hom]
+    [Flat X.hom] [GeometricallyIntegral X.hom]
     [IsProper Y.hom] [GeometricallyIntegral Y.hom]
-    (hY : ∀ V : S.affineOpens, IsIso (Y.hom.app V))
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    (hY : ∀ V : S.affineOpens, IsIso (Y.hom.app V)) [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (x₀ : 𝟙_ (Over S) ⟶ X) (y₀ : 𝟙_ (Over S) ⟶ Y) (z₀ : 𝟙_ (Over S) ⟶ Z)
     (hf : lift (toUnit Y ≫ x₀) (𝟙 Y) ≫ f = toUnit Y ≫ z₀) :
     f = fst X Y ≫ lift (𝟙 X) (toUnit X ≫ y₀) ≫ f := by
@@ -228,29 +224,25 @@ section Field
 variable {K : Type u} [Field K]
 
 /-- **The section-free rigidity lemma over a field.** Let `X` be proper and geometrically integral
-over a field `K`, `Y` geometrically integral and locally of finite type over `K`, and `Z` separated
-and locally of finite type over `K`. If `f : X ×_K Y ⟶ Z` collapses the slice `X ×_K {y₀}` over a
-`K`-rational point `y₀` of `Y` to a `K`-rational point `z₀` of `Z`, then `f` factors uniquely
-through `snd X Y : X ×_K Y ⟶ Y`, even if `X` has no `K`-rational point. -/
+over `K`, let `Y` be geometrically integral over `K`, and let `Z` be separated over `K`.
+If `f : X ×_K Y ⟶ Z` collapses the fibre over a rational point `y₀` to a rational point `z₀`,
+then `f` factors uniquely through `snd X Y`, even if `X` has no rational point. -/
 theorem existsUnique_snd_comp_eq {X Y Z : Over (Spec (.of K))}
     [IsProper X.hom] [GeometricallyIntegral X.hom]
-    [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    [GeometricallyIntegral Y.hom] [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (y₀ : 𝟙_ (Over (Spec (.of K))) ⟶ Y) (z₀ : 𝟙_ (Over (Spec (.of K))) ⟶ Z)
     (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
     ∃! g : Y ⟶ Z, snd X Y ≫ g = f :=
   existsUnique_snd_comp_eq_of_flat
     (fun V ↦ X.hom.isIso_app_of_universallyClosed_of_geometricallyIntegral V) f y₀ z₀ hf
 
-/-- **The rigidity lemma over a field.** Let `X` be proper and geometrically integral over a field
-`K`, `Y` geometrically integral and locally of finite type over `K`, and `Z` separated and locally
-of finite type over `K`. If `f : X ×_K Y ⟶ Z` sends the fibre `X × {y₀}` over a `K`-point `y₀` of
-`Y` to a single `K`-point `z₀` of `Z`, then `f` factors through the projection to `Y`:
-`f (x, y) = f (x₀, y)` for any `K`-point `x₀` of `X`. -/
+/-- **The rigidity lemma over a field.** Let `X` be proper and geometrically integral over `K`,
+let `Y` be geometrically integral over `K`, and let `Z` be separated over `K`. If
+`f : X ×_K Y ⟶ Z` collapses the fibre over a rational point `y₀` to a rational point `z₀`,
+then `f(x, y) = f(x₀, y)` for any rational point `x₀` of `X`. -/
 theorem eq_snd_comp_lift_comp {X Y Z : Over (Spec (.of K))}
     [IsProper X.hom] [GeometricallyIntegral X.hom]
-    [LocallyOfFiniteType Y.hom] [GeometricallyIntegral Y.hom]
-    [IsSeparated Z.hom] [LocallyOfFiniteType Z.hom]
+    [GeometricallyIntegral Y.hom] [IsSeparated Z.hom]
     (f : X ⊗ Y ⟶ Z) (x₀ : 𝟙_ _ ⟶ X) (y₀ : 𝟙_ _ ⟶ Y) (z₀ : 𝟙_ _ ⟶ Z)
     (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
     f = snd X Y ≫ lift (toUnit Y ≫ x₀) (𝟙 Y) ≫ f :=

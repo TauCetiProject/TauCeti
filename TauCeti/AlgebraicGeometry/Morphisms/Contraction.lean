@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import TauCeti.AlgebraicGeometry.Morphisms.Epi
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
 
 /-!
 # Contractions of schemes
@@ -32,7 +33,7 @@ along contractions. Descent of a map constant on fibres can use
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry MonoidalCategory CartesianMonoidalCategory
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -101,5 +102,17 @@ theorem isContraction_iff_isIso (f : X ⟶ Y) [IsAffineHom f] :
     exact ⟨U, hyU, (isIso_morphismRestrict_iff_isIso_app f hU).mpr (hf.isIso_app U)⟩
   · intro hf
     infer_instance
+
+/-- If `X` is proper and integral over a field and has a rational point, then the second
+projection `X × Y ⟶ Y` is a contraction for every `Y` over that field. -/
+theorem isContraction_snd_left_of_isIntegral {K : Type u} [Field K] {X Y : Over (Spec (.of K))}
+    [IsProper X.hom] [IsIntegral X.left]
+    (x₀ : 𝟙_ _ ⟶ X) : IsContraction (snd X Y).left := by
+  have hx : x₀.left ≫ X.hom = 𝟙 (Spec (.of K)) := x₀.w
+  have hΓ : IsIso X.hom.appTop :=
+    (ConcreteCategory.isIso_iff_bijective _).mpr (appTop_bijective_of_section hx)
+  rw [Over.snd_left]
+  exact ⟨fun U ↦ isIso_app_pullback_snd_of_flat X.hom Y.hom
+    (fun V ↦ X.hom.isIso_app_of_isIso_appTop V) U⟩
 
 end TauCeti.AlgebraicGeometry
