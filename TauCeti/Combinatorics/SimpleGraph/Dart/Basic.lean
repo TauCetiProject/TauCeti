@@ -7,12 +7,18 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Dart
+public import Mathlib.Combinatorics.SimpleGraph.Finite
+import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 
 /-!
 # Darts of a simple graph
 
 The darts of a simple graph with tail `u` correspond to the neighbours of `u`: a dart is sent to
 its head, and a neighbour `w` to the dart `u → w` (`SimpleGraph.dartOfNeighborSet`).
+
+Each edge `s(x, y)` of a finite graph carries exactly the two darts `x → y` and `y → x`, so a sum
+over the darts, or over the ordered adjacent pairs, is a sum over the edges of the symmetrized
+summand. This turns quadratic forms of graph matrices into sums over edges.
 
 ## Main definitions
 
@@ -23,6 +29,10 @@ its head, and a neighbour `w` to the dart `u → w` (`SimpleGraph.dartOfNeighbor
 
 * `SimpleGraph.sum_dart_snd_eq_sum_neighborSet`: a sum over the darts with head `v` is a sum over
   the neighbours of `v`.
+* `SimpleGraph.sum_dart_eq_sum_edgeFinset`: a sum of `f d.fst d.snd` over the darts is the sum of
+  `f x y + f y x` over the edges `s(x, y)`.
+* `SimpleGraph.sum_sum_ite_adj_eq_sum_edgeFinset`: the same for the double sum of `f i j` over the
+  ordered adjacent pairs.
 * `SimpleGraph.Dart.ne_symm`: no dart is its own reversal.
 * `SimpleGraph.Dart.eq_symm_comm`: `a` is the reversal of `b` exactly when `b` is the reversal
   of `a`.
@@ -88,5 +98,38 @@ theorem DartAdj.edge_ne_iff {d d' : G.Dart} (h : G.DartAdj d d') :
   rw [Ne, dart_edge_eq_iff]
   unfold DartAdj at h
   grind [Dart.symm_symm]
+
+section Fintype
+
+variable [Fintype V] [DecidableRel G.Adj]
+
+variable (G) in
+/-- A sum of `f d.fst d.snd` over the darts of `G` is the sum of `f x y + f y x` over the edges
+`s(x, y)` of `G`: the darts over an edge are its two orientations. -/
+theorem sum_dart_eq_sum_edgeFinset {M : Type*} [AddCommMonoid M] (f : V → V → M) :
+    ∑ d : G.Dart, f d.fst d.snd =
+      ∑ e ∈ G.edgeFinset, Sym2.lift ⟨fun x y ↦ f x y + f y x, fun _ _ ↦ add_comm _ _⟩ e := by
+  classical
+  rw [← Finset.sum_fiberwise_of_maps_to (g := Dart.edge) (t := G.edgeFinset)
+    fun d _ ↦ mem_edgeFinset.2 d.edge_mem]
+  refine Finset.sum_congr rfl fun e he ↦ ?_
+  induction e using Sym2.ind with | _ x y =>
+  have hxy : G.Adj x y := mem_edgeFinset.1 he
+  rw [Sym2.lift_mk, ← Dart.edge_mk (p := (x, y)) hxy, Dart.edge_fiber,
+    Finset.sum_pair (Dart.ne_symm _)]
+  simp
+
+variable (G) in
+/-- The double sum of `f i j` over the ordered pairs of adjacent vertices is the sum of
+`f x y + f y x` over the edges `s(x, y)` of `G`. -/
+theorem sum_sum_ite_adj_eq_sum_edgeFinset {M : Type*} [AddCommMonoid M] (f : V → V → M) :
+    ∑ i, ∑ j, (if G.Adj i j then f i j else 0) =
+      ∑ e ∈ G.edgeFinset, Sym2.lift ⟨fun x y ↦ f x y + f y x, fun _ _ ↦ add_comm _ _⟩ e := by
+  rw [← G.sum_dart_eq_sum_edgeFinset, ← Fintype.sum_prod_type', ← Finset.sum_filter]
+  exact Finset.sum_bij' (fun p hp ↦ ⟨p, (Finset.mem_filter.1 hp).2⟩) (fun d _ ↦ d.toProd)
+    (fun _ _ ↦ Finset.mem_univ _) (fun d _ ↦ Finset.mem_filter.2 ⟨Finset.mem_univ _, d.adj⟩)
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+end Fintype
 
 end SimpleGraph
