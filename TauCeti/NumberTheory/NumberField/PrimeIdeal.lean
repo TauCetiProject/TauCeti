@@ -124,7 +124,8 @@ theorem heightOneSpectrumOfLiesOver_asIdeal (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrim
   rw [heightOneSpectrumOfLiesOver]
 
 omit [NumberField K] in
-private theorem liesOver_span_natCast_iff {𝔭 : Ideal (𝓞 K)} (h𝔭 : 𝔭 ≠ ⊤) :
+/-- An ideal `𝔭` of `𝓞 K` different from `⊤` lies over `span {(p : ℤ)}` iff `(p : 𝓞 K) ∈ 𝔭`. -/
+theorem liesOver_span_natCast_iff {𝔭 : Ideal (𝓞 K)} (h𝔭 : 𝔭 ≠ ⊤) :
     𝔭.LiesOver (span {(p : ℤ)}) ↔ (p : 𝓞 K) ∈ 𝔭 := by
   simpa using liesOver_span_iff h𝔭 (Nat.prime_iff_prime_int.mp hp.out)
 
@@ -147,7 +148,9 @@ theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal 
     rw [hT, Set.mem_singleton_iff] at hQ
     exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
 
-private theorem mem_primesOverFinset_span_natCast_iff {𝔭 : Ideal (𝓞 K)} :
+/-- An ideal `𝔭` of `𝓞 K` belongs to `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` iff `𝔭` is
+prime and `(p : 𝓞 K) ∈ 𝔭`. -/
+theorem mem_primesOverFinset_span_natCast_iff {𝔭 : Ideal (𝓞 K)} :
     𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K) ↔ 𝔭.IsPrime ∧ (p : 𝓞 K) ∈ 𝔭 := by
   rw [mem_primesOverFinset_iff (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)]
   exact and_congr_right fun h𝔭 ↦ liesOver_span_natCast_iff h𝔭.ne_top
