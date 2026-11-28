@@ -81,6 +81,10 @@ theorem primeWeight_def (n : ℕ) :
     primeWeight d q n = if (n : ZMod q) = 1 then Λ n * (1 - (legendreSym d n : ℝ)) else 0 :=
   (rfl)
 
+/-- At modulus one the congruence condition on `primeWeight` is automatic. -/
+theorem primeWeight_one (n : ℕ) : primeWeight d 1 n = Λ n * (1 - (legendreSym d n : ℝ)) :=
+  (primeWeight_def d 1 n).trans (ite_eq_left (Subsingleton.elim _ _))
+
 /-- The product `ψ χ_K` of a Dirichlet character `ψ` modulo `q` and the quadratic character
 `χ_K = (· / d)`, a Dirichlet character modulo `q d`. The second factor is Mathlib's quadratic
 character of `ZMod d` with values cast to `ℂ`, which is `TauCeti.jacobiChar ℂ d` by
