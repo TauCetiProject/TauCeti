@@ -195,7 +195,7 @@ theorem toFractionalIdeal_scaleIdele :
 
 /-- The character `ψ₀(z) = ψ_f(t z)` of the finite adeles, where `t = j α (conj α)`. -/
 def selfDualAddChar : AddChar (FiniteAdeleRing (𝓞 E) E) Circle :=
-  (finiteAdeleAddChar E).compAddMonoidHom (AddMonoidHom.mulLeft (W.scaleIdele : _))
+  (finiteAdeleAddChar E).mulShift (W.scaleIdele : _)
 
 /-- The defining formula `ψ₀(z) = ψ_f(t z)`, where `t = j α (conj α)`
 (`TauCeti.WeilData.coe_scaleIdele`). -/
