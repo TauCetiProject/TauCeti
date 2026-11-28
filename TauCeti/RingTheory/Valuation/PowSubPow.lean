@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.RingTheory.Valuation.Basic
 
 import Mathlib.Tactic.FieldSimp
+import TauCeti.RingTheory.Valuation.Basic
 
 /-!
 # The valuation of a difference of powers
@@ -26,7 +27,8 @@ The exact formulas here say that powers whose exponent has valuation one preserv
 of a principal unit from one (natural powers over any ring, integer powers over any division
 ring), and compute differences of integer powers in a field after translation by an element of
 smaller valuation. These give the displacement orders of explicit
-uniformizers in wildly ramified Artin--Schreier extensions.
+uniformizers in wildly ramified Artin--Schreier extensions. The principal-unit bound also
+controls the errors of congruences modulo `(1 + X) ^ (p ^ n) - 1` under a Gauss valuation.
 -/
 
 public section
@@ -61,24 +63,53 @@ theorem map_pow_sub_pow_le (v : Valuation R Γ₀) {x y : R} {c : Γ₀} (hx : v
     · rw [map_mul, pow_succ c, ← mul_assoc]
       gcongr
 
+/-- The geometric sum at `1 + x` differs from its value at `1` by an element of
+valuation at most `v x`, when `v x ≤ 1`. -/
+theorem map_geom_sum_one_add_sub_natCast_le (v : Valuation R Γ₀) {x : R} (hx : v x ≤ 1)
+    (n : ℕ) : v ((∑ i ∈ Finset.range n, (1 + x) ^ i) - (n : R)) ≤ v x := by
+  have hcast : (n : R) = ∑ _i ∈ Finset.range n, (1 : R) := by simp
+  have hval : v (1 + x) ≤ 1 := (v.map_add 1 x).trans (by simp [hx])
+  rw [hcast, ← Finset.sum_sub_distrib]
+  refine v.map_sum_le fun i _ ↦ ?_
+  simpa using v.map_pow_sub_pow_le hval (y := 1) (c := 1) (by simp) i
+
+/-- In the closed unit ball, taking an `n`-th power contracts the distance of `1 + x`
+from `1` by a factor bounded by `max (v n) (v x)`. -/
+theorem map_one_add_pow_sub_one_le (v : Valuation R Γ₀) {x : R} (hx : v x ≤ 1)
+    (n : ℕ) : v ((1 + x) ^ n - 1) ≤ v x * max (v (n : R)) (v x) := by
+  let s : R := ∑ i ∈ Finset.range n, (1 + x) ^ i
+  have hs := (v.map_add (s - n) (n : R)).trans
+    (max_le_max (v.map_geom_sum_one_add_sub_natCast_le hx n) le_rfl)
+  rw [sub_add_cancel, max_comm] at hs
+  rw [← geom_sum_mul, add_sub_cancel_left, map_mul, mul_comm]
+  exact mul_le_mul_right hs _
+
+/-- Iterating the contraction bound gives a factor `(max (v p) (v x))^n` for the
+`p^n`-th power of an element `1 + x` of the closed unit ball. -/
+theorem map_one_add_pow_pow_sub_one_le (v : Valuation R Γ₀) {x : R} (hx : v x ≤ 1)
+    (p n : ℕ) : v ((1 + x) ^ p ^ n - 1) ≤ v x * max (v (p : R)) (v x) ^ n := by
+  let c := max (v (p : R)) (v x)
+  have hc : c ≤ 1 := max_le (v.map_natCast_le_one p) hx
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    let y := (1 + x) ^ p ^ n - 1
+    have hy : v y ≤ v x := ih.trans (mul_le_of_le_one_right' (pow_le_one' hc _))
+    have he : 1 + y = (1 + x) ^ p ^ n := by simp [y]
+    rw [pow_succ p n, pow_mul, ← he, pow_succ c, ← mul_assoc]
+    exact (v.map_one_add_pow_sub_one_le (hy.trans hx) p).trans
+      (mul_le_mul' ih (max_le_max le_rfl hy))
+
 /-- Raising a principal unit to a natural power of valuation one preserves its distance
 from one. -/
 @[simp] theorem map_one_add_pow_sub_one (v : Valuation R Γ₀) {x : R} (hx : v x < 1)
     (n : ℕ) (hn : v (n : R) = 1) : v ((1 + x) ^ n - 1) = v x := by
-  have : Nontrivial Γ₀ := ⟨⟨v x, 1, hx.ne⟩⟩
-  have ha : v (1 + x) = 1 := v.map_one_add_of_lt hx
-  -- `(1 + x) ^ i - 1 = (∑ j < i, (1 + x) ^ j) * x`, where each `(1 + x) ^ j` has valuation one.
-  have hgeom (i : ℕ) : (1 + x) ^ i - 1 = (∑ j ∈ Finset.range i, (1 + x) ^ j) * x := by
-    rw [← geom_sum_mul, add_sub_cancel_left]
-  have hsum : v ((∑ i ∈ Finset.range n, (1 + x) ^ i) - (n : R)) < 1 := by
-    have hcast : (n : R) = ∑ _i ∈ Finset.range n, (1 : R) := by simp
-    rw [hcast, ← Finset.sum_sub_distrib]
-    refine v.map_sum_lt one_ne_zero fun i _ => ?_
-    rw [hgeom, map_mul]
-    exact (mul_le_of_le_one_left' (v.map_sum_le fun j _ => by simp [ha])).trans_lt hx
-  have hs : v (∑ i ∈ Finset.range n, (1 + x) ^ i) = 1 := by
-    simpa [hn] using v.map_add_eq_of_lt_left (hsum.trans_eq hn.symm)
-  rw [hgeom, map_mul, hs, one_mul]
+  let s : R := ∑ i ∈ Finset.range n, (1 + x) ^ i
+  have hsum : v (s - n) < v (n : R) :=
+    (v.map_geom_sum_one_add_sub_natCast_le hx.le n).trans_lt (hn ▸ hx)
+  have hs : v s = 1 := by
+    simpa only [sub_add_cancel, hn] using v.map_add_eq_of_lt_right hsum
+  rw [← geom_sum_mul, add_sub_cancel_left, map_mul, hs, one_mul]
 
 end Ring
 
