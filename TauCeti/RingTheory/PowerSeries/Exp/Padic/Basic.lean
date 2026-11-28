@@ -33,6 +33,9 @@ exponential has one exactly on the closed disc `‖x‖ * c ≤ p ^ (-1 / (p - 1
 The same bounds hold for a finite combination `∑ aᵢ exp(xᵢX)` of such series, an exponential
 polynomial: it is restricted on every closed disc strictly inside the exponential discs of all
 the `xᵢ`, and its Gauss norm there is at most `max ‖aᵢ‖`, by the ultrametric inequality.
+Multiplying any power series `Q` by `exp(ψX)` keeps every bound on the weighted coefficients of `Q`
+at a radius `r` with `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`
+(`PowerSeries.norm_coeff_mul_rescale_exp_mul_pow_le`), since the Gauss norm is submultiplicative.
 
 For `x = log u`, these estimates give discs of radius greater than one for normal series
 interpolating powers of sufficiently deep units. A quantitative Gauss norm, rather than just
@@ -218,6 +221,23 @@ theorem gaussNorm_rescale_exp_sub_one_le {x : K} {c : ℝ} (hc : 0 ≤ c)
       (p : ℝ) ^ ((p - 1 : ℝ)⁻¹) * ‖x‖ * c := by
   rw [gaussNorm_eq]
   exact ciSup_le (norm_coeff_rescale_exp_sub_one_mul_pow_le hc hxc)
+
+/-- Multiplying a power series `Q` by `exp(ψX)` keeps every bound `M` on the weighted coefficients
+of `Q` at a radius `r` with `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, boundary of the exponential disc
+included. -/
+theorem norm_coeff_mul_rescale_exp_mul_pow_le {Q : K⟦X⟧} {ψ : K} {r M : ℝ} (hr : 0 ≤ r)
+    (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (hQ : ∀ j, ‖coeff j Q‖ * r ^ j ≤ M) (k : ℕ) :
+    ‖coeff k (Q * rescale ψ (exp K))‖ * r ^ k ≤ M := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  have hQ' : Q.HasGaussNorm norm r := ⟨M, Set.forall_mem_range.mpr hQ⟩
+  have he := hasGaussNorm_rescale_exp hr hψ
+  calc ‖coeff k (Q * rescale ψ (exp K))‖ * r ^ k
+      ≤ (Q * rescale ψ (exp K)).gaussNorm norm r :=
+        le_gaussNorm norm r _ (hasGaussNorm_mul hr hQ' he) k
+    _ ≤ Q.gaussNorm norm r * (rescale ψ (exp K)).gaussNorm norm r := gaussNorm_mul_le hr hQ' he
+    _ ≤ M := by
+        rw [gaussNorm_rescale_exp hr hψ, mul_one, gaussNorm_eq]
+        exact ciSup_le hQ
 
 end PowerSeries
 

@@ -20,10 +20,12 @@ exponential. For a polynomial `Q` over `L` and `ψ ∈ L`, the exponential polyn
 coefficients and evaluates it.
 
 * If the coefficients of `Q` satisfy `‖Q_j‖ r ^ j ≤ M` and `‖ψ‖ r ≤ ρ`, then the coefficients `c_k`
-  of `Q (X) exp (ψ X)` satisfy `‖c_k‖ r ^ k ≤ M`. The reason is that the coefficients
-  `ψ ^ k / k!` of `exp (ψ X)` satisfy `‖ψ ^ k / k!‖ r ^ k ≤ 1` there, by Legendre's bound for
-  `‖k!‖`, and that the norm is ultrametric. The disc `‖ψ‖ r ≤ ρ` is closed: at its boundary the
-  weighted coefficients of `exp (ψ X)` stay bounded by `1` although they no longer tend to `0`.
+  of `Q (X) exp (ψ X)` satisfy `‖c_k‖ r ^ k ≤ M`. This is the polynomial case of
+  `PowerSeries.norm_coeff_mul_rescale_exp_mul_pow_le`, which holds for any power series `Q`. The
+  reason is that the coefficients `ψ ^ k / k!` of `exp (ψ X)` satisfy `‖ψ ^ k / k!‖ r ^ k ≤ 1`
+  there, by Legendre's bound for `‖k!‖`, and that the norm is ultrametric. The disc `‖ψ‖ r ≤ ρ`
+  is closed: at its boundary the weighted coefficients of `exp (ψ X)` stay bounded by `1`
+  although they no longer tend to `0`.
 * If `L` is complete and `‖ψ x‖ < ρ`, the series `∑ c_k x ^ k` converges to
   `Q (x) exp (ψ x)`, with Mathlib's `NormedSpace.exp`.
 
@@ -62,19 +64,9 @@ variable {p : ℕ} [Fact p.Prime] {L : Type*} [NormedField L] [Algebra ℚ L]
 `‖c_k‖ r ^ k ≤ M`. -/
 theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le {Q : L[X]} {ψ : L} {r M : ℝ} (hr : 0 ≤ r)
     (hQ : ∀ j, ‖Q.coeff j‖ * r ^ j ≤ M) (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (k : ℕ) :
-    ‖coeff k ((Q : L⟦X⟧) * rescale ψ (exp L))‖ * r ^ k ≤ M := by
-  have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
-  have hQ' : (Q : L⟦X⟧).HasGaussNorm norm r :=
-    ⟨M, Set.forall_mem_range.2 fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j⟩
-  have hE := hasGaussNorm_rescale_exp (p := p) hr hψ
-  -- the Gauss norm at `r` is submultiplicative, and that of `exp (ψ X)` is `1`
-  calc _ ≤ ((Q : L⟦X⟧) * rescale ψ (exp L)).gaussNorm norm r :=
-        le_gaussNorm norm r _ (TauCeti.PowerSeries.hasGaussNorm_mul hr hQ' hE) k
-    _ ≤ (Q : L⟦X⟧).gaussNorm norm r * (rescale ψ (exp L)).gaussNorm norm r :=
-        TauCeti.PowerSeries.gaussNorm_mul_le hr hQ' hE
-    _ ≤ M := by
-      rw [gaussNorm_rescale_exp hr hψ, mul_one, gaussNorm_eq]
-      exact ciSup_le fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j
+    ‖coeff k ((Q : L⟦X⟧) * rescale ψ (exp L))‖ * r ^ k ≤ M :=
+  norm_coeff_mul_rescale_exp_mul_pow_le hr hψ
+    (fun j ↦ by simpa [Polynomial.coeff_coe] using hQ j) k
 
 variable [CompleteSpace L]
 
