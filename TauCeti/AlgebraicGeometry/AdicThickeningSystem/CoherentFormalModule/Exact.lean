@@ -31,9 +31,6 @@ map of finite modules over a noetherian ring (`AdicCompletion.map_injective`).
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.mono_of_injective_limMap`:
-  a morphism of coherent formal modules on `spf J` whose limit of global sections is injective is
-  a monomorphism.
 * `AlgebraicGeometry.Scheme.formalCompletion.isColimitCokernelCoforkCompletionFunctorMap`: the
   completion functor preserves cokernels.
 * `AlgebraicGeometry.Scheme.formalCompletion.epi_completionFunctor_map`: the completion functor
@@ -54,27 +51,6 @@ open CategoryTheory Limits AlgebraicGeometry
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.AdicThickeningSystem
 
 universe u
-
-namespace TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
-
-variable {R : Type u} [CommRing R] (I : Ideal R)
-
-/-- A morphism `f` of coherent formal modules on `spf I` is a monomorphism if the inverse limit
-of the morphism of towers of global sections of `f` is injective. A morphism `g` with `g ≫ f = 0`
-then has zero limit of global sections, so `g = 0`, because morphisms of `I`-adic systems are
-determined by their limits. -/
-theorem mono_of_injective_limMap {M N : CoherentFormalModule (spf I)} (f : M ⟶ N)
-    (hf : Function.Injective (ModuleTower.limMap ((sectionsTower I).map f))) : Mono f := by
-  refine Preadditive.mono_of_cancel_zero _ fun {P} g hg ↦ (sectionsTower I).map_injective ?_
-  rw [Functor.map_zero]
-  refine (ModuleTower.limMap_inj ((ModuleTower.isFiniteAdicSystem_iff I _).1
-    (isFiniteAdicSystem_sectionsTower_obj I P)).1.transition_surjective).1 ?_
-  refine LinearMap.ext fun y ↦ hf ?_
-  rw [← LinearMap.comp_apply, ← ModuleTower.limMap_comp, ← Functor.map_comp, hg,
-    Functor.map_zero, ModuleTower.limMap_zero, ModuleTower.limMap_zero, LinearMap.zero_apply,
-    LinearMap.zero_apply, map_zero]
-
-end TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule
 
 namespace AlgebraicGeometry.Scheme.formalCompletion
 
@@ -119,17 +95,7 @@ end RightExact
 
 section Affine
 
-variable {R : Type u} [CommRing R]
-
-/-- On `Spec R`, every ideal sheaf is cut out by an ideal of `R`, in the form used by
-`specIso`. -/
-private lemma exists_ofIdealTop_eq (I : (Spec (CommRingCat.of R)).IdealSheafData) :
-    ∃ J : Ideal R, ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom) = I := by
-  let e := (ΓSpecIso (CommRingCat.of R)).commRingCatIsoToRingEquiv
-  exact ⟨(equivOfIsAffine I).map e,
-    (congrArg ofIdealTop (Ideal.map_of_equiv e)).trans (equivOfIsAffine.symm_apply_apply I)⟩
-
-variable [IsNoetherianRing R]
+variable {R : Type u} [CommRing R] [IsNoetherianRing R]
 
 /-- **The completion functor preserves monomorphisms on an affine noetherian scheme** (the
 Artin–Rees lemma, Stacks, Lemma 30.23.4): for a noetherian ring `R`, an ideal sheaf `I` on

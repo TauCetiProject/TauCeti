@@ -312,6 +312,8 @@ theorem limMap_reductionMap_toLimReduction (u : M →ₗ[A] N) (x : M) :
   Subtype.ext <| funext fun n ↦ by simp
 
 /-- `limReductionEquiv` intertwines `limMap` of a reduced linear map with `AdicCompletion.map`. -/
+-- The same statement, proved the same way, is in
+-- [TauCeti PR #41469](https://github.com/TauCetiProject/TauCeti/pull/41469) by @chrisflav.
 @[simp]
 theorem limReductionEquiv_limMap_reductionMap (u : M →ₗ[A] N) (y : (reduction I M).lim) :
     limReductionEquiv I N (limMap (reductionMap I u) y) =

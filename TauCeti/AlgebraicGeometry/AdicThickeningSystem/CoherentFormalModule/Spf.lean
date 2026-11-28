@@ -58,6 +58,8 @@ ideal, this describes the coherent formal modules on `Spf Â`.
 * `CoherentFormalModule.isFiniteAdicSystem_sectionsTower_obj`: the tower of global sections is an
   `I`-adic system with finite first term.
 * `CoherentFormalModule.sectionsTower` is full and faithful.
+* `CoherentFormalModule.mono_of_injective_limMap`: a morphism of coherent formal modules on
+  `spf I` whose limit of global sections is injective is a monomorphism.
 * `CoherentFormalModule.finiteSectionsTower` is an equivalence when `R` is noetherian.
 
 ## References
@@ -226,6 +228,21 @@ instance : (sectionsTower I).Additive where
     exact (congrArg (ModuleCat.restrictScalars (Ideal.Quotient.mk (I ^ (n + 1)))).map
       (moduleSpecΓFunctor.map_add (f := f.app n) (g := g.app n))).trans
         (Functor.map_add _)
+
+/-- A morphism `f` of coherent formal modules on `spf I` is a monomorphism if the inverse limit
+of the morphism of towers of global sections of `f` is injective. A morphism `g` with `g ≫ f = 0`
+then has zero limit of global sections, so `g = 0`, because morphisms of `I`-adic systems are
+determined by their limits. -/
+theorem mono_of_injective_limMap {M N : CoherentFormalModule (spf I)} (f : M ⟶ N)
+    (hf : Function.Injective (ModuleTower.limMap ((sectionsTower I).map f))) : Mono f := by
+  refine Preadditive.mono_of_cancel_zero _ fun {P} g hg ↦ (sectionsTower I).map_injective ?_
+  rw [Functor.map_zero]
+  refine (ModuleTower.limMap_inj ((ModuleTower.isFiniteAdicSystem_iff I _).1
+    (isFiniteAdicSystem_sectionsTower_obj I P)).1.transition_surjective).1 ?_
+  refine LinearMap.ext fun y ↦ hf ?_
+  rw [← LinearMap.comp_apply, ← ModuleTower.limMap_comp, ← Functor.map_comp, hg,
+    Functor.map_zero, ModuleTower.limMap_zero, ModuleTower.limMap_zero, LinearMap.zero_apply,
+    LinearMap.zero_apply, map_zero]
 
 /-- The tower of global sections of a coherent formal module on `spf I`, as an `I`-adic system with
 finite first term (`isFiniteAdicSystem_sectionsTower_obj`). It is fully faithful. -/
