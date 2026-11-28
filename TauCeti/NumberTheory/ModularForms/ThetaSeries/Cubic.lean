@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
-import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 
 /-!
@@ -74,15 +73,12 @@ theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
       summable_norm_iff.mpr ((summable_jacobiTheta₂_term_iff 0 τ).mpr τ.im_pos)
   have hpow : jacobiTheta τ ^ Fintype.card ι = ∏ _ : ι, jacobiTheta τ := by simp
   rw [hpow, jacobiTheta, TauCeti.prod_tsum_of_summable_norm fun _ ↦ hs, thetaSeries_apply,
-    ← b.coe_toBasis, ← (b.toBasis.restrictScalars ℤ).equivFun.symm.toEquiv.tsum_eq]
+    ← b.coe_toBasis, ← b.latticeEquiv.toEquiv.tsum_eq]
   refine tsum_congr fun m ↦ ?_
   -- The lattice vector with coordinates `m` is `∑ i, (m i : ℝ) • b i`, of squared norm
   -- `∑ i, (m i)²` by orthonormality.
-  have hv : ((b.toBasis.restrictScalars ℤ).equivFun.symm m : E) = ∑ i, (m i : ℝ) • b i := by
-    rw [Basis.coe_restrictScalars_equivFun_symm, Basis.equivFun_symm_apply, b.coe_toBasis]
-    simp only [eq_intCast]
-  have hn : ‖((b.toBasis.restrictScalars ℤ).equivFun.symm m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
-    rw [hv]
+  have hn : ‖(b.latticeEquiv m : E)‖ ^ 2 = ∑ i, (m i : ℝ) ^ 2 := by
+    rw [b.coe_latticeEquiv]
     simpa using b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (m i : ℝ)) Finset.univ
   rw [LinearEquiv.coe_toEquiv, hn, ← Complex.exp_sum]
   push_cast
