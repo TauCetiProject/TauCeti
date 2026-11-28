@@ -377,6 +377,20 @@ theorem sum_adjMat_col (h : IsAssocScheme rel) (i : Fin (d + 1)) (y : X) :
   simp_rw [hrow]
   exact h.sum_adjMat_row i y
 
+/-- The sum of the entries of `M ∈ bmAlgebra rel` over class `i` equals
+`|X| * valency rel i * h.adjMatBasis.repr M i`. -/
+theorem sum_sum_adjMat_mul (h : IsAssocScheme rel) (M : bmAlgebra rel) (i : Fin (d + 1)) :
+    ∑ x, ∑ y, adjMat rel i x y * (M : Matrix X X ℝ) x y =
+      (Fintype.card X : ℝ) * valency rel i * h.adjMatBasis.repr M i := by
+  have hterm : ∀ x y, adjMat rel i x y * (M : Matrix X X ℝ) x y =
+      adjMat rel i x y * h.adjMatBasis.repr M i := fun x y => by
+    rw [adjMat_apply]
+    split_ifs with hxy
+    · rw [← hxy, h.adjMatBasis_repr_rel]
+    · simp
+  simp_rw [hterm, ← Finset.sum_mul, h.sum_adjMat_row i, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul]
+
 /-- Multiplying `A_i` on the right by the all-ones matrix `J` gives `v_i • J`. -/
 theorem adjMat_mul_allOnes (h : IsAssocScheme rel) (i : Fin (d + 1)) :
     adjMat rel i * Matrix.of (fun _ _ : X => (1 : ℝ)) =

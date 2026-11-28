@@ -476,6 +476,17 @@ theorem eq_sum_smul (hE : IsPrimitiveIdempotents rel E)
     _ = ∑ i, ((M * E i).trace / (E i).trace) • E i :=
       Finset.sum_congr rfl fun i _ => hE.mul_eq_smul hM i
 
+/-- The `basis`-coordinate of `M ∈ bmAlgebra rel` at `i` is `tr (M * E i) / tr (E i)`. -/
+@[simp]
+theorem basis_repr (hE : IsPrimitiveIdempotents rel E) (M : bmAlgebra rel)
+    (i : Fin (d + 1)) :
+    hE.basis.repr M i = ((M : Matrix X X ℝ) * E i).trace / (E i).trace := by
+  have hM : M = ∑ j, (((M : Matrix X X ℝ) * E j).trace / (E j).trace) • hE.basis j := by
+    apply Subtype.ext
+    simpa [Submodule.coe_sum, SetLike.val_smul, coe_basis] using hE.eq_sum_smul M.property
+  conv_lhs => rw [hM]
+  simp [Finsupp.single_apply]
+
 /-- Every adjacency matrix `A_j` satisfies `A_j * E_i = (tr (A_j * E_i) / tr (E_i)) • E_i`. -/
 theorem adjMat_mul_eq_smul (hE : IsPrimitiveIdempotents rel E)
     (i j : Fin (d + 1)) :
