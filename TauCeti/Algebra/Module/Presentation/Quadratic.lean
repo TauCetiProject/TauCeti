@@ -52,9 +52,12 @@ ideal `I` of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentati
   along a linear equivalence and base change along an algebra `R → S`.
 * `TauCeti.QuadraticPresentation.extension`: the presentation of an extension `0 → A → B → C → 0`
   of quadratically presented modules by the block upper triangular matrix `[[ψ, -X], [0, φ]]`.
+* `TauCeti.QuadraticPresentation.ofPad`, `TauCeti.QuadraticPresentation.pad`: padding a square
+  presentation (including size zero) by an identity block to any positive size `m`.
 
 ## Main results
 
+* `TauCeti.IsQuadraticallyPresented.nonempty`: extracting a `QuadraticPresentation` witness.
 * `TauCeti.QuadraticPresentation.fittingIdeal_eq`: `Fitt₀(N) = (det φ)`.
 * `TauCeti.QuadraticPresentation.det_mem_nonZeroDivisors_of_fittingIdeal_eq_span`: if
   `Fitt₀(N) = (x)` with `x ∈ nonZeroDivisors R`, then `det φ ∈ nonZeroDivisors R`.
@@ -71,6 +74,10 @@ ideal `I` of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentati
   `TauCeti.QuadraticPresentation.exists_extension`: an extension of quadratically presented
   modules of sizes `n` and `m` is quadratically presented, with size `n + m` and relation
   determinant `det ψ * det φ`.
+* `TauCeti.QuadraticPresentation.ofPad_rel`, `TauCeti.QuadraticPresentation.det_ofPad_rel`,
+  `TauCeti.QuadraticPresentation.ofPad_gen_apply`, `TauCeti.QuadraticPresentation.pad_rel`,
+  `TauCeti.QuadraticPresentation.det_pad_rel`, `TauCeti.QuadraticPresentation.pad_gen_apply`:
+  relation matrices, determinants, and generator maps of identity-padded presentations.
 
 ## References
 
@@ -301,9 +308,151 @@ theorem baseChange_gen_apply (v : Fin (P.baseChange S).size → S) :
   intro v
   simp [Basis.equivFun_symm_apply, TensorProduct.smul_tmul']
 
+/-- Pad a square presentation `Rʳ →A Rʳ →π N → 0` (including `r = 0`) by an identity block to a
+`QuadraticPresentation R N` of any positive size `m ≥ r`, preserving the determinant. -/
+@[expose]
+def ofPad {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) :
+    QuadraticPresentation R N :=
+  let e : Fin r ⊕ Fin (m - r) ≃ Fin m :=
+    finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm))
+  let b := ((Pi.basisFun R (Fin r)).prod (Pi.basisFun R (Fin (m - r)))).reindex e
+  ofExact hm b b (f := (Matrix.toLin' A).prodMap LinearMap.id)
+    (π := π ∘ₗ LinearMap.fst R (Fin r → R) (Fin (m - r) → R))
+    (LinearMap.exact_iff.2 <| by
+      ext ⟨x, y⟩
+      simp only [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.fst_apply,
+        LinearMap.mem_range, LinearMap.prodMap_apply, LinearMap.id_apply, Prod.mk.injEq]
+      exact ⟨fun hx ↦ by
+        obtain ⟨u, hu⟩ := hrange.symm ▸ (LinearMap.mem_ker.mpr hx)
+        exact ⟨(u, y), hu, rfl⟩,
+        fun ⟨⟨u, _⟩, hu, _⟩ ↦ LinearMap.mem_ker.mp (hrange ▸ ⟨u, hu⟩)⟩)
+    (hπ.comp Prod.fst_surjective)
+
+@[simp]
+theorem ofPad_size {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) :
+    (ofPad hrm hm A π hπ hrange).size = m := rfl
+
+theorem ofPad_rel {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) :
+    (ofPad hrm hm A π hπ hrange).rel =
+      Matrix.reindex (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm)))
+        (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm)))
+        (Matrix.fromBlocks A 0 0 1) := by
+  let e : Fin r ⊕ Fin (m - r) ≃ Fin m :=
+    finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm))
+  ext k l
+  obtain ⟨k | k, rfl⟩ := e.surjective k <;> obtain ⟨l | l, rfl⟩ := e.surjective l <;>
+    simp [ofPad, e, LinearMap.toMatrix_apply, Matrix.one_apply, Pi.single_apply]
+
+/-- Padding a square presentation by an identity block does not change its determinant. -/
+@[simp]
+theorem det_ofPad_rel {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) :
+    (ofPad hrm hm A π hπ hrange).rel.det = A.det := by
+  have h := Matrix.det_fromBlocks_zero₂₁ A 0 (1 : Matrix (Fin (m - r)) (Fin (m - r)) R)
+  rw [Matrix.det_one, mul_one,
+    ← Matrix.det_reindex_self (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm)))] at h
+  exact (congrArg Matrix.det (ofPad_rel hrm hm A π hπ hrange)).trans h
+
+/-- The generator map of `ofPad` restricts `v : Fin m → R` to the first `r` coordinates and
+applies `π`. Not a simp lemma: `ofPad_size` rewrites the index type `Fin (ofPad ...).size`
+in its left-hand side (`simpNF`). -/
+theorem ofPad_gen_apply {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) (v : Fin m → R) :
+    (ofPad hrm hm A π hπ hrange).gen v = π (fun i ↦ v (Fin.castLE hrm i)) := by
+  let e : Fin r ⊕ Fin (m - r) ≃ Fin m :=
+    finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm))
+  have hinl (i : Fin r) : e (Sum.inl i) = Fin.castLE hrm i := rfl
+  let b := ((Pi.basisFun R (Fin r)).prod (Pi.basisFun R (Fin (m - r)))).reindex e
+  have hgen : (ofPad hrm hm A π hπ hrange).gen v = π (b.equivFun.symm v).1 := rfl
+  rw [hgen, Basis.equivFun_symm_apply]
+  have hsum : (∑ k : Fin m, v k • b k).1 = fun i : Fin r ↦ v (Fin.castLE hrm i) := by
+    rw [← e.sum_comp (fun k ↦ v k • b k)]
+    simp only [b, Basis.reindex_apply, Equiv.symm_apply_apply, Fintype.sum_sum_type, Prod.fst_add,
+      Prod.fst_sum, Prod.smul_fst, hinl]
+    ext i
+    simp [Finset.sum_apply, Pi.single_apply]
+  rw [hsum]
+
+/-- The first `r` standard generators of `ofPad` map to the generators of `π`. -/
+theorem ofPad_gen_castLE {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) (i : Fin r) :
+    (ofPad hrm hm A π hπ hrange).gen (Pi.single (Fin.castLE hrm i) 1) = π (Pi.single i 1) := by
+  refine (ofPad_gen_apply hrm hm A π hπ hrange (Pi.single (Fin.castLE hrm i) 1)).trans ?_
+  congr 1
+  ext j
+  simp [Pi.single_apply, Fin.ext_iff]
+
+/-- The last `m - r` standard generators of `ofPad` map to `0`. -/
+theorem ofPad_gen_natAdd {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R)
+    (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
+    (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) (j : Fin (m - r)) :
+    (ofPad hrm hm A π hπ hrange).gen
+      (Pi.single (finCongr (Nat.add_sub_cancel' hrm) (Fin.natAdd r j)) 1) = 0 := by
+  refine (ofPad_gen_apply hrm hm A π hπ hrange
+    (Pi.single (finCongr (Nat.add_sub_cancel' hrm) (Fin.natAdd r j)) (1 : R) : Fin m → R)).trans
+    ?_
+  rw [← map_zero π]
+  congr 1
+  ext i
+  simp [Pi.single_apply, Fin.ext_iff]
+  omega
+
+/-- Pad a `QuadraticPresentation R N` to any size `m ≥ P.size` by an identity block, preserving the
+relation determinant. -/
+@[expose]
+def pad (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m) : QuadraticPresentation R N :=
+  ofPad hm (P.size_pos.trans_le hm) P.rel P.gen P.gen_surjective P.range_rel_eq_ker
+
+@[simp]
+theorem pad_size (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m) :
+    (P.pad hm).size = m := rfl
+
+theorem pad_rel (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m) :
+    (P.pad hm).rel =
+      Matrix.reindex (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hm)))
+        (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hm)))
+        (Matrix.fromBlocks P.rel 0 0 1) :=
+  ofPad_rel ..
+
+@[simp]
+theorem det_pad_rel (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m) :
+    (P.pad hm).rel.det = P.rel.det :=
+  det_ofPad_rel ..
+
+/-- The generator map of `P.pad hm` restricts `v : Fin m → R` to the first `P.size` coordinates
+and applies `P.gen`. Not a simp lemma: `pad_size` rewrites the index type `Fin (P.pad hm).size`
+in its left-hand side (`simpNF`). -/
+theorem pad_gen_apply (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m) (v : Fin m → R) :
+    (P.pad hm).gen v = P.gen (fun i ↦ v (Fin.castLE hm i)) :=
+  ofPad_gen_apply ..
+
+/-- The first `P.size` standard generators of `P.pad hm` map to the generators of `P`. -/
+theorem pad_gen_castLE (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m) (i : Fin P.size) :
+    (P.pad hm).gen (Pi.single (Fin.castLE hm i) 1) = P.gen (Pi.single i 1) :=
+  ofPad_gen_castLE ..
+
+/-- The last `m - P.size` standard generators of `P.pad hm` map to `0`. -/
+theorem pad_gen_natAdd (P : QuadraticPresentation R N) {m : ℕ} (hm : P.size ≤ m)
+    (j : Fin (m - P.size)) :
+    (P.pad hm).gen (Pi.single (finCongr (Nat.add_sub_cancel' hm) (Fin.natAdd P.size j)) 1) = 0 :=
+  ofPad_gen_natAdd ..
+
 end QuadraticPresentation
 
 namespace IsQuadraticallyPresented
+
+/-- Extract a `QuadraticPresentation` witness from `IsQuadraticallyPresented`. -/
+theorem nonempty (h : IsQuadraticallyPresented R N) : Nonempty (QuadraticPresentation R N) :=
+  h
 
 /-- A quadratically presented module is finitely presented. -/
 theorem finitePresentation (h : IsQuadraticallyPresented R N) : Module.FinitePresentation R N :=

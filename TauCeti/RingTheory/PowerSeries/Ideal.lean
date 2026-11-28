@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Ideal
 public import Mathlib.RingTheory.PowerSeries.Basic
@@ -54,6 +55,11 @@ its coefficients and shows that it is prime when `I` is.
   maximal ideal has no nonzero torsion on `R⟦X⟧ ⧸ (ϖ ^ m)` for a prime `ϖ` of a local domain.
 * `PowerSeries.sq_map_mk_eq_zero_of_coeff_mem`: a series with coefficients in `J` squares to zero
   in `(R ⧸ K)⟦X⟧` when `J * J ≤ K`.
+* `PowerSeries.jacobson_eq_comap_constantCoeff`: `Ring.jacobson R⟦X⟧` is the preimage of
+  `Ring.jacobson R` under `constantCoeff`.
+* `PowerSeries.quotientMapRingEquiv`, `PowerSeries.quotientSpanCRingEquiv`,
+  `PowerSeries.isLocalRing_quotient_span_C`: quotient isomorphisms
+  `R⟦X⟧ ⧸ (ker φ).map C ≃+* S⟦X⟧` and `R⟦X⟧ ⧸ (C r) ≃+* (R ⧸ (r))⟦X⟧`, preserving locality.
 -/
 
 public section
@@ -156,5 +162,51 @@ theorem sq_map_mk_eq_zero_of_coeff_mem {J K : Ideal R} (hJK : J * J ≤ K) {f : 
   ext n
   rw [sq, ← map_mul, coeff_map, map_zero, Ideal.Quotient.eq_zero_iff_mem]
   exact hJK (coeff_mul_mem_ideal_mul_ideal_of_coeff_mem_ideal' hf hf n)
+
+/-- **Jacobson radical of a power series ring.** A power series lies in the Jacobson radical of
+`R⟦X⟧` if and only if its constant coefficient lies in the Jacobson radical of `R`. -/
+theorem jacobson_eq_comap_constantCoeff (R : Type*) [CommRing R] :
+    Ring.jacobson R⟦X⟧ = (Ring.jacobson R).comap constantCoeff := by
+  ext f
+  simp only [Ideal.mem_comap, Ring.mem_jacobson_iff, isUnit_iff_constantCoeff, map_add, map_one,
+    map_mul]
+  constructor
+  · intro hf c
+    simpa using hf (C c)
+  · intro hf g
+    exact hf (constantCoeff g)
+
+/-- For a surjective ring homomorphism `φ : R →+* S` with finitely generated kernel, the quotient
+`R⟦X⟧ ⧸ (ker φ).map C` is isomorphic to `S⟦X⟧`. -/
+noncomputable def quotientMapRingEquiv (φ : R →+* S) (hφ : Function.Surjective φ)
+    (hker : (RingHom.ker φ).FG) :
+    (R⟦X⟧ ⧸ (RingHom.ker φ).map C) ≃+* S⟦X⟧ :=
+  (Ideal.quotEquivOfEq (ker_map_of_fg φ hker).symm).trans
+    (RingHom.quotientKerEquivOfSurjective (map_surjective φ hφ))
+
+@[simp]
+theorem quotientMapRingEquiv_mk (φ : R →+* S) (hφ : Function.Surjective φ)
+    (hker : (RingHom.ker φ).FG) (f : R⟦X⟧) :
+    quotientMapRingEquiv φ hφ hker (Ideal.Quotient.mk _ f) = f.map φ := by
+  simp [quotientMapRingEquiv]
+
+/-- For any element `r : R`, the quotient `R⟦X⟧ ⧸ (C r)` is isomorphic to `(R ⧸ (r))⟦X⟧`. -/
+noncomputable def quotientSpanCRingEquiv (r : R) :
+    (R⟦X⟧ ⧸ Ideal.span {C r}) ≃+* (R ⧸ Ideal.span {r})⟦X⟧ :=
+  (Ideal.quotEquivOfEq (by
+    rw [Ideal.mk_ker, Ideal.map_span, Set.image_singleton])).trans
+    (quotientMapRingEquiv (Ideal.Quotient.mk (Ideal.span {r})) Ideal.Quotient.mk_surjective
+      (by rw [Ideal.mk_ker]; exact Submodule.fg_span_singleton r))
+
+@[simp]
+theorem quotientSpanCRingEquiv_mk (r : R) (f : R⟦X⟧) :
+    quotientSpanCRingEquiv r (Ideal.Quotient.mk _ f) =
+      f.map (Ideal.Quotient.mk (Ideal.span {r})) := by
+  simp [quotientSpanCRingEquiv]
+
+/-- If `R ⧸ (r)` is a local ring, then so is `R⟦X⟧ ⧸ (C r)`. -/
+theorem isLocalRing_quotient_span_C (r : R) [IsLocalRing (R ⧸ Ideal.span {r})] :
+    IsLocalRing (R⟦X⟧ ⧸ Ideal.span {C r}) :=
+  (quotientSpanCRingEquiv r).symm.isLocalRing
 
 end PowerSeries

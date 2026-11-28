@@ -27,7 +27,9 @@ a nilpotent ideal. This is the quotient calculation used when selecting one prim
 idempotent from each simple-module isomorphism class to obtain a basic algebra.
 
 The equivalences use Mathlib's first isomorphism theorem
-`RingHom.quotientKerEquivOfSurjective`.
+`RingHom.quotientKerEquivOfSurjective`. Over a commutative ring `O`, the same isomorphism theorem
+identifies the corner `eOe` directly with `O ⧸ (1 - e)`
+(`IsIdempotentElem.cornerRingEquivQuotient`).
 
 ## References
 
@@ -160,4 +162,41 @@ theorem cornerQuotientAlgEquiv_mk (x : he.Corner) :
 
 end Algebra
 end Ring
+
+section CommRing
+
+/-- Over a commutative ring `O`, the corner ring `eOe` of an idempotent `e` is isomorphic to the
+quotient ring `O ⧸ (1 - e)`. -/
+noncomputable def cornerRingEquivQuotient {O : Type*} [CommRing O] {e : O}
+    (he : IsIdempotentElem e) :
+    he.Corner ≃+* O ⧸ Ideal.span {1 - e} := by
+  let φ : O →+* he.Corner :=
+    { toFun := he.compress
+      map_one' := Subtype.ext (by simp)
+      map_mul' := fun x y ↦ Subtype.ext <| by
+        simp only [IsIdempotentElem.Corner.val_mul, IsIdempotentElem.val_compress]
+        have he4 : e * e * e * e = e * e := by simp only [he.eq]
+        calc e * (x * y) * e = e * e * (x * y) := by ring
+          _ = e * e * e * e * (x * y) := by rw [he4]
+          _ = e * x * e * (e * y * e) := by ring
+      map_zero' := he.compress_zero
+      map_add' := he.compress_add }
+  have hker : RingHom.ker φ = Ideal.span {1 - e} := by
+    ext x
+    rw [RingHom.mem_ker, Ideal.mem_span_singleton]
+    have hval : (φ x).val = e * x := by
+      rw [show (φ x).val = e * x * e from he.val_compress x, mul_right_comm, he.eq]
+    constructor
+    · intro hx
+      have hex : e * x = 0 := by
+        rw [← hval, congrArg Subtype.val hx, IsIdempotentElem.Corner.val_zero]
+      exact ⟨x, by rw [sub_mul, one_mul, hex, sub_zero]⟩
+    · rintro ⟨y, rfl⟩
+      apply Subtype.ext
+      rw [hval, IsIdempotentElem.Corner.val_zero, ← mul_assoc, mul_sub, mul_one, he.eq,
+        sub_self, zero_mul]
+  exact (RingHom.quotientKerEquivOfSurjective fun x ↦ ⟨x.val, he.compress_val x⟩).symm.trans
+    (Ideal.quotEquivOfEq hker)
+
+end CommRing
 end IsIdempotentElem

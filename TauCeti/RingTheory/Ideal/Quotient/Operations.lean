@@ -218,6 +218,12 @@ theorem Quotient.linearCombination_mk_map_apply {S ι : Type*} [CommRing S] [Alg
       Quotient.mk (I.map (algebraMap R S)) (∑ j, algebraMap R S (c j) * b j) := by
   simp [Fintype.linearCombination_apply, map_sum, Algebra.smul_def]
 
+/-- Two ideals have `I.map (mk K) ≤ L.map (mk K)` in `R ⧸ K` if and only if `I ≤ L ⊔ K`. -/
+theorem map_quotientMk_le_map_quotientMk_iff {I L K : Ideal R} :
+    I.map (Quotient.mk K) ≤ L.map (Quotient.mk K) ↔ I ≤ L ⊔ K := by
+  rw [map_le_iff_le_comap, comap_map_of_surjective _ Quotient.mk_surjective,
+    ← RingHom.ker_eq_comap_bot, mk_ker]
+
 end CommRing
 
 -- Not `@[simp]`: `map_mul` further expands the right-hand side to `mk I r * mk I s`, whereas

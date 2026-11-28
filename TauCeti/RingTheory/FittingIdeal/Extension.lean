@@ -93,8 +93,7 @@ theorem fittingIdeal_eq_mul_of_exact [Module.Finite R A] [Module.Finite R B] [Mo
     (hi : Function.Injective i) (hq : Function.Surjective q) (hiq : Function.Exact i q)
     (hC : IsQuadraticallyPresented R C) :
     fittingIdeal R B 0 = fittingIdeal R A 0 * fittingIdeal R C 0 := by
-  obtain ⟨m, hm, M, ⟨e⟩⟩ := isQuadraticallyPresented_iff_exists_linearEquiv.1 hC
-  let P := (QuadraticPresentation.cokernel hm M).map e
+  obtain ⟨P⟩ := hC.nonempty
   rw [P.fittingIdeal_eq, fittingIdeal_zero_eq_mul_span_det_of_exact hi hq hiq (Matrix.toLin' P.rel)
     P.gen_surjective P.range_rel_eq_ker.symm, LinearMap.det_toLin']
 
