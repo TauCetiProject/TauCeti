@@ -32,6 +32,14 @@ of `ℕ∞`, with value `⊤` if there is no such time.
 
 ## Main declarations
 
+* `Kernel.tvToStationary` and `Kernel.tvBetweenStarts`: the worst-case distances `d(t)` to a
+  reference measure and `d̄(t)` between two starts.
+* `Kernel.isGreatest_tvToStationary` and `Kernel.isGreatest_tvBetweenStarts`: on a nonempty
+  finite space with measurable singletons, point starts attain the worst-case distances over
+  all initial probability laws.
+* `Kernel.tvToStationary_antitone` and `Kernel.tvBetweenStarts_antitone`: for a Markov kernel
+  on a finite space with measurable singletons, both distances are nonincreasing.
+* `Kernel.tvBetweenStarts_add_le`: the bound `d̄(s + t) ≤ d̄(s) d̄(t)`.
 * `Kernel.mixingTime`: the mixing time `t_mix(ε)`.
 * `Kernel.mixingTime_le_iff`: for a Markov kernel on a finite space with measurable
   singletons, `t_mix(ε) ≤ t` exactly when `κ.tvToStationary π t ≤ ε`.
@@ -212,15 +220,8 @@ theorem mixingTime_def (κ : Kernel α α) (π : Measure α) (ε : ℝ) :
 most `ε` at some time `s ≤ t`. -/
 theorem mixingTime_le_iff_exists :
     κ.mixingTime π ε ≤ t ↔ ∃ s ≤ t, κ.tvToStationary π s ≤ ε := by
-  refine ⟨fun h ↦ ?_, fun ⟨s, hst, hs⟩ ↦ (iInf₂_le s hs).trans (by exact_mod_cast hst)⟩
-  by_contra! hlt
-  have h' : ((t + 1 : ℕ) : ℕ∞) ≤ κ.mixingTime π ε :=
-    le_iInf₂ fun s hs ↦ by
-      by_contra! hs'
-      exact (hlt s (Nat.lt_succ_iff.mp (by exact_mod_cast hs'))).not_ge hs
-  have := h'.trans h
-  norm_cast at this
-  omega
+  simp only [mixingTime_def, ← ENat.lt_add_one_iff (ENat.natCast_ne_top t), iInf_lt_iff,
+    exists_prop, ← Nat.cast_add_one, Nat.cast_lt, Nat.lt_succ_iff, and_comm]
 
 /-- If the distance to the reference measure is at most `ε` at time `t`, then the mixing time
 is at most `t`. -/
