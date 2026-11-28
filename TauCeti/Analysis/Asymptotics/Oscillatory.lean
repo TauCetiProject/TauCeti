@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Oscillatory asymptotic decay
@@ -26,7 +27,8 @@ and Bessel (`p = 1, α₀ = 1 / 2`) asymptotics.
 ## Main declarations
 
 * `TauCeti.HasOscillatoryDecayAt` and `TauCeti.hasOscillatoryDecayAt_iff`: fixed-order
-  oscillatory decomposition up to `O(t ^ (-B))`.
+  oscillatory decomposition up to `O(t ^ (-B))`, with amplitude bound
+  `TauCeti.HasOscillatoryDecayAt.isBigO_rpow_neg`.
 * `TauCeti.HasOscillatoryDecay`, `TauCeti.hasOscillatoryDecay_iff`,
   `TauCeti.hasOscillatoryDecay_def`, `TauCeti.HasOscillatoryDecay.of_forall`, and
   `TauCeti.HasOscillatoryDecay.hasOscillatoryDecayAt`: all-orders oscillatory asymptotic decay
@@ -34,6 +36,7 @@ and Bessel (`p = 1, α₀ = 1 / 2`) asymptotics.
 * `TauCeti.HasOscillatoryDecay.of_asymptoticExpansion`: criterion from a Poincaré oscillatory
   asymptotic series.
 * `TauCeti.HasOscillatoryDecay.isBigO_rpow_neg`: leading amplitude bound `O(t ^ (-α₀))`.
+* `TauCeti.continuousOn_oscillatorySum`: continuity on `(0, ∞)` of a finite oscillatory sum.
 * Algebraic and mode-construction lemmas: `of_isBigO`, `zero`, `congr_atTop`, `mono`,
   `mono_order`, `const_mul`, `neg`, `add`, `sub`, `sum`, `rpow_mul_cos`, `rpow_mul_sin`,
   `rpow_mul_cos_add`, `rpow_mul_sin_add`.
@@ -105,6 +108,11 @@ theorem of_isBigO {c p α₀ B : ℝ} {f : ℝ → ℝ}
     (hf : f =O[atTop] fun t : ℝ ↦ t ^ (-B)) : HasOscillatoryDecayAt c p α₀ B f :=
   ⟨0, Fin.elim0, Fin.elim0, Fin.elim0, f, fun i ↦ i.elim0, hf, by simp⟩
 
+/-- The zero function satisfies `HasOscillatoryDecayAt c p α₀ B`. -/
+@[simp]
+theorem zero (c p α₀ B : ℝ) : HasOscillatoryDecayAt c p α₀ B 0 :=
+  of_isBigO (isBigO_zero _ _)
+
 /-- `HasOscillatoryDecayAt` depends only on the eventual germ of `f` at `+∞`. -/
 theorem congr_atTop {c p α₀ B : ℝ} {f g : ℝ → ℝ}
     (hf : HasOscillatoryDecayAt c p α₀ B f) (hfg : f =ᶠ[atTop] g) :
@@ -168,6 +176,24 @@ theorem rpow_mul_cos_add_sin {c p α₀ α B : ℝ} (u v : ℝ) (hα : α₀ ≤
     HasOscillatoryDecayAt c p α₀ B
       (fun t ↦ u * (t ^ (-α) * Real.cos (c * t ^ p)) + v * (t ^ (-α) * Real.sin (c * t ^ p))) :=
   ⟨1, fun _ ↦ α, fun _ ↦ u, fun _ ↦ v, 0, fun _ ↦ hα, isBigO_zero _ _, by simp⟩
+
+/-- Every function satisfying `HasOscillatoryDecayAt c p α₀ B f` satisfies the amplitude bound
+`f =O[atTop] fun t : ℝ ↦ t ^ (-min α₀ B)`. -/
+theorem isBigO_rpow_neg {c p α₀ B : ℝ} {f : ℝ → ℝ} (hf : HasOscillatoryDecayAt c p α₀ B f) :
+    f =O[atTop] fun t : ℝ ↦ t ^ (-min α₀ B) := by
+  obtain ⟨k, α, u, v, r, hα, hr, heq⟩ := hf
+  have hmode (i : Fin k) (trig : ℝ → ℝ) (htrig : ∀ θ, |trig θ| ≤ 1) :
+      (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) =O[atTop] fun t : ℝ ↦ t ^ (-min α₀ B) :=
+    (isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by
+      rw [norm_mul, Real.norm_eq_abs (trig _), one_mul]
+      exact mul_le_of_le_one_right (norm_nonneg _) (htrig _)⟩).trans
+      (isBigO_rpow_rpow_atTop_of_le (neg_le_neg ((min_le_left α₀ B).trans (hα i))))
+  exact (((IsBigO.sum (s := Finset.univ) fun i _ ↦
+      ((hmode i Real.cos Real.abs_cos_le_one).const_mul_left (u i)).add
+        ((hmode i Real.sin Real.abs_sin_le_one).const_mul_left (v i))).congr_left
+      fun t ↦ Finset.sum_apply t Finset.univ _).add
+      (hr.trans (isBigO_rpow_rpow_atTop_of_le (neg_le_neg (min_le_right α₀ B))))).congr'
+    heq.symm EventuallyEq.rfl
 
 end HasOscillatoryDecayAt
 
@@ -291,18 +317,21 @@ theorem of_asymptoticExpansion {c p α₀ : ℝ} {f : ℝ → ℝ} {β u v : ℕ
 `f =O[atTop] fun t : ℝ ↦ t ^ (-α₀)`. -/
 theorem isBigO_rpow_neg {c p α₀ : ℝ} {f : ℝ → ℝ} (hf : HasOscillatoryDecay c p α₀ f) :
     f =O[atTop] fun t : ℝ ↦ t ^ (-α₀) := by
-  obtain ⟨k, α, u, v, r, hα, hr, heq⟩ := hasOscillatoryDecayAt_iff.mp (hf α₀)
-  have hmode (i : Fin k) (trig : ℝ → ℝ) (htrig : ∀ θ, |trig θ| ≤ 1) :
-      (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) =O[atTop] fun t : ℝ ↦ t ^ (-α₀) :=
-    (isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by
-      rw [norm_mul, Real.norm_eq_abs (trig _), one_mul]
-      exact mul_le_of_le_one_right (norm_nonneg _) (htrig _)⟩).trans
-      (isBigO_rpow_rpow_atTop_of_le (neg_le_neg (hα i)))
-  exact (((IsBigO.sum (s := Finset.univ) fun i _ ↦
-      ((hmode i Real.cos Real.abs_cos_le_one).const_mul_left (u i)).add
-        ((hmode i Real.sin Real.abs_sin_le_one).const_mul_left (v i))).congr_left
-      fun t ↦ Finset.sum_apply t Finset.univ _).add hr).congr' heq.symm EventuallyEq.rfl
+  simpa only [min_self] using (hf.hasOscillatoryDecayAt α₀).isBigO_rpow_neg
 
 end HasOscillatoryDecay
+
+/-- Continuity on `(0, ∞)` of a finite oscillatory sum with phase `c * t ^ p`, exponents `-α i`,
+and coefficients `u i, v i`. -/
+theorem continuousOn_oscillatorySum (c p : ℝ) {k : ℕ} (α u v : Fin k → ℝ) :
+    ContinuousOn (fun t : ℝ ↦ ∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
+      v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) (Set.Ioi 0) := by
+  have htrig {trig : ℝ → ℝ} (htrig : Continuous trig) (i : Fin k) :
+      ContinuousOn (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) (Set.Ioi 0) := by
+    simpa only [add_zero] using
+      continuousOn_rpow_mul_comp_add htrig (c := c) (p := p) (q := -α i) (φ := 0)
+  exact continuousOn_finsetSum Finset.univ fun i _ ↦
+    (continuousOn_const.mul (htrig Real.continuous_cos i)).add
+      (continuousOn_const.mul (htrig Real.continuous_sin i))
 
 end TauCeti

@@ -161,20 +161,6 @@ private theorem hasOscillatoryDecay_tail_rpow_mul_cos_add {c p α : ℝ} (φ : �
     ⌈(B - (α + p - 1)) / p⌉₊ φ hα (by
       have := (div_le_iff₀ hp).mp (Nat.le_ceil ((B - (α + p - 1)) / p)); linarith)
 
-/-- Continuity of a finite oscillatory sum on `[x, ∞)` (`0 < x`). -/
-private theorem continuousOn_oscillatorySum {c p x : ℝ} {k : ℕ} {α u v : Fin k → ℝ}
-    (hx : 0 < x) :
-    ContinuousOn (fun t ↦ ∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
-        v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) (Ici x) := by
-  have htrig {trig : ℝ → ℝ} (htrig : Continuous trig) (i : Fin k) :
-      ContinuousOn (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) (Ici x) := by
-    simpa only [add_zero] using
-      (continuousOn_rpow_mul_comp_add htrig (c := c) (p := p) (q := -α i) (φ := 0)).mono
-        (Ici_subset_Ioi.mpr hx)
-  exact continuousOn_finsetSum Finset.univ fun i _ ↦
-    (continuousOn_const.mul (htrig Real.continuous_cos i)).add
-      (continuousOn_const.mul (htrig Real.continuous_sin i))
-
 /-- Improper tail integral of a finite oscillatory sum on `[x, ∞)` (`0 < x`). -/
 private theorem tendsto_oscillatorySum {c p x : ℝ} {k : ℕ} {α u v : Fin k → ℝ}
     (hc : c ≠ 0) (hp : 0 < p) (hα : ∀ i, 0 < α i + p - 1) (hx : 0 < x) :
@@ -250,7 +236,7 @@ private theorem tendsto_and_hasOscillatoryDecay_step {c p α₀ a : ℝ} {f : �
     have hα_pos : ∀ i, 0 < α i + p - 1 := fun i ↦ by linarith [hαi i]
     have hr_loc : LocallyIntegrableOn r (Ici x₀) := by
       refine ((hloc.mono_set (Ici_subset_Ici.mpr ha_x₀)).sub (ContinuousOn.locallyIntegrableOn
-        (continuousOn_oscillatorySum hx₀_pos (c := c) (p := p) (α := α) (u := u) (v := v))
+        ((continuousOn_oscillatorySum c p α u v).mono (Ici_subset_Ioi.mpr hx₀_pos))
         measurableSet_Ici)).congr ?_
       filter_upwards [ae_restrict_mem measurableSet_Ici] with t (ht : x₀ ≤ t)
       simp [hR₀ t ((le_max_right _ _).trans ht)]
@@ -267,8 +253,8 @@ private theorem tendsto_and_hasOscillatoryDecay_step {c p α₀ a : ℝ} {f : �
       filter_upwards [eventually_ge_atTop x] with R hR
       have hsub : [[x, R]] ⊆ Ici x := ordConnected_Ici.uIcc_subset le_rfl hR
       rw [id, ← intervalIntegral.integral_add
-        (((continuousOn_oscillatorySum (hx₀_pos.trans_le hx) (c := c) (p := p) (α := α) (u := u)
-          (v := v)).mono hsub).intervalIntegrable)
+        (((continuousOn_oscillatorySum c p α u v).mono
+          (hsub.trans (Ici_subset_Ioi.mpr (hx₀_pos.trans_le hx)))).intervalIntegrable)
         (hr_loc.intervalIntegrable (hsub.trans (Ici_subset_Ici.mpr hx)))]
       exact intervalIntegral.integral_congr fun t ht ↦
         (hR₀ t ((le_max_right _ _).trans (hx.trans (hsub ht)))).symm
@@ -293,16 +279,17 @@ private theorem tendsto_and_hasOscillatoryDecay_one {c p α₀ : ℝ} {f : ℝ �
     by_cases hx : LocallyIntegrableOn f (Ici x)
     · obtain ⟨_, hL⟩ := (tendsto_and_hasOscillatoryDecay_step hc hp hα hf hx).1
       rwa [iteratedTailIntegral_one_eq_of_tendsto hL]
-    · have h0 := tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici hx
-      rwa [iteratedTailIntegral_one_eq_of_tendsto h0]
+    · rw [iteratedTailIntegral_succ_of_not_locallyIntegrableOn_Ici (n := 0)
+        (by simpa only [iteratedTailIntegral_zero] using hx)]
+      exact tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici hx
   refine ⟨hx_tend, ?_⟩
   by_cases hex : ∃ a : ℝ, LocallyIntegrableOn f (Ici a)
   · exact (tendsto_and_hasOscillatoryDecay_step hc hp hα hf hex.choose_spec).2
   · push Not at hex
     have hzero : iteratedTailIntegral f 1 = 0 := by
       ext x
-      exact iteratedTailIntegral_one_eq_of_tendsto
-        (tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici (hex x))
+      exact iteratedTailIntegral_succ_of_not_locallyIntegrableOn_Ici (n := 0)
+        (by simpa only [iteratedTailIntegral_zero] using hex x)
     rw [hzero]
     exact HasOscillatoryDecay.zero c p (α₀ + p - 1)
 

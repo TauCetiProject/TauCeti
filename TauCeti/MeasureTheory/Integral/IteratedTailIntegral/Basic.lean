@@ -74,12 +74,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 Because both `Filter.limUnder` and `intervalIntegral` are totalized in Lean, three fallback
 conventions apply when convergence, local integrability, or completeness fails:
 1. If `R ↦ ∫ t in x..R, iteratedTailIntegral f n t` does not converge as `R → ∞`,
-   `Filter.limUnder` returns the junk value `Classical.arbitrary E` (by
-   `Filter.limUnder_of_not_tendsto`).
+   `Filter.limUnder` returns the junk value `Classical.arbitrary E`
+   (`TauCeti.iteratedTailIntegral_succ_of_not_tendsto`).
 2. If `iteratedTailIntegral f n` is not locally integrable on `[x, ∞)`, Mathlib's
    `intervalIntegral.integral_undef` returns `0` for all sufficiently large `R`, so the truncated
    integrals collapse to `0` and `iteratedTailIntegral f (n + 1) x = 0`
-   (`TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici`).
+   (`TauCeti.iteratedTailIntegral_succ_of_not_locallyIntegrableOn_Ici`).
 3. If `E` is not complete (`¬ CompleteSpace E`), every Bochner integral collapses to `0`
    (`integral_of_not_completeSpace`), so `iteratedTailIntegral f (n + 1) x = 0`
    (`TauCeti.iteratedTailIntegral_succ_of_not_completeSpace`). -/
@@ -89,9 +89,6 @@ noncomputable def iteratedTailIntegral (f : ℝ → E) : ℕ → ℝ → E
 
 @[simp]
 theorem iteratedTailIntegral_zero (f : ℝ → E) : iteratedTailIntegral f 0 = f := by rfl
-
-theorem iteratedTailIntegral_zero_apply (f : ℝ → E) (x : ℝ) :
-    iteratedTailIntegral f 0 x = f x := by rfl
 
 theorem iteratedTailIntegral_succ_apply (f : ℝ → E) (n : ℕ) (x : ℝ) :
     iteratedTailIntegral f (n + 1) x =
@@ -144,8 +141,23 @@ theorem iteratedTailIntegral_zero_fun (n : ℕ) : iteratedTailIntegral (0 : ℝ 
     ext x
     exact iteratedTailIntegral_succ_eq_of_tendsto (by simp [ih])
 
-theorem iteratedTailIntegral_zero_fun_apply (n : ℕ) (x : ℝ) :
-    iteratedTailIntegral (0 : ℝ → E) n x = 0 := by simp
+/-- If the truncated integrals `R ↦ ∫ t in x..R, iteratedTailIntegral f n t` do not converge as
+`R → ∞`, then `iteratedTailIntegral f (n + 1) x` takes the `Filter.limUnder` fallback value
+`Classical.arbitrary E`. -/
+theorem iteratedTailIntegral_succ_of_not_tendsto {f : ℝ → E} {n : ℕ} {x : ℝ}
+    (h : ¬ ∃ L : E, Tendsto (fun R : ℝ ↦ ∫ t in x..R, iteratedTailIntegral f n t) atTop (𝓝 L)) :
+    iteratedTailIntegral f (n + 1) x = Classical.arbitrary E := by
+  rw [iteratedTailIntegral_succ_apply]
+  exact limUnder_of_not_tendsto h
+
+/-- If `iteratedTailIntegral f n` is not locally integrable on `[x, ∞)`, then the truncated
+integrals collapse to `0` for large `R` by `intervalIntegral.integral_undef`, so
+`iteratedTailIntegral f (n + 1) x = 0`. -/
+theorem iteratedTailIntegral_succ_of_not_locallyIntegrableOn_Ici {f : ℝ → E} {n : ℕ} {x : ℝ}
+    (hnot : ¬ LocallyIntegrableOn (iteratedTailIntegral f n) (Ici x)) :
+    iteratedTailIntegral f (n + 1) x = 0 :=
+  iteratedTailIntegral_succ_eq_of_tendsto
+    (tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici hnot)
 
 /-- In an incomplete normed space, every Bochner integral vanishes, so every positive-order
 `iteratedTailIntegral` is identically `0`. -/
@@ -160,7 +172,7 @@ theorem iteratedTailIntegral_succ_of_not_completeSpace (hE : ¬ CompleteSpace E)
 theorem iteratedTailIntegral_comp_add_right (f : ℝ → E) (c : ℝ) (n : ℕ) (x : ℝ) :
     iteratedTailIntegral (fun t ↦ f (t + c)) n x = iteratedTailIntegral f n (x + c) := by
   induction n generalizing x with
-  | zero => simp only [iteratedTailIntegral_zero_apply]
+  | zero => simp only [iteratedTailIntegral_zero]
   | succ n ih =>
     simp only [iteratedTailIntegral_succ_apply, ih, intervalIntegral.integral_comp_add_right]
     rw [← Function.comp_def (fun R ↦ ∫ t in x + c..R, iteratedTailIntegral f n t) (· + c),
@@ -288,10 +300,8 @@ theorem continuousOn_iteratedTailIntegral_succ {f : ℝ → E} {n : ℕ} {a : �
     refine (hprim x ⟨hx, by linarith⟩).mono_of_mem_nhdsWithin ?_
     filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one x))] with
       _ h1 h2 using ⟨h1, h2.le⟩
-  · refine (continuousOn_const (c := Classical.choice (inferInstance : Nonempty E))).congr
-      fun x (hx : a ≤ x) ↦ ?_
-    rw [iteratedTailIntegral_succ_apply]
-    exact limUnder_of_not_tendsto fun ⟨L, hL⟩ ↦
+  · refine (continuousOn_const (c := Classical.arbitrary E)).congr fun x (hx : a ≤ x) ↦ ?_
+    exact iteratedTailIntegral_succ_of_not_tendsto fun ⟨L, hL⟩ ↦
       hconv ⟨L - ∫ t in x..a, iteratedTailIntegral f n t,
         hloc.tendsto_intervalIntegral_sub hx le_rfl hL⟩
 
@@ -453,7 +463,7 @@ theorem iteratedTailIntegral_const_smul {R : Type*} [NormedRing R] [Module R E] 
     (hx : a ≤ x) :
     iteratedTailIntegral (fun t ↦ c • f t) n x = c • iteratedTailIntegral f n x := by
   induction n generalizing x with
-  | zero => simp only [iteratedTailIntegral_zero_apply]
+  | zero => simp only [iteratedTailIntegral_zero]
   | succ n ih =>
     have hf_loc := hloc (Nat.succ_pos n)
     have hloc_n := locallyIntegrableOn_iteratedTailIntegral hf_loc n
@@ -496,7 +506,7 @@ theorem iteratedTailIntegral_add {f g : ℝ → E} {n : ℕ} {a x : ℝ}
     iteratedTailIntegral (f + g) n x =
       iteratedTailIntegral f n x + iteratedTailIntegral g n x := by
   induction n generalizing x with
-  | zero => simp only [iteratedTailIntegral_zero_apply, Pi.add_apply]
+  | zero => simp only [iteratedTailIntegral_zero, Pi.add_apply]
   | succ n ih =>
     have hf_loc := hloc_f (Nat.succ_pos n)
     have hg_loc := hloc_g (Nat.succ_pos n)
