@@ -471,4 +471,11 @@ noncomputable def coefficientFunctor (R : Type v) [CommRing R] :
         eqToHom (coefficientFunctor_obj R B).symm :=
   ((Category.id_comp _).trans (Category.comp_id _)).symm
 
+/-- In the coefficient category, multiplication by an integer is that integer times the
+identity morphism. -/
+@[simp high] lemma coefficientFunctor_map_mulBy (R : Type v) [CommRing R]
+    (A : AbelianVariety K) (n : ℤ) :
+    (coefficientFunctor R).map (mulBy A n) = n • 𝟙 ((coefficientFunctor R).obj A) :=
+  CoefficientHom.ofHom_mulBy (R := R) A n
+
 end TauCeti.AlgebraicGeometry.AbelianVariety
