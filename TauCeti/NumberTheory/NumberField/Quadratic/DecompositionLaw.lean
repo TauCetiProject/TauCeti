@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Quadratic.Prime.Decomposition
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.Radicand
 import TauCeti.RingTheory.Ideal.Maps
 
@@ -97,10 +98,9 @@ private theorem fundamentalDiscriminantChar_discr_eq_neg_one_iff_isPrime_of_fact
   have hzero := fundamentalDiscriminantChar_discr_eq_zero_iff_dvd (p := p) hK
   -- A prime of `𝓞 K` lies over `p` exactly when it contains `p`.
   have hover : ∀ Q : Ideal (𝓞 K), Q.IsPrime →
-      (Q ∈ primesOver (span {(p : ℤ)}) (𝓞 K) ↔ (p : 𝓞 K) ∈ Q) := fun Q hQ => by
-    have h := liesOver_span_iff hQ.ne_top (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime))
-    simp only [algebraMap_int_eq, eq_intCast, Int.cast_natCast] at h
-    exact ⟨fun h' => h.mp h'.2, fun h' => ⟨hQ, h.mpr h'⟩⟩
+      (Q ∈ primesOver (span {(p : ℤ)}) (𝓞 K) ↔ (p : 𝓞 K) ∈ Q) := fun Q hQ =>
+    ⟨fun h' => (TauCeti.NumberField.liesOver_span_natCast_iff hQ.ne_top).mp h'.2,
+      fun h' => ⟨hQ, (TauCeti.NumberField.liesOver_span_natCast_iff hQ.ne_top).mpr h'⟩⟩
   rw [isPrime_span_natCast_iff_isMaximal, hmax]
   constructor
   · -- Over a root `r` lie the two primes `P r ≠ P' r`, but an inert `p` has a single prime over it.
