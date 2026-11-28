@@ -52,6 +52,13 @@ rotations of the round sphere.
 * `Matrix.specialUnitaryGroup.ker_toPSL_eq_center` and `Matrix.specialUnitaryGroup.mem_center_iff`:
   over `ℂ`, the kernel of `SU(n) → PSL(n)` equals the center of `SU(n)`, consisting of the scalar
   matrices whose scalar is a `card n`-th root of unity.
+* `Matrix.specialUnitaryGroup.centerEquivRootsOfUnity`,
+  `Matrix.specialUnitaryGroup.scalar_centerEquivRootsOfUnity`,
+  `Matrix.specialUnitaryGroup.coe_centerEquivRootsOfUnity_eq_diag`,
+  `Matrix.specialUnitaryGroup.coe_centerEquivRootsOfUnity_symm`, and
+  `Matrix.specialUnitaryGroup.centerEquivRootsOfUnity_eq_iff`: over `ℂ` with nonempty index
+  type `n`, multiplicative identification of `Z(SU(n))` with `rootsOfUnity (card n) ℂ` and its
+  scalar-matrix evaluation lemmas.
 
 ## References
 
@@ -262,6 +269,72 @@ theorem mem_center_iff {A : specialUnitaryGroup n ℂ} :
       ∃ c : ℂ, c ^ Fintype.card n = 1 ∧ scalar n c = (A : Matrix n n ℂ) := by
   rw [← ker_toPSL_eq_center, ker_toPSL, Subgroup.mem_comap, SpecialLinearGroup.mem_center_iff,
     coe_toSL]
+
+private theorem toSL_mem_center (A : Subgroup.center (specialUnitaryGroup n ℂ)) :
+    toSL (A : specialUnitaryGroup n ℂ) ∈ Subgroup.center (SpecialLinearGroup n ℂ) := by
+  rw [← Subgroup.mem_comap, ← ker_toPSL (n := n) (α := ℂ), ker_toPSL_eq_center]
+  exact A.property
+
+/-- Over `ℂ` with a nonempty index type `n`, the center of `SU(n, ℂ)` is multiplicatively
+equivalent to the group `rootsOfUnity (Fintype.card n) ℂ` of `card n`-th roots of unity. -/
+noncomputable def centerEquivRootsOfUnity [Nonempty n] :
+    Subgroup.center (specialUnitaryGroup n ℂ) ≃* rootsOfUnity (Fintype.card n) ℂ where
+  toFun A := SpecialLinearGroup.center_equiv_rootsOfUnity' (Classical.arbitrary n)
+    ⟨toSL (A : specialUnitaryGroup n ℂ), toSL_mem_center A⟩
+  invFun ζ := scalarCenter (n := n) <| by
+    have hpow := (mem_rootsOfUnity (Fintype.card n) (ζ : ℂˣ)).mp ζ.property
+    simpa [Units.ext_iff] using hpow
+  left_inv A := Subtype.ext <| toSL_injective <| Subtype.ext <| by
+    have hSL := SpecialLinearGroup.scalar_eq_coe_self_center
+      ⟨toSL (A : specialUnitaryGroup n ℂ), toSL_mem_center A⟩ (Classical.arbitrary n)
+    simpa [coe_scalarCenter, SpecialLinearGroup.center_equiv_rootsOfUnity'_apply] using hSL
+  right_inv ζ := by
+    ext
+    simp [SpecialLinearGroup.center_equiv_rootsOfUnity'_apply]
+  map_mul' A B :=
+    (SpecialLinearGroup.center_equiv_rootsOfUnity' (Classical.arbitrary n)).map_mul
+      ⟨toSL (A : specialUnitaryGroup n ℂ), toSL_mem_center A⟩
+      ⟨toSL (B : specialUnitaryGroup n ℂ), toSL_mem_center B⟩
+
+/-- An element of `Z(SU(n, ℂ))` (with `n` nonempty) is the scalar matrix determined by its image
+under `centerEquivRootsOfUnity`. -/
+theorem scalar_centerEquivRootsOfUnity [Nonempty n]
+    (A : Subgroup.center (specialUnitaryGroup n ℂ)) :
+    scalar n ((centerEquivRootsOfUnity A : ℂˣ) : ℂ) =
+      ((A : specialUnitaryGroup n ℂ) : Matrix n n ℂ) := by
+  have hSL := SpecialLinearGroup.scalar_eq_coe_self_center
+    ⟨toSL (A : specialUnitaryGroup n ℂ), toSL_mem_center A⟩ (Classical.arbitrary n)
+  simpa [centerEquivRootsOfUnity, SpecialLinearGroup.center_equiv_rootsOfUnity'_apply] using hSL
+
+/-- The diagonal entries of a central element of `SU(n, ℂ)` equal its `centerEquivRootsOfUnity`
+coordinate. -/
+theorem coe_centerEquivRootsOfUnity_eq_diag [Nonempty n]
+    (A : Subgroup.center (specialUnitaryGroup n ℂ)) (i : n) :
+    ((centerEquivRootsOfUnity A : ℂˣ) : ℂ) =
+      ((A : specialUnitaryGroup n ℂ) : Matrix n n ℂ) i i := by
+  have h := congr_fun₂ (scalar_centerEquivRootsOfUnity A) i i
+  simpa [scalar_apply] using h
+
+/-- Evaluating `centerEquivRootsOfUnity.symm ζ` as a matrix yields `scalar n ((ζ : ℂˣ) : ℂ)`. -/
+@[simp]
+theorem coe_centerEquivRootsOfUnity_symm [Nonempty n]
+    (ζ : rootsOfUnity (Fintype.card n) ℂ) :
+    ((centerEquivRootsOfUnity.symm ζ : specialUnitaryGroup n ℂ) : Matrix n n ℂ) =
+      scalar n ((ζ : ℂˣ) : ℂ) := by
+  simp [centerEquivRootsOfUnity]
+
+/-- A central element of `SU(n, ℂ)` corresponds to `ζ : rootsOfUnity (Fintype.card n) ℂ` under
+`centerEquivRootsOfUnity` if and only if its matrix is `scalar n ((ζ : ℂˣ) : ℂ)`. -/
+theorem centerEquivRootsOfUnity_eq_iff [Nonempty n]
+    {A : Subgroup.center (specialUnitaryGroup n ℂ)} {ζ : rootsOfUnity (Fintype.card n) ℂ} :
+    centerEquivRootsOfUnity A = ζ ↔
+      ((A : specialUnitaryGroup n ℂ) : Matrix n n ℂ) = scalar n ((ζ : ℂˣ) : ℂ) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · subst h
+    exact (scalar_centerEquivRootsOfUnity A).symm
+  · rw [← MulEquiv.eq_symm_apply]
+    exact Subtype.ext <| toSL_injective <| Subtype.ext <| by
+      rw [coe_toSL, coe_toSL, h, coe_centerEquivRootsOfUnity_symm]
 
 end Complex
 

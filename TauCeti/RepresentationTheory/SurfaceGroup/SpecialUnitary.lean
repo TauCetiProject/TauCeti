@@ -181,6 +181,14 @@ private noncomputable def entryRep {r g : ℕ}
   MonoidHom.comp (Matrix.toLinAlgEquiv' : Matrix (Fin r) (Fin r) ℂ ≃ₐ[ℂ] _).toMonoidHom
     ((Matrix.specialUnitaryGroup (Fin r) ℂ).subtype.comp (entrySubgroup x).subtype)
 
+private theorem entryRep_apply {r g : ℕ}
+    (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ)
+    (u : entrySubgroup x) :
+    entryRep x u =
+      Matrix.toLin' ((u : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) :=
+  LinearMap.ext fun v => by
+    simp [entryRep, Matrix.toLinAlgEquiv'_apply, Matrix.toLin'_apply]
+
 private theorem isIrreducible_entryRep {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
     (hr : 0 < r) {g : ℕ}
     {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
@@ -199,7 +207,7 @@ private theorem isIrreducible_entryRep {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
         ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) := by
       simp [z, ← (entrySubgroup x).subtype_apply, List.map_ofFn, Function.comp_def,
         map_commutatorElement]
-    simp [entryRep, hzx, mem_relationSet.1 hx]
+    simp [entryRep_apply, hzx, mem_relationSet.1 hx, Module.End.one_eq_id]
   exact Representation.isIrreducible_of_mem_commutator hz (by simpa using hζ) hzζ
 
 /-- **Irreducibility of coprime twisted representations.** For a primitive `r`-th root of unity
@@ -220,7 +228,8 @@ theorem eq_bot_or_eq_top_of_invariant_relationSet {r : ℕ} {ζ : ℂ}
       rintro y (⟨j, rfl⟩ | ⟨j, rfl⟩)
       · exact (hV j).1
       · exact (hV j).2)
-  let σ : Subrepresentation (entryRep x) := ⟨V, fun u v hv => hinv u u.property v hv⟩
+  let σ : Subrepresentation (entryRep x) :=
+    ⟨V, fun u v hv => by rw [entryRep_apply]; exact hinv u u.property v hv⟩
   rcases hirr.eq_bot_or_eq_top σ with hbot | htop
   · exact Or.inl (congrArg Subrepresentation.toSubmodule hbot)
   · exact Or.inr (congrArg Subrepresentation.toSubmodule htop)
@@ -245,7 +254,7 @@ theorem exists_eq_smul_one_of_commute_relationSet {r : ℕ} {ζ : ℂ}
       · exact (hM j).2)
   obtain ⟨c, hc⟩ := Representation.IsIrreducible.exists_forall_apply_eq_smul (ρ := entryRep x)
     (Matrix.toLin' M) fun u v => by
-      simp [entryRep, Matrix.mulVec_mulVec, (hcomm u u.property).eq]
+      simp [entryRep_apply, Matrix.toLin'_apply, Matrix.mulVec_mulVec, (hcomm u u.property).eq]
   exact ⟨c, Matrix.toLin'.injective <| LinearMap.ext fun v => by simpa using hc v⟩
 
 /-- **Stabilizers of the coprime twisted relation are central.** Let `ζ` be a primitive `r`-th root

@@ -7,111 +7,78 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.UnitaryGroup
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Inverse
 
 /-!
-# Invariant-subspace and commutant subgroups of `SU(n)`
+# Invariant-subspace and centralizer subgroups of `SU(n)`
 
 This file provides two general subgroup constructions for `Matrix.specialUnitaryGroup n α` over any
 commutative star ring `α`:
 
-* `Matrix.specialUnitaryGroup.invariantSubgroup V`: the subgroup of special unitary matrices leaving
-  a submodule `V : Submodule α (n → α)` invariant under `Matrix.toLin'`. Inversion closure holds
-  over any commutative ring by Cayley–Hamilton, since `det A = 1` expresses `A⁻¹ = star A` as a
-  polynomial in `A`.
-* `Matrix.specialUnitaryGroup.commuteSubgroup M`: the subgroup of special unitary matrices
-  commuting with a matrix `M : Matrix n n α`.
+* `Submodule.specialUnitaryStabilizer V`: the subgroup of special unitary matrices leaving a
+  submodule `V : Submodule α (n → α)` invariant under `Matrix.toLin'`. Inversion closure holds over
+  any commutative ring by Cayley–Hamilton (`Matrix.nonsing_inv_mem` applied to the subalgebra of
+  matrices preserving `V`).
+* `Matrix.specialUnitaryCentralizer M`: the subgroup of special unitary matrices commuting with a
+  matrix `M : Matrix n n α`.
 
-Each subgroup comes with its `@[simp]` membership characterization (`mem_invariantSubgroup_iff`,
-`mem_commuteSubgroup_iff`) and a closure-lifting lemma (`forall_mem_closure_toLin'_mem`,
-`forall_mem_closure_commute`).
+Each subgroup comes with its `@[simp]` membership characterization
+(`Submodule.mem_specialUnitaryStabilizer_iff`, `Matrix.mem_specialUnitaryCentralizer_iff`) and a
+closure-lifting lemma (`Matrix.specialUnitaryGroup.forall_mem_closure_toLin'_mem`,
+`Matrix.specialUnitaryGroup.forall_mem_closure_commute`).
 
 ## Main declarations
 
-* `Matrix.specialUnitaryGroup.invariantSubgroup` and
-  `Matrix.specialUnitaryGroup.mem_invariantSubgroup_iff`
+* `Submodule.specialUnitaryStabilizer` and `Submodule.mem_specialUnitaryStabilizer_iff`
 * `Matrix.specialUnitaryGroup.forall_mem_closure_toLin'_mem`
-* `Matrix.specialUnitaryGroup.commuteSubgroup` and
-  `Matrix.specialUnitaryGroup.mem_commuteSubgroup_iff`
+* `Matrix.specialUnitaryCentralizer` and `Matrix.mem_specialUnitaryCentralizer_iff`
 * `Matrix.specialUnitaryGroup.forall_mem_closure_commute`
 -/
 
 public section
 
-namespace Matrix.specialUnitaryGroup
+variable {n : Type*} [Fintype n] [DecidableEq n] {α : Type*} [CommRing α] [StarRing α]
 
-variable {n : Type*} [Fintype n] [DecidableEq n] {α : Type*} [CommRing α]
-
-private theorem toLin'_aeval_mem_of_toLin'_mem {A : Matrix n n α} {V : Submodule α (n → α)}
-    (hA : ∀ v ∈ V, Matrix.toLin' A v ∈ V) (p : Polynomial α) :
-    ∀ v ∈ V, Matrix.toLin' (Polynomial.aeval A p) v ∈ V := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq =>
-    intro v hv
-    simpa only [map_add, LinearMap.add_apply] using V.add_mem (hp v hv) (hq v hv)
-  | monomial k c =>
-    intro v hv
-    rw [← Polynomial.C_mul_X_pow_eq_monomial, map_mul, Polynomial.aeval_C, Polynomial.aeval_X_pow,
-      Algebra.algebraMap_eq_smul_one, Matrix.smul_mul, Matrix.one_mul, Matrix.toLin'_apply,
-      Matrix.smul_mulVec]
-    refine V.smul_mem c ?_
-    induction k generalizing v with
-    | zero => simpa using hv
-    | succ k ih =>
-      rw [pow_succ', ← Matrix.mulVec_mulVec]
-      exact by simpa [Matrix.toLin'_apply] using hA _ (ih v hv)
-
-variable [StarRing α]
+namespace Submodule
 
 /-- The subgroup of `SU(n, α)` leaving a submodule `V : Submodule α (n → α)` invariant under
 `Matrix.toLin'`. -/
-def invariantSubgroup (V : Submodule α (n → α)) : Subgroup (specialUnitaryGroup n α) where
+def specialUnitaryStabilizer (V : Submodule α (n → α)) :
+    Subgroup (Matrix.specialUnitaryGroup n α) where
   carrier := {a | ∀ v ∈ V, Matrix.toLin' (a : Matrix n n α) v ∈ V}
   one_mem' _ hv := by simpa using hv
   mul_mem' ha hb v hv := by
     simpa [Submonoid.coe_mul, Matrix.mulVec_mulVec] using ha _ (hb v hv)
-  inv_mem' {a} ha v hv := by
-    let A : Matrix n n α := a
-    obtain ⟨hU, hdet⟩ := mem_specialUnitaryGroup_iff.mp a.property
-    have hcoeff : A.charpoly.coeff 0 = (-1 : α) ^ Fintype.card n := by
-      have h := congrArg (((-1 : α) ^ Fintype.card n) * ·) (Matrix.det_eq_sign_charpoly_coeff A)
-      simpa [A, hdet, ← mul_assoc, ← mul_pow] using h.symm
-    have hch : A * Polynomial.aeval A A.charpoly.divX +
-        ((-1 : α) ^ Fintype.card n) • (1 : Matrix n n α) = 0 := by
-      have h := Matrix.aeval_self_charpoly A
-      conv_lhs at h => rw [← Polynomial.X_mul_divX_add A.charpoly, hcoeff]
-      rwa [map_add, map_mul, Polynomial.aeval_X, Polynomial.aeval_C,
-        Algebra.algebraMap_eq_smul_one] at h
-    have hstar : star A = -((-1 : α) ^ Fintype.card n) • Polynomial.aeval A A.charpoly.divX := by
-      have hmul := congrArg (star A * ·) hch
-      rw [Matrix.mul_add, ← Matrix.mul_assoc, Unitary.star_mul_self_of_mem hU, Matrix.one_mul,
-        Matrix.mul_smul, Matrix.mul_one, Matrix.mul_zero] at hmul
-      have hsmul : ((-1 : α) ^ Fintype.card n) • (star A) =
-          -Polynomial.aeval A A.charpoly.divX := eq_neg_of_add_eq_zero_right hmul
-      have h2 := congrArg (((-1 : α) ^ Fintype.card n) • ·) hsmul
-      simpa [smul_smul, ← mul_pow] using h2
-    have hcoe : ((a⁻¹ : specialUnitaryGroup n α) : Matrix n n α) = star A := rfl
-    rw [hcoe, hstar, Matrix.toLin'_apply, neg_smul, Matrix.neg_mulVec, Matrix.smul_mulVec,
-      ← Matrix.toLin'_apply]
-    exact V.neg_mem (V.smul_mem _ (toLin'_aeval_mem_of_toLin'_mem ha A.charpoly.divX v hv))
+  inv_mem' {a} ha := by
+    let S : Subalgebra α (Matrix n n α) :=
+      { carrier := {A | ∀ v ∈ V, Matrix.toLin' A v ∈ V}
+        mul_mem' {A B} hA hB v hv := by
+          simpa [Matrix.toLin'_apply, Matrix.mulVec_mulVec] using hA _ (hB v hv)
+        one_mem' _ hv := by simpa using hv
+        add_mem' {A B} hA hB v hv := by simpa using V.add_mem (hA v hv) (hB v hv)
+        zero_mem' _ _ := by simp
+        algebraMap_mem' c v hv := by
+          simpa [Algebra.algebraMap_eq_smul_one, Matrix.toLin'_apply] using V.smul_mem c hv }
+    have hinv : (a : Matrix n n α)⁻¹ ∈ S := Matrix.nonsing_inv_mem (S := S) ha
+    have hcoe : ((a⁻¹ : Matrix.specialUnitaryGroup n α) : Matrix n n α) =
+        (a : Matrix n n α)⁻¹ :=
+      (Matrix.inv_eq_right_inv (congrArg Subtype.val (mul_inv_cancel a))).symm
+    simpa [S, hcoe] using hinv
 
-/-- An element of `SU(n, α)` belongs to `invariantSubgroup V` if and only if it maps `V` into
-itself under `Matrix.toLin'`. -/
+/-- An element of `SU(n, α)` belongs to `V.specialUnitaryStabilizer` if and only if it maps `V`
+into itself under `Matrix.toLin'`. -/
 @[simp]
-theorem mem_invariantSubgroup_iff {V : Submodule α (n → α)} {a : specialUnitaryGroup n α} :
-    a ∈ invariantSubgroup V ↔ ∀ v ∈ V, Matrix.toLin' (a : Matrix n n α) v ∈ V :=
+theorem mem_specialUnitaryStabilizer_iff {V : Submodule α (n → α)}
+    {a : Matrix.specialUnitaryGroup n α} :
+    a ∈ V.specialUnitaryStabilizer ↔ ∀ v ∈ V, Matrix.toLin' (a : Matrix n n α) v ∈ V :=
   Iff.rfl
 
-/-- If every element of `S ⊆ SU(n, α)` leaves `V` invariant under `Matrix.toLin'`, then so does
-every element of the subgroup generated by `S`. -/
-theorem forall_mem_closure_toLin'_mem (S : Set (specialUnitaryGroup n α))
-    (V : Submodule α (n → α))
-    (hS : ∀ a ∈ S, ∀ v ∈ V, Matrix.toLin' (a : Matrix n n α) v ∈ V) :
-    ∀ u ∈ Subgroup.closure S, ∀ v ∈ V, Matrix.toLin' (u : Matrix n n α) v ∈ V :=
-  (Subgroup.closure_le (K := invariantSubgroup V)).mpr hS
+end Submodule
+
+namespace Matrix
 
 /-- The subgroup of `SU(n, α)` consisting of matrices commuting with `M : Matrix n n α`. -/
-def commuteSubgroup (M : Matrix n n α) : Subgroup (specialUnitaryGroup n α) where
+def specialUnitaryCentralizer (M : Matrix n n α) : Subgroup (specialUnitaryGroup n α) where
   carrier := {a | Commute M (a : Matrix n n α)}
   one_mem' := Commute.one_right M
   mul_mem' ha hb := by simpa [Submonoid.coe_mul] using ha.mul_right hb
@@ -119,17 +86,30 @@ def commuteSubgroup (M : Matrix n n α) : Subgroup (specialUnitaryGroup n α) wh
     (u := Unitary.toUnits (⟨a, specialUnitaryGroup_le_unitaryGroup a.property⟩ :
       unitaryGroup n α)) ha
 
-/-- An element of `SU(n, α)` belongs to `commuteSubgroup M` if and only if it commutes with `M`. -/
+/-- An element of `SU(n, α)` belongs to `M.specialUnitaryCentralizer` if and only if it commutes
+with `M`. -/
 @[simp]
-theorem mem_commuteSubgroup_iff {M : Matrix n n α} {a : specialUnitaryGroup n α} :
-    a ∈ commuteSubgroup M ↔ Commute M (a : Matrix n n α) :=
+theorem mem_specialUnitaryCentralizer_iff {M : Matrix n n α} {a : specialUnitaryGroup n α} :
+    a ∈ M.specialUnitaryCentralizer ↔ Commute M (a : Matrix n n α) :=
   Iff.rfl
+
+namespace specialUnitaryGroup
+
+/-- If every element of `S ⊆ SU(n, α)` leaves `V` invariant under `Matrix.toLin'`, then so does
+every element of the subgroup generated by `S`. -/
+theorem forall_mem_closure_toLin'_mem (S : Set (specialUnitaryGroup n α))
+    (V : Submodule α (n → α))
+    (hS : ∀ a ∈ S, ∀ v ∈ V, Matrix.toLin' (a : Matrix n n α) v ∈ V) :
+    ∀ u ∈ Subgroup.closure S, ∀ v ∈ V, Matrix.toLin' (u : Matrix n n α) v ∈ V :=
+  (Subgroup.closure_le (K := V.specialUnitaryStabilizer)).mpr hS
 
 /-- If `M` commutes with every element of `S ⊆ SU(n, α)`, then `M` commutes with every element of
 the subgroup generated by `S`. -/
 theorem forall_mem_closure_commute (S : Set (specialUnitaryGroup n α)) (M : Matrix n n α)
     (hS : ∀ a ∈ S, Commute M (a : Matrix n n α)) :
     ∀ u ∈ Subgroup.closure S, Commute M (u : Matrix n n α) :=
-  (Subgroup.closure_le (K := commuteSubgroup M)).mpr hS
+  (Subgroup.closure_le (K := M.specialUnitaryCentralizer)).mpr hS
 
-end Matrix.specialUnitaryGroup
+end specialUnitaryGroup
+
+end Matrix

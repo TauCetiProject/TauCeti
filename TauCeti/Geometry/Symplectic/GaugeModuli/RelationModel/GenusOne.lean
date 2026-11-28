@@ -26,11 +26,13 @@ Consequently, the genus-one representation model `relationModuli r ζ 1` is a si
 induced `PSU(r)` action identifies `PSU(r)` homeomorphically with `relationSet r ζ 1`
 (`TauCeti.GaugeModuli.psuOrbitHomeomorphGenusOne`).
 
-As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` and
-`relationModuli r ζ g` for every positive genus `g ≥ 1`, triviality of the central-twist action of
-`(Z(SU(r)) × Z(SU(r)))^1` (representing `H¹(T²; μ_r)` for `r ≥ 1`, and trivial at `r = 0`) at
-genus one (`TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one`), and hence
-non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
+As immediate consequences (still for a primitive `r`-th root of unity `ζ`), we also deduce
+nonemptiness of `relationSet r ζ g` and `relationModuli r ζ g` for every positive genus `g ≥ 1`,
+triviality of the central-twist action of `(Z(SU(r)) × Z(SU(r)))^1` (representing `H¹(T²; μ_r)`
+for `r ≥ 1`, and trivial at `r = 0`) on the genus-one quotient `relationModuli r ζ 1` (in contrast
+to its action on `relationSet r ζ 1`)
+(`TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one`), and hence non-freeness
+of the central-twist action on `relationModuli r ζ 1` for every `r ≥ 2` and primitive `ζ`
 (`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). At the concrete
 coprime parameter `r = 2, ζ = -1`, we verify explicitly that
 `(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)` lies in `relationSet 2 (-1) 1`
@@ -56,10 +58,11 @@ action admits non-central stabilizers
   genus-one moduli.
 * `TauCeti.GaugeModuli.nonempty_relationSet_of_pos` and
   `TauCeti.GaugeModuli.nonempty_relationModuli_of_pos`: nonemptiness of the relation set and moduli
-  for every genus `g ≥ 1`.
+  for every genus `g ≥ 1` and primitive `r`-th root of unity `ζ`.
 * `TauCeti.GaugeModuli.centerTwist_smul_eq_self_relationModuli_genus_one` and
   `TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`: the central-twist action
-  is trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
+  on the genus-one quotient `relationModuli r ζ 1` is trivial for primitive `ζ` (rather than on
+  `relationSet r ζ 1`), hence not free for any `r ≥ 2` and primitive `ζ`.
 * `TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`,
   `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`, and
   `TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`: explicit rank-two checks
@@ -197,6 +200,7 @@ theorem nonempty_relationModuli_of_pos (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRo
 
 /-- At genus one, the central-twist action of `(Z(SU(r)) × Z(SU(r)))^1` (representing
 `H¹(T²; μ_r)` for `r ≥ 1`, and trivial at `r = 0`) on `relationModuli r ζ 1` is trivial. -/
+@[simp]
 theorem centerTwist_smul_eq_self_relationModuli_genus_one (r : ℕ) (ζ : ℂ)
     (hζ : IsPrimitiveRoot ζ r)
     (ε : Fin 1 → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×

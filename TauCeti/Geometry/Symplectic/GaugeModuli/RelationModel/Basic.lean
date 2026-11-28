@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup.Speci
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Topology.Algebra.Group.Quotient
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # The twisted `SU(r)` representation model of surface moduli
@@ -25,12 +26,12 @@ relation
 
 `⁅A₁, B₁⁆ ⋯ ⁅A_g, B_g⁆ = ζ • 1`,
 
-where `⁅A, B⁆ = A * B * A⁻¹ * B⁻¹` is the group commutator. When `ζ = exp(2πi d / r)` is a
-primitive `r`-th root of unity (corresponding to `gcd(r, d) = 1`), the quotient
-`TauCeti.GaugeModuli.relationModuli r ζ g` of `relationSet r ζ g` by simultaneous conjugation is
-the representation model of the fixed-determinant coprime `U(r)` moduli space of central-curvature
-connections on a closed oriented surface of genus `g` (Wehrheim–Woodward, *Floer field theory for
-coprime rank and degree*, §3).
+where `⁅A, B⁆ = A * B * A⁻¹ * B⁻¹` is the group commutator. For positive rank `r ≥ 1` and a
+primitive `r`-th root of unity `ζ = exp(2πi d / r)` (corresponding to `gcd(r, d) = 1`), the
+quotient `TauCeti.GaugeModuli.relationModuli r ζ g` of `relationSet r ζ g` by simultaneous
+conjugation is the representation model of the fixed-determinant coprime `U(r)` moduli space of
+central-curvature connections on a closed oriented surface of genus `g` (Wehrheim–Woodward, *Floer
+field theory for coprime rank and degree*, §3).
 
 ## Main definitions
 
@@ -42,9 +43,11 @@ coprime rank and degree*, §3).
 
 ## Main results
 
-* `TauCeti.GaugeModuli.isClosed_relationSet`, `TauCeti.GaugeModuli.isCompact_relationSet`, and
-  `T2Space (relationModuli r ζ g)`: the relation set is compact, the induced `PSU(r)` action is
-  continuous and proper, and the quotient `relationModuli r ζ g` is compact Hausdorff.
+* `TauCeti.GaugeModuli.isClosed_relationSet`, `TauCeti.GaugeModuli.isCompact_relationSet`,
+  `TauCeti.GaugeModuli.continuous_conjAct_smul_relationSet`, and
+  `T2Space (relationModuli r ζ g)`: the relation set is compact, the simultaneous `SU(r)`
+  conjugation map and induced `PSU(r)` action are continuous (with the `PSU(r)` action proper), and
+  the quotient `relationModuli r ζ g` is compact Hausdorff.
 * `TauCeti.GaugeModuli.eq_zero_of_commute_relationSet_of_trace_eq_zero`: vanishing of the
   trace-free commuting matrices (the infinitesimal stabilizer) at every solution when `ζ` is a
   primitive `r`-th root of unity (via `TauCeti.exists_eq_smul_one_of_commute_relationSet`).
@@ -100,8 +103,11 @@ theorem coe_conjAct_smul_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
       u • x.val :=
   (rfl)
 
-/-- The representation model `R_g / SU(r)` of the fixed-determinant surface moduli: the orbit
-quotient of `relationSet r ζ g` by simultaneous `SU(r)`-conjugation, with the quotient topology. -/
+/-- For arbitrary rank `r : ℕ`, scalar `ζ : ℂ`, and genus `g : ℕ`, the orbit quotient of
+`relationSet r ζ g` by simultaneous `SU(r)`-conjugation, equipped with the quotient topology.
+For positive rank `r ≥ 1` and a primitive `r`-th root of unity `ζ = exp(2πi d / r)` (coprime
+degree `d`), this is the representation model `R_g / SU(r)` of the fixed-determinant coprime `U(r)`
+moduli space of central-curvature connections on a closed oriented surface of genus `g`. -/
 abbrev relationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) : Type :=
   MulAction.orbitRel.Quotient (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g)
 
@@ -196,7 +202,7 @@ theorem toPSL_rangeRestrict_smul_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
 
 /-- The simultaneous conjugation map `SU(r) × relationSet r ζ g → relationSet r ζ g` is
 continuous. -/
-private theorem continuous_conjAct_smul_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
+theorem continuous_conjAct_smul_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     Continuous fun p : Matrix.specialUnitaryGroup (Fin r) ℂ × relationSet r ζ g =>
       ConjAct.toConjAct p.1 • p.2 := by
   have hcoord (j : Fin g)
@@ -246,13 +252,13 @@ noncomputable def relationModuliEquivPSUOrbitQuotient (r : ℕ) (ζ : ℂ) (g : 
 @[simp]
 theorem relationModuliEquivPSUOrbitQuotient_mk {r : ℕ} {ζ : ℂ} {g : ℕ} (x : relationSet r ζ g) :
     relationModuliEquivPSUOrbitQuotient r ζ g (Quotient.mk _ x) = Quotient.mk'' x :=
-  (rfl)
+  Homeomorph.Quotient.congrRight_mk _ x
 
 @[simp]
 theorem relationModuliEquivPSUOrbitQuotient_symm_mk {r : ℕ} {ζ : ℂ} {g : ℕ}
     (x : relationSet r ζ g) :
-    (relationModuliEquivPSUOrbitQuotient r ζ g).symm (Quotient.mk'' x) = Quotient.mk _ x :=
-  (rfl)
+    (relationModuliEquivPSUOrbitQuotient r ζ g).symm (Quotient.mk'' x) = Quotient.mk _ x := by
+  rw [← relationModuliEquivPSUOrbitQuotient_mk x, Homeomorph.symm_apply_apply]
 
 /-- The representation model `relationModuli r ζ g` is Hausdorff, as the orbit space of the proper
 `PSU(r)` action on `relationSet r ζ g`. -/
@@ -285,6 +291,7 @@ theorem eq_zero_of_commute_relationSet_of_trace_eq_zero {r : ℕ} {ζ : ℂ}
 /-- When `ζ` is a primitive `r`-th root of unity, an element `u ∈ SU(r)` stabilizes
 `x : relationSet r ζ g` under simultaneous conjugation if and only if `u` lies in the center of
 `SU(r)`. -/
+@[simp]
 theorem conjAct_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) {g : ℕ} (x : relationSet r ζ g)
     (u : Matrix.specialUnitaryGroup (Fin r) ℂ) :
@@ -304,6 +311,7 @@ theorem conjAct_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
 /-- **Freeness of the induced `PSU(r)` action.** For a primitive `r`-th root of unity `ζ`, an
 element of `PSU(r)` fixes a point `x : relationSet r ζ g` if and only if it is `1` (so the action
 is faithful whenever `relationSet r ζ g` is nonempty). -/
+@[simp]
 theorem psu_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) {g : ℕ} (x : relationSet r ζ g)
     (p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
@@ -320,6 +328,7 @@ theorem psu_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
 
 /-- The `PSU(r)`-stabilizer of every point of `relationSet r ζ g` is trivial when `ζ` is a
 primitive `r`-th root of unity. -/
+@[simp]
 theorem stabilizer_psu_relationSet_eq_bot {r : ℕ} {ζ : ℂ}
     (hζ : IsPrimitiveRoot ζ r) {g : ℕ} (x : relationSet r ζ g) :
     MulAction.stabilizer (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
