@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Coarsening
 public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 
-import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import TauCeti.Combinatorics.Hypergraph.Polyad.Density
