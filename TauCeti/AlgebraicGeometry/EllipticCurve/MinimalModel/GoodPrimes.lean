@@ -83,12 +83,8 @@ theorem HasGoodReductionAt.padicValRat_j_nonneg {E : WeierstrassCurve ℚ}
     0 ≤ padicValRat p E.j := by
   intro hE
   have hgood := E.hasGoodReductionAt_iff.mp h
-  obtain ⟨C, hC⟩ := (E.baseChange ℚ_[p]).exists_smul_eq_minimal ℤ_[p]
-  have hpot : (E.baseChange ℚ_[p]).HasPotentialGoodReduction ℤ_[p] :=
-    (hasPotentialGoodReduction_smul ℤ_[p] C _).mp
-      (hC ▸ hgood.hasPotentialGoodReduction ℤ_[p])
-  obtain ⟨z, hz⟩ := hpot.isInteger_j ℤ_[p]
-  simp only [baseChange, map_j, eq_ratCast, PadicInt.algebraMap_apply] at hz
+  obtain ⟨z, hz⟩ := hgood.isInteger_j ℤ_[p]
+  simp only [j_minimal, baseChange, map_j, eq_ratCast, PadicInt.algebraMap_apply] at hz
   rw [← Padic.valuation_ratCast, ← hz]
   exact PadicInt.valuation_coe_nonneg
 

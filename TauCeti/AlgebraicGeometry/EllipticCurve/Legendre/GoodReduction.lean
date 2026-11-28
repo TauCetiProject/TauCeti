@@ -44,9 +44,7 @@ theorem padicValRat_legendre_j_of_nonunit (hp : (p : ℕ) ≠ 2)
   intro hE
   set t := l * (1 - l)
   have ht : t ≠ 0 := fun h ↦ hs (by simp only [h, padicValRat.zero])
-  have ht' : 1 - t ≠ 0 := by
-    dsimp [t]
-    nlinarith [sq_nonneg (l - 1 / 2)]
+  have ht' : 1 - t ≠ 0 := fun h ↦ hs (by simp only [← sub_eq_zero.mp h, padicValRat.one])
   have h256 : padicValRat p 256 = 0 := by
     have hdvd : ¬ (p : ℕ) ∣ 256 := fun h ↦
       hp (Nat.prime_eq_prime_of_dvd_pow p.prop Nat.prime_two (m := 8) (by
