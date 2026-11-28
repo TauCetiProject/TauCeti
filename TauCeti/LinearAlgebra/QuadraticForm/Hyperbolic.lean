@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Dual
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # The hyperbolic plane
@@ -42,12 +43,21 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
 * `QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane`: two isotropic vectors with polar
   pairing one span a hyperbolic plane.
+* `QuadraticForm.linearIndependent_pair_of_polar_eq_one`,
+  `QuadraticForm.span_pair_eq_top_of_polar_eq_one`: in every characteristic, such a pair is
+  linearly independent, and spans a two-dimensional space.
 * `QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one`: in every characteristic,
   a plane containing such a pair is isometric to the `xy`-plane `TauCeti.binaryQuadraticForm K 0 0`.
 * `QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal`,
   `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal_span_pair`: such a pair splits a
   finite-dimensional form as the orthogonal sum of its hyperbolic plane and the orthogonal
   complement, which is regular when the form is.
+* `QuadraticForm.isCompl_span_pair_orthogonal_of_polar_eq_one`,
+  `QuadraticForm.equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal`: in every
+  characteristic, the span of such a pair is complementary to its polar orthogonal complement, and
+  splits `Q` as the `xy`-plane plus that complement.
+* `QuadraticForm.finrank_orthogonal_span_pair_add_two`: the orthogonal complement of such a
+  hyperbolic plane has codimension two.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
 * `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
@@ -321,6 +331,24 @@ theorem _root_.QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane [Inve
   rw [← range_hyperbolicPairMap]
   exact ⟨(hyperbolicPairIsometryEquiv Q x y hxQ hyQ hxy).symm⟩
 
+/-- **A hyperbolic pair is linearly independent**: isotropic vectors `e, f` with
+`polar Q e f = 1` are linearly independent, over any commutative ring. -/
+theorem _root_.QuadraticForm.linearIndependent_pair_of_polar_eq_one {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] {Q : QuadraticForm R M} {e f : M} (he : Q e = 0)
+    (hf : Q f = 0) (hef : polar Q e f = 1) : LinearIndependent R ![e, f] :=
+  LinearIndependent.pair_iff.mpr fun s t hst ↦
+    ⟨by simpa [polar_comm Q f e, hf, hef] using congrArg (polar Q f) hst,
+      by simpa [he, hef] using congrArg (polar Q e) hst⟩
+
+/-- **A hyperbolic pair spans a plane**: on a two-dimensional space, isotropic vectors `e, f`
+with `polar Q e f = 1` span the whole space, in every characteristic. -/
+theorem _root_.QuadraticForm.span_pair_eq_top_of_polar_eq_one {Q : QuadraticForm K V}
+    (hV : Module.finrank K V = 2) {e f : V} (he : Q e = 0) (hf : Q f = 0)
+    (hef : polar Q e f = 1) : Submodule.span K {e, f} = ⊤ := by
+  rw [← Matrix.range_cons_cons_empty e f ![]]
+  exact LinearIndependent.span_eq_top_of_card_eq_finrank
+    (QuadraticForm.linearIndependent_pair_of_polar_eq_one he hf hef) (by simp [hV])
+
 /-- A plane containing a hyperbolic pair `w, f` (isotropic vectors with polar pairing one) is
 isometric to the `xy`-plane `(K², xy)`: in the basis `w, f` the form reads `xy`. Unlike
 `QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane`, this holds in every
@@ -329,9 +357,8 @@ theorem _root_.QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one
     (Q : QuadraticForm K V) (hV : Module.finrank K V = 2) {w f : V} (hw : Q w = 0)
     (hf : Q f = 0) (hwf : polar Q w f = 1) :
     Q.Equivalent (binaryQuadraticForm K 0 0) := by
-  have hli : LinearIndependent K ![w, f] := LinearIndependent.pair_iff.mpr fun s t hst ↦
-    ⟨by simpa [polar_comm Q f w, hf, hwf] using congrArg (polar Q f) hst,
-      by simpa [hw, hwf] using congrArg (polar Q w) hst⟩
+  have hli : LinearIndependent K ![w, f] :=
+    QuadraticForm.linearIndependent_pair_of_polar_eq_one hw hf hwf
   have hb : Q.basisRepr (basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])) =
       binaryQuadraticForm K 0 0 := QuadraticMap.ext fun c ↦ by
     simp [basisRepr_apply, Fin.sum_univ_two, QuadraticMap.map_add, QuadraticMap.map_smul,
@@ -354,6 +381,61 @@ theorem _root_.QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal
   exact QuadraticMap.Equivalent.trans
     ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W hcomp).symm⟩
     (QuadraticMap.Equivalent.prod ⟨eH⟩ (QuadraticMap.Equivalent.refl _))
+
+/-- The span of a hyperbolic pair `e, f` (isotropic vectors with `polar Q e f = 1`) is
+complementary to its polar orthogonal complement, in every characteristic and with no hypothesis on
+`Q`. The component of `u` in the span is `polar Q u f • e + polar Q u e • f`. -/
+theorem _root_.QuadraticForm.isCompl_span_pair_orthogonal_of_polar_eq_one {R M : Type*}
+    [CommRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M} {e f : M} (he : Q e = 0)
+    (hf : Q f = 0) (hef : polar Q e f = 1) :
+    IsCompl (Submodule.span R {e, f})
+      (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span R {e, f})) := by
+  have hfe : polar Q f e = 1 := by rw [polar_comm, hef]
+  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ ↦ ?_,
+    codisjoint_iff.2 (eq_top_iff.2 fun u _ ↦ ?_)⟩
+  · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hv
+    obtain ⟨h₁, h₂⟩ := LinearMap.BilinForm.mem_orthogonal_span_pair_iff.1 hv'
+    simp only [polarBilin_apply_apply, polar_add_right, polar_smul_right, polar_self, he, hf, hef,
+      hfe, smul_eq_mul, smul_zero, mul_zero, mul_one, zero_add, add_zero] at h₁ h₂
+    simp [h₁, h₂]
+  · refine Submodule.mem_sup.2 ⟨polar Q u f • e + polar Q u e • f,
+      Submodule.mem_span_pair.2 ⟨_, _, rfl⟩, u - (polar Q u f • e + polar Q u e • f),
+      LinearMap.BilinForm.mem_orthogonal_span_pair_iff.2 ⟨?_, ?_⟩, add_sub_cancel _ _⟩ <;>
+    simp [polar_sub_right, polar_add_right, polar_smul_right, polar_self, he, hf, hef, hfe,
+      polar_comm Q u]
+
+/-- A hyperbolic pair `e, f` splits `Q` as the orthogonal sum of the hyperbolic plane `[0, 0]`,
+spanned by `e` and `f`, and the polar orthogonal complement of their span. Unlike
+`QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal`, this holds in every
+characteristic and with no hypothesis on `Q`. -/
+theorem _root_.QuadraticForm.equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal
+    {Q : QuadraticForm K V} {e f : V} (he : Q e = 0) (hf : Q f = 0) (hef : polar Q e f = 1) :
+    Q.Equivalent ((binaryQuadraticForm K 0 0).prod
+      (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {e, f})))) := by
+  set W := Submodule.span K {e, f}
+  have hli := QuadraticForm.linearIndependent_pair_of_polar_eq_one he hf hef
+  have hW : Module.finrank K W = 2 := by
+    rw [show W = Submodule.span K (Set.range ![e, f]) by
+      rw [Matrix.range_cons_cons_empty], finrank_span_eq_card hli, Fintype.card_fin]
+  have hH : (Q.restrict W).Equivalent (binaryQuadraticForm K 0 0) :=
+    QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one (Q.restrict W) hW
+      (w := ⟨e, Submodule.subset_span (by simp)⟩) (f := ⟨f, Submodule.subset_span (by simp)⟩)
+      he hf hef
+  exact QuadraticMap.Equivalent.trans
+    ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W
+      (QuadraticForm.isCompl_span_pair_orthogonal_of_polar_eq_one he hf hef)).symm⟩
+    (hH.prod (QuadraticMap.Equivalent.refl _))
+
+/-- The orthogonal complement of the hyperbolic plane spanned by isotropic vectors `x, y` with
+`polar Q x y = 1` has codimension two. -/
+theorem _root_.QuadraticForm.finrank_orthogonal_span_pair_add_two [Invertible (2 : K)]
+    [FiniteDimensional K V] (Q : QuadraticForm K V) {x y : V}
+    (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
+    Module.finrank K
+        (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})) + 2 =
+      Module.finrank K V := by
+  obtain ⟨e⟩ := Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hxQ hyQ hxy
+  rw [e.toLinearEquiv.finrank_eq, Module.finrank_prod, Module.finrank_fin_fun, add_comm]
 
 /-- In a regular quadratic space, the orthogonal complement of the hyperbolic
 plane spanned by isotropic vectors `x, y` with `polar Q x y = 1` is regular. -/

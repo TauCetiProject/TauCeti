@@ -16,9 +16,9 @@ import TauCeti.Order.Disjoint
 
 Mathlib's `PrimeSpectrum.isIdempotentElemEquivClopens` identifies idempotents `e : R` of a
 commutative ring with clopen subsets `U` of `Spec R` via `U = D(e)`. This file records
-compatibility of that identification with membership in prime ideals, disjoint unions, complete
+compatibility of that identification with membership in prime ideals, disjoint unions, and complete
 orthogonal families of idempotents (in particular for the clopen fibers of a locally constant
-function on `Spec R`), quotient prime pullbacks, and ring homomorphisms.
+function on `Spec R`).
 
 ## Main results
 
@@ -31,8 +31,6 @@ function on `Spec R`), quotient prime pullbacks, and ring homomorphisms.
   `PrimeSpectrum.completeOrthogonalIdempotents_fiberClopens`: finite clopen partitions of `Spec R`
   (in particular the fibers of a locally constant function) give complete orthogonal families of
   idempotents.
-* `PrimeSpectrum.map_isIdempotentElemEquivClopens_symm`: compatibility of clopen idempotents with
-  ring homomorphisms.
 -/
 
 public section
@@ -50,7 +48,8 @@ theorem mem_asIdeal_isIdempotentElemEquivClopens_symm_iff
     (U : Clopens (PrimeSpectrum R)) (p : PrimeSpectrum R) :
     (isIdempotentElemEquivClopens.symm U).val ∈ p.asIdeal ↔ p ∉ U := by
   have h : p ∈ basicOpen (isIdempotentElemEquivClopens.symm U).val ↔ p ∈ U := by
-    rw [basicOpen_isIdempotentElemEquivClopens_symm]; rfl
+    rw [basicOpen_isIdempotentElemEquivClopens_symm, ← SetLike.mem_coe, Clopens.coe_toOpens,
+      SetLike.mem_coe]
   exact (not_iff_comm.1 h).symm
 
 /-- Disjoint clopens have orthogonal idempotents. -/
@@ -90,19 +89,6 @@ theorem completeOrthogonalIdempotents_isIdempotentElemEquivClopens_symm {ι : Ty
   complete := by
     rw [← isIdempotentElemEquivClopens_symm_finset_sup Finset.univ U (fun _ _ _ _ h ↦ hdisj h),
       hcover, isIdempotentElemEquivClopens_symm_top]
-
-/-- A ring homomorphism carries the idempotent of a clopen `U ⊆ Spec R` to the idempotent of its
-preimage in `Spec S`. -/
-theorem map_isIdempotentElemEquivClopens_symm {S : Type*} [CommRing S] (f : R →+* S)
-    (U : Clopens (PrimeSpectrum R)) :
-    f (isIdempotentElemEquivClopens.symm U).val =
-      (isIdempotentElemEquivClopens.symm
-        (Clopens.comap ⟨comap f, continuous_comap f⟩ U)).val := by
-  apply basicOpen_injOn_isIdempotentElem ((isIdempotentElemEquivClopens.symm U).property.map f)
-    (isIdempotentElemEquivClopens.symm _).property
-  rw [← comap_basicOpen, basicOpen_isIdempotentElemEquivClopens_symm,
-    basicOpen_isIdempotentElemEquivClopens_symm]
-  exact Opens.ext (by ext; simp)
 
 /-- The idempotents attached to the clopen fibers of a locally constant function on `Spec R` form
 a complete orthogonal family indexed by the finite range of the function. -/

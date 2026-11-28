@@ -9,9 +9,7 @@ public import Mathlib.Algebra.Module.StablyFree.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
-public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.LocalRing.Module
 
@@ -24,8 +22,7 @@ group of finitely generated projective `A`-modules as soon as `A` has the invari
 property: `n[A] = m[A]` forces `Aⁿ⁺ᵏ ≃ Aᵐ⁺ᵏ` for some `k`, hence `n = m`. If moreover every
 finitely generated projective `A`-module is stably free, every class is a multiple of `[A]`, so
 this group is `ℤ`, with `[A] ↦ 1`. Over a ring with the strong rank condition the isomorphism sends
-the class of a free module to its rank. For a nontrivial commutative ring `R`, this upgrades to a
-ring isomorphism `K₀(proj R) ≃+* ℤ`, applying in particular to principal ideal domains.
+the class of a free module to its rank.
 
 Both hypotheses are also necessary for `n ↦ n[A]` to be an isomorphism. If it is injective, then
 `Aⁿ ≃ Aᵐ` forces `n = m`, as it gives `n[A] = m[A]`. The class of a module `P` is a multiple of
@@ -49,10 +46,6 @@ is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero an
 * `TauCeti.FiniteProjectiveModules.rankEquiv A h`: the isomorphism of the split `K₀` of finitely
   generated projective `A`-modules with `ℤ`, when `A` has invariant basis number and every such
   module is stably free.
-* `TauCeti.FiniteProjectiveModules.rankEquivIntOfForallIsStablyFree` and
-  `TauCeti.FiniteProjectiveModules.rankEquivIntOfIsPrincipalIdealRing`: the ring isomorphism
-  `K₀(proj R) ≃+* ℤ` for a nontrivial commutative ring whose finitely generated projective modules
-  are stably free, and in particular for a commutative principal ideal domain.
 
 ## Main results
 
@@ -261,66 +254,6 @@ theorem rankEquiv_of [StrongRankCondition A] (P : (finiteProjectiveModules A).Fu
   rw [SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := finiteProjectiveModulesRegular A)
     (Module.finBasis A P.obj).equivFun (.refl _ _), ← natCast_zsmul,
     rankEquiv_zsmul_of_finiteProjectiveModulesRegular]
-
-section CommRing
-
-variable (R : Type u) [CommRing R]
-
-private theorem of_finiteProjectiveModulesRegular_eq_one :
-    SplitK0.of.{u} (finiteProjectiveModulesRegular R) = 1 := by
-  rw [SplitK0.one_def]
-  exact SplitK0.of_congr (ObjectProperty.isoMk _ (eqToIso (tensorUnit_obj R).symm))
-
-/-- If `R` is nontrivial and every finitely generated projective `R`-module is stably free, then
-the integer cast gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
-noncomputable def rankEquivIntOfForallIsStablyFree [Nontrivial R]
-    (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj) :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  (RingEquiv.ofBijective
-    (Int.castRingHom (SplitK0.{u} (finiteProjectiveModules R).FullSubcategory))
-    (by
-      convert (rankEquiv R h).symm.bijective using 1
-      ext z
-      simp [of_finiteProjectiveModulesRegular_eq_one R])).symm
-
-theorem rankEquivIntOfForallIsStablyFree_symm_apply [Nontrivial R]
-    (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj)
-    (n : ℤ) :
-    (rankEquivIntOfForallIsStablyFree R h).symm n = n := by
-  simp
-
-@[simp]
-theorem rankEquivIntOfForallIsStablyFree_of [Nontrivial R]
-    (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj)
-    (P : (finiteProjectiveModules R).FullSubcategory) [Module.Free R P.obj] :
-    rankEquivIntOfForallIsStablyFree R h (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) := by
-  apply (rankEquivIntOfForallIsStablyFree R h).symm.injective
-  rw [RingEquiv.symm_apply_apply, rankEquivIntOfForallIsStablyFree_symm_apply,
-    SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := finiteProjectiveModulesRegular R)
-      (Module.finBasis R P.obj).equivFun (.refl _ _),
-    of_finiteProjectiveModulesRegular_eq_one, nsmul_one, Int.cast_natCast]
-
-/-- **PID `K₀` classification.** Over a principal ideal domain `R`, every finitely generated
-projective module is free, so stalk rank gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
-noncomputable def rankEquivIntOfIsPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R] :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  rankEquivIntOfForallIsStablyFree R fun P ↦
-    have : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-    inferInstance
-
-theorem rankEquivIntOfIsPrincipalIdealRing_symm_apply [IsDomain R] [IsPrincipalIdealRing R]
-    (n : ℤ) :
-    (rankEquivIntOfIsPrincipalIdealRing R).symm n = n :=
-  rankEquivIntOfForallIsStablyFree_symm_apply R _ n
-
-@[simp]
-theorem rankEquivIntOfIsPrincipalIdealRing_of [IsDomain R] [IsPrincipalIdealRing R]
-    (P : (finiteProjectiveModules R).FullSubcategory) :
-    rankEquivIntOfIsPrincipalIdealRing R (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
-  haveI : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-  rankEquivIntOfForallIsStablyFree_of R _ P
-
-end CommRing
 
 end FiniteProjectiveModules
 

@@ -46,6 +46,9 @@ contained in the Jacobson radical is the whole spectrum: every prime ideal is co
 maximal ideal, which is a point of that zero locus, and an open set contains every point that
 specializes to one of its points. For the maximal ideal of a local ring, whose zero locus is the
 closed point, this is Mathlib's `IsLocalRing.closedPoint_mem_iff`.
+
+For a localization away from `r`, `PrimeSpectrum` is preconnected precisely when the basic open
+set `D(r)` is preconnected.
 -/
 
 public section
@@ -237,5 +240,14 @@ theorem zeroLocus_subset_iff_eq_top_of_le_jacobson_bot {S : Type*} [CommRing S] 
     exact hI.trans (Ideal.jacobson_bot.trans_le (Ring.jacobson_le_of_isMaximal m))
   · rw [hU, TopologicalSpace.Opens.coe_top]
     exact Set.subset_univ _
+
+/-- For any localization `S` away from `r`, `PrimeSpectrum S` is preconnected if and only if the
+basic open set `D(r)` in `PrimeSpectrum R` is preconnected. -/
+theorem preconnectedSpace_iff_isPreconnected_basicOpen (S : Type*) [CommSemiring S]
+    [Algebra R S] (r : R) [IsLocalization.Away r S] :
+    PreconnectedSpace (PrimeSpectrum S) ↔ IsPreconnected (basicOpen r : Set (PrimeSpectrum R)) := by
+  have hind := (localization_away_isOpenEmbedding S r).isInducing
+  rw [preconnectedSpace_iff_univ, ← hind.isPreconnected_image, Set.image_univ,
+    localization_away_comap_range S r]
 
 end PrimeSpectrum

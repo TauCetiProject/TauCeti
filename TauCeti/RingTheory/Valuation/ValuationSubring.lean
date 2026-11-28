@@ -21,7 +21,10 @@ valuation subring whose pullback contains it, and among finitely many elements o
 all zero, one of largest valuation divides all the others in the valuation subring. A ring
 embedded in a field is itself a field if no proper valuation subring contains its image. The
 valuation ring of a surjective valuation is a proper subring once the units of its target are
-nontrivial.
+nontrivial. Two elements of the valuation subring `O` of a valuation `v` have the same residue
+exactly when their difference has valuation `< 1`, and, for a ring endomorphism `τ` preserving
+`O` and `y ∈ O` with `y − τ y` a unit, integrality of `a + τ a`, `b + τ b` and `a + y b` forces
+integrality of `b`, as used for traces along an involution of a local field.
 
 For a group acting on `L` by ring automorphisms, the translate `g • A` of a valuation subring is
 its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
@@ -44,6 +47,9 @@ subfield `K` do not change the restriction to `K`.
   valuation subring is a field.
 * `RingHom.exists_valuationSubring_mem_and_image_subset_nonunits`: a ring map to a field whose
   kernel lies in a proper ideal `Q` maps into a valuation subring with `Q` sent to its nonunits.
+* `RingHom.exists_valuationSubring_mem_and_mem_nonunits_iff`: for a ring map `φ` to a field and
+  a prime `𝔭` containing its kernel, some valuation subring contains `φ(R)`, and `φ r` is a
+  nonunit of it exactly when `r ∈ 𝔭`.
 * `ValuationSubring.pointwise_smul_eq_comap`: the translate `g • A` is the pullback of `A` along
   the action of `g⁻¹`.
 * `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
@@ -53,9 +59,16 @@ subfield `K` do not change the restriction to `K`.
   equivalent to containment of the base valuation subring upon restriction.
 * `ValuationSubring.isIntegral_iff_forall_comap_le`: the integral closure is the intersection of
   valuation subrings whose restrictions contain the base valuation subring.
+* `ValuationSubring.algebraMap_integralClosure_mem`: a valuation subring whose restriction
+  contains the base valuation subring contains its integral closure.
 * `Valuation.valuationSubring_ne_top_of_surjective`: for a surjective valuation from a field into
   a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial, the valuation ring is
   a proper subring.
+* `Valuation.residue_eq_residue_iff_sub_lt_one`: two elements of the valuation subring of `v` have
+  the same reduction exactly when their difference has valuation `< 1`.
+* `Valuation.mem_valuationSubring_of_add_mul_mem`: for a ring endomorphism `τ` preserving the
+  valuation subring `O` and `y ∈ O` with `y − τ y` a unit of `O`, if `a + τ a`, `b + τ b` and
+  `a + y b` lie in `O`, then so does `b`.
 * `TauCeti.exists_valuationRing_of_isPrime_le`: a prime `P` and an ideal `Q ⊇ P` of an algebra
   over a local ring `V`, lying over the zero ideal and the maximal ideal of `V`, yield a map from
   the algebra to a valuation domain that is injective and local on `V`.
@@ -196,6 +209,32 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
   exact ⟨W, fun x ↦ hrange ⟨x, rfl⟩, fun x hx ↦
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
 
+/-- **A valuation subring dominating a prime.** Let `φ : R →+* L` be a ring map to a field and
+`𝔭` a prime ideal of `R` containing the kernel of `φ`. Some valuation subring `V` of `L` contains
+`φ(R)`, and `φ r` is a nonunit of `V` exactly when `r ∈ 𝔭`. -/
+theorem exists_valuationSubring_mem_and_mem_nonunits_iff {R L : Type*} [CommRing R] [Field L]
+    (φ : R →+* L) (𝔭 : Ideal R) [𝔭.IsPrime] (hker : RingHom.ker φ ≤ 𝔭) :
+    ∃ V : ValuationSubring L, (∀ r, φ r ∈ V) ∧ ∀ r, φ r ∈ V.nonunits ↔ r ∈ 𝔭 := by
+  -- the image `P` of `𝔭` in the range of `φ` is prime, and pulls back to `𝔭`
+  have hφ : Function.Surjective φ.rangeRestrict := φ.rangeRestrict_surjective
+  have hker' : RingHom.ker φ.rangeRestrict ≤ 𝔭 := by rwa [RingHom.ker_rangeRestrict]
+  let P : Ideal φ.range := 𝔭.map φ.rangeRestrict
+  have : P.IsPrime := Ideal.map_isPrime_of_surjective hφ hker'
+  have hP (r : R) : φ.rangeRestrict r ∈ P ↔ r ∈ 𝔭 := by
+    rw [← Ideal.mem_comap, Ideal.comap_map_of_surjective' _ hφ, sup_eq_left.mpr hker']
+  -- a valuation subring `V` dominating the localisation of the range of `φ` at `P`
+  obtain ⟨V, hle, hloc⟩ := (LocalSubring.ofPrime φ.range P).exists_le_valuationSubring
+  have hmem (r : R) : φ r ∈ V := hle (LocalSubring.le_ofPrime _ _ (φ.rangeRestrict r).property)
+  -- domination: `φ r` is a unit of `V` exactly when `r ∉ 𝔭`
+  have hunit (r : R) : IsUnit (⟨φ r, hmem r⟩ : V) ↔ r ∉ 𝔭 := by
+    rw [← hP, ← Ideal.mem_primeCompl_iff, ← IsLocalization.AtPrime.isUnit_to_map_iff
+      (LocalSubring.ofPrime φ.range P).toSubring P, ← isUnit_map_iff (Subring.inclusion hle)]
+    -- both elements of `V` have underlying element `φ r` of `L`
+    rfl
+  refine ⟨V, hmem, fun r ↦ ?_⟩
+  rw [ValuationSubring.coe_mem_nonunits_iff (a := ⟨φ r, hmem r⟩), IsLocalRing.mem_maximalIdeal,
+    mem_nonunits_iff, hunit, not_not]
+
 /-- A ring embedded in a field `L` is a field if its image lies in no valuation subring of `L`
 other than `L` itself. -/
 theorem isField_of_forall_valuationSubring_eq_top {R L : Type*} [CommRing R] [Field L]
@@ -250,6 +289,13 @@ theorem isIntegral_iff_forall_comap_le [Algebra K L] (A : ValuationSubring K) {x
   exact ⟨fun h B hB ↦ (B.mem_toSubring x).mp (h ⟨B, B.integralClosure_toSubring_le_iff.mpr hB⟩),
     fun h ⟨B, hB⟩ ↦ (B.mem_toSubring x).mpr (h B (B.integralClosure_toSubring_le_iff.mp hB))⟩
 
+/-- Every valuation subring of `L` whose restriction to `K` contains `O` contains the integral
+closure of `O` in `L`. -/
+theorem algebraMap_integralClosure_mem [Algebra K L] {O : ValuationSubring K}
+    {A : ValuationSubring L} (hA : O ≤ A.comap (algebraMap K L)) (b : integralClosure O L) :
+    algebraMap (integralClosure O L) L b ∈ A :=
+  (isIntegral_iff_forall_comap_le O).mp b.property A hA
+
 end ValuationSubring
 
 namespace Valuation
@@ -260,6 +306,35 @@ variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
 theorem valuationSubring_ne_top_of_surjective [Nontrivial Γ₀ˣ] (v : Valuation K Γ₀)
     (hv : Function.Surjective v) : v.valuationSubring ≠ ⊤ :=
   fun h ↦ (valuationSubring_eq_top_iff v).mp h (isNontrivial_of_surjective hv)
+
+/-- Two elements of the valuation subring of `v` have the same reduction in its residue field
+exactly when their difference has valuation `< 1`. -/
+theorem residue_eq_residue_iff_sub_lt_one (v : Valuation K Γ₀) {x y : v.valuationSubring} :
+    IsLocalRing.residue _ x = IsLocalRing.residue _ y ↔ v ((x : K) - y) < 1 := by
+  rw [← sub_eq_zero, ← _root_.map_sub, IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff,
+    AddSubgroupClass.coe_sub]
+
+/-- **Integrality from a twisted sum.** Let `τ` be a ring endomorphism of `K` mapping the
+valuation subring `O` of `v` into itself, and `y ∈ O` with `v (y − τ y) = 1`. If `a + τ a`,
+`b + τ b` and `a + y b` lie in `O`, then so does `b`: applying `τ` to `a + y b` shows that
+`a + (τ y) b ∈ O`, so `(y − τ y) b ∈ O`. -/
+theorem mem_valuationSubring_of_add_mul_mem {v : Valuation K Γ₀} {τ : K →+* K}
+    (hτ : ∀ x ∈ v.valuationSubring, τ x ∈ v.valuationSubring) {y a b : K}
+    (hy : y ∈ v.valuationSubring) (hyτ : v (y - τ y) = 1) (ha : a + τ a ∈ v.valuationSubring)
+    (hb : b + τ b ∈ v.valuationSubring) (hab : a + y * b ∈ v.valuationSubring) :
+    b ∈ v.valuationSubring := by
+  have h₁ : a + τ y * b ∈ v.valuationSubring := by
+    have e : a + τ y * b = (a + τ a) + τ y * (b + τ b) - τ (a + y * b) := by
+      rw [map_add, map_mul]
+      ring
+    rw [e]
+    exact sub_mem (add_mem ha (mul_mem (hτ y hy) hb)) (hτ _ hab)
+  have h₂ : (y - τ y) * b ∈ v.valuationSubring := by
+    have e : (y - τ y) * b = (a + y * b) - (a + τ y * b) := by ring
+    rw [e]
+    exact sub_mem hab h₁
+  rw [mem_valuationSubring_iff, map_mul, hyτ, one_mul] at h₂
+  exact (mem_valuationSubring_iff _ _).2 h₂
 
 end Valuation
 

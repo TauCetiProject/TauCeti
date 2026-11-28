@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.RingTheory.Idempotents.BalancedExtension
 import TauCeti.RingTheory.Idempotents.Projective
+import TauCeti.RingTheory.Spectrum.Prime.Idempotent
 
 /-!
 # Clopen-glued finitely generated projective modules
@@ -202,8 +203,15 @@ noncomputable def balancedExtensionEquiv {S : Type v} [CommRing S] (φ : R →+*
     infer_instance
   have hmap (k : ℕ) : φ (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val =
       (isIdempotentElemEquivClopens.symm (f'.fiberClopens k)).val := by
-    rw [PrimeSpectrum.map_isIdempotentElemEquivClopens_symm φ (f.fiberClopens k),
-      LocallyConstant.preimage_fiberClopens]
+    have hpre : f'.fiberClopens k =
+        ⟨PrimeSpectrum.comap φ ⁻¹' (f.fiberClopens k : Set (PrimeSpectrum R)),
+          (f.fiberClopens k).isClopen.preimage (PrimeSpectrum.continuous_comap φ)⟩ :=
+      (LocallyConstant.preimage_fiberClopens
+        ⟨PrimeSpectrum.comap φ, PrimeSpectrum.continuous_comap φ⟩ f k).symm.trans
+        (Clopens.ext (Clopens.coe_comap _ _))
+    rw [hpre]
+    exact congrArg Subtype.val
+      (PrimeSpectrum.isIdempotentElemEquivClopens_symm_preimage φ (f.fiberClopens k)).symm
   exact ((BalancedExtension.congr φ (equivPi R f)).trans <|
     (BalancedExtension.piEquiv φ _ _).trans <|
       LinearEquiv.piCongrRight fun k ↦

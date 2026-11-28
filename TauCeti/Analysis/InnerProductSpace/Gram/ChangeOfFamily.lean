@@ -28,6 +28,8 @@ inner product space, where no coordinate matrix is given.
 ## Main results
 
 * `LinearIsometry.gram_comp`: a linear isometry preserves the Gram matrix of any indexed family.
+* `Matrix.of_inner_sum_smul`: independent changes of the two families in a matrix of inner
+  products act by a conjugated matrix on the left and a transposed matrix on the right.
 * `Matrix.gram_sum_smul`: the Gram matrix of `fun k ↦ ∑ j, U k j • v j` is
   `U.map conj * gram 𝕜 v * Uᵀ`, for a possibly rectangular `U`.
 * `Matrix.det_gram_sum_smul`: its determinant is `‖det U‖ ^ 2 * det (gram 𝕜 v)`.
@@ -61,9 +63,21 @@ end LinearIsometry
 namespace Matrix
 
 open Finset
+open scoped InnerProductSpace
 
 variable {ι 𝕜 E : Type*} [Fintype ι] [RCLike 𝕜] [SeminormedAddCommGroup E]
   [InnerProductSpace 𝕜 E]
+
+/-- The matrix of inner products of two families transforms by independent changes of the
+families. The left coefficient matrix is conjugated and the right one is transposed. -/
+theorem of_inner_sum_smul {κ μ ν : Type*} [Fintype κ]
+    (U : Matrix μ ι 𝕜) (V : Matrix ν κ 𝕜) (x : ι → E) (y : κ → E) :
+    of (fun i k ↦ ⟪∑ j, U i j • x j, ∑ j, V k j • y j⟫_𝕜) =
+      U.map (starRingEnd 𝕜) * of (fun i j ↦ ⟪x i, y j⟫_𝕜) * Vᵀ := by
+  ext i k
+  simp only [of_apply, sum_inner, inner_sum, inner_smul_left, inner_smul_right,
+    Matrix.mul_apply, map_apply, transpose_apply, sum_mul, mul_sum]
+  exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ by ac_rfl
 
 /-- **The Gram matrix under a change of family.** The Gram matrix of `w k = ∑ j, U k j • v j` is
 `U.map conj * gram 𝕜 v * Uᵀ`; the conjugate appears because the inner product is conjugate-linear
@@ -71,10 +85,7 @@ in its first argument. The coefficient matrix `U` may be rectangular: the new fa
 any index type `κ`. -/
 theorem gram_sum_smul {κ : Type*} (U : Matrix κ ι 𝕜) (v : ι → E) :
     gram 𝕜 (fun i ↦ ∑ j, U i j • v j) = U.map (starRingEnd 𝕜) * gram 𝕜 v * Uᵀ := by
-  ext i k
-  simp only [gram_apply, sum_inner, inner_sum, inner_smul_left, inner_smul_right,
-    Matrix.mul_apply, map_apply, transpose_apply, sum_mul, mul_sum]
-  exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ mul_comm _ _
+  simpa only [gram] using of_inner_sum_smul U U v v
 
 variable [DecidableEq ι]
 

@@ -25,9 +25,12 @@ Finite unions of trivializing open sets already have this vanishing by
 diagram. Every compact subset of the total space, or of its nonzero subspace, projects
 into finitely many trivializing sets. Thus `TopPair.isColimitMapCoconeSingularHomology`
 identifies the homology of the whole Thom pair with a filtered colimit of zero objects.
-The diagram, cocone and homology colimit presentation are available in every degree.
-Universal coefficients then gives the same vanishing for relative cohomology with projective
-chain coefficients.
+The diagram, cocone and homology colimit presentation are available in every degree, for a model
+fibre in the universe of the base. Universal coefficients then gives the same vanishing for
+relative cohomology with projective chain coefficients. The vanishing and the characteristic-two
+Thom class below hold for a model fibre in any universe, by reading the bundle with the model fibre
+`ULift (Fin r → ℝ)` (`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`) along the
+isomorphism of Thom pairs `TauCeti.thomPairModelFiberIso`.
 
 This is the below-rank vanishing used in constructing Thom classes from local fibre
 generators. In the degree of the rank the same colimit presentation shows that the fibre pairs
@@ -570,11 +573,8 @@ theorem isZero_singularHomology_thomPair {F : Type*} [NormedAddCommGroup F] [Nor
     IsZero ((thomPair F E).singularHomology R n) := by
   -- Read `E` with the model fibre `ULift (Fin r → ℝ)`, which lies in the universe of `B` and of
   -- the fibres, with the topology on its total space induced along the identity of points.
-  let L : F ≃L[ℝ] ULift.{w} (Fin (finrank ℝ F) → ℝ) :=
-    (ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm
-  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
-  exact (isZero_singularHomology_thomPair_sameUniverse R
-    (by rwa [← L.toLinearEquiv.finrank_eq])).of_iso
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  exact (isZero_singularHomology_thomPair_sameUniverse R (by simpa using hn)).of_iso
     ((thomPair F E).singularHomologyMapIso R (thomPairModelFiberIso h_ind).symm n)
 
 /-- **Morphisms out of the top-degree homology of the Thom pair are determined on the fibres**:
@@ -606,11 +606,12 @@ theorem singularHomology_thomPair_hom_ext
         fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, h]
 
 /-- The relative cohomology of a real vector bundle modulo its nonzero vectors vanishes
-below the rank, over an arbitrary base and with projective chain coefficients. -/
-theorem isZero_singularCohomology_thomPair
-    {k : Type*} [CommRing k] [Linear k (ModuleCat.{w} k)] (R M : ModuleCat.{w} k)
-    [Module.Projective k R]
-    {n : ℕ} (hn : n < finrank ℝ F) :
+below the rank, over an arbitrary base and with projective chain coefficients. The model fibre may
+lie in any universe. -/
+theorem isZero_singularCohomology_thomPair {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+    [VectorBundle ℝ F E] {k : Type*} [CommRing k] [Linear k (ModuleCat.{w} k)]
+    (R M : ModuleCat.{w} k) [Module.Projective k R] {n : ℕ} (hn : n < finrank ℝ F) :
     IsZero ((thomPair F E).singularCohomology R k M n) :=
   TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R M n fun _ hj ↦
     isZero_singularHomology_thomPair R (hj.trans_lt hn)
@@ -668,13 +669,10 @@ theorem existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero {K : Type*
   have hb := mem_baseSet_trivializationAt F E b
   exact (hy (trivializationAt F E b) b hb).trans (hx' (trivializationAt F E b) b hb).symm
 
-/-- **In characteristic two every real vector bundle has a Thom class**: if `2 = 0` in the
-commutative ring `K`, for instance for every field of characteristic two, then there is a class
-of `Hʳ(E, E₀; K, K)`, `r = dim F`, restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on
-every fibre. No orientation of the bundle is needed, and the base is arbitrary. It is unique when
-`1` is the only unit of `K` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`); in general
-any unit multiple of it is again a Thom class. -/
-theorem exists_isThomClass_of_two_eq_zero (K : Type w) [CommRing K] (h2 : (2 : K) = 0) :
+/-- In characteristic two a real vector bundle whose model fibre lies in the universe of the base
+has a Thom class: `TauCeti.exists_isThomClass_of_two_eq_zero` for such model fibres. -/
+private theorem exists_isThomClass_of_two_eq_zero_sameUniverse (K : Type w) [CommRing K]
+    (h2 : (2 : K) = 0) :
     ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F), IsThomClass F E u := by
   -- A generator `g` of the local cohomology `Hʳ(F, F ∖ {0}; K) ≅ K`, spread over the Thom pair.
@@ -688,6 +686,24 @@ theorem exists_isThomClass_of_two_eq_zero (K : Type w) [CommRing K] (h2 : (2 : K
     (finrank ℝ F)).mapIso ((trivializationAt F E b).continuousLinearEquivAt ℝ b
       (mem_baseSet_trivializationAt F E b)).complZeroPairIso.op
         ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
+
+/-- **In characteristic two every real vector bundle has a Thom class**: if `2 = 0` in the
+commutative ring `K`, for instance for every field of characteristic two, then there is a class
+of `Hʳ(E, E₀; K, K)`, `r = dim F`, restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on
+every fibre. No orientation of the bundle is needed, the base is arbitrary, and the model fibre may
+lie in any universe. It is unique when `1` is the only unit of `K`
+(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`); in general any unit multiple of it is
+again a Thom class. -/
+theorem exists_isThomClass_of_two_eq_zero {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+    [VectorBundle ℝ F E] (K : Type w) [CommRing K] (h2 : (2 : K) = 0) :
+    ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F), IsThomClass F E u := by
+  -- Read `E` with the model fibre `ULift (Fin r → ℝ)`, which lies in the universe of `B` and of
+  -- the fibres, with the topology on its total space induced along the identity of points.
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  exact (exists_isThomClass_iff_of_isInducing h_ind (by simp)).2
+    (exists_isThomClass_of_two_eq_zero_sameUniverse K h2)
 
 section SubsingletonUnits
 

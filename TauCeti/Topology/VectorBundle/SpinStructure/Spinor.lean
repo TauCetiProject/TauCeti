@@ -92,6 +92,8 @@ half-spinors being the square of the twisting circle.
   `conj (det (χ g) w) = det g (conj w)`.
 * `Orientation.HalfSpinModel.conjEquiv_smul`, `Orientation.HalfSpinModel.cliffordMul_conjEquiv`:
   `j (g • ψ) = χ(g) • j ψ` and `c(v) (j ψ) = j (c(v) ψ)` on the model half-spinors.
+* `Orientation.HalfSpinModel.conjEquiv_conjEquiv`: if `j' ∘ j = -1` (for instance `j² = -1`), so
+  is the composite of their restrictions.
 * `TauCeti.SpinCStructure.finrank_determinantLine`: `L` is a line bundle.
 * `TauCeti.SpinCStructure.mk_ofCircle_smul_determinantLine`,
   `TauCeti.SpinCStructure.mk_ofCircle_smul_halfSpinorBundle`: the central circle acts with weight
@@ -355,6 +357,16 @@ theorem cliffordMul_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ 
   apply Subtype.ext
   simp [hj]
 
+/-- If `j : W ≃ W'` and `j' : W' ≃ W` compose to `-1`, `j' (j w) = -w`, then so do their
+restrictions to the model half-spinors `S^ε ≃ S'^ε' ≃ S^ε`. For a quaternionic structure `j' = j`
+and `j² = -1`, with `ε` real. -/
+theorem conjEquiv_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') (j' : W' ≃ₗᵢ⋆[ℂ] W)
+    (hj' : ∀ v w, j' (ρ' (ι Q v) w) = ρ (ι Q v) (j' w)) (hε' : starRingEnd ℂ ε' = ε)
+    (hjj : ∀ w, j' (j w) = -w) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    conjEquiv hρ' hρ j' hj' hε' (conjEquiv hρ hρ' j hj hε ψ) = -ψ :=
+  toEigenspace.injective <| Subtype.ext <| by simp [hjj]
+
 end ChargeConjugation
 
 end HalfSpinModel
@@ -478,6 +490,11 @@ theorem finrank_determinantLine (s : SpinCStructure F E n) (x : X) :
     finrank ℂ (s.determinantLine x) = 1 := by
   rw [AssociatedBundle.finrank_eq ℂ SpinCn, DeterminantModel.finrank_eq_one]
 
+/-- Each fibre of the determinant line is finite-dimensional. -/
+instance finiteDimensional_determinantLine (s : SpinCStructure F E n) (x : X) :
+    FiniteDimensional ℂ (s.determinantLine x) :=
+  AssociatedBundle.finiteDimensional ℂ SpinCn (Classical.choice (s.nonempty_P x))
+
 /-- **The central circle acts with weight two on the determinant line**: `[p • [1, z], w]` is
 `[p, z² w]`. -/
 theorem mk_ofCircle_smul_determinantLine (s : SpinCStructure F E n) {x : X} (p : s.P x)
@@ -521,6 +538,11 @@ theorem finrank_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
   rw [AssociatedBundle.finrank_eq ℂ SpinC, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
 
+/-- Each fibre of the half-spinor bundle is finite-dimensional. -/
+instance finiteDimensional_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
+    FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
+  AssociatedBundle.finiteDimensional ℂ SpinC (Classical.choice (s.nonempty_P x))
+
 /-- **The central circle acts with weight one on the half-spinors**: `[p • [1, z], ψ]` is
 `[p, z ψ]`. -/
 theorem mk_ofCircle_smul_halfSpinorBundle (s : SpinCStructure F E 4) {x : X} (p : s.P x)
@@ -540,6 +562,20 @@ coordinates of the orthonormal basis `b`. -/
 def vectorFrame (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V) {x : X}
     (p : s.P x) : E x ≃ₗᵢ[ℝ] V :=
   (s.frameAt p).symm.trans b.repr.symm
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- `κ_p⁻¹` sends `v` to the frame of `E x` at `p` applied to the coordinates of `v` in `b`. -/
+@[simp]
+theorem vectorFrame_symm_apply (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V)
+    {x : X} (p : s.P x) (v : V) : (s.vectorFrame b p).symm v = s.frameAt p (b.repr v) :=
+  (rfl)
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- `κ_p` is `b.repr.symm` applied to the coordinates of `v` in the frame `p`. -/
+theorem vectorFrame_apply_eq_repr_symm (s : SpinCStructure F E 4)
+    (b : OrthonormalBasis (Fin 4) ℝ V) {x : X} (p : s.P x) (v : E x) :
+    s.vectorFrame b p v = b.repr.symm ((s.frameAt p).symm v) := by
+  rw [vectorFrame, LinearIsometryEquiv.trans_apply]
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- `κ_p` is `b` applied to the coordinates of `v` in the frame `p`. -/
@@ -716,6 +752,33 @@ theorem halfSpinorDetAlternatingMap_mk (h₂ : finrank ℂ (eigenspace (ρ (chir
   ext i
   fin_cases i <;> simp
 
+/-- **The determinant pairing of two classes in a common frame**: `([p, v], [p, φ]) ↦ [p, ω(v, φ)]`
+for every point `p` of the principal bundle over `x`. -/
+@[simp]
+theorem halfSpinorDetAlternatingMap_mk_mk
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X} (p : s.P x)
+    (v φ : o.HalfSpinModel hQ b ρ hρ ε) :
+    s.halfSpinorDetAlternatingMap h₂ ω x
+        ![AssociatedBundle.mk SpinC p v, AssociatedBundle.mk SpinC p φ] =
+      AssociatedBundle.mk SpinC p (DeterminantModel.toComplex.symm (ω ![v, φ])) := by
+  rw [← halfSpinorDetAlternatingMap_mk h₂]
+  congr 1
+  ext i
+  fin_cases i <;> simp
+
+/-- The fibrewise descent of the model determinant pairing (`TauCeti.AssociatedBundle.bilinearMap`)
+applied to `(v, ψ)` is the alternating map `TauCeti.SpinCStructure.halfSpinorDetAlternatingMap`
+evaluated on the pair `![v, ψ]`. -/
+theorem bilinearMap_halfSpinorDetPairing_apply
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X}
+    (v ψ : s.halfSpinorBundle o hQ b ρ hρ ε x) :
+    AssociatedBundle.bilinearMap (P := s.P) (halfSpinorDetPairing ω)
+        (halfSpinorDetPairing_smul_smul h₂ ω) x v ψ =
+      s.halfSpinorDetAlternatingMap h₂ ω x ![v, ψ] := by
+  simp [halfSpinorDetAlternatingMap]
+
 /-- For a nonzero `ω` and `S^ε` of complex dimension two, the linear map `⋀² W^ε_x → L_x` induced
 by the determinant pairing is bijective: it is onto the line `L_x`, and both sides are lines. -/
 theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
@@ -724,9 +787,6 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
     Function.Bijective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
   obtain ⟨p⟩ := s.nonempty_P x
-  have : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
-    AssociatedBundle.finiteDimensional ℂ SpinC p
-  have : FiniteDimensional ℂ (s.determinantLine x) := AssociatedBundle.finiteDimensional ℂ SpinC p
   -- Every `[p, w]` is a multiple of the image of `[p, ψ₁] ∧ [p, ψ₂]`, for `ω(ψ₁, ψ₂) ≠ 0`.
   have hsurj : Function.Surjective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by

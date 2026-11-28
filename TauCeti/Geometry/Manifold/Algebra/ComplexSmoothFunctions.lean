@@ -23,9 +23,11 @@ complexifies to a complex-linear map between complex-valued ones
 (`ContMDiffMap.complexifyLinearMap`), and conjugation is a real algebra involution. Conjugating
 the input and output of a complex-linear map, `f ↦ conj (P (conj f))`, gives a complex-linear map
 (`ContMDiffMap.intrinsicConj`); it fixes exactly the complexifications of real-linear maps
-(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map is `A + i B` with `A`
+(`ContMDiffMap.intrinsicConj_eq_self_iff`), so every complex-linear map `P` is `A + i B` with `A`
 and `B` complexifications
-(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`).
+(`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`), namely of
+`u ↦ Re (P u)` and `u ↦ Im (P u)` on real-valued functions
+(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
@@ -187,11 +189,36 @@ theorem ofReal_im (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
   ext x
   simp
 
+/-- Real part of the product of a real-valued and a complex-valued smooth function. -/
+@[simp]
+theorem re_ofReal_mul (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal f * g).re = f * g.re := by
+  ext x
+  simp
+
+/-- Imaginary part of the product of a real-valued and a complex-valued smooth function. -/
+@[simp]
+theorem im_ofReal_mul (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal f * g).im = f * g.im := by
+  ext x
+  simp
+
 /-- Inclusion of real-valued functions is injective. -/
 theorem ofReal_injective :
     Function.Injective (ofReal (I := I) (M := M) (n := n)) := by
   intro f g h
   simpa using congrArg re h
+
+/-- **Splitting by a partition of unity on a set.** If real-valued smooth functions `ρ i` add up
+to `1` on a set `K`, then a complex-valued smooth function `g` agrees on `K` with the sum of the
+products `ρ i · g`. -/
+theorem eqOn_sum_mulLeft_ofReal {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I, M; ℝ⟯) {K : Set M}
+    (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
+    Set.EqOn g ⇑(∑ i ∈ s, LinearMap.mulLeft ℂ (ofReal (ρ i)) g) K := by
+  intro x hx
+  simp only [coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply, coe_mul, Pi.mul_apply,
+    ofReal_apply, ← Finset.sum_mul]
+  rw [← Complex.ofReal_sum, hρ x hx, Complex.ofReal_one, one_mul]
 
 /-- **Splitting by a partition of unity.** If real-valued smooth functions `ρ i` add up to `1` on a
 set `K` containing the support of a complex-valued smooth function `g`, then `g` is the sum of the
@@ -201,11 +228,9 @@ theorem eq_sum_mulLeft_ofReal {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I,
     (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
     g = ∑ i ∈ s, LinearMap.mulLeft ℂ (ofReal (ρ i)) g := by
   ext x
-  simp only [coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply, coe_mul, Pi.mul_apply,
-    ofReal_apply, ← Finset.sum_mul]
   by_cases hx : x ∈ K
-  · rw [← Complex.ofReal_sum, hρ x hx, Complex.ofReal_one, one_mul]
-  · rw [Function.notMem_support.1 fun h ↦ hx (hg h), mul_zero]
+  · exact eqOn_sum_mulLeft_ofReal s ρ g hρ hx
+  · simp [Function.notMem_support.1 fun h ↦ hx (hg h)]
 
 /-- Real and imaginary parts reconstruct the original smooth function. -/
 theorem ofReal_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
@@ -549,6 +574,16 @@ theorem exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq
     field_simp
   rw [hA, hB, smul_smul, hI]
   module
+
+/-- **Real and imaginary parts of an operator, explicitly.** Every complex-linear map `P` between
+complex-valued smooth functions is `A + i B` for the complexifications of the real-linear maps
+`A u = Re (P u)` and `B u = Im (P u)` on real-valued functions `u`. -/
+theorem complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp
+    (P : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexifyLinearMap (re ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) +
+      Complex.I • complexifyLinearMap (im ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) = P :=
+  linearMap_ext_ofReal fun u ↦ by
+    simpa [complexifyLinearMap_ofReal] using ofReal_re_add_I_smul_im (P (ofReal u))
 
 variable {U V : TopologicalSpace.Opens M}
 

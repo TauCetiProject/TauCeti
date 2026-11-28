@@ -90,6 +90,11 @@ theorem finiteProjectiveModulesSplitK0Extend_toAddMonoidHom (f : R →+* S) :
     (f.finiteProjectiveModulesSplitK0Extend : _ →+ _) =
       SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars := (rfl)
 
+theorem finiteProjectiveModulesSplitK0Extend_apply (f : R →+* S)
+    (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
+    f.finiteProjectiveModulesSplitK0Extend x =
+      SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x := (rfl)
+
 @[simp]
 theorem finiteProjectiveModulesSplitK0Extend_of (f : R →+* S)
     (P : (finiteProjectiveModules R).FullSubcategory) :

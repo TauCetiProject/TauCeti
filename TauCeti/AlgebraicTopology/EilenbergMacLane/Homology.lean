@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.UniquelyDivisible
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.ULift
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
@@ -21,6 +22,13 @@ with coefficients in a commutative ring `k` is the group homology of `G` with tr
 `k` (`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_singularHomologyIsoGroupHomology`):
 
 `Hₙ(X; k) ≅ Hₙ(G, k)`.
+
+In degree one, the Hurewicz map identifies the first integral homology of a `K(G, 1)` space with
+the abelianization of its fundamental group, which is the abelianization of `G`
+(`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`); this holds with `G`
+and `X` in any universes. For an abelian group `A`, the first integral homology of a `K(A, 1)`
+space is `A` itself
+(`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`).
 
 The spaces of interest need not have CW type. The loop space of a `K(A, 2)` space is a `K(A, 1)`
 space, and so are the fibres of the path-loop fibration over it; it is to such spaces that the
@@ -39,6 +47,10 @@ the path-loop fibrations uses it.
 
 * `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_singularHomologyIsoGroupHomology`: the singular
   homology of a `K(G, 1)` space is the group homology of `G`.
+* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`: the first integral
+  homology of a `K(G, 1)` space is the abelianization of `G`.
+* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`: for an
+  abelian group `A`, the first integral homology of a `K(A, 1)` space is `A`.
 * `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul`: a
   `K(A, 1)` space of a uniquely `m`-divisible abelian group is acyclic modulo `m`.
 * `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isUniquelyTwoDivisible`:
@@ -46,8 +58,8 @@ the path-loop fibrations uses it.
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 4.1,
-  Proposition 4.21, and Section 4.2, Proposition 4.30.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 2.A,
+  Theorem 2A.1, Section 4.1, Proposition 4.21, and Section 4.2, Proposition 4.30.
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953),
   Chapter I.
 -/
@@ -58,7 +70,7 @@ noncomputable section
 
 open AlgebraicTopology CategoryTheory
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -76,6 +88,29 @@ theorem nonempty_singularHomologyIsoGroupHomology {G : Type u} [Group G] {X : Ty
   have := hf.isIso_singularHomologyMap (ModuleCat.of k k) n
   exact ⟨(asIso (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
     (TopCat.ofHom f))).symm ≪≫ classifyingSpaceSingularHomologyIsoGroupHomology k G n⟩
+
+/-- **The first integral homology of a `K(G, 1)` space is the abelianization of `G`.** For a
+group `G` and a `K(G, 1)` space `X`, the Hurewicz map identifies the abelianized fundamental group
+of `X`, which is the abelianization of `G`, with the singular homology `H₁(X; ℤ)`. -/
+theorem nonempty_addEquiv_singularHomology_one {G : Type v} [Group G] {X : Type u}
+    [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpaceOne G X x) :
+    Nonempty (Additive (Group.Abelianization G) ≃+
+      ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
+  have := hX.isAspherical.pathConnectedSpace
+  obtain ⟨φ⟩ := hX.nonempty_fundamentalGroupMulEquiv
+  exact ⟨(MulEquiv.toAdditive φ.abelianizationCongr).symm.trans
+    (HurewiczOne.hurewiczHomologyUliftAddEquiv (X := TopCat.of X) x)⟩
+
+/-- **The first integral homology of a `K(A, 1)` space is `A`.** For an abelian group `A`, the
+abelianization of `A` is `A` itself, so a `K(A, 1)` space `X` has `H₁(X; ℤ) ≅ A`. -/
+theorem nonempty_addEquiv_singularHomology_one_of_comm {A : Type v} [AddCommGroup A]
+    {X : Type u} [TopologicalSpace X] {x : X}
+    (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) :
+    Nonempty (A ≃+ ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
+  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one
+  exact ⟨(MulEquiv.toAdditiveLeft Group.Abelianization.equivOfComm).trans φ⟩
 
 variable (k : Type u) [CommRing k] [IsSemisimpleRing k] {m : ℤ}
 
