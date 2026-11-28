@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
-public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-public import Mathlib.CategoryTheory.Comma.Over.Pullback
-public import Mathlib.AlgebraicGeometry.Pullbacks
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
+import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
-# Finiteness and quasi-compactness under `Over.pullback` of schemes
+# Base change in the over category of schemes
 
 Mathlib proves stability of `LocallyOfFiniteType` and `QuasiCompact` under `Limits.pullback`,
 which yields `LocallyOfFiniteType (pullback.snd Y.hom f)` and `CompactSpace (pullback Y.hom f)`
@@ -27,17 +29,50 @@ morphisms of schemes.
   morphism of schemes preserves `LocallyOfFiniteType` on structure morphisms in `Over`.
 * `TauCeti.AlgebraicGeometry.compactSpace_over_pullback_obj_left`: base change along a
   quasi-compact morphism of schemes preserves `CompactSpace` on underlying schemes in `Over`.
+* `Over.Hom.isIso_pullback_map_iff_of_isOpenImmersion` tests whether base change is an
+  isomorphism using the open-restriction arrow comparison.
+* `Over.pullback_map_injective_of_isSchemeTheoreticallyDominant` uses schematic density and
+  separatedness to prove injectivity on morphisms.
 -/
 
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
 
+universe u
+
+namespace CategoryTheory.Over.Hom
+
+variable {T S : Scheme.{u}} {X Y : Over S} (m : X ⟶ Y) (j : T ⟶ S) [IsOpenImmersion j]
+
+/-- Base change of `m` along the open immersion `j` is an isomorphism exactly when its
+underlying morphism restricts to an isomorphism over the inverse image of `j.opensRange`. -/
+theorem isIso_pullback_map_iff_of_isOpenImmersion :
+    IsIso ((Over.pullback j).map m) ↔ IsIso (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) := by
+  have h : IsIso ((Over.pullback j).map m).left ↔ IsIso ((Over.pullback j).map m) := by
+    simpa only [Over.forget_map] using
+      isIso_iff_of_reflects_iso ((Over.pullback j).map m) (Over.forget _)
+  rw [← h, Scheme.preimage_opensRange_of_isPullback (IsPullback.of_hasPullback Y.hom j).flip]
+  have sq := Over.isPullback_pullback_map_left j m
+  exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+    (m.left.morphismRestrictArrowIso _ sq.w.symm
+      (Scheme.preimage_opensRange_of_isPullback sq))).symm
+
+end CategoryTheory.Over.Hom
+
+/-- Base change is injective on morphisms from a scheme with schematically dense pullback
+to a separated target over the same base. -/
+theorem CategoryTheory.Over.pullback_map_injective_of_isSchemeTheoreticallyDominant
+    {T S : Scheme.{u}} (j : T ⟶ S) {X Y : Over S} [IsSeparated Y.hom]
+    [IsSchemeTheoreticallyDominant (pullback.fst X.hom j)] :
+    Function.Injective ((Over.pullback j).map : (X ⟶ Y) → _) := by
+  intro f g h
+  exact Over.OverMorphism.ext (TauCeti.ext_of_isSchemeTheoreticallyDominant (pullback.fst X.hom j)
+    Y.hom ((Over.w f).trans (Over.w g).symm) ((Over.pullback_map_eq_map_iff j f g).mp h))
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
-
-universe u
 
 /-- Base change along any morphism of schemes preserves `LocallyOfFiniteType` of the structure
 morphism of an object in `Over S`. -/
@@ -60,8 +95,6 @@ end AlgebraicGeometry
 end TauCeti
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
 
 /-- The canonical comparison for two successive base changes is a pullback square. -/
 theorem isPullback_pullbackLeftPullbackSndIso_inv_fst
