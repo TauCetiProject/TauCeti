@@ -264,12 +264,6 @@ noncomputable def GlueingDatum.sectionsEquivPatchedModule (D : GlueingDatum R₁
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (x : PatchedModule (GlueingDatum.commSq R R₁ R₂ R₁₂) D.patchedTransition.toLinearMap) :
     (((D.sectionsEquivPatchedModule R).symm x : D.sections R) : M₁ × M₂) = (x.fst, x.snd) := by rfl
-/-- `GlueingDatum.sectionsEquivPatchedModule` intertwines `D.fst` with `PatchedModule.fst`. -/
-theorem GlueingDatum.fst_sectionsEquivPatchedModule (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) : (D.sectionsEquivPatchedModule R x).fst = D.fst R x := by rfl
-/-- `GlueingDatum.sectionsEquivPatchedModule` intertwines `D.snd` with `PatchedModule.snd`. -/
-theorem GlueingDatum.snd_sectionsEquivPatchedModule (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) : (D.sectionsEquivPatchedModule R x).snd = D.snd R x := by rfl
 /-- The inverse of `GlueingDatum.sectionsEquivPatchedModule` intertwines first projections. -/
 theorem GlueingDatum.fst_sectionsEquivPatchedModule_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (x : PatchedModule (GlueingDatum.commSq R R₁ R₂ R₁₂) D.patchedTransition.toLinearMap) :
