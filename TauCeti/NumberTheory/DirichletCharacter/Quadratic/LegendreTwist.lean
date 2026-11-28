@@ -9,7 +9,9 @@ public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
 import Mathlib.Data.Nat.ChineseRemainder
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Conductor
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.OddPart
 
 /-!
@@ -34,12 +36,16 @@ principal, whatever `χ` is.
   twisting by a prime congruent to `3` modulo `4` reverses parity.
 * `DirichletCharacter.legendreTwist_ne_one`: for an odd prime `d` not dividing `N`, the Legendre
   twist is not principal.
+* `DirichletCharacter.IsPrimitive.legendreTwist`: at such primes the twist of a primitive
+  character is primitive.
 
 ## Provenance
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
 PBC): `New.quadTwist` in `src/Lib/General/NumberTheory/ImaginaryQuadraticField.lean`, and
 `New.quadTwist_apply` and `New.quadTwist_ne_one` in `src/Lib/Analytic/EntireLFunction.lean`.
+For primitivity see `New.isPrimitive_quadTwist` in `src/Lib/Analytic/QuadraticTwist.lean` at
+revision `72fead1`.
 -/
 
 public section
@@ -129,5 +135,30 @@ theorem legendreTwist_ne_one (hd : d ≠ 2) (hN : N.Coprime d) : χ.legendreTwis
   have h_sq : χ.legendreTwist d n * χ.legendreTwist d n = χ.legendreTwist d n := by
     rw [← MulChar.mul_apply, h_one, one_mul]
   norm_num [h_val] at h_sq
+
+/-- A Legendre twist at the product level is the common-level Jacobi twist lifted along
+`lcm N d ∣ N * d`. This works even when the two moduli are not coprime. -/
+theorem legendreTwist_eq_changeLevel_mul_jacobiChar :
+    χ.legendreTwist d = (χ.mul (TauCeti.jacobiChar ℂ d)).changeLevel (Nat.lcm_dvd_mul N d) := by
+  rw [legendreTwist_def, TauCeti.jacobiChar_eq_ringHomComp_quadraticChar,
+    DirichletCharacter.mul, map_mul]
+  simp only [← changeLevel_trans]
+
+/-- Twisting a primitive character by the Legendre character of an odd prime outside its
+level gives a primitive character at the product level. -/
+theorem IsPrimitive.legendreTwist {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive)
+    {d : ℕ} [Fact d.Prime] (hd : d ≠ 2) (hcop : N.Coprime d) :
+    (χ.legendreTwist d).IsPrimitive := by
+  have hp : d.Prime := Fact.out
+  have hN : N ≠ 0 := by
+    intro h
+    exact hp.ne_one (by simpa [h] using hcop)
+  let : NeZero (N * d) := ⟨mul_ne_zero hN hp.ne_zero⟩
+  have hj := TauCeti.isPrimitive_jacobiChar_of_odd_squarefree (R := ℂ)
+    (by norm_num) (hp.odd_of_ne_two hd) hp.squarefree
+  have hprim := hχ.mul_of_coprime hj hcop
+  rw [isPrimitive_def] at hprim ⊢
+  rw [legendreTwist_eq_changeLevel_mul_jacobiChar, conductor_changeLevel, hprim,
+    hcop.lcm_eq_mul]
 
 end DirichletCharacter
