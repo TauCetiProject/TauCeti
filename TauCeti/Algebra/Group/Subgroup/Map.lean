@@ -53,6 +53,9 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
   of the normal core of `B` when every element is `f x * b` with `b` in the normalizer of `B`.
+* `Subgroup.normalCore_inf_eq_bot_of_disjoint_map_conj`,
+  `AddSubgroup.normalCore_inf_eq_bot_of_disjoint_map_addConj`: if `U` is disjoint from a
+  `w`-conjugate of `B`, then the normal core of `B` meets `U` trivially.
 * `Subgroup.mul_mul_injective_of_disjoint`: the coordinates `u n b` are unique when `U`
   meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
@@ -373,6 +376,14 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
     group
   rw [hconj]
   exact (Subgroup.mem_normalizer_iff.mp (inv_mem hb) _).mp (hx y⁻¹)
+
+/-- If `U` is disjoint from the `w`-conjugate of `B`, then the normal core of `B` meets `U`
+trivially. -/
+@[to_additive /-- If `U` is disjoint from the `w`-conjugate of `B`, then the normal core of `B`
+meets `U` trivially. -/]
+theorem _root_.Subgroup.normalCore_inf_eq_bot_of_disjoint_map_conj {B U : Subgroup G} (w : G)
+    (h : Disjoint U (B.map (MulAut.conj w).toMonoidHom)) : B.normalCore ⊓ U = ⊥ :=
+  disjoint_iff.mp <| (h.mono_right <| B.normalCore_eq_iInf_map_conj ▸ iInf_le _ w).symm
 
 /-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
 theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}

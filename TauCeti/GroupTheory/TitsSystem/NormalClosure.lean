@@ -153,9 +153,8 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     exact one_mem _
   -- `Z` centralizes `U`, so `U` lies in the normal subgroup centralizing `Z`, and so does `P`.
   have hZ : T.subgroupB.normalCore ≤ Subgroup.centralizer (P : Set G) :=
-    Subgroup.le_centralizer_iff.mpr (Subgroup.normalClosure_le_normal
-      (Subgroup.le_centralizer_iff.mp (TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot
-        (T.subgroupB.normalCore_le.trans hBU) Subgroup.le_normalizer_of_normal hZU)))
+    TauCeti.le_centralizer_normalClosure_of_le_normalizer_of_inf_eq_bot
+      (T.subgroupB.normalCore_le.trans hBU) hZU
   exact Subgroup.mem_centralizer_iff.mp (hZ (Subgroup.mem_subgroupOf.mp hx)) y y.property
 
 /-- **Tits's simplicity criterion for the normal closure of `U`.** Under the hypotheses of
