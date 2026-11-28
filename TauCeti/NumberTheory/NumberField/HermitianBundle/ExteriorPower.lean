@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.GramForm
+public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.BaseChange
 
 import TauCeti.LinearAlgebra.ExteriorPower.Localization
 
@@ -42,6 +43,10 @@ vector bundle of higher rank.
   decomposable vectors.
 * `TauCeti.HermitianMetric.exteriorPower_rescale`: `⋀ⁿ (Ē(c)) = (⋀ⁿ Ē)(n c)`.
 * `TauCeti.HermitianBundle.rank_det`: the determinant of a hermitian vector bundle is a line.
+* `TauCeti.HermitianMetric.isometryEquivBaseChangeExteriorPower`: the exterior-power
+  scalar-extension equivalence `TauCeti.exteriorPower.equivBaseChange` preserves the Gram metric.
+* `TauCeti.HermitianBundle.isometryEquivBaseChangeDet`: base change preserves the metrized
+  determinant, using rank preservation.
 
 ## References
 
@@ -243,6 +248,68 @@ theorem isometryEquivExteriorPowerOne_apply (x : ⋀[𝓞 K]^1 E) :
     h.isometryEquivExteriorPowerOne x = exteriorPower.oneEquiv (𝓞 K) E x :=
   (rfl)
 
+section BaseChange
+
+open TauCeti.exteriorPower (equivBaseChange_symm_tmul_ιMulti)
+
+variable {L : Type*} [Field L] [Algebra K L]
+
+/-- The canonical scalar-extension map preserves the forms on integral exterior vectors. -/
+private theorem baseChange_exteriorPower_form_tmul (n : ℕ) (τ : L →+* ℂ)
+    (x y : 𝓞 L ⊗[𝓞 K] (⋀[𝓞 K]^n E)) :
+    (h.baseChange.exteriorPower n).form τ
+        (1 ⊗ₜ (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n).symm x)
+        (1 ⊗ₜ (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n).symm y) =
+      ((h.exteriorPower n).baseChange (L := L)).form τ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
+  -- It suffices to compare Gram determinants on wedges of vectors from the original module.
+  let w (a : Fin n → E) := (1 : 𝓞 L) ⊗ₜ[𝓞 K] exteriorPower.ιMulti (𝓞 K) n a
+  have hspan : Submodule.span (𝓞 L) (Set.range w) = ⊤ := by
+    have hspan' := Submodule.baseChange_span (R := 𝓞 K) (𝓞 L)
+      (Set.range (exteriorPower.ιMulti (𝓞 K) n (M := E)))
+    rw [exteriorPower.ιMulti_span, Submodule.baseChange_top, ← Set.range_comp] at hspan'
+    exact hspan'.symm
+  have hx : x ∈ Submodule.span (𝓞 L) (Set.range w) := hspan ▸ Submodule.mem_top
+  have hy : y ∈ Submodule.span (𝓞 L) (Set.range w) := hspan ▸ Submodule.mem_top
+  induction hx, hy using Submodule.span_induction₂ with
+  | mem_mem x y hx hy =>
+    obtain ⟨a, rfl⟩ := hx
+    obtain ⟨b, rfl⟩ := hy
+    simp only [w, equivBaseChange_symm_tmul_ιMulti, one_smul,
+      exteriorPower_form_tmul_ιMulti, baseChange_form_tmul_tmul, map_one, one_mul]
+  | zero_left | zero_right => simp
+  | add_left _ _ _ _ _ _ h₁ h₂ =>
+    simp only [map_add, TensorProduct.tmul_add, LinearMap.add_apply, h₁, h₂]
+  | add_right _ _ _ _ _ _ h₁ h₂ => simp only [map_add, TensorProduct.tmul_add, h₁, h₂]
+  | smul_left _ _ _ _ _ ih => simp only [map_smul, Codomain.tmul_smul, LinearMap.map_smulₛₗ₂, ih]
+  | smul_right _ _ _ _ _ ih => simp only [map_smul, Codomain.tmul_smul, ih]
+
+/-- The canonical scalar-extension comparison is an isometry from the base change of the
+`n`-th exterior power metric to the exterior power of the base-changed metric
+(Bost, Appendice A.2). -/
+def isometryEquivBaseChangeExteriorPower (n : ℕ) :
+    IsometryEquiv ((h.exteriorPower n).baseChange (L := L)) (h.baseChange.exteriorPower n) where
+  toLinearEquiv := (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n).symm
+  form_tmul := h.baseChange_exteriorPower_form_tmul n
+
+/-- The underlying linear equivalence of the metric comparison is the canonical
+exterior-power base-change equivalence, in the direction from tensors to wedges. -/
+@[simp]
+theorem isometryEquivBaseChangeExteriorPower_toLinearEquiv (n : ℕ) :
+    (h.isometryEquivBaseChangeExteriorPower (L := L) n).toLinearEquiv =
+      (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n).symm :=
+  (rfl)
+
+/-- On a scalar tensored with a decomposable vector, the isometry applies base change to each
+wedge factor and multiplies by the scalar. -/
+@[simp]
+theorem isometryEquivBaseChangeExteriorPower_tmul_ιMulti {n : ℕ} (a : 𝓞 L) (x : Fin n → E) :
+    h.isometryEquivBaseChangeExteriorPower n (a ⊗ₜ exteriorPower.ιMulti (𝓞 K) n x) =
+      a • exteriorPower.ιMulti (𝓞 L) n (fun i ↦ (1 : 𝓞 L) ⊗ₜ x i) := by
+  rw [← IsometryEquiv.coe_toLinearEquiv, isometryEquivBaseChangeExteriorPower_toLinearEquiv,
+    equivBaseChange_symm_tmul_ιMulti]
+
+end BaseChange
+
 namespace IsometryEquiv
 
 variable {h} {h' : HermitianMetric K F}
@@ -303,6 +370,35 @@ theorem det_def (Ē : HermitianBundle.{u, v} K) : Ē.det = Ē.exteriorPower Ē.r
 @[simp]
 theorem rank_det (Ē : HermitianBundle.{u, v} K) : Ē.det.rank = 1 := by
   rw [det_def, rank_exteriorPower, Nat.choose_self]
+
+/-- Formation of the determinant of a hermitian bundle commutes isometrically with base
+change (Bost, Appendice A.2). -/
+def isometryEquivBaseChangeDet {L : Type*} [Field L] [Algebra K L] (Ē : HermitianBundle.{u, v} K) :
+    HermitianMetric.IsometryEquiv (Ē.det.baseChange (L := L)).metric
+      (Ē.baseChange (L := L)).det.metric :=
+  Eq.ndrec (motive := fun n ↦ HermitianMetric.IsometryEquiv
+    (Ē.det.baseChange (L := L)).metric ((Ē.baseChange (L := L)).exteriorPower n).metric)
+    (Ē.metric.isometryEquivBaseChangeExteriorPower (L := L) Ē.rank)
+    (rank_baseChange (L := L) Ē).symm
+
+/-- The determinant comparison sends a wedge to the wedge of its images under base change,
+with the factors indexed by the unchanged rank. -/
+@[simp]
+theorem isometryEquivBaseChangeDet_tmul_ιMulti {L : Type*} [Field L] [Algebra K L]
+    (Ē : HermitianBundle.{u, v} K) (a : 𝓞 L) (x : Fin Ē.rank → Ē) :
+    Ē.isometryEquivBaseChangeDet (L := L) (a ⊗ₜ exteriorPower.ιMulti (𝓞 K) Ē.rank x) =
+      a • exteriorPower.ιMulti (𝓞 L) (Ē.baseChange (L := L)).rank
+        (fun i ↦ (1 : 𝓞 L) ⊗ₜ x (Fin.cast (rank_baseChange Ē) i)) := by
+  have apply_cast (m : ℕ) (hm : Ē.rank = m) :
+      (Eq.ndrec (motive := fun n ↦ HermitianMetric.IsometryEquiv
+        (Ē.det.baseChange (L := L)).metric ((Ē.baseChange (L := L)).exteriorPower n).metric)
+        (Ē.metric.isometryEquivBaseChangeExteriorPower (L := L) Ē.rank) hm)
+        (a ⊗ₜ exteriorPower.ιMulti (𝓞 K) Ē.rank x) =
+      a • exteriorPower.ιMulti (𝓞 L) m
+        (fun i ↦ (1 : 𝓞 L) ⊗ₜ x (Fin.cast hm.symm i)) := by
+    cases hm
+    exact Ē.metric.isometryEquivBaseChangeExteriorPower_tmul_ιMulti a x
+  exact apply_cast _ (rank_baseChange (L := L) Ē).symm
 
 end HermitianBundle
 
