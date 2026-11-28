@@ -7,11 +7,16 @@ module
 
 public import TauCeti.Analysis.Normed.Ring.MulUnit
 public import TauCeti.Analysis.Normed.Ring.Ultra
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
+import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Normed.Field.Basic
+
 /-!
-# The open-ball ideal and Neumann estimates in ultrametric normed rings
+# The open-ball ideal, Neumann estimates, and noetherianity in ultrametric normed rings
 
 Let `R` be an ultrametric seminormed ring with `‖1‖ = 1`, and let `R⁰ = Subring.unitClosedBall R`
 be its closed unit ball. The elements of `R⁰` of norm less than one form an ideal
@@ -31,6 +36,16 @@ ultrametric normed field `K` the ring `K⁰` is local with maximal ideal `K⁰�
 is the residue field. These are the facts about the unit ball that underlie reduction arguments
 for Banach modules over nonarchimedean Banach rings.
 
+Over an ultrametric normed field `K`, divisibility in `K⁰` is comparison of norms
+(`Subring.unitClosedBall.dvd_iff_norm_le`). The closed unit ball `K⁰` is noetherian if and only if
+`K⁰⁰` is finitely generated, if and only if there is a strict norm gap `ρ < 1` above `{‖a‖ < 1}`;
+in that case `K⁰` is a principal ideal ring, and when `K` is nontrivially normed it is a discrete
+valuation ring. Without a norm gap below `1`, `K⁰⁰` is not finitely generated, but for every
+`0 < ε < 1` there is a single `d ∈ K⁰` with `√ε < ‖d‖ < 1` that divides every scalar `c ∈ K⁰`
+of norm at most `ε`, with quotient norm at most `√ε`
+(`TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`), and every ideal of
+`K⁰` is *almost principal* (`Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall`).
+
 Conversely, a ring homomorphism into the closed unit ball of a seminormed ring with `‖1‖ = 1`
 maps units to elements of norm one. If its source is a local ring and it maps the maximal ideal
 into the open unit ball, it maps exactly the units to elements of norm one, and the maximal ideal
@@ -45,6 +60,8 @@ the valuation ring of a nonarchimedean field.
 
 * `TauCeti.exists_norm_lt_one_forall_norm_le_of_fg`: if the open-ball ideal is finitely
   generated, some element has the largest norm less than one.
+* `Ideal.eq_bot_or_exists_mem_forall_mul_norm_le_unitClosedBall`: every nonzero ideal of
+  `Subring.unitClosedBall R` has an element exceeding any `r < 1` times the supremum of its norms.
 * `TauCeti.isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul`: for a power-multiplicative
   norm, topological nilpotence is equivalent to norm less than one.
 * `TauCeti.norm_inverse_one_sub` and `TauCeti.norm_inverse_one_sub_sub_one`: the ultrametric
@@ -56,11 +73,21 @@ the valuation ring of a nonarchimedean field.
   (`TauCeti.isLocalHom_quotientMk_unitBallIdeal`).
 * `TauCeti.isUnit_unitClosedBall_iff`: for a multiplicative norm, the units of the unit ball are
   the units of norm one.
-* `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
-  `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed division ring the unit ball
-  is a local ring, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
-* `TauCeti.isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow`: if the nonzero norms of `K` are
-  the integer powers of `‖π‖` for some `0 < ‖π‖ < 1`, then `K⁰` is a principal ideal ring.
+* `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall`,
+  `Subring.unitClosedBall.dvd_iff_norm_le`, and `TauCeti.maximalIdeal_unitClosedBall`: over an
+  ultrametric normed division ring the unit ball is a local ring in which divisibility is norm
+  comparison, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
+* `TauCeti.isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow`,
+  `TauCeti.isPrincipalIdealRing_unitClosedBall_of_forall_norm_le`,
+  `TauCeti.fg_unitBallIdeal_iff_exists_forall_norm_le`,
+  `TauCeti.isNoetherianRing_unitClosedBall_iff_fg_unitBallIdeal`,
+  `TauCeti.isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le`, and
+  `TauCeti.isDiscreteValuationRing_unitClosedBall_iff_isNoetherianRing`: characterizations of
+  discrete norms, noetherianity, and the discrete valuation ring property for `K⁰`.
+* `TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`,
+  `Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall`, and
+  `Subring.unitClosedBall.smul_mem_span_singleton_of_norm_le`: scalar factorization in dense norm
+  groups and almost-principality of ideals of `K⁰`.
 * `TauCeti.norm_map_eq_one_of_isUnit`: a ring homomorphism into the closed unit ball maps units
   to elements of norm one.
 * `TauCeti.norm_map_eq_one_iff_isUnit` and `TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`: a
@@ -73,6 +100,8 @@ the valuation ring of a nonarchimedean field.
 * S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, Springer, 1984, §1.2.
 * C. Johansson and J. Newton, *Extended eigenvarieties for overconvergent cohomology*,
   arXiv:1604.07739, §2.1.
+* R. Kiehl, *Der Endlichkeitssatz für eigentliche Abbildungen in der nichtarchimedischen
+  Funktionentheorie*, Inventiones Mathematicae 2 (1967), 191–214, §5, Satz 5.1.
 -/
 
 public section
@@ -133,6 +162,33 @@ theorem exists_norm_lt_one_forall_norm_le_of_fg (h : (unitBallIdeal R).FG) :
       ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.1 b.property)).trans hx)
 
 end UnitBallIdeal
+
+/-- **Supremum-norm approximation dichotomy for ideals of the closed unit ball.** For every ideal
+`I` of `Subring.unitClosedBall R` and every `r < 1`, either `I = ⊥` or there is an element `g ∈ I`
+with `0 < ‖(g : R)‖` such that `‖(g : R)‖` approximates `sup_{f ∈ I} ‖(f : R)‖` within factor
+`r`, meaning `r * ‖(f : R)‖ ≤ ‖(g : R)‖` for all `f ∈ I`. -/
+theorem _root_.Ideal.eq_bot_or_exists_mem_forall_mul_norm_le_unitClosedBall
+    {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormOneClass R]
+    (I : Ideal (Subring.unitClosedBall R)) {r : ℝ} (hr1 : r < 1) :
+    I = ⊥ ∨ ∃ g ∈ I, 0 < ‖(g : R)‖ ∧ ∀ f ∈ I, r * ‖(f : R)‖ ≤ ‖(g : R)‖ := by
+  set S : Set ℝ := (fun f : Subring.unitClosedBall R ↦ ‖(f : R)‖) '' (I : Set _)
+  have hSne : S.Nonempty := ⟨0, 0, I.zero_mem, by simp⟩
+  have hSbdd : BddAbove S :=
+    ⟨1, by rintro _ ⟨f, -, rfl⟩; exact Subring.mem_unitClosedBall.mp f.property⟩
+  set α := sSup S
+  have hα0 : 0 ≤ α := le_csSup_of_le hSbdd ⟨0, I.zero_mem, rfl⟩ (by simp)
+  rcases hα0.eq_or_lt with hα | hα
+  · refine Or.inl ((Submodule.eq_bot_iff I).mpr fun f hf ↦ ?_)
+    have hf0 : ‖(f : R)‖ ≤ 0 := hα ▸ le_csSup hSbdd ⟨f, hf, rfl⟩
+    exact Subtype.ext (norm_le_zero_iff.mp hf0)
+  · have hlt : max r 0 * α < α := mul_lt_of_lt_one_left hα (max_lt hr1 zero_lt_one)
+    obtain ⟨_, ⟨g, hgI, rfl⟩, hgt⟩ := (lt_csSup_iff hSbdd hSne).mp hlt
+    refine Or.inr ⟨g, hgI, (mul_nonneg (le_max_right r 0) hα.le).trans_lt hgt, fun f hf ↦ ?_⟩
+    have hfα : ‖(f : R)‖ ≤ α := le_csSup hSbdd ⟨f, hf, rfl⟩
+    calc r * ‖(f : R)‖ ≤ max r 0 * ‖(f : R)‖ :=
+          mul_le_mul_of_nonneg_right (le_max_left r 0) (norm_nonneg _)
+      _ ≤ max r 0 * α := mul_le_mul_of_nonneg_left hfα (le_max_right r 0)
+      _ ≤ ‖(g : R)‖ := hgt.le
 
 /-- **Topological nilpotence for power-multiplicative norms.** If `‖x ^ n‖ = ‖x‖ ^ n` for all
 `n ≥ 1`, then `x` is topologically nilpotent exactly when `‖x‖ < 1`. The implication from right
@@ -273,6 +329,21 @@ instance isLocalRing_unitClosedBall : IsLocalRing (Subring.unitClosedBall K) := 
   · exact .inl hx
   · exact .inr (norm_one_sub_of_norm_lt_one hx)
 
+/-- **Divisibility in `K⁰` is comparison of norms**: in an ultrametric normed division ring, `b`
+divides `a` in `Subring.unitClosedBall K` exactly when `‖(a : K)‖ ≤ ‖(b : K)‖`. -/
+theorem _root_.Subring.unitClosedBall.dvd_iff_norm_le {a b : Subring.unitClosedBall K} :
+    b ∣ a ↔ ‖(a : K)‖ ≤ ‖(b : K)‖ := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rw [hc, Subring.coe_mul, norm_mul]
+    exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp c.property)
+  · rcases eq_or_ne (b : K) 0 with hb | hb
+    · have ha : (a : K) = 0 := norm_le_zero_iff.mp (by simpa [hb] using h)
+      exact ⟨0, Subtype.ext (by simp [ha])⟩
+    · refine ⟨⟨(b : K)⁻¹ * (a : K), Subring.mem_unitClosedBall.mpr ?_⟩, Subtype.ext ?_⟩
+      · rw [norm_mul, norm_inv]
+        exact (inv_mul_le_one₀ (norm_pos_iff.mpr hb)).mpr h
+      · simp [mul_inv_cancel_left₀ hb]
+
 end DivisionRing
 
 section Field
@@ -312,7 +383,7 @@ theorem isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow {π : K} (hπ0 : 0 <
     obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
     obtain ⟨n, hn⟩ := hnat x hx
     exact ⟨n, x, hxI, hx, hn⟩
-  obtain ⟨x, hxI, hx, hxn⟩ := Nat.find_spec hex
+  obtain ⟨x, hxI, -, hxn⟩ := Nat.find_spec hex
   refine ⟨x, le_antisymm (fun y hy ↦ ?_) ((Ideal.span_singleton_le_iff_mem _).2 hxI)⟩
   rcases eq_or_ne y 0 with rfl | hy0
   · exact zero_mem _
@@ -320,13 +391,134 @@ theorem isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow {π : K} (hπ0 : 0 <
   have hle : ‖(y : K)‖ ≤ ‖(x : K)‖ := by
     rw [hm, hxn]
     exact pow_le_pow_of_le_one hπ0.le hπ1.le (Nat.find_min' hex ⟨y, hy, hy0, hm⟩)
-  have hx0 : (x : K) ≠ 0 := fun h ↦ hx (Subtype.ext h)
-  refine Ideal.mem_span_singleton'.2 ⟨⟨y / x, Subring.mem_unitClosedBall.2 ?_⟩, Subtype.ext ?_⟩
-  · rw [norm_div]
-    exact div_le_one_of_le₀ hle (norm_nonneg _)
-  · simp [hx0]
+  exact Ideal.mem_span_singleton.mpr (Subring.unitClosedBall.dvd_iff_norm_le.mpr hle)
+
+/-- **Principal ideal property from a norm gap.** If some `ρ < 1` bounds every norm strictly below
+`1` in an ultrametric normed field `K`, then `Subring.unitClosedBall K` is a principal ideal ring:
+either `K` is trivially normed and `K⁰` is a field, or `K` is discretely valued. -/
+theorem isPrincipalIdealRing_unitClosedBall_of_forall_norm_le {ρ : ℝ} (hρ1 : ρ < 1)
+    (hρ : ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) :
+    IsPrincipalIdealRing (Subring.unitClosedBall K) := by
+  by_cases hex : ∃ c : K, 0 < ‖c‖ ∧ ‖c‖ < 1
+  · obtain ⟨c, hc0, hc1⟩ := hex
+    obtain ⟨π, hπ0, hπ1, -, hdisc⟩ :=
+      exists_norm_lt_one_forall_exists_norm_eq_zpow_of_forall_norm_le_of_norm_lt_one hρ1 hρ hc0 hc1
+    exact isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow hπ0 hπ1 hdisc
+  · push Not at hex
+    -- Every nonzero element of `K⁰` has norm `1`, hence is a unit, so `K⁰` is a field.
+    have hfield : IsField (Subring.unitClosedBall K) := by
+      refine IsLocalRing.isField_iff_maximalIdeal_eq.mpr ?_
+      rw [maximalIdeal_unitClosedBall, Submodule.eq_bot_iff]
+      intro x hx
+      rw [mem_unitBallIdeal] at hx
+      ext
+      by_contra hx0
+      exact (hex x (norm_pos_iff.mpr hx0)).not_gt hx
+    let := hfield.toField
+    infer_instance
+
+/-- **Finite generation of the open-ball ideal is equivalent to a norm gap below `1`.** -/
+theorem fg_unitBallIdeal_iff_exists_forall_norm_le :
+    (unitBallIdeal K).FG ↔ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ := by
+  refine ⟨fun hfg ↦ ?_, fun ⟨ρ, hρ1, hρ⟩ ↦ ?_⟩
+  · obtain ⟨π, hπ1, hπ⟩ := exists_norm_lt_one_forall_norm_le_of_fg hfg
+    exact ⟨‖π‖, hπ1, hπ⟩
+  · have := isPrincipalIdealRing_unitClosedBall_of_forall_norm_le hρ1 hρ
+    exact IsNoetherian.noetherian _
+
+/-- **The closed unit ball of an ultrametric normed field is noetherian if and only if its
+open-ball ideal is finitely generated.** -/
+theorem isNoetherianRing_unitClosedBall_iff_fg_unitBallIdeal :
+    IsNoetherianRing (Subring.unitClosedBall K) ↔ (unitBallIdeal K).FG := by
+  refine ⟨fun _ ↦ IsNoetherian.noetherian _, fun hfg ↦ ?_⟩
+  obtain ⟨ρ, hρ1, hρ⟩ := fg_unitBallIdeal_iff_exists_forall_norm_le.mp hfg
+  have := isPrincipalIdealRing_unitClosedBall_of_forall_norm_le hρ1 hρ
+  infer_instance
+
+/-- **The closed unit ball of an ultrametric normed field is noetherian if and only if some
+`ρ < 1` bounds all norms strictly below `1`.** -/
+theorem isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le :
+    IsNoetherianRing (Subring.unitClosedBall K) ↔
+      ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ :=
+  isNoetherianRing_unitClosedBall_iff_fg_unitBallIdeal.trans
+    fg_unitBallIdeal_iff_exists_forall_norm_le
+
+/-- **Uniform scalar division in dense norm groups.** When `K⁰` has no strict norm gap below `1`,
+for each `0 < ε < 1` there is a single `d ∈ K⁰` with `√ε < ‖d‖ < 1` that divides every scalar
+`c ∈ K⁰` of norm at most `ε`, with quotient norm at most `√ε`. -/
+theorem exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le
+    (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) {ε : ℝ} (hε0 : 0 < ε)
+    (hε1 : ε < 1) :
+    ∃ (δ : ℝ) (d : Subring.unitClosedBall K),
+      0 < δ ∧ δ < 1 ∧ 0 < ‖(d : K)‖ ∧ ‖(d : K)‖ < 1 ∧ δ < ‖(d : K)‖ ∧
+      ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε →
+        ∃ c' : Subring.unitClosedBall K, c = c' * d ∧ ‖(c' : K)‖ ≤ δ := by
+  set δ := Real.sqrt ε
+  have hδ0 : 0 < δ := Real.sqrt_pos.mpr hε0
+  have hδ1 : δ < 1 := (Real.sqrt_lt_sqrt hε0.le hε1).trans_eq Real.sqrt_one
+  have hδ_sq : δ * δ = ε := Real.mul_self_sqrt hε0.le
+  push Not at hdense
+  obtain ⟨a, ha1, hδa⟩ := hdense δ hδ1
+  let d : Subring.unitClosedBall K := ⟨a, Subring.mem_unitClosedBall.mpr ha1.le⟩
+  have hd_pos : 0 < ‖(d : K)‖ := hδ0.trans hδa
+  refine ⟨δ, d, hδ0, hδ1, hd_pos, ha1, hδa, fun c hc ↦ ?_⟩
+  have hcd : ‖(c : K)‖ ≤ ‖(d : K)‖ :=
+    hc.trans (hδ_sq ▸ (mul_le_of_le_one_left hδ0.le hδ1.le).trans hδa.le)
+  obtain ⟨c', hc'⟩ := Subring.unitClosedBall.dvd_iff_norm_le.mpr hcd
+  refine ⟨c', by rw [hc', mul_comm], ?_⟩
+  have hc'_norm : ‖(d : K)‖ * ‖(c' : K)‖ ≤ ‖(d : K)‖ * δ := by
+    rw [← norm_mul, ← Subring.coe_mul, ← hc']
+    exact hc.trans (hδ_sq ▸ mul_comm δ ‖(d : K)‖ ▸ mul_le_mul_of_nonneg_left hδa.le hδ0.le)
+  exact le_of_mul_le_mul_left hc'_norm hd_pos
+
+/-- **Ideals of `K⁰` are almost principal.** For every ideal `I` of `Subring.unitClosedBall K` and
+every `ε < 1`, there is an element `x ∈ I` such that `c • y ∈ Ideal.span {x}` for all
+`c ∈ Subring.unitClosedBall K` with `‖(c : K)‖ ≤ ε` and all `y ∈ I`. -/
+theorem _root_.Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall
+    (I : Ideal (Subring.unitClosedBall K)) {ε : ℝ} (hε1 : ε < 1) :
+    ∃ x ∈ I, ∀ c : Subring.unitClosedBall K, ‖(c : K)‖ ≤ ε →
+      ∀ y ∈ I, c • y ∈ Ideal.span {x} := by
+  rcases I.eq_bot_or_exists_mem_forall_mul_norm_le_unitClosedBall hε1 with rfl | ⟨x, hxI, -, hle⟩
+  · exact ⟨0, zero_mem _, fun _ _ _ hy ↦ by simp [Ideal.mem_bot.mp hy]⟩
+  · refine ⟨x, hxI, fun c hc y hy ↦ Ideal.mem_span_singleton.mpr <|
+      Subring.unitClosedBall.dvd_iff_norm_le.mpr ?_⟩
+    simpa only [smul_eq_mul, Subring.coe_mul, norm_mul] using
+      (mul_le_mul_of_nonneg_right hc (norm_nonneg _)).trans (hle y hy)
+
+/-- **Principal ideal containment from norm comparison in `K⁰`.** For `x, c, y ∈ K⁰`, if
+`‖(c : K)‖ ≤ ‖(x : K)‖` then `c • y ∈ Ideal.span {x}`. -/
+theorem _root_.Subring.unitClosedBall.smul_mem_span_singleton_of_norm_le
+    {x c y : Subring.unitClosedBall K} (hc : ‖(c : K)‖ ≤ ‖(x : K)‖) :
+    c • y ∈ Ideal.span {x} :=
+  Ideal.mem_span_singleton.mpr <| Subring.unitClosedBall.dvd_iff_norm_le.mpr <| by
+    simpa only [smul_eq_mul, Subring.coe_mul, norm_mul] using
+      (mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp y.property)).trans hc
 
 end Field
+
+section NontriviallyNormedField
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- **Over a nontrivially normed ultrametric field, `Subring.unitClosedBall K` is a discrete
+valuation ring if and only if it is noetherian.** -/
+theorem isDiscreteValuationRing_unitClosedBall_iff_isNoetherianRing :
+    IsDiscreteValuationRing (Subring.unitClosedBall K) ↔
+      IsNoetherianRing (Subring.unitClosedBall K) := by
+  refine ⟨fun _ ↦ inferInstance, fun hnoeth ↦ ?_⟩
+  obtain ⟨ρ, hρ1, hρ⟩ := isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le.mp hnoeth
+  have : IsPrincipalIdealRing (Subring.unitClosedBall K) :=
+    isPrincipalIdealRing_unitClosedBall_of_forall_norm_le hρ1 hρ
+  refine { not_a_field' := ?_ }
+  rw [maximalIdeal_unitClosedBall]
+  obtain ⟨c, hc0, hc1⟩ := NormedField.exists_norm_lt_one K
+  intro hbot
+  have hc : (⟨c, Subring.mem_unitClosedBall.mpr hc1.le⟩ : Subring.unitClosedBall K) ∈
+      unitBallIdeal K := mem_unitBallIdeal.mpr hc1
+  rw [hbot, Ideal.mem_bot] at hc
+  exact hc0.ne' (by simpa using congrArg (fun x : Subring.unitClosedBall K ↦ ‖(x : K)‖) hc)
+
+end NontriviallyNormedField
 
 section Map
 

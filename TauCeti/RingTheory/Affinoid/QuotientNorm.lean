@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.Quotient.Basic
+public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import Mathlib.Topology.Algebra.Algebra.Equiv
@@ -28,6 +29,8 @@ and the Banach open mapping theorem. Equivalent norms need not be equal or isome
 * `TauCeti.IsAffinoidAlgebra.isOpenQuotientMap`: a surjective algebra homomorphism from a
   noetherian ultrametric Banach algebra onto a completely normed affinoid algebra is an open
   quotient map, so the target carries the quotient topology.
+* `TauCeti.IsAffinoidAlgebra.isOpen_map_unitClosedBall`: for any noetherian ultrametric Banach
+  `K`-algebra `B` with `‖(1 : B)‖ = 1` and surjective `f : B →ₐ[K] A`, `f(B°)` is open in `A`.
 * `TauCeti.IsAffinoidAlgebra.quotientKerContinuousAlgEquiv`: for such a surjection `f : A → B`,
   the first isomorphism theorem `A ⧸ ker f ≃ B` is a homeomorphism.
 * `TauCeti.IsAffinoidAlgebra.presentationContinuousAlgEquiv`: two Tate presentations of the same
@@ -56,15 +59,27 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 
 section Surjective
 
-variable [IsNoetherianRing A]
-
 /-- A surjective algebra homomorphism from a noetherian ultrametric Banach algebra onto a
 completely normed affinoid algebra is an open quotient map, so the target carries the quotient
 topology induced by the homomorphism. -/
-theorem isOpenQuotientMap (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
+theorem isOpenQuotientMap [IsNoetherianRing A] (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) : IsOpenQuotientMap f :=
   let g : A →L[K] B := ⟨f.toLinearMap, hB.continuous_algHom f⟩
   ⟨hf, g.continuous, g.isOpenMap hf⟩
+
+/-- **Surjective homomorphisms map the closed unit ball to an open subring.** Over a complete
+nontrivially normed ultrametric field `K`, for any affinoid algebra `A` carrying a complete
+ultrametric `K`-algebra norm, any noetherian ultrametric Banach `K`-algebra `B` with
+`‖(1 : B)‖ = 1`, and any surjective `f : B →ₐ[K] A`, the image `f(B°)` is open in `A` (hence a
+ring of definition of `A`). -/
+theorem isOpen_map_unitClosedBall (hA : IsAffinoidAlgebra K A)
+    {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
+    [IsNoetherianRing B] [NormOneClass B] (f : B →ₐ[K] A) (hf : Function.Surjective f) :
+    IsOpen (((Subring.unitClosedBall B).map f.toRingHom : Subring A) : Set A) := by
+  rw [Subring.coe_map, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  exact (hA.isOpenQuotientMap f hf).isOpenMap _ (Subring.isOpen_unitClosedBall B)
+
+variable [IsNoetherianRing A]
 
 /-- For a surjective algebra homomorphism `f` from a noetherian ultrametric Banach algebra onto a
 completely normed affinoid algebra, the algebraic first isomorphism theorem `A ⧸ ker f ≃ B` is a

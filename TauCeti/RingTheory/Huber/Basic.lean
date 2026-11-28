@@ -61,6 +61,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   adjacent powers of `I` agree, the closure of zero in the Huber ring is open.
 * `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_mul_mem`: some `Iⁿ`
   multiplies a given element into a given open subring.
+* `TauCeti.Huber.IsPseudoUniformizer.not_isBounded_univ`: a nontrivial `T₁` topological monoid
+  with zero admitting a pseudouniformiser is not bounded.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
 * `TauCeti.Huber.IsBounded.image_of_isPseudoUniformizer` and
@@ -216,6 +218,19 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     {φ : F} (hφ : Continuous φ) {a : A} (ha : IsPseudoUniformizer a) :
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
+
+/-- **A nontrivial `T₁` topological monoid with zero containing a pseudouniformiser is not
+bounded.** Multiplying `Set.univ` by a high power `ϖ ^ n` still contains `1 = ϖ ^ n * ϖ⁻ⁿ`,
+contradicting that `ϖ ^ n * Set.univ` eventually enters `{1}ᶜ`. -/
+theorem IsPseudoUniformizer.not_isBounded_univ {A : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [T1Space A] [Nontrivial A] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) :
+    ¬ IsBounded (Set.univ : Set A) := by
+  intro h
+  obtain ⟨n, hn⟩ := h.exists_pow_mul_subset hϖ.isTopologicallyNilpotent
+    (isOpen_compl_singleton.mem_nhds zero_ne_one)
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow n
+  exact hn (Set.mul_mem_mul rfl (Set.mem_univ (↑u⁻¹ : A)))
+    (by rw [← hu, Units.mul_inv]; exact Set.mem_singleton 1)
 
 /-- **A product of pseudouniformisers is a pseudouniformiser**: a topologically nilpotent element
 is power-bounded, and a power-bounded element times a topologically nilpotent one is

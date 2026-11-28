@@ -11,16 +11,27 @@ public import TauCeti.Topology.Algebra.Valued.Integer
 public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import Mathlib.Algebra.MvPolynomial.Nilpotent
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
+
+import Mathlib.RingTheory.Noetherian.Basic
+import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
 # The Gauss unit ball of a Tate algebra and its reduction
 
 Let `K` be a nontrivially normed ultrametric field with ring of integers `𝒪[K]` and residue
 field `𝓀[K]`, and let `T = K⟨X⟩` be the Tate algebra of unit-radius restricted series in the
-variables `σ`. Its Gauss unit ball `T° = {f | ‖f‖ ≤ 1}` consists of the series with integral
-coefficients, and is identified isometrically with the ring `𝒪[K]⟨X⟩` of restricted series over
-`𝒪[K]`. Reducing coefficients modulo the maximal ideal of `𝒪[K]` sends a series in `T°` to a
+variables `σ`. More generally, over any ultrametric normed ring `R` with `‖1‖ = 1`, the Gauss unit
+ball `R⟨X⟩° = {f | ‖f‖ ≤ 1}` consists of the series with coefficients in `R°`, giving an isometric
+ring isomorphism `R°⟨X⟩ ≃+* R⟨X⟩°` (`TauCeti.MvPowerSeries.restrictedUnitClosedBallEquiv`).
+Specializing along `𝒪[K] ≃+* K°` identifies `T°` with `𝒪[K]⟨X⟩`. For commutative `R` and any
+positive polyradius `r`, constant series embed `R°` into `R{X/r}°` as a retract via the constant
+coefficient, and inverting any unit of `R` of norm `< 1` localizes `R{X/r}°` to `R{X/r}`; over a
+nontrivially normed ultrametric field `K`, any `K°`-compatible ring homomorphism out of `K{X/r}°`
+therefore extends uniquely to a `K`-algebra homomorphism out of `K{X/r}`.
+
+Reducing coefficients modulo the maximal ideal of `𝒪[K]` sends a series in `T°` to a
 polynomial, because only finitely many of its coefficients have norm one. This gives a surjective
 ring homomorphism `T° → 𝓀[K][X]` whose kernel is `T°° = {f | ‖f‖ < 1}`, hence
 `T° ⧸ T°° ≃ 𝓀[K][X]`. The unit ball is also the subring of power-bounded elements of `T`, and
@@ -42,6 +53,14 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 
 ## Main definitions
 
+* `TauCeti.MvPowerSeries.restrictedUnitClosedBallEquiv`: the isometric ring isomorphism
+  `R°⟨X⟩ ≃+* R⟨X⟩°` for an ultrametric normed ring `R` with `‖1‖ = 1`.
+* `TauCeti.MvPowerSeries.unitClosedBallC` and
+  `TauCeti.MvPowerSeries.unitClosedBallConstantCoeffHom`: the constant-series inclusion
+  `R° →+* R{X/r}°` and its constant-coefficient retraction.
+* `TauCeti.MvPowerSeries.restrictedIntegerUnitClosedBallEquiv`: the coefficientwise ring
+  isomorphism `𝒪[K]{X/r} ≃+* K°{X/r}` at any polyradius `r`, which preserves the Gauss norm at
+  positive polyradii.
 * `TauCeti.MvPowerSeries.restrictedIntegerEquiv`: the isometric ring isomorphism
   `𝒪[K]⟨X⟩ ≃ T°`.
 * `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`, defined
@@ -56,6 +75,12 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 
 * `TauCeti.MvPowerSeries.mem_unitClosedBall_iff`: a restricted series lies in the unit ball
   exactly when all its coefficients have norm at most one.
+* `isNoetherianRing_unitClosedBall_of_isNoetherianRing_restrictedUnitClosedBall` (in
+  `TauCeti.MvPowerSeries`): if `R{X/r}°` is noetherian, then `R°` is noetherian.
+* `TauCeti.MvPowerSeries.isLocalizationAway_unitClosedBallC`: inverting a unit of `R` of
+  norm `< 1` localizes `R{X/r}°` to `R{X/r}`.
+* `RingHom.existsUnique_algHom_of_unitClosedBall`: over a nontrivially normed ultrametric field
+  `K`, a `K°`-compatible ring homomorphism out of `K{X/r}°` extends uniquely to `K{X/r}`.
 * `TauCeti.MvPowerSeries.restrictedReduction_eq_zero_iff`: the reduction of `f` vanishes exactly
   when `‖f‖ < 1`.
 * `TauCeti.MvPowerSeries.restrictedReduction_surjective`: every polynomial over `𝓀[K]` is a
@@ -87,6 +112,9 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§5.1.2–5.1.3.
+* S. Bosch, *Lectures on Formal and Rigid Geometry*, Lecture Notes in Mathematics 2105, Springer
+  (2014), §6.4, proof of Lemma 5 (pp. 137–138), for the general localization step extending a
+  `K°`-compatible homomorphism on the Gauss unit ball to `K{X/r}`.
 -/
 
 public section
@@ -131,7 +159,209 @@ theorem restrictedMap_mem_unitClosedBall [NormOneClass R] {S : Type*} [NormedRin
     rw [coeff_restrictedMap]
     exact (hφ _).trans (norm_coeff_le_one f t)
 
+/-- The inclusion of `Subring.unitClosedBall R` into `R` is bounded with constant one. -/
+private theorem norm_unitClosedBall_subtype_le [NormOneClass R] (x : Subring.unitClosedBall R) :
+    ‖(Subring.unitClosedBall R).subtype x‖ ≤ 1 * ‖x‖ := by
+  rw [Subring.coe_subtype, one_mul, AddSubgroupClass.coe_norm]
+
+/-- The map `R°⟨X⟩ →+* R⟨X⟩°` including the coefficients. -/
+private noncomputable def restrictedUnitClosedBallHom [NormOneClass R] :
+    IsRestricted.subring (R := Subring.unitClosedBall R) (fun _ : σ ↦ 1) →+*
+      Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :=
+  (restrictedMap (Subring.unitClosedBall R).subtype norm_unitClosedBall_subtype_le).codRestrict _
+    fun f ↦ mem_unitClosedBall_iff.mpr fun t ↦ by
+      rw [coeff_restrictedMap, Subring.coe_subtype]
+      exact Subring.mem_unitClosedBall.mp
+        (coeff t (f : MvPowerSeries σ (Subring.unitClosedBall R))).property
+
+private theorem restrictedUnitClosedBallHom_bijective [NormOneClass R] :
+    Function.Bijective (restrictedUnitClosedBallHom (σ := σ) (R := R)) := by
+  refine ⟨fun f g h ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ Subtype.ext ?_, fun f ↦ ?_⟩
+  · simpa [restrictedUnitClosedBallHom] using
+      congrArg (fun g : Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) ↦
+        coeff t ((g : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R)) h
+  · let g : MvPowerSeries σ (Subring.unitClosedBall R) :=
+      fun t ↦ ⟨coeff t ((f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R),
+        Subring.mem_unitClosedBall.mpr (norm_coeff_le_one f t)⟩
+    have hgc (t : σ →₀ ℕ) :
+        coeff t g =
+          ⟨coeff t ((f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R),
+            Subring.mem_unitClosedBall.mpr (norm_coeff_le_one f t)⟩ :=
+      MvPowerSeries.coeff_apply g t
+    have hg : IsRestricted (fun _ : σ ↦ 1) g := by
+      have hf : IsRestricted (fun _ : σ ↦ 1)
+          ((f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R) :=
+        f.val.property
+      simp only [IsRestricted] at hf ⊢
+      simpa [hgc, AddSubgroupClass.coe_norm] using hf
+    exact ⟨⟨g, hg⟩, Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun t ↦ by
+      simp [restrictedUnitClosedBallHom, hgc]⟩
+
+/-- **The Gauss unit ball as restricted series over `R°`.** Including coefficients identifies
+unit-radius restricted series over `Subring.unitClosedBall R` with the series in `R⟨X⟩` of Gauss
+norm at most one. -/
+noncomputable def restrictedUnitClosedBallEquiv [NormOneClass R] :
+    IsRestricted.subring (R := Subring.unitClosedBall R) (fun _ : σ ↦ 1) ≃+*
+      Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :=
+  RingEquiv.ofBijective _ restrictedUnitClosedBallHom_bijective
+
+/-- `restrictedUnitClosedBallEquiv` includes each coefficient into `R`. -/
+@[simp]
+theorem coeff_restrictedUnitClosedBallEquiv [NormOneClass R]
+    (f : IsRestricted.subring (R := Subring.unitClosedBall R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
+    coeff t ((restrictedUnitClosedBallEquiv f :
+        IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R) =
+      coeff t (f : MvPowerSeries σ (Subring.unitClosedBall R)) := by
+  simp [restrictedUnitClosedBallEquiv, restrictedUnitClosedBallHom]
+
+/-- The coefficients of `restrictedUnitClosedBallEquiv.symm f` are those of `f`. -/
+@[simp]
+theorem coeff_restrictedUnitClosedBallEquiv_symm [NormOneClass R]
+    (f : Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1))) (t : σ →₀ ℕ) :
+    ((coeff t (restrictedUnitClosedBallEquiv.symm f :
+        MvPowerSeries σ (Subring.unitClosedBall R)) : Subring.unitClosedBall R) : R) =
+      coeff t ((f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R) := by
+  conv_rhs => rw [← restrictedUnitClosedBallEquiv.apply_symm_apply f]
+  rw [coeff_restrictedUnitClosedBallEquiv]
+
+/-- `restrictedUnitClosedBallEquiv` preserves the Gauss norm. -/
+@[simp]
+theorem norm_restrictedUnitClosedBallEquiv [NormOneClass R]
+    (f : IsRestricted.subring (R := Subring.unitClosedBall R) (fun _ : σ ↦ 1)) :
+    ‖(restrictedUnitClosedBallEquiv f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1))‖ =
+      ‖f‖ :=
+  norm_restrictedMap _ _ (fun x ↦ by simp [AddSubgroupClass.coe_norm]) f
+
 end UnitBall
+
+section Constant
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+  {r : σ → ℝ} [∀ i, Fact (0 < r i)]
+
+/-- **Scalar inclusion into the Gauss unit ball.** Constants of norm at most one in `R` embed as
+constant series of Gauss norm at most one in `R{X/r}°`. -/
+noncomputable def unitClosedBallC :
+    Subring.unitClosedBall R →+* Subring.unitClosedBall (IsRestricted.subring (R := R) r) :=
+  (algebraMap R (IsRestricted.subring (R := R) r)).restrict _ _ fun x hx ↦
+    Subring.mem_unitClosedBall.mpr <| by
+      rw [norm_algebraMap_isRestrictedSubring]
+      exact Subring.mem_unitClosedBall.mp hx
+
+@[simp]
+theorem coe_unitClosedBallC (x : Subring.unitClosedBall R) :
+    (unitClosedBallC (σ := σ) (r := r) x : IsRestricted.subring (R := R) r) =
+      algebraMap R (IsRestricted.subring (R := R) r) (x : R) := (rfl)
+
+/-- **Constant-coefficient retraction on Gauss unit balls.** The constant coefficient maps
+`R{X/r}°` back onto `R°`. -/
+noncomputable def unitClosedBallConstantCoeffHom :
+    Subring.unitClosedBall (IsRestricted.subring (R := R) r) →+* Subring.unitClosedBall R :=
+  ((constantCoeff : MvPowerSeries σ R →+* R).comp
+      (IsRestricted.subring (R := R) r).subtype).restrict
+    _ _ fun f hf ↦ Subring.mem_unitClosedBall.mpr <|
+      (norm_constantCoeff_le f).trans (Subring.mem_unitClosedBall.mp hf)
+
+@[simp]
+theorem coe_unitClosedBallConstantCoeffHom
+    (f : Subring.unitClosedBall (IsRestricted.subring (R := R) r)) :
+    (unitClosedBallConstantCoeffHom f : R) =
+      constantCoeff ((f : IsRestricted.subring (R := R) r) : MvPowerSeries σ R) := (rfl)
+
+@[simp]
+theorem unitClosedBallConstantCoeffHom_unitClosedBallC (x : Subring.unitClosedBall R) :
+    unitClosedBallConstantCoeffHom (unitClosedBallC (σ := σ) (r := r) x) = x := by
+  ext
+  simp [coe_algebraMap_isRestrictedSubring]
+
+@[simp]
+theorem unitClosedBallConstantCoeffHom_comp_unitClosedBallC :
+    (unitClosedBallConstantCoeffHom (σ := σ) (R := R) (r := r)).comp unitClosedBallC =
+      RingHom.id _ :=
+  RingHom.ext unitClosedBallConstantCoeffHom_unitClosedBallC
+
+/-- If the Gauss unit ball `R{X/r}°` of a restricted power-series ring is noetherian, then `R°` is
+noetherian, via the constant-coefficient retraction. -/
+theorem isNoetherianRing_unitClosedBall_of_isNoetherianRing_restrictedUnitClosedBall {R : Type*}
+    [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R] (σ : Type*) (r : σ → ℝ)
+    [∀ i, Fact (0 < r i)]
+    [IsNoetherianRing (Subring.unitClosedBall (IsRestricted.subring (R := R) r))] :
+    IsNoetherianRing (Subring.unitClosedBall R) :=
+  isNoetherianRing_of_surjective _ _ (unitClosedBallConstantCoeffHom (σ := σ) (r := r)) fun c ↦
+    ⟨unitClosedBallC c, unitClosedBallConstantCoeffHom_unitClosedBallC c⟩
+
+/-- `restrictedUnitClosedBallEquiv` maps constants in `R°` to constant series in `R⟨X⟩°`. -/
+@[simp]
+theorem restrictedUnitClosedBallEquiv_algebraMap (c : Subring.unitClosedBall R) :
+    restrictedUnitClosedBallEquiv
+        (algebraMap (Subring.unitClosedBall R)
+          (IsRestricted.subring (R := Subring.unitClosedBall R) (fun _ : σ ↦ 1)) c) =
+      unitClosedBallC (σ := σ) (r := fun _ ↦ 1) c :=
+  Subtype.ext <| (restrictedMap_algebraMap _ _ c).trans (coe_unitClosedBallC c).symm
+
+/-- **Inverting any unit of `R` of norm `< 1` localizes `R{X/r}°` to `R{X/r}`.**
+
+This is the general localization step underlying the integral-presentation bridge (cf. Bosch,
+*Lectures on Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). -/
+theorem isLocalizationAway_unitClosedBallC (π : Subring.unitClosedBall R)
+    (hπ0 : IsUnit (π : R)) (hπ1 : ‖(π : R)‖ < 1) :
+    IsLocalization.Away (unitClosedBallC (σ := σ) (r := r) π)
+      (IsRestricted.subring (R := R) r) :=
+  (Subring.unitClosedBall (IsRestricted.subring (R := R) r)).isLocalizationAway_of_isOpen
+    (Subring.isOpen_unitClosedBall _) (unitClosedBallC π)
+    (tendsto_pow_atTop_nhds_zero_of_norm_lt_one <| by
+      simpa [coe_unitClosedBallC, norm_algebraMap_isRestrictedSubring] using hπ1)
+    (by
+      rw [coe_unitClosedBallC]
+      exact hπ0.map (algebraMap R (IsRestricted.subring (R := R) r)))
+
+/-- **Unique extension of a ring homomorphism on the Gauss unit ball to a `K`-algebra
+homomorphism** (generalizing Bosch, *Lectures on Formal and Rigid Geometry*, §6.4, proof of
+Lemma 5, pp. 137–138). Over a nontrivially normed ultrametric field `K`, any ring homomorphism
+`ψ : Subring.unitClosedBall (IsRestricted.subring (R := K) r) →+* A` into a commutative
+`K`-algebra `A` that agrees with `algebraMap K A` on `Subring.unitClosedBall K` extends uniquely
+to a `K`-algebra homomorphism `π : IsRestricted.subring (R := K) r →ₐ[K] A` via localization at a
+pseudouniformizer. -/
+theorem _root_.RingHom.existsUnique_algHom_of_unitClosedBall {σ K A : Type*}
+    [NontriviallyNormedField K] [IsUltrametricDist K] {r : σ → ℝ} [∀ i, Fact (0 < r i)]
+    [CommRing A] [Algebra K A]
+    (ψ : Subring.unitClosedBall (IsRestricted.subring (R := K) r) →+* A)
+    (hψ : ∀ c : Subring.unitClosedBall K, ψ (unitClosedBallC c) = algebraMap K A c) :
+    ∃! π : IsRestricted.subring (R := K) r →ₐ[K] A,
+      ∀ f : Subring.unitClosedBall (IsRestricted.subring (R := K) r), π f = ψ f := by
+  -- Choose a nonzero scalar of norm `< 1`; inverting it localizes `K°` to `K` and `K{X/r}°` to
+  -- `K{X/r}`.
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  let p : Subring.unitClosedBall K := ⟨ϖ, Subring.mem_unitClosedBall.mpr hϖ1.le⟩
+  have hp0 : IsUnit (p : K) := isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)
+  have : IsLocalization.Away p K :=
+    (Subring.unitClosedBall K).isLocalizationAway_of_isOpen
+      (Subring.isOpen_unitClosedBall K) p (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hϖ1) hp0
+  let x := unitClosedBallC (σ := σ) (r := r) p
+  have : IsLocalization.Away x (IsRestricted.subring (R := K) r) :=
+    isLocalizationAway_unitClosedBallC p hp0 hϖ1
+  -- Lift `ψ` along the localization and verify `K`-linearity on `K°[1/p] = K`.
+  have hx : IsUnit (ψ x) := by
+    rw [hψ p]
+    exact hp0.map (algebraMap K A)
+  let π₀ : IsRestricted.subring (R := K) r →+* A := IsLocalization.Away.lift x hx
+  have hπ₀_ball (f : Subring.unitClosedBall (IsRestricted.subring (R := K) r)) : π₀ f = ψ f := by
+    simpa [Algebra.algebraMap_ofSubring] using
+      IsLocalization.Away.lift_eq (S := IsRestricted.subring (R := K) r) x hx f
+  have hcomm : π₀.comp (algebraMap K (IsRestricted.subring (R := K) r)) = algebraMap K A :=
+    IsLocalization.ringHom_ext (Submonoid.powers p) <| RingHom.ext fun c ↦ by
+      simp only [RingHom.comp_apply, Algebra.algebraMap_ofSubring, Subring.coe_subtype]
+      rw [← coe_unitClosedBallC (σ := σ) (r := r), hπ₀_ball, hψ]
+  let π : IsRestricted.subring (R := K) r →ₐ[K] A :=
+    { π₀ with commutes' := RingHom.congr_fun hcomm }
+  have hπ_ball (f : Subring.unitClosedBall (IsRestricted.subring (R := K) r)) : π f = ψ f := by
+    simpa [π] using hπ₀_ball f
+  -- Uniqueness follows from `IsLocalization.ringHom_ext` on `K{X/r}°[1/x] = K{X/r}`.
+  refine ⟨π, hπ_ball, fun π' hπ' ↦ AlgHom.toRingHom_injective ?_⟩
+  refine IsLocalization.ringHom_ext (Submonoid.powers x) (RingHom.ext fun f ↦ ?_)
+  simpa [Algebra.algebraMap_ofSubring, AlgHom.coe_toRingHom] using (hπ' f).trans (hπ_ball f).symm
+
+end Constant
 
 variable {σ K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 
@@ -146,43 +376,68 @@ theorem coeff_mem_integer (f : T°) (t : σ →₀ ℕ) :
 
 section IntegerEquiv
 
-/-- The inclusion of `𝒪[K]` into `K` is bounded with constant one. -/
-private theorem norm_integer_subtype_le (x : 𝒪[K]) : ‖(𝒪[K]).subtype x‖ ≤ 1 * ‖x‖ :=
-  (one_mul ‖x‖).symm.le
+/-- **Coefficientwise identification `𝒪[K]{X/r} ≃+* K°{X/r}`.** Transporting coefficients along
+`TauCeti.integerUnitClosedBallEquiv` identifies restricted series over `𝒪[K]` with restricted
+series over `K°` at any polyradius `r`. -/
+noncomputable def restrictedIntegerUnitClosedBallEquiv {r : σ → ℝ} :
+    IsRestricted.subring (R := 𝒪[K]) r ≃+*
+      IsRestricted.subring (R := Subring.unitClosedBall K) r :=
+  RingEquiv.ofRingHom
+    (restrictedMap (integerUnitClosedBallEquiv (K := K)).toRingHom (C := 1) fun x ↦ by
+      simp [AddSubgroupClass.coe_norm])
+    (restrictedMap (integerUnitClosedBallEquiv (K := K)).symm.toRingHom (C := 1) fun x ↦ by
+      simp [AddSubgroupClass.coe_norm])
+    (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)
+    (RingHom.ext fun f ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp)
 
-/-- The map `𝒪[K]⟨X⟩ → T°` including the coefficients. -/
-private noncomputable def restrictedIntegerHom : Tint →+* T° :=
-  (restrictedMap (𝒪[K]).subtype norm_integer_subtype_le).codRestrict _ fun f ↦
-    mem_unitClosedBall_iff.mpr fun t ↦ by
-      rw [coeff_restrictedMap]
-      exact Valued.integer.norm_le_one _
+/-- `restrictedIntegerUnitClosedBallEquiv` maps each coefficient along
+`integerUnitClosedBallEquiv`. -/
+@[simp]
+theorem coeff_restrictedIntegerUnitClosedBallEquiv {r : σ → ℝ}
+    (f : IsRestricted.subring (R := 𝒪[K]) r) (t : σ →₀ ℕ) :
+    coeff t (restrictedIntegerUnitClosedBallEquiv f :
+        MvPowerSeries σ (Subring.unitClosedBall K)) =
+      integerUnitClosedBallEquiv (coeff t (f : MvPowerSeries σ 𝒪[K])) := by
+  simp [restrictedIntegerUnitClosedBallEquiv]
 
-private theorem restrictedIntegerHom_bijective :
-    Function.Bijective (restrictedIntegerHom (σ := σ) (K := K)) := by
-  refine ⟨fun f g h ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ Subtype.ext ?_, fun f ↦ ?_⟩
-  · simpa [restrictedIntegerHom] using
-      congrArg (fun g : T° ↦ coeff t ((g : T) : MvPowerSeries σ K)) h
-  · let g : MvPowerSeries σ 𝒪[K] := fun t ↦ ⟨_, coeff_mem_integer f t⟩
-    have hgc (t : σ →₀ ℕ) : coeff t g = ⟨_, coeff_mem_integer f t⟩ := (rfl)
-    have hg : IsRestricted (fun _ : σ ↦ 1) g := by
-      have hf : IsRestricted (fun _ : σ ↦ 1) ((f : T) : MvPowerSeries σ K) := (f : T).property
-      simp only [IsRestricted] at hf ⊢
-      simpa [hgc] using hf
-    exact ⟨⟨g, hg⟩, Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun t ↦ by
-      simp [restrictedIntegerHom, hgc]⟩
+/-- The inverse of `restrictedIntegerUnitClosedBallEquiv` maps each coefficient along
+`integerUnitClosedBallEquiv.symm`. -/
+@[simp]
+theorem coeff_restrictedIntegerUnitClosedBallEquiv_symm {r : σ → ℝ}
+    (f : IsRestricted.subring (R := Subring.unitClosedBall K) r) (t : σ →₀ ℕ) :
+    coeff t (restrictedIntegerUnitClosedBallEquiv.symm f : MvPowerSeries σ 𝒪[K]) =
+      integerUnitClosedBallEquiv.symm
+        (coeff t (f : MvPowerSeries σ (Subring.unitClosedBall K))) := by
+  simp [restrictedIntegerUnitClosedBallEquiv]
+
+/-- `restrictedIntegerUnitClosedBallEquiv` preserves the Gauss norm at any positive polyradius. -/
+@[simp]
+theorem norm_restrictedIntegerUnitClosedBallEquiv {r : σ → ℝ} [∀ i, Fact (0 < r i)]
+    (f : IsRestricted.subring (R := 𝒪[K]) r) :
+    ‖restrictedIntegerUnitClosedBallEquiv f‖ = ‖f‖ :=
+  norm_restrictedMap _ _ (fun x ↦ by simp [AddSubgroupClass.coe_norm]) f
+
+/-- `restrictedIntegerUnitClosedBallEquiv` maps constants in `𝒪[K]` to constants in `K°`. -/
+@[simp]
+theorem restrictedIntegerUnitClosedBallEquiv_algebraMap {r : σ → ℝ} (c : 𝒪[K]) :
+    restrictedIntegerUnitClosedBallEquiv
+        (algebraMap 𝒪[K] (IsRestricted.subring (R := 𝒪[K]) r) c) =
+      algebraMap (Subring.unitClosedBall K)
+        (IsRestricted.subring (R := Subring.unitClosedBall K) r) (integerUnitClosedBallEquiv c) :=
+  restrictedMap_algebraMap (integerUnitClosedBallEquiv (K := K)).toRingHom _ c
 
 /-- **The Gauss unit ball as restricted series over the integers.** Including coefficients
 identifies unit-radius restricted series over `𝒪[K]` with the series in `K⟨X⟩` of Gauss norm at
 most one. -/
 noncomputable def restrictedIntegerEquiv : Tint ≃+* T° :=
-  RingEquiv.ofBijective _ restrictedIntegerHom_bijective
+  restrictedIntegerUnitClosedBallEquiv.trans restrictedUnitClosedBallEquiv
 
 /-- `restrictedIntegerEquiv` includes each coefficient into `K`. -/
 @[simp]
 theorem coeff_restrictedIntegerEquiv (f : Tint) (t : σ →₀ ℕ) :
     coeff t ((restrictedIntegerEquiv f : T) : MvPowerSeries σ K) =
       coeff t (f : MvPowerSeries σ 𝒪[K]) := by
-  simp [restrictedIntegerEquiv, restrictedIntegerHom]
+  simp [restrictedIntegerEquiv]
 
 /-- The coefficients of `restrictedIntegerEquiv.symm f` are those of `f`. -/
 @[simp]
@@ -195,10 +450,15 @@ theorem coeff_restrictedIntegerEquiv_symm (f : T°) (t : σ →₀ ℕ) :
 /-- `restrictedIntegerEquiv` preserves the Gauss norm. -/
 @[simp]
 theorem norm_restrictedIntegerEquiv (f : Tint) : ‖(restrictedIntegerEquiv f : T)‖ = ‖f‖ := by
-  refine le_antisymm (norm_le_iff.mpr fun t ↦ ?_)
-    (norm_le_iff.mpr fun t ↦ ?_)
-  · simpa using norm_coeff_mul_prod_le f t
-  · simpa using norm_coeff_mul_prod_le (restrictedIntegerEquiv f : T) t
+  simp [restrictedIntegerEquiv]
+
+/-- `restrictedIntegerEquiv` maps constants in `𝒪[K]` to constant series in `K⟨X⟩°`. -/
+@[simp]
+theorem restrictedIntegerEquiv_algebraMap (c : 𝒪[K]) :
+    restrictedIntegerEquiv (algebraMap 𝒪[K] Tint c) =
+      unitClosedBallC (σ := σ) (r := fun _ ↦ 1) (integerUnitClosedBallEquiv c) := by
+  rw [restrictedIntegerEquiv, RingEquiv.trans_apply,
+    restrictedIntegerUnitClosedBallEquiv_algebraMap, restrictedUnitClosedBallEquiv_algebraMap]
 
 end IntegerEquiv
 

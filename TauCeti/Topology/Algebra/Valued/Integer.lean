@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import Mathlib.Topology.Algebra.LinearTopology
+public import TauCeti.Analysis.Normed.Ring.UnitBall
 
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import TauCeti.Topology.Algebra.Valued.NormedValued
@@ -22,6 +23,9 @@ For an arbitrary valued ring, its integer ring has a linear topology, and it is
 complete when the ring is complete. These instances support topological evaluation
 of power series with integral coefficients.
 
+As a subring of `K`, `𝒪[K]` equals `Subring.unitClosedBall K` (`TauCeti.integer_eq_unitClosedBall`),
+yielding the identity ring equivalence `TauCeti.integerUnitClosedBallEquiv : 𝒪[K] ≃+* K°`.
+
 Every `𝒪[K]`-linear map between finite products of copies of `K` is `K`-linear, since `K` is the
 fraction field of `𝒪[K]`; hence it is continuous and carries bounded sets to bounded sets. If the
 norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the maximal ideal
@@ -30,6 +34,11 @@ norm of `K` is dense, for instance if its value group is all of `ℝ_{>0}`, the 
 A ring homomorphism `φ : K → L` of nonarchimedean fields with `‖φ x‖ ≤ ‖x‖` maps `𝒪[K]` into
 `𝒪[L]`, and the restriction is local, so it induces a homomorphism of residue fields. Such maps
 are the coefficient maps along which reductions modulo the maximal ideal are functorial.
+
+## Main definitions
+
+* `TauCeti.integerUnitClosedBallEquiv`: the bicontinuous identity ring equivalence `𝒪[K] ≃+* K°`
+  for a nontrivially normed ultrametric field `K`.
 
 ## Main results
 
@@ -42,6 +51,8 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   nonzero element.
 * `Valued.integer.smul_def`: on a `K`-module, `𝒪[K]` acts through the inclusion `𝒪[K] → K`.
 * `Valued.integer.dvd_iff_norm_le`: divisibility in `𝒪[K]` is comparison of norms.
+* `Valued.integer.smul_mem_span_singleton_of_norm_le`: `c • y ∈ Ideal.span {x}` in `𝒪[K]`
+  whenever `‖(c : K)‖ ≤ ‖(x : K)‖`.
 * `Valued.integer.submodule_mem_of_norm_le`: an `𝒪[K]`-submodule of `K` contains every element
   of norm at most that of one of its elements.
 * `Valued.integer.exists_eq_mul_of_linearMap_maximalIdeal`: every `𝒪[K]`-linear map
@@ -55,6 +66,7 @@ are the coefficient maps along which reductions modulo the maximal ideal are fun
   `K`-space is continuous.
 * `LinearEquiv.isBounded_image_iff_of_integer`: `𝒪[K]`-linear equivalences between finite
   products of `K` preserve and reflect bounded sets.
+* `TauCeti.integer_eq_unitClosedBall`: `𝒪[K] = Subring.unitClosedBall K` as subrings of `K`.
 * `TauCeti.isOpen_maximalIdeal_integer`: for any valued field `K`, the maximal ideal `𝓂[K]` of
   `𝒪[K]` is open.
 * `TauCeti.not_fg_maximalIdeal_integer`: for a densely normed field the maximal ideal of `𝒪[K]`
@@ -276,6 +288,59 @@ theorem Valued.integer.exists_seq_mem_maximalIdeal :
 end DenselyNormed
 
 namespace TauCeti
+
+section NontriviallyNormedField
+
+open scoped Valued
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- **The valuation ring `𝒪[K]` and the closed unit ball `K⁰` are the same subring of `K`.** -/
+theorem integer_eq_unitClosedBall : 𝒪[K] = Subring.unitClosedBall K :=
+  Subring.ext fun _ ↦ Valued.integer.mem_iff.trans Subring.mem_unitClosedBall.symm
+
+/-- **The identity ring equivalence `𝒪[K] ≃+* Subring.unitClosedBall K`** for a nontrivially
+normed ultrametric field `K`. -/
+noncomputable def integerUnitClosedBallEquiv : 𝒪[K] ≃+* Subring.unitClosedBall K :=
+  RingEquiv.subringCongr integer_eq_unitClosedBall
+
+@[simp]
+theorem coe_integerUnitClosedBallEquiv (x : 𝒪[K]) :
+    (integerUnitClosedBallEquiv x : K) = x := by
+  simp [integerUnitClosedBallEquiv]
+
+@[simp]
+theorem coe_integerUnitClosedBallEquiv_symm (x : Subring.unitClosedBall K) :
+    (integerUnitClosedBallEquiv.symm x : K) = x := by
+  simp [integerUnitClosedBallEquiv]
+
+/-- `integerUnitClosedBallEquiv` is continuous for the subspace topologies inherited from `K`. -/
+theorem continuous_integerUnitClosedBallEquiv :
+    Continuous (integerUnitClosedBallEquiv (K := K)) :=
+  continuous_induced_rng.mpr <| by
+    simpa only [Function.comp_def, coe_integerUnitClosedBallEquiv] using continuous_subtypeVal
+
+/-- The inverse of `integerUnitClosedBallEquiv` is continuous for the subspace topologies inherited
+from `K`. -/
+theorem continuous_integerUnitClosedBallEquiv_symm :
+    Continuous (integerUnitClosedBallEquiv (K := K)).symm :=
+  continuous_induced_rng.mpr <| by
+    simpa only [Function.comp_def, coe_integerUnitClosedBallEquiv_symm] using continuous_subtypeVal
+
+/-- **Principal ideal containment from norm comparison in `𝒪[K]`.** For `x, c, y ∈ 𝒪[K]`, if
+`‖(c : K)‖ ≤ ‖(x : K)‖` then `c • y ∈ Ideal.span {x}`. -/
+theorem _root_.Valued.integer.smul_mem_span_singleton_of_norm_le {x c y : 𝒪[K]}
+    (hc : ‖(c : K)‖ ≤ ‖(x : K)‖) : c • y ∈ Ideal.span {x} := by
+  have h : integerUnitClosedBallEquiv c • integerUnitClosedBallEquiv y ∈
+      Ideal.span {integerUnitClosedBallEquiv x} :=
+    Subring.unitClosedBall.smul_mem_span_singleton_of_norm_le <| by
+      simpa only [coe_integerUnitClosedBallEquiv] using hc
+  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.mp h
+  refine Ideal.mem_span_singleton'.mpr ⟨integerUnitClosedBallEquiv.symm q, ?_⟩
+  apply integerUnitClosedBallEquiv.injective
+  simpa only [map_mul, RingEquiv.apply_symm_apply, smul_eq_mul] using hq
+
+end NontriviallyNormedField
 
 /-- The maximal ideal `𝓂[K]` of the valuation ring `𝒪[K]` of a valued field is open, being the
 open unit ball around `0`. -/

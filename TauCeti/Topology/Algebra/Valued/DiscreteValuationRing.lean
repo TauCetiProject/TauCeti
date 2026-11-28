@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import TauCeti.Topology.Algebra.Valued.Integer
+import Mathlib.RingTheory.DiscreteValuationRing.Basic
+import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.Valuation.Discrete.RankOne
 
 /-!
@@ -20,6 +22,8 @@ closed unit ball) and residue field `𝓀[K]`. This file collects criteria, phra
 `𝒪[K]` to be a discrete valuation ring and for `𝓀[K]` to be finite, and the resulting
 finite-dimensionality of `K` over a complete field of scalars.
 
+* `𝒪[K]` is a discrete valuation ring if and only if it is noetherian, if and only if there is a
+  strict norm gap `ρ < 1` above `{‖a‖ < 1}`.
 * A nontrivially normed field embedded isometrically into a field with discrete valuation ring has
   a discrete valuation ring as well: a nontrivially valued subfield of a discretely valued field is
   discretely valued, since its value group is a subgroup of a cyclic group.
@@ -38,6 +42,10 @@ field fixed by a Frobenius lift, as a finite extension of `ℚ_[p]`.
 
 * `NormedField.instRankOneToValued`: the valuation `Valued.v` of a nonarchimedean nontrivially
   normed field has rank one.
+* `TauCeti.isDiscreteValuationRing_integer_iff_isNoetherianRing` and
+  `TauCeti.isDiscreteValuationRing_integer_iff_exists_forall_norm_le`: `𝒪[K]` is a discrete
+  valuation ring if and only if it is noetherian, if and only if some `ρ < 1` bounds all norms
+  strictly below `1`.
 * `RingHom.isDiscreteValuationRing_integer_of_norm_map_eq`: a nontrivially normed field embedded
   isometrically into a discretely valued field is discretely valued.
 * `Valued.integer.pow_eq_self_of_norm_pow_sub_lt_one`,
@@ -186,3 +194,36 @@ theorem locallyCompactSpace_of_finite_residueField [CompleteSpace K]
 end LocallyCompact
 
 end Valued.integer
+
+namespace TauCeti
+
+section DiscreteValuationRing
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
+if it is noetherian.** -/
+theorem isDiscreteValuationRing_integer_iff_isNoetherianRing :
+    IsDiscreteValuationRing 𝒪[K] ↔ IsNoetherianRing 𝒪[K] := by
+  have hdvr : IsDiscreteValuationRing 𝒪[K] ↔ IsDiscreteValuationRing (Subring.unitClosedBall K) :=
+    ⟨fun _ ↦ IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+        (integerUnitClosedBallEquiv (K := K)),
+      fun _ ↦ IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+        (integerUnitClosedBallEquiv (K := K)).symm⟩
+  have hnoeth : IsNoetherianRing (Subring.unitClosedBall K) ↔ IsNoetherianRing 𝒪[K] :=
+    ⟨fun _ ↦ isNoetherianRing_of_ringEquiv _ (integerUnitClosedBallEquiv (K := K)).symm,
+      fun _ ↦ isNoetherianRing_of_ringEquiv 𝒪[K] (integerUnitClosedBallEquiv (K := K))⟩
+  exact hdvr.trans (isDiscreteValuationRing_unitClosedBall_iff_isNoetherianRing.trans hnoeth)
+
+/-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
+if some `ρ < 1` bounds every norm strictly below `1`.** -/
+theorem isDiscreteValuationRing_integer_iff_exists_forall_norm_le :
+    IsDiscreteValuationRing 𝒪[K] ↔ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ := by
+  rw [isDiscreteValuationRing_integer_iff_isNoetherianRing,
+    ← isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le]
+  exact ⟨fun _ ↦ isNoetherianRing_of_ringEquiv 𝒪[K] (integerUnitClosedBallEquiv (K := K)),
+    fun _ ↦ isNoetherianRing_of_ringEquiv _ (integerUnitClosedBallEquiv (K := K)).symm⟩
+
+end DiscreteValuationRing
+
+end TauCeti

@@ -15,6 +15,7 @@ import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Huber.Normed
+import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.IntegralClosure.Quotient
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
@@ -59,6 +60,10 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
   power-bounded if and only if `|b(x)| ≤ |c(x)|` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inverse_iff`: `c` is a unit with
   power-bounded inverse if and only if `|c(x)| ≥ 1` at every classical point `x`.
+* `TauCeti.IsAffinoidAlgebra.isBounded_map_unitClosedBall`,
+  `TauCeti.IsAffinoidAlgebra.map_unitClosedBall_le_powerBoundedSubring`: for any noetherian
+  ultrametric Banach `K`-algebra `B` with `‖(1 : B)‖ = 1` and `f : B →ₐ[K] A`, `f(B°)` is bounded
+  and consists of power-bounded elements.
 
 ## References
 
@@ -280,5 +285,30 @@ theorem isUnit_and_isPowerBounded_inverse_iff (hA : IsAffinoidAlgebra K A) {c : 
       hA.isUnit_iff_forall_pointNorm_ne_zero.mpr fun y ↦ (one_pos.trans_le (h y)).ne'
     rw [← one_mul (Ring.inverse c), hA.isPowerBounded_mul_inverse_iff hc]
     exact ⟨hc, by simpa using h⟩
+
+/-- **Images of unit balls are bounded.** Over a complete nontrivially normed ultrametric field `K`,
+for any affinoid algebra `A` carrying a complete ultrametric `K`-algebra norm, any noetherian
+ultrametric Banach `K`-algebra `B` with `‖(1 : B)‖ = 1`, and any `f : B →ₐ[K] A`, the image
+`f(B°)` of the closed unit ball is bounded in `A`. -/
+theorem isBounded_map_unitClosedBall (hA : IsAffinoidAlgebra K A)
+    {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
+    [IsNoetherianRing B] [NormOneClass B] (f : B →ₐ[K] A) :
+    Huber.IsBounded (((Subring.unitClosedBall B).map f.toRingHom : Subring A) : Set A) := by
+  have := Huber.IsTateRing.of_normedAlgebra K B
+  have := Huber.IsTateRing.of_normedAlgebra K A
+  rw [Subring.coe_map, Subring.coe_unitClosedBall, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  exact (Huber.isBounded_closedBall_zero (1 : ℝ)).image_of_isTateRing (f := (f : B →+* A))
+    (hA.continuous_algHom f).continuousAt
+
+/-- **Images of unit balls consist of power-bounded elements.** Over a complete nontrivially normed
+ultrametric field `K`, for any affinoid algebra `A` carrying a complete ultrametric `K`-algebra
+norm, any noetherian ultrametric Banach `K`-algebra `B` with `‖(1 : B)‖ = 1`, and any
+`f : B →ₐ[K] A`, `f(B°) ≤ Huber.powerBoundedSubring A`. -/
+theorem map_unitClosedBall_le_powerBoundedSubring (hA : IsAffinoidAlgebra K A)
+    {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
+    [IsNoetherianRing B] [NormOneClass B] (f : B →ₐ[K] A) :
+    (Subring.unitClosedBall B).map f.toRingHom ≤ Huber.powerBoundedSubring A :=
+  fun _ ha ↦ Huber.mem_powerBoundedSubring.mpr
+    ((hA.isBounded_map_unitClosedBall f).isPowerBounded_of_mem ha)
 
 end TauCeti.IsAffinoidAlgebra
