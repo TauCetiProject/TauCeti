@@ -28,8 +28,9 @@ below in terms of the distance travelled (`TauCeti.sq_le_mul_one_add_div_pow_of_
 
 Conversely, a nonincreasing quantity which drops at least by a factor `q < 1` over every time
 interval of length `T` decays exponentially, at the rate `-log q / T`
-(`TauCeti.le_div_mul_exp_of_antitoneOn`). This is how a differential inequality `E ≤ K (-E')` is
-integrated without differentiating `E`: when `E (s) - E (s + T) = ∫ₛ^{s + T} g` with `E ≤ K g`,
+(`TauCeti.le_div_mul_exp_of_antitoneOn`), and likewise on a bounded interval
+(`TauCeti.le_div_mul_exp_of_antitoneOn_Icc`). This is how a differential inequality `E ≤ K (-E')`
+is integrated without differentiating `E`: when `E (s) - E (s + T) = ∫ₛ^{s + T} g` with `E ≤ K g`,
 monotonicity gives `T E (s + T) ≤ K (E s - E (s + T))`, a drop by the factor `K / (K + T)`.
 
 The bound `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub` is the shape of the a priori bound
@@ -54,8 +55,9 @@ energy dissipated, `d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the 
   `0 ≤ s ≤ t`, `0 < τ j` eventually, and `τ j → 0`.
 * `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`: the discrete Grönwall bound
   `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` under coercivity.
-* `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential decay of a nonincreasing function which
-  drops by a fixed factor over every interval of a fixed length.
+* `TauCeti.le_div_mul_exp_of_antitoneOn_Icc`, `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential
+  decay of a nonincreasing function which drops by a fixed factor over every interval of a fixed
+  length, on a bounded interval and on a half-line.
 
 ## References
 
@@ -213,47 +215,63 @@ theorem sq_le_mul_one_add_div_pow_of_sq_le_mul_sub {D d e : ℕ → ℝ} {τ τ'
       exact (hNstep n).trans (by gcongr)
   linarith [hQ n]
 
-/-- **Exponential decay from a fixed-step contraction.** Let `E` be nonincreasing on `[s₀, ∞)`,
-with `E s₀ ≥ 0`, and suppose that `E (s + T) ≤ q E s` for every `s ≥ s₀`, where `0 < q ≤ 1`. Then
-`E s ≤ (E s₀ / q) exp ((log q / T) (s - s₀))` for every `s ≥ s₀`. -/
-theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hq : 0 < q)
-    (hq1 : q ≤ 1) (hE : AntitoneOn E (Set.Ici s₀)) (h0 : 0 ≤ E s₀)
-    (hstep : ∀ s, s₀ ≤ s → E (s + T) ≤ q * E s) {s : ℝ} (hs : s₀ ≤ s) :
-    E s ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) := by
+/-- **Exponential decay from a fixed-step contraction on an interval.** Let `E` be nonincreasing
+on `[s₀, s₁]`, with `E s₀ ≥ 0`, and suppose that `E (s + T) ≤ q E s` whenever `s₀ ≤ s` and
+`s + T ≤ s₁`, where `0 < q ≤ 1`. Then `E s ≤ (E s₀ / q) exp ((log q / T) (s - s₀))` for every
+`s ∈ [s₀, s₁]`. -/
+theorem le_div_mul_exp_of_antitoneOn_Icc {E : ℝ → ℝ} {s₀ s₁ T q : ℝ} (hq : 0 < q)
+    (hq1 : q ≤ 1) (hE : AntitoneOn E (Set.Icc s₀ s₁)) (h0 : 0 ≤ E s₀)
+    (hstep : ∀ s, s₀ ≤ s → s + T ≤ s₁ → E (s + T) ≤ q * E s) {s : ℝ} (hs : s₀ ≤ s)
+    (hs₁ : s ≤ s₁) : E s ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) := by
+  have hmem : s ∈ Set.Icc s₀ s₁ := ⟨hs, hs₁⟩
   rcases le_or_gt T 0 with hT | hT
   · -- For `T ≤ 0` the exponent is nonnegative and monotonicity alone suffices.
     have h1 : 1 ≤ Real.exp (Real.log q / T * (s - s₀)) :=
       Real.one_le_exp (mul_nonneg (div_nonneg_of_nonpos (Real.log_nonpos hq.le hq1) hT)
         (sub_nonneg.2 hs))
-    calc E s ≤ E s₀ := hE (Set.mem_Ici.2 le_rfl) (Set.mem_Ici.2 hs) hs
+    calc E s ≤ E s₀ := hE ⟨le_rfl, hs.trans hs₁⟩ hmem hs
       _ ≤ E s₀ / q := le_div_self h0 hq hq1
       _ = E s₀ / q * 1 := (mul_one _).symm
       _ ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
         mul_le_mul_of_nonneg_left h1 (div_nonneg h0 hq.le)
-  have hk (k : ℕ) : E (s₀ + k * T) ≤ q ^ k * E s₀ := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      calc E (s₀ + ↑(k + 1) * T) = E (s₀ + k * T + T) := by push_cast; ring_nf
-        _ ≤ q * E (s₀ + k * T) := hstep _ (by nlinarith [k.cast_nonneg (α := ℝ)])
-        _ ≤ q * (q ^ k * E s₀) := mul_le_mul_of_nonneg_left ih hq.le
-        _ = q ^ (k + 1) * E s₀ := by ring
   set n := ⌊(s - s₀) / T⌋₊
   have hy : 0 ≤ (s - s₀) / T := div_nonneg (sub_nonneg.2 hs) hT.le
   have hnT : n * T ≤ s - s₀ := (le_div_iff₀ hT).1 (Nat.floor_le hy)
   have hn1 : (s - s₀) / T < n + 1 := Nat.lt_floor_add_one _
+  -- The steps up to the `n`-th one stay inside `[s₀, s₁]`.
+  have hk (k : ℕ) (hkn : k ≤ n) : E (s₀ + k * T) ≤ q ^ k * E s₀ := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      have hkT : (k + 1 : ℝ) * T ≤ n * T :=
+        mul_le_mul_of_nonneg_right (by exact_mod_cast hkn) hT.le
+      calc E (s₀ + ↑(k + 1) * T) = E (s₀ + k * T + T) := by push_cast; ring_nf
+        _ ≤ q * E (s₀ + k * T) :=
+          hstep _ (by nlinarith [k.cast_nonneg (α := ℝ)]) (by linarith)
+        _ ≤ q * (q ^ k * E s₀) := mul_le_mul_of_nonneg_left (ih (by omega)) hq.le
+        _ = q ^ (k + 1) * E s₀ := by ring
   -- The time `s` lies in the `n`-th step, so `E s ≤ qⁿ E s₀ ≤ q ^ ((s - s₀) / T - 1) E s₀`.
   have hexp : q ^ (n + 1) ≤ Real.exp (Real.log q / T * (s - s₀)) := by
     rw [← Real.exp_log (pow_pos hq _), Real.exp_le_exp, Real.log_pow, div_mul_eq_mul_div,
       mul_div_assoc]
     push_cast
     nlinarith [Real.log_nonpos hq.le hq1]
-  calc E s ≤ E (s₀ + n * T) := hE (Set.mem_Ici.2 (le_add_of_nonneg_right (by positivity)))
-        (Set.mem_Ici.2 hs) (by linarith)
-    _ ≤ q ^ n * E s₀ := hk n
+  calc E s ≤ E (s₀ + n * T) := hE ⟨le_add_of_nonneg_right (by positivity), by linarith⟩ hmem
+        (by linarith)
+    _ ≤ q ^ n * E s₀ := hk n le_rfl
     _ = E s₀ / q * q ^ (n + 1) := by field_simp; ring
     _ ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
         mul_le_mul_of_nonneg_left hexp (div_nonneg h0 hq.le)
+
+/-- **Exponential decay from a fixed-step contraction.** Let `E` be nonincreasing on `[s₀, ∞)`,
+with `E s₀ ≥ 0`, and suppose that `E (s + T) ≤ q E s` for every `s ≥ s₀`, where `0 < q ≤ 1`. Then
+`E s ≤ (E s₀ / q) exp ((log q / T) (s - s₀))` for every `s ≥ s₀`. -/
+theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hq : 0 < q)
+    (hq1 : q ≤ 1) (hE : AntitoneOn E (Set.Ici s₀)) (h0 : 0 ≤ E s₀)
+    (hstep : ∀ s, s₀ ≤ s → E (s + T) ≤ q * E s) {s : ℝ} (hs : s₀ ≤ s) :
+    E s ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
+  le_div_mul_exp_of_antitoneOn_Icc hq hq1 (hE.mono Set.Icc_subset_Ici_self) h0
+    (fun s hs _ ↦ hstep s hs) hs le_rfl
 
 open Filter Topology in
 /-- Along any filter `l`, if `0 ≤ r`, `0 < τ j` eventually, and `τ j → 0`, then

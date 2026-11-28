@@ -9,9 +9,10 @@ public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.Algebra.Lie.HighestWeight.TracePower
 public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
 import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
-import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
+public import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.SymmetricAlgebra.DegreeFiltration
 import TauCeti.RingTheory.Invariant.OrbitSeparation
 
 /-!
@@ -41,6 +42,12 @@ Combining surjectivity with finite-group orbit separation on `S(H)^W` shows that
 (`TauCeti.forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup`), and in particular at most
 one element of `H` where every simple root of a base `b` takes a natural value realizes a given
 invariant character (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`).
+Since invariant polynomial functions are constant on orbits of the group `Int(L)` of inner
+automorphisms (`TauCeti.SymmetricAlgebra.lift_eval_smul_of_mem_intLieAlgebra`), and the Weyl group
+acts on `H` by inner automorphisms
+(`TauCeti.exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv`), two elements of `H` are
+`Int(L)`-conjugate exactly when they are Weyl-conjugate
+(`TauCeti.exists_mem_intLieAlgebra_smul_eq_iff_exists_coweightEquiv_eq`).
 
 ## Main definitions
 
@@ -56,8 +63,14 @@ invariant character (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_
 * `LieSubalgebra.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
 * `LieSubalgebra.lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff`: the isomorphism
   preserves degrees in both directions.
+* `LieSubalgebra.lieChevalleyRestrictionIso_mem_wordFiltration_iff`: the isomorphism preserves the
+  degree filtration in both directions.
 * `TauCeti.forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup`: two elements of `H` agree
   on `S(L*)^L` if and only if they are conjugate under the Weyl group.
+* `TauCeti.exists_coweightEquiv_eq_of_smul_eq`: if `g ∈ Int(L)` carries `x ∈ H` to `y ∈ H`, some
+  element of the Weyl group carries `x` to `y`.
+* `TauCeti.exists_mem_intLieAlgebra_smul_eq_iff_exists_coweightEquiv_eq`: elements of `H` are
+  `Int(L)`-conjugate exactly when they are Weyl-conjugate.
 * `RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`: dominant elements of
   `H` agreeing on `S(L*)^L` are equal.
 
@@ -65,6 +78,8 @@ invariant character (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §23.1.
 * J. Dixmier, *Enveloping Algebras*, §7.3.
+* D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*, Van
+  Nostrand Reinhold, 1993, §2.2.
 -/
 
 public section
@@ -96,12 +111,8 @@ theorem lieCartanRestriction_mem_linearInvariants {p : _root_.SymmetricAlgebra K
         lam ∘ₗ ((rootSystem H).coreflection i).toLinearMap :=
       LinearMap.ext fun y ↦ by
         simp [RootPairing.reflection_apply, RootPairing.coreflection_apply, mul_comm]
-    have hlift :
-        _root_.SymmetricAlgebra.lift (lam ∘ₗ ((rootSystem H).coreflection i).toLinearMap) =
-          (_root_.SymmetricAlgebra.lift lam).comp
-            (_root_.SymmetricAlgebra.map K ((rootSystem H).coreflection i).toLinearMap) :=
-      _root_.SymmetricAlgebra.algHom_ext (LinearMap.ext fun y ↦ by simp)
-    rw [hs, hlift, AlgHom.comp_apply, map_coreflection_lieCartanRestriction i hp]
+    rw [hs, ← _root_.SymmetricAlgebra.lift_comp_map, AlgHom.comp_apply,
+      map_coreflection_lieCartanRestriction i hp]
   | one => simp
   | mul x y hx hy ihx ihy => rw [← MulMemClass.mk_mul_mk (hx := hx) (hy := hy), mul_smul, ihx, ihy]
 
@@ -199,6 +210,24 @@ theorem lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff {p : lieInvarian
     H m ⟨lieCartanRestriction_mem_linearInvariants p.property, hq⟩
   rwa [← lieCartanRestriction_injOn_lieInvariants H hp' p.property hpq]
 
+/-- **The Chevalley isomorphism preserves the degree filtration**: an invariant has degree at most
+`n` exactly when its restriction to `H` has. -/
+theorem lieChevalleyRestrictionIso_mem_wordFiltration_iff {p : lieInvariants K L L} {n : ℕ} :
+    (lieChevalleyRestrictionIso H p : _root_.SymmetricAlgebra K H) ∈
+        TauCeti.Algebra.wordFiltration (_root_.SymmetricAlgebra.ι K H) n ↔
+      (p : _root_.SymmetricAlgebra K L) ∈
+        TauCeti.Algebra.wordFiltration (_root_.SymmetricAlgebra.ι K L) n := by
+  rw [coe_lieChevalleyRestrictionIso_apply]
+  refine ⟨fun hq ↦ ?_, fun hp ↦ TauCeti.Algebra.map_mem_wordFiltration _ _ _ (fun x ↦ ?_) hp⟩
+  · -- the components of `p` above `n` are invariant and restrict to zero, so vanish
+    refine mem_wordFiltration_iff_coe_decompose_eq_zero.mpr fun m hm ↦
+      lieCartanRestriction_injOn_lieInvariants H (decompose_mem_lieInvariants p.property m)
+        (zero_mem _) ?_
+    rw [lieCartanRestriction_decompose, map_zero]
+    exact coe_decompose_eq_zero_of_mem_wordFiltration hm hq
+  · rw [lieCartanRestriction_ι]
+    exact TauCeti.Algebra.apply_mem_wordFiltration_one _ _
+
 end Surjective
 
 end LieSubalgebra
@@ -260,6 +289,33 @@ theorem forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup {x y : H} :
     let := ratLieAlgebra K L
     obtain ⟨g, hg, hgw⟩ := exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv w
     rw [← hgw x, lift_eval_smul_of_mem_intLieAlgebra hg hp]
+
+section IntLieAlgebra
+
+variable [LieAlgebra ℚ L]
+
+/-- **Elements of a Cartan subalgebra conjugate under `Int(L)` are Weyl-conjugate.** If an inner
+automorphism `g ∈ Int(L)` carries `x ∈ H` to `y ∈ H`, then some element `w` of the Weyl group of
+the root system of `H` carries `x` to `y` through its action
+`RootPairing.Equiv.coweightEquiv` on `H`. -/
+theorem exists_coweightEquiv_eq_of_smul_eq {g : LinearMap.GeneralLinearGroup K L}
+    (hg : g ∈ intLieAlgebra K L) {x y : H} (hxy : g • (x : L) = y) :
+    ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv x = y :=
+  -- invariant polynomial functions are constant on `Int(L)`-orbits
+  forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup.mp fun _ hp ↦ by
+    rw [← hxy, lift_eval_smul_of_mem_intLieAlgebra hg hp]
+
+/-- **`Int(L)`-conjugacy on a Cartan subalgebra is Weyl conjugacy.** Two elements `x, y` of `H` are
+conjugate under the group `Int(L)` of inner automorphisms exactly when some element of the Weyl
+group of the root system of `H` carries `x` to `y`. -/
+theorem exists_mem_intLieAlgebra_smul_eq_iff_exists_coweightEquiv_eq {x y : H} :
+    (∃ g ∈ intLieAlgebra K L, g • (x : L) = y) ↔
+      ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv x = y := by
+  refine ⟨fun ⟨g, hg, hxy⟩ ↦ exists_coweightEquiv_eq_of_smul_eq hg hxy, fun ⟨w, hw⟩ ↦ ?_⟩
+  obtain ⟨g, hg, hgH⟩ := exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv w
+  exact ⟨g, hg, by rw [hgH, hw]⟩
+
+end IntLieAlgebra
 
 end CartanSeparation
 

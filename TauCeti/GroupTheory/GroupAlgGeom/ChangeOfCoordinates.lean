@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
+import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Changes of coordinates in equations over groups
@@ -18,9 +19,12 @@ groups. The results apply to inconsistent systems and arbitrary coefficient homo
 A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `imageEquivV` between the solutions of a
 system `S` and those of its image `φ S`; it carries the radical of `S` to that of `φ S`
 (`Rad_image_mulEquiv`) and induces the isomorphism of coordinate groups
-`CoordGroup.imageMulEquiv`. The change of coordinates `x ↦ x g` of one variable, a transvection,
-fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the centralizer of
-`ι g`, onto themselves.
+`CoordGroup.imageMulEquiv`. More generally, for any equivalent target system `T` with
+`V_H(φ S) = V_H(T)`, this induces a solution bijection `equivVOfVImageEq`, carries `Rad ι S` to
+`Rad ι T` (`Rad_of_V_image_eq`), and induces a `G`-isomorphism `CoordGroup.mulEquivOfVImageEq`
+of radical coordinate groups.
+The change of coordinates `x ↦ x g` of one variable, a transvection, fixes the commutator equation
+`[x, g] = 1`, so it carries its solutions, the centralizer of `ι g`, onto themselves.
 
 ## Main definitions
 
@@ -29,10 +33,12 @@ fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the cen
   equivalence of solution sets.
 * `TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`: the induced isomorphism of
   coordinate groups.
-* `TauCeti.GroupAlgGeom.imageEquivV`: the bijection of solution sets induced by a
-  `G`-isomorphism.
-* `TauCeti.GroupAlgGeom.CoordGroup.imageMulEquiv`: the isomorphism of coordinate groups induced
-  by a `G`-isomorphism.
+* `TauCeti.GroupAlgGeom.imageEquivV`, `TauCeti.GroupAlgGeom.equivVOfVImageEq`: the bijections of
+  solution sets induced by a `G`-isomorphism, and to any system with the same algebraic set as
+  `φ S`.
+* `TauCeti.GroupAlgGeom.CoordGroup.imageMulEquiv`,
+  `TauCeti.GroupAlgGeom.CoordGroup.mulEquivOfVImageEq`: the induced isomorphisms of coordinate
+  groups.
 
 ## Main results
 
@@ -40,8 +46,9 @@ fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the cen
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
   system under a `G`-isomorphism.
-* `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`: a `G`-isomorphism carries the radical of a system
-  to the radical of its image.
+* `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`,
+  `TauCeti.GroupAlgGeom.Rad_of_V_image_eq`: a `G`-isomorphism carries the radical of a system to
+  the radical of its image and of any system with the same solutions.
 * `TauCeti.GroupAlgGeom.image_transvection_V_singleton_commutatorElement`: the transvection
   `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
 
@@ -337,6 +344,109 @@ theorem imageMulEquiv_symm_comp_genericPoint (S : Set (GX G X)) :
   simp
 
 end CoordGroup
+
+section VImageEq
+
+variable {S : Set (GX G X)} {T : Set (GX G Y)}
+
+/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection between the solutions of `S` and
+those of any system `T` having the same solution set as `φ '' S`. -/
+noncomputable def equivVOfVImageEq (hV : V ι (φ '' S) = V ι T) : V ι S ≃ V ι T :=
+  (imageEquivV ι φ hφ S).trans (Set.equivOfEq hV)
+
+/-- On tuples, `equivVOfVImageEq` applies the word map of the words `φ⁻¹ y`. -/
+@[simp]
+theorem equivVOfVImageEq_apply_coe (hV : V ι (φ '' S) = V ι T) (v : V ι S) :
+    (equivVOfVImageEq ι φ hφ hV v : Y → H) =
+      wordMap ι (fun y => φ.symm (inr (FreeGroup.of y))) v := by
+  simp [equivVOfVImageEq]
+
+/-- On tuples, the inverse of `equivVOfVImageEq` applies the word map of the words `φ x`. -/
+@[simp]
+theorem equivVOfVImageEq_symm_apply_coe (hV : V ι (φ '' S) = V ι T) (v : V ι T) :
+    ((equivVOfVImageEq ι φ hφ hV).symm v : X → H) =
+      wordMap ι (fun x => φ (inr (FreeGroup.of x))) v := by
+  simp [equivVOfVImageEq]
+
+include hφ in
+/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` carries the radical of `S` to the radical of any system
+`T` having the same solution set as `φ '' S`. -/
+theorem Rad_of_V_image_eq (hV : V ι (φ '' S) = V ι T) :
+    Rad ι T = (Rad ι S).map (φ : GX G X →* GX G Y) := by
+  rw [Rad_def, ← hV, ← Rad_def, Rad_image_mulEquiv ι φ hφ]
+
+namespace CoordGroup
+
+/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces an isomorphism from the coordinate group of `S`
+to that of any system `T` having the same solution set as `φ '' S`, given by `φ` on
+representatives. -/
+noncomputable def mulEquivOfVImageEq (hV : V ι (φ '' S) = V ι T) :
+    CoordGroup ι S ≃* CoordGroup ι T :=
+  (imageMulEquiv ι φ hφ S).trans
+    (QuotientGroup.quotientMulEquivOfEq (by rw [Rad_def, hV, Rad_def]))
+
+@[simp]
+theorem mulEquivOfVImageEq_mk (hV : V ι (φ '' S) = V ι T) (t : GX G X) :
+    mulEquivOfVImageEq ι φ hφ hV (t : CoordGroup ι S) = (φ t : CoordGroup ι T) := by
+  simp [mulEquivOfVImageEq]
+
+@[simp]
+theorem mulEquivOfVImageEq_symm_mk (hV : V ι (φ '' S) = V ι T) (t : GX G Y) :
+    (mulEquivOfVImageEq ι φ hφ hV).symm (t : CoordGroup ι T) = (φ.symm t : CoordGroup ι S) := by
+  apply (mulEquivOfVImageEq ι φ hφ hV).injective
+  simp
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism and solution-set equivalence
+commutes with the coefficient maps. -/
+theorem mulEquivOfVImageEq_coeff (hV : V ι (φ '' S) = V ι T) (g : G) :
+    mulEquivOfVImageEq ι φ hφ hV (coeff ι S g) = coeff ι T g := by
+  simp [coeff_apply, hφ]
+
+/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism and solution-set
+equivalence commutes with the coefficient maps. -/
+theorem mulEquivOfVImageEq_symm_coeff (hV : V ι (φ '' S) = V ι T) (g : G) :
+    (mulEquivOfVImageEq ι φ hφ hV).symm (coeff ι T g) = coeff ι S g := by
+  rw [MulEquiv.symm_apply_eq, mulEquivOfVImageEq_coeff]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and solution-set
+equivalence sends a coordinate `x` of the generic point of `S` to the class of `φ x`. -/
+@[simp]
+theorem mulEquivOfVImageEq_genericPoint (hV : V ι (φ '' S) = V ι T) (x : X) :
+    mulEquivOfVImageEq ι φ hφ hV (genericPoint ι S x) =
+      (φ (inr (FreeGroup.of x)) : CoordGroup ι T) := by
+  simp [genericPoint_apply]
+
+/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism `φ` and solution-set
+equivalence sends a coordinate `y` of the generic point of `T` to the class of `φ⁻¹ y`. -/
+@[simp]
+theorem mulEquivOfVImageEq_symm_genericPoint (hV : V ι (φ '' S) = V ι T) (y : Y) :
+    (mulEquivOfVImageEq ι φ hφ hV).symm (genericPoint ι T y) =
+      (φ.symm (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` and solution-set
+equivalence sends the generic point of `S` to the image of the generic point of `T` under the word
+map of `φ`. -/
+@[simp]
+theorem mulEquivOfVImageEq_comp_genericPoint (hV : V ι (φ '' S) = V ι T) :
+    ⇑(mulEquivOfVImageEq ι φ hφ hV) ∘ genericPoint ι S =
+      wordMap (coeff ι T) (fun x => φ (inr (FreeGroup.of x))) (genericPoint ι T) := by
+  funext x
+  simp
+
+/-- The inverse coordinate-group isomorphism induced by a `G`-isomorphism `φ` and solution-set
+equivalence sends the generic point of `T` to the image of the generic point of `S` under the word
+map of `φ⁻¹`. -/
+@[simp]
+theorem mulEquivOfVImageEq_symm_comp_genericPoint (hV : V ι (φ '' S) = V ι T) :
+    ⇑(mulEquivOfVImageEq ι φ hφ hV).symm ∘ genericPoint ι T =
+      wordMap (coeff ι S) (fun y => φ.symm (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp
+
+end CoordGroup
+
+end VImageEq
 
 end MulEquiv
 

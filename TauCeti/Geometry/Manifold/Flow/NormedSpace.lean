@@ -6,19 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Complete
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Prod
 
 /-!
-# Translation and rotation as maximal flows
+# Translation, dilation and rotation as maximal flows
 
-The maximal flow of a constant field on a real normed space is translation. On the real plane
-`ℝ × ℝ`, the field `(x, y) ↦ (-ω y, ω x)` generates counterclockwise rotation through angle
-`ω t`. Both fields are complete, so these formulas describe the actual maximal flows at every
+The maximal flow of a constant field on a real normed space is translation, and the maximal flow
+of the multiple `x ↦ c • x` of the position field is the dilation `x ↦ e^(c t) • x`. On the real
+plane `ℝ × ℝ`, the field `(x, y) ↦ (-ω y, ω x)` generates counterclockwise rotation through angle
+`ω t`. All three fields are complete, so these formulas describe the actual maximal flows at every
 time, not just locally or at points where their totalized values happen to be defined.
 
 The statements use the standard model `𝓘(ℝ, E)`, identifying its tangent fibers with `E`.
-No completeness or finite-dimensionality assumption is needed for translation.
+No completeness or finite-dimensionality assumption is needed for translation and dilation.
 
 ## References
 
@@ -60,6 +62,41 @@ theorem flowOf_const (v : E) (t : ℝ) (x : E) :
       (isMIntegralCurve_translation v x) t
 
 end Translation
+
+section Dilation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The curve `t ↦ e^(c t) • x` is an integral curve of the field `x ↦ c • x`. -/
+theorem isMIntegralCurve_dilation (c : ℝ) (x : E) :
+    IsMIntegralCurve (I := 𝓘(ℝ, E)) (fun t : ℝ ↦ Real.exp (c * t) • x) (fun y ↦ c • y) := by
+  intro t
+  have h : HasDerivAt (fun s : ℝ ↦ Real.exp (c * s) • x) (c • Real.exp (c * t) • x) t := by
+    simpa only [id_eq, mul_one, mul_comm _ c, mul_smul] using
+      (((hasDerivAt_id t).const_mul c).exp).smul_const x
+  exact h.hasFDerivAt.hasMFDerivAt
+
+/-- The multiple `x ↦ c • x` of the position field is a smooth tangent section, at every
+regularity. -/
+theorem contMDiff_dilation (c : ℝ) (n : WithTop ENat) :
+    ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E)).tangent n
+      (fun y : E ↦ (⟨y, c • y⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
+  contMDiff_vectorSpace_iff_contDiff.mpr (contDiff_const.smul contDiff_id)
+
+/-- Every multiple `x ↦ c • x` of the position field on a real normed space is complete. -/
+theorem isCompleteVectorField_dilation (c : ℝ) :
+    IsCompleteVectorField (I := 𝓘(ℝ, E)) (fun y : E ↦ c • y) := by
+  refine (isCompleteVectorField_iff_exists_isMIntegralCurve (contMDiff_dilation c 1)).mpr
+    fun x ↦ ⟨_, by simp, isMIntegralCurve_dilation c x⟩
+
+/-- The maximal flow of the field `x ↦ c • x` is the dilation by `e^(c t)`. -/
+@[simp]
+theorem flowOf_dilation (c t : ℝ) (x : E) :
+    flowOf (I := 𝓘(ℝ, E)) (fun y : E ↦ c • y) t x = Real.exp (c * t) • x := by
+  simpa only [mul_zero, Real.exp_zero, one_smul] using
+    flowOf_eq_of_isMIntegralCurve (contMDiff_dilation c 1) (isMIntegralCurve_dilation c x) t
+
+end Dilation
 
 section Rotation
 

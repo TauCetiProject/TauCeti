@@ -21,6 +21,9 @@ trivializations of `TauCeti.fiberLocalSystem L ℤ n`:
 
 * `TauCeti.torusFamilyHomologyMarking_transport`, `TauCeti.torusFamilyMarking_transport`: Hurewicz
   transport along any path preserves the canonical markings.
+* `TauCeti.torusFamilyHomologyMarking_singularHomologyMap_transport_affineMap`: monodromy of an
+  affine action in all degrees. Transport along a path from `y₀` to `y₁`, followed by the affine
+  map of `g` with `g • y₁ = y₀`, acts on the markings of `Hₙ` by `⋀ⁿ ρ g`.
 * `TauCeti.torusFamilyHomologyLocalSystemIso`, `TauCeti.torusFamilyFirstHomologyLocalSystemIso`:
   canonical trivializations by `⋀[ℤ]^n Λ` and `Λ`, with trivial monodromy
   (`TauCeti.isTrivial_monodromyRepresentation_torusFamilyFiberLocalSystem`,
@@ -126,6 +129,42 @@ theorem torusFamilyMarking_transport {y₀ y₁ : Y}
     (congrArg (exteriorPower.oneEquiv ℤ Λ)
       (torusFamilyHomologyMarking_transport P hcont hinj L γ 1 c)).trans
       (oneEquiv_torusFamilyHomologyMarking P hcont hinj y₀ c)
+
+/-- **Monodromy of an affine action in all degrees.** Carry a class `c ∈ Hₙ` of the fibre over
+`y₀` along a path `γ` from `y₀` to `y₁` by Hurewicz transport, and identify the fibre over `y₁`
+back with the fibre over `y₀` by the affine map of `g` (`TauCeti.torusFamilyAffineMap`), so that
+`g • y₁ = y₀`, through its restriction `φ`. Then the marking of the transported class is
+`exteriorPower.map n (ρ g)` applied to the marking of `c`.
+
+For a group `Γ` and a path from `y₀` to `h • y₀`, the inverse action `g = h⁻¹` identifies the end
+fibre with the starting one, so the monodromy on `Hₙ` is `⋀ⁿ ρ h⁻¹`. In degree one, for loops
+carried by free homotopies, this is
+`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`. -/
+theorem torusFamilyHomologyMarking_singularHomologyMap_transport_affineMap
+    {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
+    (ρ : Representation ℤ Γ Λ) (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
+    (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
+    (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y) {g : Γ} {y₀ y₁ : Y}
+    (L : letI := periodAddAction P; LiftingFunction
+      (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
+    (γ : Path y₀ y₁)
+    (φ : letI := periodAddAction P
+      C({z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁},
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀}))
+    (hφ : letI := periodAddAction P
+      ∀ x : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₁},
+        (φ x : AddAction.orbitRel.Quotient Λ (Y × E)) = torusFamilyAffineMap R P ρ hP b hb g x)
+    (hR : Continuous (R g y₁)) (n : ℕ)
+    (c : letI := periodAddAction P; ((singularChains ℤ).obj ((TopCat.ofHom
+      ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).fiber y₀)).homology n) :
+    letI := periodAddAction P
+    torusFamilyHomologyMarking P hcont hinj y₀ n
+        (ContinuousMap.singularHomologyMap ℤ n φ
+          (ContinuousMap.singularHomologyMap ℤ n (L.transport γ) c)) =
+      exteriorPower.map n (ρ g) (torusFamilyHomologyMarking P hcont hinj y₀ n c) := by
+  let _ := periodAddAction P
+  exact (torusFamilyHomologyMarking_singularHomologyMap_affineMap P hcont hinj R ρ hP b hb φ hφ hR
+    n _).trans (congrArg _ (torusFamilyHomologyMarking_transport P hcont hinj L γ n c))
 
 variable (L : letI := periodAddAction P; LiftingFunction
   (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)

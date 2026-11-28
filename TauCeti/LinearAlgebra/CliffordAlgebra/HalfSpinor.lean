@@ -13,10 +13,13 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
--- Private: the orthogonal vector, even relation, conjugation and adjugate facts are proof-only.
+-- Private: the orthogonal vector, two-vector commutator, even relation, conjugation and adjugate
+-- facts are proof-only.
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.Eigenspace.Involution
 import TauCeti.LinearAlgebra.End.Adjugate
 
 /-!
@@ -74,8 +77,13 @@ products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
   `CliffordAlgebra.map_star_mul_self_apply_of_mem_even` state both on vectors.
 * `CliffordAlgebra.map_ι_apply_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
   `Γ` into the `-ε`-eigenspace.
+* `Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self`:
+  `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for a positive half-spinor `ψ` and a self-dual `β`, where
+  `v ⌟ β` is `TauCeti.twoVectorContraction β v`.
 * `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
   dimension.
+* `CliffordAlgebra.exists_ne_zero_eigenspace_chirality`: every nontrivial complex Clifford module
+  has a nonzero vector in the `ε`-eigenspace of `Γ` for `ε ^ 2 = 1`.
 * `CliffordAlgebra.eq_zero_of_forall_re_inner_map_ι_apply_eq_zero`: if
   `Re ⟪c(v) ψ, χ⟫ = 0` for all `v`, with `ψ ≠ 0` in a two-dimensional `ε`-eigenspace and `χ` in
   the opposite eigenspace, then `χ = 0`.
@@ -291,6 +299,14 @@ theorem map_ι_apply_mem_eigenspace_chirality_neg {ε : ℂ} {ψ : W}
   rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_ι o, map_neg, map_mul,
     LinearMap.neg_apply, mul_apply_eq_comp, hψ, map_smul, neg_smul]
 
+omit hQ in
+/-- Two Clifford multiplications preserve each eigenspace of chirality. -/
+theorem map_ι_apply_map_ι_apply_mem_eigenspace_chirality {ε : ℂ} {ψ : W}
+    (hψ : ψ ∈ eigenspace (ρ (chirality Q o)) ε) (v w : V) :
+    ρ (ι Q v) (ρ (ι Q w) ψ) ∈ eigenspace (ρ (chirality Q o)) ε := by
+  simpa only [neg_neg] using
+    map_ι_apply_mem_eigenspace_chirality_neg o (map_ι_apply_mem_eigenspace_chirality_neg o hψ w) v
+
 variable (ρ) in
 omit hQ in
 /-- **Clifford multiplication between the eigenspaces of `Γ`**: `c(v)` restricted to the
@@ -309,6 +325,28 @@ theorem coe_halfSpinCliffordMul_apply_apply (ε : ℂ) (v : V)
     (ψ : eigenspace (ρ (chirality Q o)) ε) :
     (halfSpinCliffordMul o ρ ε v ψ : W) = ρ (ι Q v) ψ :=
   (rfl)
+
+/-- **Clifford multiplication by a vector after a self-dual two-form**: on a positive half-spinor
+`ψ`, `c(v) c₂(β) ψ = -2 c(v ⌟ β) ψ` for self-dual `β`. Indeed `c(v) ψ` is a negative half-spinor,
+which the self-dual `β` annihilates, and `⁅c₂(β), c(v)⁆ = 2 c(v ⌟ β)`
+(`TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq`). -/
+theorem _root_.Orientation.ι_apply_bivectorExterior_apply_of_hodgeStar_eq_self
+    (hkl : 2 + 2 = finrank ℝ V) {β : ⋀[ℝ]^2 V} (hβ : o.hodgeStar hkl β = β)
+    (ψ : positiveHalfSpinors o ρ) (v : V) :
+    ρ (ι Q v) (ρ (bivectorExterior Q β) ψ) =
+      (-2 : ℂ) • ρ (ι Q (TauCeti.twoVectorContraction β v)) ψ := by
+  -- `c(v) ψ` is a negative half-spinor.
+  have hneg : ρ (chirality Q o) (ρ (ι Q v) ψ) = -ρ (ι Q v) ψ := by
+    simpa using map_ι_apply_mem_eigenspace_chirality_neg o (ε := 1)
+      (by simpa using mem_positiveHalfSpinors.1 ψ.property) v
+  -- The self-dual form `β` annihilates it, for the Clifford action on `W` through `ρ`.
+  have hzero : ρ (bivectorExterior Q β) (ρ (ι Q v) ψ) = 0 :=
+    letI := Module.compHom W ρ.toRingHom
+    bivectorExterior_smul_eq_zero_of_hodgeStar_eq_self o hQ hkl hβ hneg
+  have h := congrArg (fun a ↦ ρ a ψ) (TauCeti.bivectorExterior_lie_ι_of_eq_neg_norm_sq hQ β v)
+  simp only [Ring.lie_def, map_sub, map_mul, LinearMap.sub_apply, mul_apply_eq_comp, hzero,
+    map_smul, LinearMap.smul_apply] at h
+  linear_combination (norm := module) -h
 
 section ChiralEquiv
 
@@ -386,6 +424,26 @@ theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     · rw [hbot ε hε, hbot (-ε) (neg_ne_zero.2 hε)]
   · obtain ⟨v, hv⟩ := not_forall.1 hQ₀
     exact (halfSpinCliffordMulEquiv o ρ ε hv).finrank_eq.symm
+
+variable (ρ) in
+/-- **Every nontrivial complex Clifford module has a nonzero half-spinor** in the `ε`-eigenspace
+of `Γ` for `ε = ±1` (`hε : ε ^ 2 = 1`), when `Q v = -‖v‖²`. -/
+theorem exists_ne_zero_eigenspace_chirality [Nontrivial W] {ε : ℂ} (hε : ε ^ 2 = 1) :
+    ∃ ψ : eigenspace (ρ (chirality Q o)) ε, (ψ : W) ≠ 0 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hQv : Q v ≠ 0 := by simpa [hQ] using hv
+  have hΓ : Function.Involutive (ρ (chirality Q o)) := by
+    intro z
+    rw [← mul_apply_eq_comp, ← map_mul, chirality_mul_self o hQ, map_one, one_apply_eq_self]
+  rcases hasEigenvalue_or_neg_of_involutive hΓ (by simpa [sq] using hε) with h | h
+  · obtain ⟨w, hw, hw₀⟩ := h.exists_hasEigenvector
+    exact ⟨⟨w, hw⟩, hw₀⟩
+  · obtain ⟨w, hw, hw₀⟩ := h.exists_hasEigenvector
+    let e := halfSpinCliffordMulEquiv o ρ (-ε) hQv
+    refine ⟨⟨(e ⟨w, hw⟩ : W), by simpa only [neg_neg] using (e ⟨w, hw⟩).property⟩, ?_⟩
+    intro h0
+    exact hw₀ (congrArg Subtype.val ((map_eq_zero_iff e e.injective).1 (Subtype.ext h0)))
 
 variable [FiniteDimensional ℂ W]
 

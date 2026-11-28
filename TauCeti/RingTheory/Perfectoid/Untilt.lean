@@ -36,6 +36,7 @@ same holds without the nonzerodivisor hypothesis, and the sharp map induces
 * `PreTilt.untilt_equivPerfection_symm`, `PreTilt.teichmuller₀_equivPerfection`,
   `PreTilt.untilt_zero`: compatibility of `PreTilt.untilt` and `Perfection.teichmuller₀` across
   `PreTilt.equivPerfection`, and `(0 : PreTilt A p).untilt = 0`.
+* `PreTilt.untilt_surjective`: the untilt is onto when every element of `A` has a `p`-th root.
 * `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
   the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
   `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
@@ -43,6 +44,8 @@ same holds without the nonzerodivisor hypothesis, and the sharp map induces
   `∑_{j < p} ζ ^ j = 0`, then `ε♯ = 1`.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
   `ϖ.untilt` is a nonzerodivisor of `A`.
+* `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`, `PreTilt.instIsDomain`: for reduced
+  `A`, `x.untilt = 0` if and only if `x = 0`, so `PreTilt A p` is a domain when `A` is.
 * `PreTilt.exists_mul_natCast_dvd_sub_untilt`, `PreTilt.exists_associated_untilt`: every element of
   `A` is congruent modulo `π p` to an untilt, and `π` is associated to an untilt.
 * `PreTilt.dvd_iff_untilt_dvd`: `ϖ ∣ f` in `PreTilt A p` iff `ϖ.untilt ∣ f.untilt` in `A`.
@@ -109,6 +112,18 @@ theorem teichmuller₀_equivPerfection (x : PreTilt A p) :
 theorem untilt_zero : (0 : PreTilt A p).untilt = 0 := by
   rw [← teichmuller₀_equivPerfection, map_zero, map_zero]
 
+/-- **The untilt is onto when every element has a `p`-th root.** If `x ↦ x ^ p` is surjective on
+`A`, for instance if `A` is absolutely integrally closed, then every `a ∈ A` is the untilt `x♯` of
+some `x : PreTilt A p`: reducing a compatible system of `p`-power roots of `a` modulo `p` gives `x`.
+-/
+theorem untilt_surjective (h : Function.Surjective fun x : A ↦ x ^ p) :
+    Function.Surjective (untilt : PreTilt A p → A) := by
+  intro a
+  obtain ⟨f, rfl⟩ := Perfection.coeffMonoidHom_surjective h 0 a
+  refine ⟨equivPerfection.symm
+    (Perfection.mapMonoidHom p (Ideal.Quotient.mk (span {(p : A)}) : A →* ModP A p) f), ?_⟩
+  rw [untilt_equivPerfection_symm, Perfection.teichmuller₀_mapMonoidHom_idealQuotientMk]
+
 /-- **Nonzerodivisors lift along `untilt`.** If `ϖ.untilt` is a nonzerodivisor of `A`, then `ϖ`
 is a nonzerodivisor of `PreTilt A p` (the converse can fail when `A` has nilpotent elements killed
 by perfection). -/
@@ -125,6 +140,27 @@ theorem mem_nonZeroDivisors_of_untilt {ϖ : PreTilt A p} (hreg : ϖ.untilt ∈ A
   have hx_n : untilt ((ψ^[n]) x) = 0 :=
     (mul_left_mem_nonZeroDivisors_eq_zero_iff hreg_n).mp hmul
   rw [map_zero, coeff_eq_mk_untilt_iterate, hx_n, map_zero]
+
+/-- **The sharp map detects zero on the tilt of a reduced ring.** If `A` is reduced, then
+`x♯ = 0` only for `x = 0`. -/
+@[simp]
+theorem untilt_eq_zero_iff [IsReduced A] {x : PreTilt A p} : x.untilt = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ untilt_zero⟩
+  have hn : untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n]) x) = 0 :=
+    IsReduced.eq_zero _ ⟨p ^ n, by rw [untilt_iterate_frobeniusEquiv_symm_pow, h]⟩
+  rw [coeff_eq_mk_untilt_iterate, hn, map_zero, map_zero]
+
+/-- For reduced `A`, `x♯ ≠ 0` if and only if `x ≠ 0`. -/
+theorem untilt_ne_zero_iff [IsReduced A] {x : PreTilt A p} : x.untilt ≠ 0 ↔ x ≠ 0 :=
+  untilt_eq_zero_iff.not
+
+/-- **The tilt of a `p`-adically complete domain is a domain.** -/
+instance instIsDomain [IsDomain A] : IsDomain (PreTilt A p) :=
+  have : Nontrivial (PreTilt A p) := CharP.nontrivial_of_char_ne_one hp.out.ne_one
+  have : NoZeroDivisors (PreTilt A p) := ⟨fun {x y} hxy ↦ by
+    have h0 : x.untilt * y.untilt = 0 := by rw [← map_mul, hxy, untilt_zero]
+    simpa only [untilt_eq_zero_iff] using mul_eq_zero.mp h0⟩
+  NoZeroDivisors.to_isDomain _
 
 /-- **Approximation modulo `π p` by untilts** (Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge
 theory*, Lemma 3.9). In a `π`-adically complete ring `A` with `π ^ p ∣ p` in which every element is

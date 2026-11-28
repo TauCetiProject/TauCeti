@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Skeleton
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.QuasiIso
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Cubical.Cells
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Convergence
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Cubical.Skeleton
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
 /-!
@@ -21,7 +21,9 @@ cell. Let `P` be the pullback of the end point map along the characteristic maps
 `MoorePathPullback (sigmaCellMap C n) b`, and `∂P` its part over their boundary spheres. Pushing
 chains forward along `P → P_b B` is a quasi-isomorphism from the relative chains `C_*(P, ∂P)` onto
 the quotient of the `n`-th stage by the `(n - 1)`-th
-(`TauCeti.exists_add_differential_sub_mem_pathFromChainSkeleton`).
+(`TauCeti.exists_add_differential_sub_mem_pathFromChainSkeleton`). The relative homology
+`H_p(P, ∂P; R)` vanishes below the cell dimension, for `p < n`
+(`TauCeti.isZero_homology_cubicalChainComplex_ofSubset_sigmaCellMap`).
 
 The statement is written on chains, as for `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`:
 every relative cycle is a relative boundary. A relative cycle is a pair `(x, y)` of a chain `x` of
@@ -33,18 +35,20 @@ which a quotient of the filtration is compared with free generators attached ove
 semi-free model of `C_*(P_b B; R)` over the chains on the loop space, one skeleton at a time.
 
 The end point map of the based path space is a Hurewicz fibration
-(`TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`), so the
-projection of relative cubical chain complexes `N(P, ∂P) ⟶ N(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` is a
-quasi-isomorphism (`TauCeti.TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap`). The
-chains of `p⁻¹(Xⁿ)` and `p⁻¹(Xⁿ⁻¹)` are the chains of `P_b B` supported in them, and
-`TauCeti.exists_add_differential_sub_mem_cubicalChainModuleSupportedIn_of_quasiIso` reads this
-quasi-isomorphism on the chains of `P` and `P_b B`.
+(`TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`), so the projection of relative cubical
+chain complexes `N(P, ∂P) ⟶ N(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` is a quasi-isomorphism
+(`TauCeti.TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap`). This quasi-isomorphism
+is read on chains for every Serre fibration by
+`TauCeti.TopCat.exists_add_differential_sub_mem_preimageSkeleton`, and the first statement is its
+case for the based path fibration.
 
 ## Main results
 
 * `TauCeti.exists_add_differential_sub_mem_pathFromChainSkeleton`: the push-forward from the
   pullback to the `n`-cells, relative to the boundary spheres, is a quasi-isomorphism onto the
   quotient of the `n`-th stage of the skeletal filtration of `C_*(P_b B; R)` by the `(n - 1)`-th.
+* `TauCeti.isZero_homology_cubicalChainComplex_ofSubset_sigmaCellMap`: the relative homology of the
+  pullback to the `n`-cells, relative to the boundary spheres, vanishes in degrees below `n`.
 
 ## References
 
@@ -76,6 +80,12 @@ private abbrev pathFromEndpoint (B : Type u) [TopologicalSpace B] (b : B) :
     _root_.TopCat.of (MoorePathFrom B b) ⟶ _root_.TopCat.of B :=
   _root_.TopCat.ofHom (MoorePathFrom.endpoint B b)
 
+omit [T2Space B] in
+/-- The based path fibration is a Serre fibration, since it is a Hurewicz fibration. -/
+private theorem pathFromEndpoint_mem_serreFibrations :
+    TopCat.serreFibrations (pathFromEndpoint B b) :=
+  (MoorePathFrom.isHurewiczFibration_endpoint.{0} b).mem_serreFibrations
+
 variable (b C) in
 /-- The pullback of the based path fibration to the disks of the `n`-cells, as the pullback
 `TauCeti.TopCat.cellPullback` of a map in `TopCat`. Both spaces are subtypes of the product of the
@@ -87,68 +97,12 @@ private def cellPullbackHomeomorph (n : ℕ) :
   Homeomorph.subtype (Homeomorph.refl _) fun _ ↦ by
     simp [MoorePathFrom.endpoint_apply, eq_comm]
 
-variable (b C) in
-/-- The preimage of `Xⁿ` is the `n`-th stage of the skeletal filtration. -/
-private theorem preimage_skeletonLT_succ_eq (n : ℕ) :
-    (pathFromEndpoint B b) ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞)) =
-      preimageSkeleton C (MoorePathFrom.endpoint B b) n := by
-  ext x
-  simp [MoorePathFrom.endpoint_apply]
-
-variable (b C) in
-/-- The preimage of `Xⁿ⁻¹` is the `(n - 1)`-th stage of the skeletal filtration. -/
-private theorem preimage_skeletonLT_eq (n : ℕ) :
-    (pathFromEndpoint B b) ⁻¹' (skeletonLT C n) =
-      preimageSkeleton C (MoorePathFrom.endpoint B b) (n - 1) := by
-  ext x
-  simp [MoorePathFrom.endpoint_apply]
-
-variable (b C) in
-/-- The projection of the pullback to the `n`-cells to `P_b B` is the projection to the preimage
-of `Xⁿ`, followed by the inclusion. -/
-private theorem toMoorePathFrom_eq (n : ℕ) (z : MoorePathPullback (sigmaCellMap C n) b) :
-    MoorePathPullback.toMoorePathFrom z = ContinuousMap.subtypeVal _
-      (TopPair.Hom.fst (TopCat.cellPullbackPairMap (pathFromEndpoint B b) C n)
-        (cellPullbackHomeomorph b C n z)) := by
-  obtain ⟨⟨d, γ⟩, h⟩ := z
-  refine MoorePathFrom.ext ?_
-  rw [MoorePathPullback.toMoorePathFrom_toMoorePath, MoorePathPullback.path_mk]
-  -- `cellPullbackPairMap` projects a pair to its path, and `cellPullbackHomeomorph` is the
-  -- identity on the underlying pairs by definition, so the right-hand side is the path `γ`.
-  exact congrArg MoorePathFrom.toMoorePath
-    (TopCat.coe_cellPullbackPairMap_fst_apply n (cellPullbackHomeomorph b C n ⟨(d, γ), h⟩)).symm
-
 omit [T2Space B] in
 variable (b C) in
-/-- The part of the pullback over the boundary spheres. -/
-private theorem image_symm_range_cellPullbackPair_map (n : ℕ) :
-    ((cellPullbackHomeomorph b C n).symm : C(TopCat.cellPullback (pathFromEndpoint B b) C n,
-        MoorePathPullback (sigmaCellMap C n) b)) ''
-        Set.range (TopCat.cellPullbackPair (pathFromEndpoint B b) C n).map =
-      MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1} := by
-  ext ⟨⟨d, γ⟩, h⟩
-  rw [Set.mem_preimage, MoorePathPullback.proj_apply, MoorePathPullback.point_mk,
-    Set.mem_ofPred_eq]
-  refine ⟨?_, fun hd ↦ ⟨_, ⟨⟨cellPullbackHomeomorph b C n ⟨(d, γ), h⟩, hd⟩, rfl⟩, rfl⟩⟩
-  rintro ⟨_, ⟨v, rfl⟩, hv⟩
-  -- The inverse of `cellPullbackHomeomorph` is the identity on the underlying pairs, so the cell
-  -- coordinate of `hv` is this equation by definition.
-  have hd : v.val.val.1 = d := congrArg (fun z ↦ z.val.1) hv
-  rw [← hd]
-  exact v.property
-
-variable (b C) in
-/-- The preimage of `Xⁿ⁻¹`, as a subset of `P_b B`. -/
-private theorem image_range_preimageSkeletonPair_map (n : ℕ) :
-    ContinuousMap.subtypeVal ((pathFromEndpoint B b) ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞))) ''
-        Set.range (TopCat.preimageSkeletonPair (pathFromEndpoint B b) C n).map =
-      preimageSkeleton C (MoorePathFrom.endpoint B b) (n - 1) := by
-  refine Set.ext fun γ ↦ ⟨?_, fun hγ ↦ ?_⟩
-  · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-    rw [← preimage_skeletonLT_eq]
-    exact w.property
-  · rw [← preimage_skeletonLT_eq] at hγ
-    exact ⟨_, ⟨⟨γ, hγ⟩, rfl⟩, rfl⟩
+/-- `cellPullbackHomeomorph` is the identity on the underlying pairs. -/
+private theorem val_cellPullbackHomeomorph (n : ℕ) (z : MoorePathPullback (sigmaCellMap C n) b) :
+    (cellPullbackHomeomorph b C n z).val = z.val :=
+  (rfl)
 
 variable {H} in
 /-- **The quotients of the skeletal filtration of the chains on the based path space are computed
@@ -176,17 +130,49 @@ theorem exists_add_differential_sub_mem_pathFromChainSkeleton {n : ℕ}
           (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) ∧
         cubicalChainModuleLinearMap R MoorePathPullback.toMoorePathFrom u +
             cubicalChainModuleDifferential _ H R v - y ∈ pathFromChainSkeleton b C H R (n - 1) := by
-  have := TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap (C := C)
-    (IsHurewiczFibration.mem_serreFibrations (p := pathFromEndpoint B b)
-      (MoorePathFrom.isHurewiczFibration_endpoint.{0} b)) R n
   simp only [mem_pathFromChainSkeleton] at hy hxy ⊢
-  exact exists_add_differential_sub_mem_cubicalChainModuleSupportedIn_of_quasiIso H
-    (TopCat.cellPullbackPairMap (pathFromEndpoint B b) C n)
-    (Y := MoorePathFrom B b) (cellPullbackHomeomorph b C n)
-    (ι := ContinuousMap.subtypeVal ((pathFromEndpoint B b) ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞))))
-    IsEmbedding.subtypeVal _ (toMoorePathFrom_eq b C n)
-    (image_symm_range_cellPullbackPair_map b C n)
-    (Subtype.range_coe.trans (preimage_skeletonLT_succ_eq b C n))
-    (image_range_preimageSkeletonPair_map b C n) hx hy hxy
+  exact TopCat.exists_add_differential_sub_mem_preimageSkeleton H
+    (pathFromEndpoint_mem_serreFibrations (B := B) (b := b)) (cellPullbackHomeomorph b C n)
+    MoorePathPullback.toMoorePathFrom
+    (fun ⟨⟨d, γ⟩, h⟩ ↦ MoorePathFrom.ext (by
+      rw [MoorePathPullback.toMoorePathFrom_toMoorePath, MoorePathPullback.path_mk,
+        val_cellPullbackHomeomorph]))
+    (fun ⟨⟨d, γ⟩, h⟩ ↦ by
+      rw [mem_preimage, MoorePathPullback.proj_apply, MoorePathPullback.point_mk,
+        val_cellPullbackHomeomorph, mem_ofPred_eq])
+    hx hy hxy
+
+variable (b C R) in
+/-- **The relative homology of the pullback over the cells vanishes below their dimension.** Let
+`P` be the pullback of the based path fibration `P_b B → B` along the characteristic maps of the
+`n`-cells and `∂P` its part over the boundary spheres. Then `H_p(P, ∂P; R) = 0` for `p < n`: the
+projection to `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` is an isomorphism on relative homology, and the skeletal
+filtration of a Serre fibration has no relative homology below the cell dimension
+(`TauCeti.TopCat.isZero_singularHomology_preimageSkeleton_succ`). -/
+theorem isZero_homology_cubicalChainComplex_ofSubset_sigmaCellMap {n p : ℕ} (hp : p < n) :
+    IsZero (((TopPair.ofSubset (X := _root_.TopCat.of (MoorePathPullback (sigmaCellMap C n) b))
+      (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1})
+        ).cubicalChainComplex R).homology p) := by
+  have hser := pathFromEndpoint_mem_serreFibrations (B := B) (b := b)
+  have h₁ := TopCat.isZero_singularHomology_preimageSkeleton_succ hser R (C := C)
+    ((n : ℤ) - 1) p (by omega)
+  rw [TopCat.ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (C := C)
+    (p := pathFromEndpoint B b) n ((n : ℤ) - 1) rfl] at h₁
+  have h₂ : IsZero (((TopCat.preimageSkeletonPair (pathFromEndpoint B b) C n).cubicalChainComplex
+      R).homology p) :=
+    h₁.of_iso (TopPair.singularCubicalHomologyIso R _ p).symm
+  have := TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap C hser R n
+  have h₃ : IsZero (((TopCat.cellPullbackPair (pathFromEndpoint B b) C n).cubicalChainComplex
+      R).homology p) :=
+    h₂.of_iso (asIso (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap R
+      (TopCat.cellPullbackPairMap (pathFromEndpoint B b) C n)) p))
+  -- The two pullbacks are the same subspace of the product of the disks with `P_b B`.
+  let e : TopPair.ofSubset (X := _root_.TopCat.of (MoorePathPullback (sigmaCellMap C n) b))
+      (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) ≅
+        TopCat.cellPullbackPair (pathFromEndpoint B b) C n :=
+    TopPair.ofSubsetIso (cellPullbackHomeomorph b C n) fun ⟨⟨d, γ⟩, h⟩ ↦ by
+      simp [cellPullbackHomeomorph, MoorePathPullback.proj_apply, MoorePathPullback.point_mk]
+  exact h₃.of_iso (asIso (HomologicalComplex.homologyMap
+    (TopPair.cubicalChainComplexMap R e.hom) p))
 
 end TauCeti

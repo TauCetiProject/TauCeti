@@ -35,6 +35,10 @@ primitive `λ` of a symplectic form `ω = -dλ` into the moment map identity
   invariant one-form pairing fundamental vector fields with constants vanishes on them.
 * `TauCeti.SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq`: pointwise form of the
   invariance of a one-form under a group element.
+* `TauCeti.RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq`: a form invariant under the
+  inverse of `g` vanishes at `g • x` whenever it vanishes at `x`.
+* `TauCeti.SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`: pointwise form of the invariance
+  of a two-form under the action.
 
 ## References
 
@@ -73,6 +77,14 @@ theorem SmoothForm.apply_smul_eq_apply_mfderiv_of_mpullback_inv_smul_eq {g : G}
   exact congrArg (fun A : E [⋀^Fin 1]→L[ℝ] F ↦ A _)
     (show α.val (g⁻¹ • g • x) = α.val x by rw [inv_smul_smul])
 
+omit [IsManifold I 1 M] [ContMDiffConstSMul I ∞ G M] in
+/-- A form invariant under the inverse of a group element `g` vanishes at `g • x` whenever it
+vanishes at `x`. -/
+theorem RoughForm.apply_smul_eq_zero_of_mpullback_inv_smul_eq {k : ℕ} {γ : RoughForm I M F k}
+    {g : G} (hγ : mpullback I I (g⁻¹ • ·) γ = γ) {x : M} (hx : γ x = 0) : γ (g • x) = 0 := by
+  rw [← hγ]
+  exact mpullback_apply_eq_zero (by rwa [inv_smul_smul])
+
 end Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -83,6 +95,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [T2Space M] [IsManifold I' ∞ M]
   [MulAction G M] [ContMDiffSMul I I' ∞ G M]
+
+omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
+  [FiniteDimensional ℝ E'] [I'.Boundaryless] [T2Space M] in
+/-- **Pointwise invariance of a two-form.** If `(g • ·)^* σ = σ` for every `g`, then `σ` is
+preserved by the differentials of the action:
+`σ_{a • x}(d(a • ·) u, d(a • ·) v) = σ_x(u, v)`. -/
+theorem SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {σ : SmoothForm I' M F 2}
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (a : G) (x : M) (u v : TangentSpace I' x) :
+    σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) = σ.eval₂ x u v := by
+  rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
 
 omit [CompleteSpace E] [T2Space G] [BoundarylessManifold I G] [FiniteDimensional ℝ E']
   [I'.Boundaryless] [T2Space M] in
@@ -132,7 +157,7 @@ theorem mlieDerivForm_fundamentalVectorField_eq_zero {F : Type*} [NormedAddCommG
       funext (globalFlow_fundamentalVectorField ξ _ hc s)
     rw [hψ, ← SmoothForm.coe_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') _),
       hα]
-  have h := hasDerivAt_mpullback_globalFlow_zero hc hZ x (α.mdifferentiable x)
+  have h := hasDerivAt_mpullback_globalFlow_zero hc (hZ.of_le one_le_two) x (α.mdifferentiable x)
   rw [hconst] at h
   exact h.unique (hasDerivAt_const 0 _)
 

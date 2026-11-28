@@ -82,6 +82,10 @@ group.
   `H¹(G_K, E₁)` lies in the Shafarevich–Tate group.
 * `TauCeti.Isogeny.mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap`: the `φ`-Selmer group
   is cut out by the images of the local Kummer maps.
+* `TauCeti.Isogeny.card_shafarevichTateGroupKer_eq_card_ker_shaMap` and
+  `TauCeti.Isogeny.card_sha_eq_card_shafarevichTateGroupKer_mul`: comparing
+  `φ.shafarevichTateGroupKer τ` with `(ofIsogeny φ).shaMap.ker` and factoring `#Sha(W₁/K)` into
+  kernel and image orders of `φ` over a number field.
 * `TauCeti.Isogeny.kummerSelmerMap_injective`,
   `TauCeti.Isogeny.exact_kummerSelmerMap_selmerShaMap` and
   `TauCeti.Isogeny.selmerShaMap_surjective`: the `φ`-descent sequence
@@ -127,9 +131,7 @@ def selmerStructure :
   coeffHom i := φ.kerCoeffBaseChange (τ i)
   continuous_coeffHom _ := continuous_of_discreteTopology
   coeffHom_smul i := φ.kerCoeffBaseChange_smul (τ i)
-  localCondition i :=
-    (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange (L i))).kerCoeffIncl
-      continuous_of_discreteTopology).ker
+  localCondition i := (φ.baseChange (L i)).localKummerCondition
 
 /-- The localisation maps of `selmerStructure φ τ` are the restriction maps `kerRes (τ i)`. -/
 @[simp]
@@ -138,11 +140,10 @@ theorem selmerStructure_localization (i : ι) :
   rw [SelmerStructure.localization_eq_explicitMap1, kerRes_eq_explicitMap1]
   rfl
 
+/-- The local condition of the Selmer structure at `i` is the Kummer condition over `L i`. -/
 @[simp]
 theorem selmerStructure_localCondition (i : ι) :
-    (φ.selmerStructure τ).localCondition i =
-      (explicitCoeff1 _ _ (ofIsogeny (φ.baseChange (L i))).kerCoeffIncl
-        continuous_of_discreteTopology).ker :=
+    (φ.selmerStructure τ).localCondition i = (φ.baseChange (L i)).localKummerCondition :=
   (rfl)
 
 /-- **The `φ`-Selmer group** of the isogeny `φ : W₁ → W₂` relative to the family of extensions
@@ -153,6 +154,10 @@ all places this is `Sel_φ(E₁/K)` (Silverman X.4). -/
 def selmerGroup : AddSubgroup (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :=
   (φ.selmerStructure τ).selmerGroup
 
+/-- The isogeny Selmer group is the Selmer group of its Selmer structure. -/
+theorem selmerGroup_def : φ.selmerGroup τ = (φ.selmerStructure τ).selmerGroup := by
+  simp only [selmerGroup]
+
 /-- **Silverman's description of `Sel_φ`**: a class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly
 when its image in `H¹(G_K, E₁(Kˢ))` lies in the Shafarevich–Tate group of `W₁`. -/
 @[simp]
@@ -161,8 +166,26 @@ theorem mem_selmerGroup_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCo
       explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c ∈
         W₁.shafarevichTateGroup τ := by
   simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
-    selmerStructure_localCondition, AddMonoidHom.mem_ker, mem_shafarevichTateGroup_iff,
-    pointRes_kerCoeffIncl]
+    selmerStructure_localCondition, mem_localKummerCondition_iff,
+    mem_shafarevichTateGroup_iff, pointRes_kerCoeffIncl]
+
+/-- A class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly when its restriction to every `L i`
+satisfies the local Kummer condition of the base change of `φ` to `L i`. -/
+theorem mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition
+    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    c ∈ φ.selmerGroup τ ↔ ∀ i, φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).localKummerCondition := by
+  simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
+    selmerStructure_localCondition]
+
+/-- A `φ̂`-Selmer class, restricted to `L i` into the kernel of the dual of the base change of `φ`
+(`TauCeti.Isogeny.dualKerRes`), satisfies the local Kummer condition of that dual. This is the
+form in which the local Tate pairings of the base changes of `φ` see the `φ̂`-Selmer group. -/
+theorem dualKerRes_mem_localKummerCondition_of_mem_selmerGroup
+    {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} (hd : d ∈ φ.dual.selmerGroup τ)
+    (i : ι) : φ.dualKerRes (τ i) d ∈ (φ.baseChange (L i)).dual.localKummerCondition := by
+  have h := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd i
+  rw [mem_localKummerCondition_iff] at h ⊢
+  rwa [explicitCoeff1_kerCoeffIncl_dualKerRes]
 
 /-- Imposing the local conditions along a subfamily `τ ∘ f` of the localisations gives a larger
 `φ`-Selmer group. -/
@@ -179,7 +202,7 @@ theorem mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap
     [∀ i, DecidableEq (L i)] {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
     c ∈ φ.selmerGroup τ ↔ ∀ i, φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).kummerMap.range := by
   simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
-    selmerStructure_localCondition, range_kummerMap]
+    selmerStructure_localCondition, ← range_kummerMap]
 
 /-! ### The kernel of `φ` on the Shafarevich–Tate group -/
 
@@ -203,6 +226,31 @@ theorem shafarevichTateGroupKer_eq_ker_shafarevichTateMap :
   rw [mem_shafarevichTateGroupKer_iff, AddMonoidHom.mem_ker, ← Subtype.val_inj,
     Hom.coe_shafarevichTateMap, ZeroMemClass.coe_zero, Hom.pointH1Map_def]
 
+section NumberField
+
+variable [NumberField K]
+
+/-- Over a number field `K`, the kernel `φ.shafarevichTateGroupKer τ` has the same cardinality as
+`(ofIsogeny φ).shaMap.ker` for any family `τ` of embeddings over the places of `K`. -/
+theorem card_shafarevichTateGroupKer_eq_card_ker_shaMap
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card (φ.shafarevichTateGroupKer τ) = Nat.card (ofIsogeny φ).shaMap.ker := by
+  rw [φ.shafarevichTateGroupKer_eq_ker_shafarevichTateMap τ, (ofIsogeny φ).card_ker_shaMap τ]
+
+/-- **Factoring `#Sha(W₁/K)` into kernel and image orders of an isogeny**: along any family `τ`
+of embeddings of separable closures over the places of a number field `K`,
+`#Sha(W₁/K) = #Sha(W₁/K)[φ] · #φ(Sha(W₁/K))`. -/
+theorem card_sha_eq_card_shafarevichTateGroupKer_mul
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card W₁.sha =
+      Nat.card (φ.shafarevichTateGroupKer τ) * Nat.card (ofIsogeny φ).shaMap.range := by
+  rw [φ.card_shafarevichTateGroupKer_eq_card_ker_shaMap τ]
+  exact (AddSubgroup.card_ker_mul_card_range (ofIsogeny φ).shaMap).symm
+
+end NumberField
+
 /-! ### The `φ`-descent sequence of Selmer groups -/
 
 section Descent
@@ -217,7 +265,7 @@ variable [DecidableEq K]
 `φ`-Selmer group, since it already vanishes in `H¹(G_K, E₁(Kˢ))`. -/
 theorem kummerMap_mem_selmerGroup (P : W₂.toAffine.Point) : φ.kummerMap P ∈ φ.selmerGroup τ := by
   have h : φ.kummerMap P ∈ φ.kummerMap.range := ⟨P, rfl⟩
-  rw [range_kummerMap, AddMonoidHom.mem_ker] at h
+  rw [range_kummerMap, mem_localKummerCondition_iff] at h
   rw [mem_selmerGroup_iff, h]
   exact zero_mem _
 
@@ -269,7 +317,7 @@ theorem exact_kummerSelmerMap_selmerShaMap [DecidableEq K] :
   have hker : φ.selmerShaMap τ c = 0 ↔
       explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c = 0 := by
     simp only [← Subtype.val_inj, coe_selmerShaMap, ZeroMemClass.coe_zero]
-  rw [hker, ← AddMonoidHom.mem_ker, ← range_kummerMap φ]
+  rw [hker, ← mem_localKummerCondition_iff, ← range_kummerMap φ]
   refine ⟨fun ⟨P, hP⟩ ↦ ⟨QuotientAddGroup.mk P, Subtype.ext ?_⟩, fun ⟨x, hx⟩ ↦ ?_⟩
   · rw [coe_kummerSelmerMap, kummerClassMap_mk, hP]
   · induction x using QuotientAddGroup.induction_on with

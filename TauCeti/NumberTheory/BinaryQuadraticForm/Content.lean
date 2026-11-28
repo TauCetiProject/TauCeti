@@ -30,9 +30,12 @@ equivalence classes of primitive positive definite forms of discriminant `-n`.
 
 Two forms `(a, B, a'C)` and `(a', B, aC)` sharing the middle coefficient have Dirichlet
 composition `(aa', B, C)`, of the same discriminant `B² - 4aa'C`; if both are primitive so is
-the composition (`isPrimitive_mk_mul_of_isPrimitive`). The principal form of discriminant
+the composition (`isPrimitive_mk_mul_of_isPrimitive`), and the composition represents the
+products of their values (`eval_mul_eval_eq_eval_mk_mul`). The principal form of discriminant
 `D ≡ 0, 1 mod 4` is `x² + δxy + ((δ - D)/4)y²` with `δ = D mod 2` (`principalForm`); it is
-primitive of discriminant `D`, and positive definite when `D < 0`.
+primitive of discriminant `D`, and positive definite when `D < 0`. The product of two values of
+any form of discriminant `D` is a value of the principal form
+(`exists_eval_mul_eval_eq_eval_principalForm`).
 
 ## References
 
@@ -349,7 +352,7 @@ def primitiveForms (D : ℤ) :
 
 /-- A form is primitive positive definite of discriminant `-n` exactly when it has discriminant
 `-n`, positive leading coefficient and coprime coefficients. -/
-@[simp] theorem mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n] {f : BinaryQuadraticForm ℤ} :
+theorem mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n] {f : BinaryQuadraticForm ℤ} :
     f ∈ posDef n ⊓ primitiveForms (-n) ↔ f.discrim = -n ∧ 0 < f.a ∧ f.IsPrimitive :=
   calc f ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ∧ f ∈ primitiveForms (-n) := Iff.rfl
     _ ↔ _ := by rw [mem_posDef, mem_primitiveForms]; tauto
@@ -433,6 +436,17 @@ theorem isPrimitive_mk_mul_of_isPrimitive
     (u * w' * a ^ 2 + w * u' * a' ^ 2) ?_
   linear_combination (u' * a' + v' * B + w' * (a * C)) * huvw + huvw'
 
+/-- **Dirichlet's composition identity** (Cox, Lemma 3.2). The composition `(aa', B, C)` of
+`(a, B, a'C)` and `(a', B, aC)` represents the product of their values:
+`f(x, y) g(z, w) = h(xz - Cyw, axw + a'yz + Byw)`. -/
+theorem eval_mul_eval_eq_eval_mk_mul {R : Type*} [CommRing R] (a a' B C x y z w : R) :
+    (⟨a, B, a' * C⟩ : BinaryQuadraticForm R).eval x y *
+        (⟨a', B, a * C⟩ : BinaryQuadraticForm R).eval z w =
+      (⟨a * a', B, C⟩ : BinaryQuadraticForm R).eval (x * z - C * y * w)
+        (a * x * w + a' * y * z + B * y * w) := by
+  simp only [eval_mk]
+  ring
+
 end Composition
 
 /-! ### The principal form -/
@@ -453,15 +467,51 @@ def principalForm (D : ℤ) : BinaryQuadraticForm ℤ :=
 /-- The last coefficient of the principal form is `(D mod 2 - D) / 4`. -/
 @[simp] theorem principalForm_c (D : ℤ) : (principalForm D).c = (D % 2 - D) / 4 := (rfl)
 
+private theorem four_mul_principalForm_c {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    4 * (principalForm D).c = D % 2 * (D % 2) - D := by
+  have h4 : 4 * (principalForm D).c = D % 2 - D :=
+    Int.mul_ediv_cancel' (Int.dvd_iff_emod_eq_zero.mpr (by omega))
+  rcases Int.emod_two_eq_zero_or_one D with h | h <;> rw [h4, h] <;> norm_num
+
+/-- The principal form of discriminant `4N` is `x² - N y²`. -/
+@[simp]
+theorem principalForm_four_mul (N : ℤ) : principalForm (4 * N) = ⟨1, 0, -N⟩ := by
+  ext <;> simp <;> omega
+
 /-- The principal form of discriminant `D ≡ 0, 1 mod 4` has discriminant `D`. -/
 theorem discrim_principalForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
     (principalForm D).discrim = D := by
-  have h4 : 4 * ((D % 2 - D) / 4) = D % 2 - D :=
-    Int.mul_ediv_cancel' (Int.dvd_iff_emod_eq_zero.mpr (by omega))
-  have hsq : D % 2 * (D % 2) = D % 2 := by
-    rcases Int.emod_two_eq_zero_or_one D with h | h <;> rw [h] <;> norm_num
-  rw [discrim_def, discrim, principalForm_a, principalForm_b, principalForm_c]
-  linear_combination hsq - h4
+  rw [discrim_def, discrim, principalForm_a, principalForm_b]
+  linear_combination -four_mul_principalForm_c hD
+
+/-- Four times a value of the principal form of discriminant `D ≡ 0, 1 mod 4` is
+`(2x + δy)² - D y²`, with `δ = D mod 2`. -/
+theorem four_mul_eval_principalForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) (x y : ℤ) :
+    4 * (principalForm D).eval x y = (2 * x + D % 2 * y) ^ 2 - D * y ^ 2 := by
+  rw [eval_def, principalForm_a, principalForm_b]
+  linear_combination y ^ 2 * four_mul_principalForm_c hD
+
+/-- **The product of two values of a form is a value of the principal form.** For an integral
+form `f` of discriminant `D`, `f(x, y) f(z, w)` is represented by the principal form of
+discriminant `D`: with `b = 2k + δ` and `δ = D mod 2`, it is its value at
+`(axz + cyw + k(xw + yz) + δxw, yz - xw)`. On values, this is the relation `[f][f⁻] = 1` in the
+class group. -/
+theorem exists_eval_mul_eval_eq_eval_principalForm (f : BinaryQuadraticForm ℤ) (x y z w : ℤ) :
+    ∃ u v, f.eval x y * f.eval z w = (principalForm f.discrim).eval u v := by
+  have hD := discrim_emod_four_eq_zero_or_one f
+  have he := discrim_emod_two f
+  obtain ⟨a, b, c⟩ := f
+  rcases Int.even_or_odd' b with ⟨k, rfl | rfl⟩
+  · refine ⟨a * x * z + c * y * w + k * (x * w + y * z), y * z - x * w,
+      mul_left_cancel₀ (four_ne_zero (α := ℤ)) ?_⟩
+    rw [four_mul_eval_principalForm hD, he, show 2 * k % 2 = 0 by omega, discrim_def, discrim,
+      eval_mk, eval_mk]
+    ring
+  · refine ⟨a * x * z + c * y * w + k * (x * w + y * z) + x * w, y * z - x * w,
+      mul_left_cancel₀ (four_ne_zero (α := ℤ)) ?_⟩
+    rw [four_mul_eval_principalForm hD, he, show (2 * k + 1) % 2 = 1 by omega, discrim_def,
+      discrim, eval_mk, eval_mk]
+    ring
 
 /-- The principal form is primitive. -/
 theorem isPrimitive_principalForm (D : ℤ) : (principalForm D).IsPrimitive :=

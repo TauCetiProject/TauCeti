@@ -31,6 +31,8 @@ entry by entry.
 * `TauCeti.sampleSecondMoment_apply`: its entries are sample means of coordinate products.
 * `TauCeti.isHermitian_sampleSecondMoment`, `TauCeti.posSemidef_sampleSecondMoment`: it is
   Hermitian, and positive semidefinite in finite dimension.
+* `TauCeti.sampleSecondMoment_eq_inv_smul_transpose_mul`: it is the normalized Gram matrix
+  `r⁻¹ Vᵀ conj V` of the matrix `V` whose rows are the samples.
 * `Matrix.sampleCovariance`: the sample covariance matrix `X Xᴴ / n` of a `p × n` data matrix, whose
   columns are the samples; `Matrix.sampleCovariance_eq_sampleSecondMoment` identifies it with the
   empirical second-moment matrix of the columns, and `Matrix.isHermitian_sampleCovariance` and
@@ -88,6 +90,15 @@ theorem posSemidef_sampleSecondMoment [Finite n] (v : ι → n → 𝕜) :
   rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
   exact (posSemidef_sum _ fun i _ ↦ posSemidef_vecMulVec_self_star (v i)).smul (by positivity)
 
+/-- The empirical second-moment matrix of the rows of `Matrix.of v` is its normalized Gram
+matrix: `r⁻¹ ∑ᵢ vᵢ vᵢᴴ = r⁻¹ Vᵀ conj V` with `V = Matrix.of v` and `r = card ι`. Over `ℝ` the
+right side is `r⁻¹ Vᵀ V`. -/
+theorem sampleSecondMoment_eq_inv_smul_transpose_mul (v : ι → n → 𝕜) :
+    sampleSecondMoment v =
+      (Fintype.card ι : 𝕜)⁻¹ • ((Matrix.of v)ᵀ * (Matrix.of v).map star) := by
+  ext k l
+  simp [finiteMean_eq_inv_smul_sum, Matrix.mul_apply]
+
 end TauCeti
 
 namespace Matrix
@@ -108,6 +119,18 @@ theorem sampleCovariance_def (X : Matrix p n 𝕜) :
 theorem sampleCovariance_apply (X : Matrix p n 𝕜) (i j : p) :
     sampleCovariance X i j = (1 / (Fintype.card n : ℝ)) • ∑ k, X i k * star (X j k) := by
   simp [sampleCovariance_def, Matrix.mul_apply]
+
+/-- A real star-algebra homomorphism commutes with sample covariance. -/
+@[simp]
+theorem sampleCovariance_map {𝕜' : Type*} [RCLike 𝕜'] (X : Matrix p n 𝕜)
+    (f : 𝕜 →⋆ₐ[ℝ] 𝕜') :
+    sampleCovariance (X.map f) = (sampleCovariance X).map f := by
+  ext i j
+  simp only [sampleCovariance_apply, Matrix.map_apply, RCLike.real_smul_eq_coe_mul,
+    map_mul, map_sum, map_star]
+  congr 1
+  simpa only [RCLike.algebraMap_eq_ofReal, StarAlgHom.coe_toAlgHom] using
+    (f.toAlgHom.commutes (1 / (Fintype.card n : ℝ))).symm
 
 /-- The real trace of a sample covariance matrix is the column-normalized sum of squared entry
 norms. This holds for empty index types, with the usual zero conventions. -/

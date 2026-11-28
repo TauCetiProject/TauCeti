@@ -12,6 +12,7 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Card
 
 import Mathlib.Algebra.Polynomial.OfFn
+import TauCeti.Data.Int.Interval
 
 /-!
 # Counting polynomials of bounded degree and bounded coefficients
@@ -162,10 +163,9 @@ absolute value number exactly `(2 * B + 1) ^ (d + 1)`: each of the `d + 1` coeff
 `coeff 0, …, coeff d` ranges independently over the `2 * B + 1` integers in `[-B, B]`. -/
 theorem ncard_natDegree_le_abs_intCoeff_le (d B : ℕ) :
     {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)}.ncard = (2 * B + 1) ^ (d + 1) := by
-  have hU : (Finset.Icc (-(B : ℤ)) B).card = 2 * B + 1 := by
-    rw [Int.card_Icc]; omega
-  rw [setOf_abs_intCoeff_le_eq, ncard_natDegree_le_coeff_mem_pi]
-  simp [hU]
+  rw [setOf_abs_intCoeff_le_eq, ncard_natDegree_le_coeff_mem_pi,
+    Int.card_Icc_neg_natCast_natCast]
+  simp
 
 /-- The integer polynomials of degree at most `d` all of whose coefficients are bounded by `B` in
 absolute value form a finite set: their coefficients range over the finite interval `[-B, B]`. -/

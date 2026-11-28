@@ -574,6 +574,18 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] [Algebra (ZMod 3) A] (s 
     TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusBaseChangeCoordinateMap,
     IntegralToralClosure.coe_weightTorusPoints, kostantTorusMatrix_apply]
 
+/-- The fundamental-weight parameters of a weight-torus point are uniquely determined. -/
+theorem weightTorusPoints_injective (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
+    Function.Injective (weightTorusPoints A) := by
+  intro s t h
+  apply eq_of_span_eq_top_of_torusCharacter_eq span_range_weight_eq_top
+  intro i
+  apply Units.ext
+  have hi := congrArg (fun g : points A ↦
+    ((g : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) i i) h
+  simpa only [coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal,
+    Matrix.diagonal_apply_eq] using hi
+
 /-- **The pinning equation on matrix-valued points of the carrier**: conjugation by a point `s` of
 the weight torus rescales the parameter of each numbered simple root subgroup by the corresponding
 type-`G₂` root character evaluated at `s`. -/

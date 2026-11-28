@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The energy identity and Gårding inequality for the gauge-fixed vortex operator
@@ -46,6 +47,12 @@ the vortex equation holds the potential simplifies
 (`TauCeti.Vortex.gaugeFixedPotential_eq_of_equation_eq_zero`), which gives the energy identity
 `TauCeti.Vortex.integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`.
 
+At the zero field the potential vanishes, and changing the sign of the last coordinate turns the
+formal adjoint into the operator up to the signs of the coordinates, so their pointwise norms
+agree, and `∫ ∑ⱼ |∇ηⱼ|² = ∫ |L₀* η|²` for the adjoint `L₀*` at the zero
+field (`TauCeti.Vortex.integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero`):
+the first-order part of `L_x*` controls the gradient.
+
 At a vortex `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the potential is
 `|φ|² |b|² + ((12 |φ|² - 1) / 8) |ψ|²` up to a cross term bounded by `|∇₁ α| |y|²`. When
 `|α| → 1` and `∇₁ α → 0` at infinity, the potential therefore tends to the vacuum mass `1 / 4`.
@@ -62,7 +69,8 @@ supported in a fixed closed disc, on whose support the vortex equation holds,
 For variations vanishing on the disc of radius `R` it gives the exterior bound
 `TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
 controls the covariant gradient of the variation, which bounds the flat gradient up to the term
-`2 ‖x‖² ‖y‖²` given by the norm of the field (`TauCeti.Vortex.sum_norm_gradient_sq_le`).
+`2 (A₁² + A₂²) ‖y‖²` given by the connection coefficients of the field
+(`TauCeti.Vortex.sum_norm_gradient_sq_le`).
 Combined with the compactness of `H¹ → L²` on the disc, an estimate of this form gives
 finite-dimensionality of the kernel and closedness of the range of `L_x` on the completed spaces.
 The radius and the constant depend on the vortex and on `a`. These are classical test-field
@@ -139,24 +147,31 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
   positivity
 
 /-- The covariant gradient density controls the flat gradient of a variation `y`, up to the term
-`2 ‖x z‖² ‖y z‖²` given by the norm of the field `x`. -/
+`2 (A₁² + A₂²) ‖y z‖²` given by the connection coefficients of the field, where
+`a = i (A₁ ds + A₂ dt)`. -/
 theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
-      2 * gaugeFixedGradientDensity x y z + 2 * ‖x z‖ ^ 2 * ‖y z‖ ^ 2 := by
-  have hg (f : ℂ → ℝ) : ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z I ^ 2 := by
-    rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
-    simp [Fin.sum_univ_two, inner_gradient_left]
-  simp only [Fin.sum_univ_four, hg, gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
+      2 * gaugeFixedGradientDensity x y z + 2 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  simp only [Fin.sum_univ_four, norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq,
+    gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
   nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * x z 0 * y z 3),
     sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * x z 0 * y z 2),
     sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * x z 1 * y z 3),
     sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * x z 1 * y z 2),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
-      (add_nonneg (sq_nonneg (y z 2)) (sq_nonneg (y z 3))),
     mul_nonneg (add_nonneg (sq_nonneg (x z 0)) (sq_nonneg (x z 1)))
-      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1))),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
       (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1)))]
+
+/-- The squared derivative of a variation is controlled by its covariant gradient density and
+the connection coefficients of the field:
+`|Dy|² ≤ 4 (|∇b|² + |∇_a ψ|²) + 4 (A₁² + A₂²) |y|²`, where `a = i (A₁ ds + A₂ dt)`. -/
+theorem norm_fderiv_sq_le_gaugeFixedGradientDensity_add (x y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    ‖fderiv ℝ y z‖ ^ 2 ≤
+      4 * gaugeFixedGradientDensity x y z + 4 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  have h := sum_norm_gradient_sq_le x y z
+  have hD := norm_fderiv_sq_le_two_mul_sum_sq y z
+  simp only [Fin.sum_univ_four, norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq] at h hD
+  linarith
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -252,6 +267,26 @@ theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff 
     fun_prop
   · simp [gaugeFixedGradientDensity_def, (hy.differentiable one_ne_zero z).fderiv_piLp_apply,
       fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
+
+/-- The integrated form of `norm_fderiv_sq_le_gaugeFixedGradientDensity_add`: if the connection
+coefficients of `x` satisfy `A₁² + A₂² ≤ M` wherever the compactly supported `C¹` variation `y`
+is nonzero, then `∫ |Dy|² ≤ 4 ∫ (|∇b|² + |∇_a ψ|²) + 4 M ∫ |y|²`. -/
+theorem integral_norm_fderiv_sq_le_gaugeFixedGradientDensity_add (hx : Continuous x)
+    (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y) {M : ℝ}
+    (hM : ∀ z, y z ≠ 0 → x z 0 ^ 2 + x z 1 ^ 2 ≤ M) :
+    ∫ z, ‖fderiv ℝ y z‖ ^ 2 ∂μ ≤
+      4 * (∫ z, gaugeFixedGradientDensity x y z ∂μ) + 4 * M * ∫ z, ‖y z‖ ^ 2 ∂μ := by
+  have hG := integrable_gaugeFixedGradientDensity (μ := μ) hx hy hyc
+  have hn := hy.continuous.integrable_norm_sq_of_hasCompactSupport (μ := μ) hyc
+  rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hG.const_mul _)
+    (hn.const_mul _)]
+  refine integral_mono ((hy.continuous_fderiv one_ne_zero).integrable_norm_sq_of_hasCompactSupport
+    (hyc.fderiv (𝕜 := ℝ))) ((hG.const_mul _).add (hn.const_mul _)) fun z ↦
+      (norm_fderiv_sq_le_gaugeFixedGradientDensity_add x y z).trans ?_
+  by_cases hz : y z = 0
+  · simp [hz]
+  · gcongr
+    exact hM z hz
 
 /-- The Jacobian form of the two partial derivatives of a compactly supported `C¹` variation is
 integrable. -/
@@ -361,6 +396,40 @@ private theorem min_sub_mul_le_potential {s cr ci n v₀ v₁ v₂ v₃ : ℝ} (
   have hBP : v₀ ^ 2 + v₁ ^ 2 + v₂ ^ 2 + v₃ ^ 2 = B + P := by ring
   rw [hBP]
   nlinarith
+
+/-- **The first-order part of `L_x*` controls the gradient.** For a compactly supported `C²`
+field `η`, `∫ ∑ⱼ |∇ηⱼ|² = ∫ |L₀* η|²`, where `L₀*` is the formal adjoint at the zero field, which
+has no zeroth-order part. -/
+theorem integral_sum_norm_gradient_sq_eq_integral_norm_sq_gaugeFixedAdjoint_zero
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ∑ j : Fin 4, ‖∇ (fun w ↦ η w j) z‖ ^ 2 ∂μ = ∫ z, ‖gaugeFixedAdjoint 0 η z‖ ^ 2 ∂μ := by
+  -- Changing the sign of the last coordinate of `η` turns `L₀* η` into `L₀` of the changed field,
+  -- up to the signs of the coordinates, and the Weitzenböck formula for `L₀` at the zero field
+  -- has no potential.
+  set T : EuclideanSpace ℝ (Fin 4) → EuclideanSpace ℝ (Fin 4) :=
+    fun v ↦ WithLp.toLp 2 ![v 0, v 1, v 2, -v 3]
+  set y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ T (η z)
+  have hη' (j : Fin 4) : ContDiff ℝ 2 fun z ↦ η z j := (contDiff_piLp 2).1 hη j
+  have hy : ContDiff ℝ 2 y := (contDiff_piLp 2).2 fun j ↦ by
+    fin_cases j
+    exacts [hη' 0, hη' 1, hη' 2, (hη' 3).neg]
+  have hyc : HasCompactSupport y := hηc.comp_left (g := T) (by ext j; fin_cases j <;> simp [T])
+  have h := integral_norm_sq_gaugeFixedOperator (μ := μ) (x := 0) contDiff_const hy hyc
+  have hs : sectionValue (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 :=
+    funext fun z ↦ by simp [sectionValue_apply]
+  have hP (z : ℂ) : gaugeFixedPotential 0 z (y z) = 0 := by
+    have hk : curvature 0 z = 0 := by simp [curvature_apply]
+    have hc (v : ℂ) : covariantDerivative 0 z v = 0 := by simp [covariantDerivative_apply, hs]
+    simp [gaugeFixedPotential_def, hk, hc]
+  have hG (z : ℂ) : gaugeFixedGradientDensity 0 y z = ∑ j : Fin 4, ‖∇ (fun w ↦ η w j) z‖ ^ 2 := by
+    simp [gaugeFixedGradientDensity_def, Fin.sum_univ_four,
+      norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq, y, T, fderiv_fun_neg]
+    ring
+  have hL (z : ℂ) : ‖gaugeFixedOperator 0 y z‖ ^ 2 = ‖gaugeFixedAdjoint 0 η z‖ ^ 2 := by
+    simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, y, T, fderiv_fun_neg]
+    ring
+  simp only [hP, integral_zero, add_zero, hG, hL] at h
+  exact h.symm
 
 /-- The coefficient `min (|φ|², (12 |φ|² - 1) / 8) - |∇₁ α|` bounding the potential from below
 at a vortex (`vortexMass_mul_norm_sq_le_gaugeFixedPotential`). -/
@@ -490,40 +559,20 @@ gradient density of `u` plus the zeroth-order potential. -/
 private def energyIntegrand (x u : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   gaugeFixedGradientDensity x u z + gaugeFixedPotential x z (u z)
 
-/-- The pointwise lower bound behind the Gårding inequality: where the vortex equation holds or
-`u` vanishes, the energy integrand controls half the squared gradient, up to a zeroth-order term
-whose coefficient is bounded by the coefficients of `x`. -/
-private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) {z : ℂ}
-    (hx : DifferentiableAt ℝ x z) (hsol : u z ≠ 0 → equation x z = 0) :
-    (∑ i, (fderiv ℝ (fun w ↦ u w i) z 1 ^ 2 + fderiv ℝ (fun w ↦ u w i) z I ^ 2)) / 2 ≤
-      energyIntegrand x u z +
-        (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 := by
-  -- The potential is at least `-(1 / 8 + |∇₁ α|) |u|²`.
-  have hV : -(1 / 8 + ‖covariantDerivative x z 1‖) * ‖u z‖ ^ 2 ≤
-      gaugeFixedPotential x z (u z) := by
-    by_cases hz : u z = 0
-    · simp [gaugeFixedPotential_def, hz]
-    refine le_trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
-      (vortexMass_mul_norm_sq_le_gaugeFixedPotential hx (hsol hz) (u z))
-    have hs : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
-    have hm : -(1 / 8) ≤ min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) :=
-      le_min (by linarith) (by linarith)
-    rw [vortexMass_def]
-    linarith
-  have hN : ‖u z‖ ^ 2 = u z 0 ^ 2 + u z 1 ^ 2 + u z 2 ^ 2 + u z 3 ^ 2 := by
-    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  rw [hN] at hV ⊢
-  rw [energyIntegrand, gaugeFixedGradientDensity_def, Fin.sum_univ_four]
-  nlinarith [norm_nonneg (covariantDerivative x z 1),
-    sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z 1 - 2 * (x z 0 * u z 3)),
-    sq_nonneg (fderiv ℝ (fun w ↦ u w 2) z I - 2 * (x z 1 * u z 3)),
-    sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z 1 + 2 * (x z 0 * u z 2)),
-    sq_nonneg (fderiv ℝ (fun w ↦ u w 3) z I + 2 * (x z 1 * u z 2)),
-    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (u z 0)),
-    mul_nonneg (sq_nonneg (x z 0)) (sq_nonneg (u z 1)),
-    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (u z 0)),
-    mul_nonneg (sq_nonneg (x z 1)) (sq_nonneg (u z 1)),
-    sq_nonneg (u z 0), sq_nonneg (u z 1), sq_nonneg (u z 2), sq_nonneg (u z 3)]
+/-- Where the vortex equation holds or the value `v` of a variation vanishes, the potential is
+at least `-(1 / 8 + |∇₁ α|) |v|²`. -/
+private theorem neg_mul_norm_sq_le_gaugeFixedPotential {z : ℂ} (hx : DifferentiableAt ℝ x z)
+    {v : EuclideanSpace ℝ (Fin 4)} (hsol : v ≠ 0 → equation x z = 0) :
+    -(1 / 8 + ‖covariantDerivative x z 1‖) * ‖v‖ ^ 2 ≤ gaugeFixedPotential x z v := by
+  by_cases hv : v = 0
+  · simp [gaugeFixedPotential_def, hv]
+  refine le_trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+    (vortexMass_mul_norm_sq_le_gaugeFixedPotential hx (hsol hv) v)
+  have hs : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
+  have hm : -(1 / 8) ≤ min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) :=
+    le_min (by linarith) (by linarith)
+  rw [vortexMass_def]
+  linarith
 
 /-- **The Gårding inequality for the gauge-fixed vortex operator on a disc.** For a `C¹` field `x`
 and a radius `r`, there is a constant `C` such that every `C²` variation `u` vanishing outside the
@@ -558,18 +607,20 @@ theorem exists_integral_norm_fderiv_sq_le (hx : ContDiff ℝ 1 x) (r : ℝ) :
     Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
       ((hu.continuous_fderiv two_ne_zero).norm.pow 2)
       ((hc.fderiv (𝕜 := ℝ)).comp_left (g := fun L ↦ ‖L‖ ^ 2) (by simp))
-  -- Pointwise, `|Du|² ≤ 2 (|∂₁u|² + |∂₂u|²) ≤ 4 E + 4 M |u|²` for the energy integrand `E`.
+  -- Pointwise, `|Du|² ≤ 4 G(u) + 4 (A₁² + A₂²) |u|² ≤ 4 E + 4 M |u|²` for the energy integrand
+  -- `E = G(u) + V_x(u)`.
   have hpt (z : ℂ) :
       ‖fderiv ℝ u z‖ ^ 2 ≤ 4 * energyIntegrand x u z + 4 * max M 1 * ‖u z‖ ^ 2 := by
-    have hD := norm_fderiv_sq_le_two_mul_sum_sq u z
-    have hS := sum_sq_div_two_le u (hx.differentiable one_ne_zero z) (hsol z)
+    have hD := norm_fderiv_sq_le_gaugeFixedGradientDensity_add x u z
+    have hV := neg_mul_norm_sq_le_gaugeFixedPotential (hx.differentiable one_ne_zero z) (hsol z)
     have hMu : (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 ≤
         max M 1 * ‖u z‖ ^ 2 := by
       by_cases hz : r < ‖z‖
       · simp [hr z hz]
       · refine mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
         exact (le_abs_self _).trans ((hM z (by simpa using hz)).trans (le_max_left _ _))
-    linarith
+    rw [energyIntegrand]
+    linarith [sq_nonneg ‖u z‖]
   have hE0 : 0 ≤ ∫ z, energyIntegrand x u z := hE ▸ integral_nonneg fun z ↦ sq_nonneg _
   rw [hE]
   calc ∫ z, ‖fderiv ℝ u z‖ ^ 2

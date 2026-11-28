@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Basic
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Tensor.Pow
 
 /-!
 # Second Frobenius–Schur indicators of simple objects
@@ -17,8 +17,9 @@ identifies the invariant space `𝟙_ C ⟶ tensorPow V 2` with `Vᘁ ⟶ V`
 (`TauCeti.homTensorPowTwoLinearEquiv`).
 
 In a `k`-linear pivotal category with kernels, Schur's lemma controls this hom space whenever `V`
-and `Vᘁ` are simple (which holds automatically for `Vᘁ` when `C` is abelian, by
-`TauCeti.simple_rightDual`):
+and `Vᘁ` are simple (which holds automatically for `Vᘁ` when `C` is abelian, by the instance
+`TauCeti.simple_rightDual` of `TauCeti.CategoryTheory.Monoidal.Rigid.Simple`, which this file does
+not import):
 
 * If `V` is not isomorphic to `Vᘁ`, then `Vᘁ ⟶ V` is zero and `ν₂(V) = 0` over any commutative
   ring `k` (`TauCeti.frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso`).
@@ -73,7 +74,7 @@ theorem frobeniusSchurIndicator_two_eq_zero_of_isEmpty_iso (k : Type w) [CommRin
       have : IsIso f := isIso_of_hom_simple hf
       exact h.false (asIso f).symm
   have : Subsingleton (𝟙_ C ⟶ tensorPow V 2) :=
-    (homTensorPowTwoLinearEquiv k V).subsingleton
+    (homTensorPowTwoLinearEquiv k V Vᘁ).subsingleton
   rw [frobeniusSchurIndicator_two, Subsingleton.elim (frobeniusSchurEnd k V 1) 0, map_zero]
 
 section IsAlgClosed
@@ -88,7 +89,7 @@ theorem frobeniusSchurIndicator_two_eq_one_or_eq_neg_one_of_nonempty_iso
     frobeniusSchurIndicator k V 2 = 1 ∨ frobeniusSchurIndicator k V 2 = -1 := by
   obtain ⟨e⟩ := h
   let L : (𝟙_ C ⟶ tensorPow V 2) ≃ₗ[k] (V ⟶ V) :=
-    (homTensorPowTwoLinearEquiv k V).trans (Linear.homCongr k e.symm (Iso.refl V))
+    (homTensorPowTwoLinearEquiv k V Vᘁ).trans (Linear.homCongr k e.symm (Iso.refl V))
   let T : Module.End k (V ⟶ V) := L.conj (frobeniusSchurEnd k V 1)
   obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (T (𝟙 V))
   have hT : T = c • 1 := by

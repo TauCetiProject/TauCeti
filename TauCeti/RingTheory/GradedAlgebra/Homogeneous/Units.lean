@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
-public import TauCeti.Data.ZMod.QuotientGroup
+public import TauCeti.Algebra.Module.LinearMap.End
+public import TauCeti.Data.ZMod.Quotient.Group
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -38,7 +38,8 @@ grading graded-isomorphic to a shift has such a generator.
 ## Main results
 
 * `Units.val_inv_mem_graded`: the inverse of a homogeneous unit of degree `d` is homogeneous of
-  degree `-d`.
+  degree `-d`, and `Units.val_mul_mul_inv_mem_graded`: in a ring graded by an additive commutative
+  group, conjugation by a homogeneous unit preserves every graded piece.
 * `TauCeti.mem_homogeneousUnitDegrees_iff`: a degree lies in `homogeneousUnitDegrees 𝒜` if and
   only if it is the degree of a homogeneous unit.
 * `TauCeti.mul_mem_iff_of_isUnit_mem` and `TauCeti.eq_map_mulLeft_of_isUnit_mem`: a compatible
@@ -47,6 +48,9 @@ grading graded-isomorphic to a shift has such a generator.
   the shift `A(d)` if and only if it has a unit in degree `-d`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
+* `TauCeti.existsUnique_shiftClass_of_exists_linearEquiv` and
+  `TauCeti.existsUnique_shiftClass_of_isUnit_mem`: once `ℳ` admits one shift isomorphism (or a
+  homogeneous unit generator), its shift class in `ShiftClassGroup 𝒜` is unique.
 * `TauCeti.ShiftClassGroup.equivZMod`: for a `ℤ`-grading whose homogeneous unit degrees are the
   multiples of `e`, the shift class group is `ZMod |e|`.
 
@@ -69,10 +73,25 @@ variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike 
 homogeneous of degree `-d`. -/
 theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d) :=
-  TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hu u.isRegular.left
-    (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
+  TauCeti.GradedAlgebra.mem_of_mul_mul_eq_self 𝒜 (add_neg_cancel d) hu
+    (by rw [Units.mul_inv]; exact SetLike.one_mem_graded 𝒜)
+    (by rw [Units.inv_mul]; exact SetLike.one_mem_graded 𝒜) (by rw [Units.inv_mul, one_mul])
 
 end Inverse
+
+section Conjugation
+
+variable {ι A σ : Type*} [DecidableEq ι] [AddCommGroup ι] [Semiring A] [SetLike σ A]
+  [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
+
+/-- In a ring graded by an additive commutative group, conjugation by a homogeneous unit of any
+degree preserves every graded piece. -/
+theorem Units.val_mul_mul_inv_mem_graded (u : Aˣ) {i k : ι} (hu : (u : A) ∈ 𝒜 i) {y : A}
+    (hy : y ∈ 𝒜 k) : (u : A) * y * ↑u⁻¹ ∈ 𝒜 k := by
+  simpa [add_comm, add_assoc] using
+    SetLike.mul_mem_graded (SetLike.mul_mem_graded hu hy) (u.val_inv_mem_graded hu)
+
+end Conjugation
 
 namespace TauCeti
 
@@ -201,9 +220,7 @@ variable {𝒜 ℳ}
 generator of `ℳ`: a unit of degree `-d`. -/
 theorem _root_.LinearEquiv.isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
     (hφ : ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) : IsUnit (φ 1) ∧ φ 1 ∈ ℳ (-d) := by
-  -- `Module.End A A ≃+* Aᵐᵒᵖ` sends an endomorphism to its value at `1`.
-  refine ⟨(((Module.End.isUnit_iff φ.toLinearMap).2 φ.bijective).map
-    (RingEquiv.moduleEndSelf A).symm).unop, (hφ _ _).mpr ?_⟩
+  refine ⟨φ.isUnit_apply_one, (hφ _ _).mpr ?_⟩
   rw [neg_add_cancel]
   exact SetLike.one_mem_graded 𝒜
 
@@ -248,6 +265,57 @@ theorem ShiftClassGroup.mk_eq_mk_iff {d e : ι} :
     (d : ShiftClassGroup 𝒜) = e ↔ ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ 𝒜 (n + e) ↔ x ∈ 𝒜 (n + d) := by
   rw [QuotientAddGroup.eq, ← sub_mem_homogeneousUnitDegrees_iff, ← neg_mem_iff, neg_add_rev,
     neg_neg, neg_add_eq_sub]
+
+/-- **Unique shift class from one shift isomorphism.** Over a semiring graded by an additive
+commutative group, once a family `ℳ` is graded-isomorphic to at least one shift `A(d₀)`, the
+shifts `A(d)` isomorphic to `ℳ` form a unique class in `TauCeti.ShiftClassGroup 𝒜`. -/
+theorem existsUnique_shiftClass_of_exists_linearEquiv (ℳ : ι → σM)
+    (h : ∃ d₀ : ι, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d₀)) :
+    ∃! c : ShiftClassGroup 𝒜,
+      ∀ d : ι, (∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) ↔
+        (d : ShiftClassGroup 𝒜) = c := by
+  obtain ⟨d₀, φ₀, hφ₀⟩ := h
+  refine ⟨d₀, fun d ↦ ⟨fun ⟨φ, hφ⟩ ↦ ?_, fun hd ↦ ?_⟩,
+    fun c hc ↦ ((hc d₀).mp ⟨φ₀, hφ₀⟩).symm⟩
+  · exact (ShiftClassGroup.mk_eq_mk_iff 𝒜).mpr
+      ⟨φ.trans φ₀.symm, fun n x ↦ by
+        rw [LinearEquiv.trans_apply, ← hφ n x]
+        simpa using (hφ₀ n (φ₀.symm (φ x))).symm⟩
+  · obtain ⟨ψ, hψ⟩ := (ShiftClassGroup.mk_eq_mk_iff 𝒜).mp hd
+    exact ⟨ψ.trans φ₀, fun n x ↦ by simp [hφ₀, hψ]⟩
+
+/-- **Unique shift class from a homogeneous generator.** Over a semiring graded by an additive
+commutative group, a compatible grading `ℳ` of `A` having a homogeneous unit `u ∈ ℳ c` is
+graded-isomorphic to the shift `A(d)` if and only if `d` represents the class of `-c` in
+`TauCeti.ShiftClassGroup 𝒜`. -/
+theorem existsUnique_shiftClass_of_isUnit_mem [AddSubmonoidClass σM A] (ℳ : ι → σM)
+    [Decomposition ℳ] [SetLike.GradedSMul 𝒜 ℳ] {u : A} (hu : IsUnit u) {c : ι} (hmem : u ∈ ℳ c) :
+    ∃! q : ShiftClassGroup 𝒜,
+      ∀ d : ι, (∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) ↔
+        (d : ShiftClassGroup 𝒜) = q :=
+  existsUnique_shiftClass_of_exists_linearEquiv 𝒜 ℳ
+    ⟨-c, (exists_linearEquiv_iff_exists_isUnit_mem 𝒜 ℳ).mpr ⟨u, hu, by simpa using hmem⟩⟩
+
+/-- When `homogeneousUnitDegrees 𝒜 = ⊥`, a family `ℳ` admitting at least one shift isomorphism to
+`𝒜` is graded-isomorphic to a shift `A(d)` for a unique degree `d`. -/
+theorem existsUnique_shift_linearEquiv_of_exists_linearEquiv (ℳ : ι → σM)
+    (h : ∃ d₀ : ι, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d₀))
+    (hbot : homogeneousUnitDegrees 𝒜 = ⊥) :
+    ∃! d : ι, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
+  obtain ⟨c, hc, -⟩ := existsUnique_shiftClass_of_exists_linearEquiv 𝒜 ℳ h
+  obtain ⟨d₀, rfl⟩ := QuotientAddGroup.mk_surjective c
+  refine ⟨d₀, (hc d₀).mpr rfl, fun d hd ↦ ?_⟩
+  have hmk : (d : ShiftClassGroup 𝒜) = d₀ := (hc d).mp hd
+  simpa [QuotientAddGroup.eq, hbot, neg_add_eq_zero] using hmk
+
+/-- When `homogeneousUnitDegrees 𝒜 = ⊥`, a compatible grading `ℳ` of `A` with a homogeneous unit
+`u ∈ ℳ c` is graded-isomorphic to a shift `A(d)` for a unique degree `d`. -/
+theorem existsUnique_shift_linearEquiv_of_isUnit_mem [AddSubmonoidClass σM A] (ℳ : ι → σM)
+    [Decomposition ℳ] [SetLike.GradedSMul 𝒜 ℳ] {u : A} (hu : IsUnit u) {c : ι} (hmem : u ∈ ℳ c)
+    (hbot : homogeneousUnitDegrees 𝒜 = ⊥) :
+    ∃! d : ι, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) :=
+  existsUnique_shift_linearEquiv_of_exists_linearEquiv 𝒜 ℳ
+    ⟨-c, (exists_linearEquiv_iff_exists_isUnit_mem 𝒜 ℳ).mpr ⟨u, hu, by simpa using hmem⟩⟩ hbot
 
 end AddCommGroup
 

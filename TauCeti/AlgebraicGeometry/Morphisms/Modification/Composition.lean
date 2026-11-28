@@ -18,6 +18,9 @@ this shrinking remains dense, even for reducible or empty schemes.
 
 The auxiliary results show that a modification pulls back every dense open to a dense open,
 and that its isomorphism locus can be shrunk to have preimage in any prescribed dense open.
+
+Conversely, if `f ≫ g` and `g` are modifications, so is `f`
+(`TauCeti.AlgebraicGeometry.IsModification.of_comp`).
 No integrality, reducedness or Noetherian hypothesis is needed.
 
 ## References
@@ -83,6 +86,25 @@ instance comp (f : X ⟶ Y) (g : Y ⟶ Z) [hf : IsModification f] [hg : IsModifi
     · simpa only [Scheme.Hom.comp_preimage] using hf.dense_preimage (hg.dense_preimage hW)
     · rw [morphismRestrict_comp]
       exact IsIso.comp_isIso' hfW hgW
+
+/-- **Cancellation.** If `f ≫ g` and `g` are modifications, so is `f`: it is proper because
+`f ≫ g` is proper and `g` separated, and over the preimage under `g` of a dense open of `Z` over
+which `f ≫ g` and `g` are isomorphisms, `f` is an isomorphism. -/
+theorem of_comp (f : X ⟶ Y) (g : Y ⟶ Z) [hfg : IsModification (f ≫ g)] [hg : IsModification g] :
+    IsModification f := by
+  have : IsProper f := IsProper.of_comp f g
+  obtain ⟨V₁, hV₁, -, h₁⟩ := hfg.exists_isIso_morphismRestrict
+  obtain ⟨V₂, hV₂, -, h₂⟩ := hg.exists_isIso_morphismRestrict
+  have hfgV : IsIso ((f ≫ g) ∣_ (V₁ ⊓ V₂)) :=
+    IsZariskiLocalAtTarget.restrict_of_le (isomorphisms Scheme) h₁ inf_le_left
+  have hgV : IsIso (g ∣_ (V₁ ⊓ V₂)) :=
+    IsZariskiLocalAtTarget.restrict_of_le (isomorphisms Scheme) h₂ inf_le_right
+  have hV : Dense ((V₁ ⊓ V₂ : Z.Opens) : Set Z) := hV₁.inter_of_isOpen_left hV₂ V₁.isOpen
+  refine ⟨⟨g ⁻¹ᵁ (V₁ ⊓ V₂), hg.dense_preimage hV, ?_, ?_⟩⟩
+  · simpa only [Scheme.Hom.comp_preimage] using hfg.dense_preimage hV
+  · have : IsIso (f ∣_ g ⁻¹ᵁ (V₁ ⊓ V₂) ≫ g ∣_ (V₁ ⊓ V₂)) := by
+      rwa [← morphismRestrict_comp]
+    exact IsIso.of_isIso_comp_right _ (g ∣_ (V₁ ⊓ V₂))
 
 /-- The morphism property of being a modification is stable under composition. -/
 instance isStableUnderComposition : IsStableUnderComposition @IsModification where

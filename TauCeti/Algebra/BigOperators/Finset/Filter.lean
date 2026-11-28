@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-!
 # Filtered products
@@ -34,11 +35,37 @@ level `m ≥ 1`.
   over `s ×ˢ t` as an iterated product or sum over `s` and the filtered fiber in `t`.
 * `Finset.prod_filter_product_product_and`, `Finset.sum_filter_product_product_and`: peeling the
   last coordinate off a filtered product or sum over `s ×ˢ t ×ˢ u` with a conjunctive predicate.
+* `Finset.prod_prod_filter_eq_prod_pow_card`, `Finset.sum_sum_filter_eq_sum_card_nsmul`: a product
+  or sum over `k` of filtered products or sums over `i` counts, for each `i`, the `k` selecting it.
+* `Finset.prod_ite_one_eq_pow`, `Finset.sum_ite_zero_eq_nsmul`: multiplying (or summing) a constant
+  gated by `p` over `s` raises it to (or scales it by) `#{i ∈ s | p i}`.
+* `Finset.prod_ite_eq_pow_card_mul`, `Finset.sum_ite_eq_card_nsmul_add`: a two-valued product or
+  sum counts a baseline at every index and a correction at the indices satisfying the predicate.
 -/
 
 public section
 
 namespace Finset
+
+/-- Multiplying `if p i then a else 1` over `s` raises `a` to the number of elements of `s`
+satisfying `p`. -/
+@[to_additive /-- Summing `if p i then a else 0` over `s` scales `a` by the
+number of elements of `s` satisfying `p`. -/]
+theorem prod_ite_one_eq_pow {ι M : Type*} [CommMonoid M] (s : Finset ι) (p : ι → Prop)
+    [DecidablePred p] (a : M) :
+    (∏ i ∈ s, if p i then a else 1) = a ^ #{i ∈ s | p i} := by
+  rw [← prod_filter, prod_const]
+
+/-- In a two-valued product, count `v` at every index and multiply by `u / v` at the indices
+satisfying `p`. -/
+@[to_additive sum_ite_eq_card_nsmul_add /-- In a two-valued sum, count `v` at every index and add
+`u - v` at the indices satisfying `p`. -/]
+theorem prod_ite_eq_pow_card_mul {ι M : Type*} [CommGroup M] (s : Finset ι) (p : ι → Prop)
+    [DecidablePred p] (u v : M) :
+    (∏ i ∈ s, if p i then u else v) = v ^ s.card * (u / v) ^ (s.filter p).card := by
+  rw [← prod_ite_one_eq_pow s p, pow_card_mul_prod]
+  refine prod_congr rfl fun i _ ↦ ?_
+  split_ifs <;> simp
 
 /-- Adjoining a point `c` with `¬P c` to the condition `P` of a filtered product over `s`
 multiplies it by the factor at `c` exactly when `c ∈ s`. -/
@@ -128,5 +155,18 @@ theorem prod_filter_product_product_and {α β γ M : Type*} [CommMonoid M]
   simp_rw [prod_filter, prod_product]
   refine prod_congr rfl fun a _ ↦ prod_congr rfl fun b _ ↦ ?_
   by_cases hp : p a b <;> simp [hp]
+
+/-- A product over `k ∈ s` of the products of `f` over the indices `i ∈ t` selected by `p i k` is
+the product over `i ∈ t` of `f i` raised to the number of `k ∈ s` selecting `i`. -/
+@[to_additive sum_sum_filter_eq_sum_card_nsmul /-- A sum over `k ∈ s` of the sums of `f` over the
+indices `i ∈ t` selected by `p i k` is the sum over `i ∈ t` of `f i`, counted as many times as there
+are `k ∈ s` selecting `i`. -/]
+theorem prod_prod_filter_eq_prod_pow_card {ι κ M : Type*} [CommMonoid M] (s : Finset κ)
+    (t : Finset ι) (f : ι → M) (p : ι → κ → Prop) [∀ i, DecidablePred (p i)] :
+    ∏ k ∈ s, ∏ i ∈ t with p i k, f i = ∏ i ∈ t, f i ^ #{k ∈ s | p i k} := by
+  -- Mathlib's double counting with the relation `r k i := p i k`, then a constant inner product.
+  simpa only [bipartiteAbove, bipartiteBelow, prod_const] using
+    prod_prod_bipartiteAbove_eq_prod_prod_bipartiteBelow (s := s) (t := t)
+      (r := fun k i ↦ p i k) fun _ i ↦ f i
 
 end Finset

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.MetricSpace.ProperSpace.Real
+public import Mathlib.Topology.Instances.NNReal.Lemmas
 
 /-!
 # Moore paths and the Moore loop space
@@ -42,6 +43,7 @@ parametrized by the unit interval: when `X` is a point, the Moore loops at it fo
 * `TauCeti.MoorePath.symm`: the reversal of a Moore path.
 * `TauCeti.MoorePath.rescale γ ℓ`: the Moore path `γ` reparametrized to the length `ℓ`.
 * `TauCeti.MoorePath.map`: the image of a Moore path under a continuous map.
+* `TauCeti.MoorePath.extend`: a Moore path as a function on `ℝ`, constant before time `0`.
 * `TauCeti.MoorePath.pathsBetween A B`: the Moore paths from `A` to `B`, the path space
   `P_{A→B} X`.
 * `TauCeti.MoorePath.pathsBetweenSymm A B`: reversal of paths `P_{A→B} X → P_{B→A} X`.
@@ -181,6 +183,29 @@ theorem continuous_source : Continuous (source : MoorePath X → X) :=
 @[fun_prop]
 theorem continuous_target : Continuous (target : MoorePath X → X) :=
   continuous_eval.comp (continuous_id.prodMk continuous_length)
+
+/-! ### Moore paths on `ℝ` -/
+
+/-- A Moore path as a function on `ℝ`: `t ↦ γ t` for `t ≥ 0`, constant at the source for `t ≤ 0`.
+-/
+def extend (γ : MoorePath X) : C(ℝ, X) :=
+  γ.toContinuousMap.comp ContinuousMap.realToNNReal
+
+@[simp]
+theorem extend_apply (γ : MoorePath X) (t : ℝ) : γ.extend t = γ t.toNNReal :=
+  (rfl)
+
+theorem extend_coe (γ : MoorePath X) (t : ℝ≥0) : γ.extend t = γ t := by
+  rw [extend_apply, Real.toNNReal_coe]
+
+/-- A Moore path read on `ℝ` is at its source at non-positive times. -/
+theorem extend_of_nonpos (γ : MoorePath X) {t : ℝ} (ht : t ≤ 0) : γ.extend t = γ.source := by
+  rw [extend_apply, Real.toNNReal_of_nonpos ht, source_def]
+
+/-- A Moore path read on `ℝ` is at its target from time `length` on. -/
+theorem extend_of_length_le (γ : MoorePath X) {t : ℝ} (ht : (γ.length : ℝ) ≤ t) :
+    γ.extend t = γ.target := by
+  rw [extend_apply, γ.apply_of_length_le (by simpa using Real.toNNReal_le_toNNReal ht)]
 
 /-! ### Constant paths -/
 
@@ -585,6 +610,12 @@ theorem map_const (y : Y) (γ : MoorePath X) :
 theorem map_symm (f : C(X, Y)) (γ : MoorePath X) : γ.symm.map f = (γ.map f).symm :=
   (rfl)
 
+/-- The image of a rescaled path is the rescaled image. -/
+@[simp]
+theorem map_rescale (f : C(X, Y)) (γ : MoorePath X) (ℓ : ℝ≥0) :
+    (γ.rescale ℓ).map f = (γ.map f).rescale ℓ :=
+  (rfl)
+
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩
@@ -901,6 +932,13 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (f : C(X
     (hg : g y = z) (hf : f x = y) :
     map (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) = (map g hg).comp (map f hf) :=
   ContinuousMonoidHom.ext fun _ ↦ ext <| by simp
+
+/-- The Moore loop map sends only the unit to the unit, since it preserves lengths: the fibre of
+the Moore loop map over the unit is a single point. -/
+@[simp]
+theorem map_eq_one_iff (f : C(X, Y)) (hf : f x = y) {γ : MooreLoopSpace X x} :
+    map f hf γ = 1 ↔ γ = 1 := by
+  rw [← length_eq_zero_iff, ← length_eq_zero_iff, length_map]
 
 /-! ### Reversal of Moore loops -/
 

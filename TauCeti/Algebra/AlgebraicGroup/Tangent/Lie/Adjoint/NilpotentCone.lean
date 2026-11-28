@@ -12,10 +12,15 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Quotient
+public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
+import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
 # The nilpotent cone of an affine group
@@ -67,6 +72,20 @@ the `ad`-nilpotent elements of `𝔤` form the larger set `Z(𝔤) × 𝒩(⁅�
 central element and a point of the cone
 (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`).
 
+The cone is not reduced in general, so the statement about `k`-points does not by itself say
+anything about points with values in a nonreduced ring. For a connected affine group of finite
+type over an algebraically closed field of characteristic zero, the trace-power polynomials
+`x ↦ tr (ρ_M(x) ^ m)` of positive degree of a `d`-dimensional module `M` over `𝔤` lie in the ideal
+of the cone. Over the coordinate ring of the cone, which is a `ℚ`-algebra, Newton's identities
+then make the characteristic polynomial of the matrix `A` of the universal element acting on `M`
+equal to `T ^ d`, and the Cayley–Hamilton theorem gives `A ^ d = 0` there. So every point of the
+cone, with values in any semiring, acts on `M` by a matrix with `d`-th power zero.
+
+The characteristic coefficients of `A` are Lie invariants as well, and all but the leading one
+vanish at the origin, so they lie in the ideal of the cone directly, without Newton's identities.
+Hence at every point of the cone with values in any commutative ring, not only a `ℚ`-algebra, the
+matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
+
 ## Main declarations
 
 * `TauCeti.adjointPolynomialComoduleAlgebra`: the action of `G` on the polynomial functions on `𝔤`,
@@ -76,8 +95,18 @@ central element and a point of the cone
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
   connected `G` over an algebraically closed field of characteristic zero they are all of them.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
-* `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
-  stable under scaling and under the adjoint action.
+* `TauCeti.mem_adjointInvariantPolynomials_iff_mem_coinvariants` and
+  `TauCeti.nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal`: the invariants and the ideal of
+  the cone, in terms of the coinvariants of the symmetric algebra of the comodule `𝔤*`.
+* `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: the ideal
+  is stable under scaling and under the adjoint action.
+* `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on the full quotient ring
+  of the nilpotent cone, with computation and intertwining laws
+  `TauCeti.nilpotentConeComoduleAlgebra_coact_mk` and
+  `TauCeti.nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk`.
+* `TauCeti.polynomialCoact_eval_ι`: evaluating the group leg of a linear polynomial coaction at
+  `g⁻¹` and the polynomial leg at the coordinates `x` of `z` gives the linear polynomial evaluated
+  on `Ad(g) z`.
 * `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
   `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
   `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
@@ -108,6 +137,17 @@ central element and a point of the cone
   (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`), while the `ad`-nilpotent elements are
   the sums of an arbitrary central element and a point of the cone
   (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`).
+* `Module.Basis.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal`: for a connected
+  affine group of finite type over an algebraically closed field of characteristic zero, the
+  universal element of the cone acts nilpotently with a uniform bound. In a basis of size `d` of a
+  module `M` over the Lie algebra, the `d`-th power of the generic action matrix vanishes in the
+  coordinate ring of the cone, because the trace-power polynomials of positive degree lie in its
+  ideal (`TauCeti.tracePowerPolynomial_mem_nilpotentConeIdeal`). Consequently every point of the
+  cone, with values in any semiring, acts on `M` by a matrix whose `d`-th power vanishes
+  (`TauCeti.map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker`).
+* `TauCeti.charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker`: for a
+  connected group, at every point of the cone with values in a commutative ring the generic action
+  matrix of a module of rank `d` over the Lie algebra has characteristic polynomial `X ^ d`.
 
 ## References
 
@@ -162,6 +202,43 @@ coordinate ring of the adjoint quotient `𝔤 // G`. -/
 noncomputable def adjointInvariantPolynomials :
     Subalgebra k (SymmetricAlgebra k (Module.Dual k 𝔤)) :=
   ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k 𝔤))
+
+section Evaluation
+
+variable {A : Type u} [CommRing A] [Algebra k A]
+
+attribute [local instance] Comodule.dual
+
+/-- Evaluating the group leg of a coacted linear polynomial at `g⁻¹` and its polynomial leg at
+the coordinates `x` of `z` gives the linear polynomial evaluated on `Ad(g) z`.
+The hypothesis `hx` identifies `x` with evaluation at `z` after base change to `A`. -/
+theorem polynomialCoact_eval_ι
+    (g : WithConv (H →ₐ[k] A)) (x : Module.Dual k 𝔤 →ₗ[k] A) (z : A ⊗[k] 𝔤)
+    (hx : ∀ φ, x φ = Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ) z)
+    (φ : Module.Dual k 𝔤) :
+    Algebra.TensorProduct.lift (SymmetricAlgebra.lift x) (g⁻¹).ofConv
+        (fun _ _ ↦ Commute.all _ _)
+        (Comodule.coact (R := k) (C := H) (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ)) =
+      Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ)
+        ((Derivation.adjointAction (CommAlgCat.of k A) g).val z) := by
+  have heval (w : A ⊗[k] Module.Dual k 𝔤) :
+      x.liftBaseChange A w = Module.Dual.baseChangeEvaluation w z := by
+    induction w using TensorProduct.inductionOn with
+    | add w w' hw hw' => simp only [map_add, LinearMap.add_apply, hw, hw']
+    | tmul a ψ =>
+        rw [LinearMap.liftBaseChange_tmul, hx, TensorProduct.tmul_eq_smul_one_tmul a ψ,
+          map_smul, LinearMap.smul_apply]
+  have htranslate := DFunLike.congr_fun
+    (ComoduleAlgebra.lift_liftBaseChange_endOfPoint (g⁻¹).ofConv x)
+    (SymmetricAlgebra.ι k (Module.Dual k 𝔤) φ)
+  simp only [SymmetricAlgebra.lift_ι_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    TensorProduct.mk_apply, AlgHom.comp_apply] at htranslate
+  rw [ComoduleAlgebra.symmetricAlgebra_coact, AlgHom.toLinearMap_apply, ← htranslate, heval,
+    Comodule.baseChangeEvaluation_dual_endOfPoint, inv_inv]
+  exact congrArg (Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ))
+    (Derivation.adjointComodule_endOfPoint_eq_adjointAction (CommAlgCat.of k A) g z)
+
+end Evaluation
 
 variable {k H}
 
@@ -248,6 +325,43 @@ theorem coact_mem_map_includeLeft_nilpotentConeIdeal {p : SymmetricAlgebra k (Mo
         (A := SymmetricAlgebra k (Module.Dual k 𝔤)) (B := H)) :=
   ComoduleAlgebra.coact_mem_map_includeLeft_symmetricAlgebraHilbertIdeal hp
 
+section Quotient
+
+variable (k H)
+
+local notation "P" => SymmetricAlgebra k (Module.Dual k 𝔤)
+local notation "I" => nilpotentConeIdeal k H
+
+/-- The polynomial coaction descends to the full coordinate ring of the nilpotent cone.
+Its computation and intertwining laws are `nilpotentConeComoduleAlgebra_coact_mk` and
+`nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk`. -/
+@[irreducible]
+noncomputable def nilpotentConeComoduleAlgebra : ComoduleAlgebra k H (P ⧸ I) :=
+  ComoduleAlgebra.quotient I fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
+
+/-- The descended coaction applies the quotient map to the polynomial tensor factor. -/
+@[simp]
+theorem nilpotentConeComoduleAlgebra_coact_mk (p : P) :
+    letI := nilpotentConeComoduleAlgebra k H
+    Comodule.coact (R := k) (C := H) (Ideal.Quotient.mk I p) =
+      Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)
+        (Comodule.coact (R := k) (C := H) p) := by
+  unfold nilpotentConeComoduleAlgebra
+  exact ComoduleAlgebra.quotient_coact_mk I
+    (fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp) p
+
+/-- The quotient map intertwines the polynomial and nilpotent-cone coactions. -/
+theorem nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk :
+    letI := nilpotentConeComoduleAlgebra k H
+    (ComoduleAlgebra.coactAlgHom k H (P ⧸ I)).comp (Ideal.Quotient.mkₐ k I) =
+      (Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)).comp
+        (ComoduleAlgebra.coactAlgHom k H P) := by
+  unfold nilpotentConeComoduleAlgebra
+  exact ComoduleAlgebra.quotient_coactAlgHom_comp_mk I
+    fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
+
+end Quotient
+
 variable (k H) in
 /-- The ideal of the nilpotent cone, as a subcomodule of the polynomial functions on the Lie
 algebra: the adjoint action of `G` on `O(𝔤)` restricts to it, and so descends to the coordinate
@@ -317,6 +431,55 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk [IsAlgClosed k] [Algebra
     exact nilpotentConeIdeal_le_iff.mp hx p hp hp₀
 
 end Basic
+
+section Coinvariants
+
+variable {k : Type u} [Field k] {H : Type u} [CommRing H] [HopfAlgebra k H]
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+attribute [local instance] ComoduleAlgebra.symmetricAlgebra
+
+/-- The invariant polynomial functions on the Lie algebra are the coinvariants of the symmetric
+algebra of the contragredient of the adjoint comodule. -/
+theorem mem_adjointInvariantPolynomials_iff_mem_coinvariants
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)} :
+    letI := Comodule.dual k H 𝔤
+    p ∈ adjointInvariantPolynomials k H ↔
+      p ∈ ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k 𝔤)) := by
+  let := Comodule.dual k H 𝔤
+  -- Both coactions are algebra maps extending the contragredient coaction on generators.
+  have h : (letI := adjointPolynomialComoduleAlgebra k H
+      ComoduleAlgebra.coactAlgHom k H (SymmetricAlgebra k (Module.Dual k 𝔤))) =
+      Comodule.symmetricAlgebraCoact k H (Module.Dual k 𝔤) := by
+    let := adjointPolynomialComoduleAlgebra k H
+    refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ ?_)
+    simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, Function.comp_apply,
+      ComoduleAlgebra.coactAlgHom_apply, adjointPolynomialComoduleAlgebra_coact_ι,
+      Comodule.symmetricAlgebraCoact_ι, Comodule.dual_coact]
+  have hp : (letI := adjointPolynomialComoduleAlgebra k H
+      Comodule.coact (R := k) (C := H) p) = Comodule.symmetricAlgebraCoact k H _ p := by
+    let := adjointPolynomialComoduleAlgebra k H
+    rw [← ComoduleAlgebra.coactAlgHom_apply, h]
+  rw [mem_adjointInvariantPolynomials, hp, ComoduleAlgebra.mem_coinvariants,
+    ComoduleAlgebra.symmetricAlgebra_coact, AlgHom.toLinearMap_apply]
+
+/-- The ideal of the adjoint nilpotent cone is the ideal generated by the coinvariants of the
+symmetric algebra of the contragredient of the adjoint comodule vanishing at the origin. -/
+theorem nilpotentConeIdeal_eq_symmetricAlgebraHilbertIdeal :
+    letI := Comodule.dual k H 𝔤
+    nilpotentConeIdeal k H = (ComoduleAlgebra.coinvariants k H
+      (SymmetricAlgebra k (Module.Dual k 𝔤))).symmetricAlgebraHilbertIdeal := by
+  let := Comodule.dual k H 𝔤
+  refine le_antisymm (nilpotentConeIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
+    (Subalgebra.symmetricAlgebraHilbertIdeal_le_iff.mpr fun p hp hp₀ ↦ ?_)
+  · exact Subalgebra.mem_symmetricAlgebraHilbertIdeal_of_mem
+      (mem_adjointInvariantPolynomials_iff_mem_coinvariants.mp hp) hp₀
+  · exact mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
+      (mem_adjointInvariantPolynomials_iff_mem_coinvariants.mpr hp) hp₀
+
+end Coinvariants
 
 section Connected
 
@@ -441,6 +604,82 @@ theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_
   rw [isNilpotent_ad_iff_exists_mem_center_add]
   simp only [nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad,
     and_assoc]
+
+section GenericActionMatrix
+
+/-- For a connected affine group of finite type over an algebraically closed field of
+characteristic zero, the trace-power polynomials `x ↦ tr (ρ_M(x) ^ m)` of positive degree of every
+finite-dimensional module `M` over its Lie algebra lie in the ideal of the nilpotent cone. -/
+theorem tracePowerPolynomial_mem_nilpotentConeIdeal {M : Type*} [AddCommGroup M] [Module k M]
+    [FiniteDimensional k M] [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {m : ℕ} (hm : 0 < m) :
+    tracePowerPolynomial k 𝔤 M m ∈ nilpotentConeIdeal k H := by
+  refine mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
+    (by rw [adjointInvariantPolynomials_eq_lieInvariants]
+        exact tracePowerPolynomial_mem_lieInvariants m) ?_
+  -- a homogeneous element of positive degree lies in the irrelevant ideal
+  exact SymmetricAlgebra.mem_irrelevant_iff_algebraMapInv_eq_zero.mp <|
+    HomogeneousIdeal.mem_irrelevant_of_mem _ hm
+      (tracePowerPolynomial_mem_homogeneousSubmodule (R := k) (L := 𝔤) (M := M) m)
+
+variable {M : Type*} [AddCommGroup M] [Module k M]
+  [LieRingModule (Module.Dual k (Bialgebra.CotangentSpace k H)) M]
+  [LieModule k (Module.Dual k (Bialgebra.CotangentSpace k H)) M]
+  {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- **The universal element of the nilpotent cone is nilpotent.** For a connected affine group of
+finite type over an algebraically closed field of characteristic zero and a basis `c` of size `d`
+of a module `M` over its Lie algebra, every entry of the `d`-th power of the generic action matrix
+lies in the ideal of the nilpotent cone. That is, `A ^ d = 0` in the coordinate ring of the cone,
+where `A` is the matrix of the universal element of the cone acting on `M`. -/
+theorem _root_.Module.Basis.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal
+    (c : Module.Basis κ k M) (p q : κ) :
+    (genericActionMatrix k 𝔤 c ^ Fintype.card κ) p q ∈ nilpotentConeIdeal k H := by
+  have := Module.Finite.of_basis c
+  let I := nilpotentConeIdeal k H
+  -- the coordinate ring of the cone is a vector space over a field of characteristic zero
+  have := HasUniqueDiv.of_isTorsionFree k (SymmetricAlgebra k (Module.Dual k 𝔤) ⧸ I)
+  have h := map_genericActionMatrix_pow_card_eq_zero (Ideal.Quotient.mk I) c
+    fun j hj _ ↦ Ideal.Quotient.eq_zero_iff_mem.mpr (tracePowerPolynomial_mem_nilpotentConeIdeal hj)
+  have hpq := congrFun₂ h p q
+  rw [← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply] at hpq
+  exact Ideal.Quotient.eq_zero_iff_mem.mp hpq
+
+/-- **Points of the nilpotent cone act nilpotently, with a uniform bound.** For a connected affine
+group of finite type over an algebraically closed field of characteristic zero, let
+`φ : O(𝔤) → B` be a point of the nilpotent cone with values in any semiring, possibly nonreduced:
+a ring homomorphism killing the ideal of the cone. Let `A` be the generic action matrix of a module
+`M` over the Lie algebra in a basis of size `d`. Then the matrix `φ A` of the point acting on `M`
+satisfies `(φ A) ^ d = 0`. -/
+theorem map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker {B F : Type*}
+    [Semiring B] [FunLike F (SymmetricAlgebra k (Module.Dual k 𝔤)) B]
+    [RingHomClass F (SymmetricAlgebra k (Module.Dual k 𝔤)) B] (φ : F)
+    (hφ : nilpotentConeIdeal k H ≤ RingHom.ker φ) (c : Module.Basis κ k M) :
+    (genericActionMatrix k 𝔤 c).map φ ^ Fintype.card κ = 0 := by
+  ext p q
+  rw [← RingHom.coe_coe φ, ← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply]
+  exact hφ (c.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal p q)
+
+/-- **The characteristic polynomial of a module on the nilpotent cone.** For a connected affine
+group over an algebraically closed field of characteristic zero, let `M` be a Lie module over its
+Lie algebra with a basis `c` of size `N`. At every point of the nilpotent cone with values in a
+commutative ring, that is after applying any ring homomorphism `f` killing the ideal of the cone,
+the generic action matrix of `M` has characteristic polynomial `X ^ N`: its other characteristic
+coefficients are invariant polynomial functions vanishing at the origin. -/
+theorem charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker {B : Type*}
+    [CommRing B] {f : SymmetricAlgebra k (Module.Dual k 𝔤) →+* B}
+    (hf : nilpotentConeIdeal k H ≤ RingHom.ker f) (c : Module.Basis κ k M) :
+    ((genericActionMatrix k 𝔤 c).map f).charpoly = Polynomial.X ^ Fintype.card κ := by
+  set A := genericActionMatrix k 𝔤 c
+  have hcoeff (i : ℕ) (hi : i < Fintype.card κ) : f (A.charpoly.coeff i) = 0 := by
+    refine hf (mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials ?_
+      (algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt k 𝔤 c hi))
+    rw [adjointInvariantPolynomials_eq_lieInvariants]
+    exact charpoly_coeff_genericActionMatrix_mem_lieInvariants k 𝔤 c i
+  rw [Matrix.charpoly_map, ← Matrix.charpoly_natDegree_eq_dim A]
+  exact (Matrix.charpoly_monic A).map_eq_X_pow_of_map_coeff_eq_zero fun i hi ↦
+    hcoeff i (A.charpoly_natDegree_eq_dim ▸ hi)
+
+end GenericActionMatrix
 
 end Connected
 

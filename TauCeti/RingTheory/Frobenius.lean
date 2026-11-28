@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.Frobenius
 
+import TauCeti.RingTheory.Ideal.Maps
+import TauCeti.RingTheory.Invariant.Basic
+
 /-!
 # Frobenius elements for a group acting on a ring extension
 
@@ -39,6 +42,12 @@ each of them, which again carries hypotheses of its own, such as those of
   by the `q ^ n`-th power map.
 * `IsArithFrobAt.mul_of_mem_inertia` — a Frobenius element times an element of the inertia
   subgroup is again a Frobenius element.
+* `IsArithFrobAt.iff_mul_inv_mem_inertia` — given one Frobenius element at `Q`, the Frobenius
+  elements at `Q` are exactly one coset of the inertia subgroup.
+* `IsArithFrobAt.mem_stabilizer_of_isIntegral` — when `S` is an integral extension of `R` that is a
+  domain, a Frobenius element at any ideal `Q` stabilizes `Q`.
+* `Ideal.mem_stabilizer_of_forall_smul_sub_pow_mem` — an element raising every element to the
+  `q`-th power modulo a prime ideal stabilizes it, with no integrality hypothesis.
 * `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
   contraction to the base.
 * `Ideal.exists_isArithFrobAt_smul` — translating a member of the fiber of `σ` by `c` gives a
@@ -140,9 +149,55 @@ theorem of_le {P : Ideal S} (H : IsArithFrobAt R σ Q) (hQP : Q ≤ P)
   rw [h]
   exact hQP (H x)
 
+/-- **The Frobenius elements at `Q` form one coset of the inertia subgroup.** Given one arithmetic
+Frobenius `σ` at `Q`, an element `τ` is an arithmetic Frobenius at `Q` exactly when
+`τ σ⁻¹ ∈ I_Q`. -/
+theorem iff_mul_inv_mem_inertia {G : Type*} [Group G] [MulSemiringAction G S]
+    [SMulCommClass G R S] {σ τ : G} (hσ : IsArithFrobAt R σ Q) :
+    IsArithFrobAt R τ Q ↔ τ * σ⁻¹ ∈ Q.inertia G := by
+  refine ⟨fun hτ ↦ hτ.mul_inv_mem_inertia hσ, fun h x ↦ ?_⟩
+  have := Q.add_mem (Ideal.mem_inertia.mp h (σ • x)) (hσ x)
+  simpa [mul_smul] using this
+
+/-- **An arithmetic Frobenius stabilizes its ideal**, for an integral extension `S` of `R` that is a
+domain, without assuming the ideal prime. -/
+theorem mem_stabilizer_of_isIntegral {G : Type*} [Group G] [MulSemiringAction G S]
+    [SMulCommClass G R S] [IsDomain S] [Algebra.IsIntegral R S] {σ : G}
+    (h : IsArithFrobAt R σ Q) : σ ∈ MulAction.stabilizer G Q := by
+  have hle (n : ℕ) : ∀ y ∈ Q, (σ ^ n) • y ∈ Q := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      intro y hy
+      rw [pow_succ, mul_smul]
+      exact ih _ (h.le_comap hy)
+  -- The Frobenius congruence gives `σ • Q ≤ Q`; the reverse inclusion holds because every element
+  -- has a finite `σ`-orbit.
+  rw [MulAction.mem_stabilizer_iff]
+  refine le_antisymm ?_ fun x hx ↦ ?_
+  · rw [Ideal.pointwise_smul_def, Ideal.map_le_iff_le_comap]
+    exact h.le_comap
+  · obtain ⟨n, hn⟩ := TauCeti.MulSemiringAction.exists_pow_succ_smul_eq_of_isIntegral R σ x
+    rw [← hn, pow_succ', mul_smul]
+    exact Ideal.smul_mem_pointwise_smul σ _ Q (hle n x hx)
+
 end IsArithFrobAt
 
 namespace Ideal
+
+/-- An element raising every element of `S` to the `q`-th power modulo a prime `P` stabilizes
+`P`. -/
+theorem mem_stabilizer_of_forall_smul_sub_pow_mem {S G : Type*} [CommRing S] [Group G]
+    [MulSemiringAction G S] {P : Ideal S} [P.IsPrime] {g : G} {q : ℕ}
+    (hg : ∀ b : S, g • b - b ^ q ∈ P) : g ∈ MulAction.stabilizer G P := by
+  rcases q.eq_zero_or_pos with rfl | hq
+  · exact absurd (by simpa using hg 0) (P.ne_top_iff_one.mp ‹P.IsPrime›.ne_top)
+  have hcomap := comap_eq_self_of_forall_sub_pow_mem ‹P.IsPrime›.isRadical hq.ne'
+    (φ := MulSemiringAction.toRingHom G S g) hg
+  have hiff (b : S) : g • b ∈ P ↔ b ∈ P := by
+    simpa using SetLike.ext_iff.mp hcomap b
+  refine MulAction.mem_stabilizer_iff.mpr (SetLike.ext fun b ↦ ?_)
+  rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, ← hiff, smul_inv_smul]
 
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
   [MulSemiringAction G S] [SMulCommClass G R S]

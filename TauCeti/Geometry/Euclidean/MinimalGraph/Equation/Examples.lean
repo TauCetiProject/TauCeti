@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Model checks for the Euclidean minimal graph equation

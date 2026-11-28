@@ -11,6 +11,8 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.Normed.Operator.OfTendsto
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Count
 
 /-!
@@ -113,22 +115,13 @@ private theorem exists_hasSum_enlargedLittlewoodPaleyBlock (φ : ContDiffBump (0
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   set a : ℕ → Lp F p (volume : Measure E) := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j
   choose z hz hzn using fun j ↦ hJ (p := p) j (a j)
-  have hz_bound (j : ℕ) : ‖z j‖ ≤ C₂ * ‖b‖ * (1 / 2) ^ j := by
-    have h2 : (2 : ℝ) ^ ((s - 1) * j) = (1 / 2) ^ j * 2 ^ (s * j) := by
-      rw [sub_mul, one_mul, Real.rpow_sub two_pos, Real.rpow_natCast, div_eq_inv_mul, ← inv_pow,
-        one_div]
-    have ha_norm : (2 : ℝ) ^ (s * j) * ‖a j‖ = ‖b j‖ := by
-      rw [norm_smul, norm_inv, Complex.norm_of_nonneg (by positivity),
-        mul_inv_cancel_left₀ (by positivity)]
-    calc ‖z j‖ ≤ C₂ * 2 ^ ((s - 1) * j) * ‖a j‖ := hzn j
-      _ = C₂ * (1 / 2) ^ j * (2 ^ (s * j) * ‖a j‖) := by rw [h2]; ring
-      _ = C₂ * (1 / 2) ^ j * ‖b j‖ := by rw [ha_norm]
-      _ ≤ C₂ * (1 / 2) ^ j * ‖b‖ := by gcongr; exact lp.norm_apply_le_norm hq0 b j
-      _ = C₂ * ‖b‖ * (1 / 2) ^ j := by ring
-  have hz_sum : Summable z :=
-    Summable.of_norm_bounded (summable_geometric_two.mul_left (C₂ * ‖b‖)) hz_bound
+  have ha_norm (j : ℕ) : (2 : ℝ) ^ (s * j) * ‖a j‖ = ‖b j‖ := by
+    rw [norm_smul, norm_inv, Complex.norm_of_nonneg (by positivity),
+      mul_inv_cancel_left₀ (by positivity)]
+  obtain ⟨Z, hZ, -⟩ := exists_hasSum_and_norm_le_of_two_rpow_mul_le (t := fun j ↦ (j : ℝ)) hC₂0
+    (fun _ ↦ le_rfl) (fun j ↦ (ha_norm j).le.trans (lp.norm_apply_le_norm hq0 b j)) hzn
   set T := besselPotential E F (1 - s) ∘L Lp.toTemperedDistributionCLM F volume p
-  refine ⟨T (∑' j, z j), (hz_sum.hasSum.map T T.continuous).congr_fun fun j ↦ ?_⟩
+  refine ⟨T Z, (hZ.map T T.continuous).congr_fun fun j ↦ ?_⟩
   simp only [T, a, Function.comp_apply, ContinuousLinearMap.comp_apply,
     Lp.toTemperedDistributionCLM_apply, ← hz j, besselPotential_besselPotential_apply,
     show s - 1 + (1 - s) = 0 by ring, besselPotential_zero, ContinuousLinearMap.id_apply]
@@ -206,21 +199,19 @@ enlarged Littlewood–Paley multiplier of width `φ.littlewoodPaleyOverlap φ`
 `p` and `q` (`exists_norm_ofWeightedBlocksCLM_le`). -/
 def ofWeightedBlocksCLM :
     lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q →L[ℂ] BesovSpace F φ s p q :=
-  let hS := (exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
-  LinearMap.mkContinuous
-    { toFun b := (hS b).choose
-      map_add' b₁ b₂ := ext <| ((hS (b₁ + b₂)).choose_spec.1).unique <| by
-        refine (((hS b₁).choose_spec.1).add ((hS b₂).choose_spec.1)).congr_fun fun j ↦ ?_
-        rw [lp.coeFn_add, Pi.add_apply, smul_add, Lp.toTemperedDistribution_add, map_add]
-      map_smul' c b := ext <| ((hS (c • b)).choose_spec.1).unique <| by
-        have hsmul := ((hS b).choose_spec.1).map (c • ContinuousLinearMap.id ℂ 𝓢'(E, F))
-          (c • ContinuousLinearMap.id ℂ 𝓢'(E, F)).continuous
-        refine hsmul.congr_fun fun j ↦ ?_
-        simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.id_apply,
-          lp.coeFn_smul, Pi.smul_apply]
-        rw [smul_comm, Lp.toTemperedDistribution_smul, map_smul] }
-    (exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose
-    fun b ↦ (hS b).choose_spec.2
+  .ofTendstoOfInjective (toDistrCLM F φ s p q) toDistrCLM_injective (l := atTop)
+    (fun t ↦ ∑ j ∈ t, (enlargedLittlewoodPaleyBlock F φ (φ.littlewoodPaleyOverlap φ) j ∘L
+      Lp.toTemperedDistributionCLM F volume p ∘L
+      ((((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ •
+        lp.evalCLM ℂ (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q j) :
+        lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q →ₗ[ℂ] 𝓢'(E, F)))
+    fun b ↦ ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
+      b).imp fun _ hv ↦ ⟨by
+        -- An unconditional sum is the `atTop` limit of the partial sums over finsets.
+        have h := hv.1
+        rw [HasSum, SummationFilter.unconditional_filter] at h
+        rw [toDistrCLM_apply]
+        exact h.congr fun t ↦ by simp, hv.2⟩
 
 /-- **Series characterization of `ofWeightedBlocksCLM`.** For every `b ∈ ℓ^q(ℕ, Lᵖ)`, the tempered
 distribution of `ofWeightedBlocksCLM F φ s p q b` is the sum in `𝓢'(E, F)` of the enlarged
@@ -231,23 +222,36 @@ theorem hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM
     (b : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q) :
     HasSum (fun j ↦ enlargedLittlewoodPaleyBlock F φ (φ.littlewoodPaleyOverlap φ) j
       (((((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • b j : Lp F p (volume : Measure E)) : 𝓢'(E, F)))
-      (ofWeightedBlocksCLM F φ s p q b).toDistr :=
-  ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
-    b).choose_spec.1
+      (ofWeightedBlocksCLM F φ s p q b).toDistr := by
+  -- An unconditional sum is the `atTop` limit of the partial sums over finsets.
+  rw [← toDistrCLM_apply, HasSum, SummationFilter.unconditional_filter]
+  exact (ContinuousLinearMap.tendsto_ofTendstoOfInjective _ _ _ _ b).congr fun t ↦ by simp
+
+/-- The Littlewood–Paley blocks of `u` sum to the synthesis of its weighted blocks. -/
+private theorem hasSum_littlewoodPaleyBlock_ofWeightedBlocksCLM_weightedBlocks
+    (u : BesovSpace F φ s p q) :
+    HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr)
+      (ofWeightedBlocksCLM F φ s p q u.weightedBlocks).toDistr := by
+  refine (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM u.weightedBlocks).congr_fun
+    fun j ↦ ?_
+  rw [inv_weight_smul_weightedBlocks_apply, u.coe_block,
+    enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+      (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
 
 /-- `ofWeightedBlocksCLM` reconstructs every element of `B^s_{p,q}` from its weighted blocks. -/
 @[simp]
 theorem ofWeightedBlocksCLM_weightedBlocks (u : BesovSpace F φ s p q) :
-    ofWeightedBlocksCLM F φ s p q u.weightedBlocks = u := by
-  ext1
-  have hsum : HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr)
-      (ofWeightedBlocksCLM F φ s p q u.weightedBlocks).toDistr := by
-    refine (hasSum_enlargedLittlewoodPaleyBlock_ofWeightedBlocksCLM u.weightedBlocks).congr_fun
-      fun j ↦ ?_
-    rw [inv_weight_smul_weightedBlocks_apply, u.coe_block,
-      enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
-        (fun _ _ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ)]
-  exact tendsto_nhds_unique hsum.tendsto_sum_nat (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
+    ofWeightedBlocksCLM F φ s p q u.weightedBlocks = u :=
+  ext <| tendsto_nhds_unique
+    (hasSum_littlewoodPaleyBlock_ofWeightedBlocksCLM_weightedBlocks u).tendsto_sum_nat
+    (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
+
+/-- **Unconditional reconstruction.** The tempered distribution of an element of `B^s_{p,q}` is the
+unconditional sum in `𝓢'(E, F)` of its Littlewood–Paley blocks. -/
+theorem hasSum_littlewoodPaleyBlock_toDistr (u : BesovSpace F φ s p q) :
+    HasSum (fun j ↦ littlewoodPaleyBlock F φ j u.toDistr) u.toDistr := by
+  simpa only [ofWeightedBlocksCLM_weightedBlocks] using
+    hasSum_littlewoodPaleyBlock_ofWeightedBlocksCLM_weightedBlocks u
 
 theorem leftInverse_ofWeightedBlocksCLM :
     Function.LeftInverse (ofWeightedBlocksCLM F φ s p q) (weightedBlocksₗᵢ F φ s p q) :=
@@ -262,8 +266,7 @@ theorem exists_norm_ofWeightedBlocksCLM_le (φ : ContDiffBump (0 : E)) (s : ℝ)
       ‖ofWeightedBlocksCLM F φ s p q b‖ ≤ C * ‖b‖ :=
   ⟨(exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose,
     (exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.1,
-    fun b ↦ ((exists_hasSum_enlargedLittlewoodPaleyBlock_and_norm_le (F := F) φ s).choose_spec.2
-      b).choose_spec.2⟩
+    fun _ ↦ ContinuousLinearMap.norm_ofTendstoOfInjective_apply_le _ _ _ _ _⟩
 
 omit [Fact (1 ≤ q)] in
 /-- Two sequences with the same unweighted `Lᵖ` coordinates `(2^{-jsᵢ} bⱼ)ⱼ` synthesize to the

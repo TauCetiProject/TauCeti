@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.DensityEstimates
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.Dilation
 import TauCeti.Analysis.BoundedVariation.HalfSpace

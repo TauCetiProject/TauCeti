@@ -49,6 +49,11 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   `‖u‖ * c ≤ 1` and `‖b‖ ≤ c`, then `φ u * b` is power-bounded.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
+* `TauCeti.Huber.setOf_forall_isPowerBounded_eq_closedBall`,
+  `TauCeti.Huber.isClosed_setOf_forall_isPowerBounded`, and
+  `TauCeti.Huber.completeSpace_subtype_forall_isPowerBounded`: power-bounded families form a closed
+  subset (the closed unit ball for finite index types) and hence a complete subspace when the ring
+  is complete.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
 * `TauCeti.Huber.isPowerBounded_algebraMap_of_norm_le_one`: in a topological algebra over a
   nontrivially normed field, scalars of norm at most one are power-bounded.
@@ -81,6 +86,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
 * `TauCeti.Huber.IsTateRing.of_normedAlgebra`: an ultrametric seminormed algebra over a
   nontrivially normed field is Tate, without requiring its norm at one to equal one.
+* `TauCeti.Huber.exists_subring_ball_subset_forall_norm_le`: in such an algebra, finitely many
+  power-bounded elements lie in a subring containing a ball about zero and bounded in norm.
 
 ## References
 
@@ -243,6 +250,30 @@ theorem isPseudoUniformizer_iff_norm_lt_one {ϖ : K} :
     IsPseudoUniformizer ϖ ↔ ϖ ≠ 0 ∧ ‖ϖ‖ < 1 := by
   rw [isPseudoUniformizer_iff, isUnit_iff_ne_zero]
   exact and_congr_right fun _ ↦ tendsto_pow_atTop_nhds_zero_iff_norm_lt_one
+
+/-- In a normed division ring `K`, the finite tuples of power-bounded elements form the closed unit
+ball in `ι → K`. -/
+theorem setOf_forall_isPowerBounded_eq_closedBall {ι : Type*} [Fintype ι] :
+    {a : ι → K | ∀ i, IsPowerBounded (a i)} = Metric.closedBall (0 : ι → K) 1 := by
+  ext a
+  simp [Metric.mem_closedBall, pi_norm_le_iff_of_nonneg zero_le_one]
+
+/-- In a normed division ring `K`, the families of power-bounded elements form a closed subset of
+`ι → K`. -/
+theorem isClosed_setOf_forall_isPowerBounded {ι : Type*} :
+    IsClosed {a : ι → K | ∀ i, IsPowerBounded (a i)} := by
+  have h : {a : ι → K | ∀ i, IsPowerBounded (a i)} =
+      ⋂ i : ι, (fun a : ι → K ↦ a i) ⁻¹' Metric.closedBall (0 : K) 1 := by
+    ext a
+    simp
+  rw [h]
+  exact isClosed_iInter fun i ↦ Metric.isClosed_closedBall.preimage (continuous_apply i)
+
+/-- **Completeness of families of power-bounded elements.** Over a complete normed division ring
+`K`, the subtype of power-bounded families `ι → K` is a complete uniform space. -/
+theorem completeSpace_subtype_forall_isPowerBounded {ι : Type*} [CompleteSpace K] :
+    CompleteSpace {a : ι → K // ∀ i, IsPowerBounded (a i)} :=
+  (isClosed_setOf_forall_isPowerBounded (ι := ι) (K := K)).completeSpace_coe
 
 end NormedDivisionRing
 
@@ -430,5 +461,22 @@ theorem IsTateRing.of_normedAlgebra (K : Type*) [NontriviallyNormedField K]
   have hϖ := IsPseudoUniformizer.of_norm_lt_one
     (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1
   exact IsTateRing.of_isOpen_isBounded A₀ hopen hb (hϖ.map (continuous_algebraMap K A))
+
+/-- **Finitely many power-bounded elements lie in a norm-bounded open subring.** In an ultrametric
+seminormed algebra over a nontrivially normed field, a finite set of power-bounded elements is
+contained in a subring that contains a ball about zero and whose elements are bounded in norm:
+a ring of definition containing the set (`PairOfDefinition.adjoin`). -/
+theorem exists_subring_ball_subset_forall_norm_le (K : Type*) [NontriviallyNormedField K]
+    {A : Type*} [SeminormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] {T : Finset A}
+    (hT : ∀ t ∈ T, IsPowerBounded t) :
+    ∃ (A₀ : Subring A) (r N : ℝ), 0 < r ∧ (T : Set A) ⊆ A₀ ∧
+      Metric.ball (0 : A) r ⊆ A₀ ∧ ∀ x ∈ A₀, ‖x‖ ≤ N := by
+  have := IsTateRing.of_normedAlgebra K A
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  let Q := P.adjoin T hT
+  obtain ⟨N, hN⟩ := hϖ.isBounded_iff_forall_norm_le.mp Q.isBounded_ringOfDefinition
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp Q.isOpen_ringOfDefinition 0 (zero_mem _)
+  exact ⟨Q.ringOfDefinition, r, N, hr, fun t ht ↦ P.mem_adjoin_of_mem T hT ht, hball, hN⟩
 
 end TauCeti.Huber
