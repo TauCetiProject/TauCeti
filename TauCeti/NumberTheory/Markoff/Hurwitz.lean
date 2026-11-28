@@ -141,6 +141,11 @@ theorem positiveMarkoffHurwitzSet_three :
 def markoffHurwitzMove (a : R) (i : Fin n) (x : Fin n → R) : Fin n → R :=
   Function.update x i (a * (∏ j ∈ univ.erase i, x j) - x i)
 
+/-- A Vieta move is the update of the chosen coordinate by the other quadratic root. -/
+theorem markoffHurwitzMove_eq_update (a : R) (i : Fin n) (x : Fin n → R) :
+    markoffHurwitzMove a i x =
+      Function.update x i (a * (∏ j ∈ univ.erase i, x j) - x i) := (rfl)
+
 /-- The new value of the moved coordinate. -/
 @[simp]
 theorem markoffHurwitzMove_apply_self (a : R) (i : Fin n) (x : Fin n → R) :
@@ -226,6 +231,17 @@ theorem markoffHurwitzMove_apply_self_fin_three (a : R) (i : Fin 3) (x : Fin 3 �
   have hne : ∀ j : Fin 3, j + 1 ≠ j + 2 := by decide
   rw [markoffHurwitzMove_apply_self, h i]
   simp [hne i, mul_assoc]
+
+/-- At coefficient one, a three-variable Vieta move updates the chosen coordinate by the
+product of the other two coordinates minus its original value. -/
+@[simp]
+theorem markoffHurwitzMove_one_fin_three (i : Fin 3) (x : Fin 3 → R) :
+    markoffHurwitzMove 1 i x =
+      Function.update x i (x (i + 1) * x (i + 2) - x i) := by
+  ext j
+  obtain rfl | h := eq_or_ne j i
+  · simp only [markoffHurwitzMove_apply_self_fin_three, one_mul, Function.update_self]
+  · simp [h]
 
 /-- At coefficient three, the three-variable Vieta moves are the classical Markoff moves. -/
 @[simp]
