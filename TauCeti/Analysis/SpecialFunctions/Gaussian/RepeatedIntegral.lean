@@ -12,6 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Distributions.Gaussian.PDF
@@ -168,9 +169,20 @@ private theorem natCast_add_one_mul_div_factorial_succ (n : ℕ) (u : ℂ) :
 theorem hasDerivAt_repeatedGaussianIntegral (n : ℕ) (z : ℂ) :
     HasDerivAt (repeatedGaussianIntegral n)
       (-(z * repeatedGaussianIntegral n z + (n + 1) * repeatedGaussianIntegral (n + 1) z)) z := by
-  have hL := hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi (b := 1 / 2)
-    (s := n + 1) (by norm_num) (by rw [add_re, natCast_re, one_re]; positivity) z
-  simp only [add_sub_cancel_right, cpow_natCast] at hL
+  have hL0 := (hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 2) (b := 1 / 2)
+    (s := n) (by norm_num) (by norm_num)
+    (by rw [natCast_re]; linarith [n.cast_nonneg (α := ℝ)]) (-z)).comp z (hasDerivAt_neg z)
+  have hL : HasDerivAt
+      (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(1 / 2) * (t : ℂ) ^ 2 - w * t))
+      (-∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(1 / 2) * (t : ℂ) ^ 2 - z * t)) z := by
+    refine hL0.congr_of_eventuallyEq (.of_forall fun w => ?_) |>.congr_deriv ?_
+    · refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+      rw [cpow_natCast, ofReal_ofNat, cpow_ofNat]
+      ring_nf
+    · rw [mul_neg_one, neg_inj]
+      refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+      rw [← Nat.cast_add_one, cpow_natCast, ofReal_ofNat, cpow_ofNat]
+      ring_nf
   have hE : HasDerivAt (fun w : ℂ => cexp (-w ^ 2 / 2)) (cexp (-z ^ 2 / 2) * -z) z := by
     convert Complex.hasDerivAt_cexp_mul_sub_sq (-(1 / 2)) 0 z using 1
     · exact funext fun w => by ring_nf
@@ -181,12 +193,8 @@ theorem hasDerivAt_repeatedGaussianIntegral (n : ℕ) (z : ℂ) :
   rw [hfun]
   convert (hE.div_const (n ! : ℂ)).mul hL using 1
   beta_reduce
-  rw [repeatedGaussianIntegral_eq_cexp_div_factorial_mul_integral]
-  have hcpow : (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ ((n : ℂ) + 1) *
-      cexp (-(1 / 2) * (t : ℂ) ^ 2 - z * t)) =
-      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(1 / 2) * (t : ℂ) ^ 2 - z * t) := by
-    simp_rw [← Nat.cast_add_one, cpow_natCast]
-  rw [hcpow, div_mul_eq_mul_div (cexp (-z ^ 2 / 2)) ((n + 1) ! : ℂ),
+  rw [repeatedGaussianIntegral_eq_cexp_div_factorial_mul_integral,
+    div_mul_eq_mul_div (cexp (-z ^ 2 / 2)) ((n + 1) ! : ℂ),
     natCast_add_one_mul_div_factorial_succ]
   ring
 

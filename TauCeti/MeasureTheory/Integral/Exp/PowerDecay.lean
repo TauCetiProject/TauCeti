@@ -32,8 +32,8 @@ convergent Gamma-coefficient series
 
 Differentiating under the integral sign shows that the integral
 `∫₀^∞ t ^ s exp (z t - b t ^ p) dt` is an entire function of `z` whose derivative is the moment of
-order `s + 1`. For every `s : ℂ` and `0 < b.re` the kernel tends to zero at infinity, and for
-`p > 0`, `0 < b.re`, `-1 < s.re` at `z = 0` the integral is a Gamma value,
+order `s + 1`. For `p > 1`, `0 < b.re`, and every `s, z : ℂ` the kernel tends to zero at infinity,
+and for `p > 0`, `0 < b.re`, `-1 < s.re` at `z = 0` the integral is a Gamma value,
 `∫₀^∞ t ^ s exp (-b t ^ p) dt = b ^ (-(s + 1) / p) * (1 / p) * Γ ((s + 1) / p)`.
 
 With `p = 3`, integrals of this shape represent the Scorer function `Hi`, which is `π⁻¹` times
@@ -174,6 +174,18 @@ theorem integral_cpow_mul_cexp_neg_mul_cpow_Ioi {p : ℝ} (hp : 0 < p) {b s : �
             neg_div]
           ring
 
+/-- Weighted exponential power-series identity over a commutative Banach field (`ℝ` or `ℂ`). -/
+private theorem hasSum_mul_pow_div_factorial_mul_normedExp {𝕜 : Type*}
+    [NormedField 𝕜] [NormedAlgebra ℚ 𝕜] [CompleteSpace 𝕜] (a t u v : 𝕜) :
+    HasSum (fun n : ℕ => (a ^ n / (n ! : 𝕜)) * (u * t ^ n * NormedSpace.exp v))
+      (u * NormedSpace.exp (a * t + v)) := by
+  convert (NormedSpace.expSeries_div_hasSum_exp (a * t)).mul_right
+    (u * NormedSpace.exp v) using 1
+  · ext n
+    rw [mul_pow]
+    ring
+  · rw [← mul_assoc, mul_comm (NormedSpace.exp (a * t)), mul_assoc, ← NormedSpace.exp_add]
+
 /-- **Series expansion of a superlinear exponential-power Laplace integral.** For `1 < p`,
 `0 < b.re`, `-1 < s.re`, and every `z : ℂ`,
 `∫ t in Ioi 0, (t : ℂ) ^ s * exp (z * t - b * (t : ℂ) ^ (p : ℂ)) =
@@ -192,14 +204,13 @@ theorem hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p
     (‖z‖ ^ n / (n ! : ℝ)) * (t ^ (s.re + n) * rexp (-b.re * t ^ p))
   have hbound_sum : ∀ t : ℝ, 0 < t →
       HasSum (fun n => bound n t) (t ^ s.re * rexp (‖z‖ * t - b.re * t ^ p)) := fun t ht => by
-    have hexp := Real.exp_eq_exp_ℝ ▸ NormedSpace.expSeries_div_hasSum_exp (‖z‖ * t)
-    convert hexp.mul_right (t ^ s.re * rexp (-b.re * t ^ p)) using 1
+    have hexp := Real.exp_eq_exp_ℝ ▸
+      hasSum_mul_pow_div_factorial_mul_normedExp ‖z‖ t (t ^ s.re) (-b.re * t ^ p)
+    convert hexp using 1
     · ext n
       simp only [bound]
-      rw [mul_pow, Real.rpow_add ht, Real.rpow_natCast]
-      ring
-    · rw [← mul_assoc, mul_comm (rexp (‖z‖ * t)), mul_assoc, ← Real.exp_add, sub_eq_add_neg,
-        neg_mul]
+      rw [Real.rpow_add ht, Real.rpow_natCast]
+    · rw [sub_eq_add_neg, neg_mul]
   have hdom : HasSum (fun n => ∫ t in Ioi (0 : ℝ), F n t)
       (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ s * cexp (z * t - b * (t : ℂ) ^ (p : ℂ))) := by
     refine hasSum_integral_of_dominated_convergence bound
@@ -216,14 +227,13 @@ theorem hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p
         (fun t (ht : 0 < t) => (hbound_sum t ht).tsum_eq.symm) measurableSet_Ioi
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
       have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
-      have hexp := Complex.exp_eq_exp_ℂ ▸ NormedSpace.expSeries_div_hasSum_exp (z * (t : ℂ))
-      convert hexp.mul_right ((t : ℂ) ^ s * cexp (-b * (t : ℂ) ^ (p : ℂ))) using 1
+      have hexp := Complex.exp_eq_exp_ℂ ▸
+        hasSum_mul_pow_div_factorial_mul_normedExp z (t : ℂ) ((t : ℂ) ^ s) (-b * (t : ℂ) ^ (p : ℂ))
+      convert hexp using 1
       · ext n
         simp only [F]
-        rw [mul_pow, Complex.cpow_add _ _ ht0, Complex.cpow_natCast]
-        ring
-      · rw [← mul_assoc, mul_comm (cexp (z * t)), mul_assoc, ← Complex.exp_add, sub_eq_add_neg,
-          neg_mul]
+        rw [Complex.cpow_add _ _ ht0, Complex.cpow_natCast]
+      · rw [sub_eq_add_neg, neg_mul]
   refine hdom.congr_fun fun n => ?_
   have hsn : -1 < (s + n).re := by
     rw [Complex.add_re, Complex.natCast_re]

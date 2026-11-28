@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.Airy.Equation
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 
@@ -36,8 +37,8 @@ cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every
   `Real.scorerGi` their real restrictions, `Real.scorerHi_eq_integral` — the real integral
   formula for `Real.scorerHi`, and `Real.scorerHi_ofReal` — `Hi(x)` is the cast of
   `Real.scorerHi x`.
-* `Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul` — integrability of the moment
-  integrands on `(0, ∞)`.
+* `Complex.integrableOn_cexp_neg_cube_div_three_add_mul` — integrability of the defining
+  integrand on `(0, ∞)`.
 * `Nat.iterate_deriv_scorerHi` — the iterated derivatives of `Hi` as moment integrals.
 * `TauCeti.differentiable_scorerHi`, `TauCeti.differentiable_scorerGi` — `Hi` and `Gi` are
   entire, and `Real.differentiable_scorerHi`, `Real.differentiable_scorerGi` — their real
@@ -133,24 +134,21 @@ private theorem pow_mul_cexp_neg_cube_div_three_add_mul_eq (n : ℕ) (z : ℂ) (
 
 /-- For every natural number `n` and complex `z`, the moment integrand
 `t ↦ tⁿ exp(−t³/3 + z t)` is Bochner integrable on `(0, ∞)`. -/
-theorem _root_.Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) := by
-  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 3) (b := 1 / 3) (s := n)
+private theorem integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) :=
+  (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
     (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]) z).congr_fun
-    (fun t _ => ?_) measurableSet_Ioi
-  dsimp only
-  rw [cpow_natCast]
-  ring_nf
+    (fun t _ => (pow_mul_cexp_neg_cube_div_three_add_mul_eq n z t).symm) measurableSet_Ioi
 
 /-- The integrand `t ↦ exp(−t³/3 + z t)` of `Hi` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Complex.integrableOn_cexp_neg_cube_div_three_add_mul (z : ℂ) :
     IntegrableOn (fun t : ℝ => cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) := by
   simpa only [pow_zero, one_mul] using
-    Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 0 z
+    integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 0 z
 
 /-- The derivative of `w ↦ ∫₀^∞ tⁿ exp(−t³/3 + w t) dt` is obtained by multiplying the integrand
 by `t`. -/
-theorem _root_.Nat.hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
+private theorem hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
     HasDerivAt
       (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + w * t))
       (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) z := by
@@ -170,7 +168,7 @@ theorem _root_.Nat.iterate_deriv_scorerHi (n : ℕ) (z : ℂ) :
   -- The moment integrals form a tower of successive derivatives starting at `Hi`.
   have htower := iteratedDeriv_eq_of_derivative_tower
     (F := fun k w => (π : ℂ)⁻¹ * ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ k * cexp (-(t : ℂ) ^ 3 / 3 + w * t))
-    (fun k w => (Nat.hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul k w).const_mul
+    (fun k w => (hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul k w).const_mul
       ((π : ℂ)⁻¹)) n
   simp only [pow_zero, one_mul, ← Complex.scorerHi_def, iteratedDeriv_eq_iterate] at htower
   rw [htower]
@@ -180,7 +178,7 @@ theorem _root_.Complex.hasDerivAt_scorerHi (z : ℂ) :
     HasDerivAt scorerHi
       ((π : ℂ)⁻¹ * ∫ t in Ioi (0 : ℝ), (t : ℂ) * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) z := by
   simpa only [pow_zero, one_mul, zero_add, pow_one, ← Complex.scorerHi_def] using
-    (Nat.hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul 0 z).const_mul ((π : ℂ)⁻¹)
+    (hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul 0 z).const_mul ((π : ℂ)⁻¹)
 
 /-- The Scorer function `Hi` is entire. -/
 @[fun_prop]
@@ -220,7 +218,7 @@ private theorem integral_sq_mul_cexp_sub_mul_cexp_neg_cube_div_three_add_mul (z 
       push_cast
       ring
     exact harg.cexp.neg.congr_deriv (by ring)
-  have hint := (Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 2 z).sub
+  have hint := (integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 2 z).sub
     ((Complex.integrableOn_cexp_neg_cube_div_three_add_mul z).const_mul z)
   -- `g` is the negated kernel of `TauCeti.MeasureTheory.Integral.Exp.PowerDecay` with `s = 0`.
   have htend : Tendsto g atTop (𝓝 0) := by
@@ -237,7 +235,7 @@ private theorem integral_sq_mul_cexp_sub_mul_cexp_neg_cube_div_three_add_mul (z 
 /-- `Hi` solves the inhomogeneous Airy equation `Hi'' = z Hi + 1/π` (DLMF 9.12.1). -/
 theorem scorerHi_ode (z : ℂ) : deriv^[2] scorerHi z = z * scorerHi z + (π : ℂ)⁻¹ := by
   have hk := integral_sq_mul_cexp_sub_mul_cexp_neg_cube_div_three_add_mul z
-  rw [integral_sub (Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 2 z)
+  rw [integral_sub (integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul 2 z)
     ((Complex.integrableOn_cexp_neg_cube_div_three_add_mul z).const_mul z),
     integral_const_mul] at hk
   rw [Nat.iterate_deriv_scorerHi, Complex.scorerHi_def]
@@ -264,8 +262,9 @@ theorem _root_.Nat.iterate_deriv_scorerHi_zero (n : ℕ) :
   have hpow : (1 / 3 : ℂ) ^ (-((n : ℂ) + 1) / 3) * (1 / (3 : ℂ)) =
       (3 : ℂ) ^ (((n : ℂ) - 2) / 3) := by
     have hexp : ((n : ℂ) + 1) / 3 + (-1) = ((n : ℂ) - 2) / 3 := by ring
-    rw [neg_div, one_div, ← ofReal_ofNat 3, inv_cpow_ofReal_nonneg (by norm_num : (0 : ℝ) ≤ 3),
-      cpow_neg, inv_inv, ← cpow_neg_one, ← cpow_add _ _ (by norm_num), ofReal_ofNat, hexp]
+    rw [neg_div, one_div, ← ofReal_ofNat 3,
+      inv_cpow_neg_ofReal_nonneg (by norm_num : (0 : ℝ) ≤ 3), ofReal_ofNat,
+      ← cpow_neg_one, ← cpow_add _ _ (by norm_num), hexp]
   rw [Nat.iterate_deriv_scorerHi, hint,
     integral_cpow_mul_cexp_neg_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
       (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]),

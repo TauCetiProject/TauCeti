@@ -21,6 +21,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Hermite.Bound
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 import TauCeti.RingTheory.Polynomial.Hermite.GeneratingFunction
 
 /-!
@@ -711,10 +712,14 @@ theorem tendsto_tsum_mul_pow_div_factorial_mul_hermite_mul_integral_nhdsLT_one {
   let I : ℂ → ℂ := fun z =>
     ∫ v in Ioi (0 : ℝ), (v : ℂ) ^ (s - 1) * cexp (-(v : ℂ) ^ 2 / 2 - z * v)
   have hI_cont : Continuous I := by
-    have hdiff : Differentiable ℂ I := by
-      simpa only [I, neg_sq_div_two_sub_eq] using
-        differentiable_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi
-          (b := (1 / 2 : ℂ)) (by norm_num) hs
+    have hdiff : Differentiable ℂ I := fun z => by
+      have hz := (hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 2) (b := 1 / 2)
+        (s := s - 1) (by norm_num) (by norm_num) (by simpa using hs) (-z)).comp z
+        (hasDerivAt_neg z)
+      refine (hz.congr_of_eventuallyEq (.of_forall fun w => ?_)).differentiableAt
+      refine setIntegral_congr_fun measurableSet_Ioi fun v _ => ?_
+      rw [Complex.ofReal_ofNat, Complex.cpow_ofNat]
+      ring_nf
     exact hdiff.continuous
   let g : ℝ → ℂ := fun t =>
     (Real.sqrt (1 + (r * t) ^ 2) : ℂ) ^ (-s) *

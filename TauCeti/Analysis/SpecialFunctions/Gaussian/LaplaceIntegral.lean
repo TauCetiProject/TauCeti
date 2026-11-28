@@ -32,10 +32,9 @@ integrals of the form
 with complex quadratic rate `b : ℂ` (`0 < b.re`), Mellin exponent `s : ℂ`, and linear Laplace
 parameter `z : ℂ`, alongside real majorants for `b ≥ 0`. Completing the square on
 `-b.re u² - z.re u` absorbs the linear term into half the Gaussian weight, so the integral
-converges on `(0, ∞)` whenever `0 < b.re` and `0 < s.re` for every `z : ℂ`, defines an entire
-function of `z` whose derivative shifts `s - 1` to `s` with a minus sign, and defines a holomorphic
-function of `s` on the open right half-plane `{s : ℂ | 0 < s.re}` whose derivative inserts
-`Complex.log u` into the integrand.
+converges on `(0, ∞)` whenever `0 < b.re` and `0 < s.re` for every `z : ℂ`, and defines a
+holomorphic function of `s` on the open right half-plane `{s : ℂ | 0 < s.re}` whose derivative
+inserts `Complex.log u` into the integrand.
 
 At `b = 1 / 2` and `s = a + 1 / 2`, this integral is the half-line Laplace kernel of Weber's
 parabolic cylinder function `U(a, z)` (DLMF 12.5.1), providing both its differential-equation
@@ -53,9 +52,6 @@ derivative shifts and the termwise shifted integrals of the Laplace–Hermite ro
   on `σ₁ ≤ s.re ≤ σ₂` (`0 < σ₁`) by the sum of the two real endpoint integrals.
 * `TauCeti.integral_cpow_mul_cexp_neg_mul_sq_mul_sq_sub_mul_Ioi_eq_cpow_mul_integral`: positive
   scaling `v = c u` (`0 < c`) pulls out `(c : ℂ) ^ (-s)` and replaces `(b c², z)` by `(b, z / c)`.
-* `TauCeti.hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`,
-  `TauCeti.differentiable_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`: derivative in `z : ℂ`
-  and entireness on `ℂ` for `0 < b.re` and `0 < s.re`.
 * `TauCeti.hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_left`,
   `TauCeti.differentiableOn_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi`: derivative and
   holomorphy in `s` on `{s : ℂ | 0 < s.re}` for `0 < b.re` and any `z : ℂ`.
@@ -180,61 +176,6 @@ theorem integral_cpow_mul_cexp_neg_mul_sq_mul_sq_sub_mul_Ioi_eq_cpow_mul_integra
   congr 2
   push_cast
   field_simp
-
-/-- For `0 < b.re` and `0 < s.re`, the Gaussian–Laplace integral
-`w ↦ ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - w * u)` has complex
-derivative `-∫ u in Ioi (0 : ℝ), (u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)` at every `z : ℂ`. -/
-theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb : 0 < b.re)
-    (hs : 0 < s.re) (z : ℂ) :
-    HasDerivAt
-      (fun w : ℂ => ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - w * u))
-      (-∫ u in Ioi (0 : ℝ), (u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)) z := by
-  have hball : Metric.ball z 1 ∈ 𝓝 z := Metric.ball_mem_nhds z zero_lt_one
-  have hb_int : IntegrableOn
-      (fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (z.re - 1) * u)) (Ioi 0) :=
-    integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (by linarith) (z.re - 1)
-  have hf_int : IntegrableOn
-      (fun u : ℝ => (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)) (Ioi 0) := by
-    refine (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (s := s - 1) (by norm_num) hb
-      (by simp [hs]) (-z)).congr_fun (fun u _ => ?_) measurableSet_Ioi
-    dsimp only
-    ring_nf
-  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (μ := volume.restrict (Ioi 0))
-    (F := fun w (u : ℝ) => (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - w * u))
-    (F' := fun w (u : ℝ) => -((u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - w * u)))
-    (bound := fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (z.re - 1) * u))
-    hball
-    (Eventually.of_forall fun _ => Measurable.aestronglyMeasurable (by fun_prop))
-    hf_int
-    (Measurable.aestronglyMeasurable (by fun_prop)) ?_ hb_int ?_
-  · simpa only [integral_neg] using h.2
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w hw
-    have hw_re : z.re - 1 < w.re := (RCLike.re_mem_Ioo_of_mem_ball hw).1
-    rw [norm_neg, norm_cpow_mul_cexp_neg_mul_sq_sub_mul b s w hu]
-    gcongr
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w _
-    have hu0 : (u : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hu.ne'
-    have hid : HasDerivAt (fun ξ : ℂ => ξ * (u : ℂ)) (u : ℂ) w := by
-      simpa using (hasDerivAt_id w).mul_const (u : ℂ)
-    have hexp : HasDerivAt (fun ξ : ℂ => -b * (u : ℂ) ^ 2 - ξ * u) (-(u : ℂ)) w :=
-      hid.const_sub (-b * (u : ℂ) ^ 2)
-    have hcpow : (u : ℂ) ^ s = (u : ℂ) ^ (s - 1) * (u : ℂ) :=
-      calc (u : ℂ) ^ s = (u : ℂ) ^ ((s - 1) + 1) := by rw [sub_add_cancel]
-        _ = (u : ℂ) ^ (s - 1) * (u : ℂ) ^ (1 : ℂ) := Complex.cpow_add _ _ hu0
-        _ = (u : ℂ) ^ (s - 1) * (u : ℂ) := by rw [Complex.cpow_one]
-    convert hexp.cexp.const_mul ((u : ℂ) ^ (s - 1)) using 1
-    rw [hcpow]
-    ring
-
-/-- For `0 < b.re` and `0 < s.re`, the Gaussian–Laplace integral
-`z ↦ ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is an entire
-function on `ℂ`. -/
-theorem differentiable_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb : 0 < b.re)
-    (hs : 0 < s.re) :
-    Differentiable ℂ fun z : ℂ =>
-      ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u) :=
-  fun z => (hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi hb hs z).differentiableAt
 
 /-- For `0 < b.re`, `0 < s₀.re`, and any `z : ℂ`, differentiating the Gaussian–Laplace integral
 with respect to the Mellin exponent `s` at `s₀` inserts a factor `Complex.log u` into the
