@@ -34,6 +34,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {J : ModelWithCorners 𝕜 F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : WithTop ℕ∞}
 
+/-- The identity `C^n` map coerces to `id`. -/
+@[simp]
+theorem coe_id : ⇑(ContMDiffMap.id : C^n⟮I, M; I, M⟯) = _root_.id :=
+  rfl
+
 /-- The identity `C^n` map evaluates to the identity at every point. -/
 @[simp, grind =]
 theorem id_apply (x : M) : (ContMDiffMap.id : C^n⟮I, M; I, M⟯) x = x :=

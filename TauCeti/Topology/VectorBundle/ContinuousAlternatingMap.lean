@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Topology.VectorBundle.Hom
+public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 
 /-!
-# Composition in alternating-bundle coordinates
+# Composition and coordinates in alternating-bundle trivializations
 
 Precomposing a fibrewise alternating map with a fibrewise linear map commutes with passing
 into bundle coordinates wherever the intermediate trivialization is valid. This identity
@@ -26,6 +28,9 @@ When the codomain is a fixed space, a fibre alternating map read in the triviali
 is precomposed with the inverse, at its base point, of the trivialization of the domain bundle at
 `x₀` (`FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd`). This holds everywhere,
 with no base-set hypothesis.
+
+Fibrewise topological currying also commutes with passing into bundle coordinates
+(`TauCeti.inCoordinates_curryLeftTopological`).
 
 The coordinate maps are Mathlib's `ContinuousAlternatingMap.inCoordinates` and
 `ContinuousLinearMap.inCoordinates`.
@@ -86,8 +91,7 @@ variable {𝕜 ι B F₁ F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] 
 /-- In the trivialization at `x₀` of the bundle of alternating maps from `V` to a fixed space `F`,
 a fibre map `ω` at `x` is precomposed with the inverse, at `x`, of the trivialization of `V` at
 `x₀`. -/
-@[simp]
-theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
+@[simp] theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
     (ω : V x [⋀^ι]→L[𝕜] F) :
     (trivializationAt (F₁ [⋀^ι]→L[𝕜] F) (fun x ↦ V x [⋀^ι]→L[𝕜] F) x₀ ⟨x, ω⟩).2 =
       ω.compContinuousLinearMap ((trivializationAt F₁ V x₀).symmL 𝕜 x) := by
@@ -95,3 +99,32 @@ theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
   simp [trivializationAt_continuousAlternatingMap_apply, ContinuousAlternatingMap.inCoordinates]
 
 end FiberBundle
+
+namespace TauCeti
+section Coordinates
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {FW FV : Type*}
+  [NormedAddCommGroup FW] [NormedSpace 𝕜 FW] [NormedAddCommGroup FV] [NormedSpace 𝕜 FV]
+  {M : Type*} [TopologicalSpace M] {W V : M → Type*}
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle 𝕜 FW W]
+  [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V] [VectorBundle 𝕜 FV V]
+  [∀ x, ContinuousAdd (V x)] [∀ x, ContinuousConstSMul 𝕜 (V x)]
+
+/-- Coordinate expression of `φ.curryLeftTopological w` in a domain trivialization. -/
+theorem inCoordinates_curryLeftTopological {k : ℕ} {x₀ y : M}
+    (w : W y) (φ : W y [⋀^Fin (k + 1)]→L[𝕜] V y)
+    (hy : y ∈ (trivializationAt FW W x₀).baseSet) :
+    ContinuousAlternatingMap.inCoordinates FW FV x₀ y x₀ y (φ.curryLeftTopological w) =
+      (ContinuousAlternatingMap.inCoordinates FW FV x₀ y x₀ y φ).curryLeft
+        ((trivializationAt FW W x₀ ⟨y, w⟩).2) := by
+  ext v; simp only [ContinuousAlternatingMap.inCoordinates,
+    ContinuousLinearMap.compContinuousAlternatingMap_coe,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ContinuousAlternatingMap.curryLeftTopological_apply_apply,
+    ContinuousAlternatingMap.curryLeft_apply_apply, Function.comp_apply]
+  congr 2; funext i; refine Fin.cases ?_ (fun _ ↦ rfl) i
+  simp only [Function.comp_apply, Matrix.cons_val_zero, Trivialization.symmL_apply _ hy,
+    (trivializationAt FW W x₀).symm_apply_apply_mk hy]
+end Coordinates
+end TauCeti

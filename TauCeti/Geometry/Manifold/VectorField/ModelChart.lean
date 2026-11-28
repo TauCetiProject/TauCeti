@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+public import TauCeti.Geometry.Manifold.VectorField.Constant
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # Vector fields read in the charts of a manifold modelled on its own model space
@@ -31,8 +29,6 @@ of regular points.
 
 * `TauCeti.mfderiv_mpullback_apply`, `TauCeti.mvfderiv_mpullback_apply`,
   `TauCeti.contMDiffOn_mpullback`: the pullback of a vector field by a chart.
-* `TauCeti.mlieBracket_constVectorField`: two constant vector fields on the model space have zero
-  bracket.
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
 * `TauCeti.mvfderiv_chartConstField_apply`: the derivative of a function along a constant chart
   field, read in the chart.
@@ -100,54 +96,8 @@ theorem contMDiffOn_mpullback (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) �
 
 end Pullback
 
-section ConstField
-
+section ChartConstField
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
-
-/-- The constant vector field with value `v` on the model space. -/
-noncomputable def constVectorField (v : E) : (z : E) → TangentSpace 𝓘(ℝ, E) z := fun _ ↦ v
-
-omit [FiniteDimensional ℝ E] in
-/-- The constant vector field takes the value `v` at every point, under the canonical
-identification `NormedSpace.fromTangentSpace` of each tangent space of `E` with `E`. -/
-theorem constVectorField_apply (v z : E) :
-    constVectorField v z = (NormedSpace.fromTangentSpace z).symm v :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] in
-/-- The constant vector field with value `v` is the constant function `v`, each tangent space of
-`E` being `E` itself. -/
-theorem constVectorField_eq (v : E) : constVectorField v = fun _ ↦ v :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] in
-/-- The section `z ↦ ⟨z, v⟩` of the tangent bundle of the model space with constant value `v` is
-smooth. This is `contMDiff_constVectorField` stated for the bare pair, for use where the body of
-`constVectorField` is not exposed. -/
-theorem contMDiff_tangentBundle_mk_const (v : E) {n : WithTop ℕ∞} :
-    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n (fun z ↦ (⟨z, v⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
-  contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-
-omit [FiniteDimensional ℝ E] in
-/-- The constant vector field is smooth. -/
-theorem contMDiff_constVectorField (v : E) {n : WithTop ℕ∞} :
-    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n
-      (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
-  contMDiff_tangentBundle_mk_const v
-
-omit [FiniteDimensional ℝ E] in
-/-- The constant vector field is differentiable. -/
-theorem mdifferentiable_constVectorField (v : E) :
-    MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ, E).tangent
-      (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
-  (contMDiff_constVectorField v (n := 1)).mdifferentiable one_ne_zero
-
-omit [FiniteDimensional ℝ E] in
-/-- Two constant vector fields on the model space have zero Lie bracket. -/
-@[simp]
-theorem mlieBracket_constVectorField (v w : E) :
-    VectorField.mlieBracket 𝓘(ℝ, E) (constVectorField v) (constVectorField w) = 0 :=
-  funext (VectorField.mlieBracket_const_model_space v w)
 
 variable (E) in
 /-- The constant vector field with value `v` in the preferred chart at `p`, pulled back to the
@@ -160,14 +110,16 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 theorem mfderiv_chartConstField_apply [IsManifold 𝓘(ℝ, E) 1 M] {p y : M} (v : E)
     (hy : y ∈ (chartAt E p).source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E p) y (chartConstField E p v y) = v :=
-  mfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas p) (constVectorField v) hy
+  (mfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas p) (constVectorField v) hy).trans
+    (congrFun (constVectorField_eq v) _)
 
 omit [FiniteDimensional ℝ E] in
 /-- A constant field in a chart is smooth on the source of the chart. -/
 theorem contMDiffOn_chartConstField [FiniteDimensional ℝ E] (p : M) (v : E) :
     ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E).tangent ∞
       (fun y ↦ (⟨y, chartConstField E p v y⟩ : TangentBundle 𝓘(ℝ, E) M)) (chartAt E p).source :=
-  contMDiffOn_mpullback (IsManifold.chart_mem_maximalAtlas p) contDiffOn_const
+  contMDiffOn_mpullback (IsManifold.chart_mem_maximalAtlas p)
+    (contDiff_constVectorField v).contDiffOn
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- On the source of the preferred chart at `y₀`, the derivative of `f` along a constant
@@ -176,7 +128,8 @@ theorem mvfderiv_chartConstField_apply [IsManifold 𝓘(ℝ, E) 1 M] {y₀ y : M
     (hy : y ∈ (chartAt E y₀).source) :
     mvfderiv 𝓘(ℝ, E) f y (chartConstField E y₀ v y) =
       fderiv ℝ (f ∘ (chartAt E y₀).symm) (chartAt E y₀ y) v :=
-  mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀) (eqOn_comp_chartAt_symm y₀) _ hy
+  (mvfderiv_mpullback_apply (IsManifold.chart_mem_maximalAtlas y₀) (eqOn_comp_chartAt_symm y₀) _
+    hy).trans (by rw [constVectorField_eq])
 
 omit [FiniteDimensional ℝ E] in
 /-- Near a regular point of `f`, some constant field in the preferred chart is a direction of
@@ -239,7 +192,7 @@ theorem exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ
     fun y hy ↦ ?_⟩
   rw [map_smul, hdf y (hUc hy), smul_eq_mul, neg_mul, inv_mul_cancel₀ (hne y hy)]
 
-end ConstField
+end ChartConstField
 
 section Glue
 

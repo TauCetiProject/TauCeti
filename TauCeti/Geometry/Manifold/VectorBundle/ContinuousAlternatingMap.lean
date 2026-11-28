@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
 /-!
 # Smooth bundles of continuous alternating maps
@@ -23,8 +25,11 @@ remove the characteristic-zero assumption.
 
 A family of alternating maps of two vectors whose values are given by a `C^n` section of the
 bundle of bilinear maps is itself a `C^n` section of the alternating-map bundle
-(`TauCeti.contMDiffAt_continuousAlternatingMap_bundle_of_bilinear`). This lets a two-form be
-built from a smooth bilinear tensor field without repeating a coordinate computation.
+(`TauCeti.contMDiffAt_continuousAlternatingMap_bundle_of_bilinear`), and inserting a `C^n` section
+of the domain bundle into a `C^n` alternating section preserves regularity
+(`ContMDiffWithinAt.curryLeftTopological_section`, `ContMDiffAt.curryLeftTopological_section`,
+`ContMDiffOn.curryLeftTopological_section`, `ContMDiff.curryLeftTopological_section`). This lets a
+two-form or contraction be built without repeating a coordinate computation.
 
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
@@ -194,5 +199,67 @@ theorem contMDiffAt_continuousAlternatingMap_bundle_of_bilinear
   exact e'.continuousLinearMapAt_apply_of_mem 𝕜 hy' _
 
 end Bilinear
+
+section CurryRegularity
+
+open Filter
+open scoped Topology
+
+variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+  {k : ℕ} {u : Set B} {x : B}
+
+/-- Inserting a `C^n` section of `E₁` into a `C^n` alternating section preserves regularity within
+a set at a point. -/
+theorem _root_.ContMDiffWithinAt.curryLeftTopological_section
+    {s : ∀ y, E₁ y} {φ : ∀ y, E₁ y [⋀^Fin (k + 1)]→L[𝕜] E₂ y} (hs : CMDiffAt[u] n (T% s) x)
+    (hφ : ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂) y (φ y)) u x) :
+    ContMDiffWithinAt IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin k]→L[𝕜] F₂)) n (fun y ↦
+      TotalSpace.mk' (F₁ [⋀^Fin k]→L[𝕜] F₂) y ((φ y).curryLeftTopological (s y))) u x := by
+  rw [contMDiffWithinAt_section_iff] at hs
+  rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hφ ⊢; refine ⟨hφ.1, ?_⟩
+  let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := 𝕜) (E := F₁) (F := F₂)
+    (n := k)).toContinuousLinearMap
+  have hL := (L.contDiff.comp_contMDiffWithinAt hφ.2).clm_apply hs
+  have heq : (fun y ↦ ContinuousAlternatingMap.inCoordinates F₁ F₂ x y x y
+      ((φ y).curryLeftTopological (s y))) =ᶠ[𝓝 x] fun y ↦
+      L (ContinuousAlternatingMap.inCoordinates F₁ F₂ x y x y (φ y))
+        ((trivializationAt F₁ E₁ x ⟨y, s y⟩).2) := by
+    filter_upwards [(trivializationAt F₁ E₁ x).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt F₁ E₁ x)] with y hy using
+      TauCeti.inCoordinates_curryLeftTopological (s y) (φ y) hy
+  exact hL.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
+
+/-- Inserting a `C^n` section of `E₁` into a `C^n` alternating section preserves regularity at a
+point. -/
+theorem _root_.ContMDiffAt.curryLeftTopological_section
+    {s : ∀ y, E₁ y} {φ : ∀ y, E₁ y [⋀^Fin (k + 1)]→L[𝕜] E₂ y} (hs : CMDiffAt n (T% s) x)
+    (hφ : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂) y (φ y)) x) :
+    ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin k]→L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^Fin k]→L[𝕜] F₂) y ((φ y).curryLeftTopological (s y))) x :=
+  ContMDiffWithinAt.curryLeftTopological_section hs hφ
+
+/-- Inserting a `C^n` section of `E₁` into a `C^n` alternating section preserves regularity on a
+set. -/
+theorem _root_.ContMDiffOn.curryLeftTopological_section
+    {s : ∀ y, E₁ y} {φ : ∀ y, E₁ y [⋀^Fin (k + 1)]→L[𝕜] E₂ y} (hs : CMDiff[u] n (T% s))
+    (hφ : ContMDiffOn IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂) y (φ y)) u) :
+    ContMDiffOn IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin k]→L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^Fin k]→L[𝕜] F₂) y ((φ y).curryLeftTopological (s y))) u :=
+  fun y hy ↦ (hs y hy).curryLeftTopological_section (hφ y hy)
+
+/-- Inserting a `C^n` section of `E₁` into a `C^n` alternating section preserves global
+regularity. -/
+theorem _root_.ContMDiff.curryLeftTopological_section
+    {s : ∀ y, E₁ y} {φ : ∀ y, E₁ y [⋀^Fin (k + 1)]→L[𝕜] E₂ y} (hs : CMDiff n (T% s))
+    (hφ : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ [⋀^Fin (k + 1)]→L[𝕜] F₂) y (φ y))) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F₁ [⋀^Fin k]→L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^Fin k]→L[𝕜] F₂) y ((φ y).curryLeftTopological (s y))) :=
+  fun y ↦ (hs y).curryLeftTopological_section (hφ y)
+
+end CurryRegularity
 
 end TauCeti
