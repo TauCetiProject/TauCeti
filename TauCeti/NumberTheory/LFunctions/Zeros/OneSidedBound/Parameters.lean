@@ -47,6 +47,7 @@ This file proves the elementary facts about them: `d ≡ 7 (mod 8)` and `d > 64`
 * `TauCeti.OneSidedBound.Parameters.modEq_div_two_sub_one`, `Parameters.ofModEq`.
 * `Parameters.q₀_pos`, `Parameters.d_mod_eight`, `Parameters.sixty_four_lt_d`.
 * `TauCeti.OneSidedBound.towerDeg_eq`: `towerDeg s = 3 ^ (⌊log₃ s⌋ + 5) · 2 ^ s`.
+* `TauCeti.OneSidedBound.two_pow_le_towerDeg`: `2 ^ s ≤ towerDeg s`.
 * `TauCeti.OneSidedBound.lt_l₀`, `TauCeti.OneSidedBound.l₀_le`, `Parameters.two_pow_succ_dvd_q₁`.
 * `Parameters.dvd_q₀_of_dvd_q₁`, `Parameters.primeFactors_q₁`,
   `Parameters.primeFactors_towerDeg_subset`, `Parameters.four_mul_dvd_d_add_one`,
@@ -104,6 +105,11 @@ theorem l₀_le {s : ℕ} (hs : s ≠ 0) : l₀ s ≤ 81 * s := by
 theorem towerDeg_pos (s : ℕ) : 0 < towerDeg s := by
   rw [towerDeg_eq]
   positivity
+
+/-- The tower degree is at least its dyadic factor. -/
+theorem two_pow_le_towerDeg (s : ℕ) : 2 ^ s ≤ towerDeg s := by
+  rw [towerDeg_def]
+  exact Nat.le_mul_of_pos_left _ (Nat.mul_pos (by decide) (by simp [l₀_def]))
 
 /-- **Parameters** `(q₀, d)`: a natural number `q₀` divisible by `18480 = 16 · 3 · 5 · 7 · 11`
 and a prime `d` with `q₀ ∣ 2 (d + 1)` and `q₀ ∤ d + 1`, that is `d ≡ q₀ / 2 - 1 (mod q₀)`
