@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.InnerProductSpace.OrthonormalSplitting
+import TauCeti.Geometry.Manifold.ContMDiff.InnerProductSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
@@ -35,7 +36,10 @@ inverse sends a vector to its coefficient along `s` and its orthogonal projectio
 
 The orthogonal projections onto the fibres of `s^⊥` form a smooth fibrewise operator on `V` of
 constant rank `k`, so its ranges have smooth local frames
-(`TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`).
+(`TauCeti.hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range`). For a nowhere-zero
+`C^k` map `s : B → E` into an `(n + 1)`-dimensional real inner product space `E`,
+`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalSpan` similarly gives `C^k` local subbundle
+frames for `(ℝ ∙ s b)ᗮ` inside `Bundle.Trivial B E`.
 
 A smooth Hermitian metric exists on a σ-compact base
 (`TauCeti.exists_contMDiffRiemannianMetric_inner_smul_I`), and a nowhere-zero smooth section exists
@@ -300,6 +304,35 @@ theorem trivialProdOrthogonalSpanDiffeomorph_symm_apply (p : TotalSpace F V) :
   (rfl)
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+/-- For any nowhere-zero `C^k` map `s : B → E` into an `(n + 1)`-dimensional real inner product
+space, the orthogonal hyperplanes `(ℝ ∙ s b)ᗮ` admit `C^k` local subbundle frames of rank `n`
+inside the ambient trivial bundle `Bundle.Trivial B E` at every regularity `k : ℕ∞ω`. -/
+theorem hasLocalContMDiffSubbundleFrames_orthogonalSpan
+    {X H B E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [TopologicalSpace H] {IB : ModelWithCorners ℝ X H}
+    [TopologicalSpace B] [ChartedSpace H B]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {n : ℕ} [Fact (finrank ℝ E = n + 1)]
+    {k : ℕ∞ω} {s : B → E} (hs : ContMDiff IB 𝓘(ℝ, E) k s) (hsne : ∀ b, s b ≠ 0) :
+    HasLocalContMDiffSubbundleFrames IB k E (Fin n)
+      (fun b : B ↦ ((ℝ ∙ s b)ᗮ : Submodule ℝ (Bundle.Trivial B E b))) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hproj : ContMDiff (IB.prod 𝓘(ℝ, E)) (IB.prod 𝓘(ℝ, E)) k
+      (fun p : TotalSpace E (Bundle.Trivial B E) ↦
+        (⟨p.proj, (ℝ ∙ s p.proj)ᗮ.starProjection p.snd⟩ : TotalSpace E (Bundle.Trivial B E))) :=
+    Bundle.Trivial.contMDiff_mk_iff.mpr ⟨Bundle.contMDiff_proj _,
+      contMDiff_starProjection_orthogonal_span_singleton (hs.comp (Bundle.contMDiff_proj _))
+        (Bundle.Trivial.contMDiff_mk_iff.mp contMDiff_id).2 fun p ↦ hsne p.proj⟩
+  exact hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range
+    (fun b ↦ ((ℝ ∙ s b)ᗮ.starProjection : E →ₗ[ℝ] E))
+    hproj
+    (fun b ↦ Submodule.range_starProjection _)
+    fun b ↦ Submodule.finrank_orthogonal_span_singleton (hsne b)
+
+end TauCeti
 
 namespace Bundle.ContMDiffRiemannianMetric
 

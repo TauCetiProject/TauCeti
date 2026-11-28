@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
+import TauCeti.RingTheory.KrullDimension.Quotient
 
 /-!
 # Cycles of dimension `k`, rational equivalence and Chow groups
@@ -80,6 +81,20 @@ variable {X} in
 lemma mem_pointsOfDimension {k : ℤ} {x : X} :
     x ∈ pointsOfDimension X k ↔ ∃ n : ℕ, height x = n ∧ (n : ℤ) = k :=
   Iff.rfl
+
+/-- A point of an affine scheme has dimension `d` exactly when its prime quotient does. -/
+theorem mem_pointsOfDimension_spec_iff {R : Type*} [CommRing R] {d : ℕ} {p : PrimeSpectrum R} :
+    (p : Spec (.of R)) ∈ pointsOfDimension (Spec (.of R)) d ↔ ringKrullDim (R ⧸ p.asIdeal) = d := by
+  have h : Order.height (α := Spec (.of R)) p = Order.coheight p :=
+    (Order.height_orderIso (specOrderIsoPrimeSpectrum (.of R)) p).symm.trans (Order.height_toDual p)
+  refine (mem_pointsOfDimension (X := Spec (.of R)) (x := p) (k := d)).trans ?_
+  rw [h, ← p.coheight_eq_ringKrullDim_quotient]
+  constructor
+  · rintro ⟨n, h, hn⟩
+    obtain rfl : n = d := by exact_mod_cast hn
+    exact_mod_cast h
+  · intro h
+    exact ⟨d, by exact_mod_cast h, rfl⟩
 
 /-- There are no points of negative dimension. -/
 lemma pointsOfDimension_eq_empty_of_neg {k : ℤ} (hk : k < 0) : pointsOfDimension X k = ∅ :=

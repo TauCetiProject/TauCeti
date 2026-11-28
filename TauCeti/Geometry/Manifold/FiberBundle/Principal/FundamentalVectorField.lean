@@ -63,6 +63,8 @@ This file connects the general right-action theory of
   `TauCeti.PrincipalBundle.rightFundamentalVectorField_injective`,
   `TauCeti.PrincipalBundle.range_rightFundamentalLinearMap_eq_ker_mfderiv_proj`: verticality,
   pointwise freeness, and exactness at the vertical tangent space.
+* `TauCeti.PrincipalBundle.exists_eq_mfderiv_add_rightFundamentalVectorField`: at a point of a
+  local section `s`, every tangent vector `w` is `ds (dπ w)` plus a vertical vector `ξ♯`.
 * `TauCeti.PrincipalBundle.mfderiv_diffeomorphOfEquivariant_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.mfderiv_pullbackLift_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.mfderiv_diffeomorphProd_rightFundamentalVectorField`: naturality under
@@ -82,7 +84,7 @@ public section
 noncomputable section
 
 open Bundle Function Manifold MulOpposite
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti.PrincipalBundle
 
@@ -258,6 +260,35 @@ theorem range_rightFundamentalLinearMap_eq_ker_mfderiv_proj (x : ManifoldTotalSp
         one_ne_zero p]
     obtain ⟨ξ, hξ⟩ := hw'
     exact ⟨ξ, (rightFundamentalVectorField_homeomorph b p ξ).trans hξ⟩
+
+/-- **Tangent vectors along a local section.** Let `s` be a map from the base into the total space
+which is a section near `b`, that is `π (s y) = y` for `y` near `b`, and differentiable at `b`.
+Every tangent vector `w` at `s b` is the image `ds (dπ w)` of its projection plus a vertical
+vector, the fundamental vector field of some `ξ`. -/
+theorem exists_eq_mfderiv_add_rightFundamentalVectorField {s : B → ManifoldTotalSpace G P}
+    {b : B} (hs : MDifferentiableAt IB (IB.prod IG) s b)
+    (hsec : (fun y ↦ ((ManifoldTotalSpace.homeomorph G P).symm (s y)).proj) =ᶠ[𝓝 b] id)
+    (w : TangentSpace (IB.prod IG) (s b)) :
+    ∃ ξ : GroupLieAlgebra IG G, w = mfderiv IB (IB.prod IG) s b
+        (mfderiv (IB.prod IG) IB
+          (fun y : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm y).proj)
+          (s b) w) +
+      rightFundamentalVectorField (IB.prod IG) ξ (s b) := by
+  set proj := fun y : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm y).proj
+  have hπ : MDifferentiableAt (IB.prod IG) IB proj (s b) :=
+    (ManifoldTotalSpace.contMDiff_proj 1 G P IB IG _).mdifferentiableAt one_ne_zero
+  -- Since `proj ∘ s = id` near `b`, the vector `w - ds (dπ w)` is vertical.
+  have hsec' : proj ∘ s =ᶠ[𝓝 b] id := hsec
+  have hcomp := mfderiv_comp_apply_of_eq b hπ hs rfl (mfderiv (IB.prod IG) IB proj (s b) w)
+  rw [hsec'.mfderiv_eq, mfderiv_id] at hcomp
+  have hvert : w - mfderiv IB (IB.prod IG) s b (mfderiv (IB.prod IG) IB proj (s b) w) ∈
+      (mfderiv (IB.prod IG) IB proj (s b)).ker := by
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, ← hcomp, sub_eq_zero]
+    -- `hcomp` holds up to the cast between the tangent spaces at `b` and at `π (s b) = b`.
+    rfl
+  rw [← range_rightFundamentalLinearMap_eq_ker_mfderiv_proj] at hvert
+  obtain ⟨ξ, hξ⟩ := hvert
+  exact ⟨ξ, by rw [← rightFundamentalLinearMap_apply, hξ, add_sub_cancel]⟩
 
 variable (IB IG) in
 /-- **The canonical vertical-fibre isomorphism `𝔤 ≃ₗ[𝕜] V_x P`.** At every point `x` of a `C¹`

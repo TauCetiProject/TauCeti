@@ -40,10 +40,10 @@ the idele group and the idele class group are continuous, and so are `toFiniteId
 Finally, `NumberField.IdeleGroup.localUnitsEquiv` identifies the idele group, with its units
 topology, with the product of the unit groups `K_wˣ` at the infinite places and the restricted
 product of the unit groups `K_vˣ` at the finite places with respect to the local integral units
-`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, and its inverse is
-`TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical description of the idele group as
-a restricted product over all places, and it shows that the units topology of the adele ring is
-the restricted-product topology of the local unit groups.
+`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, which are therefore
+continuous, and its inverse is `TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical
+description of the idele group as a restricted product over all places, and it shows that the
+units topology of the adele ring is the restricted-product topology of the local unit groups.
 
 This topology need not be the subspace topology of the adele ring: when `R` has infinitely many
 height-one primes, `NumberField.IdeleGroup.not_isEmbedding_val` shows that the inclusion of the
@@ -329,6 +329,34 @@ theorem localUnitsEquiv_symm_apply (zi : ∀ w : InfinitePlace K, w.Completionˣ
       exact RestrictedProduct.mk_apply _ _ z hz v)
 
 end NumberField.IdeleGroup
+
+section CoordinateContinuity
+
+open NumberField.IdeleGroup
+
+variable {K : Type*} [Field K]
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+
+/-- The coordinate of an idele at an infinite place is continuous. -/
+@[continuity, fun_prop]
+theorem NumberField.InfinitePlace.continuous_ideleInfiniteCoord (w : InfinitePlace K) :
+    Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) := by
+  have : (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) =
+      fun x ↦ (localUnitsEquiv R K x).1 w := funext fun x ↦ (localUnitsEquiv_apply_fst x w).symm
+  rw [this]
+  exact (continuous_apply w).comp (continuous_fst.comp (localUnitsEquiv R K).continuous)
+
+/-- The coordinate of an idele at a finite place is continuous. -/
+@[continuity, fun_prop]
+theorem IsDedekindDomain.HeightOneSpectrum.continuous_ideleFiniteCoord (v : HeightOneSpectrum R) :
+    Continuous (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) := by
+  have : (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) =
+      fun x ↦ (localUnitsEquiv R K x).2 v := funext fun x ↦ (localUnitsEquiv_apply_snd x v).symm
+  rw [this]
+  exact (RestrictedProduct.continuous_eval v).comp
+    (continuous_snd.comp (localUnitsEquiv R K).continuous)
+
+end CoordinateContinuity
 
 namespace NumberField.IdeleGroup
 
