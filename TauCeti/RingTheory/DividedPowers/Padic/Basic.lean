@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DividedPowers.Padic
 public import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 import TauCeti.Data.ZMod.Nilpotent
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.DividedPowers.SubDPIdeal
 
 /-!
@@ -38,6 +39,8 @@ PD-nilpotence classification of `PadicInt.dividedPowers p` and `ZMod.dividedPowe
 
 ## Main results
 
+* `PadicInt.algebraMap_dpow_p`: in a `ℤ_[p]`-algebra in which `p` is a unit, the image of
+  `(dividedPowers p).dpow n p` is `p ^ n / n!`.
 * `PadicInt.valuation_dpow_p`: `((dividedPowers p).dpow n p).valuation = n - multiplicity p n!`.
 * `PadicInt.sub_one_mul_valuation_dpow_p`: Legendre identity
   `(p - 1) * ((dividedPowers p).dpow n p).valuation = (p - 2) * n + (p.digits n).sum`.
@@ -75,6 +78,16 @@ theorem coe_dpow_p (n : ℕ) :
     Ideal.subset_span (Set.mem_singleton _)
   rw [coe_dpow_eq p n (p : ℤ_[p])]
   simp [hp_mem, Ring.inverse_eq_inv']
+
+/-- In a `ℤ_[p]`-algebra in which `p` is a unit, the image of
+`(PadicInt.dividedPowers p).dpow n p` is `p ^ n / n!`. -/
+theorem algebraMap_dpow_p {R : Type*} [CommSemiring R] [Algebra ℤ_[p] R] (hpR : IsUnit (p : R))
+    (n : ℕ) : algebraMap ℤ_[p] R ((dividedPowers p).dpow n (p : ℤ_[p])) =
+      Ring.inverse (n.factorial : R) * (p : R) ^ n := by
+  have h := congrArg (algebraMap ℤ_[p] R)
+    ((dividedPowers p).factorial_mul_dpow_eq_pow (n := n) (Ideal.mem_span_singleton_self _))
+  simp only [map_mul, map_natCast, map_pow] at h
+  rw [eq_comm, Ring.inverse_mul_eq_iff_eq_mul _ _ _ (isUnit_factorial_of_isUnit hpR n), h]
 
 /-- The divided power `(PadicInt.dividedPowers p).dpow n p` is nonzero for every `n : ℕ`. -/
 @[simp]

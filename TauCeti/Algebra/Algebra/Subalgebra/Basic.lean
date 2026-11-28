@@ -25,6 +25,8 @@ equivalence of a subalgebra with its image.
 A subalgebra over `K` is also closed under division by a natural number `m` that is a unit in `K`:
 it contains `m * t` exactly when it contains `t`.
 
+An element of a subalgebra which is a unit of the ambient algebra is cancellable in the subalgebra.
+
 ## Main results
 
 * `Subalgebra.equivMapSemilinear`: ambient semilinear transport over the equivalence of a
@@ -36,6 +38,8 @@ it contains `m * t` exactly when it contains `t`.
   isomorphism and its inverse commute with the inclusions into `A`.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
+* `Subalgebra.isSMulRegular_of_isUnit_coe`: an element of a subalgebra which is a unit of the
+  ambient algebra is regular in the subalgebra.
 -/
 
 public section
@@ -117,5 +121,11 @@ theorem natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring L] [Algebra
     (T : Subalgebra K L) {m : ℕ} (hm : IsUnit (m : K)) {t : L} : (m : L) * t ∈ T ↔ t ∈ T := by
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul K]
   exact Submodule.smul_mem_iff_of_isUnit (Subalgebra.toSubmodule T) hm
+
+/-- An element of a subalgebra which is a unit of the ambient algebra is a regular element of the
+subalgebra. -/
+theorem isSMulRegular_of_isUnit_coe {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
+    {S : Subalgebra R B} {x : S} (hx : IsUnit (x : B)) : IsSMulRegular S x :=
+  fun _ _ h ↦ Subtype.val_injective (hx.mul_left_cancel (congrArg Subtype.val h))
 
 end Subalgebra
