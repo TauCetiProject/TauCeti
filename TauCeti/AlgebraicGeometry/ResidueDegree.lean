@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Length
+public import TauCeti.AlgebraicGeometry.Scheme.Stalk
 
 /-!
 # Residue degrees of scheme morphisms
@@ -29,14 +30,14 @@ it through any local ring isomorphic to the source stalk compatibly with the sta
 supply the residue-field weights used in degree and pushforward constructions. The comparison
 `toNat_length_residueField_eq_residueDegree` expresses the same degree as the natural-number
 truncation of the length of `κ(x)` over the local ring of its image; it also applies to a point
-over a specified equal image `y`, using `stalkAlgebraOfApplyEq`, whose algebra map is local by
-`isLocalHom_algebraMap_stalkAlgebraOfApplyEq`. The simp lemma `appLE_germ` lets `simp` move germs
-past pulled-back sections.
+over a specified equal image `y`, using `stalkAlgebraOfApplyEq` from
+`TauCeti.AlgebraicGeometry.Scheme.Stalk`, whose algebra map is local by
+`isLocalHom_algebraMap_stalkAlgebraOfApplyEq`.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
 Mathlib's residue-field maps and the field-extension tower law `Module.finrank_mul_finrank`.
-The stalk-algebra and length comparison are adapted from the
+The length comparison is adapted from the
 [lookahead formalization](https://github.com/roed-math/TauCeti-w2-fresh/tree/678c1bad7a8c53d6cffb49946b9fefc73d4c0435).
 -/
 
@@ -163,75 +164,6 @@ theorem finrank_residueField_stalk {K : Type u} [Field K] {X : Scheme.{u}}
   exact (congrArg (fun g : Γ(X, ⊤) ⟶ CommRingCat.of
     (IsLocalRing.ResidueField (X.presheaf.stalk x)) ↦
       g (((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom c)) hc).symm
-
-/-- Pullback to a smaller open commutes with taking germs at a point over a specified image. -/
-@[reassoc]
-theorem appLE_germ_of_apply_eq (f : X ⟶ Y) (U : Y.Opens) (V : X.Opens)
-    (e : V ≤ f ⁻¹ᵁ U) {x : X} {y : Y} (h : f x = y) (hx : x ∈ V) (hy : y ∈ U) :
-    f.appLE U V e ≫ X.presheaf.germ V x hx =
-      Y.presheaf.germ U y hy ≫ Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫
-        f.stalkMap x := by
-  subst y
-  simp only [TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp]
-  rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
-    ← X.presheaf.germ_res (homOfLE e) x hx, Scheme.Hom.appLE_map_assoc]
-
-/-- Pullback to a smaller open commutes with taking germs at a point, through the stalk map at
-that point. The membership `f x ∈ U` is stated through `mem_preimage`, so that `simp` continues
-with Mathlib's `germ_stalkMap`. -/
-@[reassoc (attr := simp)]
-theorem appLE_germ (f : X ⟶ Y) (U : Y.Opens) (V : X.Opens) (e : V ≤ f ⁻¹ᵁ U) {x : X}
-    (hx : x ∈ V) :
-    f.appLE U V e ≫ X.presheaf.germ V x hx =
-      Y.presheaf.germ U (f x) (f.mem_preimage.mp (e hx)) ≫ f.stalkMap x := by
-  have := f.appLE_germ_of_apply_eq U V e rfl hx (f.mem_preimage.mp (e hx))
-  rwa [TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp] at this
-
-/-- The local ring `𝒪_{Y,y}` maps to the local ring `𝒪_{X,x}` of a point over `y`, through the
-stalk map of `f` at `x`. -/
-@[instance_reducible]
-noncomputable def stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
-    Algebra (Y.presheaf.stalk y) (X.presheaf.stalk x) :=
-  (Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫ f.stalkMap x).hom.toAlgebra
-
-/-- The algebra map of `stalkAlgebraOfApplyEq` is the specialization map of stalks followed by
-the stalk map of `f`. -/
-theorem algebraMap_stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
-    letI := f.stalkAlgebraOfApplyEq h
-    algebraMap (Y.presheaf.stalk y) (X.presheaf.stalk x) =
-      (Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫ f.stalkMap x).hom := by
-  -- The definition is unexposed; its body is `RingHom.toAlgebra` of this ring hom.
-  unfold stalkAlgebraOfApplyEq
-  rfl
-
-/-- The algebra map on stalks at equal image points commutes with germs of pulled-back sections. -/
-theorem algebraMap_stalkAlgebraOfApplyEq_comp_germ (f : X ⟶ Y)
-    (U : Y.Opens) (V : X.Opens) (e : V ≤ f ⁻¹ᵁ U)
-    {x : X} {y : Y} (h : f x = y) (hx : x ∈ V) (hy : y ∈ U) :
-    letI := f.stalkAlgebraOfApplyEq h
-    (algebraMap (Y.presheaf.stalk y) (X.presheaf.stalk x)).comp
-        (Y.presheaf.germ U y hy).hom =
-      (X.presheaf.germ V x hx).hom.comp (f.appLE U V e).hom := by
-  let _ := f.stalkAlgebraOfApplyEq h
-  rw [f.algebraMap_stalkAlgebraOfApplyEq h]
-  exact (congrArg CommRingCat.Hom.hom (f.appLE_germ_of_apply_eq U V e h hx hy)).symm
-
-/-- Over the image point itself, the algebra map of `stalkAlgebraOfApplyEq` is the stalk map
-of `f`. -/
-@[simp]
-theorem algebraMap_stalkAlgebraOfApplyEq_rfl (f : X ⟶ Y) (x : X) :
-    letI := f.stalkAlgebraOfApplyEq (rfl : f x = f x)
-    algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) = (f.stalkMap x).hom := by
-  simp [algebraMap_stalkAlgebraOfApplyEq]
-
-/-- The algebra map of `stalkAlgebraOfApplyEq` is a local homomorphism, so it induces a map of
-residue fields. -/
-theorem isLocalHom_algebraMap_stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
-    letI := f.stalkAlgebraOfApplyEq h
-    IsLocalHom (algebraMap (Y.presheaf.stalk y) (X.presheaf.stalk x)) := by
-  subst h
-  rw [algebraMap_stalkAlgebraOfApplyEq_rfl]
-  infer_instance
 
 /-- The natural-number truncation of the length of `κ(x)` over `𝒪_{Y,y}` is the residue
 degree `[κ(x) : κ(y)]` (both truncations are `0` when the extension is infinite). -/

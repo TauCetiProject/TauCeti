@@ -13,7 +13,7 @@ import Mathlib.RingTheory.Localization.Algebra
 import Mathlib.AlgebraicGeometry.Morphisms.Affine
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
-import TauCeti.AlgebraicGeometry.ResidueDegree
+import TauCeti.AlgebraicGeometry.Scheme.Stalk
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalProperties.Semilocal
 

@@ -259,7 +259,7 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
 /-- Pulling a section back to a smaller nonempty open and then taking its germ in the function
 field agrees with taking its germ first and pulling back along the dominant morphism. This is
 not a simp lemma: `simp` derives it from `Scheme.Hom.appLE_germ` in
-`TauCeti.AlgebraicGeometry.ResidueDegree`, `germ_stalkMap` and
+`TauCeti.AlgebraicGeometry.Scheme.Stalk`, `germ_stalkMap` and
 `germToFunctionField_functionFieldMap`. -/
 @[reassoc]
 theorem appLE_germToFunctionField (f : X ⟶ Y) [IsDominant f]
