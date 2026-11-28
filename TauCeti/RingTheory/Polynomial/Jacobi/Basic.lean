@@ -16,6 +16,7 @@ import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Data.Nat.Factorial.Field
 
 /-!
 # The Jacobi polynomials
@@ -39,6 +40,12 @@ orthogonality theory consumes.
 ## Main definitions and results
 
 * `Polynomial.jacobi α β n`: the Jacobi polynomial `Pₙ^{(α,β)}`.
+* `Polynomial.jacobiCoeff α β i k`: the coefficient of `(X - 1)^i (X + 1)^k` in `2ⁿ Pₙ^{(α,β)}`,
+  `i + k = n`, with the formula `Polynomial.jacobiCoeff_def`, the value
+  `Polynomial.jacobiCoeff_zero_zero` and the expansion `Polynomial.jacobi_eq_smul_sum_jacobiCoeff`.
+  `Polynomial.jacobiCoeff_mul_left` and `Polynomial.jacobiCoeff_mul_right` relate the coefficients
+  at the parameters `(α + 1, β + 1)` to those at `(α, β)` with `k`, respectively `i`, raised by
+  one; identities between Jacobi polynomials of neighbouring indices and parameters reduce to them.
 * `Polynomial.coeff_jacobi_self`: the coefficient of `X^n` is `(n + α + β + 1)_n / (2ⁿ n!)`,
   by the Chu–Vandermonde identity `Ring.descPochhammer_smeval_add`.
 * `Polynomial.degree_jacobi`: `Pₙ^{(α,β)}` has degree `n` as soon as `(n + α + β + 1)_n ≠ 0`, and
@@ -80,6 +87,65 @@ theorem jacobi_def (α β : R) (n : ℕ) :
           (ascPochhammer R k).smeval (α + (n - k : ℕ) + 1))) •
         ((X - 1) ^ (n - k) * (X + 1) ^ k) := by
   rw [jacobi]
+
+/-! ### The coefficients of the defining sum -/
+
+/-- The coefficient of `(X - 1)^i (X + 1)^k` in `2ⁿ Pₙ^{(α,β)}`, for `i + k = n`:
+`(β + k + 1)_i (α + i + 1)_k / (i! k!)`. -/
+noncomputable def jacobiCoeff (α β : R) (i k : ℕ) : R :=
+  algebraMap ℚ R (1 / (i.factorial * k.factorial)) *
+    ((ascPochhammer R i).eval (β + k + 1) * (ascPochhammer R k).eval (α + i + 1))
+
+/-- The defining formula of `Polynomial.jacobiCoeff`: a product of two rising factorials divided
+by two factorials. -/
+theorem jacobiCoeff_def (α β : R) (i k : ℕ) :
+    jacobiCoeff α β i k = algebraMap ℚ R (1 / (i.factorial * k.factorial)) *
+      ((ascPochhammer R i).eval (β + k + 1) * (ascPochhammer R k).eval (α + i + 1)) := by
+  rw [jacobiCoeff]
+
+/-- The coefficient of the constant polynomial `P₀^{(α,β)} = 1`. -/
+@[simp]
+theorem jacobiCoeff_zero_zero (α β : R) : jacobiCoeff α β 0 0 = 1 := by
+  simp [jacobiCoeff_def]
+
+/-- The defining sum of the Jacobi polynomial `Pₙ^{(α,β)}`, with its coefficients written as
+`Polynomial.jacobiCoeff`. -/
+theorem jacobi_eq_smul_sum_jacobiCoeff (α β : R) (n : ℕ) :
+    jacobi α β n = ((1 : ℚ) / 2 ^ n) • ∑ k ∈ Finset.range (n + 1),
+      jacobiCoeff α β (n - k) k • ((X - 1) ^ (n - k) * (X + 1) ^ k) := by
+  simp only [jacobi_def, jacobiCoeff, ← eval_eq_smeval, Algebra.smul_def]
+
+/-- Raising `k` by one in `Polynomial.jacobiCoeff`: the coefficient at the parameters
+`(α + 1, β + 1)` and the indices `(i, k)`, times `α + 1 + i`, is `k + 1` times the coefficient at
+the parameters `(α, β)` and the indices `(i, k + 1)`. This is the rising factorial identity
+`(x)ₖ₊₁ = x (x + 1)ₖ` at `x = α + i + 1`. -/
+theorem jacobiCoeff_mul_left (α β : R) (i k : ℕ) :
+    jacobiCoeff (α + 1) (β + 1) i k * (α + 1 + i) = (k + 1) * jacobiCoeff α β i (k + 1) := by
+  have hq : algebraMap ℚ R (1 / (i.factorial * k.factorial)) =
+      algebraMap ℚ R (1 / (i.factorial * (k + 1).factorial)) * (k + 1) := by
+    rw [Nat.one_div_factorial_mul_factorial_succ_right, map_mul, map_add, map_natCast, map_one]
+  have hp : (ascPochhammer R (k + 1)).eval (α + i + 1) =
+      (α + i + 1) * (ascPochhammer R k).eval (α + 1 + i + 1) := by
+    rw [ascPochhammer_succ_eval, ← ascPochhammer_eval_succ]
+    ring_nf
+  simp only [jacobiCoeff, hq, hp, Nat.cast_add, Nat.cast_one]
+  ring_nf
+
+/-- Raising `i` by one in `Polynomial.jacobiCoeff`: the coefficient at the parameters
+`(α + 1, β + 1)` and the indices `(i, k)`, times `β + 1 + k`, is `i + 1` times the coefficient at
+the parameters `(α, β)` and the indices `(i + 1, k)`. This is the rising factorial identity
+`(x)ᵢ₊₁ = x (x + 1)ᵢ` at `x = β + k + 1`. -/
+theorem jacobiCoeff_mul_right (α β : R) (i k : ℕ) :
+    jacobiCoeff (α + 1) (β + 1) i k * (β + 1 + k) = (i + 1) * jacobiCoeff α β (i + 1) k := by
+  have hq : algebraMap ℚ R (1 / (i.factorial * k.factorial)) =
+      algebraMap ℚ R (1 / ((i + 1).factorial * k.factorial)) * (i + 1) := by
+    rw [Nat.one_div_factorial_mul_factorial_succ_left, map_mul, map_add, map_natCast, map_one]
+  have hp : (ascPochhammer R (i + 1)).eval (β + k + 1) =
+      (β + k + 1) * (ascPochhammer R i).eval (β + 1 + k + 1) := by
+    rw [ascPochhammer_succ_eval, ← ascPochhammer_eval_succ]
+    ring_nf
+  simp only [jacobiCoeff, hq, hp, Nat.cast_add, Nat.cast_one]
+  ring_nf
 
 omit [Algebra ℚ R] in
 private lemma coeff_X_sub_one_pow_mul_X_add_one_pow (m k : ℕ) :
