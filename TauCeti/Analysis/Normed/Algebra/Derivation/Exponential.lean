@@ -42,6 +42,8 @@ vanishes by the Leibniz rule, so that it is constant.
 
 * `ContinuousLinearMap.exp_apply_apply_of_leibniz`: the exponentials of operators satisfying the
   Leibniz rule for a bilinear map are compatible with it.
+* `ContinuousLinearMap.forall_exp_smul_apply_bilinear_iff`: preserving a bilinear product along an
+  exponential line is equivalent to the Leibniz rule.
 * `ContinuousLinearMap.exp_apply_mul_of_derivation`: the exponential of a bounded derivation is
   multiplicative.
 
@@ -96,6 +98,26 @@ theorem exp_apply_apply_of_leibniz (β : E →L[𝕜] F →L[𝕜] G) {D₁ : E 
     rw [← exp_add_of_commute (Commute.refl D₃).neg_right, add_neg_cancel, exp_zero]
   simp only [K, one_smul, zero_smul, exp_zero, one_apply_eq_self] at hK10
   rw [← hK10, ← mul_apply_eq_comp, hinv, one_apply_eq_self]
+
+/-- Compatibility with the exponential lines of three operators through a continuous bilinear
+map is equivalent to the Leibniz rule for those operators. -/
+theorem forall_exp_smul_apply_bilinear_iff (β : E →L[𝕜] F →L[𝕜] G)
+    (D₁ : E →L[𝕜] E) (D₂ : F →L[𝕜] F) (D₃ : G →L[𝕜] G) :
+    (∀ (t : 𝕜) x y, exp (t • D₃) (β x y) = β (exp (t • D₁) x) (exp (t • D₂) y)) ↔
+      ∀ x y, D₃ (β x y) = β (D₁ x) y + β x (D₂ y) := by
+  constructor
+  · intro h x y
+    have hb := β.hasDerivAt_of_bilinear (fun _ ↦ D₁.hasDerivAt_exp_smul_apply 0 x)
+      (fun _ ↦ D₂.hasDerivAt_exp_smul_apply 0 y)
+    have hf : (fun t : 𝕜 ↦ exp (t • D₃) (β x y)) =
+        fun t : 𝕜 ↦ β (exp (t • D₁) x) (exp (t • D₂) y) := funext fun t ↦ h t x y
+    have ha := D₃.hasDerivAt_exp_smul_apply 0 (β x y)
+    rw [hf] at ha
+    simpa [add_comm] using ha.unique hb
+  · intro h t
+    refine β.exp_apply_apply_of_leibniz (D₁ := t • D₁) (D₂ := t • D₂) (D₃ := t • D₃) ?_
+    intro x y
+    simp [h, smul_add]
 
 end Bilinear
 
