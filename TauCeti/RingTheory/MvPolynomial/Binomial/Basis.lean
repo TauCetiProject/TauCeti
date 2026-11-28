@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Binomial.Basis
+public import TauCeti.RingTheory.Binomial.ProductSpan
 public import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.RingTheory.AlgebraTower
 import Mathlib.Algebra.CharP.Algebra
