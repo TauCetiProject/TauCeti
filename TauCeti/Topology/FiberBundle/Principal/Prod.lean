@@ -50,6 +50,8 @@ induce an equivalence of fibre products `(p, q) ↦ (φ p, ψ q)`
 * `TauCeti.PrincipalBundle.FiberProd.continuous_iff`: a map into the total space is continuous
   exactly when its two components are.
 * `TauCeti.PrincipalBundle.FiberProd.division_mk`: the division map is componentwise.
+* `TauCeti.PrincipalBundle.FiberProd.trivializationAt_snd`: the preferred fibre coordinates
+  are componentwise.
 
 ## References
 
@@ -212,6 +214,17 @@ noncomputable instance instFiberBundle [One G] [One H] : FiberBundle (G × H) (F
   letI : ∀ b, Zero (P b) := fun b ↦ ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   letI : ∀ b, Zero (Q b) := fun b ↦ ⟨(FiberBundle.homeomorphAt H Q b).symm 1⟩
   FiberBundle.prod G P H Q
+
+variable {G H} in
+/-- The fibre coordinate in the preferred chart of the fibrewise product is the pair of
+preferred fibre coordinates of its components. -/
+@[simp]
+theorem trivializationAt_snd [One G] [One H] (b : B)
+    (z : TotalSpace (G × H) (FiberProd P Q)) :
+    (trivializationAt (G × H) (FiberProd P Q) b z).2 =
+      ((trivializationAt G P b ⟨z.proj, z.snd.fst⟩).2,
+        (trivializationAt H Q b ⟨z.proj, z.snd.snd⟩).2) :=
+  (rfl)
 
 variable [Group G] [Group H] [∀ b, MulAction Gᵐᵒᵖ (P b)] [∀ b, MulAction Hᵐᵒᵖ (Q b)]
 

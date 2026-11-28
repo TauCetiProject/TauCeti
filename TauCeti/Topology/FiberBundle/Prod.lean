@@ -8,12 +8,13 @@ module
 public import Mathlib.Topology.FiberBundle.Constructions
 
 /-!
-# The fibrewise product as a closed relation
+# Fibrewise products of bundles
 
 The total space of a fibrewise product has the topology induced from the product of total
 spaces, so each of its two components depends continuously on a vector. Its image consists
 exactly of pairs with equal base points. Over a Hausdorff base this gives a closed embedding,
-useful for properness of bundle actions.
+useful for properness of bundle actions. The coordinate changes of the product trivializations
+are componentwise (`Bundle.Trivialization.coordChange_prod`).
 -/
 
 public section
@@ -76,3 +77,25 @@ theorem isClosedEmbedding_diag [TopologicalSpace B] [T2Space B]
   exact isClosed_eq (h₁.comp continuous_fst) (h₂.comp continuous_snd)
 
 end FiberBundle.Prod
+
+section ProductTrivializations
+
+open Bundle.Trivialization
+
+variable {B F₁ F₂ : Type*} {E₁ E₂ : B → Type*}
+  [TopologicalSpace B] [TopologicalSpace F₁] [TopologicalSpace F₂]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [∀ b, Zero (E₁ b)] [∀ b, Zero (E₂ b)]
+
+/-- A change from a product trivialization has the two factor coordinate changes as its
+components, over the base of the source trivialization. -/
+theorem _root_.Bundle.Trivialization.coordChange_prod (e₁ e₁' : Bundle.Trivialization F₁ (π F₁ E₁))
+    (e₂ e₂' : Bundle.Trivialization F₂ (π F₂ E₂)) {b : B}
+    (h₁ : b ∈ e₁.baseSet) (h₂ : b ∈ e₂.baseSet) (v₁ : F₁) (v₂ : F₂) :
+    (e₁.prod e₂).coordChange (e₁'.prod e₂') b (v₁, v₂) =
+      (e₁.coordChange e₁' b v₁, e₂.coordChange e₂' b v₂) := by
+  have hsymm : (e₁.prod e₂).toOpenPartialHomeomorph.symm (b, v₁, v₂) =
+      ⟨b, e₁.symm b v₁, e₂.symm b v₂⟩ := e₁.prod_symm_apply e₂ b v₁ v₂
+  simp only [coordChange, hsymm, prod_apply, Prod.toFun', ← e₁.mk_symm h₁, ← e₂.mk_symm h₂]
+
+end ProductTrivializations
