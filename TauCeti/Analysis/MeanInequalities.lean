@@ -266,17 +266,13 @@ theorem sqrt_sum_le_sqrt_sum_add_sqrt_sum {ι : Type*} {s : Finset ι} {a b c : 
     (ha : ∀ i ∈ s, 0 ≤ a i) (hb : ∀ i ∈ s, 0 ≤ b i)
     (h : ∀ i ∈ s, √(c i) ≤ √(a i) + √(b i)) :
     √(∑ i ∈ s, c i) ≤ √(∑ i ∈ s, a i) + √(∑ i ∈ s, b i) := by
-  have hCS := sum_mul_le_sqrt_mul_sqrt s (fun i ↦ √(a i)) (fun i ↦ √(b i))
-  rw [Finset.sum_congr rfl fun i hi ↦ sq_sqrt (ha i hi),
-    Finset.sum_congr rfl fun i hi ↦ sq_sqrt (hb i hi)] at hCS
-  have hc : ∀ i ∈ s, c i ≤ a i + b i + 2 * (√(a i) * √(b i)) := fun i hi ↦ by
-    have h2 := (sqrt_le_iff.1 (h i hi)).2
-    rw [add_sq, sq_sqrt (ha i hi), sq_sqrt (hb i hi)] at h2
-    linarith
-  rw [sqrt_le_iff, add_sq, sq_sqrt (Finset.sum_nonneg ha), sq_sqrt (Finset.sum_nonneg hb)]
-  refine ⟨by positivity, (Finset.sum_le_sum hc).trans ?_⟩
-  rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum]
-  linarith
+  have hM := Lp_add_le_of_nonneg (s := s) (f := fun i ↦ √(a i)) (g := fun i ↦ √(b i))
+    one_le_two (fun i _ ↦ sqrt_nonneg _) fun i _ ↦ sqrt_nonneg _
+  simp only [rpow_two] at hM
+  rw [← sqrt_eq_rpow, ← sqrt_eq_rpow, ← sqrt_eq_rpow,
+    Finset.sum_congr rfl fun i hi ↦ sq_sqrt (ha i hi),
+    Finset.sum_congr rfl fun i hi ↦ sq_sqrt (hb i hi)] at hM
+  exact (sqrt_le_sqrt (Finset.sum_le_sum fun i hi ↦ (sqrt_le_iff.1 (h i hi)).2)).trans hM
 
 /-- **Absorption.** If `M ≤ A + B M^θ N^(1 - θ)` with `0 ≤ θ < 1` and `M, B, N ≥ 0`, then
 `M ≤ A / (1 - θ) + B^(1 / (1 - θ)) N`, by Young's inequality
