@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.Module.ProjectiveCover.Simple
 
+import TauCeti.RingTheory.Jacobson.TNilpotent
+
 /-!
 # Tops of indecomposable projective modules
 

@@ -127,6 +127,14 @@ theorem comp_prodMap_prodMk_right {n : WithTop ℕ∞} {G : Type*} [NormedAddCom
     ContDiffAt 𝕜 n (fun q : E × G ↦ H ((p, q.1), q.2)) (x, y) :=
   hH.comp (x, y) ((contDiff_prodMk_right p).prodMap contDiff_id).contDiffAt
 
+/-- Reading a function `g` on `P × E` that is `C^n` at `(p, x + d p)` at the second point moved by
+a map `d` that is `C^n` at `p` gives a function `(q, y) ↦ g (q, y + d q)` that is `C^n` at
+`(p, x)`. -/
+theorem comp_prodMk_add {n : WithTop ℕ∞} {g : P × E → X} {d : P → E}
+    (hg : ContDiffAt 𝕜 n g (p, x + d p)) (hd : ContDiffAt 𝕜 n d p) :
+    ContDiffAt 𝕜 n (fun q : P × E ↦ g (q.1, q.2 + d q.1)) (p, x) :=
+  hg.comp (p, x) (contDiffAt_fst.prodMk (contDiffAt_snd.add (hd.comp (p, x) contDiffAt_fst)))
+
 /-- The spatial differential of a `C^n` family is `C^m` jointly in the parameter and the spatial
 variable, for `m + 1 ≤ n`. -/
 theorem fderiv_slice {n m : WithTop ℕ∞} {F : P × E → X}
