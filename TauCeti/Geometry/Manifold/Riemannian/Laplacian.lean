@@ -22,6 +22,7 @@ import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -50,7 +51,8 @@ hypotheses. The operator laws include the Leibniz rule and the chain rule
 `Δ (log f) = Δ f / f - |grad f|² / f²`. On a finite-dimensional normed space whose metric is a
 field of bilinear forms `g`, the Hessian in linear coordinates is `D²f(u, v) - Df(Γ(u, v))` with
 `Γ` the Christoffel symbols of `g`. On a finite-dimensional inner-product space, the operator
-agrees with Mathlib's flat Laplacian. The Hessian conventions follow Lee, *Introduction to
+agrees with Mathlib's flat Laplacian, and the Hessian of the squared norm is twice the inner
+product. The Hessian conventions follow Lee, *Introduction to
 Riemannian Manifolds*, Chapter 3.
 
 The Laplace–Beltrami locality lemmas are adapted from Giada Franz's locality helper.
@@ -166,6 +168,17 @@ theorem _root_.ContMDiffSection.contMDiff_divergence {I : ModelWithCorners ℝ E
     ContMDiff I 𝓘(ℝ) ∞ (divergence I fun x ↦ X x) :=
   TauCeti.Manifold.contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
     (by simpa using X.contMDiff)
+
+/-- The divergence of a `C¹` vector field on a `C²` Riemannian manifold with `C¹` metric is
+continuous. -/
+theorem continuous_divergence {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {X : (x : M) → TangentSpace I x} (hX : ContMDiff I I.tangent 1 (T% X)) :
+    Continuous (divergence I X) :=
+  (contMDiff_divergence (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
+    (by simpa using hX)).continuous
 
 /-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
 `(v, w) ↦ ⟪∇_v grad f, w⟫`: the metric lowering of the Levi–Civita covariant derivative of the
@@ -1168,6 +1181,20 @@ theorem hessian_eq_iteratedFDeriv_model_space
             (NormedSpace.fromTangentSpace x w) := by rw [toDual_comp_gradient]
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
+
+/-- On a finite-dimensional real inner-product space with its standard metric, the Riemannian
+Hessian of the squared norm is twice the inner product. -/
+theorem hessian_norm_sq_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (x : F) (v w : TangentSpace (modelWithCornersSelf ℝ F) x) :
+    hessian (modelWithCornersSelf ℝ F) (fun y : F ↦ ‖y‖ ^ 2) x v w =
+      2 * inner ℝ (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
+  have hgrad : DifferentiableAt ℝ (∇ fun y : F ↦ ‖y‖ ^ 2) x :=
+    ((contDiff_norm_sq ℝ (n := 2)).gradient_right (m := 1) (by norm_num)).differentiable
+      (by norm_num) x
+  rw [hessian_eq_iteratedFDeriv_model_space hgrad, iteratedFDeriv_two_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
+  exact TauCeti.fderiv_fderiv_norm_sq_apply x _ _
 
 /-- At a point `x` where `∇ f` is differentiable, the Laplace–Beltrami operator of the standard
 Riemannian metric equals Mathlib's flat Laplacian `Δ f`. This fixes the sign convention as

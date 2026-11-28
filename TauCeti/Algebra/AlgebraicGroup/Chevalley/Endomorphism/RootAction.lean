@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Endomorphism.Basic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.Algebra.Group.Pow

@@ -5,20 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Colimit.DirectLimit
 public import Mathlib.FieldTheory.PerfectClosure
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
+public import TauCeti.Algebra.Colimit.Ring.Iterate
 public import TauCeti.RingTheory.Perfect.IsPRadical
 
 /-!
 # The colimit perfection of a ring in which `p` vanishes
 
 Let `p` be a prime and `A` a commutative ring with `p = 0`. The *colimit perfection* of `A` is the
-direct limit `A → A → A → ⋯` along the `p`-th power map `x ↦ x ^ p`. Writing `mk n x` for the class
-of `x` in the `n`-th copy, it is the element `x ^ (1 / p ^ n)`: its `p ^ n`-th power is
-`of x = mk 0 x`. The map `of : A → ColimitPerfection A p hA` is `p`-radical, its target is perfect,
-and every ring map from `A` to a perfect ring extends uniquely along it.
+direct limit `A → A → A → ⋯` along the `p`-th power map `x ↦ x ^ p`, that is the iterate colimit
+`RingHom.IterateColimit (TauCeti.powRingHom A p hA)`, whose general API it specializes. Writing
+`mk n x` for the class of `x` in the `n`-th copy, it is the element `x ^ (1 / p ^ n)`: its
+`p ^ n`-th power is `of x = mk 0 x`. The map `of : A → ColimitPerfection A p hA` is `p`-radical,
+its target is perfect, and every ring map from `A` to a perfect ring extends uniquely along it.
 
 This is the construction of Mathlib's `PerfectClosure A p`, to which it is isomorphic when `A` has
 characteristic `p` (`TauCeti.ColimitPerfection.ringEquivPerfectClosure`). Mathlib's version needs
@@ -46,7 +47,7 @@ perfection of `X`.
   `k`.
 * `TauCeti.ColimitPerfection.perfectRing`: the colimit perfection is a perfect ring.
 * `TauCeti.ColimitPerfection.isPRadical`: the map `of` is `p`-radical.
-* `TauCeti.ColimitPerfection.bijective_of`: a perfect ring is its own colimit perfection.
+* `TauCeti.ColimitPerfection.of_bijective`: a perfect ring is its own colimit perfection.
 * `TauCeti.ColimitPerfection.isLocalization_away`: the colimit perfection of the localization
   `A[1 / f]` is the localization of the colimit perfection of `A` away from `of f`.
 
@@ -62,37 +63,19 @@ namespace TauCeti
 
 variable (A : Type*) [CommRing A] (p : ℕ) [hp : Fact p.Prime] (hA : (p : A) = 0)
 
-/-- The transition maps `x ↦ x ^ p ^ (n - m)` of the direct system defining the colimit
-perfection. -/
-def ColimitPerfection.transition (m n : ℕ) (_ : m ≤ n) : A →+* A :=
-  powRingHom A p hA ^ (n - m)
-
-theorem ColimitPerfection.transition_apply {m n : ℕ} (h : m ≤ n) (x : A) :
-    transition A p hA m n h x = x ^ p ^ (n - m) := by
-  rw [transition, RingHom.coe_pow, funext (powRingHom_apply hA)]
-  exact congrFun (pow_iterate p (n - m)) x
-
-instance ColimitPerfection.directedSystem :
-    DirectedSystem (fun _ : ℕ ↦ A) (transition A p hA · · ·) where
-  map_self x := by simp [transition_apply]
-  map_map {k j i} hij hjk x := by
-    simp only [transition_apply, ← pow_mul, ← pow_add]
-    congr 2
-    omega
-
 /-- The *colimit perfection* of a ring `A` in which the prime `p` vanishes: the direct limit of
-`A → A → A → ⋯` along the `p`-th power map. Unlike Mathlib's `PerfectClosure A p`, it does not
-require `CharP A p`, and so it is defined for the zero ring. It is an abbreviation so that it
-inherits the ring structure of the direct limit. -/
+`A → A → A → ⋯` along the `p`-th power map, the iterate colimit of `TauCeti.powRingHom A p hA`.
+Unlike Mathlib's `PerfectClosure A p`, it does not require `CharP A p`, and so it is defined for
+the zero ring. It is an abbreviation so that it inherits the ring structure of the direct limit. -/
 abbrev ColimitPerfection : Type _ :=
-  DirectLimit (fun _ : ℕ ↦ A) (ColimitPerfection.transition A p hA)
+  (powRingHom A p hA).IterateColimit
 
 namespace ColimitPerfection
 
 /-- The inclusion of the `n`-th copy of `A` in its colimit perfection: `mk A p hA n x` is the
 `p ^ n`-th root of `of A p hA x`. -/
 def mk (n : ℕ) : A →+* ColimitPerfection A p hA :=
-  DirectLimit.Ring.of (fun _ : ℕ ↦ A) (transition A p hA) n
+  RingHom.IterateColimit.mk (powRingHom A p hA) n
 
 /-- The canonical map from `A` to its colimit perfection. -/
 def of : A →+* ColimitPerfection A p hA :=
@@ -102,25 +85,32 @@ def of : A →+* ColimitPerfection A p hA :=
 theorem mk_zero_eq_of : mk A p hA 0 = of A p hA :=
   (rfl)
 
+/-- `mk A p hA n` is the map from the `n`-th stage of the iterate colimit of `powRingHom A p hA`. -/
+theorem mk_eq_iterateColimit_mk (n : ℕ) :
+    mk A p hA n = RingHom.IterateColimit.mk (powRingHom A p hA) n :=
+  (rfl)
+
+/-- `of A p hA` is the canonical map to the iterate colimit of `powRingHom A p hA`. -/
+theorem of_eq_iterateColimit_of : of A p hA = RingHom.IterateColimit.of (powRingHom A p hA) :=
+  RingHom.IterateColimit.mk_zero _
+
 variable {A p hA}
 
 /-- Every element of the colimit perfection is the image of some `x` in some copy of `A`. -/
 theorem exists_eq_mk (z : ColimitPerfection A p hA) : ∃ (n : ℕ) (x : A), z = mk A p hA n x :=
-  DirectLimit.exists_eq_mk _ z
+  RingHom.IterateColimit.exists_eq_mk z
 
 /-- Two elements of the colimit perfection come from the same copy of `A`. -/
 theorem exists_eq_mk₂ (z w : ColimitPerfection A p hA) :
     ∃ (n : ℕ) (x y : A), z = mk A p hA n x ∧ w = mk A p hA n y :=
-  DirectLimit.exists_eq_mk₂ _ z w
+  RingHom.IterateColimit.exists_eq_mk₂ z w
 
 /-- The class of `x ^ p ^ k` in the `(n + k)`-th copy of `A` is the class of `x` in the `n`-th
 copy. -/
 @[simp]
 theorem mk_add_apply_pow_pow (n k : ℕ) (x : A) :
     mk A p hA (n + k) (x ^ p ^ k) = mk A p hA n x := by
-  have h := DirectLimit.Ring.of_f (G := fun _ : ℕ ↦ A) (f := transition A p hA)
-    (Nat.le_add_right n k) x
-  rwa [transition_apply, Nat.add_sub_cancel_left] at h
+  rw [mk, mk, ← iterate_powRingHom hA, RingHom.IterateColimit.mk_add_iterate]
 
 theorem mk_succ_apply_pow (n : ℕ) (x : A) : mk A p hA (n + 1) (x ^ p) = mk A p hA n x := by
   simpa using mk_add_apply_pow_pow (hA := hA) n 1 x
@@ -144,14 +134,10 @@ theorem mk_succ_pow (n : ℕ) (x : A) : mk A p hA (n + 1) x ^ p = mk A p hA n x 
 colimit perfection exactly when they agree after raising to some power `p ^ k`. -/
 theorem mk_eq_mk_iff {n : ℕ} {x y : A} :
     mk A p hA n x = mk A p hA n y ↔ ∃ k : ℕ, x ^ p ^ k = y ^ p ^ k := by
-  refine ⟨fun h ↦ ?_, fun ⟨k, hk⟩ ↦ ?_⟩
-  · obtain ⟨i, hx, hy, hxy⟩ := Quotient.eq.1 h
-    exact ⟨i - n, by simpa only [transition_apply] using hxy⟩
-  · rw [← mk_add_apply_pow_pow n k x, ← mk_add_apply_pow_pow n k y, hk]
+  simp only [mk, RingHom.IterateColimit.mk_eq_mk_iff, iterate_powRingHom]
 
 theorem mk_eq_zero_iff {n : ℕ} {x : A} : mk A p hA n x = 0 ↔ ∃ k : ℕ, x ^ p ^ k = 0 := by
-  rw [← map_zero (mk A p hA n), mk_eq_mk_iff]
-  simp [zero_pow (pow_ne_zero _ hp.out.ne_zero)]
+  simp only [mk, RingHom.IterateColimit.mk_eq_zero_iff, iterate_powRingHom]
 
 theorem of_eq_zero_iff {x : A} : of A p hA x = 0 ↔ ∃ k : ℕ, x ^ p ^ k = 0 :=
   mk_eq_zero_iff
@@ -186,17 +172,10 @@ instance isPRadical : IsPRadical (of A p hA) p where
 
 /-- **A perfect ring is its own colimit perfection**: when the `p`-th power map of `A` is
 bijective, so is the map from `A` to its colimit perfection. -/
-theorem bijective_of [PerfectRing A p] : Function.Bijective (of A p hA) := by
-  have hF := PerfectRing.bijective_frobenius (R := A) (p := p)
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun z ↦ ?_⟩
-  · obtain ⟨k, hk⟩ := of_eq_zero_iff.1 hx
-    refine hF.1.iterate k ?_
-    rw [pow_iterate]
-    simpa [zero_pow (pow_ne_zero _ hp.out.ne_zero)] using hk
-  · obtain ⟨n, x, rfl⟩ := exists_eq_mk z
-    obtain ⟨y, hy⟩ := hF.2.iterate n x
-    rw [pow_iterate] at hy
-    exact ⟨y, (of_eq_mk n y).trans (congrArg _ hy)⟩
+theorem of_bijective [PerfectRing A p] : Function.Bijective (of A p hA) := by
+  rw [of, mk, RingHom.IterateColimit.mk_zero, RingHom.IterateColimit.of_bijective_iff,
+    show ⇑(powRingHom A p hA) = (· ^ p) from funext (powRingHom_apply hA)]
+  exact PerfectRing.bijective_frobenius
 
 /-! ### The universal property -/
 
@@ -254,24 +233,28 @@ variable (hA) in
 /-- The map of colimit perfections induced by a ring map `g : A →+* B`; it sends the class of `x`
 in the `n`-th copy of `A` to the class of `g x` in the `n`-th copy of `B`. -/
 def map (hB : (p : B) = 0) (g : A →+* B) : ColimitPerfection A p hA →+* ColimitPerfection B p hB :=
-  DirectLimit.Ring.lift (fun _ : ℕ ↦ A) (transition A p hA) _ (fun n ↦ (mk B p hB n).comp g)
-    fun m n hmn x ↦ by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
-    simp [transition_apply]
+  RingHom.IterateColimit.map _ _ g fun x ↦ by rw [powRingHom_apply, powRingHom_apply, map_pow]
+
+/-- The map induced by `g` is the map of iterate colimits induced by `g`, which commutes with the
+`p`-th power maps. -/
+theorem map_eq_iterateColimit_map (hB : (p : B) = 0) (g : A →+* B) :
+    map hA hB g = RingHom.IterateColimit.map (powRingHom A p hA) (powRingHom B p hB) g
+      fun x ↦ by rw [powRingHom_apply, powRingHom_apply, map_pow] :=
+  (rfl)
 
 @[simp]
 theorem map_mk (hB : (p : B) = 0) (g : A →+* B) (n : ℕ) (x : A) :
     map hA hB g (mk A p hA n x) = mk B p hB n (g x) :=
-  (rfl)
+  RingHom.IterateColimit.map_mk _ _ n x
 
 @[simp]
 theorem map_of (hB : (p : B) = 0) (g : A →+* B) (x : A) :
     map hA hB g (of A p hA x) = of B p hB (g x) :=
-  (rfl)
+  map_mk hB g 0 x
 
 theorem map_comp_of (hB : (p : B) = 0) (g : A →+* B) :
     (map hA hB g).comp (of A p hA) = (of B p hB).comp g :=
-  (rfl)
+  RingHom.ext (map_of hB g)
 
 /-- The map induced by `g` is the extension of `of ∘ g`. -/
 theorem map_eq_lift (hB : (p : B) = 0) (g : A →+* B) :
@@ -280,11 +263,11 @@ theorem map_eq_lift (hB : (p : B) = 0) (g : A →+* B) :
 
 @[simp]
 theorem map_id : map hA hA (RingHom.id A) = RingHom.id (ColimitPerfection A p hA) :=
-  hom_ext (by ext; simp)
+  RingHom.IterateColimit.map_id
 
 theorem map_comp (hB : (p : B) = 0) (hC : (p : C) = 0) (g : A →+* B) (h : B →+* C) :
     map hA hC (h.comp g) = (map hB hC h).comp (map hA hB g) :=
-  hom_ext (by ext; simp)
+  RingHom.IterateColimit.map_comp _ _ _ _
 
 theorem map_map (hB : (p : B) = 0) (hC : (p : C) = 0) (g : A →+* B) (h : B →+* C)
     (z : ColimitPerfection A p hA) : map hB hC h (map hA hB g z) = map hA hC (h.comp g) z := by

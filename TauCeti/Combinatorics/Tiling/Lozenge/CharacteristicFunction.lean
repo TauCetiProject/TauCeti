@@ -127,6 +127,16 @@ theorem lozengeZeroAngleSnd_def (w₁ w₂ w₃ : ℝ) :
     lozengeZeroAngleSnd w₁ w₂ w₃ = Real.arccos ((w₂ ^ 2 - w₁ ^ 2 - w₃ ^ 2) / (2 * w₁ * w₃)) :=
   (rfl)
 
+/-- For all weights `θ₀ ∈ [0, π]`, the range of `arccos`. -/
+theorem lozengeZeroAngleFst_mem_Icc (w₁ w₂ w₃ : ℝ) :
+    lozengeZeroAngleFst w₁ w₂ w₃ ∈ Icc 0 Real.pi :=
+  ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩
+
+/-- For all weights `φ₀ ∈ [0, π]`, the range of `arccos`. -/
+theorem lozengeZeroAngleSnd_mem_Icc (w₁ w₂ w₃ : ℝ) :
+    lozengeZeroAngleSnd w₁ w₂ w₃ ∈ Icc 0 Real.pi :=
+  lozengeZeroAngleFst_mem_Icc w₂ w₁ w₃
+
 /-- The real part of `P_w(θ, φ)` is `w₃ + w₂ cos θ + w₁ cos φ`. -/
 @[simp]
 theorem lozengeCharFun_re (w₁ w₂ w₃ θ φ : ℝ) :

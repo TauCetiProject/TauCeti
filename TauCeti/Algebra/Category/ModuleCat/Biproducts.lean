@@ -224,6 +224,23 @@ theorem finite_of_finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCa
   Module.Finite.of_surjective (biproduct.π V i).hom fun x ↦
     ⟨(biproduct.ι V i).hom x, by rw [← ConcreteCategory.comp_apply, biproduct.ι_π_self, id_apply]⟩
 
+/-- The `j`-th biproduct injection, followed by the comparison `biproductIsoPi f` with the product
+module, is the inclusion `LinearMap.single` of the `j`-th coordinate. -/
+@[simp]
+theorem ι_biproductIsoPi_hom {J : Type} [Finite J] [DecidableEq J] (f : J → ModuleCat.{v} R)
+    (j : J) :
+    biproduct.ι f j ≫ (biproductIsoPi f).hom = ofHom (LinearMap.single R (fun j ↦ f j) j) := by
+  rw [← Iso.eq_comp_inv]
+  apply biproduct.hom_ext
+  intro i
+  rw [Category.assoc, biproductIsoPi_inv_comp_π]
+  by_cases h : i = j
+  · subst i
+    rw [biproduct.ι_π_self, ← ofHom_comp, LinearMap.proj_comp_single_same]
+    rfl
+  · rw [biproduct.ι_π_ne _ (Ne.symm h), ← ofHom_comp, LinearMap.proj_comp_single_ne _ _ _ _ h]
+    rfl
+
 end ModuleCat
 
 namespace CategoryTheory.Functor

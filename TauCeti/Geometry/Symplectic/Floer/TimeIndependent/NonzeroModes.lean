@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Linearization
+import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IntervalIntegral.Slice
@@ -21,7 +22,8 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 
 Let `(V, ω)` be a symplectic vector space whose inner product is the metric `g = ω(·, J ·)` of a
 constant compatible almost complex structure `J`. Along a time-independent cylinder
-`u(s, t) = γ(s)` of an autonomous Hamiltonian `H`, the linearized Floer operator is
+`u(s, t) = γ(s)`, for Hamiltonians `H = H_s` depending on `s` alone, as for an autonomous
+Hamiltonian or for continuation data `K = H_s dt`, the linearized Floer operator is
 
 `D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)`
 
@@ -50,8 +52,8 @@ of `J ∂t` minus `a`, and the whole estimate for `D` reduces to the estimate fo
   `mul_setIntegral_norm_fderiv_sq_add_le_setIntegral_norm_floerLinearization_sq` in the same
   namespace for the derivatives).
   No bound on the second derivative of `X_H` or on `γ'` is needed, and `γ` need only be continuous.
-* **Splitting off the zero mode.** For a `C¹` map `ξ` of period one in `t` and a `C²`
-  Hamiltonian, `∫ ‖D ξ‖² = ∫ₛ ‖M ξbar‖² + ∫ ‖D (ξ - ξbar)‖²`
+* **Splitting off the zero mode.** For a `C¹` map `ξ` of period one in `t` and jointly `C²`
+  Hamiltonians, `∫ ‖D ξ‖² = ∫ₛ ‖M ξbar‖² + ∫ ‖D (ξ - ξbar)‖²`
   (`TauCeti.SymplecticForm.setIntegral_norm_floerLinearization_sq_eq`), since the slice average of
   `D ξ` is `M ξbar` and `D (ξ - ξbar) = D ξ - M ξbar` has mean-zero slices
   (`TauCeti.setIntegral_norm_add_sq_eq`). Consequently, if `a < 2π`, an `L²` estimate
@@ -216,63 +218,63 @@ end CauchyRiemann
 
 section TimeIndependent
 
-variable {H : V → ℝ} {γ : ℝ → V}
+variable {H : ℝ → V → ℝ} {γ : ℝ → V}
 
-/-- Along a continuous curve `γ`, the linearized operator of a `C²` autonomous Hamiltonian maps
-`C¹` maps to continuous maps. -/
-private theorem continuous_floerLinearization_comp_fst (hH : ContDiff ℝ 2 H) (hγ : Continuous γ)
-    (hξ : ContDiff ℝ 1 ξ) :
+/-- Along a continuous curve `γ`, the linearized operator of jointly `C²` Hamiltonians `H_s`
+depending on `s` maps `C¹` maps to continuous maps. -/
+private theorem continuous_floerLinearization_comp_fst (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ) (hξ : ContDiff ℝ 1 ξ) :
     Continuous (ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) ξ) := by
+      (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) ξ) := by
   have hd := hξ.continuous_fderiv one_ne_zero
-  have hX : Continuous (fderiv ℝ (ω.hamiltonianVectorField H)) :=
-    (ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero
+  have hX := ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ
   have h : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z (1, 0) +
-      J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (ξ z)) :=
+      J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField (H z.1)) (γ z.1) (ξ z)) :=
     (hd.clm_apply continuous_const).add (J.toLinearMap.toContinuousLinearMap.continuous.comp
       ((hd.clm_apply continuous_const).sub
-        ((hX.comp (hγ.comp continuous_fst)).clm_apply hξ.continuous)))
+        ((hX.comp continuous_fst).clm_apply hξ.continuous)))
   convert h using 1
-  exact funext fun z ↦ floerLinearization_const_eq ω J H _ ξ z
+  exact funext fun z ↦ floerLinearization_const_eq ω J (fun z ↦ H z.1) _ ξ z
 
-/-- Along a continuous curve `γ`, the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` of a `C²` autonomous
-Hamiltonian maps `C¹` curves to continuous curves. -/
-private theorem continuous_deriv_sub_fderiv_hamiltonianVectorField (hH : ContDiff ℝ 2 H)
-    (hγ : Continuous γ) {ζ : ℝ → V} (hζ : ContDiff ℝ 1 ζ) :
-    Continuous fun s ↦ deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s)) :=
+/-- Along a continuous curve `γ`, the Morse operator `ζ ↦ ζ' - J dX_{H_s}(γ) ζ` of jointly `C²`
+Hamiltonians `H_s` maps `C¹` curves to continuous curves. -/
+private theorem continuous_deriv_sub_fderiv_hamiltonianVectorField
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {ζ : ℝ → V} (hζ : ContDiff ℝ 1 ζ) :
+    Continuous fun s ↦ deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (ζ s)) :=
   (hζ.continuous_deriv le_rfl).sub (J.toLinearMap.toContinuousLinearMap.continuous.comp
-    ((((ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero).comp
-      hγ).clm_apply hζ.continuous))
+    ((ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ).clm_apply hζ.continuous))
 
 /-- The linearized operator along `(s, t) ↦ γ(s)` differs from `∂s ξ + J ∂t ξ` by
-`J dX_H(γ(s)) ξ`, of norm at most `a ‖ξ‖` where `‖dX_H(γ(s))‖ ≤ a`. -/
+`J dX_{H_s}(γ(s)) ξ`, of norm at most `a ‖ξ‖` where `‖dX_{H_s}(γ(s))‖ ≤ a`. -/
 private theorem norm_sub_floerLinearization_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a : ℝ}
-    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a) :
+    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a) :
     ∀ z ∈ Icc s₀ s₁ ×ˢ Icc 0 1, ‖fderiv ℝ ξ z (1, 0) + J (fderiv ℝ ξ z (0, 1)) -
       ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) ξ z‖ ≤ a * ‖ξ z‖ := by
+        (fun z ↦ H z.1) (fun z ↦ γ z.1) ξ z‖ ≤ a * ‖ξ z‖ := by
   intro z hz
   rw [floerLinearization_const_eq, map_sub, add_sub_add_left_eq_sub, sub_sub_cancel,
     ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner fun v ↦ hg v v]
-  exact ((fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1)).le_opNorm _).trans
+  exact ((fderiv ℝ (ω.hamiltonianVectorField (H z.1)) (γ z.1)).le_opNorm _).trans
     (mul_le_mul_of_nonneg_right (haγ z.1 hz.1) (norm_nonneg _))
 
 /-- **The gap on the nonzero modes along a time-independent cylinder.** Let the inner product of
-`V` be the metric `ω(·, J ·)`, let `H` be a `C²` autonomous Hamiltonian and `γ` a continuous curve
-with `‖dX_H(γ(s))‖ ≤ a ≤ 2π` for `s ∈ [s₀, s₁]`. If `ξ` is a `C²` map of period one in `t`,
-vanishing on the slices `s = s₀` and `s = s₁`, whose slices all have mean zero, then the linearized
-Floer operator `D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)` along `(s, t) ↦ γ(s)` satisfies
+`V` be the metric `ω(·, J ·)`, let `H_s` be jointly `C²` Hamiltonians depending on `s` and `γ` a
+continuous curve with `‖dX_{H_s}(γ(s))‖ ≤ a ≤ 2π` for `s ∈ [s₀, s₁]`. If `ξ` is a `C²` map of
+period one in `t`, vanishing on the slices `s = s₀` and `s = s₁`, whose slices all have mean zero,
+then the linearized Floer operator `D ξ = ∂s ξ + J (∂t ξ - dX_{H_s}(γ(s)) ξ)` along
+`(s, t) ↦ γ(s)` satisfies
 `(2π - a)² ∫ ‖ξ‖² ≤ ∫ ‖D ξ‖²` over `[s₀, s₁] × [0, 1]`. -/
 theorem mul_setIntegral_norm_sq_le_setIntegral_norm_floerLinearization_sq
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ)
+    {a : ℝ}
     (ha : a ≤ 2 * π)
-    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hξ : ContDiff ℝ 2 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
     (hmean : ∀ s, ∫ t in (0 : ℝ)..1, ξ (s, t) = 0) (hs : s₀ ≤ s₁) (h₀ : ∀ t, ξ (s₀, t) = 0)
     (h₁ : ∀ t, ξ (s₁, t) = 0) :
     (2 * π - a) ^ 2 * ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 ≤
       ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) ξ z‖ ^ 2 :=
   mul_setIntegral_norm_sq_le_of_norm_sub_le hg ((norm_nonneg _).trans (haγ s₀ ⟨le_rfl, hs⟩)) ha
     hξ hper hmean hs h₀ h₁
@@ -286,16 +288,17 @@ hypotheses of
 derivatives of `ξ` are controlled as well:
 `(2π - a)² ∫ (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ (2π)² ∫ ‖D ξ‖²`. -/
 theorem mul_setIntegral_norm_fderiv_sq_add_le_setIntegral_norm_floerLinearization_sq
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a : ℝ}
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ)
+    {a : ℝ}
     (ha : a ≤ 2 * π)
-    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hξ : ContDiff ℝ 2 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
     (hmean : ∀ s, ∫ t in (0 : ℝ)..1, ξ (s, t) = 0) (hs : s₀ ≤ s₁) (h₀ : ∀ t, ξ (s₀, t) = 0)
     (h₁ : ∀ t, ξ (s₁, t) = 0) :
     (2 * π - a) ^ 2 * ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1,
         (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤
       (2 * π) ^ 2 * ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) ξ z‖ ^ 2 :=
   mul_setIntegral_norm_fderiv_sq_add_le_of_norm_sub_le hg
     ((norm_nonneg _).trans (haγ s₀ ⟨le_rfl, hs⟩)) ha hξ hper hmean hs h₀ h₁
@@ -303,27 +306,27 @@ theorem mul_setIntegral_norm_fderiv_sq_add_le_setIntegral_norm_floerLinearizatio
       |>.integrableOn_Icc_prod_Icc)
     (norm_sub_floerLinearization_le hg haγ)
 
-/-- **Splitting off the zero mode.** Let `H` be a `C²` autonomous Hamiltonian and `γ` a
-continuous curve, and let `ξ` be a `C¹` map of period one in `t`, with slice average
+/-- **Splitting off the zero mode.** Let `H_s` be jointly `C²` Hamiltonians depending on `s` and
+`γ` a continuous curve, and let `ξ` be a `C¹` map of period one in `t`, with slice average
 `ξbar(s) = ∫₀¹ ξ(s, t) dt`. Over `[s₀, s₁] × [0, 1]` the squared `L²` norm of the linearized Floer
-operator `D ξ = ∂s ξ + J (∂t ξ - dX_H(γ(s)) ξ)` along `(s, t) ↦ γ(s)` is the sum of the squared
-norm of the Morse operator `ξbar' - J dX_H(γ) ξbar` on the zero mode and that of `D` on the
-mean-zero part `ξ - ξbar`. -/
-theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 H) (hγ : Continuous γ)
-    (hξ : ContDiff ℝ 1 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) :
+operator `D ξ = ∂s ξ + J (∂t ξ - dX_{H_s}(γ(s)) ξ)` along `(s, t) ↦ γ(s)` is the sum of the
+squared norm of the Morse operator `ξbar' - J dX_{H_s}(γ) ξbar` on the zero mode and that of `D` on
+the mean-zero part `ξ - ξbar`. -/
+theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 (Function.uncurry H))
+    (hγ : Continuous γ) (hξ : ContDiff ℝ 1 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) :
     ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) ξ z‖ ^ 2 =
       (∫ s in Icc s₀ s₁, ‖deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) s -
-          J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (∫ t in (0 : ℝ)..1, ξ (s, t)))‖ ^ 2) +
+          J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (∫ t in (0 : ℝ)..1, ξ (s, t)))‖ ^ 2) +
         ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-          (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+          (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
           (fun z ↦ γ z.1) (fun z ↦ ξ z - ∫ t in (0 : ℝ)..1, ξ (z.1, t)) z‖ ^ 2 := by
   set D := ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-    (fun _ ↦ H) (fun z ↦ γ z.1)
+    (fun z ↦ H z.1) (fun z ↦ γ z.1)
   set ξbar : ℝ → V := fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)
   set m : ℝ → V := fun s ↦
-    deriv ξbar s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ξbar s))
+    deriv ξbar s - J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (ξbar s))
   have hbar : ContDiff ℝ 1 ξbar := hξ.parametric_intervalIntegral (μ := volume)
   have hm : Continuous m := continuous_deriv_sub_fderiv_hamiltonianVectorField hH hγ hbar
   have hDξ : Continuous (D ξ) := continuous_floerLinearization_comp_fst hH hγ hξ
@@ -347,24 +350,25 @@ theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 H) (hγ :
   simpa only [sub_zero, one_mul] using setIntegral_norm_add_sq_eq zero_le_one hm hw hw0
 
 /-- **The estimate of the linearized operator reduces to the Morse operator.** Let the inner
-product of `V` be the metric `ω(·, J ·)`, let `H` be a `C²` autonomous Hamiltonian and `γ` a
-continuous curve with `‖dX_H(γ(s))‖ ≤ a < 2π` for `s ∈ [s₀, s₁]`, and suppose that the Morse
-operator `M ζ = ζ' - J dX_H(γ) ζ` satisfies `∫ ‖ζ‖² ≤ K ∫ ‖M ζ‖²` over `[s₀, s₁]` for every `C²`
-curve `ζ` vanishing at `s₀` and `s₁`. Then every `C²` map `ξ` of period one in `t` vanishing on the
-slices `s = s₀` and `s = s₁` satisfies `∫ ‖ξ‖² ≤ max K (2π - a)⁻² ∫ ‖D ξ‖²` over
+product of `V` be the metric `ω(·, J ·)`, let `H_s` be jointly `C²` Hamiltonians depending on `s`
+and `γ` a continuous curve with `‖dX_{H_s}(γ(s))‖ ≤ a < 2π` for `s ∈ [s₀, s₁]`, and suppose that
+the Morse operator `M ζ = ζ' - J dX_{H_s}(γ) ζ` satisfies `∫ ‖ζ‖² ≤ K ∫ ‖M ζ‖²` over `[s₀, s₁]`
+for every `C²` curve `ζ` vanishing at `s₀` and `s₁`. Then every `C²` map `ξ` of period one in `t`
+vanishing on the slices `s = s₀` and `s = s₁` satisfies `∫ ‖ξ‖² ≤ max K (2π - a)⁻² ∫ ‖D ξ‖²` over
 `[s₀, s₁] × [0, 1]`, for the linearized Floer operator `D` along `(s, t) ↦ γ(s)`. -/
 theorem setIntegral_norm_sq_le_max_mul_setIntegral_norm_floerLinearization_sq
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 H) (hγ : Continuous γ) {a K : ℝ}
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ)
+    {a K : ℝ}
     (ha : a < 2 * π)
-    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
+    (haγ : ∀ s ∈ Icc s₀ s₁, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hM : ∀ ζ : ℝ → V, ContDiff ℝ 2 ζ → ζ s₀ = 0 → ζ s₁ = 0 →
       ∫ s in Icc s₀ s₁, ‖ζ s‖ ^ 2 ≤ K * ∫ s in Icc s₀ s₁,
-        ‖deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s))‖ ^ 2)
+        ‖deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (ζ s))‖ ^ 2)
     (hξ : ContDiff ℝ 2 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hs : s₀ ≤ s₁)
     (h₀ : ∀ t, ξ (s₀, t) = 0) (h₁ : ∀ t, ξ (s₁, t) = 0) :
     ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 ≤
       max K ((2 * π - a) ^ 2)⁻¹ * ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) ξ z‖ ^ 2 := by
   set ξbar : ℝ → V := fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)
   set η : ℝ × ℝ → V := fun z ↦ ξ z - ξbar z.1
@@ -395,15 +399,15 @@ theorem setIntegral_norm_sq_le_max_mul_setIntegral_norm_floerLinearization_sq
     positivity
   have hX : ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖η z‖ ^ 2 ≤ ((2 * π - a) ^ 2)⁻¹ *
       ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+        (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1) η z‖ ^ 2 := by
     rw [← div_eq_inv_mul, le_div_iff₀' hb]
     exact hgap
   have hA : 0 ≤ ∫ s in Icc s₀ s₁, ‖deriv ξbar s -
-      J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ξbar s))‖ ^ 2 :=
+      J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (ξbar s))‖ ^ 2 :=
     setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
   have hB : 0 ≤ ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ω.floerLinearization
-      (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
+      (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
       (fun z ↦ γ z.1) η z‖ ^ 2 :=
     setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ by positivity
   rw [mul_add]
@@ -414,23 +418,23 @@ theorem setIntegral_norm_sq_le_max_mul_setIntegral_norm_floerLinearization_sq
 `TauCeti.SymplecticForm.setIntegral_norm_sq_le_max_mul_setIntegral_norm_floerLinearization_sq`,
 if the linearized Floer operator `D` along `(s, t) ↦ γ(s)` satisfies `∫ ‖ξ‖² ≤ C ∫ ‖D ξ‖²` over
 `[s₀, s₁] × [0, 1]` for every `C²` map `ξ` of period one in `t` vanishing on the slices `s = s₀`
-and `s = s₁`, then the Morse operator `M ζ = ζ' - J dX_H(γ) ζ` satisfies `∫ ‖ζ‖² ≤ C ∫ ‖M ζ‖²` over
-`[s₀, s₁]` for every `C²` curve `ζ` vanishing at `s₀` and `s₁`: on maps that do not depend on `t`,
-`D` is `M`. -/
+and `s = s₁`, then the Morse operator `M ζ = ζ' - J dX_{H_s}(γ) ζ` satisfies
+`∫ ‖ζ‖² ≤ C ∫ ‖M ζ‖²` over `[s₀, s₁]` for every `C²` curve `ζ` vanishing at `s₀` and `s₁`: on maps
+that do not depend on `t`, `D` is `M`. -/
 theorem setIntegral_norm_sq_le_mul_setIntegral_norm_deriv_sub_sq {C : ℝ}
     (hD : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
       (∀ t, ξ (s₀, t) = 0) → (∀ t, ξ (s₁, t) = 0) →
       ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 ≤ C * ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1,
         ‖ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-          (fun _ ↦ H) (fun z ↦ γ z.1) ξ z‖ ^ 2)
+          (fun z ↦ H z.1) (fun z ↦ γ z.1) ξ z‖ ^ 2)
     {ζ : ℝ → V} (hζ : ContDiff ℝ 2 ζ) (hζ₀ : ζ s₀ = 0) (hζ₁ : ζ s₁ = 0) :
     ∫ s in Icc s₀ s₁, ‖ζ s‖ ^ 2 ≤ C * ∫ s in Icc s₀ s₁,
-      ‖deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s))‖ ^ 2 := by
-  set m : ℝ → V := fun s ↦ deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s))
+      ‖deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (ζ s))‖ ^ 2 := by
+  set m : ℝ → V := fun s ↦ deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s) (ζ s))
   -- On the map `(s, t) ↦ ζ(s)`, the linearized operator is the Morse operator.
   have hDζ (z : ℝ × ℝ) : ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ζ z.1) z = m z.1 :=
-    floerLinearization_comp_fst ω J H _ ζ z
+      (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) (fun z ↦ ζ z.1) z = m z.1 :=
+    floerLinearization_comp_fst ω J (fun z ↦ H z.1) _ ζ z
   have h := hD (fun z ↦ ζ z.1) (hζ.comp contDiff_fst) (fun _ _ ↦ rfl) (fun _ ↦ hζ₀)
     fun _ ↦ hζ₁
   simp only [hDζ] at h

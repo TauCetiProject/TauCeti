@@ -76,8 +76,8 @@ theorem χ₈_eq_and_eq_or_of_mul_stdAddChar_eq {x y s t : ZMod (2 ^ 3)} (hx : I
     (hy : IsUnit y)
     (h : ((χ₈ x : ℤ) : ℂ) * stdAddChar s = ((χ₈ y : ℤ) : ℂ) * stdAddChar t) :
     χ₈ x = χ₈ y ∧ s = t ∨ χ₈ x = -χ₈ y ∧ s = t + 4 := by
-  have h4 : (stdAddChar (4 : ZMod (2 ^ 3)) : ℂ) = -1 := by
-    simpa [stdAddChar_apply] using ZMod.coe_toCircle_natCast_self 4
+  have h4 : stdAddChar (4 : ZMod (2 ^ 3)) = -1 := by
+    simpa using stdAddChar_natCast_self 4
   have hχ : ∀ z : ZMod (2 ^ 3), IsUnit z → χ₈ z = 1 ∨ χ₈ z = -1 := fun z hz ↦
     (isQuadratic_χ₈ z).resolve_left ((MulChar.apply_ne_zero_iff).mpr hz)
   have hz (z : ZMod (2 ^ 3)) (hz : IsUnit z) :

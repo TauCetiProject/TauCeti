@@ -35,9 +35,13 @@ its degree. It also computes the norms of the real iterated derivatives of the p
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
-(`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Weierstrass's theorem upgrades locally
-uniform convergence of holomorphic maps on `U` to locally uniform convergence of all iterated
-derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
+(`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Moreover, a function holomorphic on an
+open subset `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset restricts to a `C^n` real
+function `g` whose real iterated derivatives coerce to its complex iterated derivatives
+(`DifferentiableOn.contDiffOn_ofReal`, `DifferentiableOn.iteratedDeriv_comp_ofReal`,
+`DifferentiableOn.iteratedDeriv_ofReal`). Weierstrass's theorem upgrades locally uniform
+convergence of holomorphic maps on `U` to locally uniform convergence of all iterated derivatives
+(`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
 (`TendstoLocallyUniformlyOn.iteratedFDeriv`). It also records the resulting Weierstrass M-test
 formulas for differentiating holomorphic series (`Complex.hasDerivAt_tsum_of_summable_norm`,
 `Complex.hasSum_iteratedDeriv_of_summable_norm`).
@@ -54,6 +58,8 @@ complex variable is assumed.
 -/
 
 public section
+
+open scoped ContDiff Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
@@ -159,6 +165,56 @@ theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNor
     (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
   · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+
+/-- A function holomorphic on an open set `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset
+`s` with `(↑) '' s ⊆ U` restricts to a `C^n` real function `g` on `s`. -/
+theorem DifferentiableOn.contDiffOn_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ} {U : Set ℂ} {s : Set ℝ}
+    {n : WithTop ℕ∞} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
+    (hmaps : Set.MapsTo ((↑) : ℝ → ℂ) s U) (hfg : ∀ x ∈ s, f (x : ℂ) = (g x : ℂ)) :
+    ContDiffOn ℝ n g s := by
+  have hf_cd : ContDiffOn ℝ n f U := (hf.contDiffOn hU).restrict_scalars ℝ
+  have hcomp : ContDiffOn ℝ n (fun x : ℝ ↦ Complex.reCLM (f (Complex.ofRealCLM x))) s :=
+    Complex.reCLM.contDiff.contDiffOn.comp
+      (hf_cd.comp Complex.ofRealCLM.contDiff.contDiffOn hmaps) (Set.mapsTo_univ _ _)
+  exact hcomp.congr fun x hx ↦ by
+    simp only [Complex.reCLM_apply, Complex.ofRealCLM_apply, hfg x hx, Complex.ofReal_re]
+
+/-- If `f : ℂ → E` is holomorphic on an open set `U ⊆ ℂ` and `(x : ℂ) ∈ U`, then the real
+iterated derivative of `t ↦ f (t : ℂ)` at `x` equals the complex iterated derivative of `f` at
+`x`. -/
+theorem DifferentiableOn.iteratedDeriv_comp_ofReal {f : ℂ → E} {U : Set ℂ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (k : ℕ) {x : ℝ} (hx : (x : ℂ) ∈ U) :
+    iteratedDeriv k (fun t : ℝ ↦ f (t : ℂ)) x = iteratedDeriv k f (x : ℂ) := by
+  have hpre : IsOpen (Complex.ofRealCLM ⁻¹' U) := hU.preimage Complex.ofRealCLM.continuous
+  have hcomp := Complex.ofRealCLM.iteratedFDerivWithin_comp_right
+    ((hf.contDiffOn (n := k) hU).restrict_scalars ℝ) hU.uniqueDiffOn hpre.uniqueDiffOn
+    (by simpa using hx) le_rfl (i := k)
+  have h1 := congrArg (fun M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ ℝ) E ↦ M fun _ ↦ 1) hcomp
+  simp only [← iteratedDerivWithin_eq_iteratedFDerivWithin, iteratedDerivWithin_of_isOpen hpre hx,
+    ContinuousMultilinearMap.compContinuousLinearMap_apply,
+    iteratedFDerivWithin_of_isOpen k hU hx,
+    hf.iteratedFDeriv_eq_restrictScalars ℝ hU k hx,
+    ContinuousMultilinearMap.coe_restrictScalars, Complex.ofRealCLM_apply,
+    Complex.ofReal_one] at h1
+  simpa [ContinuousMultilinearMap.piFieldEquiv, Function.comp_def] using h1
+
+/-- If `f : ℂ → ℂ` is holomorphic on an open set `U ⊆ ℂ` and agrees with `(g · : ℂ)` on an open
+real set `s` mapped into `U`, then every complex iterated derivative of `f` on `s` is the coercion
+of the real iterated derivative of `g`. -/
+theorem DifferentiableOn.iteratedDeriv_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ} {U : Set ℂ} {s : Set ℝ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hs : IsOpen s)
+    (hmaps : Set.MapsTo ((↑) : ℝ → ℂ) s U) (hfg : ∀ x ∈ s, f (x : ℂ) = (g x : ℂ))
+    (k : ℕ) {x : ℝ} (hx : x ∈ s) :
+    iteratedDeriv k f (x : ℂ) = ((iteratedDeriv k g x : ℝ) : ℂ) := by
+  have hev : (fun t : ℝ ↦ f (t : ℂ)) =ᶠ[𝓝 x] Complex.ofRealCLM ∘ g :=
+    Filter.eventually_of_mem (hs.mem_nhds hx) fun t ht ↦ hfg t ht
+  have hcomp := Complex.ofRealCLM.iteratedFDeriv_comp_left
+    ((hf.contDiffOn_ofReal hU hmaps hfg).contDiffAt (hs.mem_nhds hx)) le_rfl (i := k)
+  have h1 := congrArg (fun M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ ℝ) ℂ ↦ M fun _ ↦ 1) hcomp
+  rw [← iteratedDeriv_eq_iteratedFDeriv, ← hev.iteratedDeriv_eq,
+    hf.iteratedDeriv_comp_ofReal hU k (hmaps hx)] at h1
+  simpa only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+    Complex.ofRealCLM_apply, ← iteratedDeriv_eq_iteratedFDeriv] using h1
 
 namespace Complex
 

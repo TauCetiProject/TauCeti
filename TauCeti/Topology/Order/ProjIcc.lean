@@ -26,6 +26,9 @@ coordinate to `[a, b]` with `Set.projIcc`.
 * `ContinuousOn.comp_projIcc`: that extension, written as `f ∘ projIcc a b`, is continuous.
 * `TauCeti.continuousWithinAt_IccExtend_Ici`: constant extension preserves right continuity
   within the interval and is right-continuous outside `[a, b)` without further assumptions.
+* `Filter.Tendsto.comp_min_atBot`, `TauCeti.tendsto_comp_min_atTop`,
+  `TauCeti.tendsto_comp_max_atBot` and `Filter.Tendsto.comp_max_atTop`: the limits at `±∞` of
+  the clamped functions `s ↦ f (min s t)` and `s ↦ f (max s t)`.
 -/
 
 public section
@@ -87,3 +90,23 @@ theorem TauCeti.continuousWithinAt_IccExtend_Ici (hab : a ≤ b) {x : α}
         (fun y hy ↦ ⟨by simpa only [coe_projIcc] using
           (le_max_of_le_right (le_min hxb.le hy) : x ≤ max a (min b y)),
           (projIcc a b hab y).property.2⟩) hproj
+
+/-- A function stopped at time `t`, `s ↦ g (min s t)`, has the same limit at `-∞` as `g`. -/
+theorem Filter.Tendsto.comp_min_atBot {ι X : Type*} [LinearOrder ι] {g : ι → X} {l : Filter X}
+    (h : Tendsto g atBot l) (t : ι) : Tendsto (fun s ↦ g (min s t)) atBot l :=
+  h.congr' ((eventually_le_atBot t).mono fun s hs ↦ by simp only [min_eq_left hs])
+
+/-- A function started at time `t`, `s ↦ g (max s t)`, has the same limit at `∞` as `g`. -/
+theorem Filter.Tendsto.comp_max_atTop {ι X : Type*} [LinearOrder ι] {g : ι → X} {l : Filter X}
+    (h : Tendsto g atTop l) (t : ι) : Tendsto (fun s ↦ g (max s t)) atTop l :=
+  h.congr' ((eventually_ge_atTop t).mono fun s hs ↦ by simp only [max_eq_left hs])
+
+/-- A function stopped at time `t`, `s ↦ g (min s t)`, is eventually `g t` at `∞`. -/
+theorem TauCeti.tendsto_comp_min_atTop {ι X : Type*} [LinearOrder ι] [TopologicalSpace X]
+    {g : ι → X} (t : ι) : Tendsto (fun s ↦ g (min s t)) atTop (𝓝 (g t)) :=
+  tendsto_const_nhds.congr' ((eventually_ge_atTop t).mono fun s hs ↦ by simp only [min_eq_right hs])
+
+/-- A function started at time `t`, `s ↦ g (max s t)`, is `g t` near `-∞`. -/
+theorem TauCeti.tendsto_comp_max_atBot {ι X : Type*} [LinearOrder ι] [TopologicalSpace X]
+    {g : ι → X} (t : ι) : Tendsto (fun s ↦ g (max s t)) atBot (𝓝 (g t)) :=
+  tendsto_const_nhds.congr' ((eventually_le_atBot t).mono fun s hs ↦ by simp only [max_eq_right hs])

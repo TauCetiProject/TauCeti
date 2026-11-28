@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Bornology.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -32,6 +33,10 @@ estimates that describe a Cauchy-type integral far from its data.
 
 ## Main results
 
+* `TauCeti.inv_sub_injective` and `TauCeti.continuousOn_inv_sub_compl_singleton`: injectivity and
+  continuity of `z ↦ (z - q)⁻¹` on `{q}ᶜ`.
+* `IsCompact.image_inv_sub`: inverting a compact set about a point outside it preserves
+  compactness.
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
   preimage under `w ↦ q + w⁻¹`.
@@ -50,10 +55,13 @@ estimates that describe a Cauchy-type integral far from its data.
   `TauCeti.frontier_image_inv_sub`: the inversion of an open set about a point outside it is open,
   the interior of the inversion of a set is the inversion of its interior, and inverting an
   unbounded set about a point outside it adds `0` to the inverted frontier.
-* `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
+* `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub`,
+  `TauCeti.isPreconnected_insert_zero_image_inv_sub`,
+  `TauCeti.image_inv_sub_subset_connectedComponentIn_zero`, and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   any point and completed by `0`, is open; the completed inversion of any set has the completed
-  inverted closure as closure; and for a set with bounded complement and a centre outside its
+  inverted closure as closure; inverting an unbounded preconnected set maps it into the
+  complementary component of `0`; and for a set with bounded complement and a centre outside its
   closure, the inverted frontier as frontier.
 * `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
   of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
@@ -74,12 +82,16 @@ section DivisionRing
 
 variable {𝕜 : Type*} [DivisionRing 𝕜] {q : 𝕜}
 
+/-- The inversion `z ↦ (z - q)⁻¹` is injective on `𝕜`. -/
+theorem inv_sub_injective (q : 𝕜) : Function.Injective fun z : 𝕜 ↦ (z - q)⁻¹ :=
+  inv_injective.comp (sub_left_injective (b := q))
+
 /-- The map `w ↦ q + w⁻¹` inverts the inversion `z ↦ (z - q)⁻¹`: it is a bijection from the
 inverted image of any set `S` back onto `S`. -/
 theorem bijOn_add_inv_image_inv_sub (S : Set 𝕜) :
     BijOn (fun w : 𝕜 => q + w⁻¹) ((fun z : 𝕜 => (z - q)⁻¹) '' S) S :=
   BijOn.symm ⟨fun _ _ => by simp, fun _ _ => by simp⟩
-    (inv_injective.comp (sub_left_injective (b := q))).injOn.bijOn_image
+    (inv_sub_injective q).injOn.bijOn_image
 
 /-- The inversion `z ↦ (z - q)⁻¹` is a bijection of `𝕜` (sending `q` to `0⁻¹ = 0`) with inverse
 `w ↦ q + w⁻¹`, so it maps any set onto the preimage of that set under `w ↦ q + w⁻¹`. -/
@@ -89,6 +101,23 @@ theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
     (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
 
 end DivisionRing
+
+section TopologicalDivisionRing
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [TopologicalSpace 𝕜] [ContinuousSub 𝕜] [ContinuousInv₀ 𝕜]
+
+/-- The inversion `z ↦ (z - q)⁻¹` is continuous on the punctured space `{q}ᶜ`. -/
+theorem continuousOn_inv_sub_compl_singleton (q : 𝕜) :
+    ContinuousOn (fun z : 𝕜 ↦ (z - q)⁻¹) {q}ᶜ :=
+  (continuousOn_id.sub continuousOn_const).inv₀ fun _ hz h ↦ hz (sub_eq_zero.mp h)
+
+/-- Inverting a compact set `K` about a point `q ∉ K` yields a compact set. -/
+theorem _root_.IsCompact.image_inv_sub {K : Set 𝕜} (hK : IsCompact K) {q : 𝕜} (hq : q ∉ K) :
+    IsCompact ((fun z : 𝕜 ↦ (z - q)⁻¹) '' K) :=
+  hK.image_of_continuousOn
+    ((continuousOn_inv_sub_compl_singleton q).mono fun _ hz h ↦ hq (h ▸ hz))
+
+end TopologicalDivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
 
@@ -272,6 +301,28 @@ theorem closure_image_inv_sub (hUb : ¬IsBounded U) :
   rw [← closure_insert_zero_image_inv_sub, insert_eq, closure_union, closure_singleton,
     ← insert_eq, insert_eq_of_mem h0]
 
+/-- Inverting an unbounded preconnected set `U` about a point `q ∉ U` and adding `0` gives a
+preconnected set. -/
+theorem isPreconnected_insert_zero_image_inv_sub (hU : IsPreconnected U) (hqU : q ∉ U)
+    (hUb : ¬IsBounded U) :
+    IsPreconnected (insert (0 : 𝕜) ((fun z : 𝕜 ↦ (z - q)⁻¹) '' U)) := by
+  have h0 : (0 : 𝕜) ∈ closure ((fun z : 𝕜 ↦ (z - q)⁻¹) '' U) := by
+    rw [closure_image_inv_sub hUb]
+    exact mem_insert 0 _
+  exact (hU.image _ ((continuousOn_inv_sub_compl_singleton q).mono fun _ hz h ↦
+    hqU (h ▸ hz))).subset_closure (subset_insert _ _) (insert_subset h0 subset_closure)
+
+/-- Under `z ↦ (z - q)⁻¹`, the image of an unbounded preconnected set `S ⊆ Kᶜ \ {q}` lies in the
+complementary component of `0` whenever `0 ∉ (fun z ↦ (z - q)⁻¹) '' K`. -/
+theorem image_inv_sub_subset_connectedComponentIn_zero {K S : Set 𝕜}
+    (hS : IsPreconnected S) (hSK : S ⊆ Kᶜ) (hSq : q ∉ S) (hSub : ¬IsBounded S)
+    (h0 : (0 : 𝕜) ∉ (fun z : 𝕜 ↦ (z - q)⁻¹) '' K) :
+    (fun z : 𝕜 ↦ (z - q)⁻¹) '' S ⊆ connectedComponentIn ((fun z : 𝕜 ↦ (z - q)⁻¹) '' K)ᶜ 0 :=
+  (subset_insert 0 _).trans <|
+    (isPreconnected_insert_zero_image_inv_sub hS hSq hSub).subset_connectedComponentIn
+      (mem_insert 0 _)
+      (insert_subset h0 ((image_mono hSK).trans (Set.image_compl_subset (inv_sub_injective q))))
+
 /-- Inverting an open set `U` about a point `q` outside it, the image is open. -/
 theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
     IsOpen ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
@@ -292,12 +343,12 @@ theorem interior_image_inv_sub (hq : q ∉ U) :
   obtain ⟨u, hu, rfl⟩ := interior_subset hw
   -- the points off `q` inverted into the interior of the image form an open subset of `U`
   have hN : IsOpen ({q}ᶜ ∩ (fun z : 𝕜 => (z - q)⁻¹) ⁻¹' interior ((fun z : 𝕜 => (z - q)⁻¹) '' U)) :=
-    (continuousOn_inv₀.comp (continuousOn_id.sub continuousOn_const) fun z hz => by
-      simpa [sub_ne_zero] using hz).isOpen_inter_preimage isOpen_compl_singleton isOpen_interior
+    (continuousOn_inv_sub_compl_singleton q).isOpen_inter_preimage isOpen_compl_singleton
+      isOpen_interior
   have hNU : {q}ᶜ ∩ (fun z : 𝕜 => (z - q)⁻¹) ⁻¹' interior ((fun z : 𝕜 => (z - q)⁻¹) '' U) ⊆ U :=
     fun z hz => by
       obtain ⟨v, hv, hvz⟩ := interior_subset hz.2
-      exact (inv_injective.comp (sub_left_injective (b := q)) hvz) ▸ hv
+      exact (inv_sub_injective q hvz) ▸ hv
   exact ⟨u, hN.subset_interior_iff.mpr hNU ⟨fun h => hq (h ▸ hu), hw⟩, rfl⟩
 
 /-- Inverting an unbounded set `U` about a point `q` outside it, the frontier of the image is the
@@ -308,8 +359,7 @@ theorem frontier_image_inv_sub (hq : q ∉ U) (hUb : ¬IsBounded U) :
   have hU0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' interior U := by
     simpa [sub_eq_zero] using fun h => hq (interior_subset h)
   rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub hq,
-    insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
-      (inv_injective.comp (sub_left_injective (b := q)))]
+    insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (inv_sub_injective q)]
 
 /-- Inverting a set `U` with bounded complement about a point `q` outside its closure, and adding
 `0`, the image of infinity, the frontier of the resulting set is the inverted frontier of `U`. -/
@@ -333,8 +383,7 @@ theorem frontier_insert_zero_image_inv_sub (hq : q ∉ closure U) (hUc : IsBound
     refine mem_insert_of_mem _ (interior_mono ?_ hw')
     exact fun x hx => (mem_insert_iff.mp hx.1).resolve_left hx.2
   rw [frontier, closure_insert_zero_image_inv_sub, hint, insert_sdiff_of_mem _ (mem_insert _ _),
-    sdiff_insert_of_notMem h0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
-      (inv_injective.comp (sub_left_injective (b := q)))]
+    sdiff_insert_of_notMem h0, frontier, image_sdiff (inv_sub_injective q)]
 
 end Completion
 

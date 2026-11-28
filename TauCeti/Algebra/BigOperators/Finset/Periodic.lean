@@ -26,6 +26,11 @@ and sums over positive intervals to genuinely `N`-periodic families on `ℕ`. Wh
 product `∏ j ∈ Icc 1 N, a j` is `1` (additively, when `∑ j ∈ Icc 1 N, a j = 0`), the partial
 products `m ↦ ∏ j ∈ Icc 1 m, a j` are `N`-periodic on all of `ℕ` and depend only on `m % N`.
 
+For an endomorphism `τ` of a commutative monoid (or additive monoid), the product (or sum) over a
+full period `range p` of a `τ`-orbit `a (i + 1) = τ (a i)` with `a p = a 0` is fixed by `τ`; in
+particular, norms `∏ i ∈ range p, τ^[i] x` of periodic points and ring-endomorphism orbit products
+`∏ i ∈ range p, (σ ^ i) x` (for `σ ^ p = 1`) are fixed by the endomorphism.
+
 ## Main results
 
 * `Finset.prod_range_mul_add_of_periodic`, `Finset.sum_range_mul_add_of_periodic`: a product or
@@ -43,6 +48,11 @@ products `m ↦ ∏ j ∈ Icc 1 m, a j` are `N`-periodic on all of `ℕ` and dep
   `Finset.sum_Icc_eq_sum_Icc_mod_of_sum_eq_zero`: when the period product is `1` (or period sum is
   `0`), `m ↦ ∏ j ∈ Icc 1 m, a j` is `N`-periodic on all of `ℕ` and agrees with its value at
   `m % N`.
+* `Finset.map_prod_range_eq_self_of_periodic`, `Finset.map_sum_range_eq_self_of_periodic`,
+  `Finset.isFixedPt_prod_range_iterate_of_isPeriodicPt`,
+  `Finset.isFixedPt_sum_range_iterate_of_isPeriodicPt`, and
+  `Finset.isFixedPt_prod_range_pow_apply`: an endomorphism fixes the product or sum over `range p`
+  of any `p`-periodic orbit.
 -/
 
 public section
@@ -149,6 +159,42 @@ theorem prod_Icc_eq_prod_Icc_mod_of_prod_eq_one (hper : ∀ k, 1 ≤ k → a (k 
 
 end PositivePeriodic
 
+/-- If a monoid endomorphism `τ` shifts a periodic sequence `a` by `a (i + 1) = τ (a i)` with
+`a p = a 0`, then `τ` fixes the product `∏ i ∈ range p, a i`. -/
+@[to_additive
+  /-- If an additive monoid endomorphism `τ` shifts a periodic sequence `a` by
+  `a (i + 1) = τ (a i)` with `a p = a 0`, then `τ` fixes the sum `∑ i ∈ range p, a i`. -/]
+theorem map_prod_range_eq_self_of_periodic {p : ℕ} (τ : M →* M) (a : ℕ → M)
+    (h_period : a p = a 0) (h_succ : ∀ i : ℕ, a (i + 1) = τ (a i)) :
+    τ (∏ i ∈ range p, a i) = ∏ i ∈ range p, a i := by
+  cases p with
+  | zero => simp
+  | succ p =>
+    calc
+      τ (∏ i ∈ range (p + 1), a i) = ∏ i ∈ range (p + 1), a (i + 1) := by
+        simp only [map_prod, h_succ]
+      _ = (∏ i ∈ range p, a (i + 1)) * a (p + 1) := prod_range_succ _ p
+      _ = ∏ i ∈ range (p + 1), a i := by rw [h_period, prod_range_succ']
+
+/-- If `x` is `p`-periodic under a monoid endomorphism `τ`, then `τ` fixes the orbit product
+`∏ i ∈ range p, τ^[i] x`. -/
+@[to_additive
+  /-- If `x` is `p`-periodic under an additive monoid endomorphism `τ`, then `τ` fixes the orbit
+  sum `∑ i ∈ range p, τ^[i] x`. -/]
+theorem isFixedPt_prod_range_iterate_of_isPeriodicPt {p : ℕ} {τ : M →* M} {x : M}
+    (hx : Function.IsPeriodicPt τ p x) :
+    Function.IsFixedPt τ (∏ i ∈ range p, τ^[i] x) :=
+  map_prod_range_eq_self_of_periodic τ (fun i ↦ τ^[i] x) hx fun i ↦
+    Function.iterate_succ_apply' τ i x
+
 end CommMonoid
+
+/-- If a ring endomorphism `σ` satisfies `σ ^ p = 1`, then `σ` fixes the norm product
+`∏ i ∈ range p, (σ ^ i) x` for every `x`. -/
+theorem isFixedPt_prod_range_pow_apply {R : Type*} [CommSemiring R] {σ : R →+* R} {p : ℕ}
+    (hσ : σ ^ p = 1) (x : R) :
+    Function.IsFixedPt σ (∏ i ∈ range p, (σ ^ i) x) :=
+  map_prod_range_eq_self_of_periodic (σ : R →* R) (fun i ↦ (σ ^ i) x)
+    (by rw [hσ, pow_zero]) fun i ↦ by simp [pow_succ']
 
 end Finset
