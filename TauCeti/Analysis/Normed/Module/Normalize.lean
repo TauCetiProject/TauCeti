@@ -14,14 +14,26 @@ This file proves that normalization is continuous away from the origin, in the f
 `Filter.Tendsto.normalize`, and packages pointwise normalization of a continuous nowhere-zero
 map as a continuous map to the unit sphere. It also defines the direction map
 `sphereDirection e`, which sends a nonzero vector `x` to `‖x‖⁻¹ • x` and the origin to an assigned
-point `e` of the unit sphere.
+point `e` of the unit sphere. Normalization at most doubles distances to points of the unit
+sphere, which moves nets built from arbitrary approximants onto the sphere.
 
 ## Main results
 
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 * `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
   over a closed set `S` of directions is closed.
+* `NormedSpace.normalize_apply_normalize`: a map commuting with nonnegative dilations commutes
+  with normalization up to normalization.
+* `NormedSpace.eq_normalize_iff_of_apply_pos`: a positive functional selects the unique unit
+  vector in an oriented line.
+* `NormedSpace.normalize_eq_div_norm`: in a normed field over `ℝ`, such as `ℂ`, normalization is
+  division by the norm.
+* `NormedSpace.dist_normalize_le_two_mul_dist`: `dist x (normalize y) ≤ 2 * dist x y` for a unit
+  vector `x`.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
+* `TauCeti.norm_mul_dist_sphereDirection_le`: `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`.
+* `NormedSpace.tendsto_normalize_sub_normalize_sub_cobounded`: far out, translating by a fixed
+  vector barely changes the direction.
 
 ## Main definitions
 
@@ -58,6 +70,41 @@ theorem _root_.NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem {S : Set E} (
   exact ContinuousOn.isOpen_inter_preimage
     (fun x hx ↦ ContinuousAt.continuousWithinAt (tendsto_id.normalize hx)) isOpen_ne
     hS.isOpen_compl
+
+/-- A map commuting with dilations by nonnegative scalars commutes with normalization up to
+normalization: `normalize (g (normalize z)) = normalize (g z)`. -/
+theorem _root_.NormedSpace.normalize_apply_normalize {g : E → E}
+    (hg : ∀ c : ℝ, 0 ≤ c → ∀ y, g (c • y) = c • g y) (z : E) :
+    normalize (g (normalize z)) = normalize (g z) := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  -- `normalize z` is the positive multiple `‖z‖⁻¹ • z` of `z`.
+  have hz' : normalize z = ‖z‖⁻¹ • z := (rfl)
+  rw [hz', hg _ (inv_nonneg.2 (norm_nonneg z)),
+    normalize_smul_of_pos (inv_pos.2 (norm_pos_iff.2 hz))]
+
+/-- In a normed field that is a normed algebra over `ℝ`, such as `ℂ`, normalization is division by
+the norm. -/
+theorem _root_.NormedSpace.normalize_eq_div_norm {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    (x : 𝕜) : normalize x = x / algebraMap ℝ 𝕜 ‖x‖ := by
+  rw [normalize, Algebra.smul_def, map_inv₀, div_eq_inv_mul]
+
+/-- Normalizing `y` at most doubles its distance to a unit vector `x`. This includes `y = 0`,
+whose normalization is `0`. -/
+theorem _root_.NormedSpace.dist_normalize_le_two_mul_dist {x : E} (hx : ‖x‖ = 1) (y : E) :
+    dist x (normalize y) ≤ 2 * dist x y := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · norm_num [hx]
+  have hyu : dist y (normalize y) = |‖y‖ - 1| := by
+    rw [dist_eq_norm]
+    calc
+      ‖y - normalize y‖ = ‖(‖y‖ - 1) • normalize y‖ := by
+        rw [sub_smul, one_smul, norm_smul_normalize]
+      _ = |‖y‖ - 1| := by rw [norm_smul, Real.norm_eq_abs, norm_normalize hy, mul_one]
+  have hnorm : |‖y‖ - 1| ≤ dist x y := by
+    rw [← hx, dist_comm, dist_eq_norm]
+    exact abs_norm_sub_norm_le y x
+  linarith [dist_triangle x y (normalize y)]
 
 /-- Radial projection sends a continuous nowhere-zero map into a real normed space continuously
 to its unit sphere. -/
@@ -124,7 +171,59 @@ theorem continuousAt_sphereDirection (hx : x ≠ 0) : ContinuousAt (sphereDirect
   exact (tendsto_id.normalize hx).congr' <| Filter.mem_of_superset (isOpen_ne.mem_nhds hx)
     fun y hy ↦ (coe_sphereDirection_of_ne_zero e hy).symm
 
+/-- Directions of two vectors are at distance at most `2 ‖x - y‖ / ‖y‖`, in the multiplied-out
+form `‖y‖ dist (x / ‖x‖, y / ‖y‖) ≤ 2 ‖x - y‖`, which also holds when either vector vanishes. -/
+theorem norm_mul_dist_sphereDirection_le (x y : E) :
+    ‖y‖ * dist (sphereDirection e x) (sphereDirection e y) ≤ 2 * ‖x - y‖ := by
+  set u : E := (sphereDirection e x : E)
+  have hu : ‖u‖ = 1 := norm_eq_of_mem_sphere (sphereDirection e x)
+  -- `‖y‖ • (u - v) = (‖y‖ - ‖x‖) • u + (x - y)`, using `‖x‖ • u = x` and `‖y‖ • v = y`.
+  have hdecomp : ‖y‖ • (u - sphereDirection e y) = (‖y‖ - ‖x‖) • u + (x - y) := by
+    rw [smul_sub, norm_smul_sphereDirection, sub_smul, norm_smul_sphereDirection]
+    abel
+  calc ‖y‖ * dist (sphereDirection e x) (sphereDirection e y)
+      = ‖(‖y‖ - ‖x‖) • u + (x - y)‖ := by
+        rw [Subtype.dist_eq, dist_eq_norm, ← hdecomp, norm_smul, norm_norm]
+    _ ≤ |‖y‖ - ‖x‖| + ‖x - y‖ := by
+        simpa [norm_smul, hu] using norm_add_le ((‖y‖ - ‖x‖) • u) (x - y)
+    _ ≤ 2 * ‖x - y‖ := by
+        linarith [abs_norm_sub_norm_le y x, norm_sub_rev y x]
+
+/-- Far out, translating by a fixed vector `c` barely changes the direction: the directions of `x`
+and `x - c` differ by at most `2 ‖c‖ / ‖x‖`, which vanishes as `‖x‖ → ∞`. -/
+theorem _root_.NormedSpace.tendsto_normalize_sub_normalize_sub_cobounded (c : E) :
+    Tendsto (fun x ↦ normalize x - normalize (x - c)) (Bornology.cobounded E) (𝓝 0) := by
+  have h : Tendsto (fun x : E ↦ 2 * ‖c‖ / ‖x‖) (Bornology.cobounded E) (𝓝 0) :=
+    tendsto_const_nhds.div_atTop tendsto_norm_cobounded_atTop
+  refine squeeze_zero_norm' ((eventually_cobounded_le_norm (‖c‖ + 1)).mono fun x hx ↦ ?_) h
+  have hx0 : x ≠ 0 := norm_pos_iff.1 (by linarith [norm_nonneg c])
+  have hxc : x - c ≠ 0 := norm_pos_iff.1 (by linarith [norm_sub_norm_le x c])
+  have hd := norm_mul_dist_sphereDirection_le
+    ⟨normalize x, mem_sphere_zero_iff_norm.2 (norm_normalize hx0)⟩ (x - c) x
+  rw [Subtype.dist_eq, dist_eq_norm, coe_sphereDirection_of_ne_zero _ hxc,
+    coe_sphereDirection_of_ne_zero _ hx0, sub_sub_cancel_left, norm_neg, norm_sub_rev] at hd
+  rw [le_div_iff₀ (norm_pos_iff.2 hx0), mul_comm]
+  exact hd
+
 end Direction
+
+/-- A functional positive on `u` characterizes its normalization by unit length, membership
+in the line spanned by `u`, and positive functional value. -/
+theorem _root_.NormedSpace.eq_normalize_iff_of_apply_pos {u v : E} {ℓ : E →ₗ[ℝ] ℝ} (hℓ : 0 < ℓ u) :
+    v = normalize u ↔ ‖v‖ = 1 ∧ v ∈ ℝ ∙ u ∧ 0 < ℓ v := by
+  have hu : u ≠ 0 := by
+    rintro rfl
+    simp at hℓ
+  constructor
+  · rintro rfl
+    refine ⟨norm_normalize hu, ?_, ?_⟩
+    · exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self u)
+    · simpa only [normalize, map_smul, smul_eq_mul] using
+        mul_pos (inv_pos.mpr (norm_pos_iff.mpr hu)) hℓ
+  · rintro ⟨hnorm, hmem, hpos⟩
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hmem
+    have hc : 0 < c := (mul_pos_iff_of_pos_right hℓ).mp (by simpa using hpos)
+    rw [← normalize_eq_self_of_norm_eq_one hnorm, normalize_smul_of_pos hc]
 
 end TauCeti
 

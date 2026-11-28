@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.CategoryTheory.Dagger.Basic
 
@@ -32,6 +33,9 @@ is stated as `f ≫ dagger f = g ≫ dagger g` for an endomorphism `g` of `X`; i
   C*-algebra, with Mathlib's operator-order multiplication and the dagger as star.
 * `CategoryTheory.End.nonneg_iff`: the positive elements of `End X` are exactly the composites
   `f ≫ dagger f` for arrows `f` out of `X`.
+* `CategoryTheory.End.comp_comp_dagger_mono`: conjugation `a ↦ g†ag` by an arrow `g` is
+  monotone.
+* `CategoryTheory.End.comp_comp_dagger_le_norm_smul`: `g†ag ≤ ‖a‖ g†g` for self-adjoint `a`.
 
 ## Implementation notes
 
@@ -147,6 +151,14 @@ theorem norm_self_comp_dagger (f : X ⟶ Y) : ‖f ≫ dagger f‖ = ‖f‖ ^ 2
 theorem norm_dagger_comp_self (f : X ⟶ Y) : ‖dagger f ≫ f‖ = ‖f‖ ^ 2 := by
   simpa using norm_self_comp_dagger (dagger f)
 
+/-- An arrow `f` with `f†f = 0`, that is `f ≫ dagger f = 0`, is zero. -/
+@[simp] theorem self_comp_dagger_eq_zero {f : X ⟶ Y} : f ≫ dagger f = 0 ↔ f = 0 := by
+  rw [← norm_eq_zero, norm_self_comp_dagger, pow_eq_zero_iff two_ne_zero, norm_eq_zero]
+
+/-- An arrow `f` with `f f† = 0`, that is `dagger f ≫ f = 0`, is zero. -/
+@[simp] theorem dagger_comp_self_eq_zero {f : X ⟶ Y} : dagger f ≫ f = 0 ↔ f = 0 := by
+  rw [← norm_eq_zero, norm_dagger_comp_self, pow_eq_zero_iff two_ne_zero, norm_eq_zero]
+
 /-- The norm of an identity arrow is idempotent under squaring. -/
 private theorem sq_norm_id (X : C) : ‖𝟙 X‖ ^ 2 = ‖𝟙 X‖ := by
   simpa using (norm_self_comp_dagger (𝟙 X)).symm
@@ -260,5 +272,28 @@ theorem nonneg_iff {a : End X} : 0 ≤ a ↔ ∃ (Y : C) (f : X ⟶ Y), a = End.
     exact ⟨X, b.asHom, End.ext (by simp)⟩
   · rintro ⟨Y, f, rfl⟩
     exact self_comp_dagger_nonneg f
+
+/-- Conjugation by an arrow `g : X ⟶ Y` is monotone from `End Y` to `End X`: `a ≤ b` implies
+`g†ag ≤ g†bg`, that is `g ≫ a ≫ dagger g ≤ g ≫ b ≫ dagger g`. -/
+theorem comp_comp_dagger_mono {Y : C} (g : X ⟶ Y) {a b : End Y} (hab : a ≤ b) :
+    End.of (g ≫ a.asHom ≫ dagger g) ≤ End.of (g ≫ b.asHom ≫ dagger g) := by
+  obtain ⟨h, hh⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (sub_nonneg.2 hab)
+  have key : End.of (g ≫ b.asHom ≫ dagger g) - End.of (g ≫ a.asHom ≫ dagger g) =
+      End.of ((g ≫ h.asHom) ≫ dagger (g ≫ h.asHom)) := by
+    have := congrArg End.asHom hh
+    simp only [End.sub_asHom, End.mul_asHom, star_asHom] at this
+    ext
+    simp [← Preadditive.comp_sub, ← Preadditive.sub_comp, this]
+  rw [← sub_nonneg, key]
+  exact self_comp_dagger_nonneg _
+
+/-- For a self-adjoint `a : End Y` and an arrow `g : X ⟶ Y`, the conjugate `g†ag`, that is
+`g ≫ a ≫ dagger g`, is at most `‖a‖ g†g` in `End X`. -/
+theorem comp_comp_dagger_le_norm_smul {Y : C} (g : X ⟶ Y) (a : End Y)
+    (ha : IsSelfAdjoint a := by cfc_tac) :
+    End.of (g ≫ a.asHom ≫ dagger g) ≤ ‖a‖ • End.of (g ≫ dagger g) := by
+  refine (comp_comp_dagger_mono g ha.le_algebraMap_norm_self).trans_eq ?_
+  ext
+  simp [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul]
 
 end CategoryTheory.End

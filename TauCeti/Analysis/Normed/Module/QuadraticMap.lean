@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Anisotropic quadratic maps over normed fields are coercive
@@ -37,6 +39,8 @@ vector into a level set of `Q`.
 * `QuadraticMap.Anisotropic.isCompact_setOf_norm_apply_le`: the sublevel sets of the norm of an
   anisotropic quadratic form on a finite-dimensional space over a locally compact field are
   compact.
+* `QuadraticForm.nondegenerate_of_eq_neg_norm_sq`: a real quadratic form equal to `-‖v‖²` on a
+  normed space is nondegenerate.
 -/
 
 public section
@@ -122,5 +126,16 @@ theorem Anisotropic.isCompact_setOf_norm_apply_le {Q : QuadraticForm K V} (hQ : 
   exact e.isCompact_preimage.mpr hK
 
 end ModuleTopology
+
+section Nondegenerate
+
+variable {V : Type*} [NormedAddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
+
+/-- A real quadratic form equal to the negated squared norm `Q v = -‖v‖²` is nondegenerate. -/
+theorem _root_.QuadraticForm.nondegenerate_of_eq_neg_norm_sq (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    Q.Nondegenerate :=
+  QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
+
+end Nondegenerate
 
 end QuadraticMap

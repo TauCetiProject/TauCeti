@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Group.Integral
@@ -15,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Fourier.CharacterAnnihilator
 import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Linear change of variables for the Fourier transform
@@ -31,7 +30,7 @@ and multiplies the moment `∫ ‖y‖ ^ s ‖𝓕⁻ f y‖` of order `s` of th
 Fourier transform by `R ^ (n - n / r)`.
 
 The Jacobian factor comes from the linear change of variables
-`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`. The formulas use the total Bochner
+`MeasureTheory.Measure.integral_comp_linearMap`. The formulas use the total Bochner
 integral, so no integrability hypothesis is necessary. They apply to functions with values in any
 complex normed space, including Schwartz functions by coercion.
 
@@ -50,14 +49,19 @@ complex normed space, including Schwartz functions by coercion.
   inverse Fourier transform.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: for `R > 0`, replacing `g` by `g (R⁻¹ • ·)`
   multiplies the `Lʳ` norm of the inverse Fourier transform by `R ^ (n - n / r)`.
-* `TauCeti.fourier_comp_sub_const`, `TauCeti.support_fourier_comp_sub_const`: translating a
-  function by `a` multiplies its Fourier transform by the character `𝐞 (-⟪a, ·⟫)`, so the support
-  of the Fourier transform does not change.
+* `TauCeti.fourier_comp_sub_const`, `TauCeti.fourierInv_comp_sub_const`,
+  `TauCeti.support_fourier_comp_sub_const`: translating a function by `a` multiplies its Fourier
+  transform by the character `𝐞 (-⟪a, ·⟫)`, and its inverse Fourier transform by `𝐞 ⟪a, ·⟫`, so
+  the support of the Fourier transform does not change.
+* `TauCeti.integral_norm_fourierInv_comp_sub_const`: translation preserves the `L¹` norm of the
+  inverse Fourier transform.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
 * `Real.conj_fourier_apply`, `Real.conj_fourierInv_apply`: conjugating the Fourier transform of
   `v` gives the Fourier transform of `ξ ↦ conj (v (-ξ))`.
+* `Real.fourier_star_apply`: the Fourier transform of `star v` at `x` is the conjugate of that of
+  `v` at `-x`.
 * `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
   character at the frequency `ξ / 2π`.
 -/
@@ -83,8 +87,10 @@ theorem _root_.ContinuousLinearEquiv.fourier_comp (A : E ≃L[ℝ] E) (f : E →
     simp [ContinuousLinearMap.adjoint_inner_right]
   simp only [Real.fourier_eq, Function.comp_apply]
   simp_rw [← hinner]
-  exact Measure.integral_comp_continuousLinearEquiv volume
-    (fun x : E ↦ 𝐞 (-⟪x, ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y⟫) • f x) A
+  have h := Measure.integral_comp_linearMap volume
+    (fun x ↦ 𝐞 (-⟪x, ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y⟫) • f x)
+    A.toLinearEquiv.toLinearMap
+  simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] using h
 
 /-- The inverse Fourier transform has the same linear change-of-variables law. -/
 theorem _root_.ContinuousLinearEquiv.fourierInv_comp (A : E ≃L[ℝ] E) (f : E → F) (y : E) :
@@ -191,6 +197,19 @@ theorem fourier_comp_sub_const (f : E → F) (a ξ : E) :
     innerₗ_apply_apply] at h
   exact h
 
+/-- **Inverse Fourier transform of a translate**: translation becomes modulation,
+`𝓕⁻ (f (· - a)) x = 𝐞 ⟪a, x⟫ • 𝓕⁻ f x`. -/
+theorem fourierInv_comp_sub_const (f : E → F) (a x : E) :
+    𝓕⁻ (fun ξ ↦ f (ξ - a)) x = 𝐞 ⟪a, x⟫ • 𝓕⁻ f x := by
+  rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg, fourier_comp_sub_const,
+    inner_neg_right, neg_neg]
+
+/-- Translating a function does not change the `L¹` norm of its inverse Fourier transform:
+`∫ ‖𝓕⁻ (f (· - a))‖ = ∫ ‖𝓕⁻ f‖`. -/
+theorem integral_norm_fourierInv_comp_sub_const (f : E → F) (a : E) :
+    ∫ y, ‖𝓕⁻ (fun ξ ↦ f (ξ - a)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
+  simp_rw [fourierInv_comp_sub_const, Circle.norm_smul]
+
 /-- **Frequencies of a translate**: translating a function does not change the support of its
 Fourier transform. -/
 theorem support_fourier_comp_sub_const (f : E → F) (a : E) :
@@ -233,6 +252,16 @@ of `v` gives the inverse Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
 theorem _root_.Real.conj_fourierInv_apply (v : E → ℂ) (x : E) :
     conj (𝓕⁻ v x) = 𝓕⁻ (fun ξ ↦ conj (v (-ξ))) x := by
   rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg, Real.conj_fourier_apply]
+
+open ComplexConjugate in
+/-- **The Fourier transform of a conjugate.** The Fourier integral of the conjugate `star v` at
+`x` is the conjugate of the Fourier integral of `v` at `-x`. -/
+theorem _root_.Real.fourier_star_apply (v : E → ℂ) (x : E) : 𝓕 (star v) x = conj (𝓕 v (-x)) := by
+  have h : (fun ξ ↦ (fun η ↦ conj (v (-η))) (-ξ)) = star v := by
+    ext ξ
+    simp only [neg_neg, Pi.star_apply, starRingEnd_apply]
+  rw [Real.conj_fourier_apply, ← Real.fourierInv_eq_fourier_neg,
+    Real.fourierInv_eq_fourier_comp_neg, h]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The exponential `exp(i ⟪y, ξ⟫)` is the Fourier character `𝐞 ⟪y, ξ / 2π⟫`. -/

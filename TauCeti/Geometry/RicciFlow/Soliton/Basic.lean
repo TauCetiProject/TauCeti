@@ -7,14 +7,17 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # The gradient Ricci soliton equation
 
 The native soliton equation is `Ric + Hess f = c g`. Potential regularity is supplied separately
 when constructing its flow. Adding a constant to the potential leaves the equation unchanged;
-a constant potential gives the Einstein equation.
+a constant potential gives the Einstein equation. Tracing the equation gives
+`R + Δf = n c`, with no regularity assumption on the potential.
 
 ## References
 
@@ -53,10 +56,8 @@ theorem satisfiesGradientRicciSolitonEquation_iff {f : M → ℝ} {c : ℝ} :
 theorem satisfiesGradientRicciSolitonEquation_add_const_iff (f : M → ℝ) (a c : ℝ) :
     SatisfiesGradientRicciSolitonEquation (I := I) (fun x ↦ f x + a) c ↔
       SatisfiesGradientRicciSolitonEquation (I := I) f c := by
-  have hgrad : mgradient I (fun x ↦ f x + a) = mgradient I f := by
-    funext x
-    rw [mgradient_def, mgradient_def, mvfderiv_add_const]
-  simp only [satisfiesGradientRicciSolitonEquation_iff, hessian_def, hgrad]
+  simp only [satisfiesGradientRicciSolitonEquation_iff,
+    I.hessian_eq_inner_leviCivitaConnection_mgradient, mgradient_add_const]
 
 /-- A constant potential gives exactly the Einstein equation for the ambient metric. -/
 @[simp]
@@ -65,5 +66,26 @@ theorem satisfiesGradientRicciSolitonEquation_const_iff (a c : ℝ) :
       ∀ (x : M) (v w : TangentSpace I x),
         (leviCivitaConnection I M).ricciTensor x v w = c * inner ℝ v w := by
   simp only [satisfiesGradientRicciSolitonEquation_iff, hessian_const, add_zero]
+
+namespace SatisfiesGradientRicciSolitonEquation
+
+local notation "∇" => leviCivitaConnection I M
+
+variable {f : M → ℝ} {c : ℝ} (hsol : SatisfiesGradientRicciSolitonEquation (I := I) f c)
+
+include hsol
+
+/-- Tracing the soliton equation gives `R + Δf = n c`. -/
+theorem scalarCurvature_add_laplaceBeltrami (x : M) :
+    ∇.scalarCurvature x + laplaceBeltrami I f x = (Module.finrank ℝ E : ℝ) * c := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  have hs := satisfiesGradientRicciSolitonEquation_iff.mp hsol
+  rw [∇.scalarCurvature_eq_sum x b, laplaceBeltrami_eq_sum_hessian I f x b,
+    ← Finset.sum_add_distrib]
+  simp only [hs, real_inner_self_eq_norm_sq, b.orthonormal.1, one_pow, mul_one,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+    TauCeti.finrank_tangentSpace]
+
+end SatisfiesGradientRicciSolitonEquation
 
 end TauCeti.Manifold

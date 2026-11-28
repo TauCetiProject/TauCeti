@@ -54,12 +54,8 @@ variable (A : ObjectProperty C) [A.IsClosedUnderIsomorphisms]
 /-- **Stable isomorphisms are realised in a dense subcategory**: if `A` is dense, two objects have
 the same class in split `K₀` exactly when they become isomorphic after adding an object of `A`. -/
 theorem of_eq_of_iff_of_retractClosure_eq_top (hA : A.retractClosure = ⊤) {X Y : C} :
-    (of X : SplitK0 C) = of Y ↔ ∃ B : C, A B ∧ Nonempty (X ⊞ B ≅ Y ⊞ B) := by
-  refine ⟨fun h => ?_, fun ⟨B, _, h⟩ => of_eq_of_iff.2 ⟨B, h⟩⟩
-  obtain ⟨W, ⟨e⟩⟩ := of_eq_of_iff.1 h
-  obtain ⟨W', hW'⟩ := A.exists_prop_biprod_of_retractClosure_eq_top hA W
-  exact ⟨W ⊞ W', hW', ⟨(biprod.associator _ _ _).symm ≪≫ biprod.mapIso e (Iso.refl _) ≪≫
-    biprod.associator _ _ _⟩⟩
+    (of X : SplitK0 C) = of Y ↔ ∃ B : C, A B ∧ Nonempty (X ⊞ B ≅ Y ⊞ B) :=
+  of_eq_of_iff_of_forall_exists_biprod A (A.exists_prop_biprod_of_retractClosure_eq_top hA)
 
 variable [A.IsTriangulated] [EssentiallySmall.{w'} A.FullSubcategory]
 

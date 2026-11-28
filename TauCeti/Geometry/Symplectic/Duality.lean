@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -18,9 +21,9 @@ On a finite-dimensional real normed space, contraction with a symplectic form is
 invertible continuous linear map to the continuous dual. This identifies covectors with
 vectors and allows the contraction equation in Moser's deformation argument to be solved
 using the continuous-linear-map inverse. The symplectic pairing of two continuous maps is
-continuous, and that of two differentiable curves satisfies the product rule. The pairing is
-bounded by the operator norm of the form, and the continuous bilinear map minus its transpose is
-twice the form.
+continuous, that of two maps of class `C^n` is of class `C^n`, and that of two differentiable
+curves satisfies the product rule. The pairing is bounded by the operator norm of the form, and
+the continuous bilinear map minus its transpose is twice the form.
 
 ## Main declarations
 
@@ -91,6 +94,13 @@ theorem hasDerivAt_apply_comp (ω : SymplecticForm V) {p q : ℝ → V} {p' q' :
   simpa only [LinearMap.toContinuousBilinearMap_apply, add_comm] using
     ω.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear (fun _ ↦ hp) (fun _ ↦ hq)
 
+/-- The symplectic pairing of two maps of class `C^n` at a point is of class `C^n` there. -/
+theorem contDiffAt_apply_comp (ω : SymplecticForm V) {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {p q : E → V} {x : E} {n : WithTop ℕ∞} (hp : ContDiffAt ℝ n p x)
+    (hq : ContDiffAt ℝ n q x) : ContDiffAt ℝ n (fun z ↦ ω (p z) (q z)) x := by
+  simpa only [Function.comp_apply, LinearMap.toContinuousBilinearMap_apply] using
+    (ω.toBilinForm.toContinuousBilinearMap.contDiff.contDiffAt.comp x hp).clm_apply hq
+
 /-! ### Covectors as vectors through `ω` -/
 
 /-- The isomorphism `ω♭ : v ↦ ω(v, ·)` of a finite-dimensional symplectic vector space with its
@@ -121,6 +131,28 @@ theorem coe_flatEquiv_symm (ω : SymplecticForm V) :
     (ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V) =
       ω.toBilinForm.toContinuousBilinearMap.inverse := by
   rw [← coe_flatEquiv, ContinuousLinearMap.inverse_equiv]
+
+/-- `‖φ‖² ≤ ‖ω♭‖² ‖ω♭⁻¹ φ‖²`. -/
+theorem norm_sq_le_norm_flatEquiv_sq_mul_norm_flatEquiv_symm_apply_sq (ω : SymplecticForm V)
+    (φ : V →L[ℝ] ℝ) :
+    ‖φ‖ ^ 2 ≤ ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖ ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
+  rw [← mul_pow]
+  refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
+  simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
+
+/-- `‖ω♭⁻¹ φ‖² ≤ ‖ω♭⁻¹‖² ‖φ‖²`. -/
+theorem norm_flatEquiv_symm_apply_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
+    ‖ω.flatEquiv.symm φ‖ ^ 2 ≤ ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 * ‖φ‖ ^ 2 := by
+  rw [← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
+
+/-- The derivative of the vector field `ω♭⁻¹ ∘ η` is `ω♭⁻¹` of the derivative of the covector
+field `η`. -/
+theorem fderiv_flatEquiv_symm_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (ω : SymplecticForm V) (η : E → V →L[ℝ] ℝ) (z v : E) :
+    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
+  rw [← Function.comp_def ω.flatEquiv.symm η, ContinuousLinearEquiv.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
 
 omit [FiniteDimensional ℝ V] in
 /-- Two endomorphisms that pair in the same way under `ω` are equal. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
-public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
@@ -44,6 +44,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.integral`: the integral against `P`, a unital star algebra homomorphism.
 * `ProjValMeasure.integral_ofSimpleFunc`: the integral of a simple symbol is the finite sum of
   its values times the projections of its fibres.
+* `ProjValMeasure.sum_proj_preimage_singleton`: the projections of the fibres of a simple symbol
+  sum to the identity.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
 * `ProjValMeasure.integral_indicator`, `ProjValMeasure.proj_mul_integral`, and
@@ -51,6 +53,8 @@ continuous extension `LinearMap.extendOfNorm`.
   composing a projection with an integral restricts the symbol to that set.
 * `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
   commutes with every projection.
+* `ProjValMeasure.integral_mem_closure_span_proj`: every integral lies in the norm closure of the
+  complex linear span of the measurable-set projections.
 * `ProjValMeasure.integral_diag_eq_inner_integral` and `ProjValMeasure.inner_integral_star_left`:
   diagonal matrix elements of the integral and moving `P.integral (star g)` across the inner
   product.
@@ -66,6 +70,10 @@ continuous extension `LinearMap.extendOfNorm`.
   `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
+* `ProjValMeasure.isSelfAdjoint_integral_ofRealFunction`: real-valued bounded Borel symbols
+  integrate to self-adjoint operators.
+* `ProjValMeasure.integral_exp`: exponential compatibility
+  `P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f)`.
 
 ## References
 
@@ -128,10 +136,10 @@ private theorem setToSimpleFunc_smulProj_add (P : ProjValMeasure X H) (s t : Sim
 
 private theorem setToSimpleFunc_smulProj_piecewise (P : ProjValMeasure X H) (c : ℂ) {B : Set X}
     (hB : MeasurableSet B) :
-    (SimpleFunc.piecewise B hB (SimpleFunc.const X c) (SimpleFunc.const X 0)).setToSimpleFunc
-      P.smulProj = c • P.proj B hB := by
-  rw [SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB, smulProj_apply,
-    projOrZero_of_measurableSet P hB]
+    (SimpleFunc.piecewise B hB (SimpleFunc.const X c) 0).setToSimpleFunc P.smulProj =
+      c • P.proj B hB := by
+  rw [← SimpleFunc.const_zero, SimpleFunc.setToSimpleFunc_indicator _ P.smulProj_empty hB,
+    smulProj_apply, projOrZero_of_measurableSet P hB]
 
 /-- The integral of simple symbols against `P`, as a unital star algebra homomorphism. -/
 private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H) where
@@ -147,9 +155,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
     | const c hA =>
       induction t using SimpleFunc.induction with
       | const d hB =>
-        rw [SimpleFunc.piecewise_const_mul_piecewise_const, setToSimpleFunc_smulProj_piecewise,
-          setToSimpleFunc_smulProj_piecewise, setToSimpleFunc_smulProj_piecewise,
-          smul_mul_smul_comm, P.proj_inter]
+        simp only [SimpleFunc.const_zero, SimpleFunc.piecewise_zero_mul_piecewise_zero,
+          SimpleFunc.const_mul_const, setToSimpleFunc_smulProj_piecewise, smul_mul_smul_comm,
+          P.proj_inter]
       | add _ ht₁ ht₂ =>
         rw [mul_add, setToSimpleFunc_smulProj_add,
           setToSimpleFunc_smulProj_add, mul_add, ht₁, ht₂]
@@ -165,8 +173,9 @@ private def simpleIntegral (P : ProjValMeasure X H) : (SimpleFunc X ℂ) →⋆�
   map_star' s := by
     induction s using SimpleFunc.induction with
     | const c hA =>
-      rw [SimpleFunc.star_piecewise_const, setToSimpleFunc_smulProj_piecewise,
-        setToSimpleFunc_smulProj_piecewise, star_smul, (P.isSelfAdjoint_proj _ hA).star_eq]
+      simp only [SimpleFunc.const_zero, SimpleFunc.star_piecewise, SimpleFunc.star_const,
+        star_zero, setToSimpleFunc_smulProj_piecewise, star_smul,
+        (P.isSelfAdjoint_proj _ hA).star_eq]
     | add _ hs₁ hs₂ =>
       rw [star_add, setToSimpleFunc_smulProj_add,
         setToSimpleFunc_smulProj_add, star_add, hs₁, hs₂]
@@ -278,6 +287,12 @@ theorem integral_ofSimpleFunc (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
       ∑ c ∈ s.range, c • P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) :=
   (P.integral_ofSimpleFunc_eq_simpleIntegral s).trans (P.simpleIntegral_apply s)
 
+/-- Integrating a constant scalar symbol gives the corresponding scalar multiple of the identity. -/
+@[simp]
+theorem integral_algebraMap (P : ProjValMeasure X H) (c : ℂ) :
+    P.integral (algebraMap ℂ (BoundedBorelFunction X) c) = c • (1 : H →L[ℂ] H) := by
+  rw [AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
+
 /-- The integral of the indicator of a measurable set `B` is the projection `P(B)`. -/
 @[simp]
 theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) :
@@ -286,6 +301,21 @@ theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : Measurable
     ← BoundedBorelFunction.ofSimpleFunc_piecewise_const_zero,
     integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
+
+/-- The projections `P(s ⁻¹' {c})` of the fibres of a simple symbol `s` sum to the identity: the
+fibres partition `X`. -/
+theorem sum_proj_preimage_singleton (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
+    ∑ c ∈ s.range, P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) = 1 := by
+  -- The indicators of the fibres sum to the constant symbol `1`.
+  have h : ∑ c ∈ s.range, BoundedBorelFunction.indicator (s ⁻¹' {c}) (s.measurableSet_fiber c) 1
+      = 1 := by
+    ext x
+    rw [sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
+    · simp
+    · intro c _ hc
+      simp [Ne.symm hc]
+  rw [← map_one P.integral, ← h, map_sum]
+  simp
 
 /-- Multiplying an operator integral on the left by `P(B)` restricts the symbol to `B`. -/
 theorem proj_mul_integral (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B)
@@ -324,6 +354,19 @@ theorem forall_commute_integral_iff (P : ProjValMeasure X H) (A : H →L[ℂ] H)
   | ih s =>
     rw [integral_ofSimpleFunc]
     exact Commute.sum_right _ _ _ fun c _ => (h _ _).smul_right c
+
+/-- Every integral against `P` lies in the operator-norm closure of the complex linear span of the
+measurable-set projections of `P`. -/
+theorem integral_mem_closure_span_proj (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :
+    P.integral f ∈
+      closure (Submodule.span ℂ {p | ∃ B hB, P.proj B hB = p} : Set (H →L[ℂ] H)) := by
+  induction f using BoundedBorelFunction.denseRange_ofSimpleFunc.induction_on with
+  | hp => exact isClosed_closure.preimage P.continuous_integral
+  | ih s =>
+    refine subset_closure ?_
+    rw [integral_ofSimpleFunc]
+    exact Submodule.sum_mem _ fun c _ =>
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, _, rfl⟩)
 
 /-- Diagonal matrix elements of the integral are integrals against the diagonal measures:
 `∫ f d(P.diag ξ) = ⟪ξ, (∫ f dP) ξ⟫`. -/
@@ -442,6 +485,21 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
       simpa only [ENNReal.rpow_two] using
         MeasureTheory.ofReal_setIntegral_norm_sq_eq hint.integrableOn
     _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
+
+/-- Integrating a real-valued bounded Borel symbol against a projection-valued measure yields a
+self-adjoint operator. -/
+theorem isSelfAdjoint_integral_ofRealFunction (P : ProjValMeasure X H) (g : X → ℝ)
+    (hg : Measurable g) (hbound) :
+    IsSelfAdjoint (P.integral (BoundedBorelFunction.ofRealFunction g hg hbound)) :=
+  (BoundedBorelFunction.isSelfAdjoint_ofRealFunction g hg hbound).map P.integral
+
+/-- **Exponential compatibility of projection-valued measure integrals.** For every bounded Borel
+symbol `f : BoundedBorelFunction X`, `∫ exp f dP = exp (∫ f dP)`. -/
+theorem integral_exp (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :
+    P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f) := by
+  let +nondep : NormedAlgebra ℚ (BoundedBorelFunction X) := .restrictScalars ℚ ℂ _
+  let +nondep : NormedAlgebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
+  exact NormedSpace.map_exp P.integral P.continuous_integral f
 
 /-- The squared extended norm of `(∫ g dP) ξ` is the second moment of `‖g‖ₑ` against
 `P.diag ξ`. -/

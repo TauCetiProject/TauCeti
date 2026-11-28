@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Algebra.AddCircle
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -47,9 +48,13 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
 * `TauCeti.circleCosTwoMaxCrit`, `TauCeti.circleCosTwoMinCrit`: the same points as elements of
   the set of critical points, the basis elements of the Morse complex;
   `TauCeti.circleCosTwoMaxCrit_ne_circleCosTwoMinCrit`: a maximum is never a minimum among them.
+* `TauCeti.mvfderiv_circleCosTwo_coe`: its differential at the class of `t` is multiplication
+  by `-2 δ sin (2 (t - r))`.
 * `TauCeti.isMorse_circleCosTwo`: for `δ ≠ 0` it is a Morse function.
 * `TauCeti.mem_criticalPoints_circleCosTwo_iff_exists`: for `δ ≠ 0` its critical points are the
-  two maxima and the two minima.
+  two maxima and the two minima;
+  `TauCeti.exists_eq_circleCosTwoMaxCrit_or_eq_circleCosTwoMinCrit` states this for the critical
+  points.
 * `TauCeti.manifoldMorseIndex_circleCosTwoMax`, `TauCeti.manifoldMorseIndex_circleCosTwoMin`: for
   `δ > 0` the maxima have index `1` and the minima index `0`; likewise
   `TauCeti.manifoldMorseIndex_circleCosTwoMaxCrit` and
@@ -211,6 +216,12 @@ theorem circleCosTwo_add_pi (δ r : ℝ) : circleCosTwo δ (r + π) = circleCosT
   rw [circleCosTwo_coe, circleCosTwo_coe,
     show 2 * (t - (r + π)) = 2 * (t - r) - 2 * π by ring, Real.cos_sub_two_pi]
 
+/-- Rotating `δ cos (2 θ)` by `r` gives `δ cos (2 (θ - r))`. -/
+theorem circleCosTwo_zero_apply_sub (δ r : ℝ) (θ : AddCircle (2 * π)) :
+    circleCosTwo δ 0 (θ - r) = circleCosTwo δ r θ := by
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  rw [← AddCircle.coe_sub, circleCosTwo_coe, circleCosTwo_coe, sub_zero]
+
 /-- Rotating the function by `c` moves its maxima by `c`, keeping their labels. -/
 theorem circleCosTwoMax_add_coe (r c : ℝ) (j : Fin 2) :
     circleCosTwoMax r j + (c : AddCircle (2 * π)) = circleCosTwoMax (r + c) j := by
@@ -283,6 +294,15 @@ theorem contMDiff_circleCosTwo (δ r : ℝ) : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ 
   contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.2 <|
     ContDiffAt.congr_of_eventuallyEq (by fun_prop)
       (circleCosTwo_comp_extChartAt_symm_eventuallyEq δ r x)
+
+/-- **The differential of `θ ↦ δ cos (2 (θ - r))`.** At the class of `t`, the tangent line of the
+circle being read as `ℝ` through the local real lifts, it is multiplication by
+`-2 δ sin (2 (t - r))`. -/
+theorem mvfderiv_circleCosTwo_coe (δ r t : ℝ) :
+    mvfderiv 𝓘(ℝ) (circleCosTwo δ r) (t : AddCircle (2 * π)) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (-(2 * δ) * Real.sin (2 * (t - r))) :=
+  AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt <| by
+    simpa only [Function.comp_def, circleCosTwo_coe] using hasDerivAt_cos_two δ r t
 
 /-- At a point `x` of the circle with lift `y`, the angle `2 (y - r)` has the sine and cosine of the
 class of `2 (θ - r)`; these do not depend on the lift. -/
@@ -436,6 +456,15 @@ theorem mem_criticalPoints_circleCosTwo_iff_exists {δ : ℝ} (hδ : δ ≠ 0) (
   · rintro ⟨j, rfl | rfl⟩
     · exact circleCosTwoMax_mem_criticalPoints δ r j
     · exact circleCosTwoMin_mem_criticalPoints δ r j
+
+/-- For `δ ≠ 0`, every critical point of `θ ↦ δ cos (2 (θ - r))` is one of the labelled maxima
+`circleCosTwoMaxCrit δ r j` or minima `circleCosTwoMinCrit δ r j`. -/
+theorem exists_eq_circleCosTwoMaxCrit_or_eq_circleCosTwoMinCrit {δ : ℝ} (hδ : δ ≠ 0) (r : ℝ)
+    (p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r)) :
+    ∃ j, p = circleCosTwoMaxCrit δ r j ∨ p = circleCosTwoMinCrit δ r j := by
+  obtain ⟨j, h | h⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ r).1 p.property
+  · exact ⟨j, Or.inl (Subtype.ext h)⟩
+  · exact ⟨j, Or.inr (Subtype.ext h)⟩
 
 /-- **The maxima have Morse index `1`.** -/
 theorem manifoldMorseIndex_circleCosTwoMax {δ : ℝ} (hδ : 0 < δ) (r : ℝ) (j : Fin 2) :

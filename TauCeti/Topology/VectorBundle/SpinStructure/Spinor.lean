@@ -9,10 +9,11 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import TauCeti.LinearAlgebra.Determinant.Basic
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 public import TauCeti.Topology.VectorBundle.Associated.Bilinear
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
+import Mathlib.Topology.Algebra.Module.Star
 
 /-!
 # Spinor bundles and the determinant line of a `Spinᶜ` structure
@@ -24,7 +25,9 @@ complex vector bundles associated to `P` on which Seiberg–Witten theory is set
 **The determinant line.** For every rank `n ≥ 1`, `Spinᶜ(n)` acts on `ℂ` through its determinant
 character `[s, z] ↦ z²` (`CliffordAlgebra.spinCGroup.det`). The associated bundle
 `L = P ×_{z²} ℂ` is the determinant line of `s` (`TauCeti.SpinCStructure.determinantLine`), a
-Hermitian line bundle on which the central circle `[1, z]` acts with weight two.
+Hermitian line bundle on which the central circle `[1, z]` acts with weight two. Complex
+conjugation of the model (`TauCeti.SpinCStructure.DeterminantModel.conj`) intertwines the action
+of `χ g` with that of `g`, for charge conjugation `χ` (`CliffordAlgebra.spinCGroup.chargeConj`).
 
 **The half-spinor bundles.** In rank four, fix a model Hermitian Clifford module: an oriented
 real inner product space `V` of dimension four with `Q v = -‖v‖²`, an orthonormal basis `b` of
@@ -38,6 +41,13 @@ When `b` is positively oriented for `o` (`b.toBasis.orientation = o`), the bundl
 chosen by `s`; when `b` is negatively oriented for `o`, the two labels are exchanged.
 The central circle acts on them with weight one. Each point `p` of `P` over `x` is a unitary frame
 `S^ε ≃ W^ε_x`, and changing `p` acts by the half-spin representation.
+
+A conjugate-linear isometric equivalence `j : W ≃ W'` of model Hermitian Clifford modules
+commuting with Clifford multiplication, such as the quaternionic structure of the spinors, restricts
+to the model half-spinors (`Orientation.HalfSpinModel.conjEquiv`) and intertwines the action of `g`
+with that of its charge conjugate `χ g` (`Orientation.HalfSpinModel.conjEquiv_smul`). This is the
+model of charge conjugation of spinors `ψ ↦ j ψ` between the half-spinor bundles of a `Spinᶜ`
+structure and of its charge conjugate.
 
 **Clifford multiplication.** A point `p` of `P` over `x` also gives an orthonormal frame of
 `E x` (`TauCeti.OrthonormalFrameLift.frameAt`), hence a linear isometry `κ_p : E x ≃ V` through
@@ -62,6 +72,9 @@ half-spinors being the square of the twisting circle.
 
 * `Orientation.HalfSpinModel o hQ b ρ hρ ε`: the eigenspace `S^ε` with its action of `Spinᶜ(4)`.
 * `TauCeti.SpinCStructure.DeterminantModel n`: `ℂ` with `Spinᶜ(n)` acting by `z²`.
+* `TauCeti.SpinCStructure.DeterminantModel.conj`: complex conjugation of the determinant model.
+* `Orientation.HalfSpinModel.conjEquiv`: the conjugate-linear isometric isomorphism `S^ε ≃ S'^ε'`
+  induced by a conjugate-linear Clifford intertwiner `j : W ≃ W'`.
 * `TauCeti.SpinCStructure.determinantLine`: the determinant line `L` of a `Spinᶜ` structure.
 * `TauCeti.SpinCStructure.halfSpinorBundle`: the half-spinor bundle `W^ε` of a `Spinᶜ` structure
   of rank four.
@@ -75,6 +88,12 @@ half-spinors being the square of the twisting circle.
 ## Main results
 
 * `Orientation.HalfSpinModel.smul_cliffordMul`: model Clifford multiplication is equivariant.
+* `TauCeti.SpinCStructure.DeterminantModel.conj_chargeConj_smul`:
+  `conj (det (χ g) w) = det g (conj w)`.
+* `Orientation.HalfSpinModel.conjEquiv_smul`, `Orientation.HalfSpinModel.cliffordMul_conjEquiv`:
+  `j (g • ψ) = χ(g) • j ψ` and `c(v) (j ψ) = j (c(v) ψ)` on the model half-spinors.
+* `Orientation.HalfSpinModel.conjEquiv_conjEquiv`: if `j' ∘ j = -1` (for instance `j² = -1`), so
+  is the composite of their restrictions.
 * `TauCeti.SpinCStructure.finrank_determinantLine`: `L` is a line bundle.
 * `TauCeti.SpinCStructure.mk_ofCircle_smul_determinantLine`,
   `TauCeti.SpinCStructure.mk_ofCircle_smul_halfSpinorBundle`: the central circle acts with weight
@@ -269,6 +288,87 @@ theorem alternatingMap_smul {N : Type*} [AddCommGroup N] [Module ℂ N]
     congrArg (· ψ) (AlternatingMap.compLinearMap_eq_det_smul e ω
       (DistribSMul.toLinearMap ℂ _ x))
 
+/-! ### Charge conjugation of the model half-spinors -/
+
+section ChargeConjugation
+
+variable {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] [FiniteDimensional ℂ W']
+  {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'}
+  (hρ' : ∀ v, LinearMap.adjoint (ρ' (ι Q v)) = -ρ' (ι Q v)) {ε' : ℂ}
+
+variable (hρ)
+
+/-- **Charge conjugation of the model half-spinors**: a conjugate-linear isometric equivalence
+`j : W ≃ W'` of Hermitian Clifford modules commuting with Clifford multiplication,
+`j (c(v) w) = c(v) (j w)`, restricts to a conjugate-linear isometric equivalence `S^ε ≃ S'^ε'` of
+the model half-spinors, for `ε' = conj ε`; for the half-spinors `ε = ε' = ±1`. It is the
+restriction `CliffordAlgebra.eigenspaceChiralityConjEquiv` of `j` to the eigenspaces of the
+chirality element. For the quaternionic structure of the spinors this is `ψ ↦ j ψ`. It intertwines
+the action of `g ∈ Spinᶜ(4)` with that of its charge conjugate
+(`Orientation.HalfSpinModel.conjEquiv_smul`), and Clifford multiplication on both sides
+(`Orientation.HalfSpinModel.cliffordMul_conjEquiv`). -/
+def conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') :
+    HalfSpinModel o hQ b ρ hρ ε ≃ₗᵢ⋆[ℂ] HalfSpinModel o hQ b ρ' hρ' ε' :=
+  (toEigenspace.trans (eigenspaceChiralityConjEquiv o ρ ρ' j hj hε)).trans toEigenspace.symm
+
+/-- `conjEquiv hρ hρ' j hj hε` is `j` on the underlying vectors of the Clifford modules. -/
+@[simp]
+theorem coe_toEigenspace_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W')
+    (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) (hε : starRingEnd ℂ ε = ε')
+    (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    (toEigenspace (conjEquiv hρ hρ' j hj hε ψ) : W') = j (toEigenspace ψ) :=
+  coe_eigenspaceChiralityConjEquiv_apply o ρ ρ' j hj hε (toEigenspace ψ)
+
+/-- The inverse of `conjEquiv hρ hρ' j hj hε` is `j⁻¹` on the underlying vectors of the Clifford
+modules. -/
+@[simp]
+theorem coe_toEigenspace_conjEquiv_symm (j : W ≃ₗᵢ⋆[ℂ] W')
+    (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) (hε : starRingEnd ℂ ε = ε')
+    (ψ : HalfSpinModel o hQ b ρ' hρ' ε') :
+    (toEigenspace ((conjEquiv hρ hρ' j hj hε).symm ψ) : W) = j.symm (toEigenspace ψ) :=
+  coe_eigenspaceChiralityConjEquiv_symm_apply o ρ ρ' j hj hε (toEigenspace ψ)
+
+/-- **Charge conjugation of the model half-spinors intertwines charge conjugation of `Spinᶜ(4)`**:
+`j (g • ψ) = χ(g) • j ψ`, where `χ [s, z] = [s, z⁻¹]` (`CliffordAlgebra.spinCGroup.chargeConj`);
+in particular `j (z ρ(s) ψ) = z⁻¹ ρ'(s) (j ψ)`. -/
+theorem conjEquiv_smul (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') (g : SpinC) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    conjEquiv hρ hρ' j hj hε (g • ψ) =
+      spinCGroup.chargeConj _ hpos g • conjEquiv hρ hρ' j hj hε ψ := by
+  apply toEigenspace.injective
+  apply Subtype.ext
+  rw [coe_toEigenspace_conjEquiv, toEigenspace_smul, toEigenspace_smul,
+    realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε (b.ne_zero_of_neg_norm_sq hQ),
+    realSpinCHalfSpinSmoothHom_apply o hQ b ρ' ε' (b.ne_zero_of_neg_norm_sq hQ),
+    OrthonormalBasis.realSpinCGroupHom_chargeConj]
+  exact map_coe_spinCGroupHalfSpinRep_apply o ρ ε (b.ne_zero_of_neg_norm_sq hQ)
+    (j := j.toLinearEquiv.toLinearMap) hj _
+    (ψ' := toEigenspace (conjEquiv hρ hρ' j hj hε ψ)) (by simp)
+
+/-- **Charge conjugation of the model half-spinors commutes with Clifford multiplication**:
+`c(v) (j ψ) = j (c(v) ψ)` for `c(v) : S^ε → S^{-ε}` and `c(v) : S'^ε' → S'^{-ε'}`. -/
+theorem cliffordMul_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') {δ δ' : ℂ} (hδ : δ = -ε) (hδ' : δ' = -ε') (v : V)
+    (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    cliffordMul hδ' v (conjEquiv hρ hρ' j hj hε ψ) =
+      conjEquiv hρ hρ' j hj (by rw [hδ, hδ', map_neg, hε]) (cliffordMul hδ v ψ) := by
+  apply toEigenspace.injective
+  apply Subtype.ext
+  simp [hj]
+
+/-- If `j : W ≃ W'` and `j' : W' ≃ W` compose to `-1`, `j' (j w) = -w`, then so do their
+restrictions to the model half-spinors `S^ε ≃ S'^ε' ≃ S^ε`. For a quaternionic structure `j' = j`
+and `j² = -1`, with `ε` real. -/
+theorem conjEquiv_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') (j' : W' ≃ₗᵢ⋆[ℂ] W)
+    (hj' : ∀ v w, j' (ρ' (ι Q v) w) = ρ (ι Q v) (j' w)) (hε' : starRingEnd ℂ ε' = ε)
+    (hjj : ∀ w, j' (j w) = -w) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    conjEquiv hρ' hρ j' hj' hε' (conjEquiv hρ hρ' j hj hε ψ) = -ψ :=
+  toEigenspace.injective <| Subtype.ext <| by simp [hjj]
+
+end ChargeConjugation
+
 end HalfSpinModel
 
 end Orientation
@@ -312,6 +412,12 @@ variable {n}
 /-- The determinant model as `ℂ`. -/
 def toComplex : DeterminantModel n ≃ₗᵢ[ℂ] ℂ := LinearIsometryEquiv.refl ℂ ℂ
 
+variable (n) in
+omit [NeZero n] in
+/-- The determinant model has complex dimension one. -/
+theorem finrank_eq_one : finrank ℂ (DeterminantModel n) = 1 :=
+  (toComplex (n := n)).finrank_eq.trans (finrank_self ℂ)
+
 /-- `x` acts on the determinant model by multiplication by `det x`. -/
 @[simp]
 theorem toComplex_smul (x : spinCGroup (realCliffordForm n 0) hQn) (w : DeterminantModel n) :
@@ -349,6 +455,25 @@ instance instIsIsometricSMul :
       rw [DistribSMul.toAddMonoidHom_apply, ← toComplex.norm_map, toComplex_smul, norm_mul,
         Circle.norm_coe, one_mul, toComplex.norm_map]
 
+/-- Complex conjugation of the determinant model, a conjugate-linear isometric isomorphism. -/
+def conj : DeterminantModel n ≃L⋆[ℂ] DeterminantModel n :=
+  (toComplex.toContinuousLinearEquiv.trans (starL ℂ)).trans toComplex.symm.toContinuousLinearEquiv
+
+omit [NeZero n] in
+@[simp]
+theorem toComplex_conj (w : DeterminantModel n) :
+    toComplex (conj w) = starRingEnd ℂ (toComplex w) := by
+  simp [conj]
+
+/-- **Conjugation intertwines charge conjugation**: `conj (det (χ g) w) = det g (conj w)` for
+charge conjugation `χ` (`CliffordAlgebra.spinCGroup.chargeConj`), since `det (χ g) = (det g)⁻¹`
+lies on the circle. -/
+theorem conj_chargeConj_smul (g : SpinCn) (w : DeterminantModel n) :
+    conj (spinCGroup.chargeConj _ hQn g • w) = g • conj w :=
+  toComplex.injective (by
+    rw [toComplex_conj, toComplex_smul, spinCGroup.det_chargeConj, Circle.coe_inv_eq_conj]
+    simp)
+
 end DeterminantModel
 
 variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
@@ -363,9 +488,12 @@ abbrev determinantLine (s : SpinCStructure F E n) : X → Type _ :=
 /-- The determinant line has complex rank one. -/
 theorem finrank_determinantLine (s : SpinCStructure F E n) (x : X) :
     finrank ℂ (s.determinantLine x) = 1 := by
-  obtain ⟨p⟩ := s.nonempty_P x
-  rw [AssociatedBundle.finrank_eq ℂ SpinCn p, (DeterminantModel.toComplex (n := n)).finrank_eq,
-    Module.finrank_self]
+  rw [AssociatedBundle.finrank_eq ℂ SpinCn, DeterminantModel.finrank_eq_one]
+
+/-- Each fibre of the determinant line is finite-dimensional. -/
+instance finiteDimensional_determinantLine (s : SpinCStructure F E n) (x : X) :
+    FiniteDimensional ℂ (s.determinantLine x) :=
+  AssociatedBundle.finiteDimensional ℂ SpinCn (Classical.choice (s.nonempty_P x))
 
 /-- **The central circle acts with weight two on the determinant line**: `[p • [1, z], w]` is
 `[p, z² w]`. -/
@@ -408,8 +536,12 @@ abbrev halfSpinorBundle (s : SpinCStructure F E 4) : X → Type _ :=
 theorem finrank_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
     finrank ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
-  obtain ⟨p⟩ := s.nonempty_P x
-  rw [AssociatedBundle.finrank_eq ℂ SpinC p, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
+  rw [AssociatedBundle.finrank_eq ℂ SpinC, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
+
+/-- Each fibre of the half-spinor bundle is finite-dimensional. -/
+instance finiteDimensional_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
+    FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
+  AssociatedBundle.finiteDimensional ℂ SpinC (Classical.choice (s.nonempty_P x))
 
 /-- **The central circle acts with weight one on the half-spinors**: `[p • [1, z], ψ]` is
 `[p, z ψ]`. -/
@@ -432,12 +564,33 @@ def vectorFrame (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V) 
   (s.frameAt p).symm.trans b.repr.symm
 
 omit [Fact (finrank ℝ V = 4)] in
+/-- `κ_p⁻¹` sends `v` to the frame of `E x` at `p` applied to the coordinates of `v` in `b`. -/
+@[simp]
+theorem vectorFrame_symm_apply (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V)
+    {x : X} (p : s.P x) (v : V) : (s.vectorFrame b p).symm v = s.frameAt p (b.repr v) :=
+  (rfl)
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- `κ_p` is `b.repr.symm` applied to the coordinates of `v` in the frame `p`. -/
+theorem vectorFrame_apply_eq_repr_symm (s : SpinCStructure F E 4)
+    (b : OrthonormalBasis (Fin 4) ℝ V) {x : X} (p : s.P x) (v : E x) :
+    s.vectorFrame b p v = b.repr.symm ((s.frameAt p).symm v) := by
+  rw [vectorFrame, LinearIsometryEquiv.trans_apply]
+
+omit [Fact (finrank ℝ V = 4)] in
 /-- `κ_p` is `b` applied to the coordinates of `v` in the frame `p`. -/
 theorem vectorFrame_apply (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 4) ℝ V)
     {x : X} (p : s.P x) (v : E x) :
     s.vectorFrame b p v = b.negRealCliffordFormIsometryEquiv hQ ((s.frameAt p).symm v).ofLp := by
   rw [OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply, vectorFrame,
     LinearIsometryEquiv.trans_apply, ← b.sum_repr_symm]
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- The vector frame `κ_p` depends only on the frame of `E x` at `p`: points of the principal
+bundles of two `Spinᶜ` structures on `E` with the same frame have the same vector frame. -/
+theorem vectorFrame_eq_of_frameAt_eq {s t : SpinCStructure F E 4} {x : X} {p : s.P x}
+    {q : t.P x} (h : s.frameAt p = t.frameAt q) : s.vectorFrame b p = t.vectorFrame b q := by
+  rw [vectorFrame, vectorFrame, h]
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- **The vector frames are equivariant**: `κ_{p • g} = π(g)⁻¹ κ_p`, read through `b`. -/
@@ -455,6 +608,18 @@ theorem vectorFrame_smul (s : SpinCStructure F E 4) {x : X} (p : s.P x) (g : Spi
   rw [WithLp.toLp_ofLp, LinearIsometryEquiv.apply_symm_apply] at h
   rw [h, LinearIsometryEquiv.symm_apply_apply, WithLp.ofLp_toLp, MonoidHom.comp_apply,
     Subgroup.coe_subtype]
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- **Changing the frame rotates the vector frame**: `κ_p = π(g) κ_{p • g}`, where `π(g)` is the
+rotation of `V` by `g`, read through `b`. -/
+theorem vectorFrame_eq_toSpecialOrthogonal_vectorFrame_smul (s : SpinCStructure F E 4) {x : X}
+    (p : s.P x) (g : SpinC) (v : E x) :
+    s.vectorFrame b p v =
+      (spinCGroup.toSpecialOrthogonal Q (b.ne_zero_of_neg_norm_sq hQ)
+        (b.realSpinCGroupHom hQ hpos (b.ne_zero_of_neg_norm_sq hQ) g) : V ≃ₗ[ℝ] V)
+        (s.vectorFrame b (op g • p) v) := by
+  rw [vectorFrame_apply (hQ := hQ) s b (op g • p),
+    OrthonormalBasis.toSpecialOrthogonal_realSpinCGroupHom_apply, vectorFrame_smul]
 
 /-- **Clifford multiplication** `c(v) : W^ε_x → W^{ε'}_x` on the half-spinor bundles of a `Spinᶜ`
 structure of rank four, for `v ∈ E x` and `ε' = -ε`: in a frame `p` it is model Clifford
@@ -587,6 +752,33 @@ theorem halfSpinorDetAlternatingMap_mk (h₂ : finrank ℂ (eigenspace (ρ (chir
   ext i
   fin_cases i <;> simp
 
+/-- **The determinant pairing of two classes in a common frame**: `([p, v], [p, φ]) ↦ [p, ω(v, φ)]`
+for every point `p` of the principal bundle over `x`. -/
+@[simp]
+theorem halfSpinorDetAlternatingMap_mk_mk
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X} (p : s.P x)
+    (v φ : o.HalfSpinModel hQ b ρ hρ ε) :
+    s.halfSpinorDetAlternatingMap h₂ ω x
+        ![AssociatedBundle.mk SpinC p v, AssociatedBundle.mk SpinC p φ] =
+      AssociatedBundle.mk SpinC p (DeterminantModel.toComplex.symm (ω ![v, φ])) := by
+  rw [← halfSpinorDetAlternatingMap_mk h₂]
+  congr 1
+  ext i
+  fin_cases i <;> simp
+
+/-- The fibrewise descent of the model determinant pairing (`TauCeti.AssociatedBundle.bilinearMap`)
+applied to `(v, ψ)` is the alternating map `TauCeti.SpinCStructure.halfSpinorDetAlternatingMap`
+evaluated on the pair `![v, ψ]`. -/
+theorem bilinearMap_halfSpinorDetPairing_apply
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X}
+    (v ψ : s.halfSpinorBundle o hQ b ρ hρ ε x) :
+    AssociatedBundle.bilinearMap (P := s.P) (halfSpinorDetPairing ω)
+        (halfSpinorDetPairing_smul_smul h₂ ω) x v ψ =
+      s.halfSpinorDetAlternatingMap h₂ ω x ![v, ψ] := by
+  simp [halfSpinorDetAlternatingMap]
+
 /-- For a nonzero `ω` and `S^ε` of complex dimension two, the linear map `⋀² W^ε_x → L_x` induced
 by the determinant pairing is bijective: it is onto the line `L_x`, and both sides are lines. -/
 theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
@@ -595,9 +787,6 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
     Function.Bijective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
   obtain ⟨p⟩ := s.nonempty_P x
-  have : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
-    AssociatedBundle.finiteDimensional ℂ SpinC p
-  have : FiniteDimensional ℂ (s.determinantLine x) := AssociatedBundle.finiteDimensional ℂ SpinC p
   -- Every `[p, w]` is a multiple of the image of `[p, ψ₁] ∧ [p, ψ₂]`, for `ω(ψ₁, ψ₂) ≠ 0`.
   have hsurj : Function.Surjective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by

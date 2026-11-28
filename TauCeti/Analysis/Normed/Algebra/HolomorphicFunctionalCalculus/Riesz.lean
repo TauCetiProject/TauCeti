@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Module.Submodule.Invariant
 public import TauCeti.RingTheory.Idempotents.Corner.Jacobson
 public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
+import TauCeti.Analysis.Normed.Algebra.GelfandRadius
+import TauCeti.Analysis.Normed.Algebra.Spectrum
 
 /-!
 # Riesz idempotents
@@ -26,13 +28,20 @@ Since the calculus is a unital algebra homomorphism, the Riesz idempotents inher
 algebra of clopen parts of `σ(a)`: for a finite partition of `σ(a)` into clopen parts they are
 complete orthogonal idempotents, that is, pairwise orthogonal idempotents summing to `1`. They
 commute with every element commuting with `a`. The spectral mapping theorem shows that
-`rieszIdempotent a K` vanishes exactly when `K` is empty.
+`rieszIdempotent a K` vanishes exactly when `K` is empty, so distinct clopen parts have
+distinct Riesz idempotents.
 
 The idempotent `p = rieszIdempotent a K` cuts out the part `K` of the spectrum: in the corner
 ring `p A p` (`IsIdempotentElem.Corner`), whose unit is `p`, the compression of `μ - a` is a
 unit exactly when `μ ∉ K` (`TauCeti.isUnit_compress_rieszIdempotent_iff`), so the spectrum of
 the compression of `a` in this corner is `K` (`TauCeti.spectrum_compress_rieszIdempotent`).
 Equivalently, `(μ - a) p + (1 - p)` is a unit of `A` exactly when `μ ∉ K`.
+
+When `K` is the part `{μ}` of the spectrum, this pins `p` down: `a - μ` is quasinilpotent on the
+range of `p` and invertible on the range of `1 - p`, and these two properties characterize `p`
+among the idempotents commuting with `a` (`TauCeti.rieszIdempotent_eq_iff`). For a compact operator
+and `μ ≠ 0`, this identifies `p` with the projection of the stable Riesz splitting of `T - μ`
+(`IsCompactOperator.exists_forall_range_rieszIdempotent_eq_ker_pow`).
 
 For a bounded operator `T` on a complex Banach space, the ranges of the Riesz idempotents of `K`
 and of its complement are closed topological complements, each invariant under every operator
@@ -50,11 +59,16 @@ hyperinvariant subspace.
   `TauCeti.completeOrthogonalIdempotents_rieszIdempotent`: the same facts in the language of
   Mathlib's `OrthogonalIdempotents` and `CompleteOrthogonalIdempotents`.
 * `Commute.rieszIdempotent_right`: commutation with the commutant of `a`.
-* `TauCeti.rieszIdempotent_eq_zero_iff` and `TauCeti.rieszIdempotent_eq_one_iff`.
+* `TauCeti.rieszIdempotent_eq_zero_iff` and `TauCeti.rieszIdempotent_eq_one_iff`, and the
+  injectivity of `K ↦ rieszIdempotent a K` (`TauCeti.rieszIdempotent_injective`).
 * `TauCeti.isUnit_sub_mul_rieszIdempotent_add_iff` and
   `TauCeti.isUnit_compress_rieszIdempotent_iff`: the corner spectrum of `a` cut out by
   `rieszIdempotent a K` is `K`, stated as an equality in
   `TauCeti.spectrum_compress_rieszIdempotent`.
+* `TauCeti.spectralRadius_sub_mul_rieszIdempotent_eq_zero`,
+  `TauCeti.isUnit_sub_mul_one_sub_rieszIdempotent_add` and `TauCeti.rieszIdempotent_eq_iff`: the
+  Riesz idempotent of `{μ}` is the unique idempotent commuting with `a` on whose range `a - μ` is
+  quasinilpotent and on whose complementary range it is invertible.
 * `ContinuousLinearMap.ker_rieszIdempotent`,
   `ContinuousLinearMap.isTopCompl_range_rieszIdempotent_range_rieszIdempotent_compl` and
   `Commute.range_rieszIdempotent_mem_invtSubmodule`: the spectral decomposition of a bounded
@@ -231,6 +245,20 @@ theorem rieszIdempotent_eq_one_iff (a : A) (K : Clopens (spectrum ℂ a)) :
     rieszIdempotent a K = 1 ↔ K = ⊤ := by
   rw [← compl_eq_bot, ← rieszIdempotent_eq_zero_iff, rieszIdempotent_compl, sub_eq_zero, eq_comm]
 
+/-- Distinct clopen parts of the spectrum have distinct Riesz idempotents. -/
+theorem rieszIdempotent_injective (a : A) : Injective (rieszIdempotent a) := by
+  have hle {K L : Clopens (spectrum ℂ a)} (h : rieszIdempotent a K = rieszIdempotent a L) :
+      K ≤ L := by
+    rw [← disjoint_compl_right_iff, disjoint_iff, ← rieszIdempotent_eq_zero_iff]
+    simp only [rieszIdempotent_inf, rieszIdempotent_compl, h,
+      (isIdempotentElem_rieszIdempotent a L).mul_one_sub_self]
+  exact fun K L h ↦ le_antisymm (hle h) (hle h.symm)
+
+@[simp]
+theorem rieszIdempotent_inj {a : A} {K L : Clopens (spectrum ℂ a)} :
+    rieszIdempotent a K = rieszIdempotent a L ↔ K = L :=
+  (rieszIdempotent_injective a).eq_iff
+
 /-- **Corner spectrum**, unit form: for `p = rieszIdempotent a K`, the element
 `(μ - a) p + (1 - p)` is a unit exactly when `μ` lies outside `K`. -/
 theorem isUnit_sub_mul_rieszIdempotent_add_iff (a : A) (K : Clopens (spectrum ℂ a)) (μ : ℂ) :
@@ -266,6 +294,68 @@ theorem spectrum_compress_rieszIdempotent (a : A) (K : Clopens (spectrum ℂ a))
   ext μ
   rw [spectrum.mem_iff, ← IsIdempotentElem.compress_algebraMap, ← IsIdempotentElem.compress_sub,
     isUnit_compress_rieszIdempotent_iff, not_not]
+
+/-- If the part `K` of the spectrum lies in `{μ}`, then `a - μ` is quasinilpotent on the range of
+`p = rieszIdempotent a K`: the spectral radius of `(μ - a) p` vanishes. -/
+theorem spectralRadius_sub_mul_rieszIdempotent_eq_zero (a : A) {K : Clopens (spectrum ℂ a)}
+    {μ : ℂ} (hK : ∀ x ∈ K, (x : ℂ) = μ) :
+    spectralRadius ℂ ((algebraMap ℂ A μ - a) * rieszIdempotent a K) = 0 := by
+  have h : (algebraMap ℂ A μ - a) * rieszIdempotent a K =
+      holomorphicCalculus a
+        ((algebraMap ℂ _ μ - ofFun id analyticOnNhd_id) * holomorphicGerms.indicator K) := by
+    simp [rieszIdempotent_def]
+  rw [h, spectralRadius_eq_zero_iff_spectrum_subset_singleton_zero, spectrum_holomorphicCalculus,
+    spectrum_eq]
+  rintro _ ⟨x, hx, rfl⟩
+  by_cases hxK : (⟨x, hx⟩ : spectrum ℂ a) ∈ K
+  · simp [eval_indicator_of_mem hxK, ← hK _ hxK]
+  · simp [eval_indicator_of_notMem hxK]
+
+/-- If the part `K` of the spectrum contains `μ` whenever `μ` is a spectral value, then `a - μ`
+is invertible on the range of `1 - p` for `p = rieszIdempotent a K`: the element
+`(μ - a) (1 - p) + p` is a unit. -/
+theorem isUnit_sub_mul_one_sub_rieszIdempotent_add (a : A) {K : Clopens (spectrum ℂ a)} {μ : ℂ}
+    (hK : ∀ x : spectrum ℂ a, (x : ℂ) = μ → x ∈ K) :
+    IsUnit ((algebraMap ℂ A μ - a) * (1 - rieszIdempotent a K) + rieszIdempotent a K) := by
+  have h := (isUnit_sub_mul_rieszIdempotent_add_iff a Kᶜ μ).mpr fun ⟨x, hx, hxμ⟩ ↦
+    (SetLike.mem_coe.mp hx : x ∈ Kᶜ) (hK x hxμ)
+  rwa [rieszIdempotent_compl, sub_sub_cancel] at h
+
+/-- **The Riesz idempotent of an isolated point.** Let `K` be the part `{μ}` of the spectrum of
+`a`, empty when `μ` is not a spectral value. Then `q` is the Riesz idempotent of `K` exactly when
+`q` is an idempotent commuting with `a` such that `a - μ` is quasinilpotent on the range of `q`
+and invertible on the range of `1 - q`. -/
+theorem rieszIdempotent_eq_iff (a : A) {K : Clopens (spectrum ℂ a)} {μ : ℂ}
+    (hK : ∀ x : spectrum ℂ a, x ∈ K ↔ (x : ℂ) = μ) {q : A} :
+    rieszIdempotent a K = q ↔ IsIdempotentElem q ∧ Commute q a ∧
+      spectralRadius ℂ ((algebraMap ℂ A μ - a) * q) = 0 ∧
+      IsUnit ((algebraMap ℂ A μ - a) * (1 - q) + q) := by
+  refine ⟨?_, fun ⟨hq, hqa, hrad, hunit⟩ ↦ ?_⟩
+  · rintro rfl
+    exact ⟨isIdempotentElem_rieszIdempotent a K, (commute_rieszIdempotent a K).symm,
+      spectralRadius_sub_mul_rieszIdempotent_eq_zero a fun x hx ↦ (hK x).mp hx,
+      isUnit_sub_mul_one_sub_rieszIdempotent_add a fun x hx ↦ (hK x).mpr hx⟩
+  set p := rieszIdempotent a K
+  have hp : IsIdempotentElem p := isIdempotentElem_rieszIdempotent a K
+  have hqp : Commute q p := hqa.rieszIdempotent_right K
+  have hcp : Commute (algebraMap ℂ A μ - a) p :=
+    (Algebra.commute_algebraMap_left μ p).sub_left (commute_rieszIdempotent a K)
+  have hcq : Commute (algebraMap ℂ A μ - a) q :=
+    (Algebra.commute_algebraMap_left μ q).sub_left hqa.symm
+  have hpunit : IsUnit ((algebraMap ℂ A μ - a) * (1 - p) + (1 - (1 - p))) := by
+    rw [sub_sub_cancel]
+    exact isUnit_sub_mul_one_sub_rieszIdempotent_add a fun x hx ↦ (hK x).mpr hx
+  have hprad := spectralRadius_sub_mul_rieszIdempotent_eq_zero a fun x hx ↦ (hK x).mp hx
+  have h1 : (1 - p) * q = 0 :=
+    hp.one_sub.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero hq
+      ((Commute.one_left q).sub_left hqp.symm) ((Commute.one_right _).sub_right hcp) hcq
+      hpunit (spectralRadius_eq_zero_iff_gelfandRadius_eq_zero.mp hrad)
+  have h2 : (1 - q) * p = 0 :=
+    hq.one_sub.mul_eq_zero_of_isUnit_of_gelfandRadius_eq_zero hp
+      ((Commute.one_left p).sub_left hqp) ((Commute.one_right _).sub_right hcq) hcp
+      (by rwa [sub_sub_cancel]) (spectralRadius_eq_zero_iff_gelfandRadius_eq_zero.mp hprad)
+  rw [sub_mul, one_mul, sub_eq_zero] at h1 h2
+  rw [h2, hqp.eq, ← h1]
 
 end TauCeti
 

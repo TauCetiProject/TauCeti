@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
-public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry

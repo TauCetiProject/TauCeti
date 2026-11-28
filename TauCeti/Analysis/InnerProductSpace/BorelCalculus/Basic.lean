@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.DiagonalMeasure
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.DominatedConvergence
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
 public import TauCeti.MeasureTheory.MeasurableSpace.Subtype
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
 # The Borel functional calculus of a normal operator
@@ -42,9 +43,13 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.spectralPVM a`: the spectral measure of a normal operator `a`.
 * `ContinuousLinearMap.borelCalculus a`: the Borel functional calculus of `a`, the integral
   against `a.spectralPVM`.
+* `ContinuousLinearMap.continuous_borelCalculus`: continuity of `a.borelCalculus` for the supremum
+  norm on symbols.
 * `ContinuousLinearMap.borelCalculus_ofContinuousMap`: the Borel calculus extends `cfcHom`.
 * `ContinuousLinearMap.borelCalculus_restrict_id`: the coordinate function recovers `a`.
 * `ContinuousLinearMap.borelCalculus_indicator`: indicators give the spectral projections.
+* `ContinuousLinearMap.exists_seq_tendsto_borelCalculus_ofSimpleFunc`: `a` is the norm limit of
+  finite sums `∑ c • P(B_c)` of spectral projections with `c` in the spectrum.
 * `ContinuousLinearMap.eq_spectralPVM_iff`: uniqueness of the spectral measure.
 * `ContinuousLinearMap.spectralPVM_proj_eq_zero_iff`: the spectral measure has full support.
 * `ContinuousLinearMap.mul_spectralPVM_proj_preimage_singleton`,
@@ -55,6 +60,12 @@ commutes with every spectral projection, equivalently with every value of the Bo
   not an eigenvalue.
 * `ContinuousLinearMap.forall_commute_borelCalculus_iff`,
   `ContinuousLinearMap.forall_commute_spectralPVM_proj_iff`: the spectral commutant.
+* `ContinuousLinearMap.isSelfAdjoint_borelCalculus_ofRealFunction`: real-valued symbols produce
+  self-adjoint operators.
+* `ContinuousLinearMap.borelCalculus_exp`: `a.borelCalculus (exp f) = exp (a.borelCalculus f)`.
+* `ContinuousLinearMap.borelCalculus_mem_closure_span_spectralPVM_proj`,
+  `ContinuousLinearMap.mem_closure_span_spectralPVM_proj`: `f(a)` and `a` lie in the norm closure
+  of the complex linear span of the spectral projections of `a`.
 
 ## References
 
@@ -66,7 +77,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TauCeti
+open MeasureTheory TauCeti Filter Topology
 open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
@@ -88,6 +99,12 @@ def borelCalculus : BoundedBorelFunction (spectrum ℂ a) →⋆ₐ[ℂ] (H →L
 @[simp]
 theorem integral_spectralPVM : a.spectralPVM.integral = a.borelCalculus :=
   (rfl)
+
+/-- The Borel functional calculus of a normal operator is continuous for the supremum norm on
+symbols and the operator norm on `H →L[ℂ] H`. -/
+@[fun_prop]
+theorem continuous_borelCalculus : Continuous a.borelCalculus :=
+  a.spectralPVM.continuous_integral
 
 /-- The spectral measure is the projection-valued measure of `cfcHom`. -/
 theorem spectralPVM_eq_ofRepresentation :
@@ -123,11 +140,49 @@ theorem borelCalculus_restrict_id :
       ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))) = a := by
   rw [borelCalculus_ofContinuousMap, cfcHom_id]
 
+/-- Evaluating the Borel functional calculus at a constant scalar symbol gives that scalar
+multiple of the identity. -/
+@[simp]
+theorem borelCalculus_algebraMap (c : ℂ) :
+    a.borelCalculus (algebraMap ℂ (BoundedBorelFunction (spectrum ℂ a)) c) =
+      c • (1 : H →L[ℂ] H) := by
+  rw [← a.integral_spectralPVM, ProjValMeasure.integral_algebraMap]
+
 /-- The Borel calculus of the indicator of a Borel set `B` is the spectral projection `P(B)`. -/
 @[simp]
 theorem borelCalculus_indicator {B : Set (spectrum ℂ a)} (hB : MeasurableSet B) :
     a.borelCalculus (BoundedBorelFunction.indicator B hB 1) = a.spectralPVM.proj B hB :=
   a.spectralPVM.integral_indicator hB
+
+/-- **Approximation by finite spectral sums.** A normal operator `a` is the norm limit of the Borel
+calculi of simple functions on its spectrum that take their values in the spectrum, that is of
+finite sums `∑ c • P(B_c)` of spectral projections with `c ∈ spectrum ℂ a`
+(`ProjValMeasure.integral_ofSimpleFunc`). -/
+theorem exists_seq_tendsto_borelCalculus_ofSimpleFunc :
+    ∃ s : ℕ → SimpleFunc (spectrum ℂ a) ℂ, (∀ n z, s n z ∈ spectrum ℂ a) ∧
+      Tendsto (fun n ↦ a.borelCalculus (BoundedBorelFunction.ofSimpleFunc (s n))) atTop (𝓝 a) := by
+  -- On a zero space the spectrum is empty and every operator is `0`.
+  rcases subsingleton_or_nontrivial H with hH | hH
+  · refine ⟨fun _ ↦ SimpleFunc.const _ 0, fun n z ↦ absurd z.property (by simp), ?_⟩
+    simpa only [Subsingleton.elim _ a] using tendsto_const_nhds
+  obtain ⟨y₀, h₀⟩ := spectrum.nonempty a
+  refine ⟨fun n ↦ SimpleFunc.approxOn Subtype.val measurable_subtypeVal _ y₀ h₀ n,
+    fun n z ↦ SimpleFunc.approxOn_mem _ h₀ n z, ?_⟩
+  -- The simple approximants of the coordinate function converge to it uniformly.
+  have hlim : Tendsto (fun n ↦ BoundedBorelFunction.ofSimpleFunc
+      (SimpleFunc.approxOn Subtype.val measurable_subtypeVal _ y₀ h₀ n)) atTop
+      (𝓝 (BoundedBorelFunction.ofContinuousMap
+        ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)))) := by
+    simp only [BoundedBorelFunction.tendsto_iff_tendstoUniformly,
+      BoundedBorelFunction.coe_ofSimpleFunc, BoundedBorelFunction.coe_ofContinuousMap,
+      ContinuousMap.coe_restrict, ContinuousMap.coe_id]
+    exact SimpleFunc.tendstoUniformly_approxOn measurable_subtypeVal h₀
+      (spectrum.isCompact (𝕜 := ℂ) a).totallyBounded fun z ↦ subset_closure z.property
+  have hcont : Continuous a.borelCalculus := by
+    rw [← integral_spectralPVM]
+    exact a.spectralPVM.continuous_integral
+  have := (hcont.tendsto _).comp hlim
+  rwa [borelCalculus_restrict_id] at this
 
 /-- Diagonal matrix elements of the Borel calculus are integrals against the diagonal measures:
 `⟪ξ, f(a) ξ⟫ = ∫ f dμ_ξ`. -/
@@ -295,5 +350,35 @@ theorem range_spectralPVM_proj_preimage_singleton (z : ℂ) :
   refine ⟨?_, fun h => ⟨ξ, h⟩⟩
   rintro ⟨η, rfl⟩
   exact a.spectralPVM.proj_apply_proj _ _ η
+
+/-- The Borel functional calculus sends real-valued symbols to self-adjoint operators. -/
+theorem isSelfAdjoint_borelCalculus_ofRealFunction (g : spectrum ℂ a → ℝ) (hg : Measurable g)
+    (hbound) :
+    IsSelfAdjoint (a.borelCalculus (BoundedBorelFunction.ofRealFunction g hg hbound)) := by
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.isSelfAdjoint_integral_ofRealFunction g hg hbound
+
+/-- **Exponential compatibility of the Borel functional calculus.** For every bounded Borel symbol
+`f` on the spectrum of a normal operator `a`, `(exp f)(a) = exp (f(a))`. -/
+theorem borelCalculus_exp (f : BoundedBorelFunction (spectrum ℂ a)) :
+    a.borelCalculus (NormedSpace.exp f) = NormedSpace.exp (a.borelCalculus f) := by
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.integral_exp f
+
+/-- Every value of the Borel calculus of `a` lies in the operator-norm closure of the complex
+linear span of the spectral projections of `a`. -/
+theorem borelCalculus_mem_closure_span_spectralPVM_proj
+    (f : BoundedBorelFunction (spectrum ℂ a)) :
+    a.borelCalculus f ∈
+      closure (Submodule.span ℂ {p | ∃ B hB, a.spectralPVM.proj B hB = p} : Set (H →L[ℂ] H)) := by
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.integral_mem_closure_span_proj f
+
+/-- **Norm-approximation spectral theorem.** Every normal operator lies in the operator-norm
+closure of the complex linear span of its spectral projections. -/
+theorem mem_closure_span_spectralPVM_proj :
+    a ∈ closure (Submodule.span ℂ {p | ∃ B hB, a.spectralPVM.proj B hB = p} : Set (H →L[ℂ] H)) :=
+  Set.mem_of_eq_of_mem a.borelCalculus_restrict_id.symm
+    (a.borelCalculus_mem_closure_span_spectralPVM_proj _)
 
 end ContinuousLinearMap

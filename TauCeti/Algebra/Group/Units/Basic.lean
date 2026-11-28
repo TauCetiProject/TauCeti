@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Even
-public import Mathlib.Algebra.Group.Units.Hom
+public import Mathlib.Algebra.Group.Units.Equiv
 
 /-!
 # Units in monoids
@@ -22,8 +22,12 @@ ambient monoid. The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow
 
 * `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a local monoid
   homomorphism exactly when it is the image of a unit under `Units.map`.
+* `TauCeti.isUnit_of_isUnit_mul_of_isUnit_mul`: in any monoid, if `y * x` and `x * y` are both
+  units, then `x` is a unit.
 * `Units.mul_mul_inv_eq_iff_eq_of_commute`: for `z` commuting with a unit `u`, the conjugate of
   `a` by `u` equals `z` exactly when `a` does.
+* `Units.map_coeHom_bijective`: `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective: it is
+  the inverse of Mathlib's `toUnits : Mˣ ≃* Mˣˣ`.
 * `Units.val_inv_mul_mul_mul_eq_one`: if `(a : M) = z`, then `(l * a)⁻¹ * l * z = 1`.
 * `Units.val_inv_mul_mul_inv_mul_eq_one`: if `(a : M) = z` and `l ^ 2 * z = b`, then
   `(l * a)⁻¹ * l⁻¹ * b = 1`.
@@ -41,9 +45,25 @@ theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
   ⟨fun ⟨a, ha⟩ ↦ ⟨(IsUnit.of_map f a (ha ▸ u.isUnit)).unit, Units.ext (by simp [ha])⟩,
     fun ⟨a, ha⟩ ↦ ⟨a, by simp [← ha]⟩⟩
 
+/-- In any monoid, if both `y * x` and `x * y` are units, then `x` is a unit. -/
+theorem isUnit_of_isUnit_mul_of_isUnit_mul {M : Type*} [Monoid M] {x y : M}
+    (h₁ : IsUnit (y * x)) (h₂ : IsUnit (x * y)) : IsUnit x := by
+  obtain ⟨u, hu⟩ := h₁
+  obtain ⟨v, hv⟩ := h₂
+  exact isUnit_iff_exists_and_exists.2
+    ⟨⟨y * ↑v⁻¹, by rw [← mul_assoc, ← hv, v.mul_inv]⟩,
+     ⟨↑u⁻¹ * y, by rw [mul_assoc, ← hu, u.inv_mul]⟩⟩
+
 end TauCeti
 
 namespace Units
+
+/-- `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective, being the inverse of Mathlib's
+`toUnits : Mˣ ≃* Mˣˣ`: the units of the group `Mˣ` are the units of `M`. -/
+theorem map_coeHom_bijective (M : Type*) [Monoid M] : Function.Bijective (map (coeHom M)) := by
+  have h : ⇑(map (coeHom M)) = (toUnits (G := Mˣ)).symm := funext fun x => by
+    ext; simp [toUnits_symm_apply]
+  exact h ▸ (toUnits (G := Mˣ)).symm.bijective
 
 /-- For an element `z` commuting with a unit `u`, the conjugate of `a` by `u` equals `z` exactly
 when `a` does. -/

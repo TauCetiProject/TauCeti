@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Basic facts about manifold derivatives
 
 This file collects general facts about `mfderiv` that need nothing beyond Mathlib's basic
-manifold-derivative API.
+manifold-derivative API and the derivatives of extended charts.
 
 ## Main results
 
@@ -28,6 +29,9 @@ manifold-derivative API.
   image has injective derivative.
 * `TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp`: if `Φ ∘ Ψ = κ` near `x`, then `dΦ` takes
   `dΨ(u)` to `dκ(u)`.
+* `MDifferentiableAt.mfderiv_apply_mfderiv_of_eventuallyEq_id`,
+  `MDifferentiableAt.surjective_mfderiv_of_eventuallyEq_id`: if `g ∘ f =ᶠ[𝓝 x] id`, then
+  `dg_(f x) (df_x v) = v` and `dg_(f x)` is surjective.
 * `TauCeti.surjective_mfderiv_of_comp_eq`: a map `k` with `i₂ ∘ k = π ∘ j` along immersions `i₁`,
   `i₂` has surjective derivative when `dπ` is surjective and every tangent vector whose image under
   `dπ` is tangent to the image of `i₂` is carried by `di₁` into the image of `d(i₁ ∘ j)`.
@@ -36,6 +40,15 @@ manifold-derivative API.
   differentiability hypothesis.
 * `TauCeti.finiteDimensional_of_injective_mfderiv`: a map into a finite-dimensional manifold
   whose differential is injective at some point has a finite-dimensional source model.
+* `TauCeti.injective_mfderiv_of_injective_mfderiv_comp`: if `d(g ∘ f)_x` is injective and `f`, `g`
+  are differentiable at `x`, `f x`, then `df_x` is injective.
+* `TauCeti.injective_mfderiv_comp`: if `df_x` and `dg_(f x)` are injective, so is `d(g ∘ f)_x`.
+* `TauCeti.range_mfderiv_comp`: the range of `d(g ∘ f)_x` is the image under `dg_(f x)` of the
+  range of `df_x`.
+* `TauCeti.mfderiv_ne_zero_of_injective`: an injective differential out of a manifold with a
+  nontrivial model space is nonzero.
+* `TauCeti.injective_mfderiv_of_eventuallyEq_comp_extChartAt`: a map agreeing near `x` with
+  `g ∘ extChartAt I x` has injective differential at `x` when `g` does at the chart image of `x`.
 -/
 
 public section
@@ -124,6 +137,26 @@ theorem mfderiv_apply_mfderiv_of_eventuallyEq_comp {Ψ : M → N} {Φ : N → P}
   -- The cast between the tangent spaces at `(Φ ∘ Ψ) x` and `κ x` is definitionally the identity.
   rfl
 
+section EventuallyEqId
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x) (df_x v) = v`. -/
+theorem _root_.MDifferentiableAt.mfderiv_apply_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) (v : TangentSpace I x) :
+    mfderiv J I g (f x) (mfderiv I J f x v) = v := by
+  simpa using mfderiv_apply_mfderiv_of_eventuallyEq_comp hgf hg hf v
+
+/-- If `g ∘ f =ᶠ[𝓝 x] id` and both maps are differentiable, then `dg_(f x)` is surjective. -/
+theorem _root_.MDifferentiableAt.surjective_mfderiv_of_eventuallyEq_id {f : M → N} {g : N → M}
+    (hg : MDifferentiableAt J I g (f x)) (hf : MDifferentiableAt I J f x)
+    (hgf : g ∘ f =ᶠ[𝓝 x] id) : Function.Surjective (mfderiv J I g (f x)) :=
+  fun v ↦ ⟨mfderiv I J f x v, hg.mfderiv_apply_mfderiv_of_eventuallyEq_id hf hgf v⟩
+
+end EventuallyEqId
+
 variable {E₁ H₁ M₁ E₂ H₂ M₂ F H' N F₂ H₂' N₂ : Type*}
   [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [TopologicalSpace H₁] {I₁ : ModelWithCorners 𝕜 E₁ H₁}
   [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
@@ -201,5 +234,72 @@ theorem finiteDimensional_of_injective_mfderiv {f : M → N}
   have : FiniteDimensional 𝕜 (TangentSpace I x) :=
     Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
   exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
+
+section Comp
+
+variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+  {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P]
+
+/-- If `g ∘ f` has injective differential at `x`, where `f` is differentiable at `x` and `g` at
+`f x`, then `f` has injective differential at `x`: by the chain rule,
+`d(g ∘ f)_x = dg_(f x) ∘ df_x`. -/
+theorem injective_mfderiv_of_injective_mfderiv_comp {f : M → N} {g : N → P}
+    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x)
+    (hinj : Function.Injective (mfderiv I K (g ∘ f) x)) :
+    Function.Injective (mfderiv I J f x) := by
+  rw [mfderiv_comp x hg hf, ContinuousLinearMap.coe_comp] at hinj
+  exact hinj.of_comp
+
+/-- If `f` has injective differential at `x` and `g` has injective differential at `f x`, then
+`g ∘ f` has injective differential at `x`: both maps are then differentiable there, and by the
+chain rule `d(g ∘ f)_x = dg_(f x) ∘ df_x`. -/
+theorem injective_mfderiv_comp {f : M → N} {g : N → P}
+    (hg : Function.Injective (mfderiv J K g (f x))) (hf : Function.Injective (mfderiv I J f x)) :
+    Function.Injective (mfderiv I K (g ∘ f) x) := by
+  rw [mfderiv_comp x (mdifferentiableAt_of_mfderiv_injective hg)
+    (mdifferentiableAt_of_mfderiv_injective hf), ContinuousLinearMap.coe_comp]
+  exact hg.comp hf
+
+/-- The range of the differential of `g ∘ f` at `x`, where `f` is differentiable at `x` and `g`
+at `f x`, is the image under `dg_(f x)` of the range of `df_x`. -/
+theorem range_mfderiv_comp {f : M → N} {g : N → P}
+    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x) :
+    LinearMap.range (mfderiv I K (g ∘ f) x).toLinearMap =
+      (LinearMap.range (mfderiv I J f x).toLinearMap).map
+        (mfderiv J K g (f x) : TangentSpace J (f x) →ₗ[𝕜] TangentSpace K (g (f x))) := by
+  rw [mfderiv_comp x hg hf]
+  exact LinearMap.range_comp _ _
+
+end Comp
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map out of a manifold modelled on a nontrivial space whose differential at `x` is injective
+has nonzero differential at `x`. -/
+theorem mfderiv_ne_zero_of_injective [Nontrivial E] {f : M → N}
+    (hinj : Function.Injective (mfderiv I J f x)) : mfderiv I J f x ≠ 0 := by
+  -- The tangent space at `x` is the nontrivial model space, so the zero map is not injective.
+  have : Nontrivial (TangentSpace I x) := ‹Nontrivial E›
+  exact fun h0 ↦ LinearMap.ne_zero_of_injective hinj
+    (by rw [h0, ContinuousLinearMap.toLinearMap_zero])
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map agreeing near `x` with `g ∘ φ`, for the extended chart `φ` at `x` and a map `g` on the
+model space with injective differential at `φ x`, has injective differential at `x`: the
+differential of `φ` at `x` is invertible. -/
+theorem injective_mfderiv_of_eventuallyEq_comp_extChartAt [IsManifold I 1 M] {f : M → N}
+    {g : E → N} (hgd : MDifferentiableAt 𝓘(𝕜, E) J g (extChartAt I x x))
+    (hg : Function.Injective (mfderiv 𝓘(𝕜, E) J g (extChartAt I x x)))
+    (hev : f =ᶠ[𝓝 x] g ∘ extChartAt I x) : Function.Injective (mfderiv I J f x) := by
+  have hφ := (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H x)).hasMFDerivAt
+  rw [((hgd.hasMFDerivAt.comp x hφ).congr_of_eventuallyEq hev).mfderiv,
+    ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
+  refine (tangentSpaceCast _ _ _).injective.comp (hg.comp ?_)
+  obtain ⟨A, hA⟩ := isInvertible_mfderiv_extChartAt (I := I) (mem_extChartAt_source x)
+  rw [← hA]
+  exact A.injective
 
 end TauCeti

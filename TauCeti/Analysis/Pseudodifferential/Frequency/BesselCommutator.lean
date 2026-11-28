@@ -116,18 +116,9 @@ theorem besselPotentialCLM_comp_quantizeUniformCLM_ofSpatial_sub
       quantizeUniformCLM_congr hc (h.isUniform.comp (isUniform_besselPotential s))
         (funext fun p ↦ by
           simp [coefficient_comp, ContinuousLinearMap.comp_smul, ContinuousLinearMap.smul_comp])]
-  have hleft : SchwartzMap.besselPotentialCLM (E := CoordinateSpace n) (F := W) (s : ℂ) ∘L
-      quantizeUniformCLM (ofSpatial f hf) h.isUniform =
-      quantizeUniformCLM ((besselPotential s).sharp (ofSpatial f hf) h)
-        ((isUniform_besselPotential s).sharp h) := by
-    ext u x
-    rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply,
-      quantizeSchwartzValue_besselPotential_sharp, SchwartzMap.besselPotentialCLM_ofReal]
-    congr 2
-    ext y
-    rw [HasCompactSupport.toSchwartzMap_toFun, quantizeUniformCLM_apply]
-  rw [hleft, hsharp, SchwartzMap.besselPotentialCLM_ofReal,
-    quantizeUniformCLM_comp_besselMultiplier, add_sub_cancel_left]
+  rw [SchwartzMap.besselPotentialCLM_ofReal, SchwartzMap.besselPotentialCLM_ofReal,
+    besselMultiplier_comp_quantizeUniformCLM h, hsharp, quantizeUniformCLM_comp_besselMultiplier,
+    add_sub_cancel_left]
 
 end Normed
 

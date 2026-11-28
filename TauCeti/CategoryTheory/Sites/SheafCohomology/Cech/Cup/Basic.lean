@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 
-import TauCeti.Data.Fin.Basic
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # The cup product on Čech complexes
@@ -65,7 +65,10 @@ presheaves act on factors and restrictions by restriction maps and by components
 `TauCeti.CategoryTheory.cechFace_cechComplexFunctor_map`); the comparison along a functor acts
 by the restrictions along the product comparison maps
 (`TauCeti.CategoryTheory.cechComponent_cechComplexCompIso_hom`,
-`TauCeti.CategoryTheory.cechFace_cechComplexCompIso_hom`).
+`TauCeti.CategoryTheory.cechFace_cechComplexCompIso_hom`). For a terminal object `T`, the
+augmentation `F(T) → Č⁰(U, F)` restricts a section to every factor
+(`TauCeti.CategoryTheory.cechComponent_cechAugmentation_f_zero`,
+`TauCeti.CategoryTheory.cechFace_cechAugmentation_f_zero`).
 
 ## References
 
@@ -263,6 +266,26 @@ theorem cechFace_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F �
   -- the products `∏ᶜ fun j ↦ U ((k ∘ σ) j)` and `∏ᶜ fun x ↦ U (k (σ x))` are the same object
   rfl
 
+/-- The factors of the augmentation `F(T) → Č⁰(U, F)` for a terminal object `T`: the factor indexed
+by `a` of the augmentation of a section `s` over `T` is the restriction of `s`. -/
+theorem cechComponent_cechAugmentation_f_zero {T : C} (hT : IsTerminal T) (a : Fin 1 → ι)
+    (s : F.obj (op T)) :
+    cechComponent a
+        (((cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f 0).hom s) =
+      (F.map (hT.from (∏ᶜ fun j ↦ U (a j))).op).hom s :=
+  congrArg (fun f ↦ ModuleCat.Hom.hom f s)
+    (cechAugmentation_f_zero_comp_π U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) a)
+
+/-- The restrictions of the augmentation `F(T) → Č⁰(U, F)` for a terminal object `T`: every
+restriction of the augmentation of a section `s` over `T` is the restriction of `s`. -/
+theorem cechFace_cechAugmentation_f_zero {T : C} (hT : IsTerminal T) {n : ℕ}
+    (k : Fin (n + 1) → ι) (σ : Fin 1 → Fin (n + 1)) (s : F.obj (op T)) :
+    cechFace k σ
+        (((cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f 0).hom s) =
+      (F.map (hT.from (∏ᶜ fun j ↦ U (k j))).op).hom s := by
+  rw [cechFace_apply, cechComponent_cechAugmentation_f_zero, ← AlgCat.comp_apply, ← F.map_comp,
+    ← op_comp, hT.hom_ext (_ ≫ _) (hT.from _)]
+
 end Maps
 
 /-- Restrictions along maps of vertices with the same values agree. -/
@@ -326,27 +349,9 @@ theorem d_cechCup (a : (cechAlgebraComplex U F).X p) (b : (cechAlgebraComplex U 
   subst h
   refine cechCochain_ext fun k ↦ ?_
   rw [map_add, map_zsmul, cechComponent_d, cechComponent_cechCup, cechComponent_cechCup,
-    cechFace_d, cechFace_d, ← Fin.sum_congr' _ (show p + 1 + (q + 1) = p + q + 2 by omega),
-    Fin.sum_univ_add, Fin.sum_univ_castSucc (n := p + 1), Fin.sum_univ_succ (n := q + 1)]
+    cechFace_d, cechFace_d]
   simp only [cechFace_cechCup]
-  -- the faces `j ≤ p` of `a ⌣ b` are the faces of `d a`, the faces `j ≥ p + 1` those of `d b`,
-  -- and the last face of `d a` cancels the first face of `d b`
-  rw [add_mul, mul_add, smul_add, Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
-  have key {M : Type w} [AddCommGroup M] {P₁ P₂ Q₁ Q₂ X Y : M} (h₁ : P₁ = Q₁) (h₂ : P₂ = Q₂)
-      (h : X + Y = 0) : P₁ + P₂ = Q₁ + X + (Y + Q₂) := by
-    rw [h₁, h₂, add_assoc Q₁, ← add_assoc X, h, zero_add]
-  refine key (Finset.sum_congr rfl fun x _ ↦ ?_)
-    (Finset.sum_congr rfl fun x _ ↦ ?_) ?_
-  · rw [smul_mul_assoc]
-    congr 2 <;> exact cechFace_eq_of_val _ fun i ↦ by grind [Fin.val_succAbove]
-  · rw [mul_smul_comm, smul_smul, ← pow_add]
-    congr 2
-    · simp only [Fin.val_cast, Fin.val_natAdd, Fin.val_succ]
-      omega
-    all_goals exact cechFace_eq_of_val _ fun i ↦ by grind [Fin.val_succAbove]
-  · rw [Fin.val_last, Fin.val_zero, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul]
-    simp only [neg_mul, smul_mul_assoc, neg_add_eq_zero]
-    congr 2 <;> exact cechFace_eq_of_val _ fun i ↦ by grind [Fin.val_succAbove]
+  exact Fin.sum_neg_one_pow_zsmul_mul_succAbove (fun σ ↦ cechFace k σ a) (fun σ ↦ cechFace k σ b)
 
 /-- The cup product of two cocycles is a cocycle. -/
 theorem d_cechCup_eq_zero {a : (cechAlgebraComplex U F).X p} {b : (cechAlgebraComplex U F).X q}
@@ -478,7 +483,6 @@ variable {D : Type*} [Category D] [HasFiniteProducts D] (G : C ⥤ D) {Q : Dᵒ�
 `G` preserving the products of members: the factor indexed by `k` is the image of the factor of
 the same index under `Q` applied to the comparison map
 `G(U (k 0) × ⋯ × U (k m)) ⟶ G (U (k 0)) × ⋯ × G (U (k m))`. -/
-@[simp]
 theorem cechComponent_cechComplexCompIso_hom {m : ℕ} (k : Fin (m + 1) → ι)
     (c : (cechAlgebraComplex (fun i ↦ G.obj (U i)) Q).X m) :
     cechComponent (F := G.op ⋙ Q) k
@@ -490,7 +494,6 @@ theorem cechComponent_cechComplexCompIso_hom {m : ℕ} (k : Fin (m + 1) → ι)
 
 /-- The restrictions of the comparison `Č(G ∘ U, Q) ≅ Č(U, G.op ⋙ Q)` are the images of the
 restrictions under `Q` applied to the comparison maps of products. -/
-@[simp]
 theorem cechFace_cechComplexCompIso_hom {m l : ℕ} (k : Fin (l + 1) → ι)
     (σ : Fin (m + 1) → Fin (l + 1)) (c : (cechAlgebraComplex (fun i ↦ G.obj (U i)) Q).X m) :
     cechFace (F := G.op ⋙ Q) k σ

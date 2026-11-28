@@ -23,7 +23,11 @@ the extended masses (`MeasureTheory.measure_preimage_fst_singleton_eq_sum`); thi
 for the real masses `Measure.real`. A set of zero first-marginal mass carries no mass in any
 rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`). The graph
 `{z | z.2 = f z.1}` of a measurable function is null for `μ.prod ν` whenever `ν` gives no mass to
-points (`MeasureTheory.Measure.prod_graph_eq_zero`).
+points (`MeasureTheory.Measure.prod_graph_eq_zero`). More generally, for an s-finite second factor
+the graph has measure `∑' y, μ (f ⁻¹' {y}) * ν {y}` (`MeasureTheory.Measure.prod_graph`), and the
+diagonal carries mass `∑' x, μ {x} * ν {x}` (`MeasureTheory.Measure.prod_diagonal`, with real-valued
+counterparts `MeasureTheory.Measure.hasSum_prod_real_diagonal` and
+`MeasureTheory.Measure.prod_real_diagonal` for finite measures).
 For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
@@ -62,6 +66,9 @@ invariant (`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 A coupling that moves almost every point by less than `r` and is carried in its second marginal
 by a set `s` gives no first-marginal mass to a point at distance at least `r` from every point of
 `s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`).
+
+Projecting the graph pushforward along `(T, id)` onto the second coordinate recovers the original
+measure (`MeasureTheory.Measure.snd_map_prodMk_id₀` and `MeasureTheory.Measure.snd_map_prodMk_id`).
 -/
 
 public section
@@ -207,6 +214,70 @@ theorem prod_graph_eq_zero {α β : Type*} [MeasurableSpace α] [MeasurableSpace
     (hf : Measurable f) : μ.prod ν {z : α × β | z.2 = f z.1} = 0 :=
   measure_prod_null_of_ae_null (measurableSet_eq_fun measurable_snd (hf.comp measurable_fst))
     (Filter.Eventually.of_forall fun x ↦ by simp)
+
+/-- The product measure of the graph `{z | z.2 = f z.1}` of a measurable function is the sum over
+all target points `y` of `μ (f ⁻¹' {y}) * ν {y}`. Only the second factor must be s-finite. -/
+theorem prod_graph {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableEq β]
+    (μ : Measure α) (ν : Measure β) [SFinite ν] {f : α → β} (hf : Measurable f) :
+    (μ.prod ν) {z : α × β | z.2 = f z.1} = ∑' y : β, μ (f ⁻¹' {y}) * ν {y} := by
+  have hmeas : MeasurableSet {z : α × β | z.2 = f z.1} :=
+    measurableSet_eq_fun measurable_snd (hf.comp measurable_fst)
+  have hν_meas : Measurable fun y : β ↦ ν {y} := by
+    have hdiag : (fun y : β ↦ ν (Prod.mk y ⁻¹' Set.diagonal β)) = fun y : β ↦ ν {y} := by
+      ext1 y
+      congr 1
+      ext z
+      simp [eq_comm]
+    simpa only [hdiag] using measurable_measure_prodMk_left (ν := ν) measurableSet_diagonal
+  have hS : (Function.support fun y : β ↦ ν {y}).Countable := by
+    simpa [Function.support, pos_iff_ne_zero] using
+      Measure.countable_meas_level_set_pos (μ := ν) (g := id) measurable_id
+  have hsec : ∀ x : α, Prod.mk x ⁻¹' {z : α × β | z.2 = f z.1} = {f x} := fun x ↦ by
+    ext y
+    simp
+  calc (μ.prod ν) {z : α × β | z.2 = f z.1}
+      = ∫⁻ x : α, ν {f x} ∂μ := by
+        rw [prod_apply hmeas]
+        simp_rw [hsec]
+    _ = ∫⁻ y : β, ν {y} ∂(μ.map f) := by
+        rw [← Function.comp_def (fun y : β ↦ ν {y}) f, lintegral_comp hν_meas hf]
+    _ = ∑' y : β, ν {y} * (μ.map f) {y} := by
+        rw [← setLIntegral_eq_of_support_subset Set.Subset.rfl, lintegral_countable _ hS,
+          tsum_subtype_eq_of_support_subset
+            (Function.support_mul_subset_left (fun y : β ↦ ν {y}) (fun y : β ↦ (μ.map f) {y}))]
+    _ = ∑' y : β, μ (f ⁻¹' {y}) * ν {y} := by
+        simp_rw [map_apply hf (measurableSet_singleton _), mul_comm]
+
+/-- The product measure of the diagonal `Set.diagonal α` is `∑' x, μ {x} * ν {x}`. Only the second
+factor must be s-finite. -/
+theorem prod_diagonal {α : Type*} [MeasurableSpace α] [MeasurableEq α]
+    (μ ν : Measure α) [SFinite ν] :
+    (μ.prod ν) (Set.diagonal α) = ∑' x : α, μ {x} * ν {x} := by
+  have hdiag : Set.diagonal α = {z : α × α | z.2 = id z.1} := by
+    ext ⟨x, y⟩
+    simp [eq_comm]
+  rw [hdiag, prod_graph μ ν measurable_id]
+  simp
+
+/-- For finite measures `μ` and `ν` on a space with measurable diagonal, the products
+`μ.real {x} * ν.real {x}` of their singleton masses are summable with sum
+`(μ.prod ν).real (Set.diagonal α)`. -/
+theorem hasSum_prod_real_diagonal {α : Type*} [MeasurableSpace α] [MeasurableEq α]
+    (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    HasSum (fun x : α ↦ μ.real {x} * ν.real {x}) ((μ.prod ν).real (Set.diagonal α)) := by
+  have hne : ∑' x : α, μ {x} * ν {x} ≠ ∞ := by
+    rw [← prod_diagonal]
+    exact measure_ne_top _ _
+  have h := ENNReal.hasSum_toReal hne
+  rw [← ENNReal.tsum_toReal_eq (fun _ ↦ by finiteness), ← prod_diagonal, ← measureReal_def] at h
+  simpa only [ENNReal.toReal_mul, measureReal_def] using h
+
+/-- For finite measures `μ` and `ν` on a space with measurable diagonal, the real mass of the
+diagonal under `μ.prod ν` is `∑' x, μ.real {x} * ν.real {x}`. -/
+theorem prod_real_diagonal {α : Type*} [MeasurableSpace α] [MeasurableEq α]
+    (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    (μ.prod ν).real (Set.diagonal α) = ∑' x : α, μ.real {x} * ν.real {x} :=
+  (hasSum_prod_real_diagonal μ ν).tsum_eq.symm
 
 /-- For a probability measure `μ` and any set `s`, the pairs having a first or a second coordinate
 in `s` have `μ.prod μ`-measure at most twice `μ s`. No measurability is needed. -/
@@ -464,5 +535,21 @@ theorem map_eval_prod_pi_eq_bind [Fintype I] [MeasurableSingletonClass I]
   rw [map_eval_prod_eq_bind_map]
   apply Measure.bind_congr_right
   exact ae_of_all _ fun i ↦ (measurePreserving_eval K i).map_eq
+
+/-- Projecting the graph pushforward `(μ.map fun x ↦ (T x, x))` onto the second coordinate
+recovers `μ` for any `μ`-almost everywhere measurable map `T`. -/
+@[simp]
+theorem snd_map_prodMk_id₀ {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {T : X → S} (hT : AEMeasurable T μ) :
+    (μ.map fun x ↦ (T x, x)).snd = μ := by
+  rw [Measure.snd_map_prodMk₀ hT aemeasurable_id', Measure.map_id']
+
+/-- Projecting the graph pushforward `(μ.map fun x ↦ (T x, x))` onto the second coordinate
+recovers `μ` for any measurable map `T`. -/
+@[simp]
+theorem snd_map_prodMk_id {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
+    {μ : Measure X} {T : X → S} (hT : Measurable T) :
+    (μ.map fun x ↦ (T x, x)).snd = μ :=
+  snd_map_prodMk_id₀ hT.aemeasurable
 
 end MeasureTheory.Measure

@@ -51,11 +51,11 @@ theorem isUnit_leading_weight_minors_weylWord_iff {β : Type*} [PartialOrder β]
       ((((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod :
         Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A))
       fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤ a).det)) ↔
-      t.geckWeylWordProd ht l = 1 := by
+      t.simplyConnectedWeylWordProd ht l = 1 := by
   rw [← D.map_toMatrix_weylWordLatticeEquiv l A,
     isUnit_leading_weight_minors_iff (t.lieBasis ht).h D.representation D.lattice D.basis D.weight
       D.isCartanWeightVector_basis (D.weylWordLatticeEquiv l)
-      (fun μ => t.geckWeylWordProd ht l • μ)
+      (fun μ => t.simplyConnectedWeylWordProd ht l • μ)
       (MulAction.injective _).injOn
       (fun j => D.isCartanWeightVector_weylWordLatticeEquiv l (D.isCartanWeightVector_basis j)) r]
   exact ⟨D.eq_one_of_forall_smul_weight_eq _, fun h j => by rw [h, one_smul]⟩

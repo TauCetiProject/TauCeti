@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.IteratedDeriv.FaaDiBruno
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Deriv
 
 /-!
@@ -111,19 +112,6 @@ open OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
-/-- Near a finite point `z` that is not a pole, the derivative of a Möbius transformation read in
-the affine charts is `w ↦ (a d - b c) / (c w + d) ^ 2`. -/
-private theorem deriv_writtenInExtChartAt_smul_coe_eventuallyEq (g : GL (Fin 2) 𝕜) {z : 𝕜}
-    (hz : g 1 0 * z + g 1 1 ≠ 0) :
-    deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x) =ᶠ[𝓝 z]
-      fun w ↦ (g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * w + g 1 1) ^ 2 := by
-  have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
-  -- Near each such `w`, the chart expressions at `z` and at `w` are the same rational function.
-  filter_upwards [(writtenInExtChartAt_smul_coe_eventuallyEq g hz).eventually_nhds,
-    hq.continuousAt.eventually_ne hz] with w hw hw0
-  rw [(EventuallyEq.trans hw (writtenInExtChartAt_smul_coe_eventuallyEq g hw0).symm).deriv_eq,
-    (hasDerivAt_writtenInExtChartAt_smul_coe g hw0).deriv]
-
 /-- **The second derivative of a Möbius transformation.** At a finite point `z` that is not a
 pole, `z ↦ (a z + b) / (c z + d)` has second derivative `-2 c (a d - b c) / (c z + d) ^ 3`, read
 in the affine charts at `z` and at its image. -/
@@ -131,14 +119,9 @@ theorem iteratedDeriv_two_writtenInExtChartAt_smul_coe (g : GL (Fin 2) 𝕜) {z 
     (hz : g 1 0 * z + g 1 1 ≠ 0) :
     iteratedDeriv 2 (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x) z =
       -2 * g 1 0 * (g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 3 := by
-  have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
-    simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (g 1 1)
-  have hsecond := (hasDerivAt_const z (g : Matrix (Fin 2) (Fin 2) 𝕜).det).fun_div
-    (hq'.fun_pow 2) (pow_ne_zero 2 hz)
   rw [iteratedDeriv_succ, iteratedDeriv_one,
-    (deriv_writtenInExtChartAt_smul_coe_eventuallyEq g hz).deriv_eq, hsecond.deriv]
-  field_simp
-  ring
+    (writtenInExtChartAt_smul_coe_eventuallyEq g hz).deriv.deriv_eq,
+    (TauCeti.hasDerivAt_deriv_mul_add_div_mul_add hz).deriv, det_fin_two]
 
 end Matrix.GeneralLinearGroup
 
@@ -202,8 +185,8 @@ private theorem deriv_stabZero_smul_zero (a : 𝕜ˣ) (c : 𝕜) :
     deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜)
       fun y ↦ stabZero a c • y) 0 = a := by
   simp only [stabZero, pglMk_smul]
-  rw [(GeneralLinearGroup.deriv_writtenInExtChartAt_smul_coe_eventuallyEq _
-    (by simp [GeneralLinearGroup.mkOfDetNeZero])).eq_of_nhds]
+  rw [(GeneralLinearGroup.hasDerivAt_writtenInExtChartAt_smul_coe _
+    (by simp [GeneralLinearGroup.mkOfDetNeZero])).deriv]
   simp [GeneralLinearGroup.mkOfDetNeZero]
 
 private theorem iteratedDeriv_two_stabZero_smul_zero (a : 𝕜ˣ) (c : 𝕜) :

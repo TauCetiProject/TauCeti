@@ -57,7 +57,9 @@ differential of `ι` is a hyperplane and `Z` lies outside it. The covector `α =
 vanish on `W`, since it vanishes on `Z` and `ω` is nondegenerate. A vector of `W ∩ ker α` that is
 `ω`-orthogonal to `W ∩ ker α` is also `ω`-orthogonal to `Z`, hence to all of `ker α`, so it is a
 multiple of `Z` lying in `W` and therefore zero. The pointwise version
-(`TauCeti.isContactFormAt_mpullback`) only uses the data at a single point.
+(`TauCeti.isContactFormAt_mpullback`) only uses the data at a single point, and the global
+version (`TauCeti.SmoothTwoForm.IsNondegenerate.isContactForm_mpullback_of_interior_eq`) only
+uses, along `ι`, transverse vectors contracting `ω` to `α`, with no smoothness assumed of them.
 
 ## Main definitions
 
@@ -69,8 +71,10 @@ multiple of `Z` lying in `W` and therefore zero. The pointwise version
 * `TauCeti.IsRestrictedContactType.isContactType`: restricted contact type implies contact type.
 * `TauCeti.exists_isRestrictedContactType_iff`: the characterization by transverse Liouville vector
   fields.
-* `TauCeti.isContactFormAt_mpullback`, `TauCeti.IsContactType.isContactForm_mpullback`: the
-  primitive restricts to a contact form on a hypersurface of contact type.
+* `TauCeti.isContactFormAt_mpullback`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.isContactForm_mpullback_of_interior_eq`,
+  `TauCeti.IsContactType.isContactForm_mpullback`: the primitive restricts to a contact form on a
+  hypersurface of contact type.
 
 ## References
 
@@ -227,6 +231,27 @@ theorem isContactFormAt_mpullback [IsManifold I 2 M] [IsManifold J 2 S] {s : S}
   · rw [← h₂]
     exact huw w (by rwa [RoughForm.mem_ker, h₁])
 
+/-- **The primitive restricts to a contact form on a hypersurface transverse to a Liouville
+field.** Let `ι : S → M` be a smooth map with injective differentials, from a manifold of one
+dimension less, and let `σ` be a nondegenerate two-form with a primitive `α`, `dα = σ` along `ι`.
+If at each `s` some tangent vector `z s` at `ι s`, outside the image of the differential of `ι`,
+satisfies `ι_(z s) σ = α`, such as the value of a transverse Liouville field, then the pullback
+`ι^* α` is a contact form on `S`. -/
+theorem SmoothTwoForm.IsNondegenerate.isContactForm_mpullback_of_interior_eq
+    [IsManifold I (⊤ : ℕ∞) M] [IsManifold J 2 S] {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate)
+    {α : SmoothForm I M ℝ 1} (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
+    (hdα : ∀ s, mextDeriv α.val (ι s) = σ.val (ι s)) {z : (s : S) → TangentSpace I (ι s)}
+    (hz : ∀ s, z s ∉ (mfderiv J I ι s).range)
+    (hzα : ∀ s v, σ.val (ι s) ![z s, v] = α.val (ι s) ![v]) :
+    (SmoothForm.mpullback ι hι α).IsContactForm := by
+  refine SmoothForm.isContactForm_iff_forall_isContactFormAt.2 fun s ↦ ?_
+  rw [SmoothForm.coe_mpullback]
+  refine isContactFormAt_mpullback hdim ((hι s).of_le (by simp)) (hιs s) (fun v hv ↦ ?_)
+    ((α.contMDiff (ι s)).of_le (by simp)) (hdα s) (hz s) (hzα s)
+  exact (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hσ) _ v fun w ↦ by
+    simpa [SmoothBundleForm.eval₂_apply] using hv w
+
 /-- **Hypersurfaces of contact type carry contact forms.** If a smooth map `ι : S → M` with
 injective differentials, from a manifold of one dimension less, is of contact type for a
 nondegenerate two-form `σ`, with primitive `α`, then the pullback `ι^* α` is a contact form on
@@ -237,13 +262,9 @@ theorem IsContactType.isContactForm_mpullback [IsManifold I (⊤ : ℕ∞) M] [I
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
     (SmoothForm.mpullback ι hι α).IsContactForm := by
   obtain ⟨U, -, hιU, hdα, Z, -, hZα, hZι⟩ := h
-  refine SmoothForm.isContactForm_iff_forall_isContactFormAt.2 fun s ↦ ?_
-  rw [SmoothForm.coe_mpullback]
-  have hs : ι s ∈ U := hιU (mem_range_self s)
-  refine isContactFormAt_mpullback hdim ((hι s).of_le (by simp)) (hιs s) (fun v hv ↦ ?_)
-    ((α.contMDiff (ι s)).of_le (by simp)) (hdα _ hs) (isTransverseAlong_iff.1 hZι s) fun v ↦ ?_
-  · exact (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hσ) _ v fun w ↦ by
-      simpa [SmoothBundleForm.eval₂_apply] using hv w
-  · simpa only [RoughForm.interior_apply] using congrArg (fun a ↦ a ![v]) (hZα _ hs)
+  have hs (s : S) : ι s ∈ U := hιU (mem_range_self s)
+  refine hσ.isContactForm_mpullback_of_interior_eq hι hιs hdim (fun s ↦ hdα _ (hs s))
+    (isTransverseAlong_iff.1 hZι) fun s v ↦ ?_
+  simpa only [RoughForm.interior_apply] using congrArg (fun a ↦ a ![v]) (hZα _ (hs s))
 
 end TauCeti

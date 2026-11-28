@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -18,6 +20,8 @@ Write a field as `x = (b₁, b₂, p, q)`, representing the imaginary connection
 `|b|² + |δα|² / 4` is then the Euclidean metric on variations of `x`.
 Fields take values in `EuclideanSpace ℝ (Fin 4)` and equation defects in
 `EuclideanSpace ℝ (Fin 3)`, with these Euclidean coefficient norms.
+`sectionValue x` is the section `α` of a field `x`, and `sectionVariation F` is the variation
+of the section alone by `F`, with no connection part.
 `equation x` has three real components: the defect in
 `*iF_a = (1 - |α|²) / 8` and the real and imaginary parts of `∂bar_a α`.
 The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a`.
@@ -37,11 +41,18 @@ the modulus defect and on `|d_a α (1)|` bound it (`energyDensity_le_of_equation
 particular it is continuous on a solution with continuous `b₁` and `C¹` section
 (`continuous_energyDensity_of_equation_eq_zero`).
 
-`equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
-identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
-gauge action `gaugeDirection x f`, the off-shell composition is
+`equation_add_smul` gives the exact quadratic expansion, whose quadratic remainder
+`quadraticTerm` is the diagonal of the bilinear map `quadraticTermBilinear` and is homogeneous of
+degree two under real weights (`quadraticTerm_fun_smul`), and `hasDerivAt_equation` identifies
+`linearizedEquation` as its first variation. For the
+charge-one infinitesimal gauge action `gaugeDirection x f`, the off-shell composition is
 `(0, -f * (equation x)₂, f * (equation x)₁)`. Consequently it vanishes at every
 solution, giving the differential-complex identity without a gauge-fixing assumption.
+For a family of fields `F_q` depending on a parameter, the section of the velocity
+`w ↦ ∂_v F_p (w)` is the velocity of the sections (`sectionValue_fderiv`), and if the family is
+jointly `C²` and solves the equation near `p`, its velocity solves the linearized equation
+(`linearizedEquation_fderiv_eq_zero`), by swapping the parameter and spatial derivatives
+(`TauCeti.fderiv_fderiv_slice_piLp_apply_comm`).
 The vacuum is `(0, 0, 1/2, 0)`; its linearization agrees with the last three rows of
 `vacuumOperator`. This is a smooth differential expression; no completed field space,
 Fredholm property or quotient construction is asserted.
@@ -164,12 +175,104 @@ theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {
   · simp only [Fin.reduceFinMk, Fin.isValue]
     linarith
 
+/-- The **variation of the section alone** by `F`: zero connection variation and section
+variation `δα = F`, in the real coordinates of `TauCeti.Vortex.equation`. -/
+def sectionVariation (F : ℂ → ℂ) (z : ℂ) : EuclideanSpace ℝ (Fin 4) :=
+  !₂[0, 0, (F z).re / 2, (F z).im / 2]
+
+/-- The first connection component of the variation of the section alone vanishes. -/
+@[simp]
+theorem sectionVariation_apply_zero (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 0 = 0 :=
+  (rfl)
+
+/-- The second connection component of the variation of the section alone vanishes. -/
+@[simp]
+theorem sectionVariation_apply_one (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 1 = 0 :=
+  (rfl)
+
+/-- The real section component of the variation of the section alone by `F`. -/
+@[simp]
+theorem sectionVariation_apply_two (F : ℂ → ℂ) (z : ℂ) :
+    sectionVariation F z 2 = (F z).re / 2 :=
+  (rfl)
+
+/-- The imaginary section component of the variation of the section alone by `F`. -/
+@[simp]
+theorem sectionVariation_apply_three (F : ℂ → ℂ) (z : ℂ) :
+    sectionVariation F z 3 = (F z).im / 2 :=
+  (rfl)
+
+/-- The section variation of `sectionVariation F` is `F`. -/
+@[simp]
+theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
+    sectionValue (sectionVariation F) z = F z := by
+  apply Complex.ext <;> simp [sectionValue_apply] <;> ring
+
+/-- Two variations of the section alone agree at a point exactly when their sections do. -/
+@[simp]
+theorem sectionVariation_left_inj {F G : ℂ → ℂ} {z : ℂ} :
+    sectionVariation F z = sectionVariation G z ↔ F z = G z := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [sectionVariation, h]⟩
+  have hs : sectionValue (sectionVariation F) z = sectionValue (sectionVariation G) z := by
+    simp only [sectionValue_apply, h]
+  simpa using hs
+
+/-- The variation of the section alone by zero is zero. -/
+@[simp]
+theorem sectionVariation_zero : sectionVariation 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation]
+
+/-- The variation of the section alone is additive in the section variation. -/
+theorem sectionVariation_add (F G : ℂ → ℂ) :
+    sectionVariation (F + G) = sectionVariation F + sectionVariation G := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation, add_div]
+
+/-- The variation of the section alone commutes with real scalar multiplication. -/
+theorem sectionVariation_smul (r : ℝ) (F : ℂ → ℂ) :
+    sectionVariation (r • F) = r • sectionVariation F := by
+  ext z i
+  fin_cases i <;> simp [sectionVariation, mul_div_assoc]
+
+/-- A field is the variation of the section alone by `F` at a point exactly when its connection
+coordinates vanish there and its section is `F`. -/
+theorem eq_sectionVariation_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℂ} {z : ℂ} :
+    y z = sectionVariation F z ↔ y z 0 = 0 ∧ y z 1 = 0 ∧ sectionValue y z = F z := by
+  refine ⟨fun h ↦ ?_, fun ⟨h₀, h₁, hs⟩ ↦ apply_eq_of_sectionValue_eq h₀ h₁ (by simp [hs])⟩
+  have hs : sectionValue y z = sectionValue (sectionVariation F) z := by
+    simp only [sectionValue_apply, h]
+  simp [h, hs]
+
+/-- The variation of the section alone by a `Cⁿ` function is `Cⁿ`. -/
+theorem contDiff_sectionVariation {F : ℂ → ℂ} {n : WithTop ℕ∞} (hF : ContDiff ℝ n F) :
+    ContDiff ℝ n (sectionVariation F) := by
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa [sectionVariation] using contDiff_const
+  · simpa [sectionVariation] using contDiff_const
+  · simpa [sectionVariation] using (reCLM.contDiff.comp hF).div_const 2
+  · simpa [sectionVariation] using (imCLM.contDiff.comp hF).div_const 2
+
 /-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
 theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
   rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
+
+/-- A lower bound `c² < 4 (p² + q²)` on the squared modulus of the section in the real field
+coordinates bounds its modulus: `c < |α|`. -/
+theorem lt_norm_sectionValue_of_sq_lt {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} {c : ℝ}
+    (h : c ^ 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) : c < ‖sectionValue x z‖ :=
+  lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by rwa [sq_norm_sectionValue])
+
+/-- The potential `P = |α|² / 4` in terms of the section `α`. -/
+theorem ofReal_sq_add_sq_eq_conj_sectionValue_mul_sectionValue_div_four
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) =
+      starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
+  apply Complex.ext <;> simp [sectionValue_apply, sq] <;> ring
 
 /-- The section of a field is bounded by the field: `|α| ≤ 2 |x|`. -/
 theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -337,6 +440,26 @@ theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
   simp only [Fin.isValue, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
     ofRealCLM_apply, smul_eq_mul]
   ring
+
+/-- **The section of the velocity of a family of fields is the velocity of its sections.** If the
+fields `F_q` are differentiable in the parameter at `p` at the point `z`, then the section of the
+velocity `w ↦ ∂_v F_p (w)` at `z` is the derivative of `q ↦ α_q (z)` at `p` in the direction `v`. -/
+theorem sectionValue_fderiv {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {F : P → ℂ → EuclideanSpace ℝ (Fin 4)} {p : P} {z : ℂ}
+    (hF : DifferentiableAt ℝ (fun q ↦ F q z) p) (v : P) :
+    sectionValue (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v) z =
+      fderiv ℝ (fun q ↦ sectionValue (F q) z) p v := by
+  -- The section, as a real-linear map of the field value.
+  let S : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℂ :=
+    (2 : ℝ) • ((EuclideanSpace.proj 2 : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).smulRight (1 : ℂ) +
+      (EuclideanSpace.proj 3 : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).smulRight I)
+  have hS (y : EuclideanSpace ℝ (Fin 4)) : S y = 2 * ((y 2 : ℂ) + (y 3 : ℂ) * I) := by
+    simp [S, Complex.real_smul]
+    ring
+  rw [show (fun q ↦ sectionValue (F q) z) = ⇑S ∘ fun q ↦ F q z from
+      funext fun q ↦ by simp [hS, sectionValue_apply],
+    (S.hasFDerivAt.comp p hF.hasFDerivAt).fderiv, ContinuousLinearMap.comp_apply, hS,
+    sectionValue_apply]
 
 /-- Where the section is nonzero, its modulus `|α| = √|α|²` is differentiable, with derivative
 `d |α|² / (2 |α|)`. -/
@@ -775,6 +898,43 @@ theorem quadraticTerm_apply_two (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : �
     quadraticTerm y z 2 = y z 0 * y z 2 - y z 1 * y z 3 := by
   rfl
 
+/-- A continuous bilinear map of two field values whose diagonal is the quadratic remainder:
+`quadraticTerm y z = quadraticTermBilinear (y z) (y z)` (`quadraticTerm_eq_quadraticTermBilinear`).
+-/
+def quadraticTermBilinear :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3) :=
+  LinearMap.toContinuousLinearMap <|
+    (LinearMap.toContinuousLinearMap :
+        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 3)) ≃ₗ[ℝ]
+          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3))).toLinearMap ∘ₗ
+      LinearMap.mk₂ ℝ (fun u v : EuclideanSpace ℝ (Fin 4) ↦
+        !₂[(u 2 * v 2 + u 3 * v 3) / 2, -u 0 * v 3 - u 1 * v 2, u 0 * v 2 - u 1 * v 3])
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+
+/-- The defining formula of `quadraticTermBilinear`. -/
+@[simp]
+theorem quadraticTermBilinear_apply (u v : EuclideanSpace ℝ (Fin 4)) :
+    quadraticTermBilinear u v =
+      !₂[(u 2 * v 2 + u 3 * v 3) / 2, -u 0 * v 3 - u 1 * v 2, u 0 * v 2 - u 1 * v 3] :=
+  (rfl)
+
+/-- The quadratic remainder is the diagonal of the bilinear map `quadraticTermBilinear`. -/
+theorem quadraticTerm_eq_quadraticTermBilinear (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    quadraticTerm y = fun z ↦ quadraticTermBilinear (y z) (y z) := by
+  ext z i
+  fin_cases i <;> simp
+  ring
+
+/-- The quadratic term is homogeneous of degree two under multiplication by a real function. -/
+theorem quadraticTerm_fun_smul (y : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ → ℝ) (z : ℂ) :
+    quadraticTerm (fun t ↦ w t • y t) z = w z ^ 2 • quadraticTerm y z := by
+  ext i
+  fin_cases i <;>
+    simp [quadraticTerm_apply_zero, quadraticTerm_apply_one, quadraticTerm_apply_two] <;> ring
+
 /-- The first connection component of the infinitesimal gauge action. -/
 @[simp]
 theorem gaugeDirection_apply_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
@@ -862,6 +1022,13 @@ theorem gaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ �
   ext i
   fin_cases i <;> simp [fderiv_const_smul_field] <;> ring
 
+/-- The infinitesimal gauge action preserves subtraction of phases differentiable at the point. -/
+theorem gaugeDirection_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f g : ℂ → ℝ} {z : ℂ}
+    (hf : DifferentiableAt ℝ f z) (hg : DifferentiableAt ℝ g z) :
+    gaugeDirection x (f - g) z = gaugeDirection x f z - gaugeDirection x g z := by
+  ext i
+  fin_cases i <;> simp [fderiv_sub hf hg] <;> ring
+
 /-- The infinitesimal gauge action of a `C^(n+1)` phase at a `Cⁿ` field is `Cⁿ`. -/
 theorem contDiff_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ → ℝ}
     {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hf : ContDiff ℝ (n + 1) f) :
@@ -887,6 +1054,26 @@ theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDire
 @[simp]
 theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
+
+/-- The section of the vacuum field is the constant `1`. -/
+@[simp]
+theorem sectionValue_vacuumField (z : ℂ) : sectionValue vacuumField z = 1 := by
+  simp [sectionValue_apply]
+
+/-- The vacuum field is constant. -/
+theorem vacuumField_eq_const : vacuumField = fun _ ↦ vacuumField 0 :=
+  funext fun z ↦ by rw [vacuumField_apply, vacuumField_apply]
+
+/-- The vacuum field is smooth. -/
+theorem contDiff_vacuumField {n : WithTop ℕ∞} : ContDiff ℝ n vacuumField := by
+  rw [vacuumField_eq_const]
+  exact contDiff_const
+
+/-- The coordinates of the vacuum, a constant field, have bounded derivatives of every order. -/
+theorem exists_norm_iteratedFDeriv_vacuumField_apply_le (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ vacuumField z i) z‖ ≤ C := by
+  rw [vacuumField_eq_const]
+  exact ⟨_, norm_iteratedFDeriv_const_le n (vacuumField 0 i)⟩
 
 /-- The zero phase acts as the identity. -/
 @[simp]
@@ -1041,6 +1228,64 @@ theorem linearizedEquation_gaugeDirection_eq_zero {x : ℂ → EuclideanSpace �
   ext i
   fin_cases i <;> simp
 
+/-! ### The velocity of a family of vortices solves the linearized equation -/
+
+section Linearization
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+  {F : P → ℂ → EuclideanSpace ℝ (Fin 4)} {p : P} {z : ℂ}
+
+/-- **The velocity of a family of vortices solves the linearized equation.** Let `F` be a family of
+plane fields, jointly `C²` in the parameter and the point near `(p, z)`, solving the vortex
+equation at `z` for all parameters near `p`. Then for every direction `v` the velocity
+`w ↦ ∂_v F_p (w)` satisfies the linearized vortex equation `d₁ ∂_v F_p = 0` of `F_p` at `z`. -/
+theorem linearizedEquation_fderiv_eq_zero (hF : ContDiffAt ℝ 2 (Function.uncurry F) (p, z))
+    (hsol : ∀ᶠ q in 𝓝 p, equation (F q) z = 0) (v : P) :
+    linearizedEquation (F p) (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v) z = 0 := by
+  -- Each component of `q ↦ equation (F q) z` vanishes near `p`, so its derivative vanishes.
+  have hzero (k : Fin 3) {g : P → ℝ} {L : P →L[ℝ] ℝ} (hL : HasFDerivAt g L p)
+      (hg : ∀ q, g q = equation (F q) z k) : L v = 0 := by
+    have h : g =ᶠ[𝓝 p] fun _ ↦ 0 := hsol.mono fun q hq ↦ by simp [hg, hq]
+    rw [← hL.fderiv, h.fderiv_eq, fderiv_const_apply, zero_apply]
+  -- The coordinates of `F` are jointly `C²`, so differentiable in each variable.
+  have hG (i : Fin 4) :
+      ContDiffAt ℝ (minSmoothness ℝ 2) (fun pq : P × ℂ ↦ F pq.1 pq.2 i) (p, z) := by
+    rw [minSmoothness_of_isRCLikeNormedField]
+    exact (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.contDiffAt.comp _ hF
+  have hslice : DifferentiableAt ℝ (fun q ↦ F q z) p :=
+    (hF.differentiableAt two_ne_zero).hasFDerivAt_slice_fst.differentiableAt
+  have hc (i : Fin 4) : HasFDerivAt (fun q ↦ F q z i) (fderiv ℝ (fun q ↦ F q z i) p) p :=
+    ((hG i).differentiableAt (by simp)).hasFDerivAt_slice_fst.differentiableAt.hasFDerivAt
+  have hd (i : Fin 4) (e : ℂ) :=
+    ((TauCeti.hasFDerivAt_spatialFDeriv (hG i)).clm_apply (hasFDerivAt_const e p)).differentiableAt
+      |>.hasFDerivAt
+  have hdd (i : Fin 4) (e : ℂ) : fderiv ℝ (fun q ↦ fderiv ℝ (fun w ↦ F q w i) z e) p v =
+      fderiv ℝ (fun w ↦ fderiv ℝ (fun q ↦ F q w) p v i) z e :=
+    TauCeti.fderiv_fderiv_slice_piLp_apply_comm (F := Function.uncurry F)
+      (by rwa [minSmoothness_of_isRCLikeNormedField]) i v e
+  have hcc (i : Fin 4) := hslice.fderiv_piLp_apply i v
+  ext k
+  fin_cases k
+  · have h := hzero 0 (((hd 0 I).sub (hd 1 1)).add
+      ((((hc 2).pow 2).add ((hc 3).pow 2)).const_mul (1 / 2) |>.sub_const (1 / 8)))
+      fun q ↦ by rw [equation_apply_zero]; simp only [Pi.add_apply, Pi.sub_apply]; ring
+    simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, nsmul_eq_mul, hdd, hcc] at h
+    norm_num at h
+    simp
+    linear_combination h
+  · have h := hzero 1 ((((hd 2 1).sub (hd 3 I)).sub ((hc 0).mul (hc 3))).sub ((hc 1).mul (hc 2)))
+      fun q ↦ by rw [equation_apply_one]; simp only [Pi.sub_apply, Pi.mul_apply]
+    simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, hdd, hcc] at h
+    simp
+    linear_combination h
+  · have h := hzero 2 ((((hd 3 1).add (hd 2 I)).add ((hc 0).mul (hc 2))).sub ((hc 1).mul (hc 3)))
+      fun q ↦ by rw [equation_apply_two]; simp only [Pi.add_apply, Pi.sub_apply, Pi.mul_apply]
+    simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, hdd, hcc] at h
+    simp
+    linear_combination h
+
+end Linearization
+
 /-- The vacuum solves the nonlinear vortex equation. -/
 @[simp]
 theorem equation_vacuumField (z : ℂ) : equation vacuumField z = 0 := by
@@ -1054,13 +1299,9 @@ of the existing gauge-fixed Schwartz operator. -/
 theorem linearizedEquation_vacuumField (y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
     linearizedEquation vacuumField y z =
       !₂[vacuumOperator y z 1, vacuumOperator y z 2, vacuumOperator y z 3] := by
-  have hd (i : Fin 4) (v : ℂ) :
-      fderiv ℝ (fun w ↦ y w i) z v = (∂_{v} y) z i := by
-    have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp z
-      y.differentiableAt.hasFDerivAt).fderiv
-    simpa [Function.comp_def, SchwartzMap.lineDerivOp_apply_eq_fderiv] using
-      congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hp
+  -- The simp lemma `SchwartzMap.fderiv_apply_eq_lineDerivOp_apply` turns the coordinate
+  -- derivatives of `y` into coordinates of its line derivatives.
   ext i
-  fin_cases i <;> simp [vacuumField, hd] <;> ring
+  fin_cases i <;> simp [vacuumField] <;> ring
 
 end TauCeti.Vortex
