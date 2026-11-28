@@ -92,6 +92,14 @@ def cechHypercohomologyIsoOfFlasque [CompactSpace X]
       infer_instance
   exact asIso (TauCeti.Topology.cechHypercohomologyAugmentation K.sheafPresheaf n)
 
+/-- The forward flasque comparison is the canonical cover-colimit augmentation. -/
+lemma cechHypercohomologyIsoOfFlasque_hom_eq_augmentation [CompactSpace X]
+    (K : CochainComplex (X.Sheaf (ModuleCat.{u} R)) ℤ)
+    (b : ℤ) [K.IsStrictlyGE b]
+    (hflasque : ∀ q, (K.X q).presheaf.IsFlasque) (n : ℤ) :
+    (cechHypercohomologyIsoOfFlasque K b hflasque n).hom =
+      TauCeti.Topology.cechHypercohomologyAugmentation K.sheafPresheaf n := (rfl)
+
 /-- The native sheaf-complex comparison respects every point-cover structure map. -/
 @[reassoc]
 lemma cechHypercohomologyIsoOfFlasque_hom [CompactSpace X]
@@ -104,7 +112,7 @@ lemma cechHypercohomologyIsoOfFlasque_hom [CompactSpace X]
           (cechTotalComplexAugmentation W.opens isTerminalTop K.sheafPresheaf) n ≫
         (cechHypercohomologyι TauCeti.Topology.PointOpenCover.toFormalCoproduct
           (fun _ _ h ↦ h) n W).app K.sheafPresheaf := by
-  rw [cechHypercohomologyIsoOfFlasque]
+  rw [cechHypercohomologyIsoOfFlasque_hom_eq_augmentation]
   exact (TauCeti.Topology.homologyMap_cechTotalComplexAugmentation_comp_ι
     K.sheafPresheaf n W).symm
 
@@ -122,7 +130,8 @@ lemma cechHypercohomologyIsoOfFlasque_naturality [CompactSpace X]
       HomologicalComplex.homologyMap
           ((((Opens.grothendieckTopology X).complexToPresheaf _ _).map f).app (op ⊤)) n ≫
         (cechHypercohomologyIsoOfFlasque L bL hL n).hom := by
-  rw [cechHypercohomologyIsoOfFlasque, cechHypercohomologyIsoOfFlasque]
+  rw [cechHypercohomologyIsoOfFlasque_hom_eq_augmentation,
+    cechHypercohomologyIsoOfFlasque_hom_eq_augmentation]
   exact TauCeti.Topology.cechHypercohomologyAugmentation_naturality _ n
     (((Opens.grothendieckTopology X).complexToPresheaf _ _).map f)
 

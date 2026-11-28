@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Total.Basic
-
-import TauCeti.Algebra.Homology.TotalComplex.UpInt
+public import TauCeti.Algebra.Homology.TotalComplex.UpInt
 
 /-!
 # Augmentation of the total Čech complex
@@ -54,7 +53,23 @@ lemma cechTotalComplexAugmentationColumn_def :
           (i := 0) rfl).inv := (rfl)
 
 omit [HasCoproducts.{0} A] in
+/-- In internal degree `q`, the zero-column map is the corresponding component of the
+ordinary Čech augmentation, transported along zero extension. -/
+lemma cechTotalComplexAugmentationColumn_f (q : ℤ) :
+    (cechTotalComplexAugmentationColumn U hT P).f q =
+      ((cechAugmentation U hT P).f 0).f q ≫
+        (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map
+          ((((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
+            (i := 0) rfl).inv) := by
+  rw [cechTotalComplexAugmentationColumn_def]
+  simp only [HomologicalComplex.comp_f, CochainComplex.single₀ObjXSelf, Iso.refl_inv]
+  dsimp only [Functor.comp_obj, HomologicalComplex.eval_obj, CochainComplex.single₀]
+  simp only [HomologicalComplex.id_f, HomologicalComplex.eval_map]
+  exact Category.id_comp _
+
+omit [HasCoproducts.{0} A] in
 /-- Restriction to the zero Čech column is killed by the Čech differential. -/
+@[reassoc (attr := simp)]
 lemma cechTotalComplexAugmentationColumn_comp_d :
     cechTotalComplexAugmentationColumn U hT P ≫
       (((cechComplexFunctor U).obj P).extend ComplexShape.embeddingUpNat).d 0 1 = 0 := by
@@ -71,6 +86,13 @@ def cechTotalComplexAugmentation : P.obj (op T) ⟶ (cechTotalComplexFunctor U).
   totalCoaugmentationUpInt _ (cechTotalComplexAugmentationColumn U hT P)
     (cechTotalComplexAugmentationColumn_comp_d U hT P)
 
+/-- The total Čech augmentation is the total coaugmentation induced by its zero-column map. -/
+lemma cechTotalComplexAugmentation_def :
+    cechTotalComplexAugmentation U hT P =
+      totalCoaugmentationUpInt _ (cechTotalComplexAugmentationColumn U hT P)
+        (cechTotalComplexAugmentationColumn_comp_d U hT P) := by
+  unfold cechTotalComplexAugmentation; rfl
+
 /-- In degree `n`, the augmentation restricts to Čech degree zero and includes bidegree `(0,n)`
 in the native direct-sum total. -/
 @[simp]
@@ -82,7 +104,9 @@ lemma cechTotalComplexAugmentation_f (n : ℤ) :
   rw [totalCoaugmentationUpInt_f]
 
 omit [HasCoproducts.{0} A] in
-private lemma cechTotalComplexAugmentationColumn_naturality
+/-- The zero-column augmentation is natural in the coefficient presheaf of complexes. -/
+@[reassoc]
+lemma cechTotalComplexAugmentationColumn_naturality
     {Q : Cᵒᵖ ⥤ CochainComplex A ℤ} (α : P ⟶ Q) :
     cechTotalComplexAugmentationColumn U hT P ≫
       (HomologicalComplex.extendMap ((cechComplexFunctor U).map α)
@@ -109,7 +133,9 @@ lemma cechTotalComplexAugmentation_naturality {Q : Cᵒᵖ ⥤ CochainComplex A 
   simp
 
 omit [HasCoproducts.{0} A] in
-private lemma cechTotalComplexAugmentationColumn_refinement
+/-- Restricting sections to the zero column commutes with any raw refinement. -/
+@[reassoc]
+lemma cechTotalComplexAugmentationColumn_refinement
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     cechTotalComplexAugmentationColumn V hT P ≫
       (HomologicalComplex.extendMap (cechComplexMap P φ)

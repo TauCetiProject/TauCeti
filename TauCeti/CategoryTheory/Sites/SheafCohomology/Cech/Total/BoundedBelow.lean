@@ -8,9 +8,6 @@ module
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Total.Augmentation
 public import Mathlib.CategoryTheory.Abelian.Basic
 
-import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
-import TauCeti.Algebra.Homology.Embedding.MapExtend
-import TauCeti.Algebra.Homology.TotalComplex.UpInt
 import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 import Mathlib.Data.Int.Interval
 
@@ -98,48 +95,7 @@ lemma cechComplexFunctor_extend_support_subset (b : ℤ)
   · by_contra h
     exact hp (isZero_cechComplexFunctor_extend_X U P b hP p (n - p) (Or.inr (by omega)))
 
-private def extendedCechRowIso (q : ℤ) :
-    (HomologicalComplex₂.flip
-      (((cechComplexFunctor U).obj P).extend ComplexShape.embeddingUpNat)).X q ≅
-      ((cechComplexFunctor U).obj
-        (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extend
-          ComplexShape.embeddingUpNat :=
-  HomologicalComplex.mapExtendIso (HomologicalComplex.eval A (ComplexShape.up ℤ) q)
-    ((cechComplexFunctor U).obj P) ComplexShape.embeddingUpNat ≪≫
-      (ComplexShape.embeddingUpNat.extendFunctor A).mapIso
-        ((cechComplexFunctorMapIso U (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).app P)
-
-private lemma extendedCechRowIso_hom_f_zero (q : ℤ) :
-    (extendedCechRowIso U P q).hom.f 0 =
-      (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map
-          ((((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
-            (i := 0) rfl).hom) ≫
-        ((cechComplexFunctorMapIso U
-          (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).hom.app P).f 0 ≫
-          (((cechComplexFunctor U).obj
-            (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extendXIso
-              ComplexShape.embeddingUpNat (i := 0) rfl).inv := by
-  simp only [extendedCechRowIso, Iso.trans_hom, HomologicalComplex.comp_f,
-    Functor.mapIso_hom]
-  dsimp only [ComplexShape.Embedding.extendFunctor]
-  rw [HomologicalComplex.mapExtendIso_hom_f _ _ _ (j := 0) (j' := (0 : ℤ)) rfl,
-    HomologicalComplex.extendMap_f _ _ (i := 0) (i' := (0 : ℤ)) rfl]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  rfl
-
 variable {T : C} (hT : IsTerminal T)
-
-private lemma cechTotalComplexAugmentationColumn_f (q : ℤ) :
-    (cechTotalComplexAugmentationColumn U hT P).f q =
-      ((cechAugmentation U hT P).f 0).f q ≫
-        (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map
-          ((((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
-            (i := 0) rfl).inv) := by
-  rw [cechTotalComplexAugmentationColumn_def]
-  simp only [HomologicalComplex.comp_f, CochainComplex.single₀ObjXSelf, Iso.refl_inv]
-  dsimp only [Functor.comp_obj, HomologicalComplex.eval_obj, CochainComplex.single₀]
-  simp only [HomologicalComplex.id_f, HomologicalComplex.eval_map]
-  exact Category.id_comp _
 
 private lemma extendedCechAugmentation_f_zero (q : ℤ) :
     (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
@@ -175,9 +131,10 @@ private lemma rowCoaugmentationUpInt_comp_extendedCechRowIso (q : ℤ) :
   apply HomologicalComplex.from_single_hom_ext
   apply (cancel_epi (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
     ((P.obj (op T)).X q)).inv).mp
+  have hrow := extendedCechRowIso_hom_f U P q 0
+  simp only [Int.natCast_zero] at hrow
   rw [HomologicalComplex.comp_f, rowCoaugmentationUpInt_f_zero_assoc,
-    extendedCechAugmentation_f_zero, cechTotalComplexAugmentationColumn_f,
-    extendedCechRowIso_hom_f_zero]
+    extendedCechAugmentation_f_zero, cechTotalComplexAugmentationColumn_f, hrow]
   simp only [HomologicalComplex.eval_map, Category.assoc]
   simp only [← HomologicalComplex.comp_f_assoc, Iso.inv_hom_id,
     HomologicalComplex.id_f, Category.id_comp]
@@ -216,12 +173,7 @@ theorem quasiIso_cechTotalComplexAugmentation (b : ℤ)
                 ComplexShape.embeddingUpNat) := by infer_instance
     rw [← rowCoaugmentationUpInt_comp_extendedCechRowIso] at he
     exact (quasiIso_iff_comp_right _ (extendedCechRowIso U P q).hom).1 he
-  have he : cechTotalComplexAugmentation U hT P =
-      totalCoaugmentationUpInt _ (cechTotalComplexAugmentationColumn U hT P)
-        (cechTotalComplexAugmentationColumn_comp_d U hT P) := by
-    ext n
-    simp only [cechTotalComplexAugmentation_f, totalCoaugmentationUpInt_f]
-  rw [he]
+  rw [cechTotalComplexAugmentation_def]
   exact quasiIso_totalCoaugmentationUpInt _ _ _ hfin hr
 
 end

@@ -54,6 +54,14 @@ lemma totalCoaugmentationUpInt_f (n : ℤ) :
     (K.totalCoaugmentationUpInt η hη).f n =
       η.f n ≫ K.ιTotal (ComplexShape.up ℤ) 0 n n (by simp) := by rfl
 
+/-- Precomposing the coaugmentation of the total complex with a cochain map `g` gives the
+coaugmentation induced by `g ≫ η`. -/
+lemma comp_totalCoaugmentationUpInt {E' : CochainComplex C ℤ} (g : E' ⟶ E) :
+    g ≫ K.totalCoaugmentationUpInt η hη =
+      K.totalCoaugmentationUpInt (g ≫ η) (by rw [Category.assoc, hη, comp_zero]) := by
+  ext n
+  simp
+
 /-- The total coaugmentation commutes with a morphism of bicomplexes. -/
 @[reassoc (attr := simp)]
 lemma totalCoaugmentationUpInt_total_map
