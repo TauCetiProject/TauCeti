@@ -86,6 +86,8 @@ Two statements are worth singling out.
   Gram determinant is a non-zero-divisor.
 * `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isSquare`: over a linearly ordered ring, an isometry
   of a left-separating form that is the square of an endomorphism has determinant `1`.
+* `TauCeti.BilinForm.IsIsometry.toMatrix_mem_symplecticGroup`: the matrix of an isometry in a
+  basis in which `B` has the standard symplectic matrix `Matrix.J` is symplectic.
 * `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
   form on a vector space has determinant `1` (by convention when the space is
   infinite-dimensional).
@@ -465,14 +467,22 @@ theorem isUnit_det (b : Basis ι R M)
     (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
   IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
 
+/-- **The matrix of an isometry in a symplectic basis is symplectic**: if the matrix of `B` in a
+basis `b` is the standard symplectic matrix `Matrix.J`, the matrix in `b` of an isometry of `B`
+lies in the symplectic group. -/
+theorem toMatrix_mem_symplecticGroup {l : Type*} [Fintype l] [DecidableEq l]
+    (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
+    (hf : IsIsometry B f) : LinearMap.toMatrix b b f ∈ Matrix.symplecticGroup l R := by
+  have h := (isIsometry_iff_toMatrix b).mp hf
+  rwa [hb, ← SymplecticGroup.mem_iff'] at h
+
 /-- An isometry of a form whose matrix in some basis is the standard symplectic matrix
 `Matrix.J` has determinant `1`: its matrix in that basis is symplectic. -/
 theorem det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
     (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
     (hf : IsIsometry B f) : LinearMap.det f = 1 := by
-  have h := (isIsometry_iff_toMatrix b).mp hf
-  rw [hb, ← SymplecticGroup.mem_iff'] at h
-  rw [← LinearMap.det_toMatrix b, SymplecticGroup.det_eq_one h]
+  rw [← LinearMap.det_toMatrix b,
+    SymplecticGroup.det_eq_one (hf.toMatrix_mem_symplecticGroup b hb)]
 
 end IsIsometry
 

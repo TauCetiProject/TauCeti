@@ -77,7 +77,7 @@ Lie group `GL(2, ℂ)`. -/
 abbrev lieAlgebra :
     LieSubalgebra ℝ (LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ)
       (Matrix (Fin 2) (Fin 2) ℂ)ˣ) :=
-  Lie.lieSubalgebraOfSubgroup (GLSpecialUnitary (Fin 2) ℂ : Subgroup (Matrix (Fin 2) (Fin 2) ℂ)ˣ)
+  GLSpecialUnitary.lieAlgebra (Fin 2) ℂ
 
 /-- The matrix coordinates of `𝔰𝔲(2)`, as an injective homomorphism of real Lie algebras into the
 `2 × 2` complex matrices with their commutator bracket. Its range is the trace-free

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Deriv
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Volume
+import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Calculus.Deriv.Matrix
 
 /-!
 # The relative volume of a family of metrics
@@ -22,7 +24,9 @@ sign, with the density and the volume taken relative to `g_{t₀}`:
 `V'(t₀) = ∫ ∂_t J(g_{t₀}, g_t) dV_{g_{t₀}}` and `V''(t₀) = ∫ ∂_t² J(g_{t₀}, g_t) dV_{g_{t₀}}`,
 
 the derivatives of `J` being taken at `t = t₀`. Changing the reference metric `g₀` changes `V`
-by a constant.
+by a constant. Pointwise, if the inner products of `g_t` at `x` have parameter derivative `k` at
+`t₀`, then `∂_t J(g_{t₀}, g_t)(x) = ½ ∑ᵢ k(eᵢ, eᵢ)` in a `g_{t₀}`-orthonormal basis `(eᵢ)`, by
+Jacobi's formula for the Gram determinant.
 
 ## Main results
 
@@ -30,6 +34,8 @@ by a constant.
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume` and
   `Bundle.ContMDiffRiemannianMetric.hasDerivAt_deriv_relativeVolume`: regularity and the first
   two derivatives of the relative volume of a family of metrics on a compact manifold.
+* `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity`: the variation of the
+  relative volume density of a family of metrics.
 -/
 
 public section
@@ -52,6 +58,30 @@ section Family
 
 variable {g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
   {g : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)} {t₀ : ℝ}
+
+/-- **The variation of the relative volume density.** Let `g_t` be a family of metrics whose inner
+products at `x` have parameter derivative `h` at `t₀`. Then the relative volume density of `g_t`
+with respect to `g_{t₀}` has derivative `½ ∑ᵢ h(eᵢ, eᵢ)` at `t₀`, for every `g_{t₀}`-orthonormal
+basis `(eᵢ)` of `T_x M`: half the `g_{t₀}`-trace of `h`. -/
+theorem hasDerivAt_relativeVolumeDensity {x : M}
+    {h : TangentSpace I x → TangentSpace I x → ℝ} {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℝ (TangentSpace I x))
+    (hb : ∀ i j, (g t₀).inner x (b i) (b j) = if i = j then 1 else 0)
+    (hg : ∀ v w, HasDerivAt (fun t ↦ (g t).inner x v w) (h v w) t₀) :
+    HasDerivAt (fun t ↦ relativeVolumeDensity (g t₀) (g t) x) (2⁻¹ * ∑ i, h (b i) (b i)) t₀ := by
+  let G : ℝ → Matrix ι ι ℝ := fun t ↦ Matrix.of fun i j ↦ (g t).inner x (b i) (b j)
+  have hG : G t₀ = 1 := by
+    ext i j
+    simp [G, hb, Matrix.one_apply]
+  have hdet := Matrix.hasDerivAt_det_of_entries (A := G)
+    (A' := Matrix.of fun i j ↦ h (b i) (b j)) (fun i j ↦ hg _ _) (by simp [hG])
+  have hsqrt := hdet.sqrt (by simp [hG])
+  have heq : (fun t ↦ relativeVolumeDensity (g t₀) (g t) x) = fun t ↦ √(G t).det :=
+    funext fun t ↦ b.relativeVolumeDensity_eq_sqrt_det_of_orthonormal hb
+  rw [heq]
+  convert hsqrt using 1
+  simp [hG, Matrix.trace]
+  ring
 
 variable [CompactSpace M]
 
