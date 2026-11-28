@@ -65,7 +65,9 @@ operators; `G(s)` acts on the hermitian spaces with an adelic frame
 * `TauCeti.IsUnitaryLevel K`: `K` is a level, an open subgroup of `G_f` contained in `K₀`.
 * `TauCeti.infiniteAdelicUnitaryGroup E s`, `TauCeti.adelicUnitaryGroup E s`: `G_∞(s)` and
   `G(s)`, with the finite component `TauCeti.adelicUnitaryGroup.finitePart : G(s) → G_f`, the
-  embedding `TauCeti.adelicUnitaryGroup.ofFinite : G_f → G(s)`, `g ↦ (1, g)`, and the element
+  embedding `TauCeti.adelicUnitaryGroup.ofFinite : G_f → G(s)`, `g ↦ (1, g)`, their archimedean
+  counterparts `TauCeti.adelicUnitaryGroup.infinitePart : G(s) → G_∞(s)` and
+  `TauCeti.adelicUnitaryGroup.ofInfinite : G_∞(s) → G(s)`, `g ↦ (g, 1)`, and the element
   `TauCeti.adelicUnitaryGroup.ofMatrix` of `G(s)` defined by a pair of matrices preserving the
   forms.
 
@@ -73,6 +75,8 @@ operators; `G(s)` acts on the hermitian spaces with an adelic frame
 
 * `TauCeti.finiteAdelicUnitaryGroup.proj_conjPlace`: the components of `g ∈ G_f` at a finite
   place and at its conjugate.
+* `TauCeti.finiteAdelicUnitaryGroup.ext_proj`: an element of `G_f` is determined by its
+  components at the finite places.
 * `TauCeti.mem_integralAdelicUnitaryGroup_iff_mem_range_integralGL`: `K₀ = G_f ∩ GL_n(Ô)`;
   `TauCeti.mem_integralAdelicUnitaryGroup_iff`: `K₀` is the set of `g ∈ G_f` with integral
   entries, and `TauCeti.mem_integralAdelicUnitaryGroup_iff_forall_place`: the set of `g` with
@@ -87,7 +91,9 @@ operators; `G(s)` acts on the hermitian spaces with an adelic frame
   preserves the form `diag(s)` at the infinite places and `1_n` at the finite places.
 * `TauCeti.finiteAdelicUnitaryGroup.continuous_proj`,
   `TauCeti.adelicUnitaryGroup.continuous_finitePart`,
-  `TauCeti.adelicUnitaryGroup.continuous_ofFinite`: the component maps are continuous.
+  `TauCeti.adelicUnitaryGroup.continuous_ofFinite`,
+  `TauCeti.adelicUnitaryGroup.continuous_infinitePart`,
+  `TauCeti.adelicUnitaryGroup.continuous_ofInfinite`: the component maps are continuous.
 
 ## References
 
@@ -188,6 +194,11 @@ theorem finiteAdelicUnitaryGroup.proj_conjPlace (g : finiteAdelicUnitaryGroup E 
   rw [proj_conjPlace_apply, GeneralLinearGroup.coe_inverseTranspose, transpose_apply,
     ← map_inv (GeneralLinearGroup.map _) (finiteAdelicUnitaryGroup.proj E ι w g),
     GeneralLinearGroup.map_apply, RingHom.coe_coe]
+
+/-- An element of `G_f` is determined by its components at the finite places. -/
+theorem finiteAdelicUnitaryGroup.ext_proj {g h : finiteAdelicUnitaryGroup E ι}
+    (H : ∀ w : HeightOneSpectrum (𝓞 E), proj E ι w g = proj E ι w h) : g = h :=
+  Subtype.ext <| FiniteAdeleRing.generalLinearGroup_ext H
 
 /-! ### The integral subgroup `K₀` -/
 
@@ -410,6 +421,18 @@ def adelicUnitaryGroup.ofFinite (s : ι → ℤˣ) :
   ((MonoidHom.inr _ _).comp (finiteAdelicUnitaryGroup E ι).subtype).codRestrict _
     fun g ↦ ⟨one_mem _, g.property⟩
 
+/-- The archimedean component `G(s) → G_∞(s)`, `(g_∞, g_f) ↦ g_∞`. -/
+def adelicUnitaryGroup.infinitePart (s : ι → ℤˣ) :
+    adelicUnitaryGroup E s →* infiniteAdelicUnitaryGroup E s :=
+  ((MonoidHom.fst _ _).comp (adelicUnitaryGroup E s).subtype).codRestrict _
+    fun g ↦ g.property.1
+
+/-- The embedding `G_∞(s) → G(s)`, `g ↦ (g, 1)`. -/
+def adelicUnitaryGroup.ofInfinite (s : ι → ℤˣ) :
+    infiniteAdelicUnitaryGroup E s →* adelicUnitaryGroup E s :=
+  ((MonoidHom.inl _ _).comp (infiniteAdelicUnitaryGroup E s).subtype).codRestrict _
+    fun g ↦ ⟨g.property, one_mem _⟩
+
 variable {E}
 
 /-- The finite component of `g ∈ G(s)` is `g_f`. -/
@@ -431,6 +454,52 @@ theorem adelicUnitaryGroup.coe_ofFinite {s : ι → ℤˣ} (g : finiteAdelicUnit
 theorem adelicUnitaryGroup.finitePart_ofFinite {s : ι → ℤˣ} (g : finiteAdelicUnitaryGroup E ι) :
     adelicUnitaryGroup.finitePart E s (adelicUnitaryGroup.ofFinite E s g) = g :=
   (rfl)
+
+/-- The archimedean component of `g ∈ G(s)` is `g_∞`. -/
+@[simp]
+theorem adelicUnitaryGroup.coe_infinitePart {s : ι → ℤˣ} (g : adelicUnitaryGroup E s) :
+    (adelicUnitaryGroup.infinitePart E s g : GL ι (InfiniteAdeleRing E)) =
+      (g : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]).1 :=
+  (rfl)
+
+/-- The embedding of `G_∞(s)` in `G(s)` is `g ↦ (g, 1)`. -/
+@[simp]
+theorem adelicUnitaryGroup.coe_ofInfinite {s : ι → ℤˣ} (g : infiniteAdelicUnitaryGroup E s) :
+    (adelicUnitaryGroup.ofInfinite E s g : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]) =
+      ((g : GL ι (InfiniteAdeleRing E)), 1) :=
+  (rfl)
+
+/-- The archimedean component of `(g, 1)` is `g`. -/
+@[simp]
+theorem adelicUnitaryGroup.infinitePart_ofInfinite {s : ι → ℤˣ}
+    (g : infiniteAdelicUnitaryGroup E s) :
+    adelicUnitaryGroup.infinitePart E s (adelicUnitaryGroup.ofInfinite E s g) = g :=
+  (rfl)
+
+/-- The archimedean component of `(1, g)` is `1`. -/
+@[simp]
+theorem adelicUnitaryGroup.infinitePart_ofFinite {s : ι → ℤˣ} (g : finiteAdelicUnitaryGroup E ι) :
+    adelicUnitaryGroup.infinitePart E s (adelicUnitaryGroup.ofFinite E s g) = 1 :=
+  (rfl)
+
+/-- The finite component of `(g, 1)` is `1`. -/
+@[simp]
+theorem adelicUnitaryGroup.finitePart_ofInfinite {s : ι → ℤˣ}
+    (g : infiniteAdelicUnitaryGroup E s) :
+    adelicUnitaryGroup.finitePart E s (adelicUnitaryGroup.ofInfinite E s g) = 1 :=
+  (rfl)
+
+/-- The archimedean component `G(s) → G_∞(s)` is continuous. -/
+@[fun_prop]
+theorem adelicUnitaryGroup.continuous_infinitePart (s : ι → ℤˣ) :
+    Continuous (adelicUnitaryGroup.infinitePart E s) :=
+  continuous_induced_rng.2 (continuous_fst.comp continuous_subtypeVal)
+
+/-- The embedding `G_∞(s) → G(s)`, `g ↦ (g, 1)`, is continuous. -/
+@[fun_prop]
+theorem adelicUnitaryGroup.continuous_ofInfinite (s : ι → ℤˣ) :
+    Continuous (adelicUnitaryGroup.ofInfinite E s) :=
+  continuous_induced_rng.2 (continuous_subtypeVal.prodMk continuous_const)
 
 /-- The finite component `G(s) → G_f` is continuous. -/
 @[fun_prop]

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.Complex.Analytic
+public import TauCeti.Geometry.Manifold.Complex.PseudoholomorphicAtlas
 public import TauCeti.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Complex.Beltrami.Isothermal
@@ -137,12 +137,9 @@ theorem isPseudoholomorphicAt_symm (he : IsIsothermalChart j e) (hz : z ∈ e.ta
 /-- **The transition between two isothermal charts is holomorphic.** Its differential commutes
 with multiplication by `i`, which is the Cauchy–Riemann equation. -/
 theorem differentiableOn_symm_trans (he : IsIsothermalChart j e) (he' : IsIsothermalChart j e') :
-    DifferentiableOn ℂ (e.symm ≫ₕ e') (e.symm ≫ₕ e').source := by
-  intro z hz
-  rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hz
-  have h := (he'.isPseudoholomorphicAt _ hz.2).comp (he.isPseudoholomorphicAt_symm hz.1)
-  rw [isPseudoholomorphicAt_ofComplexManifold_iff, mdifferentiableAt_iff_differentiableAt] at h
-  exact h.differentiableWithinAt
+    DifferentiableOn ℂ (e.symm ≫ₕ e') (e.symm ≫ₕ e').source :=
+  he.mdifferentiable.2.differentiableOn_symm_trans_of_isPseudoholomorphicAt
+    he.isPseudoholomorphicAt he'.isPseudoholomorphicAt
 
 /-- **The transition between two isothermal charts is analytic.** -/
 theorem analyticOnNhd_symm_trans (he : IsIsothermalChart j e) (he' : IsIsothermalChart j e') :
@@ -392,11 +389,10 @@ theorem isIsothermalChart_symm_transOpenPartialHomeomorph
 
 /-- **The isothermal charts form a complex analytic atlas.** -/
 instance instIsManifold : IsManifold 𝓘(ℂ) ω (IsothermalSurface j) := by
-  refine isManifold_of_contDiffOn 𝓘(ℂ) ω _ ?_
-  rintro _ _ ⟨e, he, rfl⟩ ⟨e', he', rfl⟩
-  simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, range_id, inter_univ,
-    preimage_id_eq, CompTriple.comp_eq, Homeomorph.transOpenPartialHomeomorph_symm_trans]
-  exact (he.differentiableOn_symm_trans he').contDiffOn (e.symm ≫ₕ e').open_source
+  refine (homeomorph j).isManifold_of_isPseudoholomorphicAt (J := j) ?_
+  intro c hc
+  obtain ⟨e, he, hce⟩ := mem_atlas_iff.mp hc
+  exact ⟨e, hce, he.mdifferentiable.2, he.isPseudoholomorphicAt⟩
 
 /-! ### The isothermal surface carries `j` -/
 

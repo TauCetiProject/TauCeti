@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Different.Eisenstein
 public import TauCeti.NumberTheory.LocalField.RealAddValuation
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.RingTheory.Valuation.Orthogonality
 
@@ -189,12 +190,9 @@ degree is `1`. -/
 theorem natTrailingDegree_ramificationPolynomial {φ : K[X]} {α : L}
     (hroot : (φ.map (algebraMap K L)).IsRoot α)
     (hsep : (ramificationPolynomial φ α).Separable) :
-    (ramificationPolynomial φ α).natTrailingDegree = 1 := by
-  have hc1 := coeff_one_ramificationPolynomial_ne_zero hroot hsep
-  refine le_antisymm (natTrailingDegree_le_of_ne_zero hc1)
-    (le_natTrailingDegree (fun h0 ↦ hc1 (by simp [h0])) fun m hm ↦ ?_)
-  obtain rfl : m = 0 := by omega
-  exact coeff_zero_ramificationPolynomial_of_isRoot hroot
+    (ramificationPolynomial φ α).natTrailingDegree = 1 :=
+  natTrailingDegree_eq_one_iff.2 ⟨coeff_zero_ramificationPolynomial_of_isRoot hroot,
+    coeff_one_ramificationPolynomial_ne_zero hroot hsep⟩
 
 section OverField
 
