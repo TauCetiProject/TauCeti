@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.PowerSeries.Geometric.Basic
+import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 
 /-!
 # Bell series of arithmetic functions
@@ -128,12 +129,9 @@ is the formal reciprocal of `1 - X ^ m`. -/
 theorem bellSeries_ofPowerSeries_mk_one_mul_one_sub_X_pow {p m : ℕ} (hp : p.Prime) (hm : m ≠ 0) :
     bellSeries p hp (ofPowerSeries (p ^ m) (PowerSeries.mk 1 : PowerSeries R)) *
       (1 - PowerSeries.X ^ m) = 1 := by
-  have hsub : PowerSeries.HasSubst (PowerSeries.X ^ m : PowerSeries R) :=
-    PowerSeries.HasSubst.X_pow hm
-  have h := congrArg (PowerSeries.substAlgHom hsub)
-    (PowerSeries.mk_one_mul_one_sub_eq_one R)
-  rw [bellSeries_ofPowerSeries_pow hp hm, ← PowerSeries.coe_substAlgHom hsub]
-  simpa [map_mul, map_sub, map_one, PowerSeries.substAlgHom_X] using h
+  rw [bellSeries_ofPowerSeries_pow hp hm]
+  simpa only [PowerSeries.expand_apply] using
+    PowerSeries.expand_mk_one_mul_one_sub_X_pow (R := R) m hm
 
 end CommRing
 
