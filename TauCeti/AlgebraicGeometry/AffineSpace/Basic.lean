@@ -30,6 +30,8 @@ For a commutative ring `R`, an `R`-algebra `A`, and a coordinate family `x : n �
 
 ## Main declarations
 
+* `AlgebraicGeometry.AffineSpace.homOfVector_appLE_coord`: the coordinate equation for
+  `homOfVector` on restrictions to arbitrary opens.
 * `AlgebraicGeometry.AffineSpace.homOfAlgebra`: the evaluation morphism
   `Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` attached to a coordinate tuple `x : n → A`.
 -/
@@ -43,6 +45,21 @@ namespace AlgebraicGeometry.AffineSpace
 universe u
 
 noncomputable section
+
+/-- Restricting the coordinates before pulling them back along `homOfVector` gives the
+corresponding restricted entries of the coordinate family. -/
+@[simp]
+lemma homOfVector_appLE_coord {X S : Scheme.{u}} {ι : Type u}
+    (f : X ⟶ S) (v : ι → Γ(X, ⊤)) (W : 𝔸(ι; S).Opens) (U : X.Opens)
+    (e : U ≤ AffineSpace.homOfVector f v ⁻¹ᵁ W) (i : ι) :
+    (AffineSpace.homOfVector f v).appLE W U e
+      (𝔸(ι; S).presheaf.map (homOfLE le_top).op (AffineSpace.coord S i)) =
+        X.presheaf.map (homOfLE (show U ≤ ⊤ from le_top)).op (v i) := by
+  rw [← CommRingCat.comp_apply, Scheme.Hom.map_appLE]
+  -- At the top open, `appLE` is `appTop` followed by restriction.
+  change X.presheaf.map _ ((homOfVector f v).appTop _) = _
+  rw [homOfVector_appTop_coord]
+  rfl
 
 variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A] {m n : Type u}
 
