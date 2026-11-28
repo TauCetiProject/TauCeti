@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Basic
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.FieldTheory.FunctionField.Category
 

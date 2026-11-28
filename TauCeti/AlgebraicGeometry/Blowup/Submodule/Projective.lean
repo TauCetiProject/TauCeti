@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.Submodule.Basic
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 
 /-!

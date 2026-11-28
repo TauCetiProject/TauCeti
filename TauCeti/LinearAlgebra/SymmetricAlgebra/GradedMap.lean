@@ -142,6 +142,11 @@ noncomputable def gradedMap (f : M →ₗ[R] N) :
   gradedLift R (homogeneousSubmodule R N)
     ((ι R N ∘ₗ f).codRestrict _ fun m ↦ ι_mem_homogeneousSubmodule R N (f m))
 
+/-- The graded map is the graded lift of the linear map into the degree-one part. -/
+theorem gradedMap_def (f : M →ₗ[R] N) :
+    gradedMap R f = gradedLift R (homogeneousSubmodule R N)
+      ((ι R N ∘ₗ f).codRestrict _ fun m ↦ ι_mem_homogeneousSubmodule R N (f m)) := (rfl)
+
 /-- The graded map agrees with the symmetric-algebra map on every element. -/
 @[simp]
 theorem gradedMap_apply (f : M →ₗ[R] N) (a : SymmetricAlgebra R M) :
@@ -149,6 +154,11 @@ theorem gradedMap_apply (f : M →ₗ[R] N) (a : SymmetricAlgebra R M) :
   rw [gradedMap, gradedLift_apply]
   -- both lifts send each generator `ι m` to `ι (f m)`
   exact AlgHom.congr_fun ((map_unique R f _).mp fun m ↦ by simp) a
+
+/-- A surjective linear map induces a surjective graded map of symmetric algebras. -/
+theorem gradedMap_surjective (f : M →ₗ[R] N) (hf : Function.Surjective f) :
+    Function.Surjective (gradedMap R f) := by
+  simpa only [Function.Surjective, gradedMap_apply] using map_surjective R f hf
 
 /-- The underlying ring homomorphism is the ordinary symmetric-algebra map. -/
 @[simp]

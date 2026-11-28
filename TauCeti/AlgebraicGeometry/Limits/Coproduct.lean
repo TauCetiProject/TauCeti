@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import TauCeti.Topology.ContinuousMap.Sigma
 
 /-!
 # The summands of a coproduct of schemes
@@ -27,6 +28,8 @@ used to work one summand at a time:
   to `∐ X` lands in a single summand;
 * `TauCeti.AlgebraicGeometry.locallyFinite_range_sigmaι`: the summands form a locally finite
   family;
+* `AlgebraicGeometry.isClosedImmersion_sigmaDesc`: a locally finite disjoint family of closed
+  immersions gives a closed immersion from the coproduct;
 * `TauCeti.AlgebraicGeometry.isLocallyNoetherian_sigma`: a coproduct of locally Noetherian schemes
   is locally Noetherian.
 -/
@@ -100,3 +103,45 @@ instance isLocallyNoetherian_sigma [hX : ∀ i, IsLocallyNoetherian (X i)] :
   (isLocallyNoetherian_iff_openCover (sigmaOpenCover X)).mpr hX
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry
+
+open scoped Function
+
+/-- If the images of a family of closed immersions in a common target are pairwise disjoint
+and locally finite, the induced map from the coproduct is a closed immersion. No reducedness
+assumption is needed. -/
+theorem isClosedImmersion_sigmaDesc {ι : Type v} [Small.{u} ι]
+    {X : ι → Scheme.{u}} {Y : Scheme.{u}} (f : ∀ i, X i ⟶ Y)
+    [∀ i, IsClosedImmersion (f i)]
+    (hf : Pairwise (Disjoint on (Set.range <| f ·)))
+    (hlf : LocallyFinite fun i ↦ Set.range (f i)) :
+    IsClosedImmersion (Sigma.desc f) := by
+  -- Use `ContinuousMap.isClosedEmbedding_sigma` and stalk locality, as in the open-immersion
+  -- analogue `AlgebraicGeometry.isOpenImmersion_sigmaDesc`.
+  classical
+  let e := equivShrink.{u} ι
+  let X' := X ∘ e.symm
+  let f' : ∀ i, X' i ⟶ Y := fun i ↦ f (e.symm i)
+  have : SurjectiveOnStalks (Sigma.desc f') :=
+    IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
+  have htop : IsClosedEmbedding (Sigma.desc f' ∘ sigmaMk X') := by
+    have h := ContinuousMap.isClosedEmbedding_sigma
+      (f := fun i ↦ ⟨f' i, (f' i).continuous⟩)
+      (fun i ↦ (f' i).isClosedEmbedding)
+      (fun i j hij ↦ hf (fun h ↦ hij (e.symm.injective h)))
+      (hlf.comp_injective e.symm.injective)
+    convert h using 1
+    funext ⟨i, x⟩
+    simp [← Scheme.Hom.comp_apply]
+  have : IsClosedImmersion (Sigma.desc f') := ⟨by
+    convert htop.comp (sigmaMk X').symm.isClosedEmbedding using 1
+    funext x
+    simp⟩
+  convert IsClosedImmersion.comp (Sigma.reindex e.symm X).inv (Sigma.desc f') using 1
+  apply Sigma.hom_ext
+  intro i
+  obtain ⟨i, rfl⟩ := e.symm.surjective i
+  simp [f']
+
+end AlgebraicGeometry

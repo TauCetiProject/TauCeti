@@ -18,7 +18,7 @@ import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Presentation
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic

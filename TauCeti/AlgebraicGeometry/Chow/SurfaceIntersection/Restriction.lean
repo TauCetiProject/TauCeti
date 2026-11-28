@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Chow.SurfaceIntersection.Basic
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.IdealSheaf
 import TauCeti.AlgebraicGeometry.IdealSheaf.RestrictionEulerCharacteristic
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite

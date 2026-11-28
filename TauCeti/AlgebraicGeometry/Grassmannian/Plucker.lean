@@ -106,6 +106,11 @@ theorem pluckerHom_toSpec : pluckerHom R M k ≫ toSpec R (⋀[R]^k M) 1 = toSpe
   refine scheme_hom_ext fun A _ _ N ↦ ?_
   rw [toSchemeHom_comp_pluckerHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec]
 
+variable (R M k) in
+/-- The Plücker morphism is a morphism over the coefficient ring. -/
+instance instIsOverPluckerHom : (pluckerHom R M k).IsOver (Spec (.of R)) :=
+  ⟨by simpa only [over_scheme] using pluckerHom_toSpec R M k⟩
+
 open ChartAlgebra
 
 variable (R) in

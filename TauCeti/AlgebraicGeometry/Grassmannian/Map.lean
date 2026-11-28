@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Grassmannian.StableLocus
+public import TauCeti.AlgebraicGeometry.Grassmannian.StableLocus.Basic
 public import TauCeti.RingTheory.Grassmannian.Map
 
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange

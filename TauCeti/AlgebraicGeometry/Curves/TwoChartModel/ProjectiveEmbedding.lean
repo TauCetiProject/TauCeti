@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.SectionRing
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Pencil
 

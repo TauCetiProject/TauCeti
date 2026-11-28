@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Grassmannian.IdealLocus
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Over
 public import TauCeti.RingTheory.Grassmannian.Chart.StableLocus
 public import TauCeti.RingTheory.Grassmannian.StableLocus
 

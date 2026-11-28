@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.SchemePoints
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.ClosedImmersion
