@@ -29,7 +29,8 @@ This file defines the ReLU MLP specification and realization predicates, establi
 layer realizations (`ReLUNetRealizes.of_continuousAffineMap`,
 `ReLUNetComputes.of_continuousAffineMap`), and characterizes depth-zero and depth-one networks
 as well as concrete depth-two realizations of the identity (`ReLUNetRealizes.id_depth_two`),
-absolute value (`reluNetComputes_abs`), and binary maximum (`reluNetComputes_max`).
+absolute value (`reluNetComputes_abs`, with width-one impossibility
+`not_reluNetComputes_depth_two_width_one_abs`), and binary maximum (`reluNetComputes_max`).
 
 ## References
 
@@ -83,13 +84,6 @@ theorem layerActivation_reluSpec_eq {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 1) →
     (h : i₁.val + 1 < L₁ ↔ i₂.val + 1 < L₂) :
     (reluSpec d₁).layerActivation i₁ = (reluSpec d₂).layerActivation i₂ := by
   simp only [layerActivation_reluSpec, h]
-
-/-- In positive depth `L + 1`, hidden layer `i + 1` of `reluSpec d` applies `t ↦ max 0 t`. -/
-@[simp]
-theorem layerActivation_reluSpec_castSucc {L : ℕ} (d : Fin (L + 2) → ℕ) (i : Fin L)
-    (t : ℝ) :
-    (reluSpec d).layerActivation i.castSucc t = max 0 t := by
-  simp [MLPSpec.layerActivation_castSucc]
 
 /-- Dropping layer `0` of `reluSpec d` yields `reluSpec (Fin.tail d)`. -/
 @[simp]
@@ -284,7 +278,8 @@ theorem reluNetRealizes_depth_two_iff {a b c : ℕ} {f : (Fin a → ℝ) → (Fi
       Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) () v =
         fun k => max 0 (v k) := funext fun k => by
     rw [Neuromanifold.activation_apply]
-    exact layerActivation_reluSpec_castSucc ![a, b, c] 0 (v k)
+    change (reluSpec ![a, b, c]).layerActivation (0 : Fin 1).castSucc (v k) = max 0 (v k)
+    simp only [MLPSpec.layerActivation_castSucc, reluSpec_activation]
   have hreal (θ : (reluSpec ![a, b, c]).Parameters) (x : Fin a → ℝ) :
       (reluSpec ![a, b, c]).realize θ x =
         (θ 1).1 *ᵥ (fun k => max 0 (((θ 0).1 *ᵥ x) k + (θ 0).2 k)) + (θ 1).2 := by
@@ -445,7 +440,37 @@ theorem reluNetComputes_abs :
   simp only [Pi.add_apply, Pi.zero_apply, add_zero, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two, Fin.sum_univ_one, Matrix.of_apply, Matrix.cons_val_zero,
     Matrix.cons_val_one, one_mul, neg_mul]
-  rcases le_total 0 (x 0) with h | h <;> simp [h, abs_of_nonneg, abs_of_nonpos]
+  rw [← posPart_add_negPart (x 0), posPart_def, negPart_def, max_comm (x 0) 0, max_comm (-x 0) 0]
+
+/-- No depth-2 ReLU network with hidden width `1` computes `x ↦ |x 0|`. -/
+theorem not_reluNetComputes_depth_two_width_one_abs :
+    ¬ ReLUNetComputes ![1, 1, 1] (fun x : Fin 1 → ℝ => |x 0|) := by
+  rw [reluNetComputes_depth_two_iff]
+  rintro ⟨W₀, b₀, W₁, b₁, hf⟩
+  have hval (t : ℝ) : W₁ 0 0 * max 0 (W₀ 0 0 * t + b₀ 0) + b₁ 0 = |t| := by
+    have ht := congrFun hf (fun _ => t)
+    simpa [Matrix.mulVec, dotProduct] using ht.symm
+  rcases lt_trichotomy (W₀ 0 0) 0 with hw | hw | hw
+  · let t : ℝ := max 0 (-b₀ 0 / W₀ 0 0) + 1
+    have h1 : W₀ 0 0 * t + b₀ 0 ≤ 0 := by
+      nlinarith [le_max_right 0 (-b₀ 0 / W₀ 0 0), mul_div_cancel₀ (-b₀ 0) hw.ne]
+    have h2 : W₀ 0 0 * (t + 1) + b₀ 0 ≤ 0 := by nlinarith
+    have ht1 : |t| = b₁ 0 := by simpa [max_eq_left h1] using (hval t).symm
+    have ht2 : |t + 1| = b₁ 0 := by simpa [max_eq_left h2] using (hval (t + 1)).symm
+    have ht_pos : 0 < t := by linarith [le_max_left 0 (-b₀ 0 / W₀ 0 0)]
+    linarith [abs_of_pos ht_pos, abs_of_pos (by linarith : 0 < t + 1)]
+  · have h0 := hval 0
+    have h1 := hval 1
+    simp [hw] at h0 h1
+    linarith
+  · let t : ℝ := min 0 (-b₀ 0 / W₀ 0 0) - 1
+    have h1 : W₀ 0 0 * t + b₀ 0 ≤ 0 := by
+      nlinarith [min_le_right 0 (-b₀ 0 / W₀ 0 0), mul_div_cancel₀ (-b₀ 0) hw.ne']
+    have h2 : W₀ 0 0 * (t - 1) + b₀ 0 ≤ 0 := by nlinarith
+    have ht1 : |t| = b₁ 0 := by simpa [max_eq_left h1] using (hval t).symm
+    have ht2 : |t - 1| = b₁ 0 := by simpa [max_eq_left h2] using (hval (t - 1)).symm
+    have ht_neg : t < 0 := by linarith [min_le_left 0 (-b₀ 0 / W₀ 0 0)]
+    linarith [abs_of_neg ht_neg, abs_of_neg (by linarith : t - 1 < 0)]
 
 /-- `max x₀ x₁ = max 0 (x₀ - x₁) + max 0 x₁ - max 0 (-x₁)` is computed by a depth-2 ReLU
 network with three hidden units (`![2, 3, 1]`). -/
@@ -455,8 +480,12 @@ theorem reluNetComputes_max :
     ⟨!![1, -1; 0, 1; 0, -1], 0, !![1, 1, -1], 0, funext fun x => ?_⟩
   simp only [Pi.add_apply, Pi.zero_apply, add_zero, Matrix.mulVec, dotProduct,
     Fin.sum_univ_three, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, one_mul, neg_mul, zero_mul, zero_add]
-  rcases le_total (x 0) (x 1) with h | h <;> rcases le_total 0 (x 1) with h1 | h1 <;>
-    simp [h, h1]
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons,
+    one_mul, neg_mul, zero_mul, zero_add]
+  rw [add_assoc, ← sub_eq_add_neg (max 0 (x 1)), max_comm 0 (x 1), max_comm 0 (-x 1),
+    max_zero_sub_max_neg_zero_eq_self, ← sub_eq_add_neg (x 0) (x 1)]
+  have hmax : max 0 (x 0 - x 1) = max (x 0) (x 1) - x 1 := by
+    simpa [sub_self, max_comm] using max_sub_sub_right (x 1) (x 0) (x 1)
+  rw [hmax, sub_add_cancel]
 
 end TauCeti

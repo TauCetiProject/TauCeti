@@ -271,38 +271,18 @@ theorem ReLUNetComputes.comp {n m L₁ L₂ : ℕ}
 
 /-! ### Depth padding -/
 
-/-- Appending a hidden layer of width `2 * m` preserves realization, increasing depth by one. -/
+/-- Appending the depth-2 identity network `![m, 2 * m, m]` preserves realization, increasing
+depth by one. -/
 theorem ReLUNetRealizes.pad {n m L : ℕ} {d : Fin (L + 2) → ℕ}
     {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f) :
-    ReLUNetRealizes
-      (fun i : Fin (L + 3) =>
-        if _ : i.val ≤ L then d ⟨i.val, by omega⟩
-        else if i = Fin.last (L + 2) then m else 2 * m)
-      f := by
-  have hcomp := hf.comp (ReLUNetRealizes.id_depth_two m)
-  refine hcomp.of_width_eq ?_
-  ext i
-  by_cases hi : i.val ≤ L
-  · simp [compWidths_of_le, hi]
-  · have hlt : L < i.val := Nat.lt_of_not_le hi
-    rw [compWidths_of_lt _ _ hlt]
-    by_cases hiL : i = Fin.last (L + 2)
-    · subst hiL
-      simp
-    · have hi1 : i.val = L + 1 := by
-        have := i.isLt
-        have : i.val ≠ L + 2 := fun h => hiL (Fin.ext h)
-        omega
-      simp [hiL, hi1]
+    ReLUNetRealizes (compWidths d ![m, 2 * m, m]) f :=
+  hf.comp (ReLUNetRealizes.id_depth_two m)
 
-/-- Appending a two-unit hidden layer preserves scalar computation, increasing depth by one. -/
+/-- Appending the scalar depth-2 identity network `![1, 2, 1]` preserves computation, increasing
+depth by one. -/
 theorem ReLUNetComputes.pad {n L : ℕ} {d : Fin (L + 2) → ℕ} {f : (Fin n → ℝ) → ℝ}
     (hf : ReLUNetComputes d f) :
-    ReLUNetComputes
-      (fun i : Fin (L + 3) =>
-        if _ : i.val ≤ L then d ⟨i.val, by omega⟩
-        else if i = Fin.last (L + 2) then 1 else 2)
-      f :=
+    ReLUNetComputes (compWidths d ![1, 2, 1]) f :=
   reluNetComputes_iff_reluNetRealizes.mpr
     (reluNetComputes_iff_reluNetRealizes.mp hf).pad
 

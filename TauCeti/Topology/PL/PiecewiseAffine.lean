@@ -155,29 +155,25 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
 piecewise affine on the whole space, with one orthant cell per sign pattern. -/
 theorem isPiecewiseAffineOn_pi_max_zero (ι : Type*) [Finite ι] :
     IsPiecewiseAffineOn (fun (x : ι → ℝ) i => max 0 (x i)) (Set.univ : Set (ι → ℝ)) := by
-  let C : (ι → Bool) → Set (ι → ℝ) := fun s =>
-    {x | ∀ i, (if s i then -(ContinuousLinearMap.proj (R := ℝ) i)
-      else ContinuousLinearMap.proj (R := ℝ) i).toContinuousAffineMap x ≤ 0}
-  let A : (ι → Bool) → (ι → ℝ) →ᴬ[ℝ] (ι → ℝ) := fun s =>
+  let g : ι → ((ι → ℝ) →ᴬ[ℝ] ℝ) := fun i =>
+    (ContinuousLinearMap.proj (R := ℝ) i).toContinuousAffineMap
+  let A : (ι → SignType) → (ι → ℝ) →ᴬ[ℝ] (ι → ℝ) := fun σ =>
     (ContinuousLinearMap.pi fun i =>
-      if s i then ContinuousLinearMap.proj (R := ℝ) i else 0).toContinuousAffineMap
-  refine isPiecewiseAffineOn_of_finite (C := C) (A := A)
-    (fun s => isConvexPolyhedron_setOf_forall _) ?_ ?_
+      if σ i = .pos then ContinuousLinearMap.proj (R := ℝ) i else 0).toContinuousAffineMap
+  refine isPiecewiseAffineOn_of_finite (C := TauCeti.Convex.weakSignCell g) (A := A)
+    (fun σ => TauCeti.Convex.isConvexPolyhedron_weakSignCell g σ) ?_ ?_
   · intro x _
-    refine mem_iUnion.mpr ⟨fun i => decide (0 ≤ x i), fun i => ?_⟩
-    by_cases hi : 0 ≤ x i
-    · simp [hi]
-    · simp [hi, (not_le.mp hi).le]
-  · intro s x hx
+    exact mem_iUnion.mpr ⟨_, TauCeti.Convex.signCell_subset_weakSignCell g _
+      (TauCeti.Convex.mem_signCell_sign g x)⟩
+  · intro σ x hx
     ext i
-    have hxi := hx.2 i
-    by_cases hsi : s i
-    · simp only [hsi, ↓reduceIte, ContinuousLinearMap.coe_toContinuousAffineMap,
-        neg_apply, ContinuousLinearMap.proj_apply, neg_nonpos] at hxi
-      simp [A, hsi, max_eq_right hxi]
-    · simp only [hsi, Bool.false_eq_true, ↓reduceIte,
-        ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.proj_apply] at hxi
-      simp [A, hsi, max_eq_left hxi]
+    have hxi := TauCeti.Convex.mem_weakSignCell.mp hx.2 i
+    dsimp only [g, ContinuousLinearMap.coe_toContinuousAffineMap,
+      ContinuousLinearMap.proj_apply] at hxi
+    cases hsi : σ i with
+    | zero => simp [A, hsi, hxi.1 hsi]
+    | neg => simp [A, hsi, max_eq_left (hxi.2.1 hsi)]
+    | pos => simp [A, hsi, max_eq_right (hxi.2.2 hsi)]
 
 /-! ### Selection characterization -/
 
