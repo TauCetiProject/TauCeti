@@ -54,6 +54,16 @@ otherwise. -/
 def completionEmbedding (w : InfinitePlace E) : w.Completion →+* ℂ :=
   if w.embedding ∈ Φ then extensionEmbedding w else (starRingEnd ℂ).comp (extensionEmbedding w)
 
+/-- For a representative embedding in the CM type, its extension is the completion embedding. -/
+theorem completionEmbedding_of_mem {w : InfinitePlace E} (hw : w.embedding ∈ Φ) :
+    Φ.completionEmbedding w = extensionEmbedding w :=
+  ite_eq_left hw
+
+/-- If the CM type selects the other representative, its extension is the conjugate embedding. -/
+theorem completionEmbedding_of_notMem {w : InfinitePlace E} (hw : w.embedding ∉ Φ) :
+    Φ.completionEmbedding w = (starRingEnd ℂ).comp (extensionEmbedding w) :=
+  ite_eq_right hw
+
 /-- `completionEmbedding Φ w` extends `Φ_w`, stated for the coercion `WithAbs w.val → E_w`. -/
 @[simp]
 theorem completionEmbedding_coe (w : InfinitePlace E) (x : WithAbs w.val) :
