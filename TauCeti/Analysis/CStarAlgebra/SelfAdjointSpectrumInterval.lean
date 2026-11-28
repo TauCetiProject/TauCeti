@@ -44,7 +44,7 @@ and its real spectrum directly.
   `‖a - algebraMap ℝ A c‖ ≤ r` if and only if `spectrum ℝ a ⊆ Set.Icc (c - r) (c + r)`.
 * `IsSelfAdjoint.spectrum_add_subset_Icc`: real-spectrum interval bounds add for two self-adjoint
   elements under an isometric continuous functional calculus.
-* `TauCeti.spectrum_sum_subset_Icc`: real-spectrum interval bounds add across any finite sum of
+* `Finset.spectrum_sum_subset_Icc`: real-spectrum interval bounds add across any finite sum of
   self-adjoint elements under an isometric continuous functional calculus.
 -/
 
@@ -99,9 +99,7 @@ theorem spectrum_add_subset_Icc {b : A} (ha : IsSelfAdjoint a) (hb : IsSelfAdjoi
 
 end IsSelfAdjoint
 
-namespace TauCeti
-
-open Finset
+namespace Finset
 
 /-- If self-adjoint elements `a i` (`i ∈ s`) have real spectra in `[m i, M i]`, then
 `spectrum ℝ (∑ i ∈ s, a i) ⊆ [∑ i ∈ s, m i, ∑ i ∈ s, M i]` (including `s = ∅`). -/
@@ -120,4 +118,4 @@ theorem spectrum_sum_subset_Icc {A ι : Type*} [NormedRing A] [StarRing A] [Norm
         (hI i (mem_insert_self i s))
         (ih (fun j hj => ha j (mem_insert_of_mem hj)) (fun j hj => hI j (mem_insert_of_mem hj)))
 
-end TauCeti
+end Finset

@@ -236,17 +236,30 @@ theorem rSeries_integral_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
   have hsa : IsSelfAdjoint ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) := by
     simpa [Complex.coe_smul, IsScalarTower.algebraMap_apply ℝ ℂ C(μ.support, ℂ)] using
       ((IsSelfAdjoint.all b).smul hx).add (IsSelfAdjoint.algebraMap _ (.all a))
-  apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [← haff, φ.map_ofReal_rSeries_integral_law hsa, ← PositiveLinearMap.coe_toLinearMap,
-    TauCeti.rSeries_add_algebraMap hφ _ (a : ℂ), TauCeti.rSeries_smul φ.toLinearMap (b : ℂ) x,
-    PositiveLinearMap.coe_toLinearMap, ← φ.map_ofReal_rSeries_integral_law hx, hlaw, map_add,
-    PowerSeries.map_C, Complex.ofRealHom_eq_coe]
-  congr 1
-  ext n
-  simp only [PowerSeries.coeff_smul, PowerSeries.coeff_rescale, PowerSeries.coeff_map,
-    Complex.ofRealHom_eq_coe, smul_eq_mul]
-  push_cast
-  ring
+  have hr_aff :
+      PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ)
+          (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.map fun x => a + b * x)) id) =
+        TauCeti.rSeries φ ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) := by
+    rw [← haff, φ.map_ofReal_rSeries_integral_law hsa]
+  have hr_alg :
+      TauCeti.rSeries φ ((b : ℂ) • x + algebraMap ℂ _ (a : ℂ)) =
+        (b : ℂ) • PowerSeries.rescale (b : ℂ) (TauCeti.rSeries φ x) + PowerSeries.C (a : ℂ) := by
+    rw [← PositiveLinearMap.coe_toLinearMap, TauCeti.rSeries_add_algebraMap hφ _ (a : ℂ),
+      TauCeti.rSeries_smul φ.toLinearMap (b : ℂ) x, PositiveLinearMap.coe_toLinearMap]
+  have hRx :
+      PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ)
+          (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id) =
+        TauCeti.rSeries φ x := by
+    simpa [hlaw] using φ.map_ofReal_rSeries_integral_law hx
+  have hr_map :
+      PowerSeries.map (Complex.ofRealHom : ℝ →+* ℂ)
+          (b • PowerSeries.rescale b (TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id) +
+            PowerSeries.C a) =
+        (b : ℂ) • PowerSeries.rescale (b : ℂ) (TauCeti.rSeries φ x) + PowerSeries.C (a : ℂ) := by
+    simp only [PowerSeries.smul_eq_C_mul, map_add, map_mul, PowerSeries.map_C,
+      ← PowerSeries.rescale_map, Complex.ofRealHom_eq_coe, hRx]
+  exact PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
+    (hr_aff.trans (hr_alg.trans hr_map.symm))
 
 /-- Under `x ↦ a + b * x`, the first free cumulant (mean) transforms by
 `κ₁(μ.map (a + b * ·)) = a + b * κ₁(μ)`. -/
@@ -255,19 +268,18 @@ theorem freeCumulant_one_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (μ.map fun x => a + b * x).freeCumulant 1 = a + b * μ.freeCumulant 1 := by
   have hm : Integrable (fun x => b * x) μ := hμ.const_mul b
   rw [freeCumulant_one, freeCumulant_one, integral_map (by fun_prop) (by fun_prop),
-    integral_add (integrable_const a) hm, integral_const, probReal_univ, smul_eq_mul, one_mul]
-  exact congrArg (a + ·) (MeasureTheory.integral_const_mul b id)
+    integral_add (integrable_const a) hm]
+  simp [MeasureTheory.integral_const_mul (μ := μ) b fun x => x]
 
 /-- For `n ≥ 2`, pushing a compactly supported probability measure `μ` forward by `x ↦ a + b * x`
 scales its `n`-th free cumulant by `b ^ n`. -/
 theorem freeCumulant_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (a b : ℝ) {n : ℕ} (hn : 2 ≤ n) :
     (μ.map fun x => a + b * x).freeCumulant n = b ^ n * μ.freeCumulant n := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rw [show k + 2 = (k + 1) + 1 by omega, freeCumulant_succ_eq_coeff_rSeries,
-    rSeries_integral_map_affine hμ a b, map_add, PowerSeries.coeff_succ_C, add_zero,
-    PowerSeries.coeff_smul, PowerSeries.coeff_rescale, ← freeCumulant_succ_eq_coeff_rSeries,
-    smul_eq_mul]
-  ring
+  rcases n with _ | _ | k
+  · omega
+  · omega
+  · rw [freeCumulant_succ_eq_coeff_rSeries, rSeries_integral_map_affine hμ a b]
+    simp [freeCumulant_succ_eq_coeff_rSeries, PowerSeries.coeff_succ_C, pow_succ', mul_assoc]
 
 end MeasureTheory.Measure

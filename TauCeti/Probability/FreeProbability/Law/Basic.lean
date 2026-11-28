@@ -393,6 +393,6 @@ theorem support_law_add_subset_Icc {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelf
 theorem support_law_sum_subset_Icc {ι : Type*} (s : Finset ι) {x : ι → A} {m M : ι → ℝ}
     (hx : ∀ i ∈ s, IsSelfAdjoint (x i)) (hI : ∀ i ∈ s, spectrum ℝ (x i) ⊆ Set.Icc (m i) (M i)) :
     (law φ (∑ i ∈ s, x i)).support ⊆ Set.Icc (∑ i ∈ s, m i) (∑ i ∈ s, M i) :=
-  (support_law_subset_spectrum φ _).trans (TauCeti.spectrum_sum_subset_Icc s hx hI)
+  (support_law_subset_spectrum φ _).trans (s.spectrum_sum_subset_Icc hx hI)
 
 end PositiveLinearMap
