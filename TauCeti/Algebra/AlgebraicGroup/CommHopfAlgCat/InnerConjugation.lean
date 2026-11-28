@@ -28,6 +28,8 @@ H --conj#--> H ⊗ H --(g ⊗ id)--> H.
 * `CommHopfAlgCat.innerConjugationIso`: the corresponding coordinate Hopf-algebra
   automorphism.
 * `CommHopfAlgCat.innerConjugationIso_hom_toAlgHom`: its explicit coordinate formula.
+* `CommHopfAlgCat.Hom.innerConjugationIso_hom_comp`: naturality in the coordinate algebra,
+  from `BialgHom.comp_pointConjugationAlgHom_mapDomain`.
 * `CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom`: its natural action on
   algebra-valued points.
 
@@ -112,6 +114,21 @@ theorem innerConjugationIso_inv_toAlgHom
     (innerConjugationIso H g).inv.hom.toAlgHom =
       HopfAlgebra.pointConjugationAlgHom g⁻¹ := by
   rw [← Iso.symm_hom, ← innerConjugationIso_inv_point, innerConjugationIso_hom_toAlgHom]
+
+/-- A coordinate Hopf-algebra morphism intertwines inner conjugation by a ground-ring point
+with inner conjugation by its image on points. -/
+@[reassoc]
+theorem Hom.innerConjugationIso_hom_comp {K L : CommHopfAlgCat.{u} R}
+    (f : K ⟶ L) (g : HopfAlgebra.points (R := R) (H := L) (CommAlgCat.of R R)) :
+    (K.innerConjugationIso (f.mapPointsFunctor.app (CommAlgCat.of R R) g)).hom ≫ f =
+      f ≫ (L.innerConjugationIso g).hom := by
+  apply hom_ext
+  apply BialgHom.coe_toAlgHom_injective
+  have hg : f.mapPointsFunctor.app (CommAlgCat.of R R) g = BialgHom.mapDomain f.hom g :=
+    (Hom.mapPointsFunctor_app_apply f _ g).trans (BialgHom.mapDomain_apply f.hom g).symm
+  rw [hg]
+  simpa only [hom_comp, BialgHom.comp_toAlgHom,
+    innerConjugationIso_hom_toAlgHom] using f.hom.comp_pointConjugationAlgHom_mapDomain g
 
 /-- The coordinate inner automorphism induces natural inner conjugation on points over
 commutative value algebras in any universe. -/

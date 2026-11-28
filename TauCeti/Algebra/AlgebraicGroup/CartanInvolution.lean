@@ -51,6 +51,10 @@ Hence `θ₁ × θ₂` is a Cartan involution exactly when `θ₁` and `θ₂` a
   precomposing it with `θ` is the same as postcomposing it with complex conjugation.
 * `TauCeti.isCartanInvolution_iff_isCompact`: the compactness condition, read in the point
   topology on the complex points.
+* `TauCeti.twistedRealPoints_conj`: precomposition identifies the twisted real points of
+  conjugate automorphisms.
+* `TauCeti.isCartanInvolution_conj_iff`: Cartan involutions transport across coordinate
+  isomorphisms using `AlgEquiv.pointComapHomeomorph`.
 * `TauCeti.isCartanInvolution_refl_iff`: the identity is a Cartan involution exactly when the real
   points are compact.
 * `TauCeti.one_mem_twistedRealPoints`: the identity point is twisted-real for every automorphism.
@@ -73,7 +77,7 @@ namespace TauCeti
 
 universe v
 
-variable {H : CommHopfAlgCat.{v} ℝ}
+variable {H K : CommHopfAlgCat.{v} ℝ}
 
 /-- **The twisted real points of an automorphism `θ` of a real affine group scheme**: the complex
 points `p` with `p = θ(conj p)`, where `conj p` is the complex conjugate of `p`. The point
@@ -99,6 +103,35 @@ theorem mem_twistedRealPoints_iff_comp_eq {θ : H ≅ H} {p : H →ₐ[ℝ] ℂ}
     Complex.conjAe_coe, starRingEnd_apply]
   exact forall_congr' fun _ ↦ eq_star_iff_eq_star
 
+/-- Precomposing with a surjective algebra map that intertwines two automorphisms preserves
+and reflects twisted-real membership. This is not a simp lemma because the original automorphism
+and the precomposition map are not determined by the left-hand side. -/
+theorem mem_twistedRealPoints_iff_comp_of_surjective {θ : H ≅ H} {ψ : K ≅ K}
+    {f : H →ₐ[ℝ] K} (hf : Function.Surjective f)
+    (hcomm : ∀ x : H, ψ.hom.hom (f x) = f (θ.hom.hom x)) {p : K →ₐ[ℝ] ℂ} :
+    p ∈ twistedRealPoints ψ ↔ p.comp f ∈ twistedRealPoints θ := by
+  simp only [mem_twistedRealPoints_iff, AlgHom.comp_apply, ← hcomm]
+  exact hf.forall
+
+/-- A complex point is twisted-real for the conjugate automorphism exactly when its
+precomposition with the coordinate isomorphism is twisted-real for the original one. -/
+@[simp high]
+theorem mem_twistedRealPoints_conj_iff {e : H ≅ K} {θ : H ≅ H} {p : K →ₐ[ℝ] ℂ} :
+    p ∈ twistedRealPoints (e.symm ≪≫ θ ≪≫ e) ↔
+      p.comp e.hom.hom.toAlgHom ∈ twistedRealPoints θ := by
+  have hcomm : e.hom ≫ (e.symm ≪≫ θ ≪≫ e).hom = θ.hom ≫ e.hom := by simp
+  have hsurj : Function.Surjective e.hom.hom := (CommHopfAlgCat.ofIso e).surjective
+  refine mem_twistedRealPoints_iff_comp_of_surjective hsurj fun x ↦ ?_
+  simpa only [CommHopfAlgCat.hom_comp, BialgHom.comp_apply, BialgHom.coe_toAlgHom] using
+    DFunLike.congr_fun (congrArg CommHopfAlgCat.Hom.hom hcomm) x
+
+/-- The twisted real points of a conjugate automorphism correspond under precomposition
+with the coordinate Hopf-algebra isomorphism. -/
+theorem twistedRealPoints_conj (e : H ≅ K) (θ : H ≅ H) :
+    twistedRealPoints (e.symm ≪≫ θ ≪≫ e) =
+      (fun p : K →ₐ[ℝ] ℂ ↦ p.comp e.hom.hom.toAlgHom) ⁻¹' twistedRealPoints θ :=
+  Set.ext fun _ ↦ mem_twistedRealPoints_conj_iff
+
 /-- **Cartan involutions of a real affine algebraic group** (Milne, *Introduction to Shimura
 varieties*, §1, definition (9)). An automorphism `θ` of the coordinate Hopf algebra is a Cartan
 involution when it is an involution and its twisted real points `{g : g = θ(conj g)}` form a
@@ -117,6 +150,24 @@ theorem isCartanInvolution_iff_isCompact {θ : H ≅ H} :
     IsCartanInvolution θ ↔ θ.hom ≫ θ.hom = 𝟙 H ∧ IsCompact (twistedRealPoints θ) := by
   rw [PointTopology.isEmbedding_coeFn.isCompact_iff]
   exact ⟨fun h ↦ ⟨h.hom_comp_self, h.isCompact⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+open scoped PointTopology in
+/-- Conjugation by a real coordinate Hopf-algebra isomorphism preserves and reflects the
+Cartan involution condition. -/
+@[simp]
+theorem isCartanInvolution_conj_iff (e : H ≅ K) {θ : H ≅ H} :
+    IsCartanInvolution (e.symm ≪≫ θ ≪≫ e) ↔ IsCartanInvolution θ := by
+  rw [isCartanInvolution_iff_isCompact, isCartanInvolution_iff_isCompact, twistedRealPoints_conj]
+  have hsquare :
+      (e.symm ≪≫ θ ≪≫ e).hom ≫ (e.symm ≪≫ θ ≪≫ e).hom = 𝟙 K ↔
+        θ.hom ≫ θ.hom = 𝟙 H := by grind
+  have hf : (CommHopfAlgCat.ofIso e).toAlgEquiv.toAlgHom = e.hom.hom.toAlgHom :=
+    AlgHom.ext (CommHopfAlgCat.ofIso_apply e)
+  rw [hsquare, ← hf]
+  refine and_congr_right fun _ ↦ ?_
+  simpa only [AlgEquiv.coe_pointComapHomeomorph] using
+    ((CommHopfAlgCat.ofIso e).toAlgEquiv.pointComapHomeomorph (R := ℂ)).isCompact_preimage
+      (s := twistedRealPoints θ)
 
 /-- **The twisted real points of the identity are the real points**, embedded in the complex
 points. -/
