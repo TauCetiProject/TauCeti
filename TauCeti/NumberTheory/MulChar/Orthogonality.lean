@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Coset.Fiber
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.MulChar.Duality
+import TauCeti.Algebra.Group.Units.PowEq
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -320,12 +321,8 @@ theorem card_pow_eq_eq_one_add_sum_filter_mulChar {d : ℕ} (hd : d ≠ 0)
       (fun χ ↦ χ (c : F)) (by simp : (1 : MulChar F R) ∈ _)
     rw [← filter_ne', filter_filter, one_apply_coe,
       sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq] at hsplit
-    -- The solutions in `F` are nonzero, so they are the solutions in `Fˣ`.
-    have hne {y : F} (hy : y ^ d = c) : y ≠ 0 := fun h ↦ hc (by rw [← hy, h, zero_pow hd])
-    have hcard : Nat.card {y : F // y ^ d = c} = Nat.card {y : Fˣ // y ^ d = c} :=
-      Nat.card_congr <| (Equiv.subtypeSubtypeEquivSubtype hne).symm.trans
-        (unitsEquivNeZero.subtypeEquiv fun y ↦ by simp [Units.ext_iff]).symm
-    rw [hcard, ← hsplit]
+    -- The solutions in `F` are units, so they are the solutions in `Fˣ`.
+    rw [Units.natCard_pow_eq_val hd, ← hsplit]
     -- The two sides differ only in the decidability instance of the filter.
     congr
 
